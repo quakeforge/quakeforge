@@ -20,7 +20,7 @@
 //	Boston, MA  02111-1307, USA
 
 // Installing:
-//   Put qfadmin.gib in your server's gamedir (or id1 to be globally avalible)
+//   Put qfadmin.gib in your server's gamedir (or id1 to be globally available)
 //   and put "exec qfadmin.gib" in your server.cfg.
 
 // Configuring:
@@ -36,12 +36,20 @@
 //	unset <name>	- Manually unset a configuration value
 //	value <name>	- Show a configuration value
 //
-//	maps [map1 ...]	- Show/set the list of maps avalible for voting
+//	maps [map1 ...]	- Show/set the list of maps available for voting
+//	maplist <file>	- Load the maplist from a file
+//	motd [yes/no]	- Show the motd upon connect?
+//	motdfile <file>	- File containing the motd
 //
 //   qfadmin configuration values:	
 //      cheater.action	- What do do when somebody is !cheater'd out (kick or ban)
 //			  If an action is unknown (e.g. no kick/ban) it will default to kick
 //      cheater.bantime - How long they should be banned for (if action is ban)
+
+// Notes about the motd file:
+//   Special tokens can be embedded in the motd file which are replaced when sent to the client
+//	#players#	- Current number of players connected to the server
+//	#deathmatch#	- Current deathmatch mode
 
 // Sample Configuration:
 //   This example is taken from my server.cfg
@@ -50,6 +58,8 @@
 //   qfadmin maps dm1 dm3 dm5 dm2
 //   qfadmin set cheater.action ban
 //   qfadmin set cheater.bantime 20
+//   qfadmin motd yes
+//   qfadmin motdfile welcome.txt
 
 // User commands:
 //   All these commands are used by saying !commandname as a regular user.
@@ -57,7 +67,8 @@
 //
 //   !version		- Show the QFAdmin version running
 //   !cheater <id>	- Vote to kick/ban somebody
-//   !maps <name>	- Vote to change map
+//   !map <name>	- Vote to change map
+//   !maps		- Show a list of maps
 
 domain qfadmin
 
@@ -73,13 +84,13 @@ function qfadmin {
 	// Set a configuration value
 	if $(equal $cmd "set") {
 		tmp = $args[2]
-		config.${tmp} = $args[3]
+		config.$tmp = $args[3]
 
 	// Unset a configuration value
 	} else if $(equal $cmd "unset") {
 		tmp = $args[2]
 
-		ifnot ${config.${tmp}} {
+		ifnot $(length $config.tmp) {
 			echo "QFAdmin: value not set"
 			return
 		}
@@ -89,18 +100,19 @@ function qfadmin {
 	// Echo a configuration value
 	} else if $(equal $cmd "value") {
 		tmp = $args[2]
-		ifnot ${config.${tmp}} {
+
+		ifnot $(length ${config.$tmp}) {
 			echo "QFAdmin: value not set"
 			return
 		}
 
-		echo "QFAdmin: value of ", $tmp, " is \"", ${config.${tmp}}, "\""
+		echo "QFAdmin: value of ", $tmp, " is \"", ${config.$tmp}, "\""
 
 	// Enable a command
 	} else if $(equal $cmd "enable") {
 		tmp = $args[2]
 
-		ifnot #{cmd.$tmp} {
+		ifnot #cmd.$tmp {
 			echo "QFAdmin: command ", $tmp, " doesnt exist"
 			return
 		}
@@ -111,28 +123,82 @@ function qfadmin {
 	} else if $(equal $cmd "disable") {
 		tmp = $args[2]
 
-		ifnot #{cmd.$tmp} {
-			echo "QFAdmin: command ", $tmp, "doesnt exist"
+		ifnot #cmd.$tmp {
+			echo "QFAdmin: command ", $tmp, " doesnt exist"
 			return
 		}
 
-		delete config.disable.${tmp}
+		delete config.disable.$tmp
 
 	// View the list of voteable maps
 	} else if $(equal $cmd "maps") {
-		local tmp2
-
 		if (#args == 2) {
 			ifnot #config.maps {
-				echo "QFAdmin: no maps avalible"
+				echo "QFAdmin: no maps available"
 				return
 			}
 
-			echo "QFAdmin: maps avalible are" @config.maps
+			echo "QFAdmin: maps available are" @config.maps
 			return
 		}
 
 		config.maps = @args[2:]
+
+	// Load a list of maps from a file
+	}  else if $(equal $cmd "maplist") {
+//		local line tmplist
+
+		if (#args == 2) {
+			echo "QFAdmin: must specify file to load maplist from"
+			return
+		}
+
+//		tmp = $args[2]
+
+//		for line in $(split $(file::read $tmp) "\n") {
+//			tmplist = $tmplist, " ", $line
+//		}
+
+//		config.maps = @tmplist
+		config.maps = $(split $(file::read $args[2]) "\n")
+
+	} else if $(equal $cmd "motd") {
+		if (#args == 2) {
+			ifnot $(length ${config.motd}) {
+				config.motd = "no"
+			}
+
+			echo  "QFAdmin: motd is set to \"", ${config.motd}, "\""
+			return
+		}
+
+		ifnot ($(equal $args[2] "yes") || $(equal $args[2] "no")) {
+			echo "QFAdmin: must be set either yes or no"
+			return
+		}
+
+		config.motd = $args[2]
+
+	} else if $(equal $cmd "motdfile") {
+		if (#args == 2) {
+			ifnot $(length ${config.motdfile}) {
+				echo "QFAdmin: no motd file set"
+				return
+			}
+
+			echo "QFAdmin: motd file is \"", ${config.motdfile}, "\""
+			return
+		}
+
+		ifnot $(count $(file::find $args[2])) {
+			echo "QFAdmin: cannot find motd file!"
+			return
+		}
+
+		config.motdfile = $args[2]
+
+	} else if $(equal $cmd "version") {
+		print "QFAdmin: ", $(qfadmin::getVersion), "\n"
 
 	// Print help information
 	} else if $(equal $cmd "help") {
@@ -143,9 +209,13 @@ function qfadmin {
 		echo "	enable - enable a command"
 		echo "	disable - disable a command"
 		echo "	maps - display/set the list of maps"
+		echo "	maplist - load the maplist from a file"
+		echo "	motd - show the motd upon connect"
+		echo "	motdfile - file to read motd from"
+		echo "	version - show qfadmin version"
 
 	} else {
-		echo "QFAdmin: unknown command"
+		echo "QFAdmin: unknown command \"", $cmd, "\""
 	}
 }
 
@@ -168,10 +238,19 @@ function qfadmin::doVersion {
 
 // Return the current version
 function qfadmin::getVersion {
-	local tmp
+	local tmp tmp2
 
 	tmp = $(split $cvsheader)
-	return "QFAdmin ", $tmp[2], " (", $tmp[3], ") by Harry Roberts"
+
+	if $(equal $tmp[6] "Exp") {
+		tmp2 = "Beta"
+	} else if $(equal $tmp[6] "Stab") {
+		tmp2 = "Stable"
+	} else if $(equal $tmp[6] "Rel") {
+		tmp2 = "Release"
+	}
+
+	return "QFAdmin v", $tmp[2], " (", $tmp[3], " ", $tmp2, ") by Harry Roberts"
 }
 
 // Clear uservore & mapvote vars
@@ -221,7 +300,7 @@ function qfadmin::doCheater {
 
 	// Decrease the count for the last person they cheatered
 	if (0${lastvoteid} > 0) {
-		uservote.${voteid}.cheated = (${uservote.${voteid}.cheated} - 1)
+		uservote.${lastvoteid}.cheated = (${uservote.${lastvoteid}.cheated} - 1)
 	}
 
 	uservote.${id}.cheater = $voteid
@@ -294,6 +373,78 @@ function qfadmin::doMap {
 	say $name, " voted for ", $map, " - with ", ${mapvote.$map} , " votes"
 }
 
+function qfadmin::doMaps {
+	local name id tmp count
+
+	id = $args[1]
+	name = $args[2]
+
+	if (0$(count @config.maps) < 1) {
+		client::print $id "There are no maps available for voting\n"
+		return
+	}
+
+	client::print $id "There are ", $(count @config.maps), " maps available for voting\n"
+	for tmp in @config.maps {
+		client::print $id $tmp, " "
+
+		count = (0${count} + 1)
+		if ($count == 5) {
+			client::print $id "\n"
+			count = 0
+		}
+	}
+
+	client::print $id "\n"
+}
+
+// Perform whatever needs to be done when the client connects
+function qfadmin::connectEvent {
+	local name id
+
+	id = $args[1]
+	name = $args[2]
+
+	// Send them the MOTD
+	if $(equal ${config.motd} "yes") {
+		client::print $id "This server is using ", $(qfadmin::getVersion), "\n"
+
+		if $(length ${config.motdfile}) {
+			if $(count $(file::find ${config.motdfile})) {
+				local motdline
+
+				for motdline in $(split $(file::read ${config.motdfile}) "\n") {
+					motdline = $(regex::replace $motdline "#players#" -- $(qfadmin::getClientNum))
+					motdline = $(regex::replace $motdline "#deathmatch#" -- $deathmatch)
+					client::print $id $motdline, "\n"
+				}
+			}
+		}
+	}
+}
+
+// Clean up when a person disconnects
+function qfadmin::disconnectEvent {
+	local lastmap lastvoteid
+	local id name
+
+	id = $args[1]
+	name = $args[2]
+
+	lastmap = ${uservote.${id}.map}
+	lastvoteid = ${uservote.${voteid}.cheater}
+
+	if $(length $lastmap) {
+		mapvote.$lastmap = (${mapvote.$lastmap} - 1)
+	}
+
+	if (0${lastvoteid} > 0) {
+		uservote.${lastvoteid}.cheated = (${uservote.${lastvoteid}.cheated} - 1)
+	}
+
+	delete uservote.$id
+}
+
 // Add a user triggerable command
 function qfadmin::addCmd {
 	cmds.$args[1] = $args[2]
@@ -331,8 +482,10 @@ function qfadmin::chatEvent {
 qfadmin::init
 
 event::register chat qfadmin::chatEvent
+event::register client.connect qfadmin::connectEvent
 
 // QFAdmin Commands
 qfadmin::addCmd "version" qfadmin::doVersion
 qfadmin::addCmd "cheater" qfadmin::doCheater
 qfadmin::addCmd "map" qfadmin::doMap
+qfadmin::addCmd "maps" qfadmin::doMaps
