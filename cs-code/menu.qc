@@ -141,7 +141,7 @@ void (integer x, integer y, integer width, integer lines) text_box =
 	Draw_Pic (cx, cy + 8, "gfx/box_br.lmp");
 };
 
-// ********* LOAD
+// ********* LOAD / SAVE
 
 #define MAX_SAVEGAMES 12
 string [MAX_SAVEGAMES] filenames;
@@ -329,9 +329,19 @@ void () single_player_menu =
 	Menu_End ();
 };
 
+// ********* MULTIPLAYER
+
 void () multi_player_menu =
 {
+	Menu_Begin (54, 52, "");
+	Menu_Pic (16, 4, "gfx/qplaque.lmp");
+	Menu_CenterPic (160, 4, "gfx/p_multi.lmp");
+	Menu_Pic (72, 32, "gfx/mp_menu.lmp");
+	Menu_Item (54, 32, "", quit_f);
 	Menu_Item (54, 52, "", quit_f);
+	Menu_Item (54, 72, "", quit_f);
+	Menu_Cursor (spinner);
+	Menu_End ();
 };
 
 void () options_menu =
