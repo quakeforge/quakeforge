@@ -130,8 +130,10 @@ WriteData (int crc)
 	FILE       *h;
 	int         i;
 
-	globals = calloc (pr.num_globals, sizeof (ddef_t));
-	fields = calloc (pr.num_globals, sizeof (ddef_t));
+	for (i = 0, def = pr.def_head; def; def = def->def_next)
+		i++;
+	globals = calloc (i, sizeof (ddef_t));
+	fields = calloc (i, sizeof (ddef_t));
 
 	for (def = pr.def_head; def; def = def->def_next) {
 		if (def->scope)
