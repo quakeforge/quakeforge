@@ -64,6 +64,7 @@ struct keybind_s keybindings[IMT_LAST][QFK_LAST];
 int			keydown[QFK_LAST];
 
 static int  keyhelp;
+static cbuf_t *cbuf;
 
 typedef struct {
 	char	*name;
@@ -386,10 +387,8 @@ Key_Game (knum_t key, short unicode)
 {
 	const char *kb;
 	char        cmd[1024];
-	cbuf_t     *cbuf;
 
 	kb = Key_GetBinding(game_target, key);
-	cbuf = keybindings[game_target][key].cbuf;
 	if (!kb && (game_target > IMT_0))
 		kb = Key_GetBinding(IMT_0, key);
 
@@ -794,8 +793,10 @@ Key_ClearStates (void)
 }
 
 void
-Key_Init (void)
+Key_Init (cbuf_t *cb)
 {
+	cbuf = cb;
+
 	OK_Init ();
 
 	// register our functions
@@ -848,5 +849,4 @@ Key_SetBinding (imt_t target, knum_t keynum, const char *binding)
 	if (binding) {
 		keybindings[target][keynum].str = strdup(binding);
 	}
-	keybindings[target][keynum].cbuf = cbuf_active;
 }

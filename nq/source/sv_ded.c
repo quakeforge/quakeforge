@@ -219,7 +219,7 @@ IN_Shutdown (void)
 }
 
 void
-Key_Init (void)
+Key_Init (struct cbuf_s *cb)
 {
 }
 

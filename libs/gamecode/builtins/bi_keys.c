@@ -38,20 +38,9 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "QF/cbuf.h"
-#include "QF/idparse.h"
 #include "QF/keys.h"
 #include "QF/progs.h"
 #include "QF/zone.h"
-
-static cbuf_t *cbuf; //FIXME use a properly allocated cbuf rather than this hack
-
-static inline void
-check_cbuf (void)
-{
-	if (!cbuf)
-		cbuf = Cbuf_New (&id_interp);
-}
 
 /*
     bi_Key_SetBinding
@@ -64,16 +53,12 @@ bi_Key_SetBinding (progs_t *pr)
 	int	        target  = P_INT (pr, 0);
 	int         keynum  = P_INT (pr, 1);
 	const char *binding = P_STRING (pr, 2);
-	cbuf_t     *tcb = cbuf_active;
 
 	if(strlen(binding) == 0 || binding[0] == '\0') {
 		binding = NULL;	/* unbind a binding */
 	}
 
-	check_cbuf ();
-	cbuf_active = cbuf;
 	Key_SetBinding (target, keynum, binding);
-	cbuf_active = tcb;
 }
 
 /*

@@ -1757,7 +1757,7 @@ Host_Init (void)
 	}
 
 	W_LoadWadFile ("gfx.wad");
-	Key_Init ();
+	Key_Init (cl_cbuf);
 	Mod_Init ();
 
 	CL_Demo_Init();

@@ -934,7 +934,7 @@ Host_Init (void)
 	NET_Init ();
 
 	W_LoadWadFile ("gfx.wad");
-	Key_Init ();
+	Key_Init (host_cbuf);
 	Mod_Init ();
 
 	CL_Demo_Init ();

@@ -380,12 +380,12 @@ extern imt_t		game_target;
 
 extern struct keybind_s {
 	char *str;
-	struct cbuf_s *cbuf;
 } keybindings[IMT_LAST][QFK_LAST];
 extern int		keydown[QFK_LAST];
 
+struct cbuf_s;
 void Key_Event (knum_t key, short unicode, qboolean down);
-void Key_Init (void);
+void Key_Init (struct cbuf_s *cb);
 void Key_Init_Cvars (void);
 void Key_WriteBindings (VFile *f);
 void Key_ClearStates (void);
