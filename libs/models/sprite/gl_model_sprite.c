@@ -27,9 +27,6 @@
 static const char rcsid[] = 
 	"$Id$";
 
-// models are the only shared resource between a client and server running
-// on the same machine.
-
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -41,46 +38,17 @@ static const char rcsid[] =
 #endif
 
 #include "QF/model.h"
-#include "QF/qendian.h"
 #include "QF/GL/qf_textures.h"
 
 #include "compat.h"
 
-
-void       *
-Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
+void
+Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
 {
-	dspriteframe_t *pinframe;
-	mspriteframe_t *pspriteframe;
-	int         width, height, size, origin[2];
 	char        name[64];
-
-	pinframe = (dspriteframe_t *) pin;
-
-	width = LittleLong (pinframe->width);
-	height = LittleLong (pinframe->height);
-	size = width * height;
-
-	pspriteframe = Hunk_AllocName (sizeof (mspriteframe_t), loadname);
-
-	memset (pspriteframe, 0, sizeof (mspriteframe_t));
-
-	*ppframe = pspriteframe;
-
-	pspriteframe->width = width;
-	pspriteframe->height = height;
-	origin[0] = LittleLong (pinframe->origin[0]);
-	origin[1] = LittleLong (pinframe->origin[1]);
-
-	pspriteframe->up = origin[1];
-	pspriteframe->down = origin[1] - height;
-	pspriteframe->left = origin[0];
-	pspriteframe->right = width + origin[0];
 
 	snprintf (name, sizeof (name), "%s_%i", loadmodel->name, framenum);
 	pspriteframe->gl_texturenum =
-		GL_LoadTexture (name, width, height, (byte *) (pinframe + 1), true,
-						true, 1);
-
-	return (void *) ((byte *) pinframe + sizeof (dspriteframe_t) + size);
+		GL_LoadTexture (name, pspriteframe->width, pspriteframe->height,
+						pspriteframe->pixels, true, true, 1);
 }

@@ -469,6 +469,7 @@ void	*Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
 void     Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 										 int _s);
 void	 Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr);
+void	 Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum);
 
 
 

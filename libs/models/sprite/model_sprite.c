@@ -30,6 +30,12 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include "QF/model.h"
 #include "QF/qendian.h"
@@ -37,11 +43,43 @@ static const char rcsid[] =
 
 #include "compat.h"
 
+void *
+Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
+{
+	dspriteframe_t *pinframe;
+	mspriteframe_t *pspriteframe;
+	int         width, height, size, origin[2];
 
-void       *Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe,
-								 int framenum);
+	pinframe = (dspriteframe_t *) pin;
 
-void       *
+	width = LittleLong (pinframe->width);
+	height = LittleLong (pinframe->height);
+	size = width * height;
+
+	pspriteframe = Hunk_AllocName (sizeof (mspriteframe_t) + size, loadname);
+
+	memset (pspriteframe, 0, sizeof (mspriteframe_t) + size);
+
+	*ppframe = pspriteframe;
+
+	pspriteframe->width = width;
+	pspriteframe->height = height;
+	origin[0] = LittleLong (pinframe->origin[0]);
+	origin[1] = LittleLong (pinframe->origin[1]);
+
+	pspriteframe->up = origin[1];
+	pspriteframe->down = origin[1] - height;
+	pspriteframe->left = origin[0];
+	pspriteframe->right = width + origin[0];
+
+	memcpy (pspriteframe->pixels, (byte *) (pinframe + 1), size);
+
+	Mod_SpriteLoadTexture (pspriteframe, framenum);
+
+	return (void *) ((byte *) pinframe + sizeof (dspriteframe_t) + size);
+}
+
+void *
 Mod_LoadSpriteGroup (void *pin, mspriteframe_t **ppframe, int framenum)
 {
 	dspritegroup_t *pingroup;
