@@ -19,6 +19,8 @@
 - (id) removeItemAt: (integer) index;
 - (id) insertItemAt: (integer) index item:(id) item;
 - (integer) count;
+-(void)makeObjectsPerformSelector:(SEL)selector;
+-(void)makeObjectsPerformSelector:(SEL)selector withObject:(id)arg;
 @end
 
 #endif//__ruamoko_Array_h

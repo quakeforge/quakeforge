@@ -24,6 +24,7 @@
 	for (i = 0; i < count; i++)
 		[array[i] free];
 	obj_free (array);
+	[super free];
 }
 
 - (id) getItemAt: (integer) index
@@ -103,6 +104,20 @@
 - (integer) count
 {
 	return count;
+}
+
+-(void)makeObjectsPerformSelector:(SEL)selector
+{
+	local integer i;
+	for (i = 0; i < count; i++)
+		[array[i] perform:selector];
+}
+
+-(void)makeObjectsPerformSelector:(SEL)selector withObject:(id)arg
+{
+	local integer i;
+	for (i = 0; i < count; i++)
+		[array[i] perform:selector withObject:arg];
 }
 
 @end
