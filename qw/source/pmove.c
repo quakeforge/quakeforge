@@ -131,8 +131,10 @@ PM_FlyMove (void)
 	time_left = frametime;
 
 	for (bumpcount = 0; bumpcount < numbumps; bumpcount++) {
-		for (i = 0; i < 3; i++)
-			end[i] = pmove.origin[i] + time_left * pmove.velocity[i];
+		if (VectorIsZero (pmove.velocity))
+			break;
+
+		VectorMA (pmove.origin, time_left, pmove.velocity, end);
 
 		trace = PM_PlayerMove (pmove.origin, end);
 

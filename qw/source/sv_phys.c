@@ -258,6 +258,9 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 	time_left = time;
 
 	for (bumpcount = 0; bumpcount < numbumps; bumpcount++) {
+		if (VectorIsZero (SVvector (ent, velocity)))
+			break;
+
 		VectorMA (SVvector (ent, origin), time_left, SVvector (ent, velocity),
 				  end);
 
