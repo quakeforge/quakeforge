@@ -159,6 +159,7 @@ CF_BuildQuota ()
 		strcpy (file, i->d_name);
 		cf_cursize += CF_GetFileSize (path);
 	}
+	closedir (dir);
 }
 
 /*
