@@ -15,6 +15,8 @@ libr_dep = $(addsuffix .d,$(basename $(libr_source)))
 %.qfo: %.qc
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
 
+all: libr.pak
+
 libr.pak: $(libr_obj)
 	pak -cf $@ $^
 

@@ -22,6 +22,8 @@ game_dep = $(addsuffix .d,$(basename $(game_source)))
 %.qfo: %.qc
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
 
+all: game.dat
+
 game.dat: $(game_obj) ../lib/libr.pak
 	$(QFCC) -qq -g -o $@ $(game_obj) -l../lib/libr.pak
 
