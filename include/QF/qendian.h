@@ -61,14 +61,14 @@ extern	int			(*LittleLong) (int l);
 extern	float		(*BigFloat) (float l);
 extern	float		(*LittleFloat) (float l);
 
-short   ShortSwap (short l);
+short	ShortSwap (short l);
 short	ShortNoSwap (short l);
-int    LongSwap (int l);
-int	LongNoSwap (int l);
-float FloatSwap (float f);
-float FloatNoSwap (float f);
+int		LongSwap (int l);
+int		LongNoSwap (int l);
+float	FloatSwap (float f);
+float	FloatNoSwap (float f);
 
-//NOTE: thes /always/ read and write /little/ endian entities.
+// NOTE: these /always/ read and write /little/ endian entities.
 struct VFile_s;
 void WriteFloat (struct VFile_s *file, float f);
 void WriteByte (struct VFile_s *file, int b);
@@ -78,8 +78,5 @@ float ReadFloat (struct VFile_s *file);
 byte ReadByte (struct VFile_s *file);
 unsigned short ReadShort (struct VFile_s *file);
 unsigned long ReadLong (struct VFile_s *file);
-
-
-//============================================================================
 
 #endif // __qendian_h
