@@ -210,12 +210,14 @@ get_op_string (int op)
 		case '!':	return "!";
 		case SHL:	return "<<";
 		case SHR:	return ">>";
-		case '(':	return "(";
 		case '.':	return ".";
 		case 'i':	return "<if>";
 		case 'n':	return "<ifnot>";
 		case 'g':	return "<goto>";
 		case 'r':	return "<return>";
+		case 'b':	return "<bind>";
+		case 's':	return "<state>";
+		case 'c':	return "<call>";
 		default:	return "unknown";
 	}
 }
