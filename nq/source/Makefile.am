@@ -35,8 +35,8 @@ SDL_LIBS = @SDL_LIBS@
 
 bin_PROGRAMS=	@NQ_TARGETS@
 
-EXTRA_PROGRAMS= nq-fbdev nq-glx nq-mgl nq-sdl nq-sdl32 nq-sgl nq-svga nq-wgl \
-		nq-x11 nq-server
+EXTRA_PROGRAMS= nq-fbdev nq-glx nq-mgl nq-sdl nq-sdl32 nq-sgl nq-svga nq-3dfx \
+		nq-wgl nq-x11 nq-server
 
 asm_src= sys_ia32.S worlda.S
 
@@ -169,6 +169,19 @@ nq_x11_DEPENDENCIES=	$(top_builddir)/libs/video/renderer/libQFrenderer_sw.la \
 
 # OpenGL-using targets
 
+# ... Linux 3DFX
+nq_3dfx_SOURCES= 	$(combined_sources) sys_unix.c
+nq_3dfx_LDADD=		$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
+			$(top_builddir)/libs/models/libQFmodels_gl.la \
+			$(top_builddir)/libs/video/targets/libQFtdfx.la \
+			$(client_LIBS) $(GLIDE_LIBS) $(SVGA_LIBS)
+nq_3dfx_LDFAGS=		$(common_ldflags)
+nq_3dfx_DEPENDENCIES= 	\
+			$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
+			$(top_builddir)/libs/models/libQFmodels_gl.la \
+			$(top_builddir)/libs/video/targets/libQFtdfx.la \
+			$(client_LIB_DEPS)
+							
 # ... OpenGL in X Window
 nq_glx_SOURCES= 	$(combined_sources) sys_unix.c
 nq_glx_LDADD=		$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \

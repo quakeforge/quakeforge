@@ -36,8 +36,8 @@ SDL_LIBS = @SDL_LIBS@
 bin_PROGRAMS=	@QW_TARGETS@
 
 EXTRA_PROGRAMS= qw-client-fbdev qw-client-glx qw-client-mgl qw-client-sdl \
-		qw-client-sdl32 qw-client-sgl qw-client-svga qw-client-wgl \
-		qw-client-x11 qw-server qw-master
+		qw-client-sdl32 qw-client-sgl qw-client-svga qw-client-3dfx \
+		qw-client-wgl qw-client-x11 qw-server qw-master
 
 if ASM_ARCH
 asm= libasm.la
@@ -205,6 +205,17 @@ qw_client_glx_LDFLAGS=  $(common_ldflags)
 qw_client_glx_DEPENDENCIES= \
 			$(opengl_LIBS) \
 			$(top_builddir)/libs/video/targets/libQFglx.la \
+			$(client_LIB_DEPS)
+
+# ... Linux 3DFX
+qw_client_3dfx_SOURCES= $(common_sources) $(client_sources) cl_sys_unix.c
+qw_client_3dfx_LDADD=   $(opengl_LIBS) \
+                        $(top_builddir)/libs/video/targets/libQFtdfx.la \
+			$(client_LIBS) $(GLIDE_LIBS) $(SVGA_LIBS)
+qw_client_3dfx_LDFAGS=  $(common_ldflags)
+qw_client_3dfx_DEPENDENCIES= \
+			$(opengl_LIBS) \
+			$(top_builddir)/libs/video/targets/libQFtdfx.la \
 			$(client_LIB_DEPS)
 
 # ... Simple DirectMedia Layer, version 1.2 and higher, in GL mode

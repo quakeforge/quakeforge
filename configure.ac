@@ -553,6 +553,32 @@ if test "x$HAVE_DGA" != xno; then
 fi
 AC_SUBST(DGA_LIBS)
 
+dnl Checks for GLIDE support
+AC_ARG_WITH(glide,
+[  --with-glide=DIR        use the GLIDE 2.x SDK found in DIR],
+HAVE_GLIDE=$withval, HAVE_GLIDE=auto)
+if test "x$HAVE_GLIDE" != xno; then
+	AC_CHECK_LIB(glide, grGammaCorrectionValue, GLIDE_LIBS="-lglide",
+		AC_CHECK_LIB(glide2x, grGammaCorrectionValue, GLIDE_LIBS="-lglide2x",GLIDE_LIBS=""))
+	if test "x$HAVE_GLIDE" != xauto; then
+		GLIDE_CFLAGS="$GLIDE_CFLAGS -I$withval/include"
+		GLIDE_LIBS="$GLIDE_LIBS -L$withval/lib"
+	else
+		GLIDE_CFLAGS="$GLIDE_CFLAGS -I/usr/include/glide -I/usr/local/include/glide"
+	fi
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $GLIDE_CFLAGS"
+	AC_CHECK_HEADER(glide.h, HAVE_GLIDE=yes, HAVE_GLIDE=no)
+	if test "x$HAVE_GLIDE" != xyes; then
+		HAVE_GLIDE=no
+	else
+		AC_DEFINE(HAVE_GLIDE)
+	fi
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+AC_SUBST(GLIDE_CFLAGS)
+AC_SUBST(GLIDE_LIBS)
+
 dnl SDL/SDL-GL checks
 AC_ARG_ENABLE(sdl,
 [  --disable-sdl           disable checking for SDL],
@@ -1286,7 +1312,7 @@ dnl ==================================================================
 
 AC_ARG_WITH(clients,
 	[  --with-clients=<list>   compile clients in <list>;
-                          fbdev,glx,mgl,sdl,sdl32,sgl,svga,wgl,x11],
+                          3dfx,fbdev,glx,mgl,sdl,sdl32,sgl,svga,wgl,x11],
 	clients="$withval",
 	clients="all"
 )
@@ -1315,6 +1341,9 @@ else
 	IFS=","
 	for client in $clients; do
 		case "$client" in
+			3dfx)
+				ENABLE_3DFX=yes
+				;;
 			fbdev)
 				ENABLE_FBDEV=yes
 				;;
@@ -1471,6 +1500,16 @@ if test "x$HAVE_SVGA" = xyes; then
 		BUILD_SW=yes
 	fi
 	CAN_BUILD_SW=yes
+	if test "x$HAVE_GLIDE" = xyes; then
+		if test "x$ENABLE_3DFX" = xyes; then
+			QW_TARGETS="$QW_TARGETS qw-client-3dfx\$(EXEEXT)"
+			NQ_TARGETS="$NQ_TARGETS nq-3dfx\$(EXEEXT)"
+			CL_TARGETS="$CL_TARGETS 3dfx"
+			VID_TARGETS="$VID_TARGETS libQFtdfx.la"
+			BUILD_GL=yes
+		fi
+		CAN_BUILD_GL=yes
+	fi
 fi
 if test "x$mingw" = xyes; then
 	if test "x$ENABLE_WGL" = xyes; then

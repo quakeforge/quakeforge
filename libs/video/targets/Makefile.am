@@ -13,8 +13,8 @@ lib_LTLIBRARIES= @JOY_TARGETS@
 noinst_LTLIBRARIES= @VID_TARGETS@
 
 EXTRA_LTLIBRARIES= \
-	libQFjs.la libQFfbdev.la libQFglx.la libQFsvga.la libQFx11.la \
-	libQFsdl.la libQFsdl32.la libQFsgl.la libQFwgl.la libasm.la
+	libQFjs.la libQFfbdev.la libQFglx.la libQFsvga.la libQFtdfx.la \
+	libQFx11.la libQFsdl.la libQFsdl32.la libQFsgl.la libQFwgl.la libasm.la
 
 libasm_la_SOURCES= d_copy.S
 
@@ -78,6 +78,16 @@ libQFsvga_la_DEPENDENCIES=$(asm)
 endif
 libQFsvga_la_SOURCES=	in_svgalib.c vid.c vid_common_sw.c vid_svgalib.c \
 			$(in_common_SOURCE)
+
+#
+# 3dfx
+#
+if ASM_ARCH
+libQFtdfx_la_LIBADD=    $(asm)
+libQFtdfx_la_DEPENDENCIES=$(asm)
+endif
+libQFtdfx_la_SOURCES=   in_svgalib.c vid.c vid_common_gl.c vid_3dfxsvga.c \
+                        qfgl_ext.c $(in_common_SOURCE)
 
 #
 # OpenGL in Win32
