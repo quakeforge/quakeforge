@@ -600,12 +600,9 @@ CL_ParseProjectiles (qboolean nail2)
 	}
 
 	if (d < c) {
-		c = (c - d) * 6;
-		for (i = 0; i < c; i++) {
-			if (nail2)
-				MSG_ReadByte (net_message);
+		c = (c - d) * (nail2 ? 7 : 6);
+		for (i = 0; i < c; i++)
 			MSG_ReadByte (net_message);
-		}
 	}
 }
 
