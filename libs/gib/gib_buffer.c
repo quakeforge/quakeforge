@@ -96,6 +96,11 @@ GIB_Buffer_Reset (struct cbuf_s *cbuf)
 {
 	gib_buffer_data_t *g = GIB_DATA (cbuf);
 
+	// Being reset is nearly the same as being destroyed.
+	// It just means the buffer is going to be reused.
+	if (g->dnotify)
+		g->dnotify (cbuf, g->ddata);
+	
 	if (g->locals)
 		Hash_FlushTable (g->locals);
 	g->globals = gib_globals;
@@ -110,6 +115,7 @@ GIB_Buffer_Reset (struct cbuf_s *cbuf)
 	g->program = g->ip = 0;
 	g->stack.p = 0;
 	g->waitret = false;
+	g->dnotify = NULL;
 	g->reply.obj = NULL;
 }
 

@@ -179,7 +179,7 @@ GIB_Class_Create (gib_classdesc_t *desc)
 	// Create a class object
 
 	class->classobj = GIB_Object_Create (desc->name, true);
-	GIB_Send (class->classobj, 1, &init, NULL, NULL);
+	GIB_Send (class->classobj, NULL, 1, &init, NULL, NULL);
 }
 
 /*
@@ -250,7 +250,7 @@ void
 GIB_Object_Destroy (gib_object_t *obj)
 {
 	const static char *dispose = "dispose";
-	GIB_Send (obj, 1, &dispose, GIB_Object_Finish_Destroy, obj);
+	GIB_Send (obj, NULL, 1, &dispose, GIB_Object_Finish_Destroy, obj);
 }
 
 void
@@ -268,7 +268,8 @@ GIB_Object_Decref (gib_object_t *obj)
 }
 
 int
-GIB_Send (gib_object_t *obj, int argc, const char **argv, gib_reply_handler reply, void *replydata)
+GIB_Send (gib_object_t *obj, gib_object_t *sender, int argc, const char
+		**argv, gib_reply_handler reply, void *replydata)
 {
 	gib_message_t message;
 	gib_method_t *method;
@@ -281,11 +282,17 @@ GIB_Send (gib_object_t *obj, int argc, const char **argv, gib_reply_handler repl
 	message.reply = reply;
 	message.replydata = replydata;
 
-	return method->func (obj, method, obj->data[method->class->depth], message);
+	if (reply)
+		GIB_Object_Incref (obj);
+	
+	return method->func (obj, method, obj->data[method->class->depth],
+			sender, message);
 }
 
 int
-GIB_SendToMethod (gib_object_t *obj, gib_method_t *method, int argc, const char **argv, gib_reply_handler reply, void *replydata)
+GIB_SendToMethod (gib_object_t *obj, gib_method_t *method, gib_object_t
+		*sender, int argc, const char **argv, gib_reply_handler reply,
+		void *replydata)
 {
 	gib_message_t message;
 	
@@ -294,7 +301,11 @@ GIB_SendToMethod (gib_object_t *obj, gib_method_t *method, int argc, const char 
 	message.reply = reply;
 	message.replydata = replydata;
 
-	return method->func (obj, method, obj->data[method->class->depth], message);
+	if (reply)
+		GIB_Object_Incref (obj);
+	
+	return method->func (obj, method, obj->data[method->class->depth],
+			sender, message);
 }
 
 gib_object_t *
@@ -358,7 +369,7 @@ GIB_Object_Signal_Emit (gib_object_t *sender, int argc, const char **argv)
 	if ((list = (gib_signal_t **) Hash_FindList (sender->signals, *argv))) {
 		for (cur = list; *cur; cur++) {
 			*argv = (*cur)->slot->mesg;
-			GIB_Send ((*cur)->receiver, argc, argv, NULL, NULL);
+			GIB_Send ((*cur)->receiver, sender, argc, argv, NULL, NULL);
 		}
 		free (list);
 	}

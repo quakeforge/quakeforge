@@ -57,87 +57,94 @@
 */
 
 typedef struct baseobj_s {
-	llist_t *receivers, *subscribed;
+	unsigned long int ref;	
 } baseobj_t;
 
 static int
 Object_Retain_f (gib_object_t *obj, gib_method_t *method, void *data,
-		gib_message_t mesg)
+		gib_object_t *sender, gib_message_t mesg)
 {
 	const char *r;
-
+	baseobj_t *base = data;
+	
+	base->ref++;
 	GIB_Object_Incref (obj);
 	r = va ("%lu", obj->handle);
-	GIB_Reply (mesg, 1, &r);
+	GIB_Reply (obj, mesg, 1, &r);
 	return 0;
 }
 
 static int
 Object_Release_f (gib_object_t *obj, gib_method_t *method, void *data,
-		gib_message_t mesg) 
+		gib_object_t *sender, gib_message_t mesg) 
 {
-	GIB_Object_Decref (obj);
+	baseobj_t *base = data;
+	if (base->ref) {
+		base->ref--;
+		GIB_Object_Decref (obj);
+	}
+	GIB_Reply (obj, mesg, 0, NULL);
 	return 0;
 }
 
 static int
 Object_Init_f (gib_object_t *obj, gib_method_t *method, void *data,
-		gib_message_t mesg)
+		gib_object_t *sender, gib_message_t mesg)
 {
 	const char *r;
 
 	r = va ("%lu", obj->handle);
-	GIB_Reply (mesg, 1, &r);
+	GIB_Reply (obj, mesg, 1, &r);
 	return 0;
 }
 
 static int
 Object_Class_f (gib_object_t *obj, gib_method_t *method, void *data,
-		gib_message_t mesg)
+		gib_object_t *sender, gib_message_t mesg)
 {
-	GIB_Reply (mesg, 1, &obj->class->name);
+	GIB_Reply (obj, mesg, 1, &obj->class->name);
 	return 0;
 }
 
 static int
 Object_Dispose_f (gib_object_t *obj, gib_method_t *method, void *data,
-		gib_message_t mesg)
+		gib_object_t *sender, gib_message_t mesg)
 {
 	static const char *disposed = "disposed";
 	GIB_Object_Signal_Emit (obj, 1, &disposed);
-	GIB_Reply (mesg, 0, NULL);
+	GIB_Reply (obj, mesg, 0, NULL);
 	return 0;
 }
 
 static int
 Object_SignalConnect_f (gib_object_t *obj, gib_method_t *method, void *data,
-		gib_message_t mesg)
+		gib_object_t *sender, gib_message_t mesg)
 {
 	gib_object_t *other;
 
 	if (mesg.argc >= 4 && (other = GIB_Object_Get (mesg.argv[2])))
 		GIB_Object_Signal_Slot_Pair (obj, mesg.argv[1], other,
 				mesg.argv[3]);
-	GIB_Reply (mesg, 0, NULL);
+	GIB_Reply (obj, mesg, 0, NULL);
 	return 0;
 }
 
 static int
 Object_SignalDisconnect_f (gib_object_t *obj, gib_method_t *method, void
-		*data, gib_message_t mesg)
+		*data, gib_object_t *sender, gib_message_t mesg)
 {
 	gib_object_t *other;
 
 	if (mesg.argc >= 4 && (other = GIB_Object_Get (mesg.argv[2])))
 		GIB_Object_Signal_Slot_Destroy (obj, mesg.argv[1], other,
 				mesg.argv[3]);
-	GIB_Reply (mesg, 0, NULL);
+	GIB_Reply (obj, mesg, 0, NULL);
 	return 0;
 }
 
 static int
 Object_Class_New_f (gib_object_t *obj, gib_method_t *method, void *data,
-		gib_message_t mesg)
+		gib_object_t *sender, gib_message_t mesg)
 {
 	const char *old;
 	gib_object_t *new;
@@ -145,7 +152,8 @@ Object_Class_New_f (gib_object_t *obj, gib_method_t *method, void *data,
 	new = GIB_Object_Create (obj->class->name, false);
 	old = mesg.argv[0];
 	mesg.argv[0] = "init";
-	GIB_Send (new, mesg.argc, mesg.argv, mesg.reply, mesg.replydata);
+	GIB_Send (new, sender, mesg.argc, mesg.argv, mesg.reply, mesg.replydata);
+	GIB_Object_Decref (obj);
 	mesg.argv[0] = old;
 	return 0;
 }
@@ -155,6 +163,8 @@ Object_Construct (gib_object_t *obj)
 {
 	baseobj_t *base = malloc (sizeof (baseobj_t));
 
+	base->ref = 1;
+	
 	return base;
 }
 
@@ -219,15 +229,14 @@ typedef struct Thread_s {
 
 static int
 Thread_Init_f (gib_object_t *obj, gib_method_t *method, void *data,
-		gib_message_t mesg)
+		gib_object_t *sender, gib_message_t mesg)
 {
 	Thread_t *t = (Thread_t *) data;
 	gib_function_t *f;
 
 	if (mesg.argc < 2 || !(f = GIB_Function_Find (mesg.argv[1]))) {
-		GIB_Reply (mesg, 0, NULL);
 		GIB_Object_Destroy (obj);
-		return 0;
+		return -1;
 	} else {
 		GIB_Function_Execute (t->thread, f, mesg.argv+1, mesg.argc-1);
 		Cbuf_Execute_Stack (t->thread);
@@ -243,7 +252,7 @@ Thread_Cbuf_Freed (cbuf_t *cbuf, void *data)
 
 	t->thread = NULL;
 	t->ended = true;
-	GIB_Send (t->obj, 1, &release, NULL, NULL);
+	GIB_Send (t->obj, t->obj, 1, &release, NULL, NULL);
 }
 
 static void *
@@ -335,15 +344,15 @@ Scrobj_Destruct (void *data)
 static void
 Scrobj_Thread_Died (cbuf_t *thread, void *data)
 {
-	GIB_Reply (GIB_DATA(thread)->reply.mesg, 0, NULL);
-	GIB_Object_Decref (GIB_DATA(thread)->reply.obj);
+	GIB_Reply (GIB_DATA(thread)->reply.obj, GIB_DATA(thread)->reply.mesg, 0, NULL);
 }
 
 static int
 Scrobj_Method_f (gib_object_t *obj, gib_method_t *method, void *data,
-		gib_message_t mesg)
+		gib_object_t *sender, gib_message_t mesg)
 {
 	static char this[] = "this";
+	static char send[] = "sender";
 	unsigned int ind;
 	cbuf_t *thread = GIB_Thread_New ();
 	static hashtab_t *nhash = NULL;
@@ -363,7 +372,12 @@ Scrobj_Method_f (gib_object_t *obj, gib_method_t *method, void *data,
 		dsprintf (var->array[0].value, "%lu", obj->handle);
 	else
 		dstring_copystr (var->array[0].value, obj->class->name);
-	GIB_Object_Incref (obj);
+	var = GIB_Var_Get_Complex (&GIB_DATA(thread)->locals, &nhash, send,
+			&ind, true);
+	if (sender)
+		dsprintf (var->array[0].value, "%lu", sender->handle);
+	else
+		dstring_copystr (var->array[0].value, "0");
 	Cbuf_Execute_Stack (thread);
 	
 	return 0;

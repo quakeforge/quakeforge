@@ -321,10 +321,9 @@ GIB_Return_f (void)
 		for (i = 1; i < GIB_Argc(); i++)
 			argv[i-1] = GIB_Argv(i);
 		
-		GIB_Reply (g->reply.mesg, GIB_Argc()-1, argv);
+		GIB_Reply (g->reply.obj, g->reply.mesg, GIB_Argc()-1, argv);
 		free (argv);
 		g->dnotify = NULL;
-		GIB_Object_Decref (g->reply.obj);
 	} else if (GIB_Argc () > 1 && sp && sp->interpreter == &gib_interp
 		&& GIB_DATA (sp)->waitret) {
 		int i;

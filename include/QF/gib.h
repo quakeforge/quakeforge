@@ -73,13 +73,15 @@ typedef struct gib_message_s {
 
 typedef struct gib_method_s {
 	const char *name;
-	int (*func) (struct gib_object_s *obj, struct gib_method_s *method, void *data, gib_message_t message);
+	int (*func) (struct gib_object_s *obj, struct gib_method_s *method,
+			void *data, gib_object_t *sender, gib_message_t message);
 	struct gib_method_s *parent;
 	struct gib_class_s *class;
 	void *data;
 } gib_method_t;
 
-typedef int (*gib_message_handler) (gib_object_t *obj, gib_method_t *method, void *data, gib_message_t message);
+typedef int (*gib_message_handler) (gib_object_t *obj, gib_method_t *method,
+		void *data, gib_object_t *sender, gib_message_t message);
 typedef void * (*gib_obj_constructor) (gib_object_t *obj);
 typedef void (*gib_obj_destructor) (void *data);
 
@@ -107,17 +109,23 @@ typedef struct gib_classdesc_s {
 	struct gib_methodtab_s *methods, *class_methods;
 } gib_classdesc_t;
 
-#define GIB_Reply(mesg,argc,argv) if ((mesg).reply) ((mesg).reply(argc,argv,(mesg).replydata))
-#define GIB_ForwardToSuper(mesg,obj,method) ((method)->parent->func ((obj), (method)->parent, (obj)->data[(method)->parent->class->depth], (mesg)))
+#define GIB_Reply(obj,mesg,argc,argv) if ((mesg).reply) { \
+			((mesg).reply(argc,argv,(mesg).replydata)); \
+			GIB_Object_Decref ((obj));}
+#define GIB_ForwardToSuper(mesg,obj,method) ((method)->parent->func ((obj), \
+			(method)->parent, \
+			(obj)->data[(method)->parent->class->depth], \
+			(obj), (mesg)))
 
 void GIB_Class_Create (gib_classdesc_t *desc);
 gib_object_t *GIB_Object_Create (const char *classname, qboolean classobj);
 void GIB_Object_Destroy (gib_object_t *obj);
 void GIB_Object_Incref (gib_object_t *obj);
 void GIB_Object_Decref (gib_object_t *obj);
-int GIB_Send (gib_object_t *obj, int argc, const char **argv, gib_reply_handler reply, void *replydata);
-int GIB_SendToMethod (gib_object_t *obj, gib_method_t *method, int argc, const
-		char **argv, gib_reply_handler reply, void *replydata);
+int GIB_Send (gib_object_t *obj, gib_object_t *sender, int argc, const char **argv, gib_reply_handler reply, void *replydata);
+int GIB_SendToMethod (gib_object_t *obj, gib_method_t *method, gib_object_t
+		*sender, int argc, const char **argv, gib_reply_handler reply,
+		void *replydata);
 gib_object_t *GIB_Object_Get (const char *id);
 void GIB_Object_Signal_Slot_Pair (gib_object_t *sender, const char *signal,
 		gib_object_t *receiver, const char *slot);

@@ -162,9 +162,10 @@ GIB_Execute_Prepare_Line (cbuf_t * cbuf, gib_tree_t * line)
 			if (cur->flags & TREE_A_EMBED) {
 				Cbuf_ArgsAdd (args, "");
 				GIB_Process_Embedded (cur, cbuf->args);
-			} else
+			} else {
 				Cbuf_ArgsAdd (args, cur->str);
-			args->argm[args->argc - 1] = cur;
+				args->argm[args->argc - 1] = cur;
+			}
 		}
 		if (cur->delim == '('
 			&& GIB_Process_Math (args->argv[args->argc - 1], pos))
@@ -296,20 +297,21 @@ GIB_Execute (cbuf_t * cbuf)
 					cbuf->state = CBUF_STATE_BLOCKED;
 					i = super ? GIB_SendToMethod (obj,
 							g->reply.method->parent,
-							i - 2, mesg,
+							g->reply.obj, i - 2, mesg,
 							GIB_Buffer_Reply_Callback,
 							cbuf) : GIB_Send (obj,
-							i - 2, mesg, 
+							g->reply.obj, i - 2, mesg, 
 							GIB_Buffer_Reply_Callback,
 							cbuf);
 				} else {
 					g->waitret = false;
 					i = super ? GIB_SendToMethod (obj,
 							g->reply.method->parent,
-							i - 2, mesg,
+							g->reply.obj, i - 2, mesg,
 							NULL, NULL) : 
-							GIB_Send (obj, i - 2, 
-							mesg, NULL, NULL);
+							GIB_Send (obj,g->reply.obj, 
+							i - 2, mesg, NULL,
+							NULL);
 				}
 				if (i < 0) {
 					GIB_Error (
