@@ -413,11 +413,11 @@ process_corners (struct box_def *box)
 			}
 			break;
 		case 4:	// c d j n
-			if (max_visit > 1)
+			if (max_visit > 1) // c d
 				return;
 			if (abs (visit[2].face - visit[0].face) == 3
 				&& abs (visit[3].face - visit[1].face) == 3) {
-				// 4 vertices
+				// 4 vertices, n
 				int         sum, diff;
 				vec3_t      v[4];
 
@@ -437,7 +437,7 @@ process_corners (struct box_def *box)
 					insert_cube_vertices (box, visit[i], 2, v[i],
 										  v[(i - 1) & 3]);
 			} else {
-				// 2 vertices
+				// 2 vertices, j
 				int         l_f, t_f, r_f, b_f;
 				vec3_t      v_l, v_r;
 
@@ -468,7 +468,7 @@ process_corners (struct box_def *box)
 			break;
 		case 5:	// h m
 			if (max_visit > 1) {
-				// one vertex
+				// one vertex, h
 				vec3_t      v;
 
 				for (i = 0; i < 4; i++) {
@@ -482,7 +482,7 @@ process_corners (struct box_def *box)
 				insert_cube_vertices (box, visit[(i + 1) % 5], 1, v);
 				insert_cube_vertices (box, visit[(i + 4) % 5], 1, v);
 			} else {
-				// 3 vertices
+				// 3 vertices, m
 				unsigned int sel =
 					(((abs (visit[2].face - visit[0].face) == 3) << 2) |
 					 ((abs (visit[3].face - visit[1].face) == 3) << 1) |
@@ -507,7 +507,7 @@ process_corners (struct box_def *box)
 				insert_cube_vertices (box, visit[(center + 4) % 5], 1, v[2]);
 			}
 			break;
-		case 6:	// e k l
+		case 6:	// e k l o
 			if (max_visit > 2) // e
 				return;
 			for (i = 0; i < 5; i++) {
@@ -517,9 +517,12 @@ process_corners (struct box_def *box)
 					break;
 			}
 			if (visit[(i + 3) % 6].face == visit[(i + 5) % 6].face) {
-				// adjacant vertices
+				// adjacant vertices, l o
 				vec3_t      v[2];
 
+				if (visit[(i + 0) % 6].face == visit[(i + 2) % 6].face) // o
+					return;
+				// l
 				find_cube_vertex (visit[i].face,
 								  visit[(i + 1) % 6].face,
 								  visit[(i + 5) % 6].face, v[0]);
@@ -533,7 +536,7 @@ process_corners (struct box_def *box)
 				insert_cube_vertices (box, visit[(i + 1) % 6], 2, v[1], v[0]);
 				insert_cube_vertices (box, visit[(i + 2) % 6], 1, v[1]);
 			} else {
-				// opposing vertices
+				// opposing vertices, k
 				vec3_t      v[2];
 
 				find_cube_vertex (visit[i].face, visit[(i + 1) % 6].face,
