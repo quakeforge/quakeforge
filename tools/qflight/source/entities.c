@@ -71,7 +71,7 @@ static int max_entities;
 */
 
 int numlighttargets;
-char lighttargets[32][64];
+const char *lighttargets[32];
 
 
 static int
@@ -86,7 +86,7 @@ LightStyleForTargetname (const char *targetname, qboolean alloc)
 	if (!alloc)
 		return -1;
 
-	strcpy (lighttargets[i], targetname);
+	lighttargets[i] = targetname;
 	numlighttargets++;
 	return numlighttargets - 1 + 32;
 }
@@ -97,11 +97,12 @@ MatchTargets (void)
 	int			i, j;
 
 	for (i = 0; i < num_entities; i++) {
-		if (!entities[i].target[0])
+		if (!entities[i].target || !entities[i].target[0])
 			continue;
 
 		for (j = 0; j < num_entities; j++)
-			if (!strcmp (entities[j].targetname, entities[i].target)) {
+			if (entities[j].targetname
+				&& !strcmp (entities[j].targetname, entities[i].target)) {
 				entities[i].targetent = &entities[j];
 				break;
 			}
@@ -207,11 +208,13 @@ LoadEntities (void)
 		}
 
 		// all fields have been parsed
-		if (!strncmp (entity->classname, "light", 5) && !entity->light)
+		if (entity->classname && !strncmp (entity->classname, "light", 5)
+			&& !entity->light)
 			entity->light = DEFAULTLIGHTLEVEL;
 
-		if (!strcmp (entity->classname, "light")) {
-			if (entity->targetname[0] && !entity->style) {
+		if (entity->classname && !strcmp (entity->classname, "light")) {
+			if (entity->targetname && entity->targetname[0]
+				&& !entity->style) {
 				char s[16];
 
 				entity->style = LightStyleForTargetname (entity->targetname,
