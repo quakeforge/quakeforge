@@ -48,7 +48,6 @@
 #include "QF/sound.h"
 #include "QF/sys.h"
 
-#include "d_iface.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_local.h"
@@ -134,11 +133,6 @@ float       dp_time1, dp_time2, db_time1, db_time2, rw_time1, rw_time2;
 float       se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
 
 void        R_MarkLeaves (void);
-
-extern cvar_t *scr_fov;
-
-void        R_ZGraph (void);
-
 
 void R_LoadSky_f (void);
 
@@ -255,6 +249,7 @@ R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 	if (r_force_fullscreen) {
 		full = true;
 		size = 100.0;
+		lineadj = 0;
 	}
 	size /= 100.0;
 
@@ -368,8 +363,8 @@ R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
 	screenedge[0].type = PLANE_ANYZ;
 
 	// right side clip
-	screenedge[1].normal[0] =
-		1.0 / ((1.0 - xOrigin) * r_refdef.horizontalFieldOfView);
+	screenedge[1].normal[0] = 1.0 / ((1.0 - xOrigin) *
+									 r_refdef.horizontalFieldOfView);
 	screenedge[1].normal[1] = 0;
 	screenedge[1].normal[2] = 1;
 	screenedge[1].type = PLANE_ANYZ;
@@ -447,7 +442,8 @@ R_MarkLeaves (void)
 					mark++;
 				} while (--c);
 			}
-			node = (mnode_t*)leaf;
+
+			node = (mnode_t *) leaf;
 			do {
 				if (node->visframe == r_visframecount)
 					break;
@@ -487,7 +483,7 @@ R_DrawEntitiesOnList (void)
 	int         lnum;
 	alight_t    lighting;
 
-// FIXME: remove and do real lighting
+	// FIXME: remove and do real lighting
 	float       lightvec[3] = { -1, 0, 0 };
 	vec3_t      dist;
 	float       add;
@@ -552,7 +548,7 @@ R_DrawEntitiesOnList (void)
 void
 R_DrawViewModel (void)
 {
-// FIXME: remove and do real lighting
+	// FIXME: remove and do real lighting
 	float       lightvec[3] = { -1, 0, 0 };
 	int         j;
 	int         lnum;
@@ -633,8 +629,8 @@ R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 	} else {
 		for (i = 0; i < 4; i++) {
 			// generate accept and reject points
-// FIXME: do with fast look-ups or integer tests based on the
-// sign bit of the floating point values
+			// FIXME: do with fast look-ups or integer tests based on the
+			// sign bit of the floating point values
 
 			pindex = pfrustum_indexes[i];
 
@@ -682,7 +678,6 @@ R_DrawBEntitiesOnList (void)
 
 		switch (currententity->model->type) {
 			case mod_brush:
-
 				clmodel = currententity->model;
 
 				// see if the bounding box lets us trivially reject, also
@@ -698,12 +693,12 @@ R_DrawBEntitiesOnList (void)
 				if (clipflags != BMODEL_FULLY_CLIPPED) {
 					VectorCopy (currententity->origin, r_entorigin);
 					VectorSubtract (r_origin, r_entorigin, modelorg);
-// FIXME: is this needed?
-					VectorCopy (modelorg, r_worldmodelorg);
 
+					// FIXME: is this needed?
+					VectorCopy (modelorg, r_worldmodelorg);
 					r_pcurrentvertbase = clmodel->vertexes;
 
-// FIXME: stop transforming twice
+					// FIXME: stop transforming twice
 					R_RotateBmodel ();
 
 					// calculate dynamic lighting for bmodel if it's not an
@@ -758,7 +753,7 @@ R_DrawBEntitiesOnList (void)
 					}
 
 					// put back world rotation and frustum clipping     
-// FIXME: R_RotateBmodel should just work off base_vxx
+					// FIXME: R_RotateBmodel should just work off base_vxx
 					VectorCopy (base_vpn, vpn);
 					VectorCopy (base_vup, vup);
 					VectorCopy (base_vright, vright);
@@ -766,9 +761,7 @@ R_DrawBEntitiesOnList (void)
 					VectorCopy (oldorigin, modelorg);
 					R_TransformFrustum ();
 				}
-
 				break;
-
 			default:
 				break;
 		}

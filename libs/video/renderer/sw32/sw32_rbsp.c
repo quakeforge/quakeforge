@@ -76,6 +76,7 @@ R_EntityRotate (vec3_t vec)
 	vec[2] = DotProduct (entity_rotation[2], tvec);
 }
 
+
 void
 R_RotateBmodel (void)
 {
@@ -146,6 +147,7 @@ R_RotateBmodel (void)
 
 	R_TransformFrustum ();
 }
+
 
 void
 R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
@@ -271,13 +273,11 @@ R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
 	// draw or recurse further
 	for (i = 0; i < 2; i++) {
 		if (psideedges[i]) {
-			// draw if we've reached a non-solid leaf, done if all that's
-			// left is a
-			// solid leaf, and continue down the tree if it's not a leaf
+			// draw if we've reached a non-solid leaf, done if all that's left
+			// is a solid leaf, and continue down the tree if it's not a leaf
 			pn = pnode->children[i];
 
-			// we're done with this branch if the node or leaf isn't in the
-			// PVS
+			// we're done with this branch if the node or leaf isn't in the PVS
 			if (pn->visframe == r_visframecount) {
 				if (pn->contents < 0) {
 					if (pn->contents != CONTENTS_SOLID) {
@@ -292,6 +292,7 @@ R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
 		}
 	}
 }
+
 
 void
 R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
@@ -324,9 +325,8 @@ R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
 
 			// copy the edges to bedges, flipping if necessary so always
 			// clockwise winding
-			// FIXME: if edges and vertices get caches, these assignments
-			// must move
-			// outside the loop, and overflow checking must be done here
+			// FIXME: if edges and vertices get caches, these assignments must
+			// move outside the loop, and overflow checking must be done here
 			pbverts = bverts;
 			pbedges = bedges;
 			numbverts = numbedges = 0;
@@ -362,6 +362,7 @@ R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
 	}
 }
 
+
 void
 R_DrawSubmodelPolygons (model_t *pmodel, int clipflags)
 {
@@ -393,13 +394,14 @@ R_DrawSubmodelPolygons (model_t *pmodel, int clipflags)
 	}
 }
 
+
 void
 R_RecursiveWorldNode (mnode_t *node, int clipflags)
 {
 	int         i, c, side, *pindex;
 	vec3_t      acceptpt, rejectpt;
 	mplane_t   *plane;
-	msurface_t *surf, **mark;
+	msurface_t *surf;
 	mleaf_t    *pleaf;
 	double      d, dot;
 
@@ -447,24 +449,13 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 	// if a leaf node, draw stuff
 	if (node->contents < 0) {
 		pleaf = (mleaf_t *) node;
-
-		mark = pleaf->firstmarksurface;
-		c = pleaf->nummarksurfaces;
-
-		if (c) {
-			do {
-				(*mark)->visframe = r_framecount;
-				mark++;
-			} while (--c);
-		}
 		// deal with model fragments in this leaf
 		if (pleaf->efrags) {
 			R_StoreEfrags (&pleaf->efrags);
 		}
 
 		pleaf->key = r_currentkey;
-		r_currentkey++;					// all bmodels in a leaf share the
-										// same key
+		r_currentkey++;				// all bmodels in a leaf share the same key
 	} else {
 		// node is just a decision point, so go down the apropriate sides
 
@@ -503,7 +494,7 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 			if (dot < -BACKFACE_EPSILON) {
 				do {
 					if ((surf->flags & SURF_PLANEBACK) &&
-						(surf->visframe == r_framecount)) {
+						(surf->visframe == r_visframecount)) {
 						if (r_drawpolys) {
 							if (r_worldpolysbacktofront) {
 								if (numbtofpolys < MAX_BTOFPOLYS) {
@@ -525,7 +516,7 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 			} else if (dot > BACKFACE_EPSILON) {
 				do {
 					if (!(surf->flags & SURF_PLANEBACK) &&
-						(surf->visframe == r_framecount)) {
+						(surf->visframe == r_visframecount)) {
 						if (r_drawpolys) {
 							if (r_worldpolysbacktofront) {
 								if (numbtofpolys < MAX_BTOFPOLYS) {
@@ -552,6 +543,7 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 		R_RecursiveWorldNode (node->children[!side], clipflags);
 	}
 }
+
 
 void
 R_RenderWorld (void)

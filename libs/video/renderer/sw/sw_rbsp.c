@@ -41,15 +41,13 @@
 // current entity info
 qboolean    insubmodel;
 entity_t   *currententity;
-vec3_t      modelorg, base_modelorg;
-								// modelorg is the viewpoint reletive to
+vec3_t      modelorg;			// modelorg is the viewpoint relative to
 								// the currently rendering entity
+vec3_t      base_modelorg;
+vec3_t      r_worldmodelorg;
 vec3_t      r_entorigin;		// the currently rendering entity in world
 								// coordinates
-
 float       entity_rotation[3][3];
-
-vec3_t      r_worldmodelorg;
 
 int         r_currentbkey;
 
@@ -166,7 +164,7 @@ R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
 	makeclippededge = false;
 
 	// transform the BSP plane into model space
-// FIXME: cache these?
+	// FIXME: cache these?
 	splitplane = pnode->plane;
 	tplane.dist = splitplane->dist -
 		DotProduct (r_entorigin, splitplane->normal);
@@ -179,7 +177,7 @@ R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
 		pnextedge = pedges->pnext;
 
 		// set the status for the last point as the previous point
-// FIXME: cache this stuff somehow?
+		// FIXME: cache this stuff somehow?
 		plastvert = pedges->v[0];
 		lastdist = DotProduct (plastvert->position, tplane.normal) -
 			tplane.dist;
@@ -215,7 +213,7 @@ R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
 
 			// split into two edges, one on each side, and remember entering
 			// and exiting points
-// FIXME: share the clip edge by having a winding direction flag?
+			// FIXME: share the clip edge by having a winding direction flag?
 			if (numbedges >= (MAX_BMODEL_EDGES - 1)) {
 				Con_Printf ("Out of edges for bmodel\n");
 				return;
@@ -308,7 +306,7 @@ R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
 	bedge_t     bedges[MAX_BMODEL_EDGES], *pbedge;
 	medge_t    *pedge, *pedges;
 
-// FIXME: use bounding-box-based frustum clipping info?
+	// FIXME: use bounding-box-based frustum clipping info?
 
 	psurf = &pmodel->surfaces[pmodel->firstmodelsurface];
 	numsurfaces = pmodel->nummodelsurfaces;
@@ -323,11 +321,12 @@ R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
 		// draw the polygon
 		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
 			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-// FIXME: use bounding-box-based frustum clipping info?
+			// FIXME: use bounding-box-based frustum clipping info?
+
 			// copy the edges to bedges, flipping if necessary so always
 			// clockwise winding
-// FIXME: if edges and vertices get caches, these assignments must move
-// outside the loop, and overflow checking must be done here
+			// FIXME: if edges and vertices get caches, these assignments must
+			// move outside the loop, and overflow checking must be done here
 			pbverts = bverts;
 			pbedges = bedges;
 			numbverts = numbedges = 0;
@@ -373,7 +372,7 @@ R_DrawSubmodelPolygons (model_t *pmodel, int clipflags)
 	int         numsurfaces;
 	mplane_t   *pplane;
 
-// FIXME: use bounding-box-based frustum clipping info?
+	// FIXME: use bounding-box-based frustum clipping info?
 
 	psurf = &pmodel->surfaces[pmodel->firstmodelsurface];
 	numsurfaces = pmodel->nummodelsurfaces;
@@ -413,16 +412,16 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 		return;
 
 	// cull the clipping planes if not trivial accept
-// FIXME: the compiler is doing a lousy job of optimizing here; it could be
-//  twice as fast in ASM
+	// FIXME: the compiler is doing a lousy job of optimizing here; it could be
+	//  twice as fast in ASM
 	if (clipflags) {
 		for (i = 0; i < 4; i++) {
 			if (!(clipflags & (1 << i)))
 				continue;				// don't need to clip against it
 
 			// generate accept and reject points
-// FIXME: do with fast look-ups or integer tests based on the sign bit
-// of the floating point values
+			// FIXME: do with fast look-ups or integer tests based on the
+			// sign bit of the floating point values
 
 			pindex = pfrustum_indexes[i];
 

@@ -48,7 +48,6 @@
 #include "QF/sound.h"
 #include "QF/sys.h"
 
-//#include "d_iface.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_local.h"
@@ -184,8 +183,6 @@ R_Init (void)
 {
 	int         dummy;
 
-//	allowskybox = false;				// server decides this  --KB
-
 	// get stack position so we can guess if we are going to overflow
 	r_stack_start = (byte *) & dummy;
 
@@ -236,8 +233,8 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 
 	// clear out efrags in case the level hasn't been reloaded
 	// FIXME: is this one short?
-	for (i = 0; i < worldmodel->numleafs; i++)
-		worldmodel->leafs[i].efrags = NULL;
+	for (i = 0; i < r_worldentity.model->numleafs; i++)
+		r_worldentity.model->leafs[i].efrags = NULL;
 
 	r_viewleaf = NULL;
 	R_ClearParticles ();
@@ -291,8 +288,9 @@ R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 		size = 100.0;
 		full = true;
 		lineadj = 0;
-	} else
+	} else {
 		size = scr_viewsize->int_val;
+	}
 
 	if (r_force_fullscreen) {
 		full = true;
@@ -306,7 +304,7 @@ R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 	if (full) {
 		pvrect->width = pvrectin->width;
 	} else {
-		pvrect->width = pvrectin->width - size;
+		pvrect->width = pvrectin->width * size;
 	}
 
 	if (pvrect->width < 96) {
@@ -375,18 +373,18 @@ R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
 	yOrigin = r_refdef.yOrigin;
 
 	screenAspect = r_refdef.vrect.width * pixelAspect / r_refdef.vrect.height;
-// 320*200 1.0 pixelAspect = 1.6 screenAspect
-// 320*240 1.0 pixelAspect = 1.3333 screenAspect
-// proper 320*200 pixelAspect = 0.8333333
+	// 320*200 1.0 pixelAspect = 1.6 screenAspect
+	// 320*240 1.0 pixelAspect = 1.3333 screenAspect
+	// proper 320*200 pixelAspect = 0.8333333
 
 	verticalFieldOfView = r_refdef.horizontalFieldOfView / screenAspect;
 
-// values for perspective projection
-// if math were exact, the values would range from 0.5 to to range+0.5
-// hopefully they wll be in the 0.000001 to range+.999999 and truncate
-// the polygon rasterization will never render in the first row or column
-// but will definately render in the [range] row and column, so adjust the
-// buffer origin to get an exact edge to edge fill
+	// values for perspective projection
+	// if math were exact, the values would range from 0.5 to to range+0.5
+	// hopefully they wll be in the 0.000001 to range+.999999 and truncate
+	// the polygon rasterization will never render in the first row or column
+	// but will definately render in the [range] row and column, so adjust the
+	// buffer origin to get an exact edge to edge fill
 	xcenter = ((float) r_refdef.vrect.width * XCENTERING) +
 		r_refdef.vrect.x - 0.5;
 	aliasxcenter = xcenter * r_aliasuvscale;
@@ -403,27 +401,27 @@ R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
 	xscaleshrink = (r_refdef.vrect.width - 6) / r_refdef.horizontalFieldOfView;
 	yscaleshrink = xscaleshrink * pixelAspect;
 
-// left side clip
+	// left side clip
 	screenedge[0].normal[0] = -1.0 / (xOrigin *
 									  r_refdef.horizontalFieldOfView);
 	screenedge[0].normal[1] = 0;
 	screenedge[0].normal[2] = 1;
 	screenedge[0].type = PLANE_ANYZ;
 
-// right side clip
+	// right side clip
 	screenedge[1].normal[0] = 1.0 / ((1.0 - xOrigin) *
 									 r_refdef.horizontalFieldOfView);
 	screenedge[1].normal[1] = 0;
 	screenedge[1].normal[2] = 1;
 	screenedge[1].type = PLANE_ANYZ;
 
-// top side clip
+	// top side clip
 	screenedge[2].normal[0] = 0;
 	screenedge[2].normal[1] = -1.0 / (yOrigin * verticalFieldOfView);
 	screenedge[2].normal[2] = 1;
 	screenedge[2].type = PLANE_ANYZ;
 
-// bottom side clip
+	// bottom side clip
 	screenedge[3].normal[0] = 0;
 	screenedge[3].normal[1] = 1.0 / ((1.0 - yOrigin) * verticalFieldOfView);
 	screenedge[3].normal[2] = 1;
@@ -451,6 +449,9 @@ R_MarkLeaves (void)
 {
 	byte       *vis;
 	mnode_t    *node;
+	mleaf_t    *leaf;
+	msurface_t **mark;
+	int         c;
 	int         i;
 
 	if (r_oldviewleaf == r_viewleaf)
@@ -463,7 +464,17 @@ R_MarkLeaves (void)
 
 	for (i = 0; i < r_worldentity.model->numleafs; i++) {
 		if (vis[i >> 3] & (1 << (i & 7))) {
-			node = (mnode_t *) &r_worldentity.model->leafs[i + 1];
+			leaf = &r_worldentity.model->leafs[i + 1];
+			mark = leaf->firstmarksurface;
+			c = leaf->nummarksurfaces;
+			if (c) {
+				do {
+					(*mark)->visframe = r_visframecount;
+					mark++;
+				} while (--c);
+			}
+
+			node = (mnode_t *) leaf;
 			do {
 				if (node->visframe == r_visframecount)
 					break;
@@ -495,7 +506,7 @@ R_ShowNearestLoc (void)
 		R_RunParticleEffect(trueloc,252,10);
 	}
 }
-			
+
 void
 R_DrawEntitiesOnList (void)
 {
@@ -576,7 +587,7 @@ R_DrawViewModel (void)
 	float       add;
 	dlight_t   *dl;
 
-	if (!r_inhibit_viewmodel
+	if (r_inhibit_viewmodel
 		|| !r_drawviewmodel->int_val
 		|| !r_drawentities->int_val)
 		return;
@@ -697,91 +708,93 @@ R_DrawBEntitiesOnList (void)
 		currententity = r_visedicts[i];
 
 		switch (currententity->model->type) {
-		case mod_brush:
-			clmodel = currententity->model;
+			case mod_brush:
+				clmodel = currententity->model;
 
-			// see if the bounding box lets us trivially reject, also
-			// sets trivial accept status
-			for (j = 0; j < 3; j++) {
-				minmaxs[j] = currententity->origin[j] + clmodel->mins[j];
-				minmaxs[3 + j] = currententity->origin[j] + clmodel->maxs[j];
-			}
-
-			clipflags = R_BmodelCheckBBox (clmodel, minmaxs);
-
-			if (clipflags != BMODEL_FULLY_CLIPPED) {
-				VectorCopy (currententity->origin, r_entorigin);
-				VectorSubtract (r_origin, r_entorigin, modelorg);
-
-// FIXME: is this needed?
-				VectorCopy (modelorg, r_worldmodelorg);
-				r_pcurrentvertbase = clmodel->vertexes;
-
-// FIXME: stop transforming twice
-				R_RotateBmodel ();
-
-				// calculate dynamic lighting for bmodel if it's not an
-				// instanced model
-				if (clmodel->firstmodelsurface != 0) {
-					vec3_t      lightorigin;
-
-					for (k = 0; k < MAX_DLIGHTS; k++) {
-						if ((r_dlights[k].die < r_realtime) ||
-							(!r_dlights[k].radius)) continue;
-
-						VectorSubtract (r_dlights[k].origin,
-										currententity->origin,
-										lightorigin);
-						R_RecursiveMarkLights
-							(lightorigin, &r_dlights[k], 1 << k,
-							 clmodel->nodes + clmodel->hulls[0].firstclipnode);
-					}
+				// see if the bounding box lets us trivially reject, also
+				// sets trivial accept status
+				for (j = 0; j < 3; j++) {
+					minmaxs[j] = currententity->origin[j] + clmodel->mins[j];
+					minmaxs[3 + j] = currententity->origin[j] +
+						clmodel->maxs[j];
 				}
-				// if the driver wants polygons, deliver those.
-				// Z-buffering is on at this point, so no clipping to the
-				// world tree is needed, just frustum clipping
-				if (r_drawpolys | r_drawculledpolys) {
-					R_ZDrawSubmodelPolys (clmodel);
-				} else {
-					r_pefragtopnode = NULL;
 
-					for (j = 0; j < 3; j++) {
-						r_emins[j] = minmaxs[j];                                                        r_emaxs[j] = minmaxs[3 + j];
+				clipflags = R_BmodelCheckBBox (clmodel, minmaxs);
+
+				if (clipflags != BMODEL_FULLY_CLIPPED) {
+					VectorCopy (currententity->origin, r_entorigin);
+					VectorSubtract (r_origin, r_entorigin, modelorg);
+
+					// FIXME: is this needed?
+					VectorCopy (modelorg, r_worldmodelorg);
+					r_pcurrentvertbase = clmodel->vertexes;
+
+					// FIXME: stop transforming twice
+					R_RotateBmodel ();
+
+					// calculate dynamic lighting for bmodel if it's not an
+					// instanced model
+					if (clmodel->firstmodelsurface != 0) {
+						vec3_t      lightorigin;
+
+						for (k = 0; k < MAX_DLIGHTS; k++) {
+							if ((r_dlights[k].die < r_realtime) ||
+								(!r_dlights[k].radius)) continue;
+
+							VectorSubtract (r_dlights[k].origin,
+											currententity->origin,
+											lightorigin);
+							R_RecursiveMarkLights (lightorigin, &r_dlights[k],
+												   1 << k, clmodel->nodes +
+										  clmodel->hulls[0].firstclipnode);
+						}
 					}
+					// if the driver wants polygons, deliver those.
+					// Z-buffering is on at this point, so no clipping to the
+					// world tree is needed, just frustum clipping
+					if (r_drawpolys | r_drawculledpolys) {
+						R_ZDrawSubmodelPolys (clmodel);
+					} else {
+						r_pefragtopnode = NULL;
 
-					R_SplitEntityOnNode2 (r_worldentity.model->nodes);
-
-					if (r_pefragtopnode) {
-						currententity->topnode = r_pefragtopnode;
-
-						if (r_pefragtopnode->contents >= 0) {
-							// not a leaf; has to be clipped to the world 
-							// BSP
-							r_clipflags = clipflags;
-							R_DrawSolidClippedSubmodelPolygons (clmodel);
-						} else {
-							// falls entirely in one leaf, so we just put 
-							// all the edges in the edge list and let 1/z
-							// sorting handle drawing order
-							R_DrawSubmodelPolygons (clmodel, clipflags);
+						for (j = 0; j < 3; j++) {
+							r_emins[j] = minmaxs[j];
+							r_emaxs[j] = minmaxs[3 + j];
 						}
 
-						currententity->topnode = NULL;
-					}
-				}
+						R_SplitEntityOnNode2 (r_worldentity.model->nodes);
 
-				// put back world rotation and frustum clipping     
-// FIXME: R_RotateBmodel should just work off base_vxx
-				VectorCopy (base_vpn, vpn);
-				VectorCopy (base_vup, vup);
-				VectorCopy (base_vright, vright);
-				VectorCopy (base_modelorg, modelorg);
-				VectorCopy (oldorigin, modelorg);
-				R_TransformFrustum ();
-			}
-			break;
-		default:
-			break;
+						if (r_pefragtopnode) {
+							currententity->topnode = r_pefragtopnode;
+
+							if (r_pefragtopnode->contents >= 0) {
+								// not a leaf; has to be clipped to the world 
+								// BSP
+								r_clipflags = clipflags;
+								R_DrawSolidClippedSubmodelPolygons (clmodel);
+							} else {
+								// falls entirely in one leaf, so we just put 
+								// all the edges in the edge list and let 1/z
+								// sorting handle drawing order
+								R_DrawSubmodelPolygons (clmodel, clipflags);
+							}
+
+							currententity->topnode = NULL;
+						}
+					}
+
+					// put back world rotation and frustum clipping     
+					// FIXME: R_RotateBmodel should just work off base_vxx
+					VectorCopy (base_vpn, vpn);
+					VectorCopy (base_vup, vup);
+					VectorCopy (base_vright, vright);
+					VectorCopy (base_modelorg, modelorg);
+					VectorCopy (oldorigin, modelorg);
+					R_TransformFrustum ();
+				}
+				break;
+			default:
+				break;
 		}
 	}
 
@@ -792,10 +805,8 @@ void
 R_EdgeDrawing (void)
 {
 	edge_t      ledges[NUMSTACKEDGES +
-
 					   ((CACHE_SIZE - 1) / sizeof (edge_t)) + 1];
 	surf_t      lsurfs[NUMSTACKSURFACES +
-
 					   ((CACHE_SIZE - 1) / sizeof (surf_t)) + 1];
 
 	if (auxedges) {
@@ -844,8 +855,7 @@ R_EdgeDrawing (void)
 
 	if (!r_dspeeds->int_val) {
 		VID_UnlockBuffer ();
-		S_ExtraUpdate ();				// don't let sound get messed up if
-										// going slow
+		S_ExtraUpdate ();		// don't let sound get messed up if going slow
 		VID_LockBuffer ();
 	}
 
@@ -874,9 +884,9 @@ R_RenderView_ (void)
 #ifdef PASSAGES
 	SetVisibilityByPassages ();
 #else
-	R_MarkLeaves ();					// done here so we know if we're in
-										// water
+	R_MarkLeaves ();				// done here so we know if we're in water
 #endif
+	R_PushDlights (vec3_origin);
 
 // make FDIV fast. This reduces timing precision after we've been running for a
 // while, so we don't do it globally.  This also sets chop mode, and we do it
