@@ -625,7 +625,7 @@ X11_SaveMouseAcceleration (void)
 void
 X11_RemoveMouseAcceleration (void)
 {
-	XChangePointerControl(x_disp, false, false, 0, 0, 0);
+	XChangePointerControl(x_disp, true, false, 0, 1, 0);
 }
 
 void
