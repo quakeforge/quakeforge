@@ -433,8 +433,6 @@ extern	token_type_t	pr_token_type;
 extern	type_t		*pr_immediate_type;
 extern	eval_t		pr_immediate;
 
-void PR_PrintStatement (dstatement_t *s);
-
 void PR_Lex (void);
 void PR_LexString (void);
 // reads the next token into pr_token and classifies its type
@@ -497,8 +495,6 @@ extern	qboolean	pr_trace;
 #define	G_VECTOR(o) (&pr_globals[o])
 #define	G_STRING(o) (strings + *(string_t *)&pr_globals[o])
 #define	G_FUNCTION(o) (*(func_t *)&pr_globals[o])
-
-char *PR_ValueString (etype_t type, void *val);
 
 void PR_ClearGrabMacros (void);
 
