@@ -261,7 +261,8 @@ ReuseConstant (expr_t *expr, def_t *def)
 			reloc = new_reloc (cn->ofs, rel_def_string);
 			break;
 		case ex_func:
-			reloc = new_reloc (cn->ofs, rel_def_func);
+			if (e.e.func_val)
+				reloc = new_reloc (cn->ofs, rel_def_func);
 			break;
 		case ex_pointer:
 			if (e.e.pointer.def)

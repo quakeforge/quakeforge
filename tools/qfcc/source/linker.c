@@ -349,8 +349,10 @@ fixup_def (qfo_t *qfo, qfo_def_t *def, int def_num)
 			pr_type_t  *var = DATA (def->ofs);
 			switch (def->basic_type) {
 				case ev_func:
-					func = funcs.funcs + var->func_var - 1;
-					func->def = def_num;
+					if (var->func_var) {
+						func = funcs.funcs + var->func_var - 1;
+						func->def = def_num;
+					}
 					break;
 				case ev_field:
 					process_field (def);
@@ -506,8 +508,11 @@ fixup_relocs (void)
 		if (def->basic_type == ev_func
 			&& (def->flags & QFOD_INITIALIZED)
 			&& !(def->flags & (QFOD_LOCAL | QFOD_EXTERNAL | QFOD_ABSOLUTE))) {
-			func = funcs.funcs + DATA (def->ofs)->func_var - 1;
-			func->def = i;
+			pr_type_t  *var = DATA (def->ofs);
+			if (var->func_var) {
+				func = funcs.funcs + var->func_var - 1;
+				func->def = i;
+			}
 		}
 	}
 }
@@ -531,8 +536,12 @@ move_def (hashtab_t *deftab, qfo_def_t *d)
 	}
 	if ((d->flags & QFOD_CONSTANT) && d->basic_type == ev_func) {
 		qfo_func_t *func;
-		func = funcs.funcs + DATA (d->ofs)->func_var - 1;
-		func->def = def_num;
+		pr_type_t  *var = DATA (d->ofs);
+
+		if (var->func_var) {
+			func = funcs.funcs + var->func_var - 1;
+			func->def = def_num;
+		}
 	}
 	if (deftab) {
 		while ((_d = Hash_Del (deftab, STRING (def->name)))) {
