@@ -493,7 +493,7 @@ Team_ResetTimers (void)
 {
 	int		i;
 
-	for (i = 0; f_replies[i].name; i++)
+	for (i = 0; i < sizeof (f_replies) / sizeof (f_replies[0]); i++)
 		f_replies[i].lasttime = realtime - cl_freply->value;
 	return;
 }
