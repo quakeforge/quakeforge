@@ -196,7 +196,7 @@ WIPX_OpenSocket (int port)
 
 	address.sa_family = AF_IPX;
 	memset (address.sa_netnum, 0, 4);
-	memset (address.sa_nodenum, 0, 6);;
+	memset (address.sa_nodenum, 0, 6);
 	address.sa_socket = htons ((unsigned short) port);
 	if (bind (newsocket, (void *) &address, sizeof (address)) == 0) {
 		ipxsocket[handle] = newsocket;

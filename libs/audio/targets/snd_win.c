@@ -508,7 +508,7 @@ SNDDMA_Init (void)
 	/* Init DirectSound */
 	if (!wavonly) {
 		if (snd_firsttime || snd_isdirect) {
-			stat = SNDDMA_InitDirect ();;
+			stat = SNDDMA_InitDirect ();
 
 			if (stat == SIS_SUCCESS) {
 				snd_isdirect = true;

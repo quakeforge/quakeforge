@@ -73,7 +73,7 @@ typedef struct
 	vec3_t	angles;
 	vec3_t	velocity;
 	int		oldbuttons;
-	int		oldonground;;
+	int		oldonground;
 	float		waterjumptime;
 	qboolean	dead;
 	qboolean	flying;

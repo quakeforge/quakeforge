@@ -82,7 +82,7 @@ get_hash (void *_op, void *_tab)
 	} else {
 		abort ();
 	}
-	return hash + Hash_String (op->name);;
+	return hash + Hash_String (op->name);
 }
 
 static int

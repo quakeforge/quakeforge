@@ -265,7 +265,7 @@ Log_Incoming_Packet (const char *p, int len)
 		Net_LogPrintf ("\n>>>>>>>>>>>>>>>>>>>>> server to client %d bytes: "
 					   ">>>>>>>>>>>>>>>>>>>>>>>>\n", len);
 		if (net_loglevel->int_val != 3)
-			hex_dump_buf ((unsigned char *) p, len);;
+			hex_dump_buf ((unsigned char *) p, len);
 		if (net_loglevel->int_val > 1)
 			Analyze_Server_Packet (p, len);
 	}
@@ -282,14 +282,14 @@ Log_Outgoing_Packet (const char *p, int len)
 		Net_LogPrintf ("\n>>>>>>>>>>>>>>>>>>>>> server to client %d bytes: "
 					   ">>>>>>>>>>>>>>>>>>>>>>>>\n", len);
 		if (net_loglevel->int_val != 3)
-			hex_dump_buf ((unsigned char *) p, len);;
+			hex_dump_buf ((unsigned char *) p, len);
 		if (net_loglevel->int_val > 1)
 			Analyze_Server_Packet (p, len);
 	} else {
 		Net_LogPrintf ("\n<<<<<<<<<<<<<<<<<<<<< client to server %d bytes: "
 					   "<<<<<<<<<<<<<<<<<<<<<<<<\n", len);
 		if (net_loglevel->int_val != 3)
-			hex_dump_buf ((unsigned char *) p, len);;
+			hex_dump_buf ((unsigned char *) p, len);
 		if (net_loglevel->int_val > 1)
 			Analyze_Client_Packet (p, len);
 	}
