@@ -845,6 +845,8 @@ SV_Say (qboolean team)
 	dstring_appendstr (text, p);
 	dstring_appendstr (text, "\n");
 
+	SV_Printf ("%s", text->str);
+
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
 		if (client->state < cs_connected)	// Clients connecting can hear.
 			continue;
