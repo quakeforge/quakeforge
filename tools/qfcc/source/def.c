@@ -66,6 +66,7 @@ def_t       def_void = { &type_void, "def void" };
 def_t       def_function = { &type_function, "def function" };
 
 static def_t *free_temps[4];			// indexted by type size
+static int tempdef_counter;
 static def_t temp_scope;
 static def_t *free_defs;
 static defspace_t *free_spaces;
@@ -405,7 +406,7 @@ get_tempdef (type_t *type, scope_t *scope)
 		free_temps[size] = def->next;
 		def->type = type;
 	} else {
-		def = new_def (type, 0, scope);
+		def = new_def (type, va (".tmp%d", tempdef_counter++), scope);
 		def->return_addr = __builtin_return_address (0);
 		def->ofs = new_location (type, scope->space);
 	}
@@ -432,7 +433,8 @@ free_tempdefs (void)
 				expr_t      e;
 				e.file = d->file;
 				e.line = d->line;
-				notice (&e, "%s %3d %3d %d", pr_type_name[d->type->type],
+				notice (&e, "temp def over-freed:%s %3d %3d %d",
+						pr_type_name[d->type->type],
 						d->ofs, d->users, d->managed);
 			}
 			size = type_size (d->type);
@@ -456,6 +458,7 @@ reset_tempdefs (void)
 	unsigned int i;
 	def_t      *d;
 
+	tempdef_counter = 0;
 	for (i = 0; i < sizeof (free_temps) / sizeof (free_temps[0]); i++) {
 		free_temps[i] = 0;
 	}
@@ -464,7 +467,8 @@ reset_tempdefs (void)
 		expr_t      e;
 		e.file = d->file;
 		e.line = d->line;
-		notice (&e, "%s %3d %3d %d", pr_type_name[d->type->type],
+		notice (&e, "temp def under-freed:%s %3d %3d %d",
+				pr_type_name[d->type->type],
 				d->ofs, d->users, d->managed);
 	}
 	temp_scope.next = 0;
