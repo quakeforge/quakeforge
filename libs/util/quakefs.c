@@ -220,15 +220,11 @@ qfs_dir_get_key (void *_k, void *unused)
 	return _k;
 }
 
-static gamedir_t *
-qfs_get_gamedir (const char *name)
+static plitem_t *
+qfs_find_gamedir (const char *name, hashtab_t *dirs)
 {
-	gamedir_t  *gamedir;
-	plitem_t   *gdpl;
-	dstring_t  *path;
-	hashtab_t  *dirs = Hash_NewTable (31, qfs_dir_get_key, 0, 0);
+	plitem_t   *gdpl = PL_ObjectForKey (qfs_gd_plist, name);
 
-	gdpl = PL_ObjectForKey (qfs_gd_plist, name);
 	if (!gdpl) {
 		dictkey_t **list = (dictkey_t **) Hash_GetList (qfs_gd_plist->data);
 		dictkey_t **l;
@@ -243,14 +239,26 @@ qfs_get_gamedir (const char *name)
 			}
 		}
 		free (list);
-		if (!gdpl) {
-			Sys_Printf ("gamedir `%s' not found\n", name);
-			Hash_DelTable (dirs);
-			return 0;
-		}
-	} else {
-		Hash_Add (dirs, (void *)name);
 	}
+	return gdpl;
+}
+
+static gamedir_t *
+qfs_get_gamedir (const char *name)
+{
+	gamedir_t  *gamedir;
+	plitem_t   *gdpl;
+	dstring_t  *path;
+	hashtab_t  *dirs = Hash_NewTable (31, qfs_dir_get_key, 0, 0);
+
+	gdpl = qfs_find_gamedir (name, dirs);
+	if (!gdpl) {
+		Sys_Printf ("gamedir `%s' not found\n", name);
+		Hash_DelTable (dirs);
+		return 0;
+	}
+	Hash_Add (dirs, (void *)name);
+
 	gamedir = calloc (1, sizeof (gamedir_t));
 	gamedir->name = strdup (name);
 	path = dstring_newstr ();
@@ -977,6 +985,8 @@ COM_CreateGameDirectory (const char *gamename)
 void
 QFS_Init (const char *game)
 {
+	int         i;
+
 	fs_sharepath = Cvar_Get ("fs_sharepath", FS_SHAREPATH, CVAR_ROM, NULL,
 							 "location of shared (read only) game "
 							 "directories");
@@ -989,7 +999,62 @@ QFS_Init (const char *game)
 
 	qfs_game = game;
 
-	COM_Gamedir ("");
+	if ((i = COM_CheckParm ("-game")) && i < com_argc - 1) {
+		char       *gamedirs = NULL;
+		char      **list;
+		char       *where;
+		char       *dir = 0;
+		gamedir_t  *gamedir;
+		plitem_t   *gdpl;
+		dstring_t  *path;
+		hashtab_t  *dirs = Hash_NewTable (31, qfs_dir_get_key, 0, 0);
+		int         j, count = 1;
+
+		gamedirs = strdup (com_argv[i + 1]);
+
+		for (j = 0; gamedirs[j]; j++)
+			if (gamedirs[j] == ',')
+				count++;
+
+		list = malloc (count * sizeof (char *));
+
+		j = 0;
+		where = strtok (gamedirs, ",");
+		while (where) {
+			list[j++] = where;
+			where = strtok (NULL, ",");
+		}
+		gamedir = calloc (1, sizeof (gamedir_t));
+		path = dstring_newstr ();
+		while (j--) {
+			const char *name = va ("%s:%s", qfs_game, dir = list[j]);
+			if (Hash_Find (dirs, name))
+				continue;
+			gdpl = qfs_find_gamedir (name, dirs);
+			if (!gdpl) {
+				Sys_Printf ("gamedir `%s' not found\n", name);
+				continue;
+			}
+			Hash_Add (dirs, (void *) name);
+			if (!j)
+				gamedir->name = strdup (name);
+			qfs_get_gd_params (gdpl, gamedir, path);
+			qfs_inherit (qfs_gd_plist, gdpl, gamedir, path, dirs);
+		}
+		gamedir->path = path->str;
+		qfs_gamedir = gamedir;
+		Sys_DPrintf ("%s\n", qfs_gamedir->name);
+		Sys_DPrintf ("    %s\n", qfs_gamedir->path);
+		Sys_DPrintf ("    %s\n", qfs_gamedir->gamecode);
+		Sys_DPrintf ("    %s\n", qfs_gamedir->skinpath);
+		qfs_process_path (qfs_gamedir->path, dir);
+		free (path);
+		Hash_DelTable (dirs);
+		free (gamedirs);
+		free (list);
+	} else {
+		COM_Gamedir ("");
+	}
 }
 
 const char *
