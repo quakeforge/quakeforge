@@ -51,7 +51,6 @@
 #define	PAINTBUFFER_SIZE	512
 portable_samplepair_t paintbuffer[PAINTBUFFER_SIZE * 2];
 int         max_overpaint;				// number of extra samples painted
-
 										// due to phase shift
 int         snd_scaletable[32][256];
 int        *snd_p, snd_linear_count, snd_vol;
@@ -208,9 +207,7 @@ SND_TransferPaintBuffer (int endtime)
 #endif
 }
 
-/*
-	CHANNEL MIXING
-*/
+/* CHANNEL MIXING */
 
 void       SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int endtime);
 void       SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int endtime);
@@ -231,8 +228,8 @@ SND_PaintChannels (int endtime)
 			end = paintedtime + PAINTBUFFER_SIZE;
 
 		// clear the paint buffer
-//      memset (paintbuffer, 0,
-//              (end - paintedtime) * sizeof (portable_samplepair_t));
+//		memset (paintbuffer, 0, (end - paintedtime) *
+//				sizeof (portable_samplepair_t));
 		max_overpaint = 0;
 
 		// paint in the channels.

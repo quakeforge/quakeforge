@@ -32,14 +32,14 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
+#endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
 #endif
 
 #include <stdio.h>
@@ -49,7 +49,6 @@
 #include <vgamouse.h>
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
@@ -58,6 +57,8 @@
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
+
+#include "compat.h"
 
 static int  UseKeyboard = 1;
 static int  UseMouse = 1;
@@ -73,12 +74,11 @@ static void IN_InitMouse (void);
 
 #define ROTL(x,n) (((x)<<(n))|(x)>>(32-n))
 
+
 static void
 keyhandler (int scancode, int state)
 {
-	int         sc;
-	int         key;
-	int         ascii;
+	int         sc, ascii, key;
 	int         press = state == KEY_EVENTPRESS;
 	unsigned long mask = ~1;
 	static unsigned long shifts;
@@ -117,9 +117,9 @@ keyhandler (int scancode, int state)
 	Key_Event (key, ascii, press);
 }
 
-
 static void
-mousehandler (int buttonstate, int dx, int dy, int dz, int drx, int dry, int drz)
+mousehandler (int buttonstate, int dx, int dy, int dz, int drx, int dry,
+			  int drz)
 {
 	mouse_buttonstate = buttonstate;
 	in_mouse_x += dx;
@@ -132,7 +132,6 @@ mousehandler (int buttonstate, int dx, int dy, int dz, int drx, int dry, int drz
 		Key_Event (M_WHEEL_DOWN, 0, 0);
 	}
 }
-
 
 void
 IN_LL_Init (void)
@@ -364,8 +363,8 @@ static void
 IN_InitMouse (void)
 {
 	int         mtype;
-	char       *mousedev;
 	int         mouserate = MOUSE_DEFAULTSAMPLERATE;
+	char       *mousedev;
 
 	mouse_buttons = 3;
 
@@ -419,7 +418,6 @@ IN_LL_SendKeyEvents (void)
 		while ((keyboard_update ()));
 	}
 }
-
 
 void
 IN_LL_Commands (void)

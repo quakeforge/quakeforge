@@ -44,7 +44,6 @@
 // must be BEFORE include gl/gl.h
 # include "winquake.h"
 #endif
-
 #ifdef HAVE_WINDOWS_H
 # include <windows.h>
 #endif
@@ -56,20 +55,20 @@
 # include <strings.h>
 #endif
 
+#include "QF/cvar.h"
 #include "QF/qtypes.h"
-
+#include "QF/sys.h"
 #include "QF/GL/extensions.h"
 #include "QF/GL/funcs.h"
-#include "QF/cvar.h"
-#include "QF/sys.h"
 
 #include "r_cvar.h"
 
-/*
-	ParseExtensionList
 
-	It takes a bit of care to be fool-proof about parsing an OpenGL extensions
-	string. Don't be fooled by sub-strings, etc.
+/*
+  ParseExtensionList
+
+  It takes a bit of care to be fool-proof about parsing an OpenGL extensions
+  string. Don't be fooled by sub-strings, etc.
 */
 qboolean
 QFGL_ParseExtensionList (const GLubyte * list, const char *name)
@@ -108,7 +107,6 @@ QFGL_ExtensionPresent (const char *name)
 	return QFGL_ParseExtensionList (gl_extensions, name);
 }
 
-
 void *
 QFGL_ExtensionAddress (const char *name)
 {
@@ -122,7 +120,8 @@ QFGL_ExtensionAddress (const char *name)
 
 #if defined(HAVE_DLOPEN)
 	if (!(handle = dlopen (gl_libgl->string, RTLD_NOW))) {
-		Sys_Error ("Couldn't load OpenGL library %s: %s\n", gl_libgl->string, dlerror ());
+		Sys_Error ("Couldn't load OpenGL library %s: %s\n", gl_libgl->string,
+				   dlerror ());
 		return 0;
 	}
 #elif defined(_WIN32)
@@ -137,9 +136,11 @@ QFGL_ExtensionAddress (const char *name)
 	if (glProcAddress_present && !glGetProcAddress) {
 		if (QFGL_ExtensionPresent ("GLX_ARB_get_proc_address")) {
 #if defined(HAVE_GLX)
-			glGetProcAddress = QFGL_ProcAddress (handle, "glXGetProcAddressARB", false);
+			glGetProcAddress =
+				QFGL_ProcAddress (handle, "glXGetProcAddressARB", false);
 #elif defined (_WIN32)
-			glGetProcAddress = QFGL_ProcAddress (handle, "wglGetProcAddress", false);
+			glGetProcAddress =
+				QFGL_ProcAddress (handle, "wglGetProcAddress", false);
 #endif
 			if (!glGetProcAddress)
 				glProcAddress_present = false;

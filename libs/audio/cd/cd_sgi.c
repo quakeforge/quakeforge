@@ -31,9 +31,9 @@
 # include "config.h"
 #endif
 
-#include <sys/types.h>
 #include <errno.h>
 #include <dmedia/cdaudio.h>
+#include <sys/types.h>
 
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
@@ -63,7 +63,6 @@ pCDAudio_Eject (void)
 		Con_DPrintf ("CDAudio_Eject: CDeject failed\n");
 }
 
-
 static int
 pCDAudio_GetState (void)
 {
@@ -79,7 +78,6 @@ pCDAudio_GetState (void)
 
 	return cds.state;
 }
-
 
 static int
 pCDAudio_MaxTrack (void)
@@ -97,7 +95,6 @@ pCDAudio_MaxTrack (void)
 	return cds.last;
 }
 
-
 void
 pCDAudio_Pause (void)
 {
@@ -107,7 +104,6 @@ pCDAudio_Pause (void)
 	if (CDtogglepause (cdp) == 0)
 		Con_DPrintf ("CDAudio_PAUSE: CDtogglepause failed (%d)\n", errno);
 }
-
 
 void
 pCDAudio_Play (byte track, qboolean looping)
@@ -166,7 +162,6 @@ pCDAudio_Play (byte track, qboolean looping)
 	playTrack = track;
 }
 
-
 void
 pCDAudio_Resume (void)
 {
@@ -176,7 +171,6 @@ pCDAudio_Resume (void)
 	if (CDtogglepause (cdp) == 0)
 		Con_DPrintf ("CDAudio_Resume: CDtogglepause failed (%d)\n", errno);
 }
-
 
 void
 pCDAudio_Shutdown (void)
@@ -190,7 +184,6 @@ pCDAudio_Shutdown (void)
 	initialized = false;
 }
 
-
 void
 pCDAudio_Stop (void)
 {
@@ -200,7 +193,6 @@ pCDAudio_Stop (void)
 	if (CDstop (cdp) == 0)
 		Con_DPrintf ("CDAudio_Stop: CDStop failed (%d)\n", errno);
 }
-
 
 void
 pCDAudio_Update (void)
@@ -224,7 +216,6 @@ pCDAudio_Update (void)
 		CDAudio_GetState () != CD_PAUSED && playLooping)
 			CDAudio_Play (playTrack, true);
 }
-
 
 static void
 pCD_f (void)
@@ -319,7 +310,6 @@ pCD_f (void)
 		return;
 	}
 }
-
 
 int
 pCDAudio_Init (void)

@@ -205,7 +205,6 @@ VID_MakeColormaps (int fullbrights, byte *pal)
 	VID_MakeColormap32(vid.colormap32, pal);
 }
 
-
 void
 VID_InitBuffers (void)
 {

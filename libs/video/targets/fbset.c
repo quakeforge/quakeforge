@@ -18,39 +18,28 @@
  *
  */
 
-
+#include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <fcntl.h>
-#include <errno.h>
+#include <unistd.h>
 #include <sys/ioctl.h>
-#include <ctype.h>
 #include <sys/stat.h>
+
+#include "fbset.h"
 
 struct file;
 struct inode;
 
-#include "fbset.h"
-
-
-    /*
-     *  Default Frame Buffer Special Device Node
-     */
-
+/* Default Frame Buffer Special Device Node */
 #define DEFAULT_FRAMEBUFFER	"/dev/fb0"
 
-
-    /*
-     *  Default Video Mode Database File
-     */
-
+/* Default Video Mode Database File */
 #define DEFAULT_MODEDBFILE	"/etc/fb.modes"
 
-    /*
-     *  Command Line Options
-     */
+/* Command Line Options */
 
 static const char *ProgramName;
 
@@ -130,17 +119,10 @@ static struct {
     { NULL, NULL, 0 }
 };
 
-    /*
-     *  Video Mode Database
-     */
-
+/* Video Mode Database */
 struct VideoMode *VideoModes = NULL;
 
-
-    /*
-     *  Hardware Text Modes
-     */
-
+/* Hardware Text Modes */
 static struct textentry {
     __u32 id;
     const char *name;
@@ -163,13 +145,10 @@ static struct textentry VGAModes[] = {
     { FB_AUX_VGA_PLANES_CFB8, "VGA 256 colors in 4 planes" },
 #endif
     /* last entry has name == NULL */
-    { 0,                      NULL}
+    { 0,					  NULL}
 };
 
-    /*
-     *  Hardware Accelerators
-     */
-
+/* Hardware Accelerators */
 static struct accelentry {
     __u32 id;
     const char *name;
@@ -203,17 +182,10 @@ static struct accelentry {
     { FB_ACCEL_MATROX_MGAG400, "Matrox G400" },
 };
 
-
-    /*
-     *  Current Video Mode
-     */
-
+/* Current Video Mode */
 struct VideoMode Current;
 
-
-    /*
-     *  Function Prototypes
-     */
+/* Function Prototypes */
 
 int OpenFrameBuffer(const char *name);
 void CloseFrameBuffer(int fh);
@@ -221,9 +193,9 @@ int GetVarScreenInfo(int fh, struct fb_var_screeninfo *var);
 int SetVarScreenInfo(int fh, struct fb_var_screeninfo *var);
 int GetFixScreenInfo(int fh, struct fb_fix_screeninfo *fix);
 void ConvertFromVideoMode(const struct VideoMode *vmode,
-			 struct fb_var_screeninfo *var);
+						  struct fb_var_screeninfo *var);
 void ConvertToVideoMode(const struct fb_var_screeninfo *var,
-		       struct VideoMode *vmode);
+						struct VideoMode *vmode);
 static int atoboolean(const char *var);
 void ReadModeDB(void);
 struct VideoMode *FindVideoMode(const char *name);
@@ -240,11 +212,10 @@ extern void Con_Printf (const char *fmt, ...);
 #define puts(s) Con_Printf("%s\n",(s))
 #define printf Con_Printf
 
-    /*
-     *  Open the Frame Buffer Device
-     */
 
-int OpenFrameBuffer(const char *name)
+/* Open the Frame Buffer Device */
+int
+OpenFrameBuffer (const char *name)
 {
     int fh;
 
@@ -256,21 +227,16 @@ int OpenFrameBuffer(const char *name)
     return fh;
 }
 
-
-    /*
-     *  Close the Frame Buffer Device
-     */
-
-void CloseFrameBuffer(int fh)
+/* Close the Frame Buffer Device */
+void
+CloseFrameBuffer (int fh)
 {
     close(fh);
 }
 
-    /*
-     *  Get the Variable Part of the Screen Info
-     */
-
-int GetVarScreenInfo(int fh, struct fb_var_screeninfo *var)
+/* Get the Variable Part of the Screen Info */
+int
+GetVarScreenInfo (int fh, struct fb_var_screeninfo *var)
 {
     if (ioctl(fh, FBIOGET_VSCREENINFO, var)) {
 	Die("ioctl FBIOGET_VSCREENINFO: %s\n", strerror(errno));
@@ -279,12 +245,9 @@ int GetVarScreenInfo(int fh, struct fb_var_screeninfo *var)
     return 0;
 }
 
-
-    /*
-     *  Set (and Get) the Variable Part of the Screen Info
-     */
-
-int SetVarScreenInfo(int fh, struct fb_var_screeninfo *var)
+/* Set (and Get) the Variable Part of the Screen Info */
+int
+SetVarScreenInfo (int fh, struct fb_var_screeninfo *var)
 {
     if (ioctl(fh, FBIOPUT_VSCREENINFO, var)) {
 	Die("ioctl FBIOPUT_VSCREENINFO: %s\n", strerror(errno));
@@ -293,12 +256,9 @@ int SetVarScreenInfo(int fh, struct fb_var_screeninfo *var)
     return 0;
 }
 
-
-    /*
-     *  Get the Fixed Part of the Screen Info
-     */
-
-int GetFixScreenInfo(int fh, struct fb_fix_screeninfo *fix)
+/* Get the Fixed Part of the Screen Info */
+int
+GetFixScreenInfo (int fh, struct fb_fix_screeninfo *fix)
 {
     if (ioctl(fh, FBIOGET_FSCREENINFO, fix)) {
 	Die("ioctl FBIOGET_FSCREENINFO: %s\n", strerror(errno));
@@ -307,13 +267,10 @@ int GetFixScreenInfo(int fh, struct fb_fix_screeninfo *fix)
     return 0;
 }
 
-
-    /*
-     *  Conversion Routines
-     */
-
-void ConvertFromVideoMode(const struct VideoMode *vmode,
-				 struct fb_var_screeninfo *var)
+/* Conversion Routines */
+void
+ConvertFromVideoMode (const struct VideoMode *vmode,
+					  struct fb_var_screeninfo *var)
 {
     memset(var, 0, sizeof(struct fb_var_screeninfo));
     var->xres = vmode->xres;
@@ -322,12 +279,14 @@ void ConvertFromVideoMode(const struct VideoMode *vmode,
     var->yres_virtual = vmode->vyres;
     var->bits_per_pixel = vmode->depth;
     var->nonstd = vmode->nonstd;
+
     if (Opt_test)
-	var->activate = FB_ACTIVATE_TEST;
+		var->activate = FB_ACTIVATE_TEST;
     else
-	var->activate = FB_ACTIVATE_NOW;
+		var->activate = FB_ACTIVATE_NOW;
     if (Opt_all)
-	var->activate = FB_ACTIVATE_ALL;
+		var->activate = FB_ACTIVATE_ALL;
+
     var->accel_flags = vmode->accel_flags;
     var->pixclock = vmode->pixclock;
     var->left_margin = vmode->left;
@@ -336,24 +295,27 @@ void ConvertFromVideoMode(const struct VideoMode *vmode,
     var->lower_margin = vmode->lower;
     var->hsync_len = vmode->hslen;
     var->vsync_len = vmode->vslen;
+
     if (vmode->hsync == HIGH)
-	var->sync |= FB_SYNC_HOR_HIGH_ACT;
+		var->sync |= FB_SYNC_HOR_HIGH_ACT;
     if (vmode->vsync == HIGH)
-	var->sync |= FB_SYNC_VERT_HIGH_ACT;
+		var->sync |= FB_SYNC_VERT_HIGH_ACT;
     if (vmode->csync == HIGH)
-	var->sync |= FB_SYNC_COMP_HIGH_ACT;
+		var->sync |= FB_SYNC_COMP_HIGH_ACT;
     if (vmode->gsync == HIGH)
-	var->sync |= FB_SYNC_ON_GREEN;
+		var->sync |= FB_SYNC_ON_GREEN;
     if (vmode->extsync == TRUE)
-	var->sync |= FB_SYNC_EXT;
+		var->sync |= FB_SYNC_EXT;
     if (vmode->bcast == TRUE)
-	var->sync |= FB_SYNC_BROADCAST;
+		var->sync |= FB_SYNC_BROADCAST;
+
     if (vmode->laced == TRUE)
-	var->vmode = FB_VMODE_INTERLACED;
+		var->vmode = FB_VMODE_INTERLACED;
     else if (vmode->dblscan == TRUE)
-	var->vmode = FB_VMODE_DOUBLE;
+		var->vmode = FB_VMODE_DOUBLE;
     else
-	var->vmode = FB_VMODE_NONINTERLACED;
+		var->vmode = FB_VMODE_NONINTERLACED;
+
     var->vmode |= FB_VMODE_CONUPDATE;
     var->red.length = vmode->red.length;
     var->red.offset = vmode->red.offset;
@@ -366,9 +328,9 @@ void ConvertFromVideoMode(const struct VideoMode *vmode,
     var->grayscale = vmode->grayscale;
 }
 
-
-void ConvertToVideoMode(const struct fb_var_screeninfo *var,
-			       struct VideoMode *vmode)
+void
+ConvertToVideoMode (const struct fb_var_screeninfo *var,
+					struct VideoMode *vmode)
 {
     vmode->name = NULL;
     vmode->xres = var->xres;
@@ -394,6 +356,7 @@ void ConvertToVideoMode(const struct fb_var_screeninfo *var,
     vmode->grayscale = var->grayscale;
     vmode->laced = FALSE;
     vmode->dblscan = FALSE;
+
     switch (var->vmode & FB_VMODE_MASK) {
 	case FB_VMODE_INTERLACED:
 	    vmode->laced = TRUE;
@@ -402,6 +365,7 @@ void ConvertToVideoMode(const struct fb_var_screeninfo *var,
 	    vmode->dblscan = TRUE;
 	    break;
     }
+
     vmode->red.length = var->red.length;
     vmode->red.offset = var->red.offset;
     vmode->green.length = var->green.length;
@@ -414,46 +378,44 @@ void ConvertToVideoMode(const struct fb_var_screeninfo *var,
 }
 
 
-static int atoboolean(const char *var)
+static int
+atoboolean (const char *var)
 {
     int value = 0;
 
-    if (!strcasecmp(var, "false") || !strcasecmp(var, "low") ||
-	!strcasecmp(var, "no") || !strcasecmp(var, "off") ||
-	!strcmp(var, "0"))
-	value = 0;
-    else if (!strcasecmp(var, "true") || !strcasecmp(var, "high") ||
-	     !strcasecmp(var, "yes") || !strcasecmp(var, "on") ||
-	     !strcmp(var, "1"))
-	value = 1;
+    if (!strcasecmp (var, "false") || !strcasecmp (var, "low") ||
+		!strcasecmp (var, "no") || !strcasecmp (var, "off") ||
+		!strcmp (var, "0"))
+		value = 0;
+    else if (!strcasecmp (var, "true") || !strcasecmp (var, "high") ||
+			 !strcasecmp (var, "yes") || !strcasecmp (var, "on") ||
+			 !strcmp (var, "1"))
+		value = 1;
     else
-	Die("Invalid value `%s'\n", var);
+		Die("Invalid value `%s'\n", var);
 
     return value;
 }
 
-
-void AddVideoMode(const struct VideoMode *vmode)
+void
+AddVideoMode (const struct VideoMode *vmode)
 {
     struct VideoMode *vmode2;
 
     if (FindVideoMode(vmode->name))
-	Die("%s:%d: Duplicate mode name `%s'\n", Opt_modedb, line,
-	    vmode->name);
+		Die("%s:%d: Duplicate mode name `%s'\n", Opt_modedb, line,
+			vmode->name);
     vmode2 = malloc(sizeof(struct VideoMode));
     *vmode2 = *vmode;
     if (!FillScanRates(vmode2))
-	Die("%s:%d: Bad video mode `%s'\n", Opt_modedb, line, vmode2->name);
+		Die("%s:%d: Bad video mode `%s'\n", Opt_modedb, line, vmode2->name);
     vmode2->next = VideoModes;
     VideoModes = vmode2;
 }
 
-
-    /*
-     *  Read the Video Mode Database
-     */
-
-void ReadModeDB(void)
+/* Read the Video Mode Database */
+void
+ReadModeDB (void)
 {
     if (Opt_verbose)
 	printf("Reading mode database from file `%s'\n", Opt_modedb);
@@ -466,8 +428,8 @@ void ReadModeDB(void)
     fclose(yyin);
 }
 
-
-static void getColor(struct color *color, const char** opt)
+static void
+getColor (struct color *color, const char** opt)
 {
     char* ptr;
 
@@ -478,22 +440,23 @@ static void getColor(struct color *color, const char** opt)
 	return;
     color->length = strtoul(ptr, &ptr, 0);
     if (!ptr)
-	return;
+		return;
     if (*ptr == '/')
-	color->offset = strtoul(ptr+1, &ptr, 0);
+		color->offset = strtoul(ptr+1, &ptr, 0);
     if (ptr) {
-	while (*ptr && isspace(*ptr))
-	    ptr++;
-	if (*ptr == ',') {
-	    ptr++;
-	} else if (*ptr)
-	    Die("Bad RGBA syntax, rL/rO,gL/gO,bL/bO,tL/tO or rL,gL,bL,tL\n");
+		while (*ptr && isspace(*ptr))
+			ptr++;
+		if (*ptr == ',') {
+			ptr++;
+		} else if (*ptr)
+			Die("Bad RGBA syntax, rL/rO,gL/gO,bL/bO,tL/tO or rL,gL,bL,tL\n");
     }
     *opt = ptr;
     return;
 }
 
-void makeRGBA(struct VideoMode *vmode, const char* opt)
+void
+makeRGBA (struct VideoMode *vmode, const char* opt)
 {
     getColor(&vmode->red, &opt);
     getColor(&vmode->green, &opt);
@@ -501,11 +464,9 @@ void makeRGBA(struct VideoMode *vmode, const char* opt)
     getColor(&vmode->transp, &opt);
 }
 
-    /*
-     *  Find a Video Mode
-     */
-
-struct VideoMode *FindVideoMode(const char *name)
+/* Find a Video Mode */
+struct VideoMode
+*FindVideoMode (const char *name)
 {
     struct VideoMode *vmode;
 
@@ -516,197 +477,187 @@ struct VideoMode *FindVideoMode(const char *name)
     return vmode;
 }
 
-
-    /*
-     *  Modify a Video Mode
-     */
-
-static void ModifyVideoMode(struct VideoMode *vmode)
+/* Modify a Video Mode */
+static void
+ModifyVideoMode (struct VideoMode *vmode)
 {
     u_int hstep = 8, vstep = 2;
 
     if (Opt_xres)
-	vmode->xres = strtoul(Opt_xres, NULL, 0);
+		vmode->xres = strtoul(Opt_xres, NULL, 0);
     if (Opt_yres)
-	vmode->yres = strtoul(Opt_yres, NULL, 0);
+		vmode->yres = strtoul(Opt_yres, NULL, 0);
     if (Opt_vxres)
-	vmode->vxres = strtoul(Opt_vxres, NULL, 0);
+		vmode->vxres = strtoul(Opt_vxres, NULL, 0);
     if (Opt_vyres)
-	vmode->vyres = strtoul(Opt_vyres, NULL, 0);
+		vmode->vyres = strtoul(Opt_vyres, NULL, 0);
     if (Opt_depth)
-	vmode->depth = strtoul(Opt_depth, NULL, 0);
+		vmode->depth = strtoul(Opt_depth, NULL, 0);
     if (Opt_nonstd)
-	vmode->nonstd = strtoul(Opt_nonstd, NULL, 0);
+		vmode->nonstd = strtoul(Opt_nonstd, NULL, 0);
     if (Opt_accel)
-	vmode->accel_flags = atoboolean(Opt_accel) ? FB_ACCELF_TEXT : 0;
+		vmode->accel_flags = atoboolean(Opt_accel) ? FB_ACCELF_TEXT : 0;
     if (Opt_pixclock)
-	vmode->pixclock = strtoul(Opt_pixclock, NULL, 0);
+		vmode->pixclock = strtoul(Opt_pixclock, NULL, 0);
     if (Opt_left)
-	vmode->left = strtoul(Opt_left, NULL, 0);
+		vmode->left = strtoul(Opt_left, NULL, 0);
     if (Opt_right)
-	vmode->right = strtoul(Opt_right, NULL, 0);
+		vmode->right = strtoul(Opt_right, NULL, 0);
     if (Opt_upper)
-	vmode->upper = strtoul(Opt_upper, NULL, 0);
+		vmode->upper = strtoul(Opt_upper, NULL, 0);
     if (Opt_lower)
-	vmode->lower = strtoul(Opt_lower, NULL, 0);
+		vmode->lower = strtoul(Opt_lower, NULL, 0);
     if (Opt_hslen)
-	vmode->hslen = strtoul(Opt_hslen, NULL, 0);
+		vmode->hslen = strtoul(Opt_hslen, NULL, 0);
     if (Opt_vslen)
-	vmode->vslen = strtoul(Opt_vslen, NULL, 0);
+		vmode->vslen = strtoul(Opt_vslen, NULL, 0);
     if (Opt_hsync)
-	vmode->hsync = atoboolean(Opt_hsync);
+		vmode->hsync = atoboolean(Opt_hsync);
     if (Opt_vsync)
-	vmode->vsync = atoboolean(Opt_vsync);
+		vmode->vsync = atoboolean(Opt_vsync);
     if (Opt_csync)
-	vmode->csync = atoboolean(Opt_csync);
+		vmode->csync = atoboolean(Opt_csync);
     if (Opt_gsync)
-	vmode->gsync = atoboolean(Opt_gsync);
+		vmode->gsync = atoboolean(Opt_gsync);
     if (Opt_extsync)
-	vmode->extsync = atoboolean(Opt_extsync);
+		vmode->extsync = atoboolean(Opt_extsync);
     if (Opt_bcast)
-	vmode->bcast = atoboolean(Opt_bcast);
+		vmode->bcast = atoboolean(Opt_bcast);
     if (Opt_laced)
-	vmode->laced = atoboolean(Opt_laced);
+		vmode->laced = atoboolean(Opt_laced);
     if (Opt_double)
-	vmode->dblscan = atoboolean(Opt_double);
+		vmode->dblscan = atoboolean(Opt_double);
     if (Opt_grayscale)
-	vmode->grayscale = atoboolean(Opt_grayscale);
+		vmode->grayscale = atoboolean(Opt_grayscale);
     if (Opt_step)
-	hstep = vstep = strtoul(Opt_step, NULL, 0);
+		hstep = vstep = strtoul(Opt_step, NULL, 0);
     if (Opt_matchyres)
         vmode->vyres = vmode->yres;
     if (Opt_move) {
 	if (!strcasecmp(Opt_move, "left")) {
 	    if (hstep > vmode->left)
-		Die("The left margin cannot be negative\n");
+			Die("The left margin cannot be negative\n");
 	    vmode->left -= hstep;
 	    vmode->right += hstep;
 	} else if (!strcasecmp(Opt_move, "right")) {
 	    if (hstep > vmode->right)
-		Die("The right margin cannot be negative\n");
+			Die("The right margin cannot be negative\n");
 	    vmode->left += hstep;
 	    vmode->right -= hstep;
 	} else if (!strcasecmp(Opt_move, "up")) {
 	    if (vstep > vmode->upper)
-		Die("The upper margin cannot be negative\n");
+			Die("The upper margin cannot be negative\n");
 	    vmode->upper -= vstep;
 	    vmode->lower += vstep;
 	} else if (!strcasecmp(Opt_move, "down")) {
 	    if (vstep > vmode->lower)
-		Die("The lower margin cannot be negative\n");
+			Die("The lower margin cannot be negative\n");
 	    vmode->upper += vstep;
 	    vmode->lower -= vstep;
 	} else
 	    Die("Invalid direction `%s'\n", Opt_move);
     }
-    if (Opt_rgba) {
-	makeRGBA(vmode, Opt_rgba);
-    }
+    if (Opt_rgba)
+		makeRGBA(vmode, Opt_rgba);
     if (!FillScanRates(vmode))
-	Die("Bad video mode\n");
+		Die("Bad video mode\n");
 }
 
-
-    /*
-     *  Display the Video Mode Information
-     */
-
-static void DisplayVModeInfo(struct VideoMode *vmode)
+/* Display the Video Mode Information */
+static void
+DisplayVModeInfo (struct VideoMode *vmode)
 {
-    u_int res, sstart, send, total;
+    u_int		res, sstart, send, total;
 
     puts("");
     if (!Opt_xfree86) {
-	printf("mode \"%dx%d", vmode->xres, vmode->yres);
-	if (vmode->pixclock) {
-	    printf("-%d\"\n", (int)(vmode->vrate+0.5));
-	    printf("    # D: %5.3f MHz, H: %5.3f kHz, V: %5.3f Hz\n",
-		   vmode->drate/1E6, vmode->hrate/1E3, vmode->vrate);
-	} else
-	    puts("\"");
-	printf("    geometry %d %d %d %d %d\n", vmode->xres, vmode->yres,
-	       vmode->vxres, vmode->vyres, vmode->depth);
-	printf("    timings %d %d %d %d %d %d %d\n", vmode->pixclock,
-	       vmode->left, vmode->right, vmode->upper, vmode->lower,
-	       vmode->hslen, vmode->vslen);
-	if (vmode->hsync)
-	    puts("    hsync high");
-	if (vmode->vsync)
-	    puts("    vsync high");
-	if (vmode->csync)
-	    puts("    csync high");
-	if (vmode->gsync)
-	    puts("    gsync true");
-	if (vmode->extsync)
-	    puts("    extsync true");
-	if (vmode->bcast)
-	    puts("    bcast true");
-	if (vmode->laced)
-	    puts("    laced true");
-	if (vmode->dblscan)
-	    puts("    double true");
-	if (vmode->nonstd)
+		printf("mode \"%dx%d", vmode->xres, vmode->yres);
+		if (vmode->pixclock) {
+			printf("-%d\"\n", (int)(vmode->vrate+0.5));
+			printf("    # D: %5.3f MHz, H: %5.3f kHz, V: %5.3f Hz\n",
+				   vmode->drate/1E6, vmode->hrate/1E3, vmode->vrate);
+		} else
+			puts("\"");
+		printf("    geometry %d %d %d %d %d\n", vmode->xres, vmode->yres,
+			   vmode->vxres, vmode->vyres, vmode->depth);
+		printf("    timings %d %d %d %d %d %d %d\n", vmode->pixclock,
+			   vmode->left, vmode->right, vmode->upper, vmode->lower,
+			   vmode->hslen, vmode->vslen);
+		if (vmode->hsync)
+			puts("    hsync high");
+		if (vmode->vsync)
+			puts("    vsync high");
+		if (vmode->csync)
+			puts("    csync high");
+		if (vmode->gsync)
+			puts("    gsync true");
+		if (vmode->extsync)
+			puts("    extsync true");
+		if (vmode->bcast)
+			puts("    bcast true");
+		if (vmode->laced)
+			puts("    laced true");
+		if (vmode->dblscan)
+			puts("    double true");
+		if (vmode->nonstd)
             printf("    nonstd %u\n", vmode->nonstd);
-	if (vmode->accel_flags)
-	    puts("    accel true");
-	if (vmode->grayscale)
-	    puts("    grayscale true");
-	printf("    rgba %u/%u,%u/%u,%u/%u,%u/%u\n",
-	    vmode->red.length, vmode->red.offset, vmode->green.length,
-	    vmode->green.offset, vmode->blue.length, vmode->blue.offset,
-	    vmode->transp.length, vmode->transp.offset);
-	puts("endmode\n");
+		if (vmode->accel_flags)
+			puts("    accel true");
+		if (vmode->grayscale)
+			puts("    grayscale true");
+		printf("    rgba %u/%u,%u/%u,%u/%u,%u/%u\n",
+			   vmode->red.length, vmode->red.offset, vmode->green.length,
+			   vmode->green.offset, vmode->blue.length, vmode->blue.offset,
+			   vmode->transp.length, vmode->transp.offset);
+		puts("endmode\n");
     } else {
-	printf("Mode \"%dx%d\"\n", vmode->xres, vmode->yres);
-	if (vmode->pixclock) {
-	    printf("    # D: %5.3f MHz, H: %5.3f kHz, V: %5.3f Hz\n",
-		   vmode->drate/1E6, vmode->hrate/1E3, vmode->vrate);
-	    printf("    DotClock %5.3f\n", vmode->drate/1E6+0.001);
-	} else
-	    puts("    DotClock Unknown");
-	res = vmode->xres;
-	sstart = res+vmode->right;
-	send = sstart+vmode->hslen;
-	total = send+vmode->left;
-	printf("    HTimings %d %d %d %d\n", res, sstart, send, total);
-	res = vmode->yres;
-	sstart = res+vmode->lower;
-	send = sstart+vmode->vslen;
-	total = send+vmode->upper;
-	printf("    VTimings %d %d %d %d\n", res, sstart, send, total);
-	printf("    Flags   ");
-	if (vmode->laced)
-	    printf(" \"Interlace\"");
-	if (vmode->dblscan)
-	    printf(" \"DoubleScan\"");
-	if (vmode->hsync)
-	    printf(" \"+HSync\"");
-	else
-	    printf(" \"-HSync\"");
-	if (vmode->vsync)
-	    printf(" \"+VSync\"");
-	else
-	    printf(" \"-VSync\"");
-	if (vmode->csync)
-	    printf(" \"Composite\"");
-	if (vmode->extsync)
-	    puts("    # Warning: XFree86 doesn't support extsync\n");
-	if (vmode->bcast)
-	    printf(" \"bcast\"");
-	if (vmode->accel_flags)
-	    puts("    # Warning: XFree86 doesn't support accel\n");
-	if (vmode->grayscale)
-	    puts("    # Warning: XFree86 doesn't support grayscale\n");
-	puts("\nEndMode\n");
+		printf("Mode \"%dx%d\"\n", vmode->xres, vmode->yres);
+		if (vmode->pixclock) {
+			printf("    # D: %5.3f MHz, H: %5.3f kHz, V: %5.3f Hz\n",
+				   vmode->drate/1E6, vmode->hrate/1E3, vmode->vrate);
+			printf("    DotClock %5.3f\n", vmode->drate/1E6+0.001);
+		} else
+			puts("    DotClock Unknown");
+		res = vmode->xres;
+		sstart = res+vmode->right;
+		send = sstart+vmode->hslen;
+		total = send+vmode->left;
+		printf("    HTimings %d %d %d %d\n", res, sstart, send, total);
+		res = vmode->yres;
+		sstart = res+vmode->lower;
+		send = sstart+vmode->vslen;
+		total = send+vmode->upper;
+		printf("    VTimings %d %d %d %d\n", res, sstart, send, total);
+		printf("    Flags   ");
+		if (vmode->laced)
+			printf(" \"Interlace\"");
+		if (vmode->dblscan)
+			printf(" \"DoubleScan\"");
+		if (vmode->hsync)
+			printf(" \"+HSync\"");
+		else
+			printf(" \"-HSync\"");
+		if (vmode->vsync)
+			printf(" \"+VSync\"");
+		else
+			printf(" \"-VSync\"");
+		if (vmode->csync)
+			printf(" \"Composite\"");
+		if (vmode->extsync)
+			puts("    # Warning: XFree86 doesn't support extsync\n");
+		if (vmode->bcast)
+			printf(" \"bcast\"");
+		if (vmode->accel_flags)
+			puts("    # Warning: XFree86 doesn't support accel\n");
+		if (vmode->grayscale)
+			puts("    # Warning: XFree86 doesn't support grayscale\n");
+		puts("\nEndMode\n");
     }
 }
 
-
-    /*
-     *  Display the Frame Buffer Device Information
-     */
-
-static void DisplayFBInfo(struct fb_fix_screeninfo *fix)
+/* Display the Frame Buffer Device Information */
+static void
+DisplayFBInfo (struct fb_fix_screeninfo *fix)
 {
     int i;
 
@@ -728,23 +679,23 @@ static void DisplayFBInfo(struct fb_fix_screeninfo *fix)
 	    break;
 	case FB_TYPE_TEXT:
 	    for (i = 0; i < sizeof(Textmodes)/sizeof(*Textmodes); i++)
-		if (fix->type_aux == Textmodes[i].id)
-		    break;
+			if (fix->type_aux == Textmodes[i].id)
+				break;
 	    if (i < sizeof(Textmodes)/sizeof(*Textmodes))
-		puts(Textmodes[i].name);
+			puts(Textmodes[i].name);
 	    else
-		printf("Unknown text (%d)\n", fix->type_aux);
+			printf("Unknown text (%d)\n", fix->type_aux);
 	    break;
 	case FB_TYPE_VGA_PLANES:
 	    {
 	    	struct textentry *t;
 		
-		for (t = VGAModes; t->name; t++)
-		    if (fix->type_aux == t->id)
-		    	break;
-		if (t->name)
-		    puts(t->name);
-		else
+			for (t = VGAModes; t->name; t++)
+				if (fix->type_aux == t->id)
+					break;
+			if (t->name)
+				puts(t->name);
+			else
 	            printf("Unknown VGA mode (%d)\n", fix->type_aux);
 	    }
 	    break;
@@ -782,119 +733,117 @@ static void DisplayFBInfo(struct fb_fix_screeninfo *fix)
     printf("    YWrapStep   : %d\n", fix->ywrapstep);
     printf("    LineLength  : %d\n", fix->line_length);
     if (fix->mmio_len) {
-	printf("    MMIO Address: %p\n", (void *)fix->mmio_start);
-	printf("    MMIO Size   : %d\n", fix->mmio_len);
+		printf("    MMIO Address: %p\n", (void *)fix->mmio_start);
+		printf("    MMIO Size   : %d\n", fix->mmio_len);
     }
     printf("    Accelerator : ");
     for (i = 0; i < sizeof(Accelerators)/sizeof(*Accelerators); i++)
-	if (fix->accel == Accelerators[i].id)
-	    break;
+		if (fix->accel == Accelerators[i].id)
+			break;
     if (i < sizeof(Accelerators)/sizeof(*Accelerators))
-	puts(Accelerators[i].name);
+		puts(Accelerators[i].name);
     else
-	printf("Unknown (%d)\n", fix->accel);
+		printf("Unknown (%d)\n", fix->accel);
 }
 
-
-    /*
-     *  Calculate the Scan Rates for a Video Mode
-     */
-
-static int FillScanRates(struct VideoMode *vmode)
+/* Calculate the Scan Rates for a Video Mode */
+static int
+FillScanRates (struct VideoMode *vmode)
 {
     u_int htotal = vmode->left+vmode->xres+vmode->right+vmode->hslen;
     u_int vtotal = vmode->upper+vmode->yres+vmode->lower+vmode->vslen;
 
     if (vmode->dblscan)
-	vtotal <<= 2;
+		vtotal <<= 2;
     else if (!vmode->laced)
-	vtotal <<= 1;
+		vtotal <<= 1;
 
     if (!htotal || !vtotal)
-	return 0;
+		return 0;
 
     if (vmode->pixclock) {
-	vmode->drate = 1E12/vmode->pixclock;
-	vmode->hrate = vmode->drate/htotal;
-	vmode->vrate = vmode->hrate/vtotal*2;
+		vmode->drate = 1E12/vmode->pixclock;
+		vmode->hrate = vmode->drate/htotal;
+		vmode->vrate = vmode->hrate/vtotal*2;
     } else {
-	vmode->drate = 0;
-	vmode->hrate = 0;
-	vmode->vrate = 0;
+		vmode->drate = 0;
+		vmode->hrate = 0;
+		vmode->vrate = 0;
     }
 
     return 1;
 }
 
-    /*
-     *  Print the Usage Template and Exit
-     */
-
-static void Usage(void)
+/* Print the Usage Template and Exit */
+static void
+Usage (void)
 {
     puts(FBSET_VERSION);
     printf("\nUsage: %s [options] [mode]\n\n"
-	"Valid options:\n"
-	"  General options:\n"
-	"    -h, --help         : display this usage information\n"
-	"    --test             : don't change, just test whether the mode is "
-				 "valid\n"
-	"    -s, --show         : display video mode settings\n"
-	"    -i, --info         : display all frame buffer information\n"
-	"    -v, --verbose      : verbose mode\n"
-	"    -V, --version      : print version information\n"
-	"    -x, --xfree86      : XFree86 compatibility mode\n"
-	"    -a, --all          : change all virtual consoles on this device\n"
-	"  Frame buffer special device nodes:\n"
-	"    -fb <device>       : processed frame buffer device\n"
-	"                         (default is " DEFAULT_FRAMEBUFFER ")\n"
-	"  Video mode database:\n"
-	"    -db <file>         : video mode database file\n"
-	"                         (default is " DEFAULT_MODEDBFILE ")\n"
-	"  Display geometry:\n"
-	"    -xres <value>      : horizontal resolution (in pixels)\n"
-	"    -yres <value>      : vertical resolution (in pixels)\n"
-	"    -vxres <value>     : virtual horizontal resolution (in pixels)\n"
-	"    -vyres <value>     : virtual vertical resolution (in pixels)\n"
-	"    -depth <value>     : display depth (in bits per pixel)\n"
-	"    -nonstd <value>    : select nonstandard video mode\n"
-	"    -g, --geometry ... : set all geometry parameters at once\n"
-	"    -match             : set virtual vertical resolution by virtual resolution\n"
-	"  Display timings:\n"
-	"    -pixclock <value>  : pixel clock (in picoseconds)\n"
-	"    -left <value>      : left margin (in pixels)\n"
-	"    -right <value>     : right margin (in pixels)\n"
-	"    -upper <value>     : upper margin (in pixel lines)\n"
-	"    -lower <value>     : lower margin (in pixel lines)\n"
-	"    -hslen <value>     : horizontal sync length (in pixels)\n"
-	"    -vslen <value>     : vertical sync length (in pixel lines)\n"
-	"    -t, --timings ...  : set all timing parameters at once\n"
-	"  Display flags:\n"
-	"    -accel <value>     : hardware text acceleration enable (false or "
-				 "true)\n"
-	"    -hsync <value>     : horizontal sync polarity (low or high)\n"
-	"    -vsync <value>     : vertical sync polarity (low or high)\n"
-	"    -csync <value>     : composite sync polarity (low or high)\n"
-	"    -gsync <value>     : synch on green (false or true)\n"
-	"    -extsync <value>   : external sync enable (false or true)\n"
-	"    -bcast <value>     : broadcast enable (false or true)\n"
-	"    -laced <value>     : interlace enable (false or true)\n"
-	"    -double <value>    : doublescan enable (false or true)\n"
-	"    -rgba <r,g,b,a>    : recommended length of color entries\n"
-	"    -grayscale <value> : grayscale enable (false or true)\n"
-	"  Display positioning:\n"
-	"    -move <direction>  : move the visible part (left, right, up or "
-				 "down)\n"
-	"    -step <value>      : step increment (in pixels or pixel lines)\n"
-	"                         (default is 8 horizontal, 2 vertical)\n",
-	ProgramName);
+		   "Valid options:\n"
+		   "  General options:\n"
+		   "    -h, --help         : display this usage information\n"
+		   "    --test             : don't change, just test whether the mode "
+		   "is "
+		   "valid\n"
+		   "    -s, --show         : display video mode settings\n"
+		   "    -i, --info         : display all frame buffer information\n"
+		   "    -v, --verbose      : verbose mode\n"
+		   "    -V, --version      : print version information\n"
+		   "    -x, --xfree86      : XFree86 compatibility mode\n"
+		   "    -a, --all          : change all virtual consoles on this "
+		   "device\n"
+		   "  Frame buffer special device nodes:\n"
+		   "    -fb <device>       : processed frame buffer device\n"
+		   "                         (default is " DEFAULT_FRAMEBUFFER ")\n"
+		   "  Video mode database:\n"
+		   "    -db <file>         : video mode database file\n"
+		   "                         (default is " DEFAULT_MODEDBFILE ")\n"
+		   "  Display geometry:\n"
+		   "    -xres <value>      : horizontal resolution (in pixels)\n"
+		   "    -yres <value>      : vertical resolution (in pixels)\n"
+		   "    -vxres <value>     : virtual horizontal resolution (in "
+		   "pixels)\n"
+		   "    -vyres <value>     : virtual vertical resolution (in pixels)\n"
+		   "    -depth <value>     : display depth (in bits per pixel)\n"
+		   "    -nonstd <value>    : select nonstandard video mode\n"
+		   "    -g, --geometry ... : set all geometry parameters at once\n"
+		   "    -match             : set virtual vertical resolution by "
+		   "virtual resolution\n"
+		   "  Display timings:\n"
+		   "    -pixclock <value>  : pixel clock (in picoseconds)\n"
+		   "    -left <value>      : left margin (in pixels)\n"
+		   "    -right <value>     : right margin (in pixels)\n"
+		   "    -upper <value>     : upper margin (in pixel lines)\n"
+		   "    -lower <value>     : lower margin (in pixel lines)\n"
+		   "    -hslen <value>     : horizontal sync length (in pixels)\n"
+		   "    -vslen <value>     : vertical sync length (in pixel lines)\n"
+		   "    -t, --timings ...  : set all timing parameters at once\n"
+		   "  Display flags:\n"
+		   "    -accel <value>     : hardware text acceleration enable (false "
+		   "or true)\n"
+		   "    -hsync <value>     : horizontal sync polarity (low or high)\n"
+		   "    -vsync <value>     : vertical sync polarity (low or high)\n"
+		   "    -csync <value>     : composite sync polarity (low or high)\n"
+		   "    -gsync <value>     : synch on green (false or true)\n"
+		   "    -extsync <value>   : external sync enable (false or true)\n"
+		   "    -bcast <value>     : broadcast enable (false or true)\n"
+		   "    -laced <value>     : interlace enable (false or true)\n"
+		   "    -double <value>    : doublescan enable (false or true)\n"
+		   "    -rgba <r,g,b,a>    : recommended length of color entries\n"
+		   "    -grayscale <value> : grayscale enable (false or true)\n"
+		   "  Display positioning:\n"
+		   "    -move <direction>  : move the visible part (left, right, up "
+		   "or down)\n"
+		   "    -step <value>      : step increment (in pixels or pixel "
+		   "lines)\n"
+		   "                         (default is 8 horizontal, 2 vertical)\n",
+		   ProgramName);
 }
 
-    /*
-     *  Main Routine
-     */
-
-int fbset_main(int argc, const char *argv[])
+/* Main Routine */
+int
+fbset_main (int argc, const char *argv[])
 {
     struct VideoMode *vmode;
     struct fb_var_screeninfo var;
@@ -903,168 +852,145 @@ int fbset_main(int argc, const char *argv[])
 
     ProgramName = argv[0];
 
-    /*
-     *  Parse the Options
-     */
+    /* Parse the Options */
 
     while (--argc > 0) {
-	argv++;
-	if (!strcmp(argv[0], "-h") || !strcmp(argv[0], "--help")) {
-	    Usage();
-	    return 1;
-	} else if (!strcmp(argv[0], "-v") || !strcmp(argv[0], "--verbose"))
-	    Opt_verbose = 1;
-	else if (!strcmp(argv[0], "-V") || !strcmp(argv[0], "--version"))
-	    Opt_version = 1;
-	else if (!strcmp(argv[0], "--test"))
-	    Opt_test = 1;
-	else if (!strcmp(argv[0], "-s") || !strcmp(argv[0], "--show"))
-	    Opt_show = 1;
-	else if (!strcmp(argv[0], "-i") || !strcmp(argv[0], "--info")) {
-	    Opt_show = 1;
-	    Opt_info = 1;
-	} else if (!strcmp(argv[0], "-x") || !strcmp(argv[0], "--xfree86"))
-	    Opt_xfree86 = 1;
-	else if (!strcmp(argv[0], "-a") || !strcmp(argv[0], "--all"))
-	    Opt_all = 1;
-	else if (!strcmp(argv[0], "-g") || !strcmp(argv[0], "--geometry")) {
-	    if (argc > 5) {
-		Opt_xres = argv[1];
-		Opt_yres = argv[2];
-		Opt_vxres = argv[3];
-		Opt_vyres = argv[4];
-		Opt_depth = argv[5];
-		Opt_change = 1;
-		argc -= 5;
-		argv += 5;
-	    } else {
-		Usage();
-	        return 1;
-	    }
-	} else if (!strcmp(argv[0], "-t") || !strcmp(argv[0], "--timings")) {
-	    if (argc > 7) {
-		Opt_pixclock = argv[1];
-		Opt_left = argv[2];
-		Opt_right = argv[3];
-		Opt_upper = argv[4];
-		Opt_lower = argv[5];
-		Opt_hslen = argv[6];
-		Opt_vslen = argv[7];
-		Opt_change = 1;
-		argc -= 7;
-		argv += 7;
-	    } else {
-		Usage();
-		return 1;
-	    }
-	} else if (!strcmp(argv[0], "-match")) {
-	    Opt_matchyres = argv[0];
-	    Opt_change = 1;
-	} else {
-	    for (i = 0; Options[i].name; i++)
-		if (!strcmp(argv[0], Options[i].name))
-		    break;
-	    if (Options[i].name) {
-		if (argc-- > 1) {
-		    *Options[i].value = argv[1];
-		    Opt_change |= Options[i].change;
-		    argv++;
+		argv++;
+		if (!strcmp(argv[0], "-h") || !strcmp(argv[0], "--help")) {
+			Usage();
+			return 1;
+		} else if (!strcmp(argv[0], "-v") || !strcmp(argv[0], "--verbose"))
+			Opt_verbose = 1;
+		else if (!strcmp(argv[0], "-V") || !strcmp(argv[0], "--version"))
+			Opt_version = 1;
+		else if (!strcmp(argv[0], "--test"))
+			Opt_test = 1;
+		else if (!strcmp(argv[0], "-s") || !strcmp(argv[0], "--show"))
+			Opt_show = 1;
+		else if (!strcmp(argv[0], "-i") || !strcmp(argv[0], "--info")) {
+			Opt_show = 1;
+			Opt_info = 1;
+		} else if (!strcmp(argv[0], "-x") || !strcmp(argv[0], "--xfree86"))
+			Opt_xfree86 = 1;
+		else if (!strcmp(argv[0], "-a") || !strcmp(argv[0], "--all"))
+			Opt_all = 1;
+		else if (!strcmp(argv[0], "-g") || !strcmp(argv[0], "--geometry")) {
+			if (argc > 5) {
+				Opt_xres = argv[1];
+				Opt_yres = argv[2];
+				Opt_vxres = argv[3];
+				Opt_vyres = argv[4];
+				Opt_depth = argv[5];
+				Opt_change = 1;
+				argc -= 5;
+				argv += 5;
+			} else {
+				Usage();
+				return 1;
+			}
+		} else if (!strcmp(argv[0], "-t") || !strcmp(argv[0], "--timings")) {
+			if (argc > 7) {
+				Opt_pixclock = argv[1];
+				Opt_left = argv[2];
+				Opt_right = argv[3];
+				Opt_upper = argv[4];
+				Opt_lower = argv[5];
+				Opt_hslen = argv[6];
+				Opt_vslen = argv[7];
+				Opt_change = 1;
+				argc -= 7;
+				argv += 7;
+			} else {
+				Usage();
+				return 1;
+			}
+		} else if (!strcmp(argv[0], "-match")) {
+			Opt_matchyres = argv[0];
+			Opt_change = 1;
 		} else {
-		    Usage();
-		    return 1;
+			for (i = 0; Options[i].name; i++)
+				if (!strcmp(argv[0], Options[i].name))
+					break;
+			if (Options[i].name) {
+				if (argc-- > 1) {
+					*Options[i].value = argv[1];
+					Opt_change |= Options[i].change;
+					argv++;
+				} else {
+					Usage();
+					return 1;
+				}
+			} else if (!Opt_modename) {
+				Opt_modename = argv[0];
+				Opt_change = 1;
+			} else {
+				Usage();
+				return 1;
+			}
 		}
-	    } else if (!Opt_modename) {
-		Opt_modename = argv[0];
-		Opt_change = 1;
-	    } else {
-		Usage();
-		return 1;
-	    }
-	}
     }
 
     if (Opt_version || Opt_verbose)
-	puts(FBSET_VERSION);
+		puts(FBSET_VERSION);
 
     if (!Opt_fb) {
-	Opt_fb = getenv("FRAMEBUFFER");
-	if (!Opt_fb)
-	    Opt_fb = DEFAULT_FRAMEBUFFER;
+		Opt_fb = getenv("FRAMEBUFFER");
+		if (!Opt_fb)
+			Opt_fb = DEFAULT_FRAMEBUFFER;
     }
 
-    /*
-     *  Open the Frame Buffer Device
-     */
-
-    fh = OpenFrameBuffer(Opt_fb);
+	/* Open the Frame Buffer Device */
+	fh = OpenFrameBuffer(Opt_fb);
     if (fh < 0)
 	return 1;
 
-    /*
-     *  Get the Video Mode
-     */
-
+    /* Get the Video Mode */
     if (Opt_modename) {
 
 #if 0
-	/*
-	 *  Read the Video Mode Database
-	 */
-
-	ReadModeDB();
+		/* Read the Video Mode Database */
+		ReadModeDB();
 #endif
 
-	if (!(vmode = FindVideoMode(Opt_modename))) {
-	    Die("Unknown video mode `%s'\n", Opt_modename);
-	    return 1;
-	}
-	Current = *vmode;
-	if (Opt_verbose)
-	    printf("Using video mode `%s'\n", Opt_modename);
+		if (!(vmode = FindVideoMode(Opt_modename))) {
+			Die("Unknown video mode `%s'\n", Opt_modename);
+			return 1;
+		}
+		Current = *vmode;
+		if (Opt_verbose)
+			printf("Using video mode `%s'\n", Opt_modename);
     } else {
-	GetVarScreenInfo(fh, &var);
-	ConvertToVideoMode(&var, &Current);
-	if (Opt_verbose)
-	    printf("Using current video mode from `%s'\n", Opt_fb);
+		GetVarScreenInfo(fh, &var);
+		ConvertToVideoMode(&var, &Current);
+		if (Opt_verbose)
+			printf("Using current video mode from `%s'\n", Opt_fb);
     }
 
     if (Opt_change) {
+		/* Optionally Modify the Video Mode */
+		ModifyVideoMode(&Current);
 
-	/*
-	 *  Optionally Modify the Video Mode
-	 */
-
-	ModifyVideoMode(&Current);
-
-	/*
-	 *  Set the Video Mode
-	 */
-
-	ConvertFromVideoMode(&Current, &var);
-	if (Opt_verbose)
-	    printf("Setting video mode to `%s'\n", Opt_fb);
-	SetVarScreenInfo(fh, &var);
-	ConvertToVideoMode(&var, &Current);
+		/* Set the Video Mode */
+		ConvertFromVideoMode(&Current, &var);
+		if (Opt_verbose)
+			printf("Setting video mode to `%s'\n", Opt_fb);
+		SetVarScreenInfo(fh, &var);
+		ConvertToVideoMode(&var, &Current);
     }
 
-    /*
-     *  Display some Video Mode Information
-     */
+    /* Display some Video Mode Information */
 
     if (Opt_show || !Opt_change)
-	DisplayVModeInfo(&Current);
+		DisplayVModeInfo(&Current);
 
     if (Opt_info) {
-	if (Opt_verbose)
-	    puts("Getting further frame buffer information");
-	if (GetFixScreenInfo(fh, &fix) != -1)
-	    DisplayFBInfo(&fix);
+		if (Opt_verbose)
+			puts("Getting further frame buffer information");
+		if (GetFixScreenInfo(fh, &fix) != -1)
+			DisplayFBInfo(&fix);
     }
 
-    /*
-     *  Close the Frame Buffer Device
-     */
-
+    /* Close the Frame Buffer Device */
     CloseFrameBuffer(fh);
 
     return 0;

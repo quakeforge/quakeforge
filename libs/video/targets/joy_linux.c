@@ -31,9 +31,9 @@
 # include "config.h"
 #endif
 
-#include <linux/joystick.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <linux/joystick.h>
 
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -43,6 +43,7 @@
 
 // Variables and structures for this driver
 int         joy_handle;
+
 
 void
 JOY_Read (void)

@@ -68,6 +68,7 @@ UINT        wDeviceID;
 void I_CDAudio_Play (byte track, qboolean looping);
 void I_CDAudio_Stop (void);
 
+
 static void
 I_CDAudio_CloseDoor (void)
 {
@@ -79,7 +80,6 @@ I_CDAudio_CloseDoor (void)
 		Con_DPrintf ("MCI_SET_DOOR_CLOSED failed (%li)\n", dwReturn);
 	}
 }
-
 
 static void
 I_CDAudio_Eject (void)
@@ -93,13 +93,11 @@ I_CDAudio_Eject (void)
 	}
 }
 
-
 static int
 I_CDAudio_GetAudioDiskInfo (void)
 {
 	DWORD       dwReturn;
 	MCI_STATUS_PARMS mciStatusParms;
-
 
 	cdValid = false;
 
@@ -135,7 +133,6 @@ I_CDAudio_GetAudioDiskInfo (void)
 	return 0;
 }
 
-
 LONG
 I_CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -169,7 +166,6 @@ I_CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-
 void
 I_CDAudio_Pause (void)
 {
@@ -193,7 +189,6 @@ I_CDAudio_Pause (void)
 	wasPlaying = playing;
 	playing = false;
 }
-
 
 void
 I_CDAudio_Play (byte track, qboolean looping)
@@ -269,7 +264,6 @@ I_CDAudio_Play (byte track, qboolean looping)
 		I_CDAudio_Pause ();
 }
 
-
 void
 I_CDAudio_Resume (void)
 {
@@ -298,7 +292,6 @@ I_CDAudio_Resume (void)
 	playing = true;
 }
 
-
 void
 I_CDAudio_Shutdown (void)
 {
@@ -308,7 +301,6 @@ I_CDAudio_Shutdown (void)
 	if (mciSendCommand (wDeviceID, MCI_CLOSE, MCI_WAIT, (DWORD) NULL))
 		Con_DPrintf ("CDAudio_Shutdown: MCI_CLOSE failed\n");
 }
-
 
 void
 I_CDAudio_Stop (void)
@@ -330,7 +322,6 @@ I_CDAudio_Stop (void)
 	playing = false;
 }
 
-
 void
 I_CDAudio_Update (void)
 {
@@ -350,14 +341,11 @@ I_CDAudio_Update (void)
 	}
 }
 
-
 static void
 I_CD_f (void)
 {
 	const char *command;
-	int         ret;
-	int         n;
-
+	int         n, ret;
 //  int     startAddress;
 
 	if (Cmd_Argc () < 2)
@@ -459,7 +447,6 @@ I_CD_f (void)
 	}
 }
 
-
 void
 I_CDAudio_Init (void)
 {
@@ -500,7 +487,6 @@ I_CDAudio_Init (void)
 		enabled = false;
 	}
 }
-
 
 plugin_t *
 PluginInfo (void)

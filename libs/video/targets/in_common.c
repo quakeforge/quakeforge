@@ -43,10 +43,10 @@
 #endif
 
 #define _BSD
-#include <stdio.h>
-#include <stdlib.h>
 #include <ctype.h>
 #include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -124,9 +124,7 @@ IN_Move (void)
 	in_mouse_x = in_mouse_y = 0.0;
 }
 
-/*
-  Called at shutdown
-*/
+/* Called at shutdown */
 void
 IN_Shutdown (void)
 {

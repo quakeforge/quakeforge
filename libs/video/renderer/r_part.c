@@ -31,19 +31,16 @@
 # include "config.h"
 #endif
 
-#include "QF/qargs.h"
 #include "QF/console.h"
+#include "QF/qargs.h"
 #include "QF/render.h"
 
 #include "compat.h"
 #include "r_local.h"
 
-particle_t *active_particles, *free_particles;
-
-particle_t *particles;
-int         r_numparticles;
-
+particle_t *active_particles, *free_particles, *particles;
 vec3_t      r_pright, r_pup, r_ppn;
+int         r_numparticles;
 
 
 #ifdef QUAKE2
@@ -51,10 +48,9 @@ void
 R_DarkFieldParticles (entity_t *ent)
 {
 	int         i, j, k;
-	particle_t *p;
 	float       vel;
-	vec3_t      dir;
-	vec3_t      org;
+	particle_t *p;
+	vec3_t      dir, org;
 
 	org[0] = ent->origin[0];
 	org[1] = ent->origin[1];
@@ -89,20 +85,17 @@ R_DarkFieldParticles (entity_t *ent)
 #endif
 
 #define NUMVERTEXNORMALS	162
-extern float r_avertexnormals[NUMVERTEXNORMALS][3];
-static vec3_t      avelocities[NUMVERTEXNORMALS];
-static float       beamlength = 16;
+extern float		r_avertexnormals[NUMVERTEXNORMALS][3];
+static float		beamlength = 16;
+static vec3_t		avelocities[NUMVERTEXNORMALS];
 
 void
 R_EntityParticles (entity_t *ent)
 {
-	int         count;
-	int         i;
+	int         count, i;
+	float       angle, dist, sr, sp, sy, cr, cp, cy;
 	particle_t *p;
-	float       angle;
-	float       sr, sp, sy, cr, cp, cy;
 	vec3_t      forward;
-	float       dist;
 
 	dist = 64;
 	count = 50;

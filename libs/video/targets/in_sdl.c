@@ -31,17 +31,18 @@
 
 #include <SDL.h>
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/joystick.h"
 #include "QF/keys.h"
 #include "QF/mathlib.h"
-#include "QF/sys.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
+#include "QF/sys.h"
 #include "QF/vid.h"
+
+#include "compat.h"
 
 #ifdef WIN32
 // FIXME: this is evil...
@@ -51,13 +52,10 @@ HWND        mainwindow;
 
 cvar_t	*m_filter;
 cvar_t	*_windowed_mouse;
-int		old_windowed_mouse;
 
+int		old_windowed_mouse;
 int		modestate;	// FIXME: just to avoid cross-comp errors - remove later
 
-/*
-	IN_SendKeyEvents
-*/
 
 void
 IN_LL_SendKeyEvents (void)
@@ -820,7 +818,6 @@ IN_LL_SendKeyEvents (void)
 		}
 	}
 }
-
 
 void
 IN_LL_Commands (void)

@@ -110,8 +110,8 @@ SND_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
 }
 
 void
-SND_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol,
-			  float attenuation)
+SND_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin,
+				float fvol, float attenuation)
 {
 }
 
@@ -172,7 +172,8 @@ SND_UnblockSound (void)
 }
 
 plugin_t *
-PluginInfo (void) {
+PluginInfo (void)
+{
     plugin_info.type = qfp_sound;
     plugin_info.api_version = QFPLUGIN_VERSION;
     plugin_info.plugin_version = "0.1";

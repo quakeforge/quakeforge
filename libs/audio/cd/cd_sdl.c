@@ -78,7 +78,6 @@ I_CDAudio_Eject (void)
 		Con_DPrintf ("Unable to eject CD-ROM tray.\n");
 }
 
-
 void
 I_CDAudio_Pause (void)
 {
@@ -90,7 +89,6 @@ I_CDAudio_Pause (void)
 	if (SDL_CDPause (cd_id))
 		Con_DPrintf ("CDAudio_Pause: Failed to pause track.\n");
 }
-
 
 void
 I_CDAudio_Stop (void)
@@ -107,7 +105,6 @@ I_CDAudio_Stop (void)
 		Con_DPrintf ("CDAudio_Stop: Failed to stop track.\n");
 }
 
-
 void
 I_CDAudio_Play (byte track, qboolean looping)
 {
@@ -119,7 +116,8 @@ I_CDAudio_Play (byte track, qboolean looping)
 		return;
 
 	if (!cdValid) {
-		if (!CD_INDRIVE (cd_stat = SDL_CDStatus (cd_id)) || (!cd_id->numtracks))
+		if (!CD_INDRIVE (cd_stat = SDL_CDStatus (cd_id)) ||
+			(!cd_id->numtracks))
 			return;
 		cdValid = true;
 	}
@@ -143,7 +141,6 @@ I_CDAudio_Play (byte track, qboolean looping)
 	playLooping = looping;
 }
 
-
 void
 I_CDAudio_Resume (void)
 {
@@ -156,7 +153,6 @@ I_CDAudio_Resume (void)
 		Con_DPrintf ("CDAudio_Resume: Failed tp resume track.\n");
 }
 
-
 void
 I_CDAudio_Shutdown (void)
 {
@@ -166,7 +162,6 @@ I_CDAudio_Shutdown (void)
 	SDL_CDClose (cd_id);
 	cd_id = NULL;
 }
-
 
 void
 I_CDAudio_Update (void)
@@ -188,7 +183,6 @@ I_CDAudio_Update (void)
 		&& (SDL_CDStatus (cd_id) != CD_PAUSED))
 		CDAudio_Play (cd_id->cur_track + 1, true);
 }
-
 
 #define CD_f_DEFINED
 
@@ -255,7 +249,6 @@ I_CD_f (void)
 	}
 }
 
-
 void
 I_CDAudio_Init (void)
 {
@@ -285,7 +278,6 @@ I_CDAudio_Init (void)
 	
 	Con_Printf ("CD Audio Initialized.\n");
 }
-
 
 plugin_t *
 PluginInfo (void)

@@ -71,6 +71,7 @@ ocvar_t joy_axes_cvar_init[JOY_MAX_AXES] = {
 struct joy_axis joy_axes[JOY_MAX_AXES];
 struct joy_button joy_buttons[JOY_MAX_BUTTONS];
 
+
 void
 JOY_Command (void)
 {

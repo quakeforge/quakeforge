@@ -32,9 +32,6 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
-#include <stdlib.h>
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -42,12 +39,15 @@
 # include <strings.h>
 #endif
 
+#include <stdlib.h>
+
 #include "QF/sys.h"
 #include "QF/in_event.h"
 
 #define IE_MAX_DEPTH 100
 
 float ie_time;
+
 
 void
 IE_Threshold_Event (ie_event_t *event, float value)
@@ -94,7 +94,7 @@ IE_Translation_Event (ie_event_t *event, float value)
 }
 
 ie_translation_table_t *
-IE_Translation_Table_Create ()
+IE_Translation_Table_Create (void)
 {
 	ie_translation_table_t *table;
 
@@ -108,16 +108,19 @@ IE_Translation_Table_Create ()
 }
 
 void
-IE_Translation_Table_Modify (ie_translation_table_t *table, int offset, ie_event_t *event)
+IE_Translation_Table_Modify (ie_translation_table_t *table, int offset,
+							 ie_event_t *event)
 {
 	int i;
 
 	if (offset >= table->maxevents) {
 		i = table->maxevents;
 		table->maxevents++;
-		table->events = realloc (table->events, sizeof (ie_translation_table_t *) * table->maxevents);
+		table->events = realloc (table->events, sizeof (ie_translation_table_t
+														*) * table->maxevents);
 		if (!table->events)
-			Sys_Error ("IE_Translation_Table_Modify: memory allocation failure");
+			Sys_Error ("IE_Translation_Table_Modify: memory allocation "
+					   "failure");
 		for (; i < table->maxevents; i++)
 			table->events[i] = 0;
 	}
@@ -125,7 +128,7 @@ IE_Translation_Table_Modify (ie_translation_table_t *table, int offset, ie_event
 }
 
 ie_translation_index_t *
-IE_Translation_Index_Create ()
+IE_Translation_Index_Create (void)
 {
 	ie_translation_index_t *index;
 
@@ -137,8 +140,6 @@ IE_Translation_Index_Create ()
 	index->tables = 0;
 	return index;
 }
-
-
 
 void
 IE_Multiplier_Event (ie_event_t *event, float value)
@@ -159,8 +160,6 @@ IE_CallHandler (ie_handler handler, ie_event_t *event, float value)
 		handler (event, value);
 	depth--;
 }
-
-
 
 /*
 static int (**event_handler_list)(const IE_event_t*);

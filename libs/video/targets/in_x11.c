@@ -43,10 +43,10 @@
 #endif
 
 #define _BSD
-#include <stdio.h>
-#include <stdlib.h>
 #include <ctype.h>
 #include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 
@@ -87,6 +87,7 @@ static int  p_mouse_x, p_mouse_y;
 #define FOCUS_MASK (FocusChangeMask)
 #define INPUT_MASK (KEY_MASK | MOUSE_MASK | FOCUS_MASK)
 
+
 static void
 XLateKey (XKeyEvent * ev, int *k, int *u)
 {
@@ -98,7 +99,8 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 	int         unicode;
 
 	keysym = XLookupKeysym (ev, 0);
-	bytes = XLookupString (ev, buffer, sizeof(buffer), &shifted_keysym, &compose);
+	bytes = XLookupString (ev, buffer, sizeof(buffer), &shifted_keysym,
+						   &compose);
 	unicode = buffer[0];
 
 	switch (keysym) {
@@ -289,7 +291,7 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 			key = K_KP_DIVIDE;
 			break;
 
-			/* For Sun keyboards */
+		/* For Sun keyboards */
 		case XK_F27:
 			key = K_HOME;
 			break;
@@ -337,7 +339,6 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 	*u = unicode;
 }
 
-
 static void
 event_key (XEvent * event)
 {
@@ -353,7 +354,6 @@ event_key (XEvent * event)
 	XLateKey (&event->xkey, &key, &unicode);
 	Key_Event (key, unicode, event->type == KeyPress);
 }
-
 
 static void
 event_button (XEvent * event)
@@ -414,7 +414,6 @@ center_pointer (void)
 				  vid.width / 2, vid.height / 2);
 }
 
-
 static void
 event_motion (XEvent * event)
 {
@@ -426,8 +425,8 @@ event_motion (XEvent * event)
 			if (!event->xmotion.send_event) {
 				in_mouse_x += (event->xmotion.x - p_mouse_x);
 				in_mouse_y += (event->xmotion.y - p_mouse_y);
-				if (abs (vid.width / 2 - event->xmotion.x) > vid.width / 4
-					|| abs (vid.height / 2 - event->xmotion.y) > vid.height / 4) {
+				if (abs (vid.width / 2 - event->xmotion.x) > vid.width / 4 ||
+					abs (vid.height / 2 - event->xmotion.y) > vid.height / 4) {
 					center_pointer ();
 				}
 			}
@@ -439,7 +438,6 @@ event_motion (XEvent * event)
 		p_mouse_y = event->xmotion.y;
 	}
 }
-
 
 void
 IN_LL_Commands (void)
@@ -474,7 +472,6 @@ IN_LL_Commands (void)
 	}
 }
 
-
 void
 IN_LL_SendKeyEvents (void)
 {
@@ -482,9 +479,7 @@ IN_LL_SendKeyEvents (void)
 	X11_ProcessEvents ();
 }
 
-/*
-  Called at shutdown
-*/
+/* Called at shutdown */
 void
 IN_LL_Shutdown (void)
 {

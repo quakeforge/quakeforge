@@ -29,14 +29,14 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
+#endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
 #endif
 #ifdef HAVE_SYS_IOCTL_H
 # include <sys/ioctl.h>
@@ -90,7 +90,6 @@ I_CDAudio_CloseDoor (void)
 		Con_DPrintf ("CDAudio: ioctl cdromclosetray failed\n");
 }
 
-
 static void
 I_CDAudio_Eject (void)
 {
@@ -100,7 +99,6 @@ I_CDAudio_Eject (void)
 	if (ioctl (cdfile, CDROMEJECT) == -1)
 		Con_DPrintf ("CDAudio: ioctl cdromeject failed\n");
 }
-
 
 static int
 I_CDAudio_GetAudioDiskInfo (void)
@@ -125,7 +123,6 @@ I_CDAudio_GetAudioDiskInfo (void)
 	return 0;
 }
 
-
 void
 I_CDAudio_Pause (void)
 {
@@ -142,7 +139,6 @@ I_CDAudio_Pause (void)
 	playing = false;
 }
 
-
 void
 I_CDAudio_Stop (void)
 {
@@ -158,7 +154,6 @@ I_CDAudio_Stop (void)
 	wasPlaying = false;
 	playing = false;
 }
-
 
 void
 I_CDAudio_Play (byte track, qboolean looping)
@@ -239,7 +234,6 @@ I_CDAudio_Play (byte track, qboolean looping)
 		CDAudio_Pause ();
 }
 
-
 void
 I_CDAudio_Resume (void)
 {
@@ -257,7 +251,6 @@ I_CDAudio_Resume (void)
 	playing = true;
 }
 
-
 void
 I_CDAudio_Shutdown (void)
 {
@@ -269,7 +262,6 @@ I_CDAudio_Shutdown (void)
 	}
 	mus_enabled = false;
 }
-
 
 void // FIXME: was static
 I_CD_f (void)
@@ -377,7 +369,6 @@ I_CD_f (void)
 	}
 }
 
-
 void
 I_CDAudio_Update (void)
 {
@@ -416,7 +407,6 @@ I_CDAudio_Update (void)
 	}
 }
 
-
 void
 Mus_CDChange (cvar_t *mus_cdaudio)
 {
@@ -448,14 +438,12 @@ Mus_CDChange (cvar_t *mus_cdaudio)
 	mus_enabled = true;
 }
 
-
 void
 I_CDAudio_Init (void)
 {
 	mus_cddevice = Cvar_Get("mus_cddevice", "/dev/cdrom", CVAR_NONE,
 			Mus_CDChange, "device to use for CD music");
 }
-
 
 plugin_t *
 PluginInfo (void)

@@ -218,9 +218,7 @@ SND_LoadSound (sfx_t *s)
 	return sc;
 }
 
-/*
-	WAV loading
-*/
+/* WAV loading */
 
 byte       *data_p;
 byte       *iff_end;

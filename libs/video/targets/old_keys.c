@@ -39,8 +39,8 @@
 # include <strings.h>
 #endif
 
-#include <stdlib.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 #include "QF/console.h"
 #include "QF/hash.h"

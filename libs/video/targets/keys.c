@@ -39,9 +39,9 @@
 # include <strings.h>
 #endif
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
 
 #include "QF/cmd.h"
 #include "QF/console.h"
@@ -54,9 +54,7 @@
 #include "compat.h"
 #include "old_keys.h"
 
-/*
-  key up events are sent even if in console mode
-*/
+/*  key up events are sent even if in console mode */
 
 cvar_t     *cl_chatmode;
 cvar_t     *in_bind_imt;
@@ -385,13 +383,12 @@ keyname_t   keynames[] = {
 	{ "J_BUTTON31",	J_BUTTON31 },
 	{ "J_BUTTON32",	J_BUTTON32 },
 
-
 	{NULL, 0}
 };
 
 
 /*
-			LINE TYPING INTO THE CONSOLE
+  LINE TYPING INTO THE CONSOLE
 */
 
 qboolean
@@ -473,7 +470,8 @@ Key_Console (knum_t key, short unicode)
 	if (Key_Game (key, unicode))
 		return;
 
-	if (unicode == '\x0D' || key == K_RETURN) {			// backslash text are commands, else
+	if (unicode == '\x0D' || key == K_RETURN) {
+		// backslash text are commands, else
 		if (!strncmp(key_lines[edit_line], "//", 2))
 			goto no_lf;
 		else if (key_lines[edit_line][1] == '\\' ||
@@ -532,7 +530,6 @@ no_lf:
 			key_linepos--;
 		return;
 	}
-
 	if (key == K_UP) {
 		do {
 			history_line = (history_line - 1) & 31;
@@ -543,7 +540,6 @@ no_lf:
 		key_linepos = strlen (key_lines[edit_line]);
 		return;
 	}
-
 	if (key == K_DOWN) {
 		if (history_line == edit_line)
 			return;
@@ -565,7 +561,6 @@ no_lf:
 		con->display -= 2;
 		return;
 	}
-
 	if (key == K_PAGEDOWN || key == M_WHEEL_DOWN) {
 		con->display += 2;
 		if (con->display > con->current)
@@ -577,7 +572,6 @@ no_lf:
 		key_linepos = 1;
 		return;
 	}
-
 	if (key == K_END) {
 		key_linepos = strlen (key_lines[edit_line]);
 		return;
@@ -689,13 +683,11 @@ Key_IMTnumToString (const int imtnum)
 }
 
 /*
-===================
-Key_StringToKeynum
+  Key_StringToKeynum
 
-Returns a key number to be used to index keybindings[] by looking at
-the given string.  Single ascii characters return themselves, while
-the K_* names are matched up.
-===================
+  Returns a key number to be used to index keybindings[] by looking at
+  the given string.  Single ascii characters return themselves, while
+  the K_* names are matched up.
 */
 int
 Key_StringToKeynum (const char *str)
@@ -713,13 +705,10 @@ Key_StringToKeynum (const char *str)
 }
 
 /*
-===================
-Key_KeynumToString
+  Key_KeynumToString
 
-Returns a string (a K_* name) for the
-given keynum.
-FIXME: handle quote special (general escape sequence?)
-===================
+  Returns a string (a K_* name) for the given keynum.
+  FIXME: handle quote special (general escape sequence?)
 */
 const char *
 Key_KeynumToString (knum_t keynum)
@@ -814,7 +803,8 @@ Key_In_Bind_f (void)
 	c = Cmd_Argc ();
 
 	if (c < 3) {
-		Con_Printf ("in_bind <imt> <key> [command] : attach a command to a key\n");
+		Con_Printf ("in_bind <imt> <key> [command] : attach a command to a "
+					"key\n");
 		return;
 	}
 
@@ -826,7 +816,8 @@ Key_In_Bind_f (void)
 		cmd = cmd_buf;
 		cmd_buf[0] = 0;
 		for (i = 3; i < c; i++) {
-			strncat (cmd_buf, Cmd_Argv (i), sizeof (cmd_buf) - strlen (cmd_buf));
+			strncat (cmd_buf, Cmd_Argv (i), sizeof (cmd_buf) -
+					 strlen (cmd_buf));
 			if (i != (c - 1))
 				strncat (cmd_buf, " ", sizeof (cmd_buf) - strlen (cmd_buf));
 		}
@@ -870,7 +861,8 @@ Key_Bind_f (void)
 		cmd = cmd_buf;
 		cmd_buf[0] = 0;
 		for (i = 2; i < c; i++) {
-			strncat (cmd_buf, Cmd_Argv (i), sizeof (cmd_buf) - strlen (cmd_buf));
+			strncat (cmd_buf, Cmd_Argv (i), sizeof (cmd_buf) -
+					 strlen (cmd_buf));
 			if (i != (c - 1))
 				strncat (cmd_buf, " ", sizeof (cmd_buf) - strlen (cmd_buf));
 		}
@@ -946,9 +938,8 @@ Key_Event (knum_t key, short unicode, qboolean down)
 		keydown[key] = 0;
 
 	key_lastpress = key;
-//
-// handle escape specialy, so the user can never unbind it
-//
+
+	// handle escape specially, so the user can never unbind it
 	if (unicode == '\x1b' || key == K_ESCAPE) {
 		if (!down || (keydown[key] > 1))
 			return;
@@ -969,9 +960,7 @@ Key_Event (knum_t key, short unicode, qboolean down)
 	if (!down && Key_Game (key, unicode))
 		return;
 
-//
-// if not a consolekey, send to the interpreter no matter what mode is
-//
+	// if not a consolekey, send to the interpreter no matter what mode is
 	switch (key_dest) {
 		case key_message:
 			Key_Message (key, unicode);
@@ -1013,8 +1002,8 @@ Key_Init (void)
 	key_linepos = 1;
 
 	// register our functions
-	Cmd_AddCommand ("in_bind", Key_In_Bind_f,
-					"Assign a command or a set of commands to a key.\n"
+	Cmd_AddCommand ("in_bind", Key_In_Bind_f, "Assign a command or a set of "
+					"commands to a key.\n"
 					"Note: To bind multiple commands to a key, enclose the "
 					"commands in quotes and separate with semi-colons.");
 	Cmd_AddCommand ("in_unbind", Key_In_Unbind_f,
@@ -1022,9 +1011,8 @@ Key_Init (void)
 	Cmd_AddCommand ("unbindall", Key_Unbindall_f,
 					"Remove all binds (USE CAUTIOUSLY!!!)");
 	Cmd_AddCommand ("imt", Key_InputMappingTable_f, "");
-	Cmd_AddCommand ("bind", Key_Bind_f,
-					"wrapper for in_bind that uses in_bind_imt for the imt "
-					"parameter");
+	Cmd_AddCommand ("bind", Key_Bind_f, "wrapper for in_bind that uses "
+					"in_bind_imt for the imt parameter");
 	Cmd_AddCommand ("unbind", Key_Unbind_f,
 					"wrapper for in_unbind that uses in_bind_imt for the imt "
 					"parameter");

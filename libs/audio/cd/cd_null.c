@@ -47,42 +47,35 @@ I_CDAudio_Pause (void)
 {
 }
 
-
 void
 I_CDAudio_Play (byte track, qboolean looping)
 {
 }
-
 
 void
 I_CDAudio_Resume (void)
 {
 }
 
-
 void
 I_CDAudio_Shutdown (void)
 {
 }
-
 
 void
 I_CDAudio_Update (void)
 {
 }
 
-
 void
 I_CDAudio_Init (void)
 {
 }
 
-
 void
 I_CD_f (void)
 {
 }
-
 
 plugin_t *
 PluginInfo (void)

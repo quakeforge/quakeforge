@@ -39,7 +39,7 @@
 #include <stdlib.h>
 
 #ifdef _WIN32
-#include "winquake.h"
+# include "winquake.h"
 #endif
 
 #include "QF/cmd.h"
@@ -54,9 +54,9 @@
 void		SND_Play (void);
 void		SND_PlayVol (void);
 void		SND_SoundList (void);
-void		SND_Update_ (void);
 void		SND_StopAllSounds (qboolean clear);
 void		SND_StopAllSoundsC (void);
+void		SND_Update_ (void);
 
 sfx_t		*SND_PrecacheSound (const char *name);
 sfxcache_t	*SND_LoadSound (sfx_t *s);
@@ -64,9 +64,6 @@ void		SND_ClearBuffer (void);
 void		SND_PaintChannels (int endtime);
 
 void		SND_Init_Cvars ();
-
-// QuakeWorld hack...
-//#define	viewentity	playernum+1
 
 // Internal sound data & structures ===========================================
 
@@ -113,7 +110,6 @@ cvar_t	   *snd_phasesep;
 cvar_t	   *snd_show;
 cvar_t	   *snd_volumesep;
 
-
 plugin_t				plugin_info;
 plugin_data_t			plugin_info_data;
 plugin_funcs_t			plugin_info_funcs;
@@ -131,6 +127,7 @@ snd_render_funcs_t		plugin_info_snd_render_funcs;
 
 qboolean	fakedma = false;
 int			fakedma_updates = 15;
+
 
 void
 SND_AmbientOff (void)
@@ -652,7 +649,8 @@ SND_UpdateAmbientSounds (void)
 	if (!**plugin_info_snd_render_data.worldmodel) // FIXME: eww
 		return;
 
-	l = Mod_PointInLeaf (listener_origin, **plugin_info_snd_render_data.worldmodel);
+	l = Mod_PointInLeaf (listener_origin,
+						 **plugin_info_snd_render_data.worldmodel);
 	if (!l || !ambient_level->value) {
 		for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
 			 ambient_channel++)
@@ -837,13 +835,10 @@ SND_Update_ (void)
 #endif
 
 	SND_PaintChannels (endtime);
-
 	S_O_Submit ();
 }
 
-/*
-	console functions
-*/
+/* console functions */
 
 void
 SND_Play (void)
@@ -928,8 +923,8 @@ SND_LocalSound (const char *sound)
 		Con_Printf ("S_LocalSound: can't cache %s\n", sound);
 		return;
 	}
-	SND_StartSound (*plugin_info_snd_render_data.viewentity, -1, sfx, vec3_origin,
-					1, 1);
+	SND_StartSound (*plugin_info_snd_render_data.viewentity, -1, sfx,
+					vec3_origin, 1, 1);
 }
 
 void
@@ -970,7 +965,8 @@ PluginInfo (void) {
 	plugin_info.plugin_version = "0.1";
 	plugin_info.description = "Sound Renderer";
 	plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
-		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge project\n"
+		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge "
+		"project\n"
 		"Please see the file \"AUTHORS\" for a list of contributors";
 	plugin_info.functions = &plugin_info_funcs;
 	plugin_info.data = &plugin_info_data;

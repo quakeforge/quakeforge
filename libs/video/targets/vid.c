@@ -29,33 +29,32 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
 #include <math.h>
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
+
+#include "compat.h"
 #include "view.h"
 
 extern viddef_t vid;					// global video state
 
-/*
-	Software and hardware gamma support
-*/
+/* Software and hardware gamma support */
 byte		gammatable[256];
 cvar_t		*vid_gamma;
 cvar_t		*vid_system_gamma;
 qboolean	vid_gamma_avail;		// hardware gamma availability
 
-/*
-	Screen size
-*/
+/* Screen size */
 int 		scr_width, scr_height;
 cvar_t		*vid_width;
 cvar_t		*vid_height;
+
 
 void
 VID_GetWindowSize (int def_w, int def_h)
@@ -105,9 +104,7 @@ VID_GetWindowSize (int def_w, int def_h)
 	scr_height = vid.height = vid_height->int_val;
 }
 
-/****************************************************************************
- *								GAMMA FUNCTIONS 							*
- ****************************************************************************/
+/* GAMMA FUNCTIONS */
 
 void
 VID_BuildGammaTable (double gamma)

@@ -28,11 +28,11 @@
 	$Id$
 */
 
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/sound.h"
-#include "QF/plugin.h"
-#include "QF/console.h"
 #include "QF/model.h"
+#include "QF/plugin.h"
 
 // =======================================================================
 // Various variables also defined in snd_dma.c
@@ -60,6 +60,7 @@ extern double host_frametime; // From host.h
 extern struct model_s       **snd_worldmodel;
 extern int snd_viewentity;
 
+
 void
 S_Init (void)
 {
@@ -78,7 +79,8 @@ S_Init (void)
 		} else {
 			snd_render_module->data->snd_render->worldmodel = &snd_worldmodel;
 			snd_render_module->data->snd_render->viewentity = &snd_viewentity;
-			snd_render_module->data->snd_render->host_frametime = &host_frametime;
+			snd_render_module->data->snd_render->host_frametime =
+				&host_frametime;
 
 			snd_output_module->data->snd_output->soundtime
 				= snd_render_module->data->snd_render->soundtime;
@@ -157,25 +159,28 @@ S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
 }
 
 void
-S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol,
-			  float attenuation)
+S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin,
+			  float fvol, float attenuation)
 {
 	if (snd_render_module)
-		snd_render_module->functions->snd_render->pS_StartSound (entnum, entchannel, sfx, origin, fvol, attenuation);
+		snd_render_module->functions->snd_render->pS_StartSound
+			(entnum, entchannel, sfx, origin, fvol, attenuation);
 }
 
 void
 S_StopSound (int entnum, int entchannel)
 {
 	if (snd_render_module)
-		snd_render_module->functions->snd_render->pS_StopSound (entnum, entchannel);
+		snd_render_module->functions->snd_render->pS_StopSound
+			(entnum, entchannel);
 }
 
 sfx_t      *
 S_PrecacheSound (const char *sample)
 {
 	if (snd_render_module)
-		return snd_render_module->functions->snd_render->pS_PrecacheSound (sample);
+		return snd_render_module->functions->snd_render->pS_PrecacheSound
+			(sample);
 	else
 		return NULL;
 }
@@ -191,7 +196,8 @@ void
 S_Update (vec3_t origin, vec3_t v_forward, vec3_t v_right, vec3_t v_up)
 {
 	if (snd_render_module)
-		snd_render_module->functions->snd_render->pS_Update (origin, v_forward, v_right, v_up);
+		snd_render_module->functions->snd_render->pS_Update (origin, v_forward,
+															 v_right, v_up);
 }
 
 void
@@ -289,4 +295,3 @@ S_O_UnblockSound (void)
 	if (snd_output_module)
 		snd_output_module->functions->snd_output->pS_O_UnblockSound ();
 }
-

@@ -32,16 +32,17 @@
 # include "config.h"
 #endif
 
-#include "winquake.h"
 #include <dinput.h>
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
+
+#include "compat.h"
+#include "winquake.h"
 
 #define DINPUT_BUFFERSIZE           16
 #define iDirectInputCreate(a,b,c,d)	pDirectInputCreate(a,b,c,d)
@@ -51,11 +52,9 @@ HRESULT (WINAPI * pDirectInputCreate) (HINSTANCE hinst, DWORD dwVersion,
 									   LPUNKNOWN punkOuter);
 
 // mouse public variables
-
 unsigned int uiWheelMessage;
 
 // mouse local variables
-
 static int  mouse_buttons;
 static int  mouse_oldbuttonstate;
 static POINT current_pos;
@@ -69,7 +68,6 @@ static qboolean dinput_acquired;
 static unsigned int mstate_di;
 
 // misc locals
-
 static LPDIRECTINPUT g_pdi;
 static LPDIRECTINPUTDEVICE g_pMouse;
 
@@ -88,15 +86,15 @@ typedef struct MYDATA {
 } MYDATA;
 
 static DIOBJECTDATAFORMAT rgodf[] = {
-	{&GUID_XAxis, FIELD_OFFSET (MYDATA, lX), DIDFT_AXIS | DIDFT_ANYINSTANCE, 0,},
-	{&GUID_YAxis, FIELD_OFFSET (MYDATA, lY), DIDFT_AXIS | DIDFT_ANYINSTANCE, 0,},
-	
-		{&GUID_ZAxis, FIELD_OFFSET (MYDATA, lZ),
+	{&GUID_XAxis, FIELD_OFFSET (MYDATA, lX), DIDFT_AXIS | DIDFT_ANYINSTANCE,
+	 0,},
+	{&GUID_YAxis, FIELD_OFFSET (MYDATA, lY), DIDFT_AXIS | DIDFT_ANYINSTANCE,
+	 0,},
+	{&GUID_ZAxis, FIELD_OFFSET (MYDATA, lZ),
 	 0x80000000 | DIDFT_AXIS | DIDFT_ANYINSTANCE, 0,},
 	{0, FIELD_OFFSET (MYDATA, bButtonA), DIDFT_BUTTON | DIDFT_ANYINSTANCE, 0,},
 	{0, FIELD_OFFSET (MYDATA, bButtonB), DIDFT_BUTTON | DIDFT_ANYINSTANCE, 0,},
-	
-		{0, FIELD_OFFSET (MYDATA, bButtonC),
+	{0, FIELD_OFFSET (MYDATA, bButtonC),
 	 0x80000000 | DIDFT_BUTTON | DIDFT_ANYINSTANCE, 0,},
 	{0, FIELD_OFFSET (MYDATA, bButtonD),
 	 0x80000000 | DIDFT_BUTTON | DIDFT_ANYINSTANCE, 0,},
@@ -114,7 +112,6 @@ static DIDATAFORMAT df = {
 };
 
 // forward-referenced functions, joy
-
 extern void JOY_Command(void);
 extern void JOY_Init_Cvars(void);
 extern void JOY_Init (void);
@@ -122,9 +119,6 @@ extern void JOY_AdvancedUpdate_f (void);
 extern void JOY_Move (void);
 
 
-/*
-	IN_UpdateClipCursor
-*/
 void
 IN_UpdateClipCursor (void)
 {
@@ -134,10 +128,6 @@ IN_UpdateClipCursor (void)
 	}
 }
 
-
-/*
-	IN_ShowMouse
-*/
 void
 IN_ShowMouse (void)
 {
@@ -148,10 +138,6 @@ IN_ShowMouse (void)
 	}
 }
 
-
-/*
-	IN_HideMouse
-*/
 void
 IN_HideMouse (void)
 {
@@ -162,10 +148,6 @@ IN_HideMouse (void)
 	}
 }
 
-
-/*
-	IN_ActivateMouse
-*/
 void
 IN_ActivateMouse (void)
 {
@@ -196,10 +178,6 @@ IN_ActivateMouse (void)
 	}
 }
 
-
-/*
-	IN_SetQuakeMouseState
-*/
 void
 IN_SetQuakeMouseState (void)
 {
@@ -207,10 +185,6 @@ IN_SetQuakeMouseState (void)
 		IN_ActivateMouse ();
 }
 
-
-/*
-	IN_DeactivateMouse
-*/
 void
 IN_DeactivateMouse (void)
 {
@@ -237,10 +211,6 @@ IN_DeactivateMouse (void)
 	}
 }
 
-
-/*
-	IN_RestoreOriginalMouseState
-*/
 void
 IN_RestoreOriginalMouseState (void)
 {
@@ -248,28 +218,23 @@ IN_RestoreOriginalMouseState (void)
 		IN_DeactivateMouse ();
 		mouseactivatetoggle = true;
 	}
-// try to redraw the cursor so it gets reinitialized, because sometimes it
-// has garbage after the mode switch
+	// try to redraw the cursor so it gets reinitialized, because sometimes it
+	// has garbage after the mode switch
 	ShowCursor (TRUE);
 	ShowCursor (FALSE);
 }
 
-
-/*
-	IN_InitDInput
-*/
 static qboolean
 IN_InitDInput (void)
 {
 	HRESULT     hr;
 	DIPROPDWORD dipdw = {
 		{
-		 sizeof (DIPROPDWORD),			// diph.dwSize
-		 sizeof (DIPROPHEADER),			// diph.dwHeaderSize
-		 0,								// diph.dwObj
-		 DIPH_DEVICE,					// diph.dwHow
-		 }
-		,
+			sizeof (DIPROPDWORD),			// diph.dwSize
+			sizeof (DIPROPHEADER),			// diph.dwHeaderSize
+			0,								// diph.dwObj
+			DIPH_DEVICE,					// diph.dwHow
+		},
 		DINPUT_BUFFERSIZE,				// dwData
 	};
 
@@ -291,29 +256,27 @@ IN_InitDInput (void)
 			return false;
 		}
 	}
-// register with DirectInput and get an IDirectInput to play with.
-	hr =
-		iDirectInputCreate (global_hInstance, DIRECTINPUT_VERSION, &g_pdi,
-							NULL);
+	// register with DirectInput and get an IDirectInput to play with.
+	hr = iDirectInputCreate (global_hInstance, DIRECTINPUT_VERSION, &g_pdi,
+							 NULL);
 
-	if (FAILED (hr)) {
+	if (FAILED (hr))
 		return false;
-	}
-// obtain an interface to the system mouse device.
+	// obtain an interface to the system mouse device.
 	hr = IDirectInput_CreateDevice (g_pdi, &GUID_SysMouse, &g_pMouse, NULL);
 
 	if (FAILED (hr)) {
 		Con_Printf ("Couldn't open DI mouse device\n");
 		return false;
 	}
-// set the data format to "mouse format".
+	// set the data format to "mouse format".
 	hr = IDirectInputDevice_SetDataFormat (g_pMouse, &df);
 
 	if (FAILED (hr)) {
 		Con_Printf ("Couldn't set DI mouse format\n");
 		return false;
 	}
-// set the cooperativity level.
+	// set the cooperativity level.
 	hr = IDirectInputDevice_SetCooperativeLevel (g_pMouse, mainwindow,
 												 DISCL_EXCLUSIVE |
 												 DISCL_FOREGROUND);
@@ -323,11 +286,10 @@ IN_InitDInput (void)
 		return false;
 	}
 
-// set the buffer size to DINPUT_BUFFERSIZE elements.
-// the buffer size is a DWORD property associated with the device
-	hr =
-		IDirectInputDevice_SetProperty (g_pMouse, DIPROP_BUFFERSIZE,
-										&dipdw.diph);
+	// set the buffer size to DINPUT_BUFFERSIZE elements.
+	// the buffer size is a DWORD property associated with the device
+	hr = IDirectInputDevice_SetProperty (g_pMouse, DIPROP_BUFFERSIZE,
+										 &dipdw.diph);
 
 	if (FAILED (hr)) {
 		Con_Printf ("Couldn't set DI buffersize\n");
@@ -337,10 +299,6 @@ IN_InitDInput (void)
 	return true;
 }
 
-
-/*
-	IN_StartupMouse
-*/
 static void
 IN_StartupMouse (void)
 {
@@ -362,8 +320,8 @@ IN_StartupMouse (void)
 	}
 
 	if (!dinput) {
-		mouseparmsvalid =
-			SystemParametersInfo (SPI_GETMOUSE, 0, originalmouseparms, 0);
+		mouseparmsvalid = SystemParametersInfo (SPI_GETMOUSE, 0,
+												originalmouseparms, 0);
 
 		if (mouseparmsvalid) {
 			if (COM_CheckParm ("-noforcemspd"))
@@ -384,16 +342,12 @@ IN_StartupMouse (void)
 
 	mouse_buttons = 3;
 
-// if a fullscreen video mode was set before the mouse was initialized,
-// set the mouse state appropriately
+	// if a fullscreen video mode was set before the mouse was initialized,
+	// set the mouse state appropriately
 	if (mouseactivatetoggle)
 		IN_ActivateMouse ();
 }
 
-
-/*
-	IN_Init
-*/
 void
 IN_LL_Init (void)
 {
@@ -407,9 +361,6 @@ IN_LL_Init_Cvars (void)
 {
 }
 
-/*
-	IN_Shutdown
-*/
 void
 IN_LL_Shutdown (void)
 {
@@ -428,10 +379,6 @@ IN_LL_Shutdown (void)
 	}
 }
 
-
-/*
-	IN_MouseEvent
-*/
 void
 IN_MouseEvent (int mstate)
 {
@@ -453,10 +400,6 @@ IN_MouseEvent (int mstate)
 	}
 }
 
-
-/*
-	IN_MouseMove
-*/
 void
 IN_LL_Commands (void)
 {
@@ -494,7 +437,6 @@ IN_LL_Commands (void)
 			}
 
 			/* Look at the element to see what happened */
-
 			switch (od.dwOfs) {
 				case DIMOFS_X:
 					mx += od.dwData;
@@ -550,16 +492,12 @@ IN_LL_Commands (void)
 	in_mouse_x = mx;
 	in_mouse_y = my;
 
-// if the mouse has moved, force it to the center, so there's room to move
+	// if the mouse has moved, force it to the center, so there's room to move
 	if (mx || my) {
 		SetCursorPos (window_center_x, window_center_y);
 	}
 }
 
-
-/*
-	IN_LL_ClearStates
-*/
 void
 IN_LL_ClearStates (void)
 {

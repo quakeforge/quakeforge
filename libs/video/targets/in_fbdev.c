@@ -33,8 +33,8 @@
 # include <unistd.h>
 #endif
 
-#include <termios.h>
 #include <fcntl.h>
+#include <termios.h>
 #include <sys/ioctl.h>
 
 #include "QF/cvar.h"
@@ -48,11 +48,11 @@ fd_blocking (int fd, int on)
 	int x;
 
 #if defined(_POSIX_SOURCE) || !defined(FIONBIO)
-#if !defined(O_NONBLOCK)
-# if defined(O_NDELAY)
-#  define O_NONBLOCK O_NDELAY
+# if !defined(O_NONBLOCK)
+#  if defined(O_NDELAY)
+#   define O_NONBLOCK O_NDELAY
+#  endif
 # endif
-#endif
 	if ((x = fcntl(fd, F_GETFL, 0)) == -1)
 		return -1;
 	if (on)
@@ -137,9 +137,6 @@ IN_LL_Commands (void)
 {
 }
 
-/*
-	IN_ModeChanged
-*/
 void
 IN_LL_ModeChanged (void)
 {

@@ -73,10 +73,10 @@ void
 R_RecursiveMarkLights (vec3_t lightorigin, dlight_t *light, int bit,
 					   mnode_t *node)
 {
-	mplane_t   *splitplane;
-	float       ndist, maxdist;
-	msurface_t *surf;
 	int         i;
+	float       ndist, maxdist;
+	mplane_t   *splitplane;
+	msurface_t *surf;
 
 	maxdist = light->radius * light->radius;
 
@@ -160,8 +160,7 @@ loc0:
 }
 
 static void
-mark_surfaces (msurface_t *surf, vec3_t lightorigin,  dlight_t *light,
-			   int bit)
+mark_surfaces (msurface_t *surf, vec3_t lightorigin, dlight_t *light, int bit)
 {
 	float      dist;
 #if 1
@@ -301,24 +300,19 @@ vec3_t      lightspot;
 int
 RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 {
-	int         r;
-	float       front, back, frac;
-	int         side;
-	mplane_t   *plane;
-	vec3_t      mid;
-	msurface_t *surf;
-	int         s, t, ds, dt;
-	int         i;
-	mtexinfo_t *tex;
-	byte       *lightmap;
+	int			 i, r, s, t, ds, dt, maps, side;
 	unsigned int scale;
-	int         maps;
+	byte		*lightmap;
+	float		 front, back, frac;
+	mplane_t	*plane;
+	msurface_t	*surf;
+	mtexinfo_t	*tex;
+	vec3_t		 mid;
 
 	if (node->contents < 0)
 		return -1;						// didn't hit anything
 
-// calculate mid point
-
+	// calculate mid point
 // FIXME: optimize for axial
 	plane = node->plane;
 	front = DotProduct (start, plane->normal) - plane->dist;
@@ -333,7 +327,7 @@ RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 	mid[1] = start[1] + (end[1] - start[1]) * frac;
 	mid[2] = start[2] + (end[2] - start[2]) * frac;
 
-// go down front side   
+	// go down front side   
 	r = RecursiveLightPoint (node->children[side], start, mid);
 	if (r >= 0)
 		return r;						// hit something
@@ -341,7 +335,7 @@ RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 	if ((back < 0) == side)
 		return -1;						// didn't hit anything
 
-// check for impact on this node
+	// check for impact on this node
 	VectorCopy (mid, lightspot);
 	lightplane = plane;
 
@@ -390,7 +384,7 @@ RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 		return r;
 	}
 
-// go down back side
+	// go down back side
 	return RecursiveLightPoint (node->children[!side], mid, end);
 }
 

@@ -1059,7 +1059,7 @@ R_Mirror (void)
 	R_DrawWaterSurfaces ();
 
 	gldepthmin = 0;
-	gldepthmax = 1;//XXX 0.5;
+	gldepthmax = 1;								// XXX 0.5;
 	qfglDepthRange (gldepthmin, gldepthmax);
 	qfglDepthFunc (GL_LEQUAL);
 

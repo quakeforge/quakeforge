@@ -46,14 +46,12 @@ CDAudio_Pause (void)
 		cdmodule->functions->cd->pCDAudio_Pause ();
 }
 
-
 void
 CDAudio_Play (byte track, qboolean looping)
 {
 	if (cdmodule)
 		cdmodule->functions->cd->pCDAudio_Play (track, looping);
 }
-
 
 void
 CDAudio_Resume (void)
@@ -62,14 +60,12 @@ CDAudio_Resume (void)
 		cdmodule->functions->cd->pCDAudio_Resume ();
 }
 
-
 void
 CDAudio_Shutdown (void)
 {
 	if (cdmodule)
 		cdmodule->functions->general->p_Shutdown ();
 }
-
 
 void
 CDAudio_Update (void)
@@ -78,14 +74,12 @@ CDAudio_Update (void)
 		cdmodule->functions->cd->pCDAudio_Update ();
 }
 
-
 void
 CD_f (void)
 {
 	if (cdmodule)
 		cdmodule->functions->cd->pCD_f ();
 }
-
 
 int
 CDAudio_Init (void)
@@ -100,7 +94,8 @@ CDAudio_Init (void)
 		cdmodule->functions->general->p_Init ();
 		return 0; // FIXME: Assumes success
 	}
-	Cmd_AddCommand ("cd", CD_f, "Control the CD player.\n"
+	Cmd_AddCommand (
+		"cd", CD_f, "Control the CD player.\n"
 		"Commands:\n"
 		"eject - Eject the CD.\n"
 		"info - Reports information on the CD.\n"

@@ -53,6 +53,7 @@
 #endif
 
 #include "QF/console.h"
+
 #include "dga_check.h"
 
 
@@ -86,7 +87,8 @@ VID_CheckDGA (Display * dpy, int *maj_ver, int *min_ver, int *hasvideo)
 	}
 
 	if ((!maj_ver) || (*maj_ver != XDGA_MAJOR_VERSION)) {
-		Con_Printf ("VID: Incorrect DGA version: %d.%d, \n", *maj_ver, *min_ver);
+		Con_Printf ("VID: Incorrect DGA version: %d.%d, \n", *maj_ver,
+					*min_ver);
 		return false;
 	}
 	Con_Printf ("VID: DGA version: %d.%d\n", *maj_ver, *min_ver);
@@ -120,8 +122,7 @@ qboolean
 VID_CheckVMode (Display * dpy, int *maj_ver, int *min_ver)
 {
 #ifdef HAVE_VIDMODE
-	int 	event_base, error_base;
-	int 	dummy, dummy_major, dummy_minor;
+	int		dummy, dummy_major, dummy_minor, event_base, error_base;
 
 	if (!XQueryExtension (dpy, XF86VIDMODENAME, &dummy, &dummy, &dummy)) {
 		return false;
@@ -140,7 +141,8 @@ VID_CheckVMode (Display * dpy, int *maj_ver, int *min_ver)
 		return false;
 
 	if ((!maj_ver) || (*maj_ver != XF86VIDMODE_MAJOR_VERSION)) {
-		Con_Printf ("VID: Incorrect VidMode version: %d.%d\n", *maj_ver, *min_ver);
+		Con_Printf ("VID: Incorrect VidMode version: %d.%d\n", *maj_ver,
+					*min_ver);
 		return false;
 	}
 
