@@ -58,6 +58,7 @@ qboolean    sv_allow_cheats;
 int         fp_messages = 4, fp_persecond = 4, fp_secondsdead = 10;
 char        fp_msg[255] = { 0 };
 extern cvar_t *cl_warncmd;
+cvar_t     *sv_leetnickmatch;
 extern redirect_t sv_redirected;
 
 static qboolean
@@ -66,7 +67,17 @@ match_char (char a, char b)
 	a = tolower (sys_char_map[(byte)a]);
 	b = tolower (sys_char_map[(byte)b]);
 
-	if (a == b || (a == '1' && b == 'i') || (a == 'i' || b == '1'))
+	if (a == b || (sv_leetnickmatch->int_val
+			&& ((a == '1' && b == 'i') || (a == 'i' && b == '1')
+			|| (a == '1' && b == 'l') || (a == 'l' && b == '1')
+			|| (a == '3' && b == 'e') || (a == 'e' && b == '3')
+			|| (a == '4' && b == 'a') || (a == 'a' && b == '4')
+			|| (a == '5' && b == 'g') || (a == 'g' && b == '5')
+			|| (a == '5' && b == 'r') || (a == 'r' && b == '5')
+			|| (a == '7' && b == 't') || (a == 't' && b == '7')
+			|| (a == '9' && b == 'p') || (a == 'p' && b == '9')
+			|| (a == '0' && b == 'o') || (a == 'o' && b == '0')
+			|| (a == '$' && b == 's') || (a == 's' && b == '$'))))
 		return true;
 	return false;
 }
@@ -1189,4 +1200,6 @@ SV_InitOperatorCommands (void)
 	cl_warncmd = Cvar_Get ("cl_warncmd", "1", CVAR_NONE, NULL, "Toggles the "
 						   "display of error messages for unknown commands"); 
 	// poor description
+	sv_leetnickmatch = Cvar_Get ("sv_3133735_7h4n_7h0u", "1", CVAR_NONE, NULL,
+								 "Match '1' as 'i' and such in nicks");
 }
