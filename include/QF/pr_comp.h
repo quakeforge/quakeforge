@@ -241,6 +241,7 @@ typedef enum {
 	OP_LEAI,
 
 	OP_LOAD_P,
+	OP_STORE_P,
 } pr_opcode_e;
 
 typedef struct

@@ -132,6 +132,7 @@ opcode_t    pr_opcodes[] = {
 	{"=", "store.fld", OP_STORE_FLD, true, ev_field, ev_field, ev_void, PROG_ID_VERSION},
 	{"=", "store.fnc", OP_STORE_FNC, true, ev_func, ev_func, ev_void, PROG_ID_VERSION},
 	{"=", "store.i",   OP_STORE_I,   true, ev_integer, ev_integer, ev_void, PROG_VERSION},
+	{"=", "store.p",   OP_STORE_P,   true, ev_pointer, ev_pointer, ev_void, PROG_VERSION},
 
 	{"=", "storep.f",   OP_STOREP_F,   true, ev_float, ev_pointer, ev_void, PROG_ID_VERSION},
 	{"=", "storep.v",   OP_STOREP_V,   true, ev_vector, ev_pointer, ev_void, PROG_ID_VERSION},
