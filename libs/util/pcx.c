@@ -56,7 +56,6 @@ LoadPCX (VFile *f, int convert, byte *pal)
 	byte       *palette;
 	byte       *pix;
 	byte       *dataByte;
-	int         x, y;
 	int         runLength = 1;
 	int         count;
 	tex_t      *tex;
@@ -87,8 +86,6 @@ LoadPCX (VFile *f, int convert, byte *pal)
 	dataByte = (byte *) &pcx[1];
 
 	count = (pcx->xmax + 1) * (pcx->ymax + 1);
-	if (convert)
-		count *= 4;
 	tex = Hunk_TempAlloc (field_offset (tex_t, data[count]));
 	tex->width = pcx->xmax + 1;
 	tex->height = pcx->ymax + 1;
@@ -101,42 +98,35 @@ LoadPCX (VFile *f, int convert, byte *pal)
 	}
 	pix = tex->data;
 
-	for (y = 0; y < tex->height; y++) {
-		for (x = 0; x < tex->width;) {
-			runLength = 1;
+	while (count) {
+		if (dataByte >= palette)
+			break;
+
+		if ((*dataByte & 0xC0) == 0xC0) {
+			runLength = *dataByte++ & 0x3F;
 			if (dataByte >= palette)
 				break;
-
-			if ((*dataByte & 0xC0) == 0xC0) {
-				runLength = *dataByte++ & 0x3F;
-				if (dataByte >= palette)
-					break;
-			}
-
-			if (convert) {
-				while (count && runLength > 0) {
-					*pix++ = palette[*dataByte * 3];
-					*pix++ = palette[*dataByte * 3 + 1];
-					*pix++ = palette[*dataByte * 3 + 2];
-					*pix++ = 255;
-					count -= 4;
-					runLength--;
-					x++;
-				}
-			} else {
-				while (count && runLength > 0) {
-					*pix++ = *dataByte;
-					count--;
-					runLength--;
-					x++;
-				}
-			}
-			if (runLength)
-				break;
-			dataByte++;
+		} else {
+			runLength = 1;
 		}
-		if (runLength)
-			break;
+
+		if (runLength > count)
+			runLength = count;
+		count -= runLength;
+
+		if (convert) {
+			while (runLength-- > 0) {
+				*pix++ = palette[*dataByte * 3];
+				*pix++ = palette[*dataByte * 3 + 1];
+				*pix++ = palette[*dataByte * 3 + 2];
+				*pix++ = 255;
+			}
+		} else {
+			while (runLength-- > 0) {
+				*pix++ = *dataByte;
+			}
+		}
+		dataByte++;
 	}
 	Hunk_FreeToLowMark (pcx_mark);
 	if (count || runLength) {
