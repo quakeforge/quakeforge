@@ -22,13 +22,14 @@ void (integer x, integer y, integer size, integer perc_val) draw_perc_bar =
 	} else if(perc_val < 0) {
 		perc_val = 0;
 	}
+
 	perc = itof(perc_val) / (100/itof(size));
-	Draw_String (x, y, "[");
+	Draw_Character (x, y, 128);
 	for (i = 0; i <= size; i++) {
-		Draw_String (x + ((i+1)*8), y, "-");
+		Draw_Character (x + ((i+1)*8), y, 129);
 	}
-	Draw_String (x + ((i+1)*8), y, "]");
-    Draw_Character (x + ((ftoi(perc) + 1) * 8), y, '*');
+	Draw_Character (x + ((i+1)*8), y, 130);
+    Draw_Character (x + ((ftoi(perc) + 1) * 8), y, 131);
 };
 
 void (integer x, integer y, integer spacing, string spacechar, string label, string valstr) draw_item =

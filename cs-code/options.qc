@@ -39,14 +39,20 @@ integer (string text, integer key) video_options_f =
 		case "time":
 			Cbuf_AddText ("toggle show_time\n");
 			break;
+	}
+
+	if(!(key == QFK_RIGHT || key == QFK_LEFT )) {
+		return 0;
+	}
+	switch (text) {
 		case "gamma":
 			val = cvar("vid_gamma");
-			val = min_max_cnt(MIN_GAMMA, MAX_GAMMA, GAMMA_STEP, val, key == QFK_RIGHT);
+			val = min_max_cnt(MIN_GAMMA, MAX_GAMMA, GAMMA_STEP, val, (key == QFK_RIGHT) && (key != QFK_LEFT));
 			cvar_set("vid_gamma", ftos(val));
 			break;
 		case "viewsize":
 			val = cvar("viewsize");
-			val = min_max_cnt(MIN_VIEWSIZE, MAX_VIEWSIZE, VIEWSIZE_STEP, val, key == QFK_RIGHT);
+			val = min_max_cnt(MIN_VIEWSIZE, MAX_VIEWSIZE, VIEWSIZE_STEP, val, (key == QFK_RIGHT) && (key != QFK_LEFT));
 			cvar_set("viewsize", ftos(val));
 			break;
 	}
@@ -179,9 +185,14 @@ integer (string text, integer key) control_options_f =
 		case "freelook":
 			Cbuf_AddText ("toggle freelook\n");
 			break;
+	}
+	if(!(key == QFK_RIGHT || key == QFK_LEFT)) {
+		return 0;
+	}
+	switch (text) {
 		case "mouseamp":
 			val = cvar("in_mouse_amp");
-			val = min_max_cnt(MIN_MOUSE_AMP, MAX_MOUSE_AMP, MOUSE_AMP_STEP, val, key == QFK_RIGHT);
+			val = min_max_cnt(MIN_MOUSE_AMP, MAX_MOUSE_AMP, MOUSE_AMP_STEP, val, (key == QFK_RIGHT) && (key != QFK_LEFT));
 			cvar_set("in_mouse_amp", ftos(val));
 			break;
 	}
@@ -211,7 +222,7 @@ integer () options_controls_draw =
 
 	Draw_String (70, bar_pad + 10, "Mouse amp:");
 	draw_perc_bar  (150,  bar_pad + 10, 12, to_percentage (MIN_MOUSE_AMP, MAX_MOUSE_AMP, cvar("in_mouse_amp")));
-	Draw_String (150 + (15 + 4)*8 , bar_pad + 10, ftos(cvar("in_mouse_amp")));
+	Draw_String (150 + (12 + 4)*8 , bar_pad + 10, ftos(cvar("in_mouse_amp")));
 
 	opt_cursor  (62, (Menu_GetIndex() * 10) + 60 + cursor_pad);
 	return 1;
