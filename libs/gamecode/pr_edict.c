@@ -858,6 +858,7 @@ ED_LoadFromFile (progs_t * pr, char *data)
 	int         inhibit;
 	dfunction_t *func;
 	eval_t     *classname;
+	ddef_t     *def;
 
 	ent = NULL;
 	inhibit = 0;
@@ -888,13 +889,14 @@ ED_LoadFromFile (progs_t * pr, char *data)
 		//
 		// immediately call spawn function
 		//
-		classname = GETEDICTFIELDVALUE (ent, FindFieldOffset (pr, "classname"));
-		if (classname) {
+		def = ED_FindField (pr, "classname");
+		if (!def) {
 			Con_Printf ("No classname for:\n");
 			ED_Print (pr, ent);
 			ED_Free (pr, ent);
 			continue;
 		}
+		classname = (eval_t*)&ent->v[def->ofs];
 		// look for the spawn function
 		func = ED_FindFunction (pr, PR_GetString (pr, classname->string));
 
