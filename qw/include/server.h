@@ -567,6 +567,8 @@ void ClientReliableWrite_Long(client_t *cl, int c);
 void ClientReliableWrite_Short(client_t *cl, int c);
 void ClientReliableWrite_String(client_t *cl, const char *s);
 void ClientReliableWrite_SZ(client_t *cl, void *data, int len);
+void ClientReliableWrite_AngleV(client_t *cl, const vec3_t v);
+void ClientReliableWrite_CoordV(client_t *cl, const vec3_t v);
 
 void Cvar_Info (struct cvar_s *var);
 

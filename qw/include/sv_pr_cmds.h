@@ -92,6 +92,8 @@ void PF_WriteShort (progs_t *pr);
 void PF_WriteLong (progs_t *pr);
 void PF_WriteAngle (progs_t *pr);
 void PF_WriteCoord (progs_t *pr);
+void PF_WriteAngleV (progs_t *pr);
+void PF_WriteCoordV (progs_t *pr);
 void PF_WriteString (progs_t *pr);
 void PF_WriteEntity (progs_t *pr);
 void PF_makestatic (progs_t *pr);

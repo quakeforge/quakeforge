@@ -1166,6 +1166,42 @@ PF_WriteCoord (progs_t *pr)
 }
 
 void
+PF_WriteAngleV (progs_t *pr)
+{
+	float      *ang = P_VECTOR (pr, 1);
+
+	if (P_FLOAT (pr, 0) == MSG_ONE) {
+		client_t   *cl = Write_GetClient (pr);
+
+		ClientReliableCheckBlock (cl, 1);
+		ClientReliableWrite_AngleV (cl, ang);
+		if (sv.demorecording) {
+			DemoWrite_Begin (dem_single, cl - svs.clients, 1);
+			MSG_WriteAngleV (&demo.dbuf->sz, ang);
+		}
+	} else
+		MSG_WriteAngleV (WriteDest (pr), ang);
+}
+
+void
+PF_WriteCoordV (progs_t *pr)
+{
+	float      *coord = P_VECTOR (pr, 1);
+
+	if (P_FLOAT (pr, 0) == MSG_ONE) {
+		client_t   *cl = Write_GetClient (pr);
+
+		ClientReliableCheckBlock (cl, 2);
+		ClientReliableWrite_CoordV (cl, coord);
+		if (sv.demorecording) {
+			DemoWrite_Begin (dem_single, cl - svs.clients, 2);
+			MSG_WriteCoordV (&demo.dbuf->sz, coord);
+		}
+	} else
+		MSG_WriteCoordV (WriteDest (pr), coord);
+}
+
+void
 PF_WriteString (progs_t *pr)
 {
 	if (P_FLOAT (pr, 0) == MSG_ONE) {
@@ -1697,6 +1733,8 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "writelong", PF_WriteLong, 55); // void(float to, float f) WriteLong
 	PR_AddBuiltin (&sv_pr_state, "writecoord", PF_WriteCoord, 56); // void(float to, float f) WriteCoord
 	PR_AddBuiltin (&sv_pr_state, "writeangle", PF_WriteAngle, 57); // void(float to, float f) WriteAngle
+	PR_AddBuiltin (&sv_pr_state, "WriteCoordV", PF_WriteCoordV, -1); // void(float to, vector v) WriteCoordV
+	PR_AddBuiltin (&sv_pr_state, "WriteAngleV", PF_WriteAngleV, -1); // void(float to, vector v) WriteAngleV
 	PR_AddBuiltin (&sv_pr_state, "writestring", PF_WriteString, 58); // void(float to, string s) WriteString
 	PR_AddBuiltin (&sv_pr_state, "writeentity", PF_WriteEntity, 59); // void(float to, entity s) WriteEntity
 	PR_AddBuiltin (&sv_pr_state, "movetogoal", SV_MoveToGoal, 67); // void (float step) movetogoal

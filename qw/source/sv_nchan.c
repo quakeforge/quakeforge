@@ -203,3 +203,23 @@ ClientReliableWrite_SZ (client_t *cl, void *data, int len)
 	} else
 		SZ_Write (&cl->netchan.message, data, len);
 }
+
+void
+ClientReliableWrite_AngleV (client_t *cl, const vec3_t v)
+{
+	if (cl->num_backbuf) {
+		MSG_WriteAngleV (&cl->backbuf, v);
+		ClientReliable_FinishWrite (cl);
+	} else
+		MSG_WriteAngleV (&cl->netchan.message, v);
+}
+
+void
+ClientReliableWrite_CoordV (client_t *cl, const vec3_t v)
+{
+	if (cl->num_backbuf) {
+		MSG_WriteCoordV (&cl->backbuf, v);
+		ClientReliable_FinishWrite (cl);
+	} else
+		MSG_WriteCoordV (&cl->netchan.message, v);
+}
