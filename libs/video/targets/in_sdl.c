@@ -231,19 +231,19 @@ IN_LL_SendKeyEvents (void)
 							sym = SDLK_PERIOD;
 						break;
 					case SDLK_KP_DIVIDE:
-						sym = SDLK_SLASH;
+						sym = KP_DIVIDE;
 						break;
 					case SDLK_KP_MULTIPLY:
-						sym = SDLK_ASTERISK;
+						sym = KP_MULTIPLY;
 						break;
 					case SDLK_KP_MINUS:
-						sym = SDLK_MINUS;
+						sym = KP_MINUS;
 						break;
 					case SDLK_KP_PLUS:
-						sym = SDLK_PLUS;
+						sym = KP_PLUS;
 						break;
 					case SDLK_KP_ENTER:
-						sym = SDLK_RETURN;
+						sym = KP_ENTER;
 						break;
 					case SDLK_KP_EQUALS:
 						sym = SDLK_EQUALS;

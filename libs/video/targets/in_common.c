@@ -57,9 +57,9 @@
 #include "QF/mathlib.h"
 
 cvar_t     *_windowed_mouse;
-cvar_t     *m_filter;
-cvar_t     *in_pre_sensitivity;
-cvar_t     *sensitivity;
+cvar_t     *in_mouse_filter;
+cvar_t     *in_mouse_pre_accel;
+cvar_t     *in_mouse_accel;
 cvar_t     *lookstrafe;
 cvar_t     *in_freelook;
 
@@ -96,18 +96,19 @@ IN_Move (void)
 	if (!in_mouse_avail)
 		return;
 
-	in_mouse_x *= in_pre_sensitivity->value;
-	in_mouse_y *= in_pre_sensitivity->value;
+	in_mouse_x *= in_mouse_pre_accel->value;
+	in_mouse_y *= in_mouse_pre_accel->value;
 
-	if (m_filter->int_val) {
+	if (in_mouse_filter->int_val) {
 		in_mouse_x = (in_mouse_x + in_old_mouse_x) * 0.5;
 		in_mouse_y = (in_mouse_y + in_old_mouse_y) * 0.5;
-	}
-	in_old_mouse_x = in_mouse_x;
-	in_old_mouse_y = in_mouse_y;
 
-	in_mouse_x *= sensitivity->value;
-	in_mouse_y *= sensitivity->value;
+		in_old_mouse_x = in_mouse_x;
+		in_old_mouse_y = in_mouse_y;
+	}
+
+	in_mouse_x *= in_mouse_accel->value;
+	in_mouse_y *= in_mouse_accel->value;
 
 	if ((in_strafe.state & 1) || (lookstrafe->int_val && freelook))
 		viewdelta.position[0] += in_mouse_x;
@@ -154,17 +155,17 @@ IN_Init_Cvars (void)
 	JOY_Init_Cvars ();
 	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, NULL,
 			"With this set to 1, quake will grab the mouse from X");
-	m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, NULL,
-			"Toggle mouse input filtering.");
 	in_freelook = Cvar_Get ("freelook", "0", CVAR_ARCHIVE, NULL,
 			                        "force +mlook");
 	
 	lookstrafe = Cvar_Get ("lookstrafe", "0", CVAR_ARCHIVE, NULL,
 						   "when mlook/klook on player will strafe");
-	in_pre_sensitivity = Cvar_Get ("in_pre_sensitivity", "3", CVAR_ARCHIVE,
-						NULL, "mouse sensitivity multiplier (pre m_filter)");
-	sensitivity = Cvar_Get ("sensitivity", "3", CVAR_ARCHIVE, NULL,
-							"mouse sensitivity multiplier");
+	in_mouse_filter = Cvar_Get ("in_mouse_filter", "0", CVAR_ARCHIVE, NULL,
+			"Toggle mouse input filtering.");
+	in_mouse_pre_accel = Cvar_Get ("in_mouse_pre_accel", "1", CVAR_ARCHIVE,
+						NULL, "mouse in_mouse_pre_accel multiplier");
+	in_mouse_accel = Cvar_Get ("in_mouse_accel", "3", CVAR_ARCHIVE, NULL,
+							"mouse in_mouse_accel multiplier");
 	IN_LL_Init_Cvars ();
 }
 
