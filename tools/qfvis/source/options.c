@@ -50,23 +50,22 @@ static struct option const long_options[] = {
 	{"verbose", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
 	{"version", no_argument, 0, 'V'},
-	{"threads", no_argument, 0, 't'},
+	{"threads", required_argument, 0, 't'},
 	{"minimal", no_argument, 0, 'm'},
-	{"level", no_argument, 0, 'l'},	
+	{"level", required_argument, 0, 'l'},	
 	{"file", required_argument, 0, 'f'},	
 	{NULL, 0, NULL, 0}
 };
 
 static const char *short_options =
-	"-"		// magic option parsing mode doohicky (must come first)
 	"q"		// quiet
 	"v"		// verbose
 	"h"		// help
 	"V"		// version
-	"t"		// threads
+	"t:"	// threads
 	"m"		// minimal vis
-	"l"		// level
-	"f"		// file
+	"l:"	// level
+	"f:"	// file
 	;
 
 void
