@@ -42,6 +42,7 @@ typedef enum {
 	rel_op_c_op,
 	rel_def_op,
 	rel_def_def,
+	rel_def_func,
 } reloc_type;
 
 typedef struct reloc_s {

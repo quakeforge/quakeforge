@@ -53,6 +53,7 @@ static const char rcsid[] =
 #include "def.h"
 #include "immediate.h"
 #include "method.h"
+#include "reloc.h"
 #include "struct.h"
 #include "type.h"
 
@@ -303,6 +304,7 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 	methods->method_next = 0;
 	methods->method_count = count;
 	for (i = 0, method = _methods->head; method; method = method->next) {
+		reloc_t    *ref;
 		if (!method->instance != !instance || !method->def)
 			continue;
 		methods->method_list[i].method_name.sel_id = ReuseString (method->name);
@@ -311,6 +313,12 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 		methods->method_list[i].method_types =
 			methods->method_list[i].method_name.sel_types;
 		methods->method_list[i].method_imp = G_FUNCTION (method->def->ofs);
+		if (method->func) {
+			ref = new_reloc (POINTER_OFS (methods->method_list[i].method_imp),
+							 rel_def_func);
+			ref->next = method->func->refs;
+			method->func->refs = ref;
+		}
 		i++;
 	}
 	return methods_def->ofs;

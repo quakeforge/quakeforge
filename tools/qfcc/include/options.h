@@ -63,6 +63,7 @@ typedef struct {
 	qboolean		save_temps;		// save temporary files
 	qboolean		files_dat;		// generate files.dat
 	qboolean		traditional;	// behave more like qcc
+	qboolean		compile;		// serparate compilation mode
 	int				strip_path;		// number of leading path elements to strip
 									// from source file names
 } options_t;

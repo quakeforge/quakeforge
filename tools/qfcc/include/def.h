@@ -63,6 +63,8 @@ typedef struct def_s {
 	struct defspace_s *space;
 	struct def_s	*parent;		// vector/quaternion member
 
+	int              obj_def;		// index to def in qfo defs
+
 	void			*return_addr;	// who allocated this
 } def_t;
 

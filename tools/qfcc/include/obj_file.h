@@ -33,6 +33,8 @@
 #ifndef __obj_file_h
 #define __obj_file_h
 
+#include "QF/pr_comp.h"
+
 #define QFO			"QFO"
 #define QFO_VERSION 0x00001001		// MMmmmRRR 0.001.001 (hex)
 
@@ -101,6 +103,16 @@ typedef struct qfo_function_s {
 
 	int         num_parms;
 	byte        parm_size[MAX_PARMS];
+
+	int         refs;
+	int         num_refs;
 } qfo_function_t;
+
+typedef struct qfo_ref_s {
+	int         ofs;
+	int         type;
+} qfo_ref_t;
+
+int write_obj_file (const char *filename);
 
 #endif//__obj_file_h

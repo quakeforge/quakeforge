@@ -75,23 +75,24 @@ static struct option const long_options[] = {
 };
 
 static const char *short_options =
-	 "s:"	// source dir
-	 "P:"	// progs.src name
-	 "F"	// generate files.dat
-	 "q"	// quiet
-	 "v"	// verbose
-	 "g"	// debug
-	 "C:"	// code options
-	 "W:"	// warning options
-	 "h"	// help
-	 "V"	// version
-	 "p:"	// strip path
-	 "S"	// save temps
-	 "D:"	// define
-	 "I:"	// set includes
-	 "U:"	// undefine
-	 "N:"	// notice options
-	 ;
+	"c"		// separate compilation
+	"s:"	// source dir
+	"P:"	// progs.src name
+	"F"		// generate files.dat
+	"q"		// quiet
+	"v"		// verbose
+	"g"		// debug
+	"C:"	// code options
+	"W:"	// warning options
+	"h"		// help
+	"V"		// version
+	"p:"	// strip path
+	"S"		// save temps
+	"D:"	// define
+	"I:"	// set includes
+	"U:"	// undefine
+	"N:"	// notice options
+	;
 
 static void
 usage (int status)
@@ -173,6 +174,9 @@ DecodeArgs (int argc, char **argv)
 			case 't':					// traditional
 				options.traditional = true;
 				options.code.progsversion = PROG_ID_VERSION;
+				break;
+			case 'c':					// traditional
+				options.compile = true;
 				break;
 			case 'C':{					// code options
 					char       *opts = strdup (optarg);

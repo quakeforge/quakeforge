@@ -86,6 +86,8 @@ extern	int		pr_error_count;
 #define G_POINTER(t,o)	((t *)(pr.near_data->data + o))
 #define G_STRUCT(t,o)	(*G_POINTER (t, o))
 
+#define POINTER_OFS(p)	((pr_type_t *) (p) - pr.near_data->data)
+
 extern	string_t	s_file;			// filename for function definition
 
 const char *strip_path (const char *filename);

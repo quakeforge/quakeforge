@@ -41,6 +41,7 @@ typedef struct method_s {
 	param_t    *params;
 	struct type_s *type;
 	struct def_s *def;
+	struct function_s *func;
 	char       *name;
 	char       *types;
 } method_t;

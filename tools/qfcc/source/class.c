@@ -53,6 +53,7 @@ static const char rcsid[] =
 #include "expr.h"
 #include "immediate.h"
 #include "method.h"
+#include "reloc.h"
 #include "struct.h"
 #include "type.h"
 
@@ -476,12 +477,14 @@ class_finish_module (void)
 	exec_class_func = new_function ();
 	exec_class_func->builtin = 0;
 	exec_class_func->def = exec_class_def;
+	exec_class_func->refs = new_reloc (exec_class_def->ofs, rel_def_func);
 	build_function (exec_class_func);
 	finish_function (exec_class_func);
 
 	init_def = get_def (&type_function, ".ctor", pr.scope, 1);
 	init_func = new_function ();
 	init_func->def = init_def;
+	init_func->refs = new_reloc (init_def->ofs, rel_def_func);
 	init_func->code = pr.num_statements;
 	build_scope (init_func, init_def, 0);
 	build_function (init_func);

@@ -134,7 +134,7 @@ ReuseString (const char *str)
 {
 	int         s;
 
-	if (!*str)
+	if (!str || !*str)
 		return 0;
 	if (!strings_tab)
 		return CopyString (str);

@@ -45,7 +45,7 @@ static const char rcsid[] =
 #include <QF/hash.h>
 #include <QF/sys.h>
 
-#include "qfcc.h"
+#include "class.h"
 #include "debug.h"
 #include "def.h"
 #include "expr.h"
@@ -53,7 +53,8 @@ static const char rcsid[] =
 #include "immediate.h"
 #include "method.h"
 #include "options.h"
-#include "class.h"
+#include "qfcc.h"
+#include "reloc.h"
 #include "struct.h"
 #include "switch.h"
 #include "type.h"
@@ -480,6 +481,7 @@ begin_function
 		{
 			$$ = current_func = new_function ();
 			$$->def = current_def;
+			$$->refs = new_reloc ($$->def->ofs, rel_def_func);
 			$$->code = pr.num_statements;
 			if (options.code.debug) {
 				pr_lineno_t *lineno = new_lineno ();
@@ -512,14 +514,15 @@ statement_block
 	  statements '}'
 		{
 			def_t      *defs = current_scope->head;
+			int         num_defs = current_scope->num_defs;
 
 			flush_scope (current_scope, 1);
 
 			current_scope = current_scope->parent;
+			current_scope->num_defs += num_defs;
 			*current_scope->tail = defs;
 			while (*current_scope->tail) {
 				current_scope->tail = &(*current_scope->tail)->def_next;
-				current_scope->num_defs++;
 			}
 			$$ = $3;
 		}
@@ -1085,6 +1088,7 @@ methoddef
 		}
 	  begin_function statement_block end_function
 		{
+			$2->func = $6;
 			build_function ($6);
 			if ($4) {
 				$4->next = $7;
@@ -1100,7 +1104,7 @@ methoddef
 			$2 = class_find_method (current_class, $2);
 			$2->def = method_def (current_class, $2);
 
-			build_builtin_function ($2->def, $5);
+			$2->func = build_builtin_function ($2->def, $5);
 		}
 	| '-' methoddecl
 		{
@@ -1114,6 +1118,7 @@ methoddef
 		}
 	  begin_function statement_block end_function
 		{
+			$2->func = $6;
 			build_function ($6);
 			if ($4) {
 				$4->next = $7;
@@ -1129,7 +1134,7 @@ methoddef
 			$2 = class_find_method (current_class, $2);
 			$2->def = method_def (current_class, $2);
 
-			build_builtin_function ($2->def, $5);
+			$2->func = build_builtin_function ($2->def, $5);
 		}
 	;
 

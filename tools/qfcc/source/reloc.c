@@ -95,6 +95,7 @@ relocate_refs (reloc_t *refs, int ofs)
 					G_INT (refs->ofs) = ofs;
 				break;
 			case rel_def_def:
+			case rel_def_func:
 				G_INT (refs->ofs) = ofs;
 				break;
 		}

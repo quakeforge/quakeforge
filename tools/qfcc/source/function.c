@@ -51,6 +51,7 @@ static const char rcsid[] =
 #include "function.h"
 #include "immediate.h"
 #include "opcodes.h"
+#include "reloc.h"
 #include "type.h"
 
 param_t *
@@ -175,19 +176,19 @@ new_function (void)
 	return f;
 }
 
-void
+function_t *
 build_builtin_function (def_t *def, expr_t *bi_val)
 {
 	function_t *f;
 
 	if (def->type->type != ev_func) {
 		error (bi_val, "%s is not a function", def->name);
-		return;
+		return 0;
 	}
 	
 	if (bi_val->type != ex_integer && bi_val->type != ex_float) {
 		error (bi_val, "invalid constant for = #");
-		return;
+		return 0;
 	}
 
 	f = new_function ();
@@ -195,8 +196,10 @@ build_builtin_function (def_t *def, expr_t *bi_val)
 	f->builtin = bi_val->type == ex_integer ? bi_val->e.integer_val
 											: (int)bi_val->e.float_val;
 	f->def = def;
+	f->refs = new_reloc (def->ofs, rel_def_func);
 	build_function (f);
 	finish_function (f);
+	return f;
 }
 
 void

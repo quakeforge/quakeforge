@@ -71,6 +71,7 @@ static const char rcsid[] =
 #include "function.h"
 #include "idstuff.h"
 #include "immediate.h"
+#include "obj_file.h"
 #include "opcodes.h"
 #include "options.h"
 #include "reloc.h"
@@ -494,19 +495,23 @@ main (int argc, char **argv)
 			return 1;
 	}
 
-	if (!finish_compilation ())
-		Error ("compilation errors");
+	if (options.compile) {
+		write_obj_file ("test.qfo");
+	} else {
+		if (!finish_compilation ())
+			Error ("compilation errors");
 
-	// write progdefs.h
-	if (options.code.progsversion == PROG_ID_VERSION)
-		crc = WriteProgdefs ("progdefs.h");
+		// write progdefs.h
+		if (options.code.progsversion == PROG_ID_VERSION)
+			crc = WriteProgdefs ("progdefs.h");
 
-	// write data file
-	WriteData (crc);
+		// write data file
+		WriteData (crc);
 
-	// write files.dat
-	if (options.files_dat)
-		WriteFiles (sourcedir);
+		// write files.dat
+		if (options.files_dat)
+			WriteFiles (sourcedir);
+	}
 
 	stop = Sys_DoubleTime ();
 	if (options.verbosity >= 0)
