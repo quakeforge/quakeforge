@@ -58,11 +58,11 @@
 /* These may be underscored... */
 #if defined(HAVE__SNPRINTF)
 # undef snprintf
-# define snprintf _snprintf
+# define snprintf Q_snprintfz
 #endif
 #if defined(HAVE__VSNPRINTF)
 # undef vsnprintf
-# define vsnprintf _vsnprintf
+# define vsnprintf Q_vsnprintfz
 #endif
 #if defined(_WIN32) && !defined(__BORLANDC__)
 # define kbhit _kbhit

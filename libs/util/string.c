@@ -65,3 +65,29 @@ Q_strnlen (const char *s, size_t maxlen)
 	for (i = 0; i < maxlen && s[i]; i++);
 	return i;
 }
+
+#ifdef HAVE__VSNPRINTF
+void
+Q_snprintfz (char *dest, size_t size, char *fmt, ...)
+{
+	int   len;
+	va_list  argptr;
+
+	va_start (argptr, fmt);
+	len = _vsnprintf (dest, size - 1, fmt, argptr);
+	va_end (argptr);
+	if (len < 0) // the string didn't fit into the buffer
+		dest[size - 1] = 0;
+}
+
+void
+Q_vsnprintfz (char *dest, size_t size, va_list argptr)
+{
+	int   len;
+
+	len = _vsnprintf (dest, size - 1, fmt, argptr);
+
+	if (len < 0) // the string didn't fit into the buffer
+		dest[size - 1] = 0;
+}
+#endif
