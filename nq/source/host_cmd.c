@@ -116,7 +116,7 @@ Host_Status_f (void)
 		} else
 			hours = 0;
 		print ("#%-2u %-16.16s  %3i  %2i:%02i:%02i\n", j + 1, client->name,
-			   (int) client->edict->v.frags, hours, minutes, seconds);
+			   (int) client->edict->v.v.frags, hours, minutes, seconds);
 		print ("   %s\n", client->netconnection->address);
 	}
 }
@@ -137,11 +137,11 @@ Host_God_f (void)
 		return;
 	}
 
-	if (pr_global_struct->deathmatch && !host_client->privileged)
+	if (sv_pr_state.pr_global_struct->deathmatch && !host_client->privileged)
 		return;
 
-	sv_player->v.flags = (int) sv_player->v.flags ^ FL_GODMODE;
-	if (!((int) sv_player->v.flags & FL_GODMODE))
+	sv_player->v.v.flags = (int) sv_player->v.v.flags ^ FL_GODMODE;
+	if (!((int) sv_player->v.v.flags & FL_GODMODE))
 		SV_ClientPrintf ("godmode OFF\n");
 	else
 		SV_ClientPrintf ("godmode ON\n");
@@ -155,11 +155,11 @@ Host_Notarget_f (void)
 		return;
 	}
 
-	if (pr_global_struct->deathmatch && !host_client->privileged)
+	if (sv_pr_state.pr_global_struct->deathmatch && !host_client->privileged)
 		return;
 
-	sv_player->v.flags = (int) sv_player->v.flags ^ FL_NOTARGET;
-	if (!((int) sv_player->v.flags & FL_NOTARGET))
+	sv_player->v.v.flags = (int) sv_player->v.v.flags ^ FL_NOTARGET;
+	if (!((int) sv_player->v.v.flags & FL_NOTARGET))
 		SV_ClientPrintf ("notarget OFF\n");
 	else
 		SV_ClientPrintf ("notarget ON\n");
@@ -175,16 +175,16 @@ Host_Noclip_f (void)
 		return;
 	}
 
-	if (pr_global_struct->deathmatch && !host_client->privileged)
+	if (sv_pr_state.pr_global_struct->deathmatch && !host_client->privileged)
 		return;
 
-	if (sv_player->v.movetype != MOVETYPE_NOCLIP) {
+	if (sv_player->v.v.movetype != MOVETYPE_NOCLIP) {
 		noclip_anglehack = true;
-		sv_player->v.movetype = MOVETYPE_NOCLIP;
+		sv_player->v.v.movetype = MOVETYPE_NOCLIP;
 		SV_ClientPrintf ("noclip ON\n");
 	} else {
 		noclip_anglehack = false;
-		sv_player->v.movetype = MOVETYPE_WALK;
+		sv_player->v.v.movetype = MOVETYPE_WALK;
 		SV_ClientPrintf ("noclip OFF\n");
 	}
 }
@@ -204,14 +204,14 @@ Host_Fly_f (void)
 		return;
 	}
 
-	if (pr_global_struct->deathmatch && !host_client->privileged)
+	if (sv_pr_state.pr_global_struct->deathmatch && !host_client->privileged)
 		return;
 
-	if (sv_player->v.movetype != MOVETYPE_FLY) {
-		sv_player->v.movetype = MOVETYPE_FLY;
+	if (sv_player->v.v.movetype != MOVETYPE_FLY) {
+		sv_player->v.v.movetype = MOVETYPE_FLY;
 		SV_ClientPrintf ("flymode ON\n");
 	} else {
-		sv_player->v.movetype = MOVETYPE_WALK;
+		sv_player->v.v.movetype = MOVETYPE_WALK;
 		SV_ClientPrintf ("flymode OFF\n");
 	}
 }
@@ -511,7 +511,7 @@ Host_Savegame_f (void)
 	}
 
 	for (i = 0; i < svs.maxclients; i++) {
-		if (svs.clients[i].active && (svs.clients[i].edict->v.health <= 0)) {
+		if (svs.clients[i].active && (svs.clients[i].edict->v.v.health <= 0)) {
 			Con_Printf ("Can't savegame with a dead player\n");
 			return;
 		}
@@ -546,9 +546,9 @@ Host_Savegame_f (void)
 	}
 
 
-	ED_WriteGlobals (f);
+	ED_WriteGlobals (&sv_pr_state, f);
 	for (i = 0; i < sv.num_edicts; i++) {
-		ED_Write (f, EDICT_NUM (i));
+		ED_Write (&sv_pr_state, f, EDICT_NUM (&sv_pr_state, i));
 		Qflush (f);
 	}
 	Qclose (f);
@@ -678,13 +678,13 @@ Host_Loadgame_f (void)
 			Sys_Error ("First token isn't a brace");
 
 		if (entnum == -1) {				// parse the global vars
-			ED_ParseGlobals (start);
+			ED_ParseGlobals (&sv_pr_state, start);
 		} else {						// parse an edict
 
-			ent = EDICT_NUM (entnum);
-			memset (&ent->v, 0, progs->entityfields * 4);
+			ent = EDICT_NUM (&sv_pr_state, entnum);
+			memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
 			ent->free = false;
-			ED_ParseEdict (start, ent);
+			ED_ParseEdict (&sv_pr_state, start, ent);
 
 			// link it into the bsp tree
 			if (!ent->free)
@@ -748,7 +748,7 @@ SaveGamestate ()
 
 	for (i = svs.maxclients + 1; i < sv.num_edicts; i++) {
 		ent = EDICT_NUM (i);
-		if ((int) ent->v.flags & FL_ARCHIVE_OVERRIDE)
+		if ((int) ent->v.v.flags & FL_ARCHIVE_OVERRIDE)
 			continue;
 		Qprintf (f, "%i\n", i);
 		ED_Write (f, ent);
@@ -936,7 +936,8 @@ Host_Name_f (void)
 		if (strcmp (host_client->name, newName) != 0)
 			Con_Printf ("%s renamed to %s\n", host_client->name, newName);
 	strcpy (host_client->name, newName);
-	host_client->edict->v.netname = host_client->name - pr_strings;
+	host_client->edict->v.v.netname =
+		host_client->name - sv_pr_state.pr_strings;
 
 // send notification to all clients
 
@@ -1001,7 +1002,7 @@ Host_Say (qboolean teamonly)
 		if (!client || !client->active || !client->spawned)
 			continue;
 		if (teamplay->int_val && teamonly
-			&& client->edict->v.team != save->edict->v.team) continue;
+			&& client->edict->v.v.team != save->edict->v.v.team) continue;
 		host_client = client;
 		SV_ClientPrintf ("%s", text);
 	}
@@ -1116,7 +1117,7 @@ Host_Color_f (void)
 	}
 
 	host_client->colors = playercolor;
-	host_client->edict->v.team = bottom + 1;
+	host_client->edict->v.v.team = bottom + 1;
 
 // send notification to all clients
 	MSG_WriteByte (&sv.reliable_datagram, svc_updatecolors);
@@ -1137,14 +1138,15 @@ Host_Kill_f (void)
 		return;
 	}
 
-	if (sv_player->v.health <= 0) {
+	if (sv_player->v.v.health <= 0) {
 		SV_ClientPrintf ("Can't suicide -- already dead!\n");
 		return;
 	}
 
-	pr_global_struct->time = sv.time;
-	pr_global_struct->self = EDICT_TO_PROG (sv_player);
-	PR_ExecuteProgram (pr_global_struct->ClientKill);
+	sv_pr_state.pr_global_struct->time = sv.time;
+	sv_pr_state.pr_global_struct->self =
+		EDICT_TO_PROG (&sv_pr_state, sv_player);
+	PR_ExecuteProgram (&sv_pr_state, sv_pr_state.pr_global_struct->ClientKill);
 }
 
 
@@ -1168,10 +1170,12 @@ Host_Pause_f (void)
 
 		if (sv.paused) {
 			SV_BroadcastPrintf ("%s paused the game\n",
-								pr_strings + sv_player->v.netname);
+								sv_pr_state.pr_strings +
+								sv_player->v.v.netname);
 		} else {
 			SV_BroadcastPrintf ("%s unpaused the game\n",
-								pr_strings + sv_player->v.netname);
+								sv_pr_state.pr_strings +
+								sv_player->v.v.netname);
 		}
 
 		// send notification to all clients
@@ -1237,26 +1241,29 @@ Host_Spawn_f (void)
 		// set up the edict
 		ent = host_client->edict;
 
-		memset (&ent->v, 0, progs->entityfields * 4);
-		ent->v.colormap = NUM_FOR_EDICT (ent);
-		ent->v.team = (host_client->colors & 15) + 1;
-		ent->v.netname = host_client->name - pr_strings;
+		memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
+		ent->v.v.colormap = NUM_FOR_EDICT (&sv_pr_state, ent);
+		ent->v.v.team = (host_client->colors & 15) + 1;
+		ent->v.v.netname = host_client->name - sv_pr_state.pr_strings;
 
 		// copy spawn parms out of the client_t
 
 		for (i = 0; i < NUM_SPAWN_PARMS; i++)
-			(&pr_global_struct->parm1)[i] = host_client->spawn_parms[i];
+			(&sv_pr_state.pr_global_struct->parm1)[i] = host_client->spawn_parms[i];
 
 		// call the spawn function
 
-		pr_global_struct->time = sv.time;
-		pr_global_struct->self = EDICT_TO_PROG (sv_player);
-		PR_ExecuteProgram (pr_global_struct->ClientConnect);
+		sv_pr_state.pr_global_struct->time = sv.time;
+		sv_pr_state.pr_global_struct->self =
+			EDICT_TO_PROG (&sv_pr_state, sv_player);
+		PR_ExecuteProgram (&sv_pr_state,
+						   sv_pr_state.pr_global_struct->ClientConnect);
 
 		if ((Sys_DoubleTime () - host_client->netconnection->connecttime) <=
 			sv.time) Sys_Printf ("%s entered the game\n", host_client->name);
 
-		PR_ExecuteProgram (pr_global_struct->PutClientInServer);
+		PR_ExecuteProgram (&sv_pr_state,
+						   sv_pr_state.pr_global_struct->PutClientInServer);
 	}
 
 
@@ -1291,19 +1298,23 @@ Host_Spawn_f (void)
 //
 	MSG_WriteByte (&host_client->message, svc_updatestat);
 	MSG_WriteByte (&host_client->message, STAT_TOTALSECRETS);
-	MSG_WriteLong (&host_client->message, pr_global_struct->total_secrets);
+	MSG_WriteLong (&host_client->message,
+				   sv_pr_state.pr_global_struct->total_secrets);
 
 	MSG_WriteByte (&host_client->message, svc_updatestat);
 	MSG_WriteByte (&host_client->message, STAT_TOTALMONSTERS);
-	MSG_WriteLong (&host_client->message, pr_global_struct->total_monsters);
+	MSG_WriteLong (&host_client->message,
+				   sv_pr_state.pr_global_struct->total_monsters);
 
 	MSG_WriteByte (&host_client->message, svc_updatestat);
 	MSG_WriteByte (&host_client->message, STAT_SECRETS);
-	MSG_WriteLong (&host_client->message, pr_global_struct->found_secrets);
+	MSG_WriteLong (&host_client->message,
+				   sv_pr_state.pr_global_struct->found_secrets);
 
 	MSG_WriteByte (&host_client->message, svc_updatestat);
 	MSG_WriteByte (&host_client->message, STAT_MONSTERS);
-	MSG_WriteLong (&host_client->message, pr_global_struct->killed_monsters);
+	MSG_WriteLong (&host_client->message,
+				   sv_pr_state.pr_global_struct->killed_monsters);
 
 
 //
@@ -1312,10 +1323,10 @@ Host_Spawn_f (void)
 // in a state where it is expecting the client to correct the angle
 // and it won't happen if the game was just loaded, so you wind up
 // with a permanent head tilt
-	ent = EDICT_NUM (1 + (host_client - svs.clients));
+	ent = EDICT_NUM (&sv_pr_state, 1 + (host_client - svs.clients));
 	MSG_WriteByte (&host_client->message, svc_setangle);
 	for (i = 0; i < 2; i++)
-		MSG_WriteAngle (&host_client->message, ent->v.angles[i]);
+		MSG_WriteAngle (&host_client->message, ent->v.v.angles[i]);
 	MSG_WriteAngle (&host_client->message, 0);
 
 	SV_WriteClientdataToMessage (sv_player, &host_client->message);
@@ -1365,8 +1376,9 @@ Host_Kick_f (void)
 			Cmd_ForwardToServer ();
 			return;
 		}
-	} else if (pr_global_struct->deathmatch && !host_client->privileged)
-		return;
+	}
+		else if (sv_pr_state.pr_global_struct->deathmatch
+				 && !host_client->privileged) return;
 
 	save = host_client;
 
@@ -1447,7 +1459,7 @@ Host_Give_f (void)
 		return;
 	}
 
-	if (pr_global_struct->deathmatch && !host_client->privileged)
+	if (sv_pr_state.pr_global_struct->deathmatch && !host_client->privileged)
 		return;
 
 	t = Cmd_Argv (1);
@@ -1468,101 +1480,104 @@ Host_Give_f (void)
 		if (hipnotic) {
 			if (t[0] == '6') {
 				if (t[1] == 'a')
-					sv_player->v.items =
-						(int) sv_player->v.items | HIT_PROXIMITY_GUN;
+					sv_player->v.v.items =
+						(int) sv_player->v.v.items | HIT_PROXIMITY_GUN;
 				else
-					sv_player->v.items =
-						(int) sv_player->v.items | IT_GRENADE_LAUNCHER;
+					sv_player->v.v.items =
+						(int) sv_player->v.v.items | IT_GRENADE_LAUNCHER;
 			} else if (t[0] == '9')
-				sv_player->v.items =
-					(int) sv_player->v.items | HIT_LASER_CANNON;
+				sv_player->v.v.items =
+					(int) sv_player->v.v.items | HIT_LASER_CANNON;
 			else if (t[0] == '0')
-				sv_player->v.items = (int) sv_player->v.items | HIT_MJOLNIR;
+				sv_player->v.v.items = (int) sv_player->v.v.items | HIT_MJOLNIR;
 			else if (t[0] >= '2')
-				sv_player->v.items =
-					(int) sv_player->v.items | (IT_SHOTGUN << (t[0] - '2'));
+				sv_player->v.v.items =
+					(int) sv_player->v.v.items | (IT_SHOTGUN << (t[0] - '2'));
 		} else {
 			if (t[0] >= '2')
-				sv_player->v.items =
-					(int) sv_player->v.items | (IT_SHOTGUN << (t[0] - '2'));
+				sv_player->v.v.items =
+					(int) sv_player->v.v.items | (IT_SHOTGUN << (t[0] - '2'));
 		}
 		break;
 
 		case 's':
 		if (rogue) {
-			val = GetEdictFieldValue (sv_player, "ammo_shells1");
+			val = GetEdictFieldValue (&sv_pr_state, sv_player, "ammo_shells1");
 			if (val)
 				val->_float = v;
 		}
 
-		sv_player->v.ammo_shells = v;
+		sv_player->v.v.ammo_shells = v;
 		break;
 		case 'n':
 		if (rogue) {
-			val = GetEdictFieldValue (sv_player, "ammo_nails1");
+			val = GetEdictFieldValue (&sv_pr_state, sv_player, "ammo_nails1");
 			if (val) {
 				val->_float = v;
-				if (sv_player->v.weapon <= IT_LIGHTNING)
-					sv_player->v.ammo_nails = v;
+				if (sv_player->v.v.weapon <= IT_LIGHTNING)
+					sv_player->v.v.ammo_nails = v;
 			}
 		} else {
-			sv_player->v.ammo_nails = v;
+			sv_player->v.v.ammo_nails = v;
 		}
 		break;
 		case 'l':
 		if (rogue) {
-			val = GetEdictFieldValue (sv_player, "ammo_lava_nails");
+			val =
+				GetEdictFieldValue (&sv_pr_state, sv_player, "ammo_lava_nails");
 			if (val) {
 				val->_float = v;
-				if (sv_player->v.weapon > IT_LIGHTNING)
-					sv_player->v.ammo_nails = v;
+				if (sv_player->v.v.weapon > IT_LIGHTNING)
+					sv_player->v.v.ammo_nails = v;
 			}
 		}
 		break;
 		case 'r':
 		if (rogue) {
-			val = GetEdictFieldValue (sv_player, "ammo_rockets1");
+			val = GetEdictFieldValue (&sv_pr_state, sv_player, "ammo_rockets1");
 			if (val) {
 				val->_float = v;
-				if (sv_player->v.weapon <= IT_LIGHTNING)
-					sv_player->v.ammo_rockets = v;
+				if (sv_player->v.v.weapon <= IT_LIGHTNING)
+					sv_player->v.v.ammo_rockets = v;
 			}
 		} else {
-			sv_player->v.ammo_rockets = v;
+			sv_player->v.v.ammo_rockets = v;
 		}
 		break;
 		case 'm':
 		if (rogue) {
-			val = GetEdictFieldValue (sv_player, "ammo_multi_rockets");
+			val =
+				GetEdictFieldValue (&sv_pr_state, sv_player,
+									"ammo_multi_rockets");
 			if (val) {
 				val->_float = v;
-				if (sv_player->v.weapon > IT_LIGHTNING)
-					sv_player->v.ammo_rockets = v;
+				if (sv_player->v.v.weapon > IT_LIGHTNING)
+					sv_player->v.v.ammo_rockets = v;
 			}
 		}
 		break;
 		case 'h':
-		sv_player->v.health = v;
+		sv_player->v.v.health = v;
 		break;
 		case 'c':
 		if (rogue) {
-			val = GetEdictFieldValue (sv_player, "ammo_cells1");
+			val = GetEdictFieldValue (&sv_pr_state, sv_player, "ammo_cells1");
 			if (val) {
 				val->_float = v;
-				if (sv_player->v.weapon <= IT_LIGHTNING)
-					sv_player->v.ammo_cells = v;
+				if (sv_player->v.v.weapon <= IT_LIGHTNING)
+					sv_player->v.v.ammo_cells = v;
 			}
 		} else {
-			sv_player->v.ammo_cells = v;
+			sv_player->v.v.ammo_cells = v;
 		}
 		break;
 		case 'p':
 		if (rogue) {
-			val = GetEdictFieldValue (sv_player, "ammo_plasma");
+			val = GetEdictFieldValue (&sv_pr_state, sv_player, "ammo_plasma");
 			if (val) {
 				val->_float = v;
-				if (sv_player->v.weapon > IT_LIGHTNING)
-					sv_player->v.ammo_cells = v;
+				if (sv_player->v.v.weapon > IT_LIGHTNING)
+					sv_player->v.v.ammo_cells = v;
 			}
 		}
 		break;
@@ -1576,8 +1591,8 @@ FindViewthing (void)
 	edict_t    *e;
 
 	for (i = 0; i < sv.num_edicts; i++) {
-		e = EDICT_NUM (i);
-		if (!strcmp (pr_strings + e->v.classname, "viewthing"))
+		e = EDICT_NUM (&sv_pr_state, i);
+		if (!strcmp (sv_pr_state.pr_strings + e->v.v.classname, "viewthing"))
 			return e;
 	}
 	Con_Printf ("No viewthing on map\n");
@@ -1605,8 +1620,8 @@ Host_Viewmodel_f (void)
 		return;
 	}
 
-	e->v.frame = 0;
-	cl.model_precache[(int) e->v.modelindex] = m;
+	e->v.v.frame = 0;
+	cl.model_precache[(int) e->v.v.modelindex] = m;
 }
 
 /*
@@ -1624,13 +1639,13 @@ Host_Viewframe_f (void)
 	e = FindViewthing ();
 	if (!e)
 		return;
-	m = cl.model_precache[(int) e->v.modelindex];
+	m = cl.model_precache[(int) e->v.v.modelindex];
 
 	f = atoi (Cmd_Argv (1));
 	if (f >= m->numframes)
 		f = m->numframes - 1;
 
-	e->v.frame = f;
+	e->v.v.frame = f;
 }
 
 
@@ -1662,13 +1677,13 @@ Host_Viewnext_f (void)
 	e = FindViewthing ();
 	if (!e)
 		return;
-	m = cl.model_precache[(int) e->v.modelindex];
+	m = cl.model_precache[(int) e->v.v.modelindex];
 
-	e->v.frame = e->v.frame + 1;
-	if (e->v.frame >= m->numframes)
-		e->v.frame = m->numframes - 1;
+	e->v.v.frame = e->v.v.frame + 1;
+	if (e->v.v.frame >= m->numframes)
+		e->v.v.frame = m->numframes - 1;
 
-	PrintFrameName (m, e->v.frame);
+	PrintFrameName (m, e->v.v.frame);
 }
 
 /*
@@ -1686,13 +1701,13 @@ Host_Viewprev_f (void)
 	if (!e)
 		return;
 
-	m = cl.model_precache[(int) e->v.modelindex];
+	m = cl.model_precache[(int) e->v.v.modelindex];
 
-	e->v.frame = e->v.frame - 1;
-	if (e->v.frame < 0)
-		e->v.frame = 0;
+	e->v.v.frame = e->v.v.frame - 1;
+	if (e->v.v.frame < 0)
+		e->v.v.frame = 0;
 
-	PrintFrameName (m, e->v.frame);
+	PrintFrameName (m, e->v.v.frame);
 }
 
 /*

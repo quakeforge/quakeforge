@@ -145,8 +145,8 @@ NET_Ban_f (void)
 		}
 		print = Con_Printf;
 	} else {
-		if (pr_global_struct->deathmatch && !host_client->privileged)
-			return;
+		if (sv_pr_state.pr_global_struct->deathmatch
+			&& !host_client->privileged) return;
 		print = SV_ClientPrintf;
 	}
 
@@ -945,7 +945,7 @@ _Datagram_CheckNewConnections (void)
 		MSG_WriteByte (net_message->message, playerNumber);
 		MSG_WriteString (net_message->message, client->name);
 		MSG_WriteLong (net_message->message, client->colors);
-		MSG_WriteLong (net_message->message, (int) client->edict->v.frags);
+		MSG_WriteLong (net_message->message, (int) client->edict->v.v.frags);
 		MSG_WriteLong (net_message->message,
 					   (int) (net_time - client->netconnection->connecttime));
 		MSG_WriteString (net_message->message, client->netconnection->address);

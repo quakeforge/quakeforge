@@ -137,8 +137,8 @@ client_SOURCES= cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
 		gib_interpret.c gib_modules.c gib_parse.c gib_stack.c vid.c
 
 server_SOURCES= host.c host_cmd.c \
-		pr_cmds.c pr_edict.c pr_exec.c \
-		sv_cvar.c sv_main.c sv_move.c sv_phys.c sv_user.c
+		pr_cmds.c pr_edict.c pr_exec.c pr_offs.c \
+		sv_cvar.c sv_main.c sv_move.c sv_phys.c sv_progs.c sv_user.c
 
 combined_SOURCES= $(common_SOURCES) $(client_SOURCES) $(server_SOURCES)
 
