@@ -47,23 +47,20 @@
 @interface Preferences: NSObject
 {
 	// UI targets
-	id		projectPathField;		// path to the project to load on startup
-	id		bspSoundPathField;		// location of BSP sounds
-	id		startWadField;			// which wadfile to load on startup
-	id		xLightField;			// Lighting for X side
-	id		yLightField;			// Lighting for Y side
-	id		zLightField;			// Lighting for Z side
-	id		showBSPOutputButton; 	// "Show BSP Output" checkbox
-	id		offsetBrushCopyButton;	// "Brush offset" checkbox
-
-	NSDictionary		*currentValues;
-	NSMutableDictionary *displayedValues;
+	NSString	*projectPath;		// path to the project to load on startup
+	NSString	*bspSoundPath;		// location of BSP sounds
+	NSString	*startWad;			// which wadfile to load on startup
+	float		xLight;				// Lighting for X side
+	float		yLight;				// Lighting for Y side
+	float		zLight;				// Lighting for Z side
+	BOOL		showBSPOutput;		// "Show BSP Output" checkbox
+	BOOL		offsetBrushCopy;	// "Brush offset" checkbox
 }
 
-+ (void) saveDefaults;
-- (void) loadDefaults;
-
 + (Preferences *) sharedInstance;	// Return the shared instance
+
+- (void) saveDefaults;
+- (void) loadDefaults;
 
 - (NSDictionary *) preferences; 	// current prefs
 
@@ -81,12 +78,9 @@
 
 
 - (id) objectForKey: (id) key;
-//+ (void) setObject: (id) obj forKey: (id) key;
+- (void) setObject: (id) obj forKey: (id) key;
 
-
-+ (NSDictionary *) preferencesFromDefaults;
-+ (void) savePreferencesToDefaults: (NSDictionary *) dict;
+- (NSDictionary *) preferencesFromDefaults;
+- (void) savePreferencesToDefaults: (NSDictionary *) dict;
 
 @end
-
-extern Preferences	*prefs;

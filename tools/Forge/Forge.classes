@@ -11,6 +11,17 @@
 	);
 	Super = NSObject;
     };
+    IBInspector = {
+	Actions = (
+	    ok:,
+	    revert:,
+	    touch:
+	);
+	Outlets = (
+	    window
+	);
+	Super = NSObject;
+    };
     NSApplication = {
 	Outlets = (
 	    delegate
@@ -73,14 +84,14 @@
 	    revert:
 	);
 	Outlets = (
-	    bspSoundPathField,
-	    offsetBrushCopyButton,
-	    projectPathField,
-	    showBSPOutputButton,
-	    startWadField,
-	    xLightField,
-	    yLightField,
-	    zLightField
+	    bspSoundPath,
+	    offsetBrushCopy,
+	    projectPath,
+	    showBSPOutput,
+	    startWad,
+	    xLight,
+	    yLight,
+	    zLight
 	);
 	Super = NSObject;
     };

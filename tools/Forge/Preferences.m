@@ -36,15 +36,15 @@
 
 #import "Preferences.h"
 
-id	prefs;
+NSMutableDictionary *
+defaultValues (void) {
+    static NSMutableDictionary *dict = nil;
 
-static NSDictionary *defaultValues (void) {
-    static NSDictionary *dict = nil;
     if (!dict) {
-        dict = [[NSDictionary alloc] initWithObjectsAndKeys:
+        dict = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
 				@"/Local/Forge/Projects", ProjectPath,
-				@"/Local/Forge/Sounds", BspSoundPath,
-				[NSNumber numberWithInt: 0], StartWad,
+				@"/Local/Library/Sounds", BspSoundPath,
+				@"none", StartWad,
 				[NSNumber numberWithFloat: 1.0], XLight,
 				[NSNumber numberWithFloat: 0.6], YLight,
 				[NSNumber numberWithFloat: 0.75], ZLight,
@@ -55,25 +55,95 @@ static NSDictionary *defaultValues (void) {
     return dict;
 }
 
+/***
+	Code to deal with defaults
+***/
+BOOL
+getBoolDefault (NSMutableDictionary *dict, NSString *name)
+{
+	NSString	*str = [[NSUserDefaults standardUserDefaults] stringForKey: name];
+	NSNumber	*num;
+
+	if (!str)
+		str = [[defaultValues() objectForKey: name] stringValue];
+
+	num = [NSNumber numberWithBool: [str hasPrefix: @"Y"]];
+	[dict setObject: num forKey: name];
+
+	return [num boolValue];
+}
+
+float
+getFloatDefault (NSMutableDictionary *dict, NSString *name)
+{
+	NSString	*str = [[NSUserDefaults standardUserDefaults] stringForKey: name];
+	NSNumber	*num;
+
+	if (!str)
+		str = [[defaultValues() objectForKey: name] stringValue];
+
+	num = [NSNumber numberWithFloat: [str floatValue]];
+	[dict setObject: num forKey: name];
+	
+	return [num floatValue];
+}
+
+int
+getIntDefault (NSMutableDictionary *dict, NSString *name)
+{
+	NSString	*str = [[NSUserDefaults standardUserDefaults] stringForKey: name];
+	NSNumber	*num;
+
+	if (!str)
+		str = [[defaultValues() objectForKey: name] stringValue];
+
+	num = [NSNumber numberWithInt: [str intValue]];
+	[dict setObject: num forKey: name];
+	
+	return [num intValue];
+}
+
+NSString *
+getStringDefault (NSMutableDictionary *dict, NSString *name)
+{
+	NSString	*str = [[NSUserDefaults standardUserDefaults] stringForKey: name];
+
+	if (!str)
+		str = [defaultValues() objectForKey: name];
+
+	[dict setObject: str forKey: name];
+	
+	return str;
+}
+
 @implementation Preferences
 
-static Preferences	*sharedInstance = nil;
+static Preferences			*sharedInstance = nil;
+static NSDictionary			*currentValues = nil;
+static NSMutableDictionary	*displayedValues = nil;
 
 - (id) objectForKey: (id) key
 {
-    return [[[[self class] sharedInstance] preferences] objectForKey: key];
+	id		obj = [[NSUserDefaults standardUserDefaults] objectForKey: key];
+	
+	if (!obj)
+		return [defaultValues () objectForKey: key];
+	else
+		return obj;
 }
 
-+ (void) saveDefaults
+- (void) setObject: (id) obj forKey: (id) key
 {
-	if (sharedInstance) {
-		[self savePreferencesToDefaults: [sharedInstance preferences]];
-	}
+	if ((!key) || (!obj))
+		return;
+
+	[displayedValues setObject: obj forKey: key];
+	[self commitDisplayedValues];
 }
 
-- (void) saveDefaults: (id) sender
+- (void) saveDefaults
 {
-	[[self class] saveDefaults];
+	[self savePreferencesToDefaults: currentValues];
 }
 
 - (void) loadDefaults
@@ -81,7 +151,7 @@ static Preferences	*sharedInstance = nil;
 	if (currentValues)
 		[currentValues release];
 
-	currentValues = [[[self class] preferencesFromDefaults] copyWithZone: [self zone]];
+	currentValues = [[self preferencesFromDefaults] copyWithZone: [self zone]];
 	[self discardDisplayedValues];
 }
 
@@ -96,16 +166,16 @@ static Preferences	*sharedInstance = nil;
 		[self dealloc];
 	} else {
 		[super init];
-		currentValues = [[[self class] preferencesFromDefaults] copyWithZone:[self zone]];
+		currentValues = [[self preferencesFromDefaults] mutableCopy];
 		[self discardDisplayedValues];
 		sharedInstance = self;
-		prefs = sharedInstance;
 		[[NSNotificationCenter defaultCenter]
 			addObserver: self
-			selector: @selector(saveDefaults:)
+			selector: @selector(saveDefaults)
 			name: @"NSApplicationWillTerminateNotification"
 			object: nil];
 	}
+	[self prefsChanged: self];
 	return sharedInstance;
 }
 
@@ -130,87 +200,54 @@ static Preferences	*sharedInstance = nil;
 */
 - (void) updateUI
 {
-	id theCenter = [NSNotificationCenter defaultCenter];
-
-	NSLog (@"Defaults updated, UI should update.");
-
-	[theCenter postNotificationName: @"ForgeTextureCacheShouldFlush" object: self userInfo: nil];
-	[theCenter postNotificationName: @"ForgeUIShouldUpdate" object: self userInfo: nil];
-
 	return;
 }
 
-- (void) prefsChanged: (id) sender {
-	static NSNumber 	*yes = nil;
-	static NSNumber 	*no = nil;
-	int 				anInt;
+- (void) prefsChanged: (id) sender
+{
 	float				aFloat;
-	
-	if (!yes) {
-		yes = [[NSNumber alloc] initWithBool: YES];
-		no = [[NSNumber alloc] initWithBool: NO];
+
+	[displayedValues setObject: projectPath forKey: ProjectPath];
+	[displayedValues setObject: bspSoundPath forKey: BspSoundPath];
+	[displayedValues setObject: startWad forKey: StartWad];
+
+	if ((aFloat = [[displayedValues objectForKey: XLight] floatValue]) < 0.0 || aFloat > 1.0) {
+		aFloat = [[defaultValues () objectForKey: XLight] floatValue];
 	}
+	xLight = aFloat;
+	[displayedValues setObject: [NSNumber numberWithFloat: xLight] forKey: XLight];
 
-	[displayedValues setObject: [projectPathField stringValue] forKey: ProjectPath];
-	[displayedValues setObject: [bspSoundPathField stringValue] forKey: BspSoundPath];
-
-	if ((anInt = [startWadField intValue]) < 0 || anInt > 2) {
-		if ((anInt = [[displayedValues objectForKey: StartWad] intValue]) < 0 || anInt > 2) {
-			anInt = [[defaultValues () objectForKey: StartWad] intValue];
-		}
-		[startWadField setIntValue: anInt];
-	} else {
-		[displayedValues setObject: [NSNumber numberWithInt: anInt] forKey: StartWad];
+	if ((aFloat = [[displayedValues objectForKey: YLight] floatValue]) < 0.0 || aFloat > 1.0) {
+		aFloat = [[defaultValues () objectForKey: YLight] floatValue];
 	}
+	yLight = aFloat;
+	[displayedValues setObject: [NSNumber numberWithFloat: yLight] forKey: YLight];
 
-	if ((aFloat = [xLightField floatValue]) < 0.0 || aFloat > 1.0) {
-		if ((aFloat = [[displayedValues objectForKey: XLight] floatValue]) < 0.0 || aFloat > 1.0) {
-			aFloat = [[defaultValues () objectForKey: XLight] floatValue];
-		}
-		[xLightField setFloatValue: aFloat];
-	} else {
-		[displayedValues setObject: [NSNumber numberWithFloat: aFloat] forKey: XLight];
+	if ((aFloat = [[displayedValues objectForKey: ZLight] floatValue]) < 0.0 || aFloat > 1.0) {
+		aFloat = [[defaultValues () objectForKey: ZLight] floatValue];
 	}
+	zLight = aFloat;
+	[displayedValues setObject: [NSNumber numberWithFloat: zLight] forKey: ZLight];
 
-	if ((aFloat = [yLightField floatValue]) < 0.0 || aFloat > 1.0) {
-		if ((aFloat = [[displayedValues objectForKey: YLight] floatValue]) < 0.0 || aFloat > 1.0) {
-			aFloat = [[defaultValues () objectForKey: YLight] floatValue];
-		}
-		[yLightField setFloatValue: aFloat];
-	} else {
-		[displayedValues setObject: [NSNumber numberWithFloat: aFloat] forKey: YLight];
-	}
-
-	if ((aFloat = [zLightField floatValue]) < 0.0 || aFloat > 1.0) {
-		if ((aFloat = [[displayedValues objectForKey: YLight] floatValue]) < 0.0 || aFloat > 1.0) {
-			aFloat = [[defaultValues () objectForKey: YLight] floatValue];
-		}
-		[zLightField setFloatValue: aFloat];
-	} else {
-		[displayedValues setObject: [NSNumber numberWithFloat: aFloat] forKey: ZLight];
-	}
-
-	[displayedValues setObject: ([showBSPOutputButton state] ? yes : no) forKey: ShowBSPOutput];
-	[displayedValues setObject: ([offsetBrushCopyButton state] ? yes : no) forKey: OffsetBrushCopy];
+	[displayedValues setObject: [NSNumber numberWithBool: showBSPOutput] forKey: ShowBSPOutput];
+	[displayedValues setObject: [NSNumber numberWithBool: offsetBrushCopy] forKey: OffsetBrushCopy];
 
 	[self commitDisplayedValues];
 }
 
 - (void) commitDisplayedValues
 {
-	if (currentValues != displayedValues) {
-		[currentValues release];
-		currentValues = [displayedValues copyWithZone: [self zone]];
-	}
+	[currentValues release];
+	currentValues = [[displayedValues copy] retain];
+	[self saveDefaults];
+	[self updateUI];
 }
 
 - (void) discardDisplayedValues
 {
-	if (currentValues != displayedValues) {
-		[displayedValues release];
-		displayedValues = [currentValues mutableCopyWithZone: [self zone]];
-		[self updateUI];
-	}
+	[displayedValues release];
+	displayedValues = [[currentValues mutableCopy] retain];
+	[self updateUI];
 }
 
 - (void) ok: (id) sender
@@ -228,101 +265,61 @@ static Preferences	*sharedInstance = nil;
 	if (currentValues)
 		[currentValues release];
 
-	currentValues = [defaultValues () copyWithZone: [self zone]];
-	[currentValues retain];
+	currentValues = defaultValues ();
 
 	[self discardDisplayedValues];
 }
 
-/***
-	Code to deal with defaults
-***/
-
-#define getBoolDefault(name) \
-{ \
-	NSString *str = [defaults stringForKey: name]; \
-	[dict setObject: (str ? [NSNumber numberWithBool: [str hasPrefix: @"Y"]] : [defaultValues() objectForKey: name]) forKey: name]; \
-}
-
-#define getFloatDefault(name) \
-{ \
-	NSString *str = [defaults stringForKey: name]; \
-	[dict setObject: (str ? [NSNumber numberWithFloat: [str floatValue]] : [defaultValues() objectForKey: name]) forKey: name]; \
-}
-
-#define getIntDefault(name) \
-{ \
-	NSString *str = [defaults stringForKey: name]; \
-	[dict setObject: (str ? [NSNumber numberWithInt: [str intValue]] : [defaultValues() objectForKey: name]) forKey: name]; \
-}
-
-#define getStringDefault(name) \
-{ \
-	NSString *str = [defaults stringForKey: name]; \
-	[dict setObject: (str ? str : [defaultValues() objectForKey: name]) forKey: name]; \
-}
-
-+ (NSDictionary *) preferencesFromDefaults
+- (NSDictionary *) preferencesFromDefaults
 {
-	NSUserDefaults		*defaults = [NSUserDefaults standardUserDefaults];
 	NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity: 10];
 
-	getStringDefault(ProjectPath);
-	getStringDefault(BspSoundPath);
-	getIntDefault(StartWad);
-	getFloatDefault(XLight);
-	getFloatDefault(YLight);
-	getFloatDefault(ZLight);
-	getBoolDefault(ShowBSPOutput);
-	getBoolDefault(OffsetBrushCopy);
+	projectPath = getStringDefault (dict, ProjectPath);
+	bspSoundPath = getStringDefault (dict, BspSoundPath);
+	startWad = getStringDefault (dict, StartWad);
+	xLight = getFloatDefault (dict, XLight);
+	yLight = getFloatDefault (dict, YLight);
+	zLight = getFloatDefault (dict, ZLight);
+	showBSPOutput = getBoolDefault (dict, ShowBSPOutput);
+	offsetBrushCopy = getBoolDefault (dict, OffsetBrushCopy);
 
 	return dict;
 }
 
 #define setBoolDefault(name) \
 { \
-	if ([[defaultValues() objectForKey: name] isEqual: [dict objectForKey: name]]) \
-		[defaults removeObjectForKey: name]; \
-	else \
-		[defaults setBool:[[dict objectForKey:name] boolValue] forKey: name]; \
+	[defaults setBool:[[dict objectForKey:name] boolValue] forKey: name]; \
 }
 
 #define setFloatDefault(name) \
 { \
-	if ([[defaultValues() objectForKey: name] isEqual: [dict objectForKey: name]]) \
-		[defaults removeObjectForKey: name]; \
-	else \
-		[defaults setFloat:[[dict objectForKey:name] floatValue] forKey: name]; \
+	[defaults setFloat:[[dict objectForKey:name] floatValue] forKey: name]; \
 }
 
 #define setIntDefault(name) \
 { \
-	if ([[defaultValues() objectForKey:name] isEqual:[dict objectForKey:name]]) \
-		[defaults removeObjectForKey:name]; \
-	else \
-		[defaults setInteger:[[dict objectForKey:name] intValue] forKey:name]; \
+	[defaults setInteger:[[dict objectForKey:name] intValue] forKey:name]; \
 }
 
 #define setStringDefault(name) \
 { \
-	if ([[defaultValues() objectForKey:name] isEqual: [dict objectForKey: name]]) \
-		[defaults removeObjectForKey: name]; \
-	else \
-		[defaults setObject: [[dict objectForKey: name] stringValue] forKey: name]; \
+	[defaults setObject: [dict objectForKey: name] forKey: name]; \
 }
 
-+ (void) savePreferencesToDefaults: (NSDictionary *) dict
+- (void) savePreferencesToDefaults: (NSDictionary *) dict
 {
 	NSUserDefaults	*defaults = [NSUserDefaults standardUserDefaults];
 
+	NSLog (@"Updating defaults...");
 	setStringDefault(ProjectPath);
 	setStringDefault(BspSoundPath);
-	setIntDefault(StartWad);
+	setStringDefault(StartWad);
 	setFloatDefault(XLight);
 	setFloatDefault(YLight);
 	setFloatDefault(ZLight);
 	setBoolDefault(ShowBSPOutput);
 	setBoolDefault(OffsetBrushCopy);
+	[defaults synchronize];
 }
 
 @end

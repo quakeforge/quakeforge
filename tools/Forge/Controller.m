@@ -1,20 +1,35 @@
 /*
 	Controller.m
 
-	Central controller object for Edit...
+	Controller class for Forge
 
-	Copyright (c) 1995-1996, NeXT Software, Inc.
-	All rights reserved.
-	Author: Ali Ozer
+	Copyright (C) 2001 Jeff Teunissen <deek@quakeforge.net>
 
-	You may freely copy, distribute and reuse the code in this example.
-	NeXT disclaims any warranty of any kind, expressed or implied,
-	as to its fitness for any particular use.
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License as
+	published by the Free Software Foundation; either version 2 of
+	the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public
+	License along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+	$Id$
 */
 
 #import <AppKit/NSApplication.h>
 #import <AppKit/NSMenu.h>
 #import "Controller.h"
+#import "Preferences.h"
 
 @implementation Controller
 
@@ -81,7 +96,6 @@
 	NSLog (@"This _would_ save, but it doesn't.");
 }
 
-
 /*
 	Notifications
 */
@@ -112,31 +126,31 @@
 	NSMenu	*windows;
 	NSMenu	*services;
 
-	[menu addItemWithTitle: @"Info"		action: NULL	keyEquivalent: @""];
-	[menu addItemWithTitle: @"Project"	action: NULL	keyEquivalent: @""];
-	[menu addItemWithTitle: @"File"		action: NULL	keyEquivalent: @""];
-	[menu addItemWithTitle: @"Edit"		action: NULL	keyEquivalent: @""];
-	[menu addItemWithTitle: @"BSP"		action: NULL	keyEquivalent: @""];
-	[menu addItemWithTitle: @"Brush"	action: NULL	keyEquivalent: @""];
-	[menu addItemWithTitle: @"Windows"	action: NULL	keyEquivalent: @""];
-	[menu addItemWithTitle: @"Services"	action: NULL	keyEquivalent: @""];
+	[menu addItemWithTitle: _(@"Info")		action: NULL	keyEquivalent: @""];
+	[menu addItemWithTitle: _(@"Project")	action: NULL	keyEquivalent: @""];
+	[menu addItemWithTitle: _(@"File")		action: NULL	keyEquivalent: @""];
+	[menu addItemWithTitle: _(@"Edit")		action: NULL	keyEquivalent: @""];
+	[menu addItemWithTitle: _(@"BSP")		action: NULL	keyEquivalent: @""];
+	[menu addItemWithTitle: _(@"Brush")		action: NULL	keyEquivalent: @""];
+	[menu addItemWithTitle: _(@"Windows")	action: NULL	keyEquivalent: @""];
+	[menu addItemWithTitle: _(@"Services")	action: NULL	keyEquivalent: @""];
 
-	[menu addItemWithTitle: @"Hide"		action: @selector(hide:)	keyEquivalent: @"h"];
-	[menu addItemWithTitle: @"Quit"		action: @selector(terminate:)	keyEquivalent: @"q"];
+	[menu addItemWithTitle: _(@"Hide")		action: @selector(hide:)	keyEquivalent: @"h"];
+	[menu addItemWithTitle: _(@"Quit")		action: @selector(terminate:)	keyEquivalent: @"q"];
 
 	/*
 		Info
 	*/
 	info = [[[NSMenu alloc] init] autorelease];
-	[menu setSubmenu: info	forItem: [menu itemWithTitle: @"Info"]];
+	[menu setSubmenu: info	forItem: [menu itemWithTitle: _(@"Info")]];
 
-	[info addItemWithTitle: @"Info Panel..."
+	[info addItemWithTitle: _(@"Info Panel...")
 					action: @selector (orderFrontStandardAboutPanel:)
 			 keyEquivalent: @""];
-	[info addItemWithTitle: @"Preferences..."
+	[info addItemWithTitle: _(@"Preferences...")
 					action: @selector (orderFrontPreferencesPanel:)
 			 keyEquivalent: @""];
-	[info addItemWithTitle: @"Help"
+	[info addItemWithTitle: _(@"Help")
 					action: @selector (orderFrontHelpPanel:)
 			 keyEquivalent: @"?"];
 
@@ -144,21 +158,21 @@
 		Project
 	*/
 	project = [[[NSMenu alloc] init] autorelease];
-	[menu setSubmenu: project	forItem: [menu itemWithTitle: @"Project"]];
+	[menu setSubmenu: project	forItem: [menu itemWithTitle: _(@"Project")]];
 
-	[project addItemWithTitle: @"Open..."
+	[project addItemWithTitle: _(@"Open...")
 					   action: @selector (openProject:)
-				keyEquivalent: @"@o"];
-	[project addItemWithTitle: @"New"
+				keyEquivalent: @"~o"];
+	[project addItemWithTitle: _(@"New")
 					   action: @selector (createNewProject:)
-				keyEquivalent: @"@n"];
-	[project addItemWithTitle: @"Save..."
+				keyEquivalent: @"~n"];
+	[project addItemWithTitle: _(@"Save...")
 					   action: @selector (saveProject:)
-				keyEquivalent: @"@s"];
-	[project addItemWithTitle: @"Save As..."
+				keyEquivalent: @"~s"];
+	[project addItemWithTitle: _(@"Save As...")
 					   action: @selector (saveProjectAs:)
-				keyEquivalent: @"@S"];
-	[project addItemWithTitle: @"Close"
+				keyEquivalent: @"~S"];
+	[project addItemWithTitle: _(@"Close")
 					   action: @selector (closeProject:)
 				keyEquivalent: @""];
 
@@ -166,27 +180,27 @@
 		File
 	*/
 	file = [[[NSMenu alloc] init] autorelease];
-	[menu setSubmenu: file	forItem: [menu itemWithTitle: @"File"]];
+	[menu setSubmenu: file	forItem: [menu itemWithTitle: _(@"File")]];
 
-	[file addItemWithTitle: @"Open..."
+	[file addItemWithTitle: _(@"Open...")
 					action: @selector (open:)
 			 keyEquivalent: @"o"];
-	[file addItemWithTitle: @"New"
+	[file addItemWithTitle: _(@"New")
 					action: @selector (createNew:)
 			 keyEquivalent: @"n"];
-	[file addItemWithTitle: @"Save..."
+	[file addItemWithTitle: _(@"Save...")
 					action: @selector (save:)
 			 keyEquivalent: @"s"];
-	[file addItemWithTitle: @"Save As..."
+	[file addItemWithTitle: _(@"Save As...")
 					action: @selector (saveAs:)
 			 keyEquivalent: @"S"];
-	[file addItemWithTitle: @"Save All"
+	[file addItemWithTitle: _(@"Save All")
 					action: @selector (saveAll:)
 			 keyEquivalent: @""];
-	[file addItemWithTitle: @"Revert to Saved"
+	[file addItemWithTitle: _(@"Revert to Saved")
 					action: @selector (revertToSaved:)
 			 keyEquivalent: @""];
-	[file addItemWithTitle: @"Close"
+	[file addItemWithTitle: _(@"Close")
 					action: @selector (close:)
 			 keyEquivalent: @""];
 
@@ -194,58 +208,61 @@
 		Edit
 	*/
 	edit = [[[NSMenu alloc] init] autorelease];
-	[menu setSubmenu: edit forItem: [menu itemWithTitle: @"Edit"]];
+	[menu setSubmenu: edit forItem: [menu itemWithTitle: _(@"Edit")]];
 	
-	[edit addItemWithTitle: @"Undo"
+	[edit addItemWithTitle: _(@"Undo")
 					action: @selector (undo:)
 			 keyEquivalent: @"z"];
-	[edit addItemWithTitle: @"Redo"
+	[edit addItemWithTitle: _(@"Redo")
 					action: @selector (redo:)
 			 keyEquivalent: @"Z"];
-	[edit addItemWithTitle: @"Cut"
+	[edit addItemWithTitle: _(@"Cut")
 					action: @selector (cut:)
 			 keyEquivalent: @"x"];
-	[edit addItemWithTitle: @"Copy"
+	[edit addItemWithTitle: _(@"Copy")
 					action: @selector (copy:)
 			 keyEquivalent: @"c"];
-	[edit addItemWithTitle: @"Paste"
+	[edit addItemWithTitle: _(@"Paste")
 					action: @selector (paste:)
 			 keyEquivalent: @"v"];
+	[edit addItemWithTitle: _(@"Delete")
+					action: @selector (delete:)
+			 keyEquivalent: @""];
+	[edit addItemWithTitle: _(@"Select All")
+					action: @selector (selectAll:)
+			 keyEquivalent: @"a"];
 
 	/*
 		BSP
 	*/
 	bsp = [[[NSMenu alloc] init] autorelease];
-	[menu setSubmenu: bsp forItem: [menu itemWithTitle: @"BSP"]];
+	[menu setSubmenu: bsp forItem: [menu itemWithTitle: _(@"BSP")]];
 	
-	[bsp addItemWithTitle: @"dunno"
-					action: @selector (undo:)
-			 keyEquivalent: @"z"];
+	[bsp addItemWithTitle: _(@"None")	action: @selector(nothing:)	keyEquivalent: @""];
+
 	/*
 		Brush
 	*/
 	brush = [[[NSMenu alloc] init] autorelease];
-	[menu setSubmenu: brush forItem: [menu itemWithTitle: @"Brush"]];
+	[menu setSubmenu: brush forItem: [menu itemWithTitle: _(@"Brush")]];
 	
-	[brush addItemWithTitle: @"dunno"
-					action: @selector (undo:)
-			 keyEquivalent: @"z"];
+	[brush addItemWithTitle: _(@"none")	action: @selector(nothing:)	keyEquivalent: @""];
 
 	/*
 		Windows
 	*/
 	windows = [[[NSMenu alloc] init] autorelease];
-	
-	[menu setSubmenu: windows	forItem: [menu itemWithTitle: @"Windows"]];
-	
+
 	[NSApp setWindowsMenu: windows];
+	[menu setSubmenu: windows	forItem: [menu itemWithTitle: _(@"Windows")]];
 
 	/*
 		Services
 	*/
 	services = [[[NSMenu alloc] init] autorelease];
+
 	[NSApp setServicesMenu: services];
-	[menu setSubmenu: services	forItem: [menu itemWithTitle: @"Services"]];
+	[menu setSubmenu: services	forItem: [menu itemWithTitle: _(@"Services")]];
 
 	[NSApp setMainMenu: menu];
 }
@@ -253,7 +270,7 @@
 /*
 	applicationWillTerminate:
 
-	Sort of like SIGQUIT. App should die now, but has a chance to clean up
+	Sort of like SIGQUIT. App is about to die, but has a chance to clean up
 */
 - (void) applicationWillTerminate: (NSNotification *) not;
 {

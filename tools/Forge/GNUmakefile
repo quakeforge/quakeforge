@@ -53,6 +53,9 @@ Forge_RESOURCE_FILES= \
 	Forge.tiff \
 	ForgeInfo.plist
 
+Forge_LOCALIZED_RESOURCE_FILES= \
+	Localizable.strings
+
 # Languages we're localized for
 Forge_LANGUAGES= \
 	English
