@@ -185,9 +185,10 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 		if (buffer->pos >= sfx->length) {
 			if (sfx->loopstart == (unsigned int)-1) {
 				// reset the buffer and fill it incase it's needed again
-				buffer->pos = 0;
+				headpos = buffer->pos = 0;
 				buffer->head = buffer->tail = 0;
 				count = 0;
+				stream->seek (stream->file, buffer->pos * stepscale, info);
 			} else {
 				buffer->pos -= sfx->length - sfx->loopstart;
 			}
