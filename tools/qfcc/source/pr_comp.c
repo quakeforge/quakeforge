@@ -181,7 +181,7 @@ PR_ParseFunctionCall (def_t *func)
 
 			// a vector copy will copy everything
 			def_parms[arg].type = t->parm_types[arg];
-			op = PR_Opcode_Find ("=", 5, &def_vector, &def_vector, &def_vector);
+			op = PR_Opcode_Find ("=", 5, e, e, e);
 			PR_Statement (op, e, &def_parms[arg]);
 			arg++;
 		} while (PR_Check (tt_punct, ","));
