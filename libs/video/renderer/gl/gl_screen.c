@@ -536,7 +536,7 @@ SCR_ScreenShot (int width, int height)
 	tex->palette = vid.palette;
 
 	for (y = 0; y < h; y++) {
-		dest = snap + (w * 3 * y);
+		dest = tex->data + (w * y);
 
 		for (x = 0; x < w; x++) {
 			r = g = b = 0;
@@ -563,20 +563,7 @@ SCR_ScreenShot (int width, int height)
 			r /= count;
 			g /= count;
 			b /= count;
-			*dest++ = r;
-			*dest++ = g;
-			*dest++ = b;
-		}
-	}
-
-	// convert to eight bit
-	for (y = 0; y < h; y++) {
-		src = snap + (w * 3 * y);
-		dest = tex->data + (w * y);
-
-		for (x = 0; x < w; x++) {
-			*dest++ = MipColor (src[0], src[1], src[2]);
-			src += 3;
+			*dest++ = MipColor (r, g, b);
 		}
 	}
 
