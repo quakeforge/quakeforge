@@ -49,11 +49,12 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/vfs.h"
 #include "QF/zone.h"
-#include "compat.h"
 #include "QF/dstring.h"
-#include "QF/exp.h"
 #include "QF/va.h"
 #include "QF/info.h"
+
+#include "compat.h"
+#include "exp.h"
 
 typedef struct cmdalias_s {
 	struct cmdalias_s *next;

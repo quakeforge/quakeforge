@@ -1,3 +1,3 @@
 AUTOMAKE_OPTIONS= foreign
 
-EXTRA_DIST=
+EXTRA_DIST=	disassemble.h globals.h qfprogs.h strings.h

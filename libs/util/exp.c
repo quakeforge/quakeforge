@@ -24,9 +24,10 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "QF/exp.h"
-#include "QF/ops.h"
 #include "QF/qtypes.h"
+
+#include "exp.h"
+#include "ops.h"
 
 exp_error_t EXP_ERROR;
 

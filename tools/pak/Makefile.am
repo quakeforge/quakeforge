@@ -13,3 +13,5 @@ man_MANS=	pak.1
 pak_SOURCES=	pak.c pakfile.c
 pak_LDADD=	$(PAK_LIBS)
 pak_DEPENDENCIES= $(PAK_DEPS)
+
+EXTRA_DIST=		pak.h pakfile.h pak.1

@@ -1,3 +1,4 @@
 AUTOMAKE_OPTIONS= foreign
 
-EXTRA_DIST=	cmdlib.h expr.h struct.h switch.h qfcc.h type.h
+EXTRA_DIST=	class.h cmdlib.h expr.h function.h method.h qfcc.h struct.h \
+			switch.h type.h
