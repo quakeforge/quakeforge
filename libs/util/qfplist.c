@@ -484,7 +484,7 @@ PL_GetPropertyList (const char *string)
 		return newpl;
 	} else {
 		if (pl && pl->error && pl->error[0])
-			Sys_Error ("%s\n", pl->error);
+			Sys_Error ("%d,%d: %s\n", pl->line, pl->pos, pl->error);
 		free (pl);
 		return NULL;
 	}
