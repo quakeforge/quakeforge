@@ -394,6 +394,8 @@ CL_Rcon_f (void)
 			return;
 		}
 		NET_StringToAdr (rcon_address->string, &to);
+		if (to.port == 0)
+			to.port = BigShort (27500);
 	}
 
 	NET_SendPacket (strlen (message) + 1, message, to);
