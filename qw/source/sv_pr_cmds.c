@@ -1866,11 +1866,14 @@ PF_rotate_bbox (progs_t *pr)
 	hull_t     *hull = &pf_hull_list[h];
 	int         i;
 
+	// set up the rotation matrix. the three orientation vectors form the
+	// columns of the rotation matrix
 	for (i = 0; i < 3; i++) {
 		m[i][0] = r[i];
 		m[i][1] = f[i];
 		m[i][2] = u[i];
 	}
+	// rotate the bounding box points
 	for (i = 0; i < 3; i++) {
 		mins[i] = DotProduct (m[i], mi);
 		maxs[i] = DotProduct (m[i], ma);
