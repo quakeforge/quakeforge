@@ -436,11 +436,11 @@ R_AliasSetUpTransform (int trivial_accept)
 }
 
 /*
-R_AliasTransformFinalVert
+	R_AliasTransformFinalVert
 
-now this function just copies the texture coordinates and calculates lighting
-actual 3D transform is done by R_AliasTransformFinalVert8/16 functions above
-*/
+	now this function just copies the texture coordinates and calculates
+	lighting actual 3D transform is done by R_AliasTransformFinalVert8/16
+	functions above */
 void
 R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
 						   trivertx_t *pverts, stvert_t *pstverts)
