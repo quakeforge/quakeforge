@@ -178,6 +178,8 @@ CL_ClearState (void)
 	memset (cl_dlights, 0, sizeof (cl_dlights));
 	memset (cl_lightstyle, 0, sizeof (cl_lightstyle));
 
+	CL_ClearTEnts ();
+
 	// allocate the efrags and chain together into a free list
 	cl.free_efrags = cl_efrags;
 	for (i = 0; i < MAX_EFRAGS - 1; i++)

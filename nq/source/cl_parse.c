@@ -347,8 +347,8 @@ CL_ParseUpdate (int bits)
 	int         num;
 	int         skin;
 
-	if (cls.signon == SIGNONS - 1) {	// first update is the final signon
-		// stage
+	if (cls.signon == SIGNONS - 1) {
+		// first update is the final signon stage
 		cls.signon = SIGNONS;
 		CL_SignonReply ();
 	}
@@ -357,6 +357,7 @@ CL_ParseUpdate (int bits)
 		i = MSG_ReadByte (net_message);
 		bits |= (i << 8);
 	}
+	
 
 	if (bits & U_LONGENTITY)
 		num = MSG_ReadShort (net_message);
@@ -373,6 +374,15 @@ CL_ParseUpdate (int bits)
 		forcelink = true;				// no previous frame to lerp from
 	else
 		forcelink = false;
+
+	if (forcelink) {
+		//FIXME do this right (ie, protocol support)
+		ent->alpha = 1;
+		ent->scale = 1;
+		ent->glow_color = 254;
+		ent->glow_size = 0;
+		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1;
+	}
 
 	ent->msgtime = cl.mtime[0];
 
@@ -394,8 +404,7 @@ CL_ParseUpdate (int bits)
 			else
 				ent->syncbase = 0.0;
 		} else
-			forcelink = true;			// hack to make null model players
-		// work
+			forcelink = true;		// hack to make null model players work
 		if (num > 0 && num <= cl.maxclients)
 			CL_NewTranslation (num - 1);
 	}
@@ -623,6 +632,13 @@ CL_ParseStatic (void)
 	ent->colormap = vid.colormap;
 	ent->skinnum = ent->baseline->skin;
 	ent->effects = ent->baseline->effects;
+
+	ent->alpha = ent->baseline->alpha / 255.0;
+	ent->scale = ent->baseline->scale / 16.0;
+	ent->glow_color = ent->baseline->glow_color;
+	ent->glow_size = ent->baseline->glow_size;
+//FIXME need to get this from baseline
+	ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1;
 
 	VectorCopy (ent->baseline->origin, ent->origin);
 	VectorCopy (ent->baseline->angles, ent->angles);
