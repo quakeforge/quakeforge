@@ -59,9 +59,6 @@
 
 qboolean    isDedicated;
 
-char       *basedir = ".";
-char       *cachedir = "/tmp";
-
 cvar_t     *sys_linerefresh;
 cvar_t     *timestamps;
 cvar_t     *timeformat;
@@ -194,10 +191,6 @@ main (int c, const char *v[])
 	if (j)
 		parms.memsize = (int) (atof (com_argv[j + 1]) * 1024 * 1024);
 	parms.membase = malloc (parms.memsize);
-
-	parms.basedir = basedir;
-	// caching is disabled by default, use -cachedir to enable
-//	parms.cachedir = cachedir;
 
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
 

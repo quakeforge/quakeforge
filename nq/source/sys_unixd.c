@@ -67,9 +67,6 @@ qboolean    isDedicated;
 
 int         nostdout = 0;
 
-char       *basedir = ".";
-char       *cachedir = "/tmp";
-
 cvar_t     *sys_linerefresh;
 cvar_t     *timestamps;
 cvar_t     *timeformat;
@@ -311,8 +308,6 @@ main (int argc, char *argv[])
 	}
 	if ((parms.membase = malloc (parms.memsize)) == NULL)
 		Sys_Error ("Can't allocate %d\n", parms.memsize);
-
-	parms.basedir = basedir;
 
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
 
