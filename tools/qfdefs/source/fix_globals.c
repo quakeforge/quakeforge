@@ -84,7 +84,10 @@ fix_missing_globals (progs_t *pr, def_t *globals)
 
 	memmove ((char*)progs + offs + defs_size, (char*)progs + offs,
 			 pr->progs_size - offs);
-	memcpy ((char*)progs + offs, new_defs, defs_size);
+	for (i = 0; i < defs_count; i++) {
+		ddef_t *d = &((ddef_t*)((char*)progs + offs))[i];
+		memcpy (d, new_defs[i], sizeof (ddef_t));
+	}
 
 	progs->numglobaldefs += defs_count;
 	pr->progs_size += defs_size;
