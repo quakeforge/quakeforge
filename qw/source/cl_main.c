@@ -1551,8 +1551,12 @@ Host_Frame (float time)
 	r_frametime = host_frametime;
 
 	// don't allow cheats in multiplayer
-	if (r_active && !cl.watervis && r_wateralpha->value != 1.0)
-		Cvar_SetValue (r_wateralpha, 1);
+	if (r_active) {
+		if (!cl.watervis)
+			cl_wateralpha = r_wateralpha->value;
+		else
+			cl_wateralpha = 1.0;
+	}
 
 	CL_UpdateScreen (realtime);
 

@@ -560,9 +560,9 @@ static void
 GL_WaterSurface (msurface_t *s)
 {
 	qfglBindTexture (GL_TEXTURE_2D, s->texinfo->texture->gl_texturenum);
-	if (r_wateralpha->value < 1.0) {
+	if (cl_wateralpha < 1.0) {
 		qfglDepthMask (GL_FALSE);
-		color_white[3] = r_wateralpha->value * 255;
+		color_white[3] = cl_wateralpha * 255;
 		qfglColor4ubv (color_white);
 		EmitWaterPolys (s);
 		qfglColor3ubv (color_white);
@@ -583,9 +583,9 @@ R_DrawWaterSurfaces (void)
 	// go back to the world matrix
 	qfglLoadMatrixf (r_world_matrix);
 
-	if (r_wateralpha->value < 1.0) {
+	if (cl_wateralpha < 1.0) {
 		qfglDepthMask (GL_FALSE);
-		color_white[3] = r_wateralpha->value * 255;
+		color_white[3] = cl_wateralpha * 255;
 		qfglColor4ubv (color_white);
 	}
 
@@ -601,7 +601,7 @@ R_DrawWaterSurfaces (void)
 	waterchain = NULL;
 	waterchain_tail = &waterchain;
 
-	if (r_wateralpha->value < 1.0) {
+	if (cl_wateralpha < 1.0) {
 		qfglDepthMask (GL_TRUE);
 		qfglColor3ubv (color_white);
 	}
@@ -798,7 +798,7 @@ R_RecursiveWorldNode (mnode_t *node)
 				continue;				// wrong side
 
 			if (surf->flags & SURF_DRAWTURB) {
-//				if (r_wateralpha->value < 1.0) // FIXME: DESPAIR
+//				if (cl_wateralpha < 1.0) // FIXME: DESPAIR
 					CHAIN_SURF_B2F (surf, waterchain);
 //				else
 //					CHAIN_SURF (surf, waterchain);

@@ -55,7 +55,6 @@ typedef struct
 #define CSHIFT_POWERUP  3
 #define NUM_CSHIFTS     4
 
-
 // viewmodel lighting =======================================================
 
 typedef struct {
@@ -96,6 +95,8 @@ extern struct cvar_s	*r_numsurfs;
 extern struct cvar_s	*r_reportedgeout;
 extern struct cvar_s	*r_maxedges;
 extern struct cvar_s	*r_numedges;
+
+extern float	cl_wateralpha;
 
 #define XCENTERING	(1.0 / 2.0)
 #define YCENTERING	(1.0 / 2.0)
