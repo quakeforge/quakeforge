@@ -15,7 +15,7 @@ r    cl_autoexec          : exec autoexec.cfg on gamedir change
      cl_camera_maxpitch   : highest camera pitch in spectator mode
      cl_camera_maxyaw     : highest camera yaw in spectator mode
      cl_chasecam          : get first person view of the person you are tracking in spectator mode
-     cl_chatmode          : Controls when console text will be treated as a chat message
+     cl_chatmode          : Controls when console text will be treated as a chat message: 0 - never, 1 - always, 2 - smart
  *   cl_crossx            : Sets the position of the crosshair on the X-axis
  *   cl_crossy            : Sets the position of the crosshair on the Y-axis
  *   cl_cshift_bonus      : Show bonus flash on item pickup
@@ -57,7 +57,6 @@ r    cl_autoexec          : exec autoexec.cfg on gamedir change
      d_mipscale           : Detail level of objects. 0 is highest, 3 is lowest.
      d_subdiv16           : Set to enable extreme perspective correction
      developer            : show info interesting to developers
-0 - never, 1 - always, 2 - smart
      fov                  : field of view. 90 is normal, smaller numbers zoom
  *   freelook             : force +mlook
 r    fs_basegame          : game to use by default
