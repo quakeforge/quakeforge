@@ -396,13 +396,8 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	VectorAdd (currententity->origin, clmodel->mins, mins);
 	VectorAdd (currententity->origin, clmodel->maxs, maxs);
 
-	if (cull)
-	{
-		if (R_CullBox (mins, maxs))
+	if (cull && R_CullBox (mins, maxs))
 			return;
-//		if (R_CullBlocked(mins, maxs, currententity->origin))
-//			return;
-	}
 
 	// FIXME: shadecolor is supposed to be the lighting for the model, not
 	// just colormod
