@@ -1288,7 +1288,7 @@ else
 	IFS=" "
 fi
 
-AC_ARG_WITH(server,
+AC_ARG_WITH(servers,
 	[  --with-servers=<list>   compile dedicated server
                           master,nq,qw],
 	servers="$withval",
