@@ -376,6 +376,35 @@ fixup_relocs ()
 }
 
 static void
+move_def (hashtab_t *deftab, qfo_def_t *d)
+{
+	qfo_def_t  *def;
+	int         def_num = defs.num_defs;
+	int         j;
+
+	defgroup_add_defs (&defs, d, 1);
+	def = defs.defs + def_num;
+	def->relocs = final_relocs.num_relocs;
+	relocgroup_add_relocs (&final_relocs, relocs.relocs + d->relocs,
+						   d->num_relocs);
+	for (j = 0; j < d->num_relocs; j++) {
+		relocs.relocs[d->relocs + j].type = rel_none;
+		final_relocs.relocs[def->relocs + j].def = def_num;
+	}
+	if (deftab) {
+		while ((d = Hash_Del (deftab, strings->strings + def->name))) {
+			relocgroup_add_relocs (&final_relocs, relocs.relocs + d->relocs,
+								   d->num_relocs);
+			def->num_relocs += d->num_relocs;
+			for (j = 0; j < d->num_relocs; j++) {
+				relocs.relocs[d->relocs + j].type = rel_none;
+				final_relocs.relocs[def->relocs + j].def = def_num;
+			}
+		}
+	}
+}
+
+static void
 merge_defgroups (void)
 {
 	int         local_base, i, j;
@@ -383,68 +412,19 @@ merge_defgroups (void)
 	qfo_func_t *func;
 
 	for (i = 0; i < global_defs.num_defs; i++) {
-		int         def_num = defs.num_defs;
 		const char *name;
 		def = global_defs.defs + i;
 		name = strings->strings + def->name;
-		if ((d = Hash_Del (defined_defs, name))) {
-			defgroup_add_defs (&defs, d, 1);
-			def = defs.defs + def_num;
-			def->relocs = final_relocs.num_relocs;
-			relocgroup_add_relocs (&final_relocs, relocs.relocs + d->relocs,
-								   d->num_relocs);
-			for (j = 0; j < d->num_relocs; j++)
-				relocs.relocs[d->relocs + j].type = rel_none;
-			while ((d = Hash_Del (defined_defs,
-								  strings->strings + def->name))) {
-				relocgroup_add_relocs (&final_relocs, relocs.relocs + d->relocs,
-									   d->num_relocs);
-				def->num_relocs += d->num_relocs;
-				for (j = 0; j < d->num_relocs; j++)
-					relocs.relocs[d->relocs + j].type = rel_none;
-			}
-		} else if ((d = Hash_Del (extern_defs, name))) {
-			defgroup_add_defs (&defs, d, 1);
-			def = defs.defs + def_num;
-			def->relocs = final_relocs.num_relocs;
-			relocgroup_add_relocs (&final_relocs, relocs.relocs + d->relocs,
-								   d->num_relocs);
-			for (j = 0; j < d->num_relocs; j++)
-				relocs.relocs[d->relocs + j].type = rel_none;
-			while ((d = Hash_Del (extern_defs,
-								  strings->strings + def->name))) {
-				relocgroup_add_relocs (&final_relocs, relocs.relocs + d->relocs,
-									   d->num_relocs);
-				def->num_relocs += d->num_relocs;
-				for (j = 0; j < d->num_relocs; j++)
-					relocs.relocs[d->relocs + j].type = rel_none;
-			}
-		} else if (!(def->flags & (QFOD_GLOBAL | QFOD_EXTERNAL))) {
-			d = def;
-			defgroup_add_defs (&defs, d, 1);
-			def = defs.defs + def_num;
-			def->relocs = final_relocs.num_relocs;
-			relocgroup_add_relocs (&final_relocs, relocs.relocs + d->relocs,
-								   d->num_relocs);
-			for (j = 0; j < d->num_relocs; j++)
-				relocs.relocs[d->relocs + j].type = rel_none;
-		}
-		for (j = 0; j < def->num_relocs; j++)
-			final_relocs.relocs[def->relocs + j].def = def_num;
+		if ((d = Hash_Del (defined_defs, name)))
+			move_def (defined_defs, d);
+		else if ((d = Hash_Del (extern_defs, name)))
+			move_def (extern_defs, d);
+		else if (!(def->flags & (QFOD_GLOBAL | QFOD_EXTERNAL)))
+			move_def (0, def);
 	}
 	local_base = defs.num_defs;
 	for (i = 0; i < local_defs.num_defs; i++) {
-		int         r = final_relocs.num_relocs;
-		def = local_defs.defs + i;
-		defgroup_add_defs (&defs, def, 1);
-		def = defs.defs + defs.num_defs - 1;
-		relocgroup_add_relocs (&final_relocs, relocs.relocs + def->relocs,
-							   def->num_relocs);
-		for (j = 0; j < def->num_relocs; j++) {
-			relocs.relocs[def->relocs + j].type = rel_none;
-			final_relocs.relocs[r + j].def += local_base;
-		}
-		def->relocs = r;
+		move_def (0, local_defs.defs + i);
 	}
 	for (i = 0; i < funcs.num_funcs; i++) {
 		int         r = final_relocs.num_relocs;
