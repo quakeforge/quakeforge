@@ -777,6 +777,7 @@ MENU_network_options =
 integer (string text, integer key)
 op_goto_console =
 {
+	Menu_SelectMenu ("");
 	Cbuf_AddText ("toggleconsole\n");
 	return 0;
 };
