@@ -539,6 +539,45 @@ PF_traceline (progs_t *pr)
 }
 
 /*
+	PF_checkmove
+
+	Wrapper around SV_Move, this makes PF_movetoground and PF_traceline
+	redundant.
+
+	checkmove (start, mins, maxs, end, type, passent)
+*/
+void
+PF_checkmove (progs_t *pr)
+{
+	float	*start, *end, *mins, *maxs;
+	trace_t	trace;
+	int		type;
+	edict_t	*ent;
+
+	start = G_VECTOR (pr, OFS_PARM0);
+	mins = G_VECTOR (pr, OFS_PARM1);
+	maxs = G_VECTOR (pr, OFS_PARM2);
+	end = G_VECTOR (pr, OFS_PARM3);
+	type = G_FLOAT (pr, OFS_PARM4);
+	ent = G_EDICT (pr, OFS_PARM5);
+
+	trace = SV_Move (start, mins, maxs, end, type, ent);
+
+	*sv_globals.trace_allsolid = trace.allsolid;
+	*sv_globals.trace_startsolid = trace.startsolid;
+	*sv_globals.trace_fraction = trace.fraction;
+	*sv_globals.trace_inwater = trace.inwater;
+	*sv_globals.trace_inopen = trace.inopen;
+	VectorCopy (trace.endpos, *sv_globals.trace_endpos);
+	VectorCopy (trace.plane.normal, *sv_globals.trace_plane_normal);
+	*sv_globals.trace_plane_dist = trace.plane.dist;
+	if (trace.ent)
+		*sv_globals.trace_ent = EDICT_TO_PROG (pr, trace.ent);
+	else
+		*sv_globals.trace_ent = EDICT_TO_PROG (pr, sv.edicts);
+}
+
+/*
 	PF_checkpos
 
 	Returns true if the given entity can move to the given position from it's
@@ -1919,7 +1958,7 @@ builtin_t   sv_builtins[] = {
 	PF_Fixme,
 	PF_Fixme,
 	PF_Fixme,
-	PF_Fixme,
+	PF_checkmove,		// 98
 	PF_Checkextension,	// 99
 	PF_strlen,
 	PF_charcount,
