@@ -826,7 +826,7 @@ CL_FinishTimeDemo (void)
 	if (timedemo_count > 0) {
 		CL_StartTimeDemo ();
 	} else {
-		if (--timedemo_runs) {
+		if (--timedemo_runs > 0) {
 			double      average = 0;
 			double      variance = 0;
 			double      min, max;
@@ -848,6 +848,7 @@ CL_FinishTimeDemo (void)
 			Con_Printf ("std deviation: %.3f\n", sqrt (variance));
 		}
 		free (timedemo_data);
+		timedemo_data = 0;
 	}
 }
 
@@ -868,7 +869,9 @@ CL_TimeDemo_f (void)
 	} else {
 		timedemo_count = 1;
 	}
-	timedemo_runs = timedemo_count;
+	timedemo_runs = timedemo_count = max (timedemo_count, 1);
+	if (timedemo_data)
+		free (timedemo_data)
 	timedemo_data = calloc (timedemo_runs, sizeof (td_stats_t));
 	strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
 	CL_StartTimeDemo ();
