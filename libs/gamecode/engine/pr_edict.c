@@ -200,8 +200,11 @@ PR_ValueString (progs_t *pr, etype_t type, pr_type_t *val)
 
 	switch (type) {
 		case ev_string:
-			snprintf (line, sizeof (line), "%s",
-					  PR_GetString (pr, val->string_var));
+			if (PR_StringValid (pr, val->string_var))
+				snprintf (line, sizeof (line), "%s",
+						  PR_GetString (pr, val->string_var));
+			else
+				strcpy (line, "*** invalid ***");
 			break;
 		case ev_entity:
 			snprintf (line, sizeof (line), "entity %i",
