@@ -62,7 +62,7 @@ opcode_t    pr_opcodes[] = {
 
 	{"!=", "NE_F", OP_NE_F, 4, false, &def_float, &def_float, &def_float, PROG_ID_VERSION},
 	{"!=", "NE_V", OP_NE_V, 4, false, &def_vector, &def_vector, &def_float, PROG_ID_VERSION},
-	{"!=", "NE_S", OP_NE_S, 4, false, &def_string, &def_string, &def_float, PROG_VERSION},
+	{"!=", "NE_S", OP_NE_S, 4, false, &def_string, &def_string, &def_float, PROG_ID_VERSION},
 	{"!=", "NE_E", OP_NE_E, 4, false, &def_entity, &def_entity, &def_float, PROG_ID_VERSION},
 	{"!=", "NE_FNC", OP_NE_FNC, 4, false, &def_function, &def_function, &def_float, PROG_ID_VERSION},
 
