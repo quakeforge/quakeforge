@@ -2495,15 +2495,18 @@ void
 init_elements (def_t *def, expr_t *eles)
 {
 	expr_t     *e, *c;
-	int         count, i, num_params;
+	int         count, i, num_params, ofs;
 	pr_type_t  *g;
 	def_t      *elements;
 
+	ofs = def->ofs;
+	if (def->local && local_expr)
+		ofs = 0;
 	if (def->type->type == ev_array) {
 		elements = calloc (def->type->num_parms, sizeof (def_t));
 		for (i = 0; i < def->type->num_parms; i++) {
 			elements[i].type = def->type->aux_type;
-			elements[i].ofs = def->ofs + i * type_size (def->type->aux_type);
+			elements[i].ofs = ofs + i * type_size (def->type->aux_type);
 		}
 		num_params = i;
 	} else if (def->type->type == ev_struct) {
@@ -2516,7 +2519,7 @@ init_elements (def_t *def, expr_t *eles)
 		for (i = 0, field = def->type->s.strct->struct_head; field;
 			 i++, field = field->next) {
 			elements[i].type = field->type;
-			elements[i].ofs = def->ofs + field->offset;
+			elements[i].ofs = ofs + field->offset;
 		}
 		num_params = i;
 	} else {
@@ -2543,6 +2546,7 @@ init_elements (def_t *def, expr_t *eles)
 				continue;
 			}
 			init_elements (&elements[i], c);
+			continue;
 		} else if (c->type >= ex_string) {
 			if (c->type == ex_integer
 				&& elements[i].type->type == ev_float)
@@ -2560,13 +2564,24 @@ init_elements (def_t *def, expr_t *eles)
 				error (e, "type mismatch in initializer");
 				continue;
 			}
+		} else {
+			if (!def->local || !local_expr) {
+				error (e, "non-constant initializer");
+				continue;
+			}
+		}
+		if (def->local && local_expr) {
+			int         ofs = elements[i].ofs;
+			type_t     *type = elements[i].type;
+			expr_t     *ptr = new_pointer_expr (ofs, type, def);
+
+			append_expr (local_expr, assign_expr (unary_expr ('.', ptr), c));
+		} else {
 			if (c->type == ex_string) {
 				EMIT_STRING (g->string_var, c->e.string_val);
 			} else {
 				memcpy (g, &c->e, type_size (get_type (c)) * 4);
 			}
-		} else {
-			error (e, "non-constant initializer");
 		}
 	}
 	free (elements);

@@ -89,8 +89,8 @@ type_t      type_method_description = { ev_struct, "obj_method_description" };
 type_t     *type_category;
 type_t     *type_ivar;
 type_t     *type_module;
-type_t      type_va_list;
-type_t      type_param;
+type_t      type_va_list = { ev_struct, "@va_list" };
+type_t      type_param = { ev_struct, "@param" };
 type_t      type_zero;
 
 struct_t   *vector_struct;
@@ -751,11 +751,6 @@ init_types (void)
 	new_struct_field (strct, &type_integer, "ivar_offset", vis_public);
 	type_ivar = strct->type;
 
-	strct = calloc (sizeof (struct_t), 1);
-	init_struct (strct, &type_va_list, str_union, 0);
-	new_struct_field (strct, &type_integer, "count", vis_public);
-	new_struct_field (strct, pointer_type (&type_param), "list", vis_public);
-
 	strct = get_struct ("Super", 1);
 	init_struct (strct, new_type (), str_struct, 0);
 	new_struct_field (strct, &type_id, "self", vis_public);
@@ -810,6 +805,11 @@ chain_initial_types (void)
 
 	type_supermsg.parm_types[0] = &type_Super;
 	chain_type (&type_supermsg);
+
+	strct = calloc (sizeof (struct_t), 1);
+	init_struct (strct, &type_va_list, str_struct, 0);
+	new_struct_field (strct, &type_integer, "count", vis_public);
+	new_struct_field (strct, pointer_type (&type_param), "list", vis_public);
 
 	strct = get_struct ("obj_module_s", 1);
 	init_struct (strct, new_type (), str_struct, 0);

@@ -339,6 +339,7 @@ static keyword_t keywords[] = {
 	{"@argc",		ARGC,	0,					0, PROG_VERSION},
 	{"@argv",		ARGV,	0,					0, PROG_VERSION},
 	{"@va_list",	TYPE,	&type_va_list,		0, PROG_VERSION},
+	{"@param",		TYPE,	&type_param,		0, PROG_VERSION},
 	{"@extern",		EXTERN,	0,					1, PROG_ID_VERSION},
 	{"@static",		STATIC,	0,					1, PROG_ID_VERSION},
 	{"@system",		SYSTEM,	0,					1, PROG_ID_VERSION},
