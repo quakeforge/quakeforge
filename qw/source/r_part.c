@@ -59,14 +59,9 @@ cvar_t      *r_particles;
 void
 R_InitParticles (void)
 {
-	if (cl_max_particles->int_val < 1)
-	{
-		/* Abuse check */
-		r_numparticles = 2048;
-	} else {
-		r_numparticles = cl_max_particles->int_val;
-	}
-	
+	// Misty-chan: Chooses cvar if bigger than zero, otherwise ignore and set variable to zero. Deek showed this to me.
+	r_numparticles = max(cl_max_particles->int_val, 0);
+
 	particles = (particle_t *)
 		Hunk_AllocName (r_numparticles * sizeof (particle_t), "particles");
 }
@@ -75,7 +70,7 @@ R_InitParticles (void)
 	R_MaxParticlesCheck
 */
 /*
-Disabled until it is fixed
+Misty-chan: Disabled until it is fixed
 void
 R_MaxParticlesCheck (void)
 {

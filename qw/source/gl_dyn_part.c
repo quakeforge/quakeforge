@@ -127,12 +127,13 @@ particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 void
 R_InitParticles (void)
 {
-	// Chooses cvar if bigger than zero, otherwise ignore and set variable to zero
+	// Misty-chan: Chooses cvar if bigger than zero, otherwise ignore and set variable to zero. Deek showed this to me.
 	r_numparticles = max(cl_max_particles->int_val, 0);
 
 	particles = (particle_t *)
 		Hunk_AllocName (r_numparticles * sizeof (particle_t), "particles");
 
+	// Misty-chan: Note to self, *THIS* is bugged, use our line when we remerge
 	freeparticles = (void *)
 		Hunk_AllocName (r_numparticles * sizeof (particle_t), "particles");
 
@@ -143,7 +144,7 @@ R_InitParticles (void)
 	R_MaxParticlesCheck
 */
 /*
-This entire section is disabled because I don't understand Hunk_Allocname, or how to fix it yet.
+Misty-chan: This entire section is disabled until it can be fixed
 void
 R_MaxParticlesCheck (void)
 {
@@ -154,7 +155,9 @@ R_MaxParticlesCheck (void)
 		R_ClearParticles();
 		r_numparticles = cl_max_particles->int_val;
 		
-
+		// Misty-chan: Note to self: PLEASE remember to do this section in this order:
+		// R_ClearParticles to disable the particles, then free the memory, then calloc.
+		// then set the variable. Otherwise you'll likely be shot on sight.
 		particles = (particle_t *)
 			Hunk_AllocName (r_numparticles * sizeof (particle_t), "particles");
 
