@@ -1307,8 +1307,6 @@ CL_Init_Cvars (void)
 					  "Auto aim off switch. Set to 1 to turn off.");
 	cl_port = Cvar_Get ("cl_port", PORT_CLIENT, CVAR_NONE, Cvar_Info,
 						"UDP Port for client to use.");
-
-	R_Particles_Init_Cvars ();
 }
 
 /*
@@ -1658,6 +1656,7 @@ Host_Init (void)
 	Netchan_Init_Cvars ();
 	Pmove_Init_Cvars ();
 	R_Init_Cvars ();
+	R_Particles_Init_Cvars ();
 	S_Init_Cvars ();
 	Team_Init_Cvars ();
 	V_Init_Cvars ();

@@ -108,6 +108,7 @@ cvar_t     *r_novis;
 cvar_t     *r_numedges;
 cvar_t     *r_numsurfs;
 cvar_t     *r_particles;
+cvar_t	   *r_particles_style;
 cvar_t	   *r_particles_max;
 cvar_t     *r_reportedgeout;
 cvar_t     *r_reportsurfout;
@@ -307,6 +308,9 @@ R_Init_Cvars (void)
 								r_particles_max_f, "Maximum amount of "
 								"particles to display. No maximum, minimum " 
 								"is 0.");
+	r_particles_style = Cvar_Get ("r_particles_style", "1", CVAR_ARCHIVE,
+								  r_particles_style_f, "Sets particle style. "
+								  "0 for Id, 1 for QF.");
 	r_reportedgeout = Cvar_Get ("r_reportedgeout", "0", CVAR_NONE, NULL,
 								"Toggle the display of how many edges were "
 								"not displayed");

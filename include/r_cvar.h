@@ -1,5 +1,6 @@
 extern struct cvar_s	 *easter_eggs;
 extern void r_easter_eggs_f (cvar_t *var);
+extern void r_particles_style_f (cvar_t *var);
 
 extern struct cvar_s     *cl_crossx;
 extern struct cvar_s     *cl_crossy;
@@ -70,6 +71,8 @@ extern struct cvar_s     *r_novis;
 extern struct cvar_s     *r_numedges;
 extern struct cvar_s     *r_numsurfs;
 extern struct cvar_s     *r_particles;
+extern struct cvar_s     *r_particles_max;
+extern struct cvar_s     *r_particles_style;
 extern struct cvar_s     *r_reportedgeout;
 extern struct cvar_s     *r_reportsurfout;
 extern struct cvar_s     *r_shadows;

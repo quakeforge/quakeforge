@@ -48,6 +48,10 @@ typedef struct
 typedef enum {
 	pt_static,
 	pt_grav,
+	pt_slowgrav,
+	pt_fire,
+	pt_explode,
+	pt_explode2,
 	pt_blob,
 	pt_blob2,
 	pt_smoke,
@@ -56,10 +60,7 @@ typedef enum {
 	pt_fadespark,
 	pt_fadespark2,
 	pt_fallfadespark,
-	pt_slowgrav,
-	pt_fire,
-	pt_explode,
-	pt_explode2,
+	pt_flame
 } ptype_t;
 
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
@@ -67,16 +68,16 @@ typedef struct particle_s
 {
 // driver-usable fields
 	vec3_t		org;
+	int			color;
 	int			tex;
-	float		color;
-	float		alpha;
 	float		scale;
+	float		alpha;
 // drivers never touch the following fields
-	struct particle_s	*next;
 	vec3_t		vel;
-	float		ramp;
-	float		die;
 	ptype_t		type;
+	float		die;
+	float		ramp;
+	struct particle_s	*next;
 } particle_t;
 
 #define PARTICLE_Z_CLIP	8.0

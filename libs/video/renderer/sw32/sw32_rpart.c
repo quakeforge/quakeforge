@@ -734,6 +734,11 @@ r_easter_eggs_f (cvar_t *var)
 }
 
 void
+r_particles_style_f (cvar_t *var)
+{
+}
+
+void
 R_ParticleFunctionInit (void)
 {
 	R_BlobExplosion = R_BlobExplosion_QF;
