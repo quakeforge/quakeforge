@@ -169,6 +169,9 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 			d = PR_GetDef (&type_floatfield, element, scope, allocate);
 			d->used = 1;	// always `used'
 			d->parent = def;
+		} else if (type->aux_type->type == ev_pointer) {
+			pr.size_fields += type->aux_type->num_parms
+							  * pr_type_size[type->aux_type->aux_type->type];
 		} else {
 			pr.size_fields += pr_type_size[type->aux_type->type];
 		}

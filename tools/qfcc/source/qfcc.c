@@ -267,6 +267,7 @@ WriteData (int crc)
 		printf ("%6i locals size (%s)\n", num_localdefs, big_function);
 		printf ("%6i fielddefs\n", numfielddefs);
 		printf ("%6i pr_globals\n", numpr_globals);
+		printf ("%6i entityfields\n", pr.size_fields);
 	}
 
 	h = SafeOpenWrite (destfile);
