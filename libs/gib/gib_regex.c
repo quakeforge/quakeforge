@@ -133,6 +133,18 @@ GIB_Regex_Translate_Options (const char *opstr)
 	return options;
 }
 
+int
+GIB_Regex_Translate_Runtime_Options (const char *opstr)
+{
+	int options = 0;
+
+	if (strchr (opstr, '<'))
+		options |= REG_NOTBOL;
+	if (strchr (opstr, '>'))
+		options |= REG_NOTEOL;
+	return options;
+}
+
 unsigned int
 GIB_Regex_Apply_Match (regmatch_t match[10], dstring_t * dstr, unsigned int ofs,
 					   const char *replace)
