@@ -277,7 +277,7 @@ SND_Spatialize (channel_t *ch)
 	vec3_t		source_vec;
 
 	// anything coming from the view entity will always be full volume
-	if (ch->entnum == *render_data.viewentity || ch->entnum == -1) {
+	if (ch->entnum == *render_data.viewentity) {
 		ch->leftvol = ch->master_vol;
 		ch->rightvol = ch->master_vol;
 		ch->phase = 0;
@@ -736,7 +736,7 @@ SND_PlayCenter (void)
 			dsprintf (name, "%s", Cmd_Argv (i));
 		}
 		sfx = SND_PrecacheSound (name->str);
-		SND_StartSound (-1, 0, sfx, listener_origin, 1.0, 1.0);
+		SND_StartSound (*render_data.viewentity, 0, sfx, listener_origin, 1.0, 1.0);
 		i++;
 	}
 	dstring_delete (name);
