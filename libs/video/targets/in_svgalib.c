@@ -86,7 +86,7 @@ keyhandler (int scancode, int state)
 
 	sc = scancode & 0x7f;
 	key = scantokey[0][sc];
-	if ((shifts & 0x03)) {
+	if ((shifts & 0x0c)) {
 		ascii = scantokey[2][sc];
 	} else if (shifts & 3) {
 		ascii = scantokey[1][sc];
@@ -115,6 +115,8 @@ keyhandler (int scancode, int state)
 		default:
 			break;
 	}
+	//Con_DPrintf ("%d %02x %02lx %04x %c\n", sc, press, shifts,
+	//			 key, ascii > 32 && ascii < 127 ? ascii : '#');
 	Key_Event (key, ascii, press);
 }
 
