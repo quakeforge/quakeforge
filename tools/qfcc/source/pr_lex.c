@@ -206,6 +206,7 @@ PR_LexString (void)
 							c += *pr_file_p - 'A';
 						else
 							c += *pr_file_p - 'a';
+						pr_file_p++;
 					}
 					if (!*pr_file_p)
 						PR_ParseError ("EOF inside quote");
