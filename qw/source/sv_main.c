@@ -1976,6 +1976,7 @@ SV_Init (void)
 	Con_Printf ("<==> %s initialized <==>\n", PROGRAM);
 
 	// process command line arguments
+	Cmd_Exec_File (fs_usercfg->string);
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute ();
 

@@ -985,14 +985,13 @@ Host_Init (quakeparms_t *parms)
 		CL_Init ();
 	}
 
+	Cbuf_InsertText ("exec quake.rc\n");
+	Cmd_Exec_File (fs_usercfg->string);
 	// reparse the command line for + commands other than set
 	// (sets still done, but it doesn't matter)
 	if (check_quakerc ()) {
 		Cmd_StuffCmds_f ();
-		Cbuf_Execute ();
 	}
-
-	Cbuf_InsertText ("exec quake.rc\n");
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();

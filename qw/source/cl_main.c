@@ -1674,14 +1674,14 @@ Host_Init (void)
 	IN_Init ();
 #endif
 
+	Cbuf_InsertText ("exec quake.rc\n");
+	Cmd_Exec_File (fs_usercfg->string);
 	// Reparse the command line for + commands.
 	// (Note, no non-base commands exist yet)
 	if (check_quakerc ()) {
 		Cmd_StuffCmds_f ();
-		Cbuf_Execute ();
 	}
 
-	Cbuf_InsertText ("exec quake.rc\n");
 	Cbuf_AddText
 		("echo Type connect <internet address> or use a server browser to connect to a game.\n");
 	Cbuf_AddText ("cl_warncmd 1\n");
