@@ -66,6 +66,7 @@ typedef struct {
 	qboolean		compile;		// serparate compilation mode
 	int				strip_path;		// number of leading path elements to strip
 									// from source file names
+	const char     *output_file;
 } options_t;
 
 extern options_t options;

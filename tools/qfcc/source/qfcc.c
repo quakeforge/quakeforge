@@ -82,7 +82,6 @@ options_t   options;
 const char *sourcedir;
 const char *progs_src;
 
-char        destfile[1024];
 char        debugfile[1024];
 
 pr_info_t   pr;
@@ -175,7 +174,7 @@ WriteData (int crc)
 		printf ("%6i entity fields\n", pr.entity_data->size);
 	}
 
-	h = SafeOpenWrite (destfile);
+	h = SafeOpenWrite (options.output_file);
 	SafeWrite (h, &progs, sizeof (progs));
 
 	progs.ofs_strings = ftell (h);
@@ -255,7 +254,7 @@ WriteData (int crc)
 		return;
 	}
 
-	h = SafeOpenRead (destfile);
+	h = SafeOpenRead (options.output_file);
 
 	debug.version = LittleLong (PROG_DEBUG_VERSION);
 	CRC_Init (&debug.crc);
@@ -434,9 +433,10 @@ main (int argc, char **argv)
 	if (!(src = Parse (src)))
 		Error ("No destination filename.  qfcc --help for info.\n");
 
-	strcpy (destfile, qfcc_com_token);
+	if (!options.output_file)
+		options.output_file = strdup (qfcc_com_token);
 	if (options.verbosity >= 1) {
-		printf ("outputfile: %s\n", destfile);
+		printf ("output file: %s\n", options.output_file);
 	}
 	if (options.code.debug) {
 		char       *s;
@@ -496,7 +496,7 @@ main (int argc, char **argv)
 	}
 
 	if (options.compile) {
-		write_obj_file ("test.qfo");
+		write_obj_file (options.output_file);
 	} else {
 		if (!finish_compilation ())
 			Error ("compilation errors");

@@ -54,6 +54,7 @@ static const char rcsid[] =
 const char *this_program;
 
 static struct option const long_options[] = {
+	{"output-file", required_argument, 0, 'o'},
 	{"source", required_argument, 0, 's'},
 	{"progs-src", required_argument, 0, 'P'},
 	{"save-temps", no_argument, 0, 'S'},
@@ -75,6 +76,7 @@ static struct option const long_options[] = {
 };
 
 static const char *short_options =
+	"o:"	// output file
 	"c"		// separate compilation
 	"s:"	// source dir
 	"P:"	// progs.src name

@@ -167,7 +167,7 @@ FileLength (FILE *f)
 
 
 FILE *
-SafeOpenWrite (char *filename)
+SafeOpenWrite (const char *filename)
 {
 	FILE       *f;
 
@@ -180,7 +180,7 @@ SafeOpenWrite (char *filename)
 }
 
 FILE *
-SafeOpenRead (char *filename)
+SafeOpenRead (const char *filename)
 {
 	FILE       *f;
 
@@ -213,7 +213,7 @@ SafeWrite (FILE *f, void *buffer, int count)
 	LoadFile
 */
 int
-LoadFile (char *filename, void **bufferptr)
+LoadFile (const char *filename, void **bufferptr)
 {
 	FILE       *f;
 	int         length;

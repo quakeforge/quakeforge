@@ -53,6 +53,7 @@ static const char rcsid[] =
 #include "expr.h"
 #include "immediate.h"
 #include "method.h"
+#include "options.h"
 #include "reloc.h"
 #include "struct.h"
 #include "type.h"
@@ -469,7 +470,7 @@ class_finish_module (void)
 	module_def->initialized = module_def->constant = 1;
 	module = &G_STRUCT (pr_module_t, module_def->ofs);
 	module->size = type_size (type_module);
-	module->name = ReuseString (destfile);
+	module->name = ReuseString (options.output_file);
 	module->symtab = symtab_def->ofs;
 
 	exec_class_def = get_def (&type_obj_exec_class, "__obj_exec_class",

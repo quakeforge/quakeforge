@@ -30,12 +30,12 @@ int FileLength (FILE *f);
 
 void	Error (char *error, ...)__attribute__((format(printf, 1,2)));
 
-FILE	*SafeOpenWrite (char *filename);
-FILE	*SafeOpenRead (char *filename);
+FILE	*SafeOpenWrite (const char *filename);
+FILE	*SafeOpenRead (const char *filename);
 void	SafeRead (FILE *f, void *buffer, int count);
 void	SafeWrite (FILE *f, void *buffer, int count);
 
-int		LoadFile (char *filename, void **bufferptr);
+int		LoadFile (const char *filename, void **bufferptr);
 
 char *Parse (char *data);
 
