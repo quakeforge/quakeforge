@@ -383,7 +383,7 @@ R_LavaSplash (vec3_t org)
 			VectorNormalize (dir);
 			vel = 50 + (rand () & 63);
 			VectorScale (dir, vel, pvel);
-			particle_new (pt_grav, part_tex_dot, porg, 7, pvel,
+			particle_new (pt_grav, part_tex_dot, porg, 3, pvel,
 						  (cl.time + 2 + (rand () & 31) * 0.02),
 						  (224 + (rand () & 7)), 193);
 		}
