@@ -86,16 +86,19 @@ GIB_Execute_Split_Array (cbuf_t *cbuf)
 			if (str[i] == '[') {
 				str[i] = 0;
 				start = atoi (str+i+1);
-				if ((c = strchr (str+i+1, ':')))
-					end = atoi (c+1);
-				else
-					end = start;
+				if ((c = strchr (str+i+1, ':'))) {
+					if (c[1] != ']')
+						end = atoi (c+1);
+					else
+						end = (int) ((unsigned int)~0>>1);
+				} else
+					end = start+1;
 				break;
 			}
 	cbuf->args->argc--;
 	if (!(var = GIB_Var_Get_Complex (&GIB_DATA(cbuf)->locals, &GIB_DATA(cbuf)->globals, str, &i, false)))
 		return;
-	if (end < 1)
+	if (end < 0)
 		end += var->size;
 	else if (end > var->size)
 		end = var->size;

@@ -353,13 +353,13 @@ GIB_Slice_f (void)
 {
 	dstring_t *ret;
 	int start, end, len;
-	if (GIB_Argc() != 4)
-		GIB_USAGE ("string start end");
+	if (GIB_Argc() < 3 || GIB_Argc() > 4)
+		GIB_USAGE ("string start [end]");
 	else {
 		len = strlen (GIB_Argv(1));
 		start = atoi (GIB_Argv(2));
-		end = atoi (GIB_Argv(3));
-		if (end < 1)
+		end = *GIB_Argv(3) ? atoi (GIB_Argv(3)) : len;
+		if (end < 0)
 			end += len;
 		else if (end > len)
 			end = len;
