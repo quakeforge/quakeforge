@@ -173,6 +173,8 @@ do_op_float (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		if ((type = get_type (e1)) != &type_float) {
 			//FIXME optimize casting a constant
 			e->e.expr.e2 = e2 = cast_expr (type, e2);
+		} else if ((conv = convert_to_float (e2)) != e2) {
+			e->e.expr.e2 = e2 = conv;
 		}
 	} else {
 		if ((conv = convert_to_float (e1)) != e1) {
@@ -661,6 +663,8 @@ do_op_uinteger (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op == '=') {
 		if ((type = get_type (e1)) != &type_uinteger) {
 			e->e.expr.e2 = e2 = cast_expr (type, e2);
+		} else if ((conv = convert_to_uinteger (e2)) != e2) {
+			e->e.expr.e2 = e2 = conv;
 		}
 	} else {
 		if (get_type (e1) != &type_uinteger) {
