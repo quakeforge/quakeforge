@@ -1981,5 +1981,5 @@ SV_Init (void)
 	if (sv.state == ss_dead)
 		Cmd_ExecuteString ("map start", src_command);
 	if (sv.state == ss_dead)
-		SV_Error ("Couldn't spawn a server");
+		SV_Error ("Could not initialize server");
 }
