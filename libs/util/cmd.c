@@ -777,7 +777,7 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 			quotes = 1;
 		}
 		dstring_insert(cmd_argv[cmd_argc-1], str + i, len, 0);
-		if (filter) {
+		if (filter && text[0] != '|') {
 			Cmd_ProcessTags(cmd_argv[cmd_argc-1]);
 			Cmd_ProcessVariables(cmd_argv[cmd_argc-1]);
 			Cmd_ProcessEscapes(cmd_argv[cmd_argc-1]);
