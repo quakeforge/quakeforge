@@ -272,6 +272,7 @@ Tdfx_Init8bitPalette (void)
 		QF_gl3DfxSetPaletteEXT qgl3DfxSetPaletteEXT = NULL;
 
 		if (!(qgl3DfxSetPaletteEXT = QFGL_ExtensionAddress ("gl3DfxSetPaletteEXT"))) {
+			Con_Printf ("3DFX_set_global_palette not found.\n");
 			return;
 		}
 
@@ -288,6 +289,8 @@ Tdfx_Init8bitPalette (void)
 		glEnable (GL_SHARED_TEXTURE_PALETTE_EXT);
 		qgl3DfxSetPaletteEXT ((GLuint *) table);
 		is8bit = true;
+	} else {
+		Con_Printf ("\n    3DFX_set_global_palette not found.");
 	}
 }
 
@@ -313,6 +316,7 @@ Shared_Init8bitPalette (void)
 
 	if (QFGL_ExtensionPresent ("GL_EXT_shared_texture_palette")) {
 		if (!(qglColorTableEXT = QFGL_ExtensionAddress ("glColorTableEXT"))) {
+			Con_Printf ("glColorTableEXT not found.\n");
 			return;
 		}
 
@@ -330,6 +334,8 @@ Shared_Init8bitPalette (void)
 		qglColorTableEXT (GL_SHARED_TEXTURE_PALETTE_EXT, GL_RGB, 256, GL_RGB,
 							GL_UNSIGNED_BYTE, (GLvoid *) thePalette);
 		is8bit = true;
+	} else {
+		Con_Printf ("\n    GL_EXT_shared_texture_palette not found.");
 	}
 }
 #endif
@@ -347,7 +353,7 @@ VID_Init8bitPalette (void)
 		Shared_Init8bitPalette ();
 #endif
 		if (!is8bit) {
-			Con_Printf ("not found.\n");
+			Con_Printf ("\n  8-bit extension not found.\n");
 		}
 	} else {
 		Con_Printf ("disabled.\n");
