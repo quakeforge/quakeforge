@@ -30,6 +30,10 @@
 
 #define GIB_DATA(buffer) ((gib_buffer_data_t *)(buffer->data))
 
+typedef struct gib_local_s {
+	struct dstring_s *key, *value;
+} gib_local_t;
+
 typedef struct gib_buffer_data_s {
 	struct dstring_s *arg_composite;
 	struct dstring_s *current_token;
@@ -42,6 +46,8 @@ typedef struct gib_buffer_data_s {
 		struct dstring_s *retval; // Returned value
 	} ret;
 	
+	struct hashtab_s *locals; // Local variables
+	
 	enum {
 		GIB_BUFFER_NORMAL, // Normal buffer
 		GIB_BUFFER_LOOP, // Looping buffer
@@ -49,5 +55,7 @@ typedef struct gib_buffer_data_s {
 	} type;
 } gib_buffer_data_t;
 
+void GIB_Local_Set (cbuf_t *cbuf, const char *key, const char *value);
+const char *GIB_Local_Get (cbuf_t *cbuf, const char *key);
 void GIB_Buffer_Construct (struct cbuf_s *cbuf);
 void GIB_Buffer_Destruct (struct cbuf_s *cbuf);

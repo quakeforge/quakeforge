@@ -34,3 +34,4 @@ typedef struct gib_function_s {
 
 void GIB_Function_Define (const char *name, const char *program);
 gib_function_t *GIB_Function_Find (const char *name);
+void GIB_Function_Execute (gib_function_t *func);

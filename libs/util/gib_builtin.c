@@ -36,6 +36,7 @@
 #include "QF/hash.h"
 #include "QF/dstring.h"
 #include "QF/gib_builtin.h"
+#include "QF/gib_buffer.h"
 #include "QF/gib_function.h"
 
 hashtab_t *gib_builtins;
@@ -96,16 +97,28 @@ GIB_Argv (unsigned int arg)
 void
 GIB_Function_f (void)
 {
-	if (GIB_Argc () != 3) {
+	if (GIB_Argc () != 3)
 		Cbuf_Error ("numargs", 
 					"function: invalid number of arguments\n"
 					"usage: function function_name {program}");
-	} else
+	else
 		GIB_Function_Define (GIB_Argv(1), GIB_Argv(2));
 }			
+
+void
+GIB_Lset_f (void)
+{
+	if (GIB_Argc () != 3)
+		Cbuf_Error ("numargs",
+					"lset: invalid number of arguments\n"
+					"usage: lset variable value");
+	else
+		GIB_Local_Set (cbuf_active, GIB_Argv(1), GIB_Argv(2));
+}
 
 void
 GIB_Builtin_Init (void)
 {
 	GIB_Builtin_Add ("function", GIB_Function_f);
+	GIB_Builtin_Add ("lset", GIB_Lset_f);
 }

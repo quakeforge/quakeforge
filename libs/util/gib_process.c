@@ -34,6 +34,7 @@
 #include "QF/dstring.h"
 #include "QF/cbuf.h"
 #include "QF/cvar.h"
+#include "QF/gib_buffer.h"
 
 #include "exp.h"
 
@@ -41,16 +42,20 @@ void
 GIB_Process_Variable (struct dstring_s *dstr)
 {
 	int i;
-	cvar_t *var;
+	cvar_t *cvar;
+	const char *str;
 	
 	for (i = 0; dstr->str[i] == '$'; i++);
 	i--;
 	for (; i >= 0; i--) {
-		var = Cvar_FindVar (dstr->str+i+1);
-		if (!var)
+		if ((str = GIB_Local_Get (cbuf_active, dstr->str+i+1)))	
+			; // yay for us
+		else if ((cvar = Cvar_FindVar (dstr->str+i+1)))
+			str = cvar->string;
+		else
 			return;
 		dstr->str[i] = 0;
-		dstring_appendstr (dstr, var->string);
+		dstring_appendstr (dstr, str);
 	}
 }
 
@@ -87,5 +92,17 @@ GIB_Process_Math (struct dstring_s *token)
 		dstring_clearstr (token);
 		dsprintf (token, "%.10g", value);
 	}
+	return 0;
+}
+
+int
+GIB_Process_Token (struct dstring_s *token, char delim)
+{
+	if (delim != '{' && delim != '\"')
+		GIB_Process_Variables_All (token);
+			
+	if (delim == '(')
+		if (GIB_Process_Math (token))
+			return -1;
 	return 0;
 }

@@ -31,6 +31,11 @@
 typedef struct gib_builtin_s {
 	struct dstring_s *name;
 	void (*func) (void);
+	enum {
+		GIB_BUILTIN_NORMAL, // Normal argument processing
+		GIB_BUILTIN_NOPROCESS, // Don't process arguments
+		GIB_BUILTIN_FIRSTONLY, // Process only the first argument
+	} type;
 } gib_builtin_t;
 
 void GIB_Builtin_Add (const char *name, void (*func) (void));

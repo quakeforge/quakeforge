@@ -32,7 +32,11 @@
 
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/cbuf.h"
+#include "QF/gib_parse.h"
+#include "QF/gib_buffer.h"
 #include "QF/gib_function.h"
+#include "QF/va.h"
 
 hashtab_t *gib_functions = 0;
 
@@ -84,4 +88,22 @@ GIB_Function_Find (const char *name)
 	if (!gib_functions)
 		return 0;
 	return (gib_function_t *) Hash_Find (gib_functions, name);
+}
+
+void
+GIB_Function_Execute (gib_function_t *func)
+{
+		cbuf_t *sub = Cbuf_New (&gib_interp);
+		int i;
+		
+		Cbuf_AddText (sub, func->program->str);
+		if (cbuf_active->down)
+			Cbuf_DeleteStack (cbuf_active->down);
+		cbuf_active->down = sub;
+		sub->up = cbuf_active;
+		cbuf_active->state = CBUF_STATE_STACK;
+		
+		for (i = 0; i < cbuf_active->args->argc; i++)
+			GIB_Local_Set (sub, va("%i", i), cbuf_active->args->argv[i]->str);
+		GIB_Local_Set (sub, "argc", va("%i", cbuf_active->args->argc));
 }
