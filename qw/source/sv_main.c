@@ -2034,10 +2034,11 @@ SV_InitLocal (void)
 					   "Sets the value for auto-aiming leniency");
 	sv_timekick = Cvar_Get ("sv_timekick", "3", CVAR_SERVERINFO, Cvar_Info,
 							"Time cheat protection");
-	sv_timekick_fuzz = Cvar_Get ("sv_timekick_fuzz", "15", CVAR_NONE, NULL,
-								 "Time cheat \"fuzz factor\"");
+	sv_timekick_fuzz = Cvar_Get ("sv_timekick_fuzz", "30", CVAR_NONE, NULL,
+								 "Time cheat \"fuzz factor\" in milliseconds");
 	sv_timekick_interval = Cvar_Get ("sv_timekick_interval", "30", CVAR_NONE,
-									 NULL, "Time cheat check interval");
+									 NULL, "Time cheat check interval in "
+									 "seconds");
 	sv_minqfversion = Cvar_Get ("sv_minqfversion", "0", CVAR_SERVERINFO,
 								Cvar_Info, "Minimum QF version on client");
 	sv_maxrate = Cvar_Get ("sv_maxrate", "10000", CVAR_SERVERINFO, Cvar_Info,
