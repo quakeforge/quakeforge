@@ -505,18 +505,25 @@ static int
 separate_compile (void)
 {
 	const char **file;
+	const char **temp_files;
 	dstring_t  *output_file = dstring_newstr ();
 	dstring_t  *extension = dstring_newstr ();
 	char       *f;
 	int         err = 0;
+	int         i;
 
 	if (options.compile && options.output_file && source_files[1]) {
-		fprintf (stderr, "%s: cannot use -c and -o together with multiple "
-				 "files\n", this_program);
+		fprintf (stderr,
+				 "%s: cannot use -c and -o together with multiple files\n",
+				 this_program);
 		return 1;
 	}
 
-	for (file = source_files; *file; file++) {
+	for (file = source_files, i = 0; *file; file++)
+		i++;
+	temp_files = calloc (i + 1, sizeof (const char*));
+
+	for (file = source_files, i = 0; *file; file++) {
 		dstring_clearstr (extension);
 		dstring_clearstr (output_file);
 
@@ -540,6 +547,7 @@ separate_compile (void)
 				|| !strcmp (extension->str, ".qc"))) {
 			if (options.verbosity >= 2)
 				printf ("%s %s\n", *file, output_file->str);
+			temp_files[i++] = save_string (output_file->str);
 			err = compile_to_obj (*file, output_file->str) || err;
 
 			free ((char *)*file);
@@ -576,6 +584,9 @@ separate_compile (void)
 		} else {
 			err = 1;
 		}
+		if (!options.save_temps)
+			for (file = temp_files; *file; file++)
+				unlink (*file);
 	}
 	return err;
 }
