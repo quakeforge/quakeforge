@@ -236,7 +236,7 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 
 	// add all the lightmaps
 	if (lightmap) {
-		for (maps = 0; maps < r_maxdlights && surf->styles[maps] != 255;
+		for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255;
 			 maps++) {
 			scale = d_lightstylevalue[surf->styles[maps]];
 			surf->cached_light[maps] = scale;	// 8.8 fraction
