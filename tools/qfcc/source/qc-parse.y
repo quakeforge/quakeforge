@@ -213,8 +213,8 @@ def
 	  { current_struct = new_struct ($2); } '=' '{' struct_defs '}' { }
 	| UNION NAME
 	  { current_struct = new_union ($2); } '=' '{' struct_defs '}' { }
-	| STRUCT NAME			{ decl_struct ($2)->type; }
-	| UNION NAME			{ decl_union ($2)->type; }
+	| STRUCT NAME			{ decl_struct ($2); }
+	| UNION NAME			{ decl_union ($2); }
 	| ENUM '{' enum_list opt_comma '}'
 	  { process_enum ($3); }
 	| TYPEDEF type NAME
