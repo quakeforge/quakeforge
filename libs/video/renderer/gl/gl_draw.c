@@ -282,17 +282,17 @@ Draw_Init (void)
 	smoothly scrolled off.
 */
 void
-Draw_Character (int x, int y, int num)
+Draw_Character (int x, int y, unsigned int num)
 {
 	float       frow, fcol;
 
 	if (num == 32)
 		return;							// space
 
-	num &= 255;
-
 	if (y <= -8)
 		return;							// totally off screen
+
+	num &= 255;
 
 	frow = (num >> 4) * CELL_SIZE;
 	fcol = (num & 15) * CELL_SIZE;

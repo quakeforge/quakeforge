@@ -199,7 +199,7 @@ Draw_Init (void)
 	smoothly scrolled off.
 */
 void
-Draw_Character (int x, int y, int num)
+Draw_Character (int x, int y, unsigned int num)
 {
 	byte       *dest;
 	byte       *source;
