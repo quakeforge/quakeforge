@@ -44,6 +44,7 @@ void Qclose(VFile *file);
 int Qread(VFile *file, void *buf, int count);
 int Qwrite(VFile *file, const void *buf, int count);
 int Qprintf(VFile *file, const char *fmt, ...) __attribute__((format(printf,2,3)));
+int Qputs(VFile *file, const char *buf);
 char *Qgets(VFile *file, char *buf, int count);
 int Qgetc(VFile *file);
 int Qputc(VFile *file, int c);

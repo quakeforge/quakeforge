@@ -279,6 +279,19 @@ Qprintf (VFile *file, const char *fmt, ...)
 	return ret;
 }
 
+int
+Qputs (VFile *file, const char *buf)
+{
+	if (file->file)
+		return fputs (buf, file->file);
+#ifdef HAVE_ZLIB
+	else
+		return gzputs (file->gzfile, buf);
+#else
+	return 0;
+#endif
+}
+
 char *
 Qgets (VFile *file, char *buf, int count)
 {
