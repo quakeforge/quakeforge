@@ -109,6 +109,31 @@ SV_GIB_Client_GetInfo_f (void)
 		GIB_Return (str);
 }
 		
+static void
+SV_GIB_Client_Print_f (void)
+{
+	client_t *cl;
+	
+	if (GIB_Argc() != 3)
+		GIB_USAGE("uid message");
+	else if (!(cl = SV_GIB_GetClient (atoi(GIB_Argv(1)))))
+		GIB_Error ("uid", "No user with id '%s' was found on the server.", GIB_Argv(1));
+	else
+		SV_ClientPrintf (0, cl, GIB_Argv(0)[13] ? PRINT_CHAT : PRINT_HIGH, "%s", GIB_Argv(2));
+}
+
+static void
+SV_GIB_Client_Print_All_f (void)
+{
+	client_t *cl;
+	int i, level = GIB_Argv(0)[16] ? PRINT_CHAT : PRINT_HIGH;
+	
+	if (GIB_Argc() != 2)
+		GIB_USAGE("message");
+	else for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
+		if (cl->state)
+			SV_ClientPrintf (0, cl, level, "%s", GIB_Argv(1));
+}
 
 void	
 SV_GIB_Init (void)
@@ -117,6 +142,10 @@ SV_GIB_Init (void)
 	GIB_Builtin_Add ("client::getList", SV_GIB_Client_GetList_f);
 	GIB_Builtin_Add ("client::getKeys", SV_GIB_Client_GetKeys_f);
 	GIB_Builtin_Add ("client::getInfo", SV_GIB_Client_GetInfo_f);
+	GIB_Builtin_Add ("client::print", SV_GIB_Client_Print_f);
+	GIB_Builtin_Add ("client::printChat", SV_GIB_Client_Print_f);
+	GIB_Builtin_Add ("client::printAll", SV_GIB_Client_Print_All_f);
+	GIB_Builtin_Add ("client::printAllChat", SV_GIB_Client_Print_All_f);
 	
 	// Events
 	sv_chat_e = GIB_Event_New ("chat");
