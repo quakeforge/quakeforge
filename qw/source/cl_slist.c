@@ -47,7 +47,10 @@
 #include <stdlib.h>
 
 #include "bothdefs.h"
+#include "cl_main.h"
 #include "cl_slist.h"
+#include "client.h"
+#include "QF/cmd.h"
 #include "commdef.h"
 #include "QF/console.h"
 #include "QF/quakefs.h"
@@ -318,6 +321,45 @@ void timepassed (double time1, double *time2)
 	*time2 -= time1;
 }
 
+void
+SL_Con_List (server_entry_t *sldata)
+{
+	int serv;
+	server_entry_t *cp;
+
+	for(serv = 0; serv < SL_Len (sldata); serv++)
+	{
+		cp = SL_Get_By_Num (sldata, serv);
+		Con_Printf("%i) %s\n",(serv + 1),cp->desc);
+	}
+}
+
+void
+SL_Connect (server_entry_t *sldata, int slitemno)
+{
+	CL_Disconnect ();
+	strncpy (cls.servername, SL_Get_By_Num (sldata, (slitemno - 1))->server,
+		sizeof (cls.servername) - 0);
+	CL_BeginServerConnect ();
+}
+
+void
+SL_Command (void)
+{
+	int sltemp = 0;
+	
+	if (Cmd_Argc () == 1)
+		SL_Con_List(slist); 
+	else if (strcasecmp(Cmd_Argv(1),"connect") == 0)
+	{
+		sltemp = atoi(Cmd_Argv(2)); 
+		if(sltemp && (sltemp <= SL_Len (slist)))
+			SL_Connect(slist,sltemp);
+		else
+			Con_Printf("Error: Invalid Server Number -> %s\n",Cmd_Argv(2));
+	}
+}
+
 void SList_Init (void)
 {
 	QFile      *servlist;
@@ -334,4 +376,6 @@ void SList_Init (void)
 			Qclose (servlist);
 		}
 	}
+	Cmd_AddCommand("slist",SL_Command,"console commands to access server list\n");
 }
+
