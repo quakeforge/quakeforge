@@ -50,6 +50,12 @@ static __attribute__ ((unused)) const char rcsid[] =
 #elif HAVE_MACHINE_SOUNDCARD_H
 # include <machine/soundcard.h>
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include <errno.h>
 #include <fcntl.h>
@@ -84,7 +90,6 @@ static cvar_t	   *snd_rate;
 static cvar_t	   *snd_device;
 static cvar_t	   *snd_bits;
 static cvar_t	   *snd_oss_mmaped;
-static cvar_t	   *snd_oss_rw;
 
 static plugin_t           plugin_info;
 static plugin_data_t      plugin_info_data;
@@ -108,13 +113,10 @@ SNDDMA_Init_Cvars (void)
 						 "sound sample depth. 0 is system default");
 	snd_oss_mmaped = Cvar_Get ("snd_oss_mmaped", "1", CVAR_ROM, NULL,
 							   "mmaped io");
-	snd_oss_rw = Cvar_Get ("snd_oss_rw", "0", CVAR_ROM, NULL,
-						   "open the sound device in read/write rather than "
-						   "write-only mode");
 }
 
-static qboolean
-SNDDMA_Init (void)
+static int
+try_open (int rw)
 {
 	int         caps, fmt, rc, tmp, i;
 	int		    retries = 3;
@@ -130,7 +132,7 @@ SNDDMA_Init (void)
 	if (snd_device->string[0])
 		snd_dev = snd_device->string;
 
-	if (snd_oss_rw->int_val) {
+	if (rw) {
 		omode = O_RDWR;
 		mmmode |= PROT_READ;
 		mmflags |= MAP_SHARED;
@@ -145,22 +147,19 @@ SNDDMA_Init (void)
 			audio_fd = open (snd_dev, omode);
 		}
 		if (audio_fd < 0) {
-			perror (snd_dev);
-			Sys_Printf ("Could not open %s\n", snd_dev);
+			Sys_Printf ("Could not open %s: %s\n", snd_dev, strerror (errno));
 			return 0;
 		}
 	}
 
 	if ((rc = ioctl (audio_fd, SNDCTL_DSP_RESET, 0)) < 0) {
-		perror (snd_dev);
-		Sys_Printf ("Could not reset %s\n", snd_dev);
+		Sys_Printf ("Could not reset %s: %s\n", snd_dev, strerror (errno));
 		close (audio_fd);
 		return 0;
 	}
 
 	if (ioctl (audio_fd, SNDCTL_DSP_GETCAPS, &caps) == -1) {
-		perror (snd_dev);
-		Sys_Printf ("Sound driver too old\n");
+		Sys_Printf ("Sound driver too old: %s\n", strerror (errno));
 		close (audio_fd);
 		return 0;
 	}
@@ -172,8 +171,7 @@ SNDDMA_Init (void)
 	}
 
 	if (ioctl (audio_fd, SNDCTL_DSP_GETOSPACE, &info) == -1) {
-		perror ("GETOSPACE");
-		Sys_Printf ("Um, can't do GETOSPACE?\n");
+		Sys_Printf ("Um, can't do GETOSPACE?: %s\n", strerror (errno));
 		close (audio_fd);
 		return 0;
 	}
@@ -219,8 +217,7 @@ SNDDMA_Init (void)
 		tmp = 1;
 	rc = ioctl (audio_fd, SNDCTL_DSP_STEREO, &tmp);
 	if (rc < 0) {
-		perror (snd_dev);
-		Sys_Printf ("Could not set %s to stereo=%d", snd_dev, shm->channels);
+		Sys_Printf ("Could not set %s to stereo=%d: %s\n", snd_dev, shm->channels, strerror (errno));
 		close (audio_fd);
 		return 0;
 	}
@@ -232,8 +229,7 @@ SNDDMA_Init (void)
 
 	rc = ioctl (audio_fd, SNDCTL_DSP_SPEED, &shm->speed);
 	if (rc < 0) {
-		perror (snd_dev);
-		Sys_Printf ("Could not set %s speed to %d", snd_dev, shm->speed);
+		Sys_Printf ("Could not set %s speed to %d: %s\n", snd_dev, shm->speed, strerror (errno));
 		close (audio_fd);
 		return 0;
 	}
@@ -242,8 +238,7 @@ SNDDMA_Init (void)
 		rc = AFMT_S16_LE;
 		rc = ioctl (audio_fd, SNDCTL_DSP_SETFMT, &rc);
 		if (rc < 0) {
-			perror (snd_dev);
-			Sys_Printf ("Could not support 16-bit data.  Try 8-bit.\n");
+			Sys_Printf ("Could not support 16-bit data.  Try 8-bit. %s\n", strerror (errno));
 			close (audio_fd);
 			return 0;
 		}
@@ -251,14 +246,12 @@ SNDDMA_Init (void)
 		rc = AFMT_U8;
 		rc = ioctl (audio_fd, SNDCTL_DSP_SETFMT, &rc);
 		if (rc < 0) {
-			perror (snd_dev);
-			Sys_Printf ("Could not support 8-bit data.\n");
+			Sys_Printf ("Could not support 8-bit data. %s\n", strerror (errno));
 			close (audio_fd);
 			return 0;
 		}
 	} else {
-		perror (snd_dev);
-		Sys_Printf ("%d-bit sound not supported.", shm->samplebits);
+		Sys_Printf ("%d-bit sound not supported. %s", shm->samplebits, strerror (errno));
 		close (audio_fd);
 		return 0;
 	}
@@ -270,8 +263,7 @@ SNDDMA_Init (void)
 		len = (len + sz - 1) & ~(sz - 1);
 		shm->buffer = (byte *) mmap (NULL, len, mmmode, mmflags, audio_fd, 0);
 		if (shm->buffer == MAP_FAILED) {
-			perror (snd_dev);
-			Sys_Printf ("Could not mmap %s\n", snd_dev);
+			Sys_Printf ("Could not mmap %s: %s\n", snd_dev, strerror (errno));
 			close (audio_fd);
 			return 0;
 		}
@@ -288,8 +280,7 @@ SNDDMA_Init (void)
 	tmp = 0;
 	rc = ioctl (audio_fd, SNDCTL_DSP_SETTRIGGER, &tmp);
 	if (rc < 0) {
-		perror (snd_dev);
-		Sys_Printf ("Could not toggle.\n");
+		Sys_Printf ("Could not toggle.: %s\n", strerror (errno));
 		if (mmaped_io)
 			munmap (shm->buffer, shm->samples * shm->samplebits / 8);
 		close (audio_fd);
@@ -298,8 +289,7 @@ SNDDMA_Init (void)
 	tmp = PCM_ENABLE_OUTPUT;
 	rc = ioctl (audio_fd, SNDCTL_DSP_SETTRIGGER, &tmp);
 	if (rc < 0) {
-		perror (snd_dev);
-		Sys_Printf ("Could not toggle.\n");
+		Sys_Printf ("Could not toggle.: %s\n", strerror (errno));
 		if (mmaped_io)
 			munmap (shm->buffer, shm->samples * shm->samplebits / 8);
 		close (audio_fd);
@@ -312,6 +302,14 @@ SNDDMA_Init (void)
 	return 1;
 }
 
+static qboolean
+SNDDMA_Init (void)
+{
+	if (try_open (0))
+		return 1;
+	return try_open (1);
+}
+
 static int
 SNDDMA_GetDMAPos (void)
 {
@@ -321,8 +319,7 @@ SNDDMA_GetDMAPos (void)
 		return 0;
 
 	if (ioctl (audio_fd, SNDCTL_DSP_GETOPTR, &count) == -1) {
-		perror (snd_dev);
-		Sys_Printf ("Uh, sound dead.\n");
+		Sys_Printf ("Uh, %s dead: %s\n", snd_dev, strerror (errno));
 		if (mmaped_io)
 			munmap (shm->buffer, shm->samples * shm->samplebits / 8);
 		close (audio_fd);
