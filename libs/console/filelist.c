@@ -176,7 +176,7 @@ Con_Skyboxlist_f (void)
 				
 			}
 			if (c == 5)
-				QFS_FilelistFill (cutlist, basename, 0, 0);
+				QFS_FilelistAdd (cutlist, basename, 0);
 		}
 	}
 	filelist_print (cutlist);

@@ -1389,14 +1389,14 @@ QFS_FilelistNew (void)
 	return calloc (1, sizeof (filelist_t));
 }
 
-static void
-filelist_add_file (filelist_t *filelist, char *fname, const char *ext)
+void
+QFS_FilelistAdd (filelist_t *filelist, const char *fname, const char *ext)
 {
 	char      **new_list;
-	char      *s;
+	char      *s, *str;
 
 	while ((s = strchr(fname, '/')))
-		fname = s+1;
+		fname = s + 1;
 	if (filelist->count == filelist->size) {
 		filelist->size += 32;
 		new_list = realloc (filelist->list, filelist->size * sizeof (char *));
@@ -1407,11 +1407,11 @@ filelist_add_file (filelist_t *filelist, char *fname, const char *ext)
 		}
 		filelist->list = new_list;
 	}
-	fname = strdup (fname);
+	str = strdup (fname);
 
-	if (ext && (s = strstr(fname, va(".%s", ext))))
+	if (ext && (s = strstr(str, va(".%s", ext))))
 		*s = 0;
-	filelist->list[filelist->count++] = fname;
+	filelist->list[filelist->count++] = str;
 }
 
 void
@@ -1433,7 +1433,7 @@ QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 
 				if (!fnmatch (va("%s*.%s", path, ext), name, FNM_PATHNAME)
 					|| !fnmatch (va("%s*.%s.gz", path, ext), name, FNM_PATHNAME))
-					filelist_add_file (list, name, strip ? ext : 0);
+					QFS_FilelistAdd (list, name, strip ? ext : 0);
 			}
 		} else {
 			snprintf (buf, sizeof (buf), "%s/%s", search->filename, path);
@@ -1443,7 +1443,7 @@ QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 			while ((dirent = readdir (dir_ptr)))
 				if (!fnmatch (va("*.%s", ext), dirent->d_name, 0)
 					|| !fnmatch (va("*.%s.gz", ext), dirent->d_name, 0))
-					filelist_add_file (list, dirent->d_name, strip ? ext : 0);
+					QFS_FilelistAdd (list, dirent->d_name, strip ? ext : 0);
 			closedir (dir_ptr);
 		}
 	}

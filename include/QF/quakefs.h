@@ -116,6 +116,8 @@ const char *QFS_FileExtension (const char *in);
 void QFS_GamedirCallback (gamedir_callback_t *);
 
 filelist_t *QFS_FilelistNew (void);
+void QFS_FilelistAdd (filelist_t *filelist, const char *fname,
+					  const char *ext);
 void QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 					   int strip);
 void QFS_FilelistFree (filelist_t *list);
