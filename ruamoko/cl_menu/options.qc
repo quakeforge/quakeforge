@@ -90,10 +90,10 @@ CB_video_options =
 			cvar_set ("crosshair", itos (selected_crosshair));
 			break;
 		case "fps":
-			Cbuf_AddText ("toggle show_fps\n");
+			Cbuf_AddText ("toggle hud_fps\n");
 			break;
 		case "time":
-			Cbuf_AddText ("toggle show_time\n");
+			Cbuf_AddText ("toggle hud_time\n");
 			break;
 	}
 
@@ -136,9 +136,9 @@ DRAW_video_options =
 	draw_val_item (x + 70, y + 70, spacing, "Crosshair",
 				   ftos (cvar ("crosshair")));
 	draw_val_item (x + 70, y + 80, spacing, "Show fps", 
-				   cvar ("show_fps") ? "On" : "Off");
+				   cvar ("hud_fps") ? "On" : "Off");
 	draw_val_item (x + 70, y + 90, spacing, "Show time", 
-				   cvar ("show_time") ? "On" : "Off");
+				   cvar ("hud_time") ? "On" : "Off");
 	bar_pad = y + 90;
 
 	Draw_String (x + 70, bar_pad + 10, "Gamma:");
