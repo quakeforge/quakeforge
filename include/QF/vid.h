@@ -56,7 +56,8 @@ typedef struct {
 	unsigned int	height;
 	float			aspect;			// width / height -- < 0 is taller than wide
 	int				numpages;
-	int				recalc_refdef;	// if true, recalc vid-based stuff
+	qboolean		recalc_refdef;	// if true, recalc vid-based stuff
+	qboolean		cshift_changed;
 	pixel_t			*conbuffer;
 	int				conrowbytes;
 	unsigned int	conwidth;

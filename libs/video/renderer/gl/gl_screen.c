@@ -909,8 +909,6 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 
 	qfglEnable (GL_TEXTURE_2D);
 
-	V_UpdatePalette ();
-
 	if (r_speeds->int_val) {
 //      qfglFinish ();
 		time2 = Sys_DoubleTime ();

@@ -65,6 +65,12 @@ libQFsdl_la_SOURCES=	$(in_common_SOURCE) in_sdl.c vid.c vid_common_sw.c vid_sdl.
 libQFsdl.la: $(libQFsdl_la_OBJECTS) $(libQFsdl_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libQFsdl_la_LDFLAGS) $(libQFsdl_la_OBJECTS) $(libQFsdl_la_LIBADD) $(LIBS)
 
+# FIXME: waiting on *view.c merge --DESPAIR
+#libQFsdl32_la_LDFLAGS=	-version-info 1:0:0
+#libQFsdl32_la_SOURCES=	in_common.c in_sdl.c vid.c vid_common_sw.c vid_sdl32.c
+#libQFsdl32.la: $(libQFsdl32_la_OBJECTS) $(libQFsdl32_la_DEPENDENCIES)
+#	$(LINK) -rpath $(libdir) $(libQFsdl32_la_LDFLAGS) $(libQFsdl32_la_OBJECTS) $(libQFsdl32_la_LIBADD) $(LIBS)
+
 
 libQFsgl_la_LDFLAGS=	-version-info 1:0:0
 libQFsgl_la_SOURCES=	$(in_common_SOURCE) in_sdl.c qfgl_ext.c vid.c vid_common_gl.c vid_sgl.c

@@ -56,6 +56,7 @@
 extern cvar_t *cl_cshift_bonus;
 extern cvar_t *cl_cshift_contents;
 extern cvar_t *cl_cshift_damage;
+extern cvar_t *cl_cshift_powerup;
 extern cvar_t *vid_gamma;
 
 cvar_t     *cl_rollspeed;
@@ -82,6 +83,7 @@ cvar_t     *v_ipitch_level;
 cvar_t     *v_idlescale;
 
 float       v_dmg_time, v_dmg_roll, v_dmg_pitch;
+float       v_blend[4];
 
 extern int  in_forward, in_forward2, in_back;
 
@@ -374,31 +376,15 @@ V_SetContentsColor (int contents)
 
 
 void
-V_CalcItemCshift (void)
+V_CalcPowerupCshift (void)
 {
-	if (cl.stats[STAT_ITEMS] & IT_SUIT) {
-		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
-		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
-		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
-		cl.cshifts[CSHIFT_POWERUP].percent = 20;
-	} else if (cl.stats[STAT_ITEMS] & IT_INVISIBILITY) {
-		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 100;
-		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 100;
-		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 100;
-		cl.cshifts[CSHIFT_POWERUP].percent = 100;
-	} else
-		cl.cshifts[CSHIFT_POWERUP].percent = 0;
-}
-
-
-void
-V_CalcGlowCshift (void)
-{
-	if (!cl.stats[STAT_ITEMS] & (IT_SUIT || IT_INVISIBILITY || IT_QUAD || IT_INVULNERABILITY))
+	if (!cl.stats[STAT_ITEMS] & (IT_SUIT || IT_INVISIBILITY || IT_QUAD
+								 || IT_INVULNERABILITY))
 	{
 		cl.cshifts[CSHIFT_POWERUP].percent = 0;
 		return;
 	}
+
 	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY &&
 		cl.stats[STAT_ITEMS] & IT_QUAD) {
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
@@ -415,9 +401,104 @@ V_CalcGlowCshift (void)
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
 		cl.cshifts[CSHIFT_POWERUP].percent = 30;
+	} else 	if (cl.stats[STAT_ITEMS] & IT_SUIT) {
+		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
+		cl.cshifts[CSHIFT_POWERUP].percent = 20;
+	} else if (cl.stats[STAT_ITEMS] & IT_INVISIBILITY) {
+		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 100;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 100;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 100;
+		cl.cshifts[CSHIFT_POWERUP].percent = 100;
 	} else {
-		V_CalcItemCshift ();
+		cl.cshifts[CSHIFT_POWERUP].percent = 0;
 	}
+}
+
+
+/*
+  V_CalcBlend
+
+  LordHavoc made this a real, true alpha blend.  Cleaned it up
+  a bit, but otherwise this is his code.  --KB
+*/
+void
+V_CalcBlend (void)
+{
+	float       r = 0, g = 0, b = 0, a = 0;
+	float       a2, a3;
+	int         i;
+
+	for (i = 0; i < NUM_CSHIFTS; i++) {
+		a2 = cl.cshifts[i].percent / 255.0;
+
+		if (!a2)
+			continue;
+
+		a2 = min (a2, 1.0);
+		r += (cl.cshifts[i].destcolor[0] - r) * a2;
+		g += (cl.cshifts[i].destcolor[1] - g) * a2;
+		b += (cl.cshifts[i].destcolor[2] - b) * a2;
+
+		a3 = (1.0 - a) * (1.0 - a2);
+		a = 1.0 - a3;
+	}
+
+	// LordHavoc: saturate color
+	if (a) {
+		a2 = 1.0 / a;
+		r *= a2;
+		g *= a2;
+		b *= a2;
+	}
+
+	v_blend[0] = min (r, 255.0) / 255.0;
+	v_blend[1] = min (g, 255.0) / 255.0;
+	v_blend[2] = min (b, 255.0) / 255.0;
+	v_blend[3] = bound (0.0, a, 1.0);
+}
+
+
+void
+V_PrepBlend (void)
+{ 
+	int         i, j;
+
+	if (cl_cshift_powerup->int_val
+		|| (atoi (Info_ValueForKey (cl.serverinfo, "cshifts"))
+			& INFO_CSHIFT_POWERUP))
+		V_CalcPowerupCshift ();
+
+	vid.cshift_changed = false;
+
+	for (i = 0; i < NUM_CSHIFTS; i++) {
+		if (cl.cshifts[i].percent != cl.prev_cshifts[i].percent) {
+			vid.cshift_changed = true;
+			cl.prev_cshifts[i].percent = cl.cshifts[i].percent;
+		}
+		for (j = 0; j < 3; j++) {
+			if (cl.cshifts[i].destcolor[j] != cl.prev_cshifts[i].destcolor[j]) {
+				vid.cshift_changed = true;
+				cl.prev_cshifts[i].destcolor[j] = cl.cshifts[i].destcolor[j];
+			}
+		}
+	}
+
+	// drop the damage value
+	cl.cshifts[CSHIFT_DAMAGE].percent -= host_frametime * 150;
+	if (cl.cshifts[CSHIFT_DAMAGE].percent < 0)
+		cl.cshifts[CSHIFT_DAMAGE].percent = 0;
+
+	// drop the bonus value
+	cl.cshifts[CSHIFT_BONUS].percent -= host_frametime * 100;
+	if (cl.cshifts[CSHIFT_BONUS].percent < 0)
+		cl.cshifts[CSHIFT_BONUS].percent = 0;
+
+	if (!vid.cshift_changed && !vid.recalc_refdef)
+		return;
+
+	V_CalcBlend();
 }
 
 

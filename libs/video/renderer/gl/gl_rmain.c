@@ -887,7 +887,7 @@ R_SetupFrame (void)
 	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.model);
 
 	V_SetContentsColor (r_viewleaf->contents);
-	V_CalcBlend ();
+//	V_CalcBlend ();
 
 	r_cache_thrash = false;
 

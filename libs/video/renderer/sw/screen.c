@@ -354,6 +354,36 @@ SCR_CalcRefdef (void)
 }
 
 
+extern float v_blend[4];
+
+void
+SCR_ApplyBlend (void)		// Used to be V_UpdatePalette
+{
+	int         r, g, b, i;
+	byte       *basepal, *newpal;
+	byte        pal[768];
+	basepal = vid_basepal;
+	newpal = pal;
+
+	for (i = 0; i < 256; i++) {
+		r = basepal[0];
+		g = basepal[1];
+		b = basepal[2];
+		basepal += 3;
+
+		r += ((int) (v_blend[3] * (v_blend[0] - r))) >> 8;
+		g += ((int) (v_blend[3] * (v_blend[1] - g))) >> 8;
+		b += ((int) (v_blend[3] * (v_blend[2] - b))) >> 8;
+
+		newpal[0] = gammatable[r];
+		newpal[1] = gammatable[g];
+		newpal[2] = gammatable[b];
+		newpal += 3;
+	}
+	VID_ShiftPalette (pal);
+}
+
+
 /*
 	SCR_SizeUp_f
 
@@ -911,7 +941,7 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 		D_UpdateRects (pconupdate);
 	}
 
-	V_UpdatePalette ();
+	SCR_ApplyBlend ();
 
 	//
 	// update one of three areas
