@@ -147,10 +147,10 @@ Skin_Cache (skin_t *skin)
 	snprintf (name, sizeof (name), "skins/%s.pcx", skin->name);
 	COM_FOpenFile (name, &file);
 	if (!file) {
+		Con_Printf ("Couldn't load skin %s\n", name);
 		snprintf (name, sizeof (name), "skins/%s.pcx", baseskin->string);
 		COM_FOpenFile (name, &file);
 		if (!file) {
-			Con_Printf ("Couldn't load skin %s\n", name);
 			skin->failedload = true;
 			return NULL;
 		}
