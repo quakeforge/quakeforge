@@ -661,13 +661,13 @@ EmitSkyPolys (float speedscale, msurface_t *fa)
 			dir[2] *= 3;	// flatten the sphere
 
 			length = DotProduct (dir, dir);
-			length = (6 * 63) / sqrt (length);
+			length = 2.95 / sqrt (length);
 
 			dir[0] *= length;
 			dir[1] *= length;
 
-			s = (speedscale + dir[0]) * (1.0 / 128.0);
-			t = (speedscale + dir[1]) * (1.0 / 128.0);
+			s = speedscale + dir[0];
+			t = speedscale + dir[1];
 
 			qfglTexCoord2f (s, t);
 			qfglVertex3fv (v);
@@ -745,8 +745,8 @@ draw_id_sky_polys (msurface_t *sky_chain)
 	msurface_t *sc = sky_chain;
 	float       speedscale;
 
-	speedscale = r_realtime * 8;
-	speedscale -= (int)speedscale & ~127 ;
+	speedscale = r_realtime / 16;
+	speedscale -= floor (speedscale);
 
 	qfglBindTexture (GL_TEXTURE_2D, solidskytexture);
 	while (sc) {
@@ -757,8 +757,8 @@ draw_id_sky_polys (msurface_t *sky_chain)
 	if (gl_skymultipass->int_val) {
 		sc = sky_chain;
 
-		speedscale = r_realtime * 16;
-		speedscale -= (int)speedscale & ~127 ;
+		speedscale = r_realtime / 8;
+		speedscale -= floor (speedscale);
 
 		qfglBindTexture (GL_TEXTURE_2D, alphaskytexture);
 		while (sc) {
