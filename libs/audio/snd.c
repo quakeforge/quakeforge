@@ -69,8 +69,6 @@ plugin_list_t   snd_render_list[] = {
 	SND_RENDER_LIST
 };
 
-// FIXME: ewwwies
-
 
 void
 S_Init (struct model_s **worldmodel, int *viewentity, double *host_frametime)
@@ -122,8 +120,13 @@ S_Init_Cvars (void)
 						  "CD music volume");
 	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
 	                              "control sample interpolation");
-	snd_output = Cvar_Get ("snd_output", "null", CVAR_ARCHIVE, NULL,
+#ifdef _WIN32
+	snd_output = Cvar_Get ("snd_output", "sdl", CVAR_ARCHIVE, NULL,
 						   "Sound Output Plugin to use");
+#else
+	snd_output = Cvar_Get ("snd_output", "oss", CVAR_ARCHIVE, NULL,
+						   "Sound Output Plugin to use");
+#endif
 	snd_render = Cvar_Get ("snd_render", "default", CVAR_ARCHIVE, NULL,
 						   "Sound Renderer Plugin to use");
 }
