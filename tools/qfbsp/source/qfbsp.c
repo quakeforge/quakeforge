@@ -177,15 +177,18 @@ winding_t *
 ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 {
 	int         maxpts, i, j;
-	int         sides[MAX_POINTS_ON_WINDING + 1];
+	int        *sides;
 	int         counts[3];
 	vec_t       dot;
-	vec_t       dists[MAX_POINTS_ON_WINDING + 1];
+	vec_t      *dists;
 	vec_t      *p1, *p2;
 	vec3_t      mid;
 	winding_t  *neww;
 
 	counts[0] = counts[1] = counts[2] = 0;
+
+	sides = alloca ((in->numpoints + 1) * sizeof (int));
+	dists = alloca ((in->numpoints + 1) * sizeof (vec_t));
 
 	// determine sides for each point
 	for (i = 0; i < in->numpoints; i++) {
@@ -273,41 +276,30 @@ void
 DivideWinding (winding_t *in, plane_t *split, winding_t **front,
 			   winding_t **back)
 {
-	int         maxpts, i, j;
-	int         sides[MAX_POINTS_ON_WINDING + 1];
+	int         maxpts, i;
 	int         counts[3];
+	plane_t     plane;
 	vec_t       dot;
-	vec_t       dists[MAX_POINTS_ON_WINDING + 1];
-	vec_t      *p1, *p2;
-	vec3_t      mid;
-	winding_t  *f, *b;
+	winding_t  *tmp;
 
 	counts[0] = counts[1] = counts[2] = 0;
 
 	// determine sides for each point
 	for (i = 0; i < in->numpoints; i++) {
-		dot = DotProduct (in->points[i], split->normal);
-		dot -= split->dist;
-		dists[i] = dot;
+		dot = DotProduct (in->points[i], split->normal) - split->dist;
 		if (dot > ON_EPSILON)
-			sides[i] = SIDE_FRONT;
+			counts[SIDE_FRONT]++;
 		else if (dot < -ON_EPSILON)
-			sides[i] = SIDE_BACK;
-		else {
-			sides[i] = SIDE_ON;
-		}
-		counts[sides[i]]++;
+			counts[SIDE_BACK]++;
 	}
-	sides[i] = sides[0];
-	dists[i] = dists[0];
 
 	*front = *back = NULL;
 
-	if (!counts[0]) {
+	if (!counts[SIDE_FRONT]) {
 		*back = in;
 		return;
 	}
-	if (!counts[1]) {
+	if (!counts[SIDE_BACK]) {
 		*front = in;
 		return;
 	}
@@ -315,54 +307,14 @@ DivideWinding (winding_t *in, plane_t *split, winding_t **front,
 	maxpts = in->numpoints + 4;			// can't use counts[0]+2 because
 										// of fp grouping errors
 
-	*front = f = NewWinding (maxpts);
-	*back = b = NewWinding (maxpts);
+	tmp = CopyWinding (in);
+	*front = ClipWinding (tmp, split, 0);
 
-	for (i = 0; i < in->numpoints; i++) {
-		p1 = in->points[i];
+	plane.dist = -split->dist;
+	VectorNegate (split->normal, plane.normal);
 
-		if (sides[i] == SIDE_ON) {
-			VectorCopy (p1, f->points[f->numpoints]);
-			f->numpoints++;
-			VectorCopy (p1, b->points[b->numpoints]);
-			b->numpoints++;
-			continue;
-		}
-
-		if (sides[i] == SIDE_FRONT) {
-			VectorCopy (p1, f->points[f->numpoints]);
-			f->numpoints++;
-		}
-		if (sides[i] == SIDE_BACK) {
-			VectorCopy (p1, b->points[b->numpoints]);
-			b->numpoints++;
-		}
-
-		if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i])
-			continue;
-
-		// generate a split point
-		p2 = in->points[(i + 1) % in->numpoints];
-
-		dot = dists[i] / (dists[i] - dists[i + 1]);
-		for (j = 0; j < 3; j++) {		// avoid round off error when
-										// possible
-			if (split->normal[j] == 1)
-				mid[j] = split->dist;
-			else if (split->normal[j] == -1)
-				mid[j] = -split->dist;
-			else
-				mid[j] = p1[j] + dot * (p2[j] - p1[j]);
-		}
-
-		VectorCopy (mid, f->points[f->numpoints]);
-		f->numpoints++;
-		VectorCopy (mid, b->points[b->numpoints]);
-		b->numpoints++;
-	}
-
-	if (f->numpoints > maxpts || b->numpoints > maxpts)
-		Sys_Error ("ClipWinding: points exceeded estimate");
+	tmp = CopyWinding (in);
+	*back = ClipWinding (tmp, &plane, 0);
 }
 
 winding_t *
@@ -371,7 +323,7 @@ NewWinding (int points)
 	int         size;
 	winding_t  *w;
 
-	if (points < 3 || points > MAX_POINTS_ON_WINDING)
+	if (points < 3)
 		Sys_Error ("NewWinding: %i points", points);
 
 	c_activewindings++;

@@ -54,8 +54,6 @@ typedef struct
 	vec3_t	points[8];			// variable sized
 } winding_t;
 
-#define MAX_POINTS_ON_WINDING	64
-
 winding_t *BaseWindingForPlane (plane_t *p);
 void CheckWinding (winding_t *w);
 winding_t	*NewWinding (int points);
@@ -67,10 +65,6 @@ void	DivideWinding (winding_t *in, plane_t *split, winding_t **front, winding_t 
 
 //============================================================================
  
-#define	MAXEDGES			32
-#define	MAXPOINTS			28		// don't let a base face get past this
-									// because it can be split more later
-
 typedef struct visfacet_s
 {
 	struct visfacet_s	*next;
