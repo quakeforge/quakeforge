@@ -345,7 +345,7 @@ NET_SVC_Nails_Parse (net_svc_nails_t *block, msg_t *msg)
 			bits[j] = MSG_ReadByte (msg);
 
 		if (i >= MAX_PROJECTILES)
-			continue;
+			return NET_ERROR;
 
 		// [48 bits] xyzpy 12 12 12 4 8
 		// format is 12 bits per origin coord, 4 for angles[0],
@@ -358,9 +358,6 @@ NET_SVC_Nails_Parse (net_svc_nails_t *block, msg_t *msg)
 		block->nails[i].angles[2] = 0;
 	}
 
-	if (block->numnails > MAX_PROJECTILES)
-		block->numnails = MAX_PROJECTILES;
-
 	return msg->badread;
 }
 
@@ -371,10 +368,12 @@ NET_SVC_Modellist_Parse (net_svc_modellist_t *block, msg_t *msg)
 
 	block->startmodel = MSG_ReadByte (msg);
 
-	for (i = 0; i < MAX_MODELS; i++) {
+	for (i = 0;; i++) {
 		block->models[i] = MSG_ReadString (msg);
 		if (!*block->models[i])
 			break;
+		if (i >= MAX_MODELS)
+			return NET_ERROR;
 	}
 	// this is a bit redundant, but I think the robustness is a good thing
 	block->models[MAX_MODELS] = "";
@@ -391,10 +390,12 @@ NET_SVC_Soundlist_Parse (net_svc_soundlist_t *block, msg_t *msg)
 
 	block->startsound = MSG_ReadByte (msg);
 
-	for (i = 0; i < MAX_MODELS; i++) {
+	for (i = 0;; i++) {
 		block->sounds[i] = MSG_ReadString (msg);
 		if (!*block->sounds[i])
 			break;
+		if (i >= MAX_SOUNDS)
+			return NET_ERROR;
 	}
 	// this is a bit redundant, but I think the robustness is a good thing
 	block->sounds[MAX_SOUNDS] = "";
