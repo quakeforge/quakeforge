@@ -84,6 +84,7 @@ static cvar_t	   *snd_rate;
 static cvar_t	   *snd_device;
 static cvar_t	   *snd_bits;
 static cvar_t	   *snd_oss_mmaped;
+static cvar_t	   *snd_oss_rw;
 
 static plugin_t           plugin_info;
 static plugin_data_t      plugin_info_data;
@@ -107,13 +108,18 @@ SNDDMA_Init_Cvars (void)
 						 "sound sample depth. 0 is system default");
 	snd_oss_mmaped = Cvar_Get ("snd_oss_mmaped", "1", CVAR_ROM, NULL,
 							   "mmaped io");
+	snd_oss_rw = Cvar_Get ("snd_oss_rw", "0", CVAR_ROM, NULL,
+						   "open the sound device in read/write rather than "
+						   "write-only mode");
 }
 
 static qboolean
 SNDDMA_Init (void)
 {
-	int				caps, fmt, rc, tmp, i;
-	int		        retries = 3;
+	int         caps, fmt, rc, tmp, i;
+	int		    retries = 3;
+	int         omode = O_WRONLY;
+	int         mmmode = PROT_WRITE;
 	struct audio_buf_info info;
 
 	snd_inited = 0;
@@ -123,13 +129,18 @@ SNDDMA_Init (void)
 	if (snd_device->string[0])
 		snd_dev = snd_device->string;
 
-	audio_fd = open (snd_dev, O_RDWR);
+	if (snd_oss_rw->int_val) {
+		omode = O_RDWR;
+		mmmode |= PROT_READ;
+	}
+
+	audio_fd = open (snd_dev, omode);
 	if (audio_fd < 0) {					// Failed open, retry up to 3 times
 		// if it's busy
 		while ((audio_fd < 0) && retries-- &&
 			   ((errno == EAGAIN) || (errno == EBUSY))) {
 			sleep (1);
-			audio_fd = open (snd_dev, O_RDWR);
+			audio_fd = open (snd_dev, omode);
 		}
 		if (audio_fd < 0) {
 			perror (snd_dev);
@@ -252,13 +263,7 @@ SNDDMA_Init (void)
     
 	if (mmaped_io) {				// memory map the dma buffer
 		shm->buffer = (unsigned char *) mmap
-			(NULL, info.fragstotal * info.fragsize,
-#if (defined(__FreeBSD__) && (__FreeBSD_version < 500000))
-			 // workaround for BSD OSS quirk
-			 PROT_READ | PROT_WRITE,
-#else
-			 PROT_WRITE,
-#endif	
+			(NULL, info.fragstotal * info.fragsize, mmmode,
 			 MAP_FILE | MAP_SHARED, audio_fd, 0);
 		if (shm->buffer == MAP_FAILED) {
 			perror (snd_dev);
