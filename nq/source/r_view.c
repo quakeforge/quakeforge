@@ -83,11 +83,6 @@ cvar_t     *v_kicktime;
 cvar_t     *v_kickroll;
 cvar_t     *v_kickpitch;
 
-cvar_t     *crosshair;
-cvar_t     *crosshaircolor;
-cvar_t     *cl_crossx;
-cvar_t     *cl_crossy;
-
 cvar_t     *brightness;
 cvar_t     *contrast;
 
@@ -144,7 +139,6 @@ V_StartPitchDrift (void)
 										// drifting
 	}
 #endif
-
 	if (cl.nodrift || !cl.pitchvel) {
 		cl.pitchvel = v_centerspeed->value;
 		cl.nodrift = false;
@@ -163,15 +157,16 @@ V_StopPitchDrift (void)
 
 
 /*
-V_DriftPitch
+	V_DriftPitch
 
-Moves the client pitch angle towards cl.idealpitch sent by the server.
+	Moves the client pitch angle towards cl.idealpitch sent by the server.
 
-If the user is adjusting pitch manually, either with lookup/lookdown,
-mlook and mouse, or klook and keyboard, pitch drifting is constantly stopped.
+	If the user is adjusting pitch manually, either with lookup/lookdown,
+	mlook and mouse, or klook and keyboard, pitch drifting is constantly
+	stopped.
 
-Drifting is enabled when the center view key is hit, mlook is released and
-lookspring is non 0, or when 
+	Drifting is enabled when the center view key is hit, mlook is released
+	and lookspring is non 0, or when 
 */
 void
 V_DriftPitch (void)
@@ -226,7 +221,7 @@ V_DriftPitch (void)
 
 
 /*
-  PALETTE FLASHES 
+	PALETTE FLASHES 
 */
 
 
@@ -235,15 +230,14 @@ V_CheckGamma (void)
 {
 	static float    oldgamma;
 
-	if (vid_gamma) {				// might get called before vid_gamma gets set
+	if (vid_gamma) {		// might get called before vid_gamma gets set
 		if (oldgamma == vid_gamma->value)
 			return false;
 
 		oldgamma = vid_gamma->value;
 	}
 
-
-	vid.recalc_refdef = 1;			// force a surface cache flush
+	vid.recalc_refdef = 1;	// force a surface cache flush
 
 	return true;
 }
@@ -330,7 +324,6 @@ void
 V_BonusFlash_f (void)
 {
 	if (!cl_cshift_bonus->int_val)
-//		&& !(atoi (Info_ValueForKey (cl.serverinfo, "cshifts")) & INFO_CSHIFT_BONUS))
 		return;
 	cl.cshifts[CSHIFT_BONUS] = cshift_bonus;
 }
@@ -345,30 +338,29 @@ void
 V_SetContentsColor (int contents)
 {
 	if (!cl_cshift_contents->int_val) {
-//		&& !(atoi (Info_ValueForKey (cl.serverinfo, "cshifts")) & INFO_CSHIFT_CONTENTS)) {
 		cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
 		return;
 	}
 
 	switch (contents) {
-	case CONTENTS_EMPTY:
-	case CONTENTS_SOLID:
-		cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
-		break;
-	case CONTENTS_LAVA:
-		cl.cshifts[CSHIFT_CONTENTS] = cshift_lava;
-		break;
-	case CONTENTS_SLIME:
-		cl.cshifts[CSHIFT_CONTENTS] = cshift_slime;
-		break;
-	default:
-		cl.cshifts[CSHIFT_CONTENTS] = cshift_water;
+		case CONTENTS_EMPTY:
+		case CONTENTS_SOLID:
+			cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
+			break;
+		case CONTENTS_LAVA:
+			cl.cshifts[CSHIFT_CONTENTS] = cshift_lava;
+			break;
+		case CONTENTS_SLIME:
+			cl.cshifts[CSHIFT_CONTENTS] = cshift_slime;
+			break;
+		default:
+			cl.cshifts[CSHIFT_CONTENTS] = cshift_water;
 	}
 }
 
 
 /* 
-   VIEW RENDERING 
+	VIEW RENDERING 
 */
 
 
@@ -393,15 +385,10 @@ CalcGunAngle (void)
 	pitch = -r_refdef.viewangles[PITCH];
 
 	yaw = angledelta (yaw - r_refdef.viewangles[YAW]) * 0.4;
-	if (yaw > 10)
-		yaw = 10;
-	if (yaw < -10)
-		yaw = -10;
+	yaw = bound (-10, yaw, 10);
 	pitch = angledelta (-pitch - r_refdef.viewangles[PITCH]) * 0.4;
-	if (pitch > 10)
-		pitch = 10;
-	if (pitch < -10)
-		pitch = -10;
+	pitch = bound (-10, pitch, 10);
+
 	move = host_frametime * 20;
 	if (yaw > oldyaw) {
 		if (oldyaw + move < yaw)
@@ -611,21 +598,16 @@ V_CalcRefdef (void)
 
 // fudge position around to keep amount of weapon visible
 // roughly equal with different FOV
-
-#if 0
-	if (cl.model_precache[cl.stats[STAT_WEAPON]] &&
-		strcmp (cl.model_precache[cl.stats[STAT_WEAPON]]->name,
-				"progs/v_shot2.mdl"))
-#endif
-		if (cl_sbar->int_val == 0 && scr_viewsize->int_val >= 100);
-		else if (scr_viewsize->int_val == 110)
-			view->origin[2] += 1;
-		else if (scr_viewsize->int_val == 100)
-			view->origin[2] += 2;
-		else if (scr_viewsize->int_val == 90)
-			view->origin[2] += 1;
-		else if (scr_viewsize->int_val == 80)
-			view->origin[2] += 0.5;
+	if (cl_sbar->int_val == 0 && scr_viewsize->int_val >= 100)
+		;
+	else if (scr_viewsize->int_val == 110)
+		view->origin[2] += 1;
+	else if (scr_viewsize->int_val == 100)
+		view->origin[2] += 2;
+	else if (scr_viewsize->int_val == 90)
+		view->origin[2] += 1;
+	else if (scr_viewsize->int_val == 80)
+		view->origin[2] += 0.5;
 
 	view->model = cl.model_precache[cl.stats[STAT_WEAPON]];
 	view->frame = cl.stats[STAT_WEAPONFRAME];
@@ -683,8 +665,7 @@ V_RenderView (void)
 	if (cl.intermission) {				// intermission / finale rendering
 		V_CalcIntermissionRefdef ();
 	} else {
-		if (!cl.paused					/* && (sv.maxclients > 1 || key_dest
-										   == key_game) */ )
+		if (!cl.paused)
 			V_CalcRefdef ();
 	}
 
@@ -695,40 +676,59 @@ V_RenderView (void)
 void
 V_Init (void)
 {
-	Cmd_AddCommand ("v_cshift", V_cshift_f, "No Description");
-	Cmd_AddCommand ("bf", V_BonusFlash_f, "No Description");
-	Cmd_AddCommand ("centerview", V_StartPitchDrift, "No Description");
+	Cmd_AddCommand ("v_cshift", V_cshift_f, "This adjusts all of the colors currently being displayed.\n"
+		"Used when you are underwater, hit, have the Ring of Shadows, or Quad Damage. (v_cshift r g b intensity)");
 
-	v_centermove = Cvar_Get ("v_centermove", "0.15", CVAR_NONE, NULL, "None");
-	v_centerspeed = Cvar_Get ("v_centerspeed", "500", CVAR_NONE, NULL, "None");
+	Cmd_AddCommand ("bf", V_BonusFlash_f, "Background flash, used when you pick up an item");
+	Cmd_AddCommand ("centerview", V_StartPitchDrift, "Centers the player's view ahead after +lookup or +lookdown \n"
+		"Will not work while mlook is active or freelook is 1.");
+}
 
-	v_iyaw_cycle = Cvar_Get ("v_iyaw_cycle", "2", CVAR_NONE, NULL, "None");
-	v_iroll_cycle = Cvar_Get ("v_iroll_cycle", "0.5", CVAR_NONE, NULL, "None");
-	v_ipitch_cycle = Cvar_Get ("v_ipitch_cycle", "1", CVAR_NONE, NULL, "None");
-	v_iyaw_level = Cvar_Get ("v_iyaw_level", "0.3", CVAR_NONE, NULL, "None");
-	v_iroll_level = Cvar_Get ("v_iroll_level", "0.1", CVAR_NONE, NULL, "None");
+void
+V_Init_Cvars (void)
+{
+	v_centermove = Cvar_Get ("v_centermove", "0.15", CVAR_NONE, NULL,
+			"How far the player must move forward before the view re-centers");
+	v_centerspeed = Cvar_Get ("v_centerspeed", "500", CVAR_NONE, NULL,
+			"How quickly you return to a center view after a lookup or lookdown");
+
+	v_iyaw_cycle = Cvar_Get ("v_iyaw_cycle", "2", CVAR_NONE, NULL,
+			"How far you tilt right and left when v_idlescale is enabled");
+	v_iroll_cycle = Cvar_Get ("v_iroll_cycle", "0.5", CVAR_NONE, NULL,
+			"How quickly you tilt right and left when v_idlescale is enabled");
+	v_ipitch_cycle = Cvar_Get ("v_ipitch_cycle", "1", CVAR_NONE, NULL,
+			"How quickly you lean forwards and backwards when v_idlescale is enabled");
+	v_iyaw_level = Cvar_Get ("v_iyaw_level", "0.3", CVAR_NONE, NULL,
+			"How far you tilt right and left when v_idlescale is enabled");
+	v_iroll_level = Cvar_Get ("v_iroll_level", "0.1", CVAR_NONE, NULL,
+			"How far you tilt right and left when v_idlescale is enabled");
 	v_ipitch_level = Cvar_Get ("v_ipitch_level", "0.3", CVAR_NONE, NULL,
-			"None");
+			"How far you lean forwards and backwards when v_idlescale is enabled");
 
-	v_idlescale = Cvar_Get ("v_idlescale", "0", CVAR_NONE, NULL, "None");
-	crosshair = Cvar_Get ("crosshair", "0", CVAR_ARCHIVE, NULL, "None");
-	crosshaircolor = Cvar_Get ("crosshaircolor", "79", CVAR_ARCHIVE, NULL,
-			"None");
-	cl_crossx = Cvar_Get ("cl_crossx", "0", CVAR_NONE, NULL, "None");
-	cl_crossy = Cvar_Get ("cl_crossy", "0", CVAR_NONE, NULL, "None");
+	v_idlescale = Cvar_Get ("v_idlescale", "0", CVAR_NONE, NULL,
+			"Toggles whether the view remains idle");
 
 	scr_ofsx = Cvar_Get ("scr_ofsx", "0", CVAR_NONE, NULL, "None");
 	scr_ofsy = Cvar_Get ("scr_ofsy", "0", CVAR_NONE, NULL, "None");
 	scr_ofsz = Cvar_Get ("scr_ofsz", "0", CVAR_NONE, NULL, "None");
-	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL, "None");
-	cl_rollangle = Cvar_Get ("cl_rollangle", "2.0", CVAR_NONE, NULL, "None");
-	cl_bob = Cvar_Get ("cl_bob", "0.02", CVAR_NONE, NULL, "None");
-	cl_bobcycle = Cvar_Get ("cl_bobcycle", "0.6", CVAR_NONE, NULL, "None");
-	cl_bobup = Cvar_Get ("cl_bobup", "0.5", CVAR_NONE, NULL, "None");
+	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,
+			"How quickly you straighten out after strafing");
+	cl_rollangle = Cvar_Get ("cl_rollangle", "2.0", CVAR_NONE, NULL,
+			"How much your screen tilts when strafing");
 
-	v_kicktime = Cvar_Get ("v_kicktime", "0.5", CVAR_NONE, NULL, "None");
-	v_kickroll = Cvar_Get ("v_kickroll", "0.6", CVAR_NONE, NULL, "None");
-	v_kickpitch = Cvar_Get ("v_kickpitch", "0.6", CVAR_NONE, NULL, "None");
+	cl_bob = Cvar_Get ("cl_bob", "0.02", CVAR_NONE, NULL,
+			"How much your weapon moves up and down when walking");
+	cl_bobcycle = Cvar_Get ("cl_bobcycle", "0.6", CVAR_NONE, NULL,
+			"How quickly your weapon moves up and down when walking");
+	cl_bobup = Cvar_Get ("cl_bobup", "0.5", CVAR_NONE, NULL,
+			"How long your weapon stays up before cycling when walking");
+
+	v_kicktime = Cvar_Get ("v_kicktime", "0.5", CVAR_NONE, NULL,
+			"How long the kick from an attack lasts");
+	v_kickroll = Cvar_Get ("v_kickroll", "0.6", CVAR_NONE, NULL,
+			"How much you lean when hit");
+	v_kickpitch = Cvar_Get ("v_kickpitch", "0.6", CVAR_NONE, NULL,
+			"How much you look up when hit");
 
 	brightness = Cvar_Get ("brightness", "1", CVAR_ARCHIVE, NULL, "None");
 	contrast = Cvar_Get ("contrast", "1", CVAR_ARCHIVE, NULL, "None");

@@ -80,9 +80,9 @@ cvar_t     *v_ipitch_level;
 
 cvar_t     *v_idlescale;
 
-float		v_dmg_time, v_dmg_roll, v_dmg_pitch;
+float       v_dmg_time, v_dmg_roll, v_dmg_pitch;
 
-extern int	in_forward, in_forward2, in_back;
+extern int  in_forward, in_forward2, in_back;
 
 frame_t    *view_frame;
 player_state_t *view_message;
@@ -159,7 +159,6 @@ V_CalcBob (void)
 
 cvar_t     *v_centermove;
 cvar_t     *v_centerspeed;
-
 
 void
 V_StartPitchDrift (void)
@@ -254,14 +253,14 @@ V_DriftPitch (void)
 
 
 /*
-						PALETTE FLASHES 
+	PALETTE FLASHES 
 */
 
 
 qboolean
 V_CheckGamma (void)
 {
-	static float	oldgamma;
+	static float    oldgamma;
 
 	if (vid_gamma) {		// might get called before vid_gamma gets set
 		if (oldgamma == vid_gamma->value)
@@ -279,7 +278,6 @@ V_CheckGamma (void)
 void
 V_ParseDamage (void)
 {
-
 	int         armor, blood;
 	vec3_t      from;
 	int         i;
@@ -373,7 +371,6 @@ V_BonusFlash_f (void)
 void
 V_SetContentsColor (int contents)
 {
-
 	if (!cl_cshift_contents->int_val
 		&& !(atoi (Info_ValueForKey (cl.serverinfo, "cshifts")) & INFO_CSHIFT_CONTENTS)) {
 		cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
@@ -398,7 +395,7 @@ V_SetContentsColor (int contents)
 
 
 /* 
-						VIEW RENDERING 
+	VIEW RENDERING 
 */
 
 
@@ -614,7 +611,7 @@ V_CalcRefdef (void)
 
 // fudge position around to keep amount of weapon visible
 // roughly equal with different FOV
-	if (cl_sbar->int_val == 0 &&scr_viewsize->int_val >= 100)
+	if (cl_sbar->int_val == 0 && scr_viewsize->int_val >= 100)
 		;
 	else if (scr_viewsize->int_val == 110)
 		view->origin[2] += 1;
@@ -700,12 +697,11 @@ V_Init (void)
 {
 	Cmd_AddCommand ("v_cshift", V_cshift_f, "This adjusts all of the colors currently being displayed.\n"
 		"Used when you are underwater, hit, have the Ring of Shadows, or Quad Damage. (v_cshift r g b intensity)");
-		
+
 	Cmd_AddCommand ("bf", V_BonusFlash_f, "Background flash, used when you pick up an item");
 	Cmd_AddCommand ("centerview", V_StartPitchDrift, "Centers the player's view ahead after +lookup or +lookdown \n"
 		"Will not work while mlook is active or freelook is 1.");
 }
-
 
 void
 V_Init_Cvars (void)

@@ -930,6 +930,7 @@ Host_Init (quakeparms_t *parms)
 	R_Particles_Init_Cvars ();
 	Mod_Init_Cvars ();
 	Host_Skin_Init_Cvars ();
+	V_Init_Cvars ();
 
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute_Sets ();
