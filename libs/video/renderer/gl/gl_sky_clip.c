@@ -793,7 +793,7 @@ R_DrawSkyChain (msurface_t *sky_chain)
 #if 0
 	qfglDisable (GL_TEXTURE_2D);
 	sc = sky_chain;
-	qfglColor3f (1, 1, 1);
+	qfglColor3ubv (255, 255, 255);
 	while (sc) {
 		glpoly_t   *p = sc->polys;
 		while (p) {
@@ -808,7 +808,7 @@ R_DrawSkyChain (msurface_t *sky_chain)
 		sc = sc->texturechain;
 	}
 	sc = sky_chain;
-	qfglColor3f (0, 1, 0);
+	qfglColor3ubv (0, 255, 0);
 	qfglBegin (GL_POINTS);
 	while (sc) {
 		glpoly_t   *p = sc->polys;
@@ -829,7 +829,7 @@ R_DrawSkyChain (msurface_t *sky_chain)
 	qfglEnd ();
 	if (skyloaded) {
 		int         i, j;
-		qfglColor3f (1, 0, 0);
+		qfglColor3ubv (255, 0, 0);
 		for (i = 0; i < 6; i++) {
 			vec3_t      v;
 			qfglBegin (GL_LINE_LOOP);

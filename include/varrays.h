@@ -59,6 +59,6 @@ typedef struct varray_t2f_c4f_n3f_v3f_s {
 } varray_t2f_c4f_n3f_v3f_t;
 
 #define MAX_VARRAY_VERTS	10000
-extern varray_t2f_c4f_v3f_t varray[MAX_VARRAY_VERTS];
+extern varray_t2f_c4ub_v3f_t varray[MAX_VARRAY_VERTS];
 
 #endif // __qf_varrays_h

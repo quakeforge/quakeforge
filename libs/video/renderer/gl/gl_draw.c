@@ -608,7 +608,7 @@ void
 Draw_FadeScreen (void)
 {
 	qfglDisable (GL_TEXTURE_2D);
-	qfglColor4f (0, 0, 0, 0.7);
+	qfglColor4ub (0, 0, 0, 179);
 	qfglBegin (GL_QUADS);
 
 	qfglVertex2f (0, 0);

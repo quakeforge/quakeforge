@@ -655,12 +655,12 @@ R_VoorTrail (entity_t *ent)
 void
 R_DrawParticles (void)
 {
-	byte        alpha, i;
-	unsigned char *at;
-	float       dvel, grav, fast_grav, minparticledist, scale;
-	int         activeparticles, maxparticle, j, k;
-	particle_t *part;
-	vec3_t		up_scale, right_scale, up_right_scale, down_right_scale;
+	byte			i;
+	unsigned char  *at;
+	float			dvel, grav, fast_grav, minparticledist, scale;
+	int				activeparticles, maxparticle, j, k;
+	particle_t	   *part;
+	vec3_t			up_scale, right_scale, up_right_scale, down_right_scale;
 	
 	if (!r_particles->int_val)
 		return;
@@ -697,12 +697,11 @@ R_DrawParticles (void)
 		// Note, we must still do physics and such on them.
 		if (!(DotProduct (part->org, vpn) < minparticledist)) {
 			at = (byte *) & d_8to24table[(byte) part->color];
-			alpha = part->alpha;
 
-			varray[0].color[0] = (float) at[0] / 255;
-			varray[0].color[1] = (float) at[1] / 255;
-			varray[0].color[2] = (float) at[2] / 255;
-			varray[0].color[3] = (float) alpha / 255;
+			varray[0].color[0] = at[0];
+			varray[0].color[1] = at[1];
+			varray[0].color[2] = at[2];
+			varray[0].color[3] = part->alpha;
 
 			memcpy(varray[1].color, varray[0].color, sizeof(varray[0].color));
 			memcpy(varray[2].color, varray[0].color, sizeof(varray[0].color));

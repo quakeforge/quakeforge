@@ -57,7 +57,7 @@
 #include "r_local.h"
 #include "varrays.h"
 
-varray_t2f_c4f_v3f_t varray[MAX_VARRAY_VERTS];
+varray_t2f_c4ub_v3f_t varray[MAX_VARRAY_VERTS];
 
 qboolean    VID_Is8bit (void);
 void        R_InitBubble (void);
@@ -169,7 +169,7 @@ R_Init (void)
 
 //	qfglInterleavedArrays(GL_T2F_C4F_N3F_V3F, 0, varray);
 	qfglTexCoordPointer (2, GL_FLOAT, sizeof(varray[0]), varray[0].texcoord);
-	qfglColorPointer (4, GL_FLOAT, sizeof(varray[0]), varray[0].color);
+	qfglColorPointer (4, GL_UNSIGNED_BYTE, sizeof(varray[0]), varray[0].color);
 	qfglVertexPointer (3, GL_FLOAT, sizeof(varray[0]), varray[0].vertex);
 }
 
