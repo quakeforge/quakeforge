@@ -57,7 +57,7 @@ Collection_ToString_f (Object *self)
 
 	dstring_appendstr (dstr, "]");
 
-	ret = newFloat(String, dstr->str);
+	ret = new(String, dstr->str);
 	dstring_delete (dstr);
 	
 	return ret;

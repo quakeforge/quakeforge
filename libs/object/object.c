@@ -70,7 +70,7 @@ Object_Finalize_f (Object *self)
 static String *
 Object_ToString_f (Object *self) 
 {
-	return newFloat(String, va("%s@%p", self->cl->name, self));
+	return new(String, va("%s@%p", self->cl->name, self));
 }
 
 static void
@@ -92,7 +92,7 @@ Object_Deinit_f (Object *self)
 static String *
 Class_ToString_f (Object *self)
 {
-	return newFloat(String, CLASS(self)->name);
+	return new(String, CLASS(self)->name);
 }	
 
 static Object *
@@ -115,18 +115,25 @@ Class_Deinit_f (Object *self) {
 
 
 Object *
-Object_Create (Class *cl, qboolean floating)
+Object_Create (Class *cl, qboolean perm)
 {
-	Object *new = calloc (1, cl->size);
+	Object *new;
+	if (cl->abstract)
+		return NULL;
+
+	new = calloc (1, cl->size);
 	new->cl = cl;
-	if (floating) {
-		new->refs = 0;
-	} else
-		new->refs = 1;
 	new->marked = false;
 	new->finalized = false;
-	new->next = allObjs;
-	allObjs = new;
+	if (perm || cl->alwaysperm) {
+		new->refs = 1;
+		new->nogc = true;
+	} else {
+		new->refs = 0;
+		new->nogc = false;
+		new->next = allObjs;
+		allObjs = new;
+	}
 	return new;
 }
 
@@ -150,6 +157,16 @@ Object_Release (Object *obj)
 {
 	if (obj->refs)
 		obj->refs--;
+	if (obj->nogc && !obj->refs) {
+		if (!obj->finalized) {
+			obj->finalized = true;
+			methodCall(obj, finalize);
+		}
+		if (!obj->refs) {
+			Object_Delete (obj);
+			return NULL;
+		}
+	}
 	return obj;
 }
 
@@ -179,31 +196,31 @@ static void
 Object_Test (void)
 {
 	String *liststr;
-	Collection *list = newFloat(ArrayList, classObj(Object), NULL);
+	Collection *list = new(ArrayList, classObj(Object), NULL);
 	
-	methodCall(list, add, newFloat(String, "Testing..."));
-	methodCall(list, add, newFloat(String, "One"));
-	methodCall(list, add, newFloat(Integer, 2));
-	methodCall(list, add, newFloat(Double, 3.0));
+	methodCall(list, add, new(String, "Testing..."));
+	methodCall(list, add, new(String, "One"));
+	methodCall(list, add, new(Integer, 2));
+	methodCall(list, add, new(Double, 3.0));
 	
 	liststr = methodCall(OBJECT(list), toString);
 	Sys_DPrintf("List: %s\n", liststr->str);
 	methodCall(LIST(list), removeAt, 2);
 	liststr = methodCall(OBJECT(list), toString);
 	Sys_DPrintf("List: %s\n", liststr->str);
-	methodCall(LIST(list), insertAt, 2, newFloat(String, "Mr. Two!"));
+	methodCall(LIST(list), insertAt, 2, new(String, "Mr. Two!"));
 	liststr = methodCall(OBJECT(list), toString);
 	Sys_DPrintf("List: %s\n", liststr->str);
 
-	list = newFloat(ArrayList, classObj(Object), NULL);
-	methodCall(list, add, newFloat(String, "Don't free me!"));
-	methodCall(list, add, newFloat(Integer, 5));
-	methodCall(list, add, newFloat(Double, 3.14));
+	list = new(ArrayList, classObj(Object), NULL);
+	methodCall(list, add, new(String, "Don't free me!"));
+	methodCall(list, add, new(Integer, 5));
+	methodCall(list, add, new(Double, 3.14));
 	Object_AddToRoot (OBJECT(methodCall(list, iterator)));
 }
 
-Class *Object_class;
-Class *Class_class;
+Class * classObj(Object);
+Class * classObj(Class);
 
 void
 Object_Init (void)
@@ -211,17 +228,19 @@ Object_Init (void)
 	/* There is somewhat of a chicken and egg problem
 	   here.
 	*/
-	Object_class = calloc (1, sizeof (struct Class_s));
-	Class_class = calloc (1, sizeof (struct Class_s));
-	OBJECT(Object_class)->cl = Class_class;
-	OBJECT(Class_class)->cl = Class_class;
-	Class_class->parent = Object_class;
-	Object_class->init = (Object_Init_t) Object_Init_f; 
-	
-	Class_Init_f (OBJECT(Object_class), "Object", sizeof(Object), NULL, Object_Init_f, Object_Deinit_f, true);
-	Class_Init_f (OBJECT(Class_class), "Class", sizeof(Class), Object_class, Class_Init_f, Class_Deinit_f, false);
-	retain(Object_class);
-	retain(Class_class);
+	classObj(Object) = malloc (sizeof (Class));
+	classObj(Class) = malloc (sizeof (Class));
+	OBJECT(classObj(Object))->cl = Class_class;
+	OBJECT(classObj(Class))->cl = Class_class;
+	classObj(Class)->parent = classObj(Class);
+	classObj(Object)->init = (Object_Init_t) Object_Init_f; 
+	classObj(Class)->alwaysperm = true;
+	OBJECT(classObj(Class))->nogc = OBJECT(classObj(Object))->nogc = true;	
+
+	Class_Init_f (OBJECT(classObj(Object)), "Object", sizeof(Object), NULL, Object_Init_f, Object_Deinit_f, true);
+	Class_Init_f (OBJECT(classObj(Class)), "Class", sizeof(Class), classObj(Object), Class_Init_f, Class_Deinit_f, false);
+	retain(classObj(Object));
+	retain(classObj(Class));
 	/* Phew... Object and Class are now bootstrapped,
 	   classes can now be created by instantiating
 	   Class

@@ -43,7 +43,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 static String *
 Double_ToString_f (Object *self)
 {
-	return newFloat(String, va("%f", DOUBLE(self)->value));
+	return new(String, va("%f", DOUBLE(self)->value));
 }
 
 static int

@@ -200,7 +200,7 @@ ArrayList_Add_f (Collection *self, Object *o)
 static Iterator *
 ArrayList_Iterator_f (Collection *self)
 {
-	return newFloat(ArrayListIterator, ARRAYLIST(self));
+	return new(ArrayListIterator, ARRAYLIST(self));
 }
 
 static Object *
