@@ -668,7 +668,7 @@ SCR_ScreenShot_f (void)
 	switch(r_pixbytes) {
 	case 1:
 		pcx = EncodePCX (vid.buffer, vid.width, vid.height, vid.rowbytes,
-						 vid.palette, false, &pcx_len);
+						 vid.basepal, false, &pcx_len);
 		break;
 	case 2:
 		Con_Printf("SCR_ScreenShot_f: FIXME - add 16bit support\n");

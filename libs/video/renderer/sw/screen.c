@@ -656,7 +656,7 @@ SCR_ScreenShot_f (void)
 
 	// save the pcx file
 	pcx = EncodePCX (vid.buffer, vid.width, vid.height, vid.rowbytes,
-					 vid.palette, false, &pcx_len);
+					 vid.basepal, false, &pcx_len);
 	COM_WriteFile (pcxname, pcx, pcx_len);
 
 
