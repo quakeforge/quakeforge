@@ -297,7 +297,7 @@ Model_NextDownload (void)
 			&& cl.model_precache[i]->type == mod_alias)
 			info_key = emodel_name;
 
-		if (info_key) {
+		if (info_key && cl_model_crcs->int_val) {
 			aliashdr_t *ahdr = (aliashdr_t *) Mod_Extradata (cl.model_precache[i]);
 			Info_SetValueForKey (cls.userinfo, info_key, va ("%d", ahdr->crc),
 								 MAX_INFO_STRING);

@@ -301,6 +301,8 @@ extern	struct cvar_s	*m_side;
 
 extern	struct cvar_s	*cl_name;
 
+extern	struct cvar_s	*cl_model_crcs;
+
 
 #define	MAX_STATIC_ENTITIES	128			// torches, etc
 

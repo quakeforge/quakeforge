@@ -134,6 +134,8 @@ cvar_t     *cl_cshift_contents;
 cvar_t     *cl_cshift_damage;
 cvar_t     *cl_cshift_powerup;
 
+cvar_t     *cl_model_crcs;
+
 cvar_t     *lookspring;
 
 cvar_t     *m_pitch;
@@ -1197,6 +1199,10 @@ CL_Init (void)
 void
 CL_Init_Cvars (void)
 {
+	cl_model_crcs = Cvar_Get ("cl_model_crcs", "1", CVAR_ARCHIVE, NULL,
+		"Controls setting of emodel and pmodel info vars. Required by some "
+		"servers, but clearing this can make the difference between "
+		"connecting and not connecting on some others.");
 	confirm_quit = Cvar_Get ("confirm_quit", "1", CVAR_ARCHIVE, NULL,
 							 "confirm quit command");
 	cl_allow_cmd_pkt = Cvar_Get ("cl_allow_cmd_pkt", "1", CVAR_NONE, NULL,
