@@ -557,10 +557,10 @@ CL_RelinkEntities (void)
 
 		VectorCopy (ent->origin, ent->old_origin);
 
-		if (state->forcelink) {		// the entity was not updated in the
-									// last message so move to the final spot
-		} else {					// if the delta is large, assume a
-									// teleport and don't lerp
+		if (state->forcelink) {		// The entity was not updated in the last
+									// message so move to the final spot
+		} else {					// If the delta is large, assume a teleport
+									// and don't lerp
 			f = frac;
 			VectorSubtract (state->msg_origins[0],
 							state->msg_origins[1], delta);
@@ -608,7 +608,8 @@ CL_RelinkEntities (void)
 			}
 		}
 		CL_NewDlight (i, ent->origin, state->effects);
-		if (VectorDistance_fast(state->msg_origins[1], ent->origin) > (256*256))
+		if ( VectorDistance_fast(state->msg_origins[1], ent->origin)
+			 > (256*256))
 			VectorCopy (ent ->origin, state->msg_origins[1]);
 		if (ent->model->flags & EF_ROCKET) {
 			dl = R_AllocDlight (i);
@@ -632,7 +633,7 @@ CL_RelinkEntities (void)
 		else if (ent->model->flags & EF_TRACER3)
 			R_VoorTrail (ent);
 		else if (ent->model->flags & EF_GLOWTRAIL)
-			R_GlowTrail (ent);
+			R_GlowTrail (ent, state->glow_color);
 
 		state->forcelink = false;
 

@@ -214,7 +214,7 @@ CL_CheckOrDownloadFile (const char *filename)
 	}
 
 	if (!snd_initialized && strnequal ("sound/", filename, 6)) {
-		// don't bother downloading sownds if we can't play them
+		// don't bother downloading sounds if we can't play them
 		return true;
 	}
 

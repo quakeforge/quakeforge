@@ -362,7 +362,6 @@ CL_ParseUpdate (int bits)
 		bits |= (i << 8);
 	}
 	
-
 	if (bits & U_LONGENTITY)
 		num = MSG_ReadShort (net_message);
 	else
@@ -486,16 +485,15 @@ CL_ParseUpdate (int bits)
 		forcelink = true;
 
 // QSG Start
-#if 0
 	if (bits & U_ALPHA)
 		state->alpha = MSG_ReadByte (net_message);
 	else
-		state->alpha = state.baseline.alpha;
+		state->alpha = state->baseline.alpha;
 
 	if (bits & U_SCALE)
 		state->scale = MSG_ReadByte (net_message);
 	else
-		state->scale = state.baseline.scale;
+		state->scale = state->baseline.scale;
 
 	if (bits & U_EFFECTS2)
 		state->effects = (state->effects & 0xFF) |
@@ -504,17 +502,17 @@ CL_ParseUpdate (int bits)
 	if (bits & U_GLOWSIZE)
 		state->glow_size = MSG_ReadByte (net_message);
 	else
-		state->glow_size = state.baseline.glow_size;
+		state->glow_size = state->baseline.glow_size;
 
 	if (bits & U_GLOWCOLOR)
 		state->glow_color = MSG_ReadByte (net_message);
 	else
-		state->glow_color = state.baseline.glow_color;
+		state->glow_color = state->baseline.glow_color;
 
 	if (bits & U_COLORMOD)
 		state->colormod = MSG_ReadByte (net_message);
 	else
-		state->colormod = state.baseline.colormod;
+		state->colormod = state->baseline.colormod;
 
 	if (!(bits & U_EXTEND2))
 		return;
@@ -523,8 +521,7 @@ CL_ParseUpdate (int bits)
 		state->effects |= EF_GLOWTRAIL;
 
 	if (bits & U_FRAME2)
-		to->frame = (to->frame & 0xFF) | (MSG_ReadByte (net_message) << 8);
-#endif
+		ent->frame = (ent->frame & 0xFF) | (MSG_ReadByte (net_message) << 8);
 // QSG End
 
 	if (forcelink) {					// didn't have an update last message
@@ -582,7 +579,8 @@ CL_ParseClientdata (int bits)
 		else
 			cl.punchangle[i] = 0;
 		if (bits & (SU_VELOCITY1 << i))
-			cl.mvelocity[0][i] = ((signed char) MSG_ReadByte (net_message)) * 16;
+			cl.mvelocity[0][i] = ((signed char) MSG_ReadByte (net_message))
+				* 16;
 		else
 			cl.mvelocity[0][i] = 0;
 	}

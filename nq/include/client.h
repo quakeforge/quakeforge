@@ -67,9 +67,7 @@ typedef struct
 #define	NAME_LENGTH	64
 
 
-/*
-  client_state_t should hold all pieces of the client state
-*/
+// client_state_t should hold all pieces of the client state
 
 #define	SIGNONS		4			// signon messages to receive before connected
 
@@ -144,33 +142,32 @@ extern client_static_t	cls;
 */
 typedef struct
 {
-	int			movemessages;	// since connecting to this server
-								// throw out the first couple, so the player
-								// doesn't accidentally do something the 
-								// first frame
-	usercmd_t	cmd;			// last command sent to the server
+	int			movemessages;	// Since connecting to this server throw out
+								// the first couple, so the player doesn't
+								// accidentally do something the first frame
+	usercmd_t	cmd;			// Last command sent to the server
 
 // information for local display
-	int			stats[MAX_CL_STATS];	// health, etc
-	float	item_gettime[32];	// cl.time of aquiring item, for blinking
-	float		faceanimtime;	// use anim frame if cl.time < this
+	int			stats[MAX_CL_STATS];	// Health, etc
+	float		item_gettime[32];	// cl.time of aquiring item, for blinking
+	float		faceanimtime;	// Use anim frame if cl.time < this
 
-	cshift_t	cshifts[NUM_CSHIFTS];	// color shifts for damage, powerups
-	cshift_t	prev_cshifts[NUM_CSHIFTS];	// and content types
+	cshift_t	cshifts[NUM_CSHIFTS];	// Color shifts for damage, powerups
+	cshift_t	prev_cshifts[NUM_CSHIFTS];	// And content types
 
-// the client maintains its own idea of view angles, which are
-// sent to the server each frame.  The server sets punchangle when
-// the view is temporarliy offset, and an angle reset commands at the start
-// of each level and after teleporting.
-	vec3_t		mviewangles[2];	// during demo playback viewangles is lerped
+// The client maintains its own idea of view angles, which are sent to the
+// server each frame.  The server sets punchangle when the view is temporarily
+// offset, and an angle reset commands at the start of each level and after
+// teleporting.
+	vec3_t		mviewangles[2];	// During demo playback viewangles is lerped
 								// between these
 	vec3_t		viewangles;
 	
-	vec3_t		mvelocity[2];	// update by server, used for lean+bob
+	vec3_t		mvelocity[2];	// Update by server, used for lean+bob
 								// (0 is newest)
-	vec3_t		velocity;		// lerped between mvelocity[0] and [1]
+	vec3_t		velocity;		// Lerped between mvelocity[0] and [1]
 
-	vec3_t		punchangle;		// temporary offset
+	vec3_t		punchangle;		// Temporary offset
 	
 // pitch drifting vars
 	float		idealpitch;
@@ -180,22 +177,21 @@ typedef struct
 	double		laststop;
 
 	float		viewheight;
-	float		crouch;			// local amount for smoothing stepups
+	float		crouch;			// Local amount for smoothing stepups
 
-	qboolean	paused;			// send over by server
+	qboolean	paused;			// Send over by server
 	qboolean	onground;
 	qboolean	inwater;
 	
-	int			intermission;	// don't change view angle, full screen, etc
-	int			completed_time;	// latched at intermission start
+	int			intermission;	// Don't change view angle, full screen, etc
+	int			completed_time;	// Latched at intermission start
 	
-	double		mtime[2];		// the timestamp of last two messages	
-	double		time;			// clients view of time, should be between
-								// servertime and oldservertime to generate
-								// a lerp point for other data
-	double		oldtime;		// previous cl.time, time-oldtime is used
+	double		mtime[2];		// The timestamp of last two messages	
+	double		time;			// Clients view of time, should be between
+								// servertime and oldservertime to generate a
+								// lerp point for other data
+	double		oldtime;		// Previous cl.time, time-oldtime is used
 								// to decay light values and smooth step ups
-	
 
 	float		last_received_message;	// (realtime) for net trouble icon
 
@@ -233,11 +229,15 @@ typedef struct cl_entity_state_s {
 	int				colors;
 	struct model_s	*model;
 	int				skinnum;
+	byte			alpha;
+	byte			scale;
+	byte			colormod;
+	byte			glow_size;
+	byte			glow_color;
 } cl_entity_state_t;
 
-/*
-  cvars
-*/
+
+// cvars
 extern struct cvar_s	*cl_name;
 extern struct cvar_s	*cl_color;
 
@@ -292,9 +292,7 @@ extern	entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
 extern int fps_count;
 
 
-/*
-  cl_main
-*/
+// cl_main
 void CL_Init (void);
 void CL_InitCvars (void);
 
@@ -309,9 +307,7 @@ void CL_Disconnect_f (void);
 void CL_NextDemo (void);
 
 
-/*
-  cl_input
-*/
+// cl_input
 void CL_InitInput (void);
 void CL_SendCmd (void);
 void CL_SendMove (usercmd_t *cmd);
@@ -327,9 +323,7 @@ void CL_WriteToServer (usercmd_t *cmd);
 void CL_BaseMove (usercmd_t *cmd);
 
 
-/*
-  cl_demo.c
-*/
+// cl_demo.c
 void CL_StopPlayback (void);
 int CL_GetMessage (void);
 
@@ -342,17 +336,13 @@ void CL_Demo_Init (void);
 extern struct cvar_s *demo_gzip;
 extern struct cvar_s *demo_speed;
 
-/*
-  cl_parse.c
-*/
+// cl_parse.c
 struct skin_s;
 void CL_ParseServerMessage (void);
 void CL_NewTranslation (int slot, struct skin_s *skin);
 
 
-/*
-  view
-*/
+// view
 void V_StartPitchDrift (void);
 void V_StopPitchDrift (void);
 
@@ -363,9 +353,7 @@ void V_ParseDamage (void);
 void V_SetContentsColor (int contents);
 void V_PrepBlend (void);
 
-/*
-  cl_tent
-*/
+// cl_tent
 void CL_TEnts_Init (void);
 void CL_ClearEnts (void);
 void CL_ClearTEnts (void);
