@@ -23,11 +23,11 @@ integer HUDHandleClass;
 	return self;
 }
 
-- (void) free
+- (void) dealloc
 {
-	[origin free];
+	[origin dealloc];
 	GIB_Handle_Free (handle, HUDHandleClass);
-	[super free];
+	[super dealloc];
 }
 
 - (integer) handle
@@ -110,10 +110,10 @@ integer HUDHandleClass;
 	return self;
 }
 
-- (void) free
+- (void) dealloc
 {
-	[picture free];
-	[super free];
+	[picture dealloc];
+	[super dealloc];
 }
 
 - (Point) size
@@ -123,7 +123,7 @@ integer HUDHandleClass;
 
 - (void) setFile: (string) _file
 {
-	[picture free];
+	[picture dealloc];
 	picture = [[QPic alloc] initName :_file];
 }
 
@@ -147,10 +147,10 @@ integer HUDHandleClass;
 	return self;
 }
 
-- (void) free
+- (void) dealloc
 {
-	[frames free];
-	[super free];
+	[frames dealloc];
+	[super dealloc];
 }
 
 - (Point) size

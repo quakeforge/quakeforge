@@ -125,14 +125,14 @@
 {
 	local list_bucket_t [] e;
 	for (e = head; e; e = e.next)
-		[e.obj perform:selector];
+		[e.obj performSelector:selector];
 }
 
 -(void)makeObjectsPerformSelector:(SEL)selector withObject:(id)arg
 {
 	local list_bucket_t [] e;
 	for (e = head; e; e = e.next)
-		[e.obj perform:selector withObject:arg];
+		[e.obj performSelector:selector withObject:arg];
 }
 
 @end

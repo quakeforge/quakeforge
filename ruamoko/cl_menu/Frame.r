@@ -11,10 +11,10 @@
 	return self;
 }
 
-- (void) free
+- (void) dealloc
 {
-	[picture free];
-	[super free];
+	[picture dealloc];
+	[super dealloc];
 }
 
 - (Point) size

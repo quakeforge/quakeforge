@@ -110,14 +110,14 @@
 {
 	local integer i;
 	for (i = 0; i < count; i++)
-		[array[i] perform:selector];
+		[array[i] performSelector:selector];
 }
 
 -(void)makeObjectsPerformSelector:(SEL)selector withObject:(id)arg
 {
 	local integer i;
 	for (i = 0; i < count; i++)
-		[array[i] perform:selector withObject:arg];
+		[array[i] performSelector:selector withObject:arg];
 }
 
 @end

@@ -7,7 +7,7 @@
 	float duration;
 }
 - (id) initWithFile: (string) file duration: (float) time;
-- (void) free;
+- (void) dealloc;
 - (Point) size;
 - (float) duration;
 - (void) draw: (integer) x :(integer) y;

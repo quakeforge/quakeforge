@@ -11,7 +11,7 @@
 
 + (void) initClass;
 - (id) initWithComponents: (integer) x : (integer) y;
-- (void) free;
+- (void) dealloc;
 - (integer) handle;
 - (Point) origin;
 - (Point) size;
@@ -40,7 +40,7 @@
 }
 
 - (id) initWithComponents: (integer)x :(integer)y :(string) _file;
-- (void) free;
+- (void) dealloc;
 - (Point) size;
 - (void) setFile: (string) _file;
 - (void) display;
@@ -57,7 +57,7 @@
 	BOOL looping;
 }
 - (id) initWithComponents: (integer) x :(integer) y;
-- (void) free;
+- (void) dealloc;
 - (Point) size;
 - (void) addFrame: (Frame) frame;
 - (void) changeFrame;

@@ -76,7 +76,7 @@ void (integer argc, string [] argv) gib_hud_start_anim_f =
 
 	for (i = 1; i < argc; i++) {
 		anim = GIB_Handle_Get (stoi (argv[i]), HUDHandleClass);
-		if (anim && [anim isKindOf :[HUDAnimation class]])
+		if (anim && [anim isKindOfClass :[HUDAnimation class]])
 			[anim start];
 	}
 };
@@ -91,7 +91,7 @@ void (integer argc, string [] argv) gib_hud_stop_anim_f =
 
 	for (i = 1; i < argc; i++) {
 		anim = GIB_Handle_Get (stoi (argv[i]), HUDHandleClass);
-		if (anim && [anim isKindOf :[HUDAnimation class]])
+		if (anim && [anim isKindOfClass :[HUDAnimation class]])
 			[anim stop];
 	}
 };
@@ -104,7 +104,7 @@ void (integer argc, string [] argv) gib_hud_set_looping_f =
 		return;
 
 	anim = GIB_Handle_Get (stoi (argv[1]), HUDHandleClass);
-	if (anim && [anim isKindOf :[HUDAnimation class]]) {
+	if (anim && [anim isKindOfClass :[HUDAnimation class]]) {
 		switch (argv[2]) {
 			case "yes":
 			case "true":
@@ -132,7 +132,7 @@ void (integer argc, string [] argv) gib_hud_delete_f =
 		trashObject = GIB_Handle_Get (stoi (argv[i]), HUDHandleClass);
 		if (trashObject) {
 			[HUDObjects removeItem :trashObject];
-			[trashObject free];
+			[trashObject dealloc];
 		} else
 			dprint (sprintf ("Warning: no HUD object associated with handle %i\n", stoi (argv[i])));
 	}
@@ -156,7 +156,7 @@ void (integer argc, string [] argv) gib_hud_get_rect_f =
 	myPoint = [myObject size];
 	GIB_Return (itos ([myPoint x]));
 	GIB_Return (itos ([myPoint y]));
-	[myPoint free];
+	[myPoint dealloc];
 };
 
 
@@ -176,7 +176,7 @@ void (integer argc, string [] argv) gib_hud_set_translate_f =
 	else
 		for (i = 1; i < argc - 2; i++)
 			[(HUDObject) GIB_Handle_Get (stoi (argv[i]), HUDHandleClass) setOrigin :p];
-	[p free];
+	[p dealloc];
 };
 
 void (integer argc, string [] argv) gib_hud_set_text_f =
@@ -187,7 +187,7 @@ void (integer argc, string [] argv) gib_hud_set_text_f =
 		return;
 
 	myObject = GIB_Handle_Get (stoi (argv[1]), HUDHandleClass);
-	if (!myObject || ![myObject isKindOf :[HUDText class]])
+	if (!myObject || ![myObject isKindOfClass :[HUDText class]])
 		return;
 	[myObject setText :argv[2]];
 };
@@ -200,7 +200,7 @@ void (integer argc, string [] argv) gib_hud_set_file_f =
 		return;
 
 	myObject = GIB_Handle_Get (stoi (argv[1]), HUDHandleClass);
-	if (!myObject || ![myObject isKindOf :[HUDGraphic class]])
+	if (!myObject || ![myObject isKindOfClass :[HUDGraphic class]])
 		return;
 	[myObject setFile :argv[2]];
 };
