@@ -345,6 +345,10 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 			key = QFK_KP5;
 			break;
 
+		case XK_Print:
+			key = QFK_PRINT;
+			break;
+
 		case XK_Scroll_Lock:
 			key = QFK_SCROLLOCK;
 			break;
