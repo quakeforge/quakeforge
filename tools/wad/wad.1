@@ -1,0 +1,98 @@
+.\"                              hey, Emacs:   -*- nroff -*-
+.\" wad is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\" See the GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; see the file COPYING.  If not, write to:
+.\"
+.\"		Free Software Foundation, Inc.
+.\"		59 Temple Place, Suite 330
+.\"		Boston, MA 02111-1307, USA
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins (default)
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.\"
+.TH WAD 1 "9 Jan, 2004" QuakeForge "QuakeForge User's Manual"
+.\" Please update the above date whenever this man page is modified.
+.SH NAME
+wad \- The QuakeForge Packfile Tool
+.SH SYNOPSIS
+.B wad
+<\fBcommand\fP> [\fBoptions\fP] \fIARCHIVE\fP \fIFILE\fP...
+.SH DESCRIPTION
+\fBwad\fP is a utility for managing pack (*.wad) archives. The format used is
+compatible with Quake and Quake II. wad archives are a convenient way to store
+groups of related files. Some engines allow wad archives to be compressed
+internally.
+.SH COMMANDS
+\fBwad\fP accepts the following arguments as a command. Only one command may be
+used at a time.
+.TP
+.B \-c, \-\-create
+Create an archive. Overwrites any contents the archive may have had.
+.TP
+.B \-t, \-\-test
+Test an archive for valid formatting.
+.TP
+.B \-x, \-\-extract
+Extract an archive. Overwrites any files in the current directory with the same
+names as those inside the archive.
+.TP
+.B \-h, \-\-help
+Show summary of options.
+.TP
+.B \-V, \-\-version
+Show the version of wad.
+.SH OPTIONS
+\fBwad\fP takes the following arguments as options.
+.TP
+.B \-f, \-\-file ARCHIVE
+Use ARCHIVE as the archive filename, instead of the first non-option argument.
+This option is provided for compatibility with older versions of \fBwad\fP.
+.TP
+.B \-p, \-\-pad
+Can be useful when creating an archive. File space is padded to a 4\-byte
+boundary, assisting in the speed of loading files from the archive. The file
+data itself is not changed.
+.TP
+.B \-q, \-\-quiet
+Inhibit some of wad's normal output.
+.TP
+.B \-v, \-\-verbose
+Display more output than usual.
+.SH "EXIT STATUS"
+\fBwad\fP returns a zero exit status when it has completed a command
+successfully (without error). Otherwise, it returns a non-zero exit status.
+.SH BUGS
+.PP
+The program does not currently handle compression or decompression. This
+is planned for a future version.
+.PP
+The program does not currently handle extraction of individual files inside an
+archive. This is planned for a future version.
+.PP
+The program cannot modify an archive once it has been created.
+.SH AUTHORS
+Bill Currie (taniwha@quakeforge.net) wrote most of the program.
+.PP
+Jeff Teunissen (deek@quakeforge.net) wrote the command-line interface and the
+documentation.
+.SH "SEE ALSO"
+.BR quakeforge (1),
+.BR qfcc (1)

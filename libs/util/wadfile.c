@@ -110,7 +110,7 @@ wad_rehash (wad_t *wad)
 	int         i;
 
 	for (i = 0; i < wad->numlumps; i++) {
-		Hash_Add (wad->lump_hash, &wad->lumps[i]);
+		Hash_AddElement (wad->lump_hash, &wad->lumps[i]);
 	}
 }
 
@@ -132,7 +132,7 @@ wad_open (const char *name)
 		errno = 0;
 		goto error;
 	}
-	if (strncmp (wad->header.id, "PACK", 4)) {
+	if (strncmp (wad->header.id, "WAD2", 4)) {
 		fprintf (stderr, "%s: not a wad file\n", name);
 		errno = 0;
 		goto error;
@@ -155,7 +155,7 @@ wad_open (const char *name)
 	for (i = 0; i < wad->numlumps; i++) {
 		wad->lumps[i].filepos = LittleLong (wad->lumps[i].filepos);
 		wad->lumps[i].size = LittleLong (wad->lumps[i].size);
-		Hash_Add (wad->lump_hash, &wad->lumps[i]);
+		Hash_AddElement (wad->lump_hash, &wad->lumps[i]);
 	}
 	return wad;
 error:
@@ -216,11 +216,15 @@ int
 wad_add (wad_t *wad, const char *filename, const char *lumpname, byte type)
 {
 	lumpinfo_t *pf;
+	lumpinfo_t  dummy;
 	QFile      *file;
 	char        buffer[16384];
 	int         bytes;
 
-	pf = Hash_Find (wad->lump_hash, lumpname);
+	strncpy (dummy.name, lumpname, 16);
+	dummy.name[15] = 0;
+
+	pf = Hash_FindElement (wad->lump_hash, &dummy);
 	if (pf)
 		return -1;
 	if (wad->numlumps == wad->lumps_size) {
@@ -257,7 +261,7 @@ wad_add (wad_t *wad, const char *filename, const char *lumpname, byte type)
 		static char buf[4];
 		Qwrite (wad->handle, buf, 4 - (pf->size & 3));
 	}
-	Hash_Add (wad->lump_hash, pf);
+	Hash_AddElement (wad->lump_hash, pf);
 	return 0;
 }
 
@@ -312,7 +316,10 @@ wad_extract (wad_t *wad, lumpinfo_t *pf)
 }
 
 lumpinfo_t *
-wad_find_lump (wad_t *wad, const char *filename)
+wad_find_lump (wad_t *wad, const char *lumpname)
 {
-	return Hash_Find (wad->lump_hash, filename);
+	lumpinfo_t  dummy;
+	strncpy (dummy.name, lumpname, 16);
+	dummy.name[15] = 0;
+	return Hash_FindElement (wad->lump_hash, &dummy);
 }

@@ -1565,7 +1565,7 @@ QF_WITH_TARGETS(
 QF_WITH_TARGETS(
 	tools,
 	[  --with-tools=<list>     compile qf tools:],
-	[bsp2img,carne,pak,qfbsp,qfcc,qfdefs,qflight,qfmodelgen,qfprogs,qfvis,qwaq,wav],dummy
+	[bsp2img,carne,pak,qfbsp,qfcc,qfdefs,qflight,qfmodelgen,qfprogs,qfvis,qwaq,wad,wav],dummy
 )
 
 unset CL_TARGETS
@@ -1729,17 +1729,6 @@ if test "x$ENABLE_servers_qw" = xyes; then
 	QF_NEED(qw, [common server])
 fi
 
-unset BSP2IMG_TARGETS
-unset CARNE_TARGETS
-unset PAK_TARGETS
-unset QFCC_TARGETS
-unset QFDEFS_TARGETS
-unset QFLIGHT_TARGETS
-unset QFMODELGEN_TARGETS
-unset QFPROGS_TARGETS
-unset QFVIS_TARGETS
-unset QWAQ_TARGETS
-unset WAV_TARGETS
 unset TOOLS_TARGETS
 if test "x$ENABLE_tools_bsp2img" = xyes; then
 	TOOLS_TARGETS="$TOOLS_TARGETS bsp2img"
@@ -1774,6 +1763,9 @@ fi
 if test "x$ENABLE_tools_qwaq" = xyes; then
 	TOOLS_TARGETS="$TOOLS_TARGETS qwaq"
 fi
+if test "x$ENABLE_tools_wad" = xyes; then
+	TOOLS_TARGETS="$TOOLS_TARGETS wad"
+fi
 if test "x$ENABLE_tools_wav" = xyes; then
 	TOOLS_TARGETS="$TOOLS_TARGETS wav"
 fi
@@ -1789,6 +1781,7 @@ AM_CONDITIONAL(BUILD_QFMODELGEN, test "$ENABLE_tools_qfmodelgen" = "yes")
 AM_CONDITIONAL(BUILD_QFPROGS, test "$ENABLE_tools_qfprogs" = "yes")
 AM_CONDITIONAL(BUILD_QFVIS, test "$ENABLE_tools_qfvis" = "yes")
 AM_CONDITIONAL(BUILD_QWAQ, test "$ENABLE_tools_qwaq" = "yes" -a "$ENABLE_tools_qfcc" = "yes")
+AM_CONDITIONAL(BUILD_WAD, test "$ENABLE_tools_wad" = "yes")
 AM_CONDITIONAL(BUILD_WAV, test "$ENABLE_tools_wav" = "yes")
 
 AM_CONDITIONAL(BUILD_RUAMOKO, test "$ENABLE_tools_qfcc" = "yes" -a "$ENABLE_tools_pak" = "yes")
@@ -2050,6 +2043,11 @@ QF_DEPS(PAK,
 	[$(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
+QF_DEPS(WAD,
+	[],
+	[$(top_builddir)/libs/util/libQFutil.la],
+	[$(WIN32_LIBS)],
+)
 QF_DEPS(WAV,
 	[],
 	[$(top_builddir)/libs/util/libQFutil.la],
@@ -2160,6 +2158,7 @@ AC_OUTPUT(
 	tools/qfvis/source/Makefile
 	tools/qwaq/Makefile
 	tools/qwaq/progs.src
+	tools/wad/Makefile
 	tools/wav/Makefile
 
 	ruamoko/Makefile
