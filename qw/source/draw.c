@@ -44,6 +44,7 @@
 
 #include "client.h"
 #include "d_iface.h"
+#include "r_cvar.h"
 
 typedef struct {
 	vrect_t     rect;
@@ -59,9 +60,7 @@ byte       *draw_chars;					// 8*8 graphic characters
 qpic_t     *draw_disc;
 qpic_t     *draw_backtile;
 
-cvar_t     *cl_verstring;
 
-//=============================================================================
 /* Support Routines */
 
 typedef struct cachepic_s {
@@ -115,9 +114,7 @@ Draw_CachePic (char *path, qboolean alpha)
 	if (dat)
 		return dat;
 
-//
-// load the pic from disk
-//
+	// load the pic from disk
 	COM_LoadCacheFile (path, &pic->cache);
 
 	dat = (qpic_t *) pic->cache.data;
@@ -195,10 +192,6 @@ Draw_Init (void)
 	r_rectdesc.height = draw_backtile->height;
 	r_rectdesc.ptexbytes = draw_backtile->data;
 	r_rectdesc.rowbytes = draw_backtile->width;
-
-	cl_verstring =
-		Cvar_Get ("cl_verstring", PROGRAM " " VERSION, CVAR_NONE, NULL,
-				"Client version string");
 }
 
 
@@ -264,7 +257,7 @@ Draw_Character8 (int x, int y, int num)
 			dest += vid.conrowbytes;
 		}
 	} else {
-		// FIXME: pre-expand to native format?
+// FIXME: pre-expand to native format?
 		pusdest = (unsigned short *)
 			((byte *) vid.conbuffer + y * vid.conrowbytes + (x << 1));
 
@@ -325,7 +318,7 @@ Draw_Pixel (int x, int y, byte color)
 		dest = vid.conbuffer + y * vid.conrowbytes + x;
 		*dest = color;
 	} else {
-		// FIXME: pre-expand to native format?
+// FIXME: pre-expand to native format?
 		pusdest = (unsigned short *)
 			((byte *) vid.conbuffer + y * vid.conrowbytes + (x << 1));
 		*pusdest = d_8to16table[color];
@@ -411,7 +404,7 @@ Draw_Pic (int x, int y, qpic_t *pic)
 			}
 		}
 	} else {
-		// FIXME: pretranslate at load time?
+// FIXME: pretranslate at load time?
 		pusdest = (unsigned short *) vid.buffer + y * (vid.rowbytes >> 1) + x;
 
 		for (v = 0; v < pic->height; v++) {
@@ -454,7 +447,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 			source += pic->width;
 		}
 	} else {
-		// FIXME: pretranslate at load time?
+// FIXME: pretranslate at load time?
 		pusdest = (unsigned short *) vid.buffer + y * (vid.rowbytes >> 1) + x;
 
 		for (v = 0; v < height; v++) {
@@ -520,7 +513,7 @@ Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 			}
 		}
 	} else {
-		// FIXME: pretranslate at load time?
+// FIXME: pretranslate at load time?
 		pusdest = (unsigned short *) vid.buffer + y * (vid.rowbytes >> 1) + x;
 
 		for (v = 0; v < pic->height; v++) {
@@ -550,7 +543,7 @@ Draw_ConsoleBackground (int lines)
 
 	conback = Draw_CachePic ("gfx/conback.lmp", false);
 
-// draw the pic
+	// draw the pic
 	if (r_pixbytes == 1) {
 		dest = vid.conbuffer;
 
@@ -578,8 +571,8 @@ Draw_ConsoleBackground (int lines)
 		pusdest = (unsigned short *) vid.conbuffer;
 
 		for (y = 0; y < lines; y++, pusdest += (vid.conrowbytes >> 1)) {
-			// FIXME: pre-expand to native format?
-			// FIXME: does the endian switching go away in production?
+// FIXME: pre-expand to native format?
+// FIXME: does the endian switching go away in production?
 			v = (vid.conheight - lines + y) * 200 / vid.conheight;
 			src = conback->data + v * 320;
 			f = 0;
@@ -741,14 +734,12 @@ Draw_TileClear (int x, int y, int w, int h)
 
 			vr.x += vr.width;
 			width -= vr.width;
-			tileoffsetx = 0;			// only the left tile can be
-										// left-clipped
+			tileoffsetx = 0;	// only the left tile can be left-clipped
 		}
 
 		vr.y += vr.height;
 		height -= vr.height;
-		tileoffsety = 0;				// only the top tile can be
-										// top-clipped
+		tileoffsety = 0;		// only the top tile can be top-clipped
 	}
 }
 
@@ -787,9 +778,6 @@ Draw_Fill (int x, int y, int w, int h, int c)
 }
 
 
-//=============================================================================
-
-
 void
 Draw_FadeScreen (void)
 {
@@ -816,9 +804,6 @@ Draw_FadeScreen (void)
 	S_ExtraUpdate ();
 	VID_LockBuffer ();
 }
-
-
-//=============================================================================
 
 
 /*
