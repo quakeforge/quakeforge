@@ -169,7 +169,7 @@ DecodeArgs (int argc, char **argv)
 		   != EOF) {
 		switch (c) {
 			case 1:						// ordinary file
-				add_file (optarg);
+				add_file (NORMALIZE (optarg));
 				break;
 			case 'o':
 				if (options.output_file) {
@@ -177,14 +177,14 @@ DecodeArgs (int argc, char **argv)
 							 this_program);
 					exit (1);
 				} else {
-					options.output_file = save_string (optarg);
+					options.output_file = save_string (NORMALIZE (optarg));
 				}
 				break;
 			case 'l':					// lib file
-				add_file (va ("-l%s", optarg));
+				add_file (va ("-l%s", NORMALIZE (optarg)));
 				break;
 			case 'L':
-				linker_add_path (optarg);
+				linker_add_path (NORMALIZE (optarg));
 				break;
 			case 'h':					// help
 				usage (0);
@@ -194,10 +194,10 @@ DecodeArgs (int argc, char **argv)
 				exit (0);
 				break;
 			case 's':					// src dir
-				sourcedir = save_string (optarg);
+				sourcedir = save_string (NORMALIZE (optarg));
 				break;
 			case 'P':					// progs-src
-				progs_src = save_string (optarg);
+				progs_src = save_string (NORMALIZE (optarg));
 				break;
 			case 'p':
 				options.strip_path = atoi (optarg);

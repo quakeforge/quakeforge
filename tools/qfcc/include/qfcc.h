@@ -108,6 +108,13 @@ extern FILE *yyin;
 int yyparse (void);
 extern int yydebug;
 
+#ifdef _WIN32
+char *fix_backslash (const char *path);
+#define NORMALIZE(x) fix_backslash (x)
+#else
+#define NORMALIZE(x) x
+#endif
+
 #define ALLOC(s, t, n, v)							\
 	do {											\
 		if (!free_##n) {							\

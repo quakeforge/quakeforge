@@ -124,6 +124,19 @@ save_string (const char *str)
 	return s;
 }
 
+#ifdef _WIN32
+char *
+fix_backslash (char *path)
+{
+	char       *s;
+
+	for (s = path; *s; s++)
+		if (*s == '\\')
+			*s = '/';
+	return path;
+}
+#endif
+
 static void
 InitData (void)
 {
@@ -729,7 +742,7 @@ main (int argc, char **argv)
 
 	start = Sys_DoubleTime ();
 
-	this_program = argv[0];
+	this_program = NORMALIZE (argv[0]);
 
 	DecodeArgs (argc, argv);
 
