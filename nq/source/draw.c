@@ -69,8 +69,8 @@ typedef struct cachepic_s {
 } cachepic_t;
 
 #define	MAX_CACHED_PICS		128
-cachepic_t  menu_cachepics[MAX_CACHED_PICS];
-int         menu_numcachepics;
+cachepic_t  cachepics[MAX_CACHED_PICS];
+int         numcachepics;
 
 
 qpic_t *
@@ -98,14 +98,14 @@ Draw_CachePic (char *path, qboolean alpha)
 	int         i;
 	qpic_t     *dat;
 
-	for (pic = menu_cachepics, i = 0; i < menu_numcachepics; pic++, i++)
+	for (pic = cachepics, i = 0; i < numcachepics; pic++, i++)
 		if (!strcmp (path, pic->name))
 			break;
 
-	if (i == menu_numcachepics) {
-		if (menu_numcachepics == MAX_CACHED_PICS)
+	if (i == numcachepics) {
+		if (numcachepics == MAX_CACHED_PICS)
 			Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
-		menu_numcachepics++;
+		numcachepics++;
 		strcpy (pic->name, path);
 	}
 
