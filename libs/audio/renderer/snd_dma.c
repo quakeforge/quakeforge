@@ -847,10 +847,15 @@ SND_Play (void)
 	i = 1;
 	while (i < Cmd_Argc ()) {
 		if (!strrchr (Cmd_Argv (i), '.')) {
+			if (strlen (Cmd_Argv (i)) + 4 >= MAX_QPATH)
+				Sys_Error ("Sound name too long: %s", Cmd_Argv (i));
 			strcpy (name, Cmd_Argv (i));
 			strncat (name, ".wav", sizeof (name) - strlen (name));
-		} else
+		} else {
+			if (strlen (Cmd_Argv (i)) >= MAX_QPATH)
+				Sys_Error ("Sound name too long: %s", Cmd_Argv (i));
 			strcpy (name, Cmd_Argv (i));
+		}
 		sfx = SND_PrecacheSound (name);
 		SND_StartSound (hash++, 0, sfx, listener_origin, 1.0, 1.0);
 		i++;
@@ -869,10 +874,15 @@ SND_PlayVol (void)
 	i = 1;
 	while (i < Cmd_Argc ()) {
 		if (!strrchr (Cmd_Argv (i), '.')) {
+			if (strlen (Cmd_Argv (i)) + 4 >= MAX_QPATH)
+				Sys_Error ("Sound name too long: %s", Cmd_Argv (i));
 			strcpy (name, Cmd_Argv (i));
 			strncat (name, ".wav", sizeof (name) - strlen (name));
-		} else
+		} else {
+			if (strlen (Cmd_Argv (i)) >= MAX_QPATH)
+				Sys_Error ("Sound name too long: %s", Cmd_Argv (i));
 			strcpy (name, Cmd_Argv (i));
+		}
 		sfx = SND_PrecacheSound (name);
 		vol = atof (Cmd_Argv (i + 1));
 		SND_StartSound (hash++, 0, sfx, listener_origin, vol, 1.0);
