@@ -31,6 +31,7 @@
 #endif
 
 #include "d_local.h"
+#include "r_local.h"
 
 
 void
