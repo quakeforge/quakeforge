@@ -8,8 +8,6 @@
 extern char *yytext;
 extern int lineno;
 
-void PR_PrintType(type_t*);
-
 void
 yyerror (const char *s)
 {
@@ -18,7 +16,11 @@ yyerror (const char *s)
 
 int yylex (void);
 type_t *PR_FindType (type_t *new);
+void PR_PrintType(type_t*);
+
 type_t *parse_params (def_t *parms);
+function_t *new_function (void);
+void build_scope (def_t *func, def_t *parms);
 
 typedef struct {
 	type_t	*type;
@@ -60,7 +62,7 @@ typedef struct {
 
 %type	<type>	type maybe_func
 %type	<def>	param param_list def_item def_list def_name
-%type	<expr>	const expr arg_list opt_initializer
+%type	<expr>	const expr arg_list
 %type	<statement>	statement statements statement_block
 
 %expect 1
@@ -194,33 +196,33 @@ param
 
 opt_initializer
 	: /*empty*/
-		{
-			$$ = 0;
-		}
 	| '=' const
 		{
-			$$ = $2;
 		}
 	| '=' '#' const
 		{
-			if ($3->type != ex_int && $3->type != ex_float) {
-				yyerror ("invalid constant for = #");
-				$$ = 0;
+			if (current_type->type != ev_func) {
+				yyerror ("note a function");
 			} else {
-				$$ = $3;
+				if ($3->type != ex_int && $3->type != ex_float) {
+					yyerror ("invalid constant for = #");
+				} else {
+					function_t	*f;
+
+					f = new_function ();
+					f->builtin = $3->type == ex_int
+								 ? $3->e.int_val : (int)$3->e.float_val;
+					f->def = current_def;
+					f->def->initialized = 1;
+					G_FUNCTION (f->def->ofs) = numfunctions;
+				}
 			}
 		}
 	| '=' begin_function statement_block end_function
 		{
-			$$ = new_expr ();
-			$$->type = ex_statement;
-			$$->e.statement = $3;
 		}
-	| '=' '[' expr ',' expr ']' begin_function statement_block end_function
+	| '=' begin_function '[' expr ',' expr ']' statement_block end_function
 		{
-			$$ = new_expr ();
-			$$->type = ex_statement;
-			$$->e.statement = $8;
 		}
 	;
 
@@ -389,4 +391,21 @@ parse_params (def_t *parms)
 		} while (parms);
 	}
 	return PR_FindType (&new);
+}
+
+void
+build_scope (def_t *func, def_t *parms)
+{
+}
+
+function_t *
+new_function (void)
+{
+	function_t	*f;
+
+	f = calloc (1, sizeof (function_t));
+	f->next = pr_functions;
+	pr_functions = f;
+
+	return f;
 }
