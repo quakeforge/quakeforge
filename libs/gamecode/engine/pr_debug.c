@@ -596,11 +596,8 @@ global_string (progs_t *pr, int ofs, etype_t type, int contents)
 		if (strequal(line->str, "IMMEDIATE") || strequal(line->str, ".imm")) {
 			dsprintf (line, "%s", s);
 		} else {
-			if (contents) {
-				if (!def)
-					dasprintf (line, "(%08x)", ofs);
+			if (contents)
 				dasprintf (line, "%s(%s)", oi, s);
-			}
 		}
 	}
 	return line->str;
