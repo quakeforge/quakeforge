@@ -184,7 +184,7 @@ Sys_Printf (const char *fmt, ...)
 	va_list     args;
 	va_start (args, fmt);
 	sys_printf_function (fmt, args);
-	va_end (argptr);
+	va_end (arg);
 }
 
 /*
