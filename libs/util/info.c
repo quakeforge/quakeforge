@@ -304,7 +304,7 @@ Info_Validate (char *s)
 		return false;
 
 	for (p = s, count = 0; *p != '\0'; p++)
-		if (!*p == '\\')
+		if (*p == '\\')
 			count++;
 
 	return (!(count % 2));
