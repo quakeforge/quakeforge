@@ -35,7 +35,6 @@
 #include "QF/model.h"
 
 const int   mod_lightmap_bytes = 1;
-mplane_t    frustum[4];
 cvar_t     *gl_sky_divide;	// not used but needed for linking
 
 void        Mod_LoadBrushModel (model_t *mod, void *buffer);

@@ -44,6 +44,7 @@
 #include "QF/qfgl_ext.h"
 #include "QF/wad.h"
 
+
 void GL_BeginRendering (int *x, int *y, int *width, int *height);
 void GL_EndRendering (void);
 
@@ -233,17 +234,5 @@ extern float v_blend[4];
 void AddLightBlend (float, float, float, float);
 extern	int			c_brush_polys, c_alias_polys;
 extern	float		r_world_matrix[16];
-extern	mplane_t	frustum[4];
-
-extern inline qboolean R_CullBox (vec3_t mins, vec3_t maxs)
-{
-	int i;
-
-	for (i=0 ; i<4 ; i++)
-		if (BoxOnPlaneSide (mins, maxs, &frustum[i]) == 2)
-			return true;
-	return false;
-}
-
 
 #endif // __glquake_h

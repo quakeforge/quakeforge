@@ -38,12 +38,15 @@
 
 #include <math.h>
 
+#define IMPLEMENT_R_CullBox
+
 #include "QF/mathlib.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
 vec3_t      vec3_origin = { 0, 0, 0 };
 int         nanmask = 255 << 23;
+mplane_t    frustum[4];
 
 /*-----------------------------------------------------------------*/
 

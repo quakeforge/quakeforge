@@ -36,8 +36,6 @@
 # define M_PI	    3.14159265358979323846  // matches value in gcc v2 math.h
 #endif
 
-struct mplane_s;
-
 extern vec3_t vec3_origin;
 extern  int nanmask;
 
@@ -114,5 +112,21 @@ void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, 
 	)													\
 	:													\
 	BoxOnPlaneSide( (emins), (emaxs), (p)))
+
+extern	mplane_t	frustum[4];
+
+#ifndef IMPLEMENT_R_CullBox
+extern inline
+#endif
+qboolean
+R_CullBox (vec3_t mins, vec3_t maxs)
+{
+	int i;
+
+	for (i=0 ; i<4 ; i++)
+		if (BoxOnPlaneSide (mins, maxs, &frustum[i]) == 2)
+			return true;
+	return false;
+}
 
 #endif // __mathlib_h
