@@ -43,7 +43,7 @@ static const char rcsid[] =
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
-#if defined(HAVE_SYS_IO_H)
+#ifdef HAVE_SYS_IO_H
 # include <sys/io.h>
 #elif defined(HAVE_ASM_IO_H)
 # include <asm/io.h>
@@ -63,31 +63,28 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-static int  num_modes, current_mode;
+static int   num_modes, current_mode;
 static vga_modeinfo *modes;
 
-static byte vid_current_palette[768];
+static byte  vid_current_palette[768];
+static byte  backingbuf[48 * 24];
+static char *framebuffer_ptr;
 
-static int  svgalib_inited = 0;
-static int  svgalib_backgrounded = 0;
+static int   svgalib_inited = 0;
+static int   svgalib_backgrounded = 0;
 
 static cvar_t *vid_redrawfull;
 static cvar_t *vid_waitforrefresh;
 
-static char *framebuffer_ptr;
-
-static byte backingbuf[48 * 24];
-
-int         VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes, VGA_planar;
-byte       *VGA_pagebase;
-
-int         VID_options_items = 0;
+int		 VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes, VGA_planar;
+byte	*VGA_pagebase;
+int		 VID_options_items = 0;
 
 
 void
 D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
 {
-	int         i, j, k, plane, reps, repshift, offset, vidpage, off;
+	int			plane, reps, repshift, offset, vidpage, off, i, j, k;
 
 	if (!svgalib_inited || !vid.direct || svgalib_backgrounded
 		|| !vga_oktowrite ())
@@ -144,7 +141,7 @@ D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
 void
 D_EndDirectRect (int x, int y, int width, int height)
 {
-	int         i, j, k, plane, reps, repshift, offset, vidpage, off;
+	int			plane, reps, repshift, offset, vidpage, off, i, j, k;
 
 	if (!svgalib_inited || !vid.direct || svgalib_backgrounded
 		|| !vga_oktowrite ())
@@ -223,13 +220,13 @@ get_mode (int width, int height, int depth)
 {
 	int         i, ok, match;
 
-	match = (!!width) + (!!height) * 2 + (!!depth) * 4;
+	match = (!!depth) << 2 + (!!height) << 1 + (!!width);
 
 	for (i = 0; i < num_modes; i++) {
 		if (modes[i].width) {
-			ok = (modes[i].width == width)
-				+ (modes[i].height == height) * 2
-				+ (modes[i].bytesperpixel == depth / 8) * 4;
+			ok = (modes[i].bytesperpixel == (depth / 8)) << 2
+				+ (modes[i].height == height) << 1
+				+ (modes[i].width == width);
 			if ((ok & match) == match)
 				break;
 		}
@@ -305,7 +302,7 @@ VID_SetMode (int modenum, unsigned char *palette)
 		vid.rowbytes = modes[current_mode].linewidth * 4;
 	}
 
-	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
+	vid.aspect = ((float) vid.height / (float) vid.width) * (4.0 / 3.0);
 	vid.colormap8 = (byte *) vid_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 	vid.conrowbytes = vid.rowbytes;
