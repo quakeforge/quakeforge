@@ -19,8 +19,7 @@ configure: configure-stamp
 configure-stamp:
 	dh_testdir
 	# Add here commands to configure the package.
-#	[ -d CVS ] && tools/cvs2cl/cvs2cl.pl
-	./bootstrap
+	[ -d CVS ] && ./bootstrap
 	./configure --prefix=/usr $(RETARGET) --bindir=/usr/games \
 		    --mandir=\$${prefix}/share/man \
 		    --infodir=\$${prefix}/share/info \
@@ -33,8 +32,8 @@ build-stamp:
 	dh_testdir
 
 	# Add here commands to compile the package.
+	[ -d CVS ] && $(MAKE) changelog
 	$(MAKE)
-	$(MAKE) changelog
 
 	touch build-stamp
 
@@ -56,7 +55,7 @@ install: build
 	dh_installdirs
 
 	# Add here commands to install the package into debian/tmp.
-	$(MAKE) prefix=$(tmp)/usr bindir=$(tmp)/usr/games install
+	$(MAKE) DESTDIR=$(tmp) install
 	mkdir $(tmp)/etc
 	cp debian/quakeforge.conf $(tmp)/etc
 
@@ -79,15 +78,15 @@ binary-arch: build install
 	dh_installexamples
 	dh_installmenu
 	dh_undocumented
-	dh_installchangelogs ChangeLog
+	dh_installchangelogs
 	dh_strip
 	dh_link
 	dh_compress
 	dh_fixperms
+	dh_makeshlibs
 	# You may want to make some executables suid here.
-	chmod 4755 debian/qf-client-svga/usr/games/qf-client-svga
-	-chmod 4755 debian/qf-client-3dfx/usr/games/qf-client-3dfx
-	dh_suidregister
+	chmod 4755 debian/quakeforge-svga/usr/games/qw-client-svga debian/qf-svga/usr/games/nuq-svga
+	-chmod 4755 debian/quakeforge-3dfx/usr/games/qw-client-3dfx debian/qf-3dfx/usr/games/nuq-3dfx
 	dh_installdeb
 	dh_shlibdeps
 	dh_gencontrol

@@ -1,10 +1,10 @@
 This is a Debian prepackaged version of QuakeForge. This package was
-compiled by Jeff Teunissen <deek@dusknet.dhs.org>.
+compiled by Jeff Teunissen <deek@debian.org>.
 
 Original sources can be found at:
 	http://www.quakeforge.net/files.php
 
-Copyright (C) 1999,2000 contributors to the QuakeForge Project.
+Copyright (C) 1999-2001 contributors to the QuakeForge Project.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
