@@ -149,9 +149,9 @@ filelist_print (struct filelist *filelist)
 	const char **list;
 
 	if (filelist->count) {
-		//qsort (filelist->list, filelist->count, sizeof (char *), filelist_cmp);
+		qsort (filelist->list, filelist->count, sizeof (char *), filelist_cmp);
 
-		if (0) filelist_cmp (0, 0);
+		//if (0) filelist_cmp (0, 0);
 
 		list = (const char **)malloc ((filelist->count + 1)*sizeof(char **));
 		list[filelist->count] = 0;
