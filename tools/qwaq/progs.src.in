@@ -2,6 +2,6 @@ qwaq.dat
 
 @srcdir@/defs.qc
 
-@top_srcdir@/cs-code/object.r
+@top_srcdir@/ruamoko/lib/object.r
 @srcdir@/test.r
 @srcdir@/main.qc
