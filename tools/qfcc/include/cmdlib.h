@@ -30,10 +30,14 @@
 #include <time.h>
 #include <stdarg.h>
 
-#ifndef __BYTEBOOL__
-#define __BYTEBOOL__
-typedef enum {false, true} qboolean;
+#ifndef _DEF_BYTE_
+# define _DEF_BYTE_
 typedef unsigned char byte;
+#endif
+
+#ifndef _DEF_BOOL_
+# define _DEF_BOOL_
+typedef enum    {false, true} qboolean;
 #endif
 
 // the dec offsetof macro doesn't work very well...
@@ -56,13 +60,6 @@ void	SafeRead (FILE *f, void *buffer, int count);
 void	SafeWrite (FILE *f, void *buffer, int count);
 
 int		LoadFile (char *filename, void **bufferptr);
-
-short	BigShort (short l);
-short	LittleShort (short l);
-int		BigLong (int l);
-int		LittleLong (int l);
-float	BigFloat (float l);
-float	LittleFloat (float l);
 
 char *COM_Parse (char *data);
 

@@ -37,6 +37,13 @@ if test "$1" = gcc; then
 	fi
 fi
 
+dnl We want warnings, lots of warnings...
+if test "x$GCC" = xyes; then
+	CFLAGS="$CFLAGS -Wall -Werror"
+	#   CFLAGS="$CFLAGS -Wall -pedantic"
+fi
+
+
 dnl Checks for libraries.
 
 dnl Checks for header files.
@@ -49,29 +56,32 @@ dnl Checks for library functions.
 
 AC_ARG_WITH(qf-headers,
 [  --with-qf-headers=DIR   use the QuakeForge headers found in DRI],
-QF_HEADERS=$withval, QF_HEADERS=auto)
+QF_INCL=$withval, QF_INCL=auto)
 AC_ARG_WITH(qf-libs,
 [  --with-qf-libs=DIR      use the QuakeForge libs found in DRI],
 QF_LIBS=$withval, QF_LIBS=auto)
 
 AC_MSG_CHECKING(for QF headers location)
-if test "x$QF_HEADERS" = xauto; then
+if test "x$QF_INCL" = xauto; then
 	qf_dir=`cd ${srcdir}/../..; pwd`
 	if test -r ${qf_dir}/include/QF/qtypes.h; then
-		QF_HEADERS="-I ${qf_dir}/include"
+		QF_INCL="-I${qf_dir}/include"
 	else
-		QF_HEADERS=''
+		QF_INCL=''
 	fi
 else
-	QF_HEADERS="-I ${QF_HEADERS}"
+	QF_INCL="-I${QF_INCL}"
 fi
-AC_MSG_RESULT($QF_HEADERS)
+AC_MSG_RESULT($QF_INCL)
+AC_SUBST(QF_INCL)
 
 AC_MSG_CHECKING(for QF libs location)
+QF_DEPS=""
 if test "x$QF_LIBS" = xauto; then
 	qf_dir=`cd ${srcdir}/../..; pwd`
 	if test -r ${qf_dir}/libs/util/qfplist.c; then
 		QF_LIBS="-L ${qf_dir}/libs/util"
+		QF_DEPS="${qf_dir}/libs/libqfutil.a"
 	else
 		QF_LIBS=''
 	fi
@@ -79,6 +89,9 @@ else
 	QF_LIBS="-L ${QF_LIBS}"
 fi
 AC_MSG_RESULT($QF_LIBS)
+QF_LIBS="${QF_LIBS} -lqfutil"
+AC_SUBST(QF_LIBS)
+AC_SUBST(QF_DEPS)
 
 AC_OUTPUT(
 	include/Makefile

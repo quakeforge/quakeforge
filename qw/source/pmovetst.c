@@ -36,6 +36,7 @@
 # include <strings.h>
 #endif
 
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "model.h"
 #include "pmove.h"

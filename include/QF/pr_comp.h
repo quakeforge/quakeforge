@@ -1,37 +1,30 @@
-/*
-	pr_comp.h
+/*  Copyright (C) 1996-1997  Id Software, Inc.
 
-	(description)
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 
-	Copyright (C) 1996-1997  Id Software, Inc.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-	This program is free software; you can redistribute it and/or
-	modify it under the terms of the GNU General Public License
-	as published by the Free Software Foundation; either version 2
-	of the License, or (at your option) any later version.
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-	See the GNU General Public License for more details.
-
-	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to:
-
-		Free Software Foundation, Inc.
-		59 Temple Place - Suite 330
-		Boston, MA  02111-1307, USA
-
-	$Id$
+    See file, 'COPYING', for details.
 */
 
-// this file is shared by quake and qcc
-
-#ifndef _PR_COMP_H
-#define _PR_COMP_H
+// this file is shared by QuakeForge and qfcc
+#ifndef __pr_comp_h
+#define __pr_comp_h
 
 #include "QF/qtypes.h"
+
+typedef int	func_t;
+typedef int	string_t;
 
 typedef enum {
 	ev_void,
@@ -44,6 +37,7 @@ typedef enum {
 	ev_pointer
 } etype_t;
 
+
 #define	OFS_NULL		0
 #define	OFS_RETURN		1
 #define	OFS_PARM0		4		// leave 3 ofs for each parm to hold vectors
@@ -55,6 +49,7 @@ typedef enum {
 #define	OFS_PARM6		22
 #define	OFS_PARM7		25
 #define	RESERVED_OFS	28
+
 
 enum {
 	OP_DONE,
@@ -134,6 +129,7 @@ enum {
 	OP_BITOR
 };
 
+
 typedef struct statement_s
 {
 	unsigned short	op;
@@ -167,8 +163,8 @@ typedef struct
 	byte	parm_size[MAX_PARMS];
 } dfunction_t;
 
-#define	PROG_VERSION	6
 
+#define	PROG_VERSION	6
 typedef struct
 {
 	int		version;
@@ -195,4 +191,4 @@ typedef struct
 	int		entityfields;
 } dprograms_t;
 
-#endif // _PR_COMP_H
+#endif // __pr_comp_h

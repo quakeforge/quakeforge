@@ -34,19 +34,30 @@
 
 #include <ctype.h>
 
+#include "QF/qendian.h"
 #include "QF/qtypes.h"
 
 /*
 					BYTE ORDER FUNCTIONS
 */
 
-qboolean    bigendien;
-short       (*BigShort) (short l);
-short       (*LittleShort) (short l);
-int         (*BigLong) (int l);
-int         (*LittleLong) (int l);
-float       (*BigFloat) (float l);
-float       (*LittleFloat) (float l);
+#ifndef WORDS_BIGENDIAN
+qboolean    bigendien = false;;
+short       (*BigShort) (short l) = ShortSwap;
+short       (*LittleShort) (short l) = ShortNoSwap;
+int         (*BigLong) (int l) = LongSwap;
+int         (*LittleLong) (int l) = LongNoSwap;
+float       (*BigFloat) (float l) = FloatSwap;
+float       (*LittleFloat) (float l) = FloatNoSwap;
+#else
+qboolean    bigendien = true;;
+short       (*BigShort) (short l) = ShortNoSwap;
+short       (*LittleShort) (short l) = ShortSwap;
+int         (*BigLong) (int l) = LongNoSwap;
+int         (*LittleLong) (int l) = LongSwap;
+float       (*BigFloat) (float l) = FloatNoSwap;
+float       (*LittleFloat) (float l) = FloatSwap;
+#endif
 
 short
 ShortSwap (short l)

@@ -41,6 +41,7 @@
 #include <stdio.h>
 
 #include "glquake.h"
+#include "QF/compat.h"
 #include "QF/sys.h"
 
 qboolean    r_cache_thrash;

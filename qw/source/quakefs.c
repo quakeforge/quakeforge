@@ -63,6 +63,7 @@
 
 #include "QF/cmd.h"
 #include "commdef.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "draw.h"

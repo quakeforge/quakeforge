@@ -30,8 +30,10 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#include "QF/qendian.h"
 
 #include "qfcc.h"
+
 
 char        sourcedir[1024];
 char        destfile[1024];
@@ -204,7 +206,7 @@ WriteData (int crc)
 	int 		i;
 
 	for (def = pr.def_head.next; def; def = def->next) {
-		if (def->type->type == ev_function) {
+		if (def->type->type == ev_func) {
 //			df = &functions[numfunctions];
 //			numfunctions++;
 		} else if (def->type->type == ev_field) {
@@ -220,9 +222,9 @@ WriteData (int crc)
 		dd->type = def->type->type;
 
 		if (!def->initialized
-			&& def->type->type != ev_function
+			&& def->type->type != ev_func
 			&& def->type->type != ev_field && def->scope == NULL)
-			dd->type |= DEF_SAVEGLOBGAL;
+			dd->type |= DEF_SAVEGLOBAL;
 		dd->s_name = CopyString (def->name);
 		dd->ofs = def->ofs;
 	}
@@ -392,7 +394,7 @@ PR_ValueString (etype_t type, void *val)
 		case ev_entity:
 			sprintf (line, "entity %i", *(int *) val);
 			break;
-		case ev_function:
+		case ev_func:
 			if (!(f = functions + *(int *) val))
 				sprintf (line, "undefined function");
 			else
@@ -468,7 +470,7 @@ PR_GlobalString (gofs_t ofs)
 	if (!(def = pr_global_defs[ofs]))
 		return PR_GlobalStringNoContents (ofs);
 
-	if (def->initialized && def->type->type != ev_function) {
+	if (def->initialized && def->type->type != ev_func) {
 		s = PR_ValueString (def->type->type, &pr_globals[ofs]);
 		sprintf (line, "%i(%s)", ofs, s);
 	} else {
@@ -582,7 +584,7 @@ PR_FinishCompilation (void)
 
 	// check to make sure all functions prototyped have code
 	for (d = pr.def_head.next; d; d = d->next) {
-		if (d->type->type == ev_function && !d->scope) {	// function args ok
+		if (d->type->type == ev_func && !d->scope) {	// function args ok
 //			f = G_FUNCTION(d->ofs);
 //			if (!f || (!f->code && !f->builtin))
 			if (!d->initialized) {
@@ -633,7 +635,7 @@ PR_WriteProgdefs (char *filename)
 			case ev_string:
 				fprintf (f, "\tstring_t\t%s;\n", d->name);
 				break;
-			case ev_function:
+			case ev_func:
 				fprintf (f, "\tfunc_t\t%s;\n", d->name);
 				break;
 			case ev_entity:
@@ -666,7 +668,7 @@ PR_WriteProgdefs (char *filename)
 			case ev_string:
 				fprintf (f, "\tstring_t\t%s;\n", d->name);
 				break;
-			case ev_function:
+			case ev_func:
 				fprintf (f, "\tfunc_t\t%s;\n", d->name);
 				break;
 			case ev_entity:
@@ -752,12 +754,12 @@ Options: \n\
 	-h, --help		display this help and exit\n\
 	-V, --version		output version information and exit\n\
 ");
-		return;
+		return 1;
 	}
 
 	if (CheckParm ("-V") || CheckParm ("--version")) {
 		printf ("%s version %s\n", PACKAGE, VERSION);
-		return;
+		return 1;
 	}
 
 	if ((p = CheckParm ("--source")) && p < argc - 1) {
@@ -796,7 +798,7 @@ Options: \n\
 		LoadFile (filename, (void *) &src2);
 
 		if (!PR_CompileFile (src2, filename))
-			exit (1);
+			return 1;
 	}
 
 	if (!PR_FinishCompilation ())
@@ -813,4 +815,5 @@ Options: \n\
 
 	stop = I_FloatTime ();
 	printf ("Compilation time: %i seconds.\n", (int) (stop - start));
+	return 0;
 }

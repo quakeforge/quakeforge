@@ -52,6 +52,7 @@
 #include "cl_tent.h"
 #include "client.h"
 #include "QF/cmd.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "host.h"
 #include "QF/msg.h"

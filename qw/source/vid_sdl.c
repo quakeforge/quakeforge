@@ -35,6 +35,7 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#include <stdlib.h>
 
 #include <SDL.h>
 

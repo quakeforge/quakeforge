@@ -34,6 +34,7 @@
 #include "host.h"
 #include "protocol.h"
 #include "skin.h"
+#include "QF/compat.h"
 #include "QF/sys.h"
 #include "texture.h"
 

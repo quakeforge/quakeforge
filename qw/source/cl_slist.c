@@ -44,6 +44,7 @@
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
+#include <stdlib.h>
 
 #include "bothdefs.h"
 #include "cl_slist.h"

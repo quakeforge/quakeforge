@@ -40,6 +40,7 @@
 #include "client.h"
 #include "host.h"
 #include "skin.h"
+#include "QF/compat.h"
 #include "QF/sys.h"
 #include "vid.h"
 

@@ -39,6 +39,7 @@
 #include <stdlib.h>
 
 #include "QF/cmd.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "glquake.h"
 #include "host.h"

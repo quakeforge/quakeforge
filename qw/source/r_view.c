@@ -36,6 +36,7 @@
 #include "bothdefs.h"
 #include "client.h"
 #include "QF/cmd.h"
+#include "QF/compat.h"
 #include "QF/cvar.h"
 #include "host.h"
 #include "QF/msg.h"

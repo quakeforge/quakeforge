@@ -36,6 +36,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "client.h"
 #include "QF/cvar.h"

@@ -41,6 +41,7 @@
 #include "cl_parse.h"
 #include "client.h"
 #include "QF/cmd.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "d_iface.h"
 #include "draw.h"

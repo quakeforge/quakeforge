@@ -40,6 +40,7 @@
 
 #include "bothdefs.h"
 #include "QF/cmd.h"
+#include "QF/compat.h"
 #include "QF/msg.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"

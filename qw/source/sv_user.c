@@ -44,6 +44,7 @@
 #include "bothdefs.h"
 #include "QF/checksum.h"
 #include "QF/cmd.h"
+#include "QF/compat.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
 #include "msg_ucmd.h"

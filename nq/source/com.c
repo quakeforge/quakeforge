@@ -30,7 +30,6 @@
 # include "config.h"
 #endif
 
-#include "QF/qendian.h"
 #include "QF/cvar.h"
 #include "QF/quakefs.h"
 #include "QF/console.h"
@@ -81,24 +80,6 @@ COM_Init
 void
 COM_Init ()
 {
-#ifndef WORDS_BIGENDIAN
-	bigendien = false;
-	BigShort = ShortSwap;
-	LittleShort = ShortNoSwap;
-	BigLong = LongSwap;
-	LittleLong = LongNoSwap;
-	BigFloat = FloatSwap;
-	LittleFloat = FloatNoSwap;
-#else
-	bigendien = true;
-	BigShort = ShortNoSwap;
-	LittleShort = ShortSwap;
-	BigLong = LongNoSwap;
-	LittleLong = LongSwap;
-	BigFloat = FloatNoSwap;
-	LittleFloat = FloatSwap;
-#endif
-
 	registered = Cvar_Get ("registered", "0", CVAR_NONE, "None");
 	cmdline = Cvar_Get ("cmdline", "0", CVAR_SERVERINFO, "None");
 	Cmd_AddCommand ("path", COM_Path_f, "No Description");

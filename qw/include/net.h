@@ -30,8 +30,9 @@
 #define _NET_H
 
 #include "QF/gcc_attr.h"
-#include "QF/sizebuf.h"
 #include "QF/cvar.h"
+#include "QF/qdefs.h"
+#include "QF/sizebuf.h"
 
 #define	PORT_ANY	-1
 

@@ -349,7 +349,7 @@ PR_ParseFunctionCall (def_t *func)
 
 	t = func->type;
 
-	if (t->type != ev_function)
+	if (t->type != ev_func)
 		PR_ParseError ("not a function");
 
 	// copy the arguments to the global parameter variables
@@ -440,7 +440,7 @@ PR_Term (void)
 				return PR_Statement (&pr_opcodes[OP_NOT_ENT], e, 0);
 			case ev_vector:
 				return PR_Statement (&pr_opcodes[OP_NOT_V], e, 0);
-			case ev_function:
+			case ev_func:
 				return PR_Statement (&pr_opcodes[OP_NOT_FNC], e, 0);
 			default:
 				PR_ParseError ("Type mismatch for !");
@@ -839,7 +839,7 @@ PR_ParseDefs (void)
 
 	type = PR_ParseType ();
 
-	if (pr_scope && (type->type == ev_field || type->type == ev_function))
+	if (pr_scope && (type->type == ev_field || type->type == ev_func))
 		PR_ParseError ("Fields and functions must be global");
 
 	do {
@@ -852,7 +852,7 @@ PR_ParseDefs (void)
 			if (def->initialized)
 				PR_ParseError ("%s redeclared", name);
 
-			if (type->type == ev_function) {
+			if (type->type == ev_func) {
 				locals_start = locals_end = numpr_globals;
 				pr_scope = def;
 				f = PR_ParseImmediateStatements (type);

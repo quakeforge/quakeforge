@@ -62,7 +62,7 @@ type_t	type_vector = { ev_vector, &def_vector };
 type_t	type_entity = { ev_entity, &def_entity };
 type_t	type_field = { ev_field, &def_field };
 // type_function is a void() function used for state defs
-type_t	type_function = { ev_function, &def_function, NULL, &type_void };
+type_t	type_function = { ev_func, &def_function, NULL, &type_void };
 type_t	type_pointer = { ev_pointer, &def_pointer };
 
 type_t	type_floatfield = { ev_field, &def_field, NULL, &type_float };
@@ -649,7 +649,7 @@ PR_ParseType (void)
 
 	// function type
 	memset (&new, 0, sizeof (new));
-	new.type = ev_function;
+	new.type = ev_func;
 	new.aux_type = type;				// return type
 	new.num_parms = 0;
 	if (!PR_Check (tt_punct, ")")) {

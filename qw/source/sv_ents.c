@@ -36,6 +36,7 @@
 # include <strings.h>
 #endif
 
+#include "QF/compat.h"
 #include "QF/msg.h"
 #include "msg_ucmd.h"
 #include "server.h"

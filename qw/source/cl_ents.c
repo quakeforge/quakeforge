@@ -41,6 +41,7 @@
 #include "cl_main.h"
 #include "cl_pred.h"
 #include "cl_tent.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "d_iface.h"
 #include "host.h"

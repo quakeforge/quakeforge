@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <setjmp.h>
 
-#include "pr_comp.h"
+#include "QF/pr_comp.h"
 
 /*
 

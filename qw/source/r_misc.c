@@ -30,6 +30,7 @@
 # include "config.h"
 #endif
 
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/cmd.h"
 #include "cl_parse.h"

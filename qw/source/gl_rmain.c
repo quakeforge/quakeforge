@@ -45,6 +45,7 @@
 #include "cl_main.h"
 #include "cl_parse.h" //FIXME CL_NewTranslation
 #include "commdef.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "locs.h"
 #include "glquake.h"

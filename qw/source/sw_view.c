@@ -34,6 +34,7 @@
 #include "host.h"
 #include "r_local.h"
 #include "view.h"
+#include "QF/compat.h"
 
 extern cvar_t   *cl_cshift_powerup;
 

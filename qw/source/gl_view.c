@@ -41,6 +41,7 @@
 #include "bothdefs.h"
 #include "glquake.h"
 #include "view.h"
+#include "QF/compat.h"
 
 
 extern byte *host_basepal;

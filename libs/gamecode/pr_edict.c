@@ -35,6 +35,7 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#include <stdarg.h>
 
 #include "QF/cmd.h"
 #include "QF/console.h"

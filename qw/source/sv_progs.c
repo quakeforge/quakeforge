@@ -38,6 +38,7 @@
 #endif
 
 #include "QF/cmd.h"
+#include "QF/compat.h"
 #include "server.h"
 #include "progdefs.h"
 #include "sv_progs.h"

@@ -34,8 +34,8 @@
 #include <stdio.h>
 #include <sys/types.h>
 
-#include "QF/qdefs.h"
-#include "QF/compat.h"
+//#include "QF/qdefs.h"
+//#include "QF/compat.h"
 
 #define MAX_QPATH	64
 
@@ -44,10 +44,13 @@
 typedef unsigned char byte;
 #endif
 
+#ifndef _DEF_BOOL_
+# define _DEF_BOOL_
 // KJB Undefined true and false defined in SciTech's DEBUG.H header
 #undef true
 #undef false
 typedef	enum	{false, true} qboolean;
+#endif
 
 // From mathlib...
 typedef float	vec_t;
@@ -58,8 +61,6 @@ typedef	int	fixed8_t;
 typedef	int	fixed16_t;
 
 
-typedef	int	func_t;
-typedef	int	string_t;
 typedef	byte	pixel_t;
 
 #endif // __qtypes_h

@@ -40,6 +40,7 @@
 
 #include "QF/cvar.h"
 #include "QF/cmd.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/hash.h"
 #include "QF/qargs.h"

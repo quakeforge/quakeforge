@@ -40,10 +40,11 @@
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "host.h"
-#include "progdefs.h"
 #include "server.h"
 #include "sv_progs.h"
 #include "world.h"
+
+#include "progdefs.h"
 
 progs_t     sv_pr_state;
 sv_globals_t sv_globals;

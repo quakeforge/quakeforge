@@ -46,6 +46,7 @@
 # include <X11/extensions/xf86dga.h>
 #endif
 
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "context_x11.h"
 #include "glquake.h"

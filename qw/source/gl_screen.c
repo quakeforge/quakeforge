@@ -40,6 +40,7 @@
 
 #include "cl_parse.h"
 #include "QF/cmd.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "draw.h"
 #include "glquake.h"

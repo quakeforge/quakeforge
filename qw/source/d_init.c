@@ -30,6 +30,7 @@
 # include "config.h"
 #endif
 
+#include "QF/compat.h"
 #include "bothdefs.h"
 #include "d_local.h"
 

@@ -57,6 +57,7 @@
 #endif
 
 #include "client.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "context_x11.h"
 #include "QF/cmd.h"

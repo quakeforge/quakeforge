@@ -35,7 +35,6 @@
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
-#include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
@@ -86,24 +85,6 @@ COM_CheckRegistered (void)
 void
 COM_Init (void)
 {
-#ifndef WORDS_BIGENDIAN
-	bigendien = false;
-	BigShort = ShortSwap;
-	LittleShort = ShortNoSwap;
-	BigLong = LongSwap;
-	LittleLong = LongNoSwap;
-	BigFloat = FloatSwap;
-	LittleFloat = FloatNoSwap;
-#else
-	bigendien = true;
-	BigShort = ShortNoSwap;
-	LittleShort = ShortSwap;
-	BigLong = LongNoSwap;
-	LittleLong = LongSwap;
-	BigFloat = FloatNoSwap;
-	LittleFloat = FloatSwap;
-#endif
-
 	Cmd_AddCommand ("path", COM_Path_f, "Show what paths Quake is using");
 
 	COM_Filesystem_Init ();

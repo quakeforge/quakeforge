@@ -42,6 +42,7 @@
 #include "bothdefs.h"
 #include "buildnum.h"
 #include "QF/cmd.h"
+#include "QF/compat.h"
 #include "model.h"
 #include "net.h"
 #include "QF/msg.h"

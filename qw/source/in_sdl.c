@@ -34,6 +34,7 @@
 #include "client.h"
 #include "cl_input.h"
 #include "cl_main.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "draw.h"
