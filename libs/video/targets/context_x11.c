@@ -106,7 +106,6 @@ static qboolean	vidmode_avail = false;
 
 static qboolean	vidmode_active = false;
 
-qboolean	vid_fullscreen_active;
 static qboolean    vid_context_created = false;
 static int  window_x, window_y, window_saved;
 
@@ -155,6 +154,21 @@ X11_ProcessEventProxy(XEvent *x_event)
 	if (event_handlers[x_event->type])
 		event_handlers[x_event->type] (x_event);
 }	
+
+static void
+X11_WaitForEvent (int event)
+{
+	XEvent	ev;
+	int     type;
+
+	while (1) {
+		XMaskEvent (x_disp, StructureNotifyMask, &ev);
+		type = ev.type;
+		X11_ProcessEventProxy (&ev);
+		if (type == event) 
+			break;
+	}
+}
 
 void
 X11_ProcessEvent (void)
@@ -255,18 +269,8 @@ X11_ForceMove (int x, int y)
 
 	XMoveWindow (x_disp, x_win, x, y);
 	XFlush(x_disp);
-	while (1) {
-		XEvent ev;
-		XMaskEvent (x_disp,StructureNotifyMask,&ev);
-		if (ev.type == ConfigureNotify) {
-			nx = ev.xconfigure.x;
-			ny = ev.xconfigure.y;
-			X11_ProcessEventProxy (&ev);
-			break;
-		}
-		X11_ProcessEventProxy (&ev);
-	}
-//	X11_GetWindowCoords (&nx, &ny);
+	X11_WaitForEvent (ConfigureNotify);
+	X11_GetWindowCoords (&nx, &ny);
 	nx -= x;
 	ny -= y;
 	if (nx == 0 || ny == 0) {
@@ -285,15 +289,7 @@ X11_ForceMove (int x, int y)
 	XMoveWindow (x_disp, x_win, x, y);
 	XSync (x_disp, false);
 	// this is the best we can do.
-	while (1) {
-		XEvent ev;
-		XMaskEvent (x_disp, StructureNotifyMask, &ev);
-		if (ev.type == ConfigureNotify) {
-			X11_ProcessEventProxy (&ev);
-			break;
-		}
-		X11_ProcessEventProxy (&ev);
-	}
+	X11_WaitForEvent (ConfigureNotify);
 }
 
 void
@@ -394,14 +390,11 @@ X11_UpdateFullscreen (cvar_t *fullscreen)
 		IN_UpdateGrab (in_grab);
 		return;
 	} else {
-		IN_UpdateGrab (in_grab);
 
 		if (X11_GetWindowCoords (&window_x, &window_y))
 			window_saved = 1;
 
 		X11_SetVidMode (scr_width, scr_height);
-
-		IN_UpdateGrab (in_grab);	// FIXME: why are there two of these?
 
 		if (!vidmode_active) {
 			window_saved = 0;
@@ -411,6 +404,7 @@ X11_UpdateFullscreen (cvar_t *fullscreen)
 		X11_ForceMove (0, 0);
 		XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, scr_width / 2,
 					  scr_height / 2);
+		IN_UpdateGrab (in_grab);
 		// Done in X11_SetVidMode but moved the window since then
 		X11_ForceViewPort (); 
 	}
@@ -476,16 +470,7 @@ X11_CreateWindow (int width, int height)
 
 	XMapWindow (x_disp, x_win);
 
-	while (1) {
-		XEvent	ev;
-
-		XMaskEvent (x_disp, StructureNotifyMask, &ev);
-		if (ev.type == MapNotify) {
-			X11_ProcessEventProxy (&ev);
-			break;
-		}
-		X11_ProcessEventProxy (&ev);
-	}
+	X11_WaitForEvent (MapNotify);
 
 	vid_context_created = true;
 	if (vid_fullscreen->int_val) {
