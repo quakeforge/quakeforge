@@ -35,7 +35,6 @@ static const char rcsid[] =
 
 #include "qfcc.h"
 #include "switch.h"
-#include "scope.h"
 #include "qc-parse.h"
 
 typedef struct case_node_s {

@@ -54,14 +54,14 @@ yyerror (const char *s)
 int yylex (void);
 type_t *PR_FindType (type_t *new);
 
-type_t *parse_params (def_t *parms);
+type_t *parse_params (type_t *type, def_t *parms, int elipsis);
 function_t *new_function (void);
 void build_function (function_t *f);
 void finish_function (function_t *f);
 void emit_function (function_t *f, expr_t *e);
 void build_scope (function_t *f, def_t *func);
 type_t *build_type (int is_field, type_t *type);
-type_t *build_array_type (int size);
+type_t *build_array_type (type_t *type, int size);
 
 hashtab_t *save_local_inits (def_t *scope);
 hashtab_t *merge_local_inits (hashtab_t *dl_1, hashtab_t *dl_2);
@@ -77,7 +77,7 @@ typedef struct {
 
 %union {
 	int			op;
-	scope_t		scope;
+	def_t		*scope;
 	def_t		*def;
 	struct hashtab_s	*def_list;
 	type_t		*type;
@@ -89,6 +89,7 @@ typedef struct {
 	float		quaternion_val[4];
 	function_t *function;
 	struct switch_block_s	*switch_block;
+	param_t		params;
 }
 
 %right	<op> '=' ASX PAS /* pointer assign */
@@ -111,13 +112,14 @@ typedef struct {
 %token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELIPSIS NIL
 %token	IFBE IFB IFAE IFA
 %token	SWITCH CASE DEFAULT STRUCT ENUM TYPEDEF
+%token	ELE_START
 %token	<type> TYPE
 
-%type	<type>	type opt_func func_parms array_decl
-%type	<integer_val> opt_field opt_comma_elipsis
+%type	<type>	type type_name
+%type	<params> function_decl
+%type	<integer_val> array_decl
 %type	<def>	param param_list def_name
-%type	<def>	var_def_item var_def_list
-%type	<def>	func_def_item func_def_list
+%type	<def>	def_item def_list
 %type	<expr>	const opt_expr expr arg_list element_list element_list1 element
 %type	<expr>	string_val
 %type	<expr>	statement statements statement_block
@@ -125,6 +127,7 @@ typedef struct {
 %type	<function> begin_function
 %type	<def_list> save_inits
 %type	<switch_block> switch_block
+%type	<scope>	param_scope
 
 %expect 1
 
@@ -143,6 +146,8 @@ expr_t	*current_init;
 def_t		*pr_scope;					// the function being parsed, or NULL
 string_t	s_file;						// filename for function definition
 
+int      element_flag;
+
 %}
 
 %%
@@ -153,12 +158,7 @@ defs
 	;
 
 def
-	: opt_field TYPE
-	  { current_type = build_type ($1, $2); } var_def_list
-	| opt_field TYPE { current_type = $2; } array_decl
-	  { current_type = build_type ($1, $4); } var_def_list
-	| opt_field TYPE { current_type = $2; } func_parms
-	  { current_type = build_type ($1, $4); } func_def_list
+	: type { current_type = $1} def_list
 	| STRUCT NAME
 	  { struct_type = new_struct ($2); } '=' '{' struct_defs '}'
 	| ENUM '{' enum_list opt_comma '}'
@@ -178,12 +178,8 @@ struct_defs
 	;
 
 struct_def
-	: opt_field TYPE
-	  { current_type = build_type ($1, $2); } struct_def_list
-	| opt_field TYPE { current_type = $2; } array_decl
-	  { current_type = build_type ($1, $4); } struct_def_list
-	| opt_field TYPE { current_type = $2; } func_parms
-	  { current_type = build_type ($1, $4); } struct_def_list
+	: type struct_def_list
+	  {}
 	;
 
 enum_list
@@ -214,124 +210,60 @@ enum
 		}
 	;
 
-opt_field
-	: /* empty */ { $$ = 0; }
-	| '.' { $$ = 1; }
+type
+	: '.' type { $$ = build_type (1, $2); }
+	| type array_decl { $$ = build_type (0, build_array_type ($1, $2)); }
+	| type_name function_decl
+		{
+			$$ = build_type (0, parse_params ($1, $2.params, $2.elipsis));
+		}
+	| type_name { $$ = build_type (0, $1); }
+	| '(' type ')' { $$ = $2; }
 	;
 
-opt_func
+type_name
+	: TYPE { $$ = $1; }
+	;
+
+function_decl
+	: '(' param_scope param_list
+		{
+			PR_FlushScope (pr_scope, 1);
+			pr_scope = $<scope>2;
+		}
+	  ')'
+		{
+			$$.params = $3;
+			$$.elipsis = 0;
+		}
+	| '(' param_scope param_list ',' ELIPSIS ')'
+		{
+			PR_FlushScope (pr_scope, 1);
+			pr_scope = $<scope>2;
+
+			$$.params = $3;
+			$$.elipsis = 1;
+		}
+	| '(' ELIPSIS ')'
+		{
+			$$.params = 0;
+			$$.elipsis = 1;
+		}
+	| '(' ')'
+		{
+			$$.params = 0;
+			$$.elipsis = 0;
+		}
+	;
+
+param_scope
 	: /* empty */
 		{
-			$$ = 0;
-		}
-	| func_parms
-		{
-			$$ = $1;
-		}
-	;
-
-func_parms
-	: '('
-		{
-			$<scope>$.scope = pr_scope;
-			$<scope>$.type = current_type;
-
+			$$ = pr_scope;
 			pr_scope = PR_NewDef (0, 0, 0);
 			pr_scope->alloc = &pr_scope->locals;
 			*pr_scope->alloc = 0;
 		}
-	  param_list opt_comma_elipsis
-		{
-			PR_FlushScope (pr_scope, 1);
-			current_type = $<scope>2.type;
-			pr_scope = $<scope>2.scope;
-		}
-	  ')'
-		{
-			if ($4)
-				$$ = parse_params ((def_t*)1);
-			else
-				$$ = parse_params ($3);
-		}
-	| '(' ')'
-		{
-			$$ = parse_params (0);
-		}
-	| '(' ELIPSIS ')'
-		{
-			$$ = parse_params ((def_t*)1);
-		}
-	;
-
-array_decl
-	: '[' const ']'
-		{
-			if ($2->type != ex_integer || $2->e.integer_val < 1)
-				error (0, "invalid array size");
-			else
-				$$ = build_array_type ($2->e.integer_val);
-		}
-	| '[' ']' { $$ = build_array_type (0); }
-	;
-
-struct_def_list
-	: struct_def_list ',' struct_def_item
-	| struct_def_item
-	;
-
-struct_def_item
-	: NAME { new_struct_field (struct_type, current_type, $1); }
-	;
-
-var_def_list
-	: var_def_list ',' var_def_item
-	| var_def_item
-	;
-
-var_def_item
-	: def_name opt_var_initializer
-		{
-			$$ = $1;
-			if ($$ && !$$->scope && $$->type->type != ev_func)
-				PR_DefInitialized ($$);
-		}
-	;
-
-func_def_list
-	: func_def_list ',' func_def_item
-	| func_def_item
-	;
-
-func_def_item
-	: def_name opt_func_initializer
-		{
-			$$ = $1;
-			if (!$$->scope && $$->type->type != ev_func)
-				PR_DefInitialized ($$);
-		}
-	;
-
-def_name
-	: NAME
-		{
-			int *alloc = &numpr_globals;
-
-			if (pr_scope) {
-				alloc = pr_scope->alloc;
-				if (pr_scope->scope && !pr_scope->scope->scope) {
-					def_t      *def = PR_GetDef (0, $1, pr_scope->scope, 0);
-					if (def && def->scope && !def->scope->scope)
-						warning (0, "local %s shadows param %s", $1, def->name);
-				}
-			}
-			$$ = PR_GetDef (current_type, $1, pr_scope, alloc);
-			current_def = $$;
-		}
-	;
-
-opt_comma_elipsis
-	: /* empty */ { $$ = 0; }
-	| ',' ELIPSIS { $$ = 1; }
 	;
 
 param_list
@@ -356,16 +288,68 @@ param
 		}
 	;
 
-type
-	: opt_field TYPE { current_type = $2; } opt_func
-	  { $$ = build_type ($1, $4 ? $4 : $2); }
-	| opt_field TYPE { current_type = $2; } array_decl
-	  { $$ = build_type ($1, $4); }
+array_decl
+	: '[' const ']'
+		{
+			if ($2->type != ex_integer || $2->e.integer_val < 1) {
+				error (0, "invalid array size");
+				$$ = 0;
+			} else {
+				$$ = $2->e.integer_val;
+			}
+		}
+	| '[' ']' { $$ = 0; }
 	;
 
-opt_var_initializer
+struct_def_list
+	: struct_def_list ',' struct_def_item
+	| struct_def_item
+	;
+
+struct_def_item
+	: NAME { new_struct_field (struct_type, current_type, $1); }
+	;
+
+def_list
+	: def_list ',' def_item
+	| def_item
+	;
+
+def_item
+	: def_name opt_initializer
+		{
+			$$ = $1;
+			if ($$ && !$$->scope && $$->type->type != ev_func)
+				PR_DefInitialized ($$);
+		}
+	;
+
+def_name
+	: NAME
+		{
+			int *alloc = &numpr_globals;
+
+			if (pr_scope) {
+				alloc = pr_scope->alloc;
+				if (pr_scope->scope && !pr_scope->scope->scope) {
+					def_t      *def = PR_GetDef (0, $1, pr_scope->scope, 0);
+					if (def && def->scope && !def->scope->scope)
+						warning (0, "local %s shadows param %s", $1, def->name);
+				}
+			}
+			$$ = PR_GetDef (current_type, $1, pr_scope, alloc);
+			current_def = $$;
+		}
+	;
+
+opt_initializer
 	: /*empty*/
-	| '=' expr
+	| { element_flag = current_type->type != ev_func; } var_initializer
+		{ element_flag = 0; }
+	;
+
+var_initializer
+	: '=' expr
 		{
 			if (pr_scope) {
 				expr_t *e = new_expr ();
@@ -381,62 +365,11 @@ opt_var_initializer
 				}
 			}
 		}
-	| '=' '{' { current_init = new_block_expr (); } element_list '}'
+	| '=' ELE_START { current_init = new_block_expr (); } element_list '}'
 		{
 			init_elements (current_def, $4);
 			current_init = 0;
 		}
-	;
-
-element_list
-	: /* empty */
-		{
-			$$ = new_block_expr ();
-		}
-	| element_list1 opt_comma
-		{
-			$$ = current_init;
-		}
-	;
-
-element_list1
-	: element
-		{
-			append_expr (current_init, $1);
-		}
-	| element_list1 ',' element
-		{
-			append_expr (current_init, $3);
-		}
-	;
-
-element
-	: '{'
-		{
-			$$ = current_init;
-			current_init = new_block_expr ();
-		}
-	  element_list
-		{
-			current_init = $<expr>2;
-		}
-	  '}'
-		{
-			$$ = $3;
-		}
-	| expr
-		{
-			$$ = $1;
-		}
-	;
-
-opt_comma
-	: /* empty */
-	| ','
-	;
-
-opt_func_initializer
-	: /*empty*/
 	| '=' '#' const
 		{
 			if (current_type->type != ev_func) {
@@ -495,6 +428,53 @@ opt_func_initializer
 			emit_function ($10, e);
 			finish_function ($10);
 		}
+	;
+
+element_list
+	: /* empty */
+		{
+			$$ = new_block_expr ();
+		}
+	| element_list1 opt_comma
+		{
+			$$ = current_init;
+		}
+	;
+
+element_list1
+	: element
+		{
+			append_expr (current_init, $1);
+		}
+	| element_list1 ',' element
+		{
+			append_expr (current_init, $3);
+		}
+	;
+
+element
+	: '{'
+		{
+			$$ = current_init;
+			current_init = new_block_expr ();
+		}
+	  element_list
+		{
+			current_init = $<expr>2;
+		}
+	  '}'
+		{
+			$$ = $3;
+		}
+	| expr
+		{
+			$$ = $1;
+		}
+	;
+
+opt_comma
+	: /* empty */
+	| ','
 	;
 
 begin_function
@@ -653,7 +633,7 @@ statement
 			current_type = $2;
 			local_expr = new_block_expr ();
 		}
-	  var_def_list ';'
+	  def_list ';'
 		{
 			$$ = local_expr;
 			local_expr = 0;
@@ -886,7 +866,7 @@ string_val
 %%
 
 type_t *
-parse_params (def_t *parms)
+parse_params (type_t *type, def_t *parms, int elipsis)
 {
 	type_t		new;
 	def_t		*p;
@@ -894,12 +874,12 @@ parse_params (def_t *parms)
 
 	memset (&new, 0, sizeof (new));
 	new.type = ev_func;
-	new.aux_type = current_type;
+	new.aux_type = type;
 	new.num_parms = 0;
 
-	if (!parms) {
-	} else if (parms == (def_t*)1) {
+	if (elipsis) {
 		new.num_parms = -1;			// variable args
+	} else if (!parms) {
 	} else {
 		for (p = parms; p; p = p->next, new.num_parms++)
 			;
@@ -954,13 +934,13 @@ build_type (int is_field, type_t *type)
 }
 
 type_t *
-build_array_type (int size)
+build_array_type (type_t *type, int size)
 {
 	type_t      new;
 
 	memset (&new, 0, sizeof (new));
 	new.type = ev_pointer;
-	new.aux_type = current_type;
+	new.aux_type = type;
 	new.num_parms = size;
 	return PR_FindType (&new);
 }

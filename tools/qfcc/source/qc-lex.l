@@ -34,7 +34,6 @@ static const char rcsid[] =
 #include <QF/hash.h>
 #include <QF/sys.h>
 #include "qfcc.h"
-#include "scope.h"
 #include "struct.h"
 #include "type.h"
 #include "qc-parse.h"
@@ -50,6 +49,7 @@ void add_frame_macro (char *token);
 char *make_string (char *token);
 
 extern YYSTYPE yylval;
+extern int element_flag;
 
 %}
 
@@ -157,7 +157,13 @@ m		([\-+]?)
 						return ASX;
 					}
 
-[!(){}.*/&|^~+\-=\[\];,#%?:]	return yytext[0];
+[!(){}.*/&|^~+\-=\[\];,#%?:] {
+						if (yytext[0] == '{' && element_flag) {
+							element_flag = 0;
+							return ELE_START;
+						}
+						return yytext[0];
+					}
 
 "..."	return ELIPSIS;
 

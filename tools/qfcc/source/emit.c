@@ -36,7 +36,6 @@ static const char rcsid[] =
 #include <QF/va.h>
 
 #include "qfcc.h"
-#include "scope.h"
 #include "qc-parse.h"
 
 def_t      *emit_sub_expr (expr_t *e, def_t *dest);

@@ -37,7 +37,6 @@ static const char rcsid[] =
 #include <QF/va.h>
 
 #include "qfcc.h"
-#include "scope.h"
 #include "struct.h"
 #include "type.h"
 #include "qc-parse.h"
