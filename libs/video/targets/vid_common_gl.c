@@ -127,7 +127,10 @@ CheckMultiTextureExtensions (void)
 				("glMultiTexCoord2fARB");
 			qglActiveTexture = QFGL_ExtensionAddress ("glActiveTextureARB");
 			gl_mtex_enum = GL_TEXTURE0_ARB;
-			gl_mtex_capable = true;
+			if (qglMultiTexCoord2f && gl_mtex_enum)
+				gl_mtex_capable = true;
+			else
+				Con_Printf ("disabled, could not find required functions\n");
 		} else {
 			Con_Printf ("disabled, not enough TMUs.\n");
 		}
