@@ -487,13 +487,12 @@ ED_ParseOld (progs_t *pr, const char *data)
 void
 ED_LoadFromFile (progs_t *pr, const char *data)
 {
-	if (*data == '{') {
-		// oldstyle entity data
-		ED_ParseOld (pr, data);
-	} else if (*data == '(') {
+	if (*data == '(') {
 		// new style (plist) entity data
-	} else {
 		plitem_t   *plist = PL_GetPropertyList (data);
 		plist = plist;
+	} else {
+		// oldstyle entity data
+		ED_ParseOld (pr, data);
 	}
 }
