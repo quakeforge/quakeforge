@@ -180,8 +180,7 @@ VID_Init (unsigned char *palette)
 
 	x_visinfo = qfglXChooseVisual (x_disp, x_screen, attrib);
 	if (!x_visinfo) {
-		Sys_Error ("Error couldn't get an RGB, Double-buffered, Depth "
-				   "visual\n");
+		Sys_Error ("Error couldn't get an RGB, Double-buffered, Depth visual");
 	}
 	x_vis = x_visinfo->visual;
 

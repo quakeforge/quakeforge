@@ -106,7 +106,7 @@ fix_missing_globals (progs_t *pr, def_t *globals)
 
 	progs = malloc (pr->progs_size + strings_size);
 	if (!progs)
-		Sys_Error ("fix_missing_globals: Memory Allocation Failure\n");
+		Sys_Error ("fix_missing_globals: Memory Allocation Failure");
 	memcpy (progs, pr->progs, pr->progs_size);
 
 	offs = progs->ofs_strings + progs->numstrings;

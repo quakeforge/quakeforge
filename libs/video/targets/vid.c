@@ -69,33 +69,33 @@ VID_GetWindowSize (int def_w, int def_h)
 
 	if ((pnum = COM_CheckParm ("-width"))) {
 		if (pnum >= com_argc - 1)
-			Sys_Error ("VID: -width <width>\n");
+			Sys_Error ("VID: -width <width>");
 
 		Cvar_Set (vid_width, com_argv[pnum + 1]);
 
 		if (!vid_width->int_val)
-			Sys_Error ("VID: Bad window width\n");
+			Sys_Error ("VID: Bad window width");
 	}
 
 	if ((pnum = COM_CheckParm ("-height"))) {
 		if (pnum >= com_argc - 1)
-			Sys_Error ("VID: -height <height>\n");
+			Sys_Error ("VID: -height <height>");
 
 		Cvar_Set (vid_height, com_argv[pnum + 1]);
 
 		if (!vid_height->int_val)
-			Sys_Error ("VID: Bad window height\n");
+			Sys_Error ("VID: Bad window height");
 	}
 
 	if ((pnum = COM_CheckParm ("-winsize"))) {
 		if (pnum >= com_argc - 2)
-			Sys_Error ("VID: -winsize <width> <height>\n");
+			Sys_Error ("VID: -winsize <width> <height>");
 
 		Cvar_Set (vid_width, com_argv[pnum + 1]);
 		Cvar_Set (vid_height, com_argv[pnum + 2]);
 
 		if (!vid_width->int_val || !vid_height->int_val)
-			Sys_Error ("VID: Bad window width/height\n");
+			Sys_Error ("VID: Bad window width/height");
 	}
 
 	Cvar_SetFlags (vid_width, vid_width->flags | CVAR_ROM);

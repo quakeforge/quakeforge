@@ -394,7 +394,7 @@ SV_Map_f (void)
 		SV_Printf ("Can't find %s\n", expanded);
 		// If curlevel == level, something is SCREWED!  --KB
 		if (strcaseequal (level, curlevel))
-			Sys_Error ("map: cannot restart level\n");
+			Sys_Error ("map: cannot restart level");
 		else
 			Cbuf_AddText (va ("map %s", curlevel));
 		return;

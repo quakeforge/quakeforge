@@ -267,7 +267,7 @@ VID_InitModes (void)
 	num_modes = vga_lastmodenumber () + 1;
 	modes = malloc (num_modes * sizeof (vga_modeinfo));
 	if (!modes)
-		Sys_Error ("VID_InitModes: Memory Allocation Failure\n");
+		Sys_Error ("VID_InitModes: Memory Allocation Failure");
 	for (i = 0; i < num_modes; i++) {
 		if (vga_hasmode (i)) {
 			memcpy (&modes[i], vga_getmodeinfo (i), sizeof (vga_modeinfo));
@@ -399,7 +399,7 @@ VID_SetMode (int modenum, unsigned char *palette)
 	/* get goin' */
 	err = vga_setmode (current_mode);
 	if (err) {
-		Sys_Error ("Video mode failed: %d\n", modenum);
+		Sys_Error ("Video mode failed: %d", modenum);
 	}
 	VID_SetPalette (palette);
 
@@ -410,7 +410,7 @@ VID_SetMode (int modenum, unsigned char *palette)
 	}
 #endif
 	if (!framebuffer_ptr) {
-		Sys_Error ("This mode isn't hapnin'\n");
+		Sys_Error ("This mode isn't hapnin'");
 	}
 
 	vga_setpage (0);
@@ -449,7 +449,7 @@ VID_Init (unsigned char *palette)
 	if (UseDisplay) {
 		err = vga_init ();
 		if (err)
-			Sys_Error ("SVGALib failed to allocate a new VC\n");
+			Sys_Error ("SVGALib failed to allocate a new VC");
 
 		if (vga_runinbackground_version () == 1) {
 			Con_Printf ("SVGALIB background support detected\n");

@@ -279,7 +279,7 @@ WINS_Listen (qboolean state)
 			return;
 		WINS_GetLocalAddress ();
 		if ((net_acceptsocket = WINS_OpenSocket (net_hostport)) == -1)
-			Sys_Error ("WINS_Listen: Unable to open accept socket\n");
+			Sys_Error ("WINS_Listen: Unable to open accept socket");
 		return;
 	}
 	// disable listening
@@ -455,7 +455,7 @@ WINS_Broadcast (int socket, byte * buf, int len)
 
 	if (socket != net_broadcastsocket) {
 		if (net_broadcastsocket != 0)
-			Sys_Error ("Attempted to use multiple broadcasts sockets\n");
+			Sys_Error ("Attempted to use multiple broadcasts sockets");
 		WINS_GetLocalAddress ();
 		ret = WINS_MakeSocketBroadcastCapable (socket);
 		if (ret == -1) {

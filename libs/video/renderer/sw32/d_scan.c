@@ -198,7 +198,7 @@ D_WarpScreen (void)
 	}
 	break;
 	default:
-		Sys_Error("D_WarpScreen: unsupported r_pixbytes %i\n", r_pixbytes);
+		Sys_Error("D_WarpScreen: unsupported r_pixbytes %i", r_pixbytes);
 	}
 }
 
@@ -254,7 +254,7 @@ D_DrawTurbulentSpan (void)
 		}
 		break;
 	default:
-		Sys_Error("D_DrawTurbulentSpan: unsupported r_pixbytes %i\n",
+		Sys_Error("D_DrawTurbulentSpan: unsupported r_pixbytes %i",
 				  r_pixbytes);
 	}
 }
@@ -817,7 +817,7 @@ D_DrawSpans (espan_t *pspan)
 	}
 	break;
 	default:
-		Sys_Error("D_DrawSpans: unsupported r_pixbytes %i\n", r_pixbytes);
+		Sys_Error("D_DrawSpans: unsupported r_pixbytes %i", r_pixbytes);
 	}
 }
 

@@ -179,7 +179,7 @@ SV_LoadProgs (void)
 
 	PR_LoadProgs (&sv_pr_state, sv_progs->string, MAX_EDICTS, 0);
 	if (!sv_pr_state.progs)
-		Sys_Error ("SV_LoadProgs: couldn't load %s\n", sv_progs->string);
+		Sys_Error ("SV_LoadProgs: couldn't load %s", sv_progs->string);
 	// progs engine needs these globals anyway
 	sv_globals.self = sv_pr_state.globals.self;
 	sv_globals.time = sv_pr_state.globals.time;

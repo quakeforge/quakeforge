@@ -853,7 +853,7 @@ Cache_RealFree (cache_user_t *c)
 
 #ifdef MMAPPED_CACHE
 	if (munmap (cs, cs->size))
-		Sys_Error ("Cache_Free: munmap failed!\n");
+		Sys_Error ("Cache_Free: munmap failed!");
 #endif
 }
 
@@ -968,7 +968,7 @@ Cache_Add (cache_user_t *c, void *object, cache_loader_t loader)
 	CACHE_WRITE_LOCK;
 
 	if (c->data || c->object || c->loader)
-		Sys_Error ("Cache_Add: cache item already exists!\n");
+		Sys_Error ("Cache_Add: cache item already exists!");
 
 	c->object = object;
 	c->loader = loader;
@@ -984,7 +984,7 @@ Cache_Remove (cache_user_t *c)
 	CACHE_WRITE_LOCK;
 
 	if (!c->object || !c->loader)
-		Sys_Error ("Cache_Remove: already removed!\n");
+		Sys_Error ("Cache_Remove: already removed!");
 
 	if (Cache_RealCheck (c))
 		Cache_RealFree (c);
@@ -1018,7 +1018,7 @@ Cache_Get (cache_user_t *c)
 {
 	void *mem = Cache_TryGet (c);
 	if (!mem)
-		Sys_Error ("Cache_Get: couldn't get cache!\n");
+		Sys_Error ("Cache_Get: couldn't get cache!");
 	return mem;
 }
 
@@ -1030,7 +1030,7 @@ Cache_Release (cache_user_t *c)
 	readlock = &(((cache_system_t *)c->data) - 1)->readlock;
 
 	if (!*readlock)
-		Sys_Error ("Cache_Release: already released!\n");
+		Sys_Error ("Cache_Release: already released!");
 
 	(*readlock)--;
 
@@ -1057,7 +1057,7 @@ QA_alloc (unsigned flags, ...)
 	va_list ap;
 
 	if (flags & ~(QA_FAILURE | QA_PREVIOUS | QA_SIZE | QA_ZEROED))
-		Sys_Error ("QA_alloc: bad flags: %u\n", flags);
+		Sys_Error ("QA_alloc: bad flags: %u", flags);
 
 	va_start (ap, flags);
 	if (flags & QA_PREVIOUS)
@@ -1071,13 +1071,13 @@ QA_alloc (unsigned flags, ...)
 	va_end (ap);
 
 	if (failure != QA_NOFAIL && failure != QA_LATEFAIL && failure != QA_EARLYFAIL)
-		Sys_Error ("QA_alloc: invalid failure type: %u\n", failure);
+		Sys_Error ("QA_alloc: invalid failure type: %u", failure);
 
 	if (size) {
 		do {
 			if (ptr) {
 				if (zeroed)
-					Sys_Error ("QA_alloc: Zeroing reallocated memory not yet supported\n");
+					Sys_Error ("QA_alloc: Zeroing reallocated memory not yet supported");
 				else
 					mem = realloc (ptr, size);
 			} else {
@@ -1090,12 +1090,12 @@ QA_alloc (unsigned flags, ...)
 				 && QA_alloc_callback && QA_alloc_callback (size));
 
 		if (!mem && failure == QA_NOFAIL)
-			Sys_Error ("QA_alloc: could not allocate %d bytes!\n", (int)size);
+			Sys_Error ("QA_alloc: could not allocate %d bytes!", (int)size);
 
 		return mem;
 	} else {
 		if (!ptr)
-			Sys_Error ("QA_alloc: can't free a NULL pointers!\n");
+			Sys_Error ("QA_alloc: can't free a NULL pointers!");
 		free (ptr);
 		return 0;
 	}

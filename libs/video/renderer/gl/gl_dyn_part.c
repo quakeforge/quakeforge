@@ -78,7 +78,7 @@ particle_new (ptype_t type, int texnum, const vec3_t org, float scale,
 
 /*
 	if (numparticles >= r_maxparticles) {
-		Sys_Error  ("FAILED PARTICLE ALLOC!\n");
+		Sys_Error  ("FAILED PARTICLE ALLOC!");
 		return NULL;
 	}
 */

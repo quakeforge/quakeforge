@@ -116,13 +116,13 @@ QFGL_ExtensionAddress (const char *name)
 	if (!handle) {
 #if defined(HAVE_DLOPEN)
 		if (!(handle = dlopen (gl_driver->string, RTLD_NOW))) {
-			Sys_Error ("Couldn't load OpenGL library %s: %s\n",
+			Sys_Error ("Couldn't load OpenGL library %s: %s",
 					   gl_driver->string, dlerror ());
 			return 0;
 		}
 #elif defined(_WIN32)
 		if (!(handle = LoadLibrary (gl_driver->string))) {
-			Sys_Error ("Couldn't load OpenGL library %s!\n",
+			Sys_Error ("Couldn't load OpenGL library %s!",
 					   gl_driver->string);
 			return 0;
 		}

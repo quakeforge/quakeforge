@@ -228,7 +228,7 @@ VID_SetVESAPalette (viddef_t *lvid, vmode_t * pcurrentmode, unsigned char *pal)
 	dos_int86 (0x10);
 
 	if (regs.x.ax != 0x4f)
-		Sys_Error ("Unable to load VESA palette\n");
+		Sys_Error ("Unable to load VESA palette");
 }
 
 

@@ -88,7 +88,7 @@ R_LineGraph (int x, int y, int *h_vals, int count)
 	graph_width[graph_index] = count;
 
 	if (!graph_texels[graph_index])
-		Sys_Error ("R_LineGraph: failed to allocate texture buffer\n");
+		Sys_Error ("R_LineGraph: failed to allocate texture buffer");
 
 	i = 0;
 	while (count--) {

@@ -320,7 +320,7 @@ VID_Init (unsigned char *palette)
 	fc = qf_fxMesaCreateContext (0, findres (&scr_width, &scr_height),
 							  GR_REFRESH_75Hz, attribs);
 	if (!fc)
-		Sys_Error ("Unable to create 3DFX context.\n");
+		Sys_Error ("Unable to create 3DFX context.");
 
 	qf_fxMesaMakeCurrent (fc);
 

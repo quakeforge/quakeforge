@@ -434,7 +434,7 @@ SCR_ApplyBlend (void) // Used to be V_UpdatePalette
 	}
 	break;
 	default:
-		Sys_Error("V_UpdatePalette: unsupported r_pixbytes %i\n", r_pixbytes);
+		Sys_Error("V_UpdatePalette: unsupported r_pixbytes %i", r_pixbytes);
 	}
 }
 
@@ -677,7 +677,7 @@ SCR_ScreenShot_f (void)
 		Con_Printf("SCR_ScreenShot_f: FIXME - add 32bit support\n");
 		break;
 	default:
-		Sys_Error("SCR_ScreenShot_f: unsupported r_pixbytes %i\n", r_pixbytes);
+		Sys_Error("SCR_ScreenShot_f: unsupported r_pixbytes %i", r_pixbytes);
 	}
 
 	// for adapters that can't stay mapped in for linear writes all the time

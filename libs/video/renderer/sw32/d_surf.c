@@ -150,10 +150,10 @@ D_SCAlloc (int width, int size)
 	qboolean    wrapped_this_time;
 
 	if ((width < 0) || (width > 256))
-		Sys_Error ("D_SCAlloc: bad cache width %d\n", width);
+		Sys_Error ("D_SCAlloc: bad cache width %d", width);
 
 	if ((size <= 0) || (size > (0x10000 * r_pixbytes)))
-		Sys_Error ("D_SCAlloc: bad cache size %d\n", size);
+		Sys_Error ("D_SCAlloc: bad cache size %d", size);
 
 	/* This adds the offset of data[0] in the surfcache_t struct. */
 	size += field_offset (surfcache_t, data);

@@ -1155,7 +1155,7 @@ SV_PrintIP (byte *ip)
 	if (!inet_ntop (AF_INET, ip, buf, INET_ADDRSTRLEN))
 # endif
 #endif
-        Sys_Error ("SV_CleanIPList: inet_ntop_failed.  wtf?\n");
+        Sys_Error ("SV_CleanIPList: inet_ntop_failed.  wtf?");
 	return buf;
 }
 
@@ -1244,7 +1244,7 @@ SV_StringToFilter (const char *address, ipfilter_t *f)
 
 	s = strdup (address);
 	if (!s)
-		Sys_Error ("SV_StringToFilter: memory allocation failure\n");
+		Sys_Error ("SV_StringToFilter: memory allocation failure");
 
 	// Parse out the mask (the /8 part)
 	if ((slash = strchr (s, '/'))) {
@@ -2384,7 +2384,7 @@ SV_Init_Memory (void)
 	mem_base = malloc (mem_size);
 
 	if (!mem_base)
-		Sys_Error ("Can't allocate %d\n", mem_size);
+		Sys_Error ("Can't allocate %d", mem_size);
 
 	Memory_Init (mem_base, mem_size);
 }

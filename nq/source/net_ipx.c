@@ -330,7 +330,7 @@ IPX_Listen (qboolean state)
 		if (net_acceptsocket != -1)
 			return;
 		if ((net_acceptsocket = IPX_OpenSocket (net_hostport)) == -1)
-			Sys_Error ("IPX_Listen: Unable to open accept socket\n");
+			Sys_Error ("IPX_Listen: Unable to open accept socket");
 		return;
 	}
 	// disable listening
@@ -391,7 +391,7 @@ IPX_OpenSocket (int port)
 	}
 
 	// "this will NEVER happen"
-	Sys_Error ("IPX_OpenSocket: handle allocation failed\n");
+	Sys_Error ("IPX_OpenSocket: handle allocation failed");
 	return -1;
 }
 
@@ -482,7 +482,7 @@ IPX_Read (int handle, byte * buf, int len, struct qsockaddr *addr)
 
 		ntohs (rcvbuf->header.length) - (sizeof (int) + sizeof (IPXheader));
 	if (len < copylen)
-		Sys_Error ("IPX_Read: buffer too small (%d vs %d)\n", len, copylen);
+		Sys_Error ("IPX_Read: buffer too small (%d vs %d)", len, copylen);
 	Q_memcpy (buf, rcvbuf->data, copylen);
 
 	// fill in the addr if they want it

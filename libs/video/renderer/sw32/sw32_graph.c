@@ -94,7 +94,7 @@ R_LineGraph (int x, int y, int *h_vals, int count)
 				}
 			break;
 			default:
-				Sys_Error("R_LineGraph: unsupported r_pixbytes %i\n",
+				Sys_Error("R_LineGraph: unsupported r_pixbytes %i",
 						  r_pixbytes);
 		}
 	}

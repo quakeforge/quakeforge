@@ -192,7 +192,7 @@ NET_FreeQSocket (qsocket_t * sock)
 				break;
 			}
 		if (!s)
-			Sys_Error ("NET_FreeQSocket: not active\n");
+			Sys_Error ("NET_FreeQSocket: not active");
 	}
 
 	// add it to free list

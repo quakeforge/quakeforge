@@ -518,10 +518,10 @@ FloorDivMod (double numer, double denom, int *quotient, int *rem)
 
 #ifndef PARANOID
 	if (denom <= 0.0)
-		Sys_Error ("FloorDivMod: bad denominator %f\n", denom);
+		Sys_Error ("FloorDivMod: bad denominator %f", denom);
 
 //	if ((floor(numer) != numer) || (floor(denom) != denom))
-//		Sys_Error ("FloorDivMod: non-integer numer or denom %f %f\n",
+//		Sys_Error ("FloorDivMod: non-integer numer or denom %f %f",
 //				   numer, denom);
 #endif
 

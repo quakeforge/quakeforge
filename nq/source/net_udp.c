@@ -146,7 +146,7 @@ UDP_Init (void)
 	}
 
 	if ((net_controlsocket = UDP_OpenSocket (0)) == -1)
-		Sys_Error ("UDP_Init: Unable to open control socket\n");
+		Sys_Error ("UDP_Init: Unable to open control socket");
 
 	((struct sockaddr_in *) &broadcastaddr)->sin_family = AF_INET;
 	((struct sockaddr_in *) &broadcastaddr)->sin_addr.s_addr =
@@ -181,7 +181,7 @@ UDP_Listen (qboolean state)
 		if (net_acceptsocket != -1)
 			return;
 		if ((net_acceptsocket = UDP_OpenSocket (net_hostport)) == -1)
-			Sys_Error ("UDP_Listen: Unable to open accept socket\n");
+			Sys_Error ("UDP_Listen: Unable to open accept socket");
 		return;
 	}
 	// disable listening
@@ -306,7 +306,7 @@ UDP_CheckNewConnections (void)
 		return -1;
 
 	if (ioctl (net_acceptsocket, FIONREAD, &available) == -1)
-		Sys_Error ("UDP: ioctlsocket (FIONREAD) failed\n");
+		Sys_Error ("UDP: ioctlsocket (FIONREAD) failed");
 	if (available)
 		return net_acceptsocket;
 	recvfrom (net_acceptsocket, buff, 0, 0, (struct sockaddr *) &from,
@@ -347,7 +347,7 @@ UDP_Broadcast (int socket, byte * buf, int len)
 
 	if (socket != net_broadcastsocket) {
 		if (net_broadcastsocket != 0)
-			Sys_Error ("Attempted to use multiple broadcasts sockets\n");
+			Sys_Error ("Attempted to use multiple broadcasts sockets");
 		ret = UDP_MakeSocketBroadcastCapable (socket);
 		if (ret == -1) {
 			Con_Printf ("Unable to make socket broadcast capable\n");

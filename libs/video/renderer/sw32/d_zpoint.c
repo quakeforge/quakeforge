@@ -64,7 +64,7 @@ D_DrawZPoint (void)
 				d_8to24table[r_zpointdesc.color];
 			break;
 		default:
-			Sys_Error("D_DrawZPoint: unsupported r_pixbytes %i\n", r_pixbytes);
+			Sys_Error("D_DrawZPoint: unsupported r_pixbytes %i", r_pixbytes);
 		}
 	}
 }

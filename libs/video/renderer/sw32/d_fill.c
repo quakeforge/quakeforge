@@ -157,6 +157,6 @@ D_FillRect (vrect_t *rect, int color)
 		}
 		break;
 	default:
-		Sys_Error("D_FillRect: unsupported r_pixbytes %i\n", r_pixbytes);
+		Sys_Error("D_FillRect: unsupported r_pixbytes %i", r_pixbytes);
 	}
 }

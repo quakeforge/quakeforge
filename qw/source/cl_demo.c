@@ -947,7 +947,7 @@ CL_TimeFrames_AddTimestamp (void)
 				 ((cl_timeframes_index / CL_TIMEFRAMES_ARRAYBLOCK) + 1) *
 				 CL_TIMEFRAMES_ARRAYBLOCK);
 		if (cl_timeframes_array == NULL)
-			Sys_Error ("Unable to allocate timeframes buffer\n");
+			Sys_Error ("Unable to allocate timeframes buffer");
 		cl_timeframes_array[cl_timeframes_index] = Sys_DoubleTime ();
 		cl_timeframes_index++;
 	}

@@ -302,7 +302,7 @@ ResetFrameBuffer (void)
 	mem = ((vid.width * pwidth + 7) & ~7) * vid.height;
 	buf = malloc (mem);
 	if (!buf)
-		Sys_Error ("ResetFrameBuffer: Memory Allocation Failure\n");
+		Sys_Error ("ResetFrameBuffer: Memory Allocation Failure");
 
 	// allocate new screen buffer
 	x_framebuffer[0] = XCreateImage (x_disp, x_vis, x_visinfo->depth,
@@ -310,7 +310,7 @@ ResetFrameBuffer (void)
 									 vid.height, 32, 0);
 
 	if (!x_framebuffer[0]) {
-		Sys_Error ("VID: XCreateImage failed\n");
+		Sys_Error ("VID: XCreateImage failed");
 	}
 }
 
@@ -339,12 +339,12 @@ ResetSharedFrameBuffers (void)
 		size = x_framebuffer[frm]->bytes_per_line * x_framebuffer[frm]->height;
 
 		if (size < minsize)
-			Sys_Error ("VID: Window must use at least %d bytes\n", minsize);
+			Sys_Error ("VID: Window must use at least %d bytes", minsize);
 
 		key = random ();
 		x_shminfo[frm].shmid = shmget ((key_t) key, size, IPC_CREAT | 0777);
 		if (x_shminfo[frm].shmid == -1)
-			Sys_Error ("VID: Could not get any shared memory (%s)\n",
+			Sys_Error ("VID: Could not get any shared memory (%s)",
 					   strerror (errno));
 
 		// attach to the shared memory segment
@@ -357,7 +357,7 @@ ResetSharedFrameBuffers (void)
 
 		// get the X server to attach to it
 		if (!XShmAttach (x_disp, &x_shminfo[frm]))
-			Sys_Error ("VID: XShmAttach() failed\n");
+			Sys_Error ("VID: XShmAttach() failed");
 		XSync (x_disp, 0);
 		shmctl (x_shminfo[frm].shmid, IPC_RMID, 0);
 
@@ -435,7 +435,7 @@ VID_Init (unsigned char *palette)
 	// specify a visual id
 	if ((pnum = COM_CheckParm ("-visualid"))) {
 		if (pnum >= com_argc - 1)
-			Sys_Error ("VID: -visualid <id#>\n");
+			Sys_Error ("VID: -visualid <id#>");
 		template.visualid = atoi (com_argv[pnum + 1]);
 		template_mask = VisualIDMask;
 	} else {							// If not specified, use default
@@ -458,9 +458,9 @@ VID_Init (unsigned char *palette)
 	} else {
 		if (num_visuals == 0) {
 			if (template_mask == VisualIDMask) {
-				Sys_Error ("VID: Bad visual ID %ld\n", template.visualid);
+				Sys_Error ("VID: Bad visual ID %ld", template.visualid);
 			} else {
-				Sys_Error ("VID: No visuals at depth %d\n", template.depth);
+				Sys_Error ("VID: No visuals at depth %d", template.depth);
 			}
 		}
 	}
@@ -639,7 +639,7 @@ VID_Update (vrect_t *rects)
 							   x_framebuffer[current_framebuffer],
 							   rects->x, rects->y, rects->x, rects->y,
 							   rects->width, rects->height, True)) {
-				Sys_Error ("VID_Update: XShmPutImage failed\n");
+				Sys_Error ("VID_Update: XShmPutImage failed");
 			}
 			oktodraw = false;
 			while (!oktodraw)
@@ -653,7 +653,7 @@ VID_Update (vrect_t *rects)
 			if (XPutImage (x_disp, x_win, x_gc, x_framebuffer[0],
 							rects->x, rects->y, rects->x, rects->y,
 							rects->width, rects->height)) {
-				Sys_Error ("VID_Update: XPutImage failed\n");
+				Sys_Error ("VID_Update: XPutImage failed");
 			}
 			rects = rects->pnext;
 		}

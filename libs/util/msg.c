@@ -283,7 +283,7 @@ MSG_ReadString (msg_t *msg)
 			msg->badread_string_size = len + 1;
 		}
 		if (!msg->badread_string)
-			Sys_Error ("MSG_ReadString: out of memory\n");
+			Sys_Error ("MSG_ReadString: out of memory");
 		strncpy (msg->badread_string, string, len);
 		msg->badread_string[len] = 0;
 		return msg->badread_string;

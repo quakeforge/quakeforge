@@ -584,9 +584,9 @@ IN_LL_Init (void)
 {
 	// open the display
 	if (!x_disp)
-		Sys_Error ("IN: No display!!\n");
+		Sys_Error ("IN: No display!!");
 	if (!x_win)
-		Sys_Error ("IN: No window!!\n");
+		Sys_Error ("IN: No window!!");
 
 	X11_OpenDisplay (); // call to increment the reference counter
 

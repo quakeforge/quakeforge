@@ -242,7 +242,7 @@ void
 Mod_CallbackLoad (void *object, cache_allocator_t allocator)
 {
 	if (((model_t *)object)->type != mod_alias)
-		Sys_Error ("Mod_CallbackLoad for non-alias model?  FIXME!\n");
+		Sys_Error ("Mod_CallbackLoad for non-alias model?  FIXME!");
 	// FIXME: do we want crash set to true?
 	Mod_RealLoadModel (object, true, allocator);
 }

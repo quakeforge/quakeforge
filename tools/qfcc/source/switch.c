@@ -75,7 +75,7 @@ case_label_expr (switch_block_t *switch_block, expr_t *value)
 	case_label_t *cl = malloc (sizeof (case_label_t));
 
 	if (!cl)
-		Sys_Error ("case_label_expr: Memory Allocation Failure\n");
+		Sys_Error ("case_label_expr: Memory Allocation Failure");
 
 	if (value)
 		convert_name (value);
@@ -106,7 +106,7 @@ new_switch_block (void)
 	switch_block_t *switch_block = malloc (sizeof (switch_block_t));
 
 	if (!switch_block)
-		Sys_Error ("new_switch_block: Memory Allocation Failure\n");
+		Sys_Error ("new_switch_block: Memory Allocation Failure");
 	switch_block->labels = Hash_NewTable (127, 0, 0, 0);
 	Hash_SetHashCompare (switch_block->labels, get_hash, compare);
 	switch_block->test = 0;

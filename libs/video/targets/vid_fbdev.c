@@ -306,7 +306,7 @@ loadpalette (unsigned short *red, unsigned short *green, unsigned short *blue)
 	cmap.transp = NULL;
 	cmap.start = 0;
 	if (-1 == ioctl(fb_fd, FBIOPUTCMAP, (void *)&cmap))
-		Sys_Error("ioctl FBIOPUTCMAP %s\n", strerror(errno));
+		Sys_Error("ioctl FBIOPUTCMAP %s", strerror(errno));
 }
 
 void
@@ -377,21 +377,21 @@ VID_SetMode (const char *name, unsigned char *palette)
 	ConvertFromVideoMode(&current_mode, &var);
 	err = ioctl(fb_fd, FBIOPUT_VSCREENINFO, &var);
 	if (err)
-		Sys_Error ("Video mode failed: %s\n", name);
+		Sys_Error ("Video mode failed: %s", name);
 	ConvertToVideoMode(&var, &current_mode);
 	current_mode.name = current_name;
 	VID_SetPalette (palette);
 
 	err = ioctl(fb_fd, FBIOGET_FSCREENINFO, &fix);
 	if (err)
-		Sys_Error ("Video mode failed: %s\n", name);
+		Sys_Error ("Video mode failed: %s", name);
 	smem_start = (unsigned long)fix.smem_start & PAGE_MASK;
 	smem_offset = (unsigned long)fix.smem_start & ~PAGE_MASK;
 	fb_map_length = (smem_offset+fix.smem_len+~PAGE_MASK) & PAGE_MASK;
 	fb_map_addr = (char *)mmap(0, fb_map_length, PROT_WRITE, MAP_SHARED,
 							   fb_fd, 0);
 	if (!fb_map_addr)
-		Sys_Error ("This mode isn't hapnin'\n");
+		Sys_Error ("This mode isn't hapnin'");
 	vid.direct = framebuffer_ptr = fb_map_addr;
 
 	// alloc screen buffer, z-buffer, and surface cache
@@ -442,14 +442,14 @@ fb_switch_init (void)
 	sigaction(SIGUSR2, &act, 0);
 
 	if (ioctl(tty_fd, VT_GETMODE, &vtmode)) {
-		Sys_Error("ioctl VT_GETMODE: %s\n", strerror(errno));
+		Sys_Error("ioctl VT_GETMODE: %s", strerror(errno));
 	}
 	vtmode.mode = VT_PROCESS;
 	vtmode.waitv = 0;
 	vtmode.relsig = SIGUSR1;
 	vtmode.acqsig = SIGUSR2;
 	if (ioctl(tty_fd, VT_SETMODE, &vtmode)) {
-		Sys_Error("ioctl VT_SETMODE: %s\n", strerror(errno));
+		Sys_Error("ioctl VT_SETMODE: %s", strerror(errno));
 	}
 }
 
@@ -473,10 +473,10 @@ VID_Init (unsigned char *palette)
 
 		fb_fd = open(fbname, O_RDWR);
 		if (fb_fd < 0)
-			Sys_Error ("failed to open fb device\n");
+			Sys_Error ("failed to open fb device");
 
 		if (ioctl(fb_fd, FBIOGET_VSCREENINFO, &orig_var))
-			Sys_Error ("failed to get var screen info\n");
+			Sys_Error ("failed to get var screen info");
 
 		fb_switch_init();
 
@@ -516,7 +516,7 @@ VID_Init (unsigned char *palette)
 		/* Set vid parameters */
 		vmode = FindVideoMode(modestr);
 		if (!vmode)
-			Sys_Error("no video mode %s\n", modestr);
+			Sys_Error("no video mode %s", modestr);
 		current_mode = *vmode;
 		ioctl(tty_fd, KDSETMODE, KD_GRAPHICS);
 		VID_SetMode (current_mode.name, palette);

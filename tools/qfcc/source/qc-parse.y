@@ -1275,7 +1275,7 @@ scan_scope (hashtab_t *tab, def_t *scope)
 		if  (def->name && !def->removed) {
 			def_state_t *ds = malloc (sizeof (def_state_t));
 			if (!ds)
-				Sys_Error ("scan_scope: Memory Allocation Failure\n");
+				Sys_Error ("scan_scope: Memory Allocation Failure");
 			ds->def = def;
 			ds->state = def->initialized;
 			Hash_Add (tab, ds);
@@ -1306,7 +1306,7 @@ merge_local_inits (hashtab_t *dl_1, hashtab_t *dl_2)
 
 		nds = malloc (sizeof (def_state_t));
 		if (!nds)
-			Sys_Error ("merge_local_inits: Memory Allocation Failure\n");
+			Sys_Error ("merge_local_inits: Memory Allocation Failure");
 		nds->def = (*ds)->def;
 		nds->state = (*ds)->state && d->state;
 		Hash_Add (tab, nds);

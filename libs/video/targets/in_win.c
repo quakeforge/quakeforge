@@ -757,8 +757,8 @@ AppActivate (BOOL fActive, BOOL minimize)
 				if (ChangeDisplaySettings (&win_gdevmode, CDS_FULLSCREEN) !=
 					DISP_CHANGE_SUCCESSFUL) {
 					IN_ShowMouse ();
-					Sys_Error ("Couldn't set fullscreen DIB mode\n(try "
-							   "upgrading your video drivers)\r\n (%lx)",
+					Sys_Error ("Couldn't set fullscreen DIB mode\n"
+							   "(try upgrading your video drivers)\n (%lx)",
 							   GetLastError());
 				}
 				ShowWindow (mainwindow, SW_SHOWNORMAL);

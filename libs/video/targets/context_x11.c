@@ -243,7 +243,7 @@ X11_OpenDisplay (void)
 	if (!x_disp) {
 		x_disp = XOpenDisplay (NULL);
 		if (!x_disp) {
-			Sys_Error ("X11_OpenDisplay: Could not open display [%s]\n",
+			Sys_Error ("X11_OpenDisplay: Could not open display [%s]",
 					   XDisplayName (NULL));
 		}
 

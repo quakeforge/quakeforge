@@ -122,7 +122,7 @@ VID_Init (unsigned char *palette)
 	// Initialize display
 	if (!(screen = SDL_SetVideoMode (vid.width, vid.height,
 									 vid_bitdepth->int_val, flags)))
-		Sys_Error ("VID: Couldn't set video mode: %s\n", SDL_GetError ());
+		Sys_Error ("VID: Couldn't set video mode: %s", SDL_GetError ());
 	VID_InitGamma (palette);
 	VID_SetPalette (palette);
 
@@ -149,7 +149,7 @@ VID_Init (unsigned char *palette)
 				 0x0000FF00, 0x00FF0000, 0x00000000);
 		break;
 	default:
-		Sys_Error ("VID_Init: unsupported bit depth\n");
+		Sys_Error ("VID_Init: unsupported bit depth");
 	}
 
 	// now we know everything we need to know about the buffer

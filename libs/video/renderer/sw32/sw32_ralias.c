@@ -727,7 +727,7 @@ R_AliasDrawModel (alight_t *plighting)
 		else if (r_pixbytes == 4)
 			acolormap = vid.colormap32;
 		else
-			Sys_Error("R_AliasDrawmodel: unsupported r_pixbytes %i\n",
+			Sys_Error("R_AliasDrawmodel: unsupported r_pixbytes %i",
 					  r_pixbytes);
 	}
 

@@ -132,14 +132,14 @@ Info_SetValueForStarKey (info_t *info, const char *key, const char *value, int f
 		free ((char*)k->value);
 	} else {
 		if (!(k = malloc (sizeof (info_key_t))))
-			Sys_Error ("Info_SetValueForStarKey: out of memory\n");
+			Sys_Error ("Info_SetValueForStarKey: out of memory");
 		if (!(k->key = strdup (key)))
-			Sys_Error ("Info_SetValueForStarKey: out of memory\n");
+			Sys_Error ("Info_SetValueForStarKey: out of memory");
 		info->cursize += strlen (key) + 1;
 		Hash_Add (info->tab, k);
 	}
 	if (!(str = strdup (value)))
-		Sys_Error ("Info_SetValueForStarKey: out of memory\n");
+		Sys_Error ("Info_SetValueForStarKey: out of memory");
 	if (flags & 1) {
 		byte       *s, *d;
 		for (d = s = str; *s; s++)

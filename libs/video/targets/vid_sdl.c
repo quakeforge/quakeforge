@@ -109,7 +109,7 @@ VID_Init (unsigned char *palette)
 
 	// Initialize display
 	if (!(screen = SDL_SetVideoMode (vid.width, vid.height, 8, flags)))
-		Sys_Error ("VID: Couldn't set video mode: %s\n", SDL_GetError ());
+		Sys_Error ("VID: Couldn't set video mode: %s", SDL_GetError ());
 	VID_InitGamma (palette);
 	VID_SetPalette (palette);
 

@@ -135,12 +135,12 @@ LoadTGA (VFile *fin)
 	targa->height = LittleShort (targa->height);
 
 	if (targa->image_type != 2 && targa->image_type != 10)
-		Sys_Error ("LoadTGA: Only type 2 and 10 targa RGB images supported\n");
+		Sys_Error ("LoadTGA: Only type 2 and 10 targa RGB images supported");
 
 	if (targa->colormap_type != 0
 		|| (targa->pixel_size != 32 && targa->pixel_size != 24))
 		Sys_Error ("Texture_LoadTGA: Only 32 or 24 bit images supported "
-				   "(no colormaps)\n");
+				   "(no colormaps)");
 
 	columns = targa->width;
 	rows = targa->height;
@@ -150,14 +150,14 @@ LoadTGA (VFile *fin)
 		case 24:
 			tex = Hunk_TempAlloc (field_offset (tex_t, data[numPixels * 3]));
 			if (!tex)
-				Sys_Error ("LoadTGA: Memory Allocation Failure\n");
+				Sys_Error ("LoadTGA: Memory Allocation Failure");
 			tex->format = tex_rgb;
 			break;
 		default:
 		case 32:
 			tex = Hunk_TempAlloc (field_offset (tex_t, data[numPixels * 4]));
 			if (!tex)
-				Sys_Error ("LoadTGA: Memory Allocation Failure\n");
+				Sys_Error ("LoadTGA: Memory Allocation Failure");
 			tex->format = tex_rgba;
 			break;
 	}

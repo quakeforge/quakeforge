@@ -65,7 +65,7 @@ main ()
 	Cmd_Init_Hash ();
 	membase = malloc (memsize);
 	if (!membase)
-		Sys_Error ("Memory Allocation Failure\n");
+		Sys_Error ("Memory Allocation Failure");
 	Memory_Init (membase, memsize);
 	Cvar_Init ();
 	Cbuf_Init ();
@@ -100,7 +100,7 @@ main ()
 		Qclose (f);
 	}
 	if (!progs.progs)
-		Sys_Error ("couldn't load %s\n", "qwaq.dat");
+		Sys_Error ("couldn't load %s", "qwaq.dat");
 
 	if (!PR_ResolveGlobals (&progs))
 		PR_Error (&progs, "unable to load %s", progs.progs_name);

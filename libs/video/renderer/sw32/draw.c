@@ -311,7 +311,7 @@ Draw_Character (int x, int y, unsigned int num)
 	}
 	break;
 	default:
-		Sys_Error("Draw_Character: unsupported r_pixbytes %i\n", r_pixbytes);
+		Sys_Error("Draw_Character: unsupported r_pixbytes %i", r_pixbytes);
 	}
 }
 
@@ -361,7 +361,7 @@ Draw_Pixel (int x, int y, byte color)
 			d_8to24table[color];
 		break;
 	default:
-		Sys_Error("Draw_Pixel: unsupported r_pixbytes %i\n", r_pixbytes);
+		Sys_Error("Draw_Pixel: unsupported r_pixbytes %i", r_pixbytes);
 	}
 }
 
@@ -477,7 +477,7 @@ Draw_Pic (int x, int y, qpic_t *pic)
 	}
 	break;
 	default:
-		Sys_Error("Draw_Pic: unsupported r_pixbytes %i\n", r_pixbytes);
+		Sys_Error("Draw_Pic: unsupported r_pixbytes %i", r_pixbytes);
 	}
 }
 
@@ -529,7 +529,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	}
 	break;
 	default:
-		Sys_Error("Draw_SubPic: unsupported r_pixbytes %i\n", r_pixbytes);
+		Sys_Error("Draw_SubPic: unsupported r_pixbytes %i", r_pixbytes);
 	}
 }
 
@@ -618,7 +618,7 @@ Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 	}
 	break;
 	default:
-		Sys_Error("Draw_TransPicTranslate: unsupported r_pixbytes %i\n",
+		Sys_Error("Draw_TransPicTranslate: unsupported r_pixbytes %i",
 				  r_pixbytes);
 	}
 }
@@ -705,7 +705,7 @@ Draw_ConsoleBackground (int lines)
 	break;
 
 	default:
-		Sys_Error("Draw_TransPicTranslate: unsupported r_pixbytes %i\n",
+		Sys_Error("Draw_TransPicTranslate: unsupported r_pixbytes %i",
 				  r_pixbytes);
 	}
 
@@ -990,7 +990,7 @@ R_DrawRect (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 	}
 	break;
 	default:
-		Sys_Error("R_DrawRect: unsupported r_pixbytes %i\n", r_pixbytes);
+		Sys_Error("R_DrawRect: unsupported r_pixbytes %i", r_pixbytes);
 	}
 }
 
@@ -1103,7 +1103,7 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	}
 	break;
 	default:
-		Sys_Error("Draw_Fill: unsupported r_pixbytes %i\n", r_pixbytes);
+		Sys_Error("Draw_Fill: unsupported r_pixbytes %i", r_pixbytes);
 	}
 }
 
@@ -1154,7 +1154,7 @@ Draw_FadeScreen (void)
 	}
 	break;
 	default:
-		Sys_Error("Draw_FadeScreen: unsupported r_pixbytes %i\n", r_pixbytes);
+		Sys_Error("Draw_FadeScreen: unsupported r_pixbytes %i", r_pixbytes);
 	}
 
 	VID_UnlockBuffer ();

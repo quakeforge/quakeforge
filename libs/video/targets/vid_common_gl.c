@@ -244,7 +244,7 @@ void
 GL_Pre_Init (void)
 {
 	if (!GLF_Init()) {
-		Sys_Error("Can't init video.\n");
+		Sys_Error("Can't init video.");
 		return;
 	}
 }

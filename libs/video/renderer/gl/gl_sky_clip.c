@@ -144,7 +144,7 @@ determine_face (vec3_t v)
 		i = 2;
 	}
 	if (!m) {
-		Sys_Error ("You are speared by a sky poly edge\n");
+		Sys_Error ("You are speared by a sky poly edge");
 	}
 	if (v[i] < 0)
 		i += 3;

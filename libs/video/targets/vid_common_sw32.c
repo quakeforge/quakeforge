@@ -198,7 +198,7 @@ VID_MakeColormaps (int fullbrights, byte *pal)
 	vid.colormap16 = malloc (256*VID_GRADES * sizeof (short));
 	vid.colormap32 = malloc (256*VID_GRADES * sizeof (int));
 	if (!vid.colormap8 || !vid.colormap16 || !vid.colormap32)
-		Sys_Error ("VID_MakeColormaps: Memory Allocation Failure\n");
+		Sys_Error ("VID_MakeColormaps: Memory Allocation Failure");
 	VID_MakeColormap8(vid.colormap8, pal);
 	VID_MakeColormap16(vid.colormap16, pal);
 	VID_MakeColormap32(vid.colormap32, pal);
@@ -238,7 +238,7 @@ VID_InitBuffers (void)
 		// Allocate the new screen buffer
 		vid.conbuffer = vid.buffer = calloc (buffersize, 1);
 		if (!vid.conbuffer) {
-			Sys_Error ("Not enough memory for video mode\n");
+			Sys_Error ("Not enough memory for video mode");
 		}
 	}
 	// Allocate the new z-buffer
@@ -246,7 +246,7 @@ VID_InitBuffers (void)
 	if (!vid.zbuffer) {
 		free (vid.buffer);
 		vid.conbuffer = vid.buffer = NULL;
-		Sys_Error ("Not enough memory for video mode\n");
+		Sys_Error ("Not enough memory for video mode");
 	}
 	// Allocate the new surface cache; free the z-buffer if we fail
 	vid.surfcache = calloc (cachesize, 1);
@@ -254,7 +254,7 @@ VID_InitBuffers (void)
 		free (vid.buffer);
 		free (vid.zbuffer);
 		vid.zbuffer = NULL;
-		Sys_Error ("Not enough memory for video mode\n");
+		Sys_Error ("Not enough memory for video mode");
 	}
 
 	if (vid.init_caches)

@@ -165,7 +165,7 @@ VID_Init (unsigned char *palette)
 
 	// Initialize the SDL library 
 	if (SDL_Init (SDL_INIT_VIDEO) < 0)
-		Sys_Error ("Couldn't initialize SDL: %s\n", SDL_GetError ());
+		Sys_Error ("Couldn't initialize SDL: %s", SDL_GetError ());
 
 	// Check if we want fullscreen
 	if (vid_fullscreen->value) {
@@ -190,7 +190,7 @@ VID_Init (unsigned char *palette)
 	SDL_GL_SetAttribute (SDL_GL_DEPTH_SIZE, 1);
 
 	if (!(screen = SDL_SetVideoMode (scr_width, scr_height, 8, flags))) {
-		Sys_Error ("Couldn't set video mode: %s\n", SDL_GetError ());
+		Sys_Error ("Couldn't set video mode: %s", SDL_GetError ());
 		SDL_Quit ();
 	}
 

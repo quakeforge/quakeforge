@@ -82,7 +82,7 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 	float      *poutskinintervals;
 
 	if (numskins < 1 || numskins > MAX_SKINS)
-		Sys_Error ("Mod_LoadAliasModel: Invalid # of skins: %d\n", numskins);
+		Sys_Error ("Mod_LoadAliasModel: Invalid # of skins: %d", numskins);
 
 	skinsize = pheader->mdl.skinwidth * pheader->mdl.skinheight;
 	pskindesc = Hunk_AllocName (numskins * sizeof (maliasskindesc_t),
@@ -223,7 +223,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	pmodel->numframes = LittleLong (pinmodel->numframes);
 	numframes = pmodel->numframes;
 	if (numframes < 1)
-		Sys_Error ("Mod_LoadAliasModel: Invalid # of frames: %d\n", numframes);
+		Sys_Error ("Mod_LoadAliasModel: Invalid # of frames: %d", numframes);
 
 	pmodel->size = LittleFloat (pinmodel->size) * ALIAS_BASE_SIZE_RATIO;
 	mod->synctype = LittleLong (pinmodel->synctype);

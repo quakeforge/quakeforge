@@ -228,7 +228,7 @@ SV_PrintToClient (client_t *cl, int level, const char *string)
 			free (buffer);
 		buffer = malloc (buffer_size);
 		if (!buffer)
-			Sys_Error ("SV_PrintToClient: could not allocate %d bytes\n",
+			Sys_Error ("SV_PrintToClient: could not allocate %d bytes",
 					   buffer_size);
 	}
 

@@ -166,7 +166,7 @@ Mod_LoadSpriteModel (model_t *mod, void *buffer)
 
 	// load the frames
 	if (numframes < 1)
-		Sys_Error ("Mod_LoadSpriteModel: Invalid # of frames: %d\n", numframes);
+		Sys_Error ("Mod_LoadSpriteModel: Invalid # of frames: %d", numframes);
 
 	mod->numframes = numframes;
 

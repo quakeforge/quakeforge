@@ -98,7 +98,7 @@ W_LoadWadFile (const char *filename)
 					fs_basegame->string);
 		Sys_Printf ("    fs_sharepath is %s\n", fs_sharepath->string);
 		Sys_Printf ("    fs_userpath is %s\n\n", fs_userpath->string);
-		Sys_Error ("W_LoadWadFile: unable to load %s\n\n", filename);
+		Sys_Error ("W_LoadWadFile: unable to load %s", filename);
 	}
 
 	header = (wadinfo_t *) wad_base;
@@ -107,7 +107,7 @@ W_LoadWadFile (const char *filename)
 		|| header->identification[1] != 'A'
 		|| header->identification[2] != 'D'
 		|| header->identification[3] != '2')
-		Sys_Error ("Wad file %s doesn't have WAD2 id\n", filename);
+		Sys_Error ("Wad file %s doesn't have WAD2 id", filename);
 
 	wad_numlumps = LittleLong (header->numlumps);
 	infotableofs = LittleLong (header->infotableofs);

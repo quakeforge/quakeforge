@@ -73,7 +73,7 @@ VID_InitBuffers (void)
 		// Allocate the new screen buffer
 		vid.conbuffer = vid.buffer = calloc (buffersize, 1);
 		if (!vid.conbuffer) {
-			Sys_Error ("Not enough memory for video mode\n");
+			Sys_Error ("Not enough memory for video mode");
 		}
 	}
 	// Allocate the new z-buffer
@@ -81,7 +81,7 @@ VID_InitBuffers (void)
 	if (!vid.zbuffer) {
 		free (vid.buffer);
 		vid.conbuffer = vid.buffer = NULL;
-		Sys_Error ("Not enough memory for video mode\n");
+		Sys_Error ("Not enough memory for video mode");
 	}
 	// Allocate the new surface cache; free the z-buffer if we fail
 	vid.surfcache = calloc (cachesize, 1);
@@ -90,7 +90,7 @@ VID_InitBuffers (void)
 		free (vid.zbuffer);
 		vid.conbuffer = vid.buffer = NULL;
 		vid.zbuffer = NULL;
-		Sys_Error ("Not enough memory for video mode\n");
+		Sys_Error ("Not enough memory for video mode");
 	}
 
 	if (vid.init_caches)

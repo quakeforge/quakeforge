@@ -304,7 +304,7 @@ R_DrawSurface (void)
 		pblockdrawer = surfmiptable32[r_drawsurf.surfmip];
 		break;
 	default:
-		Sys_Error("R_DrawSurface: unsupported r_pixbytes %i\n", r_pixbytes);
+		Sys_Error("R_DrawSurface: unsupported r_pixbytes %i", r_pixbytes);
 		pblockdrawer = NULL;
 	}
 

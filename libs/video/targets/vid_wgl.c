@@ -210,7 +210,7 @@ VID_SetWindowedMode (int modenum)
 							   NULL, NULL, global_hInstance, NULL);
 
 	if (!mainwindow)
-		Sys_Error ("Couldn't create DIB window (%lx)\r\n",GetLastError());
+		Sys_Error ("Couldn't create DIB window (%lx)",GetLastError());
 
 	// Center and show the window
 	CenterWindow (mainwindow, WindowRect.right - WindowRect.left,
@@ -265,7 +265,7 @@ VID_SetFullDIBMode (int modenum)
 
 		if (ChangeDisplaySettings (&win_gdevmode, CDS_FULLSCREEN) !=
 			DISP_CHANGE_SUCCESSFUL)
-			Sys_Error ("Couldn't set fullscreen DIB mode (%lx)\r\n",
+			Sys_Error ("Couldn't set fullscreen DIB mode (%lx)",
 					   GetLastError());
 	}
 
@@ -300,7 +300,7 @@ VID_SetFullDIBMode (int modenum)
 		global_hInstance, NULL);
 
 	if (!mainwindow)
-		Sys_Error ("Couldn't create DIB window (%lx)\r\n",GetLastError());
+		Sys_Error ("Couldn't create DIB window (%lx)",GetLastError());
 
 	ShowWindow (mainwindow, SW_SHOWDEFAULT);
 	UpdateWindow (mainwindow);
@@ -343,7 +343,7 @@ VID_SetMode (int modenum, unsigned char *palette)
 
 	if ((windowed && (modenum != 0)) ||
 		(!windowed && (modenum < 1)) || (!windowed && (modenum >= nummodes))) {
-		Sys_Error ("Bad video mode\n");
+		Sys_Error ("Bad video mode");
 	}
 
 	// so Con_Printfs don't mess us up by forcing vid and snd updates
@@ -690,7 +690,7 @@ VID_InitDIB (HINSTANCE hInstance)
 	wc.lpszClassName = "QuakeForge";
 
 	if (!RegisterClass (&wc))
-		Sys_Error ("Couldn't register window class (%lx)\r\n", GetLastError());
+		Sys_Error ("Couldn't register window class (%lx)", GetLastError());
 
 	modelist[0].type = MS_WINDOWED;
 
@@ -1069,7 +1069,7 @@ VID_Init (unsigned char *palette)
 			ReleaseDC (mainwindow, maindc);
 		Sys_Error("Could not initialize GL (wglCreateContext failed).\n\nMake "
 				  "sure you in are 65535 color mode, and try running -window. "
-				  "\nError code: (%lx)\r\n", lasterror);
+				  "\nError code: (%lx)", lasterror);
 	}
 
 	if (!qf_wglMakeCurrent (maindc, baseRC)) {
@@ -1078,7 +1078,7 @@ VID_Init (unsigned char *palette)
 			qf_wglDeleteContext (baseRC);
                 if (maindc && mainwindow)
        	                ReleaseDC (mainwindow, maindc);
-		Sys_Error ("wglMakeCurrent failed (%lx)\r\n", lasterror);
+		Sys_Error ("wglMakeCurrent failed (%lx)", lasterror);
 	}
 
 	GL_Init ();

@@ -269,7 +269,7 @@ PR_FreeLocation (def_t *def)
 		free_free_locs = malloc (256 * sizeof (locref_t));
 
 		if (!free_free_locs)
-			Sys_Error ("PR_FreeLocation: Memory Allocation Failure\n");
+			Sys_Error ("PR_FreeLocation: Memory Allocation Failure");
 		for (loc = free_free_locs; loc - free_free_locs < 255; loc++)
 			loc->next = loc + 1;
 		loc->next = 0;

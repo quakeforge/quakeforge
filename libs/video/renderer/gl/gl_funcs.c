@@ -73,7 +73,7 @@ QFGL_LoadLibrary (void)
 	void	*handle;
 
 	if (!(handle = dlopen (gl_driver->string, RTLD_NOW))) {
-		Sys_Error ("Couldn't load OpenGL library %s: %s\n", gl_driver->string,
+		Sys_Error ("Couldn't load OpenGL library %s: %s", gl_driver->string,
 				   dlerror ());
 	}
 	getProcAddress = dlsym;
@@ -92,7 +92,7 @@ QFGL_LoadLibrary (void)
 	void	*handle;
 
 	if (!(handle = LoadLibrary (gl_driver->string))) {
-		Sys_Error ("Couldn't load OpenGL library %s!\n", gl_driver->string);
+		Sys_Error ("Couldn't load OpenGL library %s!", gl_driver->string);
 	}
 	getProcAddress = GetProcAddress;
 	(FARPROC)glGetProcAddress = GetProcAddress (handle, "wglGetProcAddress");
@@ -148,7 +148,7 @@ QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 	Con_DPrintf ("not found\n");
 
 	if (crit)
-		Sys_Error ("Couldn't load critical OpenGL function %s, exiting...\n",
+		Sys_Error ("Couldn't load critical OpenGL function %s, exiting...",
 				   name);
 
 	return NULL;

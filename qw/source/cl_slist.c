@@ -129,7 +129,7 @@ SL_Add (server_entry_t *start, char *ip, char *desc)
 		start->server = malloc (strlen (ip) + 1);
 		start->desc = malloc (strlen (desc ? desc : ip) + 1);
 		if (!start->server || !start->desc)
-			Sys_Error ("SL_Add: Memory Allocation Failure\n");
+			Sys_Error ("SL_Add: Memory Allocation Failure");
 		strcpy (start->server, ip);
 		strcpy (start->desc, desc ? desc : ip);
 		start->status = NULL;
@@ -146,7 +146,7 @@ SL_Add (server_entry_t *start, char *ip, char *desc)
 	p->next->server = malloc (strlen (ip) + 1);
 	p->next->desc = malloc (strlen (desc ? desc : ip) + 1);
 	if (!p->next->server || !p->next->desc)
-		Sys_Error ("SL_Add: Memory Allocation Failure\n");
+		Sys_Error ("SL_Add: Memory Allocation Failure");
 
 	strcpy (p->next->server, ip);
 	strcpy (p->next->desc, desc ? desc : ip);
@@ -191,7 +191,7 @@ SL_InsB (server_entry_t *start, server_entry_t *place, char *ip, char *desc)
 	new->server = malloc (strlen (ip) + 1);
 	new->desc = malloc (strlen (desc) + 1);
 	if (!new->server || !new->desc)
-		Sys_Error ("SL_InsB: Memory Allocation Failure\n");
+		Sys_Error ("SL_InsB: Memory Allocation Failure");
 	strcpy (new->server, ip);
 	strcpy (new->desc, desc);
 	other = place->prev;
@@ -637,7 +637,7 @@ SL_LoadF (VFile *f, server_entry_t *start)
 			len = gettoklen (line, 1, ' ');
 			addr = malloc (len + 1);
 			if (!addr)
-				Sys_Error ("SL_LoadF: Memory Allocation Failure\n");
+				Sys_Error ("SL_LoadF: Memory Allocation Failure");
 			strncpy (addr, &line[0], len);
 			addr[len] = '\0';
 			if ((st = gettokstart (line, 2, ' '))) {

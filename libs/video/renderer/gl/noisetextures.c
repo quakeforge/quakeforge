@@ -62,11 +62,11 @@ noise_diamondsquare (unsigned char *noise, unsigned int size,
 
 	for (sizepower = 0; (1 << sizepower) < size; sizepower++);
 	if (size != (1 << sizepower))
-		Sys_Error("fractalnoise: size must be power of 2\n");
+		Sys_Error("fractalnoise: size must be power of 2");
 
 	for (gridpower = 0; (1 << gridpower) < startgrid; gridpower++);
 	if (startgrid != (1 << gridpower))
-		Sys_Error("fractalnoise: grid must be power of 2\n");
+		Sys_Error("fractalnoise: grid must be power of 2");
 
 	startgrid = bound(0, startgrid, size);
 	amplitude = 0xFFFF; // this gets halved before use

@@ -272,6 +272,6 @@ D_DrawSkyScans (espan_t *pspan)
 	break;
 
 	default:
-		Sys_Error("D_DrawSkyScans: unsupported r_pixbytes %i\n", r_pixbytes);
+		Sys_Error("D_DrawSkyScans: unsupported r_pixbytes %i", r_pixbytes);
 	}
 }

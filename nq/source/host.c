@@ -139,7 +139,7 @@ Host_EndGame (const char *message, ...)
 		Host_ShutdownServer (false);
 
 	if (cls.state == ca_dedicated)
-		Sys_Error ("Host_EndGame: %s\n", string);	// dedicated servers exit
+		Sys_Error ("Host_EndGame: %s", string);	// dedicated servers exit
 
 	if (cls.demonum != -1)
 		CL_NextDemo ();
@@ -175,7 +175,7 @@ Host_Error (const char *error, ...)
 		Host_ShutdownServer (false);
 
 	if (cls.state == ca_dedicated)
-		Sys_Error ("Host_Error: %s\n", string);		// dedicated servers exit
+		Sys_Error ("Host_Error: %s", string);		// dedicated servers exit
 
 	Con_Printf ("Host_Error: %s\n", string);
 
@@ -730,21 +730,21 @@ Host_InitVCR (quakeparms_t *parms)
 
 	if (COM_CheckParm ("-playback")) {
 		if (com_argc != 2)
-			Sys_Error ("No other parameters allowed with -playback\n");
+			Sys_Error ("No other parameters allowed with -playback");
 
 		vcrFile = Qopen ("quake.vcr", "rbz");
 		if (!vcrFile)
-			Sys_Error ("playback file not found\n");
+			Sys_Error ("playback file not found");
 
 		Qread (vcrFile, &i, sizeof (int));
 
 		if (i != VCR_SIGNATURE)
-			Sys_Error ("Invalid signature in vcr file\n");
+			Sys_Error ("Invalid signature in vcr file");
 
 		Qread (vcrFile, &com_argc, sizeof (int));
 		com_argv = malloc (com_argc * sizeof (char *));
 		if (!com_argv)
-			Sys_Error ("Host_InitVCR: Memory Allocation Failure\n");
+			Sys_Error ("Host_InitVCR: Memory Allocation Failure");
 
 		com_argv[0] = parms->argv[0];
 		for (i = 0; i < com_argc; i++) {
@@ -752,7 +752,7 @@ Host_InitVCR (quakeparms_t *parms)
 
 			p = malloc (len);
 			if (!p)
-				Sys_Error ("Host_InitVCR: Memory Allocation Failure\n");
+				Sys_Error ("Host_InitVCR: Memory Allocation Failure");
 			Qread (vcrFile, p, len);
 			com_argv[i + 1] = p;
 		}
@@ -841,7 +841,7 @@ CL_Init_Memory (void)
 	mem_base = malloc (mem_size);
 
 	if (!mem_base)
-		Sys_Error ("Can't allocate %d\n", mem_size);
+		Sys_Error ("Can't allocate %d", mem_size);
 
 	Sys_PageIn (mem_base, mem_size);
 	Memory_Init (mem_base, mem_size);

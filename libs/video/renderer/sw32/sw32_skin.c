@@ -145,7 +145,7 @@ Skin_Set_Translate (int top, int bottom, void *_dest)
 			}
 			break;
 		default:
-			Sys_Error("Skin_Set_Translate: unsupported r_pixbytes %i\n",
+			Sys_Error("Skin_Set_Translate: unsupported r_pixbytes %i",
 					  r_pixbytes);
 	}
 /*

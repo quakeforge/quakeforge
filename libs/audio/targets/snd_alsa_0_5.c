@@ -369,7 +369,7 @@ SNDDMA_Submit (void)
 		case SND_PCM_STATUS_PREPARED:
 			if ((rc = snd_pcm_channel_go (pcm_handle,
 										  SND_PCM_CHANNEL_PLAYBACK)) < 0) {
-				Sys_Error ("unable to start playback. %s\n",
+				Sys_Error ("unable to start playback. %s",
 						   snd_strerror (rc));
 			}
 			break;
@@ -378,7 +378,7 @@ SNDDMA_Submit (void)
 		case SND_PCM_STATUS_UNDERRUN:
 			if ((rc = snd_pcm_plugin_prepare (pcm_handle,
 											  SND_PCM_CHANNEL_PLAYBACK)) < 0) {
-				Sys_Error ("underrun: playback channel prepare error. %s\n",
+				Sys_Error ("underrun: playback channel prepare error. %s",
 						   snd_strerror (rc));
 			}
 			break;

@@ -108,7 +108,7 @@ MPATH_Init (void)
 	}
 
 	if ((net_controlsocket = MPATH_OpenSocket (0)) == -1)
-		Sys_Error ("MPATH_Init: Unable to open control socket\n");
+		Sys_Error ("MPATH_Init: Unable to open control socket");
 
 	((struct sockaddr_in *) &broadcastaddr)->sin_family = AF_INET;
 	((struct sockaddr_in *) &broadcastaddr)->sin_addr.s_addr = INADDR_BROADCAST;
@@ -145,7 +145,7 @@ MPATH_Listen (qboolean state)
 		if (net_acceptsocket != -1)
 			return;
 		if ((net_acceptsocket = MPATH_OpenSocket (net_hostport)) == -1)
-			Sys_Error ("MPATH_Listen: Unable to open accept socket\n");
+			Sys_Error ("MPATH_Listen: Unable to open accept socket");
 		return;
 	}
 	// disable listening
@@ -318,7 +318,7 @@ MPATH_Broadcast (int socket, byte * buf, int len)
 
 	if (socket != net_broadcastsocket) {
 		if (net_broadcastsocket != 0)
-			Sys_Error ("Attempted to use multiple broadcasts sockets\n");
+			Sys_Error ("Attempted to use multiple broadcasts sockets");
 		ret = MPATH_MakeSocketBroadcastCapable (socket);
 		if (ret == -1) {
 			Con_Printf ("Unable to make socket broadcast capable\n");

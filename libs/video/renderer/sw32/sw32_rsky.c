@@ -187,7 +187,7 @@ R_MakeSky (void)
 		}
 		break;
 	default:
-		Sys_Error("R_MakeSky: unsupported r_pixbytes %i\n", r_pixbytes);
+		Sys_Error("R_MakeSky: unsupported r_pixbytes %i", r_pixbytes);
 	}
 	r_skymade = 1;
 }

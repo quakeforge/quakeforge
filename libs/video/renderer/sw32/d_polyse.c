@@ -583,7 +583,7 @@ done32:			;
 	break;
 
 	default:
-		Sys_Error("D_PolysetDrawSpans: unsupported r_pixbytes %i\n",
+		Sys_Error("D_PolysetDrawSpans: unsupported r_pixbytes %i",
 				  r_pixbytes);
 	}
 }

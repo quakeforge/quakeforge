@@ -347,7 +347,7 @@ BW_Init (void)
 
 	lowmem_buffer = dos_getmemory (LOWMEM_SIZE);
 	if (!lowmem_buffer)
-		Sys_Error ("not enough low memory\n");
+		Sys_Error ("not enough low memory");
 	lowmem_bufoff = ptr2real (lowmem_buffer) & 0xf;
 	lowmem_bufseg = ptr2real (lowmem_buffer) >> 4;
 
@@ -397,7 +397,7 @@ BW_Listen (qboolean state)
 		if (net_acceptsocket != -1)
 			return;
 		if ((net_acceptsocket = BW_OpenSocket (net_hostport)) == -1)
-			Sys_Error ("BW_Listen: Unable to open accept socket\n");
+			Sys_Error ("BW_Listen: Unable to open accept socket");
 		return;
 	}
 	// disable listening
@@ -583,7 +583,7 @@ BW_Broadcast (int s, byte * msg, int len)
 	writeInfo->remotePort = net_hostport;
 	writeInfo->dataLen = len;
 	if (len > NET_DATAGRAMSIZE)
-		Sys_Error ("BW UDP write packet too large: %u\n", len);
+		Sys_Error ("BW UDP write packet too large: %u", len);
 	Q_memcpy (writeInfo->data, msg, len);
 	writeInfo->data[len] = 0;
 	regs.h.ah = 0x40;
@@ -619,7 +619,7 @@ BW_Write (int s, byte * msg, int len, struct qsockaddr *to)
 	writeInfo->remotePort = ntohs (((struct sockaddr_in *) to)->sin_port);
 	writeInfo->dataLen = len;
 	if (len > NET_DATAGRAMSIZE)
-		Sys_Error ("BW UDP write packet too large: %u\n", len);
+		Sys_Error ("BW UDP write packet too large: %u", len);
 	Q_memcpy (writeInfo->data, msg, len);
 	writeInfo->data[len] = 0;
 	regs.h.ah = 0x40;

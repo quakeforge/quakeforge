@@ -1412,7 +1412,7 @@ Host_Error (const char *error, ...)
 	if (host_initialized) {
 		longjmp (host_abort, 1);
 	} else {
-		Sys_Error ("Host_Error: %s\n", string);
+		Sys_Error ("Host_Error: %s", string);
 	}
 }
 
@@ -1638,7 +1638,7 @@ CL_Init_Memory (void)
 	mem_base = malloc (mem_size);
 
 	if (!mem_base)
-		Sys_Error ("Can't allocate %d\n", mem_size);
+		Sys_Error ("Can't allocate %d", mem_size);
 
 	Sys_PageIn (mem_base, mem_size);
 	Memory_Init (mem_base, mem_size);

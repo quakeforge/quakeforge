@@ -349,7 +349,7 @@ new_label_name (void)
 	char       *lname = malloc (len);
 
 	if (!lname)
-		Sys_Error ("new_label_expr: Memory Allocation Failure\n");
+		Sys_Error ("new_label_expr: Memory Allocation Failure");
 	snprintf (lname, len, "$%s_%d", fname, lnum);
 	return lname;
 }
@@ -602,7 +602,7 @@ do_op_string (int op, expr_t *e1, expr_t *e2)
 			len = strlen (s1) + strlen (s2) + 1;
 			buf = malloc (len);
 			if (!buf)
-				Sys_Error ("do_op_string: Memory Allocation Failure\n");
+				Sys_Error ("do_op_string: Memory Allocation Failure");
 			strcpy (buf, s1);
 			strcat (buf, s2);
 			e1->e.string_val = buf;
@@ -1571,7 +1571,7 @@ function_expr (expr_t *e1, expr_t *e2)
 		ret->e.def = memcpy (malloc (sizeof (def_t)), &def_ret, sizeof (def_t));
 
 		if (!ret->e.def)
-			Sys_Error ("function_expr: Memory Allocation Failure\n");
+			Sys_Error ("function_expr: Memory Allocation Failure");
 		ret->e.def->type = ftype->aux_type;
 		call->e.block.result = ret;
 	}

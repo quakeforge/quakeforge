@@ -81,7 +81,7 @@ bi_cmd_f (void *pr)
 	bi_cmd_t   *cmd = Hash_Find (bi_cmds, Cmd_Argv (0));
 
 	if (!cmd)
-		Sys_Error ("bi_cmd_f: unexpected call %s\n", Cmd_Argv (0));
+		Sys_Error ("bi_cmd_f: unexpected call %s", Cmd_Argv (0));
 	PR_ExecuteProgram (cmd->pr, cmd->func);
 }
 

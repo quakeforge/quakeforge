@@ -43,7 +43,7 @@ dstring_new (void)
 	new = calloc (1, sizeof (dstring_t));
 
 	if (!new)
-		Sys_Error ("dstring_new: Failed to allocate memory.\n");
+		Sys_Error ("dstring_new: Failed to allocate memory.");
 	return new;
 }
 
@@ -61,7 +61,7 @@ dstring_adjust (dstring_t *dstr)
 	if (dstr->size > dstr->truesize) {
 		dstr->str = realloc (dstr->str, dstr->size);
 		if (!dstr->str)
-			Sys_Error ("dstring_adjust:  Failed to reallocate memory.\n");
+			Sys_Error ("dstring_adjust:  Failed to reallocate memory.");
 		dstr->truesize = dstr->size;
 	}
 }
@@ -130,7 +130,7 @@ dstring_newstr (void)
 	new = calloc (1, sizeof (dstring_t));
 
 	if (!new)
-		Sys_Error ("dstring_newstr:  Failed to allocate memory.\n");
+		Sys_Error ("dstring_newstr:  Failed to allocate memory.");
 	new->size = 1;
 	dstring_adjust (new);
 	new->str[0] = 0;

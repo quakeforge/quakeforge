@@ -73,7 +73,7 @@ VCR_ReadNext (void)
 {
 	if (Qread (vcrFile, &next, sizeof (next)) == 0) {
 		next.op = 255;
-		Sys_Error ("=== END OF PLAYBACK===\n");
+		Sys_Error ("=== END OF PLAYBACK===");
 	}
 	if (next.op < 1 || next.op > VCR_MAX_MESSAGE)
 		Sys_Error ("VCR_ReadNext: bad op");

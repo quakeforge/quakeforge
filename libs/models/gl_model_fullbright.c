@@ -73,7 +73,7 @@ Mod_Fullbright (byte * skin, int width, int height, char *name)
 	// ptexels = Hunk_Alloc(s);
 	ptexels = malloc (pixels);
 	if (!ptexels)
-		Sys_Error ("Mod_Fullbright: Memory Allocation Failure\n");
+		Sys_Error ("Mod_Fullbright: Memory Allocation Failure");
 	if (Mod_CalcFullbright (skin, ptexels, pixels)) {
 		Sys_DPrintf ("FB Model ID: '%s'\n", name);
 		texnum = GL_LoadTexture (name, width, height, ptexels, true, true, 1);

@@ -379,6 +379,6 @@ D_DrawParticle (particle_t *pparticle)
 		}
 		break;
 	default:
-		Sys_Error("D_DrawParticles: unsupported r_pixbytes %i\n", r_pixbytes);
+		Sys_Error("D_DrawParticles: unsupported r_pixbytes %i", r_pixbytes);
 	}
 }

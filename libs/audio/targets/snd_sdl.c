@@ -174,7 +174,7 @@ SNDDMA_Init (void)
 	shm->buffer = calloc(shm->samples * (shm->samplebits / 8), 1);
 	if (!shm->buffer)
 	{
-		Sys_Error ("Failed to allocate buffer for sound!\n");
+		Sys_Error ("Failed to allocate buffer for sound!");
 	}
 
 	snd_inited = 1;
