@@ -380,7 +380,7 @@ IN_Getimpulse_f (void)
 	0 if held then released, and
 	1.0 if held for the entire time
 */
-float
+float // FIXME: float? for 4 states? Ugh!
 CL_KeyState (kbutton_t *key)
 {
 	float       val;
@@ -471,6 +471,7 @@ CL_AdjustAngles (void)
 	if (up || down)
 		V_StopPitchDrift ();
 
+	// FIXME: Need to clean up view angle limits
 	if (cl.viewangles[PITCH] > 80)
 		cl.viewangles[PITCH] = 80;
 	if (cl.viewangles[PITCH] < -70)
@@ -480,9 +481,7 @@ CL_AdjustAngles (void)
 		cl.viewangles[ROLL] = 50;
 	if (cl.viewangles[ROLL] < -50)
 		cl.viewangles[ROLL] = -50;
-
 }
-
 
 /*
 	CL_BaseMove
@@ -528,7 +527,7 @@ CL_BaseMove (usercmd_t *cmd)
 
 	IN_Move ();
 
-		// adjust for chase camera angles
+	// adjust for chase camera angles
  	if (cl.chase
 		&& (chase_active->int_val == 2 || chase_active->int_val == 3))
 	{
