@@ -452,6 +452,8 @@ void PR_NewLine (void);
 def_t *PR_GetDef (type_t *type, const char *name, def_t *scope,
 				  int *allocate);
 def_t *PR_NewDef (type_t *type, const char *name, def_t *scope);
+int PR_NewLocation (type_t *type);
+void PR_FreeLocation (def_t *def);
 def_t *PR_GetTempDef (type_t *type, def_t *scope);
 void PR_FreeTempDefs ();
 void PR_ResetTempDefs ();
@@ -524,3 +526,9 @@ extern	int			numfiles;
 
 int	CopyString (const char *str);
 int	ReuseString (const char *str);
+
+typedef struct {
+	int		cow;		// copy on write for constants
+} options_t;
+
+extern options_t options;

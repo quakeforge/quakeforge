@@ -309,10 +309,22 @@ PR_Expression (int priority)
 			if (e->type->type == ev_pointer && e2->type->type != e->type->aux_type->type)
 				PR_ParseError ("type mismatch for %s", op->name);
 
-			if (op->right_associative)
+			if (op->right_associative) {
+				if (e->initialized) {
+					if (options.cow) {
+						int size = type_size [e->type->type];
+						int ofs = PR_NewLocation (e->type);
+						memcpy (pr_globals + ofs, pr_globals + e->ofs, size);
+						e->ofs = ofs;
+						e->initialized = 0;
+					} else {
+						PR_ParseError ("assignment to constant: %s", e->name);
+					}
+				}
 				e = PR_Statement (op, e2, e);
-			else
+			} else {
 				e = PR_Statement (op, e, e2);
+			}
 
 			if (var_c.type != &type_void)		// field access gets type from field
 				e->type = e2->type->aux_type;

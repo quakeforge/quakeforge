@@ -71,6 +71,9 @@ PR_ParseImmediate (def_t *def)
 		float_imm_defs = Hash_NewTable (16381, float_imm_get_key, 0, 0);
 		vector_imm_defs = Hash_NewTable (16381, vector_imm_get_key, 0, 0);
 	}
+	if (def && def->type != pr_immediate_type) {
+		PR_ParseError ("immediate type missmatch");
+	}
 	if (pr_immediate_type == &type_string) {
 		cn = (def_t*) Hash_Find (string_imm_defs, pr_immediate_string);
 		tab = string_imm_defs;
@@ -92,8 +95,15 @@ PR_ParseImmediate (def_t *def)
 		PR_ParseError ("weird immediate type");
 	}
 	if (cn) {
-		if (cn->type != pr_immediate_type) printf("urk\n");
+		if (cn->type != pr_immediate_type)
+			printf("urk\n");
 		//printf("found\n");
+		if (def) {
+			PR_FreeLocation (def);
+			def->ofs = cn->ofs;
+			def->initialized = 1;
+			cn = def;
+		}
 		PR_Lex ();
 		return cn;
 	}
@@ -104,9 +114,8 @@ PR_ParseImmediate (def_t *def)
 		cn = def;
 	} else {
 		cn = PR_NewDef (pr_immediate_type, "IMMEDIATE", 0);
-		cn->ofs = numpr_globals;
+		cn->ofs = PR_NewLocation (pr_immediate_type);
 		pr_global_defs[cn->ofs] = cn;
-		numpr_globals += type_size[pr_immediate_type->type];
 	}
 	cn->initialized = 1;
 	// copy the immediate to the global area

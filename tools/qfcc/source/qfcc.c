@@ -37,6 +37,7 @@
 
 #include "qfcc.h"
 
+options_t   options;
 
 char        sourcedir[1024];
 char        destfile[1024];
@@ -604,6 +605,27 @@ PR_BeginCompilation (void *memory, int memsize)
 	pr_error_count = 0;
 }
 
+void
+PR_RelocateRefs (def_t *def)
+{
+	statref_t	*ref;
+	for (ref = def->refs; ref; ref = ref->next) {
+		switch (ref->field) {
+			case 0:
+				ref->statement->a = def->ofs;
+				break;
+			case 1:
+				ref->statement->b = def->ofs;
+				break;
+			case 2:
+				ref->statement->c = def->ofs;
+				break;
+			default:
+				abort();
+		}
+	}
+}
+
 /*
 	PR_FinishCompilation
 
@@ -617,7 +639,6 @@ PR_FinishCompilation (void)
 	qboolean	errors = false;
 	function_t	*f;
 	def_t		*def;
-	statref_t	*ref;
 
 	// check to make sure all functions prototyped have code
 	for (d = pr.def_head.next; d; d = d->next) {
@@ -634,6 +655,12 @@ PR_FinishCompilation (void)
 	if (errors)
 		return !errors;
 
+	for (def = pr.def_head.next; def; def = def->next) {
+		if (def->scope)
+			continue;
+		PR_RelocateRefs (def);
+	}
+
 	for (f = pr_functions; f; f = f->next) {
 		if (f->builtin)
 			continue;
@@ -641,22 +668,8 @@ PR_FinishCompilation (void)
 			num_locals = f->def->num_locals;
 		f->dfunc->parm_start = numpr_globals;
 		for (def = f->def->scope_next; def; def = def->scope_next) {
-			for (ref = def->refs; ref; ref = ref->next) {
-				switch (ref->field) {
-					case 0:
-						ref->statement->a += numpr_globals;
-						break;
-					case 1:
-						ref->statement->b += numpr_globals;
-						break;
-					case 2:
-						ref->statement->c += numpr_globals;
-						break;
-					default:
-						abort();
-				}
-			}
 			def->ofs += numpr_globals;
+			PR_RelocateRefs (def);
 		}
 	}
 	numpr_globals += num_locals;
@@ -854,6 +867,10 @@ Options: \n\
 		} else {
 			strcpy (sourcedir, ".");
 		}
+	}
+
+	if (CheckParm ("--cow")) {
+		options.cow = 1;
 	}
 
 	if (strcmp (sourcedir, ".")) {

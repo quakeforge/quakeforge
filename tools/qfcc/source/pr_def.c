@@ -24,11 +24,17 @@
 
 #include "qfcc.h"
 
+typedef struct locref_s {
+	struct locref_s *next;
+	int ofs;
+} locref_t;
 
 def_t		*pr_global_defs[MAX_REGS];	// to find def for a global variable
 int 		pr_edict_size;
 static def_t *free_temps[4];	// indexted by type size
 static def_t temp_scope;
+static locref_t *free_locs[4];	// indexted by type size
+static locref_t *free_free_locs;
 
 static hashtab_t  *defs_by_name;
 
@@ -77,6 +83,7 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 	def = PR_NewDef (type, name, scope);
 	Hash_Add (defs_by_name, def);
 
+	//FIXME: need to sort out location re-use
 	def->ofs = *allocate;
 	pr_global_defs[*allocate] = def;
 
@@ -143,6 +150,44 @@ PR_NewDef (type_t *type, const char *name, def_t *scope)
 	def->scope = scope;
 
 	return def;
+}
+
+int
+PR_NewLocation (type_t *type)
+{
+	int size = type_size[type->type];
+	locref_t *loc;
+
+	if (free_locs[size]) {
+		loc = free_locs[size];
+		free_locs[size] = loc->next;
+
+		loc->next = free_free_locs;
+		free_free_locs = loc;
+
+		return loc->ofs;
+	}
+	numpr_globals += size;
+	return numpr_globals - size;
+}
+
+void
+PR_FreeLocation (def_t *def)
+{
+	int size = type_size[def->type->type];
+	locref_t *loc;
+
+	if (!free_free_locs) {
+		free_free_locs = malloc (256 * sizeof (locref_t));
+		for (loc = free_free_locs; loc - free_free_locs < 255; loc++)
+			loc->next = loc + 1;
+		loc->next = 0;
+	}
+	loc = free_free_locs;
+	free_free_locs = loc->next;
+	loc->ofs = def->ofs;
+	loc->next = free_locs[size];
+	free_locs[size] = loc;
 }
 
 def_t *
