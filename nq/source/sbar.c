@@ -694,10 +694,9 @@ draw_health (view_t *view)
 			  cl.stats[STAT_HEALTH] <= 25);
 }
 
-static inline int
+static inline void
 draw_ammo (view_t *view)
 {
-	int         ret = 1;
 	if (cl.stats[STAT_ITEMS] & IT_SHELLS)
 		draw_pic (view, 224, 0, sb_ammo[0]);
 	else if (cl.stats[STAT_ITEMS] & IT_NAILS)
@@ -706,10 +705,8 @@ draw_ammo (view_t *view)
 		draw_pic (view, 224, 0, sb_ammo[2]);
 	else if (cl.stats[STAT_ITEMS] & IT_CELLS)
 		draw_pic (view, 224, 0, sb_ammo[3]);
-	else
-		ret = 0;
+
 	draw_num (view, 248, 0, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
-	return ret;
 }
 
 static void
@@ -746,20 +743,24 @@ draw_rogue_weapons_sbar (view_t *view)
 static void
 draw_rogue_weapons_hud (view_t *view)
 {
-	int         flashon, i;
+	int         flashon, i, j;
+	qpic_t     *pic;
 
 	for (i = 0; i < 7; i++) {
 		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
 			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
-			draw_subpic (view, 0, i * 16, sb_weapons[flashon][i], 0, 0, 24, 16);
+			if (i >= 2) {
+				j = i - 2;
+				if (cl.stats[STAT_ACTIVEWEAPON] == (RIT_LAVA_NAILGUN << j))
+					pic = rsb_weapons[j];
+				else
+					pic = sb_weapons[flashon][i];
+			} else {
+				pic = sb_weapons[flashon][i];
+			}
+			draw_subpic (view, 0, i * 16, pic, 0, 0, 24, 16);
 			if (flashon > 1)
 				sb_updates = 0;			// force update to remove flash
-		}
-	}
-	for (i = 0; i < 5; i++) {
-		//if (cl.stats[STAT_ACTIVEWEAPON] == (RIT_LAVA_NAILGUN << i)) {
-		if (cl.stats[STAT_ITEMS] & (RIT_LAVA_NAILGUN << i)) {
-			draw_pic (view, 0, i * 16 + 112, rsb_weapons[i]);
 		}
 	}
 }
@@ -841,21 +842,38 @@ draw_rogue_status (view_t *view)
 		return;
 	}
 
-	draw_armor (view);
+	draw_num (view, 24, 0, cl.stats[STAT_ARMOR], 3,
+			  cl.stats[STAT_ARMOR] <= 25);
+	if (cl.stats[STAT_ITEMS] & RIT_ARMOR3)
+		draw_pic (view, 0, 0, sb_armor[2]);
+	else if (cl.stats[STAT_ITEMS] & RIT_ARMOR2)
+		draw_pic (view, 0, 0, sb_armor[1]);
+	else if (cl.stats[STAT_ITEMS] & RIT_ARMOR1)
+		draw_pic (view, 0, 0, sb_armor[0]);
+
 	// PGM 03/02/97 - fixed so color swatch only appears in CTF modes
 	if (cl.maxclients != 1 && teamplay->int_val > 3 && teamplay->int_val < 7)
 		draw_rogue_face (view);
 	else
 		draw_face (view);
+
 	draw_health (view);
-	if (!draw_ammo (view)) {
-		if (cl.stats[STAT_ITEMS] & RIT_LAVA_NAILS)
-			draw_pic (view, 224, 0, rsb_ammo[0]);
-		else if (cl.stats[STAT_ITEMS] & RIT_PLASMA_AMMO)
-			draw_pic (view, 224, 0, rsb_ammo[1]);
-		else if (cl.stats[STAT_ITEMS] & RIT_MULTI_ROCKETS)
-			draw_pic (view, 224, 0, rsb_ammo[2]);
-	}
+
+	if (cl.stats[STAT_ITEMS] & RIT_SHELLS)
+		draw_pic (view, 224, 0, sb_ammo[0]);
+	else if (cl.stats[STAT_ITEMS] & RIT_NAILS)
+		draw_pic (view, 224, 0, sb_ammo[1]);
+	else if (cl.stats[STAT_ITEMS] & RIT_ROCKETS)
+		draw_pic (view, 224, 0, sb_ammo[2]);
+	else if (cl.stats[STAT_ITEMS] & RIT_CELLS)
+		draw_pic (view, 224, 0, sb_ammo[3]);
+	else if (cl.stats[STAT_ITEMS] & RIT_LAVA_NAILS)
+		draw_pic (view, 224, 0, rsb_ammo[0]);
+	else if (cl.stats[STAT_ITEMS] & RIT_PLASMA_AMMO)
+		draw_pic (view, 224, 0, rsb_ammo[1]);
+	else if (cl.stats[STAT_ITEMS] & RIT_MULTI_ROCKETS)
+		draw_pic (view, 224, 0, rsb_ammo[2]);
+	draw_num (view, 248, 0, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
 }
 
 static void
@@ -1488,14 +1506,9 @@ init_rogue_hud_views (void)
 
 	hud_view->resize_y = 1;
 
-	if (vid.conheight < 284) {
-		hud_armament_view = view_new (0, min (vid.conheight - 192, 48),
-									  66, 192, grav_southeast);
-	} else {
-		hud_armament_view = view_new (0, 48, 42, 236, grav_southeast);
-	}
+	hud_armament_view = view_new (0, 48, 42, 156, grav_southeast);
 
-	view = view_new (0, 0, 24, 192, grav_northeast);
+	view = view_new (0, 0, 24, 112, grav_northeast);
 	view->draw = draw_rogue_weapons_hud;
 	view_add (hud_armament_view, view);
 
