@@ -86,6 +86,8 @@ GLenum				gl_mtex_enum = GL_TEXTURE0_ARB;
 QF_glColorTableEXT	qglColorTableEXT = NULL;
 qboolean			is8bit = false;
 
+qboolean			gl_feature_mach64 = false;
+
 cvar_t      *gl_multitexture;
 cvar_t      *gl_vaelements_max;
 cvar_t      *gl_screenshot_byte_swap;
@@ -297,6 +299,9 @@ GL_Init_Common (void)
 
 	CheckMultiTextureExtensions ();
 	CheckVertexArraySize ();
+
+	if (strstr(gl_renderer, "Mesa DRI Mach64"))
+		gl_feature_mach64 = true;
 }
 
 void

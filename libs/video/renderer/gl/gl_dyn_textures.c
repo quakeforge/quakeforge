@@ -54,6 +54,7 @@ int         part_tex_spark;
 */
 
 int			part_tex;
+GLint		part_tex_internal_format = 2;
 
 
 static void
@@ -67,7 +68,7 @@ GDT_InitParticleTexture (void)
 	qfglBindTexture (GL_TEXTURE_2D, part_tex);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	qfglTexImage2D (GL_TEXTURE_2D, 0, 2, 64, 64, 0, GL_LUMINANCE_ALPHA,
+	qfglTexImage2D (GL_TEXTURE_2D, 0, part_tex_internal_format, 64, 64, 0, GL_LUMINANCE_ALPHA,
 					GL_UNSIGNED_BYTE, data);
 }
 
@@ -133,8 +134,7 @@ GDT_InitSmokeParticleTexture (void)
 
 	noise_plasma (&noise1[0][0], 32);
 	noise_diamondsquare (&noise2[0][0], 32, 4);
-	for (y = 0; y < 32; y++)
-	{
+	for (y = 0; y < 32; y++) {
 		dy2 = y - 16;
 		dy2 *= dy2;
 		for (x = 0; x < 32; x++) {
@@ -159,6 +159,8 @@ GDT_InitSmokeParticleTexture (void)
 void
 GDT_Init (void)
 {
+	if (gl_feature_mach64)
+		part_tex_internal_format = 4;
 	GDT_InitParticleTexture ();
 	GDT_InitDotParticleTexture ();
 	GDT_InitSparkParticleTexture ();

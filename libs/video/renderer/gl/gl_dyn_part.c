@@ -28,7 +28,7 @@
 # include "config.h"
 #endif
 
-static __attribute__ ((unused)) const char rcsid[] = 
+static __attribute__ ((unused)) const char rcsid[] =
 	"$Id$";
 
 #ifdef HAVE_STRING_H
@@ -51,6 +51,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_explosions.h"
 #include "QF/GL/qf_textures.h"
+#include "QF/GL/qf_vid.h"
 
 #include "compat.h"
 #include "r_cvar.h"
@@ -85,6 +86,8 @@ particle_new (ptype_t type, int texnum, const vec3_t org, float scale,
 		return NULL;
 	}
 */
+	if(gl_feature_mach64 && type == pt_smokecloud && texnum == part_tex_smoke )
+		return;
 
 	part = &particles[numparticles++];
 
@@ -1057,7 +1060,7 @@ R_TeleportSplash_ID (const vec3_t org)
 
 				VectorCopy (dir, pdir);
 				VectorNormalize (pdir);
-				
+
 				rnd = rand ();
 				porg[0] = org[0] + i + (rnd & 3);
 				porg[1] = org[1] + j + ((rnd >> 2) & 3);

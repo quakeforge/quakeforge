@@ -43,6 +43,8 @@ extern GLenum					gl_mtex_enum;
 extern float					gldepthmin, gldepthmax;
 extern int						texture_extension_number;
 
+extern qboolean					gl_feature_mach64;
+
 void GL_EndRendering (void);
 void GL_BeginRendering (int *x, int *y, int *width, int *height);
 
