@@ -649,10 +649,11 @@ Host_ClientFrame (void)
 static void
 _Host_Frame (float time)
 {
+	static int  first = 1;
+
 	if (setjmp (host_abortserver))
 		return;							// something bad happened, or the
 										// server disconnected
-
 
 	rand ();							// keep the random time dependent
 
@@ -670,6 +671,21 @@ _Host_Frame (float time)
 	GIB_Thread_Execute ();
 	cmd_source = src_command;
 	Cbuf_Execute_Stack (host_cbuf);
+
+	if (first) {
+		first = 0;
+
+		if (isDedicated) {
+			if (!sv.active)
+				Cmd_ExecuteString ("map start", src_command);
+			if (!sv.active)
+				Sys_Error ("Could not initialize server");
+		} else {
+			Con_NewMap ();
+		}
+
+		CL_UpdateScreen (cl.time);
+	}
 
 	NET_Poll ();
 
@@ -993,21 +1009,8 @@ Host_Init (void)
 				build_number ());
 
 	Con_Printf ("\x80\x81\x81\x82 %s initialized\x80\x81\x81\x82\n", PROGRAM);
-	CL_UpdateScreen (cl.time);
-
-	// make sure all + commands have been executed
-	Cbuf_Execute_Stack (host_cbuf);
 
 	host_initialized = true;
-
-	if (isDedicated) {
-		if (!sv.active)
-			Cmd_ExecuteString ("map start", src_command);
-		if (!sv.active)
-			Sys_Error ("Could not initialize server");
-	} else {
-		Con_NewMap ();
-	}
 
 	CL_UpdateScreen (cl.time);
 }
