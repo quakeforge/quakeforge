@@ -651,12 +651,9 @@ PR_PrintDefs (void)
 	called before compiling a batch of files, clears the pr struct
 */
 void
-PR_BeginCompilation (void *memory, int memsize)
+PR_BeginCompilation (void)
 {
 	int 	i;
-
-	pr.memory = memory;
-	pr.max_memory = memsize;
 
 	numpr_globals = RESERVED_OFS;
 	pr.def_tail = &pr.def_head;
@@ -913,7 +910,6 @@ main (int argc, char **argv)
 	int 	p, crc;
 	double	start, stop;
 	int		no_cpp = 0;
-	void   *mem;
 
 	start = Sys_DoubleTime ();
 
@@ -1024,10 +1020,7 @@ main (int argc, char **argv)
 			printf ("debug file: %s\n", debugfile);
 	}
 
-	mem = malloc (0x100000);
-	if (!mem)
-		Sys_Error ("main: Memory Allocation Failure\n");
-	PR_BeginCompilation (mem, 0x100000);
+	PR_BeginCompilation ();
 
 	// compile all the files
 	while ((src = COM_Parse (src))) {

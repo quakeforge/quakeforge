@@ -375,8 +375,6 @@ function_t *pr_functions;
 //
 typedef struct
 {
-	char		*memory;
-	int			max_memory;
 	int			current_memory;
 	type_t		*types;
 	
