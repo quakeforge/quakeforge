@@ -1813,6 +1813,24 @@ static mplane_t pf_planes[MAX_PF_HULLS][6];
 hull_t pf_hull_list[MAX_PF_HULLS];
 
 static void
+PF_getboxbounds (progs_t *pr)
+{
+	int         h = G_INT (pr, OFS_PARM0) - 1;
+	hull_t     *hull = &pf_hull_list[h];
+
+	if (h < 0 || h > MAX_PF_HULLS - 1
+		|| hull->clipnodes != pf_clipnodes[h]
+		|| hull->planes != pf_planes[h])
+		PR_RunError (pr, "PF_freeboxhull: invalid box hull handle\n");
+
+	if (G_INT (pr, OFS_PARM1)) {
+		VectorCopy (hull->clip_maxs, G_VECTOR (pr, OFS_RETURN));
+	} else {
+		VectorCopy (hull->clip_mins, G_VECTOR (pr, OFS_RETURN));
+	}
+}
+
+static void
 PF_getboxhull (progs_t *pr)
 {
 	hull_t     *hull;
@@ -1856,52 +1874,79 @@ static void
 PF_rotate_bbox (progs_t *pr)
 {
 	int         h = G_INT (pr, OFS_PARM0) - 1;
-	float      *r = G_VECTOR (pr, OFS_PARM1);
-	float      *f = G_VECTOR (pr, OFS_PARM2);
-	float      *u = G_VECTOR (pr, OFS_PARM3);
+	float      *dir[3] = {
+					G_VECTOR (pr, OFS_PARM1),
+					G_VECTOR (pr, OFS_PARM2),
+					G_VECTOR (pr, OFS_PARM3),
+				};
 	float      *mi = G_VECTOR (pr, OFS_PARM4);
 	float      *ma = G_VECTOR (pr, OFS_PARM5);
 	vec3_t      m[3];
 	vec3_t      mins, maxs;
 	hull_t     *hull = &pf_hull_list[h];
-	int         i;
+	int         i, j;
+	vec3_t      v[8], d;
+	float       l;
 
 	// set up the rotation matrix. the three orientation vectors form the
 	// columns of the rotation matrix
 	for (i = 0; i < 3; i++) {
-		m[i][0] = r[i];
-		m[i][1] = f[i];
-		m[i][2] = u[i];
+		for (j = 0; j < 3; j++) {
+			m[i][j] = dir[j][i];
+		}
 	}
 	// rotate the bounding box points
 	for (i = 0; i < 3; i++) {
 		mins[i] = DotProduct (m[i], mi);
 		maxs[i] = DotProduct (m[i], ma);
 	}
+	// find all 8 corners of the rotated box
+	VectorCopy (mins, v[0]);
+	VectorCopy (mins, v[1]);
+	
+	VectorSubtract (maxs, mins, d);
+	for (i = 0; i < 3; i++) {
+		vec3_t      x;
 
-	hull->planes[0].dist = DotProduct (f, maxs);
+		l = DotProduct (d, dir[i]);
+		VectorScale    (dir[i], l, x);
+		VectorAdd      (mins, x, v[2 + i * 2]);
+		VectorSubtract (maxs, x, v[3 + i * 2]);
+	}
+	// now find the aligned bounding box
+	VectorCopy (v[0], hull->clip_mins);
+	VectorCopy (v[0], hull->clip_maxs);
+	for (i = 0; i < 8; i++) {
+		for (j = 0; j < 3; j++) {
+			hull->clip_mins[j] = min (hull->clip_mins[j], v[i][j]);
+			hull->clip_maxs[j] = max (hull->clip_maxs[j], v[i][j]);
+		}
+	}
+
+	// now set up the clip planes
+	hull->planes[0].dist = DotProduct (dir[1], maxs);
 	hull->planes[0].type = 4;
-	VectorCopy (f, hull->planes[0].normal);
+	VectorCopy (dir[1], hull->planes[0].normal);
 
-	hull->planes[1].dist = DotProduct (f, mins);
+	hull->planes[1].dist = DotProduct (dir[1], mins);
 	hull->planes[1].type = 4;
-	VectorCopy (f, hull->planes[1].normal);
+	VectorCopy (dir[1], hull->planes[1].normal);
 
-	hull->planes[2].dist = DotProduct (r, maxs);
+	hull->planes[2].dist = DotProduct (dir[0], maxs);
 	hull->planes[2].type = 4;
-	VectorCopy (r, hull->planes[2].normal);
+	VectorCopy (dir[0], hull->planes[2].normal);
 
-	hull->planes[3].dist = DotProduct (r, mins);
+	hull->planes[3].dist = DotProduct (dir[0], mins);
 	hull->planes[3].type = 4;
-	VectorCopy (r, hull->planes[3].normal);
+	VectorCopy (dir[0], hull->planes[3].normal);
 
-	hull->planes[4].dist = DotProduct (u, maxs);
+	hull->planes[4].dist = DotProduct (dir[2], maxs);
 	hull->planes[4].type = 4;
-	VectorCopy (u, hull->planes[4].normal);
+	VectorCopy (dir[2], hull->planes[4].normal);
 
-	hull->planes[5].dist = DotProduct (u, mins);
+	hull->planes[5].dist = DotProduct (dir[2], mins);
 	hull->planes[5].type = 4;
-	VectorCopy (u, hull->planes[5].normal);
+	VectorCopy (dir[2], hull->planes[5].normal);
 }
 
 
@@ -2023,7 +2068,7 @@ builtin_t   sv_builtins[] = {
 	PF_Fixme,			// 91
 	PF_Fixme,			// 92
 	PF_Fixme,			// 93
-	PF_Fixme,			// 94
+	PF_getboxbounds,	// vector (integer hull, integer max) getboxbounds = #94
 	PF_getboxhull,		// integer () getboxhull = #95
 	PF_freeboxhull,		// void (integer hull) freeboxhull = #96
 	PF_rotate_bbox,		// void (integer hull, vector right, vector forward, vector up, vector mins, vector maxs) rotate_bbox = #97

@@ -846,10 +846,10 @@ SV_TestPlayerPosition (edict_t *ent, vec3_t origin)
 
 		// get the clipping hull
 		if (sv_fields.rotated_bbox != -1
-			&& SVFIELD (ent, rotated_bbox, integer)) {
+			&& SVFIELD (check, rotated_bbox, integer)) {
 			extern hull_t pf_hull_list[];
-			hull = &pf_hull_list[SVFIELD (ent, rotated_bbox, integer) - 1];
-			VectorCopy (SVFIELD (ent, origin, vector), offset);
+			hull = &pf_hull_list[SVFIELD (check, rotated_bbox, integer) - 1];
+			VectorCopy (SVFIELD (check, origin, vector), offset);
 		} else {
 			hull = SV_HullForEntity (check, SVFIELD (ent, mins, vector),
 									 SVFIELD (ent, maxs, vector), offset);
