@@ -80,7 +80,8 @@ server_SOURCES= crudefile.c sv_ccmds.c sv_console.c sv_cvar.c \
 		sv_progs.c sv_send.c sv_user.c world.c $(syssv_SRC)
 
 qf_server_LIBS= $(top_builddir)/libs/models/libQFmodels.la \
-		$(top_builddir)/libs/gamecode/libQFgamecode.la \
+		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
+		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
 		$(top_builddir)/libs/util/libQFutil.la
 
 qw_server_SOURCES=	$(common_SOURCES) $(server_SOURCES)
@@ -88,7 +89,8 @@ qw_server_LDADD=	libqfnet.la $(ASM) $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(C
 qw_server_DEPENDENCIES=	libqfnet.la $(ASM) $(qf_server_LIBS)
 
 qf_client_LIBS=	$(top_builddir)/libs/video/targets/libQFjs.la \
-		$(top_builddir)/libs/gamecode/libQFgamecode.la \
+		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
+		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
 		$(top_builddir)/libs/audio/libQFcd.la \
 		$(top_builddir)/libs/audio/libQFsound.la \
 		$(top_builddir)/libs/util/libQFutil.la

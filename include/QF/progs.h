@@ -188,6 +188,12 @@ ddef_t *PR_Get_Local_Def (progs_t *pr, int offs);
 
 extern struct cvar_s *pr_debug;
 
+//
+// PR Cmds stuff
+//
+
+void PR_Cmds_Init (void);
+
 //============================================================================
 
 #define MAX_STACK_DEPTH		32
