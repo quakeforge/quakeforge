@@ -823,7 +823,7 @@ SV_Say (qboolean team)
 	Con_Printf ("%s", text);
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
-		if (client->state != cs_spawned)
+		if (client->state < cs_connected)	// Clients connecting can hear.
 			continue;
 		if (host_client->spectator && !sv_spectalk->int_val)
 			if (!client->spectator)

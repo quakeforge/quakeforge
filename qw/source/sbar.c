@@ -55,6 +55,7 @@
 int         sb_updates;				// if >= vid.numpages, no update needed
 
 #define STAT_MINUS		10			// num frame for '-' stats digit
+
 qpic_t     *sb_nums[2][11];
 qpic_t     *sb_colon, *sb_slash;
 qpic_t     *sb_ibar;
@@ -535,31 +536,29 @@ Sbar_DrawInventory (void)
 
 	// ammo counts
 	for (i = 0; i < 4; i++) {
-		snprintf (num, sizeof (num), "%3i", cl.stats[STAT_SHELLS + i]);
+		snprintf (num, sizeof (num), "%3i", min (cl.stats[STAT_SHELLS + i], 999));
 		if (headsup) {
-//			Sbar_DrawSubPic(3, -24, sb_ibar, 3, 0, 42, 11);
-			Sbar_DrawSubPic ((hudswap) ? 0 : (vid.width - 42),
-							 -24 - (4 - i) * 11, sb_ibar, 3 + (i * 48), 0, 42,
-							 11);
+#define HUD_X(dist)		((hudswap) ? dist : (vid.width - (42 - dist)))
+#define HUD_Y(n)		(-24 - (4 - n) * 11)
+			Sbar_DrawSubPic (HUD_X (0), HUD_Y (i), sb_ibar,
+							 3 + (i * 48), 0, 42, 11);
 			if (num[0] != ' ')
-				Sbar_DrawCharacter ((hudswap) ? 3 : (vid.width - 39),
-									-24 - (4 - i) * 11, 18 + num[0] - '0');
+				Sbar_DrawCharacter (HUD_X (3),  HUD_Y (i), 18 + num[0] - '0');
 			if (num[1] != ' ')
-				Sbar_DrawCharacter ((hudswap) ? 11 : (vid.width - 31),
-									-24 - (4 - i) * 11, 18 + num[1] - '0');
+				Sbar_DrawCharacter (HUD_X (11), HUD_Y (i), 18 + num[1] - '0');
 			if (num[2] != ' ')
-				Sbar_DrawCharacter ((hudswap) ? 19 : (vid.width - 23),
-									-24 - (4 - i) * 11, 18 + num[2] - '0');
+				Sbar_DrawCharacter (HUD_X (19), HUD_Y (i), 18 + num[2] - '0');
+#undef HUD_X
+#undef HUD_Y
 		} else {
+#define HUD_X(n, dist)	((6 * n + dist) * 8 - 2)
 			if (num[0] != ' ')
-				Sbar_DrawCharacter ((6 * i + 1) * 8 - 2, -24,
-									18 + num[0] - '0');
+				Sbar_DrawCharacter (HUD_X(i, 1), -24, 18 + num[0] - '0');
 			if (num[1] != ' ')
-				Sbar_DrawCharacter ((6 * i + 2) * 8 - 2, -24,
-									18 + num[1] - '0');
+				Sbar_DrawCharacter (HUD_X(i, 2), -24, 18 + num[1] - '0');
 			if (num[2] != ' ')
-				Sbar_DrawCharacter ((6 * i + 3) * 8 - 2, -24,
-									18 + num[2] - '0');
+				Sbar_DrawCharacter (HUD_X(i, 3), -24, 18 + num[2] - '0');
+#undef HUD_X
 		}
 	}
 

@@ -78,8 +78,7 @@ static byte cs_data[64] = {
 
 typedef struct {
 	int         texnum;
-	int         bytesperpixel;
-	float       sl, tl, sh, th;
+//	float       sl, tl, sh, th;
 } glpic_t;
 
 extern int gl_filter_min, gl_filter_max;
@@ -107,11 +106,7 @@ Draw_PicFromWad (char *name)
 	p = W_GetLumpName (name);
 	gl = (glpic_t *) p->data;
 
-	gl->texnum = GL_LoadTexture ("", p->width, p->height, p->data, false, true, 1);
-	gl->sl = 0;
-	gl->sh = 1;
-	gl->tl = 0;
-	gl->th = 1;
+	gl->texnum = GL_LoadTexture (name, p->width, p->height, p->data, false, true, 1);
 
 	return p;
 }
@@ -165,12 +160,6 @@ Draw_CachePic (char *path, qboolean alpha)
 	// Now feed it to the GL stuff and get a texture number..
 	gl = (glpic_t *) pic->pic.data;
 	gl->texnum = GL_LoadTexture ("", dat->width, dat->height, dat->data, false, alpha, 1);
-
-	// Alignment stuff..
-	gl->sl = 0;
-	gl->sh = 1;
-	gl->tl = 0;
-	gl->th = 1;
 
 	// Now lets mark this cache entry as used..
 	pic->dirty = false;
@@ -403,13 +392,13 @@ Draw_Pic (int x, int y, qpic_t *pic)
 
 	glBindTexture (GL_TEXTURE_2D, gl->texnum);
 	glBegin (GL_QUADS);
-	glTexCoord2f (gl->sl, gl->tl);
+	glTexCoord2f (0, 0);
 	glVertex2f (x, y);
-	glTexCoord2f (gl->sh, gl->tl);
+	glTexCoord2f (1, 0);
 	glVertex2f (x + pic->width, y);
-	glTexCoord2f (gl->sh, gl->th);
+	glTexCoord2f (1, 1);
 	glVertex2f (x + pic->width, y + pic->height);
-	glTexCoord2f (gl->sl, gl->th);
+	glTexCoord2f (0, 1);
 	glVertex2f (x, y + pic->height);
 	glEnd ();
 }
@@ -421,18 +410,14 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 {
 	glpic_t    *gl;
 	float       newsl, newtl, newsh, newth;
-	float       oldglwidth, oldglheight;
 
 	gl = (glpic_t *) pic->data;
 
-	oldglwidth = gl->sh - gl->sl;
-	oldglheight = gl->th - gl->tl;
+	newsl = (float) srcx / (float) pic->width;
+	newsh = newsl + (float) width / (float) pic->width;
 
-	newsl = gl->sl + (srcx * oldglwidth) / pic->width;
-	newsh = newsl + (width * oldglwidth) / pic->width;
-
-	newtl = gl->tl + (srcy * oldglheight) / pic->height;
-	newth = newtl + (height * oldglheight) / pic->height;
+	newtl = (float) srcy / (float) pic->height;
+	newth = newtl + (float) height / (float) pic->height;
 
 	glColor3f (0.8, 0.8, 0.8);
 	glBindTexture (GL_TEXTURE_2D, gl->texnum);
@@ -555,13 +540,13 @@ Draw_ConsoleBackground (int lines)
 	// draw the console texture
 	glBindTexture (GL_TEXTURE_2D, gl->texnum);
 	glBegin (GL_QUADS);
-	glTexCoord2f (gl->sl, gl->tl + ofs);
+	glTexCoord2f (0, 0 + ofs);
 	glVertex2f (0, 0);
-	glTexCoord2f (gl->sh, gl->tl + ofs);
+	glTexCoord2f (1, 0 + ofs);
 	glVertex2f (vid.conwidth, 0);
-	glTexCoord2f (gl->sh, gl->th);
+	glTexCoord2f (1, 1);
 	glVertex2f (vid.conwidth, lines);
-	glTexCoord2f (gl->sl, gl->th);
+	glTexCoord2f (0, 1);
 	glVertex2f (0, lines);
 	glEnd ();
 

@@ -290,13 +290,6 @@ Model_NextDownload (void)
 			return;
 		}
 
-		if (strequal (cl.model_name[i], "progs/player.mdl")
-			&& cl.model_precache[i]->type == mod_alias)
-			info_key = pmodel_name;
-		if (strequal (cl.model_name[i], "progs/eyes.mdl")
-			&& cl.model_precache[i]->type == mod_alias)
-			info_key = emodel_name;
-
 		if (info_key) {
 			aliashdr_t *ahdr = (aliashdr_t *) Mod_Extradata (cl.model_precache[i]);
 			Info_SetValueForKey (cls.userinfo, info_key, va ("%d", ahdr->crc),
