@@ -54,7 +54,6 @@
 #include "cl_cam.h"
 #include "cl_main.h"
 #include "cl_parse.h" //FIXME CL_NewTranslation
-#include "commdef.h"
 #include "glquake.h"
 #include "r_dynamic.h"
 #include "r_local.h"
