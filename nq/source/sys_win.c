@@ -181,6 +181,11 @@ shutdown (void)
 	DeinitConProc ();
 }
 
+void
+Sys_DebugLog (const char *file, const char *fmt, ...)
+{
+}
+
 const char *
 Sys_ConsoleInput (void)
 {
@@ -315,7 +320,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		}
 	}
 
-	COM_InitArgv (host_parms.argc, (const char**)host_parms.argv);
+	COM_InitArgv (host_parms.argc, (const char**)argv);
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 
@@ -340,21 +345,6 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 			SetForegroundWindow (hwnd_dialog);
 		}
 	}
-#if 0
-	// take the greater of all the available memory or half the total memory,
-	// but at least 8 Mb and no more than 16 Mb, unless they explicitly
-	// request otherwise
-	parms.memsize = lpBuffer.dwAvailPhys;
-
-	if (parms.memsize < MINIMUM_WIN_MEMORY)
-		parms.memsize = MINIMUM_WIN_MEMORY;
-
-	if (parms.memsize < (lpBuffer.dwTotalPhys >> 1))
-		parms.memsize = lpBuffer.dwTotalPhys >> 1;
-
-	if (parms.memsize > MAXIMUM_WIN_MEMORY)
-		parms.memsize = MAXIMUM_WIN_MEMORY;
-#endif
 
 	tevent = CreateEvent (NULL, FALSE, FALSE, NULL);
 
@@ -388,13 +378,10 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		InitConProc (hFile, heventParent, heventChild);
 	}
 
-// because sound is off until we become active
-	//XXX S_BlockSound ();
+	Host_Init ();
 
 	Sys_RegisterShutdown (Host_Shutdown);
 	Sys_RegisterShutdown (shutdown);
-
-	Host_Init ();
 
 	oldtime = Sys_DoubleTime ();
 
@@ -430,9 +417,4 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 
 	/* return success of application */
 	return TRUE;
-}
-
-void
-Sys_DebugLog (const char *file, const char *fmt, ...)
-{
 }

@@ -210,10 +210,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		}
 	}
 
-	host_parms.argv = argv;
-
-	COM_InitArgv (host_parms.argc, (const char**)host_parms.argv);
-
+	COM_InitArgv (host_parms.argc, (const char**)argv);
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 
@@ -240,9 +237,6 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 
 	if (!tevent)
 		Sys_Error ("Couldn't create event");
-
-	// because sound is off until we become active
-	// XXX S_BlockSound ();
 
 	Con_Printf ("Host_Init\n");
 	Host_Init ();
