@@ -153,7 +153,7 @@ pi_realname (char *realname, int size, const char *type, const char *name)
 #if defined(HAVE_DLOPEN)
 	const char *format = "%s/%s_%s.so";
 #elif defined(_WIN32)
-	const char *format = "%s/QF%s_%s.dll";
+	const char *format = "%s/%s_%s.dll";
 #else
 # error "No shared library support. FIXME"
 #endif
