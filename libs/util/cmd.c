@@ -185,7 +185,7 @@ extract_line (char *line)
 void
 Cbuf_Execute (void)
 {
-	char        line[1024] = { 0 };
+	char        line[1024];
 
 	while (cmd_text.cursize) {
 		extract_line (line);
@@ -205,7 +205,7 @@ Cbuf_Execute (void)
 void
 Cbuf_Execute_Sets (void)
 {
-	char        line[1024] = { 0 };
+	char        line[1024];
 
 	while (cmd_text.cursize) {
 		extract_line (line);

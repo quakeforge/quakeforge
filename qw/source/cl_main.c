@@ -1482,7 +1482,7 @@ Host_Frame (float time)
 		CL_PredictMove ();
 
 		// Set up prediction for other players
-		CL_SetUpPlayerPrediction (true);
+		CL_SetUpPlayerPrediction (cl_predict_players->int_val);
 
 		// build a refresh entity list
 		CL_EmitEntities ();

@@ -192,6 +192,13 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 	if (bits & U_ANGLE3)
 		to->angles[2] = MSG_ReadAngle (net_message);
 
+	if (bits & U_SOLID) {
+		// FIXME
+	}
+
+	if (!bits & U_EXTEND1)
+		return;
+
 	// LordHavoc: Endy neglected to mark this as being part of the QSG
 	// version 2 stuff... rearranged it and implemented missing effects
 // Ender (QSG - Begin)
@@ -207,26 +214,13 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 		to->glow_color = MSG_ReadByte (net_message);
 	if (bits & U_COLORMOD)
 		to->colormod = MSG_ReadByte (net_message);
+
+	if (!bits & U_EXTEND2)
+		return;
+
 	if (bits & U_FRAME2)
 		to->frame = (to->frame & 0xFF) | (MSG_ReadByte (net_message) << 8);
 // Ender (QSG - End)
-
-	if (bits & U_SOLID) {
-		// FIXME
-	}
-/*
-	if ((!to->alpha) || (!to->colormod))
-		Con_Printf("fa: %d, fc: %d, ta: %d, tc: %d\n",
-				   from->alpha, from->colormod, to->alpha, to->colormod);
-*/
-/*
-	if ((!ent->alpha) || (!ent->colormod[0]) || (!ent->colormod[1]) ||
-		(!ent->colormod[2])) {
-		Con_Printf ("ea: %f, ec0: %f, ec1: %f ec2: %f, sa: %d, sc: %d\n",
-					ent->alpha, ent->colormod[0], ent->colormod[1],
-					ent->colormod[2], s1->alpha, s1->colormod);
-	}
-*/
 }
 
 void
@@ -766,7 +760,8 @@ CL_LinkPlayers (void)
 {
 	double			playertime;
 	int				msec, oldphysent, i, j;
-	entity_t	  **ent;
+	entity_t	  **_ent;
+	entity_t	   *ent;
 	frame_t		   *frame;
 	player_info_t  *info;
 	player_state_t	exact;
@@ -787,7 +782,7 @@ CL_LinkPlayers (void)
 		// spawn light flashes, even ones coming from invisible objects
 		if (j == cl.playernum) {
 			VectorCopy (cl.simorg, org);
-			r_player_entity = &cl_player_ents[state - frame->playerstate];
+			r_player_entity = &cl_player_ents[j];
 		} else
 			VectorCopy (state->origin, org);
 
@@ -814,58 +809,58 @@ CL_LinkPlayers (void)
 			continue;
 
 		// grab an entity to fill in
-		ent = R_NewEntity ();
-		if (!ent)						// object list is full
+		_ent = R_NewEntity ();
+		if (!_ent)						// object list is full
 			break;
-		*ent = &cl_player_ents[state - frame->playerstate];
+		ent = *_ent = &cl_player_ents[j];
 
-		(*ent)->frame = state->frame;
-		(*ent)->keynum = state - frame->playerstate;
-		(*ent)->model = cl.model_precache[state->modelindex];
-		(*ent)->skinnum = state->skinnum;
-		(*ent)->colormap = info->translations;
+		ent->frame = state->frame;
+		ent->keynum = j;
+		ent->model = cl.model_precache[state->modelindex];
+		ent->skinnum = state->skinnum;
+		ent->colormap = info->translations;
 		if (state->modelindex == cl_playerindex)
-			(*ent)->scoreboard = info;		// use custom skin
+			ent->scoreboard = info;		// use custom skin
 		else
-			(*ent)->scoreboard = NULL;
+			ent->scoreboard = NULL;
 
-		if ((*ent)->scoreboard && !(*ent)->scoreboard->skin)
-			Skin_Find ((*ent)->scoreboard);
-		if ((*ent)->scoreboard && (*ent)->scoreboard->skin) {
-			(*ent)->skin = Skin_NewTempSkin ();
-			if ((*ent)->skin) {
-				CL_NewTranslation (j, (*ent)->skin);
+		if (ent->scoreboard && !ent->scoreboard->skin)
+			Skin_Find (ent->scoreboard);
+		if (ent->scoreboard && ent->scoreboard->skin) {
+			ent->skin = Skin_NewTempSkin ();
+			if (ent->skin) {
+				CL_NewTranslation (j, ent->skin);
 			}
 		} else {
-			(*ent)->skin = NULL;
+			ent->skin = NULL;
 		}
 
 		// LordHavoc: more QSG VERSION 2 stuff, FIXME: players don't have
 		// extend stuff
-		(*ent)->glow_size = 0;
-		(*ent)->glow_color = 254;
-		(*ent)->alpha = 1;
-		(*ent)->scale = 1;
-		(*ent)->colormod[0] = (*ent)->colormod[1] = (*ent)->colormod[2] = 1;
+		ent->glow_size = 0;
+		ent->glow_color = 254;
+		ent->alpha = 1;
+		ent->scale = 1;
+		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1;
 
 		// angles
 		if (j == cl.playernum)
 		{
-			(*ent)->angles[PITCH] = -cl.viewangles[PITCH] / 3;
-			(*ent)->angles[YAW] = cl.viewangles[YAW];
+			ent->angles[PITCH] = -cl.viewangles[PITCH] / 3;
+			ent->angles[YAW] = cl.viewangles[YAW];
 		}
 		else
 		{
-			(*ent)->angles[PITCH] = -state->viewangles[PITCH] / 3;
-			(*ent)->angles[YAW] = state->viewangles[YAW];
+			ent->angles[PITCH] = -state->viewangles[PITCH] / 3;
+			ent->angles[YAW] = state->viewangles[YAW];
 		}
-		(*ent)->angles[ROLL] = 0;
-		(*ent)->angles[ROLL] = V_CalcRoll ((*ent)->angles, state->velocity) * 4;
+		ent->angles[ROLL] = 0;
+		ent->angles[ROLL] = V_CalcRoll (ent->angles, state->velocity) * 4;
 
 		// only predict half the move to minimize overruns
 		msec = 500 * (playertime - state->state_time);
 		if (msec <= 0 || (!cl_predict_players->int_val)) {
-			VectorCopy (state->origin, (*ent)->origin);
+			VectorCopy (state->origin, ent->origin);
 		} else {	// predict players movement
 			state->command.msec = msec = min (msec, 255);
 
@@ -873,13 +868,13 @@ CL_LinkPlayers (void)
 			CL_SetSolidPlayers (j);
 			CL_PredictUsercmd (state, &exact, &state->command, false);
 			pmove.numphysent = oldphysent;
-			VectorCopy (exact.origin, (*ent)->origin);
+			VectorCopy (exact.origin, ent->origin);
 		}
 
 		if (state->effects & EF_FLAG1)
-			CL_AddFlagModels ((*ent), 0);
+			CL_AddFlagModels (ent, 0);
 		else if (state->effects & EF_FLAG2)
-			CL_AddFlagModels ((*ent), 1);
+			CL_AddFlagModels (ent, 1);
 	}
 }
 
@@ -969,9 +964,7 @@ CL_SetUpPlayerPrediction (qboolean dopred)
 		} else {
 			// only predict half the move to minimize overruns
 			msec = 500 * (playertime - state->state_time);
-			if (msec <= 0 ||
-				(!cl_predict_players->int_val)
-				|| !dopred) {
+			if (msec <= 0 || !dopred) {
 				VectorCopy (state->origin, pplayer->origin);
 				// Con_DPrintf ("nopredict\n");
 			} else {
