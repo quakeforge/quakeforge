@@ -6,7 +6,7 @@ QCPPFLAGS=$(INCLUDES)
 PAK=$(top_builddir)/tools/pak/pak$(EXEEXT)
 RANLIB=touch
 
-INCLUDES=	-I$(top_srcdir)/ruamoko/include
+INCLUDES=	-I$(top_srcdir)/ruamoko/include -I$(top_srcdir)/include
 
 noinst_LIBRARIES= libr.a libgui.a libcsqc.a
 
