@@ -630,6 +630,7 @@ CL_ParsePrint (void)
 		}
 		con_ormask = 128;
 		S_LocalSound ("misc/talk.wav");
+		Team_ParseChat(string);
 	}
 	Con_Printf ("%s", string);
 	con_ormask = 0;

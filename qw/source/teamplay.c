@@ -39,6 +39,8 @@ static const char rcsid[] =
 
 #include <errno.h>
 
+#include <ctype.h>
+
 #include "QF/console.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -46,6 +48,8 @@ static const char rcsid[] =
 #include "QF/model.h"
 #include "QF/sys.h"
 #include "QF/teamplay.h"
+#include "QF/va.h"
+#include "QF/skin.h"
 
 #include "bothdefs.h"
 #include "cl_input.h"
@@ -59,7 +63,7 @@ cvar_t         *cl_deadbodyfilter;
 cvar_t         *cl_gibfilter;
 cvar_t         *cl_parsesay;
 cvar_t         *cl_nofake;
-
+cvar_t         *cl_freply;
 
 
 void
@@ -315,6 +319,8 @@ Team_Init_Cvars (void)
 							"when you put %l in messages");
 	cl_nofake = Cvar_Get ("cl_nofake", "0", CVAR_NONE, NULL,
 						  "Unhide fake messages");
+	cl_freply = Cvar_Get ("cl_freply", "20", CVAR_NONE, NULL,
+						"Delay between replies to f_*.  Set to zero to disable.");
 }
 
 /*
@@ -397,4 +403,78 @@ Locs_Init (void)
 {
 	Cmd_AddCommand ("loc", locs_loc, "Location marker editing commands: 'loc "
 					"help' for more");
+}
+
+char *
+Team_F_Version (char *args)
+{
+	return va("say %s %s", PROGRAM, VERSION);
+}
+
+char *
+Team_F_Skins (char *args)
+{
+	int totalfb, i, l;
+	skin_t *skin;
+
+	while(isspace(*args))
+		args++;
+	for (l = 0;args[l] && !isspace(args[l]);l++);
+
+	if (l == 0) {
+		for (i = 0, totalfb = 0; i < numskins; i++)
+			totalfb += skin_cache[i].numfb;
+		return va("say Average percent fullbright for all loaded skins is %.1f", (float)totalfb/(float)(numskins * fullfb)*100.0);
+	}
+
+	for (i = 0, skin = 0; i < numskins; i++) {
+		if (!strncmp(skin_cache[i].name, args, l)) {
+			skin = &skin_cache[i];
+			break;
+		}
+	}
+
+	if (skin)
+		return va("say \"Skin %s is %.1f%% fullbright\"",
+			skin->name,
+			(float)skin->numfb/(float)fullfb*100.0);
+	else
+		return ("say \"Skin not currently loaded.\"");
+}
+
+freply_t f_replies[] = {
+	{"f_version", Team_F_Version, 0},
+	{"f_skins", Team_F_Skins, 0},
+	{0, 0}
+};
+
+void 
+Team_ParseChat (const char *string)
+{
+	char *s;
+	int i;
+
+	s = strchr(string, ':') + 1;
+	while (isspace(*s))
+		s++;	
+
+	if (s && cl_freply->value) {
+		for (i = 0; f_replies[i].name; i++) {
+			if (!strncmp(f_replies[i].name, s, strlen(f_replies[i].name)) && cl_freply->value) {
+				while (*s && !isspace(*s))
+					s++;
+				Cbuf_AddText(f_replies[i].func(s));
+				f_replies[i].lasttime = realtime;
+			}
+		}
+	}
+}
+	
+void
+Team_ResetTimers (void)
+{
+	int i;
+	for (i = 0; f_replies[i].name; i++)
+		f_replies[i].lasttime = realtime - cl_freply->value;
+	return;
 }

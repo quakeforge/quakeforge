@@ -45,6 +45,7 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/texture.h"
 #include "QF/vfs.h"
+#include "QF/skin_stencil.h"
 
 #include "client.h"
 #include "compat.h"
@@ -66,6 +67,8 @@ int         num_temp_skins;
 
 int         skin_textures;
 int         skin_fb_textures;
+
+int         fullfb;
 
 static const char *
 skin_get_key (void *_skin, void *unused)
@@ -142,7 +145,7 @@ Skin_Cache (skin_t *skin)
 	tex_t      *tex;
 	int         pixels;
 	byte       *ipix, *opix;
-	int         i;
+	int         i, numfb;
 
 	if (cls.downloadtype == dl_skin)		// use base until downloaded
 		return NULL;
@@ -195,6 +198,10 @@ Skin_Cache (skin_t *skin)
 
 	skin->failedload = false;
 
+	for (i = 0,numfb = 0; i < 320*200; i++)
+		if (skin_stencil[i] && out->data[i] >= 256 - 32)
+			numfb++;
+	skin->numfb = numfb;
 	return out;
 }
 
@@ -241,8 +248,11 @@ Skin_Init_Textures (int base)
 void
 Skin_Init (void)
 {
+	int i;
 	skin_hash = Hash_NewTable (1021, skin_get_key, 0, 0);
 	Skin_Init_Translation ();
+	for (i = 0, fullfb = 0; i < 320*200; i++)
+		fullfb += skin_stencil[i];
 }
 
 

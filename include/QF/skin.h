@@ -47,12 +47,15 @@ typedef struct skin_s
 	} data;
 	int         texture;
 	int         fb_texture;
+	int         numfb;
 } skin_t;
 
 extern byte player_8bit_texels[320 * 200];
 extern skin_t   skin_cache[MAX_CACHED_SKINS];
 extern int skin_textures;
 extern int skin_fb_textures;
+extern int numskins;
+extern int fullfb;
 
 struct tex_s;
 struct tex_s *Skin_Cache (skin_t *skin);

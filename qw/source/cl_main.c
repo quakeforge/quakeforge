@@ -495,6 +495,8 @@ CL_Disconnect (void)
 
 	CL_StopUpload ();
 
+	Team_ResetTimers ();
+
 }
 
 void

@@ -1076,22 +1076,25 @@ skipwhite:
 
 struct stable_s {char a, b;} stable1[] =
 {
-	{'\\', 13},
-	{'[', 0x90},
+	{'\\',0x0D}, // Fake message
+	{'[', 0x90}, // Gold braces
 	{']', 0x91},
-	{'(', 0x80},
+	{'(', 0x80}, // Scroll bar characters
 	{'=', 0x81},
 	{')', 0x82},
 	{'|', 0x83},
-	{'<', 0x9D},
+	{'<', 0x9D}, // Vertical line characters
 	{'-', 0X9E},
 	{'>', 0x9F},
-	{'.', 0x8E},
-	{',', 0x0E},
-	{'B', 0x8B},
-	{'a', 0x7F},
-	{'A', 0x8D},
-	{'0', 0x92},
+	{'.', 0x8E}, // Gold dot
+	{',', 0x0E}, // White dot
+	{'G', 0x86}, // Ocrana leds from ocrana.wad
+	{'R', 0x87},
+	{'Y', 0x88},
+	{'B', 0x89},
+	{'a', 0x7F}, // White arrow
+	{'A', 0x8D}, // Brown arrow
+	{'0', 0x92}, // Gold numbers
 	{'1', 0x93},
 	{'2', 0x94},
 	{'3', 0x95},
@@ -1101,8 +1104,7 @@ struct stable_s {char a, b;} stable1[] =
 	{'7', 0x99},
 	{'8', 0x9A},
 	{'9', 0x9B},
-	{'\'', 0x7E},
-	{'n', '\n'},
+	{'n', '\n'}, // Newline!
 	{0, 0}
 };
 	
