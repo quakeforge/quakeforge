@@ -334,7 +334,7 @@ GIB_Parse_Get_Token (const char *str, unsigned int *i, dstring_t *dstr, qboolean
 			return 0; // Parse error
 		} else {
 			dstring_insert (dstr, 0, str+n+!include_delim, *i-n+1-!include_delim-!include_delim);
-			return '\(';
+			return '(';
 		}
 	} else {
 		while (str[*i] && !isspace((byte)str[*i]) && str[*i] != ',') { // find end of token
@@ -463,7 +463,6 @@ GIB_Parse_Tokenize_Line (struct cbuf_s *cbuf)
 		delim = GIB_Parse_Get_Token (str, &i, arg, noprocess == 1);
 		if (!delim)
 			break;
-		Sys_DPrintf("Got token: %s\n", arg->str);
 		if (delim != ' ') // Move into whitespace if we haven't already
 			i++;
 
@@ -517,13 +516,16 @@ GIB_Parse_Execute_Varexp (cbuf_t *cbuf)
 				case '-':
 					newval--;
 			}
-			GIB_Var_Set (cbuf, args->argv[0]->str, va("%.10g", newval));
+			s = va("%.10g", newval);
+			GIB_Var_Set (cbuf, args->argv[0]->str, s);
+			GIB_Return (s);
 			return true;
 		} else
 			return false;
 	} else if (args->argc == 3 && strlen(args->argv[1]->str) <= 2 && strchr(args->argv[1]->str, '=')) {
 		s = args->argv[1]->str;
 		if (*s == '=') {
+			GIB_Return (args->argv[2]->str);
 			GIB_Var_Set (cbuf, args->argv[0]->str, args->argv[2]->str);
 			return true;
 		} else if (s[1] == '=') {
@@ -548,7 +550,9 @@ GIB_Parse_Execute_Varexp (cbuf_t *cbuf)
 				default:
 					return false;
 			}
-			GIB_Var_Set (cbuf, args->argv[0]->str, va("%.10g", newval));
+			s = va("%.10g", newval);
+			GIB_Return (s);
+			GIB_Var_Set (cbuf, args->argv[0]->str, s);
 			return true;
 		} else
 			return false;
