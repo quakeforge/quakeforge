@@ -481,7 +481,7 @@ SV_Status_f (void)
 	SV_Printf ("packets/frame    : %5.2f\n", pak);
 
 	// min fps lat drp
-	if (sv_redirected != RD_NONE) {
+	if (sv_redirected != RD_NONE && sv_redirected != RD_MOD) {
 		// most remote clients are 40 columns
 		//          0123456789012345678901234567890123456789
 		SV_Printf ("name               userid frags\n");
@@ -843,6 +843,32 @@ SV_Serverinfo_f (void)
 	}
 }
 
+void
+SV_SetLocalinfo (const char *key, const char *value)
+{
+	char       *oldvalue = 0;
+
+	if (sv_funcs.LocalinfoChanged)
+		oldvalue = strdup (Info_ValueForKey (localinfo, key));
+
+	if (*value)
+		Info_SetValueForKey (localinfo, key, value, !sv_highchars->int_val);
+	else
+		Info_RemoveKey (localinfo, key);
+
+	if (sv_funcs.LocalinfoChanged) {
+		*sv_globals.time = sv.time;
+		*sv_globals.self = 0;
+		P_STRING (&sv_pr_state, 0) = PR_SetString (&sv_pr_state, key);
+		P_STRING (&sv_pr_state, 1) = PR_SetString (&sv_pr_state, oldvalue);
+		P_STRING (&sv_pr_state, 2) = PR_SetString (&sv_pr_state, value);
+		PR_ExecuteProgram (&sv_pr_state, sv_funcs.LocalinfoChanged);
+	}
+
+	if (oldvalue)
+		free (oldvalue);
+}
+
 /*
 	SV_Serverinfo_f
 
@@ -866,11 +892,7 @@ SV_Localinfo_f (void)
 		SV_Printf ("Star variables cannot be changed.\n");
 		return;
 	}
-	if (*Cmd_Argv (2))
-		Info_SetValueForKey (localinfo, Cmd_Argv (1), Cmd_Argv (2),
-							 !sv_highchars->int_val);
-	else
-		Info_RemoveKey (localinfo, Cmd_Argv (1));
+	SV_SetLocalinfo (Cmd_Argv (1), Cmd_Argv (2));
 }
 
 /*

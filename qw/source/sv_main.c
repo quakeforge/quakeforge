@@ -344,11 +344,11 @@ SV_DropClient (client_t *drop)
 			// this will set the body to a dead frame, among other things
 			*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, drop->edict);
 			PR_ExecuteProgram (&sv_pr_state, sv_funcs.ClientDisconnect);
-		} else if (SpectatorDisconnect) {
+		} else if (sv_funcs.SpectatorDisconnect) {
 			// call the prog function for removing a client
 			// this will set the body to a dead frame, among other things
 			*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, drop->edict);
-			PR_ExecuteProgram (&sv_pr_state, SpectatorDisconnect);
+			PR_ExecuteProgram (&sv_pr_state, sv_funcs.SpectatorDisconnect);
 		}
 	}
 	if (drop->spectator)

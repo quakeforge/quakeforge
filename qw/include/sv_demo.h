@@ -102,6 +102,7 @@ typedef struct {
 	byte       *mfile;
 	byte        buffer[20 * MAX_MSGLEN];
 	int         bufsize;
+	int         forceFrame;
 } demo_t;
 
 extern demo_t      demo;

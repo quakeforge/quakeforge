@@ -427,8 +427,6 @@ extern	QFile		*sv_fraglogfile;
 extern	double		sv_frametime;
 extern	double		realtime;
 
-extern	struct progs_s		sv_pr_state;
-
 extern	const char *client_info_filters[];
 
 extern struct cbuf_s *sv_cbuf;
@@ -548,11 +546,19 @@ void *SV_AddUserCommand (const char *name, void (*func) (void *userdata),
 				         void (*on_free) (void *userdata));
 int SV_RemoveUserCommand (void *cmd);
 void SV_Spawn (client_t *client);
+void SV_SetUserinfo (client_t *client, const char *key, const char *value);
+extern int (*ucmd_unknown)(void);
 
 //
 // svonly.c
 //
-typedef enum {RD_NONE, RD_CLIENT, RD_PACKET} redirect_t;
+typedef enum {
+	RD_NONE,
+	RD_CLIENT,
+	RD_PACKET,
+	RD_MOD,
+} redirect_t;
+
 void SV_BeginRedirect (redirect_t rd);
 void SV_EndRedirect (void);
 extern redirect_t sv_redirected;
@@ -562,6 +568,7 @@ extern redirect_t sv_redirected;
 //
 void SV_Status_f (void);
 const char *SV_Current_Map (void);
+void SV_SetLocalinfo (const char *key, const char *value);
 
 
 //
@@ -573,6 +580,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg,
 //
 // sv_nchan.c
 //
+int ClientReliableCheckSize (client_t *cl, int maxsize, int minsize);
 void ClientReliableCheckBlock(client_t *cl, int maxsize);
 void ClientReliable_FinishWrite(client_t *cl);
 void ClientReliableWrite_Begin(client_t *cl, int c, int maxsize);
@@ -585,7 +593,7 @@ void ClientReliableWrite_Coord(client_t *cl, float f);
 void ClientReliableWrite_Long(client_t *cl, int c);
 void ClientReliableWrite_Short(client_t *cl, int c);
 void ClientReliableWrite_String(client_t *cl, const char *s);
-void ClientReliableWrite_SZ(client_t *cl, void *data, int len);
+void ClientReliableWrite_SZ(client_t *cl, const void *data, int len);
 void ClientReliableWrite_AngleV(client_t *cl, const vec3_t v);
 void ClientReliableWrite_CoordV(client_t *cl, const vec3_t v);
 

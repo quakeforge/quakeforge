@@ -491,7 +491,7 @@ SV_Begin_f (void *unused)
 	if (host_client->spectator) {
 		SV_SpawnSpectator ();
 
-		if (SpectatorConnect) {
+		if (sv_funcs.SpectatorConnect) {
 			// copy spawn parms out of the client_t
 			for (i = 0; i < NUM_SPAWN_PARMS; i++)
 				sv_globals.parms[i] = host_client->spawn_parms[i];
@@ -499,7 +499,7 @@ SV_Begin_f (void *unused)
 			// call the spawn function
 			*sv_globals.time = sv.time;
 			*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
-			PR_ExecuteProgram (&sv_pr_state, SpectatorConnect);
+			PR_ExecuteProgram (&sv_pr_state, sv_funcs.SpectatorConnect);
 		}
 	} else {
 		// copy spawn parms out of the client_t
@@ -785,6 +785,17 @@ SV_Say (qboolean team)
 		if (host_client->whensaidhead > 9)
 			host_client->whensaidhead = 0;
 		host_client->whensaid[host_client->whensaidhead] = realtime;
+	}
+
+	if (sv_funcs.ChatMessage) {
+		P_STRING (&sv_pr_state, 0) = PR_SetString (&sv_pr_state, p);
+		G_FLOAT (&sv_pr_state, 1) = (float) team;
+
+		*sv_globals.time = sv.time;
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
+		PR_ExecuteProgram (&sv_pr_state, sv_funcs.ChatMessage);
+		if (R_FLOAT (&sv_pr_state))
+			return;
 	}
 
 	text = dstring_new ();
@@ -1088,6 +1099,49 @@ SV_Msg_f (void *unused)
 					 host_client->messagelevel);
 }
 
+void
+SV_SetUserinfo (client_t *client, const char *key, const char *value)
+{
+	char       *oldvalue = 0;
+
+	if (sv_setinfo_e->func || sv_funcs.UserInfoChanged)
+		oldvalue = strdup (Info_ValueForKey (client->userinfo, key));
+	if (!Info_SetValueForKey (client->userinfo, key, value,
+							  !sv_highchars->int_val)) {
+		// key hasn't changed
+		if (oldvalue)
+			free (oldvalue);
+		return;
+	}
+
+	// process any changed values
+	SV_ExtractFromUserinfo (client);
+
+	// trigger a GIB event
+	if (sv_setinfo_e->func)
+		GIB_Event_Callback (sv_setinfo_e, 4, va("%d", client->userid),
+							key, oldvalue, value);
+
+	if (sv_funcs.UserInfoChanged) {
+		*sv_globals.time = sv.time;
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, client->edict);
+		P_STRING (&sv_pr_state, 0) = PR_SetString (&sv_pr_state, key);
+		P_STRING (&sv_pr_state, 1) = PR_SetString (&sv_pr_state, oldvalue);
+		P_STRING (&sv_pr_state, 2) = PR_SetString (&sv_pr_state, value);
+		PR_ExecuteProgram (&sv_pr_state, sv_funcs.UserInfoChanged);
+	}
+
+	if (oldvalue)
+		free (oldvalue);
+
+	if (Info_FilterForKey (key, client_info_filters)) {
+		MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
+		MSG_WriteByte (&sv.reliable_datagram, client - svs.clients);
+		MSG_WriteString (&sv.reliable_datagram, key);
+		MSG_WriteString (&sv.reliable_datagram, value);
+	}
+}
+
 /*
 	SV_SetInfo_f
 
@@ -1096,7 +1150,8 @@ SV_Msg_f (void *unused)
 static void
 SV_SetInfo_f (void *unused)
 {
-	char       *oldval;
+	const char *key;
+	const char *value;
 
 	if (Cmd_Argc () == 1) {
 		SV_Printf ("User info settings:\n");
@@ -1112,41 +1167,18 @@ SV_SetInfo_f (void *unused)
 	if (Cmd_Argv (1)[0] == '*')
 		return;							// don't set priveledged values
 
-	if (UserInfoCallback) {
+	key = Cmd_Argv (1);
+	value = Cmd_Argv (2);
+
+	if (sv_funcs.UserInfoCallback) {
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
-		P_STRING (&sv_pr_state, 0) = PR_SetString (&sv_pr_state, Cmd_Argv (1));
-		P_STRING (&sv_pr_state, 1) = PR_SetString (&sv_pr_state, Cmd_Argv (2));
-		PR_ExecuteProgram (&sv_pr_state, UserInfoCallback);
+		P_STRING (&sv_pr_state, 0) = PR_SetString (&sv_pr_state, key);
+		P_STRING (&sv_pr_state, 1) = PR_SetString (&sv_pr_state, value);
+		PR_ExecuteProgram (&sv_pr_state, sv_funcs.UserInfoCallback);
 		return;
 	}
 
-	oldval = strdup (Info_ValueForKey (host_client->userinfo, Cmd_Argv (1)));
-	if (!Info_SetValueForKey (host_client->userinfo, Cmd_Argv (1),
-							  Cmd_Argv (2), !sv_highchars->int_val)) {
-		// key hasn't changed
-		free (oldval);
-		return;
-	}
-
-	// process any changed values
-	SV_ExtractFromUserinfo (host_client);
-
-	// trigger a GIB event
-	if (sv_setinfo_e->func)
-		GIB_Event_Callback (sv_setinfo_e, 4, va("%d", host_client->userid),
-							Cmd_Argv (1), oldval,
-							Info_ValueForKey (host_client->userinfo,
-											  Cmd_Argv (1)));
-	free (oldval);
-
-	if (Info_FilterForKey (Cmd_Argv (1), client_info_filters)) {
-		MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
-		MSG_WriteByte (&sv.reliable_datagram, host_client - svs.clients);
-		MSG_WriteString (&sv.reliable_datagram, Cmd_Argv (1));
-		MSG_WriteString (&sv.reliable_datagram,
-						 Info_ValueForKey (host_client->userinfo,
-							 			   Cmd_Argv (1)));
-	}
+	SV_SetUserinfo (host_client, key, value);
 }
 
 /*
@@ -1205,6 +1237,7 @@ ucmd_t      ucmds[] = {
 };
 
 static hashtab_t *ucmd_table;
+int (*ucmd_unknown)(void);
 
 static void
 call_qc_hook (void *qc_hook)
@@ -1340,9 +1373,11 @@ SV_ExecuteUserCommand (const char *s)
 	u = (ucmd_t*) Hash_Find (ucmd_table, sv_args->argv[0]->str);
 
 	if (!u) {
-		SV_BeginRedirect (RD_CLIENT);
-		SV_Printf ("Bad user command: %s\n", sv_args->argv[0]->str);
-		SV_EndRedirect ();
+		if (ucmd_unknown && !ucmd_unknown ()) {
+			SV_BeginRedirect (RD_CLIENT);
+			SV_Printf ("Bad user command: %s\n", sv_args->argv[0]->str);
+			SV_EndRedirect ();
+		}
 	} else {
 		if (!u->no_redirect)
 			SV_BeginRedirect (RD_CLIENT);
@@ -1705,10 +1740,10 @@ SV_PostRunCmd (void)
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.PlayerPostThink);
 		SV_RunNewmis ();
-	} else if (SpectatorThink) {
+	} else if (sv_funcs.SpectatorThink) {
 		*sv_globals.time = sv.time;
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
-		PR_ExecuteProgram (&sv_pr_state, SpectatorThink);
+		PR_ExecuteProgram (&sv_pr_state, sv_funcs.SpectatorThink);
 	}
 }
 

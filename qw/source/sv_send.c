@@ -44,6 +44,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/msg.h"
 #include "QF/sound.h" // FIXME: DEFAULT_SOUND_PACKET_*
 #include "QF/sys.h"
@@ -62,7 +63,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 /* SV_Printf redirection */
 
-char        outputbuf[8000];
+dstring_t   outputbuf;
 int         con_printf_no_log;
 redirect_t  sv_redirected;
 
@@ -71,24 +72,62 @@ static void
 SV_FlushRedirect (void)
 {
 	char        send[8000 + 6];
+	int         count;
+	int         bytes;
+	const char *p;
 
+	if (!outputbuf.size)
+		return;
+
+	count = strlen (outputbuf.str);
 	if (sv_redirected == RD_PACKET) {
+
 		send[0] = 0xff;
 		send[1] = 0xff;
 		send[2] = 0xff;
 		send[3] = 0xff;
 		send[4] = A2C_PRINT;
-		memcpy (send + 5, outputbuf, strlen (outputbuf) + 1);
 
-		Netchan_SendPacket (strlen (send) + 1, send, net_from);
-	} else if (sv_redirected == RD_CLIENT) {
-		ClientReliableWrite_Begin (host_client, svc_print,
-								   strlen (outputbuf) + 3);
-		ClientReliableWrite_Byte (host_client, PRINT_HIGH);
-		ClientReliableWrite_String (host_client, outputbuf);
+		p = outputbuf.str;
+		while (count) {
+			bytes = min (count, sizeof (send) - 5);
+			memcpy (send + 5, p, bytes);
+			send[5 + bytes] = 0;
+			Netchan_SendPacket (bytes + 1, send, net_from);
+			p += bytes;
+			count -= bytes;
+		}
+	} else if (sv_redirected == RD_CLIENT || sv_redirected > RD_MOD) {
+		client_t   *cl;
+
+		if (sv_redirected > RD_MOD) {
+			cl = svs.clients + sv_redirected - RD_MOD - 1;
+			if (cl->state != cs_spawned)
+				count = 0;
+		} else {
+			cl = host_client;
+		}
+		p = outputbuf.str;
+		while (count) {
+			// +/- 3 for svc_print, PRINT_HIGH and nul byte
+			// min of 4 because we don't want to send an effectively empty
+			// message
+			bytes = ClientReliableCheckSize (cl, count + 3, 4) - 3;
+			// if writing another packet would overflow the client, just drop
+			// the rest of the data. getting rudely disconnected would be much
+			// more annoying than losing the tail end of the output
+			if (bytes <= 0)
+				break;
+			ClientReliableWrite_Begin (cl, svc_print, bytes + 3);
+			ClientReliableWrite_Byte (cl, PRINT_HIGH);
+			ClientReliableWrite_SZ (cl, p, bytes);
+			p += bytes;
+			count -= bytes;
+		}
 	}
+	// RD_MOD doesn't do anything :)
 	// clear it
-	outputbuf[0] = 0;
+	dstring_clear (&outputbuf);
 }
 
 /*
@@ -101,7 +140,7 @@ void
 SV_BeginRedirect (redirect_t rd)
 {
 	sv_redirected = rd;
-	outputbuf[0] = 0;
+	dstring_clear (&outputbuf);
 }
 
 void
@@ -171,9 +210,7 @@ SV_Print (const char *fmt, va_list args)
 	*out = '\0';
 
 	if (sv_redirected) {				// Add to redirected message
-		if (strlen (msg) + strlen (outputbuf) > sizeof (outputbuf) - 1)
-			SV_FlushRedirect ();
-		strncat (outputbuf, msg, sizeof (outputbuf) - strlen (outputbuf));
+		dstring_appendstr (&outputbuf, msg);
 	}
 	if (!con_printf_no_log) {
 		// We want to output to console and maybe logfile
@@ -820,8 +857,9 @@ SV_SendDemoMessage (void)
 		min_fps = sv_demofps->value;
 
 	min_fps = max (4, min_fps);
-	if (sv.time - demo.time < 1.0 / min_fps)
+	if (!demo.forceFrame && sv.time - demo.time < 1.0 / min_fps)
 		return;
+	demo.forceFrame = 0;
 
 	for (i = 0, c = svs.clients ; i<MAX_CLIENTS ; i++, c++) {
 		if (c->state != cs_spawned)

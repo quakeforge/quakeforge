@@ -54,14 +54,33 @@ PushBackbuf (client_t *cl)
 	cl->num_backbuf++;
 }
 
+int
+ClientReliableCheckSize (client_t *cl, int maxsize, int minsize)
+{
+	sizebuf_t  *msg = &cl->netchan.message;
+
+	if (cl->num_backbuf)
+		msg = &cl->backbuf;
+
+	if (maxsize <= msg->maxsize - msg->cursize - 1)
+		return maxsize;
+
+	if (minsize <= msg->maxsize - msg->cursize - 1)
+		return msg->maxsize - msg->cursize - 1;
+
+	if (cl->num_backbuf == MAX_BACK_BUFFERS)
+		return 0;
+
+	return cl->backbuf.maxsize;
+}
 
 // check to see if client block will fit, if not, rotate buffers
 void
 ClientReliableCheckBlock (client_t *cl, int maxsize)
 {
-	if (cl->num_backbuf ||
-		cl->netchan.message.cursize > cl->netchan.message.maxsize - maxsize -
-		1) {
+	sizebuf_t  *msg = &cl->netchan.message;
+
+	if (cl->num_backbuf || msg->cursize > msg->maxsize - maxsize - 1) {
 		// we would probably overflow the buffer, save it for next
 		if (!cl->num_backbuf) {
 			PushBackbuf (cl);
@@ -72,8 +91,7 @@ ClientReliableCheckBlock (client_t *cl, int maxsize)
 				SV_Printf ("WARNING: MAX_BACK_BUFFERS for %s\n", cl->name);
 				cl->backbuf.cursize = 0;	// don't overflow without
 											// allowoverflow set
-				cl->netchan.message.overflowed = true;	// this will drop the 
-														// client
+				msg->overflowed = true;		// this will drop the client
 				return;
 			}
 			PushBackbuf (cl);
@@ -195,7 +213,7 @@ ClientReliableWrite_String (client_t *cl, const char *s)
 }
 
 void
-ClientReliableWrite_SZ (client_t *cl, void *data, int len)
+ClientReliableWrite_SZ (client_t *cl, const void *data, int len)
 {
 	if (cl->num_backbuf) {
 		SZ_Write (&cl->backbuf, data, len);

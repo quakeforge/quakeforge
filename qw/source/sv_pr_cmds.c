@@ -1468,8 +1468,7 @@ PF_multicast (progs_t *pr)
 static void
 PF_cfopen (progs_t *pr)
 {
-	R_FLOAT (pr) = CF_Open (P_GSTRING (pr, 0),
-										P_GSTRING (pr, 1));
+	R_FLOAT (pr) = CF_Open (P_GSTRING (pr, 0), P_GSTRING (pr, 1));
 }
 
 /*
@@ -1534,41 +1533,11 @@ PF_setinfokey (progs_t *pr)
 	int         e1 = NUM_FOR_EDICT (pr, edict);
 	const char *key = P_GSTRING (pr, 1);
 	const char *value = P_GSTRING (pr, 2);
-	char       *oldval = 0;
 
 	if (e1 == 0) {
-		if (*value)
-			Info_SetValueForKey (localinfo, key, value,
-								 !sv_highchars->int_val);
-		else
-			Info_RemoveKey (localinfo, key);
+		SV_SetLocalinfo (key, value);
 	} else if (e1 <= MAX_CLIENTS) {
-		if (sv_setinfo_e->func)
-			oldval = strdup (Info_ValueForKey (svs.clients[e1 - 1].userinfo,
-											   key));
-		Info_SetValueForKey (svs.clients[e1 - 1].userinfo, key, value,
-							 !sv_highchars->int_val);
-		SV_ExtractFromUserinfo (&svs.clients[e1 - 1]);
-
-		// trigger a GIB event
-		if (sv_setinfo_e->func)
-			GIB_Event_Callback (sv_setinfo_e, 4, 
-								va("%d", svs.clients[e1 - 1].userid),
-								key, oldval,
-								Info_ValueForKey (svs.clients[e1 - 1].userinfo,
-												  key));
-		if (oldval)
-			free (oldval);
-
-		if (Info_FilterForKey (key, client_info_filters)) {
-			MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
-			MSG_WriteByte (&sv.reliable_datagram, e1 - 1);
-			MSG_WriteString (&sv.reliable_datagram, key);
-			MSG_WriteString (&sv.reliable_datagram,
-							 Info_ValueForKey (svs.clients[e1 - 1].userinfo,
-								 			   key));
-
-		}
+		SV_SetUserinfo (&svs.clients[e1 - 1], key, value);
 	}
 }
 

@@ -79,6 +79,15 @@ typedef struct {
     func_t     ClientDisconnect;
     func_t     SetNewParms;
     func_t     SetChangeParms;
+
+	func_t     EndFrame;
+	func_t     SpectatorConnect;
+	func_t     SpectatorThink;
+	func_t     SpectatorDisconnect;
+	func_t     UserInfoCallback;
+	func_t     UserInfoChanged;
+	func_t     ChatMessage;
+	func_t     LocalinfoChanged;
 } sv_funcs_t;
 
 extern sv_funcs_t sv_funcs;
@@ -159,9 +168,13 @@ typedef struct
 
 	int			gravity;
 	int			maxspeed;
+
+	int			team_str;		//string
 } sv_fields_t;
 
 extern sv_fields_t sv_fields;
+
+extern	struct progs_s sv_pr_state;
 
 #if TYPECHECK_PROGS
 #define SVFIELD(e,f,t) E_var (e, PR_AccessField (&sv_pr_state, #f, ev_##t, __FILE__, __LINE__), t)
@@ -177,12 +190,6 @@ extern sv_fields_t sv_fields;
 #define SVinteger(e,f)	SVFIELD (e, f, integer)
 
 #define PROGHEADER_CRC 54730
-
-extern func_t EndFrame;
-extern func_t SpectatorConnect;
-extern func_t SpectatorThink;
-extern func_t SpectatorDisconnect;
-extern func_t UserInfoCallback;
 
 static inline void
 sv_pr_touch (edict_t *self, edict_t *other)

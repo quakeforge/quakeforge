@@ -57,12 +57,6 @@ cvar_t     *pr_checkextensions;
 cvar_t     *sv_old_entity_free;
 cvar_t     *sv_hide_version_info;
 
-func_t	EndFrame;
-func_t	SpectatorConnect;
-func_t	SpectatorDisconnect;
-func_t	SpectatorThink;
-func_t	UserInfoCallback;
-
 static int reserved_edicts = MAX_CLIENTS;
 
 static void
@@ -168,6 +162,8 @@ SV_LoadProgs (void)
 	ddef_t *def;
 	dfunction_t *f;
 	const char *progs_name = "qwprogs.dat";
+
+	memset (&sv_funcs, 0, sizeof (sv_funcs));
 
 	if (qfs_gamedir->gamecode && *qfs_gamedir->gamecode)
 		progs_name = qfs_gamedir->gamecode;
@@ -313,21 +309,18 @@ SV_LoadProgs (void)
 	sv_fields.rotated_bbox = ED_GetFieldIndex (&sv_pr_state, "rotated_bbox");
 
 	// Zoid, find the spectator functions
-	SpectatorConnect = SpectatorThink = SpectatorDisconnect = 0;
-	EndFrame = UserInfoCallback = 0;
-
 	if ((f = ED_FindFunction (&sv_pr_state, "SpectatorConnect")) != NULL)
-		SpectatorConnect = (func_t) (f - sv_pr_state.pr_functions);
+		sv_funcs.SpectatorConnect = (func_t) (f - sv_pr_state.pr_functions);
 	if ((f = ED_FindFunction (&sv_pr_state, "SpectatorThink")) != NULL)
-		SpectatorThink = (func_t) (f - sv_pr_state.pr_functions);
+		sv_funcs.SpectatorThink = (func_t) (f - sv_pr_state.pr_functions);
 	if ((f = ED_FindFunction (&sv_pr_state, "SpectatorDisconnect")) != NULL)
-		SpectatorDisconnect = (func_t) (f - sv_pr_state.pr_functions);
+		sv_funcs.SpectatorDisconnect = (func_t) (f - sv_pr_state.pr_functions);
 	if ((f = ED_FindFunction (&sv_pr_state, "UserInfoCallback")) != NULL)
-		UserInfoCallback = (func_t) (f - sv_pr_state.pr_functions);
+		sv_funcs.UserInfoCallback = (func_t) (f - sv_pr_state.pr_functions);
 
 	// 2000-01-02 EndFrame function by Maddes/FrikaC
 	if ((f = ED_FindFunction (&sv_pr_state, "EndFrame")) != NULL)
-		EndFrame = (func_t) (f - sv_pr_state.pr_functions);
+		sv_funcs.EndFrame = (func_t) (f - sv_pr_state.pr_functions);
 
 	sv_fields.alpha = ED_GetFieldIndex (&sv_pr_state, "alpha");
 	sv_fields.scale = ED_GetFieldIndex (&sv_pr_state, "scale");
