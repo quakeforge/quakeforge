@@ -1619,8 +1619,9 @@ array_expr (expr_t *array, expr_t *index)
 		return error (array, "not an array");
 	if (index_type != &type_integer && index_type != &type_uinteger)
 		return error (index, "invalid array index type");
-	if (index->type >= ex_integer &&
-		index->e.uinteger_val >= array_type->num_parms)
+	if (array_type->num_parms
+		&& index->type >= ex_integer
+		&& index->e.uinteger_val >= array_type->num_parms)
 			return error (index, "array index out of bounds");
 	size = PR_GetTypeSize (array_type->aux_type);
 	if (size > 1) {
