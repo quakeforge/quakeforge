@@ -211,9 +211,9 @@ sv_pr_touch (edict_t *self, edict_t *other)
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, self);
 	*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, other);
 	if ((this = sv_pr_state.fields.this) != -1) {
-		P_INT (&sv_pr_state, 0) = E_var (self, this, integer);
+		P_INT (&sv_pr_state, 0) = E_POINTER (self, this);
 		P_INT (&sv_pr_state, 1) = 0;
-		P_INT (&sv_pr_state, 2) = E_var (other, this, integer);
+		P_INT (&sv_pr_state, 2) = E_POINTER (other, this);
 	}
 	PR_ExecuteProgram (&sv_pr_state, SVfunc (self, touch));
 }
@@ -231,7 +231,7 @@ sv_pr_think (edict_t *self)
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, self);
 	*sv_globals.other = 0;
 	if ((this = sv_pr_state.fields.this) != -1) {
-		P_INT (&sv_pr_state, 0) = E_var (self, this, integer);
+		P_INT (&sv_pr_state, 0) = E_POINTER (self, this);
 		P_INT (&sv_pr_state, 1) = 0;
 		P_INT (&sv_pr_state, 2) = 0;
 	}
@@ -246,9 +246,9 @@ sv_pr_blocked (edict_t *self, edict_t *other)
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, self);
 	*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, other);
 	if ((this = sv_pr_state.fields.this) != -1) {
-		P_INT (&sv_pr_state, 0) = E_var (self, this, integer);
+		P_INT (&sv_pr_state, 0) = E_POINTER (self, this);
 		P_INT (&sv_pr_state, 1) = 0;
-		P_INT (&sv_pr_state, 2) = E_var (other, this, integer);
+		P_INT (&sv_pr_state, 2) = E_POINTER (other, this);
 	}
 	PR_ExecuteProgram (&sv_pr_state, SVfunc (self, blocked));
 }

@@ -169,8 +169,8 @@ qboolean PR_EdictValid (progs_t *pr, int e);
 #define	E_UINT(e,o)		E_var (e, o, uinteger)
 #define	E_VECTOR(e,o)	E_var (e, o, vector)
 #define E_STRING(e,o)	E_var (e, o, string)
-#define E_FUNCTION(p)	E_var (p, o, func)
-#define E_POINTER(p)	E_var (p, o, pointer)
+#define E_FUNCTION(p,o)	E_var (p, o, func)
+#define E_POINTER(p,o)	E_var (p, o, pointer)
 
 #define	E_GSTRING(p,e,o) (PR_GetString (p, E_STRING (e, o)))
 
