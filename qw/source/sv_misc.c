@@ -43,8 +43,3 @@ void
 Draw_EndDisc (void)
 {
 }
-
-void
-Cmd_ForwardToServer (void)
-{
-}

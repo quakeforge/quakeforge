@@ -1182,11 +1182,11 @@ CL_Init (void)
 //
 // forward to server commands
 //
-	Cmd_AddCommand ("kill", NULL, "Suicide :)");
-	Cmd_AddCommand ("pause", NULL, "Pause the game");
-	Cmd_AddCommand ("say", NULL, "Say something to all other players");
-	Cmd_AddCommand ("say_team", NULL, "Say something only to people on your team");
-	Cmd_AddCommand ("serverinfo", NULL, "Report the current server info");
+	Cmd_AddCommand ("kill", Cmd_ForwardToServer, "Suicide :)");
+	Cmd_AddCommand ("pause", Cmd_ForwardToServer, "Pause the game");
+	Cmd_AddCommand ("say", Cmd_ForwardToServer, "Say something to all other players");
+	Cmd_AddCommand ("say_team", Cmd_ForwardToServer, "Say something only to people on your team");
+	Cmd_AddCommand ("serverinfo", Cmd_ForwardToServer, "Report the current server info");
 
 }
 

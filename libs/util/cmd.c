@@ -50,8 +50,6 @@
 #include "QF/sys.h"
 #include "QF/zone.h"
 
-void        Cmd_ForwardToServer (void);
-
 #define	MAX_ALIAS_NAME	32
 
 typedef struct cmdalias_s {
@@ -756,9 +754,7 @@ Cmd_ExecuteString (char *text, cmd_source_t src)
 // check functions
 	cmd = (cmd_function_t*)Hash_Find (cmd_hash, cmd_argv[0]);
 	if (cmd) {
-		if (!cmd->function)
-			Cmd_ForwardToServer ();
-		else
+		if (cmd->function)
 			cmd->function ();
 		return;
 	}
