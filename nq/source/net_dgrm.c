@@ -32,6 +32,7 @@
 
 #include <string.h>
 
+#include "cmd.h"
 #include "sys.h"
 #include "keys.h"
 #include "client.h"
@@ -42,7 +43,7 @@
 #include "screen.h"
 #include "console.h"
 #include "net.h"
-#include "qdefs.h"
+#include "game.h"
 
 // This is enables a simple IP banning mechanism
 #define BAN_TEST
@@ -793,7 +794,7 @@ int Datagram_Init (void)
 	int csock;
 
 	myDriverLevel = net_driverlevel;
-	Cmd_AddCommand ("net_stats", NET_Stats_f);
+	Cmd_AddCommand ("net_stats", NET_Stats_f, "No Description");
 
 	if (COM_CheckParm("-nolan"))
 		return -1;
@@ -808,10 +809,10 @@ int Datagram_Init (void)
 		}
 
 #ifdef BAN_TEST
-	Cmd_AddCommand ("ban", NET_Ban_f);
+	Cmd_AddCommand ("ban", NET_Ban_f, "No Description");
 #endif
-	Cmd_AddCommand ("test", Test_f);
-	Cmd_AddCommand ("test2", Test2_f);
+	Cmd_AddCommand ("test", Test_f, "No Description");
+	Cmd_AddCommand ("test2", Test2_f, "No Description");
 
 	return 0;
 }

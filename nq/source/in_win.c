@@ -505,8 +505,8 @@ IN_Init
 */
 void IN_Init (void)
 {
-	Cmd_AddCommand ("force_centerview", Force_CenterView_f);
-	Cmd_AddCommand ("joyadvancedupdate", Joy_AdvancedUpdate_f);
+	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "No Description");
+	Cmd_AddCommand ("joyadvancedupdate", Joy_AdvancedUpdate_f, "No Description");
 
 	uiWheelMessage = RegisterWindowMessage ( "MSWHEEL_ROLLMSG" );
 

@@ -260,7 +260,7 @@ IN_init_mouse()
 	char *mousedev;
 	int mouserate = MOUSE_DEFAULTSAMPLERATE;
 
-	Cmd_AddCommand("force_centerview", Force_CenterView_f);
+	Cmd_AddCommand("force_centerview", Force_CenterView_f, "No Description");
 
 	mouse_buttons = 3;
 

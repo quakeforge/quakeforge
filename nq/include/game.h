@@ -1,5 +1,5 @@
 /*
-	qdefs.h
+	game.h
 
 	(description)
 
@@ -28,37 +28,20 @@
 	$Id$
 */
 
-#ifndef __qdefs_h
-#define __qdefs_h
+#ifndef __game_h
+#define __game_h
 
 #include "qtypes.h"
 #include "cvar.h"
+#include "qdefs.h"
 
-#define	MAX_OSPATH		128			// max length of a filesystem pathname
-#define	MAX_QPATH		64			// max length of a quake game pathname
-#define MAX_CL_STATS	32
-#define NUM_CSHIFTS		4
-#define	MAX_MODELS		256			// these are sent over the net as bytes
-#define	MAX_SOUNDS		256			// so they cannot be blindly increased
-#define	MAX_SCOREBOARD		16
-#define	MAX_SCOREBOARDNAME	32
-#define MAX_STYLESTRING	64
-#define	MAX_EDICTS		600			// FIXME: ouch! ouch! ouch!
-#define MAX_LIGHTSTYLES	64
+#undef MAX_DATAGRAM
 #define	MAX_DATAGRAM	1024		// max length of unreliable message
 
+#undef MAX_MSGLEN
 #define	MAX_MSGLEN		8000		// max length of a reliable message
-#define clc_stringcmd	4
 
 #define	QUAKE_GAME			// as opposed to utilities
-
-//define	PARANOID			// speed sapping error checking
-
-#ifdef QUAKE2
-#define	GAMENAME	"id1"		// directory to look in by default
-#else
-#define	GAMENAME	"id1"
-#endif
 
 #include <math.h>
 #include <string.h>
@@ -186,4 +169,4 @@ extern qboolean		isDedicated;
 extern qboolean		abyss, rogue, hipnotic, standard_quake;
 extern cvar_t		*registered;
 
-#endif // __qdefs_h
+#endif // __game_h

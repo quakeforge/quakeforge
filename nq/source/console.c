@@ -39,6 +39,7 @@
 #include <fcntl.h>
 
 #include "va.h"
+#include "cmd.h"
 #include "draw.h"
 #include "host.h"
 #include "sys.h"
@@ -258,10 +259,10 @@ void Con_Init (void)
 //
 	con_notifytime = Cvar_Get("con_notifytime", "3", CVAR_NONE, "seconds");
 
-	Cmd_AddCommand ("toggleconsole", Con_ToggleConsole_f);
-	Cmd_AddCommand ("messagemode", Con_MessageMode_f);
-	Cmd_AddCommand ("messagemode2", Con_MessageMode2_f);
-	Cmd_AddCommand ("clear", Con_Clear_f);
+	Cmd_AddCommand ("toggleconsole", Con_ToggleConsole_f, "No Description");
+	Cmd_AddCommand ("messagemode", Con_MessageMode_f, "No Description");
+	Cmd_AddCommand ("messagemode2", Con_MessageMode2_f, "No Description");
+	Cmd_AddCommand ("clear", Con_Clear_f, "No Description");
 	con_initialized = true;
 }
 
@@ -596,7 +597,7 @@ Draws the console with the solid background
 The typing input line at the bottom should only be drawn if typing is allowed
 ================
 */
-void Con_DrawConsole (int lines, qboolean drawinput)
+void Con_DrawConsole (int lines)//, qboolean drawinput)
 {
 	int				i, x, y;
 	int				rows;
@@ -627,7 +628,7 @@ void Con_DrawConsole (int lines, qboolean drawinput)
 	}
 
 // draw the input prompt, user text, and cursor if desired
-	if (drawinput)
+//	if (drawinput)
 		Con_DrawInput ();
 }
 

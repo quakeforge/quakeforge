@@ -239,7 +239,7 @@ Cbuf_Execute (void)
 		extract_line (line);
 		// execute the command line
 		//Con_DPrintf("+%s\n",line),
-		Cmd_ExecuteString (line, src_command);
+		Cmd_ExecuteString_src (line, src_command);
 
 		if (cmd_wait)
 		{	// skip out while text still remains in buffer, leaving it
@@ -265,7 +265,7 @@ Cbuf_Execute_Sets (void)
 		if (strncmp(line,"set",3)==0
 			&& isspace((int) line[3]))
 			//Con_DPrintf("+%s\n",line),
-			Cmd_ExecuteString (line, src_command);
+			Cmd_ExecuteString_src (line, src_command);
 	}
 }
 
@@ -527,6 +527,7 @@ typedef struct cmd_function_s
 	struct cmd_function_s	*next;
 	char					*name;
 	xcommand_t				function;
+	char					*description;
 } cmd_function_t;
 
 
@@ -642,7 +643,7 @@ void Cmd_TokenizeString (char *text)
 Cmd_AddCommand
 ============
 */
-void	Cmd_AddCommand (char *cmd_name, xcommand_t function)
+void	Cmd_AddCommand (char *cmd_name, xcommand_t function, char *description)
 {
 	cmd_function_t	*cmd;
 
@@ -670,6 +671,7 @@ void	Cmd_AddCommand (char *cmd_name, xcommand_t function)
 	cmd->name = cmd_name;
 	cmd->function = function;
 	cmd->next = cmd_functions;
+	cmd->description = description;
 	cmd_functions = cmd;
 }
 
@@ -810,13 +812,13 @@ void Cmd_ExpandVariables (char *data, char *dest)
 
 /*
 ============
-Cmd_ExecuteString
+Cmd_ExecuteString_src
 
 A complete command line has been parsed, so try to execute it
 FIXME: lookupnoadd the token to speed search?
 ============
 */
-void Cmd_ExecuteString (char *text, cmd_source_t src)
+void Cmd_ExecuteString_src (char *text, cmd_source_t src)
 {
 	cmd_function_t	*cmd;
 	cmdalias_t		*a;
@@ -986,12 +988,12 @@ void Cmd_Init (void)
 //
 // register our commands
 //
-	Cmd_AddCommand ("stuffcmds",Cmd_StuffCmds_f);
-	Cmd_AddCommand ("exec",Cmd_Exec_f);
-	Cmd_AddCommand ("echo",Cmd_Echo_f);
-	Cmd_AddCommand ("alias",Cmd_Alias_f);
-	Cmd_AddCommand ("cmd", Cmd_ForwardToServer);
-	Cmd_AddCommand ("wait", Cmd_Wait_f);
+	Cmd_AddCommand ("stuffcmds",Cmd_StuffCmds_f, "No Description");
+	Cmd_AddCommand ("exec",Cmd_Exec_f, "No Description");
+	Cmd_AddCommand ("echo",Cmd_Echo_f, "No Description");
+	Cmd_AddCommand ("alias",Cmd_Alias_f, "No Description");
+	Cmd_AddCommand ("cmd", Cmd_ForwardToServer, "No Description");
+	Cmd_AddCommand ("wait", Cmd_Wait_f, "No Description");
 }
 
 /*

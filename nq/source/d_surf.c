@@ -33,7 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "qdefs.h"
+#include "game.h"
 #include "sys.h"
 #include "qargs.h"
 #include "console.h"

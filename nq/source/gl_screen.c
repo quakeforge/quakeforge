@@ -429,9 +429,9 @@ SCR_Init (void)
 //
 // register our commands
 //
-	Cmd_AddCommand ("screenshot",SCR_ScreenShot_f);
-	Cmd_AddCommand ("sizeup",SCR_SizeUp_f);
-	Cmd_AddCommand ("sizedown",SCR_SizeDown_f);
+	Cmd_AddCommand ("screenshot",SCR_ScreenShot_f, "No Description");
+	Cmd_AddCommand ("sizeup",SCR_SizeUp_f, "No Description");
+	Cmd_AddCommand ("sizedown",SCR_SizeDown_f, "No Description");
 
 	scr_ram = Draw_PicFromWad ("ram");
 	scr_net = Draw_PicFromWad ("net");
@@ -655,7 +655,7 @@ void SCR_DrawConsole (void)
 	if (scr_con_current)
 	{
 		scr_copyeverything = 1;
-		Con_DrawConsole (scr_con_current, true);
+		Con_DrawConsole (scr_con_current);//, true);
 		clearconsole = 0;
 	}
 	else

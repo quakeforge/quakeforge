@@ -1157,7 +1157,7 @@ int TTY_Init(void)
 		p->portNumber = n;
 		p->dialType = 'T';
 		snprintf (p->name, sizeof(p->name), "com%u", n+1);
-		Cmd_AddCommand (p->name, Com_f);
+		Cmd_AddCommand (p->name, Com_f, "No Description");
 		ResetComPortConfig (p);
 	}
 

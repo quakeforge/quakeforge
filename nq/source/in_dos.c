@@ -174,8 +174,8 @@ void IN_Init (void)
 	in_joystick = Cvar_Get("joystick", "0", CVAR_ARCHIVE, "None");
 	joy_numbuttons = Cvar_Get("joybuttons", "4", CVAR_ARCHIVE, "None");
 	aux_look = Cvar_Get("auxlook", "1", CVAR_ARCHIVE, "None");
-	Cmd_AddCommand ("toggle_auxlook", Toggle_AuxLook_f);
-	Cmd_AddCommand ("force_centerview", Force_CenterView_f);
+	Cmd_AddCommand ("toggle_auxlook", Toggle_AuxLook_f, "No Description");
+	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "No Description");
 
 	IN_StartupMouse ();
 	IN_StartupJoystick ();

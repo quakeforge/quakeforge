@@ -34,6 +34,7 @@
 #include "sys.h"
 #include "console.h"
 #include "view.h"
+#include "cmd.h"
 #include "screen.h"
 #include "chase.h"
 
@@ -203,8 +204,8 @@ void R_Init (void)
 	
 	R_InitTurb ();
 	
-	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f);	
-	Cmd_AddCommand ("pointfile", R_ReadPointFile_f);	
+	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f, "No Description");	
+	Cmd_AddCommand ("pointfile", R_ReadPointFile_f, "No Description");	
 
 	gl_particles = Cvar_Get ("gl_particles", "1", CVAR_ARCHIVE|CVAR_ROM,
 				"whether or not to draw particles");

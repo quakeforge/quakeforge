@@ -33,6 +33,7 @@
 #include "view.h"
 #include "r_local.h"
 #include "host.h"
+#include "cmd.h"
 #include "chase.h"
 #include "draw.h"
 #include "screen.h"
@@ -755,9 +756,9 @@ V_Init
 */
 void V_Init (void)
 {
-	Cmd_AddCommand ("v_cshift", V_cshift_f);	
-	Cmd_AddCommand ("bf", V_BonusFlash_f);
-	Cmd_AddCommand ("centerview", V_StartPitchDrift);
+	Cmd_AddCommand ("v_cshift", V_cshift_f, "No Description");	
+	Cmd_AddCommand ("bf", V_BonusFlash_f, "No Description");
+	Cmd_AddCommand ("centerview", V_StartPitchDrift, "No Description");
 
 	v_centermove = Cvar_Get("v_centermove", "0.15", CVAR_NONE, "None");
 	v_centerspeed = Cvar_Get("v_centerspeed", "500", CVAR_NONE, "None");

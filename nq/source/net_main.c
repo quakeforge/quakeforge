@@ -32,6 +32,7 @@
 
 #include <string.h>
 
+#include "cmd.h"
 #include "net.h"
 #include "net_vcr.h"
 #include "qargs.h"
@@ -875,10 +876,10 @@ void NET_Init (void)
 	config_modem_init = Cvar_Get("_config_modem_init", "", CVAR_ARCHIVE, "None");
 	config_modem_hangup = Cvar_Get("_config_modem_hangup", "AT H", CVAR_ARCHIVE, "None");
 
-	Cmd_AddCommand ("slist", NET_Slist_f);
-	Cmd_AddCommand ("listen", NET_Listen_f);
-	Cmd_AddCommand ("maxplayers", MaxPlayers_f);
-	Cmd_AddCommand ("port", NET_Port_f);
+	Cmd_AddCommand ("slist", NET_Slist_f, "No Description");
+	Cmd_AddCommand ("listen", NET_Listen_f, "No Description");
+	Cmd_AddCommand ("maxplayers", MaxPlayers_f, "No Description");
+	Cmd_AddCommand ("port", NET_Port_f, "No Description");
 
 	// initialize all the drivers
 	for (net_driverlevel=0 ; net_driverlevel<net_numdrivers ; net_driverlevel++)

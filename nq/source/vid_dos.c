@@ -116,11 +116,11 @@ void    VID_Init (unsigned char *palette)
 	vid_windowed_mode = Cvar_Get("vid_windowed_mode", "0", CVAR_ARCHIVE, "None");
 	block_switch = Cvar_Get("block_switch", "0", CVAR_ARCHIVE, "None");
 
-	Cmd_AddCommand ("vid_testmode", VID_TestMode_f);
-	Cmd_AddCommand ("vid_nummodes", VID_NumModes_f);
-	Cmd_AddCommand ("vid_describecurrentmode", VID_DescribeCurrentMode_f);
-	Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f);
-	Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f);
+	Cmd_AddCommand ("vid_testmode", VID_TestMode_f, "No Description");
+	Cmd_AddCommand ("vid_nummodes", VID_NumModes_f, "No Description");
+	Cmd_AddCommand ("vid_describecurrentmode", VID_DescribeCurrentMode_f, "No Description");
+	Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f, "No Description");
+	Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f, "No Description");
 
 // set up the mode list; note that later inits link in their modes ahead of
 // earlier ones, so the standard VGA modes are always first in the list. This

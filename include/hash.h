@@ -1,9 +1,10 @@
 /*
-	sizebuf.h
+	hash.h
 
-	(description)
+	hash tables
 
 	Copyright (C) 1996-1997  Id Software, Inc.
+	Copyright (C) 2000  Marcus Sundberg <mackan@stacken.kth.se>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -25,25 +26,29 @@
 
 	$Id$
 */
-#ifndef _SIZEBUF_H
-#define _SIZEBUF_H
 
-#include "qtypes.h"
+#ifndef __hash_h
+#define __hash_h
 
-typedef struct sizebuf_s
-{
-	qboolean	allowoverflow;	// if false, do a Sys_Error
-	qboolean	overflowed;		// set to true if the buffer size failed
-	byte	*data;
-	int		maxsize;
-	int		cursize;
-} sizebuf_t;
+#include <stdlib.h> // should be sys/types.h, but bc is stupid
 
-void SZ_Alloc (sizebuf_t *buf, int startsize);
-void SZ_Free (sizebuf_t *buf);
-void SZ_Clear (sizebuf_t *buf);
-void *SZ_GetSpace (sizebuf_t *buf, int length);
-void SZ_Write (sizebuf_t *buf, void *data, int length);
-void SZ_Print (sizebuf_t *buf, char *data);	// strcats onto the sizebuf
+typedef struct hashlink_s {
+	struct hashlink_s *next;
+	struct hashlink_s **prev;
+	void *data;
+} hashlink_t;
 
-#endif
+typedef struct hashtab_s {
+	size_t tab_size;
+	char *(*get_key)(void*);
+	void (*free_ele)(void*);
+	hashlink_t *tab[ZERO_LENGTH_ARRAY];
+} hashtab_t;
+
+hashtab_t *Hash_NewTable (int tsize, char *(*gk)(void*), void (*f)(void*));
+void Hash_DelTable (hashtab_t *tab);
+int Hash_Add (hashtab_t *tab, void *ele);
+void *Hash_Find (hashtab_t *tab, const char *key);
+int Hash_Del (hashtab_t *tab, const char *key);
+
+#endif // __hash_h

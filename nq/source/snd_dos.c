@@ -445,7 +445,7 @@ qboolean BLASTER_Init(void)
 	}
 
 	
-	Cmd_AddCommand("sbinfo", SB_Info_f);
+	Cmd_AddCommand("sbinfo", SB_Info_f, "No Description");
 	size = 4096;
 
 // allocate 8k and get a 4k-aligned buffer from it

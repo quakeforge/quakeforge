@@ -2095,15 +2095,15 @@ void	VID_Init (unsigned char *palette)
 	int		basenummodes;
 	byte	*ptmp;
 
-	Cmd_AddCommand ("vid_testmode", VID_TestMode_f);
-	Cmd_AddCommand ("vid_nummodes", VID_NumModes_f);
-	Cmd_AddCommand ("vid_describecurrentmode", VID_DescribeCurrentMode_f);
-	Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f);
-	Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f);
-	Cmd_AddCommand ("vid_forcemode", VID_ForceMode_f);
-	Cmd_AddCommand ("vid_windowed", VID_Windowed_f);
-	Cmd_AddCommand ("vid_fullscreen", VID_Fullscreen_f);
-	Cmd_AddCommand ("vid_minimize", VID_Minimize_f);
+	Cmd_AddCommand ("vid_testmode", VID_TestMode_f, "No Description");
+	Cmd_AddCommand ("vid_nummodes", VID_NumModes_f, "No Description");
+	Cmd_AddCommand ("vid_describecurrentmode", VID_DescribeCurrentMode_f, "No Description");
+	Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f, "No Description");
+	Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f, "No Description");
+	Cmd_AddCommand ("vid_forcemode", VID_ForceMode_f, "No Description");
+	Cmd_AddCommand ("vid_windowed", VID_Windowed_f, "No Description");
+	Cmd_AddCommand ("vid_fullscreen", VID_Fullscreen_f, "No Description");
+	Cmd_AddCommand ("vid_minimize", VID_Minimize_f, "No Description");
 
 	if (COM_CheckParm ("-dibonly"))
 		dibonly = true;

@@ -1,11 +1,9 @@
 /*
-	qargs.h
+	sizebuf.h
 
 	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
-	Copyright (C) 1999,2000  contributors of the QuakeForge project
-	Please see the file "AUTHORS" for a list of contributors
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -27,21 +25,25 @@
 
 	$Id$
 */
-
-#ifndef _QARGS_H
-#define _QARGS_H
+#ifndef __sizebuf_h
+#define __sizebuf_h
 
 #include "qtypes.h"
 
-extern	int		com_argc;
-extern	char	**com_argv;
-extern	char	*com_cmdline;
+typedef struct sizebuf_s
+{
+	qboolean	allowoverflow;	// if false, do a Sys_Error
+	qboolean	overflowed;		// set to true if the buffer size failed
+	byte	*data;
+	int		maxsize;
+	int		cursize;
+} sizebuf_t;
 
-int COM_CheckParm (char *parm);
-void COM_AddParm (char *parm);
+void SZ_Alloc (sizebuf_t *buf, int startsize);
+void SZ_Free (sizebuf_t *buf);
+void SZ_Clear (sizebuf_t *buf);
+void *SZ_GetSpace (sizebuf_t *buf, int length);
+void SZ_Write (sizebuf_t *buf, void *data, int length);
+void SZ_Print (sizebuf_t *buf, char *data);	// strcats onto the sizebuf
 
-void COM_Init (void);
-void COM_Init_Cvars (void);
-void COM_InitArgv (int argc, char **argv);
-
-#endif // _QARGS_H
+#endif // __sizebuf_h

@@ -35,7 +35,8 @@
 #include "quakefs.h"
 #include "console.h"
 #include "qargs.h"
-#include "qdefs.h"
+#include "game.h"
+#include "cmd.h"
 
 cvar_t	*cmdline;
 int	static_registered = 1;
@@ -97,8 +98,9 @@ void COM_Init ()
 
 	registered = Cvar_Get("registered", "0", CVAR_NONE, "None");
 	cmdline = Cvar_Get("cmdline", "0", CVAR_SERVERINFO, "None");
-	Cmd_AddCommand ("path", COM_Path_f);
+	Cmd_AddCommand ("path", COM_Path_f, "No Description");
 
-	COM_InitFilesystem ();
+	COM_Filesystem_Init_Cvars ();
+	COM_Filesystem_Init ();
 	COM_CheckRegistered ();
 }

@@ -41,6 +41,7 @@
 #include "server.h"
 #include "console.h"
 #include "screen.h"
+#include "cmd.h"
 
 // we need to declare some mouse variables here, because the menu system
 // references them even when on a unix system.
@@ -824,13 +825,13 @@ void CL_Init (void)
 	CL_InitInput ();
 	CL_InitTEnts ();
 
-	Cmd_AddCommand ("entities", CL_PrintEntities_f);
-	Cmd_AddCommand ("disconnect", CL_Disconnect_f);
-	Cmd_AddCommand ("record", CL_Record_f);
-	Cmd_AddCommand ("stop", CL_Stop_f);
-	Cmd_AddCommand ("playdemo", CL_PlayDemo_f);
-	Cmd_AddCommand ("timedemo", CL_TimeDemo_f);
-	Cmd_AddCommand ("maplist", COM_Maplist_f);
+	Cmd_AddCommand ("entities", CL_PrintEntities_f, "No Description");
+	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "No Description");
+	Cmd_AddCommand ("record", CL_Record_f, "No Description");
+	Cmd_AddCommand ("stop", CL_Stop_f, "No Description");
+	Cmd_AddCommand ("playdemo", CL_PlayDemo_f, "No Description");
+	Cmd_AddCommand ("timedemo", CL_TimeDemo_f, "No Description");
+	Cmd_AddCommand ("maplist", COM_Maplist_f, "No Description");
 }
 	
 

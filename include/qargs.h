@@ -1,5 +1,5 @@
 /*
-	qtypes.h
+	qargs.h
 
 	(description)
 
@@ -28,32 +28,20 @@
 	$Id$
 */
 
-#ifndef __qtypes
-#define __qtypes
+#ifndef __qargs_h
+#define __qargs_h
 
-#define MAX_QPATH	64
+#include "qtypes.h"
 
-#ifndef _DEF_BYTE_
-# define _DEF_BYTE_
-typedef unsigned char byte;
-#endif
+extern	int		com_argc;
+extern	char	**com_argv;
+extern	char	*com_cmdline;
 
-// KJB Undefined true and false defined in SciTech's DEBUG.H header
-#undef true
-#undef false
-typedef	enum	{false, true} qboolean;
+int COM_CheckParm (char *parm);
+void COM_AddParm (char *parm);
 
-// From mathlib...
-typedef float	vec_t;
-typedef vec_t	vec3_t[3];
-typedef vec_t	vec5_t[5];
-typedef	int	fixed4_t;
-typedef	int	fixed8_t;
-typedef	int	fixed16_t;
+void COM_Init (void);
+void COM_Init_Cvars (void);
+void COM_InitArgv (int argc, char **argv);
 
-
-typedef	int	func_t;
-typedef	int	string_t;
-typedef	byte	pixel_t;
-
-#endif // __qtypes
+#endif // __qargs_h

@@ -35,6 +35,7 @@
 #include "progs.h"
 #include "console.h"
 #include "sys.h"
+#include "cmd.h"
 #include "va.h"
 #include "host.h"
 #include "world.h"

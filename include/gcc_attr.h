@@ -1,11 +1,9 @@
 /*
-	qdefs.h
+	gcc_attr.h
 
-	(description)
+	GCC __attribute__ protection for lame compilers.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
-	Copyright (C) 1999,2000  contributors of the QuakeForge project
-	Please see the file "AUTHORS" for a list of contributors
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -28,22 +26,11 @@
 	$Id$
 */
 
-#ifndef _QDEFS_H
-#define _QDEFS_H
+#ifndef __gcc_attr_h
+#define __gcc_attr_h
 
-#define MAX_QPATH		64
-#define MAX_CL_STATS	32
-#define NUM_CSHIFTS		4
-#define MAX_MODELS		256
-#define MAX_SOUNDS		256
-#define MAX_SCOREBOARDNAME 16
-#define MAX_STYLESTRING	64
-#define MAX_EDICTS		768
-#define MAX_LIGHTSTYLES	64
-#define MAX_DATAGRAM	1450
+#ifndef __GNUC__
+# define __attribute__(x)
+#endif
 
-#define MAX_MSGLEN		1450
-
-#define clc_stringcmd	4
-
-#endif // _QDEFS_H
+#endif	// __gcc_attr_h

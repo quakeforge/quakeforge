@@ -472,7 +472,7 @@ void VID_Init (unsigned char *palette)
 	VID_GetWindowSize (320, 200);
 
 	//plugin_load("in_x11.so");
-//	Cmd_AddCommand("gamma", VID_Gamma_f);
+//	Cmd_AddCommand("gamma", VID_Gamma_f, "No Description");
 	for (i=0; i < 256; i++)	vid_gamma[i] = i;
 
 	vid.width = vid_width->int_val;

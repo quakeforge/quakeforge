@@ -40,7 +40,7 @@
 #include "console.h"
 #include "r_local.h"
 #include "view.h"
-#include "qdefs.h"
+#include "game.h"
 #include "glquake.h"
 #include "client.h"
 #include "model.h"

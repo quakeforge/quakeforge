@@ -1,5 +1,5 @@
 /*
-	quakeio.h
+	qtypes.h
 
 	(description)
 
@@ -27,43 +27,39 @@
 
 	$Id$
 */
-#ifndef _QUAKEIO_H
-#define _QUAKEIO_H
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+#ifndef __qtypes_h
+#define __qtypes_h
 
 #include <stdio.h>
+#include <sys/types.h>
 
-#ifdef HAVE_ZLIB
-# include <zlib.h>
+#include "qdefs.h"
+#include "compat.h"
+
+#define MAX_QPATH	64
+
+#ifndef _DEF_BYTE_
+# define _DEF_BYTE_
+typedef unsigned char byte;
 #endif
 
-#include "gcc_attr.h"
+// KJB Undefined true and false defined in SciTech's DEBUG.H header
+#undef true
+#undef false
+typedef	enum	{false, true} qboolean;
 
-typedef struct {
-	FILE *file;
-#ifdef HAVE_ZLIB
-	gzFile *gzfile;
-#endif
-} QFile;
+// From mathlib...
+typedef float	vec_t;
+typedef vec_t	vec3_t[3];
+typedef vec_t	vec5_t[5];
+typedef	int	fixed4_t;
+typedef	int	fixed8_t;
+typedef	int	fixed16_t;
 
-void Qexpand_squiggle(const char *path, char *dest);
-int Qrename(const char *old, const char *new);
-QFile *Qopen(const char *path, const char *mode);
-QFile *Qdopen(int fd, const char *mode);
-void Qclose(QFile *file);
-int Qread(QFile *file, void *buf, int count);
-int Qwrite(QFile *file, void *buf, int count);
-int Qprintf(QFile *file, const char *fmt, ...) __attribute__((format(printf,2,3)));
-char *Qgets(QFile *file, char *buf, int count);
-int Qgetc(QFile *file);
-int Qputc(QFile *file, int c);
-int Qseek(QFile *file, long offset, int whence);
-long Qtell(QFile *file);
-int Qflush(QFile *file);
-int Qeof(QFile *file);
-char *Qgetline(QFile *file);
 
-#endif /*_QUAKEIO_H*/
+typedef	int	func_t;
+typedef	int	string_t;
+typedef	byte	pixel_t;
+
+#endif // __qtypes_h

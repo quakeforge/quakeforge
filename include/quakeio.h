@@ -27,16 +27,17 @@
 
 	$Id$
 */
-#ifndef _QUAKEIO_H
-#define _QUAKEIO_H
+#ifndef __quakeio_h
+#define __quakeio_h
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+# include "config.h"
 #endif
 
 #include <stdio.h>
+
 #ifdef HAVE_ZLIB
-#include <zlib.h>
+# include <zlib.h>
 #endif
 
 #include "gcc_attr.h"
@@ -63,8 +64,8 @@ int Qseek(QFile *file, long offset, int whence);
 long Qtell(QFile *file);
 int Qflush(QFile *file);
 int Qeof(QFile *file);
-
+char *Qgetline(QFile *file);
 int Qgetpos(QFile *file, fpos_t *pos);
 int Qsetpos(QFile *file, fpos_t *pos);
 
-#endif /*_QUAKEIO_H*/
+#endif /*__quakeio_h*/

@@ -587,7 +587,7 @@ void	VID_Init (unsigned char *palette)
 	int num_visuals;
 	int template_mask;
 
-	Cmd_AddCommand ("gamma", VID_Gamma_f);
+	Cmd_AddCommand ("gamma", VID_Gamma_f, "No Description");
 	for (i=0 ; i<256 ; i++)
 		vid_gamma[i] = i;
 

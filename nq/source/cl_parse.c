@@ -41,8 +41,9 @@
 #include "sbar.h"
 #include "screen.h"
 #include "server.h"
-#include "qdefs.h"
+#include "game.h"
 #include "input.h"
+#include "cmd.h"
 
 char *svc_strings[] =
 {
@@ -963,7 +964,7 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_sellscreen:
-			Cmd_ExecuteString ("help", src_command);
+			Cmd_ExecuteString_src ("help", src_command);
 			break;
 		}
 	}

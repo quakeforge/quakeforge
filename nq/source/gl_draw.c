@@ -440,7 +440,7 @@ void Draw_Init (void)
 		Cvar_Set (gl_lightmode, "0");
 	lighthalf = gl_lightmode->int_val != 0; // to avoid re-rendering all lightmaps on first frame
 
-	Cmd_AddCommand ("gl_texturemode", &Draw_TextureMode_f);
+	Cmd_AddCommand ("gl_texturemode", &Draw_TextureMode_f, "No Description");
 
 	// load the console background and the charset
 	// by hand, because we need to write the version

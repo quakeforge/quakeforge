@@ -34,6 +34,7 @@
 #include "msg.h"
 #include "console.h"
 #include "sys.h"
+#include "cmd.h"
 #include "host.h"
 #include "world.h"
 
@@ -1001,7 +1002,7 @@ void SV_SendReconnect (void)
 #ifdef QUAKE2
 		Cbuf_InsertText ("reconnect\n");
 #else
-		Cmd_ExecuteString ("reconnect\n", src_command);
+		Cmd_ExecuteString_src ("reconnect\n", src_command);
 #endif
 }
 

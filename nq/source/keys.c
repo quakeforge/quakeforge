@@ -37,7 +37,6 @@
 #include "vid.h"
 #include "keys.h"
 #include "cmd.h"
-#include "zone.h"
 #include "cvar.h"
 #include "screen.h"
 #include "console.h"
@@ -468,7 +467,7 @@ void Key_SetBinding (int keynum, char *binding)
 			
 // allocate memory for new binding
 	l = strlen (binding);	
-	new = Z_Malloc (l+1);
+	new = malloc (l+1);
 	strcpy (new, binding);
 	new[l] = 0;
 	keybindings[keynum] = new;	
@@ -641,9 +640,9 @@ void Key_Init (void)
 //
 // register our functions
 //
-	Cmd_AddCommand ("bind",Key_Bind_f);
-	Cmd_AddCommand ("unbind",Key_Unbind_f);
-	Cmd_AddCommand ("unbindall",Key_Unbindall_f);
+	Cmd_AddCommand ("bind",Key_Bind_f, "No Description");
+	Cmd_AddCommand ("unbind",Key_Unbind_f, "No Description");
+	Cmd_AddCommand ("unbindall",Key_Unbindall_f, "No Description");
 
 
 }

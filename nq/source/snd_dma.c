@@ -146,7 +146,7 @@ void S_SoundInfo_f(void)
     Con_Printf("%5d samplebits\n", shm->samplebits);
     Con_Printf("%5d submission_chunk\n", shm->submission_chunk);
     Con_Printf("%5d speed\n", shm->speed);
-    Con_Printf("0x%x dma buffer\n", shm->buffer);
+    Con_Printf("0x%x dma buffer\n", (int)shm->buffer);
 	Con_Printf("%5d total_channels\n", total_channels);
 }
 
@@ -192,11 +192,11 @@ void S_Init (void)
 
 	Con_Printf("\nSound Initialization\n");
 
-	Cmd_AddCommand("play", S_Play);
-	Cmd_AddCommand("playvol", S_PlayVol);
-	Cmd_AddCommand("stopsound", S_StopAllSoundsC);
-	Cmd_AddCommand("soundlist", S_SoundList);
-	Cmd_AddCommand("soundinfo", S_SoundInfo_f);
+	Cmd_AddCommand("play", S_Play, "No Description");
+	Cmd_AddCommand("playvol", S_PlayVol, "No Description");
+	Cmd_AddCommand("stopsound", S_StopAllSoundsC, "No Description");
+	Cmd_AddCommand("soundlist", S_SoundList, "No Description");
+	Cmd_AddCommand("soundinfo", S_SoundInfo_f, "No Description");
 
 	nosound = Cvar_Get("nosound", "0", CVAR_NONE, "None");
 	volume = Cvar_Get("volume", "0.7", CVAR_ARCHIVE, "None");

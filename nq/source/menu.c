@@ -3039,19 +3039,19 @@ void M_ServerList_Key (int k)
 
 void M_Init (void)
 {
-	Cmd_AddCommand ("togglemenu", M_ToggleMenu_f);
+	Cmd_AddCommand ("togglemenu", M_ToggleMenu_f, "No Description");
 
-	Cmd_AddCommand ("menu_main", M_Menu_Main_f);
-	Cmd_AddCommand ("menu_singleplayer", M_Menu_SinglePlayer_f);
-	Cmd_AddCommand ("menu_load", M_Menu_Load_f);
-	Cmd_AddCommand ("menu_save", M_Menu_Save_f);
-	Cmd_AddCommand ("menu_multiplayer", M_Menu_MultiPlayer_f);
-	Cmd_AddCommand ("menu_setup", M_Menu_Setup_f);
-	Cmd_AddCommand ("menu_options", M_Menu_Options_f);
-	Cmd_AddCommand ("menu_keys", M_Menu_Keys_f);
-	Cmd_AddCommand ("menu_video", M_Menu_Video_f);
-	Cmd_AddCommand ("menu_help", M_Menu_Help_f);
-	Cmd_AddCommand ("menu_quit", M_Menu_Quit_f);
+	Cmd_AddCommand ("menu_main", M_Menu_Main_f, "No Description");
+	Cmd_AddCommand ("menu_singleplayer", M_Menu_SinglePlayer_f, "No Description");
+	Cmd_AddCommand ("menu_load", M_Menu_Load_f, "No Description");
+	Cmd_AddCommand ("menu_save", M_Menu_Save_f, "No Description");
+	Cmd_AddCommand ("menu_multiplayer", M_Menu_MultiPlayer_f, "No Description");
+	Cmd_AddCommand ("menu_setup", M_Menu_Setup_f, "No Description");
+	Cmd_AddCommand ("menu_options", M_Menu_Options_f, "No Description");
+	Cmd_AddCommand ("menu_keys", M_Menu_Keys_f, "No Description");
+	Cmd_AddCommand ("menu_video", M_Menu_Video_f, "No Description");
+	Cmd_AddCommand ("menu_help", M_Menu_Help_f, "No Description");
+	Cmd_AddCommand ("menu_quit", M_Menu_Quit_f, "No Description");
 }
 
 

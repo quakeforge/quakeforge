@@ -226,12 +226,12 @@ void R_Init (void)
 {
 	allowskybox = false;	// server will decide if this is allowed  --KB
 
-	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f);	
-	Cmd_AddCommand ("envmap", R_Envmap_f);	
-	Cmd_AddCommand ("pointfile", R_ReadPointFile_f);
-	Cmd_AddCommand ("loadsky", R_LoadSky_f);
+	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f, "No Description");	
+	Cmd_AddCommand ("envmap", R_Envmap_f, "No Description");	
+	Cmd_AddCommand ("pointfile", R_ReadPointFile_f, "No Description");
+	Cmd_AddCommand ("loadsky", R_LoadSky_f, "No Description");
 
-	Cmd_AddCommand ("r_firecolor", R_FireColor_f);
+	Cmd_AddCommand ("r_firecolor", R_FireColor_f, "No Description");
 
 	r_norefresh = Cvar_Get("r_norefresh", "0", CVAR_NONE, "None");
 	r_lightmap = Cvar_Get("r_lightmap", "0", CVAR_NONE, "None");

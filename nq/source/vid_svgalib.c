@@ -545,7 +545,7 @@ VID_Init(unsigned char *palette)
 	if (svgalib_inited) return;
 
 #if 0
-	Cmd_AddCommand ("gamma", VID_Gamma_f);
+	Cmd_AddCommand ("gamma", VID_Gamma_f, "No Description");
 #endif
 
 	if (UseDisplay) {
@@ -555,10 +555,10 @@ VID_Init(unsigned char *palette)
 
 		VID_InitModes();
 
-		Cmd_AddCommand("vid_nummodes", VID_NumModes_f);
-		Cmd_AddCommand("vid_describemode", VID_DescribeMode_f);
-		Cmd_AddCommand("vid_describemodes", VID_DescribeModes_f);
-		Cmd_AddCommand("vid_debug", VID_Debug_f);
+		Cmd_AddCommand("vid_nummodes", VID_NumModes_f, "No Description");
+		Cmd_AddCommand("vid_describemode", VID_DescribeMode_f, "No Description");
+		Cmd_AddCommand("vid_describemodes", VID_DescribeModes_f, "No Description");
+		Cmd_AddCommand("vid_debug", VID_Debug_f, "No Description");
 
 		/* Interpret command-line params */
 		w = h = d = 0;

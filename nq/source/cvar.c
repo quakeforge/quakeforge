@@ -413,11 +413,11 @@ void Cvar_Init()
 {
 	developer = Cvar_Get ("developer","0",0,"None");
 
-	Cmd_AddCommand ("set", Cvar_Set_f);
-	Cmd_AddCommand ("setrom", Cvar_Setrom_f);
-	Cmd_AddCommand ("toggle", Cvar_Toggle_f);
-	Cmd_AddCommand ("help",Cvar_Help_f);
-	Cmd_AddCommand ("cvarlist",Cvar_CvarList_f);
+	Cmd_AddCommand ("set", Cvar_Set_f, "No Description");
+	Cmd_AddCommand ("setrom", Cvar_Setrom_f, "No Description");
+	Cmd_AddCommand ("toggle", Cvar_Toggle_f, "No Description");
+	Cmd_AddCommand ("help",Cvar_Help_f, "No Description");
+	Cmd_AddCommand ("cvarlist",Cvar_CvarList_f, "No Description");
 }
 
 void Cvar_Shutdown (void)

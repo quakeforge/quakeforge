@@ -22,9 +22,9 @@
 
 void GIB_Init (void)
 {
-	Cmd_AddCommand("gibload", GIB_Load_f);
-	Cmd_AddCommand("gibstats", GIB_Stats_f);
-	Cmd_AddCommand("gib", GIB_Gib_f);
+	Cmd_AddCommand("gibload", GIB_Load_f, "No Description");
+	Cmd_AddCommand("gibstats", GIB_Stats_f, "No Description");
+	Cmd_AddCommand("gib", GIB_Gib_f, "No Description");
 	GIB_Init_Instructions ();
 }
 

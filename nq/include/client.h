@@ -40,7 +40,7 @@
 #include "render.h"
 #include "cvar.h"
 #include "quakefs.h"
-#include "qdefs.h"
+#include "game.h"
 
 typedef struct usercmd_s
 {

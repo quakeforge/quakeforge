@@ -402,7 +402,7 @@ void	VID_Init (unsigned char *palette)
 
 	int desired_width=320, desired_height=200;
 	
-	Cmd_AddCommand ("gamma", VID_Gamma_f);
+	Cmd_AddCommand ("gamma", VID_Gamma_f, "No Description");
 
 	pixel_multiply = Cvar_Get("pixel_multiply", "2", CVAR_ARCHIVE, "None");
 

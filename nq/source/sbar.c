@@ -32,7 +32,8 @@
 
 #include "compat.h"
 #include "sbar.h"
-#include "qdefs.h"
+#include "game.h"
+#include "cmd.h"
 #include "vid.h"
 #include "va.h"
 #include "draw.h"
@@ -1219,8 +1220,8 @@ Sbar_Init (void)
 	sb_face_invis_invuln = Draw_PicFromWad ("face_inv2");
 	sb_face_quad = Draw_PicFromWad ("face_quad");
 
-	Cmd_AddCommand ("+showscores", Sbar_ShowScores);
-	Cmd_AddCommand ("-showscores", Sbar_DontShowScores);
+	Cmd_AddCommand ("+showscores", Sbar_ShowScores, "No Description");
+	Cmd_AddCommand ("-showscores", Sbar_DontShowScores, "No Description");
 
 	sb_sbar = Draw_PicFromWad ("sbar");
 	sb_ibar = Draw_PicFromWad ("ibar");

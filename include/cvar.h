@@ -26,12 +26,11 @@
 	$Id$
 */
 
-#ifndef _CVAR_H
-#define _CVAR_H
+#ifndef __cvar_h
+#define __cvar_h
 
-//#include "qtypes.h"
+#include "qtypes.h"
 #include "quakeio.h"
-#include "cmd.h"
 
 typedef struct cvar_s
 {
@@ -40,7 +39,8 @@ typedef struct cvar_s
 	int	flags;
 	char 	*description;	// for "help" command
 	float	value;
-	int	int_val;
+	int		int_val;
+	vec3_t	vec;
 	struct cvar_s *next;
 } cvar_t;
 
@@ -111,10 +111,11 @@ void 	Cvar_WriteVariables (QFile *f);
 // Returns a pointer to the Cvar, NULL if not found
 cvar_t *Cvar_FindVar (char *var_name);
 
+void Cvar_Init_Hash (void);
 void Cvar_Init();
 
 void Cvar_Shutdown();
 
 extern cvar_t	*cvar_vars;
 
-#endif // _CVAR_H
+#endif // __cvar_h

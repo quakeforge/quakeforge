@@ -1575,10 +1575,10 @@ void	VID_Init (unsigned char *palette)
 
 	memset(&devmode, 0, sizeof(devmode));
 
-	Cmd_AddCommand ("vid_nummodes", VID_NumModes_f);
-	Cmd_AddCommand ("vid_describecurrentmode", VID_DescribeCurrentMode_f);
-	Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f);
-	Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f);
+	Cmd_AddCommand ("vid_nummodes", VID_NumModes_f, "No Description");
+	Cmd_AddCommand ("vid_describecurrentmode", VID_DescribeCurrentMode_f, "No Description");
+	Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f, "No Description");
+	Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f, "No Description");
 
 	hIcon = LoadIcon (global_hInstance, MAKEINTRESOURCE (IDI_ICON2));
 

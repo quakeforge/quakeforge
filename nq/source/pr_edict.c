@@ -35,6 +35,7 @@
 #include "sys.h"
 #include "console.h"
 #include "host.h"
+#include "cmd.h"
 #include "server.h"
 #include "qendian.h"
 #include "crc.h"
@@ -1086,10 +1087,10 @@ PR_Init
 */
 void PR_Init (void)
 {
-	Cmd_AddCommand ("edict", ED_PrintEdict_f);
-	Cmd_AddCommand ("edicts", ED_PrintEdicts);
-	Cmd_AddCommand ("edictcount", ED_Count);
-	Cmd_AddCommand ("profile", PR_Profile_f);
+	Cmd_AddCommand ("edict", ED_PrintEdict_f, "No Description");
+	Cmd_AddCommand ("edicts", ED_PrintEdicts, "No Description");
+	Cmd_AddCommand ("edictcount", ED_Count, "No Description");
+	Cmd_AddCommand ("profile", PR_Profile_f, "No Description");
 	nomonsters = Cvar_Get("nomonsters", "0", CVAR_NONE, "None");
 	gamecfg = Cvar_Get("gamecfg", "0", CVAR_NONE, "None");
 	scratch1 = Cvar_Get("scratch1", "0", CVAR_NONE, "None");
