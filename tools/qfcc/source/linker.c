@@ -63,6 +63,7 @@ static const char rcsid[] =
 #include "qfcc.h"
 #include "reloc.h"
 #include "strpool.h"
+#include "type.h"
 
 #define Xgroup(X)\
 typedef struct {\
@@ -101,6 +102,7 @@ static int      reloc_base;
 static int      func_base;
 static int      line_base;
 
+#define DATA(x) (data->data + (x))
 #define STRING(x) (strings->strings + (x))
 #define TYPE_STRING(x) (type_strings->strings + (x))
 
@@ -186,15 +188,16 @@ add_relocs (qfo_t *qfo)
 			case rel_def_func:
 				reloc->ofs += data_base;
 				reloc->def += func_base;
+				DATA (reloc->ofs)->func_var = reloc->def + 1;
 				break;
 			case rel_def_def:
 				reloc->ofs += data_base;
 				break;
 			case rel_def_string:
 				reloc->ofs += data_base;
-				data->data[reloc->ofs].string_var =
+				DATA (reloc->ofs)->string_var =
 					strpool_addstr (strings,
-							qfo->strings + data->data[reloc->ofs].string_var);
+							qfo->strings + DATA (reloc->ofs)->string_var);
 				break;
 			case rel_def_field:
 				//FIXME more?
@@ -217,24 +220,50 @@ process_def (qfo_def_t *def)
 		} else {
 			Hash_Add (extern_defs, def);
 		}
-	} else {
-		if (def->flags & QFOD_GLOBAL) {
-			if ((d = Hash_Find (defined_defs, STRING (def->name)))) {
-				def_error (def, "%s redefined", STRING (def->name));
-			}
-			while ((d = Hash_Del (extern_defs, STRING (def->name)))) {
-				Hash_Add (defined_defs, d);
+	} else if (def->flags & QFOD_GLOBAL) {
+		if ((d = Hash_Find (defined_defs, STRING (def->name)))) {
+			if (d->flags & QFOD_SYSTEM) {
+				int         i, size;
+
 				if (d->full_type != def->full_type) {
 					def_error (def, "type mismatch `%s' `%s'",
 							   TYPE_STRING (def->full_type),
 							   TYPE_STRING (d->full_type));
-					continue;
+					def_error (d, "previous definition");
+					return;
 				}
-				d->ofs = def->ofs;
-				d->flags = def->flags;
+				d->flags &= ~QFOD_SYSTEM;
+				d->flags |= def->flags & (QFOD_INITIALIZED | QFOD_CONSTANT);
+				size = type_size (parse_type (TYPE_STRING (d->full_type)));
+				memcpy (DATA (d->ofs), DATA (def->ofs),
+						size * sizeof (pr_type_t));
+				for (i = 0; i < relocs.num_relocs; i++) {
+					qfo_reloc_t *reloc = relocs.relocs + i;
+					if (reloc->type >= rel_def_op
+						&& reloc->type <= rel_def_field)
+						if (reloc->ofs == def->ofs)
+							reloc->ofs = d->ofs;
+				}
+				def->ofs = d->ofs;
+				def->flags = d->flags;
+			} else {
+				def_error (def, "%s redefined", STRING (def->name));
+				def_error (d, "previous definition");
 			}
-			Hash_Add (defined_defs, def);
 		}
+		while ((d = Hash_Del (extern_defs, STRING (def->name)))) {
+			Hash_Add (defined_defs, d);
+			if (d->full_type != def->full_type) {
+				def_error (def, "type mismatch `%s' `%s'",
+						   TYPE_STRING (def->full_type),
+						   TYPE_STRING (d->full_type));
+				def_error (d, "previous definition");
+				continue;
+			}
+			d->ofs = def->ofs;
+			d->flags = def->flags;
+		}
+		Hash_Add (defined_defs, def);
 	}
 }
 
@@ -242,10 +271,11 @@ static void
 process_field (qfo_def_t *def)
 {
 	qfo_def_t  *field_def;
-	pr_type_t  *var = data->data + def->ofs;
+	pr_type_t  *var = DATA (def->ofs);
 
 	if ((field_def = Hash_Find (field_defs, STRING (def->name)))) {
 		def_error (def, "%s redefined", STRING (def->name));
+		def_error (field_def, "previous definition");
 	}
 	defgroup_add_defs (&fields, def, 1);
 	field_def = fields.defs + fields.num_defs - 1;
@@ -275,10 +305,10 @@ fixup_def (qfo_t *qfo, qfo_def_t *def, int def_num)
 	if (!(def->flags & QFOD_EXTERNAL)) {
 		def->ofs += data_base;
 		if (def->flags & QFOD_INITIALIZED) {
-			pr_type_t  *var = data->data + def->ofs;
+			pr_type_t  *var = DATA (def->ofs);
 			switch (def->basic_type) {
 				case ev_func:
-					func = funcs.funcs + var->func_var - 1 + func_base;
+					func = funcs.funcs + var->func_var - 1;
 					func->def = def_num;
 					break;
 				case ev_field:
@@ -411,20 +441,19 @@ fixup_relocs ()
 			case rel_op_c_op:
 				break;
 			case rel_def_op:
-				data->data[reloc->ofs].integer_var = reloc->def;
+				DATA (reloc->ofs)->integer_var = reloc->def;
 				break;
 			case rel_def_def:
-				data->data[reloc->ofs].integer_var = def->ofs;
+				DATA (reloc->ofs)->integer_var = def->ofs;
 				break;
 			case rel_def_func:
-				data->data[reloc->ofs].integer_var = reloc->def + 1;
 				break;
 			case rel_def_string:
 				break;
 			case rel_def_field:
 				field_def = Hash_Find (field_defs, STRING (def->name));
 				if (field_def)			// null if not initialized
-					data->data[reloc->ofs].integer_var = field_def->ofs;
+					DATA (reloc->ofs)->integer_var = field_def->ofs;
 				break;
 		}
 	}
@@ -433,7 +462,7 @@ fixup_relocs ()
 		if (def->basic_type == ev_func
 			&& (def->flags & QFOD_INITIALIZED)
 			&& !(def->flags & (QFOD_LOCAL | QFOD_EXTERNAL | QFOD_ABSOLUTE))) {
-			func = funcs.funcs + data->data[def->ofs].func_var - 1;
+			func = funcs.funcs + DATA (def->ofs)->func_var - 1;
 			func->def = i;
 		}
 	}
@@ -455,6 +484,11 @@ move_def (hashtab_t *deftab, qfo_def_t *d)
 		relocs.relocs[d->relocs + j].type = rel_none;
 		final_relocs.relocs[def->relocs + j].def = def_num;
 	}
+	if (d->basic_type == ev_func) {
+		qfo_func_t *func;
+		func = funcs.funcs + DATA (d->ofs)->func_var - 1;
+		func->def = def_num;
+	}
 	if (deftab) {
 		while ((d = Hash_Del (deftab, STRING (def->name)))) {
 			int         def_relocs;
@@ -466,6 +500,7 @@ move_def (hashtab_t *deftab, qfo_def_t *d)
 				relocs.relocs[d->relocs + j].type = rel_none;
 				final_relocs.relocs[def_relocs + j].def = def_num;
 			}
+			memset (d, 0, sizeof (*d));
 		}
 	}
 }
@@ -476,10 +511,13 @@ merge_defgroups (void)
 	int         local_base, i, j;
 	qfo_def_t  *def, *d;
 	qfo_func_t *func;
+	static qfo_def_t null_def;
 
 	for (i = 0; i < global_defs.num_defs; i++) {
 		const char *name;
 		def = global_defs.defs + i;
+		if (memcmp (def, &null_def, sizeof (*def)) == 0)
+			continue;
 		name = STRING (def->name);
 		if ((d = Hash_Del (defined_defs, name)))
 			move_def (defined_defs, d);
