@@ -92,8 +92,6 @@ GIB_Buffer_Add (cbuf_t *cbuf, const char *str)
 	gib_buffer_data_t *g = GIB_DATA (cbuf);
 	gib_tree_t **save, *cur;
 
-	cbuf_active = cbuf;
-
 	if (g->program) {
 		for (cur = g->program; cur->next; cur = cur->next);
 		save = &cur->next;
