@@ -91,6 +91,8 @@ type_t     *type_category;
 type_t     *type_ivar;
 type_t     *type_module;
 
+type_t     *vector_struct;
+
 type_t      type_floatfield = { ev_field, ".float", NULL, &type_float };
 
 static type_t *free_types;
@@ -583,6 +585,11 @@ init_types (void)
 
 	if (options.traditional)
 		return;
+
+	type = vector_struct = new_struct (0);
+	new_struct_field (type, &type_float, "x", vis_public);
+	new_struct_field (type, &type_float, "y", vis_public);
+	new_struct_field (type, &type_float, "z", vis_public);
 
 	type = type_SEL.aux_type = new_struct (0);
 	new_struct_field (type, &type_string, "sel_id", vis_public);

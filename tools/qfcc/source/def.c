@@ -387,6 +387,7 @@ get_tempdef (type_t *type, scope_t *scope)
 		def->type = type;
 	} else {
 		def = new_def (type, 0, scope);
+		def->return_addr = __builtin_return_address (0);
 		def->ofs = new_location (type, scope->space);
 	}
 	def->freed = def->removed = def->users = 0;
