@@ -52,7 +52,7 @@ libvid_sw32_la_SOURCES=		vid_common_sw32.c
 libvid_sw32_la_CFLAGS=		@PREFER_NON_PIC@
 libvid_sw32_la_LDFLAGS=		-static
 
-libvid_gl_la_SOURCES=		vid_common_gl.c qfgl_ext.c
+libvid_gl_la_SOURCES=		vid_common_gl.c qfgl_ext.c vtxarray.c
 libvid_gl_la_CFLAGS=		@PREFER_NON_PIC@
 libvid_gl_la_LDFLAGS=		-static
 
