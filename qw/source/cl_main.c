@@ -167,12 +167,6 @@ entity_t    cl_static_entities[MAX_STATIC_ENTITIES];
 lightstyle_t cl_lightstyle[MAX_LIGHTSTYLES];
 dlight_t    cl_dlights[MAX_DLIGHTS];
 
-// refresh list
-// this is double buffered so the last frame
-// can be scanned for oldorigins of trailing objects
-int         cl_numvisedicts;
-entity_t	*cl_visedicts[MAX_VISEDICTS];
-
 double      connect_time = -1;			// for connection retransmits
 
 quakeparms_t host_parms;

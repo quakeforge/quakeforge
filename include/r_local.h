@@ -333,6 +333,9 @@ extern int		r_clipflags;
 extern int		r_dlightframecount;
 extern qboolean	r_fov_greater_than_90;
 
+extern int r_numvisedicts;
+extern struct entity_s *r_visedicts[];
+
 void R_StoreEfrags (efrag_t **ppefrag);
 void R_TimeRefresh_f (void);
 void R_TimeGraph (void);

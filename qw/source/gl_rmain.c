@@ -831,28 +831,28 @@ R_DrawEntitiesOnList (void)
 	}
 
 	// LordHavoc: split into 3 loops to simplify state changes
-	for (i = 0; i < cl_numvisedicts; i++) {
-		if (cl_visedicts[i]->model->type != mod_brush)
+	for (i = 0; i < r_numvisedicts; i++) {
+		if (r_visedicts[i]->model->type != mod_brush)
 			continue;
-		currententity = cl_visedicts[i];
+		currententity = r_visedicts[i];
 		modelalpha = currententity->alpha;
 
 		R_DrawBrushModel (currententity);
 	}
 
-	for (i = 0; i < cl_numvisedicts; i++) {
-		if (cl_visedicts[i]->model->type != mod_alias)
+	for (i = 0; i < r_numvisedicts; i++) {
+		if (r_visedicts[i]->model->type != mod_alias)
 			continue;
-		currententity = cl_visedicts[i];
+		currententity = r_visedicts[i];
 		modelalpha = currententity->alpha;
 
 		R_DrawAliasModel (currententity);
 	}
 
-	for (i = 0; i < cl_numvisedicts; i++) {
-		if (cl_visedicts[i]->model->type != mod_sprite)
+	for (i = 0; i < r_numvisedicts; i++) {
+		if (r_visedicts[i]->model->type != mod_sprite)
 			continue;
-		currententity = cl_visedicts[i];
+		currententity = r_visedicts[i];
 		modelalpha = currententity->alpha;
 
 		R_DrawSpriteModel (currententity);
@@ -1106,7 +1106,7 @@ R_Mirror (void)
 	r_refdef.viewangles[1] = atan2 (vpn[1], vpn[0]) / M_PI * 180;
 	r_refdef.viewangles[2] = -r_refdef.viewangles[2];
 
-	ent = CL_NewTempEntity();
+	ent = R_NewEntity();
 	if (ent)
 		*ent = &cl_entities[cl.viewentity];
 

@@ -484,7 +484,7 @@ CL_LinkPacketEntities (void)
 			continue;
 
 		// create a new entity
-		ent = CL_NewTempEntity ();
+		ent = R_NewEntity ();
 		if (!ent)
 			break;						// object list is full
 
@@ -642,7 +642,7 @@ CL_LinkProjectiles (void)
 			continue;
 
 		// grab an entity to fill in
-		ent = CL_NewTempEntity ();
+		ent = R_NewEntity ();
 		if (!ent)
 			break;						// object list is full
 		*ent = &pr->ent;
@@ -790,7 +790,7 @@ CL_AddFlagModels (entity_t *ent, int team)
 			f = f + 7;					// shotattack
 	}
 
-	newent = CL_NewTempEntity ();
+	newent = R_NewEntity ();
 	if (!newent)
 		return;
 	*newent = &cl_flag_ents[ent->keynum];
@@ -864,7 +864,7 @@ CL_LinkPlayers (void)
 			continue;
 
 		// grab an entity to fill in
-		ent = CL_NewTempEntity ();
+		ent = R_NewEntity ();
 		if (!ent)						// object list is full
 			break;
 		*ent = &cl_player_ents[state - frame->playerstate];
@@ -1080,7 +1080,7 @@ CL_EmitEntities (void)
 	if (!cl.validsequence)
 		return;
 
-	cl_numvisedicts = 0;
+	R_ClearEnts ();
 
 	CL_LinkPlayers ();
 	CL_LinkPacketEntities ();

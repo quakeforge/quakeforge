@@ -73,7 +73,7 @@ client_LIBS=	-L. -lqfnet $(qf_client_LIBS) $(NET_LIBS)
 client_LIB_DEPS=	libqfnet.a $(qf_client_LIBS)
 
 client_SOURCES=	cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
-		cl_tent.c console.c keys.c sbar.c r_cvar.c r_efrag.c r_part.c r_view.c \
+		cl_tent.c console.c keys.c sbar.c r_cvar.c r_efrag.c r_ent.c r_part.c r_view.c \
 		nonintel.c locs.c pcx.c tga.c
 
 server_SOURCES= 	host.c host_cmd.c pr_cmds.c sv_cvar.c sv_main.c \

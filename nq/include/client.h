@@ -304,10 +304,6 @@ void CL_Disconnect (void);
 void CL_Disconnect_f (void);
 void CL_NextDemo (void);
 
-#define			MAX_VISEDICTS	256
-extern	int				cl_numvisedicts;
-extern	entity_t		*cl_visedicts[MAX_VISEDICTS];
-
 
 /*
   cl_input
@@ -366,7 +362,6 @@ void CL_TEnts_Init (void);
 void CL_ClearEnts (void);
 void CL_ClearTEnts (void);
 void CL_Init_Entity (struct entity_s *ent);
-struct entity_s **CL_NewTempEntity (void);
 void CL_ParseTEnt (void);
 void CL_SignonReply (void);
 

@@ -91,9 +91,6 @@ entity_state_t    cl_static_entity_baselines[MAX_STATIC_ENTITIES];
 lightstyle_t cl_lightstyle[MAX_LIGHTSTYLES];
 dlight_t    cl_dlights[MAX_DLIGHTS];
 
-int         cl_numvisedicts;
-entity_t   *cl_visedicts[MAX_VISEDICTS];
-
 
 void
 CL_InitCvars (void)
@@ -715,7 +712,7 @@ CL_RelinkEntities (void)
 		if (ent->effects & EF_NODRAW)
 			continue;
 #endif
-		if ((_ent = CL_NewTempEntity ()))
+		if ((_ent = R_NewEntity ()))
 			*_ent = ent;
 	}
 }
@@ -748,7 +745,7 @@ CL_ReadFromServer (void)
 	if (cl_shownet->int_val)
 		Con_Printf ("\n");
 
-	cl_numvisedicts = 0;
+	R_ClearEnts ();
 
 	CL_RelinkEntities ();
 	CL_UpdateTEnts ();

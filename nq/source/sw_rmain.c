@@ -494,8 +494,8 @@ R_DrawEntitiesOnList (void)
 		return;
 	}
 
-	for (i = 0; i < cl_numvisedicts; i++) {
-		currententity = cl_visedicts[i];
+	for (i = 0; i < r_numvisedicts; i++) {
+		currententity = r_visedicts[i];
 
 		if (currententity == &cl_entities[cl.viewentity]) {
 			if (!chase_active->int_val)
@@ -693,8 +693,8 @@ R_DrawBEntitiesOnList (void)
 	insubmodel = true;
 	r_dlightframecount = r_framecount;
 
-	for (i = 0; i < cl_numvisedicts; i++) {
-		currententity = cl_visedicts[i];
+	for (i = 0; i < r_numvisedicts; i++) {
+		currententity = r_visedicts[i];
 
 		switch (currententity->model->type) {
 			case mod_brush:

@@ -34,7 +34,6 @@
 #include "QF/render.h"
 #include "QF/sys.h"
 
-#include "client.h"
 #include "r_local.h"
 
 mnode_t    *r_pefragtopnode;
@@ -248,7 +247,7 @@ R_StoreEfrags (efrag_t **ppefrag)
 				pent = pefrag->entity;
 
 				if (pent->visframe != r_framecount) {
-					entity_t **ent = CL_NewTempEntity ();
+					entity_t **ent = R_NewEntity ();
 					if (!ent)
 						return;
 					*ent = pent;

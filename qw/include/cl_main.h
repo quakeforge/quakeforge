@@ -48,10 +48,6 @@ qboolean CL_DemoBehind(void);
 
 void CL_BeginServerConnect(void);
 
-#define			MAX_VISEDICTS	256
-extern int		cl_numvisedicts;
-extern entity_t	*cl_visedicts[MAX_VISEDICTS];
-
 extern char emodel_name[], pmodel_name[], prespawn_name[], modellist_name[], soundlist_name[];
 
 #endif // _CL_MAIN_H

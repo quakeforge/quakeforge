@@ -418,16 +418,6 @@ CL_ParseTEnt (void)
 }
 
 
-entity_t **
-CL_NewTempEntity (void)
-{
-
-	if (cl_numvisedicts == MAX_VISEDICTS)
-		return NULL;
-	return &cl_visedicts[cl_numvisedicts++];
-}
-
-
 void
 CL_UpdateBeams (void)
 {
@@ -473,7 +463,7 @@ CL_UpdateBeams (void)
 		d = VectorNormalize (dist);
 		b->ent_count = 0;
 		while (d > 0 && b->ent_count < MAX_BEAM_ENTS) {
-			ent = CL_NewTempEntity ();
+			ent = R_NewEntity ();
 			if (!ent)
 				return;
 			*ent = &b->ent_list[b->ent_count++];
@@ -507,7 +497,7 @@ CL_UpdateExplosions (void)
 			continue;
 		}
 
-		ent = CL_NewTempEntity ();
+		ent = R_NewEntity ();
 		if (!ent)
 			return;
 		ex->ent.frame = f;
