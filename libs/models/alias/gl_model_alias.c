@@ -286,14 +286,18 @@ Mod_LoadExternalSkin (maliasskindesc_t *pskindesc, char *filename)
 
 		pskindesc->fb_texnum = 0;
 
-		glow = LoadImage (va ("%s_glow", filename));
+		glow = LoadImage (va ("%s_luma", filename));
+		if (!glow)
+			glow = LoadImage (va ("%s_glow", filename));
+		if (!glow)
+			glow = LoadImage (va ("textures/%s_luma", ptr));
 		if (!glow)
 			glow = LoadImage (va ("textures/%s_glow", ptr));
 		if (glow)
-			pskindesc->fb_texnum = GL_LoadTexture (va ("fb_%s", filename),
-												   glow->width, glow->height,
-												   glow->data, true, true,
-										  glow->format > 2 ? glow->format : 1);
+			pskindesc->fb_texnum =
+				GL_LoadTexture (va ("fb_%s", filename), glow->width,
+								glow->height, glow->data, true, true,
+								glow->format > 2 ? glow->format : 1);
 		else if (tex->format < 3)
 			pskindesc->fb_texnum = Mod_Fullbright (tex->data, tex->width,
 												   tex->height,
