@@ -70,6 +70,10 @@ typedef struct cmd_buffer_s {
 	unsigned int loop; // Buffer loops itself.  If true, value signifies number of loops done so far
 	qboolean embedded; // Buffer exists to evaluate embedded command
 
+	// Sleep data
+	double timeleft;
+	double lasttime;
+
 	// Execution position
 	enum {
 		cmd_ready, // Ready to read a command

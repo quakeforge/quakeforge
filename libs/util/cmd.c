@@ -451,9 +451,20 @@ Cbuf_ExecuteBuffer (cmd_buffer_t *buffer)
 	cmd_buffer_t *temp = cmd_activebuffer;	// save old context
 	int ret;
 
+
+	if (buffer->timeleft) {
+		double newtime = Sys_DoubleTime ();
+		buffer->timeleft -= newtime - buffer->lasttime;
+		buffer->lasttime = newtime;
+		if (buffer->timeleft < 0.0)
+			buffer->timeleft = 0.0;
+	}
+	if (buffer->timeleft)
+		return;
 	cmd_activebuffer = buffer;
 	buffer->wait = false;
 	buffer->again = false;
+
 	while (1) {
 		if (!strlen(buffer->buffer->str) && buffer->position == cmd_ready) {
 			if (buffer->loop) {
@@ -1893,6 +1904,11 @@ Cmd_Alias_f (void)
 	s = Cmd_Argv (1);
 	// if the alias already exists, reuse it
 	alias = (cmdalias_t *) Hash_Find (cmd_alias_hash, s);
+	if (Cmd_Argc () == 2) {
+		if (alias)
+			Sys_Printf("alias \"%s\" {%s}\n", alias->name, alias->value);
+		return;
+	}
 	if (alias) {
 		free ((char *) alias->value);
 	} else {
@@ -1962,6 +1978,20 @@ Cmd_Wait_f (void)
 	cmd_buffer_t *cur;
 	for (cur = cmd_activebuffer; cur; cur = cur->prev)
 		cur->wait = true;
+}
+
+/* Pauses execution for a certain number of seconds */
+void
+Cmd_Sleep_f (void)
+{
+	if (Cmd_Argc() != 2) {
+		Cmd_Error ("sleep: invalid number of arguments.\n");
+		return;
+	}
+	cmd_activebuffer->timeleft = (double)atof(Cmd_Argv(1));
+	cmd_activebuffer->lasttime = Sys_DoubleTime ();
+	Cmd_Wait_f ();
+	return;
 }
 
 /* Prints a list of available commands */
@@ -2319,6 +2349,7 @@ Cmd_Init (void)
 					"seperate each command with a semi-colon.");
 	Cmd_AddCommand ("unalias", Cmd_UnAlias_f, "Remove the selected alias");
 	Cmd_AddCommand ("wait", Cmd_Wait_f, "Wait a game tic");
+	Cmd_AddCommand ("sleep", Cmd_Sleep_f, "Sleep for $1 seconds");
 	Cmd_AddCommand ("cmdlist", Cmd_CmdList_f, "List all commands");
 	Cmd_AddCommand ("help", Cmd_Help_f, "Display help for a command or "
 					"variable");

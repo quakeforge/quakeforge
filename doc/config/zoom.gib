@@ -23,74 +23,74 @@
 //              Boston, MA  02111-1307, USA
 
 set zoom_version {$Id$}
-set zoom_base_sensitivity 10
+set zoom_base_amp 1
 set zoom_base_fov 90
 set zoom_mult 1.25
 set zoom_zoomed 0
 
 set zoom_mult_lower 1.25
 set zoom_mult_upper 90 // This is more or less the hard limit
-set zoom_mult_step .25;
+set zoom_mult_step .25
 
 alias zoom_init { // Initialize basic options
 	if #{$argn != 6} {
-		echo "Usage: $0 base_sensitivity base_fov min_zoom max_zoom zoom_step";
-		return;
+		echo "Usage: $0 base_sensitivity base_fov min_zoom max_zoom zoom_step"
+		return
 	}
-	set zoom_base_sensitivity $1;
+	set zoom_base_amp $1
 	set zoom_base_fov $2
-	set zoom_mult_lower $3;
-	set zoom_mult $3;
-	set zoom_mult_upper $4;
-	set zoom_mult_step $5;
+	set zoom_mult_lower $3
+	set zoom_mult $3
+	set zoom_mult_upper $4
+	set zoom_mult_step $5
 }
 
 alias zoom_mult { // "Accessor" for zoom_mult
-	if #{!$1} return; // Prevent division by zero
-	set zoom_mult $1;
+	if #{!$1} return // Prevent division by zero
+	set zoom_mult $1
 }
 
 alias zoom_adjust { // Adjust fov and sensitivity to match zoom factor
 	if $zoom_zoomed {
-		set fov #{$zoom_base_fov/$zoom_mult};
-		set in_mouse_amp #{$zoom_base_sensitivity/$zoom_mult};
-		return;
+		set fov #{$zoom_base_fov/$zoom_mult}
+		set in_mouse_amp #{$zoom_base_amp/$zoom_mult}
+		return
 	} else {
-		set fov $zoom_base_fov;
-		set in_mouse_amp $zoom_base_sensitivity;
-	};
+		set fov $zoom_base_fov
+		set in_mouse_amp $zoom_base_amp
+	}
 }
 
 alias zoom_in { // Replaced ID zoom function
-	set zoom_zoomed 1;
-	zoom_adjust;
+	set zoom_zoomed 1
+	zoom_adjust
 }
 
 alias zoom_out { // Replaced ID zoom function
-	set zoom_zoomed 0;
-	zoom_adjust;
+	set zoom_zoomed 0
+	zoom_adjust
 }
 
 alias zoom_toggle {
-	toggle zoom_zoomed;
-	zoom_adjust;
+	toggle zoom_zoomed
+	zoom_adjust
 }
 
 alias zoom_increase {
-	if #{!$zoom_zoomed} return;
-	zoom_mult #{$zoom_mult + $zoom_mult_step*$zoom_mult};
+	if #{!$zoom_zoomed} return
+	zoom_mult #{$zoom_mult + $zoom_mult_step*$zoom_mult} // Grow zoom exponentially
 	if #{$zoom_mult>$zoom_mult_upper} {
-		zoom_mult $zoom_mult_upper;
-	};
-	zoom_adjust;
+		zoom_mult $zoom_mult_upper
+	}
+	zoom_adjust
 }
 
 alias zoom_decrease {
-	if #{!$zoom_zoomed} return;
-	zoom_mult #{$zoom_mult/(1 + $zoom_mult_step)};
+	if #{!$zoom_zoomed} return
+	zoom_mult #{$zoom_mult/(1 + $zoom_mult_step)}
 	if #{$zoom_mult < $zoom_mult_lower} {
-		zoom_mult $zoom_mult_lower;
-	};
-	zoom_adjust;
+		zoom_mult $zoom_mult_lower
+	}
+	zoom_adjust
 }
 
