@@ -1150,8 +1150,17 @@ if test "x$optimize" = xyes; then
 				set $2
 				if test $1 -ge 3; then
 					CFLAGS="$CFLAGS -fstrict-aliasing"
+				else
+					if test $1 = 2 -a $ $2 = 96; then
+						CFLAGS="$CFLAGS -fno-strict-aliasing"
+					fi
 				fi
 				IFS=" "
+			else
+				set $CCVER
+				if test $1 = 2.96; then
+					CFLAGS="$CFLAGS -fno-strict-aliasing"
+				fi
 			fi
 		fi
 		AC_MSG_CHECKING(for special compiler settings)
