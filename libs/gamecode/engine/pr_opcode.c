@@ -75,12 +75,12 @@ opcode_t    pr_opcodes[] = {
 	{"!=", "ne.e", OP_NE_E, false, ev_entity, ev_entity, ev_integer, PROG_ID_VERSION},
 	{"!=", "ne.fnc", OP_NE_FNC, false, ev_func, ev_func, ev_integer, PROG_ID_VERSION},
 
-	{"<=", "le", OP_LE, false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
-	{">=", "ge", OP_GE, false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
+	{"<=", "le.f", OP_LE, false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
+	{">=", "ge.f", OP_GE, false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
 	{"<=", "le.s", OP_LE_S, false, ev_string, ev_string, ev_integer, PROG_VERSION},
 	{">=", "ge.s", OP_GE_S, false, ev_string, ev_string, ev_integer, PROG_VERSION},
-	{"<", "lt", OP_LT, false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
-	{">", "gt", OP_GT, false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
+	{"<", "lt.f", OP_LT, false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
+	{">", "gt.f", OP_GT, false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
 	{"<", "lt.s", OP_LT_S, false, ev_string, ev_string, ev_integer, PROG_VERSION},
 	{">", "gt.s", OP_GT_S, false, ev_string, ev_string, ev_integer, PROG_VERSION},
 
