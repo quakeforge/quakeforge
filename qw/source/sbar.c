@@ -815,6 +815,7 @@ Sbar_TeamOverlay (void)
 	int         pavg, plow, phigh, i, k, l, x, y;
 	qpic_t     *pic;
 	team_t     *tm;
+	info_key_t *player_team = cl.players[cl.playernum].team;
 
 	if (!cl.teamplay) { // FIXME: if not teamplay, why teamoverlay?
 		Sbar_DeathmatchOverlay (0);
@@ -874,7 +875,7 @@ Sbar_TeamOverlay (void)
 		snprintf (num, sizeof (num), "%5i", tm->players);
 		Draw_String (x + 104 + 88, y, num);
 
-		if (strnequal (cl.players[cl.playernum].team->value, tm->team, 16)) {
+		if (player_team && strnequal (player_team->value, tm->team, 16)) {
 			Draw_Character (x + 104 - 8, y, 16);
 			Draw_Character (x + 104 + 32, y, 17);
 		}
@@ -1626,6 +1627,7 @@ Sbar_MiniDeathmatchOverlay (void)
 	int         numlines, top, bottom, f, i, k, x, y;
 	char        num[12];
 	player_info_t *s;
+	info_key_t *player_team = cl.players[cl.playernum].team;
 	team_t     *tm;
 
 	if (vid.width < 512 || !sb_lines)
@@ -1723,7 +1725,7 @@ Sbar_MiniDeathmatchOverlay (void)
 		snprintf (num, sizeof (num), "%5i", tm->frags);
 		Draw_String (x + 40, y, num);
 
-		if (strnequal (cl.players[cl.playernum].team->value, tm->team, 16)) {
+		if (player_team && strnequal (player_team->value, tm->team, 16)) {
 			Draw_Character (x - 8, y, 16);
 			Draw_Character (x + 32, y, 17);
 		}
