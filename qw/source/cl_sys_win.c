@@ -74,7 +74,7 @@ HWND        hwnd_dialog;				// startup dialog box
 
 HANDLE      qwclsemaphore;
 
-static HANDLE hinput, houtput, tevent;
+static HANDLE tevent;
 
 void        MaskExceptions (void);
 void        Sys_PopFPCW (void);
