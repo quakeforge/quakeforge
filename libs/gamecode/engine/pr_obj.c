@@ -69,6 +69,12 @@ call_function (progs_t *pr, func_t func)
 }
 
 static const char *
+selector_get_key (void *s, void *pr)
+{
+	return PR_GetString ((progs_t *)pr, ((pr_sel_t *)s)->sel_id);
+}
+
+static const char *
 class_get_key (void *c, void *pr)
 {
 	return PR_GetString ((progs_t *)pr, ((pr_class_t *)c)->name);
@@ -214,6 +220,7 @@ pr___obj_exec_class (progs_t *pr)
 	sel = &G_STRUCT (pr, pr_sel_t, symtab->refs);
 	for (i = 0; i < symtab->sel_ref_cnt; i++) {
 		Sys_DPrintf ("    %s\n", PR_GetString (pr, sel->sel_id));
+		Hash_Add (pr->selectors, sel);
 		sel++;
 	}
 	ptr = symtab->defs;
@@ -256,7 +263,7 @@ pr___obj_exec_class (progs_t *pr)
 
 //====================================================================
 
-static func_t
+static pr_method_t *
 obj_find_message (progs_t *pr, pr_class_t *class, pr_sel_t *selector)
 {
 	pr_class_t *c = class;
@@ -270,7 +277,7 @@ obj_find_message (progs_t *pr, pr_class_t *class, pr_sel_t *selector)
 			for (i = 0, method = method_list->method_list;
 				 i < method_list->method_count; i++, method++) {
 				if (method->method_name.sel_id == selector->sel_id)
-					return method->method_imp;
+					return method;
 			}
 			method_list = &G_STRUCT (pr, pr_method_list_t,
 									 method_list->method_next);
@@ -280,7 +287,7 @@ obj_find_message (progs_t *pr, pr_class_t *class, pr_sel_t *selector)
 	return 0;
 }
 
-static func_t
+static pr_method_t *
 obj_msg_lookup (progs_t *pr, pr_id_t *receiver, pr_sel_t *op)
 {
 	pr_class_t *class;
@@ -290,7 +297,7 @@ obj_msg_lookup (progs_t *pr, pr_id_t *receiver, pr_sel_t *op)
 	return obj_find_message (pr, class, op);
 }
 
-static func_t
+static pr_method_t *
 obj_msg_lookup_super (progs_t *pr, pr_super_t *super, pr_sel_t *op)
 {
 	pr_class_t *class;
@@ -337,7 +344,8 @@ pr_obj_msg_lookup (progs_t *pr)
 {
 	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
-	R_INT (pr) = obj_msg_lookup (pr, receiver, op);
+	pr_method_t *method = obj_msg_lookup (pr, receiver, op);
+	R_INT (pr) = method ? method->method_imp : 0;
 }
 
 static void
@@ -345,8 +353,8 @@ pr_obj_msg_lookup_super (progs_t *pr)
 {
 	pr_super_t *super = &P_STRUCT (pr, pr_super_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
-
-	R_INT (pr) = obj_msg_lookup_super (pr, super, _cmd);
+	pr_method_t *method = obj_msg_lookup_super (pr, super, _cmd);
+	R_INT (pr) = method ? method->method_imp : 0;
 }
 
 static void
@@ -355,9 +363,9 @@ pr_obj_msg_sendv (progs_t *pr)
 	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
 	pr_va_list_t args = P_STRUCT (pr, pr_va_list_t, 2);
-	func_t      imp = obj_msg_lookup (pr, receiver, op);
+	pr_method_t *method = obj_msg_lookup (pr, receiver, op);
 
-	if (!imp)
+	if (!method)
 		PR_RunError (pr, "%s does not respond to %s",
 					 PR_GetString (pr, object_get_class_name (pr, receiver)),
 					 PR_GetString (pr, op->sel_id));
@@ -365,7 +373,7 @@ pr_obj_msg_sendv (progs_t *pr)
 		args.count = 6;
 	memcpy (P_GPOINTER (pr, 2), G_GPOINTER (pr, args.list),
 			args.count * 4 * pr->pr_param_size);
-	call_function (pr, imp);
+	call_function (pr, method->method_imp);
 }
 
 static void
@@ -435,7 +443,7 @@ pr_obj_msgSend (progs_t *pr)
 {
 	pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
-	func_t      imp;
+	pr_method_t *method;
 
 	if (!self) {
 		R_INT (pr) = R_INT (pr);
@@ -443,13 +451,13 @@ pr_obj_msgSend (progs_t *pr)
 	}
 	if (!_cmd)
 		PR_RunError (pr, "null selector");
-	imp = obj_msg_lookup (pr, self, _cmd);
-	if (!imp)
+	method = obj_msg_lookup (pr, self, _cmd);
+	if (!method)
 		PR_RunError (pr, "%s does not respond to %s",
 					 PR_GetString (pr, object_get_class_name (pr, self)),
 					 PR_GetString (pr, _cmd->sel_id));
 
-	call_function (pr, imp);
+	call_function (pr, method->method_imp);
 }
 
 static void
@@ -457,17 +465,17 @@ pr_obj_msgSend_super (progs_t *pr)
 {
 	pr_super_t *super = &P_STRUCT (pr, pr_super_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
-	func_t      imp;
+	pr_method_t *method;
 
-	imp = obj_msg_lookup_super (pr, super, _cmd);
-	if (!imp) {
+	method = obj_msg_lookup_super (pr, super, _cmd);
+	if (!method) {
 		pr_id_t    *self = &G_STRUCT (pr, pr_id_t, super->self);
 		PR_RunError (pr, "%s does not respond to %s",
 					 PR_GetString (pr, object_get_class_name (pr, self)),
 					 PR_GetString (pr, _cmd->sel_id));
 	}
 	P_POINTER (pr, 0) = super->self;
-	call_function (pr, imp);
+	call_function (pr, method->method_imp);
 }
 
 static void
@@ -518,9 +526,9 @@ pr_sel_get_type (progs_t *pr)
 static void
 pr_sel_get_uid (progs_t *pr)
 {
-	//const char *name = P_GSTRING (pr, 0);
-	//XXX
-	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
+	const char *name = P_GSTRING (pr, 0);
+	pr_sel_t   *sel = Hash_Find (pr->selectors, name);
+	RETURN_POINTER (pr, sel);
 }
 
 static void
@@ -553,10 +561,10 @@ pr_class_get_class_method (progs_t *pr)
 static void
 pr_class_get_instance_method (progs_t *pr)
 {
-	//pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
-	//pr_sel_t   *aSel = &P_STRUCT (pr, pr_sel_t, 1);
-	//XXX
-	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
+	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
+	pr_sel_t   *aSel = &P_STRUCT (pr, pr_sel_t, 1);
+	pr_method_t *method = obj_find_message (pr, class, aSel);
+	RETURN_POINTER (pr, method);
 }
 
 static void
@@ -933,6 +941,11 @@ PR_InitRuntime (progs_t *pr)
 	int         fnum;
 	pr_class_t **class_list, **class;
 	pr_category_t **category_list, **category;
+
+	if (!pr->selectors)
+		pr->selectors = Hash_NewTable (1021, selector_get_key, 0, pr);
+	else
+		Hash_FlushTable (pr->selectors);
 
 	if (!pr->classes)
 		pr->classes = Hash_NewTable (1021, class_get_key, 0, pr);

@@ -364,6 +364,7 @@ struct progs_s {
 	struct hashtab_s *resource_hash;
 
 	// obj info
+	struct hashtab_s *selectors;
 	struct hashtab_s *classes;
 	struct hashtab_s *categories;
 	struct hashtab_s *protocols;
