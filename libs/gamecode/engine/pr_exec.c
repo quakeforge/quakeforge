@@ -690,7 +690,9 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 			case OP_DONE:
 			case OP_RETURN:
-				memcpy (&R_INT (pr), &OPA, pr->pr_param_size * sizeof (OPA));
+				if (&R_INT (pr) != &OPA.integer_var)
+					memcpy (&R_INT (pr), &OPA,
+							pr->pr_param_size * sizeof (OPA));
 				PR_LeaveFunction (pr);
 				st = pr->pr_statements + pr->pr_xstatement;
 				if (pr->pr_depth == exitdepth) {
