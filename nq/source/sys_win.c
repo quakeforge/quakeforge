@@ -42,7 +42,7 @@
 #include "client.h"
 #include "game.h"
 #include "host.h"
-#include "screen.h"
+#include "QF/screen.h"
 
 #define MINIMUM_WIN_MEMORY		0x0880000
 #define MAXIMUM_WIN_MEMORY		0x1000000

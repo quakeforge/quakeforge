@@ -44,7 +44,7 @@
 #include "host.h"
 #include "QF/qargs.h"
 #include "resource.h"
-#include "screen.h"
+#include "QF/screen.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/vid.h"

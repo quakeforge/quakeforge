@@ -34,15 +34,13 @@
 
 #include "winquake.h"
 #include <dinput.h>
-#include "client.h"
+
 #include "QF/keys.h"
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/qargs.h"
 #include "QF/cmd.h"
 #include "QF/input.h"
-#include "cl_input.h"
-#include "view.h"
 
 #define DINPUT_BUFFERSIZE           16
 #define iDirectInputCreate(a,b,c,d)	pDirectInputCreate(a,b,c,d)
@@ -53,8 +51,6 @@ HRESULT (WINAPI * pDirectInputCreate) (HINSTANCE hinst, DWORD dwVersion,
 
 // mouse public variables
 
-float       mouse_x, mouse_y;
-qboolean    mouseactive;
 unsigned int uiWheelMessage;
 
 // mouse local variables
@@ -62,7 +58,7 @@ unsigned int uiWheelMessage;
 static int  mouse_buttons;
 static int  mouse_oldbuttonstate;
 static POINT current_pos;
-static float old_mouse_x, old_mouse_y, mx_accum, my_accum;
+static float mx_accum, my_accum;
 static qboolean mouseinitialized;
 static cvar_t *m_filter;
 static qboolean restore_spi;
@@ -125,15 +121,6 @@ extern void JOY_Init (void);
 extern void JOY_AdvancedUpdate_f (void);
 extern void JOY_Move (void);
 
-/*
-	Force_CenterView_f
-*/
-static void
-Force_CenterView_f (void)
-{
-	cl.viewangles[PITCH] = 0;
-}
-
 
 /*
 	IN_UpdateClipCursor
@@ -142,7 +129,7 @@ void
 IN_UpdateClipCursor (void)
 {
 
-	if (mouseinitialized && mouseactive && !dinput) {
+	if (mouseinitialized && in_mouse_avail && !dinput) {
 		ClipCursor (&window_rect);
 	}
 }
@@ -205,7 +192,7 @@ IN_ActivateMouse (void)
 			ClipCursor (&window_rect);
 		}
 
-		mouseactive = true;
+		in_mouse_avail = true;
 	}
 }
 
@@ -246,7 +233,7 @@ IN_DeactivateMouse (void)
 			ReleaseCapture ();
 		}
 
-		mouseactive = false;
+		in_mouse_avail = false;
 	}
 }
 
@@ -410,8 +397,6 @@ IN_StartupMouse (void)
 void
 IN_Init (void)
 {
-	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "Force view of player to center");
-
 	uiWheelMessage = RegisterWindowMessage ("MSWHEEL_ROLLMSG");
 
 
@@ -426,8 +411,10 @@ IN_Init_Cvars (void)
 	// mouse variables
 	m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, NULL,
 			"Toggle mouse input filtering.");
+	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, NULL,
+			"Grab the mouse from X while playing quake");
 
-        JOY_Init_Cvars();
+	JOY_Init_Cvars();
 }
 
 /*
@@ -460,7 +447,7 @@ IN_MouseEvent (int mstate)
 {
 	int         i;
 
-	if (mouseactive && !dinput) {
+	if (in_mouse_avail && !dinput) {
 		// perform button actions
 		for (i = 0; i < mouse_buttons; i++) {
 			if ((mstate & (1 << i)) && !(mouse_oldbuttonstate & (1 << i))) {
@@ -491,7 +478,7 @@ IN_MouseMove (void)
 	DWORD       dwElements;
 	HRESULT     hr;
 
-	if (!mouseactive)
+	if (!in_mouse_avail)
 		return;
 
 	if (dinput) {
@@ -570,34 +557,8 @@ IN_MouseMove (void)
 		my_accum = 0;
 	}
 
-	if (m_filter->value) {
-		mouse_x = (mx + old_mouse_x) * 0.5;
-		mouse_y = (my + old_mouse_y) * 0.5;
-	} else {
-		mouse_x = mx;
-		mouse_y = my;
-	}
-
-	old_mouse_x = mx;
-	old_mouse_y = my;
-
-	mouse_x *= sensitivity->value;
-	mouse_y *= sensitivity->value;
-
-// add mouse X/Y movement to cmd
-	if ((in_strafe.state & 1) || (lookstrafe->int_val && freelook))
-		viewdelta.position[0] += mouse_x;
-	else
-		viewdelta.angles[YAW] -= mouse_x;
-
-	if (freelook && !(in_strafe.state & 1)) {
-		viewdelta.angles[PITCH] += mouse_y;
-	} else {
-		if (in_strafe.state & 1)
-			viewdelta.position[1] -= mouse_y;
-		else
-			viewdelta.position[2] -= mouse_y;
-	}
+	in_mouse_x = mx;
+	in_mouse_y = my;
 
 // if the mouse has moved, force it to the center, so there's room to move
 	if (mx || my) {
@@ -631,7 +592,7 @@ IN_Accumulate (void)
 
 //        if (dinput) return;             // If using dinput we don't probably need this
 
-	if (mouseactive) {
+	if (in_mouse_avail) {
 		GetCursorPos (&current_pos);
 
 		mx_accum += current_pos.x - window_center_x;
@@ -650,7 +611,7 @@ void
 IN_ClearStates (void)
 {
 
-	if (mouseactive) {
+	if (in_mouse_avail) {
 		mx_accum = 0;
 		my_accum = 0;
 		mouse_oldbuttonstate = 0;
