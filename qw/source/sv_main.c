@@ -1810,6 +1810,8 @@ SV_ExtractFromUserinfo (client_t *cl)
 			// being too long), drop the client to prevent an infinite
 			// loop.
 			if(strcmp(val, newname)) {
+				Netchan_OutOfBandPrint (net_from,
+							"%c\nPlease choose a different name.\n", A2C_PRINT);
 				SV_ClientPrintf (cl, PRINT_HIGH,
 								 "Please choose a different name.\n");
 				Con_Printf("Client %d kicked for invalid name\n", cl->userid);
