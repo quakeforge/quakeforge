@@ -285,23 +285,23 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 	if (pr->pr_depth >= MAX_STACK_DEPTH)
 		PR_RunError (pr, "stack overflow");
 
-// save off any locals that the new function steps on
+	// save off any locals that the new function steps on
 	c = f->locals;
 	if (pr->localstack_used + c > LOCALSTACK_SIZE)
 		PR_RunError (pr, "PR_ExecuteProgram: locals stack overflow\n");
 
-	for (i = 0; i < c; i++)
-		pr->localstack[pr->localstack_used + i] =
-			((int *) pr->pr_globals)[f->parm_start + i];
+	memcpy (&pr->localstack[pr->localstack_used],
+			&pr->pr_globals[f->parm_start],
+			sizeof (pr_type_t) * c);
 	pr->localstack_used += c;
 
 // copy parameters
 	o = f->parm_start;
 	for (i = 0; i < f->numparms; i++) {
 		for (j = 0; j < f->parm_size[i]; j++) {
-
-			((int *) pr->pr_globals)[o] =
-				((int *) pr->pr_globals)[OFS_PARM0 + i * 3 + j];
+			memcpy (&pr->pr_globals[o],
+					&pr->pr_globals[OFS_PARM0 + i * 3 + j],
+					sizeof (pr_type_t));
 			o++;
 		}
 	}
@@ -316,7 +316,7 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 int
 PR_LeaveFunction (progs_t * pr)
 {
-	int         i, c;
+	int         c;
 
 	if (pr->pr_depth <= 0)
 		PR_Error (pr, "prog stack underflow");
@@ -327,10 +327,9 @@ PR_LeaveFunction (progs_t * pr)
 	if (pr->localstack_used < 0)
 		PR_RunError (pr, "PR_ExecuteProgram: locals stack underflow\n");
 
-	for (i = 0; i < c; i++)
-
-		((int *) pr->pr_globals)[pr->pr_xfunction->parm_start + i] =
-			pr->localstack[pr->localstack_used + i];
+	memcpy (&pr->pr_globals[pr->pr_xfunction->parm_start],
+			&pr->localstack[pr->localstack_used],
+			sizeof (pr_type_t) * c);
 
 // up stack
 	pr->pr_depth--;
