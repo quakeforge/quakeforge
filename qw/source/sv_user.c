@@ -68,11 +68,12 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 typedef struct ucmd_s {
 	const char *name;
-	void        (*func) (struct ucmd_s *cmd);
+	void        (*func) (void *userdata);
 	unsigned    no_redirect:1;
 	unsigned    overridable:1;
 	unsigned    freeable:1;
-	func_t      qc_hook;
+	void		*userdata;
+	void		(*on_free) (void *userdata);
 } ucmd_t;
 
 edict_t    *sv_player;
@@ -103,7 +104,7 @@ cvar_t     *sv_timecheck_decay;
 	This will be sent on the initial connection and upon each server load.
 */
 static void
-SV_New_f (ucmd_t *cmd)
+SV_New_f (void *unused)
 {
 	const char *gamedir;
 	int         playernum;
@@ -175,7 +176,7 @@ SV_New_f (ucmd_t *cmd)
 }
 
 static void
-SV_Soundlist_f (ucmd_t *cmd)
+SV_Soundlist_f (void *unused)
 {
 	const char **s;
 	unsigned    n;
@@ -222,7 +223,7 @@ SV_Soundlist_f (ucmd_t *cmd)
 }
 
 static void
-SV_Modellist_f (ucmd_t *cmd)
+SV_Modellist_f (void *unused)
 {
 	const char **s;
 	unsigned    n;
@@ -268,7 +269,7 @@ SV_Modellist_f (ucmd_t *cmd)
 }
 
 static void
-SV_PreSpawn_f (ucmd_t *cmd)
+SV_PreSpawn_f (void *unused)
 {
 	char *command;
 	int buf, size;
@@ -332,7 +333,7 @@ SV_PreSpawn_f (ucmd_t *cmd)
 }
 
 static void
-SV_Spawn_f (ucmd_t *cmd)
+SV_Spawn_f (void *unused)
 {
 	int         i, n;
 	client_t   *client;
@@ -451,7 +452,7 @@ SV_SpawnSpectator (void)
 }
 
 static void
-SV_Begin_f (ucmd_t *cmd)
+SV_Begin_f (void *unused)
 {
 	unsigned int	pmodel = 0, emodel = 0;
 	int				i;
@@ -553,7 +554,7 @@ SV_Begin_f (ucmd_t *cmd)
 //=============================================================================
 
 static void
-SV_NextDownload_f (ucmd_t *cmd)
+SV_NextDownload_f (void *unused)
 {
 	byte        buffer[1024];
 	int         percent, size, r;
@@ -670,7 +671,7 @@ SV_NextUpload (void)
 }
 
 static void
-SV_BeginDownload_f (ucmd_t *cmd)
+SV_BeginDownload_f (void *unused)
 {
 	const char *name;
 	dstring_t  *realname;
@@ -874,13 +875,13 @@ SV_Say (qboolean team)
 }
 
 static void
-SV_Say_f (ucmd_t *cmd)
+SV_Say_f (void *unused)
 {
 	SV_Say (false);
 }
 
 static void
-SV_Say_Team_f (ucmd_t *cmd)
+SV_Say_Team_f (void *unused)
 {
 	SV_Say (true);
 }
@@ -894,7 +895,7 @@ SV_Say_Team_f (ucmd_t *cmd)
 	clients
 */
 static void
-SV_Pings_f (ucmd_t *cmd)
+SV_Pings_f (void *unused)
 {
 	client_t   *client;
 	int         j;
@@ -913,7 +914,7 @@ SV_Pings_f (ucmd_t *cmd)
 }
 
 static void
-SV_Kill_f (ucmd_t *cmd)
+SV_Kill_f (void *unused)
 {
 	if (SVfloat (sv_player, health) <= 0) {
 		SV_BeginRedirect (RD_CLIENT);
@@ -949,7 +950,7 @@ SV_TogglePause (const char *msg)
 }
 
 static void
-SV_Pause_f (ucmd_t *cmd)
+SV_Pause_f (void *unused)
 {
 	char			st[sizeof (host_client->name) + 32];
 	static double	lastpausetime;
@@ -991,7 +992,7 @@ SV_Pause_f (ucmd_t *cmd)
 	The client is going to disconnect, so remove the connection immediately
 */
 static void
-SV_Drop_f (ucmd_t *cmd)
+SV_Drop_f (void *unused)
 {
 	SV_EndRedirect ();
 	if (!host_client->spectator)
@@ -1005,7 +1006,7 @@ SV_Drop_f (ucmd_t *cmd)
 	Change the bandwidth estimate for a client
 */
 static void
-SV_PTrack_f (ucmd_t *cmd)
+SV_PTrack_f (void *unused)
 {
 	edict_t    *ent, *tent;
 	int         i;
@@ -1046,7 +1047,7 @@ SV_PTrack_f (ucmd_t *cmd)
 	Change the bandwidth estimate for a client
 */
 static void
-SV_Rate_f (ucmd_t *cmd)
+SV_Rate_f (void *unused)
 {
 	int		rate;
 
@@ -1073,7 +1074,7 @@ SV_Rate_f (ucmd_t *cmd)
 	Change the message level for a client
 */
 static void
-SV_Msg_f (ucmd_t *cmd)
+SV_Msg_f (void *unused)
 {
 	if (Cmd_Argc () != 2) {
 		SV_ClientPrintf (1, host_client, PRINT_HIGH,
@@ -1094,7 +1095,7 @@ SV_Msg_f (ucmd_t *cmd)
 	Allow clients to change userinfo
 */
 static void
-SV_SetInfo_f (ucmd_t *cmd)
+SV_SetInfo_f (void *unused)
 {
 	if (Cmd_Argc () == 1) {
 		SV_Printf ("User info settings:\n");
@@ -1148,13 +1149,13 @@ SV_SetInfo_f (ucmd_t *cmd)
 	Dump serverinfo into a string
 */
 static void
-SV_ShowServerinfo_f (ucmd_t *cmd)
+SV_ShowServerinfo_f (void *unused)
 {
 	Info_Print (svs.info);
 }
 
 static void
-SV_NoSnap_f (ucmd_t *cmd)
+SV_NoSnap_f (void *unused)
 {
 	if (*host_client->uploadfn) {
 		*host_client->uploadfn = 0;
@@ -1199,10 +1200,10 @@ ucmd_t      ucmds[] = {
 static hashtab_t *ucmd_table;
 
 static void
-call_qc_hook (ucmd_t *cmd)
+call_qc_hook (void *qc_hook)
 {
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
-	PR_ExecuteProgram (&sv_pr_state, cmd->qc_hook);
+	PR_ExecuteProgram (&sv_pr_state, (func_t)qc_hook);
 }
 
 static const char *
@@ -1217,29 +1218,74 @@ ucmds_free (void *_c, void *unused)
 {
 	ucmd_t *c = (ucmd_t*)_c;
 	if (c->freeable) {
+		if (c->on_free)
+			c->on_free (c->userdata);
 		free ((char *)c->name);
 		free (c);
 	}
 }
 
-static void
-SV_AddUserCommand (progs_t *pr)
+/*
+	SV_AddUserCommand
+
+	Adds a new user command.  Returns a pointer to the command object (to be
+	used by SV_RemoveUserCommand) if succesful, NULL if the command already
+	exists and is not overridable.
+*/
+void *
+SV_AddUserCommand (const char *name,
+				   void (*func) (void *userdata),
+				   int flags,
+				   void *userdata,
+				   void (*on_free) (void *userdata))
 {
-	const char *name = P_GSTRING (pr, 0);
-	ucmd_t     *cmd;
+	ucmd_t *cmd;
 
 	cmd = Hash_Find (ucmd_table, name);
-	if (cmd && !cmd->overridable) {
-		SV_Printf ("%s already a user command\n", name);
-		return;
-	}
+	if (cmd && !cmd->overridable)
+		return NULL;
+
 	cmd = calloc (1, sizeof (ucmd_t));
 	cmd->freeable = 1;
 	cmd->name = strdup (name);
-	cmd->func = call_qc_hook;
-	cmd->qc_hook = P_FUNCTION (pr, 1);
-	cmd->no_redirect = P_INT (pr, 2);
+	cmd->func = func;
+	cmd->no_redirect = (flags & UCMD_NO_REDIRECT) ? 1 : 0;
+	cmd->overridable = (flags & UCMD_OVERRIDABLE) ? 1 : 0;
+	cmd->userdata = userdata;
+	cmd->on_free = on_free;
 	Hash_Add (ucmd_table, cmd);
+	
+	return cmd;
+}
+
+/*
+	Removes a user command added with SV_AddUserCommand.  Returns true if 
+	successful, false if not.
+*/
+int
+SV_RemoveUserCommand (void *cmd)
+{
+	void *ele = Hash_DelElement(ucmd_table, cmd);
+	
+	if (!ele)
+		return 0;
+	
+	Hash_Free (ucmd_table, ele);
+	return 1;
+}
+
+static void
+PF_AddUserCommand (progs_t *pr)
+{
+	const char *name = P_GSTRING (pr, 0);
+	ucmd_t     *cmd;
+	cmd = SV_AddUserCommand (name, call_qc_hook, 
+							 P_INT (pr, 2) ? UCMD_NO_REDIRECT : 0,
+							 P_FUNCTION (pr, 1),
+							 NULL);
+	
+	if (!cmd)
+		SV_Printf ("%s already a user command\n", name);
 }
 
 void
@@ -1782,7 +1828,7 @@ void
 SV_UserInit (void)
 {
 	ucmd_table = Hash_NewTable (251, ucmds_getkey, ucmds_free, 0);
-	PR_AddBuiltin (&sv_pr_state, "SV_AddUserCommand", SV_AddUserCommand, -1);
+	PR_AddBuiltin (&sv_pr_state, "SV_AddUserCommand", PF_AddUserCommand, -1);
 	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,
 							 "How quickly a player straightens out after "
 							 "strafing");

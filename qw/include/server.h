@@ -535,9 +535,18 @@ void SV_FindModelNumbers (void);
 //
 // sv_user.c
 //
+
+#define UCMD_NO_REDIRECT 1
+#define UCMD_OVERRIDABLE 2
+
 void SV_ExecuteClientMessage (client_t *cl);
 void SV_UserInit (void);
 void SV_TogglePause (const char *msg);
+void *SV_AddUserCommand (const char *name, void (*func) (void *userdata),
+		         int flags,
+		         void *userdata,
+		         void (*on_free) (void *userdata));
+int SV_RemoveUserCommand (void *cmd);
 
 //
 // svonly.c
