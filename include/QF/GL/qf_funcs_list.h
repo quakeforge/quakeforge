@@ -31,6 +31,11 @@
 #define UNDEF_QFGL_DONT_NEED
 #endif
 
+#ifndef QFGL_WANT
+#define QFGL_WANT(ret, func, params)
+#define UNDEF_QFGL_WANT
+#endif
+
 #ifndef QFGL_NEED
 #define QFGL_NEED(ret, func, params)
 #define UNDEF_QFGL_NEED
@@ -412,10 +417,14 @@ QFGL_NEED (void, glVertexPointer, (GLint size, GLenum type, GLsizei stride, cons
 QFGL_NEED (void, glViewport, (GLint x, GLint y, GLsizei width, GLsizei height))
 
 // ATI Extensions
-QFGL_NEED (void, glPNTrianglesiATI, (GLenum pname, GLint param))
+QFGL_WANT (void, glPNTrianglesiATI, (GLenum pname, GLint param))
 
 #ifdef UNDEF_QFGL_DONT_NEED
 #undef QFGL_DONT_NEED
+#endif
+
+#ifdef UNDEF_QFGL_WANT
+#undef QFGL_WANT
 #endif
 
 #ifdef UNDEF_QFGL_NEED

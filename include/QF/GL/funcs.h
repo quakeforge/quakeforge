@@ -37,9 +37,11 @@
 # include <windows.h>
 #endif
 
+#define QFGL_WANT(ret, name, args)	extern ret (GLAPIENTRY * qf##name) args;
 #define QFGL_NEED(ret, name, args)	extern ret (GLAPIENTRY * qf##name) args;
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
+#undef QFGL_WANT
 
 extern void *libgl_handle;
 

@@ -94,10 +94,13 @@ QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 }
 
 // First we need to get all the function pointers declared.
-#define QFGL_NEED(ret, name, args)	\
+#define QFGL_WANT(ret, name, args) \
+	ret (GLAPIENTRY * qf##name) args;
+#define QFGL_NEED(ret, name, args) \
 	ret (GLAPIENTRY * qf##name) args;
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
+#undef QFGL_WANT
 void		*libgl_handle;
 
 // Then we need to open the libGL and set all the symbols.
@@ -106,10 +109,13 @@ GLF_Init (void)
 {
 	libgl_handle = QFGL_LoadLibrary ();
 
-#define QFGL_NEED(ret, name, args)	\
+#define QFGL_WANT(ret, name, args) \
+	qf##name = QFGL_ProcAddress (libgl_handle, #name, false);
+#define QFGL_NEED(ret, name, args) \
 	qf##name = QFGL_ProcAddress (libgl_handle, #name, true);
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
+#undef QFGL_WANT
 
 	return true;
 }

@@ -165,10 +165,10 @@ GL_Common_Init_Cvars (void)
 				  gl_screenshot_byte_swap_f, "Swap the bytes for gl "
 				  "screenshots. Needed if you get screenshots with red and "
 				  "blue swapped.");
-	gl_tessellate = Cvar_Get ("gl_tessellate", "0", CVAR_NONE, gl_tessellate_f,
-							  nva ("Specifies tessellation level from 0 to "
-								   "%i. Quadruples the triangle count at each "
-								   "tessellation level.", tess_max));
+	gl_tessellate =
+		Cvar_Get ("gl_tessellate", "0", CVAR_NONE, gl_tessellate_f,
+				  nva ("Specifies tessellation level from 0 to %i. Higher "
+					   "tessellation level means more triangles.", tess_max));
 	gl_vaelements_max = Cvar_Get ("gl_vaelements_max", "0", CVAR_ROM, NULL,
 								  "Limit the vertex array size for buggy "
 								  "drivers. 0 (default) uses driver provided "

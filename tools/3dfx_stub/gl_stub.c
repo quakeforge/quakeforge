@@ -40,21 +40,27 @@
 
 #define QFGL_DONT_NEED(ret, func, params) QFGL_NEED(ret, func, params)
 
+#undef QFGL_WANT
 #undef QFGL_NEED
-
+#define QFGL_WANT(ret, name, args) \
+ret GLAPIENTRY norm_##name args;
 #define QFGL_NEED(ret, name, args) \
 ret GLAPIENTRY norm_##name args;
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
+#undef QFGL_WANT
 fxMesaContext norm_fxMesaCreateContext (GLuint win, GrScreenResolution_t res, GrScreenRefresh_t ref, const GLint attribList[]);
 void norm_fxMesaMakeCurrent(fxMesaContext fxMesa);
 void norm_fxMesaDestroyContext(fxMesaContext fxMesa);
 void norm_fxMesaSwapBuffers(void);
 
+#define QFGL_WANT(ret, name, args) \
+ret GLAPIENTRY trace_##name args;
 #define QFGL_NEED(ret, name, args) \
 ret GLAPIENTRY trace_##name args;
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
+#undef QFGL_WANT
 fxMesaContext trace_fxMesaCreateContext (GLuint win, GrScreenResolution_t res, GrScreenRefresh_t ref, const GLint attribList[]);
 void trace_fxMesaMakeCurrent(fxMesaContext fxMesa);
 void trace_fxMesaDestroyContext(fxMesaContext fxMesa);
@@ -67,10 +73,13 @@ typedef struct {
 } gl_stub_t;
 
 static gl_stub_t gl_stub_funcs[] = {
+#define QFGL_WANT(ret, name, args) \
+	{#name, norm_##name, trace_##name},
 #define QFGL_NEED(ret, name, args) \
 	{#name, norm_##name, trace_##name},
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
+#undef QFGL_WANT
 	{"fxMesaCreateContext", norm_fxMesaCreateContext, trace_fxMesaCreateContext},
 	{"fxMesaMakeCurrent", norm_fxMesaMakeCurrent, trace_fxMesaMakeCurrent},
 	{"fxMesaDestroyContext", norm_fxMesaDestroyContext, trace_fxMesaDestroyContext},

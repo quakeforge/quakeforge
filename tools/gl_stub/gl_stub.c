@@ -20,17 +20,24 @@ typedef struct __GLXcontextRec *GLXContext;
 
 #define QFGL_DONT_NEED(ret, func, params) QFGL_NEED(ret, func, params)
 
+#undef QFGL_WANT
 #undef QFGL_NEED
 
+#define QFGL_WANT(ret, name, args) \
+ret GLAPIENTRY norm_##name args;
 #define QFGL_NEED(ret, name, args) \
 ret GLAPIENTRY norm_##name args;
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
+#undef QFGL_WANT
 
+#define QFGL_WANT(ret, name, args) \
+ret GLAPIENTRY trace_##name args;
 #define QFGL_NEED(ret, name, args) \
 ret GLAPIENTRY trace_##name args;
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
+#undef QFGL_WANT
 
 typedef struct {
 	const char *name;
@@ -41,10 +48,13 @@ typedef struct {
 static int  trace;
 
 static gl_stub_t gl_stub_funcs[] = {
+#define QFGL_WANT(ret, name, args) \
+	{#name, norm_##name, trace_##name},
 #define QFGL_NEED(ret, name, args) \
 	{#name, norm_##name, trace_##name},
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
+#undef QFGL_WANT
 };
 
 #define NUM_FUNCS (sizeof (gl_stub_funcs) / sizeof (gl_stub_funcs[0]))
