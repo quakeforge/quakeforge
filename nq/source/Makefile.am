@@ -41,7 +41,7 @@ EXTRA_PROGRAMS= nq-mgl nq-sdl \
 noinst_LIBRARIES= libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
 
 #if ASM_ARCH
-math_ASM= 	math.S cl_math.S
+math_ASM= 	cl_math.S
 soft_ASM=	d_draw.S d_draw16.S d_parta.S d_polysa.S d_scana.S d_spr8.S \
 		d_varsa.S r_aclipa.S r_aliasa.S r_drawa.S r_edgea.S r_varsa.S \
 		surf16.S surf8.S
@@ -49,7 +49,7 @@ sound_ASM=	snd_mixa.S
 common_ASM=	sys_ia32.S worlda.S $(math_ASM)
 #endif
 
-common_SOURCES= game.c mathlib.c wad.c world.c \
+common_SOURCES= game.c wad.c world.c \
 		model.c model_alias.c model_brush.c model_sprite.c \
 		quakefs.c \
 		quakeio.c com.c \

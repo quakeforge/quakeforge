@@ -1,7 +1,7 @@
 /*
 	mathlib.c
 
-	@description@
+	math primitives
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -29,12 +29,18 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include <math.h>
 
 #include "mathlib.h"
+#include "qtypes.h"
 #include "sys.h"
-#include "model.h"
 
 vec3_t      vec3_origin = { 0, 0, 0 };
 int         nanmask = 255 << 23;
@@ -94,7 +100,7 @@ PerpendicularVector (vec3_t dst, const vec3_t src)
 	VectorNormalize (dst);
 }
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__GNUC__)
 #pragma optimize( "", off )
 #endif
 
@@ -156,12 +162,11 @@ RotatePointAroundVector (vec3_t dst, const vec3_t dir, const vec3_t point,
 	}
 }
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__GNUC__)
 #pragma optimize( "", on )
 #endif
 
 /*-----------------------------------------------------------------*/
-
 
 float
 anglemod (float a)
@@ -177,11 +182,9 @@ anglemod (float a)
 }
 
 /*
-==================
-BOPS_Error
+	BOPS_Error
 
-Split out like this for ASM to call.
-==================
+	Split out like this for ASM to call.
 */
 void
 BOPS_Error (void)
@@ -189,15 +192,12 @@ BOPS_Error (void)
 	Sys_Error ("BoxOnPlaneSide:  Bad signbits");
 }
 
-
-#ifndef	USE_INTEL_ASM
+#ifndef USE_INTEL_ASM
 
 /*
-==================
-BoxOnPlaneSide
+	BoxOnPlaneSide
 
-Returns 1, 2, or 1 + 2
-==================
+	Returns 1, 2, or 1 + 2
 */
 int
 BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, mplane_t *p)
@@ -206,8 +206,8 @@ BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, mplane_t *p)
 	int         sides;
 
 #if 0									// this is done by the
-	// BOX_ON_PLANE_SIDE macro before
-	// calling this
+										// BOX_ON_PLANE_SIDE macro before
+										// calling this
 	// function
 // fast axial cases
 	if (p->type < 3) {
@@ -222,73 +222,73 @@ BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, mplane_t *p)
 // general case
 	switch (p->signbits) {
 		case 0:
-		dist1 =
-			p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
-			p->normal[2] * emaxs[2];
-		dist2 =
-			p->normal[0] * emins[0] + p->normal[1] * emins[1] +
-			p->normal[2] * emins[2];
-		break;
+			dist1 =
+				p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
+				p->normal[2] * emaxs[2];
+			dist2 =
+				p->normal[0] * emins[0] + p->normal[1] * emins[1] +
+				p->normal[2] * emins[2];
+			break;
 		case 1:
-		dist1 =
-			p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
-			p->normal[2] * emaxs[2];
-		dist2 =
-			p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
-			p->normal[2] * emins[2];
-		break;
+			dist1 =
+				p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
+				p->normal[2] * emaxs[2];
+			dist2 =
+				p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
+				p->normal[2] * emins[2];
+			break;
 		case 2:
-		dist1 =
-			p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
-			p->normal[2] * emaxs[2];
-		dist2 =
-			p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
-			p->normal[2] * emins[2];
-		break;
+			dist1 =
+				p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
+				p->normal[2] * emaxs[2];
+			dist2 =
+				p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
+				p->normal[2] * emins[2];
+			break;
 		case 3:
-		dist1 =
-			p->normal[0] * emins[0] + p->normal[1] * emins[1] +
-			p->normal[2] * emaxs[2];
-		dist2 =
-			p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
-			p->normal[2] * emins[2];
-		break;
+			dist1 =
+				p->normal[0] * emins[0] + p->normal[1] * emins[1] +
+				p->normal[2] * emaxs[2];
+			dist2 =
+				p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
+				p->normal[2] * emins[2];
+			break;
 		case 4:
-		dist1 =
-			p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
-			p->normal[2] * emins[2];
-		dist2 =
-			p->normal[0] * emins[0] + p->normal[1] * emins[1] +
-			p->normal[2] * emaxs[2];
-		break;
+			dist1 =
+				p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
+				p->normal[2] * emins[2];
+			dist2 =
+				p->normal[0] * emins[0] + p->normal[1] * emins[1] +
+				p->normal[2] * emaxs[2];
+			break;
 		case 5:
-		dist1 =
-			p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
-			p->normal[2] * emins[2];
-		dist2 =
-			p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
-			p->normal[2] * emaxs[2];
-		break;
+			dist1 =
+				p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
+				p->normal[2] * emins[2];
+			dist2 =
+				p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
+				p->normal[2] * emaxs[2];
+			break;
 		case 6:
-		dist1 =
-			p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
-			p->normal[2] * emins[2];
-		dist2 =
-			p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
-			p->normal[2] * emaxs[2];
-		break;
+			dist1 =
+				p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
+				p->normal[2] * emins[2];
+			dist2 =
+				p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
+				p->normal[2] * emaxs[2];
+			break;
 		case 7:
-		dist1 =
-			p->normal[0] * emins[0] + p->normal[1] * emins[1] +
-			p->normal[2] * emins[2];
-		dist2 =
-			p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
-			p->normal[2] * emaxs[2];
-		break;
+			dist1 =
+				p->normal[0] * emins[0] + p->normal[1] * emins[1] +
+				p->normal[2] * emins[2];
+			dist2 =
+				p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
+				p->normal[2] * emaxs[2];
+			break;
 		default:
-		dist1 = dist2 = 0;				// shut up compiler
-		BOPS_Error ();
-		break;
+			dist1 = dist2 = 0;			// shut up compiler
+			BOPS_Error ();
+			break;
 	}
 
 #if 0
@@ -474,16 +474,14 @@ Q_log2 (int val)
 {
 	int         answer = 0;
 
-	while (val >>= 1)
+	while ((val >>= 1) != 0)
 		answer++;
 	return answer;
 }
 
 
 /*
-================
-R_ConcatRotations
-================
+	R_ConcatRotations
 */
 void
 R_ConcatRotations (float in1[3][3], float in2[3][3], float out[3][3])
@@ -510,9 +508,7 @@ R_ConcatRotations (float in1[3][3], float in2[3][3], float out[3][3])
 
 
 /*
-================
-R_ConcatTransforms
-================
+	R_ConcatTransforms
 */
 void
 R_ConcatTransforms (float in1[3][4], float in2[3][4], float out[3][4])
@@ -545,13 +541,11 @@ R_ConcatTransforms (float in1[3][4], float in2[3][4], float out[3][4])
 
 
 /*
-===================
-FloorDivMod
+	FloorDivMod
 
-Returns mathematically correct (floor-based) quotient and remainder for
-numer and denom, both of which should contain no fractional part. The
-quotient must fit in 32 bits.
-====================
+	Returns mathematically correct (floor-based) quotient and remainder for
+	numer and denom, both of which should contain no fractional part. The
+	quotient must fit in 32 bits.
 */
 
 void
@@ -594,9 +588,7 @@ FloorDivMod (double numer, double denom, int *quotient, int *rem)
 
 
 /*
-===================
-GreatestCommonDivisor
-====================
+	GreatestCommonDivisor
 */
 int
 GreatestCommonDivisor (int i1, int i2)
@@ -613,16 +605,14 @@ GreatestCommonDivisor (int i1, int i2)
 }
 
 
-#ifndef	USE_INTEL_ASM
+#ifndef USE_INTEL_ASM
 
 // TODO: move to nonintel.c
 
 /*
-===================
-Invert24To16
+	Invert24To16
 
-Inverts an 8.24 value to a 16.16 value
-====================
+	Inverts an 8.24 value to a 16.16 value
 */
 
 fixed16_t
