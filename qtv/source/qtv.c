@@ -55,11 +55,6 @@ static plugin_list_t server_plugin_list[] = {
 	SERVER_PLUGIN_LIST
 };
 
-cvar_t     *net_packetlog;
-void Log_Outgoing_Packet (const char *p, int len, int has_sequence);
-void Log_Outgoing_Packet (const char *p, int len, int has_sequence) { }
-
-
 cbuf_t     *qtv_cbuf;
 
 cvar_t     *qtv_console_plugin;
