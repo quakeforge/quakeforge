@@ -105,24 +105,35 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 	expr_t     *sw = new_block_expr ();
 	type_t     *type = get_type (switch_block->test);
 	expr_t     *temp = new_temp_def_expr (type);
+	expr_t     *default_expr;
+
+	temp->line = switch_block->test->line;
+	temp->file = switch_block->test->file;
 	
 	default_label->value = 0;
 	default_label = Hash_FindElement (switch_block->labels, default_label);
 	labels = (case_label_t **)Hash_GetList (switch_block->labels);
 
-	append_expr (sw, binary_expr ('=', temp, switch_block->test));
+	if (default_label)
+		default_expr = new_unary_expr ('g', default_label->label);
+	else
+		default_expr = new_unary_expr ('g', break_label);
+	default_expr->line = temp->line;
+	default_expr->file = temp->file;
+
+	append_expr (sw, binary_expr ('b', switch_block->test, temp));
 	for (l = labels; *l; l++) {
 		if ((*l)->value) {
 			expr_t     *cmp = binary_expr (EQ, temp, (*l)->value);
-			append_expr (sw,
-						 new_binary_expr ('i',
-										  test_expr (cmp, 1), (*l)->label));
+			expr_t     *test = new_binary_expr ('i',
+												test_expr (cmp, 1),
+												(*l)->label);
+			test->line = cmp->line = temp->line;
+			test->file = cmp->file = temp->file;
+			append_expr (sw, test);
 		}
 	}
-	if (default_label)
-		append_expr (sw, new_unary_expr ('g', default_label->label));
-	else
-		append_expr (sw, new_unary_expr ('g', break_label));
+	append_expr (sw, default_expr);
 	append_expr (sw, statements);
 	append_expr (sw, break_label);
 	return sw;
