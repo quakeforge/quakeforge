@@ -383,7 +383,7 @@ typedef struct
 	pr_opcode_e opcode;
 	int			priority;
 	qboolean	right_associative;
-	def_t		*type_a, *type_b, *type_c;
+	etype_t		type_a, type_b, type_c;
 	int			min_version;
 } opcode_t;
 

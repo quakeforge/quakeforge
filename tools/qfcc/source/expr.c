@@ -751,14 +751,14 @@ emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_
 	statement->op = op->opcode;
 	statement->a = var_a ? var_a->ofs : 0;
 	statement->b = var_b ? var_b->ofs : 0;
-	if (op->type_c == &def_void || op->right_associative) {
+	if (op->type_c == ev_void || op->right_associative) {
 		// ifs, gotos, and assignments don't need vars allocated
 		var_c = NULL;
 		statement->c = 0;
 		ret = var_a;
 	} else {	// allocate result space
 		if (!var_c)
-			var_c = PR_GetTempDef (op->type_c->type, pr_scope);
+			var_c = PR_GetTempDef (types[op->type_c], pr_scope);
 		statement->c = var_c->ofs;
 		ret = var_c;
 	}
