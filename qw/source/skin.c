@@ -86,13 +86,13 @@ skin_get_key (void *_skin, void *unused)
 void
 Skin_Find (player_info_t *sc)
 {
-	skin_t     *skin;
-	char        name[128];
-	const char *s = NULL;
+	skin_t		*skin;
+	char		name[128];
+	const char	*s = NULL;
 
-	if (allskins[0])
+	if (allskins[0]) {
 		strncpy (name, allskins, sizeof (name));
-	else {
+	} else {
 		if ((s = Info_ValueForKey (sc->userinfo, "skin")) && s[0])
 			strncpy (name, s, sizeof (name));
 		else
@@ -114,8 +114,7 @@ Skin_Find (player_info_t *sc)
 		return;
 	}
 
-	if (numskins == MAX_CACHED_SKINS) {	// ran out of spots, so flush
-										// everything
+	if (numskins == MAX_CACHED_SKINS) {	// ran out of spots, so flush everything
 		Skin_Flush ();
 		return;
 	}

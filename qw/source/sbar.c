@@ -615,10 +615,8 @@ Sbar_DrawFrags (void)
 			continue;
 
 		// draw background
-		top = s->topcolor;
-		bottom = s->bottomcolor;
-		top = (top < 0) ? 0 : ((top > 13) ? 13 : top);
-		bottom = (bottom < 0) ? 0 : ((bottom > 13) ? 13 : bottom);
+		top = bound (0, s->topcolor, 13);
+		bottom = bound (0, s->bottomcolor, 13);
 
 		top = Sbar_ColorForMap (top);
 		bottom = Sbar_ColorForMap (bottom);
