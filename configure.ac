@@ -1641,7 +1641,7 @@ QF_WITH_TARGETS(
 QF_WITH_TARGETS(
 	servers,
 	[  --with-servers=<list>   compile dedicated server:],
-	[master,nq,qw],dummy
+	[master,nq,qw,qtv],dummy
 )
 QF_WITH_TARGETS(
 	tools,
@@ -1651,6 +1651,7 @@ QF_WITH_TARGETS(
 
 unset CL_TARGETS
 HW_TARGETS=""
+QTV_TARGETS=""
 QW_TARGETS=""
 NQ_TARGETS=""
 
@@ -1798,6 +1799,11 @@ if test "x$ENABLE_servers_nq" = xyes; then
 	NQ_TARGETS="nq-server\$(EXEEXT) $NQ_TARGETS"
 	SV_TARGETS="$SV_TARGETS nq"
 	QF_NEED(nq, [common server])
+fi
+if test "x$ENABLE_servers_qtv" = xyes; then
+	QTV_TARGETS="qtv $QTV_TARGETS"
+	SV_TARGETS="$SV_TARGETS qtv"
+#	QF_NEED(qtv, [common server])
 fi
 if test "x$ENABLE_servers_master" = xyes; then
 	HW_TARGETS="hw-master\$(EXEEXT) $HW_TARGETS"
@@ -2047,6 +2053,7 @@ AC_DEFINE_UNQUOTED(SND_RENDER_PROTOS, $SND_RENDER_PROTOS, [list of sound render 
 
 AC_SUBST(HW_TARGETS)
 AC_SUBST(NQ_TARGETS)
+AC_SUBST(QTV_TARGETS)
 AC_SUBST(QW_TARGETS)
 AC_SUBST(SERVER_PLUGIN_STATIC)
 AC_SUBST(SERVER_PLUGIN_STATIC_LIBS)
@@ -2192,6 +2199,10 @@ AC_OUTPUT(
 	nq/Makefile
 	nq/include/Makefile
 	nq/source/Makefile
+
+	qtv/Makefile
+	qtv/include/Makefile
+	qtv/source/Makefile
 
 	qw/Makefile
 	qw/include/Makefile
