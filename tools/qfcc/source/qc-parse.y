@@ -1,5 +1,7 @@
 %{
 #include "qfcc.h"
+#include "expr.h"
+
 #define YYDEBUG 1
 #define YYERROR_VERBOSE 1
 void
@@ -18,6 +20,7 @@ type_t *PR_FindType (type_t *new);
 %union {
 	def_t	*def;
 	type_t	*type;
+	expr_t	*expr;
 	int		int_val;
 	float	float_val;
 	char	*string_val;
@@ -42,13 +45,15 @@ type_t *PR_FindType (type_t *new);
 %token	<type> TYPE
 
 %type	<type>	type
-%type	<def>	param param_list def_item def_list expr arg_list
+%type	<def>	param param_list def_item def_list def_name
+%type	<expr>	const expr arg_list
 
 %expect 1
 
 %{
 
-type_t *current_type;
+type_t	*current_type;
+def_t	*current_def;
 
 %}
 
@@ -85,14 +90,19 @@ def_list
 	;
 
 def_item
+	: def_name opt_initializer
+	| '(' param_list ')' def_name opt_definition {}
+	| '(' ')' def_name opt_definition {}
+	| '(' ELIPSIS ')' def_name opt_definition {}
+	;
+
+def_name
 	: NAME
 		{
+			printf ("%s\n", $1);
 			$$ = PR_GetDef (current_type, $1, pr_scope, pr_scope ? &pr_scope->num_locals : &numpr_globals);
+			current_def = $$;
 		}
-	  opt_initializer
-	| '(' param_list ')' NAME opt_initializer {}
-	| '(' ')' NAME opt_initializer {}
-	| '(' ELIPSIS ')' NAME opt_initializer {}
 	;
 
 param_list
@@ -114,10 +124,34 @@ param
 
 opt_initializer
 	: /*empty*/
-	| '=' '#' const
-	| '=' statement_block
 	| '=' const
-	| '=' '[' expr ',' expr ']' statement_block
+	;
+
+opt_definition
+	: /*empty*/
+	| '=' '#' const
+		{
+			if ($3->type != ex_int && $3->type != ex_float)
+				yyerror ("invalid constant for = #");
+			else {
+			}
+		}
+	| '=' begin_function statement_block end_function
+	| '=' '[' expr ',' expr ']' begin_function statement_block end_function
+	;
+
+begin_function
+	: /*empty*/
+		{
+			pr_scope = current_def;
+		}
+	;
+
+end_function
+	: /*empty*/
+		{
+			pr_scope = 0;
+		}
 	;
 
 statement_block
@@ -140,7 +174,7 @@ statement
 	| IF '(' expr ')' statement
 	| IF '(' expr ')' statement ELSE statement
 	| FOR '(' expr ';' expr ';' expr ')' statement
-	| expr ';'
+	| expr ';' {}
 	;
 
 expr
@@ -162,13 +196,15 @@ expr
 	| expr '.' expr
 	| expr '(' arg_list ')'
 	| expr '(' ')'
-	| '-' expr
-	| '!' expr
+	| '-' expr {}
+	| '!' expr {}
 	| NAME
 		{
-			$$ = PR_GetDef (NULL, $1, pr_scope, false);
+			$$ = new_expr ();
+			$$->type = ex_def;
+			$$->e.def = PR_GetDef (NULL, $1, pr_scope, false);
 		}
-	| const {}
+	| const
 	| '(' expr ')' { $$ = $2; }
 	;
 
@@ -178,11 +214,36 @@ arg_list
 	;
 
 const
-	: FLOAT_VAL {}
+	: FLOAT_VAL
+		{
+			$$ = new_expr ();
+			$$->type = ex_float;
+			$$->e.float_val = $1;
+		}
 	| STRING_VAL {}
+		{
+			$$ = new_expr ();
+			$$->type = ex_string;
+			$$->e.string_val = ReuseString ($1);
+		}
 	| VECTOR_VAL {}
+		{
+			$$ = new_expr ();
+			$$->type = ex_vector;
+			memcpy ($$->e.vector_val, $1, sizeof ($$->e.vector_val));
+		}
 	| QUATERNION_VAL {}
+		{
+			$$ = new_expr ();
+			$$->type = ex_quaternion;
+			memcpy ($$->e.quaternion_val, $1, sizeof ($$->e.quaternion_val));
+		}
 	| INT_VAL {}
+		{
+			$$ = new_expr ();
+			$$->type = ex_int;
+			$$->e.int_val = $1;
+		}
 	;
 
 %%

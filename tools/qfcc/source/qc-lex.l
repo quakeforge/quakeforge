@@ -1,6 +1,7 @@
 %{
 #include <QF/hash.h>
 #include "qfcc.h"
+#include "expr.h"
 #include "qc-parse.h"
 
 #define YY_NO_UNPUT
@@ -60,7 +61,7 @@ m		([\-+]?)
 {ID}	return type_or_name(yytext);
 
 \"(\\.|[^"])*\"		{
-						//yylval.string_val = strdup (yytext);
+						yylval.string_val = strdup (yytext);
 						return STRING_VAL;
 					}
 
@@ -170,6 +171,7 @@ type_or_name (char *token)
 		yylval.type = keyword->type;
 		return keyword->value;
 	}
+	yylval.string_val = strdup (token);
 	return NAME;
 }
 

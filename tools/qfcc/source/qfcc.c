@@ -832,7 +832,6 @@ int
 main (int argc, char **argv)
 {
 	char	*src;
-	char	*src2;
 	char	filename[1024];
 	int 	p, crc;
 	double	start, stop;
@@ -924,6 +923,7 @@ Options: \n\
 		}
 		fclose (yyin);
 #else
+		char	*src2;
 		sprintf (filename, "%s/%s", sourcedir, com_token);
 		printf ("compiling %s\n", filename);
 		LoadFile (filename, (void *) &src2);
