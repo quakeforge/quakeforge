@@ -544,19 +544,20 @@ build_function (function_t *f)
 void
 emit_function (function_t *f, expr_t *e)
 {
+	//PR_PrintType (f->def->type);
+	//printf (" %s =\n", f->def->name);
+
 	pr_scope = f->def;
 	while (e) {
+		//print_expr (e);
+		//puts("");
+
 		emit_expr (e);
 		e = e->next;
 	}
+	emit_statement (op_done, 0, 0, 0);
 	PR_FlushScope (pr_scope);
 	pr_scope = 0;
-	/*PR_PrintType (f->def->type);
-	printf (" %s =\n", f->def->name);
-	while (e) {
-		print_expr (e);
-		puts("");
-		e = e->next;
-	}
-	puts ("");*/
+
+	//puts ("");
 }

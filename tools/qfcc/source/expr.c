@@ -922,7 +922,7 @@ emit_expr (expr_t *e)
 					PR_Statement (op_return, def, 0);
 					return;
 				case 'g':
-					emit_branch (op_goto, 0, e);
+					emit_branch (op_goto, 0, e->e.expr.e1);
 					return;
 				default:
 					fprintf (stderr,
