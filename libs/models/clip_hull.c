@@ -39,7 +39,9 @@ static const char rcsid[] =
 #include "QF/clip_hull.h"
 #include "QF/model.h"
 
-clip_hull_t *MOD_Alloc_Hull (int nodes, int planes)
+
+clip_hull_t *
+MOD_Alloc_Hull (int nodes, int planes)
 {
 	clip_hull_t *ch;
 	int			 size, i;
@@ -65,7 +67,8 @@ clip_hull_t *MOD_Alloc_Hull (int nodes, int planes)
 	return ch;
 }
 
-void MOD_Free_Hull (clip_hull_t *ch)
+void
+MOD_Free_Hull (clip_hull_t *ch)
 {
 	free (ch);
 }
