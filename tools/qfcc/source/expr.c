@@ -671,7 +671,7 @@ new_this_expr (void)
 static expr_t *
 param_expr (const char *name, type_t *type)
 {
-	def_t      *def = get_def (type_param, name, pr.scope, st_extern);;
+	def_t      *def = get_def (&type_param, name, pr.scope, st_extern);;
 	expr_t     *def_expr;
 
 	def_initialized (def);

@@ -152,16 +152,19 @@ bi_printf (progs_t *pr)
 		if (c == '%' && count < 7) {
 			switch (c = *fmt++) {
 				case 'i':
-					fprintf (stdout, "%i", P_INT (pr, 1 + count++ * 3));
+					fprintf (stdout, "%i",
+							 P_INT (pr, 1 + count++ * pr->pr_param_size));
 					break;
 				case 'f':
-					fprintf (stdout, "%f", P_FLOAT (pr, 1 + count++ * 3));
+					fprintf (stdout, "%f",
+							 P_FLOAT (pr, 1 + count++ * pr->pr_param_size));
 					break;
 				case 's':
-					fputs (P_GSTRING (pr, 1 + count++ * 3), stdout);
+					fputs (P_GSTRING (pr, 1 + count++ * pr->pr_param_size),
+						   stdout);
 					break;
 				case 'v':
-					v = P_VECTOR (pr, 1 + count++ * 3);
+					v = P_VECTOR (pr, 1 + count++ * pr->pr_param_size);
 					fprintf (stdout, "'%f %f %f'", v[0], v[1], v[2]);
 					break;
 				default:

@@ -91,22 +91,20 @@ typedef union defref_s {
 
 typedef struct builtin_sym_s {
 	const char *name;
-	etype_t     basic_type;
-	const char *full_type;
-	int         size;
+	type_t     *type;
 } builtin_sym_t;
 
 static builtin_sym_t builtin_symbols[] = {
-	{".zero",		ev_struct,	"{-*fEFv(v)^viI}",	1},
-	{".return",		ev_struct,	"{-*fVEFv(v)^viI}", 3},
-	{".param_0",	ev_struct,	"{-*fVEFv(v)^viI}", 3},
-	{".param_1",	ev_struct,	"{-*fVEFv(v)^viI}", 3},
-	{".param_2",	ev_struct,	"{-*fVEFv(v)^viI}", 3},
-	{".param_3",	ev_struct,	"{-*fVEFv(v)^viI}", 3},
-	{".param_4",	ev_struct,	"{-*fVEFv(v)^viI}", 3},
-	{".param_5",	ev_struct,	"{-*fVEFv(v)^viI}", 3},
-	{".param_6",	ev_struct,	"{-*fVEFv(v)^viI}", 3},
-	{".param_7",	ev_struct,	"{-*fVEFv(v)^viI}", 3},
+	{".zero",		&type_zero},
+	{".return",		&type_param},
+	{".param_0",	&type_param},
+	{".param_1",	&type_param},
+	{".param_2",	&type_param},
+	{".param_3",	&type_param},
+	{".param_4",	&type_param},
+	{".param_5",	&type_param},
+	{".param_6",	&type_param},
+	{".param_7",	&type_param},
 };
 
 static defref_t *free_defrefs;
@@ -704,12 +702,18 @@ linker_begin (void)
 
 	pr.strings = strings;
 	if (!options.partial_link) {
+		dstring_t  *encoding = dstring_new ();
+
 		for (i = 0;
 			 i < sizeof (builtin_symbols) / sizeof (builtin_symbols[0]);
 			 i++) {
-			define_def (builtin_symbols[i].name, builtin_symbols[i].basic_type,
-						builtin_symbols[i].full_type, builtin_symbols[i].size,
-						0);
+			etype_t     basic_type = builtin_symbols[i].type->type;
+			int         size = type_size (builtin_symbols[i].type);
+
+			dstring_clearstr (encoding);
+			encode_type (encoding, builtin_symbols[i].type);
+			define_def (builtin_symbols[i].name, basic_type, encoding->str,
+						size, 0);
 		}
 	}
 }

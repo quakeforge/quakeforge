@@ -349,16 +349,16 @@ begin_compilation (void)
 static void
 setup_param_block (void)
 {
-	def_initialized (get_def (type_zero, ".zero", pr.scope, st_global));
-	def_initialized (get_def (type_param, ".return", pr.scope, st_global));
-	def_initialized (get_def (type_param, ".param_0", pr.scope, st_global));
-	def_initialized (get_def (type_param, ".param_1", pr.scope, st_global));
-	def_initialized (get_def (type_param, ".param_2", pr.scope, st_global));
-	def_initialized (get_def (type_param, ".param_3", pr.scope, st_global));
-	def_initialized (get_def (type_param, ".param_4", pr.scope, st_global));
-	def_initialized (get_def (type_param, ".param_5", pr.scope, st_global));
-	def_initialized (get_def (type_param, ".param_6", pr.scope, st_global));
-	def_initialized (get_def (type_param, ".param_7", pr.scope, st_global));
+	def_initialized (get_def (&type_zero, ".zero", pr.scope, st_global));
+	def_initialized (get_def (&type_param, ".return", pr.scope, st_global));
+	def_initialized (get_def (&type_param, ".param_0", pr.scope, st_global));
+	def_initialized (get_def (&type_param, ".param_1", pr.scope, st_global));
+	def_initialized (get_def (&type_param, ".param_2", pr.scope, st_global));
+	def_initialized (get_def (&type_param, ".param_3", pr.scope, st_global));
+	def_initialized (get_def (&type_param, ".param_4", pr.scope, st_global));
+	def_initialized (get_def (&type_param, ".param_5", pr.scope, st_global));
+	def_initialized (get_def (&type_param, ".param_6", pr.scope, st_global));
+	def_initialized (get_def (&type_param, ".param_7", pr.scope, st_global));
 }
 
 static qboolean
@@ -394,6 +394,13 @@ finish_compilation (void)
 	}
 	if (errors)
 		return !errors;
+
+	if (!options.traditional) {
+		e.type = ex_integer;
+		e.e.integer_val = type_size (&type_param);
+		ReuseConstant (&e, get_def (&type_integer, ".param_size", pr.scope,
+					   st_global));
+	}
 
 	if (options.code.debug) {
 		e.type = ex_string;

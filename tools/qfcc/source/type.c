@@ -92,8 +92,8 @@ type_t     *type_category;
 type_t     *type_ivar;
 type_t     *type_module;
 type_t      type_va_list;
-type_t     *type_param;
-type_t     *type_zero;
+type_t      type_param;
+type_t      type_zero;
 
 type_t     *vector_struct;
 
@@ -594,7 +594,8 @@ init_types (void)
 {
 	type_t     *type;
 
-	type = type_zero = new_union (0);
+	init_struct (malloc (sizeof (struct_t)), type = &type_zero, 0);
+	((struct_t *) type->class)->is_union = 1;
 	new_struct_field (type, &type_string,   "string_val",   vis_public);
 	new_struct_field (type, &type_float,    "float_val",    vis_public);
 	new_struct_field (type, &type_entity,   "entity_val",   vis_public);
@@ -604,7 +605,8 @@ init_types (void)
 	new_struct_field (type, &type_integer,  "integer_val",  vis_public);
 	new_struct_field (type, &type_uinteger, "uinteger_val", vis_public);
 
-	type = type_param = new_union (0);
+	init_struct (malloc (sizeof (struct_t)), type = &type_param, 0);
+	((struct_t *) type->class)->is_union = 1;
 	new_struct_field (type, &type_string,   "string_val",   vis_public);
 	new_struct_field (type, &type_float,    "float_val",    vis_public);
 	new_struct_field (type, &type_vector,   "vector_val",   vis_public);
@@ -680,7 +682,7 @@ init_types (void)
 
 	init_struct (malloc (sizeof (struct_t)), &type_va_list, 0);
 	new_struct_field (&type_va_list, &type_integer, "count", vis_public);
-	new_struct_field (&type_va_list, pointer_type (type_param), "list",
+	new_struct_field (&type_va_list, pointer_type (&type_param), "list",
 					  vis_public);
 #if 0
 	type = type_module = new_struct ("obj_module_t");
@@ -704,8 +706,8 @@ chain_initial_types (void)
 	chain_type (&type_pointer);
 	chain_type (&type_floatfield);
 
-	chain_type (type_param);
-	chain_type (type_zero);
+	chain_type (&type_param);
+	chain_type (&type_zero);
 
 	if (options.traditional)
 		return;

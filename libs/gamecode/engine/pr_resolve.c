@@ -164,7 +164,32 @@ PR_ResolveGlobals (progs_t *pr)
 {
 	const char *sym;
 	ddef_t     *def;
+	int         i;
 
+	if (pr->progs->version == PROG_ID_VERSION) {
+		pr->pr_return = &pr->pr_globals[OFS_RETURN];
+		pr->pr_params[0] = &pr->pr_globals[OFS_PARM0];
+		pr->pr_params[1] = &pr->pr_globals[OFS_PARM1];
+		pr->pr_params[2] = &pr->pr_globals[OFS_PARM2];
+		pr->pr_params[3] = &pr->pr_globals[OFS_PARM3];
+		pr->pr_params[4] = &pr->pr_globals[OFS_PARM4];
+		pr->pr_params[5] = &pr->pr_globals[OFS_PARM5];
+		pr->pr_params[6] = &pr->pr_globals[OFS_PARM6];
+		pr->pr_params[7] = &pr->pr_globals[OFS_PARM7];
+		pr->pr_param_size = OFS_PARM1 - OFS_PARM0;
+	} else {
+		if (!(def = PR_FindGlobal (pr, sym = ".return")))
+			goto error;
+		pr->pr_return = &pr->pr_globals[def->ofs];
+		for (i = 0; i < MAX_PARMS; i++) {
+			if (!(def = PR_FindGlobal (pr, sym = va(".param_%d", i))))
+				goto error;
+			pr->pr_params[i] = &pr->pr_globals[def->ofs];
+		}
+		if (!(def = PR_FindGlobal (pr, sym = ".param_size")))
+			goto error;
+		pr->pr_param_size = G_INT (pr, def->ofs);
+	}
 	if (!(def = PR_FindGlobal (pr, sym = "time")))
 		goto error;
 	pr->globals.time = &G_FLOAT (pr, def->ofs);

@@ -129,10 +129,9 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 		}
 		argc->integer_var = pr->pr_argc - i;
 		argv->integer_var = o;
-		while (i < MAX_PARMS) {
-			memcpy (&pr->pr_globals[o], &P_INT (pr, i), 3);
-			o += 3;
-			i++;
+		if (i < MAX_PARMS) {
+			memcpy (&pr->pr_globals[o], &P_INT (pr, i),
+					(MAX_PARMS - i) * pr->pr_param_size * sizeof (pr_type_t));
 		}
 	}
 
@@ -679,7 +678,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 			case OP_DONE:
 			case OP_RETURN:
-				memcpy (&R_INT (pr), &OPA, 3 * sizeof (OPA));
+				memcpy (&R_INT (pr), &OPA, pr->pr_param_size * sizeof (OPA));
 				PR_LeaveFunction (pr);
 				st = pr->pr_statements + pr->pr_xstatement;
 				if (pr->pr_depth == exitdepth) {

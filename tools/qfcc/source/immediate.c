@@ -345,7 +345,7 @@ clear_immediates (void)
 	}
 
 	imm = calloc (1, sizeof (immediate_t));
-	imm->def = get_def (type_zero, ".zero", pr.scope, st_extern);
+	imm->def = get_def (&type_zero, ".zero", pr.scope, st_extern);
 
 	Hash_AddElement (string_imm_defs, imm);
 	Hash_AddElement (float_imm_defs, imm);

@@ -134,7 +134,7 @@ qboolean PR_EdictValid (progs_t *pr, int e);
 #define	G_GPOINTER(p,o)	PR_GetPointer (p, o)
 #define	G_STRUCT(p,t,o)	(*(t *)G_GPOINTER (p, o))
 
-#define P_var(p,n,t)	G_var (p, (OFS_PARM0 + (n) * 3), t)
+#define P_var(p,n,t)	((p)->pr_params[n]->t##_var)
 
 #define P_FLOAT(p,n)	P_var (p, n, float)
 #define P_INT(p,n)		P_var (p, n, integer)
@@ -150,7 +150,7 @@ qboolean PR_EdictValid (progs_t *pr, int e);
 #define P_GPOINTER(p,n)	PR_GetPointer (p, P_POINTER (p, n))
 #define P_STRUCT(p,t,n)	(*(t *)P_GPOINTER (p, n))
 
-#define R_var(p,t)		G_var (p, OFS_RETURN, t)
+#define R_var(p,t)		((p)->pr_return->t##_var)
 
 #define R_FLOAT(p)		R_var (p, float)
 #define R_INT(p)		R_var (p, integer)
@@ -319,6 +319,10 @@ struct progs_s {
 	dstatement_t	*pr_statements;
 	pr_type_t		*pr_globals;			// same as pr_global_struct
 	int				globals_size;
+
+	pr_type_t		*pr_return;
+	pr_type_t		*pr_params[MAX_PARMS];
+	int             pr_param_size;		// covers both params and return
 
 	int				pr_edict_size;	// in bytes
 	int				pr_edictareasize; // for bounds checking, starts at 0

@@ -598,7 +598,7 @@ PF_charcount (progs_t *pr)
 # define INT_WIDTH 20
 #endif
 
-#define MAX_ARG 23
+#define MAX_ARG 7
 
 static void
 PF_sprintf (progs_t *pr)
@@ -611,7 +611,7 @@ PF_sprintf (progs_t *pr)
 			fmt_precision, fmt_signed, fmt_space, fmt_type, looping,
 			ret;
 	size_t	new_format_i; 
-	int		curarg = 3, out_max = 32, out_size = 0;
+	int		curarg = 1, out_max = 32, out_size = 0;
 
 	format = P_GSTRING (pr, 0);
 	c = format;
@@ -656,7 +656,7 @@ PF_sprintf (progs_t *pr)
 				}
 			else if (*c == '*') {
 				fmt_minwidth = P_INT (pr, 0 + curarg);
-				curarg += 3;
+				curarg++;
 			}
 
 			// precision
@@ -672,7 +672,7 @@ PF_sprintf (progs_t *pr)
 					}
 				} else if (*c == '*') {
 					fmt_precision = P_INT (pr, 0 + curarg);
-					curarg += 3;
+					curarg++;
 				}
 			}
 			if (!*c)
@@ -734,7 +734,7 @@ PF_sprintf (progs_t *pr)
 						out = o;
 					}
 					out_size += ret;
-					curarg += 3;
+					curarg++;
 					break;
 				case 'f':
 					while ((ret = snprintf (&out[out_size], out_max - out_size,
@@ -749,7 +749,7 @@ PF_sprintf (progs_t *pr)
 						out = o;
 					}
 					out_size += ret;
-					curarg += 3;
+					curarg++;
 					break;
 				case 'v': {
 					int i;
@@ -758,8 +758,7 @@ PF_sprintf (progs_t *pr)
 							goto maxargs;
 						while ((ret = snprintf (&out[out_size],
 												out_max - out_size, new_format,
-												P_FLOAT (pr, 0 +
-														 curarg)))
+												P_VECTOR (pr, 0 + curarg)[i]))
 							   >= out_max - out_size) {
 							char *o;
 							out_max *= 2;
@@ -769,9 +768,9 @@ PF_sprintf (progs_t *pr)
 							out = o;
 						}
 						out_size += ret;
-						curarg++;
 						i++;
 					}
+					curarg++;
 					break;
 				}
 			}
@@ -791,7 +790,7 @@ PF_sprintf (progs_t *pr)
 				out = o;
 			}
 			out_size += ret;
-			curarg += 3;
+			curarg++;
 			c += 2;
 		} else {
 			if (*c == '%')
