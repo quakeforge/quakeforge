@@ -45,6 +45,8 @@ typedef struct vrect_s {
 
 typedef struct {
 	pixel_t			*buffer;		// invisible buffer
+	short			*zbuffer;
+	void			*surfcache;
 	pixel_t			*colormap;		// 256 * VID_GRADES size
 	unsigned short	*colormap16;	// 256 * VID_GRADES size
 	int				fullbright;		// index of first fullbright color
@@ -62,6 +64,9 @@ typedef struct {
 	int				maxwarpheight;
 	pixel_t			*direct;		// direct drawing to framebuffer, if not
 									//  NULL
+	int				(*surf_cache_size)(int width, int height);
+	void			(*flush_caches)(void);
+	void			(*init_caches)(void *cache, int size);
 } viddef_t;
 
 extern viddef_t 		vid;				// global video state

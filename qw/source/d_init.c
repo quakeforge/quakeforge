@@ -31,6 +31,8 @@
 #endif
 
 #include "QF/compat.h"
+#include "QF/vid.h"
+
 #include "bothdefs.h"
 #include "d_local.h"
 
@@ -65,6 +67,12 @@ D_Init (void)
 	r_recursiveaffinetriangles = true;
 	r_pixbytes = 1;
 	r_aliasuvscale = 1.0;
+
+	vid.surf_cache_size = D_SurfaceCacheForRes;
+	vid.flush_caches = D_FlushCaches;
+	vid.init_caches = D_InitCaches;
+
+	VID_InitBuffers ();
 }
 
 void

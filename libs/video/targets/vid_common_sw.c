@@ -30,21 +30,22 @@
 # include "config.h"
 #endif
 
+#include <stdlib.h>
 #include <math.h>
 
+#include "QF/sys.h"
 #include "QF/vid.h"
 
 void
 VID_InitBuffers (void)
 {
-#if 0 //XXX not just yet
-	int         buffersize, zbuffersize, cachesize;
-	void       *vid_surfcache;
+	int         buffersize, zbuffersize, cachesize = 1;
 
 	// Calculate the sizes we want first
 	buffersize = vid.rowbytes * vid.height;
-	zbuffersize = vid.width * vid.height * sizeof (*d_pzbuffer);
-	cachesize = D_SurfaceCacheForRes (vid.width, vid.height);
+	zbuffersize = vid.width * vid.height * sizeof (*vid.zbuffer);
+	if (vid.surf_cache_size)
+		cachesize = vid.surf_cache_size (vid.width, vid.height);
 
 	// Free the old screen buffer
 	if (vid.buffer) {
@@ -52,16 +53,16 @@ VID_InitBuffers (void)
 		vid.conbuffer = vid.buffer = NULL;
 	}
 	// Free the old z-buffer
-	if (d_pzbuffer) {
-		free (d_pzbuffer);
-		d_pzbuffer = NULL;
+	if (vid.zbuffer) {
+		free (vid.zbuffer);
+		vid.zbuffer = NULL;
 	}
 	// Free the old surface cache
-	vid_surfcache = D_SurfaceCacheAddress ();
-	if (vid_surfcache) {
-		D_FlushCaches ();
-		free (vid_surfcache);
-		vid_surfcache = NULL;
+	if (vid.surfcache) {
+		if (vid.flush_caches)
+			vid.flush_caches ();
+		free (vid.surfcache);
+		vid.surfcache = NULL;
 	}
 	// Allocate the new screen buffer
 	vid.conbuffer = vid.buffer = calloc (buffersize, 1);
@@ -69,22 +70,22 @@ VID_InitBuffers (void)
 		Sys_Error ("Not enough memory for video mode\n");
 	}
 	// Allocate the new z-buffer
-	d_pzbuffer = calloc (zbuffersize, 1);
-	if (!d_pzbuffer) {
+	vid.zbuffer = calloc (zbuffersize, 1);
+	if (!vid.zbuffer) {
 		free (vid.buffer);
 		vid.conbuffer = vid.buffer = NULL;
 		Sys_Error ("Not enough memory for video mode\n");
 	}
 	// Allocate the new surface cache; free the z-buffer if we fail
-	vid_surfcache = calloc (cachesize, 1);
-	if (!vid_surfcache) {
+	vid.surfcache = calloc (cachesize, 1);
+	if (!vid.surfcache) {
 		free (vid.buffer);
-		free (d_pzbuffer);
+		free (vid.zbuffer);
 		vid.conbuffer = vid.buffer = NULL;
-		d_pzbuffer = NULL;
+		vid.zbuffer = NULL;
 		Sys_Error ("Not enough memory for video mode\n");
 	}
 
-	D_InitCaches (vid_surfcache, cachesize);
-#endif
+	if (vid.init_caches)
+		vid.init_caches (vid.surfcache, cachesize);
 }
