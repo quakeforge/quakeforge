@@ -257,7 +257,6 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 				*dest++ = bound (0, *bl >> shift, 255);
 				bl++;
 				*dest++ = 255;
-				bl++;
 			}
 		}
 		break;
