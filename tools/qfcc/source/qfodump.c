@@ -76,6 +76,7 @@ void
 dump_defs (qfo_t *qfo)
 {
 	qfo_def_t  *def;
+	qfo_func_t *func;
 
 	for (def = qfo->defs; def - qfo->defs < qfo->num_defs; def++) {
 		printf ("%4d %4x %d %s %s %d %d %s:%d\n",
@@ -93,8 +94,13 @@ dump_defs (qfo_t *qfo)
 //				printf ("    %4d %s\n", qfo->data[def->ofs].string_var,
 //						qfo->strings + qfo->data[def->ofs].string_var);
 		} else if (def->basic_type == ev_func) {
+			if (qfo->data[def->ofs].func_var < 1
+				|| qfo->data[def->ofs].func_var - 1 > qfo->num_funcs)
+				func = 0;
+			else
+				func = qfo->funcs + qfo->data[def->ofs].func_var - 1;
 			printf ("    %4d %s\n", qfo->data[def->ofs].func_var,
-					qfo->strings + qfo->funcs[qfo->data[def->ofs].func_var - 1].name);
+					func ? qfo->strings + func->name : "BORKAGE");
 		} else {
 //				printf ("    %4d\n", qfo->data[def->ofs].integer_var);
 		}
