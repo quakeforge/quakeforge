@@ -758,6 +758,9 @@ CL_LinkPlayers (void)
 		if (state->messagenum != cl.parsecount)
 			continue;					// not present this frame
 
+		if (!info->name[0])
+			continue;
+
 		// spawn light flashes, even ones coming from invisible objects
 		if (j == cl.playernum) {
 			VectorCopy (cl.simorg, org);
