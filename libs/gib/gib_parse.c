@@ -220,7 +220,7 @@ GIB_Parse_ErrorPos (void)
 static gib_tree_t *
 GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs, gib_tree_t ** embedded)
 {
-	char        c, delim, *str;
+	char        c = 0, delim, *str;
 	unsigned int tstart, start;
 	gib_tree_t *nodes = 0, *cur, *new, *embs = 0, *tmp;
 	gib_tree_t **node = &nodes;
