@@ -362,7 +362,7 @@ PR_GlobalString (progs_t * pr, int ofs, etype_t type)
 			if (type == ev_void)
 				type = def->type;
 			name = PR_GetString (pr, def->s_name);
-			if (type != def->type)
+			if (type != (def->type & ~DEF_SAVEGLOBAL))
 				oi = "!";
 		}
 		if (ofs > pr->globals_size)
