@@ -650,7 +650,7 @@ VID_Update (vrect_t *rects)
 			vid.buffer = x_framebuffer[current_framebuffer]->data;
 			vid.conbuffer = vid.buffer;
 		} else {
-			if (!XPutImage (x_disp, x_win, x_gc, x_framebuffer[0],
+			if (XPutImage (x_disp, x_win, x_gc, x_framebuffer[0],
 							rects->x, rects->y, rects->x, rects->y,
 							rects->width, rects->height)) {
 				Sys_Error ("VID_Update: XPutImage failed\n");
