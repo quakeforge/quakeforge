@@ -279,15 +279,14 @@ Mst_SendList (void)
 {
 	byte        buf[MAX_DATAGRAM];
 	sizebuf_t   msg;
+	server_t   *sv;
+	short int   sv_num = 0;
 
 	msg.data = buf;
 	msg.maxsize = sizeof (buf);
 	msg.cursize = 0;
 	msg.allowoverflow = true;
 	msg.overflowed = false;
-	server_t   *sv;
-	short int   sv_num = 0;
-
 
 	// number of servers:
 	for (sv = sv_list; sv; sv = sv->next)
