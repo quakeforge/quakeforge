@@ -34,13 +34,9 @@
 #include <QF/qtypes.h>
 #include <QF/plugin.h>
 
-typedef void (QFPLUGIN *P_C_Init) (void);
-typedef void (QFPLUGIN *P_C_Shutdown) (void);
 typedef void (QFPLUGIN *P_C_Print) (const char *fmt, va_list args);
 
 typedef struct console_func_s {
-	P_C_Init	pC_Init;
-	P_C_Shutdown	pC_Shutdown;
 	P_C_Print	pC_Print;
 } console_funcs_t;
 

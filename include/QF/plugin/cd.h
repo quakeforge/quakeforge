@@ -53,4 +53,7 @@ typedef struct cd_funcs_s {
 	P_CDAudio_Init			pCDAudio_Init;
 } cd_funcs_t;
 
+typedef struct cd_data_s {
+} cd_data_t;
+
 #endif // __QF_plugin_cd_h_

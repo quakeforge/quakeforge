@@ -59,7 +59,7 @@ typedef struct plugin_funcs_s {
 typedef struct plugin_data_s {
 	general_data_t	*general;
 	input_data_t	*input;
-//	cd_data_t		*cd;
+	cd_data_t		*cd;
 	sound_data_t	*sound;
 	console_data_t	*console;
 } plugin_data_t;
