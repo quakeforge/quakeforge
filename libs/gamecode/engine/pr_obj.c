@@ -57,7 +57,7 @@ class_get_key (void *c, void *pr)
 static func_t
 obj_find_message (progs_t *pr, pr_class_t *class, pr_sel_t *selector)
 {
-	pr_class_t *c;
+	pr_class_t *c = class;
 	pr_method_list_t *method_list;
 	pr_method_t *method;
 	int         i;
