@@ -944,7 +944,7 @@ R_RunParticleEffect_ID (const vec3_t org, const vec3_t dir, int color,
 						int count)
 {
 	float			scale;
-	int             i, j;
+	int             i;
 	vec3_t			porg;
 
 	if (numparticles >= r_maxparticles)
@@ -963,9 +963,9 @@ R_RunParticleEffect_ID (const vec3_t org, const vec3_t dir, int color,
 	for (i = 0; i < count; i++) {
 		int rnd = rand ();
 
-		porg[0] = org[0] + scale * ((rnd >> 3) & 15 - 8);
-		porg[1] = org[1] + scale * ((rnd >> 7) & 15 - 8);
-		porg[2] = org[2] + scale * ((rnd >> 11) & 15 - 8);
+		porg[0] = org[0] + scale * (((rnd >> 3) & 15) - 8);
+		porg[1] = org[1] + scale * (((rnd >> 7) & 15) - 8);
+		porg[2] = org[2] + scale * (((rnd >> 11) & 15) - 8);
 
 		// Note that ParseParticleEffect handles (dir * 15)
 		particle_new (pt_grav, part_tex_dot, porg, 1.0, dir,
