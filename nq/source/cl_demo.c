@@ -50,8 +50,6 @@
 void        CL_FinishTimeDemo (void);
 
 /*
-==============================================================================
-
 DEMO CODE
 
 When a demo is playing back, all NET_SendMessages are skipped, and
@@ -59,15 +57,13 @@ NET_GetMessages are read from the demo file.
 
 Whenever cl.time gets past the last received message, another message is
 read from the demo file.
-==============================================================================
 */
 
-/*
-==============
-CL_StopPlayback
 
-Called when a demo file runs out, or the user starts a game
-==============
+/*
+	CL_StopPlayback
+
+	Called when a demo file runs out, or the user starts a game
 */
 void
 CL_StopPlayback (void)
@@ -84,12 +80,11 @@ CL_StopPlayback (void)
 		CL_FinishTimeDemo ();
 }
 
-/*
-====================
-CL_WriteDemoMessage
 
-Dumps the current net message, prefixed by the length and view angles
-====================
+/*
+	CL_WriteDemoMessage
+
+	Dumps the current net message, prefixed by the length and view angles
 */
 void
 CL_WriteDemoMessage (void)
@@ -109,12 +104,11 @@ CL_WriteDemoMessage (void)
 	Qflush (cls.demofile);
 }
 
-/*
-====================
-CL_GetMessage
 
-Handles recording and playback of demos, on top of NET_ code
-====================
+/*
+	CL_GetMessage
+
+	Handles recording and playback of demos, on top of NET_ code
 */
 int
 CL_GetMessage (void)
@@ -183,11 +177,9 @@ CL_GetMessage (void)
 
 
 /*
-====================
-CL_Stop_f
+	CL_Stop_f
 
-stop recording a demo
-====================
+	stop recording a demo
 */
 void
 CL_Stop_f (void)
@@ -211,12 +203,11 @@ CL_Stop_f (void)
 	Con_Printf ("Completed demo\n");
 }
 
-/*
-====================
-CL_Record_f
 
-record <demoname> <map> [cd track]
-====================
+/*
+	CL_Record_f
+
+	record <demoname> <map> [cd track]
 */
 void
 CL_Record_f (void)
@@ -253,13 +244,11 @@ CL_Record_f (void)
 
 	snprintf (name, sizeof (name), "%s/%s", com_gamedir, Cmd_Argv (1));
 
-//
 // start the map up
 //
 	if (c > 2)
 		Cmd_ExecuteString (va ("map %s", Cmd_Argv (2)), src_command);
 
-//
 // open the demo file
 //
 	COM_DefaultExtension (name, ".dem");
@@ -279,11 +268,9 @@ CL_Record_f (void)
 
 
 /*
-====================
-CL_PlayDemo_f
+	CL_PlayDemo_f
 
-play [demoname]
-====================
+	play [demoname]
 */
 void
 CL_PlayDemo_f (void)
@@ -299,12 +286,11 @@ CL_PlayDemo_f (void)
 		Con_Printf ("play <demoname> : plays a demo\n");
 		return;
 	}
-//
+
 // disconnect from server
 //
 	CL_Disconnect ();
 
-//
 // open the demo file
 //
 	strcpy (name, Cmd_Argv (1));
@@ -343,7 +329,7 @@ CL_FinishTimeDemo (void)
 
 	cls.timedemo = false;
 
-// the first frame didn't count
+	// the first frame didn't count
 	frames = (host_framecount - cls.td_startframe) - 1;
 	time = realtime - cls.td_starttime;
 	if (!time)
@@ -352,12 +338,11 @@ CL_FinishTimeDemo (void)
 				frames / time);
 }
 
-/*
-====================
-CL_TimeDemo_f
 
-timedemo [demoname]
-====================
+/*
+	CL_TimeDemo_f
+
+	timedemo [demoname]
 */
 void
 CL_TimeDemo_f (void)
@@ -372,8 +357,8 @@ CL_TimeDemo_f (void)
 
 	CL_PlayDemo_f ();
 
-// cls.td_starttime will be grabbed at the second frame of the demo, so
-// all the loading time doesn't get counted
+	// cls.td_starttime will be grabbed at the second frame of the demo, so
+	// all the loading time doesn't get counted
 
 	cls.timedemo = true;
 	cls.td_startframe = host_framecount;

@@ -47,8 +47,6 @@
 #include "host.h"
 
 /*
-===============================================================================
-
 KEY BUTTONS
 
 Continuous button event tracking is complicated by the fact that two different
@@ -63,8 +61,6 @@ the release.
 state bit 0 is the current state of the key
 state bit 1 is edge triggered on the up to down transition
 state bit 2 is edge triggered on the down to up transition
-
-===============================================================================
 */
 
 
@@ -144,11 +140,13 @@ KeyUp (kbutton_t *b)
 	b->state |= 4;						// impulse up
 }
 
+
 void
 IN_KLookDown (void)
 {
 	KeyDown (&in_klook);
 }
+
 
 void
 IN_KLookUp (void)
@@ -156,11 +154,13 @@ IN_KLookUp (void)
 	KeyUp (&in_klook);
 }
 
+
 void
 IN_MLookDown (void)
 {
 	KeyDown (&in_mlook);
 }
+
 
 void
 IN_MLookUp (void)
@@ -170,11 +170,13 @@ IN_MLookUp (void)
 		V_StartPitchDrift ();
 }
 
+
 void
 IN_UpDown (void)
 {
 	KeyDown (&in_up);
 }
+
 
 void
 IN_UpUp (void)
@@ -182,11 +184,13 @@ IN_UpUp (void)
 	KeyUp (&in_up);
 }
 
+
 void
 IN_DownDown (void)
 {
 	KeyDown (&in_down);
 }
+
 
 void
 IN_DownUp (void)
@@ -194,17 +198,20 @@ IN_DownUp (void)
 	KeyUp (&in_down);
 }
 
+
 void
 IN_LeftDown (void)
 {
 	KeyDown (&in_left);
 }
 
+
 void
 IN_LeftUp (void)
 {
 	KeyUp (&in_left);
 }
+
 
 void
 IN_RightDown (void)
@@ -218,11 +225,13 @@ IN_RightUp (void)
 	KeyUp (&in_right);
 }
 
+
 void
 IN_ForwardDown (void)
 {
 	KeyDown (&in_forward);
 }
+
 
 void
 IN_ForwardUp (void)
@@ -230,11 +239,13 @@ IN_ForwardUp (void)
 	KeyUp (&in_forward);
 }
 
+
 void
 IN_BackDown (void)
 {
 	KeyDown (&in_back);
 }
+
 
 void
 IN_BackUp (void)
@@ -242,11 +253,13 @@ IN_BackUp (void)
 	KeyUp (&in_back);
 }
 
+
 void
 IN_LookupDown (void)
 {
 	KeyDown (&in_lookup);
 }
+
 
 void
 IN_LookupUp (void)
@@ -254,11 +267,13 @@ IN_LookupUp (void)
 	KeyUp (&in_lookup);
 }
 
+
 void
 IN_LookdownDown (void)
 {
 	KeyDown (&in_lookdown);
 }
+
 
 void
 IN_LookdownUp (void)
@@ -266,11 +281,13 @@ IN_LookdownUp (void)
 	KeyUp (&in_lookdown);
 }
 
+
 void
 IN_MoveleftDown (void)
 {
 	KeyDown (&in_moveleft);
 }
+
 
 void
 IN_MoveleftUp (void)
@@ -278,11 +295,13 @@ IN_MoveleftUp (void)
 	KeyUp (&in_moveleft);
 }
 
+
 void
 IN_MoverightDown (void)
 {
 	KeyDown (&in_moveright);
 }
+
 
 void
 IN_MoverightUp (void)
@@ -290,11 +309,13 @@ IN_MoverightUp (void)
 	KeyUp (&in_moveright);
 }
 
+
 void
 IN_SpeedDown (void)
 {
 	KeyDown (&in_speed);
 }
+
 
 void
 IN_SpeedUp (void)
@@ -302,11 +323,13 @@ IN_SpeedUp (void)
 	KeyUp (&in_speed);
 }
 
+
 void
 IN_StrafeDown (void)
 {
 	KeyDown (&in_strafe);
 }
+
 
 void
 IN_StrafeUp (void)
@@ -314,11 +337,13 @@ IN_StrafeUp (void)
 	KeyUp (&in_strafe);
 }
 
+
 void
 IN_AttackDown (void)
 {
 	KeyDown (&in_attack);
 }
+
 
 void
 IN_AttackUp (void)
@@ -326,11 +351,13 @@ IN_AttackUp (void)
 	KeyUp (&in_attack);
 }
 
+
 void
 IN_UseDown (void)
 {
 	KeyDown (&in_use);
 }
+
 
 void
 IN_UseUp (void)
@@ -338,17 +365,20 @@ IN_UseUp (void)
 	KeyUp (&in_use);
 }
 
+
 void
 IN_JumpDown (void)
 {
 	KeyDown (&in_jump);
 }
 
+
 void
 IN_JumpUp (void)
 {
 	KeyUp (&in_jump);
 }
+
 
 void
 IN_Impulse (void)
@@ -358,14 +388,12 @@ IN_Impulse (void)
 
 
 /*
-===============
-CL_KeyState
+	CL_KeyState
 
-Returns 0.25 if a key was pressed and released during the frame,
-0.5 if it was pressed and held
-0 if held then released, and
-1.0 if held for the entire time
-===============
+	Returns 0.25 if a key was pressed and released during the frame,
+	0.5 if it was pressed and held
+	0 if held then released, and
+	1.0 if held for the entire time
 */
 float
 CL_KeyState (kbutton_t *key)
@@ -409,27 +437,20 @@ CL_KeyState (kbutton_t *key)
 }
 
 
-//==========================================================================
-
-cvar_t     *cl_upspeed;
-cvar_t     *cl_forwardspeed;
-cvar_t     *cl_backspeed;
-cvar_t     *cl_sidespeed;
-
-cvar_t     *cl_movespeedkey;
-
-cvar_t     *cl_yawspeed;
-cvar_t     *cl_pitchspeed;
-
 cvar_t     *cl_anglespeedkey;
+cvar_t     *cl_backspeed;
+cvar_t     *cl_forwardspeed;
+cvar_t     *cl_movespeedkey;
+cvar_t     *cl_pitchspeed;
+cvar_t     *cl_sidespeed;
+cvar_t     *cl_upspeed;
+cvar_t     *cl_yawspeed;
 
 
 /*
-================
-CL_AdjustAngles
+	CL_AdjustAngles
 
-Moves the local angle positions
-================
+	Moves the local angle positions
 */
 void
 CL_AdjustAngles (void)
@@ -480,11 +501,9 @@ CL_AdjustAngles (void)
 
 
 /*
-================
-CL_BaseMove
+	CL_BaseMove
 
-Send the intended movement message to the server
-================
+	Send the intended movement message to the server
 */
 void
 CL_BaseMove (usercmd_t *cmd)
@@ -511,7 +530,7 @@ CL_BaseMove (usercmd_t *cmd)
 		cmd->forwardmove += cl_forwardspeed->value * CL_KeyState (&in_forward);
 		cmd->forwardmove -= cl_backspeed->value * CL_KeyState (&in_back);
 	}
-//
+
 // adjust for speed key
 //
 	if (in_speed.state & 1) {
@@ -544,11 +563,6 @@ CL_BaseMove (usercmd_t *cmd)
 }
 
 
-/*
-==============
-CL_SendMove
-==============
-*/
 void
 CL_SendMove (usercmd_t *cmd)
 {
@@ -563,7 +577,6 @@ CL_SendMove (usercmd_t *cmd)
 
 	cl.cmd = *cmd;
 
-//
 // send the movement message
 //
 	MSG_WriteByte (&buf, clc_move);
@@ -577,7 +590,6 @@ CL_SendMove (usercmd_t *cmd)
 	MSG_WriteShort (&buf, cmd->sidemove);
 	MSG_WriteShort (&buf, cmd->upmove);
 
-//
 // send button bits
 //
 	bits = 0;
@@ -596,22 +608,18 @@ CL_SendMove (usercmd_t *cmd)
 	in_impulse = 0;
 
 #ifdef QUAKE2
-//
 // light level
 //
 	MSG_WriteByte (&buf, cmd->lightlevel);
 #endif
 
-//
 // deliver the message
 //
 	if (cls.demoplayback)
 		return;
 
-//
 // always dump the first two message, because it may contain leftover inputs
 // from the last level
-//
 	if (++cl.movemessages <= 2)
 		return;
 

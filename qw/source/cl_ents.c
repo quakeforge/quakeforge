@@ -69,11 +69,7 @@ entity_t    cl_packet_ents[512];	// FIXME: magic number
 entity_t    cl_flag_ents[MAX_CLIENTS];
 entity_t    cl_player_ents[MAX_CLIENTS];
 
-//============================================================
 
-/*
-	CL_ClearEnts
-*/
 void
 CL_ClearEnts ()
 {
@@ -87,9 +83,7 @@ CL_ClearEnts ()
 		CL_Init_Entity (&cl_player_ents[i]);
 }
 
-/*
-	CL_AllocDlight
-*/
+
 dlight_t *
 CL_AllocDlight (int key)
 {
@@ -125,9 +119,7 @@ CL_AllocDlight (int key)
 	return dl;
 }
 
-/*
-	CL_NewDlight
-*/
+
 void
 CL_NewDlight (int key, vec3_t org, int effects)
 {
@@ -168,9 +160,6 @@ CL_NewDlight (int key, vec3_t org, int effects)
 }
 
 
-/*
-	CL_DecayLights
-*/
 void
 CL_DecayLights (void)
 {
@@ -192,6 +181,7 @@ CL_DecayLights (void)
 /*
 	PACKET ENTITY PARSING / LINKING
 */
+
 
 /*
 	CL_ParseDelta
@@ -285,20 +275,22 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 	if (bits & U_SOLID) {
 		// FIXME
 	}
-	/* 
-	   if ((!to->alpha) || (!to->colormod)) Con_Printf("fa: %d, fc: %d, ta:
-	   %d, tc: %d\n", from->alpha, from->colormod, to->alpha, to->colormod); */
-	/* 
-	   if ((!ent->alpha) || (!ent->colormod[0]) || (!ent->colormod[1]) ||
-	   (!ent->colormod[2])) { Con_Printf("ea: %f, ec0: %f, ec1: %f ec2: %f,
-	   sa: %d, sc: %d\n", ent->alpha, ent->colormod[0], ent->colormod[1],
-	   ent->colormod[2], s1->alpha, s1->colormod); } */
+/*
+	   if ((!to->alpha) || (!to->colormod))
+		   Con_Printf("fa: %d, fc: %d, ta: %d, tc: %d\n",
+					  from->alpha, from->colormod, to->alpha, to->colormod);
+*/
+/*
+	if ((!ent->alpha) || (!ent->colormod[0]) || (!ent->colormod[1]) ||
+		(!ent->colormod[2])) {
+		Con_Printf ("ea: %f, ec0: %f, ec1: %f ec2: %f, sa: %d, sc: %d\n",
+					ent->alpha, ent->colormod[0], ent->colormod[1],
+					ent->colormod[2], s1->alpha, s1->colormod);
+	}
+*/
 }
 
 
-/*
-	FlushEntityPacket
-*/
 void
 FlushEntityPacket (void)
 {
@@ -315,7 +307,7 @@ FlushEntityPacket (void)
 	// read it all, but ignore it
 	while (1) {
 		word = (unsigned short) MSG_ReadShort (net_message);
-		if (net_message->badread) {				// something didn't parse right...
+		if (net_message->badread) {			// something didn't parse right...
 			Host_EndGame ("msg_badread in packetentities");
 			return;
 		}
@@ -326,6 +318,7 @@ FlushEntityPacket (void)
 		CL_ParseDelta (&olde, &newe, word);
 	}
 }
+
 
 /*
 	CL_ParsePacketEntities
@@ -456,9 +449,6 @@ CL_ParsePacketEntities (qboolean delta)
 }
 
 
-/*
-	CL_LinkPacketEntities
-*/
 void
 CL_LinkPacketEntities (void)
 {
@@ -602,11 +592,13 @@ int         cl_num_projectiles;
 
 extern int  cl_spikeindex;
 
+
 void
 CL_ClearProjectiles (void)
 {
 	cl_num_projectiles = 0;
 }
+
 
 /*
 	CL_ParseProjectiles
@@ -640,9 +632,7 @@ CL_ParseProjectiles (void)
 	}
 }
 
-/*
-	CL_LinkProjectiles
-*/
+
 void
 CL_LinkProjectiles (void)
 {
@@ -674,13 +664,12 @@ CL_LinkProjectiles (void)
 	}
 }
 
+
 //========================================
 
 extern int  cl_spikeindex, cl_playerindex, cl_flagindex;
 
-/*
-	CL_ParsePlayerinfo
-*/
+
 extern int  parsecountmod;
 extern double parsecounttime;
 void
@@ -824,6 +813,7 @@ CL_AddFlagModels (entity_t *ent, int team)
 		(*newent)->angles[2] -= 45;
 }
 
+
 /*
 	CL_LinkPlayers
 
@@ -933,7 +923,9 @@ CL_LinkPlayers (void)
 	}
 }
 
+
 //======================================================================
+
 
 /*
 	CL_SetSolid
@@ -973,6 +965,7 @@ CL_SetSolidEntities (void)
 	}
 
 }
+
 
 /*
 	Calculate the new position of players, without other player clipping
@@ -1037,6 +1030,7 @@ CL_SetUpPlayerPrediction (qboolean dopred)
 		}
 	}
 }
+
 
 /*
 	CL_SetSolid
@@ -1104,6 +1098,7 @@ CL_EmitEntities (void)
 	CL_LinkProjectiles ();
 	CL_UpdateTEnts ();
 }
+
 
 void
 CL_Ents_Init (void)

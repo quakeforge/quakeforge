@@ -36,11 +36,13 @@
 #include "QF/compat.h"
 #include "QF/sys.h"
 
+
 qboolean
 ServerPaused (void)
 {
 	return false;
 }
+
 
 void
 SV_Error (char *error, ...)

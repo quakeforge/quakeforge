@@ -79,6 +79,7 @@ void        MaskExceptions (void);
 void        Sys_PopFPCW (void);
 void        Sys_PushFPCW_SetHigh (void);
 
+
 void
 Sys_DebugLog (char *file, char *fmt, ...)
 {
@@ -94,13 +95,12 @@ Sys_DebugLog (char *file, char *fmt, ...)
 	close (fd);
 };
 
+
 /*
 	FILE IO
 */
 
-/*
-	wfilelength
-*/
+
 int
 wfilelength (QFile *f)
 {
@@ -120,9 +120,7 @@ wfilelength (QFile *f)
 	SYSTEM IO
 */
 
-/*
-	Sys_MakeCodeWriteable
-*/
+
 void
 Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 {
@@ -139,12 +137,14 @@ Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 	Sys_Init
 */
 
+
 void
 Sys_Init_Cvars (void)
 {
 	sys_nostdout = Cvar_Get ("sys_nostdout", "1", CVAR_NONE, NULL,
-			"unset to enable std out - windows does NOT support this");
+					"unset to enable std out - windows does NOT support this");
 }
+
 
 void
 Sys_Init (void)
@@ -215,6 +215,7 @@ Sys_Error (const char *error, ...)
 	exit (1);
 }
 
+
 void
 Sys_Quit (void)
 {
@@ -236,8 +237,7 @@ Sys_Quit (void)
 }
 
 
-
-char       *
+char *
 Sys_ConsoleInput (void)
 {
 	static char text[256];
@@ -342,9 +342,9 @@ Sys_ConsoleInput (void)
 			}
 		}
 	}
-
 	return NULL;
 }
+
 
 void
 Sys_Sleep (void)
@@ -356,9 +356,7 @@ Sys_Sleep (void)
 	WINDOWS CRAP
 */
 
-/*
-	WinMain
-*/
+
 void
 SleepUntilInput (int time)
 {
@@ -367,10 +365,6 @@ SleepUntilInput (int time)
 }
 
 
-
-/*
-	WinMain
-*/
 HINSTANCE   global_hInstance;
 int         global_nCmdShow;
 char       *argv[MAX_NUM_ARGVS];
@@ -381,7 +375,7 @@ int WINAPI
 WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		 int nCmdShow)
 {
-//    MSG               msg;
+//	MSG               msg;
 	double      time, oldtime, newtime;
 	MEMORYSTATUS lpBuffer;
 	static char cwd[1024];
@@ -424,7 +418,6 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 				*lpCmdLine = 0;
 				lpCmdLine++;
 			}
-
 		}
 	}
 
@@ -485,7 +478,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	if (!tevent)
 		Sys_Error ("Couldn't create event");
 
-// because sound is off until we become active
+	// because sound is off until we become active
 	S_BlockSound ();
 
 	Sys_Printf ("Host_Init\n");

@@ -55,9 +55,7 @@ cvar_t     *bottomcolor;
 
 char        allskins[128];
 
-/*
-	Skin_NextDownload
-*/
+
 void
 Skin_NextDownload (void)
 {
@@ -128,6 +126,7 @@ CL_AllSkins_f (void)
 	CL_Skins_f ();
 }
 
+
 void
 CL_Color_f (void)
 {
@@ -163,14 +162,20 @@ CL_Color_f (void)
 	Cvar_Set (bottomcolor, num);
 }
 
+
 void
 CL_Skin_Init (void)
 {
 	Skin_Init ();
-	Cmd_AddCommand ("skins", CL_Skins_f, "Download all skins that are currently in use");
-	Cmd_AddCommand ("allskins", CL_AllSkins_f, "Force all player skins to one skin");
-	Cmd_AddCommand ("color", CL_Color_f, "The pant and shirt color (color shirt pants) Note that if only shirt color is given, pants will match");
+	Cmd_AddCommand ("skins", CL_Skins_f, "Download all skins that are "
+					"currently in use");
+	Cmd_AddCommand ("allskins", CL_AllSkins_f, "Force all player skins to "
+					"one skin");
+	Cmd_AddCommand ("color", CL_Color_f, "The pant and shirt color (color "
+					"shirt pants) Note that if only shirt color is given, "
+					"pants will match");
 }
+
 
 void
 CL_Skin_Init_Cvars (void)
@@ -179,16 +184,14 @@ CL_Skin_Init_Cvars (void)
 	noskins = Cvar_Get ("noskins", "0", CVAR_NONE, NULL, //XXX FIXME
 						"set to 1 to not download new skins");
 	skin = Cvar_Get ("skin", "", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
-			"Players skin");
+					 "Players skin");
 	topcolor = Cvar_Get ("topcolor", "0", CVAR_ARCHIVE | CVAR_USERINFO,
-			Cvar_Info, "Players color on top");
+						 Cvar_Info, "Players color on top");
 	bottomcolor = Cvar_Get ("bottomcolor", "0", CVAR_ARCHIVE | CVAR_USERINFO,
-			Cvar_Info, "Players color on bottom");
+							Cvar_Info, "Players color on bottom");
 }
 
-/*
-	CL_NewTranslation
-*/
+
 void
 CL_NewTranslation (int slot)
 {

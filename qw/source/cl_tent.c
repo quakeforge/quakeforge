@@ -345,7 +345,7 @@ CL_ParseTEnt (void)
 }
 
 
-entity_t   **
+entity_t **
 CL_NewTempEntity (void)
 {
 

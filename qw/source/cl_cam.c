@@ -77,6 +77,7 @@ double      cam_lastviewtime;
 int         spec_track = 0;				// player# of who we are tracking
 int         autocam = CAM_NONE;
 
+
 static void
 vectoangles (vec3_t vec, vec3_t ang)
 {
@@ -105,11 +106,13 @@ vectoangles (vec3_t vec, vec3_t ang)
 	ang[2] = 0;
 }
 
+
 static float
 vlen (vec3_t v)
 {
 	return sqrt (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 }
+
 
 // returns true if weapon model should be drawn in camera mode
 qboolean
@@ -123,6 +126,7 @@ Cam_DrawViewModel (void)
 	return false;
 }
 
+
 // returns true if we should draw this player, we don't if we are chase camming
 qboolean
 Cam_DrawPlayer (int playernum)
@@ -132,6 +136,7 @@ Cam_DrawPlayer (int playernum)
 		return false;
 	return true;
 }
+
 
 void
 Cam_Unlock (void)
@@ -144,6 +149,7 @@ Cam_Unlock (void)
 		Sbar_Changed ();
 	}
 }
+
 
 void
 Cam_Lock (int playernum)
@@ -159,6 +165,7 @@ Cam_Lock (int playernum)
 	Sbar_Changed ();
 }
 
+
 pmtrace_t
 Cam_DoTrace (vec3_t vec1, vec3_t vec2)
 {
@@ -173,6 +180,7 @@ Cam_DoTrace (vec3_t vec1, vec3_t vec2)
 	VectorCopy (vec1, pmove.origin);
 	return PM_PlayerMove (pmove.origin, vec2);
 }
+
 
 // Returns distance or 9999 if invalid for some reason
 static float
@@ -209,6 +217,7 @@ Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
 	return len;
 }
 
+
 // Is player visible?
 static qboolean
 Cam_IsVisible (player_state_t * player, vec3_t vec)
@@ -227,6 +236,7 @@ Cam_IsVisible (player_state_t * player, vec3_t vec)
 		return false;
 	return true;
 }
+
 
 static qboolean
 InitFlyby (player_state_t * self, player_state_t * player, int checkvis)
@@ -318,6 +328,7 @@ InitFlyby (player_state_t * self, player_state_t * player, int checkvis)
 	return true;
 }
 
+
 static void
 Cam_CheckHighTarget (void)
 {
@@ -338,6 +349,7 @@ Cam_CheckHighTarget (void)
 	} else
 		Cam_Unlock ();
 }
+
 
 // ZOID
 //
@@ -425,6 +437,7 @@ Cam_Track (usercmd_t *cmd)
 	}
 }
 
+
 #if 0
 static float
 adjustang (float current, float ideal, float speed)
@@ -457,6 +470,7 @@ adjustang (float current, float ideal, float speed)
 	return anglemod (current + move);
 }
 #endif
+
 
 #if 0
 void
@@ -493,6 +507,7 @@ Cam_SetView (void)
 	VectorCopy (cl.viewangles, cl.simangles);
 }
 #endif
+
 
 void
 Cam_FinishMove (usercmd_t *cmd)
@@ -593,6 +608,7 @@ Cam_FinishMove (usercmd_t *cmd)
 	autocam = locked = false;
 }
 
+
 void
 Cam_Reset (void)
 {
@@ -600,13 +616,18 @@ Cam_Reset (void)
 	spec_track = 0;
 }
 
+
 void
 CL_Cam_Init_Cvars (void)
 {
-	cl_hightrack = Cvar_Get ("cl_hightrack", "0", CVAR_NONE, NULL, "view the player with the highest frags while in spectator mode.");
-	cl_chasecam = Cvar_Get ("cl_chasecam", "0", CVAR_NONE, NULL, "get first person view of the person you are tracking in spectator mode");
-	cl_camera_maxpitch =
-		Cvar_Get ("cl_camera_maxpitch", "10", CVAR_NONE, NULL, "highest camera pitch in spectator mode");
-	cl_camera_maxyaw = Cvar_Get ("cl_camera_maxyaw", "30", CVAR_NONE, NULL, "highest camera yaw in spectator mode");
+	cl_hightrack = Cvar_Get ("cl_hightrack", "0", CVAR_NONE, NULL, "view the "
+							 "player who has the most frags while you are in "
+							 "spectator mode.");
+	cl_chasecam = Cvar_Get ("cl_chasecam", "0", CVAR_NONE, NULL, "get first "
+							"person view of the person you are tracking in "
+							"spectator mode");
+	cl_camera_maxpitch = Cvar_Get ("cl_camera_maxpitch", "10", CVAR_NONE, NULL,
+								   "highest camera pitch in spectator mode");
+	cl_camera_maxyaw = Cvar_Get ("cl_camera_maxyaw", "30", CVAR_NONE, NULL,
+								 "highest camera yaw in spectator mode");
 }
-

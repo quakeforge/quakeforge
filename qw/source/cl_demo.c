@@ -61,6 +61,7 @@ int demotime_cached;
 	read from the demo file.
 */
 
+
 /*
 	CL_StopPlayback
 
@@ -82,9 +83,11 @@ CL_StopPlayback (void)
 		CL_FinishTimeDemo ();
 }
 
+
 #define dem_cmd		0
 #define dem_read	1
 #define dem_set		2
+
 
 /*
 	CL_WriteDemoCmd
@@ -99,7 +102,7 @@ CL_WriteDemoCmd (usercmd_t *pcmd)
 	byte        c;
 	usercmd_t   cmd;
 
-//Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
+//	Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
 	fl = LittleFloat ((float) realtime);
 	Qwrite (cls.demofile, &fl, sizeof (fl));
@@ -126,6 +129,7 @@ CL_WriteDemoCmd (usercmd_t *pcmd)
 	Qflush (cls.demofile);
 }
 
+
 /*
 	CL_WriteDemoMessage
 
@@ -138,7 +142,7 @@ CL_WriteDemoMessage (sizebuf_t *msg)
 	float       fl;
 	byte        c;
 
-//Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
+//	Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
 	if (!cls.demorecording)
 		return;
@@ -156,11 +160,7 @@ CL_WriteDemoMessage (sizebuf_t *msg)
 	Qflush (cls.demofile);
 }
 
-/*
-	CL_GetDemoMessage
 
-	FIXME...
-*/
 qboolean
 CL_GetDemoMessage (void)
 {
@@ -180,7 +180,7 @@ CL_GetDemoMessage (void)
 		demotime = LittleFloat (demotime);
 	}
 
-// decide if it is time to grab the next message        
+	// decide if it is time to grab the next message        
 	if (cls.timedemo) {
 		if (cls.td_lastframe < 0)
 			cls.td_lastframe = demotime;
@@ -250,9 +250,9 @@ CL_GetDemoMessage (void)
 			// get the next message
 			Qread (cls.demofile, &net_message->message->cursize, 4);
 			net_message->message->cursize = LittleLong (net_message->message->cursize);
-			// Con_Printf("read: %ld bytes\n", net_message->message->cursize);
+//				Con_Printf("read: %ld bytes\n", net_message->message->cursize);
 			if (net_message->message->cursize > MAX_MSGLEN)
-//          Sys_Error ("Demo message > MAX_MSGLEN");
+//				Sys_Error ("Demo message > MAX_MSGLEN");
 				Host_EndGame ("Demo message > MAX_MSGLEN");
 			r = Qread (cls.demofile, net_message->message->data, net_message->message->cursize);
 			if (r != net_message->message->cursize) {
@@ -276,6 +276,7 @@ CL_GetDemoMessage (void)
 
 	return 1;
 }
+
 
 /*
 	CL_GetMessage
@@ -337,7 +338,7 @@ CL_WriteRecordDemoMessage (sizebuf_t *msg, int seq)
 	float       fl;
 	byte        c;
 
-//Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
+//	Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
 	if (!cls.demorecording)
 		return;
@@ -388,8 +389,6 @@ CL_WriteSetDemoMessage (void)
 }
 
 
-
-
 /*
 	CL_Record_f
 
@@ -426,7 +425,6 @@ CL_Record_f (void)
 
 	snprintf (name, sizeof (name), "%s/%s", com_gamedir, Cmd_Argv (1));
 
-//
 // open the demo file
 //
 	COM_DefaultExtension (name, ".qwd");
@@ -676,6 +674,7 @@ CL_Record_f (void)
 	// done
 }
 
+
 /*
 	CL_ReRecord_f
 
@@ -703,7 +702,6 @@ CL_ReRecord_f (void)
 
 	snprintf (name, sizeof (name), "%s/%s", com_gamedir, Cmd_Argv (1));
 
-//
 // open the demo file
 //
 	COM_DefaultExtension (name, ".qwd");
@@ -736,14 +734,11 @@ CL_PlayDemo_f (void)
 		Con_Printf ("play <demoname> : plays a demo\n");
 		return;
 	}
-//
-// disconnect from server
-//
+
+	// disconnect from server
 	CL_Disconnect ();
 
-//
-// open the demo file
-//
+	// open the demo file
 	strcpy (name, Cmd_Argv (1));
 	COM_DefaultExtension (name, ".qwd");
 
@@ -761,9 +756,7 @@ CL_PlayDemo_f (void)
 	realtime = 0;
 }
 
-/*
-	CL_FinishTimeDemo
-*/
+
 void
 CL_FinishTimeDemo (void)
 {
@@ -772,7 +765,7 @@ CL_FinishTimeDemo (void)
 
 	cls.timedemo = false;
 
-// the first frame didn't count
+	// the first frame didn't count
 	frames = (host_framecount - cls.td_startframe) - 1;
 	time = Sys_DoubleTime () - cls.td_starttime;
 	if (!time)
@@ -780,6 +773,7 @@ CL_FinishTimeDemo (void)
 	Con_Printf ("%i frames %5.1f seconds %5.2f fps\n", frames, time,
 				frames / time);
 }
+
 
 /*
 	CL_TimeDemo_f
@@ -799,8 +793,8 @@ CL_TimeDemo_f (void)
 	if (cls.state != ca_demostart)
 		return;
 
-// cls.td_starttime will be grabbed at the second frame of the demo, so
-// all the loading time doesn't get counted
+	// cls.td_starttime will be grabbed at the second frame of the demo, so
+	// all the loading time doesn't get counted
 
 	cls.timedemo = true;
 	cls.td_starttime = 0;

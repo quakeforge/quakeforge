@@ -97,18 +97,11 @@ entity_t   *cl_visedicts[MAX_VISEDICTS];
 void
 CL_InitCvars (void)
 {
-
-	r_firecolor = Cvar_Get ("r_firecolor", "0.9 0.4 0", CVAR_ARCHIVE, NULL,
-				"color of rocket and lava ball fires");
-	show_fps = Cvar_Get ("show_fps", "0", CVAR_NONE, NULL,
-			     "display realtime frames per second");
-	show_time = Cvar_Get ("show_time", "0", CVAR_NONE, NULL,
-			      "display the current time");
-	// Misty: Turn on or off screen filling colors for powerups among other things.
 	cl_cshift_bonus = Cvar_Get ("cl_cshift_bonus", "1", CVAR_ARCHIVE, NULL,
 								"Show bonus flash on item pickup");
-	cl_cshift_contents = Cvar_Get ("cl_cshift_content", "1", CVAR_ARCHIVE, NULL,
-								   "Shift view colors for contents (water, slime, etc)");
+	cl_cshift_contents = Cvar_Get ("cl_cshift_content", "1", CVAR_ARCHIVE,
+								   NULL, "Shift view colors for contents "
+								   "(water, slime, etc)");
 	cl_cshift_damage = Cvar_Get ("cl_cshift_damage", "1", CVAR_ARCHIVE, NULL, 
 								 "Shift view colors on damage");
 	cl_cshift_powerup = Cvar_Get ("cl_cshift_powerup", "1", CVAR_ARCHIVE, NULL,                             "Shift view colors for powerups");
@@ -118,22 +111,22 @@ CL_InitCvars (void)
 						"Player name");
 	cl_color = Cvar_Get ("_cl_color", "0", CVAR_ARCHIVE, NULL,
 						 "Player color");
-	cl_upspeed = Cvar_Get ("cl_upspeed", "200", CVAR_NONE, NULL,
-						   "swim/fly up/down speed");
-	cl_forwardspeed = Cvar_Get ("cl_forwardspeed", "200", CVAR_ARCHIVE, NULL,
-								"forward speed");
+	cl_anglespeedkey = Cvar_Get ("cl_anglespeedkey", "1.5", CVAR_NONE, NULL,
+								 "turn `run' speed multiplier");
 	cl_backspeed = Cvar_Get ("cl_backspeed", "200", CVAR_ARCHIVE, NULL,
 							 "backward speed");
-	cl_sidespeed = Cvar_Get ("cl_sidespeed", "350", CVAR_NONE, NULL,
-							 "strafe speed");
+	cl_forwardspeed = Cvar_Get ("cl_forwardspeed", "200", CVAR_ARCHIVE, NULL,
+								"forward speed");
 	cl_movespeedkey = Cvar_Get ("cl_movespeedkey", "2.0", CVAR_NONE, NULL,
 								"move `run' speed multiplier");
-	cl_yawspeed = Cvar_Get ("cl_yawspeed", "140", CVAR_NONE, NULL,
-							"turning speed");
 	cl_pitchspeed = Cvar_Get ("cl_pitchspeed", "150", CVAR_NONE, NULL,
 							  "look up/down speed");
-	cl_anglespeedkey = Cvar_Get ("cl_anglespeedkey", "1.5", CVAR_NONE,
-								 NULL, "turn `run' speed multiplier");
+	cl_sidespeed = Cvar_Get ("cl_sidespeed", "350", CVAR_NONE, NULL,
+							 "strafe speed");
+	cl_upspeed = Cvar_Get ("cl_upspeed", "200", CVAR_NONE, NULL,
+						   "swim/fly up/down speed");
+	cl_yawspeed = Cvar_Get ("cl_yawspeed", "140", CVAR_NONE, NULL,
+							"turning speed");
 	cl_shownet = Cvar_Get ("cl_shownet", "0", CVAR_NONE, NULL,
 						   "show network packets. 0=off, 1=basic, 2=verbose");
 	cl_nolerp = Cvar_Get ("cl_nolerp", "0", CVAR_NONE, NULL,
@@ -142,9 +135,8 @@ CL_InitCvars (void)
 						"status bar mode");
 	cl_hudswap = Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, NULL,
 						   "new HUD on left side?");
-	lookspring =
-		Cvar_Get ("lookspring", "0", CVAR_ARCHIVE, NULL,
-				  "Snap view to center when moving and no mlook/klook");
+	lookspring = Cvar_Get ("lookspring", "0", CVAR_ARCHIVE, NULL, "Snap view "
+						   "to center when moving and no mlook/klook");
 	m_pitch = Cvar_Get ("m_pitch", "0.022", CVAR_ARCHIVE, NULL,
 						"mouse pitch (up/down) multipier");
 	m_yaw =	Cvar_Get ("m_yaw", "0.022", CVAR_ARCHIVE, NULL,
@@ -153,6 +145,12 @@ CL_InitCvars (void)
 						  "mouse forward/back speed");
 	m_side = Cvar_Get ("m_side", "0.8", CVAR_ARCHIVE, NULL,
 					   "mouse strafe speed");
+	r_firecolor = Cvar_Get ("r_firecolor", "0.9 0.4 0", CVAR_ARCHIVE, NULL,
+							"color of rocket and lava ball fires");
+	show_fps = Cvar_Get ("show_fps", "0", CVAR_NONE, NULL,
+						 "display realtime frames per second");
+	show_time = Cvar_Get ("show_time", "0", CVAR_NONE, NULL,
+						  "display the current time");
 }
 
 

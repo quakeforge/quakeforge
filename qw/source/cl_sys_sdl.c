@@ -75,6 +75,7 @@ qboolean    Minimized = false;
 void        MaskExceptions (void);
 #endif
 
+
 void
 Sys_DebugLog (char *file, char *fmt, ...)
 {
@@ -90,13 +91,12 @@ Sys_DebugLog (char *file, char *fmt, ...)
 	close (fd);
 };
 
+
 /*
 	SYSTEM IO
 */
 
-/*
-	Sys_MakeCodeWriteable
-*/
+
 void
 Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 {
@@ -126,17 +126,12 @@ Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 }
 
 
-/*
-	Sys_Init
-*/
 void
 Sys_Init (void)
 {
-
 #ifdef WIN32
 	OSVERSIONINFO vinfo;
 #endif
-
 #ifdef USE_INTEL_ASM
 #ifdef _WIN32
 	MaskExceptions ();
@@ -185,6 +180,7 @@ Sys_Error (char *error, ...)
 	exit (1);
 }
 
+
 void
 Sys_Quit (void)
 {
@@ -192,11 +188,13 @@ Sys_Quit (void)
 	exit (0);
 }
 
-char       *
+
+char *
 Sys_ConsoleInput (void)
 {
 	return NULL;
 }
+
 
 void
 Sys_Sleep (void)
@@ -208,20 +206,18 @@ void
 Sys_Init_Cvars (void)
 {
 	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, NULL,
-			"Set to disable std out");
+							 "Set to disable std out");
 	if (COM_CheckParm ("-nostdout"))
 		Cvar_Set (sys_nostdout, "1");
 }
 
+
 C_LINKAGE int
 SDL_main (int c, char **v)
 {
-
 	double      time, oldtime, newtime;
-	int         j;
-
+	int         j, t;
 	static char cwd[1024];
-	int         t;
 
 #ifndef WIN32
 	signal (SIGFPE, SIG_IGN);
@@ -261,5 +257,4 @@ SDL_main (int c, char **v)
 		Host_Frame (time);
 		oldtime = newtime;
 	}
-
 }

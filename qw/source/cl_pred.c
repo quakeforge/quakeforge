@@ -45,23 +45,21 @@ cvar_t     *cl_nostatpred;
 
 extern frame_t *view_frame;
 
-/*
-	CL_PredictUsercmd
-*/
+
 void
 CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 				   qboolean spectator)
 {
 
 // Dabb: if there is no movement to start with, don't predict...
-        if(cl_nostatpred->int_val && !from->velocity[0]
-                && !from->velocity[1]
-                && !from->velocity[2]) {
-                VectorCopy (from->origin, to->origin);
-                VectorCopy (u->angles, to->viewangles);
-                VectorCopy (from->velocity, to->velocity);
+	if(cl_nostatpred->int_val && !from->velocity[0]
+	   && !from->velocity[1]
+	   && !from->velocity[2]) {
+		VectorCopy (from->origin, to->origin);
+		VectorCopy (u->angles, to->viewangles);
+		VectorCopy (from->velocity, to->velocity);
 		return;
-        }
+	}
 
 	// split up very long moves
 	if (u->msec > 50) {
@@ -77,7 +75,7 @@ CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 	}
 
 	VectorCopy (from->origin, pmove.origin);
-//  VectorCopy (from->viewangles, pmove.angles);
+//	VectorCopy (from->viewangles, pmove.angles);
 	VectorCopy (u->angles, pmove.angles);
 	VectorCopy (from->velocity, pmove.velocity);
 
@@ -90,24 +88,19 @@ CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 	pmove.cmd = *u;
 
 	PlayerMove ();
-//for (i=0 ; i<3 ; i++)
-//pmove.origin[i] = ((int)(pmove.origin[i]*8))*0.125;
+//	for (i=0 ; i<3 ; i++)
+//	pmove.origin[i] = ((int)(pmove.origin[i]*8))*0.125;
 	to->waterjumptime = pmove.waterjumptime;
 	to->oldbuttons = pmove.oldbuttons;	// Tonik
-//  to->oldbuttons = pmove.cmd.buttons;
+//	to->oldbuttons = pmove.cmd.buttons;
 	VectorCopy (pmove.origin, to->origin);
 	VectorCopy (pmove.angles, to->viewangles);
 	VectorCopy (pmove.velocity, to->velocity);
 	to->onground = onground;
-
 	to->weaponframe = from->weaponframe;
 }
 
 
-
-/*
-	CL_PredictMove
-*/
 void
 CL_PredictMove (void)
 {
@@ -158,19 +151,19 @@ CL_PredictMove (void)
 
 // Dabb: if there is no movement to start with, don't predict...
 
-        if(cl_nostatpred->int_val && !from->playerstate[cl.playernum].velocity[0]
-                && !from->playerstate[cl.playernum].velocity[1]
-                && !from->playerstate[cl.playernum].velocity[2]) {
+	if(cl_nostatpred->int_val && !from->playerstate[cl.playernum].velocity[0]
+	   && !from->playerstate[cl.playernum].velocity[1]
+	   && !from->playerstate[cl.playernum].velocity[2]) {
 		VectorCopy (from->playerstate[cl.playernum].velocity, cl.simvel);
 		VectorCopy (from->playerstate[cl.playernum].origin, cl.simorg);
 		return;
-        }
+	}
 
-        // predict forward until cl.time <= to->senttime
+	// predict forward until cl.time <= to->senttime
 	oldphysent = pmove.numphysent;
 	CL_SetSolidPlayers (cl.playernum);
 
-//  to = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];
+//	to = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];
 
 	for (i = 1; i < UPDATE_BACKUP - 1 && cls.netchan.incoming_sequence + i <
 		 cls.netchan.outgoing_sequence; i++) {
@@ -205,9 +198,8 @@ CL_PredictMove (void)
 	for (i = 0; i < 3; i++)
 		if (fabs
 			(from->playerstate[cl.playernum].origin[i] -
-			 to->playerstate[cl.playernum].origin[i]) > 128) {	// teleported, 
-																// so don't
-																// lerp
+			 to->playerstate[cl.playernum].origin[i]) > 128) {
+			// teleported, so don't lerp
 			VectorCopy (to->playerstate[cl.playernum].velocity, cl.simvel);
 			VectorCopy (to->playerstate[cl.playernum].origin, cl.simorg);
 			return;
@@ -224,18 +216,13 @@ CL_PredictMove (void)
 }
 
 
-/*
-	CL_Prediction_Init_Cvars
-*/
 void
 CL_Prediction_Init_Cvars (void)
 {
-/* I'm not totally sure what cl_pushlatency is for. Or if it is SUPPOSED TO BE SETTABLE. */
 	cl_pushlatency = Cvar_Get ("pushlatency", "-999", CVAR_NONE, NULL,
 			"How much prediction should the client make");
 	cl_nopred = Cvar_Get ("cl_nopred", "0", CVAR_NONE, NULL,
-			"Set to turn off client prediction");
-        cl_nostatpred = Cvar_Get ("cl_nostatpred", "0", CVAR_NONE, NULL,
-				"Set to turn off static player prediction");
+						  "Set to turn off client prediction");
+	cl_nostatpred = Cvar_Get ("cl_nostatpred", "0", CVAR_NONE, NULL,
+							  "Set to turn off static player prediction");
 }
-

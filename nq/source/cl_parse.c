@@ -100,15 +100,11 @@ char       *svc_strings[] = {
 	"svc_cutscene"
 };
 
-//=============================================================================
-
 
 /*
-===============
-CL_EntityNum
+	CL_EntityNum
 
-This error checks and tracks the total number of entities
-===============
+	This error checks and tracks the total number of entities
 */
 entity_t   *
 CL_EntityNum (int num)
@@ -167,12 +163,10 @@ CL_ParseStartSoundPacket (void)
 
 
 /*
-==================
-CL_KeepaliveMessage
+	CL_KeepaliveMessage
 
-When the client is taking a long time to load stuff, send keepalive messages
-so the server doesn't disconnect.
-==================
+	When the client is taking a long time to load stuff, send keepalive
+	messages so the server doesn't disconnect.
 */
 void
 CL_KeepaliveMessage (void)
@@ -239,12 +233,12 @@ CL_ParseServerInfo (void)
 	char        sound_precache[MAX_SOUNDS][MAX_QPATH];
 
 	Con_DPrintf ("Serverinfo packet received.\n");
-//
+
 // wipe the client_state_t struct
 //
 	CL_ClearState ();
 
-// parse protocol version number
+	// parse protocol version number
 	i = MSG_ReadLong (net_message);
 	if (i != PROTOCOL_VERSION) {
 		Con_Printf ("Server returned version %i, not %i", i, PROTOCOL_VERSION);
@@ -270,11 +264,9 @@ CL_ParseServerInfo (void)
 		("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\37\n\n");
 	Con_Printf ("%c%s\n", 2, str);
 
-//
 // first we go through and touch all of the precache data that still
 // happens to be in the cache, so precaching something else doesn't
 // needlessly purge it
-//
 
 // precache models
 	memset (cl.model_precache, 0, sizeof (cl.model_precache));
@@ -304,9 +296,7 @@ CL_ParseServerInfo (void)
 		S_TouchSound (str);
 	}
 
-//
 // now we try to load everything else until a cache allocation fails
-//
 
 	for (i = 1; i < nummodels; i++) {
 		cl.model_precache[i] = Mod_ForName (model_precache[i], false);
@@ -336,17 +326,16 @@ CL_ParseServerInfo (void)
 }
 
 
-/*
-==================
-CL_ParseUpdate
-
-Parse an entity update message from the server
-If an entities model or origin changes from frame to frame, it must be
-relinked.  Other attributes can change without relinking.
-==================
-*/
 int         bitcounts[16];
 
+
+/*
+	CL_ParseUpdate
+
+	Parse an entity update message from the server
+	If an entities model or origin changes from frame to frame, it must be
+	relinked.  Other attributes can change without relinking.
+*/
 void
 CL_ParseUpdate (int bits)
 {
@@ -504,11 +493,9 @@ CL_ParseBaseline (entity_t *ent)
 
 
 /*
-==================
-CL_ParseClientdata
+	CL_ParseClientdata
 
-Server information pertaining to this client only
-==================
+	Server information pertaining to this client only
 */
 void
 CL_ParseClientdata (int bits)
@@ -696,7 +683,6 @@ CL_ParseServerMessage (void)
 	int         cmd;
 	int         i;
 
-//
 // if recording demos, copy the message out
 //
 	if (cl_shownet->int_val == 1)
@@ -705,7 +691,7 @@ CL_ParseServerMessage (void)
 		Con_Printf ("------------------\n");
 
 	cl.onground = false;				// unless the server says otherwise 
-//
+
 // parse the message
 //
 	MSG_BeginReading (net_message);

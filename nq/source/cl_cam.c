@@ -1,7 +1,7 @@
 /*
 	cl_cam.c
 
-	@description@
+	camera support
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -58,12 +58,14 @@ Chase_Init (void)
 	chase_active = Cvar_Get ("chase_active", "0", CVAR_NONE, NULL, "None");
 }
 
+
 void
 Chase_Reset (void)
 {
 	// for respawning and teleporting
-//  start position 12 units behind head
+	// start position 12 units behind head
 }
+
 
 void
 TraceLine (vec3_t start, vec3_t end, vec3_t impact)
@@ -75,6 +77,7 @@ TraceLine (vec3_t start, vec3_t end, vec3_t impact)
 
 	VectorCopy (trace.endpos, impact);
 }
+
 
 void
 Chase_Update (void)

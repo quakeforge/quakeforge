@@ -1045,9 +1045,8 @@ CL_ReadPackets (void)
 #ifdef PACKET_LOGGING
                 if (cls.demoplayback) Log_Incoming_Packet(net_message->message->data,net_message->message->cursize);
 #endif
-		// 
+
 		// remote command packet
-		//
 		if (*(int *) net_message->message->data == -1) {
 			CL_ConnectionlessPacket ();
 			continue;
@@ -1061,9 +1060,8 @@ CL_ReadPackets (void)
 			Con_Printf ("%s: Runt packet\n", NET_AdrToString (net_from));
 			continue;
 		}
-		// 
+
 		// packet from server
-		// 
 		if (!cls.demoplayback &&
 			!NET_CompareAdr (net_from, cls.netchan.remote_address)) {
 			Con_DPrintf ("%s:sequenced packet without connection\n",
@@ -1089,9 +1087,6 @@ CL_ReadPackets (void)
 	}
 
 }
-
-
-//=============================================================================
 
 
 void
@@ -1154,78 +1149,72 @@ CL_Init (void)
 
 	SList_Init ();
 	
-//
 // register our commands
-//
-
 	Cmd_AddCommand ("version", CL_Version_f, "Report version information");
-
 	Cmd_AddCommand ("changing", CL_Changing_f, "Used when maps are changing");
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "Disconnect from server");
-	Cmd_AddCommand ("record", CL_Record_f, "Record a demo 'record filename server'");
-	Cmd_AddCommand ("rerecord", CL_ReRecord_f, "Rerecord a demo on the same server");
+	Cmd_AddCommand ("record", CL_Record_f, "Record a demo 'record filename "
+					"server'");
+	Cmd_AddCommand ("rerecord", CL_ReRecord_f, "Rerecord a demo on the same "
+					"server");
 	Cmd_AddCommand ("stop", CL_Stop_f, "Stop recording a demo");
 	Cmd_AddCommand ("playdemo", CL_PlayDemo_f, "Play a recorded demo");
-	Cmd_AddCommand ("timedemo", CL_TimeDemo_f, "Play a demo as fast as your hardware can. Useful for benchmarking.");
-
+	Cmd_AddCommand ("timedemo", CL_TimeDemo_f, "Play a demo as fast as your "
+					"hardware can. Useful for benchmarking.");
 	Cmd_AddCommand ("maplist", COM_Maplist_f, "List maps available");
-
 	Cmd_AddCommand ("quit", CL_Quit_f, "Exit the program");
+	Cmd_AddCommand ("connect", CL_Connect_f, "Connect to a server 'connect "
+					"hostname:port'");
+	Cmd_AddCommand ("reconnect", CL_Reconnect_f, "Reconnect to the last "
+					"server");
+	Cmd_AddCommand ("rcon", CL_Rcon_f, "Issue set of commands to the current "
+					"connected server or the one set in rcon_address");
+	Cmd_AddCommand ("packet", CL_Packet_f, "Send a packet with specified "
+					"contents to the destination");
+	Cmd_AddCommand ("user", CL_User_f, "Queries the user for his setinfo "
+					"information");
+	Cmd_AddCommand ("users", CL_Users_f, "Report information on connected "
+					"players and retrieve user ids");
+	Cmd_AddCommand ("setinfo", CL_SetInfo_f, "Sets information about your "
+					"QuakeWorld user.\n Used without a key it will list all "
+					"of your current settings.\n Specifying a non-existent "
+					"key and a value will create the new key.\n"
+					"Special Keys:\n b_switch - Determines the highest weapon "
+					"that Quake should switch to upon a backpack pickup.\n "
+					"w_switch - Determines the highest weapon that Quake "
+					"should switch to upon a weapon pickup.");
+	Cmd_AddCommand ("fullinfo", CL_FullInfo_f, "Used by QuakeSpy and Qlist to "
+					"set setinfo variables");
+	Cmd_AddCommand ("fullserverinfo", CL_FullServerinfo_f, "Used by QuakeSpy "
+					"and Qlist to obtain server variables");
+	Cmd_AddCommand ("download", CL_Download_f, "Manually download a quake "
+					"file from the server");
+	Cmd_AddCommand ("nextul", CL_NextUpload, "Tells the client to send the "
+					"next upload");
+	Cmd_AddCommand ("stopul", CL_StopUpload, "Tells the client to stop "
+					"uploading");
 
-	Cmd_AddCommand ("connect", CL_Connect_f, "Connect to a server 'connect hostname:port'");
-	Cmd_AddCommand ("reconnect", CL_Reconnect_f, "Reconnect to the last server");
-
-	Cmd_AddCommand ("rcon", CL_Rcon_f, "Issue the set of commands to the server you are currently connected to or have set in rcon_address");
-	Cmd_AddCommand ("packet", CL_Packet_f, "Send a packet with specified contents to the destination");
-	Cmd_AddCommand ("user", CL_User_f, "Queries the user for his setinfo information");
-	Cmd_AddCommand ("users", CL_Users_f, "Report information on connected players and retrieve user ids");
-	Cmd_AddCommand ("setinfo", CL_SetInfo_f, "Sets information about your QuakeWorld user.\n"
-		"Used without a key it will list all of your current settings.\n"
-		"Specifying a non-existent key and a value will create the new key.\n"
-
-		"Special Keys:\n"
-		"b_switch - Determines the highest weapon that Quake should switch to upon a backpack pickup.\n"
-		"w_switch - Determines the highest weapon that Quake should switch to upon a weapon pickup.");
-		
-	Cmd_AddCommand ("fullinfo", CL_FullInfo_f, "Used by QuakeSpy and Qlist to set setinfo variables");
-	Cmd_AddCommand ("fullserverinfo", CL_FullServerinfo_f, "Used by QuakeSpy and Qlist to obtain server variables");
-
-	Cmd_AddCommand ("download", CL_Download_f, "Manually download a quake file from the server");
-
-	Cmd_AddCommand ("nextul", CL_NextUpload, "Tells the client to send the next upload");
-	Cmd_AddCommand ("stopul", CL_StopUpload, "Tells the client to stop uploading");
-
-//
 // forward to server commands
-//
 	Cmd_AddCommand ("kill", Cmd_ForwardToServer, "Suicide :)");
 	Cmd_AddCommand ("pause", Cmd_ForwardToServer, "Pause the game");
-	Cmd_AddCommand ("say", Cmd_ForwardToServer, "Say something to all other players");
-	Cmd_AddCommand ("say_team", Cmd_ForwardToServer, "Say something only to people on your team");
-	Cmd_AddCommand ("serverinfo", Cmd_ForwardToServer, "Report the current server info");
-
+	Cmd_AddCommand ("say", Cmd_ForwardToServer, "Say something to all other "
+					"players");
+	Cmd_AddCommand ("say_team", Cmd_ForwardToServer, "Say something only to "
+					"people on your team");
+	Cmd_AddCommand ("serverinfo", Cmd_ForwardToServer, "Report the current "
+					"server info");
 }
 
 
 void
 CL_Init_Cvars (void)
 {
-	// LordHavoc: some people like it asking on quit, others don't...
-	confirm_quit =
-		Cvar_Get ("confirm_quit", "1", CVAR_ARCHIVE, NULL,
-				"confirm quit command");
+	confirm_quit = Cvar_Get ("confirm_quit", "1", CVAR_ARCHIVE, NULL,
+							 "confirm quit command");
 	cl_allow_cmd_pkt = Cvar_Get ("cl_allow_cmd_pkt", "1", CVAR_NONE, NULL,
 								 "enables packets from the likes of gamespy");
-	show_fps = Cvar_Get ("show_fps", "0", CVAR_NONE, NULL,
-						 "display realtime frames per second");
-	// Misty: I like to be able to see the time when I play
-	show_time = Cvar_Get ("show_time", "0", CVAR_ARCHIVE, NULL,
-						  "display the current time");
-	host_speeds = Cvar_Get ("host_speeds", "0", CVAR_NONE, NULL,
-							"display host processing times");
 	cl_demospeed = Cvar_Get ("cl_demospeed", "1.0", CVAR_NONE, NULL,
 							 "adjust demo playback speed. 1.0 = normal, < 1 slow-mo, > 1 timelaps");
-	// Misty: Turn on or off screen filling colors for powerups among other things. 
 	cl_cshift_bonus = Cvar_Get ("cl_cshift_bonus", "1", CVAR_ARCHIVE, NULL,
 							"Show bonus flash on item pickup");
 	cl_cshift_contents = Cvar_Get ("cl_cshift_content", "1", CVAR_ARCHIVE, NULL,
@@ -1274,24 +1263,24 @@ CL_Init_Cvars (void)
 	m_forward = Cvar_Get ("m_forward", "1", CVAR_NONE, NULL,
 						  "mouse forward/back speed");
 	m_side = Cvar_Get ("m_side", "0.8", CVAR_NONE, NULL, "mouse strafe speed");
-
 	rcon_password = Cvar_Get ("rcon_password", "", CVAR_NONE, NULL,
 							  "remote control password");
-	rcon_address = Cvar_Get ("rcon_address", "", CVAR_NONE, NULL,
-							 "server IP address when client not connected - for sending rcon commands");
-
+	rcon_address = Cvar_Get ("rcon_address", "", CVAR_NONE, NULL, "server IP "
+							 "address when client not connected - for "
+							 "sending rcon commands");
 	cl_writecfg = Cvar_Get ("cl_writecfg", "1", CVAR_NONE, NULL,
-			"write config files?");
-
-	cl_predict_players2 = Cvar_Get ("cl_predict_players2", "1", CVAR_NONE, NULL,
-									"If this and cl_predict_players is 0, no player prediction is done");
+							"write config files?");
+	cl_predict_players2 = Cvar_Get ("cl_predict_players2", "1", CVAR_NONE,
+									NULL, "If this and cl_predict_players are "
+									"0, no player prediction is done");
 	cl_predict_players = Cvar_Get ("cl_predict_players", "1", CVAR_NONE, NULL,
-								   "If this and cl_predict_players2 is 0, no player prediction is done");
+								   "If this and cl_predict_players2 is 0, no "
+								   "player prediction is done");
 	cl_solid_players = Cvar_Get ("cl_solid_players", "1", CVAR_NONE, NULL,
-								 "Are players solid? If off, you can walk through them with difficulty");
-
-	localid = Cvar_Get ("localid", "", CVAR_NONE, NULL,
-						"FIXME: This has something to do with client authentication. No Description");
+								 "Are players solid? If off, you can walk "
+								 "through them with difficulty");
+	localid = Cvar_Get ("localid", "", CVAR_NONE, NULL, "FIXME: This has "
+						"something to do with client authentication.");
 
 	// 
 	// info mirrors
@@ -1396,9 +1385,6 @@ Host_WriteConfiguration (void)
 		Qclose (f);
 	}
 }
-
-
-//============================================================================
 
 
 /*
@@ -1521,9 +1507,6 @@ Host_Frame (float time)
 	host_framecount++;
 	fps_count++;
 }
-
-
-//============================================================================
 
 
 static int

@@ -57,9 +57,8 @@ char       *svs_info;
 void Net_LogStop (void);
 #endif
 
-// =======================================================================
-// General routines
-// =======================================================================
+// General routines ======================================================
+
 
 void
 Sys_Quit (void)
@@ -74,6 +73,7 @@ Sys_Quit (void)
 	exit (0);
 }
 
+
 void
 Sys_Init_Cvars (void)
 {
@@ -83,6 +83,7 @@ Sys_Init_Cvars (void)
 		Cvar_Set (sys_nostdout, "1");
 }
 
+
 void
 Sys_Init (void)
 {
@@ -90,6 +91,7 @@ Sys_Init (void)
 	Sys_SetFPCW ();
 #endif
 }
+
 
 void
 Sys_Error (const char *error, ...)
@@ -110,6 +112,7 @@ Sys_Error (const char *error, ...)
 
 }
 
+
 void
 Sys_Warn (char *warning, ...)
 {
@@ -121,6 +124,7 @@ Sys_Warn (char *warning, ...)
 	va_end (argptr);
 	fprintf (stderr, "Warning: %s", string);
 }
+
 
 void
 Sys_DebugLog (char *file, char *fmt, ...)
@@ -138,6 +142,7 @@ Sys_DebugLog (char *file, char *fmt, ...)
 	close (fd);
 }
 
+
 void
 floating_point_exception_handler (int whatever)
 {
@@ -145,7 +150,8 @@ floating_point_exception_handler (int whatever)
 	signal (SIGFPE, floating_point_exception_handler);
 }
 
-char       *
+
+char *
 Sys_ConsoleInput (void)
 {
 #if 0
@@ -164,11 +170,13 @@ Sys_ConsoleInput (void)
 	return NULL;
 }
 
+
 #ifndef USE_INTEL_ASM
 void
 Sys_HighFPPrecision (void)
 {
 }
+
 
 void
 Sys_LowFPPrecision (void)
@@ -176,7 +184,9 @@ Sys_LowFPPrecision (void)
 }
 #endif
 
+
 int         skipframes;
+
 
 int
 main (int c, char **v)
@@ -184,9 +194,9 @@ main (int c, char **v)
 	double      time, oldtime, newtime;
 	int         j;
 
-//  static char cwd[1024];
+//	static char cwd[1024];
 
-//  signal(SIGFPE, floating_point_exception_handler);
+//	signal(SIGFPE, floating_point_exception_handler);
 	signal (SIGFPE, SIG_IGN);
 
 	memset (&host_parms, 0, sizeof (host_parms));
@@ -224,9 +234,6 @@ main (int c, char **v)
 }
 
 
-/*
-	Sys_MakeCodeWriteable
-*/
 void
 Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 {
