@@ -46,7 +46,7 @@ asm=
 endif
 
 noinst_LIBRARIES= @qw_libs@ $(asm)
-EXTRA_LIBRARIES=libasm.a libqw_client.a libqw_common.a libqw_net.a libqw_sdl.a libqw_server.a
+EXTRA_LIBRARIES=libasm.a libqw_client.a libqw_common.a libqw_sdl.a libqw_server.a
 
 
 libasm_a_SOURCES= worlda.S
@@ -55,17 +55,6 @@ libqw_sdl_a_SOURCES=cl_sys_sdl.c
 libqw_sdl_a_CFLAGS=$(SDL_CFLAGS)
 
 common_ldflags= -export-dynamic
-
-# ... Network type
-ipv6_src= net_udp6.c
-ipv4_src= net_udp.c
-if NETTYPE_IPV6
-ipvX_src= $(ipv6_src)
-else
-ipvX_src= $(ipv4_src)
-endif
-libqw_net_a_SOURCES=	net_chan.c $(ipvX_src)
-EXTRA_libqw_net_a_SOURCES= $(ipv4_src) $(ipv6_src)
 
 # Server builds
 #
@@ -85,6 +74,7 @@ libqw_server_a_SOURCES= \
 
 qf_server_LIBS= \
 		$(SERVER_PLUGIN_STATIC_LIBS) \
+		$(top_builddir)/libs/net/libnet_chan.la \
 		$(top_builddir)/libs/gamecode/builtins/libQFcsqc.la \
 		$(top_builddir)/libs/models/libQFmodels.la \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
@@ -94,9 +84,9 @@ qf_server_LIBS= \
 		$(top_builddir)/libs/gib/libQFgib.la
 
 qw_server_SOURCES=	sv_model.c 
-qw_server_LDADD=	libqw_server.a libqw_common.a libqw_net.a libasm.a $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
+qw_server_LDADD=	libqw_server.a libqw_common.a libasm.a $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
 qw_server_LDFLAGS=	$(common_ldflags)
-qw_server_DEPENDENCIES=	libqw_common.a libqw_server.a libqw_net.a libasm.a $(qf_server_LIBS)
+qw_server_DEPENDENCIES=	libqw_common.a libqw_server.a libasm.a $(qf_server_LIBS)
 
 qw_master_SOURCES=	master.c
 qw_master_LDADD=	$(top_builddir)/libs/util/libQFutil.la $(NET_LIBS)
@@ -107,6 +97,7 @@ cl_plugin_LIBS= \
 		$(top_builddir)/libs/gamecode/builtins/libQFcsqc.la
 
 qf_client_LIBS= \
+		$(top_builddir)/libs/net/libnet_chan.la \
 		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/video/targets/libQFjs.la \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
@@ -116,7 +107,7 @@ qf_client_LIBS= \
 		$(top_builddir)/libs/util/libQFutil.la \
 		$(top_builddir)/libs/gib/libQFgib.la
 
-client_LIBS= libqw_net.a libasm.a $(qf_client_LIBS)
+client_LIBS= libasm.a $(qf_client_LIBS)
 client_libs= libqw_client.a libqw_common.a
 
 libqw_client_a_SOURCES= \

@@ -45,7 +45,7 @@ asm=
 endif
 
 noinst_LIBRARIES= @nq_libs@ $(asm)
-EXTRA_LIBRARIES=libasm.a libnq_client.a libnq_common.a libnq_net.a libnq_sdl.a libnq_server.a
+EXTRA_LIBRARIES=libasm.a libnq_client.a libnq_common.a libnq_sdl.a libnq_server.a
 
 libasm_a_SOURCES=	worlda.S
 libnq_common_a_SOURCES=game.c locs.c world.c com.c
@@ -53,17 +53,6 @@ libnq_sdl_a_SOURCES=	sys_sdl.c
 libnq_sdl_a_CFLAGS=	$(SDL_CFLAGS)
 
 common_ldflags= -export-dynamic
-
-# ... Networking
-if SYSTYPE_WIN32
-net_sources= net_win.c net_wins.c
-else
-net_sources= net_bsd.c net_udp.c
-endif
-libnq_net_a_SOURCES= net_dgrm.c net_loop.c net_main.c net_vcr.c $(net_sources)
-
-EXTRA_libnq_net_a_SOURCES= \
-		net_bsd.c net_win.c net_wins.c net_udp.c
 
 cl_plugin_LIBS= \
 		$(CLIENT_PLUGIN_STATIC_LIBS) \
@@ -76,12 +65,11 @@ client_LIBFILES= \
 
 server_LIBFILES= \
 		$(SERVER_PLUGIN_STATIC_LIBS) \
-		$(top_builddir)/libs/models/libQFmodels.la \
-		$(top_builddir)/libs/console/libQFconsole.la
+		$(top_builddir)/libs/models/libQFmodels.la
 
 common_LIBFILES= \
 		libasm.a \
-		libnq_net.a \
+		$(top_builddir)/libs/net/libnet_main.la \
 		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
 		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \

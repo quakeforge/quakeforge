@@ -30,7 +30,7 @@
 #define __net_loop_h
 
 #include "QF/qtypes.h"
-#include "net.h"
+#include "netmain.h"
 
 int			Loop_Init (void);
 void		Loop_Listen (qboolean state);

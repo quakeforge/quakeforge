@@ -34,9 +34,10 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/msg.h"
 #include "QF/sys.h"
 
-#include "net.h"
+#include "netmain.h"
 #include "net_vcr.h"
-#include "server.h"
+
+#include "../nq/include/server.h"
 
 
 // This is the playback portion of the VCR.  It reads the file produced

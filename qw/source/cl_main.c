@@ -102,7 +102,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "compat.h"
 #include "game.h"
 #include "host.h"
-#include "net.h"
+#include "netchan.h"
 #include "pmove.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"

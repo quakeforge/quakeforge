@@ -48,10 +48,11 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sizebuf.h"
 #include "QF/sys.h"
 
-#include "host.h"
-#include "net.h"
+#include "netmain.h"
 #include "net_vcr.h"
-#include "server.h"
+
+#include "../nq/include/host.h"
+#include "../nq/include/server.h"
 
 qsocket_t  *net_activeSockets = NULL;
 qsocket_t  *net_freeSockets = NULL;

@@ -34,7 +34,7 @@
 #include "QF/qdefs.h"
 #include "QF/sizebuf.h"
 
-#include "bothdefs.h"
+#include "../qw/include/bothdefs.h"
 
 #define	PORT_ANY	-1
 

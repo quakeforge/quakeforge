@@ -89,7 +89,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "client.h"		//FIXME needed by cls below (for netchan)
 #include "crudefile.h"
 #include "game.h"
-#include "net.h"
+#include "netchan.h"
 #include "pmove.h"
 #include "server.h"
 #include "sv_demo.h"

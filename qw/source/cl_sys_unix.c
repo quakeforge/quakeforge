@@ -58,7 +58,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sys.h"
 
 #include "host.h"
-#include "net.h"
+#include "netchan.h"
 
 int         noconinput = 0;
 qboolean    is_server = false;

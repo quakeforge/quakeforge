@@ -12,7 +12,7 @@
 #include "QF/qargs.h"
 #include "QF/sizebuf.h"
 #include "QF/sys.h"
-#include "../qw/include/net.h"
+#include "netchan.h"
 #include "defs.h"
 
 qboolean is_server = true;

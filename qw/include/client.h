@@ -34,7 +34,7 @@
 #include "QF/vid.h"
 #include "QF/zone.h"
 
-#include "net.h"
+#include "netchan.h"
 #include "protocol.h"
 #include "r_local.h"
 #include "QF/render.h"

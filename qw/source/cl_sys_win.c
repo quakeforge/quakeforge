@@ -54,7 +54,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "client.h"
 #include "compat.h"
 #include "host.h"
-#include "net.h"
+#include "netchan.h"
 #include "win32/resources/resource.h"
 
 #define MAXIMUM_WIN_MEMORY	0x1000000

@@ -40,7 +40,7 @@ EXTRA_PROGRAMS= hw-master
 common_ldflags= -export-dynamic
 
 hw_master_SOURCES=	master.c
-hw_master_LDADD=	$(top_builddir)/qw/source/libqw_net.a $(SERVER_PLUGIN_STATIC_LIBS) $(top_builddir)/libs/console/libQFconsole.la $(top_builddir)/libs/util/libQFutil.la $(NET_LIBS)
+hw_master_LDADD=	$(top_builddir)/libs/net/libnet_chan.la $(SERVER_PLUGIN_STATIC_LIBS) $(top_builddir)/libs/console/libQFconsole.la $(top_builddir)/libs/util/libQFutil.la $(NET_LIBS)
 hw_master_LDFLAGS=	$(common_ldflags) -static
 
 # Kill the temp files, hopefully.

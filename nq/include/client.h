@@ -39,7 +39,7 @@
 #include "QF/render.h"
 
 #include "game.h"
-#include "net.h"
+#include "netmain.h"
 #include "protocol.h"
 #include "r_local.h"
 

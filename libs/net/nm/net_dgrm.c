@@ -48,11 +48,12 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/screen.h"
 #include "QF/console.h"
 
-#include "client.h"
-#include "server.h"
-#include "net.h"
-#include "game.h"
-#include "sv_progs.h"
+#include "netmain.h"
+
+#include "../nq/include/client.h"
+#include "../nq/include/server.h"
+#include "../nq/include/game.h"
+#include "../nq/include/sv_progs.h"
 
 // This is enables a simple IP banning mechanism
 #define BAN_TEST

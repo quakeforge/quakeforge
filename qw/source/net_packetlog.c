@@ -56,7 +56,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/va.h"
 
 #include "compat.h"
-#include "net.h"
+#include "netchan.h"
 #include "protocol.h"
 #include "server.h"
 

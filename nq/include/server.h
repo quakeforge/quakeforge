@@ -37,7 +37,7 @@
 #include "QF/sizebuf.h"
 
 #include "client.h"
-#include "net.h"
+#include "netmain.h"
 #include "protocol.h"
 #include "sv_progs.h"
 

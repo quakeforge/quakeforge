@@ -43,7 +43,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sys.h"
 
 #include "msg_ucmd.h"
-#include "net.h"
+#include "netchan.h"
 #include "protocol.h"
 
 struct usercmd_s nullcmd;

@@ -84,7 +84,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/console.h"
 
 #include "compat.h"
-#include "net.h"
+#include "netmain.h"
 
 #ifdef _WIN32
 # undef EWOULDBLOCK

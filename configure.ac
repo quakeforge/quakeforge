@@ -1503,6 +1503,7 @@ QF_WITH_TARGETS(
 )
 
 unset CL_TARGETS
+HW_TARGETS=""
 QW_TARGETS=""
 NQ_TARGETS=""
 
@@ -1652,6 +1653,7 @@ if test "x$ENABLE_servers_nq" = xyes; then
 	QF_NEED(nq, [common net server])
 fi
 if test "x$ENABLE_servers_master" = xyes; then
+	HW_TARGETS="hw-master\$(EXEEXT) $HW_TARGETS"
 	QW_TARGETS="qw-master\$(EXEEXT) $QW_TARGETS"
 	SV_TARGETS="$SV_TARGETS master"
 fi
@@ -1898,6 +1900,7 @@ AC_DEFINE_UNQUOTED(SND_OUTPUT_PROTOS, $SND_OUTPUT_PROTOS, [list of sound output 
 AC_DEFINE_UNQUOTED(SND_RENDER_LIST, $SND_RENDER_LIST, [list of sound render plugins])
 AC_DEFINE_UNQUOTED(SND_RENDER_PROTOS, $SND_RENDER_PROTOS, [list of sound render prototypes])
 
+AC_SUBST(HW_TARGETS)
 AC_SUBST(NQ_TARGETS)
 AC_SUBST(QW_TARGETS)
 AC_SUBST(SERVER_PLUGIN_STATIC)
@@ -2030,6 +2033,9 @@ AC_OUTPUT(
 	libs/models/alias/Makefile
 	libs/models/brush/Makefile
 	libs/models/sprite/Makefile
+	libs/net/Makefile
+	libs/net/nc/Makefile
+	libs/net/nm/Makefile
 	libs/util/Makefile
 	libs/video/Makefile
 	libs/video/renderer/Makefile
@@ -2037,6 +2043,10 @@ AC_OUTPUT(
 	libs/video/renderer/sw/Makefile
 	libs/video/renderer/sw32/Makefile
 	libs/video/targets/Makefile
+
+	hw/Makefile
+	hw/include/Makefile
+	hw/source/Makefile
 
 	nq/Makefile
 	nq/include/Makefile

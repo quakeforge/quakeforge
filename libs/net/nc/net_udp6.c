@@ -107,7 +107,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
-#include "net.h"
+#include "netchan.h"
 
 #ifndef MAXHOSTNAMELEN
 # define MAXHOSTNAMELEN	512

@@ -31,7 +31,7 @@
 static __attribute__ ((unused)) const char rcsid[] = 
 	"$Id$";
 
-#include "net.h"
+#include "netmain.h"
 #include "net_loop.h"
 #include "net_dgrm.h"
 

@@ -49,9 +49,10 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/msg.h"
 #include "QF/sys.h"
 
-#include "client.h"
 #include "compat.h"
-#include "net.h"
+#include "netchan.h"
+
+#include "../qw/include/client.h"
 
 #define	PACKET_HEADER	8
 

@@ -38,7 +38,7 @@
 #include "QF/sizebuf.h"
 
 #include "host.h"
-#include "net.h"
+#include "netchan.h"
 #include "protocol.h"
 
 #define	QW_SERVER
