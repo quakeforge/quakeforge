@@ -207,11 +207,9 @@ install: build
 
 	# qfcc
 	install -D -m755 $(tmp)/usr/games/qfcc $(tmp)/usr/bin/qfcc
-	install -D -m755 $(tmp)/usr/games/qwaq $(tmp)/usr/bin/qwaq
-	rm -f $(tmp)/usr/games/qfcc $(tmp)/usr/games/qwaq
+	rm -f $(tmp)/usr/games/qfcc
 	dh_movefiles -p$(QFCC) --sourcedir=$(tmp) \
 		usr/bin/qfcc \
-		usr/bin/qwaq \
 		usr/share/man/man1/qfcc.1 \
 		usr/include/QF/ruamoko/* \
 		usr/lib/ruamoko/*
