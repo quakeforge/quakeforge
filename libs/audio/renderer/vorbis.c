@@ -263,7 +263,8 @@ vorbis_stream (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 	sfx->release = SND_StreamRelease;
 
 	stream->sfx = sfx;
-	stream->file = vf;
+	stream->file = malloc (sizeof (OggVorbis_File));
+	memcpy (stream->file, vf, sizeof (OggVorbis_File));;
 	stream->resample = info.channels == 2 ? SND_ResampleStereo
 										  : SND_ResampleMono;
 	stream->read = vorbis_stream_read;
