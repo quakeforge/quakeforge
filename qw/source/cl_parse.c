@@ -168,6 +168,8 @@ int         cl_h_playerindex, cl_gib1index, cl_gib2index, cl_gib3index;
 
 int         packet_latency[NET_TIMINGS];
 
+float		r_gravity;
+
 extern cvar_t *hud_scoreboard_uid;
 
 
@@ -735,6 +737,7 @@ CL_ParseServerData (void)
 
 	// get the movevars
 	movevars.gravity = MSG_ReadFloat (net_message);
+	r_gravity = movevars.gravity;		// Gravity for renderer effects
 	movevars.stopspeed = MSG_ReadFloat (net_message);
 	movevars.maxspeed = MSG_ReadFloat (net_message);
 	movevars.spectatormaxspeed = MSG_ReadFloat (net_message);

@@ -661,7 +661,7 @@ R_DrawParticles (void)
 	time3 = frametime * 15;
 	time2 = frametime * 10;				// 15;
 	time1 = frametime * 5;
-	grav = frametime * 800 * 0.05;
+	grav = frametime * r_gravity * 0.05;
 	dvel = 4 * frametime;
 
 	for (particle = &active_particles; *particle;) {

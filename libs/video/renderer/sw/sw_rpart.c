@@ -73,8 +73,7 @@ R_ReadPointFile_f (void)
 {
 	QFile      *f;
 	vec3_t      org;
-	int         r;
-	int         c;
+	int         c, r;
 	particle_t *p;
 	char        name[MAX_OSPATH];
 
@@ -137,18 +136,13 @@ R_ParticleExplosion_QF (const vec3_t org)
 		p->die = r_realtime + 5;
 		p->color = ramp1[0];
 		p->ramp = rand () & 3;
-		if (i & 1) {
+		if (i & 1)
 			p->type = pt_explode;
-			for (j = 0; j < 3; j++) {
-				p->org[j] = org[j] + ((rand () % 32) - 16);
-				p->vel[j] = (rand () % 512) - 256;
-			}
-		} else {
+		else
 			p->type = pt_explode2;
-			for (j = 0; j < 3; j++) {
-				p->org[j] = org[j] + ((rand () % 32) - 16);
-				p->vel[j] = (rand () % 512) - 256;
-			}
+		for (j = 0; j < 3; j++) {
+			p->org[j] = org[j] + ((rand () % 32) - 16);
+			p->vel[j] = (rand () % 512) - 256;
 		}
 	}
 }
@@ -157,11 +151,10 @@ static void
 R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
 {
 	int              i, j;
-	particle_t      *p;
 	int              colorMod = 0;
+	particle_t      *p;
 
-	for (i=0; i<512; i++)
-	{
+	for (i=0; i<512; i++) {
 		if (!free_particles)
 			return;
 		p = free_particles;
@@ -174,8 +167,7 @@ R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
 		colorMod++;
 
 		p->type = pt_blob;
-		for (j=0 ; j<3 ; j++)
-		{
+		for (j=0 ; j<3 ; j++) {
 			p->org[j] = org[j] + ((rand()%32)-16);
 			p->vel[j] = (rand()%512)-256;
 		}
@@ -204,17 +196,13 @@ R_BlobExplosion_QF (const vec3_t org)
 		if (i & 1) {
 			p->type = pt_blob;
 			p->color = 66 + rand () % 6;
-			for (j = 0; j < 3; j++) {
-				p->org[j] = org[j] + ((rand () % 32) - 16);
-				p->vel[j] = (rand () % 512) - 256;
-			}
 		} else {
 			p->type = pt_blob2;
 			p->color = 150 + rand () % 6;
-			for (j = 0; j < 3; j++) {
-				p->org[j] = org[j] + ((rand () % 32) - 16);
-				p->vel[j] = (rand () % 512) - 256;
-			}
+		}
+		for (j = 0; j < 3; j++) {
+			p->org[j] = org[j] + ((rand () % 32) - 16);
+			p->vel[j] = (rand () % 512) - 256;
 		}
 	}
 }
@@ -643,13 +631,9 @@ R_VoorTrail_QF (entity_t *ent)
 void
 R_DrawParticles (void)
 {
-	particle_t *p, **particle;
-	float       grav;
 	int         i;
-	float       time2, time3;
-	float       time1;
-	float       dvel;
-	float       frametime;
+	float       dvel, frametime, grav, time1, time2, time3;
+	particle_t *p, **particle;
 
 	D_StartParticles ();
 
@@ -661,7 +645,7 @@ R_DrawParticles (void)
 	time3 = frametime * 15;
 	time2 = frametime * 10;				// 15;
 	time1 = frametime * 5;
-	grav = frametime * 800 * 0.05;
+	grav = frametime * r_gravity * 0.05;
 	dvel = 4 * frametime;
 
 	for (particle = &active_particles; *particle;) {

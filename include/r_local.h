@@ -260,6 +260,10 @@ void R_ReadPointFile_f (void);
 void R_InitSprites (void);
 void R_SurfacePatch (void);
 
+extern float r_gravity;
+
+// renderer stuff again ===================================
+
 extern int		r_amodels_drawn;
 extern edge_t	*auxedges;
 extern int		r_numallocatededges;

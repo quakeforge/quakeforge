@@ -1363,7 +1363,7 @@ R_DrawParticles (void)
 	qfglDepthMask (GL_FALSE);
 	qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, particleVertexArray);
 
-	grav = (fast_grav = r_frametime * 800.0) * 0.05;
+	grav = (fast_grav = r_frametime * r_gravity) * 0.05;
 	time_125 = r_frametime * 0.125;
 	time_25= r_frametime * 0.25;
 	time_40 = r_frametime * 0.40;

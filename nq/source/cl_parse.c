@@ -103,6 +103,8 @@ const char *svc_strings[] = {
 	"svc_cutscene"
 };
 
+float r_gravity;
+
 
 /*
 	CL_EntityNum
@@ -188,14 +190,14 @@ CL_KeepaliveMessage (void)
 	do {
 		ret = CL_GetMessage ();
 		switch (ret) {
-			default:
+		default:
 			Host_Error ("CL_KeepaliveMessage: CL_GetMessage failed");
-			case 0:
+		case 0:
 			break;						// nothing waiting
-			case 1:
+		case 1:
 			Host_Error ("CL_KeepaliveMessage: received a message");
 			break;
-			case 2:
+		case 2:
 			if (MSG_ReadByte (net_message) != svc_nop)
 				Host_Error ("CL_KeepaliveMessage: datagram wasn't a nop");
 			break;
@@ -236,10 +238,11 @@ map_cfg (const char *mapname, int all)
 	} else {
 		Cmd_Exec_File (cbuf, "maps_default.cfg", 1);
 	}
-	if (all)
+	if (all) {
 		Cbuf_Execute_Stack (cbuf);
-	else
+	} else {
 		Cbuf_Execute_Sets (cbuf);
+	}
 	free (name);
 	Cbuf_Delete (cbuf);
 }
@@ -352,6 +355,7 @@ CL_ParseServerInfo (void)
 	Hunk_Check ();						// make sure nothing is hurt
 
 	noclip_anglehack = false;			// noclip is turned off at start    
+	r_gravity = 800.0;					// Set up gravity for renderer effects
 }
 
 int         bitcounts[16];
