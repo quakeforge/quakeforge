@@ -282,7 +282,7 @@ num_digits (int val)
 {
 	int         num = 1;
 
-	printf ("%d ", val);
+//	printf ("%d ", val);
 	if (val < 0) {
 		num++;
 		val = -val;
@@ -291,7 +291,7 @@ num_digits (int val)
 		val /= 10;
 		num++;
 	}
-	printf ("%d\n", num);
+//	printf ("%d\n", num);
 	return num;
 }
 
