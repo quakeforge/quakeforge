@@ -3,8 +3,11 @@ menu.dat
 @srcdir@/cbuf_def.qc
 @srcdir@/draw_def.qc
 @srcdir@/file_def.qc
+@srcdir@/game_def.qc
 @srcdir@/inputline_def.qc
+@srcdir@/key_defs.qc
 @srcdir@/menu_def.qc
 @srcdir@/string_def.qc
 
+@srcdir@/options.qc
 @srcdir@/menu.qc

@@ -1,5 +1,3 @@
-#include "QF/keys.h"
-
 float () random = #0;
 string () gametype = #0;
 string (...) sprintf = #0;
@@ -434,7 +432,7 @@ void () main_menu =
 	if (do_single_player)
 		single_player_menu ();
 	multi_player_menu ();
-	//options_menu ();
+	options_menu ();
 	help_menu ();
 	Menu_Item (54, 112, "", quit_f);
 	Menu_End ();

@@ -1,5 +1,3 @@
-#include "QF/keys.h"
-
 float time;
 
 void (integer x, integer y) opt_cursor =
@@ -64,7 +62,7 @@ integer (integer key, integer unicode, integer down) options_controls_keyevent =
 
 integer () options_controls_draw = 
 {
-	local string tmp;
+	//local string tmp;
 
 	Draw_Pic (16, 4, "gfx/qplaque.lmp");
 	Draw_CenterPic (160, 4, "gfx/p_option.lmp");
