@@ -908,6 +908,7 @@ main (int argc, char **argv)
 	char	filename[1024];
 	int 	p, crc;
 	double	start, stop;
+	int		no_cpp = 0;
 
 	start = Sys_DoubleTime ();
 
@@ -964,6 +965,10 @@ Options: \n\
 
 	if (CheckParm ("--debug")) {
 		options.debug = 1;
+	}
+
+	if (CheckParm ("--no-cpp")) {
+		no_cpp = 1;
 	}
 
 	// FIXME eww, really must go to getopt
@@ -1032,51 +1037,59 @@ Options: \n\
 			printf ("compiling %s\n", filename);
 
 #ifdef USE_CPP
-		temp1 = getenv ("TMPDIR");
-		if ((!temp1) || (!temp1[0])) {
-			temp1 = getenv ("TEMP");
+		if (!no_cpp) {
+			temp1 = getenv ("TMPDIR");
 			if ((!temp1) || (!temp1[0])) {
-				temp1 = "/tmp";
+				temp1 = getenv ("TEMP");
+				if ((!temp1) || (!temp1[0])) {
+					temp1 = "/tmp";
+				}
 			}
-		}
 
-		snprintf (tempname, sizeof (tempname), "%s%c%sXXXXXX", temp1, PATH_SEPARATOR, temp2 ? temp2 + 1 : argv[0]);
-		tempfd = mkstemp (tempname);
+			snprintf (tempname, sizeof (tempname), "%s%c%sXXXXXX", temp1,
+					  PATH_SEPARATOR, temp2 ? temp2 + 1 : argv[0]);
+			tempfd = mkstemp (tempname);
 
-		if ((pid = fork ()) == -1) {
-			perror ("fork");
-			return 1;
-		}
+			if ((pid = fork ()) == -1) {
+				perror ("fork");
+				return 1;
+			}
 
-		if (!pid) { // we're a child, check for abuse
-			execlp ("cpp", "-D__QFCC__=1", "-o", tempname, filename, NULL);
-			printf ("Child shouldn't reach here\n");
-			exit (1);
-		} else { 	// give parental guidance (or bury it in the back yard)
-			int 	status;
-			pid_t	rc;
+			if (!pid) { // we're a child, check for abuse
+				execlp ("cpp", "-D__QFCC__=1", "-o", tempname, filename, NULL);
+				printf ("Child shouldn't reach here\n");
+				exit (1);
+			} else { 	// give parental guidance (or bury it in the back yard)
+				int 	status;
+				pid_t	rc;
+					
+	//			printf ("pid = %d\n", pid);
+				if ((rc = waitpid (0, &status, 0 | WUNTRACED)) != pid) {
+					if (rc == -1) {
+						perror ("wait");
+						exit (1);
+					}
+					printf ("*** Uhh, dude, the wrong child (%d) just died.\n"
+							"*** Don't ask me, I can't figure it out either.\n",
+							rc);
+					exit (1);
+				}
+				if (WIFEXITED (status)) {
+					if (WEXITSTATUS (status)) {
+						printf ("cpp returned error code %d",
+								WEXITSTATUS (status));
+						exit (1);
+					}
+				} else {
+					printf ("cpp returned prematurely.");
+					exit (1);
+				}
+			}
 				
-//			printf ("pid = %d\n", pid);
-			if ((rc = waitpid (0, &status, 0 | WUNTRACED)) != pid) {
-				if (rc == -1) {
-					perror ("wait");
-					exit (1);
-				}
-				printf ("*** Uhh, dude, the wrong child (%d) just died.\n*** Don't ask me, I can't figure it out either.\n", rc);
-				exit (1);
-			}
-			if (WIFEXITED (status)) {
-				if (WEXITSTATUS (status)) {
-					printf ("cpp returned error code %d", WEXITSTATUS (status));
-					exit (1);
-				}
-			} else {
-				printf ("cpp returned prematurely.");
-				exit (1);
-			}
+			yyin = fdopen (tempfd, "r+t");
+		} else {
+			yyin = fopen (filename, "rt");
 		}
-			
-		yyin = fdopen (tempfd, "r+t");
 #else
 		yyin = fopen (filename, "rt");
 #endif
@@ -1087,9 +1100,11 @@ Options: \n\
 			return 1;
 		fclose (yyin);
 #ifdef USE_CPP
-		if (unlink (tempname)) {
-			perror ("unlink");
-			exit (1);
+		if (!no_cpp) {
+			if (unlink (tempname)) {
+				perror ("unlink");
+				exit (1);
+			}
 		}
 #endif
 #else
