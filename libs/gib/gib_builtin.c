@@ -543,7 +543,7 @@ void
 GIB_File_Read_f (void)
 {
 	QFile      *file;
-	char       *path, *contents;
+	char       *path, *contents = 0;
 	int        len;
 
 	if (GIB_Argc () != 2) {
