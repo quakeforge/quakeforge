@@ -126,7 +126,6 @@ R_RenderFullbrights (void)
 	int         i, j;
 	glpoly_t   *p;
 
-	qfglBlendFunc (GL_ONE, GL_ONE);
 	for (i = 1; i < MAX_GLTEXTURES; i++) {
 		if (!fullbright_polys[i])
 			continue;
@@ -141,7 +140,6 @@ R_RenderFullbrights (void)
 			qfglEnd ();
 		}
 	}
-	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 inline void
