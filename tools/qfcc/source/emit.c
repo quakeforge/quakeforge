@@ -177,8 +177,9 @@ emit_branch (expr_t *_e, opcode_t *op, expr_t *e, expr_t *l)
 
 	if (e)
 		def = emit_sub_expr (e, 0);
-	st = &pr.code->code[ofs = pr.code->size];
+	ofs = pr.code->size;
 	emit_statement (_e, op, def, 0, 0);
+	st = &pr.code->code[ofs];
 	if (l->e.label.ofs) {
 		if (op == op_goto)
 			st->a = l->e.label.ofs - ofs;
