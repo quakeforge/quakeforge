@@ -34,9 +34,6 @@
 #include "gui/Slider.h"
 #include "options_util.h"
 
-void ()traceon=#0;
-void ()traceoff=#0;
-
 @implementation CvarToggle
 
 -(id)initWithCvar:(string)cvname
@@ -92,10 +89,8 @@ void ()traceoff=#0;
 
 -(void)toggle
 {
-traceon();
 	[toggle toggle];
 	[self update];
-traceoff();
 }
 
 @end
