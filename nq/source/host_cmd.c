@@ -583,10 +583,12 @@ Host_Loadgame_f (void)
 
 	// load the light styles
 	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
+		char       *s;
 		Qgets (f, buf, sizeof (buf));
 		sscanf (buf, "%s\n", str);
-		sv.lightstyles[i] = Hunk_Alloc (strlen (str) + 1);
-		strcpy (sv.lightstyles[i], str);
+		s = Hunk_Alloc (strlen (str) + 1);
+		strcpy (s, str);
+		sv.lightstyles[i] = s;
 	}
 
 	// load the edicts out of the savegame file

@@ -1,7 +1,7 @@
 /*
-	pr->pr_cmds.c
+	sv_pr_cmds.c
 
-	@description@
+	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -53,8 +53,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "sv_progs.h"
 #include "world.h"
 
+/* BUILT-IN FUNCTIONS */
 
-// BUILT-IN FUNCTIONS =========================================================
 
 /*
 	PF_error
@@ -72,7 +72,7 @@ PF_error (progs_t *pr)
 
 	s = PF_VarString (pr, 0);
 	Con_Printf ("======SERVER ERROR in %s:\n%s\n",
-				PR_GetString (&sv_pr_state, pr->pr_xfunction->s_name), s);
+				PR_GetString (pr, pr->pr_xfunction->s_name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed);
 
@@ -95,7 +95,7 @@ PF_objerror (progs_t *pr)
 
 	s = PF_VarString (pr, 0);
 	Con_Printf ("======OBJECT ERROR in %s:\n%s\n",
-				PR_GetString (&sv_pr_state, pr->pr_xfunction->s_name), s);
+				PR_GetString (pr, pr->pr_xfunction->s_name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed);
 	ED_Free (pr, ed);
@@ -238,20 +238,19 @@ PF_setmodel (progs_t *pr)
 {
 	edict_t    *e;
 	const char *m, **check;
-	model_t    *mod;
 	int         i;
+	model_t    *mod;
 
 	e = P_EDICT (pr, 0);
 	m = P_GSTRING (pr, 1);
 
-// check to see if model was properly precached
+	// check to see if model was properly precached
 	for (i = 0, check = sv.model_precache; *check; i++, check++)
 		if (!strcmp (*check, m))
 			break;
 
 	if (!*check)
 		PR_RunError (pr, "no precache: %s\n", m);
-
 
 	SVstring (e, model) = PR_SetString (pr, m);
 	SVfloat (e, modelindex) = i;				// SV_ModelIndex (m);
@@ -319,7 +318,7 @@ void
 PF_centerprint (progs_t *pr)
 {
 	const char *s;
-	client_t   *client;
+	client_t   *cl;
 	int         entnum;
 
 	entnum = P_EDICTNUM (pr, 0);
@@ -330,17 +329,12 @@ PF_centerprint (progs_t *pr)
 		return;
 	}
 
-	client = &svs.clients[entnum - 1];
+	cl = &svs.clients[entnum - 1];
 
-	MSG_WriteByte (&client->message, svc_centerprint);
-	MSG_WriteString (&client->message, s);
+	MSG_WriteByte (&cl->message, svc_centerprint);
+	MSG_WriteString (&cl->message, s);
 }
 
-/*
-	PF_particle
-
-	particle (origin, color, count)
-*/
 void
 PF_particle (progs_t *pr)
 {
@@ -355,14 +349,17 @@ PF_particle (progs_t *pr)
 	SV_StartParticle (org, dir, color, count);
 }
 
+/*
+	PF_ambientsound
+*/
 void
 PF_ambientsound (progs_t *pr)
 {
 	const char **check;
-	const char  *samp;
-	float		*pos;
-	float		 vol, attenuation;
-	int			 soundnum;
+	const char *samp;
+	float      *pos;
+	float       vol, attenuation;
+	int         soundnum;
 
 	pos = P_VECTOR (pr, 0);
 	samp = P_GSTRING (pr, 1);
@@ -404,9 +401,9 @@ void
 PF_sound (progs_t *pr)
 {
 	const char *sample;
-	float		attenuation;
-	int			channel, volume;
 	edict_t    *entity;
+	float       attenuation;
+	int         channel, volume;
 
 	entity = P_EDICT (pr, 0);
 	channel = P_FLOAT (pr, 1);
@@ -424,7 +421,6 @@ PF_sound (progs_t *pr)
 	SV_StartSound (entity, channel, sample, volume, attenuation);
 }
 
-
 /*
 	PF_traceline
 
@@ -438,8 +434,8 @@ void
 PF_traceline (progs_t *pr)
 {
 	float      *v1, *v2;
-	int         nomonsters;
 	edict_t    *ent;
+	int         nomonsters;
 	trace_t     trace;
 
 	v1 = P_VECTOR (pr, 0);
@@ -477,21 +473,18 @@ PF_checkpos (progs_t *pr)
 {
 }
 
-// ============================================================================
-
 byte        checkpvs[MAX_MAP_LEAFS / 8];
 
 int
 PF_newcheckclient (progs_t *pr, int check)
 {
-	int         i;
 	byte       *pvs;
 	edict_t    *ent;
+	int         i;
 	mleaf_t    *leaf;
 	vec3_t      org;
 
-// cycle to the next one
-
+	// cycle to the next one
 	if (check < 1)
 		check = 1;
 	if (check > svs.maxclients)
@@ -510,6 +503,7 @@ PF_newcheckclient (progs_t *pr, int check)
 
 		if (i == check)
 			break;						// didn't find anything else
+
 		if (ent->free)
 			continue;
 		if (SVfloat (ent, health) <= 0)
@@ -520,7 +514,7 @@ PF_newcheckclient (progs_t *pr, int check)
 		break;
 	}
 
-// get the PVS for the entity
+	// get the PVS for the entity
 	VectorAdd (SVvector (ent, origin), SVvector (ent, view_ofs), org);
 	leaf = Mod_PointInLeaf (org, sv.worldmodel);
 	pvs = Mod_LeafPVS (leaf, sv.worldmodel);
@@ -530,7 +524,7 @@ PF_newcheckclient (progs_t *pr, int check)
 }
 
 #define	MAX_CHECK	16
-int     c_invis, c_notvis;
+int         c_invis, c_notvis;
 
 /*
 	PF_checkclient
@@ -553,18 +547,18 @@ PF_checkclient (progs_t *pr)
 	mleaf_t    *leaf;
 	vec3_t      view;
 
-// find a new check if on a new frame
+	// find a new check if on a new frame
 	if (sv.time - sv.lastchecktime >= 0.1) {
 		sv.lastcheck = PF_newcheckclient (pr, sv.lastcheck);
 		sv.lastchecktime = sv.time;
 	}
-// return check if it might be visible  
+	// return check if it might be visible  
 	ent = EDICT_NUM (pr, sv.lastcheck);
 	if (ent->free || SVfloat (ent, health) <= 0) {
 		RETURN_EDICT (pr, sv.edicts);
 		return;
 	}
-// if current entity can't possibly see the check entity, return 0
+	// if current entity can't possibly see the check entity, return 0
 	self = PROG_TO_EDICT (pr, *sv_globals.self);
 	VectorAdd (SVvector (self, origin), SVvector (self, view_ofs), view);
 	leaf = Mod_PointInLeaf (view, sv.worldmodel);
@@ -574,12 +568,10 @@ PF_checkclient (progs_t *pr)
 		RETURN_EDICT (pr, sv.edicts);
 		return;
 	}
-// might be able to see it
+	// might be able to see it
 	c_invis++;
 	RETURN_EDICT (pr, ent);
 }
-
-//============================================================================
 
 /*
 	PF_stuffcmd
@@ -609,7 +601,7 @@ PF_stuffcmd (progs_t *pr)
 /*
 	PF_localcmd
 
-	Sends text over to the client's execution buffer
+	Inserts text into the server console's execution buffer
 
 	localcmd (string)
 */
@@ -634,7 +626,7 @@ PF_findradius (progs_t *pr)
 {
 	edict_t    *ent, *chain;
 	float       rad;
-	float	   *eorigin, *emins, *emaxs, *org;
+	float      *eorigin, *emins, *emaxs, *org;
 	int         i, j;
 	vec3_t      eorg;
 
@@ -642,7 +634,7 @@ PF_findradius (progs_t *pr)
 
 	org = P_VECTOR (pr, 0);
 	rad = P_FLOAT (pr, 1);
-	rad *= rad;				// Square early, sqrt never
+	rad *= rad;					// Square early, sqrt never
 
 	ent = NEXT_EDICT (pr, sv.edicts);
 	for (i = 1; i < sv.num_edicts; i++, ent = NEXT_EDICT (pr, ent)) {
@@ -756,11 +748,11 @@ PF_precache_model (progs_t *pr)
 void
 PF_walkmove (progs_t *pr)
 {
+	dfunction_t *oldf;
 	edict_t    *ent;
 	float       yaw, dist;
-	vec3_t      move;
-	dfunction_t *oldf;
 	int         oldself;
+	vec3_t      move;
 
 	ent = PROG_TO_EDICT (pr, *sv_globals.self);
 	yaw = P_FLOAT (pr, 0);
@@ -777,14 +769,13 @@ PF_walkmove (progs_t *pr)
 	move[1] = sin (yaw) * dist;
 	move[2] = 0;
 
-// save program state, because SV_movestep may call other progs
+	// save program state, because SV_movestep may call other progs
 	oldf = pr->pr_xfunction;
 	oldself = *sv_globals.self;
 
 	R_FLOAT (pr) = SV_movestep (ent, move, true);
 
-
-// restore program state
+	// restore program state
 	pr->pr_xfunction = oldf;
 	*sv_globals.self = oldself;
 }
@@ -798,16 +789,15 @@ void
 PF_droptofloor (progs_t *pr)
 {
 	edict_t    *ent;
-	vec3_t      end;
 	trace_t     trace;
+	vec3_t      end;
 
 	ent = PROG_TO_EDICT (pr, *sv_globals.self);
 
 	VectorCopy (SVvector (ent, origin), end);
 	end[2] -= 256;
 
-	trace = SV_Move (SVvector (ent, origin),
-					 SVvector (ent, mins),
+	trace = SV_Move (SVvector (ent, origin), SVvector (ent, mins),
 					 SVvector (ent, maxs), end, false, ent);
 
 	if (trace.fraction == 1 || trace.allsolid) {
@@ -829,18 +819,17 @@ PF_droptofloor (progs_t *pr)
 void
 PF_lightstyle (progs_t *pr)
 {
-	int         style;
-	char       *val;
+	const char *val;
 	client_t   *client;
-	int         j;
+	int         style, j;
 
 	style = P_FLOAT (pr, 0);
 	val = P_GSTRING (pr, 1);
 
-// change the string in sv
+	// change the string in sv
 	sv.lightstyles[style] = val;
 
-// send message to all clients on this server
+	// send message to all clients on this server
 	if (sv.state != ss_active)
 		return;
 
@@ -885,6 +874,7 @@ PF_aim (progs_t *pr)
 {
 	edict_t    *ent, *check, *bestent;
 	float       dist, bestdist, speed;
+	float      *mins, *maxs, *org;
 	int         i, j;
 	trace_t     tr;
 	vec3_t      start, dir, end, bestdir;
@@ -895,7 +885,7 @@ PF_aim (progs_t *pr)
 	VectorCopy (SVvector (ent, origin), start);
 	start[2] += 20;
 
-// try sending a trace straight
+	// try sending a trace straight
 	VectorCopy (*sv_globals.v_forward, dir);
 	VectorMA (start, 2048, dir, end);
 	tr = SV_Move (start, vec3_origin, vec3_origin, end, false, ent);
@@ -905,7 +895,8 @@ PF_aim (progs_t *pr)
 		VectorCopy (*sv_globals.v_forward, R_VECTOR (pr));
 		return;
 	}
-// try all possible entities
+
+	// try all possible entities
 	VectorCopy (dir, bestdir);
 	bestdist = sv_aim->value;
 	bestent = NULL;
@@ -920,9 +911,11 @@ PF_aim (progs_t *pr)
 			&& SVfloat (ent, team) == SVfloat (check, team))
 			continue;	// don't aim at teammate
 
+		mins = SVvector (check, mins);
+		maxs = SVvector (check, maxs);
+		org = SVvector (check, origin);
 		for (j = 0; j < 3; j++)
-			end[j] = SVvector (check, origin)[j] + 0.5
-				* (SVvector (check, mins)[j] + SVvector (check, maxs)[j]);
+			end[j] = org[j] + 0.5 * (mins[j] + maxs[j]);
 		VectorSubtract (end, start, dir);
 		VectorNormalize (dir);
 		dist = DotProduct (dir, *sv_globals.v_forward);
@@ -985,7 +978,7 @@ PF_changeyaw (progs_t *pr)
 	SVvector (ent, angles)[1] = anglemod (current + move);
 }
 
-// MESSAGE WRITING ============================================================
+/* MESSAGE WRITING */
 
 #define	MSG_BROADCAST	0				// unreliable to all
 #define	MSG_ONE			1				// reliable to one (msg_entity)
@@ -1078,14 +1071,15 @@ PF_WriteEntity (progs_t *pr)
 void
 PF_makestatic (progs_t *pr)
 {
+	const char *model;
 	edict_t    *ent;
 
 	ent = P_EDICT (pr, 0);
 
 	MSG_WriteByte (&sv.signon, svc_spawnstatic);
 
-	MSG_WriteByte (&sv.signon,
-				   SV_ModelIndex (PR_GetString (pr, SVstring (ent, model))));
+	model = PR_GetString (pr, SVstring (ent, model));
+	MSG_WriteByte (&sv.signon, SV_ModelIndex (model));
 
 	MSG_WriteByte (&sv.signon, SVfloat (ent, frame));
 	MSG_WriteByte (&sv.signon, SVfloat (ent, colormap));
@@ -1093,23 +1087,17 @@ PF_makestatic (progs_t *pr)
 
 	MSG_WriteCoordAngleV (&sv.signon, SVvector (ent, origin),
 						  SVvector (ent, angles));
-/*	for (i = 0; i < 3; i++) { // FIXME: DESPAIR
-		MSG_WriteCoord (&sv.signon, SVvector (ent, origin)[i]);
-		MSG_WriteAngle (&sv.signon, SVvector (ent, angles)[i]);
-		} */
 
 	// throw the entity away now
 	ED_Free (pr, ent);
 }
 
-// ============================================================================
-
 void
 PF_setspawnparms (progs_t *pr)
 {
+	client_t   *client;
 	edict_t    *ent;
 	int         i;
-	client_t   *client;
 
 	ent = P_EDICT (pr, 0);
 	i = NUM_FOR_EDICT (pr, ent);
@@ -1126,7 +1114,7 @@ PF_setspawnparms (progs_t *pr)
 void
 PF_changelevel (progs_t *pr)
 {
-	char       *s;
+	const char *s;
 
 	// make sure we don't issue two changelevels
 	if (svs.changelevel_issued)
@@ -1159,11 +1147,11 @@ PF_hullpointcontents (progs_t *pr)
 static void
 PF_getboxbounds (progs_t *pr)
 {
-	int         h = P_INT (pr, 0) - 1;
 	clip_hull_t *ch;
+	int         h = P_INT (pr, 0) - 1;
 
 	if (h < 0 || h > MAX_PF_HULLS - 1 || !(ch = pf_hull_list[h]))
-		PR_RunError (pr, "PF_freeboxhull: invalid box hull handle\n");
+		PR_RunError (pr, "PF_getboxbounds: invalid box hull handle\n");
 
 	if (P_INT (pr, 1)) {
 		VectorCopy (ch->maxs, R_VECTOR (pr));
@@ -1228,31 +1216,31 @@ calc_dist (vec3_t p, vec3_t n, vec3_t *offsets)
 static void
 PF_rotate_bbox (progs_t *pr)
 {
-	int         h = P_INT (pr, 0) - 1;
+	clip_hull_t *ch;
+	float       l;
+	float      *mi = P_VECTOR (pr, 4);
+	float      *ma = P_VECTOR (pr, 5);
 	float      *dir[3] = {
 					P_VECTOR (pr, 1),
 					P_VECTOR (pr, 2),
 					P_VECTOR (pr, 3),
 				};
-	float      *mi = P_VECTOR (pr, 4);
-	float      *ma = P_VECTOR (pr, 5);
 
-	vec3_t      mins, maxs;
+	hull_t     *hull;
+	int         i, j;
+	int         h = P_INT (pr, 0) - 1;
+
+	vec3_t      mins, maxs, d;
 	float      *verts[6] = {maxs, mins, maxs, mins, maxs, mins};
-
+	vec3_t      v[8];
 	vec3_t      offsets[3][2] = {
 					{ {   0,   0,   0 }, {  0,  0,  0} },
 					{ { -16, -16, -32 }, { 16, 16, 24} },
 					{ { -32, -32, -64 }, { 32, 32, 24} },
 				};
-	vec3_t      v[8], d;
-	hull_t     *hull;
-	clip_hull_t *ch;
-	int         i, j;
-	float       l;
 
 	if (h < 0 || h > MAX_PF_HULLS - 1 || !(ch = pf_hull_list[h]))
-		PR_RunError (pr, "PF_freeboxhull: invalid box hull handle\n");
+		PR_RunError (pr, "PF_rotate_bbox: invalid box hull handle\n");
 
 	// set up the rotation matrix. the three orientation vectors form the
 	// columns of the rotation matrix
@@ -1306,7 +1294,7 @@ PF_rotate_bbox (progs_t *pr)
 void
 PF_Fixme (progs_t *pr)
 {
-	PR_RunError (pr, "unimplemented bulitin");
+	PR_RunError (pr, "unimplemented bulitin function called");
 }
 
 

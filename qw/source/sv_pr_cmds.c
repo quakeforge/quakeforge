@@ -297,8 +297,8 @@ PF_centerprint (progs_t *pr)
 void
 PF_ambientsound (progs_t *pr)
 {
-	const char      **check;
-	const char       *samp;
+	const char **check;
+	const char *samp;
 	float      *pos;
 	float       vol, attenuation;
 	int         soundnum;
@@ -321,9 +321,7 @@ PF_ambientsound (progs_t *pr)
 	// add an svc_spawnambient command to the level signon packet
 	MSG_WriteByte (&sv.signon, svc_spawnstaticsound);
 	MSG_WriteCoordV (&sv.signon, pos);
-
 	MSG_WriteByte (&sv.signon, soundnum);
-
 	MSG_WriteByte (&sv.signon, vol * 255);
 	MSG_WriteByte (&sv.signon, attenuation * 64);
 
@@ -344,7 +342,7 @@ PF_ambientsound (progs_t *pr)
 void
 PF_sound (progs_t *pr)
 {
-	const char       *sample;
+	const char *sample;
 	edict_t    *entity;
 	float       attenuation;
 	int         channel, volume;
@@ -361,7 +359,7 @@ PF_sound (progs_t *pr)
 /*
 	PF_traceline
 
-	Used for use tracing and shot targeting
+	Used for use tracing and shot targeting.
 	Traces are blocked by bbox and exact bsp entityes, and also slide box
 	entities if the tryents flag is set.
 
@@ -434,12 +432,12 @@ PF_checkmove (progs_t *pr)
 }
 
 /*
-  PF_checkpos
+	PF_checkpos
 
-  Returns true if the given entity can move to the given position from it's
-  current position by walking or rolling.
-  FIXME: make work...
-  scalar checkpos (entity, vector)
+	Returns true if the given entity can move to the given position from it's
+	current position by walking or rolling.
+	FIXME: make work...
+	scalar checkpos (entity, vector)
 */
 void
 PF_checkpos (progs_t *pr)
@@ -501,15 +499,15 @@ PF_newcheckclient (progs_t *pr, int check)
 int         c_invis, c_notvis;
 
 /*
-  PF_checkclient
+	PF_checkclient
 
-  Returns a client (or object that has a client enemy) that would be a valid
-  target.
+	Returns a client (or object that has a client enemy) that would be a
+	valid target.
 
-  If there are more than one valid options, they are cycled each frame
+	If there are more than one valid options, they are cycled each frame
 
-  If (self.origin + self.viewofs) is not in the PVS of the current target, it
-  is not returned at all.
+	If (self.origin + self.viewofs) is not in the PVS of the current target, it
+	is not returned at all.
 */
 void
 PF_checkclient (progs_t *pr)
@@ -555,7 +553,7 @@ PF_checkclient (progs_t *pr)
 void
 PF_stuffcmd (progs_t *pr)
 {
-	const char       *str;
+	const char *str;
 	char       *buf, *p;
 	client_t   *cl;
 	int         entnum;
@@ -811,9 +809,9 @@ PF_droptofloor (progs_t *pr)
 	trace = SV_Move (SVvector (ent, origin), SVvector (ent, mins),
 					 SVvector (ent, maxs), end, false, ent);
 
-	if (trace.fraction == 1 || trace.allsolid)
+	if (trace.fraction == 1 || trace.allsolid) {
 		R_FLOAT (pr) = 0;
-	else {
+	} else {
 		VectorCopy (trace.endpos, SVvector (ent, origin));
 		SV_LinkEdict (ent, false);
 		SVfloat (ent, flags) = (int) SVfloat (ent, flags) | FL_ONGROUND;
@@ -830,7 +828,7 @@ PF_droptofloor (progs_t *pr)
 void
 PF_lightstyle (progs_t *pr)
 {
-	const char       *val;
+	const char *val;
 	client_t   *client;
 	int         style, j;
 
@@ -859,9 +857,6 @@ PF_lightstyle (progs_t *pr)
 	}
 }
 
-/*
-	PF_checkbottom
-*/
 void
 PF_checkbottom (progs_t *pr)
 {
@@ -893,13 +888,13 @@ cvar_t     *sv_aim;
 void
 PF_aim (progs_t *pr)
 {
+	const char *noaim;
 	edict_t    *ent, *check, *bestent;
-	vec3_t      start, dir, end, bestdir;
+	float       dist, bestdist, speed;
+	float      *mins, *maxs, *org;
 	int         i, j;
 	trace_t     tr;
-	float       dist, bestdist;
-	float       speed;
-	const char       *noaim;
+	vec3_t      start, dir, end, bestdir;
 
 	if (sv_aim->value >= 1.0) {
 		VectorCopy (*sv_globals.v_forward, R_VECTOR (pr));
@@ -945,11 +940,14 @@ PF_aim (progs_t *pr)
 		if (check == ent)
 			continue;
 		if (teamplay->int_val && SVfloat (ent, team) > 0
-			&& SVfloat (ent, team) == SVfloat (check, team)) continue;
-			// don't aim at teammate
+			&& SVfloat (ent, team) == SVfloat (check, team))
+			continue;	// don't aim at teammate
+
+		mins = SVvector (check, mins);
+		maxs = SVvector (check, maxs);
+		org = SVvector (check, origin);
 		for (j = 0; j < 3; j++)
-			end[j] = SVvector (check, origin)[j] + 0.5 *
-				(SVvector (check, mins)[j] + SVvector (check, maxs)[j]);
+			end[j] = org[j] + 0.5 * (mins[j] + maxs[j]);
 		VectorSubtract (end, start, dir);
 		VectorNormalize (dir);
 		dist = DotProduct (dir, *sv_globals.v_forward);
@@ -1027,34 +1025,27 @@ WriteDest (progs_t *pr)
 
 	dest = P_FLOAT (pr, 0);
 	switch (dest) {
-	case MSG_BROADCAST:
-		return &sv.datagram;
+		case MSG_BROADCAST:
+			return &sv.datagram;
 
-	case MSG_ONE:
-		Sys_Error ("Shouldn't be at MSG_ONE");
-#if 0
-		ent = PROG_TO_EDICT (pr, *sv_globals.msg_entity);
-		entnum = NUM_FOR_EDICT (pr, ent);
-		if (entnum < 1 || entnum > MAX_CLIENTS)
-			PR_RunError (pr, "WriteDest: not a client");
-		return &svs.clients[entnum - 1].netchan.message;
-#endif
+		case MSG_ONE:
+			Sys_Error ("Shouldn't be at MSG_ONE");
 
-	case MSG_ALL:
-		return &sv.reliable_datagram;
+		case MSG_ALL:
+			return &sv.reliable_datagram;
 
-	case MSG_INIT:
-		if (sv.state != ss_loading)
-			PR_RunError (pr, "PF_Write_*: MSG_INIT can only be written in "
-						 "spawn functions");
-		return &sv.signon;
+		case MSG_INIT:
+			if (sv.state != ss_loading)
+				PR_RunError (pr, "PF_Write_*: MSG_INIT can only be written in "
+							 "spawn functions");
+			return &sv.signon;
 
-	case MSG_MULTICAST:
-		return &sv.multicast;
+		case MSG_MULTICAST:
+			return &sv.multicast;
 
-	default:
-		PR_RunError (pr, "WriteDest: bad destination");
-		break;
+		default:
+			PR_RunError (pr, "WriteDest: bad destination");
+			break;
 	}
 
 	return NULL;
@@ -1300,7 +1291,6 @@ PF_makestatic (progs_t *pr)
 	MSG_WriteByte (&sv.signon, svc_spawnstatic);
 
 	model = PR_GetString (pr, SVstring (ent, model));
-//	SV_Printf ("Model: %d %s\n", SVstring (ent, model), model);
 	MSG_WriteByte (&sv.signon, SV_ModelIndex (model));
 
 	MSG_WriteByte (&sv.signon, SVfloat (ent, frame));
@@ -1309,6 +1299,7 @@ PF_makestatic (progs_t *pr)
 
 	MSG_WriteCoordAngleV (&sv.signon, SVvector (ent, origin),
 						  SVvector (ent, angles));
+
 	// throw the entity away now
 	ED_Free (pr, ent);
 }
@@ -1338,7 +1329,7 @@ PF_setspawnparms (progs_t *pr)
 void
 PF_changelevel (progs_t *pr)
 {
-	const char       *s;
+	const char *s;
 	static int  last_spawncount;
 
 	// make sure we don't issue two changelevels
@@ -1611,7 +1602,7 @@ static void
 PF_getboxbounds (progs_t *pr)
 {
 	clip_hull_t *ch;
-	int          h = P_INT (pr, 0) - 1;
+	int         h = P_INT (pr, 0) - 1;
 
 	if (h < 0 || h > MAX_PF_HULLS - 1 || !(ch = pf_hull_list[h]))
 		PR_RunError (pr, "PF_getboxbounds: invalid box hull handle\n");
@@ -1627,7 +1618,7 @@ static void
 PF_getboxhull (progs_t *pr)
 {
 	clip_hull_t *ch = 0;
-	int          i;
+	int         i;
 
 	for (i = 0; i < MAX_PF_HULLS; i++) {
 		if (!pf_hull_list[i]) {
@@ -1650,7 +1641,7 @@ PF_getboxhull (progs_t *pr)
 static void
 PF_freeboxhull (progs_t *pr)
 {
-	int          h = P_INT (pr, 0) - 1;
+	int         h = P_INT (pr, 0) - 1;
 	clip_hull_t *ch;
 
 	if (h < 0 || h > MAX_PF_HULLS - 1 || !(ch = pf_hull_list[h]))
@@ -1733,7 +1724,6 @@ PF_rotate_bbox (progs_t *pr)
 	VectorCopy (v[0], ch->mins);
 	VectorCopy (v[0], ch->maxs);
 	for (i = 0; i < 8; i++) {
-		//SV_Printf ("'%0.1f %0.1f %0.1f'\n", v[i][0], v[i][1], v[i][2]);
 		for (j = 0; j < 3; j++) {
 			ch->mins[j] = min (ch->mins[j], v[i][j]);
 			ch->maxs[j] = max (ch->maxs[j], v[i][j]);
@@ -1751,10 +1741,6 @@ PF_rotate_bbox (progs_t *pr)
 											  offsets[j]);
 			hull->planes[i].type = 4;
 			VectorCopy (dir[i / 2], hull->planes[i].normal);
-//			SV_Printf ("%f   %f %f %f\n",
-//						hull->planes[i].dist,
-//						hull->planes[i].normal[0], hull->planes[i].normal[1],
-//						hull->planes[i].normal[2]);
 		}
 	}
 }
@@ -1766,7 +1752,7 @@ PF_Fixme (progs_t *pr)
 }
 
 static void
-PF_Checkextension (progs_t *pr)
+PF_checkextension (progs_t *pr)
 {
 	R_FLOAT (pr) = 0;	 // FIXME: make this function actually useful :P
 }
@@ -1877,78 +1863,164 @@ SV_PR_Cmds_Init ()
 	PR_Cmds_Init (&sv_pr_state);
 	PR_Obj_Progs_Init (&sv_pr_state);
 
-	sv_pr_state.builtins[45] = 0;	// (override standard builtin)
-	PR_AddBuiltin (&sv_pr_state, "cvar", PF_sv_cvar, 45); // float (string s) cvar
+	// (override standard builtin)
+	sv_pr_state.builtins[45] = 0;
+	// float (string s) cvar
+	PR_AddBuiltin (&sv_pr_state, "cvar", PF_sv_cvar, 45);
 
-	PR_AddBuiltin (&sv_pr_state, "makevectors", PF_makevectors, 1); // void (entity e) makevectors
-	PR_AddBuiltin (&sv_pr_state, "setorigin", PF_setorigin, 2); // void (entity e, vector o) setorigin
-	PR_AddBuiltin (&sv_pr_state, "setmodel", PF_setmodel, 3); // void (entity e, string m) setmodel
-	PR_AddBuiltin (&sv_pr_state, "setsize", PF_setsize, 4); // void (entity e, vector min, vector max) setsize
-	PR_AddBuiltin (&sv_pr_state, "fixme", PF_Fixme, 5); // void (entity e, vector min, vector max) setabssize
-	PR_AddBuiltin (&sv_pr_state, "sound", PF_sound, 8); // void (entity e, float chan, string samp) sound
-	PR_AddBuiltin (&sv_pr_state, "error", PF_error, 10); // void (string e) error
-	PR_AddBuiltin (&sv_pr_state, "objerror", PF_objerror, 11); // void (string e) objerror
-	PR_AddBuiltin (&sv_pr_state, "spawn", PF_Spawn, 14); // entity () spawn
-	PR_AddBuiltin (&sv_pr_state, "remove", PF_Remove, 15); // void (entity e) remove
-	PR_AddBuiltin (&sv_pr_state, "traceline", PF_traceline, 16); // float (vector v1, vector v2, float tryents) traceline
-	PR_AddBuiltin (&sv_pr_state, "checkclient", PF_checkclient, 17); // entity () clientlist
-	PR_AddBuiltin (&sv_pr_state, "precache_sound", PF_precache_sound, 19); // void (string s) precache_sound
-	PR_AddBuiltin (&sv_pr_state, "precache_model", PF_precache_model, 20); // void (string s) precache_model
-	PR_AddBuiltin (&sv_pr_state, "stuffcmd", PF_stuffcmd, 21); // void (entity client, string s) stuffcmd
-	PR_AddBuiltin (&sv_pr_state, "findradius", PF_findradius, 22); // entity (vector org, float rad) findradius
-	PR_AddBuiltin (&sv_pr_state, "bprint", PF_bprint, 23); // void (string s) bprint
-	PR_AddBuiltin (&sv_pr_state, "sprint", PF_sprint, 24); // void (entity client, string s) sprint
-	PR_AddBuiltin (&sv_pr_state, "walkmove", PF_walkmove, 32); // float (float yaw, float dist) walkmove
-	PR_AddBuiltin (&sv_pr_state, "droptofloor", PF_droptofloor, 34); // float () droptofloor
-	PR_AddBuiltin (&sv_pr_state, "lightstyle", PF_lightstyle, 35); // void (float style, string value) lightstyle
-	PR_AddBuiltin (&sv_pr_state, "checkbottom", PF_checkbottom, 40); // float (entity e) checkbottom
-	PR_AddBuiltin (&sv_pr_state, "pointcontents", PF_pointcontents, 41); // float (vector v) pointcontents
-	PR_AddBuiltin (&sv_pr_state, "aim", PF_aim, 44); // vector (entity e, float speed) aim
-	PR_AddBuiltin (&sv_pr_state, "localcmd", PF_localcmd, 46); // void (string s) localcmd
-	PR_AddBuiltin (&sv_pr_state, "changeyaw", PF_changeyaw, 49); // void () ChangeYaw
-	PR_AddBuiltin (&sv_pr_state, "writebyte", PF_WriteByte, 52); // void (float to, float f) WriteByte
-	PR_AddBuiltin (&sv_pr_state, "WriteBytes", PF_WriteBytes, -1); // void (float to, ...) WriteBytes
-	PR_AddBuiltin (&sv_pr_state, "writechar", PF_WriteChar, 53); // void (float to, float f) WriteChar
-	PR_AddBuiltin (&sv_pr_state, "writeshort", PF_WriteShort, 54); // void (float to, float f) WriteShort
-	PR_AddBuiltin (&sv_pr_state, "writelong", PF_WriteLong, 55); // void (float to, float f) WriteLong
-	PR_AddBuiltin (&sv_pr_state, "writecoord", PF_WriteCoord, 56); // void (float to, float f) WriteCoord
-	PR_AddBuiltin (&sv_pr_state, "writeangle", PF_WriteAngle, 57); // void (float to, float f) WriteAngle
-	PR_AddBuiltin (&sv_pr_state, "WriteCoordV", PF_WriteCoordV, -1); // void (float to, vector v) WriteCoordV
-	PR_AddBuiltin (&sv_pr_state, "WriteAngleV", PF_WriteAngleV, -1); // void (float to, vector v) WriteAngleV
-	PR_AddBuiltin (&sv_pr_state, "writestring", PF_WriteString, 58); // void (float to, string s) WriteString
-	PR_AddBuiltin (&sv_pr_state, "writeentity", PF_WriteEntity, 59); // void (float to, entity s) WriteEntity
-	PR_AddBuiltin (&sv_pr_state, "movetogoal", SV_MoveToGoal, 67); // void (float step) movetogoal
-	PR_AddBuiltin (&sv_pr_state, "precache_file", PF_precache_file, 68); // string (string s) precache_file
-	PR_AddBuiltin (&sv_pr_state, "makestatic", PF_makestatic, 69); // void (entity e) makestatic
-	PR_AddBuiltin (&sv_pr_state, "changelevel", PF_changelevel, 70); // void (string s) changelevel
-	PR_AddBuiltin (&sv_pr_state, "centerprint", PF_centerprint, 73); // void (...) centerprint
-	PR_AddBuiltin (&sv_pr_state, "ambientsound", PF_ambientsound, 74); // void (vector pos, string samp, float vol, float atten) ambientsound
-	PR_AddBuiltin (&sv_pr_state, "precache_model2", PF_precache_model, 75); // string (string s) precache_model2
-	PR_AddBuiltin (&sv_pr_state, "precache_sound2", PF_precache_sound, 76); // string (string s) precache_sound2
-	PR_AddBuiltin (&sv_pr_state, "precache_file2", PF_precache_file, 77); // string (string s) precache_file2
-	PR_AddBuiltin (&sv_pr_state, "setspawnparms", PF_setspawnparms, 78); // void (entity e) setspawnparms
-	PR_AddBuiltin (&sv_pr_state, "logfrag", PF_logfrag, 79); // void (entity killer, entity killee) logfrag
-	PR_AddBuiltin (&sv_pr_state, "infokey", PF_infokey, 80); // string (entity e, string key) infokey
-	PR_AddBuiltin (&sv_pr_state, "multicast", PF_multicast, 82); // void (vector where, float set) multicast
-	PR_AddBuiltin (&sv_pr_state, "testentitypos", PF_testentitypos, 92); // entity (entity ent) testentitypos
-	PR_AddBuiltin (&sv_pr_state, "hullpointcontents", PF_hullpointcontents, 93);	// integer (entity ent, vector point) hullpointcontents
-	PR_AddBuiltin (&sv_pr_state, "getboxbounds", PF_getboxbounds, 94); // vector (integer hull, integer max) getboxbounds
-	PR_AddBuiltin (&sv_pr_state, "getboxhull", PF_getboxhull, 95); // integer () getboxhull
-	PR_AddBuiltin (&sv_pr_state, "freeboxhull", PF_freeboxhull, 96); // void (integer hull) freeboxhull
-	PR_AddBuiltin (&sv_pr_state, "rotate_bbox", PF_rotate_bbox, 97); // void (integer hull, vector right, vector forward, vector up, vector mins, vector maxs) rotate_bbox
-	PR_AddBuiltin (&sv_pr_state, "checkmove", PF_checkmove, 98); // void (vector start, vector mins, vector maxs, vector end, float type, entity passent) checkmove
-	PR_AddBuiltin (&sv_pr_state, "checkextension", PF_Checkextension, 99); // float () checkextension
-	PR_AddBuiltin (&sv_pr_state, "setinfokey", PF_setinfokey, 102); // void (entity ent, string key, string value) setinfokey
-	PR_AddBuiltin (&sv_pr_state, "cfopen", PF_cfopen, 103); // float (string path, string mode) cfopen
-	PR_AddBuiltin (&sv_pr_state, "cfclose", PF_cfclose, 104); // void (float desc) cfclose
-	PR_AddBuiltin (&sv_pr_state, "cfread", PF_cfread, 105); // string (float desc) cfread
-	PR_AddBuiltin (&sv_pr_state, "cfwrite", PF_cfwrite, 106); // float (float desc, string buf) cfwrite
-	PR_AddBuiltin (&sv_pr_state, "cfeof", PF_cfeof, 107); // float (float desc) cfeof
-	PR_AddBuiltin (&sv_pr_state, "cfquota", PF_cfquota, 108); // float () cfquota
+	// void (entity e) makevectors
+	PR_AddBuiltin (&sv_pr_state, "makevectors", PF_makevectors, 1);
+	// void (entity e, vector o) setorigin
+	PR_AddBuiltin (&sv_pr_state, "setorigin", PF_setorigin, 2);
+	// void (entity e, string m) setmodel
+	PR_AddBuiltin (&sv_pr_state, "setmodel", PF_setmodel, 3);
+	// void (entity e, vector min, vector max) setsize
+	PR_AddBuiltin (&sv_pr_state, "setsize", PF_setsize, 4);
+	// void (entity e, vector min, vector max) setabssize
+	PR_AddBuiltin (&sv_pr_state, "fixme", PF_Fixme, 5);
 
-	PR_AddBuiltin (&sv_pr_state, "SV_AllocClient", PF_SV_AllocClient, -1); // entity () SV_AllocClient
-	PR_AddBuiltin (&sv_pr_state, "SV_FreeClient", PF_SV_FreeClient, -1); // void (entity cl) SV_FreeClient
-	PR_AddBuiltin (&sv_pr_state, "SV_SetUserinfo", PF_SV_SetUserinfo, -1); // void (entity cl, string userinfo) SV_SetUserinfo
-	PR_AddBuiltin (&sv_pr_state, "SV_SetPing", PR_SV_SetPing, -1); // void (entity cl, integer ping) SV_SetPing
-	PR_AddBuiltin (&sv_pr_state, "SV_UserCmd", PR_SV_UserCmd, -1); // void (entity cl, float secs, vector angles, vector move, integer buttons, integer impulse) SV_UserCmd
+	// void (entity e, float chan, string samp) sound
+	PR_AddBuiltin (&sv_pr_state, "sound", PF_sound, 8);
+
+	// void (string e) error
+	PR_AddBuiltin (&sv_pr_state, "error", PF_error, 10);
+	// void (string e) objerror
+	PR_AddBuiltin (&sv_pr_state, "objerror", PF_objerror, 11);
+	// entity () spawn
+	PR_AddBuiltin (&sv_pr_state, "spawn", PF_Spawn, 14);
+	// void (entity e) remove
+	PR_AddBuiltin (&sv_pr_state, "remove", PF_Remove, 15);
+	// float (vector v1, vector v2, float tryents) traceline
+	PR_AddBuiltin (&sv_pr_state, "traceline", PF_traceline, 16);
+	// entity () clientlist
+	PR_AddBuiltin (&sv_pr_state, "checkclient", PF_checkclient, 17);
+
+	// void (string s) precache_sound
+	PR_AddBuiltin (&sv_pr_state, "precache_sound", PF_precache_sound, 19);
+	// void (string s) precache_model
+	PR_AddBuiltin (&sv_pr_state, "precache_model", PF_precache_model, 20);
+	// void (entity client, string s) stuffcmd
+	PR_AddBuiltin (&sv_pr_state, "stuffcmd", PF_stuffcmd, 21);
+	// entity (vector org, float rad) findradius
+	PR_AddBuiltin (&sv_pr_state, "findradius", PF_findradius, 22);
+	// void (string s) bprint
+	PR_AddBuiltin (&sv_pr_state, "bprint", PF_bprint, 23);
+	// void (entity client, string s) sprint
+	PR_AddBuiltin (&sv_pr_state, "sprint", PF_sprint, 24);
+
+	// float (float yaw, float dist) walkmove
+	PR_AddBuiltin (&sv_pr_state, "walkmove", PF_walkmove, 32);
+
+	// float () droptofloor
+	PR_AddBuiltin (&sv_pr_state, "droptofloor", PF_droptofloor, 34);
+	// void (float style, string value) lightstyle
+	PR_AddBuiltin (&sv_pr_state, "lightstyle", PF_lightstyle, 35);
+
+	// float (entity e) checkbottom
+	PR_AddBuiltin (&sv_pr_state, "checkbottom", PF_checkbottom, 40);
+	// float (vector v) pointcontents
+	PR_AddBuiltin (&sv_pr_state, "pointcontents", PF_pointcontents, 41);
+
+	// vector (entity e, float speed) aim
+	PR_AddBuiltin (&sv_pr_state, "aim", PF_aim, 44);
+
+	// void (string s) localcmd
+	PR_AddBuiltin (&sv_pr_state, "localcmd", PF_localcmd, 46);
+	// void () ChangeYaw
+	PR_AddBuiltin (&sv_pr_state, "changeyaw", PF_changeyaw, 49);
+
+	// void (float to, float f) WriteByte
+	PR_AddBuiltin (&sv_pr_state, "writebyte", PF_WriteByte, 52);
+	// void (float to, ...) WriteBytes
+	PR_AddBuiltin (&sv_pr_state, "WriteBytes", PF_WriteBytes, -1);
+	// void (float to, float f) WriteChar
+	PR_AddBuiltin (&sv_pr_state, "writechar", PF_WriteChar, 53);
+	// void (float to, float f) WriteShort
+	PR_AddBuiltin (&sv_pr_state, "writeshort", PF_WriteShort, 54);
+	// void (float to, float f) WriteLong
+	PR_AddBuiltin (&sv_pr_state, "writelong", PF_WriteLong, 55);
+	// void (float to, float f) WriteCoord
+	PR_AddBuiltin (&sv_pr_state, "writecoord", PF_WriteCoord, 56);
+	// void (float to, float f) WriteAngle
+	PR_AddBuiltin (&sv_pr_state, "writeangle", PF_WriteAngle, 57);
+	// void (float to, vector v) WriteCoordV
+	PR_AddBuiltin (&sv_pr_state, "WriteCoordV", PF_WriteCoordV, -1);
+	// void (float to, vector v) WriteAngleV
+	PR_AddBuiltin (&sv_pr_state, "WriteAngleV", PF_WriteAngleV, -1);
+	// void (float to, string s) WriteString
+	PR_AddBuiltin (&sv_pr_state, "writestring", PF_WriteString, 58);
+	// void (float to, entity s) WriteEntity
+	PR_AddBuiltin (&sv_pr_state, "writeentity", PF_WriteEntity, 59);
+
+	// void (float step) movetogoal
+	PR_AddBuiltin (&sv_pr_state, "movetogoal", SV_MoveToGoal, 67);
+	// string (string s) precache_file
+	PR_AddBuiltin (&sv_pr_state, "precache_file", PF_precache_file, 68);
+	// void (entity e) makestatic
+	PR_AddBuiltin (&sv_pr_state, "makestatic", PF_makestatic, 69);
+	// void (string s) changelevel
+	PR_AddBuiltin (&sv_pr_state, "changelevel", PF_changelevel, 70);
+
+	// void (...) centerprint
+	PR_AddBuiltin (&sv_pr_state, "centerprint", PF_centerprint, 73);
+	// void (vector pos, string samp, float vol, float atten) ambientsound
+	PR_AddBuiltin (&sv_pr_state, "ambientsound", PF_ambientsound, 74);
+	// string (string s) precache_model2
+	PR_AddBuiltin (&sv_pr_state, "precache_model2", PF_precache_model, 75);
+	// string (string s) precache_sound2
+	PR_AddBuiltin (&sv_pr_state, "precache_sound2", PF_precache_sound, 76);
+	// string (string s) precache_file2
+	PR_AddBuiltin (&sv_pr_state, "precache_file2", PF_precache_file, 77);
+	// void (entity e) setspawnparms
+	PR_AddBuiltin (&sv_pr_state, "setspawnparms", PF_setspawnparms, 78);
+
+	// void (entity killer, entity killee) logfrag
+	PR_AddBuiltin (&sv_pr_state, "logfrag", PF_logfrag, 79);
+	// string (entity e, string key) infokey
+	PR_AddBuiltin (&sv_pr_state, "infokey", PF_infokey, 80);
+	// void (vector where, float set) multicast
+	PR_AddBuiltin (&sv_pr_state, "multicast", PF_multicast, 82);
+	// entity (entity ent) testentitypos
+	PR_AddBuiltin (&sv_pr_state, "testentitypos", PF_testentitypos, 92);
+	// integer (entity ent, vector point) hullpointcontents
+	PR_AddBuiltin (&sv_pr_state, "hullpointcontents", PF_hullpointcontents,
+				   93);
+	// vector (integer hull, integer max) getboxbounds
+	PR_AddBuiltin (&sv_pr_state, "getboxbounds", PF_getboxbounds, 94);
+	// integer () getboxhull
+	PR_AddBuiltin (&sv_pr_state, "getboxhull", PF_getboxhull, 95);
+	// void (integer hull) freeboxhull
+	PR_AddBuiltin (&sv_pr_state, "freeboxhull", PF_freeboxhull, 96);
+	// void (integer hull, vector right, vector forward, vector up, vector mins, vector maxs) rotate_bbox
+	PR_AddBuiltin (&sv_pr_state, "rotate_bbox", PF_rotate_bbox, 97);
+
+	// void (vector start, vector mins, vector maxs, vector end, float type, entity passent) checkmove
+	PR_AddBuiltin (&sv_pr_state, "checkmove", PF_checkmove, 98);
+	// float () checkextension
+	PR_AddBuiltin (&sv_pr_state, "checkextension", PF_checkextension, 99);
+	// void (entity ent, string key, string value) setinfokey
+	PR_AddBuiltin (&sv_pr_state, "setinfokey", PF_setinfokey, 102);
+	// float (string path, string mode) cfopen
+	PR_AddBuiltin (&sv_pr_state, "cfopen", PF_cfopen, 103);
+	// void (float desc) cfclose
+	PR_AddBuiltin (&sv_pr_state, "cfclose", PF_cfclose, 104);
+	// string (float desc) cfread
+	PR_AddBuiltin (&sv_pr_state, "cfread", PF_cfread, 105);
+	// float (float desc, string buf) cfwrite
+	PR_AddBuiltin (&sv_pr_state, "cfwrite", PF_cfwrite, 106);
+	// float (float desc) cfeof
+	PR_AddBuiltin (&sv_pr_state, "cfeof", PF_cfeof, 107);
+	// float () cfquota
+	PR_AddBuiltin (&sv_pr_state, "cfquota", PF_cfquota, 108);
+
+	// entity () SV_AllocClient
+	PR_AddBuiltin (&sv_pr_state, "SV_AllocClient", PF_SV_AllocClient, -1);
+	// void (entity cl) SV_FreeClient
+	PR_AddBuiltin (&sv_pr_state, "SV_FreeClient", PF_SV_FreeClient, -1);
+	// void (entity cl, string userinfo) SV_SetUserinfo
+	PR_AddBuiltin (&sv_pr_state, "SV_SetUserinfo", PF_SV_SetUserinfo, -1);
+	// void (entity cl, integer ping) SV_SetPing
+	PR_AddBuiltin (&sv_pr_state, "SV_SetPing", PR_SV_SetPing, -1);
+	// void (entity cl, float secs, vector angles, vector move, integer buttons, integer impulse) SV_UserCmd
+	PR_AddBuiltin (&sv_pr_state, "SV_UserCmd", PR_SV_UserCmd, -1);
 };
