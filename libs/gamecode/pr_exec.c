@@ -58,6 +58,12 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s)
 	int         addr = s - pr->pr_statements;
 	opcode_t   *op;
 
+	if (pr_debug->int_val) {
+		const char *source_line = PR_Get_Source_Line (pr, addr);
+
+		if (source_line)
+			Con_Printf ("%s\n", source_line);
+	}
 	Con_Printf ("%-7d ", addr);
 	op = PR_Opcode (s->op);
 	if (op) {

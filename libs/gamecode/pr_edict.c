@@ -1039,6 +1039,8 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 		PR_Error (pr, "%s has unrecognised version number (%08x)",
 				  progsname, pr->progs->version);
 
+	pr->progs_name = progsname;	//XXX is this safe?
+
 	pr->pr_functions =
 		(dfunction_t *) ((byte *) pr->progs + pr->progs->ofs_functions);
 	pr->pr_strings = (char *) pr->progs + pr->progs->ofs_strings;
@@ -1128,6 +1130,8 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 
 	// initialise the strings managment code
 	PR_LoadStrings (pr);
+
+	PR_LoadDebug (pr);
 
 	// LordHavoc: bounds check anything static
 	for (i = 0, st = pr->pr_statements; i < pr->progs->numstatements; i++, st++) {
@@ -1280,12 +1284,14 @@ PR_Init_Cvars (void)
 				  "Server progs bounds checking");
 	pr_deadbeef = Cvar_Get ("pr_deadbeef", "0", CVAR_NONE, NULL,
 							"set to clear unallocated memory ot 0xdeadbeef");
+	PR_Debug_Init_Cvars ();
 }
 
 void
 PR_Init (void)
 {
 	PR_Opcode_Init ();
+	PR_Debug_Init ();
 }
 
 edict_t    *

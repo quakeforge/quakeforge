@@ -32,6 +32,7 @@
 #include "QF/link.h"
 #include "QF/vfile.h"
 #include "QF/pr_comp.h"
+#include "QF/pr_debug.h"
 
 typedef union pr_type_u {
 	float	float_var;
@@ -71,6 +72,7 @@ void PR_PrintStatement (progs_t * pr, dstatement_t *s);
 void PR_ExecuteProgram (progs_t *pr, func_t fnum);
 void PR_LoadProgs (progs_t *pr, char *progsname);
 void PR_LoadStrings (progs_t *pr);
+void PR_LoadDebug (progs_t *pr);
 edict_t *PR_InitEdicts (progs_t *pr, int num_edicts);
 
 void PR_Profile_f (void);
@@ -153,13 +155,27 @@ char *PR_GlobalStringNoContents (progs_t *pr, int ofs);
 pr_type_t *GetEdictFieldValue(progs_t *pr, edict_t *ed, char *field);
 
 //
-// PR STrings stuff
+// PR Strings stuff
 //
 
 char *PR_GetString(progs_t *pr, int num);
 int PR_SetString(progs_t *pr, char *s);
 void PR_GarbageCollect (progs_t *pr);
 
+//
+// PR Debug stuff
+//
+
+void PR_Debug_Init (void);
+void PR_Debug_Init_Cvars (void);
+pr_auxfunction_t *PR_Get_Lineno_Func (progs_t *pr, pr_lineno_t *lineno);
+unsigned long PR_Get_Lineno_Addr (progs_t *pr, pr_lineno_t *lineno);
+unsigned long PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno);
+pr_lineno_t *PR_Find_Lineno (progs_t *pr, unsigned long addr);
+const char *PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno);
+const char *PR_Get_Source_Line (progs_t *pr, unsigned long addr);
+
+extern struct cvar_s *pr_debug;
 
 //============================================================================
 
@@ -179,6 +195,7 @@ typedef struct strref_s {
 } strref_t;
 
 struct progs_s {
+	char			*progs_name;
 	dprograms_t		*progs;
 
 	struct hashtab_s *function_hash;
@@ -231,6 +248,13 @@ struct progs_s {
 
 	builtin_t		*builtins;
 	int				numbuiltins;
+
+	// debug info
+	char			*debugfile;
+	struct pr_debug_header_s *debug;
+	struct pr_auxfunction_s *auxfunctions;
+	struct pr_lineno_s *linenos;
+	ddef_t			*local_defs;
 
 	// required globals
 	struct {

@@ -32,7 +32,7 @@
 #ifndef __pr_debug_h
 #define __pr_debug_h
 
-typedef struct {
+typedef struct pr_auxfunction_s {
 	unsigned long function;		// function def this aux info is for
 	unsigned long source_line;	// first source line for this function
 	unsigned long line_info;	// index to first lineno entry
@@ -40,7 +40,7 @@ typedef struct {
 	unsigned long num_locals;	// number of local defs
 } pr_auxfunction_t;
 
-typedef struct {
+typedef struct pr_lineno_s {
 	union {
 		unsigned long func;		// (line==0) index of function aux info
 		unsigned long addr;		// (line!=0) dstatement_t address
@@ -50,7 +50,7 @@ typedef struct {
 
 #define PROG_DEBUG_VERSION 0x00001001	// MMmmmRRR 0.001.001 (hex)
 
-typedef struct {
+typedef struct pr_debug_header_s {
 	int				version;
 	unsigned short	crc;		// of the progs.dat this progs.sym file is for
 	unsigned short	you_tell_me_and_we_will_both_know;
