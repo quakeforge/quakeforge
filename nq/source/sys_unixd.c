@@ -69,22 +69,6 @@ qboolean    isDedicated = true;
 
 int         nostdout = 0;
 
-void
-Sys_DebugLog (const char *file, const char *fmt, ...)
-{
-	va_list     argptr;
-	static char data[1024];
-	int         fd;
-
-	va_start (argptr, fmt);
-	vsnprintf (data, sizeof (data), fmt, argptr);
-	va_end (argptr);
-
-	fd = open (file, O_WRONLY | O_CREAT | O_APPEND, 0666);
-	write (fd, data, strlen (data));
-	close (fd);
-}
-
 static void
 shutdown (void)
 {

@@ -115,21 +115,6 @@ shutdown (void)
 #endif
 }
 
-void
-Sys_DebugLog (const char *file, const char *fmt, ...)
-{
-	int         fd;
-	static char data[1024];				// why static ?
-	va_list     argptr;
-
-	va_start (argptr, fmt);
-	vsnprintf (data, sizeof (data), fmt, argptr);
-	va_end (argptr);
-	fd = open (file, O_WRONLY | O_CREAT | O_APPEND, 0666);
-	write (fd, data, strlen (data));
-	close (fd);
-};
-
 #ifndef USE_INTEL_ASM
 void
 Sys_HighFPPrecision (void)

@@ -79,22 +79,6 @@ shutdown (void)
 }
 
 void
-Sys_DebugLog (const char *file, const char *fmt, ...)
-{
-	va_list     argptr;
-	static char data[1024];
-	int         fd;
-
-	va_start (argptr, fmt);
-	vsnprintf (data, sizeof (data), fmt, argptr);
-	va_end (argptr);
-
-	fd = open (file, O_WRONLY | O_CREAT | O_APPEND, 0666);
-	write (fd, data, strlen (data));
-	close (fd);
-}
-
-void
 floating_point_exception_handler (int whatever)
 {
 //	Sys_Warn("floating point exception\n");

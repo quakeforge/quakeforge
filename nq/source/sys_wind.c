@@ -57,11 +57,6 @@ VFile      *sys_handles[MAX_HANDLES];
 // SYSTEM IO ==================================================================
 
 void
-Sys_DebugLog (char *file, char *fmt, ...)
-{
-}
-
-void
 IN_SendKeyEvents (void)
 {
 }

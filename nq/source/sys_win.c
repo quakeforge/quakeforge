@@ -181,11 +181,6 @@ shutdown (void)
 	DeinitConProc ();
 }
 
-void
-Sys_DebugLog (const char *file, const char *fmt, ...)
-{
-}
-
 const char *
 Sys_ConsoleInput (void)
 {
