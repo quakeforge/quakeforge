@@ -65,7 +65,7 @@ new_expr (void)
 }
 
 expr_t *
-label_expr (void)
+new_label_expr (void)
 {
 	static int label = 0;
 	int lnum = ++label;
@@ -77,6 +77,29 @@ label_expr (void)
 	l->e.label->name = malloc (1 + strlen (fname) + 1 + ceil (log10 (lnum)) + 1);
 	sprintf (l->e.label->name, "$%s_%d", fname, lnum);
 	return l;
+}
+
+expr_t *
+new_binary_expr (int op, expr_t *e1, expr_t *e2)
+{
+	expr_t *e = new_expr ();
+
+	e->type = ex_expr;
+	e->e.expr.op = op;
+	e->e.expr.e1 = e1;
+	e->e.expr.e2 = e2;
+	return e;
+}
+
+expr_t *
+new_unary_expr (int op, expr_t *e1)
+{
+	expr_t *e = new_expr ();
+
+	e->type = ex_uexpr;
+	e->e.expr.op = op;
+	e->e.expr.e1 = e1;
+	return e;
 }
 
 void

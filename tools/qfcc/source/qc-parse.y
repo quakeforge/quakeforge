@@ -301,64 +301,44 @@ statement
 	| statement_block { $$ = $1; }
 	| RETURN expr ';'
 		{
-			$$ = new_expr ();
-			$$->type = ex_uexpr;
-			$$->e.expr.op = 'r';
-			$$->e.expr.e1 = $2;
+			$$ = new_unary_expr ('r', $2);
 		}
 	| RETURN ';'
 		{
-			$$ = new_expr ();
-			$$->type = ex_uexpr;
-			$$->e.expr.op = 'r';
+			$$ = new_unary_expr ('r', 0);
 		}
 	| WHILE '(' expr ')' statement
 		{
-			expr_t *e = new_expr ();
-			expr_t *l1 = label_expr ();
-			expr_t *l2 = label_expr ();
+			expr_t *l1 = new_label_expr ();
+			expr_t *l2 = new_label_expr ();
+
+			expr_t *e = new_binary_expr ('n', $3, l2);
 
 			$$ = e;
 
-			e->type = ex_expr;
-			e->e.expr.op = 'n';
-			e->e.expr.e1 = $3;
-			e->e.expr.e2 = l2;
-
-			e->next = l1;
-			e = e->next;
+			e = (e->next = l1);
 
 			e->next = $5;
 			while (e->next)
 				e = e->next;
 
-			e->next = new_expr ();
-			e = e->next;
-			e->type = ex_expr;
-			e->e.expr.op = 'i';
-			e->e.expr.e1 = $3;
-			e->e.expr.e2 = l1;
+			e = (e->next = new_binary_expr ('i', $3, l1));
 
 			e->next = l2;
 		}
 	| DO statement WHILE '(' expr ')' ';'
 		{
-			expr_t *e;
-			expr_t *l1 = label_expr ();
+			expr_t *l1 = new_label_expr ();
 
-			$$ = e = l1;
+			expr_t *e = l1;
+
+			$$ = e;
 
 			e->next = $2;
 			while (e->next)
 				e = e->next;
 
-			e->next = new_expr ();
-			e = e->next;
-			e->type = ex_expr;
-			e->e.expr.op = 'i';
-			e->e.expr.e1 = $5;
-			e->e.expr.e2 = l1;
-
+			e->next = new_binary_expr ('i', $5, l1);
 		}
 	| LOCAL type
 		{
@@ -367,15 +347,11 @@ statement
 	  def_list ';' { $$ = 0; }
 	| IF '(' expr ')' statement
 		{
-			expr_t *e = new_expr ();
-			expr_t *l1 = label_expr ();
+			expr_t *l1 = new_label_expr ();
+
+			expr_t *e = new_binary_expr ('n', $3, l1);
 
 			$$ = e;
-
-			e->type = ex_expr;
-			e->e.expr.op = 'n';
-			e->e.expr.e1 = $3;
-			e->e.expr.e2 = l1;
 
 			e->next = $5;
 			while (e->next)
@@ -385,29 +361,20 @@ statement
 		}
 	| IF '(' expr ')' statement ELSE statement
 		{
-			expr_t *e = new_expr ();
-			expr_t *l1 = label_expr ();
-			expr_t *l2 = label_expr ();
+			expr_t *l1 = new_label_expr ();
+			expr_t *l2 = new_label_expr ();
+
+			expr_t *e = new_binary_expr ('n', $3, l1);
 
 			$$ = e;
-
-			e->type = ex_expr;
-			e->e.expr.op = 'n';
-			e->e.expr.e1 = $3;
-			e->e.expr.e2 = l1;
 
 			e->next = $5;
 			while (e->next)
 				e = e->next;
 
-			e->next = new_expr ();
-			e = e->next;
-			e->type = ex_uexpr;
-			e->e.expr.op = 'g';
-			e->e.expr.e1 = l2;
+			e = (e->next = new_unary_expr ('g', l2));
 
-			e->next = l1;
-			e = e->next;
+			e = (e->next = l1);
 
 			e->next = $7;
 			while (e->next)
@@ -417,24 +384,19 @@ statement
 		}
 	| FOR '(' expr ';' expr ';' expr ')' statement
 		{
-			expr_t *e;
-			expr_t *l1 = label_expr ();
-			expr_t *l2 = label_expr ();
+			expr_t *l1 = new_label_expr ();
+			expr_t *l2 = new_label_expr ();
 
-			$$ = e = $3;
-			if (e) {
-				e->next = new_expr ();
-				e = e->next;
+			expr_t *e = new_binary_expr ('n', $5, l2);
+
+			$$ = $3;
+			if ($$) {
+				$$->next = e;
 			} else {
-				e = new_expr ();
+				$$ = e;
 			}
-			e->type = ex_expr;
-			e->e.expr.op = 'n';
-			e->e.expr.e1 = $5;
-			e->e.expr.e2 = l2;
 			
-			e->next = l1;
-			e = e->next;
+			e = (e->next = l1);
 
 			e->next = $9;
 			while (e->next)
@@ -444,12 +406,7 @@ statement
 			if (e->next)
 				e = e->next;
 
-			e->next = new_expr ();
-			e = e->next;
-			e->type = ex_expr;
-			e->e.expr.op = 'i';
-			e->e.expr.e1 = $5;
-			e->e.expr.e2 = l1;
+			e = (e->next = new_binary_expr ('i', $5, l1));
 
 			e->next = l2;
 		}
