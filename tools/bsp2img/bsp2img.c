@@ -587,22 +587,12 @@ render_map (bsp_t *bsp)
 				e1 = &edgelist[abs (ledges[j])];
 				e2 = &edgelist[abs (ledges[k])];
 				if (ledges[j] > 0) {
-					v0.X = vertexlist[e1->v[0]].X - vertexlist[e1->v[1]].X;
-					v0.Y = vertexlist[e1->v[0]].Y - vertexlist[e1->v[1]].Y;
-					v0.Z = vertexlist[e1->v[0]].Z - vertexlist[e1->v[1]].Z;
-
-					v1.X = vertexlist[e2->v[0]].X - vertexlist[e2->v[1]].X;
-					v1.Y = vertexlist[e2->v[0]].Y - vertexlist[e2->v[1]].Y;
-					v1.Z = vertexlist[e2->v[0]].Z - vertexlist[e2->v[1]].Z;
+					SUB (vertexlist[e1->v[0]], vertexlist[e1->v[1]], v0);
+					SUB (vertexlist[e2->v[0]], vertexlist[e2->v[1]], v0);
 				} else {
 					/* negative index, therefore walk in reverse order */
-					v0.X = vertexlist[e1->v[1]].X - vertexlist[e1->v[0]].X;
-					v0.Y = vertexlist[e1->v[1]].Y - vertexlist[e1->v[0]].Y;
-					v0.Z = vertexlist[e1->v[1]].Z - vertexlist[e1->v[0]].Z;
-
-					v1.X = vertexlist[e2->v[1]].X - vertexlist[e2->v[0]].X;
-					v1.Y = vertexlist[e2->v[1]].Y - vertexlist[e2->v[0]].Y;
-					v1.Z = vertexlist[e2->v[1]].Z - vertexlist[e2->v[0]].Z;
+					SUB (vertexlist[e1->v[1]], vertexlist[e1->v[0]], v0);
+					SUB (vertexlist[e2->v[1]], vertexlist[e2->v[0]], v0);
 				}
 
 				/* cross product */
