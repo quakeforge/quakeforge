@@ -20,7 +20,7 @@
 	$Id$
 */
 
-#define	MAX_FACES		128
+#define	MAX_FACES		256
 typedef struct mface_s
 {
 	struct mface_s	*next;

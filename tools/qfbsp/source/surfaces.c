@@ -72,8 +72,8 @@ SubdivideFace (face_t *f, face_t **prevptr)
 
 	for (axis = 0; axis < 2; axis++) {
 		while (1) {
-			mins = 9999;
-			maxs = -9999;
+			mins = BOGUS_RANGE;
+			maxs = -BOGUS_RANGE;
 
 			for (i = 0; i < f->numpoints; i++) {
 				v = DotProduct (f->pts[i], tex->vecs[axis]);

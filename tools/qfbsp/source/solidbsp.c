@@ -283,8 +283,8 @@ SelectPartition (surface_t *surfaces, int *detail)
 
 	// calculate a bounding box of the entire surfaceset
 	for (i = 0; i < 3; i++) {
-		mins[i] = 99999;
-		maxs[i] = -99999;
+		mins[i] = BOGUS_RANGE;
+		maxs[i] = -BOGUS_RANGE;
 	}
 
 	for (p = surfaces; p; p = p->next)
@@ -329,8 +329,8 @@ CalcSurfaceInfo (surface_t * surf)
 
 	// calculate a bounding box
 	for (i = 0; i < 3; i++) {
-		surf->mins[i] = 99999;
-		surf->maxs[i] = -99999;
+		surf->mins[i] = BOGUS_RANGE;
+		surf->maxs[i] = -BOGUS_RANGE;
 	}
 
 	for (f = surf->faces; f; f = f->next) {

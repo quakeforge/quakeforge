@@ -87,7 +87,7 @@ BaseWindingForPlane (plane_t *p)
 	if (x == -1)
 		Sys_Error ("BaseWindingForPlane: no axis found");
 
-	VectorCopy (vec3_origin, vup);
+	VectorZero (vup);
 	switch (x) {
 		case 0:
 		case 1:
@@ -106,8 +106,8 @@ BaseWindingForPlane (plane_t *p)
 
 	CrossProduct (vup, p->normal, vright);
 
-	VectorScale (vup, 8192, vup);
-	VectorScale (vright, 8192, vright);
+	VectorScale (vup, BOGUS_RANGE, vup);
+	VectorScale (vright, BOGUS_RANGE, vright);
 
 	// project a really big axis aligned box onto the plane
 	w = NewWinding (4);
@@ -161,10 +161,10 @@ winding_t *
 ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 {
 	int         maxpts, i, j;
-	int         sides[MAX_POINTS_ON_WINDING];
+	int         sides[MAX_POINTS_ON_WINDING + 1];
 	int         counts[3];
 	vec_t       dot;
-	vec_t       dists[MAX_POINTS_ON_WINDING];
+	vec_t       dists[MAX_POINTS_ON_WINDING + 1];
 	vec_t      *p1, *p2;
 	vec3_t      mid;
 	winding_t  *neww;
@@ -258,10 +258,10 @@ DivideWinding (winding_t *in, plane_t *split, winding_t **front,
 			   winding_t **back)
 {
 	int         maxpts, i, j;
-	int         sides[MAX_POINTS_ON_WINDING];
+	int         sides[MAX_POINTS_ON_WINDING + 1];
 	int         counts[3];
 	vec_t       dot;
-	vec_t       dists[MAX_POINTS_ON_WINDING];
+	vec_t       dists[MAX_POINTS_ON_WINDING + 1];
 	vec_t      *p1, *p2;
 	vec3_t      mid;
 	winding_t  *f, *b;

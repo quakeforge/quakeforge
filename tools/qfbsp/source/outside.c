@@ -99,9 +99,6 @@ MarkLeakTrail (portal_t *n2)
 	portal_t   *n1;
 	vec3_t      p1, p2, dir;
 
-	if (options.hullnum)
-		return;
-
 	n1 = prevleaknode;
 	prevleaknode = n2;
 
@@ -124,6 +121,11 @@ MarkLeakTrail (portal_t *n2)
 	len = VectorLength (dir);
 	_VectorNormalize (dir);
 
+	if (!leakfile)
+		leakfile = fopen (options.pointfile, "w");
+	if (!leakfile)
+		Sys_Error ("Couldn't open %s\n", options.pointfile);
+
 	while (len > 2) {
 		fprintf (leakfile, "%f %f %f\n", p1[0], p1[1], p1[2]);
 		for (i = 0; i < 3; i++)
@@ -133,7 +135,6 @@ MarkLeakTrail (portal_t *n2)
 }
 
 int         hit_occupied;
-int         backdraw;
 
 /*
 	RecursiveFillOutside
@@ -175,7 +176,7 @@ RecursiveFillOutside (node_t *l, qboolean fill)
 
 		if (RecursiveFillOutside (p->nodes[s], fill)) {
 			// leaked, so stop filling
-			if (backdraw-- > 0) {
+			if (!options.hullnum) {
 				MarkLeakTrail (p);
 				DrawLeaf (l, 2);
 			}
@@ -243,67 +244,23 @@ FillOutside (node_t *node)
 
 	prevleaknode = NULL;
 
-	if (!options.hullnum) {
-		leakfile = fopen (options.pointfile, "w");
-		if (!leakfile)
-			Sys_Error ("Couldn't open %s\n", options.pointfile);
-	}
-
 	if (RecursiveFillOutside (outside_node.portals->nodes[s], false)) {
-		v = entities[hit_occupied].origin;
-		qprintf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-		qprintf ("reached occupant at: (%4.0f,%4.0f,%4.0f)\n", v[0], v[1],
-				 v[2]);
-		qprintf ("no filling performed\n");
-		qprintf ("leak file written to %s\n", options.pointfile);
-		qprintf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-
-		if (!options.hullnum) {
-			node_t     *n, *nextnode;
-			portal_t   *p, *p2;
-			int         i, j, next, side;
-			vec3_t      wc;
-
-			n = &outside_node;
-			next = -1;
-
-			while ((n->o_dist > 1) || (next == -1)) {
-				nextnode = NULL;
-				p2 = NULL;
-				for (p = n->portals; p; p = p->next[side]) {
-					side = (p->nodes[1] == n);
-					if ((next == -1)
-						|| ((p->nodes[!side]->o_dist < next)
-							&& (p->nodes[!side]->o_dist))
-					   )
-					{
-						next = p->nodes[!side]->o_dist;
-						nextnode = p->nodes[!side];
-						p2 = p;
-					}
-				}
-				if (nextnode) {
-					n = nextnode;
-
-					wc[0] = wc[1] = wc[2] = 0;
-					for (i = 0; i < p2->winding->numpoints; i++) {
-						for (j = 0; j < 3; j++)
-							wc[j] += p2->winding->points[i][j];
-					}
-					for (j = 0; j < 3; j++)
-						wc[j] /= p2->winding->numpoints;
-					fprintf (leakfile, "%g %g %g\n", wc[0], wc[1], wc[2]);
-				} else
-					break;
-			}
-			v = entities[n->occupied].origin;
-			fprintf (leakfile, "%g %g %g\n", v[0], v[1], v[2]);
+		if (leakfile)
 			fclose (leakfile);
+		leakfile = 0;
+		if (!options.hullnum) {
+			v = entities[hit_occupied].origin;
+			qprintf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+			qprintf ("reached occupant at: (%4.0f,%4.0f,%4.0f)\n", v[0], v[1],
+					 v[2]);
+			qprintf ("no filling performed\n");
+			qprintf ("leak file written to %s\n", options.pointfile);
+			qprintf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 		}
+		// remove faces from filled in leafs
+		ClearOutFaces (node);
 		return false;
 	}
-	if (!options.hullnum)
-		fclose (leakfile);
 
 	// now go back and fill things in
 	valid++;

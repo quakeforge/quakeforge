@@ -512,11 +512,11 @@ FinishBSPFile (void)
 	QFile      *f;
 
 	printf ("--- FinishBSPFile ---\n");
-	printf ("WriteBSPFile: %s\n", options.bspfile);
 
 	WriteMiptex ();
 
 // XXX	PrintBSPFileSizes ();
+	printf ("WriteBSPFile: %s\n", options.bspfile);
 	f = Qopen (options.bspfile, "wb");
 	if (!f)
 		Sys_Error ("couldn't open %s. %s", options.bspfile, strerror(errno));

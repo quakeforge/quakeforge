@@ -32,6 +32,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 #include "bsp5.h"
+#include "options.h"
 
 /*
 input
@@ -99,7 +100,7 @@ CanJoinFaces (face_t *f, face_t *f2)
 		VectorCopy (region_maxs, oldmaxs);
 		AddFaceToRegionSize (f2);
 		for (i = 0; i < 3; i++) {
-			if (region_maxs[i] - region_mins[i] > 240) {
+			if (region_maxs[i] - region_mins[i] > options.subdivide_size) {
 				VectorCopy (oldmins, region_mins);
 				VectorCopy (oldmaxs, region_maxs);
 				return false;

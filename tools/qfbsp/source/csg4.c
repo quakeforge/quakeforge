@@ -246,14 +246,11 @@ SaveOutside (qboolean mirror)
 			{
 				VectorCopy (f->pts[f->numpoints - 1 - i], newf->pts[i]);
 			}
-		} else
-			newf = NULL;
-
-		validfaces[planenum] = MergeFaceToList (f, validfaces[planenum]);
-		if (newf)
 			validfaces[planenum] = MergeFaceToList (newf,
 													validfaces[planenum]);
+		}
 
+		validfaces[planenum] = MergeFaceToList (f, validfaces[planenum]);
 		validfaces[planenum] = FreeMergeListScraps (validfaces[planenum]);
 	}
 }

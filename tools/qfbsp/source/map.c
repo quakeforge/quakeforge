@@ -41,6 +41,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "bsp5.h"
 
+int         nummapbrushfaces;
 int         nummapbrushes;
 mbrush_t    mapbrushes[MAX_MAP_BRUSHES];
 
@@ -302,14 +303,17 @@ ParseVerts (int *n_verts)
 static void
 ParseBrush (void)
 {
-	float       shift[2], rotate, scale[2];
-	int         i, j, n_verts = 0;
+	float       rotate, scale[2];
+	float       ang, sinv, cosv, ns, nt;
+	int         sv, tv;
+	int         i, j, n_verts = 0, hltexdef;
 	mbrush_t   *b;
 	mface_t    *f, *f2;
+	plane_t     plane;
 	texinfo_t   tx;
 	vec3_t      planepts[3];
-	vec3_t      t1, t2, t3, *verts = 0;
-	vec_t       d;
+	vec3_t      t1, t2, *verts = 0;
+	vec_t       d, vecs[2][4];
 
 	b = &mapbrushes[nummapbrushes];
 	nummapbrushes++;
@@ -335,7 +339,7 @@ ParseBrush (void)
 			GetToken (false);
 			for (i = 0; i < n_v; i++) {
 				GetToken (false);
-				v = atoi (token);
+				v = atof (token);
 				if (i < 3)
 					VectorCopy (verts[v], planepts[i]);
 			}
@@ -350,7 +354,7 @@ ParseBrush (void)
 
 				for (j = 0; j < 3; j++) {
 					GetToken (false);
-					planepts[i][j] = atoi (token);
+					planepts[i][j] = atof (token);
 				}
 
 				GetToken (false);
@@ -359,16 +363,51 @@ ParseBrush (void)
 			}
 		}
 
+		// convert points to a plane
+		VectorSubtract (planepts[0], planepts[1], t1);
+		VectorSubtract (planepts[2], planepts[1], t2);
+		CrossProduct(t1, t2, plane.normal);
+		VectorNormalize (plane.normal);
+		plane.dist = DotProduct(planepts[1], plane.normal);
+
 		// read the texturedef
 		memset (&tx, 0, sizeof (tx));
 		GetToken (false);
 		tx.miptex = FindMiptex (token);
 		GetToken (false);
-		shift[0] = atoi (token);
+		if ((hltexdef = !strcmp (token, "["))) {
+			// S vector
+			GetToken (false);
+			vecs[0][0] = atof (token);
+			GetToken (false);
+			vecs[0][1] = atof (token);
+			GetToken (false);
+			vecs[0][2] = atof (token);
+			GetToken (false);
+			vecs[0][3] = atof (token);
+			// ]
+			GetToken (false);
+			// [
+			GetToken (false);
+			// T vector
+			GetToken (false);
+			vecs[1][0] = atof (token);
+			GetToken (false);
+			vecs[1][1] = atof (token);
+			GetToken (false);
+			vecs[1][2] = atof (token);
+			GetToken (false);
+			vecs[1][3] = atof (token);
+			// ]
+			GetToken (false);
+		} else {
+			vecs[0][3] = atof (token);
+			GetToken (false);
+			vecs[1][3] = atof (token);
+		}
+
 		GetToken (false);
-		shift[1] = atoi (token);
-		GetToken (false);
-		rotate = atoi (token);
+		rotate = atof (token);
 		GetToken (false);
 		scale[0] = atof (token);
 		GetToken (false);
@@ -399,90 +438,74 @@ ParseBrush (void)
 			continue;
 		}
 
+		if (DotProduct (plane.normal, plane.normal) < 0.1) {
+			printf ("WARNING: brush plane with no normal on line %d\n",
+					script_line);
+			continue;
+		}
+
+		if (!hltexdef) {
+			// fake proper texture vectors from QuakeEd style
+			TextureAxisFromPlane (&f->plane, vecs[0], vecs[1]);
+		}
+
+		if (!scale[0])
+			scale[0] = 1;
+		if (!scale[1])
+			scale[1] = 1;
+
+		// rotate axis
+		if (rotate == 0) {
+			sinv = 0;
+			cosv = 1;
+		} else if (rotate == 90) {
+			sinv = 1;
+			cosv = 0;
+		} else if (rotate == 180) {
+			sinv = 0;
+			cosv = -1;
+		} else if (rotate == 270) {
+			sinv = -1;
+			cosv = 0;
+		} else {
+			ang = rotate / 180 * M_PI;
+			sinv = sin (ang);
+			cosv = cos (ang);
+		}
+
+		if (vecs[0][0])
+			sv = 0;
+		else if (vecs[0][1])
+			sv = 1;
+		else
+			sv = 2;
+
+		if (vecs[1][0])
+			tv = 0;
+		else if (vecs[1][1])
+			tv = 1;
+		else
+			tv = 2;
+
+		for (i = 0; i < 2; i++) {
+			// rotate
+			ns = cosv * vecs[i][sv] - sinv * vecs[i][tv];
+			nt = sinv * vecs[i][sv] + cosv * vecs[i][tv];
+			vecs[i][sv] = ns;
+			vecs[i][tv] = nt;
+			// cale and store into texinfo
+			for (j = 0; j < 3; j++)
+				tx.vecs[i][j] = vecs[i][j] / scale[i];
+			tx.vecs[i][3] = vecs[i][3];
+		}
+
 		f = malloc (sizeof (mface_t));
 		f->next = b->faces;
 		b->faces = f;
-
-		// convert to a vector / dist plane
-		for (j = 0; j < 3; j++) {
-			t1[j] = planepts[0][j] - planepts[1][j];
-			t2[j] = planepts[2][j] - planepts[1][j];
-			t3[j] = planepts[1][j];
-		}
-
-		CrossProduct (t1, t2, f->plane.normal);
-		if (_VectorCompare (f->plane.normal, vec3_origin)) {
-			printf ("WARNING: brush plane with no normal\n");
-			b->faces = f->next;
-			free (f);
-			break;
-		}
-		_VectorNormalize (f->plane.normal);
-		f->plane.dist = DotProduct (t3, f->plane.normal);
-
-		// fake proper texture vectors from QuakeEd style
-		{
-			float       ang, sinv, cosv, ns, nt;
-			int         sv, tv;
-			vec3_t      vecs[2];
-
-			TextureAxisFromPlane (&f->plane, vecs[0], vecs[1]);
-
-			if (!scale[0])
-				scale[0] = 1;
-			if (!scale[1])
-				scale[1] = 1;
-
-			// rotate axis
-			if (rotate == 0) {
-				sinv = 0;
-				cosv = 1;
-			} else if (rotate == 90) {
-				sinv = 1;
-				cosv = 0;
-			} else if (rotate == 180) {
-				sinv = 0;
-				cosv = -1;
-			} else if (rotate == 270) {
-				sinv = -1;
-				cosv = 0;
-			} else {
-				ang = rotate / 180 * M_PI;
-				sinv = sin (ang);
-				cosv = cos (ang);
-			}
-
-			if (vecs[0][0])
-				sv = 0;
-			else if (vecs[0][1])
-				sv = 1;
-			else
-				sv = 2;
-
-			if (vecs[1][0])
-				tv = 0;
-			else if (vecs[1][1])
-				tv = 1;
-			else
-				tv = 2;
-
-			for (i = 0; i < 2; i++) {
-				ns = cosv * vecs[i][sv] - sinv * vecs[i][tv];
-				nt = sinv * vecs[i][sv] + cosv * vecs[i][tv];
-				vecs[i][sv] = ns;
-				vecs[i][tv] = nt;
-			}
-
-			for (i = 0; i < 2; i++)
-				for (j = 0; j < 3; j++)
-					tx.vecs[i][j] = vecs[i][j] / scale[i];
-
-			tx.vecs[0][3] = shift[0];
-			tx.vecs[1][3] = shift[1];
-		}
-
+		f->plane = plane;
 		// unique the texinfo
 		f->texinfo = FindTexinfo (&tx);
+		nummapbrushfaces++;
 	} while (1);
 	if (verts)
 		free (verts);
@@ -565,9 +588,10 @@ LoadMapFile (const char *filename)
 
 	qprintf ("--- LoadMapFile ---\n");
 	qprintf ("%s\n", filename);
+	qprintf ("%5i faces\n", nummapbrushfaces);
 	qprintf ("%5i brushes (%i detail)\n", nummapbrushes, numdetailbrushes);
 	qprintf ("%5i entities\n", num_entities);
-	qprintf ("%5i miptex\n", nummiptex);
+	qprintf ("%5i textures\n", nummiptex);
 	qprintf ("%5i texinfo\n", bsp->numtexinfo);
 }
 

@@ -197,7 +197,7 @@ CutNodePortals_r (node_t *node)
 			side = 0;
 		else if (p->nodes[1] == node) {
 			clipplane.dist = -clipplane.dist;
-			VectorSubtract (vec3_origin, clipplane.normal, clipplane.normal);
+			VectorNegate (clipplane.normal, clipplane.normal);
 			side = 1;
 		} else
 			Sys_Error ("CutNodePortals_r: mislinked portal");
@@ -330,15 +330,7 @@ int         num_visleafs;				// leafs the player can be in
 int         num_visportals;
 int         num_realleafs;
 
-static void
-WriteFloat (FILE *f, vec_t v)
-{
-	if (fabs (v - RINT (v)) < 0.001)
-		fprintf (f, "%i ", (int) RINT (v));
-	else
-		fprintf (f, "%f ", v);
-}
-
+//FIXME make work with transparent water
 static int
 HasContents (node_t *n, int cont)
 {
@@ -414,14 +406,12 @@ WritePortalFile_r (node_t *node)
 			} else
 				fprintf (pf, "%i %i %i ", w->numpoints,
 						 p->nodes[0]->visleafnum, p->nodes[1]->visleafnum);
-			for (i = 0; i < w->numpoints; i++) {
-				fprintf (pf, "(");
-				WriteFloat (pf, w->points[i][0]);
-				WriteFloat (pf, w->points[i][1]);
-				WriteFloat (pf, w->points[i][2]);
-				fprintf (pf, ") ");
+			for (i = 0; i < w->numpoints - 1; i++) {
+				fprintf (pf, "(%g %g %g) ",
+						 w->points[i][0], w->points[i][0], w->points[i][0]);
 			}
-			fprintf (pf, "\n");
+			fprintf (pf, "(%g %g %g)\n",
+					 w->points[i][0], w->points[i][0], w->points[i][0]);
 		}
 
 		if (p->nodes[0] == node)

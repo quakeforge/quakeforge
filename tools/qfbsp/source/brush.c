@@ -36,8 +36,9 @@ int         numbrushplanes;
 plane_t     planes[MAX_MAP_PLANES];
 
 int         numbrushfaces;
-mface_t     faces[128];		// beveled clipping hull can generate many extra
+mface_t     faces[MAX_FACES];	// beveled clipping hull can generate many extra
 
+static entity_t *CurrentEntity;
 
 /*
 	CheckFace
@@ -57,7 +58,7 @@ CheckFace (face_t *f)
 
 	VectorCopy (planes[f->planenum].normal, facenormal);
 	if (f->planeside)
-		VectorSubtract (vec3_origin, facenormal, facenormal);
+		VectorNegate (facenormal, facenormal);
 
 	for (i = 0; i < f->numpoints; i++) {
 		p1 = f->pts[i];
@@ -74,6 +75,9 @@ CheckFace (face_t *f)
 
 		if (d < -ON_EPSILON || d > ON_EPSILON)
 			Sys_Error ("CheckFace: point off plane");
+#if 0	//XXX point off plane autofix
+		VectorMultSub (p1, d, planes[f->planenum].normal, p1);
+#endif
 
 		// check the edge isn't degenerate
 		p2 = f->pts[j];
@@ -105,8 +109,8 @@ ClearBounds (brushset_t *bs)
 
 	for (j = 0; j < NUM_HULLS; j++)
 		for (i = 0; i < 3; i++) {
-			bs->mins[i] = 99999;
-			bs->maxs[i] = -99999;
+			bs->mins[i] = BOGUS_RANGE;
+			bs->maxs[i] = -BOGUS_RANGE;
 		}
 }
 
@@ -160,12 +164,10 @@ NormalizePlane (plane_t *dp)
 	if (dp->normal[0] == -1.0) {
 		dp->normal[0] = 1.0;
 		dp->dist = -dp->dist;
-	}
-	if (dp->normal[1] == -1.0) {
+	} else if (dp->normal[1] == -1.0) {
 		dp->normal[1] = 1.0;
 		dp->dist = -dp->dist;
-	}
-	if (dp->normal[2] == -1.0) {
+	} else if (dp->normal[2] == -1.0) {
 		dp->normal[2] = 1.0;
 		dp->dist = -dp->dist;
 	}
@@ -194,7 +196,7 @@ NormalizePlane (plane_t *dp)
 	else
 		dp->type = PLANE_ANYZ;
 	if (dp->normal[dp->type - PLANE_ANYX] < 0) {
-		VectorSubtract (vec3_origin, dp->normal, dp->normal);
+		VectorNegate (dp->normal, dp->normal);
 		dp->dist = -dp->dist;
 	}
 }
@@ -253,21 +255,51 @@ FindPlane (plane_t *dplane, int *side)
 vec3_t      brush_mins, brush_maxs;
 face_t     *brush_faces;
 
+static entity_t *
+FindTargetEntity (const char *targetname)
+{
+	int         entnum;
+
+	for (entnum = 0; entnum < num_entities; entnum++)
+		if (!strcmp (targetname,
+					 ValueForKey (&entities[entnum], "targetname")))
+			return &entities[entnum];
+	return 0;
+}
+
 #define	ZERO_EPSILON	0.001
 static void
 CreateBrushFaces (void)
 {
 	face_t     *f;
-	int         i, j, k;
+	int         i, j, k, rotate;
 	mface_t    *mf;
 	plane_t     plane;
 	vec_t       r;
 	winding_t  *w;
+	vec3_t      offset, point;
 
-	brush_mins[0] = brush_mins[1] = brush_mins[2] = 99999;
-	brush_maxs[0] = brush_maxs[1] = brush_maxs[2] = -99999;
+	offset[0] = offset[1] = offset[2] = 0;
+	brush_mins[0] = brush_mins[1] = brush_mins[2] = BOGUS_RANGE;
+	brush_maxs[0] = brush_maxs[1] = brush_maxs[2] = -BOGUS_RANGE;
 
 	brush_faces = NULL;
+
+	rotate = !strncmp (ValueForKey (CurrentEntity, "classname"), "rotate_", 7);
+	if (rotate) {
+		entity_t   *FoundEntity;
+		const char *searchstring;
+		char       text[20];
+
+		searchstring = ValueForKey (CurrentEntity, "target");
+		FoundEntity = FindTargetEntity (searchstring);
+		if (FoundEntity)
+			GetVectorForKey (FoundEntity, "origin", offset);
+
+		snprintf (text, sizeof (text), "%g %g %g",
+				  offset[0], offset[1], offset[2]);
+		SetKeyValue (CurrentEntity, "origin", text);
+	}
 
 	for (i = 0; i < numbrushfaces; i++) {
 		mf = &faces[i];
@@ -278,10 +310,11 @@ CreateBrushFaces (void)
 			if (j == i)
 				continue;
 			// flip the plane, because we want to keep the back side
-			VectorSubtract (vec3_origin, faces[j].plane.normal, plane.normal);
+			VectorNegate (faces[j].plane.normal, plane.normal);
 			plane.dist = -faces[j].plane.dist;
 
-			w = ClipWinding (w, &plane, false);
+			// keepon was false. avoid clipping away windings on plane?
+			w = ClipWinding (w, &plane, true);
 		}
 
 		if (!w)
@@ -295,11 +328,12 @@ CreateBrushFaces (void)
 
 		for (j = 0; j < w->numpoints; j++) {
 			for (k = 0; k < 3; k++) {
-				r = RINT (w->points[j][k]);
-				if (fabs (w->points[j][k] - r) < ZERO_EPSILON)
+				point[k] = w->points[j][k] - offset[k];
+				r = RINT (point[k]);
+				if (fabs (point[k] - r) < ZERO_EPSILON)
 					f->pts[j][k] = r;
 				else
-					f->pts[j][k] = w->points[j][k];
+					f->pts[j][k] = point[k];
 
 				if (f->pts[j][k] < brush_mins[k])
 					brush_mins[k] = f->pts[j][k];
@@ -308,12 +342,44 @@ CreateBrushFaces (void)
 			}
 
 		}
+		VectorCopy (mf->plane.normal, plane.normal);
+		VectorScale (mf->plane.normal, mf->plane.dist, point);
+		VectorSubtract (point, offset, point);
+		plane.dist = DotProduct (plane.normal, point);
+
 		FreeWinding (w);
 		f->texturenum = mf->texinfo;
-		f->planenum = FindPlane (&mf->plane, &f->planeside);
+		f->planenum = FindPlane (&plane, &f->planeside);
 		f->next = brush_faces;
 		brush_faces = f;
 		CheckFace (f);
+	}
+
+	// Rotatable objects have to have a bounding box big enough
+	// to account for all its rotations.
+	if (rotate) {
+		vec_t       delta, min, max;
+
+		min = brush_mins[0];
+		if (min > brush_mins[1])
+			min = brush_mins[1];
+		if (min > brush_mins[2])
+			min = brush_mins[2];
+
+		max = brush_maxs[0];
+		if (max > brush_maxs[1])
+			max = brush_maxs[1];
+		if (max > brush_maxs[2])
+			max = brush_maxs[2];
+
+		delta = fabs(max);
+		if (fabs(min) > delta)
+			delta = fabs(min);
+
+		for (k = 0; k < 3; k++) {
+			brush_mins[k] = -delta;
+			brush_maxs[k] = delta;
+		}
 	}
 }
 
@@ -328,7 +394,6 @@ vec3_t      hull_size[3][2] = {
 	{{0, 0, 0}, {0, 0, 0}},
 	{{-16, -16, -32}, {16, 16, 24}},
 	{{-32, -32, -64}, {32, 32, 24}}
-
 };
 
 #define	MAX_HULL_POINTS	64
@@ -387,7 +452,7 @@ TestAddPlane (plane_t *plane)
 		if (_VectorCompare (plane->normal, pl->normal)
 			&& fabs (plane->dist - pl->dist) < ON_EPSILON)
 			return;
-		VectorSubtract (vec3_origin, plane->normal, inv);
+		VectorNegate (plane->normal, inv);
 		if (_VectorCompare (inv, pl->normal)
 			&& fabs (plane->dist + pl->dist) < ON_EPSILON) return;
 	}
@@ -413,7 +478,7 @@ TestAddPlane (plane_t *plane)
 
 	// the plane is a seperator
 	if (counts[0]) {
-		VectorSubtract (vec3_origin, plane->normal, flip.normal);
+		VectorNegate (plane->normal, flip.normal);
 		flip.dist = -plane->dist;
 		plane = &flip;
 	}
@@ -497,7 +562,7 @@ AddHullEdge (vec3_t p1, vec3_t p2, int hullnum)
 				planeorg[b] += hull_size[hullnum][d][b];
 				planeorg[c] += hull_size[hullnum][e][c];
 
-				VectorCopy (vec3_origin, planevec);
+				VectorZero (planevec);
 				planevec[a] = 1;
 
 				CrossProduct (planevec, edgevec, plane.normal);
@@ -529,7 +594,7 @@ ExpandBrush (int hullnum)
 	// expand all of the planes
 	for (i = 0; i < numbrushfaces; i++) {
 		p = &faces[i].plane;
-		VectorCopy (vec3_origin, corner);
+		VectorZero (corner);
 		for (x = 0; x < 3; x++) {
 			if (p->normal[x] > 0)
 				corner[x] = hull_size[hullnum][1][x];
@@ -543,7 +608,7 @@ ExpandBrush (int hullnum)
 	for (x = 0; x < 3; x++)
 		for (s = -1; s <= 1; s += 2) {
 			// add the plane
-			VectorCopy (vec3_origin, plane.normal);
+			VectorZero (plane.normal);
 			plane.normal[x] = s;
 			if (s == -1)
 				plane.dist = -brush_mins[x] + -hull_size[hullnum][0][x];
@@ -666,6 +731,8 @@ Brush_LoadEntity (entity_t *ent, int hullnum)
 	other = water = NULL;
 
 	qprintf ("--- Brush_LoadEntity ---\n");
+
+	CurrentEntity = ent;
 
 	for (mbr = ent->brushes; mbr; mbr = mbr->next) {
 		b = LoadBrush (mbr, hullnum);
