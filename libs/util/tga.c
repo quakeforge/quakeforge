@@ -75,21 +75,36 @@ blit_rgba (byte *buf, int count, byte red, byte green, byte blue, byte alpha)
 }
 
 static inline byte *
+reverse_blit_rgb (byte *buf, int count, byte red, byte green, byte blue)
+{
+	while (count--) {
+		*buf-- = 255;
+		*buf-- = blue;
+		*buf-- = green;
+		*buf-- = red;
+	}
+	return buf;
+}
+
+static inline byte *
+reverse_blit_rgba (byte *buf, int count, byte red, byte green, byte blue,
+				   byte alpha)
+{
+	while (count--) {
+		*buf-- = alpha;
+		*buf-- = blue;
+		*buf-- = green;
+		*buf-- = red;
+	}
+	return buf;
+}
+
+static inline byte *
 read_bgr (byte *buf, int count, byte **data)
 {
 	byte		blue = *(*data)++;
 	byte		green = *(*data)++;
 	byte		red = *(*data)++;
-
-	return blit_rgb (buf, count, red, green, blue);
-}
-
-static inline byte *
-read_rgb (byte *buf, int count, byte **data)
-{
-	byte		red = *(*data)++;
-	byte		green = *(*data)++;
-	byte		blue = *(*data)++;
 
 	return blit_rgb (buf, count, red, green, blue);
 }
@@ -106,6 +121,16 @@ read_bgra (byte *buf, int count, byte **data)
 }
 
 static inline byte *
+read_rgb (byte *buf, int count, byte **data)
+{
+	byte		red = *(*data)++;
+	byte		green = *(*data)++;
+	byte		blue = *(*data)++;
+
+	return blit_rgb (buf, count, red, green, blue);
+}
+
+static inline byte *
 read_rgba (byte *buf, int count, byte **data)
 {
 	byte		red = *(*data)++;
@@ -114,6 +139,27 @@ read_rgba (byte *buf, int count, byte **data)
 	byte		alpha = *(*data)++;
 
 	return blit_rgba (buf, count, red, green, blue, alpha);
+}
+
+static inline byte *
+reverse_read_bgr (byte *buf, int count, byte **data)
+{
+	byte		blue = *(*data)++;
+	byte		green = *(*data)++;
+	byte		red = *(*data)++;
+
+	return reverse_blit_rgb (buf, count, red, green, blue);
+}
+
+static inline byte *
+reverse_read_bgra (byte *buf, int count, byte **data)
+{
+	byte		blue = *(*data)++;
+	byte		green = *(*data)++;
+	byte		red = *(*data)++;
+	byte		alpha = *(*data)++;
+
+	return reverse_blit_rgba (buf, count, red, green, blue, alpha);
 }
 
 struct tex_s *
@@ -168,10 +214,12 @@ LoadTGA (QFile *fin)
 	dataByte += targa->id_length;
 
 	span = columns * 4; // tex->format
-	pixrow = tex->data + (rows - 1) * span;
 
 	if (targa->image_type == 2) {	// Uncompressed image
-		switch (targa->pixel_size) {
+		switch (targa->attributes & 48) {
+		case 0:						// Origin at bottom left
+			pixrow = tex->data + (rows - 1) * span;
+			switch (targa->pixel_size) {
 			case 24:
 				for (row = rows - 1; row >= 0; row--, pixrow -= span) {
 					pixcol = pixrow;
@@ -186,11 +234,72 @@ LoadTGA (QFile *fin)
 						pixcol = read_bgra (pixcol, 1, &dataByte);
 				}
 				break;
+			}
+			break;
+		case 16:						// Origin at bottom right
+			pixrow = tex->data + rows * span - 4;
+			switch (targa->pixel_size) {
+			case 24:
+				for (row = rows - 1; row >= 0; row--, pixrow -= span) {
+					pixcol = pixrow;
+					for (column = columns - 1; column >= 0; column--)
+						pixcol = reverse_read_bgr (pixcol, 1, &dataByte);
+				}
+				break;
+			case 32:
+				for (row = rows - 1; row >= 0; row--, pixrow -= span) {
+					pixcol = pixrow;
+					for (column = columns - 1; column >= 0; column--)
+						pixcol = reverse_read_bgra (pixcol, 1, &dataByte);
+				}
+				break;
+			}
+			break;
+		case 32:						// Origin at top left
+			pixrow = tex->data;
+			switch (targa->pixel_size) {
+			case 24:
+				for (row = 0; row < rows; row++, pixrow += span) {
+					pixcol = pixrow;
+					for (column = 0; column < columns; column++)
+						pixcol = read_bgr (pixcol, 1, &dataByte);
+				}
+				break;
+			case 32:
+				for (row = 0; row < rows; row++, pixrow += span) {
+					pixcol = pixrow;
+					for (column = 0; column < columns; column++)
+						pixcol = read_bgra (pixcol, 1, &dataByte);
+				}
+				break;
+			}
+			break;
+		case 48:						// Origin at top right
+			pixrow = tex->data + span - 4;
+			switch (targa->pixel_size) {
+			case 24:
+				for (row = 0; row < rows; row++, pixrow += span) {
+					pixcol = pixrow;
+					for (column = columns - 1; column >= 0; column--)
+						pixcol = reverse_read_bgr (pixcol, 1, &dataByte);
+				}
+				break;
+			case 32:
+				for (row = 0; row < rows; row++, pixrow += span) {
+					pixcol = pixrow;
+					for (column = columns - 1; column >= 0; column--)
+						pixcol = reverse_read_bgra (pixcol, 1, &dataByte);
+				}
+				break;
+			}
+			break;
 		}
 	} else if (targa->image_type == 10) {	// RLE compressed image
 		unsigned char packetHeader, packetSize;
 
 		byte *(*expand) (byte *buf, int count, byte **data);
+
+		pixrow = tex->data + (rows - 1) * span;
 
 		if (targa->pixel_size == 24)
 			expand = read_bgr;
