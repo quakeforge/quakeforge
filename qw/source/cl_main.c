@@ -1387,7 +1387,7 @@ Host_WriteConfiguration (void)
 {
 	VFile      *f;
 
-	if (cl_writecfg->int_val && host_initialized) {
+	if (host_initialized && cl_writecfg->int_val) {
 		char       *path = va ("%s/config.cfg", com_gamedir);
 
 		COM_CreatePath (path);
