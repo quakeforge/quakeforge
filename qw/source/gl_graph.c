@@ -121,12 +121,6 @@ R_LineGraph (int x, int y, int *h_vals, int count)
 
 	glBindTexture (GL_TEXTURE_2D, graph_texture[graph_index]);
 
-	//glTexImage2D (GL_TEXTURE_2D, 0, gl_alpha_format,
-	//			  graph_width[graph_index], s, 0, GL_RGBA,
-	//			  GL_UNSIGNED_BYTE, graph_texels[graph_index]);
-
-	//glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	//glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	GL_Upload8 (graph_texels[graph_index], graph_width[graph_index], s, 0, 1);
 
 	glBegin (GL_QUADS);
