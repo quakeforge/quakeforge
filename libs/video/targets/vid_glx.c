@@ -144,13 +144,11 @@ QFGL_LoadLibrary (void)
 void
 VID_Shutdown (void)
 {
-	if (!vid.initialized)
-		return;
-
 	Con_Printf ("VID_Shutdown\n");
-
-	X11_RestoreVidMode ();
-	X11_CloseDisplay ();
+	if (x_disp) {
+		X11_RestoreVidMode ();
+		X11_CloseDisplay ();
+	}
 }
 
 static void
