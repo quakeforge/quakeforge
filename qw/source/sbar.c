@@ -1858,7 +1858,7 @@ init_views (void)
 	overlay_view->draw = draw_overlay;
 	overlay_view->visible = 0;
 
-	stuff_view = view_new (0, 48, 144, 16, grav_southwest);
+	stuff_view = view_new (0, 48, 152, 16, grav_southwest);
 	stuff_view->draw = draw_stuff;
 
 	if (con_module) {
