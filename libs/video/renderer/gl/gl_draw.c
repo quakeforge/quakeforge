@@ -347,6 +347,40 @@ Draw_String (int x, int y, const char *str)
 }
 
 void
+Draw_nString (int x, int y, const char *str, int count)
+{
+	unsigned char   num;
+	float           frow, fcol;
+	int				size;
+	
+	if (!str || !str[0])
+		return;
+	if (y <= -8)
+		return;                         // totally off screen
+
+	qfglBindTexture (GL_TEXTURE_2D, char_texture);
+	qfglBegin (GL_QUADS);
+
+	for (size = 0; size < count; size++, x+=8) {
+		if ((num = *str++) != 32) // Don't render spaces
+        {
+			frow = (num >> 4) * CELL_SIZE;
+			fcol = (num & 15) * CELL_SIZE;
+
+			qfglTexCoord2f (fcol, frow);
+			qfglVertex2f (x, y);
+			qfglTexCoord2f (fcol + CELL_SIZE, frow);
+			qfglVertex2f (x + 8, y);
+			qfglTexCoord2f (fcol + CELL_SIZE, frow + CELL_SIZE);
+			qfglVertex2f (x + 8, y + 8);
+			qfglTexCoord2f (fcol, frow + CELL_SIZE);
+			qfglVertex2f (x, y + 8);
+		}
+	}
+    qfglEnd ();
+}
+
+void
 Draw_AltString (int x, int y, const char *str)
 {
 	unsigned char	num;

@@ -324,6 +324,15 @@ Draw_String (int x, int y, const char *str)
 	}
 }
 
+void
+Draw_nString (int x, int y, const char *str, int count)
+{
+	int     size; 
+	for (size = 0; size < count; size++, x += 8) {
+		Draw_Character (x, y, *str++);
+	}
+}
+
 
 void
 Draw_AltString (int x, int y, const char *str)

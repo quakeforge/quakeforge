@@ -1015,9 +1015,7 @@ Sbar_DeathmatchOverlay (int start)
 		f = s->frags;
 		snprintf (num, sizeof (num), "%3i", f);
 
-		Draw_Character (x + 112, y, num[0]);
-		Draw_Character (x + 120, y, num[1]);
-		Draw_Character (x + 128, y, num[2]);
+		Draw_nString (x + 112, y, num, 3);
 
 		if (k == cl.playernum) {
 			Draw_Character (x + 104, y, 16);
@@ -1114,9 +1112,7 @@ Sbar_MiniDeathmatchOverlay (void)
 		f = s->frags;
 		snprintf (num, sizeof (num), "%3i", f);
 
-		Draw_Character (x + 8, y, num[0]);
-		Draw_Character (x + 16, y, num[1]);
-		Draw_Character (x + 24, y, num[2]);
+		Draw_nString (x + 8, y, num, 3);
 
 		if (k == cl.playernum) {
 			Draw_Character (x, y, 16);

@@ -787,7 +787,6 @@ SCR_DrawNotifyString (void)
 {
 	char       *start;
 	int         l;
-	int         j;
 	int         x, y;
 
 	start = scr_notifystring;
@@ -800,10 +799,7 @@ SCR_DrawNotifyString (void)
 			if (start[l] == '\n' || !start[l])
 				break;
 		x = (vid.width - l * 8) / 2;
-		for (j = 0; j < l; j++, x += 8)
-			Draw_Character (x, y, start[j]);
-
-		y += 8;
+		Draw_nString (x, y, start, l);
 
 		while (*start && *start != '\n')
 			start++;

@@ -953,9 +953,7 @@ Sbar_DeathmatchOverlay (void)
 		f = s->frags;
 		snprintf (num, sizeof (num), "%3i", f);
 
-		Draw_Character (x + 8, y, num[0]);
-		Draw_Character (x + 16, y, num[1]);
-		Draw_Character (x + 24, y, num[2]);
+		Draw_nString (x + 8, y, num, 3);
 
 		if (k == cl.viewentity - 1)
 			Draw_Character (x - 8, y, 12);
@@ -1028,10 +1026,8 @@ Sbar_MiniDeathmatchOverlay (void)
 		f = s->frags;
 		snprintf (num, sizeof (num), "%3i", f);
 
-		Draw_Character (x + 8, y, num[0]);
-		Draw_Character (x + 16, y, num[1]);
-		Draw_Character (x + 24, y, num[2]);
-
+		Draw_nString (x + 8, y, num, 3);
+		
 		if (k == cl.viewentity - 1) {
 			Draw_Character (x, y, 16);
 			Draw_Character (x + 32, y, 17);

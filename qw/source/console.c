@@ -419,8 +419,7 @@ Con_DrawInput (void)
 	// draw it
 	y = con_vislines - 22;
 
-	for (i = 0; i < con_linewidth; i++)
-		Draw_Character ((i + 1) << 3, con_vislines - 22, text[i]);
+	Draw_nString (3, y, text, con_linewidth);
 }
 
 /*
@@ -450,9 +449,7 @@ Con_DrawNotify (void)
 		clearnotify = 0;
 		scr_copytop = 1;
 
-		for (x = 0; x < con_linewidth; x++)
-			Draw_Character ((x + 1) << 3, v, text[x]);
-
+		Draw_nString (3, v, text, con_linewidth);
 		v += 8;
 	}
 
@@ -472,11 +469,8 @@ Con_DrawNotify (void)
 		if (chat_bufferlen > (vid.width >> 3) - (skip + 1))
 			s += chat_bufferlen - ((vid.width >> 3) - (skip + 1));
 		x = 0;
-		while (s[x]) {
-			Draw_Character ((x + skip) << 3, v, s[x]);
-			x++;
-		}
-		Draw_Character ((x + skip) << 3, v,
+		Draw_String (skip >> 3, v, s);
+		Draw_Character ((strlen(s) + skip) << 3, v,
 						 10 + ((int) (realtime * con_cursorspeed) & 1));
 		v += 8;
 	}
@@ -529,8 +523,7 @@ Con_DrawConsole (int lines)
 
 		text = con->text + (row % con_totallines) * con_linewidth;
 
-		for (x = 0; x < con_linewidth; x++)
-			Draw_Character ((x + 1) << 3, y, text[x]);
+		Draw_nString(3, y, text, con_linewidth);
 	}
 
 	// draw the input prompt, user text, and cursor if desired
@@ -579,8 +572,7 @@ Con_DrawDownload (int lines)
 			  " %02d%%", cls.downloadpercent);
 	// draw it
 	y = lines - 22 + 8;
-	for (i = 0; i < strlen (dlbar); i++)
-		Draw_Character ((i + 1) << 3, y, dlbar[i]);
+	Draw_nString (3, y, dlbar, strlen (dlbar));
 }
 
 /*

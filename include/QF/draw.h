@@ -48,6 +48,7 @@ void Draw_TileClear (int x, int y, int w, int h);
 void Draw_Fill (int x, int y, int w, int h, int c);
 void Draw_FadeScreen (void);
 void Draw_String (int x, int y, const char *str);
+void Draw_nString (int x, int y, const char *str, int count);
 void Draw_AltString (int x, int y, const char *str);
 qpic_t *Draw_PicFromWad (const char *name);
 qpic_t *Draw_CachePic (const char *path, qboolean alpha);
