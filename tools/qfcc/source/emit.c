@@ -56,15 +56,50 @@ static const char rcsid[] =
 #include "type.h"
 #include "qc-parse.h"
 
-def_t      *emit_sub_expr (expr_t *e, def_t *dest);
-
 static expr_t zero;
+
+codespace_t *
+codespace_new (void)
+{
+	return calloc (1, sizeof (codespace_t));
+}
+
+void
+codespace_delete (codespace_t *codespace)
+{
+	free (codespace->code);
+	free (codespace);
+}
+
+void
+codespace_addcode (codespace_t *codespace, dstatement_t *code, int size)
+{
+	if (codespace->size + size > codespace->max_size) {
+		codespace->max_size = (codespace->size + size + 16383) & ~16383;
+		codespace->code = realloc (codespace->code,
+								   codespace->max_size * sizeof (dstatement_t));
+	}
+	memcpy (codespace->code + codespace->size, code,
+			size * sizeof (dstatement_t));
+	codespace->size += size;
+}
+
+dstatement_t *
+codespace_newstatement (codespace_t *codespace)
+{
+	if (codespace->size >= codespace->max_size) {
+		codespace->max_size += 16384;
+		codespace->code = realloc (codespace->code,
+								   codespace->max_size * sizeof (dstatement_t));
+	}
+	return codespace->code + codespace->size++;
+}
 
 void
 add_statement_ref (def_t *def, dstatement_t *st, reloc_type type)
 {
 	if (def) {
-		reloc_t    *ref = new_reloc (st - pr.statements, type);
+		reloc_t    *ref = new_reloc (st - pr.code->code, type);
 
 		ref->next = def->refs;
 		def->refs = ref;
@@ -86,22 +121,16 @@ emit_statement (expr_t *e, opcode_t *op, def_t *var_a, def_t *var_b,
 		abort ();
 	}
 	if (options.code.debug) {
-		int         line = e->line - lineno_base;
+		int         line = (e ? e->line : pr.source_line) - lineno_base;
 
 		if (line != linenos[num_linenos - 1].line) {
 			pr_lineno_t *lineno = new_lineno ();
 
 			lineno->line = line;
-			lineno->fa.addr = pr.num_statements;
+			lineno->fa.addr = pr.code->size;
 		}
 	}
-	if (pr.num_statements >= pr.statements_size) {
-		pr.statements_size += 16384;
-		pr.statements = realloc (pr.statements,
-								 pr.statements_size * sizeof (dstatement_t));
-	}
-	statement = &pr.statements[pr.num_statements];
-	pr.num_statements++;
+	statement = codespace_newstatement (pr.code);
 	statement->op = op->opcode;
 	statement->a = var_a ? var_a->ofs : 0;
 	statement->b = var_b ? var_b->ofs : 0;
@@ -148,7 +177,7 @@ emit_branch (expr_t *_e, opcode_t *op, expr_t *e, expr_t *l)
 
 	if (e)
 		def = emit_sub_expr (e, 0);
-	st = &pr.statements[ofs = pr.num_statements];
+	st = &pr.code->code[ofs = pr.code->size];
 	emit_statement (_e, op, def, 0, 0);
 	if (l->e.label.ofs) {
 		if (op == op_goto)
@@ -512,7 +541,7 @@ emit_expr (expr_t *e)
 			break;
 		case ex_label:
 			label = &e->e.label;
-			label->ofs = pr.num_statements;
+			label->ofs = pr.code->size;
 			break;
 		case ex_block:
 			for (e = e->e.block.head; e; e = e->next)

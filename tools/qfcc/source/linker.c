@@ -44,6 +44,7 @@ static const char rcsid[] =
 #include "QF/hash.h"
 
 #include "def.h"
+#include "emit.h"
 #include "expr.h"
 #include "immediate.h"
 #include "obj_file.h"
@@ -52,6 +53,8 @@ static const char rcsid[] =
 
 static hashtab_t *extern_defs;
 static hashtab_t *defined_defs;
+static strpool_t *strings;
+static strpool_t *type_strings;
 
 static const char *
 defs_get_key (void *_def, void *unused)
@@ -64,16 +67,6 @@ defs_get_key (void *_def, void *unused)
 void
 add_code (qfo_t *qfo)
 {
-	int         num_statements = pr.num_statements;
-
-	pr.num_statements += qfo->code_size;
-	if (pr.num_statements >= pr.statements_size) {
-		pr.statements_size = (pr.num_statements + 16383) & ~16383;
-		pr.statements = realloc (pr.statements,
-								 pr.statements_size * sizeof (dstatement_t));
-	}
-	memcpy (pr.statements + num_statements, qfo->code,
-			qfo->code_size * sizeof (dstatement_t));
 }
 
 void
@@ -83,9 +76,10 @@ add_defs (qfo_t *qfo)
 	qfo_def_t  *d;
 
 	for (def = qfo->defs; def - qfo->defs < qfo->num_defs; def++) {
-		def->full_type = ReuseString (qfo->strings + def->full_type);
-		def->name      = ReuseString (qfo->strings + def->name);
-		def->file      = ReuseString (qfo->strings + def->file);
+		def->full_type = strpool_addstr (type_strings,
+										 qfo->strings + def->full_type);
+		def->name      = strpool_addstr (strings, qfo->strings + def->name);
+		def->file      = strpool_addstr (strings, qfo->strings + def->file);
 		if (def->flags & QFOD_EXTERNAL) {
 			Hash_Add (extern_defs, def);
 		} else {
@@ -99,7 +93,7 @@ add_defs (qfo_t *qfo)
 			if (def->basic_type == ev_string && def->ofs
 				&& QFO_var (qfo, string, def->ofs)) {
 				string_t    s;
-				s = ReuseString (QFO_STRING (qfo, def->ofs));
+				s = strpool_addstr (strings, QFO_STRING (qfo, def->ofs));
 				QFO_var (qfo, string, def->ofs) = s;
 			}
 			if (def->ofs)
@@ -128,10 +122,10 @@ add_functions (qfo_t *qfo)
 
 	for (func = qfo->functions; func - qfo->functions < qfo->num_functions;
 		 func++) {
-		func->name = ReuseString (qfo->strings + func->name);
-		func->file = ReuseString (qfo->strings + func->file);
+		func->name = strpool_addstr (strings, qfo->strings + func->name);
+		func->file = strpool_addstr (strings, qfo->strings + func->file);
 		if (func->code)
-			func->code += pr.num_statements;
+			func->code += pr.code->size;
 	}
 }
 
@@ -140,16 +134,8 @@ linker_begin (void)
 {
 	extern_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
 	defined_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
-	if (pr.statements)
-		free (pr.statements);
-	memset (&pr, 0, sizeof (pr));
-	pr.num_statements = 1;
-	pr.statements_size = 16384;
-	pr.statements = calloc (pr.statements_size, sizeof (dstatement_t));
-	pr.strings = strpool_new ();
-	pr.num_functions = 1;
-	pr.near_data = new_defspace ();
-	pr.near_data->data = calloc (65536, sizeof (pr_type_t));
+	strings = strpool_new ();
+	type_strings = strpool_new ();
 }
 
 void

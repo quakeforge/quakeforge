@@ -48,6 +48,7 @@ static const char rcsid[] =
 #include "class.h"
 #include "debug.h"
 #include "def.h"
+#include "emit.h"
 #include "expr.h"
 #include "function.h"
 #include "immediate.h"
@@ -486,7 +487,7 @@ begin_function
 			$$ = current_func = new_function (current_def->name);
 			$$->def = current_def;
 			$$->refs = new_reloc ($$->def->ofs, rel_def_func);
-			$$->code = pr.num_statements;
+			$$->code = pr.code->size;
 			if (options.code.debug) {
 				pr_lineno_t *lineno = new_lineno ();
 				$$->aux = new_auxfunction ();

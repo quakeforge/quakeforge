@@ -47,6 +47,7 @@ static const char rcsid[] =
 
 #include "debug.h"
 #include "def.h"
+#include "emit.h"
 #include "function.h"
 #include "immediate.h"
 #include "obj_file.h"
@@ -199,7 +200,7 @@ setup_data (void)
 			for (d = f->scope->head; d; d = d->def_next)
 				write_def (d, def++, &reloc);
 	}
-	for (st = pr.statements; st - pr.statements < pr.num_statements; st++) {
+	for (st = pr.code->code; st - pr.code->code < pr.code->size; st++) {
 		st->op = LittleLong (st->op);
 		st->a  = LittleLong (st->a);
 		st->b  = LittleLong (st->b);
@@ -237,7 +238,7 @@ write_obj_file (const char *filename)
 
 	memcpy (hdr.qfo, QFO, sizeof (hdr.qfo));
 	hdr.version       = LittleLong (QFO_VERSION);
-	hdr.code_size     = LittleLong (pr.num_statements);
+	hdr.code_size     = LittleLong (pr.code->size);
 	hdr.data_size     = LittleLong (pr.near_data->size);
 	if (pr.far_data) {
 		hdr.far_data_size = LittleLong (pr.far_data->size);
@@ -250,8 +251,8 @@ write_obj_file (const char *filename)
 	hdr.types_size    = LittleLong (types->size);
 
 	Qwrite (file, &hdr, sizeof (hdr));
-	if (pr.num_statements)
-		Qwrite (file, pr.statements, pr.num_statements * sizeof (dstatement_t));
+	if (pr.code->size)
+		Qwrite (file, pr.code->code, pr.code->size * sizeof (dstatement_t));
 	if (pr.near_data->size)
 		Qwrite (file, pr.near_data->data,
 				pr.near_data->size * sizeof (pr_type_t));
@@ -439,10 +440,8 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 
 	pr->strings = strpool_build (qfo->strings, qfo->strings_size);
 
-	pr->num_statements = pr->statements_size = qfo->code_size;
-	pr->statements = malloc (pr->statements_size * sizeof (dstatement_t));
-	memcpy (pr->statements, qfo->code,
-			pr->statements_size * sizeof (dstatement_t));
+	pr->code = codespace_new ();
+	codespace_addcode (pr->code, qfo->code, qfo->code_size);
 
 	pr->near_data = init_space (qfo->data_size, qfo->data);
 	pr->far_data = init_space (qfo->far_data_size, qfo->far_data);

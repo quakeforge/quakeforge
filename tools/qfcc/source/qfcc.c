@@ -67,6 +67,7 @@ static const char rcsid[] =
 #include "cpp.h"
 #include "debug.h"
 #include "def.h"
+#include "emit.h"
 #include "expr.h"
 #include "function.h"
 #include "idstuff.h"
@@ -126,17 +127,16 @@ InitData (void)
 {
 	int         i;
 
-	if (pr.statements) {
-		free (pr.statements);
+	if (pr.code) {
+		codespace_delete (pr.code);
 		strpool_delete (pr.strings);
-		memset (&pr, 0, sizeof (pr));
 	}
+	memset (&pr, 0, sizeof (pr));
 	chain_initial_types ();
 	pr.source_line = 1;
 	pr.error_count = 0;
-	pr.num_statements = 1;
-	pr.statements_size = 16384;
-	pr.statements = calloc (pr.statements_size, sizeof (dstatement_t));
+	pr.code = codespace_new ();
+	memset (codespace_newstatement (pr.code), 0, sizeof (dstatement_t));
 	pr.strings = strpool_new ();
 	pr.num_functions = 1;
 
@@ -197,7 +197,7 @@ WriteData (int crc)
 
 	if (options.verbosity >= 0) {
 		printf ("%6i strofs\n", pr.strings->size);
-		printf ("%6i statements\n", pr.num_statements);
+		printf ("%6i statements\n", pr.code->size);
 		printf ("%6i functions\n", pr.num_functions);
 		printf ("%6i global defs\n", numglobaldefs);
 		printf ("%6i locals size (%s)\n", num_localdefs, big_function);
@@ -214,14 +214,14 @@ WriteData (int crc)
 	SafeWrite (h, pr.strings->strings, pr.strings->size);
 
 	progs.ofs_statements = ftell (h);
-	progs.numstatements = pr.num_statements;
-	for (i = 0; i < pr.num_statements; i++) {
-		pr.statements[i].op = LittleShort (pr.statements[i].op);
-		pr.statements[i].a = LittleShort (pr.statements[i].a);
-		pr.statements[i].b = LittleShort (pr.statements[i].b);
-		pr.statements[i].c = LittleShort (pr.statements[i].c);
+	progs.numstatements = pr.code->size;
+	for (i = 0; i < pr.code->size; i++) {
+		pr.code->code[i].op = LittleShort (pr.code->code[i].op);
+		pr.code->code[i].a = LittleShort (pr.code->code[i].a);
+		pr.code->code[i].b = LittleShort (pr.code->code[i].b);
+		pr.code->code[i].c = LittleShort (pr.code->code[i].c);
 	}
-	SafeWrite (h, pr.statements, pr.num_statements * sizeof (dstatement_t));
+	SafeWrite (h, pr.code->code, pr.code->size * sizeof (dstatement_t));
 
 	{
 		dfunction_t *df;

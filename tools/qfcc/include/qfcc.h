@@ -50,9 +50,7 @@ typedef struct pr_info_s {
 	
 	struct strpool_s *strings;
 
-	dstatement_t	*statements;
-	int				num_statements;
-	int				statements_size;
+	struct codespace_s *code;
 
 	struct function_s *func_head;
 	struct function_s **func_tail;

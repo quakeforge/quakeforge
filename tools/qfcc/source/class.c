@@ -50,6 +50,7 @@ static const char rcsid[] =
 
 #include "class.h"
 #include "def.h"
+#include "emit.h"
 #include "expr.h"
 #include "immediate.h"
 #include "method.h"
@@ -494,7 +495,7 @@ class_finish_module (void)
 	init_func = new_function (".ctor");
 	init_func->def = init_def;
 	init_func->refs = new_reloc (init_def->ofs, rel_def_func);
-	init_func->code = pr.num_statements;
+	init_func->code = pr.code->size;
 	build_scope (init_func, init_def, 0);
 	build_function (init_func);
 	init_expr = new_block_expr ();

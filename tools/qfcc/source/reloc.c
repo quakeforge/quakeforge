@@ -42,6 +42,7 @@ static const char rcsid[] =
 #include <stdlib.h>
 
 #include "def.h"
+#include "emit.h"
 #include "expr.h"
 #include "qfcc.h"
 #include "reloc.h"
@@ -61,43 +62,43 @@ relocate_refs (reloc_t *refs, int ofs)
 				if (ofs > 65535)
 					error (0, "def offset too large");
 				else
-					pr.statements[refs->ofs].a = ofs;
+					pr.code->code[refs->ofs].a = ofs;
 				break;
 			case rel_op_b_def:
 				if (ofs > 65535)
 					error (0, "def offset too large");
 				else
-					pr.statements[refs->ofs].b = ofs;
+					pr.code->code[refs->ofs].b = ofs;
 				break;
 			case rel_op_c_def:
 				if (ofs > 65535)
 					error (0, "def offset too large");
 				else
-					pr.statements[refs->ofs].c = ofs;
+					pr.code->code[refs->ofs].c = ofs;
 				break;
 			case rel_op_a_op:
 				o = ofs - refs->ofs;
 				if (o < -32768 || o > 32767)
 					error (0, "relative offset too large");
 				else
-					pr.statements[refs->ofs].a = o;
+					pr.code->code[refs->ofs].a = o;
 				break;
 			case rel_op_b_op:
 				o = ofs - refs->ofs;
 				if (o < -32768 || o > 32767)
 					error (0, "relative offset too large");
 				else
-					pr.statements[refs->ofs].b = o;
+					pr.code->code[refs->ofs].b = o;
 				break;
 			case rel_op_c_op:
 				o = ofs - refs->ofs;
 				if (o < -32768 || o > 32767)
 					error (0, "relative offset too large");
 				else
-					pr.statements[refs->ofs].c = o;
+					pr.code->code[refs->ofs].c = o;
 				break;
 			case rel_def_op:
-				if (ofs >= pr.num_statements)
+				if (ofs >= pr.code->size)
 					error (0, "invalid statement offset");
 				else
 					G_INT (refs->ofs) = ofs;
