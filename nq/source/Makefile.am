@@ -55,6 +55,7 @@ libnq_sdl_a_CFLAGS=	$(SDL_CFLAGS)
 common_ldflags= -export-dynamic
 
 cl_plugin_LIBS= \
+		$(SERVER_PLUGIN_STATIC_LIBS) \
 		$(CLIENT_PLUGIN_STATIC_LIBS) \
 		$(top_builddir)/libs/gamecode/builtins/libQFcsqc.la
 
