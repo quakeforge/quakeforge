@@ -148,6 +148,7 @@ static const char *qfs_default_dirconf =
 	"	};"
 	"	\"nq:*\" = {"
 	"		Inherit = (Quake);"
+	"		Path = \"$gamedir\";"
 	"		GameCode = \"progs.dat\";"
 	"	};"
 	"}";
