@@ -195,7 +195,7 @@ QW_SendHearts (int sock, struct sockaddr_in *addr, server_t *servers,
 		return;
 	}
 	cpos = 1;
-	out[0] = out[1] = out[2] = out[3] = 0xff;
+	out[0] = out[1] = out[2] = out[3] = 0xff;	// connectionless packet
 	out[4] = M2C_MASTER_REPLY;
 	out[5] = '\n';
 
@@ -219,6 +219,7 @@ QW_SendHearts (int sock, struct sockaddr_in *addr, server_t *servers,
 void
 QW_Pong (int sock, struct sockaddr_in *addr)
 {
+	// connectionless pa cket
 	char data[6] = {0xFF, 0xFF, 0xFF, 0xFF, A2A_ACK, 0};
 	printf ("Ping\n");
 	sendto (sock, data, sizeof (data), 0,
@@ -360,7 +361,7 @@ read_hosts (const char *fname)
 		if (*buf)
 			host_port = atoi (buf);
 		else
-			host_port = 27500;	//FIXME: magic number (default server port)
+			host_port = PORT_SERVER;
 		if (make_host_addr (host_name, host_port, &host_addr) == -1) {
 			fprintf (stderr, "could not resolve `%s', skipping", host_name);
 			continue;
@@ -375,7 +376,7 @@ int
 main (int argc, char **argv)
 {
 	struct sockaddr_in addr;
-	short port = htons (27000);
+	short port = htons (PORT_MASTER);
 #ifndef WIN32 //FIXME
 	int c;
 #endif
