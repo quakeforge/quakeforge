@@ -330,6 +330,10 @@ WriteData (int crc)
 	h = SafeOpenWrite (destfile);
 	SafeWrite (h, &progs, sizeof (progs));
 
+	progs.ofs_strings = ftell (h);
+	progs.numstrings = strofs;
+	SafeWrite (h, strings, strofs);
+
 	progs.ofs_statements = ftell (h);
 	progs.numstatements = numstatements;
 	for (i = 0; i < numstatements; i++) {
@@ -339,6 +343,18 @@ WriteData (int crc)
 		statements[i].c = LittleShort (statements[i].c);
 	}
 	SafeWrite (h, statements, numstatements * sizeof (dstatement_t));
+
+	progs.ofs_functions = ftell (h);
+	progs.numfunctions = numfunctions;
+	for (i = 0; i < numfunctions; i++) {
+		functions[i].first_statement = LittleLong (functions[i].first_statement);
+		functions[i].parm_start = LittleLong (functions[i].parm_start);
+		functions[i].s_name = LittleLong (functions[i].s_name);
+		functions[i].s_file = LittleLong (functions[i].s_file);
+		functions[i].numparms = LittleLong (functions[i].numparms);
+		functions[i].locals = LittleLong (functions[i].locals);
+	}
+	SafeWrite (h, functions, numfunctions * sizeof (dfunction_t));
 
 	progs.ofs_globaldefs = ftell (h);
 	progs.numglobaldefs = numglobaldefs;
@@ -357,22 +373,6 @@ WriteData (int crc)
 		fields[i].s_name = LittleLong (fields[i].s_name);
 	}
 	SafeWrite (h, fields, numfielddefs * sizeof (ddef_t));
-
-	progs.ofs_functions = ftell (h);
-	progs.numfunctions = numfunctions;
-	for (i = 0; i < numfunctions; i++) {
-		functions[i].first_statement = LittleLong (functions[i].first_statement);
-		functions[i].parm_start = LittleLong (functions[i].parm_start);
-		functions[i].s_name = LittleLong (functions[i].s_name);
-		functions[i].s_file = LittleLong (functions[i].s_file);
-		functions[i].numparms = LittleLong (functions[i].numparms);
-		functions[i].locals = LittleLong (functions[i].locals);
-	}
-	SafeWrite (h, functions, numfunctions * sizeof (dfunction_t));
-
-	progs.ofs_strings = ftell (h);
-	progs.numstrings = strofs;
-	SafeWrite (h, strings, strofs);
 
 	progs.ofs_globals = ftell (h);
 	progs.numglobals = numpr_globals;
