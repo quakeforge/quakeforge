@@ -1,45 +1,40 @@
-NOTE: this method was determined in windows98, if it doesn't work for your
-system, let us know.
+This file gives instruction for compiling QF with cygwin to run in MS Windows(R).
 
-Also lets us know if it does.
+DISCLAIMER: Use at your own risk, NO WARRANTY of any kind. NO GUARANTEE of correctness or usability.
 
-email: quake-user@lists.sourceforge.net
-IRC: irc.openprojects.net #quakeforge
+If you have problems with these instructions please let me know.
+
+email: wildcode@users.sourceforge.net
+IRC: irc.xiph.org #quakeforge
 ==========================================================================
 
-WARNING: QuakeForge may take several hours from bootstrap to the completion
+WARNING: This is not intended for inexperienced users, binaries are available on request.
+
+         QuakeForge may take several hours from bootstrap to the completion
          of make install on some systems
 
-To build win32(mingw) quakeforge bins you will need to download and build
-libtools and SDL sources, in that order.
+To build win32(mingw) QuakeForge bins you will need to download and install cygwin, and the Microsoft DirectX SDK. Cygwin can be found at http://www.cygwin.org
 
-You will also need 3 headers from the Microsoft Directx SDK.
-ddraw.h dinput.h dsound.h
-Put them in your /usr/include/w32api dir
- 
-Obtain libtool source from www.gnu.org (good place to get to know), and when
-you configure libtool please ensure you use --prefix=/usr otherwise you will
-have problems.
+Once cygwin is installed along with the appropriate developement modules, copy dinput.h from the DirectX SDK and place it in /usr/include/w32api/
 
-Obtain SDL source from www.libsdl.org. You do not need the SDL mingw file, it
-is just a bunch of docs and test source. 
+If you want to use DirectSound also copy dsound.h to the same spot.
 
-Once both are built and installed, then you can start.
-
-in quakeforge run
+in the quakeforge source dir, within cygwin, type
 ./bootstrap
-./configure --program-prefix= --disable-oss --host=i386-mingw32 --build=i386-cygwin --target=i386-ming32 --disable-Werror
+./configure --host=i386-mingw32 --build=i386-cygwin --target=i386-mingw32 --program-prefix= --with-static-plugins --disable-shared --disable-oss --disable-vorbis --disable-Werror --enable-optimize --enable-asmopt --disable-debug --enable-zlib
 make
 make install
 
-goto the /usr/local/bin directory and copy the qw-* and nq-* files to your dos
+--disable-Werror is needed as some versions of the DX SDK are buggy.
+
+Go to the /usr/local/bin directory and copy the qw-* and nq-* files to your dos
 quake dir
 
-NOTE: due to bugs in the Directx8 SDK header files you will need 
---disable-Werror on the configure command line. This may also be the case with
-earlier Directx SDK's but it hasn't been tested. 
+Let us know how it works for you.
 
-Let us know how you go.
+NOTE: At the time of writing qw-server.exe was not working correctly. Please refrain from using it unless you are willing to fix it.
 
+Special Note: QuakeForge only supplies our own version of the programs for Quake. To get the game data, you still need to have purchased Quake or get the shareware version from Id Software.
 
-Chris Ison (WildCode) for Quakeforge
+Chris Ison (WildCode) for QuakeForge
+March 11, 2003
