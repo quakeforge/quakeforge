@@ -67,13 +67,21 @@ AC_TRY_COMPILE(
 AC_ARG_WITH(qf,
 [  --with-qf=DIR           location of QF libs and headers (prefix)],
 	if test "x$withval" != xyes ; then
-		LIBS="$LIBS -L${withval}/lib"
-		INCLUDES="$INCLUDES -I${withval}/include"
+		LDFLAGS="$LDFLAGS -L${withval}/lib"
+		CFLAGS="$CFLAGS -I${withval}/include"
 	fi
 	,
 	HAVE_QF=auto
 )
-AC_CHECK_HEADER(QF/qtypes.h, :, HAVE_QF=no)
+AC_MSG_CHECKING(for QF/qtypes.h)
+AC_TRY_COMPILE(
+	[#include "QF/qtypes.h"],
+	[qboolean foo = false;
+	 foo = true;],
+	AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+	HAVE_QF=no
+)
 if test "x$HAVE_QF" != xno; then
 	AC_CHECK_LIB(QFutil, Hash_NewTable,
 	:, HAVE_QF=no,
