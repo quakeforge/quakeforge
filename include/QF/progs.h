@@ -146,7 +146,7 @@ int PR_GetFieldOffset (progs_t *pr, const char *name);
 void PR_Error (progs_t *pr, const char *error, ...) __attribute__((format(printf,2,3)));
 void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(printf,2,3)));
 
-void ED_PrintEdicts (progs_t *pr);
+void ED_PrintEdicts (progs_t *pr, const char *fieldval);
 void ED_PrintNum (progs_t *pr, int ent);
 void ED_Count (progs_t *pr);
 void PR_Profile (progs_t *pr);

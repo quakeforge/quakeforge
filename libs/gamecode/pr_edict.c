@@ -599,14 +599,26 @@ ED_PrintNum (progs_t * pr, int ent)
 	For debugging, prints all the entities in the current server
 */
 void
-ED_PrintEdicts (progs_t * pr)
+ED_PrintEdicts (progs_t *pr, const char *fieldval)
 {
-	int         i;
+	int     i;
+	int		count;
+	ddef_t *def;
 
-	Con_Printf ("%i entities\n", *(pr)->num_edicts);
-	for (i = 0; i < *(pr)->num_edicts; i++) {
-		Con_Printf ("\nEDICT %i:\n", i);
-		ED_PrintNum (pr, i);
+	def = ED_FindField(pr, "classname");
+
+	if (fieldval && fieldval[0] && def) {
+		count = 0;
+		for (i = 0; i < *(pr)->num_edicts; i++)
+			if (strequal(fieldval, E_STRING (pr, EDICT_NUM(pr, i), def->ofs))) {
+				ED_PrintNum (pr, i);
+				count++;
+			}
+		Con_Printf ("%i entities\n", count);
+	} else {
+		for (i = 0; i < *(pr)->num_edicts; i++)
+			ED_PrintNum (pr, i);
+		Con_Printf ("%i entities\n", *(pr)->num_edicts);
 	}
 }
 

@@ -90,7 +90,7 @@ prune_edict (progs_t *pr, edict_t *ent)
 void
 ED_PrintEdicts_f (void)
 {
-	ED_PrintEdicts (&sv_pr_state);
+	ED_PrintEdicts (&sv_pr_state, Cmd_Argv (1));
 }
 
 /*

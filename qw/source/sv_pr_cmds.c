@@ -972,7 +972,7 @@ PF_precache_model (progs_t *pr)
 void
 PF_coredump (progs_t *pr)
 {
-	ED_PrintEdicts (pr);
+	ED_PrintEdicts (pr, "");
 }
 
 void
