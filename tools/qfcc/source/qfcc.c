@@ -202,6 +202,7 @@ CopyString (const char *str)
 
 	if (!strings_tab) {
 		strings_tab = Hash_NewTable (16381, stings_get_key, 0, 0);
+		Hash_Add (strings_tab, strings);
 	}
 	old = strofs;
 	strcpy (strings + strofs, str);
