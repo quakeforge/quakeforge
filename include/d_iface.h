@@ -69,9 +69,9 @@ typedef struct particle_s
 // driver-usable fields
 	vec3_t		org;
 	int			color;
+	float		alpha;
 	int			tex;
 	float		scale;
-	float		alpha;
 // drivers never touch the following fields
 	vec3_t		vel;
 	ptype_t		type;

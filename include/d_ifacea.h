@@ -54,8 +54,8 @@
 // driver-usable fields
 #define pt_org				0
 #define pt_color			12
-#define pt_tex				16
-#define pt_alpha			20
+#define pt_alpha			16
+#define pt_tex				20
 #define pt_scale			24
 // drivers never touch the following fields
 #define pt_vel				28
