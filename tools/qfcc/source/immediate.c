@@ -59,7 +59,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 typedef struct {
 	def_t      *def;
 	union {
-		const char *string_val;
+		string_t    string_val;
 		float       float_val;
 		float       vector_val[3];
 		int         entity_val;
@@ -88,7 +88,8 @@ imm_get_hash (void *_imm, void *_tab)
 	hashtab_t  **tab = (hashtab_t **) _tab;
 
 	if (tab == &string_imm_defs) {
-		return imm->i.string_val ? Hash_String (imm->i.string_val) : 0;
+		const char *str = pr.strings->strings + imm->i.string_val;
+		return str ? Hash_String (str) : 0;
 	} else if (tab == &float_imm_defs) {
 		return imm->i.integer_val;
 	} else if (tab == &vector_imm_defs) {
@@ -119,9 +120,9 @@ imm_compare (void *_imm1, void *_imm2, void *_tab)
 	hashtab_t  **tab = (hashtab_t **) _tab;
 
 	if (tab == &string_imm_defs) {
-		return (imm1->i.string_val == imm2->i.string_val
-				|| (imm1->i.string_val && imm2->i.string_val
-					&& !strcmp (imm1->i.string_val, imm2->i.string_val)));
+		const char *str1 = pr.strings->strings + imm1->i.string_val;
+		const char *str2 = pr.strings->strings + imm2->i.string_val;
+		return (str1 == str2 || (str1 && str2 && !strcmp (str1, str2)));
 	} else if (tab == &float_imm_defs) {
 		return imm1->i.float_val == imm2->i.float_val;
 	} else if (tab == &vector_imm_defs) {
@@ -166,7 +167,6 @@ ReuseConstant (expr_t *expr, def_t *def)
 		clear_immediates ();
 	}
 	cn = 0;
-	memcpy (&search.i, &e.e, sizeof (search.i));
 	switch (e.type) {
 		case ex_entity:
 			tab = entity_imm_defs;
@@ -198,11 +198,13 @@ ReuseConstant (expr_t *expr, def_t *def)
 				e.e.float_val = e.e.uinteger_val;
 			else
 				e.e.float_val = e.e.integer_val;
+			e.type = ex_float;
 		case ex_float:
 			tab = float_imm_defs;
 			type = &type_float;
 			break;
 		case ex_string:
+			e.e.integer_val = ReuseString (e.e.string_val);
 			tab = string_imm_defs;
 			type = &type_string;
 			break;
@@ -217,8 +219,11 @@ ReuseConstant (expr_t *expr, def_t *def)
 		default:
 			abort ();
 	}
+	memcpy (&search.i, &e.e, sizeof (search.i));
 	imm = (immediate_t *) Hash_FindElement (tab, &search);
 	if (imm) {
+		if (imm->i.integer_val != e.e.integer_val)
+			notice (&e, "%08x %08x", imm->i.integer_val, e.e.integer_val);
 		cn = imm->def;
 		if (def) {
 			free_location (def);
@@ -257,7 +262,6 @@ ReuseConstant (expr_t *expr, def_t *def)
 	// copy the immediate to the global area
 	switch (e.type) {
 		case ex_string:
-			e.e.integer_val = ReuseString (e.e.string_val);
 			reloc = new_reloc (cn->ofs, rel_def_string);
 			break;
 		case ex_func:
@@ -280,7 +284,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 
 	imm = malloc (sizeof (immediate_t));
 	imm->def = cn;
-	memcpy (&imm->i, &expr->e, sizeof (imm->i));
+	memcpy (&imm->i, &e.e, sizeof (imm->i));
 
 	Hash_AddElement (tab, imm);
 
