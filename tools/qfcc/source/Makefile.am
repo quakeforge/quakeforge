@@ -33,7 +33,7 @@ QFCC_DEPS=@QFCC_DEPS@
 QFCC_INCS=@QFCC_INCS@
 
 INCLUDES=	-I$(top_srcdir)/include $(QFCC_INCS)
-YFLAGS = -d
+YFLAGS = -v -d
 
 if BUILD_QFCC
 qfcc=qfcc
