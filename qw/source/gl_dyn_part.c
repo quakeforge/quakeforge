@@ -127,13 +127,8 @@ particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 void
 R_InitParticles (void)
 {
-	if (cl_max_particles->int_val < 1)
-	{
-		/* Protect against stupidity */
-		r_numparticles = 2048;
-	} else {
-		r_numparticles = cl_max_particles->int_val;
-	}
+	// Chooses cvar if bigger than zero, otherwise ignore and set variable to zero
+	r_numparticles = max(cl_max_particles->int_val, 0);
 
 	particles = (particle_t *)
 		Hunk_AllocName (r_numparticles * sizeof (particle_t), "particles");
@@ -141,19 +136,20 @@ R_InitParticles (void)
 	freeparticles = (void *)
 		Hunk_AllocName (r_numparticles * sizeof (particle_t), "particles");
 
-
 	GDT_Init ();
 }
 
 /*
 	R_MaxParticlesCheck
 */
+/*
+This entire section is disabled because I don't understand Hunk_Allocname, or how to fix it yet.
 void
 R_MaxParticlesCheck (void)
 {
-	if (cl_max_particles->int_val == r_numparticles || cl_max_particles->int_val < 1)
+	if (cl_max_particles->int_val == r_numparticles || cl_max_particles->int_val < 0)
 	{
-	return;
+		return;
 	} else {
 		R_ClearParticles();
 		r_numparticles = cl_max_particles->int_val;
@@ -166,7 +162,7 @@ R_MaxParticlesCheck (void)
 			Hunk_AllocName (r_numparticles * sizeof (particle_t), "particles");
 		}
 }
-
+*/
 /*
 	R_ClearParticles
 */
@@ -556,9 +552,10 @@ R_DrawParticles (void)
 	float       scale;
 	particle_t *part;
 	int         activeparticles, maxparticle, j, k;
-
+/*
+Disabled until I fix this
 	R_MaxParticlesCheck ();
-
+*/
 	// LordHavoc: particles should not affect zbuffer
 	glDepthMask (GL_FALSE);
 

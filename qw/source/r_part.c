@@ -74,6 +74,8 @@ R_InitParticles (void)
 /*
 	R_MaxParticlesCheck
 */
+/*
+Disabled until it is fixed
 void
 R_MaxParticlesCheck (void)
 {
@@ -88,6 +90,7 @@ R_MaxParticlesCheck (void)
 			Hunk_AllocName (r_numparticles * sizeof (particle_t), "particles");
 		}
 }
+*/
 
 /*
 	R_ClearParticles
@@ -492,8 +495,10 @@ R_DrawParticles (void)
 	float       dvel;
 	float       frametime;
 	
+/*
+Disabled until it is fixed.
 	R_MaxParticlesCheck ();
-	
+*/	
 	D_StartParticles ();
 
 	VectorScale (vright, xscaleshrink, r_pright);
