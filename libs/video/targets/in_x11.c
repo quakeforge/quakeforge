@@ -553,26 +553,28 @@ event_motion (XEvent *event)
 	}
 }
 
-int
-IN_LL_Grab_Input (void)
+void
+IN_LL_Grab_Input (int grab)
 {
-	if (!x_disp || !x_win)
-		return 0;
-	X11_Grabber (true);
-	if (in_dga->int_val)
-		dga_on ();
-	return 1;
-}
+	static int input_grabbed = 0;
 
-int
-IN_LL_Ungrab_Input (void)
-{
 	if (!x_disp || !x_win)
-		return 0;
-	if (in_dga->int_val)
-		dga_off ();
-	X11_Grabber (false);
-	return 0;
+		return;
+
+	if (vid_fullscreen)
+		grab = grab || vid_fullscreen->int_val;
+
+	if ((input_grabbed && grab) || (!input_grabbed && !grab))
+		return;
+
+	input_grabbed = grab;
+	X11_Grabber (grab);
+	if (in_dga->int_val) {
+		if (grab)
+			dga_on ();
+		else
+			dga_off ();
+	}
 }
 
 void

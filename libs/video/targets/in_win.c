@@ -407,16 +407,9 @@ IN_MouseEvent (int mstate)
 	}
 }
 
-int
-IN_LL_Grab_Input (void)
+void
+IN_LL_Grab_Input (int grab)
 {
-	return 0;
-}
-
-int
-IN_LL_Ungrab_Input (void)
-{
-	return 0;
 }
 
 void

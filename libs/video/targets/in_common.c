@@ -78,21 +78,11 @@ qboolean    in_mouse_avail;
 float       in_mouse_x, in_mouse_y;
 static float in_old_mouse_x, in_old_mouse_y;
 
-static int  input_grabbed = 0;
-
 void
 IN_UpdateGrab (cvar_t *var)		// called from context_*.c
 {
 	if (var) {
-		if (var->int_val) {
-			if (!input_grabbed) {
-				input_grabbed = IN_LL_Grab_Input ();
-			}
-		} else {
-			if (input_grabbed) {
-				input_grabbed = IN_LL_Ungrab_Input ();
-			}
-		}
+		IN_LL_Grab_Input (var->int_val);
 	}
 }
 
