@@ -1184,7 +1184,7 @@ Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
 			} else
 				dstring_appendstr (varname, copy->str);
 			if (n >= 0) {
-				escape (varname, "\\");
+				escape (varname, "<#\\"); // Preserve backslashes, tags, and math as unprocessed
 				dstring_insertstr (dstr, varname->str, start);
 				n = strlen(varname->str);
 			}
@@ -1242,7 +1242,7 @@ Cmd_ProcessEmbeddedSingle (dstring_t * dstr, int start)
 		return -1;
 	}
 	if (cmd_activebuffer->returned == cmd_returned) {
-		escape (cmd_activebuffer->retval, "\\");
+		escape (cmd_activebuffer->retval, "<#$\\");
 		dstring_snip(dstr, start, n+1);
 		dstring_insertstr (dstr, cmd_activebuffer->retval->str, start);
 		n = strlen(cmd_activebuffer->retval->str);
@@ -2384,7 +2384,7 @@ Cmd_Eval_f (void)
 		Cmd_Error("eval: invalid number of arguments.\n");
 		return;
 	}
-	Cbuf_AddText (Cmd_Args (1));
+	Cbuf_InsertText (Cmd_Args (1));
 }
 
 void
