@@ -202,10 +202,10 @@ CB_audio_options =
 	if(!(key == QFK_RIGHT || key == QFK_LEFT )) {
 		return 0;
 	}
-	volume = cvar ("volume");
+	volume = cvar (text);
 	volume = min_max_cnt (MIN_VOLUME, MAX_VOLUME, VOLUME_STEP, volume, 
 						  (key == QFK_RIGHT) && (key != QFK_LEFT));
-	cvar_set ("volume", ftos (volume));
+	cvar_set (text, ftos (volume));
 
 	return 0;
 };
@@ -232,6 +232,11 @@ DRAW_audio_options =
 		to_percentage (MIN_VOLUME, MAX_VOLUME, cvar("volume")) );
 	Draw_String (x + 126 + (15 + 4)*8 , bar_pad + 10, ftos(cvar("volume")));
 
+	Draw_String (x + 70, bar_pad + 18, "Music :");
+	draw_perc_bar  (x + 126,  bar_pad + 18, 15, 
+		to_percentage (MIN_VOLUME, MAX_VOLUME, cvar("bgmvolume")) );
+	Draw_String (x + 126 + (15 + 4)*8 , bar_pad + 18, ftos(cvar("bgmvolume")));
+
 	opt_cursor  (x + 62, y + (Menu_GetIndex() * 10) + 60);
 	return 1;
 };
@@ -252,6 +257,7 @@ MENU_audio_options =
 	
 	bar_pad = 0;
 	Menu_Item (54, bar_pad + 10, "volume", CB_audio_options, 1);
+	Menu_Item (54, bar_pad + 10, "bgmvolume", CB_audio_options, 1);
 	Menu_End ();
 };
 

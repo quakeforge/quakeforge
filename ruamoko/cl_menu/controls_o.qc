@@ -164,7 +164,14 @@ get_hash_keys =
 		if (desc2 != "") {
 			desc1 += ", " + desc2;
 		}
-		binding.keys = desc1;
+		if (binding.keys) {
+			str_free (binding.keys);
+			binding.keys = NIL;
+		}
+		if (desc1) {
+			binding.keys = str_new ();
+			str_copy (binding.keys, desc1);
+		}
 	}
 };
 
