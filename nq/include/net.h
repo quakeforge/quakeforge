@@ -35,8 +35,8 @@
 
 struct qsockaddr
 {
-	short sa_family;
-	unsigned char sa_data[14];
+	short qsa_family;
+	unsigned char qsa_data[14];
 };
 
 
