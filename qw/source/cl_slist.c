@@ -112,8 +112,8 @@ S_Refresh (server_entry_t *slrefresh)
 
 	slrefresh->pingsent = Sys_DoubleTime ();
 	slrefresh->pongback = 0;
-	NET_SendPacket (6, data_ping, addy);
-	NET_SendPacket (11, data_status, addy);
+	Netchan_SendPacket (6, data_ping, addy);
+	Netchan_SendPacket (11, data_status, addy);
 	slrefresh->waitstatus = 1;
 }
 
@@ -503,21 +503,21 @@ SL_MasterUpdate(void)
 	SL_Del_All(slist);
 	slist = NULL;
 	NET_StringToAdr ("194.251.249.32:27000", &addy);
-	NET_SendPacket (3, data, addy);
+	Netchan_SendPacket (3, data, addy);
 	NET_StringToAdr ("qwmaster.barrysworld.com:27000", &addy);
-	NET_SendPacket (3, data, addy);
+	Netchan_SendPacket (3, data, addy);
 	NET_StringToAdr ("192.246.40.37:27000", &addy);
-	NET_SendPacket (3, data, addy);
+	Netchan_SendPacket (3, data, addy);
 	NET_StringToAdr ("192.246.40.37:27002", &addy);
-	NET_SendPacket (3, data, addy);
+	Netchan_SendPacket (3, data, addy);
 	NET_StringToAdr ("192.246.40.37:27003", &addy);
-	NET_SendPacket (3, data, addy);
+	Netchan_SendPacket (3, data, addy);
 	NET_StringToAdr ("192.246.40.37:27004", &addy);
-	NET_SendPacket (3, data, addy);
+	Netchan_SendPacket (3, data, addy);
 	NET_StringToAdr ("192.246.40.37:27006", &addy);
-	NET_SendPacket (3, data, addy);
+	Netchan_SendPacket (3, data, addy);
 	NET_StringToAdr ("203.9.148.7:27000", &addy);
-	NET_SendPacket (3, data, addy);
+	Netchan_SendPacket (3, data, addy);
 }
 
 static int

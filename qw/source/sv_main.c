@@ -241,7 +241,7 @@ Master_Shutdown (void)
 		if (master_adr[i].port) {
 			SV_Printf ("Sending heartbeat to %s\n",
 						NET_AdrToString (master_adr[i]));
-			NET_SendPacket (strlen (string), string, master_adr[i]);
+			Netchan_SendPacket (strlen (string), string, master_adr[i]);
 		}
 }
 
@@ -635,7 +635,7 @@ SVC_Log (void)
 	if (seq == svs.logsequence - 1 || !sv_fraglogfile) {
 		// they already have this data, or we aren't logging frags
 		data[0] = A2A_NACK;
-		NET_SendPacket (1, data, net_from);
+		Netchan_SendPacket (1, data, net_from);
 		return;
 	}
 
@@ -649,7 +649,7 @@ SVC_Log (void)
 			  svs.logsequence - 1,
 			  (char *) svs.log_buf[((svs.logsequence - 1) & 1)]);
 
-	NET_SendPacket (strlen (data) + 1, data, net_from);
+	Netchan_SendPacket (strlen (data) + 1, data, net_from);
 }
 
 /*
@@ -669,7 +669,7 @@ SVC_Ping (void)
 
 	data = A2A_ACK;
 
-	NET_SendPacket (1, &data, net_from);
+	Netchan_SendPacket (1, &data, net_from);
 }
 
 /*
@@ -1664,13 +1664,13 @@ SV_SendBan (double till)
 		snprintf (data + 5, sizeof (data) - 5, "\nbanned permanently.\n");
 	}
 
-	NET_SendPacket (strlen (data), data, net_from);
+	Netchan_SendPacket (strlen (data), data, net_from);
 
 /*	data[4] = A2C_CLIENT_COMMAND;
 	snprintf (data + 5, sizeof (data) - 5, "disconnect\n");
 	data2 = data + strlen (data) + 1;
 	snprintf (data2, sizeof (data) - (data2 - data), "12345");
-	NET_SendPacket (strlen (data) + strlen (data2) + 2, data, net_from);*/
+	Netchan_SendPacket (strlen (data) + strlen (data2) + 2, data, net_from);*/
 	// FIXME: this should send a disconnect to the client!
 }
 
@@ -1760,7 +1760,7 @@ SV_ReadPackets (void)
 	double      until;
 
 	good = false;
-	while (NET_GetPacket ()) {
+	while (Netchan_GetPacket ()) {
 		if (SV_FilterIP (net_from.ip, &until)) {
 			SV_SendBan (until);			// tell them we aren't listening...
 			continue;
@@ -2260,7 +2260,7 @@ Master_Heartbeat (void)
 		if (master_adr[i].port) {
 			SV_Printf ("Sending heartbeat to %s\n",
 						NET_AdrToString (master_adr[i]));
-			NET_SendPacket (strlen (string), string, master_adr[i]);
+			Netchan_SendPacket (strlen (string), string, master_adr[i]);
 		}
 }
 

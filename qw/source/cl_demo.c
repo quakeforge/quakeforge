@@ -402,7 +402,7 @@ CL_GetMessage (void)
 	if (cls.demoplayback)
 		return CL_GetDemoMessage ();
 
-	if (!NET_GetPacket ())
+	if (!Netchan_GetPacket ())
 		return false;
 
 	CL_WriteDemoMessage (net_message->message);

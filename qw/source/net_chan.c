@@ -155,9 +155,9 @@ Netchan_OutOfBand (netadr_t adr, int length, byte * data)
 	// zoid, no input in demo playback mode
 	if (!is_server) {
 		if (!cls.demoplayback)
-			NET_SendPacket (send.cursize, send.data, adr);
+			Netchan_SendPacket (send.cursize, send.data, adr);
 	} else
-		NET_SendPacket (send.cursize, send.data, adr);
+		Netchan_SendPacket (send.cursize, send.data, adr);
 }
 
 /*
@@ -301,9 +301,9 @@ Netchan_Transmit (netchan_t *chan, int length, byte * data)
 	// zoid, no input in demo playback mode
 	if (!is_server) {
 		if (!cls.demoplayback)
-			NET_SendPacket (send.cursize, send.data, chan->remote_address);
+			Netchan_SendPacket (send.cursize, send.data, chan->remote_address);
 	} else
-		NET_SendPacket (send.cursize, send.data, chan->remote_address);
+		Netchan_SendPacket (send.cursize, send.data, chan->remote_address);
 
 	if (chan->cleartime < realtime)
 		chan->cleartime = realtime + send.cursize * chan->rate;

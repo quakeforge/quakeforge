@@ -80,7 +80,7 @@ SV_FlushRedirect (void)
 		send[4] = A2C_PRINT;
 		memcpy (send + 5, outputbuf, strlen (outputbuf) + 1);
 
-		NET_SendPacket (strlen (send) + 1, send, net_from);
+		Netchan_SendPacket (strlen (send) + 1, send, net_from);
 	} else if (sv_redirected == RD_CLIENT) {
 		ClientReliableWrite_Begin (host_client, svc_print,
 								   strlen (outputbuf) + 3);

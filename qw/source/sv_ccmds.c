@@ -182,7 +182,7 @@ SV_SetMaster_f (void)
 
 		data[0] = A2A_PING;
 		data[1] = 0;
-		NET_SendPacket (2, data, master_adr[i - 1]);
+		Netchan_SendPacket (2, data, master_adr[i - 1]);
 	}
 
 	svs.last_heartbeat = -99999;

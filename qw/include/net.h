@@ -29,6 +29,8 @@
 #ifndef _NET_H
 #define _NET_H
 
+#include "QF/cvar.h"
+#include "QF/msg.h"
 #include "QF/qdefs.h"
 #include "QF/sizebuf.h"
 
@@ -68,6 +70,19 @@ const char	*NET_AdrToString (netadr_t a);
 const char	*NET_BaseAdrToString (netadr_t a);
 qboolean	NET_StringToAdr (const char *s, netadr_t *a);
 qboolean NET_IsClientLegal(netadr_t *adr);
+
+
+int Net_Log_Init (const char **sound_precache);
+void Log_Incoming_Packet (const char *p, int len);
+void Log_Outgoing_Packet (const char *p, int len);
+void Net_LogStop (void);
+void Analyze_Client_Packet (const byte * data, int len);
+void Analyze_Server_Packet (const byte * data, int len);
+
+extern struct cvar_s *net_packetlog;
+
+extern qboolean is_server;
+qboolean ServerPaused (void);
 
 //============================================================================
 
@@ -132,16 +147,24 @@ void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport);
 qboolean Netchan_CanPacket (netchan_t *chan);
 qboolean Netchan_CanReliable (netchan_t *chan);
 
-int Net_Log_Init (const char **sound_precache);
-void Log_Incoming_Packet (const char *p, int len);
-void Log_Outgoing_Packet (const char *p, int len);
-void Net_LogStop (void);
-void Analyze_Client_Packet (const byte * data, int len);
-void Analyze_Server_Packet (const byte * data, int len);
+static inline int
+Netchan_GetPacket (void)
+{
+	int         ret;
 
-extern struct cvar_s *net_packetlog;
+	ret = NET_GetPacket ();
+	if (ret && net_packetlog->int_val)
+		Log_Incoming_Packet(net_message->message->data,
+							net_message->message->cursize);
+	return ret;
+}
 
-extern qboolean is_server;
-qboolean ServerPaused (void);
+static inline void
+Netchan_SendPacket (int length, void *data, netadr_t to)
+{
+	if (net_packetlog->int_val)
+		Log_Outgoing_Packet(data, length);
+	NET_SendPacket (length, data, to);
+}
 
 #endif // _NET_H

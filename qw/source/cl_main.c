@@ -292,7 +292,7 @@ CL_SendConnectPacket (void)
 	snprintf (data, sizeof (data), "%c%c%c%cconnect %i %i %i \"%s\"\n",
 			  255, 255, 255, 255, PROTOCOL_VERSION, cls.qport, cls.challenge,
 			  Info_MakeString (cls.userinfo, 0));
-	NET_SendPacket (strlen (data), data, cls.server_addr);
+	Netchan_SendPacket (strlen (data), data, cls.server_addr);
 }
 
 /*
@@ -330,7 +330,7 @@ CL_CheckForResend (void)
 	Con_Printf ("Connecting to %s...\n", cls.servername);
 	snprintf (data, sizeof (data), "%c%c%c%cgetchallenge\n", 255, 255, 255,
 			  255);
-	NET_SendPacket (strlen (data), data, cls.server_addr);
+	Netchan_SendPacket (strlen (data), data, cls.server_addr);
 }
 
 void
@@ -386,7 +386,7 @@ CL_Rcon_f (void)
 			to.port = BigShort (27500);
 	}
 
-	NET_SendPacket (strlen (message) + 1, message, to);
+	Netchan_SendPacket (strlen (message) + 1, message, to);
 }
 
 void
@@ -772,7 +772,7 @@ CL_Packet_f (void)
 	}
 	*out = 0;
 
-	NET_SendPacket (out - send, send, adr);
+	Netchan_SendPacket (out - send, send, adr);
 }
 
 /*
@@ -970,7 +970,7 @@ CL_ConnectionlessPacket (void)
 		data[4] = A2A_ACK;
 		data[5] = 0;
 
-		NET_SendPacket (6, &data, net_from);
+		Netchan_SendPacket (6, &data, net_from);
 		return;
 	}
 
