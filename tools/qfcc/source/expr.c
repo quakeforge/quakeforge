@@ -1949,6 +1949,9 @@ return_expr (function_t *f, expr_t *e)
 		t = &type_float;
 	}
 	if (t == &type_void) {
+		if (!options.traditional)
+			return error (e, "void value not ignored as it ought to be");
+		warning (e, "void value not ignored as it ought to be");
 		t = f->def->type->aux_type;
 		e->type = expr_types[t->type];
 	}

@@ -1437,8 +1437,8 @@ keywordnamelist
 	;
 
 keywordname
-	: selector ':'				{ $$ = new_keywordarg ($1, 0); }
-	| ':'						{ $$ = new_keywordarg ("", 0); }
+	: selector ':'				{ $$ = new_keywordarg ($1, new_nil_expr ()); }
+	| ':'						{ $$ = new_keywordarg ("", new_nil_expr ()); }
 	;
 
 obj_string
