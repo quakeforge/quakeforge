@@ -2176,17 +2176,17 @@ assign_expr (expr_t *e1, expr_t *e2)
 	}
 	type = t1;
 	if (is_indirect (e1) && is_indirect (e2)) {
-		if (options.code.progsversion == PROG_ID_VERSION) {
+		if (extract_type (e2) == ev_struct) {
+			e1 = address_expr (e1, 0, 0);
+			e2 = address_expr (e2, 0, 0);
+			e = new_binary_expr ('M', e1, e2);
+		} else {
 			expr_t     *temp = new_temp_def_expr (t1);
 
 			e = new_block_expr ();
 			append_expr (e, assign_expr (temp, e2));
 			append_expr (e, assign_expr (e1, temp));
 			e->e.block.result = temp;
-		} else {
-			e1 = address_expr (e1, 0, 0);
-			e2 = address_expr (e2, 0, 0);
-			e = new_binary_expr ('M', e1, e2);
 		}
 		return e;
 	} else if (is_indirect (e1)) {
