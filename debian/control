@@ -157,7 +157,7 @@ Description: QuakeForge 3D game engine - OpenGL renderer libraries
 Package: quakeforge-oss
 Architecture: any
 Depends: ${shlibs:Depends}
-Description: OSS sound plugin for QuakeForge
+Description: OSS digital audio output plugin for QuakeForge
  The OSS plugin for QuakeForge provides digital audio output (using OSS/Linux,
  OSS/Free, or kernel sound) for QuakeForge targets that contain clients.
  
@@ -168,6 +168,6 @@ Description: OSS sound plugin for QuakeForge
 Package: quakeforge-alsa
 Architecture: any
 Depends: ${shlibs:Depends}
-Description: ALSA 0.9 sound plugin for QuakeForge
+Description: ALSA 0.9 digital audio output plugin for QuakeForge
  The ALSA 0.9 plugin for QuakeForge provides digital audio output for QuakeForge
  targets that contain clients.
