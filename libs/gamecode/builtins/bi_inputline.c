@@ -127,6 +127,39 @@ bi_InputLine_Process (progs_t *pr)
 	Con_ProcessInputLine (line, ch);
 }
 
+/*
+	bi_InputLine_SetText
+
+	Sets the inputline to a specified text
+*/
+static void
+bi_InputLine_SetText (progs_t *pr)
+{
+	pr_type_t   *handle = pr->pr_globals + G_INT (pr, OFS_PARM0);
+	inputline_t *il = *(inputline_t **)handle;
+	const char  *str = G_STRING (pr, OFS_PARM1);
+
+	/* this was segfault trap:
+		 il->lines[il->edit_line][0] is promt character
+	*/
+	strncpy(il->lines[il->edit_line] + 1,str,il->line_size - 1);
+	il->lines[il->edit_line][il->line_size-1] = '\0';
+}
+
+/*
+	bi_InputLine_GetText
+
+	Gets the text from a inputline 
+*/
+static void
+bi_InputLine_GetText (progs_t *pr)
+{
+	pr_type_t   *handle = pr->pr_globals + G_INT (pr, OFS_PARM0);
+	inputline_t *il = *(inputline_t **)handle;
+
+	RETURN_STRING(pr, il->lines[il->edit_line]+1);
+}
+
 static void
 bi_InputLine_Draw (progs_t *pr)
 {
@@ -173,6 +206,8 @@ InputLine_Progs_Init (progs_t *pr)
 	PR_Resources_Register (pr, "InputLine", res, bi_il_clear);
 	PR_AddBuiltin (pr, "InputLine_Create", bi_InputLine_Create, -1);
 	PR_AddBuiltin (pr, "InputLine_SetWidth", bi_InputLine_SetWidth, -1);
+	PR_AddBuiltin (pr, "InputLine_SetText", bi_InputLine_SetText, -1);
+	PR_AddBuiltin (pr, "InputLine_GetText", bi_InputLine_GetText, -1);
 	PR_AddBuiltin (pr, "InputLine_Destroy", bi_InputLine_Destroy, -1);
 	PR_AddBuiltin (pr, "InputLine_Clear", bi_InputLine_Clear, -1);
 	PR_AddBuiltin (pr, "InputLine_Process", bi_InputLine_Process, -1);

@@ -24,21 +24,4 @@
         Boston, MA  02111-1307, USA
 */      
 
-
-/*
-    InputLine_SetText
-
-    Inserts characters of a string into
-    a inputline.
-*/
-
-void (inputline_t il, string str)
-InputLine_SetText = 
-{
-	local integer i, charint;
-	charint = String_GetChar(str,0);
-	for(i = 0; charint != 0; i++) {
-		InputLine_Process(il, String_GetChar(str,i));
-		charint = String_GetChar(str,i);
-	}
-};
+/* EMPTY YET - REMOVE FILE? */

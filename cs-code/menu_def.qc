@@ -14,3 +14,9 @@ void (string name) Menu_SelectMenu = #0;
 void (integer () func) Menu_SetQuit = #0;
 void () Menu_Quit = #0;
 integer () Menu_GetIndex = #0;
+
+float () random = #0;
+float () traceon = #0; 
+float () traceoff = #0;
+string () gametype = #0;
+string (...) sprintf = #0;

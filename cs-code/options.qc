@@ -437,6 +437,8 @@ MENU_feature_options =
  * Player settings, generally name, team, and color
  ***************************************************/
 
+string playername_cvar; // name of the cvar holding playername (gametype dependend)
+
 // input for playername
 string player_config_playername;
 inputline_t player_config_plname_il;
@@ -479,6 +481,9 @@ KEYEV_player_options =
 			break;
 		case QFK_RETURN:
 			if (player_config_iactive) {
+				if(player_config_iactive == player_config_plname_il) {
+					cvar_set(playername_cvar,InputLine_GetText(player_config_plname_il));
+				}
 				player_config_iactive = NIL;
 			} else {
 				if (player_config_cursor == 0) {
@@ -555,6 +560,23 @@ DRAW_player_options =
 	return 1;
 };
 
+/*
+	CB_ME_player_options
+
+	Entercallback for the playermenu.
+	For initalising the playername and teamname.
+*/
+integer () 
+CB_ME_player_options =
+{
+	if(gametype() == "quakeworld") {
+		playername_cvar = "name";	
+	} else {
+		playername_cvar = "_cl_name";
+	}
+	dprint("DOO\n");
+	InputLine_SetText (player_config_plname_il, Cvar_GetCvarString(playername_cvar)); 
+};
 
 /*
 	MENU_player_options
@@ -571,6 +593,7 @@ MENU_player_options =
 	Menu_Begin (54, 80, "Player");
 	Menu_FadeScreen (1);
 	Menu_KeyEvent (KEYEV_player_options);
+	Menu_EnterHook (CB_ME_player_options);
 	Menu_Draw (DRAW_player_options);
 	Menu_End ();
 };

@@ -1,5 +1,6 @@
 menu.dat
 
+@srcdir@/cvar_def.qc
 @srcdir@/cbuf_def.qc
 @srcdir@/draw_def.qc
 @srcdir@/file_def.qc
