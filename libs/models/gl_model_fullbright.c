@@ -43,10 +43,11 @@ static const char rcsid[] =
 
 #include "r_local.h"
 
+
 int
 Mod_CalcFullbright (byte *in, byte *out, int pixels)
 {
-	int fb = 0;
+	int		fb = 0;
 	
 	while (pixels--) {
 		if (*in >= 256 - 32) {
@@ -61,18 +62,20 @@ Mod_CalcFullbright (byte *in, byte *out, int pixels)
 }
 
 int
-Mod_Fullbright (byte * skin, int width, int height, char *name)
+Mod_Fullbright (byte *skin, int width, int height, char *name)
 {
-	int         pixels;
-	int         texnum = 0;
-	byte       *ptexels;
+	byte   *ptexels;
+	int		pixels;
+	int		texnum = 0;
 
-	// Check for fullbright pixels..
+	// Check for fullbright pixels
+
 	pixels = width * height;
 
-	// ptexels = Hunk_Alloc(s);
+//	ptexels = Hunk_Alloc(s);
 	ptexels = malloc (pixels);
 	SYS_CHECKMEM (ptexels);
+
 	if (Mod_CalcFullbright (skin, ptexels, pixels)) {
 		Sys_DPrintf ("FB Model ID: '%s'\n", name);
 		texnum = GL_LoadTexture (name, width, height, ptexels, true, true, 1);
