@@ -928,8 +928,6 @@ Host_Init (quakeparms_t *parms)
 	Con_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
 	Con_Printf ("%4.1f megabyte heap\n", parms->memsize / (1024 * 1024.0));
 
-	R_Textures_Init ();					// needed even for dedicated servers
-
 	if (cls.state != ca_dedicated) {
 		vid_basepal = (byte *) COM_LoadHunkFile ("gfx/palette.lmp");
 		if (!vid_basepal)

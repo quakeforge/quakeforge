@@ -1628,8 +1628,6 @@ Host_Init (void)
 //  Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
 	Con_Printf ("%4.1f megs RAM used.\n", host_parms.memsize / (1024 * 1024.0));
 
-	R_Textures_Init ();
-
 	vid_basepal = (byte *) COM_LoadHunkFile ("gfx/palette.lmp");
 	if (!vid_basepal)
 		Sys_Error ("Couldn't load gfx/palette.lmp");

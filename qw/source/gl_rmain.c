@@ -797,7 +797,7 @@ R_ShowNearestLoc (void)
 	if (r_drawentities->int_val)
 		return;
 
-	nearloc = locs_find (cl.simorg);
+	nearloc = locs_find (r_origin);
 
 	if (nearloc) {
 		dl = CL_AllocDlight (4096);

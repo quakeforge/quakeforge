@@ -143,39 +143,7 @@ void        R_NetGraph (void);
 void        R_ZGraph (void);
 
 
-void
-R_Textures_Init (void)
-{
-	int         x, y, m;
-	byte       *dest;
-
-	// create a simple checkerboard texture for the default
-	r_notexture_mip =
-		Hunk_AllocName (sizeof (texture_t) + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2,
-						"notexture");
-
-	r_notexture_mip->width = r_notexture_mip->height = 16;
-	r_notexture_mip->offsets[0] = sizeof (texture_t);
-
-	r_notexture_mip->offsets[1] = r_notexture_mip->offsets[0] + 16 * 16;
-	r_notexture_mip->offsets[2] = r_notexture_mip->offsets[1] + 8 * 8;
-	r_notexture_mip->offsets[3] = r_notexture_mip->offsets[2] + 4 * 4;
-
-	for (m = 0; m < 4; m++) {
-		dest = (byte *) r_notexture_mip + r_notexture_mip->offsets[m];
-		for (y = 0; y < (16 >> m); y++)
-			for (x = 0; x < (16 >> m); x++) {
-				if ((y < (8 >> m)) ^ (x < (8 >> m)))
-					*dest++ = 0;
-				else
-					*dest++ = 0xff;
-			}
-	}
-}
-
-
 void R_LoadSky_f (void);
-
 
 void
 R_Init (void)
@@ -498,7 +466,7 @@ R_ShowNearestLoc (void)
 	
 	if (r_drawentities->int_val)
 		return;
-	nearloc = locs_find (cl.simorg);
+	nearloc = locs_find (r_origin);
 	if (nearloc) {
 		dl = CL_AllocDlight (4096);
 		VectorCopy (nearloc->loc, dl->origin);
@@ -544,8 +512,7 @@ R_DrawEntitiesOnList (void)
 				VectorSubtract (r_origin, r_entorigin, modelorg);
 
 				// see if the bounding box lets us trivially reject, also
-				// sets
-				// trivial accept status
+				// sets trivial accept status
 				if (R_AliasCheckBBox ()) {
 					j = R_LightPoint (currententity->origin);
 
@@ -874,8 +841,7 @@ R_EdgeDrawing (void)
 
 	if (!r_dspeeds->int_val) {
 		VID_UnlockBuffer ();
-		S_ExtraUpdate ();				// don't let sound get messed up if
-										// going slow
+		S_ExtraUpdate ();		// don't let sound get messed up if going slow
 		VID_LockBuffer ();
 	}
 
@@ -1014,7 +980,7 @@ R_InitTurb (void)
 {
 	int         i;
 
-	for (i = 0; i < 1280; i++) {
+	for (i = 0; i < (SIN_BUFFER_SIZE); i++) {
 		sintable[i] = AMP + sin (i * 3.14159 * 2 / CYCLE) * AMP;
 		intsintable[i] = AMP2 + sin (i * 3.14159 * 2 / CYCLE) * AMP2;
 		// AMP2 not 20

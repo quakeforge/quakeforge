@@ -70,6 +70,7 @@ cvar_t     *r_timegraph;
 cvar_t     *r_wateralpha;
 cvar_t     *r_waterripple;
 cvar_t     *r_waterwarp;
+cvar_t     *r_zgraph;
 
 cvar_t     *scr_centertime;
 cvar_t     *scr_consize;
@@ -253,6 +254,9 @@ R_Init_Cvars (void)
 							  "Set to make liquids ripple, try setting to 5");
 	r_waterwarp = Cvar_Get ("r_waterwarp", "1", CVAR_NONE, NULL,
 							"Toggles whether surfaces are warped in liquid.");
+	r_zgraph = Cvar_Get ("r_zgraph", "0", CVAR_NONE, NULL,
+						  "Toggle the graph that reports the changes of "
+						  "z-axis position");
 	scr_centertime = Cvar_Get ("scr_centertime", "2", CVAR_NONE, NULL, "How "
 							   "long in seconds screen hints are displayed");
 	scr_consize = Cvar_Get ("scr_consize", "0.5", CVAR_ARCHIVE, NULL,

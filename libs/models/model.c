@@ -69,7 +69,31 @@ texture_t  *r_notexture_mip;
 void
 Mod_Init (void)
 {
+	int x, y, m;
+	byte *dest;
+
 	memset (mod_novis, 0xff, sizeof (mod_novis));
+	r_notexture_mip =
+		Hunk_AllocName (sizeof (texture_t) + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2,
+						"notexture");
+
+	r_notexture_mip->width = r_notexture_mip->height = 16;
+	r_notexture_mip->offsets[0] = sizeof (texture_t);
+
+	r_notexture_mip->offsets[1] = r_notexture_mip->offsets[0] + 16 * 16;
+	r_notexture_mip->offsets[2] = r_notexture_mip->offsets[1] + 8 * 8;
+	r_notexture_mip->offsets[3] = r_notexture_mip->offsets[2] + 4 * 4;
+
+	for (m = 0; m < 4; m++) {
+		dest = (byte *) r_notexture_mip + r_notexture_mip->offsets[m];
+		for (y = 0; y < (16 >> m); y++)
+			for (x = 0; x < (16 >> m); x++) {
+				if ((y < (8 >> m)) ^ (x < (8 >> m)))
+					*dest++ = 0;
+				else
+					*dest++ = 0xff;
+			}
+	}
 }
 
 void

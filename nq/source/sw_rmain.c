@@ -109,28 +109,21 @@ float       xOrigin, yOrigin;
 mplane_t    screenedge[4];
 
 // refresh flags
-int         r_framecount = 1;			// so frame counts initialized to 0
-										// don't match
+int         r_framecount = 1;	// so frame counts initialized to 0 don't match
 int         r_visframecount;
 int         d_spanpixcount;
 int         r_polycount;
 int         r_drawnpolycount;
 int         r_wholepolycount;
 
-#define		VIEWMODNAME_LENGTH	256
-char        viewmodname[VIEWMODNAME_LENGTH + 1];
-int         modcount;
-
 int        *pfrustum_indexes[4];
 int         r_frustum_indexes[4 * 6];
 
-int         reinit_surfcache = 1;		// if 1, surface cache is currently
-										// empty and must be reinitialized
-										// for current cache size
+int         reinit_surfcache = 1;	// if 1, surface cache is currently empty
+									// and must be reinitialized for current
+									// cache size
 
 mleaf_t    *r_viewleaf, *r_oldviewleaf;
-
-texture_t  *r_notexture_mip;
 
 float       r_aliastransition, r_resfudge;
 
@@ -145,36 +138,6 @@ extern cvar_t *scr_fov;
 
 void        R_NetGraph (void);
 void        R_ZGraph (void);
-
-void
-R_Textures_Init (void)
-{
-	int         x, y, m;
-	byte       *dest;
-
-	// create a simple checkerboard texture for the default
-	r_notexture_mip =
-		Hunk_AllocName (sizeof (texture_t) + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2,
-						"notexture");
-
-	r_notexture_mip->width = r_notexture_mip->height = 16;
-	r_notexture_mip->offsets[0] = sizeof (texture_t);
-
-	r_notexture_mip->offsets[1] = r_notexture_mip->offsets[0] + 16 * 16;
-	r_notexture_mip->offsets[2] = r_notexture_mip->offsets[1] + 8 * 8;
-	r_notexture_mip->offsets[3] = r_notexture_mip->offsets[2] + 4 * 4;
-
-	for (m = 0; m < 4; m++) {
-		dest = (byte *) r_notexture_mip + r_notexture_mip->offsets[m];
-		for (y = 0; y < (16 >> m); y++)
-			for (x = 0; x < (16 >> m); x++) {
-				if ((y < (8 >> m)) ^ (x < (8 >> m)))
-					*dest++ = 0;
-				else
-					*dest++ = 0xff;
-			}
-	}
-}
 
 
 void R_LoadSky_f (void);
@@ -215,7 +178,6 @@ R_Init (void)
 	Sys_MakeCodeWriteable ((long) R_EdgeCodeStart,
 						   (long) R_EdgeCodeEnd - (long) R_EdgeCodeStart);
 #endif // USE_INTEL_ASM
-
 	D_Init ();
 }
 
@@ -381,12 +343,12 @@ R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
 
 	verticalFieldOfView = r_refdef.horizontalFieldOfView / screenAspect;
 
-// values for perspective projection
-// if math were exact, the values would range from 0.5 to to range+0.5
-// hopefully they wll be in the 0.000001 to range+.999999 and truncate
-// the polygon rasterization will never render in the first row or column
-// but will definately render in the [range] row and column, so adjust the
-// buffer origin to get an exact edge to edge fill
+	// values for perspective projection
+	// if math were exact, the values would range from 0.5 to to range+0.5
+	// hopefully they wll be in the 0.000001 to range+.999999 and truncate
+	// the polygon rasterization will never render in the first row or column
+	// but will definately render in the [range] row and column, so adjust the
+	// buffer origin to get an exact edge to edge fill
 	xcenter = ((float) r_refdef.vrect.width * XCENTERING) +
 		r_refdef.vrect.x - 0.5;
 	aliasxcenter = xcenter * r_aliasuvscale;
@@ -966,6 +928,12 @@ R_RenderView_ (void)
 
 	if (r_timegraph->int_val)
 		R_TimeGraph ();
+
+	if (r_netgraph->int_val)
+		R_NetGraph ();
+
+	if (r_zgraph->int_val)
+		R_ZGraph ();
 
 	if (r_aliasstats->int_val)
 		R_PrintAliasStats ();
