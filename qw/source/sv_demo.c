@@ -172,7 +172,7 @@ SV_DemoWriteToDisk (int type, int to, float time)
 	int         size;
 	sizebuf_t   msg;
 
-	(byte *) p = demo.dbuf->sz.data;
+	p = (header_t *) demo.dbuf->sz.data;
 	demo.dbuf->h = NULL;
 
 	oldm = demo.dbuf->bufsize;
@@ -201,7 +201,7 @@ SV_DemoWriteToDisk (int type, int to, float time)
 			demobuffer->start += size + header;
 		}
 		// move along
-		(byte *) p = p->data + size;
+		p = (header_t *) p->data + size;
 	}
 
 	if (demobuffer->start == demobuffer->last) {
@@ -418,7 +418,7 @@ DemoSetBuf (byte type, int to)
 	header_t   *p;
 	int         pos = 0;
 
-	(byte *) p = demo.dbuf->sz.data;
+	p = (header_t *) demo.dbuf->sz.data;
 
 	while (pos < demo.dbuf->bufsize) {
 		pos += header + p->size;
@@ -429,7 +429,7 @@ DemoSetBuf (byte type, int to)
 			return;
 		}
 
-		(byte *) p = p->data + p->size;
+		p = (header_t *) p->data + p->size;
 	}
 	// type && to not exist in the buf, so add it
 
