@@ -51,7 +51,7 @@ common_SOURCES= game.c wad.c world.c model.c model_alias.c model_brush.c \
 
 # ... System type
 if SYSTYPE_WIN32
-qfsys_SRC=	sys_win.c fnmatch.c
+qfsys_SRC=	sys_win.c
 else
 qfsys_SRC=	sys_unix.c
 endif
