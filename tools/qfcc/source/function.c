@@ -229,7 +229,7 @@ finish_function (function_t *f)
 	if ((count = df->numparms) < 0)
 		count = -count - 1;
 	for (i = 0; i < count; i++)
-		df->parm_size[i] = pr_type_size[f->def->type->parm_types[i]->type];
+		df->parm_size[i] = type_size (f->def->type->parm_types[i]->type);
 
 	if (f->aux) {
 		def_t *def;

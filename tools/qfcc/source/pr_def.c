@@ -47,6 +47,7 @@ typedef struct locref_s {
 
 static def_t *free_temps[4];			// indexted by type size
 static def_t temp_scope;
+static def_t *free_defs;
 static locref_t *free_locs[4];			// indexted by type size
 static locref_t *free_free_locs;
 
@@ -213,7 +214,15 @@ PR_NewDef (type_t *type, const char *name, def_t *scope)
 {
 	def_t      *def;
 
-	def = calloc (1, sizeof (def_t));
+	if (!free_defs) {
+		int         i;
+		free_defs = malloc (16384 * sizeof (def_t));
+		for (i = 0; i < 16383; i++)
+			free_defs[i].next = &free_defs[i + 1];
+	}
+	def = free_defs;
+	free_defs = free_defs->next;
+	memset (def, 0, sizeof (*def));
 
 	if (name) {
 		*pr.def_tail = def;
@@ -258,7 +267,7 @@ PR_NewLocation (type_t *type)
 void
 PR_FreeLocation (def_t *def)
 {
-	int         size = pr_type_size[def->type->type];
+	int         size = type_size (def->type->type);
 	locref_t   *loc;
 
 	if (!free_free_locs) {
@@ -279,7 +288,7 @@ PR_FreeLocation (def_t *def)
 def_t *
 PR_GetTempDef (type_t *type, def_t *scope)
 {
-	int         size = pr_type_size[type->type];
+	int         size = type_size (type->type);
 	def_t      *def;
 
 	if (free_temps[size]) {
@@ -289,7 +298,7 @@ PR_GetTempDef (type_t *type, def_t *scope)
 	} else {
 		def = PR_NewDef (type, 0, scope);
 		def->ofs = *scope->alloc;
-		*scope->alloc += pr_type_size[size];
+		*scope->alloc += type_size (size);
 	}
 	def->freed = def->removed = def->users = 0;
 	def->next = temp_scope.next;
@@ -313,7 +322,7 @@ PR_FreeTempDefs (void)
 				printf ("%s:%d: warning: %s %3d %3d %d\n", pr.strings + d->file,
 						d->line, pr_type_name[d->type->type], d->ofs, d->users,
 						d->managed);
-			size = pr_type_size[d->type->type];
+			size = type_size (d->type->type);
 			if (d->expr)
 				d->expr->e.temp.def = 0;
 

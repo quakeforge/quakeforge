@@ -284,7 +284,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 	if (e.type == ex_string)
 		e.e.integer_val = ReuseString (rep->str);
 
-	memcpy (pr.globals + cn->ofs, &e.e, 4 * pr_type_size[type->type]);
+	memcpy (pr.globals + cn->ofs, &e.e, 4 * type_size (type->type));
 
 	Hash_Add (tab, cn);
 

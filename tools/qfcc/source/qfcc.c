@@ -129,8 +129,8 @@ WriteData (int crc)
 	FILE       *h;
 	int         i;
 
-	globals = calloc (pr.num_globals, sizeof (ddef_t)); //FIXME
-	fields = calloc (pr.num_globals, sizeof (ddef_t)); //FIXME
+	globals = calloc (pr.num_globals, sizeof (ddef_t));
+	fields = calloc (pr.num_globals, sizeof (ddef_t));
 
 	for (def = pr.def_head; def; def = def->def_next) {
 		if (def->scope)
