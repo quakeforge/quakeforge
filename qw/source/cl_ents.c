@@ -97,10 +97,10 @@ CL_NewDlight (int key, vec3_t org, int effects, byte glow_size,
 {
 	float		radius;
 	dlight_t   *dl;
-	static vec3_t normal = {0.4, 0.2, 0.05};
-	static vec3_t red = {0.5, 0.05, 0.05};
-	static vec3_t blue = {0.05, 0.05, 0.5};
-	static vec3_t purple = {0.5, 0.05, 0.5};
+	static quat_t normal = {0.4, 0.2, 0.05, 0.7};
+	static quat_t red = {0.5, 0.05, 0.05, 0.7};
+	static quat_t blue = {0.05, 0.05, 0.5, 0.7};
+	static quat_t purple = {0.5, 0.05, 0.5, 0.7};
 
 	effects &= EF_BLUE | EF_RED | EF_BRIGHTLIGHT | EF_DIMLIGHT;
 	if (!effects) {
@@ -126,16 +126,16 @@ CL_NewDlight (int key, vec3_t org, int effects, byte glow_size,
 		dl->die = cl.time + 0.1;
 		switch (effects & (EF_RED | EF_BLUE)) {
 			case EF_RED | EF_BLUE:
-				VectorCopy (purple, dl->color);
+				QuatCopy (purple, dl->color);
 				break;
 			case EF_RED:
-				VectorCopy (red, dl->color);
+				QuatCopy (red, dl->color);
 				break;
 			case EF_BLUE:
-				VectorCopy (blue, dl->color);
+				QuatCopy (blue, dl->color);
 				break;
 			default:
-				VectorCopy (normal, dl->color);
+				QuatCopy (normal, dl->color);
 				break;
 		}
 	}
@@ -537,6 +537,7 @@ CL_LinkPacketEntities (void)
 				dl->radius = 200.0;
 				dl->die = cl.time + 0.1;
 				VectorCopy (r_firecolor->vec, dl->color);
+				dl->color[3] = 0.7;
 			}
 			R_RocketTrail (*ent);
 		} else if (model->flags & EF_GRENADE)
@@ -663,6 +664,7 @@ CL_ParsePlayerinfo (void)
 		Host_Error ("CL_ParsePlayerinfo: bad num");
 
 	info = &cl.players[num];
+	player_parsecountmod = parsecountmod;
 	state = &cl.frames[parsecountmod].playerstate[num];
 
 	state->number = num;
@@ -1160,6 +1162,7 @@ CL_EmitEntities (void)
 				dl->color[0] = 0;
 				dl->color[1] = 1;
 				dl->color[2] = 0;
+				dl->color[3] = 0.7;
 			}
 			VectorCopy (nearloc->loc, trueloc);
 			R_WizSpikeEffect (trueloc);

@@ -350,6 +350,7 @@ CL_ParseTEnt (void)
 				dl->color[0] = 0.86;
 				dl->color[1] = 0.31;
 				dl->color[2] = 0.24;
+				dl->color[3] = 0.7;
 			}
 
 			// sound
@@ -419,6 +420,7 @@ CL_ParseTEnt (void)
 			dl->color[0] = vid.palette[colorStart] * (1.0 / 255.0);
 			dl->color[1] = vid.palette[colorStart + 1] * (1.0 / 255.0);
 			dl->color[2] = vid.palette[colorStart + 2] * (1.0 / 255.0);
+			dl->color[3] = 0.7;
 			break;
 
 		case TE_GUNSHOT:				// bullet hitting wall
@@ -446,6 +448,7 @@ CL_ParseTEnt (void)
 				dl->color[0] = 0.25;
 				dl->color[1] = 0.40;
 				dl->color[2] = 0.65;
+				dl->color[3] = 1;
 			}
 
 			R_LightningBloodEffect (pos);

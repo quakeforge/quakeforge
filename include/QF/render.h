@@ -44,7 +44,7 @@ typedef struct dlight_s
 	float   die;                // stop lighting after this time
 	float   decay;              // drop this each second
 	float   minlight;           // don't add when contributing less
-	float   color[3];           // Don't use alpha  --KB
+	float   color[4];
 } dlight_t;
 
 extern  dlight_t       *r_dlights;

@@ -90,7 +90,7 @@ R_RenderDlight (dlight_t *light)
 
 	qfglBegin (GL_TRIANGLE_FAN);
 
-	qfglColor3fv (light->color);
+	qfglColor4fv (light->color);
 
 	VectorSubtract (r_origin, light->origin, v);
 	VectorNormalize (v);

@@ -400,10 +400,10 @@ CL_NewDlight (int key, vec3_t org, int effects)
 	float       radius;
 	float       time = 0.1;
 	dlight_t   *dl;
-	static vec3_t normal  = {0.4, 0.2, 0.05};
-	static vec3_t red = {0.5, 0.05, 0.05};
-	static vec3_t blue = {0.05, 0.05, 0.5};
-	static vec3_t purple = {0.5, 0.05, 0.5};
+	static quat_t normal = {0.4, 0.2, 0.05, 0.7};
+	static quat_t red = {0.5, 0.05, 0.05, 0.7};
+	static quat_t blue = {0.05, 0.05, 0.5, 0.7};
+	static quat_t purple = {0.5, 0.05, 0.5, 0.7};
 
 	if (!(effects & (EF_BLUE | EF_RED | EF_BRIGHTLIGHT | EF_DIMLIGHT)))
 		return;
@@ -425,16 +425,16 @@ CL_NewDlight (int key, vec3_t org, int effects)
 
 	switch (effects & (EF_BLUE | EF_RED)) {
 		case EF_RED | EF_BLUE:
-			VectorCopy (purple, dl->color);
+			QuatCopy (purple, dl->color);
 			break;
 		case EF_RED:
-			VectorCopy (red, dl->color);
+			QuatCopy (red, dl->color);
 			break;
 		case EF_BLUE:
-			VectorCopy (blue, dl->color);
+			QuatCopy (blue, dl->color);
 			break;
 		default:
-			VectorCopy (normal, dl->color);
+			QuatCopy (normal, dl->color);
 			break;
 	}
 }
@@ -598,6 +598,7 @@ CL_RelinkEntities (void)
 				dl->color[0] = 0.2;
 				dl->color[1] = 0.1;
 				dl->color[2] = 0.05;
+				dl->color[3] = 0.7;
 			}
 		}
 		CL_NewDlight (i, ent->origin, state->effects);
@@ -611,6 +612,7 @@ CL_RelinkEntities (void)
 				dl->radius = 200;
 				dl->die = cl.time + 0.1;
 				VectorCopy (r_firecolor->vec, dl->color);
+				dl->color[3] = 0.7;
 			}
 			R_RocketTrail (ent);
 		} else if (ent->model->flags & EF_GRENADE)

@@ -159,6 +159,7 @@ const char *svc_strings[] = {
 
 int         oldparsecountmod;
 int         parsecountmod;
+int         player_parsecountmod;
 double      parsecounttime;
 
 int         viewentity;
@@ -1156,7 +1157,7 @@ CL_MuzzleFlash (void)
 	if ((unsigned int) (i - 1) >= MAX_CLIENTS)
 		return;
 
-	pl = &cl.frames[parsecountmod].playerstate[i - 1];
+	pl = &cl.frames[player_parsecountmod].playerstate[i - 1];
 
 	dl = R_AllocDlight (i);
 	if (!dl)
@@ -1174,6 +1175,7 @@ CL_MuzzleFlash (void)
 	dl->color[0] = 0.2;
 	dl->color[1] = 0.1;
 	dl->color[2] = 0.05;
+	dl->color[3] = 0.7;
 }
 
 #define SHOWNET(x) \

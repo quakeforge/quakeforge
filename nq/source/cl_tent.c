@@ -339,6 +339,7 @@ CL_ParseTEnt (void)
 				dl->color[0] = 1.0;
 				dl->color[1] = 0.5;
 				dl->color[2] = 0.25;
+				dl->color[3] = 0.7;
 			}
 
 			// sound
@@ -409,6 +410,7 @@ CL_ParseTEnt (void)
 			dl->color[0] = vid.palette[colorStart] * (1.0 / 255.0);
 			dl->color[1] = vid.palette[colorStart + 1] * (1.0 / 255.0);
 			dl->color[2] = vid.palette[colorStart + 2] * (1.0 / 255.0);
+			dl->color[3] = 0.7;
 			break;
 
 		case TE_EXPLOSION3:				// Nehahra colored light explosion
@@ -423,6 +425,7 @@ CL_ParseTEnt (void)
 				dl->die = cl.time + 0.5;
 				dl->decay = 300;
 				VectorCopy (col, dl->color);
+				dl->color[3] = 0.7;
 			}
 			break;
 
