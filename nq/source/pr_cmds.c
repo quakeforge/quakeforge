@@ -157,7 +157,7 @@ PF_setorigin (progs_t * pr)
 
 	e = G_EDICT (pr, OFS_PARM0);
 	org = G_VECTOR (pr, OFS_PARM1);
-	VectorCopy (org, SVFIELD (e, origin, vector));
+	VectorCopy (org, SVvector (e, origin));
 	SV_LinkEdict (e, false);
 }
 
@@ -188,7 +188,7 @@ SetMinMaxSize (progs_t * pr, edict_t *e, float *min, float *max,
 		VectorCopy (max, rmax);
 	} else {
 		// find min / max for rotations
-		angles = SVFIELD (e, angles, vector);
+		angles = SVvector (e, angles);
 
 		a = angles[1] / 180 * M_PI;
 
@@ -229,9 +229,9 @@ SetMinMaxSize (progs_t * pr, edict_t *e, float *min, float *max,
 	}
 
 // set derived values
-	VectorCopy (rmin, SVFIELD (e, mins, vector));
-	VectorCopy (rmax, SVFIELD (e, maxs, vector));
-	VectorSubtract (max, min, SVFIELD (e, size, vector));
+	VectorCopy (rmin, SVvector (e, mins));
+	VectorCopy (rmax, SVvector (e, maxs));
+	VectorSubtract (max, min, SVvector (e, size));
 
 	SV_LinkEdict (e, false);
 }
@@ -285,10 +285,10 @@ PF_setmodel (progs_t * pr)
 		PR_RunError (pr, "no precache: %s\n", m);
 
 
-	SVFIELD (e, model, string) = PR_SetString (pr, m);
-	SVFIELD (e, modelindex, float) = i;				// SV_ModelIndex (m);
+	SVstring (e, model) = PR_SetString (pr, m);
+	SVfloat (e, modelindex) = i;				// SV_ModelIndex (m);
 
-	mod = sv.models[(int) SVFIELD (e, modelindex, float)];	// Mod_ForName (m, true);
+	mod = sv.models[(int) SVfloat (e, modelindex)];	// Mod_ForName (m, true);
 
 	if (mod)
 		SetMinMaxSize (pr, e, mod->mins, mod->maxs, true);
@@ -756,9 +756,9 @@ PF_newcheckclient (progs_t * pr, int check)
 
 		if (ent->free)
 			continue;
-		if (SVFIELD (ent, health, float) <= 0)
+		if (SVfloat (ent, health) <= 0)
 			continue;
-		if ((int) SVFIELD (ent, flags, float) & FL_NOTARGET)
+		if ((int) SVfloat (ent, flags) & FL_NOTARGET)
 			continue;
 
 		// anything that is a client, or has a client as an enemy
@@ -766,7 +766,7 @@ PF_newcheckclient (progs_t * pr, int check)
 	}
 
 // get the PVS for the entity
-	VectorAdd (SVFIELD (ent, origin, vector), SVFIELD (ent, view_ofs, vector), org);
+	VectorAdd (SVvector (ent, origin), SVvector (ent, view_ofs), org);
 	leaf = Mod_PointInLeaf (org, sv.worldmodel);
 	pvs = Mod_LeafPVS (leaf, sv.worldmodel);
 	memcpy (checkpvs, pvs, (sv.worldmodel->numleafs + 7) >> 3);
@@ -806,13 +806,13 @@ PF_checkclient (progs_t * pr)
 	}
 // return check if it might be visible  
 	ent = EDICT_NUM (pr, sv.lastcheck);
-	if (ent->free || SVFIELD (ent, health, float) <= 0) {
+	if (ent->free || SVfloat (ent, health) <= 0) {
 		RETURN_EDICT (pr, sv.edicts);
 		return;
 	}
 // if current entity can't possibly see the check entity, return 0
 	self = PROG_TO_EDICT (pr, *sv_globals.self);
-	VectorAdd (SVFIELD (self, origin, vector), SVFIELD (self, view_ofs, vector), view);
+	VectorAdd (SVvector (self, origin), SVvector (self, view_ofs), view);
 	leaf = Mod_PointInLeaf (view, sv.worldmodel);
 	l = (leaf - sv.worldmodel->leafs) - 1;
 	if ((l < 0) || !(checkpvs[l >> 3] & (1 << (l & 7)))) {
@@ -944,16 +944,16 @@ PF_findradius (progs_t * pr)
 	for (i = 1; i < sv.num_edicts; i++, ent = NEXT_EDICT (pr, ent)) {
 		if (ent->free)
 			continue;
-		if (SVFIELD (ent, solid, float) == SOLID_NOT)
+		if (SVfloat (ent, solid) == SOLID_NOT)
 			continue;
 		for (j = 0; j < 3; j++)
 			eorg[j] =
-				org[j] - (SVFIELD (ent, origin, vector)[j] +
-						  (SVFIELD (ent, mins, vector)[j] + SVFIELD (ent, maxs, vector)[j]) * 0.5);
+				org[j] - (SVvector (ent, origin)[j] +
+						  (SVvector (ent, mins)[j] + SVvector (ent, maxs)[j]) * 0.5);
 		if (Length (eorg) > rad)
 			continue;
 
-		SVFIELD (ent, chain, entity) = EDICT_TO_PROG (pr, chain);
+		SVentity (ent, chain) = EDICT_TO_PROG (pr, chain);
 		chain = ent;
 	}
 
@@ -1068,19 +1068,19 @@ PF_Find (progs_t * pr)
 				first = ed;
 			else if (second == (edict_t *) sv.edicts)
 				second = ed;
-			SVFIELD (ed, chain, entity) = EDICT_TO_PROG (pr, last);
+			SVentity (ed, chain) = EDICT_TO_PROG (pr, last);
 			last = ed;
 		}
 	}
 
 	if (first != last) {
 		if (last != second)
-			SVFIELD (first, chain, entity) = SVFIELD (last, chain, entity);
+			SVentity (first, chain) = SVentity (last, chain);
 		else
-			SVFIELD (first, chain, entity) = EDICT_TO_PROG (pr, last);
-		SVFIELD (last, chain, entity) = EDICT_TO_PROG (pr, (edict_t *) sv.edicts);
+			SVentity (first, chain) = EDICT_TO_PROG (pr, last);
+		SVentity (last, chain) = EDICT_TO_PROG (pr, (edict_t *) sv.edicts);
 		if (second && second != last)
-			SVFIELD (second, chain, entity) = EDICT_TO_PROG (pr, last);
+			SVentity (second, chain) = EDICT_TO_PROG (pr, last);
 	}
 	RETURN_EDICT (pr, first);
 }
@@ -1226,7 +1226,7 @@ PF_walkmove (progs_t * pr)
 	yaw = G_FLOAT (pr, OFS_PARM0);
 	dist = G_FLOAT (pr, OFS_PARM1);
 
-	if (!((int) SVFIELD (ent, flags, float) & (FL_ONGROUND | FL_FLY | FL_SWIM))) {
+	if (!((int) SVfloat (ent, flags) & (FL_ONGROUND | FL_FLY | FL_SWIM))) {
 		G_FLOAT (pr, OFS_RETURN) = 0;
 		return;
 	}
@@ -1265,20 +1265,20 @@ PF_droptofloor (progs_t * pr)
 
 	ent = PROG_TO_EDICT (pr, *sv_globals.self);
 
-	VectorCopy (SVFIELD (ent, origin, vector), end);
+	VectorCopy (SVvector (ent, origin), end);
 	end[2] -= 256;
 
 	trace =
-		SV_Move (SVFIELD (ent, origin, vector), SVFIELD (ent, mins, vector), SVFIELD (ent, maxs, vector), end, false,
+		SV_Move (SVvector (ent, origin), SVvector (ent, mins), SVvector (ent, maxs), end, false,
 				 ent);
 
 	if (trace.fraction == 1 || trace.allsolid)
 		G_FLOAT (pr, OFS_RETURN) = 0;
 	else {
-		VectorCopy (trace.endpos, SVFIELD (ent, origin, vector));
+		VectorCopy (trace.endpos, SVvector (ent, origin));
 		SV_LinkEdict (ent, false);
-		SVFIELD (ent, flags, float) = (int) SVFIELD (ent, flags, float) | FL_ONGROUND;
-		SVFIELD (ent, groundentity, entity) = EDICT_TO_PROG (pr, trace.ent);
+		SVfloat (ent, flags) = (int) SVfloat (ent, flags) | FL_ONGROUND;
+		SVentity (ent, groundentity) = EDICT_TO_PROG (pr, trace.ent);
 		G_FLOAT (pr, OFS_RETURN) = 1;
 	}
 }
@@ -1421,16 +1421,16 @@ PF_aim (progs_t * pr)
 	ent = G_EDICT (pr, OFS_PARM0);
 	speed = G_FLOAT (pr, OFS_PARM1);
 
-	VectorCopy (SVFIELD (ent, origin, vector), start);
+	VectorCopy (SVvector (ent, origin), start);
 	start[2] += 20;
 
 // try sending a trace straight
 	VectorCopy (*sv_globals.v_forward, dir);
 	VectorMA (start, 2048, dir, end);
 	tr = SV_Move (start, vec3_origin, vec3_origin, end, false, ent);
-	if (tr.ent && SVFIELD (tr.ent, takedamage, float) == DAMAGE_AIM
-		&& (!teamplay->int_val || SVFIELD (ent, team, float) <= 0
-			|| SVFIELD (ent, team, float) != SVFIELD (tr.ent, team, float))) {
+	if (tr.ent && SVfloat (tr.ent, takedamage) == DAMAGE_AIM
+		&& (!teamplay->int_val || SVfloat (ent, team) <= 0
+			|| SVfloat (ent, team) != SVfloat (tr.ent, team))) {
 		VectorCopy (*sv_globals.v_forward, G_VECTOR (pr, OFS_RETURN));
 		return;
 	}
@@ -1441,16 +1441,16 @@ PF_aim (progs_t * pr)
 
 	check = NEXT_EDICT (pr, sv.edicts);
 	for (i = 1; i < sv.num_edicts; i++, check = NEXT_EDICT (pr, check)) {
-		if (SVFIELD (check, takedamage, float) != DAMAGE_AIM)
+		if (SVfloat (check, takedamage) != DAMAGE_AIM)
 			continue;
 		if (check == ent)
 			continue;
-		if (teamplay->int_val && SVFIELD (ent, team, float) > 0
-			&& SVFIELD (ent, team, float) == SVFIELD (check, team, float)) continue;	// don't aim at
+		if (teamplay->int_val && SVfloat (ent, team) > 0
+			&& SVfloat (ent, team) == SVfloat (check, team)) continue;	// don't aim at
 		// teammate
 		for (j = 0; j < 3; j++)
-			end[j] = SVFIELD (check, origin, vector)[j]
-				+ 0.5 * (SVFIELD (check, mins, vector)[j] + SVFIELD (check, maxs, vector)[j]);
+			end[j] = SVvector (check, origin)[j]
+				+ 0.5 * (SVvector (check, mins)[j] + SVvector (check, maxs)[j]);
 		VectorSubtract (end, start, dir);
 		VectorNormalize (dir);
 		dist = DotProduct (dir, *sv_globals.v_forward);
@@ -1464,7 +1464,7 @@ PF_aim (progs_t * pr)
 	}
 
 	if (bestent) {
-		VectorSubtract (SVFIELD (bestent, origin, vector), SVFIELD (ent, origin, vector), dir);
+		VectorSubtract (SVvector (bestent, origin), SVvector (ent, origin), dir);
 		dist = DotProduct (dir, *sv_globals.v_forward);
 		VectorScale (*sv_globals.v_forward, dist, end);
 		end[2] = dir[2];
@@ -1489,9 +1489,9 @@ PF_changeyaw (progs_t * pr)
 	float       ideal, current, move, speed;
 
 	ent = PROG_TO_EDICT (pr, *sv_globals.self);
-	current = anglemod (SVFIELD (ent, angles, vector)[1]);
-	ideal = SVFIELD (ent, ideal_yaw, float);
-	speed = SVFIELD (ent, yaw_speed, float);
+	current = anglemod (SVvector (ent, angles)[1]);
+	ideal = SVfloat (ent, ideal_yaw);
+	speed = SVfloat (ent, yaw_speed);
 
 	if (current == ideal)
 		return;
@@ -1511,7 +1511,7 @@ PF_changeyaw (progs_t * pr)
 			move = -speed;
 	}
 
-	SVFIELD (ent, angles, vector)[1] = anglemod (current + move);
+	SVvector (ent, angles)[1] = anglemod (current + move);
 }
 
 #ifdef QUAKE2
@@ -1527,9 +1527,9 @@ PF_changepitch (progs_t * pr)
 	float       ideal, current, move, speed;
 
 	ent = G_EDICT (pr, OFS_PARM0);
-	current = anglemod (SVFIELD (ent, angles, vector)[0]);
-	ideal = SVFIELD (ent, idealpitch, float);
-	speed = SVFIELD (ent, pitch_speed, float);
+	current = anglemod (SVvector (ent, angles)[0]);
+	ideal = SVfloat (ent, idealpitch);
+	speed = SVfloat (ent, pitch_speed);
 
 	if (current == ideal)
 		return;
@@ -1549,7 +1549,7 @@ PF_changepitch (progs_t * pr)
 			move = -speed;
 	}
 
-	SVFIELD (ent, angles, vector)[0] = anglemod (current + move);
+	SVvector (ent, angles)[0] = anglemod (current + move);
 }
 #endif
 
@@ -1660,14 +1660,14 @@ PF_makestatic (progs_t * pr)
 
 	MSG_WriteByte (&sv.signon, svc_spawnstatic);
 
-	MSG_WriteByte (&sv.signon, SV_ModelIndex (PR_GetString (pr, SVFIELD (ent, model, string))));
+	MSG_WriteByte (&sv.signon, SV_ModelIndex (PR_GetString (pr, SVstring (ent, model))));
 
-	MSG_WriteByte (&sv.signon, SVFIELD (ent, frame, float));
-	MSG_WriteByte (&sv.signon, SVFIELD (ent, colormap, float));
-	MSG_WriteByte (&sv.signon, SVFIELD (ent, skin, float));
+	MSG_WriteByte (&sv.signon, SVfloat (ent, frame));
+	MSG_WriteByte (&sv.signon, SVfloat (ent, colormap));
+	MSG_WriteByte (&sv.signon, SVfloat (ent, skin));
 	for (i = 0; i < 3; i++) {
-		MSG_WriteCoord (&sv.signon, SVFIELD (ent, origin, vector)[i]);
-		MSG_WriteAngle (&sv.signon, SVFIELD (ent, angles, vector)[i]);
+		MSG_WriteCoord (&sv.signon, SVvector (ent, origin)[i]);
+		MSG_WriteAngle (&sv.signon, SVvector (ent, angles)[i]);
 	}
 
 // throw the entity away now
@@ -1764,49 +1764,49 @@ PF_WaterMove (progs_t * pr)
 
 	self = PROG_TO_EDICT (pr, *sv_globals.self);
 
-	if (SVFIELD (self, movetype, float) == MOVETYPE_NOCLIP) {
-		SVFIELD (self, air_finished, float) = sv.time + 12;
+	if (SVfloat (self, movetype) == MOVETYPE_NOCLIP) {
+		SVfloat (self, air_finished) = sv.time + 12;
 		G_FLOAT (pr, OFS_RETURN) = damage;
 		return;
 	}
 
-	if (SVFIELD (self, health, float) < 0) {
+	if (SVfloat (self, health) < 0) {
 		G_FLOAT (pr, OFS_RETURN) = damage;
 		return;
 	}
 
-	if (SVFIELD (self, deadflag, float) == DEAD_NO)
+	if (SVfloat (self, deadflag) == DEAD_NO)
 		drownlevel = 3;
 	else
 		drownlevel = 1;
 
-	flags = (int) SVFIELD (self, flags, float);
-	waterlevel = (int) SVFIELD (self, waterlevel, float);
-	watertype = (int) SVFIELD (self, watertype, float);
+	flags = (int) SVfloat (self, flags);
+	waterlevel = (int) SVfloat (self, waterlevel);
+	watertype = (int) SVfloat (self, watertype);
 
 	if (!(flags & (FL_IMMUNE_WATER + FL_GODMODE)))
 		if (((flags & FL_SWIM) && (waterlevel < drownlevel))
 			|| (waterlevel >= drownlevel)) {
-			if (SVFIELD (self, air_finished, float) < sv.time)
-				if (SVFIELD (self, pain_finished, float) < sv.time) {
-					SVFIELD (self, dmg, float) = SVFIELD (self, dmg, float) + 2;
-					if (SVFIELD (self, dmg, float) > 15)
-						SVFIELD (self, dmg, float) = 10;
+			if (SVfloat (self, air_finished) < sv.time)
+				if (SVfloat (self, pain_finished) < sv.time) {
+					SVfloat (self, dmg) = SVfloat (self, dmg) + 2;
+					if (SVfloat (self, dmg) > 15)
+						SVfloat (self, dmg) = 10;
 //                  T_Damage (self, world, world, self.dmg, 0, FALSE);
-					damage = SVFIELD (self, dmg, float);
-					SVFIELD (self, pain_finished, float) = sv.time + 1.0;
+					damage = SVfloat (self, dmg);
+					SVfloat (self, pain_finished) = sv.time + 1.0;
 				}
 		} else {
-			if (SVFIELD (self, air_finished, float) < sv.time)
+			if (SVfloat (self, air_finished) < sv.time)
 //              sound (self, CHAN_VOICE, "player/gasp2.wav", 1, ATTN_NORM);
 				SV_StartSound (self, CHAN_VOICE, "player/gasp2.wav", 255,
 							   ATTN_NORM);
-			else if (SVFIELD (self, air_finished, float) < sv.time + 9)
+			else if (SVfloat (self, air_finished) < sv.time + 9)
 //              sound (self, CHAN_VOICE, "player/gasp1.wav", 1, ATTN_NORM);
 				SV_StartSound (self, CHAN_VOICE, "player/gasp1.wav", 255,
 							   ATTN_NORM);
-			SVFIELD (self, air_finished, float) = sv.time + 12.0;
-			SVFIELD (self, dmg, float) = 2;
+			SVfloat (self, air_finished) = sv.time + 12.0;
+			SVfloat (self, dmg) = 2;
 		}
 
 	if (!waterlevel) {
@@ -1815,28 +1815,28 @@ PF_WaterMove (progs_t * pr)
 //          sound (self, CHAN_BODY, "misc/outwater.wav", 1, ATTN_NORM);
 			SV_StartSound (self, CHAN_BODY, "misc/outwater.wav", 255,
 						   ATTN_NORM);
-			SVFIELD (self, flags, float) = (float) (flags & ~FL_INWATER);
+			SVfloat (self, flags) = (float) (flags & ~FL_INWATER);
 		}
-		SVFIELD (self, air_finished, float) = sv.time + 12.0;
+		SVfloat (self, air_finished) = sv.time + 12.0;
 		G_FLOAT (pr, OFS_RETURN) = damage;
 		return;
 	}
 
 	if (watertype == CONTENT_LAVA) {	// do damage
 		if (!(flags & (FL_IMMUNE_LAVA + FL_GODMODE)))
-			if (SVFIELD (self, dmgtime, float) < sv.time) {
-				if (SVFIELD (self, radsuit_finished, float) < sv.time)
-					SVFIELD (self, dmgtime, float) = sv.time + 0.2;
+			if (SVfloat (self, dmgtime) < sv.time) {
+				if (SVfloat (self, radsuit_finished) < sv.time)
+					SVfloat (self, dmgtime) = sv.time + 0.2;
 				else
-					SVFIELD (self, dmgtime, float) = sv.time + 1.0;
+					SVfloat (self, dmgtime) = sv.time + 1.0;
 //              T_Damage (self, world, world, 10*self.waterlevel, 0, TRUE);
 				damage = (float) (10 * waterlevel);
 			}
 	} else if (watertype == CONTENT_SLIME) {	// do damage
 		if (!(flags & (FL_IMMUNE_SLIME + FL_GODMODE)))
-			if (SVFIELD (self, dmgtime, float) < sv.time
-				&& SVFIELD (self, radsuit_finished, float) < sv.time) {
-				SVFIELD (self, dmgtime, float) = sv.time + 1.0;
+			if (SVfloat (self, dmgtime) < sv.time
+				&& SVfloat (self, radsuit_finished) < sv.time) {
+				SVfloat (self, dmgtime) = sv.time + 1.0;
 //              T_Damage (self, world, world, 4*self.waterlevel, 0, TRUE);
 				damage = (float) (4 * waterlevel);
 			}
@@ -1857,15 +1857,15 @@ PF_WaterMove (progs_t * pr)
 			SV_StartSound (self, CHAN_BODY, "player/slimbrn2.wav", 255,
 						   ATTN_NORM);
 
-		SVFIELD (self, flags, float) = (float) (flags | FL_INWATER);
-		SVFIELD (self, dmgtime, float) = 0;
+		SVfloat (self, flags) = (float) (flags | FL_INWATER);
+		SVfloat (self, dmgtime) = 0;
 	}
 
 	if (!(flags & FL_WATERJUMP)) {
 //      self.velocity = self.velocity - 0.8*self.waterlevel*frametime*self.velocity;
-		VectorMA (SVFIELD (self, velocity, vector),
-				  -0.8 * SVFIELD (self, waterlevel, float) * host_frametime,
-				  SVFIELD (self, velocity, vector), SVFIELD (self, velocity, vector));
+		VectorMA (SVvector (self, velocity),
+				  -0.8 * SVfloat (self, waterlevel) * host_frametime,
+				  SVvector (self, velocity), SVvector (self, velocity));
 	}
 
 	G_FLOAT (pr, OFS_RETURN) = damage;

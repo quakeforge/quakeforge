@@ -265,8 +265,8 @@ SV_God_f (void)
 	if (!SV_SetPlayer ())
 		return;
 
-	SVFIELD (sv_player, flags, float) = (int) SVFIELD (sv_player, flags, float) ^ FL_GODMODE;
-	if (!((int) SVFIELD (sv_player, flags, float) & FL_GODMODE))
+	SVfloat (sv_player, flags) = (int) SVfloat (sv_player, flags) ^ FL_GODMODE;
+	if (!((int) SVfloat (sv_player, flags) & FL_GODMODE))
 		SV_ClientPrintf (host_client, PRINT_HIGH, "godmode OFF\n");
 	else
 		SV_ClientPrintf (host_client, PRINT_HIGH, "godmode ON\n");
@@ -285,11 +285,11 @@ SV_Noclip_f (void)
 	if (!SV_SetPlayer ())
 		return;
 
-	if (SVFIELD (sv_player, movetype, float) != MOVETYPE_NOCLIP) {
-		SVFIELD (sv_player, movetype, float) = MOVETYPE_NOCLIP;
+	if (SVfloat (sv_player, movetype) != MOVETYPE_NOCLIP) {
+		SVfloat (sv_player, movetype) = MOVETYPE_NOCLIP;
 		SV_ClientPrintf (host_client, PRINT_HIGH, "noclip ON\n");
 	} else {
-		SVFIELD (sv_player, movetype, float) = MOVETYPE_WALK;
+		SVfloat (sv_player, movetype) = MOVETYPE_WALK;
 		SV_ClientPrintf (host_client, PRINT_HIGH, "noclip OFF\n");
 	}
 }
@@ -325,24 +325,24 @@ SV_Give_f (void)
 		case '7':
 		case '8':
 		case '9':
-			SVFIELD (sv_player, items, float) =
-				(int) SVFIELD (sv_player, items, float) | IT_SHOTGUN << (t[0] - '2');
+			SVfloat (sv_player, items) =
+				(int) SVfloat (sv_player, items) | IT_SHOTGUN << (t[0] - '2');
 			break;
 
 		case 's':
-			SVFIELD (sv_player, ammo_shells, float) = v;
+			SVfloat (sv_player, ammo_shells) = v;
 			break;
 		case 'n':
-			SVFIELD (sv_player, ammo_nails, float) = v;
+			SVfloat (sv_player, ammo_nails) = v;
 			break;
 		case 'r':
-			SVFIELD (sv_player, ammo_rockets, float) = v;
+			SVfloat (sv_player, ammo_rockets) = v;
 			break;
 		case 'h':
-			SVFIELD (sv_player, health, float) = v;
+			SVfloat (sv_player, health) = v;
 			break;
 		case 'c':
-			SVFIELD (sv_player, ammo_cells, float) = v;
+			SVfloat (sv_player, ammo_cells) = v;
 			break;
 	}
 }
@@ -476,7 +476,7 @@ SV_Status_f (void)
 
 			SV_Printf ("%-16.16s  ", cl->name);
 
-			SV_Printf ("%6i %5i", cl->userid, (int) SVFIELD (cl->edict, frags, float));
+			SV_Printf ("%6i %5i", cl->userid, (int) SVfloat (cl->edict, frags));
 			if (cl->spectator)
 				SV_Printf (" (s)\n");
 			else
@@ -506,7 +506,7 @@ SV_Status_f (void)
 		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
 			if (!cl->state)
 				continue;
-			SV_Printf ("%5i %6i ", (int) SVFIELD (cl->edict, frags, float), cl->userid);
+			SV_Printf ("%5i %6i ", (int) SVfloat (cl->edict, frags), cl->userid);
 
 			s = NET_BaseAdrToString (cl->netchan.remote_address);
 

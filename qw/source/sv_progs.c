@@ -67,21 +67,21 @@ static int
 prune_edict (progs_t *pr, edict_t *ent)
 {
 	if (!sv_globals.current_skill) {
-		if (((int) SVFIELD (ent, spawnflags, float) & SPAWNFLAG_NOT_DEATHMATCH))
+		if (((int) SVfloat (ent, spawnflags) & SPAWNFLAG_NOT_DEATHMATCH))
 			return 1;
 	} else {
 		// remove things from different skill levels or deathmatch
 		if (deathmatch->int_val) {
-			if (((int) SVFIELD (ent, spawnflags, float) & SPAWNFLAG_NOT_DEATHMATCH)) {
+			if (((int) SVfloat (ent, spawnflags) & SPAWNFLAG_NOT_DEATHMATCH)) {
 				return 1;
 			}
 		} else if (
 				(*sv_globals.current_skill == 0
-					&& ((int) SVFIELD (ent, spawnflags, float) & SPAWNFLAG_NOT_EASY))
+					&& ((int) SVfloat (ent, spawnflags) & SPAWNFLAG_NOT_EASY))
 						|| (*sv_globals.current_skill == 1
-					&& ((int) SVFIELD (ent, spawnflags, float) & SPAWNFLAG_NOT_MEDIUM))
+					&& ((int) SVfloat (ent, spawnflags) & SPAWNFLAG_NOT_MEDIUM))
 						|| (*sv_globals.current_skill >= 2
-					&& ((int) SVFIELD (ent, spawnflags, float) & SPAWNFLAG_NOT_HARD))) {
+					&& ((int) SVfloat (ent, spawnflags) & SPAWNFLAG_NOT_HARD))) {
 			return 1;
 		}
 	}

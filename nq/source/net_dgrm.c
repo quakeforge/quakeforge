@@ -953,7 +953,7 @@ _Datagram_CheckNewConnections (void)
 		MSG_WriteByte (net_message->message, playerNumber);
 		MSG_WriteString (net_message->message, client->name);
 		MSG_WriteLong (net_message->message, client->colors);
-		MSG_WriteLong (net_message->message, SVFIELD (client->edict, frags, float));
+		MSG_WriteLong (net_message->message, SVfloat (client->edict, frags));
 		MSG_WriteLong (net_message->message,
 					   (int) (net_time - client->netconnection->connecttime));
 		MSG_WriteString (net_message->message, client->netconnection->address);

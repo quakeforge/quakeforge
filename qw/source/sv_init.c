@@ -115,23 +115,23 @@ SV_CreateBaseline (void)
 			continue;
 		// create baselines for all player slots,
 		// and any other edict that has a visible model
-		if (entnum > MAX_CLIENTS && !SVFIELD (svent, modelindex, float))
+		if (entnum > MAX_CLIENTS && !SVfloat (svent, modelindex))
 			continue;
 
 		// 
 		// create entity baseline
 		// 
-		VectorCopy (SVFIELD (svent, origin, vector), ((entity_state_t*)svent->data)->origin);
-		VectorCopy (SVFIELD (svent, angles, vector), ((entity_state_t*)svent->data)->angles);
-		((entity_state_t*)svent->data)->frame = SVFIELD (svent, frame, float);
-		((entity_state_t*)svent->data)->skinnum = SVFIELD (svent, skin, float);
+		VectorCopy (SVvector (svent, origin), ((entity_state_t*)svent->data)->origin);
+		VectorCopy (SVvector (svent, angles), ((entity_state_t*)svent->data)->angles);
+		((entity_state_t*)svent->data)->frame = SVfloat (svent, frame);
+		((entity_state_t*)svent->data)->skinnum = SVfloat (svent, skin);
 		if (entnum > 0 && entnum <= MAX_CLIENTS) {
 			((entity_state_t*)svent->data)->colormap = entnum;
 			((entity_state_t*)svent->data)->modelindex = SV_ModelIndex ("progs/player.mdl");
 		} else {
 			((entity_state_t*)svent->data)->colormap = 0;
 			((entity_state_t*)svent->data)->modelindex =
-				SV_ModelIndex (PR_GetString (&sv_pr_state, SVFIELD (svent, model, string)));
+				SV_ModelIndex (PR_GetString (&sv_pr_state, SVstring (svent, model)));
 		}
 		// LordHavoc: setup baseline to include new effects
 		((entity_state_t*)svent->data)->alpha = 255;
@@ -400,10 +400,10 @@ SV_SpawnServer (const char *server)
 
 	ent = EDICT_NUM (&sv_pr_state, 0);
 	ent->free = false;
-	SVFIELD (ent, model, string) = PR_SetString (&sv_pr_state, sv.worldmodel->name);
-	SVFIELD (ent, modelindex, float) = 1;				// world model
-	SVFIELD (ent, solid, float) = SOLID_BSP;
-	SVFIELD (ent, movetype, float) = MOVETYPE_PUSH;
+	SVstring (ent, model) = PR_SetString (&sv_pr_state, sv.worldmodel->name);
+	SVfloat (ent, modelindex) = 1;				// world model
+	SVfloat (ent, solid) = SOLID_BSP;
+	SVfloat (ent, movetype) = MOVETYPE_PUSH;
 
 	*sv_globals.mapname = PR_SetString (&sv_pr_state, sv.name);
 	// serverflags are for cross level information (sigils)

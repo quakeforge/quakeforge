@@ -113,8 +113,8 @@ extern int  sv_nailmodel, sv_supernailmodel, sv_playermodel;
 qboolean
 SV_AddNailUpdate (edict_t *ent)
 {
-	if (SVFIELD (ent, modelindex, float) != sv_nailmodel
-		&& SVFIELD (ent, modelindex, float) != sv_supernailmodel) return false;
+	if (SVfloat (ent, modelindex) != sv_nailmodel
+		&& SVfloat (ent, modelindex) != sv_supernailmodel) return false;
 	if (numnails == MAX_NAILS)
 		return true;
 	nails[numnails] = ent;
@@ -138,11 +138,11 @@ SV_EmitNailUpdate (sizebuf_t *msg)
 
 	for (n = 0; n < numnails; n++) {
 		ent = nails[n];
-		x = (int) (SVFIELD (ent, origin, vector)[0] + 4096) >> 1;
-		y = (int) (SVFIELD (ent, origin, vector)[1] + 4096) >> 1;
-		z = (int) (SVFIELD (ent, origin, vector)[2] + 4096) >> 1;
-		p = (int) (16 * SVFIELD (ent, angles, vector)[0] / 360) & 15;
-		yaw = (int) (256 * SVFIELD (ent, angles, vector)[1] / 360) & 255;
+		x = (int) (SVvector (ent, origin)[0] + 4096) >> 1;
+		y = (int) (SVvector (ent, origin)[1] + 4096) >> 1;
+		z = (int) (SVvector (ent, origin)[2] + 4096) >> 1;
+		p = (int) (16 * SVvector (ent, angles)[0] / 360) & 15;
+		yaw = (int) (256 * SVvector (ent, angles)[1] / 360) & 255;
 
 		bits[0] = x;
 		bits[1] = (x >> 8) | (y << 4);
@@ -412,18 +412,18 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 
 		pflags = PF_MSEC | PF_COMMAND;
 
-		if (SVFIELD (ent, modelindex, float) != sv_playermodel)
+		if (SVfloat (ent, modelindex) != sv_playermodel)
 			pflags |= PF_MODEL;
 		for (i = 0; i < 3; i++)
-			if (SVFIELD (ent, velocity, vector)[i])
+			if (SVvector (ent, velocity)[i])
 				pflags |= PF_VELOCITY1 << i;
-		if (SVFIELD (ent, effects, float))
+		if (SVfloat (ent, effects))
 			pflags |= PF_EFFECTS;
-		if (SVFIELD (ent, skin, float))
+		if (SVfloat (ent, skin))
 			pflags |= PF_SKINNUM;
-		if (SVFIELD (ent, health, float) <= 0)
+		if (SVfloat (ent, health) <= 0)
 			pflags |= PF_DEAD;
-		if (SVFIELD (ent, mins, vector)[2] != -24)
+		if (SVvector (ent, mins)[2] != -24)
 			pflags |= PF_GIB;
 
 		if (cl->spectator) {			// only sent origin and velocity to
@@ -432,21 +432,21 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 		} else if (ent == clent) {		// don't send a lot of data on
 										// personal entity
 			pflags &= ~(PF_MSEC | PF_COMMAND);
-			if (SVFIELD (ent, weaponframe, float))
+			if (SVfloat (ent, weaponframe))
 				pflags |= PF_WEAPONFRAME;
 		}
 
 		if (client->spec_track && client->spec_track - 1 == j &&
-			SVFIELD (ent, weaponframe, float)) pflags |= PF_WEAPONFRAME;
+			SVfloat (ent, weaponframe)) pflags |= PF_WEAPONFRAME;
 
 		MSG_WriteByte (msg, svc_playerinfo);
 		MSG_WriteByte (msg, j);
 		MSG_WriteShort (msg, pflags);
 
 		for (i = 0; i < 3; i++)
-			MSG_WriteCoord (msg, SVFIELD (ent, origin, vector)[i]);
+			MSG_WriteCoord (msg, SVvector (ent, origin)[i]);
 
-		MSG_WriteByte (msg, SVFIELD (ent, frame, float));
+		MSG_WriteByte (msg, SVfloat (ent, frame));
 
 		if (pflags & PF_MSEC) {
 			msec = 1000 * (sv.time - cl->localtime);
@@ -458,10 +458,10 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 		if (pflags & PF_COMMAND) {
 			cmd = cl->lastcmd;
 
-			if (SVFIELD (ent, health, float) <= 0) {	// don't show the corpse looking
+			if (SVfloat (ent, health) <= 0) {	// don't show the corpse looking
 										// around...
 				cmd.angles[0] = 0;
-				cmd.angles[1] = SVFIELD (ent, angles, vector)[1];
+				cmd.angles[1] = SVvector (ent, angles)[1];
 				cmd.angles[0] = 0;
 			}
 
@@ -473,19 +473,19 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 
 		for (i = 0; i < 3; i++)
 			if (pflags & (PF_VELOCITY1 << i))
-				MSG_WriteShort (msg, SVFIELD (ent, velocity, vector)[i]);
+				MSG_WriteShort (msg, SVvector (ent, velocity)[i]);
 
 		if (pflags & PF_MODEL)
-			MSG_WriteByte (msg, SVFIELD (ent, modelindex, float));
+			MSG_WriteByte (msg, SVfloat (ent, modelindex));
 
 		if (pflags & PF_SKINNUM)
-			MSG_WriteByte (msg, SVFIELD (ent, skin, float));
+			MSG_WriteByte (msg, SVfloat (ent, skin));
 
 		if (pflags & PF_EFFECTS)
-			MSG_WriteByte (msg, SVFIELD (ent, effects, float));
+			MSG_WriteByte (msg, SVfloat (ent, effects));
 
 		if (pflags & PF_WEAPONFRAME)
-			MSG_WriteByte (msg, SVFIELD (ent, weaponframe, float));
+			MSG_WriteByte (msg, SVfloat (ent, weaponframe));
 	}
 }
 
@@ -515,7 +515,7 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 
 	// find the client's PVS
 	clent = client->edict;
-	VectorAdd (SVFIELD (clent, origin, vector), SVFIELD (clent, view_ofs, vector), org);
+	VectorAdd (SVvector (clent, origin), SVvector (clent, view_ofs), org);
 	pvs = SV_FatPVS (org);
 
 	// send over the players in the PVS
@@ -531,7 +531,7 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 	for (e = MAX_CLIENTS + 1, ent = EDICT_NUM (&sv_pr_state, e); e < sv.num_edicts;
 		 e++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
 		// ignore ents without visible models
-		if (!SVFIELD (ent, modelindex, float) || !*PR_GetString (&sv_pr_state, SVFIELD (ent, model, string)))
+		if (!SVfloat (ent, modelindex) || !*PR_GetString (&sv_pr_state, SVstring (ent, model)))
 			continue;
 
 		// ignore if not touching a PV leaf
@@ -554,13 +554,13 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 
 		state->number = e;
 		state->flags = 0;
-		VectorCopy (SVFIELD (ent, origin, vector), state->origin);
-		VectorCopy (SVFIELD (ent, angles, vector), state->angles);
-		state->modelindex = SVFIELD (ent, modelindex, float);
-		state->frame = SVFIELD (ent, frame, float);
-		state->colormap = SVFIELD (ent, colormap, float);
-		state->skinnum = SVFIELD (ent, skin, float);
-		state->effects = SVFIELD (ent, effects, float);
+		VectorCopy (SVvector (ent, origin), state->origin);
+		VectorCopy (SVvector (ent, angles), state->angles);
+		state->modelindex = SVfloat (ent, modelindex);
+		state->frame = SVfloat (ent, frame);
+		state->colormap = SVfloat (ent, colormap);
+		state->skinnum = SVfloat (ent, skin);
+		state->effects = SVfloat (ent, effects);
 
 		// LordHavoc: cleaned up Endy's coding style, shortened the code,
 		// and implemented missing effects
@@ -572,26 +572,26 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 			state->glow_color = 254;
 			state->colormod = 255;
 
-			if (sv_fields.alpha != -1 && SVFIELD (ent, alpha, float))
-				state->alpha = bound (0, SVFIELD (ent, alpha, float), 1) * 255.0;
+			if (sv_fields.alpha != -1 && SVfloat (ent, alpha))
+				state->alpha = bound (0, SVfloat (ent, alpha), 1) * 255.0;
 
-			if (sv_fields.scale != -1 && SVFIELD (ent, scale, float))
-				state->scale = bound (0, SVFIELD (ent, scale, float), 15.9375) * 16.0;
+			if (sv_fields.scale != -1 && SVfloat (ent, scale))
+				state->scale = bound (0, SVfloat (ent, scale), 15.9375) * 16.0;
 
-			if (sv_fields.glow_size != -1 && SVFIELD (ent, glow_size, float))
-				state->glow_size = bound (-1024, (int) SVFIELD (ent, glow_size, float), 1016) >> 3;
+			if (sv_fields.glow_size != -1 && SVfloat (ent, glow_size))
+				state->glow_size = bound (-1024, (int) SVfloat (ent, glow_size), 1016) >> 3;
 
-			if (sv_fields.glow_color != -1 && SVFIELD (ent, glow_color, vector))
-				state->glow_color = (int) SVFIELD (ent, glow_color, vector);
+			if (sv_fields.glow_color != -1 && SVvector (ent, glow_color))
+				state->glow_color = (int) SVvector (ent, glow_color);
 
 			if (sv_fields.colormod != -1
-				&& SVFIELD (ent, colormod, vector)[0]
-				&& SVFIELD (ent, colormod, vector)[1]
-				&& SVFIELD (ent, colormod, vector)[2])
+				&& SVvector (ent, colormod)[0]
+				&& SVvector (ent, colormod)[1]
+				&& SVvector (ent, colormod)[2])
 				state->colormod =
-					((int) (bound (0, SVFIELD (ent, colormod, vector)[0], 1) * 7.0) << 5) |
-					((int) (bound (0, SVFIELD (ent, colormod, vector)[1], 1) * 7.0) << 2) |
-					(int) (bound (0, SVFIELD (ent, colormod, vector)[2], 1) * 3.0);
+					((int) (bound (0, SVvector (ent, colormod)[0], 1) * 7.0) << 5) |
+					((int) (bound (0, SVvector (ent, colormod)[1], 1) * 7.0) << 2) |
+					(int) (bound (0, SVvector (ent, colormod)[2], 1) * 3.0);
 		}
 // Ender: EXTEND (QSG - End)
 	}

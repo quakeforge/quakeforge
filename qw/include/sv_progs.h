@@ -165,6 +165,13 @@ extern sv_fields_t sv_fields;
 #define SVFIELD(e,f,t) E_var (e, sv_fields.f, t)
 #endif
 
+#define SVfloat(e,f)	SVFIELD (e, f, float)
+#define SVstring(e,f)	SVFIELD (e, f, string)
+#define SVfunc(e,f)		SVFIELD (e, f, func)
+#define SVentity(e,f)	SVFIELD (e, f, entity)
+#define SVvector(e,f)	SVFIELD (e, f, vector)
+#define SVinteger(e,f)	SVFIELD (e, f, integer)
+
 #define PROGHEADER_CRC 54730
 
 extern func_t EndFrame;

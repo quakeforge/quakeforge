@@ -93,7 +93,7 @@ Host_Color_f (void)
 	}
 
 	host_client->colors = playercolor;
-	SVFIELD (host_client->edict, team, float) = bottom + 1;
+	SVfloat (host_client->edict, team) = bottom + 1;
 
 	// send notification to all clients
 	MSG_WriteByte (&sv.reliable_datagram, svc_updatecolors);
