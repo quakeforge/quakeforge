@@ -217,10 +217,10 @@ DecodeArgs (int argc, char **argv)
 				options.traditional = true;
 				options.code.progsversion = PROG_ID_VERSION;
 				break;
-			case 'c':					// traditional
+			case 'c':
 				options.compile = true;
 				break;
-			case 'r':					// traditional
+			case 'r':
 				options.partial_link = true;
 				break;
 			case 'C':{					// code options
