@@ -810,12 +810,14 @@ SV_Say (qboolean team)
 		}
 
 	if (sv_funcs.ChatMessage) {
-		P_STRING (&sv_pr_state, 0) = PR_SetString (&sv_pr_state, p);
+		PR_PushFrame (&sv_pr_state);
+		P_STRING (&sv_pr_state, 0) = PR_SetTempString (&sv_pr_state, p);
 		G_FLOAT (&sv_pr_state, 1) = (float) team;
 
 		*sv_globals.time = sv.time;
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.ChatMessage);
+		PR_PopFrame (&sv_pr_state);
 		if (R_FLOAT (&sv_pr_state))
 			return;
 	}
@@ -1121,12 +1123,14 @@ SV_SetUserinfo (client_t *client, const char *key, const char *value)
 							key, oldvalue, value);
 
 	if (sv_funcs.UserInfoChanged) {
+		PR_PushFrame (&sv_pr_state);
 		*sv_globals.time = sv.time;
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, client->edict);
-		P_STRING (&sv_pr_state, 0) = PR_SetString (&sv_pr_state, key);
-		P_STRING (&sv_pr_state, 1) = PR_SetString (&sv_pr_state, oldvalue);
-		P_STRING (&sv_pr_state, 2) = PR_SetString (&sv_pr_state, value);
+		P_STRING (&sv_pr_state, 0) = PR_SetTempString (&sv_pr_state, key);
+		P_STRING (&sv_pr_state, 1) = PR_SetTempString (&sv_pr_state, oldvalue);
+		P_STRING (&sv_pr_state, 2) = PR_SetTempString (&sv_pr_state, value);
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.UserInfoChanged);
+		PR_PopFrame (&sv_pr_state);
 	}
 
 	if (oldvalue)
@@ -1169,10 +1173,12 @@ SV_SetInfo_f (void *unused)
 	value = Cmd_Argv (2);
 
 	if (sv_funcs.UserInfoCallback) {
+		PR_PushFrame (&sv_pr_state);
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
-		P_STRING (&sv_pr_state, 0) = PR_SetString (&sv_pr_state, key);
-		P_STRING (&sv_pr_state, 1) = PR_SetString (&sv_pr_state, value);
+		P_STRING (&sv_pr_state, 0) = PR_SetTempString (&sv_pr_state, key);
+		P_STRING (&sv_pr_state, 1) = PR_SetTempString (&sv_pr_state, value);
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.UserInfoCallback);
+		PR_PopFrame (&sv_pr_state);
 		return;
 	}
 

@@ -46,12 +46,37 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/hash.h"
 #include "QF/progs.h"
 
-typedef struct strref_s {
-	struct strref_s *next;
+struct strref_s {
+	strref_t   *next;
 	char       *string;
 	dstring_t  *dstring;
 	int         count;
-} strref_t;
+};
+
+// format adjustments
+#define FMT_ALTFORM		(1<<0)
+#define FMT_LJUSTIFY	(1<<1)
+#define FMT_ZEROPAD		(1<<2)
+#define FMT_ADDSIGN		(1<<3)
+#define FMT_ADDBLANK	(1<<4)
+#define FMT_HEX			(1<<5)
+
+typedef struct fmt_item_s {
+	byte        type;
+	unsigned    flags;
+	int         minFieldWidth;
+	int         precision;
+	union {
+		const char *string_var;
+		int         integer_var;
+		unsigned    uinteger_var;
+		float       float_var;
+	}           data;
+	struct fmt_item_s *next;
+} fmt_item_t;
+
+static strref_t *free_string_refs;
+static fmt_item_t *free_fmt_items;
 
 static void *
 pr_strings_alloc (void *_pr, size_t size)
@@ -78,7 +103,7 @@ static strref_t *
 new_string_ref (progs_t *pr)
 {
 	strref_t *sr;
-	if (!pr->free_string_refs) {
+	if (!free_string_refs) {
 		int		i, size;
 
 		pr->dyn_str_size++;
@@ -86,15 +111,15 @@ new_string_ref (progs_t *pr)
 		pr->dynamic_strings = realloc (pr->dynamic_strings, size);
 		if (!pr->dynamic_strings)
 			PR_Error (pr, "out of memory");
-		if (!(pr->free_string_refs = calloc (1024, sizeof (strref_t))))
+		if (!(free_string_refs = calloc (1024, sizeof (strref_t))))
 			PR_Error (pr, "out of memory");
-		pr->dynamic_strings[pr->dyn_str_size - 1] = pr->free_string_refs;
-		for (i = 0, sr = pr->free_string_refs; i < 1023; i++, sr++)
+		pr->dynamic_strings[pr->dyn_str_size - 1] = free_string_refs;
+		for (i = 0, sr = free_string_refs; i < 1023; i++, sr++)
 			sr->next = sr + 1;
 		sr->next = 0;
 	}
-	sr = pr->free_string_refs;
-	pr->free_string_refs = sr->next;
+	sr = free_string_refs;
+	free_string_refs = sr->next;
 	sr->next = 0;
 	return sr;
 }
@@ -104,8 +129,8 @@ free_string_ref (progs_t *pr, strref_t *sr)
 {
 	sr->string = 0;
 	sr->dstring = 0;
-	sr->next = pr->free_string_refs;
-	pr->free_string_refs = sr;
+	sr->next = free_string_refs;
+	free_string_refs = sr;
 }
 
 static int
@@ -173,7 +198,7 @@ PR_LoadStrings (progs_t *pr)
 		pr->strref_hash = Hash_NewTable (1021, strref_get_key, strref_free,
 										 pr);
 		pr->dynamic_strings = 0;
-		pr->free_string_refs = 0;
+		free_string_refs = 0;
 		pr->dyn_str_size = 0;
 	}
 
@@ -282,6 +307,9 @@ PR_SetTempString (progs_t *pr, const char *s)
 {
 	strref_t   *sr;
 
+	if (!s)
+		return PR_SetString (pr, "");
+
 	sr = new_string_ref (pr);
 	sr->string = pr_strdup(pr, s);
 	sr->count = 0;
@@ -345,28 +373,6 @@ PR_FreeTempStrings (progs_t *pr)
 	}
 	pr->pr_xtstr = 0;
 }
-
-// format adjustments
-#define FMT_ALTFORM		(1<<0)
-#define FMT_LJUSTIFY	(1<<1)
-#define FMT_ZEROPAD		(1<<2)
-#define FMT_ADDSIGN		(1<<3)
-#define FMT_ADDBLANK	(1<<4)
-#define FMT_HEX			(1<<5)
-
-typedef struct fmt_item_s {
-	byte        type;
-	unsigned    flags;
-	int         minFieldWidth;
-	int         precision;
-	union {
-		const char *string_var;
-		int         integer_var;
-		unsigned    uinteger_var;
-		float       float_var;
-	}           data;
-	struct fmt_item_s *next;
-} fmt_item_t;
 
 #define PRINT(t)													\
 	switch ((doWidth << 1) | doPrecision) {							\
@@ -446,8 +452,6 @@ I_DoPrint (dstring_t *result, fmt_item_t *formatting)
 	dstring_delete (tmp);
 }
 
-static fmt_item_t *free_fmt_items;
-
 static fmt_item_t *
 new_fmt_item (void)
 {
@@ -492,7 +496,7 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 
 	*fi = new_fmt_item ();
 	c = l = format;
-	while (*c) {	// count "%"s, checking our input along the way
+	while (*c) {
 		if (*c++ == '%') {
 			if (c != l + 1) {
 				// have some unformatted text to print
@@ -676,7 +680,7 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 		fi = &(*fi)->next;
 	}
 
-	if (0 && fmt_count != count) {
+	if (fmt_count != count) {
 		printf ("%d %d", fmt_count, count);
 		if (fmt_count > count)
 			msg = "Not enough arguments for format string.";

@@ -161,17 +161,19 @@ main (int argc, char **argv)
 	if (!load_progs (name))
 		Sys_Error ("couldn't load %s", "qwaq.dat");
 
+	PR_PushFrame (&pr);
 	if (argc > 2)
 		pr_argc = argc - 1;
 	pr_argv = PR_Zone_Malloc (&pr, (pr_argc + 1) * 4);
-	pr_argv[0] = PR_SetString (&pr, name);
+	pr_argv[0] = PR_SetTempString (&pr, name);
 	for (i = 1; i < pr_argc; i++)
-		pr_argv[i] = PR_SetString (&pr, argv[1 + i]);
+		pr_argv[i] = PR_SetTempString (&pr, argv[1 + i]);
 	pr_argv[i] = 0;
 
 	main_func = PR_GetFunctionIndex (&pr, "main");
-	P_INT (&pr, 0) = pr_argc;
-	P_INT (&pr, 1) = POINTER_TO_PROG (&pr, pr_argv);
+	P_POINTER (&pr, 0) = pr_argc;
+	P_POINTER (&pr, 1) = POINTER_TO_PROG (&pr, pr_argv);
 	PR_ExecuteProgram (&pr, main_func);
+	PR_PopFrame (&pr);
 	return R_INT (&pr);
 }

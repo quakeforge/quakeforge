@@ -586,14 +586,13 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 			return;
 	} else if (menu->items && menu->items[menu->cur_item]->func
 			   && menu->items[menu->cur_item]->allkeys) {
+		PR_PushFrame (&menu_pr_state);
 		item = menu->items[menu->cur_item];
-		if (item->text)
-			P_INT (&menu_pr_state, 0) =
-				PR_SetString (&menu_pr_state, item->text);
-		else
-			P_INT (&menu_pr_state, 0) = 0;
+		P_STRING (&menu_pr_state, 0) = PR_SetTempString (&menu_pr_state,
+														 item->text);
 		P_INT (&menu_pr_state, 1) = key;
 		PR_ExecuteProgram (&menu_pr_state, item->func);
+		PR_PopFrame (&menu_pr_state);
 		if (R_INT (&menu_pr_state))
 			return;
 	}
@@ -615,13 +614,12 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 			{
 				item = menu->items[menu->cur_item];
 				if (item->func) {
-					if (item->text)
-						P_INT (&menu_pr_state, 0) =
-							PR_SetString (&menu_pr_state, item->text);
-					else
-						P_INT (&menu_pr_state, 0) = 0;
+					PR_PushFrame (&menu_pr_state);
+					P_STRING (&menu_pr_state, 0) =
+						PR_SetTempString (&menu_pr_state, item->text);
 					P_INT (&menu_pr_state, 1) = key;
 					PR_ExecuteProgram (&menu_pr_state, item->func);
+					PR_PopFrame (&menu_pr_state);
 				} else {
 					menu = item;
 					if (menu->enter_hook) {

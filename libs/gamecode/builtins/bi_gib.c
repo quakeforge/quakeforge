@@ -85,14 +85,16 @@ bi_gib_builtin_f (void)
 	if (!builtin)
 		Sys_Error ("bi_gib_builtin_f: unexpected call %s", GIB_Argv (0));
 
+	PR_PushFrame (builtin->pr);
 	pr_list = PR_Zone_Malloc (builtin->pr, GIB_Argc() * sizeof (pr_type_t));
 
 	for (i = 0; i < GIB_Argc(); i++)
-		pr_list[i].integer_var = PR_SetString (builtin->pr, GIB_Argv(i));
+		pr_list[i].integer_var = PR_SetTempString (builtin->pr, GIB_Argv(i));
 
 	P_INT (builtin->pr, 0) = GIB_Argc();
 	P_INT (builtin->pr, 1) = POINTER_TO_PROG (builtin->pr, pr_list);
 	PR_ExecuteProgram (builtin->pr, builtin->func);
+	PR_PopFrame (builtin->pr);
 	PR_Zone_Free (builtin->pr, pr_list);
 }
 

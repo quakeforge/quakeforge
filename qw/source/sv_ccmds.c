@@ -859,10 +859,12 @@ SV_SetLocalinfo (const char *key, const char *value)
 	if (sv_funcs.LocalinfoChanged) {
 		*sv_globals.time = sv.time;
 		*sv_globals.self = 0;
-		P_STRING (&sv_pr_state, 0) = PR_SetString (&sv_pr_state, key);
-		P_STRING (&sv_pr_state, 1) = PR_SetString (&sv_pr_state, oldvalue);
-		P_STRING (&sv_pr_state, 2) = PR_SetString (&sv_pr_state, value);
+		PR_PushFrame (&sv_pr_state);
+		P_STRING (&sv_pr_state, 0) = PR_SetTempString (&sv_pr_state, key);
+		P_STRING (&sv_pr_state, 1) = PR_SetTempString (&sv_pr_state, oldvalue);
+		P_STRING (&sv_pr_state, 2) = PR_SetTempString (&sv_pr_state, value);
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.LocalinfoChanged);
+		PR_PopFrame (&sv_pr_state);
 	}
 
 	if (oldvalue)

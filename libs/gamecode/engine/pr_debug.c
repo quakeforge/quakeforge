@@ -535,51 +535,57 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s)
 	Sys_Printf ("%s\n", line->str);
 }
 
+static void
+dump_frame (progs_t *pr, prstack_t *frame)
+{
+	dfunction_t	   *f = frame->f;
+
+	if (!f) {
+		Sys_Printf ("<NO FUNCTION>\n");
+		return;
+	}
+	if (pr_debug->int_val && pr->debug) {
+		pr_lineno_t *lineno = PR_Find_Lineno (pr, frame->s);
+		pr_auxfunction_t *func = PR_Get_Lineno_Func (pr, lineno);
+		unsigned int line = PR_Get_Lineno_Line (pr, lineno);
+		int         addr = PR_Get_Lineno_Addr (pr, lineno);
+
+		line += func->source_line;
+		if (addr == frame->s) {
+			Sys_Printf ("%12s:%d : %s: %x\n",
+						PR_GetString (pr, f->s_file),
+						line,
+						PR_GetString (pr, f->s_name),
+						frame->s);
+		} else {
+			Sys_Printf ("%12s:%d+%d : %s: %x\n",
+						PR_GetString (pr, f->s_file),
+						line, frame->s - addr,
+						PR_GetString (pr, f->s_name),
+						frame->s);
+		}
+	} else {
+		Sys_Printf ("%12s : %s: %x\n", PR_GetString (pr, f->s_file),
+					PR_GetString (pr, f->s_name), frame->s);
+	}
+}
+
 void
-PR_StackTrace (progs_t * pr)
+PR_StackTrace (progs_t *pr)
 {
 	int				i;
-	dfunction_t	   *f;
+	prstack_t       top;
 
 	if (pr->pr_depth == 0) {
 		Sys_Printf ("<NO STACK>\n");
 		return;
 	}
 
-	pr->pr_stack[pr->pr_depth].s = pr->pr_xstatement;
-	pr->pr_stack[pr->pr_depth].f = pr->pr_xfunction;
-	for (i = pr->pr_depth; i >= 0; i--) {
-		f = pr->pr_stack[i].f;
-
-		if (!f) {
-			Sys_Printf ("<NO FUNCTION>\n");
-		} else {
-			if (pr_debug->int_val && pr->debug) {
-				pr_lineno_t *lineno = PR_Find_Lineno (pr, pr->pr_stack[i].s);
-				pr_auxfunction_t *func = PR_Get_Lineno_Func (pr, lineno);
-				unsigned int line = PR_Get_Lineno_Line (pr, lineno);
-				int         addr = PR_Get_Lineno_Addr (pr, lineno);
-
-				line += func->source_line;
-				if (addr == pr->pr_stack[i].s) {
-					Sys_Printf ("%12s:%d : %s: %x\n",
-								PR_GetString (pr, f->s_file),
-								line,
-								PR_GetString (pr, f->s_name),
-								pr->pr_stack[i].s);
-				} else {
-					Sys_Printf ("%12s:%d+%d : %s: %x\n",
-								PR_GetString (pr, f->s_file),
-								line, pr->pr_stack[i].s - addr,
-								PR_GetString (pr, f->s_name),
-								pr->pr_stack[i].s);
-				}
-			} else {
-				Sys_Printf ("%12s : %s: %x\n", PR_GetString (pr, f->s_file),
-							PR_GetString (pr, f->s_name), pr->pr_stack[i].s);
-			}
-		}
-	}
+	top.s = pr->pr_xstatement;
+	top.f = pr->pr_xfunction;
+	dump_frame (pr, &top);
+	for (i = pr->pr_depth - 1; i >= 0; i--)
+		dump_frame (pr, pr->pr_stack + i);
 }
 
 void

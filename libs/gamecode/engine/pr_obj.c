@@ -403,7 +403,7 @@ pr_obj_msg_sendv (progs_t *pr)
 					 PR_GetString (pr, op->sel_id));
 	if (args.count > 6)
 		args.count = 6;
-	memcpy (P_GPOINTER (pr, 2), G_GPOINTER (pr, args.list),
+	memcpy (pr->pr_params[2], G_GPOINTER (pr, args.list),
 			args.count * 4 * pr->pr_param_size);
 	call_function (pr, method->method_imp);
 }

@@ -75,23 +75,59 @@ PR_RunError (progs_t * pr, const char *error, ...)
 	PR_Error (pr, "Program error: %s", string->str);
 }
 
+inline void
+PR_PushFrame (progs_t *pr)
+{
+	prstack_t  *frame;
+
+	if (pr->pr_depth == MAX_STACK_DEPTH)
+		PR_RunError (pr, "stack overflow");
+
+	frame = pr->pr_stack + pr->pr_depth++;
+
+	frame->s    = pr->pr_xstatement;
+	frame->f    = pr->pr_xfunction;
+	frame->tstr = pr->pr_xtstr;
+
+	pr->pr_xtstr = 0;
+	pr->pr_xfunction = 0;
+}
+
+inline void
+PR_PopFrame (progs_t *pr)
+{
+	prstack_t  *frame;
+
+	if (pr->pr_depth <= 0)
+		PR_Error (pr, "prog stack underflow");
+
+	if (pr->pr_xtstr)
+		PR_FreeTempStrings (pr);
+
+	// up stack
+	frame = pr->pr_stack + --pr->pr_depth;
+
+	pr->pr_xfunction  = frame->f;
+	pr->pr_xstatement = frame->s;
+	pr->pr_xtstr      = frame->tstr;
+}
+
 /*
 	PR_EnterFunction
 
 	Returns the new program statement counter
 */
 void
-PR_EnterFunction (progs_t * pr, dfunction_t *f)
+PR_EnterFunction (progs_t *pr, dfunction_t *f)
 {
 	int			i, j, c, o;
 	int			k;
 
+	PR_PushFrame (pr);
+
 	//Sys_Printf("%s:\n", PR_GetString(pr,f->s_name));
-	pr->pr_stack[pr->pr_depth].s = pr->pr_xstatement;
-	pr->pr_stack[pr->pr_depth].f = pr->pr_xfunction;
-	pr->pr_depth++;
-	if (pr->pr_depth >= MAX_STACK_DEPTH - 1)
-		PR_RunError (pr, "stack overflow");
+	pr->pr_xfunction = f;
+	pr->pr_xstatement = f->first_statement - 1;      		// offset the st++
 
 	// save off any locals that the new function steps on
 	c = f->locals;
@@ -134,39 +170,24 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 					(MAX_PARMS - i) * pr->pr_param_size * sizeof (pr_type_t));
 		}
 	}
-
-	pr->pr_xfunction = f;
-	pr->pr_xstatement = f->first_statement - 1;      		// offset the st++
-	pr->pr_xtstr = 0;
-	return;
 }
 
 static void
-PR_LeaveFunction (progs_t * pr)
+PR_LeaveFunction (progs_t *pr)
 {
 	int			c;
+	dfunction_t *f = pr->pr_xfunction;
 
-	if (pr->pr_depth <= 0)
-		PR_Error (pr, "prog stack underflow");
+	PR_PopFrame (pr);
 
 	// restore locals from the stack
-	c = pr->pr_xfunction->locals;
+	c = f->locals;
 	pr->localstack_used -= c;
 	if (pr->localstack_used < 0)
 		PR_RunError (pr, "PR_LeaveFunction: locals stack underflow");
 
-	memcpy (&pr->pr_globals[pr->pr_xfunction->parm_start],
-			&pr->localstack[pr->localstack_used],
-			sizeof (pr_type_t) * c);
-
-	if (pr->pr_xtstr)
-		PR_FreeTempStrings (pr);
-
-	// up stack
-	pr->pr_depth--;
-	pr->pr_xfunction = pr->pr_stack[pr->pr_depth].f;
-	pr->pr_xstatement = pr->pr_stack[pr->pr_depth].s;
-	pr->pr_xtstr = pr->pr_stack[pr->pr_depth].tstr;
+	memcpy (&pr->pr_globals[f->parm_start],
+			&pr->localstack[pr->localstack_used], sizeof (pr_type_t) * c);
 }
 
 #define OPA (*op_a)

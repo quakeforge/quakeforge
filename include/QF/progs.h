@@ -64,6 +64,8 @@ void PR_Init (void);
 void PR_Init_Cvars (void);
 
 void PR_PrintStatement (progs_t *pr, dstatement_t *s);
+void PR_PushFrame (progs_t *pr);
+void PR_PopFrame (progs_t *pr);
 void PR_EnterFunction (progs_t *pr, dfunction_t *f);
 void PR_ExecuteProgram (progs_t *pr, func_t fnum);
 void PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int edicts,
@@ -286,13 +288,15 @@ void PR_Cmds_Init (progs_t *pr);
 
 //============================================================================
 
-#define MAX_STACK_DEPTH		32
-#define LOCALSTACK_SIZE		2048
+#define MAX_STACK_DEPTH		64
+#define LOCALSTACK_SIZE		4096
+
+typedef struct strref_s strref_t;
 
 typedef struct {
 	int         s;
 	dfunction_t *f;
-	struct strref_s *tstr;
+	strref_t   *tstr;
 } prstack_t;
 
 struct progs_s {
@@ -312,15 +316,13 @@ struct progs_s {
 	int         max_load_funcs;
 	pr_load_func_t **load_funcs;
 
-	// garbage collected strings
 	struct dstring_mem_s *ds_mem;
-	struct strref_s *static_strings;
-	struct strref_s **dynamic_strings;
-	struct strref_s *free_string_refs;
+	strref_t   *static_strings;
+	strref_t  **dynamic_strings;
 	unsigned    dyn_str_size;
 	struct hashtab_s *strref_hash;
 	int         num_strings;
-	struct strref_s *pr_xtstr;
+	strref_t   *pr_xtstr;
 
 	dfunction_t *pr_functions;
 	char       *pr_strings;
