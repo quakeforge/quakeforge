@@ -482,11 +482,11 @@ _parse_type (const char **str)
 				return 0;
 			return new.aux_type;
 		case '[':
-			while (isdigit (**str)) {
+			while (isdigit ((byte)**str)) {
 				new.num_parms *= 10;
 				new.num_parms += *(*str)++ - '0';
 			}
-			while (isspace (**str))
+			while (isspace ((byte)**str))
 				(*str)++;
 			new.aux_type = _parse_type (str);
 			if (**str != ']')

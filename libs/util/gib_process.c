@@ -55,7 +55,7 @@ GIB_Process_Variable (struct dstring_s *dstr, unsigned int pos, qboolean toleran
 	const char *str;
 	char *p, c;
 	
-	for (p = dstr->str+pos+1; tolerant ? *p : isalnum (*p) || *p == '_'; p++);
+	for (p = dstr->str+pos+1; tolerant ? *p : isalnum ((byte)*p) || *p == '_'; p++);
 	c = *p;
 	*p = 0;
 	if ((str = GIB_Var_Get (cbuf_active, dstr->str+pos+1)))	
@@ -94,7 +94,7 @@ GIB_Process_Variables_All (struct dstring_s *token)
 				dstring_insertstr (var, 0, "$");
 				n++;
 			} else {
-				for (n = 1; isalnum(token->str[i+n]) || token->str[i+n] == '$' || token->str[i+n] == '_'; n++); // find end of var
+				for (n = 1; isalnum((byte)token->str[i+n]) || token->str[i+n] == '$' || token->str[i+n] == '_'; n++); // find end of var
 				dstring_insert (var, 0, token->str+i, n); // extract it
 			}
 			for (m = 1; var->str[m]; m++) {

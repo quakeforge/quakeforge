@@ -264,7 +264,7 @@ GIB_Parse_Get_Token (const char *str, unsigned int *i, dstring_t *dstr, qboolean
 			return '\(';
 		}
 	} else {
-		while (str[*i] && !isspace(str[*i]) && str[*i] != ',') { // find end of token
+		while (str[*i] && !isspace((byte)str[*i]) && str[*i] != ',') { // find end of token
 			if (str[*i] == '`') {
 				if ((c = GIB_Parse_Match_Backtick (str, i))) {
 				Cbuf_Error ("parse", "Could not find matching %c", c);
@@ -373,7 +373,7 @@ GIB_Parse_Tokenize_Line (struct cbuf_s *cbuf)
 	}
 
 	while (str[i]) {
-		while (isspace(str[i])) // Eliminate whitespace
+		while (isspace((byte)str[i])) // Eliminate whitespace
 			i++;
 		if (!str[i]) // Blank token
 			break;
