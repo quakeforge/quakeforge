@@ -642,6 +642,14 @@ Con_CompleteCommandLine (void)
 void
 Con_ProcessInput (void)
 {
+	const char *cmd;
+
+	while (1) {
+		cmd = Sys_ConsoleInput ();
+		if (!cmd)
+			break;
+		Cbuf_AddText (cmd);
+	}
 }
 
 void
