@@ -124,7 +124,7 @@ InitData (void)
 }
 
 
-void
+int
 WriteData (int crc)
 {
 	def_t      *def;
@@ -251,7 +251,7 @@ WriteData (int crc)
 	fclose (h);
 
 	if (!options.code.debug) {
-		return;
+		return 0;
 	}
 
 	h = SafeOpenRead (options.output_file);
@@ -298,6 +298,7 @@ WriteData (int crc)
 	fseek (h, 0, SEEK_SET);
 	SafeWrite (h, &debug, sizeof (debug));
 	fclose (h);
+	return 0;
 }
 
 
@@ -390,58 +391,13 @@ strip_path (const char *filename)
 	return filename;
 }
 
-/*
-	main
-
-	The nerve center of our little operation
-*/
-int
-main (int argc, char **argv)
+static void
+setup_sym_file (const char *output_file)
 {
-	char       *src;
-	dstring_t  *filename = dstring_newstr ();
-	int         crc = 0;
-	double      start, stop;
-
-	start = Sys_DoubleTime ();
-
-	this_program = argv[0];
-
-	DecodeArgs (argc, argv);
-
-	tempname = dstring_new ();
-	parse_cpp_name ();
-
-	if (options.verbosity >= 1 && strcmp (sourcedir, "")) {
-		printf ("Source directory: %s\n", sourcedir);
-	}
-	if (options.verbosity >= 1 && strcmp (progs_src, "progs.src")) {
-		printf ("progs.src: %s\n", progs_src);
-	}
-
-	opcode_init ();
-
-	InitData ();
-	init_types ();
-
-	if (*sourcedir)
-		dsprintf (filename, "%s/%s", sourcedir, progs_src);
-	else
-		dsprintf (filename, "%s", progs_src);
-	LoadFile (filename->str, (void *) &src);
-
-	if (!(src = Parse (src)))
-		Error ("No destination filename.  qfcc --help for info.\n");
-
-	if (!options.output_file)
-		options.output_file = strdup (qfcc_com_token);
-	if (options.verbosity >= 1) {
-		printf ("output file: %s\n", options.output_file);
-	}
 	if (options.code.debug) {
 		char       *s;
 
-		strcpy (debugfile, qfcc_com_token);
+		strcpy (debugfile, output_file);
 
 		s = debugfile + strlen (debugfile);
 		while (s-- > debugfile) {
@@ -456,6 +412,85 @@ main (int argc, char **argv)
 		if (options.verbosity >= 1)
 			printf ("debug file: %s\n", debugfile);
 	}
+}
+
+static int
+separate_compile (void)
+{
+	const char **file;
+	dstring_t  *output_file = dstring_newstr ();
+	dstring_t  *extension = dstring_newstr ();
+	char       *f;
+
+	if (options.compile && options.output_file && source_files[1]) {
+		fprintf (stderr, "%s: cannot use -c and -o together with multiple "
+				 "files\n", this_program);
+		return 1;
+	}
+
+	for (file = source_files; *file; file++) {
+		dstring_clearstr (extension);
+		dstring_clearstr (output_file);
+		dstring_appendstr (output_file, *file);
+
+		f = output_file->str + strlen (output_file->str);
+		while (f >= output_file->str && *f != '.' && *f != '/')
+			f--;
+		if (*f == '.') {
+			output_file->size -= strlen (f);
+			dstring_appendstr (extension, f);
+			*f = 0;
+		}
+		dstring_appendstr (output_file, ".qfo");
+		if (strncmp (*file, "-l", 2)
+			&& (!strcmp (extension->str, ".r")
+				|| !strcmp (extension->str, ".qc"))) {
+			free ((char *)*file);
+			*file = strdup (output_file->str);
+		} else {
+			if (options.compile)
+				fprintf (stderr, "%s: %s: ignoring object file since linking "
+						 "not done\n", this_program, *file);
+		}
+	}
+	if (!options.compile) {
+		for (file = source_files; *file; file++) {
+		}
+	}
+	return 0;
+}
+
+static int
+progs_src_compile (void)
+{
+	dstring_t  *filename = dstring_newstr ();
+	char       *src;
+	int         crc = 0;
+
+	if (options.verbosity >= 1 && strcmp (sourcedir, "")) {
+		printf ("Source directory: %s\n", sourcedir);
+	}
+	if (options.verbosity >= 1 && strcmp (progs_src, "progs.src")) {
+		printf ("progs.src: %s\n", progs_src);
+	}
+
+	if (*sourcedir)
+		dsprintf (filename, "%s/%s", sourcedir, progs_src);
+	else
+		dsprintf (filename, "%s", progs_src);
+	LoadFile (filename->str, (void *) &src);
+
+	if (!(src = Parse (src))) {
+		fprintf (stderr, "No destination filename.  qfcc --help for info.\n");
+		return 1;
+	}
+
+	if (!options.output_file)
+		options.output_file = strdup (qfcc_com_token);
+	if (options.verbosity >= 1) {
+		printf ("output file: %s\n", options.output_file);
+	}
+	setup_sym_file (options.output_file);
 
 	begin_compilation ();
 
@@ -498,21 +533,60 @@ main (int argc, char **argv)
 	if (options.compile) {
 		write_obj_file (options.output_file);
 	} else {
-		if (!finish_compilation ())
-			Error ("compilation errors");
+		if (!finish_compilation ()) {
+			fprintf (stderr, "compilation errors\n");
+			return 1;
+		}
 
 		// write progdefs.h
 		if (options.code.progsversion == PROG_ID_VERSION)
 			crc = WriteProgdefs ("progdefs.h");
 
 		// write data file
-		WriteData (crc);
+		if (WriteData (crc))
+			return 1;
 
 		// write files.dat
 		if (options.files_dat)
-			WriteFiles (sourcedir);
+			if (WriteFiles (sourcedir))
+				return 1;
 	}
 
+	return 0;
+}
+
+/*
+	main
+
+	The nerve center of our little operation
+*/
+int
+main (int argc, char **argv)
+{
+	double      start, stop;
+	int         res;
+
+	start = Sys_DoubleTime ();
+
+	this_program = argv[0];
+
+	DecodeArgs (argc, argv);
+
+	tempname = dstring_new ();
+	parse_cpp_name ();
+
+	opcode_init ();
+	init_types ();
+
+	InitData ();
+
+	if (source_files) {
+		res = separate_compile ();
+	} else {
+		res = progs_src_compile ();
+	}
+	if (res)
+		return res;
 	stop = Sys_DoubleTime ();
 	if (options.verbosity >= 0)
 		printf ("Compilation time: %0.3g seconds.\n", (stop - start));

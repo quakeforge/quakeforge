@@ -52,6 +52,9 @@ static const char rcsid[] =
 #include "options.h"
 
 const char *this_program;
+const char **source_files;
+static int num_files;
+static int files_size;
 
 static struct option const long_options[] = {
 	{"output-file", required_argument, 0, 'o'},
@@ -76,6 +79,8 @@ static struct option const long_options[] = {
 };
 
 static const char *short_options =
+	"-"		// magic option parsing mode doohicky (must come first)
+	"l:"	// lib file
 	"o:"	// output file
 	"c"		// separate compilation
 	"s:"	// source dir
@@ -122,6 +127,17 @@ usage (int status)
 	exit (status);
 }
 
+static void
+add_file (const char *file)
+{
+	if (num_files >= files_size - 1) {
+		files_size += 16;
+		source_files = realloc (source_files, files_size * sizeof (char *));
+	}
+	source_files[num_files++] = strdup (file);
+	source_files[num_files] = 0;
+}
+
 int
 DecodeArgs (int argc, char **argv)
 {
@@ -145,6 +161,21 @@ DecodeArgs (int argc, char **argv)
 	while ((c = getopt_long (argc, argv, short_options, long_options, 0))
 		   != EOF) {
 		switch (c) {
+			case 1:						// ordinary file
+				add_file (optarg);
+				break;
+			case 'o':
+				if (options.output_file) {
+					fprintf (stderr, "%s: -o must not be used more than once\n",
+							 this_program);
+					exit (1);
+				} else {
+					options.output_file = strdup (optarg);
+				}
+				break;
+			case 'l':					// lib file
+				add_file (va ("-l%s", optarg));
+				break;
 			case 'h':					// help
 				usage (0);
 				break;

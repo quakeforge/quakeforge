@@ -155,7 +155,7 @@ PrecacheFile (def_t *e, int ch)
 	Generates files.dat, which contains all of the data files actually used by
 	the game, to be processed by qfiles
 */
-void
+int
 WriteFiles (const char *sourcedir)
 {
 	FILE       *f;
@@ -164,8 +164,10 @@ WriteFiles (const char *sourcedir)
 
 	dsprintf (filename, "%s%cfiles.dat", sourcedir, PATH_SEPARATOR);
 	f = fopen (filename->str, "w");
-	if (!f)
-		Error ("Couldn't open %s", filename->str);
+	if (!f) {
+		fprintf (stderr, "Couldn't open %s", filename->str);
+		return 1;
+	}
 
 	fprintf (f, "%i\n", numsounds);
 	for (i = 0; i < numsounds; i++)
@@ -181,6 +183,7 @@ WriteFiles (const char *sourcedir)
 
 	fclose (f);
 	dstring_delete (filename);
+	return 0;
 }
 
 /*

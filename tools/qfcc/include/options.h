@@ -72,7 +72,7 @@ typedef struct {
 extern options_t options;
 int DecodeArgs (int argc, char **argv);
 extern const char *progs_src;
-
+extern const char **source_files;
 extern const char *this_program;
 extern const char *sourcedir;
 
