@@ -44,10 +44,8 @@ static const char rcsid[] =
 #include "QF/screen.h"
 #include "QF/va.h"
 
-#include "bothdefs.h"
 #include "cl_parse.h"
 #include "cl_skin.h"
-#include "cl_tent.h"
 #include "client.h"
 #include "compat.h"
 #include "host.h"
@@ -73,7 +71,7 @@ Skin_NextDownload (void)
 
 	for (; cls.downloadnumber != MAX_CLIENTS; cls.downloadnumber++) {
 		sc = &cl.players[cls.downloadnumber];
-		if (!sc->name)
+		if (!sc->name[0])
 			continue;
 		Skin_Find (sc);
 		if (noskins->int_val) //XXX FIXME
@@ -90,7 +88,7 @@ Skin_NextDownload (void)
 	// now load them in for real
 	for (i = 0; i < MAX_CLIENTS; i++) {
 		sc = &cl.players[i];
-		if (!sc->name)
+		if (!sc->name[0])
 			continue;
 		Skin_Find (sc);
 		Skin_Cache (sc->skin);
@@ -211,7 +209,7 @@ CL_NewTranslation (int slot, skin_t *skin)
 		Host_Error ("CL_NewTranslation: slot > MAX_CLIENTS");
 
 	player = &cl.players[slot];
-	if (!player->name)
+	if (!player->name[0])
 		return;
 
 	if (player->skin && !strequal (player->skinname->value, player->skin->name))
@@ -235,29 +233,5 @@ CL_NewTranslation (int slot, skin_t *skin)
 		skin->texture = skin_textures + slot;		// FIXME
 		skin->data.texels = Skin_Cache(player->skin);
 				// FIXME: breaks cache ownership
-	}
-}
-
-skin_t cl_skins[MAX_EDICTS];
-
-void
-CL_SetColormap (entity_t *ent, int slot)
-{
-	player_info_t *info = &cl.players[slot];
-
-	if ((unsigned int)slot <= MAX_CLIENTS && info->name
-		&& ent->model && strequal (ent->model->name, "progs/player.mdl")) {
-		if (!info->skin)
-			Skin_Find (info);
-		if (info->skin) {
-			ent->skin = &cl_skins[ent - cl_entities];
-			CL_NewTranslation (slot, ent->skin);
-		} else {
-			ent->skin = NULL;
-		}
-		ent->colormap = info->translations;
-	} else {
-		ent->colormap = vid.colormap8;
-		ent->skin = NULL;
 	}
 }

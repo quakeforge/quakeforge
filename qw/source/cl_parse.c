@@ -800,7 +800,7 @@ CL_ParseModellist (void)
 }
 
 void
-CL_ParseBaseline (entity_state_t *es, entity_t *ent)
+CL_ParseBaseline (entity_state_t *es)
 {
 	int         i;
 
@@ -819,7 +819,6 @@ CL_ParseBaseline (entity_state_t *es, entity_t *ent)
 	es->glow_color = 254;
 	es->glow_size = 0;
 	es->colormod = 255;
-	CL_EntFromBaseline (es, ent, ent - cl_entities);
 }
 
 /*
@@ -834,11 +833,20 @@ CL_ParseStatic (void)
 	entity_t   *ent;
 	entity_state_t es;
 
+	CL_ParseBaseline (&es);
+
 	if (cl.num_statics >= MAX_STATIC_ENTITIES)
 		Host_Error ("Too many static entities");
 	ent = &cl_static_entities[cl.num_statics++];
+	CL_Init_Entity (ent);
 
-	CL_ParseBaseline (&es, ent);
+	// copy it to the current state
+	ent->model = cl.model_precache[es.modelindex];
+	ent->frame = es.frame;
+	ent->skinnum = es.skinnum;
+
+	VectorCopy (es.origin, ent->origin);
+	VectorCopy (es.angles, ent->angles);
 
 	R_AddEfrags (ent);
 }
@@ -942,12 +950,13 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 	COM_StripExtension (s, skin);   // FIXME buffer overflow
 	if (!strequal (s, skin))
 		Info_SetValueForKey (player->userinfo, "skin", skin, 1);
+	strncpy (player->name, Info_ValueForKey (player->userinfo, "name"),
+			 sizeof (player->name) - 1);
 	player->_topcolor = player->_bottomcolor = -1;
 	player->topcolor = atoi (Info_ValueForKey (player->userinfo, "topcolor"));
 	player->bottomcolor =
 		atoi (Info_ValueForKey (player->userinfo, "bottomcolor"));
 
-	player->name = Hash_Find (player->userinfo->tab, "name");
 	while (!(player->team = Hash_Find (player->userinfo->tab, "team")))
 			Info_SetValueForKey (player->userinfo, "team", "", 1);
 	while (!(player->skinname = Hash_Find (player->userinfo->tab, "skin")))
@@ -962,9 +971,7 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 		Skin_Find (player);
 
 	Sbar_Changed ();
-	if (!player->name)
-		return;
-	CL_SetColormap (&cl_entities[slot + 1], slot);
+	//XXX CL_NewTranslation (slot);
 }
 
 void
@@ -1007,9 +1014,7 @@ CL_SetInfo (void)
 	strncpy (value, MSG_ReadString (net_message), sizeof (value) - 1);
 	key[sizeof (value) - 1] = 0;
 
-	Con_DPrintf ("SETINFO %s: %s=%s\n", player->name ? player->name->value
-													 : "<dead>",
-				 key, value);
+	Con_DPrintf ("SETINFO %s: %s=%s\n", player->name, key, value);
 
 	if (!player->userinfo)
 		player->userinfo = Info_ParseString ("", MAX_INFO_STRING);
@@ -1271,7 +1276,7 @@ CL_ParseServerMessage (void)
 
 			case svc_spawnbaseline:
 				i = MSG_ReadShort (net_message);
-				CL_ParseBaseline (&cl_baselines[i], &cl_entities[i]);
+				CL_ParseBaseline (&cl_baselines[i]);
 				break;
 			case svc_spawnstatic:
 				CL_ParseStatic ();

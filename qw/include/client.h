@@ -78,7 +78,7 @@ typedef struct player_info_s
 	struct info_s	*userinfo;
 
 	// scoreboard information
-	struct info_key_s *name;
+	char	name[MAX_SCOREBOARDNAME];
 	float	entertime;
 	int		frags;
 	int		ping;
