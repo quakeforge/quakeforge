@@ -78,7 +78,6 @@
 #include "host.h"
 #include "input.h"
 #include "keys.h"
-#include "menu.h"
 #include "model.h"
 #include "msg.h"
 #include "net.h"
@@ -217,10 +216,11 @@ cvar_t     *confirm_quit;
 void
 CL_Quit_f (void)
 {
-	if (confirm_quit->int_val) {
-		M_Menu_Quit_f ();
-		return;
-	}
+	// FIXME: MENUCODE
+//	if (confirm_quit->int_val) {
+//		M_Menu_Quit_f ();
+//		return;
+//	}
 	CL_Disconnect ();
 	Sys_Quit ();
 }
@@ -1617,7 +1617,6 @@ Host_Init (void)
 	W_LoadWadFile ("gfx.wad");
 	Key_Init ();
 	Con_Init ();
-	M_Init ();
 	Mod_Init ();
 
 //  Con_Printf ("Exe: "__TIME__" "__DATE__"\n");

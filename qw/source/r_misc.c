@@ -35,7 +35,6 @@
 #include "cl_parse.h"
 #include "draw.h"
 #include "host.h"
-#include "menu.h"
 #include "r_local.h"
 #include "sbar.h"
 #include "sys.h"
@@ -227,31 +226,32 @@ R_TimeGraph (void)
 void
 R_NetGraph (void)
 {
-	int         a, x, y, y2, w, i;
+	int         a, x, y, i;
 	int         lost;
 	char        st[80];
 
-	if (vid.width - 16 <= NET_TIMINGS)
-		w = vid.width - 16;
-	else
-		w = NET_TIMINGS;
+	x = cl_hudswap->int_val ? vid.width - (NET_TIMINGS + 16): 0;
+	y = vid.height - sb_lines - 24 - r_graphheight->int_val - 1;
 
-	x = w - ((vid.width - 320) >> 1);
-	y = vid.height - sb_lines - 24 - r_graphheight->int_val * 2 - 2;
+	Draw_TextBox (x, y, NET_TIMINGS / 8, r_graphheight->int_val / 8 + 1);
 
-	//M_DrawTextBox (x, y, (w + 7) / 8, (r_graphheight->int_val * 2 + 7) / 8 + 1);
-	M_DrawTextBox (x-w, y, (w+7)/8, (r_graphheight->int_val*2+7)/8+1);
-	y2 = y + 8;
-	y = vid.height - sb_lines - 8 - 2;
+	y += 8;
 
-	x = 8;
 	lost = CL_CalcNet ();
-	for (a = NET_TIMINGS - w; a < w; a++) {
-		i = (cls.netchan.outgoing_sequence - a) & NET_TIMINGSMASK;
-		R_LineGraph (x + w - 1 - a, y, packet_latency[i]);
-	}
 	snprintf (st, sizeof (st), "%3i%% packet loss", lost);
-	Draw_String8 (8, y2, st);
+	if (cl_hudswap->int_val) {
+		Draw_String8 (vid.width - ((strlen (st) * 8) + 8), y, st);
+	} else {
+		Draw_String8 (8, y, st);
+	}
+
+	x = cl_hudswap->int_val ? vid.width - (NET_TIMINGS + 8) : 8;
+	y += 8;
+
+	for (a = 0; a < NET_TIMINGS; a++) {
+		i = (cls.netchan.outgoing_sequence - a) & NET_TIMINGSMASK;
+		R_LineGraph (x + NET_TIMINGS - 1 - a, y, packet_latency[i]);
+	}
 }
 
 /*
