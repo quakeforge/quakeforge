@@ -39,24 +39,56 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 
-dstring_t  *
-dstring_new (void)
+static void *
+dstring_alloc (void *data, size_t size)
+{
+	return calloc (1, size);
+}
+
+static void
+dstring_free (void *data, void *ptr)
+{
+	free (ptr);
+}
+
+static void *
+dstring_realloc (void *data, void *ptr, size_t size)
+{
+	return realloc (ptr, size);
+}
+
+dstring_mem_t dstring_default_mem = {
+	dstring_alloc,
+	dstring_free,
+	dstring_realloc,
+	0
+};
+
+inline dstring_t  *
+_dstring_new (dstring_mem_t *mem)
 {
 	dstring_t  *new;
 
-	new = calloc (1, sizeof (dstring_t));
+	new = mem->alloc (mem->data, sizeof (dstring_t));
 
 	if (!new)
 		Sys_Error ("dstring_new: Failed to allocate memory.");
+	new->mem = mem;
 	return new;
+}
+
+dstring_t *
+dstring_new (void)
+{
+	return _dstring_new (&dstring_default_mem);
 }
 
 void
 dstring_delete (dstring_t *dstr)
 {
 	if (dstr->str)
-		free (dstr->str);
-	free (dstr);
+		dstr->mem->free (dstr->mem->data, dstr->str);
+	dstr->mem->free (dstr->mem->data, dstr);
 }
 
 inline void
@@ -64,7 +96,8 @@ dstring_adjust (dstring_t *dstr)
 {
 	if (dstr->size > dstr->truesize) {
 		dstr->truesize = (dstr->size + 1023) & ~1023;
-		dstr->str = realloc (dstr->str, dstr->truesize);
+		dstr->str = dstr->mem->realloc (dstr->mem->data, dstr->str,
+										dstr->truesize);
 		if (!dstr->str)
 			Sys_Error ("dstring_adjust:  Failed to reallocate memory.");
 	}
@@ -149,24 +182,31 @@ dstring_replace (dstring_t *dstr, unsigned int pos, unsigned int rlen,
 char *
 dstring_freeze (dstring_t *dstr)
 {
-	char *str = realloc (dstr->str, dstr->size);
-	free (dstr);
+	char *str = dstr->mem->realloc (dstr->mem->data, dstr->str, dstr->size);
+	dstr->mem->free (dstr->mem->data, dstr);
 	return str;
 }
 
-dstring_t  *
-dstring_newstr (void)
+inline dstring_t  *
+_dstring_newstr (dstring_mem_t *mem)
 {
 	dstring_t  *new;
 
-	new = calloc (1, sizeof (dstring_t));
+	new = mem->alloc (mem->data, sizeof (dstring_t));
 
 	if (!new)
 		Sys_Error ("dstring_newstr:  Failed to allocate memory.");
+	new->mem = mem;
 	new->size = 1;
 	dstring_adjust (new);
 	new->str[0] = 0;
 	return new;
+}
+
+dstring_t *
+dstring_newstr (void)
+{
+	return _dstring_newstr (&dstring_default_mem);
 }
 
 void

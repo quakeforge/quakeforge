@@ -30,18 +30,31 @@
 #define __dstring_h
 
 #include <stdarg.h>
+#include <stdlib.h>
+
+typedef struct dstring_mem_s {
+	void     *(*alloc) (void *data, size_t size);
+	void      (*free) (void *data, void *ptr);
+	void     *(*realloc) (void *data, void *ptr, size_t size);
+	void       *data;
+} dstring_mem_t;
 
 typedef struct dstring_s {
+	dstring_mem_t *mem;
 	unsigned long int size, truesize;
 	char *str;
 } dstring_t;
 
+extern dstring_mem_t dstring_default_mem;
 
 // General buffer functions
+//@{
 /** Create a new dstring. size and truesize start at 0 and no string buffer
 	is allocated.
 */
+dstring_t *_dstring_new(dstring_mem_t *mem);
 dstring_t *dstring_new(void);
+//@}
 /** Delete a dstring. Both the string buffer and dstring object are freed.
 */
 void dstring_delete (dstring_t *dstr);
@@ -79,10 +92,13 @@ void dstring_replace (dstring_t *dstr, unsigned int pos, unsigned int rlen,
 char *dstring_freeze (dstring_t *dstr);
  
 // String-specific functions
+//@{
 /** Allocate a new dstring pre-initialized as a null terminated string. size
 	will be 1 and the first byte 0.
 */
+dstring_t *_dstring_newstr (dstring_mem_t *mem);
 dstring_t *dstring_newstr (void);
+//@}
 /** Copy the null terminated string into the dstring. Replaces any existing
 	data.
 	The dstring does not have to be null terminated but will become so.
