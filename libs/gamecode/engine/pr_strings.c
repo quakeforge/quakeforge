@@ -154,10 +154,10 @@ PR_LoadStrings (progs_t *pr)
 void
 PR_GarbageCollect (progs_t *pr)
 {
-	char	   *str;
+	const char *str;
 	unsigned int i;
 	int         j;
-	ddef_t	   *def;
+	ddef_t     *def;
 	strref_t   *sr;
 
 	for (i = 0; i < pr->dyn_str_size; i++)
@@ -222,7 +222,7 @@ PR_StringValid (progs_t *pr, int num)
 	return get_string (pr, num) != 0;
 }
 
-char *
+const char *
 PR_GetString (progs_t *pr, int num)
 {
 	char       *str;

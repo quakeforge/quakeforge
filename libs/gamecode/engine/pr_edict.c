@@ -369,12 +369,12 @@ PR_GlobalStringNoContents (progs_t *pr, int ofs, etype_t type)
 void
 ED_Print (progs_t *pr, edict_t *ed)
 {
-	int			l;
+	int         l;
 	unsigned int i;
-	char		*name;
-	int			type;
-	ddef_t		*d;
-	pr_type_t	*v;
+	const char *name;
+	int         type;
+	ddef_t     *d;
+	pr_type_t  *v;
 
 	if (ed->free) {
 		Sys_Printf ("FREE\n");

@@ -273,8 +273,8 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 			case OP_ADD_S:
 				{
-					char *a = PR_GetString (pr, OPA.string_var);
-					char *b = PR_GetString (pr, OPB.string_var);
+					const char *a = PR_GetString (pr, OPA.string_var);
+					const char *b = PR_GetString (pr, OPB.string_var);
 					int lena = strlen (a);
 					int size = lena + strlen (b) + 1;
 					char *c = Hunk_TempAlloc (size);

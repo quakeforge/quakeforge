@@ -602,15 +602,15 @@ PF_charcount (progs_t *pr)
 static void
 PF_sprintf (progs_t *pr)
 {
-	char   *format;
-	char   *c; // current
-	char   *out = 0;
-	char	new_format[INT_WIDTH * 2 + 9]; // "%0-+ #." and conversion
-	int		fmt_alternate, fmt_leadzero, fmt_leftjust, fmt_minwidth,
-			fmt_precision, fmt_signed, fmt_space, fmt_type, looping,
-			ret;
-	size_t	new_format_i; 
-	int		curarg = 1, out_max = 32, out_size = 0;
+	const char *format;
+	const char *c; // current
+	char       *out = 0;
+	char        new_format[INT_WIDTH * 2 + 9]; // "%0-+ #." and conversion
+	int         fmt_alternate, fmt_leadzero, fmt_leftjust, fmt_minwidth;
+	int         fmt_precision, fmt_signed, fmt_space, fmt_type, looping;
+	int         ret;
+	size_t      new_format_i; 
+	int         curarg = 1, out_max = 32, out_size = 0;
 
 	format = P_GSTRING (pr, 0);
 	c = format;
@@ -774,7 +774,7 @@ PF_sprintf (progs_t *pr)
 				}
 			}
 		} else if (*c == '%' && *(c + 1) == 's') {
-			char *s;
+			const char *s;
 			if (curarg > MAX_ARG)
 				goto maxargs;
 			s = P_GSTRING (pr, 0 + curarg);

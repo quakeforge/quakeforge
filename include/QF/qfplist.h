@@ -89,7 +89,7 @@ plitem_t *PL_A_InsertObjectAtIndex (plitem_t *, plitem_t *, int ind);
 plitem_t *PL_NewDictionary (void);
 plitem_t *PL_NewArray (void);
 plitem_t *PL_NewData (void *, int);
-plitem_t *PL_NewString (char *);
+plitem_t *PL_NewString (const char *);
 
 void PL_FreeItem (struct plitem_s *);
 

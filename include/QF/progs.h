@@ -221,7 +221,7 @@ int PR_InitRuntime (progs_t *pr);
 //
 
 qboolean PR_StringValid (progs_t *pr, int num);
-char *PR_GetString(progs_t *pr, int num);
+const char *PR_GetString(progs_t *pr, int num);
 int PR_SetString(progs_t *pr, const char *s);
 void PR_GarbageCollect (progs_t *pr);
 
@@ -378,7 +378,7 @@ struct progs_s {
 	struct hashtab_s *protocols;
 
 	// debug info
-	char			*debugfile;
+	const char		*debugfile;
 	struct pr_debug_header_s *debug;
 	struct pr_auxfunction_s *auxfunctions;
 	struct pr_auxfunction_s **auxfunction_map;

@@ -49,7 +49,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 static void
 bi_print (progs_t *pr)
 {
-	char *str;
+	const char *str;
 
 	str = P_GSTRING (pr, 0);
 	fprintf (stdout, "%s", str);
@@ -77,7 +77,7 @@ bi_strerror (progs_t *pr)
 static void
 bi_open (progs_t *pr)
 {
-	char *path = P_GSTRING (pr, 0);
+	const char *path = P_GSTRING (pr, 0);
 	int flags = P_INT (pr, 1);
 	int mode = P_INT (pr, 2);
 	R_INT (pr) = open (path, flags, mode);
@@ -112,7 +112,7 @@ static void
 bi_write (progs_t *pr)
 {
 	int handle = P_INT (pr, 0);
-	char *buffer = P_GSTRING (pr, 1);
+	const char *buffer = P_GSTRING (pr, 1);
 	int count = P_INT (pr, 2);
 
 	R_INT (pr) = write (handle, buffer, count);

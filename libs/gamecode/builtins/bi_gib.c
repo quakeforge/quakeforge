@@ -115,7 +115,7 @@ bi_GIB_Builtin_Add (progs_t *pr)
 {
 	bi_gib_resources_t *res = PR_Resources_Find (pr, "GIB");
 	bi_gib_builtin_t   *builtin;
-	char       *name = P_GSTRING (pr, 0);
+	const char *name = P_GSTRING (pr, 0);
 	func_t      func = P_FUNCTION (pr, 1);
 
 	if (GIB_Builtin_Exists (name)) {
@@ -139,7 +139,7 @@ bi_GIB_Builtin_Add (progs_t *pr)
 static void
 bi_GIB_Return (progs_t *pr)
 {
-	char *str = P_GSTRING(pr, 0);
+	const char *str = P_GSTRING(pr, 0);
 
 	if (str)
 		GIB_Return (str);

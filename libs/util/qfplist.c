@@ -98,12 +98,18 @@ PL_NewData (void *data, int size)
 	return item;
 }
 
-plitem_t *
-PL_NewString (char *str)
+static plitem_t *
+new_string (char *str)
 {
 	plitem_t   *item = PL_NewItem (QFString);
 	item->data = str;
 	return item;
+}
+
+plitem_t *
+PL_NewString (const char *str)
+{
+	return new_string (strdup (str));
 }
 
 void
@@ -581,7 +587,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 		if (!str) {
 			return NULL;
 		} else {
-			return PL_NewString (str);
+			return new_string (str);
 		}
 	}
 
@@ -591,7 +597,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 		if (!str) {
 			return NULL;
 		} else {
-			return PL_NewString (str);
+			return new_string (str);
 		}
 	}
 	} // switch

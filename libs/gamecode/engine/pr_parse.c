@@ -118,10 +118,10 @@ ED_Write (progs_t *pr, QFile *f, edict_t *ed)
 {
 	unsigned int i;
 	int         j;
-	int			type;
-	char		*name;
-	ddef_t		*d;
-	pr_type_t	*v;
+	int         type;
+	const char *name;
+	ddef_t     *d;
+	pr_type_t  *v;
 
 	Qprintf (f, "{\n");
 
@@ -162,10 +162,10 @@ ED_Write (progs_t *pr, QFile *f, edict_t *ed)
 void
 ED_WriteGlobals (progs_t *pr, QFile *f)
 {
-	ddef_t		*def;
+	ddef_t     *def;
 	unsigned int i;
-	char		*name;
-	int			type;
+	const char *name;
+	int         type;
 
 	Qprintf (f, "{\n");
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
