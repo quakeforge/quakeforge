@@ -716,10 +716,12 @@ CL_SetState (cactive_t state)
 		r_active = true;
 		game_target = IMT_0;
 		key_dest = key_game;
+		VID_SetCaption ("");
 	} else {
 		r_active = false;
 		game_target = IMT_CONSOLE;
 		key_dest = key_console;
+		VID_SetCaption ("Disconnected");
 	}
 }
 
