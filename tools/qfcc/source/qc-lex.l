@@ -243,6 +243,8 @@ static keyword_t keywords[] = {
 	{"integer",		TYPE,	&type_integer,		0, PROG_VERSION},
 	{"function",	TYPE,	&type_function,		0, PROG_VERSION},
 	{"id",			TYPE,	&type_id,			0, PROG_VERSION},
+	{"SEL",			TYPE,	&type_SEL,			0, PROG_VERSION},
+	{"IMP",			TYPE,	&type_IMP,			0, PROG_VERSION},
 	{"local",		LOCAL,	0,					1, PROG_ID_VERSION},
 	{"return",		RETURN,	0,					1, PROG_ID_VERSION},
 	{"while",		WHILE,	0,					1, PROG_ID_VERSION},
@@ -259,6 +261,7 @@ static keyword_t keywords[] = {
 	{"struct",		STRUCT, 0,					0, PROG_VERSION},
 	{"enum",		ENUM,	0,					0, PROG_ID_VERSION},
 	{"typedef",		TYPEDEF, 0,					0, PROG_ID_VERSION},
+	{"super",		SUPER,	0,					0, PROG_VERSION},
 
 	{"@class",		CLASS,	0,					0, PROG_VERSION},
 	{"@defs",		DEFS,	0,					0, PROG_VERSION},

@@ -113,7 +113,7 @@ void free_local_inits (hashtab_t *def_list);
 
 %token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS NIL
 %token	IFBE IFB IFAE IFA
-%token	SWITCH CASE DEFAULT STRUCT ENUM TYPEDEF
+%token	SWITCH CASE DEFAULT STRUCT ENUM TYPEDEF SUPER
 %token	ELE_START
 %token	<type> TYPE
 
@@ -1198,6 +1198,7 @@ reserved_word
 	| STRUCT					{ $$ = strdup (yytext); }
 	| ENUM						{ $$ = strdup (yytext); }
 	| TYPEDEF					{ $$ = strdup (yytext); }
+	| SUPER						{ $$ = strdup (yytext); }
 	;
 
 keyworddecl
@@ -1225,6 +1226,7 @@ obj_messageexpr
 
 receiver
 	: expr
+	| SUPER							{ $$ = new_name_expr ("super"); }
 	;
 
 messageargs
