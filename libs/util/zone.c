@@ -892,7 +892,7 @@ Cache_Profile (void)
 		Con_Printf ("%8d  %8d  %8d  %8d  %7d%%\n",
 					items[i], 1 << i, (1 << (i + 1)) - 1,
 					sizes[i] / items[i],
-					(int) (sizes[i] / (float) total * 100));
+					(sizes[i] * 100) / total);
 	}
 	Con_Printf ("Total allocations: %d in %d allocations, average of"
 				" %d per allocation\n", total, count, total / count);
