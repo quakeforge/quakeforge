@@ -904,7 +904,7 @@ main (int argc, char *argv[])
 
 	/* Write image */
 
-	outfile = Qopen (options.outf_name, "w");
+	outfile = Qopen (options.outf_name, "wb");
 	if (outfile == NULL) {
 		fprintf (stderr, "Error opening output file %s.\n", options.outf_name);
 
