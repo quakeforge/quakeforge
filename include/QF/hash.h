@@ -43,7 +43,7 @@ typedef struct hashtab_s {
 	void *user_data;
 	char *(*get_key)(void*,void*);
 	void (*free_ele)(void*,void*);
-	hashlink_t *tab[ZERO_LENGTH_ARRAY];
+	hashlink_t *tab[1];				// variable size
 } hashtab_t;
 
 hashtab_t *Hash_NewTable (int tsize, char *(*gk)(void*,void*),
