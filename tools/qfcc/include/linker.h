@@ -3,7 +3,7 @@
 
 	qc object file linking
 
-	Copyright (C) 2001 Bill Currie <bill@taniwha.org>
+	Copyright (C) 2002 Bill Currie <bill@taniwha.org>
 
 	Author: Bill Currie <bill@taniwha.org>
 	Date: 2002/7/3
