@@ -946,13 +946,14 @@ void on_base_texture_clicked(GtkButton *b,gpointer data)
 			points[2]=(double)mdl->tri[k].tex[i][0]*w;
 			points[3]=(double)mdl->tri[k].tex[i][1]*h;
 
-			return_val=gimp_run_procedure("gimp_paintbrush",
+			return_val=gimp_run_procedure("gimp-paintbrush",
 				&nreturn_val,
 				GIMP_PDB_IMAGE,image_id,
 				GIMP_PDB_DRAWABLE,layer_id,
 				GIMP_PDB_FLOAT,(gdouble)0.0,
 				GIMP_PDB_INT32,4,
-				GIMP_PDB_FLOATARRAY,&points[0],GIMP_PDB_END);
+				GIMP_PDB_FLOATARRAY,&points[0],
+				GIMP_PDB_END);
 			gimp_destroy_params(return_val,nreturn_val);
 		}
 	}
