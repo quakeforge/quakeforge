@@ -111,7 +111,8 @@ Mod_LoadExternalTextures (model_t *mod)
 		if ((base = Mod_LoadAnExternalTexture (tx->name, mod->name))) {
 			tx->gl_texturenum =
 				GL_LoadTexture (tx->name, base->width, base->height,
-								base->data, true, false, base->format);
+								base->data, true, false,
+								base->format > 2 ? base->format : 1);
 
 			luma = Mod_LoadAnExternalTexture (va ("%s_luma", tx->name),
 											  mod->name);
@@ -120,14 +121,15 @@ Mod_LoadExternalTextures (model_t *mod)
 												  mod->name);
 
 			tx->gl_fb_texturenum = 0;
+
 			if (luma) {
 				tx->gl_fb_texturenum =
 					GL_LoadTexture (va ("fb_%s", tx->name), luma->width,
-									luma->height, luma->data, true, true,
-									luma->format);
-			} else if (base->format == 1) {
+									luma->height, luma->data, true, true, 
+									luma->format > 2 ? luma->format : 1);
+			} else if (base->format < 3) {
 				tx->gl_fb_texturenum =
-					Mod_Fullbright (luma->data, luma->width, luma->height,
+					Mod_Fullbright (base->data, base->width, base->height,
 									va ("fb_%s", tx->name));
 			}
 		}

@@ -291,6 +291,8 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 
 	Mod_FinalizeAliasModel (mod, pheader);
 
+	Mod_LoadExternalSkins (mod);
+
 	// move the complete, relocatable alias model to the cache
 	end = Hunk_LowMark ();
 	total = end - start;

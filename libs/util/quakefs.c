@@ -1222,16 +1222,22 @@ QFS_SkipPath (const char *pathname)
 void
 QFS_StripExtension (const char *in, char *out)
 {
-	while (*in && *in != '.')
-		*out++ = *in++;
-	*out = 0;
+	char       *tmp;
+
+	strcpy (out, in);
+
+	if ((tmp = strrchr (out, '.')))
+		*tmp = 0;
 }
 
 const char *
 QFS_FileExtension (const char *in)
 {
-	while (*in && *in != '.')
-		in++;
+	char       *tmp;
+
+	if ((tmp = strrchr (in, '.')))
+		return tmp;
+
 	return in;
 }
 

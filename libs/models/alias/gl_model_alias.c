@@ -132,7 +132,7 @@ Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
 			  maliasskindesc_t *skindesc)
 {
 	byte   *pskin;
-	char	name[32];
+	char	name[32], modname[MAX_QPATH + 4];
 	int		fb_texnum = 0, texnum = 0;
 
 	pskin = Hunk_AllocName (skinsize, loadname);
@@ -148,21 +148,23 @@ Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
 		memcpy (player_8bit_texels, pskin, skinsize);
 	}
 
+	QFS_StripExtension (loadmodel->name, modname);
+
 	if (!loadmodel->fullbright) {
 		if (group) {
-			snprintf (name, sizeof (name), "fb_%s_%i_%i", loadmodel->name,
+			snprintf (name, sizeof (name), "fb_%s_%i_%i", modname,
 					  snum, gnum);
 		} else {
-			snprintf (name, sizeof (name), "fb_%s_%i", loadmodel->name, snum);
+			snprintf (name, sizeof (name), "fb_%s_%i", modname, snum);
 		}
 		fb_texnum = Mod_Fullbright (pskin, pheader->mdl.skinwidth,
 									pheader->mdl.skinheight, name);
 	}
 	if (group) {
-		snprintf (name, sizeof (name), "%s_%i_%i", loadmodel->name, snum,
+		snprintf (name, sizeof (name), "%s_%i_%i", modname, snum,
 				  gnum);
 	} else {
-		snprintf (name, sizeof (name), "%s_%i", loadmodel->name, snum);
+		snprintf (name, sizeof (name), "%s_%i", modname, snum);
 	}
 	texnum = GL_LoadTexture (name, pheader->mdl.skinwidth,
 							 pheader->mdl.skinheight, pskin, true, false, 1);
@@ -267,41 +269,61 @@ Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
 static void
 Mod_LoadExternalSkin (maliasskindesc_t *pskindesc, char *filename)
 {
-	tex_t		*tex;
+	tex_t		*tex, *glow;
+	char		*ptr;
 
-	tex = LoadImage (va ("progs/%s", filename));
+	ptr = strrchr (filename, '/');
+	if (!ptr)
+		ptr = filename;
+
+	tex = LoadImage (filename);
 	if (!tex)
-		tex = LoadImage (va ("textures/%s", filename));
+		tex = LoadImage (va ("textures/%s", ptr));
 	if (tex) {
-		if (tex->format < 4)
-			pskindesc->texnum = GL_LoadTexture
-				(filename, tex->width, tex->height, tex->data, true, false, 3);
-		else
-			pskindesc->texnum = GL_LoadTexture
-				(filename, tex->width, tex->height, tex->data, true, false, 4);
+		pskindesc->texnum = GL_LoadTexture (filename, tex->width, tex->height,
+											tex->data, true, false,
+											tex->format > 2 ? tex->format : 1);
+
+		pskindesc->fb_texnum = 0;
+
+		glow = LoadImage (va ("%s_glow", filename));
+		if (!glow)
+			glow = LoadImage (va ("textures/%s_glow", ptr));
+		if (glow)
+			pskindesc->fb_texnum = GL_LoadTexture (va ("fb_%s", filename),
+												   glow->width, glow->height,
+												   glow->data, true, true,
+										  glow->format > 2 ? glow->format : 1);
+		else if (tex->format < 3)
+			pskindesc->fb_texnum = Mod_Fullbright (tex->data, tex->width,
+												   tex->height,
+												   va ("fb_%s", filename));
 	}
 }
 
 void
 Mod_LoadExternalSkins (model_t *mod)
 {
-	char			   filename[MAX_QPATH + 4];
+	char			   filename[MAX_QPATH + 4], modname[MAX_QPATH + 4];
 	int				   i, j;
 	maliasskindesc_t  *pskindesc;
 	maliasskingroup_t *pskingroup;
+
+	QFS_StripExtension (mod->name, modname);
 
 	for (i = 0; i < pheader->mdl.numskins; i++) {
 		pskindesc = ((maliasskindesc_t *)
 					 ((byte *) pheader + pheader->skindesc)) + i;
 		if (pskindesc->type == ALIAS_SKIN_SINGLE) {
-			snprintf (filename, sizeof (filename), "%s_%i", mod->name, i);
+			snprintf (filename, sizeof (filename), "%s_%i", modname, i);
 			Mod_LoadExternalSkin (pskindesc, filename);
 		} else {
 			pskingroup = (maliasskingroup_t *)
 				((byte *) pheader + pskindesc->skin);
+
 			for (j = 0; j < pskingroup->numskins; j++) {
 				snprintf (filename, sizeof (filename), "%s_%i_%i",
-						  mod->name, i, j);
+						  modname, i, j);
 				Mod_LoadExternalSkin (pskingroup->skindescs + j, filename);
 			}
 		}
