@@ -77,7 +77,7 @@
 #include "va.h"
 
 #ifndef HAVE_FNMATCH_PROTO
- int        fnmatch (const char *__pattern, const char *__string, int __flags);
+int         fnmatch (const char *__pattern, const char *__string, int __flags);
 #endif
 
 
@@ -158,7 +158,7 @@ char        com_gamedir[MAX_OSPATH];
 typedef struct searchpath_s {
 	char        filename[MAX_OSPATH];
 	pack_t     *pack;					// only one of filename / pack will
-										// be used
+	// be used
 	struct searchpath_s *next;
 } searchpath_t;
 
@@ -171,21 +171,29 @@ searchpath_t *com_base_searchpaths;		// without gamedirs
 void
 COM_FileBase (char *in, char *out)
 {
-	char       *s, *s2;
+	char    *slash, *dot;
+	char    *s;
 
-	s = in + strlen (in) - 1;
-
-	while (s != in && *s != '.')
-		s--;
-
-	for (s2 = s; s2 != in && *s2 && *s2 != '/'; s2--);
-
-	if (s - s2 < 2)
-		strcpy (out, "?model?");
-	else {
-		s--;
-		strncpy (out, s2 + 1, s - s2);
-		out[s - s2] = 0;
+	slash = in;
+	dot = NULL;
+	s = in;
+	while (*s)
+	{
+		if (*s == '/')
+			slash = s + 1;
+		if (*s == '.')
+			dot = s;
+		s++;
+	}
+	if (dot == NULL)
+		dot = s;
+	if (dot - slash < 2)
+		strcpy (out,"?model?");
+	else
+	{
+		while (slash < dot)
+			*out++ = *slash++;
+		*out++ = 0;
 	}
 }
 
@@ -265,9 +273,9 @@ maplist_new (void)
 static void
 maplist_free (struct maplist *maplist)
 {
-	int i;
+	int         i;
 
-	for (i=0; i < maplist->count; i++)
+	for (i = 0; i < maplist->count; i++)
 		free (maplist->list[i]);
 	free (maplist->list);
 	free (maplist);
@@ -422,8 +430,9 @@ COM_WriteBuffers (const char *filename, int count, ...)
 
 	Sys_Printf ("COM_WriteBuffers: %s\n", name);
 	while (count--) {
-		void *data = va_arg (args, void*);
-		int   len = va_arg (args, int);
+		void       *data = va_arg (args, void *);
+		int         len = va_arg (args, int);
+
 		Qwrite (f, data, len);
 	}
 	Qclose (f);
@@ -471,7 +480,7 @@ COM_CopyFile (char *netpath, char *cachepath)
 
 	remaining = COM_FileOpenRead (netpath, &in);
 	COM_CreatePath (cachepath);			// create directories up to the cache 
-										// file
+	// file
 	out = Qopen (cachepath, "wb");
 	if (!out)
 		Sys_Error ("Error opening %s", cachepath);
@@ -493,7 +502,7 @@ COM_CopyFile (char *netpath, char *cachepath)
 /*
 	COM_OpenRead
 */
-QFile *
+QFile      *
 COM_OpenRead (const char *path, int offs, int len, int zip)
 {
 	int         fd = open (path, O_RDONLY);
@@ -570,12 +579,12 @@ _COM_FOpenFile (char *filename, QFile **gzfile, char *foundname, int zip)
 		if (search->pack) {
 			packfile_t *packfile;
 
-			packfile = (packfile_t*)Hash_Find (search->pack->file_hash,
-											   filename);
+			packfile = (packfile_t *) Hash_Find (search->pack->file_hash,
+												 filename);
 #ifdef HAVE_ZLIB
 			if (!packfile)
-				packfile = (packfile_t*)Hash_Find (search->pack->file_hash,
-												   gzfilename);
+				packfile = (packfile_t *) Hash_Find (search->pack->file_hash,
+													 gzfilename);
 #endif
 			if (packfile) {
 				Con_DPrintf ("PackFile: %s : %s\n", search->pack->filename,
@@ -639,7 +648,7 @@ int         loadsize;
 	Filename are relative to the quake directory.
 	Allways appends a 0 byte to the loaded data.
 */
-byte *
+byte       *
 COM_LoadFile (char *path, int usehunk)
 {
 	QFile      *h;
@@ -687,13 +696,13 @@ COM_LoadFile (char *path, int usehunk)
 	return buf;
 }
 
-byte *
+byte       *
 COM_LoadHunkFile (char *path)
 {
 	return COM_LoadFile (path, 1);
 }
 
-byte *
+byte       *
 COM_LoadTempFile (char *path)
 {
 	return COM_LoadFile (path, 2);
@@ -707,7 +716,7 @@ COM_LoadCacheFile (char *path, struct cache_user_s *cu)
 }
 
 // uses temp hunk if larger than bufsize
-byte *
+byte       *
 COM_LoadStackFile (char *path, void *buffer, int bufsize)
 {
 	byte       *buf;
@@ -722,7 +731,8 @@ COM_LoadStackFile (char *path, void *buffer, int bufsize)
 static char *
 pack_get_key (void *_p)
 {
-	packfile_t *p = (packfile_t*)_p;
+	packfile_t *p = (packfile_t *) _p;
+
 	return p->name;
 }
 
@@ -734,7 +744,7 @@ pack_get_key (void *_p)
 	Loads the header and directory, adding the files at the beginning
 	of the list so they override previous pack files.
 */
-pack_t *
+pack_t     *
 COM_LoadPackFile (char *packfile)
 {
 	dpackheader_t header;
@@ -1049,7 +1059,8 @@ COM_Filesystem_Init (void)
 {
 	int         i;
 
-	Cmd_AddCommand ("gamedir", COM_Gamedir_f, "Specifies the directory to be used while playing.");
+	Cmd_AddCommand ("gamedir", COM_Gamedir_f,
+					"Specifies the directory to be used while playing.");
 
 	// start up with basegame->string by default
 	COM_CreateGameDirectory (fs_basegame->string);
@@ -1084,14 +1095,14 @@ COM_Filesystem_Init_Cvars (void)
 							"location of your game directories");
 	fs_basegame = Cvar_Get ("fs_basegame", "id1", CVAR_ROM,
 							"game to use by default");
-	fs_skinbase= Cvar_Get ("fs_skinbase", "qw", CVAR_ROM,
+	fs_skinbase = Cvar_Get ("fs_skinbase", "qw", CVAR_ROM,
 							"location of skins dir for downloads");
 }
 
 /*
 	COM_SkipPath
 */
-char *
+char       *
 COM_SkipPath (char *pathname)
 {
 	char       *last;
@@ -1119,7 +1130,7 @@ COM_StripExtension (char *in, char *out)
 /*
 	COM_FileExtension
 */
-char *
+char       *
 COM_FileExtension (char *in)
 {
 	static char exten[8];
@@ -1166,12 +1177,12 @@ COM_DefaultExtension (char *path, char *extension)
 int
 COM_NextFilename (char *filename, const char *prefix, const char *ext)
 {
-	char *digits;
-	char checkname [MAX_OSPATH];
-	int i;
+	char       *digits;
+	char        checkname[MAX_OSPATH];
+	int         i;
 
 	strncpy (filename, prefix, MAX_OSPATH - 4);
-	filename [MAX_OSPATH - 4] = 0;
+	filename[MAX_OSPATH - 4] = 0;
 	digits = filename + strlen (filename);
 	strcat (filename, "000");
 	strncat (filename, ext, MAX_OSPATH - strlen (filename));
@@ -1180,7 +1191,8 @@ COM_NextFilename (char *filename, const char *prefix, const char *ext)
 		digits[0] = i / 100 + '0';
 		digits[1] = i / 10 % 10 + '0';
 		digits[2] = i % 10 + '0';
-		snprintf (checkname, sizeof (checkname), "%s/%s", com_gamedir, filename);
+		snprintf (checkname, sizeof (checkname), "%s/%s", com_gamedir,
+				  filename);
 		if (Sys_FileTime (checkname) == -1)
 			return 1;					// file doesn't exist
 	}
