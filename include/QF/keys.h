@@ -30,9 +30,7 @@
 #ifndef _KEYS_H
 #define _KEYS_H
 
-#ifdef __QFCC__
-# define typedef
-#else
+#ifndef __QFCC__
 # include "QF/qtypes.h"
 # include "QF/vfile.h"
 #endif
