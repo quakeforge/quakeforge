@@ -31,61 +31,74 @@
 #ifndef __ruamoko_debug_h
 #define __ruamoko_debug_h
 
-/*
-	abort (in QuakeC, this was break)
+#ifdef __RUA_INTERNAL_IMPLEMENT
+# define BUILTIN(name, number, rettype, ...) \
+	rettype (__VA_ARGS__) name = number
+#else
+# define BUILTIN(name, number, rettype, ...) \
+	rettype (__VA_ARGS__) name
+@extern {
+#endif	// __RUA_INTERNAL_IMPLEMENT
 
-	Tell the engine to abort (stop) code processing.
-*/
-@extern void () abort;
+	/*
+		abort (in QuakeC, this was break)
 
-/*
-	error
+		Tell the engine to abort (stop) code processing.
+	*/
+	BUILTIN (abort, #6, void, void);
 
-	Abort (crash) the server. "e" is the message the server crashes with.
-*/
-@extern void (string e) error;
+	/*
+		coredump
 
-/*
-	objerror
+		Tell the engine to print all edicts (entities)
+	*/
+	BUILTIN (coredump, #28, void, void);
 
-	Prints info on the "self" ENTITY (not object), and error message "e".
-	The entity is freed.
-*/
-@extern void (string e) objerror;
+	/*
+		traceon
 
-/*
-	dprint
+		Enable instruction trace in the interpreter
+	*/
+	BUILTIN (traceon, #29, void, void);
 
-	Print string "e" if the developer Cvar is set to a nonzero value
-*/
-@extern void (string s) dprint;
+	/*
+		traceoff
 
-/*
-	coredump
+		Disable instruction trace in the interpreter
+	*/
+	BUILTIN (traceoff, #30, void, void);
 
-	Tell the engine to print all edicts (entities)
-*/
-@extern void () coredump;
+	/*
+		eprint
 
-/*
-	traceon
+		Print all information on an entity to the console
+	*/
+	BUILTIN (eprint, #31, void, entity e);
 
-	Enable instruction trace in the interpreter
-*/
-@extern void () traceon;
+	/*
+		dprint
 
-/*
-	traceoff
+		Print a string to the console if the "developer" Cvar is nonzero.
+	*/
+	BUILTIN (dprint, #25, void, string str);
 
-	Disable instruction trace in the interpreter
-*/
-@extern void () traceoff;
+	/*
+		error
 
-/*
-	eprint
+		Abort (crash) the server. "str" is the message the server crashes with.
+	*/
+	BUILTIN (error, #10, void, string str);
 
-	Print all information on an entity to the server console
-*/
-@extern void (entity e) eprint;
+	/*
+		objerror
+
+		Prints info on the "self" ENTITY (not object), and error message "e".
+		The entity is freed.
+	*/
+	BUILTIN (objerror, #10, void, string e);
+
+#ifndef __RUA_INTERNAL_IMPLEMENT
+};
+#endif	// __RUA_INTERNAL_IMPLEMENT
 
 #endif //__ruamoko_debug_h

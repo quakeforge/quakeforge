@@ -31,54 +31,107 @@
 #ifndef __ruamoko_entities_h
 #define __ruamoko_entities_h
 
-/*
-	setmodel
+#ifdef __RUA_INTERNAL_IMPLEMENT
+# define BUILTIN(name, number, rettype, ...) \
+	rettype (__VA_ARGS__) name = number
+#else
+# define BUILTIN(name, number, rettype, ...) \
+	rettype (__VA_ARGS__) name
+@extern {
+#endif	// __RUA_INTERNAL_IMPLEMENT
 
-	Sets the model name for entity e to string m.
-	Set the entity's move type and solid type before calling this.
-*/
-@extern void (entity e, string m) setmodel;
+	/*
+		setmodel
 
-/*
-	setorigin
+		Sets the model name for entity e to string m.
+		Set the entity's move type and solid type before calling.
+		SERVER ONLY
+	*/
+	BUILTIN (setmodel, #3, void, entity e, string m);
 
-	Sets origin for entity e to vector o.
-*/
-@extern void (entity e, vector o) setorigin;
+	/*
+		setorigin
 
-/*
-	setsize
+		Sets origin for entity e to vector o.
+		SERVER ONLY
+	*/
+	BUILTIN (setorigin, #2, void, entity e, vector o);
 
-	Set the size of entity e to a cube with the bounds ( x1 y1 z1 ) ( x2 y2 z2 )
-*/
-@extern void (entity e, vector min, vector max) setsize;
+	/*
+		setsize
 
-/*
-	spawn
+		Set the size of entity e to a cube with the bounds ( x1 y1 z1 ) ( x2 y2 z2 )
+		SERVER ONLY
+	*/
+	BUILTIN (setsize, #4, void, entity e, vector min, vector max);
 
-	Creates a new entity and returns it.
-*/
-@extern entity () spawn;
+	/*
+		spawn
 
-/*
-	remove
+		Creates a new entity and returns it.
+		SERVER ONLY
+	*/
+	BUILTIN (spawn, #14, entity, void);
 
-	Remove entity e.
-*/
-@extern void (entity e) remove;
+	/*
+		remove
 
-@extern entity (entity start, .string fld, string match) find;
-@extern entity (vector org, float rad) findradius;
-@extern entity (entity e) nextent;
+		Remove entity e.
+		SERVER ONLY
+	*/
+	BUILTIN (remove, #15, void, entity e);
 
-/*
-	makestatic
+	/*
+		find
 
-	Make entity e static (part of the world).
-	Static entities do not interact with the game.
-*/
-@extern void (entity e) makestatic;
+		Search all entities for a field with contents matching a value and
+		return the first matching entity.
 
-@extern void (entity e) setspawnparms;
+		start:	the edict from which to start.
+		field:	The field to search.
+		match:	The contents to search for.
+
+		This function must be called multiple times to get multiple results.
+		Stupid, but functional.
+	*/
+#ifdef __VERSION6__
+	BUILTIN (find, #18, entity, entity start, .string field, string match);
+#else
+	BUILTIN (find, #18, entity, entity start, ...);
+#endif
+
+	/*
+		findradius
+
+		Search for entities within radius of origin.
+
+		If none found, world is returned.
+		If >1 found, the next will be linked using the "chain" field.
+		SERVER ONLY
+	*/
+	BUILTIN (findradius, #22, entity, vector origin, float radius);
+
+	/*
+		nextent
+
+		Return next entity after e. Use for traversing all entities.
+		Entity zero (the world) is returned if no more exist.
+	*/
+	BUILTIN (nextent, #47, entity, entity e);
+
+	/*
+		makestatic
+
+		Make entity e static (part of the world).
+		Static entities do not interact with the game.
+		SERVER ONLY
+	*/
+	BUILTIN (makestatic, #69, void, entity e);
+
+	BUILTIN (setspawnparms, #78, void, entity e);
+
+#ifndef __RUA_INTERNAL_IMPLEMENT
+};
+#endif	// __RUA_INTERNAL_IMPLEMENT
 
 #endif //__ruamoko_entities_h
