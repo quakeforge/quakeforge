@@ -475,6 +475,8 @@ CL_AdjustAngles (void)
 
 }
 
+extern cvar_t *chase_active;
+
 /*
 	CL_BaseMove
 
@@ -518,6 +520,22 @@ CL_BaseMove (usercmd_t *cmd)
 	viewdelta.position[0] = viewdelta.position[1] = viewdelta.position[2] = 0;
 
 	IN_Move ();
+
+		// adjust for chase camera angles
+ 	if (atoi (Info_ValueForKey (cl.serverinfo, "chase"))
+		&& (chase_active->int_val == 2 || chase_active->int_val == 3))
+	{
+		vec3_t dir = {0,0,0}, forward, right, up;
+		dir[1] = r_refdef.viewangles[1] - cl.viewangles[1];
+		AngleVectors (dir, forward, right, up);
+
+		VectorScale (forward, cmd->forwardmove, forward);
+		VectorScale (right,   cmd->sidemove,    right);
+		VectorAdd   (forward, right, dir);
+
+		cmd->forwardmove = dir[0];
+		cmd->sidemove    = dir[1];
+	}
 
 	cmd->forwardmove += viewdelta.position[2] * m_forward->value;
 	cmd->sidemove += viewdelta.position[0] * m_side->value;

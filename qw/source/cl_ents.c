@@ -805,7 +805,7 @@ CL_LinkPlayers (void)
 		// things (due to lack of lights?), so I'm leaving this as is for now.
 
 		// the player object never gets added
-		if (j == cl.playernum) {
+		if (j == cl.playernum && !Cam_DrawPlayer (j)) {
 			r_player_entity = &cl_player_ents[state - frame->playerstate];
 			continue;
 		}
@@ -858,11 +858,18 @@ CL_LinkPlayers (void)
 		(*ent)->colormod[0] = (*ent)->colormod[1] = (*ent)->colormod[2] = 1;
 
 		// angles
-		(*ent)->angles[PITCH] = -state->viewangles[PITCH] / 3;
-		(*ent)->angles[YAW] = state->viewangles[YAW];
+		if (j == cl.playernum)
+		{
+			(*ent)->angles[PITCH] = -cl.viewangles[PITCH] / 3;
+			(*ent)->angles[YAW] = cl.viewangles[YAW];
+		}
+		else
+		{
+			(*ent)->angles[PITCH] = -state->viewangles[PITCH] / 3;
+			(*ent)->angles[YAW] = state->viewangles[YAW];
+		}
 		(*ent)->angles[ROLL] = 0;
-		(*ent)->angles[ROLL] =
-			V_CalcRoll ((*ent)->angles, state->velocity) * 4;
+		(*ent)->angles[ROLL] = V_CalcRoll ((*ent)->angles, state->velocity) * 4;
 
 		// only predict half the move to minimize overruns
 		msec = 500 * (playertime - state->state_time);

@@ -52,4 +52,6 @@ void CL_Cam_Init_Cvars(void);
 
 void CL_ParseEntityLump(const char *entdata);
 
+void Chase_Update (void);
+
 #endif // _CL_CAM_H

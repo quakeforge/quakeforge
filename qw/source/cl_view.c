@@ -619,6 +619,10 @@ V_CalcIntermissionRefdef (void)
 	Cvar_SetValue (v_idlescale, old);
 }
 
+#include "cl_cam.h"
+
+extern cvar_t *chase_active;
+
 void
 V_CalcRefdef (void)
 {
@@ -724,6 +728,10 @@ V_CalcRefdef (void)
 		view->origin[2] += oldz - cl.simorg[2];
 	} else
 		oldz = cl.simorg[2];
+
+	if (atoi (Info_ValueForKey (cl.serverinfo, "chase"))
+		&& chase_active->int_val)
+		Chase_Update ();
 }
 
 void
