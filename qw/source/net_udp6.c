@@ -52,9 +52,7 @@ static const char rcsid[] =
 # include <sys/socket.h>
 #endif
 #ifdef HAVE_NETINET_IN_H
-# define model_t sun_model_t
 # include <netinet/in.h>
-# undef model_t
 #endif
 #ifdef HAVE_NETDB_H
 # include <netdb.h>
