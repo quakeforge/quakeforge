@@ -148,6 +148,7 @@ PR_GarbageCollect (progs_t *pr)
 	strref_t   *sr;
 	ddef_t     *def;
 	int         i, j;
+	char       *str;
 
 	for (i = 0; i < pr->dyn_str_size; i++)
 		for (j = 0; j < 1024; j++)
@@ -155,29 +156,37 @@ PR_GarbageCollect (progs_t *pr)
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
 		def = &pr->pr_globaldefs[i];
 		if ((def->type & ~DEF_SAVEGLOBAL) == ev_string) {
-			sr = Hash_Find (pr->strref_hash, G_STRING (pr, def->ofs));
-			if (sr)
-				sr->count++;
+			str = G_STRING (pr, def->ofs);
+			if (str) {
+				sr = Hash_Find (pr->strref_hash, str);
+				if (sr)
+					sr->count++;
+			}
 		}
 	}
 	for (i = 0; i < pr->progs->numfielddefs; i++) {
 		def = &pr->pr_fielddefs[i];
 		if ((def->type & ~DEF_SAVEGLOBAL) == ev_string) {
 			for (j = 0; j < *pr->num_edicts; j++) {
-				sr = Hash_Find (pr->strref_hash,
-								E_STRING (pr, EDICT_NUM (pr, j), def->ofs));
-				if (sr)
-					sr->count++;
+				str = E_STRING (pr, EDICT_NUM (pr, j), def->ofs);
+				if (str) {
+					sr = Hash_Find (pr->strref_hash, str);
+					if (sr)
+						sr->count++;
+				}
 			}
 		}
 	}
-	for (i = 0; i < pr->dyn_str_size; i++)
-		for (j = 0; j < 1024; j++)
-			if (pr->dynamic_strings[i][j].string
-				&& !pr->dynamic_strings[i][j].count) {
+	for (i = 0; i < pr->dyn_str_size; i++) {
+		for (j = 0; j < 1024; j++) {
+			sr = &pr->dynamic_strings[i][j];
+			if (sr->string && !sr->count) {
+				sr = 
 				Hash_Del (pr->strref_hash, sr->string);
 				strref_free (sr, pr);
 			}
+		}
+	}
 }
 
 char *
