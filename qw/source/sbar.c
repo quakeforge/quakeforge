@@ -57,6 +57,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "bothdefs.h"
 #include "cl_cam.h"
+#include "cl_parse.h"
 #include "client.h"
 #include "compat.h"
 #include "sbar.h"
@@ -109,6 +110,7 @@ static view_t *hud_armament_view;
 static view_t *hud_frags_view;
 
 static view_t *overlay_view;
+static view_t *stuff_view;
 
 static void (*Sbar_Draw_DMO_func) (view_t *view, int l, int y, int skip);
 static void Sbar_TeamOverlay (view_t *view);
@@ -120,11 +122,14 @@ cl_hudswap_f (cvar_t *var)
 	hudswap = var->int_val;
 	if (hudswap) {
 		hud_armament_view->gravity = grav_southwest;
+		stuff_view->gravity = grav_southeast;
 	} else {
 		hud_armament_view->gravity = grav_southeast;
+		stuff_view->gravity = grav_southwest;
 	}
 	view_move (hud_armament_view, hud_armament_view->xpos,
 			   hud_armament_view->ypos);
+	view_move (stuff_view, stuff_view->xpos, stuff_view->ypos);
 }
 
 static void
@@ -1543,6 +1548,84 @@ draw_miniteam (view_t *view)
 	}
 }
 
+static void
+draw_time (view_t *view)
+{
+	struct tm  *local = NULL;
+	time_t      utc = 0;
+	const char *timefmt = NULL;
+	char        st[80];
+
+	// Get local time
+	utc = time (NULL);
+	local = localtime (&utc);
+
+	if (show_time->int_val == 1) {  // Use international format
+		timefmt = "%k:%M";
+	} else if (show_time->int_val >= 2) {   // US AM/PM display
+		timefmt = "%l:%M %P";
+	}
+
+	strftime (st, sizeof (st), timefmt, local);
+	draw_string (view, 8, 8, st);
+}
+
+static void
+draw_fps (view_t *view)
+{
+	char          st[80];
+	double        t;
+	static double lastframetime;
+	static int    lastfps;
+
+	t = Sys_DoubleTime ();
+	if ((t - lastframetime) >= 1.0) {
+		lastfps = fps_count;
+		fps_count = 0;
+		lastframetime = t;
+	}
+	snprintf (st, sizeof (st), "%3d FPS", lastfps);
+	draw_string (view, 80, 8, st);
+}
+
+static void
+draw_net (view_t *view)
+{
+	// request new ping times every two seconds
+	if (!cls.demoplayback && realtime - cl.last_ping_request > 2) {
+		cl.last_ping_request = realtime;
+		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+		SZ_Print (&cls.netchan.message, "pings");
+	}
+	if (show_ping->int_val) {
+		int ping = cl.players[cl.playernum].ping;
+
+		ping = bound (0, ping, 999);
+		draw_string (view, 0, 0, va ("%3d ms ", ping));
+	}
+
+	if (show_ping->int_val && show_pl->int_val)
+		draw_character (view, 48, 0, '/');
+
+	if (show_pl->int_val) {
+		int lost = CL_CalcNet ();
+
+		lost = bound (0, lost, 999);
+		draw_string (view, 56, 0, va ("%3d pl", lost));
+	}
+}
+
+static void
+draw_stuff (view_t *view)
+{
+	if (show_time->int_val > 0)
+		draw_time (view);
+	if (show_fps->int_val > 0)
+		draw_fps (view);
+	if (cls.state == ca_active && (show_ping->int_val || show_pl->int_val))
+		draw_net (view);
+}
+
 void
 Sbar_IntermissionOverlay (void)
 {
@@ -1567,8 +1650,8 @@ static void
 init_sbar_views (void)
 {
 	view_t     *view;
-	view_t     *minifrags_view;
-	view_t     *miniteam_view;
+	view_t     *minifrags_view = 0;
+	view_t     *miniteam_view = 0;
 
 	if (vid.conwidth < 512) {
 		sbar_view = view_new (0, 0, 320, 48, grav_south);
@@ -1659,8 +1742,8 @@ static void
 init_hud_views (void)
 {
 	view_t     *view;
-	view_t     *minifrags_view;
-	view_t     *miniteam_view;
+	view_t     *minifrags_view = 0;
+	view_t     *miniteam_view = 0;
 
 	if (vid.conwidth < 512) {
 		hud_view = view_new (0, 0, 320, 48, grav_south);
@@ -1739,8 +1822,13 @@ init_views (void)
 	overlay_view->draw = draw_overlay;
 	overlay_view->visible = 0;
 
-	if (con_module)
+	stuff_view = view_new (0, 48, 144, 16, grav_southwest);
+	stuff_view->draw = draw_stuff;
+
+	if (con_module) {
 		view_insert (con_module->data->console->view, overlay_view, 0);
+		view_insert (con_module->data->console->view, stuff_view, 0);
+	}
 
 	init_sbar_views ();
 	init_hud_views ();

@@ -68,8 +68,6 @@ static SCR_Func scr_funcs[] = {
 	Draw_Crosshair,
 	SCR_DrawRam,
 	SCR_DrawNet,
-	SCR_DrawFPS,
-	SCR_DrawTime,
 	SCR_DrawTurtle,
 	SCR_DrawPause,
 	SCR_CheckDrawCenterString,

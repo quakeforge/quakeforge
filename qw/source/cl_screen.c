@@ -69,53 +69,11 @@ SCR_DrawNet (void)
 	Draw_Pic (scr_vrect.x + 64, scr_vrect.y, scr_net);
 }
 
-static void
-CL_NetStats (void)
-{
-	int		x, y;
-
-	if (!show_ping->int_val && !show_pl->int_val)
-		return;
-	if (cls.state != ca_active)
-		return;
-
-	x = hudswap ? vid.width - 104 : 0;
-	y = vid.height - sb_lines - 16;
-
-	// request new ping times every two seconds
-	if (!cls.demoplayback && realtime - cl.last_ping_request > 2) {
-		cl.last_ping_request = realtime;
-		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-		SZ_Print (&cls.netchan.message, "pings");
-	}
-	if (show_ping->int_val) {
-		int ping = cl.players[cl.playernum].ping;
-
-		ping = bound (0, ping, 999);
-		Draw_String (x, y, va ("%3d ms", ping));
-		x+= 48;
-	} else if (hudswap) {
-		x += 56;
-	}
-	if (show_ping->int_val && show_pl->int_val) {
-		Draw_String (x, y, "/");
-		x += 8;
-	}
-	if (show_pl->int_val) {
-		int lost = CL_CalcNet ();
-		lost = bound (0, lost, 999);
-		Draw_String (x, y, va ("%3d pl", lost));
-	}
-}
-
 static SCR_Func scr_funcs[] = {
 	Draw_Crosshair,
 	SCR_DrawRam,
 	SCR_DrawNet,
 	CL_NetGraph,
-	CL_NetStats,
-	SCR_DrawFPS,
-	SCR_DrawTime,
 	SCR_DrawTurtle,
 	SCR_DrawPause,
 	SCR_CheckDrawCenterString,

@@ -38,8 +38,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include <time.h>
-
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -292,79 +290,6 @@ SCR_DrawTurtle (void)
 		return;
 
 	Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
-}
-
-extern int    fps_count;	//FIXME
-
-void
-SCR_DrawFPS (void)
-{
-	char          st[80];
-	double        t;
-	static double lastframetime;
-	int           i, x, y;
-	static int    lastfps;
-
-	if (!show_fps->int_val)
-		return;
-
-	t = Sys_DoubleTime ();
-	if ((t - lastframetime) >= 1.0) {
-		lastfps = fps_count;
-		fps_count = 0;
-		lastframetime = t;
-	}
-	snprintf (st, sizeof (st), "%3d FPS", lastfps);
-
-	// FIXME! This is evil. -- Deek
-	// calculate the location of the clock
-	if (show_time->int_val <= 0) {
-		i = 8;
-	} else if (show_time->int_val == 1) {
-		i = 56;
-	} else {
-		i = 80;
-	}
-
-	x = hudswap ? vid.width - ((strlen (st) * 8) + i) : (unsigned int) i;
-	y = vid.height - sb_lines - 8;
-	Draw_String (x, y, st);
-}
-
-/*
-	SCR_DrawTime
-
-	Draw a clock on the screen
-	Written by Misty, rewritten by Deek.
-*/
-void
-SCR_DrawTime (void)
-{
-	char        st[80];
-	const char *timefmt = NULL;
-	int         x, y;
-	struct tm  *local = NULL;
-	time_t      utc = 0;
-
-	// any cvar that can take multiple settings must be able to handle abuse. 
-	if (show_time->int_val <= 0)
-		return;
-
-	// Get local time
-	utc = time (NULL);
-	local = localtime (&utc);
-
-	if (show_time->int_val == 1) {	// Use international format
-		timefmt = "%k:%M";
-	} else if (show_time->int_val >= 2) {	// US AM/PM display
-		timefmt = "%l:%M %P";
-	}
-	strftime (st, sizeof (st), timefmt, local);
-
-	// Print it at far left/right of screen
-	x = hudswap ? (vid.width - ((strlen (st) * 8) + 8)) : 8;
-	y = vid.height - sb_lines - 8;
-	Draw_String (x, y, st);
 }
 
 void
