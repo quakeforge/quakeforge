@@ -98,14 +98,17 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 		sprintf (element, "%s_x", name);
 		d = PR_GetDef (&type_float, element, scope, allocate);
 		d->used = 1;
+		d->parent = def;
 
 		sprintf (element, "%s_y", name);
 		d = PR_GetDef (&type_float, element, scope, allocate);
 		d->used = 1;
+		d->parent = def;
 
 		sprintf (element, "%s_z", name);
 		d = PR_GetDef (&type_float, element, scope, allocate);
 		d->used = 1;
+		d->parent = def;
 	} else {
 		*allocate += type_size[type->type];
 	}
@@ -119,14 +122,17 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 			sprintf (element, "%s_x", name);
 			d = PR_GetDef (&type_floatfield, element, scope, allocate);
 			d->used = 1;	// always `used'
+			d->parent = def;
 
 			sprintf (element, "%s_y", name);
 			d = PR_GetDef (&type_floatfield, element, scope, allocate);
 			d->used = 1;	// always `used'
+			d->parent = def;
 
 			sprintf (element, "%s_z", name);
 			d = PR_GetDef (&type_floatfield, element, scope, allocate);
 			d->used = 1;	// always `used'
+			d->parent = def;
 		} else {
 			pr.size_fields += type_size[type->aux_type->type];
 		}
@@ -275,5 +281,29 @@ PR_FlushScope (def_t *scope, int force_used)
 			}
 			Hash_Del (defs_by_name, def->name);
 		}
+	}
+}
+
+void
+PR_DefInitialized (def_t *d)
+{
+	d->initialized = 1;
+	if (d->type == &type_vector
+		|| (d->type->type == ev_field
+			&& d->type->aux_type == &type_vector)) {
+		d = d->def_next;
+		d->initialized = 1;
+		d = d->def_next;
+		d->initialized = 1;
+		d = d->def_next;
+		d->initialized = 1;
+	}
+	if (d->parent) {
+		d = d->parent;
+		if (d->type == &type_vector
+			&& d->def_next->initialized
+			&& d->def_next->def_next->initialized
+			&& d->def_next->def_next->def_next->initialized)
+			d->initialized = 1;
 	}
 }

@@ -920,6 +920,7 @@ main (int argc, char **argv)
 	myargv = argv;
 
 	options.version = PROG_VERSION;
+	options.warn_uninitialized = 1;
 
 	if (CheckParm ("-h") || CheckParm ("--help")) {
 		printf ("%s - A compiler for the QuakeC language\n", argv[0]);

@@ -812,6 +812,24 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	type_t     *type = 0;
 	expr_t     *e;
 
+	if (options.warn_uninitialized) {
+		if (op != '='
+			&& e1->type == ex_def
+			&& !e1->e.def->initialized) {
+			warning (e1, "%s may be used uninitialized", e1->e.def->name);
+			e1->e.def->initialized = 1; // only warn once
+		}
+		if (e2->type == ex_def
+			&& !e2->e.def->initialized
+			&& !(e2->e.def->type->type == ev_func && !e2->e.def->scope)) {
+			warning (e2, "%s may be used uninitialized", e2->e.def->name);
+			e2->e.def->initialized = 1; // only warn once
+		}
+	}
+
+	if (op == '=' && e1->type == ex_def)
+		PR_DefInitialized (e1->e.def);
+
 	if (e1->type == ex_block && e1->e.block.is_call
 		&& e2->type == ex_block && e2->e.block.is_call
 		&& e1->e.block.result) {
@@ -936,6 +954,12 @@ asx_expr (int op, expr_t *e1, expr_t *e2)
 expr_t *
 unary_expr (int op, expr_t *e)
 {
+	if (options.warn_uninitialized
+		&& e->type == ex_def
+		&& !e->e.def->initialized) {
+		warning (e, "%s may be used uninitialized", e->e.def->name);
+		e->e.def->initialized = 1; // only warn once
+	}
 	switch (op) {
 		case '-':
 			switch (e->type) {

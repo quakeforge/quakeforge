@@ -204,6 +204,8 @@ def_item
 	: def_name opt_initializer
 		{
 			$$ = $1;
+			if (!$$->scope && $$->type->type != ev_func)
+				PR_DefInitialized ($$);
 		}
 	;
 
@@ -246,11 +248,13 @@ opt_initializer
 				e->type = ex_def;
 				e->e.def = current_def;
 				append_expr (local_expr, binary_expr ('=', e, $2));
+				PR_DefInitialized (current_def);
 			} else {
-				if ($2->type >= ex_string)
+				if ($2->type >= ex_string) {
 					current_def = PR_ReuseConstant ($2,  current_def);
-				else
+				} else {
 					error ($2, "non-constant expression used for initializer");
+				}
 			}
 		}
 	| '=' '#' const
@@ -617,7 +621,8 @@ build_scope (function_t *f, def_t *func)
 		f->parm_ofs[i] = def->ofs;
 		if (i > 0 && f->parm_ofs[i] < f->parm_ofs[i - 1])
 			Error ("bad parm order");
-		def->used = 1;	// don't warn for unused params
+		def->used = 1;				// don't warn for unused params
+		PR_DefInitialized (def);	// params are assumed to be initialized
 	}
 }
 

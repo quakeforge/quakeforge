@@ -302,6 +302,7 @@ typedef struct def_s {
 	struct def_s	*next;			// general purpose linking
 	struct def_s	*scope_next;	// to facilitate hash table removal
 	struct def_s	*scope;			// function the var was defined in, or NULL
+	struct def_s	*parent;		// vector/quaternion member
 } def_t;
 
 //============================================================================
@@ -470,6 +471,7 @@ def_t *PR_GetTempDef (type_t *type, def_t *scope);
 void PR_FreeTempDefs ();
 void PR_ResetTempDefs ();
 void PR_FlushScope (def_t *scope, int force_used);
+void PR_DefInitialized (def_t *d);
 
 void PR_PrintDefs (void);
 void PR_PrintFunction (def_t *def);
@@ -559,6 +561,7 @@ typedef struct {
 	int		quiet;		// not so much chatter
 	int		debug;		// produce debug info
 	int		undefined_function_warning;	// print a warning when a function isn't defined
+	int		warn_uninitialized;	// warn for uninitialized vars
 } options_t;
 
 extern options_t options;
