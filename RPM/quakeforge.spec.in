@@ -297,6 +297,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root) %{_prefix}/lib/libQFcsqc.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFgamecode.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFgamecode_builtins.so.*
+%attr(-,root,root) %{_prefix}/lib/libQFgib.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFjs.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFmodels.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFsound.so.*
@@ -319,6 +320,8 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/lib/libQFgamecode.so
 %attr(-,root,root)	%{_prefix}/lib/libQFgamecode_builtins.*a
 %attr(-,root,root)	%{_prefix}/lib/libQFgamecode_builtins.so
+%attr(-,root,root)	%{_prefix}/lib/libQFgib.*a
+%attr(-,root,root)	%{_prefix}/lib/libQFgib.so
 %attr(-,root,root)	%{_prefix}/lib/libQFjs.*a
 %attr(-,root,root)	%{_prefix}/lib/libQFjs.so
 %attr(-,root,root)	%{_prefix}/lib/libQFmodels.*a

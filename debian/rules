@@ -92,6 +92,7 @@ install: build
 		usr/lib/libQFcsqc.so.* \
 		usr/lib/libQFgamecode.so.* \
 		usr/lib/libQFgamecode_builtins.so.* \
+		usr/lib/libQFgib.so.* \
 		usr/lib/libQFjs.so.* \
 		usr/lib/libQFmodels.so.* \
 		usr/lib/libQFsound.so.* \
@@ -117,6 +118,8 @@ install: build
 		usr/lib/libQFgamecode.so \
 		usr/lib/libQFgamecode_builtins.*a \
 		usr/lib/libQFgamecode_builtins.so \
+		usr/lib/libQFgib.a \
+		usr/lib/libQFgib.so \
 		usr/lib/libQFjs.*a \
 		usr/lib/libQFjs.so \
 		usr/lib/libQFmodels.*a \
