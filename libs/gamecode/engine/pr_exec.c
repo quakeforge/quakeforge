@@ -785,6 +785,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				memcpy (&pr->pr_globals[OFS_RETURN], &OPA, 3 * sizeof (OPA));
 				st = &pr->pr_statements[PR_LeaveFunction (pr)];
 				if (pr->pr_depth == exitdepth) {
+					pr->pr_xstatement = st - pr->pr_statements;
 					Sys_PopSignalHook ();
 					return;					// all done
 				}
