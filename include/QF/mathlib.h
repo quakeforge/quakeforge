@@ -62,7 +62,7 @@ extern  int nanmask;
 #define VectorDistance(a, b)	sqrt(VectorDistance_fast(a, b))
 
 
-#define qfrandom(MAX) ((float) MAX * (rand() / (RAND_MAX + 1.0)))
+#define qfrandom(MAX) ((float) MAX * (rand() * (1.0 / (RAND_MAX + 1.0))))
 
 // up / down
 #define	PITCH	0
