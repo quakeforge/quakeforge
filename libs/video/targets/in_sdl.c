@@ -33,6 +33,7 @@ static const char rcsid[] =
 
 #include <SDL.h>
 
+#include "QF/cdaudio.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
@@ -40,14 +41,35 @@ static const char rcsid[] =
 #include "QF/keys.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
-#include "QF/qendian.h"
+#include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
 
 #include "compat.h"
 
-int		old_windowed_mouse;
+cvar_t *in_snd_block;
 
+
+static void
+event_focusout (void)
+{
+//	XAutoRepeatOn (x_disp);
+	if (in_snd_block->int_val) {
+		S_BlockSound ();
+		CDAudio_Pause ();
+	}
+}
+
+static void
+event_focusin (void)
+{
+//	if (key_dest == key_game)
+//		XAutoRepeatOff (x_disp);
+	if (in_snd_block->int_val) {
+		S_UnblockSound ();
+		CDAudio_Resume ();
+	}
+}
 
 void
 IN_LL_SendKeyEvents (void)
@@ -59,6 +81,15 @@ IN_LL_SendKeyEvents (void)
 
 	while (SDL_PollEvent (&event)) {
 		switch (event.type) {
+			case SDL_ACTIVEEVENT:
+				if (event.active.state == SDL_APPINPUTFOCUS) {
+					if (event.active.gain)
+						event_focusin ();
+					else
+						event_focusout ();
+				}
+				break;
+
 			case SDL_KEYDOWN:
 			case SDL_KEYUP:
 				sym = event.key.keysym.sym;
@@ -786,12 +817,12 @@ IN_LL_SendKeyEvents (void)
 								   event.type == SDL_MOUSEBUTTONDOWN);
 						break;
 					case 4:
-						Key_Event (QFM_WHEEL_UP, 0, true);
-						Key_Event (QFM_WHEEL_UP, 0, false);
+						Key_Event (QFM_WHEEL_UP, 0,
+								   event.type == SDL_MOUSEBUTTONDOWN);
 						break;
 					case 5:
-						Key_Event (QFM_WHEEL_DOWN, 0, true);
-						Key_Event (QFM_WHEEL_DOWN, 0, false);
+						Key_Event (QFM_WHEEL_DOWN, 0,
+								   event.type == SDL_MOUSEBUTTONDOWN);
 						break;
 				}
 				break;
@@ -802,7 +833,6 @@ IN_LL_SendKeyEvents (void)
 				break;
 
 			case SDL_QUIT:
-//				CL_Disconnect ();
 				Sys_Quit ();
 				break;
 			default:
@@ -815,23 +845,20 @@ void
 IN_LL_Grab_Input (void)
 {
 	SDL_WM_GrabInput (SDL_GRAB_ON);
-	SDL_ShowCursor (0);
 }
 
 void
 IN_LL_Ungrab_Input (void)
 {
-	SDL_ShowCursor (1);
 	SDL_WM_GrabInput (SDL_GRAB_OFF);
 }
 
 void
 IN_LL_Init (void)
 {
-	// Enable UNICODE translation for keyboard input
-	SDL_EnableUNICODE(1);
+	SDL_EnableUNICODE (1);	// Enable UNICODE translation for keyboard input
 
-	if (COM_CheckParm ("-nomouse") && !in_grab->value)
+	if (COM_CheckParm ("-nomouse"))
 		return;
 
 	in_mouse_x = in_mouse_y = 0.0;
@@ -841,8 +868,8 @@ IN_LL_Init (void)
 void
 IN_LL_Init_Cvars (void)
 {
-//	in_snd_block = Cvar_Get ("in_snd_block", "0", CVAR_ARCHIVE, NULL,
-//							 "block sound output on window focus loss");
+	in_snd_block = Cvar_Get ("in_snd_block", "0", CVAR_ARCHIVE, NULL,
+							 "block sound output on window focus loss");
 }
 
 void
