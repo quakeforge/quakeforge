@@ -32,7 +32,7 @@
 #endif
 
 #include <stdio.h>
-#include <sys/asoundlib.h>
+#include <alsa/asoundlib.h>
 
 #include "QF/console.h"
 #include "QF/cvar.h"
