@@ -280,8 +280,6 @@ Log_Delta (int bits)
 	entity_state_t to;
 	int i;
 
-	Net_LogPrintf ("\n\t");
-
 	// set everything to the state we are delta'ing from
 
 	to.number = bits & 511;
@@ -743,20 +741,25 @@ Parse_Server_Packet (int has_sequence)
 						Net_LogPrintf ("\n\t*End of sound list*");
 					break;
 				case svc_packetentities:
+packetentities:
 					while (1) {
 						mask1 = (unsigned short) MSG_ReadShort (&packet);
 						if (packet.badread) {
 							Net_LogPrintf ("Badread\n");
 							return;
 						}
-						if (!mask1) break;
-						if (mask1 & U_REMOVE) Net_LogPrintf ("UREMOVE ");
+						if (!mask1)
+							break;
+						Net_LogPrintf ("%d", mask1 & 511);
+						if (mask1 & U_REMOVE)
+							Net_LogPrintf (" UREMOVE");
 						Log_Delta (mask1);
+						Net_LogPrintf ("\n");
 					}
 					break;
 				case svc_deltapacketentities:
-					Net_LogPrintf ("idx: %d", MSG_ReadByte (&packet));
-					return;
+					Net_LogPrintf ("idx: %d\n", MSG_ReadByte (&packet));
+					goto packetentities;
 					break;
 				case svc_maxspeed:
 					Net_LogPrintf ("%f", MSG_ReadFloat (&packet));
