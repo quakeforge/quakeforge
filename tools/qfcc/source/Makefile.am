@@ -33,9 +33,5 @@ YFLAGS = -d
 
 bin_PROGRAMS=	qfcc
 
-if NEW_PARSER
 qfcc_SOURCES=	cmdlib.c debug.c pr_comp.c pr_def.c pr_imm.c pr_lex.c pr_opcode.c qfcc.c qc-parse.y qc-lex.l emit.c expr.c
-else
-qfcc_SOURCES=	cmdlib.c debug.c pr_comp.c pr_def.c pr_imm.c pr_lex.c pr_opcode.c qfcc.c
-endif
 qfcc_LDADD=	-lQFgamecode -lQFutil

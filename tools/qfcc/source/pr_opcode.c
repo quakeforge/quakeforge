@@ -36,17 +36,6 @@ opcode_t *op_ifnot;
 opcode_t *op_state;
 opcode_t *op_goto;
 
-static type_t *types[] = {
-	&type_void,
-	&type_string,
-	&type_float,
-	&type_vector,
-	&type_entity,
-	&type_field,
-	&type_function,
-	&type_pointer,
-};
-
 statref_t *
 PR_NewStatref (dstatement_t *st, int field)
 {
@@ -64,42 +53,6 @@ PR_AddStatementRef (def_t *def, dstatement_t *st, int field)
 		ref->next = def->refs;
 		def->refs = ref;
 	}
-}
-
-/*
-	PR_Statement
-
-	Emits a primitive statement, returning the var it places it's value in
-*/
-def_t *
-PR_Statement (opcode_t * op, def_t * var_a, def_t * var_b)
-{
-	dstatement_t	*statement;
-	def_t			*var_c;
-
-	statement = &statements[numstatements];
-	numstatements++;
-
-	statement_linenums[statement - statements] = pr_source_line;
-	statement->op = op->opcode;
-	statement->a = var_a ? var_a->ofs : 0;
-	statement->b = var_b ? var_b->ofs : 0;
-	if (op->type_c == ev_void || op->right_associative) {
-		// ifs, gotos, and assignments don't need vars allocated
-		var_c = NULL;
-		statement->c = 0;
-	} else {	// allocate result space
-		var_c = PR_GetTempDef (types[op->type_c], pr_scope);
-		statement->c = var_c->ofs;
-	}
-	PR_AddStatementRef (var_a, statement, 0);
-	PR_AddStatementRef (var_b, statement, 1);
-	PR_AddStatementRef (var_c, statement, 2);
-
-	if (op->right_associative)
-		return var_a;
-
-	return var_c;
 }
 
 static const char *

@@ -87,7 +87,7 @@ m		([\-+]?)
 						while (isspace (*pr_file_p))
 							pr_file_p++;
 						if (!*pr_file_p)
-							PR_ParseError ("Unexpected end of file");
+							error (0, "Unexpected end of file");
 						PR_LexString ();		// grab the filename
 						while (*pr_file_p && *pr_file_p != '\n')	// ignore flags
 							pr_file_p++;

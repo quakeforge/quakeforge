@@ -71,7 +71,7 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 	if (def) {
 		if (allocate && scope == def->scope)
 			if (type && def->type != type)
-				PR_ParseError ("Type mismatch on redeclaration of %s", name);
+				error (0, "Type mismatch on redeclaration of %s", name);
 		if (!allocate || def->scope == scope)
 			return def;
 	}

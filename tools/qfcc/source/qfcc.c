@@ -1023,7 +1023,6 @@ main (int argc, char **argv)
 
 	// compile all the files
 	while ((src = COM_Parse (src))) {
-#ifdef NEW_PARSER
 #ifdef USE_CPP
 		pid_t	pid;
 		char	*temp1;
@@ -1114,15 +1113,6 @@ main (int argc, char **argv)
 #endif
 		if (error)
 			return 1;
-#else
-		char	*src2;
-		sprintf (filename, "%s%c%s", sourcedir, PATH_SEPARATOR, com_token);
-		if (!options.quiet)
-			printf ("compiling %s\n", filename);
-		LoadFile (filename, (void *) &src2);
-		if (!PR_CompileFile (src2, filename))
-			return 1;
-#endif
 	}
 
 	if (!PR_FinishCompilation ())
