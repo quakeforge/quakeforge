@@ -32,7 +32,6 @@
 #endif
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/screen.h"
@@ -40,9 +39,10 @@
 #include "QF/va.h"
 #include "QF/wad.h"
 
-#include "sbar.h"
-#include "game.h"
 #include "client.h"
+#include "compat.h"
+#include "game.h"
+#include "sbar.h"
 #include "server.h"
 
 int         sb_updates;				// if >= vid.numpages, no update needed
@@ -555,8 +555,11 @@ Sbar_DrawInventory (void)
 			if (time && time > (cl.time - 2) && flashon) {	// Flash frame
 				sb_updates = 0;
 			} else {
-				// FIXME: MISSIONHUD (this should have been !hip && maybe?)
-				if (/*!hipnotic ||*/ (i > 1)) {
+				// FIXME: MISSIONHUD
+				// NOTE: hipnotic seems to move the keys (items 0 and 1), so
+				// draw all items if /not/ hipnotic, but skip 0 and 1 if
+				// playing hipnotic
+				if (/*!hipnotic*/1 || (i > 1)) {
 					Sbar_DrawPic (192 + i * 16, -16, sb_items[i]);
 				}
 			}
