@@ -20,7 +20,8 @@ void PR_PrintType(type_t*);
 
 type_t *parse_params (def_t *parms);
 function_t *new_function (void);
-void build_scope (def_t *func);
+void build_function (function_t *f);
+void build_scope (function_t *f, def_t *func);
 
 typedef struct {
 	type_t	*type;
@@ -41,6 +42,7 @@ typedef struct {
 	float	vector_val[3];
 	float	quaternion_val[4];
 	estatement_t *statement;
+	function_t *function;
 }
 
 %left	OR AND
@@ -65,6 +67,7 @@ typedef struct {
 %type	<def>	param param_list def_item def_list def_name
 %type	<expr>	const expr arg_list
 %type	<statement>	statement statements statement_block
+%type	<function> begin_function
 
 %expect 1
 
@@ -213,24 +216,28 @@ opt_initializer
 					f->builtin = $3->type == ex_int
 								 ? $3->e.int_val : (int)$3->e.float_val;
 					f->def = current_def;
-					f->def->initialized = 1;
-					G_FUNCTION (f->def->ofs) = numfunctions;
+					build_function (f);
 				}
 			}
 		}
 	| '=' begin_function statement_block end_function
 		{
+			build_function ($2);
 		}
 	| '=' begin_function '[' expr ',' expr ']' statement_block end_function
 		{
+			build_function ($2);
 		}
 	;
 
 begin_function
 	: /*empty*/
 		{
+			$$ = new_function ();
+			$$->def = current_def;
+			$$->code = numstatements;
 			pr_scope = current_def;
-			build_scope (current_def);
+			build_scope ($$, current_def);
 		}
 	;
 
@@ -395,7 +402,7 @@ parse_params (def_t *parms)
 }
 
 void
-build_scope (def_t *func)
+build_scope (function_t *f, def_t *func)
 {
 	int i;
 	def_t *def;
@@ -403,6 +410,9 @@ build_scope (def_t *func)
 
 	for (i = 0; i < ftype->num_parms; i++) {
 		def = PR_GetDef (ftype->parm_types[i], pr_parm_names[i], func, &func->num_locals);
+		f->parm_ofs[i] = def->ofs;
+		if (i > 0 && f->parm_ofs[i] < f->parm_ofs[i - 1])
+			Error ("bad parm order");
 	}
 }
 
@@ -416,4 +426,31 @@ new_function (void)
 	pr_functions = f;
 
 	return f;
+}
+
+void
+build_function (function_t *f)
+{
+	dfunction_t *df;
+	int i;
+
+	f->def->initialized = 1;
+	G_FUNCTION (f->def->ofs) = numfunctions;
+	// fill in the dfunction
+	df = &functions[numfunctions];
+	numfunctions++;
+	f->dfunc = df;
+
+	if (f->builtin)
+		df->first_statement = -f->builtin;
+	else
+		df->first_statement = f->code;
+
+	df->s_name = ReuseString (f->def->name);
+	df->s_file = s_file;
+	df->numparms = f->def->type->num_parms;
+	df->locals = f->def->num_locals;
+	df->parm_start = 0;
+	for (i = 0; i < df->numparms; i++)
+		df->parm_size[i] = type_size[f->def->type->parm_types[i]->type];
 }
