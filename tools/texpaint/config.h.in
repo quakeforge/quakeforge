@@ -1,6 +1,4 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
-#undef PACKAGE
-#undef VERSION
 
 /* Name of package */
 #undef PACKAGE
