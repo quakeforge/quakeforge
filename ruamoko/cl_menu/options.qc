@@ -43,6 +43,12 @@ CvarToggleView fullscreen_view;
 CvarToggleView crosshair_view;
 CvarToggleView fps_view;
 CvarToggleView time_view;
+CvarToggleView grab_mouse_view;
+CvarToggleView freelook_view;
+CvarToggleView lookspring_view;
+CvarToggleView lookstrafe_view;
+CvarToggleView fraglog_view;
+CvarToggleView autorecord_view;
 
 CvarRangeView gamma_view;
 CvarRangeView viewsize_view;
@@ -302,7 +308,7 @@ CB_control_options =
 {
 	switch (text) {
 	    case "in_grab":	    
-			Cbuf_AddText ("toggle in_grab\n");
+			[grab_mouse_view toggle];
 			break;
 		case "autorun":
 			if(cvar("cl_forwardspeed") < 400) {
@@ -314,13 +320,13 @@ CB_control_options =
 			}
 			break;
 		case "freelook":
-			Cbuf_AddText ("toggle freelook\n");
+			[freelook_view toggle];
 			break;
 		case "lookspring":
-			Cbuf_AddText ("toggle lookspring\n");
+			[lookspring_view toggle];
 			break;
 		case "lookstrafe":
-			Cbuf_AddText ("toggle lookstrafe\n");
+			[lookstrafe_view toggle];
 			break;
 		case "m_pitch":
 			if(cvar("m_pitch") < 0) {
@@ -329,21 +335,10 @@ CB_control_options =
 				Cbuf_AddText ("set m_pitch -0.022\n");
 			}
 			break;
-		case "cl_autorecord":
-			Cbuf_AddText ("toggle cl_autorecord\n");
-			break;
-		case "cl_fraglog":
-			Cbuf_AddText ("toggle cl_fraglog\n");
-			break;
-	}
-	if(!(key == QFK_RIGHT || key == QFK_LEFT)) {
-		return 0;
-	}
-	switch (text) {
 		case "mouseamp":
-			if ((key == QFK_RIGHT) && (key != QFK_LEFT))
+			if (key == QFK_RIGHT)
 				[mouse_amp_view inc];
-			else
+			else if (key == QFK_LEFT)
 				[mouse_amp_view dec];
 			break;
 	}
@@ -366,8 +361,9 @@ DRAW_control_options =
 	Draw_String (x + 54, y + 50, "--------");
 	Draw_String (x + 70, y + 60, "Bindings");
 
-	draw_val_item (x + 70, y + 70, spacing, "Grab mouse",
-				   cvar ("in_grab") ? "On" : "Off");
+	[grab_mouse_view setBasePos:x y:y];
+	[grab_mouse_view draw];
+
 	draw_val_item (x + 70, y + 80, spacing, "Auto run",
 				   cvar ("cl_forwardspeed") < 400 ? "Off" : "On");
 	draw_val_item (x + 70, y + 90, spacing, "Mouse Invert",
@@ -377,12 +373,14 @@ DRAW_control_options =
 	[mouse_amp_view setBasePos:x y:y];
 	[mouse_amp_view draw];
 
-	draw_val_item (x + 70, y + 110, spacing, "Freelook",
-				   cvar("freelook") ? "On" : "Off");
-	draw_val_item (x + 70, y + 120, spacing, "Lookspring",
-				   cvar ("lookspring") ? "On" : "Off");
-	draw_val_item (x + 70, y + 130, spacing, "Lookstrafe",
-				   cvar ("lookstrafe") ? "On" : "Off");
+	[freelook_view setBasePos:x y:y];
+	[freelook_view draw];
+
+	[lookspring_view setBasePos:x y:y];
+	[lookspring_view draw];
+
+	[lookstrafe_view setBasePos:x y:y];
+	[lookstrafe_view draw];
 
 	opt_cursor (x + 62, y + (Menu_GetIndex () * 10) + 60 + cursor_pad);
 
@@ -397,12 +395,36 @@ DRAW_control_options =
 void () 
 MENU_control_options =
 {
+	local Rect rect;
+
 	Menu_Begin (54, 40, "Controls");
 	Menu_FadeScreen (1);
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 
 	Menu_Draw (DRAW_control_options);
-	mouse_amp_view = [[CvarRangeView alloc] initWithBounds:[[Rect alloc] initWithComponents:70 :100 :232 :8] title:"Mouse amp:" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"in_mouse_amp" min:MIN_MOUSE_AMP max:MAX_MOUSE_AMP step:MOUSE_AMP_STEP]];
+
+	rect = [[Rect alloc] initWithComponents:70 :70 :224 :8];
+	grab_mouse_view = [[CvarToggleView alloc] initWithBounds:rect title:"Grab mouse" :[[CvarToggle alloc] initWithCvar:"in_grab"]];
+
+	rect.origin.y += 10;
+
+	rect.origin.y += 10;
+
+	rect.origin.y += 10;
+	rect.size.width += 8;
+	mouse_amp_view = [[CvarRangeView alloc] initWithBounds:rect title:"Mouse amp:" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"in_mouse_amp" min:MIN_MOUSE_AMP max:MAX_MOUSE_AMP step:MOUSE_AMP_STEP]];
+	rect.size.width -= 8;
+
+	rect.origin.y += 10;
+	freelook_view = [[CvarToggleView alloc] initWithBounds:rect title:"Freelook" :[[CvarToggle alloc] initWithCvar:"freelook"]];
+
+	rect.origin.y += 10;
+	lookspring_view = [[CvarToggleView alloc] initWithBounds:rect title:"Lookspring" :[[CvarToggle alloc] initWithCvar:"lookspring"]];
+
+	rect.origin.y += 10;
+	lookstrafe_view = [[CvarToggleView alloc] initWithBounds:rect title:"Lookstrafe" :[[CvarToggle alloc] initWithCvar:"lookstrafe"]];
+
+	[rect dealloc];
 
 	MENU_control_binding ();
 
@@ -432,10 +454,10 @@ CB_feature_options =
 {
 	switch (text) {
 		case "cl_autorecord":
-			Cbuf_AddText ("toggle cl_autorecord\n");
+			[autorecord_view toggle];
 			break;
 		case "cl_fraglog":
-			Cbuf_AddText ("toggle cl_fraglog\n");
+			[fraglog_view toggle];
 			break;
 	}
 	return 0;
@@ -456,10 +478,12 @@ DRAW_feature_options =
 	Draw_String (x + 54,  y + 40, "Features");
 	Draw_String (x + 54,  y + 50, "--------");
 
-	draw_val_item (x + 70, y + 60, spacing, "Auto Record", 
-				   cvar ("cl_autorecord") != 0 ? "On" : "Off");
-	draw_val_item (x + 70, y + 70, spacing, "Fraglogging", 
-				   cvar ("cl_fraglog") != 0 ? "On" : "Off");
+
+	[autorecord_view setBasePos:x y:y];
+	[autorecord_view draw];
+
+	[fraglog_view setBasePos:x y:y];
+	[fraglog_view draw];
 
 	opt_cursor (x + 62, y + (Menu_GetIndex () * 10) + 60 + cursor_pad);
 	return 1;
@@ -473,10 +497,21 @@ DRAW_feature_options =
 void () 
 MENU_feature_options =
 {
+	local Rect rect;
+
 	Menu_Begin (54, 70, "Features");
 	Menu_FadeScreen (1);
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 	Menu_Draw (DRAW_feature_options);
+
+	rect = [[Rect alloc] initWithComponents:70 :60 :224 :8];
+	autorecord_view = [[CvarToggleView alloc] initWithBounds:rect title:"Autoreocrd" :[[CvarToggle alloc] initWithCvar:"cl_autorecord"]];
+
+	rect.origin.y += 10;
+	fraglog_view = [[CvarToggleView alloc] initWithBounds:rect title:"Frag Logging" :[[CvarToggle alloc] initWithCvar:"cl_fraglog"]];
+
+	[rect dealloc];
+
 	Menu_Item (54, 70, "cl_autorecord", CB_feature_options, 0);
 	Menu_Item (54, 80, "cl_fraglog", CB_feature_options, 0);
 	Menu_End ();
