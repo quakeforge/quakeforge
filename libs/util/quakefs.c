@@ -771,13 +771,6 @@ open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 			return qfs_filesize;
 		}
 	} else {
-		// sanity check the strings
-		if (strnlen (search->filename, sizeof (netpath))
-			+ strnlen (filename, sizeof (netpath)) + 2 > sizeof (netpath))
-			Sys_Error ("open_file: search->filename and/or filename "
-					   "bogus: `%.*s'  `%.*s'",
-					   (int) sizeof (netpath), search->filename,
-					   (int) sizeof (netpath), filename);
 		// check a file in the directory tree
 		netpath = nva ("%s/%s", search->filename, filename);
 
@@ -832,7 +825,7 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile,
 #endif
 #ifdef HAVE_ZLIB
 	gzfilename = alloca (strlen (path) + 3 + 1);
-	snprintf (gzfilename, sizeof (gzfilename), "%s.gz", path);
+	sprintf (gzfilename, "%s.gz", path);
 #endif
 
 	// search through the path, one element at a time
