@@ -280,8 +280,7 @@ BumpModel (int hullnum)
 typedef struct wadlist_s {
 	struct wadlist_s *next;
 	const char *path;
-	wadinfo_t   wadinfo;
-	lumpinfo_t *lumpinfo;
+	wad_t      *wad;
 } wadlist_t;
 
 wadlist_t  *wadlist;
@@ -305,37 +304,23 @@ CleanupName (char *in, char *out)
 static int
 TEX_InitFromWad (char *path)
 {
-	int         i;
 	wadlist_t  *wl;
-	QFile      *texfile;
+	wad_t      *wad;
 
-	texfile = Qopen (path, "rbz");
+	wad = wad_open (path);
 #ifdef HAVE_ZLIB
-	if (!texfile)
-		texfile = Qopen (path = va ("%s.gz", path), "rbz");
+	if (!wad)
+		wad = wad_open (path = va ("%s.gz", path));
 #endif
-	if (!texfile)
+	if (!wad)
 		return -1;
 	printf ("wadfile: %s\n", path);
 
 	wl = calloc (1, sizeof (wadlist_t));
 	wl->path = strdup (path);
 
-	Qread (texfile, &wl->wadinfo, sizeof (wadinfo_t));
-	if (strncmp (wl->wadinfo.id, "WAD2", 4))
-		Sys_Error ("TEX_InitFromWad: %s isn't a wadfile", path);
-	wl->wadinfo.numlumps = LittleLong (wl->wadinfo.numlumps);
-	wl->wadinfo.infotableofs = LittleLong (wl->wadinfo.infotableofs);
-	Qseek (texfile, wl->wadinfo.infotableofs, SEEK_SET);
-	wl->lumpinfo = malloc (wl->wadinfo.numlumps * sizeof (lumpinfo_t));
-	Qread (texfile, wl->lumpinfo, wl->wadinfo.numlumps * sizeof (lumpinfo_t));
-	Qclose (texfile);
+	wl->wad = wad;
 
-	for (i = 0; i < wl->wadinfo.numlumps; i++) {
-		CleanupName (wl->lumpinfo[i].name, wl->lumpinfo[i].name);
-		wl->lumpinfo[i].filepos = LittleLong (wl->lumpinfo[i].filepos);
-		wl->lumpinfo[i].disksize = LittleLong (wl->lumpinfo[i].disksize);
-	}
 	wl->next = wadlist;
 	wadlist = wl;
 	return 0;
@@ -345,39 +330,38 @@ static int
 LoadLump (char *name, dstring_t *dest)
 {
 	char        cname[16];		//FIXME: overflow
-	int         i, r;
+	int         r;
 	int         ofs = dest->size;
 	wadlist_t  *wl;
+	lumpinfo_t *lump;
 	QFile      *texfile;
 
 	CleanupName (name, cname);
 
 	for (wl = wadlist; wl; wl = wl->next) {
-		for (i = 0; i < wl->wadinfo.numlumps; i++) {
-			if (!strcmp (cname, wl->lumpinfo[i].name)) {
-				dest->size += wl->lumpinfo[i].disksize;
-				dstring_adjust (dest);
-				texfile = Qopen (wl->path, "rbz");
-				if (!texfile) {
-					printf ("couldn't open %s\n", wl->path);
-					continue;
-				}
-				r = Qseek (texfile, wl->lumpinfo[i].filepos, SEEK_SET);
-				if (r == -1) {
-					printf ("seek error: %s:%s %d\n", wl->path,
-							wl->lumpinfo[i].name, wl->lumpinfo[i].filepos);
-					Qclose (texfile);
-					continue;
-				}
-				r = Qread (texfile, dest->str + ofs, wl->lumpinfo[i].disksize);
-				Qclose (texfile);
-				if (r != wl->lumpinfo[i].disksize) {
-					printf ("seek error: %s:%s %d\n", wl->path,
-							wl->lumpinfo[i].name, wl->lumpinfo[i].disksize);
-					continue;
-				}
-				return wl->lumpinfo[i].disksize;
+		if ((lump = wad_find_lump (wl->wad, name))) {
+			dest->size += lump->disksize;
+			dstring_adjust (dest);
+			texfile = Qopen (wl->path, "rbz");
+			if (!texfile) {
+				printf ("couldn't open %s\n", wl->path);
+				continue;
 			}
+			r = Qseek (texfile, lump->filepos, SEEK_SET);
+			if (r == -1) {
+				printf ("seek error: %s:%s %d\n", wl->path,
+						lump->name, lump->filepos);
+				Qclose (texfile);
+				continue;
+			}
+			r = Qread (texfile, dest->str + ofs, lump->disksize);
+			Qclose (texfile);
+			if (r != lump->disksize) {
+				printf ("seek error: %s:%s %d\n", wl->path,
+						lump->name, lump->disksize);
+				continue;
+			}
+			return lump->disksize;
 		}
 	}
 
@@ -388,16 +372,18 @@ LoadLump (char *name, dstring_t *dest)
 static void
 AddAnimatingTextures (void)
 {
-	int         base, i, j, k;
-	char        name[32];		//FIXME: overflow
+	int         base, i, j;
+	char        name[32];
 	wadlist_t  *wl;
 
 	base = nummiptex;
 
+	name[sizeof (name) - 1] = 0;
+
 	for (i = 0; i < base; i++) {
 		if (miptex[i][0] != '+')
 			continue;
-		strcpy (name, miptex[i]);
+		strncpy (name, miptex[i], sizeof (name) - 1);
 
 		for (j = 0; j < 20; j++) {
 			if (j < 10)
@@ -407,11 +393,9 @@ AddAnimatingTextures (void)
 
 			// see if this name exists in the wadfile
 			for (wl = wadlist; wl; wl = wl->next) {
-				for (k = 0; k < wl->wadinfo.numlumps; k++) {
-					if (!strcmp (name, wl->lumpinfo[k].name)) {
-						FindMiptex (name);	// add to the miptex list
-						break;
-					}
+				if (wad_find_lump (wl->wad, name)) {
+					FindMiptex (name);	// add to the miptex list
+					break;
 				}
 			}
 		}
