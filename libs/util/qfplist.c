@@ -3,7 +3,7 @@
 
 	Property list management
 
-	Copyright (C) 2000  Jeff Teunissen <deek@dusknet.dhs.org>
+	Copyright (C) 2000  Jeff Teunissen <deek@d2dc.net>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "QF/hash.h"
 #include "QF/qfplist.h"
 #include "QF/qtypes.h"
 
@@ -41,6 +42,58 @@ static plitem_t *PL_ParsePropertyListItem (pldata_t *);
 static qboolean PL_SkipSpace (pldata_t *);
 static char *PL_ParseQuotedString (pldata_t *);
 static char *PL_ParseUnquotedString (pldata_t *);
+
+void
+PL_FreeItem (plitem_t *item)
+{
+	switch (item->type) {
+		case QFDictionary:
+			Hash_DelTable (item->data);
+			break;
+
+		case QFArray: {
+				int 	i = ((plarray_t *) item->data)->numvals;
+
+				while (--i) {
+					PL_FreeItem (((plarray_t *) item->data)->values[i]);
+				}
+				free (item->data);
+			}
+			break;
+
+		case QFBinary:
+			free (((plbinary_t *) item->data)->data);
+			free (item->data);
+			break;
+
+		case QFString:
+			free (item->data);
+			break;
+	}
+	free (item);
+}
+
+static const char *
+dict_get_key (void *i, void *unused)
+{
+	dictkey_t	*item = (dictkey_t *) i;
+	return item->key;
+}
+
+static void
+dict_free (void *i, void *unused)
+{
+	dictkey_t	*item = (dictkey_t *) i;
+	free (item->key);
+	PL_FreeItem (item->value);	// Make descended stuff get freed
+	free (item);
+}
+
+plitem_t *
+PL_ObjectForKey (hashtab_t *table, const char *key)
+{
+	return (plitem_t *) Hash_Find (table, key);
+}
 
 static qboolean
 PL_SkipSpace (pldata_t *pl)
@@ -262,7 +315,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 	
 	switch (pl->ptr[pl->pos]) {
 		case '{': {
-			dict_t *dict = calloc (1, sizeof (dict_t));
+			hashtab_t *dict = Hash_NewTable (1021, dict_get_key, dict_free, NULL);
 
 			pl->pos++;
 			
@@ -272,12 +325,24 @@ PL_ParsePropertyListItem (pldata_t *pl)
 
 				if (!(key = PL_ParsePropertyListItem (pl)))
 					return NULL;
+
 				if (!(PL_SkipSpace (pl))) {
+					free (key->data);
 					free (key);
 					return NULL;
 				}
+
+				if (key->type != QFString) {
+					pl->error = "Key is not a string";
+					free (key->data);
+					free (key);
+					return NULL;
+				}
+						
+
 				if (pl->ptr[pl->pos] != '=') {
 					pl->error = "Unexpected character (wanted '=')";
+					free (key->data);
 					free (key);
 					return NULL;
 				}
@@ -285,58 +350,46 @@ PL_ParsePropertyListItem (pldata_t *pl)
 
 				// If there is no value, lose the key				
 				if (!(value = PL_ParsePropertyListItem (pl))) {
+					free (key->data);
 					free (key);
 					return NULL;
 				}
+
 				if (!(PL_SkipSpace (pl))) {
+					free (key->data);
 					free (key);
+					free (value->data);
 					free (value);
 					return NULL;
 				}
+
 				if (pl->ptr[pl->pos] == ';') {
 					pl->pos++;
 				} else if (pl->ptr[pl->pos] != '}') {
 					pl->error = "Unexpected character (wanted ';' or '}')";
+					free (key->data);
 					free (key);
+					free (value->data);
 					free (value);
 					return NULL;
 				}
 
-				// Add the key/value pair to the dict
-				if (!(dict->keys)) {	// No keys, add one
+				{	// Add the key/value pair to the dictionary
 					dictkey_t	*k = calloc (1, sizeof (dictkey_t));
-					
+
 					if (!k) {
+						free (key->data);
 						free (key);
+						free (value->data);
 						free (value);
 						return NULL;
 					}
-					
-					k->key = key;
+
+					k->key = (char *) key->data;
 					k->value = value;
-					
-					dict->keys = k;
-				} else {
-					dictkey_t	*k;
-					
-					for (k = dict->keys; k; k = k->next) {	// add to end
-						if (k->next == NULL) {
-							dictkey_t	*k2 = calloc (1, sizeof (dictkey_t));
 
-							if (!k2) {
-								free (key);
-								free (value);
-								return NULL;
-							}
-
-							k2->key = key;
-							k2->value = value;
-							k = k2;
-							break;
-						}
-					}
+					Hash_Add (dict, k);
 				}
-				dict->numkeys++;
 			}
 
 			if (pl->pos >= pl->end) {	// Catch the error
@@ -349,12 +402,12 @@ PL_ParsePropertyListItem (pldata_t *pl)
 			
 			item = calloc (1, sizeof (plitem_t));
 			item->type = QFDictionary;
-			item->data.dict = dict;
+			item->data = dict;
 			return item;
 		}
 
 		case '(': {
-			array_t *a = calloc (1, sizeof (array_t));
+			plarray_t *a = calloc (1, sizeof (plarray_t));
 
 			pl->pos++;
 
@@ -385,7 +438,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 			
 			item = calloc (1, sizeof (plitem_t));
 			item->type = QFArray;
-			item->data.array = a;
+			item->data = a;
 			return item;
 		}
 
@@ -401,7 +454,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 			} else {
 				item = calloc (1, sizeof (plitem_t));
 				item->type = QFString;
-				item->data.string = str;
+				item->data = str;
 				return item;
 			}
 		}
@@ -414,7 +467,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 			} else {
 				item = calloc (1, sizeof (plitem_t));
 				item->type = QFString;
-				item->data.string = str;
+				item->data = str;
 				return item;
 			}
 		}

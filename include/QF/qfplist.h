@@ -3,7 +3,7 @@
 
 	Property list management types and prototypes
 
-	Copyright (C) 2000 Jeff Teunissen <deek@dusknet.dhs.org>
+	Copyright (C) 2000 Jeff Teunissen <deek@d2dc.net>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -26,60 +26,63 @@
 	$Id$
 */
 
-#ifndef __qfplist_h_
-#define __qfplist_h_
+#ifndef __QF_qfplist_h_
+#define __QF_qfplist_h_
+
+#include <glob.h>
 
 #include "QF/qtypes.h"
 
 //	Ugly defines for fast checking and conversion from char to number
 #define inrange(ch,min,max) ((ch) >= (min) && (ch) <= (max))
 #define char2num(ch) \
-inrange(ch, '0', '9') ? (ch - 0x30) \
-: (inrange(ch, 'a', 'f') ? (ch - 0x57) : (ch - 0x37))
+inrange((ch), '0', '9') ? ((ch) - 0x30) \
+: (inrange((ch), 'a', 'f') ? ((ch) - 0x57) : ((ch) - 0x37))
 
 // Maximum number of items in an array
 #define MAX_ARRAY_INDEX 128
 
 typedef enum {QFDictionary, QFArray, QFBinary, QFString} pltype_t;	// possible types
 
+/*
+	Generic property list item
+*/
 struct plitem_s {
-	struct plitem_s	*next;	// Pointer to next item
-	pltype_t		type;	// Type
-	union shared {			// Type-dependant data
-		struct dict_s	*dict;
-		struct array_s 	*array;
-		void			*binary;
-		char			*string;
-	} data;
+	pltype_t	type;		// Type
+	void		*data;
 };
+typedef struct plitem_s plitem_t;
 
 /*
 	Dictionaries
 */
-struct dict_s {
-	int					numkeys;	// Number of items in dictionary
-	struct dictkey_s	*keys;
-};
-
 struct dictkey_s {
-	struct dictkey_s	*next;
-	struct plitem_s		*key;
-	struct plitem_s		*value;
+	char		*key;
+	plitem_t	*value;
 };
+typedef struct dictkey_s	dictkey_t;
 
 /*
 	Arrays
 */
-struct array_s {
-	int				numvals;					// Number of items in array
+struct plarray_s {
+	int				numvals;		// Number of items in array
 	struct plitem_s *values[MAX_ARRAY_INDEX+1]; 	// Array data
 };
+typedef struct plarray_s	plarray_t;
 
-// now that we've defined the structs, define their types so we can use them
-typedef struct plitem_s 	plitem_t;
-typedef struct dict_s		dict_t;
-typedef struct dictkey_s	dictkey_t;
-typedef struct array_s		array_t;
+/*
+	Typeless, unformatted binary data (not supported yet)
+*/
+struct plbinary_s {
+	size_t		size;
+	void		*data;
+};
+typedef struct plbinary_s	plbinary_t;
+
+plitem_t *PL_GetPropertyList (const char *);
+plitem_t *PL_ObjectForKey (struct hashtab_s *, const char *);
+void PL_FreeItem (struct plitem_s *);
 
 typedef struct pldata_s {	// Unparsed property list string
 	const char		*ptr;
@@ -89,8 +92,6 @@ typedef struct pldata_s {	// Unparsed property list string
 	char			*error;
 } pldata_t;
 
-plitem_t *PL_GetPropertyList (const char *);
-
 /*
 	Internal prototypes
 
@@ -99,4 +100,4 @@ plitem_t *PL_GetPropertyList (const char *);
 	static char *PL_ParseQuotedString (pldata_t *);
 	static char *PL_ParseUnquotedString (pldata_t *);
 */
-#endif	// __qfplist_h_
+#endif	// __QF_qfplist_h_
