@@ -46,6 +46,7 @@ static const char rcsid[] =
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
+#include "QF/sys.h"
 
 #include "client.h"
 #include "compat.h"
@@ -111,7 +112,7 @@ Netchan_Init (void)
 	int         port;
 
 	// pick a port value that should be nice and random
-	port = rand () * (65536.0 / RAND_MAX);
+	port = Sys_TimeID ();
 
 	Cvar_SetValue (qport, port);
 }

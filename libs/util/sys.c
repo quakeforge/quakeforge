@@ -54,6 +54,7 @@ static const char rcsid[] =
 #include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
+#include <time.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -351,4 +352,16 @@ Sys_RegisterShutdown (void (*func) (void))
 	p->func = func;
 	p->next = shutdown_list;
 	shutdown_list = p;
+}
+
+int
+Sys_TimeID (void) //FIXME I need a new name, one that doesn't make me feel 3 feet thick
+{
+	int val;
+#ifdef _WIN32
+	val = ((int) (timeGetTime () * 1000) * time (NULL)) & 0xffff;
+#else
+	val = ((int) (getpid () + getuid () * 1000) * time (NULL)) & 0xffff;
+#endif
+	return val;
 }

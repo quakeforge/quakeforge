@@ -60,6 +60,8 @@ double Sys_DoubleTime (void);
 const char *Sys_ConsoleInput (void);
 
 void Sys_Sleep (void);
+
+int Sys_TimeID (void);
 // called to yield for a little bit so as
 // not to hog cpu when paused or debugging
 
