@@ -1,5 +1,5 @@
 *.d
-#.dat
+*.dat
 *.la
 *.lo
 .deps
