@@ -42,6 +42,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #ifdef HAVE_IO_H
 # include <io.h>
 #endif
+#include <string.h>
 #include <getopt.h>
 #include <sys/types.h>
 #include <sys/fcntl.h>
@@ -73,6 +74,7 @@ static const struct option long_options[] = {
 	{"functions", no_argument, 0, 'F'},
 	{"lines", no_argument, 0, 'l'},
 	{"modules", no_argument, 0, 'M'},
+	{"path", required_argument, 0, 'P'},
 	{"verbose", no_argument, 0, 'v'},
 	{NULL, 0, NULL, 0},
 };
@@ -85,6 +87,7 @@ static void    *membase;
 static int      memsize = 1024*1024;
 
 static int      verbosity = 0;
+static const char *source_path = "";
 
 static hashtab_t *func_tab;
 
@@ -99,6 +102,12 @@ open_file (const char *path, int *len)
 	return file;
 }
 
+static void
+file_error (progs_t *pr, const char *name)
+{
+	perror (name);
+}
+
 static void *
 load_file (progs_t *pr, const char *name)
 {
@@ -109,10 +118,8 @@ load_file (progs_t *pr, const char *name)
 	file = open_file (name, &size);
 	if (!file) {
 		file = open_file (va ("%s.gz", name), &size);
-		if (!file) {
-			perror (name);
+		if (!file)
 			return 0;
-		}
 	}
 	sym = malloc (size);
 	Qread (file, sym, size);
@@ -166,12 +173,14 @@ init_qf (void)
 	Memory_Init (membase, memsize);
 
 	Cvar_Get ("pr_debug", va ("%d", verbosity), 0, 0, "");
+	Cvar_Get ("pr_source_path", source_path, 0, 0, "");
 	PR_Init_Cvars ();
 	PR_Init ();
 
 	pr.edicts = &edicts;
 	pr.num_edicts = &num_edicts;
 	pr.reserved_edicts = &reserved_edicts;
+	pr.file_error = file_error;
 	pr.load_file = load_file;
 	pr.allocate_progs_mem = allocate_progs_mem;
 	pr.free_progs_mem = free_progs_mem;
@@ -215,7 +224,8 @@ main (int argc, char **argv)
 	int         c;
 	void      (*func)(progs_t *pr) = dump_globals;
 
-	while ((c = getopt_long (argc, argv, "dgsfFlMv", long_options, 0)) != EOF) {
+	while ((c = getopt_long (argc, argv,
+							 "dgsfFlMP:v", long_options, 0)) != EOF) {
 		switch (c) {
 			case 'd':
 				func = disassemble_progs;
@@ -238,6 +248,8 @@ main (int argc, char **argv)
 			case 'M':
 				func = dump_modules;
 				break;
+			case 'P':
+				source_path = strdup (optarg);
 			case 'v':
 				verbosity++;
 				break;

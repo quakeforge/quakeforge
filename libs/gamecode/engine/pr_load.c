@@ -72,6 +72,12 @@ var_get_key (void *d, void *_pr)
 	return PR_GetString (pr, def->s_name);
 }
 
+static void
+file_error (progs_t *pr, const char *path)
+{
+	Sys_Printf ("failed to load %s\n", path);
+}
+
 static void *
 load_file (progs_t *pr, const char *path)
 {
@@ -155,6 +161,8 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 	pr->pr_edict_size &= ~(sizeof (void*) - 1);
 	pr->pr_edictareasize = edicts * pr->pr_edict_size;
 
+	if (!pr->file_error)
+		pr->file_error = file_error;
 	if (!pr->load_file)
 		pr->load_file = load_file;
 	if (!pr->allocate_progs_mem)

@@ -68,9 +68,11 @@ typedef struct {
 	progs_t *pr;
 } file_t;
 
-cvar_t      *pr_debug;
-cvar_t      *pr_source_path;
-static hashtab_t  *file_hash;
+cvar_t         *pr_debug;
+cvar_t         *pr_source_path;
+static hashtab_t   *file_hash;
+static char        *source_path_string;
+static char       **source_paths;
 
 
 static const char *
@@ -91,6 +93,30 @@ file_free (void *_f, void *unused)
 	free (f);
 }
 
+static void
+source_path_f (cvar_t *var)
+{
+	int         i;
+	char       *s;
+
+	if (source_path_string)
+		free (source_path_string);
+	source_path_string = strdup (var->string);
+	if (source_paths)
+		free (source_paths);
+	for (i = 2, s = source_path_string; *s; s++)
+		if (*s == ';')
+			i++;
+	source_paths = malloc (i * sizeof (char **));
+	source_paths[0] = source_path_string;
+	for (i = 1, s = source_path_string; *s; s++)
+		if (*s == ';') {
+			*s++ = 0;
+			source_paths[i++] = s;
+		}
+	source_paths[i] = 0;
+}
+
 void
 PR_Debug_Init (void)
 {
@@ -102,26 +128,31 @@ PR_Debug_Init_Cvars (void)
 {
 	pr_debug = Cvar_Get ("pr_debug", "0", CVAR_NONE, NULL,
 						 "enable progs debugging");
-	pr_source_path = Cvar_Get ("pr_source_path", ".", CVAR_NONE, NULL, "where "
-							   "to look (within gamedir) for source files");
+	pr_source_path = Cvar_Get ("pr_source_path", ".", CVAR_NONE, source_path_f,
+							   "where to look (within gamedir) for source "
+							   "files");
 }
 
 static file_t *
 PR_Load_Source_File (progs_t *pr, const char *fname)
 {
-	char		*path, *l;
+	char		*path, *l, **dir;
 	file_t		*f = Hash_Find (file_hash, fname);
 
 	if (f)
 		return f;
-	f = malloc (sizeof (file_t));
+	f = calloc (1, sizeof (file_t));
 	if (!f)
 		return 0;
-	path = Hunk_TempAlloc (strlen (pr_source_path->string) + strlen (fname) +
-						   2);
-	sprintf (path, "%s/%s", pr_source_path->string, fname);
-	f->text = pr->load_file (pr, path);
+	for (dir = source_paths; *dir && !f->text; dir++) {
+		int         len;
+		len = strlen (*dir) + strlen (fname) + 2;
+		path = Hunk_TempAlloc (len);
+		sprintf (path, "%s/%s", *dir, fname);
+		f->text = pr->load_file (pr, path);
+	}
 	if (!f->text) {
+		pr->file_error (pr, path);
 		free (f);
 		return 0;
 	}
