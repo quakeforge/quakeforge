@@ -44,21 +44,14 @@
 #include "QF/mathlib.h"
 #include "QF/console.h"
 
-#if 0
-#include "compat.h"
-#include "crudefile.h"
-#include "server.h"
-#include "sv_pr_cmds.h"
-#include "sv_progs.h"
-#include "world.h"
-#endif
-
 #define	RETURN_EDICT(p, e) ((p)->pr_globals[OFS_RETURN].integer_var = EDICT_TO_PROG(p, e))
 #define	RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].integer_var = PR_SetString((p), s))
 
 /*
 						BUILT-IN FUNCTIONS
 */
+
+// FIXME: Hunk_TempAlloc, Con_Printf, Cvar_*, PR_SetString, PR_RunError, ED_PrintEdicts, PF_traceon, PF_traceoff, ED_PrintNum, PR_FindBuiltin isn't threadsafe/reentrant
 
 const char *
 PF_VarString (progs_t *pr, int first)
@@ -273,30 +266,35 @@ PF_cvar_set (progs_t *pr)
 	Cvar_Set (var, val);
 }
 
-char        pr_string_temp[128];
+#ifdef FLT_MAX_10_EXP
+# define MAX_FLOAT_STRING (FLT_MAX_10_EXP + 8)
+#else
+# define MAX_FLOAT_STRING 128
+#endif
 
 void
 PF_ftos (progs_t *pr)
 {
 	float       v;
 	int         i;						// 1999-07-25 FTOS fix by Maddes
+	char        string[MAX_FLOAT_STRING];
 
 	v = G_FLOAT (pr, OFS_PARM0);
 
 	if (v == (int) v)
-		snprintf (pr_string_temp, sizeof (pr_string_temp), "%d", (int) v);
+		snprintf (string, sizeof (string), "%d", (int) v);
 	else
 // 1999-07-25 FTOS fix by Maddes  start
 	{
-		snprintf (pr_string_temp, sizeof (pr_string_temp), "%1f", v);
-		for (i = strlen (pr_string_temp) - 1;
-			 i > 0 && pr_string_temp[i] == '0' && pr_string_temp[i - 1] != '.';
+		snprintf (string, sizeof (string), "%1.6f", v);
+		for (i = strlen (string) - 1;
+			 i > 0 && string[i] == '0' && string[i - 1] != '.';
 			 i--) {
-			pr_string_temp[i] = 0;
+			string[i] = 0;
 		}
 	}
 // 1999-07-25 FTOS fix by Maddes  end
-	G_INT (pr, OFS_RETURN) = PR_SetString (pr, pr_string_temp);
+	G_INT (pr, OFS_RETURN) = PR_SetString (pr, string);
 }
 
 void
@@ -311,10 +309,12 @@ PF_fabs (progs_t *pr)
 void
 PF_vtos (progs_t *pr)
 {
-	snprintf (pr_string_temp, sizeof (pr_string_temp), "'%5.1f %5.1f %5.1f'",
-			  G_VECTOR (pr, OFS_PARM0)[0], G_VECTOR (pr, OFS_PARM0)[1],
+	char string[MAX_FLOAT_STRING * 3 + 5];
+	snprintf (string, sizeof (string), "'%5.1f %5.1f %5.1f'",
+			  G_VECTOR (pr, OFS_PARM0)[0],
+			  G_VECTOR (pr, OFS_PARM0)[1],
 			  G_VECTOR (pr, OFS_PARM0)[2]);
-	G_INT (pr, OFS_RETURN) = PR_SetString (pr, pr_string_temp);
+	G_INT (pr, OFS_RETURN) = PR_SetString (pr, string);
 }
 
 // entity (entity start, .string field, string match) find = #5;
@@ -431,7 +431,6 @@ PF_nextent (progs_t *pr)
 	}
 }
 
-
 /*
 	PF_stof
 
@@ -486,97 +485,6 @@ PF_charcount (progs_t *pr)
 		s++;
 	}
 	G_FLOAT (pr, OFS_RETURN) = count;
-}
-
-#if 0
-/*
-	PF_cfopen
-
-	float(string path, string mode) cfopen
-*/
-void
-PF_cfopen (progs_t *pr)
-{
-	G_FLOAT (pr, OFS_RETURN) = CF_Open (G_STRING (pr, OFS_PARM0), G_STRING (pr, OFS_PARM1));
-}
-
-/*
-	PF_cfclose
-
-	void (float desc) cfclose
-*/
-void
-PF_cfclose (progs_t *pr)
-{
-	CF_Close ((int) G_FLOAT (pr, OFS_PARM0));
-}
-
-/*
-	PF_cfread
-
-	string (float desc) cfread
-*/
-void
-PF_cfread (progs_t *pr)
-{
-	RETURN_STRING (pr, CF_Read((int) G_FLOAT (pr, OFS_PARM0)));
-}
-
-/*
-	PF_cfwrite
-
-	float (float desc, string buf) cfwrite
-*/
-void
-PF_cfwrite (progs_t *pr)
-{
-	G_FLOAT (pr, OFS_RETURN) = CF_Write((int) G_FLOAT(pr, OFS_PARM0), G_STRING (pr, OFS_PARM1));
-}
-
-/*
-	PF_cfeof
-
-	float () cfeof
-*/
-void
-PF_cfeof (progs_t *pr)
-{
-	G_FLOAT (pr, OFS_RETURN) = CF_EOF ((int) G_FLOAT(pr, OFS_PARM0));
-}
-
-/*
-	PF_cfquota
-
-	float () cfquota
-*/
-void
-PF_cfquota (progs_t *pr)
-{
-	G_FLOAT (pr, OFS_RETURN) = CF_Quota();
-}
-#endif
-
-static vec_t
-calc_dist (vec3_t p, vec3_t n, vec3_t *offsets)
-{
-	vec_t      d = DotProduct (p, n);
-	vec3_t     s, v;
-	int        i;
-
-	VectorScale (n, d, s);
-	for (i = 0; i < 3; i++)
-		if (s[i] < 0)
-			v[i] = offsets[0][i];
-		else
-			v[i] = offsets[1][i];
-	VectorAdd (p, v, v);
-	return DotProduct (v, n);
-}
-
-void
-PF_Fixme (progs_t *pr)
-{
-	PR_RunError (pr, "unimplemented bulitin");
 }
 
 void
