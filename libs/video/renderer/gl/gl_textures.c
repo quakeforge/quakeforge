@@ -504,7 +504,7 @@ void
 GL_Upload8 (byte * data, int width, int height, qboolean mipmap, qboolean alpha)
 {
 	int           i, s, p;
-	unsigned int *trans = NULL;
+	unsigned int *trans;
 
 	s = width * height;
 	trans = malloc (s * sizeof (unsigned int));
@@ -522,13 +522,10 @@ GL_Upload8 (byte * data, int width, int height, qboolean mipmap, qboolean alpha)
 			trans[i] = d_8to24table[p];
 		}
 	} else {
-		if (s & 3)
-			Sys_Error ("GL_Upload8: width*height divisible by 3");
-		for (i = 0; i < s; i += 4) {
-			trans[i] = d_8to24table[data[i]];
-			trans[i + 1] = d_8to24table[data[i + 1]];
-			trans[i + 2] = d_8to24table[data[i + 2]];
-			trans[i + 3] = d_8to24table[data[i + 3]];
+		unsigned int *out = trans;
+		byte         *in = data;
+		for (i = 0; i < s; i++) {
+			*out++ = d_8to24table[*in++];
 		}
 	}
 
