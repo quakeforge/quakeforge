@@ -39,6 +39,9 @@ static const char rcsid[] =
 #ifdef HAVE_SYS_MMAN_H
 # include <sys/mman.h>
 #endif
+#ifdef HAVE_SYS_PARAM_H
+# include <sys/param.h>
+#endif
 #ifdef HAVE_SYS_SOUNDCARD_H
 # include <sys/soundcard.h>
 #elif defined HAVE_LINUX_SOUNDCARD_H
