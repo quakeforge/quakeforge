@@ -456,9 +456,8 @@ visit_node (mnode_t *node, int side, int clipflags)
 }
 
 static inline int
-test_node (mnode_t *node, int *_clipflags)
+test_node (mnode_t *node, int *clipflags)
 {
-	int         clipflags = *_clipflags;
 	int         i, *pindex;
 	vec3_t      acceptpt, rejectpt;
 	double      d;
@@ -470,9 +469,9 @@ test_node (mnode_t *node, int *_clipflags)
 	// cull the clipping planes if not trivial accept
 	// FIXME: the compiler is doing a lousy job of optimizing here; it could be
 	// twice as fast in ASM
-	if (clipflags) {
+	if (*clipflags) {
 		for (i = 0; i < 4; i++) {
-			if (!(clipflags & (1 << i)))
+			if (!(*clipflags & (1 << i)))
 				continue;				// don't need to clip against it
 
 			// generate accept and reject points
@@ -488,10 +487,8 @@ test_node (mnode_t *node, int *_clipflags)
 			d = DotProduct (rejectpt, view_clipplanes[i].normal);
 			d -= view_clipplanes[i].dist;
 
-			if (d <= 0) {
-				*_clipflags = clipflags;
+			if (d <= 0)
 				return 0;
-			}
 
 			acceptpt[0] = (float) node->minmaxs[pindex[3 + 0]];
 			acceptpt[1] = (float) node->minmaxs[pindex[3 + 1]];
@@ -500,10 +497,9 @@ test_node (mnode_t *node, int *_clipflags)
 			d = DotProduct (acceptpt, view_clipplanes[i].normal);
 			d -= view_clipplanes[i].dist;
 			if (d >= 0)
-				clipflags &= ~(1 << i);	// node is entirely on screen
+				*clipflags &= ~(1 << i);	// node is entirely on screen
 		}
 	}
-	*_clipflags = clipflags;
 	return 1;
 }
 
@@ -516,15 +512,17 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 		int         side, clipflags;
 	}          *node_ptr, node_stack[256];
 	mnode_t    *front;
-	int         side;
+	int         side, cf;
 
 	node_ptr = node_stack;
 
+	cf = clipflags;
 	while (1) {
-		while (test_node (node, &clipflags)) {
+		while (test_node (node, &cf)) {
+			cf = clipflags;
 			side = get_side (node);
 			front = node->children[side];
-			if (test_node (front, &clipflags)) {
+			if (test_node (front, &cf)) {
 				if (node_ptr - node_stack
 					== sizeof (node_stack) / sizeof (node_stack[0]))
 					Sys_Error ("node_stack overflow");
@@ -532,6 +530,7 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 				node_ptr->side = side;
 				node_ptr->clipflags = clipflags;
 				node_ptr++;
+				clipflags = cf;
 				node = front;
 				continue;
 			}
