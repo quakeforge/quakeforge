@@ -248,7 +248,7 @@ OK_TranslateKeyName (const char *name)
 		s++;
 	ok = Hash_Find (old_key_table, uname);
 	if (!ok) {
-		Con_Printf ("%s\n", uname);
+		Con_Printf ("unknown old keyname: %s\n", uname);
 		return name;
 	}
 	return ok->new_name;
