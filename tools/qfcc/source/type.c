@@ -237,6 +237,7 @@ print_type (type_t *type)
 			else
 				printf ("[]");
 			break;
+		case ev_object:
 		case ev_class:
 			class = type->class;
 			printf (" %s %s%s", pr_type_name[type->type],
@@ -341,7 +342,8 @@ type_assignable (type_t *dst, type_t *src)
 		return 0;
 	dst = dst->aux_type;
 	src = src->aux_type;
-	if (dst->type != ev_class || src->type != ev_class)
+	if ((dst->type != ev_object && dst->type != ev_class)
+		|| (src->type != ev_object && src->type != ev_class))
 		return 0;
 	dst_class = dst->class;
 	src_class = src->class;
@@ -457,7 +459,7 @@ init_types (void)
 	chain_type (&type_Protocol);
 
 	type = type_id.aux_type = new_struct ("id");
-	type->type = ev_class;
+	type->type = ev_object;
 	type->class = &class_id;
 	class_id.ivars = type_id.aux_type;
 	new_struct_field (type, &type_Class, "class_pointer", vis_public);

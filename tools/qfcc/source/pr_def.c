@@ -30,8 +30,6 @@ static const char rcsid[] =
 #include "struct.h"
 #include "type.h"
 
-extern expr_t *local_expr;				// FIXME just where should this go?
-
 typedef struct locref_s {
 	struct locref_s *next;
 	int         ofs;

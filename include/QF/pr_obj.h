@@ -34,6 +34,49 @@
 
 #include "QF/pr_comp.h"
 
+#define PR_BITS_PER_INT (sizeof (int) * 8)
+
+#define __PR_CLS_INFO(cls) ((cls)->info)
+#define __PR_CLS_ISINFO(cls, mask) ((__PR_CLS_INFO (cls) & (mask)) == (mask))
+#define __PR_CLS_SETINFO(cls, mask) (__PR_CLS_INFO (cls) |= (mask))
+
+/*
+	The structure is of type MetaClass
+*/
+#define _PR_CLS_META 0x2
+#define PR_CLS_ISMETA(cls) ((cls) && __PR_CLS_ISINFO (cls, _PR_CLS_META))
+
+/*
+	The structure is of type Class
+*/
+#define _PR_CLS_CLASS 0x1
+#define PR_CLS_ISCLASS(cls) ((cls) && __PR_CLS_ISINFO (cls, _PR_CLS_CLASS))
+
+/*
+	The class is initialized within the runtime.  This means that
+	it has had correct super and sublinks assigned
+*/
+#define _PR_CLS_RESOLV 0x8
+#define PR_CLS_ISRESOLV(cls) __PR_CLS_ISINFO (cls, _PR_CLS_RESOLV)
+#define PR_CLS_SETRESOLV(cls) __PR_CLS_SETINFO (cls, _PR_CLS_RESOLV)
+
+/*
+	The class has been sent a +initialize message or such is not
+	defined for this class
+*/
+#define _PR_CLS_INITIALIZED 0x8
+#define PR_CLS_ISINITIALIZED(cls) __PR_CLS_ISINFO (cls, _PR_CLS_INITIALIZED)
+#define PR_CLS_SETINITIALIZED(cls) __PR_CLS_SETINFO (cls, _PR_CLS_INITIALIZED)
+
+/*
+	The class number of this class.  This must be the same for both the
+	class and its meta class boject
+*/
+#define PR_CLS_GETNUMBER(cls) (__CLS_INFO (cls) >> (PR_BITS_PER_INT / 2))
+#define PR_CLS_SETNUMBER(cls, num) \
+  (__PR_CLS_INFO (cls) = __PR_CLS_INFO (cls) & (~0U >> (PR_BITS_PER_INT / 2)) \
+   						| (num) << (PR_BITS_PER_INT / 2))
+
 typedef struct pr_sel_s {
 	pointer_t   sel_id;
 	string_t    sel_types;
@@ -48,7 +91,7 @@ typedef struct pr_class_s {
 	pointer_t   super_class;		// pr_class_t
 	string_t    name;
 	int         version;
-	int         info;
+	unsigned int info;
 	int         instance_size;
 	pointer_t   ivars;				// pr_ivar_list_t
 	pointer_t   methods;			// pr_method_list_t

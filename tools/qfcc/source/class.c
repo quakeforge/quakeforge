@@ -151,9 +151,11 @@ class_begin (class_t *class)
 							  0, &numpr_globals);
 		meta_def->initialized = meta_def->constant = 1;
 		meta = &G_STRUCT (pr_class_t, meta_def->ofs);
-		memset (meta, 0, sizeof (*meta));
 		meta->class_pointer  = ReuseString (class->class_name);
+		if (class->super_class)
+			meta->super_class = ReuseString (class->super_class->class_name);
 		meta->name = meta->class_pointer;
+		meta->info = _PR_CLS_META;
 		meta->instance_size = type_size (type_Class.aux_type);
 		meta->ivars = emit_struct (type_Class.aux_type, "Class");
 		meta->protocols = emit_protocol_list (class->protocols,
@@ -165,10 +167,9 @@ class_begin (class_t *class)
 		class->def->initialized = class->def->constant = 1;
 		cls = &G_STRUCT (pr_class_t, class->def->ofs);
 		cls->class_pointer = meta_def->ofs;
-		if (class->super_class
-			&& class->super_class->def)	//FIXME implementation only
-			cls->super_class = class->super_class->def->ofs;
+		cls->super_class = meta->super_class;
 		cls->name = meta->name;
+		meta->info = _PR_CLS_CLASS;
 		cls->protocols = meta->protocols;
 	}
 }

@@ -100,7 +100,10 @@ expr_type   expr_types[] = {
 	ex_integer,							// ev_integer
 	ex_uinteger,						// ev_uinteger
 	ex_short,							// ev_short
-	ex_nil,								// ev_struct FIXME???
+	ex_nil,								// ev_struct
+	ex_nil,								// ev_object
+	ex_nil,								// ev_class
+	ex_nil,								// ev_sel
 };
 
 void
@@ -982,6 +985,7 @@ field_expr (expr_t *e1, expr_t *e2)
 						t1 = pointer_type (field->type);
 					}
 					break;
+				case ev_object:
 				case ev_class:
 					if (e2->type == ex_name) {
 						field = class_find_ivar (t1->aux_type->class,
@@ -2013,8 +2017,14 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 		receiver->e.string_val = "self";
 	}
 	rec_type = get_type (receiver);
-	if (rec_type->type != ev_pointer || rec_type->aux_type->type != ev_class)
-		return error (receiver, "not a class object");
+
+	if (receiver->type == ex_error)
+		return receiver;
+
+	if (rec_type->type != ev_pointer
+		|| (rec_type->aux_type->type != ev_object
+			&& rec_type->aux_type->type != ev_class))
+		return error (receiver, "not a class/object");
 	class = rec_type->aux_type->class;
 	if (rec_type != &type_id) {
 		method = class_message_response (class, selector);
@@ -2030,6 +2040,10 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	a = &(*a)->next;
 	*a = receiver;
 	call = function_expr (send_message (super), args);
+
+	if (call->type == ex_error)
+		return receiver;
+
 	call->e.block.result->e.def->type = rec_type;
 	return call;
 }
