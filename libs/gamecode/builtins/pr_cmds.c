@@ -329,7 +329,8 @@ PF_Find (progs_t *pr)
 {
 	const char *s = 0, *t; // ev_string
 	int			i; // ev_vector
-	int			type, e, f;
+	int			e, f;
+	etype_t		type;
 	ddef_t	   *field_def;
 	edict_t	   *ed;
 
