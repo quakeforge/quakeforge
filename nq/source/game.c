@@ -43,7 +43,7 @@ Game_Init (void)
 {
 	if (COM_CheckParm ("-abyss")) {
 		abyss = true;
-		standard_quake = false;
+		standard_quake = true;
 	}
 
 	if (COM_CheckParm ("-rogue")) {
