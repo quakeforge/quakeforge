@@ -1,27 +1,587 @@
 #LyX 1.1 created this file. For more info see http://www.lyx.org/
 \lyxformat 218
-\textclass article
-\language english
-\inputencoding auto
-\fontscheme default
+\textclass scrbook
+\language american
+\inputencoding latin1
+\fontscheme pslatex
 \graphics default
-\paperfontsize default
+\paperfontsize 12
 \spacing single 
-\papersize Default
+\papersize letterpaper
 \paperpackage a4
-\use_geometry 0
+\use_geometry 1
 \use_amsmath 0
 \paperorientation portrait
-\secnumdepth 3
-\tocdepth 3
-\paragraph_separation indent
+\secnumdepth 2
+\tocdepth 2
+\paragraph_separation skip
 \defskip medskip
 \quotes_language english
 \quotes_times 2
 \papercolumns 1
-\papersides 1
-\paperpagestyle default
+\papersides 2
+\paperpagestyle headings
 
+\layout Title
+
+The Ruamoko Programming Language
+\layout Author
+
+Bill Currie 
+\begin_inset Formula \( \bullet  \)
+\end_inset 
+
+ Jeff Teunissen
+\layout Publishers
+
+QuakeForge Press
+\newline 
+;-)
+\layout Uppertitleback
+
+This manual is free; you can redistribute it and/or modify it under the
+ terms of the GNU General Public License as published by the Free Software
+ Foundation; either version 2 of the License, or (at your option) any later
+ version.
+\newline 
+
+\newline 
+This manual is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ FOR A PARTICULAR PURPOSE.
+ See the GNU General Public License for more details.
+\newline 
+
+\newline 
+You should have received a copy of the GNU General Public License along
+ with this manual: if not, write to:
+\newline 
+
+\newline 
+Free Software Foundation, Inc.
+\newline 
+59 Temple Place - Suite 330
+\newline 
+Boston MA 02111-1307
+\newline 
+USA
+\layout Lowertitleback
+
+Copyright © 2002 Bill Currie and Jeff Teunissen
+\layout Standard
+
+
+\begin_inset LatexCommand \tableofcontents{}
+
+\end_inset 
+
+
+\layout Addchap
+
+Preface
+\layout Standard
+
+In December 1996, Id Software released 
+\emph on 
+Quake
+\emph default 
+ to the world.
+ It's doubtful that they knew at the time that it would spark a revolution
+ -- but such a revolution happened.
+ To the game industry's surprise, people were getting the game not just
+ to play it, but to 
+\emph on 
+change
+\emph default 
+ it\SpecialChar \@.
+ For the first time, people could make whole new games based on the Quake
+ engine without having to rewrite the whole game -- and in fact you couldn't
+ rewrite the whole game, because the main source code wasn't available to
+ the general public.
+ What 
+\series bold 
+was
+\series default 
+ available was something new -- the game wasn't just a game, it was a virtual
+ machine that had a byte-code instruction set -- and it had a compiler that
+ you could use to make new games to run inside that engine.
+ The language (called 
+\emph on 
+QuakeC
+\emph default 
+) was kind of crude, and the compiler was even more crude -- but it was
+ a revolutionary development.
+\layout Standard
+
+Now, let's fast-forward to another December -- this time, December 1999.
+ In another revolutionary move, Id Software released the source code to
+ the complete Quake engine.
+ This gave many people the opportunity to do a lot more than just make 
+\begin_inset Quotes eld
+\end_inset 
+
+mods
+\begin_inset Quotes erd
+\end_inset 
+
+ for Quake.
+ Instead, people could make all-new games without using Quake itself.
+ Many projects started up around this source code, with many aims\SpecialChar \ldots{}
+but one
+ project grew to be the most dominant: That project is 
+\emph on 
+QuakeForge
+\emph default 
+.
+\layout Standard
+
+QuakeForge has developed a number of interesting things involving the Quake
+ engine, but most of them are beyond the scope of this manual.
+ This manual documents the 
+\emph on 
+Ruamoko
+\begin_float footnote 
+\layout Standard
+
+The name Ruamoko comes from the Maori name for their god of volcanoes and
+ earthquakes.
+ According to myth, Ruamoko is not yet born, and when he shakes inside the
+ Earth-mother, the world shakes.
+\end_float 
+ language, a language based on Id Software's QuakeC, but which has been
+ expanded in ways far beyond the original language.
+\layout Chapter
+
+A Tutorial Introduction
+\layout Standard
+
+Let us begin with a quick introduction to Ruamoko.
+ Our aim here is to show the basic elements of the language in real programs,
+ but without getting bogged down in details or rules.
+ At this point, we're not even trying to be complete, or even precise (except
+ that the examples are meant to be correct).
+ We want to get you as quickly as possible to the point where you can write
+ useful programs, and to do that we have to concentrate on the basics: variables
+ and constants, arithmetic, flow control, functions, and the rudiments of
+ input and output.
+ We are intentionally leaving out of this chapter features of Ruamoko that
+ are important for writing bigger programs, or programs to run in an actual
+ Quake engine.
+ These include entities, structures, pointers, most of the operators, objects,
+ and the standard builtin library.
+\layout Standard
+
+This approach has its drawbacks.
+ Most notable is that the complete story on any particular language feature
+ is not found here, and the brief tutorial, just by being brief, may be
+ misleading.
+ And because the examples don't use the full power of Ruamoko, they may
+ not be as elegant or concise as they could be; we 
+\series bold 
+have
+\series default 
+ tried to minimize these effects, but be warned.
+ Another drawback is that later chapters will repeat some of what's presented
+ here.
+ We hope that the repetition will help more than it annoys.
+\layout Standard
+
+In any case, experienced programmers should be able to get an idea, from
+ this chapter, of some of the things that can be done in Ruamoko, for their
+ own needs.
+ Beginners should supplement it by writing small, similar programs of their
+ own.
+ Both groups can use it as a framework on which to hang the more detailed
+ descriptions that begin in later chapters.
+\layout Section
+
+Getting Started
+\layout Standard
+
+The best way to learn a new programming language is by writing programs
+ in it.
+ The first program one writes is almost always the same for all new languages:
+ print the phrase 
+\begin_inset Quotes eld
+\end_inset 
+
+Hello, world!
+\begin_inset Quotes erd
+\end_inset 
+
+ on the screen.
+\layout Standard
+
+This is the big hurdle.
+ To get past it, you have to be able to create the program text somewhere,
+ compile it, load it successfully, load it, run it, and find out where the
+ output went.
+ With these mechanical details mastered, everything else is relatively easy.
+\layout Standard
+
+In Ruamoko, the program to print 
+\begin_inset Quotes eld
+\end_inset 
+
+Hello, world!
+\begin_inset Quotes erd
+\end_inset 
+
+ is:
+\layout LyX-Code
+
+#include <qwaq/globals.rh>
+\newline 
+#include <qwaq/fields.rh>
+\newline 
+#include <qwaq/builtins.rh>
+\newline 
+
+\newline 
+void () main =
+\newline 
+{
+\newline 
+    printf ("Hello, world!
+\backslash 
+n");
+\newline 
+};
+\layout Standard
+
+To run this program, you first have to compile it.
+ To compile it, you need to save the source code into a file (for example,
+ 
+\family typewriter 
+hello.r
+\family default 
+), and create a 
+\family typewriter 
+progs.src
+\family default 
+ file to tell the compiler how to compile it.
+ Here is an example 
+\family typewriter 
+progs.src
+\family default 
+ file:
+\layout LyX-Code
+
+qwaq.dat
+\newline 
+hello.r
+\layout Standard
+
+The first line of 
+\family typewriter 
+progs.src
+\family default 
+ tells the compiler the name of the compiled object file that it is supposed
+ to save to disk after compilation.
+ Following lines tell it the names of files that are to be used to compile
+ that object file.
+ To compile the source, issue the command
+\layout LyX-Code
+
+qfcc
+\layout Standard
+
+If you haven't screwed anything up, such as omitting a character or misspelling
+ something, the compilation will proceed silently.
+ You should be rewarded with something that looks something like the following:
+\layout LyX-Code
+
+   208 strofs
+\newline 
+     4 statements
+\newline 
+    14 functions
+\newline 
+    30 globaldefs
+\newline 
+     0 locals size ((null))
+\newline 
+     8 fielddefs
+\newline 
+    52 pr_globals
+\newline 
+     6 entityfields
+\newline 
+  1316 TOTAL SIZE
+\newline 
+Compilation time: 0.0365 seconds.
+\layout Standard
+
+You run 
+\family typewriter 
+qwaq.dat
+\family default 
+ by issuing the command
+\layout LyX-Code
+
+qwaq
+\layout Standard
+
+the program should print
+\layout LyX-Code
+
+Hello, world!
+\layout Standard
+
+to your screen.
+\layout Standard
+
+Now, for some explanations regarding the program itself.
+ All Ruamoko programs, regardless of size, consist mainly of 
+\emph on 
+functions
+\emph default 
+ and 
+\emph on 
+variables
+\emph default 
+.
+ A function contains statements that tell the compiler what computing operations
+ you want to do, and variables store values used during the operation of
+ the program.
+ Ruamoko functions are roughly equivalent to C's functions, or Pascal's
+ procedures and functions.
+ Our example is a function called 
+\family typewriter 
+main
+\family default 
+.
+ You can create functions with just about any name you like, but 
+\begin_inset Quotes eld
+\end_inset 
+
+
+\family typewriter 
+main
+\family default 
+
+\begin_inset Quotes erd
+\end_inset 
+
+ is special -- program execution begins there
+\begin_float footnote 
+\layout Standard
+
+This is not precisely true.
+ When used in a game engine, there are certain other functions that are
+ called by the engine during the course of a game.
+\end_float 
+.
+ This means that every program must have a 
+\family typewriter 
+main
+\family default 
+ function somewhere.
+\layout Standard
+
+Main will usually call other functions to do its job -- some of them you
+ write, and some of them are provided by the virtual machine your program
+ runs inside.
+ The first lines of the program,
+\layout LyX-Code
+
+#include <qwaq/globals.rh>
+\newline 
+#include <qwaq/fields.rh>
+\newline 
+#include <qwaq/builtins.rh>
+\layout Standard
+
+tell the compiler to include information about the standard variables, constants
+, 
+\emph on 
+fields
+\emph default 
+, and 
+\emph on 
+builtins
+\emph default 
+ (also known as 
+\emph on 
+engine functions
+\emph default 
+) provided by the environment
+\begin_float footnote 
+\layout Standard
+
+The environment will be described later.
+\end_float 
+.
+\layout Standard
+
+One way of communicating data between functions is for the calling function
+ to provide a list of values, called arguments, to the function it calls.
+ The parentheses after the function's name surround the argument list.
+ In this example, main is defined to be a function that expects no arguments,
+ which is indicated by an empty list:\SpecialChar ~
+
+\family typewriter 
+()
+\family default 
+.
+\layout Standard
+
+The statements of a function are enclosed in curly braces,\SpecialChar ~
+
+\family typewriter 
+{}
+\family default 
+.
+ The function 
+\family typewriter 
+main
+\family default 
+ contains only one statement,
+\layout LyX-Code
+
+printf ("Hello, world!
+\backslash 
+n");
+\layout Standard
+
+A function is called by giving its name, followed by a list of arguments
+ enclosed by parentheses, so this calls the function 
+\family typewriter 
+printf
+\family default 
+ with the argument 
+\family typewriter 
+"Hello, world!
+\backslash 
+n"
+\family default 
+.
+ 
+\family typewriter 
+printf
+\family default 
+ is a builtin function that prints output, in this case the string of characters
+ between the quotes.
+\layout Standard
+
+A sequence of characters between double quotes, like 
+\family typewriter 
+"Hello, world!
+\backslash 
+n"
+\family default 
+, is called a 
+\emph on 
+string constant
+\emph default 
+ or simply a 
+\emph on 
+string
+\emph default 
+.
+ For the moment, our only use of strings will be as arguments for 
+\family typewriter 
+printf
+\family default 
+ and other functions.
+\layout Standard
+
+The sequence 
+\family typewriter 
+
+\backslash 
+n
+\family default 
+ in the string is Ruamoko notation for the 
+\emph on 
+newline character
+\emph default 
+, which when printed tells the terminal (or a game client) to advance to
+ the next line in the output.
+ If you leave out the 
+\family typewriter 
+
+\backslash 
+n
+\family default 
+, you will find that there is no advance after the character string is printed.
+ You must use 
+\family typewriter 
+
+\backslash 
+n
+\family default 
+ to include a newline character in the printf argument; if you try something
+ like
+\layout LyX-Code
+
+printf ("Hello, world!
+\newline 
+");
+\layout Standard
+
+the Ruamoko compiler will give you an error message.
+\layout Standard
+
+
+\family typewriter 
+printf
+\family default 
+ never supplies a newline automatically, so several calls may be used to
+ build up an output line in stages.
+ Our first program could just as easily been written as
+\layout LyX-Code
+
+#include <qwaq/globals.rh>
+\newline 
+#include <qwaq/fields.rh>
+\newline 
+#include <qwaq/builtins.rh>
+\newline 
+
+\newline 
+void () main =
+\newline 
+{
+\newline 
+    printf ("Hello, ");
+\newline 
+    printf ("world!");
+\newline 
+    printf ("
+\backslash 
+n");
+\newline 
+};
+\layout Standard
+
+and it would have produced identical output.
+\layout Standard
+
+Note that 
+\backslash 
+n represents only a single character.
+ An escape character like 
+\backslash 
+n gives you a general way to express hard-to-type or invisible characters.
+ Among the others are 
+\backslash 
+t for a tab, 
+\backslash 
+b for a backspace, 
+\backslash 
+" for a double-quote, and 
+\backslash 
+
+\backslash 
+ for the backslash character itself.
+ There is a complete list in [section]
+\layout Section
+
+Variables and Mathematical Expressions
+\layout Chapter
+
+Language Reference
 \layout Standard
 
 This is currently just new stuff in 
@@ -31,14 +591,6 @@ qfcc
 \family default 
 \series default 
 .
-\layout Standard
-
-
-\begin_inset LatexCommand \tableofcontents{}
-
-\end_inset 
-
-
 \layout Section
 
 New Type Features
@@ -100,7 +652,7 @@ SEL
 \family typewriter 
 IMP
 \family default 
- message imlementation
+ message implementation
 \layout Standard
 
 
@@ -136,36 +688,22 @@ qfcc
 's Objective-QC extensions.
 \layout Subsection
 
-Enums
+Enumerators
 \layout Standard
 
 as per C
 \layout Subsection
 
 Structures
-\layout Verse
+\layout LyX-Code
 
-
-\family typewriter 
 struct foo {
 \newline 
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-integer bar;
+    integer bar;
 \newline 
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-float baz;
+    float baz;
 \newline 
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-void () func;
+    void () func;
 \newline 
 };
 \layout Standard
@@ -175,10 +713,8 @@ y useful for engine interface functions).
 \layout Subsection
 
 Arrays
-\layout Verse
+\layout LyX-Code
 
-
-\family typewriter 
 integer [13] array;
 \layout Subsection
 
@@ -191,8 +727,8 @@ Pointers are declared the same way as arrays, but with no number in the
 []
 \family default 
 s.
- In fact, arrays are just pointers with limited bounds checking (compile
- time constant indeces).
+ In fact, arrays are just pointers with limited (compile-time) bounds checking
+ (constant indices).
 \layout Subsection
 
 Complex types
@@ -203,11 +739,9 @@ Complex types can be created by nesting type declarations within
 ()
 \family default 
 s.
- eg:
-\layout Verse
+ e.g.:
+\layout LyX-Code
 
-
-\family typewriter 
 (.float) (string name) find_field;
 \layout Standard
 
@@ -237,11 +771,9 @@ By using
 typedef
 \family default 
  complex types can be given symbolic names.
- eg:
-\layout Verse
+ e.g.:
+\layout LyX-Code
 
-
-\family typewriter 
 struct foo_s {};
 \newline 
 typedef foo_s [] foo_t;
@@ -258,10 +790,10 @@ foo_s
  (which happens to be opaque).
 \layout Subsection
 
-vararg functions
+Variable-argument functions
 \layout Standard
 
-Typed parameters preceding the ellipsis are allowed, eg: 
+Typed parameters preceding the ellipsis are allowed, e.g.: 
 \family typewriter 
 void (string fmt, ...) printf;
 \layout Standard
@@ -271,7 +803,7 @@ More importantly, it is now possible to write vararg functions in QC.
 \family typewriter 
 @argc
 \family default 
- gives the number of parameters passed throug the ellipsis and 
+ gives the number of parameters passed through the ellipsis and 
 \family typewriter 
 @argv
 \family default 
@@ -289,8 +821,8 @@ Warning: attempting to pass
 \family typewriter 
 @argv
 \family default 
- to another non-engine function will not work due to the changes in how
- local variables are handled by the compiler.
+ to a non-engine function will not work.
+ This is because of changes in how local variables are handled by the compiler.
 \layout Subsection
 
 Improved type checking
@@ -299,7 +831,7 @@ Improved type checking
 Function parameters and return types are are fully checked, including the
  number of parameters passed to a function.
  Functions with different return types and/or different parameter types
- or counts are distinct types and mixing them up will cause a type missmatch
+ or counts are distinct types and mixing them up will cause a type mismatch
  error.
  Similar for pointers to various types.
 \layout Section
@@ -314,7 +846,7 @@ Initialization
 \layout Standard
 
 Local variables of basic types can now be initialized when declared.
- eg
+ e,g,
 \layout Verse
 
 
@@ -335,8 +867,8 @@ Checks are done to ensure that local variables have been initialized before
  being used.
  However, these checks are not perfect and false positives are very likely
  in complex code.
- Occurances of false negatives are not known, but the possibility of their
- existance remains and any examples of false negatives should be reported
+ Occurrences of false negatives are not known, but the possibility of their
+ existence remains and any examples of false negatives should be reported
  as bugs.
 \layout Subsection
 
@@ -347,7 +879,7 @@ Global array variables can be initialized using
 \family typewriter 
 = { 
 \emph on 
-elementlist
+element-list
 \emph default 
  };
 \family default 
@@ -364,7 +896,11 @@ Magic variables
 \layout List
 \labelwidthstring 00.00.0000
 
-@self Automagicly declared entity variable the engine will use for 
+
+\family typewriter 
+@self
+\family default 
+ Automagically declared entity variable the engine will use for 
 \family typewriter 
 touch
 \family default 
@@ -381,7 +917,11 @@ self
 \layout List
 \labelwidthstring 00.00.0000
 
-@this Automagicly declared 
+
+\family typewriter 
+@this
+\family default 
+ Automagically declared 
 \family typewriter 
 id
 \family default 
@@ -404,7 +944,11 @@ think
 \layout List
 \labelwidthstring 00.00.0000
 
-@argc Number of parameters passed through 
+
+\family typewriter 
+@argc
+\family default 
+ Number of parameters passed through 
 \family typewriter 
 ...
 
@@ -414,7 +958,11 @@ think
 \layout List
 \labelwidthstring 00.00.0000
 
-@argv Array of vectors representing the parameters passed through 
+
+\family typewriter 
+@argv
+\family default 
+ Array of vectors representing the parameters passed through 
 \family typewriter 
 ...
 
@@ -492,75 +1040,53 @@ The
 for
 \family default 
  loop is:
-\layout Verse
+\layout LyX-Code
 
-
-\family typewriter 
 for (
 \emph on 
-initialization\SpecialChar ~
-expression
+initialization-expression
 \emph default 
 ; 
 \emph on 
-test\SpecialChar ~
-expression
+test-expression
 \emph default 
 ; 
 \emph on 
-post\SpecialChar ~
-expression
+post-expression
 \emph default 
 )
-\emph on 
+\layout LyX-Code
 
-\newline 
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-statement
+
+\emph on 
+    statement
 \layout Standard
 
 and is equivalent to
-\layout Verse
+\layout LyX-Code
 
 
-\family typewriter 
 \emph on 
-initialization\SpecialChar ~
-expression
-\emph default 
+initialization expression
+\layout LyX-Code
 
-\newline 
 while (
 \emph on 
-test\SpecialChar ~
-expression
+test expression
 \emph default 
 ) {
-\newline 
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
+\layout LyX-Code
+
 
 \emph on 
-statement
-\emph default 
+    statement
+\layout LyX-Code
 
-\newline 
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
 
 \emph on 
-post\SpecialChar ~
-expression
-\emph default 
+    post expression
+\layout LyX-Code
 
-\newline 
 }
 \layout Subsection
 
@@ -575,85 +1101,43 @@ switch
 \family default 
  statement is used to select between multiple code blocks based on the value
  of an expression.
-\layout Verse
+\layout LyX-Code
 
-
-\family typewriter 
 switch (
 \emph on 
-test\SpecialChar ~
-expression
+test expression
 \emph default 
 ) {
 \newline 
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-case
+   case
 \emph on 
  value
 \emph default 
 :
 \newline 
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
 
 \emph on 
-optional\SpecialChar ~
-statements
-\emph default 
-
+        optional statements
 \newline 
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-case
+
+\emph default 
+   case
 \emph on 
  value
 \emph default 
 :
 \newline 
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
 
 \emph on 
-optional\SpecialChar ~
-statements
+        optional statements
 \emph default 
 
 \newline 
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-default:
+    default:
 \newline 
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
 
 \emph on 
-optional\SpecialChar ~
-statements
+        optional statements
 \emph default 
 
 \newline 
@@ -674,7 +1158,7 @@ s do
 not
 \emph default 
  affect code execution.
- If this behaviour is not desired, as is usual, then a 
+ If this behavior is not desired, as is usual, then a 
 \family typewriter 
 break
 \family default 
@@ -825,7 +1309,7 @@ e
 e
 \family default 
 \emph default 
- pre increment and decrement
+ pre-increment and decrement
 \layout List
 \labelwidthstring 00.00.0000
 
@@ -841,7 +1325,7 @@ e
 \emph default 
 --
 \family default 
- post increment and decrement
+ post-increment and decrement
 \layout Subsection
 
 Other
