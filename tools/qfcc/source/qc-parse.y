@@ -126,7 +126,7 @@ void free_local_inits (hashtab_t *def_list);
 
 %token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS NIL
 %token	IFBE IFB IFAE IFA
-%token	SWITCH CASE DEFAULT STRUCT ENUM TYPEDEF SUPER SELF THIS
+%token	SWITCH CASE DEFAULT STRUCT UNION ENUM TYPEDEF SUPER SELF THIS
 %token	ARGC ARGV
 %token	ELE_START
 %token	<type> TYPE
@@ -197,6 +197,8 @@ def
 	: type { current_type = $1; } def_list
 	| STRUCT NAME
 	  { struct_type = new_struct ($2); } '=' '{' struct_defs '}'
+	| UNION NAME
+	  { struct_type = new_union ($2); } '=' '{' struct_defs '}'
 	| ENUM '{' enum_list opt_comma '}'
 	  { process_enum ($3); }
 	| TYPEDEF type NAME
@@ -1216,6 +1218,7 @@ reserved_word
 	| DEFAULT					{ $$ = strdup (yytext); }
 	| NIL						{ $$ = strdup (yytext); }
 	| STRUCT					{ $$ = strdup (yytext); }
+	| UNION						{ $$ = strdup (yytext); }
 	| ENUM						{ $$ = strdup (yytext); }
 	| TYPEDEF					{ $$ = strdup (yytext); }
 	| SUPER						{ $$ = strdup (yytext); }

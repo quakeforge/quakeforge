@@ -57,6 +57,7 @@ static const char rcsid[] =
 typedef struct {
 	const char *name;
 	type_t     *type;
+	int         is_union;
 } struct_t;
 
 typedef struct {
@@ -97,8 +98,14 @@ new_struct_field (type_t *strct, type_t *type, const char *name,
 	field->visibility = visibility;
 	field->name = name;
 	field->type = type;
-	field->offset = strct->num_parms;
-	strct->num_parms += type_size (type);
+	if (((struct_t *) strct->class)->is_union) {
+		int         size = type_size (type);
+		field->offset = 0;
+		strct->num_parms = strct->num_parms > size ? strct->num_parms : size;
+	} else {
+		field->offset = strct->num_parms;
+		strct->num_parms += type_size (type);
+	}
 	field->next = 0;
 	*strct->struct_tail = field;
 	strct->struct_tail = &field->next;
@@ -136,11 +143,23 @@ new_struct (const char *name)
 	strct->type->type = ev_struct;
 	strct->type->struct_tail = &strct->type->struct_head;
 	strct->type->struct_fields = Hash_NewTable (61, struct_field_get_key, 0, 0);
+	strct->type->class = (struct class_s *)strct;
+	strct->is_union = 0;
 	if (name) {
 		strct->type->name = strdup (name);
 		Hash_Add (structs, strct);
 	}
 	return strct->type;
+}
+
+type_t *
+new_union (const char *name)
+{
+	type_t     *un = new_struct (name);
+
+	if (un)
+		((struct_t *) un->class)->is_union = 1;
+	return un;
 }
 
 type_t *

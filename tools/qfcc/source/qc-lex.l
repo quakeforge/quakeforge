@@ -278,6 +278,7 @@ static keyword_t keywords[] = {
 	{"default",		DEFAULT, 0,					0, PROG_ID_VERSION},
 	{"NIL",			NIL,	0,					0, PROG_ID_VERSION},
 	{"struct",		STRUCT, 0,					0, PROG_VERSION},
+	{"union",		UNION,	0,					0, PROG_VERSION},
 	{"enum",		ENUM,	0,					0, PROG_ID_VERSION},
 	{"typedef",		TYPEDEF, 0,					0, PROG_ID_VERSION},
 	{"super",		SUPER,	0,					0, PROG_VERSION},
