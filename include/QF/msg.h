@@ -30,7 +30,6 @@
 
 #include "QF/sizebuf.h"
 
-void MSG_WriteChar (sizebuf_t *sb, unsigned int c);
 void MSG_WriteByte (sizebuf_t *sb, unsigned int c);
 void MSG_WriteShort (sizebuf_t *sb, unsigned int c);
 void MSG_WriteLong (sizebuf_t *sb, unsigned int c);
@@ -54,7 +53,6 @@ typedef struct msg_s {
 
 void MSG_BeginReading (msg_t *msg);
 int MSG_GetReadCount(msg_t *msg);
-int MSG_ReadChar (msg_t *msg);
 int MSG_ReadByte (msg_t *msg);
 int MSG_ReadShort (msg_t *msg);
 int MSG_ReadLong (msg_t *msg);
