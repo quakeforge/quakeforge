@@ -40,7 +40,7 @@
 #include <sys/types.h>
 
 #include "QF/console.h"
-#include "QF/sound.h"
+#include "sound.h"
 #include "QF/qargs.h"
 
 static int  snd_inited;

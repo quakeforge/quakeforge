@@ -38,7 +38,7 @@
 
 #include "QF/compat.h"
 #include "QF/console.h"
-#include "QF/sound.h"
+#include "sound.h"
 
 #ifdef _WIN32
 # include "winquake.h"

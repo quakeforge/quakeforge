@@ -56,7 +56,7 @@
 
 #include "QF/console.h"
 #include "QF/qargs.h"
-#include "QF/sound.h"
+#include "sound.h"
 
 #ifndef MAP_FAILED
 # define MAP_FAILED ((void*)-1)

@@ -35,7 +35,7 @@
 
 #include "client.h"
 #include "host.h"
-#include "QF/cdaudio.h"
+#include "cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/msg.h"
@@ -43,6 +43,7 @@
 #include "sbar.h"
 #include "screen.h"
 #include "server.h"
+#include "sound.h" // FIXME: DEFAULT_SOUND_PACKET_*
 #include "game.h"
 #include "input.h"
 

@@ -35,7 +35,7 @@
 #include "winquake.h"
 #include "QF/qargs.h"
 #include "QF/console.h"
-#include "QF/sound.h"
+#include "sound.h"
 
 #define iDirectSoundCreate(a,b,c)	pDirectSoundCreate(a,b,c)
 

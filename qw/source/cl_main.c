@@ -60,7 +60,7 @@
 
 #include "bothdefs.h"
 #include "buildnum.h"
-#include "QF/cdaudio.h"
+#include "cdaudio.h"
 #include "cl_cam.h"
 #include "cl_demo.h"
 #include "cl_ents.h"
@@ -90,7 +90,7 @@
 #include "sbar.h"
 #include "screen.h"
 #include "skin.h"
-#include "QF/sound.h"
+#include "sound.h"
 #include "QF/sys.h"
 #include "teamplay.h"
 #include "vid.h"

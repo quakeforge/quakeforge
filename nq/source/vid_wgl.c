@@ -44,7 +44,7 @@
 #include "QF/cmd.h"
 #include "QF/qendian.h"
 #include "draw.h"
-#include "QF/cdaudio.h"
+#include "cdaudio.h"
 #include "QF/console.h"
 #include "sbar.h"
 

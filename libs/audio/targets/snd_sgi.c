@@ -36,7 +36,7 @@
 #include "QF/console.h"
 #include "QF/qtypes.h"
 #include "QF/qargs.h"
-#include "QF/sound.h"
+#include "sound.h"
 
 static int  snd_inited = 0;
 static ALconfig alc;

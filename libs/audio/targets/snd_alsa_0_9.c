@@ -36,7 +36,7 @@
 #include <sys/asoundlib.h>
 
 #include "QF/qtypes.h"
-#include "QF/sound.h"
+#include "sound.h"
 #include "QF/qargs.h"
 #include "QF/console.h"
 

@@ -36,7 +36,7 @@
 #include "server.h"
 #include "view.h"
 #include "chase.h"
-#include "QF/cdaudio.h"
+#include "cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/keys.h"

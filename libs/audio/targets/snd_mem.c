@@ -39,7 +39,7 @@
 #include "QF/console.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
-#include "QF/sound.h"
+#include "sound.h"
 #include "QF/sys.h"
 
 int         cache_full_cycle;

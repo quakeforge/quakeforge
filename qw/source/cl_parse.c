@@ -44,7 +44,7 @@
 #endif
 
 #include "bothdefs.h"
-#include "QF/cdaudio.h"
+#include "cdaudio.h"
 #include "cl_ents.h"
 #include "cl_input.h"
 #include "cl_main.h"
@@ -61,7 +61,7 @@
 #include "screen.h"
 #include "sbar.h"
 #include "skin.h"
-#include "QF/sound.h"
+#include "sound.h"
 #include "teamplay.h"
 #include "QF/va.h"
 #include "view.h"

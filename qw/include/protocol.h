@@ -221,9 +221,6 @@
 #define	SND_VOLUME		(1<<15)		// a byte
 #define	SND_ATTENUATION	(1<<14)		// a byte
 
-#define DEFAULT_SOUND_PACKET_VOLUME 255
-#define DEFAULT_SOUND_PACKET_ATTENUATION 1.0
-
 // svc_print messages have an id, so messages can be filtered
 #define	PRINT_LOW			0
 #define	PRINT_MEDIUM		1

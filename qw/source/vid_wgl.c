@@ -30,7 +30,7 @@
 # include "config.h"
 #endif
 
-#include "QF/cdaudio.h"
+#include "cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "draw.h"
@@ -43,7 +43,7 @@
 #include "resource.h"
 #include "sbar.h"
 #include "screen.h"
-#include "QF/sound.h"
+#include "sound.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "winquake.h"

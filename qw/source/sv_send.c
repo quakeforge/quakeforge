@@ -44,6 +44,7 @@
 #include "server.h"
 #include "sv_progs.h"
 #include "QF/sys.h"
+#include "sound.h" // FIXME: DEFAULT_SOUND_PACKET_*
 
 #define CHAN_AUTO   0
 #define CHAN_WEAPON 1
