@@ -836,6 +836,8 @@ ED_Print (progs_t *pr, edict_t *ed)
 				if (!v[0].float_var && !v[1].float_var && !v[2].float_var)
 					continue;
 				break;
+			case ev_void:
+				break;
 			default:
 				PR_Error (pr, "ED_Print: Unhandled type %d", type);
 		}
