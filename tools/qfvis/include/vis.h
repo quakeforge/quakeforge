@@ -29,7 +29,11 @@
 #ifndef __vis_h
 #define __vis_h
 
-#ifdef __alpha
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_PTHREAD_H
 #include <pthread.h>
 extern pthread_mutex_t *my_mutex;
 #define	LOCK	pthread_mutex_lock (my_mutex)

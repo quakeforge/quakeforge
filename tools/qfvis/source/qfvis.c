@@ -85,7 +85,7 @@ int			leafon;		// the next leaf to be given to a thread to process
 portal_t	*portals;
 leaf_t		*leafs;
 qboolean	showgetleaf = true;
-byte		*vismap, *vismap_p, *vismap_end;	// past visfile
+dstring_t   *visdata;
 byte		*uncompressed;		// [bitbytes * portalleafs]
 
 
@@ -410,7 +410,7 @@ CompressRow (byte *vis, byte *dest)
 void
 LeafFlow (int leafnum)
 {
-	byte		*dest, *outbuffer;
+	byte		*outbuffer;
 	byte		compressed[MAX_MAP_LEAFS / 8];
 	int			numvis, i, j;
 	leaf_t		*leaf;
@@ -449,24 +449,8 @@ LeafFlow (int leafnum)
 	i = CompressRow (outbuffer, compressed);
 #endif
 
-	dest = vismap_p;
-	vismap_p += i;
-
-	if (vismap_p > vismap_end) {
-		int d = dest - bsp->visdata;
-		int p = vismap_p - bsp->visdata;
-		int e = vismap_end - bsp->visdata;
-		bsp->visdatasize = p;
-		vismap = bsp->visdata = realloc (bsp->visdata, bsp->visdatasize);
-		dest = bsp->visdata + d;
-		vismap_p = bsp->visdata + p;
-		vismap_end = bsp->visdata + e;
-		fprintf (stderr, "Vismap grown\n");
-	}
-
-	bsp->leafs[leafnum + 1].visofs = dest - vismap;	// leaf 0 is a common solid
-
-	memcpy (dest, compressed, i);
+	bsp->leafs[leafnum + 1].visofs = visdata->size;
+	dstring_append (visdata, compressed, i);
 }
 
 void
@@ -498,25 +482,25 @@ CalcPortalVis (void)
 //		if (pthread_mutexattr_settype (&mattrib, PTHREAD_MUTEX_ADAPTIVE_NP)
 //			== -1)
 //			fprintf (stderr, "pthread_mutexattr_setkind_np failed\n");	
-	if (pthread_mutex_init (my_mutex, &mattrib) == -1)
-		fprintf (stderr, "pthread_mutex_init failed\n");
-	if (pthread_attr_init (&attrib) == -1)
-		fprintf (stderr, "pthread_attr_create failed\n");
-	if (pthread_attr_setstacksize (&attrib, 0x100000) == -1)
-		fprintf (stderr, "pthread_attr_setstacksize failed\n");
-	for (i = 0; i < options.threads; i++) {
-		if (pthread_create (&work_threads[i], &attrib, LeafThread,
-							(void *) i) == -1)
-			fprintf (stderr, "pthread_create failed\n");
-	}
+		if (pthread_mutex_init (my_mutex, &mattrib) == -1)
+			fprintf (stderr, "pthread_mutex_init failed\n");
+		if (pthread_attr_init (&attrib) == -1)
+			fprintf (stderr, "pthread_attr_create failed\n");
+		if (pthread_attr_setstacksize (&attrib, 0x100000) == -1)
+			fprintf (stderr, "pthread_attr_setstacksize failed\n");
+		for (i = 0; i < options.threads; i++) {
+			if (pthread_create (&work_threads[i], &attrib, LeafThread,
+								(void *) i) == -1)
+				fprintf (stderr, "pthread_create failed\n");
+		}
 
-	for (i = 0; i < options.threads; i++) {
-		if (pthread_join (work_threads[i], &status) == -1)
-			fprintf (stderr, "pthread_join failed\n");
-	}
+		for (i = 0; i < options.threads; i++) {
+			if (pthread_join (work_threads[i], &status) == -1)
+				fprintf (stderr, "pthread_join failed\n");
+		}
 
-	if (pthread_mutex_destroy (my_mutex) == -1)
-		fprintf (stderr, "pthread_mutex_destroy failed\n");
+		if (pthread_mutex_destroy (my_mutex) == -1)
+			fprintf (stderr, "pthread_mutex_destroy failed\n");
 	}
 #else
 	LeafThread (0);
@@ -764,9 +748,6 @@ LoadPortals (char *name)
 
 	originalvismapsize = portalleafs * ((portalleafs + 7) / 8);
 
-	vismap = vismap_p = bsp->visdata;
-	vismap_end = vismap + bsp->visdatasize;
-
 	for (i = 0, portal = portals; i < numportals; i++) {
 		if (fscanf (f, "%i %i %i ", &numpoints, &leafnums[0],
 					&leafnums[1]) != 3)
@@ -852,6 +833,8 @@ main (int argc, char **argv)
 	bsp = LoadBSPFile (f, Qfilesize (f));
 	Qclose (f);
 
+	visdata = dstring_new ();
+
 	portalfile->size = strlen (options.bspfile) + 1;
 	dstring_adjust (portalfile);
 	COM_StripExtension (options.bspfile, portalfile->str);
@@ -866,7 +849,7 @@ main (int argc, char **argv)
 	if (options.verbosity >= 0)
 		printf ("c_chains: %i\n", c_chains);
 
-	bsp->visdatasize = vismap_p - bsp->visdata;
+	BSP_AddVisibility (bsp, visdata->str, visdata->size);
 	if (options.verbosity >= 0)
 		printf ("visdatasize:%i  compressed from %i\n", bsp->visdatasize,
 				originalvismapsize);
