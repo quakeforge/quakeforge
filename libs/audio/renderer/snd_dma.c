@@ -92,6 +92,8 @@ static general_funcs_t			plugin_info_general_funcs;
 static snd_render_data_t		plugin_info_snd_render_data;
 static snd_render_funcs_t		plugin_info_snd_render_funcs;
 
+static snd_output_funcs_t      *snd_output_funcs;
+
 
 // User-setable variables =====================================================
 
@@ -142,7 +144,7 @@ SND_Startup (void)
 		return;
 
 	if (!fakedma) {
-		rc = plugin_info_snd_render_data.output->functions->snd_output->pS_O_Init ();
+		rc = snd_output_funcs->pS_O_Init ();
 
 		if (!rc) {
 			Sys_Printf ("S_Startup: S_O_Init failed.\n");
@@ -545,7 +547,7 @@ SND_GetSoundtime (void)
 
 	// it is possible to miscount buffers if it has wrapped twice between
 	// calls to SND_Update.  Oh well.
-	samplepos = plugin_info_snd_render_data.output->functions->snd_output->pS_O_GetDMAPos ();
+	samplepos = snd_output_funcs->pS_O_GetDMAPos ();
 
 	if (samplepos < oldsamplepos) {
 		buffers++;						// buffer wrapped
@@ -593,7 +595,7 @@ SND_Update_ (void)
 #endif
 
 	SND_PaintChannels (endtime);
-	plugin_info_snd_render_data.output->functions->snd_output->pS_O_Submit ();
+	snd_output_funcs->pS_O_Submit ();
 }
 
 /*
@@ -817,7 +819,7 @@ void
 SND_BlockSound (void)
 {
 	if (++snd_blocked == 1) {
-		plugin_info_snd_render_data.output->functions->snd_output->pS_O_BlockSound ();
+		snd_output_funcs->pS_O_BlockSound ();
 		SND_ClearBuffer ();
 	}
 }
@@ -829,7 +831,7 @@ SND_UnblockSound (void)
 		return;
 	if (!--snd_blocked) {
 		SND_ClearBuffer ();
-		plugin_info_snd_render_data.output->functions->snd_output->pS_O_UnblockSound ();
+		snd_output_funcs->pS_O_UnblockSound ();
 	}
 }
 
@@ -870,6 +872,7 @@ SND_Init_Cvars (void)
 void
 SND_Init (void)
 {
+	snd_output_funcs = plugin_info_snd_render_data.output->functions->snd_output;
 	Sys_Printf ("\nSound Initialization\n");
 
 	Cmd_AddCommand ("play", SND_Play,
@@ -951,7 +954,7 @@ SND_Shutdown (void)
 	sound_started = 0;
 
 	if (!fakedma) {
-		plugin_info_snd_render_data.output->functions->snd_output->pS_O_Shutdown ();
+		snd_output_funcs->pS_O_Shutdown ();
 	}
 
 	shm = 0;

@@ -54,10 +54,11 @@ cvar_t         *bgmvolume;
 cvar_t         *volume;
 cvar_t         *snd_interp;
 
-cvar_t         *snd_output;
-cvar_t         *snd_render;
-plugin_t       *snd_render_module = NULL;
-plugin_t       *snd_output_module = NULL;
+static cvar_t  *snd_output;
+static cvar_t  *snd_render;
+static plugin_t *snd_render_module = NULL;
+static plugin_t *snd_output_module = NULL;
+static snd_render_funcs_t *snd_render_funcs = NULL;
 
 SND_OUTPUT_PROTOS
 plugin_list_t   snd_output_list[] = {
@@ -105,6 +106,8 @@ S_Init (struct model_s **worldmodel, int *viewentity, double *host_frametime)
 
 			snd_output_module->functions->general->p_Init ();
 			snd_render_module->functions->general->p_Init ();
+
+			snd_render_funcs = snd_render_module->functions->snd_render;
 		}
 	}
 }
@@ -134,15 +137,15 @@ S_Init_Cvars (void)
 void
 S_AmbientOff (void)
 {
-	if (snd_render_module)
-		snd_render_module->functions->snd_render->pS_AmbientOff ();
+	if (snd_render_funcs)
+		snd_render_funcs->pS_AmbientOff ();
 }
 
 void
 S_AmbientOn (void)
 {
-	if (snd_render_module)
-		snd_render_module->functions->snd_render->pS_AmbientOn ();
+	if (snd_render_funcs)
+		snd_render_funcs->pS_AmbientOn ();
 }
 
 void
@@ -151,6 +154,7 @@ S_Shutdown (void)
 	if (snd_render_module) {
 		PI_UnloadPlugin (snd_render_module);
 		snd_render_module = NULL;
+		snd_render_funcs = NULL;
 	}
 	if (snd_output_module) {
 		PI_UnloadPlugin (snd_output_module);
@@ -161,39 +165,39 @@ S_Shutdown (void)
 void
 S_TouchSound (const char *sample)
 {
-	if (snd_render_module)
-		snd_render_module->functions->snd_render->pS_TouchSound (sample);
+	if (snd_render_funcs)
+		snd_render_funcs->pS_TouchSound (sample);
 }
 
 void
 S_StaticSound (sfx_t *sfx, const vec3_t origin, float vol, float attenuation)
 {
-	if (snd_render_module)
-		snd_render_module->functions->snd_render->pS_StaticSound (sfx, origin, vol, attenuation);
+	if (snd_render_funcs)
+		snd_render_funcs->pS_StaticSound (sfx, origin, vol, attenuation);
 }
 
 void
 S_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 			  float fvol, float attenuation)
 {
-	if (snd_render_module)
-		snd_render_module->functions->snd_render->pS_StartSound
+	if (snd_render_funcs)
+		snd_render_funcs->pS_StartSound
 			(entnum, entchannel, sfx, origin, fvol, attenuation);
 }
 
 void
 S_StopSound (int entnum, int entchannel)
 {
-	if (snd_render_module)
-		snd_render_module->functions->snd_render->pS_StopSound
+	if (snd_render_funcs)
+		snd_render_funcs->pS_StopSound
 			(entnum, entchannel);
 }
 
 sfx_t      *
 S_PrecacheSound (const char *sample)
 {
-	if (snd_render_module)
-		return snd_render_module->functions->snd_render->pS_PrecacheSound
+	if (snd_render_funcs)
+		return snd_render_funcs->pS_PrecacheSound
 			(sample);
 	else
 		return NULL;
@@ -202,64 +206,64 @@ S_PrecacheSound (const char *sample)
 void
 S_ClearPrecache (void)
 {
-	if (snd_render_module)
-		snd_render_module->functions->snd_render->pS_ClearPrecache ();
+	if (snd_render_funcs)
+		snd_render_funcs->pS_ClearPrecache ();
 }
 
 void
 S_Update (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right,
 		  const vec3_t v_up)
 {
-	if (snd_render_module)
-		snd_render_module->functions->snd_render->pS_Update (origin, v_forward,
+	if (snd_render_funcs)
+		snd_render_funcs->pS_Update (origin, v_forward,
 															 v_right, v_up);
 }
 
 void
 S_StopAllSounds (qboolean clear)
 {
-	if (snd_render_module)
-		snd_render_module->functions->snd_render->pS_StopAllSounds (clear);
+	if (snd_render_funcs)
+		snd_render_funcs->pS_StopAllSounds (clear);
 }
 
 void
 S_BeginPrecaching (void)
 {
-	if (snd_render_module)
-		snd_render_module->functions->snd_render->pS_BeginPrecaching ();
+	if (snd_render_funcs)
+		snd_render_funcs->pS_BeginPrecaching ();
 }
 
 void
 S_EndPrecaching (void)
 {
-	if (snd_render_module)
-		snd_render_module->functions->snd_render->pS_EndPrecaching ();
+	if (snd_render_funcs)
+		snd_render_funcs->pS_EndPrecaching ();
 }
 
 void
 S_ExtraUpdate (void)
 {
-	if (snd_render_module)
-		snd_render_module->functions->snd_render->pS_ExtraUpdate ();
+	if (snd_render_funcs)
+		snd_render_funcs->pS_ExtraUpdate ();
 }
 
 void
 S_LocalSound (const char *s)
 {
-	if (snd_render_module)
-		snd_render_module->functions->snd_render->pS_LocalSound (s);
+	if (snd_render_funcs)
+		snd_render_funcs->pS_LocalSound (s);
 }
 
 void
 S_BlockSound (void)
 {
-	if (snd_render_module)
-		snd_render_module->functions->snd_render->pS_BlockSound ();
+	if (snd_render_funcs)
+		snd_render_funcs->pS_BlockSound ();
 }
 
 void
 S_UnblockSound (void)
 {
-	if (snd_render_module)
-		snd_render_module->functions->snd_render->pS_UnblockSound ();
+	if (snd_render_funcs)
+		snd_render_funcs->pS_UnblockSound ();
 }
