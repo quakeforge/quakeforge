@@ -74,22 +74,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "protocol.h"
 
 static void __attribute__ ((format (printf, 1, 2)))
-ma_log (const char *fmt, ...)
-{
-	va_list     args;
-	time_t      mytime = 0;
-	struct tm  *local = NULL;
-	char        stamp[1024];
-
-	mytime = time (NULL);
-	local = localtime (&mytime);
-	strftime (stamp, sizeof (stamp), "[%b %e %X] ", local);
-	fprintf (stdout, "%s", stamp);
-	va_start (args, fmt);
-	vfprintf (stdout, fmt, args);
-	va_end (args);
-	fflush (stdout);
-}
+ma_log (const char *fmt, ...);
 
 #ifdef HAVE_IN_PKTINFO
 static int
@@ -508,4 +493,22 @@ main (int argc, char **argv)
 
 	QW_Master (&addr);
 	return 0;
+}
+
+static void __attribute__ ((format (printf, 1, 2)))
+ma_log (const char *fmt, ...)
+{
+	va_list     args;
+	time_t      mytime = 0;
+	struct tm  *local = NULL;
+	char        stamp[1024];
+
+	mytime = time (NULL);
+	local = localtime (&mytime);
+	strftime (stamp, sizeof (stamp), "[%b %e %X] ", local);
+	fprintf (stdout, "%s", stamp);
+	va_start (args, fmt);
+	vfprintf (stdout, fmt, args);
+	va_end (args);
+	fflush (stdout);
 }
