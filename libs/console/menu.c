@@ -462,9 +462,9 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 			{
 				menu_item_t *item = menu->items[menu->cur_item];
 				if (item->func) {
-					G_INT (&menu_pr_state, OFS_PARM0) = key;
-					G_INT (&menu_pr_state, OFS_PARM1) =
+					G_INT (&menu_pr_state, OFS_PARM0) =
 						PR_SetString (&menu_pr_state, item->text);
+					G_INT (&menu_pr_state, OFS_PARM1) = key;
 					PR_ExecuteProgram (&menu_pr_state, item->func);
 				} else {
 					menu = item;
