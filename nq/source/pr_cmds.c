@@ -1421,6 +1421,7 @@ SV_PR_Cmds_Init ()
 
 	PR_AddBuiltin (&sv_pr_state, "setspawnparms", PF_setspawnparms, 78);	// void(entity e) setspawnparms = #78
 
+	PR_AddBuiltin (&sv_pr_state, "hullpointcontents", PF_hullpointcontents, 93);    // integer (entity ent, vector point) hullpointcontents = #93
 	PR_AddBuiltin (&sv_pr_state, "getboxbounds", PF_getboxbounds, 94);  // vector (integer hull, integer max) getboxbounds = #94
 	PR_AddBuiltin (&sv_pr_state, "getboxhull", PF_getboxhull, 95);  // integer () getboxhull = #95
 	PR_AddBuiltin (&sv_pr_state, "freeboxhull", PF_freeboxhull, 96);    // void (integer hull) freeboxhull = #96
