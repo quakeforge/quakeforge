@@ -44,7 +44,7 @@
 
 #define	QW_SERVER
 
-#define	MAX_MASTERS	8				// max recipients for heartbeat packets
+#define	MAX_MASTERS	32				// max recipients for heartbeat packets
 
 #define	MAX_SIGNON_BUFFERS	8
 
