@@ -1066,6 +1066,7 @@ elif test "x$sharepath" = xno; then
 	sharepath="."
 fi
 AC_DEFINE_UNQUOTED(FS_SHAREPATH, "$sharepath")
+AC_SUBST(sharepath)
 
 AC_ARG_WITH(userpath,
 [  --with-userpath=DIR     Use DIR for unshared game data, defaults to
