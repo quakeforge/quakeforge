@@ -1343,8 +1343,10 @@ Cmd_ProcessToken (cmd_token_t *token)
 {
 	int res;
 
-	dstring_clearstr (token->processed);
-	dstring_appendstr (token->processed, token->original->str);
+	if (!token->pos) {
+		dstring_clearstr (token->processed);
+		dstring_appendstr (token->processed, token->original->str);
+	}
 	res = Cmd_ProcessEmbedded (token, token->processed);
 	if (res < 0)
 		return res;
