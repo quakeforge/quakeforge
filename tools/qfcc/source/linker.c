@@ -46,8 +46,10 @@ static const char rcsid[] =
 # include <io.h>
 #endif
 #include <stdlib.h>
+#include <stdarg.h>
 #include <fcntl.h>
 
+#include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/pakfile.h"
 
@@ -99,6 +101,9 @@ static int      reloc_base;
 static int      func_base;
 static int      line_base;
 
+#define STRING(x) (strings->strings + (x))
+#define TYPE_STRING(x) (type_strings->strings + (x))
+
 #define Xgroup_add(X)\
 static void \
 X##group_add_##X##s (X##group_t *X##group, qfo_##X##_t *X##s, int num_##X##s)\
@@ -117,12 +122,31 @@ Xgroup_add(def)		// defgroup_add_defs
 Xgroup_add(reloc)	// relocgroup_add_relocs
 Xgroup_add(func)	// funcgroup_add_funcs
 
+static void __attribute__ ((format (printf, 2, 3)))
+def_error (qfo_def_t *def, const char *fmt, ...)
+{
+	va_list     args;
+	static dstring_t *string;
+
+	if (!string)
+		string = dstring_new ();
+
+	va_start (args, fmt);
+	dvsprintf (string, fmt, args);
+	va_end (args);
+
+	pr.source_file = def->file;
+	pr.source_line = def->line;
+	pr.strings = strings;
+	error (0, "%s", string->str);
+}
+
 static const char *
 defs_get_key (void *_def, void *unused)
 {
 	qfo_def_t  *def = (qfo_def_t *) _def;
 
-	return strings->strings + def->name;
+	return STRING (def->name);
 }
 
 static void
@@ -186,7 +210,7 @@ process_def (qfo_def_t *def)
 	qfo_def_t  *d;
 
 	if (def->flags & QFOD_EXTERNAL) {
-		if ((d = Hash_Find (defined_defs, strings->strings + def->name))) {
+		if ((d = Hash_Find (defined_defs, STRING (def->name)))) {
 			def->ofs = d->ofs;
 			def->flags = d->flags;
 			Hash_Add (defined_defs, def);
@@ -195,23 +219,15 @@ process_def (qfo_def_t *def)
 		}
 	} else {
 		if (def->flags & QFOD_GLOBAL) {
-			if ((d = Hash_Find (defined_defs,
-								strings->strings + def->name))) {
-				pr.source_file = def->file;
-				pr.source_line = def->line;
-				error (0, "%s redefined", strings->strings + def->name);
+			if ((d = Hash_Find (defined_defs, STRING (def->name)))) {
+				def_error (def, "%s redefined", STRING (def->name));
 			}
-		}
-		if (def->flags & QFOD_GLOBAL) {
-			while ((d = Hash_Del (extern_defs,
-								  strings->strings + def->name))) {
+			while ((d = Hash_Del (extern_defs, STRING (def->name)))) {
 				Hash_Add (defined_defs, d);
 				if (d->full_type != def->full_type) {
-					pr.source_file = def->file;
-					pr.source_line = def->line;
-					error (0, "type mismatch `%s' `%s'",
-						   type_strings->strings + def->full_type,
-						   type_strings->strings + d->full_type);
+					def_error (def, "type mismatch `%s' `%s'",
+							   TYPE_STRING (def->full_type),
+							   TYPE_STRING (d->full_type));
 					continue;
 				}
 				d->ofs = def->ofs;
@@ -228,10 +244,8 @@ process_field (qfo_def_t *def)
 	qfo_def_t  *field_def;
 	pr_type_t  *var = data->data + def->ofs;
 
-	if ((field_def = Hash_Find (field_defs, strings->strings + def->name))) {
-		pr.source_file = def->file;
-		pr.source_line = def->line;
-		error (0, "%s redefined", strings->strings + def->name);
+	if ((field_def = Hash_Find (field_defs, STRING (def->name)))) {
+		def_error (def, "%s redefined", STRING (def->name));
 	}
 	defgroup_add_defs (&fields, def, 1);
 	field_def = fields.defs + fields.num_defs - 1;
@@ -408,8 +422,7 @@ fixup_relocs ()
 			case rel_def_string:
 				break;
 			case rel_def_field:
-				field_def = Hash_Find (field_defs,
-									   strings->strings + def->name);
+				field_def = Hash_Find (field_defs, STRING (def->name));
 				if (field_def)			// null if not initialized
 					data->data[reloc->ofs].integer_var = field_def->ofs;
 				break;
@@ -443,7 +456,7 @@ move_def (hashtab_t *deftab, qfo_def_t *d)
 		final_relocs.relocs[def->relocs + j].def = def_num;
 	}
 	if (deftab) {
-		while ((d = Hash_Del (deftab, strings->strings + def->name))) {
+		while ((d = Hash_Del (deftab, STRING (def->name)))) {
 			int         def_relocs;
 			relocgroup_add_relocs (&final_relocs, relocs.relocs + d->relocs,
 								   d->num_relocs);
@@ -467,7 +480,7 @@ merge_defgroups (void)
 	for (i = 0; i < global_defs.num_defs; i++) {
 		const char *name;
 		def = global_defs.defs + i;
-		name = strings->strings + def->name;
+		name = STRING (def->name);
 		if ((d = Hash_Del (defined_defs, name)))
 			move_def (defined_defs, d);
 		else if ((d = Hash_Del (extern_defs, name)))
@@ -642,7 +655,7 @@ linker_finish (void)
 
 		undef_defs = (qfo_def_t **) Hash_GetList (extern_defs);
 		for (def = undef_defs; *def; def++) {
-			const char *name = strings->strings + (*def)->name;
+			const char *name = STRING ((*def)->name);
 
 			if (strcmp (name, ".self") == 0 && !did_self) {
 				define_def (".self", ev_entity, "E", 0);
@@ -658,11 +671,7 @@ linker_finish (void)
 		undef_defs = (qfo_def_t **) Hash_GetList (extern_defs);
 		for (def = undef_defs; *def; def++) {
 			if ((*def)->num_relocs) {
-				const char *name = strings->strings + (*def)->name;
-				pr.source_file = (*def)->file;
-				pr.source_line = (*def)->line;
-				pr.strings = strings;
-				error (0, "undefined symbol %s", name);
+				def_error (*def, "undefined symbol %s", STRING ((*def)->name));
 			}
 		}
 		free (undef_defs);
