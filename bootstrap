@@ -1,3 +1,29 @@
-#!/bin/sh
+#! /bin/sh
+# Check Autoconf version
+if [ -x `which autoconf` ]; then
+	AC_VER=`autoconf --version | head -1 | sed s/\(GNU\ Autoconf\)\ //i | sed s/Autoconf\ //i`
+	AC_VER_MAJOR=`echo $AC_VER | cut -f1 -d'.'`
+	AC_VER_MINOR=`echo $AC_VER | cut -f2 -d'.'`
+
+	if [ "$AC_VER_MAJOR" -lt "2" ]; then
+		echo "Autoconf 2.13 or greater needed to build configure."
+		exit 1
+	fi
+
+	if [ "$AC_VER_MINOR" -lt "13" ]; then
+		echo "Autoconf 2.13 or greater needed to build configure."
+		exit 1
+	fi
+
+	if [ "$AC_VER_MINOR" -lt "50" ]; then
+		if [ ! -e configure.in ]; then
+			ln -s configure.ac configure.in
+			echo "If you see some warnings about cross-compiling, don't worry; this is normal."
+		fi
+	fi
+else
+	echo Autoconf not found. QuakeForge CVS requires autoconf to bootstrap itself.
+	exit 1
+fi
 
 aclocal && autoheader && libtoolize --automake && automake --add-missing && autoconf
