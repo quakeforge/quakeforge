@@ -47,7 +47,8 @@ menu.dat$(GZ): $(menu_obj) $(QFCC_DEP) ../lib/libgui.a ../lib/libcsqc.a ../lib/l
 	$(GZIP)
 
 EXTRA_DIST= $(menu_src) \
-	HUD.h client_menu.h controls_o.h \
+	Frame.h HUD.h \
+	client_menu.h controls_o.h \
 	menu.h options.h \
 	options_util.h servlist.h
 CLEANFILES= *.dat *.sym *.gz *.qfo
