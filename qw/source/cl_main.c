@@ -1111,9 +1111,7 @@ CL_Download_f (void)
 void
 CL_Init (void)
 {
-	QFile      *servlist;
 	char        st[80];
-	char        e_path[MAX_OSPATH];
 
 	cls.state = ca_disconnected;
 
@@ -1135,18 +1133,8 @@ CL_Init (void)
 	CL_TEnts_Init ();
 	Pmove_Init ();
 
-	Qexpand_squiggle (fs_userpath->string, e_path);
-	if ((servlist = Qopen (va ("%s/servers.txt", e_path), "r"))) {
-		slist = SL_LoadF (servlist, slist);
-		Qclose (servlist);
-	} else {
-		Qexpand_squiggle (fs_sharepath->string, e_path);
-		if ((servlist = Qopen (va ("%s/servers.txt", e_path), "r"))) {
-			slist = SL_LoadF (servlist, slist);
-			Qclose (servlist);
-		}
-	}
-
+	SList_Init ();
+	
 //
 // register our commands
 //

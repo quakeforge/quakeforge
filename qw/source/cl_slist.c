@@ -316,3 +316,21 @@ void timepassed (double time1, double *time2)
 {
 	*time2 -= time1;
 }
+
+void SList_Init (void)
+{
+	QFile      *servlist;
+	char        e_path[MAX_OSPATH];
+
+	Qexpand_squiggle (fs_userpath->string, e_path);
+	if ((servlist = Qopen (va ("%s/servers.txt", e_path), "r"))) {
+		slist = SL_LoadF (servlist, slist);
+		Qclose (servlist);
+	} else {
+		Qexpand_squiggle (fs_sharepath->string, e_path);
+		if ((servlist = Qopen (va ("%s/servers.txt", e_path), "r"))) {
+			slist = SL_LoadF (servlist, slist);
+			Qclose (servlist);
+		}
+	}
+}
