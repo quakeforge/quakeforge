@@ -1692,7 +1692,7 @@ PF_setinfokey (progs_t *pr)
 		MSG_WriteByte (&sv.reliable_datagram, e1 - 1);
 		MSG_WriteString (&sv.reliable_datagram, key);
 		MSG_WriteString (&sv.reliable_datagram,
-						 Info_ValueForKey (host_client->userinfo, key));
+						 Info_ValueForKey (svs.clients[e1 - 1].userinfo, key));
 	}
 }
 
