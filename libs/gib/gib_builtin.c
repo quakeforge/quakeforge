@@ -542,8 +542,9 @@ GIB_File_Transform_Path_Secure (dstring_t *path)
 void
 GIB_File_Read_f (void)
 {
+	QFile      *file;
 	char       *path, *contents;
-	int         mark;
+	int        len;
 
 	if (GIB_Argc () != 2) {
 		Cbuf_Error ("syntax",
@@ -562,15 +563,22 @@ GIB_File_Read_f (void)
 		return;
 	}
 	path = GIB_Argv (1);
-	mark = Hunk_LowMark ();
-	contents = (char *) COM_LoadHunkFile (path);
+	file = Qopen (path, "r");
+	if (file) {
+		len = Qfilesize (file);
+		contents = (char *) malloc (len + 1);
+		SYS_CHECKMEM (contents);
+		contents[len] = 0;
+		Qread (file, contents, len);
+		Qclose (file);
+	}
 	if (!contents) {
 		Cbuf_Error ("file",
 		  "file::read: could not open %s for reading: %s", path, strerror (errno));
 		return;
 	}
 	GIB_Return (contents);
-	Hunk_FreeToLowMark (mark);
+	free (contents);
 }
 
 void
