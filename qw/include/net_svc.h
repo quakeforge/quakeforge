@@ -234,9 +234,16 @@ net_status_t NET_SVC_ServerInfo_Emit (net_svc_serverinfo_t *block,
 net_status_t NET_SVC_ServerInfo_Parse (net_svc_serverinfo_t *block, msg_t *msg);
 net_status_t NET_SVC_Download_Emit (net_svc_download_t *block, sizebuf_t *buf);
 net_status_t NET_SVC_Download_Parse (net_svc_download_t *block, msg_t *msg);
+net_status_t NET_SVC_Playerinfo_Emit (net_svc_playerinfo_t *block,
+									  sizebuf_t *buf);
 net_status_t NET_SVC_Playerinfo_Parse (net_svc_playerinfo_t *block, msg_t *msg);
+net_status_t NET_SVC_Nails_Emit (net_svc_nails_t *block, sizebuf_t *buf);
 net_status_t NET_SVC_Nails_Parse (net_svc_nails_t *block, msg_t *msg);
+net_status_t NET_SVC_Modellist_Emit (net_svc_modellist_t *block,
+									 sizebuf_t *buf);
 net_status_t NET_SVC_Modellist_Parse (net_svc_modellist_t *block, msg_t *msg);
+net_status_t NET_SVC_Soundlist_Emit (net_svc_soundlist_t *block,
+									 sizebuf_t *buf);
 net_status_t NET_SVC_Soundlist_Parse (net_svc_soundlist_t *block, msg_t *msg);
 net_status_t NET_SVC_PacketEntities_Parse (net_svc_packetentities_t *block,
 									   msg_t *msg);

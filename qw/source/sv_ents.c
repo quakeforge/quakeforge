@@ -42,6 +42,7 @@ static const char rcsid[] =
 
 #include "compat.h"
 #include "msg_ucmd.h"
+#include "net_svc.h"
 #include "server.h"
 #include "sv_progs.h"
 
@@ -125,34 +126,21 @@ SV_AddNailUpdate (edict_t *ent)
 void
 SV_EmitNailUpdate (sizebuf_t *msg)
 {
-	byte        bits[6];				// [48 bits] xyzpy 12 12 12 4 8 
-	int         i, n, p, x, y, z, yaw;
-	edict_t    *ent;
+	int         i;
+	net_svc_nails_t block;
 
 	if (!numnails)
 		return;
 
-	MSG_WriteByte (msg, svc_nails);
-	MSG_WriteByte (msg, numnails);
+	block.numnails = numnails;
 
-	for (n = 0; n < numnails; n++) {
-		ent = nails[n];
-		x = (int) (SVvector (ent, origin)[0] + 4096) >> 1;
-		y = (int) (SVvector (ent, origin)[1] + 4096) >> 1;
-		z = (int) (SVvector (ent, origin)[2] + 4096) >> 1;
-		p = (int) (16 * SVvector (ent, angles)[0] / 360) & 15;
-		yaw = (int) (256 * SVvector (ent, angles)[1] / 360) & 255;
-
-		bits[0] = x;
-		bits[1] = (x >> 8) | (y << 4);
-		bits[2] = (y >> 4);
-		bits[3] = z;
-		bits[4] = (z >> 8) | (p << 4);
-		bits[5] = yaw;
-
-		for (i = 0; i < 6; i++)
-			MSG_WriteByte (msg, bits[i]);
+	for (i = 0; i < numnails; i++) {
+		VectorCopy (SVvector (nails[i], origin), block.nails[i].origin);
+		VectorCopy (SVvector (nails[i], angles), block.nails[i].angles);
 	}
+
+	MSG_WriteByte (msg, svc_nails);
+	NET_SVC_Nails_Emit (&block, msg);
 }
 
 /*
@@ -372,10 +360,10 @@ void
 SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 						 sizebuf_t *msg)
 {
-	int         i, j, msec, pflags;
+	int         i, j;
 	client_t   *cl;
 	edict_t    *ent;
-	usercmd_t   cmd;
+	net_svc_playerinfo_t block;
 
 	for (j = 0, cl = svs.clients; j < MAX_CLIENTS; j++, cl++) {
 		if (cl->state != cs_spawned)
@@ -397,82 +385,63 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 				continue;				// not visible
 		}
 
-		pflags = PF_MSEC | PF_COMMAND;
+		block.flags = PF_MSEC | PF_COMMAND;
 
 		if (SVfloat (ent, modelindex) != sv_playermodel)
-			pflags |= PF_MODEL;
+			block.flags |= PF_MODEL;
 		for (i = 0; i < 3; i++)
 			if (SVvector (ent, velocity)[i])
-				pflags |= PF_VELOCITY1 << i;
+				block.flags |= PF_VELOCITY1 << i;
 		if (SVfloat (ent, effects))
-			pflags |= PF_EFFECTS;
+			block.flags |= PF_EFFECTS;
 		if (SVfloat (ent, skin))
-			pflags |= PF_SKINNUM;
+			block.flags |= PF_SKINNUM;
 		if (SVfloat (ent, health) <= 0)
-			pflags |= PF_DEAD;
+			block.flags |= PF_DEAD;
 		if (SVvector (ent, mins)[2] != -24)
-			pflags |= PF_GIB;
+			block.flags |= PF_GIB;
 
 		if (cl->spectator) {			// only sent origin and velocity to
 										// spectators
-			pflags &= PF_VELOCITY1 | PF_VELOCITY2 | PF_VELOCITY3;
+			block.flags &= PF_VELOCITY1 | PF_VELOCITY2 | PF_VELOCITY3;
 		} else if (ent == clent) {		// don't send a lot of data on
 										// personal entity
-			pflags &= ~(PF_MSEC | PF_COMMAND);
+			block.flags &= ~(PF_MSEC | PF_COMMAND);
 			if (SVfloat (ent, weaponframe))
-				pflags |= PF_WEAPONFRAME;
+				block.flags |= PF_WEAPONFRAME;
 		}
 
 		if (client->spec_track && client->spec_track - 1 == j &&
-			SVfloat (ent, weaponframe)) pflags |= PF_WEAPONFRAME;
+			SVfloat (ent, weaponframe))
+			block.flags |= PF_WEAPONFRAME;
+
+		block.playernum = j;
+
+		VectorCopy (SVvector (ent, origin), block.origin);
+		block.frame = SVfloat (ent, frame);
+
+		block.msec = 1000 * (sv.time - cl->localtime);
+		if (block.msec > 255)
+			block.msec = 255;
+
+		block.usercmd = cl->lastcmd;
+		if (SVfloat (ent, health) <= 0) {	// don't show the corpse
+											// looking around...
+			block.usercmd.angles[0] = 0;
+			block.usercmd.angles[1] = SVvector (ent, angles)[1];
+			block.usercmd.angles[0] = 0;
+		}
+		block.usercmd.buttons = 0;			// never send buttons
+		block.usercmd.impulse = 0;			// never send impulses
+
+		VectorCopy (SVvector (ent, velocity), block.velocity);
+		block.modelindex = SVfloat (ent, modelindex);
+		block.skinnum = SVfloat (ent, skin);
+		block.effects = SVfloat (ent, effects);
+		block.weaponframe = SVfloat (ent, weaponframe);
 
 		MSG_WriteByte (msg, svc_playerinfo);
-		MSG_WriteByte (msg, j);
-		MSG_WriteShort (msg, pflags);
-
-		for (i = 0; i < 3; i++)
-			MSG_WriteCoord (msg, SVvector (ent, origin)[i]);
-
-		MSG_WriteByte (msg, SVfloat (ent, frame));
-
-		if (pflags & PF_MSEC) {
-			msec = 1000 * (sv.time - cl->localtime);
-			if (msec > 255)
-				msec = 255;
-			MSG_WriteByte (msg, msec);
-		}
-
-		if (pflags & PF_COMMAND) {
-			cmd = cl->lastcmd;
-
-			if (SVfloat (ent, health) <= 0) {	// don't show the corpse
-												// looking around...
-				cmd.angles[0] = 0;
-				cmd.angles[1] = SVvector (ent, angles)[1];
-				cmd.angles[0] = 0;
-			}
-
-			cmd.buttons = 0;			// never send buttons
-			cmd.impulse = 0;			// never send impulses
-
-			MSG_WriteDeltaUsercmd (msg, &nullcmd, &cmd);
-		}
-
-		for (i = 0; i < 3; i++)
-			if (pflags & (PF_VELOCITY1 << i))
-				MSG_WriteShort (msg, SVvector (ent, velocity)[i]);
-
-		if (pflags & PF_MODEL)
-			MSG_WriteByte (msg, SVfloat (ent, modelindex));
-
-		if (pflags & PF_SKINNUM)
-			MSG_WriteByte (msg, SVfloat (ent, skin));
-
-		if (pflags & PF_EFFECTS)
-			MSG_WriteByte (msg, SVfloat (ent, effects));
-
-		if (pflags & PF_WEAPONFRAME)
-			MSG_WriteByte (msg, SVfloat (ent, weaponframe));
+		NET_SVC_Playerinfo_Emit (&block, msg);
 	}
 }
 

@@ -496,6 +496,37 @@ NET_SVC_Download_Parse (net_svc_download_t *block, msg_t *msg)
 }
 
 net_status_t
+NET_SVC_Playerinfo_Emit (net_svc_playerinfo_t *block, sizebuf_t *buf)
+{
+	int i;
+
+	MSG_WriteByte (buf, block->playernum);
+	MSG_WriteShort (buf, block->flags);
+
+	for (i = 0; i < 3; i++)
+		MSG_WriteCoord (buf, block->origin[i]);
+	MSG_WriteByte (buf, block->frame);
+
+	if (block->flags & PF_MSEC)
+		MSG_WriteByte (buf, block->msec);
+	if (block->flags & PF_COMMAND)
+		MSG_WriteDeltaUsercmd (buf, &nullcmd, &block->usercmd); // FIXME
+	for (i = 0; i < 3; i++)
+		if (block->flags & (PF_VELOCITY1 << i))
+			MSG_WriteShort (buf, block->velocity[i]);
+	if (block->flags & PF_MODEL)
+		MSG_WriteByte (buf, block->modelindex);
+	if (block->flags & PF_SKINNUM)
+		MSG_WriteByte (buf, block->skinnum);
+	if (block->flags & PF_EFFECTS)
+		MSG_WriteByte (buf, block->effects);
+	if (block->flags & PF_WEAPONFRAME)
+		MSG_WriteByte (buf, block->weaponframe);
+
+	return buf->overflowed;
+}
+
+net_status_t
 NET_SVC_Playerinfo_Parse (net_svc_playerinfo_t *block, msg_t *msg)
 {
 	int i;
@@ -546,6 +577,39 @@ NET_SVC_Playerinfo_Parse (net_svc_playerinfo_t *block, msg_t *msg)
 }
 
 net_status_t
+NET_SVC_Nails_Emit (net_svc_nails_t *block, sizebuf_t *buf)
+{
+	int		i, j;
+	int		x, y, z, p, yaw;
+	byte	bits[6]; // [48 bits] xyzpy 12 12 12 4 8
+
+	if (block->numnails > MAX_PROJECTILES)
+		return NET_ERROR;
+
+	MSG_WriteByte (buf, block->numnails);
+
+	for (i = 0; i < block->numnails; i++) {
+		x = (int) (block->nails[i].origin[0] + 4096) >> 1;
+		y = (int) (block->nails[i].origin[1] + 4096) >> 1;
+		z = (int) (block->nails[i].origin[2] + 4096) >> 1;
+		p = (int) (16 * block->nails[i].angles[0] / 360) & 15;
+		yaw = (int) (256 * block->nails[i].angles[1] / 360) & 255;
+
+		bits[0] = x;
+		bits[1] = (x >> 8) | (y << 4);
+		bits[2] = (y >> 4);
+		bits[3] = z;
+		bits[4] = (z >> 8) | (p << 4);
+		bits[5] = yaw;
+
+		for (j = 0; j < 6; j++)
+			MSG_WriteByte (buf, bits[j]);
+	}
+
+	return buf->overflowed;
+}
+
+net_status_t
 NET_SVC_Nails_Parse (net_svc_nails_t *block, msg_t *msg)
 {
 	int		i, j;
@@ -574,6 +638,20 @@ NET_SVC_Nails_Parse (net_svc_nails_t *block, msg_t *msg)
 }
 
 net_status_t
+NET_SVC_Modellist_Emit (net_svc_modellist_t *block, sizebuf_t *buf)
+{
+	int i = 0;
+
+	MSG_WriteByte (buf, block->startmodel);
+	do
+		MSG_WriteString (buf, block->models[i]);
+	while (*block->models[i++]);
+	MSG_WriteByte (buf, block->nextmodel);
+
+	return buf->overflowed;
+}
+
+net_status_t
 NET_SVC_Modellist_Parse (net_svc_modellist_t *block, msg_t *msg)
 {
 	int i;
@@ -587,12 +665,24 @@ NET_SVC_Modellist_Parse (net_svc_modellist_t *block, msg_t *msg)
 		if (i >= MAX_MODELS)
 			return NET_ERROR;
 	}
-	// this is a bit redundant, but I think the robustness is a good thing
-	block->models[MAX_MODELS] = "";
 
 	block->nextmodel = MSG_ReadByte (msg);
 
 	return msg->badread;
+}
+
+net_status_t
+NET_SVC_Soundlist_Emit (net_svc_soundlist_t *block, sizebuf_t *buf)
+{
+	int i = 0;
+
+	MSG_WriteByte (buf, block->startsound);
+	do
+		MSG_WriteString (buf, block->sounds[i]);
+	while (*block->sounds[i++]);
+	MSG_WriteByte (buf, block->nextsound);
+
+	return buf->overflowed;
 }
 
 net_status_t
@@ -609,8 +699,6 @@ NET_SVC_Soundlist_Parse (net_svc_soundlist_t *block, msg_t *msg)
 		if (i >= MAX_SOUNDS)
 			return NET_ERROR;
 	}
-	// this is a bit redundant, but I think the robustness is a good thing
-	block->sounds[MAX_SOUNDS] = "";
 
 	block->nextsound = MSG_ReadByte (msg);
 

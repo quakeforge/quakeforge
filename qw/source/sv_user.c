@@ -151,12 +151,14 @@ void
 SV_Soundlist_f (void)
 {
 	const char **s;
-	unsigned    n;
+	int			i, size;
+	net_svc_soundlist_t block;
 
 	if (host_client->state != cs_connected) {
 		SV_Printf ("soundlist not valid -- already spawned\n");
 		return;
 	}
+
 	// handle the case of a level changing while a client was connecting
 	if (atoi (Cmd_Argv (1)) != svs.spawncount) {
 		SV_Printf ("SV_Soundlist_f from different level\n");
@@ -164,34 +166,40 @@ SV_Soundlist_f (void)
 		return;
 	}
 
-	n = atoi (Cmd_Argv (2));
-	if (n >= MAX_SOUNDS) {
+	block.startsound = atoi (Cmd_Argv (2));
+	if (block.startsound >= MAX_SOUNDS) {
 		SV_Printf ("SV_Soundlist_f: Invalid soundlist index\n");
 		SV_New_f ();
 		return;
 	}
-//NOTE:  This doesn't go through ClientReliableWrite since it's before the user
-//spawns.  These functions are written to not overflow
+
+	// NOTE:  This doesn't go through ClientReliableWrite since it's
+	// before the user spawns.  These functions are written to not
+	// overflow
 	if (host_client->num_backbuf) {
-		SV_Printf ("WARNING %s: [SV_Soundlist] Back buffered (%d0, clearing",
+		SV_Printf ("WARNING %s: [SV_Soundlist] Back buffered (%d), clearing",
 					host_client->name, host_client->netchan.message.cursize);
 		host_client->num_backbuf = 0;
 		SZ_Clear (&host_client->netchan.message);
 	}
 
-	MSG_WriteByte (&host_client->netchan.message, svc_soundlist);
-	MSG_WriteByte (&host_client->netchan.message, n);
-	for (s = sv.sound_precache + 1 + n;
-		 *s && host_client->netchan.message.cursize < (MAX_MSGLEN / 2);
-		 s++, n++) MSG_WriteString (&host_client->netchan.message, *s);
-
-	MSG_WriteByte (&host_client->netchan.message, 0);
+	for (s = sv.sound_precache + 1 + block.startsound, i = 0, size = 0;
+		 *s; i++, s++) {
+		if (host_client->netchan.message.cursize + size >= (MAX_MSGLEN / 2))
+			break;
+		size += strlen (*s) + 1;
+		block.sounds[i] = *s;
+	}
+	block.sounds[i] = "";
 
 	// next msg
 	if (*s)
-		MSG_WriteByte (&host_client->netchan.message, n);
+		block.nextsound = block.startsound + i;
 	else
-		MSG_WriteByte (&host_client->netchan.message, 0);
+		block.nextsound = 0;
+
+	MSG_WriteByte (&host_client->netchan.message, svc_soundlist);
+	NET_SVC_Soundlist_Emit (&block, &host_client->netchan.message);
 }
 
 /*
@@ -201,12 +209,14 @@ void
 SV_Modellist_f (void)
 {
 	const char **s;
-	unsigned    n;
+	int			i, size;
+	net_svc_modellist_t block;
 
 	if (host_client->state != cs_connected) {
 		SV_Printf ("modellist not valid -- already spawned\n");
 		return;
 	}
+
 	// handle the case of a level changing while a client was connecting
 	if (atoi (Cmd_Argv (1)) != svs.spawncount) {
 		SV_Printf ("SV_Modellist_f from different level\n");
@@ -214,33 +224,40 @@ SV_Modellist_f (void)
 		return;
 	}
 
-	n = atoi (Cmd_Argv (2));
-	if (n >= MAX_MODELS) {
+	block.startmodel = atoi (Cmd_Argv (2));
+	if (block.startmodel >= MAX_MODELS) {
 		SV_Printf ("SV_Modellist_f: Invalid modellist index\n");
 		SV_New_f ();
 		return;
 	}
-//NOTE:  This doesn't go through ClientReliableWrite since it's before the user
-//spawns.  These functions are written to not overflow
+
+	// NOTE:  This doesn't go through ClientReliableWrite since it's
+	// before the user spawns.  These functions are written to not
+	// overflow
 	if (host_client->num_backbuf) {
-		SV_Printf ("WARNING %s: [SV_Modellist] Back buffered (%d0, clearing",
+		SV_Printf ("WARNING %s: [SV_Modellist] Back buffered (%d), clearing",
 					host_client->name, host_client->netchan.message.cursize);
 		host_client->num_backbuf = 0;
 		SZ_Clear (&host_client->netchan.message);
 	}
 
-	MSG_WriteByte (&host_client->netchan.message, svc_modellist);
-	MSG_WriteByte (&host_client->netchan.message, n);
-	for (s = sv.model_precache + 1 + n;
-		 *s && host_client->netchan.message.cursize < (MAX_MSGLEN / 2);
-		 s++, n++) MSG_WriteString (&host_client->netchan.message, *s);
-	MSG_WriteByte (&host_client->netchan.message, 0);
+	for (s = sv.model_precache + 1 + block.startmodel, i = 0, size = 0;
+		 *s; i++, s++) {
+		if (host_client->netchan.message.cursize + size >= (MAX_MSGLEN / 2))
+			break;
+		size += strlen (*s) + 1;
+		block.models[i] = *s;
+	}
+	block.models[i] = "";
 
 	// next msg
 	if (*s)
-		MSG_WriteByte (&host_client->netchan.message, n);
+		block.nextmodel = block.startmodel + i;
 	else
-		MSG_WriteByte (&host_client->netchan.message, 0);
+		block.nextmodel = 0;
+
+	MSG_WriteByte (&host_client->netchan.message, svc_modellist);
+	NET_SVC_Modellist_Emit (&block, &host_client->netchan.message);
 }
 
 /*
