@@ -56,7 +56,7 @@ struct view_s {
 	int     num_children;
 	int     max_children;
 	void    (*draw)(view_t *view);
-	unsigned enabled:1;
+	unsigned visible:1;
 	unsigned resize_x:1;
 	unsigned resize_y:1;
 };

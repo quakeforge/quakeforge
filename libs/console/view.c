@@ -53,7 +53,7 @@ view_new (int xp, int yp, int xl, int yl, grav_t grav)
 	view->xlen = xl;
 	view->ylen = yl;
 	view->gravity = grav;
-	view->enabled = 1;
+	view->visible = 1;
 	return view;
 }
 
@@ -162,7 +162,7 @@ view_draw (view_t *view)
 
 	for (i = 0; i < view->num_children; i++) {
 		view_t     *v = view->children[i];
-		if (v->enabled && v->draw)
+		if (v->visible && v->draw)
 			v->draw (v);
 	}
 }

@@ -567,7 +567,7 @@ void
 C_DrawInputLine (inputline_t *il)
 {
 	il_data_t   *data = il->user_data;
-	DrawInputLine (data->xbase + data->x, data->xbase + data->y, data->cursor,
+	DrawInputLine (data->xbase + data->x, data->ybase + data->y, data->cursor,
 				   il);
 }
 
@@ -719,8 +719,8 @@ C_DrawConsole (int lines)
 {
 	if (console_view->ylen != lines)
 		view_resize (console_view, console_view->xlen, lines);
-	console_view->enabled = lines != 0;
-	menu_view->enabled = key_dest == key_menu;
+	console_view->visible = lines != 0;
+	menu_view->visible = key_dest == key_menu;
 
 	view_draw (con_data.view);
 }
@@ -773,18 +773,18 @@ C_Init (void)
 	view_add (con_data.view, menu_view);
 
 	console_view->draw = draw_console;
-	console_view->enabled = 0;
+	console_view->visible = 0;
 	console_view->resize_x = console_view->resize_y = 1;
 
 	say_view->draw = draw_say;
-	say_view->enabled = 0;
+	say_view->visible = 0;
 	say_view->resize_x = 1;
 
 	notify_view->draw = draw_notify;
 	notify_view->resize_x = 1;
 
 	menu_view->draw = Menu_Draw;
-	menu_view->enabled = 0;
+	menu_view->visible = 0;
 
 	view = view_new (0, 0, 320, 170, grav_northwest);
 	view->draw = draw_console_text;
