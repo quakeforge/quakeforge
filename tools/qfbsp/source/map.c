@@ -52,6 +52,26 @@ char        miptex[MAX_MAP_TEXINFO][16];
 
 int         numdetailbrushes;
 
+#define	MAXTOKEN	128
+
+char        token[MAXTOKEN];
+qboolean    unget;
+char       *script_p;
+const char *script_file;
+int         script_line;
+
+static void __attribute__ ((format (printf, 1, 2), noreturn))
+map_error (const char *fmt, ...)
+{
+	va_list     args;
+
+	va_start (args, fmt);
+	fprintf (stderr, "%s:%d: ", script_file, script_line);
+	vfprintf (stderr, fmt, args);
+	fprintf (stderr, "\n");
+	va_end (args);
+	exit (1);
+}
 
 int
 FindMiptex (const char *name)
@@ -67,7 +87,7 @@ FindMiptex (const char *name)
 			return i;
 	}
 	if (nummiptex == MAX_MAP_TEXINFO)
-		Sys_Error ("nummiptex == MAX_MAP_TEXINFO");
+		map_error ("nummiptex == MAX_MAP_TEXINFO");
 	strcpy (miptex[i], name);
 	nummiptex++;
 	return i;
@@ -114,17 +134,10 @@ FindTexinfo (texinfo_t *t)
 	return i;
 }
 
-#define	MAXTOKEN	128
-
-char        token[MAXTOKEN];
-qboolean    unget;
-char       *script_p;
-int         scriptline;
-
 static void
 StartTokenParsing (char *data)
 {
-	scriptline = 1;
+	script_line = 1;
 	script_p = data;
 	unget = false;
 }
@@ -136,14 +149,19 @@ TokenAvailable (qboolean crossline)
 		return true;
   skipspace:
 	while (isspace ((unsigned char) *script_p)) {
-		if (*script_p++ == '\n') {
+		if (*script_p == '\n') {
 			if (!crossline)
 				return false;
-			scriptline++;
+			script_line++;
 		}
+		script_p++;
 	}
 	if (!*script_p)
 		return false;
+	if (*script_p == 26 || *script_p == 4) {		// end of file characters
+		script_p++;
+		goto skipspace;
+	}
 
 	if (script_p[0] == '/' && script_p[1] == '/') {		// comment field
 		while (*script_p && *script_p != '\n')
@@ -152,7 +170,6 @@ TokenAvailable (qboolean crossline)
 			return false;
 		if (!crossline)
 			return false;
-		scriptline++;
 		goto skipspace;
 	}
 	return true;
@@ -170,7 +187,7 @@ GetToken (qboolean crossline)
 
 	if (!TokenAvailable (crossline)) {
 		if (!crossline)
-			Sys_Error ("Line %i is incomplete", scriptline);
+			map_error ("line is incomplete");
 		return false;
 	}
 
@@ -181,17 +198,19 @@ GetToken (qboolean crossline)
 		script_p++;
 		while (*script_p != '"') {
 			if (!*script_p)
-				Sys_Error ("EOF inside quoted token");
+				map_error ("EOF inside quoted token");
+			if (*script_p == '\n')
+				script_line++;
 			*token_p++ = *script_p++;
 			if (token_p > &token[MAXTOKEN - 1])
-				Sys_Error ("Token too large on line %i", scriptline);
+				map_error ("token too large");
 		}
 		script_p++;
 	} else
 		while (*script_p && !isspace ((unsigned char) *script_p)) {
 			*token_p++ = *script_p++;
 			if (token_p > &token[MAXTOKEN - 1])
-				Sys_Error ("Token too large on line %i", scriptline);
+				map_error ("token too large");
 		}
 
 	*token_p = 0;
@@ -219,11 +238,11 @@ ParseEpair (void)
 	mapent->epairs = e;
 
 	if (strlen (token) >= MAX_KEY - 1)
-		Sys_Error ("ParseEpar: token too long");
+		map_error ("ParseEpar: token too long");
 	e->key = strdup (token);
 	GetToken (false);
 	if (strlen (token) >= MAX_VALUE - 1)
-		Sys_Error ("ParseEpar: token too long");
+		map_error ("ParseEpar: token too long");
 	e->value = strdup (token);
 }
 
@@ -264,7 +283,7 @@ ParseVerts (int *n_verts)
 	int         i;
 
 	if (token[0] != ':')
-		Sys_Error ("parsing brush");
+		map_error ("parsing brush");
 	*n_verts = atoi (token + 1);
 	verts = malloc (sizeof (vec3_t) * *n_verts);
 
@@ -327,7 +346,7 @@ ParseBrush (void)
 				if (i != 0)
 					GetToken (true);
 				if (strcmp (token, "("))
-					Sys_Error ("parsing brush");
+					map_error ("parsing brush");
 
 				for (j = 0; j < 3; j++) {
 					GetToken (false);
@@ -336,7 +355,7 @@ ParseBrush (void)
 
 				GetToken (false);
 				if (strcmp (token, ")"))
-					Sys_Error ("parsing brush");
+					map_error ("parsing brush");
 			}
 		}
 
@@ -360,7 +379,7 @@ ParseBrush (void)
 			if (!strcmp (token, "detail"))
 				b->detail = 1;
 			else
-				Sys_Error ("Parse error on line %i", scriptline);
+				map_error ("parse error");
 		}
 
 		// if the three points are all on a previous plane, it is a duplicate
@@ -476,17 +495,17 @@ ParseEntity (void)
 		return false;
 
 	if (strcmp (token, "{"))
-		Sys_Error ("ParseEntity: { not found");
+		map_error ("ParseEntity: { not found");
 
 	if (num_entities == MAX_MAP_ENTITIES)
-		Sys_Error ("num_entities == MAX_MAP_ENTITIES");
+		map_error ("num_entities == MAX_MAP_ENTITIES");
 
 	mapent = &entities[num_entities];
 	num_entities++;
 
 	do {
 		if (!GetToken (true))
-			Sys_Error ("ParseEntity: EOF without closing brace");
+			map_error ("ParseEntity: EOF without closing brace");
 		if (!strcmp (token, "}"))
 			break;
 		if (!strcmp (token, "{"))
@@ -532,6 +551,8 @@ LoadMapFile (const char *filename)
 	buf[Qfilesize (file)] = 0;
 	Qread (file, buf, Qfilesize (file));
 	Qclose (file);
+
+	script_file = filename;
 
 	StartTokenParsing (buf);
 
