@@ -262,7 +262,6 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int flags, gib_
 			// Try to parse sub-program
 			if (!(new = GIB_Parse_Lines (str, flags)))
 				goto ERROR;
-			new->parent = cur;
 			cur->children = new;
 		// Check for embedded commands/variables
 		} else if (cur->delim == ' ' || cur->delim == '(') {
@@ -272,7 +271,6 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int flags, gib_
 					goto ERROR;
 			} else {
 				// Link/set flags
-				cur->children->parent = cur;
 				cur->flags |= TREE_P_EMBED;
 				// Add any embedded commands to top of chain
 				if (new) {
@@ -332,7 +330,6 @@ GIB_Parse_Semantic_Preprocess (gib_tree_t *line)
 		p = line;
 		// Move subprogram inline
 		line->next = line->children->next->next->children;
-		line->next->parent = 0;
 		line->children->next->next->children = 0;
 		// Find end of subprogram
 		while (line->next) line = line->next;
@@ -352,7 +349,6 @@ GIB_Parse_Semantic_Preprocess (gib_tree_t *line)
 			if (p->children->next->next->next->next->delim == '{') {
 				// Move subprogram inline
 				line->next = p->children->next->next->next->next->children;
-				line->next->parent = 0;
 				p->children->next->next->next->next->children = 0;
 				while (line->next) line = line->next;
 			} else {
@@ -390,7 +386,6 @@ GIB_Parse_Semantic_Preprocess (gib_tree_t *line)
 		p = line;
 		// Move subprogram inline
 		line->next = line->children->next->next->children;
-		line->next->parent = 0;
 		line->children->next->next->children = 0;
 		// Find end of subprogram, set jump point back to top of loop as we go
 		for (; line->next; line = line->next)
@@ -418,8 +413,6 @@ GIB_Parse_Semantic_Preprocess (gib_tree_t *line)
 		p = line;
 		// Move subprogram inline
 		line->next = tmp->children;
-		line->next->parent = 0;
-		tmp->children = 0;
 		// Find end of subprogram, set jump point back to top of loop as we go
 		for (; line->next; line = line->next)
 			if (!line->jump)
@@ -455,7 +448,6 @@ GIB_Parse_Lines (const char *program, unsigned int flags)
 			memcpy (str, program+lstart, i - lstart);
 			cur->str = str;
 			cur->children = tokens;
-			tokens->parent = cur;
 			// Line contains embedded commands?
 			if (embs) {
 				// Add them to chain before actual line
@@ -515,7 +507,6 @@ GIB_Parse_Embedded (const char *program, unsigned int flags, gib_tree_t **embedd
 				goto ERROR;
 			}
 			cur->children = tokens;
-			tokens->parent = cur;
 			GIB_Parse_Semantic_Preprocess (cur)->next = *embedded;
 			if (gib_parse_error)
 				goto ERROR;

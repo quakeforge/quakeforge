@@ -46,7 +46,7 @@
 typedef struct gib_tree_s {
 	const char *str;
 	char delim;
-	struct gib_tree_s *children, *next, *parent, *jump;
+	struct gib_tree_s *children, *next, *jump;
 	unsigned int flags, start, end, refs;
 } gib_tree_t;
 

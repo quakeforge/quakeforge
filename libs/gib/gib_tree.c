@@ -51,16 +51,6 @@ GIB_Tree_New (unsigned int flags)
 	return new;
 }
 
-static void
-GIB_Tree_Free (gib_tree_t *tree)
-{
-	if (tree->str)
-		free((void *) tree->str);
-	if (tree->parent)
-		tree->parent->children = 0;
-	free(tree);
-}
-
 void
 GIB_Tree_Free_Recursive (gib_tree_t *tree)
 {
@@ -75,6 +65,8 @@ GIB_Tree_Free_Recursive (gib_tree_t *tree)
 			tree->children->refs--;
 			GIB_Tree_Free_Recursive (tree->children);
 		}
-		GIB_Tree_Free (tree);
+		if (tree->str)
+			free((void *) tree->str);
+		free(tree);
 	}
 }
