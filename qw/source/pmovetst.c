@@ -116,9 +116,6 @@ PM_HullPointContents (hull_t *hull, int num, vec3_t p)
 	mplane_t   *plane;
 
 	while (num >= 0) {
-		if (num < hull->firstclipnode || num > hull->lastclipnode)
-			Sys_Error ("PM_HullPointContents: bad node number");
-
 		node = hull->clipnodes + num;
 		plane = hull->planes + node->planenum;
 
@@ -152,9 +149,6 @@ PM_PointContents (vec3_t p)
 	num = hull->firstclipnode;
 
 	while (num >= 0) {
-		if (num < hull->firstclipnode || num > hull->lastclipnode)
-			Sys_Error ("PM_HullPointContents: bad node number");
-
 		node = hull->clipnodes + num;
 		plane = hull->planes + node->planenum;
 
