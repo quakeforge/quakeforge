@@ -1,6 +1,7 @@
 #include "draw.h"
 #include "debug.h"
 #include "gib.h"
+#include "string.h"
 #include "HUD.h"
 
 integer HUDHandleClass;
@@ -13,6 +14,7 @@ integer HUDHandleClass;
 
 - (id) initWithComponents: (integer) x : (integer) y
 {
+	self = [super init];
 	origin = [[Point alloc] initWithComponents: x :y];
 	visible = YES;
 	handle = GIB_Handle_New (self, HUDHandleClass);
@@ -23,6 +25,7 @@ integer HUDHandleClass;
 - (void) free
 {
 	[origin free];
+	[size free];
 	GIB_Handle_Free (handle, HUDHandleClass);
 	[super free];
 }
@@ -37,6 +40,11 @@ integer HUDHandleClass;
 	return origin;
 }
 
+- (Point) size
+{
+	return size;
+}
+
 - (void) setOrigin: (Point) newPoint
 {
 	[origin setPoint :newPoint];
@@ -46,6 +54,16 @@ integer HUDHandleClass;
 {
 	[origin addPoint :addPoint];
 }
+
+/*
+- (void) center Horizontal: (BOOL) h Vertical: (BOOL) v
+{
+	Point newCoords;
+	integer newX, newY;
+
+	if (h) {
+		newX = X
+*/
 
 - (BOOL) isVisible
 {
@@ -66,7 +84,7 @@ integer HUDHandleClass;
 - (id) initWithComponents: (integer) x :(integer) y :(string) _text
 {
 	self = [super initWithComponents :x :y];
-	text = _text;
+	[self setText :_text];
 
 	return self;
 }
@@ -79,6 +97,8 @@ integer HUDHandleClass;
 - (void) setText: (string) _text
 {
 	text = _text;
+	[size free];
+	size = [[Point alloc] initWithComponents :8*(integer) strlen (text) :8];
 }
 
 - (void) display
@@ -92,21 +112,23 @@ integer HUDHandleClass;
 - (id) initWithComponents: (integer)x :(integer)y :(string) _file
 {
 	self = [super initWithComponents :x :y];
-	picture = [[QPic alloc] initName :_file];
+	[self setFile :_file];
 
 	return self;
 }
 
 - (void) free
 {
-	[super free];
 	[picture free];
+	[super free];
 }
 
 - (void) setFile: (string) _file
 {
 	[picture free];
 	picture = [[QPic alloc] initName :_file];
+	[size free];
+	size = [[Point alloc] initWithComponents :[picture width] :[picture height]];
 }
 
 - (void) display

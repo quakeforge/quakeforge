@@ -2,7 +2,7 @@
 
 @interface HUDObject : Object
 {
-	Point origin;
+	Point origin, size;
 	BOOL visible;
 	integer handle;
 }
@@ -14,6 +14,8 @@
 - (Point) origin;
 - (void) setOrigin: (Point) newPoint;
 - (void) translate: (Point) addPoint;
+- (Point) size;
+//- (void) center Horizontal: (BOOL) h Vertical: (BOOL) v;
 - (BOOL) isVisible;
 - (void) setVisible: (BOOL) _visible;
 - (void) display;

@@ -15,8 +15,8 @@ void (integer argc, string [] argv) gib_hud_new_text_f =
 		return;
 
 	newText = [[HUDText alloc] initWithComponents
-		:(integer) stof (argv[1])
-		:(integer) stof (argv[2])
+		:stoi (argv[1])
+		:stoi (argv[2])
 		:argv[3]
 	];
 
@@ -33,8 +33,8 @@ void (integer argc, string [] argv) gib_hud_new_graphic_f =
 		return;
 
 	newGraphic = [[HUDGraphic alloc] initWithComponents
-		:(integer) stof (argv[1])
-		:(integer) stof (argv[2])
+		:stoi (argv[1])
+		:stoi (argv[2])
 		:argv[3]
 	];
 
@@ -53,16 +53,36 @@ void (integer argc, string [] argv) gib_hud_delete_f =
 		return;
 
 	for (i = 1; i < argc; i++) {
-		trashObject = GIB_Handle_Get ((integer) stof (argv[i]), HUDHandleClass);
+		trashObject = GIB_Handle_Get (stoi (argv[i]), HUDHandleClass);
 		if (trashObject) {
 			[HUDObjects removeItem :trashObject];
 			[trashObject free];
 		} else
-			dprint (sprintf ("Warning: no HUD object associated with handle %i\n", (integer) stof (argv[i])));
+			dprint (sprintf ("Warning: no HUD object associated with handle %i\n", stoi (argv[i])));
 	}
 };
 
-void (integer argc, string [] argv) gib_hud_get_origin_f =
+void (integer argc, string [] argv) gib_hud_get_rect_f =
+{
+	local HUDObject myObject;
+	local Point myPoint;
+
+	if (argc != 2)
+		return;
+
+	myObject = GIB_Handle_Get (stoi (argv[1]), HUDHandleClass);
+	if (!myObject)
+		return;
+
+	myPoint = [myObject origin];
+	GIB_Return (itos ([myPoint x]));
+	GIB_Return (itos ([myPoint y]));
+	myPoint = [myObject size];
+	GIB_Return (itos ([myPoint x]));
+	GIB_Return (itos ([myPoint y]));
+};
+
+void (integer argc, string [] argv) gib_hud_get_size_f =
 {
 	local HUDObject myObject;
 	local Point myOrigin;
@@ -70,7 +90,7 @@ void (integer argc, string [] argv) gib_hud_get_origin_f =
 	if (argc != 2)
 		return;
 
-	myObject = GIB_Handle_Get ((integer) stof (argv[1]), HUDHandleClass);
+	myObject = GIB_Handle_Get (stoi (argv[1]), HUDHandleClass);
 	if (!myObject)
 		return;
 
@@ -87,14 +107,14 @@ void (integer argc, string [] argv) gib_hud_set_translate_f =
 	if (argc < 4)
 		return;
 
-	p = [[Point alloc] initWithComponents :(integer) stof (argv[argc-2]) :(integer) stof (argv[argc-1])];
+	p = [[Point alloc] initWithComponents :stoi (argv[argc-2]) :stoi (argv[argc-1])];
 
 	if (argv[0] == "HUD::translate")
 		for (i = 1; i < argc - 2; i++)
-			[(HUDObject) GIB_Handle_Get ((integer) stof (argv[i]), HUDHandleClass) translate :p];
+			[(HUDObject) GIB_Handle_Get (stoi (argv[i]), HUDHandleClass) translate :p];
 	else
 		for (i = 1; i < argc - 2; i++)
-			[(HUDObject) GIB_Handle_Get ((integer) stof (argv[i]), HUDHandleClass) setOrigin :p];
+			[(HUDObject) GIB_Handle_Get (stoi (argv[i]), HUDHandleClass) setOrigin :p];
 	[p free];
 };
 
@@ -105,7 +125,7 @@ void (integer argc, string [] argv) gib_hud_set_text_f =
 	if (argc != 3)
 		return;
 
-	myObject = GIB_Handle_Get ((integer) stof (argv[1]), HUDHandleClass);
+	myObject = GIB_Handle_Get (stoi (argv[1]), HUDHandleClass);
 	if (!myObject || ![myObject isKindOf :[HUDText class]])
 		return;
 	[myObject setText :argv[2]];
@@ -118,7 +138,7 @@ void (integer argc, string [] argv) gib_hud_set_file_f =
 	if (argc != 3)
 		return;
 
-	myObject = GIB_Handle_Get ((integer) stof (argv[1]), HUDHandleClass);
+	myObject = GIB_Handle_Get (stoi (argv[1]), HUDHandleClass);
 	if (!myObject || ![myObject isKindOf :[HUDGraphic class]])
 		return;
 	[myObject setFile :argv[2]];
@@ -129,7 +149,7 @@ void () HUD_Init =
 	GIB_Builtin_Add ("HUD::newText", gib_hud_new_text_f);
 	GIB_Builtin_Add ("HUD::newGraphic", gib_hud_new_graphic_f);
 	GIB_Builtin_Add ("HUD::delete", gib_hud_delete_f);
-	GIB_Builtin_Add ("HUD::getOrigin", gib_hud_get_origin_f);
+	GIB_Builtin_Add ("HUD::getRect", gib_hud_get_rect_f);
 	GIB_Builtin_Add ("HUD::setOrigin", gib_hud_set_translate_f);
 	GIB_Builtin_Add ("HUD::translate", gib_hud_set_translate_f);
 	GIB_Builtin_Add ("HUD::setText", gib_hud_set_text_f);
