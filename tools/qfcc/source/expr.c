@@ -1808,7 +1808,7 @@ function_expr (expr_t *e1, expr_t *e2)
 		def_t      *e = ReuseConstant (e2, 0);
 
 		if (strncmp (func->name, "precache_sound", 14) == 0)
-			PrecacheSound (e, func->name[4]);
+			PrecacheSound (e, func->name[14]);
 		else if (strncmp (func->name, "precache_model", 14) == 0)
 			PrecacheModel (e, func->name[14]);
 		else if (strncmp (func->name, "precache_file", 13) == 0)
