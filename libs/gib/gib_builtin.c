@@ -716,7 +716,7 @@ GIB_File_Find_f (void)
 {
 	DIR        *directory;
 	struct dirent *entry;
-	char       *path, *glob, *s;
+	char       *path, *glob = 0, *s;
 	const char *ifs;
 	dstring_t  *list;
 
