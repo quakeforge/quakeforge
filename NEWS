@@ -1,6 +1,11 @@
 NEWS for the QuakeForge project
 -------------------------------
 
+Changes from 0.5.4
+    o more cvar renaming: scr_consize -> con_size, scr_conspeed -> con_speed,
+      gl_conalpha -> con_alpha
+    o demo_speed no longer affects console scrolling or cursor blink rate
+
 Changes from 0.5.3
     o CRITICAL: exploitable buffer overflow in qw-server fixed
     o more gib regex and other text manipuation support
