@@ -116,4 +116,21 @@
 */
 @extern vector (vector v) vectoangles;
 
+@extern float (float x) sin;
+@extern float (float x) cos;
+@extern float (float x) tan;
+@extern float (float x) asin;
+@extern float (float x) acos;
+@extern float (float x) atan;
+@extern float (float y, float x) atan2;
+@extern float (float x) log;
+@extern float (float x) log10;
+@extern float (float x, float y) pow;
+@extern float (float x) sinh;
+@extern float (float x) cosh;
+@extern float (float x) tanh;
+@extern float (float x) asinh;
+@extern float (float x) acosh;
+@extern float (float x) atanh;
+
 #endif //__ruamoko_math_h
