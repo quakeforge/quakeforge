@@ -1885,6 +1885,23 @@ PF_freeboxhull (progs_t *pr)
 	MOD_Free_Hull (ch);
 }
 
+static vec_t
+calc_dist (vec3_t p, vec3_t n, vec3_t *offsets)
+{
+	vec_t      d = DotProduct (p, n);
+	vec3_t     s, v;
+	int        i;
+
+	VectorScale (n, d, s);
+	for (i = 0; i < 3; i++)
+		if (s[i] < 0)
+			v[i] = offsets[0][i];
+		else
+			v[i] = offsets[1][i];
+	VectorAdd (p, v, v);
+	return DotProduct (v, n);
+}
+
 static void
 PF_rotate_bbox (progs_t *pr)
 {
@@ -1900,8 +1917,11 @@ PF_rotate_bbox (progs_t *pr)
 	vec3_t      mins, maxs;
 	float      *verts[6] = {maxs, mins, maxs, mins, maxs, mins};
 
-	vec3_t      mins_offs = { -16, -16, -32 };
-	vec3_t      maxs_offs = { +16, +16, +32 };
+	vec3_t      offsets[3][2] = {
+					{ {   0,   0,   0 }, {  0,  0,  0} },
+					{ { -16, -16, -32 }, { 16, 16, 24} },
+					{ { -32, -32, -64 }, { 32, 32, 24} },
+				};
 	vec3_t      v[8], d;
 	hull_t     *hull;
 	clip_hull_t *ch;
@@ -1922,10 +1942,6 @@ PF_rotate_bbox (progs_t *pr)
 	for (i = 0; i < 3; i++) {
 		mins[i] = DotProduct (ch->axis[i], mi);
 		maxs[i] = DotProduct (ch->axis[i], ma);
-		//if (mins[i] > maxs[i]) {
-		//	mins_offs[i] *= -1;
-		//	maxs_offs[i] *= -1;
-		//}
 	}
 	// find all 8 corners of the rotated box
 	VectorCopy (mins, v[0]);
@@ -1950,56 +1966,21 @@ PF_rotate_bbox (progs_t *pr)
 		}
 	}
 
-	hull = ch->hulls[0];
-	// now set up the clip planes
-	for (i = 0; i < 6; i++) {
-		hull->planes[i].dist = DotProduct (dir[i / 2], verts[i]);
-		hull->planes[i].type = 4;
-		VectorCopy (dir[i / 2], hull->planes[i].normal);
-		//Con_Printf ("%f   %f %f %f\n",
-		//			hull->planes[i].dist,
-		//			hull->planes[i].normal[0], hull->planes[i].normal[1],
-		//			hull->planes[i].normal[2]);
-	}
-
-	hull = ch->hulls[1];
-	hull->clip_mins[0] = -16;
-	hull->clip_mins[1] = -16;
-	hull->clip_mins[2] = -24;
-	hull->clip_maxs[0] = 16;
-	hull->clip_maxs[1] = 16;
-	hull->clip_maxs[2] = 32;
-	VectorAdd (mins_offs, mins, mins);
-	VectorAdd (maxs_offs, maxs, maxs);
-	for (i = 0; i < 6; i++) {
-		hull->planes[i].dist = DotProduct (dir[i / 2], verts[i]);
-		hull->planes[i].type = 4;
-		VectorCopy (dir[i / 2], hull->planes[i].normal);
-		//Con_Printf ("%f   %f %f %f\n",
-		//			hull->planes[i].dist,
-		//			hull->planes[i].normal[0], hull->planes[i].normal[1],
-		//			hull->planes[i].normal[2]);
-	}
-
-	hull = ch->hulls[2];
-	hull->clip_mins[0] = -32;
-	hull->clip_mins[1] = -32;
-	hull->clip_mins[2] = -24;
-	hull->clip_maxs[0] = 32;
-	hull->clip_maxs[1] = 32;
-	hull->clip_maxs[2] = 64;
-
-	maxs_offs[2] = 0;
-	VectorAdd (mins_offs, mins, mins);
-	VectorAdd (maxs_offs, maxs, maxs);
-	for (i = 0; i < 6; i++) {
-		hull->planes[i].dist = DotProduct (dir[i / 2], verts[i]);
-		hull->planes[i].type = 4;
-		VectorCopy (dir[i / 2], hull->planes[i].normal);
-		//Con_Printf ("%f   %f %f %f\n",
-		//			hull->planes[i].dist,
-		//			hull->planes[i].normal[0], hull->planes[i].normal[1],
-		//			hull->planes[i].normal[2]);
+	// set up the 3 size based hulls
+	for (j = 0; j < 3; j++) {
+		hull = ch->hulls[j];
+		VectorScale (offsets[j][0], -1, hull->clip_mins);
+		VectorScale (offsets[j][1], -1, hull->clip_maxs);
+		// set up the clip planes
+		for (i = 0; i < 6; i++) {
+			hull->planes[i].dist = calc_dist (verts[i], dir[i / 2], offsets[j]);
+			hull->planes[i].type = 4;
+			VectorCopy (dir[i / 2], hull->planes[i].normal);
+			//Con_Printf ("%f   %f %f %f\n",
+			//			hull->planes[i].dist,
+			//			hull->planes[i].normal[0], hull->planes[i].normal[1],
+			//			hull->planes[i].normal[2]);
+		}
 	}
 }
 
