@@ -31,10 +31,8 @@
 #ifndef _R_SHARED_H
 #define _R_SHARED_H
 
-#include "QF/mathlib.h"
-#include "QF/cvar.h"
-#include "QF/model.h"
 #include "d_iface.h"
+#include "render.h"
 
 #define	MAXVERTS	16					// max points in a surface polygon
 #define MAXWORKINGVERTS	(MAXVERTS+4)	// max points in an intermediate

@@ -31,7 +31,7 @@
 
 #include "QF/mathlib.h"
 #include "QF/model.h"
-#include "render.h"
+#include "QF/vid.h"
 
 #define WARP_WIDTH		320
 #define WARP_HEIGHT		200

@@ -30,6 +30,7 @@
 #define __r_shared_h
 
 #include "d_iface.h"
+#include "render.h"
 
 #ifndef GLQUAKE
 
