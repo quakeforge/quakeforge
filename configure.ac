@@ -39,7 +39,6 @@ AC_SUBST(ISODATE)
 AC_LANG_C
 
 if test ${AR-unset} = unset; then
-echo boo
 	AR="ar"
 fi
 export AR
