@@ -1,4 +1,4 @@
-#!/bin/bash
+#! /bin/bash
 # create pak files with gzipped internals
 
 if [ $# -eq 0 ]; then
@@ -6,18 +6,27 @@ if [ $# -eq 0 ]; then
 	exit 1
 fi
 
+tmpdir=/var/tmp/zpak.$$
+
 for pakfile in $*; do
-	if [ ! -f ${pakfile} ]; then echo ${pakfile} not found; continue; fi
-	[ "${pakfile#/}" = "${pakfile}" ] && pakfile=`pwd`/${pakfile}
+	[ ! -f ${pakfile} ] && echo "${pakfile} not found" && continue
+	[ "${pakfile#/}" = "${pakfile}" ] && pakfile=${PWD}/${pakfile}
 
-	tmp=/var/tmp/zpak.$$
+	mkdir ${tmpdir}
+	cd ${tmpdir}
+	pak -vxf ${pakfile}
 
-	mkdir ${tmp}
-	cd ${tmp}
-	pak -vxf ${pakfile} | sed -e 's/$/.gz/' > pakfile.lst
+	# cosmetic (gzip preserves timestamps.. could come in handy)
+	find * -type f \
+	-exec touch {} -r ${pakfile} \;
+
+	find * -type f \
+	! -name '*.gz' ! -name '*.jpg' ! -name '*.ogg' ! -name '*.png' \
+	-exec gzip -v9 {} \;
+
 	mv ${pakfile} ${pakfile}.bak
-	gzip -rv9 *
-	pak -vcf ${pakfile} `zcat pakfile.lst.gz`
+	pak -vcf ${pakfile} $(find * -type f | sort)
+
 	cd -
-	rm -rf ${tmp}
+	rm -rf ${tmpdir}
 done
