@@ -152,14 +152,14 @@ Con_Print (const char *txt)
 	chtype      ch;
 
 	if (output) {
-		while ((ch = *txt++)) {
+		while ((ch = (byte)*txt++)) {
 			ch = sys_char_map[ch] | attr_table[attr_map[ch]];
 			waddch (output, ch);
 		}
 		touchwin (stdscr);
 		wrefresh (output);
 	} else {
-		while ((ch = *txt++)) {
+		while ((ch = (byte)*txt++)) {
 			ch = sys_char_map[ch];
 			putchar (ch);
 		}
