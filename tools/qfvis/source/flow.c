@@ -196,6 +196,7 @@ qboolean flipclip)
 			target = ClipWinding (target, &plane, false);
 			if (!target)
 				return NULL;	// target is not visible
+			break;				//XXX is this correct? big speedup
 		}
     }
     return target;
