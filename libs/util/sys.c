@@ -60,7 +60,10 @@
 #include "QF/cvar.h"
 #include "QF/sys.h"
 
+static void Sys_StdPrintf (const char *fmt, va_list args);
+
 cvar_t     *sys_nostdout;
+static sys_printf_t sys_printf_function = Sys_StdPrintf;
 
 /* The translation table between the graphical font and plain ASCII  --KB */
 static char qfont_table[256] = {
@@ -142,12 +145,23 @@ Sys_FileTime (const char *path)
 }
 
 /*
-	Sys_Printf
+	Sys_SetPrintf
+
+	for want of a better name, but it sets the function pointer for the
+	actual implementation of Sys_Printf.
 */
 void
-Sys_Printf (const char *fmt, ...)
+Sys_SetPrintf (sys_printf_t func)
 {
-	va_list     argptr;
+	sys_printf_function = func;
+}
+
+/*
+	Sys_Printf
+*/
+static void
+Sys_StdPrintf (const char *fmt, va_list args)
+{
 	char        msg[MAXPRINTMSG];
 
 	unsigned char *p;
@@ -155,15 +169,22 @@ Sys_Printf (const char *fmt, ...)
 	if (sys_nostdout && sys_nostdout->int_val)
 		return;
 
-	va_start (argptr, fmt);
-	vsnprintf (msg, sizeof (msg), fmt, argptr);
-	va_end (argptr);
+	vsnprintf (msg, sizeof (msg), fmt, args);
 
 	/* translate to ASCII instead of printing [xx]  --KB */
 	for (p = (unsigned char *) msg; *p; p++)
 		putc (qfont_table[*p], stdout);
 
 	fflush (stdout);
+}
+
+void
+Sys_Printf (const char *fmt, ...)
+{
+	va_list     args;
+	va_start (args, fmt);
+	sys_printf_function (fmt, args);
+	va_end (argptr);
 }
 
 /*

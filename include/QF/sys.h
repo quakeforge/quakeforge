@@ -29,12 +29,18 @@
 #ifndef __sys_h
 #define __sys_h
 
+#include <stdarg.h>
+
 #include "QF/gcc_attr.h"
 
 extern	struct cvar_s	*sys_nostdout;
 
 int	Sys_FileTime (const char *path);
 void Sys_mkdir (const char *path);
+
+typedef void (*sys_printf_t) (const char *fmt, va_list args);
+
+void Sys_SetPrintf (sys_printf_t func);
 
 void Sys_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void Sys_Error (const char *error, ...) __attribute__((format(printf,1,2)));
