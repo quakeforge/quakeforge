@@ -265,14 +265,14 @@ PR_FindGlobal (progs_t * pr, const char *name)
 	return  Hash_Find (pr->global_hash, name);
 }
 
-eval_t *
+pr_type_t *
 PR_GetGlobalPointer (progs_t *pr, const char *name)
 {
 	ddef_t     *def;
 
 	def = PR_FindGlobal (pr, name);
 	if (def)
-		return (eval_t*)&pr->pr_globals[def->ofs];
+		return &pr->pr_globals[def->ofs];
 	PR_Error (pr, "undefined global %s", name);
 	return 0;
 }
@@ -306,7 +306,7 @@ ED_FindFunction (progs_t * pr, const char *name)
 	return  Hash_Find (pr->function_hash, name);
 }
 
-eval_t     *
+pr_type_t     *
 GetEdictFieldValue (progs_t * pr, edict_t *ed, char *field)
 {
 	ddef_t     *def = NULL;
@@ -332,7 +332,7 @@ GetEdictFieldValue (progs_t * pr, edict_t *ed, char *field)
 	if (!def)
 		return NULL;
 
-	return (eval_t *) ((char *) &ed->v + def->ofs * 4);
+	return &ed->v[def->ofs];
 }
 
 /*
@@ -396,7 +396,7 @@ PR_ValueString (progs_t * pr, etype_t type, pr_type_t *val)
 	Easier to parse than PR_ValueString
 */
 char       *
-PR_UglyValueString (progs_t * pr, etype_t type, eval_t *val)
+PR_UglyValueString (progs_t * pr, etype_t type, pr_type_t *val)
 {
 	static char line[256];
 	ddef_t     *def;
@@ -407,18 +407,18 @@ PR_UglyValueString (progs_t * pr, etype_t type, eval_t *val)
 	switch (type) {
 		case ev_string:
 			snprintf (line, sizeof (line), "%s",
-					  PR_GetString (pr, val->string));
+					  PR_GetString (pr, val->string_var));
 			break;
 		case ev_entity:
 			snprintf (line, sizeof (line), "%i",
-					  NUM_FOR_EDICT (pr, PROG_TO_EDICT (pr, val->edict)));
+					  NUM_FOR_EDICT (pr, PROG_TO_EDICT (pr, val->entity_var)));
 			break;
 		case ev_func:
-			f = pr->pr_functions + val->function;
+			f = pr->pr_functions + val->func_var;
 			snprintf (line, sizeof (line), "%s", PR_GetString (pr, f->s_name));
 			break;
 		case ev_field:
-			def = ED_FieldAtOfs (pr, val->_int);
+			def = ED_FieldAtOfs (pr, val->int_var);
 			snprintf (line, sizeof (line), "%s",
 					  PR_GetString (pr, def->s_name));
 			break;
@@ -426,11 +426,11 @@ PR_UglyValueString (progs_t * pr, etype_t type, eval_t *val)
 			strcpy (line, "void");
 			break;
 		case ev_float:
-			snprintf (line, sizeof (line), "%f", val->_float);
+			snprintf (line, sizeof (line), "%f", val->float_var);
 			break;
 		case ev_vector:
-			snprintf (line, sizeof (line), "%f %f %f", val->vector[0],
-					  val->vector[1], val->vector[2]);
+			snprintf (line, sizeof (line), "%f %f %f", val->vector_var[0],
+					  val->vector_var[1], val->vector_var[2]);
 			break;
 		default:
 			snprintf (line, sizeof (line), "bad type %i", type);
@@ -552,7 +552,7 @@ void
 ED_Write (progs_t * pr, VFile *f, edict_t *ed)
 {
 	ddef_t     *d;
-	int        *v;
+	pr_type_t  *v;
 	int         i, j;
 	char       *name;
 	int         type;
@@ -570,18 +570,18 @@ ED_Write (progs_t * pr, VFile *f, edict_t *ed)
 		if (name[strlen (name) - 2] == '_')
 			continue;					// skip _x, _y, _z vars
 
-		v = (int *) ((char *) &ed->v + d->ofs * 4);
+		v = &ed->v[d->ofs];
 
 		// if the value is still all 0, skip the field
 		type = d->type & ~DEF_SAVEGLOBAL;
 		for (j = 0; j < type_size[type]; j++)
-			if (v[j])
+			if (v[j].int_var)
 				break;
 		if (j == type_size[type])
 			continue;
 
 		Qprintf (f, "\"%s\" ", name);
-		Qprintf (f, "\"%s\"\n", PR_UglyValueString (pr, d->type, (eval_t *) v));
+		Qprintf (f, "\"%s\"\n", PR_UglyValueString (pr, d->type, v));
 	}
 
 	Qprintf (f, "}\n");
@@ -676,8 +676,7 @@ ED_WriteGlobals (progs_t * pr, VFile *f)
 		name = PR_GetString (pr, def->s_name);
 		Qprintf (f, "\"%s\" ", name);
 		Qprintf (f, "\"%s\"\n",
-				 PR_UglyValueString (pr, type,
-									 (eval_t *) &pr->pr_globals[def->ofs]));
+				 PR_UglyValueString (pr, type, &pr->pr_globals[def->ofs]));
 	}
 	Qprintf (f, "}\n");
 }
@@ -764,18 +763,18 @@ ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, char *s)
 	char        string[128];
 	ddef_t     *def;
 	char       *v, *w;
-	eval_t     *d;
+	pr_type_t  *d;
 	dfunction_t *func;
 
-	d = (eval_t*)&base[key->ofs];
+	d = &base[key->ofs];
 
 	switch (key->type & ~DEF_SAVEGLOBAL) {
 		case ev_string:
-			d->string = PR_SetString (pr, ED_NewString (pr, s));
+			d->string_var = PR_SetString (pr, ED_NewString (pr, s));
 			break;
 
 		case ev_float:
-			d->_float = atof (s);
+			d->float_var = atof (s);
 			break;
 
 		case ev_vector:
@@ -786,13 +785,13 @@ ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, char *s)
 				while (*v && *v != ' ')
 					v++;
 				*v = 0;
-				d->vector[i] = atof (w);
+				d->vector_var[i] = atof (w);
 				w = v = v + 1;
 			}
 			break;
 
 		case ev_entity:
-			d->edict = EDICT_TO_PROG (pr, EDICT_NUM (pr, atoi (s)));
+			d->entity_var = EDICT_TO_PROG (pr, EDICT_NUM (pr, atoi (s)));
 			break;
 
 		case ev_field:
@@ -801,7 +800,7 @@ ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, char *s)
 				Con_Printf ("Can't find field %s\n", s);
 				return false;
 			}
-			d->_int = G_INT (pr, def->ofs);
+			d->int_var = G_INT (pr, def->ofs);
 			break;
 
 		case ev_func:
@@ -810,7 +809,7 @@ ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, char *s)
 				Con_Printf ("Can't find function %s\n", s);
 				return false;
 			}
-			d->function = func - pr->pr_functions;
+			d->func_var = func - pr->pr_functions;
 			break;
 
 		default:
@@ -931,7 +930,7 @@ ED_LoadFromFile (progs_t * pr, char *data)
 	edict_t    *ent;
 	int         inhibit;
 	dfunction_t *func;
-	eval_t     *classname;
+	pr_type_t  *classname;
 	ddef_t     *def;
 
 	ent = NULL;
@@ -970,9 +969,9 @@ ED_LoadFromFile (progs_t * pr, char *data)
 			ED_Free (pr, ent);
 			continue;
 		}
-		classname = (eval_t*)&ent->v[def->ofs];
+		classname = &ent->v[def->ofs];
 		// look for the spawn function
-		func = ED_FindFunction (pr, PR_GetString (pr, classname->string));
+		func = ED_FindFunction (pr, PR_GetString (pr, classname->string_var));
 
 		if (!func) {
 			Con_Printf ("No spawn function for:\n");

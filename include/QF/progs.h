@@ -33,16 +33,6 @@
 #include "QF/vfile.h"
 #include "QF/pr_comp.h"
 
-typedef union eval_s
-{
-	string_t		string;
-	float			_float;
-	float			vector[3];
-	func_t			function;
-	int				_int;
-	int				edict;
-} eval_t;	
-
 typedef union pr_type_u {
 	float	float_var;
 	int		int_var;
@@ -145,7 +135,7 @@ typedef void (*builtin_t) (progs_t *pr);
 
 ddef_t *PR_FindGlobal (progs_t *pr, const char *name);
 
-eval_t *PR_GetGlobalPointer (progs_t *pr, const char *name);
+pr_type_t *PR_GetGlobalPointer (progs_t *pr, const char *name);
 func_t PR_GetFunctionIndex (progs_t *pr, const char *name);
 int PR_GetFieldOffset (progs_t *pr, const char *name);
 
@@ -160,7 +150,7 @@ void PR_Profile (progs_t *pr);
 char *PR_GlobalString (progs_t *pr, int ofs);
 char *PR_GlobalStringNoContents (progs_t *pr, int ofs);
 
-eval_t *GetEdictFieldValue(progs_t *pr, edict_t *ed, char *field);
+pr_type_t *GetEdictFieldValue(progs_t *pr, edict_t *ed, char *field);
 
 //
 // PR STrings stuff

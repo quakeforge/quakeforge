@@ -644,7 +644,7 @@ SV_UpdateToReliableMessages (void)
 {
 	int         i, j;
 	client_t   *client;
-	eval_t     *val;
+	pr_type_t  *val;
 	edict_t    *ent;
 
 // check for changes to be sent over the reliable streams to all clients
@@ -670,14 +670,14 @@ SV_UpdateToReliableMessages (void)
 		ent = host_client->edict;
 
 		val = GetEdictFieldValue (&sv_pr_state, ent, "gravity");
-		if (val && host_client->entgravity != val->_float) {
-			host_client->entgravity = val->_float;
+		if (val && host_client->entgravity != val->float_var) {
+			host_client->entgravity = val->float_var;
 			ClientReliableWrite_Begin (host_client, svc_entgravity, 5);
 			ClientReliableWrite_Float (host_client, host_client->entgravity);
 		}
 		val = GetEdictFieldValue (&sv_pr_state, ent, "maxspeed");
-		if (val && host_client->maxspeed != val->_float) {
-			host_client->maxspeed = val->_float;
+		if (val && host_client->maxspeed != val->float_var) {
+			host_client->maxspeed = val->float_var;
 			ClientReliableWrite_Begin (host_client, svc_maxspeed, 5);
 			ClientReliableWrite_Float (host_client, host_client->maxspeed);
 		}

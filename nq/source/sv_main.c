@@ -599,7 +599,7 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	int         items;
 
 #ifndef QUAKE2
-	eval_t     *val;
+	pr_type_t  *val;
 #endif
 
 //
@@ -647,7 +647,7 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	val = GetEdictFieldValue (&sv_pr_state, ent, "items2");
 
 	if (val)
-		items = (int) SVFIELD (ent, items, float) | ((int) val->_float << 23);
+		items = (int) SVFIELD (ent, items, float) | ((int) val->float_var << 23);
 	else
 		items =
 			(int) SVFIELD (ent, items, float) | ((int) sv_globals.serverflags << 28);

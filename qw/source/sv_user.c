@@ -332,7 +332,7 @@ SV_Spawn_f (void)
 	int         i;
 	client_t   *client;
 	edict_t    *ent;
-	eval_t     *val;
+	pr_type_t  *val;
 	int         n;
 
 	if (host_client->state != cs_connected) {
@@ -387,11 +387,11 @@ SV_Spawn_f (void)
 	host_client->entgravity = 1.0;
 	val = GetEdictFieldValue (&sv_pr_state, ent, "gravity");
 	if (val)
-		val->_float = 1.0;
+		val->float_var = 1.0;
 	host_client->maxspeed = sv_maxspeed->value;
 	val = GetEdictFieldValue (&sv_pr_state, ent, "maxspeed");
 	if (val)
-		val->_float = sv_maxspeed->value;
+		val->float_var = sv_maxspeed->value;
 
 //
 // force stats to be updated
