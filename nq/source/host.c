@@ -96,6 +96,7 @@ jmp_buf     host_abortserver;
 byte       *vid_basepal;
 
 cvar_t     *fs_globalcfg;
+cvar_t     *fs_usercfg;
 
 cvar_t     *host_framerate;
 cvar_t     *host_speeds;
@@ -838,6 +839,29 @@ Host_InitVCR (quakeparms_t *parms)
 }
 
 
+static int
+check_quakerc (void)
+{
+	QFile *f;
+	char *l, *p;
+	int ret = 1;
+
+	COM_FOpenFile ("quake.rc", &f);
+	if (!f)
+		return 1;
+	while ((l = Qgetline (f))) {
+		if ((p = strstr (l, "stuffcmds"))) {
+			if (p == l) {				// only known case so far
+				ret = 0;
+				break;
+			}
+		}
+	}
+	Qclose (f);
+	return ret;
+}
+
+
 void
 Host_Init (quakeparms_t *parms)
 {
@@ -880,6 +904,19 @@ Host_Init (quakeparms_t *parms)
 	Cmd_Exec_File (fs_globalcfg->string);
 	Cbuf_Execute_Sets ();
 
+	// execute +set again to override the config file
+	Cmd_StuffCmds_f ();
+	Cbuf_Execute_Sets ();
+
+	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG, CVAR_ROM, NULL,
+						   "user configuration file");
+	Cmd_Exec_File (fs_usercfg->string);
+	Cbuf_Execute_Sets ();
+
+	// execute +set again to override the config file
+	Cmd_StuffCmds_f ();
+	Cbuf_Execute_Sets ();
+
 	CL_InitCvars ();
 	IN_Init_Cvars ();
 	VID_Init_Cvars ();
@@ -905,11 +942,6 @@ Host_Init (quakeparms_t *parms)
 
 	Game_Init ();
 
-	// reparse the command line for + commands other than set
-	// (sets still done, but it doesn't matter)
-	Cmd_StuffCmds_f ();
-	Cbuf_Execute ();
-
 	Chase_Init ();
 	Host_InitVCR (parms);
 	Host_InitLocal ();
@@ -932,14 +964,8 @@ Host_Init (quakeparms_t *parms)
 		vid_basepal = (byte *) COM_LoadHunkFile ("gfx/palette.lmp");
 		if (!vid_basepal)
 			Sys_Error ("Couldn't load gfx/palette.lmp");
-		vid_basepal[765] = vid_basepal[766] = vid_basepal[767] = 0;	// LordHavoc: 
-																		// 
-		// force 
-		// the 
-		// transparent 
-		// color 
-		// to 
-		// black
+		// LordHavoc: force the transparent color to black
+		vid_basepal[765] = vid_basepal[766] = vid_basepal[767] = 0;
 		vid_colormap = (byte *) COM_LoadHunkFile ("gfx/colormap.lmp");
 		if (!vid_colormap)
 			Sys_Error ("Couldn't load gfx/colormap.lmp");
@@ -957,6 +983,13 @@ Host_Init (quakeparms_t *parms)
 		CDAudio_Init ();
 		Sbar_Init ();
 		CL_Init ();
+	}
+
+	// reparse the command line for + commands other than set
+	// (sets still done, but it doesn't matter)
+	if (check_quakerc ()) {
+		Cmd_StuffCmds_f ();
+		Cbuf_Execute ();
 	}
 
 	Cbuf_InsertText ("exec quake.rc\n");
