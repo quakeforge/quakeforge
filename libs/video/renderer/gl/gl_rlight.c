@@ -275,7 +275,6 @@ loc0:
 	if (node->children[0]->contents >= 0) {
 		if (node->children[1]->contents >= 0)
 			R_RecursiveMarkLights (lightorigin, light, bit, node->children[1]);
-
 		node = node->children[0];
 		goto loc0;
 	} else if (node->children[1]->contents >= 0) {
