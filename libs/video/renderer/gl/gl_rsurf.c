@@ -311,8 +311,7 @@ R_DrawBrushModel (entity_t *e)
 
 	VectorSubtract (r_refdef.vieworg, e->origin, modelorg);
 	if (rotated) {
-		vec3_t      temp;
-		vec3_t      forward, right, up;
+		vec3_t      temp, forward, right, up;
 
 		VectorCopy (modelorg, temp);
 		AngleVectors (e->angles, forward, right, up);
@@ -368,7 +367,7 @@ R_DrawBrushModel (entity_t *e)
 					qfglColor3ubv (color_white);
 				}
 			} else if (psurf->flags & SURF_DRAWSKY) {
-// FIXME: add modelalpha support for sky brushes
+// QSG FIXME: add modelalpha support for sky brushes
 				CHAIN_SURF (psurf, sky_chain);
 				return;
 			} else {
@@ -459,6 +458,7 @@ R_RecursiveWorldNode (mnode_t *node)
 				CHAIN_SURF (surf, sky_chain);
 			} else {
 				texture_t  *tex;
+
 				if (!surf->texinfo->texture->anim_total)
 					tex = surf->texinfo->texture;
 				else 
