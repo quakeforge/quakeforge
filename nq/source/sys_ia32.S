@@ -29,7 +29,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "asm_ia32.h"
+#include "asm_i386.h"
 
 
 #ifdef USE_INTEL_ASM

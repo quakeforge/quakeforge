@@ -1,4 +1,4 @@
-#include "asm_ia32.h"
+#include "asm_i386.h"
 
 .data
 fpenv:	.long	0, 0, 0, 0, 0, 0, 0, 0
