@@ -63,19 +63,18 @@ typedef struct cmdalias_s {
 cmdalias_t *cmd_alias;
 cmd_source_t cmd_source;
 
-/* FIXME: All these separate buffers are sort of hacky
-The command buffer interface should be generalized and
-each part of QF (console, stufftext, config files and scripts)
-that needs one should allocate and maintain its own.
-*/
-cmd_buffer_t *cmd_consolebuffer;		// Console buffer
+cmd_buffer_t *cmd_consolebuffer;	// Console buffer
 cmd_buffer_t *cmd_legacybuffer;         // Server stuffcmd buffer with
-										// absolute backwards-compatibility
-cmd_buffer_t *cmd_privatebuffer;		// Buffer for internal command execution
+					// absolute backwards-compatibility
+cmd_buffer_t *cmd_privatebuffer;	// Buffer for internal command execution
 cmd_buffer_t *cmd_keybindbuffer;        // Buffer for commands from bound keys
 cmd_buffer_t *cmd_activebuffer;         // Buffer currently being executed
 
-cmd_buffer_t *cmd_recycled;	// Recycled buffers
+cmd_buffer_t *cmd_recycled;		// Recycled buffers
+
+
+cmd_thread_t *cmd_threads;		// Detached buffers running by themselves
+long int cmd_threadid;			// The id of the last thread + 1
 
 dstring_t  *cmd_backtrace;
 
@@ -89,7 +88,7 @@ hashtab_t  *cmd_hash;
 
 //=============================================================================
 
-/* Local variable stuff */
+/* Structure management */
 
 cmd_localvar_t *
 Cmd_NewLocal (const char *key, const char *value)
@@ -152,7 +151,7 @@ Cmd_LocalFree (void *ele, void *ptr)
 cmd_token_t	*
 Cmd_NewToken (void) {
 	cmd_token_t *new;
-	
+
 	new = calloc(1,sizeof(cmd_token_t));
 	SYS_CHECKMEM (new);
 	new->original = dstring_newstr();
@@ -190,7 +189,7 @@ Cmd_NewBuffer (qboolean ownvars)
 
 /*
 	Cmd_FreeBuffer
-	
+
 	Actually just "recycles" buffer for
 	later use
 */
@@ -203,7 +202,7 @@ Cmd_FreeBuffer (cmd_buffer_t *free) {
 	dstring_clearstr (free->buffer);
 	dstring_clearstr (free->line);
 	dstring_clearstr (free->realline);
-	dstring_clearstr (free->looptext);	
+	dstring_clearstr (free->looptext);
 	dstring_clearstr (free->retval);
 	free->locals = 0;
 	free->next = cmd_recycled;
@@ -213,13 +212,52 @@ Cmd_FreeBuffer (cmd_buffer_t *free) {
 void
 Cmd_FreeStack (cmd_buffer_t *stack) {
 	cmd_buffer_t *temp;
-	
+
 	for (;stack; stack = temp) {
 		temp = stack->next;
 		Cmd_FreeBuffer (stack);
 	}
 }
-		
+
+
+cmd_thread_t	*
+Cmd_NewThread (long int id) {
+	cmd_thread_t *new;
+
+	new = calloc (1, sizeof(cmd_thread_t));
+	SYS_CHECKMEM (new);
+	new->id = id;
+	new->cbuf = Cmd_NewBuffer (true);
+
+	return new;
+}
+
+void
+Cmd_FreeThread (cmd_thread_t *thread) {
+	Cmd_FreeBuffer (thread->cbuf);
+	free (thread);
+	return;
+}
+
+void
+Cmd_AddThread (cmd_thread_t **list, cmd_thread_t *thread) {
+	thread->next = *list;
+	thread->prev = 0;
+	if (*list)
+		(*list)->prev = thread;
+	*list = thread;
+}
+
+void
+Cmd_RemoveThread (cmd_thread_t **list, cmd_thread_t *thread) {
+	if (thread == *list)
+		*list = thread->next;
+	if (thread->next)
+		thread->next->prev = thread->prev;
+	if (thread->prev)
+		thread->prev->next = thread->next;
+	Cmd_FreeThread (thread);
+}
 
 /*void
 Cmd_FreeBuffer (cmd_buffer_t *del)
@@ -345,6 +383,8 @@ Cbuf_Init (void)
 
 	cmd_activebuffer = cmd_consolebuffer;
 
+	cmd_threads = 0;
+	cmd_threadid = 0;
 	cmd_recycled = 0;
 
 	cmd_backtrace = dstring_newstr ();
@@ -480,7 +520,6 @@ Cbuf_ExecuteBuffer (cmd_buffer_t *buffer)
 			Cbuf_ExtractLine (buffer->buffer, buf, buffer->legacy);
 			if (!buf->str[0])
 				continue;
-			Sys_DPrintf("Cbuf_ExecuteBuffer:  Executing line %s\n", buf->str);
 			Cmd_TokenizeString (buf->str, cmd_activebuffer->legacy);
 			if (cmd_error)
 				break;
@@ -547,6 +586,16 @@ Cbuf_ExecuteStack (cmd_buffer_t *buffer)
 void
 Cbuf_Execute (void)
 {
+	cmd_thread_t *t, *temp;
+
+	for (t = cmd_threads; t; t = temp) {
+		temp = t->next;
+		if (!t->cbuf->next && !t->cbuf->buffer->str[0]) {
+			Cmd_RemoveThread (&cmd_threads, t);
+			continue;
+		}
+		Cbuf_ExecuteStack (t->cbuf);
+	}
 	Cbuf_ExecuteStack (cmd_keybindbuffer);
 	Cbuf_ExecuteStack (cmd_consolebuffer);
 	Cbuf_ExecuteStack (cmd_legacybuffer);
@@ -1093,31 +1142,27 @@ Cmd_ProcessMath (dstring_t * dstr)
 	statement = dstring_newstr ();
 
 	for (i = 0; i < strlen (dstr->str); i++) {
-		if (dstr->str[i] == '#' && dstr->str[i + 1] == '{') {
-			if (!escaped (dstr->str, i)) {
-				i -= unescape (dstr, i);
-				n = Cmd_EndBrace (dstr->str+i+1)+1;
-				if (n < 0) {
-					Cmd_Error ("Unmatched brace in math expression.\n");
-					ret = -1;
-					break;
-				}
-				/* Copy text between parentheses into a buffer */
-				dstring_clearstr (statement);
-				dstring_insert (statement, dstr->str + i + 2, n - 2, 0);
-				value = EXP_Evaluate (statement->str);
-				if (EXP_ERROR == EXP_E_NORMAL) {
-					temp = va ("%.10g", value);
-					dstring_snip (dstr, i, n + 1);	// Nuke the statement
-					dstring_insertstr (dstr, temp, i);	// Stick in the value
-					i += strlen (temp) - 1;
-				} else {
-					ret = -2;
-					Cmd_Error (va("Math error: invalid expression %s\n", statement->str));
-					break;					// Math evaluation error
-				}
-			} else
-				i -= unescape (dstr, i);
+		if (dstr->str[i] == '#' && dstr->str[i + 1] == '{' && !escaped (dstr->str, i)) {
+			n = Cmd_EndBrace (dstr->str+i+1)+1;
+			if (n < 0) {
+				Cmd_Error ("Unmatched brace in math expression.\n");
+				ret = -1;
+				break;
+			}
+			/* Copy text between parentheses into a buffer */
+			dstring_clearstr (statement);
+			dstring_insert (statement, dstr->str + i + 2, n - 2, 0);
+			value = EXP_Evaluate (statement->str);
+			if (EXP_ERROR == EXP_E_NORMAL) {
+				temp = va ("%.10g", value);
+				dstring_snip (dstr, i, n + 1);	// Nuke the statement
+				dstring_insertstr (dstr, temp, i);	// Stick in the value
+				i += strlen (temp) - 1;
+			} else {
+				ret = -2;
+				Cmd_Error (va("Math error: invalid expression %s\n", statement->str));
+				break;					// Math evaluation error
+			}
 		}
 	}
 	dstring_delete (statement);
@@ -1183,18 +1228,14 @@ Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
 	if (dstr->str[start+1] == '{')
 		braces = 1;
 	for (i = start + 1 + braces;; i++) {
-		if (dstr->str[i] == '$' && (braces || dstr->str[i-1] == '$')) {
-			if (!escaped (dstr->str, i)) {
-				i -= unescape (dstr, i);
-				n = Cmd_ProcessVariablesRecursive (dstr, i);
-				if (n < 0) {
-					break;
-				} else {
-					i += n - 1;
-					continue;
-				}
-			} else
-				i -= unescape (dstr, i);
+		if (dstr->str[i] == '$' && (braces || dstr->str[i-1] == '$') && !escaped (dstr->str, i)) {
+			n = Cmd_ProcessVariablesRecursive (dstr, i);
+			if (n < 0) {
+				break;
+			} else {
+				i += n - 1;
+				continue;
+			}
 		} else if (!dstr->str[i] && braces) {		// No closing brace
 			Cmd_Error ("Unmatched brace in variable substitution expression.\n");
 			n = -1;
@@ -1214,6 +1255,8 @@ Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
 				// Then cvars
 				dstring_appendstr (copy, cvar->string);
 			}
+			n = 0;
+			dstring_clearstr (varname); // Reuse variable
 			if (dstr->str[start] == '[') {
 				int val1, val2, res;
 				res = Cmd_ProcessIndex (dstr, start, &val1, &val2);
@@ -1221,16 +1264,16 @@ Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
 					n = -1;
 				else if (val1 >= strlen(copy->str) || val1 < 0)
 					n = 0;
-				else if (val2 < strlen(copy->str)) {
-					dstring_insert (dstr, copy->str+val1, val2-val1+1, start);
-					n = val2 - val1 + 1;
-				} else {
-					dstring_insert (dstr, copy->str+val1, strlen(copy->str)-val1, start);
-					n = strlen(copy->str)-val1;
-				}
-			} else {
-				dstring_insertstr (dstr, copy->str, start);
-				n = strlen(copy->str);
+				else if (val2 < strlen(copy->str))
+					dstring_insert (varname, copy->str+val1, val2-val1+1, 0);
+				else
+					dstring_insert (varname, copy->str+val1, strlen(copy->str)-val1, 0);
+			} else
+				dstring_appendstr (varname, copy->str);
+			if (n >= 0) {
+				escape (varname, "\\");
+				dstring_insertstr (dstr, varname->str, start);
+				n = strlen(varname->str);
 			}
 			dstring_delete (copy);
 			dstring_delete (varname);
@@ -1258,6 +1301,7 @@ Cmd_ProcessEmbeddedSingle (dstring_t * dstr, int start)
 		return -1;
 	}
 	if (cmd_activebuffer->returned == cmd_returned) {
+		escape (cmd_activebuffer->retval, "\\");
 		dstring_snip(dstr, start, n+1);
 		dstring_insertstr (dstr, cmd_activebuffer->retval->str, start);
 		n = strlen(cmd_activebuffer->retval->str);
@@ -1283,20 +1327,16 @@ Cmd_ProcessEmbedded (cmd_token_t *tok, dstring_t * dstr)
 	int i, n;
 
 	for (i = tok->pos; i < strlen(dstr->str); i++) {
-		if (dstr->str[i] == '~' && dstr->str[i+1] == '{') {
-			if (!escaped (dstr->str, i)) {
-				i -= unescape (dstr, i);
-				n = Cmd_ProcessEmbeddedSingle (dstr, i);
-				if (n == -2) {
-					tok->pos = i;
-					return n;
-				}
-				if (n < 0)
-					return n;
-				else
-					i += n-1;
-			} else
-				i -= unescape (dstr, i);
+		if (dstr->str[i] == '~' && dstr->str[i+1] == '{' && !escaped (dstr->str, i)) {
+			n = Cmd_ProcessEmbeddedSingle (dstr, i);
+			if (n == -2) {
+				tok->pos = i;
+				return n;
+			}
+			if (n < 0)
+				return n;
+			else
+				i += n-1;
 		}
 	}
 	return 0;
@@ -1308,16 +1348,12 @@ Cmd_ProcessVariables (dstring_t * dstr)
 	int         i, n;
 
 	for (i = 0; i < strlen (dstr->str); i++) {
-		if (dstr->str[i] == '$') {
-			if (!escaped (dstr->str, i)) {
-				i -= unescape (dstr, i);
-				n = Cmd_ProcessVariablesRecursive (dstr, i);
-				if (n < 0)
-					return n;
-				else
-					i += n - 1;
-			} else
-				i -= unescape (dstr, i);
+		if (dstr->str[i] == '$' && !escaped (dstr->str, i)) {
+			n = Cmd_ProcessVariablesRecursive (dstr, i);
+			if (n < 0)
+				return n;
+			else
+				i += n - 1;
 		}
 	}
 	return 0;
@@ -1335,27 +1371,24 @@ Cmd_ProcessVariables (dstring_t * dstr)
 	tags, etc. can be escaped
 */
 
-void
+int
 Cmd_ProcessEscapes (dstring_t * dstr, const char *noprocess)
 {
 	int         i;
 
 	if (strlen(dstr->str) == 1)
-		return;
-	for (i = 1; i <= strlen (dstr->str); i++) {
-		if (!(dstr->str[i] && strchr (noprocess, dstr->str[i])) && dstr->str[i-1] == '\\' && dstr->str[i] != '\\') {
-			if (dstr->str[i] == 'n' && escaped (dstr->str, i))
-				dstr->str[i] = '\n';
-			i -= unescape (dstr, i);
+		return 0;
+	for (i = 0; i < strlen (dstr->str); i++)
+		if (dstr->str[i] == '\\') {
+			dstring_snip (dstr, i, 1);
 		}
-	}
+	return 0;
 }
 
 int
 Cmd_ProcessToken (cmd_token_t *token)
 {
 	int res;
-	Cmd_ProcessEscapes (token->processed, "$#~");
 	res = Cmd_ProcessEmbedded (token, token->processed);
 	if (res < 0)
 		return res;
@@ -1366,6 +1399,9 @@ Cmd_ProcessToken (cmd_token_t *token)
 	if (res < 0)
 		return res;
 	Cmd_ProcessTags (token->processed);
+	res = Cmd_ProcessEscapes (token->processed, "$#~");
+		if (res < 0)
+		return res;
 	token->state = cmd_done;
 	return 0;
 }
@@ -2004,6 +2040,10 @@ Cmd_For_f (void) {
 		Cmd_ExecuteSubroutine (sub);
 	} else
 		Cmd_Error("Malformed for statement.\n");
+	dstring_delete (arg1);
+	dstring_delete (init);
+	dstring_delete (cond);
+	dstring_delete (inc);
 	return;
 }
 
@@ -2097,6 +2137,53 @@ Cmd_Strlen_f (void)
 }
 
 void
+Cmd_Detach_f (void)
+{
+	cmd_thread_t *thread;
+
+	if (Cmd_Argc () != 2) {
+		Cmd_Error ("detach: invalid number of arguments.\n");
+		return;
+	}
+
+	thread = Cmd_NewThread (cmd_threadid++);
+	Cmd_AddThread (&cmd_threads, thread);
+	Cbuf_AddTextTo (thread->cbuf, Cmd_Argv(1));
+	Cbuf_ExecuteStack (thread->cbuf); // Execute it now
+	cmd_error = false; // Don't let errors cross into this stack
+	Cmd_Return (va("%li", thread->id));
+}
+
+void
+Cmd_Killthread_f (void)
+{
+	long int id;
+	cmd_thread_t *t;
+	if (Cmd_Argc() != 2)
+		Cmd_Error ("killthread: invalid number of arguments.\n");
+	id = atol (Cmd_Argv(1));
+	for (t = cmd_threads; t; t = t->next)
+		if (id == t->id) {
+			if (t->cbuf->next)
+				Cmd_FreeStack (t->cbuf->next);
+			t->cbuf->next = 0;
+			dstring_clearstr (t->cbuf->buffer);
+			return;
+		}
+	Cmd_Error ("kill: invalid thread id\n");
+}
+void
+Cmd_Threadstats_f (void)
+{
+	cmd_thread_t *t;
+	
+	Sys_Printf ("Currently running threads:\n");
+	for (t = cmd_threads; t; t = t->next)
+		Sys_Printf("%li\n", t->id);
+}
+
+
+void
 Cmd_Hash_Stats_f (void)
 {
 	Sys_Printf ("alias hash table:\n");
@@ -2179,6 +2266,9 @@ Cmd_Init (void)
 	Cmd_AddCommand ("randint", Cmd_Randint_f, "Returns a random integer between $1 and $2");
 	Cmd_AddCommand ("streq", Cmd_Streq_f, "Returns 1 if $1 and $2 are the same string, 0 otherwise");
 	Cmd_AddCommand ("strlen", Cmd_Strlen_f, "Returns the length of $1");
+	Cmd_AddCommand ("detach", Cmd_Detach_f, "Starts a thread with an initial program of $1");
+	Cmd_AddCommand ("killthread", Cmd_Killthread_f, "Kills thread with id $1");
+	Cmd_AddCommand ("threadstats", Cmd_Threadstats_f, "Shows statistics about threads");
 
 	//Cmd_AddCommand ("cmd_hash_stats", Cmd_Hash_Stats_f, "Display statistics "
 	//				"alias and command hash tables");

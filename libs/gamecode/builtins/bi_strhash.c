@@ -225,7 +225,7 @@ bi_StringHash_Set (progs_t *pr)
 			sh->elements = (str_hash_elem**) malloc(sizeof(str_hash_elem*));
 			sh->cnt_elements = 0; // 0 because usage as index here
 		} else {
-			sh->elements = (str_hash_elem**) realloc(sh->elements, 
+			sh->elements = (str_hash_elem**) realloc(sh->elements,
 				sizeof(str_hash_elem*) * (sh->cnt_elements+1));
 		}
 		sh->elements[sh->cnt_elements] = malloc(sizeof(str_hash_elem));
@@ -260,7 +260,7 @@ bi_StringHash_SetIdx (progs_t *pr)
 	str_hash   *sh = NULL;
 
 	// validate the hash ID
-	if(res->hashes == NULL || 
+	if(res->hashes == NULL ||
 		(hash_id >= res->cnt_hashes || hash_id < 0) ||
 		(val_id < 0 || val_id >= MAX_SH_VALUES))
 	{
@@ -270,7 +270,7 @@ bi_StringHash_SetIdx (progs_t *pr)
 	sh = res->hashes[hash_id];
 
 	if(idx < 0 || idx >= sh->cnt_elements || sh->elements[idx] == NULL) {
-		if(sh->elements[idx] == NULL) 
+		if(sh->elements[idx] == NULL)
 			PR_Error(pr, "NULL hash-element found -> not supposed!");
 
 		G_INT (pr, OFS_RETURN) = 0;
@@ -304,8 +304,8 @@ bi_StringHash_Get (progs_t *pr)
 	const char *retstr = NULL;
 
 	// validate the hash ID
-	if(res->hashes == NULL || hash_id >= res->cnt_hashes || hash_id < 0 || 
-		val_id >= MAX_SH_VALUES) 
+	if(res->hashes == NULL || hash_id >= res->cnt_hashes || hash_id < 0 ||
+		val_id >= MAX_SH_VALUES)
 	{
 		retstr = "";
 		RETURN_STRING(pr, retstr);
@@ -375,8 +375,8 @@ bi_StringHash_GetIdx (progs_t *pr)
 	}
 	sh = res->hashes[hash_id];
 
-	if(idx < 0 || idx >= sh->cnt_elements || 
-		(val_id < -1 || val_id >= MAX_SH_VALUES)) 
+	if(idx < 0 || idx >= sh->cnt_elements ||
+		(val_id < -1 || val_id >= MAX_SH_VALUES))
 	{
 		retstr = NULL;
 	} else {
@@ -402,12 +402,16 @@ static void
 bi_strh_clear (progs_t *pr, void *data)
 {
 	strh_resources_t *res = (strh_resources_t *)data;
-	int         i,d;
+	int         i,d,n;
 
 	for (i = 0; i < res->cnt_hashes; i++) {
 		if (res->hashes[i]) {
 			for(d = 0; d < res->hashes[i]->cnt_elements; d++) {
-				free(res->hashes[i]->elements[d]);
+				free(res->hashes[i]->elements[d]->key); // Free the key
+				for (n = 0; n < MAX_SH_VALUES; n++) // Free all values
+					if (res->hashes[i]->elements[d]->values[n])
+						free(res->hashes[i]->elements[d]->values[n]);
+				free(res->hashes[i]->elements[d]); // Free the element itself
 			}
 			free(res->hashes[i]->elements);
 			free(res->hashes[i]);
@@ -443,10 +447,10 @@ StringHash_Progs_Init (progs_t *pr)
 	PR_AddBuiltin (pr, "StringHash_GetIdx", bi_StringHash_GetIdx, -1);
 }
 
-/* 
-	XXX NOTE by elmex: 
-	A file, decripted like this is what 
-	i want to see everywhere in qf-cvs =) 
+/*
+	XXX NOTE by elmex:
+	A file, decripted like this is what
+	i want to see everywhere in qf-cvs =)
 	No excuse for undocumented code and design without
 	a reason for it.
 	We/I want to know why something was designed how it is.

@@ -453,6 +453,7 @@ void
 CL_Disconnect (void)
 {
 	byte        final[10];
+	int	i;
 
 	connect_time = -1;
 
@@ -494,6 +495,12 @@ CL_Disconnect (void)
 
 	Team_ResetTimers ();
 
+	// remove player info strings
+	for (i = 0; i < MAX_CLIENTS; i++)
+		if (cl.players[i].userinfo) {
+			Info_Destroy (cl.players[i].userinfo);
+			cl.players[i].userinfo = 0;
+		}
 }
 
 void

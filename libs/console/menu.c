@@ -122,6 +122,7 @@ menu_free (void *_m, void *unused)
 			free ((char*)p->name);
 		free (p);
 	}
+	free (m);
 }
 
 static void

@@ -89,6 +89,12 @@ typedef struct cmd_buffer_s {
 	struct cmd_buffer_s *prev, *next; // Neighboring buffers in stack
 } cmd_buffer_t;
 
+typedef struct cmd_thread_s {
+	struct cmd_buffer_s *cbuf;
+	long int id;
+	struct cmd_thread_s *prev, *next;
+} cmd_thread_t;
+
 //===========================================================================
 
 void	escape (dstring_t * dstr, const char *clist);
