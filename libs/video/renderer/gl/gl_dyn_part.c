@@ -1566,10 +1566,7 @@ r_particles_style_f (cvar_t *var)
 	if (r_particles_style) {
 		if (r_particles_style->int_val && !gl_feature_mach64) {
 			R_BlobExplosion = R_BlobExplosion_QF;
-			R_ParticleExplosion = R_ParticleExplosion_QF;
-			R_ParticleExplosion2 = R_ParticleExplosion2_QF;
 			R_LavaSplash = R_LavaSplash_QF;
-			R_TeleportSplash = R_TeleportSplash_QF;
 
 			R_BloodPuffEffect = R_BloodPuffEffect_QF;
 			R_GunshotEffect = R_GunshotEffect_QF;
@@ -1581,20 +1578,14 @@ r_particles_style_f (cvar_t *var)
 			R_KnightSpikeEffect = R_KnightSpikeEffect_QF;
 			R_WizSpikeEffect = R_WizSpikeEffect_QF;
 
-			R_RocketTrail = R_RocketTrail_QF;
-			R_GrenadeTrail = R_GrenadeTrail_QF;
 			R_BloodTrail = R_BloodTrail_QF;
 			R_SlightBloodTrail = R_SlightBloodTrail_QF;
 			R_WizTrail = R_WizTrail_QF;
 			R_FlameTrail = R_FlameTrail_QF;
 			R_VoorTrail = R_VoorTrail_QF;
-			R_GlowTrail = R_GlowTrail_QF;
 		} else {
 			R_BlobExplosion = R_BlobExplosion_ID;
-			R_ParticleExplosion = R_ParticleExplosion_ID;
-			R_ParticleExplosion2 = R_ParticleExplosion2_QF;
 			R_LavaSplash = R_LavaSplash_ID;
-			R_TeleportSplash = R_TeleportSplash_ID;
 
 			R_BloodPuffEffect = R_BloodPuffEffect_ID;
 			R_GunshotEffect = R_GunshotEffect_ID;
@@ -1606,16 +1597,18 @@ r_particles_style_f (cvar_t *var)
 			R_KnightSpikeEffect = R_KnightSpikeEffect_ID;
 			R_WizSpikeEffect = R_WizSpikeEffect_ID;
 
-			R_RocketTrail = R_RocketTrail_ID;
-			R_GrenadeTrail = R_GrenadeTrail_ID;
 			R_BloodTrail = R_BloodTrail_ID;
 			R_SlightBloodTrail = R_SlightBloodTrail_ID;
 			R_WizTrail = R_WizTrail_ID;
 			R_FlameTrail = R_FlameTrail_ID;
 			R_VoorTrail = R_VoorTrail_ID;
-			R_GlowTrail = R_GlowTrail_QF;
 		}
 	}
+	R_ParticleExplosion2 = R_ParticleExplosion2_QF;
+	R_GlowTrail = R_GlowTrail_QF;
+	// Handle R_GrenadeTrail, R_RocketTrail, R_ParticleExplosion,
+	// R_TeleportSplash
+	r_easter_eggs_f (easter_eggs);
 }
 
 static void
