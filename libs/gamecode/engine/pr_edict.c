@@ -58,22 +58,22 @@ cvar_t     *pr_deadbeef_ents;
 cvar_t     *pr_deadbeef_locals;
 
 int         pr_type_size[ev_type_count] = {
-	1,
-	1,
-	1,
-	3,
-	1,
-	1,
-	1,
-	1,
-	4,
-	1,
-	1,
-	0,			// value in opcode
-	1,			// variable
-	1,			// variable
-	1,
-	2,
+	1,			// ev_void
+	1,			// ev_string
+	1,			// ev_float
+	3,			// ev_vector
+	1,			// ev_entity
+	1,			// ev_field
+	1,			// ev_func
+	1,			// ev_pointer
+	4,			// ev_quaternion
+	1,			// ev_integer
+	1,			// ev_uinteger
+	0,			// ev_short        value in opcode
+	1,			// ev_struct       variable
+	1,			// ev_object       variable
+	1,			// ev_class        variable
+	2,			// ev_sel
 };
 
 const char *pr_type_name[ev_type_count] = {
