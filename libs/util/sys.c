@@ -639,19 +639,23 @@ signal_handler (int sig)
 	printf ("Received signal %d, exiting...\n", sig);
 
 	switch (sig) {
-		case SIGHUP:
 		case SIGINT:
 		case SIGTERM:
+#ifndef _WIN32
+		case SIGHUP:
 			signal (SIGHUP, SIG_DFL);
+#endif
 			signal (SIGINT, SIG_DFL);
 			signal (SIGTERM, SIG_DFL);
 			Sys_Quit ();
 		default:
+#ifndef _WIN32
 			signal (SIGQUIT, aiee);
-			signal (SIGILL, aiee);
 			signal (SIGTRAP, aiee);
 			signal (SIGIOT, aiee);
 			signal (SIGBUS, aiee);
+#endif
+			signal (SIGILL, aiee);
 			signal (SIGSEGV, aiee);
 
 			if (!setjmp (aiee_abort)) {
@@ -660,11 +664,13 @@ signal_handler (int sig)
 				Sys_Shutdown ();
 			}
 
+#ifndef _WIN32
 			signal (SIGQUIT, SIG_DFL);
-			signal (SIGILL, SIG_DFL);
 			signal (SIGTRAP, SIG_DFL);
 			signal (SIGIOT, SIG_DFL);
 			signal (SIGBUS, SIG_DFL);
+#endif
+			signal (SIGILL, SIG_DFL);
 			signal (SIGSEGV, SIG_DFL);
 	}
 }
@@ -673,13 +679,15 @@ void
 Sys_Init (void)
 {
 	// catch signals
+#ifndef _WIN32
 	signal (SIGHUP, signal_handler);
-	signal (SIGINT, signal_handler);
 	signal (SIGQUIT, signal_handler);
-	signal (SIGILL, signal_handler);
 	signal (SIGTRAP, signal_handler);
 	signal (SIGIOT, signal_handler);
 	signal (SIGBUS, signal_handler);
+#endif
+	signal (SIGINT, signal_handler);
+	signal (SIGILL, signal_handler);
 	signal (SIGSEGV, signal_handler);
 	signal (SIGTERM, signal_handler);
 //	signal (SIGFPE, signal_handler);
