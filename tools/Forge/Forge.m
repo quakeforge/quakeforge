@@ -49,17 +49,17 @@ AutoSave
 Every five minutes, save a modified map
 ===============
 */
+#if 0
 void AutoSave(DPSTimedEntry tag, double now, void *userData)
 {
-// automatic backup
-	if (autodirty)
-	{
+	// automatic backup
+	if (autodirty) {
 		autodirty = NO;
 		[map_i writeMapFile: FN_AUTOSAVE useRegion: NO];
 	}
 	[map_i writeStats];
 }
-
+#endif
 
 void DisplayCmdOutput (void)
 {
@@ -85,6 +85,7 @@ CheckCmdDone
 See if the BSP is done
 ===============
 */
+#if 0
 DPSTimedEntry	cmdte;
 void CheckCmdDone(DPSTimedEntry tag, double now, void *userData)
 {
@@ -97,7 +98,7 @@ void CheckCmdDone(DPSTimedEntry tag, double now, void *userData)
 	bsppid = 0;
 	DPSRemoveTimedEntry( cmdte );	
 }
-
+#endif
 //============================================================================
 
 @implementation Forge
@@ -107,27 +108,24 @@ void CheckCmdDone(DPSTimedEntry tag, double now, void *userData)
 init
 ===============
 */
-- initContent:(const NXRect *)contentRect
-style:(int)aStyle
-backing:(int)backingType
-buttonMask:(int)mask
-defer:(BOOL)flag
+- initWithContentRect: (NSRect) contentRect
+		styleMask: (unsigned int) styleMask
+		backing: (NSBackingStoreType) backingType
+		defer: (BOOL) flag
 {
-	[super initContent:contentRect
-		style:aStyle
-		backing:backingType
-		buttonMask:mask
-		defer:flag];
+	[super initWithContentRect: contentRect
+			styleMask: styleMask
+			backing: backingType
+			defer: flag];
 
-	[self addToEventMask:
-		NX_RMOUSEDRAGGEDMASK|NX_LMOUSEDRAGGEDMASK];	
+//	[self addToEventMask: NSRightMouseDraggedMask | NSLeftMouseDraggedMask];	
 	
     malloc_error(My_Malloc_Error);
 	
 	quakeed_i = self;
 	dirty = autodirty = NO;
 
-	DPSAddTimedEntry(5*60, AutoSave, self, NX_BASETHRESHOLD);
+//	DPSAddTimedEntry(5*60, AutoSave, self, NX_BASETHRESHOLD);
 
 	upath = newUserPath ();
 
@@ -135,9 +133,9 @@ defer:(BOOL)flag
 }
 
 - setDefaultFilename
-{	
-	strcpy (filename, FN_TEMPSAVE);
-	[self setTitleAsFilename:filename];
+{
+	filename = [NSString stringWithCString: FN_TEMPSAVE];
+	[self setTitleWithRepresentedFilename: filename];
 	
 	return self;
 }
@@ -164,18 +162,22 @@ BOOL	updatexy;
 BOOL	updatez;
 BOOL	updatecamera;
 
-void postappdefined (void)
+- (void) postAppDefined
 {
-	NXEvent ev;
+	NSEvent *ev;
 
 	if (updateinflight)
 		return;
-			
-// post an event at the end of the que
-	ev.type = NX_APPDEFINED;
-	if (DPSPostEvent(&ev, 0) == -1)
-		printf ("WARNING: DPSPostEvent: full\n");
-//printf ("posted\n");
+
+	ev = [NSEvent otherEventWithType: NSApplicationDefined
+			location: (NSPoint) {0,0} modifierFlags: 0
+			timestamp: [[NSDate date] timeIntervalSince1970]
+			windowNumber: [self windowNumber]
+			context: nil subtype: 0 data1: 0 data2: 0];
+
+	// post an event at the end of the queue
+	DPSPostEvent(nil, ev, 0);
+//	printf ("posted\n");
 	updateinflight = YES;
 }
 
@@ -239,19 +241,19 @@ flushWindow
 instance draw the brush after each flush
 ===============
 */
--flushWindow
+- (void) flushWindow
 {
 	[super flushWindow];
 	
-	if (!running || in_error)
-		return self;		// don't lock focus before nib is finished loading
+	if (!running || in_error) // don't lock focus before nib is loaded
+		return; 		
 		
-	if (_flushDisabled)
-		return self;
+	if ([self isFlushWindowDisabled])
+		return;
 		
 	[cameraview_i lockFocus];	
-	if (clearinstance)
-	{
+
+	if (clearinstance) {
 		PSnewinstance ();
 		clearinstance = NO;
 	}
@@ -283,7 +285,7 @@ instance draw the brush after each flush
 	PSsetinstance (0);
 	[zview_i unlockFocus];
 
-	return self;
+	return;
 }
 
 
@@ -295,16 +297,16 @@ App delegate methods
 ==============================================================================
 */
 
-- applicationDefined:(NXEvent *)theEvent
+- applicationDefined: (NSEvent *) theEvent
 {
-	NXEvent		ev, *evp;
+	NSEvent 	*ev, *evp;
 	
 	updateinflight = NO;
 
 //printf ("serviced\n");
 	
 // update screen	
-	evp = [NXApp peekNextEvent:-1 into:&ev];
+	evp = [NSApp peekNextEvent:-1 into:&ev];
 	if (evp)
 	{
 		postappdefined();
@@ -328,7 +330,7 @@ App delegate methods
 
 	updatecamera = updatexy = updatez = NO;
 
-	[self reenableFlushWindow];
+	[self enableFlushWindow];
 	[self flushWindow];
 	
 //	NXPing ();
@@ -336,9 +338,9 @@ App delegate methods
 	return self;
 }
 
-- appDidInit:sender
+- appDidInitialize: sender
 {
-	NXScreen	const *screens;
+	NSScreen	const *screens;
 	int			screencount;
 	
 	running = YES;
@@ -351,14 +353,16 @@ App delegate methods
 											// scrollview and can't be
 											// connected directly in IB
 	
-	[self setFrameAutosaveName:"EditorWinFrame"];
+	[self setFrameAutosaveName: @"EditorWinFrame"];
 	[self clear: self];
 
+#if 0
 // go to my second monitor
-	[NXApp getScreens:&screens count:&screencount];
+	[NSApp getScreens:&screens count:&screencount];
 	if (screencount == 2)
 		[self moveTopLeftTo:0 : screens[1].screenBounds.size.height
 		screen:screens+1];
+#endif
 	
 	[self makeKeyAndOrderFront: self];
 
@@ -383,12 +387,11 @@ App delegate methods
 
 - textCommand: sender
 {
-	char	const *t;
+	NSString	*t;
 	
 	t = [sender stringValue];
 	
-	if (!strcmp (t, "texname"))
-	{
+	if ([t isEqualToString: @"texname"]) {
 		texturedef_t	*td;
 		id				b;
 		
@@ -429,14 +432,12 @@ App delegate methods
 
 - centerCamera: sender
 {
-	NXRect	sbounds;
-	
-	[[xyview_i superview] getBounds: &sbounds];
-	
+	NSRect	sbounds = [[xyview_i superview] bounds];
+
 	sbounds.origin.x += sbounds.size.width/2;
 	sbounds.origin.y += sbounds.size.height/2;
 	
-	[cameraview_i setXYOrigin: &sbounds.origin];
+	[cameraview_i setXYOrigin: sbounds.origin];
 	[self updateAll];
 	
 	return self;
@@ -444,14 +445,12 @@ App delegate methods
 
 - centerZChecker: sender
 {
-	NXRect	sbounds;
-	
-	[[xyview_i superview] getBounds: &sbounds];
+	NSRect	sbounds = [[xyview_i superview] bounds];
 	
 	sbounds.origin.x += sbounds.size.width/2;
 	sbounds.origin.y += sbounds.size.height/2;
 	
-	[zview_i setPoint: &sbounds.origin];
+	[zview_i setPoint: sbounds.origin];
 	[self updateAll];
 	
 	return self;
@@ -532,10 +531,7 @@ applyRegion:
 
 - setXYRegion: sender
 {
-	NXRect	bounds;
-	
-// get xy size
-	[[xyview_i superview] getBounds: &bounds];
+	NSRect	bounds = [[xyview_i superview] bounds];
 
 	region_min[0] = bounds.origin.x;
 	region_min[1] = bounds.origin.y;
@@ -544,7 +540,7 @@ applyRegion:
 	region_max[1] = bounds.origin.y + bounds.size.height;
 	region_max[2] = 99999;
 	
-// turn region on
+	// turn region on
 	[regionbutton_i setIntValue: 1];
 	[self applyRegion: self];
 	
@@ -603,10 +599,10 @@ void ExpandCommand (char *in, char *out, char *src, char *dest)
 saveBSP
 =============
 */
-- saveBSP:(char *)cmdline dialog:(BOOL)wt
+- saveBSP: (char *) cmdline dialog: (BOOL) wt
 {
 	char	expandedcmd[1024];
-	char	mappath[1024];
+	NSString	*mappath;
 	char	bsppath[1024];
 	int		oldLightFilter;
 	int		oldPathFilter;
@@ -627,11 +623,10 @@ saveBSP
 	[filter_path_i setIntValue:0];
 	[self applyRegion: self];
 	
-	if ([regionbutton_i intValue])
-	{
-		strcpy (mappath, filename);
-		StripExtension (mappath);
-		strcat (mappath, ".reg");
+	if ([regionbutton_i intValue]) {
+		mappath = [[[NSString stringWithString: filename]
+						stringByDeletingPathExtension]
+						stringByAppendingPathExtension: @"reg"];
 		[map_i writeMapFile: mappath useRegion: YES];
 		wt = YES;		// always pop the dialog on region ops
 	}
@@ -880,7 +875,7 @@ keyDown
 #define	KEY_UPARROW			0xad
 #define	KEY_DOWNARROW		0xaf
 
-- keyDown:(NXEvent *)theEvent
+- keyDown:(NSEvent *)theEvent
 {
     int		ch;
 	

@@ -16,8 +16,8 @@ void qprintf (char *fmt, ...);		// prints text to cmd_out_i
 
 @interface Forge: NSWindow
 {
-	BOOL	dirty;
-	char	filename[1024];		// full path with .map extension
+	BOOL		dirty;
+	NSString	*filename;		// full path with .map extension
 
 // UI objects
 	id		brushcount_i;
@@ -53,7 +53,6 @@ void qprintf (char *fmt, ...);		// prints text to cmd_out_i
 - newinstance;		// force next flushwindow to clear all instance drawing
 - redrawInstance;	// erase and redraw all instance now
 
-- appDidInit:sender;
 - appWillTerminate:sender;
 
 - openProject:sender;
