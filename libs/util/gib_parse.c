@@ -466,9 +466,13 @@ void GIB_Parse_Execute_Line (cbuf_t *cbuf)
 	
 	if ((b = GIB_Builtin_Find (args->argv[0]->str)))
 		b->func ();
-	else if ((f = GIB_Function_Find (args->argv[0]->str)))
-		GIB_Function_Execute (f);
-	else if (args->argc == 3 && !strcmp (args->argv[1]->str, "=")) {
+	else if ((f = GIB_Function_Find (args->argv[0]->str))) {
+		cbuf_t *sub = Cbuf_New (&gib_interp);
+		GIB_Function_Execute (sub, f, cbuf_active->args);
+		cbuf_active->down = sub;
+		sub->up = cbuf_active;
+		cbuf_active->state = CBUF_STATE_STACK;
+	} else if (args->argc == 3 && !strcmp (args->argv[1]->str, "=")) {
 		// First, determine global versus local
 		int glob = 0;
 		char *c = 0;

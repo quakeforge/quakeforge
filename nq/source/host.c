@@ -50,6 +50,7 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
+#include "QF/gib_thread.h"
 
 #include "buildnum.h"
 #include "chase.h"
@@ -604,6 +605,10 @@ _Host_Frame (float time)
 	// allow mice or other external controllers to add commands
 		IN_Commands ();
 	}
+
+	// process gib threads
+	
+	GIB_Thread_Execute ();
 
 	// process console commands
 	cmd_source = src_command;

@@ -79,6 +79,7 @@ static const char rcsid[] =
 #include "QF/va.h"
 #include "QF/vfs.h"
 #include "QF/vid.h"
+#include "QF/gib_thread.h"
 
 #include "bothdefs.h"
 #include "buildnum.h"
@@ -1530,6 +1531,10 @@ Host_Frame (float time)
 
 	// allow mouses or other external controllers to add commands
 	IN_Commands ();
+
+	// process gib threads
+	
+	GIB_Thread_Execute ();
 
 	// process console commands
 	Cbuf_Execute_Stack (cl_cbuf);

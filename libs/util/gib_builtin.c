@@ -49,6 +49,7 @@ static const char rcsid[] =
 #include "QF/gib_buffer.h"
 #include "QF/gib_function.h"
 #include "QF/gib_vars.h"
+#include "QF/gib_thread.h"
 
 hashtab_t *gib_builtins;
 
@@ -334,8 +335,13 @@ GIB_Runexported_f (void)
 		Sys_Printf ("Error:  No function found for exported command \"%s\".\n"
 					"This is most likely a bug, please report it to"
 					"The QuakeForge developers.", Cmd_Argv(0));
-	else
-		GIB_Function_Execute (f);
+	else {
+		cbuf_t *sub = Cbuf_New (&gib_interp);
+		GIB_Function_Execute (sub, f, cbuf_active->args);
+		cbuf_active->down = sub;
+		sub->up = cbuf_active;
+		cbuf_active->state = CBUF_STATE_STACK;
+	}
 }
 
 void
@@ -378,6 +384,45 @@ GIB_String_Equal_f (void)
 }
 
 void
+GIB_Thread_Create_f (void)
+{
+	if (GIB_Argc() != 2)
+		Cbuf_Error ("syntax",
+	  	"thread.create: invalid syntax\n"
+		  "usage: thread.create program");
+	else {
+		gib_thread_t *thread = GIB_Thread_New ();
+		Cbuf_AddText (thread->cbuf, GIB_Argv(1));
+		GIB_Thread_Add (thread);
+		GIB_Return (va("%lu", thread->id));
+	}
+}
+
+void
+GIB_Thread_Kill_f (void)
+{
+	if (GIB_Argc() != 2)
+		Cbuf_Error ("syntax",
+	  	"thread.kill: invalid syntax\n"
+		  "usage: thread.kill id");
+	else {
+		gib_thread_t *thread;
+		cbuf_t *cur;
+		unsigned long int id = strtoul (GIB_Argv(1), 0, 10);
+		thread = GIB_Thread_Find (id);
+		if (!thread) {
+			Cbuf_Error ("thread", "thread.kill: thread %ul does not exist.", id);
+			return;
+		}
+		for (cur = thread->cbuf; cur; cur = cur->down) {
+			GIB_DATA(cur)->type = GIB_BUFFER_NORMAL;
+			dstring_clearstr (cur->line);
+			dstring_clearstr (cur->buf);
+		}
+	}
+}
+			
+void
 GIB_Builtin_Init (void)
 {
 	gib_globals = Hash_NewTable (512, GIB_Var_Get_Key, GIB_Var_Free, 0);
@@ -394,4 +439,6 @@ GIB_Builtin_Init (void)
 	GIB_Builtin_Add ("break", GIB_Break_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("string.length", GIB_String_Length_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("string.equal", GIB_String_Equal_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("thread.create", GIB_Thread_Create_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("thread.kill", GIB_Thread_Kill_f, GIB_BUILTIN_NORMAL);
 }

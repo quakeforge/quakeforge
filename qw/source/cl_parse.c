@@ -57,6 +57,7 @@ static const char rcsid[] =
 #include "QF/vfile.h"
 #include "QF/dstring.h"
 #include "QF/gib_vars.h"
+#include "QF/gib_thread.h"
 
 #include "bothdefs.h"
 #include "cl_ents.h"
@@ -775,7 +776,7 @@ CL_ParseModellist (void)
 			cl_playerindex = nummodels;
 		else if (!strcmp (cl.model_name[nummodels], "progs/flag.mdl"))
 			cl_flagindex = nummodels;
-		// for deadbodyfilter & gibfilter
+		// for deadbodyfilter & gib filter
 		else if (!strcmp (cl.model_name[nummodels], "progs/h_player.mdl"))
 			cl_h_playerindex = nummodels;
 		else if (!strcmp (cl.model_name[nummodels], "progs/gib1.mdl"))
@@ -1055,7 +1056,8 @@ void
 CL_SetStat (int stat, int value)
 {
 	int			j;
-	const char *arm;
+	unsigned int changed;
+	const char *arm, *cb;
 
 	if (stat < 0 || stat >= MAX_CL_STATS)
 		Host_Error ("CL_SetStat: %i is invalid", stat);
@@ -1064,7 +1066,11 @@ CL_SetStat (int stat, int value)
 
 	switch (stat) {
 		case STAT_ITEMS:
+			changed = cl.stats[STAT_ITEMS] ^ value;
 			Sbar_Changed ();
+			if ((changed & IT_KEY1 || changed & IT_KEY2) &&
+			   (cb = GIB_Var_Get_Global ("player.key.callback")))
+					GIB_Thread_Callback (cb, 0);
 			GIB_Var_Set_Global ("player.key.1", value & IT_KEY1 ? "1" : "0");
 			GIB_Var_Set_Global ("player.key.2", value & IT_KEY2 ? "1" : "0");
 			if (value & IT_ARMOR1)
@@ -1076,6 +1082,9 @@ CL_SetStat (int stat, int value)
 			else
 				arm = "none";
 			GIB_Var_Set_Global ("player.armor.type", arm);
+			if ((changed & 127 || changed & IT_AXE) &&
+			   (cb = GIB_Var_Get_Global ("player.weapon.callback")))
+				GIB_Thread_Callback (cb, 0);
 			GIB_Var_Set_Global ("player.weapon.1", value & IT_AXE ? "1" : "0");
 			for (j = 0; j < 7; j++)
 				GIB_Var_Set_Global (va("player.weapon.%i", j+2),
@@ -1085,23 +1094,35 @@ CL_SetStat (int stat, int value)
 					cl.item_gettime[j] = cl.time;
 			break;
 		case STAT_HEALTH:
+			if ((cb = GIB_Var_Get_Global ("player.health.callback")))
+				GIB_Thread_Callback (cb, 1, va("%i", value));
 			GIB_Var_Set_Global ("player.health", va("%i", value));
 			if (value <= 0)
 				Team_Dead ();
 			break;
 		case STAT_ARMOR:
+			if ((cb = GIB_Var_Get_Global ("player.armor.callback")))
+				GIB_Thread_Callback (cb, 1, va("%i", value));
 			GIB_Var_Set_Global ("player.armor", va("%i", value));
 			break;
 		case STAT_SHELLS:
+			if ((cb = GIB_Var_Get_Global ("player.ammo.shells.callback")))
+				GIB_Thread_Callback (cb, 1, va("%i", value));
 			GIB_Var_Set_Global ("player.ammo.shells", va("%i", value));
 			break;
 		case STAT_NAILS:
+			if ((cb = GIB_Var_Get_Global ("player.ammo.nails.callback")))
+				GIB_Thread_Callback (cb, 1, va("%i", value));
 			GIB_Var_Set_Global ("player.ammo.nails", va("%i", value));
 			break;
 		case STAT_ROCKETS:
+			if ((cb = GIB_Var_Get_Global ("player.ammo.rockets.callback")))
+				GIB_Thread_Callback (cb, 1, va("%i", value));
 			GIB_Var_Set_Global ("player.ammo.rockets", va("%i", value));
 			break;
 		case STAT_CELLS:
+			if ((cb = GIB_Var_Get_Global ("player.ammo.cells.callback")))
+				GIB_Thread_Callback (cb, 1, va("%i", value));
 			GIB_Var_Set_Global ("player.ammo.cells", va("%i", value));
 			break;
 	}

@@ -63,6 +63,7 @@ static const char rcsid[] =
 #include "QF/idparse.h"
 #include "QF/gib_parse.h"
 #include "QF/gib_buffer.h"
+#include "QF/gib_thread.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -1901,6 +1902,10 @@ SV_Frame (float time)
 
 	// check for commands typed to the host
 	SV_GetConsoleCommands ();
+
+	// process gib threads
+
+	GIB_Thread_Execute ();
 
 	// process console commands
 	Cbuf_Execute_Stack (sv_cbuf);

@@ -37,6 +37,7 @@ static const char rcsid[] =
 
 #include <stdlib.h>
 
+#include "QF/sys.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/cbuf.h"
@@ -123,26 +124,16 @@ GIB_Function_Find (const char *name)
 /*
 	GIB_Function_Execute
 	
-	Creates a new buffer on the current stack
-	and copies the program text of a function
-	into it.  Also sets local variables on the
-	buffer for all arguments passed to the
-	function
+	Prepares a buffer to execute
+	a GIB function with certain arguments
 */
 void
-GIB_Function_Execute (gib_function_t *func)
+GIB_Function_Execute (cbuf_t *cbuf, gib_function_t *func, cbuf_args_t *args)
 {
-		cbuf_t *sub = Cbuf_New (&gib_interp);
 		int i;
 		
-		Cbuf_AddText (sub, func->program->str);
-		if (cbuf_active->down)
-			Cbuf_DeleteStack (cbuf_active->down);
-		cbuf_active->down = sub;
-		sub->up = cbuf_active;
-		cbuf_active->state = CBUF_STATE_STACK;
-		
-		for (i = 0; i < cbuf_active->args->argc; i++)
-			GIB_Var_Set_Local (sub, va("%i", i), cbuf_active->args->argv[i]->str);
-		GIB_Var_Set_Local (sub, "argc", va("%i", cbuf_active->args->argc));
+		Cbuf_AddText (cbuf, func->program->str);
+		for (i = 0; i < args->argc; i++)
+			GIB_Var_Set_Local (cbuf, va("%i", i), args->argv[i]->str);
+		GIB_Var_Set_Local (cbuf, "argc", va("%i", args->argc));
 }
