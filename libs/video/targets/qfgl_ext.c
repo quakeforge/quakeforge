@@ -134,19 +134,15 @@ QFGL_ExtensionAddress (const char *name)
 #endif
 
 	if (glProcAddress_present && !glGetProcAddress) {
-		if (QFGL_ExtensionPresent ("GLX_ARB_get_proc_address")) {
 #if defined(HAVE_GLX)
-			glGetProcAddress =
-				QFGL_ProcAddress (handle, "glXGetProcAddressARB", false);
+		glGetProcAddress =
+			QFGL_ProcAddress (handle, "glXGetProcAddressARB", false);
 #elif defined (_WIN32)
-			glGetProcAddress =
-				QFGL_ProcAddress (handle, "wglGetProcAddress", false);
+		glGetProcAddress =
+			QFGL_ProcAddress (handle, "wglGetProcAddress", false);
 #endif
-			if (!glGetProcAddress)
-				glProcAddress_present = false;
-		} else {
+		if (!glGetProcAddress)
 			glProcAddress_present = false;
-		}
 	}
 
 	if (name && glProcAddress_present)
