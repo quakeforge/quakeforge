@@ -59,6 +59,7 @@ static const char rcsid[] =
 #include <limits.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include "QF/dstring.h"
 #include "QF/qendian.h"
@@ -408,11 +409,30 @@ int
 Qseek (QFile *file, long offset, int whence)
 {
 	if (file->file) {
-		return fseek (file->file, file->start + offset, whence);
+		int         res;
+		switch (whence) {
+			case SEEK_SET:
+				res = fseek (file->file, file->start + offset, whence);
+				break;
+			case SEEK_CUR:
+				res = fseek (file->file, offset, whence);
+				break;
+			case SEEK_END:
+				res = fseek (file->file,
+							 file->start + file->size - offset, SEEK_SET);
+				break;
+			default:
+				errno = EINVAL;
+				return -1;
+		}
+		if (res != -1)
+			res = ftell (file->file) - file->start;
+		return res;
 	}
 #ifdef HAVE_ZLIB
 	else {
 		// libz seems to keep track of the true start position itself
+		// doesn't support SEEK_END, though
 		return gzseek (file->gzfile, offset, whence);
 	}
 #else
@@ -424,10 +444,10 @@ long
 Qtell (QFile *file)
 {
 	if (file->file)
-		return ftell (file->file);
+		return ftell (file->file) - file->start;
 #ifdef HAVE_ZLIB
 	else
-		return gztell (file->gzfile);
+		return gztell (file->gzfile);	//FIXME does gztell do the right thing?
 #else
 	return -1;
 #endif
