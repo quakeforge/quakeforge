@@ -84,7 +84,7 @@ PR_ParseImmediate (def_t *def)
 		vector_imm_defs = Hash_NewTable (16381, vector_imm_get_key, 0, 0);
 	}
 	if (def && def->type != pr_immediate_type) {
-		PR_ParseError ("immediate type missmatch");
+		PR_ParseError ("type mismatch for immediate value");
 	}
 	if (pr_immediate_type == &type_string) {
 		cn = (def_t*) Hash_Find (string_imm_defs, pr_immediate_string);

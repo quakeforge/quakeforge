@@ -441,7 +441,7 @@ binary_const (int op, expr_t *e1, expr_t *e2)
 	if (t1 == t2) {
 		return do_op[t1](op, e1, e2);
 	} else {
-		return error (e1, "type missmatch for %d (%c)",
+		return error (e1, "type mismatch for %d (%c)",
 					  op, (op > ' ' && op < 127) ? op : ' ');
 	}
 }
@@ -527,7 +527,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 				}
 			default:
 type_mismatch:
-				return error (e1, "type missmatch %d %d", t1, t2);
+				return error (e1, "type mismatch %d %d", t1, t2);
 		}
 	}
 }
@@ -645,7 +645,7 @@ function_expr (expr_t *e1, expr_t *e2)
 	for (e = e2; e; e = e->next)
 		parm_count++;
 	if (parm_count > 8) {
-		return error (e1, "more than 8 paramters");
+		return error (e1, "more than 8 parameters");
 	}
 	if (ftype->num_parms != -1) {
 		if (parm_count > ftype->num_parms) {
@@ -773,6 +773,7 @@ emit_assign_expr (expr_t *e)
 				memcpy (pr_globals + ofs, pr_globals + def_a->ofs, size);
 				def_a->ofs = ofs;
 				def_a->initialized = 0;
+				warning (e1, "assignment to constant %s", def_a->name);
 			} else {
 				error (e1, "assignment to constant %s", def_a->name);
 			}
@@ -961,7 +962,7 @@ emit_expr (expr_t *e)
 					emit_statement (op_state, def_a, def_b, 0);
 					break;
 				default:
-					warning (e, "unused expression ignored");
+					warning (e, "Ignoring useless expression");
 					break;
 			}
 			break;
@@ -977,7 +978,7 @@ emit_expr (expr_t *e)
 					emit_branch (op_goto, 0, e->e.expr.e1);
 					break;
 				default:
-					warning (e, "unused expression ignored");
+					warning (e, "Ignoring useless expression");
 					emit_expr (e->e.expr.e1);
 					break;
 			}
@@ -988,7 +989,7 @@ emit_expr (expr_t *e)
 		case ex_string:
 		case ex_vector:
 		case ex_quaternion:
-			warning (e, "unused expression ignored");
+			warning (e, "Ignoring useless expression");
 			break;
 	}
 	PR_FreeTempDefs ();
