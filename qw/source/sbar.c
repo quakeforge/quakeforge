@@ -1588,8 +1588,10 @@ Sbar_DeathmatchOverlay (int start)
 	// request new ping times every two second
 	if (realtime - cl.last_ping_request > 2.0) {
 		cl.last_ping_request = realtime;
-		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-		SZ_Print (&cls.netchan.message, "pings");
+		if (!cls.demoplayback) {
+			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+			SZ_Print (&cls.netchan.message, "pings");
+		}
 	}
 
 	scr_copyeverything = 1;

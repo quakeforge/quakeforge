@@ -807,9 +807,11 @@ CL_ParseModellist (void)
 	n = MSG_ReadByte (net_message);
 
 	if (n) {
-		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-		MSG_WriteString (&cls.netchan.message,
-						 va (modellist_name, cl.servercount, n));
+		if (!cls.demoplayback) {
+			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+			MSG_WriteString (&cls.netchan.message,
+							 va (modellist_name, cl.servercount, n));
+		}
 		return;
 	}
 

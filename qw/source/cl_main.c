@@ -853,6 +853,8 @@ CL_Reconnect_f (void)
 {
 	if (cls.download)					// don't change when downloading
 		return;
+	if (cls.demoplayback)
+		return;
 
 	S_StopAllSounds (true);
 
@@ -1091,7 +1093,7 @@ CL_ReadPackets (void)
 void
 CL_Download_f (void)
 {
-	if (cls.state == ca_disconnected) {
+	if (cls.state == ca_disconnected || cls.demoplayback) {
 		Con_Printf ("Must be connected.\n");
 		return;
 	}

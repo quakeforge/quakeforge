@@ -51,7 +51,7 @@ Cvar_Info (cvar_t *var)
 		Info_SetValueForKey (cls.userinfo, var->name, var->string,
 							 ((!strequal(var->name, "name"))
 							  |(strequal(var->name, "team") << 1)));
-		if (cls.state >= ca_connected) {
+		if (cls.state >= ca_connected && !cls.demoplayback) {
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			MSG_WriteString (&cls.netchan.message,
 							 va ("setinfo \"%s\" \"%s\"\n", var->name,

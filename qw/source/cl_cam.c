@@ -172,8 +172,10 @@ void
 Cam_Unlock (void)
 {
 	if (autocam) {
-		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-		MSG_WriteString (&cls.netchan.message, "ptrack");
+		if (!cls.demoplayback) {
+			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+			MSG_WriteString (&cls.netchan.message, "ptrack");
+		}
 		autocam = CAM_NONE;
 		locked = false;
 		Sbar_Changed ();
@@ -469,8 +471,10 @@ Cam_Track (usercmd_t *cmd)
 		len = VectorLength (vec);
 		cmd->forwardmove = cmd->sidemove = cmd->upmove = 0;
 		if (len > 16) {					// close enough?
-			MSG_WriteByte (&cls.netchan.message, clc_tmove);
-			MSG_WriteCoordV (&cls.netchan.message, desired_position);
+			if (!cls.demoplayback) {
+				MSG_WriteByte (&cls.netchan.message, clc_tmove);
+				MSG_WriteCoordV (&cls.netchan.message, desired_position);
+			}
 		}
 		// move there locally immediately
 		VectorCopy (desired_position, self->origin);
