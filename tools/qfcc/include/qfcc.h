@@ -550,3 +550,8 @@ typedef struct {
 } options_t;
 
 extern options_t options;
+
+//XXX eww :/
+void PrecacheSound (def_t *e, int ch);
+void PrecacheModel (def_t *e, int ch);
+void PrecacheFile (def_t *e, int ch);

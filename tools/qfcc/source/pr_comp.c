@@ -100,8 +100,8 @@ PrecacheModel (def_t *e, int ch)
 		}
 	}
 
-	if (numsounds == MAX_SOUNDS)
-		Error ("PrecacheModels: numsounds == MAX_SOUNDS");
+	if (nummodels == MAX_MODELS)
+		Error ("PrecacheModels: nummodels == MAX_MODELS");
 
 	strcpy (precache_models[i], n);
 	if (ch >= '1' && ch <= '9')

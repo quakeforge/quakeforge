@@ -789,6 +789,19 @@ function_expr (expr_t *e1, expr_t *e2)
 			return error (e1, "Called object is not a function");
 	}
 
+	if (e1->type == ex_def && e2 && e2->type == ex_string) {
+		//XXX eww, I hate this, but it's needed :(
+		def_t *func = e1->e.def;
+		def_t *e = PR_ReuseConstant (e2, 0);
+
+		if (strncmp (func->name, "precache_sound", 14) == 0)
+			PrecacheSound (e, func->name[4]);
+		else if (strncmp (func->name, "precache_model", 14) == 0)
+			PrecacheModel (e, func->name[14]);
+		else if (strncmp (func->name, "precache_file", 13) == 0)
+			PrecacheFile (e, func->name[13]);
+	}
+
 	ftype = e1->type == ex_def
 			? e1->e.def->type
 			: e1->e.expr.type;
