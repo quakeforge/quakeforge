@@ -1,11 +1,11 @@
 /*
-        net_packetlog.c
+	net_packetlog.c
 
-        packet logging/parsing - for debugging and educational purposes
+	packet logging/parsing - for debugging and educational purposes
 
-        **EXPERIMENTAL**
+	**EXPERIMENTAL**
 
-        Copyright (C) 2000 Jukka Sorjonen <jukka.sorjonen@asikkala.fi>
+	Copyright (C) 2000 Jukka Sorjonen <jukka.sorjonen@asikkala.fi>
        
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -56,6 +56,7 @@ static const char rcsid[] =
 
 #include "compat.h"
 #include "net.h"
+#include "net_svc.h"
 #include "protocol.h"
 #include "server.h"
 
@@ -69,81 +70,6 @@ void Analyze_Client_Packet (const byte *data, int len);
 void Parse_Server_Packet (void);
 void Parse_Client_Packet (void);
 void Net_LogStop (void);
-
-// note: this is SUPPOSED to be duplicate, like many others
-const char *svc_string[] = {
-	"svc_bad",
-	"svc_nop",
-	"svc_disconnect",
-	"svc_updatestat",
-	"svc_version",						// [long] server version
-	"svc_setview",						// [short] entity number
-	"svc_sound",						// <see code>
-	"svc_time",							// [float] server time
-	"svc_print",						// [string] null terminated string
-	"svc_stufftext",					// [string] stuffed into client's
-										// console buffer the string
-										// should be \n terminated
-	"svc_setangle",						// [vec3] set the view angle to this
-										// absolute value
-	"svc_serverdata",					// [long] version ...
-	"svc_lightstyle",					// [byte] [string]
-	"svc_updatename",					// [byte] [string]
-	"svc_updatefrags",					// [byte] [short]
-	"svc_clientdata",					// <shortbits + data>
-	"svc_stopsound",					// <see code>
-	"svc_updatecolors",					// [byte] [byte]
-	"svc_particle",						// [vec3] <variable>
-	"svc_damage",						// [byte] impact [byte] blood [vec3]
-										// from
-	"svc_spawnstatic",
-	"svc_spawnbinary",
-	"svc_spawnbaseline",
-	"svc_temp_entity",					// <variable>
-	"svc_setpause",
-	"svc_signonnum",
-	"svc_centerprint",
-	"svc_killedmonster",
-	"svc_foundsecret",
-	"svc_spawnstaticsound",
-	"svc_intermission",
-	"svc_finale",						// [string] music [string] text
-	"svc_cdtrack",						// [byte] track [byte] looptrack
-	"svc_sellscreen",
-	"svc_smallkick",					// Quake svc_cutscene
-	"svc_bigkick",
-	"svc_updateping",
-	"svc_updateentertime",
-	"svc_updatestatlong",
-	"svc_muzzleflash",
-	"svc_updateuserinfo",
-	"svc_download",
-	"svc_playerinfo",
-	"svc_nails",
-	"svc_chokecount",
-	"svc_modellist",
-	"svc_soundlist",
-	"svc_packetentities",
-	"svc_deltapacketentities",
-	"svc_maxspeed",
-	"svc_entgravity",
-	"svc_setinfo",
-	"svc_serverinfo",
-	"svc_updatepl",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL"
-};
 
 const char *clc_string[] = {
 	"clc_bad",
@@ -451,7 +377,7 @@ Parse_Server_Packet ()
 						   MSG_GetReadCount (&packet) - 1, c);
 
 			if (c < 53)
-				Net_LogPrintf ("%s: ", svc_string[c]);
+				Net_LogPrintf ("%s: ", NET_SVC_GetString (c));
 //			else Net_LogPrintf("(UNK: %d): ",c);
 
 			if (MSG_GetReadCount (&packet) > packet.message->cursize)

@@ -51,6 +51,77 @@ static const char rcsid[] =
 #include "msg_ucmd.h" // FIXME
 #include "net_svc.h"
 
+static const char *net_svc_strings[] = {
+	"svc_bad",
+	"svc_nop",
+	"svc_disconnect",
+	"svc_updatestat",
+	"svc_version",						// [long] server version
+	"svc_setview",						// [short] entity number
+	"svc_sound",						// <see code>
+	"svc_time",							// [float] server time
+	"svc_print",						// [string] null terminated string
+	"svc_stufftext",					// [string] stuffed into client's
+										// console buffer the string
+										// should be \n terminated
+	"svc_setangle",						// [vec3] set the view angle to this
+										// absolute value
+	"svc_serverdata",					// [long] version ...
+	"svc_lightstyle",					// [byte] [string]
+	"svc_updatename",					// [byte] [string]
+	"svc_updatefrags",					// [byte] [short]
+	"svc_clientdata",					// <shortbits + data>
+	"svc_stopsound",					// <see code>
+	"svc_updatecolors",					// [byte] [byte]
+	"svc_particle",						// [vec3] <variable>
+	"svc_damage",						// [byte] impact [byte] blood [vec3]
+										// from
+	"svc_spawnstatic",
+	"svc_spawnbinary",
+	"svc_spawnbaseline",
+	"svc_temp_entity",					// <variable>
+	"svc_setpause",
+	"svc_signonnum",
+	"svc_centerprint",
+	"svc_killedmonster",
+	"svc_foundsecret",
+	"svc_spawnstaticsound",
+	"svc_intermission",
+	"svc_finale",						// [string] music [string] text
+	"svc_cdtrack",						// [byte] track [byte] looptrack
+	"svc_sellscreen",
+	"svc_smallkick",					// Quake svc_cutscene
+	"svc_bigkick",
+	"svc_updateping",
+	"svc_updateentertime",
+	"svc_updatestatlong",
+	"svc_muzzleflash",
+	"svc_updateuserinfo",
+	"svc_download",
+	"svc_playerinfo",
+	"svc_nails",
+	"svc_chokecount",
+	"svc_modellist",
+	"svc_soundlist",
+	"svc_packetentities",
+	"svc_deltapacketentities",
+	"svc_maxspeed",
+	"svc_entgravity",
+	"svc_setinfo",
+	"svc_serverinfo",
+	"svc_updatepl",
+};
+
+const char *
+NET_SVC_GetString (int type)
+{
+	if (type >= 0 && type < (sizeof (net_svc_strings) / sizeof (const char *)))
+		return net_svc_strings[type];
+	else
+		return "Invalid Block Type";
+}
+
+
 net_status_t
 NET_SVC_Print_Emit (net_svc_print_t *block, sizebuf_t *buf)
 {

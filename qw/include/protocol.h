@@ -224,7 +224,7 @@
 						 U_GLOWSIZE | U_GLOWCOLOR | U_COLORMOD | \
 						 U_EXTEND2)
 #define U_GROUP_EXTEND2 (U_GLOWTRAIL | U_VIEWMODEL | U_FRAME2)
-// I skip the UNISED and EXTEND3 bits because although they exist in
+// I skip the UNUSED and EXTEND3 bits because although they exist in
 // QSG2, they're not usable
 
 #define U_VERSION_ID ((U_GROUP_ORIG | U_GROUP_MOREBITS) & ~U_EXTEND1)
