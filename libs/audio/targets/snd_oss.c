@@ -120,6 +120,7 @@ SNDDMA_Init (void)
 	int		    retries = 3;
 	int         omode = O_WRONLY;
 	int         mmmode = PROT_WRITE;
+	int         mmflags = MAP_FILE;
 	struct audio_buf_info info;
 
 	snd_inited = 0;
@@ -132,6 +133,7 @@ SNDDMA_Init (void)
 	if (snd_oss_rw->int_val) {
 		omode = O_RDWR;
 		mmmode |= PROT_READ;
+		mmflags |= MAP_SHARED;
 	}
 
 	audio_fd = open (snd_dev, omode);
@@ -262,9 +264,8 @@ SNDDMA_Init (void)
 	}
     
 	if (mmaped_io) {				// memory map the dma buffer
-		shm->buffer = (unsigned char *) mmap
-			(NULL, info.fragstotal * info.fragsize, mmmode,
-			 MAP_FILE | MAP_SHARED, audio_fd, 0);
+		shm->buffer = (byte *) mmap (NULL, info.fragstotal * info.fragsize,
+									 mmmode, mmflags, audio_fd, 0);
 		if (shm->buffer == MAP_FAILED) {
 			perror (snd_dev);
 			Sys_Printf ("Could not mmap %s\n", snd_dev);
