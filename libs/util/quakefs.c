@@ -59,7 +59,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 # include <fnmatch.h>
 # undef model_t
 #else
-# ifdef WIN32
+# ifdef _WIN32
 # include "fnmatch.h"
 # endif
 #endif

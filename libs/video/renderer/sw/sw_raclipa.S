@@ -37,7 +37,7 @@
 
 #ifdef USE_INTEL_ASM
 
-#ifdef WIN32
+#ifdef _WIN32
 # undef PIC
 #endif
 

@@ -1546,7 +1546,7 @@ fi
 
 AS="$CC"
 if test "x$SYSTYPE" = "xWIN32"; then
-	ASFLAGS="\$(DEFS) \$(CFLAGS) \$(CPPFLAGS) \$(DEFAULT_INCLUDES) \$(INCLUDES) -DWIN32"
+	ASFLAGS="\$(DEFS) \$(CFLAGS) \$(CPPFLAGS) \$(DEFAULT_INCLUDES) \$(INCLUDES) -D_WIN32"
 	plugin_ldflags="-no-undefined"
 	plugin_libadd="-luser32 -lgdi32 -lwinmm"
 else

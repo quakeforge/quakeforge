@@ -36,7 +36,7 @@
 # define M_PI	    3.14159265358979323846  // matches value in gcc v2 math.h
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 # if defined (DLL_EXPORT) && defined (BUILD_QFutil)
 #  define QFutil_IMPORT
 # else

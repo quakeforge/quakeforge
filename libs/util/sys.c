@@ -213,7 +213,7 @@ Sys_Print (FILE *stream, const char *fmt, va_list args)
 	dvsprintf (msg, fmt, args);
 
 	if (stream == stderr) {
-#ifdef WIN32
+#ifdef _WIN32
 		MessageBox (NULL, msg->str, "Fatal Error", 0 /* MB_OK */ );
 #endif
 		fputs ("Fatal Error: ", stream);
@@ -464,7 +464,7 @@ Sys_TimeID (void) //FIXME I need a new name, one that doesn't make me feel 3 fee
 void
 Sys_PageIn (void *ptr, int size)
 {
-//may or may not be useful in linux #ifdef WIN32
+//may or may not be useful in linux #ifdef _WIN32
 	byte       *x;
 	int         m, n;
 

@@ -49,7 +49,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "d_iface.h"
 
-#ifdef WIN32	// FIXME: evil hack to get full DirectSound support with SDL
+#ifdef _WIN32	// FIXME: evil hack to get full DirectSound support with SDL
 #include <windows.h>
 #include <SDL_syswm.h>
 HWND 		mainwindow;
@@ -126,7 +126,7 @@ VID_Init (unsigned char *palette)
 
 	SDL_ShowCursor (0);		// hide the mouse pointer
 
-#ifdef WIN32
+#ifdef _WIN32
 // FIXME: EVIL thing - but needed for win32 until
 // SDL_sound works better - without this DirectSound fails.
 

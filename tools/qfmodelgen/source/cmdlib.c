@@ -29,7 +29,7 @@
 
 #include "cmdlib.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <direct.h>
 #endif
 
@@ -160,7 +160,7 @@ I_FloatTime (void)
 void
 Q_getwd (char *out)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	_getcwd (out, 256);
 	strcat (out, "\\");
 #else
@@ -171,7 +171,7 @@ Q_getwd (char *out)
 void
 Q_mkdir (char *path)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	if (_mkdir (path) != -1)
 		return;
 #else

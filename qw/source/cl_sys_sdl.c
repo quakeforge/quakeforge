@@ -80,7 +80,7 @@ int         noconinput;
 static void
 startup (void)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	OSVERSIONINFO vinfo;
 	Sys_MaskFPUExceptions ();
 
@@ -125,7 +125,7 @@ SDL_main (int c, char **v)
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 
-#ifndef WIN32
+#ifndef _WIN32
 	noconinput = COM_CheckParm ("-noconinput");
 	if (!noconinput)
 		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);

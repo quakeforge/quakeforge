@@ -62,7 +62,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/quakefs.h"
 #include "QF/quakeio.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 # ifndef __BORLANDC__
 #  define setmode _setmode
 #  define O_BINARY _O_BINARY
@@ -196,7 +196,7 @@ Qdopen (int fd, const char *mode)
 	int         zip = 0;
 
 	m = alloca (strlen (mode) + 1);
-#ifdef WIN32
+#ifdef _WIN32
 	setmode (fd, O_BINARY);
 #endif
 	for (p = m; *mode && p - m < ((int) sizeof (m) - 1); mode++) {
@@ -240,7 +240,7 @@ Qsubopen (const char *path, int offs, int len, int zip)
 
 	if (fd == -1)
 		return 0;
-#ifdef WIN32
+#ifdef _WIN32
 	setmode (fd, O_BINARY);
 #endif
 

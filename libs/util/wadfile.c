@@ -321,7 +321,7 @@ make_parents (const char *_path)
 	for (p = path; *p && (d = strchr (p, '/')); p = d + 1) {
 		t = *d;
 		*d = 0;
-#ifdef WIN32
+#ifdef _WIN32
 		if (mkdir (path) < 0)
 #else
 		if (mkdir (path, 0777) < 0)
