@@ -130,6 +130,69 @@ int         scr_center_lines;
 int         scr_erase_lines;
 int         scr_erase_center;
 
+void
+R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
+{
+	float       size;
+	int         h;
+
+	// intermission is always full screen
+	if (r_viewsize >= 100 || r_force_fullscreen /* FIXME: better test */) {
+		size = 100.0;
+		lineadj = 0;
+	} else {
+		size = r_viewsize;
+	}
+	size /= 100.0;
+
+	h = pvrectin->height - lineadj;
+
+	pvrect->width = pvrectin->width * size + 0.5;
+	if (pvrect->width < 96) {
+		size = 96.0 / pvrectin->width;
+		pvrect->width = 96;				// min for icons
+	}
+	pvrect->width &= ~7;
+
+	pvrect->height = pvrectin->height * size + 0.5;
+	if (pvrect->height > h)
+		pvrect->height = h;
+	pvrect->height &= ~1;
+
+	pvrect->x = (pvrectin->width - pvrect->width) / 2;
+	pvrect->y = (h - pvrect->height) / 2;
+}
+
+void
+SCR_CalcRefdef (void)
+{
+	vrect_t     vrect;
+
+	// force a background redraw
+	scr_fullupdate = 0;
+	vid.recalc_refdef = 0;
+
+	// force the status bar to redraw
+	Sbar_Changed ();
+
+	// bound field of view
+	Cvar_SetValue (scr_fov, bound (1, scr_fov->value, 170));
+
+	r_refdef.fov_x = scr_fov->value;
+	r_refdef.fov_y =
+		CalcFov (r_refdef.fov_x, r_refdef.vrect.width, r_refdef.vrect.height);
+
+	vrect.x = 0;
+	vrect.y = 0;
+	vrect.width = vid.width;
+	vrect.height = vid.height;
+
+	R_SetVrect (&vrect, &scr_vrect, r_lineadj);
+	r_refdef.vrect = scr_vrect;
+
+	// notify the refresh of the change
+	R_ViewChanged (vid.aspect);
+}
 
 /*
 	SCR_CenterPrint

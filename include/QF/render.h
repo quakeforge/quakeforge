@@ -147,8 +147,8 @@ void R_Init_Cvars (void);
 void R_InitEfrags (void);
 void R_InitSky (struct texture_s *mt);	// called at level load
 void R_Textures_Init (void);
-void R_RenderView (void);		// must set r_refdef first
-void R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect);
+void R_RenderView (void);			// must set r_refdef first
+void R_ViewChanged (float aspect);	// must set r_refdef first
 								// called whenever r_refdef or vid change
 
 void R_AddEfrags (entity_t *ent);

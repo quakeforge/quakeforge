@@ -66,67 +66,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 int         glx, gly, glwidth, glheight;
 
-/*
-	SCR_CalcRefdef
-
-	Must be called whenever vid changes
-	Internal use only
-*/
-static void
-SCR_CalcRefdef (void)
-{
-	float       size;
-	int         h, lines;
-	qboolean    full = false;
-
-	scr_fullupdate = 0;					// force a background redraw
-	vid.recalc_refdef = 0;
-
-	// force the status bar to redraw
-	Sbar_Changed ();
-
-	// bound field of view
-	Cvar_SetValue (scr_fov, bound (1, scr_fov->value, 170));
-
-	if (r_viewsize >= 100) {
-		full = true;
-		size = 100.0;
-	} else {
-		size = r_viewsize;
-	}
-	// intermission is always full screen
-	lines = r_lineadj;
-	if (r_force_fullscreen /* FIXME: better test */) {
-		full = true;
-		size = 100.0;
-		lines = 0;
-	}
-	size /= 100.0;
-
-	h = vid.height - lines;
-
-	r_refdef.vrect.width = vid.width * size + 0.5;
-	if (r_refdef.vrect.width < 96) {
-		size = 96.0 / r_refdef.vrect.width;
-		r_refdef.vrect.width = 96;		// min for icons
-	}
-
-	r_refdef.vrect.height = vid.height * size + 0.5;
-	if (r_refdef.vrect.height > h)
-		r_refdef.vrect.height = h;
-	r_refdef.vrect.x = (vid.width - r_refdef.vrect.width) / 2;
-	if (full)
-		r_refdef.vrect.y = 0;
-	else
-		r_refdef.vrect.y = (h - r_refdef.vrect.height) / 2;
-
-	r_refdef.fov_x = scr_fov->value;
-	r_refdef.fov_y =
-		CalcFov (r_refdef.fov_x, r_refdef.vrect.width, r_refdef.vrect.height);
-
-	scr_vrect = r_refdef.vrect;
-}
-
 /* SCREEN SHOTS */
 
 tex_t *

@@ -266,55 +266,6 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	r_viewchanged = false;
 }
 
-void
-R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
-{
-	int         h;
-	float       size;
-	qboolean    full = false;
-
-	if (scr_viewsize->int_val >= 100) {
-		size = 100.0;
-		full = true;
-		lineadj = 0;
-	} else {
-		size = scr_viewsize->int_val;
-	}
-
-	if (r_force_fullscreen) {
-		full = true;
-		size = 100.0;
-		lineadj = 0;
-	}
-	size /= 100.0;
-
-	h = pvrectin->height - lineadj;
-
-	if (full) {
-		pvrect->width = pvrectin->width;
-	} else {
-		pvrect->width = pvrectin->width * size;
-	}
-
-	if (pvrect->width < 96) {
-		size = 96.0 / pvrectin->width;
-		pvrect->width = 96;				// min for icons
-	}
-	pvrect->width &= ~7;
-	pvrect->height = pvrectin->height * size;
-
-	if (pvrect->height > h)
-		pvrect->height = h;
-
-	pvrect->height &= ~1;
-
-	pvrect->x = (pvrectin->width - pvrect->width) / 2;
-	if (full)
-		pvrect->y = 0;
-	else
-		pvrect->y = (h - pvrect->height) / 2;
-}
-
 /*
 	R_ViewChanged
 
@@ -322,14 +273,12 @@ R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 	Guaranteed to be called before the first refresh
 */
 void
-R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
+R_ViewChanged (float aspect)
 {
 	int         i;
 	float       res_scale;
 
 	r_viewchanged = true;
-
-	R_SetVrect (pvrect, &r_refdef.vrect, lineadj);
 
 	r_refdef.horizontalFieldOfView = 2.0 * tan (r_refdef.fov_x / 360 * M_PI);
 	r_refdef.fvrectx = (float) r_refdef.vrect.x;

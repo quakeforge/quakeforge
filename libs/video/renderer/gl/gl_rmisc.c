@@ -211,6 +211,11 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 		R_LoadSkys ("none");
 }
 
+void
+R_ViewChanged (float aspect)
+{
+}
+
 /*
   R_TimeRefresh_f
 
