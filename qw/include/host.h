@@ -31,8 +31,6 @@
 
 #include "QF/qtypes.h"
 
-#define	QUAKE_GAME			// as opposed to utilities
-
 //define	PARANOID			// speed sapping error checking
 
 #if defined(_WIN32) && !defined(__GNUC__)

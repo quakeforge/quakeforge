@@ -227,11 +227,6 @@ typedef struct dleaf_s {
 
 //============================================================================
 
-#ifndef QUAKE_GAME
-
-#define	ANGLE_UP		-1
-#define	ANGLE_DOWN		-2
-
 typedef struct bsp_s {
 	int			nummodels;
 	dmodel_t	*models;
@@ -299,5 +294,4 @@ void BSP_AddVisibility (bsp_t *bsp, byte *visdata, int visdatasize);
 void BSP_AddEntities (bsp_t *bsp, char *entdata, int entdatasize);
 void BSP_AddTextures (bsp_t *bsp, byte *texdata, int texdatasize);
 
-#endif
 #endif	// __bspfile_h_

@@ -40,8 +40,6 @@
 #undef MAX_MSGLEN
 #define	MAX_MSGLEN		8000		// max length of a reliable message
 
-#define	QUAKE_GAME			// as opposed to utilities
-
 #include <math.h>
 #include <string.h>
 #include <stdarg.h>
