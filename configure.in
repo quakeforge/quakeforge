@@ -667,7 +667,7 @@ TDFXGL_NAME=""
 AC_ARG_WITH(3dfx,
 [  --with-3dfx[=NAME]      support 3Dfx output for the V1/V2. If NAME is
                           specified, it will be used as the GL wrapper lib
-                          for Glide.]
+                          for Glide.],
 	HAVE_3dfx=$withval, HAVE_3dfx=auto)
 
 if test "x$HAVE_3dfx" != "xno" -a "x$HAVE_SVGA" != "xno" \
