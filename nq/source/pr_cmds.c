@@ -829,13 +829,13 @@ PF_droptofloor (progs_t *pr)
 	VectorCopy (SVvector (ent, origin), end);
 	end[2] -= 256;
 
-	trace =
-		SV_Move (SVvector (ent, origin), SVvector (ent, mins), SVvector (ent, maxs), end, false,
-				 ent);
+	trace = SV_Move (SVvector (ent, origin),
+					 SVvector (ent, mins),
+					 SVvector (ent, maxs), end, false, ent);
 
-	if (trace.fraction == 1 || trace.allsolid)
+	if (trace.fraction == 1 || trace.allsolid) {
 		G_FLOAT (pr, OFS_RETURN) = 0;
-	else {
+	} else {
 		VectorCopy (trace.endpos, SVvector (ent, origin));
 		SV_LinkEdict (ent, false);
 		SVfloat (ent, flags) = (int) SVfloat (ent, flags) | FL_ONGROUND;
