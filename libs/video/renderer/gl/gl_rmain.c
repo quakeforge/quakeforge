@@ -64,9 +64,13 @@
 #include "view.h"
 
 typedef struct {
-	trivertx_t *verts;
+	vec3_t      vert;
+	float       lightdot;
+} blended_vert_t;
+
+typedef struct {
+	blended_vert_t *verts;
 	int        *order;
-	int         blended;
 } vert_order_t;
 
 entity_t    r_worldentity;
@@ -256,10 +260,9 @@ static void
 GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
 {
 	float       l;
-	trivertx_t *verts;
+	blended_vert_t *verts;
 	int        *order;
 	int         count;
-	int         blended = vo->blended;
 
 	verts = vo->verts;
 	order = vo->order;
@@ -287,18 +290,14 @@ GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
 
 			if (!fb) {
 				// normals and vertexes come from the frame list
-				if (blended)
-					l = verts->lightnormalindex / 256.0;
-				else
-					l = shadedots[verts->lightnormalindex];
-				l *= shadelight;
+				l = shadelight * verts->lightdot;
 
 				// LordHavoc: cleanup after Endy
 				qfglColor4f (shadecolor[0] * l, shadecolor[1] * l,
 						   shadecolor[2] * l, modelalpha);
 			}
 
-			qfglVertex3f (verts->v[0], verts->v[1], verts->v[2]);
+			qfglVertex3fv (verts->vert);
 			verts++;
 		} while (--count);
 
@@ -447,11 +446,11 @@ vert_order_t *
 GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 {
 	vert_order_t *vo;
-	int        *order;
 	int         count;
 	int         pose;
 	int         numposes;
 	trivertx_t *verts;
+	int         i;
 
 	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
 		Con_DPrintf ("R_AliasSetupFrame: no such frame %d\n", frame);
@@ -463,22 +462,28 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 
 	verts = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
 
-	if (numposes == 1 || !gl_lerp_anim->int_val) {
+	count = paliashdr->poseverts;
+	vo = Hunk_TempAlloc (sizeof (*vo) + count * sizeof (blended_vert_t));
+	vo->order = (int *) ((byte *) paliashdr + paliashdr->commands);
+	vo->verts = (blended_vert_t*)&vo[1];
+
+	if (!gl_lerp_anim->int_val) {
 		float       interval;
 
 		if (numposes > 1) {
 			interval = paliashdr->frames[frame].interval;
 			pose += (int) (r_realtime / interval) % numposes;
 		}
-		vo = Hunk_TempAlloc (sizeof (*vo));
-		vo->verts = verts + pose * paliashdr->poseverts;
-		vo->order = (int *) ((byte *) paliashdr + paliashdr->commands);
-		vo->blended = 0;
+		for (i = 0; i < count; i++) {
+			vo->verts[i].vert[0] = verts[i].v[0];
+			vo->verts[i].vert[1] = verts[i].v[1];
+			vo->verts[i].vert[2] = verts[i].v[2];
+			vo->verts[i].lightdot = shadedots[verts[i].lightnormalindex];
+		}
 		lastposenum = pose;
 	} else {
 		trivertx_t *verts1, *verts2;
-		float      blend, lerp;
-		int        i;
+		float       blend, lerp;
 
 		if (numposes > 1) {
 			e->frame_interval = paliashdr->frames[frame].interval;
@@ -514,27 +519,21 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 			blend = 1;
 		lerp = 1 - blend;
 
-		order = (int *) ((byte *) paliashdr + paliashdr->commands);
 
-		count = paliashdr->poseverts;
-		vo = Hunk_TempAlloc (sizeof (*vo) + count * sizeof (trivertx_t));
-		vo->order = order;
-		vo->verts = (trivertx_t*)&vo[1];
-		vo->blended = 1;
 
 		verts1 = verts + e->pose1 * count;
 		verts2 = verts + e->pose2 * count;
 
 		for (i = 0; i < count; i++) {
-			vo->verts[i].v[0] = verts1[i].v[0] * lerp
-								+ verts2[i].v[0] * blend;
-			vo->verts[i].v[1] = verts1[i].v[1] * lerp
-								+ verts2[i].v[1] * blend;
-			vo->verts[i].v[2] = verts1[i].v[2] * lerp
-								+ verts2[i].v[2] * blend;
-			vo->verts[i].lightnormalindex =
-				(shadedots[verts[i].lightnormalindex] * lerp
-				 + shadedots[verts2[i].lightnormalindex] * blend) * 256;
+			vo->verts[i].vert[0] = verts1[i].v[0] * lerp
+									+ verts2[i].v[0] * blend;
+			vo->verts[i].vert[1] = verts1[i].v[1] * lerp
+									+ verts2[i].v[1] * blend;
+			vo->verts[i].vert[2] = verts1[i].v[2] * lerp
+									+ verts2[i].v[2] * blend;
+			vo->verts[i].lightdot =
+				shadedots[verts[i].lightnormalindex] * lerp
+				+ shadedots[verts2[i].lightnormalindex] * blend;
 		}
 		lastposenum0 = e->pose1;
 		lastposenum = e->pose2;
