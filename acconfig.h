@@ -34,6 +34,9 @@
 /* Define this to the unshared game directory root */
 #undef FS_USERPATH
 
+/* Define this to the default GL dynamic lib */
+#undef GL_DRIVER
+
 /* Define this to use experimental code */
 #undef _EXPERIMENTAL_
 

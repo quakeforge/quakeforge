@@ -1138,6 +1138,20 @@ AC_DEFINE_UNQUOTED(FS_PLUGINPATH, "$expanded_plugindir")
 AC_SUBST(plugindir)
 AC_SUBST(PLUGINDIR)
 
+AC_ARG_WITH(gl-driver,
+	[  --with-gl-driver        default gl dynamic lib name],
+	gl_driver=%withval,
+	gl_driver=auto
+)
+if test "$gl_driver" = auto; then
+	if test "$SYSTYPE" = WIN32; then
+		gl_driver="OPENGL32.DLL"
+	else
+		gl_driver="libGL.so.1"
+	fi
+fi
+AC_DEFINE_UNQUOTED(GL_DRIVER, "$gl_driver")
+
 dnl CFLAGS for release and devel versions
 AC_ARG_ENABLE(debug,
 	[  --disable-debug         compile without debugging],
@@ -1901,11 +1915,12 @@ AC_MSG_RESULT([
 	Compiler flags     : $CFLAGS
 	qfcc cpp invocation: $CPP_NAME
 
-	Shared game data directory: $sharepath
+	Shared game data directory  : $sharepath
 	Per-user game data directory: $userpath
-	Plugin load directory: $expanded_plugindir
-	Global configuration file: $globalconf
-	User configuration file: $userconf
+	Plugin load directory       : $expanded_plugindir
+	Global configuration file   : $globalconf
+	User configuration file     : $userconf
+	OpenGL dynamic lib          : $gl_driver
 ])
 
 if test -d $srcdir/CVS; then
