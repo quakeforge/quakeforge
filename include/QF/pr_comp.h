@@ -164,6 +164,14 @@ typedef enum {
 	OP_BITXOR_I,
 	OP_BITNOT_F,
 	OP_BITNOT_I,
+
+	OP_SHL_F,
+	OP_SHR_F,
+	OP_SHL_I,
+	OP_SHR_I,
+
+	OP_MOD_F,
+	OP_MOD_I,
 } pr_opcode_e;
 
 typedef struct

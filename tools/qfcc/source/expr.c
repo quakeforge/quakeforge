@@ -169,6 +169,8 @@ get_op_string (int op)
 		case '^':	return "^";
 		case '~':	return "~";
 		case '!':	return "!";
+		case SHL:	return "<<";
+		case SHR:	return ">>";
 		case '(':	return "(";
 		case '.':	return ".";
 		case 'i':	return "<if>";
@@ -412,6 +414,15 @@ do_op_float (int op, expr_t *e1, expr_t *e2)
 		case '^':
 			e1->e.float_val = (int)f1 ^ (int)f2;
 			break;
+		case '%':
+			e1->e.float_val = (int)f1 % (int)f2;
+			break;
+		case SHL:
+			e1->e.float_val = (int)f1 << (int)f2;
+			break;
+		case SHR:
+			e1->e.float_val = (int)f1 >> (int)f2;
+			break;
 		case AND:
 			e1->type = ex_integer;
 			e1->e.integer_val = f1 && f2;
@@ -517,6 +528,15 @@ do_op_integer (int op, expr_t *e1, expr_t *e2)
 			break;
 		case '^':
 			e1->e.integer_val = i1 ^ i2;
+			break;
+		case '%':
+			e1->e.integer_val = i1 % i2;
+			break;
+		case SHL:
+			e1->e.integer_val = i1 << i2;
+			break;
+		case SHR:
+			e1->e.integer_val = i1 >> i2;
 			break;
 		case AND:
 			e1->e.integer_val = i1 && i2;
@@ -761,6 +781,36 @@ type_mismatch:
 	e = new_binary_expr (op, e1, e2);
 	e->e.expr.type = type;
 	return e;
+}
+
+expr_t *
+asx_expr (int op, expr_t *e1, expr_t *e2)
+{
+	switch (op) {
+		case ASADD:
+			return binary_expr ('=', e1, binary_expr ('+', e1, e2));
+		case ASSUB:
+			return binary_expr ('=', e1, binary_expr ('-', e1, e2));
+		case ASMUL:
+			return binary_expr ('=', e1, binary_expr ('*', e1, e2));
+		case ASDIV:
+			return binary_expr ('=', e1, binary_expr ('/', e1, e2));
+		case ASAND:
+			return binary_expr ('=', e1, binary_expr ('&', e1, e2));
+		case ASOR:
+			return binary_expr ('=', e1, binary_expr ('|', e1, e2));
+		case ASXOR:
+			return binary_expr ('=', e1, binary_expr ('^', e1, e2));
+		case ASMOD:
+			return binary_expr ('=', e1, binary_expr ('%', e1, e2));
+		case ASSHL:
+			return binary_expr ('=', e1, binary_expr (SHL, e1, e2));
+		case ASSHR:
+			return binary_expr ('=', e1, binary_expr (SHR, e1, e2));
+		default:
+			error (e1, "invalid operand for asx");
+	}
+	return 0;
 }
 
 expr_t *

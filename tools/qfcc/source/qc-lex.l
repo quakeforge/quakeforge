@@ -95,9 +95,23 @@ m		([\-+]?)
 						s_file = ReuseString (pr_immediate_string);
 					}
 
-[!(){}.*/&|^~+\-=\[\];,#]	return yytext[0];
+[!(){}.*/&|^~+\-=\[\];,#%]	return yytext[0];
 
 "..."	return ELIPSIS;
+
+"+="	return ASADD;
+"-="	return ASSUB;
+"*="	return ASMUL;
+"/="	return ASDIV;
+"&="	return ASAND;
+"|="	return ASOR;
+"^="	return ASXOR;
+"%="	return ASMOD;
+"<<="	return ASSHL;
+">>="	return ASSHR;
+
+"<<"	return SHL;
+">>"	return SHR;
 
 "&&"	return AND;
 "||"	return OR;

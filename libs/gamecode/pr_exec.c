@@ -369,6 +369,18 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_BITNOT_F:
 				OPC.float_var = ~ (int) OPA.float_var;
 				break;
+			case OP_SHL_F:
+				OPC.float_var = (int) OPA.float_var << (int) OPB.float_var;
+				break;
+			case OP_SHR_F:
+				OPC.float_var = (int) OPA.float_var >> (int) OPB.float_var;
+				break;
+			case OP_SHL_I:
+				OPC.integer_var = OPA.integer_var << OPB.integer_var;
+				break;
+			case OP_SHR_I:
+				OPC.integer_var = OPA.integer_var >> OPB.integer_var;
+				break;
 			case OP_GE:
 				OPC.float_var = OPA.float_var >= OPB.float_var;
 				break;
@@ -656,6 +668,12 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 */
 			case OP_DIV_I:
 				OPC.integer_var = OPA.integer_var / OPB.integer_var;
+				break;
+			case OP_MOD_I:
+				OPC.integer_var = OPA.integer_var % OPB.integer_var;
+				break;
+			case OP_MOD_F:
+				OPC.float_var = (int) OPA.float_var % (int) OPB.float_var;
 				break;
 			case OP_CONV_IF:
 				OPC.float_var = OPA.integer_var;

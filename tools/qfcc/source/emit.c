@@ -232,6 +232,18 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					operator = "|";
 					priority = 2;
 					break;
+				case '%':
+					operator = "%";
+					priority = 2;
+					break;
+				case SHL:
+					operator = "<<";
+					priority = 2;
+					break;
+				case SHR:
+					operator = ">>";
+					priority = 2;
+					break;
 				case '.':
 					operator = ".";
 					priority = 1;

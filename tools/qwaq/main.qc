@@ -12,7 +12,7 @@ float negative = -------2;
 void () eek;
 
 float () main =
-{
+{/*
 	local float messed_or;
 	local integer handle;
 	local string buffer;
@@ -33,8 +33,23 @@ float () main =
 		print (buffer);
 	} while (read_result == 1024);
 	close (handle);
-	eek ();
-	return 0;
+	eek ();*/
+	traceon();
+	local float foo = 0;
+	foo += 1;
+	foo *= 3;
+	foo -= 5;
+	foo &= 11;
+	foo /= 3;
+	foo ^= 1;
+	foo |= 7;
+	foo <<= 3;
+	foo >>= 1;
+	local integer bar;
+	bar = 12 % 5;
+	bar %= 3;
+	foo %= 5;
+	return foo;
 };
 
 float () baz =

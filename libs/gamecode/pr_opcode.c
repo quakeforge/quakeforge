@@ -123,6 +123,11 @@ opcode_t    pr_opcodes[] = {
 	{"&&", "and", OP_AND, 6, false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
 	{"||", "or", OP_OR, 6, false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
 
+	{"<<", "shl.f", OP_SHL_F, 2, false, ev_float, ev_float, ev_float, PROG_VERSION},
+	{">>", "shr.f", OP_SHR_F, 2, false, ev_float, ev_float, ev_float, PROG_VERSION},
+	{"<<", "shl.i", OP_SHL_I, 2, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
+	{">>", "shr.i", OP_SHR_I, 2, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
+
 	{"&", "bitand", OP_BITAND, 2, false, ev_float, ev_float, ev_float, PROG_ID_VERSION},
 	{"|", "bitor", OP_BITOR, 2, false, ev_float, ev_float, ev_float, PROG_ID_VERSION},
 
@@ -130,6 +135,8 @@ opcode_t    pr_opcodes[] = {
 	{"-", "sub.i", OP_SUB_I, 3, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"*", "mul.i", OP_MUL_I, 2, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"/", "div.i", OP_DIV_I, 2, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
+	{"%", "mod_i", OP_MOD_I, 2, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
+	{"%", "mod.f", OP_MOD_F, 2, false, ev_float, ev_float, ev_float, PROG_VERSION},
 	{"&", "bitand.i", OP_BITAND_I, 2, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"|", "bitor.i", OP_BITOR_I, 2, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{">=", "ge.i", OP_GE_I, 4, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
