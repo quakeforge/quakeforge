@@ -193,7 +193,9 @@ defs
 	;
 
 def
-	: storage_class type { current_type = $2; } def_list
+	: type { current_storage = st_global; current_type = $1; } def_list
+	| storage_class type { current_type = $2; } def_list
+	| storage_class '{' simple_defs '}'
 	| STRUCT NAME
 	  { struct_type = new_struct ($2); } '=' '{' struct_defs '}'
 	| UNION NAME
@@ -209,9 +211,17 @@ def
 		}
 	;
 
+simple_defs
+	: /* empty */
+	| simple_defs simple_def ';'
+	;
+
+simple_def
+	: type { current_type = $1; } def_list
+	;
+
 storage_class
-	: /* empty */	{ current_storage = st_global; }
-	| EXTERN		{ current_storage = st_extern; }
+	: EXTERN		{ current_storage = st_extern; }
 	| STATIC		{ current_storage = st_static; }
 	;
 

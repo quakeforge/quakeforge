@@ -410,7 +410,8 @@ fixup_relocs ()
 			case rel_def_field:
 				field_def = Hash_Find (field_defs,
 									   strings->strings + def->name);
-				data->data[reloc->ofs].integer_var = field_def->ofs;
+				if (field_def)			// null if not initialized
+					data->data[reloc->ofs].integer_var = field_def->ofs;
 				break;
 		}
 	}
