@@ -50,6 +50,8 @@ typedef struct dlight_s
 	float   color[3];           // Don't use alpha  --KB
 } dlight_t;
 
+extern  dlight_t        r_dlights[MAX_DLIGHTS];
+
 // FIXME client_state_t should hold all pieces of the client state
 typedef struct
 {
@@ -57,9 +59,9 @@ typedef struct
 	char	map[MAX_STYLESTRING];
 } lightstyle_t;
 
-extern  dlight_t        r_dlights[MAX_DLIGHTS];
-
 extern  lightstyle_t    r_lightstyle[MAX_LIGHTSTYLES];
+
+// FIXME lightstyle_t and r_lightstyle were in client.h, is this the best place for them?
 
 //===============
 
