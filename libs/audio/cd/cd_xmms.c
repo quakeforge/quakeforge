@@ -76,8 +76,8 @@ static general_funcs_t plugin_info_general_funcs;
 //static cd_data_t plugin_info_cd_data;
 static cd_funcs_t plugin_info_cd_funcs;
 
-static char *xmms_cmd = "xmms";
-static char *xmms_args[] = {"xmms", 0};
+static const char *xmms_cmd = "xmms";
+static const char *xmms_args[] = {"xmms", 0};
 // Session number, gets set to 0 in I_XMMS_Init if not set
 static int sessionNo;
 
@@ -147,7 +147,7 @@ I_XMMS_Running (void)
 					close (i);
 
 				// run xmms
-				if (execvp (xmms_cmd, xmms_args)) {
+				if (execvp (xmms_cmd, (char **)xmms_args)) {
 					// Oh dear, can we even use Sys_DPrinf? We are child so
 					// we have access to them? But wouldn't it just try
 					// rendering it and screw stuff up? Better not find out.
