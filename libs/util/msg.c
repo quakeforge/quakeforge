@@ -52,7 +52,7 @@ static const char rcsid[] =
 // writing functions ==========================================================
 
 void
-MSG_WriteByte (sizebuf_t *sb, unsigned int c)
+MSG_WriteByte (sizebuf_t *sb, int c)
 {
 	byte	   *buf;
 
@@ -61,25 +61,25 @@ MSG_WriteByte (sizebuf_t *sb, unsigned int c)
 }
 
 void
-MSG_WriteShort (sizebuf_t *sb, unsigned int c)
+MSG_WriteShort (sizebuf_t *sb, int c)
 {
 	byte	   *buf;
 
 	buf = SZ_GetSpace (sb, 2);
-	*buf++ = c & 0xff;
-	*buf = c >> 8;
+	*buf++ = ((unsigned int) c) & 0xff;
+	*buf = ((unsigned int) c) >> 8;
 }
 
 void
-MSG_WriteLong (sizebuf_t *sb, unsigned int c)
+MSG_WriteLong (sizebuf_t *sb, int c)
 {
 	byte	   *buf;
 
 	buf = SZ_GetSpace (sb, 4);
-	*buf++ = c & 0xff;
-	*buf++ = (c >> 8) & 0xff;
-	*buf++ = (c >> 16) & 0xff;
-	*buf = c >> 24;
+	*buf++ = ((unsigned int) c) & 0xff;
+	*buf++ = (((unsigned int) c) >> 8) & 0xff;
+	*buf++ = (((unsigned int) c) >> 16) & 0xff;
+	*buf = ((unsigned int) c) >> 24;
 }
 
 void
