@@ -31,8 +31,7 @@
 
 typedef struct hashtab_s hashtab_t;
 
-/*
-	create a new hash table:
+/** create a new hash table:
 		tsize:	table size. larger values will give better distribution, but
 				use more memory.
 		gk:		a function that returns a string to be used as the key for
@@ -55,8 +54,7 @@ typedef struct hashtab_s hashtab_t;
 hashtab_t *Hash_NewTable (int tsize, const char *(*gk)(void*,void*),
 						  void (*f)(void*,void*), void *ud);
 
-/*
-	change the hash and compare functions used by the Hash_*Element functions.
+/** change the hash and compare functions used by the Hash_*Element functions.
 	the default hash function just returns the address of the element, and the
 	default compare just compares the addresses. compare is to return 0 for not
 	equal and non-0 otherwise.
@@ -72,38 +70,38 @@ void Hash_SetHashCompare (hashtab_t *tab, unsigned long (*gh)(void*,void*),
 						  int (*cmp)(void*,void*,void*));
 
 
-/*
-	delete a hash table:
+/** delete a hash table:
 		tab:	the table to be deleted
 */
 void Hash_DelTable (hashtab_t *tab);
 
-/*
-	clean out all the entries from a hash table, starting over again:
+/** clean out all the entries from a hash table, starting over again:
 		tab:	the table to be cleared
 */
 void Hash_FlushTable (hashtab_t *tab);
 
-/*
-	add an entry to a hash table:
+//@{
+/** add an entry to a hash table:
 		tab:	the table to be added to
 		ele:	the element to add to the table
 	returns 0 for success, -1 for error.
 */
 int Hash_Add (hashtab_t *tab, void *ele);
 int Hash_AddElement (hashtab_t *tab, void *ele);
+//@}
 
-/*
-	find an element within a hash table:
+//@{
+/** find an element within a hash table:
 		tab:	the table to search
 		key:	the key string identifying the element being searched for
 	returns a pointer to the element if found, otherwise 0.
 */
 void *Hash_Find (hashtab_t *tab, const char *key);
 void *Hash_FindElement (hashtab_t *tab, void *ele);
+//@}
 
-/*
-	find a list of elements within a hash table:
+//@{
+/** find a list of elements within a hash table:
 		tab:	the table to search
 		key:	the key string identifying the elements being searched for
 	returns a null terminated list of element pointers if at least one found,
@@ -111,9 +109,10 @@ void *Hash_FindElement (hashtab_t *tab, void *ele);
 */
 void **Hash_FindList (hashtab_t *tab, const char *key);
 void **Hash_FindElementList (hashtab_t *tab, void *ele);
+//@}
 
-/*
-	delete an element from a hash table:
+//@{
+/** delete an element from a hash table:
 		tab:	the table to remove the element from
 		key:	the key string identifying the element to be deleted
 	returns a pointer to the element on success, 0 if the element could not
@@ -123,33 +122,29 @@ void **Hash_FindElementList (hashtab_t *tab, void *ele);
 */
 void *Hash_Del (hashtab_t *tab, const char *key);
 void *Hash_DelElement (hashtab_t *tab, void *ele);
+//@}
 
-/*
-	calls the free element function for the supplied ele
+/** calls the free element function for the supplied ele
 	eg:
 	Hash_Free (tab, Hash_Del (tab, key));
 */
 void Hash_Free (hashtab_t *tab, void *ele);
 
-/*
-	returh the hash value of a string. this is the same function as used
+/** returh the hash value of a string. this is the same function as used
 	internally.
 */
 unsigned long Hash_String (const char *str);
 
-/*
-	returh the hash value of a buffer.
+/** returh the hash value of a buffer.
 */
 unsigned long Hash_Buffer (const void *buf, int len);
 
-/*
-	return a list of all elements in the table. it is the caller's
+/** return a list of all elements in the table. it is the caller's
 	responsibilty to free() the array. Null terminated.
 */
 void **Hash_GetList (hashtab_t *tab);
 
-/*
-	dump statistics about the hash table
+/** dump statistics about the hash table
 */
 void Hash_Stats (hashtab_t *tab);
 

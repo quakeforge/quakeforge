@@ -161,10 +161,10 @@ Xgroup_add(def)		// defgroup_add_defs
 Xgroup_add(reloc)	// relocgroup_add_relocs
 Xgroup_add(func)	// funcgroup_add_funcs
 
-static void __attribute__ ((format (printf, 2, 3)))
-def_error (qfo_def_t *def, const char *fmt, ...);
-static void __attribute__ ((format (printf, 2, 3)))
-def_warning (qfo_def_t *def, const char *fmt, ...);
+static void def_error (qfo_def_t *def, const char *fmt, ...)
+	__attribute__ ((format (printf, 2, 3)));
+static void def_warning (qfo_def_t *def, const char *fmt, ...)
+	__attribute__ ((format (printf, 2, 3)));
 
 static defref_t *
 get_defref (qfo_def_t *def, defgroup_t *defgroup)
