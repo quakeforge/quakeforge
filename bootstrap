@@ -22,7 +22,7 @@ if test "$1" = "clean"; then
 	exit 0
 fi
 # Check libtoolize version, fix for Debian/Woody
-if test -z `which glibtoolize` ; then
+if test -z `which glibtoolize 2> /dev/null` ; then
 	libtoolize=libtoolize
 else
 	libtoolize=glibtoolize
