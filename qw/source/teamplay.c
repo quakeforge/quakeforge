@@ -293,7 +293,7 @@ Team_NewMap (void)
 	died = false;
 	recorded_location = false;
 	mapname = strdup (cl.worldmodel->name);
-	t2 = malloc (sizeof(cl.worldmodel->name));
+	t2 = malloc (sizeof (cl.worldmodel->name));
 	if (!mapname || !t2)
 		Sys_Error ("Can't duplicate mapname!");
 	map_to_loc (mapname,t2);
@@ -344,54 +344,54 @@ locs_loc (void)
 	}
 	if (Cmd_Argc () >= 3)
 		desc = Cmd_Args (2);
-	mapname = malloc (sizeof(cl.worldmodel->name));
+	mapname = malloc (sizeof (cl.worldmodel->name));
 	if (!mapname)
 		Sys_Error ("Can't duplicate mapname!");
 	map_to_loc (cl.worldmodel->name,mapname);
 	snprintf (locfile, sizeof (locfile), "%s/%s", com_gamedir, mapname);
 	free(mapname);
 	
-	if (strcasecmp(Cmd_Argv(1),"save") == 0) {
+	if (strcasecmp (Cmd_Argv(1),"save") == 0) {
 		if (Cmd_Argc () == 2) {
-			locs_save(locfile, false);
+			locs_save (locfile, false);
 		} else 
 			Con_Printf ("loc save :saves locs from memory into a .loc file\n");
 	}
 
-	if (strcasecmp(Cmd_Argv(1),"zsave") == 0) {
+	if (strcasecmp (Cmd_Argv(1),"zsave") == 0) {
 		if (Cmd_Argc () == 2) {
-			locs_save(locfile, true);
+			locs_save (locfile, true);
 		} else
 			Con_Printf ("loc save :saves locs from memory into a .loc file\n");
 	}
 	
-	if (strcasecmp(Cmd_Argv(1),"add") == 0) {
+	if (strcasecmp (Cmd_Argv(1),"add") == 0) {
 		if (Cmd_Argc () >= 3)
-			locs_mark(cl.simorg,desc);
+			locs_mark (cl.simorg,desc);
 		else
 			Con_Printf ("loc add <description> :marks the current location "
 						"with the description and records the information "
 						"into a loc file.\n");
 	}
 
-	if (strcasecmp(Cmd_Argv(1),"rename") == 0) {
+	if (strcasecmp (Cmd_Argv(1),"rename") == 0) {
 		if (Cmd_Argc () >= 3)
-			locs_edit(cl.simorg,desc);
+			locs_edit (cl.simorg,desc);
 		else
 			Con_Printf ("loc rename <description> :changes the description of "
 					    "the nearest location marker\n");
 	}
 	
-	if (strcasecmp(Cmd_Argv(1),"delete") == 0) {
+	if (strcasecmp (Cmd_Argv(1),"delete") == 0) {
 		if (Cmd_Argc () == 2)
-			locs_del(cl.simorg);
+			locs_del (cl.simorg);
 		else
 			Con_Printf ("loc delete :removes nearest location marker\n");
 	}
 	
-	if (strcasecmp(Cmd_Argv(1),"move") == 0) {
+	if (strcasecmp (Cmd_Argv(1),"move") == 0) {
 		if (Cmd_Argc () == 2)
-			locs_edit(cl.simorg,NULL);
+			locs_edit (cl.simorg,NULL);
 		else
 			Con_Printf ("loc move :moves the nearest location marker to your "
 					   "current location\n");
