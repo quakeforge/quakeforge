@@ -81,6 +81,10 @@ server_SOURCES= host.c host_cmd.c pr_cmds.c sv_cvar.c sv_main.c \
 combined_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(server_SOURCES) \
 			$(qfsys_SRC)
 
+if BUILD_GL
+AM_CFLAGS = $(GLX_CFLAGS)
+endif
+
 # Software-rendering targets
 #
 # ... Common stuff

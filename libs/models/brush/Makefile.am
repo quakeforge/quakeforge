@@ -2,6 +2,7 @@ INCLUDES= -I$(top_srcdir)/include
 
 if BUILD_GL
 BRUSH_GL = libbrush_gl.la
+AM_CFLAGS = $(GLX_CFLAGS)
 else
 BRUSH_GL =
 endif

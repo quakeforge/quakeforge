@@ -3,6 +3,7 @@ INCLUDES= -I$(top_srcdir)/include
 
 if BUILD_GL
 MODELS_GL = libQFmodels_gl.la
+AM_CFLAGS = $(GLX_CFLAGS)
 else
 MODELS_GL =
 endif

@@ -103,6 +103,10 @@ client_SOURCES= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
 		r_view.c sbar.c skin.c teamplay.c \
 		$(syscl_SRC)
 
+if BUILD_GL
+AM_CFLAGS = $(GLX_CFLAGS)
+endif
+
 # Software-rendering clients
 #
 # ... Common stuff

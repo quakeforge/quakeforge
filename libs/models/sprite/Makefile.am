@@ -2,6 +2,7 @@ INCLUDES= -I$(top_srcdir)/include
 
 if BUILD_GL
 SPRITE_GL = libsprite_gl.la
+AM_CFLAGS = $(GLX_CFLAGS)
 else
 SPRITE_GL =
 endif

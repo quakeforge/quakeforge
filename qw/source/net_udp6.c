@@ -105,7 +105,9 @@
 
 #ifdef __GLIBC__						// glibc macro
 # define s6_addr32 in6_u.u6_addr32
+# if ! __GLIBC_PREREQ (2,2)
 # define ss_family __ss_family
+# endif
 #endif
 
 netadr_t    net_local_adr;

@@ -2,6 +2,7 @@ INCLUDES= -I$(top_srcdir)/include
 
 if BUILD_GL
 GL = libgl.la
+AM_CFLAGS = $(GLX_CFLAGS)
 else
 GL =
 endif

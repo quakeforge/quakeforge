@@ -2,6 +2,7 @@ INCLUDES= -I$(top_srcdir)/include
 
 if BUILD_GL
 ALIAS_GL = libalias_gl.la
+AM_CFLAGS = $(GLX_CFLAGS)
 else
 ALIAS_GL =
 endif

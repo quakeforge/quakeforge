@@ -634,7 +634,7 @@ else
 fi
 
 if test "x$HAVE_GLX" = xyes; then
-	test "x$GLX_CFLAGS" != x &&	GLX_CFLAGS="-I$GLX_CFLAGS"
+	test "x$glx_includes" != x &&	GLX_CFLAGS="-I$glx_includes"
 	test "x$glx_libraries" != x && GLX_LIBS="-L$glx_libraries"
 	GLX_LIBS="$GLX_LIBS -l$OGL_NAME"
 	AC_DEFINE(HAVE_GLX)
