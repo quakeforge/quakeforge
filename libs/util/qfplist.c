@@ -649,7 +649,7 @@ PL_GetPropertyList (const char *string)
 		return newpl;
 	} else {
 		if (pl && pl->error && pl->error[0])
-			Sys_Error ("%d,%d: %s", pl->line, pl->pos, pl->error);
+			Sys_Printf ("plist: %d,%d: %s", pl->line, pl->pos, pl->error);
 		free (pl);
 		return NULL;
 	}
