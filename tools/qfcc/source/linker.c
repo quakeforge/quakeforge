@@ -157,9 +157,9 @@ X##group_add_##X##s (X##group_t *X##group, qfo_##X##_t *X##s, int num_##X##s)\
 	X##group->num_##X##s += num_##X##s;\
 }
 
-Xgroup_add(def)		// defgroup_add_defs
-Xgroup_add(reloc)	// relocgroup_add_relocs
-Xgroup_add(func)	// funcgroup_add_funcs
+Xgroup_add(def);	// defgroup_add_defs
+Xgroup_add(reloc);	// relocgroup_add_relocs
+Xgroup_add(func);	// funcgroup_add_funcs
 
 static void def_error (qfo_def_t *def, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
 static void def_warning (qfo_def_t *def, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));

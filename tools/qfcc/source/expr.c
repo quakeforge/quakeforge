@@ -1723,6 +1723,14 @@ check_precedence (int op, expr_t *e1, expr_t *e2)
 				return binary_expr (e2->e.expr.op, e1, e2->e.expr.e2);
 			}
 		}
+	} else {
+		if (e2->type == ex_expr && !e2->paren) {
+			if ((op == '&' || op == '|' || op == '^')
+				&& is_compare (e2->e.expr.op)) {
+				warning (e2, "suggest parentheses around comparison in "
+						 "operand of %c", op);
+			}
+		}
 	}
 	return 0;
 }
