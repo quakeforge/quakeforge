@@ -33,10 +33,10 @@
 #include <math.h>
 
 #include "QF/console.h"
+#include "QF/render.h"
 #include "QF/sys.h"
 
 #include "r_local.h"
-#include "QF/render.h"
 
 // current entity info
 qboolean    insubmodel;
