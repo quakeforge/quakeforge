@@ -1133,10 +1133,9 @@ CL_SetState (cactive_t state)
 			r_active = false;
 			game_target = IMT_CONSOLE;
 			key_dest = key_console;
-			if (con_module)
-				con_module->data->console->force_commandline = 1;
+
 			// Auto demo recorder stops here
-			if(cl_autorecord->int_val && cls.demorecording)
+			if (cl_autorecord->int_val && cls.demorecording)
 				CL_Stop_f ();
 		} else if (state == ca_active) {
 			// entering active state
@@ -1146,15 +1145,14 @@ CL_SetState (cactive_t state)
 			game_target = IMT_0;
 			key_dest = key_game;
 
-			if (con_module)
-				con_module->data->console->force_commandline = 0;
-
 			// Auto demo recorder starts here
-			if(cl_autorecord->int_val && !cls.demoplayback
+			if (cl_autorecord->int_val && !cls.demoplayback
 				&& !cls.demorecording)
 				CL_Record (0);
 		}
 	}
+	if (con_module)
+		con_module->data->console->force_commandline = (state != ca_active);
 }
 
 void

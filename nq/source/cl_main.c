@@ -717,23 +717,26 @@ CL_SendCmd (void)
 void
 CL_SetState (cactive_t state)
 {
+	cactive_t   old_state = cls.state;
 	cls.state = state;
-	if (cls.state == ca_active) {
-		r_active = true;
-		game_target = IMT_0;
-		key_dest = key_game;
-		IN_ClearStates ();
-		VID_SetCaption ("");
-		if (con_module)
-			con_module->data->console->force_commandline = 0;
-	} else {
-		r_active = false;
-		game_target = IMT_CONSOLE;
-		key_dest = key_console;
-		VID_SetCaption ("Disconnected");
-		if (con_module)
-			con_module->data->console->force_commandline = 1;
+	if (old_state != state) {
+		if (state == ca_active) {
+			// entering active state
+			r_active = true;
+			game_target = IMT_0;
+			key_dest = key_game;
+			IN_ClearStates ();
+			VID_SetCaption ("");
+		} else if (old_state == ca_active) {
+			// leaving active state
+			r_active = false;
+			game_target = IMT_CONSOLE;
+			key_dest = key_console;
+			VID_SetCaption ("Disconnected");
+		}
 	}
+	if (con_module)
+		con_module->data->console->force_commandline = (state != ca_active);
 }
 
 void
