@@ -77,7 +77,7 @@ void _VectorCopy (vec3_t in, vec3_t out);
 
 int VectorCompare (vec3_t v1, vec3_t v2);
 vec_t Length (vec3_t v);
-void CrossProduct (vec3_t v1, vec3_t v2, vec3_t cross);
+void CrossProduct (const vec3_t v1, const vec3_t v2, vec3_t cross);
 float VectorNormalize (vec3_t v);	       // returns vector length
 void VectorInverse (vec3_t v);
 void VectorScale (vec3_t in, vec_t scale, vec3_t out);
@@ -93,6 +93,7 @@ fixed16_t Mul16_30(fixed16_t multiplier, fixed16_t multiplicand);
 int GreatestCommonDivisor (int i1, int i2);
 
 void AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
+void VectorVectors(const vec3_t forward, vec3_t right, vec3_t up);
 int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, struct mplane_s *plane);
 float   anglemod(float a);
 

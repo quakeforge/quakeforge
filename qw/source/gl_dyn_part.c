@@ -54,8 +54,9 @@ typedef enum {
 } ptype_t;
 
 typedef struct particle_s {
-	// driver-usable fields
 	vec3_t      org;
+	vec3_t		up;
+	vec3_t		right;
 	int         tex;
 	float       color;
 	float       alpha;
@@ -80,15 +81,16 @@ extern qboolean lighthalf;
 
 extern cvar_t *cl_max_particles;
 
+extern int  part_tex_smoke_ring[8];
+extern int  part_tex_smoke[8];
 extern int  part_tex_dot;
 extern int  part_tex_spark;
-extern int  part_tex_smoke[8];
 
 int         ramp[8] = { 0x6d, 0x6b, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
 
 inline particle_t *
 particle_new (ptype_t type, int texnum, vec3_t org, float scale, vec3_t vel,
-			  float die, byte color, byte alpha)
+			  float die, byte color, byte alpha, vec3_t up, vec3_t right)
 {
 	particle_t *part;
 
@@ -108,6 +110,9 @@ particle_new (ptype_t type, int texnum, vec3_t org, float scale, vec3_t vel,
 	part->tex = texnum;
 	part->scale = scale;
 
+	VectorScale (up, 1.5, part->up);
+	VectorScale (right, 1.5, part->right);
+
 	return part;
 }
 
@@ -125,7 +130,7 @@ particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 		if (vel_fuzz)
 			pvel[j] = lhrandom (-vel_fuzz, vel_fuzz);
 	}
-	return particle_new (type, texnum, porg, scale, pvel, die, color, alpha);
+	return particle_new (type, texnum, porg, scale, pvel, die, color, alpha, vec3_origin, vec3_origin);
 }
 
 /*
@@ -226,7 +231,7 @@ R_ReadPointFile_f (void)
 		c++;
 
 		if (!particle_new (pt_static, part_tex_dot, org, 1.5, vec3_origin,
-						   99999, (-c) & 15, 255)) {
+						   99999, (-c) & 15, 255, vec3_origin, vec3_origin)) {
 			Con_Printf ("Not enough free particles\n");
 			break;
 		}
@@ -281,7 +286,7 @@ R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 
 	particle_new (pt_smokecloud, part_tex_smoke[rand () & 7], org, 
 				  (ofuzz / 8) * .75, vec3_origin, cl.time + 99, 
-				  12 + (rand () & 3), 96);
+				  12 + (rand () & 3), 96, vec3_origin, vec3_origin);
 	while (count--)
 		particle_new_random (pt_fallfadespark, part_tex_spark, org, ofuzz * .75, 
 							 1, 96, cl.time + 5, ramp[rand () % 6], 
@@ -312,7 +317,8 @@ R_BloodPuff (vec3_t org, int count)
 		return;
 
 	particle_new (pt_bloodcloud, part_tex_smoke[rand () & 7], org, 9,
-				  vec3_origin, cl.time + 99, 68 + (rand () & 3), 128);
+				  vec3_origin, cl.time + 99, 68 + (rand () & 3), 128,
+				  vec3_origin, vec3_origin);
 }
 
 /*
@@ -362,7 +368,7 @@ R_RunParticleEffect (vec3_t org, int color, int count)
 		}
 		particle_new (pt_grav, part_tex_dot, porg, 1.5, vec3_origin,
 					  (cl.time + 0.1 * (rand () % 5)),
-					  (color & ~7) + (rand () & 7), 255);
+					  (color & ~7) + (rand () & 7), 255, vec3_origin, vec3_origin);
 	}
 }
 
@@ -413,7 +419,7 @@ R_LavaSplash (vec3_t org)
 			VectorScale (dir, vel, pvel);
 			particle_new (pt_grav, part_tex_dot, porg, 3, pvel,
 						  (cl.time + 2 + (rand () & 31) * 0.02),
-						  (224 + (rand () & 7)), 193);
+						  (224 + (rand () & 7)), 193, vec3_origin, vec3_origin);
 		}
 	}
 }
@@ -447,7 +453,7 @@ R_TeleportSplash (vec3_t org)
 				VectorScale (dir, vel, pvel);
 				particle_new (pt_grav, part_tex_spark, porg, 0.6, pvel,
 							  (cl.time + 0.2 + (rand () & 7) * 0.02),
-							  (7 + (rand () & 7)), 255);
+							  (7 + (rand () & 7)), 255, vec3_origin, vec3_origin);
 			}
 }
 
@@ -458,7 +464,7 @@ R_RocketTrail (int type, entity_t *ent)
 	float       len;
 	int         j, ptex;
 	ptype_t     ptype;
-	vec3_t      porg, pvel;
+	vec3_t      porg, pvel, up, right;
 	float       pdie, pscale;
 	byte        palpha, pcolor;
 
@@ -471,6 +477,8 @@ R_RocketTrail (int type, entity_t *ent)
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	len = VectorNormalize (vec);
 	while (len > 0) {
+		VectorCopy (vec3_origin, up);
+		VectorCopy (vec3_origin, right);
 		VectorCopy (vec3_origin, pvel);
 		pdie = cl.time + 2;
 		ptype = pt_static;
@@ -489,11 +497,12 @@ R_RocketTrail (int type, entity_t *ent)
 
 			  common_rocket_gren_trail:
 				len -= 4;
-				ptex = part_tex_smoke[rand () & 7];
-				pscale = lhrandom (6, 9);
+				ptex = part_tex_smoke_ring[rand () & 7];
+				pscale = lhrandom (10, 15);
 				palpha = 48 + (rand () & 31);
 				ptype = pt_smoke;
 				pdie = cl.time + 1;
+				VectorVectors(vec, right, up);
 				VectorCopy (ent->old_origin, porg);
 				break;
 			case 4:					// slight blood
@@ -548,7 +557,8 @@ R_RocketTrail (int type, entity_t *ent)
 
 		VectorAdd (ent->old_origin, vec, ent->old_origin);
 
-		particle_new (ptype, ptex, porg, pscale, pvel, pdie, pcolor, palpha);
+		particle_new (ptype, ptex, porg, pscale, pvel, pdie, pcolor, palpha, 
+				up, right);
 	}
 }
 
@@ -564,14 +574,17 @@ R_DrawParticles (void)
 	float       minparticledist;
 	unsigned char *at;
 	byte        alpha;
-	vec3_t      up, right;
 	float       scale;
 	particle_t *part;
+	vec3_t		up, right, o_up, o_right;
 	int         activeparticles, maxparticle, j, k, vnum;
 	varray_t	vertex_array[4];
 	
 	// LordHavoc: particles should not affect zbuffer
 	glDepthMask (GL_FALSE);
+
+	VectorScale (up, 1.5, o_up);
+	VectorScale (right, 1.5, o_right);
 
 	glInterleavedArrays (GL_T2F_C4UB_V3F, 0, (void *) &(vertex_array[0]));
 
@@ -581,9 +594,6 @@ R_DrawParticles (void)
 	vertex_array[3].texcoord[0] = 1; vertex_array[3].texcoord[1] = 1;
 
 	vnum = 0;
-
-	VectorScale (vup, 1.5, up);
-	VectorScale (vright, 1.5, right);
 
 	grav = (fast_grav = host_frametime * 800) * 0.05;
 	dvel = 4 * host_frametime;
@@ -610,6 +620,14 @@ R_DrawParticles (void)
 				r_particles->int_val) {
 			at = (byte *) & d_8to24table[(byte) part->color];
 			alpha = part->alpha;
+
+			if (VectorCompare(part->up, part->right)) {
+				VectorCopy(o_up, up);
+				VectorCopy(o_right, right);
+			} else {
+				VectorCopy(part->up, up);
+				VectorCopy(part->right, right);
+			}
 
 			if (lighthalf) {
 				vertex_array[0].color[0] = (byte) ((int) at[0] >> 1);
@@ -680,7 +698,7 @@ R_DrawParticles (void)
 			case pt_smoke:
 				if ((part->alpha -= host_frametime * 90) < 1)
 					part->die = -1;
-				part->scale += host_frametime * 6;
+				part->scale += host_frametime * 10;
 				part->org[2] += host_frametime * 30;
 				break;
 			case pt_smokecloud:

@@ -1015,16 +1015,14 @@ SCR_UpdateScreen (void)
 	glDisable (GL_TEXTURE_2D);
 
 	Cvar_SetValue (brightness, bound (1, brightness->value, 5));
-	if (lighthalf) {		// LordHavoc: render was done at half 
-							// brightness
+	if (lighthalf) {		// LordHavoc: render was done at half brightness
 		f = brightness->value * 2;
 	} else {
 		Cvar_SetValue (brightness, bound (1, brightness->value, 5));
 		f = brightness->value;
 	}
 
-	if (f >= 1.002) {					// Make sure we don't get bit by
-		// roundoff errors
+	if (f >= 1.002) {		// Make sure we don't get bit by roundoff errors
 		glBlendFunc (GL_DST_COLOR, GL_ONE);
 		glBegin (GL_QUADS);
 		while (f >= 1.002) {			// precision

@@ -104,6 +104,21 @@ PerpendicularVector (vec3_t dst, const vec3_t src)
 #pragma optimize( "", off )
 #endif
 
+void VectorVectors(const vec3_t forward, vec3_t right, vec3_t up)
+{
+	float d;
+
+	right[0] = forward[2];
+	right[1] = -forward[0];
+	right[2] = forward[1];
+
+	d = DotProduct(forward, right);
+	right[0] -= d * forward[0];
+	right[1] -= d * forward[1];
+	right[2] -= d * forward[2];
+	VectorNormalize(right);
+	CrossProduct(right, forward, up);
+}
 
 void
 RotatePointAroundVector (vec3_t dst, const vec3_t dir, const vec3_t point,
@@ -410,7 +425,7 @@ _VectorCopy (vec3_t in, vec3_t out)
 }
 
 void
-CrossProduct (vec3_t v1, vec3_t v2, vec3_t cross)
+CrossProduct (const vec3_t v1, const vec3_t v2, vec3_t cross)
 {
 	cross[0] = v1[1] * v2[2] - v1[2] * v2[1];
 	cross[1] = v1[2] * v2[0] - v1[0] * v2[2];
