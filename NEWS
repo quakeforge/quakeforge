@@ -70,3 +70,12 @@ changes from 0.3.0
      o  Integrates with console -- GIB functions can be exported as
         console commands to be used at the console or in binds.
      o  See gib.html in doc for more information.
+
+ o      Enhanced time cheat (speed cheat) protection
+     o  Speed cheat only works for a split second before protection
+        kicks in.
+     o  Players moving at the wrong speed are sped up/slowed down to
+        the correct speed.
+     o  Delay before protection activates means that lag and normal
+        network latency won't affect protection.
+     o  People who aren't really trying to cheat won't be kicked :)
