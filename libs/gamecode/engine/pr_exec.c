@@ -136,6 +136,7 @@ PR_StackTrace (progs_t * pr)
 		return;
 	}
 
+	pr->pr_stack[pr->pr_depth].s = pr->pr_xstatement;
 	pr->pr_stack[pr->pr_depth].f = pr->pr_xfunction;
 	for (i = pr->pr_depth; i >= 0; i--) {
 		f = pr->pr_stack[i].f;
@@ -143,8 +144,8 @@ PR_StackTrace (progs_t * pr)
 		if (!f) {
 			Sys_Printf ("<NO FUNCTION>\n");
 		} else
-			Sys_Printf ("%12s : %s\n", PR_GetString (pr, f->s_file),
-						PR_GetString (pr, f->s_name));
+			Sys_Printf ("%12s : %s: %x\n", PR_GetString (pr, f->s_file),
+						PR_GetString (pr, f->s_name), pr->pr_stack[i].s);
 	}
 }
 
@@ -205,7 +206,7 @@ PR_RunError (progs_t * pr, const char *error, ...)
 
 	Returns the new program statement counter
 */
-int
+void
 PR_EnterFunction (progs_t * pr, dfunction_t *f)
 {
 	int			i, j, c, o;
@@ -215,7 +216,7 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 	pr->pr_stack[pr->pr_depth].s = pr->pr_xstatement;
 	pr->pr_stack[pr->pr_depth].f = pr->pr_xfunction;
 	pr->pr_depth++;
-	if (pr->pr_depth >= MAX_STACK_DEPTH)
+	if (pr->pr_depth >= MAX_STACK_DEPTH - 1)
 		PR_RunError (pr, "stack overflow");
 
 	// save off any locals that the new function steps on
@@ -266,10 +267,11 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 	}
 
 	pr->pr_xfunction = f;
-	return f->first_statement - 1;		// offset the s++
+	pr->pr_xstatement = f->first_statement - 1;      // offset the s++
+	return;
 }
 
-int
+void
 PR_LeaveFunction (progs_t * pr)
 {
 	int			c;
@@ -290,7 +292,7 @@ PR_LeaveFunction (progs_t * pr)
 	// up stack
 	pr->pr_depth--;
 	pr->pr_xfunction = pr->pr_stack[pr->pr_depth].f;
-	return pr->pr_stack[pr->pr_depth].s;
+	pr->pr_xstatement = pr->pr_stack[pr->pr_depth].s;
 }
 
 static void
@@ -340,7 +342,8 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 	// make a stack frame
 	exitdepth = pr->pr_depth;
 
-	st = &pr->pr_statements[PR_EnterFunction (pr, f)];
+	PR_EnterFunction (pr, f);
+	st = pr->pr_statements + pr->pr_xstatement;
 	startprofile = profile = 0;
 
 	Sys_PushSignalHook (signal_hook, pr);
@@ -349,8 +352,10 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 		pr_type_t  *op_a, *op_b, *op_c;
 
 		st++;
+		++pr->pr_xstatement;
+		if (pr->pr_xstatement != st - pr->pr_statements)
+			PR_RunError (pr, "internal error");
 		if (++profile > 1000000 && !pr->no_exec_limit) {
-			pr->pr_xstatement = st - pr->pr_statements;
 			PR_RunError (pr, "runaway loop error");
 		}
 
@@ -542,19 +547,16 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				if (pr_boundscheck->int_val
 					&& (OPA.entity_var < 0 || OPA.entity_var >=
 						pr->pr_edictareasize)) {
-					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs attempted to address an out of "
 								 "bounds edict");
 				}
 				if (pr_boundscheck->int_val
 					&& (OPA.entity_var == 0 && pr->null_bad)) {
-					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "assignment to world entity");
 				}
 				if (pr_boundscheck->int_val
 					&& (OPB.integer_var < 0 || OPB.integer_var >=
 						pr->progs->entityfields)) {
-					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs attempted to address an invalid "
 								 "field in an edict");
 				}
@@ -582,14 +584,12 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				if (pr_boundscheck->int_val
 					&& (OPA.entity_var < 0 || OPA.entity_var >=
 						pr->pr_edictareasize)) {
-					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs attempted to read an out of "
 								 "bounds edict number");
 				}
 				if (pr_boundscheck->int_val
 					&& (OPB.integer_var < 0 || OPB.integer_var >=
 						pr->progs->entityfields)) {
-					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs attempted to read an invalid "
 								 "field in an edict");
 				}
@@ -600,14 +600,12 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				if (pr_boundscheck->int_val
 					&& (OPA.entity_var < 0 || OPA.entity_var >=
 						pr->pr_edictareasize)) {
-					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs attempted to read an out of "
 								 "bounds edict number");
 				}
 				if (pr_boundscheck->int_val
 					&& (OPB.integer_var < 0
 						|| OPB.integer_var + 2 >= pr->progs->entityfields)) {
-					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs attempted to read an invalid "
 								 "field in an edict");
 				}
@@ -703,39 +701,52 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 
 			// ==================
 			case OP_IFNOT:
-				if (!OPA.integer_var)
-					st += (short)st->b - 1;		// offset the s++
+				if (!OPA.integer_var) {
+					pr->pr_xstatement += (short)st->b - 1;	// offset the s++
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
 				break;
 			case OP_IF:
-				if (OPA.integer_var)
-					st += (short)st->b - 1;		// offset the s++
+				if (OPA.integer_var) {
+					pr->pr_xstatement += (short)st->b - 1;	// offset the s++
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
 				break;
 			case OP_IFBE:
-				if (OPA.integer_var <= 0)
-					st += (short)st->b - 1;		// offset the s++
+				if (OPA.integer_var <= 0) {
+					pr->pr_xstatement += (short)st->b - 1;	// offset the s++
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
 				break;
 			case OP_IFB:
-				if (OPA.integer_var < 0)
-					st += (short)st->b - 1;		// offset the s++
+				if (OPA.integer_var < 0) {
+					pr->pr_xstatement += (short)st->b - 1;	// offset the s++
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
 				break;
 			case OP_IFAE:
-				if (OPA.integer_var >= 0)
-					st += (short)st->b - 1;		// offset the s++
+				if (OPA.integer_var >= 0) {
+					pr->pr_xstatement += (short)st->b - 1;	// offset the s++
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
 				break;
 			case OP_IFA:
-				if (OPA.integer_var > 0)
-					st += (short)st->b - 1;		// offset the s++
+				if (OPA.integer_var > 0) {
+					pr->pr_xstatement += (short)st->b - 1;	// offset the s++
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
 				break;
 			case OP_GOTO:
-				st += (short)st->a - 1;			// offset the s++
+				pr->pr_xstatement += (short)st->a - 1;		// offset the s++
+				st = pr->pr_statements + pr->pr_xstatement;
 				break;
 			case OP_JUMP:
 				if (pr_boundscheck->int_val
 					&& (OPA.uinteger_var >= pr->progs->numstatements)) {
-					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Invalid jump destination");
 				}
-				st = &pr->pr_statements[OPA.uinteger_var];
+				pr->pr_xstatement = OPA.uinteger_var;
+				st = pr->pr_statements + pr->pr_xstatement;
 				break;
 			case OP_JUMPB:
 				//FIXME put bounds checking in
@@ -744,10 +755,10 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				pointer = ptr->integer_var;
 				if (pr_boundscheck->int_val
 					&& (pointer >= pr->progs->numstatements)) {
-					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Invalid jump destination");
 				}
-				st = &pr->pr_statements[pointer];
+				pr->pr_xstatement = pointer;
+				st = pr->pr_statements + pr->pr_xstatement;
 				break;
 
 			case OP_CALL0:
@@ -761,7 +772,6 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_CALL8:
 				pr->pr_xfunction->profile += profile - startprofile;
 				startprofile = profile;
-				pr->pr_xstatement = st - pr->pr_statements;
 				pr->pr_argc = st->op - OP_CALL0;
 				if (!OPA.func_var)
 					PR_RunError (pr, "NULL function");
@@ -774,18 +784,17 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 						|| !pr->builtins[i]->proc)
 						PR_RunError (pr, "Bad builtin call number");
 					pr->builtins[i]->proc (pr);
-					st = pr->pr_statements + pr->pr_xstatement;
-					break;
+				} else {
+					PR_EnterFunction (pr, newf);
 				}
-
-				st = &pr->pr_statements[PR_EnterFunction (pr, newf)];
+				st = pr->pr_statements + pr->pr_xstatement;
 				break;
 			case OP_DONE:
 			case OP_RETURN:
 				memcpy (&pr->pr_globals[OFS_RETURN], &OPA, 3 * sizeof (OPA));
-				st = &pr->pr_statements[PR_LeaveFunction (pr)];
+				PR_LeaveFunction (pr);
+				st = pr->pr_statements + pr->pr_xstatement;
 				if (pr->pr_depth == exitdepth) {
-					pr->pr_xstatement = st - pr->pr_statements;
 					Sys_PopSignalHook ();
 					return;					// all done
 				}
@@ -903,7 +912,6 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 /*
 			case OP_BOUNDCHECK:
 				if (OPA.integer_var < 0 || OPA.integer_var >= st->b) {
-					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs boundcheck failed at line number "
 					"%d, value is < 0 or >= %d", st->b, st->c);
 				}
@@ -911,7 +919,6 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 
 */
 			default:
-				pr->pr_xstatement = st - pr->pr_statements;
 				PR_RunError (pr, "Bad opcode %i", st->op);
 		}
 	}

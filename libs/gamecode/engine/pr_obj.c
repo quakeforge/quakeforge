@@ -63,7 +63,7 @@ call_function (progs_t *pr, func_t func)
 			PR_RunError (pr, "Bad builtin call number");
 		pr->builtins[i]->proc (pr);
 	} else {
-		pr->pr_xstatement = PR_EnterFunction (pr, newf);
+		PR_EnterFunction (pr, newf);
 	}
 }
 
