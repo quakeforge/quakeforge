@@ -127,7 +127,7 @@ static glformat_t formats[] = {
 	{"GL_RGBA16", GL_RGBA16}
 };
 
-int gl_filter_min = GL_LINEAR_MIPMAP_LINEAR, gl_filter_max = GL_LINEAR;
+int gl_filter_min = GL_LINEAR_MIPMAP_NEAREST, gl_filter_max = GL_LINEAR;
 int gl_alpha_format = 4, gl_lightmap_format = 4, gl_solid_format = 3;
 
 

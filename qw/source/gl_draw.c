@@ -259,7 +259,8 @@ Draw_Init (void)
 
 	// LordHavoc: 3DFX's dithering has terrible artifacts with lightmode 1
 	// 3dfx can only handle 256 wide textures
-	if (!strncasecmp ((char *) gl_renderer, "3dfx", 4))
+	if (!strncasecmp ((char *) gl_renderer, "3dfx", 4) ||
+		!strngcasecmp ((char *) gl_renderer, "Mesa Glide", 10))
 	{
 		Cvar_Set (gl_max_size, "256");
 		Cvar_Set (gl_lightmode, "0");
