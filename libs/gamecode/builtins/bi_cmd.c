@@ -3,7 +3,7 @@
 
 	Command api for csqc
 
-	Copyright (C) 2001 Bill Currie
+	Copyright (C) 2002 Bill Currie
 
 	Author: Bill Currie
 	Date: 2002/4/12
