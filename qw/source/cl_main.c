@@ -1009,6 +1009,9 @@ CL_ReadPackets (void)
 //  while (NET_GetPacket ())
 	while (CL_GetMessage ()) {
 
+		if (net_message->message->cursize == -1)
+			continue;
+
 		if (cls.demoplayback && net_packetlog->int_val)
 			Log_Incoming_Packet(net_message->message->data,
 								net_message->message->cursize);

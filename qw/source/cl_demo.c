@@ -246,6 +246,7 @@ CL_GetDemoMessage (void)
 	switch (c) {
 		case dem_cmd:
 			// user sent input
+			net_message->message->cursize = -1;
 			i = cls.netchan.outgoing_sequence & UPDATE_MASK;
 			pcmd = &cl.frames[i].cmd;
 			r = Qread (cls.demofile, pcmd, sizeof (*pcmd));
