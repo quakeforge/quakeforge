@@ -45,8 +45,10 @@ extern double realtime;
 extern cbuf_t *qtv_cbuf;
 extern cbuf_args_t *qtv_args;
 
+struct client_s;
+
 void qtv_printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
-void qtv_begin_redirect (redirect_t rd);
+void qtv_begin_redirect (redirect_t rd, struct client_s *cl);
 void qtv_end_redirect (void);
 void qtv_flush_redirect (void);
 

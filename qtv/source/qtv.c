@@ -84,6 +84,7 @@ static cvar_t  *fs_globalcfg;
 static cvar_t  *fs_usercfg;
 
 redirect_t  qtv_redirected;
+client_t   *qtv_redirect_client;
 dstring_t   outputbuf = {&dstring_default_mem};
 
 static void
@@ -157,34 +158,34 @@ qtv_flush_redirect (void)
 			count -= bytes;
 		}
 	} else if (qtv_redirected == RD_CLIENT) {
-#if 0
+		client_t   *cl = qtv_redirect_client;
 		p = outputbuf.str;
 		while (count) {
 			// +/- 3 for svc_print, PRINT_HIGH and nul byte
 			// min of 4 because we don't want to send an effectively empty
 			// message
-			bytes = ClientReliableCheckSize (cl, count + 3, 4) - 3;
+			bytes = MSG_ReliableCheckSize (&cl->backbuf, count + 3, 4) - 3;
 			// if writing another packet would overflow the client, just drop
 			// the rest of the data. getting rudely disconnected would be much
 			// more annoying than losing the tail end of the output
 			if (bytes <= 0)
 				break;
-			ClientReliableWrite_Begin (cl, svc_print, bytes + 3);
-			ClientReliableWrite_Byte (cl, PRINT_HIGH);
-			ClientReliableWrite_SZ (cl, p, bytes);
-			ClientReliableWrite_Byte (cl, 0);
+			MSG_ReliableWrite_Begin (&cl->backbuf, svc_print, bytes + 3);
+			MSG_ReliableWrite_Byte (&cl->backbuf, PRINT_HIGH);
+			MSG_ReliableWrite_SZ (&cl->backbuf, p, bytes);
+			MSG_ReliableWrite_Byte (&cl->backbuf, 0);
 			p += bytes;
 			count -= bytes;
 		}
-#endif
 	}
 	dstring_clear (&outputbuf);
 }
 
 void
-qtv_begin_redirect (redirect_t rd)
+qtv_begin_redirect (redirect_t rd, client_t *cl)
 {
 	qtv_redirected = rd;
+	qtv_redirect_client = cl;
 	dstring_clear (&outputbuf);
 }
 
@@ -193,6 +194,7 @@ qtv_end_redirect (void)
 {
 	qtv_flush_redirect ();
 	qtv_redirected = RD_NONE;
+	qtv_redirect_client = 0;
 }
 
 static void
@@ -312,7 +314,7 @@ qtv_ping (void)
 static void
 qtv_status (void)
 {
-	qtv_begin_redirect (RD_PACKET);
+	qtv_begin_redirect (RD_PACKET, 0);
 	Sys_Printf ("\\*version\\%s qtv %s", QW_VERSION, VERSION);
 	qtv_end_redirect ();
 }

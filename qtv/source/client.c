@@ -80,8 +80,8 @@ client_drop (client_t *cl)
 static void
 cl_new_f (client_t *cl, void *unused)
 {
-	qtv_printf ("\"qtv list\" for a list of servers\n");
-	qtv_printf ("\"qtv connect <servername>\" to connect to a server\n");
+	qtv_printf ("\"cmd list\" for a list of servers\n");
+	qtv_printf ("\"cmd connect <servername>\" to connect to a server\n");
 }
 
 static void
@@ -202,16 +202,18 @@ client_exec_command (client_t *cl, const char *s)
 
 	if (!u) {
 		if (ucmd_unknown && !ucmd_unknown ()) {
-			qtv_begin_redirect (RD_CLIENT);
+			qtv_begin_redirect (RD_CLIENT, cl);
 			qtv_printf ("Bad user command: %s\n", qtv_args->argv[0]->str);
 			qtv_end_redirect ();
 		}
 	} else {
-		if (!u->no_redirect)
-			qtv_begin_redirect (RD_CLIENT);
-		u->func (cl, u->userdata);
-		if (!u->no_redirect)
-			qtv_end_redirect ();
+		if (u->func) {
+			if (!u->no_redirect)
+				qtv_begin_redirect (RD_CLIENT, cl);
+			u->func (cl, u->userdata);
+			if (!u->no_redirect)
+				qtv_end_redirect ();
+		}
 	}
 }
 
@@ -337,6 +339,8 @@ client_handler (connection_t *con, void *object)
 		//cl->send_message = true;
 		//if (cl->state != cs_zombie)
 			client_parse_message (cl);
+		if (cl->backbuf.num_backbuf)
+			MSG_Reliable_Send (&cl->backbuf);
 		Netchan_Transmit (&cl->netchan, 0, NULL);
 		if (cl->drop) {
 			Connection_Del (cl->con);
@@ -393,6 +397,8 @@ client_connect (connection_t *con, void *object)
 
 	cl = calloc (1, sizeof (client_t));
 	Netchan_Setup (&cl->netchan, con->address, qport, NC_READ_QPORT);
+	cl->backbuf.netchan = &cl->netchan;
+	cl->backbuf.name = "FIXME";
 	cl->userinfo = userinfo;
 	cl->con = con;
 	con->object = cl;

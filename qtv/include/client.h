@@ -33,12 +33,14 @@
 #define __client_h
 
 #include "netchan.h"
+#include "qw/msg_backbuf.h"
 
 typedef struct client_s {
 	struct info_s *userinfo;
 	struct connection_s *con;
 	int         drop;
 	netchan_t   netchan;
+	backbuf_t   backbuf;
 } client_t;
 
 typedef struct challenge_s {
