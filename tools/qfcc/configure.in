@@ -124,8 +124,8 @@ AC_SUBST(QFCC_DEPS)
 AC_SUBST(QFCC_INCS)
 
 AC_OUTPUT(
-	doc/man/Makefile
 	doc/Makefile
+	doc/man/Makefile
 	include/Makefile
 	source/Makefile
 	Makefile
