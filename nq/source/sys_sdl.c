@@ -111,33 +111,12 @@ Sys_Init (void)
 #endif
 }
 
-void
-Sys_Quit (void)
+static void
+shutdown (void)
 {
-	Host_Shutdown ();
-	exit (0);
-}
-
-void
-Sys_Error (const char *error, ...)
-{
-	va_list     argptr;
-	char        text[1024];
-
 #ifndef _WIN32
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
 #endif
-	va_start (argptr, error);
-	vsnprintf (text, sizeof (text), error, argptr);
-	va_end (argptr);
-
-#ifdef WIN32
-	MessageBox (NULL, text, "Error", 0 /* MB_OK */ );
-#endif
-	fprintf (stderr, "Error: %s\n", text);
-
-	Host_Shutdown ();
-	exit (1);
 }
 
 void
@@ -215,6 +194,9 @@ SDL_main (int c, char **v)
 	if (!noconinput)
 		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
 #endif
+
+	Sys_RegisterShutdown (Host_Shutdown);
+	Sys_RegisterShutdown (shutdown);
 
 	Host_Init (&host_parms);
 

@@ -70,28 +70,6 @@ Sys_Init (void)
 #endif
 }
 
-void
-Sys_Quit (void)
-{
-	Net_LogStop();
-
-	exit (0);
-}
-
-void
-Sys_Error (const char *error, ...)
-{
-	char        string[1024];
-	va_list     argptr;
-
-	va_start (argptr, error);
-	vsnprintf (string, sizeof (string), error, argptr);
-	va_end (argptr);
-	printf ("Fatal error: %s\n", string);
-
-	exit (1);
-}
-
 static int  do_stdin = 1;
 
 /*
@@ -146,6 +124,8 @@ main (int argc, const char *argv[])
 		Sys_Error ("Can't allocate %d\n", host_parms.memsize);
 
 	SV_Init ();
+
+	Sys_RegisterShutdown (Net_LogStop);
 
 	// run one frame immediately for first heartbeat
 	SV_Frame (0.1);

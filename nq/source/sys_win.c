@@ -184,82 +184,11 @@ Sys_Init (void)
 		WinNT = false;
 }
 
-void
-Sys_Error (const char *error, ...)
-{
-	va_list     argptr;
-	char        text[1024], text2[1024];
-	char       *text3 = "Press Enter to exit\n";
-	char       *text4 = "***********************************\n";
-	char       *text5 = "\n";
-	DWORD       dummy;
-	double      starttime;
-	static int  in_sys_error0 = 0;
-	static int  in_sys_error1 = 0;
-	static int  in_sys_error2 = 0;
-	static int  in_sys_error3 = 0;
-
-	if (!in_sys_error3) {
-		in_sys_error3 = 1;
-		VID_ForceUnlockedAndReturnState ();
-	}
-
-	va_start (argptr, error);
-	vsnprintf (text, sizeof (text), error, argptr);
-	va_end (argptr);
-
-	if (isDedicated) {
-		va_start (argptr, error);
-		vsnprintf (text, sizeof (text), error, argptr);
-		va_end (argptr);
-
-		snprintf (text2, sizeof (text2), "ERROR: %s\n", text);
-		WriteFile (houtput, text5, strlen (text5), &dummy, NULL);
-		WriteFile (houtput, text4, strlen (text4), &dummy, NULL);
-		WriteFile (houtput, text2, strlen (text2), &dummy, NULL);
-		WriteFile (houtput, text3, strlen (text3), &dummy, NULL);
-		WriteFile (houtput, text4, strlen (text4), &dummy, NULL);
-
-		starttime = Sys_DoubleTime ();
-		sc_return_on_enter = true;		// so Enter will get us out of here
-
-		while (!Sys_ConsoleInput () &&
-			   ((Sys_DoubleTime () - starttime) < CONSOLE_ERROR_TIMEOUT)) {
-		}
-	} else {
-		// switch to windowed so the message box is visible, unless we
-		// already tried that and failed
-		if (!in_sys_error0) {
-			in_sys_error0 = 1;
-			VID_SetDefaultMode ();
-			MessageBox (NULL, text, "Quake Error",
-						MB_OK | MB_SETFOREGROUND | MB_ICONSTOP);
-		} else {
-			MessageBox (NULL, text, "Double Quake Error",
-						MB_OK | MB_SETFOREGROUND | MB_ICONSTOP);
-		}
-	}
-
-	if (!in_sys_error1) {
-		in_sys_error1 = 1;
-		Host_Shutdown ();
-	}
-	// shut down QHOST hooks if necessary
-	if (!in_sys_error2) {
-		in_sys_error2 = 1;
-		DeinitConProc ();
-	}
-
-	exit (1);
-}
-
-void
-Sys_Quit (void)
+static void
+shutdown (void)
 {
 
 	VID_ForceUnlockedAndReturnState ();
-
-	Host_Shutdown ();
 
 	if (tevent)
 		CloseHandle (tevent);
@@ -269,8 +198,6 @@ Sys_Quit (void)
 
 	// shut down QHOST hooks if necessary
 	DeinitConProc ();
-
-	exit (0);
 }
 
 const char *
@@ -500,6 +427,9 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 
 // because sound is off until we become active
 	//XXX S_BlockSound ();
+
+	Sys_RegisterShutdown (Host_Shutdown);
+	Sys_RegisterShutdown (shutdown);
 
 	Con_Printf ("Host_Init\n");
 	Host_Init (&parms);

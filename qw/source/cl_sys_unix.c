@@ -69,33 +69,11 @@ Sys_Init (void)
 #endif
 }
 
-void
-Sys_Quit (void)
+static void
+shutdown (void)
 {
-	Host_Shutdown ();
+	// change stdin to blocking
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
-
-	Net_LogStop();
-
-	exit (0);
-}
-
-void
-Sys_Error (const char *error, ...)
-{
-	char        string[1024];
-	va_list     argptr;
-
-	// change stdin to non blocking
-	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
-
-	va_start (argptr, error);
-	vsnprintf (string, sizeof (string), error, argptr);
-	va_end (argptr);
-	fprintf (stderr, "Error: %s\n", string);
-
-	Host_Shutdown ();
-	exit (1);
 }
 
 void
@@ -203,6 +181,10 @@ main (int c, const char *v[])
 	noconinput = COM_CheckParm ("-noconinput");
 	if (!noconinput)
 		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
+
+	Sys_RegisterShutdown (Host_Shutdown);
+	Sys_RegisterShutdown (Net_LogStop);
+	Sys_RegisterShutdown (shutdown);
 
 	Host_Init ();
 

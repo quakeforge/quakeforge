@@ -139,32 +139,11 @@ Sys_DebugLog (char *file, char *fmt, ...)
 	close (fd);
 }
 
-void
-Sys_Error (char *error, ...)
+static void
+shutdown (void)
 {
-	va_list     argptr;
-	char        string[1024];
-
-	// change stdin to non blocking
-	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~FNDELAY);
-
-	va_start (argptr, error);
-	vsnprintf (string, sizeof (string), error, argptr);
-	va_end (argptr);
-	fprintf (stderr, "Error: %s\n", string);
-
-	Host_Shutdown ();
-	exit (1);
-
-}
-
-void
-Sys_Quit (void)
-{
-	Host_Shutdown ();
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~FNDELAY);
 	fflush (stdout);
-	exit (0);
 }
 
 void
@@ -250,6 +229,9 @@ main (int argc, char *argv[])
 		Sys_Error ("Can't allocate %d\n", parms.memsize);
 
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
+
+	Sys_RegisterShutdown (Host_Shutdown);
+	Sys_RegisterShutdown (shutdown);
 
 	printf ("Host_Init\n");
 	Host_Init (&parms);

@@ -233,8 +233,6 @@ SV_Error (const char *error, ...)
 
 	SV_FinalMessage (va ("server crashed: %s\n", string));
 
-	SV_Shutdown ();
-
 	Sys_Error ("SV_Error: %s\n", string);
 }
 
@@ -2320,6 +2318,8 @@ SV_Init (void)
 	if (host_parms.memsize < MINIMUM_MEMORY)
 		SV_Error ("Only %4.1f megs of memory reported, can't execute game",
 				  host_parms.memsize / (float) 0x100000);
+
+	Sys_RegisterShutdown (SV_Shutdown);
 
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();

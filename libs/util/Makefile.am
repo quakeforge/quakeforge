@@ -25,7 +25,7 @@ libQFutil_la_SOURCES = \
 	info.c link.c \
 	mathlib.c \
 	mdfour.c msg.c pcx.c plugin.c qargs.c qendian.c qfplist.c quakefs.c \
-	quakeio.c sizebuf.c sys.c sys_error.c tga.c va.c ver_check.c wad.c \
+	quakeio.c sizebuf.c sys.c tga.c va.c ver_check.c wad.c \
 	zone.c $(fnmatch_SRC)
 
 LIBLIST = libQFutil.la @LIBRARY_SEARCH_PATH@

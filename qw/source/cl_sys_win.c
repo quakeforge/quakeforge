@@ -124,42 +124,16 @@ Sys_Init (void)
 		WinNT = false;
 }
 
-void
-Sys_Quit (void)
+static void
+shutdown (void)
 {
 	VID_ForceUnlockedAndReturnState ();
-
-	Host_Shutdown ();
 
 	if (tevent)
 		CloseHandle (tevent);
 
 	if (qwclsemaphore)
 		CloseHandle (qwclsemaphore);
-
-	Net_LogStop();
-
-	exit (0);
-}
-
-void
-Sys_Error (const char *error, ...)
-{
-	char        text[1024];				// , text2[1024];
-	va_list     argptr;
-//	DWORD       dummy;
-
-	Host_Shutdown ();
-
-	va_start (argptr, error);
-	vsnprintf (text, sizeof (text), error, argptr);
-	va_end (argptr);
-
-	MessageBox (NULL, text, "Error", 0 /* MB_OK */ );
-
-	CloseHandle (qwclsemaphore);
-
-	exit (1);
 }
 
 void
@@ -411,6 +385,10 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 
 	Con_Printf ("Host_Init\n");
 	Host_Init ();
+
+	Sys_RegisterShutdown (Host_Shutdown);
+	Sys_RegisterShutdown (Net_LogStop);
+	Sys_RegisterShutdown (shutdown);
 
 	oldtime = Sys_DoubleTime ();
 

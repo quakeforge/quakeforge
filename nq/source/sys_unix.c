@@ -67,32 +67,11 @@ Sys_Init (void)
 #endif
 }
 
-void
-Sys_Quit (void)
+static void
+shutdown (void)
 {
-	Host_Shutdown ();
+	// change stdin to blocking
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~FNDELAY);
-	fflush (stdout);
-	exit (0);
-}
-
-void
-Sys_Error (const char *error, ...)
-{
-	va_list     argptr;
-	char        string[1024];
-
-	// change stdin to non blocking
-	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~FNDELAY);
-
-	va_start (argptr, error);
-	vsnprintf (string, sizeof (string), error, argptr);
-	va_end (argptr);
-	fprintf (stderr, "Error: %s\n", string);
-
-	Host_Shutdown ();
-	exit (1);
-
 }
 
 void
@@ -188,6 +167,9 @@ main (int c, const char *v[])
 	parms.membase = malloc (parms.memsize);
 
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
+
+	Sys_RegisterShutdown (Host_Shutdown);
+	Sys_RegisterShutdown (shutdown);
 
 	Host_Init (&parms);
 

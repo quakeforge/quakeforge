@@ -75,29 +75,6 @@ Sys_Init (void)
 		WinNT = false;
 }
 
-void
-Sys_Quit (void)
-{
-	Net_LogStop();
-	exit (0);
-}
-
-void
-Sys_Error (const char *error, ...)
-{
-	char        text[1024];
-	va_list     argptr;
-
-	va_start (argptr, error);
-	vsnprintf (text, sizeof (text), error, argptr);
-	va_end (argptr);
-
-//	MessageBox(NULL, text, "Error", 0 /* MB_OK */ );
-	printf ("ERROR: %s\n", text);
-
-	exit (1);
-}
-
 
 /*
 	Sys_ConsoleInput
@@ -183,6 +160,8 @@ main (int argc, const char **argv)
 	// sys_sleep > 0 seems to cause packet loss on WinNT (why?)
 	if (WinNT)
 		Cvar_Set (sys_sleep, "0");
+
+	Sys_RegisterShutdown (Net_LogStop);
 
 	// run one frame immediately for first heartbeat
 	SV_Frame (0.1);

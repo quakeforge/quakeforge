@@ -184,7 +184,6 @@ SV_Quit_f (void)
 {
 	SV_FinalMessage ("server shutdown\n");
 	SV_Printf ("Shutting down.\n");
-	SV_Shutdown ();
 	Sys_Quit ();
 }
 

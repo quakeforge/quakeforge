@@ -155,22 +155,6 @@ Sys_DebugLog (char *file, char *fmt, ...)
 }
 
 void
-Sys_Error (char *error, ...)
-{
-	va_list     argptr;
-	char        text[1024];
-
-	va_start (argptr, error);
-	vsnprintf (text, sizeof (text), error, argptr);
-	va_end (argptr);
-
-//	MessageBox(NULL, text, "Error", 0 /* MB_OK */ );
-	printf ("ERROR: %s\n", text);
-
-	exit (1);
-}
-
-void
 Sys_Printf (char *fmt, ...)
 {
 	va_list     argptr;
@@ -178,12 +162,6 @@ Sys_Printf (char *fmt, ...)
 	va_start (argptr, fmt);
 	vprintf (fmt, argptr);
 	va_end (argptr);
-}
-
-void
-Sys_Quit (void)
-{
-	exit (0);
 }
 
 void
@@ -270,6 +248,9 @@ main (int argc, char **argv)
 
 	parms.argc = argc;
 	parms.argv = argv;
+
+	Sys_RegisterShutdown (Host_Shutdown);
+	Sys_RegisterShutdown (shutdown);
 
 	printf ("Host_Init\n");
 	Host_Init (&parms);

@@ -71,6 +71,13 @@ cvar_t     *sys_sleep;
 
 static sys_printf_t sys_printf_function = Sys_StdPrintf;
 
+typedef struct shutdown_list_s {
+	struct shutdown_list_s *next;
+	void (*func)(void);
+} shutdown_list_t;
+
+static shutdown_list_t *shutdown_list;
+
 /* The translation table between the graphical font and plain ASCII  --KB */
 const char sys_char_map[256] = {
 	'\0', '#', '#', '#', '#', '.', '#', '#',
@@ -290,4 +297,57 @@ Sys_Init_Cvars (void)
 	sys_sleep = Cvar_Get ("sys_sleep", "8", CVAR_NONE, NULL, "Sleep how long "
 						  "in seconds between checking for connections. "
 						  "Minimum is 0, maximum is 13");
+}
+
+static void
+run_shutdown_list (void)
+{
+	shutdown_list_t *p = shutdown_list;
+
+	while (p) {
+		p->func ();
+		p = p->next;
+	}
+}
+
+void
+Sys_Quit (void)
+{
+	run_shutdown_list ();
+
+	exit (0);
+}
+
+void
+Sys_Error (const char *error, ...)
+{
+	va_list     argptr;
+	char        string[1024];
+
+	va_start (argptr, error);
+	vsnprintf (string, sizeof (string), error, argptr);
+	va_end (argptr);
+
+#ifdef WIN32
+	MessageBox (NULL, text, "Error", 0 /* MB_OK */ );
+#endif
+	fprintf (stderr, "Fatal error: %s\n", string);
+
+	run_shutdown_list ();
+
+	exit (1);
+}
+
+void
+Sys_RegisterShutdown (void (*func) (void))
+{
+	shutdown_list_t *p;
+	if (!func)
+		return;
+	p = malloc (sizeof (*p));
+	if (!p)
+		Sys_Error ("Sys_RegisterShutdown: insufficient memory");
+	p->func = func;
+	p->next = shutdown_list;
+	shutdown_list = p;
 }

@@ -54,6 +54,7 @@ void Sys_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void Sys_DPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void Sys_Error (const char *error, ...) __attribute__((format(printf,1,2), noreturn));
 void Sys_Quit (void);
+void Sys_RegisterShutdown (void (*func) (void));
 double Sys_DoubleTime (void);
 
 const char *Sys_ConsoleInput (void);
