@@ -52,7 +52,6 @@
 
 #include "chase.h"
 #include "client.h"
-//#include "game.h"
 #include "glquake.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
