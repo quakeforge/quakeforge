@@ -589,7 +589,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	else
 		vo = GL_GetAliasFrameVerts (e->frame, paliashdr, e);
 
-	if (modelalpha != 1.0)
+	if (modelalpha < 1.0)
 		qfglDepthMask (GL_FALSE);
 
 	if (!fb_texture) {	// Model has no fullbrights, don't bother with multi
@@ -619,7 +619,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		}
 	}
 
-	if (modelalpha != 1.0)
+	if (modelalpha < 1.0)
 		qfglDepthMask (GL_TRUE);
 
 	qfglPopMatrix ();

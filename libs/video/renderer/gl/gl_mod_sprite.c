@@ -86,7 +86,7 @@ R_GetSpriteFrame (entity_t *currententity)
 void
 R_DrawSpriteModel (entity_t *e)
 {
-	float			 color[4];
+	float			 modelalpha, color[4];
 	float			*up, *right;
 	msprite_t		*psprite;
 	mspriteframe_t	*frame;
@@ -110,15 +110,21 @@ R_DrawSpriteModel (entity_t *e)
 		up = vup;
 		right = vright;
 	}
-	VectorScale (up, e->scale, up);
-	VectorScale (right, e->scale, right);
+	if (e->scale != 1.0) {
+		VectorScale (up, e->scale, up);
+		VectorScale (right, e->scale, right);
+	}
+
+	modelalpha = e->alpha;
+	if (modelalpha < 1.0)
+		qfglDepthMask (GL_FALSE);
 
 	qfglBindTexture (GL_TEXTURE_2D, frame->gl_texturenum);
 
 	qfglBegin (GL_QUADS);
 
 	VectorCopy (e->colormod, color);
-	color[3] = e->alpha;
+	color[3] = modelalpha;
 	qfglColor4fv (color);
 
 	qfglTexCoord2f (0, 1);
@@ -142,4 +148,7 @@ R_DrawSpriteModel (entity_t *e)
 	qfglVertex3fv (point);
 
 	qfglEnd ();
+
+	if (modelalpha < 1.0)
+		qfglDepthMask (GL_TRUE);
 }
