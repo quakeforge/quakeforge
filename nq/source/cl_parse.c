@@ -483,8 +483,6 @@ CL_ParseUpdate (int bits)
 
 	if (bits & U_NOLERP)
 		forcelink = true;
-	if (bits & 0xffff0000)
-		printf ("%x\n", bits);
 
 // QSG Start
 	if (bits & U_ALPHA)
