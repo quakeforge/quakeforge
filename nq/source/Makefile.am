@@ -73,7 +73,7 @@ qf_client_LIBS= $(top_builddir)/libs/video/targets/libQFjs.la \
 		$(top_builddir)/libs/audio/libQFsound.la \
 		$(top_builddir)/libs/util/libQFutil.la
 
-client_LIBS=	-L. libqfnet.la $(ASM) $(qf_client_LIBS) $(NET_LIBS)
+client_LIBS=		libqfnet.la $(ASM) $(qf_client_LIBS) $(NET_LIBS)
 client_LIB_DEPS=	libqfnet.la $(ASM) $(qf_client_LIBS)
 
 client_SOURCES=	cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_screen.c \
