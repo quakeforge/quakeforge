@@ -1,3 +1,5 @@
+#include "stringh.h"
+
 integer () StringHash_Create = #0;
 integer (integer hashid) StringHash_Destroy = #0;
 integer (integer hashid, string key, string value, integer value_id) StringHash_Set = #0;

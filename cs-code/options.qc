@@ -24,6 +24,17 @@
         Boston, MA  02111-1307, USA
 */
 
+#include "options.h"
+#include "cbuf.h"
+#include "menu.h"
+#include "game.h"
+#include "draw.h"
+#include "cvar.h"
+#include "key.h"
+#include "inputline.h"
+#include "controls_o.h"
+#include "options_util.h"
+
 /* 
 	some definitions of border values for
 	different things

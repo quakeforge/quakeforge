@@ -1,6 +1,6 @@
 *.dat
 *.gz
-*.h
+*.qfo
 *.src
 *.sym
 .vimrc

@@ -1,7 +1,32 @@
-entity self;
-.float nextthink;
-.float frame;
-.void () think;
+#include "menu.h"
+#include "file.h"
+#include "cmd.h"
+#include "draw.h"
+#include "key.h"
+#include "inputline.h"
+#include "string.h"
+#include "cbuf.h"
+#include "options.h"
+#include "servlist.h"
+#include "game.h"
+#include "client_menu.h"
+
+string [6] dot_name = {
+    "gfx/menudot1.lmp",
+    "gfx/menudot2.lmp",
+    "gfx/menudot3.lmp",
+    "gfx/menudot4.lmp",
+    "gfx/menudot5.lmp",
+    "gfx/menudot6.lmp",
+};
+
+void (integer x, integer y) spinner =
+{
+	local integer i = integer(time * 10) % 6;
+	local qpic_t p = Draw_CachePic (dot_name[i], 1);
+
+	Draw_Pic (x, y, p);
+};
 
 integer do_single_player;
 
@@ -439,8 +464,6 @@ void () main_menu =
 
 void () menu_init =
 {
-	load_menu_pics ();
-
 	lanConfig_port_il = InputLine_Create (4, 8, ' ');
 	InputLine_SetWidth (lanConfig_port_il, 10);
 	lanConfig_join_il = InputLine_Create (4, 24, ' ');

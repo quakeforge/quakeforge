@@ -1943,7 +1943,6 @@ AC_OUTPUT(
 	tools/qwaq/progs.src
 
 	cs-code/Makefile
-	cs-code/menu.src
 
 	doc/Makefile
 	doc/man/Makefile

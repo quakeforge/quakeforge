@@ -24,6 +24,13 @@
         Boston, MA  02111-1307, USA
 */
 
+#include "menu.h"
+#include "stringh.h"
+#include "draw.h"
+#include "game.h"
+#include "key.h"
+#include "string.h"
+#include "options_util.h"
 
 integer set_key_flag;	// holds flag for the key-setting
  

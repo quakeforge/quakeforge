@@ -24,8 +24,9 @@
         Boston, MA  02111-1307, USA
 */
 
-
-float time;	// holds current time
+#include "draw.h"
+#include "game.h"
+#include "string.h"
 
 /*
 	opt_cursor

@@ -1,4 +1,9 @@
-void (integer x, integer y, integer width, integer lines) text_box;
+#include "menu.h"
+#include "draw.h"
+#include "inputline.h"
+#include "options_util.h"
+#include "controls_o.h"
+#include "client_menu.h"
 
 integer () servlist_favorates_draw =
 {
@@ -20,7 +25,6 @@ integer serv_nfull;
 integer serv_nempty;
 inputline_t serv_maxping;
 inputline_t serv_game;
-inputline_t input_active;
 
 integer () servlist_filter_draw =
 {

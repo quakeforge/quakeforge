@@ -1,5 +1,5 @@
-struct _inputline_t = {};	// opaque type :)
-typedef _inputline_t [] inputline_t;
+#include "inputline.h"
+
 inputline_t (integer lines, integer size, integer prompt) InputLine_Create = #0;
 void (inputline_t il, integer width) InputLine_SetWidth = #0;
 void (inputline_t il) InputLine_Destroy = #0;

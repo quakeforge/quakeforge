@@ -1,3 +1,5 @@
+#include "menu.h"
+
 void (integer x, integer y, string text) Menu_Begin = #0;
 void (integer val) Menu_FadeScreen = #0;
 void (integer () func) Menu_Draw = #0;

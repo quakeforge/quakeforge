@@ -15,19 +15,27 @@ GZ=.gz
 else
 GZ=
 endif
-STRIP=$(shell echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c)
+STRIP=$(shell echo `echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`)
 
 pkgdata_DATA= menu.dat$(GZ)
 
 menu_src= \
-	cbuf_def.qc cmd_def.qc controls_o.qc cvar_def.qc draw_def.qc file_def.qc \
-	game_def.qc inputline_def.qc inputline_util.qc key_defs.qc menu.qc \
-	menu_def.qc menu_pics.qc menu_util.qc options.qc options_util.qc \
-	servlist.qc string_def.qc stringh_def.qc object.r
+	cbuf.r client_menu.qc cmd.r controls_o.qc cvar.r draw.r file.r \
+	game.r inputline.r inputline_util.qc key.r \
+	menu.r menu_pics.qc menu_util.qc options.qc options_util.qc \
+	servlist.qc string.r stringh.r object.r
 
-menu.dat$(GZ): menu.src $(menu_src) $(QFCC_DEP)
-	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -P $<
+%.qfo: %.r
+	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -c -o $@ $<
+
+%.qfo: %.qc
+	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -c -o $@ $<
+
+menu_obj=$(addsuffix .qfo,$(basename $(menu_src)))
+
+menu.dat$(GZ): $(menu_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -p $(STRIP) -o menu.dat $(menu_obj)
 	$(GZIP)
 
 EXTRA_DIST= $(menu_src)
-CLEANFILES= *.dat *.sym *.gz
+CLEANFILES= *.dat *.sym *.gz *.qfo
