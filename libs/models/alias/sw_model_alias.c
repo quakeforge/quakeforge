@@ -45,6 +45,7 @@
 #include "QF/qendian.h"
 #include "QF/sys.h"
 
+#include "compat.h"
 #include "d_iface.h"
 
 extern char loadname[];
@@ -125,16 +126,15 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 			pinskingroup = (daliasskingroup_t *) pskintype;
 			groupskins = LittleLong (pinskingroup->numskins);
 
-			t = (int) &((maliasskingroup_t *) 0)->skindescs[groupskins];
+			t = field_offset (maliasskingroup_t, skindescs[groupskins]);
 			paliasskingroup = Hunk_AllocName (t, loadname);
 			paliasskingroup->numskins = groupskins;
 
 			*pskinindex = (byte *) paliasskingroup - (byte *) pheader;
 
 			pinskinintervals = (daliasskininterval_t *) (pinskingroup + 1);
-			poutskinintervals =
-
-				Hunk_AllocName (groupskins * sizeof (float), loadname);
+			poutskinintervals = Hunk_AllocName (groupskins * sizeof (float),
+												loadname);
 			paliasskingroup->intervals =
 				(byte *) poutskinintervals - (byte *) pheader;
 			for (gnum = 0; gnum < groupskins; gnum++) {
@@ -250,7 +250,8 @@ Mod_LoadAliasGroup (void *pin, maliasframedesc_t *frame)
 
 	numframes = LittleLong (pingroup->numframes);
 
-	paliasgroup = Hunk_AllocName (sizeof (maliasgroup_t) + (numframes - 1) * sizeof (paliasgroup->frames[0]), loadname);
+	paliasgroup = Hunk_AllocName (field_offset (maliasgroup_t,
+												frames[numframes]), loadname);
 	paliasgroup->numframes = numframes;
 
 	for (i = 0; i < 3; i++) {

@@ -37,6 +37,8 @@
 #include "QF/qendian.h"
 #include "QF/sys.h"
 
+#include "compat.h"
+
 extern model_t *loadmodel;
 extern char loadname[];
 
@@ -61,11 +63,8 @@ Mod_LoadSpriteGroup (void *pin, mspriteframe_t **ppframe, int framenum)
 
 	numframes = LittleLong (pingroup->numframes);
 
-	pspritegroup = Hunk_AllocName (sizeof (mspritegroup_t) +
-								   (numframes -
-									1) * sizeof (pspritegroup->frames[0]),
-
-								   loadname);
+	pspritegroup = Hunk_AllocName (field_offset (mspritegroup_t,
+												 frames[numframes]), loadname);
 
 	pspritegroup->numframes = numframes;
 
@@ -120,7 +119,7 @@ Mod_LoadSpriteModel (model_t *mod, void *buffer)
 
 	numframes = LittleLong (pin->numframes);
 
-	size = sizeof (msprite_t) + (numframes - 1) * sizeof (psprite->frames);
+	size = field_offset (msprite_t, frames[numframes]);
 
 	psprite = Hunk_AllocName (size, loadname);
 

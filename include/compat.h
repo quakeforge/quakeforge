@@ -88,4 +88,7 @@ extern int vsnprintf(char *s, size_t maxlen, const char *format, va_list arg);
 # define strncaseequal(a,b,c) (strncasecmp (a, b, c) == 0)
 #endif
 
+#undef field_offset
+#define field_offset(type,field) ((int)&(((type *)0)->field))
+
 #endif // __compat_h

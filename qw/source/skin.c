@@ -182,7 +182,7 @@ Skin_Cache (skin_t *skin)
 	}
 	pixels = 320 * 200;
 
-	out = Cache_Alloc (&skin->data.cache, sizeof (tex_t) + pixels, skin->name);
+	out = Cache_Alloc (&skin->data.cache, field_offset (tex_t, data[pixels]), skin->name);
 	if (!out)
 		Sys_Error ("Skin_Cache: couldn't allocate");
 	opix = out->data;

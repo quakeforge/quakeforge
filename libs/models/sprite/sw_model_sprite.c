@@ -67,7 +67,6 @@ Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
 	size = width * height;
 
 	pspriteframe = Hunk_AllocName (sizeof (mspriteframe_t) + size * r_pixbytes,
-
 								   loadname);
 
 	memset (pspriteframe, 0, sizeof (mspriteframe_t) + size);

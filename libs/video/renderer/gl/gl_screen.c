@@ -39,7 +39,6 @@
 #include <time.h>
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
@@ -52,6 +51,7 @@
 #include "QF/tga.h"
 #include "QF/vfs.h"     // MAX_OSPATH
 
+#include "compat.h"
 #include "glquake.h"
 #include "r_cvar.h"
 #include "r_local.h"
@@ -572,7 +572,7 @@ SCR_ScreenShot (int width, int height)
 	float       fracw, frach;
 	tex_t      *tex;
 
-	tex = Hunk_TempAlloc (sizeof (tex_t) + vid.width * vid.height * 3);
+	tex = Hunk_TempAlloc (field_offset (tex_t, data[vid.width * vid.height * 3]));
 	if (!tex)
 		return 0;
 

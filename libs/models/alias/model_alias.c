@@ -115,7 +115,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer)
 // allocate space for a working header, plus all the data except the frames,
 // skin and group info
 //
-	size = (int) &((aliashdr_t *) 0)->frames[LittleLong (pinmodel->numframes)];
+	size = field_offset (aliashdr_t, frames[LittleLong (pinmodel->numframes)]);
 	pheader = Hunk_AllocName (size, loadname);
 	memset (pheader, 0, size);
 	pmodel = &pheader->mdl;

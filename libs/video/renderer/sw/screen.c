@@ -607,7 +607,7 @@ SCR_ScreenShot (int width, int height)
 	fracw = (float) vid.width / (float) w;
 	frach = (float) vid.height / (float) h;
 
-	tex = Hunk_TempAlloc (sizeof (tex_t) + w * h);
+	tex = Hunk_TempAlloc (field_offset (tex_t, data[w * h]));
 	if (!tex)
 		return 0;
 

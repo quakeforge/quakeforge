@@ -44,6 +44,8 @@
 #include "QF/vfs.h"
 #include "QF/zone.h"
 
+#include "compat.h"
+
 tex_t *
 LoadPCX (VFile *f, int convert, byte *pal)
 {
@@ -87,7 +89,7 @@ LoadPCX (VFile *f, int convert, byte *pal)
 	count = (pcx->xmax + 1) * (pcx->ymax + 1);
 	if (convert)
 		count *= 4;
-	tex = Hunk_TempAlloc (sizeof (tex_t) + count);
+	tex = Hunk_TempAlloc (field_offset (tex_t, data[count]));
 	tex->width = pcx->xmax + 1;
 	tex->height = pcx->ymax + 1;
 	if (convert) {

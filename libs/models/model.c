@@ -71,18 +71,22 @@ Mod_Init (void)
 {
 	int x, y, m;
 	byte *dest;
+	int mip0size = 16*16;
+	int mip1size = 8*8;
+	int mip2size = 4*4;
+	int mip3size = 2*2;
 
 	memset (mod_novis, 0xff, sizeof (mod_novis));
-	r_notexture_mip =
-		Hunk_AllocName (sizeof (texture_t) + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2,
-						"notexture");
+	r_notexture_mip = Hunk_AllocName (sizeof (texture_t)
+									  + mip0size + mip1size
+									  + mip2size + mip3size, "notexture");
 
 	r_notexture_mip->width = r_notexture_mip->height = 16;
 	r_notexture_mip->offsets[0] = sizeof (texture_t);
 
-	r_notexture_mip->offsets[1] = r_notexture_mip->offsets[0] + 16 * 16;
-	r_notexture_mip->offsets[2] = r_notexture_mip->offsets[1] + 8 * 8;
-	r_notexture_mip->offsets[3] = r_notexture_mip->offsets[2] + 4 * 4;
+	r_notexture_mip->offsets[1] = r_notexture_mip->offsets[0] + mip0size;
+	r_notexture_mip->offsets[2] = r_notexture_mip->offsets[1] + mip1size;
+	r_notexture_mip->offsets[3] = r_notexture_mip->offsets[2] + mip2size;
 
 	for (m = 0; m < 4; m++) {
 		dest = (byte *) r_notexture_mip + r_notexture_mip->offsets[m];

@@ -196,7 +196,6 @@ Mod_LoadTextures (lump_t *l)
 		tx->height = mt->height;
 		for (j = 0; j < MIPLEVELS; j++)
 			tx->offsets[j] =
-
 				mt->offsets[j] + sizeof (texture_t) - sizeof (miptex_t);
 		// the pixels immediately follow the structures
 		memcpy (tx + 1, mt + 1, pixels);
