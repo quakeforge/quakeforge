@@ -93,20 +93,7 @@ SND_TransferStereo16 (int endtime)
 	lpaintedtime = paintedtime;
 
 
-#if 0
-#ifdef _WIN32
-	if (pDSBuf) {
-		pbuf = DSOUND_LockBuffer (true);
-		if (!pbuf) {
-			Sys_Printf ("DSOUND_LockBuffer fails!\n");
-			return;
-		}
-	} else
-#endif
-#endif
-	{
-		pbuf = (unsigned long *) shm->buffer;
-	}
+	pbuf = (unsigned long *) shm->buffer;
 
 	while (lpaintedtime < endtime) {
 		// handle recirculating buffer issues
@@ -126,13 +113,6 @@ SND_TransferStereo16 (int endtime)
 		snd_p += snd_linear_count;
 		lpaintedtime += (snd_linear_count >> 1);
 	}
-
-#if 0
-#ifdef _WIN32
-	if (pDSBuf)
-		DSOUND_LockBuffer (false);
-#endif
-#endif
 }
 
 static void
@@ -154,20 +134,7 @@ SND_TransferPaintBuffer (int endtime)
 	step = 3 - shm->channels;
 	snd_vol = volume->value * 256;
 
-#if 0
-#ifdef _WIN32
-	if (pDSBuf) {
-		pbuf = DSOUND_LockBuffer (true);
-		if (!pbuf) {
-			Sys_Printf ("DSOUND_LockBuffer fails!\n");
-			return;
-		}
-	} else
-#endif
-#endif
-	{
-		pbuf = (unsigned long *) shm->buffer;
-	}
+	pbuf = (unsigned long *) shm->buffer;
 
 	if (shm->samplebits == 16) {
 		short      *out = (short *) pbuf;
@@ -196,12 +163,6 @@ SND_TransferPaintBuffer (int endtime)
 			out_idx = (out_idx + 1) & out_mask;
 		}
 	}
-#if 0
-#ifdef _WIN32
-	if (pDSBuf)
-		DSOUND_LockBuffer (false);
-#endif
-#endif
 }
 
 /* CHANNEL MIXING */
