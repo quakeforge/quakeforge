@@ -69,15 +69,15 @@ fi
 am=`which automake`
 if test -n "$am" ; then
 	if test -x "$am" ; then
-		AM_VER=`automake --version | head -1 | sed 's/automake (GNU automake) //'`
+		AM_VER=`automake --version | head -1 | sed -e 's/automake (GNU automake) //' -e 's/\-p.*$//'`
 		AM_VER_MAJOR=`echo $AM_VER | cut -f1 -d.`
 		AM_VER_MINOR=`echo $AM_VER | cut -f2 -d.`
 		if test "$AM_VER_MAJOR" -lt "1"; then
-			echo "Need automake version 1.6 or higher"
+			echo "Automake 1.6 or greater needed to build makefiles."
 			exit 1
 		fi
 		if test "$AM_VER_MAJOR" -eq "1" -a "$AM_VER_MINOR" -lt "6"; then
-			echo "Need automake version 1.6 or higher"
+			echo "Automake 1.6 or greater needed to build makefiles."
 			exit 1
 		fi
 	fi
