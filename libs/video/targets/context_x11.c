@@ -703,6 +703,7 @@ X11_GetWindowCoords (int *ax, int *ay)
 void
 X11_ForceViewPort (void)
 {
+#ifdef HAVE_VIDMODE
 	int         ax, ay;
 
 	if (!vidmode_avail  || !vid_context_created)
@@ -715,6 +716,7 @@ X11_ForceViewPort (void)
 		XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, 0, 0);
 	}
 	XF86VidModeSetViewPort (x_disp, x_screen, ax, ay);
+#endif
 }
 
 double
