@@ -338,15 +338,16 @@ Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 #else
 # ifdef HAVE_MPROTECT
 	int         r;
-	unsigned long addr;
+	unsigned long endaddr = startaddr + length;
+
+#  ifdef HAVE_GETPAGESIZE
 	int         psize = getpagesize ();
 
-	addr = (startaddr & ~(psize - 1)) - psize;
+	startaddr &= ~(psize - 1);
+	endaddr = (endaddr + psize - 1) & ~(psize - 1);
+#  endif
 
-//	fprintf(stderr, "writable code %lx(%lx)-%lx, length=%lx\n", startaddr,
-//			addr, startaddr+length, length);
-
-	r = mprotect ((char *) addr, length + startaddr - addr + psize, 7);
+	r = mprotect ((char *) startaddr, endaddr - startaddr, 7);
 
 	if (r < 0)
 		Sys_Error ("Protection change failed");

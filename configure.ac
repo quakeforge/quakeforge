@@ -425,7 +425,7 @@ AC_CHECK_FUNCS(
 	access _access gethostname gethostbyname connect gettimeofday getwd \
 	mkdir _mkdir ftime _ftime fcntl stat putenv select socket strerror \
 	strcasestr strnlen strstr snprintf _snprintf vsnprintf _vsnprintf \
-	strsep dlopen getaddrinfo getnameinfo mprotect
+	strsep dlopen getaddrinfo getnameinfo mprotect getpagesize
 )
 
 DL_LIBS=""
