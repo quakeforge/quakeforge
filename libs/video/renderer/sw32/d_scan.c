@@ -279,8 +279,8 @@ Turbulent (espan_t *pspan)
 	zi16stepu = d_zistepu * 16 * 65536;
 
 	do {
-		r_turb_pdest = ((byte *) d_viewbuffer + ((screenwidth * pspan->v) +
-												 pspan->u) * r_pixbytes);
+		r_turb_pdest = (byte *) d_viewbuffer + ((screenwidth * pspan->v) +
+												pspan->u) * r_pixbytes;
 
 		count = pspan->count;
 
@@ -342,12 +342,9 @@ Turbulent (espan_t *pspan)
 				r_turb_tstep = (tnext - r_turb_t) >> 4;
 			} else {
 				// calculate s/z, t/z, zi->fixed s and t at last pixel in
-				// span (so
-				// can't step off polygon), clamp, calculate s and t steps
-				// across
-				// span by division, biasing steps low so we don't run off
-				// the
-				// texture
+				// span (so can't step off polygon), clamp, calculate s and t
+				// steps across span by division, biasing steps low so we
+				// don't run off the texture
 				spancountminus1 = (float) (r_turb_spancount - 1);
 				sdivz += d_sdivzstepu * spancountminus1;
 				tdivz += d_tdivzstepu * spancountminus1;
@@ -357,10 +354,9 @@ Turbulent (espan_t *pspan)
 				if (snext > bbextents)
 					snext = bbextents;
 				else if (snext < 16)
-					snext = 16;			// prevent round-off error on <0
-										// steps from
-				// from causing overstepping & running off the
-				// edge of the texture
+					snext = 16;			// prevent round-off error on <0 steps
+										// from causing overstepping & running
+										// off the edge of the texture
 
 				tnext = (int) (tdivz * z) + tadjust;
 				if (tnext > bbextentt)

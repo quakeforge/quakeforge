@@ -261,3 +261,9 @@ VID_InitBuffers (void)
 	if (vid.init_caches)
 		vid.init_caches (vid.surfcache, cachesize);
 }
+
+void
+VID_ShiftPalette (unsigned char *p)
+{
+	VID_SetPalette (p);
+}

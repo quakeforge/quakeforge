@@ -46,9 +46,9 @@ float       d_sdivzorigin, d_tdivzorigin, d_ziorigin;
 
 fixed16_t   sadjust, tadjust, bbextents, bbextentt;
 
-void       *cacheblock;
+byte       *cacheblock;
 int         cachewidth;
-void       *d_viewbuffer;
+byte       *d_viewbuffer;
 short      *d_pzbuffer;
 unsigned int d_zrowbytes;
 unsigned int d_zwidth;

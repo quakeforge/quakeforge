@@ -73,7 +73,6 @@
   required background clears
   required update regions
 
-
   syncronous draw mode or async
   One off screen buffer, with updates either copied or xblited
   Need to double buffer?
@@ -151,8 +150,8 @@ int         scr_erase_center;
 /*
 	SCR_CenterPrint
 
-	Called for important messages that should stay in the center of the
-	screen for a few moments
+	Called for important messages that should stay in the center of the screen
+	for a few moments
 */
 void
 SCR_CenterPrint (const char *str)
@@ -473,9 +472,6 @@ SCR_DrawFPS (int swap)
 		lastframetime = t;
 	}
 	snprintf (st, sizeof (st), "%3d FPS", lastfps);
-	/* Misty: New trick! (for me) the ? makes this work like a if then else - 
-	   IE: if cl_hudswap->int_val is not null, do first case, else (else is a 
-	   : here) do second case. Deek taught me this trick */
 	if (show_time->int_val <= 0) {
 		i = 8;
 	} else if (show_time->int_val == 1) {
@@ -483,6 +479,9 @@ SCR_DrawFPS (int swap)
 	} else {
 		i = 80;
 	}
+	/* Misty: New trick! (for me) the ? makes this work like a if then else - 
+	   IE: if cl_hudswap->int_val is not null, do first case, else (else is a 
+	   : here) do second case. Deek taught me this trick */
 	x = swap ? vid.width - ((strlen (st) * 8) + i) : i;
 	y = vid.height - (sb_lines + 8);
 	Draw_String (x, y, st);
@@ -590,7 +589,7 @@ SCR_DrawConsole (int swap)
 }
 
 /*
-   SCREEN SHOTS
+	SCREEN SHOTS
 */
 
 tex_t *

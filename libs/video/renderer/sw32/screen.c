@@ -44,8 +44,8 @@
 #include "QF/draw.h"
 #include "QF/keys.h"
 #include "QF/pcx.h"
-#include "QF/render.h" 
-#include "QF/screen.h" 
+#include "QF/render.h"
+#include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
 #include "QF/vfs.h"
@@ -91,8 +91,7 @@
   net
   turn off messages option
 
-  the refresh is allways rendered, unless the console is full screen
-
+  the refresh is always rendered, unless the console is full screen
 
   console is:
 	notify lines
@@ -109,19 +108,6 @@ float       scr_conlines;				// lines of console to display
 
 int         oldscreensize, oldfov;
 int         oldsbar;
-cvar_t     *scr_viewsize;
-cvar_t     *scr_fov;					// 10 - 170
-cvar_t     *scr_conspeed;
-cvar_t     *scr_consize;
-cvar_t     *scr_centertime;
-cvar_t     *scr_showram;
-cvar_t     *scr_showturtle;
-cvar_t     *scr_showpause;
-cvar_t     *scr_printspeed;
-cvar_t     *crosshair;
-cvar_t     *crosshaircolor;
-cvar_t     *cl_crossx;
-cvar_t     *cl_crossy;
 
 qboolean    scr_initialized;			// ready to draw
 
@@ -346,7 +332,7 @@ SCR_CalcRefdef (void)
 	vrect.width = vid.width;
 	vrect.height = vid.height;
 
-	R_SetVrect (&vrect, &scr_vrect, sb_lines);
+	R_SetVrect (&vrect, &scr_vrect, r_lineadj);
 
 	// guard against going from one mode to another that's less than half the
 	// vertical resolution
@@ -354,13 +340,13 @@ SCR_CalcRefdef (void)
 		scr_con_current = vid.height;
 
 	// notify the refresh of the change
-	R_ViewChanged (&vrect, sb_lines, vid.aspect);
+	R_ViewChanged (&vrect, r_lineadj, vid.aspect);
 }
 
-extern float v_blend[4]; 
+extern float v_blend[4];
 
 void
-SCR_ApplyBlend (void)
+SCR_ApplyBlend (void) // Used to be V_UpdatePalette
 {
 	int			r, b, g, i;
 	byte	   *basepal, *newpal;
@@ -661,6 +647,7 @@ SCR_DrawConsole (int swap)
 	if (scr_con_current) {
 		scr_copyeverything = 1;
 		Con_DrawConsole (scr_con_current);
+		Con_DrawDownload (scr_con_current);
 		clearconsole = 0;
 	} else {
 		if (key_dest == key_game || key_dest == key_message)
@@ -669,7 +656,7 @@ SCR_DrawConsole (int swap)
 }
 
 /*
-  SCREEN SHOTS
+	SCREEN SHOTS
 */
 
 tex_t *
@@ -681,9 +668,9 @@ SCR_ScreenShot (int width, int height)
 void
 SCR_ScreenShot_f (void)
 {
-	char		pcxname[MAX_OSPATH];
-	pcx_t	   *pcx;
-	int			pcx_len;
+	char        pcxname[MAX_OSPATH];
+	pcx_t      *pcx;
+	int         pcx_len;
 
 	// find a file name to save it to 
 	if (!COM_NextFilename (pcxname, "qf", ".pcx")) {
@@ -717,7 +704,7 @@ SCR_ScreenShot_f (void)
 }
 
 /*
-  Find closest color in the palette for named color
+	Find closest color in the palette for named color
 */
 int
 MipColor (int r, int g, int b)
@@ -784,7 +771,7 @@ SCR_DrawCharToSnap (int num, byte * dest, int width)
 void
 SCR_DrawStringToSnap (const char *s, tex_t *tex, int x, int y)
 {
-	byte	   *buf = tex->data;
+	byte       *buf = tex->data;
 	byte       *dest;
 	const unsigned char *p;
 	int width = tex->width;
@@ -849,7 +836,7 @@ void
 SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 {
 	static int  oldscr_viewsize;
-	vrect_t		vrect;
+	vrect_t     vrect;
 
 	if (scr_skipupdate || block_drawing)
 		return;
@@ -898,6 +885,7 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 	// do 3D refresh drawing, and then update the screen
 	D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
 										// directly
+
 	if (scr_fullupdate++ < vid.numpages) {	// clear the entire screen
 		scr_copyeverything = 1;
 		Draw_TileClear (0, 0, vid.width, vid.height);
@@ -916,6 +904,7 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 
 	D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
 										// directly
+
 	if (r_force_fullscreen /*FIXME*/ == 1 && key_dest == key_game) {
 		Sbar_IntermissionOverlay ();
 	} else if (r_force_fullscreen /*FIXME*/ == 2 && key_dest == key_game) {
@@ -963,10 +952,3 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 		VID_Update (&vrect);
 	}
 }
-
-void
-VID_ShiftPalette (unsigned char *p)
-{
-	VID_SetPalette (p);
-}
-

@@ -47,11 +47,12 @@ surfcache_t *sc_rover, *sc_base;
 #define GUARDSIZE       4
 
 
-void       *
+void *
 D_SurfaceCacheAddress (void)
 {
 	return sc_base;
 }
+
 
 int
 D_SurfaceCacheForRes (int width, int height)
@@ -74,6 +75,7 @@ D_SurfaceCacheForRes (int width, int height)
 	return size;
 }
 
+
 void
 D_CheckCacheGuard (void)
 {
@@ -86,6 +88,7 @@ D_CheckCacheGuard (void)
 			Sys_Error ("D_CheckCacheGuard: failed");
 }
 
+
 void
 D_ClearCacheGuard (void)
 {
@@ -96,6 +99,7 @@ D_ClearCacheGuard (void)
 	for (i = 0; i < GUARDSIZE; i++)
 		s[i] = (byte) i;
 }
+
 
 void
 D_InitCaches (void *buffer, int size)
@@ -116,6 +120,7 @@ D_InitCaches (void *buffer, int size)
 	D_ClearCacheGuard ();
 }
 
+
 void
 D_FlushCaches (void)
 {
@@ -134,6 +139,7 @@ D_FlushCaches (void)
 	sc_base->owner = NULL;
 	sc_base->size = sc_size;
 }
+
 
 surfcache_t *
 D_SCAlloc (int width, int size)
@@ -161,8 +167,9 @@ D_SCAlloc (int width, int size)
 	wrapped_this_time = false;
 
 	if (!sc_rover || (byte *) sc_rover - (byte *) sc_base > sc_size - size) {
-		if (sc_rover)
+		if (sc_rover) {
 			wrapped_this_time = true;
+		}
 		sc_rover = sc_base;
 	}
 	// colect and free surfcache_t blocks until the rover block is large enough
@@ -205,12 +212,14 @@ D_SCAlloc (int width, int size)
 	if (d_roverwrapped) {
 		if (wrapped_this_time || (sc_rover >= d_initial_rover))
 			r_cache_thrash = true;
-	} else if (wrapped_this_time)
+	} else if (wrapped_this_time) {
 		d_roverwrapped = true;
+	}
 
 	D_CheckCacheGuard ();				// DEBUG
 	return new;
 }
+
 
 void
 D_SCDump (void)
@@ -225,10 +234,8 @@ D_SCDump (void)
 	}
 }
 
-//=============================================================================
 
 // if the num is not a power of 2, assume it will not repeat
-
 int
 MaskForNum (int num)
 {
@@ -243,6 +250,7 @@ MaskForNum (int num)
 	return 255;
 }
 
+
 int
 D_log2 (int num)
 {
@@ -255,7 +263,6 @@ D_log2 (int num)
 	return c;
 }
 
-//=============================================================================
 
 surfcache_t *
 D_CacheSurface (msurface_t *surface, int miplevel)
@@ -288,8 +295,8 @@ D_CacheSurface (msurface_t *surface, int miplevel)
 	r_drawsurf.surfheight = surface->extents[1] >> miplevel;
 
 	// allocate memory if needed
-	if (!cache) // if a texture just animated, don't reallocate it
-	{
+	if (!cache) {
+		// if a texture just animated, don't reallocate it
 		cache = D_SCAlloc (r_drawsurf.surfwidth,
 						   r_drawsurf.rowbytes * r_drawsurf.surfheight);
 		surface->cachespots[miplevel] = cache;

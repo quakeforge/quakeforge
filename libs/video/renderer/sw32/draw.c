@@ -41,9 +41,10 @@
 #include "QF/draw.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
-#include "QF/vfs.h" 
+#include "QF/vfs.h"
 
 #include "d_iface.h"
+#include "r_cvar.h"
 
 typedef struct {
 	vrect_t     rect;
@@ -59,9 +60,8 @@ byte       *draw_chars;					// 8*8 graphic characters
 qpic_t     *draw_disc;
 qpic_t     *draw_backtile;
 
-cvar_t     *cl_verstring;
 
-// Support Routines ===========================================================
+/* Support Routines */
 
 typedef struct cachepic_s {
 	char        name[MAX_QPATH];
@@ -69,37 +69,38 @@ typedef struct cachepic_s {
 } cachepic_t;
 
 #define	MAX_CACHED_PICS		128
-cachepic_t  menu_cachepics[MAX_CACHED_PICS];
-int         menu_numcachepics;
+cachepic_t  cachepics[MAX_CACHED_PICS];
+int         numcachepics;
 
 
-qpic_t     *
+qpic_t *
 Draw_PicFromWad (const char *name)
 {
 	return W_GetLumpName (name);
 }
 
+
 void
 Draw_ClearCache (void)
 {
-	// This is a no-op in software targets
 }
 
-qpic_t     *
+
+qpic_t *
 Draw_CachePic (const char *path, qboolean alpha)
 {
 	cachepic_t *pic;
 	int         i;
 	qpic_t     *dat;
 
-	for (pic = menu_cachepics, i = 0; i < menu_numcachepics; pic++, i++)
+	for (pic = cachepics, i = 0; i < numcachepics; pic++, i++)
 		if (!strcmp (path, pic->name))
 			break;
 
-	if (i == menu_numcachepics) {
-		if (menu_numcachepics == MAX_CACHED_PICS)
-			Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
-		menu_numcachepics++;
+	if (i == numcachepics) {
+		if (numcachepics == MAX_CACHED_PICS)
+			Sys_Error ("numcachepics == MAX_CACHED_PICS");
+		numcachepics++;
 		strcpy (pic->name, path);
 	}
 
@@ -120,6 +121,7 @@ Draw_CachePic (const char *path, qboolean alpha)
 
 	return dat;
 }
+
 
 void
 Draw_TextBox (int x, int y, int width, int lines)
@@ -173,6 +175,7 @@ Draw_TextBox (int x, int y, int width, int lines)
 	Draw_Pic (cx, cy + 8, p);
 }
 
+
 void
 Draw_Init (void)
 {
@@ -185,6 +188,7 @@ Draw_Init (void)
 	r_rectdesc.ptexbytes = draw_backtile->data;
 	r_rectdesc.rowbytes = draw_backtile->width;
 }
+
 
 /*
 	Draw_Character
@@ -225,7 +229,7 @@ Draw_Character (int x, int y, int num)
 	switch(r_pixbytes) {
 	case 1:
 	{
-		byte *dest = (byte *) vid.conbuffer + y * vid.conrowbytes + x;
+		byte       *dest = (byte *) vid.conbuffer + y * vid.conrowbytes + x;
 
 		while (drawline--) {
 			if (source[0])
@@ -319,6 +323,7 @@ Draw_String (int x, int y, const char *str)
 	}
 }
 
+
 void
 Draw_AltString (int x, int y, const char *str)
 {
@@ -327,6 +332,7 @@ Draw_AltString (int x, int y, const char *str)
 		x += 8;
 	}
 }
+
 
 void
 Draw_Pixel (int x, int y, byte color)
@@ -349,6 +355,7 @@ Draw_Pixel (int x, int y, byte color)
 	}
 }
 
+
 void
 Draw_Crosshair (int swap)
 {
@@ -370,10 +377,11 @@ Draw_Crosshair (int swap)
 		Draw_Pixel (x, y + 3, c);
 	} else if (crosshair->int_val)
 		Draw_Character (scr_vrect.x + scr_vrect.width / 2 - 4 +
-						 cl_crossx->int_val,
-						 scr_vrect.y + scr_vrect.height / 2 - 4 +
-						 cl_crossy->int_val, '+');
+						cl_crossx->int_val,
+						scr_vrect.y + scr_vrect.height / 2 - 4 +
+						cl_crossy->int_val, '+');
 }
+
 
 void
 Draw_Pic (int x, int y, qpic_t *pic)
@@ -391,7 +399,7 @@ Draw_Pic (int x, int y, qpic_t *pic)
 	switch(r_pixbytes) {
 	case 1:
 	{
-		byte *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
+		byte       *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
 
 		if (pic->width & 7) {			// general
 			for (v = 0; v < pic->height; v++) {
@@ -465,11 +473,12 @@ Draw_Pic (int x, int y, qpic_t *pic)
 	}
 }
 
+
 void
 Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 			 int height)
 {
-	byte *source;
+	byte       *source;
 	int   v, u;
 
 	if ((x < 0) ||
@@ -482,7 +491,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	switch (r_pixbytes) {
 	case 1:
 	{
-		byte *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
+		byte       *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
 
 		for (v = 0; v < height; v++) {
 			memcpy (dest, source, width);
@@ -516,10 +525,11 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	}
 }
 
+
 void
 Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 {
-	byte *source, tbyte;
+	byte       *source, tbyte;
 	int   v, u;
 
 	if (x < 0 || (unsigned int) (x + pic->width) > vid.width || y < 0 ||
@@ -532,7 +542,7 @@ Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 	switch(r_pixbytes) {
 	case 1:
 	{
-		byte *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
+		byte       *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
 
 		if (pic->width & 7) {			// general
 			for (v = 0; v < pic->height; v++) {
@@ -605,6 +615,7 @@ Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 	}
 }
 
+
 void
 Draw_ConsoleBackground (int lines)
 {
@@ -619,7 +630,7 @@ Draw_ConsoleBackground (int lines)
 	switch(r_pixbytes) {
 	case 1:
 	{
-		byte *dest = vid.conbuffer;
+		byte       *dest = vid.conbuffer;
 
 		for (y = 0; y < lines; y++, dest += vid.conrowbytes) {
 			v = (vid.conheight - lines + y) * 200 / vid.conheight;
@@ -975,6 +986,7 @@ R_DrawRect (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 	}
 }
 
+
 /*
 	Draw_TileClear
 
@@ -1028,16 +1040,15 @@ Draw_TileClear (int x, int y, int w, int h)
 
 			vr.x += vr.width;
 			width -= vr.width;
-			tileoffsetx = 0;			// only the left tile can be
-										// left-clipped
+			tileoffsetx = 0;	// only the left tile can be left-clipped
 		}
 
 		vr.y += vr.height;
 		height -= vr.height;
-		tileoffsety = 0;				// only the top tile can be
-										// top-clipped
+		tileoffsety = 0;		// only the top tile can be top-clipped
 	}
 }
+
 
 /*
 	Draw_Fill
@@ -1057,7 +1068,7 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	switch (r_pixbytes) {
 	case 1:
 	{
-		byte *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
+		byte       *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
 		for (v = 0; v < h; v++, dest += vid.rowbytes)
 			for (u = 0; u < w; u++)
 				dest[u] = c;
@@ -1088,7 +1099,6 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	}
 }
 
-//=============================================================================
 
 void
 Draw_FadeScreen (void)
@@ -1144,7 +1154,6 @@ Draw_FadeScreen (void)
 	VID_LockBuffer ();
 }
 
-//=============================================================================
 
 /*
 	Draw_BeginDisc
@@ -1157,6 +1166,7 @@ Draw_BeginDisc (void)
 {
 	D_BeginDirectRect (vid.width - 24, 0, draw_disc->data, 24, 24);
 }
+
 
 /*
 	Draw_EndDisc

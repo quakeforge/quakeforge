@@ -35,7 +35,8 @@
 #include "d_local.h"
 #include "r_local.h"
 
-unsigned char *r_turb_pbase, *r_turb_pdest;
+byte       *r_turb_pbase;
+byte       *r_turb_pdest;
 fixed16_t   r_turb_s, r_turb_t, r_turb_sstep, r_turb_tstep;
 int        *r_turb_turb;
 int         r_turb_spancount;
@@ -131,15 +132,15 @@ Turbulent (espan_t *pspan)
 	r_turb_sstep = 0;					// keep compiler happy
 	r_turb_tstep = 0;					// ditto
 
-	r_turb_pbase = (unsigned char *) cacheblock;
+	r_turb_pbase = (byte *) cacheblock;
 
 	sdivz16stepu = d_sdivzstepu * 16;
 	tdivz16stepu = d_tdivzstepu * 16;
 	zi16stepu = d_zistepu * 16;
 
 	do {
-		r_turb_pdest = (unsigned char *) ((byte *) d_viewbuffer +
-										  (screenwidth * pspan->v) + pspan->u);
+		r_turb_pdest = (byte *) d_viewbuffer + (screenwidth * pspan->v) +
+												pspan->u;
 
 		count = pspan->count;
 
@@ -381,8 +382,8 @@ D_DrawZSpans (espan_t *pspan)
 	double      zi;
 	float       du, dv;
 
-// FIXME: check for clamping/range problems
-// we count on FP exceptions being turned off to avoid range problems
+	// FIXME: check for clamping/range problems
+	// we count on FP exceptions being turned off to avoid range problems
 	izistep = (int) (d_zistepu * 0x8000 * 0x10000);
 
 	do {

@@ -402,7 +402,7 @@ D_DrawSprite (void)
 
 	cachewidth = r_spritedesc.pspriteframe->width;
 	sprite_height = r_spritedesc.pspriteframe->height;
-	cacheblock = (byte *) & r_spritedesc.pspriteframe->pixels[0];
+	cacheblock = &r_spritedesc.pspriteframe->pixels[0];
 
 	// copy the first vertex to the last vertex, so we don't have to deal with
 	// wrapping

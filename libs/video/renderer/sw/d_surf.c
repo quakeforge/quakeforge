@@ -104,7 +104,7 @@ void
 D_InitCaches (void *buffer, int size)
 {
 //	if (!msg_suppress_1)
-//	Con_Printf ("%ik surface cache\n", size/1024);
+//		Con_Printf ("%ik surface cache\n", size/1024);
 
 	sc_size = size - GUARDSIZE;
 	sc_base = (surfcache_t *) buffer;
@@ -293,9 +293,8 @@ D_CacheSurface (msurface_t *surface, int miplevel)
 	r_drawsurf.surfheight = surface->extents[1] >> miplevel;
 
 	// allocate memory if needed
-	if (!cache)							// if a texture just animated, don't
-										// reallocate it
-	{
+	if (!cache) {
+		// if a texture just animated, don't reallocate it
 		cache = D_SCAlloc (r_drawsurf.surfwidth,
 						   r_drawsurf.surfwidth * r_drawsurf.surfheight);
 		surface->cachespots[miplevel] = cache;
