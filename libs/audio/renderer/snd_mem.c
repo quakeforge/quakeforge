@@ -56,10 +56,12 @@ SND_GetCache (long samples, int rate, int inwidth, int channels,
 {
 	int         size;
 	int         width;
+	float		stepscale;
 	sfxcache_t *sc;
 
 	width = snd_loadas8bit->int_val ? 1 : 2;
-	size = samples / ((float) rate / shm->speed);
+	stepscale = (float) rate / shm->speed;	// usually 0.5, 1, or 2
+	size = samples / stepscale;
 	size *= width * channels;
 	sc = allocator (&sfx->cache, size + sizeof (sfxcache_t), sfx->name);
 	if (!sc)
@@ -175,7 +177,9 @@ SND_ResampleSfx (sfxcache_t *sc, byte * data)
 	if (sc->loopstart != -1)
 		sc->loopstart = sc->loopstart / stepscale;
 	if (memcmp (sc->data + sc->bytes, "\xde\xad\xbe\xef", 4))
-		Sys_Error ("SND_ResampleSfx screwed the pooch");
+		Sys_Error ("SND_ResampleSfx screwed the pooch: %02x%02x%02x%02x",
+				   sc->data[sc->bytes + 0], sc->data[sc->bytes + 1],
+				   sc->data[sc->bytes + 2], sc->data[sc->bytes + 3]);
 }
 
 sfxcache_t *
