@@ -76,28 +76,28 @@ static void
 bi_Draw_CachePic (progs_t *pr)
 {
 	draw_resources_t *res = PR_Resources_Find (pr, "Draw");
-	const char *path = G_STRING (pr, OFS_PARM0);
-	int         alpha = G_INT (pr, OFS_PARM1);
+	const char *path = P_STRING (pr, 0);
+	int         alpha = P_INT (pr, 1);
 	qpic_t     *pic = Draw_CachePic (path, alpha);
 	bi_qpic_t  *qpic;
 	qpic_res_t *rpic = Hash_Find (res->pic_hash, path);
 
 	if (!pic) {
 		Con_DPrintf ("can't load %s\n", path);
-		G_INT (pr, OFS_RETURN) = 0;
+		R_INT (pr) = 0;
 		return;
 	}
 	if (rpic) {
 		qpic = rpic->pic;
 		qpic->pic = pic;
-		G_INT (pr, OFS_RETURN) = (pr_type_t *)qpic - pr->pr_globals;
+		R_INT (pr) = (pr_type_t *)qpic - pr->pr_globals;
 		return;
 	}
 	qpic = PR_Zone_Malloc (pr, sizeof (bi_qpic_t));
 	qpic->width = pic->width;
 	qpic->height = pic->height;
 	qpic->pic = pic;
-	G_INT (pr, OFS_RETURN) = (pr_type_t *)qpic - pr->pr_globals;
+	R_INT (pr) = (pr_type_t *)qpic - pr->pr_globals;
 	rpic = malloc (sizeof (qpic_res_t));
 	rpic->name = strdup (path);
 	rpic->pic = qpic;
@@ -107,19 +107,33 @@ bi_Draw_CachePic (progs_t *pr)
 static void
 bi_Draw_Pic (progs_t *pr)
 {
-	int         x = G_INT (pr, OFS_PARM0);
-	int         y = G_INT (pr, OFS_PARM1);
-	qpic_t     *pic = get_qpic (pr, G_INT (pr, OFS_PARM2), "Draw_Pic");
+	int         x = P_INT (pr, 0);
+	int         y = P_INT (pr, 1);
+	qpic_t     *pic = get_qpic (pr, P_INT (pr, 2), "Draw_Pic");
 
 	Draw_Pic (x, y, pic);
 }
 
 static void
+bi_Draw_SubPic (progs_t *pr)
+{
+	int         x = P_INT (pr, 0);
+	int         y = P_INT (pr, 1);
+	qpic_t     *pic = get_qpic (pr, P_INT (pr, 2), "Draw_SubPic");
+	int         srcx = P_INT (pr, 3);
+	int         srcy = P_INT (pr, 4);
+	int         width = P_INT (pr, 5);
+	int         height = P_INT (pr, 6);
+
+	Draw_SubPic (x, y, pic, srcx, srcy, width, height);
+}
+
+static void
 bi_Draw_CenterPic (progs_t *pr)
 {
-	int         x = G_INT (pr, OFS_PARM0);
-	int         y = G_INT (pr, OFS_PARM1);
-	qpic_t     *pic = get_qpic (pr, G_INT (pr, OFS_PARM2), "Draw_CenterPic");
+	int         x = P_INT (pr, 0);
+	int         y = P_INT (pr, 1);
+	qpic_t     *pic = get_qpic (pr, P_INT (pr, 2), "Draw_CenterPic");
 
 	Draw_Pic (x - pic->width / 2, y, pic);
 }
@@ -127,9 +141,9 @@ bi_Draw_CenterPic (progs_t *pr)
 static void
 bi_Draw_Character (progs_t *pr)
 {
-	int         x = G_INT (pr, OFS_PARM0);
-	int         y = G_INT (pr, OFS_PARM1);
-	int         c = G_INT (pr, OFS_PARM2);
+	int         x = P_INT (pr, 0);
+	int         y = P_INT (pr, 1);
+	int         c = P_INT (pr, 2);
 
 	Draw_Character (x, y, c);
 }
@@ -137,9 +151,9 @@ bi_Draw_Character (progs_t *pr)
 static void
 bi_Draw_String (progs_t *pr)
 {
-	int         x = G_INT (pr, OFS_PARM0);
-	int         y = G_INT (pr, OFS_PARM1);
-	const char *text = G_STRING (pr, OFS_PARM2);
+	int         x = P_INT (pr, 0);
+	int         y = P_INT (pr, 1);
+	const char *text = P_STRING (pr, 2);
 
 	Draw_String (x, y, text);
 }
@@ -147,10 +161,10 @@ bi_Draw_String (progs_t *pr)
 static void
 bi_Draw_nString (progs_t *pr)
 {
-	int         x = G_INT (pr, OFS_PARM0);
-	int         y = G_INT (pr, OFS_PARM1);
-	const char *text = G_STRING (pr, OFS_PARM2);
-	int         n = G_INT (pr, OFS_PARM3);
+	int         x = P_INT (pr, 0);
+	int         y = P_INT (pr, 1);
+	const char *text = P_STRING (pr, 2);
+	int         n = P_INT (pr, 3);
 
 	Draw_nString (x, y, text, n);
 }
@@ -158,9 +172,9 @@ bi_Draw_nString (progs_t *pr)
 static void
 bi_Draw_AltString (progs_t *pr)
 {
-	int         x = G_INT (pr, OFS_PARM0);
-	int         y = G_INT (pr, OFS_PARM1);
-	const char *text = G_STRING (pr, OFS_PARM2);
+	int         x = P_INT (pr, 0);
+	int         y = P_INT (pr, 1);
+	const char *text = P_STRING (pr, 2);
 
 	Draw_AltString (x, y, text);
 }
@@ -174,11 +188,11 @@ bi_Draw_AltString (progs_t *pr)
 static void
 bi_Draw_Fill (progs_t *pr)
 {
-	int         x = G_INT (pr, OFS_PARM0);
-	int         y = G_INT (pr, OFS_PARM1);
-	int         w = G_INT (pr, OFS_PARM2);
-	int         h = G_INT (pr, OFS_PARM3);
-	int         color = G_INT (pr, OFS_PARM4);
+	int         x = P_INT (pr, 0);
+	int         y = P_INT (pr, 1);
+	int         w = P_INT (pr, 2);
+	int         h = P_INT (pr, 3);
+	int         color = P_INT (pr, 4);
 
 	Draw_Fill (x, y, w, h, color);
 }
@@ -215,6 +229,7 @@ R_Progs_Init (progs_t *pr)
 	PR_Resources_Register (pr, "Draw", res, bi_draw_clear);
 	PR_AddBuiltin (pr, "Draw_CachePic", bi_Draw_CachePic, -1);
 	PR_AddBuiltin (pr, "Draw_Pic", bi_Draw_Pic, -1);
+	PR_AddBuiltin (pr, "Draw_SubPic", bi_Draw_SubPic, -1);
 	PR_AddBuiltin (pr, "Draw_CenterPic", bi_Draw_CenterPic, -1);
 	PR_AddBuiltin (pr, "Draw_Character", bi_Draw_Character, -1);
 	PR_AddBuiltin (pr, "Draw_String", bi_Draw_String, -1);
