@@ -556,6 +556,19 @@ if test "x$enable_sdl" != xno; then
 	AC_SUBST(HAVE_SDL)
 fi
 
+dnl XMMS Checks
+AC_ARG_ENABLE(xmms,
+[  --disable-xmms          disable checking for XMMS],
+)
+
+if test "x$enable_xmms" != xno; then
+	AM_PATH_XMMS(0.9.5.1,
+		HAVE_XMMS=yes,
+		HAVE_XMMS=no)
+	AC_SUBST(HAVE_XMMS)	
+fi	
+
+
 dnl ==================================================================
 dnl Checks for system type
 dnl ==================================================================
@@ -836,6 +849,13 @@ QF_maGiC_VALUE
 	CDTYPE="$CDTYPE Linux"
 	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS libcd_linux.la"
 )
+
+dnl XMMS audio
+if test "x$HAVE_XMMS" = "xyes"; then
+	CDTYPE="$CDTYPE XMMS"
+	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS libcd_xmms.la"
+	AC_DEFINE(HAVE_XMMS, [1], [Define if you have XMMS])
+fi
 
 dnl SDL CD audio
 if test "x$HAVE_SDL" = "xyes"; then

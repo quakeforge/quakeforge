@@ -29,6 +29,10 @@
 static const char rcsid[] = 
 	"$Id$";
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -93,6 +97,21 @@ CDAudio_Init (void)
 		return -1;
 	}
 	cdmodule->functions->general->p_Init ();
+#ifdef HAVE_XMMS
+	Cmd_AddCommand (
+		"xmms", CD_f, "Control the XMMS player.\n"
+		"Commands:\n"
+		"resume - Will resume playback after pause.\n"
+		"off - Stops control and playback of XMMS.\n"
+		"on - Starts XMMS if not running, or enables playback.\n"
+		"pause - Pause the XMMS playback.\n"
+		"play - Begins playing tracks according to the playlist.\n"
+		"stop - Stops the currently playing track.\n"
+		"next - Plays the next track in the playlist.\n"
+		"prev - Plays the previous track in the playlist.\n"
+		"shuffle - Toggle shuffling the playlist.\n"
+		"repeat - Toggle repeating of the playlist.");
+#else
 	Cmd_AddCommand (
 		"cd", CD_f, "Control the CD player.\n"
 		"Commands:\n"
@@ -107,6 +126,7 @@ CDAudio_Init (void)
 		"pause - Pause the CD playback.\n"
 		"play (track number) - Plays the specified track one time.\n"
 		"stop - Stops the currently playing track.");
+#endif
 	Sys_Printf ("CD Audio Initialized\n");
 	return 0; // FIXME: Assumes success
 }

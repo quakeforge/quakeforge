@@ -1,4 +1,4 @@
-SUBDIRS=cd targets renderer
+SUBDIRS=cd targets renderer 
 INCLUDES=-I$(top_srcdir)/include
 
 lib_LTLIBRARIES=	@CD_TARGETS@ @SND_TARGETS@
