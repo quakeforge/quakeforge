@@ -110,7 +110,8 @@ particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 		if (vel_fuzz)
 			pvel[j] = lhrandom (-vel_fuzz, vel_fuzz);
 	}
-	return particle_new (type, texnum, porg, scale, pvel, die, color, alpha, vec3_origin, vec3_origin);
+	return particle_new (type, texnum, porg, scale, pvel, die, color, alpha,
+						 vec3_origin, vec3_origin);
 }
 
 
@@ -124,20 +125,22 @@ particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 void
 R_MaxParticlesCheck (cvar_t *var)
 {
-	/*
+/*
 	Catchall. If the user changed the setting to a number less than zero
-	 *or* if we had a wacky cfg get past the init code check, this will
-	 make sure we don't have problems. Also note that grabbing the
-	 var->int_val is IMPORTANT:
+	*or* if we had a wacky cfg get past the init code check, this will
+	make sure we don't have problems. Also note that grabbing the
+	var->int_val is IMPORTANT:
 
 	Prevents a segfault since if we grabbed the int_val of
 	cl_max_particles we'd sig11 right here at startup.
-	*/
+*/
 	r_numparticles = max(var->int_val, 0);
-	
-	// Be very careful the next time we do something like this.
-	// calloc/free are IMPORTANT and the compiler doesn't know when we
-	// do bad things with them.
+
+/*
+	Be very careful the next time we do something like this.
+	calloc/free are IMPORTANT and the compiler doesn't know when we
+	do bad things with them.
+*/
 	free (particles);
 	free (freeparticles);
 
@@ -153,11 +156,14 @@ R_MaxParticlesCheck (cvar_t *var)
 void
 R_Particles_Init_Cvars (void)
 {
-	// Misty-chan: This is a cvar that does callbacks. Whenever it
-	// changes, it calls the function R_MaxParticlesCheck and therefore
-	// is very nifty.
+/*
+	Misty-chan: This is a cvar that does callbacks. Whenever it
+	changes, it calls the function R_MaxParticlesCheck and therefore
+	is very nifty.
+*/
 	Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE, R_MaxParticlesCheck,
-					"Maximum amount of particles to display. No maximum, minimum is 0, although it's best to use r_particles 0 instead.");
+			  "Maximum amount of particles to display. No maximum, minimum "
+			  "is 0, although it's best to use r_particles 0 instead.");
 }
 
 
@@ -223,8 +229,8 @@ R_ParticleExplosion (vec3_t org)
 	if (!r_particles->int_val)
 		return;
 
-	particle_new_random (pt_smokecloud, part_tex_smoke[rand () & 7], org, 4, 30,
-						 8, r_realtime + 5, (rand () & 7) + 8,
+	particle_new_random (pt_smokecloud, part_tex_smoke[rand () & 7], org, 4,
+						 30, 8, r_realtime + 5, (rand () & 7) + 8,
 						 128 + (rand () & 63));
 }
 
@@ -239,7 +245,9 @@ R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
 		return;
 	
 	for (i = 0; i < 512; i++) {
-		particle_new_random (pt_blob, part_tex_dot, org, 16, 2, 256, (r_realtime + 0.3), (colorStart + (colorMod % colorLength)), 255);
+		particle_new_random (pt_blob, part_tex_dot, org, 16, 2, 256,
+							 (r_realtime + 0.3),
+							 (colorStart + (colorMod % colorLength)), 255);
 		colorMod++;
 	}
 }
@@ -356,7 +364,8 @@ R_RunParticleEffect (vec3_t org, int color, int count)
 		}
 		particle_new (pt_grav, part_tex_dot, porg, 1.5, vec3_origin,
 					  (r_realtime + 0.1 * (rand () % 5)),
-					  (color & ~7) + (rand () & 7), 255, vec3_origin, vec3_origin);
+					  (color & ~7) + (rand () & 7), 255, vec3_origin,
+					  vec3_origin);
 	}
 }
 
@@ -408,7 +417,8 @@ R_LavaSplash (vec3_t org)
 			VectorScale (dir, vel, pvel);
 			particle_new (pt_grav, part_tex_dot, porg, 3, pvel,
 						  (r_realtime + 2 + (rand () & 31) * 0.02),
-						  (224 + (rand () & 7)), 193, vec3_origin, vec3_origin);
+						  (224 + (rand () & 7)), 193, vec3_origin,
+						  vec3_origin);
 		}
 	}
 }
@@ -440,7 +450,8 @@ R_TeleportSplash (vec3_t org)
 				VectorScale (dir, vel, pvel);
 				particle_new (pt_grav, part_tex_spark, porg, 0.6, pvel,
 							  (r_realtime + 0.2 + (rand () & 7) * 0.02),
-							  (7 + (rand () & 7)), 255, vec3_origin, vec3_origin);
+							  (7 + (rand () & 7)), 255, vec3_origin,
+							  vec3_origin);
 			}
 }
 
@@ -518,7 +529,6 @@ R_RocketTrail (int type, entity_t *ent)
 
 				dist = 3;
 				pdie = r_realtime + 0.5;
-//				ptype = pt_static; // DESPAIR
 				ptype = pt_fire;
 				ptex = part_tex_smoke[rand () & 7];
 				pscale = lhrandom (1, 2);
@@ -555,8 +565,8 @@ R_RocketTrail (int type, entity_t *ent)
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 		len -= dist;
 
-		particle_new (ptype, ptex, porg, pscale, pvel, pdie, pcolor, palpha, 
-				up, right);
+		particle_new (ptype, ptex, porg, pscale, pvel, pdie, pcolor, palpha,
+					  up, right);
 	}
 }
 
@@ -738,9 +748,8 @@ R_DrawParticles (void)
 				Con_DPrintf ("unhandled particle type %d\n", part->type);
 				break;
 		}
-		// LordHavoc: immediate removal of unnecessary particles (must
-		// be done to ensure compactor below operates properly in all
-		// cases)
+		// LordHavoc: immediate removal of unnecessary particles (must be
+		// done to ensure compactor below operates properly in all cases)
 		if (part->die <= r_realtime)
 			freeparticles[j++] = part;
 	}
