@@ -273,7 +273,7 @@ R_Init_Cvars (void)
 	r_timegraph = Cvar_Get ("r_timegraph", "0", CVAR_NONE, "Toggle the display of a performance graph");
 	r_netgraph = Cvar_Get ("r_netgraph", "0", CVAR_NONE, "Toggle the display of a graph showing network performance");
 	r_zgraph = Cvar_Get ("r_zgraph", "0", CVAR_NONE, "Toggle the graph that reports the changes of z-axis position");
-	r_graphheight = Cvar_Get ("r_graphheight", "15", CVAR_NONE, "Set the number of lines displayed in the various graphs");
+	r_graphheight = Cvar_Get ("r_graphheight", "32", CVAR_NONE, "Set the number of lines displayed in the various graphs");
 	r_drawflat = Cvar_Get ("r_drawflat", "0", CVAR_NONE, "Toggles the drawing of textures");
 	r_ambient = Cvar_Get ("r_ambient", "0", CVAR_NONE, "Determines the ambient lighting for a level");
 	r_clearcolor = Cvar_Get ("r_clearcolor", "2", CVAR_NONE, "This sets the color for areas outside of the current map");

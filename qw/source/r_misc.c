@@ -158,7 +158,7 @@ R_LineGraph (int x, int y, int h)
 	if (h > s)
 		h = s;
 
-	for (i = 0; i < h; i++, dest -= vid.rowbytes * 2) {
+	for (i = 0; i < h; i++, dest -= vid.rowbytes) {
 		dest[0] = color;
 //      *(dest-vid.rowbytes) = 0x30;
 	}
@@ -246,7 +246,7 @@ R_NetGraph (void)
 	}
 
 	x = cl_hudswap->int_val ? vid.width - (NET_TIMINGS + 8) : 8;
-	y += 8;
+	y = vid.height + 24 - sb_lines - r_graphheight->int_val - 1;
 
 	for (a = 0; a < NET_TIMINGS; a++) {
 		i = (cls.netchan.outgoing_sequence - a) & NET_TIMINGSMASK;
