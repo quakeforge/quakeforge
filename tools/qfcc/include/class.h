@@ -100,6 +100,8 @@ void category_add_protocol_methods (category_t *category,
 									struct expr_s *protocols);
 void class_finish_module (void);
 
+void class_to_struct (class_t *class, struct struct_s *strct);
+
 typedef struct protocol_s {
 	const char *name;
 	struct methodlist_s *methods;

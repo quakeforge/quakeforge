@@ -244,12 +244,12 @@ storage_class
 struct_defs
 	: /* empty */
 	| struct_defs struct_def ';'
-	| DEFS '(' NAME ')'
+	| DEFS '(' maybe_class ')'
 		{
 			class_t    *class = get_class ($3, 0);
 
 			if (class) {
-				copy_struct_fields (current_struct, class->ivars);
+				class_to_struct (class, current_struct);
 			} else {
 				error (0, "undefined symbol `%s'", $3);
 			}

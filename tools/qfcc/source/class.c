@@ -851,3 +851,17 @@ clear_classes (void)
 	if (class_hash)
 		class_Class.super_class = get_class ("Object", 1);
 }
+
+void
+class_to_struct (class_t *class, struct_t *strct)
+{
+
+	struct_field_t *s = class->ivars->struct_head;
+
+	if (class->super_class) {
+		class_to_struct (class->super_class, strct);
+		s = s->next;
+	}
+	for (; s; s = s->next)
+		new_struct_field (strct, s->type, s->name, vis_public);
+}

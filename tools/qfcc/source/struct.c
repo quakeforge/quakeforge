@@ -156,17 +156,6 @@ get_struct (const char *name, int create)
 	return s;
 }
 
-void
-copy_struct_fields (struct_t *dst, struct_t *src)
-{
-	struct_field_t *s;
-
-	if (!src)
-		return;
-	for (s = src->struct_head; s; s = s->next)
-		new_struct_field (dst, s->type, s->name, s->visibility);
-}
-
 int
 struct_compare_fields (struct_t *s1, struct_t *s2)
 {
