@@ -61,6 +61,7 @@ static qfo_function_t *functions;
 static int  num_functions;
 static qfo_reloc_t *relocs;
 static int  num_relocs;
+static strpool_t *types;
 
 static int
 count_relocs (reloc_t *reloc)
@@ -109,7 +110,7 @@ type_encoding (type_t *type)
 	else
 		dstring_clearstr (encoding);
 	encode_type (encoding, type);
-	return ReuseString (encoding->str);
+	return strpool_addstr (types, encoding->str);
 }
 
 static int
@@ -223,12 +224,14 @@ write_obj_file (const char *filename)
 	qfo_header_t hdr;
 	VFile      *file;
 
+	types = strpool_new ();
 	allocate_stuff ();
 	setup_data ();
 
 	file = Qopen (filename, "wbz9");
 
 	pr.strings->size = (pr.strings->size + 3) & ~3;
+	types->size = (types->size + 3) & ~3;
 
 	memset (&hdr, 0, sizeof (hdr));
 
@@ -244,6 +247,7 @@ write_obj_file (const char *filename)
 	hdr.num_defs      = LittleLong (num_defs);
 	hdr.num_functions = LittleLong (num_functions);
 	hdr.num_lines     = LittleLong (num_linenos);
+	hdr.types_size    = LittleLong (types->size);
 
 	Qwrite (file, &hdr, sizeof (hdr));
 	if (pr.num_statements)
@@ -265,12 +269,15 @@ write_obj_file (const char *filename)
 		Qwrite (file, functions, num_functions * sizeof (qfo_function_t));
 	if (num_linenos)
 		Qwrite (file, linenos, num_linenos * sizeof (pr_lineno_t));
+	if (types->size)
+		Qwrite (file, types->strings, types->size);
 
 	Qclose (file);
 
 	free (defs);
 	free (relocs);
 	free (functions);
+	strpool_delete (types);
 	return 0;
 }
 
@@ -312,6 +319,7 @@ read_obj_file (const char *filename)
 	qfo->num_defs      = LittleLong (hdr.num_defs);
 	qfo->num_functions = LittleLong (hdr.num_functions);
 	qfo->num_lines     = LittleLong (hdr.num_lines);
+	qfo->types_size    = LittleLong (hdr.types_size);
 
 	if (hdr.version != QFO_VERSION) {
 		fprintf (stderr, "can't read version %x.%03x.%03x\n",
@@ -331,6 +339,7 @@ read_obj_file (const char *filename)
 	qfo->defs = malloc (qfo->num_defs * sizeof (qfo_def_t));
 	qfo->functions = malloc (qfo->num_functions * sizeof (qfo_function_t));
 	qfo->lines = malloc (qfo->num_lines * sizeof (pr_lineno_t));
+	qfo->types = malloc (qfo->types_size);
 
 	Qread (file, qfo->code, qfo->code_size * sizeof (dstatement_t));
 	Qread (file, qfo->data, qfo->data_size * sizeof (pr_type_t));
@@ -342,6 +351,7 @@ read_obj_file (const char *filename)
 	Qread (file, qfo->functions, qfo->num_functions * sizeof (qfo_function_t));
 	if (qfo->num_lines)
 		Qread (file, qfo->lines, qfo->num_lines * sizeof (pr_lineno_t));
+	Qread (file, qfo->types, qfo->types_size);
 
 	Qclose (file);
 
@@ -443,7 +453,7 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		 i < pr->scope->num_defs; i++) {
 		*pr->scope->tail = pd;
 		pr->scope->tail = &pd->def_next;
-		pd->type = parse_type (qfo->strings + qd->full_type);
+		pd->type = parse_type (qfo->types + qd->full_type);
 		pd->name = qfo->strings + qd->name;
 		pd->ofs = qd->ofs;
 		if (qd->num_relocs) {

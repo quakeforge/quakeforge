@@ -36,7 +36,7 @@
 #include "QF/pr_debug.h"
 
 #define QFO			"QFO"
-#define QFO_VERSION 0x00001001		// MMmmmRRR 0.001.001 (hex)
+#define QFO_VERSION 0x00001002		// MMmmmRRR 0.001.002 (hex)
 
 typedef struct qfo_header_s {
 	char        qfo[4];
@@ -49,6 +49,7 @@ typedef struct qfo_header_s {
 	int         num_defs;
 	int         num_functions;
 	int         num_lines;
+	int         types_size;
 } qfo_header_t;
 
 typedef struct qfo_def_s {
@@ -117,6 +118,8 @@ typedef struct qfo_s {
 	int         num_functions;
 	pr_lineno_t *lines;
 	int         num_lines;
+	char       *types;
+	int         types_size;
 } qfo_t;
 
 #define QFO_var(q, t, o)	((q)->data[o].t##_var)
