@@ -166,7 +166,7 @@ if test "x$ac_cv_header_pthread_h" = "xyes"; then
 	AC_TRY_LINK(
 		[#include <pthread.h>],
 		[pthread_attr_t type;
-		 pthread_attr_init(&type);],
+		 pthread_attr_setstacksize(&type);],
 		[PTHREAD_LDFLAGS=-pthread],
 		[PTHREAD_LDFLAGS=-lpthread]
 	)
