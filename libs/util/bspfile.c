@@ -104,7 +104,7 @@ QFile			*wadfile;
 
 	Byte swaps all data in a bsp file.
 */
-void
+static void
 SwapBSPFile (qboolean todisk)
 {
 	int				 c, i, j;
@@ -221,7 +221,7 @@ SwapBSPFile (qboolean todisk)
 	}
 }
 
-void
+static void
 AddLump (int lumpnum, void *data, int len)
 {
 	lump_t		*lump;
@@ -233,7 +233,7 @@ AddLump (int lumpnum, void *data, int len)
 	Qwrite (wadfile, data, (len + 3) &~3);
 }
 
-int
+static int
 CopyLump (int lump, void *dest, int size)
 {
 	int		length, ofs;

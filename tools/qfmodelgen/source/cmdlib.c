@@ -319,26 +319,6 @@ int CheckParm (char *check)
 }
 
 
-
-/*
-================
-filelength
-================
-*/
-int filelength (QFile *f)
-{
-	int		pos;
-	int		end;
-
-	pos = Qtell (f);
-	Qseek (f, 0, SEEK_END);
-	end = Qtell (f);
-	Qseek (f, pos, SEEK_SET);
-
-	return end;
-}
-
-
 QFile *SafeOpenWrite (char *filename)
 {
 	QFile	*f;
