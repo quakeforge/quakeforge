@@ -180,7 +180,7 @@ typedef struct net_svc_soundlist_s
 typedef struct net_svc_packetentities_s
 {
 	int				numwords, numdeltas;
-	unsigned short	words[MAX_PACKET_ENTITIES + 1];
+	unsigned int	words[MAX_PACKET_ENTITIES * 2 + 1];
 	entity_state_t	deltas[MAX_PACKET_ENTITIES];
 } net_svc_packetentities_t;
 
@@ -188,7 +188,7 @@ typedef struct net_svc_deltapacketentities_s
 {
 	int				numwords, numdeltas;
 	byte			from;
-	unsigned short	words[MAX_PACKET_ENTITIES + 1];
+	unsigned int	words[MAX_PACKET_ENTITIES * 2 + 1];
 	entity_state_t	deltas[MAX_PACKET_ENTITIES];
 } net_svc_deltapacketentities_t;
 
