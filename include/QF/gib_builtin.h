@@ -30,6 +30,7 @@
 */
 
 #include "QF/cbuf.h" // For cbuf_active
+#include "QF/dstring.h" // For ->str
 
 typedef struct gib_builtin_s {
 	struct dstring_s *name;

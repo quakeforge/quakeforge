@@ -50,6 +50,7 @@ static const char rcsid[] =
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/zone.h"
+#include "QF/gib_builtin.h"
 
 #include "compat.h"
 #include "old_keys.h"
@@ -667,6 +668,41 @@ Key_Bind_f (void)
 	Key_In_Bind (imt, key, cmd);
 }
 
+void 
+Key_GIB_Bind_Get_f (void)
+{
+	const char *imt, *key, *cmd;
+	int t, k;
+
+	if (GIB_Argc() != 2) {
+		Cbuf_Error ("syntax",
+		            "bind.get: invalid syntax\n"
+		            "usage: bind.get key"
+		           );
+		return;
+	}
+
+	imt = in_bind_imt->string;
+
+	key = OK_TranslateKeyName (GIB_Argv (1));
+
+	if ((t = Key_StringToIMTnum (imt)) == -1) {
+		Cbuf_Error ("bind", "bind.get: invalid imt %s", imt);
+		return;
+	}
+
+	if ((k = Key_StringToKeynum (key)) == -1) {
+		Cbuf_Error ("bind", "bind.get: invalid key %s", key);
+		return;
+	}
+	
+	if (!(cmd = Key_GetBinding (t, k)))
+		GIB_Return ("");
+	else
+		GIB_Return (cmd);
+}
+
+
 void
 in_bind_imt_f (cvar_t *var)
 {
@@ -821,6 +857,9 @@ Key_Init (cbuf_t *cb)
 	Cmd_AddCommand ("keyhelp", keyhelp_f, "display the keyname for the next "
 					"RECOGNIZED key-press. If the key pressed produces no "
 					"output, " PROGRAM " does not recognise that key.");
+
+	GIB_Builtin_Add ("bind.get", Key_GIB_Bind_Get_f, GIB_BUILTIN_NORMAL);
+
 }
 
 void
