@@ -74,6 +74,8 @@ typedef struct {
 typedef struct {
 	blended_vert_t *verts;
 	int        *order;
+	tex_coord_t *tex_coord;
+	int		count;
 } vert_order_t;
 
 float		r_avertexnormals[NUMVERTEXNORMALS][3] = {
@@ -87,6 +89,84 @@ float   r_avertexnormal_dots[SHADEDOT_QUANT][256] =
 		;
 
 vec3_t		shadevector;
+
+
+static void
+GL_DrawAliasFrameTri (vert_order_t *vo)
+{
+	float			color[4];
+	int			count;
+	blended_vert_t	*verts;
+	tex_coord_t		*tex_coord;
+
+	verts = vo->verts;
+	tex_coord = vo->tex_coord;
+	color[3] = modelalpha;
+	count = vo->count;
+	qfglBegin (GL_TRIANGLES);
+	do {
+		qfglTexCoord2fv (tex_coord->st);
+		VectorMA (ambientcolor, verts->lightdot, shadecolor, color);
+		qfglColor4fv (color);
+		qfglVertex3fv (verts->vert);
+
+		tex_coord++;
+		verts++;
+	} while (count--);
+	qfglEnd();
+}
+
+static void
+GL_DrawAliasFrameTri_fb (vert_order_t *vo)
+{
+	int				count;
+	float color[4] = { 1.0, 1.0, 1.0, 0.0};
+	blended_vert_t *verts;
+	tex_coord_t *tex_coord;
+	verts = vo->verts;
+	color[3] = modelalpha * 1.0;
+	count = vo->count;
+	tex_coord = vo->tex_coord;
+	qfglBegin (GL_TRIANGLES);
+	do {
+		qfglTexCoord2fv (tex_coord->st);
+		qfglColor4fv (color);
+		qfglVertex3fv (verts->vert);
+
+		tex_coord++;
+		verts++;
+	} while (--count);
+	qfglEnd();
+}
+
+static void
+GL_DrawAliasFrameTriMulti (vert_order_t *vo)
+{
+	float			color[4];
+	int				count;
+	blended_vert_t *verts;
+	tex_coord_t	*tex_coord;
+
+	verts = vo->verts;
+	tex_coord = vo->tex_coord;	
+	color[3] = modelalpha;
+	count = vo->count;
+	qfglBegin (GL_TRIANGLES);
+	do {
+		// texture coordinates come from the draw list
+		qglMultiTexCoord2fv (gl_mtex_enum + 0, tex_coord->st);
+		qglMultiTexCoord2fv (gl_mtex_enum + 1, tex_coord->st);
+		tex_coord++;
+
+		// normals and vertexes come from the frame list
+		VectorMA (ambientcolor, verts->lightdot, shadecolor, color);
+		qfglColor4fv (color);
+
+		qfglVertex3fv (verts->vert);
+		verts++;
+	} while (--count);
+	qfglEnd ();
+}
 
 static void
 GL_DrawAliasFrame (vert_order_t *vo)
@@ -277,14 +357,18 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 
 	pose = paliashdr->frames[frame].firstpose;
 	numposes = paliashdr->frames[frame].numposes;
-
 	verts = (trivertx16_t *) ((byte *) paliashdr + paliashdr->posedata);
 
 	count = paliashdr->poseverts;
 	vo = Hunk_TempAlloc (sizeof (*vo) + count * sizeof (blended_vert_t));
 	vo->order = (int *) ((byte *) paliashdr + paliashdr->commands);
 	vo->verts = (blended_vert_t *) &vo[1];
-
+	if (paliashdr->tex_coord) {
+		vo->tex_coord = (tex_coord_t *) ((byte *) paliashdr + paliashdr->tex_coord);
+	} else {
+		vo->tex_coord = NULL;
+	}
+	vo->count = count;
 	if (numposes > 1) {
 		interval = paliashdr->frames[frame].interval;
 		pose += (int) (r_realtime / interval) % numposes;
@@ -386,6 +470,12 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 	vo = Hunk_TempAlloc (sizeof (*vo) + count * sizeof (blended_vert_t));
 	vo->order = (int *) ((byte *) paliashdr + paliashdr->commands);
 	vo->verts = (blended_vert_t *) &vo[1];
+	if (paliashdr->tex_coord) {
+		vo->tex_coord = (tex_coord_t *) ((byte *) paliashdr + paliashdr->tex_coord);
+	} else {
+		vo->tex_coord = NULL;
+	}
+	vo->count = count;
 
 	if (numposes > 1) {
 		interval = paliashdr->frames[frame].interval;
@@ -619,12 +709,19 @@ R_DrawAliasModel (entity_t *e)
 
 	// draw all the triangles
 	if (model->fullbright) {
+
 		qfglBindTexture (GL_TEXTURE_2D, texture);
-		GL_DrawAliasFrame_fb (vo);
+		if (vo->tex_coord)
+			GL_DrawAliasFrameTri_fb (vo);
+		else 
+			GL_DrawAliasFrame_fb (vo);
 	} else if (!fb_texture) {
 		// Model has no fullbrights, don't bother with multi
 		qfglBindTexture (GL_TEXTURE_2D, texture);
-		GL_DrawAliasFrame (vo);
+		if (vo->tex_coord)
+			GL_DrawAliasFrameTri (vo);
+		else
+			GL_DrawAliasFrame (vo);
 	} else {	// try multitexture
 		if (gl_mtex_active) {	// set up the textures
 			qglActiveTexture (gl_mtex_enum + 0);
@@ -635,17 +732,27 @@ R_DrawAliasModel (entity_t *e)
 			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 			qfglEnable (GL_TEXTURE_2D);
 
-			GL_DrawAliasFrameMulti (vo);	// do the heavy lifting
+			// do the heavy lifting
+			if (vo->tex_coord)
+				GL_DrawAliasFrameTriMulti (vo);
+			else 
+				GL_DrawAliasFrameMulti (vo);
 
 			// restore the settings
 			qfglDisable (GL_TEXTURE_2D);
 			qglActiveTexture (gl_mtex_enum + 0);
 		} else {
-			qfglBindTexture (GL_TEXTURE_2D, texture);
-			GL_DrawAliasFrame (vo);
-
-			qfglBindTexture (GL_TEXTURE_2D, fb_texture);
-			GL_DrawAliasFrame_fb (vo);
+			if (vo->tex_coord) {
+				qfglBindTexture (GL_TEXTURE_2D, texture);
+				GL_DrawAliasFrameTri (vo);
+				qfglBindTexture (GL_TEXTURE_2D, fb_texture);
+				GL_DrawAliasFrameTri_fb (vo);
+			} else {
+				qfglBindTexture (GL_TEXTURE_2D, texture);
+				GL_DrawAliasFrame (vo);
+				qfglBindTexture (GL_TEXTURE_2D, fb_texture);
+				GL_DrawAliasFrame_fb (vo);
+			}
 		}
 	}
 

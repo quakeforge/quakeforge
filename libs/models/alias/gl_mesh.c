@@ -345,132 +345,162 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, i
 	aliasmodel = m;
 	paliashdr = hdr;
 
-	if (gl_mesh_cache->int_val
-		&& gl_mesh_cache->int_val <= paliashdr->mdl.numtris) {
-		do_cache = true;
+	if (!gl_alias_render_tri->int_val) {
 
-		mdfour (model_digest, (unsigned char *) _m, _s);
+		if (gl_mesh_cache->int_val
+			&& gl_mesh_cache->int_val <= paliashdr->mdl.numtris) {
+			do_cache = true;
 
-		// look for a cached version
-		strcpy (cache, "glquake/");
-		QFS_StripExtension (m->name + strlen ("progs/"),
+			mdfour (model_digest, (unsigned char *) _m, _s);
+
+			// look for a cached version
+			strcpy (cache, "glquake/");
+			QFS_StripExtension (m->name + strlen ("progs/"),
 							cache + strlen ("glquake/"));
-		strncat (cache, ".qfms", sizeof (cache) - strlen (cache));
+			strncat (cache, ".qfms", sizeof (cache) - strlen (cache));
 
-		QFS_FOpenFile (cache, &f);
-		if (f) {
-			unsigned char d1[MDFOUR_DIGEST_BYTES];
-			unsigned char d2[MDFOUR_DIGEST_BYTES];
-			struct mdfour md;
-			int			len, vers;
-			int         nc = 0, no = 0;
-			int        *c = 0, *vo = 0;
+			QFS_FOpenFile (cache, &f);
+			if (f) {
+				unsigned char d1[MDFOUR_DIGEST_BYTES];
+				unsigned char d2[MDFOUR_DIGEST_BYTES];
+				struct mdfour md;
+				int			len, vers;
+				int         nc = 0, no = 0;
+				int        *c = 0, *vo = 0;
 
-			memset (d1, 0, sizeof (d1));
-			memset (d2, 0, sizeof (d2));
+				memset (d1, 0, sizeof (d1));
+				memset (d2, 0, sizeof (d2));
 
-			Qread (f, &vers, sizeof (int));
-			Qread (f, &len, sizeof (int));
-			Qread (f, &nc, sizeof (int));
-			Qread (f, &no, sizeof (int));
+				Qread (f, &vers, sizeof (int));
+				Qread (f, &len, sizeof (int));
+				Qread (f, &nc, sizeof (int));
+				Qread (f, &no, sizeof (int));
 
-			if (vers == 1 && (nc + no) == len) {
-				c = malloc (((nc + 1023) & ~1023) * sizeof (c[0]));
-				vo = malloc (((no + 1023) & ~1023) * sizeof (vo[0]));
-				if (!c || !vo)
-					Sys_Error ("gl_mesh.c: out of memory");
-				Qread (f, c, nc * sizeof (c[0]));
-				Qread (f, vo, no * sizeof (vo[0]));
-				Qread (f, d1, MDFOUR_DIGEST_BYTES);
-				Qread (f, d2, MDFOUR_DIGEST_BYTES);
-				Qclose (f);
+				if (vers == 1 && (nc + no) == len) {
+					c = malloc (((nc + 1023) & ~1023) * sizeof (c[0]));
+					vo = malloc (((no + 1023) & ~1023) * sizeof (vo[0]));
+					if (!c || !vo)
+						Sys_Error ("gl_mesh.c: out of memory");
+					Qread (f, c, nc * sizeof (c[0]));
+					Qread (f, vo, no * sizeof (vo[0]));
+					Qread (f, d1, MDFOUR_DIGEST_BYTES);
+					Qread (f, d2, MDFOUR_DIGEST_BYTES);
+					Qclose (f);
 
-				mdfour_begin (&md);
-				mdfour_update (&md, (unsigned char *) &vers, sizeof(int));
-				mdfour_update (&md, (unsigned char *) &len, sizeof(int));
-				mdfour_update (&md, (unsigned char *) &nc, sizeof(int));
-				mdfour_update (&md, (unsigned char *) &no, sizeof(int));
-				mdfour_update (&md, (unsigned char *) c, nc * sizeof (c[0]));
-				mdfour_update (&md, (unsigned char *) vo, no * sizeof (vo[0]));
-				mdfour_update (&md, d1, MDFOUR_DIGEST_BYTES);
-				mdfour_result (&md, mesh_digest);
-
-				if (memcmp (d2, mesh_digest, MDFOUR_DIGEST_BYTES) == 0
-					&& memcmp (d1, model_digest, MDFOUR_DIGEST_BYTES) == 0) {
-					remesh = false;
-					numcommands = nc;
-					numorder = no;
-					if (numcommands > commands_size) {
-						if (commands)
-							free (commands);
-						commands_size = (numcommands + 1023) & ~1023;
-						commands = c;
-					} else {
-						memcpy (commands, c, numcommands * sizeof (c[0]));
-						free(c);
-					}
-					if (numorder > vertexorder_size) {
-						if (vertexorder)
-							free (vertexorder);
-						vertexorder_size = (numorder + 1023) & ~1023;
-						vertexorder = vo;
-					} else {
-						memcpy (vertexorder, vo, numorder * sizeof (vo[0]));
-						free (vo);
+					mdfour_begin (&md);
+					mdfour_update (&md, (unsigned char *) &vers, sizeof(int));
+					mdfour_update (&md, (unsigned char *) &len, sizeof(int));
+					mdfour_update (&md, (unsigned char *) &nc, sizeof(int));
+					mdfour_update (&md, (unsigned char *) &no, sizeof(int));
+					mdfour_update (&md, (unsigned char *) c, nc * sizeof (c[0]));
+					mdfour_update (&md, (unsigned char *) vo, no * sizeof (vo[0]));
+					mdfour_update (&md, d1, MDFOUR_DIGEST_BYTES);
+					mdfour_result (&md, mesh_digest);
+	
+					if (memcmp (d2, mesh_digest, MDFOUR_DIGEST_BYTES) == 0
+						&& memcmp (d1, model_digest, MDFOUR_DIGEST_BYTES) == 0) {
+						remesh = false;
+						numcommands = nc;
+						numorder = no;
+						if (numcommands > commands_size) {
+							if (commands)
+								free (commands);
+							commands_size = (numcommands + 1023) & ~1023;
+							commands = c;
+						} else {
+							memcpy (commands, c, numcommands * sizeof (c[0]));
+							free(c);
+						}
+						if (numorder > vertexorder_size) {
+							if (vertexorder)
+								free (vertexorder);
+							vertexorder_size = (numorder + 1023) & ~1023;
+							vertexorder = vo;
+						} else {
+							memcpy (vertexorder, vo, numorder * sizeof (vo[0]));
+							free (vo);
+						}
 					}
 				}
 			}
 		}
-	}
-	if (remesh) {
-		// build it from scratch
-		Sys_DPrintf ("meshing %s...\n", m->name);
+		if (remesh) {
+			// build it from scratch
+			Sys_DPrintf ("meshing %s...\n", m->name);
 
-		BuildTris ();					// trifans or lists
+			BuildTris ();					// trifans or lists
 
-		if (do_cache) {
-			// save out the cached version
-			snprintf (fullpath, sizeof (fullpath), "%s/%s",
-					  qfs_gamedir->dir.def, cache);
-			f = QFS_WOpen (fullpath, 9);
+			if (do_cache) {
+				// save out the cached version
+				snprintf (fullpath, sizeof (fullpath), "%s/%s",
+						  qfs_gamedir->dir.def, cache);
+				f = QFS_WOpen (fullpath, 9);	
 
-			if (f) {
-				struct mdfour md;
-				int         vers = 1;
-				int         len = numcommands + numorder;
+				if (f) {
+					struct mdfour md;
+					int         vers = 1;
+					int         len = numcommands + numorder;
 
-				mdfour_begin (&md);
-				mdfour_update (&md, (unsigned char *) &vers, sizeof (int));
-				mdfour_update (&md, (unsigned char *) &len, sizeof (int));
-				mdfour_update (&md, (unsigned char *) &numcommands,
-							   sizeof (int));
-				mdfour_update (&md, (unsigned char *) &numorder, sizeof (int));
-				mdfour_update (&md, (unsigned char *) commands,
-							   numcommands * sizeof (commands[0]));
-				mdfour_update (&md, (unsigned char *) vertexorder,
-							   numorder * sizeof (vertexorder[0]));
-				mdfour_update (&md, model_digest, MDFOUR_DIGEST_BYTES);
-				mdfour_result (&md, mesh_digest);
+					mdfour_begin (&md);
+					mdfour_update (&md, (unsigned char *) &vers, sizeof (int));
+					mdfour_update (&md, (unsigned char *) &len, sizeof (int));
+					mdfour_update (&md, (unsigned char *) &numcommands,
+								   sizeof (int));
+					mdfour_update (&md, (unsigned char *) &numorder, sizeof (int));
+					mdfour_update (&md, (unsigned char *) commands,
+								   numcommands * sizeof (commands[0]));
+					mdfour_update (&md, (unsigned char *) vertexorder,
+								   numorder * sizeof (vertexorder[0]));
+					mdfour_update (&md, model_digest, MDFOUR_DIGEST_BYTES);
+					mdfour_result (&md, mesh_digest);	
 
-				Qwrite (f, &vers, sizeof (int));
-				Qwrite (f, &len, sizeof (int));
-				Qwrite (f, &numcommands, sizeof (int));
-				Qwrite (f, &numorder, sizeof (int));
-				Qwrite (f, commands, numcommands * sizeof (commands[0]));
-				Qwrite (f, vertexorder, numorder * sizeof (vertexorder[0]));
-				Qwrite (f, model_digest, MDFOUR_DIGEST_BYTES);
-				Qwrite (f, mesh_digest, MDFOUR_DIGEST_BYTES);
-				Qclose (f);
+					Qwrite (f, &vers, sizeof (int));
+					Qwrite (f, &len, sizeof (int));
+					Qwrite (f, &numcommands, sizeof (int));
+					Qwrite (f, &numorder, sizeof (int));
+					Qwrite (f, commands, numcommands * sizeof (commands[0]));
+					Qwrite (f, vertexorder, numorder * sizeof (vertexorder[0]));
+					Qwrite (f, model_digest, MDFOUR_DIGEST_BYTES);
+					Qwrite (f, mesh_digest, MDFOUR_DIGEST_BYTES);
+					Qclose (f);
+				}
 			}
+		}	
+
+		// save the data out
+		paliashdr->poseverts = numorder;	
+
+		cmds = Hunk_Alloc (numcommands * sizeof (int));
+		paliashdr->commands = (byte *) cmds - (byte *) paliashdr;
+		memcpy (cmds, commands, numcommands * sizeof (int));
+
+	} else {
+		tex_coord_t *tex_coord;
+
+		numorder = 0;	
+		for (i=0; i < pheader->mdl.numtris; i++) {
+			add_vertex(triangles[i].vertindex[0]);
+			add_vertex(triangles[i].vertindex[1]);
+			add_vertex(triangles[i].vertindex[2]);
+		}
+		paliashdr->poseverts = numorder;	
+
+		tex_coord = Hunk_Alloc (numorder * sizeof(tex_coord_t));
+		paliashdr->tex_coord = (byte *) tex_coord - (byte *) paliashdr;
+		for (i=0; i < numorder; i++) {
+			float s, t;
+			int k;
+			k = vertexorder[i];
+			s = stverts[k].s;
+			t = stverts[k].t;
+			if (!triangles[i/3].facesfront && stverts[k].onseam)
+				s += pheader->mdl.skinwidth / 2;	// on back side
+			s = (s + 0.5) / pheader->mdl.skinwidth;
+			t = (t + 0.5) / pheader->mdl.skinheight;
+			tex_coord[i].st[0] = s;
+			tex_coord[i].st[1] = t;
 		}
 	}
-
-	// save the data out
-	paliashdr->poseverts = numorder;
-
-	cmds = Hunk_Alloc (numcommands * sizeof (int));
-	paliashdr->commands = (byte *) cmds - (byte *) paliashdr;
-	memcpy (cmds, commands, numcommands * sizeof (int));
 
 	if (extra) {
 		trivertx16_t *verts;

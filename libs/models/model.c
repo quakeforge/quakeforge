@@ -60,6 +60,7 @@ texture_t  *r_notexture_mip;
 
 cvar_t     *gl_mesh_cache;
 cvar_t     *gl_subdivide_size;
+cvar_t     *gl_alias_render_tri;
 
 static void Mod_CallbackLoad (void *object, cache_allocator_t allocator);
 
@@ -102,6 +103,7 @@ Mod_Init_Cvars (void)
 	gl_mesh_cache = Cvar_Get ("gl_mesh_cache", "256", CVAR_ARCHIVE, NULL,
 							  "minimum triangle count in a model for its mesh"
 							  " to be cached. 0 to disable caching");
+	gl_alias_render_tri = Cvar_Get("gl_alias_render_tri", "0", CVAR_ARCHIVE, NULL, "When loading alias models mesh for pure triangle rendering");
 }
 
 void

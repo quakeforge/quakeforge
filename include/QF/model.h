@@ -309,7 +309,7 @@ typedef struct {
 	int			triangles;
 
 	mdl_t		mdl;
-
+	int			tex_coord;
 	int			numposes;
 	int			poseverts;
 	int			posedata;	// numposes * poseverts trivert_t
@@ -462,6 +462,7 @@ void	 Mod_Print (void);
 
 extern struct cvar_s *gl_mesh_cache;
 extern struct cvar_s *gl_subdivide_size;
+extern struct cvar_s *gl_alias_render_tri;
 extern model_t *loadmodel;
 extern char loadname[32];
 extern byte *mod_base;

@@ -72,6 +72,10 @@ typedef struct {
 // TODO: could be shorts
 
 typedef struct {
+	float	st[2];
+} tex_coord_t; 
+
+typedef struct {
 	int		onseam;
 	int		s;
 	int		t;
