@@ -1191,13 +1191,29 @@ field_expr (expr_t *e1, expr_t *e2)
 			break;
 		case ev_entity:
 			check_initialized (e1);
-			t2 = get_type (e2);
-			if (e2->type == ex_error)
-				return e2;
-			if (t2->type == ev_field) {
+			if (e2->type == ex_name) {
+				def_t      *d = field_def (e2->e.string_val);
+
+				if (!d) {
+					t2 = get_type (e2);
+					if (e2->type == ex_error)
+						return e2;
+					break;
+				}
+				e2 = new_def_expr (d);
+				t2 = get_type (e2);
 				e = new_binary_expr ('.', e1, e2);
 				e->e.expr.type = t2->aux_type;
 				return e;
+			} else {
+				t2 = get_type (e2);
+				if (e2->type == ex_error)
+					return e2;
+				if (t2->type == ev_field) {
+					e = new_binary_expr ('.', e1, e2);
+					e->e.expr.type = t2->aux_type;
+					return e;
+				}
 			}
 			break;
 		case ev_vector:

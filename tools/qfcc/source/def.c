@@ -73,17 +73,13 @@ static scope_t *free_scopes;
 static locref_t *free_free_locs;
 
 static hashtab_t *defs_by_name;
+static hashtab_t *field_defs;
 
 static const char *
-defs_get_key (void *_def, void *_tab)
+defs_get_key (void *_def, void *unused)
 {
 	def_t      *def = (def_t *) _def;
-	hashtab_t **tab = (hashtab_t **) _tab;
-
-	if (tab == &defs_by_name) {
-		return def->name;
-	}
-	return "";
+	return def->name;
 }
 
 static def_t *
@@ -93,7 +89,8 @@ check_for_name (type_t *type, const char *name, scope_t *scope,
 	def_t      *def;
 
 	if (!defs_by_name) {
-		defs_by_name = Hash_NewTable (16381, defs_get_key, 0, &defs_by_name);
+		defs_by_name = Hash_NewTable (16381, defs_get_key, 0, 0);
+		field_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
 	}
 	if (!name)
 		return 0;
@@ -220,6 +217,12 @@ vector_component (int is_field, def_t *vec, int comp, scope_t *scope,
 	Hash_Add (defs_by_name, d);
 }
 
+def_t *
+field_def (const char *name)
+{
+	return Hash_Find (field_defs, name);
+}
+
 /*
 	get_def
 
@@ -296,6 +299,7 @@ get_def (type_t *type, const char *name, scope_t *scope,
 				vector_component (1, def, 1, scope, storage);
 				vector_component (1, def, 2, scope, storage);
 			}
+			Hash_Add (field_defs, def);
 		}
 	}
 
@@ -477,6 +481,10 @@ flush_scope (scope_t *scope, int force_used)
 			}
 			if (!def->removed) {
 				Hash_Del (defs_by_name, def->name);
+				if (def->type->type == ev_field) {
+					if (Hash_Find (field_defs, def->name) == def)
+						Hash_Del (field_defs, def->name);
+				}
 				def->removed = 1;
 			}
 		}
@@ -509,6 +517,8 @@ def_initialized (def_t *d)
 void
 clear_defs (void)
 {
+	if (field_defs)
+		Hash_FlushTable (field_defs);
 	if (defs_by_name)
 		Hash_FlushTable (defs_by_name);
 }
