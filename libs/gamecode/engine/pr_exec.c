@@ -157,20 +157,12 @@ PR_RunError (progs_t * pr, const char *error, ...)
 	vsnprintf (string, sizeof (string), error, argptr);
 	va_end (argptr);
 
-	if (pr_debug->int_val && pr->debug) {
-		int addr = pr->pr_xstatement;
-		
-		while (!PR_Get_Source_Line (pr, addr))
-			addr--;
-		while (addr != pr->pr_xstatement)
-			PR_PrintStatement (pr, pr->pr_statements + addr++);
-	}
-	PR_PrintStatement (pr, pr->pr_statements + pr->pr_xstatement);
-	PR_StackTrace (pr);
+	PR_DumpState (pr);
+
 	Sys_Printf ("%s\n", string);
 
-	pr->pr_depth = 0;					// dump the stack so PR_Error can
-										// shutdown functions
+	// dump the stack so PR_Error can shutdown functions
+	pr->pr_depth = 0;					
 
 	PR_Error (pr, "Program error");
 }

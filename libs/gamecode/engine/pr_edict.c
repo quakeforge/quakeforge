@@ -1461,6 +1461,7 @@ EDICT_NUM (progs_t * pr, int n)
 	int offs = n * pr->pr_edict_size;
 	if (offs < 0 || n >= pr->pr_edictareasize)
 		PR_RunError (pr, "EDICT_NUM: bad number %i", n);
+		
 	return PROG_TO_EDICT (pr, offs);
 }
 

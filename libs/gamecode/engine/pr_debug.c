@@ -68,6 +68,37 @@ cvar_t      *pr_source_path;
 static hashtab_t  *file_hash;
 
 
+static const char *
+file_get_key (void *_f, void *unused)
+{
+	return ((file_t*)_f)->name;
+}
+
+static void
+file_free (void *_f, void *unused)
+{
+	file_t *f = (file_t*)_f;
+	free (f->lines);
+	free (f->text);
+	free (f->name);
+	free (f);
+}
+
+void
+PR_Debug_Init (void)
+{
+	file_hash = Hash_NewTable (1024, file_get_key, file_free, 0);
+}
+
+void
+PR_Debug_Init_Cvars (void)
+{
+	pr_debug = Cvar_Get ("pr_debug", "0", CVAR_NONE, NULL,
+						 "enable progs debugging");
+	pr_source_path = Cvar_Get ("pr_source_path", ".", CVAR_NONE, NULL, "where "
+							   "to look (within gamedir) for source files");
+}
+
 file_t *
 PR_Load_Source_File (progs_t *pr, const char *fname)
 {
@@ -333,33 +364,17 @@ PR_Get_Local_Def (progs_t *pr, int offs)
 	return 0;
 }
 
-static const char *
-file_get_key (void *_f, void *unused)
-{
-	return ((file_t*)_f)->name;
-}
-
-static void
-file_free (void *_f, void *unused)
-{
-	file_t *f = (file_t*)_f;
-	free (f->lines);
-	free (f->text);
-	free (f->name);
-	free (f);
-}
-
 void
-PR_Debug_Init (void)
+PR_DumpState (progs_t *pr)
 {
-	file_hash = Hash_NewTable (1024, file_get_key, file_free, 0);
-}
+	if (pr_debug->int_val && pr->debug) {
+		int addr = pr->pr_xstatement;
 
-void
-PR_Debug_Init_Cvars (void)
-{
-	pr_debug = Cvar_Get ("pr_debug", "0", CVAR_NONE, NULL,
-						 "enable progs debugging");
-	pr_source_path = Cvar_Get ("pr_source_path", ".", CVAR_NONE, NULL, "where "
-							   "to look (within gamedir) for source files");
+		while (!PR_Get_Source_Line (pr, addr))
+			addr--;
+		while (addr != pr->pr_xstatement)
+			PR_PrintStatement (pr, pr->pr_statements + addr++);
+	}
+	PR_PrintStatement (pr, pr->pr_statements + pr->pr_xstatement);
+	PR_StackTrace (pr);
 }

@@ -166,7 +166,7 @@ static void
 seg_fault_handler(int whatever)
 {
 	if (sv_pr_state.pr_xfunction)
-		PR_RunError (&sv_pr_state, "Segmentation Fault\n");
+		PR_DumpState (&sv_pr_state);
 	signal (SIGSEGV, old_seg_handler);
 }
 

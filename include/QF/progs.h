@@ -187,6 +187,8 @@ pr_lineno_t *PR_Find_Lineno (progs_t *pr, unsigned long addr);
 const char *PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno);
 const char *PR_Get_Source_Line (progs_t *pr, unsigned long addr);
 ddef_t *PR_Get_Local_Def (progs_t *pr, int offs);
+void PR_DumpState (progs_t *pr);
+void PR_StackTrace (progs_t * pr);
 
 extern struct cvar_s *pr_debug;
 
