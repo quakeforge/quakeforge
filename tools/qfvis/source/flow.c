@@ -361,8 +361,7 @@ PortalFlow (portal_t *p)
 		fprintf (stderr, "PortalFlow: reflowed");
     p->status = stat_working;
 
-    p->visbits = malloc (bitbytes);
-    memset (p->visbits, 0, bitbytes);
+    p->visbits = calloc (1, bitbytes);
 
     memset (&data, 0, sizeof (data));
     data.leafvis = p->visbits;
@@ -413,8 +412,7 @@ BasePortalVis (void)
     winding_t	*winding;
 
     for (i = 0, p = portals; i < numportals * 2; i++, p++) {
-		p->mightsee = malloc (bitbytes);
-		memset (p->mightsee, 0, bitbytes);
+		p->mightsee = calloc (1, bitbytes);
 
 		c_portalsee = 0;
 		memset (portalsee, 0, numportals * 2);
