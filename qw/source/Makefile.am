@@ -105,7 +105,7 @@ client_SOURCES= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
 #
 # ... Common stuff
 
-soft_SOURCES=	sw_rpart.c sw_view.c
+soft_SOURCES=	sw_view.c
 
 # ... Linux FBDev
 qw_client_fbdev_SOURCES= $(common_SOURCES) $(client_SOURCES) $(soft_SOURCES)
@@ -136,7 +136,7 @@ qw_client_x11_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_sw.la ../../l
 # OpenGL-using clients
 #
 # ... Common stuff
-ogl_SOURCES=	gl_dyn_part.c gl_view.c
+ogl_SOURCES=	gl_view.c
 
 # ... 3Dfx Voodoo 1 and 2 SVGAlib-based console GL
 qw_client_3dfx_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(ogl_SOURCES)

@@ -71,7 +71,7 @@ client_LIB_DEPS=	libqfnet.a $(qf_client_LIBS)
 client_SOURCES=	cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_screen.c \
 		cl_parse.c cl_tent.c \
 		console.c keys.c sbar.c \
-		r_part.c r_view.c locs.c pcx.c tga.c
+		r_view.c locs.c pcx.c tga.c
 
 server_SOURCES= host.c host_cmd.c pr_cmds.c sv_cvar.c sv_main.c \
 		sv_move.c sv_phys.c sv_progs.c sv_user.c
@@ -82,7 +82,7 @@ combined_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(server_SOURCES) \
 # Software-rendering targets
 #
 # ... Common stuff
-soft_SOURCES=	sw_rpart.c sw_view.c
+soft_SOURCES=	sw_view.c
 
 # ... Linux FBDev
 nq_fbdev_SOURCES= $(combined_SOURCES) $(soft_SOURCES)
@@ -112,7 +112,7 @@ nq_x11_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_sw.la ../../libs/mod
 
 # OpenGL-using targets
 # ... Common stuff
-ogl_SOURCES=	gl_dyn_part.c gl_view.c
+ogl_SOURCES=	gl_view.c
 
 # ... 3Dfx Voodoo 1 and 2 SVGAlib-based console GL
 nq_3dfx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)
