@@ -41,25 +41,23 @@ static const char rcsid[] =
 #include "QF/input.h"
 
 float CL_KeyState (kbutton_t *key);
+qboolean SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
+								vec3_t p1, vec3_t p2, trace_t *trace);
 
 vec3_t camera_origin = {0,0,0};
 vec3_t camera_angles = {0,0,0};
 vec3_t player_origin = {0,0,0};
 vec3_t player_angles = {0,0,0};
 
-
-qboolean    SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
-								   vec3_t p1, vec3_t p2, trace_t *trace);
+vec3_t      chase_angles;
+vec3_t      chase_dest;
+vec3_t      chase_dest_angles;
+vec3_t      chase_pos;
 
 cvar_t     *chase_back;
 cvar_t     *chase_up;
 cvar_t     *chase_right;
 cvar_t     *chase_active;
-
-vec3_t      chase_angles;
-vec3_t      chase_dest;
-vec3_t      chase_dest_angles;
-vec3_t      chase_pos;
 
 
 void
@@ -89,33 +87,28 @@ TraceLine (vec3_t start, vec3_t end, vec3_t impact)
 	VectorCopy (trace.endpos, impact);
 }
 
-/*
-==================
-Chase_Update
-==================
-*/
 void
 Chase_Update (void)
 {
-	vec3_t    forward, up, right, stop, dir;
-	float     pitch, yaw, fwd;
-	usercmd_t cmd; // movement direction
-	int i;
+	float		pitch, yaw, fwd;
+	int			i;
+	usercmd_t	cmd;	// movement direction
+	vec3_t		forward, up, right, stop, dir;
 
 	// lazy camera, look toward player entity
 
-	if (chase_active->int_val == 2 || chase_active->int_val == 3)
-	{
+	if (chase_active->int_val == 2 || chase_active->int_val == 3) {
 		// control camera angles with key/mouse/joy-look
 
 		camera_angles[PITCH] += cl.viewangles[PITCH] - player_angles[PITCH];
-		camera_angles[YAW]   += cl.viewangles[YAW]   - player_angles[YAW];
-		camera_angles[ROLL]  += cl.viewangles[ROLL]  - player_angles[ROLL];
+		camera_angles[YAW] += cl.viewangles[YAW] - player_angles[YAW];
+		camera_angles[ROLL] += cl.viewangles[ROLL] - player_angles[ROLL];
 
-		if (chase_active->int_val == 2)
-		{
-			if (camera_angles[PITCH] < -60) camera_angles[PITCH] = -60;
-			if (camera_angles[PITCH] >  60) camera_angles[PITCH] =  60;
+		if (chase_active->int_val == 2) {
+			if (camera_angles[PITCH] < -60)
+				camera_angles[PITCH] = -60;
+			if (camera_angles[PITCH] >  60)
+				camera_angles[PITCH] =  60;
 		}
 
 		// move camera, it's not enough to just change the angles because
@@ -124,12 +117,11 @@ Chase_Update (void)
 		if (chase_active->int_val == 3)
 			VectorCopy (r_refdef.vieworg, player_origin);
 
-		AngleVectors   (camera_angles, forward, right, up);
-		VectorScale    (forward, chase_back->value, forward);
+		AngleVectors (camera_angles, forward, right, up);
+		VectorScale (forward, chase_back->value, forward);
 		VectorSubtract (player_origin, forward, camera_origin);
 
-		if (chase_active->int_val == 2)
-		{
+		if (chase_active->int_val == 2) {
 			VectorCopy (r_refdef.vieworg, player_origin);
 
 			// don't let camera get too low
@@ -139,48 +131,49 @@ Chase_Update (void)
 
 		// don't let camera get too far from player
 
-		VectorSubtract  (camera_origin, player_origin, dir);
-		VectorCopy      (dir, forward);
+		VectorSubtract (camera_origin, player_origin, dir);
+		VectorCopy (dir, forward);
 		VectorNormalize (forward);
 
-		if (Length (dir) > chase_back->value)
-		{
+		if (VectorLength (dir) > chase_back->value) {
 			VectorScale (forward, chase_back->value, dir);
-			VectorAdd   (player_origin, dir, camera_origin);
+			VectorAdd (player_origin, dir, camera_origin);
 		}
 
 		// check for walls between player and camera
 
-		VectorScale    (forward, 8, forward);
-		VectorAdd      (camera_origin, forward, camera_origin);
-		TraceLine      (player_origin, camera_origin, stop);
-		if (Length (stop) != 0)
-        		VectorSubtract (stop, forward, camera_origin);
+		VectorScale (forward, 8, forward);
+		VectorAdd (camera_origin, forward, camera_origin);
+		TraceLine (player_origin, camera_origin, stop);
+		if (VectorLength (stop) != 0)
+			VectorSubtract (stop, forward, camera_origin);
 
-		VectorSubtract  (camera_origin, r_refdef.vieworg, dir);
-		VectorCopy      (dir, forward);
+		VectorSubtract (camera_origin, r_refdef.vieworg, dir);
+		VectorCopy (dir, forward);
 		VectorNormalize (forward);
 
-		if (chase_active->int_val == 2)
-		{
-			if (dir[1] == 0 && dir[0] == 0)
-			{
+		if (chase_active->int_val == 2) {
+			if (dir[1] == 0 && dir[0] == 0) {
 				// look straight up or down
-			//	camera_angles[YAW] = r_refdef.viewangles[YAW];
-				if (dir[2] > 0) camera_angles[PITCH] = 90;
-				else            camera_angles[PITCH] = 270;
-			}
-			else
-			{
+//				camera_angles[YAW] = r_refdef.viewangles[YAW];
+				if (dir[2] > 0)
+					camera_angles[PITCH] = 90;
+				else
+					camera_angles[PITCH] = 270;
+			} else {
 				yaw = (atan2 (dir[1], dir[0]) * 180 / M_PI);
-				if (yaw <   0) yaw += 360;
-				if (yaw < 180) yaw += 180;
-				else           yaw -= 180;
+				if (yaw < 0)
+					yaw += 360;
+				if (yaw < 180)
+					yaw += 180;
+				else
+					yaw -= 180;
 				camera_angles[YAW] = yaw;
 
 				fwd = sqrt (dir[0] * dir[0] + dir[1] * dir[1]);
 				pitch = (atan2 (dir[2], fwd) * 180 / M_PI);
-				if (pitch < 0) pitch += 360;
+				if (pitch < 0)
+					pitch += 360;
 				camera_angles[PITCH] = pitch;
 			}
 		}
@@ -201,36 +194,39 @@ Chase_Update (void)
 		cmd.sidemove -= cl_sidespeed->value * CL_KeyState (&in_moveleft);
 
 		if (!(in_klook.state & 1)) {
-			cmd.forwardmove += cl_forwardspeed->value * CL_KeyState (&in_forward);
-			cmd.forwardmove -= cl_backspeed->value    * CL_KeyState (&in_back);
+			cmd.forwardmove += cl_forwardspeed->value
+				* CL_KeyState (&in_forward);
+			cmd.forwardmove -= cl_backspeed->value * CL_KeyState (&in_back);
 		}
 		if (in_speed.state & 1) {
 			cmd.forwardmove *= cl_movespeedkey->value;
-			cmd.sidemove    *= cl_movespeedkey->value;
+			cmd.sidemove *= cl_movespeedkey->value;
 		}
 
 		// mouse and joystick controllers add to movement
-		dir[1] = cl.viewangles[1] - camera_angles[1];  dir[0] = 0;  dir[2] = 0;
+		dir[1] = cl.viewangles[1] - camera_angles[1]; dir[0] = 0; dir[2] = 0;
 		AngleVectors (dir, forward, right, up);
-		VectorScale  (forward, viewdelta.position[2] * m_forward->value, forward);
-		VectorScale  (right,   viewdelta.position[0] * m_side->value,    right);
-		VectorAdd    (forward, right, dir);
+		VectorScale (forward, viewdelta.position[2] * m_forward->value,
+					  forward);
+		VectorScale (right, viewdelta.position[0] * m_side->value, right);
+		VectorAdd (forward, right, dir);
 		cmd.forwardmove += dir[0];
-		cmd.sidemove    -= dir[1];
+		cmd.sidemove -= dir[1];
 
-		dir[1] = camera_angles[1];  dir[0] = 0;  dir[2] = 0;
+		dir[1] = camera_angles[1]; dir[0] = 0; dir[2] = 0;
 		AngleVectors (dir, forward, right, up);
 
 		VectorScale (forward, cmd.forwardmove, forward);
-		VectorScale (right,   cmd.sidemove,    right);
-		VectorAdd   (forward, right, dir);
+		VectorScale (right, cmd.sidemove, right);
+		VectorAdd (forward, right, dir);
 
-		if (dir[1] || dir[0])
-		{
+		if (dir[1] || dir[0]) {
 			cl.viewangles[YAW] = (atan2 (dir[1], dir[0]) * 180 / M_PI);
 			if (cl.viewangles[YAW] <   0) cl.viewangles[YAW] += 360;
-//			if (cl.viewangles[YAW] < 180) cl.viewangles[YAW] += 180;
-//			else                          cl.viewangles[YAW] -= 180;
+//			if (cl.viewangles[YAW] < 180)
+//				cl.viewangles[YAW] += 180;
+//			else
+//				cl.viewangles[YAW] -= 180;
 		}
 
 		cl.viewangles[PITCH] = 0;

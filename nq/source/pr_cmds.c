@@ -39,12 +39,12 @@ static const char rcsid[] =
 
 #include "QF/cbuf.h"
 #include "QF/clip_hull.h"
+#include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
-#include "QF/sys.h"
-#include "QF/cmd.h"
-#include "QF/va.h"
 #include "QF/msg.h"
+#include "QF/sys.h"
+#include "QF/va.h"
 
 #include "compat.h"
 #include "host.h"
@@ -52,10 +52,8 @@ static const char rcsid[] =
 #include "sv_progs.h"
 #include "world.h"
 
-/*
-						BUILT-IN FUNCTIONS
-*/
 
+// BUILT-IN FUNCTIONS =========================================================
 
 /*
 	PF_error
@@ -104,8 +102,6 @@ PF_objerror (progs_t *pr)
 	Host_Error ("Program error");
 }
 
-
-
 /*
 	PF_makevectors
 
@@ -122,7 +118,11 @@ PF_makevectors (progs_t *pr)
 /*
 	PF_setorigin
 
-	This is the only valid way to move an object without using the physics of the world (setting velocity and waiting).  Directly changing origin will not set internal links correctly, so clipping would be messed up.  This should be called when an object is spawned, and then only if it is teleported.
+	This is the only valid way to move an object without using the physics of
+	the world (setting velocity and waiting).  Directly changing origin will
+	not set internal links correctly, so clipping would be messed up.  This
+	should be called when an object is spawned, and then only if it is
+	teleported.
 
 	setorigin (entity, origin)
 */
@@ -138,18 +138,16 @@ PF_setorigin (progs_t *pr)
 	SV_LinkEdict (e, false);
 }
 
-
 void
 SetMinMaxSize (progs_t *pr, edict_t *e, const vec3_t min, const vec3_t max,
 			   qboolean rotate)
 {
-	float      *angles;
-	vec3_t      rmin, rmax;
+	float       a;
 	float       bounds[2][3];
 	float       xvector[2], yvector[2];
-	float       a;
-	vec3_t      base, transformed;
+	float      *angles;
 	int         i, j, k, l;
+	vec3_t      rmin, rmax, base, transformed;
 
 	for (i = 0; i < 3; i++)
 		if (min[i] > max[i])
@@ -229,7 +227,6 @@ PF_setsize (progs_t *pr)
 	SetMinMaxSize (pr, e, min, max, false);
 }
 
-
 /*
 	PF_setmodel
 
@@ -276,7 +273,7 @@ PF_setmodel (progs_t *pr)
 void
 PF_bprint (progs_t *pr)
 {
-	const char       *s;
+	const char *s;
 
 	s = PF_VarString (pr, 0);
 	SV_BroadcastPrintf ("%s", s);
@@ -292,7 +289,7 @@ PF_bprint (progs_t *pr)
 void
 PF_sprint (progs_t *pr)
 {
-	const char       *s;
+	const char *s;
 	client_t   *client;
 	int         entnum;
 
@@ -309,7 +306,6 @@ PF_sprint (progs_t *pr)
 	MSG_WriteByte (&client->message, svc_print);
 	MSG_WriteString (&client->message, s);
 }
-
 
 /*
 	PF_centerprint
@@ -339,7 +335,6 @@ PF_centerprint (progs_t *pr)
 	MSG_WriteString (&client->message, s);
 }
 
-
 /*
 	PF_particle
 
@@ -359,10 +354,6 @@ PF_particle (progs_t *pr)
 	SV_StartParticle (org, dir, color, count);
 }
 
-
-/*
-	PF_ambientsound
-*/
 void
 PF_ambientsound (progs_t *pr)
 {
@@ -411,11 +402,10 @@ PF_ambientsound (progs_t *pr)
 void
 PF_sound (progs_t *pr)
 {
-	const char       *sample;
-	int         channel;
+	const char *sample;
+	float		attenuation;
+	int			channel, volume;
 	edict_t    *entity;
-	int         volume;
-	float       attenuation;
 
 	entity = P_EDICT (pr, 0);
 	channel = P_FLOAT (pr, 1);
@@ -425,10 +415,8 @@ PF_sound (progs_t *pr)
 
 	if (volume < 0 || volume > 255)
 		Sys_Error ("SV_StartSound: volume = %i", volume);
-
 	if (attenuation < 0 || attenuation > 4)
 		Sys_Error ("SV_StartSound: attenuation = %f", attenuation);
-
 	if (channel < 0 || channel > 7)
 		Sys_Error ("SV_StartSound: channel = %i", channel);
 
@@ -439,9 +427,9 @@ PF_sound (progs_t *pr)
 /*
 	PF_traceline
 
-	Used for use tracing and shot targeting
-	Traces are blocked by bbox and exact bsp entityes, and also slide box entities
-	if the tryents flag is set.
+	Used for use tracing and shot targeting.
+	Traces are blocked by bbox and exact bsp entityes, and also slide box
+	entities if the tryents flag is set.
 
 	traceline (vector1, vector2, tryents)
 */
@@ -449,9 +437,9 @@ void
 PF_traceline (progs_t *pr)
 {
 	float      *v1, *v2;
-	trace_t     trace;
 	int         nomonsters;
 	edict_t    *ent;
+	trace_t     trace;
 
 	v1 = P_VECTOR (pr, 0);
 	v2 = P_VECTOR (pr, 1);
@@ -468,12 +456,12 @@ PF_traceline (progs_t *pr)
 	VectorCopy (trace.endpos, *sv_globals.trace_endpos);
 	VectorCopy (trace.plane.normal, *sv_globals.trace_plane_normal);
 	*sv_globals.trace_plane_dist = trace.plane.dist;
+
 	if (trace.ent)
 		*sv_globals.trace_ent = EDICT_TO_PROG (pr, trace.ent);
 	else
 		*sv_globals.trace_ent = EDICT_TO_PROG (pr, sv.edicts);
 }
-
 
 /*
 	PF_checkpos
@@ -488,7 +476,7 @@ PF_checkpos (progs_t *pr)
 {
 }
 
-//============================================================================
+// ============================================================================
 
 byte        checkpvs[MAX_MAP_LEAFS / 8];
 
@@ -521,14 +509,12 @@ PF_newcheckclient (progs_t *pr, int check)
 
 		if (i == check)
 			break;						// didn't find anything else
-
 		if (ent->free)
 			continue;
 		if (SVfloat (ent, health) <= 0)
 			continue;
 		if ((int) SVfloat (ent, flags) & FL_NOTARGET)
 			continue;
-
 		// anything that is a client, or has a client as an enemy
 		break;
 	}
@@ -541,6 +527,9 @@ PF_newcheckclient (progs_t *pr, int check)
 
 	return i;
 }
+
+#define	MAX_CHECK	16
+int     c_invis, c_notvis;
 
 /*
 	PF_checkclient
@@ -555,14 +544,12 @@ PF_newcheckclient (progs_t *pr, int check)
 
 	name checkclient ()
 */
-#define	MAX_CHECK	16
-int         c_invis, c_notvis;
 void
 PF_checkclient (progs_t *pr)
 {
 	edict_t    *ent, *self;
-	mleaf_t    *leaf;
 	int         l;
+	mleaf_t    *leaf;
 	vec3_t      view;
 
 // find a new check if on a new frame
@@ -593,7 +580,6 @@ PF_checkclient (progs_t *pr)
 
 //============================================================================
 
-
 /*
 	PF_stuffcmd
 
@@ -604,9 +590,9 @@ PF_checkclient (progs_t *pr)
 void
 PF_stuffcmd (progs_t *pr)
 {
-	int         entnum;
-	const char       *str;
+	const char *str;
 	client_t   *old;
+	int         entnum;
 
 	entnum = P_EDICTNUM (pr, 0);
 	if (entnum < 1 || entnum > svs.maxclients)
@@ -648,8 +634,8 @@ PF_findradius (progs_t *pr)
 	edict_t    *ent, *chain;
 	float       rad;
 	float      *org;
-	vec3_t      eorg;
 	int         i, j;
+	vec3_t      eorg;
 
 	chain = (edict_t *) sv.edicts;
 
@@ -663,10 +649,10 @@ PF_findradius (progs_t *pr)
 		if (SVfloat (ent, solid) == SOLID_NOT)
 			continue;
 		for (j = 0; j < 3; j++)
-			eorg[j] =
-				org[j] - (SVvector (ent, origin)[j] +
-						  (SVvector (ent, mins)[j] + SVvector (ent, maxs)[j]) * 0.5);
-		if (Length (eorg) > rad)
+			eorg[j] = org[j] - (SVvector (ent, origin)[j]
+							    + (SVvector (ent, mins)[j]
+								   + SVvector (ent, maxs)[j]) * 0.5);
+		if (VectorLength (eorg) > rad)
 			continue;
 
 		SVentity (ent, chain) = EDICT_TO_PROG (pr, chain);
@@ -675,7 +661,6 @@ PF_findradius (progs_t *pr)
 
 	RETURN_EDICT (pr, chain);
 }
-
 
 void
 PF_Spawn (progs_t *pr)
@@ -695,7 +680,6 @@ PF_Remove (progs_t *pr)
 	ED_Free (pr, ed);
 }
 
-
 void
 PR_CheckEmptyString (progs_t *pr, const char *s)
 {
@@ -705,22 +689,20 @@ PR_CheckEmptyString (progs_t *pr, const char *s)
 
 void
 PF_precache_file (progs_t *pr)
-{										// precache_file is only used to copy 
-										// 
-	// 
-	// files with qcc, it does nothing
+{
+	// precache_file is only used to copy files with qcc, it does nothing
 	R_INT (pr) = P_INT (pr, 0);
 }
 
 void
 PF_precache_sound (progs_t *pr)
 {
-	const char       *s;
+	const char *s;
 	int         i;
 
 	if (sv.state != ss_loading)
-		PR_RunError
-			(pr, "PF_Precache_*: Precache can only be done in spawn functions");
+		PR_RunError (pr, "PF_Precache_*: Precache can only be done in spawn "
+					 "functions");
 
 	s = P_STRING (pr, 0);
 	R_INT (pr) = P_INT (pr, 0);
@@ -740,12 +722,12 @@ PF_precache_sound (progs_t *pr)
 void
 PF_precache_model (progs_t *pr)
 {
-	const char       *s;
+	const char *s;
 	int         i;
 
 	if (sv.state != ss_loading)
-		PR_RunError
-			(pr, "PF_Precache_*: Precache can only be done in spawn functions");
+		PR_RunError (pr, "PF_Precache_*: Precache can only be done in spawn "
+					 "functions");
 
 	s = P_STRING (pr, 0);
 	R_INT (pr) = P_INT (pr, 0);
@@ -762,7 +744,6 @@ PF_precache_model (progs_t *pr)
 	}
 	PR_RunError (pr, "PF_precache_model: overflow");
 }
-
 
 /*
 	PF_walkmove
@@ -868,9 +849,6 @@ PF_lightstyle (progs_t *pr)
 		}
 }
 
-/*
-	PF_checkbottom
-*/
 void
 PF_checkbottom (progs_t *pr)
 {
@@ -881,9 +859,6 @@ PF_checkbottom (progs_t *pr)
 	R_FLOAT (pr) = SV_CheckBottom (ent);
 }
 
-/*
-	PF_pointcontents
-*/
 void
 PF_pointcontents (progs_t *pr)
 {
@@ -894,22 +869,22 @@ PF_pointcontents (progs_t *pr)
 	R_FLOAT (pr) = SV_PointContents (v);
 }
 
+cvar_t     *sv_aim;
+
 /*
 	PF_aim
 
 	Pick a vector for the player to shoot along
 	vector aim(entity, missilespeed)
 */
-cvar_t     *sv_aim;
 void
 PF_aim (progs_t *pr)
 {
 	edict_t    *ent, *check, *bestent;
-	vec3_t      start, dir, end, bestdir;
+	float       dist, bestdist, speed;
 	int         i, j;
 	trace_t     tr;
-	float       dist, bestdist;
-	float       speed;
+	vec3_t      start, dir, end, bestdir;
 
 	ent = P_EDICT (pr, 0);
 	speed = P_FLOAT (pr, 1);
@@ -939,11 +914,12 @@ PF_aim (progs_t *pr)
 		if (check == ent)
 			continue;
 		if (teamplay->int_val && SVfloat (ent, team) > 0
-			&& SVfloat (ent, team) == SVfloat (check, team)) continue;	// don't aim at
-		// teammate
+			&& SVfloat (ent, team) == SVfloat (check, team))
+			continue;	// don't aim at teammate
+
 		for (j = 0; j < 3; j++)
-			end[j] = SVvector (check, origin)[j]
-				+ 0.5 * (SVvector (check, mins)[j] + SVvector (check, maxs)[j]);
+			end[j] = SVvector (check, origin)[j] + 0.5
+				* (SVvector (check, mins)[j] + SVvector (check, maxs)[j]);
 		VectorSubtract (end, start, dir);
 		VectorNormalize (dir);
 		dist = DotProduct (dir, *sv_globals.v_forward);
@@ -957,7 +933,8 @@ PF_aim (progs_t *pr)
 	}
 
 	if (bestent) {
-		VectorSubtract (SVvector (bestent, origin), SVvector (ent, origin), dir);
+		VectorSubtract (SVvector (bestent, origin), SVvector (ent, origin),
+						dir);
 		dist = DotProduct (dir, *sv_globals.v_forward);
 		VectorScale (*sv_globals.v_forward, dist, end);
 		end[2] = dir[2];
@@ -1005,14 +982,7 @@ PF_changeyaw (progs_t *pr)
 	SVvector (ent, angles)[1] = anglemod (current + move);
 }
 
-
-/*
-===============================================================================
-
-MESSAGE WRITING
-
-===============================================================================
-*/
+// MESSAGE WRITING ============================================================
 
 #define	MSG_BROADCAST	0				// unreliable to all
 #define	MSG_ONE			1				// reliable to one (msg_entity)
@@ -1029,24 +999,24 @@ WriteDest (progs_t *pr)
 	dest = P_FLOAT (pr, 0);
 	switch (dest) {
 		case MSG_BROADCAST:
-		return &sv.datagram;
+			return &sv.datagram;
 
 		case MSG_ONE:
-		ent = PROG_TO_EDICT (pr, *sv_globals.msg_entity);
-		entnum = NUM_FOR_EDICT (pr, ent);
-		if (entnum < 1 || entnum > svs.maxclients)
-			PR_RunError (pr, "WriteDest: not a client");
-		return &svs.clients[entnum - 1].message;
+			ent = PROG_TO_EDICT (pr, *sv_globals.msg_entity);
+			entnum = NUM_FOR_EDICT (pr, ent);
+			if (entnum < 1 || entnum > svs.maxclients)
+				PR_RunError (pr, "WriteDest: not a client");
+			return &svs.clients[entnum - 1].message;
 
 		case MSG_ALL:
-		return &sv.reliable_datagram;
+			return &sv.reliable_datagram;
 
 		case MSG_INIT:
-		return &sv.signon;
+			return &sv.signon;
 
 		default:
-		PR_RunError (pr, "WriteDest: bad destination");
-		break;
+			PR_RunError (pr, "WriteDest: bad destination");
+			break;
 	}
 
 	return NULL;
@@ -1094,14 +1064,13 @@ PF_WriteString (progs_t *pr)
 	MSG_WriteString (WriteDest (pr), P_STRING (pr, 1));
 }
 
-
 void
 PF_WriteEntity (progs_t *pr)
 {
 	MSG_WriteShort (WriteDest (pr), P_EDICTNUM (pr, 1));
 }
 
-//=============================================================================
+// ============================================================================
 
 void
 PF_makestatic (progs_t *pr)
@@ -1130,11 +1099,8 @@ PF_makestatic (progs_t *pr)
 	ED_Free (pr, ent);
 }
 
-//=============================================================================
+// ============================================================================
 
-/*
-	PF_setspawnparms
-*/
 void
 PF_setspawnparms (progs_t *pr)
 {
@@ -1154,9 +1120,6 @@ PF_setspawnparms (progs_t *pr)
 		sv_globals.parms[i] = client->spawn_parms[i];
 }
 
-/*
-	PF_changelevel
-*/
 void
 PF_changelevel (progs_t *pr)
 {
@@ -1245,9 +1208,9 @@ PF_freeboxhull (progs_t *pr)
 static vec_t
 calc_dist (vec3_t p, vec3_t n, vec3_t *offsets)
 {
+	int        i;
 	vec_t      d = DotProduct (p, n);
 	vec3_t     s, v;
-	int        i;
 
 	VectorScale (n, d, s);
 	for (i = 0; i < 3; i++)

@@ -75,23 +75,18 @@ vec3_t camera_angles = {0,0,0};
 vec3_t player_origin = {0,0,0};
 vec3_t player_angles = {0,0,0};
 
-
 cvar_t     *chase_back;
 cvar_t     *chase_up;
 cvar_t     *chase_right;
 cvar_t     *chase_active;
+cvar_t     *cl_hightrack;	// track high fragger
+cvar_t     *cl_chasecam;
+cvar_t     *cl_camera_maxpitch;
+cvar_t     *cl_camera_maxyaw;
 
 static vec3_t desired_position;			// where the camera wants to be
 static qboolean locked = false;
 static int  oldbuttons;
-
-// track high fragger
-cvar_t     *cl_hightrack;
-
-cvar_t     *cl_chasecam;
-
-cvar_t     *cl_camera_maxpitch;
-cvar_t     *cl_camera_maxyaw;
 
 double      cam_lastviewtime;
 qboolean    cam_forceview;
@@ -251,7 +246,7 @@ Cam_IsVisible (player_state_t * player, vec3_t vec)
 		return false;
 	// check distance, don't let the player get too far away or too close
 	VectorSubtract (player->origin, vec, v);
-	d = Length (v);
+	d = VectorLength (v);
 
 	return (d > 16.0);
 }
@@ -434,7 +429,7 @@ Cam_Track (usercmd_t *cmd)
 		// Ok, move to our desired position and set our angles to view
 		// the player
 		VectorSubtract (desired_position, self->origin, vec);
-		len = Length (vec);
+		len = VectorLength (vec);
 		cmd->forwardmove = cmd->sidemove = cmd->upmove = 0;
 		if (len > 16) {					// close enough?
 			MSG_WriteByte (&cls.netchan.message, clc_tmove);
@@ -557,7 +552,6 @@ Cam_FinishMove (usercmd_t *cmd)
 
 	if (cmd->buttons & BUTTON_ATTACK) {
 		if (!(oldbuttons & BUTTON_ATTACK)) {
-
 			oldbuttons |= BUTTON_ATTACK;
 			autocam++;
 
@@ -653,18 +647,13 @@ TraceLine (vec3_t start, vec3_t end, vec3_t impact)
 	VectorCopy (trace.endpos, impact);
 }
 
-/*
-==================
-Chase_Update
-==================
-*/
 void
 Chase_Update (void)
 {
-	vec3_t    forward, up, right, stop, dir;
-	float     pitch, yaw, fwd;
-	usercmd_t cmd; // movement direction
-	int i;
+	float		pitch, yaw, fwd;
+	int			i;
+	vec3_t		forward, up, right, stop, dir;
+	usercmd_t	cmd;	// movement direction
 
 	// lazy camera, look toward player entity
 
@@ -673,13 +662,13 @@ Chase_Update (void)
 		// control camera angles with key/mouse/joy-look
 
 		camera_angles[PITCH] += cl.viewangles[PITCH] - player_angles[PITCH];
-		camera_angles[YAW]   += cl.viewangles[YAW]   - player_angles[YAW];
-		camera_angles[ROLL]  += cl.viewangles[ROLL]  - player_angles[ROLL];
+		camera_angles[YAW] += cl.viewangles[YAW] - player_angles[YAW];
+		camera_angles[ROLL] += cl.viewangles[ROLL] - player_angles[ROLL];
 
 		if (chase_active->int_val == 2)
 		{
 			if (camera_angles[PITCH] < -60) camera_angles[PITCH] = -60;
-			if (camera_angles[PITCH] >  60) camera_angles[PITCH] =  60;
+			if (camera_angles[PITCH] > 60) camera_angles[PITCH] = 60;
 		}
 
 		// move camera, it's not enough to just change the angles because
@@ -688,8 +677,8 @@ Chase_Update (void)
 		if (chase_active->int_val == 3)
 			VectorCopy (r_refdef.vieworg, player_origin);
 
-		AngleVectors   (camera_angles, forward, right, up);
-		VectorScale    (forward, chase_back->value, forward);
+		AngleVectors (camera_angles, forward, right, up);
+		VectorScale (forward, chase_back->value, forward);
 		VectorSubtract (player_origin, forward, camera_origin);
 
 		if (chase_active->int_val == 2)
@@ -707,22 +696,22 @@ Chase_Update (void)
 		VectorCopy      (dir, forward);
 		VectorNormalize (forward);
 
-		if (Length (dir) > chase_back->value)
+		if (VectorLength (dir) > chase_back->value)
 		{
 			VectorScale (forward, chase_back->value, dir);
-			VectorAdd   (player_origin, dir, camera_origin);
+			VectorAdd (player_origin, dir, camera_origin);
 		}
 
 		// check for walls between player and camera
 
-		VectorScale    (forward, 8, forward);
-		VectorAdd      (camera_origin, forward, camera_origin);
-		TraceLine      (player_origin, camera_origin, stop);
-		if (Length (stop) != 0)
-        		VectorSubtract (stop, forward, camera_origin);
+		VectorScale (forward, 8, forward);
+		VectorAdd (camera_origin, forward, camera_origin);
+		TraceLine (player_origin, camera_origin, stop);
+		if (VectorLength (stop) != 0)
+			VectorSubtract (stop, forward, camera_origin);
 
 		VectorSubtract  (camera_origin, r_refdef.vieworg, dir);
-		VectorCopy      (dir, forward);
+		VectorCopy (dir, forward);
 		VectorNormalize (forward);
 
 		if (chase_active->int_val == 2)
@@ -730,9 +719,11 @@ Chase_Update (void)
 			if (dir[1] == 0 && dir[0] == 0)
 			{
 				// look straight up or down
-			//	camera_angles[YAW] = r_refdef.viewangles[YAW];
-				if (dir[2] > 0) camera_angles[PITCH] = 90;
-				else            camera_angles[PITCH] = 270;
+//				camera_angles[YAW] = r_refdef.viewangles[YAW];
+				if (dir[2] > 0)
+					camera_angles[PITCH] = 90;
+				else
+					camera_angles[PITCH] = 270;
 			}
 			else
 			{
@@ -765,8 +756,9 @@ Chase_Update (void)
 		cmd.sidemove -= cl_sidespeed->value * CL_KeyState (&in_moveleft);
 
 		if (!(in_klook.state & 1)) {
-			cmd.forwardmove += cl_forwardspeed->value * CL_KeyState (&in_forward);
-			cmd.forwardmove -= cl_backspeed->value    * CL_KeyState (&in_back);
+			cmd.forwardmove += cl_forwardspeed->value
+				* CL_KeyState (&in_forward);
+			cmd.forwardmove -= cl_backspeed->value * CL_KeyState (&in_back);
 		}
 		if (in_speed.state & 1) {
 			cmd.forwardmove *= cl_movespeedkey->value;
@@ -776,8 +768,9 @@ Chase_Update (void)
 		// mouse and joystick controllers add to movement
 		dir[1] = cl.viewangles[1] - camera_angles[1];  dir[0] = 0;  dir[2] = 0;
 		AngleVectors (dir, forward, right, up);
-		VectorScale  (forward, viewdelta.position[2] * m_forward->value, forward);
-		VectorScale  (right,   viewdelta.position[0] * m_side->value,    right);
+		VectorScale  (forward, viewdelta.position[2] * m_forward->value,
+					  forward);
+		VectorScale  (right, viewdelta.position[0] * m_side->value, right);
 		VectorAdd    (forward, right, dir);
 		cmd.forwardmove += dir[0];
 		cmd.sidemove    -= dir[1];
@@ -817,7 +810,7 @@ Chase_Update (void)
 
 	// check for walls between player and camera
 	TraceLine (r_refdef.vieworg, camera_origin, stop);
-	if (Length (stop) != 0)
+	if (VectorLength (stop) != 0)
 		for (i = 0; i < 3; i++)
 			camera_origin[i] = stop[i] + forward[i] * 8;
 

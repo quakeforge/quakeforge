@@ -397,7 +397,7 @@ CrossProduct (const vec3_t v1, const vec3_t v2, vec3_t cross)
 }
 
 vec_t
-_Length (const vec3_t v)
+_VectorLength (const vec3_t v)
 {
 	float		length;
 

@@ -373,7 +373,7 @@ SV_Multicast (const vec3_t origin, int to)
 			vec3_t      delta;
 
 			VectorSubtract (origin, SVvector (client->edict, origin), delta);
-			if (Length (delta) <= 1024)
+			if (VectorLength (delta) <= 1024)
 				goto inrange;
 		}
 

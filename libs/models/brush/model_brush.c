@@ -390,8 +390,8 @@ Mod_LoadTexinfo (lump_t *l)
 			out->vecs[0][j] = LittleFloat (in->vecs[0][j]);
 			out->vecs[1][j] = LittleFloat (in->vecs[1][j]);
 		}
-		len1 = Length (out->vecs[0]);
-		len2 = Length (out->vecs[1]);
+		len1 = VectorLength (out->vecs[0]);
+		len2 = VectorLength (out->vecs[1]);
 
 		len1 = (len1 + len2) / 2;
 		if (len1 < 0.32)

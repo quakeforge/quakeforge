@@ -120,7 +120,7 @@ SV_CheckVelocity (edict_t *ent)
 #endif
 	}
 #if 0
-	wishspeed = Length (SVvector (ent, velocity));
+	wishspeed = VectorLength (SVvector (ent, velocity));
 	if (wishspeed > sv_maxvelocity->value) {
 		VectorScale (SVvector (ent, velocity), sv_maxvelocity->value /
 					 wishspeed, SVvector (ent, velocity));

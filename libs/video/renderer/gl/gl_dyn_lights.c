@@ -82,9 +82,8 @@ R_RenderDlight (dlight_t *light)
 	rad = light->radius * 0.35;
 
 	VectorSubtract (light->origin, r_origin, v);
-	if (Length (v) < rad) {				// view is inside the dlight
+	if (VectorLength (v) < rad)				// view is inside the dlight
 		return;
-	}
 
 	qfglBegin (GL_TRIANGLE_FAN);
 

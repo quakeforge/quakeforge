@@ -525,7 +525,7 @@ R_DrawEntitiesOnList (void)
 						if (r_dlights[lnum].die >= r_realtime) {
 							VectorSubtract (currententity->origin,
 											r_dlights[lnum].origin, dist);
-							add = r_dlights[lnum].radius - Length (dist);
+							add = r_dlights[lnum].radius - VectorLength (dist);
 
 							if (add > 0)
 								lighting.ambientlight += add;
@@ -593,7 +593,7 @@ R_DrawViewModel (void)
 			continue;
 
 		VectorSubtract (currententity->origin, dl->origin, dist);
-		add = dl->radius - Length (dist);
+		add = dl->radius - VectorLength (dist);
 		if (add > 0)
 			r_viewlighting.ambientlight += add;
 	}

@@ -296,5 +296,5 @@ RadiusFromBounds (const vec3_t mins, const vec3_t maxs)
 
 	for (i = 0; i < 3; i++)
 		corner[i] = max (fabs (mins[i]), fabs (maxs[i]));
-	return Length (corner);
+	return VectorLength (corner);
 }
