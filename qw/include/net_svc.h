@@ -80,6 +80,14 @@ typedef struct net_svc_tempentity_s
 	short		beamentity; // beam entity
 } net_svc_tempentity_t;
 
+typedef struct net_svc_spawnstaticsound_s
+{
+	vec3_t		position;
+	byte		sound_num;
+	byte		volume;
+	byte		attenuation; // FIXME: should be a float (convert usages)
+} net_svc_spawnstaticsound_t;
+
 typedef struct net_svc_updateuserinfo_s
 {
 	byte		slot;
@@ -94,6 +102,12 @@ typedef struct net_svc_setinfo_s
 	const char *value;
 } net_svc_setinfo_t;
 
+typedef struct net_svc_serverinfo_s
+{
+	const char *key;
+	const char *value;
+} net_svc_serverinfo_t;
+
 typedef struct net_svc_download_s
 {
 	short		size;
@@ -101,6 +115,21 @@ typedef struct net_svc_download_s
 	const char *name; // only one of name or data will be set
 	const byte *data;
 } net_svc_download_t;
+
+typedef struct net_svc_playerinfo_s
+{
+	byte		playernum;
+	int			flags;
+	vec3_t		origin;
+	byte		frame;
+	byte		msec;
+	usercmd_t	usercmd;
+	vec3_t		velocity;
+	byte		modelindex;
+	byte		skinnum;
+	byte		effects;
+	byte		weaponframe;
+} net_svc_playerinfo_t;
 
 typedef struct net_svc_soundlist_s
 {
@@ -116,20 +145,20 @@ typedef struct net_svc_modellist_s
 	byte		nextmodel;
 } net_svc_modellist_t;
 
-qboolean NET_SVC_Print_Parse (net_svc_print_t *print, msg_t *message);
-qboolean NET_SVC_Damage_Parse (net_svc_damage_t *damage, msg_t *message);
-qboolean NET_SVC_ServerData_Parse (net_svc_serverdata_t *serverdata,
-								   msg_t *message);
-qboolean NET_SVC_Sound_Parse (net_svc_sound_t *sound, msg_t *message);
-qboolean NET_SVC_TempEntity_Parse (net_svc_tempentity_t *tempentity,
-								   msg_t *message);
-qboolean NET_SVC_UpdateUserInfo_Parse (net_svc_updateuserinfo_t *updateuserinfo,
-									   msg_t *message);
-qboolean NET_SVC_SetInfo_Parse (net_svc_setinfo_t *setinfo, msg_t *message);
-qboolean NET_SVC_Download_Parse (net_svc_download_t *download, msg_t *message);
-qboolean NET_SVC_Soundlist_Parse (net_svc_soundlist_t *soundlist,
-								  msg_t *message);
-qboolean NET_SVC_Modellist_Parse (net_svc_modellist_t *modellist,
-								  msg_t *message);
+qboolean NET_SVC_Print_Parse (net_svc_print_t *block, msg_t *msg);
+qboolean NET_SVC_Damage_Parse (net_svc_damage_t *block, msg_t *msg);
+qboolean NET_SVC_ServerData_Parse (net_svc_serverdata_t *block, msg_t *msg);
+qboolean NET_SVC_Sound_Parse (net_svc_sound_t *block, msg_t *msg);
+qboolean NET_SVC_TempEntity_Parse (net_svc_tempentity_t *block, msg_t *msg);
+qboolean NET_SVC_SpawnStaticSound_Parse (net_svc_spawnstaticsound_t *block,
+										 msg_t *msg);
+qboolean NET_SVC_UpdateUserInfo_Parse (net_svc_updateuserinfo_t *block,
+									   msg_t *msg);
+qboolean NET_SVC_SetInfo_Parse (net_svc_setinfo_t *block, msg_t *msg);
+qboolean NET_SVC_ServerInfo_Parse (net_svc_serverinfo_t *block, msg_t *msg);
+qboolean NET_SVC_Download_Parse (net_svc_download_t *block, msg_t *msg);
+qboolean NET_SVC_Playerinfo_Parse (net_svc_playerinfo_t *block, msg_t *msg);
+qboolean NET_SVC_Soundlist_Parse (net_svc_soundlist_t *block, msg_t *msg);
+qboolean NET_SVC_Modellist_Parse (net_svc_modellist_t *block, msg_t *msg);
 
 #endif // NET_SVC_H

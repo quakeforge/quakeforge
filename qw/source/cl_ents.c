@@ -53,6 +53,7 @@ static const char rcsid[] =
 #include "d_iface.h"
 #include "host.h"
 #include "msg_ucmd.h"
+#include "net_svc.h"
 #include "pmove.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
@@ -630,63 +631,43 @@ extern int    cl_spikeindex, cl_playerindex, cl_flagindex, parsecountmod;
 void
 CL_ParsePlayerinfo (void)
 {
-	int				flags, msec, num, i;
 	player_state_t *state;
+	net_svc_playerinfo_t block;
 
-	num = MSG_ReadByte (net_message);
-	if (num > MAX_CLIENTS)
-//		Sys_Error ("CL_ParsePlayerinfo: bad num");
-		Host_EndGame ("CL_ParsePlayerinfo: bad num");
+	NET_SVC_Playerinfo_Parse (&block, net_message);
 
-	state = &cl.frames[parsecountmod].playerstate[num];
+	if (block.playernum > MAX_CLIENTS)
+//		Sys_Error ("CL_ParsePlayerinfo: bad block.playernum");
+		Host_EndGame ("CL_ParsePlayerinfo: bad block.playernum");
 
-	state->number = num;
-	flags = state->flags = MSG_ReadShort (net_message);
+	state = &cl.frames[parsecountmod].playerstate[block.playernum];
+
+	state->number = block.playernum;
+	state->flags = block.flags;
 
 	state->messagenum = cl.parsecount;
-	state->origin[0] = MSG_ReadCoord (net_message);
-	state->origin[1] = MSG_ReadCoord (net_message);
-	state->origin[2] = MSG_ReadCoord (net_message);
+	VectorCopy (block.origin, state->origin);
 
-	state->frame = MSG_ReadByte (net_message);
+	state->frame = block.frame;
 
 	// the other player's last move was likely some time
 	// before the packet was sent out, so accurately track
 	// the exact time it was valid at
-	if (flags & PF_MSEC) {
-		msec = MSG_ReadByte (net_message);
-		state->state_time = parsecounttime - msec * 0.001;
-	} else
-		state->state_time = parsecounttime;
+	state->state_time = parsecounttime - block.msec * 0.001;
 
-	if (flags & PF_COMMAND)
-		MSG_ReadDeltaUsercmd (&nullcmd, &state->command);
+	if (block.flags & PF_COMMAND)
+		memcpy (&state->command, &block.usercmd, sizeof (state->command));
 
-	for (i = 0; i < 3; i++) {
-		if (flags & (PF_VELOCITY1 << i))
-			state->velocity[i] = MSG_ReadShort (net_message);
-		else
-			state->velocity[i] = 0;
-	}
-	if (flags & PF_MODEL)
-		state->modelindex = MSG_ReadByte (net_message);
+	VectorCopy (block.velocity, state->velocity);
+
+	if (block.flags & PF_MODEL)
+		state->modelindex = block.modelindex;
 	else
 		state->modelindex = cl_playerindex;
 
-	if (flags & PF_SKINNUM)
-		state->skinnum = MSG_ReadByte (net_message);
-	else
-		state->skinnum = 0;
-
-	if (flags & PF_EFFECTS)
-		state->effects = MSG_ReadByte (net_message);
-	else
-		state->effects = 0;
-
-	if (flags & PF_WEAPONFRAME)
-		state->weaponframe = MSG_ReadByte (net_message);
-	else
-		state->weaponframe = 0;
+	state->skinnum = block.skinnum;
+	state->effects = block.effects;
+	state->weaponframe = block.weaponframe;
 
 	VectorCopy (state->command.angles, state->viewangles);
 }

@@ -881,16 +881,12 @@ CL_ParseStatic (void)
 void
 CL_ParseStaticSound (void)
 {
-	int         sound_num, vol, atten, i;
-	vec3_t      org;
+	net_svc_spawnstaticsound_t block;
 
-	for (i = 0; i < 3; i++)
-		org[i] = MSG_ReadCoord (net_message);
-	sound_num = MSG_ReadByte (net_message);
-	vol = MSG_ReadByte (net_message);
-	atten = MSG_ReadByte (net_message);
+	NET_SVC_SpawnStaticSound_Parse (&block, net_message);
 
-	S_StaticSound (cl.sound_precache[sound_num], org, vol, atten);
+	S_StaticSound (cl.sound_precache[block.sound_num], block.position,
+				   block.volume, block.attenuation);
 }
 
 /* ACTION MESSAGES */
@@ -1017,20 +1013,18 @@ CL_SetInfo (void)
 void
 CL_ServerInfo (void)
 {
-	char        key[MAX_MSGLEN], value[MAX_MSGLEN];
+	net_svc_serverinfo_t block;
 
-	strncpy (key, MSG_ReadString (net_message), sizeof (key) - 1);
-	key[sizeof (key) - 1] = 0;
-	strncpy (value, MSG_ReadString (net_message), sizeof (value) - 1);
-	key[sizeof (value) - 1] = 0;
+	NET_SVC_ServerInfo_Parse (&block, net_message);
 
-	Con_DPrintf ("SERVERINFO: %s=%s\n", key, value);
+	Con_DPrintf ("SERVERINFO: %s=%s\n", block.key, block.value);
 
-	Info_SetValueForKey (cl.serverinfo, key, value, MAX_SERVERINFO_STRING, 0);
-	if (strequal (key, "chase")) {
-		cl.chase = atoi (value);
-	} else if (strequal (key, "watervis")) {
-		cl.watervis = atoi (value);
+	Info_SetValueForKey (cl.serverinfo, block.key, block.value,
+						 MAX_SERVERINFO_STRING, 0);
+	if (strequal (block.key, "chase")) {
+		cl.chase = atoi (block.value);
+	} else if (strequal (block.key, "watervis")) {
+		cl.watervis = atoi (block.value);
 	}
 }
 
@@ -1188,7 +1182,9 @@ CL_ParseServerMessage (void)
 				if (i >= MAX_LIGHTSTYLES)
 //					Sys_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
 					Host_EndGame ("svc_lightstyle > MAX_LIGHTSTYLES");
-				strcpy (r_lightstyle[i].map, MSG_ReadString (net_message));
+				strncpy (r_lightstyle[i].map, MSG_ReadString (net_message),
+						 sizeof (r_lightstyle[i].map) - 1);
+				r_lightstyle[i].map[sizeof (r_lightstyle[i].map) - 1] = 0;
 				r_lightstyle[i].length = strlen (r_lightstyle[i].map);
 				break;
 

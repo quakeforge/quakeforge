@@ -48,92 +48,93 @@ static const char rcsid[] =
 #include "QF/sound.h"
 
 #include "compat.h"
+#include "msg_ucmd.h" // FIXME
 #include "net_svc.h"
 
 qboolean
-NET_SVC_Print_Parse (net_svc_print_t *print, msg_t *message)
+NET_SVC_Print_Parse (net_svc_print_t *block, msg_t *msg)
 {
-	print->level = MSG_ReadByte (message);
-	print->message = MSG_ReadString (message);
+	block->level = MSG_ReadByte (msg);
+	block->message = MSG_ReadString (msg);
 
-	return message->badread;
+	return msg->badread;
 }
 
 qboolean
-NET_SVC_Damage_Parse (net_svc_damage_t *damage, msg_t *message)
+NET_SVC_Damage_Parse (net_svc_damage_t *block, msg_t *msg)
 {
 	int i;
 
-	damage->armor = MSG_ReadByte (message);
-	damage->blood = MSG_ReadByte (message);
+	block->armor = MSG_ReadByte (msg);
+	block->blood = MSG_ReadByte (msg);
 	for (i = 0; i < 3; i++)
-		damage->from[i] = MSG_ReadCoord (message);
+		block->from[i] = MSG_ReadCoord (msg);
 
-	return message->badread;
+	return msg->badread;
 }
 
 qboolean
-NET_SVC_ServerData_Parse (net_svc_serverdata_t *serverdata, msg_t *message)
+NET_SVC_ServerData_Parse (net_svc_serverdata_t *block, msg_t *msg)
 {
-	serverdata->protocolversion = MSG_ReadLong (message);
+	block->protocolversion = MSG_ReadLong (msg);
 	// I could abort now if the version is wrong, but why bother?
-	serverdata->servercount = MSG_ReadLong (message);
-	serverdata->gamedir = MSG_ReadString (message);
+	block->servercount = MSG_ReadLong (msg);
+	block->gamedir = MSG_ReadString (msg);
 
 	// high bit means spectator
-	serverdata->playernum = MSG_ReadByte (message);
-	serverdata->spectator = serverdata->playernum >> 7;
-	serverdata->playernum &= ~(1 << 7);
+	block->playernum = MSG_ReadByte (msg);
+	block->spectator = block->playernum >> 7;
+	block->playernum &= ~(1 << 7);
 
-	serverdata->levelname = MSG_ReadString (message);
-	serverdata->movevars.gravity = MSG_ReadFloat (message);
-	serverdata->movevars.stopspeed = MSG_ReadFloat (message);
-	serverdata->movevars.maxspeed = MSG_ReadFloat (message);
-	serverdata->movevars.spectatormaxspeed = MSG_ReadFloat (message);
-	serverdata->movevars.accelerate = MSG_ReadFloat (message);
-	serverdata->movevars.airaccelerate = MSG_ReadFloat (message);
-	serverdata->movevars.wateraccelerate = MSG_ReadFloat (message);
-	serverdata->movevars.friction = MSG_ReadFloat (message);
-	serverdata->movevars.waterfriction = MSG_ReadFloat (message);
-	serverdata->movevars.entgravity = MSG_ReadFloat (message);
+	block->levelname = MSG_ReadString (msg);
+	block->movevars.gravity = MSG_ReadFloat (msg);
+	block->movevars.stopspeed = MSG_ReadFloat (msg);
+	block->movevars.maxspeed = MSG_ReadFloat (msg);
+	block->movevars.spectatormaxspeed = MSG_ReadFloat (msg);
+	block->movevars.accelerate = MSG_ReadFloat (msg);
+	block->movevars.airaccelerate = MSG_ReadFloat (msg);
+	block->movevars.wateraccelerate = MSG_ReadFloat (msg);
+	block->movevars.friction = MSG_ReadFloat (msg);
+	block->movevars.waterfriction = MSG_ReadFloat (msg);
+	block->movevars.entgravity = MSG_ReadFloat (msg);
 
-	return message->badread;
+	return msg->badread;
 }
 
 qboolean
-NET_SVC_Sound_Parse (net_svc_sound_t *sound, msg_t *message)
+NET_SVC_Sound_Parse (net_svc_sound_t *block, msg_t *msg)
 {
 	int i, header;
 
-	header = MSG_ReadShort (message);
+	header = MSG_ReadShort (msg);
 	if (header & SND_VOLUME)
-		sound->volume = MSG_ReadByte (message) / 255.0;
+		block->volume = MSG_ReadByte (msg) / 255.0;
 	else
-		sound->volume = DEFAULT_SOUND_PACKET_VOLUME / 255.0;
+		block->volume = DEFAULT_SOUND_PACKET_VOLUME / 255.0;
 
 	if (header & SND_ATTENUATION)
-		sound->attenuation = MSG_ReadByte (message) / 64.0;
+		block->attenuation = MSG_ReadByte (msg) / 64.0;
 	else
-		sound->attenuation = DEFAULT_SOUND_PACKET_ATTENUATION;
+		block->attenuation = DEFAULT_SOUND_PACKET_ATTENUATION;
 
-	sound->sound_num = MSG_ReadByte (message);
+	block->sound_num = MSG_ReadByte (msg);
 
 	for (i = 0; i < 3; i++)
-		sound->position[i] = MSG_ReadCoord (message);
+		block->position[i] = MSG_ReadCoord (msg);
 
-	sound->entity = (header >> 3) & 1023;
-	sound->channel = header & 7;
+	block->entity = (header >> 3) & 1023;
+	block->channel = header & 7;
 
-	return message->badread;
+	return msg->badread;
 }
 
 qboolean
-NET_SVC_TempEntity_Parse (net_svc_tempentity_t *tempentity, msg_t *message)
+NET_SVC_TempEntity_Parse (net_svc_tempentity_t *block, msg_t *msg)
 {
 	int i;
 
-	tempentity->type = MSG_ReadByte (message);
-	switch (tempentity->type) {
+	block->type = MSG_ReadByte (msg);
+	switch (block->type) {
 		case TE_WIZSPIKE:
 		case TE_KNIGHTSPIKE:
 		case TE_SPIKE:
@@ -144,118 +145,191 @@ NET_SVC_TempEntity_Parse (net_svc_tempentity_t *tempentity, msg_t *message)
 		case TE_TELEPORT:
 		case TE_LIGHTNINGBLOOD:
 			for (i = 0; i < 3; i++)
-				tempentity->position[i] = MSG_ReadCoord (message);
+				block->position[i] = MSG_ReadCoord (msg);
 			break;
 		case TE_LIGHTNING1:
 		case TE_LIGHTNING2:
 		case TE_LIGHTNING3:
 		case TE_BEAM:
-			tempentity->beamentity = MSG_ReadShort (message);
+			block->beamentity = MSG_ReadShort (msg);
 			for (i = 0; i < 3; i++)
-				tempentity->position[i] = MSG_ReadCoord (message);
+				block->position[i] = MSG_ReadCoord (msg);
 			for (i = 0; i < 3; i++)
-				tempentity->beamend[i] = MSG_ReadCoord (message);
+				block->beamend[i] = MSG_ReadCoord (msg);
 			break;
 		case TE_EXPLOSION2:
 			for (i = 0; i < 3; i++)
-				tempentity->position[i] = MSG_ReadCoord (message);
-			tempentity->colorstart = MSG_ReadByte (message);
-			tempentity->colorlength = MSG_ReadByte (message);
+				block->position[i] = MSG_ReadCoord (msg);
+			block->colorstart = MSG_ReadByte (msg);
+			block->colorlength = MSG_ReadByte (msg);
 			break;
 		case TE_GUNSHOT:
 		case TE_BLOOD:
-			tempentity->gunshotcount = MSG_ReadByte (message);
+			block->gunshotcount = MSG_ReadByte (msg);
 			for (i = 0; i < 3; i++)
-				tempentity->position[i] = MSG_ReadCoord (message);
+				block->position[i] = MSG_ReadCoord (msg);
 			break;
 	}
 
-	return message->badread;
+	return msg->badread;
 }
 
 qboolean
-NET_SVC_UpdateUserInfo_Parse (net_svc_updateuserinfo_t *updateuserinfo,
-							  msg_t *message)
+NET_SVC_SpawnStaticSound_Parse (net_svc_spawnstaticsound_t *block,
+								msg_t *msg)
 {
-	updateuserinfo->slot = MSG_ReadByte (message);
-	updateuserinfo->userid = MSG_ReadLong (message);
-	updateuserinfo->userinfo = MSG_ReadString (message);
+	int i;
 
-	return message->badread;
+	for (i = 0; i < 3; i++)
+		block->position[i] = MSG_ReadCoord (msg);
+	block->sound_num = MSG_ReadByte (msg);
+	block->volume = MSG_ReadByte (msg);
+	block->attenuation = MSG_ReadByte (msg);
+
+	return msg->badread;
 }
 
 qboolean
-NET_SVC_SetInfo_Parse (net_svc_setinfo_t *setinfo, msg_t *message)
+NET_SVC_UpdateUserInfo_Parse (net_svc_updateuserinfo_t *block,
+							  msg_t *msg)
 {
-	setinfo->slot = MSG_ReadByte (message);
-	setinfo->key = MSG_ReadString (message);
-	setinfo->value = MSG_ReadString (message);
+	block->slot = MSG_ReadByte (msg);
+	block->userid = MSG_ReadLong (msg);
+	block->userinfo = MSG_ReadString (msg);
 
-	return message->badread;
+	return msg->badread;
 }
 
 qboolean
-NET_SVC_Download_Parse (net_svc_download_t *download, msg_t *message)
+NET_SVC_SetInfo_Parse (net_svc_setinfo_t *block, msg_t *msg)
 {
-	download->size = MSG_ReadShort (message);
-	download->percent = MSG_ReadByte (message);
-	download->name = download->data = 0;
+	block->slot = MSG_ReadByte (msg);
+	block->key = MSG_ReadString (msg);
+	block->value = MSG_ReadString (msg);
 
-	if (download->size == -2)
-		download->name = MSG_ReadString (message);
-	else if (download->size > 0) {
+	return msg->badread;
+}
+
+qboolean
+NET_SVC_ServerInfo_Parse (net_svc_serverinfo_t *block, msg_t *msg)
+{
+	block->key = MSG_ReadString (msg);
+	block->value = MSG_ReadString (msg);
+
+	return msg->badread;
+}
+
+qboolean
+NET_SVC_Download_Parse (net_svc_download_t *block, msg_t *msg)
+{
+	block->size = MSG_ReadShort (msg);
+	block->percent = MSG_ReadByte (msg);
+	block->name = block->data = 0;
+
+	if (block->size == -2)
+		block->name = MSG_ReadString (msg);
+	else if (block->size > 0) {
 		// FIXME: this should really be a MSG function
-		if (message->readcount + download->size <= message->message->cursize) {
-			download->data = message->message->data + message->readcount;
-			message->readcount += download->size;
+		if (msg->readcount + block->size <= msg->message->cursize) {
+			block->data = msg->message->data + msg->readcount;
+			msg->readcount += block->size;
 		} else {
 			// size was beyond the end of the packet
-			message->readcount = message->message->cursize;
-			message->badread = true;
-			download->size = 0;
+			msg->readcount = msg->message->cursize;
+			msg->badread = true;
+			block->size = 0;
 		}
 	}
 
-	return message->badread;
+	return msg->badread;
 }
 
 qboolean
-NET_SVC_Soundlist_Parse (net_svc_soundlist_t *soundlist, msg_t *message)
+NET_SVC_Playerinfo_Parse (net_svc_playerinfo_t *block, msg_t *msg)
 {
 	int i;
 
-	soundlist->startsound = MSG_ReadByte (message);
+	block->playernum = MSG_ReadByte (msg);
+	block->flags = MSG_ReadShort (msg);
+	for (i = 0; i < 3; i++)
+		block->origin[i] = MSG_ReadCoord (msg);
+	block->frame = MSG_ReadByte (msg);
 
-	for (i = 0; i < MAX_MODELS; i++) {
-		soundlist->sounds[i] = MSG_ReadString (message);
-		if (!*soundlist->sounds[i])
-			break;
+	if (block->flags & PF_MSEC)
+		block->msec = MSG_ReadByte (msg);
+	else
+		block->msec = 0;
+
+	// eww, FIXME
+	if (block->flags & PF_COMMAND)
+		MSG_ReadDeltaUsercmd (&nullcmd, &block->usercmd);
+
+	for (i = 0; i < 3; i++) {
+		if (block->flags & (PF_VELOCITY1 << i))
+			block->velocity[i] = MSG_ReadShort (msg);
+		else
+			block->velocity[i] = 0;
 	}
-	// this is a bit redundant, but I think the robustness is a good thing
-	soundlist->sounds[MAX_SOUNDS] = "";
 
-	soundlist->nextsound = MSG_ReadByte (message);
+	if (block->flags & PF_MODEL)
+		block->modelindex = MSG_ReadByte (msg);
+	// FIXME: handle else
 
-	return message->badread;
+	if (block->flags & PF_SKINNUM)
+		block->skinnum = MSG_ReadByte (msg);
+	else
+		block->skinnum = 0;
+
+	if (block->flags & PF_EFFECTS)
+		block->effects = MSG_ReadByte (msg);
+	else
+		block->effects = 0;
+
+	if (block->flags & PF_WEAPONFRAME)
+		block->weaponframe = MSG_ReadByte (msg);
+	else
+		block->weaponframe = 0;
+
+	return msg->badread;
 }
 
 qboolean
-NET_SVC_Modellist_Parse (net_svc_modellist_t *modellist, msg_t *message)
+NET_SVC_Soundlist_Parse (net_svc_soundlist_t *block, msg_t *msg)
 {
 	int i;
 
-	modellist->startmodel = MSG_ReadByte (message);
+	block->startsound = MSG_ReadByte (msg);
 
 	for (i = 0; i < MAX_MODELS; i++) {
-		modellist->models[i] = MSG_ReadString (message);
-		if (!*modellist->models[i])
+		block->sounds[i] = MSG_ReadString (msg);
+		if (!*block->sounds[i])
 			break;
 	}
 	// this is a bit redundant, but I think the robustness is a good thing
-	modellist->models[MAX_MODELS] = "";
+	block->sounds[MAX_SOUNDS] = "";
 
-	modellist->nextmodel = MSG_ReadByte (message);
+	block->nextsound = MSG_ReadByte (msg);
 
-	return message->badread;
+	return msg->badread;
+}
+
+qboolean
+NET_SVC_Modellist_Parse (net_svc_modellist_t *block, msg_t *msg)
+{
+	int i;
+
+	block->startmodel = MSG_ReadByte (msg);
+
+	for (i = 0; i < MAX_MODELS; i++) {
+		block->models[i] = MSG_ReadString (msg);
+		if (!*block->models[i])
+			break;
+	}
+	// this is a bit redundant, but I think the robustness is a good thing
+	block->models[MAX_MODELS] = "";
+
+	block->nextmodel = MSG_ReadByte (msg);
+
+	return msg->badread;
 }
 
