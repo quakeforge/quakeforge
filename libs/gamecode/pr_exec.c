@@ -48,6 +48,8 @@
 
 //=============================================================================
 
+extern cvar_t *pr_deadbeef;
+
 /*
 	PR_PrintStatement
 */
@@ -196,6 +198,7 @@ int
 PR_EnterFunction (progs_t * pr, dfunction_t *f)
 {
 	int         i, j, c, o;
+//	int			k;
 
 	//printf("%s:\n", PR_GetString(pr,f->s_name));
 	pr->pr_stack[pr->pr_depth].s = pr->pr_xstatement;
@@ -213,6 +216,10 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 			&pr->pr_globals[f->parm_start],
 			sizeof (pr_type_t) * c);
 	pr->localstack_used += c;
+
+//	if (pr_deadbeef->int_val)
+//		for (k = f->parm_start; k < f->parm_start + c; k++)
+//			pr->pr_globals[k].integer_var = 0xdeadbeef;
 
 // copy parameters
 	o = f->parm_start;
