@@ -5,11 +5,7 @@ QCPPFLAGS=-I../include
 game_source = \
 	axe.r		\
 	gameent.r	\
-	message.r	\
-	sound.r		\
 	tempent.r	\
-	trace.r		\
-	vector.r	\
 	world.r
 
 game_obj = $(addsuffix .qfo,$(basename $(game_source)))

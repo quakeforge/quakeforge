@@ -3,8 +3,21 @@ QCFLAGS=-qq -g -Werror
 QCPPFLAGS=-I../include
 
 libr_source = \
-	entity.r	\
-	object.r
+	crudefile.r		\
+	debug.r			\
+	entity.r		\
+	infokey.r		\
+	math.r			\
+	message.r		\
+	nq_message.r	\
+	object.r		\
+	physics.r		\
+	qw_message.r	\
+	qw_physics.r	\
+	qw_sys.r		\
+	sound.r			\
+	string.r		\
+	system.r
 
 libr_obj = $(addsuffix .qfo,$(basename $(libr_source)))
 libr_dep = $(addprefix .deps/,$(addsuffix .d,$(basename $(libr_source))))

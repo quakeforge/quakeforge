@@ -34,18 +34,15 @@
 #define MULTICAST_PHS_R 4
 #define MULTICAST_PVS_R 5
 
-//
-// direct client message generation
-//
-@extern void(float to, float f) WriteByte;
-@extern void(float to, float f) WriteChar;
-@extern void(float to, float f) WriteShort;
-@extern void(float to, float f) WriteLong;
-@extern void(float to, float f) WriteCoord;
-@extern void(float to, float f) WriteAngle;
-@extern void(float to, string s) WriteString;
-@extern void(float to, entity s) WriteEntity;
-
-@extern void(vector where, float set) multicast;
+@extern void (string s) bprint;
+@extern void (float to, float f) WriteByte;
+@extern void (float to, float f) WriteChar;
+@extern void (float to, float f) WriteShort;
+@extern void (float to, float f) WriteLong;
+@extern void (float to, float f) WriteCoord;
+@extern void (float to, float f) WriteAngle;
+@extern void (float to, string s) WriteString;
+@extern void (float to, entity s) WriteEntity;
+@extern void (...) centerprint;
 
 #endif//__message_h
