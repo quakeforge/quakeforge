@@ -53,6 +53,9 @@
 #include "r_local.h"
 #include "view.h"
 
+#ifndef USE_INTEL_ASM
+int			r_bmodelactive;
+#endif
 
 void       *colormap;
 vec3_t      viewlightvec;

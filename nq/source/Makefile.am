@@ -89,7 +89,7 @@ soft_SOURCES=	d_edge.c d_fill.c d_init.c d_modech.c d_part.c d_polyse.c \
 		d_scan.c d_sky.c d_sprite.c d_surf.c d_vars.c d_zpoint.c \
 		draw.c screen.c sw_raclip.c sw_ralias.c sw_rbsp.c sw_rdraw.c \
 		sw_redge.c sw_rlight.c sw_rmain.c sw_rmisc.c sw_rpart.c sw_rsky.c \
-		sw_rsprite.c sw_rsurf.c sw_rvars.c sw_skin.c \
+		sw_rsprite.c sw_rsurf.c sw_skin.c \
 		sw_view.c $(soft_ASM)
 
 # ... Linux FBDev
