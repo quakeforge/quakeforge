@@ -122,6 +122,7 @@ build_scope (function_t *f, def_t *func, param_t *params)
 	def_t      *def;
 	param_t    *p;
 	def_t      *argv = 0;
+	int         parm_ofs[MAX_PARMS];
 
 	f->scope = new_scope (sc_params, new_defspace (), pr.scope);
 
@@ -140,8 +141,8 @@ build_scope (function_t *f, def_t *func, param_t *params)
 		if (!p->type)
 			continue;					// non-param selector
 		def = get_def (p->type, p->name, f->scope, 1);
-		f->parm_ofs[i] = def->ofs;
-		if (i > 0 && f->parm_ofs[i] < f->parm_ofs[i - 1]) {
+		parm_ofs[i] = def->ofs;
+		if (i > 0 && parm_ofs[i] < parm_ofs[i - 1]) {
 			error (0, "bad parm order");
 			abort ();
 		}

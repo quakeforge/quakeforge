@@ -45,7 +45,6 @@ typedef struct function_s {
 	int					file_line;
 	struct def_s		*def;
 	struct scope_s     *scope;
-	int					parm_ofs[MAX_PARMS];	// allways contiguous, right?
 } function_t;
 
 extern function_t *current_func;
