@@ -42,6 +42,8 @@
 # include <unistd.h>
 #endif
 
+#include <getopt.h>
+
 #include <QF/crc.h>
 #include <QF/hash.h>
 #include <QF/qendian.h>
@@ -49,9 +51,22 @@
 
 #include "qfcc.h"
 
-options_t   options;
+options_t	options;
 
-char        sourcedir[1024];
+char		*sourcedir;
+
+static struct option const long_options[] =
+{
+  {"source", required_argument, 0, 's'},
+  {"quiet", no_argument, 0, 'q'},
+  {"verbose", no_argument, 0, 'v'},
+  {"code", required_argument, 0, 'C'},
+  {"warn", required_argument, 0, 'W'},
+  {"help", no_argument, 0, 'h'},
+  {"version", no_argument, 0, 'V'},
+  {NULL, 0, NULL, 0}
+};
+
 char        destfile[1024];
 char        debugfile[1024];
 
@@ -905,28 +920,133 @@ PR_PrintFunction (def_t *def)
 "	--undefined-function-warning	warn when a function isn't defined\n"
 */
 
-qboolean
-ParseParmOptions (const char *options, const char *name)
+static void
+usage (int status)
 {
-	const char	*start;
-	char		*where, *terminator;
-
-	// Options are comma-separated, so bail if the string has a comma
-	if ((!(*name)) || strchr (name, ','))
-		return false;
-
-	for (start = options;; start = terminator) {
-		if (!(where = strstr (start, name)))
-			break;
-
-		terminator = where + strlen (name);
-		if ((where == start) || (*(where - 1) == ','))
-			if ((*terminator == ',') || (*terminator == '\0'))
-				return true;
-	}
-	return false;
+	printf ("%s - the QuakeForge Code Compiler\n", myargv[0]);
+	printf ("Usage: %s [options]\n", myargv[0]);
+	printf (
+"Options:\n"
+"	-s, --source DIR	look for progs.src in DIR instead of \".\"\n"
+"	-q, --quiet		Inhibit usual output\n"
+"	-v, --verbose		Display more output than usual\n"
+"	-C, --code OPTION,...	Set code generation options\n"
+"	-W, --warn OPTION,...	Set warning options\n"
+"	-h, --help		display this help and exit\n"
+"	-V, --version		output version information and exit\n\n"
+"For help on options for --code and --warn, see the qfcc(1) manual page\n"
+	);
+	exit (status);
 }
 
+static int
+DecodeArgs (int argc, char **argv)
+{
+	int		c;
+
+	options.code.progsversion = PROG_VERSION;
+	options.warnings.uninited_variable = 1;
+	options.verbosity = 2;
+	
+	sourcedir = ".";
+
+	while ((c = getopt_long (argc, argv,
+			"s:"	// source dir
+			"q"		// quiet
+			"v"		// verbose
+			"C:"	// code options
+			"W:"	// warning options
+			"h"		// help
+			"V",	// version
+			long_options, (int *) 0)) != EOF) {
+		switch (c) {
+			case 'h':	// help
+				usage (0);
+				break;
+			case 'V':	// version
+				printf ("%s version %s", PACKAGE, VERSION);
+				exit (0);
+				break;
+			case 's':	// src dir
+				sourcedir = strdup (optarg);
+				break;
+			case 'q':	// quiet
+				options.verbosity -= 1;
+				break;
+			case 'v':	// verbose
+				options.verbosity += 1;
+				break;
+			case 'C': {	// code options
+					char	*opts = strdup (optarg);
+					char	*temp = strtok (opts, ",");
+
+					while (temp) {
+						if (!(strcasecmp (temp, "cow"))) {
+							options.code.cow = true;
+						} else if (!(strcasecmp (temp, "no-cow"))) {
+							options.code.cow = false;
+						} else if (!(strcasecmp (temp, "debug"))) {
+							options.code.debug = true;
+						} else if (!(strcasecmp (temp, "no-debug"))) {
+							options.code.debug = false;
+						} else if (!(strcasecmp (temp, "v6only"))) {
+							options.code.progsversion = PROG_ID_VERSION;
+						} else if (!(strcasecmp (temp, "no-v6only"))) {
+							options.code.progsversion = PROG_VERSION;
+						}
+						temp = strtok (NULL, ",");
+					}
+					free (opts);
+				}
+				break;
+			case 'W': {	// warning options
+					char	*opts = strdup (optarg);
+					char	*temp = strtok (opts, ",");
+
+					while (temp) {
+						if (!(strcasecmp (temp, "all"))) {
+							options.warnings.cow = true;
+							options.warnings.undefined_function = true;
+							options.warnings.uninited_variable = true;
+							options.warnings.vararg_integer = true;
+						} else if (!(strcasecmp (temp, "none"))) {
+							options.warnings.cow = false;
+							options.warnings.undefined_function = false;
+							options.warnings.uninited_variable = false;
+							options.warnings.vararg_integer = false;
+						} else if (!(strcasecmp (temp, "cow"))) {
+							options.warnings.cow = true;
+						} else if (!(strcasecmp (temp, "no-cow"))) {
+							options.warnings.cow = false;
+						} else if (!(strcasecmp (temp, "error"))) {
+							options.warnings.promote = true;
+						} else if (!(strcasecmp (temp, "no-error"))) {
+							options.warnings.promote = false;
+						} else if (!(strcasecmp (temp, "undef-function"))) {
+							options.warnings.undefined_function = true;
+						} else if (!(strcasecmp (temp, "no-undef-function"))) {
+							options.warnings.undefined_function = false;
+						} else if (!(strcasecmp (temp, "uninited-var"))) {
+							options.warnings.uninited_variable = true;
+						} else if (!(strcasecmp (temp, "no-uninited-var"))) {
+							options.warnings.uninited_variable = false;
+						} else if (!(strcasecmp (temp, "vararg-integer"))) {
+							options.warnings.vararg_integer = true;
+						} else if (!(strcasecmp (temp, "no-vararg-integer"))) {
+							options.warnings.vararg_integer = false;
+						}
+						temp = strtok (NULL, ",");
+					}
+					free (opts);
+				}
+				break;
+			default:
+				usage (1);
+		}
+	}
+	return optind;
+}
+	
 //============================================================================
 
 /*
@@ -937,89 +1057,21 @@ ParseParmOptions (const char *options, const char *name)
 int
 main (int argc, char **argv)
 {
-	char	*src;
-	char	filename[1024];
-	int 	p, crc;
-	double	start, stop;
-	int		no_cpp = 0;
+	char		*src;
+	char		filename[1024];
+	long int 	crc;
+	double		start, stop;
+	qboolean	no_cpp = false;
 
 	start = Sys_DoubleTime ();
 
 	myargc = argc;
 	myargv = argv;
 
-	options.code.progsversion = PROG_VERSION;
-	options.warnings.uninited_variable = 1;
-	options.verbosity = 2;
-
-	if (CheckParm ("-h") || CheckParm ("--help")) {
-		printf ("%s - QuakeForge Code Compiler\n", argv[0]);
-		printf ("Usage: %s [options]\n", argv[0]);
-		printf (
-"Options: \n"
-"	-s, --source <dir>	look for progs.src in directory <dir>\n"
-"	-h, --help		display this help and exit\n"
-"	-V, --version		output version information and exit\n"
-"	--cow			allow assignment to initialized globals\n"
-"	--id			only support id (progs version 6) features\n"
-"	--warn=error		treat warnings as errors\n"
-"	--no-undefined-function-warning don't warn when a function isn't defined\n"
-);
-		return 1;
-	}
-
-	if (CheckParm ("-V") || CheckParm ("--version")) {
-		printf ("%s version %s\n", PACKAGE, VERSION);
-		return 1;
-	}
-
-	if ((p = CheckParm ("--source")) && p < argc - 1) {
-		strcpy (sourcedir, argv[p + 1]);
-	} else {
-		if ((p = CheckParm ("-s")) && p < argc - 1) {
-			strcpy (sourcedir, argv[p + 1]);
-		} else {
-			strcpy (sourcedir, ".");
-		}
-	}
-
-	if (CheckParm ("--quiet=2")) { //FIXME: getopt, need getopt </#5>
-		options.verbosity = 0;
-	}
-
-	if (CheckParm ("--quiet")) {
-		options.verbosity = 1;
-	}
-
-	if (CheckParm ("--cow")) {
-		options.code.cow = 1;
-		options.warnings.cow = 1;
-	}
-
-	if (CheckParm ("--id")) {
-		options.code.progsversion = PROG_ID_VERSION;
-	}
-
-	if (CheckParm ("--debug")) {
-		options.code.debug = 1;
-	}
-
+	DecodeArgs (argc, argv);
+	
 	if (CheckParm ("--no-cpp")) {
-		no_cpp = 1;
-	}
-
-	// FIXME eww, really must go to getopt
-	if (CheckParm ("--warn=error")) {
-		options.warnings.promote = 1;
-	}
-
-	if (CheckParm ("--warn=nocow")) {
-		options.warnings.cow = 0;
-	}
-
-	options.warnings.undefined_function = 1;
-	if (CheckParm ("--no-undefined-function-warning")) {
-		options.warnings.undefined_function = 0;
+		no_cpp = true;
 	}
 
 	if (strcmp (sourcedir, ".")) {
@@ -1173,24 +1225,3 @@ main (int argc, char **argv)
 		printf ("Compilation time: %0.3g seconds.\n", (stop - start));
 	return 0;
 }
-
-/*
-static void
-usage (int status)
-{
-	printf ("%s - the QuakeForge Code Compiler\n", PROGRAM);
-	printf ("Usage: %s [options]\n", argv[0]);
-	printf (
-"Options:\n"
-"	-s, --source DIR	look for progs.src in DIR instead of \".\"\n"
-"	-q, --quiet NUM		Inhibit usual output\n"
-"	-g, --debug		Output symbol information\n"
-"	--code=<option,...>	Set code generation options\n"
-"	--warn=<option,...>	Set warning options\n"
-"	-h, --help		display this help and exit\n"
-"	-V, --version		output version information and exit\n\n"
-"For help on options for --code and --warn, see the qfcc(1) man page\n"
-	);
-	exit (status);
-}
-*/
