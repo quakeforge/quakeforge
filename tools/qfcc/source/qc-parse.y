@@ -671,10 +671,12 @@ statement
 			append_expr ($$, continue_label);
 
 			$5 = convert_bool ($5, 1);
-			backpatch ($5->e.bool.true_list, l1);
-			backpatch ($5->e.bool.false_list, l2);
-			append_expr ($5->e.bool.e, l2);
-			append_expr ($$, $5);
+			if ($5->type != ex_error) {
+				backpatch ($5->e.bool.true_list, l1);
+				backpatch ($5->e.bool.false_list, l2);
+				append_expr ($5->e.bool.e, l2);
+				append_expr ($$, $5);
+			}
 
 			break_label = $2;
 			continue_label = $3;
@@ -698,10 +700,12 @@ statement
 			append_expr ($$, continue_label);
 
 			$7 = convert_bool ($7, 1);
-			backpatch ($7->e.bool.true_list, l1);
-			backpatch ($7->e.bool.false_list, break_label);
-			append_expr ($7->e.bool.e, break_label);
-			append_expr ($$, $7);
+			if ($7->type != ex_error) {
+				backpatch ($7->e.bool.true_list, l1);
+				backpatch ($7->e.bool.false_list, break_label);
+				append_expr ($7->e.bool.e, break_label);
+				append_expr ($$, $7);
+			}
 
 			break_label = $2;
 			continue_label = $3;
@@ -736,10 +740,12 @@ statement
 			free_local_inits ($5);
 
 			$3 = convert_bool ($3, 1);
-			backpatch ($3->e.bool.true_list, tl);
-			backpatch ($3->e.bool.false_list, fl);
-			append_expr ($3->e.bool.e, tl);
-			append_expr ($$, $3);
+			if ($3->type != ex_error) {
+				backpatch ($3->e.bool.true_list, tl);
+				backpatch ($3->e.bool.false_list, fl);
+				append_expr ($3->e.bool.e, tl);
+				append_expr ($$, $3);
+			}
 
 			append_expr ($$, $6);
 			append_expr ($$, fl);
@@ -774,10 +780,12 @@ statement
 			free_local_inits ($5);
 
 			$3 = convert_bool ($3, 1);
-			backpatch ($3->e.bool.true_list, tl);
-			backpatch ($3->e.bool.false_list, fl);
-			append_expr ($3->e.bool.e, tl);
-			append_expr ($$, $3);
+			if ($3->type != ex_error) {
+				backpatch ($3->e.bool.true_list, tl);
+				backpatch ($3->e.bool.false_list, fl);
+				append_expr ($3->e.bool.e, tl);
+				append_expr ($$, $3);
+			}
 
 			append_expr ($$, $6);
 
@@ -826,10 +834,12 @@ statement
 			if ($7) {
 				append_expr ($$, l1);
 				$7 = convert_bool ($7, 1);
-				backpatch ($7->e.bool.true_list, tl);
-				backpatch ($7->e.bool.false_list, fl);
-				append_expr ($7->e.bool.e, fl);
-				append_expr ($$, $7);
+				if ($7->type != ex_error) {
+					backpatch ($7->e.bool.true_list, tl);
+					backpatch ($7->e.bool.false_list, fl);
+					append_expr ($7->e.bool.e, fl);
+					append_expr ($$, $7);
+				}
 			} else {
 				append_expr ($$, fl);
 			}

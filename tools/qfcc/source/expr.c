@@ -1514,10 +1514,14 @@ convert_bool (expr_t *e, int block)
 
 	if (e->type == ex_uexpr && e->e.expr.op == '!') {
 		e = convert_bool (e->e.expr.e1, 0);
+		if (e->type == ex_error)
+			return e;
 		e = unary_expr ('!', e);
 	}
 	if (e->type != ex_bool) {
 		e = test_expr (e, 1);
+		if (e->type == ex_error)
+			return e;
 		if (e->type == ex_integer) {
 			e = new_unary_expr ('g', 0);
 			if (e->e.integer_val)
@@ -1578,7 +1582,12 @@ bool_expr (int op, expr_t *label, expr_t *e1, expr_t *e2)
 		return binary_expr (op, e1, e2);
 
 	e1 = convert_bool (e1, 0);
+	if (e1->type == ex_error)
+		return e1;
+
 	e2 = convert_bool (e2, 0);
+	if (e2->type == ex_error)
+		return e2;
 
 	block = new_block_expr ();
 	append_expr (block, e1);
@@ -2375,6 +2384,8 @@ conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2)
 		return e2;
 
 	cond = convert_bool (cond, 1);
+	if (cond->type == ex_error)
+		return cond;
 
 	backpatch (cond->e.bool.true_list, tlabel);
 	backpatch (cond->e.bool.false_list, flabel);
