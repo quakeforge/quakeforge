@@ -48,6 +48,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "client.h"
 #include "compat.h"
 #include "game.h"
+#include "r_cvar.h"					// for scr_printspeed
 #include "sbar.h"
 #include "server.h"
 
@@ -1185,16 +1186,34 @@ Sbar_IntermissionOverlay (void)
 void
 Sbar_FinaleOverlay (void)
 {
+	int         remaining;
+
+	if (key_dest != key_game)
+		return;
+
 	scr_copyeverything = 1;
 
 	draw_cachepic (overlay_view, 0, 16, "gfx/finale.lmp", 1);
-	SCR_CheckDrawCenterString (overlay_view);
+	// the finale prints the characters one at a time
+	remaining = scr_printspeed->value * (realtime - scr_centertime_start);
+	SCR_DrawCenterString (overlay_view, remaining);
 }
 
 void
 Sbar_DrawCenterPrint (void)
 {
-	SCR_CheckDrawCenterString (overlay_view);
+	scr_copytop = 1;
+	if (scr_center_lines > scr_erase_lines)
+		scr_erase_lines = scr_center_lines;
+
+	scr_centertime_off -= r_frametime;
+	if (scr_centertime_off <= 0)
+		return;
+
+	if (key_dest != key_game)
+		return;
+
+	SCR_DrawCenterString (overlay_view, -1);
 }
 
 static void

@@ -216,17 +216,10 @@ SCR_CenterPrint (const char *str)
 }
 
 void
-SCR_DrawCenterString (view_t *view)
+SCR_DrawCenterString (view_t *view, int remaining)
 {
 	char       *start;
-	int         remaining, j, l, x, y;
-
-	// the finale prints the characters one at a time
-	if (r_force_fullscreen /* FIXME: better test */)
-		remaining = scr_printspeed->value * (r_realtime -
-											 scr_centertime_start);
-	else
-		remaining = 9999;
+	int         j, l, x, y;
 
 	scr_erase_center = 0;
 	start = scr_centerstring;
@@ -257,23 +250,6 @@ SCR_DrawCenterString (view_t *view)
 			break;
 		start++;						// skip the \n
 	} while (1);
-}
-
-void
-SCR_CheckDrawCenterString (view_t *view)
-{
-	scr_copytop = 1;
-	if (scr_center_lines > scr_erase_lines)
-		scr_erase_lines = scr_center_lines;
-
-	scr_centertime_off -= r_frametime;
-
-	if (scr_centertime_off <= 0 && !r_force_fullscreen /*FIXME: better test*/)
-		return;
-	if (key_dest != key_game)
-		return;
-
-	SCR_DrawCenterString (view);
 }
 
 float

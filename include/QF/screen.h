@@ -55,8 +55,7 @@ void SCR_DrawFPS (void);
 void SCR_DrawTime (void);
 void SCR_DrawTurtle (void);
 void SCR_DrawPause (void);
-void SCR_DrawCenterString (struct view_s *view);
-void SCR_CheckDrawCenterString (struct view_s *view);
+void SCR_DrawCenterString (struct view_s *view, int remaining);
 
 struct tex_s *SCR_ScreenShot (int width, int height);
 void SCR_DrawStringToSnap (const char *s, struct tex_s *tex, int x, int y);
@@ -65,7 +64,10 @@ int SCR_ModalMessage (const char *text);
 
 extern float		scr_con_current;
 extern float		scr_centertime_off;
-extern float		scr_conlines;		// lines of console to display
+extern float		scr_conlines;			// lines of console to display
+extern float		scr_centertime_start;	// for slow victory printing
+extern int			scr_center_lines;
+extern int			scr_erase_lines;
 
 extern int			scr_fullupdate;	// set to 0 to force full redraw
 extern int			sb_lines;
