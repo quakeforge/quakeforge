@@ -193,6 +193,31 @@ GIB_Parse_Match_Index (const char *str, unsigned int *i)
 	return '[';
 }
 
+void
+GIB_Parse_Strip_Comments (struct cbuf_s *cbuf)
+{
+	unsigned int i;
+	dstring_t *dstr = cbuf->buf;
+	char c, *n;
+	
+	for (i = 0; dstr->str[i]; i++) {
+		if (dstr->str[i] == '\"') {
+			if ((c = GIB_Parse_Match_Dquote (dstr->str, &i)))
+				// We don't care about parse errors here.
+				// Let the parser sort it out later.
+				return;
+		} else if (dstr->str[i] == '/' && dstr->str[i+1] == '/') {
+			if ((n = strchr (dstr->str+i, '\n'))) {
+				dstring_snip (dstr, i, n-dstr->str-i);
+				i--;
+			} else {
+				dstring_snip (dstr, i, strlen(dstr->str+i));
+				break;
+			}
+		}
+	}
+}
+
 /*
 	GIB_Parse_Extract_Line
 	
@@ -224,16 +249,6 @@ GIB_Parse_Extract_Line (struct cbuf_s *cbuf)
 				goto PARSE_ERROR;
 		} else if (dstr->str[i] == '\n' || dstr->str[i] == ';')
 			break;
-		else if (dstr->str[i] == '/' && dstr->str[i+1] == '/') {
-			char *n;
-			if ((n = strchr (dstr->str+i, '\n'))) {
-				dstring_snip (dstr, i, n-dstr->str-i);
-				i--;
-			} else {
-				dstring_snip (dstr, i, strlen(dstr->str+i));
-				break;
-			}
-		}
 	}
 	
 	if (dstr->str[0]) { // If something is left in the buffer

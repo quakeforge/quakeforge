@@ -492,6 +492,7 @@ Cmd_Exec_f (void)
 		sub->up = cbuf_active;
 		cbuf_active->state = CBUF_STATE_STACK;
 		Cbuf_AddText (sub, f);
+		GIB_Parse_Strip_Comments (sub);
 	} else
 		Cbuf_InsertText (cbuf_active, f);
 	Hunk_FreeToLowMark (mark);
