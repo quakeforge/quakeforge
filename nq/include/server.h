@@ -267,6 +267,8 @@ void SV_RunClients (void);
 void SV_SaveSpawnparms ();
 void SV_SpawnServer (const char *server);
 
+void SV_Error (const char *error, ...) __attribute__((format(printf,1,2)));
+
 void SV_LoadProgs (void);
 void SV_Progs_Init (void);
 void SV_Progs_Init_Cvars (void);

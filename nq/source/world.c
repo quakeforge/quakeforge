@@ -42,7 +42,6 @@ static const char rcsid[] =
 #include "QF/clip_hull.h"
 #include "QF/console.h"
 #include "QF/crc.h"
-#include "QF/sys.h"
 
 #include "compat.h"
 #include "server.h"
@@ -167,12 +166,12 @@ SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
 	} if (SVfloat (ent, solid) == SOLID_BSP) {
 		// explicit hulls in the BSP model
 		if (SVfloat (ent, movetype) != MOVETYPE_PUSH)
-			Sys_Error ("SOLID_BSP without MOVETYPE_PUSH");
+			SV_Error ("SOLID_BSP without MOVETYPE_PUSH");
 
 		model = sv.models[(int) SVfloat (ent, modelindex)];
 
 		if (!model || model->type != mod_brush)
-			Sys_Error ("MOVETYPE_PUSH with a non bsp model");
+			SV_Error ("SOLID_BSP with a non bsp model");
 
 		hull = &model->hulls[hull_index];
 	}
@@ -420,7 +419,7 @@ SV_HullPointContents (hull_t *hull, int num, const vec3_t p)
 
 	while (num >= 0) {
 		if (num < hull->firstclipnode || num > hull->lastclipnode)
-			Sys_Error ("SV_HullPointContents: bad node number");
+			SV_Error ("SV_HullPointContents: bad node number");
 
 		node = hull->clipnodes + num;
 		plane = hull->planes + node->planenum;
@@ -561,22 +560,6 @@ SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
 		trace->plane.dist = -plane->dist;
 	}
 
-#if 0 //XXX I don't think this is needed any more, but leave it in for now
-	while (SV_HullPointContents (hull, hull->firstclipnode, mid)
-		   == CONTENTS_SOLID) {
-		// shouldn't really happen, but does occasionally
-		frac -= 0.1;
-		if (frac < 0) {
-			trace->fraction = midf;
-			VectorCopy (mid, trace->endpos);
-			Con_DPrintf ("backup past 0\n");
-			return false;
-		}
-		midf = p1f + (p2f - p1f) * frac;
-		for (i = 0; i < 3; i++)
-			mid[i] = p1[i] + frac * (p2[i] - p1[i]);
-	}
-#endif
 	// put the crosspoint DIST_EPSILON pixels on the near side to guarantee
 	// mid is on the correct side of the plane
 	if (side)
@@ -658,7 +641,7 @@ SV_ClipToLinks (areanode_t *node, moveclip_t * clip)
 		if (touch == clip->passedict)
 			continue;
 		if (SVfloat (touch, solid) == SOLID_TRIGGER)
-			Sys_Error ("Trigger in clipping list");
+			SV_Error ("Trigger in clipping list");
 
 		if (clip->type == MOVE_NOMONSTERS && SVfloat (touch, solid)
 			!= SOLID_BSP)

@@ -560,22 +560,6 @@ SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
 		trace->plane.dist = -plane->dist;
 	}
 
-#if 0 //XXX I don't think this is needed any more, but leave it in for now
-	while (SV_HullPointContents (hull, hull->firstclipnode, mid)
-		   == CONTENTS_SOLID) {
-		// shouldn't really happen, but does occasionally
-		frac -= 0.1;
-		if (frac < 0) {
-			trace->fraction = midf;
-			VectorCopy (mid, trace->endpos);
-			SV_Printf ("backup past 0\n");
-			return false;
-		}
-		midf = p1f + (p2f - p1f) * frac;
-		for (i = 0; i < 3; i++)
-			mid[i] = p1[i] + frac * (p2[i] - p1[i]);
-	}
-#endif
 	// put the crosspoint DIST_EPSILON pixels on the near side to guarantee
 	// mid is on the correct side of the plane
 	if (side)
@@ -748,7 +732,8 @@ SV_Move (const vec3_t start, const vec3_t mins, const vec3_t maxs,
 	memset (&clip, 0, sizeof (moveclip_t));
 
 	// clip to world
-	clip.trace = SV_ClipMoveToEntity (sv.edicts, passedict, start, mins, maxs, end);
+	clip.trace = SV_ClipMoveToEntity (sv.edicts, passedict, start,
+									  mins, maxs, end);
 
 	clip.start = start;
 	clip.end = end;
