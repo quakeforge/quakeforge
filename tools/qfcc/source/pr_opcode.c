@@ -154,7 +154,7 @@ PR_Statement (opcode_t * op, def_t * var_a, def_t * var_b)
 		var_c = NULL;
 		statement->c = 0;
 	} else {	// allocate result space
-		var_c = PR_GetTempDef (op->type_c->type);
+		var_c = PR_GetTempDef (op->type_c->type, pr_scope);
 		statement->c = var_c->ofs;
 	}
 

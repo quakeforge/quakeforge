@@ -27,7 +27,7 @@
 
 def_t		*pr_global_defs[MAX_REGS];	// to find def for a global variable
 int 		pr_edict_size;
-static def_t *free_temps[ev_type_count];
+static def_t *free_temps[4];	// indexted by type size
 static def_t temp_scope;
 
 static hashtab_t  *defs_by_name;
@@ -146,49 +146,49 @@ PR_NewDef (type_t *type, const char *name, def_t *scope)
 }
 
 def_t *
-PR_GetTempDef (type_t *type)
+PR_GetTempDef (type_t *type, def_t *scope)
 {
-	int t = type->type;
-	def_t *d;
-	if (free_temps[t]) {
-		d = free_temps[t];
-		free_temps[t] = d->next;
+	int size = type_size[type->type];
+	def_t *def;
+	if (free_temps[size]) {
+		def = free_temps[size];
+		free_temps[size] = def->next;
+		def->type = type;
 	} else {
-		d = PR_NewDef (type, 0, 0);
+		def = PR_NewDef (type, 0, scope);
 	}
-	if (!d->ofs) {
-		d->ofs = numpr_globals;
-		numpr_globals += type_size[t];
+	if (!def->ofs) {
+		def->ofs = numpr_globals;
+		numpr_globals += type_size[size];
 	}
-	d->scope_next = temp_scope.scope_next;
-	temp_scope.scope_next = d;
-	return d;
+	def->next = temp_scope.next;
+	temp_scope.next = def;
+	return def;
 }
 
 void
 PR_FreeTempDefs (void)
 {
-	def_t *def;
-	etype_t type;
+	def_t *def, *d;
+	int size;
 
-	for (def = temp_scope.scope_next; def; def = def->scope_next) {
-		type = def->type->type;
-		def->next = free_temps[type];
-		free_temps[type] = def;
+	for (def = temp_scope.next; def; def = d) {
+		size = type_size[def->type->type];
+		d = def->next;
+		def->next = free_temps[size];
+		free_temps[size] = def;
 	}
-	temp_scope.scope_next = 0;
+	temp_scope.next = 0;
 }
 
 void
 PR_ResetTempDefs (void)
 {
 	int i;
-	def_t *d;
+	//def_t *d;
 
 	for (i = 0; i < ev_type_count; i++) {
-		for (d = free_temps[i]; d && d->ofs; d = d->next) {
-			d->ofs = 0;
-		}
+		free_temps[i] = 0;
 	}
 }
 
@@ -198,6 +198,7 @@ PR_FlushScope (def_t *scope)
 	def_t *def;
 
 	for (def = scope->scope_next; def; def = def->scope_next) {
-		Hash_Del (defs_by_name, def->name);
+		if (def->name)
+			Hash_Del (defs_by_name, def->name);
 	}
 }

@@ -335,6 +335,7 @@ PR_ParseStatement (void)
 	def_t			*e;
 	dstatement_t	*patch1, *patch2;
 
+	PR_FreeTempDefs ();
 	do {
 		if (PR_Check (tt_punct, "{")) {
 			do {
@@ -364,6 +365,7 @@ PR_ParseStatement (void)
 			PR_Expect (tt_punct, ")");
 			patch1 = &statements[numstatements];
 			PR_Statement (op_ifnot, e, 0);
+			PR_FreeTempDefs ();
 			PR_ParseStatement ();
 			junkdef.ofs = patch2 - &statements[numstatements];
 			PR_Statement (op_goto, &junkdef, 0);
@@ -394,6 +396,7 @@ PR_ParseStatement (void)
 			PR_Expect (tt_punct, "(");
 			e = PR_Expression (TOP_PRIORITY);
 			PR_Expect (tt_punct, ")");
+			PR_FreeTempDefs ();
 
 			patch1 = &statements[numstatements];
 			PR_Statement (op_ifnot, e, 0);
@@ -560,6 +563,13 @@ PR_ParseDefs (void)
 
 //				if (pr_dumpasm)
 //					PR_PrintFunction (def);
+				//{
+				//	def_t *d;
+				//	printf ("%s\n", def->name);
+				//	for (d = def->scope_next; d; d = d->scope_next) {
+				//		printf ("%s: %d %d %d\n", d->name, d->ofs, d->type->type, type_size[d->type->type]);
+				//	}
+				//}
 
 				// fill in the dfunction
 				df = &functions[numfunctions];
