@@ -58,13 +58,13 @@
 
 #include "compat.h"
 
-plugin_t		plugin_info;
-plugin_data_t	plugin_info_data;
-plugin_funcs_t	plugin_info_funcs;
-general_data_t	plugin_info_general_data;
-general_funcs_t	plugin_info_general_funcs;
-//cd_data_t		plugin_info_cd_data;
-cd_funcs_t		plugin_info_cd_funcs;
+static plugin_t		plugin_info;
+static plugin_data_t	plugin_info_data;
+static plugin_funcs_t	plugin_info_funcs;
+static general_data_t	plugin_info_general_data;
+static general_funcs_t	plugin_info_general_funcs;
+//static cd_data_t		plugin_info_cd_data;
+static cd_funcs_t		plugin_info_cd_funcs;
 
 static qboolean cdValid = false;
 static qboolean playing = false;
@@ -77,7 +77,7 @@ static byte playTrack;
 static byte maxTrack;
 
 static int  cdfile = -1;
-cvar_t *mus_cddevice;
+static cvar_t *mus_cddevice;
 
 
 static void
