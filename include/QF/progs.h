@@ -131,6 +131,10 @@ int NUM_FOR_BAD_EDICT(progs_t *pr, edict_t *e);
 #define	G_STRING(p,o)	PR_GetString (p, G_var (p, o, string))
 #define	G_FUNCTION(p,o)	G_var (p, o, func)
 
+#define RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].integer_var = PR_SetString((p), s))
+#define RETURN_EDICT(p, e) ((p)->pr_globals[OFS_RETURN].integer_var = EDICT_TO_PROG(p, e))
+
+
 #define E_var(e,o,t)	((e)->v[o].t##_var)
 
 #define	E_FLOAT(e,o)	E_var (e, o, float)
@@ -227,6 +231,8 @@ struct progs_s {
 	const char		*progs_name;
 	dprograms_t		*progs;
 	int				progs_size;
+
+	struct memzone_s *zone;
 
 	struct hashtab_s *builtin_hash;
 	struct hashtab_s *function_hash;

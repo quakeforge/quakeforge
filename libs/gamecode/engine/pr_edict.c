@@ -1110,6 +1110,8 @@ PR_LoadProgsFile (progs_t * pr, const char *progsname)
 
 	pr->progs_name = progsname;	//XXX is this safe?
 
+	pr->zone = 0;		// caller sets up afterwards
+
 	pr->pr_functions =
 		(dfunction_t *) ((byte *) pr->progs + pr->progs->ofs_functions);
 	pr->pr_strings = (char *) pr->progs + pr->progs->ofs_strings;
