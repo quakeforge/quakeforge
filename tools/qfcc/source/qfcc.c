@@ -70,6 +70,7 @@ int         numfunctions;
 ddef_t      globals[MAX_GLOBALS];
 int         numglobaldefs;
 int			num_localdefs;
+const char *big_function = 0;
 
 ddef_t      fields[MAX_FIELDS];
 int         numfielddefs;
@@ -285,7 +286,7 @@ WriteData (int crc)
 		printf ("%6i statements\n", numstatements);
 		printf ("%6i functions\n", numfunctions);
 		printf ("%6i globaldefs\n", numglobaldefs);
-		printf ("%6i locals size\n", num_localdefs);
+		printf ("%6i locals size (%s)\n", num_localdefs, big_function);
 		printf ("%6i fielddefs\n", numfielddefs);
 		printf ("%6i pr_globals\n", numpr_globals);
 	}
@@ -736,8 +737,10 @@ PR_FinishCompilation (void)
 	for (f = pr_functions; f; f = f->next) {
 		if (f->builtin)
 			continue;
-		if (f->def->num_locals > num_localdefs)
+		if (f->def->num_locals > num_localdefs) {
 			num_localdefs = f->def->num_locals;
+			big_function = f->def->name;
+		}
 		f->dfunc->parm_start = numpr_globals;
 		for (def = f->def->scope_next; def; def = def->scope_next) {
 			def->ofs += numpr_globals;
