@@ -14,6 +14,23 @@ Changes from 0.5.2
         * nq-server will now auto-load the start map if none is specified
         * streaming for large sound files
         * support for two channel sound files
+        * partial string buffer audit
+        * native Windows (win) sound driver finally works and is now default
+        * DirectX sound support added (dx)
+        * highchars stripped infokeys terminated properly so they don't contain
+          garbage
+        * WGL (nq-wgl.exe and qw-client-wgl.exe) resolution selection brought
+          in line with all other targets giving the vid_width and vid_height
+          cvars. Automatic aspect ratio support dropped.
+        * X11 (nq-x11 and qw-client-x11) no longer hangs on 32bpp displays
+        * new `view' system giving eeasier to control hud elements, centered
+          menus and locatable scoreboard (hud_scoreboard_gravity)
+        * OSS sound driver fixes: some kernel drivers need write only access,
+          others need read/write
+        * able to load/unload semi-arbitrary plugins using console commands
+        * streaming for large sound files (eg, full length oggs)
+        * stereo sample support
+        * map command in the rcon admin list
 
     o qfcc enhancements.
         * @argc and @argv deprecated in favor of @args.count and @args.list
@@ -21,6 +38,8 @@ Changes from 0.5.2
         * structure copy
         * -L lib search paths and -l now behaves in a more expected manner
         * default search paths for includes and libs
+        * updated man page and command line help
+        * [super ...] messages work
 
     o Progs engine enhancements.
         * arbitrary size data copying
