@@ -341,4 +341,38 @@ void R_LowFPPrecision (void);
 void R_HighFPPrecision (void);
 void R_SetFPCW (void);
 
+void R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av);
+void R_Alias_clip_left (finalvert_t *pfv0, finalvert_t *pfv1,
+						finalvert_t *out);
+void R_Alias_clip_right (finalvert_t *pfv0, finalvert_t *pfv1,
+						 finalvert_t *out);
+void R_Alias_clip_bottom (finalvert_t *pfv0, finalvert_t *pfv1,
+						  finalvert_t *out);
+void R_Alias_clip_top (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out);
+
+void R_AliasSetUpTransform (int trivial_accept);
+void R_AliasTransformVector (vec3_t in, vec3_t out);
+void R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
+		                        trivertx_t *pverts, stvert_t *pstverts);
+void R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts);
+
+void R_GenerateSpans (void);
+
+void R_InitVars (void);
+
+void R_LoadSky_f (void);
+
+void R_DrawSurfaceBlock_mip0 (void);
+void R_DrawSurfaceBlock_mip1 (void);
+void R_DrawSurfaceBlock_mip2 (void);
+void R_DrawSurfaceBlock_mip3 (void);
+void R_DrawSurfaceBlock16_mip0 (void);
+void R_DrawSurfaceBlock16_mip1 (void);
+void R_DrawSurfaceBlock16_mip2 (void);
+void R_DrawSurfaceBlock16_mip3 (void);
+void R_DrawSurfaceBlock32_mip0 (void);
+void R_DrawSurfaceBlock32_mip1 (void);
+void R_DrawSurfaceBlock32_mip2 (void);
+void R_DrawSurfaceBlock32_mip3 (void);
+
 #endif // _R_LOCAL_H

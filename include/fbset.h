@@ -82,3 +82,13 @@ extern int yyparse(void);
 extern void Die(const char *fmt, ...) __attribute__ ((noreturn));
 extern void AddVideoMode(const struct VideoMode *vmode);
 extern void makeRGBA(struct VideoMode *vmode, const char* opt);
+
+void ConvertFromVideoMode(const struct VideoMode *vmode,
+								 struct fb_var_screeninfo *var);
+void ConvertToVideoMode(const struct fb_var_screeninfo *var,
+							   struct VideoMode *vmode);
+struct VideoMode *FindVideoMode(const char *name);
+extern struct VideoMode *VideoModes;
+int fbset_main (int argc, const char *argv[]);
+void ReadModeDB (void);
+

@@ -452,6 +452,13 @@ void     Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 void	 Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr);
 void	 Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum);
 
+void	 Mod_LoadBrushModel (model_t *mod, void *buffer);
+void	 Mod_LoadAliasModel (model_t *mod, void *buffer,
+							 cache_allocator_t allocator);
+void	 Mod_LoadSpriteModel (model_t *mod, void *buffer);
+void	 Mod_SubdivideSurface (msurface_t *fa);
+
+void	 Mod_Print (void);
 
 extern struct cvar_s *gl_mesh_cache;
 extern struct cvar_s *gl_subdivide_size;

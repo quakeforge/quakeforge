@@ -1,4 +1,3 @@
-
 /*
 	vid_ext.c
 
@@ -133,12 +132,6 @@ typedef struct vbeinfoblock_s {
 static int  totalvidmem;
 static byte *ppal;
 qboolean    vsync_exists, de_exists;
-
-qboolean    VID_ExtraGetModeInfo (int modenum);
-int         VID_ExtraInitMode (viddef_t *vid, vmode_t * pcurrentmode);
-void        VID_ExtraSwapBuffers (viddef_t *vid, vmode_t * pcurrentmode,
-
-								  vrect_t *rects);
 
 
 /*

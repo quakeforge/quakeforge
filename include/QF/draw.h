@@ -55,6 +55,8 @@ void Draw_AltString (int x, int y, const char *str);
 qpic_t *Draw_PicFromWad (const char *name);
 qpic_t *Draw_CachePic (const char *path, qboolean alpha);
 
+void Draw_ClearCache (void);
+
 void GL_Set2D (void);
 void GL_FlushText (void);
 

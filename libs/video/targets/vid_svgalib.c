@@ -63,9 +63,6 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-void        VGA_UpdatePlanarScreen (void *srcbuffer);
-
-
 static int  num_modes, current_mode;
 static vga_modeinfo *modes;
 

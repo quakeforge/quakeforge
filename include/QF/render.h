@@ -196,4 +196,9 @@ void R_LineGraph (int x, int y, int *h_vals, int count);
 struct progs_s;
 void R_Progs_Init (struct progs_s *pr);
 
+void R_DrawAliasModel (entity_t *e);
+void R_DrawSpriteModel (entity_t *e);
+
+void R_MarkLeaves (void);
+
 #endif // __render_h

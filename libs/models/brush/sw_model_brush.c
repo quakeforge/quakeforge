@@ -46,7 +46,7 @@ int   mod_lightmap_bytes = 1;
 
 
 void
-GL_SubdivideSurface (msurface_t *fa)
+Mod_SubdivideSurface (msurface_t *fa)
 {
 }
 

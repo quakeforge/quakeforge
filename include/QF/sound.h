@@ -158,6 +158,10 @@ void SND_LocalSound (const char *s);
 void SND_BlockSound (void);
 void SND_UnblockSound (void);
 
+void SND_ResampleSfx (sfxcache_t *sc, byte * data);
+sfxcache_t *SND_GetCache (long samples, int rate, int inwidth, int channels,
+						  sfx_t *sfx, cache_allocator_t allocator);
+
 void SND_InitScaletable (void);
 // picks a channel based on priorities, empty slots, number of channels
 channel_t *SND_PickChannel(int entnum, int entchannel);
@@ -233,5 +237,13 @@ void S_AmbientOff (void);
 void S_AmbientOn (void);
 
 extern struct model_s **snd_worldmodel;
+
+void SND_CallbackLoad (void *object, cache_allocator_t allocator);
+sfxcache_t *SND_LoadOgg (QFile *file, sfx_t *sfx, cache_allocator_t allocator);
+wavinfo_t SND_GetWavinfo (const char *name, byte * wav, int wavlength);
+
+void SND_WriteLinearBlastStereo16 (void);
+void SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count);
+void SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count);
 
 #endif // _SOUND_H

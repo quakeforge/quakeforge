@@ -65,8 +65,6 @@ static char cd_dev[64] = "/dev/cdrom";
 
 static CDPLAYER *cdp = NULL;
 
-void I_SGI_Stop (void);
-
 static void
 I_SGI_Eject (void)
 {

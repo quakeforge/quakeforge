@@ -48,6 +48,7 @@ static const char rcsid[] =
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_lightmap.h"
 #include "QF/GL/qf_rmain.h"
+#include "QF/GL/qf_rsurf.h"
 #include "QF/GL/qf_sky.h"
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
@@ -89,8 +90,6 @@ extern int			lightmap_textures;
 extern qboolean		lightmap_modified[MAX_LIGHTMAPS];
 extern glpoly_t    *lightmap_polys[MAX_LIGHTMAPS];
 extern glRect_t		lightmap_rectchange[MAX_LIGHTMAPS];
-
-void EmitWaterPolys (msurface_t *fa);
 
 
 /*

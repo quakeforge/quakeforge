@@ -267,7 +267,8 @@ strupr (char *start)
 	return start;
 }
 
-char *strlower (char *start)
+char *
+strlower (char *start)
 {
 	char	*in;
 

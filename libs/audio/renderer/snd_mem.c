@@ -45,11 +45,6 @@ static const char rcsid[] =
 
 int         cache_full_cycle;
 
-byte       *SND_Alloc (int size);
-wavinfo_t   SND_GetWavinfo (const char *name, byte * wav, int wavlength);
-sfxcache_t *SND_LoadSound (sfx_t *sfx, cache_allocator_t allocator);
-sfxcache_t *SND_LoadOgg (QFile *file, sfx_t *sfx, cache_allocator_t allocator);
-
 sfxcache_t *
 SND_GetCache (long samples, int rate, int inwidth, int channels,
 			  sfx_t *sfx, cache_allocator_t allocator)

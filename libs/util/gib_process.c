@@ -48,8 +48,6 @@ static const char rcsid[] =
 
 #include "exp.h"
 
-int GIB_Process_Variables_All (struct dstring_s *token);
-
 int
 GIB_Process_Index (dstring_t *index, unsigned int pos, int *i1, int *i2)
 {

@@ -52,9 +52,6 @@ static const char rcsid[] =
 
 int         current_skill;
 
-void        Mod_Print (void);
-
-
 void
 Host_Quit_f (void)
 {

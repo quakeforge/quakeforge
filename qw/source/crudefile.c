@@ -403,7 +403,8 @@ CF_EOF (int desc)
 	cfquota returns the number of characters left in the quota, or
 	<= 0 if it's met or (somehow) exceeded.
 */
-int CF_Quota()
+int
+CF_Quota()
 {
 	return cf_maxsize - cf_cursize;
 }

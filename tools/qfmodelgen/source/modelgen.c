@@ -545,7 +545,8 @@ Cmd_Base (void)
 	SetSkinValues ();
 }
 
-void Cmd_Skin (void)
+void
+Cmd_Skin (void)
 {
 	byte	*ppal, *pskinbitmap, *ptemp1, *ptemp2;
 	int		time1, i;

@@ -38,8 +38,7 @@ static const char rcsid[] =
 #include "QF/quakefs.h"
 
 #include "game.h"
-
-void Cvar_Info (struct cvar_s *var);
+#include "server.h"
 
 cvar_t     *registered;
 cvar_t     *cmdline;

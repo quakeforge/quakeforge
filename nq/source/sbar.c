@@ -90,10 +90,6 @@ qpic_t     *hsb_items[2];			// MED 01/04/97 added hipnotic items array
 qboolean    headsup;
 qboolean    sbar_centered;
 
-void        Sbar_MiniDeathmatchOverlay (void);
-void        Sbar_DeathmatchOverlay (void);
-
-
 int
 Sbar_ColorForMap (int m)
 {
@@ -392,7 +388,7 @@ Sbar_DrawScoreboard (void)
 {
 	Sbar_SoloScoreboard ();
 	if (cl.gametype == GAME_DEATHMATCH)
-		Sbar_DeathmatchOverlay ();
+		Sbar_DeathmatchOverlay (0);
 }
 
 
@@ -905,7 +901,7 @@ Sbar_IntermissionNumber (int x, int y, int num, int digits, int color)
 
 
 void
-Sbar_DeathmatchOverlay (void)
+Sbar_DeathmatchOverlay (int start)
 {
 	qpic_t     *pic;
 	int         i, k, l;
@@ -1045,7 +1041,7 @@ Sbar_IntermissionOverlay (void)
 	scr_fullupdate = 0;
 
 	if (cl.gametype == GAME_DEATHMATCH) {
-		Sbar_DeathmatchOverlay ();
+		Sbar_DeathmatchOverlay (0);
 		return;
 	}
 

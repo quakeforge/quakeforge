@@ -62,10 +62,6 @@ static const char rcsid[] =
 
 int			r_init = 0;
 
-qboolean    VID_Is8bit (void);
-void        R_InitBubble (void);
-
-
 /*
 	R_Envmap_f
 

@@ -218,7 +218,8 @@ CL_KeepaliveMessage (void)
 	SZ_Clear (&cls.message);
 }
 
-void CL_NewMap (const char *mapname)
+void
+CL_NewMap (const char *mapname)
 {
 	char       *name = malloc (strlen (mapname) + 4 + 1);
 

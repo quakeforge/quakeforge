@@ -114,6 +114,10 @@ extern	int		watertype;
 extern vec3_t	player_mins;
 extern vec3_t	player_maxs;
 
+void PM_Accelerate (vec3_t wishdir, float wishspeed, float accel);
+void PM_CategorizePosition (void);
+void PM_InitBoxHull (void);
+
 void PlayerMove (void);
 void Pmove_Init (void);
 void Pmove_Init_Cvars (void);

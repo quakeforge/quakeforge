@@ -75,15 +75,6 @@ static const char rcsid[] =
 
 #include "fbset.h"
 
-void ConvertFromVideoMode(const struct VideoMode *vmode,
-			 struct fb_var_screeninfo *var);
-void ConvertToVideoMode(const struct fb_var_screeninfo *var,
-		       struct VideoMode *vmode);
-struct VideoMode *FindVideoMode(const char *name);
-extern struct VideoMode *VideoModes;
-int fbset_main (int argc, const char *argv[]);
-void ReadModeDB (void);
-
 static struct VideoMode current_mode;
 static char current_name[32];
 static int num_modes;
@@ -203,9 +194,6 @@ VID_NumModes_f (void)
 {
 	Con_Printf ("%d modes\n", VID_NumModes ());
 }
-
-int VID_SetMode (const char *name, unsigned char *palette);
-
 
 static void
 VID_fbset_f (void)

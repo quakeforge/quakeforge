@@ -99,8 +99,6 @@ const char	*pr_type_name[ev_type_count] = {
 	"array",
 };
 
-ddef_t     *ED_FieldAtOfs (progs_t *pr, int ofs);
-
 /*
 	ED_ClearEdict
 

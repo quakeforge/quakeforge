@@ -43,7 +43,8 @@ static const char rcsid[] =
 #include "QF/hash.h"
 #include "QF/gib_buffer.h"
 
-void GIB_Buffer_Construct (struct cbuf_s *cbuf)
+void
+GIB_Buffer_Construct (struct cbuf_s *cbuf)
 {
 	cbuf->data = calloc (1, sizeof (gib_buffer_data_t));
 	GIB_DATA (cbuf)->arg_composite = dstring_newstr ();
@@ -51,7 +52,8 @@ void GIB_Buffer_Construct (struct cbuf_s *cbuf)
 	GIB_DATA (cbuf)->ret.retval = dstring_newstr ();
 }
 
-void GIB_Buffer_Destruct (struct cbuf_s *cbuf)
+void
+GIB_Buffer_Destruct (struct cbuf_s *cbuf)
 {
 	dstring_delete (GIB_DATA (cbuf)->arg_composite);
 	dstring_delete (GIB_DATA (cbuf)->current_token);

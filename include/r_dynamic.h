@@ -77,6 +77,7 @@ void R_PushDlights (const vec3_t entorigin);
 struct cvar_s;
 void R_MaxDlightsCheck (struct cvar_s *var);
 void R_Particles_Init_Cvars (void);
+void R_InitBubble (void);
 
 void R_InitParticles (void);
 inline void R_ClearParticles (void);

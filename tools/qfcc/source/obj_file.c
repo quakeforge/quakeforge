@@ -462,7 +462,8 @@ qfo_read (QFile *file)
 	return qfo;
 }
 
-qfo_t *qfo_open (const char *filename)
+qfo_t *
+qfo_open (const char *filename)
 {
 	qfo_t      *qfo;
 	QFile      *file;

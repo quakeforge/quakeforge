@@ -53,7 +53,7 @@ float       bubble_sintable[33], bubble_costable[33];
 
 
 void
-R_InitBubble ()
+R_InitBubble (void)
 {
 	float       a;
 	float      *bub_sin, *bub_cos;

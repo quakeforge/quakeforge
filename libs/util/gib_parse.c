@@ -51,9 +51,7 @@ static const char rcsid[] =
 
 // Interpreter structure and prototypes
 
-void GIB_Parse_Extract_Line (cbuf_t *cbuf);
-void GIB_Parse_Tokenize_Line (cbuf_t *cbuf);
-void GIB_Parse_Execute_Line (cbuf_t *cbuf);
+static void GIB_Parse_Execute_Line (cbuf_t *cbuf);
 
 cbuf_interpreter_t gib_interp = {
 	GIB_Parse_Extract_Line,
@@ -508,7 +506,8 @@ FILTER_ERROR:
 	Assignment to a local/global variable
 	Normal quake console commands
 */
-void GIB_Parse_Execute_Line (cbuf_t *cbuf)
+static void
+GIB_Parse_Execute_Line (cbuf_t *cbuf)
 {
 	cbuf_args_t *args = cbuf->args;
 	gib_builtin_t *b;

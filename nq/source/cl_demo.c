@@ -54,7 +54,7 @@ static const char rcsid[] =
 char        demoname[1024];
 int         timedemo_count;
 
-void        CL_FinishTimeDemo (void);
+static void        CL_FinishTimeDemo (void);
 
 cvar_t     *demo_gzip;
 cvar_t     *demo_speed;
@@ -360,7 +360,7 @@ CL_StartTimeDemo (void)
 	cls.td_lastframe = -1;				// get a new message this frame
 }
 
-void
+static void
 CL_FinishTimeDemo (void)
 {
 	int         frames;

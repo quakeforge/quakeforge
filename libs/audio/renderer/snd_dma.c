@@ -49,20 +49,6 @@ static const char rcsid[] =
 #include "QF/sound.h"
 #include "QF/plugin.h"
 
-void		SND_Play (void);
-void		SND_PlayVol (void);
-void		SND_SoundList (void);
-void		SND_StopAllSounds (qboolean clear);
-void		SND_StopAllSoundsC (void);
-void		SND_Update_ (void);
-
-sfx_t		*SND_PrecacheSound (const char *name);
-void		SND_ClearBuffer (void);
-void		SND_PaintChannels (int endtime);
-void		SND_CallbackLoad (void *object, cache_allocator_t allocator);
-
-void		SND_Init_Cvars ();
-
 // Internal sound data & structures ===========================================
 
 int			snd_blocked = 0;
@@ -165,130 +151,6 @@ SND_Startup (void)
 	}
 
 	sound_started = 1;
-}
-
-void
-SND_Init (void)
-{
-	Sys_Printf ("\nSound Initialization\n");
-
-	Cmd_AddCommand ("play", SND_Play,
-					"Play selected sound effect (play pathto/sound.wav)");
-	Cmd_AddCommand ("playvol", SND_PlayVol, "Play selected sound effect at "
-					"selected volume (playvol pathto/sound.wav num");
-	Cmd_AddCommand ("stopsound", SND_StopAllSoundsC,
-					"Stops all sounds currently being played");
-	Cmd_AddCommand ("soundlist", SND_SoundList,
-					"Reports a list of sounds in the cache");
-	Cmd_AddCommand ("soundinfo", SND_SoundInfo_f,
-					"Report information on the sound system");
-
-	SND_Init_Cvars ();
-
-	if (COM_CheckParm ("-nosound"))
-		return;
-
-	if (COM_CheckParm ("-simsound"))
-		fakedma = true;
-
-// FIXME
-//	if (host_parms.memsize < 0x800000) {
-//		Cvar_Set (snd_loadas8bit, "1");
-//		Sys_Printf ("loading all sounds as 8bit\n");
-//	}
-
-	snd_initialized = true;
-
-	SND_Startup ();
-
-	if (sound_started == 0)				// sound startup failed? Bail out.
-		return;
-
-	SND_InitScaletable ();
-
-	known_sfx = Hunk_AllocName (MAX_SFX * sizeof (sfx_t), "sfx_t");
-
-	num_sfx = 0;
-
-	// create a piece of DMA memory
-	if (fakedma) {
-		shm = (void *) Hunk_AllocName (sizeof (*shm), "shm");
-		shm->splitbuffer = 0;
-		shm->samplebits = 16;
-		shm->speed = 22050;
-		shm->channels = 2;
-		shm->samples = 32768;
-		shm->samplepos = 0;
-		shm->soundalive = true;
-		shm->gamealive = true;
-		shm->submission_chunk = 1;
-		shm->buffer = Hunk_AllocName (1 << 16, "shmbuf");
-	}
-//	Sys_Printf ("Sound sampling rate: %i\n", shm->speed);
-
-	// provides a tick sound until washed clean
-
-//	if (shm->buffer)
-//		shm->buffer[4] = shm->buffer[5] = 0x7f; // force a pop for debugging
-
-	ambient_sfx[AMBIENT_WATER] = SND_PrecacheSound ("ambience/water1.wav");
-	ambient_sfx[AMBIENT_SKY] = SND_PrecacheSound ("ambience/wind2.wav");
-
-	SND_StopAllSounds (true);
-}
-
-void
-SND_Init_Cvars (void)
-{
-	ambient_fade = Cvar_Get ("ambient_fade", "100", CVAR_NONE, NULL,
-							 "How quickly ambient sounds fade in or out");
-	ambient_level = Cvar_Get ("ambient_level", "0.3", CVAR_NONE, NULL,
-							  "Ambient sounds' volume");
-	nosound = Cvar_Get ("nosound", "0", CVAR_NONE, NULL,
-						"Set to turn sound off");
-	precache = Cvar_Get ("precache", "1", CVAR_NONE, NULL,
-						 "Toggle the use of a precache");
-	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
-						  "Volume of CD music");
-	volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
-					   "Set the volume for sound playback");
-	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
-						   "control sample interpolation");
-	snd_loadas8bit = Cvar_Get ("snd_loadas8bit", "0", CVAR_NONE, NULL,
-							   "Toggles loading sounds as 8-bit samples");
-	snd_mixahead = Cvar_Get ("snd_mixahead", "0.1", CVAR_ARCHIVE, NULL,
-							  "Delay time for sounds");
-	snd_noextraupdate = Cvar_Get ("snd_noextraupdate", "0", CVAR_NONE, NULL,
-								  "Toggles the correct value display in "
-								  "host_speeds. Usually messes up sound "
-								  "playback when in effect");
-	snd_phasesep = Cvar_Get ("snd_phasesep", "0.0", CVAR_ARCHIVE, NULL,
-							 "max stereo phase separation in ms. 0.6 is for "
-							 "20cm head");
-	snd_show = Cvar_Get ("snd_show", "0", CVAR_NONE, NULL,
-						 "Toggles display of sounds currently being played");
-	snd_volumesep = Cvar_Get ("snd_volumesep", "1.0", CVAR_ARCHIVE, NULL,
-							  "max stereo volume separation. 1.0 is max");
-}
-
-// Shutdown sound engine ======================================================
-void
-SND_Shutdown (void)
-{
-
-	if (!sound_started)
-		return;
-
-	if (shm)
-		shm->gamealive = 0;
-
-	sound_started = 0;
-
-	if (!fakedma) {
-		S_O_Shutdown ();
-	}
-
-	shm = 0;
 }
 
 // Load a sound ===============================================================
@@ -672,6 +534,67 @@ SND_UpdateAmbientSounds (void)
 	}
 }
 
+void
+SND_GetSoundtime (void)
+{
+	int			fullsamples, samplepos;
+	static int	buffers, oldsamplepos;
+
+	fullsamples = shm->samples / shm->channels;
+
+	// it is possible to miscount buffers if it has wrapped twice between
+	// calls to SND_Update.  Oh well.
+	samplepos = S_O_GetDMAPos ();
+
+	if (samplepos < oldsamplepos) {
+		buffers++;						// buffer wrapped
+
+		if (paintedtime > 0x40000000) {	// time to chop things off to avoid
+			// 32 bit limits
+			buffers = 0;
+			paintedtime = fullsamples;
+			SND_StopAllSounds (true);
+		}
+	}
+	oldsamplepos = samplepos;
+
+	soundtime = buffers * fullsamples + samplepos / shm->channels;
+}
+
+void
+SND_Update_ (void)
+{
+	int				samps;
+	unsigned int	endtime;
+
+	if (!sound_started || (snd_blocked > 0))
+		return;
+
+	// Updates DMA time
+	SND_GetSoundtime ();
+
+	// check to make sure that we haven't overshot
+	if (paintedtime < soundtime) {
+//		Sys_Printf ("S_Update_ : overflow\n");
+		paintedtime = soundtime;
+	}
+	// mix ahead of current position
+	endtime = soundtime + snd_mixahead->value * shm->speed;
+	samps = shm->samples >> (shm->channels - 1);
+	if (endtime - soundtime > samps)
+		endtime = soundtime + samps;
+
+#if 0
+#ifdef _WIN32
+	if (pDSBuf)
+		DSOUND_Restore ();
+#endif
+#endif
+
+	SND_PaintChannels (endtime);
+	S_O_Submit ();
+}
+
 /*
 	SND_Update
 
@@ -757,72 +680,11 @@ SND_Update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 }
 
 void
-SND_GetSoundtime (void)
-{
-	int			fullsamples, samplepos;
-	static int	buffers, oldsamplepos;
-
-	fullsamples = shm->samples / shm->channels;
-
-	// it is possible to miscount buffers if it has wrapped twice between
-	// calls to SND_Update.  Oh well.
-	samplepos = S_O_GetDMAPos ();
-
-	if (samplepos < oldsamplepos) {
-		buffers++;						// buffer wrapped
-
-		if (paintedtime > 0x40000000) {	// time to chop things off to avoid
-			// 32 bit limits
-			buffers = 0;
-			paintedtime = fullsamples;
-			SND_StopAllSounds (true);
-		}
-	}
-	oldsamplepos = samplepos;
-
-	soundtime = buffers * fullsamples + samplepos / shm->channels;
-}
-
-void
 SND_ExtraUpdate (void)
 {
 	if (!sound_started || snd_noextraupdate->int_val)
 		return;							// don't pollute timings
 	SND_Update_ ();
-}
-
-void
-SND_Update_ (void)
-{
-	int				samps;
-	unsigned int	endtime;
-
-	if (!sound_started || (snd_blocked > 0))
-		return;
-
-	// Updates DMA time
-	SND_GetSoundtime ();
-
-	// check to make sure that we haven't overshot
-	if (paintedtime < soundtime) {
-//		Sys_Printf ("S_Update_ : overflow\n");
-		paintedtime = soundtime;
-	}
-	// mix ahead of current position
-	endtime = soundtime + snd_mixahead->value * shm->speed;
-	samps = shm->samples >> (shm->channels - 1);
-	if (endtime - soundtime > samps)
-		endtime = soundtime + samps;
-
-#if 0
-#ifdef _WIN32
-	if (pDSBuf)
-		DSOUND_Restore ();
-#endif
-#endif
-
-	SND_PaintChannels (endtime);
-	S_O_Submit ();
 }
 
 /* console functions */
@@ -966,6 +828,130 @@ SND_UnblockSound (void)
 		S_O_UnblockSound ();
 }
 
+void
+SND_Init_Cvars (void)
+{
+	ambient_fade = Cvar_Get ("ambient_fade", "100", CVAR_NONE, NULL,
+							 "How quickly ambient sounds fade in or out");
+	ambient_level = Cvar_Get ("ambient_level", "0.3", CVAR_NONE, NULL,
+							  "Ambient sounds' volume");
+	nosound = Cvar_Get ("nosound", "0", CVAR_NONE, NULL,
+						"Set to turn sound off");
+	precache = Cvar_Get ("precache", "1", CVAR_NONE, NULL,
+						 "Toggle the use of a precache");
+	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
+						  "Volume of CD music");
+	volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
+					   "Set the volume for sound playback");
+	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
+						   "control sample interpolation");
+	snd_loadas8bit = Cvar_Get ("snd_loadas8bit", "0", CVAR_NONE, NULL,
+							   "Toggles loading sounds as 8-bit samples");
+	snd_mixahead = Cvar_Get ("snd_mixahead", "0.1", CVAR_ARCHIVE, NULL,
+							  "Delay time for sounds");
+	snd_noextraupdate = Cvar_Get ("snd_noextraupdate", "0", CVAR_NONE, NULL,
+								  "Toggles the correct value display in "
+								  "host_speeds. Usually messes up sound "
+								  "playback when in effect");
+	snd_phasesep = Cvar_Get ("snd_phasesep", "0.0", CVAR_ARCHIVE, NULL,
+							 "max stereo phase separation in ms. 0.6 is for "
+							 "20cm head");
+	snd_show = Cvar_Get ("snd_show", "0", CVAR_NONE, NULL,
+						 "Toggles display of sounds currently being played");
+	snd_volumesep = Cvar_Get ("snd_volumesep", "1.0", CVAR_ARCHIVE, NULL,
+							  "max stereo volume separation. 1.0 is max");
+}
+
+void
+SND_Init (void)
+{
+	Sys_Printf ("\nSound Initialization\n");
+
+	Cmd_AddCommand ("play", SND_Play,
+					"Play selected sound effect (play pathto/sound.wav)");
+	Cmd_AddCommand ("playvol", SND_PlayVol, "Play selected sound effect at "
+					"selected volume (playvol pathto/sound.wav num");
+	Cmd_AddCommand ("stopsound", SND_StopAllSoundsC,
+					"Stops all sounds currently being played");
+	Cmd_AddCommand ("soundlist", SND_SoundList,
+					"Reports a list of sounds in the cache");
+	Cmd_AddCommand ("soundinfo", SND_SoundInfo_f,
+					"Report information on the sound system");
+
+	SND_Init_Cvars ();
+
+	if (COM_CheckParm ("-nosound"))
+		return;
+
+	if (COM_CheckParm ("-simsound"))
+		fakedma = true;
+
+// FIXME
+//	if (host_parms.memsize < 0x800000) {
+//		Cvar_Set (snd_loadas8bit, "1");
+//		Sys_Printf ("loading all sounds as 8bit\n");
+//	}
+
+	snd_initialized = true;
+
+	SND_Startup ();
+
+	if (sound_started == 0)				// sound startup failed? Bail out.
+		return;
+
+	SND_InitScaletable ();
+
+	known_sfx = Hunk_AllocName (MAX_SFX * sizeof (sfx_t), "sfx_t");
+
+	num_sfx = 0;
+
+	// create a piece of DMA memory
+	if (fakedma) {
+		shm = (void *) Hunk_AllocName (sizeof (*shm), "shm");
+		shm->splitbuffer = 0;
+		shm->samplebits = 16;
+		shm->speed = 22050;
+		shm->channels = 2;
+		shm->samples = 32768;
+		shm->samplepos = 0;
+		shm->soundalive = true;
+		shm->gamealive = true;
+		shm->submission_chunk = 1;
+		shm->buffer = Hunk_AllocName (1 << 16, "shmbuf");
+	}
+//	Sys_Printf ("Sound sampling rate: %i\n", shm->speed);
+
+	// provides a tick sound until washed clean
+
+//	if (shm->buffer)
+//		shm->buffer[4] = shm->buffer[5] = 0x7f; // force a pop for debugging
+
+	ambient_sfx[AMBIENT_WATER] = SND_PrecacheSound ("ambience/water1.wav");
+	ambient_sfx[AMBIENT_SKY] = SND_PrecacheSound ("ambience/wind2.wav");
+
+	SND_StopAllSounds (true);
+}
+
+// Shutdown sound engine ======================================================
+void
+SND_Shutdown (void)
+{
+
+	if (!sound_started)
+		return;
+
+	if (shm)
+		shm->gamealive = 0;
+
+	sound_started = 0;
+
+	if (!fakedma) {
+		S_O_Shutdown ();
+	}
+
+	shm = 0;
+}
+
 QFPLUGIN plugin_t *
 PLUGIN_INFO(snd_render, default) (void)
 {
@@ -1014,4 +1000,3 @@ PLUGIN_INFO(snd_render, default) (void)
 
 	return &plugin_info;
 }
-

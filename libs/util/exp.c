@@ -64,7 +64,8 @@ functable_t functable[] =
 	{"", 0, 0}
 };
 
-token *EXP_NewToken (void)
+token
+*EXP_NewToken (void)
 {
 	token *new;
 
@@ -77,7 +78,8 @@ token *EXP_NewToken (void)
 }
 
 /*
-int EXP_FindIndexByFunc (opfunc func)
+int
+EXP_FindIndexByFunc (opfunc func)
 {
 	int i;
 	for (i = 0; optable[i].func; i++)
@@ -87,7 +89,8 @@ int EXP_FindIndexByFunc (opfunc func)
 }
 */
 
-optable_t *EXP_FindOpByStr (const char *str)
+optable_t *
+EXP_FindOpByStr (const char *str)
 {
 	int i, len, fi;
 
@@ -102,7 +105,8 @@ optable_t *EXP_FindOpByStr (const char *str)
 		return 0;
 }
 
-functable_t *EXP_FindFuncByStr (const char *str)
+functable_t *
+EXP_FindFuncByStr (const char *str)
 {
 	int i, len, fi;
 
@@ -117,7 +121,8 @@ functable_t *EXP_FindFuncByStr (const char *str)
 		return 0;
 }
 
-int EXP_ContainsCommas (token *chain)
+int
+EXP_ContainsCommas (token *chain)
 {
 	token *cur;
 	int paren = 0;
@@ -134,7 +139,8 @@ int EXP_ContainsCommas (token *chain)
 	return -1; // We should never get here
 }
 
-int EXP_DoFunction (token *chain)
+int
+EXP_DoFunction (token *chain)
 {
 	token *cur, *temp;
 	double *oplist = 0;
@@ -169,7 +175,8 @@ int EXP_DoFunction (token *chain)
 	return -2; // We shouldn't get here
 }
 
-int EXP_DoUnary (token *chain)
+int
+EXP_DoUnary (token *chain)
 {
 	if (chain->generic.next->generic.type == TOKEN_OP)
 		EXP_DoUnary (chain->generic.next);
@@ -180,7 +187,8 @@ int EXP_DoUnary (token *chain)
 	return 0;
 }
 
-token *EXP_ParseString (char *str)
+token *
+EXP_ParseString (char *str)
 {
 	char buf[256];
 
@@ -292,7 +300,8 @@ token *EXP_ParseString (char *str)
 	return chain;
 }
 
-exp_error_t EXP_SimplifyTokens (token *chain)
+exp_error_t
+EXP_SimplifyTokens (token *chain)
 {
 	exp_error_t res;
 	int i;
@@ -354,14 +363,16 @@ exp_error_t EXP_SimplifyTokens (token *chain)
 	return EXP_E_NORMAL;
 }
 
-void EXP_RemoveToken (token *tok)
+void
+EXP_RemoveToken (token *tok)
 {
 	tok->generic.prev->generic.next = tok->generic.next;
 	tok->generic.next->generic.prev = tok->generic.prev;
 	free(tok);
 }
 
-void EXP_DestroyTokens (token *chain)
+void
+EXP_DestroyTokens (token *chain)
 {
 	token *temp;
 	for (;chain; chain = temp)
@@ -371,7 +382,8 @@ void EXP_DestroyTokens (token *chain)
 	}
 }
 
-double EXP_Evaluate (char *str)
+double
+EXP_Evaluate (char *str)
 {
 	token *chain;
 	double res;
@@ -405,7 +417,8 @@ double EXP_Evaluate (char *str)
 	return res;
 }
 
-void EXP_InsertTokenAfter (token *spot, token *new)
+void
+EXP_InsertTokenAfter (token *spot, token *new)
 {
 	spot->generic.next->generic.prev = new;
 	new->generic.next = spot->generic.next;
@@ -414,7 +427,8 @@ void EXP_InsertTokenAfter (token *spot, token *new)
 }
 
 
-exp_error_t EXP_Validate (token *chain)
+exp_error_t
+EXP_Validate (token *chain)
 {
 	token *cur, *new;
 	int paren = 0;
@@ -463,7 +477,8 @@ exp_error_t EXP_Validate (token *chain)
 	return 0;
 }
 
-void EXP_PrintTokens (token *chain)
+void
+EXP_PrintTokens (token *chain)
 {
 	for (; chain; chain = chain->generic.next)
 		switch (chain->generic.type)

@@ -89,15 +89,6 @@ float       r_avertexnormals[NUMVERTEXNORMALS][3] = {
 #include "anorms.h"
 };
 
-void        R_AliasTransformAndProjectFinalVerts (finalvert_t *fv,
-												  stvert_t *pstverts);
-void        R_AliasSetUpTransform (int trivial_accept);
-void        R_AliasTransformVector (vec3_t in, vec3_t out);
-void        R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
-									   trivertx_t *pverts, stvert_t *pstverts);
-void        R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av);
-
-
 qboolean
 R_AliasCheckBBox (void)
 {

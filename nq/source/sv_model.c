@@ -37,16 +37,13 @@ static const char rcsid[] =
 
 int         mod_lightmap_bytes = 1;
 
-void Mod_LoadBrushModel (model_t *mod, void *buffer);
-
-
 void
 Mod_LoadLighting (lump_t *l)
 {
 }
 
 void
-Mod_LoadAliasModel (model_t *mod, void *buf)
+Mod_LoadAliasModel (model_t *mod, void *buf, cache_allocator_t allocator)
 {
 }
 
@@ -76,6 +73,6 @@ Mod_LoadExternalTextures (model_t *mod)
 }
 
 void
-GL_SubdivideSurface (msurface_t *fa)
+Mod_SubdivideSurface (msurface_t *fa)
 {
 }

@@ -39,4 +39,6 @@ void R_DrawBrushModel (struct entity_s *e);
 void R_DrawWorld (void);
 void R_RenderBrushPoly (msurface_t *fa);
 
+void EmitWaterPolys (msurface_t *fa);
+
 #endif // __QF_GL_rsurf_h

@@ -236,7 +236,13 @@ typedef void (GLAPIENTRY *QF_glTexCoordPointerEXT) (GLint size, GLenum type, GLs
 typedef void (GLAPIENTRY *QF_glVertexPointerEXT) (GLint size, GLenum type, GLsizei stride, GLsizei count, const GLvoid *pointer);
 
 // 3Dfx
+typedef long    FxI32;
+typedef FxI32   GrScreenResolution_t;
+typedef FxI32   GrDitherMode_t;
+typedef FxI32   GrScreenRefresh_t;
+
 typedef void (GLAPIENTRY *QF_gl3DfxSetPaletteEXT) (GLuint *pal);
+typedef void (GLAPIENTRY * QF_3DfxSetDitherModeEXT) (GrDitherMode_t mode);
 
 // GLX 1.3
 typedef void *(GLAPIENTRY *QF_glXGetProcAddressARB) (const GLubyte *procName);

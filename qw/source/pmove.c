@@ -56,10 +56,6 @@ vec3_t      forward, right, up;
 vec3_t      player_mins = { -16, -16, -24 };
 vec3_t      player_maxs = { 16, 16, 32 };
 
-void        PM_InitBoxHull (void);
-void        PM_CategorizePosition (void);
-
-
 void
 Pmove_Init (void)
 {
@@ -214,8 +210,6 @@ PM_FlyMove (void)
 	}
 	return blocked;
 }
-
-void        PM_Accelerate (vec3_t, float, float);
 
 /*
 	PM_FlymodeMove

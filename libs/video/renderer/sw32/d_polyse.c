@@ -115,26 +115,53 @@ static adivtab_t adivtab[32 * 32] = {
 #include "adivtab.h"
 };
 
-void        D_PolysetDrawSpans (spanpackage_t * pspanpackage);
-void        D_PolysetCalcGradients (int skinwidth);
-void        D_DrawNonSubdiv (void);
-void        D_PolysetSetEdgeTable (void);
-void        D_RasterizeAliasPolySmooth (void);
-void        D_PolysetScanLeftEdge (int height);
-
 
 void
-D_PolysetDraw (void)
+D_PolysetSetEdgeTable (void)
 {
-	spanpackage_t spans[DPS_MAXSPANS + 1 +
-						((CACHE_SIZE - 1) / sizeof (spanpackage_t)) + 1];
+	int         edgetableindex;
 
-	// one extra because of cache line pretouching
+	// assume the vertices are already in top to bottom order
+	edgetableindex = 0;
 
-	a_spans = (spanpackage_t *)
-		(((long) &spans[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
+	// determine which edges are right & left, and the order in which
+	// to rasterize them
+	if (r_p0[1] >= r_p1[1]) {
+		if (r_p0[1] == r_p1[1]) {
+			if (r_p0[1] < r_p2[1])
+				pedgetable = &edgetables[2];
+			else
+				pedgetable = &edgetables[5];
 
-	D_DrawNonSubdiv ();
+			return;
+		} else {
+			edgetableindex = 1;
+		}
+	}
+
+	if (r_p0[1] == r_p2[1]) {
+		if (edgetableindex)
+			pedgetable = &edgetables[8];
+		else
+			pedgetable = &edgetables[9];
+
+		return;
+	} else if (r_p1[1] == r_p2[1]) {
+		if (edgetableindex)
+			pedgetable = &edgetables[10];
+		else
+			pedgetable = &edgetables[11];
+
+		return;
+	}
+
+	if (r_p0[1] > r_p2[1])
+		edgetableindex += 2;
+
+	if (r_p1[1] > r_p2[1])
+		edgetableindex += 4;
+
+	pedgetable = &edgetables[edgetableindex];
 }
 
 void
@@ -194,6 +221,20 @@ D_DrawNonSubdiv (void)
 		D_PolysetSetEdgeTable ();
 		D_RasterizeAliasPolySmooth ();
 	}
+}
+
+void
+D_PolysetDraw (void)
+{
+	spanpackage_t spans[DPS_MAXSPANS + 1 +
+						((CACHE_SIZE - 1) / sizeof (spanpackage_t)) + 1];
+
+	// one extra because of cache line pretouching
+
+	a_spans = (spanpackage_t *)
+		(((long) &spans[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
+
+	D_DrawNonSubdiv ();
 }
 
 void
@@ -755,53 +796,4 @@ D_RasterizeAliasPolySmooth (void)
 		// mark end of the spanpackages
 		D_PolysetDrawSpans (pstart);
 	}
-}
-
-
-void
-D_PolysetSetEdgeTable (void)
-{
-	int         edgetableindex;
-
-	// assume the vertices are already in top to bottom order
-	edgetableindex = 0;
-
-	// determine which edges are right & left, and the order in which
-	// to rasterize them
-	if (r_p0[1] >= r_p1[1]) {
-		if (r_p0[1] == r_p1[1]) {
-			if (r_p0[1] < r_p2[1])
-				pedgetable = &edgetables[2];
-			else
-				pedgetable = &edgetables[5];
-
-			return;
-		} else {
-			edgetableindex = 1;
-		}
-	}
-
-	if (r_p0[1] == r_p2[1]) {
-		if (edgetableindex)
-			pedgetable = &edgetables[8];
-		else
-			pedgetable = &edgetables[9];
-
-		return;
-	} else if (r_p1[1] == r_p2[1]) {
-		if (edgetableindex)
-			pedgetable = &edgetables[10];
-		else
-			pedgetable = &edgetables[11];
-
-		return;
-	}
-
-	if (r_p0[1] > r_p2[1])
-		edgetableindex += 2;
-
-	if (r_p1[1] > r_p2[1])
-		edgetableindex += 4;
-
-	pedgetable = &edgetables[edgetableindex];
 }

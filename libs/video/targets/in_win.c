@@ -58,8 +58,6 @@ HRESULT (WINAPI * pDirectInputCreate) (HINSTANCE hinst, DWORD dwVersion,
 									   LPDIRECTINPUT * lplpDirectInput,
 									   LPUNKNOWN punkOuter);
 
-void        VID_UpdateWindowStatus (int window_x, int window_y);
-
 extern qboolean win_canalttab;
 extern DEVMODE win_gdevmode;
 

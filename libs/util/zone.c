@@ -67,9 +67,6 @@ static const char rcsid[] =
 
 #define MINFRAGMENT	64
 
-void        Cache_FreeLow (int new_low_hunk);
-void        Cache_FreeHigh (int new_high_hunk);
-
 /*
    						ZONE MEMORY ALLOCATION
 
@@ -316,9 +313,6 @@ int         hunk_tempmark;
 
 qboolean    hunk_tempactive;
 
-void        R_FreeTextures (void);
-
-
 /*
 	Hunk_Check
 
@@ -564,14 +558,14 @@ typedef struct cache_system_s {
 	struct cache_system_s *lru_prev, *lru_next;	// for LRU flushing 
 } cache_system_t;
 
-cache_system_t *Cache_TryAlloc (int size, qboolean nobottom);
-void Cache_RealFree (cache_user_t *c);
-void *Cache_RealCheck (cache_user_t *c);
-void *Cache_RealAlloc (cache_user_t *c, int size, const char *name);
 cache_system_t cache_head;
 int cache_writelock;
 
-void Cache_Profile (void);
+static void *Cache_RealCheck (cache_user_t *c);
+static cache_system_t *Cache_TryAlloc (int size, qboolean nobottom);
+static void Cache_RealFree (cache_user_t *c);
+static void Cache_Profile (void);
+static void *Cache_RealAlloc (cache_user_t *c, int size, const char *name);
 
 #define CACHE_WRITE_LOCK	{ if (cache_writelock) \
 								Sys_Error ("Cache double-locked!"); \
@@ -699,7 +693,7 @@ Cache_FreeLRU ()
 	Looks for a free block of memory between the high and low hunk marks
 	Size should already include the header and padding
 */
-cache_system_t *
+static cache_system_t *
 Cache_TryAlloc (int size, qboolean nobottom)
 {
 #ifndef MMAPPED_CACHE
@@ -865,7 +859,7 @@ Cache_Free (cache_user_t *c)
 	CACHE_WRITE_UNLOCK;
 }
 
-void
+static void
 Cache_RealFree (cache_user_t *c)
 {
 	cache_system_t *cs;
@@ -891,7 +885,7 @@ Cache_RealFree (cache_user_t *c)
 #endif
 }
 
-void       *
+void *
 Cache_Check (cache_user_t *c)
 {
 	void *mem;
@@ -902,7 +896,7 @@ Cache_Check (cache_user_t *c)
 	return mem;
 }
 
-void       *
+static void *
 Cache_RealCheck (cache_user_t *c)
 {
 	cache_system_t *cs;
@@ -930,7 +924,7 @@ Cache_Alloc (cache_user_t *c, int size, const char *name)
 	return mem;
 }
 
-void       *
+static void *
 Cache_RealAlloc (cache_user_t *c, int size, const char *name)
 {
 	cache_system_t *cs;
@@ -960,7 +954,7 @@ Cache_RealAlloc (cache_user_t *c, int size, const char *name)
 	return Cache_RealCheck (c);
 }
 
-void
+static void
 Cache_Profile (void)
 {
 	cache_system_t *cs;

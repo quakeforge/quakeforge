@@ -197,10 +197,6 @@ int         pr_gc_count = 0;
 
 int         sv_net_initialized;
 
-void        SV_AcceptClient (netadr_t adr, int userid, char *userinfo);
-void        Master_Shutdown (void);
-
-
 const char *client_info_filters[] = {  // Info keys needed by client
 	"name",
 	"topcolor",
@@ -223,6 +219,28 @@ qboolean
 ServerPaused (void)
 {
 	return sv.paused;
+}
+
+/*
+	Master_Shutdown
+
+	Informs all masters that this server is going down
+*/
+void
+Master_Shutdown (void)
+{
+	char        string[2048];
+	int         i;
+
+	snprintf (string, sizeof (string), "%c\n", S2M_SHUTDOWN);
+
+	// send to group master
+	for (i = 0; i < MAX_MASTERS; i++)
+		if (master_adr[i].port) {
+			SV_Printf ("Sending heartbeat to %s\n",
+						NET_AdrToString (master_adr[i]));
+			NET_SendPacket (strlen (string), string, master_adr[i]);
+		}
 }
 
 /*
@@ -2234,28 +2252,6 @@ Master_Heartbeat (void)
 	snprintf (string, sizeof (string), "%c\n%i\n%i\n", S2M_HEARTBEAT,
 			  svs.heartbeat_sequence, active);
 
-
-	// send to group master
-	for (i = 0; i < MAX_MASTERS; i++)
-		if (master_adr[i].port) {
-			SV_Printf ("Sending heartbeat to %s\n",
-						NET_AdrToString (master_adr[i]));
-			NET_SendPacket (strlen (string), string, master_adr[i]);
-		}
-}
-
-/*
-	Master_Shutdown
-
-	Informs all masters that this server is going down
-*/
-void
-Master_Shutdown (void)
-{
-	char        string[2048];
-	int         i;
-
-	snprintf (string, sizeof (string), "%c\n", S2M_SHUTDOWN);
 
 	// send to group master
 	for (i = 0; i < MAX_MASTERS; i++)

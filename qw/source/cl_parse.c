@@ -48,6 +48,7 @@ static const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/draw.h"
 #include "QF/hash.h"
 #include "QF/msg.h"
 #include "QF/quakeio.h"
@@ -252,7 +253,8 @@ CL_CheckOrDownloadFile (const char *filename)
 	return false;
 }
 
-void CL_NewMap (const char *mapname)
+void
+CL_NewMap (const char *mapname)
 {
 	char       *name = malloc (strlen (mapname) + 4 + 1);
 
@@ -611,8 +613,21 @@ CL_StopUpload (void)
 
 // SERVER CONNECTING MESSAGES =================================================
 
-void Draw_ClearCache (void);
-void CL_ClearBaselines (void);		// LordHavoc: BIG BUG-FIX!
+// LordHavoc: BIG BUG-FIX!  Clear baselines each time it connects...
+void
+CL_ClearBaselines (void)
+{
+	int			i;
+
+	memset (cl_baselines, 0, sizeof (cl_baselines));
+	for (i = 0; i < MAX_EDICTS; i++) {
+		cl_baselines[i].colormod = 255;
+		cl_baselines[i].alpha = 255;
+		cl_baselines[i].scale = 16;
+		cl_baselines[i].glow_size = 0;
+		cl_baselines[i].glow_color = 254;
+	}
+}
 
 void
 CL_ParseServerData (void)
@@ -716,22 +731,6 @@ CL_ParseServerData (void)
 	CL_SetState (ca_onserver);
 
 	CL_ClearBaselines ();
-}
-
-// LordHavoc: BIG BUG-FIX!  Clear baselines each time it connects...
-void
-CL_ClearBaselines (void)
-{
-	int			i;
-
-	memset (cl_baselines, 0, sizeof (cl_baselines));
-	for (i = 0; i < MAX_EDICTS; i++) {
-		cl_baselines[i].colormod = 255;
-		cl_baselines[i].alpha = 255;
-		cl_baselines[i].scale = 16;
-		cl_baselines[i].glow_size = 0;
-		cl_baselines[i].glow_color = 254;
-	}
 }
 
 void
@@ -1195,8 +1194,6 @@ CL_MuzzleFlash (void)
 #define SHOWNET(x) if (cl_shownet->int_val == 2) Con_Printf ("%3i:%s\n", net_message->readcount-1, x);
 
 int			received_framecount;
-
-void Sbar_LogFrags(void);
 
 void
 CL_ParseServerMessage (void)

@@ -73,11 +73,6 @@ static const char rcsid[] =
 
 typedef struct tfxMesaContext *fxMesaContext;
 
-typedef long	FxI32;
-typedef FxI32	GrScreenResolution_t;
-typedef FxI32	GrDitherMode_t;
-typedef FxI32	GrScreenRefresh_t;
-
 #define GR_REFRESH_75Hz			0x3
 
 #define GR_DITHER_2x2			0x1
@@ -100,9 +95,6 @@ void (* qf_fxMesaDestroyContext) (fxMesaContext ctx);
 void (* qf_fxMesaSwapBuffers) (void);
 fxMesaContext (* qf_fxMesaCreateContext) (GLuint win, GrScreenResolution_t, GrScreenRefresh_t, const GLint attribList[]);
 void (* qf_fxMesaMakeCurrent) (fxMesaContext ctx);
-
-// FIXME!!!!! This belongs in include/qfgl_ext.h -- deek
-typedef void (GLAPIENTRY * QF_3DfxSetDitherModeEXT) (GrDitherMode_t mode);
 
 static fxMesaContext fc = NULL;
 

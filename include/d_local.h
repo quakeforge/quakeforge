@@ -119,4 +119,11 @@ extern float d_scalemip[3];
 
 extern void (*d_drawspans) (espan_t *pspan);
 
+void D_RasterizeAliasPolySmooth (void);
+void D_PolysetCalcGradients (int skinwidth);
+void D_PolysetScanLeftEdge (int height);
+struct spanpackage_s;
+void D_PolysetDrawSpans8 (struct spanpackage_s * pspanpackage);
+void D_DrawTurbulent8Span (void);
+
 #endif	// _D_LOCAL_H

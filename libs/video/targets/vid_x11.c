@@ -82,9 +82,6 @@ static const char rcsid[] =
 static Colormap x_cmap;
 static GC		x_gc;
 
-int XShmQueryExtension (Display *);
-int XShmGetEventBase (Display *);
-
 static qboolean doShm;
 static XShmSegmentInfo x_shminfo[2];
 

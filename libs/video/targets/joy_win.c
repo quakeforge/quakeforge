@@ -112,11 +112,6 @@ int  joy_id;
 DWORD joy_flags;
 DWORD joy_numbuttons;
 
-void JOY_AdvancedUpdate_f (void);
-int JOY_StartupJoystick (void);
-PDWORD RawValuePointer (int axis);
-
-
 qboolean
 _JOY_Read (void)
 {

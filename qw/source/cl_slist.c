@@ -365,7 +365,8 @@ gettoklen (char *str, int req, char delim)
 	return len;
 }
 
-void timepassed (double time1, double *time2)
+void
+timepassed (double time1, double *time2)
 {
 	*time2 -= time1;
 }
@@ -648,7 +649,8 @@ SL_LoadF (QFile *f, server_entry_t *start)
 	}
 }
 
-void SL_Init (void)
+void
+SL_Init (void)
 {
 	char        e_path[MAX_OSPATH];
 	QFile      *servlist;

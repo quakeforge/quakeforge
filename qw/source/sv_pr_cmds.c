@@ -1197,8 +1197,6 @@ PF_WriteEntity (progs_t *pr)
 		MSG_WriteShort (WriteDest (pr), P_EDICTNUM (pr, 1));
 }
 
-int         SV_ModelIndex (const char *name);
-
 void
 PF_makestatic (progs_t *pr)
 {

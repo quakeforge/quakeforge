@@ -79,8 +79,6 @@ cvar_t     *sv_ondemoremove;
 cvar_t     *sv_demotxt;
 cvar_t     *serverdemo;
 
-void        SV_WriteDemoMessage (sizebuf_t *msg, int type, int to, float time);
-
 int         (*dwrite) (QFile * file, const void *buf, int count);
 
 static dbuffer_t *demobuffer;

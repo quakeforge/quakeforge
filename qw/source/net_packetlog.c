@@ -62,14 +62,6 @@ static const char rcsid[] =
 cvar_t     *net_packetlog;
 cvar_t     *net_loglevel;
 
-int         Net_LogStart (const char *fname);
-
-void Analyze_Server_Packet (const byte * data, int len);
-void Analyze_Client_Packet (const byte * data, int len);
-void Parse_Server_Packet (void);
-void Parse_Client_Packet (void);
-void Net_LogStop (void);
-
 // note: this is SUPPOSED to be duplicate, like many others
 const char *svc_string[] = {
 	"svc_bad",
@@ -379,19 +371,6 @@ Log_Delta(int bits)
 // Ender (QSG - End)
 
 	return;
-}
-
-void
-Analyze_Server_Packet (const byte * data, int len)
-{
-	if (!Net_PacketLog)
-		Net_PacketLog = _stdout;
-	packet.message->data = (byte*)data;
-	packet.message->cursize = len;
-	MSG_BeginReading (&packet);
-	Parse_Server_Packet ();
-	if (Net_PacketLog == _stdout)
-		Net_PacketLog = NULL;
 }
 
 
@@ -826,14 +805,14 @@ Parse_Server_Packet ()
 }
 
 void
-Analyze_Client_Packet (const byte * data, int len)
+Analyze_Server_Packet (const byte * data, int len)
 {
 	if (!Net_PacketLog)
 		Net_PacketLog = _stdout;
 	packet.message->data = (byte*)data;
 	packet.message->cursize = len;
 	MSG_BeginReading (&packet);
-	Parse_Client_Packet ();
+	Parse_Server_Packet ();
 	if (Net_PacketLog == _stdout)
 		Net_PacketLog = NULL;
 }
@@ -929,6 +908,19 @@ Parse_Client_Packet (void)
 			Net_LogPrintf ("\n");
 		}
 	}
+}
+
+void
+Analyze_Client_Packet (const byte * data, int len)
+{
+	if (!Net_PacketLog)
+		Net_PacketLog = _stdout;
+	packet.message->data = (byte*)data;
+	packet.message->cursize = len;
+	MSG_BeginReading (&packet);
+	Parse_Client_Packet ();
+	if (Net_PacketLog == _stdout)
+		Net_PacketLog = NULL;
 }
 
 void

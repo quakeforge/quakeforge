@@ -39,17 +39,6 @@ static const char rcsid[] =
 static finalvert_t fv[2][8];
 static auxvert_t av[8];
 
-void        R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av);
-void        R_Alias_clip_top (finalvert_t *pfv0, finalvert_t *pfv1,
-							  finalvert_t *out);
-void        R_Alias_clip_bottom (finalvert_t *pfv0, finalvert_t *pfv1,
-								 finalvert_t *out);
-void        R_Alias_clip_left (finalvert_t *pfv0, finalvert_t *pfv1,
-							   finalvert_t *out);
-void        R_Alias_clip_right (finalvert_t *pfv0, finalvert_t *pfv1,
-								finalvert_t *out);
-
-
 /*
 	R_Alias_clip_z
 

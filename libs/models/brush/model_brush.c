@@ -55,10 +55,6 @@ byte        mod_novis[MAX_MAP_LEAFS / 8];
 
 cvar_t		*gl_sky_divide;
 
-void GL_SubdivideSurface (msurface_t *fa);
-void R_InitSky (struct texture_s *mt);
-
-
 mleaf_t    *
 Mod_PointInLeaf (const vec3_t p, model_t *model)
 {
@@ -300,7 +296,7 @@ Mod_LoadVertexes (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("Mod_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
@@ -322,7 +318,7 @@ Mod_LoadSubmodels (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("Mod_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
@@ -352,7 +348,7 @@ Mod_LoadEdges (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("Mod_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName ((count + 1) * sizeof (*out), loadname);
 
@@ -375,7 +371,7 @@ Mod_LoadTexinfo (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("Mod_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
@@ -477,7 +473,7 @@ Mod_LoadFaces (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("Mod_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
@@ -517,7 +513,7 @@ Mod_LoadFaces (lump_t *l)
 		if (!strncmp (out->texinfo->texture->name, "sky", 3)) {	// sky
 			out->flags |= (SURF_DRAWSKY | SURF_DRAWTILED);
 			if (gl_sky_divide && gl_sky_divide->int_val)
-				GL_SubdivideSurface (out);
+				Mod_SubdivideSurface (out);
 			continue;
 		}
 
@@ -529,7 +525,7 @@ Mod_LoadFaces (lump_t *l)
 				out->extents[i] = 16384;
 				out->texturemins[i] = -8192;
 			}
-			GL_SubdivideSurface (out);	// cut up polygon for warps
+			Mod_SubdivideSurface (out);	// cut up polygon for warps
 			continue;
 		}
 	}
@@ -554,7 +550,7 @@ Mod_LoadNodes (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("Mod_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
@@ -595,7 +591,7 @@ Mod_LoadLeafs (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("Mod_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
@@ -649,7 +645,7 @@ Mod_LoadClipnodes (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("Mod_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
@@ -739,7 +735,7 @@ Mod_LoadMarksurfaces (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("Mod_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
@@ -762,7 +758,7 @@ Mod_LoadSurfedges (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("Mod_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
@@ -782,7 +778,7 @@ Mod_LoadPlanes (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("Mod_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * 2 * sizeof (*out), loadname);
 

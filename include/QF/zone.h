@@ -138,6 +138,8 @@ void *Cache_Check (cache_user_t *c);
 // if present, otherwise returns NULL
 
 void Cache_Free (cache_user_t *c);
+void Cache_FreeLow (int new_low_hunk);
+void Cache_FreeHigh (int new_high_hunk);
 
 void *Cache_Alloc (cache_user_t *c, int size, const char *name);
 // Returns NULL if all purgable data was tossed and there still

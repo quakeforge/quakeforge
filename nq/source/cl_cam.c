@@ -40,9 +40,6 @@ static const char rcsid[] =
 #include "QF/keys.h"
 #include "QF/input.h"
 
-float CL_KeyState (kbutton_t *key);
-qboolean SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
-								vec3_t p1, vec3_t p2, trace_t *trace);
 
 vec3_t camera_origin = {0,0,0};
 vec3_t camera_angles = {0,0,0};

@@ -42,7 +42,7 @@ static const char rcsid[] =
 #define DPS_MAXSPANS		MAXHEIGHT+1		// +1 for spanpackage marking end
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
-typedef struct {
+typedef struct spanpackage_s {
 	void       *pdest;
 	short      *pz;
 	int         count;
@@ -117,15 +117,6 @@ static adivtab_t adivtab[32 * 32] = {
 byte       *skintable[MAX_LBM_HEIGHT];
 int         skinwidth;
 byte       *skinstart;
-
-void        D_PolysetDrawSpans8 (spanpackage_t * pspanpackage);
-void        D_PolysetCalcGradients (int skinwidth);
-void        D_DrawSubdiv (void);
-void        D_DrawNonSubdiv (void);
-void        D_PolysetRecursiveTriangle (int *p1, int *p2, int *p3);
-void        D_PolysetSetEdgeTable (void);
-void        D_RasterizeAliasPolySmooth (void);
-void        D_PolysetScanLeftEdge (int height);
 
 #ifdef PIC
 #undef USE_INTEL_ASM //XXX asm pic hack

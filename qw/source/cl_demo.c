@@ -78,9 +78,9 @@ int     timedemo_runs;
 td_stats_t *timedemo_data;
 
 
-void CL_FinishTimeDemo (void);
-void CL_TimeFrames_Reset (void);
-void CL_TimeFrames_DumpLog (void);
+static void CL_FinishTimeDemo (void);
+static void CL_TimeFrames_Reset (void);
+static void CL_TimeFrames_DumpLog (void);
 
 cvar_t     *demo_speed;
 cvar_t     *demo_gzip;
@@ -945,7 +945,7 @@ sqr (double x)
 	return x * x;
 }
 
-void
+static void
 CL_FinishTimeDemo (void)
 {
 	float		time;
@@ -1042,7 +1042,7 @@ CL_Demo_Init (void)
 						   "< 1 slow-mo, > 1 timelapse");
 }
 
-void
+static void
 CL_TimeFrames_Reset (void)
 {
 	cl_timeframes_index = 0;
@@ -1067,7 +1067,8 @@ CL_TimeFrames_AddTimestamp (void)
 	return;
 }
 
-void CL_TimeFrames_DumpLog (void)
+static void
+CL_TimeFrames_DumpLog (void)
 {
 	char		e_path[MAX_OSPATH];
 	char	   *filename = "timeframes.txt";

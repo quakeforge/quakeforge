@@ -113,5 +113,8 @@ struct edict_s	*SV_TestPlayerPosition (struct edict_s *ent,
 int SV_HullPointContents (hull_t *hull, int num, const vec3_t p);
 hull_t *SV_HullForEntity (struct edict_s *ent, const vec3_t mins,
 						  const vec3_t maxs, vec3_t offset);
+qboolean SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
+								const vec3_t p1, const vec3_t p2,
+								trace_t *trace);
 
 #endif // __world_h

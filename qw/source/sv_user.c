@@ -92,9 +92,6 @@ cvar_t     *sv_timekick_interval;
 cvar_t     *sv_timecheck_fuzz;
 cvar_t     *sv_timecheck_decay;
 
-void SV_FullClientUpdateToClient (client_t *client, client_t *cl);
-
-
 //	USER STRINGCMD EXECUTION host_client and sv_player will be valid.
 
 /*

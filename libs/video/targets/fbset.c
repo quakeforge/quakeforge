@@ -189,24 +189,18 @@ struct VideoMode Current;
 
 /* Function Prototypes */
 
-int OpenFrameBuffer(const char *name);
-void CloseFrameBuffer(int fh);
-int GetVarScreenInfo(int fh, struct fb_var_screeninfo *var);
-int SetVarScreenInfo(int fh, struct fb_var_screeninfo *var);
-int GetFixScreenInfo(int fh, struct fb_fix_screeninfo *fix);
-void ConvertFromVideoMode(const struct VideoMode *vmode,
-						  struct fb_var_screeninfo *var);
-void ConvertToVideoMode(const struct fb_var_screeninfo *var,
-						struct VideoMode *vmode);
+static int OpenFrameBuffer(const char *name);
+static void CloseFrameBuffer(int fh);
+static int GetVarScreenInfo(int fh, struct fb_var_screeninfo *var);
+static int SetVarScreenInfo(int fh, struct fb_var_screeninfo *var);
+static int GetFixScreenInfo(int fh, struct fb_fix_screeninfo *fix);
 static int atoboolean(const char *var);
-void ReadModeDB(void);
 struct VideoMode *FindVideoMode(const char *name);
 static void ModifyVideoMode(struct VideoMode *vmode);
 static void DisplayVModeInfo(struct VideoMode *vmode);
 static void DisplayFBInfo(struct fb_fix_screeninfo *fix);
 static int FillScanRates(struct VideoMode *vmode);
 static void Usage(void);
-int main(int argc, char *argv[]);
 
 
 #define Die Sys_Printf

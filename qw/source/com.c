@@ -45,9 +45,6 @@ int         static_registered = 1;		// only for startup check, then set
 
 qboolean    com_modified;				// set true if using non-id files
 
-void        COM_Path_f (void);
-
-
 /*
 	COM_CheckRegistered
 

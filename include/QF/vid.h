@@ -143,4 +143,6 @@ void GL_Pre_Init (void);
 
 void VID_MakeColormaps (int fullbrights, byte *pal);
 
+void VGA_UpdatePlanarScreen (void *srcbuffer);
+
 #endif	// __vid_h_

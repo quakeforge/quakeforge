@@ -112,8 +112,6 @@ static plugin_list_t client_plugin_list[] = {
 		CLIENT_PLUGIN_LIST
 };
 
-void        CL_RemoveQFInfoKeys ();
-
 // we need to declare some mouse variables here, because the menu system
 // references them even when on a unix system.
 
@@ -217,8 +215,6 @@ int         fps_count;
 
 jmp_buf     host_abort;
 
-void        Master_Connect_f (void);
-
 char       *server_version = NULL;		// version of server we connected to
 
 char        emodel_name[] = "emodel";
@@ -226,8 +222,6 @@ char        pmodel_name[] = "pmodel";
 char        prespawn_name[] = "prespawn %i 0 %i";
 char        modellist_name[] = "modellist %i %i";
 char        soundlist_name[] = "soundlist %i %i";
-
-void        CL_RSShot_f (void);
 
 extern cvar_t *cl_showscoresuid;
 
@@ -440,6 +434,14 @@ CL_StopCshifts (void)
 		cl.cshifts[i].percent = 0;
 	for (i = 0; i < MAX_CL_STATS; i++)
 		cl.stats[i] = 0;
+}
+
+void
+CL_RemoveQFInfoKeys (void)
+{
+	Info_RemoveKey (cls.userinfo, "*cap");
+	Info_RemoveKey (cls.userinfo, "*qf_version");
+	Info_RemoveKey (cls.userinfo, "*qsg_version");
 }
 
 /*
@@ -656,14 +658,6 @@ CL_AddQFInfoKeys (void)
 	Info_SetValueForStarKey (cls.userinfo, "*cap", cap, 0);
 	Info_SetValueForStarKey (cls.userinfo, "*qf_version", VERSION, 0);
 	Info_SetValueForStarKey (cls.userinfo, "*qsg_version", QW_QSG_VERSION, 0);
-}
-
-void
-CL_RemoveQFInfoKeys (void)
-{
-	Info_RemoveKey (cls.userinfo, "*cap");
-	Info_RemoveKey (cls.userinfo, "*qf_version");
-	Info_RemoveKey (cls.userinfo, "*qsg_version");
 }
 
 /*

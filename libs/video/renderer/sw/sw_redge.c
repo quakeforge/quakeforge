@@ -79,13 +79,6 @@ edge_t      edge_sentinel;
 
 float       fv;
 
-void R_GenerateSpans (void);
-void R_GenerateSpansBackward (void);
-void R_LeadingEdge (edge_t *edge);
-void R_LeadingEdgeBackwards (edge_t *edge);
-void R_TrailingEdge (surf_t *surf, edge_t *edge);
-
-
 void
 R_DrawCulledPolys (void)
 {

@@ -51,11 +51,6 @@ general_funcs_t    plugin_info_general_funcs;
 sound_data_t       plugin_info_sound_data;
 sound_funcs_t      plugin_info_sound_funcs;
 
-void SND_Init_Cvars (void);
-
-
-
-
 void
 SND_Init (void)
 {

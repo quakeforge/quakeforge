@@ -59,8 +59,6 @@ int         locations_alloced = 0;
 int         locations_count = 0;
 int         location_blocks = 0;
 
-void locs_more (void);
-
 int
 locs_nearest (const vec3_t loc)
 {
@@ -87,6 +85,24 @@ locs_find (const vec3_t target)
 	if (i == -1) 
 		return NULL;
 	return locations[i];
+}
+
+void
+locs_more (void)
+{
+	size_t      size;
+
+	location_blocks++;
+	locations_alloced += LOCATION_BLOCK;
+	size = (sizeof (location_t *) * LOCATION_BLOCK * location_blocks);
+
+	if (locations)
+		locations = realloc (locations, size);
+	else
+		locations = malloc (size);
+
+	if (!locations)
+		Sys_Error ("ERROR! Can not alloc memory for location block!");
 }
 
 void
@@ -172,24 +188,6 @@ locs_reset (void)
 	locations_alloced = 0;
 	locations_count = 0;
 	locations = NULL;
-}
-
-void
-locs_more (void)
-{
-	size_t      size;
-
-	location_blocks++;
-	locations_alloced += LOCATION_BLOCK;
-	size = (sizeof (location_t *) * LOCATION_BLOCK * location_blocks);
-
-	if (locations)
-		locations = realloc (locations, size);
-	else
-		locations = malloc (size);
-
-	if (!locations)
-		Sys_Error ("ERROR! Can not alloc memory for location block!");
 }
 
 void

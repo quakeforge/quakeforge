@@ -50,10 +50,6 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/quakeio.h"
 
-//FIXME should be in header
-void SND_ResampleSfx (sfxcache_t *sc, byte * data);
-sfxcache_t *SND_GetCache (long samples, int rate, int inwidth, int channels,
-		    	          sfx_t *sfx, cache_allocator_t allocator);
 
 static size_t
 read_func (void *ptr, size_t size, size_t nmemb, void *datasource)

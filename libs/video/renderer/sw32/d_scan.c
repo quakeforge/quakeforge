@@ -45,10 +45,6 @@ fixed16_t   r_turb_s, r_turb_t, r_turb_sstep, r_turb_tstep;
 int        *r_turb_turb;
 int         r_turb_spancount;
 
-void        D_DrawTurbulentSpan (void);
-
-
-
 /*
 	D_WarpScreen
 

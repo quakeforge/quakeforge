@@ -133,8 +133,6 @@ qboolean    scr_skipupdate;
 
 qboolean    block_drawing;
 
-void        SCR_ScreenShot_f (void);
-
 /*
 	CENTER PRINTING
 */
@@ -465,23 +463,6 @@ SCR_SizeDown_f (void)
 }
 
 //============================================================================
-
-void
-SCR_Init (void)
-{
-	// register our commands
-	Cmd_AddCommand ("screenshot", SCR_ScreenShot_f, "Take a screenshot and "
-					"write it as qfxxx.tga in the current directory");
-	Cmd_AddCommand ("sizeup", SCR_SizeUp_f, "Increase the size of the screen");
-	Cmd_AddCommand ("sizedown", SCR_SizeDown_f, "Decrease the size of the "
-					"screen");
-
-	scr_ram = Draw_PicFromWad ("ram");
-	scr_net = Draw_PicFromWad ("net");
-	scr_turtle = Draw_PicFromWad ("turtle");
-
-	scr_initialized = true;
-}
 
 void
 SCR_DrawRam (void)
@@ -924,4 +905,21 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 
 		VID_Update (&vrect);
 	}
+}
+
+void
+SCR_Init (void)
+{
+	// register our commands
+	Cmd_AddCommand ("screenshot", SCR_ScreenShot_f, "Take a screenshot and "
+					"write it as qfxxx.tga in the current directory");
+	Cmd_AddCommand ("sizeup", SCR_SizeUp_f, "Increase the size of the screen");
+	Cmd_AddCommand ("sizedown", SCR_SizeDown_f, "Decrease the size of the "
+					"screen");
+
+	scr_ram = Draw_PicFromWad ("ram");
+	scr_net = Draw_PicFromWad ("net");
+	scr_turtle = Draw_PicFromWad ("turtle");
+
+	scr_initialized = true;
 }

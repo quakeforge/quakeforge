@@ -53,8 +53,6 @@ int         snd_scaletable[32][256];
 int        *snd_p, snd_linear_count, snd_vol;
 short      *snd_out;
 
-void        SND_WriteLinearBlastStereo16 (void);
-
 #ifndef USE_INTEL_ASM
 void
 SND_WriteLinearBlastStereo16 (void)
@@ -205,9 +203,6 @@ SND_TransferPaintBuffer (int endtime)
 }
 
 /* CHANNEL MIXING */
-
-void       SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int endtime);
-void       SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int endtime);
 
 void
 SND_PaintChannels (int endtime)

@@ -52,19 +52,6 @@ int         r_lightwidth;
 int         r_numhblocks, r_numvblocks;
 byte       *r_source, *r_sourcemax;
 
-void        R_DrawSurfaceBlock8_mip0 (void);
-void        R_DrawSurfaceBlock8_mip1 (void);
-void        R_DrawSurfaceBlock8_mip2 (void);
-void        R_DrawSurfaceBlock8_mip3 (void);
-void        R_DrawSurfaceBlock16_mip0 (void);
-void        R_DrawSurfaceBlock16_mip1 (void);
-void        R_DrawSurfaceBlock16_mip2 (void);
-void        R_DrawSurfaceBlock16_mip3 (void);
-void        R_DrawSurfaceBlock32_mip0 (void);
-void        R_DrawSurfaceBlock32_mip1 (void);
-void        R_DrawSurfaceBlock32_mip2 (void);
-void        R_DrawSurfaceBlock32_mip3 (void);
-
 static void (*surfmiptable8[4]) (void) = {
 	R_DrawSurfaceBlock8_mip0,
 	R_DrawSurfaceBlock8_mip1,

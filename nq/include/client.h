@@ -322,6 +322,7 @@ int  CL_ReadFromServer (void);
 void CL_WriteToServer (usercmd_t *cmd);
 void CL_BaseMove (usercmd_t *cmd);
 
+float CL_KeyState (kbutton_t *key);
 
 // cl_demo.c
 void CL_StopPlayback (void);

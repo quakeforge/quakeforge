@@ -364,6 +364,8 @@ void V_PrepBlend (void);
 void CL_Cmd_ForwardToServer (void);
 void CL_Cmd_Init (void);
 
+void CL_RSShot_f (void);
+
 #define RSSHOT_WIDTH 320
 #define RSSHOT_HEIGHT 200
 

@@ -68,8 +68,6 @@ static const char rcsid[] =
 #include "QF/mathlib.h"
 #include "world.h"
 
-float CL_KeyState (kbutton_t *key);
-
 vec3_t camera_origin = {0,0,0};
 vec3_t camera_angles = {0,0,0};
 vec3_t player_origin = {0,0,0};

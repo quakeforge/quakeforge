@@ -101,10 +101,6 @@ int         d_lightstylevalue[256];		// 8.8 fraction of base light value
 vec3_t		shadecolor;					// Ender (Extend) Colormod
 float		modelalpha;					// Ender (Extend) Alpha
 
-void R_MarkLeaves (void);
-void R_DrawAliasModel (entity_t *e);
-void R_DrawSpriteModel (entity_t *e);
-
 
 void
 glrmain_init (void)

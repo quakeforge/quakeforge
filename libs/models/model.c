@@ -48,14 +48,6 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-void        Mod_LoadAliasModel (model_t *mod, void *buf,
-								cache_allocator_t allocator);
-void        Mod_LoadSpriteModel (model_t *mod, void *buf);
-void        Mod_LoadBrushModel (model_t *mod, void *buf);
-model_t	*	Mod_RealLoadModel (model_t *mod, qboolean crash,
-							   cache_allocator_t allocator);
-void		Mod_CallbackLoad (void *object, cache_allocator_t allocator);
-
 model_t    *loadmodel;
 char        loadname[32];				// for hunk tags
 
@@ -68,6 +60,7 @@ texture_t  *r_notexture_mip;
 cvar_t     *gl_mesh_cache;
 cvar_t     *gl_subdivide_size;
 
+static void Mod_CallbackLoad (void *object, cache_allocator_t allocator);
 
 void
 Mod_Init (void)
@@ -147,24 +140,6 @@ Mod_FindName (const char *name)
 	return mod;
 }
 
-/*
-	Mod_LoadModel
-
-	Loads a model into the cache
-*/
-model_t *
-Mod_LoadModel (model_t *mod, qboolean crash)
-{
-	if (!mod->needload) {
-		if (mod->type == mod_alias) {
-			if (Cache_Check (&mod->cache))
-				return mod;
-		} else
-			return mod;					// not cached at all
-	}
-	return Mod_RealLoadModel (mod, crash, Cache_Alloc);
-}
-
 model_t *
 Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 {
@@ -232,11 +207,29 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 }
 
 /*
+	Mod_LoadModel
+
+	Loads a model into the cache
+*/
+model_t *
+Mod_LoadModel (model_t *mod, qboolean crash)
+{
+	if (!mod->needload) {
+		if (mod->type == mod_alias) {
+			if (Cache_Check (&mod->cache))
+				return mod;
+		} else
+			return mod;					// not cached at all
+	}
+	return Mod_RealLoadModel (mod, crash, Cache_Alloc);
+}
+
+/*
 	Mod_CallbackLoad
 
 	Callback used to load model automatically
 */
-void
+static void
 Mod_CallbackLoad (void *object, cache_allocator_t allocator)
 {
 	if (((model_t *)object)->type != mod_alias)

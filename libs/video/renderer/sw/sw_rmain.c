@@ -138,11 +138,6 @@ int         d_lightstylevalue[256];		// 8.8 fraction of base light value
 float       dp_time1, dp_time2, db_time1, db_time2, rw_time1, rw_time2;
 float       se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
 
-void        R_MarkLeaves (void);
-
-void R_LoadSky_f (void);
-void R_InitVars (void);
-
 void
 R_Init (void)
 {

@@ -47,9 +47,6 @@ int         wad_numlumps;
 lumpinfo_t *wad_lumps;
 byte       *wad_base;
 
-void        SwapPic (qpic_t *pic);
-
-
 /*
 	W_CleanupName
 
