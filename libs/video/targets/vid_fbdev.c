@@ -157,7 +157,7 @@ D_EndDirectRect (int x, int y, int width, int height)
 static void
 VID_DescribeMode_f (void)
 {
-	char *modestr;
+	const char *modestr;
 	struct VideoMode *vmode;
 
 	modestr = Cmd_Argv(1);
@@ -207,13 +207,13 @@ VID_NumModes_f (void)
 
 int VID_SetMode (char *name, unsigned char *palette);
 
-extern void fbset_main (int argc, char **argv);
+extern void fbset_main (int argc, const char **argv);
 
 static void
 VID_fbset_f (void)
 {
 	int i, argc;
-	char *argv[32];
+	const char *argv[32];
 
 	argc = Cmd_Argc();
 	if (argc > 32)
@@ -341,7 +341,7 @@ VID_SetPalette (byte * palette)
 }
 
 int
-VID_SetMode (char *name, unsigned char *palette)
+VID_SetMode (const char *name, unsigned char *palette)
 {
 	struct VideoMode *vmode;
 	struct fb_var_screeninfo var;
@@ -461,7 +461,7 @@ VID_Init (unsigned char *palette)
 {
 	int w, h, d;
 	struct VideoMode *vmode;
-	char *modestr;
+	const char *modestr;
 	char *fbname;
 
 	// plugin_load("in_fbdev.so");

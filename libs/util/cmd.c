@@ -525,7 +525,7 @@ Cmd_TokenizeString (const char *text)
 	memset (cmd_args, 0, sizeof (cmd_args));
 
 	while (1) {
-// skip whitespace up to a /n
+// skip whitespace up to a \n
 		while (*text && *(unsigned char *) text <= ' ' && *text != '\n') {
 			text++;
 		}

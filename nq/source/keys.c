@@ -194,6 +194,13 @@ keyname_t   keynames[] = {
 	{"MWHEELUP", K_MWHEELUP},
 	{"MWHEELDOWN", K_MWHEELDOWN},
 
+	{"ASC178", K_ASC178},		/* be azerty keycodes for top row */
+	{"ASC233", K_ASC233},
+	{"ASC167", K_ASC167},
+	{"ASC232", K_ASC232},
+	{"ASC231", K_ASC231},
+	{"ASC224", K_ASC224},
+
 	{"SEMICOLON", ';'},			// because a raw semicolon seperates commands
 
 	{NULL, 0}
@@ -396,8 +403,12 @@ Key_Console (int key)
 	}
 #endif
 
-	if (key < 32 || key > 127)
+	if (key < 32)
 		return;							// non printable
+	if (key > 127 && key != K_ASC178 && key != K_ASC233 && key != K_ASC167 && key != K_ASC232 && key != K_ASC231 && key != K_ASC224) {
+		//Con_Printf ("keysym: %d\n", key);
+		return;
+	}
 
 	i = strlen (key_lines[edit_line]);
 	if (i >= MAXCMDLINE - 1)
@@ -728,6 +739,10 @@ Key_Event (int key, int alt_key, qboolean down)
 	char        cmd[1024];
 
 //	Con_Printf ("%i : %i\n", key, down);    //@@@
+
+	/* Let azerty keymaps get to the numbers in console & messagemode etc. */
+	if (key >= 200 && key_dest != key_game && alt_key >= 0x30 && alt_key <= 0x39)
+		key = alt_key;
 
 	// They don't prove it, fall back to interal MESS.
 	if (alt_key == -1) {

@@ -159,6 +159,13 @@ typedef enum {
 	K_MWHEELUP,
 	K_MWHEELDOWN,
 
+	K_ASC178,
+	K_ASC233,
+	K_ASC167,
+	K_ASC232,
+	K_ASC231,
+	K_ASC224,
+
 // keys count
 	K_NUM_KEYS,
 } keynum_t;

@@ -285,6 +285,26 @@ XLateKey (XKeyEvent * ev, qboolean modified)
 			key = K_PGDN;
 			break;
 
+		/* Some high ASCII symbols, for azerty keymaps */
+		case XK_twosuperior:
+			key = K_ASC178;
+			break;
+		case XK_eacute:
+			key = K_ASC233;
+			break;
+		case XK_section:
+			key = K_ASC167;
+			break;
+		case XK_egrave:
+			key = K_ASC232;
+			break;
+		case XK_ccedilla:
+			key = K_ASC231;
+			break;
+		case XK_agrave:
+			key = K_ASC224;
+			break;
+
 		default:
 			if (keysym < 128) {
 				/* ASCII keys */

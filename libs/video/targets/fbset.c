@@ -894,7 +894,7 @@ static void Usage(void)
      *  Main Routine
      */
 
-int fbset_main(int argc, char *argv[])
+int fbset_main(int argc, const char *argv[])
 {
     struct VideoMode *vmode;
     struct fb_var_screeninfo var;
