@@ -89,6 +89,12 @@ Skin_Do_Translation_Model (model_t *model, int skinnum, int slot, skin_t *skin)
 
 
 void
+Skin_Player_Model (model_t *model)
+{
+}
+
+
+void
 Skin_Init_Translation (void)
 {
 }

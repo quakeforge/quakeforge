@@ -50,7 +50,7 @@ typedef struct skin_s
 	int         numfb;
 } skin_t;
 
-extern byte player_8bit_texels[320 * 200];
+extern byte player_8bit_texels[640 * 400];
 extern skin_t   skin_cache[MAX_CACHED_SKINS];
 extern int skin_textures;
 extern int skin_fb_textures;
@@ -70,6 +70,7 @@ void	Skin_Set_Translate (int top, int bottom, void *_dest);
 void	Skin_Do_Translation (skin_t *player_skin, int slot, skin_t *skin);
 void	Skin_Do_Translation_Model (struct model_s *model, int skinnum,
 								   int slot, skin_t *skin);
+void	Skin_Player_Model (struct model_s *model);
 void	Skin_Process (skin_t *skin, struct tex_s *);
 
 skin_t	*Skin_NewTempSkin (void);

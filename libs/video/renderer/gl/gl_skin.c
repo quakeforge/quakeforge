@@ -52,6 +52,8 @@ static const char rcsid[] =
 static byte translate[256];
 static unsigned int translate32[256];
 
+static int player_width = 296;
+static int player_height = 194;
 
 void
 Skin_Set_Translate (int top, int bottom, void *_dest)
@@ -191,10 +193,11 @@ Skin_Do_Translation (skin_t *player_skin, int slot, skin_t *skin)
 		original = skin_texels->data;
 	} else {
 		original = player_8bit_texels;
-		inwidth = 296;
-		inheight = 194;
+		inwidth = player_width;
+		inheight = player_height;
 	}
-	build_skin (texnum, original, inwidth, inheight, 296, 194, false);
+	build_skin (texnum, original, inwidth, inheight,
+				player_width, player_height, false);
 }
 
 void
@@ -228,6 +231,24 @@ Skin_Do_Translation_Model (model_t *model, int skinnum, int slot, skin_t *skin)
 
 	build_skin (texnum, original, inwidth, inheight, inwidth, inheight, false);
 
+	Cache_Release (&model->cache);
+}
+
+void
+Skin_Player_Model (model_t *model)
+{
+	aliashdr_t *paliashdr;
+	
+	player_width = 296;
+	player_height = 194;
+	if (!model)							// player doesn't have a model yet
+		return;
+	if (model->type != mod_alias)		// only translate skins on alias models
+		return;
+
+	paliashdr = Cache_Get (&model->cache);
+	player_width = paliashdr->mdl.skinwidth;
+	player_height = paliashdr->mdl.skinheight;
 	Cache_Release (&model->cache);
 }
 

@@ -308,15 +308,16 @@ Model_NextDownload (void)
 		}
 
 		if (strequal (cl.model_name[i], "progs/player.mdl")
-			&& cl.model_precache[i]->type == mod_alias)
+			&& cl.model_precache[i]->type == mod_alias) {
 			info_key = pmodel_name;
+			Skin_Player_Model (cl.model_precache[i]);
+		}
 		if (strequal (cl.model_name[i], "progs/eyes.mdl")
 			&& cl.model_precache[i]->type == mod_alias)
 			info_key = emodel_name;
 
 		if (info_key && cl_model_crcs->int_val) {
-			aliashdr_t *ahdr = Cache_Get
-				(&cl.model_precache[i]->cache);
+			aliashdr_t *ahdr = Cache_Get (&cl.model_precache[i]->cache);
 			Info_SetValueForKey (cls.userinfo, info_key, va ("%d", ahdr->crc),
 								 0);
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
