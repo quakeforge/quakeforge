@@ -78,19 +78,19 @@ BOOL (GLAPIENTRY *qf_wglMakeCurrent) (HDC, HGLRC);
 
 typedef struct {
 	modestate_t type;
-	int         width;
-	int         height;
-	int         modenum;
-	int         dib;
-	int         fullscreen;
-	int         bpp;
-	int         halfscreen;
-	char        modedesc[17];
+	int			width;
+	int			height;
+	int			modenum;
+	int			dib;
+	int			fullscreen;
+	int			bpp;
+	int			halfscreen;
+	char		modedesc[17];
 } vmode_t;
 
 typedef struct {
-	int         width;
-	int         height;
+	int			width;
+	int			height;
 } lmode_t;
 
 lmode_t lowresmodes[] = {
@@ -99,9 +99,6 @@ lmode_t lowresmodes[] = {
 	{400, 300},
 	{512, 384},
 };
-
-// FIXME: Only used by MGL ..
-qboolean	DDActive;
 
 // If you ever merge screen/gl_screen, don't forget this one
 qboolean	scr_skipupdate;
@@ -116,17 +113,17 @@ static qboolean		windowed, leavecurrentmode;
 static int	windowed_mouse;
 static HICON hIcon;
 
-RECT        WindowRect;
-DWORD       WindowStyle, ExWindowStyle;
+RECT		WindowRect;
+DWORD		WindowStyle, ExWindowStyle;
 
-HWND        mainwindow;
+HWND		mainwindow;
 
-int         vid_modenum = NO_MODE;
-int         vid_realmode;
-int         vid_default = MODE_WINDOWED;
-static int  windowed_default;
-unsigned char vid_curpal[256 * 3];
-static qboolean fullsbardraw = true;
+int			vid_modenum = NO_MODE;
+int			vid_realmode;
+int			vid_default = MODE_WINDOWED;
+static int	windowed_default;
+unsigned char	vid_curpal[256 * 3];
+static qboolean	fullsbardraw = true;
 
 HDC         maindc;
 
@@ -194,12 +191,12 @@ VID_ForceUnlockedAndReturnState (void)
 void
 CenterWindow (HWND hWndCenter, int width, int height, BOOL lefttopjustify)
 {
-	int         CenterX, CenterY;
+	int			CenterX, CenterY;
 
 	CenterX = (GetSystemMetrics (SM_CXSCREEN) - width) / 2;
 	CenterY = (GetSystemMetrics (SM_CYSCREEN) - height) / 2;
 	if (CenterX > CenterY * 2)
-		CenterX >>= 1;					// dual screens
+		CenterX >>= 1;							// dual screens
 	CenterX = (CenterX < 0) ? 0 : CenterX;
 	CenterY = (CenterY < 0) ? 0 : CenterY;
 	SetWindowPos (hWndCenter, NULL, CenterX, CenterY, 0, 0,
@@ -209,9 +206,9 @@ CenterWindow (HWND hWndCenter, int width, int height, BOOL lefttopjustify)
 qboolean
 VID_SetWindowedMode (int modenum)
 {
-	HDC         hdc;
-	int         lastmodestate, width, height;
-	RECT        rect;
+	HDC			hdc;
+	int			lastmodestate, width, height;
+	RECT		rect;
 
 	lastmodestate = modestate;
 
@@ -242,20 +239,20 @@ VID_SetWindowedMode (int modenum)
 
 	// Center and show the window
 	CenterWindow (mainwindow, WindowRect.right - WindowRect.left,
-	WindowRect.bottom - WindowRect.top, false);
+				  WindowRect.bottom - WindowRect.top, false);
 
 	ShowWindow (mainwindow, SW_SHOWDEFAULT);
 	UpdateWindow (mainwindow);
 
 	modestate = MS_WINDOWED;
 
-// because we have set the background brush for the window to NULL
-// (to avoid flickering when re-sizing the window on the desktop),
-// we clear the window to black when created, otherwise it will be
-// empty while Quake starts up.
+	// because we have set the background brush for the window to NULL
+	// (to avoid flickering when re-sizing the window on the desktop),
+	// we clear the window to black when created, otherwise it will be
+	// empty while Quake starts up.
 	hdc = GetDC (mainwindow);
 	PatBlt (hdc, 0, 0, WindowRect.right, WindowRect.bottom, BLACKNESS);
-        ReleaseDC (mainwindow, hdc);
+	ReleaseDC (mainwindow, hdc);
 
 	if (vid.conheight > modelist[modenum].height)
 		vid.conheight = modelist[modenum].height;
@@ -277,11 +274,11 @@ VID_SetWindowedMode (int modenum)
 qboolean
 VID_SetFullDIBMode (int modenum)
 {
-	HDC         hdc;
-	int         lastmodestate, width, height;
-	RECT        rect;
+	HDC			hdc;
+	int			lastmodestate, width, height;
+	RECT		rect;
 
-        memset(&win_gdevmode,0,sizeof(win_gdevmode));
+	memset (&win_gdevmode,0,sizeof(win_gdevmode));
 
 	if (!leavecurrentmode) {
 		win_gdevmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
@@ -365,9 +362,9 @@ VID_SetFullDIBMode (int modenum)
 int
 VID_SetMode (int modenum, unsigned char *palette)
 {
-	int         original_mode, temp;
-	qboolean    stat = 0;
-	MSG         msg;
+	int			original_mode, temp;
+	qboolean	stat = 0;
+	MSG			msg;
 
 	if ((windowed && (modenum != 0)) ||
 		(!windowed && (modenum < 1)) || (!windowed && (modenum >= nummodes))) {
@@ -412,12 +409,13 @@ VID_SetMode (int modenum, unsigned char *palette)
 	if (!stat) {
 		Sys_Error ("Couldn't set video mode");
 	}
-// now we try to make sure we get the focus on the mode switch, because
-// sometimes in some systems we don't.  We grab the foreground, then
-// finish setting up, pump all our messages, and sleep for a little while
-// to let messages finish bouncing around the system, then we put
-// ourselves at the top of the z order, then grab the foreground again,
-// Who knows if it helps, but it probably doesn't hurt
+
+	// Now we try to make sure we get the focus on the mode switch, because
+	// sometimes in some systems we don't.  We grab the foreground, then
+	// finish setting up, pump all our messages, and sleep for a little while
+	// to let messages finish bouncing around the system, then we put
+	// ourselves at the top of the z order, then grab the foreground again,
+	// Who knows if it helps, but it probably doesn't hurt
 	SetForegroundWindow (mainwindow);
 	VID_SetPalette (palette);
 	vid_modenum = modenum;
@@ -451,7 +449,6 @@ VID_SetMode (int modenum, unsigned char *palette)
 void
 VID_UpdateWindowStatus (int w_x, int w_y)
 {
-
 	window_rect.left = window_x = w_x;
 	window_rect.top = window_y = w_y;
 	window_rect.right = window_x + window_width;
@@ -510,13 +507,13 @@ VID_SetDefaultMode (void)
 void
 VID_Shutdown (void)
 {
-	HGLRC       hRC;
-	HDC         hDC;
-	int         i, temp[8192];
+	HGLRC		hRC;
+	HDC			hDC;
+	int			i, temp[8192];
 
 #ifdef SPLASH_SCREEN
-        if(hwnd_dialog)
-                DestroyWindow (hwnd_dialog);
+	if(hwnd_dialog)
+		DestroyWindow (hwnd_dialog);
 #endif
 
 	if (vid.initialized) {
@@ -528,20 +525,20 @@ VID_Shutdown (void)
 
 		// LordHavoc: free textures before closing (may help NVIDIA)
 		for (i = 0; i < 8192; i++)
-                        temp[i] = i + 1;
+			temp[i] = i + 1;
 		qfglDeleteTextures (8192, temp);
 
 		if (hRC)
 			qf_wglDeleteContext (hRC);
 
-                if (hDC && mainwindow)
-                        ReleaseDC (mainwindow, hDC);
+		if (hDC && mainwindow)
+			ReleaseDC (mainwindow, hDC);
 
 		if (modestate == MS_FULLDIB)
 			ChangeDisplaySettings (NULL, 0);
 
-                if (maindc && mainwindow)
-                        ReleaseDC (mainwindow, maindc);
+		if (maindc && mainwindow)
+			ReleaseDC (mainwindow, maindc);
 
 		AppActivate (false, false);
 	}
@@ -553,17 +550,18 @@ BOOL
 bSetupPixelFormat (HDC hDC)
 {
 	PIXELFORMATDESCRIPTOR pfd ;
-	int         pixelformat;
+	int		pixelformat;
 
-	memset(&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
-	pfd.nSize      = sizeof(PIXELFORMATDESCRIPTOR); 
-	pfd.nVersion   = 1;
-	pfd.dwFlags    = PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL |
-		PFD_DRAW_TO_WINDOW;
+	memset (&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
+	pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR); 
+	pfd.nVersion = 1;
+	pfd.dwFlags = PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW;
 	pfd.iPixelType = PFD_TYPE_RGBA;
 
-	if (!modelist[vid_default].bpp) pfd.cColorBits = 16;
-	else pfd.cColorBits = modelist[vid_default].bpp;
+	if (!modelist[vid_default].bpp)
+		pfd.cColorBits = 16;
+	else
+		pfd.cColorBits = modelist[vid_default].bpp;
 
 	pfd.cDepthBits = 32;
 	pfd.iLayerType = PFD_MAIN_PLANE;
@@ -580,14 +578,13 @@ bSetupPixelFormat (HDC hDC)
 	return TRUE;
 }
 
-
 int
 VID_NumModes (void)
 {
 	return nummodes;
 }
 
-vmode_t    *
+vmode_t		*
 VID_GetModePtr (int modenum)
 {
 	if ((modenum >= 0) && (modenum < nummodes))
@@ -596,12 +593,12 @@ VID_GetModePtr (int modenum)
 		return &badmode;
 }
 
-char       *
+char		*
 VID_GetModeDescription (int mode)
 {
-	char       *pinfo;
-	vmode_t    *pv;
-	static char temp[100];
+	char		*pinfo;
+	vmode_t		*pv;
+	static char	 temp[100];
 
 	if ((mode < 0) || (mode >= nummodes))
 		return NULL;
@@ -621,11 +618,11 @@ VID_GetModeDescription (int mode)
 
 
 // KJB: Added this to return the mode driver name in description for console
-char       *
+char		*
 VID_GetExtModeDescription (int mode)
 {
 	static char pinfo[40];
-	vmode_t    *pv;
+	vmode_t	   *pv;
 
 	if ((mode < 0) || (mode >= nummodes))
 		return NULL;
@@ -667,7 +664,7 @@ VID_NumModes_f (void)
 void
 VID_DescribeMode_f (void)
 {
-	int         t, modenum;
+	int			t, modenum;
 
 	modenum = atoi (Cmd_Argv (1));
 
@@ -682,9 +679,9 @@ VID_DescribeMode_f (void)
 void
 VID_DescribeModes_f (void)
 {
-	int         i, lnummodes, t;
-	char       *pinfo;
-	vmode_t    *pv;
+	int			i, lnummodes, t;
+	char	   *pinfo;
+	vmode_t	   *pv;
 
 	lnummodes = VID_NumModes ();
 
@@ -703,9 +700,9 @@ VID_DescribeModes_f (void)
 void
 VID_InitDIB (HINSTANCE hInstance)
 {
-	WNDCLASS    wc;
+	WNDCLASS	wc;
 
-	/* Register the frame class */
+	// Register the frame class
 	wc.style = 0;
 	wc.lpfnWndProc = (WNDPROC) MainWndProc;
 	wc.cbClsExtra = 0;
@@ -753,10 +750,10 @@ VID_InitDIB (HINSTANCE hInstance)
 void
 VID_InitFullDIB (HINSTANCE hInstance)
 {
-	DEVMODE     devmode;
-	int         i, modenum, originalnummodes, existingmode, numlowresmodes;
-	int         j, bpp, done;
-	BOOL        stat;
+	DEVMODE		devmode;
+	int			i, modenum, originalnummodes, existingmode, numlowresmodes;
+	int			j, bpp, done;
+	BOOL		stat;
 
 	// enumerate >8 bpp modes
 	originalnummodes = nummodes;
@@ -866,11 +863,9 @@ VID_InitFullDIB (HINSTANCE hInstance)
 			case 16:
 				bpp = 32;
 				break;
-
 			case 32:
 				bpp = 24;
 				break;
-
 			case 24:
 				done = 1;
 				break;
@@ -884,12 +879,12 @@ VID_InitFullDIB (HINSTANCE hInstance)
 void
 VID_Init (unsigned char *palette)
 {
-	int         i, existingmode;
-	int         basenummodes, width, height=480, bpp, findbpp, done;
-	HDC         hdc;
-	DEVMODE     devmode;
-	HGLRC       baseRC;
-	DWORD lasterror;
+	int			i, existingmode;
+	int			basenummodes, width, height=480, bpp, findbpp, done;
+	HDC			hdc;
+	DEVMODE		devmode;
+	HGLRC		baseRC;
+	DWORD		lasterror;
 
 	GL_Pre_Init ();
 
@@ -984,9 +979,8 @@ VID_Init (unsigned char *palette)
 					modelist[nummodes].bpp = bpp;
 					snprintf (modelist[nummodes].modedesc,
 							  sizeof (modelist[nummodes].modedesc),
-							  "%ldx%ldx%ld",
-							  devmode.dmPelsWidth, devmode.dmPelsHeight,
-							  devmode.dmBitsPerPel);
+							  "%ldx%ldx%ld", devmode.dmPelsWidth,
+							  devmode.dmPelsHeight, devmode.dmBitsPerPel);
 
 					for (i = nummodes, existingmode = 0; i < nummodes; i++) {
 						if ((modelist[nummodes].width == modelist[i].width) &&
@@ -1006,7 +1000,8 @@ VID_Init (unsigned char *palette)
 
 				do {
 					if (COM_CheckParm ("-height")) {
-						height = atoi (com_argv[COM_CheckParm ("-height") + 1]);
+						height = atoi
+							(com_argv[COM_CheckParm ("-height") + 1]);
 
 						for (i = 1, vid_default = 0; i < nummodes; i++) {
 							if ((modelist[i].width == width) &&
@@ -1082,7 +1077,7 @@ VID_Init (unsigned char *palette)
 
 #ifdef SPLASH_SCREEN
 	if(hwnd_dialog)
-			DestroyWindow (hwnd_dialog);
+		DestroyWindow (hwnd_dialog);
 #endif
 
 	VID_SetMode (vid_default, palette);
@@ -1104,8 +1099,8 @@ VID_Init (unsigned char *palette)
 		lasterror=GetLastError();
 		if (baseRC)
 			qf_wglDeleteContext (baseRC);
-                if (maindc && mainwindow)
-       	                ReleaseDC (mainwindow, maindc);
+		if (maindc && mainwindow)
+			ReleaseDC (mainwindow, maindc);
 		Sys_Error ("wglMakeCurrent failed (%lx)", lasterror);
 	}
 
@@ -1134,9 +1129,9 @@ VID_Init_Cvars ()
 // Video menu stuff ======================================
 
 typedef struct {
-	int         modenum;
-	char       *desc;
-	int         iscur;
+	int			modenum;
+	char	   *desc;
+	int			iscur;
 } modedesc_t;
 
 #define MAX_COLUMN_SIZE		9
@@ -1152,7 +1147,7 @@ VID_SetCaption (const char *text)
 		char *temp = strdup (text);
 
 		SetWindowText (mainwindow,
-			(LPSTR) va ("%s %s: %s", PROGRAM, VERSION, temp));
+					   (LPSTR) va ("%s %s: %s", PROGRAM, VERSION, temp));
 		free (temp);
 	} else {
 		SetWindowText (mainwindow, (LPSTR) va ("%s %s", PROGRAM, VERSION));
@@ -1165,17 +1160,15 @@ static WORD currentgammaramps[3][256];
 qboolean
 VID_SetGamma (double gamma)
 {
-	int         i;
-	HDC         hdc = GetDC (NULL);
+	int			i;
+	HDC			hdc = GetDC (NULL);
 
 	for (i = 0; i < 256; i++) {
-		currentgammaramps[2][i] =
-			currentgammaramps[1][i] =
+		currentgammaramps[2][i] = currentgammaramps[1][i] =
 			currentgammaramps[0][i] = gammatable[i] * 256;
 	}
 
 	i = SetDeviceGammaRamp (hdc, &currentgammaramps[0][0]);
-
 	ReleaseDC (NULL, hdc);
 	return i;
 }
@@ -1183,19 +1176,17 @@ VID_SetGamma (double gamma)
 void
 VID_SaveGamma (void)
 {
-	HDC hdc = GetDC (NULL);
+	HDC			hdc = GetDC (NULL);
 
 	GetDeviceGammaRamp (hdc, &systemgammaramps[0][0]);
-
 	ReleaseDC (NULL, hdc);
 }
 
 void
 VID_RestoreGamma (void)
 {
-	HDC hdc = GetDC (NULL);
+	HDC			hdc = GetDC (NULL);
 
 	SetDeviceGammaRamp (hdc, &systemgammaramps[0][0]);
-
 	ReleaseDC (NULL, hdc);
 }

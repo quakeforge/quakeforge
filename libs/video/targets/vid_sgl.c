@@ -75,9 +75,9 @@ void * (* glGetProcAddress) (const char *symbol) = NULL; // FIXME
 
 // the following is to avoid other compiler errors
 #ifdef _WIN32
-void *(*getProcAddress) (HINSTANCE, LPCSTR);
+void * (* getProcAddress) (HINSTANCE, LPCSTR);
 #else
-void *(*getProcAddress) (void *, const char *); 
+void * (* getProcAddress) (void *, const char *); 
 #endif
 
 void *
@@ -237,12 +237,12 @@ VID_Init (unsigned char *palette)
 	vid.initialized = true;
 
 #ifdef WIN32
-        // FIXME: EVIL thing - but needed for win32 until
-        // SDL_sound works better - without this DirectSound fails.
+	// FIXME: EVIL thing - but needed for win32 until
+	// SDL_sound works better - without this DirectSound fails.
 
-//		SDL_GetWMInfo(&info);
-//		mainwindow=info.window;
-        mainwindow=GetActiveWindow();
+//	SDL_GetWMInfo(&info);
+//	mainwindow=info.window;
+	mainwindow=GetActiveWindow();
 #endif
 
 	vid.recalc_refdef = 1;				// force a surface cache flush
@@ -263,7 +263,8 @@ void
 VID_Init_Cvars ()
 {
 	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ARCHIVE,
-			VID_UpdateFullscreen, "Toggles fullscreen mode");
+							   VID_UpdateFullscreen,
+							   "Toggles fullscreen mode");
 	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
 								 "Use system gamma control if available");
 }
@@ -272,7 +273,7 @@ void
 VID_SetCaption (const char *text)
 {
 	if (text && *text) {
-		char       *temp = strdup (text);
+		char		*temp = strdup (text);
 
 		SDL_WM_SetCaption (va ("%s %s: %s", PROGRAM, VERSION, temp), NULL);
 		free (temp);
