@@ -533,33 +533,50 @@ I_XMMS_f (void)
 	return;
 }
 
-PLUGIN_INFO(cd, xmms)
-{
-	plugin_info.type = qfp_cd;
-	plugin_info.api_version = QFPLUGIN_VERSION;
-	plugin_info.plugin_version = "0.1";
-	plugin_info.description = "Linux XMMS (CD) Audio output"
+static general_funcs_t plugin_info_general_funcs = {
+	I_XMMS_Init,
+	I_XMMS_Shutdown,
+};
+
+static cd_funcs_t plugin_info_cd_funcs = {
+	I_XMMS_f,
+	I_XMMS_Pause,
+	I_XMMS_Play,
+	I_XMMS_Resume,
+	I_XMMS_Update,
+};
+
+static plugin_funcs_t plugin_info_funcs = {
+	&plugin_info_general_funcs,
+	0,
+	&plugin_info_cd_funcs,
+	0,
+	0,
+	0,
+};
+
+static plugin_data_t plugin_info_data = {
+	&plugin_info_general_data,
+	0,
+	0,
+	0,
+	0,
+	0,
+};
+
+static plugin_t plugin_info = {
+	qfp_cd,
+	0,
+	QFPLUGIN_VERSION,
+	"0.1",
+	"Linux XMMS Audio output\n",
 		"Copyright (C) 2001  contributors of the QuakeForge project\n"
-		"Please see the file \"AUTHORS\" for a list of contributors\n";
-	plugin_info.functions = &plugin_info_funcs;
-	plugin_info.data = &plugin_info_data;
+		"Please see the file \"AUTHORS\" for a list of contributors\n",
+	&plugin_info_funcs,
+	&plugin_info_data,
+};
 
-	plugin_info_data.general = &plugin_info_general_data;
-//  plugin_info_data.cd = &plugin_info_cd_data;
-	plugin_info_data.input = NULL;
-
-	plugin_info_funcs.general = &plugin_info_general_funcs;
-	plugin_info_funcs.cd = &plugin_info_cd_funcs;
-	plugin_info_funcs.input = NULL;
-
-	plugin_info_general_funcs.p_Init = I_XMMS_Init;
-	plugin_info_general_funcs.p_Shutdown = I_XMMS_Shutdown;
-
-	plugin_info_cd_funcs.pCDAudio_Pause = I_XMMS_Pause;
-	plugin_info_cd_funcs.pCDAudio_Play = I_XMMS_Play;
-	plugin_info_cd_funcs.pCDAudio_Resume = I_XMMS_Resume;
-	plugin_info_cd_funcs.pCDAudio_Update = I_XMMS_Update;
-	plugin_info_cd_funcs.pCD_f = I_XMMS_f;
-
+PLUGIN_INFO (cd, xmms)
+{
 	return &plugin_info;
 }

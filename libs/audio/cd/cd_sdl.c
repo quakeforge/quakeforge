@@ -282,33 +282,50 @@ I_CDAudio_Init (void)
 	Sys_Printf ("CD Audio Initialized.\n");
 }
 
-PLUGIN_INFO(cd, sdl)
-{
-	plugin_info.type = qfp_cd;
-	plugin_info.api_version = QFPLUGIN_VERSION;
-	plugin_info.plugin_version = "0.1";
-	plugin_info.description = "SDL CD Audio output"
+static general_funcs_t plugin_info_general_funcs = {
+	I_CDAudio_Init,
+	I_CDAudio_Shutdown,
+};
+
+static cd_funcs_t plugin_info_cd_funcs = {
+	I_CD_f,
+	I_CDAudio_Pause,
+	I_CDAudio_Play,
+	I_CDAudio_Resume,
+	I_CDAudio_Update,
+};
+
+static plugin_funcs_t plugin_info_funcs = {
+	&plugin_info_general_funcs,
+	0,
+	&plugin_info_cd_funcs,
+	0,
+	0,
+	0,
+};
+
+static plugin_data_t plugin_info_data = {
+	&plugin_info_general_data,
+	0,
+	0,
+	0,
+	0,
+	0,
+};
+
+static plugin_t plugin_info = {
+	qfp_cd,
+	0,
+	QFPLUGIN_VERSION,
+	"0.1",
+	"SDL CD Audio output\n",
 		"Copyright (C) 2001  contributors of the QuakeForge project\n"
-		"Please see the file \"AUTHORS\" for a list of contributors\n";
-	plugin_info.functions = &plugin_info_funcs;
-	plugin_info.data = &plugin_info_data;
+		"Please see the file \"AUTHORS\" for a list of contributors\n",
+	&plugin_info_funcs,
+	&plugin_info_data,
+};
 
-	plugin_info_data.general = &plugin_info_general_data;
-//	plugin_info_data.cd = &plugin_info_cd_data;
-	plugin_info_data.input = NULL;
-
-	plugin_info_funcs.general = &plugin_info_general_funcs;
-	plugin_info_funcs.cd = &plugin_info_cd_funcs;
-	plugin_info_funcs.input = NULL;
-
-	plugin_info_general_funcs.p_Init = I_CDAudio_Init;
-	plugin_info_general_funcs.p_Shutdown = I_CDAudio_Shutdown;
-
-	plugin_info_cd_funcs.pCDAudio_Pause = I_CDAudio_Pause;
-	plugin_info_cd_funcs.pCDAudio_Play = I_CDAudio_Play;
-	plugin_info_cd_funcs.pCDAudio_Resume = I_CDAudio_Resume;
-	plugin_info_cd_funcs.pCDAudio_Update = I_CDAudio_Update;
-	plugin_info_cd_funcs.pCD_f = I_CD_f;
-        
+PLUGIN_INFO (cd, sdl)
+{
 	return &plugin_info;
 }

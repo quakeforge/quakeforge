@@ -363,33 +363,50 @@ I_SGI_Init (void)
 	return ;
 }
 
-PLUGIN_INFO(cd, sgi)
+static general_funcs_t plugin_info_general_funcs = {
+	I_SGI_Init,
+	I_SGI_Shutdown,
+};
+
+static cd_funcs_t plugin_info_cd_funcs = {
+	I_SGI_f,
+	I_SGI_Pause,
+	I_SGI_Play,
+	I_SGI_Resume,
+	I_SGI_Update,
+};
+
+static plugin_funcs_t plugin_info_funcs = {
+	&plugin_info_general_funcs,
+	0,
+	&plugin_info_cd_funcs,
+	0,
+	0,
+	0,
+};
+
+static plugin_data_t plugin_info_data = {
+	&plugin_info_general_data,
+	0,
+	0,
+	0,
+	0,
+	0,
+};
+
+static plugin_t plugin_info = {
+	qfp_cd,
+	0,
+	QFPLUGIN_VERSION,
+	"0.1",
+	"SGI CD Audio output\n",
+		"Copyright (C) 2001  contributors of the QuakeForge project\n"
+		"Please see the file \"AUTHORS\" for a list of contributors\n",
+	&plugin_info_funcs,
+	&plugin_info_data,
+};
+
+PLUGIN_INFO (cd, sgi)
 {
-        plugin_info.type = qfp_cd;
-        plugin_info.api_version = QFPLUGIN_VERSION;
-        plugin_info.plugin_version = "0.1";
-        plugin_info.description = "SGI (CD) Audio output"
-                "Copyright (C) 2001  contributors of the QuakeForge project\n"
-                "Please see the file \"AUTHORS\" for a list of contributors\n";
-        plugin_info.functions = &plugin_info_funcs;
-        plugin_info.data = &plugin_info_data;
-
-        plugin_info_data.general = &plugin_info_general_data;
-//  plugin_info_data.cd = &plugin_info_cd_data;
-        plugin_info_data.input = NULL;
-
-        plugin_info_funcs.general = &plugin_info_general_funcs;
-        plugin_info_funcs.cd = &plugin_info_cd_funcs;
-        plugin_info_funcs.input = NULL;
-        plugin_info_general_funcs.p_Init = I_SGI_Init;
-        plugin_info_general_funcs.p_Shutdown = I_SGI_Shutdown;
-
-        plugin_info_cd_funcs.pCDAudio_Pause = I_SGI_Pause;
-        plugin_info_cd_funcs.pCDAudio_Play = I_SGI_Play;
-        plugin_info_cd_funcs.pCDAudio_Resume = I_SGI_Resume;
-        plugin_info_cd_funcs.pCDAudio_Update = I_SGI_Update;
-        plugin_info_cd_funcs.pCD_f = I_SGI_f;
-
-        return &plugin_info;
+	return &plugin_info;
 }
-

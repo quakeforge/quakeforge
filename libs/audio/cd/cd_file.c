@@ -66,16 +66,9 @@ static __attribute__ ((unused)) const char  rcsid[] =
 
 #include "compat.h"
 
-static plugin_t plugin_info;
-static plugin_data_t plugin_info_data;
-static plugin_funcs_t plugin_info_funcs;
 static general_data_t plugin_info_general_data;
 static general_funcs_t plugin_info_general_funcs;
 
-//static cd_data_t      plugin_info_cd_data;
-static cd_funcs_t plugin_info_cd_funcs;
-
-									   /* static qboolean cdValid = false; *//* removed, not using a cd. */
 static qboolean playing = false;
 static qboolean wasPlaying = false;
 static qboolean mus_enabled = false;
@@ -425,7 +418,6 @@ static void
 Mus_VolChange (cvar_t *bgmvolume)
 {
 	Sys_Printf ("Entering Mus_VolChange\n");
-
 }
 
 static void
@@ -441,33 +433,50 @@ I_OGGMus_Init (void)
 						  "Volume of CD music");
 }
 
+static general_funcs_t plugin_info_general_funcs = {
+	I_OGGMus_Init,
+	I_OGGMus_Shutdown,
+};
+
+static cd_funcs_t plugin_info_cd_funcs = {
+	I_OGG_f,
+	I_OGGMus_Pause,
+	I_OGGMus_Play,
+	I_OGGMus_Resume,
+	I_OGGMus_Update,
+};
+
+static plugin_funcs_t plugin_info_funcs = {
+	&plugin_info_general_funcs,
+	0,
+	&plugin_info_cd_funcs,
+	0,
+	0,
+	0,
+};
+
+static plugin_data_t plugin_info_data = {
+	&plugin_info_general_data,
+	0,
+	0,
+	0,
+	0,
+	0,
+};
+
+static plugin_t plugin_info = {
+	qfp_cd,
+	0,
+	QFPLUGIN_VERSION,
+	"0.1",
+	"OGG Music output\n",
+		"Copyright (C) 2001  contributors of the QuakeForge project\n"
+		"Please see the file \"AUTHORS\" for a list of contributors\n",
+	&plugin_info_funcs,
+	&plugin_info_data,
+};
+
 PLUGIN_INFO (cd, file)
 {
-	plugin_info.type = qfp_cd;			/* enum, leave */
-	plugin_info.api_version = QFPLUGIN_VERSION;	/* version symbol. leave */
-	plugin_info.plugin_version = "0.1";	/* plugin version, increment */
-	plugin_info.description = "OGG Music output\n"
-		"Copyright (C) 2001  contributors of the QuakeForge project\n"
-		"Please see the file \"AUTHORS\" for a list of contributors\n";
-	plugin_info.functions = &plugin_info_funcs;
-	plugin_info.data = &plugin_info_data;
-
-	plugin_info_data.general = &plugin_info_general_data;
-//  plugin_info_data.cd = &plugin_info_cd_data;
-	plugin_info_data.input = NULL;
-
-	plugin_info_funcs.general = &plugin_info_general_funcs;
-	plugin_info_funcs.cd = &plugin_info_cd_funcs;
-	plugin_info_funcs.input = NULL;
-
-	plugin_info_general_funcs.p_Init = I_OGGMus_Init;
-	plugin_info_general_funcs.p_Shutdown = I_OGGMus_Shutdown;
-
-	plugin_info_cd_funcs.pCDAudio_Pause = I_OGGMus_Pause;
-	plugin_info_cd_funcs.pCDAudio_Play = I_OGGMus_Play;
-	plugin_info_cd_funcs.pCDAudio_Resume = I_OGGMus_Resume;
-	plugin_info_cd_funcs.pCDAudio_Update = I_OGGMus_Update;
-	plugin_info_cd_funcs.pCD_f = I_OGG_f;
-
 	return &plugin_info;
 }

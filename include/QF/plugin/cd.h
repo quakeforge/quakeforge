@@ -47,9 +47,7 @@ typedef struct cd_funcs_s {
 	P_CDAudio_Pause			pCDAudio_Pause;
 	P_CDAudio_Play			pCDAudio_Play;
 	P_CDAudio_Resume		pCDAudio_Resume;
-	P_CDAudio_Shutdown		pCDAudio_Shutdown;
 	P_CDAudio_Update		pCDAudio_Update;
-	P_CDAudio_Init			pCDAudio_Init;
 } cd_funcs_t;
 
 typedef struct cd_data_s {
