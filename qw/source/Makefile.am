@@ -76,6 +76,8 @@ else
 syssv_SRC=	sv_sys_unix.c
 endif
 
+EXTRA_DIST=sv_sys_win.c sv_sys_unix.c
+
 libserver_a_SOURCES= \
 		crudefile.c sv_ccmds.c sv_demo.c sv_ents.c sv_init.c sv_main.c \
 		sv_move.c sv_nchan.c sv_phys.c sv_pr_cmds.c sv_progs.c sv_send.c \

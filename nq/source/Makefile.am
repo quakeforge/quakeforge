@@ -251,6 +251,8 @@ ded_sources=	sys_wind.c sv_ded.c sv_model.c
 else
 ded_sources=	sys_unixd.c sv_ded.c sv_model.c
 endif
+EXTRA_DIST=sys_wind.c sys_unixd.c sv_ded.c sv_model.c
+
 nq_server_LDFLAGS=	$(common_ldflags)
 nq_server_SOURCES=	$(ded_sources)
 nq_server_LDADD=	$(server_libs) $(server_LIBS)
