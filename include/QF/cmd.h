@@ -63,6 +63,7 @@ typedef struct cmd_buffer_s {
 	
 	// Flags
 	qboolean subroutine; // Temporarily stopped so a subroutine can run
+	qboolean again; // The last command needs to be executed again for some reason
 	qboolean wait; // Execution paused until next frame
 	qboolean legacy; // Backwards compatible with old console buffer
 	qboolean ownvars; // Buffer has its own private local variables

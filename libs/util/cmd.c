@@ -459,6 +459,7 @@ Cbuf_ExecuteBuffer (cmd_buffer_t *buffer)
 
 	cmd_activebuffer = buffer;
 	buffer->wait = false;
+	buffer->again = false;
 	while (1) {
 		if (!strlen(buffer->buffer->str) && buffer->position == cmd_ready) {
 			if (buffer->loop) {
@@ -489,7 +490,7 @@ Cbuf_ExecuteBuffer (cmd_buffer_t *buffer)
 		}
 		if (buffer->position == cmd_processed) {
 			Cmd_ExecuteParsed (src_command);
-			if (cmd_error)
+			if (cmd_error || buffer->again)
 				break;
 			buffer->position = cmd_ready;
 			if (buffer->wait || buffer->subroutine)
@@ -1334,6 +1335,7 @@ Cmd_ProcessToken (cmd_token_t *token)
 		return res;
 	Cmd_ProcessTags (token->processed);
 	Cmd_ProcessEscapes (token->processed);
+	token->state = cmd_done;
 	return 0;
 }
 
@@ -1360,7 +1362,7 @@ Cmd_Process (void)
 			res = Cmd_ProcessToken (cmd_activebuffer->argv[arg]);
 			if (res < 0)
 				return res;
-			cmd_activebuffer->argv[arg]->state = cmd_done;
+
 		}
 	}
 
@@ -1900,6 +1902,7 @@ void
 Cmd_If_f (void)
 {
 	long int    num;
+	int ret;
 
 	if ((Cmd_Argc () !=3 && !(Cmd_Argc () >= 5)) || (Cmd_Argc () > 5 && strcmp(Cmd_Argv(3),"else"))) {
 		Sys_Printf ("Usage: if {condition} {commands} else {commands}\n");
@@ -1912,9 +1915,12 @@ Cmd_If_f (void)
 	of sync, but since if uses Cmd_Argsu (4) and no other commands
 	will need these tokens, it is safe.
 	*/
-	if (Cmd_ProcessToken (cmd_activebuffer->argv[1]) < 0)
+	ret = Cmd_ProcessToken (cmd_activebuffer->argv[1]);
+	if (ret < 0) {
+		if (ret == -2)
+			cmd_activebuffer->again = true; // Embedded command needs a return value first
 		return;
-	cmd_activebuffer->argv[1]->state = cmd_done;
+	}
 
 	num = strtol (Cmd_Argv(1), 0, 10);
 
