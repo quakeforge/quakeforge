@@ -71,10 +71,12 @@ pack_open (const char *name)
 	if (Qread (pack->handle, &pack->header, sizeof (pack->header))
 		!= sizeof (pack->header)) {
 		fprintf (stderr, "%s: not a pack file\n", name);
+		errno = 0;
 		goto error;
 	}
 	if (strncmp (pack->header.id, "PACK", 4)) {
 		fprintf (stderr, "%s: not a pack file\n", name);
+		errno = 0;
 		goto error;
 	}
 
@@ -86,7 +88,7 @@ pack_open (const char *name)
 
 	pack->files = malloc (pack->files_size * sizeof (dpackfile_t));
 	if (!pack->files) {
-		fprintf (stderr, "out of memory\n");
+		//fprintf (stderr, "out of memory\n");
 		goto error;
 	}
 	Qseek (pack->handle, pack->header.dirofs, SEEK_SET);
