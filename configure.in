@@ -1442,7 +1442,7 @@ AC_MSG_RESULT([
 	Server support: $SV_TARGETS
 	Client support:$CL_TARGETS
 	Sound support:$SOUND_TYPES
-	CD Audio system: $CDTYPE
+	CD Audio system:$CDTYPE
 	IPv6 networking: $NETTYPE_IPV6
 	Compression support: $HAVE_ZLIB
 	Compiler version: $CCVER
