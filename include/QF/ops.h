@@ -22,6 +22,7 @@
 #ifndef __ops_h
 #define __ops_h
 
+float OP_Not (float op1, float op2);
 float OP_Add (float op1, float op2);
 float OP_Sub (float op1, float op2);
 float OP_Mult (float op1, float op2);

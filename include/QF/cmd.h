@@ -58,6 +58,7 @@ typedef struct cmd_buffer_s {
 	struct dstring_s *looptext; // If a looping buffer, the text we are looping on
 	struct dstring_s *retval; // Return value
 	unsigned int *args; // Array of positions of each token in composite line
+	unsigned int *argsu; // Array of positions of each token in original line
 	struct hashtab_s *locals; // Local variables
 	
 	// Flags

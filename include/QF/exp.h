@@ -59,6 +59,7 @@ typedef struct optable_s
 {
 	char *str;
 	opfunc func;
+	unsigned int operands;
 } optable_t;
 
 extern exp_error_t EXP_ERROR;

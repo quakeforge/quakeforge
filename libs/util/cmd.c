@@ -854,6 +854,13 @@ Cmd_Args (int start)
 	return cmd_activebuffer->line->str + cmd_activebuffer->args[start];
 }
 
+const char *
+Cmd_Argsu (int start)
+{
+	if (start >= cmd_activebuffer->argc)
+		return "";
+	return cmd_activebuffer->realline->str + cmd_activebuffer->argsu[start];
+}
 
 int
 Cmd_EndDoubleQuote (const char *str)
@@ -1371,7 +1378,7 @@ Cmd_Process (void)
 		cmd_activebuffer->args[arg] += adj;
 		adj += (str->size - 1) - (org->size - 1);
 		dstring_replace (cmd_activebuffer->line, str->str, str->size - 1,
-						 cmd_activebuffer->args[arg] + quotes, org->size - 1);
+						 cmd_activebuffer->args[arg] + quotes + (cmd_activebuffer->argv[arg]->delim == '{'), org->size - 1);
 	}
 	return 0;
 }
@@ -1387,6 +1394,8 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 
 	dstring_clearstr (cmd_activebuffer->realline);
 	dstring_appendstr (cmd_activebuffer->realline, text);
+	dstring_clearstr (cmd_activebuffer->line);
+	dstring_appendstr (cmd_activebuffer->line, text);
 
 	/* Turn off tags at the beginning of a command. This causes tags to
 	   continue past token boundaries. */
@@ -1394,7 +1403,6 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 	tag_special = 0;
 	if (text[0] == '|')
 		str++;
-	dstring_clearstr (cmd_activebuffer->line);
 	while (strlen (str + i)) {
 		if (!legacy && cmd_argc == 1) { // See if command wants unprocessed tokens
 			cmd = (cmd_function_t *) Hash_Find (cmd_hash, cmd_activebuffer->argv[0]->original->str);
@@ -1406,8 +1414,6 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 			i++;
 			space++;
 		}
-		if (space)
-			dstring_appendsubstr (cmd_activebuffer->line, str + i - space, space);
 		len = Cmd_GetToken (str + i, legacy);
 		if (len < 0) {
 			Cmd_Error ("Parse error:  Unmatched quotes, braces, or "
@@ -1421,7 +1427,10 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 			cmd_activebuffer->argv = realloc (cmd_activebuffer->argv,
 											  sizeof (cmd_token_t *) * cmd_argc);
 			SYS_CHECKMEM (cmd_activebuffer->argv);
-			
+			cmd_activebuffer->argsu = realloc (cmd_activebuffer->argsu,
+											  sizeof (int) * cmd_argc);
+			SYS_CHECKMEM (cmd_activebuffer->argsu);
+
 			cmd_activebuffer->args = realloc (cmd_activebuffer->args,
 											  sizeof (int) * cmd_argc);
 			SYS_CHECKMEM (cmd_activebuffer->args);
@@ -1434,6 +1443,7 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 		/* Remove surrounding quotes or double quotes or braces */
 		quotes = 0;
 		braces = 0;
+		cmd_activebuffer->argsu[cmd_argc - 1] = i;
 		cmd_activebuffer->args[cmd_argc - 1] = i;
 		cmd_activebuffer->argv[cmd_argc - 1]->delim = ' ';
 		if ((!legacy && str[i] == '\'' && str[i + len] == '\'')
@@ -1443,8 +1453,6 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 			len -= 1;
 			quotes = 1;
 		}
-		dstring_appendsubstr (cmd_activebuffer->line,
-							  str + i - quotes, len + quotes * 2);
 		if (str[i] == '{' && str[i + len] == '}') {
 			i++;
 			len -= 1;
@@ -1456,9 +1464,9 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 		if (!legacy && !braces && process && text[0] != '|')
 			cmd_activebuffer->argv[cmd_argc-1]->state = cmd_process;
 		else
-			cmd_activebuffer->argv[cmd_argc-1]->state = cmd_original;	
+			cmd_activebuffer->argv[cmd_argc-1]->state = cmd_original;
 		cmd_activebuffer->argv[cmd_argc-1]->pos = 0;
-		cmd_activebuffer->argv[cmd_argc-1]->space = space;	
+		cmd_activebuffer->argv[cmd_argc-1]->space = space;
 		i += len + quotes + braces;		/* If we ended on a quote or brace,
 										   skip it */
 	}
@@ -1893,18 +1901,33 @@ Cmd_If_f (void)
 {
 	long int    num;
 
-	if (Cmd_Argc () < 3) {
-		Sys_Printf ("Usage: if {condition} {commands}\n");
+	if ((Cmd_Argc () !=3 && !(Cmd_Argc () >= 5)) || (Cmd_Argc () > 5 && strcmp(Cmd_Argv(3),"else"))) {
+		Sys_Printf ("Usage: if {condition} {commands} else {commands}\n");
 		return;
 	}
-	
+
+	/* HACK HACK HACK
+	If is set as a pure command, but it needs the first argument
+	to be evaluated.  Normally this would mean Cmd_Args is out
+	of sync, but since if uses Cmd_Argsu (4) and no other commands
+	will need these tokens, it is safe.
+	*/
+	if (Cmd_ProcessToken (cmd_activebuffer->argv[1]) < 0)
+		return;
+	cmd_activebuffer->argv[1]->state = cmd_done;
+
 	num = strtol (Cmd_Argv(1), 0, 10);
-	
+
 	if (!strcmp(Cmd_Argv(0), "ifnot"))
 		num = !num;
-	
+
 	if (num)
 		Cbuf_InsertText (Cmd_Argv (2));
+	if (!num && Cmd_Argc() == 5)
+		Cbuf_InsertText (Cmd_Argv (4));
+	if (!num && Cmd_Argc() > 5) {
+		Cbuf_InsertText (Cmd_Argsu (4));
+	}
 	return;
 }
 
@@ -2116,6 +2139,7 @@ Cmd_Init (void)
 					"variable");
 
 	Cmd_AddCommand ("if", Cmd_If_f, "Conditionally execute a set of commands.");
+	Cmd_SetPure ("if");
 	Cmd_AddCommand ("ifnot", Cmd_If_f, "Conditionally execute a set of commands if the condition is false.");
 	Cmd_AddCommand ("while", Cmd_While_f, "Execute a set of commands while a condition is true.");
 	Cmd_SetPure ("while");

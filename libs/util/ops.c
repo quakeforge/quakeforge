@@ -21,6 +21,11 @@
 
 #include <math.h>
 
+float OP_Not (float op1, float op2)
+{
+	return !op1;
+}
+
 float OP_Add (float op1, float op2)
 {
 	return op1 + op2;
