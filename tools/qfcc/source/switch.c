@@ -237,42 +237,28 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 
 	if (!tree) {
 		branch = new_unary_expr ('g', default_label);
-		branch->line = sw_val->line;
-		branch->file = sw_val->file;
 		append_expr (sw, branch);
 		return;
 	}
 
 	if (tree->right) {
 		high_label = new_label_expr ();
-		high_label->line = sw_val->line;
-		high_label->file = sw_val->file;
 	}
 	if (tree->left) {
 		low_label = new_label_expr ();
-		low_label->line = sw_val->line;
-		low_label->file = sw_val->file;
 	}
 
 	test = binary_expr (op, sw_val, tree->low);
-	test->line = sw_val->line;
-	test->file = sw_val->file;
 
 	test = assign_expr (temp, test);
-	test->line = sw_val->line;
-	test->file = sw_val->file;
 	append_expr (sw, test);
 
 	if (tree->low == tree->high) {
 		branch = new_binary_expr ('n', temp, tree->labels[0]);
-		branch->line = sw_val->line;
-		branch->file = sw_val->file;
 		append_expr (sw, branch);
 
 		if (tree->left) {
 			branch = new_binary_expr (IFA, temp, high_label);
-			branch->line = sw_val->line;
-			branch->file = sw_val->file;
 			append_expr (sw, branch);
 
 			build_switch (sw, tree->left, op, sw_val, temp, default_label);
@@ -302,21 +288,13 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 
 		if (tree->left) {
 			branch = new_binary_expr (IFB, temp, low_label);
-			branch->line = sw_val->line;
-			branch->file = sw_val->file;
 			append_expr (sw, branch);
 		}
 		append_expr (sw, new_bind_expr (temp, utemp));
 		test = binary_expr (GT, utemp, range);
-		test->line = sw_val->line;
-		test->file = sw_val->file;
 		branch = new_binary_expr ('i', test, high_label);
-		branch->line = sw_val->line;
-		branch->file = sw_val->file;
 		append_expr (sw, branch);
 		branch = new_binary_expr ('g', table, temp);
-		branch->line = sw_val->line;
-		branch->file = sw_val->file;
 		append_expr (sw, branch);
 		if (tree->left) {
 			append_expr (sw, low_label);
@@ -350,9 +328,11 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 	expr_t     *sw_val = new_temp_def_expr (type);
 	expr_t     *default_expr;
 	int         num_labels = 0;
+	int         saved_line = pr_source_line;
+	string_t    saved_file = s_file;
 
-	sw_val->line = switch_block->test->line;
-	sw_val->file = switch_block->test->file;
+	pr_source_line = sw_val->line = switch_block->test->line;
+	s_file = sw_val->file = switch_block->test->file;
 
 	default_label->value = 0;
 	default_label = Hash_DelElement (switch_block->labels, default_label);
@@ -363,8 +343,6 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 		default_label->label = break_label;
 	}
 	default_expr = new_unary_expr ('g', default_label->label);
-	default_expr->line = sw_val->line;
-	default_expr->file = sw_val->file;
 
 	append_expr (sw, new_bind_expr (switch_block->test, sw_val));
 
@@ -380,8 +358,6 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 												test_expr (cmp, 1),
 												(*l)->label);
 
-			test->line = cmp->line = sw_val->line;
-			test->file = cmp->file = sw_val->file;
 			append_expr (sw, test);
 		}
 		append_expr (sw, default_expr);
@@ -411,6 +387,8 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 		}
 		build_switch (sw, case_tree, op, sw_val, temp, default_label->label);
 	}
+	pr_source_line = saved_line;
+	s_file = saved_file;
 	append_expr (sw, statements);
 	append_expr (sw, break_label);
 	return sw;
