@@ -13,7 +13,6 @@ static etype_t qc_types[] = {
 	ev_void,
 	ev_void,
 	ev_void,
-	ev_void,
 	ev_void,	// FIXME ex_int
 	ev_float,	// ex_float
 	ev_string,	// ex_string
@@ -36,7 +35,6 @@ static etype_t
 get_type (expr_t *e)
 {
 	switch (e->type) {
-		case ex_statement:
 		case ex_quaternion: //FIXME
 			return ev_void;
 		case ex_expr:
@@ -58,18 +56,34 @@ get_type (expr_t *e)
 }
 
 expr_t *
-new_expr ()
+new_expr (void)
 {
 	return calloc (1, sizeof (expr_t));
+}
+
+expr_t *
+label_expr (void)
+{
+	static int label = 0;
+
+	expr_t *l = new_expr ();
+	l->type = ex_uexpr;
+	l->e.expr.op = 'l';
+	l->e.expr.e1 = new_expr ();
+	l->e.expr.e1->type = ex_int;
+	l->e.expr.e1->e.int_val = label++;
+	return l;
 }
 
 void
 print_expr (expr_t *e)
 {
 	printf (" ");
+	if (!e) {
+		printf ("(nil)");
+		return;
+	}
 	switch (e->type) {
-		case ex_statement:
-			break;
 		case ex_expr:
 			print_expr (e->e.expr.e1);
 			if (e->e.expr.op == 'c') {
@@ -420,8 +434,6 @@ unary_expr (int op, expr_t *e)
 	switch (op) {
 		case '-':
 			switch (e->type) {
-				case ex_statement:
-					return ev_void;
 				case ex_uexpr:
 					if (e->e.expr.op == '-')
 						return e->e.expr.e1;
@@ -460,8 +472,6 @@ unary_expr (int op, expr_t *e)
 			break;
 		case '!':
 			switch (e->type) {
-				case ex_statement:
-					return ev_void;
 				case ex_uexpr:
 				case ex_expr:
 				case ex_def:

@@ -21,6 +21,7 @@ void PR_PrintType(type_t*);
 type_t *parse_params (def_t *parms);
 function_t *new_function (void);
 void build_function (function_t *f);
+void emit_function (function_t *f, expr_t *e);
 void build_scope (function_t *f, def_t *func);
 
 typedef struct {
@@ -41,7 +42,6 @@ typedef struct {
 	char	*string_val;
 	float	vector_val[3];
 	float	quaternion_val[4];
-	estatement_t *statement;
 	function_t *function;
 }
 
@@ -66,7 +66,7 @@ typedef struct {
 %type	<type>	type maybe_func
 %type	<def>	param param_list def_item def_list def_name
 %type	<expr>	const expr arg_list
-%type	<statement>	statement statements statement_block
+%type	<expr>	statement statements statement_block
 %type	<function> begin_function
 
 %expect 1
@@ -223,10 +223,29 @@ opt_initializer
 	| '=' begin_function statement_block end_function
 		{
 			build_function ($2);
+			emit_function ($2, $3);
 		}
-	| '=' begin_function '[' expr ',' expr ']' statement_block end_function
+	| '=' '[' const ','
 		{
-			build_function ($2);
+			$<def>$ = current_def;
+		}
+	  def_name
+	  	{
+			current_def = $<def>5;
+		}
+	  ']' begin_function statement_block end_function
+		{
+			expr_t *e = new_expr ();
+			build_function ($9);
+			e->type = ex_expr;
+			e->e.expr.op = 's';
+			e->e.expr.e1 = $3;
+			e->e.expr.e2 = new_expr ();
+			e->e.expr.e2->type = ex_def;
+			e->e.expr.e2->e.def = $6;
+			e->next = $10;
+
+			emit_function ($9, e);
 		}
 	;
 
@@ -262,34 +281,181 @@ statements
 		}
 	| statements statement
 		{
-/*			if ($1) {
-				estatement_t *s = $1;
-				while (s->next)
-					s = s->next;
-				s->next = $2;
+			if ($1) {
+				if ($2) {
+					expr_t *s = $1;
+					while (s->next)
+						s = s->next;
+					s->next = $2;
+				}
 				$$ = $1;
 			} else { 
 				$$ = $2;
-			}*/
+			}
 		}
 	;
 
 statement
-	: ';' {}
+	: ';' { $$ = 0; }
 	| statement_block { $$ = $1; }
-	| RETURN expr ';' {}
-	| RETURN ';' {}
-	| WHILE '(' expr ')' statement {}
-	| DO statement WHILE '(' expr ')' ';' {}
+	| RETURN expr ';'
+		{
+			$$ = new_expr ();
+			$$->type = ex_uexpr;
+			$$->e.expr.op = 'r';
+			$$->e.expr.e1 = $2;
+		}
+	| RETURN ';'
+		{
+			$$ = new_expr ();
+			$$->type = ex_uexpr;
+			$$->e.expr.op = 'r';
+		}
+	| WHILE '(' expr ')' statement
+		{
+			expr_t *e = new_expr ();
+			expr_t *l1 = label_expr ();
+			expr_t *l2 = label_expr ();
+
+			$$ = e;
+
+			e->type = ex_expr;
+			e->e.expr.op = 'n';
+			e->e.expr.e1 = $3;
+			e->e.expr.e2 = l2;
+
+			e->next = l1;
+			e = e->next;
+
+			e->next = $5;
+			while (e->next)
+				e = e->next;
+
+			e->next = new_expr ();
+			e = e->next;
+			e->type = ex_expr;
+			e->e.expr.op = 'i';
+			e->e.expr.e1 = $3;
+			e->e.expr.e2 = l1;
+
+			e->next = l2;
+		}
+	| DO statement WHILE '(' expr ')' ';'
+		{
+			expr_t *e;
+			expr_t *l1 = label_expr ();
+
+			$$ = e = l1;
+
+			e->next = $2;
+			while (e->next)
+				e = e->next;
+
+			e->next = new_expr ();
+			e = e->next;
+			e->type = ex_expr;
+			e->e.expr.op = 'i';
+			e->e.expr.e1 = $5;
+			e->e.expr.e2 = l1;
+
+		}
 	| LOCAL type
 		{
 			current_type = $2;
 		}
-	  def_list ';' {}
-	| IF '(' expr ')' statement {}
-	| IF '(' expr ')' statement ELSE statement {}
-	| FOR '(' expr ';' expr ';' expr ')' statement {}
-	| expr ';' {}
+	  def_list ';' { $$ = 0; }
+	| IF '(' expr ')' statement
+		{
+			expr_t *e = new_expr ();
+			expr_t *l1 = label_expr ();
+
+			$$ = e;
+
+			e->type = ex_expr;
+			e->e.expr.op = 'n';
+			e->e.expr.e1 = $3;
+			e->e.expr.e2 = l1;
+
+			e->next = $5;
+			while (e->next)
+				e = e->next;
+
+			e->next = l1;
+		}
+	| IF '(' expr ')' statement ELSE statement
+		{
+			expr_t *e = new_expr ();
+			expr_t *l1 = label_expr ();
+			expr_t *l2 = label_expr ();
+
+			$$ = e;
+
+			e->type = ex_expr;
+			e->e.expr.op = 'n';
+			e->e.expr.e1 = $3;
+			e->e.expr.e2 = l1;
+
+			e->next = $5;
+			while (e->next)
+				e = e->next;
+
+			e->next = new_expr ();
+			e = e->next;
+			e->type = ex_uexpr;
+			e->e.expr.op = 'g';
+			e->e.expr.e1 = l2;
+
+			e->next = l1;
+			e = e->next;
+
+			e->next = $7;
+			while (e->next)
+				e = e->next;
+
+			e->next = l2;
+		}
+	| FOR '(' expr ';' expr ';' expr ')' statement
+		{
+			expr_t *e;
+			expr_t *l1 = label_expr ();
+			expr_t *l2 = label_expr ();
+
+			$$ = e = $3;
+			if (e) {
+				e->next = new_expr ();
+				e = e->next;
+			} else {
+				e = new_expr ();
+			}
+			e->type = ex_expr;
+			e->e.expr.op = 'n';
+			e->e.expr.e1 = $5;
+			e->e.expr.e2 = l2;
+			
+			e->next = l1;
+			e = e->next;
+
+			e->next = $9;
+			while (e->next)
+				e = e->next;
+
+			e->next = $7;
+			if (e->next)
+				e = e->next;
+
+			e->next = new_expr ();
+			e = e->next;
+			e->type = ex_expr;
+			e->e.expr.op = 'i';
+			e->e.expr.e1 = $5;
+			e->e.expr.e2 = l1;
+
+			e->next = l2;
+		}
+	| expr ';'
+		{
+			$$ = $1;
+		}
 	;
 
 expr
@@ -453,4 +619,17 @@ build_function (function_t *f)
 	df->parm_start = 0;
 	for (i = 0; i < df->numparms; i++)
 		df->parm_size[i] = type_size[f->def->type->parm_types[i]->type];
+}
+
+void
+emit_function (function_t *f, expr_t *e)
+{
+	PR_PrintType (f->def->type);
+	printf (" %s =\n{\n", f->def->name);
+	while (e) {
+		print_expr (e);
+		puts("");
+		e = e->next;
+	}
+	printf ("}\n");
 }
