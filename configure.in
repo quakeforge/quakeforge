@@ -1380,6 +1380,7 @@ AC_OUTPUT(
 	include/Makefile
 	include/win32/version.h
 	libs/Makefile
+	libs/gamecode/Makefile
 	libs/util/Makefile
 	qw/include/Makefile
 	qw/source/Makefile
