@@ -108,7 +108,6 @@ extern cvar_t     *bgmvolume;
 extern cvar_t     *volume;
 
 cvar_t     *snd_device;
-cvar_t     *snd_oss_rw;
 cvar_t     *snd_rate;
 cvar_t     *snd_bits;
 cvar_t     *snd_stereo;
@@ -285,9 +284,6 @@ I_S_Init_Cvars (void)
 {
 	snd_device = Cvar_Get ("snd_device", "", CVAR_ROM, NULL,
 						   "sound device. \"\" is system default");
-	snd_oss_rw = Cvar_Get ("snd_oss_rw", "0", CVAR_ROM, NULL,
-						   "open the oss device in r/w mode instead of w/o"
-						   " (for braindead(?) drivers)");
 	snd_rate = Cvar_Get ("snd_rate", "0", CVAR_ROM, NULL,
 						 "sound playback rate. 0 is system default");
 	snd_bits = Cvar_Get ("snd_bits", "0", CVAR_ROM, NULL,

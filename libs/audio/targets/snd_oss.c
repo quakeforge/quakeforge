@@ -107,8 +107,6 @@ SNDDMA_Init (void)
 	struct audio_buf_info info;
 	int         caps;
 	int         retries = 3;
-	int         omode = O_WRONLY;
-	int         mmmode = PROT_WRITE;
 
 	snd_inited = 0;
 
@@ -116,18 +114,13 @@ SNDDMA_Init (void)
 	if (snd_device->string[0])
 		snd_dev = snd_device->string;
 
-	if (snd_oss_rw->int_val) {
-	    omode = O_RDWR;
-		mmmode |= PROT_READ;
-	}
-
-	audio_fd = open (snd_dev, omode);
+	audio_fd = open (snd_dev, O_RDWR);
 	if (audio_fd < 0) {					// Failed open, retry up to 3 times
 		// if it's busy
 		while ((audio_fd < 0) && retries-- &&
 			   ((errno == EAGAIN) || (errno == EBUSY))) {
 			sleep (1);
-			audio_fd = open (snd_dev, omode);
+			audio_fd = open (snd_dev, O_RDWR);
 		}
 		if (audio_fd < 0) {
 			perror (snd_dev);
@@ -202,7 +195,7 @@ SNDDMA_Init (void)
 	// memory map the dma buffer
 	shm->buffer = (unsigned char *) mmap (NULL, info.fragstotal
 										  * info.fragsize,
-										  mmmode,
+										  PROT_READ | PROT_WRITE,
 										  MAP_FILE | MAP_SHARED, audio_fd, 0);
 
 	if (shm->buffer == MAP_FAILED) {

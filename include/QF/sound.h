@@ -182,7 +182,6 @@ extern	cvar_t *bgmvolume;
 extern	cvar_t *volume;
 
 extern	cvar_t	*snd_device;
-extern	cvar_t	*snd_oss_rw;
 extern	cvar_t	*snd_rate;
 extern	cvar_t	*snd_bits;
 extern	cvar_t	*snd_stereo;
