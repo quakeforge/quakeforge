@@ -44,26 +44,27 @@ static int  snd_inited;
 
 static snd_pcm_t *pcm;
 static const char *pcmname = NULL;
-size_t      buffer_size;
-int snd_blocked = 0;
-volatile dma_t sn;
+static size_t      buffer_size;
+static int snd_blocked = 0;
+static volatile dma_t sn;
 
-cvar_t     *snd_stereo;
-cvar_t     *snd_rate;
-cvar_t     *snd_device;
-cvar_t     *snd_bits;
+static cvar_t     *snd_stereo;
+static cvar_t     *snd_rate;
+static cvar_t     *snd_device;
+static cvar_t     *snd_bits;
 
-plugin_t           plugin_info;
-plugin_data_t      plugin_info_data;
-plugin_funcs_t     plugin_info_funcs;
-general_data_t     plugin_info_general_data;
-general_funcs_t    plugin_info_general_funcs;
-snd_output_data_t       plugin_info_snd_output_data;
-snd_output_funcs_t      plugin_info_snd_output_funcs;
+static plugin_t           plugin_info;
+static plugin_data_t      plugin_info_data;
+static plugin_funcs_t     plugin_info_funcs;
+static general_data_t     plugin_info_general_data;
+static general_funcs_t    plugin_info_general_funcs;
+static snd_output_data_t       plugin_info_snd_output_data;
+static snd_output_funcs_t      plugin_info_snd_output_funcs;
 
 void
-SNDDMA_Init_Cvars (void)
+static SNDDMA_Init_Cvars (void)
 {
+	puts("boo bee boo");
 	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM, NULL,
 						   "sound stereo output");
 	snd_rate = Cvar_Get ("snd_rate", "0", CVAR_ROM, NULL,
@@ -74,9 +75,9 @@ SNDDMA_Init_Cvars (void)
 						 "sound sample depth. 0 is system default");
 }
 
-int SNDDMA_GetDMAPos (void);
+static int SNDDMA_GetDMAPos (void);
 
-qboolean
+static qboolean
 SNDDMA_Init (void)
 {
 	int         err;
@@ -247,7 +248,7 @@ error:
 	return 0;
 }
 
-int
+static int
 SNDDMA_GetDMAPos (void)
 {
 	snd_pcm_uframes_t offset;
@@ -265,7 +266,7 @@ SNDDMA_GetDMAPos (void)
 	return shm->samplepos;
 }
 
-void
+static void
 SNDDMA_Shutdown (void)
 {
 	if (snd_inited) {
@@ -279,7 +280,7 @@ SNDDMA_Shutdown (void)
 
 	Send sound to device if buffer isn't really the dma buffer
 */
-void
+static void
 SNDDMA_Submit (void)
 {
 	snd_pcm_uframes_t offset;
@@ -311,14 +312,14 @@ SNDDMA_Submit (void)
 	}
 }
 
-void
+static void
 SNDDMA_BlockSound (void)
 {
 	if (++snd_blocked == 1)
 		snd_pcm_pause (pcm, 1);
 }
 
-void
+static void
 SNDDMA_UnblockSound (void)
 {
 	if (!snd_blocked)
@@ -328,7 +329,7 @@ SNDDMA_UnblockSound (void)
 }
 
 plugin_t *
-PluginInfo (void)
+snd_output_alsa0_9_PluginInfo (void)
 {
     plugin_info.type = qfp_snd_output;
     plugin_info.api_version = QFPLUGIN_VERSION;

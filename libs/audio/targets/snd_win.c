@@ -59,41 +59,41 @@ static qboolean primary_format_set;
 
 static int  sample16;
 static int  snd_sent, snd_completed;
-int snd_blocked = 0;
-volatile dma_t sn;
+static int snd_blocked = 0;
+static volatile dma_t sn;
 
 /* 
  * Global variables. Must be visible to window-procedure function 
  *  so it can unlock and free the data block after it has been played. 
  */
 
-HANDLE      hData;
-HPSTR       lpData, lpData2;
+static HANDLE      hData;
+static HPSTR       lpData, lpData2;
 
-HGLOBAL     hWaveHdr;
-LPWAVEHDR   lpWaveHdr;
+static HGLOBAL     hWaveHdr;
+static LPWAVEHDR   lpWaveHdr;
 
-HWAVEOUT    hWaveOut;
+static HWAVEOUT    hWaveOut;
 
-WAVEOUTCAPS wavecaps;
+static WAVEOUTCAPS wavecaps;
 
-DWORD       gSndBufSize;
+static DWORD       gSndBufSize;
 
-MMTIME      mmstarttime;
+static MMTIME      mmstarttime;
 
-LPDIRECTSOUND pDS;
-LPDIRECTSOUNDBUFFER pDSBuf, pDSPBuf;
+static LPDIRECTSOUND pDS;
+static LPDIRECTSOUNDBUFFER pDSBuf, pDSPBuf;
 
-HINSTANCE   hInstDS;
+static HINSTANCE   hInstDS;
 
-sndinitstat SNDDMA_InitDirect (void);
-qboolean    SNDDMA_InitWav (void);
+static sndinitstat SNDDMA_InitDirect (void);
+static qboolean    SNDDMA_InitWav (void);
 
 
 /*
 	S_BlockSound
 */
-void
+static void
 S_BlockSound (void)
 {
 	// DirectSound takes care of blocking itself
@@ -106,7 +106,7 @@ S_BlockSound (void)
 /*
 	S_UnblockSound
 */
-void
+static void
 S_UnblockSound (void)
 {
 	// DirectSound takes care of blocking itself
@@ -119,7 +119,7 @@ S_UnblockSound (void)
 /*
 	FreeSound
 */
-void
+static void
 FreeSound (void)
 {
 	int         i;
@@ -179,7 +179,7 @@ FreeSound (void)
 
 	Direct-Sound support
 */
-sndinitstat SNDDMA_InitDirect (void)
+static sndinitstat SNDDMA_InitDirect (void)
 {
 	DSBUFFERDESC dsbuf;
 	DSBCAPS     dsbcaps;
@@ -375,7 +375,7 @@ sndinitstat SNDDMA_InitDirect (void)
 
 	Crappy windows multimedia base
 */
-qboolean
+static qboolean
 SNDDMA_InitWav (void)
 {
 	WAVEFORMATEX format;
@@ -490,7 +490,7 @@ SNDDMA_InitWav (void)
 	Returns false if nothing is found.
 */
 
-qboolean
+static qboolean
 SNDDMA_Init (void)
 {
 	sndinitstat stat;
@@ -556,7 +556,7 @@ SNDDMA_Init (void)
 	inside the recirculating dma buffer, so the mixing code will know
 	how many sample are required to fill it up.
 */
-int
+static int
 SNDDMA_GetDMAPos (void)
 {
 	MMTIME      mmtime;
@@ -585,7 +585,7 @@ SNDDMA_GetDMAPos (void)
 
 	Send sound to device if buffer isn't really the dma buffer
 */
-void
+static void
 SNDDMA_Submit (void)
 {
 	LPWAVEHDR   h;
@@ -637,13 +637,13 @@ SNDDMA_Submit (void)
 
 	Reset the sound device for exiting
 */
-void
+static void
 SNDDMA_Shutdown (void)
 {
 	FreeSound ();
 }
 
-DWORD      *
+static DWORD      *
 DSOUND_LockBuffer (qboolean lockit)
 {
 	int         reps;
@@ -689,7 +689,7 @@ DSOUND_LockBuffer (qboolean lockit)
 	return (pbuf1);
 }
 
-void
+static void
 DSOUND_ClearBuffer (int clear)
 {
 	DWORD      *pData;
@@ -700,7 +700,7 @@ DSOUND_ClearBuffer (int clear)
 	DSOUND_LockBuffer (false);
 }
 
-void
+static void
 DSOUND_Restore (void)
 {
 // if the buffer was lost or stopped, restore it and/or restart it

@@ -123,7 +123,7 @@ I_CDAudio_GetAudioDiskInfo (void)
 	return 0;
 }
 
-void
+static void
 I_CDAudio_Pause (void)
 {
 	if (cdfile == -1 || !mus_enabled)
@@ -139,7 +139,7 @@ I_CDAudio_Pause (void)
 	playing = false;
 }
 
-void
+static void
 I_CDAudio_Stop (void)
 {
 	if (cdfile == -1 || !mus_enabled)
@@ -155,7 +155,7 @@ I_CDAudio_Stop (void)
 	playing = false;
 }
 
-void
+static void
 I_CDAudio_Play (byte track, qboolean looping)
 {
 	struct cdrom_tocentry entry0;
@@ -234,7 +234,7 @@ I_CDAudio_Play (byte track, qboolean looping)
 		CDAudio_Pause ();
 }
 
-void
+static void
 I_CDAudio_Resume (void)
 {
 	if (cdfile == -1 || !mus_enabled)
@@ -251,7 +251,7 @@ I_CDAudio_Resume (void)
 	playing = true;
 }
 
-void
+static void
 I_CDAudio_Shutdown (void)
 {
 	if (cdfile != -1)
@@ -263,7 +263,7 @@ I_CDAudio_Shutdown (void)
 	mus_enabled = false;
 }
 
-void // FIXME: was static
+static void
 I_CD_f (void)
 {
 	const char *command;
@@ -369,7 +369,7 @@ I_CD_f (void)
 	}
 }
 
-void
+static void
 I_CDAudio_Update (void)
 {
 	struct cdrom_subchnl subchnl;
@@ -407,7 +407,7 @@ I_CDAudio_Update (void)
 	}
 }
 
-void
+static void
 Mus_CDChange (cvar_t *mus_cdaudio)
 {
 	int         i;
@@ -438,7 +438,7 @@ Mus_CDChange (cvar_t *mus_cdaudio)
 	mus_enabled = true;
 }
 
-void
+static void
 I_CDAudio_Init (void)
 {
 	mus_cddevice = Cvar_Get("mus_cddevice", "/dev/cdrom", CVAR_NONE,
@@ -446,7 +446,7 @@ I_CDAudio_Init (void)
 }
 
 plugin_t *
-PluginInfo (void)
+cd_linux_PluginInfo (void)
 {
 	plugin_info.type = qfp_cd;
 	plugin_info.api_version = QFPLUGIN_VERSION;

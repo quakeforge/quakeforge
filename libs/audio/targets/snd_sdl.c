@@ -50,18 +50,18 @@
 
 static dma_t the_shm;
 static int  snd_inited;
-int snd_blocked = 0;
+static int snd_blocked = 0;
 
-int desired_speed = 11025;
-int desired_bits = 16;
+static int desired_speed = 11025;
+static int desired_bits = 16;
 
-plugin_t           plugin_info;
-plugin_data_t      plugin_info_data;
-plugin_funcs_t     plugin_info_funcs;
-general_data_t     plugin_info_general_data;
-general_funcs_t    plugin_info_general_funcs;
-snd_output_data_t       plugin_info_snd_output_data;
-snd_output_funcs_t      plugin_info_snd_output_funcs;
+static plugin_t           plugin_info;
+static plugin_data_t      plugin_info_data;
+static plugin_funcs_t     plugin_info_funcs;
+static general_data_t     plugin_info_general_data;
+static general_funcs_t    plugin_info_general_funcs;
+static snd_output_data_t       plugin_info_snd_output_data;
+static snd_output_funcs_t      plugin_info_snd_output_funcs;
 
 
 static void
@@ -93,12 +93,12 @@ paint_audio (void *unused, Uint8 * stream, int len)
 	}
 }
 
-void
+static void
 SNDDMA_Init_Cvars (void)
 {
 }
 
-qboolean
+static qboolean
 SNDDMA_Init (void)
 {
 	SDL_AudioSpec desired, obtained;
@@ -183,13 +183,13 @@ SNDDMA_Init (void)
 	return 1;
 }
 
-int
+static int
 SNDDMA_GetDMAPos (void)
 {
 	return shm->samplepos;
 }
 
-void
+static void
 SNDDMA_Shutdown (void)
 {
 	if (snd_inited) {
@@ -206,7 +206,7 @@ SNDDMA_Shutdown (void)
 
 	Send sound to device if buffer isn't really the dma buffer
 */
-void
+static void
 SNDDMA_Submit (void)
 {
 	if (snd_blocked)
@@ -216,13 +216,13 @@ SNDDMA_Submit (void)
 	SDL_LockAudio();
 }
 
-void
+static void
 SNDDMA_BlockSound (void)
 {
 	++snd_blocked;
 }
 
-void
+static void
 SNDDMA_UnblockSound (void)
 {
 	if (!snd_blocked)
@@ -231,7 +231,7 @@ SNDDMA_UnblockSound (void)
 }
 
 plugin_t *
-PluginInfo (void) {
+snd_output_sdl_PluginInfo (void) {
     plugin_info.type = qfp_snd_output;
     plugin_info.api_version = QFPLUGIN_VERSION;
     plugin_info.plugin_version = "0.1";

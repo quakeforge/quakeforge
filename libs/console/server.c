@@ -219,7 +219,7 @@ static plugin_t plugin_info = {
 };
 
 plugin_t *
-PluginInfo (void)
+console_server_PluginInfo (void)
 {
 	return &plugin_info;
 }

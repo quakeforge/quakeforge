@@ -42,43 +42,43 @@ general_funcs_t	plugin_info_general_funcs;
 cd_funcs_t		plugin_info_cd_funcs;
 
 
-void
+static void
 I_CDAudio_Pause (void)
 {
 }
 
-void
+static void
 I_CDAudio_Play (byte track, qboolean looping)
 {
 }
 
-void
+static void
 I_CDAudio_Resume (void)
 {
 }
 
-void
+static void
 I_CDAudio_Shutdown (void)
 {
 }
 
-void
+static void
 I_CDAudio_Update (void)
 {
 }
 
-void
+static void
 I_CDAudio_Init (void)
 {
 }
 
-void
+static void
 I_CD_f (void)
 {
 }
 
 plugin_t *
-PluginInfo (void)
+cd_null_PluginInfo (void)
 {
 	plugin_info.type = qfp_cd;
 	plugin_info.api_version = QFPLUGIN_VERSION;

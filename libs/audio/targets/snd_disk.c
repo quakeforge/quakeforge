@@ -52,20 +52,20 @@
 #include "QF/plugin.h"
 
 static int  snd_inited;
-VFile      *snd_file;
-int snd_blocked = 0;
-volatile dma_t sn;
+static VFile      *snd_file;
+static int snd_blocked = 0;
+//FIXME static volatile dma_t sn;
 
-plugin_t           plugin_info;
-plugin_data_t      plugin_info_data;
-plugin_funcs_t     plugin_info_funcs;
-general_data_t     plugin_info_general_data;
-general_funcs_t    plugin_info_general_funcs;
-snd_output_data_t       plugin_info_snd_output_data;
-snd_output_funcs_t      plugin_info_snd_output_funcs;
+static plugin_t           plugin_info;
+static plugin_data_t      plugin_info_data;
+static plugin_funcs_t     plugin_info_funcs;
+static general_data_t     plugin_info_general_data;
+static general_funcs_t    plugin_info_general_funcs;
+static snd_output_data_t       plugin_info_snd_output_data;
+static snd_output_funcs_t      plugin_info_snd_output_funcs;
 
-
-qboolean
+/* FIXME
+static qboolean
 SNDDMA_Init (void)
 {
 	shm = &sn;
@@ -94,15 +94,16 @@ SNDDMA_Init (void)
 	snd_inited = 1;
 	return 1;
 }
+*/
 
-int
+static int
 SNDDMA_GetDMAPos (void)
 {
 	shm->samplepos = 0;
 	return shm->samplepos;
 }
 
-void
+static void
 SNDDMA_Shutdown (void)
 {
 	if (snd_inited) {
@@ -118,7 +119,7 @@ SNDDMA_Shutdown (void)
 
 	Send sound to device if buffer isn't really the dma buffer
 */
-void
+static void
 SNDDMA_Submit (void)
 {
 	int         count = (*plugin_info_snd_output_data.paintedtime
@@ -130,13 +131,13 @@ SNDDMA_Submit (void)
 	Qwrite (snd_file, shm->buffer, count);
 }
 
-void
+static void
 SNDDMA_BlockSound (void)                
 {
 	++snd_blocked;
 }   
     
-void
+static void
 SNDDMA_UnblockSound (void)
 {
 	if (!snd_blocked)
@@ -145,7 +146,7 @@ SNDDMA_UnblockSound (void)
 }
 
 plugin_t *
-PluginInfo (void) {
+snd_output_disk_PluginInfo (void) {
     plugin_info.type = qfp_snd_output;
     plugin_info.api_version = QFPLUGIN_VERSION;
     plugin_info.plugin_version = "0.1";

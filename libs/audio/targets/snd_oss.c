@@ -67,24 +67,24 @@ static int         audio_fd;
 static int         snd_inited;
 static int         mmaped_io = 0;
 static const char *snd_dev = "/dev/dsp";
-volatile dma_t sn;
-cvar_t     *snd_stereo;
-cvar_t     *snd_rate;
-cvar_t     *snd_device;
-cvar_t     *snd_bits;
-cvar_t     *snd_oss_mmaped;
+static volatile dma_t sn;
+static cvar_t     *snd_stereo;
+static cvar_t     *snd_rate;
+static cvar_t     *snd_device;
+static cvar_t     *snd_bits;
+static cvar_t     *snd_oss_mmaped;
 
 static int  tryrates[] = { 11025, 22050, 22051, 44100, 8000 };
 
-plugin_t           plugin_info;
-plugin_data_t      plugin_info_data;
-plugin_funcs_t     plugin_info_funcs;
-general_data_t     plugin_info_general_data;
-general_funcs_t    plugin_info_general_funcs;
-snd_output_data_t       plugin_info_snd_output_data;
-snd_output_funcs_t      plugin_info_snd_output_funcs;
+static plugin_t           plugin_info;
+static plugin_data_t      plugin_info_data;
+static plugin_funcs_t     plugin_info_funcs;
+static general_data_t     plugin_info_general_data;
+static general_funcs_t    plugin_info_general_funcs;
+static snd_output_data_t       plugin_info_snd_output_data;
+static snd_output_funcs_t      plugin_info_snd_output_funcs;
 
-void
+static void
 SNDDMA_Init_Cvars (void)
 {
 	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM, NULL,
@@ -99,7 +99,7 @@ SNDDMA_Init_Cvars (void)
 							   "mmaped io");
 }
 
-qboolean
+static qboolean
 SNDDMA_Init (void)
 {
 	int         rc;
@@ -292,7 +292,7 @@ SNDDMA_Init (void)
 
 }
 
-int
+static int
 SNDDMA_GetDMAPos (void)
 {
 
@@ -316,7 +316,7 @@ SNDDMA_GetDMAPos (void)
 
 }
 
-void
+static void
 SNDDMA_Shutdown (void)
 {
 	if (snd_inited) {
@@ -332,7 +332,7 @@ SNDDMA_Shutdown (void)
 */
 #define BITSIZE (shm->samplebits / 8)
 #define BYTES (samples / BITSIZE)
-void
+static void
 SNDDMA_Submit (void)
 {
 	int samples;
@@ -350,18 +350,18 @@ SNDDMA_Submit (void)
 	}
 }
 
-void
+static void
 SNDDMA_BlockSound (void)
 {
 }
 
-void
+static void
 SNDDMA_UnblockSound (void)
 {
 }
 
 plugin_t *
-PluginInfo (void) {
+snd_output_oss_PluginInfo (void) {
     plugin_info.type = qfp_snd_output;
     plugin_info.api_version = QFPLUGIN_VERSION;
     plugin_info.plugin_version = "0.1";

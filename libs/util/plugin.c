@@ -90,6 +90,7 @@ plugin_t *
 PI_LoadPlugin (const char *type, const char *name)
 {
 	char			realname[4096];
+	char            plugin_info_name[1024];
 	char			*tmpname;
 	void			*dlhand = NULL;
 	plugin_t		*plugin = NULL;
@@ -100,6 +101,9 @@ PI_LoadPlugin (const char *type, const char *name)
 
 	tmpname = strrchr (name, '/');	// Get the base name, don't allow paths
 
+	// Build the plugin info name
+	snprintf (plugin_info_name, sizeof (plugin_info_name), "%s_%s_PluginInfo",
+			  type, name);
 	// Build the path to the file to load
 #if defined(HAVE_DLOPEN)
 	snprintf (realname, sizeof (realname), "%s/lib%s_%s.so",
@@ -113,7 +117,8 @@ PI_LoadPlugin (const char *type, const char *name)
 #endif
 
 #if defined(HAVE_DLOPEN)
-	if (!(dlhand = dlopen (realname, RTLD_LAZY))) {	// lib not found
+	if (!(dlhand = dlopen (realname, RTLD_GLOBAL | RTLD_NOW))) {
+		// lib not found
 		Con_Printf ("Could not load plugin \"%s\": %s\n", realname,
 					dlerror ());
 		return NULL;
@@ -126,7 +131,7 @@ PI_LoadPlugin (const char *type, const char *name)
 #endif
 
 #if defined(HAVE_DLOPEN)
-	if (!(plugin_info = dlsym (dlhand, "PluginInfo"))) {
+	if (!(plugin_info = dlsym (dlhand, plugin_info_name))) {
 		// info function not found
 		dlclose (dlhand);
 		Con_Printf ("Plugin info function not found\n");
@@ -134,7 +139,7 @@ PI_LoadPlugin (const char *type, const char *name)
 	}
 #elif defined (_WIN32)
 	if (!(plugin_info = (P_PluginInfo) GetProcAddress (dlhand,
-													   "PluginInfo"))) {
+													   plugin_info_name))) {
 		// info function not found
 		FreeLibrary (dlhand);
 		Con_Printf ("Plugin info function not found\n");

@@ -38,35 +38,29 @@
 // FIXME - should be put in one place
 // =======================================================================
 
-extern channel_t       channels[MAX_CHANNELS];
-extern int             total_channels;
-extern volatile dma_t *shm;
-extern cvar_t         *snd_loadas8bit;
-extern int             paintedtime;				// sample PAIRS
-extern qboolean        snd_initialized;
+static cvar_t  *bgmvolume;
+static cvar_t  *volume;
+static cvar_t  *snd_loadas8bit;
+static cvar_t  *snd_interp;
 
-extern cvar_t         *bgmvolume;
-extern cvar_t         *volume;
-extern cvar_t         *snd_interp;
+static plugin_t           plugin_info;
+static plugin_data_t      plugin_info_data;
+static plugin_funcs_t     plugin_info_funcs;
+static general_data_t     plugin_info_general_data;
+static general_funcs_t    plugin_info_general_funcs;
+static sound_data_t       plugin_info_sound_data;
+static sound_funcs_t      plugin_info_sound_funcs;
 
-plugin_t           plugin_info;
-plugin_data_t      plugin_info_data;
-plugin_funcs_t     plugin_info_funcs;
-general_data_t     plugin_info_general_data;
-general_funcs_t    plugin_info_general_funcs;
-sound_data_t       plugin_info_sound_data;
-sound_funcs_t      plugin_info_sound_funcs;
-
-void SND_Init_Cvars (void);
+static void SND_Init_Cvars (void);
 
 
-void
+static void
 SND_Init (void)
 {
 	SND_Init_Cvars ();
 }
 
-void
+static void
 SND_Init_Cvars (void)
 {
 	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
@@ -79,100 +73,100 @@ SND_Init_Cvars (void)
 						   "control sample interpolation");
 }
 
-void
+static void
 SND_AmbientOff (void)
 {
 }
 
-void
+static void
 SND_AmbientOn (void)
 {
 }
 
-void
+static void
 SND_Shutdown (void)
 {
 }
 
-void
+static void
 SND_TouchSound (const char *sample)
 {
 }
 
-void
+static void
 SND_ClearBuffer (void)
 {
 }
 
-void
+static void
 SND_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
 {
 }
 
-void
+static void
 SND_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol,
 			  float attenuation)
 {
 }
 
-void
+static void
 SND_StopSound (int entnum, int entchannel)
 {
 }
 
-sfx_t      *
+static sfx_t      *
 SND_PrecacheSound (const char *sample)
 {
 	return NULL;
 }
 
-void
+static void
 SND_ClearPrecache (void)
 {
 }
 
-void
+static void
 SND_Update (vec3_t origin, vec3_t v_forward, vec3_t v_right, vec3_t v_up)
 {
 }
 
-void
+static void
 SND_StopAllSounds (qboolean clear)
 {
 }
 
-void
+static void
 SND_BeginPrecaching (void)
 {
 }
 
-void
+static void
 SND_EndPrecaching (void)
 {
 }
 
-void
+static void
 SND_ExtraUpdate (void)
 {
 }
 
-void
+static void
 SND_LocalSound (const char *s)
 {
 }
 
-void
+static void
 SND_BlockSound (void)
 {
 }
 
-void
+static void
 SND_UnblockSound (void)
 {
 }
 
 plugin_t *
-PluginInfo (void) {
+snd_output_null_PluginInfo (void) {
     plugin_info.type = qfp_sound;
     plugin_info.api_version = QFPLUGIN_VERSION;
     plugin_info.plugin_version = "0.1";

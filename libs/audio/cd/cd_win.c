@@ -134,7 +134,7 @@ I_CDAudio_GetAudioDiskInfo (void)
 }
 
 LONG
-I_CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static I_CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	if (lParam != wDeviceID)
 		return 1;
@@ -166,7 +166,7 @@ I_CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-void
+static void
 I_CDAudio_Pause (void)
 {
 	DWORD       dwReturn;
@@ -190,7 +190,7 @@ I_CDAudio_Pause (void)
 	playing = false;
 }
 
-void
+static void
 I_CDAudio_Play (byte track, qboolean looping)
 {
 	DWORD       dwReturn;
@@ -264,7 +264,7 @@ I_CDAudio_Play (byte track, qboolean looping)
 		I_CDAudio_Pause ();
 }
 
-void
+static void
 I_CDAudio_Resume (void)
 {
 	DWORD       dwReturn;
@@ -292,7 +292,7 @@ I_CDAudio_Resume (void)
 	playing = true;
 }
 
-void
+static void
 I_CDAudio_Shutdown (void)
 {
 	if (!initialized)
@@ -302,7 +302,7 @@ I_CDAudio_Shutdown (void)
 		Con_DPrintf ("CDAudio_Shutdown: MCI_CLOSE failed\n");
 }
 
-void
+static void
 I_CDAudio_Stop (void)
 {
 	DWORD       dwReturn;
@@ -322,7 +322,7 @@ I_CDAudio_Stop (void)
 	playing = false;
 }
 
-void
+static void
 I_CDAudio_Update (void)
 {
 	if (!enabled)
@@ -447,7 +447,7 @@ I_CD_f (void)
 	}
 }
 
-void
+static void
 I_CDAudio_Init (void)
 {
 	DWORD       dwReturn;
@@ -489,7 +489,7 @@ I_CDAudio_Init (void)
 }
 
 plugin_t *
-PluginInfo (void)
+cd_win_PluginInfo (void)
 {
 	plugin_info.type = qfp_cd;
 	plugin_info.api_version = QFPLUGIN_VERSION;

@@ -90,7 +90,7 @@ general_funcs_t    plugin_info_general_funcs;
 snd_output_data_t       plugin_info_snd_output_data;
 snd_output_funcs_t      plugin_info_snd_output_funcs;
 
-void
+static void
 SNDDMA_Init_Cvars (void)
 {
 	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM, NULL,
@@ -103,7 +103,7 @@ SNDDMA_Init_Cvars (void)
 						 "sound sample depth. 0 is system default");
 }
 
-int
+static int
 check_card (int card)
 {
 	snd_ctl_t  *handle;
@@ -141,7 +141,7 @@ check_card (int card)
 	return 1;
 }
 
-qboolean
+static qboolean
 SNDDMA_Init (void)
 {
 	int         rc = 0, i;
@@ -323,7 +323,7 @@ SNDDMA_Init (void)
 	return 0;
 }
 
-int
+static int
 SNDDMA_GetDMAPos (void)
 {
 	if (!snd_inited)
@@ -334,7 +334,7 @@ SNDDMA_GetDMAPos (void)
 	return shm->samplepos;
 }
 
-void
+static void
 SNDDMA_Shutdown (void)
 {
 	if (snd_inited) {
@@ -348,7 +348,7 @@ SNDDMA_Shutdown (void)
 
 	Send sound to device if buffer isn't really the dma buffer
 */
-void
+static void
 SNDDMA_Submit (void)
 {
 	int         count = *plugin_info_snd_output_data.paintedtime
@@ -387,14 +387,14 @@ SNDDMA_Submit (void)
 	}
 }
 
-void
+static void
 SNDDMA_BlockSound (void)
 {
 	if (++snd_blocked == 1)
 		snd_pcm_playback_pause (pcm_handle, 1);
 }
 
-void
+static void
 SNDDMA_UnblockSound (void)
 {
 	if (!snd_blocked)
@@ -404,7 +404,7 @@ SNDDMA_UnblockSound (void)
 }
 
 plugin_t *
-PluginInfo (void) {
+snd_output_alsa0_5_PluginInfo (void) {
 	plugin_info.type = qfp_snd_output;
 	plugin_info.api_version = QFPLUGIN_VERSION;
 	plugin_info.plugin_version = "0.1";

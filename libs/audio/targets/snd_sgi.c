@@ -49,18 +49,18 @@ static unsigned char *dma_buffer, *write_buffer;
 static int  bufsize;
 static int  wbufp;
 static int  framecount;
-volatile dma_t sn;
+static volatile dma_t sn;
 
-plugin_t           plugin_info;
-plugin_data_t      plugin_info_data;
-plugin_funcs_t     plugin_info_funcs;
-general_data_t     plugin_info_general_data;
-general_funcs_t    plugin_info_general_funcs;
-sound_data_t       plugin_info_sound_data;
-sound_funcs_t      plugin_info_sound_funcs;
+static plugin_t           plugin_info;
+static plugin_data_t      plugin_info_data;
+static plugin_funcs_t     plugin_info_funcs;
+static general_data_t     plugin_info_general_data;
+static general_funcs_t    plugin_info_general_funcs;
+static sound_data_t       plugin_info_sound_data;
+static sound_funcs_t      plugin_info_sound_funcs;
 
 
-qboolean
+static qboolean
 SNDDMA_Init (void)
 {
 	ALpv        alpv;
@@ -256,7 +256,7 @@ SNDDMA_Init (void)
 }
 
 
-int
+static int
 SNDDMA_GetDMAPos (void)
 {
 	/* Con_Printf("framecount: %d %d\n", (framecount * shm->channels) %
@@ -267,7 +267,7 @@ SNDDMA_GetDMAPos (void)
 }
 
 
-void
+static void
 SNDDMA_Shutdown (void)
 {
 	if (snd_inited) {
@@ -285,7 +285,7 @@ SNDDMA_Shutdown (void)
 
 	Send sound to device if buffer isn't really the dma buffer
 */
-void
+static void
 SNDDMA_Submit (void)
 {
 	int         bsize;
@@ -327,7 +327,7 @@ SNDDMA_Submit (void)
 
 
 plugin_t *
-PluginInfo (void) {
+snd_output_sgi_PluginInfo (void) {
     plugin_info.type = qfp_sound;
     plugin_info.api_version = QFPLUGIN_VERSION;
     plugin_info.plugin_version = "0.1";
@@ -369,12 +369,12 @@ PluginInfo (void) {
     return &plugin_info;
 }
 
-void
+static void
 SNDDMA_BlockSound (void)
 {
 }
 
-void
+static void
 SNDDMA_UnblockSound (void)
 {
 }

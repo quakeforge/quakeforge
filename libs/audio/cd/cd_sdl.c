@@ -68,7 +68,7 @@ static SDL_CD  *cd_id;
 static float	cdvolume = 1.0;
 
 
-void
+static void
 I_CDAudio_Eject (void)
 {
 	if (!cd_id || !enabled)
@@ -78,7 +78,7 @@ I_CDAudio_Eject (void)
 		Con_DPrintf ("Unable to eject CD-ROM tray.\n");
 }
 
-void
+static void
 I_CDAudio_Pause (void)
 {
 	if (!cd_id || !enabled)
@@ -90,7 +90,7 @@ I_CDAudio_Pause (void)
 		Con_DPrintf ("CDAudio_Pause: Failed to pause track.\n");
 }
 
-void
+static void
 I_CDAudio_Stop (void)
 {
 	int			cdstate;
@@ -105,7 +105,7 @@ I_CDAudio_Stop (void)
 		Con_DPrintf ("CDAudio_Stop: Failed to stop track.\n");
 }
 
-void
+static void
 I_CDAudio_Play (byte track, qboolean looping)
 {
 	/* Initialize cd_stat to avoid warning */
@@ -141,7 +141,7 @@ I_CDAudio_Play (byte track, qboolean looping)
 	playLooping = looping;
 }
 
-void
+static void
 I_CDAudio_Resume (void)
 {
 	if (!cd_id || !enabled)
@@ -153,7 +153,7 @@ I_CDAudio_Resume (void)
 		Con_DPrintf ("CDAudio_Resume: Failed tp resume track.\n");
 }
 
-void
+static void
 I_CDAudio_Shutdown (void)
 {
 	if (!cd_id)
@@ -163,7 +163,7 @@ I_CDAudio_Shutdown (void)
 	cd_id = NULL;
 }
 
-void
+static void
 I_CDAudio_Update (void)
 {
 	if (!cd_id || !enabled)
@@ -186,7 +186,7 @@ I_CDAudio_Update (void)
 
 #define CD_f_DEFINED
 
-void // FIXME: was static void
+static void
 I_CD_f (void)
 {
 	const char *command;
@@ -249,7 +249,7 @@ I_CD_f (void)
 	}
 }
 
-void
+static void
 I_CDAudio_Init (void)
 {
 	if (SDL_Init (SDL_INIT_CDROM) < 0) {
@@ -280,7 +280,7 @@ I_CDAudio_Init (void)
 }
 
 plugin_t *
-PluginInfo (void)
+cd_sdl_PluginInfo (void)
 {
 	plugin_info.type = qfp_cd;
 	plugin_info.api_version = QFPLUGIN_VERSION;

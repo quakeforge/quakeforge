@@ -51,13 +51,13 @@ static qboolean	snd_firsttime = true, snd_iswave;
 
 static int	sample16;
 static int	snd_sent, snd_completed;
-int snd_blocked = 0;
+static int snd_blocked = 0;
 
 static HPSTR		lpData;
 static LPWAVEHDR	lpWaveHdr;
 static HWAVEOUT		hWaveOut;
 static DWORD		gSndBufSize;
-volatile dma_t sn;
+static volatile dma_t sn;
 
 
 /* MME Callback function
@@ -76,7 +76,7 @@ mme_callback ( HANDLE h, UINT wMsg, DWORD instance, LPARAM p1, LPARAM p2 )
 S_BlockSound
 ==================
 */
-void
+static void
 S_BlockSound ( void )
 {
 	if (++snd_blocked == 1)
@@ -89,7 +89,7 @@ S_BlockSound ( void )
 S_UnblockSound
 ==================
 */
-void
+static void
 S_UnblockSound ( void )
 {
 	if (!snd_blocked)
@@ -103,7 +103,7 @@ S_UnblockSound ( void )
 FreeSound
 ==================
 */
-void
+static void
 FreeSound ( void )
 {
 // only release primary buffer if it's not also the mixing buffer we just released
@@ -136,7 +136,7 @@ SNDDM_InitWav
 Crappy windows multimedia base
 ==================
 */
-qboolean
+static qboolean
 SNDDMA_InitWav ( void )
 {
 	LPPCMWAVEFORMAT format;
@@ -243,7 +243,7 @@ Returns false if nothing is found.
 ==================
 */
 
-qboolean
+static qboolean
 SNDDMA_Init ( void )
 {
 	wav_init = 0;
@@ -281,7 +281,7 @@ inside the recirculating dma buffer, so the mixing code will know
 how many sample are required to fill it up.
 ===============
 */
-int
+static int
 SNDDMA_GetDMAPos ( void )
 {
 	int	s = 0;
@@ -304,7 +304,7 @@ SNDDMA_Submit
 Send sound to device if buffer isn't really the dma buffer
 ===============
 */
-void
+static void
 SNDDMA_Submit ( void )
 {
 	LPWAVEHDR	h;
@@ -354,7 +354,7 @@ SNDDMA_Shutdown
 Reset the sound device for exiting
 ===============
 */
-void
+static void
 SNDDMA_Shutdown ( void )
 {
 	FreeSound ();

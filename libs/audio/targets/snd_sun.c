@@ -52,29 +52,29 @@
 #include "QF/sound.h"
 #include "QF/plugin.h"
 
-int         audio_fd;
-int         snd_inited;
-int snd_blocked = 0;
+static int         audio_fd;
+static int         snd_inited;
+static int snd_blocked = 0;
 
 static int  wbufp;
 static audio_info_t info;
 
 #define BUFFER_SIZE		8192
 
-unsigned char dma_buffer[BUFFER_SIZE];
-unsigned char pend_buffer[BUFFER_SIZE];
-int         pending;
-volatile dma_t sn;
+static unsigned char dma_buffer[BUFFER_SIZE];
+static unsigned char pend_buffer[BUFFER_SIZE];
+static int         pending;
+static volatile dma_t sn;
 
-plugin_t           plugin_info;
-plugin_data_t      plugin_info_data;
-plugin_funcs_t     plugin_info_funcs;
-general_data_t     plugin_info_general_data;
-general_funcs_t    plugin_info_general_funcs;
-sound_data_t       plugin_info_sound_data;
-sound_funcs_t      plugin_info_sound_funcs;
+static plugin_t           plugin_info;
+static plugin_data_t      plugin_info_data;
+static plugin_funcs_t     plugin_info_funcs;
+static general_data_t     plugin_info_general_data;
+static general_funcs_t    plugin_info_general_funcs;
+static sound_data_t       plugin_info_sound_data;
+static sound_funcs_t      plugin_info_sound_funcs;
 
-qboolean
+static qboolean
 SNDDMA_Init (void)
 {
 	if (snd_inited) {
@@ -151,7 +151,7 @@ SNDDMA_Init (void)
 	return 1;
 }
 
-int
+static int
 SNDDMA_GetDMAPos (void)
 {
 	if (!snd_inited)
@@ -168,7 +168,7 @@ SNDDMA_GetDMAPos (void)
 	return ((info.play.samples * shm->channels) % shm->samples);
 }
 
-int
+static int
 SNDDMA_GetSamples (void)
 {
 	if (!snd_inited)
@@ -185,7 +185,7 @@ SNDDMA_GetSamples (void)
 	return info.play.samples;
 }
 
-void
+static void
 SNDDMA_Shutdown (void)
 {
 	if (snd_inited) {
@@ -199,7 +199,7 @@ SNDDMA_Shutdown (void)
 
 	Send sound to device if buffer isn't really the dma buffer
 */
-void
+static void
 SNDDMA_Submit (void)
 {
 	int         bsize;
@@ -241,13 +241,13 @@ SNDDMA_Submit (void)
 
 }
 
-void
+static void
 SNDDMA_BlockSound (void)
 {
 	++snd_blocked;
 }
 
-void
+static void
 SNDDMA_UnblockSound (void)
 {
 	if (!snd_blocked)
@@ -256,7 +256,7 @@ SNDDMA_UnblockSound (void)
 }
 
 plugin_t *
-PluginInfo (void) {
+snd_output_sun_PluginInfo (void) {
     plugin_info.type = qfp_sound;
     plugin_info.api_version = QFPLUGIN_VERSION;
     plugin_info.plugin_version = "0.1";
