@@ -75,11 +75,11 @@ static SCR_Func scr_funcs[] = {
 	0
 };
 
-extern void V_CalcBlend (void);
+extern void V_PrepBlend (void);
 
 void
 CL_UpdateScreen (double realtime)
 {
-	V_CalcBlend ();
+	V_PrepBlend ();
 	SCR_UpdateScreen (realtime, scr_funcs, cl_hudswap->int_val);
 }
