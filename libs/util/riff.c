@@ -118,7 +118,7 @@ read_data (QFile *f, int len)
 }
 
 static int
-read_ltxt (QFile *f, int len, d_ltxt_t *ltxt)
+read_ltxt (QFile *f, int len, riff_d_ltxt_t *ltxt)
 {
 	return Qread (f, ltxt, len) == len;
 }
@@ -126,14 +126,14 @@ read_ltxt (QFile *f, int len, d_ltxt_t *ltxt)
 static void
 read_adtl (dstring_t *list_buf, QFile *f, int len)
 {
-	d_chunk_t   ck, *chunk = 0;
-	ltxt_t     *ltxt;
-	label_t    *label;
-	data_t     *data;
-	list_t     *list;
+	riff_d_chunk_t   ck, *chunk = 0;
+	riff_ltxt_t     *ltxt;
+	riff_label_t    *label;
+	riff_data_t     *data;
+	riff_list_t     *list;
 	int         r;
 
-	list = (list_t *) list_buf->str;
+	list = (riff_list_t *) list_buf->str;
 	while (len) {
 		r = Rread (f, &ck, sizeof (ck));
 		if (!r) {
@@ -141,16 +141,16 @@ read_adtl (dstring_t *list_buf, QFile *f, int len)
 			break;
 		}
 		len -= r;
-		SWITCH (ck.name) {
-			case CASE ('l','t','x','t'):
-				ltxt = calloc (1, sizeof (ltxt_t));
+		RIFF_SWITCH (ck.name) {
+			case RIFF_CASE ('l','t','x','t'):
+				ltxt = calloc (1, sizeof (riff_ltxt_t));
 				ltxt->ck = ck;
 				read_ltxt (f, ck.len, &ltxt->ltxt);
 				chunk = &ltxt->ck;
 				break;
-			case CASE ('l','a','b','l'):
-			case CASE ('n','o','t','e'):
-				label = malloc (sizeof (label_t));
+			case RIFF_CASE ('l','a','b','l'):
+			case RIFF_CASE ('n','o','t','e'):
+				label = malloc (sizeof (riff_label_t));
 				label->ck = ck;
 				if (!Rread (f, &label->ofs, 4)) {
 					label->ofs = 0;
@@ -167,24 +167,24 @@ read_adtl (dstring_t *list_buf, QFile *f, int len)
 		}
 		len -= ck.len + (ck.len & 1);
 		dstring_append (list_buf, (char *)&chunk, sizeof (chunk));
-		list = (list_t *) list_buf->str;
+		list = (riff_list_t *) list_buf->str;
 		chunk = 0;
 	}
 	dstring_append (list_buf, (char *)&chunk, sizeof (chunk));
-	list = (list_t *) list_buf->str;
+	list = (riff_list_t *) list_buf->str;
 }
 
-static list_t *
-read_list (d_chunk_t *ck, QFile *f, int len)
+static riff_list_t *
+read_list (riff_d_chunk_t *ck, QFile *f, int len)
 {
-	d_chunk_t  *chunk = 0;
+	riff_d_chunk_t  *chunk = 0;
 	dstring_t  *list_buf;
-	list_t     *list;
+	riff_list_t     *list;
 
 	list_buf = dstring_new ();
-	list_buf->size = sizeof (list_t);
+	list_buf->size = sizeof (riff_list_t);
 	dstring_adjust (list_buf);
-	list = (list_t *)list_buf->str;
+	list = (riff_list_t *)list_buf->str;
 	list->ck = *ck;
 
 	if (!Rread (f, list->name, sizeof (list->name))) {
@@ -193,10 +193,10 @@ read_list (d_chunk_t *ck, QFile *f, int len)
 	}
 	len -= sizeof (list->name);
 	while (len > 0) {
-		SWITCH (list->name) {
-			case CASE ('I','N','F','O'):
+		RIFF_SWITCH (list->name) {
+			case RIFF_CASE ('I','N','F','O'):
 				{
-					data_t     *data = malloc (sizeof (data_t));
+					riff_data_t     *data = malloc (sizeof (riff_data_t));
 					if (!Rread (f, &data->ck, sizeof (data->ck))) {
 						len = 0;
 						free (data);
@@ -205,9 +205,9 @@ read_list (d_chunk_t *ck, QFile *f, int len)
 					chunk = &data->ck;
 					//printf ("%.4s %d\n", data->ck.name, data->ck.len);
 					len -= sizeof (data->ck);
-					SWITCH (data->ck.name) {
-						case CASE ('I','C','R','D'):
-						case CASE ('I','S','F','T'):
+					RIFF_SWITCH (data->ck.name) {
+						case RIFF_CASE ('I','C','R','D'):
+						case RIFF_CASE ('I','S','F','T'):
 							data->data = read_string (f, data->ck.len);
 							break;
 						default:
@@ -217,13 +217,13 @@ read_list (d_chunk_t *ck, QFile *f, int len)
 					len -= data->ck.len + (data->ck.len & 1);
 				}
 				break;
-			case CASE ('a','d','t','l'):
+			case RIFF_CASE ('a','d','t','l'):
 				read_adtl (list_buf, f, len);
 				len = 0;
 				break;
 			default:
 				{
-					data_t     *data = malloc (sizeof (data_t));
+					riff_data_t     *data = malloc (sizeof (riff_data_t));
 					if (!Rread (f, &data->ck, sizeof (data->ck))) {
 						free (data);
 					} else {
@@ -237,20 +237,20 @@ read_list (d_chunk_t *ck, QFile *f, int len)
 		}
 		if (chunk) {
 			dstring_append (list_buf, (char *)&chunk, sizeof (chunk));
-			list = (list_t *) list_buf->str;
+			list = (riff_list_t *) list_buf->str;
 		}
 		chunk = 0;
 	}
 	dstring_append (list_buf, (char *)&chunk, sizeof (chunk));
-	list = (list_t *) list_buf->str;
+	list = (riff_list_t *) list_buf->str;
 	free (list_buf);
 	return list;
 }
 
-static d_cue_t *
+static riff_d_cue_t *
 read_cue (QFile *f, int len)
 {
-	d_cue_t    *cue = malloc (len);
+	riff_d_cue_t    *cue = malloc (len);
 
 	if (!Rread (f, cue, len)) {
 		free (cue);
@@ -260,19 +260,19 @@ read_cue (QFile *f, int len)
 	return cue;
 }
 
-list_t *
+riff_t *
 riff_read (QFile *f)
 {
 	dstring_t  *riff_buf;
-	list_t     *riff;
-	d_chunk_t  *chunk = 0;
-	d_chunk_t   ck;
+	riff_list_t     *riff;
+	riff_d_chunk_t  *chunk = 0;
+	riff_d_chunk_t   ck;
 	int         file_len, len;
 
 	riff_buf = dstring_new ();
-	riff_buf->size = sizeof (list_t);
+	riff_buf->size = sizeof (riff_list_t);
 	dstring_adjust (riff_buf);
-	riff = (list_t *)riff_buf->str;
+	riff = (riff_list_t *)riff_buf->str;
 
 	file_len = Qfilesize (f);
 
@@ -296,25 +296,25 @@ riff_read (QFile *f)
 			//puts ("bling");
 			ck.len = len = file_len - Qtell (f);
 		}
-		SWITCH (ck.name) {
-			case CASE ('c','u','e',' '):
+		RIFF_SWITCH (ck.name) {
+			case RIFF_CASE ('c','u','e',' '):
 				{
-					cue_t      *cue = malloc (sizeof (cue_t));
+					riff_cue_t      *cue = malloc (sizeof (riff_cue_t));
 					cue->ck = ck;
 					cue->cue = read_cue (f, len);
 					chunk = &cue->ck;
 				}
 				break;
-			case CASE ('L','I','S','T'):
+			case RIFF_CASE ('L','I','S','T'):
 				{
-					list_t     *list;
+					riff_list_t     *list;
 					list = read_list (&ck, f, len);
 					chunk = &list->ck;
 				}
 				break;
-			case CASE ('d','a','t','a'):
+			case RIFF_CASE ('d','a','t','a'):
 				{
-					data_t     *data = malloc (sizeof (data_t));
+					riff_data_t     *data = malloc (sizeof (riff_data_t));
 					int         c;
 
 					data->ck = ck;
@@ -328,7 +328,7 @@ riff_read (QFile *f)
 				break;
 			default:
 				{
-					data_t     *data = malloc (sizeof (data_t));
+					riff_data_t     *data = malloc (sizeof (riff_data_t));
 					data->ck = ck;
 					data->data = read_data (f, len);
 					chunk = &data->ck;
@@ -336,11 +336,11 @@ riff_read (QFile *f)
 				break;
 		}
 		dstring_append (riff_buf, (char *)&chunk, sizeof (chunk));
-		riff = (list_t *) riff_buf->str;
+		riff = (riff_list_t *) riff_buf->str;
 		chunk = 0;
 	}
 	dstring_append (riff_buf, (char *)&chunk, sizeof (chunk));
-	riff = (list_t *) riff_buf->str;
+	riff = (riff_list_t *) riff_buf->str;
 	free (riff_buf);
 	return riff;
 }
@@ -349,16 +349,16 @@ riff_read (QFile *f)
 *****************************************************************************/
 
 static void
-free_adtl (d_chunk_t *adtl)
+free_adtl (riff_d_chunk_t *adtl)
 {
-	ltxt_t     *ltxt;
-	label_t    *label;
-	data_t     *data;
+	riff_ltxt_t     *ltxt;
+	riff_label_t    *label;
+	riff_data_t     *data;
 
 	//printf ("    %.4s\n", adtl->name);
-	SWITCH (adtl->name) {
-		case CASE ('l','t','x','t'):
-			ltxt = (ltxt_t *) adtl;
+	RIFF_SWITCH (adtl->name) {
+		case RIFF_CASE ('l','t','x','t'):
+			ltxt = (riff_ltxt_t *) adtl;
 			/*printf ("      %d %d %4s %d %d %d %d\n",
 					ltxt->ltxt.name,
 					ltxt->ltxt.len,
@@ -369,16 +369,16 @@ free_adtl (d_chunk_t *adtl)
 					ltxt->ltxt.codepage);*/
 			free (ltxt);
 			break;
-		case CASE ('l','a','b','l'):
-		case CASE ('n','o','t','e'):
-			label = (label_t *) adtl;
+		case RIFF_CASE ('l','a','b','l'):
+		case RIFF_CASE ('n','o','t','e'):
+			label = (riff_label_t *) adtl;
 			//printf ("      %-8d %s\n", label->ofs, label->label);
 			if (label->label)
 				free (label->label);
 			free (label);
 			break;
 		default:
-			data = (data_t *) adtl;
+			data = (riff_data_t *) adtl;
 			if (data->data)
 				free (data->data);
 			free (data);
@@ -387,20 +387,20 @@ free_adtl (d_chunk_t *adtl)
 }
 
 static void
-free_list (list_t *list)
+free_list (riff_list_t *list)
 {
-	d_chunk_t **ck;
-	data_t     *data;
+	riff_d_chunk_t **ck;
+	riff_data_t     *data;
 
 	//printf ("  %.4s\n", list->name);
 	for (ck = list->chunks; *ck; ck++) {
-		SWITCH (list->name) {
-			case CASE ('I','N','F','O'):
-				data = (data_t *) *ck;
+		RIFF_SWITCH (list->name) {
+			case RIFF_CASE ('I','N','F','O'):
+				data = (riff_data_t *) *ck;
 				//printf ("    %.4s\n", data->ck.name);
-				SWITCH (data->ck.name) {
-					case CASE ('I','C','R','D'):
-					case CASE ('I','S','F','T'):
+				RIFF_SWITCH (data->ck.name) {
+					case RIFF_CASE ('I','C','R','D'):
+					case RIFF_CASE ('I','S','F','T'):
 						//printf ("      %s\n", data->data);
 					default:
 						if (data->data)
@@ -409,11 +409,11 @@ free_list (list_t *list)
 						break;
 				}
 				break;
-			case CASE ('a','d','t','l'):
+			case RIFF_CASE ('a','d','t','l'):
 				free_adtl (*ck);
 				break;
 			default:
-				data = (data_t *) *ck;
+				data = (riff_data_t *) *ck;
 				if (data->data)
 					free (data->data);
 				free (data);
@@ -424,18 +424,18 @@ free_list (list_t *list)
 }
 
 void
-riff_free (list_t *riff)
+riff_free (riff_t *riff)
 {
-	d_chunk_t **ck;
-	cue_t      *cue;
-	list_t     *list;
-	data_t     *data;
+	riff_d_chunk_t **ck;
+	riff_cue_t      *cue;
+	riff_list_t     *list;
+	riff_data_t     *data;
 
 	for (ck = riff->chunks; *ck; ck++) {
 		//printf ("%.4s\n", (*ck)->name);
-		SWITCH ((*ck)->name) {
-			case CASE ('c','u','e',' '):
-				cue = (cue_t *) *ck;
+		RIFF_SWITCH ((*ck)->name) {
+			case RIFF_CASE ('c','u','e',' '):
+				cue = (riff_cue_t *) *ck;
 				if (cue->cue) {
 					/*int i;
 					for (i = 0; i < cue->cue->count; i++) {
@@ -451,12 +451,12 @@ riff_free (list_t *riff)
 				}
 				free (cue);
 				break;
-			case CASE ('L','I','S','T'):
-				list = (list_t *) *ck;
+			case RIFF_CASE ('L','I','S','T'):
+				list = (riff_list_t *) *ck;
 				free_list (list);
 				break;
 			default:
-				data = (data_t *) *ck;
+				data = (riff_data_t *) *ck;
 				if (data->data)
 					free (data->data);
 				free (data);

@@ -10,8 +10,8 @@ main (int argc, char **argv)
 
 	while (*++argv) {
 		QFile      *f;
-		list_t     *riff = 0;
-		d_chunk_t **ck;
+		riff_t     *riff = 0;
+		riff_d_chunk_t **ck;
 		int         sample_start, sample_count;
 
 		f = Qopen (*argv, "rbz");
@@ -26,12 +26,12 @@ main (int argc, char **argv)
 		sample_start = -1;
 		sample_count = -1;
 		for (ck = riff->chunks; *ck; ck++) {
-			SWITCH ((*ck)->name) {
-				case CASE ('c', 'u', 'e', ' '):
+			RIFF_SWITCH ((*ck)->name) {
+				case RIFF_CASE ('c', 'u', 'e', ' '):
 					{
-						cue_t      *cue = (cue_t *)*ck;
-						d_cue_t    *dcue = cue->cue;
-						d_cue_point_t *cp = dcue->cue_points;
+						riff_cue_t      *cue = (riff_cue_t *)*ck;
+						riff_d_cue_t    *dcue = cue->cue;
+						riff_d_cue_point_t *cp = dcue->cue_points;
 						int         i;
 
 						for (i = 0; i < dcue->count; i++)
@@ -47,19 +47,19 @@ main (int argc, char **argv)
 #endif
 					}
 					break;
-				case CASE ('L','I','S','T'):
+				case RIFF_CASE ('L','I','S','T'):
 					{
-						list_t     *list = (list_t *)*ck;
-						SWITCH (list->name) {
-							case CASE ('a','d','t','l'):
+						riff_list_t     *list = (riff_list_t *)*ck;
+						RIFF_SWITCH (list->name) {
+							case RIFF_CASE ('a','d','t','l'):
 								{
-									d_chunk_t **ck;
+									riff_d_chunk_t **ck;
 									for (ck = list->chunks; *ck; ck++) {
-										SWITCH ((*ck)->name) {
-											case CASE ('l', 't', 'x', 't'):
+										RIFF_SWITCH ((*ck)->name) {
+											case RIFF_CASE ('l', 't', 'x', 't'):
 												{
-													ltxt_t     *ltxt = (ltxt_t *)*ck;
-													d_ltxt_t   *dltxt = &ltxt->ltxt;
+													riff_ltxt_t     *ltxt = (riff_ltxt_t *)*ck;
+													riff_d_ltxt_t   *dltxt = &ltxt->ltxt;
 													sample_count = dltxt->len;
 #if 0
 													printf ("ltxt: %d %d %4s %d %d %d %d\n",
@@ -80,7 +80,7 @@ main (int argc, char **argv)
 						}
 					}
 					break;
-				case CASE ('d','a','t','a'):
+				case RIFF_CASE ('d','a','t','a'):
 #if 0
 					printf ("data: %d %d\n", *(int*)((data_t*)(*ck))->data, (*ck)->len);
 #endif

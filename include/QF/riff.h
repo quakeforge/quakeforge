@@ -34,34 +34,34 @@
 
 #include "QF/quakeio.h"
 
-typedef struct d_chunk_s {
+typedef struct riff_d_chunk_s {
 	unsigned char name[4];
 	unsigned    len;
-} d_chunk_t;
+} riff_d_chunk_t;
 
-typedef struct d_cue_point_s {
+typedef struct riff_d_cue_point_s {
 	unsigned    name;
 	unsigned    position;
 	char        chunk[4];
 	unsigned    chunk_start;
 	unsigned    block_start;
 	unsigned    sample_offset;
-} d_cue_point_t;
+} riff_d_cue_point_t;
 
-typedef struct d_cue_s {
+typedef struct riff_d_cue_s {
 	unsigned    count;
-	d_cue_point_t cue_points[1];
-} d_cue_t;
+	riff_d_cue_point_t cue_points[1];
+} riff_d_cue_t;
 
-typedef struct d_format_s {
+typedef struct riff_d_format_s {
 	unsigned short format_tag;
 	unsigned short channels;
 	unsigned    samples_pre_sec;
 	unsigned    byte_per_sec;
 	unsigned short align;
-} d_format_t;
+} riff_d_format_t;
 
-typedef struct d_ltxt_s {
+typedef struct riff_d_ltxt_s {
 	unsigned    name;
 	unsigned    len;
 	char        purpose[4];
@@ -70,49 +70,50 @@ typedef struct d_ltxt_s {
 	unsigned    dialect;
 	unsigned    codepage;
 	unsigned char data[0];
-} d_ltxt_t;
+} riff_d_ltxt_t;
 
-typedef struct cue_s {
-	d_chunk_t   ck;
-	d_cue_t    *cue;
-} cue_t;
+typedef struct riff_cue_s {
+	riff_d_chunk_t   ck;
+	riff_d_cue_t    *cue;
+} riff_cue_t;
 
-typedef struct format_s {
-	d_chunk_t   ck;
-	d_format_t  format;
+typedef struct riff_format_s {
+	riff_d_chunk_t   ck;
+	riff_d_format_t  format;
 	char        fdata[0];
-} format_t;
+} riff_format_t;
 
-typedef struct ltxt_s {
-	d_chunk_t   ck;
-	d_ltxt_t    ltxt;
-} ltxt_t;
+typedef struct riff_ltxt_s {
+	riff_d_chunk_t   ck;
+	riff_d_ltxt_t    ltxt;
+} riff_ltxt_t;
 
-typedef struct label_s {
-	d_chunk_t   ck;
+typedef struct riff_label_s {
+	riff_d_chunk_t   ck;
 	unsigned    ofs;
 	char       *label;
-} label_t;
+} riff_label_t;
 
-typedef struct data_s {
-	d_chunk_t   ck;
+typedef struct riff_data_s {
+	riff_d_chunk_t   ck;
 	char       *data;
-} data_t;
+} riff_data_t;
 
-typedef struct list_s {
-	d_chunk_t   ck;
+typedef struct riff_list_s {
+	riff_d_chunk_t   ck;
 	char        name[4];
-	d_chunk_t  *chunks[0];
-} list_t;
+	riff_d_chunk_t  *chunks[0];
+} riff_list_t;
+typedef riff_list_t riff_t;	// a riff file is one huge list chunk
 
-#define SWITCH(name) switch (((name)[0] << 24) | ((name)[1] << 16) \
-							 | ((name)[2] << 8) | (name)[3])
-#define CASE(a,b,c,d) (((unsigned char)(a) << 24) \
-					   | ((unsigned char)(b) << 16) \
-					   | ((unsigned char)(c) << 8) \
-					   | (unsigned char)(d))
+#define RIFF_SWITCH(name) switch (((name)[0] << 24) | ((name)[1] << 16) \
+								  | ((name)[2] << 8) | (name)[3])
+#define RIFF_CASE(a,b,c,d) (((unsigned char)(a) << 24) \
+							| ((unsigned char)(b) << 16) \
+							| ((unsigned char)(c) << 8) \
+							| (unsigned char)(d))
 
-list_t *riff_read (QFile *file);
-void riff_free (list_t *riff);
+riff_t *riff_read (QFile *file);
+void riff_free (riff_t *riff);
 
 #endif//__QF_riff_h
