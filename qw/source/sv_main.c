@@ -1805,6 +1805,18 @@ SV_ExtractFromUserinfo (client_t *cl)
 			Info_SetValueForKey (cl->userinfo, "name", newname,
 								 MAX_INFO_STRING);
 			val = Info_ValueForKey (cl->userinfo, "name");
+
+			// If the new name was not set (due to the info string 
+			// being too long), drop the client to prevent an infinite
+			// loop.
+			if(strcmp(val, newname)) {
+				SV_ClientPrintf (cl, PRINT_HIGH,
+								 "Please choose a different name.\n");
+				Con_Printf("Client %d kicked for invalid name\n", cl->userid);
+				SV_DropClient (cl);
+				return;
+			}
+
 		} else
 			break;
 	}
