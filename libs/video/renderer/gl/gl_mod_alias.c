@@ -317,14 +317,14 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 				e->pose1 = e->pose2;
 			}
 			e->pose2 = pose;
-			blend = 0;
+			blend = 0.0;
 		} else {
 			blend = (r_realtime - e->frame_start_time) / e->frame_interval;
 		}
 
 		// wierd things start happening if blend passes 1
-		if (r_paused || blend > 1)
-			blend = 1;
+		if (r_paused || blend > 1.0)
+			blend = 1.0;
 
 		verts1 = verts + e->pose1 * count;
 		verts2 = verts + e->pose2 * count;
@@ -336,11 +336,11 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 		} else {
 			for (i = 0, vo_v = vo->verts; i < count;
 				 i++, vo_v++, verts1++, verts2++) {
-				VectorScale (verts1->v, 1 / 256.0, v1);
-				VectorScale (verts2->v, 1 / 256.0, v2);
+				VectorScale (verts1->v, 1.0 / 256.0, v1);
+				VectorScale (verts2->v, 1.0 / 256.0, v2);
 				VectorBlend (v1, v2, blend, vo_v->vert);
 				vo_v->lightdot =
-					shadedots[verts1->lightnormalindex] * (1 - blend)
+					shadedots[verts1->lightnormalindex] * (1.0 - blend)
 					+ shadedots[verts2->lightnormalindex] * blend;
 			}
 			return vo;
@@ -349,7 +349,7 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 		verts += pose * count;
 	}
 	for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
-		VectorScale (verts->v, 1 / 256.0, vo_v->vert);
+		VectorScale (verts->v, 1.0 / 256.0, vo_v->vert);
 		vo_v->lightdot = shadedots[verts->lightnormalindex];
 	}
 	return vo;
@@ -497,7 +497,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	int			  fb_texture = 0;
 	aliashdr_t	 *paliashdr;
 	model_t		 *clmodel;
-	vec3_t		  dist, mins, maxs;
+	vec3_t		  dist, mins, maxs, scale;
 	vert_order_t *vo;
 
 	clmodel = e->model;
@@ -563,8 +563,8 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	qfglTranslatef (paliashdr->mdl.scale_origin[0],
 					paliashdr->mdl.scale_origin[1],
 					paliashdr->mdl.scale_origin[2]);
-	qfglScalef (paliashdr->mdl.scale[0], paliashdr->mdl.scale[1],
-				paliashdr->mdl.scale[2]);
+	VectorScale (paliashdr->mdl.scale, e->scale, scale)
+	qfglScalef (scale[0], scale[1], scale[2]);
 
 	// if the model has a colorised/external skin, use it, otherwise use
 	// the skin embedded in the model data
