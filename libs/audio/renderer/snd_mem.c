@@ -212,8 +212,7 @@ SND_LoadSound (cache_user_t *cache, const char *name, cache_allocator_t allocato
 void
 SND_CallbackLoad (struct cache_user_s *cache, cache_allocator_t allocator)
 {
-	if (!SND_LoadSound (cache, cache->filename, allocator))
-		Sys_Error ("SND_CallbackLoad: load failed!\n");
+	SND_LoadSound (cache, cache->filename, allocator);
 }
 
 /* WAV loading */
