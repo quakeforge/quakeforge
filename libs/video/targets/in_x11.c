@@ -491,8 +491,10 @@ event_focusin (XEvent *event)
 {
 	if (key_dest == key_game)
 		XAutoRepeatOff (x_disp);
-	S_UnblockSound ();
-	CDAudio_Resume ();
+	if (in_snd_block->int_val) {
+		S_UnblockSound ();
+		CDAudio_Resume ();
+	}
 }
 
 static void
@@ -542,7 +544,7 @@ IN_LL_Grab_Input (void)
 {
 	if (!x_disp || !x_win)
 		return;
-	X11_Grabber(true);
+	X11_Grabber (true);
 	if (in_dga->int_val)
 		dga_on ();
 }
@@ -554,7 +556,7 @@ IN_LL_Ungrab_Input (void)
 		return;
 	if (in_dga->int_val)
 		dga_off ();
-	X11_Grabber(false);
+	X11_Grabber (false);
 }
 
 void
@@ -564,7 +566,6 @@ IN_LL_SendKeyEvents (void)
 	X11_ProcessEvents ();
 }
 
-/* Called at shutdown */
 void
 IN_LL_Shutdown (void)
 {
