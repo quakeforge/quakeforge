@@ -279,7 +279,7 @@ SCR_CalcRefdef (void)
 	Cvar_SetValue (scr_viewsize, bound (30, scr_viewsize->int_val, 120));
 
 	// bound field of view
-	Cvar_SetValue (scr_fov, bound (10, scr_fov->value, 170));
+	Cvar_SetValue (scr_fov, bound (1, scr_fov->value, 170));
 
 	if (scr_viewsize->int_val >= 120)
 		sb_lines = 0;					// no status bar at all
