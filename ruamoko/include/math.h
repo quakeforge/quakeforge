@@ -1,5 +1,5 @@
-#ifndef __math_h
-#define __math_h
+#ifndef __ruamoko_math_h
+#define __ruamoko_math_h
 
 @extern vector v_forward, v_up, v_right;
 
@@ -16,4 +16,4 @@
 @extern float (float f) fabs;
 @extern vector (vector v) vectoangles;
 
-#endif//__math_h
+#endif//__ruamoko_math_h

@@ -1,5 +1,5 @@
-#ifndef __message_h
-#define __message_h
+#ifndef __ruamoko_message_h
+#define __ruamoko_message_h
 
 // protocol bytes  
 #define SVC_TEMPENTITY 23
@@ -45,4 +45,4 @@
 @extern void (float to, entity s) WriteEntity;
 @extern void (...) centerprint;
 
-#endif//__message_h
+#endif//__ruamoko_message_h

@@ -8,7 +8,7 @@ RANLIB=touch
 
 INCLUDES=	-I$(top_srcdir)/ruamoko/include
 
-noinst_LIBRARIES= libr.a
+noinst_LIBRARIES= libr.a libgui.a
 
 %.qfo: %.r
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -p $(STRIP) -c -o $@ $<
@@ -22,5 +22,9 @@ libr_a_SOURCES=\
 		object.r physics.r qw_message.r qw_physics.r qw_sys.r sound.r \
 		string.r system.r
 libr_a_AR=$(PAK) -cf
+
+libgui_a_SOURCES=\
+		inputline.r point.r
+libgui_a_AR=$(PAK) -cf
 
 CLEANFILES	= *.qfo

@@ -1,5 +1,5 @@
-#ifndef __debug_h
-#define __debug_h
+#ifndef __ruamoko_debug_h
+#define __ruamoko_debug_h
 
 //FIXME@extern void () break;
 @extern void (string e) error;
@@ -10,4 +10,4 @@
 @extern void () traceoff;
 @extern void (entity e) eprint;
 
-#endif//__debug_h
+#endif//__ruamoko_debug_h

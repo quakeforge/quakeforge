@@ -1,5 +1,5 @@
-#ifndef __string_h
-#define __string_h
+#ifndef __ruamoko_string_h
+#define __ruamoko_string_h
 
 @extern void (entity client, string s) sprint;
 @extern string (float f) ftos;
@@ -12,4 +12,4 @@
 @extern integer (string s) stoi;
 @extern vector (string s) stov;
 
-#endif//__string_h
+#endif//__ruamoko_string_h

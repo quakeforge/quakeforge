@@ -27,7 +27,7 @@ void (entity e) setspawnparms = #78;
 -free
 {
 	remove (self.ent);
-	return self;
+	return [super free];
 }
 
 -new

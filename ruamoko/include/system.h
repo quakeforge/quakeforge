@@ -1,5 +1,5 @@
-#ifndef __system_h
-#define __system_h
+#ifndef __ruamoko_system_h
+#define __ruamoko_system_h
 
 @extern void (string s) precache_sound;
 @extern void (string s) precache_model;
@@ -15,4 +15,4 @@
 @extern float () checkextension;
 @extern string () gametype;
 
-#endif//__system_h
+#endif//__ruamoko_system_h

@@ -1,8 +1,8 @@
-#ifndef __qw_message_h
-#define __qw_message_h
+#ifndef __ruamoko_qw_message_h
+#define __ruamoko_qw_message_h
 
 #include "message.h"
 
 @extern void (vector where, float set) multicast;
 
-#endif//__qw_message_h
+#endif//__ruamoko_qw_message_h

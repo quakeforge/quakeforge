@@ -1,5 +1,5 @@
-#ifndef __sound_h
-#define __sound_h
+#ifndef __ruamoko_sound_h
+#define __ruamoko_sound_h
 
 #define CHAN_AUTO 0
 #define CHAN_WEAPON 1
@@ -16,4 +16,4 @@
 @extern void (entity e, float chan, string samp, float vol, float atten) sound;
 @extern void (vector pos, string samp, float vol, float atten) ambientsound;
 
-#endif//__sound_h
+#endif//__ruamoko_sound_h

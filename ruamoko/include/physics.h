@@ -1,5 +1,5 @@
-#ifndef __physics_h
-#define __physics_h
+#ifndef __ruamoko_physics_h
+#define __ruamoko_physics_h
 
 @extern float		trace_allsolid;
 @extern float		trace_startsolid;
@@ -27,4 +27,4 @@
 @extern void (integer hull) freeboxhull;
 @extern void (integer hull, vector right, vector forward, vector up, vector mins, vector maxs) rotate_bbox;
 
-#endif//__physics_h
+#endif//__ruamoko_physics_h

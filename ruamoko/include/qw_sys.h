@@ -1,6 +1,6 @@
-#ifndef __qw_sys_h
-#define __qw_sys_h
+#ifndef __ruamoko_qw_sys_h
+#define __ruamoko_qw_sys_h
 
 @extern void (entity killer, entity killee) logfrag;
 
-#endif//__qw_sys_h
+#endif//__ruamoko_qw_sys_h

@@ -1,5 +1,5 @@
-#ifndef __rua_entity_h
-#define __rua_entity_h
+#ifndef __ruamoko_entity_h
+#define __ruamoko_entity_h
 
 #include "object.h"
 
@@ -27,4 +27,4 @@
 @extern void (entity e) makestatic;
 @extern void (entity e) setspawnparms;
 
-#endif//__rua_entity_h
+#endif//__ruamoko_entity_h
