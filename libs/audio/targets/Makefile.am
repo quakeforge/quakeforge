@@ -36,5 +36,5 @@ libsnd_output_disk_la_LIBADD=	$(plugin_LIBADD)
 libsnd_output_disk_la_SOURCES=	snd_disk.c
 
 libsnd_output_null_la_LDFLAGS=	$(plugin_LDFLAGS) -version-info 1:0:0 -rpath $(plugindir)
-libsnd_output_disk_la_LIBADD=	$(plugin_LIBADD)
+libsnd_output_null_la_LIBADD=	$(plugin_LIBADD)
 libsnd_output_null_la_SOURCES=	snd_null.c
