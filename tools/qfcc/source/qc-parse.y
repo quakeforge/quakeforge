@@ -179,6 +179,8 @@ maybe_func
 			$<scope>$.type = current_type;
 			$<scope>$.pscope = param_scope.scope_next;
 			param_scope.scope_next = 0;
+			param_scope.alloc = &param_scope.locals;
+			*param_scope.alloc = 0;
 			pr_scope = &param_scope;
 		}
 	  param_list
@@ -220,7 +222,7 @@ def_item
 def_name
 	: NAME
 		{
-			$$ = PR_GetDef (current_type, $1, pr_scope, pr_scope ? &pr_scope->num_locals : &numpr_globals);
+			$$ = PR_GetDef (current_type, $1, pr_scope, pr_scope ? pr_scope->alloc : &numpr_globals);
 			current_def = $$;
 		}
 	;
@@ -353,9 +355,28 @@ end_function
 	;
 
 statement_block
-	: '{' statements '}'
+	: '{' 
 		{
-			$$ = $2;
+			def_t      *scope = PR_NewDef (&type_void, ".scope", pr_scope);
+			scope->alloc = pr_scope->alloc;
+			scope->used = 1;
+			pr_scope->scope_next = scope->scope_next;
+			scope->scope_next = 0;
+			pr_scope = scope;
+		}
+	  statements '}'
+		{
+			def_t      *scope = pr_scope;
+
+			PR_FlushScope (pr_scope, 1);
+
+			while (scope->scope_next)
+				 scope = scope->scope_next;
+
+			scope->scope_next = pr_scope->scope->scope_next;
+			pr_scope->scope->scope_next = pr_scope;
+			pr_scope = pr_scope->scope;
+			$$ = $3;
 		}
 	;
 
@@ -656,8 +677,10 @@ build_scope (function_t *f, def_t *func)
 	def_t *def;
 	type_t *ftype = func->type;
 
+	func->alloc = &func->locals;
+
 	for (i = 0; i < ftype->num_parms; i++) {
-		def = PR_GetDef (ftype->parm_types[i], pr_parm_names[i], func, &func->num_locals);
+		def = PR_GetDef (ftype->parm_types[i], pr_parm_names[i], func, func->alloc);
 		f->parm_ofs[i] = def->ofs;
 		if (i > 0 && f->parm_ofs[i] < f->parm_ofs[i - 1])
 			Error ("bad parm order");
@@ -705,7 +728,7 @@ finish_function (function_t *f)
 	df->s_name = ReuseString (f->def->name);
 	df->s_file = s_file;
 	df->numparms = f->def->type->num_parms;
-	df->locals = f->def->num_locals;
+	df->locals = f->def->locals;
 	df->parm_start = 0;
 	for (i = 0; i < df->numparms; i++)
 		df->parm_size[i] = type_size[f->def->type->parm_types[i]->type];

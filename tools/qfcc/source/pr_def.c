@@ -218,8 +218,8 @@ PR_GetTempDef (type_t *type, def_t *scope)
 		def->type = type;
 	} else {
 		def = PR_NewDef (type, 0, scope);
-		def->ofs = scope->num_locals;
-		scope->num_locals += type_size[size];
+		def->ofs = *scope->alloc;
+		*scope->alloc += type_size[size];
 	}
 	def->users = 0;
 	def->next = temp_scope.next;
@@ -279,7 +279,10 @@ PR_FlushScope (def_t *scope, int force_used)
 				e.file = def->file;
 				warning (&e, "unused variable `%s'", def->name);
 			}
-			Hash_Del (defs_by_name, def->name);
+			if (!def->removed) {
+				Hash_Del (defs_by_name, def->name);
+				def->removed = 1;
+			}
 		}
 	}
 }

@@ -285,12 +285,14 @@ typedef struct statref_s {
 typedef struct def_s {
 	type_t			*type;
 	const char		*name;
-	int				num_locals;
+	int				locals;
+	int				*alloc;
 	gofs_t			ofs;
 	int				initialized;	// for uninit var detection
 	int				constant;	// 1 when a declaration included "= immediate"
 	statref_t		*refs;			// for relocations
 
+	int				removed;		// already removed from the symbol table
 	int				used;			// unused local detection
 	string_t		file;			// source file
 	int				line;			// source line

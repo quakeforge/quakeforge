@@ -738,8 +738,8 @@ PR_FinishCompilation (void)
 	for (f = pr_functions; f; f = f->next) {
 		if (f->builtin)
 			continue;
-		if (f->def->num_locals > num_localdefs) {
-			num_localdefs = f->def->num_locals;
+		if (f->def->locals > num_localdefs) {
+			num_localdefs = f->def->locals;
 			big_function = f->def->name;
 		}
 		f->dfunc->parm_start = numpr_globals;
