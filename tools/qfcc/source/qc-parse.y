@@ -452,8 +452,10 @@ var_initializer
 			init_elements ($<def>0, $4);
 			current_init = 0;
 		}
-	| '=' '#' const
+	| '=' '#' expr
 		{
+			if ($3->type == ex_def && $3->e.def->constant)
+				$3 = constant_expr ($3);
 			build_builtin_function ($<def>0, $3);
 		}
 	| '=' opt_state_expr { $$ = $<def>0; }
