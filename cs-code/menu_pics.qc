@@ -29,10 +29,8 @@ load_menu_pics =
 {
 	local integer i;
 
-	for (i = 0; i < 6; i++) {
-		dprint (dot_name[i]);
+	for (i = 0; i < 6; i++)
 		dot[i] = Draw_CachePic (dot_name[i], 1);
-	}
 
 	box_tl_pic = Draw_CachePic ("gfx/box_tl.lmp", 1);
 	box_ml_pic = Draw_CachePic ("gfx/box_ml.lmp", 1);
