@@ -480,16 +480,20 @@ class_finish_module (void)
 	symtab->cls_def_cnt = num_classes;
 	symtab->cat_def_cnt = num_categories;
 	def_ptr = symtab->defs;
-	for (i = 0, t = classes; i < num_classes; i++, t++) {
-		if ((*t)->def && !(*t)->def->external) {
-			reloc_def_def ((*t)->def, POINTER_OFS (def_ptr));
-			*def_ptr++ = (*t)->def->ofs;
+	if (classes) {
+		for (t = classes; *t; t++) {
+			if ((*t)->def && !(*t)->def->external) {
+				reloc_def_def ((*t)->def, POINTER_OFS (def_ptr));
+				*def_ptr++ = (*t)->def->ofs;
+			}
 		}
 	}
-	for (i = 0, t = categories; i < num_categories; i++, t++) {
-		if ((*t)->def && !(*t)->def->external) {
-			reloc_def_def ((*t)->def, POINTER_OFS (def_ptr));
-			*def_ptr++ = (*t)->def->ofs;
+	if (categories) {
+		for (t = categories; *t; t++) {
+			if ((*t)->def && !(*t)->def->external) {
+				reloc_def_def ((*t)->def, POINTER_OFS (def_ptr));
+				*def_ptr++ = (*t)->def->ofs;
+			}
 		}
 	}
 

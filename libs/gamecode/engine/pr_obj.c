@@ -93,15 +93,35 @@ object_get_class_name (progs_t *pr, pr_id_t *object)
 //====================================================================
 
 static void
+finish_class (progs_t *pr, pr_class_t *class, pointer_t object_ptr)
+{
+	pr_class_t *meta = &G_STRUCT (pr, pr_class_t, class->class_pointer);
+	pr_class_t *val;
+
+	meta->class_pointer = object_ptr;
+	if (class->super_class) {
+		val = Hash_Find (pr->classes, PR_GetString (pr,
+													class->super_class));
+		meta->super_class = val->class_pointer;
+		class->super_class = POINTER_TO_PROG (pr, val);
+	} else {
+		pointer_t  *ml = &meta->methods;
+		while (*ml)
+			ml = &G_STRUCT (pr, pr_method_list_t, *ml).method_next;
+		*ml = class->methods;
+	}
+	Sys_DPrintf ("    %d %d %d\n", meta->class_pointer, meta->super_class,
+				 class->super_class);
+}
+
+static void
 pr___obj_exec_class (progs_t *pr)
 {
 	pr_module_t *module = &P_STRUCT (pr, pr_module_t, 0);
 	pr_symtab_t *symtab;
-	pointer_t   *ptr;
-	int          i;
+	pointer_t  *ptr;
+	int         i;
 	//int          d = developer->int_val;
-	pr_class_t  *object_class;
-	pointer_t    object_ptr;
 
 	if (!module)
 		return;
@@ -147,42 +167,6 @@ pr___obj_exec_class (progs_t *pr)
 		Sys_DPrintf ("    protocols: %d\n", category->protocols);
 		ptr++;
 	}
-
-	object_class = Hash_Find (pr->classes, "Object");
-	if (object_class && !object_class->super_class)
-		object_ptr = (pr_type_t *)object_class - pr->pr_globals;
-	else
-		PR_Error (pr, "root class Object not found");
-
-	ptr = symtab->defs;
-	for (i = 0; i < symtab->cls_def_cnt; i++) {
-		pr_class_t *class = &G_STRUCT (pr, pr_class_t, *ptr);
-		pr_class_t *meta = &G_STRUCT (pr, pr_class_t, class->class_pointer);
-		pr_class_t *val;
-
-		meta->class_pointer = object_ptr;
-		if (class->super_class) {
-			val = Hash_Find (pr->classes, PR_GetString (pr,
-														class->super_class));
-			meta->super_class = val->class_pointer;
-			class->super_class = POINTER_TO_PROG (pr, val);
-		} else {
-			pointer_t  *ml = &meta->methods;
-			while (*ml)
-				ml = &G_STRUCT (pr, pr_method_list_t, *ml).method_next;
-			*ml = class->methods;
-		}
-		Sys_DPrintf ("    %d %d %d\n", meta->class_pointer, meta->super_class,
-					 class->super_class);
-
-		ptr++;
-	}
-	for (i = 0; i < symtab->cat_def_cnt; i++) {
-		//pr_category_t *category = &G_STRUCT (pr, pr_category_t, *ptr);
-		ptr++;
-	}
-
-	//developer->int_val = d;
 }
 
 //====================================================================
@@ -909,6 +893,7 @@ void
 PR_InitRuntime (progs_t *pr)
 {
 	int         fnum;
+	pr_class_t **class_list, **class;;
 
 	if (!pr->classes)
 		pr->classes = Hash_NewTable (1021, class_get_key, 0, pr);
@@ -921,4 +906,19 @@ PR_InitRuntime (progs_t *pr)
 			PR_ExecuteProgram (pr, fnum);
 		}
 	}
+
+	class_list = (pr_class_t **) Hash_GetList (pr->classes);
+	if (*class_list) {
+		pr_class_t *object_class;
+		pointer_t   object_ptr;
+
+		object_class = Hash_Find (pr->classes, "Object");
+		if (object_class && !object_class->super_class)
+			object_ptr = (pr_type_t *)object_class - pr->pr_globals;
+		else
+			PR_Error (pr, "root class Object not found");
+		for (class = class_list; *class; class++)
+			finish_class (pr, *class, object_ptr);
+	}
+	free (class_list);
 }
