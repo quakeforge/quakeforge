@@ -101,10 +101,21 @@ cvar_t		*vid_system_gamma;
 qboolean	vid_fullscreen_active;
 static qboolean    vid_context_created = false;
 
+cvar_t		*sys_dump_core;
+
 static int	xss_timeout;
 static int	xss_interval;
 static int	xss_blanking;
 static int	xss_exposures;
+
+void
+dump_core_callback (cvar_t *sys_dump_core)
+{
+#ifndef HAVE_UNISTD_H
+	if (sys_dump_core->int_val)
+		Con_Printf ("support for dumping core has not been compiled in!\n");
+#endif
+}
 
 qboolean
 X11_AddEvent (int event, void (*event_handler) (XEvent *))
@@ -166,10 +177,25 @@ X11_ProcessEvents (void)
 static void
 TragicDeath (int sig)
 {
-	printf ("Received signal %d, exiting...\n", sig);
-	Sys_Quit ();
-	abort();	// Hopefully not an infinite loop.
-//	exit (sig);
+#ifdef HAVE_UNISTD_H
+	if (sys_dump_core && sys_dump_core->int_val == 1) { // paranoid check that is NOT needed at time of writing (cvar init happens before rest of init)
+		if (fork()) {
+			printf ("Received signal %d, dumping core and exiting...\n", sig);
+			Sys_Quit ();
+		} else {
+			signal (SIGABRT, SIG_IGN); // is xlib setting a handler on us?
+			abort ();
+		}
+	} else {
+#endif
+		printf ("Received signal %d, exiting...\n", sig);
+		Sys_Quit ();
+		abort();	// Hopefully not an infinite loop. // never reached
+#ifdef HAVE_UNISTD_H
+	}
+#endif
+
+	// exit (sig);
 	// XCloseDisplay(x_disp);
 	// VID_Shutdown();
 	// Sys_Error("This death brought to you by the number %d\n", signal_num);
@@ -346,6 +372,7 @@ X11_Init_Cvars (void)
 							   "Toggles fullscreen game mode");
 	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
 								 "Use system gamma control if available");
+	sys_dump_core = Cvar_Get ("sys_dumpcore", "0", CVAR_NONE, dump_core_callback, "Dump core on Tragic Death.  Be sure to check 'ulimit -c'");
 }
 
 void
