@@ -1607,7 +1607,7 @@ AC_MSG_RESULT([
 	QuakeForge has been configured successfully.
 
 	Build type:$BUILD_TYPE
-	Server support: $SV_TARGETS
+	Server support:$SV_TARGETS
 	Client support:$CL_TARGETS
 	Sound support:$SOUND_TYPES
 	CD Audio system:$CDTYPE

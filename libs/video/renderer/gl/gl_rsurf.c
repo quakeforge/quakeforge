@@ -657,9 +657,6 @@ R_DrawBrushModel (entity_t *e)
 
 	memset (lightmap_polys, 0, sizeof (lightmap_polys));
 	memset (fullbright_polys, 0, sizeof (fullbright_polys));
-	if (gl_sky_clip->int_val) {
-		sky_chain = 0;
-	}
 
 	VectorSubtract (r_refdef.vieworg, e->origin, modelorg);
 	if (rotated) {
@@ -724,8 +721,8 @@ R_DrawBrushModel (entity_t *e)
 	if (gl_fb_bmodels->int_val)
 		R_RenderFullbrights ();
 
-	if (gl_sky_clip->int_val)
-		R_DrawSkyChain (sky_chain);
+	//if (gl_sky_clip->int_val)
+	//	R_DrawSkyChain (sky_chain);
 
 	qfglPopMatrix ();
 }
@@ -815,14 +812,15 @@ R_DrawWorld (void)
 
 	memset (lightmap_polys, 0, sizeof (lightmap_polys));
 	memset (fullbright_polys, 0, sizeof (fullbright_polys));
-	if (gl_sky_clip->int_val) {
-		sky_chain = 0;
-	} else {
-		// Be sure to clear the skybox --KB
+
+	sky_chain = 0;
+	if (!gl_sky_clip->int_val) {
 		R_DrawSky ();
 	}
 
 	R_RecursiveWorldNode (r_worldentity.model->nodes);
+
+	R_DrawSkyChain (sky_chain);
 
 	DrawTextureChains ();
 
@@ -831,9 +829,6 @@ R_DrawWorld (void)
 
 	if (gl_fb_bmodels->int_val)
 		R_RenderFullbrights ();
-
-	if (gl_sky_clip->int_val)
-		R_DrawSkyChain (sky_chain);
 }
 
 void

@@ -659,18 +659,6 @@ R_DrawSkyBoxPoly (glpoly_t *poly)
 }
 
 void
-R_DrawSkyDomePoly (glpoly_t *poly)
-{
-	int         i;
-
-	qfglBegin (GL_POLYGON);
-	for (i = 0; i < poly->numverts; i++) {
-		qfglVertex3fv (poly->verts[i]);
-	}
-	qfglEnd ();
-}
-
-void
 EmitSkyPolys (float speedscale, msurface_t *fa)
 {
 	glpoly_t   *p;
@@ -702,85 +690,141 @@ EmitSkyPolys (float speedscale, msurface_t *fa)
 	}
 }
 
-void
-R_DrawSkyChain (msurface_t *sky_chain)
+static inline void
+draw_poly (glpoly_t *poly)
+{
+	int         i;
+
+	qfglBegin (GL_POLYGON);
+	for (i = 0; i < poly->numverts; i++) {
+		qfglVertex3fv (poly->verts[i]);
+	}
+	qfglEnd ();
+}
+
+static void
+draw_black_sky_polys (msurface_t *sky_chain)
 {
 	msurface_t *sc = sky_chain;
 
-	if (gl_sky_clip->int_val > 2) {
-		qfglDisable (GL_BLEND);
-		qfglDisable (GL_TEXTURE_2D);
-		qfglColor3ubv (color_black);
-		while (sc) {
-			glpoly_t   *p = sc->polys;
+	qfglDisable (GL_BLEND);
+	qfglDisable (GL_TEXTURE_2D);
+	qfglColor3ubv (color_black);
+	while (sc) {
+		glpoly_t   *p = sc->polys;
 
-			while (p) {
-				R_DrawSkyDomePoly (p);
-				p = p->next;
-			}
-			sc = sc->texturechain;
+		while (p) {
+			draw_poly (p);
+			p = p->next;
 		}
-		qfglEnable (GL_TEXTURE_2D);
-		qfglEnable (GL_BLEND);
-		qfglColor3ubv (color_white);
-		return;
+		sc = sc->texturechain;
+	}
+	qfglEnable (GL_TEXTURE_2D);
+	qfglEnable (GL_BLEND);
+	qfglColor3ubv (color_white);
+}
+
+static void
+draw_skybox_sky_polys (msurface_t *sky_chain)
+{
+	msurface_t *sc = sky_chain;
+
+	//qfglDepthRange (gldepthmax, gldepthmax);
+	qfglDepthMask (GL_FALSE);
+	qfglDisable (GL_DEPTH_TEST);
+	while (sc) {
+		glpoly_t   *p = sc->polys;
+
+		while (p) {
+			R_DrawSkyBoxPoly (p);
+			p = p->next;
+		}
+		sc = sc->texturechain;
+	}
+	qfglEnable (GL_DEPTH_TEST);
+	qfglDepthMask (GL_TRUE);
+	//qfglDepthRange (gldepthmin, gldepthmax);
+}
+
+static void
+draw_skydome_sky_polys (msurface_t *sky_chain)
+{
+	// this function is not yet implemented so just draw black
+	draw_black_sky_polys (sky_chain);
+}
+
+static void
+draw_id_sky_polys (msurface_t *sky_chain)
+{
+	msurface_t *sc = sky_chain;
+	float       speedscale;
+
+	speedscale = r_realtime * 8;
+	speedscale -= (int)speedscale & ~127 ;
+
+	qfglBindTexture (GL_TEXTURE_2D, solidskytexture);
+	while (sc) {
+		EmitSkyPolys (speedscale, sc);
+		sc = sc->texturechain;
 	}
 
-	if (skyloaded) {
-		qfglDepthRange (gldepthmax, gldepthmax);
-		while (sc) {
-			glpoly_t   *p = sc->polys;
+	if (gl_skymultipass->int_val) {
+		sc = sky_chain;
 
-			while (p) {
-				R_DrawSkyBoxPoly (p);
-				p = p->next;
-			}
-			sc = sc->texturechain;
-		}
-		qfglDepthRange (gldepthmin, gldepthmax);
-	} else if (gl_sky_clip->int_val == 2) {
-		float       speedscale;
-
-		speedscale = r_realtime * 8;
+		speedscale = r_realtime * 16;
 		speedscale -= (int)speedscale & ~127 ;
 
-		qfglBindTexture (GL_TEXTURE_2D, solidskytexture);
+		qfglBindTexture (GL_TEXTURE_2D, alphaskytexture);
 		while (sc) {
 			EmitSkyPolys (speedscale, sc);
 			sc = sc->texturechain;
 		}
-
-		if (gl_skymultipass->int_val) {
-			sc = sky_chain;
-
-			speedscale = r_realtime * 16;
-			speedscale -= (int)speedscale & ~127 ;
-
-			qfglBindTexture (GL_TEXTURE_2D, alphaskytexture);
-			while (sc) {
-				EmitSkyPolys (speedscale, sc);
-				sc = sc->texturechain;
-			}
-		}
-	} else {
-		// this code is duplicated from above because skydome is not yet
-		// clipped
-		qfglDisable (GL_BLEND);
-		qfglDisable (GL_TEXTURE_2D);
-		qfglColor3ubv (color_black);
-		while (sc) {
-			glpoly_t   *p = sc->polys;
-
-			while (p) {
-				R_DrawSkyDomePoly (p);
-				p = p->next;
-			}
-			sc = sc->texturechain;
-		}
-		qfglEnable (GL_TEXTURE_2D);
-		qfglEnable (GL_BLEND);
-		qfglColor3ubv (color_white);
 	}
+}
+
+static void
+draw_z_sky_polys (msurface_t *sky_chain)
+{
+	msurface_t *sc = sky_chain;
+
+	qfglColorMask (GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	qfglDisable (GL_BLEND);
+	qfglDisable (GL_TEXTURE_2D);
+	qfglColor3ubv (color_black);
+	while (sc) {
+		glpoly_t   *p = sc->polys;
+
+		while (p) {
+			draw_poly (p);
+			p = p->next;
+		}
+		sc = sc->texturechain;
+	}
+	qfglColor3ubv (color_white);
+	qfglEnable (GL_TEXTURE_2D);
+	qfglEnable (GL_BLEND);
+	qfglColorMask (GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+}
+
+void
+R_DrawSkyChain (msurface_t *sky_chain)
+{
+	if (gl_sky_clip->int_val > 2) {
+		draw_black_sky_polys (sky_chain);
+		return;
+	}
+
+	if (skyloaded) {
+		if (gl_sky_clip->int_val) {
+			draw_skybox_sky_polys (sky_chain);
+		}
+	} else if (gl_sky_clip->int_val == 2) {
+		draw_id_sky_polys (sky_chain);
+	} else if (gl_sky_clip->int_val) {
+		draw_skydome_sky_polys (sky_chain);
+		return; // XXX not properly implemented
+	}
+	draw_z_sky_polys (sky_chain);
 #if 0
 	// seems to work, but this is the wrong place to do it.
 	color_white[3] = 0;

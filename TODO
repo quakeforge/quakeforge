@@ -11,7 +11,7 @@ I  GL is still way too slow
 I  Client side QuakeC.
 I  mingw cross compiling
 I  merge nq and qw code bases
-W  fix skybox/dome vis problems (workable solution found, needs new renderer)
+X  fix skybox/dome vis problems (workable solution found, needs new renderer)
 o  ogg support
 o  It's possible to stick on some obtuse-angled corners qwsv 2.3x didn't
 o  better server control of certain cvars

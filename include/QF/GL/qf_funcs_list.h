@@ -87,7 +87,7 @@ QFGL_DONT_NEED (void, glColor4ui, (GLuint red, GLuint green, GLuint blue, GLuint
 QFGL_DONT_NEED (void, glColor4uiv, (const GLuint * v));
 QFGL_DONT_NEED (void, glColor4us, (GLushort red, GLushort green, GLushort blue, GLushort alpha));
 QFGL_DONT_NEED (void, glColor4usv, (const GLushort * v));
-QFGL_DONT_NEED (void, glColorMask, (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha));
+QFGL_NEED (void, glColorMask, (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha));
 QFGL_DONT_NEED (void, glColorMaterial, (GLenum face, GLenum mode));
 QFGL_NEED (void, glColorPointer, (GLint size, GLenum type, GLsizei stride, const GLvoid * ptr));
 QFGL_DONT_NEED (void, glColorSubTable, (GLenum target, GLsizei start, GLsizei count, GLenum format, GLenum type, const GLvoid * data));
