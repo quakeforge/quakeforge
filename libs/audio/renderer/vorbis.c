@@ -47,7 +47,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <vorbis/vorbisfile.h>
 
 #include "QF/cvar.h"
-#include "QF/quakeio.h"
+#include "QF/quakefs.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
 
@@ -85,71 +85,183 @@ static ov_callbacks callbacks = {
 	tell_func,
 };
 
-sfxcache_t *
-SND_LoadOgg (QFile *file, sfx_t *sfx, cache_allocator_t allocator)
+static void
+get_info (OggVorbis_File *vf, sfx_t *sfx)
 {
-	OggVorbis_File vf;
 	vorbis_info *vi;
-	long        samples, size;
-	byte       *data, *d;
-	int         current_section;
 	int         sample_start = -1, sample_count = 0;
-	sfxcache_t *sc = 0;
 	char      **ptr;
 
-	if (ov_open_callbacks (file, &vf, 0, 0, callbacks) < 0) {
-		Sys_Printf ("Input does not appear to be an Ogg bitstream.\n");
-		Qclose (file);
-		return 0;
-	}
-	vi = ov_info (&vf, -1);
-	samples = ov_pcm_total (&vf, -1);
+	vi = ov_info (vf, -1);
+	sfx->length = ov_pcm_total (vf, -1);
+	sfx->channels = vi->channels;
+	sfx->speed = vi->rate;
 
-	for (ptr = ov_comment (&vf, -1)->user_comments; *ptr; ptr++) {
+	for (ptr = ov_comment (vf, -1)->user_comments; *ptr; ptr++) {
 		Sys_DPrintf ("%s\n", *ptr);
 		if (strncmp ("CUEPOINT=", *ptr, 9) == 0) {
 			sscanf (*ptr + 9, "%d %d", &sample_start, &sample_count);
-		} else {
-			sample_count = samples;
+			break;
 		}
 	}
-	if (sample_start != -1)
-		samples = sample_start + sample_count;
-	size = samples * vi->channels * 2;
+
 	if (developer->int_val) {
-		Sys_Printf ("\nBitstream is %d channel, %ldHz\n",
-					vi->channels, vi->rate);
-		Sys_Printf ("\nDecoded length: %ld samples (%ld bytes)\n",
-					samples, size);
-		Sys_Printf ("Encoded by: %s\n\n", ov_comment (&vf, -1)->vendor);
+		Sys_Printf ("\nBitstream is %d channel, %dHz\n",
+					sfx->channels, sfx->speed);
+		Sys_Printf ("\nDecoded length: %d samples (%d bytes)\n",
+					sfx->length, sfx->length * sfx->channels * 2);
+		Sys_Printf ("Encoded by: %s\n\n", ov_comment (vf, -1)->vendor);
 	}
-	data = malloc (size);
-	if (!data)
-		goto bail;
-	sc = SND_GetCache (samples, vi->rate, 2, vi->channels, sfx, allocator);
-	if (!sc)
-		goto bail;
-	d = data;
-	while (size) {
-		int         res = ov_read (&vf, d, size, 0, 2, 1, &current_section);
+
+	if (sample_start != -1)
+		sfx->length = sample_start + sample_count;
+	sfx->loopstart = sample_start;
+}
+
+static int
+read_ogg (OggVorbis_File *vf, byte *buf, int len)
+{
+	int         count = 0;
+	int         current_section;
+
+	while (len) {
+		int         res = ov_read (vf, buf, len, 0, 2, 1, &current_section);
 		if (res > 0) {
-			size -= res;
-			d += res;
+			count += res;
+			len -= res;
+			buf += res;
 		} else if (res < 0) {
 			Sys_Printf ("vorbis error %d\n", res);
-			goto bail;
+			return -1;
 		} else {
 			Sys_Printf ("unexpected eof\n");
 			break;
 		}
 	}
-	sc->loopstart = sample_start;
-	SND_ResampleSfx (sc, data);
+	return count;
+}
+
+static sfxbuffer_t *
+load_ogg (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
+{
+	long        size;
+	byte       *data;
+	sfxbuffer_t *sc = 0;
+	sfx_t      *sfx = block->sfx;
+	int        channels;
+
+
+	get_info (vf, sfx);
+
+	channels = sfx->channels;
+
+	size = sfx->length * channels * 2;
+
+	data = malloc (size);
+	if (!data)
+		goto bail;
+	sc = SND_GetCache (sfx->length, sfx->speed, 2, channels, block, allocator);
+	if (!sc)
+		goto bail;
+	if (read_ogg (vf, data, size) < 0)
+		goto bail;
+	SND_ResampleSfx (sfx, sc, data);
   bail:
 	if (data)
 		free (data);
-	ov_clear (&vf);
+	ov_clear (vf);
 	return sc;
+}
+
+static void
+ogg_callback_load (void *object, cache_allocator_t allocator)
+{
+	QFile      *file;
+	OggVorbis_File vf;
+
+	sfxblock_t *block = (sfxblock_t *) object;
+	
+	QFS_FOpenFile (block->file, &file);
+	if (!file)
+		return; //FIXME Sys_Error?
+
+	if (ov_open_callbacks (file, &vf, 0, 0, callbacks) < 0) {
+		Sys_Printf ("Input does not appear to be an Ogg bitstream.\n");
+		Qclose (file);
+		return; //FIXME Sys_Error?
+	}
+	load_ogg (&vf, block, allocator);
+}
+
+static void
+vorbis_advance (sfxbuffer_t *buffer, int count)
+{
+}
+
+static void
+stream_ogg (sfx_t *sfx, OggVorbis_File *vf)
+{
+	sfxstream_t *stream;
+	int         length, bytes;
+	void        (*paint) (channel_t *ch, sfxbuffer_t *buffer, int count);
+
+
+	get_info (vf, sfx);
+
+	switch (sfx->channels) {
+		case 1:
+			paint = SND_PaintChannelFrom16;
+			break;
+		case 2:
+			paint = SND_PaintChannelStereo16;
+			break;
+		default:
+			Sys_Printf ("%s: unsupported channel count: %d\n",
+						sfx->name, sfx->channels);
+			return;
+	}
+
+	length = shm->speed * snd_mixahead->value * 3;
+	bytes = sfx->channels * 2 * length;
+
+	stream = calloc (1, sizeof (sfxstream_t) + bytes);
+
+	stream->file = malloc (sizeof (OggVorbis_File));
+	memcpy (stream->file, vf, sizeof (OggVorbis_File));
+
+	stream->buffer.length = length;
+	stream->buffer.paint = paint;
+	stream->buffer.advance = vorbis_advance;
+
+	sfx->data = stream;
+}
+
+void
+SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
+{
+	OggVorbis_File vf;
+
+	if (ov_open_callbacks (file, &vf, 0, 0, callbacks) < 0) {
+		Sys_Printf ("Input does not appear to be an Ogg bitstream.\n");
+		Qclose (file);
+		free (realname);
+		return;
+	}
+	if (ov_pcm_total (&vf, -1) < 3 * shm->speed) {
+		sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
+		ov_clear (&vf);
+		sfx->data = block;
+		sfx->retain = SND_CacheRetain;
+		sfx->release = SND_CacheRelease;
+		block->sfx = sfx;
+		block->file = realname;
+		Cache_Add (&block->cache, block, ogg_callback_load);
+	} else {
+		sfx->retain = SND_StreamRetain;
+		sfx->release = SND_StreamRelease;
+		free (realname);
+		stream_ogg (sfx, &vf);
+	}
 }
 
 #else//HAVE_VORBIS
@@ -160,11 +272,12 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, cache_allocator_t allocator)
 
 #include "snd_render.h"
 
-sfxcache_t *
-SND_LoadOgg (QFile *file, sfx_t *sfx, cache_allocator_t allocator)
+void
+SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 {
 	Sys_Printf ("Ogg/Vorbis support not available, sorry.\n");
 	Qclose (file);
-	return 0;
+	free (realname);
+	return;
 }
 #endif//HAVE_VORBIS

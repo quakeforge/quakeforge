@@ -32,25 +32,41 @@
 #ifndef __snd_render_h
 #define __snd_render_h
 
+#include "QF/zone.h"
+
 // !!! if this is changed, it must be changed in asm_i386.h too !!!
 typedef struct portable_samplepair_s {
 	int left;
 	int right;
 } portable_samplepair_t;
 
-// !!! if this is changed, it much be changed in asm_i386.h too !!!
-typedef struct sfxcache_s {
-	int 	length;
-	int 	loopstart;
-	int 	speed;
-	int 	width;
-	int 	stereo;
-	int		bytes;
-	byte	data[4];		// variable sized
-} sfxcache_t;
+typedef struct channel_s channel_t;
+typedef struct sfxbuffer_s sfxbuffer_t;
+struct sfxbuffer_s {
+	int			head;			// ring buffer head position in sampels
+	int         tail;			// ring buffer tail position in sampels
+	int         length;			// length of buffer in samples
+	int         pos;			// position of tail within full stream
+	void        (*paint) (channel_t *ch, sfxbuffer_t *buffer, int count);
+	void        (*advance) (sfxbuffer_t *buffer, int count);
+	byte        data[4];
+};
+
+typedef struct sfxstream_s {
+	sfx_t      *sfx;
+	void       *file;
+	sfxbuffer_t buffer;
+} sfxstream_t;
+
+typedef struct sfxblock_s {
+	sfx_t      *sfx;
+	const char *file;
+	int         bytes;
+	cache_user_t cache;
+} sfxblock_t;
 
 // !!! if this is changed, it much be changed in asm_i386.h too !!!
-typedef struct channel_s {
+struct channel_s {
 	sfx_t	*sfx;			// sfx number
 	int		leftvol;		// 0-255 volume
 	int		rightvol;		// 0-255 volume
@@ -64,7 +80,7 @@ typedef struct channel_s {
 	int	master_vol;		// 0-255 master volume
 	int	phase;	// phase shift between l-r in samples
 	int	oldphase;	// phase shift between l-r in samples
-} channel_t;
+};
 
 typedef struct wavinfo_s {
 	int		rate;
@@ -99,9 +115,9 @@ void SND_LocalSound (const char *s);
 void SND_BlockSound (void);
 void SND_UnblockSound (void);
 
-void SND_ResampleSfx (sfxcache_t *sc, byte * data);
-sfxcache_t *SND_GetCache (long samples, int rate, int inwidth, int channels,
-						  sfx_t *sfx, cache_allocator_t allocator);
+void SND_ResampleSfx (sfx_t *sfx, sfxbuffer_t *sc, byte *data);
+sfxbuffer_t *SND_GetCache (long samples, int rate, int inwidth, int channels,
+						   sfxblock_t *block, cache_allocator_t allocator);
 
 void SND_InitScaletable (void);
 // picks a channel based on priorities, empty slots, number of channels
@@ -109,15 +125,21 @@ channel_t *SND_PickChannel(int entnum, int entchannel);
 // spatializes a channel
 void SND_Spatialize(channel_t *ch);
 
+void SND_Load (sfx_t *sfx);
 void SND_CallbackLoad (void *object, cache_allocator_t allocator);
-sfxcache_t *SND_LoadOgg (QFile *file, sfx_t *sfx, cache_allocator_t allocator);
-wavinfo_t SND_GetWavinfo (const char *name, byte * wav, int wavlength);
+void SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname);
+void SND_LoadWav (QFile *file, sfx_t *sfx, char *realname);
+
+sfxbuffer_t *SND_CacheRetain (sfx_t *sfx);
+void SND_CacheRelease (sfx_t *sfx);
+sfxbuffer_t *SND_StreamRetain (sfx_t *sfx);
+void SND_StreamRelease (sfx_t *sfx);
 
 void SND_WriteLinearBlastStereo16 (void);
-void SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count);
-void SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count);
-void SND_PaintChannelStereo8 (channel_t *ch, sfxcache_t *sc, int count);
-void SND_PaintChannelStereo16 (channel_t *ch, sfxcache_t *sc, int count);
+void SND_PaintChannelFrom8 (channel_t *ch, sfxbuffer_t *sc, int count);
+void SND_PaintChannelFrom16 (channel_t *ch, sfxbuffer_t *sc, int count);
+void SND_PaintChannelStereo8 (channel_t *ch, sfxbuffer_t *sc, int count);
+void SND_PaintChannelStereo16 (channel_t *ch, sfxbuffer_t *sc, int count);
 
 wavinfo_t GetWavinfo (const char *name, byte *wav, int wavlength);
 

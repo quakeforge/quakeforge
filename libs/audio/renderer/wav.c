@@ -43,184 +43,84 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
+#include "QF/riff.h"
 
 #include "snd_render.h"
 
-static byte	   *data_p;
-static byte	   *iff_end;
-static byte	   *last_chunk;
-static byte	   *iff_data;
-static int		iff_chunk_len;
-
-static short
-SND_GetLittleShort (void)
-{
-	short		val = 0;
-
-	val = *data_p;
-	val = val + (*(data_p + 1) << 8);
-	data_p += 2;
-	return val;
-}
-
-static int
-SND_GetLittleLong (void)
-{
-	int			val = 0;
-
-	val = *data_p;
-	val = val + (*(data_p + 1) << 8);
-	val = val + (*(data_p + 2) << 16);
-	val = val + (*(data_p + 3) << 24);
-	data_p += 4;
-	return val;
-}
-
-static void
-SND_FindNexctChunk (const char *name)
-{
-	while (1) {
-		data_p = last_chunk;
-
-		if (data_p >= iff_end) {		// didn't find the chunk
-			data_p = NULL;
-			return;
-		}
-
-		data_p += 4;
-		iff_chunk_len = SND_GetLittleLong ();
-		if (iff_chunk_len < 0) {
-			data_p = NULL;
-			return;
-		}
-
-		data_p -= 8;
-		last_chunk = data_p + 8 + ((iff_chunk_len + 1) & ~1);
-		if (!strncmp (data_p, name, 4))
-			return;
-	}
-}
-
-static void
-SND_FindChunk (const char *name)
-{
-	last_chunk = iff_data;
-	SND_FindNexctChunk (name);
-}
-
-static wavinfo_t
-SND_GetWavinfo (const char *name, byte * wav, int wavlength)
-{
-	int			format, samples, i;
-	wavinfo_t	info;
-
-	memset (&info, 0, sizeof (info));
-
-	if (!wav)
-		return info;
-
-	iff_data = wav;
-	iff_end = wav + wavlength;
-
-	// find "RIFF" chunk
-	SND_FindChunk ("RIFF");
-	if (!(data_p && !strncmp (data_p + 8, "WAVE", 4))) {
-		Sys_Printf ("Missing RIFF/WAVE chunks\n");
-		return info;
-	}
-	// get "fmt " chunk
-	iff_data = data_p + 12;
-//	SND_DumpChunks ();
-
-	SND_FindChunk ("fmt ");
-	if (!data_p) {
-		Sys_Printf ("Missing fmt chunk\n");
-		return info;
-	}
-	data_p += 8;
-	format = SND_GetLittleShort ();
-	if (format != 1) {
-		Sys_Printf ("Microsoft PCM format only\n");
-		return info;
-	}
-
-	info.channels = SND_GetLittleShort ();
-	info.rate = SND_GetLittleLong ();
-	data_p += 4 + 2;
-	info.width = SND_GetLittleShort () / 8;
-
-	// get cue chunk
-	SND_FindChunk ("cue ");
-	if (data_p) {
-		data_p += 32;
-		info.loopstart = SND_GetLittleLong ();
-
-		// if the next chunk is a LIST chunk, look for a cue length marker
-		SND_FindNexctChunk ("LIST");
-		if (data_p) {
-			if (!strncmp (data_p + 28, "mark", 4)) {
-				// this is not a proper parse, but it works with cooledit...
-				data_p += 24;
-				i = SND_GetLittleLong ();	// samples in loop
-				info.samples = info.loopstart + i;
-			}
-		}
-	} else
-		info.loopstart = -1;
-
-	// find data chunk
-	SND_FindChunk ("data");
-	if (!data_p) {
-		Sys_Printf ("Missing data chunk\n");
-		return info;
-	}
-
-	data_p += 4;
-	samples = SND_GetLittleLong () / info.width;
-
-	if (info.samples) {
-		if (samples < info.samples)
-			Sys_Error ("Sound %s has a bad loop length", name);
-	} else
-		info.samples = samples;
-
-	info.dataofs = data_p - wav;
-
-	return info;
-}
 
 void
-SND_LoadWav (QFile *file)
+SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 {
-	int         size;
+	riff_t     *riff;
+	riff_d_chunk_t **ck;
 
-	size = Qfilelen (file);
-	data = Hunk_TempAlloc (size);
-	Qread (file, data, size);
+	riff_format_t *fmt;
+	riff_d_format_t *dfmt = 0;
 
-	info = SND_GetWavinfo (sfx->name, data, qfs_filesize);
-	if (info.channels != 1) {
-		Sys_Printf ("%s is a stereo sample\n", sfx->name);
-		return NULL;
+	riff_data_t *data = 0;
+
+	riff_cue_t *cue;
+	riff_d_cue_t *dcue;
+	riff_d_cue_point_t *cp = 0;
+
+	riff_list_t *list;
+	riff_d_chunk_t **lck;
+
+	riff_ltxt_t *ltxt;
+	riff_d_ltxt_t *dltxt = 0;
+
+	int         loop_start = -1, sample_count = -1;
+
+	if (!(riff = riff_read (file))) {
+		Sys_Printf ("bad riff file\n");
+		return;
 	}
 
-	stepscale = (float) info.rate / shm->speed;
-	len = info.samples / stepscale;
-
-	if (snd_loadas8bit->int_val) {
-		len = len * info.channels;
-	} else {
-		len = len * 2 * info.channels;
+	for (ck = riff->chunks; *ck; ck++) {
+		RIFF_SWITCH ((*ck)->name) {
+			case RIFF_CASE ('f','m','t',' '):
+				fmt = (riff_format_t *) *ck;
+				dfmt = (riff_d_format_t *) fmt->fdata;
+				break;
+			case RIFF_CASE ('d','a','t','a'):
+				data = (riff_data_t *) *ck;
+				break;
+			case RIFF_CASE ('c','u','e',' '):
+				cue = (riff_cue_t *) *ck;
+				dcue = cue->cue;
+				if (dcue->count)
+					cp = &dcue->cue_points[dcue->count - 1];
+				break;
+			case RIFF_CASE ('L','I','S','T'):
+				list = (riff_list_t *) *ck;
+				RIFF_SWITCH (list->name) {
+					case RIFF_CASE ('a','d','t','l'):
+						for (lck = list->chunks; *lck; lck++) {
+							RIFF_SWITCH ((*lck)->name) {
+								case RIFF_CASE ('l','t','x','t'):
+									ltxt = (riff_ltxt_t *) *ck;
+									dltxt = &ltxt->ltxt;
+									break;
+							}
+						}
+						break;
+				}
+				break;
+		}
 	}
-
-	sc = SND_GetCache (info.samples, info.rate, info.width, info.channels,
-					   sfx, allocator);
-	if (!sc)
-		return NULL;
-
-	sfx->loopstart = info.loopstart;
-
-	SND_ResampleSfx (sc, data + info.dataofs);
-
-	return sc;
+	if (!dfmt) {
+		Sys_Printf ("missing format chunk\n");
+		goto bail;
+	}
+	if (!data) {
+		Sys_Printf ("missing data chunk\n");
+		goto bail;
+	}
+	if (dltxt)
+		sample_count = dltxt->len;
+	if (cp)
+		loop_start = cp->sample_offset;
+bail:
+	Qclose (file);
+	riff_free (riff);
 }

@@ -55,7 +55,6 @@ int         snd_scaletable[32][256];
 int        *snd_p, snd_linear_count, snd_vol;
 short      *snd_out;
 
-#ifndef USE_INTEL_ASM
 void
 SND_WriteLinearBlastStereo16 (void)
 {
@@ -79,7 +78,6 @@ SND_WriteLinearBlastStereo16 (void)
 			snd_out[i + 1] = val;
 	}
 }
-#endif
 
 static void
 SND_TransferStereo16 (int endtime)
@@ -172,7 +170,7 @@ SND_PaintChannels (int endtime)
 {
 	int			end, ltime, count, i;
 	channel_t  *ch;
-	sfxcache_t *sc;
+	sfxbuffer_t *sc;
 
 	while (paintedtime < endtime) {
 		// if paintbuffer is smaller than DMA buffer
@@ -192,7 +190,7 @@ SND_PaintChannels (int endtime)
 				continue;
 			if (!ch->leftvol && !ch->rightvol)
 				continue;
-			sc = Cache_TryGet (&ch->sfx->cache);
+			sc = ch->sfx->retain (ch->sfx);
 			if (!sc)
 				continue;
 
@@ -205,20 +203,17 @@ SND_PaintChannels (int endtime)
 					count = end - ltime;
 
 				if (count > 0) {
-					if (sc->width == 1)
-						SND_PaintChannelFrom8 (ch, sc, count);
-					else
-						SND_PaintChannelFrom16 (ch, sc, count);
+					sc->paint (ch, sc, count);
 
 					ltime += count;
 				}
 				// if at end of loop, restart
 				if (ltime >= ch->end) {
-					if (sc->loopstart >= 0) {
-						ch->pos = sc->loopstart;
-						ch->end = ltime + sc->length - ch->pos;
+					if (ch->sfx->loopstart >= 0) {
+						ch->pos = ch->sfx->loopstart;
+						ch->end = ltime + ch->sfx->length - ch->pos;
 					} else {			// channel just stopped
-						Cache_Release (&ch->sfx->cache);
+						ch->sfx->release (ch->sfx);
 						ch->sfx = NULL;
 						break;
 					}
@@ -226,7 +221,7 @@ SND_PaintChannels (int endtime)
 			}
 
 			if (ch->sfx)
-				Cache_Release (&ch->sfx->cache);
+				ch->sfx->release (ch->sfx);
 		}
 
 		// transfer out according to DMA format
@@ -251,9 +246,8 @@ SND_InitScaletable (void)
 			snd_scaletable[i][j] = ((signed char) j) * i * 8;
 }
 
-#ifndef USE_INTEL_ASM
 void
-SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count)
+SND_PaintChannelFrom8 (channel_t *ch, sfxbuffer_t *sc, int count)
 {
 	unsigned char  *sfx;
 	int				data, i;
@@ -276,10 +270,9 @@ SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count)
 
 	ch->pos += count;
 }
-#endif // !USE_INTEL_ASM
 
 void
-SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
+SND_PaintChannelFrom16 (channel_t *ch, sfxbuffer_t *sc, int count)
 {
 	int		leftvol, rightvol;
 	unsigned int	left_phase, right_phase;	// Never allowed < 0 anyway
@@ -374,7 +367,7 @@ SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
 }
 
 void
-SND_PaintChannelStereo8 (channel_t *ch, sfxcache_t *sc, int count)
+SND_PaintChannelStereo8 (channel_t *ch, sfxbuffer_t *sc, int count)
 {
 	byte       *samp;
 	portable_samplepair_t *pair;
@@ -398,7 +391,7 @@ SND_PaintChannelStereo8 (channel_t *ch, sfxcache_t *sc, int count)
 }
 
 void
-SND_PaintChannelStereo16 (channel_t *ch, sfxcache_t *sc, int count)
+SND_PaintChannelStereo16 (channel_t *ch, sfxbuffer_t *sc, int count)
 {
 	short      *samp;
 	portable_samplepair_t *pair;

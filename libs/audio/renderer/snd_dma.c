@@ -176,7 +176,7 @@ SND_FindName (const char *name)
 
 	// see if already loaded
 	for (i = 0; i < num_sfx; i++)
-		if (!strcmp (known_sfx[i].name, name)) {
+		if (known_sfx[i].name && !strcmp (known_sfx[i].name, name)) {
 			return &known_sfx[i];
 		}
 
@@ -184,8 +184,10 @@ SND_FindName (const char *name)
 		Sys_Error ("S_FindName: out of sfx_t");
 
 	sfx = &known_sfx[i];
-	strcpy (sfx->name, name);
-	Cache_Add (&sfx->cache, sfx, SND_CallbackLoad);
+	if (sfx->name)
+		free ((char *) sfx->name);
+	sfx->name = strdup (name);
+	SND_Load (sfx);
 
 	num_sfx++;
 
@@ -201,7 +203,7 @@ SND_TouchSound (const char *name)
 		return;
 
 	sfx = SND_FindName (name);
-	Cache_Check (&sfx->cache);
+	sfx->touch (sfx);
 }
 
 sfx_t *
@@ -215,10 +217,10 @@ SND_PrecacheSound (const char *name)
 	sfx = SND_FindName (name);
 
 	// cache it in
-	if (precache->int_val)
-		if (Cache_TryGet (&sfx->cache))
-			Cache_Release (&sfx->cache);
-
+	if (precache->int_val) {
+		if (sfx->retain (sfx))
+			sfx->release (sfx);
+	}
 	return sfx;
 }
 
@@ -316,7 +318,6 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 {
 	int			ch_idx, skip, vol;
 	channel_t  *target_chan, *check;
-	sfxcache_t *sc;
 
 	if (!sound_started)
 		return;
@@ -347,16 +348,15 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 		return;							// not audible at all
 
 	// new channel
-	sc = Cache_TryGet (&sfx->cache);
-	if (!sc) {
+	if (!sfx->retain (sfx)) {
 		target_chan->sfx = NULL;
-		return;							// couldn't load the sound's data
+		return;						// couldn't load the sound's data
 	}
 
 	target_chan->sfx = sfx;
 	target_chan->pos = 0.0;
-	target_chan->end = paintedtime + sc->length;
-	Cache_Release (&sfx->cache);
+	target_chan->end = paintedtime + sfx->length;
+	sfx->release (sfx);
 
 	// if an identical sound has also been started this frame, offset the pos
 	// a bit to keep it from just making the first one louder
@@ -444,7 +444,6 @@ SND_StaticSound (sfx_t *sfx, const vec3_t origin, float vol,
 				 float attenuation)
 {
 	channel_t  *ss;
-	sfxcache_t *sc;
 
 	if (!sound_started || !sfx)
 		return;
@@ -457,13 +456,12 @@ SND_StaticSound (sfx_t *sfx, const vec3_t origin, float vol,
 	ss = &channels[total_channels];
 	total_channels++;
 
-	sc = Cache_TryGet (&sfx->cache);
-	if (!sc)
+	if (!sfx->retain (sfx))
 		return;
 
-	if (sc->loopstart == -1) {
+	if (sfx->loopstart == -1) {
 		Sys_Printf ("Sound %s not looped\n", sfx->name);
-		Cache_Release (&sfx->cache);
+		sfx->release (sfx);
 		return;
 	}
 
@@ -471,8 +469,8 @@ SND_StaticSound (sfx_t *sfx, const vec3_t origin, float vol,
 	VectorCopy (origin, ss->origin);
 	ss->master_vol = vol;
 	ss->dist_mult = (attenuation / 64) / sound_nominal_clip_dist;
-	ss->end = paintedtime + sc->length;
-	Cache_Release (&sfx->cache);
+	ss->end = paintedtime + sfx->length;
+	sfx->release (sfx);
 
 	SND_Spatialize (ss);
 	ss->oldphase = ss->phase;
@@ -736,9 +734,8 @@ SND_PlayVol (void)
 static void
 SND_SoundList (void)
 {
-	int			load, size, total, i;
+	int			load, total, i;
 	sfx_t	   *sfx;
-	sfxcache_t *sc;
 
 	if (Cmd_Argc() >= 2 && Cmd_Argv (1)[0])
 		load = 1;
@@ -747,23 +744,17 @@ SND_SoundList (void)
 
 	total = 0;
 	for (sfx = known_sfx, i = 0; i < num_sfx; i++, sfx++) {
-		if (load)
-			sc = Cache_TryGet (&sfx->cache);
-		else
-			sc = Cache_Check (&sfx->cache);
-
-		if (!sc)
-			continue;
-		size = sc->length * sc->width * (sc->stereo + 1);
-		total += size;
-		if (sc->loopstart >= 0)
-			Sys_Printf ("L");
-		else
-			Sys_Printf (" ");
-		Sys_Printf ("(%2db) %6i : %s\n", sc->width * 8, size, sfx->name);
+		if (load) {
+			if (!sfx->retain (sfx))
+				continue;
+		} else {
+			if (!sfx->touch (sfx))
+				continue;
+		}
+		total += sfx->length;
 
 		if (load)
-			Cache_Release (&sfx->cache);
+			sfx->release (sfx);
 	}
 	Sys_Printf ("Total resident: %i\n", total);
 }

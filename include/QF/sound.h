@@ -31,11 +31,9 @@
 #define _SOUND_H
 
 #include "QF/mathlib.h"
-#include "QF/quakeio.h"
-#include "QF/zone.h"
 
 #define AMBIENT_WATER	0
-#define AMBIENT_SKY	1
+#define AMBIENT_SKY		1
 #define AMBIENT_SLIME	2
 #define AMBIENT_LAVA	3
 #define NUM_AMBIENTS	4	// automatic ambient sounds
@@ -43,11 +41,23 @@
 #define DEFAULT_SOUND_PACKET_VOLUME 255
 #define DEFAULT_SOUND_PACKET_ATTENUATION 1.0
 
-typedef struct sfx_s
+typedef struct sfx_s sfx_t;
+struct sfx_s
 {
-	char 	name[MAX_QPATH];
-	cache_user_t	cache;
-} sfx_t;
+	const char *name;
+
+	int         length;
+	int         loopstart;
+	int         speed;
+	int         width;
+	int         channels;
+
+	void       *data;
+
+	struct sfxbuffer_s *(*touch) (sfx_t *sfx);
+	struct sfxbuffer_s *(*retain) (sfx_t *sfx);
+	void        (*release) (sfx_t *sfx);
+};
 
 typedef struct
 {
@@ -117,6 +127,7 @@ extern	struct cvar_s *snd_loadas8bit;
 extern	struct cvar_s *bgmvolume;
 extern	struct cvar_s *volume;
 
+extern	struct cvar_s *snd_mixahead;
 extern	struct cvar_s	*snd_device;
 extern	struct cvar_s	*snd_rate;
 extern	struct cvar_s	*snd_bits;
