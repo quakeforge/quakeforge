@@ -67,8 +67,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "view.h"
 
 typedef struct {
-	vec3_t		vert;
 	vec3_t		normal;
+	vec3_t		vert;
 } blended_vert_t;
 
 typedef struct {
@@ -575,8 +575,7 @@ R_DrawAliasModel (entity_t *e)
 		if (d > 1.0) {
 			VectorScale (emission, 1.0 / d, emission);
 		} else if (d < model->min_light && !used_lights) {
-			ambientcolor[2] = ambientcolor[1] =
-				ambientcolor[0] = model->min_light;
+			emission[2] = emission[1] = emission[0] = model->min_light;
 		}
 
 		qfglMaterialfv (GL_FRONT, GL_EMISSION, emission);
