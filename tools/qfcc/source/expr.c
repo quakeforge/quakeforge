@@ -507,7 +507,6 @@ do_op_integer (int op, expr_t *e1, expr_t *e2)
 
 	i1 = e1->e.integer_val;
 	i2 = e2->e.integer_val;
-	printf ("%d %s %d\n", i1, get_op_string (op), i2);
 	
 	switch (op) {
 		case '+':
@@ -637,8 +636,11 @@ test_expr (expr_t *e, int test)
 			new->type = ex_string;
 			break;
 		case ev_integer:
-		case ev_float:
 			return e;
+		case ev_float:
+			new = new_expr ();
+			new->type = ex_float;
+			break;
 		case ev_vector:
 			new = new_expr ();
 			new->type = ex_vector;
@@ -667,10 +669,19 @@ test_expr (expr_t *e, int test)
 	return binary_expr (NE, e, new);
 }
 
+void
+convert_int (expr_t *e)
+{
+	e->type = ex_float;
+	e->e.float_val = e->e.integer_val;
+}
+
 expr_t *
 binary_expr (int op, expr_t *e1, expr_t *e2)
 {
 	etype_t t1, t2;
+	type_t *type = 0;
+	expr_t *e;
 
 	if (op == '.')
 		return field_expr (e1, e2);
@@ -678,6 +689,23 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if (op == OR || op == AND) {
 		e1 = test_expr (e1, true);
 		e2 = test_expr (e2, true);
+	}
+
+	t1 = get_type (e1);
+	t2 = get_type (e2);
+	if (t1 == ev_void || t2 == ev_void) {
+		error (e1, "internal error");
+		abort ();
+	}
+
+	if (e1->type == ex_integer
+		&& (t2 == ev_float || t2 == ev_vector || t2 == ev_quaternion)) {
+		convert_int (e1);
+		t1 = ev_float;
+	} else if (e2->type == ex_integer
+			   && (t1 == ev_float || t1 == ev_vector || t1 == ev_quaternion)) {
+		convert_int (e2);
+		t2 = ev_float;
 	}
 
 	if (e1->type >= ex_string && e2->type >= ex_string)
@@ -688,60 +716,49 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		warning (e1, "ambiguous logic. Suggest explicit parentheses with expressions involving ! and %c", op);
 	}
 
-	t1 = get_type (e1);
-	t2 = get_type (e2);
-	if (t1 == ev_void || t2 == ev_void) {
-		error (e1, "internal error");
-		abort ();
-	}
-
-	if (t1 == t2) {
-		expr_t *e = new_binary_expr (op, e1, e2);
-		if ((op >= OR && op <= GT) || (op == '*' && t1 == ev_vector))
-			e->e.expr.type = &type_integer;
-		else
-			e->e.expr.type = types[t1];
-		if (op == '=' && e1->type == ex_expr && e1->e.expr.op == '.') {
-			e1->e.expr.type = &type_pointer;
-		}
-		return e;
-	} else {
+	if (t1 != t2) {
 		switch (t1) {
 			case ev_float:
 				if (t2 == ev_vector) {
-					expr_t *e = new_binary_expr (op, e1, e2);
-					e->e.expr.type = &type_vector;
-					return e;
-				} else if (e2->type == ex_integer) {
-					expr_t *e = new_binary_expr (op, e1, e2);
-					e->e.expr.type = &type_float;
-					e2->type = ex_float;
-					e2->e.float_val = e2->e.integer_val;
-					return e;
+					type = &type_vector;
 				} else {
 					goto type_mismatch;
 				}
+				break;
 			case ev_vector:
 				if (t2 == ev_float) {
-					expr_t *e = new_binary_expr (op, e1, e2);
-					e->e.expr.type = &type_vector;
-					return e;
+					type = &type_vector;
 				} else {
 					goto type_mismatch;
 				}
+				break;
 			case ev_field:
 				if (e1->e.expr.type->aux_type->type == t2) {
-					expr_t *e = new_binary_expr (op, e1, e2);
-					e->e.expr.type = e->e.expr.type->aux_type;
-					return e;
+					type = e1->e.expr.type->aux_type;
 				} else {
 					goto type_mismatch;
 				}
+				break;
 			default:
 type_mismatch:
 				return type_mismatch (e1, e2, op);
 		}
+	} else {
+		type = types[t1];
 	}
+	if ((op >= OR && op <= GT) || op == '>' || op == '<')
+		type = &type_integer;
+	else if (op == '*' && t1 == ev_vector && t2 == ev_vector)
+		type = &type_float;
+	if (op == '=' && e1->type == ex_expr && e1->e.expr.op == '.') {
+		e1->e.expr.type = &type_pointer;
+	}
+	if (!type)
+		error (e1, "internal error");
+
+	e = new_binary_expr (op, e1, e2);
+	e->e.expr.type = type;
+	return e;
 }
 
 expr_t *
@@ -800,7 +817,7 @@ unary_expr (int op, expr_t *e)
 				case ex_def:
 					{
 						expr_t *n = new_unary_expr (op, e);
-						n->e.expr.type = &type_float;
+						n->e.expr.type = &type_integer;
 						return n;
 					}
 				case ex_integer:
@@ -891,23 +908,23 @@ function_expr (expr_t *e1, expr_t *e2)
 		} else if (parm_count < ftype->num_parms) {
 			return error (e1, "too few arguments");
 		}
-		for (i = 0, e = e2; i < parm_count; i++, e = e->next) {
+		for (i = parm_count, e = e2; i > 0; i--, e = e->next) {
 			type_t *t;
 			if (e->type == ex_expr) {
 				t = e->e.expr.type;
 			} else if (e->type == ex_def) {
 				t = e->e.def->type;
 			} else {
-				if (ftype->parm_types[i] == &type_float
+				if (ftype->parm_types[i - 1] == &type_float
 					&& e->type == ex_integer) {
 					e->type = ex_float;
 					e->e.float_val = e->e.integer_val;
 				}
 				t = types[get_type (e)];
 			}
-			if (t != ftype->parm_types[i])
+			if (t != ftype->parm_types[i - 1])
 				err = error (e, "type mismatch for parameter %d of %s",
-							 i + 1, e1->e.def->name);
+							 i, e1->e.def->name);
 		}
 		if (err)
 			return err;
