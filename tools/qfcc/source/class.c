@@ -506,9 +506,16 @@ struct_t *
 class_new_ivars (class_t *class)
 {
 	struct_t   *ivars = new_struct (0);
-	if (class->super_class)
-		new_struct_field (ivars, class->super_class->ivars->type, 0,
-						  vis_private);
+	if (class->super_class) {
+		if (!class->super_class->ivars) {
+			error (0, "cannot find interface declaration for `%s', "
+				  "superclass of `%s'", class->super_class->name,
+				  class->name);
+		} else {
+			new_struct_field (ivars, class->super_class->ivars->type, 0,
+							  vis_private);
+		}
+	}
 	return ivars;
 }
 
