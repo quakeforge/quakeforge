@@ -62,6 +62,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "bothdefs.h"
 #include "cl_cam.h"
+#include "cl_chat.h"
 #include "cl_ents.h"
 #include "cl_input.h"
 #include "cl_main.h"
@@ -1030,17 +1031,21 @@ CL_UpdateUserinfo (void)
 			("CL_ParseServerMessage: svc_updateuserinfo > MAX_SCOREBOARD");
 
 	player = &cl.players[slot];
-	if (player->userinfo)
-		Info_Destroy (player->userinfo);
 	uid = MSG_ReadLong (net_message);
 	info = MSG_ReadString (net_message);
 	if (*info) {
 		// a totally empty userinfo string should not be possible
 		player->userid = uid;
+		if (player->userinfo)
+			Info_Destroy (player->userinfo);
 		player->userinfo = Info_ParseString (info, MAX_INFO_STRING, 0);
 		CL_ProcessUserInfo (slot, player);
+		CL_Chat_Check_Name (Info_ValueForKey (player->userinfo, "name"), slot);
 	} else {
 		// the server dropped the client
+		CL_Chat_User_Disconnected (player->userid);
+		if (player->userinfo)
+			Info_Destroy (player->userinfo);
 		memset (player, 0, sizeof (*player));
 	}
 }
@@ -1232,6 +1237,8 @@ CL_ParseServerMessage (void)
 				i = MSG_ReadByte (net_message);
 				s = MSG_ReadString (net_message);
 				if (i == PRINT_CHAT) {
+					if (!CL_Chat_Allow_Message (s))
+						break;
 					// TODO: cl_nofake 2 -- accept fake messages from teammates
 
 					if (cl_nofake->int_val) {

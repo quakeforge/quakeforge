@@ -88,6 +88,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "bothdefs.h"
 #include "buildnum.h"
 #include "cl_cam.h"
+#include "cl_chat.h"
 #include "cl_demo.h"
 #include "cl_ents.h"
 #include "cl_input.h"
@@ -342,6 +343,7 @@ CL_Connect_f (void)
 	server = Cmd_Argv (1);
 
 	CL_Disconnect ();
+	CL_Chat_Flush_Ignores ();
 
 	strncpy (cls.servername, server, sizeof (cls.servername) - 1);
 	CL_BeginServerConnect ();
@@ -1710,6 +1712,8 @@ Host_Init (void)
 
 	PR_Init ();
 	BI_Init ();
+
+	CL_Chat_Init ();
 
 	CL_Cmd_Init ();
 	V_Init ();
