@@ -160,8 +160,13 @@ def
 	  { current_type = build_type ($1, $4); } func_def_list
 	| STRUCT NAME
 	  { struct_type = new_struct ($2); } '=' '{' struct_defs '}'
-	| ENUM '{' enum_list opt_comma '}'
+	| ENUM '{' enum_list opt_comma '}' opt_name
 	  { process_enum ($3); }
+	;
+
+opt_name
+	: /* empty */
+	| NAME {}
 	;
 
 struct_defs
