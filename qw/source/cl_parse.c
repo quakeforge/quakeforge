@@ -51,6 +51,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/hash.h"
+#include "QF/idparse.h"
 #include "QF/msg.h"
 #include "QF/quakeio.h"
 #include "QF/screen.h"
@@ -258,21 +259,23 @@ map_cfg (const char *mapname, int all)
 {
 	char       *name = malloc (strlen (mapname) + 4 + 1);
 	QFile      *f;
+	cbuf_t     *cbuf = Cbuf_New (&id_interp);
 
 	QFS_StripExtension (mapname, name);
 	strcat (name, ".cfg");
 	QFS_FOpenFile (name, &f);
 	if (f) {
 		Qclose (f);
-		Cmd_Exec_File (cl_cbuf, name, 1);
+		Cmd_Exec_File (cbuf, name, 1);
 	} else {
-		Cmd_Exec_File (cl_cbuf, "maps_default.cfg", 1);
+		Cmd_Exec_File (cbuf, "maps_default.cfg", 1);
 	}
 	if (all)
-		Cbuf_Execute_Stack (cl_cbuf);
+		Cbuf_Execute_Stack (cbuf);
 	else
-		Cbuf_Execute_Sets (cl_cbuf);
+		Cbuf_Execute_Sets (cbuf);
 	free (name);
+	Cbuf_Delete(cbuf);
 }
 
 static void
