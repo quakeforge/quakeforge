@@ -484,7 +484,7 @@ move_def (hashtab_t *deftab, qfo_def_t *d)
 		relocs.relocs[d->relocs + j].type = rel_none;
 		final_relocs.relocs[def->relocs + j].def = def_num;
 	}
-	if (d->basic_type == ev_func) {
+	if ((d->flags & QFOD_CONSTANT) && d->basic_type == ev_func) {
 		qfo_func_t *func;
 		func = funcs.funcs + DATA (d->ofs)->func_var - 1;
 		func->def = def_num;
