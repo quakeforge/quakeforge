@@ -787,7 +787,7 @@ X11_RestoreGamma (void)
 # ifdef X_XF86VidModeSetGamma
 	XF86VidModeGamma	xgamma;
 
-	if (vid_gamma_avail) {
+	if (vid_gamma_avail && x_gamma[0] > 0) {
 		xgamma.red = x_gamma[0];
 		xgamma.green = x_gamma[1];
 		xgamma.blue = x_gamma[2];
