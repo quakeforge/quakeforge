@@ -95,6 +95,7 @@ qboolean			gl_mtex_fullbright = false;
 
 // Combine
 qboolean			gl_combine_capable = false;
+int					lm_src_blend, lm_dest_blend;
 
 QF_glColorTableEXT	qglColorTableEXT = NULL;
 qboolean			is8bit = false;
@@ -142,10 +143,19 @@ gl_doublebright_f (cvar_t *var)
 		return;
 
 	if (var->int_val) {
-		if (!gl_combine_capable && gl_mtex_capable)
+		if (!gl_combine_capable && gl_mtex_capable) {
 			Con_Printf ("Warning: gl_doublebright has no effect with "
 						"gl_multitexture enabled if you don't have "
 						"GL_COMBINE_ARB support in your driver.\n");
+			lm_src_blend = GL_ZERO;
+			lm_dest_blend = GL_SRC_COLOR;
+		} else {
+			lm_src_blend = GL_DST_COLOR;
+			lm_dest_blend = GL_SRC_COLOR;
+		}
+	} else {
+		lm_src_blend = GL_ZERO;
+		lm_dest_blend = GL_SRC_COLOR;
 	}
 }
 
