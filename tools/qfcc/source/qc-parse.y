@@ -1339,13 +1339,13 @@ typedef struct def_state_s {
 static def_state_t *free_def_states;
 
 static const char *
-get_key (void *_d, void *unused)
+ds_get_key (void *_d, void *unused)
 {
 	return ((def_state_t *)_d)->def->name;
 }
 
 static void
-free_key (void *_d, void *unused)
+ds_free_key (void *_d, void *unused)
 {
 	def_state_t *d = (def_state_t *)_d;
 	d->next = free_def_states;
@@ -1372,7 +1372,7 @@ scan_scope (hashtab_t *tab, scope_t *scope)
 hashtab_t *
 save_local_inits (scope_t *scope)
 {
-	hashtab_t  *tab = Hash_NewTable (61, get_key, free_key, 0);
+	hashtab_t  *tab = Hash_NewTable (61, ds_get_key, ds_free_key, 0);
 	scan_scope (tab, scope);
 	return tab;
 }
@@ -1380,7 +1380,7 @@ save_local_inits (scope_t *scope)
 hashtab_t *
 merge_local_inits (hashtab_t *dl_1, hashtab_t *dl_2)
 {
-	hashtab_t  *tab = Hash_NewTable (61, get_key, free_key, 0);
+	hashtab_t  *tab = Hash_NewTable (61, ds_get_key, ds_free_key, 0);
 	def_state_t **ds_list = (def_state_t **)Hash_GetList (dl_1);
 	def_state_t **ds;
 	def_state_t *d;
