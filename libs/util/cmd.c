@@ -893,7 +893,7 @@ Cmd_GetToken (const char *str, qboolean legacy)
 	if (*str == '\"')
 		return Cmd_EndDoubleQuote (str);
 	for (i = 0; i < strlen (str); i++)
-		if (isspace (str[i]))
+		if (isspace ((byte)str[i]))
 			break;
 	return i;
 }
@@ -1055,7 +1055,7 @@ Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
 		} else if (!dstr->str[i] && braces) {		// No closing brace
 			n = -1;
 			break;
-		} else if (!braces && !isalnum(dstr->str[i]) && dstr->str[i] != '_') {
+		} else if (!braces && !isalnum((byte)dstr->str[i]) && dstr->str[i] != '_') {
 			dstring_clearstr (varname);
 			dstring_insert (varname, dstr->str + start + 1, i - start - 1, 0);
 			// Nuke it, even if no match is found
@@ -1281,7 +1281,7 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 				process = false;
 		}
 		space = 0;
-		while (isspace (str[i])) {
+		while (isspace ((byte)str[i])) {
 			i++;
 			space++;
 		}
