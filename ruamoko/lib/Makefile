@@ -24,5 +24,6 @@ libr.pak: $(libr_obj)
 
 clean:
 	rm -f *.qfo *.pak *.d
+	rm -rf .deps
 
 -include $(libr_dep)
