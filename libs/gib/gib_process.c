@@ -56,6 +56,7 @@ GIB_Process_Variable (dstring_t *token, unsigned int *i)
 	hashtab_t *one = GIB_DATA(cbuf_active)->locals, *two = GIB_DATA(cbuf_active)->globals;
 	unsigned int n = *i, j, k, start = *i, index = 0, len, len2;
 	gib_var_t *var = 0;
+	cvar_t *cvar;
 	char c;
 	const char *str;
 
@@ -97,7 +98,11 @@ GIB_Process_Variable (dstring_t *token, unsigned int *i)
 			str = va("%u", var->size - index);
 		else
 			str = var->array[index]->str;
-	} else
+	} else if (token->str[start] == '#')
+		str = "0";
+	else if ((cvar = Cvar_FindVar (token->str+k)))
+		str = cvar->string;
+	else
 		str = "";
 	token->str[n] = c;
 	len += n-start;
@@ -129,6 +134,7 @@ GIB_Process_Embedded (gib_tree_t *node, cbuf_args_t *args)
 {
 	unsigned int n, j;
 	gib_var_t *var;
+	cvar_t *cvar;
 	gib_tree_t *cur;
 	unsigned int index, prev = 0;
 	const char *str = node->str;
@@ -166,7 +172,10 @@ GIB_Process_Embedded (gib_tree_t *node, cbuf_args_t *args)
 				dstring_appendstr (args->argv[args->argc-1], var->array[index]->str);
 			else
 				dasprintf (args->argv[args->argc-1], "%u", var->size - index);
-		}
+		} else if (cur->delim == '#')
+			dstring_appendstr (args->argv[args->argc-1], "0");
+		else if ((cvar = Cvar_FindVar (cur->str)))
+			dstring_appendstr (args->argv[args->argc-1], cvar->string);
 	}
 	if (str[prev])
 		dstring_appendstr (args->argv[args->argc-1], str+prev);
