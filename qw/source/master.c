@@ -19,7 +19,7 @@
 	You should have received a copy of the GNU General Public License
 	along with this program; if not, write to:
 
-		Free Software Foundation, Inc.
+		eree Software Foundation, Inc.
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 		
@@ -121,7 +121,7 @@ qf_sendmsg (int sock, void *data, size_t len, struct sockaddr_in *addr)
 static int
 qf_recvmsg (int sock, void *data, size_t len, struct sockaddr_in *addr)
 {
-	size_t      addr_len;
+	size_t      addr_len = sizeof (*addr);
 	return recvfrom (sock, data, len, 0, (struct sockaddr *)addr, &addr_len);
 }
 
