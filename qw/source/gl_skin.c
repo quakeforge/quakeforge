@@ -34,24 +34,21 @@
 #include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
+#include "QF/vid.h"
 
-#include "client.h"
 #include "glquake.h"
-#include "host.h"
-#include "protocol.h"
+#include "render.h"
 
 static byte translate[256];
 static unsigned int translate32[256];
 
 void
-Skin_Set_Translate (player_info_t *player)
+Skin_Set_Translate (int top, int bottom, byte *dest)
 {
-	int         top;
-	int         bottom;
 	int         i;
 
-	top = bound (0, player->topcolor, 13) * 16;
-	bottom = bound (0, player->bottomcolor, 13) * 16;
+	top = bound (0, top, 13) * 16;
+	bottom = bound (0, bottom, 13) * 16;
 
 	for (i = 0; i < 16; i++) {
 		if (top < 128)				// the artists made some backwards
@@ -171,17 +168,14 @@ build_skin (int texnum, byte *ptexels, int width, int height, qboolean alpha)
 }
 
 void
-Skin_Do_Translation (player_info_t *player)
+Skin_Do_Translation (skin_t *player_skin, int slot)
 {
 	int         texnum;
 	int         inwidth, inheight;
 	byte       *original;
 	tex_t      *skin;
 
-	if (!player->skin)
-		Skin_Find (player);
-
-	if ((skin = (tex_t*)Skin_Cache (player->skin)) != NULL) {
+	if ((skin = (tex_t*)Skin_Cache (player_skin)) != NULL) {
 		// skin data width
 		inwidth = 320;
 		inheight = 200;
@@ -191,7 +185,7 @@ Skin_Do_Translation (player_info_t *player)
 		inwidth = 296;
 		inheight = 194;
 	}
-	texnum = playertextures + (player - cl.players);
+	texnum = playertextures + slot;
 	build_skin (texnum, original, inwidth, inheight, false);
 }
 

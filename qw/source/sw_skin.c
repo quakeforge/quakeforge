@@ -41,22 +41,19 @@
 #include "QF/sys.h"
 #include "QF/vid.h"
 
-#include "client.h"
-#include "host.h"
+#include "render.h"
 
 void
-Skin_Set_Translate (player_info_t *player)
+Skin_Set_Translate (int top, int bottom, byte *dest)
 {
 	int         i, j;
-	int         top, bottom;
-	byte       *dest, *source;
+	byte       *source;
 
-	top = bound (0, player->topcolor, 13) * 16;
-	bottom = bound (0, player->bottomcolor, 13) * 16;
+	top = bound (0, top, 13) * 16;
+	bottom = bound (0, bottom, 13) * 16;
 
-	dest = player->translations;
 	source = vid.colormap;
-	memcpy (dest, vid.colormap, sizeof (player->translations));
+	memcpy (dest, vid.colormap, VID_GRADES*256);
 
 	for (i = 0; i < VID_GRADES; i++, dest += 256, source += 256) {
 		if (top < 128)				// the artists made some backwards
@@ -75,7 +72,7 @@ Skin_Set_Translate (player_info_t *player)
 }
 
 void
-Skin_Do_Translation (player_info_t *player)
+Skin_Do_Translation (skin_t *player_skin, int slot)
 {
 }
 

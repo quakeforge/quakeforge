@@ -58,8 +58,8 @@ void	Skin_NextDownload (void);
 void	Skin_Init (void);
 void	Skin_Init_Cvars (void);
 void	Skin_Init_Translation (void);
-void	Skin_Set_Translate (struct player_info_s *player);
-void	Skin_Do_Translation (struct player_info_s *player);
+void	Skin_Set_Translate (int top, int bottom, byte *dest);
+void	Skin_Do_Translation (skin_t *player_skin, int slot);
 void	Skin_Process (skin_t *skin, struct tex_s *);
 
 #endif

@@ -40,9 +40,11 @@
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/hash.h"
+#include "QF/info.h"
 #include "QF/msg.h"
 #include "QF/pcx.h"
 #include "QF/qendian.h"
+#include "QF/quakefs.h"
 #include "QF/screen.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
@@ -362,7 +364,10 @@ CL_NewTranslation (int slot)
 		player->_topcolor = player->topcolor;
 		player->_bottomcolor = player->bottomcolor;
 
-		Skin_Set_Translate (player);
-		Skin_Do_Translation (player);
+		Skin_Set_Translate (player->topcolor, player->bottomcolor,
+							player->translations);
+		if (!player->skin)
+			Skin_Find (player);
+		Skin_Do_Translation (player->skin, slot);
 	}
 }
