@@ -89,7 +89,7 @@ free_edict (progs_t *pr, edict_t *ent)
 static int
 prune_edict (progs_t *pr, edict_t *ent)
 {
-	if (!sv_globals.current_skill) {
+	if (!sv_globals.skill) {
 		if (((int) SVfloat (ent, spawnflags) & SPAWNFLAG_NOT_DEATHMATCH))
 			return 1;
 	} else {
@@ -98,14 +98,15 @@ prune_edict (progs_t *pr, edict_t *ent)
 			if (((int) SVfloat (ent, spawnflags) & SPAWNFLAG_NOT_DEATHMATCH)) {
 				return 1;
 			}
-		} else if (
-				(*sv_globals.current_skill == 0
-					&& ((int) SVfloat (ent, spawnflags) & SPAWNFLAG_NOT_EASY))
-						|| (*sv_globals.current_skill == 1
-					&& ((int) SVfloat (ent, spawnflags) &
-						SPAWNFLAG_NOT_MEDIUM)) ||
-				(*sv_globals.current_skill >= 2
-					&& ((int) SVfloat (ent, spawnflags) & SPAWNFLAG_NOT_HARD))) {
+		} else if ((*sv_globals.skill == 0
+					&& ((int) SVfloat (ent, spawnflags)
+						& SPAWNFLAG_NOT_EASY))
+				   || (*sv_globals.skill == 1
+					   && ((int) SVfloat (ent, spawnflags)
+						   & SPAWNFLAG_NOT_MEDIUM))
+				   || (*sv_globals.skill >= 2
+					   && ((int) SVfloat (ent, spawnflags)
+						   & SPAWNFLAG_NOT_HARD))) {
 			return 1;
 		}
 	}
@@ -334,11 +335,11 @@ SV_LoadProgs (void)
 	sv_fields.gravity = ED_GetFieldIndex (&sv_pr_state, "gravity");
 	sv_fields.maxspeed = ED_GetFieldIndex (&sv_pr_state, "maxspeed");
 
-	def = PR_FindGlobal (&sv_pr_state, "current_skill");
+	def = PR_FindGlobal (&sv_pr_state, "skill");
 	if (def)
-		sv_globals.current_skill = (float *) &sv_pr_state.pr_globals[def->ofs];
+		sv_globals.skill = (float *) &sv_pr_state.pr_globals[def->ofs];
 	else
-		sv_globals.current_skill = 0;
+		sv_globals.skill = 0;
 }
 
 void

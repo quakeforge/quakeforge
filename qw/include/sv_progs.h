@@ -63,7 +63,7 @@ typedef struct {
     float      *trace_inopen;
     float      *trace_inwater;
     int        *msg_entity;
-    float      *current_skill;
+    float      *skill;
 } sv_globals_t;
 
 extern sv_globals_t sv_globals;
