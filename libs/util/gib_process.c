@@ -106,17 +106,69 @@ GIB_Process_Variable (struct dstring_s *dstr, unsigned int pos, qboolean toleran
 }
 
 int
-GIB_Process_Variables_All (struct dstring_s *token)
+GIB_Process_Math (struct dstring_s *token)
 {
-	int i, n, m;
+	double value;
+	
+	value = EXP_Evaluate (token->str);
+	if (EXP_ERROR) {
+		// FIXME:  Give real error descriptions
+		Cbuf_Error ("math", "Expression \"%s\" caused error %i", token->str, EXP_ERROR);
+		return -1;
+	} else {
+		dstring_clearstr (token);
+		dsprintf (token, "%.10g", value);
+	}
+	return 0;
+}
+
+int
+GIB_Process_Embedded (struct dstring_s *token)
+{
+	cbuf_t *sub;
+	int i, n, m, i1, i2;
+	char c = 0, *p;
 	dstring_t *var = dstring_newstr ();
-	char c = 0;
-	char *p;
-	int i1, i2;
 	qboolean index;
 	
-	for (i = 0; token->str[i]; i++) {
-		if (token->str[i] == '$') {
+	if (GIB_DATA(cbuf_active)->ret.waiting)  {
+		if (!GIB_DATA(cbuf_active)->ret.available) {
+			GIB_DATA(cbuf_active)->ret.waiting = false;
+			Cbuf_Error ("return", "Embedded command did not return a value.");
+			return -1;
+		}
+		i = GIB_DATA(cbuf_active)->ret.token_pos; // Jump to the right place
+	} else
+		i = 0;
+	
+	for (; token->str[i]; i++) {
+		if (token->str[i] == '`') {
+			n = i;
+			if ((c = GIB_Parse_Match_Backtick (token->str, &i))) {
+				Cbuf_Error ("parse", "Could not find matching %c", c);
+				return -1;
+			}
+			if (GIB_DATA(cbuf_active)->ret.available) {
+				dstring_replace (token, n, i-n+1, GIB_DATA(cbuf_active)->ret.retval->str,
+				   strlen(GIB_DATA(cbuf_active)->ret.retval->str));
+				i = n + strlen(GIB_DATA(cbuf_active)->ret.retval->str) - 1;
+				GIB_DATA(cbuf_active)->ret.waiting = false;
+				GIB_DATA(cbuf_active)->ret.available = false;
+			} else {
+				sub = Cbuf_New (&gib_interp);
+				GIB_DATA(sub)->type = GIB_BUFFER_PROXY;
+				GIB_DATA(sub)->locals = GIB_DATA(cbuf_active)->locals;
+				dstring_insert (sub->buf, 0, token->str+n+1, i-n-1);
+				if (cbuf_active->down)
+					Cbuf_DeleteStack (cbuf_active->down);
+				cbuf_active->down = sub;
+				sub->up = cbuf_active;
+				cbuf_active->state = CBUF_STATE_STACK;
+				GIB_DATA(cbuf_active)->ret.waiting = true;
+				GIB_DATA(cbuf_active)->ret.token_pos = n;
+				return -1;
+			}
+		} else if (token->str[i] == '$') {
 			index = false;
 			if (token->str[i+1] == '{') {
 				n = i+1;
@@ -150,6 +202,7 @@ GIB_Process_Variables_All (struct dstring_s *token)
 							n++;
 						if (!token->str[i+n]) {
 							Cbuf_Error ("parse", "Could not find match for [");
+							c = '[';
 							goto ERROR;
 						}
 					}
@@ -196,75 +249,11 @@ GIB_Process_Variables_All (struct dstring_s *token)
 			dstring_clearstr (var);
 		}
 	}
+	return 0;
+	dstring_delete (var);
 ERROR:
 	dstring_delete (var);
 	return c ? -1 : 0;
-}
-
-int
-GIB_Process_Math (struct dstring_s *token)
-{
-	double value;
-	
-	value = EXP_Evaluate (token->str);
-	if (EXP_ERROR) {
-		// FIXME:  Give real error descriptions
-		Cbuf_Error ("math", "Expression \"%s\" caused error %i", token->str, EXP_ERROR);
-		return -1;
-	} else {
-		dstring_clearstr (token);
-		dsprintf (token, "%.10g", value);
-	}
-	return 0;
-}
-
-int
-GIB_Process_Embedded (struct dstring_s *token)
-{
-	cbuf_t *sub;
-	int i, n;
-	char c;
-	
-	if (GIB_DATA(cbuf_active)->ret.waiting)  {
-		if (!GIB_DATA(cbuf_active)->ret.available) {
-			GIB_DATA(cbuf_active)->ret.waiting = false;
-			Cbuf_Error ("return", "Embedded command did not return a value.");
-			return -1;
-		}
-		i = GIB_DATA(cbuf_active)->ret.token_pos; // Jump to the right place
-	} else
-		i = 0;
-	
-	for (; token->str[i]; i++) {
-		if (token->str[i] == '`') {
-			n = i;
-			if ((c = GIB_Parse_Match_Backtick (token->str, &i))) {
-				Cbuf_Error ("parse", "Could not find matching %c", c);
-				return -1;
-			}
-			if (GIB_DATA(cbuf_active)->ret.available) {
-				dstring_replace (token, n, i-n+1, GIB_DATA(cbuf_active)->ret.retval->str,
-				   strlen(GIB_DATA(cbuf_active)->ret.retval->str));
-				i = n + strlen(GIB_DATA(cbuf_active)->ret.retval->str) - 1;
-				GIB_DATA(cbuf_active)->ret.waiting = false;
-				GIB_DATA(cbuf_active)->ret.available = false;
-			} else {
-				sub = Cbuf_New (&gib_interp);
-				GIB_DATA(sub)->type = GIB_BUFFER_PROXY;
-				GIB_DATA(sub)->locals = GIB_DATA(cbuf_active)->locals;
-				dstring_insert (sub->buf, 0, token->str+n+1, i-n-1);
-				if (cbuf_active->down)
-					Cbuf_DeleteStack (cbuf_active->down);
-				cbuf_active->down = sub;
-				sub->up = cbuf_active;
-				cbuf_active->state = CBUF_STATE_STACK;
-				GIB_DATA(cbuf_active)->ret.waiting = true;
-				GIB_DATA(cbuf_active)->ret.token_pos = n;
-				return -1;
-			}
-		}
-	}
-	return 0;
 }
 
 void
@@ -283,13 +272,9 @@ GIB_Process_Escapes (dstring_t *token)
 int
 GIB_Process_Token (dstring_t *token, char delim)
 {
-	if (delim != '{' && delim != '\"') {
+	if (delim != '{' && delim != '\"')
 		if (GIB_Process_Embedded (token))
 			return -1;
-		if (GIB_Process_Variables_All (token))
-			return -1;
-	}
-			
 	if (delim == '(')
 		if (GIB_Process_Math (token))
 			return -1;

@@ -329,7 +329,7 @@ GIB___For_f (void)
 		Cbuf_InsertText (cbuf_active, "break;");
 		return;
 	}
-	for (end = GIB_DATA(cbuf_active)->loop_list_p; *end && !isspace((byte) *end); end++);
+	for (end = GIB_DATA(cbuf_active)->loop_list_p; !strchr(GIB_DATA(cbuf_active)->loop_ifs_p, *end); end++);
 	if (*end) {
 		old = *end;
 		*end = 0;
@@ -337,7 +337,7 @@ GIB___For_f (void)
 	GIB_Var_Set_Local (cbuf_active, GIB_DATA(cbuf_active)->loop_var_p, GIB_DATA(cbuf_active)->loop_list_p);
 	if (old)
 		*end = old;
-	while (isspace ((byte)*end))
+	while (*end && strchr(GIB_DATA(cbuf_active)->loop_ifs_p, *end))
 		end++;
 	GIB_DATA(cbuf_active)->loop_list_p = end;
 }
@@ -352,7 +352,9 @@ GIB_For_f (void)
 					);
 	} else if (GIB_Argv (3)[0]) {
 		char *ll;
+		const char *ifs;
 		cbuf_t *sub = Cbuf_New (&gib_interp);
+		// Create loop buffer
 		GIB_DATA(sub)->type = GIB_BUFFER_LOOP;
 		GIB_DATA(sub)->locals = GIB_DATA(cbuf_active)->locals;
 		GIB_DATA(sub)->loop_program = dstring_newstr ();
@@ -361,13 +363,19 @@ GIB_For_f (void)
 			Cbuf_DeleteStack (cbuf_active->down);
 		cbuf_active->down = sub;
 		sub->up = cbuf_active;
+		// Store all for-loop data in one big buffer (easy to clean up)
 		dstring_appendstr (GIB_DATA(sub)->loop_data, GIB_Argv(3));
 		dstring_append (GIB_DATA(sub)->loop_data, GIB_Argv(1), strlen(GIB_Argv(1))+1);
+		if (!(ifs = GIB_Var_Get_Local (cbuf_active, "ifs")))
+			ifs = " \n\t";
+		dstring_append (GIB_DATA(sub)->loop_data, ifs, strlen(ifs)+1);
+		// Store pointers to data
 		ll = GIB_DATA(sub)->loop_data->str;
 		while (isspace ((byte) *ll))
 			ll++;
-		GIB_DATA(sub)->loop_list_p = ll;
-		GIB_DATA(sub)->loop_var_p = GIB_DATA(sub)->loop_data->str + strlen(GIB_Argv(3))+1;
+		GIB_DATA(sub)->loop_list_p = ll; // List to iterate through
+		GIB_DATA(sub)->loop_var_p = GIB_DATA(sub)->loop_data->str + strlen(GIB_Argv(3))+1; // Var to use
+		GIB_DATA(sub)->loop_ifs_p = GIB_DATA(sub)->loop_var_p + strlen(GIB_Argv(1))+1; // Internal field separator
 		dstring_appendstr (GIB_DATA(sub)->loop_program, "__for;");
 		dstring_appendstr (GIB_DATA(sub)->loop_program, GIB_Argv(4));
 		Cbuf_AddText (sub, GIB_DATA(sub)->loop_program->str);
@@ -596,6 +604,7 @@ GIB_File_Find_f (void)
 	DIR        *directory;
 	struct dirent *entry;
 	char       *path;
+	const char *ifs;
 	dstring_t  *list;
 
 	if (GIB_Argc () < 2 || GIB_Argc () > 3) {
@@ -620,9 +629,13 @@ GIB_File_Find_f (void)
 		return;
 	}
 	list = dstring_newstr ();
+	if (!(ifs = GIB_Var_Get_Local (cbuf_active, "ifs")))
+			ifs = " ";
 	while ((entry = readdir (directory))) {
-		if (!fnmatch (GIB_Argv (1), entry->d_name, 0)) {
-			dstring_appendstr (list, " ");
+		if (strcmp (entry->d_name, ".") &&
+		   strcmp (entry->d_name, "..") &&
+		   !fnmatch (GIB_Argv (1), entry->d_name, 0)) {
+			dstring_appendstr (list, ifs);
 			dstring_appendstr (list, entry->d_name);
 		}
 	}
