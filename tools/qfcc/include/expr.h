@@ -150,6 +150,8 @@ expr_t *new_integer_expr (int integer_val);
 expr_t *new_uinteger_expr (unsigned int uinteger_val);
 expr_t *new_short_expr (short short_val);
 
+expr_t *constant_expr (expr_t *var);
+
 expr_t *new_bind_expr (expr_t *e1, expr_t *e2);
 expr_t *new_self_expr (void);
 expr_t *new_this_expr (void);

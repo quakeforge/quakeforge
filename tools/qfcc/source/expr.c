@@ -606,6 +606,32 @@ new_short_expr (short short_val)
 }
 
 expr_t *
+constant_expr (expr_t *var)
+{
+	if (var->type != ex_def || !var->e.def->constant) {
+		error (var, "internal error");
+		abort ();
+	}
+	switch (var->e.def->type->type) {
+		case ev_string:
+			return new_string_expr (G_GETSTR (var->e.def->ofs));
+		case ev_float:
+			return new_float_expr (G_FLOAT (var->e.def->ofs));
+		case ev_vector:
+			return new_vector_expr (G_VECTOR (var->e.def->ofs));
+		case ev_field:
+			return new_field_expr (G_var (integer, var->e.def->ofs));
+		case ev_integer:
+			return new_integer_expr (G_INT (var->e.def->ofs));
+		case ev_uinteger:
+			return new_uinteger_expr (G_INT (var->e.def->ofs));
+		default:
+			error (var, "internal error");
+			abort ();
+	}
+}
+
+expr_t *
 new_bind_expr (expr_t *e1, expr_t *e2)
 {
 	expr_t     *e;
@@ -2309,6 +2335,8 @@ init_elements (def_t *def, expr_t *eles)
 		count = def->type->num_parms;
 	}
 	for (i = 0, e = eles->e.block.head; i < count; i++, e = e->next) {
+		if (e->type == ex_def && e->e.def->constant)
+			e = constant_expr (e);
 		if (e->type == ex_block) {
 			warning (e, "not yet implemented");
 		} else if (e->type >= ex_string) {

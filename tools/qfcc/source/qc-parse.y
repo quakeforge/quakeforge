@@ -275,6 +275,8 @@ enum
 	| NAME '=' expr
 		{
 			$$ = 0;
+			if ($3->type == ex_def && $3->e.def->constant)
+				$3 = constant_expr ($3);
 			if ($3->type < ex_string) {
 				error ($3, "non-constant initializer");
 			} else if ($3->type != ex_integer) {
@@ -413,6 +415,8 @@ var_initializer
 							 assign_expr (new_def_expr ($<def>0), $2));
 				def_initialized ($<def>0);
 			} else {
+				if ($2->type == ex_def && $2->e.def->constant)
+					$2 = constant_expr ($2);
 				if ($2->type >= ex_string) {
 					if ($<def>0->constant) {
 						error ($2, "%s re-initialized", $<def>0->name);
