@@ -47,6 +47,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/input.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
+#include "r_cvar.h"			// FIXME: for gl_overbright_f
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
@@ -157,6 +158,8 @@ gl_doublebright_f (cvar_t *var)
 		lm_src_blend = GL_ZERO;
 		lm_dest_blend = GL_SRC_COLOR;
 	}
+	if (gl_overbright)
+		gl_overbright_f (gl_overbright);
 }
 
 static void

@@ -75,7 +75,7 @@ qboolean	 lightmap_modified[MAX_GLTEXTURES];
 glpoly_t	*lightmap_polys[MAX_LIGHTMAPS];
 glRect_t	 lightmap_rectchange[MAX_LIGHTMAPS];
 
-static int	 lshift, lshift2;
+static int	 lshift = 8, lshift2 = 9;
 
 void (*R_BuildLightMap) (msurface_t *surf);
 
@@ -555,7 +555,7 @@ gl_overbright_f (cvar_t *var)
 
 	if (!var)
 		return;
-	if (R_BuildLightMap == 0)
+	if (!R_BuildLightMap)
 		return;
 
 	switch (var->int_val) {
