@@ -90,7 +90,7 @@ Mod_LoadSpriteGroup (void *pin, mspriteframe_t **ppframe, int framenum)
 }
 
 void
-Mod_LoadSpriteModel (model_t *mod, void *buffer, cache_allocator_t allocator)
+Mod_LoadSpriteModel (model_t *mod, void *buffer)
 {
 	int         i;
 	int         version;
@@ -111,7 +111,9 @@ Mod_LoadSpriteModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 
 	size = field_offset (msprite_t, frames[numframes]);
 
-	psprite = allocator (&mod->cache, size, loadname);
+	psprite = Hunk_AllocName (size, loadname);
+
+	mod->cache.data = psprite;
 
 	psprite->type = LittleLong (pin->type);
 	psprite->maxwidth = LittleLong (pin->width);
