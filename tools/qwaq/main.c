@@ -6,9 +6,15 @@
 #include <QF/sys.h>
 #include <QF/zone.h>
 
+#define MAX_EDICTS 1024
+
 progs_t progs;
 void *membase;
 int memsize = 16*1024*1024;
+
+edict_t *edicts;
+int num_edicts;
+int reserved_edicts;
 
 void BI_Init (progs_t *progs);
 
@@ -34,6 +40,10 @@ main ()
 	PR_Init ();
 	BI_Init (&progs);
 
+	progs.edicts = &edicts;
+	progs.num_edicts = &num_edicts;
+	progs.reserved_edicts = &reserved_edicts;
+
 	f = fopen ("qwaq.dat", "rb");
 	if (f) {
 		fseek (f, 0, SEEK_END);
@@ -47,6 +57,9 @@ main ()
 	}
 	if (!progs.progs)
 		Sys_Error ("couldn't load %s\n", "qwaq.dat");
+
+	*progs.edicts = PR_InitEdicts (&progs, MAX_EDICTS);
+
 	for (i = 0; i < progs.progs->numstatements; i++)
 		PR_PrintStatement (&progs, &progs.pr_statements[i]);
 	printf ("\n");

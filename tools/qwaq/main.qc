@@ -14,3 +14,16 @@ float () main =
 	s = s + "\n";
 	print (s);
 };
+
+float () CheckExistence =
+{
+	return 1;
+};
+
+void () test =
+{
+	if (CheckExistence() == 0) {
+		return;
+	}
+	local entity p;
+};
