@@ -27,9 +27,8 @@ static const char rcsid[] =
 
 #include "qfcc.h"
 
-hashtab_t *opcode_priority_table;
-hashtab_t *opcode_priority_type_table_ab;
-hashtab_t *opcode_priority_type_table_abc;
+hashtab_t *opcode_type_table_ab;
+hashtab_t *opcode_type_table_abc;
 
 opcode_t *op_done;
 opcode_t *op_return;
@@ -66,12 +65,10 @@ get_hash (void *_op, void *_tab)
 	hashtab_t **tab = (hashtab_t **)_tab;
 	unsigned long hash;
 
-	if (tab == &opcode_priority_table) {
-		hash = op->priority;
-	} else if (tab == &opcode_priority_type_table_ab) {
-		hash = ~op->priority + ROTL(~op->type_a, 8) + ROTL(~op->type_b, 16);
-	} else if (tab == &opcode_priority_type_table_abc) {
-		hash = ~op->priority + ROTL(~op->type_a, 8) + ROTL(~op->type_b, 16)
+	if (tab == &opcode_type_table_ab) {
+		hash = ROTL(~op->type_a, 8) + ROTL(~op->type_b, 16);
+	} else if (tab == &opcode_type_table_abc) {
+		hash = ROTL(~op->type_a, 8) + ROTL(~op->type_b, 16)
 			   + ROTL(~op->type_c, 24);
 	} else {
 		abort ();
@@ -87,15 +84,11 @@ compare (void *_opa, void *_opb, void *_tab)
 	hashtab_t **tab = (hashtab_t **)_tab;
 	int cmp;
 
-	if (tab == &opcode_priority_table) {
-		cmp = opa->priority == opb->priority;
-	} else if (tab == &opcode_priority_type_table_ab) {
-		cmp = (opa->priority == opb->priority)
-			  && (opa->type_a == opb->type_a)
+	if (tab == &opcode_type_table_ab) {
+		cmp = (opa->type_a == opb->type_a)
 			  && (opa->type_b == opb->type_b);
-	} else if (tab == &opcode_priority_type_table_abc) {
-		cmp = (opa->priority == opb->priority)
-			  && (opa->type_a == opb->type_a)
+	} else if (tab == &opcode_type_table_abc) {
+		cmp = (opa->type_a == opb->type_a)
 			  && (opa->type_b == opb->type_b)
 			  && (opa->type_c == opb->type_c);
 	} else {
@@ -105,27 +98,26 @@ compare (void *_opa, void *_opb, void *_tab)
 }
 
 opcode_t *
-PR_Opcode_Find (const char *name, int priority, def_t *var_a, def_t *var_b, def_t *var_c)
+PR_Opcode_Find (const char *name, def_t *var_a, def_t *var_b, def_t *var_c)
 {
 	opcode_t op;
 	hashtab_t **tab;
 
 	op.name = name;
-	op.priority = priority;
 	if (var_a && var_b && var_c) {
 		op.type_a = var_a->type->type;
 		op.type_b = var_b->type->type;
 		op.type_c = var_c->type->type;
 		if (op.type_c == ev_void)
-			tab = &opcode_priority_type_table_ab;
+			tab = &opcode_type_table_ab;
 		else
-			tab = &opcode_priority_type_table_abc;
+			tab = &opcode_type_table_abc;
 	} else if (var_a && var_b) {
 		op.type_a = var_a->type->type;
 		op.type_b = var_b->type->type;
-		tab = &opcode_priority_type_table_ab;
+		tab = &opcode_type_table_ab;
 	} else {
-		tab = &opcode_priority_table;
+		tab = 0;
 	}
 	return Hash_FindElement (*tab, &op);
 }
@@ -136,24 +128,18 @@ PR_Opcode_Init_Tables (void)
 	opcode_t *op;
 
 	PR_Opcode_Init ();
-	opcode_priority_table = Hash_NewTable (1021, 0, 0,
-										   &opcode_priority_table);
-	opcode_priority_type_table_ab = Hash_NewTable (1021, 0, 0,
-												   &opcode_priority_type_table_ab);
-	opcode_priority_type_table_abc = Hash_NewTable (1021, 0, 0,
-													&opcode_priority_type_table_abc);
-	Hash_SetHashCompare (opcode_priority_table, get_hash, compare);
-	Hash_SetHashCompare (opcode_priority_type_table_ab, get_hash, compare);
-	Hash_SetHashCompare (opcode_priority_type_table_abc, get_hash, compare);
+	opcode_type_table_ab = Hash_NewTable (1021, 0, 0, &opcode_type_table_ab);
+	opcode_type_table_abc = Hash_NewTable (1021, 0, 0, &opcode_type_table_abc);
+	Hash_SetHashCompare (opcode_type_table_ab, get_hash, compare);
+	Hash_SetHashCompare (opcode_type_table_abc, get_hash, compare);
 	for (op = pr_opcodes; op->name; op++) {
 		if (op->min_version > options.version)
 			continue;
 		if (options.version == PROG_ID_VERSION
 			&& op->type_c == ev_integer)
 			op->type_c = ev_float;
-		Hash_AddElement (opcode_priority_table, op);
-		Hash_AddElement (opcode_priority_type_table_ab, op);
-		Hash_AddElement (opcode_priority_type_table_abc, op);
+		Hash_AddElement (opcode_type_table_ab, op);
+		Hash_AddElement (opcode_type_table_abc, op);
 		if (!strcmp (op->name, "<DONE>")) {
 			op_done = op;
 		} else if (!strcmp (op->name, "<RETURN>")) {

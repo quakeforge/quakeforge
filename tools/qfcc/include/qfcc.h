@@ -397,7 +397,7 @@ extern opcode_t *op_goto;
 statref_t *PR_NewStatref (dstatement_t *st, int field);
 void PR_AddStatementRef (def_t *def, dstatement_t *st, int field);
 def_t *PR_Statement (opcode_t *op, def_t *var_a, def_t *var_b);
-opcode_t *PR_Opcode_Find (const char *name, int priority,
+opcode_t *PR_Opcode_Find (const char *name,
 						  def_t *var_a, def_t *var_b, def_t *var_c);
 void PR_Opcode_Init_Tables (void);
 

@@ -145,16 +145,16 @@ emit_function_call (expr_t *e, def_t *dest)
 		parm.type = types[extract_type (earg)];
 		arg = emit_sub_expr (earg, &parm);
 		if (earg->type != ex_expr && earg->type != ex_uexpr) {
-			op = PR_Opcode_Find ("=", 5, arg, &parm, &def_void);
+			op = PR_Opcode_Find ("=", arg, &parm, &def_void);
 			emit_statement (e->line, op, arg, &parm, 0);
 		}
 	}
-	op = PR_Opcode_Find (va ("<CALL%d>", count), -1, &def_function,  &def_void, &def_void);
+	op = PR_Opcode_Find (va ("<CALL%d>", count), &def_function,  &def_void, &def_void);
 	emit_statement (e->line, op, func, 0, 0);
 
 	def_ret.type = func->type->aux_type;
 	if (dest) {
-		op = PR_Opcode_Find ("=", 5, dest, &def_ret, &def_void);
+		op = PR_Opcode_Find ("=", dest, &def_ret, &def_void);
 		emit_statement (e->line, op, &def_ret, dest, 0);
 		return dest;
 	} else {
@@ -173,7 +173,7 @@ emit_assign_expr (expr_t *e)
 	def_a = emit_sub_expr (e1, 0);
 	if (def_a->type->type == ev_pointer) {
 		def_b = emit_sub_expr (e2, 0);
-		op = PR_Opcode_Find ("=", 5, def_b, def_a, &def_void);
+		op = PR_Opcode_Find ("=", def_b, def_a, &def_void);
 		emit_statement (e->line, op, def_b, def_a, 0);
 	} else {
 		if (def_a->constant) {
@@ -190,7 +190,7 @@ emit_assign_expr (expr_t *e)
 		}
 		def_b = emit_sub_expr (e2, def_a);
 		if (def_b != def_a) {
-			op = PR_Opcode_Find ("=", 5, def_b, def_a, &def_void);
+			op = PR_Opcode_Find ("=", def_b, def_a, &def_void);
 			emit_statement (e->line, op, def_b, def_a, 0);
 		}
 	}
@@ -203,9 +203,8 @@ def_t *
 emit_sub_expr (expr_t *e, def_t *dest)
 {
 	opcode_t   *op;
-	char       *operator;
+	const char *operator;
 	def_t      *def_a, *def_b, *d = 0;
-	int         priority;
 
 	switch (e->type) {
 		case ex_block:
@@ -236,102 +235,21 @@ emit_sub_expr (expr_t *e, def_t *dest)
 				def_a = emit_sub_expr (e->e.expr.e1, 0);
 				def_b = emit_sub_expr (e->e.expr.e2, 0);
 			}
-			switch (e->e.expr.op) {
-				case AND:
-					operator = "&&";
-					priority = 6;
-					break;
-				case OR:
-					operator = "||";
-					priority = 6;
-					break;
-				case EQ:
-					operator = "==";
-					priority = 4;
-					break;
-				case NE:
-					operator = "!=";
-					priority = 4;
-					break;
-				case LE:
-					operator = "<=";
-					priority = 4;
-					break;
-				case GE:
-					operator = ">=";
-					priority = 4;
-					break;
-				case LT:
-					operator = "<";
-					priority = 4;
-					break;
-				case GT:
-					operator = ">";
-					priority = 4;
-					break;
-				case '+':
-					operator = "+";
-					priority = 3;
-					break;
-				case '-':
-					operator = "-";
-					priority = 3;
-					break;
-				case '*':
-					operator = "*";
-					priority = 2;
-					break;
-				case '/':
-					operator = "/";
-					priority = 2;
-					break;
-				case '&':
-					operator = "&";
-					priority = 2;
-					break;
-				case '^':
-					operator = "^";
-					priority = 2;
-					break;
-				case '|':
-					operator = "|";
-					priority = 2;
-					break;
-				case '%':
-					operator = "%";
-					priority = 2;
-					break;
-				case SHL:
-					operator = "<<";
-					priority = 2;
-					break;
-				case SHR:
-					operator = ">>";
-					priority = 2;
-					break;
-				case '.':
-					operator = ".";
-					priority = 1;
-					break;
-				default:
-					abort ();
-			}
+			operator = get_op_string (e->e.expr.op);
 			if (!dest) {
 				dest = PR_GetTempDef (e->e.expr.type, pr_scope);
 				dest->users += 2;
 			}
-			op = PR_Opcode_Find (operator, priority, def_a, def_b, dest);
+			op = PR_Opcode_Find (operator, def_a, def_b, dest);
 			d = emit_statement (e->line, op, def_a, def_b, dest);
 			break;
 		case ex_uexpr:
 			if (e->e.expr.op == '!') {
 				operator = "!";
-				priority = -1;
 				def_a = emit_sub_expr (e->e.expr.e1, 0);
 				def_b = &def_void;
 			} else if (e->e.expr.op == '~') {
 				operator = "~";
-				priority = -1;
 				def_a = emit_sub_expr (e->e.expr.e1, 0);
 				def_b = &def_void;
 			} else if (e->e.expr.op == '-') {
@@ -340,7 +258,6 @@ emit_sub_expr (expr_t *e, def_t *dest)
 				zero.type = expr_types[extract_type (e->e.expr.e1)];
 
 				operator = "-";
-				priority = 3;
 				def_a = PR_ReuseConstant (&zero, 0);
 				def_b = emit_sub_expr (e->e.expr.e1, 0);
 				if (!dest) {
@@ -350,7 +267,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 			} else {
 				abort ();
 			}
-			op = PR_Opcode_Find (operator, priority, def_a, def_b, dest);
+			op = PR_Opcode_Find (operator, def_a, def_b, dest);
 			d = emit_statement (e->line, op, def_a, def_b, dest);
 			break;
 		case ex_def:

@@ -179,7 +179,6 @@ typedef struct
 	const char	*name;
 	const char	*opname;
 	pr_opcode_e opcode;
-	int			priority;
 	qboolean	right_associative;
 	etype_t		type_a, type_b, type_c;
 	int			min_version;
