@@ -64,7 +64,7 @@ case "$host_os" in
 			AS="$CC"
 			AR="$host_cpu_$host_os-ar"
 			RANLIB="$host_cpu-$host_os-ranlib"
-                        endian="little"
+			endian="little"
 		fi
 		if test "$host" != "$target"; then
 			case "$target_os" in
@@ -73,7 +73,8 @@ case "$host_os" in
 					CPPFLAGS="$CPPFLAGS -mno-cygwin -mconsole"
 					CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/include/win32"
 					CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/include/win32/resources"
-					LDFLAGS="$LDFLAGS -mno-cygwin -mconsole"					endian="little"
+					LDFLAGS="$LDFLAGS -mno-cygwin -mconsole"
+					endian="little"
 				;;
 			esac
 		fi
