@@ -70,16 +70,9 @@ set $CC
 if test "$1" = gcc; then
 	shift
 	args="$*"
-	AC_MSG_CHECKING(for fubared gcc)
-	if test `gcc --version` = 2.96; then
-		AC_MSG_RESULT(yes. You poor sod, hope you have kgcc)
-		CC="kgcc $args"
-		set $CPP
-		shift
-		CPP="kgcc $*"
-	else
-		AC_MSG_RESULT(no. good)
-	fi
+	AC_MSG_CHECKING(for gcc version)
+	CCVER="gcc `gcc --version`"
+	AC_MSG_RESULT($CCVER)
 fi
 
 dnl ==================================================================
@@ -1565,7 +1558,17 @@ AC_MSG_RESULT([
 	CD Audio system: $CDTYPE
 	IPv6 networking: $NETTYPE_IPV6
 	Compression support: $HAVE_ZLIB
-
+])
+if test "x$CCVER" != "x"; then
+	if test "x$CCVER" = "xgcc 2.96"; then
+AC_MSG_RESULT([
+	Compiler version: $CCVER (CC=kgcc ./configure may be needed)
+])
+	else
+AC_MSG_RESULT([
+	Compiler version: $CCVER
+])
+fi
 	Shared game data directory: $sharepath
 	Per-user game data directory: $userpath
 	Plugin load directory: $pluginpath
