@@ -38,10 +38,10 @@
 
 #if 0
 FIXME
-	the complex cases add new polys on most lines,
-	so dont optimize for keeping them the same have multiple free span lists to
-	try to get better coherence ? low depth complexity-- 1 to 3 or so this
-	breaks spans at every edge, even hidden ones (bad)
+	the complex cases add new polys on most lines, so dont optimize for
+	keeping them the same have multiple free span lists to try to get better
+	coherence ? low depth complexity-- 1 to 3 or so this breaks spans at every
+	edge, even hidden ones (bad)
 
 	have a sentinal at both ends ?
 #endif
@@ -501,9 +501,6 @@ R_LeadingEdge (edge_t *edge)
 }
 
 
-/*
-	R_GenerateSpans
-*/
 void
 R_GenerateSpans (void)
 {
