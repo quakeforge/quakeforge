@@ -25,20 +25,21 @@ for i in range(m[6]):
 			k[2].append (model[:s])
 			model = model[s:]
 		skins.append (k)
-#pprint (skins)
+pprint (skins)
 
 stverts = []
 for i in range(m[9]):
-	stverts.append (unpack ("l l l", model[:12]))
+	x = unpack ("l l l", model[:12])
+	stverts.append ((x[0], x[1:]))
 	model = model [12:]
-#pprint (stverts)
+pprint (stverts)
 
 tris = []
 for i in range(m[10]):
 	tris.append (unpack ("l l l l", model[:16]))
 	tris[-1] = (tris[-1][0], tris[-1][1:])
 	model = model [16:]
-#pprint (tris)
+pprint (tris)
 
 frames = []
 for i in range (m[11]):
@@ -48,7 +49,8 @@ for i in range (m[11]):
 		f = (t, unpack ("3B B 3B B 16s", model[:24]), [])
 		model = model[24:]
 		for j in range(m[9]):
-			f[2].append(unpack("3B B", model[:4]))
+			x = unpack("3B B", model[:4])
+			f[2].append((x[:3], x[3]))
 			model = model[4:]
 		frames.append(f)
 	else:
@@ -61,7 +63,8 @@ for i in range (m[11]):
 			f = (unpack ("3B B 3B B 16s", model[:24]), [])
 			model = model[24:]
 			for j in range(m[9]):
-				f[1].append(unpack("3B B", model[:4]))
+				x = unpack("3B B", model[:4])
+				f[1].append((x[:3], x[3]))
 				model = model[4:]
 			g[3].append(f)
 		frames.append(g)
