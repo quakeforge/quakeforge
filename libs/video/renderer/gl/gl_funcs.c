@@ -62,6 +62,8 @@ ret (GLAPIENTRY * qf##name) args = NULL;
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
 
+void       *libgl_handle;
+
 #if defined(HAVE_DLOPEN)
 
 static QF_glXGetProcAddressARB	glGetProcAddress = NULL;
@@ -119,17 +121,12 @@ QFGL_LoadLibrary (void)
 qboolean
 GLF_Init (void)
 {
-	void	*handle;
-
-	handle = QFGL_LoadLibrary ();
+	libgl_handle = QFGL_LoadLibrary ();
 
 #define QFGL_NEED(ret, name, args)	\
-	qf##name = QFGL_ProcAddress (handle, #name, true);
+	qf##name = QFGL_ProcAddress (libgl_handle, #name, true);
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
-
-	// tell ProcAddress to clear its cache
-	QFGL_ProcAddress (NULL, NULL, false);
 
 	return true;
 }

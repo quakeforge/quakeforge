@@ -88,10 +88,9 @@ cvar_t      *tdfx_brighten;
 
 static fxMesaContext fc = NULL;
 
-void        *libgl_handle;
-
 int         VID_options_items = 0;
 
+extern void GL_Pre_Init (void);
 extern void GL_Init_Common (void);
 extern void VID_Init8bitPalette (void);
 
@@ -264,15 +263,8 @@ VID_Init (unsigned char *palette)
 	int         i;
 	GLint       attribs[32];
 
-#ifdef HAVE_DLOPEN
-	if (!(libgl_handle = dlopen (gl_driver->string, RTLD_NOW))) {
-		Sys_Error ("Can't open OpenGL library \"%s\": %s\n", gl_driver->string,
-				   dlerror());
-		return;
-	}
-#else
-# error "No dynamic library support. FIXME."
-#endif
+	GL_Pre_Init ();
+
 	fxMesaCreateContext = QFGL_ProcAddress (libgl_handle,
 											"fxMesaCreateContext", true);
 	fxMesaDestroyContext = QFGL_ProcAddress (libgl_handle,
@@ -282,7 +274,6 @@ VID_Init (unsigned char *palette)
 	fxMesaSwapBuffers = QFGL_ProcAddress (libgl_handle,
 										  "fxMesaSwapBuffers", true);
 	
-	QFGL_ProcAddress (NULL, NULL, false);
 	VID_GetWindowSize (640, 480);
 	Con_CheckResize (); // Now that we have a window size, fix console
 

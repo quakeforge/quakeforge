@@ -37,6 +37,8 @@
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
 
+extern void *libgl_handle;
+
 qboolean GLF_Init (void);
 void *QFGL_ProcAddress (void *, const char *, qboolean);
 

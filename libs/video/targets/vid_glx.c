@@ -86,6 +86,7 @@ XVisualInfo* (* glXChooseVisual) (Display *dpy, int screen, int *attribList);
 GLXContext (* glXCreateContext) (Display *dpy, XVisualInfo *vis, GLXContext shareList, Bool direct);
 Bool (* glXMakeCurrent) (Display *dpy, GLXDrawable drawable, GLXContext ctx);
 
+extern void GL_Pre_Init (void);
 extern void GL_Init_Common (void);
 extern void VID_Init8bitPalette (void);
 
@@ -95,7 +96,6 @@ const char *gl_vendor;
 const char *gl_renderer;
 const char *gl_version;
 const char *gl_extensions;
-void	   *libgl_handle;
 
 
 void
@@ -143,22 +143,13 @@ VID_Init (unsigned char *palette)
 		None
 	};
 
-#ifdef HAVE_DLOPEN
-	if (!(libgl_handle = dlopen (gl_driver->string, RTLD_NOW))) {
-		Sys_Error ("Can't open OpenGL library \"%s\": %s\n", gl_driver->string,
-				   dlerror());
-		return;
-	}
-#else
-# error "No dynamic library support. FIXME."
-#endif
+	GL_Pre_Init ();
 
 	glXSwapBuffers = QFGL_ProcAddress (libgl_handle, "glXSwapBuffers", true);
 	glXChooseVisual = QFGL_ProcAddress (libgl_handle, "glXChooseVisual", true);
 	glXCreateContext = QFGL_ProcAddress (libgl_handle, "glXCreateContext",
 										 true);
 	glXMakeCurrent = QFGL_ProcAddress (libgl_handle, "glXMakeCurrent", true);
-	QFGL_ProcAddress (NULL, NULL, false);	// make ProcAddress clear its cache
 
 	Cmd_AddCommand ("vid_center", VID_Center_f, "Center the view port on the "
 					"quake window in a virtual desktop.\n");

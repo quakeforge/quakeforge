@@ -228,17 +228,21 @@ VID_SetPalette (unsigned char *palette)
 	}
 }
 
+void
+GL_Pre_Init (void)
+{
+	if (!GLF_Init()) {
+		Sys_Error("Can't init video.\n");
+		return;
+	}
+}
+
 /*
 	GL_Init_Common
 */
 void
 GL_Init_Common (void)
 {
-	if (!GLF_Init()) {
-		Sys_Error("Can't init video.\n");
-		return;
-	}
-
 	gl_vendor = qfglGetString (GL_VENDOR);
 	Con_Printf ("GL_VENDOR: %s\n", gl_vendor);
 	gl_renderer = qfglGetString (GL_RENDERER);

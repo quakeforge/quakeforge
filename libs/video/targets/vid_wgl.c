@@ -55,6 +55,7 @@ static const char rcsid[] =
 #include "resource.h"
 #include "sbar.h"
 
+extern void GL_Pre_Init (void);
 extern void GL_Init_Common (void);
 extern void VID_Init8bitPalette (void);
 
@@ -108,7 +109,6 @@ const char *gl_vendor;
 const char *gl_renderer;
 const char *gl_version;
 const char *gl_extensions;
-void       *libgl_handle;
 
 // 8-bit and permedia support
 qboolean			isPermedia = false;
@@ -1138,10 +1138,7 @@ VID_Init (unsigned char *palette)
 	HGLRC       baseRC;
 	DWORD lasterror;
 
-	if (!(libgl_handle = LoadLibrary (gl_driver->string))) {
-		Sys_Error ("Can't open OpenGL library \"%s\"\n", gl_driver->string);
-		return;
-	}
+	GL_Pre_Init ();
 
 	qf_wglCreateContext = QFGL_ProcAddress (libgl_handle, "wglCreateContext",
 											true);

@@ -69,6 +69,7 @@ cvar_t      *vid_system_gamma;
 int         VID_options_items = 1;
 int         modestate;
 
+extern void GL_Pre_Init (void);
 extern void GL_Init_Common (void);
 extern void VID_Init8bitPalette (void);
 
@@ -133,6 +134,8 @@ VID_Init (unsigned char *palette)
 {
 	Uint32      flags = SDL_OPENGL;
 	int         i;
+
+	GL_Pre_Init ();
 
 //	SDL_SysWMinfo info;
 
