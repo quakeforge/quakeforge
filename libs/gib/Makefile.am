@@ -5,7 +5,7 @@ INCLUDES= -I$(top_srcdir)/include
 lib_LTLIBRARIES= libQFgib.la
 
 libQFgib_la_LDFLAGS=	-version-info 1:0:0 -no-undefined
-libQFgib_la_LIBADD=		$(top_builddir)/libs/util/libQFutil.la $(top_builddir)/libs/console/libQFconsole.la
+libQFgib_la_LIBADD=		$(top_builddir)/libs/util/libQFutil.la
 libQFgib_la_SOURCES= \
 	gib_buffer.c gib_builtin.c gib_classes.c gib_execute.c gib_function.c gib_parse.c gib_handle.c \
 	gib_object.c gib_process.c gib_regex.c gib_thread.c gib_vars.c gib_init.c gib_tree.c \
