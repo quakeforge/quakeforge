@@ -149,8 +149,7 @@ SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
 					neworg[2] += 8;
 			}
 			trace =
-				SV_Move (SVFIELD (ent, origin, vector), SVFIELD (ent, mins, vector), SVFIELD (ent, maxs, vector), neworg, false,
-						 ent);
+				SV_Move (SVFIELD (ent, origin, vector), SVFIELD (ent, mins, vector), SVFIELD (ent, maxs, vector), neworg, false, ent);
 
 			if (trace.fraction == 1) {
 				if (((int) SVFIELD (ent, flags, float) & FL_SWIM)
@@ -203,9 +202,9 @@ SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
 
 	if (!SV_CheckBottom (ent)) {
 		if ((int) SVFIELD (ent, flags, float) & FL_PARTIALGROUND) {	// entity had floor
-														// mostly pulled out
-														// from underneath it
-			// and is trying to correct
+													// mostly pulled out
+													// from underneath it
+													// and is trying to correct
 			if (relink)
 				SV_LinkEdict (ent, true);
 			return true;
@@ -394,7 +393,8 @@ SV_MoveToGoal (progs_t *pr)
 	}
 // if the next step hits the enemy, return immediately
 	if (PROG_TO_EDICT (&sv_pr_state, SVFIELD (ent, enemy, entity)) != sv.edicts
-		&& SV_CloseEnough (ent, goal, dist)) return;
+		&& SV_CloseEnough (ent, goal, dist))
+		return;
 
 // bump around...
 	if ((rand () & 3) == 1 || !SV_StepDirection (ent, SVFIELD (ent, ideal_yaw, float), dist)) {

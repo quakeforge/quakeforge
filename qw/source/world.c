@@ -461,7 +461,8 @@ SV_TestEntityPosition (edict_t *ent)
 	trace_t		trace;
 
 	trace =	SV_Move (SVFIELD (ent, origin, vector),
-					 SVFIELD (ent, mins, vector), SVFIELD (ent, maxs, vector),
+					 SVFIELD (ent, mins, vector),
+					 SVFIELD (ent, maxs, vector),
 					 SVFIELD (ent, origin, vector), 0, ent);
 
 	if (trace.startsolid)
@@ -658,7 +659,7 @@ SV_ClipToLinks (areanode_t *node, moveclip_t * clip)
 {
 	link_t     *l, *next;
 	edict_t    *touch;
-	trace_t     trace;
+	trace_t		trace;
 
 	// touch linked edicts
 	for (l = node->solid_edicts.next; l != &node->solid_edicts; l = next) {
@@ -684,21 +685,24 @@ SV_ClipToLinks (areanode_t *node, moveclip_t * clip)
 			continue;
 
 		if (clip->passedict != 0 && SVFIELD (clip->passedict, size, vector)[0]
-			&& !SVFIELD (touch, size, vector)[0]) continue;	// points never interact
+			&& !SVFIELD (touch, size, vector)[0])
+			continue;					// points never interact
 
 		// might intersect, so do an exact clip
 		if (clip->trace.allsolid)
 			return;
 		if (clip->passedict) {
-			if (PROG_TO_EDICT (&sv_pr_state, SVFIELD (touch, owner, entity)) == clip->passedict)
+			if (PROG_TO_EDICT (&sv_pr_state, SVFIELD (touch, owner, entity))
+				== clip->passedict)
 				continue;				// don't clip against own missiles
-			if (PROG_TO_EDICT (&sv_pr_state, SVFIELD (clip->passedict, owner, entity)) == touch)
+			if (PROG_TO_EDICT (&sv_pr_state,
+							   SVFIELD (clip->passedict, owner, entity)) == touch)
 				continue;				// don't clip against owner
 		}
 
 		if ((int) SVFIELD (touch, flags, float) & FL_MONSTER)
 			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins2,
-									 clip->maxs2, clip->end);
+										 clip->maxs2, clip->end);
 		else
 			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins,
 										 clip->maxs, clip->end);

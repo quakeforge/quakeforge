@@ -1,7 +1,7 @@
 /*
 	game.c
 
-	game specific support
+	game specific support (notably hipnotic, rogue and abyss)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 	Copyright (C) 1999,2000  contributors of the QuakeForge project

@@ -257,7 +257,7 @@ Key_Console (int key)
 			else if ((cls.state >= ca_connected && cl_chatmode->int_val == 2)
 					 || cl_chatmode->int_val == 1) {
 				if (cls.state < ca_connected)	// can happen if cl_chatmode
-					// is 1
+												// is 1
 					goto no_lf;			// the text goes to /dev/null :)
 
 				// convert to a chat message

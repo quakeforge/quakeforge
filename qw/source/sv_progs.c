@@ -300,18 +300,21 @@ SV_Progs_Init (void)
 	sv_pr_state.parse_field = parse_field;
 	sv_pr_state.prune_edict = prune_edict;
 
-	Cmd_AddCommand ("edict", ED_PrintEdict_f, "Report information on a given edict in the game. (edict (edict number))");
-	Cmd_AddCommand ("edicts", ED_PrintEdicts_f, "Display information on all edicts in the game.");
-	Cmd_AddCommand ("edictcount", ED_Count_f, "Display summary information on the edicts in the game.");
-	Cmd_AddCommand ("profile", PR_Profile_f, "FIXME: Report information about QuakeC Stuff (\?\?\?) No Description");
+	Cmd_AddCommand ("edict", ED_PrintEdict_f,
+					"Report information on a given edict in the game. (edict (edict number))");
+	Cmd_AddCommand ("edicts", ED_PrintEdicts_f,
+					"Display information on all edicts in the game.");
+	Cmd_AddCommand ("edictcount", ED_Count_f,
+					"Display summary information on the edicts in the game.");
+	Cmd_AddCommand ("profile", PR_Profile_f,
+					"FIXME: Report information about QuakeC Stuff (\?\?\?) No Description");
 }
 
 void
 SV_Progs_Init_Cvars (void)
 {
-	r_skyname =
-		Cvar_Get ("r_skyname", "", CVAR_SERVERINFO, Cvar_Info,
-				"name of skybox");
+	r_skyname = Cvar_Get ("r_skyname", "", CVAR_SERVERINFO, Cvar_Info,
+						 "name of skybox");
 	sv_progs = Cvar_Get ("sv_progs", "qwprogs.dat", CVAR_ROM, NULL,
 						 "Allows selectable game progs if you have several "
 						 "of them in the gamedir");

@@ -37,13 +37,10 @@
 #define	STEPSIZE	18
 
 /*
-=============
-SV_CheckBottom
+	SV_CheckBottom
 
-Returns false if any part of the bottom of the entity is off an edge that
-is not a staircase.
-
-=============
+	Returns false if any part of the bottom of the entity is off an edge that
+	is not a staircase.
 */
 int         c_yes, c_no;
 
@@ -110,14 +107,12 @@ SV_CheckBottom (edict_t *ent)
 
 
 /*
-=============
-SV_movestep
+	SV_movestep
 
-Called by monster program code.
-The move will be adjusted for slopes and stairs, but if the move isn't
-possible, no move is done, false is returned, and
-pr_global_struct->trace_normal is set to the normal of the blocking wall
-=============
+	Called by monster program code.
+	The move will be adjusted for slopes and stairs, but if the move isn't
+	possible, no move is done, false is returned, and
+	pr_global_struct->trace_normal is set to the normal of the blocking wall
 */
 qboolean
 SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
@@ -147,8 +142,7 @@ SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
 					neworg[2] += 8;
 			}
 			trace =
-				SV_Move (SVFIELD (ent, origin, vector), SVFIELD (ent, mins, vector), SVFIELD (ent, maxs, vector), neworg,
-						 false, ent);
+				SV_Move (SVFIELD (ent, origin, vector), SVFIELD (ent, mins, vector), SVFIELD (ent, maxs, vector), neworg, false, ent);
 
 			if (trace.fraction == 1) {
 				if (((int) SVFIELD (ent, flags, float) & FL_SWIM)
@@ -201,9 +195,9 @@ SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
 
 	if (!SV_CheckBottom (ent)) {
 		if ((int) SVFIELD (ent, flags, float) & FL_PARTIALGROUND) {	// entity had floor
-			// mostly pulled out
-			// from underneath it
-			// and is trying to correct
+													// mostly pulled out
+													// from underneath it
+													// and is trying to correct
 			if (relink)
 				SV_LinkEdict (ent, true);
 			return true;
@@ -228,13 +222,10 @@ SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
 //============================================================================
 
 /*
-======================
-SV_StepDirection
+	SV_StepDirection
 
-Turns to the movement direction, and walks the current distance if
-facing it.
-
-======================
+	Turns to the movement direction, and walks the current distance if
+	facing it.
 */
 qboolean
 SV_StepDirection (edict_t *ent, float yaw, float dist)
@@ -254,7 +245,7 @@ SV_StepDirection (edict_t *ent, float yaw, float dist)
 	if (SV_movestep (ent, move, false)) {
 		delta = SVFIELD (ent, angles, vector)[YAW] - SVFIELD (ent, ideal_yaw, float);
 		if (delta > 45 && delta < 315) {	// not turned far enough, so
-			// don't take the step
+											// don't take the step
 			VectorCopy (oldorigin, SVFIELD (ent, origin, vector));
 		}
 		SV_LinkEdict (ent, true);
@@ -266,10 +257,7 @@ SV_StepDirection (edict_t *ent, float yaw, float dist)
 }
 
 /*
-======================
-SV_FixCheckBottom
-
-======================
+	SV_FixCheckBottom
 */
 void
 SV_FixCheckBottom (edict_t *ent)
@@ -282,10 +270,7 @@ SV_FixCheckBottom (edict_t *ent)
 
 
 /*
-================
-SV_NewChaseDir
-
-================
+	SV_NewChaseDir
 */
 #define	DI_NODIR	-1
 void
@@ -366,10 +351,7 @@ SV_NewChaseDir (edict_t *actor, edict_t *enemy, float dist)
 }
 
 /*
-======================
-SV_CloseEnough
-
-======================
+	SV_CloseEnough
 */
 qboolean
 SV_CloseEnough (edict_t *ent, edict_t *goal, float dist)
@@ -386,20 +368,13 @@ SV_CloseEnough (edict_t *ent, edict_t *goal, float dist)
 }
 
 /*
-======================
-SV_MoveToGoal
-
-======================
+	SV_MoveToGoal
 */
 void
-SV_MoveToGoal (progs_t * pr)
+SV_MoveToGoal (progs_t *pr)
 {
 	edict_t    *ent, *goal;
 	float       dist;
-
-#ifdef QUAKE2
-	edict_t    *enemy;
-#endif
 
 	ent = PROG_TO_EDICT (pr, *pr->globals.self);
 	goal = PROG_TO_EDICT (pr, SVFIELD (ent, goalentity, entity));
@@ -410,13 +385,8 @@ SV_MoveToGoal (progs_t * pr)
 		return;
 	}
 // if the next step hits the enemy, return immediately
-#ifdef QUAKE2
-	enemy = PROG_TO_EDICT (pr->, SVFIELD (ent, enemy, entity));
-	if (enemy != sv.edicts && SV_CloseEnough (ent, enemy, dist))
-#else
 	if (PROG_TO_EDICT (pr, SVFIELD (ent, enemy, entity)) != sv.edicts
 		&& SV_CloseEnough (ent, goal, dist))
-#endif
 		return;
 
 // bump around...

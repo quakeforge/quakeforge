@@ -44,7 +44,7 @@ extern cvar_t   *cl_cshift_powerup;
 extern byte gammatable[256];
 
 
-extern void V_CalcGlowCshift (void); 
+extern void V_CalcGlowCshift (void);
 
 void 
 V_CalcPowerupCshift (void) 

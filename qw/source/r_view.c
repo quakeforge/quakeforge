@@ -251,7 +251,7 @@ V_DriftPitch (void)
 
 
 /*
-	PALETTE FLASHES 
+	PALETTE FLASHES
 */
 
 
