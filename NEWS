@@ -6,6 +6,7 @@ Changes from 0.5.4
       gl_conalpha -> con_alpha, vid_conwidth -> con_width,
       vid_conheight -> con_height
     o demo_speed no longer affects console scrolling or cursor blink rate
+    o save game loading fixed
 
 Changes from 0.5.3
     o CRITICAL: exploitable buffer overflow in qw-server fixed
