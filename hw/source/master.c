@@ -264,7 +264,7 @@ AnalysePacket (void)
 	size = net_message->message->cursize;
 
 	for (p = data; (rsize = min (size - (p - data), 16)); p += rsize) {
-		Con_Printf ("%04X:", p - data);
+		Con_Printf ("%04X:", (unsigned int) (p - data));
 		memcpy (buf, p, rsize);
 		for (i = 0; i < rsize; i++) {
 			Con_Printf (" %02X", buf[i]);
