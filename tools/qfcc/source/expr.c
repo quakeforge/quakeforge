@@ -762,6 +762,14 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	type_t *type = 0;
 	expr_t *e;
 
+	if (e1->type == ex_block && e1->e.block.is_call
+		&& e2->type == ex_block && e2->e.block.is_call
+		&& e1->e.block.result) {
+		e = new_temp_def_expr (e1->e.block.result->e.def->type);
+		e1 = binary_expr ('=', e, e1);
+		print_expr(e1);puts("");
+	}
+
 	if (op == '.')
 		return field_expr (e1, e2);
 
@@ -1009,6 +1017,8 @@ has_function_call (expr_t *e)
 {
 	switch (e->type) {
 		case ex_block:
+			if (e->e.block.is_call)
+				return 1;
 			for (e = e->e.block.head; e; e = e->next)
 				if (has_function_call (e))
 					return 1;
@@ -1107,6 +1117,7 @@ function_expr (expr_t *e1, expr_t *e2)
 		return err;
 
 	call = new_block_expr ();
+	call->e.block.is_call = 1;
 	for (e = e2, i = 0; e; e = e->next, i++) {
 		if (has_function_call (e)) {
 			*a = new_temp_def_expr (arg_types[i]);
@@ -1127,16 +1138,9 @@ function_expr (expr_t *e1, expr_t *e2)
 	if (ftype->aux_type != &type_void) {
 		expr_t     *ret = new_expr ();
 		ret->type = ex_def;
-#if 0
 		ret->e.def = memcpy (malloc (sizeof (def_t)), &def_ret, sizeof (def_t));
 		ret->e.def->type = ftype->aux_type;
 		call->e.block.result = ret;
-#else
-		ret->e.def = &def_ret;
-		e = new_temp_def_expr (ftype->aux_type);
-		append_expr (call, new_binary_expr ('=', e, ret));
-		call->e.block.result = e;
-#endif
 	}
 	return call;
 }

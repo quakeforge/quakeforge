@@ -156,6 +156,8 @@ emit_assign_expr (expr_t *e)
 			emit_statement (e->line, op, def_b, def_a, 0);
 		}
 	}
+	if (def_a->type->type != ev_pointer)
+		return def_a;
 	return def_b;
 }
 
@@ -187,8 +189,14 @@ emit_sub_expr (expr_t *e, def_t *dest)
 				d = emit_assign_expr (e);
 				break;
 			}
-			def_a = emit_sub_expr (e->e.expr.e1, 0);
-			def_b = emit_sub_expr (e->e.expr.e2, 0);
+			if (e->e.expr.e1->type == ex_block
+				&& e->e.expr.e1->e.block.is_call) {
+				def_b = emit_sub_expr (e->e.expr.e2, 0);
+				def_a = emit_sub_expr (e->e.expr.e1, 0);
+			} else {
+				def_a = emit_sub_expr (e->e.expr.e1, 0);
+				def_b = emit_sub_expr (e->e.expr.e2, 0);
+			}
 			switch (e->e.expr.op) {
 				case AND:
 					operator = "&&";
