@@ -186,9 +186,9 @@ main (int argc, char **argv)
 				return 1;
 			}
 			for (i = 0; i < pack->numfiles; i++) {
-				if (options.verbosity > 1)
+				if (options.verbosity >= 1)
 					printf ("%6d ", pack->files[i].filelen);
-				if (options.verbosity > 0)
+				if (options.verbosity >= 0)
 					printf ("%s\n", pack->files[i].name);
 			}
 			pack_close (pack);
