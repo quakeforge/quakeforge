@@ -31,16 +31,6 @@
 
 #include "protocol.h"
 
-typedef struct
-{
-	int		down[2];		// key nums holding it down
-	int		state;			// low bit is down state
-} kbutton_t;
-
-extern	kbutton_t	in_mlook, in_klook;
-extern 	kbutton_t 	in_strafe;
-extern 	kbutton_t 	in_speed;
-
 void CL_Input_Init (void);
 void CL_Input_Init_Cvars (void);
 void CL_ClearStates (void);
@@ -54,10 +44,5 @@ void CL_ReadPackets (void);
 int  CL_ReadFromServer (void);
 void CL_WriteToServer (usercmd_t *cmd);
 void CL_BaseMove (usercmd_t *cmd);
-
-
-float CL_KeyState (kbutton_t *key);
-char *Key_KeynumToString (int keynum);
-
 
 #endif

@@ -42,8 +42,6 @@
 #include <vgakeyboard.h>
 #include <vgamouse.h>
 
-#include "cl_input.h"
-#include "client.h"
 #include "QF/cmd.h"
 #include "QF/compat.h"
 #include "QF/console.h"
@@ -51,9 +49,9 @@
 #include "QF/input.h"
 #include "QF/joystick.h"
 #include "QF/keys.h"
+#include "QF/mathlib.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
-#include "view.h"
 
 static int  UseKeyboard = 1;
 static int  UseMouse = 1;
@@ -72,6 +70,8 @@ static void IN_InitMouse (void);
 
 cvar_t		*_windowed_mouse;
 cvar_t		*m_filter;
+cvar_t		*sensitivity;
+cvar_t		*lookstrafe;
 
 static void
 keyhandler (int scancode, int state)
@@ -104,13 +104,6 @@ mousehandler (int buttonstate, int dx, int dy, int dz, int drx, int dry, int drz
 
 
 void
-Force_CenterView_f (void)
-{
-	cl.viewangles[PITCH] = 0;
-}
-
-
-void
 IN_Init (void)
 {
 	if (COM_CheckParm ("-nokbd"))
@@ -135,6 +128,10 @@ IN_Init_Cvars (void)
 	JOY_Init_Cvars ();
 	m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, NULL,
 			"Toggle mouse input filtering.");
+	lookstrafe = Cvar_Get ("lookstrafe", "0", CVAR_ARCHIVE, NULL,
+						   "when mlook/klook on player will strafe");
+	sensitivity = Cvar_Get ("sensitivity", "3", CVAR_ARCHIVE, NULL,
+							"mouse sensitivity multiplier");
 }
 
 static void
@@ -264,8 +261,6 @@ IN_InitMouse (void)
 	int         mtype;
 	char       *mousedev;
 	int         mouserate = MOUSE_DEFAULTSAMPLERATE;
-
-	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "Force viewpoint of player to center");
 
 	mouse_buttons = 3;
 

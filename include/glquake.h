@@ -39,12 +39,10 @@
 
 #include <GL/gl.h>
 
-#include "client.h"
 #include "QF/cvar.h"
 #include "QF/model.h"
-#include "render.h"
 #include "QF/qfgl_ext.h"
-#include "wad.h"
+#include "QF/wad.h"
 
 void GL_BeginRendering (int *x, int *y, int *width, int *height);
 void GL_EndRendering (void);
@@ -106,7 +104,7 @@ typedef struct surfcache_s {
 	byte				data[4];	// width*height elements
 } surfcache_t;
 
-
+#if 0
 //====================================================
 
 
@@ -135,7 +133,7 @@ extern	refdef_t	r_refdef;
 extern	mleaf_t		*r_viewleaf, *r_oldviewleaf;
 extern	texture_t	*r_notexture_mip;
 extern	int		d_lightstylevalue[256];	// 8.8 fraction of base light value
-
+#endif
 extern	qboolean	envmap;
 extern	int	currenttexture;
 extern	int	cnttextures[2];

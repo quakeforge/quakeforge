@@ -20,7 +20,7 @@ libQFjs_la_CFLAGS=       $(JOY_CFLAGS)
 YFLAGS = -d
 libQFfbdev_la_LDFLAGS=	-version-info 1:0:0
 libQFfbdev_la_SOURCES=	fbset.c fbset_modes_y.y fbset_modes_l.l \
-			in_fbdev.c vid.c vid_fbdev.c
+			in_common.c in_fbdev.c vid.c vid_fbdev.c
 YACCLEX_CLEANFILES=	fbset_modes_y.c fbset_modes_y.h \
 			fbset_modes_y.tab.h fbset_modes_l.c
 EXTRA_libQFfbdev_la_SOURCES=fbset_modes_y.h
@@ -31,31 +31,31 @@ fbset_modes_l.lo: $(srcdir)/fbset_modes_l.c
 	$(COMPILE) -Wno-error -c $<
 
 libQFmgl_la_LDFLAGS=	-version-info 1:0:0
-libQFmgl_la_SOURCES=	in_win.c vid.c vid_common_sw.c vid_mgl.c
+libQFmgl_la_SOURCES=	in_common.c in_win.c vid.c vid_common_sw.c vid_mgl.c
 
 libQFsdl_la_LDFLAGS=	-version-info 1:0:0
-libQFsdl_la_SOURCES=	in_sdl.c vid.c vid_common_sw.c vid_sdl.c
+libQFsdl_la_SOURCES=	in_common.c in_sdl.c vid.c vid_common_sw.c vid_sdl.c
 
 libQFsvga_la_LDFLAGS=	-version-info 1:0:0
-libQFsvga_la_SOURCES=	d_copy.S in_svgalib.c vid.c vid_common_sw.c \
+libQFsvga_la_SOURCES=	d_copy.S in_common.c in_svgalib.c vid.c vid_common_sw.c \
 			vid_svgalib.c
 
 libQFx11_la_LDFLAGS=	-version-info 1:0:0
-libQFx11_la_SOURCES=	in_x11.c vid.c context_x11.c dga_check.c \
+libQFx11_la_SOURCES=	in_common.c in_x11.c vid.c context_x11.c dga_check.c \
 			vid_common_sw.c vid_x11.c
 
 libQFglx_la_LDFLAGS=	-version-info 1:0:0
-libQFglx_la_SOURCES=	in_x11.c vid.c context_x11.c dga_check.c \
+libQFglx_la_SOURCES=	in_common.c in_x11.c vid.c context_x11.c dga_check.c \
 			vid_common_gl.c vid_glx.c
 
 libQFsgl_la_LDFLAGS=	-version-info 1:0:0
-libQFsgl_la_SOURCES=	in_sdl.c vid.c vid_common_gl.c vid_sgl.c
+libQFsgl_la_SOURCES=	in_common.c in_sdl.c vid.c vid_common_gl.c vid_sgl.c
 
 libQFtdfx_la_LDFLAGS=	-version-info 1:0:0
-libQFtdfx_la_SOURCES=	in_svgalib.c vid.c vid_common_gl.c vid_3dfxsvga.c
+libQFtdfx_la_SOURCES=	in_common.c in_svgalib.c vid.c vid_common_gl.c vid_3dfxsvga.c
 
 libQFwgl_la_LDFLAGS=	-version-info 1:0:0
-libQFwgl_la_SOURCES=	in_win.c vid.c vid_wgl.c
+libQFwgl_la_SOURCES=	in_common.c in_win.c vid.c vid_wgl.c
 
 LIBLIST =	$(lib_LTLIBRARIES) @LIBRARY_SEARCH_PATH@
 

@@ -36,7 +36,7 @@ struct {
 	vec3_t position;
 } viewdelta;
 
-#define freelook (in_mlook.state&1 || cl_freelook->int_val)
+#define freelook (in_mlook.state&1 || in_freelook->int_val)
 
 void IN_Init (void);
 void IN_Init_Cvars (void);
@@ -58,5 +58,15 @@ void IN_ModeChanged (void);
 void IN_HandlePause (qboolean paused);
 
 extern cvar_t		*_windowed_mouse;
+
+extern qboolean    in_mouse_avail;
+extern float       in_mouse_x, in_mouse_y;
+
+
+void IN_LL_Init_Cvars ();
+void IN_LL_Init ();
+void IN_LL_Shutdown ();
+void IN_LL_Commands ();
+void IN_LL_SendKeyEvents ();
 
 #endif // _INPUT_H

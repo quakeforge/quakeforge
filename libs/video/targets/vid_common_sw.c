@@ -36,4 +36,57 @@
 #include "QF/compat.h"
 #include "QF/qargs.h"
 #include "QF/vid.h"
-#include "view.h"
+
+
+void
+VID_InitBuffers (void)
+{
+	int         buffersize, zbuffersize, cachesize;
+	void       *vid_surfcache;
+
+	// Calculate the sizes we want first
+	buffersize = vid.rowbytes * vid.height;
+	zbuffersize = vid.width * vid.height * sizeof (*d_pzbuffer);
+	cachesize = D_SurfaceCacheForRes (vid.width, vid.height);
+
+	// Free the old screen buffer
+	if (vid.buffer) {
+		free (vid.buffer);
+		vid.conbuffer = vid.buffer = NULL;
+	}
+	// Free the old z-buffer
+	if (d_pzbuffer) {
+		free (d_pzbuffer);
+		d_pzbuffer = NULL;
+	}
+	// Free the old surface cache
+	vid_surfcache = D_SurfaceCacheAddress ();
+	if (vid_surfcache) {
+		D_FlushCaches ();
+		free (vid_surfcache);
+		vid_surfcache = NULL;
+	}
+	// Allocate the new screen buffer
+	vid.conbuffer = vid.buffer = calloc (buffersize, 1);
+	if (!vid.conbuffer) {
+		Sys_Error ("Not enough memory for video mode\n");
+	}
+	// Allocate the new z-buffer
+	d_pzbuffer = calloc (zbuffersize, 1);
+	if (!d_pzbuffer) {
+		free (vid.buffer);
+		vid.conbuffer = vid.buffer = NULL;
+		Sys_Error ("Not enough memory for video mode\n");
+	}
+	// Allocate the new surface cache; free the z-buffer if we fail
+	vid_surfcache = calloc (cachesize, 1);
+	if (!vid_surfcache) {
+		free (vid.buffer);
+		free (d_pzbuffer);
+		vid.conbuffer = vid.buffer = NULL;
+		d_pzbuffer = NULL;
+		Sys_Error ("Not enough memory for video mode\n");
+	}
+
+	D_InitCaches (vid_surfcache, cachesize);
+}

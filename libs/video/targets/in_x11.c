@@ -55,23 +55,20 @@
 # include <X11/extensions/xf86dga.h>
 #endif
 
-#include "cl_input.h"
-#include "client.h"
 #include "QF/compat.h"
 #include "QF/console.h"
-#include "context_x11.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
-#include "dga_check.h"
 #include "QF/input.h"
 #include "QF/joystick.h"
 #include "QF/keys.h"
+#include "QF/mathlib.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
-#include "view.h"
+#include "QF/vid.h"
 
-cvar_t     *_windowed_mouse;
-cvar_t     *m_filter;
+#include "context_x11.h"
+#include "dga_check.h"
 
 cvar_t     *in_dga;
 cvar_t     *in_dga_mouseaccel;
@@ -81,9 +78,6 @@ static qboolean dga_active;
 
 static keydest_t old_key_dest = key_none;
 
-static qboolean mouse_avail;
-static float mouse_x, mouse_y;
-static float old_mouse_x, old_mouse_y;
 static int  p_mouse_x, p_mouse_y;
 
 #define KEY_MASK (KeyPressMask | KeyReleaseMask)
@@ -364,21 +358,21 @@ static void
 event_motion (XEvent * event)
 {
 	if (dga_active) {
-		mouse_x += event->xmotion.x_root * in_dga_mouseaccel->value;
-		mouse_y += event->xmotion.y_root * in_dga_mouseaccel->value;
+		in_mouse_x += event->xmotion.x_root * in_dga_mouseaccel->value;
+		in_mouse_y += event->xmotion.y_root * in_dga_mouseaccel->value;
 	} else {
 		if (vid_fullscreen->int_val || _windowed_mouse->int_val) {
 			if (!event->xmotion.send_event) {
-				mouse_x += (event->xmotion.x - p_mouse_x);
-				mouse_y += (event->xmotion.y - p_mouse_y);
+				in_mouse_x += (event->xmotion.x - p_mouse_x);
+				in_mouse_y += (event->xmotion.y - p_mouse_y);
 				if (abs (vid.width / 2 - event->xmotion.x) > vid.width / 4
 					|| abs (vid.height / 2 - event->xmotion.y) > vid.height / 4) {
 					center_pointer ();
 				}
 			}
 		} else {
-			mouse_x += (event->xmotion.x - p_mouse_x);
-			mouse_y += (event->xmotion.y - p_mouse_y);
+			in_mouse_x += (event->xmotion.x - p_mouse_x);
+			in_mouse_y += (event->xmotion.y - p_mouse_y);
 		}
 		p_mouse_x = event->xmotion.x;
 		p_mouse_y = event->xmotion.y;
@@ -387,12 +381,10 @@ event_motion (XEvent * event)
 
 
 void
-IN_Commands (void)
+IN_LL_Commands (void)
 {
 	static int  old_windowed_mouse;
 	static int  old_in_dga;
-
-	JOY_Command ();
 
 	if ((old_windowed_mouse != _windowed_mouse->int_val)
 		|| (old_in_dga != in_dga->int_val)) {
@@ -423,57 +415,20 @@ IN_Commands (void)
 
 
 void
-IN_SendKeyEvents (void)
+IN_LL_SendKeyEvents (void)
 {
 	/* Get events from X server. */
 	X11_ProcessEvents ();
-}
-
-
-void
-IN_Move (void)
-{
-	JOY_Move ();
-
-	if (!mouse_avail)
-		return;
-
-	if (m_filter->int_val) {
-		mouse_x = (mouse_x + old_mouse_x) * 0.5;
-		mouse_y = (mouse_y + old_mouse_y) * 0.5;
-	}
-	old_mouse_x = mouse_x;
-	old_mouse_y = mouse_y;
-
-	mouse_x *= sensitivity->value;
-	mouse_y *= sensitivity->value;
-
-	if ((in_strafe.state & 1) || (lookstrafe->int_val && freelook))
-		viewdelta.position[0] += mouse_x;
-	else
-		viewdelta.angles[YAW] -= mouse_x;
-
-	if (freelook && !(in_strafe.state & 1)) {
-		viewdelta.angles[PITCH] += mouse_y;
-	} else {
-		if ((in_strafe.state & 1) && noclip_anglehack)
-			viewdelta.position[1] -= mouse_y;
-		else
-			viewdelta.position[2] -= mouse_y;
-	}
-	mouse_x = mouse_y = 0.0;
 }
 
 /*
   Called at shutdown
 */
 void
-IN_Shutdown (void)
+IN_LL_Shutdown (void)
 {
-	JOY_Shutdown ();
-
-	Con_Printf ("IN_Shutdown\n");
-	mouse_avail = 0;
+	Con_Printf ("IN_LL_Shutdown\n");
+	in_mouse_avail = 0;
 	if (x_disp) {
 		XAutoRepeatOn (x_disp);
 
@@ -486,13 +441,7 @@ IN_Shutdown (void)
 }
 
 void
-Force_CenterView_f (void)
-{
-	cl.viewangles[PITCH] = 0;
-}
-
-void
-IN_Init (void)
+IN_LL_Init (void)
 {
 	// open the display
 	if (!x_disp)
@@ -515,8 +464,6 @@ IN_Init (void)
 		XChangeWindowAttributes (x_disp, x_win, attribmask, &attribs_2);
 	}
 
-	JOY_Init ();
-
 	XAutoRepeatOff (x_disp);
 
 	if (COM_CheckParm ("-nomouse"))
@@ -528,26 +475,18 @@ IN_Init (void)
 		_windowed_mouse->flags |= CVAR_ROM;
 	}
 
-	mouse_x = mouse_y = 0.0;
-	mouse_avail = 1;
+	in_mouse_avail = 1;
 
 	X11_AddEvent (KeyPress, &event_key);
 	X11_AddEvent (KeyRelease, &event_key);
 	X11_AddEvent (ButtonPress, &event_button);
 	X11_AddEvent (ButtonRelease, &event_button);
 	X11_AddEvent (MotionNotify, &event_motion);
-
-	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "Force view of player to center");
 }
 
 void
-IN_Init_Cvars (void)
+IN_LL_Init_Cvars (void)
 {
-	JOY_Init_Cvars ();
-	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, NULL,
-			"With this set to 1, quake will grab the mouse from X");
-	m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, NULL,
-			"Toggle mouse input filtering.");
 	in_dga = Cvar_Get ("in_dga", "1", CVAR_ARCHIVE, NULL,
 			"DGA Input support");
 	in_dga_mouseaccel = Cvar_Get ("in_dga_mouseaccel", "1", CVAR_ARCHIVE, NULL,

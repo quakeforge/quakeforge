@@ -160,6 +160,13 @@ typedef enum {
 	K_MWHEELDOWN
 } keynum_t;
 
+typedef struct
+{
+	int     down[2];        // key nums holding it down
+	int     state;          // low bit is down state
+} kbutton_t;
+
+
 // key_none should, preferably, be last
 typedef enum {key_game, key_console, key_message, key_menu, key_none} keydest_t;
 
@@ -178,5 +185,8 @@ void Key_Init_Cvars (void);
 void Key_WriteBindings (QFile *f);
 void Key_SetBinding (int keynum, char *binding);
 void Key_ClearStates (void);
+
+float Key_KeyState (kbutton_t *key);
+char *Key_KeynumToString (int keynum);
 
 #endif // _KEYS_H
