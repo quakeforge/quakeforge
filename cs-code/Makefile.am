@@ -11,7 +11,7 @@ QCPPFLAGS=-I. -I$(srcdir) -I$(top_builddir)/include -I$(top_srcdir)/include
 
 pkgdata_DATA= menu.dat
 
-menu_src= menu.qc
+menu_src= menu.qc cbuf_def.qc draw_def.qc file_def.qc menu_def.qc string_def.qc
 
 menu.dat: menu.src $(menu_src)
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -P $<

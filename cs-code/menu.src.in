@@ -1,3 +1,9 @@
 menu.dat
 
+@srcdir@/cbuf_def.qc
+@srcdir@/draw_def.qc
+@srcdir@/file_def.qc
+@srcdir@/menu_def.qc
+@srcdir@/string_def.qc
+
 @srcdir@/menu.qc

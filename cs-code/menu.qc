@@ -1,37 +1,5 @@
 #include "QF/keys.h"
 
-void (integer x, integer y, string text) Menu_Begin = #0;
-void (integer () func) Menu_Draw = #0;
-void (integer x, integer y, string name) Menu_Pic = #0;
-void (integer x, integer y, string name) Menu_CenterPic = #0;
-void (integer x, integer y, string text, void (string text, integer key) func) Menu_Item = #0;
-void (void (integer x, integer y) func) Menu_Cursor = #0;
-void (integer (integer key, integer unicode, integer down) func) Menu_KeyEvent = #0;
-void () Menu_End = #0;
-void (string name) Menu_TopMenu = #0;
-void (string name) Menu_SelectMenu = #0;
-void (integer () func) Menu_SetQuit = #0;
-void () Menu_Quit = #0;
-
-void (integer x, integer y, string name) Draw_Pic = #0;
-void (integer x, integer y, string name) Draw_CenterPic = #0;
-void (integer x, integer y, integer chr) Draw_Character = #0;
-void (integer x, integer y, string text) Draw_String = #0;
-void (integer x, integer y, string text, integer n) Draw_nString = #0;
-void (integer x, integer y, string text) Draw_AltString = #0;
-
-void (string text) Cbuf_AddText = #0;
-void (string text) Cbuf_InsertText = #0;
-void () Cbuf_Execute = #0;
-void () Cbuf_Execute_Sets = #0;
-
-//FIXME need a proper file struct, string sucks
-string (string path, string mode) File_Open = #0;
-void (string file) File_Close = #0;
-string (string file) File_GetLine = #0;
-
-string (integer old, integer new, string str) String_ReplaceChar = #0;
-
 float () random = #0;
 string () gametype = #0;
 string (...) sprintf = #0;
@@ -334,6 +302,14 @@ void () single_player_menu =
 
 // ********* MULTIPLAYER
 
+integer JoiningGame;
+integer lanConfig_cursor;
+string my_tcpip_address;
+string lanConfig_portname;
+string lanConfig_joinname;
+#define NUM_LANCONFIG_CMDS 3
+integer [NUM_LANCONFIG_CMDS] lanConfig_cursor_table = { 72, 92, 124 };
+
 integer () join_draw =
 {
 	local integer f = (320 - 26 * 8) / 2;
@@ -345,6 +321,62 @@ integer () join_draw =
 	return 0;
 };
 
+integer () lanconfig_draw =
+{
+	local integer basex = 54;
+	local string startJoin = JoiningGame ? "Join Game" : "New Game";
+	local string protocol = "UDP";
+
+	Draw_String (basex, 32, sprintf ("%s - %s", startJoin, protocol));
+	basex += 8;
+	Draw_String (basex, 52, "Address:");
+	Draw_String (basex + 9 * 8, 52, "127.0.0.1");
+	Draw_String (basex, lanConfig_cursor_table[0], "Port");
+	text_box (basex + 8 * 8, lanConfig_cursor_table[0] - 8, 6, 1);
+	Draw_String (basex + 9 * 8, lanConfig_cursor_table[0], lanConfig_portname);
+
+	if (JoiningGame) {
+		Draw_String (basex, lanConfig_cursor_table[1], "Search for local games...");
+		Draw_String (basex, 108, "Join game at:");
+		text_box (basex + 8, lanConfig_cursor_table[2] - 8, 22, 1);
+		Draw_String (basex + 16, lanConfig_cursor_table[2], lanConfig_joinname);
+	} else {
+		text_box (basex, lanConfig_cursor_table[1] - 8, 2, 1);
+		Draw_String (basex + 8, lanConfig_cursor_table[1], "OK");
+	}
+	Draw_Character (basex - 8, lanConfig_cursor_table[lanConfig_cursor],
+					12 + (integer (time * 4) & 1));
+
+	return 0;
+};
+
+integer (integer key, integer unicode, integer down) lanconfig_keyevent =
+{
+	switch (key) {
+		case QFK_DOWN:
+		case QFM_WHEEL_DOWN:
+			lanConfig_cursor ++;
+			lanConfig_cursor %= NUM_LANCONFIG_CMDS;
+			break;
+		case QFK_UP:
+		case QFM_WHEEL_UP:
+			lanConfig_cursor += NUM_LANCONFIG_CMDS - 1;
+			lanConfig_cursor %= NUM_LANCONFIG_CMDS;
+			break;
+	}
+	return 1;
+};
+
+void () lanconfig_menu =
+{
+	Menu_Begin (54, 92, "");
+	Menu_Pic (16, 4, "gfx/qplaque.lmp");
+	Menu_CenterPic (160, 4, "gfx/p_multi.lmp");
+	Menu_Draw (lanconfig_draw);
+	Menu_KeyEvent (lanconfig_keyevent);
+	Menu_End ();
+};
+
 void () join_menu =
 {
 	Menu_Begin (54, 32, "");
@@ -354,9 +386,18 @@ void () join_menu =
 	Menu_Pic (72, 51, "gfx/dim_drct.lmp");
 	Menu_Pic (72, 70, "gfx/dim_ipx.lmp");
 	Menu_Pic (72, 89, "gfx/netmen4.lmp");
+	lanconfig_menu ();
 	Menu_Draw (join_draw);
 	Menu_Cursor (spinner);
 	Menu_End ();
+};
+
+integer (integer key, integer unicode, integer down) multi_player_keyevent =
+{
+	if (key == QFK_RETURN) {
+		JoiningGame = (Menu_GetIndex () == 0);
+	}
+	return 0;
 };
 
 void () multi_player_menu =
@@ -365,6 +406,7 @@ void () multi_player_menu =
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/p_multi.lmp");
 	Menu_Pic (72, 32, "gfx/mp_menu.lmp");
+	Menu_KeyEvent (multi_player_keyevent);
 	join_menu ();
 	if (do_single_player)
 		Menu_Item (54, 52, "", quit_f);
