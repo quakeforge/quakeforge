@@ -259,7 +259,7 @@ void () options_controls_menu =
 integer () options_features_draw = 
 {
 	local string tmp;
-	local integer cursor_pad = 0, spacing = 120, bar_pad;
+	local integer cursor_pad = 0, spacing = 120;
 
 
 	Draw_Pic		(16, 4, "gfx/qplaque.lmp");
@@ -296,7 +296,6 @@ integer (integer key, integer unicode, integer down) options_keyevent =
 
 void () options_menu =
 {
-	local string tmp;
 	local integer spacing = 120;
 
 	Menu_Begin (54, 72, "");

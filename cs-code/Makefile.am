@@ -6,7 +6,7 @@ AUTOMAKE_OPTIONS= foreign
 pkgdatadir=@sharepath@/id1
 
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc
-QCFLAGS=-g
+QCFLAGS=-g -Werror
 QCPPFLAGS=-I. -I$(srcdir) -I$(top_builddir)/include -I$(top_srcdir)/include
 
 pkgdata_DATA= menu.dat
