@@ -39,6 +39,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #endif
 
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/qendian.h"
@@ -184,7 +185,7 @@ static sfxcache_t *
 SND_LoadSound (sfx_t *sfx, cache_allocator_t allocator)
 {
 	char		namebuffer[256];
-	char		foundname[256];
+	dstring_t  *foundname = dstring_new ();
 	byte	   *data;
 	wavinfo_t	info;
 	int			len;
@@ -198,12 +199,15 @@ SND_LoadSound (sfx_t *sfx, cache_allocator_t allocator)
 	strncat (namebuffer, sfx->name, sizeof (namebuffer) - strlen (namebuffer));
 	_QFS_FOpenFile (namebuffer, &file, foundname, 1);
 	if (!file) {
+		dstring_delete (foundname);
 		Sys_Printf ("Couldn't load %s\n", namebuffer);
 		return 0;
 	}
-	if (strcmp (".ogg", QFS_FileExtension (foundname)) == 0) {
+	if (strcmp (".ogg", QFS_FileExtension (foundname->str)) == 0) {
+		dstring_delete (foundname);
 		return SND_LoadOgg (file, sfx, allocator);
 	}
+	dstring_delete (foundname);
 	Qclose (file); //FIXME this is a dumb way to do this
 	data = QFS_LoadStackFile (namebuffer, stackbuf, sizeof (stackbuf));
 

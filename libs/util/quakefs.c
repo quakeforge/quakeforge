@@ -746,7 +746,7 @@ int file_from_pak; // global indicating file came from pack file ZOID
 
 static int
 open_file (searchpath_t *search, const char *filename, QFile **gzfile,
-		   char *foundname, int zip)
+		   dstring_t *foundname, int zip)
 {
 	char        netpath[MAX_OSPATH];
 
@@ -761,7 +761,10 @@ open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 			Sys_DPrintf ("PackFile: %s : %s\n", search->pack->filename,
 						 packfile->name);
 			// open a new file on the pakfile
-			strncpy (foundname, packfile->name, MAX_OSPATH);
+			if (foundname) {
+				dstring_clearstr (foundname);
+				dstring_appendstr (foundname, packfile->name);
+			}
 			*gzfile = QFS_OpenRead (search->pack->filename, packfile->filepos,
 									packfile->filelen, zip);
 			file_from_pak = 1;
@@ -779,7 +782,10 @@ open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 		snprintf (netpath, sizeof (netpath), "%s/%s", search->filename,
 				  filename);
 
-		strncpy (foundname, filename, MAX_OSPATH);
+		if (foundname) {
+			dstring_clearstr (foundname);
+			dstring_appendstr (foundname, filename);
+		}
 		if (Sys_FileTime (netpath) == -1)
 			return -1;
 
@@ -793,7 +799,8 @@ open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 }
 
 int
-_QFS_FOpenFile (const char *filename, QFile **gzfile, char *foundname, int zip)
+_QFS_FOpenFile (const char *filename, QFile **gzfile,
+				dstring_t *foundname, int zip)
 {
 	searchpath_t *search;
 	char       *path;
@@ -854,9 +861,7 @@ ok:
 int
 QFS_FOpenFile (const char *filename, QFile **gzfile)
 {
-	char        foundname[MAX_OSPATH];
-
-	return _QFS_FOpenFile (filename, gzfile, foundname, 1);
+	return _QFS_FOpenFile (filename, gzfile, 0, 1);
 }
 
 cache_user_t *loadcache;

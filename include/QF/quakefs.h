@@ -72,8 +72,8 @@ struct cache_user_s;
 char *QFS_CompressPath (const char *pth);
 void QFS_WriteFile (const char *filename, void *data, int len);
 void QFS_WriteBuffers (const char *filename, int count, ...);
-
-int _QFS_FOpenFile (const char *filename, QFile **gzfile, char *foundname, int zip);
+struct dstring_s;
+int _QFS_FOpenFile (const char *filename, QFile **gzfile, struct dstring_s *foundname, int zip);
 int QFS_FOpenFile (const char *filename, QFile **gzfile);
 void QFS_FileBase (const char *in, char *out);
 void QFS_DefaultExtension (char *path, const char *extension);

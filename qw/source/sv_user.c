@@ -674,7 +674,7 @@ static void
 SV_BeginDownload_f (ucmd_t *cmd)
 {
 	const char *name;
-	char		realname[MAX_OSPATH];
+	dstring_t  *realname;
 	int			size, zip;
 	QFile	   *file;
 
@@ -709,6 +709,7 @@ SV_BeginDownload_f (ucmd_t *cmd)
 
 	zip = strchr (Info_ValueForKey (host_client->userinfo, "*cap"), 'z') != 0;
 
+	realname = dstring_newstr ();
 	size = _QFS_FOpenFile (name, &file, realname, !zip);
 
 	host_client->download = file;
@@ -728,18 +729,20 @@ SV_BeginDownload_f (ucmd_t *cmd)
 		ClientReliableWrite_Begin (host_client, svc_download, 4);
 		ClientReliableWrite_Short (host_client, -1);
 		ClientReliableWrite_Byte (host_client, 0);
+		dstring_delete (realname);
 		return;
 	}
 
-	if (zip && strcmp (realname, name)) {
-		SV_Printf ("download renamed to %s\n", realname);
+	if (zip && strcmp (realname->str, name)) {
+		SV_Printf ("download renamed to %s\n", realname->str);
 		ClientReliableWrite_Begin (host_client, svc_download,
-								   strlen (realname) + 5);
+								   strlen (realname->str) + 5);
 		ClientReliableWrite_Short (host_client, -2);
 		ClientReliableWrite_Byte (host_client, 0);
-		ClientReliableWrite_String (host_client, realname);
+		ClientReliableWrite_String (host_client, realname->str);
 		ClientReliable_FinishWrite (host_client);
 	}
+	dstring_delete (realname);
 
 	SV_NextDownload_f (0);
 	SV_Printf ("Downloading %s to %s\n", name, host_client->name);
