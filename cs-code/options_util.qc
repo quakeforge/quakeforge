@@ -29,3 +29,17 @@ void (integer x, integer y, integer size, integer perc_val) draw_perc_bar =
 	Draw_String (x + ((i+1)*8), y, "]");
     Draw_Character (x + ((perc + 1) * 8), y, '*');
 };
+
+void (integer x, integer y, integer spacing, string spacechar, string label, string valstr) draw_item =
+{
+	local integer i;
+	Draw_String	(x,  y,	label); 
+	for (i = x + String_Len(label)*8; i < (x+spacing); i+=8) {
+		Draw_String (i, y, spacechar);
+	}
+	Draw_String (x + spacing,  y, valstr);
+};
+void (integer x, integer y, integer spacing, string label, string valstr) draw_val_item =
+{
+	draw_item (x, y, spacing, ".", label, ":" + valstr);
+};

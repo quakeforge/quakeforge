@@ -73,16 +73,19 @@ integer () gamma_to_percentage =
 integer () options_video_draw = 
 {
 	local string tmp = ftos(cvar("crosshair"));
+	local integer spacing = 120;
+
 	Draw_Pic (16, 4, "gfx/qplaque.lmp");
 	Draw_CenterPic (160, 4, "gfx/p_option.lmp");
 	Draw_String	(54,  40, "Video");
 	Draw_String	(54,  50, "-----");
-	Draw_String	(70, 60, "Fullscreen: " + get_cvar_state("vid_fullscreen"));
-	Draw_String	(70, 70, "Crosshair: " + tmp);
+	draw_val_item   (70, 60, spacing, "Fullscreen", get_cvar_state ("vid_fullscreen"));
+	draw_val_item   (70, 70, spacing, "Crosshair", tmp);
 
 	Draw_String (70, 80, "Gamma:");
 	draw_perc_bar  (118,  80, 15, gamma_to_percentage());
 	Draw_String (118 + (15 + 4)*8 , 80, ftos(cvar("vid_gamma")));
+
 	opt_cursor  (62, (Menu_GetIndex() * 10) + 60);
 	return 1;
 };
@@ -130,22 +133,22 @@ integer (integer key, integer unicode, integer down) options_controls_keyevent =
 integer () options_controls_draw = 
 {
 	local string tmp;
-	local integer cursor_pad = 0;
+	local integer cursor_pad = 0, spacing = 120;
 
 
 	Draw_Pic		(16, 4, "gfx/qplaque.lmp");
-	Draw_CenterPic (160, 4, "gfx/p_option.lmp");
+	Draw_CenterPic  (160,4, "gfx/p_option.lmp");
 	Draw_String		(54,  40, "Controls");
 	Draw_String		(54,  50, "--------");
-	Draw_String     (70,  60, "Grab mouse: " + get_cvar_state ("in_grab"));
+	draw_val_item   (70,  60, spacing, "Grab mouse", get_cvar_state ("in_grab"));
 	tmp = "On";
 	if(cvar("cl_forwardspeed") < 400) {
 		tmp = "Off";
 	}
-	Draw_String     (70,  70, "Auto run: " + tmp);
+	draw_val_item   (70,  70, spacing, "Auto run", tmp);
 	Draw_String     (70,  80, "Bindings");
-	opt_cursor  (62, (Menu_GetIndex() * 10) + 60 + cursor_pad);
 
+	opt_cursor  (62, (Menu_GetIndex() * 10) + 60 + cursor_pad);
 	return 1;
 };
 
