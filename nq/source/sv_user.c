@@ -31,6 +31,13 @@
 static __attribute__ ((unused)) const char rcsid[] = 
 	"$Id$";
 
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
 #include "QF/cbuf.h"
 #include "QF/console.h"
 #include "QF/cmd.h"

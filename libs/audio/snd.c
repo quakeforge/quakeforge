@@ -104,8 +104,13 @@ S_Init_Cvars (void)
 	snd_output = Cvar_Get ("snd_output", "dx", CVAR_ROM, NULL,
 						   "Sound Output Plugin to use");
 #else
+  #ifndef __QNXNTO__
 	snd_output = Cvar_Get ("snd_output", "oss", CVAR_ROM, NULL,
 						   "Sound Output Plugin to use");
+  #else
+	snd_output = Cvar_Get ("snd_output", "sdl", CVAR_ROM, NULL,
+						   "Sound Output Plugin to use");
+  #endif
 #endif
 	snd_render = Cvar_Get ("snd_render", "default", CVAR_ROM, NULL,
 						   "Sound Renderer Plugin to use");

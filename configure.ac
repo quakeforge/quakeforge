@@ -117,6 +117,9 @@ else
 		*freebsd*)
 			CPP_NAME="cpp %d %i %o"
 			;;
+		*qnx*)
+			CPP_NAME="gcc -E -x c++ %d -o %o %i"
+			;;
 		*bsd*)
 			touch conftest.c
 			CPP_NAME="`(f=\`$CC -v -E -Dfoo conftest.c -o conftest.i 2>&1 | grep -e -Dfoo\`; set $f; echo "$1")` %d %i %o"

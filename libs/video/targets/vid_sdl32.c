@@ -83,6 +83,11 @@ VID_SetPalette (unsigned char *palette)
 	}
 }
 
+static void
+do_screen_buffer (void)
+{
+}
+
 void
 VID_Init (unsigned char *palette)
 {
@@ -158,6 +163,7 @@ VID_Init (unsigned char *palette)
 	vid.conbuffer = vid.buffer;
 	vid.conrowbytes = vid.rowbytes;
 	vid.direct = rendersurface->pixels;
+	vid.do_screen_buffer = do_screen_buffer;
 
 	VID_InitBuffers ();		// allocate z buffer and surface cache
 

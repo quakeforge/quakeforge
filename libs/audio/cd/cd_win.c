@@ -505,7 +505,7 @@ PLUGIN_INFO(cd, win)
 	plugin_info.type = qfp_cd;
 	plugin_info.api_version = QFPLUGIN_VERSION;
 	plugin_info.plugin_version = "0.1";
-	plugin_info.description = "Linux CD Audio output"
+	plugin_info.description = "Windows CD Audio output"
 		"Copyright (C) 2001  contributors of the QuakeForge project\n"
 		"Please see the file \"AUTHORS\" for a list of contributors\n";
 	plugin_info.functions = &plugin_info_funcs;

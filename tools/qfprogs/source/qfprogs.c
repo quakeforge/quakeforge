@@ -45,7 +45,13 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <string.h>
 #include <getopt.h>
 #include <sys/types.h>
-#include <sys/fcntl.h>
+
+#ifdef HAVE_FCNTL_H
+# include <fcntl.h>
+#else
+# include <sys/fcntl.h>
+#endif
+
 #include <sys/stat.h>
 #include <fcntl.h>
 

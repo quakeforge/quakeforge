@@ -41,6 +41,10 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <stdarg.h>
 #include <errno.h>
 
+#ifdef __QNXNTO__
+# include <locale.h>
+#endif
+
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
@@ -540,7 +544,18 @@ C_KeyEvent (knum_t key, short unicode, qboolean down)
 		}
 		il = input_line;
 	}
-	Con_ProcessInputLine (il, key >= 256 ? (int) key : unicode);
+	//FIXME should this translation be here?
+	if ((unicode==0x0A) && (key==QFK_RETURN)) {
+		Con_ProcessInputLine (il, key);
+	}
+	if ((unicode==0x7F) && (key==QFK_BACKSPACE)) {
+		Con_ProcessInputLine (il, key);
+	}
+	if (unicode!=0) {
+		Con_ProcessInputLine (il, key >= 256 ? (int) key : unicode);
+	} else {
+		Con_ProcessInputLine (il, key);
+	}
 }
 
 /* DRAWING */
@@ -797,6 +812,10 @@ static void
 C_Init (void)
 {
 	view_t     *view;
+
+#ifdef __QNXNTO__
+	setlocale (LC_ALL, "C-TRADITIONAL");
+#endif
 
 	Menu_Init ();
 

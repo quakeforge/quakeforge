@@ -41,21 +41,11 @@ static __attribute__ ((unused)) const char rcsid[] =
 # include <unistd.h>
 #endif
 
-#include <ctype.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <sys/ipc.h>
-#include <sys/mman.h>
-#include <sys/shm.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/wait.h>
+#ifdef HAVE_FCNTL_H
+# include <fcntl.h>
+#else
+# include <sys/fcntl.h>
+#endif
 
 #include "QF/cvar.h"
 #include "QF/qargs.h"
