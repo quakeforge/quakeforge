@@ -26,6 +26,7 @@ cvar_t     *gl_fb_bmodels;
 cvar_t     *gl_fb_models;
 cvar_t     *gl_fires;
 cvar_t     *gl_keeptjunctions;
+cvar_t     *gl_lerp_anim;
 cvar_t     *gl_lightmap_components;
 cvar_t     *gl_lightmode;
 cvar_t     *gl_max_size;
@@ -154,6 +155,8 @@ R_Init_Cvars (void)
 	gl_keeptjunctions = Cvar_Get ("gl_keeptjunctions", "1", CVAR_NONE, NULL,
 								  "Set to 0 to turn off colinear vertexes "
 								  "upon level load");
+	gl_lerp_anim = Cvar_Get ("gl_lerp_anim", "1", CVAR_ARCHIVE, NULL,
+							 "Toggles model animation interpolation");
 	gl_lightmap_components = Cvar_Get ("gl_lightmap_components", "4", CVAR_ROM,
 									   NULL, "Lightmap texture components. 1 "
 									   "is greyscale, 3 is RGB, 4 is RGBA.");
