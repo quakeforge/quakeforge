@@ -316,6 +316,7 @@ struct progs_s {
 	struct hashtab_s *builtin_hash;
 	struct hashtab_s *builtin_num_hash;
 	unsigned    bi_next;
+	unsigned  (*bi_map)(progs_t *pr, unsigned binum);
 
 	struct hashtab_s *function_hash;
 	struct hashtab_s *global_hash;

@@ -189,10 +189,13 @@ PR_RelocateBuiltins (progs_t *pr)
 			func->first_statement = -bi->binum;
 		}
 
-		bi = PR_FindBuiltinNum (pr, -func->first_statement);
+		ind = -func->first_statement;
+		if (pr->bi_map)
+			ind = pr->bi_map (pr, ind);
+		bi = PR_FindBuiltinNum (pr, ind);
 		if (!bi || !(proc = bi->proc)) {
 			Sys_DPrintf ("WARNING: Bad builtin call number: %s = #%d\n",
-						 bi_name, ind);
+						 bi_name, -func->first_statement);
 			proc = bi_no_function;
 		}
 		((bfunction_t *) func)->func = proc;
