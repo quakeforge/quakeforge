@@ -314,8 +314,9 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
   Returns the proper texture for a given time and base texture
 */
 texture_t  *
-R_TextureAnimation (texture_t *base)
+R_TextureAnimation (msurface_t *surf)
 {
+	texture_t  *base = surf->texinfo->texture;
 	int         count, relative;
 
 	if (currententity->frame) {
@@ -324,7 +325,7 @@ R_TextureAnimation (texture_t *base)
 	}
 
 	if (!base->anim_total)
-		return base;
+		goto found;
 
 	relative = (int) (r_realtime * 10) % base->anim_total;
 
@@ -335,6 +336,11 @@ R_TextureAnimation (texture_t *base)
 			Sys_Error ("R_TextureAnimation: broken cycle");
 		if (++count > 100)
 			Sys_Error ("R_TextureAnimation: infinite cycle");
+	}
+found:
+	if (base->gl_fb_texturenum > 0) {
+		surf->polys->fb_chain = fullbright_polys[base->gl_fb_texturenum];
+		fullbright_polys[base->gl_fb_texturenum] = surf->polys;
 	}
 
 	return base;
@@ -374,7 +380,7 @@ R_DrawMultitexturePoly (msurface_t *s)
 {
 	float      *v;
 	int         maps, i;
-	texture_t  *texture = R_TextureAnimation (s->texinfo->texture);
+	texture_t  *texture = R_TextureAnimation (s);
 
 	c_brush_polys++;
 
@@ -422,10 +428,6 @@ R_DrawMultitexturePoly (msurface_t *s)
 	qglActiveTexture (gl_mtex_enum + 0);
 	qfglEnable (GL_TEXTURE_2D);
 
-	if (texture->gl_fb_texturenum > 0) {
-		s->polys->fb_chain = fullbright_polys[texture->gl_fb_texturenum];
-		fullbright_polys[texture->gl_fb_texturenum] = s->polys;
-	}
 	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }
 
@@ -499,11 +501,8 @@ R_RenderBrushPoly (msurface_t *fa)
 	float      *v;
 	int         maps, smax, tmax, i;
 	glRect_t   *theRect;
-	texture_t  *texture = R_TextureAnimation (fa->texinfo->texture);
 
 	c_brush_polys++;
-
-	qfglBindTexture (GL_TEXTURE_2D, texture->gl_texturenum);
 
 	qfglBegin (GL_POLYGON);
 	v = fa->polys->verts[0];
@@ -518,10 +517,6 @@ R_RenderBrushPoly (msurface_t *fa)
 	fa->polys->chain = lightmap_polys[fa->lightmaptexturenum];
 	lightmap_polys[fa->lightmaptexturenum] = fa->polys;
 
-	if (texture->gl_fb_texturenum > 0) {
-		fa->polys->fb_chain = fullbright_polys[texture->gl_fb_texturenum];
-		fullbright_polys[texture->gl_fb_texturenum] = fa->polys;
-	}
 	// check for lightmap modification
 	for (maps = 0; maps < MAXLIGHTMAPS && fa->styles[maps] != 255; maps++)
 		if (d_lightstylevalue[fa->styles[maps]] != fa->cached_light[maps])
@@ -618,6 +613,7 @@ DrawTextureChains (void)
 		texture_t  *tex = r_worldentity.model->textures[i];
 		if (!tex)
 			continue;
+		qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 		for (s = tex->texturechain; s; s = s->texturechain)
 			R_RenderBrushPoly (s);
 
@@ -711,6 +707,8 @@ R_DrawBrushModel (entity_t *e)
 			} else if (gl_mtex_active) {
 				R_DrawMultitexturePoly (psurf);
 			} else {
+				texture_t  *tex = R_TextureAnimation (psurf);
+				qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 				R_RenderBrushPoly (psurf);
 			}
 		}
@@ -791,7 +789,8 @@ R_RecursiveWorldNode (mnode_t *node)
 			} else if (gl_mtex_active) {
 				R_DrawMultitexturePoly (surf);
 			} else {
-				CHAIN_SURF (surf, surf->texinfo->texture->texturechain);
+				texture_t  *tex = R_TextureAnimation (surf);
+				CHAIN_SURF (surf, tex->texturechain);
 			}
 		}
 	}

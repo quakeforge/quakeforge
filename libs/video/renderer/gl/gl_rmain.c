@@ -467,8 +467,11 @@ R_Mirror (void)
 	color_white[2] = r_mirroralpha->value * 255;
 	qfglColor4ubv (color_white);
 	s = r_worldentity.model->textures[mirrortexturenum]->texturechain;
-	for (; s; s = s->texturechain)
+	for (; s; s = s->texturechain) {
+		texture_t  *tex = R_TextureAnimation (s);
+		qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 		R_RenderBrushPoly (s);
+	}
 	r_worldentity.model->textures[mirrortexturenum]->texturechain = NULL;
 	qfglColor3ubv (color_white);
 }

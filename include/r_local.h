@@ -161,7 +161,7 @@ void R_TransformPlane (mplane_t *p, float *normal, float *dist);
 void R_TransformFrustum (void);
 void R_SetSkyFrame (void);
 void R_DrawSurfaceBlock (void);
-texture_t *R_TextureAnimation (texture_t *base);
+texture_t *R_TextureAnimation (msurface_t *surf);
 
 #ifdef USE_INTEL_ASM
 

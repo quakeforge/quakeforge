@@ -185,8 +185,9 @@ R_BuildLightMap (void)
 	Returns the proper texture for a given time and base texture
 */
 texture_t *
-R_TextureAnimation (texture_t *base)
+R_TextureAnimation (msurface_t *surf)
 {
+	texture_t  *base = surf->texinfo->texture;
 	int         relative;
 	int         count;
 
