@@ -287,12 +287,13 @@ Cmd_Exec_File (const char *path)
 		return;
 	if ((file = Qopen (path, "r")) != NULL) {
 		len = COM_filelength (file);
-		f = (char *) Hunk_TempAlloc (len + 1);
+		f = (char *) malloc (len + 1);
 		if (f) {
 			f[len] = 0;
 			Qread (file, f, len);
 			Qclose (file);
 			Cbuf_InsertText (f);
+			free (f);
 		}
 	}
 }
