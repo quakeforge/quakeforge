@@ -732,125 +732,125 @@ CL_ParseServerMessage (void)
 		// other commands
 		switch (cmd) {
 			default:
-			Host_Error ("CL_ParseServerMessage: Illegible server message\n");
-			break;
+				Host_Error ("CL_ParseServerMessage: Illegible server message\n");
+				break;
 
 			case svc_nop:
-//          Con_Printf ("svc_nop\n");
-			break;
+//				Con_Printf ("svc_nop\n");
+				break;
 
 			case svc_time:
-			cl.mtime[1] = cl.mtime[0];
-			cl.mtime[0] = MSG_ReadFloat (net_message);
-			break;
+				cl.mtime[1] = cl.mtime[0];
+				cl.mtime[0] = MSG_ReadFloat (net_message);
+				break;
 
 			case svc_clientdata:
-			i = MSG_ReadShort (net_message);
-			CL_ParseClientdata (i);
-			break;
+				i = MSG_ReadShort (net_message);
+				CL_ParseClientdata (i);
+				break;
 
 			case svc_version:
-			i = MSG_ReadLong (net_message);
-			if (i != PROTOCOL_VERSION)
-				Host_Error
-					("CL_ParseServerMessage: Server is protocol %i instead of %i\n",
-					 i, PROTOCOL_VERSION);
-			break;
+				i = MSG_ReadLong (net_message);
+				if (i != PROTOCOL_VERSION)
+					Host_Error
+						("CL_ParseServerMessage: Server is protocol %i instead of %i\n",
+						 i, PROTOCOL_VERSION);
+				break;
 
 			case svc_disconnect:
-			Host_EndGame ("Server disconnected\n");
+				Host_EndGame ("Server disconnected\n");
 
 			case svc_print:
-			Con_Printf ("%s", MSG_ReadString (net_message));
-			break;
+				Con_Printf ("%s", MSG_ReadString (net_message));
+				break;
 
 			case svc_centerprint:
-			SCR_CenterPrint (MSG_ReadString (net_message));
-			break;
+				SCR_CenterPrint (MSG_ReadString (net_message));
+				break;
 
 			case svc_stufftext:
-			Cbuf_AddText (MSG_ReadString (net_message));
-			break;
+				Cbuf_AddText (MSG_ReadString (net_message));
+				break;
 
 			case svc_damage:
-			V_ParseDamage ();
-			break;
+				V_ParseDamage ();
+				break;
 
 			case svc_serverinfo:
-			CL_ParseServerInfo ();
-			vid.recalc_refdef = true;	// leave intermission full screen
-			break;
+				CL_ParseServerInfo ();
+				vid.recalc_refdef = true;	// leave intermission full screen
+				break;
 
 			case svc_setangle:
-			for (i = 0; i < 3; i++)
-				cl.viewangles[i] = MSG_ReadAngle (net_message);
-			break;
+				for (i = 0; i < 3; i++)
+					cl.viewangles[i] = MSG_ReadAngle (net_message);
+				break;
 
 			case svc_setview:
-			cl.viewentity = MSG_ReadShort (net_message);
-			snd_viewentity = cl.viewentity; // FIXME: evil hack
-			break;
+				cl.viewentity = MSG_ReadShort (net_message);
+				snd_viewentity = cl.viewentity; // FIXME: evil hack
+				break;
 
 			case svc_lightstyle:
-			i = MSG_ReadByte (net_message);
-			if (i >= MAX_LIGHTSTYLES)
-				Sys_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
-			strcpy (cl_lightstyle[i].map, MSG_ReadString (net_message));
-			cl_lightstyle[i].length = strlen (cl_lightstyle[i].map);
-			break;
+				i = MSG_ReadByte (net_message);
+				if (i >= MAX_LIGHTSTYLES)
+					Sys_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
+				strcpy (cl_lightstyle[i].map, MSG_ReadString (net_message));
+				cl_lightstyle[i].length = strlen (cl_lightstyle[i].map);
+				break;
 
 			case svc_sound:
-			CL_ParseStartSoundPacket ();
-			break;
+				CL_ParseStartSoundPacket ();
+				break;
 
 			case svc_stopsound:
-			i = MSG_ReadShort (net_message);
-			S_StopSound (i >> 3, i & 7);
-			break;
+				i = MSG_ReadShort (net_message);
+				S_StopSound (i >> 3, i & 7);
+				break;
 
 			case svc_updatename:
-			Sbar_Changed ();
-			i = MSG_ReadByte (net_message);
-			if (i >= cl.maxclients)
-				Host_Error
-					("CL_ParseServerMessage: svc_updatename > MAX_SCOREBOARD");
-			strcpy (cl.scores[i].name, MSG_ReadString (net_message));
-			break;
+				Sbar_Changed ();
+				i = MSG_ReadByte (net_message);
+				if (i >= cl.maxclients)
+					Host_Error
+						("CL_ParseServerMessage: svc_updatename > MAX_SCOREBOARD");
+					strcpy (cl.scores[i].name, MSG_ReadString (net_message));
+				break;
 
 			case svc_updatefrags:
-			Sbar_Changed ();
-			i = MSG_ReadByte (net_message);
-			if (i >= cl.maxclients)
-				Host_Error
-					("CL_ParseServerMessage: svc_updatefrags > MAX_SCOREBOARD");
-			cl.scores[i].frags = MSG_ReadShort (net_message);
-			break;
+				Sbar_Changed ();
+				i = MSG_ReadByte (net_message);
+				if (i >= cl.maxclients)
+					Host_Error
+						("CL_ParseServerMessage: svc_updatefrags > MAX_SCOREBOARD");
+				cl.scores[i].frags = MSG_ReadShort (net_message);
+				break;
 
 			case svc_updatecolors:
-			Sbar_Changed ();
-			i = MSG_ReadByte (net_message);
-			if (i >= cl.maxclients)
-				Host_Error
-					("CL_ParseServerMessage: svc_updatecolors > MAX_SCOREBOARD");
-			cl.scores[i].colors = MSG_ReadByte (net_message);
-			CL_NewTranslation (i);
-			break;
+				Sbar_Changed ();
+				i = MSG_ReadByte (net_message);
+				if (i >= cl.maxclients)
+					Host_Error
+						("CL_ParseServerMessage: svc_updatecolors > MAX_SCOREBOARD");
+				cl.scores[i].colors = MSG_ReadByte (net_message);
+				CL_NewTranslation (i);
+				break;
 
 			case svc_particle:
-			R_ParseParticleEffect ();
-			break;
+				R_ParseParticleEffect ();
+				break;
 
 			case svc_spawnbaseline:
-			i = MSG_ReadShort (net_message);
-			// must use CL_EntityNum() to force cl.num_entities up
-			CL_ParseBaseline (CL_EntityNum (i));
-			break;
+				i = MSG_ReadShort (net_message);
+				// must use CL_EntityNum() to force cl.num_entities up
+				CL_ParseBaseline (CL_EntityNum (i));
+				break;
 			case svc_spawnstatic:
-			CL_ParseStatic ();
-			break;
+				CL_ParseStatic ();
+				break;
 			case svc_temp_entity:
-			CL_ParseTEnt ();
-			break;
+				CL_ParseTEnt ();
+				break;
 
 			case svc_setpause:
 			{
@@ -869,65 +869,65 @@ CL_ParseServerMessage (void)
 			break;
 
 			case svc_signonnum:
-			i = MSG_ReadByte (net_message);
-			if (i <= cls.signon)
-				Host_Error ("Received signon %i when at %i", i, cls.signon);
-			cls.signon = i;
-			CL_SignonReply ();
-			break;
+				i = MSG_ReadByte (net_message);
+				if (i <= cls.signon)
+					Host_Error ("Received signon %i when at %i", i, cls.signon);
+				cls.signon = i;
+				CL_SignonReply ();
+				break;
 
 			case svc_killedmonster:
-			cl.stats[STAT_MONSTERS]++;
-			break;
+				cl.stats[STAT_MONSTERS]++;
+				break;
 
 			case svc_foundsecret:
-			cl.stats[STAT_SECRETS]++;
-			break;
+				cl.stats[STAT_SECRETS]++;
+				break;
 
 			case svc_updatestat:
-			i = MSG_ReadByte (net_message);
-			if (i < 0 || i >= MAX_CL_STATS)
-				Sys_Error ("svc_updatestat: %i is invalid", i);
-			cl.stats[i] = MSG_ReadLong (net_message);;
-			break;
+				i = MSG_ReadByte (net_message);
+				if (i < 0 || i >= MAX_CL_STATS)
+					Sys_Error ("svc_updatestat: %i is invalid", i);
+				cl.stats[i] = MSG_ReadLong (net_message);;
+				break;
 
 			case svc_spawnstaticsound:
-			CL_ParseStaticSound ();
-			break;
+				CL_ParseStaticSound ();
+				break;
 
 			case svc_cdtrack:
-			cl.cdtrack = MSG_ReadByte (net_message);
-			cl.looptrack = MSG_ReadByte (net_message);
-			if ((cls.demoplayback || cls.demorecording)
-				&& (cls.forcetrack != -1))
-				CDAudio_Play ((byte) cls.forcetrack, true);
-			else
-				CDAudio_Play ((byte) cl.cdtrack, true);
-			break;
+				cl.cdtrack = MSG_ReadByte (net_message);
+				cl.looptrack = MSG_ReadByte (net_message);
+				if ((cls.demoplayback || cls.demorecording)
+					&& (cls.forcetrack != -1))
+					CDAudio_Play ((byte) cls.forcetrack, true);
+				else
+					CDAudio_Play ((byte) cl.cdtrack, true);
+				break;
 
 			case svc_intermission:
-			cl.intermission = 1;
-			cl.completed_time = cl.time;
-			vid.recalc_refdef = true;	// go to full screen
-			break;
+				cl.intermission = 1;
+				cl.completed_time = cl.time;
+				vid.recalc_refdef = true;	// go to full screen
+				break;
 
 			case svc_finale:
-			cl.intermission = 2;
-			cl.completed_time = cl.time;
-			vid.recalc_refdef = true;	// go to full screen
-			SCR_CenterPrint (MSG_ReadString (net_message));
-			break;
+				cl.intermission = 2;
+				cl.completed_time = cl.time;
+				vid.recalc_refdef = true;	// go to full screen
+				SCR_CenterPrint (MSG_ReadString (net_message));
+				break;
 
 			case svc_cutscene:
-			cl.intermission = 3;
-			cl.completed_time = cl.time;
-			vid.recalc_refdef = true;	// go to full screen
-			SCR_CenterPrint (MSG_ReadString (net_message));
-			break;
+				cl.intermission = 3;
+				cl.completed_time = cl.time;
+				vid.recalc_refdef = true;	// go to full screen
+				SCR_CenterPrint (MSG_ReadString (net_message));
+				break;
 
 			case svc_sellscreen:
-			Cmd_ExecuteString ("help", src_command);
-			break;
+				Cmd_ExecuteString ("help", src_command);
+				break;
 		}
 	}
 }
