@@ -202,6 +202,8 @@ float EXP_Evaluate (char *str)
 	token *chain;
 	float res;	
 
+	EXP_ERROR = EXP_E_NORMAL;
+
 	if (!(chain = EXP_ParseString (str)))
 	{
 		EXP_ERROR = EXP_E_PARSE;

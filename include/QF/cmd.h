@@ -32,6 +32,10 @@
 
 #include "QF/qtypes.h"
 
+typedef struct cmd_localvar_s {
+	struct dstring_s *key, *value;
+} cmd_localvar_t;
+
 typedef struct cmd_buffer_s {
 	struct dstring_s *buffer; // Actual text
 	qboolean wait; // Execution stopped until next frame
@@ -42,6 +46,7 @@ typedef struct cmd_buffer_s {
 	struct dstring_s *line; // Tokenized and reassembled command
 	int *args; // Array of positions of each token in above string
 	int *argspace; // Amount of space before each token
+	struct hashtab_s *locals; // Local variables
 	struct cmd_buffer_s *prev, *next; // Next buffer in the stack
 } cmd_buffer_t;
 
