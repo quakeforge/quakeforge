@@ -1750,7 +1750,9 @@ SV_ReadPackets (void)
 	double      until;
 
 	good = false;
-	while (Netchan_GetPacket ()) {
+	while (NET_GetPacket ()) {
+		Log_Incoming_Packet(net_message->message->data,
+							net_message->message->cursize, 1);
 		if (SV_FilterIP (net_from.ip, &until)) {
 			SV_SendBan (until);			// tell them we aren't listening...
 			continue;

@@ -250,7 +250,7 @@ ascii_dump_buf (unsigned char *buf, int len)
 }
 */
 void
-Log_Incoming_Packet (const char *p, int len)
+Log_Incoming_Packet (const char *p, int len, int has_sequence)
 {
 	if (!net_loglevel->int_val)
 		return;
@@ -261,20 +261,20 @@ Log_Incoming_Packet (const char *p, int len)
 		if (net_loglevel->int_val != 3)
 			hex_dump_buf ((unsigned char *) p, len);
 		if (net_loglevel->int_val > 1)
-			Analyze_Client_Packet (p, len);
+			Analyze_Client_Packet (p, len, has_sequence);
 	} else {
 		Net_LogPrintf ("\n>>>>>>>>>>>>>>>>>>>>> server to client %d bytes: "
 					   ">>>>>>>>>>>>>>>>>>>>>>>>\n", len);
 		if (net_loglevel->int_val != 3)
 			hex_dump_buf ((unsigned char *) p, len);
 		if (net_loglevel->int_val > 1)
-			Analyze_Server_Packet (p, len);
+			Analyze_Server_Packet (p, len, has_sequence);
 	}
 	return;
 }
 
 void
-Log_Outgoing_Packet (const char *p, int len)
+Log_Outgoing_Packet (const char *p, int len, int has_sequence)
 {
 	if (!net_loglevel->int_val)
 		return;
@@ -285,14 +285,14 @@ Log_Outgoing_Packet (const char *p, int len)
 		if (net_loglevel->int_val != 3)
 			hex_dump_buf ((unsigned char *) p, len);
 		if (net_loglevel->int_val > 1)
-			Analyze_Server_Packet (p, len);
+			Analyze_Server_Packet (p, len, has_sequence);
 	} else {
 		Net_LogPrintf ("\n<<<<<<<<<<<<<<<<<<<<< client to server %d bytes: "
 					   "<<<<<<<<<<<<<<<<<<<<<<<<\n", len);
 		if (net_loglevel->int_val != 3)
 			hex_dump_buf ((unsigned char *) p, len);
 		if (net_loglevel->int_val > 1)
-			Analyze_Client_Packet (p, len);
+			Analyze_Client_Packet (p, len, has_sequence);
 	}
 	return;
 }
@@ -376,29 +376,33 @@ Log_Delta(int bits)
 
 
 static void
-Parse_Server_Packet (void)
+Parse_Server_Packet (int has_sequence)
 {
 	const char *s;
 	int         c, i, ii, iii, mask1, mask2;
-	long        seq1, seq2;
+	long        seq1 = 0, seq2;
 
-	seq1 = MSG_ReadLong (&packet);
-	if (packet.badread)
-		return;
+	if (has_sequence) {
+		seq1 = MSG_ReadLong (&packet);
+		if (packet.badread)
+			return;
+	}
 
 	if (seq1 == -1) {
 		Net_LogPrintf ("Special Packet");
 	} else {
-		seq2 = MSG_ReadLong (&packet);
-		// FIXME: display seqs right when reliable
-		Net_LogPrintf ("\nSeq: %ld Ack: %ld ", seq1 & 0x7FFFFFFF,
-					   seq2 & 0x7FFFFFFF);
+		if (has_sequence) {
+			seq2 = MSG_ReadLong (&packet);
+			// FIXME: display seqs right when reliable
+			Net_LogPrintf ("\nSeq: %ld Ack: %ld ", seq1 & 0x7FFFFFFF,
+						   seq2 & 0x7FFFFFFF);
 
-		if ((seq1 >> 31) & 0x01)
-			Net_LogPrintf ("SV_REL ");
-		if ((seq2 >> 31) & 0x01)
-			Net_LogPrintf ("SV_RELACK");
-		Net_LogPrintf ("\n");
+			if ((seq1 >> 31) & 0x01)
+				Net_LogPrintf ("SV_REL ");
+			if ((seq2 >> 31) & 0x01)
+				Net_LogPrintf ("SV_RELACK");
+			Net_LogPrintf ("\n");
+		}
 
 		while (1) {
 			if (packet.badread)
@@ -806,36 +810,39 @@ Parse_Server_Packet (void)
 }
 
 void
-Analyze_Server_Packet (const byte * data, int len)
+Analyze_Server_Packet (const byte * data, int len, int has_sequence)
 {
 	if (!Net_PacketLog)
 		Net_PacketLog = _stdout;
 	packet.message->data = (byte*)data;
 	packet.message->cursize = len;
 	MSG_BeginReading (&packet);
-	Parse_Server_Packet ();
+	Parse_Server_Packet (has_sequence);
 	if (Net_PacketLog == _stdout)
 		Net_PacketLog = NULL;
 }
 
 static void
-Parse_Client_Packet (void)
+Parse_Client_Packet (int has_sequence)
 {
 	int         mask, i, c, ii;
-	long        seq1, seq2;
+	long        seq1 = 0, seq2;
 
-	seq1 = MSG_ReadLong (&packet);
+	if (has_sequence)
+		seq1 = MSG_ReadLong (&packet);
 	if (seq1 == -1) {
 		Net_LogPrintf ("Special: %s\n", MSG_ReadString (&packet));
 		return;
 	} else {
-		// FIXME: display seqs right when reliable
-		seq2 = MSG_ReadLong (&packet);
+		if (has_sequence) {
+			// FIXME: display seqs right when reliable
+			seq2 = MSG_ReadLong (&packet);
 
-		Net_LogPrintf ("\nSeq: %ld Ack: %ld ", seq1 & 0x7FFFFFFF,
-					   seq2 & 0x7FFFFFFF);
+			Net_LogPrintf ("\nSeq: %ld Ack: %ld ", seq1 & 0x7FFFFFFF,
+						   seq2 & 0x7FFFFFFF);
 
-		Net_LogPrintf ("QP: %u\n", MSG_ReadShort (&packet));
+			Net_LogPrintf ("QP: %u\n", MSG_ReadShort (&packet));
+		}
 
 		while (1) {
 			if (packet.badread)
@@ -912,14 +919,14 @@ Parse_Client_Packet (void)
 }
 
 void
-Analyze_Client_Packet (const byte * data, int len)
+Analyze_Client_Packet (const byte * data, int len, int has_sequence)
 {
 	if (!Net_PacketLog)
 		Net_PacketLog = _stdout;
 	packet.message->data = (byte*)data;
 	packet.message->cursize = len;
 	MSG_BeginReading (&packet);
-	Parse_Client_Packet ();
+	Parse_Client_Packet (has_sequence);
 	if (Net_PacketLog == _stdout)
 		Net_PacketLog = NULL;
 }

@@ -402,8 +402,11 @@ CL_GetMessage (void)
 	if (cls.demoplayback)
 		return CL_GetDemoMessage ();
 
-	if (!Netchan_GetPacket ())
+	if (!NET_GetPacket ())
 		return false;
+
+	Log_Incoming_Packet(net_message->message->data,
+						net_message->message->cursize, 1);
 
 	CL_WriteDemoMessage (net_message->message);
 

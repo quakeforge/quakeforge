@@ -73,11 +73,11 @@ qboolean NET_IsClientLegal(netadr_t *adr);
 
 
 int Net_Log_Init (const char **sound_precache);
-void Log_Incoming_Packet (const char *p, int len);
-void Log_Outgoing_Packet (const char *p, int len);
+void Log_Incoming_Packet (const char *p, int len, int has_sequence);
+void Log_Outgoing_Packet (const char *p, int len, int has_sequence);
 void Net_LogStop (void);
-void Analyze_Client_Packet (const byte * data, int len);
-void Analyze_Server_Packet (const byte * data, int len);
+void Analyze_Client_Packet (const byte * data, int len, int has_sequence);
+void Analyze_Server_Packet (const byte * data, int len, int has_sequence);
 
 extern struct cvar_s *net_packetlog;
 
@@ -147,23 +147,11 @@ void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport);
 qboolean Netchan_CanPacket (netchan_t *chan);
 qboolean Netchan_CanReliable (netchan_t *chan);
 
-static inline int
-Netchan_GetPacket (void)
-{
-	int         ret;
-
-	ret = NET_GetPacket ();
-	if (ret && net_packetlog->int_val)
-		Log_Incoming_Packet(net_message->message->data,
-							net_message->message->cursize);
-	return ret;
-}
-
 static inline void
 Netchan_SendPacket (int length, void *data, netadr_t to)
 {
 	if (net_packetlog->int_val)
-		Log_Outgoing_Packet(data, length);
+		Log_Outgoing_Packet(data, length, 1);
 	NET_SendPacket (length, data, to);
 }
 
