@@ -130,7 +130,21 @@ in_paste_buffer_f (void)
 	char       *bytes, *p;
 	int         num_bytes;
 
-	bytes = XFetchBytes (x_disp, &num_bytes);
+	if (Cmd_Argc () >= 2) {
+		const char *val;
+		char       *end;
+		int         buffer;
+
+		val = Cmd_Argv (1);
+		buffer = strtol (val, &end, 10);
+		if (end == val || buffer < 0 || buffer > 7) {
+			Sys_Printf ("invalid buffer number");
+			return;
+		}
+		bytes = XFetchBuffer (x_disp, &num_bytes, buffer);
+	} else {
+		bytes = XFetchBytes (x_disp, &num_bytes);
+	}
 	if (!num_bytes)
 		return;
 	// get bytes to keys.c
