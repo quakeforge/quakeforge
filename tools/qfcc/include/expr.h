@@ -25,6 +25,8 @@ typedef struct {
 typedef struct expr_s {
 	struct expr_s *next;
 	expr_type	type;
+	int			line;
+	string_t	file;
 	union {
 		label_t label;
 		block_t block;

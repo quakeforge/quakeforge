@@ -74,7 +74,10 @@ get_type (expr_t *e)
 expr_t *
 new_expr (void)
 {
-	return calloc (1, sizeof (expr_t));
+	expr_t *e = calloc (1, sizeof (expr_t));
+	e->line = pr_source_line;
+	e->file = s_file;
+	return e;
 }
 
 expr_t *
@@ -843,10 +846,12 @@ emit_expr (expr_t *e)
 					break;
 				case 'c':
 					break;
+				case 's':
+					break;
 				default:
 					fprintf (stderr,
 							 "%s:%d: warning: unused expression ignored\n",
-							 strings + s_file, pr_source_line);
+							 strings + e->file, e->line, e->e.expr.op);
 			}
 			break;
 		case ex_uexpr:
@@ -876,7 +881,7 @@ emit_expr (expr_t *e)
 		case ex_vector:
 		case ex_quaternion:
 			fprintf (stderr, "%s:%d: warning: unused expression ignored\n",
-					 strings + s_file, pr_source_line);
+					 strings + e->file, e->line);
 			break;
 	}
 }
