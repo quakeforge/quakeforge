@@ -293,7 +293,8 @@ typedef struct
 } entity_state_t;
 
 
-#define	MAX_PACKET_ENTITIES	64	// doesn't count nails
+#define	MAX_PACKET_ENTITIES			64	// doesn't count nails
+#define	MAX_DEMO_PACKET_ENTITIES	196	// doesn't count nails
 typedef struct
 {
 	int		num_entities;

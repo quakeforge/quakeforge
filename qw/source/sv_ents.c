@@ -615,6 +615,7 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean recorder)
 {
 	byte	   *pvs;
 	int			e, i, num_edicts, mpe_moaned = 0;
+	int         max_packet_entities = MAX_PACKET_ENTITIES;
 	vec3_t		org;
 	client_frame_t *frame;
 	edict_t	   *clent, *ent;
@@ -632,6 +633,8 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean recorder)
 		pvs = SV_FatPVS (org);
 	} else {
 		client_t   *cl;
+
+		max_packet_entities = MAX_DEMO_PACKET_ENTITIES;
 
 		for (i=0, cl = svs.clients; i<MAX_CLIENTS; i++, cl++) {
 			if (cl->state != cs_spawned)
@@ -686,9 +689,9 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean recorder)
 			continue;					// added to the special update list
 
 		// add to the packetentities
-		if (pack->num_entities == MAX_PACKET_ENTITIES) {
+		if (pack->num_entities == max_packet_entities) {
 			if (!mpe_moaned) {
-				Con_DPrintf ("hit MAX_PACKET_ENTITIES for client %d\n",
+				Con_DPrintf ("hit max_packet_entities for client %d\n",
 							 client->userid);
 				mpe_moaned = 1;
 			}

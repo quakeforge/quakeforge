@@ -26,8 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "server.h"
 
-#define MAX_DEMO_PACKET_ENTITIES 64
-
 typedef struct {
 	byte       *data;
 	int         start, end, last;

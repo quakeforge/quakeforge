@@ -337,9 +337,9 @@ CL_ParsePacketEntities (qboolean delta)
 
 		if (!word) {					// copy rest of ents from old packet
 			while (oldindex < oldp->num_entities) {	
-				if (newindex >= MAX_PACKET_ENTITIES)
+				if (newindex >= MAX_DEMO_PACKET_ENTITIES)
 					Host_Error ("CL_ParsePacketEntities: newindex == "
-								"MAX_PACKET_ENTITIES");
+								"MAX_DEMO_PACKET_ENTITIES");
 				newp->entities[newindex] = oldp->entities[oldindex];
 				newindex++;
 				oldindex++;
@@ -357,9 +357,9 @@ CL_ParsePacketEntities (qboolean delta)
 				return;
 			}
 			// copy one of the old entities over to the new packet unchanged
-			if (newindex >= MAX_PACKET_ENTITIES)
+			if (newindex >= MAX_DEMO_PACKET_ENTITIES)
 				Host_Error ("CL_ParsePacketEntities: newindex == "
-							"MAX_PACKET_ENTITIES");
+							"MAX_DEMO_PACKET_ENTITIES");
 			newp->entities[newindex] = oldp->entities[oldindex];
 			newindex++;
 			oldindex++;
@@ -378,9 +378,9 @@ CL_ParsePacketEntities (qboolean delta)
 				continue;
 			}
 
-			if (newindex >= MAX_PACKET_ENTITIES)
+			if (newindex >= MAX_DEMO_PACKET_ENTITIES)
 				Host_Error ("CL_ParsePacketEntities: newindex == "
-							"MAX_PACKET_ENTITIES");
+							"MAX_DEMO_PACKET_ENTITIES");
 			CL_ParseDelta (&cl_baselines[newnum], &newp->entities[newindex],
 						   word);
 			newindex++;
