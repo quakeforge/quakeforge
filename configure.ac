@@ -38,6 +38,12 @@ AC_SUBST(ISODATE)
 
 AC_LANG_C
 
+if test ${AR-unset} = unset; then
+echo boo
+	AR="ar"
+fi
+export AR
+
 endian=""
 case "$host_os" in
 	mingw32*)
@@ -1541,6 +1547,16 @@ AC_OUTPUT(
 	RPM/quakeforge.spec,
 
 	chmod +x quakeforge-config RPM/build_rpm
+	if test "$AR" != "ar"; then
+		sed -e 's/^AR="ar"$/AR="'$AR'"/' libtool > libtool.qf
+		if cmp -s libtool.qf libtool; then
+			echo libtool is unchanged
+			rm -f libtool.qf
+		else
+			rm -f libtool
+			mv libtool.qf libtool
+		fi
+	fi
 )
 
 if test "x$CCVER" = "x"; then
