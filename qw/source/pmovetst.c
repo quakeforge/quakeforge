@@ -104,7 +104,7 @@ PM_HullForBox (const vec3_t mins, const vec3_t maxs)
 	return &box_hull;
 }
 
-int
+inline int
 PM_HullPointContents (hull_t *hull, int num, const vec3_t p)
 {
 	dclipnode_t *node;
@@ -162,7 +162,122 @@ PM_PointContents (const vec3_t p)
 
 // 1/32 epsilon to keep floating point happy
 #define	DIST_EPSILON	(0.03125)
+#if 1
+static inline void
+visit_leaf (int num, pmtrace_t *trace)
+{
+	if (num != CONTENTS_SOLID) {
+		trace->allsolid = false;
+		if (num == CONTENTS_EMPTY)
+			trace->inopen = true;
+		else
+			trace->inwater = true;
+	} else
+		trace->startsolid = true;
+}
 
+static inline void
+fill_trace (hull_t *hull, int num, int side,
+			const vec3_t p1, const vec3_t p2, float p1f, float p2f,
+			float t1, float t2, pmtrace_t *trace)
+{
+	mplane_t	*plane;
+	float        frac;
+	int          i;
+
+	// the other side of the node is solid, this is the impact point
+	// put the crosspoint DIST_EPSILON pixels on the near side to guarantee
+	// mid is on the correct side of the plane
+	plane = hull->planes + hull->clipnodes[num].planenum;
+	if (!side) {
+		VectorCopy (plane->normal, trace->plane.normal);
+		trace->plane.dist = plane->dist;
+		frac = (t1 - DIST_EPSILON) / (t1 - t2);
+	} else {
+		VectorSubtract (vec3_origin, plane->normal, trace->plane.normal);
+		trace->plane.dist = -plane->dist;
+		frac = (t1 + DIST_EPSILON) / (t1 - t2);
+	}
+
+	frac = bound (0, frac, 1);
+
+	trace->fraction = p1f + (p2f - p1f) * frac;
+	for (i = 0; i < 3; i++)
+		trace->endpos[i] = p1[i] + frac * (p2[i] - p1[i]);
+}
+
+static inline float
+calc_mid (float t1, float t2, const vec3_t p1, const vec3_t p2,
+		  float p1f, float p2f, vec3_t mid)
+{
+	float       frac = t1 / (t1 - t2);
+	int         i;
+
+	for (i=0 ; i<3 ; i++)
+		mid[i] = p1[i] + frac*(p2[i] - p1[i]);
+	return p1f + (p2f - p1f)*frac;
+}
+
+static inline void
+calc_dists (const mplane_t *plane, const vec3_t p1, const vec3_t p2,
+			float *t1, float *t2)
+{
+	if (plane->type < 3) {
+		*t1 = p1[plane->type] - plane->dist;
+		*t2 = p2[plane->type] - plane->dist;
+	} else {
+		*t1 = DotProduct (plane->normal, p1) - plane->dist;
+		*t2 = DotProduct (plane->normal, p2) - plane->dist;
+	}
+}
+
+qboolean
+PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
+					   const vec3_t p1, const vec3_t p2, pmtrace_t *trace)
+{
+	int         front, back;
+	dclipnode_t *node;
+	float		t1, t2, midf;
+	int			side;
+	vec3_t      mid;
+	vec3_t      _p1;
+
+	while (1) {
+		while (num >= 0) {
+			node = hull->clipnodes + num;
+			calc_dists (hull->planes + node->planenum, p1, p2, &t1, &t2);
+			
+			side = (t1 < 0);
+			if (t1 >= 0 != t2 >= 0)
+				break;
+			num = node->children[side];
+		}
+		if (num < 0) {
+			visit_leaf (num, trace);
+			return true;
+		}
+
+		midf = calc_mid (t1, t2, p1, p2, p1f, p2f, mid);
+
+		front = node->children[side];
+		if (!PM_RecursiveHullCheck (hull, front, p1f, midf, p1, mid, trace))
+			return false;
+
+		back = node->children[side ^ 1];
+		if (PM_HullPointContents (hull, back, mid) == CONTENTS_SOLID) {
+			// got out of the solid area?
+			if (!trace->allsolid)
+				fill_trace (hull, num, side, p1, p2, p1f, p2f,
+							t1, t2, trace);
+			return false;
+		}
+		num = back;
+		VectorCopy (mid, _p1);
+		p1f = midf;
+		p1 = _p1;
+	}
+}
+#else
 qboolean
 PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
 					   const vec3_t p1, const vec3_t p2, pmtrace_t *trace)
@@ -243,22 +358,6 @@ PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
 		trace->plane.dist = -plane->dist;
 	}
 
-#if 0	//XXX I don't think this is needed any more, but leave it in for now
-	while (PM_HullPointContents (hull, hull->firstclipnode, mid)
-		   == CONTENTS_SOLID) {
-		// shouldn't really happen, but does occasionally
-		frac -= 0.1;
-		if (frac < 0) {
-			trace->fraction = midf;
-			VectorCopy (mid, trace->endpos);
-			Con_DPrintf ("backup past 0\n");
-			return false;
-		}
-		midf = p1f + (p2f - p1f) * frac;
-		for (i = 0; i < 3; i++)
-			mid[i] = p1[i] + frac * (p2[i] - p1[i]);
-	}
-#endif
 	// put the crosspoint DIST_EPSILON pixels on the near side to guarantee
 	// mid is on the correct side of the plane
 	if (side)
@@ -276,6 +375,7 @@ PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
 
 	return false;
 }
+#endif
 
 /*
 	PM_TestPlayerPosition
