@@ -29,7 +29,7 @@ static const char rcsid[] =
 
 /*
   ZOID - This takes over player controls for spectator automatic camera.
-  Player moves as a spectator, but the camera tracks and enemy player
+  Player moves as a spectator, but the camera tracks an enemy player
 */
 
 #ifdef HAVE_CONFIG_H
