@@ -803,7 +803,7 @@ Sbar_IntermissionNumber (int x, int y, int num, int digits, int color)
 void
 Sbar_TeamOverlay (void)
 {
-	char        num[12], team[5];
+	char        num[12];
 	int         pavg, plow, phigh, i, k, l, x, y;
 	qpic_t     *pic;
 	team_t     *tm;
@@ -858,9 +858,7 @@ Sbar_TeamOverlay (void)
 		Draw_String (x, y, num);
 
 		// draw team
-		team[4] = 0;
-		strncpy (team, tm->team, 4);
-		Draw_String (x + 104, y, team);
+		Draw_nString (x + 104, y, tm->team, 4);
 
 		// draw total
 		snprintf (num, sizeof (num), "%5i", tm->frags);
@@ -889,7 +887,7 @@ Sbar_TeamOverlay (void)
 void
 Sbar_DeathmatchOverlay (int start)
 {
-	char        num[12], team[5];
+	char        num[12];
 	int         minutes, total, top, bottom, f, i, k, l, p, x, y;
 	int         skip = 10;
 	player_info_t *s;
@@ -1023,9 +1021,7 @@ Sbar_DeathmatchOverlay (int start)
 		}
 		// team
 		if (cl.teamplay) {
-			team[4] = 0;
-			strncpy (team, s->team->value, 4);
-			Draw_String (x + 152, y, team);
+			Draw_nString (x + 152, y, s->team->value, 4);
 		}
 		// draw name
 		if (cl.teamplay)
@@ -1051,7 +1047,7 @@ void
 Sbar_MiniDeathmatchOverlay (void)
 {
 	int         numlines, top, bottom, f, i, k, x, y;
-	char        name[16 + 1], num[12], team[5];
+	char        num[12];
 	player_info_t *s;
 	team_t     *tm;
 
@@ -1120,17 +1116,13 @@ Sbar_MiniDeathmatchOverlay (void)
 		}
 		// team
 		if (cl.teamplay) {
-			team[4] = 0;
-			strncpy (team, s->team->value, 4);
-			Draw_String (x + 48, y, s->team->value);
+			Draw_nString (x + 48, y, s->team->value, 4);
 		}
 		// draw name
-		name[16] = 0;
-		strncpy (name, s->name, 16);
 		if (cl.teamplay)
-			Draw_String (x + 48 + 40, y, name);
+			Draw_String (x + 48 + 40, y, s->name);
 		else
-			Draw_String (x + 48, y, name);
+			Draw_String (x + 48, y, s->name);
 		y += 8;
 	}
 
@@ -1152,10 +1144,7 @@ Sbar_MiniDeathmatchOverlay (void)
 		tm = teams + k;
 
 		// draw pings
-		team[4] = 0;
-		strncpy (team, tm->team, 4);
-		Draw_String (x, y, team);
-
+		Draw_nString (x, y, tm->team, 4);
 		// draw total
 		snprintf (num, sizeof (num), "%5i", tm->frags);
 		Draw_String (x + 40, y, num);

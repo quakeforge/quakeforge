@@ -351,7 +351,6 @@ Draw_nString (int x, int y, const char *str, int count)
 {
 	unsigned char   num;
 	float           frow, fcol;
-	int				size;
 	
 	if (!str || !str[0])
 		return;
@@ -361,7 +360,7 @@ Draw_nString (int x, int y, const char *str, int count)
 	qfglBindTexture (GL_TEXTURE_2D, char_texture);
 	qfglBegin (GL_QUADS);
 
-	for (size = 0; size < count; size++, x+=8) {
+	while (count-- && *str) {
 		if ((num = *str++) != 32) // Don't render spaces
         {
 			frow = (num >> 4) * CELL_SIZE;
@@ -376,6 +375,7 @@ Draw_nString (int x, int y, const char *str, int count)
 			qfglTexCoord2f (fcol, frow + CELL_SIZE);
 			qfglVertex2f (x, y + 8);
 		}
+		x+=8;
 	}
     qfglEnd ();
 }
