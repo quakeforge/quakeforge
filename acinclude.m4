@@ -423,7 +423,7 @@ AC_ARG_ENABLE(oggtest, [  --disable-oggtest       Do not try to compile and run 
     OGG_LIBS="-L$ogg_libraries"
   elif test "x$ogg_prefix" != "x" ; then
     OGG_LIBS="-L$ogg_prefix/lib"
-  elif test "x$prefix" != "xNONE" ; then
+  elif test "x$prefix" != "xNONE" -a "x$prefix" != "x/usr" -a "x$prefix" != "x/usr/local"; then
     OGG_LIBS="-L$prefix/lib"
   fi
 
@@ -539,7 +539,7 @@ AC_ARG_ENABLE(vorbistest, [  --disable-vorbistest       Do not try to compile an
     VORBIS_CFLAGS="-I$vorbis_includes"
   elif test "x$vorbis_prefix" != "x" ; then
     VORBIS_CFLAGS="-I$vorbis_prefix/include"
-  elif test "x$prefix" != "xNONE"; then
+  elif test "x$prefix" != "xNONE" -a "x$prefix" != "x/usr" -a "x$prefix" != "x/usr/local"; then
     VORBIS_CFLAGS="-I$prefix/include"
   fi
 
