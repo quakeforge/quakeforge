@@ -106,6 +106,26 @@ reverse_blit_rgba (byte *buf, int count, byte red, byte green, byte blue,
 }
 
 static inline byte *
+blit_la (byte *buf, int count, byte lum, byte alpha)
+{
+	while (count--) {
+		*buf++ = lum;
+		*buf++ = alpha;
+	}
+	return buf;
+}
+
+static inline byte *
+reverse_blit_la (byte *buf, int count, byte lum, byte alpha)
+{
+	while (count--) {
+		*buf-- = alpha;
+		*buf-- = lum;
+	}
+	return buf;
+}
+
+static inline byte *
 read_bgr (byte *buf, int count, byte **data, cmap_t *cmap)
 {
 	byte		blue = *(*data)++;
@@ -169,6 +189,24 @@ reverse_read_cmap (byte *buf, int count, byte **data, cmap_t *cmap)
 	byte		alpha = cmap[ind].alpha;
 
 	return reverse_blit_rgba (buf, count, red, green, blue, alpha);
+}
+
+static inline byte *
+read_l (byte *buf, int count, byte **data, cmap_t *cmap)
+{
+	byte        lum = *(*data)++;
+	byte        alpha = 255;
+
+	return blit_la (buf, count, lum, alpha);
+}
+
+static inline byte *
+reverse_read_l (byte *buf, int count, byte **data, cmap_t *cmap)
+{
+	byte        lum = *(*data)++;
+	byte        alpha = 255;
+
+	return reverse_blit_la (buf, count, lum, alpha);
 }
 
 static inline void
@@ -469,11 +507,12 @@ decode_truecolor (TargaHeader *targa, tex_t *tex, byte *dataByte)
 			tex->format = tex_rgb;
 			decode_truecolor_24 (targa, tex, dataByte);
 			break;
-		default:
 		case 32:
 			tex->format = tex_rgba;
 			decode_truecolor_32 (targa, tex, dataByte);
 			break;
+		default:
+			Sys_Error ("LoadTGA: unsupported pixel size");
 	}
 }
 
@@ -485,12 +524,69 @@ decode_truecolor_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
 			tex->format = tex_rgb;
 			decode_truecolor_24_rle (targa, tex, dataByte);
 			break;
-		default:
 		case 32:
 			tex->format = tex_rgba;
 			decode_truecolor_32_rle (targa, tex, dataByte);
 			break;
+		default:
+			Sys_Error ("LoadTGA: unsupported truecolor pixel size");
 	}
+}
+
+static void
+decode_greyscale (TargaHeader *targa, tex_t *tex, byte *dataByte)
+{
+	byte       *pixcol, *pixrow;
+	int         column, columns, rows, span;
+
+	if (targa->pixel_size != 8)
+		Sys_Error ("LoadTGA: unsupported truecolor pixel size");
+	tex->format = tex_la;
+
+	columns = targa->width;
+	rows = targa->height;
+
+	setup_pixrow_span (targa, tex, &pixrow, &span);
+
+	if (targa->attributes & 0x10) {
+		// right to left
+		while (rows-- > 0) {
+			pixcol = pixrow;
+			for (column = columns; column > 0; column--)
+				pixcol = reverse_read_l (pixcol, 1, &dataByte, 0);
+			pixrow += span;
+		}
+	} else {
+		// left to right
+		while (rows-- > 0) {
+			pixcol = pixrow;
+			for (column = columns; column > 0; column--)
+				pixcol = read_l (pixcol, 1, &dataByte, 0);
+			pixrow += span;
+		}
+	}
+}
+
+static void
+decode_greyscale_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
+{
+	byte       *pixcol, *pixrow;
+	int         column, columns, rows, span;
+	cmap_t     *cmap = 0;		// not really used but needed for rle_expand
+
+	if (targa->pixel_size != 8)
+		Sys_Error ("LoadTGA: unsupported truecolor pixel size");
+	tex->format = tex_la;
+
+	columns = targa->width;
+	rows = targa->height;
+
+	setup_pixrow_span (targa, tex, &pixrow, &span);
+
+	if (targa->attributes & 0x10)	// right to left
+		rle_expand (reverse_read_l);
+	else							// left to right
+		rle_expand (read_l);
 }
 
 typedef void (*decoder_t) (TargaHeader *, tex_t *, byte *);
@@ -498,12 +594,12 @@ static decoder_t decoder_functions[] = {
 	0,					// 0 invalid
 	decode_colormap,
 	decode_truecolor,
-	0,					// decode_greyscal
+	decode_greyscale,
 	0, 0, 0, 0,			// 5-7 invalid
 	0,					// 8 invalid
 	decode_colormap_rle,
 	decode_truecolor_rle,
-	0,					// decode_greyscal
+	decode_greyscale_rle,
 	0, 0, 0, 0,			// 12-15 invalid
 };
 #define NUM_DECODERS (sizeof (decoder_functions) \
