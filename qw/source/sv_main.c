@@ -76,6 +76,7 @@ static const char rcsid[] =
 #include "crudefile.h"
 #include "game.h"
 #include "net.h"
+#include "net_svc.h"
 #include "pmove.h"
 #include "server.h"
 #include "sv_progs.h"
@@ -260,11 +261,14 @@ SV_FinalMessage (const char *message)
 {
 	client_t   *cl;
 	int         i;
+	net_svc_print_t block;
+
+	block.level = PRINT_HIGH;
+	block.message = message;
 
 	SZ_Clear (net_message->message);
 	MSG_WriteByte (net_message->message, svc_print);
-	MSG_WriteByte (net_message->message, PRINT_HIGH);
-	MSG_WriteString (net_message->message, message);
+	NET_SVC_Print_Emit (&block, net_message->message);
 	MSG_WriteByte (net_message->message, svc_disconnect);
 
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)

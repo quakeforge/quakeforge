@@ -49,6 +49,7 @@ static const char rcsid[] =
 
 #include "bothdefs.h"
 #include "compat.h"
+#include "net_svc.h"
 #include "server.h"
 #include "sv_progs.h"
 
@@ -69,6 +70,7 @@ void
 SV_FlushRedirect (void)
 {
 	char        send[8000 + 6];
+	net_svc_print_t block;
 
 	if (sv_redirected == RD_PACKET) {
 		send[0] = 0xff;
@@ -80,10 +82,15 @@ SV_FlushRedirect (void)
 
 		NET_SendPacket (strlen (send) + 1, send, net_from);
 	} else if (sv_redirected == RD_CLIENT) {
+		block.level = PRINT_HIGH;
+		block.message = outputbuf;
 		ClientReliableWrite_Begin (host_client, svc_print,
 								   strlen (outputbuf) + 3);
-		ClientReliableWrite_Byte (host_client, PRINT_HIGH);
-		ClientReliableWrite_String (host_client, outputbuf);
+		if (host_client->num_backbuf) {
+			NET_SVC_Print_Emit (&block, &host_client->backbuf);
+			ClientReliable_FinishWrite (host_client);
+		} else
+			NET_SVC_Print_Emit (&block, &host_client->netchan.message);
 	}
 	// clear it
 	outputbuf[0] = 0;
@@ -220,6 +227,7 @@ SV_PrintToClient (client_t *cl, int level, const char *string)
 	unsigned char *b;
 	int size;
 	static int buffer_size;
+	net_svc_print_t block;
 
 	size = strlen (string) + 1;
 	if (size > buffer_size) {
@@ -239,9 +247,14 @@ SV_PrintToClient (client_t *cl, int level, const char *string)
 		if (*b != 0xFF)
 			b++;
 
+	block.level = level;
+	block.message = buffer;
 	ClientReliableWrite_Begin (cl, svc_print, strlen (buffer) + 3);
-	ClientReliableWrite_Byte (cl, level);
-	ClientReliableWrite_String (cl, buffer);
+	if (cl->num_backbuf) {
+		NET_SVC_Print_Emit (&block, &cl->backbuf);
+		ClientReliable_FinishWrite (cl);
+	} else
+		NET_SVC_Print_Emit (&block, &cl->netchan.message);
 }
 
 /*

@@ -52,6 +52,15 @@ static const char rcsid[] =
 #include "net_svc.h"
 
 net_status_t
+NET_SVC_Print_Emit (net_svc_print_t *block, sizebuf_t *buf)
+{
+	MSG_WriteByte (buf, block->level);
+	MSG_WriteString (buf, block->message);
+
+	return buf->overflowed;
+}
+
+net_status_t
 NET_SVC_Print_Parse (net_svc_print_t *block, msg_t *msg)
 {
 	block->level = MSG_ReadByte (msg);

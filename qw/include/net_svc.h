@@ -199,6 +199,7 @@ typedef struct net_svc_deltapacketentities_s
 	entity_state_t	deltas[MAX_PACKET_ENTITIES];
 } net_svc_deltapacketentities_t;
 
+net_status_t NET_SVC_Print_Emit (net_svc_print_t *block, sizebuf_t *buf);
 net_status_t NET_SVC_Print_Parse (net_svc_print_t *block, msg_t *msg);
 net_status_t NET_SVC_Damage_Parse (net_svc_damage_t *block, msg_t *msg);
 net_status_t NET_SVC_ServerData_Parse (net_svc_serverdata_t *block, msg_t *msg);
