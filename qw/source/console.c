@@ -380,7 +380,10 @@ Con_Print (const char *fmt, va_list args)
 	}
 
 	// echo to debugging console
-	fputs (txt, stdout);
+	if (txt[0] > 2)
+		fputs (txt, stdout);
+	else if (txt[0])
+		fputs (txt + 1, stdout);
 }
 
 /* DRAWING */
