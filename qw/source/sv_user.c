@@ -302,10 +302,10 @@ SV_PreSpawn_f (void)
 		host_client->checksum = check;
 	}
 
-	if (++buf == sv.num_signon_buffers - 1)
+	if (buf == sv.num_signon_buffers - 1)
 		command = va ("cmd spawn %i 0\n", svs.spawncount);
 	else
-		command = va ("cmd prespawn %i %i\n", svs.spawncount, buf);
+		command = va ("cmd prespawn %i %i\n", svs.spawncount, buf + 1);
 
 	size = sv.signon_buffer_size[buf] + 1 + strlen(command) + 1;
 
