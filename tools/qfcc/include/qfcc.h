@@ -379,6 +379,7 @@ typedef struct
 	int			priority;
 	qboolean	right_associative;
 	def_t		*type_a, *type_b, *type_c;
+	int			min_version;
 } opcode_t;
 
 extern opcode_t *op_done;
@@ -529,6 +530,7 @@ int	ReuseString (const char *str);
 
 typedef struct {
 	int		cow;		// copy on write for constants
+	int		version;	// maximum progs version to support (eg, 6 for id)
 } options_t;
 
 extern options_t options;

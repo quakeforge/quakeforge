@@ -38,97 +38,97 @@ opcode_t *op_state;
 opcode_t *op_goto;
 
 opcode_t    pr_opcodes[] = {
-	{"<DONE>", "DONE", OP_DONE, -1, false, &def_entity, &def_field, &def_void},
+	{"<DONE>", "DONE", OP_DONE, -1, false, &def_entity, &def_field, &def_void, PROG_ID_VERSION},
 
-	{"*", "MUL_F", OP_MUL_F, 2, false, &def_float, &def_float, &def_float},
-	{"*", "MUL_V", OP_MUL_V, 2, false, &def_vector, &def_vector, &def_float},
-	{"*", "MUL_FV", OP_MUL_FV, 2, false, &def_float, &def_vector, &def_vector},
-	{"*", "MUL_VF", OP_MUL_VF, 2, false, &def_vector, &def_float, &def_vector},
+	{"*", "MUL_F", OP_MUL_F, 2, false, &def_float, &def_float, &def_float, PROG_ID_VERSION},
+	{"*", "MUL_V", OP_MUL_V, 2, false, &def_vector, &def_vector, &def_float, PROG_ID_VERSION},
+	{"*", "MUL_FV", OP_MUL_FV, 2, false, &def_float, &def_vector, &def_vector, PROG_ID_VERSION},
+	{"*", "MUL_VF", OP_MUL_VF, 2, false, &def_vector, &def_float, &def_vector, PROG_ID_VERSION},
 
-	{"/", "DIV_F", OP_DIV_F, 2, false, &def_float, &def_float, &def_float},
+	{"/", "DIV_F", OP_DIV_F, 2, false, &def_float, &def_float, &def_float, PROG_ID_VERSION},
 
-	{"+", "ADD_F", OP_ADD_F, 3, false, &def_float, &def_float, &def_float},
-	{"+", "ADD_V", OP_ADD_V, 3, false, &def_vector, &def_vector, &def_vector},
-	{"+", "ADD_S", OP_ADD_S, 3, false, &def_string, &def_string, &def_string},
+	{"+", "ADD_F", OP_ADD_F, 3, false, &def_float, &def_float, &def_float, PROG_ID_VERSION},
+	{"+", "ADD_V", OP_ADD_V, 3, false, &def_vector, &def_vector, &def_vector, PROG_ID_VERSION},
+	{"+", "ADD_S", OP_ADD_S, 3, false, &def_string, &def_string, &def_string, PROG_VERSION},
 
-	{"-", "SUB_F", OP_SUB_F, 3, false, &def_float, &def_float, &def_float},
-	{"-", "SUB_V", OP_SUB_V, 3, false, &def_vector, &def_vector, &def_vector},
+	{"-", "SUB_F", OP_SUB_F, 3, false, &def_float, &def_float, &def_float, PROG_ID_VERSION},
+	{"-", "SUB_V", OP_SUB_V, 3, false, &def_vector, &def_vector, &def_vector, PROG_ID_VERSION},
 
-	{"==", "EQ_F", OP_EQ_F, 4, false, &def_float, &def_float, &def_float},
-	{"==", "EQ_V", OP_EQ_V, 4, false, &def_vector, &def_vector, &def_float},
-	{"==", "EQ_S", OP_EQ_S, 4, false, &def_string, &def_string, &def_float},
-	{"==", "EQ_E", OP_EQ_E, 4, false, &def_entity, &def_entity, &def_float},
-	{"==", "EQ_FNC", OP_EQ_FNC, 4, false, &def_function, &def_function, &def_float},
+	{"==", "EQ_F", OP_EQ_F, 4, false, &def_float, &def_float, &def_float, PROG_ID_VERSION},
+	{"==", "EQ_V", OP_EQ_V, 4, false, &def_vector, &def_vector, &def_float, PROG_ID_VERSION},
+	{"==", "EQ_S", OP_EQ_S, 4, false, &def_string, &def_string, &def_float, PROG_ID_VERSION},
+	{"==", "EQ_E", OP_EQ_E, 4, false, &def_entity, &def_entity, &def_float, PROG_ID_VERSION},
+	{"==", "EQ_FNC", OP_EQ_FNC, 4, false, &def_function, &def_function, &def_float, PROG_ID_VERSION},
 
-	{"!=", "NE_F", OP_NE_F, 4, false, &def_float, &def_float, &def_float},
-	{"!=", "NE_V", OP_NE_V, 4, false, &def_vector, &def_vector, &def_float},
-	{"!=", "NE_S", OP_NE_S, 4, false, &def_string, &def_string, &def_float},
-	{"!=", "NE_E", OP_NE_E, 4, false, &def_entity, &def_entity, &def_float},
-	{"!=", "NE_FNC", OP_NE_FNC, 4, false, &def_function, &def_function, &def_float},
+	{"!=", "NE_F", OP_NE_F, 4, false, &def_float, &def_float, &def_float, PROG_ID_VERSION},
+	{"!=", "NE_V", OP_NE_V, 4, false, &def_vector, &def_vector, &def_float, PROG_ID_VERSION},
+	{"!=", "NE_S", OP_NE_S, 4, false, &def_string, &def_string, &def_float, PROG_VERSION},
+	{"!=", "NE_E", OP_NE_E, 4, false, &def_entity, &def_entity, &def_float, PROG_ID_VERSION},
+	{"!=", "NE_FNC", OP_NE_FNC, 4, false, &def_function, &def_function, &def_float, PROG_ID_VERSION},
 
-	{"<=", "LE", OP_LE, 4, false, &def_float, &def_float, &def_float},
-	{">=", "GE", OP_GE, 4, false, &def_float, &def_float, &def_float},
-	{"<=", "LE_S", OP_LE_S, 4, false, &def_string, &def_string, &def_float},
-	{">=", "GE_S", OP_GE_S, 4, false, &def_string, &def_string, &def_float},
-	{"<", "LT", OP_LT, 4, false, &def_float, &def_float, &def_float},
-	{">", "GT", OP_GT, 4, false, &def_float, &def_float, &def_float},
-	{"<", "LT_S", OP_LT_S, 4, false, &def_string, &def_string, &def_float},
-	{">", "GT_S", OP_GT_S, 4, false, &def_string, &def_string, &def_float},
+	{"<=", "LE", OP_LE, 4, false, &def_float, &def_float, &def_float, PROG_ID_VERSION},
+	{">=", "GE", OP_GE, 4, false, &def_float, &def_float, &def_float, PROG_ID_VERSION},
+	{"<=", "LE_S", OP_LE_S, 4, false, &def_string, &def_string, &def_float, PROG_VERSION},
+	{">=", "GE_S", OP_GE_S, 4, false, &def_string, &def_string, &def_float, PROG_VERSION},
+	{"<", "LT", OP_LT, 4, false, &def_float, &def_float, &def_float, PROG_ID_VERSION},
+	{">", "GT", OP_GT, 4, false, &def_float, &def_float, &def_float, PROG_ID_VERSION},
+	{"<", "LT_S", OP_LT_S, 4, false, &def_string, &def_string, &def_float, PROG_VERSION},
+	{">", "GT_S", OP_GT_S, 4, false, &def_string, &def_string, &def_float, PROG_VERSION},
 
-	{".", "INDIRECT", OP_LOAD_F, 1, false, &def_entity, &def_field, &def_float},
-	{".", "INDIRECT", OP_LOAD_V, 1, false, &def_entity, &def_field, &def_vector},
-	{".", "INDIRECT", OP_LOAD_S, 1, false, &def_entity, &def_field, &def_string},
-	{".", "INDIRECT", OP_LOAD_ENT, 1, false, &def_entity, &def_field, &def_entity},
-	{".", "INDIRECT", OP_LOAD_FLD, 1, false, &def_entity, &def_field, &def_field},
-	{".", "INDIRECT", OP_LOAD_FNC, 1, false, &def_entity, &def_field, &def_function},
+	{".", "INDIRECT", OP_LOAD_F, 1, false, &def_entity, &def_field, &def_float, PROG_ID_VERSION},
+	{".", "INDIRECT", OP_LOAD_V, 1, false, &def_entity, &def_field, &def_vector, PROG_ID_VERSION},
+	{".", "INDIRECT", OP_LOAD_S, 1, false, &def_entity, &def_field, &def_string, PROG_ID_VERSION},
+	{".", "INDIRECT", OP_LOAD_ENT, 1, false, &def_entity, &def_field, &def_entity, PROG_ID_VERSION},
+	{".", "INDIRECT", OP_LOAD_FLD, 1, false, &def_entity, &def_field, &def_field, PROG_ID_VERSION},
+	{".", "INDIRECT", OP_LOAD_FNC, 1, false, &def_entity, &def_field, &def_function, PROG_ID_VERSION},
 
-	{".", "ADDRESS", OP_ADDRESS, 1, false, &def_entity, &def_field, &def_pointer},
+	{".", "ADDRESS", OP_ADDRESS, 1, false, &def_entity, &def_field, &def_pointer, PROG_ID_VERSION},
 
-	{"=", "STORE_F", OP_STORE_F, 5, true, &def_float, &def_float, &def_float},
-	{"=", "STORE_V", OP_STORE_V, 5, true, &def_vector, &def_vector, &def_vector},
-	{"=", "STORE_S", OP_STORE_S, 5, true, &def_string, &def_string, &def_string},
-	{"=", "STORE_ENT", OP_STORE_ENT, 5, true, &def_entity, &def_entity, &def_entity},
-	{"=", "STORE_FLD", OP_STORE_FLD, 5, true, &def_field, &def_field, &def_field},
-	{"=", "STORE_FNC", OP_STORE_FNC, 5, true, &def_function, &def_function, &def_function},
+	{"=", "STORE_F", OP_STORE_F, 5, true, &def_float, &def_float, &def_float, PROG_ID_VERSION},
+	{"=", "STORE_V", OP_STORE_V, 5, true, &def_vector, &def_vector, &def_vector, PROG_ID_VERSION},
+	{"=", "STORE_S", OP_STORE_S, 5, true, &def_string, &def_string, &def_string, PROG_ID_VERSION},
+	{"=", "STORE_ENT", OP_STORE_ENT, 5, true, &def_entity, &def_entity, &def_entity, PROG_ID_VERSION},
+	{"=", "STORE_FLD", OP_STORE_FLD, 5, true, &def_field, &def_field, &def_field, PROG_ID_VERSION},
+	{"=", "STORE_FNC", OP_STORE_FNC, 5, true, &def_function, &def_function, &def_function, PROG_ID_VERSION},
 
-	{"=", "STOREP_F", OP_STOREP_F, 5, true, &def_pointer, &def_float, &def_float},
-	{"=", "STOREP_V", OP_STOREP_V, 5, true, &def_pointer, &def_vector, &def_vector},
-	{"=", "STOREP_S", OP_STOREP_S, 5, true, &def_pointer, &def_string, &def_string},
-	{"=", "STOREP_ENT", OP_STOREP_ENT, 5, true, &def_pointer, &def_entity, &def_entity},
-	{"=", "STOREP_FLD", OP_STOREP_FLD, 5, true, &def_pointer, &def_field, &def_field},
-	{"=", "STOREP_FNC", OP_STOREP_FNC, 5, true, &def_pointer, &def_function, &def_function},
+	{"=", "STOREP_F", OP_STOREP_F, 5, true, &def_pointer, &def_float, &def_float, PROG_ID_VERSION},
+	{"=", "STOREP_V", OP_STOREP_V, 5, true, &def_pointer, &def_vector, &def_vector, PROG_ID_VERSION},
+	{"=", "STOREP_S", OP_STOREP_S, 5, true, &def_pointer, &def_string, &def_string, PROG_ID_VERSION},
+	{"=", "STOREP_ENT", OP_STOREP_ENT, 5, true, &def_pointer, &def_entity, &def_entity, PROG_ID_VERSION},
+	{"=", "STOREP_FLD", OP_STOREP_FLD, 5, true, &def_pointer, &def_field, &def_field, PROG_ID_VERSION},
+	{"=", "STOREP_FNC", OP_STOREP_FNC, 5, true, &def_pointer, &def_function, &def_function, PROG_ID_VERSION},
 
-	{"<RETURN>", "RETURN", OP_RETURN, -1, false, &def_void, &def_void, &def_void},
+	{"<RETURN>", "RETURN", OP_RETURN, -1, false, &def_void, &def_void, &def_void, PROG_ID_VERSION},
 
-	{"!", "NOT_F", OP_NOT_F, -1, false, &def_float, &def_void, &def_float},
-	{"!", "NOT_V", OP_NOT_V, -1, false, &def_vector, &def_void, &def_float},
-	{"!", "NOT_S", OP_NOT_S, -1, false, &def_string, &def_void, &def_float},
-	{"!", "NOT_ENT", OP_NOT_ENT, -1, false, &def_entity, &def_void, &def_float},
-	{"!", "NOT_FNC", OP_NOT_FNC, -1, false, &def_function, &def_void, &def_float},
+	{"!", "NOT_F", OP_NOT_F, -1, false, &def_float, &def_void, &def_float, PROG_ID_VERSION},
+	{"!", "NOT_V", OP_NOT_V, -1, false, &def_vector, &def_void, &def_float, PROG_ID_VERSION},
+	{"!", "NOT_S", OP_NOT_S, -1, false, &def_string, &def_void, &def_float, PROG_ID_VERSION},
+	{"!", "NOT_ENT", OP_NOT_ENT, -1, false, &def_entity, &def_void, &def_float, PROG_ID_VERSION},
+	{"!", "NOT_FNC", OP_NOT_FNC, -1, false, &def_function, &def_void, &def_float, PROG_ID_VERSION},
 
-	{"<IF>", "IF", OP_IF, -1, false, &def_float, &def_float, &def_void},
-	{"<IFNOT>", "IFNOT", OP_IFNOT, -1, false, &def_float, &def_float, &def_void},
+	{"<IF>", "IF", OP_IF, -1, false, &def_float, &def_float, &def_void, PROG_ID_VERSION},
+	{"<IFNOT>", "IFNOT", OP_IFNOT, -1, false, &def_float, &def_float, &def_void, PROG_ID_VERSION},
 
 // calls returns REG_RETURN
-	{"<CALL0>", "CALL0", OP_CALL0, -1, false, &def_function, &def_void, &def_void},
-	{"<CALL1>", "CALL1", OP_CALL1, -1, false, &def_function, &def_void, &def_void},
-	{"<CALL2>", "CALL2", OP_CALL2, -1, false, &def_function, &def_void, &def_void},
-	{"<CALL3>", "CALL3", OP_CALL3, -1, false, &def_function, &def_void, &def_void},
-	{"<CALL4>", "CALL4", OP_CALL4, -1, false, &def_function, &def_void, &def_void},
-	{"<CALL5>", "CALL5", OP_CALL5, -1, false, &def_function, &def_void, &def_void},
-	{"<CALL6>", "CALL6", OP_CALL6, -1, false, &def_function, &def_void, &def_void},
-	{"<CALL7>", "CALL7", OP_CALL7, -1, false, &def_function, &def_void, &def_void},
-	{"<CALL8>", "CALL8", OP_CALL8, -1, false, &def_function, &def_void, &def_void},
+	{"<CALL0>", "CALL0", OP_CALL0, -1, false, &def_function, &def_void, &def_void, PROG_ID_VERSION},
+	{"<CALL1>", "CALL1", OP_CALL1, -1, false, &def_function, &def_void, &def_void, PROG_ID_VERSION},
+	{"<CALL2>", "CALL2", OP_CALL2, -1, false, &def_function, &def_void, &def_void, PROG_ID_VERSION},
+	{"<CALL3>", "CALL3", OP_CALL3, -1, false, &def_function, &def_void, &def_void, PROG_ID_VERSION},
+	{"<CALL4>", "CALL4", OP_CALL4, -1, false, &def_function, &def_void, &def_void, PROG_ID_VERSION},
+	{"<CALL5>", "CALL5", OP_CALL5, -1, false, &def_function, &def_void, &def_void, PROG_ID_VERSION},
+	{"<CALL6>", "CALL6", OP_CALL6, -1, false, &def_function, &def_void, &def_void, PROG_ID_VERSION},
+	{"<CALL7>", "CALL7", OP_CALL7, -1, false, &def_function, &def_void, &def_void, PROG_ID_VERSION},
+	{"<CALL8>", "CALL8", OP_CALL8, -1, false, &def_function, &def_void, &def_void, PROG_ID_VERSION},
 
-	{"<STATE>", "STATE", OP_STATE, -1, false, &def_float, &def_float, &def_void},
+	{"<STATE>", "STATE", OP_STATE, -1, false, &def_float, &def_float, &def_void, PROG_ID_VERSION},
 
-	{"<GOTO>", "GOTO", OP_GOTO, -1, false, &def_float, &def_void, &def_void},
+	{"<GOTO>", "GOTO", OP_GOTO, -1, false, &def_float, &def_void, &def_void, PROG_ID_VERSION},
 
-	{"&&", "AND", OP_AND, 6, false, &def_float, &def_float, &def_float},
-	{"||", "OR", OP_OR, 6, false, &def_float, &def_float, &def_float},
+	{"&&", "AND", OP_AND, 6, false, &def_float, &def_float, &def_float, PROG_ID_VERSION},
+	{"||", "OR", OP_OR, 6, false, &def_float, &def_float, &def_float, PROG_ID_VERSION},
 
-	{"&", "BITAND", OP_BITAND, 2, false, &def_float, &def_float, &def_float},
-	{"|", "BITOR", OP_BITOR, 2, false, &def_float, &def_float, &def_float},
+	{"&", "BITAND", OP_BITAND, 2, false, &def_float, &def_float, &def_float, PROG_ID_VERSION},
+	{"|", "BITOR", OP_BITOR, 2, false, &def_float, &def_float, &def_float, PROG_ID_VERSION},
 };
 
 void
@@ -269,6 +269,8 @@ PR_Opcode_Init (void)
 													&opcode_priority_type_table_abc);
 	for (i = 0; i < sizeof (pr_opcodes) / sizeof (pr_opcodes[0]); i++) {
 		opcode_t *op = &pr_opcodes[i];
+		if (op->min_version > options.version)
+			continue;
 		Hash_Add (opcode_table, op);
 		Hash_Add (opcode_priority_table, op);
 		Hash_Add (opcode_priority_type_table_ab, op);

@@ -1034,9 +1034,10 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 	for (i = 0; i < sizeof (*pr->progs) / 4; i++)
 		((int *) pr->progs)[i] = LittleLong (((int *) pr->progs)[i]);
 
-	if (pr->progs->version != PROG_VERSION)
-		PR_Error (pr, "%s has wrong version number (%i should be %i)",
-				  progsname, pr->progs->version, PROG_VERSION);
+	if (pr->progs->version != PROG_VERSION
+		&& pr->progs->version != PROG_ID_VERSION)
+		PR_Error (pr, "%s has unrecognised version number (%08x)",
+				  progsname, pr->progs->version);
 
 	pr->pr_functions =
 		(dfunction_t *) ((byte *) pr->progs + pr->progs->ofs_functions);

@@ -172,7 +172,9 @@ typedef struct
 } dfunction_t;
 
 
-#define	PROG_VERSION	6
+#define	PROG_ID_VERSION	6
+#define	PROG_VERSION	0x00fff001	// MMmmmRRR 0.fff.001 (hex)
+
 typedef struct
 {
 	int		version;

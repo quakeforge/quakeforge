@@ -334,7 +334,7 @@ WriteData (int crc)
 
 	progs.entityfields = pr.size_fields;
 
-	progs.version = PROG_VERSION;
+	progs.version = options.version;
 	progs.crc = crc;
 
 	// byte swap the header and write it out
@@ -842,6 +842,8 @@ main (int argc, char **argv)
 	myargc = argc;
 	myargv = argv;
 
+	options.version = PROG_VERSION;
+
 	if (CheckParm ("-h") || CheckParm ("--help")) {
 		printf ("%s - A compiler for the QuakeC language\n", argv[0]);
 		printf ("Usage: %s [options]\n", argv[0]);
@@ -850,6 +852,8 @@ Options: \n\
 	-s, --source <dir>	look for progs.src in directory <dir>\n\
 	-h, --help		display this help and exit\n\
 	-V, --version		output version information and exit\n\
+	--cow			allow assignment to initialized globals\n\
+	--id			only support id (progs version 6) features\n\
 ");
 		return 1;
 	}
@@ -871,6 +875,10 @@ Options: \n\
 
 	if (CheckParm ("--cow")) {
 		options.cow = 1;
+	}
+
+	if (CheckParm ("--id")) {
+		options.version = PROG_ID_VERSION;
 	}
 
 	if (strcmp (sourcedir, ".")) {
