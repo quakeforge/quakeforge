@@ -126,9 +126,11 @@ def_item
 			def_t scope;
 			scope.scope_next=$<def>4;
 			PR_FlushScope (&scope);
+
+			$$ = $7;
 		}
-	| '(' ')' { current_type = parse_params (0); } def_name opt_definition {}
-	| '(' ELIPSIS ')' { current_type = parse_params ((def_t*)1); } def_name opt_definition {}
+	| '(' ')' { current_type = parse_params (0); } def_name opt_definition { $$ = $4; }
+	| '(' ELIPSIS ')' { current_type = parse_params ((def_t*)1); } def_name opt_definition { $$ = $5; }
 	;
 
 def_name

@@ -782,15 +782,7 @@ PR_FindType (type_t *type)
 	def_t		*def;
 	type_t		*check;
 	int 		i;
-extern int lineno;
-	printf("%-5d ", lineno);
-	PR_PrintType (type);
-	puts("");
-	for (check = pr.types; check; check = check->next) {
-		PR_PrintType (check);
-		puts("");
-	}
-	puts("");
+
 	for (check = pr.types; check; check = check->next) {
 		if (check->type != type->type
 			|| check->aux_type != type->aux_type
