@@ -62,6 +62,7 @@ typedef struct edict_s
 	short		leafnums[MAX_ENT_LEAFS];
 
 	float		freetime;			// sv.time when the object was freed
+	void		*data;			// external per-edict data
 	pr_type_t   v[1];			// fields from progs
 } edict_t;
 #define	EDICT_FROM_AREA(l) STRUCT_FROM_LINK(l,edict_t,area)
@@ -122,15 +123,15 @@ int NUM_FOR_EDICT(progs_t *pr, edict_t *e);
 #define G_EDICT(p,o)	((edict_t *)(PR_edicts (p) + G_INT (p, o)))
 #define G_EDICTNUM(p,o)	NUM_FOR_EDICT(p, G_EDICT(p, o))
 #define	G_VECTOR(p,o)	(&G_FLOAT (p, o))
-#define	G_STRING(p,o)	PR_GetString (p, G_var (p, o, string_t))
-#define	G_FUNCTION(p,o)	G_var (p, o, func_t)
+#define	G_STRING(p,o)	PR_GetString (p, G_var (p, o, string))
+#define	G_FUNCTION(p,o)	G_var (p, o, func)
 
-#define E_var(e,o,t)	((e)->v.vv[o].t##_var)
+#define E_var(e,o,t)	((e)->v[o].t##_var)
 
 #define	E_FLOAT(e,o)	E_var (e, o, float)
 #define	E_INT(e,o)		E_var (e, o, int)
 #define	E_VECTOR(e,o)	(&E_FLOAT (e, o))
-#define	E_STRING(p,e,o)	(PR_GetString (p, E_var (e, o, string_t)))
+#define	E_STRING(p,e,o)	(PR_GetString (p, E_var (e, o, string)))
 
 extern	int		type_size[8];
 
@@ -148,7 +149,7 @@ extern func_t SpectatorConnect;
 extern func_t SpectatorThink;
 extern func_t SpectatorDisconnect;
 
-void PR_Error (progs_t *pr, char *error, ...) __attribute__((format(printf,2,3)));
+void PR_Error (progs_t *pr, const char *error, ...) __attribute__((format(printf,2,3)));
 void PR_RunError (progs_t *pr, char *error, ...) __attribute__((format(printf,2,3)));
 
 void ED_PrintEdicts (progs_t *pr);
@@ -196,7 +197,7 @@ struct progs_s {
 	pr_type_t		*pr_globals;			// same as pr_global_struct
 
 	int				pr_edict_size;	// in bytes
-	int				pr_edictareasize; // LordHavoc: for bounds checking
+	int				pr_edictareasize; // for bounds checking, starts at 0
 
 	int				pr_argc;
 
@@ -215,7 +216,7 @@ struct progs_s {
 
 	edict_t			**edicts;
 	int				*num_edicts;
-	int				*reserved_edicts;
+	int				*reserved_edicts;	//alloc will start at reserved_edicts+1
 	double			*time;
 	int				null_bad;
 

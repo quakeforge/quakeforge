@@ -38,6 +38,7 @@
 
 #include "msg.h"
 #include "msg_ucmd.h"
+#include "progdefs.h"
 #include "server.h"
 #include "sys.h"
 
@@ -117,8 +118,8 @@ extern int  sv_nailmodel, sv_supernailmodel, sv_playermodel;
 qboolean
 SV_AddNailUpdate (edict_t *ent)
 {
-	if (ent->v.v.modelindex != sv_nailmodel
-		&& ent->v.v.modelindex != sv_supernailmodel) return false;
+	if (((entvars_t*)&ent->v)->modelindex != sv_nailmodel
+		&& ((entvars_t*)&ent->v)->modelindex != sv_supernailmodel) return false;
 	if (numnails == MAX_NAILS)
 		return true;
 	nails[numnails] = ent;
@@ -142,11 +143,11 @@ SV_EmitNailUpdate (sizebuf_t *msg)
 
 	for (n = 0; n < numnails; n++) {
 		ent = nails[n];
-		x = (int) (ent->v.v.origin[0] + 4096) >> 1;
-		y = (int) (ent->v.v.origin[1] + 4096) >> 1;
-		z = (int) (ent->v.v.origin[2] + 4096) >> 1;
-		p = (int) (16 * ent->v.v.angles[0] / 360) & 15;
-		yaw = (int) (256 * ent->v.v.angles[1] / 360) & 255;
+		x = (int) (((entvars_t*)&ent->v)->origin[0] + 4096) >> 1;
+		y = (int) (((entvars_t*)&ent->v)->origin[1] + 4096) >> 1;
+		z = (int) (((entvars_t*)&ent->v)->origin[2] + 4096) >> 1;
+		p = (int) (16 * ((entvars_t*)&ent->v)->angles[0] / 360) & 15;
+		yaw = (int) (256 * ((entvars_t*)&ent->v)->angles[1] / 360) & 255;
 
 		bits[0] = x;
 		bits[1] = (x >> 8) | (y << 4);
@@ -362,7 +363,7 @@ SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 										// the baseline
 			ent = EDICT_NUM (&sv_pr_state, newnum);
 //Con_Printf ("baseline %i\n", newnum);
-			SV_WriteDelta (&ent->baseline, &to->entities[newindex], msg, true,
+			SV_WriteDelta (ent->data, &to->entities[newindex], msg, true,
 						   client->stdver);
 			newindex++;
 			continue;
@@ -416,18 +417,18 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 
 		pflags = PF_MSEC | PF_COMMAND;
 
-		if (ent->v.v.modelindex != sv_playermodel)
+		if (((entvars_t*)&ent->v)->modelindex != sv_playermodel)
 			pflags |= PF_MODEL;
 		for (i = 0; i < 3; i++)
-			if (ent->v.v.velocity[i])
+			if (((entvars_t*)&ent->v)->velocity[i])
 				pflags |= PF_VELOCITY1 << i;
-		if (ent->v.v.effects)
+		if (((entvars_t*)&ent->v)->effects)
 			pflags |= PF_EFFECTS;
-		if (ent->v.v.skin)
+		if (((entvars_t*)&ent->v)->skin)
 			pflags |= PF_SKINNUM;
-		if (ent->v.v.health <= 0)
+		if (((entvars_t*)&ent->v)->health <= 0)
 			pflags |= PF_DEAD;
-		if (ent->v.v.mins[2] != -24)
+		if (((entvars_t*)&ent->v)->mins[2] != -24)
 			pflags |= PF_GIB;
 
 		if (cl->spectator) {			// only sent origin and velocity to
@@ -436,21 +437,21 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 		} else if (ent == clent) {		// don't send a lot of data on
 										// personal entity
 			pflags &= ~(PF_MSEC | PF_COMMAND);
-			if (ent->v.v.weaponframe)
+			if (((entvars_t*)&ent->v)->weaponframe)
 				pflags |= PF_WEAPONFRAME;
 		}
 
 		if (client->spec_track && client->spec_track - 1 == j &&
-			ent->v.v.weaponframe) pflags |= PF_WEAPONFRAME;
+			((entvars_t*)&ent->v)->weaponframe) pflags |= PF_WEAPONFRAME;
 
 		MSG_WriteByte (msg, svc_playerinfo);
 		MSG_WriteByte (msg, j);
 		MSG_WriteShort (msg, pflags);
 
 		for (i = 0; i < 3; i++)
-			MSG_WriteCoord (msg, ent->v.v.origin[i]);
+			MSG_WriteCoord (msg, ((entvars_t*)&ent->v)->origin[i]);
 
-		MSG_WriteByte (msg, ent->v.v.frame);
+		MSG_WriteByte (msg, ((entvars_t*)&ent->v)->frame);
 
 		if (pflags & PF_MSEC) {
 			msec = 1000 * (sv.time - cl->localtime);
@@ -462,10 +463,10 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 		if (pflags & PF_COMMAND) {
 			cmd = cl->lastcmd;
 
-			if (ent->v.v.health <= 0) {	// don't show the corpse looking
+			if (((entvars_t*)&ent->v)->health <= 0) {	// don't show the corpse looking
 										// around...
 				cmd.angles[0] = 0;
-				cmd.angles[1] = ent->v.v.angles[1];
+				cmd.angles[1] = ((entvars_t*)&ent->v)->angles[1];
 				cmd.angles[0] = 0;
 			}
 
@@ -477,19 +478,19 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 
 		for (i = 0; i < 3; i++)
 			if (pflags & (PF_VELOCITY1 << i))
-				MSG_WriteShort (msg, ent->v.v.velocity[i]);
+				MSG_WriteShort (msg, ((entvars_t*)&ent->v)->velocity[i]);
 
 		if (pflags & PF_MODEL)
-			MSG_WriteByte (msg, ent->v.v.modelindex);
+			MSG_WriteByte (msg, ((entvars_t*)&ent->v)->modelindex);
 
 		if (pflags & PF_SKINNUM)
-			MSG_WriteByte (msg, ent->v.v.skin);
+			MSG_WriteByte (msg, ((entvars_t*)&ent->v)->skin);
 
 		if (pflags & PF_EFFECTS)
-			MSG_WriteByte (msg, ent->v.v.effects);
+			MSG_WriteByte (msg, ((entvars_t*)&ent->v)->effects);
 
 		if (pflags & PF_WEAPONFRAME)
-			MSG_WriteByte (msg, ent->v.v.weaponframe);
+			MSG_WriteByte (msg, ((entvars_t*)&ent->v)->weaponframe);
 	}
 }
 
@@ -519,7 +520,7 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 
 	// find the client's PVS
 	clent = client->edict;
-	VectorAdd (clent->v.v.origin, clent->v.v.view_ofs, org);
+	VectorAdd (((entvars_t*)&clent->v)->origin, ((entvars_t*)&clent->v)->view_ofs, org);
 	pvs = SV_FatPVS (org);
 
 	// send over the players in the PVS
@@ -535,7 +536,7 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 	for (e = MAX_CLIENTS + 1, ent = EDICT_NUM (&sv_pr_state, e); e < sv.num_edicts;
 		 e++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
 		// ignore ents without visible models
-		if (!ent->v.v.modelindex || !*PR_GetString (&sv_pr_state, ent->v.v.model))
+		if (!((entvars_t*)&ent->v)->modelindex || !*PR_GetString (&sv_pr_state, ((entvars_t*)&ent->v)->model))
 			continue;
 
 		// ignore if not touching a PV leaf
@@ -558,13 +559,13 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 
 		state->number = e;
 		state->flags = 0;
-		VectorCopy (ent->v.v.origin, state->origin);
-		VectorCopy (ent->v.v.angles, state->angles);
-		state->modelindex = ent->v.v.modelindex;
-		state->frame = ent->v.v.frame;
-		state->colormap = ent->v.v.colormap;
-		state->skinnum = ent->v.v.skin;
-		state->effects = ent->v.v.effects;
+		VectorCopy (((entvars_t*)&ent->v)->origin, state->origin);
+		VectorCopy (((entvars_t*)&ent->v)->angles, state->angles);
+		state->modelindex = ((entvars_t*)&ent->v)->modelindex;
+		state->frame = ((entvars_t*)&ent->v)->frame;
+		state->colormap = ((entvars_t*)&ent->v)->colormap;
+		state->skinnum = ((entvars_t*)&ent->v)->skin;
+		state->effects = ((entvars_t*)&ent->v)->effects;
 
 		// LordHavoc: cleaned up Endy's coding style, shortened the code,
 		// and implemented missing effects

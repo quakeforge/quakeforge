@@ -39,6 +39,7 @@
 
 #include "bothdefs.h"
 #include "msg.h"
+#include "progdefs.h"
 #include "server.h"
 #include "sys.h"
 
@@ -332,12 +333,12 @@ SV_Multicast (vec3_t origin, int to)
 		if (to == MULTICAST_PHS_R || to == MULTICAST_PHS) {
 			vec3_t      delta;
 
-			VectorSubtract (origin, client->edict->v.v.origin, delta);
+			VectorSubtract (origin, ((entvars_t*)&client->edict->v)->origin, delta);
 			if (Length (delta) <= 1024)
 				goto inrange;
 		}
 
-		leaf = Mod_PointInLeaf (client->edict->v.v.origin, sv.worldmodel);
+		leaf = Mod_PointInLeaf (((entvars_t*)&client->edict->v)->origin, sv.worldmodel);
 		if (leaf) {
 			// -1 is because pvs rows are 1 based, not 0 based like leafs
 			leafnum = leaf - sv.worldmodel->leafs - 1;
@@ -429,13 +430,13 @@ SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
 		channel |= SND_ATTENUATION;
 
 	// use the entity origin unless it is a bmodel
-	if (entity->v.v.solid == SOLID_BSP) {
+	if (((entvars_t*)&entity->v)->solid == SOLID_BSP) {
 		for (i = 0; i < 3; i++)
 			origin[i] =
-				entity->v.v.origin[i] + 0.5 * (entity->v.v.mins[i] +
-											 entity->v.v.maxs[i]);
+				((entvars_t*)&entity->v)->origin[i] + 0.5 * (((entvars_t*)&entity->v)->mins[i] +
+											 ((entvars_t*)&entity->v)->maxs[i]);
 	} else {
-		VectorCopy (entity->v.v.origin, origin);
+		VectorCopy (((entvars_t*)&entity->v)->origin, origin);
 	}
 
 	MSG_WriteByte (&sv.multicast, svc_sound);
@@ -502,25 +503,25 @@ SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 		client->chokecount = 0;
 	}
 	// send a damage message if the player got hit this frame
-	if (ent->v.v.dmg_take || ent->v.v.dmg_save) {
-		other = PROG_TO_EDICT (&sv_pr_state, ent->v.v.dmg_inflictor);
+	if (((entvars_t*)&ent->v)->dmg_take || ((entvars_t*)&ent->v)->dmg_save) {
+		other = PROG_TO_EDICT (&sv_pr_state, ((entvars_t*)&ent->v)->dmg_inflictor);
 		MSG_WriteByte (msg, svc_damage);
-		MSG_WriteByte (msg, ent->v.v.dmg_save);
-		MSG_WriteByte (msg, ent->v.v.dmg_take);
+		MSG_WriteByte (msg, ((entvars_t*)&ent->v)->dmg_save);
+		MSG_WriteByte (msg, ((entvars_t*)&ent->v)->dmg_take);
 		for (i = 0; i < 3; i++)
 			MSG_WriteCoord (msg,
-							other->v.v.origin[i] + 0.5 * (other->v.v.mins[i] +
-														other->v.v.maxs[i]));
+							((entvars_t*)&other->v)->origin[i] + 0.5 * (((entvars_t*)&other->v)->mins[i] +
+														((entvars_t*)&other->v)->maxs[i]));
 
-		ent->v.v.dmg_take = 0;
-		ent->v.v.dmg_save = 0;
+		((entvars_t*)&ent->v)->dmg_take = 0;
+		((entvars_t*)&ent->v)->dmg_save = 0;
 	}
 	// a fixangle might get lost in a dropped packet.  Oh well.
-	if (ent->v.v.fixangle) {
+	if (((entvars_t*)&ent->v)->fixangle) {
 		MSG_WriteByte (msg, svc_setangle);
 		for (i = 0; i < 3; i++)
-			MSG_WriteAngle (msg, ent->v.v.angles[i]);
-		ent->v.v.fixangle = 0;
+			MSG_WriteAngle (msg, ((entvars_t*)&ent->v)->angles[i]);
+		((entvars_t*)&ent->v)->fixangle = 0;
 	}
 }
 
@@ -545,29 +546,29 @@ SV_UpdateClientStats (client_t *client)
 	if (client->spectator && client->spec_track > 0)
 		ent = svs.clients[client->spec_track - 1].edict;
 
-	stats[STAT_HEALTH] = ent->v.v.health;
-	stats[STAT_WEAPON] = SV_ModelIndex (PR_GetString (&sv_pr_state, ent->v.v.weaponmodel));
-	stats[STAT_AMMO] = ent->v.v.currentammo;
-	stats[STAT_ARMOR] = ent->v.v.armorvalue;
-	stats[STAT_SHELLS] = ent->v.v.ammo_shells;
-	stats[STAT_NAILS] = ent->v.v.ammo_nails;
-	stats[STAT_ROCKETS] = ent->v.v.ammo_rockets;
-	stats[STAT_CELLS] = ent->v.v.ammo_cells;
+	stats[STAT_HEALTH] = ((entvars_t*)&ent->v)->health;
+	stats[STAT_WEAPON] = SV_ModelIndex (PR_GetString (&sv_pr_state, ((entvars_t*)&ent->v)->weaponmodel));
+	stats[STAT_AMMO] = ((entvars_t*)&ent->v)->currentammo;
+	stats[STAT_ARMOR] = ((entvars_t*)&ent->v)->armorvalue;
+	stats[STAT_SHELLS] = ((entvars_t*)&ent->v)->ammo_shells;
+	stats[STAT_NAILS] = ((entvars_t*)&ent->v)->ammo_nails;
+	stats[STAT_ROCKETS] = ((entvars_t*)&ent->v)->ammo_rockets;
+	stats[STAT_CELLS] = ((entvars_t*)&ent->v)->ammo_cells;
 	if (!client->spectator)
-		stats[STAT_ACTIVEWEAPON] = ent->v.v.weapon;
+		stats[STAT_ACTIVEWEAPON] = ((entvars_t*)&ent->v)->weapon;
 	// stuff the sigil bits into the high bits of items for sbar
 	stats[STAT_ITEMS] =
-		(int) ent->v.v.items | ((int) sv_pr_state.pr_global_struct->serverflags << 28);
+		(int) ((entvars_t*)&ent->v)->items | ((int) ((globalvars_t*)sv_pr_state.pr_globals)->serverflags << 28);
 
 	// Extensions to the QW 2.40 protocol for Mega2k  --KB
-	stats[STAT_VIEWHEIGHT] = (int) ent->v.v.view_ofs[2];
+	stats[STAT_VIEWHEIGHT] = (int) ((entvars_t*)&ent->v)->view_ofs[2];
 
 	// FIXME: this should become a * key!  --KB
-	if (ent->v.v.movetype == MOVETYPE_FLY && !atoi (Info_ValueForKey
+	if (((entvars_t*)&ent->v)->movetype == MOVETYPE_FLY && !atoi (Info_ValueForKey
 												  (svs.info, "playerfly")))
-		ent->v.v.movetype = MOVETYPE_WALK;
+		((entvars_t*)&ent->v)->movetype = MOVETYPE_WALK;
 
-	stats[STAT_FLYMODE] = (ent->v.v.movetype == MOVETYPE_FLY);
+	stats[STAT_FLYMODE] = (((entvars_t*)&ent->v)->movetype == MOVETYPE_FLY);
 
 
 	for (i = 0; i < MAX_CL_STATS; i++)
@@ -649,16 +650,16 @@ SV_UpdateToReliableMessages (void)
 			host_client->sendinfo = false;
 			SV_FullClientUpdate (host_client, &sv.reliable_datagram);
 		}
-		if (host_client->old_frags != host_client->edict->v.v.frags) {
+		if (host_client->old_frags != ((entvars_t*)&host_client->edict->v)->frags) {
 			for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
 				if (client->state < cs_connected)
 					continue;
 				ClientReliableWrite_Begin (client, svc_updatefrags, 4);
 				ClientReliableWrite_Byte (client, i);
-				ClientReliableWrite_Short (client, host_client->edict->v.v.frags);
+				ClientReliableWrite_Short (client, ((entvars_t*)&host_client->edict->v)->frags);
 			}
 
-			host_client->old_frags = host_client->edict->v.v.frags;
+			host_client->old_frags = ((entvars_t*)&host_client->edict->v)->frags;
 		}
 		// maxspeed/entgravity changes
 		ent = host_client->edict;

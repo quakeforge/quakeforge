@@ -44,6 +44,7 @@
 #include "qdefs.h"
 #include "qendian.h"
 #include "quakefs.h"
+#include "sys.h"	//XXX
 #include "zone.h"
 #include "va.h"
 
@@ -963,7 +964,7 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 
 		pr->progs->entityfields * 4 + sizeof (edict_t) - sizeof (pr_type_t);
 
-	pr->pr_edictareasize = pr->pr_edict_size * MAX_EDICTS;
+	pr->pr_edictareasize = 0;
 
 // byte swap the lumps
 	for (i = 0; i < pr->progs->numstatements; i++) {
@@ -1014,8 +1015,8 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 		PR_Error (pr, "%s: undefined field: nextthink", progsname);
 	if (!(pr->f_frame = FindFieldOffset (pr, "frame")))
 		PR_Error (pr, "%s: undefined field: frame", progsname);
-	if (!(pr->f_think = FindFieldOffset (pr, "function")))
-		PR_Error (pr, "%s: undefined field: function", progsname);
+	if (!(pr->f_think = FindFieldOffset (pr, "think")))
+		PR_Error (pr, "%s: undefined field: think", progsname);
 
 	// LordHavoc: Ender added this
 	FindEdictFieldOffsets (pr);
@@ -1171,4 +1172,17 @@ NUM_FOR_EDICT (progs_t * pr, edict_t *e)
 	if (b < 0 || b >= *(pr)->num_edicts)
 		PR_Error (pr, "NUM_FOR_EDICT: bad pointer");
 	return b;
+}
+
+void
+PR_Error (progs_t *pr, const char *error, ...)
+{
+	va_list     argptr;
+	char        string[1024];
+
+	va_start (argptr, error);
+	vsnprintf (string, sizeof (string), error, argptr);
+	va_end (argptr);
+
+	Sys_Error ("%s", string);
 }

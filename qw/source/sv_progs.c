@@ -38,6 +38,7 @@
 #endif
 
 #include "cmd.h"
+#include "progdefs.h"
 #include "progs.h"
 #include "server.h"
 #include "world.h"
@@ -52,7 +53,7 @@ func_t	SpectatorConnect;
 func_t	SpectatorDisconnect;
 func_t	SpectatorThink;
 
-static reserved_edicts = MAX_CLIENTS;
+static int reserved_edicts = MAX_CLIENTS;
 
 void
 FindEdictFieldOffsets (progs_t *pr)
@@ -86,7 +87,7 @@ FindEdictFieldOffsets (progs_t *pr)
 int
 ED_Prune_Edict (progs_t *pr, edict_t *ent)
 {
-	if (((int) ent->v.v.spawnflags & SPAWNFLAG_NOT_DEATHMATCH))
+	if (((int) ((entvars_t*)&ent->v)->spawnflags & SPAWNFLAG_NOT_DEATHMATCH))
 		return 1;
 	return 0;
 }
@@ -148,6 +149,8 @@ SV_LoadProgs (void)
 	PR_LoadProgs (&sv_pr_state, sv_progs->string);
 	if (!sv_pr_state.progs)
 		SV_Error ("SV_LoadProgs: couldn't load %s", sv_progs->string);
+	if (sv_pr_state.progs->crc != PROGHEADER_CRC)
+		SV_Error ("You must have the qwprogs.dat from QuakeWorld installed");
 }
 
 void
