@@ -179,8 +179,7 @@ S_PrecacheSound (const char *sample)
 {
 	if (snd_render_funcs)
 		return snd_render_funcs->pS_PrecacheSound (sample);
-	else
-		return NULL;
+	return NULL;
 }
 
 void
@@ -245,4 +244,20 @@ S_UnblockSound (void)
 {
 	if (snd_render_funcs)
 		snd_render_funcs->pS_UnblockSound ();
+}
+
+sfx_t *
+S_LoadSound (const char *name)
+{
+	if (snd_render_funcs)
+		return snd_render_funcs->pS_LoadSound (name);
+	return 0;
+}
+
+struct channel_s *
+S_AllocChannel (void)
+{
+	if (snd_render_funcs)
+		return snd_render_funcs->pS_AllocChannel ();
+	return 0;
 }

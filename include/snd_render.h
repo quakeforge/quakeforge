@@ -36,28 +36,28 @@
 
 // !!! if this is changed, it must be changed in asm_i386.h too !!!
 typedef struct portable_samplepair_s {
-	int left;
-	int right;
+	int         left;
+	int         right;
 } portable_samplepair_t;
 
 typedef struct wavinfo_s {
-	unsigned int rate;
-	unsigned int width;
-	unsigned int channels;
-	unsigned int loopstart;
-	unsigned int samples;
-	unsigned int dataofs;		// chunk starts this many bytes from file start
-	unsigned int datalen;		// chunk bytes
+	unsigned    rate;
+	unsigned    width;
+	unsigned    channels;
+	unsigned    loopstart;
+	unsigned    samples;
+	unsigned    dataofs;		// chunk starts this many bytes from file start
+	unsigned    datalen;		// chunk bytes
 } wavinfo_t;
 
 typedef struct channel_s channel_t;
 typedef struct sfxbuffer_s sfxbuffer_t;
 struct sfxbuffer_s {
-	unsigned int head;			// ring buffer head position in sampels
-	unsigned int tail;			// ring buffer tail position in sampels
-	unsigned int length;		// length of buffer in samples
-	unsigned int pos;			// position of tail within full stream
-	unsigned int bps;			// bytes per sample: 1 2 4 usually
+	unsigned    head;			// ring buffer head position in sampels
+	unsigned    tail;			// ring buffer tail position in sampels
+	unsigned    length;			// length of buffer in samples
+	unsigned    pos;			// position of tail within full stream
+	unsigned    bps;			// bytes per sample: 1 2 4 usually
 	void        (*paint) (channel_t *ch, sfxbuffer_t *buffer, int count);
 	void        (*advance) (sfxbuffer_t *buffer, unsigned int count);
 	void        (*setpos) (sfxbuffer_t *buffer, unsigned int pos);
@@ -70,9 +70,9 @@ typedef struct sfxstream_s {
 	void       *file;
 	wavinfo_t   wavinfo;
 	int         pos;
-	void       (*resample)(sfxbuffer_t *, byte *, int, void *);
-	int        (*read)(void *file, byte *data, int bytes, wavinfo_t *info);
-	int        (*seek)(void *file, int pos, wavinfo_t *info);
+	void        (*resample)(sfxbuffer_t *, byte *, int, void *);
+	int         (*read)(void *file, byte *data, int bytes, wavinfo_t *info);
+	int         (*seek)(void *file, int pos, wavinfo_t *info);
 	sfxbuffer_t buffer;
 } sfxstream_t;
 
@@ -85,19 +85,19 @@ typedef struct sfxblock_s {
 
 // !!! if this is changed, it much be changed in asm_i386.h too !!!
 struct channel_s {
-	sfx_t	*sfx;			// sfx number
-	int		leftvol;		// 0-255 volume
-	int		rightvol;		// 0-255 volume
-	unsigned int end;			// end time in global paintsamples
-	unsigned int pos;			// sample position in sfx
-	unsigned int looping;		// where to loop, -1 = no looping
-	int		entnum;			// to allow overriding a specific sound
-	int		entchannel;		//
-	vec3_t	origin;			// origin of sound effect
-	vec_t	dist_mult;		// distance multiplier (attenuation/clipK)
-	int	master_vol;		// 0-255 master volume
-	int	phase;	// phase shift between l-r in samples
-	int	oldphase;	// phase shift between l-r in samples
+	sfx_t      *sfx;			// sfx number
+	int         leftvol;		// 0-255 volume
+	int         rightvol;		// 0-255 volume
+	unsigned    end;			// end time in global paintsamples
+	unsigned    pos;			// sample position in sfx
+	unsigned    looping;		// where to loop, -1 = no looping
+	int         entnum;			// to allow overriding a specific sound
+	int         entchannel;		//
+	vec3_t      origin;			// origin of sound effect
+	vec_t       dist_mult;		// distance multiplier (attenuation/clipK)
+	int         master_vol;		// 0-255 master volume
+	int         phase;			// phase shift between l-r in samples
+	int         oldphase;		// phase shift between l-r in samples
 };
 
 void SND_PaintChannels(unsigned int endtime);

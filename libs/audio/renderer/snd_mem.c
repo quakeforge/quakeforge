@@ -291,7 +291,6 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 void
 SND_Load (sfx_t *sfx)
 {
-	dstring_t  *name = dstring_new ();
 	dstring_t  *foundname = dstring_new ();
 	char       *realname;
 	char        buf[4];
@@ -302,22 +301,17 @@ SND_Load (sfx_t *sfx)
 	sfx->close = snd_noop;
 	sfx->open = snd_open;
 
-	dsprintf (name, "sound/%s", sfx->name);
-	_QFS_FOpenFile (name->str, &file, foundname, 1);
+	_QFS_FOpenFile (sfx->name, &file, foundname, 1);
 	if (!file) {
-		Sys_Printf ("Couldn't load %s\n", name->str);
-		dstring_delete (name);
+		Sys_Printf ("Couldn't load %s\n", sfx->name);
 		dstring_delete (foundname);
 		return;
 	}
-	if (!strequal (foundname->str, name->str)) {
+	if (!strequal (foundname->str, sfx->name)) {
 		realname = foundname->str;
-		dstring_delete (name);
 		free (foundname);
 	} else {
-		realname = name->str;
-		free (name);
-		dstring_delete (foundname);
+		realname = (char *) sfx->name;	// won't free if realname == sfx->name
 	}
 	Qread (file, buf, 4);
 	Qseek (file, 0, SEEK_SET);
@@ -341,7 +335,8 @@ SND_Load (sfx_t *sfx)
 		return;
 	}
 	Qclose (file);
-	free (realname);
+	if (realname != sfx->name)
+		free (realname);
 }
 
 sfxbuffer_t *

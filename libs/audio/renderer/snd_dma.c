@@ -50,6 +50,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/sound.h"
 #include "QF/plugin.h"
+#include "QF/va.h"
 
 #include "snd_render.h"
 
@@ -64,6 +65,11 @@ cvar_t         *snd_interp;
 
 channel_t       channels[MAX_CHANNELS];
 int             total_channels;
+
+static channel_t *ambient_channels[NUM_AMBIENTS];
+static channel_t *dynamic_channels[MAX_DYNAMIC_CHANNELS];
+static channel_t *static_channels[MAX_CHANNELS];
+static int        num_statics;
 
 static qboolean snd_initialized = false;
 static int      snd_blocked = 0;
@@ -170,16 +176,10 @@ s_startup (void)
 
 // Load a sound ===============================================================
 static sfx_t *
-s_findname (const char *name)
+s_load_sound (const char *name)
 {
 	int			i;
 	sfx_t	   *sfx;
-
-	if (!name)
-		Sys_Error ("S_FindName: NULL");
-
-	if (strlen (name) >= MAX_QPATH)
-		Sys_Error ("Sound name too long: %s", name);
 
 	// see if already loaded
 	for (i = 0; i < num_sfx; i++)
@@ -209,7 +209,11 @@ s_touch_sound (const char *name)
 	if (!sound_started)
 		return;
 
-	sfx = s_findname (name);
+	if (!name)
+		Sys_Error ("s_touch_sound: NULL");
+
+	name = va ("sound/%s", name);
+	sfx = s_load_sound (name);
 	sfx->touch (sfx);
 }
 
@@ -221,7 +225,11 @@ s_precache_sound (const char *name)
 	if (!sound_started || nosound->int_val)
 		return NULL;
 
-	sfx = s_findname (name);
+	if (!name)
+		Sys_Error ("s_precache_sound: NULL");
+
+	name = va ("sound/%s", name);
+	sfx = s_load_sound (name);
 
 	// cache it in
 	if (precache->int_val) {
@@ -234,45 +242,53 @@ s_precache_sound (const char *name)
 //=============================================================================
 
 static channel_t *
+s_alloc_channel (void)
+{
+	if (total_channels < MAX_CHANNELS)
+		return &channels[total_channels++];
+	return 0;
+}
+
+static channel_t *
 s_pick_channel (int entnum, int entchannel)
 {
-	int			ch_idx, first_to_die;
+	int			ch_idx;
 	unsigned    life_left;
+	channel_t  *ch, *first_to_die;
 
 	// Check for replacement sound, or find the best one to replace
-	first_to_die = -1;
+	first_to_die = 0;
 	life_left = 0x7fffffff;
-	for (ch_idx = NUM_AMBIENTS; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS;
-		 ch_idx++) {
+	for (ch_idx = 0; ch_idx < MAX_DYNAMIC_CHANNELS; ch_idx++) {
+		ch = dynamic_channels[ch_idx];
 		if (entchannel != 0				// channel 0 never overrides
-			&& channels[ch_idx].entnum == entnum
-			&& (channels[ch_idx].entchannel == entchannel ||
-				entchannel == -1)) {
+			&& ch->entnum == entnum
+			&& (ch->entchannel == entchannel || entchannel == -1)) {
 			// always override sound from same entity
-			first_to_die = ch_idx;
+			first_to_die = ch;
 			break;
 		}
 		// don't let monster sounds override player sounds
-		if (channels[ch_idx].entnum == *render_data.viewentity
+		if (ch->entnum == *render_data.viewentity
 			&& entnum != *render_data.viewentity
-			&& channels[ch_idx].sfx)
+			&& ch->sfx)
 			continue;
 
-		if (paintedtime + life_left > channels[ch_idx].end) {
-			life_left = channels[ch_idx].end - paintedtime;
-			first_to_die = ch_idx;
+		if (paintedtime + life_left > ch->end) {
+			life_left = ch->end - paintedtime;
+			first_to_die = ch;
 		}
 	}
 
-	if (first_to_die == -1)
+	if (!first_to_die)
 		return NULL;
 
-	if (channels[first_to_die].sfx) {
-		channels[first_to_die].sfx->close (channels[first_to_die].sfx);
-		channels[first_to_die].sfx = NULL;
+	if (first_to_die->sfx) {
+		first_to_die->sfx->close (first_to_die->sfx);
+		first_to_die->sfx = NULL;
 	}
 
-	return &channels[first_to_die];
+	return first_to_die;
 }
 
 static void
@@ -376,9 +392,8 @@ s_start_sound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 
 	// if an identical sound has also been started this frame, offset the pos
 	// a bit to keep it from just making the first one louder
-	check = &channels[NUM_AMBIENTS];
-	for (ch_idx = NUM_AMBIENTS; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS;
-		 ch_idx++, check++) {
+	for (ch_idx = 0; ch_idx < MAX_DYNAMIC_CHANNELS; ch_idx++) {
+		check = dynamic_channels[ch_idx];
 		if (check == target_chan)
 			continue;
 		if (check->sfx == sfx && !check->pos) {
@@ -396,17 +411,18 @@ static void
 s_stop_sound (int entnum, int entchannel)
 {
 	int			i;
+	channel_t  *ch;
 
 	if (!sound_started)
 		return;
 
 	for (i = 0; i < MAX_DYNAMIC_CHANNELS; i++) {
-		if (channels[i].entnum == entnum
-			&& channels[i].entchannel == entchannel) {
-			channels[i].end = 0;
-			if (channels[i].sfx)
-				channels[i].sfx->close (channels[i].sfx);
-			channels[i].sfx = NULL;
+		ch = dynamic_channels[i];
+		if (ch->entnum == entnum && ch->entchannel == entchannel) {
+			ch->end = 0;
+			if (ch->sfx)
+				ch->sfx->close (ch->sfx);
+			ch->sfx = NULL;
 			return;
 		}
 	}
@@ -439,7 +455,7 @@ s_stop_all_sounds (qboolean clear)
 	if (!sound_started)
 		return;
 
-	total_channels = MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS;	// no statics
+	num_statics = 0;
 
 	for (i = 0; i < MAX_CHANNELS; i++)
 		if (channels[i].sfx) {
@@ -468,13 +484,14 @@ s_static_sound (sfx_t *sfx, const vec3_t origin, float vol,
 	if (!sound_started || !sfx)
 		return;
 
-	if (total_channels == MAX_CHANNELS) {
-		Sys_Printf ("total_channels == MAX_CHANNELS\n");
-		return;
+	if (!static_channels[num_statics]) {
+		if (!(static_channels[num_statics] = s_alloc_channel ())) {
+			Sys_Printf ("ran out of channels\n");
+			return;
+		}
 	}
 
-	ss = &channels[total_channels];
-	total_channels++;
+	ss = static_channels[num_statics];
 
 	if (!sfx->retain (sfx))
 		return;
@@ -497,6 +514,7 @@ s_static_sound (sfx_t *sfx, const vec3_t origin, float vol,
 
 	s_spatialize (ss);
 	ss->oldphase = ss->phase;
+	num_statics++;
 }
 
 //=============================================================================
@@ -520,16 +538,17 @@ s_updateAmbientSounds (void)
 	if (!l || !ambient_level->value) {
 		for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
 			 ambient_channel++) {
-			if (channels[ambient_channel].sfx)
-				channels[ambient_channel].sfx->close (channels[ambient_channel].sfx);
-			channels[ambient_channel].sfx = NULL;
+			chan = ambient_channels[ambient_channel];
+			if (chan->sfx)
+				chan->sfx->close (chan->sfx);
+			chan->sfx = NULL;
 		}
 		return;
 	}
 
 	for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
 		 ambient_channel++) {
-		chan = &channels[ambient_channel];
+		chan = ambient_channels[ambient_channel];
 		if (!ambient_sfx[ambient_channel]) {
 			chan->sfx = 0;
 			continue;
@@ -611,6 +630,18 @@ s_update_ (void)
 	snd_output_funcs->pS_O_Submit ();
 }
 
+static inline int
+s_update_channel (channel_t *ch)
+{
+	if (!ch->sfx)
+		return 0;
+	ch->oldphase = ch->phase;		// prepare to lerp from prev to next phase
+	s_spatialize (ch);				// respatialize channel
+	if (!ch->leftvol && !ch->rightvol)
+		return 0;
+	return 1;
+}
+
 /*
 	s_update
 
@@ -637,43 +668,39 @@ s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 	combine = NULL;
 
 	// update spatialization for static and dynamic sounds	
-	ch = channels + NUM_AMBIENTS;
-	for (i = NUM_AMBIENTS; i < total_channels; i++, ch++) {
-		if (!ch->sfx)
-			continue;
-		ch->oldphase = ch->phase;		// prepare to lerp from prev to next
-										// phase
-		s_spatialize (ch);				// respatialize channel
-		if (!ch->leftvol && !ch->rightvol)
+	for (i = 0; i < MAX_DYNAMIC_CHANNELS; i++)
+		s_update_channel (dynamic_channels[i]);
+
+	for (i = 0; i < num_statics; i++) {
+		ch = static_channels[i];
+		if (!s_update_channel (ch))
 			continue;
 
 		// try to combine static sounds with a previous channel of the same
 		// sound effect so we don't mix five torches every frame
-		if (i >= MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS) {
-			// see if it can just use the last one
-			if (combine && combine->sfx == ch->sfx) {
+		// see if it can just use the last one
+		if (combine && combine->sfx == ch->sfx) {
+			combine->leftvol += ch->leftvol;
+			combine->rightvol += ch->rightvol;
+			ch->leftvol = ch->rightvol = 0;
+			continue;
+		}
+		// search for one
+		for (j = 0; j < i; j++) {
+			combine = static_channels[j];
+			if (combine->sfx == ch->sfx)
+				break;
+		}
+
+		if (j == i) {
+			combine = NULL;
+		} else {
+			if (combine != ch) {
 				combine->leftvol += ch->leftvol;
 				combine->rightvol += ch->rightvol;
 				ch->leftvol = ch->rightvol = 0;
-				continue;
 			}
-			// search for one
-			combine = channels + MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS;
-			for (j = MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS; j < i; j++,
-					 combine++)
-				if (combine->sfx == ch->sfx)
-					break;
-
-			if (j == total_channels) {
-				combine = NULL;
-			} else {
-				if (combine != ch) {
-					combine->leftvol += ch->leftvol;
-					combine->rightvol += ch->rightvol;
-					ch->leftvol = ch->rightvol = 0;
-				}
-				continue;
-			}
+			continue;
 		}
 	}
 
@@ -857,6 +884,13 @@ s_unblock_sound (void)
 static void
 s_init (void)
 {
+	int         i;
+
+	for (i = 0; i < NUM_AMBIENTS; i++)
+		ambient_channels[i] = s_alloc_channel ();
+	for (i = 0; i < MAX_DYNAMIC_CHANNELS; i++)
+		dynamic_channels[i] = s_alloc_channel ();
+
 	snd_output_funcs = render_data.output->functions->snd_output;
 	Sys_Printf ("\nSound Initialization\n");
 
@@ -997,6 +1031,8 @@ static snd_render_funcs_t plugin_info_render_funcs = {
 	s_local_sound,
 	s_block_sound,
 	s_unblock_sound,
+	s_load_sound,
+	s_alloc_channel,
 };
 
 static plugin_funcs_t plugin_info_funcs = {

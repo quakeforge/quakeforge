@@ -96,6 +96,8 @@ void S_ClearPrecache (void);
 void S_BeginPrecaching (void);
 void S_EndPrecaching (void);
 
+sfx_t *S_LoadSound (const char *name);
+struct channel_s *S_AllocChannel (void);
 
 // ====================================================================
 // User-setable variables

@@ -55,6 +55,8 @@ typedef void (*P_S_ExtraUpdate) (void);
 typedef void (*P_S_LocalSound) (const char *s);
 typedef void (*P_S_BlockSound) (void);
 typedef void (*P_S_UnblockSound) (void);
+typedef struct sfx_s *(*P_S_LoadSound) (const char *name);
+typedef struct channel_s *(*P_S_AllocChannel) (void);
 
 typedef struct snd_render_funcs_s {
 	P_S_AmbientOff 		pS_AmbientOff;
@@ -73,6 +75,8 @@ typedef struct snd_render_funcs_s {
 	P_S_LocalSound		pS_LocalSound;
 	P_S_BlockSound		pS_BlockSound;
 	P_S_UnblockSound	pS_UnblockSound;
+	P_S_LoadSound		pS_LoadSound; 
+	P_S_AllocChannel	pS_AllocChannel;
 } snd_render_funcs_t;
 
 typedef struct snd_render_data_s {
