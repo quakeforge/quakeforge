@@ -36,6 +36,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "compat.h"
 #include "host.h"
@@ -898,6 +899,7 @@ SV_SaveSpawnparms (void)
 void
 SV_SpawnServer (const char *server)
 {
+	char       *buf;
 	int         i;
 	edict_t    *ent;
 
@@ -1007,7 +1009,12 @@ SV_SpawnServer (const char *server)
 	// serverflags are for cross level information (sigils)
 	*sv_globals.serverflags = svs.serverflags;
 
-	ED_LoadFromFile (&sv_pr_state, sv.worldmodel->entities);
+	if ((buf = QFS_LoadFile (va ("maps/%s.ent", server), 0))) {
+		ED_LoadFromFile (&sv_pr_state, buf);
+		free (buf);
+	} else {
+		ED_LoadFromFile (&sv_pr_state, sv.worldmodel->entities);
+	}
 
 	sv.active = true;
 

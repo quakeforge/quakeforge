@@ -302,6 +302,7 @@ SV_CheckModel (const char *mdl)
 void
 SV_SpawnServer (const char *server)
 {
+	char       *buf;
 	edict_t    *ent;
 	int         i;
 
@@ -411,7 +412,12 @@ SV_SpawnServer (const char *server)
 	SV_ProgStartFrame ();
 
 	// load and spawn all other entities
-	ED_LoadFromFile (&sv_pr_state, sv.worldmodel->entities);
+	if ((buf = QFS_LoadFile (va ("maps/%s.ent", server), 0))) {
+		ED_LoadFromFile (&sv_pr_state, buf);
+		free (buf);
+	} else {
+		ED_LoadFromFile (&sv_pr_state, sv.worldmodel->entities);
+	}
 
 	// look up some model indexes for specialized message compression
 	SV_FindModelNumbers ();
