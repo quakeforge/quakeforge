@@ -60,11 +60,11 @@ noise_diamondsquare (unsigned char *noise, unsigned int size,
 
 #define n(x, y) noisebuf[((y) & size1) * size + ((x) & size1)]
 
-	for (sizepower = 0;(1 << sizepower) < size;sizepower++);
+	for (sizepower = 0; (1 << sizepower) < size; sizepower++);
 	if (size != (1 << sizepower))
 		Sys_Error("fractalnoise: size must be power of 2\n");
 
-	for (gridpower = 0;(1 << gridpower) < startgrid;gridpower++);
+	for (gridpower = 0; (1 << gridpower) < startgrid; gridpower++);
 	if (startgrid != (1 << gridpower))
 		Sys_Error("fractalnoise: grid must be power of 2\n");
 
