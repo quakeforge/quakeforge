@@ -247,9 +247,8 @@ I_OGGMus_Play (int track, qboolean looping)
 		mus_enabled = false;
 	}
 
-	if (!tracklist || !mus_enabled) {
+	if (!tracklist || !mus_enabled)
 		return;
-	}
 
 	trackstring = va ("%i", track);
 	trackmap = PL_ObjectForKey (tracklist, trackstring);
