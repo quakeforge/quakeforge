@@ -118,7 +118,7 @@ CL_NewDlight (int key, vec3_t org, int effects, byte glow_size,
 			if (effects & ~EF_DIMLIGHT)
 				radius -= 100;
 		dl->radius = radius;
-		dl->die = cl.time + 0.1; // FIXME: killing a merged dlight is bad?
+		dl->die = cl.time + 0.1;
 		switch (effects & (EF_RED | EF_BLUE)) {
 			case EF_RED | EF_BLUE:
 				VectorCopy (purple, dl->color);
@@ -138,6 +138,7 @@ CL_NewDlight (int key, vec3_t org, int effects, byte glow_size,
 	if (glow_size) {
 		dl->radius += glow_size < 128 ? glow_size * 8.0 :
 			(glow_size - 256) * 8.0;
+		dl->die = cl.time + 0.1;
 		if (glow_color) {
 			if (glow_color == 255) {
 				dl->color[0] = dl->color[1] = dl->color[2] = 1.0;
@@ -854,9 +855,6 @@ CL_LinkPlayers (void)
 				|| i == 93 || i == 102))
 			continue;
 
-		// stuff entity in map
-		R_AddEfrags (ent);
-
 		// only predict half the move to minimize overruns
 		msec = 500 * (playertime - state->state_time);
 		if (msec <= 0 || (!cl_predict_players->int_val)) {
@@ -902,6 +900,9 @@ CL_LinkPlayers (void)
 		} else {
 			ent->skin = NULL;
 		}
+
+		// stuff entity in map
+		R_AddEfrags (ent);
 
 		if (state->effects & EF_FLAG1)
 			CL_AddFlagModels (ent, 0, j);
