@@ -126,6 +126,7 @@ Info_SetValueForStarKey (info_t *info, const char *key, const char *value, int f
 	if (k) {
 		if (strequal (k->value, value))
 			return;
+		info->cursize -= strlen (k->value) + 1;
 		free ((char*)k->value);
 	} else {
 		if (!(k = malloc (sizeof (info_key_t))))
