@@ -168,6 +168,7 @@ eval_t *GetEdictFieldValue(progs_t *pr, edict_t *ed, char *field);
 
 char *PR_GetString(progs_t *pr, int num);
 int PR_SetString(progs_t *pr, char *s);
+void PR_GarbageCollect (progs_t *pr);
 
 
 //============================================================================
@@ -228,6 +229,7 @@ struct progs_s {
 	int				*reserved_edicts;	//alloc will start at reserved_edicts+1
 	double			*time;
 	int				null_bad;
+	int				no_exec_limit;
 
 	unsigned short	crc;
 

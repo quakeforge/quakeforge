@@ -379,9 +379,8 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 
 	while (1) {
 		st++;
-		if (++profile > 1000000)		// LordHavoc: increased runaway loop
-			// limit 10x
-		{
+		if (!pr->no_exec_limit
+			&& ++profile > 1000000) {
 			pr->pr_xstatement = st - pr->pr_statements;
 			PR_RunError (pr, "runaway loop error");
 		}

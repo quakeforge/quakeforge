@@ -130,7 +130,7 @@ PR_GarbageCollect (progs_t *pr)
 		}
 	}
 	for (sr = pr->dynamic_strings.next; sr; sr = sr->next) {
-		if (sr->count) {
+		if (!sr->count) {
 			Hash_Del (pr->strref_hash, sr->string);
 			strref_free (sr, pr);
 		}
