@@ -808,10 +808,13 @@ C_ProcessInput (void)
 static void
 C_NewMap (void)
 {
+	static int  first_time = 1;
 	static char old_gamedir[MAX_OSPATH];
 
-	if (!strequal (old_gamedir, qfs_gamedir->gamedir))
+	if (first_time || !strequal (old_gamedir, qfs_gamedir->gamedir)) {
+		first_time = 0;
 		Menu_Load ();
+	}
 	strcpy (old_gamedir, qfs_gamedir->gamedir);
 }
 
