@@ -962,6 +962,7 @@ expr
 
 fexpr
 	: expr						{ $$ = fold_constants ($1); }
+	;
 
 opt_arg_list
 	: /* emtpy */				{ $$ = 0; }
