@@ -425,29 +425,33 @@ const
 			$$->type = ex_float;
 			$$->e.float_val = $1;
 		}
-	| STRING_VAL {}
+	| STRING_VAL
 		{
 			$$ = new_expr ();
 			$$->type = ex_string;
 			$$->e.string_val = $1;
 		}
-	| VECTOR_VAL {}
+	| VECTOR_VAL
 		{
 			$$ = new_expr ();
 			$$->type = ex_vector;
 			memcpy ($$->e.vector_val, $1, sizeof ($$->e.vector_val));
 		}
-	| QUATERNION_VAL {}
+	| QUATERNION_VAL
 		{
 			$$ = new_expr ();
 			$$->type = ex_quaternion;
 			memcpy ($$->e.quaternion_val, $1, sizeof ($$->e.quaternion_val));
 		}
-	| INT_VAL {}
+	| INT_VAL
 		{
 			$$ = new_expr ();
 			$$->type = ex_int;
 			$$->e.int_val = $1;
+		}
+	| '-' const
+		{
+			$$ = unary_expr ('-', $2);
 		}
 	;
 
