@@ -80,6 +80,7 @@ SNDDMA_Init (void)
 	struct audio_buf_info info;
 	int         caps;
 	int         retries = 3;
+	int         omode = O_WRONLY;
 
 	snd_inited = 0;
 
@@ -87,7 +88,10 @@ SNDDMA_Init (void)
 	if (snd_device->string[0])
 		snd_dev = snd_device->string;
 
-	audio_fd = open (snd_dev, O_RDWR);
+	if (snd_oss_rw->int_val)
+	    omode = O_RDWR;
+
+	audio_fd = open (snd_dev, omode);
 	if (audio_fd < 0) {					// Failed open, retry up to 3 times
 		// if it's busy
 		while ((audio_fd < 0) && retries-- &&
