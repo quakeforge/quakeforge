@@ -98,7 +98,7 @@ emit_function_call (expr_t *e, def_t *dest)
 		parm = def_parms[ind];
 		parm.type = types[get_type (earg)];
 		arg = emit_sub_expr (earg, &parm);
-		if (earg->type != ex_expr) {
+		if (earg->type != ex_expr && earg->type != ex_uexpr) {
 			op = PR_Opcode_Find ("=", 5, arg, &parm, &parm);
 			emit_statement (e->line, op, arg, &parm, 0);
 		}
