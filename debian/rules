@@ -127,8 +127,7 @@ install: build
 		usr/lib/libQFutil.so \
 		usr/include/QF/GL/*.h \
 		usr/include/QF/plugin/*.h \
-		usr/include/QF/*.h \
-		usr/include/*.h
+		usr/include/QF/*.h
 	install -d -m755 debian/$(dev)/usr/share/doc
 	ln -s $(common) debian/$(dev)/usr/share/doc/$(dev)
 
@@ -142,8 +141,7 @@ install: build
 
 	# quakeforge-libs-sw
 	dh_movefiles -p$(swlib) --sourcedir=$(tmp) \
-		usr/lib/libQFmodels_sw.so.* \
-		usr/lib/libQFrenderer_sw.so.*
+		usr/lib/libQFmodels_sw.so.*
 	install -D -m755 debian/$(swlib).shlibs debian/$(swlib)/DEBIAN/shlibs
 	install -d -m755 debian/$(swlib)/usr/share/doc
 	ln -s $(common) debian/$(swlib)/usr/share/doc/$(swlib)
