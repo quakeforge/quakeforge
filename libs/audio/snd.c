@@ -29,6 +29,10 @@
 static const char rcsid[] = 
 	"$Id$";
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include "QF/cvar.h"
 #include "QF/sound.h"
 #include "QF/model.h"
@@ -50,10 +54,20 @@ cvar_t         *bgmvolume;
 cvar_t         *volume;
 cvar_t         *snd_interp;
 
-cvar_t                *snd_output;
-cvar_t                *snd_render;
-plugin_t              *snd_render_module = NULL;
-plugin_t              *snd_output_module = NULL;
+cvar_t         *snd_output;
+cvar_t         *snd_render;
+plugin_t       *snd_render_module = NULL;
+plugin_t       *snd_output_module = NULL;
+
+SND_OUTPUT_PROTOS
+plugin_list_t   snd_output_list[] = {
+	SND_OUTPUT_LIST
+};
+
+SND_RENDER_PROTOS
+plugin_list_t   snd_render_list[] = {
+	SND_RENDER_LIST
+};
 
 // FIXME: ewwwies
 extern double				host_frametime; // From host.h

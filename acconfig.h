@@ -133,5 +133,17 @@
 /* Define this if you want progs typechecking */
 #undef TYPECHECK_PROGS
 
+/* list of cd plugins and prototypes */
+#undef CD_PLUGIN_LIST
+#undef CD_PLUGIN_PROTOS
+
+/* list of sound output plugins and prototypes */
+#undef SND_OUTPUT_LIST
+#undef SND_OUTPUT_PROTOS
+
+/* list of sound render plugins and prototypes */
+#undef SND_RENDER_LIST
+#undef SND_RENDER_PROTOS
+
 @BOTTOM@
 #endif // __config_h_

@@ -4,6 +4,7 @@ XMMS_LIBS = @XMMS_LIBS@
 
 
 plugin_LTLIBRARIES=	@CD_PLUGIN_TARGETS@
+noinst_LTLIBRARIES=	@CD_PLUGIN_STATIC@
 EXTRA_LTLIBRARIES=	libcd_linux.la libcd_sdl.la libcd_sgi.la libcd_win.la libcd_null.la libcd_xmms.la
 
 libcd_linux_la_LDFLAGS=	-version-info 1:0:0 -rpath $(plugindir)

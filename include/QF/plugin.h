@@ -92,6 +92,11 @@ typedef struct plugin_s {
 */
 typedef plugin_t * (*P_PluginInfo) (void);
 
+typedef struct plugin_list_s {
+	const char		*name;
+	P_PluginInfo	info;
+} plugin_list_t;
+
 /*
 	Plugin system variables
 */

@@ -40,9 +40,13 @@ static const char rcsid[] =
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
-cvar_t                *cd_plugin;
-plugin_t              *cdmodule = NULL;
+cvar_t         *cd_plugin;
+plugin_t       *cdmodule = NULL;
 
+CD_PLUGIN_PROTOS
+plugin_list_t   cd_plugin_list[] = {
+	CD_PLUGIN_LIST
+};
 
 void
 CDAudio_Pause (void)

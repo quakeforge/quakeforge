@@ -9,7 +9,7 @@ else
 asm=
 endif
 
-noinst_LTLIBRARIES=	$(asm)
+noinst_LTLIBRARIES=	$(asm) @SND_REND_STATIC@
 
 libasm_la_SOURCES=	snd_mixa.S
 

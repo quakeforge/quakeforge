@@ -2,6 +2,7 @@ INCLUDES= -I$(top_srcdir)/include $(ALSA_CFLAGS) $(MME_CFLAGS) $(OSS_CFLAGS) $(S
 SDL_LIBS = @SDL_LIBS@
 
 plugin_LTLIBRARIES = @SND_PLUGIN_TARGETS@
+noinst_LTLIBRARIES = @SND_PLUGIN_STATIC@
 EXTRA_LTLIBRARIES = libsnd_output_sdl.la libsnd_output_alsa0_5.la libsnd_output_alsa0_9.la libsnd_output_oss.la libsnd_output_sgi.la libsnd_output_sun.la libsnd_output_win.la libsnd_output_null.la libsnd_output_disk.la
 
 libsnd_output_sdl_la_LDFLAGS=	$(plugin_LDFLAGS) -version-info 1:0:0 -rpath $(plugindir)
