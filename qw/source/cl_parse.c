@@ -1210,14 +1210,21 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_stufftext:
-				if (!stuffbuf) stuffbuf = dstring_newstr();
 				s = MSG_ReadString (net_message);
-				Con_DPrintf ("partial stufftext: %s\n", s);
-				dstring_appendstr (stuffbuf, s);
-				if (stuffbuf->str[strlen(stuffbuf->str)-1] == '\n') {
-					Con_DPrintf ("stufftext: %s\n", stuffbuf->str);
-					Cbuf_AddTextTo (cmd_legacybuffer, stuffbuf->str);
-					dstring_clearstr (stuffbuf);
+				if (s[strlen (s) - 1] == '\n') {
+					if (stuffbuf && stuffbuf->str[0]) {
+						Con_DPrintf ("stufftext: %s%s\n", stuffbuf->str, s);
+						Cbuf_AddTextTo (cmd_legacybuffer, stuffbuf->str);
+						dstring_clearstr (stuffbuf);
+					} else {
+						Con_DPrintf ("stufftext: %s\n", s);
+					}
+					Cbuf_AddTextTo (cmd_legacybuffer, s);
+				} else {
+					Con_DPrintf ("partial stufftext: %s\n", s);
+					if (!stuffbuf)
+						stuffbuf = dstring_newstr();
+					dstring_appendstr (stuffbuf, s);
 				}
 				break;
 
