@@ -563,11 +563,13 @@ if test "x$HAVE_VIDMODE" != xno; then
 	CPPFLAGS="$X_CFLAGS $CPPFLAGS"
 	AC_CHECK_HEADER(X11/extensions/xf86vmode.h,
 		dnl Make sure the library works
-		AC_CHECK_LIB(Xxf86vm, XF86VidModeSwitchToMode,
+		[AC_CHECK_LIB(Xxf86vm, XF86VidModeSwitchToMode,
 			AC_DEFINE(HAVE_VIDMODE, 1, [Define if you have the XFree86 VIDMODE extension])
 			VIDMODE_LIBS="-lXxf86vm",,
 			[$X_LIBS -lXext -lX11 $X_EXTRA_LIBS]
-		)
+		)],
+		[],
+		[#include <X11/Xlib.h>]
 	)
 	CPPFLAGS="$save_CPPFLAGS"
 fi
@@ -582,11 +584,13 @@ if test "x$HAVE_DGA" != xno; then
 	CPPFLAGS="$X_CFLAGS $CPPFLAGS"
 	AC_CHECK_HEADER(X11/extensions/xf86dga.h,
 		dnl Make sure the library works
-		AC_CHECK_LIB(Xxf86dga, XF86DGAQueryVersion,
+		[AC_CHECK_LIB(Xxf86dga, XF86DGAQueryVersion,
 			AC_DEFINE(HAVE_DGA, 1, [Define if you have the XFree86 DGA extension])
 			DGA_LIBS="-lXxf86dga",,
 			[$X_LIBS -lXext -lX11 $X_EXTRA_LIBS]
-		)
+		)],
+		[],
+		[#include <X11/Xlib.h>]
 	)
 	CPPFLAGS="$save_CPPFLAGS"
 fi
