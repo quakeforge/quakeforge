@@ -1119,7 +1119,7 @@ R_TeleportSplash_ID (const vec3_t org)
 static void
 R_DarkFieldParticles_ID (entity_t *ent)
 {
-	int				i, j, k, l;
+	int				i, j, k, l = 64;
 	unsigned int	rnd;
 	float			vel;
 	vec3_t			dir, org, porg, pvel;
