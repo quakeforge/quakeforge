@@ -1006,11 +1006,11 @@ AC_SUBST(PLUGINDIR)
 dnl CFLAGS for release and devel versions
 CFLAGS=""
 AC_ARG_ENABLE(debug,
-	[  --enable-debug          compile with debugging (for development)],
+	[  --disable-debug         compile without debugging],
 	debug=$enable_debug
 )
 AC_MSG_CHECKING(for debugging)
-if test "x$debug" = xyes; then
+if test "x$debug" != xno; then
 	AC_MSG_RESULT(yes)
 	BUILD_TYPE="$BUILD_TYPE Debug"
 	CFLAGS="$CFLAGS -g"
