@@ -1622,6 +1622,7 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "checkbottom", PF_checkbottom, 40);	// float(entity e) checkbottom = #40
 	PR_AddBuiltin (&sv_pr_state, "pointcontents", PF_pointcontents, 41);	// float(vector v) pointcontents = #41
 	// no 42
+	PR_AddBuiltin (&sv_pr_state, "aim", PF_aim, 44);	// vector(entity e, float speed) aim = #44
 	PR_AddBuiltin (&sv_pr_state, "localcmd", PF_localcmd, 46);	// void(string s) localcmd = #46
 	// no 48
 	PR_AddBuiltin (&sv_pr_state, "changeyaw", PF_changeyaw, 49);	// void() ChangeYaw = #49
