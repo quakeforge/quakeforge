@@ -48,7 +48,8 @@ cvar_t     *joy_enable;					// Joystick enabling flag
 cvar_t     *joy_amp;					// Joystick amplification
 cvar_t     *joy_pre_amp;				// Joystick pre-amplification
 
-extern cvar_t *in_amp, *in_pre_amp;
+extern cvar_t *in_amp;
+extern cvar_t *in_pre_amp;
 
 qboolean    joy_found = false;
 qboolean    joy_active = false;
@@ -86,7 +87,7 @@ JOY_Move (void)
 		return;
 
 	Cvar_SetValue (joy_amp, max (0.0001, joy_amp->value));
-	Cvar_SetValue (joy_amp, max (0.0001, joy_pre_amp->value));
+	Cvar_SetValue (joy_pre_amp, max (0.0001, joy_pre_amp->value));
 
 	mult_joy = 4 * joy_amp->value * joy_pre_amp->value *
 		in_amp->value * in_pre_amp->value;
@@ -163,6 +164,8 @@ JOY_Init_Cvars (void)
 						   "Joystick enable flag");
 	joy_amp = Cvar_Get ("joy_amp", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
 						"Joystick amplification");
+	joy_pre_amp = Cvar_Get ("joy_pre_amp", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
+							"Joystick pre-amplification");
 
 	for (i = 0; i < JOY_MAX_AXES; i++) {
 		joy_axes[i].axis = Cvar_Get (joy_axes_cvar_init[i].name,
