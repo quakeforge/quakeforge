@@ -99,8 +99,6 @@ void        R_MarkLeaves (void);
 
 extern cvar_t *scr_fov;
 
-extern qboolean lighthalf;
-
 
 // LordHavoc: place for gl_rmain setup code
 void
@@ -261,10 +259,7 @@ GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
 		glDepthMask (GL_FALSE);
 
 	if (fb) {
-		if (lighthalf)
-			glColor4f (0.5, 0.5, 0.5, modelalpha);
-		else
-			glColor4f (1, 1, 1, modelalpha);
+		glColor4f (1, 1, 1, modelalpha);
 	}
 
 	while ((count = *order++)) {
@@ -334,10 +329,7 @@ GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, float ble
 		glDepthMask (GL_FALSE);
 
 	if (fb) {	// don't do this in the loop, it doesn't change
-		if (lighthalf)
-			glColor4f (0.5, 0.5, 0.5, modelalpha);
-		else
-			glColor4f (1, 1, 1, modelalpha);
+		glColor4f (1, 1, 1, modelalpha);
 	}
 
 	lerp = 1 - blend;
@@ -613,14 +605,9 @@ R_DrawAliasModel (entity_t *e)
 
 	// FIXME: shadecolor is supposed to be the lighting for the model, not
 	// just colormod
-	shadecolor[0] = currententity->colormod[0];
-	shadecolor[1] = currententity->colormod[1];
-	shadecolor[2] = currententity->colormod[2];
-	if (!lighthalf) {
-		shadecolor[0] *= 2.0;
-		shadecolor[1] *= 2.0;
-		shadecolor[2] *= 2.0;
-	}
+	shadecolor[0] = currententity->colormod[0] * 2.0;
+	shadecolor[1] = currententity->colormod[1] * 2.0;
+	shadecolor[2] = currententity->colormod[2] * 2.0;
 
 	VectorCopy (currententity->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);

@@ -126,11 +126,7 @@ R_RenderDlight (dlight_t *light)
 
 	glBegin (GL_TRIANGLE_FAN);
 
-	if (lighthalf)
-		glColor3f (light->color[0] * 0.5, light->color[1] * 0.5,
-				   light->color[2] * 0.5);
-	else
-		glColor3fv (light->color);
+	glColor3fv (light->color);
 
 	VectorSubtract (r_origin, light->origin, v);
 	VectorNormalize (v);

@@ -22,7 +22,6 @@ extern cvar_t     *gl_fires;
 extern cvar_t     *gl_keeptjunctions;
 extern cvar_t     *gl_lerp_anim;
 extern cvar_t     *gl_lightmap_components;
-extern cvar_t     *gl_lightmode;
 extern cvar_t     *gl_max_size;
 extern cvar_t     *gl_nocolors;
 extern cvar_t     *gl_picmip;

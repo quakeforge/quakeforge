@@ -27,7 +27,6 @@ cvar_t     *gl_fires;
 cvar_t     *gl_keeptjunctions;
 cvar_t     *gl_lerp_anim;
 cvar_t     *gl_lightmap_components;
-cvar_t     *gl_lightmode;
 cvar_t     *gl_max_size;
 cvar_t     *gl_nocolors;
 cvar_t     *gl_picmip;
@@ -81,22 +80,7 @@ cvar_t     *scr_showram;
 cvar_t     *scr_showturtle;
 cvar_t     *scr_viewsize;
 
-unsigned char lighthalf_v[3];
-qboolean    lighthalf;
-
-void
-gl_lightmode_callback (cvar_t *cvar)
-{
-	if (cvar->int_val) {
-		lighthalf_v[0] = lighthalf_v[1] = lighthalf_v[2] = 128;
-		lighthalf = 1;
-	} else {
-		lighthalf_v[0] = lighthalf_v[1] = lighthalf_v[2] = 255;
-		lighthalf = 0;
-	}
-
-	R_ForceLightUpdate ();
-}
+unsigned char lighthalf_v[3] = {255, 255, 255};
 
 void
 R_Init_Cvars (void)
@@ -150,9 +134,6 @@ R_Init_Cvars (void)
 	gl_lightmap_components = Cvar_Get ("gl_lightmap_components", "4", CVAR_ROM,
 									   NULL, "Lightmap texture components. 1 "
 									   "is greyscale, 3 is RGB, 4 is RGBA.");
-	gl_lightmode = Cvar_Get ("gl_lightmode", "0", CVAR_ARCHIVE,
-							 gl_lightmode_callback, "Lighting mode (0 = "
-							 "GLQuake style, 1 = new style)");
 	gl_max_size = Cvar_Get ("gl_max_size", "1024", CVAR_NONE, NULL,
 							"Texture dimension");
 	gl_nocolors = Cvar_Get ("gl_nocolors", "0", CVAR_NONE, NULL,

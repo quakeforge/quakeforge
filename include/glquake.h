@@ -141,7 +141,6 @@ extern cvar_t	*gl_sky_divide;
 
 extern int		mirrortexturenum;	// quake texturenum, not gltexturenum
 extern qboolean	mirror;
-extern qboolean	lighthalf;
 extern mplane_t	*mirror_plane;
 extern int		gl_lightmap_format;
 extern int		gl_solid_format;

@@ -47,7 +47,6 @@
 #include "r_cvar.h"
 
 extern byte 	*draw_chars;	// 8*8 graphic characters
-extern qboolean lighthalf;
 
 extern cvar_t	*r_netgraph;
 extern cvar_t	*r_netgraph_alpha;

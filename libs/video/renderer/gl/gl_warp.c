@@ -38,8 +38,6 @@
 
 extern model_t *loadmodel;
 
-extern qboolean lighthalf;
-
 msurface_t *warpface;
 
 extern cvar_t *gl_subdivide_size;

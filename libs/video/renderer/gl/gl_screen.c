@@ -803,9 +803,6 @@ SCR_TileClear (void)
 extern void R_ForceLightUpdate (void);
 
 int 			oldviewsize = 0;
-unsigned char	lighthalf_v[3];
-qboolean		lighthalf;
-extern cvar_t	*gl_lightmode;
 
 /*
 	SCR_UpdateScreen
@@ -820,7 +817,6 @@ void
 SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 {
 	double      time1 = 0, time2;
-	float       f;
 
 	if (block_drawing)
 		return;
@@ -890,31 +886,6 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 
 	// also makes polyblend apply to whole screen
 	glDisable (GL_TEXTURE_2D);
-
-	if (lighthalf) {		// LordHavoc: render was done at half brightness
-		f = 2;
-	} else {
-		f = 1;
-	}
-
-	if (f >= 1.002) {		// Make sure we don't get bit by roundoff errors
-		glBlendFunc (GL_DST_COLOR, GL_ONE);
-		glBegin (GL_QUADS);
-		while (f >= 1.002) {			// precision
-			if (f >= 2)
-				glColor3f (1, 1, 1);
-			else
-				glColor3f (f - 1, f - 1, f - 1);
-			glVertex2f (0, 0);
-			glVertex2f (vid.width, 0);
-			glVertex2f (vid.width, vid.height);
-			glVertex2f (0, vid.height);
-			f *= 0.5;
-		}
-		glEnd ();
-		glColor3ubv (lighthalf_v);
-		glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	}
 
 	if (v_blend[3]) {
 		glBegin (GL_QUADS);

@@ -50,7 +50,6 @@
 extern model_t *loadmodel;
 
 extern int  skytexturenum;
-extern qboolean lighthalf;
 
 int         solidskytexture;
 int         alphaskytexture;

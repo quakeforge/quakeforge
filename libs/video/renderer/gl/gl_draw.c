@@ -256,12 +256,6 @@ Draw_Init (void)
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &texSize);
 	Cvar_Set (gl_max_size, va("%d", texSize));
 
-	// LordHavoc: 3DFX's dithering has terrible artifacts with lightmode 1
-	if (strstr (gl_renderer, "3dfx") || strstr (gl_renderer, "Mesa Glide"))
-	{
-		Cvar_Set (gl_lightmode, "0");
-	}
-
 	Cmd_AddCommand ("gl_texturemode", &GL_TextureMode_f, "Texture mipmap quality.");
 
 	// load the console background and the charset
@@ -380,12 +374,7 @@ Draw_Crosshair (int swap)
 			y = scr_vrect.y + scr_vrect.height / 2 - 3 + cl_crossy->int_val;
 
 			pColor = (unsigned char *) &d_8to24table[crosshaircolor->int_val];
-			if (lighthalf)
-				glColor4ub ((byte) ((int) pColor[0] >> 1),
-							(byte) ((int) pColor[1] >> 1),
-							(byte) ((int) pColor[2] >> 1), pColor[3]);
-			else
-				glColor4ubv (pColor);
+			glColor4ubv (pColor);
 			glBindTexture (GL_TEXTURE_2D, cs_texture);
 
 			glBegin (GL_QUADS);
@@ -444,10 +433,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	newtl = gl->tl + (srcy * oldglheight) / pic->height;
 	newth = newtl + (height * oldglheight) / pic->height;
 
-	if (lighthalf)
-		glColor3f (0.4, 0.4, 0.4);
-	else
-		glColor3f (0.8, 0.8, 0.8);
+	glColor3f (0.8, 0.8, 0.8);
 	glBindTexture (GL_TEXTURE_2D, gl->texnum);
 	glBegin (GL_QUADS);
 	glTexCoord2f (newsl, newtl);
@@ -498,10 +484,7 @@ Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
 	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 
-	if (lighthalf)
-		glColor3f (0.4, 0.4, 0.4);
-	else
-		glColor3f (0.8, 0.8, 0.8);
+	glColor3f (0.8, 0.8, 0.8);
 	glBegin (GL_QUADS);
 	glTexCoord2f (0, 0);
 	glVertex2f (x, y);
@@ -566,10 +549,7 @@ Draw_ConsoleBackground (int lines)
 		alpha = (float) (gl_conalpha->value * lines) / y;
 	}
 
-	if (lighthalf)
-		glColor4f (0.4, 0.4, 0.4, alpha);
-	else
-		glColor4f (0.8, 0.8, 0.8, alpha);
+	glColor4f (0.8, 0.8, 0.8, alpha);
 
 	// draw the console texture
 	glBindTexture (GL_TEXTURE_2D, gl->texnum);
@@ -586,10 +566,7 @@ Draw_ConsoleBackground (int lines)
 
 	// turn off alpha blending
 	if (alpha < 1.0) {
-		if (lighthalf)
-			glColor3f (0.4, 0.4, 0.4);
-		else
-			glColor3f (0.8, 0.8, 0.8);
+		glColor3f (0.8, 0.8, 0.8);
 	}
 
 	if (gl_conspin->value) {
@@ -613,10 +590,7 @@ Draw_ConsoleBackground (int lines)
 void
 Draw_TileClear (int x, int y, int w, int h)
 {
-	if (lighthalf)
-		glColor3f (0.4, 0.4, 0.4);
-	else
-		glColor3f (0.8, 0.8, 0.8);
+	glColor3f (0.8, 0.8, 0.8);
 	glBindTexture (GL_TEXTURE_2D, *(int *) draw_backtile->data);
 	glBegin (GL_QUADS);
 	glTexCoord2f (x / 64.0, y / 64.0);
@@ -641,12 +615,8 @@ void
 Draw_Fill (int x, int y, int w, int h, int c)
 {
 	glDisable (GL_TEXTURE_2D);
-	if (lighthalf)
-		glColor3f (vid_basepal[c * 3] / 510.0, vid_basepal[c * 3 + 1] / 510.0,
-				   vid_basepal[c * 3 + 2] / 510.0);
-	else
-		glColor3f (vid_basepal[c * 3] / 255.0, vid_basepal[c * 3 + 1] / 255.0,
-				   vid_basepal[c * 3 + 2] / 255.0);
+	glColor3f (vid_basepal[c * 3] / 255.0, vid_basepal[c * 3 + 1] / 255.0,
+			   vid_basepal[c * 3 + 2] / 255.0);
 
 	glBegin (GL_QUADS);
 

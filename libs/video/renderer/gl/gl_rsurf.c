@@ -87,8 +87,6 @@ byte       *lightmaps[MAX_LIGHTMAPS];
 msurface_t *waterchain = NULL;
 msurface_t *sky_chain;
 
-extern qboolean lighthalf;
-
 
 // LordHavoc: place for gl_rsurf setup code
 void
@@ -270,7 +268,7 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 	stride -= smax * lightmap_bytes;
 	bl = blocklights;
 
-	if (gl_mtex_active && !lighthalf) {
+	if (gl_mtex_active) {
 		shift = 7;      // 0-1 lightmap range.
 	} else {
 		shift = 8;      // 0-2 lightmap range.
@@ -452,10 +450,7 @@ R_BlendLightmaps (void)
 
 	glDepthMask (GL_FALSE);					// don't bother writing Z
 
-	if (lighthalf)
-		glBlendFunc (GL_ZERO, GL_SRC_COLOR);
-	else
-		glBlendFunc (GL_DST_COLOR, GL_SRC_COLOR);
+	glBlendFunc (GL_DST_COLOR, GL_SRC_COLOR);
 
 	glColor3f (1, 1, 1);
 
@@ -594,11 +589,7 @@ GL_WaterSurface (msurface_t *s)
 	glBindTexture (GL_TEXTURE_2D, i);
 	if (r_wateralpha->value < 1.0) {
 		glDepthMask (GL_FALSE);
-		if (lighthalf) {
-			glColor4f (0.5, 0.5, 0.5, r_wateralpha->value);
-		} else {
-			glColor4f (1, 1, 1, r_wateralpha->value);
-		}
+		glColor4f (1, 1, 1, r_wateralpha->value);
 		EmitWaterPolys (s);
 		glColor3ubv (lighthalf_v);
 		glDepthMask (GL_TRUE);
@@ -621,11 +612,7 @@ R_DrawWaterSurfaces (void)
 
 	if (r_wateralpha->value < 1.0) {
 		glDepthMask (GL_FALSE);
-		if (lighthalf) {
-			glColor4f (0.5, 0.5, 0.5, r_wateralpha->value);
-		} else {
-			glColor4f (1, 1, 1, r_wateralpha->value);
-		}
+		glColor4f (1, 1, 1, r_wateralpha->value);
 	}
 
 	i = -1;

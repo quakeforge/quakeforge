@@ -150,10 +150,7 @@ R_DrawFire (fire_t *f)
 	}
 	// we're not - draw it
 	glBegin (GL_TRIANGLE_FAN);
-	if (lighthalf)
-		glColor3f (f->color[0] * 0.5, f->color[1] * 0.5, f->color[2] * 0.5);
-	else
-		glColor3fv (f->color);
+	glColor3fv (f->color);
 	for (i = 0; i < 3; i++)
 		vec[i] = f->origin[i] - vpn[i] * radius;
 	glVertex3fv (vec);
