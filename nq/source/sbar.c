@@ -662,9 +662,10 @@ draw_health (view_t *view)
 			  cl.stats[STAT_HEALTH] <= 25);
 }
 
-static inline void
+static inline int
 draw_ammo (view_t *view)
 {
+	int         ret = 1;
 	if (cl.stats[STAT_ITEMS] & IT_SHELLS)
 		draw_pic (view, 224, 0, sb_ammo[0]);
 	else if (cl.stats[STAT_ITEMS] & IT_NAILS)
@@ -673,7 +674,10 @@ draw_ammo (view_t *view)
 		draw_pic (view, 224, 0, sb_ammo[2]);
 	else if (cl.stats[STAT_ITEMS] & IT_CELLS)
 		draw_pic (view, 224, 0, sb_ammo[3]);
+	else
+		ret = 0;
 	draw_num (view, 248, 0, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
+	return ret;
 }
 
 static void
@@ -810,12 +814,19 @@ draw_rogue_status (view_t *view)
 
 	draw_armor (view);
 	// PGM 03/02/97 - fixed so color swatch only appears in CTF modes
-	if (cl.maxclients != 1 || teamplay->int_val > 3 || teamplay->int_val < 7)
+	if (cl.maxclients != 1 && teamplay->int_val > 3 && teamplay->int_val < 7)
 		draw_rogue_face (view);
 	else
 		draw_face (view);
 	draw_health (view);
-	draw_ammo (view);
+	if (!draw_ammo (view)) {
+		if (cl.stats[STAT_ITEMS] & RIT_LAVA_NAILS)
+			draw_pic (view, 224, 0, rsb_ammo[0]);
+		else if (cl.stats[STAT_ITEMS] & RIT_PLASMA_AMMO)
+			draw_pic (view, 224, 0, rsb_ammo[1]);
+		else if (cl.stats[STAT_ITEMS] & RIT_MULTI_ROCKETS)
+			draw_pic (view, 224, 0, rsb_ammo[2]);
+	}
 }
 
 static void
