@@ -431,76 +431,105 @@ void
 PR_PrintStatement (progs_t * pr, dstatement_t *s)
 {
 	int			addr = s - pr->pr_statements;
-	int			ofs;
+	const char *fmt;
 	opcode_t	*op;
+	static dstring_t *line;
+
+	if (!line)
+		line = dstring_new ();
+
+	dstring_clearstr (line);
 
 	if (pr_debug->int_val && pr->debug) {
 		const char *source_line = PR_Get_Source_Line (pr, addr);
 
 		if (source_line)
-			Sys_Printf ("%s\n", source_line);
+			dasprintf (line, "%s\n", source_line);
 	}
 
 	op = PR_Opcode (s->op);
 	if (!op) {
-		Sys_Printf ("Unknown instruction %d\n", s->op);
+		Sys_Printf ("%sUnknown instruction %d\n", line->str, s->op);
 		return;
 	}
 
-	Sys_Printf ("%04x ", addr);
+	if (!(fmt = op->fmt))
+		fmt = "%Ga %Gb %gc";
+
+	dasprintf (line, "%04x ", addr);
 	if (pr_debug->int_val > 1)
-		Sys_Printf ("%02x %04x(%s) %04x(%s) %04x(%s)\t",
+		dasprintf (line, "%02x %04x(%8s) %04x(%8s) %04x(%8s)\t",
 					s->op,
 					s->a, pr_type_name[op->type_a],
 					s->b, pr_type_name[op->type_b],
 					s->c, pr_type_name[op->type_c]);
 
-	Sys_Printf ("%s ", op->opname);
+	dasprintf (line, "%s ", op->opname);
 
-	switch (s->op) {
-		case OP_IF:
-		case OP_IFNOT:
-		case OP_IFBE:
-		case OP_IFB:
-		case OP_IFAE:
-		case OP_IFA:
-			ofs = (short) s->b;
+	while (*fmt) {
+		if (*fmt == '%') {
+			if (fmt[1] == '%') {
+				dstring_appendsubstr (line, fmt + 1, 1);
+				fmt += 2;
+			} else {
+				char        mode = fmt[1];
+				char        opchar = fmt[2];
+				long        opval;
+				etype_t     optype;
 
-			Sys_Printf ("%s branch %i (%04x)",
-					PR_GlobalString (pr, s->a, ev_integer)->str, ofs, addr + ofs);
-			break;
-
-		case OP_GOTO:
-			ofs = (short) s->a;
-			Sys_Printf ("branch %i (%04x)", ofs, addr + ofs);
-			break;
-
-		case OP_RETURN:
-		case OP_DONE:
-			Sys_Printf ("%s", PR_GlobalString (pr, s->a, ev_void)->str);
-			break;
-
-		default:
-			if (op->type_a != ev_void)
-				Sys_Printf ("%s", PR_GlobalString (pr, s->a, op->type_a)->str);
-
-			if (op->type_b != ev_void) {
-				if (op->type_c != ev_void)
-					Sys_Printf (", %s", PR_GlobalString (pr, s->b, op->type_b)->str);
-				else
-					Sys_Printf (", %s",
-						PR_GlobalStringNoContents (pr, s->b, op->type_b)->str);
+				switch (opchar) {
+					case 'a':
+						opval = s->a;
+						optype = op->type_a;
+						break;
+					case 'b':
+						opval = s->b;
+						optype = op->type_b;
+						break;
+					case 'c':
+						opval = s->c;
+						optype = op->type_c;
+						break;
+					default:
+						goto err;
+				}
+				switch (mode) {
+					case 'V':
+						dstring_appendstr (line,
+										   PR_GlobalString (pr, opval,
+											   				ev_void));
+						break;
+					case 'G':
+						dstring_appendstr (line,
+										   PR_GlobalString (pr, opval,
+											   				optype));
+						break;
+					case 'g':
+						dstring_appendstr (line,
+										   PR_GlobalStringNoContents (pr,
+											   						  opval,
+																	  optype));
+						break;
+					case 's':
+						dasprintf (line, "%d", (short) opval);
+						break;
+					case 'O':
+						dasprintf (line, "%d", addr + (short) opval);
+						break;
+					default:
+						goto err;
+				}
+				fmt += 3;
+				continue;
+			err:
+				dstring_appendstr (line, fmt);
+				break;
 			}
-
-			if (op->type_c != ev_void) {
-				if (op->type_b == ev_pointer && op->type_c == ev_integer)
-					Sys_Printf (", %s", PR_GlobalString (pr, s->c, op->type_c)->str);
-				else
-					Sys_Printf (", %s",
-						PR_GlobalStringNoContents (pr, s->c, op->type_c)->str);
-			}
+		} else {
+			dstring_appendsubstr (line, fmt++, 1);
+		}
 	}
-	Sys_Printf ("\n");
+	Sys_Printf ("%s\n", line->str);
 }
 
 void

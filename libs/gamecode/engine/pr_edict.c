@@ -194,6 +194,7 @@ PR_ValueString (progs_t *pr, etype_t type, pr_type_t *val)
 {
 	static char	line[256];
 	ddef_t		*def;
+	int          ofs;
 	dfunction_t	*f;
 
 	type &= ~DEF_SAVEGLOBAL;
@@ -238,7 +239,17 @@ PR_ValueString (progs_t *pr, etype_t type, pr_type_t *val)
 					  val->vector_var[2]);
 			break;
 		case ev_pointer:
-			snprintf (line, sizeof (line), "[$%x]", val->integer_var);
+			def = 0;
+			ofs = val->integer_var;
+			if (pr_debug->int_val && pr->debug)
+				def = PR_Get_Local_Def (pr, ofs);
+			if (!def)
+				def = ED_GlobalAtOfs (pr, ofs);
+			if (def)
+				snprintf (line, sizeof (line), "&%s",
+						  PR_GetString (pr, def->s_name));
+			else
+				snprintf (line, sizeof (line), "[$%x]", ofs);
 			break;
 		case ev_quaternion:
 			snprintf (line, sizeof (line), "'%g %g %g %g'",
@@ -268,7 +279,7 @@ PR_ValueString (progs_t *pr, etype_t type, pr_type_t *val)
 
 	Returns a string with a description and the contents of a global
 */
-dstring_t *
+const char *
 PR_GlobalString (progs_t *pr, int ofs, etype_t type)
 {
 	ddef_t				*def = NULL;
@@ -280,7 +291,7 @@ PR_GlobalString (progs_t *pr, int ofs, etype_t type)
 
 	if (type == ev_short) {
 		dsprintf (line, "%04x", (short) ofs);
-		return line;
+		return line->str;
 	}
 
 	if (pr_debug->int_val && pr->debug)
@@ -320,10 +331,10 @@ PR_GlobalString (progs_t *pr, int ofs, etype_t type)
 				dsprintf (line, "%s%s(%s)", name, oi, s);
 		}
 	}
-	return line;
+	return line->str;
 }
 
-dstring_t *
+const char *
 PR_GlobalStringNoContents (progs_t *pr, int ofs, etype_t type)
 {
 	static dstring_t	*line = NULL;
@@ -334,7 +345,7 @@ PR_GlobalStringNoContents (progs_t *pr, int ofs, etype_t type)
 
 	if (type == ev_short) {
 		dsprintf (line, "%x", (short) ofs);
-		return line;
+		return line->str;
 	}
 
 	if (pr_debug->int_val && pr->debug)
@@ -346,7 +357,7 @@ PR_GlobalStringNoContents (progs_t *pr, int ofs, etype_t type)
 	else
 		dsprintf (line, "%s", PR_GetString (pr, def->s_name));
 
-	return line;
+	return line->str;
 }
 
 

@@ -296,6 +296,7 @@ typedef struct opcode_s {
 	qboolean	right_associative;
 	etype_t		type_a, type_b, type_c;
 	unsigned int min_version;
+	const char	*fmt;
 } opcode_t;
 
 extern opcode_t pr_opcodes[];
