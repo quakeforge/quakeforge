@@ -94,6 +94,10 @@ static __attribute__ ((unused)) const char rcsid[] =
 int fnmatch (const char *__pattern, const char *__string, int __flags);
 #endif
 
+#ifdef _WIN32
+void *alloca(size_t size);
+#endif
+
 /*
 	All of Quake's data access is through a hierchical file system, but the
 	contents of the file system can be transparently merged from several
