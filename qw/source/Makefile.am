@@ -260,7 +260,7 @@ qw_client_x11_DEPENDENCIES= $(CLIENT_LIB_DEPS)
 #
 # ... Common stuff
 #
-ogl_SOURCES=	fractalnoise.c gl_textures.c gl_draw.c gl_dyn_fires.c	\
+ogl_SOURCES=	noisetextures.c gl_textures.c gl_draw.c gl_dyn_fires.c	\
 		gl_dyn_part.c gl_dyn_textures.c gl_mesh.c gl_ngraph.c	\
 		r_efrag.c gl_rlight.c gl_rmain.c gl_rmisc.c gl_rsurf.c	\
 		gl_screen.c gl_skin.c gl_sky.c gl_sky_clip.c gl_view.c	\

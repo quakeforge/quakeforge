@@ -84,6 +84,47 @@ typedef struct {
 } glformat_t;
 
 static glformat_t formats[] = {
+/*
+	1-4 are standardly supported formats by GL, not exactly the
+	evil magic numbers they appear to be. Provided mostly as a
+	way to avoid ugly code for supporting a shortcut, partly for
+	consistency. --Despair
+*/
+/*	EXT_paletted_textures
+	{"COLOR_INDEX1_EXT", COLOR_INDEX1_EXT}.
+	{"COLOR_INDEX2_EXT", COLOR_INDEX2_EXT},
+	{"COLOR_INDEX4_EXT", COLOR_INDEX4_EXT},
+	{"COLOR_INDEX8_EXT", COLOR_INDEX8_EXT},
+	{"COLOR_INDEX12_EXT", COLOR_INDEX12_EXT},
+	{"COLOR_INDEX16_EXT", COLOR_INDEX16_EXT},
+*/
+/*	EXT_cymyka
+	{"CMYK_EXT", CMYK_EXT},
+	{"CMYKA_EXT", CMYKA_EXT},
+*/
+/*	EXT_422_pixels
+	{"422_EXT", 422_EXT},
+	{"422_REV_EXT", 422_REV_EXT},
+	{"422_AVERAGE_EXT", 422_AVERAGE_EXT},
+	{"422_REV_AVERAGE_EXT", 422_REV_AVERAGE_EXT},
+*/
+/*	EXT_abgr
+	{"ABGR_EXT", ABGR_EXT},
+*/
+/*	EXT_bgra
+	{"BGR_EXT", BGR_EXT},
+	{"BGRA_EXT", BGRA_EXT},
+*/
+/* ARB_texture_compression
+ * only applicable for CompressedTexImage and CompressedTexSubimage
+ * which will complicate upload paths. *ponder*
+	{"COMPRESSED_ALPHA_ARB", COMPRESSED_ALPHA_ARB},
+	{"COMPRESSED_LUMINANCE_ARB", COMPRESSED_LUMINANCE_ARB},
+	{"COMPRESSED_LUMINANCE_ALPHA_ARB", COMPRESSED_LUMINANCE_ALPHA_ARB},
+	{"COMPRESSED_INTENSITY_ARB", COMPRESSED_INTENSITY_ARB},
+	{"COMPRESSED_RGB_ARB", COMPRESSED_RGB_ARB},
+	{"COMPRESSED_RGBA_ARB", COMPRESSED_RGBA_ARB},
+*/
 	{"1", 1},
 	{"2", 2},
 	{"3", 3},

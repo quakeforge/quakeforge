@@ -32,8 +32,10 @@
 
 #include <stdlib.h>
 
-#include "fractalnoise.h"
 #include "glquake.h"
+
+extern void noise_diamondsquare(unsigned char *noise, int size);
+extern void noise_plasma(unsigned char *noise, int size);
 
 static void GDT_InitDotParticleTexture (void);
 static void GDT_InitSmokeParticleTexture (void);
@@ -54,9 +56,9 @@ GDT_InitDotParticleTexture (void)
 	int         x, y, dx2, dy, d;
 	byte        data[16][16][2];
 
-	// 
+	//
 	// particle texture
-	// 
+	//
 	part_tex_dot = texture_extension_number++;
 	glBindTexture (GL_TEXTURE_2D, part_tex_dot);
 
@@ -85,34 +87,28 @@ GDT_InitDotParticleTexture (void)
 static void
 GDT_InitSmokeParticleTexture (void)
 {
-	int         i, x, y, d;
+	int         i, x, y, c;
 	float       dx, dy2;
-	byte        data[32][32][2], noise1[32][32], noise2[32][32];
+	byte        d, data[32][32][2], noise1[32][32], noise2[32][32];
 
 	for (i = 0; i < 8; i++) {
-		fractalnoise (&noise1[0][0], 32);
-		fractalnoise (&noise2[0][0], 32);
+		noise_diamondsquare (&noise1[0][0], 32);
+		noise_plasma (&noise2[0][0], 32);
 		for (y = 0; y < 32; y++)
 		{
 			dy2 = y - 16;
 			dy2 *= dy2;
 			for (x = 0; x < 32; x++) {
 				dx = x - 16;
-				d = noise2[y][x] * 4 - 512;
+				c = 255 - (dx*dx + dy2);
+				if (c < 1)
+					c = 0;
+				d = (noise1[y][x] + noise2[y][x]) / 3;
 				if (d > 0) {
-					if (d > 255)
-						d = 255;
-					d = (d * (255 - (int) (dx * dx + dy2))) >> 8;
-					if (d <= 0) {
-						d = 0;
-						data[y][x][0] = 0;
-					} else
-						data[y][x][0] = (noise1[y][x] >> 1) + 128;
-//					if (d > 255)
-//						d = 255;
-					data[y][x][1] = (byte) d;
+					data[y][x][0] = 255;
+					data[y][x][1] = (d * c)/255;
 				} else {
-					data[y][x][0] = 0; //DESPAIR
+					data[y][x][0] = 255;
 					data[y][x][1] = 0;
 				}
 			}
@@ -122,7 +118,6 @@ GDT_InitSmokeParticleTexture (void)
 		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexImage2D (GL_TEXTURE_2D, 0, 2, 32, 32, 0, GL_LUMINANCE_ALPHA,
-					  GL_UNSIGNED_BYTE, data);
-
+			      GL_UNSIGNED_BYTE, data);
 	}
 }
