@@ -135,7 +135,7 @@ SV_CreateBaseline (void)
 		((entity_state_t*)svent->data)->scale = 16;
 		((entity_state_t*)svent->data)->glow_size = 0;
 		((entity_state_t*)svent->data)->glow_color = 254;
-		((entity_state_t*)svent->data)->colormap = 255;
+		((entity_state_t*)svent->data)->colormod = 255;
 
 		// 
 		// flush the signon message out to a seperate buffer if
