@@ -1208,6 +1208,7 @@ CL_ParseServerMessage (void)
 			case svc_stufftext:
 				s = MSG_ReadString (net_message);
 				Con_DPrintf ("stufftext: %s\n", s);
+				Cbuf_AddText ("|"); // Make command be executed in a backward-compatible fashion
 				Cbuf_AddText (s);
 				break;
 

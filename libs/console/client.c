@@ -288,6 +288,8 @@ C_ExecLine (const char *line)
 {
 	if (line[0] == '/' && line [1] == '/')
 		goto no_lf;
+	else if (line[0] == '|')
+		Cbuf_AddText (line);
 	else if (line[0] == '\\' || line[0] == '/')
 		Cbuf_AddText (line + 1);
 	else if (cl_chatmode->int_val != 1 && CheckForCommand (line))

@@ -411,29 +411,34 @@ Cmd_Args (int start)
 int Cmd_GetToken (const char *str) {
 	int i, squote, dquote;
 	
+	/* Only stop on comments at the beginning of tokens */
+	if (!strncmp(str, "//", 2))
+		return 0;
 	for (i = 0, squote = 0, dquote = 0; i <= strlen(str); i++) {
-		if (!strncmp(str+i, "//", 2) && !dquote && !squote) // When we hit a comment, just stop
-				return 0;
+		/* If we find a comment in the middle of a token, end the token
+		so it will be picked up on the next call */
+		if (!strncmp(str+i, "//", 2) && !dquote && !squote)
+			break;
 		if (str[i] == 0) {
-				if (dquote) { // We never found another quote, backtrack
-					for (; str[i] != '"'; i--);
-					dquote = 0;
-					continue;
-				}
-				else if (squote) {
-					for (; str[i] != '\''; i--);
-					squote = 0;
-					continue;
-				}
-				else // End of string, this token is done
-					break;
+			if (dquote) { // We never found another quote, backtrack
+				for (; str[i] != '"'; i--);
+				dquote = 0;
+				continue;
+			}
+			else if (squote) {
+				for (; str[i] != '\''; i--);
+				squote = 0;
+				continue;
+			}
+			else // End of string, this token is done
+				break;
 		}
-		else if (str[i] == '\'' && !dquote) {
+		else if (str[i] == '\'' && (!i || str[i-1] != '\\') && !dquote) {
 			if (i) // If not at start of string, we must be at the end of a token
 				break;
 			squote = 1;
 		}
-		else if (str[i] == '"' && !squote) {
+		else if (str[i] == '"' && (!i || str[i-1] != '\\') && !squote) {
 			if (i) // Start new token
 				break;
 			dquote = 1;
@@ -451,7 +456,7 @@ int tag_special = 0;
 
 struct stable_s {char a, b;} stable1[] =
 {
-//	{'\\',0x0D}, // Fake message
+	{'f', 0x0D}, // Fake message
 	{'[', 0x90}, // Gold braces
 	{']', 0x91},
 	{'(', 0x80}, // Scroll bar characters
@@ -469,55 +474,79 @@ struct stable_s {char a, b;} stable1[] =
 	{'B', 0x89},
 	{'a', 0x7F}, // White arrow
 	{'A', 0x8D}, // Brown arrow
-//	{'0', 0x92}, // Gold numbers
-//	{'1', 0x93},
-//	{'2', 0x94},
-//	{'3', 0x95},
-//	{'4', 0x96},
-//	{'5', 0x97},
-//	{'6', 0x98},
-//	{'7', 0x99},
-//	{'8', 0x9A},
-//	{'9', 0x9B},
-//	{'n', '\n'}, // Newline!
 	{0, 0}
 };
 
 void Cmd_ProcessTags (dstring_t *dstr) {
-	int close = 0, i, n, c;
+	int close = 0, ignore = 0, i, n, c;
 	char *str = dstr->str;
 	
 	for (i = 0; i < strlen(str); i++) {
-		if (str[i] == '<') {
+		if (str[i] == '<' && (!i || str[i-1] != '\\')) {
 			close = 0;
-			for (n = 0; str[i+n] != '>'; n++)
+			for (n = 1; str[i+n] != '>' || str[i+n-1] == '\\'; n++)
 				if (str[n] == 0)
 					return;
 			if (str[i+1] == '/')
 				close = 1;
-			if (!strncmp(str+i+close+1, "g", 1))
-				tag_gold = tag_gold > 0 && close ? tag_gold - 1 : tag_gold + 1;
-			if (!strncmp(str+i+close+1, "b", 1))
-				tag_shift = tag_shift > 0 && close ? tag_shift - 1 : tag_shift + 1;
-			if (!strncmp(str+i+close+1, "s", 1))
-				tag_special = tag_special > 0 && close ? tag_special - 1 : tag_special + 1;
+			if (!strncmp(str+i+close+1, "i", 1)) {
+				if (ignore && !close) // If we are ignoring, ignore a non close
+					continue;
+				else if (close && ignore) // If we are closing, turn off ignore
+					ignore--;
+				else if (!close)
+					ignore++; // Otherwise, turn ignore on
+			}					
+			else if (ignore) // If ignore isn't being changed and we are ignore, go on
+				continue;
+			else if (!strncmp(str+i+close+1, "g", 1))
+				tag_gold = close ? tag_gold - 1 : tag_gold + 1;
+			else if (!strncmp(str+i+close+1, "b", 1))
+				tag_shift = close ? tag_shift - 1 : tag_shift + 1;
+			else if (!strncmp(str+i+close+1, "s", 1))
+				tag_special = close ? tag_special - 1 : tag_special + 1;
+			if (tag_gold < 0)
+				tag_gold = 0;
+			if (tag_shift < 0)
+				tag_shift = 0;
+			if (tag_special < 0)
+				tag_special = 0;
 			dstring_snip(dstr, i, n+1);
 			i--;
 			continue;
 		}
 		c = str[i];	
-
-		if (tag_gold && c >='0' && c <= '9')
-				c = (str[i] += (146 - '0'));
-		if (tag_special)
-				for (n = 0; stable1[n].a; n++)
-					if (c == stable1[n].a)
-						c = str[i] = stable1[n].b;
-		if (tag_shift && c < 128)
-				c = (str[i] += 128);
+		/* This ignores escape characters, unless it is itself escaped */
+		if (c == '\\' && (!i || str[i-1] != '\\'))
+			continue;
+		else if (tag_gold && c >='0' && c <= '9')
+			c = (str[i] += (146 - '0'));
+		else if (tag_special) {
+			for (n = 0; stable1[n].a; n++)
+				if (c == stable1[n].a)
+					c = str[i] = stable1[n].b;
+		}
+		else if (tag_shift && c < 128)
+			c = (str[i] += 128);
 	}
 }
 	
+void Cmd_ProcessEscapes (dstring_t *dstr) {
+	int i;
+	char *str = dstr->str;
+	
+	for (i = 0; i < strlen(str); i++) {
+		if (str[i] == '\\' && str[i+1]) {
+			dstring_snip(dstr, i, 1);
+			if (str[i] == '\\')
+				i++;
+			if (str[i] == 'n')
+				str[i] = '\n';
+			i--;
+		}
+	}
+}
+
 void Cmd_TokenizeString (const char *text) {
 	int i = 0, n, len = 0, quotes = 0, space;
 	const char *str = text;
@@ -526,6 +555,10 @@ void Cmd_TokenizeString (const char *text) {
 	tag_shift = 0;
 	tag_gold = 0;
 	tag_special = 0;
+	printf("String in: %s\n", text);
+	if (text[0] == '|')
+		str++;
+	printf("Tokenizing: %s\n", str);
 	while (strlen(str + i)) {
 		space = 0;
 		while (isspace(str[i])) {
@@ -559,7 +592,10 @@ void Cmd_TokenizeString (const char *text) {
 			quotes = 1;
 		}
 		dstring_insert(cmd_argv[cmd_argc-1], str + i, len, 0);
-		Cmd_ProcessTags(cmd_argv[cmd_argc-1]);
+		if (text[0] != '|') { // Lines beginning with | are not modified
+			Cmd_ProcessTags(cmd_argv[cmd_argc-1]);
+			Cmd_ProcessEscapes(cmd_argv[cmd_argc-1]);
+		}
 		i += len + quotes; /* If we ended on a quote, skip it */
 	}
 	/* Now we must reconstruct cmd_args */
