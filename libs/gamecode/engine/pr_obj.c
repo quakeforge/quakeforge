@@ -164,6 +164,11 @@ pr___obj_exec_class (progs_t *pr)
 			val = Hash_Find (pr->classes, PR_GetString (pr,
 														class->super_class));
 			meta->super_class = class->super_class = val - pr->pr_globals;
+		} else {
+			pointer_t  *ml = &class->methods;
+			while (*ml)
+				ml = &G_STRUCT (pr, pr_method_list_t, *ml).method_next;
+			*ml = meta->methods;
 		}
 		Sys_DPrintf ("    %d %d %d\n", meta->class_pointer, meta->super_class,
 					 class->super_class);
@@ -189,13 +194,15 @@ obj_find_message (progs_t *pr, pr_class_t *class, pr_sel_t *selector)
 	int         i;
 
 	while (c) {
-		if (c->methods) {
-			method_list = &G_STRUCT (pr, pr_method_list_t, c->methods);
+		method_list = &G_STRUCT (pr, pr_method_list_t, c->methods);
+		while (method_list) {
 			for (i = 0, method = method_list->method_list;
-				 i < method_list->method_count; i++) {
+				 i < method_list->method_count; i++, method++) {
 				if (method->method_name.sel_id == selector->sel_id)
 					return method->method_imp;
 			}
+			method_list = &G_STRUCT (pr, pr_method_list_t,
+									 method_list->method_next);
 		}
 		c = c->super_class ? &G_STRUCT (pr, pr_class_t, c->super_class) : 0;
 	}
