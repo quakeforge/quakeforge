@@ -186,13 +186,12 @@ vector_component (int is_field, def_t *vec, int comp, scope_t *scope,
 	if (vec->external) {
 		d = get_def (is_field ? &type_floatfield : &type_float, name, scope,
 					 st_none);
-		if (!d) {
+		if (d) {
 			error (0, "internal error");
 			abort ();
 		}
-	} else {
-		d = new_def (is_field ? &type_floatfield : &type_float, name, scope);
 	}
+	d = new_def (is_field ? &type_floatfield : &type_float, name, scope);
 	d->used = 1;
 	d->parent = vec;
 	d->ofs = vec->ofs + comp;
@@ -248,6 +247,8 @@ get_def (type_t *type, const char *name, scope_t *scope,
 			def->ofs = new_location (type, space);
 	}
 
+	set_storage_bits (def, storage);
+
 	// make automatic defs for the vectors elements .origin can be accessed
 	// as .origin_x, .origin_y, and .origin_z
 	if (type->type == ev_vector && name) {
@@ -266,7 +267,6 @@ get_def (type_t *type, const char *name, scope_t *scope,
 			vector_component (1, def, 2, scope, storage);
 		}
 	}
-	set_storage_bits (def, storage);
 	if (storage == st_extern)
 		def_initialized (def);
 

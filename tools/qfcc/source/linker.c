@@ -533,11 +533,13 @@ linker_finish (void)
 		free (undef_defs);
 		undef_defs = (qfo_def_t **) Hash_GetList (extern_defs);
 		for (def = undef_defs; *def; def++) {
-			const char *name = strings->strings + (*def)->name;
-			pr.source_file = (*def)->file;
-			pr.source_line = (*def)->line;
-			pr.strings = strings;
-			error (0, "undefined symbol %s", name);
+			if ((*def)->num_relocs) {
+				const char *name = strings->strings + (*def)->name;
+				pr.source_file = (*def)->file;
+				pr.source_line = (*def)->line;
+				pr.strings = strings;
+				error (0, "undefined symbol %s", name);
+			}
 		}
 		free (undef_defs);
 		if (pr.error_count)

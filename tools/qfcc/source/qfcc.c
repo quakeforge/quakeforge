@@ -365,9 +365,9 @@ finish_compilation (void)
 		}
 
 	for (d = pr.scope->head; d; d = d->def_next) {
-		if (d->external) {
+		if (d->external && d->refs) {
 			errors = true;
-			error (0, "undefined global %s\n", d->name);
+			error (0, "undefined global %s", d->name);
 		}
 	}
 	if (errors)
