@@ -2370,8 +2370,10 @@ init_elements (def_t *def, expr_t *eles)
 		return;
 	}
 	for (count = 0, e = eles->e.block.head; e; count++, e = e->next)
-		if (e->type == ex_error)
+		if (e->type == ex_error) {
+			free (elements);
 			return;
+		}
 	if (count > def->type->num_parms) {
 		warning (eles, "excessive elements in initializer");
 		count = def->type->num_parms;
@@ -2404,6 +2406,7 @@ init_elements (def_t *def, expr_t *eles)
 			error (e, "non-constant initializer");
 		}
 	}
+	free (elements);
 }
 
 expr_t *
