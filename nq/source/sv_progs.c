@@ -261,13 +261,13 @@ SV_LoadProgs (void)
 	sv_fields.noise2 = PR_GetFieldOffset (&sv_pr_state, "noise2");
 	sv_fields.noise3 = PR_GetFieldOffset (&sv_pr_state, "noise3");
 	sv_fields.dmg = PR_GetFieldOffset (&sv_pr_state, "dmg");
-	sv_fields.dmgtime = PR_GetFieldOffset (&sv_pr_state, "dmgtime");
-	sv_fields.air_finished = PR_GetFieldOffset (&sv_pr_state, "air_finished");
-	sv_fields.pain_finished = PR_GetFieldOffset (&sv_pr_state, "pain_finished");
-	sv_fields.radsuit_finished = PR_GetFieldOffset (&sv_pr_state, "radsuit_finished");
-	sv_fields.speed = PR_GetFieldOffset (&sv_pr_state, "speed");
 
 	// Quake 2 fields?
+	sv_fields.dmgtime = ED_GetFieldIndex (&sv_pr_state, "dmgtime");
+	sv_fields.air_finished = ED_GetFieldIndex (&sv_pr_state, "air_finished");
+	sv_fields.pain_finished = ED_GetFieldIndex (&sv_pr_state, "pain_finished");
+	sv_fields.radsuit_finished = ED_GetFieldIndex (&sv_pr_state, "radsuit_finished");
+	sv_fields.speed = ED_GetFieldIndex (&sv_pr_state, "speed");
 	sv_fields.basevelocity = ED_GetFieldIndex (&sv_pr_state, "basevelocity");
 	sv_fields.drawPercent = ED_GetFieldIndex (&sv_pr_state, "drawPercent");
 	sv_fields.gravity = ED_GetFieldIndex (&sv_pr_state, "gravity");
