@@ -4,4 +4,4 @@ float time;
 
 float (string s) cvar = #45;
 void (string var, string val) cvar_set = #72;
-string () gametype = #115;
+string () gametype = #0x000f0000 + 115;

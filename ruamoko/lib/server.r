@@ -9,4 +9,4 @@ string (string s) precache_file = #68;
 string (string s) precache_model2 = #75;
 string (string s) precache_sound2 = #76;
 string (string s) precache_file2 = #77;
-float () checkextension = #99;
+float () checkextension = #0x000f0000 + 99;
