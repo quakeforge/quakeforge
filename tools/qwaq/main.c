@@ -131,7 +131,6 @@ load_progs (const char *name)
 
 	file = open_file (name, &size);
 	if (!file) {
-		perror (name);
 		return 0;
 	}
 	pr.progs_name = name;
