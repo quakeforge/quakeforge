@@ -963,13 +963,17 @@ field_expr (expr_t *e1, expr_t *e2)
 							int         ofs;
 
 							if (e1->e.expr.e2->type == ex_def)
-								ofs = e1->e.expr.e2->e.def->ofs;
+								ofs = G_INT (e1->e.expr.e2->e.def->ofs);
 							else if (e1->e.expr.e2->type == ex_field)
 								ofs = e1->e.expr.e2->e.field_val;
 							else
 								break;
-							e = new_field_expr (ofs + field->offset);
-							e = new_binary_expr ('.', e1->e.expr.e1, e);
+							if (field->offset) {
+								e = new_field_expr (ofs + field->offset);
+								e = new_binary_expr ('.', e1->e.expr.e1, e);
+							} else {
+								e = e1;
+							}
 							e->e.expr.type = field->type;
 							return e;
 						}
