@@ -808,7 +808,7 @@ IN_LL_SendKeyEvents (void)
 				}
 				if (unicode > 255)
 					unicode = 0;
-				Key_Event (sym, unicode, state);
+				Key_Event (ksym, unicode, state);
 				break;
 
 			case SDL_MOUSEBUTTONDOWN:
