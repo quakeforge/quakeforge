@@ -2,7 +2,7 @@
 
 vector v_forward, v_up, v_right;
 
-void (entity e) makevectors = #1;
+void (vector ang) makevectors = #1;
 float () random = #7;
 integer (float f) ftoi = #110;
 float (integer i) itof = #111;

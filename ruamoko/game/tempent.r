@@ -1,4 +1,4 @@
-#include "message.h"
+#include "qw_message.h"
 #include "tempent.h"
 
 void(vector org, float damage) SpawnBlood =

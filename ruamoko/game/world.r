@@ -4,10 +4,6 @@
 id world;
 integer deathmatch;
 
-void(entity e, vector min, vector max) setsize = #0;
-void(entity e, vector o) setorigin = #0;
-
-
 #define MAX_BODIES 8
 
 @interface BodyQue : Object

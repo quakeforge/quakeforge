@@ -11,7 +11,7 @@
 @extern float		trace_inopen;
 @extern float		trace_inwater;
 
-@extern float (vector v1, vector v2, float tryents) traceline;
+@extern void (vector v1, vector v2, float nomonsters, entity forent) traceline;
 @extern entity () checkclient;
 @extern float (float yaw, float dist) walkmove;
 @extern float () droptofloor;

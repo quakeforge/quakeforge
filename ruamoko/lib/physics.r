@@ -10,9 +10,8 @@ entity		trace_ent;
 float		trace_inopen;
 float		trace_inwater;
 
-void(vector v1, vector v2, float nomonsters, entity forent) traceline = #0;
 
-float (vector v1, vector v2, float tryents) traceline = #16;
+void (vector v1, vector v2, float nomonsters, entity forent) traceline = #16;
 entity () checkclient = #17;
 float (float yaw, float dist) walkmove = #32;
 float () droptofloor = #34;

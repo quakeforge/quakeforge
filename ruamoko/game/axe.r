@@ -1,10 +1,10 @@
 #include "axe.h"
 #include "gameent.h"
-#include "message.h"
+#include "math.h"
+#include "physics.h"
+#include "qw_message.h"
 #include "sound.h"
 #include "tempent.h"
-#include "trace.h"
-#include "vector.h"
 #include "world.h"
 
 @implementation Axe

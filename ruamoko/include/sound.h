@@ -13,7 +13,7 @@
 #define ATTN_IDLE 2
 #define ATTN_STATIC 3
 
-@extern void (entity e, float chan, string samp) sound;
+@extern void (entity e, float chan, string samp, float vol, float atten) sound;
 @extern void (vector pos, string samp, float vol, float atten) ambientsound;
 
 #endif//__sound_h

@@ -3,7 +3,7 @@
 
 @extern vector v_forward, v_up, v_right;
 
-@extern void (entity e) makevectors;
+@extern void (vector ang) makevectors;
 @extern float () random;
 @extern integer (float f) ftoi;
 @extern float (integer i) itof;
