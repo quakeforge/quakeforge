@@ -65,7 +65,7 @@ typedef struct {
 
 %type	<type>	type maybe_func
 %type	<def>	param param_list def_item def_list def_name
-%type	<expr>	signed_const const expr arg_list
+%type	<expr>	const expr arg_list
 %type	<expr>	statement statements statement_block
 %type	<function> begin_function
 
@@ -470,14 +470,6 @@ arg_list
 		{
 			$3->next = $1;
 			$$ = $3;
-		}
-	;
-
-signed_const
-	: const
-	| '-' signed_const
-		{
-			$$ = unary_expr ('-', $2);
 		}
 	;
 
