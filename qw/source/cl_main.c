@@ -1340,9 +1340,9 @@ Host_Error (const char *error, ...)
 	inerror = true;
 
 	va_start (argptr, error);
-	vsnprintf (string, sizeof (string), error, argptr);
+	Con_Printf ("Host_Error: ");
+	Con_Print (error, argptr);
 	va_end (argptr);
-	Con_Printf ("Host_Error: %s\n", string);
 
 	CL_Disconnect ();
 	cls.demonum = -1;
@@ -1350,7 +1350,11 @@ Host_Error (const char *error, ...)
 	inerror = false;
 
 // FIXME
-	Sys_Error ("Host_Error: %s\n", string);
+	if (host_initialized) {
+		longjmp (host_abort, 1);
+	} else {
+		Sys_Error ("Host_Error: %s\n", string);
+	}
 }
 
 /*

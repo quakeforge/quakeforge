@@ -246,7 +246,7 @@ FlushEntityPacket (void)
 	while (1) {
 		word = (unsigned short) MSG_ReadShort (net_message);
 		if (net_message->badread) {			// something didn't parse right...
-			Host_EndGame ("msg_badread in packetentities");
+			Host_Error ("msg_badread in packetentities");
 			return;
 		}
 
@@ -308,7 +308,7 @@ CL_ParsePacketEntities (qboolean delta)
 	while (1) {
 		word = (unsigned short) MSG_ReadShort (net_message);
 		if (net_message->badread) {			// something didn't parse right...
-			Host_EndGame ("msg_badread in packetentities");
+			Host_Error ("msg_badread in packetentities");
 			return;
 		}
 
@@ -316,8 +316,8 @@ CL_ParsePacketEntities (qboolean delta)
 			while (oldindex < oldp->num_entities) {	
 //				Con_Printf ("copy %i\n", oldp->entities[oldindex].number);
 				if (newindex >= MAX_PACKET_ENTITIES)
-					Host_EndGame ("CL_ParsePacketEntities: newindex == "
-								  "MAX_PACKET_ENTITIES");
+					Host_Error ("CL_ParsePacketEntities: newindex == "
+								"MAX_PACKET_ENTITIES");
 				newp->entities[newindex] = oldp->entities[oldindex];
 				newindex++;
 				oldindex++;
@@ -337,8 +337,8 @@ CL_ParsePacketEntities (qboolean delta)
 //			Con_Printf ("copy %i\n", oldnum);
 			// copy one of the old entities over to the new packet unchanged
 			if (newindex >= MAX_PACKET_ENTITIES)
-				Host_EndGame ("CL_ParsePacketEntities: newindex == "
-							  "MAX_PACKET_ENTITIES");
+				Host_Error ("CL_ParsePacketEntities: newindex == "
+							"MAX_PACKET_ENTITIES");
 			newp->entities[newindex] = oldp->entities[oldindex];
 			newindex++;
 			oldindex++;
@@ -359,8 +359,8 @@ CL_ParsePacketEntities (qboolean delta)
 			}
 
 			if (newindex >= MAX_PACKET_ENTITIES)
-				Host_EndGame ("CL_ParsePacketEntities: newindex == "
-							  "MAX_PACKET_ENTITIES");
+				Host_Error ("CL_ParsePacketEntities: newindex == "
+							"MAX_PACKET_ENTITIES");
 			CL_ParseDelta (&cl_baselines[newnum], &newp->entities[newindex],
 						   word);
 			newindex++;
@@ -626,7 +626,7 @@ CL_ParsePlayerinfo (void)
 	num = MSG_ReadByte (net_message);
 	if (num > MAX_CLIENTS)
 //		Sys_Error ("CL_ParsePlayerinfo: bad num");
-		Host_EndGame ("CL_ParsePlayerinfo: bad num");
+		Host_Error ("CL_ParsePlayerinfo: bad num");
 
 	state = &cl.frames[parsecountmod].playerstate[num];
 

@@ -623,9 +623,9 @@ CL_ParseServerData (void)
 	if (protover != PROTOCOL_VERSION &&
 		!(cls.demoplayback
 		  && (protover <= 26 && protover >= 28)))
-			Host_EndGame ("Server returned version %i, not %i\nYou probably "
-						  "need to upgrade.\nCheck http://www.quakeworld.net/",
-						  protover, PROTOCOL_VERSION);
+			Host_Error ("Server returned version %i, not %i\nYou probably "
+						"need to upgrade.\nCheck http://www.quakeworld.net/",
+						protover, PROTOCOL_VERSION);
 
 	cl.servercount = MSG_ReadLong (net_message);
 
@@ -732,7 +732,7 @@ CL_ParseSoundlist (void)
 			break;
 		numsounds++;
 		if (numsounds == MAX_SOUNDS)
-			Host_EndGame ("Server sent too many sound_precache");
+			Host_Error ("Server sent too many sound_precache");
 		strcpy (cl.sound_name[numsounds], str);
 	}
 
@@ -765,7 +765,7 @@ CL_ParseModellist (void)
 			break;
 		nummodels++;
 		if (nummodels == MAX_MODELS)
-			Host_EndGame ("Server sent too many model_precache");
+			Host_Error ("Server sent too many model_precache");
 		strcpy (cl.model_name[nummodels], str);
 
 		if (!strcmp (cl.model_name[nummodels], "progs/spike.mdl"))
@@ -836,7 +836,7 @@ CL_ParseStatic (void)
 	CL_ParseBaseline (&es);
 
 	if (cl.num_statics >= MAX_STATIC_ENTITIES)
-		Host_EndGame ("Too many static entities");
+		Host_Error ("Too many static entities");
 	ent = &cl_static_entities[cl.num_statics++];
 	CL_Init_Entity (ent);
 
@@ -896,7 +896,7 @@ CL_ParseStartSoundPacket (void)
 	channel &= 7;
 
 	if (ent > MAX_EDICTS)
-		Host_EndGame ("CL_ParseStartSoundPacket: ent = %i", ent);
+		Host_Error ("CL_ParseStartSoundPacket: ent = %i", ent);
 
 	S_StartSound (ent, channel, cl.sound_precache[sound_num], pos,
 				  volume / 255.0, attenuation);
@@ -982,7 +982,7 @@ CL_UpdateUserinfo (void)
 
 	slot = MSG_ReadByte (net_message);
 	if (slot >= MAX_CLIENTS)
-		Host_EndGame
+		Host_Error
 			("CL_ParseServerMessage: svc_updateuserinfo > MAX_SCOREBOARD");
 
 	player = &cl.players[slot];
@@ -1005,7 +1005,7 @@ CL_SetInfo (void)
 
 	slot = MSG_ReadByte (net_message);
 	if (slot >= MAX_CLIENTS)
-		Host_EndGame ("CL_ParseServerMessage: svc_setinfo > MAX_SCOREBOARD");
+		Host_Error ("CL_ParseServerMessage: svc_setinfo > MAX_SCOREBOARD");
 
 	player = &cl.players[slot];
 
@@ -1059,7 +1059,7 @@ CL_SetStat (int stat, int value)
 
 	if (stat < 0 || stat >= MAX_CL_STATS)
 //		Sys_Error ("CL_SetStat: %i is invalid", stat);
-		Host_EndGame ("CL_SetStat: %i is invalid", stat);
+		Host_Error ("CL_SetStat: %i is invalid", stat);
 
 	Sbar_Changed ();
 
@@ -1136,7 +1136,7 @@ CL_ParseServerMessage (void)
 	// parse the message
 	while (1) {
 		if (net_message->badread) {
-			Host_EndGame ("CL_ParseServerMessage: Bad server message");
+			Host_Error ("CL_ParseServerMessage: Bad server message");
 			break;
 		}
 
@@ -1154,8 +1154,7 @@ CL_ParseServerMessage (void)
 		// other commands
 		switch (cmd) {
 			default:
-				Host_EndGame
-					("CL_ParseServerMessage: Illegible server message");
+				Host_Error ("CL_ParseServerMessage: Illegible server message");
 				break;
 
 			case svc_nop:
@@ -1226,7 +1225,7 @@ CL_ParseServerMessage (void)
 				i = MSG_ReadByte (net_message);
 				if (i >= MAX_LIGHTSTYLES)
 //					Sys_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
-					Host_EndGame ("svc_lightstyle > MAX_LIGHTSTYLES");
+					Host_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
 				strcpy (r_lightstyle[i].map, MSG_ReadString (net_message));
 				r_lightstyle[i].length = strlen (r_lightstyle[i].map);
 				break;
@@ -1244,24 +1243,24 @@ CL_ParseServerMessage (void)
 				Sbar_Changed ();
 				i = MSG_ReadByte (net_message);
 				if (i >= MAX_CLIENTS)
-					Host_EndGame ("CL_ParseServerMessage: svc_updatefrags > "
-								  "MAX_SCOREBOARD");
+					Host_Error ("CL_ParseServerMessage: svc_updatefrags > "
+								"MAX_SCOREBOARD");
 				cl.players[i].frags = MSG_ReadShort (net_message);
 				break;
 
 			case svc_updateping:
 				i = MSG_ReadByte (net_message);
 				if (i >= MAX_CLIENTS)
-					Host_EndGame ("CL_ParseServerMessage: svc_updateping > "
-						 "MAX_SCOREBOARD");
+					Host_Error ("CL_ParseServerMessage: svc_updateping > "
+								"MAX_SCOREBOARD");
 				cl.players[i].ping = MSG_ReadShort (net_message);
 				break;
 
 			case svc_updatepl:
 				i = MSG_ReadByte (net_message);
 				if (i >= MAX_CLIENTS)
-					Host_EndGame ("CL_ParseServerMessage: svc_updatepl > "
-								  "MAX_SCOREBOARD");
+					Host_Error ("CL_ParseServerMessage: svc_updatepl > "
+								"MAX_SCOREBOARD");
 				cl.players[i].pl = MSG_ReadByte (net_message);
 				break;
 
@@ -1269,8 +1268,8 @@ CL_ParseServerMessage (void)
 				// time is sent over as seconds ago
 				i = MSG_ReadByte (net_message);
 				if (i >= MAX_CLIENTS)
-					Host_EndGame ("CL_ParseServerMessage: svc_updateentertime "
-								  "> MAX_SCOREBOARD");
+					Host_Error ("CL_ParseServerMessage: svc_updateentertime "
+								"> MAX_SCOREBOARD");
 				cl.players[i].entertime = realtime - MSG_ReadFloat
 					(net_message);
 				break;
