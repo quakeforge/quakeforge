@@ -125,20 +125,21 @@ bi_tanh (progs_t *pr)
 static void
 bi_asinh (progs_t *pr)
 {
-	R_FLOAT (pr) = asinh (P_FLOAT (pr, 0));
+	double      y = P_FLOAT (pr, 0);
+	R_FLOAT (pr) = log (y + sqrt (y * y + 1));
 }
 
 static void
 bi_acosh (progs_t *pr)
 {
-	R_FLOAT (pr) = acosh (P_FLOAT (pr, 0));
-}
+	double      y = P_FLOAT (pr, 0);
+	R_FLOAT (pr) = log (y + sqrt (y * y - 1));
 
 static void
 bi_atanh (progs_t *pr)
 {
-	R_FLOAT (pr) = atanh (P_FLOAT (pr, 0));
-}
+	double      y = P_FLOAT (pr, 0);
+	R_FLOAT (pr) = log ((1 + y) / (1 - y)) / 2;
 
 static builtin_t builtins[] = {
 	{"sin",		bi_sin,		-1},
