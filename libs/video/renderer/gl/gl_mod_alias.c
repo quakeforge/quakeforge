@@ -543,10 +543,12 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 
 		for (lnum = 0; lnum < r_maxdlights; lnum++) {
 			if (r_dlights[lnum].die >= r_realtime) {
+				float       d;
+
 				VectorSubtract (e->origin, r_dlights[lnum].origin, dist);
-				add = ((r_dlights[lnum].radius
-						* r_dlights[lnum].radius * 8)
-					   / DotProduct (dist, dist));	// FIXME Deek
+				d = DotProduct (dist, dist);
+				d = max (d, 1);
+				add = r_dlights[lnum].radius * r_dlights[lnum].radius * 8 / d;
 
 				if (add > 0) {
 					VectorMA (ambientcolor, add, r_dlights[lnum].color,
