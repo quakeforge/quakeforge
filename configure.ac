@@ -40,10 +40,10 @@ AC_SUBST(ISODATE)
 
 AC_LANG_C
 
-if test ${CFLAGS-unset} = unset; then
+if test "x${CFLAGS-unset}" = xunset; then
 	CFLAGS=""
 fi
-if test ${AR-unset} = unset; then
+if test "$x{AR-unset}" = xunset; then
 	AR="ar"
 fi
 export AR
@@ -53,7 +53,7 @@ case "$host_os" in
 	mingw32*)
 		mingw=yes
 		CFLAGS="$CFLAGS -I\$(top_srcdir)/include/win32"
-		if test "$host" != "$build"; then
+		if test "x$host" != "x$build"; then
 			case "$build_os" in
 				cygwin*)
 					CFLAGS="$CFLAGS -mno-cygwin -mconsole"
@@ -71,7 +71,7 @@ case "$host_os" in
 		;;
 	cygwin*)
 		cygwin=yes
-		if test "$host" != "$build"; then
+		if test "x$host" != "x$build"; then
 			CC="$host_cpu-$host_os-gcc"
 			AS="$CC"
 			AR="$host_cpu_$host_os-ar"
@@ -192,7 +192,7 @@ AC_STRUCT_ST_BLKSIZE
 AC_HEADER_TIME
 AC_STRUCT_TM
 
-if test "$ac_cv_header_unistd_h" = yes; then
+if test "x$ac_cv_header_unistd_h" = xyes; then
 AC_MSG_CHECKING(for _SC_PAGESIZE)
 AC_TRY_COMPILE(
 	[#include <unistd.h>],
@@ -274,7 +274,7 @@ AC_TRY_LINK(
 	BUILD_FNMATCH=yes
 	AC_MSG_RESULT(no)
 )
-AM_CONDITIONAL(BUILD_FNMATCH, test "$BUILD_FNMATCH" = "yes")
+AM_CONDITIONAL(BUILD_FNMATCH, test "x$BUILD_FNMATCH" = "xyes")
 
 AC_MSG_CHECKING(for alloca in stdlib.h)
 AC_TRY_COMPILE(
@@ -286,7 +286,7 @@ AC_TRY_COMPILE(
 	AC_MSG_RESULT(no)
 )
 
-if test "$have_alloca_proto" = no -a "$ac_cv_header_alloca_h" = yes; then
+if test "x$have_alloca_proto" = no -a "x$ac_cv_header_alloca_h" = yes; then
 	AC_MSG_CHECKING(for alloca in alloca.h)
 	AC_TRY_COMPILE(
 		[#include <stdlib.h>]
@@ -299,7 +299,7 @@ if test "$have_alloca_proto" = no -a "$ac_cv_header_alloca_h" = yes; then
 	)
 fi
 
-if test "$have_alloca_proto" = yes; then
+if test "x$have_alloca_proto" = xyes; then
 	AC_DEFINE(HAVE_ALLOCA_PROTO)
 fi
 AH_VERBATIM([HAVE_ALLOCA_PROTO],
@@ -479,7 +479,7 @@ dnl Checks for stricmp/strcasecmp
 #	)
 #)
 AC_CHECK_FUNC(strcasecmp, strcasecmp=yes, strcasecmp=no)
-if test $strcasecmp = no; then
+if test "x$strcasecmp" = xno; then
 	AC_CHECK_FUNC(stricmp,
 		AC_DEFINE(strcasecmp, stricmp, [Define strcasecmp as stricmp if you have one but not the other]),
 		AC_MSG_ERROR([Neither stricmp nor strcasecmp found])
@@ -514,9 +514,9 @@ AC_ARG_ENABLE(vorbis,
 HAVE_VORBIS=no
 if test "x$enable_vorbis" != "xno"; then
   AM_PATH_OGG(HAVE_OGG=yes, HAVE_OGG=no)
-  if test $HAVE_OGG = yes; then
+  if test "x$HAVE_OGG" = xyes; then
     AM_PATH_VORBIS(HAVE_VORBIS=yes, HAVE_VORBIS=no)
-    if test $HAVE_VORBIS = yes; then
+    if test "x$HAVE_VORBIS" = xyes; then
       AC_DEFINE(HAVE_VORBIS, 1, [define this if you have ogg/vorbis libs])
     fi
   fi
@@ -783,7 +783,7 @@ case "${host}" in
 		WIN32_LIBS=''
 		;;
 esac
-AM_CONDITIONAL(SYSTYPE_WIN32, test "$SYSTYPE" = "WIN32")
+AM_CONDITIONAL(SYSTYPE_WIN32, test "x$SYSTYPE" = "xWIN32")
 AC_SUBST(WIN32_LIBS)
 
 dnl Check for ia32
@@ -802,7 +802,7 @@ case "${host}" in
 		;;
 	*) AC_MSG_RESULT(no)
 esac
-AM_CONDITIONAL(ASM_ARCH, test "$ASM_ARCH" = "yes")
+AM_CONDITIONAL(ASM_ARCH, test "x$ASM_ARCH" = "xyes")
 
 dnl ==================================================================
 dnl Checks for sound
@@ -1254,7 +1254,7 @@ AC_ARG_WITH(gl-driver,
 	gl_driver=$withval,
 	gl_driver=auto
 )
-if test "$gl_driver" = auto -o "$gl_driver" = yes; then
+if test "x$gl_driver" = xauto -o "x$gl_driver" = xyes; then
 	if test "$SYSTYPE" = WIN32; then
 		gl_driver="OPENGL32.DLL"
 	else
@@ -1862,7 +1862,7 @@ CD_PLUGIN_STATIC=""
 SND_PLUGIN_STATIC=""
 SND_REND_STATIC=""
 
-if test "$enable_shared" = no; then
+if test "x$enable_shared" = xno; then
 	PREFER_PIC=
 	PREFER_NON_PIC=
 else
@@ -1876,7 +1876,7 @@ AC_ARG_WITH(static-plugins,
 [  --with-static-plugins   build plugins into executable rather than separate],
 	static_plugins="$withval", static_plugins=auto)
 if test "x$static_plugins" = xauto; then
-	if test "$enable_shared" = no -o "x$SYSTYPE" = xWIN32; then
+	if test "x$enable_shared" = xno -o "x$SYSTYPE" = xWIN32; then
 		static_plugins=yes
 	fi
 fi
@@ -2177,7 +2177,7 @@ AC_OUTPUT(
 if test "x$CCVER" = "x"; then
 	CCVER=$CC
 else
-	if test "$CCVER" = "gcc 2.96"; then
+	if test "x$CCVER" = "xgcc 2.96"; then
 		CCVER="$CCVER
 (Note: You might need CC=kgcc ./configure on some systems)"
 	fi
