@@ -230,7 +230,7 @@ error (expr_t *e, const char *fmt, ...)
 		file = e->file;
 		line = e->line;
 	}
-	fprintf (stderr, "%s:%d: ", strings + file, line);
+	fprintf (stderr, "%s:%d: ", pr.strings + file, line);
 	vfprintf (stderr, fmt, args);
 	fputs ("\n", stderr);
 	va_end (args);
@@ -260,7 +260,7 @@ warning (expr_t *e, const char *fmt, ...)
 		file = e->file;
 		line = e->line;
 	}
-	fprintf (stderr, "%s:%d: warning: ", strings + file, line);
+	fprintf (stderr, "%s:%d: warning: ", pr.strings + file, line);
 	vfprintf (stderr, fmt, args);
 	fputs ("\n", stderr);
 	va_end (args);
@@ -472,7 +472,7 @@ new_def_expr (def_t *def)
 expr_t *
 new_self_expr (void)
 {
-	def_t      *def = PR_GetDef (&type_entity, ".self", 0, &numpr_globals);
+	def_t      *def = PR_GetDef (&type_entity, ".self", 0, &pr.num_globals);
 
 	PR_DefInitialized (def);
 	return new_def_expr (def);
@@ -482,7 +482,7 @@ expr_t *
 new_this_expr (void)
 {
 	type_t     *type = field_type (&type_id);
-	def_t      *def = PR_GetDef (type, ".this", 0, &numpr_globals);
+	def_t      *def = PR_GetDef (type, ".this", 0, &pr.num_globals);
 
 	PR_DefInitialized (def);
 	return new_def_expr (def);

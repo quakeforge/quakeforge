@@ -123,7 +123,7 @@ method_def (class_t *class, method_t *method)
 			*s = '_';
 	//printf ("%s %s %s %ld\n", method->name, method->types, str->str, str->size);
 	// FIXME need a file scope
-	def = PR_GetDef (method->type, str->str, 0, &numpr_globals);
+	def = PR_GetDef (method->type, str->str, 0, &pr.num_globals);
 	dstring_delete (str);
 	return def;
 }
@@ -173,7 +173,7 @@ new_keywordarg (const char *selector, struct expr_s *expr)
 static void
 make_message_def (const char *name, def_t **def, function_t **func)
 {
-	*def = PR_GetDef (&type_IMP, name, 0, &numpr_globals);
+	*def = PR_GetDef (&type_IMP, name, 0, &pr.num_globals);
 	*func = new_function ();
 	(*func)->builtin = 0;
 	(*func)->def = *def;
@@ -229,8 +229,8 @@ sel_def_get_hash (void *_sel_def, void *unused)
 	sel_def_t  *sel_def = (sel_def_t*)_sel_def;
 	unsigned long hash;
 
-	hash = Hash_String (strings + sel_def->sel_id)
-		   ^ Hash_String (strings + sel_def->sel_types);
+	hash = Hash_String (pr.strings + sel_def->sel_id)
+		   ^ Hash_String (pr.strings + sel_def->sel_types);
 	return hash;
 }
 
@@ -241,10 +241,10 @@ sel_def_compare (void *_sd1, void *_sd2, void *unused)
 	sel_def_t  *sd2 = (sel_def_t*)_sd2;
 	int         cmp;
 
-	cmp = strcmp (strings + sd1->sel_id, strings + sd2->sel_id) == 0;
+	cmp = strcmp (pr.strings + sd1->sel_id, pr.strings + sd2->sel_id) == 0;
 	if (cmp)
-		cmp = strcmp (strings + sd1->sel_types,
-					  strings + sd2->sel_types) == 0;
+		cmp = strcmp (pr.strings + sd1->sel_types,
+					  pr.strings + sd2->sel_types) == 0;
 	return cmp;
 }
 
@@ -302,7 +302,7 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 	for (i = 0; i < count; i++)
 		new_struct_field (method_list, type_Method.aux_type, 0, vis_public);
 	methods_def = PR_GetDef (method_list, va ("_OBJ_%s_METHODS_%s", type, name),
-							 0, &numpr_globals);
+							 0, &pr.num_globals);
 	methods_def->initialized = methods_def->constant = 1;
 	methods = &G_STRUCT (pr_method_list_t, methods_def->ofs);
 	methods->method_next = 0;

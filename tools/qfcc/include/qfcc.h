@@ -49,6 +49,23 @@ typedef struct {
 	struct def_s	*def_head;		// unused head of linked list
 	struct def_s	**def_tail;		// add new defs after this and move it
 
+	char			*strings;
+	int				strofs;
+	int				strings_size;
+
+	dstatement_t	*statements;
+	int				*statement_linenums;
+	int				num_statements;
+	int				statements_size;
+
+	struct function_s *function_list;
+	dfunction_t		*functions;
+	int				num_functions;
+
+	float			*globals;
+	int				num_globals;
+	int				globals_size;
+
 	int				size_fields;
 } pr_info_t;
 
@@ -62,35 +79,14 @@ extern	int			pr_source_line;
 extern	struct def_s *pr_scope;
 extern	int		pr_error_count;
 
-#define	G_FLOAT(o)		(pr_globals[o])
-#define	G_INT(o)		(*(int *)&pr_globals[o])
-#define	G_VECTOR(o)		(&pr_globals[o])
-#define	G_STRING(o)		(strings + *(string_t *)&pr_globals[o])
-#define	G_FUNCTION(o)	(*(func_t *)&pr_globals[o])
-#define G_STRUCT(t,o)	(*(t *)&pr_globals[o])
+#define	G_FLOAT(o)		(pr.globals[o])
+#define	G_INT(o)		(*(int *)&pr.globals[o])
+#define	G_VECTOR(o)		(&pr.globals[o])
+#define	G_STRING(o)		(pr.strings + *(string_t *)&pr.globals[o])
+#define	G_FUNCTION(o)	(*(func_t *)&pr.globals[o])
+#define G_STRUCT(t,o)	(*(t *)&pr.globals[o])
 
 extern	string_t	s_file;			// filename for function definition
-
-//=============================================================================
-
-#define	MAX_STRINGS		500000
-#define	MAX_GLOBALS		65536
-#define	MAX_FIELDS		1024
-#define	MAX_STATEMENTS	131072
-#define	MAX_FUNCTIONS	8192
-
-extern	char	strings[MAX_STRINGS];
-extern	int		strofs;
-
-extern	dstatement_t	statements[MAX_STATEMENTS];
-extern	int			numstatements;
-extern	int			statement_linenums[MAX_STATEMENTS];
-
-extern	dfunction_t	functions[MAX_FUNCTIONS];
-extern	int			numfunctions;
-
-extern	float		pr_globals[MAX_REGS];
-extern	int			numpr_globals;
 
 const char *strip_path (const char *filename);
 

@@ -88,26 +88,13 @@ pr_info_t   pr;
 int         pr_source_line;
 int         pr_error_count;
 
-float       pr_globals[MAX_REGS];
-int         numpr_globals;
-
-char        strings[MAX_STRINGS];
-int         strofs;
-
-dstatement_t statements[MAX_STATEMENTS];
-int         numstatements;
-int         statement_linenums[MAX_STATEMENTS];
-
-function_t *pr_functions;
-dfunction_t functions[MAX_FUNCTIONS];
-int         numfunctions;
-
-ddef_t      globals[MAX_GLOBALS];
+ddef_t      *globals;
 int         numglobaldefs;
+
 int         num_localdefs;
 const char *big_function = 0;
 
-ddef_t      fields[MAX_FIELDS];
+ddef_t      *fields;
 int         numfielddefs;
 
 
@@ -116,9 +103,13 @@ InitData (void)
 {
 	int         i;
 
-	numstatements = 1;
-	strofs = 1;
-	numfunctions = 1;
+	pr.num_statements = 1;
+	pr.strofs = 1;
+	pr.num_functions = 1;
+
+	pr.globals = calloc (65536, 4); //FIXME
+	pr.globals_size = 65536;
+
 	numglobaldefs = 1;
 	numfielddefs = 1;
 
@@ -137,6 +128,9 @@ WriteData (int crc)
 	pr_debug_header_t debug;
 	FILE       *h;
 	int         i;
+
+	globals = calloc (pr.num_globals, sizeof (ddef_t)); //FIXME
+	fields = calloc (pr.num_globals, sizeof (ddef_t)); //FIXME
 
 	for (def = pr.def_head; def; def = def->def_next) {
 		if (def->scope)
@@ -162,48 +156,53 @@ WriteData (int crc)
 		dd->ofs = def->ofs;
 	}
 
-	strofs = (strofs + 3) & ~3;
+	pr.strofs = (pr.strofs + 3) & ~3;
 
 	if (options.verbosity >= 0) {
-		printf ("%6i strofs\n", strofs);
-		printf ("%6i statements\n", numstatements);
-		printf ("%6i functions\n", numfunctions);
-		printf ("%6i globaldefs\n", numglobaldefs);
+		printf ("%6i strofs\n", pr.strofs);
+		printf ("%6i statements\n", pr.num_statements);
+		printf ("%6i functions\n", pr.num_functions);
+		printf ("%6i global defs\n", numglobaldefs);
 		printf ("%6i locals size (%s)\n", num_localdefs, big_function);
 		printf ("%6i fielddefs\n", numfielddefs);
-		printf ("%6i pr_globals\n", numpr_globals);
-		printf ("%6i entityfields\n", pr.size_fields);
+		printf ("%6i globals\n", pr.num_globals);
+		printf ("%6i entity fields\n", pr.size_fields);
 	}
 
 	h = SafeOpenWrite (destfile);
 	SafeWrite (h, &progs, sizeof (progs));
 
 	progs.ofs_strings = ftell (h);
-	progs.numstrings = strofs;
-	SafeWrite (h, strings, strofs);
+	progs.numstrings = pr.strofs;
+	SafeWrite (h, pr.strings, pr.strofs);
 
 	progs.ofs_statements = ftell (h);
-	progs.numstatements = numstatements;
-	for (i = 0; i < numstatements; i++) {
-		statements[i].op = LittleShort (statements[i].op);
-		statements[i].a = LittleShort (statements[i].a);
-		statements[i].b = LittleShort (statements[i].b);
-		statements[i].c = LittleShort (statements[i].c);
+	progs.numstatements = pr.num_statements;
+	for (i = 0; i < pr.num_statements; i++) {
+		pr.statements[i].op = LittleShort (pr.statements[i].op);
+		pr.statements[i].a = LittleShort (pr.statements[i].a);
+		pr.statements[i].b = LittleShort (pr.statements[i].b);
+		pr.statements[i].c = LittleShort (pr.statements[i].c);
 	}
-	SafeWrite (h, statements, numstatements * sizeof (dstatement_t));
+	SafeWrite (h, pr.statements, pr.num_statements * sizeof (dstatement_t));
 
-	progs.ofs_functions = ftell (h);
-	progs.numfunctions = numfunctions;
-	for (i = 0; i < numfunctions; i++) {
-		functions[i].first_statement =
-			LittleLong (functions[i].first_statement);
-		functions[i].parm_start = LittleLong (functions[i].parm_start);
-		functions[i].s_name = LittleLong (functions[i].s_name);
-		functions[i].s_file = LittleLong (functions[i].s_file);
-		functions[i].numparms = LittleLong (functions[i].numparms);
-		functions[i].locals = LittleLong (functions[i].locals);
+	{
+		function_t *f;
+
+		progs.ofs_functions = ftell (h);
+		progs.numfunctions = pr.num_functions;
+		pr.functions = malloc (pr.num_functions * sizeof (dfunction_t));
+		for (i = 0, f = pr.function_list; f; i++, f = f->next) {
+			pr.functions[i].first_statement =
+				LittleLong (f->dfunc->first_statement);
+			pr.functions[i].parm_start = LittleLong (f->dfunc->parm_start);
+			pr.functions[i].s_name = LittleLong (f->dfunc->s_name);
+			pr.functions[i].s_file = LittleLong (f->dfunc->s_file);
+			pr.functions[i].numparms = LittleLong (f->dfunc->numparms);
+			pr.functions[i].locals = LittleLong (f->dfunc->locals);
+		}
+		SafeWrite (h, pr.functions, pr.num_functions * sizeof (dfunction_t));
 	}
-	SafeWrite (h, functions, numfunctions * sizeof (dfunction_t));
 
 	progs.ofs_globaldefs = ftell (h);
 	progs.numglobaldefs = numglobaldefs;
@@ -224,10 +223,10 @@ WriteData (int crc)
 	SafeWrite (h, fields, numfielddefs * sizeof (ddef_t));
 
 	progs.ofs_globals = ftell (h);
-	progs.numglobals = numpr_globals;
-	for (i = 0; i < numpr_globals; i++)
-		((int *) pr_globals)[i] = LittleLong (((int *) pr_globals)[i]);
-	SafeWrite (h, pr_globals, numpr_globals * 4);
+	progs.numglobals = pr.num_globals;
+	for (i = 0; i < pr.num_globals; i++)
+		((int *) pr.globals)[i] = LittleLong (((int *) pr.globals)[i]);
+	SafeWrite (h, pr.globals, pr.num_globals * 4);
 
 	if (options.verbosity >= -1)
 		printf ("%6i TOTAL SIZE\n", (int) ftell (h));
@@ -304,7 +303,7 @@ WriteData (int crc)
 void
 PR_BeginCompilation (void)
 {
-	numpr_globals = RESERVED_OFS;
+	pr.num_globals = RESERVED_OFS;
 	pr.def_tail = &pr.def_head;
 
 	pr_error_count = 0;
@@ -314,22 +313,17 @@ void
 PR_RelocateRefs (def_t *def)
 {
 	statref_t  *ref;
-	int        *d;
 
 	for (ref = def->refs; ref; ref = ref->next) {
 		switch (ref->field) {
 			case 0:
-				ref->statement->a = def->ofs;
+				pr.statements[ref->ofs].a = def->ofs;
 				break;
 			case 1:
-				ref->statement->b = def->ofs;
+				pr.statements[ref->ofs].b = def->ofs;
 				break;
 			case 2:
-				ref->statement->c = def->ofs;
-				break;
-			case 4:
-				d = (int*)ref->statement;
-				*d += def->ofs;
+				pr.statements[ref->ofs].c = def->ofs;
 				break;
 			default:
 				abort ();
@@ -372,7 +366,7 @@ qboolean PR_FinishCompilation (void)
 		e.type = ex_string;
 		e.e.string_val = debugfile;
 		ReuseConstant (&e, PR_GetDef (&type_string, ".debug_file", 0,
-									  &numpr_globals));
+									  &pr.num_globals));
 	}
 
 	for (def = pr.def_head; def; def = def->def_next) {
@@ -381,22 +375,22 @@ qboolean PR_FinishCompilation (void)
 		PR_RelocateRefs (def);
 	}
 
-	for (f = pr_functions; f; f = f->next) {
+	for (f = pr.function_list; f; f = f->next) {
 		if (f->builtin)
 			continue;
 		if (f->def->locals > num_localdefs) {
 			num_localdefs = f->def->locals;
 			big_function = f->def->name;
 		}
-		f->dfunc->parm_start = numpr_globals;
+		f->dfunc->parm_start = pr.num_globals;
 		for (def = f->def->scope_next; def; def = def->scope_next) {
 			if (def->absolute)
 				continue;
-			def->ofs += numpr_globals;
+			def->ofs += pr.num_globals;
 			PR_RelocateRefs (def);
 		}
 	}
-	numpr_globals += num_localdefs;
+	pr.num_globals += num_localdefs;
 
 	return !errors;
 }

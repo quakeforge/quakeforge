@@ -46,7 +46,6 @@ typedef struct function_s {
 	int					parm_ofs[MAX_PARMS];	// allways contiguous, right?
 } function_t;
 
-extern function_t *pr_functions;
 extern function_t *current_func;
 
 typedef struct param_s {

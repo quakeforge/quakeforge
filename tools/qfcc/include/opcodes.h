@@ -36,7 +36,7 @@
 
 typedef struct statref_s {
 	struct statref_s *next;
-	dstatement_t	*statement;
+	int				ofs;
 	int				field;		// a, b, c (0, 1, 2)
 } statref_t;
 
@@ -53,10 +53,8 @@ extern opcode_t *op_goto;
 extern opcode_t *op_jump;
 extern opcode_t *op_jumpb;
 
-statref_t *PR_NewStatref (dstatement_t *st, int field);
+statref_t *PR_NewStatref (int ofs, int field);
 void PR_AddStatementRef (struct def_s *def, dstatement_t *st, int field);
-struct def_s *PR_Statement (opcode_t *op, struct def_s *var_a,
-							struct def_s *var_b);
 opcode_t *PR_Opcode_Find (const char *name, struct def_s *var_a,
 						  struct def_s *var_b, struct def_s *var_c);
 void PR_Opcode_Init_Tables (void);

@@ -168,8 +168,8 @@ new_function (void)
 	function_t	*f;
 
 	f = calloc (1, sizeof (function_t));
-	f->next = pr_functions;
-	pr_functions = f;
+	f->next = pr.function_list;
+	pr.function_list = f;
 
 	return f;
 }
@@ -203,7 +203,7 @@ build_function (function_t *f)
 {
 	f->def->constant = 1;
 	f->def->initialized = 1;
-	G_FUNCTION (f->def->ofs) = numfunctions;
+	G_FUNCTION (f->def->ofs) = pr.num_functions;
 }
 
 void
@@ -212,9 +212,8 @@ finish_function (function_t *f)
 	dfunction_t *df;
 	int i, count;
 
-	// fill in the dfunction
-	df = &functions[numfunctions];
-	numfunctions++;
+	df = calloc (1, sizeof (dfunction_t));
+	pr.num_functions++;
 	f->dfunc = df;
 
 	if (f->builtin)
@@ -234,7 +233,7 @@ finish_function (function_t *f)
 
 	if (f->aux) {
 		def_t *def;
-		f->aux->function = df - functions;
+		f->aux->function = df - pr.functions;
 		for (def = f->def->scope_next; def; def = def->scope_next) {
 			if (def->name) {
 				ddef_t *d = new_local ();

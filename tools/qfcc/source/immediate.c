@@ -106,20 +106,25 @@ int_imm_get_key (void *_def, void *_str)
 static const char *
 strings_get_key (void *_str, void *unsued)
 {
-	return strings + (int) _str;
+	return pr.strings + (int) _str;
 }
 
 int
 CopyString (const char *str)
 {
 	int         old;
+	int         len = strlen (str) + 1;
 
 	if (!strings_tab) {
 		strings_tab = Hash_NewTable (16381, strings_get_key, 0, 0);
 	}
-	old = strofs;
-	strcpy (strings + strofs, str);
-	strofs += strlen (str) + 1;
+	if (pr.strofs + len >= pr.strings_size) {
+		pr.strings_size += (len + 16383) & ~16383;
+		pr.strings = realloc (pr.strings, pr.strings_size);
+	}
+	old = pr.strofs;
+	strcpy (pr.strings + pr.strofs, str);
+	pr.strofs += len;
 	Hash_Add (strings_tab, (void *)old);
 	return old;
 }
@@ -279,7 +284,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 	if (e.type == ex_string)
 		e.e.integer_val = ReuseString (rep->str);
 
-	memcpy (pr_globals + cn->ofs, &e.e, 4 * pr_type_size[type->type]);
+	memcpy (pr.globals + cn->ofs, &e.e, 4 * pr_type_size[type->type]);
 
 	Hash_Add (tab, cn);
 

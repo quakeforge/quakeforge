@@ -348,7 +348,7 @@ def_item
 def_name
 	: NAME
 		{
-			int *alloc = &numpr_globals;
+			int *alloc = &pr.num_globals;
 
 			if (pr_scope) {
 				alloc = pr_scope->alloc;
@@ -477,7 +477,7 @@ begin_function
 		{
 			$$ = current_func = new_function ();
 			$$->def = current_def;
-			$$->code = numstatements;
+			$$->code = pr.num_statements;
 			if (options.code.debug) {
 				pr_lineno_t *lineno = new_lineno ();
 				$$->aux = new_auxfunction ();

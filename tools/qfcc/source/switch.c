@@ -297,7 +297,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		range->type = ex_uinteger;
 
 		def = PR_GetArray (&type_uinteger, name, high - low + 1, 0,
-						   &numpr_globals);
+						   &pr.num_globals);
 		table->type = ex_def;
 		table->e.def = def;
 
@@ -320,11 +320,9 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 			build_switch (sw, tree->right, op, sw_val, temp, default_label);
 		}
 		for (i = 0; i <= high - low; i++) {
-			dstatement_t *st;
 			statref_t  *ref;
 
-			st = (dstatement_t *) (G_INT (def->ofs) + i);
-			ref = PR_NewStatref (st, 3);
+			ref = PR_NewStatref (G_INT (def->ofs) + i, 3);
 			ref->next = tree->labels[i]->e.label.refs;
 			tree->labels[i]->e.label.refs = ref;
 		}

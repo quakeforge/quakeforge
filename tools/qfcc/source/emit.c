@@ -78,12 +78,19 @@ emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b,
 			pr_lineno_t *lineno = new_lineno ();
 
 			lineno->line = line;
-			lineno->fa.addr = numstatements;
+			lineno->fa.addr = pr.num_statements;
 		}
 	}
-	statement = &statements[numstatements];
-	numstatements++;
-	statement_linenums[statement - statements] = pr_source_line;
+	if (pr.num_statements >= pr.statements_size) {
+		pr.statements_size += 16384;
+		pr.statements = realloc (pr.statements,
+								 pr.statements_size * sizeof (dstatement_t));
+		pr.statement_linenums = realloc (pr.statement_linenums,
+										 pr.statements_size * sizeof (int));
+	}
+	statement = &pr.statements[pr.num_statements];
+	pr.num_statements++;
+	pr.statement_linenums[statement - pr.statements] = pr_source_line;
 	statement->op = op->opcode;
 	statement->a = var_a ? var_a->ofs : 0;
 	statement->b = var_b ? var_b->ofs : 0;
@@ -126,18 +133,19 @@ emit_branch (int line, opcode_t *op, expr_t *e, expr_t *l)
 	dstatement_t *st;
 	statref_t  *ref;
 	def_t      *def = 0;
+	int         ofs;
 
 	if (e)
 		def = emit_sub_expr (e, 0);
-	st = &statements[numstatements];
+	st = &pr.statements[ofs = pr.num_statements];
 	emit_statement (line, op, def, 0, 0);
-	if (l->e.label.statement) {
+	if (l->e.label.ofs) {
 		if (op == op_goto)
-			st->a = l->e.label.statement - st;
+			st->a = l->e.label.ofs - ofs;
 		else
-			st->b = l->e.label.statement - st;
+			st->b = l->e.label.ofs - ofs;
 	} else {
-		ref = PR_NewStatref (st, op != op_goto);
+		ref = PR_NewStatref (ofs, op != op_goto);
 		ref->next = l->e.label.refs;
 		l->e.label.refs = ref;
 	}
@@ -200,7 +208,7 @@ emit_assign_expr (int oper, expr_t *e)
 				int         size = pr_type_size[def_a->type->type];
 				int         ofs = PR_NewLocation (def_a->type);
 
-				memcpy (pr_globals + ofs, pr_globals + def_a->ofs, size);
+				memcpy (pr.globals + ofs, pr.globals + def_a->ofs, size);
 				def_a->ofs = ofs;
 				def_a->constant = 0;
 				if (options.warnings.cow)
@@ -450,20 +458,20 @@ emit_expr (expr_t *e)
 			break;
 		case ex_label:
 			label = &e->e.label;
-			label->statement = &statements[numstatements];
+			label->ofs = pr.num_statements;
 			for (ref = label->refs; ref; ref = ref->next) {
 				switch (ref->field) {
 					case 0:
-						ref->statement->a = label->statement - ref->statement;
+						pr.statements[ref->ofs].a = label->ofs - ref->ofs;
 						break;
 					case 1:
-						ref->statement->b = label->statement - ref->statement;
+						pr.statements[ref->ofs].b = label->ofs - ref->ofs;
 						break;
 					case 2:
-						ref->statement->c = label->statement - ref->statement;
+						pr.statements[ref->ofs].c = label->ofs - ref->ofs;
 						break;
 					case 3:
-						*(int *) ref->statement = label->statement - statements;
+						G_INT (ref->ofs) = label->ofs;
 						break;
 					default:
 						abort ();

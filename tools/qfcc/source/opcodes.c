@@ -55,11 +55,11 @@ opcode_t   *op_jump;
 opcode_t   *op_jumpb;
 
 statref_t *
-PR_NewStatref (dstatement_t *st, int field)
+PR_NewStatref (int ofs, int field)
 {
 	statref_t  *ref = calloc (1, sizeof (statref_t));
 
-	ref->statement = st;
+	ref->ofs = ofs;
 	ref->field = field;
 	return ref;
 }
@@ -68,7 +68,7 @@ void
 PR_AddStatementRef (def_t *def, dstatement_t *st, int field)
 {
 	if (def) {
-		statref_t  *ref = PR_NewStatref (st, field);
+		statref_t  *ref = PR_NewStatref (st - pr.statements, field);
 
 		ref->next = def->refs;
 		def->refs = ref;
