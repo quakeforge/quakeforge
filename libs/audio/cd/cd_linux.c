@@ -134,7 +134,7 @@ CDAudio_Play (byte track, qboolean looping)
 	track = remap[track];
 
 	if (track < 1 || track > maxTrack) {
-		Con_DPrintf ("CDAudio: Bad track number %u.\n", track);
+		CDAudio_Stop ();
 		return;
 	}
 	// don't try to play a non-audio track
@@ -257,19 +257,19 @@ CD_f (void)
 
 	command = Cmd_Argv (1);
 
-	if (strcasecmp (command, "on") == 0) {
+	if (strequal (command, "on")) {
 		mus_enabled = true;
 		return;
 	}
 
-	if (strcasecmp (command, "off") == 0) {
+	if (strequal (command, "off")) {
 		if (playing)
 			CDAudio_Stop ();
 		mus_enabled = false;
 		return;
 	}
 
-	if (strcasecmp (command, "reset") == 0) {
+	if (strequal (command, "reset")) {
 		mus_enabled = true;
 		if (playing)
 			CDAudio_Stop ();
@@ -279,7 +279,7 @@ CD_f (void)
 		return;
 	}
 
-	if (strcasecmp (command, "remap") == 0) {
+	if (strequal (command, "remap")) {
 		ret = Cmd_Argc () - 2;
 		if (ret <= 0) {
 			for (n = 1; n < 100; n++)
@@ -292,7 +292,7 @@ CD_f (void)
 		return;
 	}
 
-	if (strcasecmp (command, "close") == 0) {
+	if (strequal (command, "close")) {
 		CDAudio_CloseDoor ();
 		return;
 	}
@@ -305,32 +305,32 @@ CD_f (void)
 		}
 	}
 
-	if (strcasecmp (command, "play") == 0) {
+	if (strequal (command, "play")) {
 		CDAudio_Play ((byte) atoi (Cmd_Argv (2)), false);
 		return;
 	}
 
-	if (strcasecmp (command, "loop") == 0) {
+	if (strequal (command, "loop")) {
 		CDAudio_Play ((byte) atoi (Cmd_Argv (2)), true);
 		return;
 	}
 
-	if (strcasecmp (command, "stop") == 0) {
+	if (strequal (command, "stop")) {
 		CDAudio_Stop ();
 		return;
 	}
 
-	if (strcasecmp (command, "pause") == 0) {
+	if (strequal (command, "pause")) {
 		CDAudio_Pause ();
 		return;
 	}
 
-	if (strcasecmp (command, "resume") == 0) {
+	if (strequal (command, "resume")) {
 		CDAudio_Resume ();
 		return;
 	}
 
-	if (strcasecmp (command, "eject") == 0) {
+	if (strequal (command, "eject")) {
 		if (playing)
 			CDAudio_Stop ();
 		CDAudio_Eject ();
@@ -338,7 +338,7 @@ CD_f (void)
 		return;
 	}
 
-	if (strcasecmp (command, "info") == 0) {
+	if (strequal (command, "info")) {
 		Con_Printf ("%u tracks\n", maxTrack);
 		if (playing)
 			Con_Printf ("Currently %s track %u\n",

@@ -115,7 +115,7 @@ CDAudio_Play (byte track, qboolean looping)
 	track = remap[track];
 
 	if (track < 1 || track > maxtrack) {
-		Con_DPrintf ("CDAudio_Play: Bad track number %u.\n", track);
+		CDAudio_Stop ();
 		return;
 	}
 	// don't try to play a non-audio track
@@ -191,18 +191,18 @@ CD_f (void)
 
 	command = Cmd_Argv (1);
 
-	if (strcasecmp (command, "on") == 0) {
+	if (strequal (command, "on")) {
 		enabled = true;
 		return;
 	}
 
-	if (strcasecmp (command, "off") == 0) {
+	if (strequal (command, "off")) {
 		CDAudio_Stop ();
 		enabled = false;
 		return;
 	}
 
-	if (strcasecmp (command, "reset") == 0) {
+	if (strequal (command, "reset")) {
 		enabled = true;
 		CDAudio_Stop ();
 
@@ -212,7 +212,7 @@ CD_f (void)
 		return;
 	}
 
-	if (strcasecmp (command, "remap") == 0) {
+	if (strequal (command, "remap")) {
 		ret = Cmd_Argc () - 2;
 
 		if (ret <= 0) {
@@ -228,38 +228,38 @@ CD_f (void)
 		return;
 	}
 
-	if (strcasecmp (command, "play") == 0) {
+	if (strequal (command, "play")) {
 		CDAudio_Play ((byte) atoi (Cmd_Argv (2)), false);
 		return;
 	}
 
-	if (strcasecmp (command, "loop") == 0) {
+	if (strequal (command, "loop")) {
 		CDAudio_Play ((byte) atoi (Cmd_Argv (2)), true);
 		return;
 	}
 
-	if (strcasecmp (command, "stop") == 0) {
+	if (strequal (command, "stop")) {
 		CDAudio_Stop ();
 		return;
 	}
 
-	if (strcasecmp (command, "pause") == 0) {
+	if (strequal (command, "pause")) {
 		CDAudio_Pause ();
 		return;
 	}
 
-	if (strcasecmp (command, "resume") == 0) {
+	if (strequal (command, "resume")) {
 		CDAudio_Resume ();
 		return;
 	}
 
-	if (strcasecmp (command, "eject") == 0) {
+	if (strequal (command, "eject")) {
 		CDAudio_Stop ();
 		CDAudio_Eject ();
 		return;
 	}
 
-	if (strcasecmp (command, "info") == 0) {
+	if (strequal (command, "info")) {
 		Con_Printf ("%u tracks\n", CDAudio_MaxTrack ());
 		if (CDAudio_GetState () == CD_PLAYING)
 			Con_Printf ("Currently %s track %u\n",

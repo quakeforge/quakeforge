@@ -40,6 +40,7 @@
 
 #include <SDL.h>
 
+#include "QF/compat.h"
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
@@ -83,7 +84,7 @@ CDAudio_Play (byte track, qboolean looping)
 	}
 
 	if ((track < 1) || (track >= cd_id->numtracks)) {
-		Con_DPrintf ("CDAudio: Bad track number: %d\n", track);
+		CDAudio_Stop ();
 		return;
 	}
 	track--;							/* Convert track from person to SDL
@@ -239,10 +240,10 @@ CD_f (void)
 		return;
 
 	command = Cmd_Argv (1);
-	if (!strcasecmp (command, "on")) {
+	if (strequal (command, "on")) {
 		enabled = true;
 	}
-	if (!strcasecmp (command, "off")) {
+	if (strequal (command, "off")) {
 		if (!cd_id)
 			return;
 		cdstate = SDL_CDStatus (cd_id);
@@ -251,31 +252,31 @@ CD_f (void)
 		enabled = false;
 		return;
 	}
-	if (!strcasecmp (command, "play")) {
+	if (strequal (command, "play")) {
 		CDAudio_Play (atoi (Cmd_Argv (2)), false);
 		return;
 	}
-	if (!strcasecmp (command, "loop")) {
+	if (strequal (command, "loop")) {
 		CDAudio_Play (atoi (Cmd_Argv (2)), true);
 		return;
 	}
-	if (!strcasecmp (command, "stop")) {
+	if (strequal (command, "stop")) {
 		CDAudio_Stop ();
 		return;
 	}
-	if (!strcasecmp (command, "pause")) {
+	if (strequal (command, "pause")) {
 		CDAudio_Pause ();
 		return;
 	}
-	if (!strcasecmp (command, "resume")) {
+	if (strequal (command, "resume")) {
 		CDAudio_Resume ();
 		return;
 	}
-	if (!strcasecmp (command, "eject")) {
+	if (strequal (command, "eject")) {
 		CDAudio_Eject ();
 		return;
 	}
-	if (!strcasecmp (command, "info")) {
+	if (strequal (command, "info")) {
 		if (!cd_id)
 			return;
 		cdstate = SDL_CDStatus (cd_id);
