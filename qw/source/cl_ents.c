@@ -276,9 +276,9 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 		// FIXME
 	}
 /*
-	   if ((!to->alpha) || (!to->colormod))
-		   Con_Printf("fa: %d, fc: %d, ta: %d, tc: %d\n",
-					  from->alpha, from->colormod, to->alpha, to->colormod);
+	if ((!to->alpha) || (!to->colormod))
+		Con_Printf("fa: %d, fc: %d, ta: %d, tc: %d\n",
+				   from->alpha, from->colormod, to->alpha, to->colormod);
 */
 /*
 	if ((!ent->alpha) || (!ent->colormod[0]) || (!ent->colormod[1]) ||
@@ -372,7 +372,7 @@ CL_ParsePacketEntities (qboolean delta)
 
 	while (1) {
 		word = (unsigned short) MSG_ReadShort (net_message);
-		if (net_message->badread) {				// something didn't parse right...
+		if (net_message->badread) {			// something didn't parse right...
 			Host_EndGame ("msg_badread in packetentities");
 			return;
 		}
@@ -418,10 +418,10 @@ CL_ParsePacketEntities (qboolean delta)
 				}
 				continue;
 			}
+
 			if (newindex >= MAX_PACKET_ENTITIES)
 				Host_EndGame ("CL_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES");
 			CL_ParseDelta (&cl_baselines[newnum], &newp->entities[newindex], word);
-			
 			newindex++;
 			continue;
 		}
@@ -442,7 +442,6 @@ CL_ParsePacketEntities (qboolean delta)
 			newindex++;
 			oldindex++;
 		}
-
 	}
 
 	newp->num_entities = newindex;
@@ -665,13 +664,10 @@ CL_LinkProjectiles (void)
 }
 
 
-//========================================
-
 extern int  cl_spikeindex, cl_playerindex, cl_flagindex;
-
-
 extern int  parsecountmod;
 extern double parsecounttime;
+
 void
 CL_ParsePlayerinfo (void)
 {
@@ -893,9 +889,7 @@ CL_LinkPlayers (void)
 		(*ent)->scale = 1;
 		(*ent)->colormod[0] = (*ent)->colormod[1] = (*ent)->colormod[2] = 1;
 
-		// 
 		// angles
-		// 
 		(*ent)->angles[PITCH] = -state->viewangles[PITCH] / 3;
 		(*ent)->angles[YAW] = state->viewangles[YAW];
 		(*ent)->angles[ROLL] = 0;
@@ -922,9 +916,6 @@ CL_LinkPlayers (void)
 
 	}
 }
-
-
-//======================================================================
 
 
 /*

@@ -52,9 +52,8 @@ CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 {
 
 // Dabb: if there is no movement to start with, don't predict...
-	if(cl_nostatpred->int_val && !from->velocity[0]
-	   && !from->velocity[1]
-	   && !from->velocity[2]) {
+	if(cl_nostatpred->int_val && !from->velocity[0] &&
+	   !from->velocity[1] && !from->velocity[2]) {
 		VectorCopy (from->origin, to->origin);
 		VectorCopy (u->angles, to->viewangles);
 		VectorCopy (from->velocity, to->velocity);

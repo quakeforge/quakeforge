@@ -1213,36 +1213,38 @@ CL_Init_Cvars (void)
 							 "confirm quit command");
 	cl_allow_cmd_pkt = Cvar_Get ("cl_allow_cmd_pkt", "1", CVAR_NONE, NULL,
 								 "enables packets from the likes of gamespy");
-	cl_demospeed = Cvar_Get ("cl_demospeed", "1.0", CVAR_NONE, NULL,
-							 "adjust demo playback speed. 1.0 = normal, < 1 slow-mo, > 1 timelaps");
+	cl_autoexec = Cvar_Get ("cl_autoexec", "0", CVAR_ROM, NULL,
+							"exec autoexec.cfg on gamedir change");
 	cl_cshift_bonus = Cvar_Get ("cl_cshift_bonus", "1", CVAR_ARCHIVE, NULL,
 							"Show bonus flash on item pickup");
-	cl_cshift_contents = Cvar_Get ("cl_cshift_content", "1", CVAR_ARCHIVE, NULL,
-							"Shift view colors for contents (water, slime, etc)");
+	cl_cshift_contents = Cvar_Get ("cl_cshift_content", "1", CVAR_ARCHIVE,
+								   NULL, "Shift view colors for contents "
+								   "(water, slime, etc)");
 	cl_cshift_damage = Cvar_Get ("cl_cshift_damage", "1", CVAR_ARCHIVE, NULL,
 							"Shift view colors on damage");
 	cl_cshift_powerup = Cvar_Get ("cl_cshift_powerup", "1", CVAR_ARCHIVE, NULL,
 							"Shift view colors for powerups");
-	cl_autoexec = Cvar_Get ("cl_autoexec", "0", CVAR_ROM, NULL,
-							"exec autoexec.cfg on gamedir change");
+	cl_demospeed = Cvar_Get ("cl_demospeed", "1.0", CVAR_NONE, NULL,
+							 "adjust demo playback speed. 1.0 = normal, "
+							 "< 1 slow-mo, > 1 timelapse");
 	cl_warncmd = Cvar_Get ("cl_warncmd", "0", CVAR_NONE, NULL,
 						   "inform when execing a command");
-	cl_upspeed = Cvar_Get ("cl_upspeed", "200", CVAR_NONE, NULL,
-						   "swim/fly up/down speed");
-	cl_forwardspeed = Cvar_Get ("cl_forwardspeed", "200", CVAR_ARCHIVE, NULL,
-								"forward speed");
-	cl_backspeed = Cvar_Get ("cl_backspeed", "200", CVAR_ARCHIVE, NULL,
-							 "backward speed");
-	cl_sidespeed = Cvar_Get ("cl_sidespeed", "350", CVAR_NONE, NULL,
-			"strafe speed");
-	cl_movespeedkey = Cvar_Get ("cl_movespeedkey", "2.0", CVAR_NONE, NULL,
-								"move `run' speed multiplier");
-	cl_yawspeed = Cvar_Get ("cl_yawspeed", "140", CVAR_NONE, NULL,
-			"turning speed");
-	cl_pitchspeed = Cvar_Get ("cl_pitchspeed", "150", CVAR_NONE, NULL,
-							  "look up/down speed");
 	cl_anglespeedkey = Cvar_Get ("cl_anglespeedkey", "1.5", CVAR_NONE, NULL,
 								 "turn `run' speed multiplier");
+	cl_backspeed = Cvar_Get ("cl_backspeed", "200", CVAR_ARCHIVE, NULL,
+							 "backward speed");
+	cl_forwardspeed = Cvar_Get ("cl_forwardspeed", "200", CVAR_ARCHIVE, NULL,
+								"forward speed");
+	cl_movespeedkey = Cvar_Get ("cl_movespeedkey", "2.0", CVAR_NONE, NULL,
+								"move `run' speed multiplier");
+	cl_pitchspeed = Cvar_Get ("cl_pitchspeed", "150", CVAR_NONE, NULL,
+							  "look up/down speed");
+	cl_sidespeed = Cvar_Get ("cl_sidespeed", "350", CVAR_NONE, NULL,
+							 "strafe speed");
+	cl_upspeed = Cvar_Get ("cl_upspeed", "200", CVAR_NONE, NULL,
+						   "swim/fly up/down speed");
+	cl_yawspeed = Cvar_Get ("cl_yawspeed", "140", CVAR_NONE, NULL,
+							"turning speed");
 	cl_shownet = Cvar_Get ("cl_shownet", "0", CVAR_NONE, NULL,
 						   "show network packets. 0=off, 1=basic, 2=verbose");
 	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, NULL, "status bar mode");
@@ -1252,22 +1254,28 @@ CL_Init_Cvars (void)
 						   "new HUD on left side?");
 	cl_maxfps = Cvar_Get ("cl_maxfps", "0", CVAR_ARCHIVE, NULL,
 						  "maximum frames rendered in one second. 0 == 32");
-	cl_timeout = Cvar_Get ("cl_timeout", "60", CVAR_ARCHIVE, NULL,
-						   "server connection timeout (since last packet received)");
-	lookspring = Cvar_Get ("lookspring", "0", CVAR_ARCHIVE, NULL,
-						   "Snap view to center when moving and no mlook/klook");
-	m_pitch = Cvar_Get ("m_pitch", "0.022", CVAR_ARCHIVE, NULL,
-						"mouse pitch (up/down) multipier");
-	m_yaw = Cvar_Get ("m_yaw", "0.022", CVAR_NONE, NULL,
-					  "mouse yaw (left/right) multiplier");
+	cl_timeout = Cvar_Get ("cl_timeout", "60", CVAR_ARCHIVE, NULL, "server "
+						   "connection timeout (since last packet received)");
+	host_speeds = Cvar_Get ("host_speeds", 0, CVAR_NONE, NULL,
+							"display host processing times");
+	lookspring = Cvar_Get ("lookspring", "0", CVAR_ARCHIVE, NULL, "Snap view "
+						   "to center when moving and no mlook/klook");
 	m_forward = Cvar_Get ("m_forward", "1", CVAR_NONE, NULL,
 						  "mouse forward/back speed");
+	m_pitch = Cvar_Get ("m_pitch", "0.022", CVAR_ARCHIVE, NULL,
+						"mouse pitch (up/down) multipier");
 	m_side = Cvar_Get ("m_side", "0.8", CVAR_NONE, NULL, "mouse strafe speed");
+	m_yaw = Cvar_Get ("m_yaw", "0.022", CVAR_NONE, NULL,
+					  "mouse yaw (left/right) multiplier");
 	rcon_password = Cvar_Get ("rcon_password", "", CVAR_NONE, NULL,
 							  "remote control password");
 	rcon_address = Cvar_Get ("rcon_address", "", CVAR_NONE, NULL, "server IP "
 							 "address when client not connected - for "
 							 "sending rcon commands");
+	show_fps = Cvar_Get ("show_fps", "0", CVAR_NONE, NULL,
+						 "display realtime frames per second");
+	show_time = Cvar_Get ("show_time", "0", CVAR_NONE, NULL,
+						  "display the current time");
 	cl_writecfg = Cvar_Get ("cl_writecfg", "1", CVAR_NONE, NULL,
 							"write config files?");
 	cl_predict_players2 = Cvar_Get ("cl_predict_players2", "1", CVAR_NONE,
@@ -1280,26 +1288,28 @@ CL_Init_Cvars (void)
 								 "Are players solid? If off, you can walk "
 								 "through them with difficulty");
 	localid = Cvar_Get ("localid", "", CVAR_NONE, NULL, "FIXME: This has "
-						"something to do with client authentication.");
+						"something to do with client authentication."
+						"No description");
 
-	// 
 	// info mirrors
-	// 
+	//
 	cl_name = Cvar_Get ("name", "unnamed", CVAR_ARCHIVE | CVAR_USERINFO,
 						Cvar_Info, "Player name");
 	password = Cvar_Get ("password", "", CVAR_USERINFO, Cvar_Info,
-			"Server password");
+						 "Server password");
 	spectator = Cvar_Get ("spectator", "", CVAR_USERINFO, Cvar_Info,
 						  "Set to 1 before connecting to become a spectator");
 	team = Cvar_Get ("team", "", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
 					 "Team player is on.");
 	rate = Cvar_Get ("rate", "2500", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
-					 "Amount of bytes per second server will send/download to you");
+					 "Amount of bytes per second server will send/download "
+					 "to you");
 	msg = Cvar_Get ("msg", "1", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
-			"Determines the type of messages reported 0 is maximum, 4 is none");
+					"Determines the type of messages reported 0 is maximum, "
+					"4 is none");
 	noaim = Cvar_Get ("noaim", "0", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
 					  "Auto aim off switch. Set to 1 to turn off.");
-	// Misty-chan: Initialize particles cvars. Seemed like a good place to put to me. Move as you wish!
+
 	R_Particles_Init_Cvars ();
 }
 

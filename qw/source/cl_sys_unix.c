@@ -136,7 +136,7 @@ Sys_DebugLog (char *file, char *fmt, ...)
 	va_start (argptr, fmt);
 	vsnprintf (data, sizeof (data), fmt, argptr);
 	va_end (argptr);
-//    fd = open(file, O_WRONLY | O_BINARY | O_CREAT | O_APPEND, 0666);
+//	fd = open(file, O_WRONLY | O_BINARY | O_CREAT | O_APPEND, 0666);
 	fd = open (file, O_WRONLY | O_CREAT | O_APPEND, 0666);
 	write (fd, data, strlen (data));
 	close (fd);
@@ -146,7 +146,7 @@ Sys_DebugLog (char *file, char *fmt, ...)
 void
 floating_point_exception_handler (int whatever)
 {
-//  Sys_Warn("floating point exception\n");
+//	Sys_Warn("floating point exception\n");
 	signal (SIGFPE, floating_point_exception_handler);
 }
 
