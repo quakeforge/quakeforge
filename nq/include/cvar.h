@@ -57,17 +57,11 @@ typedef struct cvar_alias_s
 									// specific configurations
 #define	CVAR_USERINFO		2		// sent to server on connect or change
 #define	CVAR_SERVERINFO		4		// sent in response to front end requests
-#define	CVAR_SYSTEMINFO		8		// these cvars will be duplicated on all clients
 #define	CVAR_NOTIFY			32		// Will notify players when changed.
 #define	CVAR_ROM			64		// display only, cannot be set by user at all
 #define	CVAR_USER_CREATED	128		// created by a set command
-#define	CVAR_HEAP			256		// allocated off the heap, safe to free
-#define CVAR_CHEAT			512		// can not be changed if cheats are disabled
-#define CVAR_NORESTART		1024	// do not clear when a cvar_restart is issued
 #define CVAR_LATCH			2048	// will only change when C code next does
 									// a Cvar_Get(), so it can't be changed
-#define CVAR_TEMP			4096	// can be set even when cheats are
-									// disabled, but is not archived
 
 // Zoid| A good CVAR_ROM example is userpath.  The code should read "cvar_t
 // *fs_userpath = CvarGet("fs_userpath", ".", CVAR_ROM);  The user can
