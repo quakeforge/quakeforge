@@ -48,13 +48,14 @@ void dstring_snip (dstring_t *dstr, unsigned int pos, unsigned int len);
 void dstring_clear (dstring_t *dstr);
 void dstring_replace (dstring_t *dstr, unsigned int pos, unsigned int rlen,
 						const char *data, unsigned int len);
-					 
+char *dstring_freeze (dstring_t *dstr);
+ 
 // String-specific functions
 dstring_t *dstring_newstr (void);
 void dstring_appendstr (dstring_t *dstr, const char *str);
 void dstring_appendsubstr (dstring_t *dstr, const char *str, unsigned int len);
 void dstring_insertstr (dstring_t *dstr, unsigned int pos, const char *str);
-void dstring_insertsubstr (dstring_t *dstr, unsigned int pos, const char *str, 
+void dstring_insertsubstr (dstring_t *dstr, unsigned int pos, const char *str,
 						   unsigned int len);
 void dstring_clearstr (dstring_t *dstr);
 

@@ -126,6 +126,14 @@ dstring_replace (dstring_t *dstr, unsigned int pos, unsigned int rlen,
 	memcpy (dstr->str + pos, data, len);
 }
 
+char *
+dstring_freeze (dstring_t *dstr)
+{
+	char *str = realloc (dstr->str, dstr->size);
+	free (dstr);
+	return str;
+}
+
 dstring_t  *
 dstring_newstr (void)
 {
