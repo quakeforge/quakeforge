@@ -8,6 +8,6 @@ libQFimage_la_LDFLAGS=		-version-info 1:0:0
 libQFimage_la_LIBADD=		-lpng
 libQFimage_la_DEPENDENCIES=
 libQFimage_la_SOURCES= \
-	pcx.c png.c tga.c
+	image.c pcx.c png.c tga.c
 
 EXTRA_DIST=
