@@ -10,7 +10,7 @@ extern int pr_source_line;
 void
 yyerror (const char *s)
 {
-	error (0, "%s %s\n", strings + s_file, pr_source_line, yytext, s);
+	error (0, "%s %s\n", yytext, s);
 }
 
 int yylex (void);
@@ -212,7 +212,7 @@ opt_initializer
 	| '=' '#' const
 		{
 			if (current_type->type != ev_func) {
-				error (0, "%s is not a function");
+				error (0, "%s is not a function", current_def->name);
 			} else {
 				if ($3->type != ex_int && $3->type != ex_float) {
 					error (0, "invalid constant for = #");
@@ -408,7 +408,7 @@ expr
 			$$->type = ex_def;
 			$$->e.def = PR_GetDef (NULL, $1, pr_scope, false);
 			if (!$$->e.def) {
-				error (0, "%s undeclared", $1);
+				error (0, "Undeclared variable \"%s\".", $1);
 				$$->e.def = &def_float;
 			}
 		}

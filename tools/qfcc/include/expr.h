@@ -62,5 +62,5 @@ expr_t *function_expr (expr_t *e1, expr_t *e2);
 def_t *emit_statement (opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_c);
 void emit_expr (expr_t *e);
 
-expr_t *error (expr_t *e, const char *fmt, ...);
-void warning (expr_t *e, const char *fmt, ...);
+expr_t *error (expr_t *e, const char *fmt, ...) __attribute__((format(printf, 2,3)));
+void warning (expr_t *e, const char *fmt, ...) __attribute__((format(printf, 2,3)));

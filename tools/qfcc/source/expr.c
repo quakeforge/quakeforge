@@ -631,7 +631,11 @@ function_expr (expr_t *e1, expr_t *e2)
 	t1 = get_type (e1);
 
 	if (t1 != ev_func) {
-		return error (e1, "called object is not a function %d", t1);
+		if (e1->type == ex_def)
+			return error (e1, "Called object \"%s\" is not a function",
+						  e1->e.def->name);
+		else
+			return error (e1, "Called object is not a function");
 	}
 
 	ftype = e1->type == ex_def
