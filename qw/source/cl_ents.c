@@ -72,6 +72,9 @@ entity_t    cl_flag_ents[MAX_CLIENTS];
 entity_t    cl_projectiles[MAX_PROJECTILES];
 entity_t    cl_entities[MAX_EDICTS];
 
+int         cl_last_sequence;
+int         cl_entity_sequence[MAX_EDICTS];
+
 struct {
 	model_t    *model;
 	int         skinnum;
@@ -442,10 +445,12 @@ CL_ParsePacketEntities (qboolean delta)
 			if (newindex >= MAX_PACKET_ENTITIES)
 				Host_Error ("CL_ParsePacketEntities: newindex == "
 							"MAX_PACKET_ENTITIES");
-			CL_EntFromBaseline (&cl_baselines[newnum], &cl_entities[newnum],
-								newnum);
+			if (cl_entity_sequence[newnum] != cl_last_sequence)
+				CL_EntFromBaseline (&cl_baselines[newnum], &cl_entities[newnum],
+									newnum);
 			CL_ParseDelta (&cl_baselines[newnum], &newp->entities[newindex],
 						   &cl_entities[newnum], word, 1);
+			cl_entity_sequence[newnum] = cls.netchan.incoming_sequence;
 			newindex++;
 			continue;
 		}
@@ -463,12 +468,14 @@ CL_ParsePacketEntities (qboolean delta)
 			CL_ParseDelta (&oldp->entities[oldindex],
 						   &newp->entities[newindex], &cl_entities[newnum],
 						   word, 1);
+			cl_entity_sequence[newnum] = cls.netchan.incoming_sequence;
 			newindex++;
 			oldindex++;
 		}
 	}
 
 	newp->num_entities = newindex;
+	cl_last_sequence = cls.netchan.incoming_sequence;
 }
 
 void
