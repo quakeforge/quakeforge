@@ -249,6 +249,15 @@ add_relocs (qfo_t *qfo)
 }
 
 static void
+linker_type_mismatch (qfo_def_t *def, qfo_def_t *d)
+{
+	def_error (def, "type mismatch for `%s' `%s'",
+			   TYPE_STRING (def->name),
+			   TYPE_STRING (def->full_type));
+	def_error (d, "previous definition `%s'", TYPE_STRING (d->full_type));
+}
+
+static void
 process_def (qfo_def_t *def)
 {
 	defref_t   *_d;
@@ -260,10 +269,7 @@ process_def (qfo_def_t *def)
 		if ((_d = Hash_Find (defined_defs, STRING (def->name)))) {
 			d = deref_def (_d, &global_defs);
 			if (d->full_type != def->full_type) {
-				def_error (def, "type mismatch `%s' `%s'",
-						   TYPE_STRING (def->full_type),
-						   TYPE_STRING (d->full_type));
-				def_error (d, "previous definition");
+				linker_type_mismatch (def, d);
 				return;
 			}
 			def->ofs = d->ofs;
@@ -279,10 +285,7 @@ process_def (qfo_def_t *def)
 				int         i, size;
 
 				if (d->full_type != def->full_type) {
-					def_error (def, "type mismatch `%s' `%s'",
-							   TYPE_STRING (def->full_type),
-							   TYPE_STRING (d->full_type));
-					def_error (d, "previous definition");
+					linker_type_mismatch (def, d);
 					return;
 				}
 				d->flags &= ~QFOD_SYSTEM;
@@ -308,10 +311,7 @@ process_def (qfo_def_t *def)
 			Hash_Add (defined_defs, _d);
 			d = deref_def (_d, &global_defs);
 			if (d->full_type != def->full_type) {
-				def_error (def, "type mismatch `%s' `%s'",
-						   TYPE_STRING (def->full_type),
-						   TYPE_STRING (d->full_type));
-				def_error (d, "previous definition");
+				linker_type_mismatch (def, d);
 				continue;
 			}
 			d->ofs = def->ofs;
