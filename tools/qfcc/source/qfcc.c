@@ -1026,6 +1026,7 @@ Options: \n\
 		char	tempname[1024];
 		int 	tempfd;
 #endif
+		int		error;
 		extern FILE *yyin;
 		int yyparse(void);
 		extern void clear_frame_macros (void);
@@ -1096,8 +1097,7 @@ Options: \n\
 		s_file = ReuseString (filename);
 		pr_source_line = 1;
 		clear_frame_macros ();
-		if (yyparse () || pr_error_count)
-			return 1;
+		error = yyparse () || pr_error_count;
 		fclose (yyin);
 #ifdef USE_CPP
 		if (!no_cpp) {
@@ -1107,6 +1107,8 @@ Options: \n\
 			}
 		}
 #endif
+		if (error)
+			return 1;
 #else
 		char	*src2;
 		sprintf (filename, "%s%c%s", sourcedir, PATH_SEPARATOR, com_token);

@@ -135,7 +135,7 @@ warning (expr_t *e, const char *fmt, ...)
 		file = e->file;
 		line = e->line;
 	}
-	fprintf (stderr, "%s:%d: warning:", strings + file, line);
+	fprintf (stderr, "%s:%d: warning: ", strings + file, line);
 	vfprintf (stderr, fmt, args);
 	fputs ("\n", stderr);
 	va_end (args);
@@ -519,6 +519,7 @@ do_op_integer (int op, expr_t *e1, expr_t *e2)
 			e1->e.integer_val *= i2;
 			break;
 		case '/':
+			warning (e2, "%d / %d == %d", i1, i2, i1 / i2);
 			e1->e.integer_val /= i2;
 			break;
 		case '&':
