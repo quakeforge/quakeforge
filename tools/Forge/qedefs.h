@@ -3,6 +3,8 @@
 #import <ctype.h>
 #import <sys/types.h>
 #import <sys/dir.h>
+#import <sys/time.h>
+#import <unistd.h>
 
 #import "UserPath.h"
 #import "cmdlib.h"

@@ -20,7 +20,7 @@ FILE METHODS
 	minz = 0;
 	maxz = 80;
 	
-	oldselection = [[List alloc] init];
+	oldselection = [[NSMutableArray alloc] init];
 	
 	return self;
 }
@@ -30,18 +30,18 @@ FILE METHODS
 	int		i, c;
 	id		o, w;
 	
-	[oldselection empty];
-	w = [self objectAt: 0];
+	[oldselection removeAllObjects];
+	w = [self objectAtIndex: 0];
 	c = [w count];
 	sb_newowner = oldselection;
 	for (i=0 ; i<c ; i++)
 	{
-		o = [w objectAt: 0];
+		o = [w objectAtIndex: 0];
 		if ([o selected])
 			[o moveToEntity];
 		else
 		{
-			[w removeObjectAt: 0];
+			[w removeObjectAtIndex: 0];
 			[o free];
 		}
 	}
@@ -49,8 +49,8 @@ FILE METHODS
 	c = [self count];
 	for (i=0 ; i<c ; i++)
 	{
-		o = [self objectAt: 0];
-		[self removeObjectAt: 0];
+		o = [self objectAtIndex: 0];
+		[self removeObjectAtIndex: 0];
 		[o freeObjects];
 		[o free];
 	}
@@ -64,17 +64,17 @@ FILE METHODS
 	id		n, w;
 	
 	c = [oldselection count];
-	w = [self objectAt: 0];	// world object
+	w = [self objectAtIndex: 0];	// world object
 
 	sb_newowner = w;
 	for (i=0 ; i<c ; i++)
 	{
-		n = [oldselection objectAt:i];
+		n = [oldselection objectAtIndex:i];
 		[n moveToEntity];
 		i--;
 		c--;
 	}
-	[oldselection empty];
+	[oldselection removeAllObjects];
 	
 	return self;
 }
@@ -151,16 +151,14 @@ FILE METHODS
 	return self;
 }
 
-- removeObject: o
+- (void) removeObject: o
 {
-	o = [super removeObject: o];
+	[super removeObject: o];
 	
 	if (o == currentEntity)
 	{	// select the world
-		[self setCurrentEntity: [self objectAt: 0]];
+		[self setCurrentEntity: [self objectAtIndex: 0]];
 	}
-
-	return o;
 }
 
 - writeStats
@@ -187,7 +185,7 @@ FILE METHODS
 	num = 0;
 	c = [currentEntity count];
 	for (i=0 ; i<c ; i++)
-		if ( [[currentEntity objectAt: i] selected] )
+		if ( [[currentEntity objectAtIndex: i] selected] )
 			num++;
 	return num;
 }
@@ -200,8 +198,8 @@ FILE METHODS
 	num = 0;
 	c = [currentEntity count];
 	for (i=0 ; i<c ; i++)
-		if ( [[currentEntity objectAt: i] selected] )
-			return [currentEntity objectAt: i];
+		if ( [[currentEntity objectAtIndex: i] selected] )
+			return [currentEntity objectAtIndex: i];
 	return nil;
 }
 
@@ -237,7 +235,7 @@ readMapFile
 
 	free (dat);
 
-	[self setCurrentEntity: [self objectAt: 0]];
+	[self setCurrentEntity: [self objectAtIndex: 0]];
 
 	[self addSelected];
 		
@@ -258,7 +256,7 @@ readMapFile
 	c = [self count];
 	for (i=1 ; i<c ; i++)
 	{
-		ent = [self objectAt: i];
+		ent = [self objectAtIndex: i];
 		cl = [ent valueForQKey: "classname"];
 		if (cl && !strcasecmp (cl,"info_player_start"))
 		{
@@ -290,8 +288,8 @@ writeMapFile
 	if (!f)
 		Error ("couldn't write %s", fname);
 	
-	for (i=0 ; i<numElements ; i++)
-		[[self objectAt: i] writeToFILE: f region: reg];
+	for (i=0 ; i<[self count] ; i++)
+		[[self objectAtIndex: i] writeToFILE: f region: reg];
 			
 	fclose (f);
 	
@@ -313,7 +311,7 @@ DRAWING
 	count = [self count];
 
 	for (i=0 ; i<count ; i++)
-		[[self objectAt: i] ZDrawSelf];
+		[[self objectAtIndex: i] ZDrawSelf];
 
 	return self;
 }
@@ -325,7 +323,7 @@ DRAWING
 	count = [self count];
 
 	for (i=0 ; i<count ; i++)
-		[[self objectAt: i] RenderSelf: callback];
+		[[self objectAtIndex: i] RenderSelf: callback];
 
 	return self;
 }
@@ -347,7 +345,7 @@ make a target connection from the original entity.
 	id	oldent, ent;
 	
 	oldent = [self currentEntity];
-	if (oldent == [self objectAt: 0])
+	if (oldent == [self objectAtIndex: 0])
 	{
 		qprintf ("Must have a non-world entity selected to connect");
 		return self;
@@ -361,7 +359,7 @@ make a target connection from the original entity.
 		return self;
 	}
 	
-	if (ent == [self objectAt: 0])
+	if (ent == [self objectAtIndex: 0])
 	{
 		qprintf ("Must click on a non-world entity to connect");
 		return self;
@@ -399,11 +397,11 @@ to intervening world brushes
 	c = [self count];
 	for (i=c-1 ; i>=0 ; i--)
 	{
-		ent = [self objectAt: i];
+		ent = [self objectAtIndex: i];
 		c2 = [ent count];
 		for (j=0 ; j<c2 ; j++)
 		{
-			brush = [ent objectAt: j];
+			brush = [ent objectAtIndex: j];
 			[brush hitByRay: p1 : p2 : &time : &face];
 			if (time < 0 || time >besttime)
 				continue;
@@ -444,12 +442,12 @@ to intervening world brushes
 		}
 
 		[bestbrush setSelected: YES];
-		qprintf ("selected entity %i brush %i face %i", [self indexOf:bestent], [bestent indexOf: bestbrush], bestface);
+		qprintf ("selected entity %i brush %i face %i", [self indexOfObject:bestent], [bestent indexOfObject: bestbrush], bestface);
 	}
 	else 
 	{
 		[bestbrush setSelected: NO];
-		qprintf ("deselected entity %i brush %i face %i", [self indexOf:bestent], [bestent indexOf: bestbrush], bestface);
+		qprintf ("deselected entity %i brush %i face %i", [self indexOfObject:bestent], [bestent indexOfObject: bestbrush], bestface);
 	}
 
 	[quakeed_i reenableFlushWindow];
@@ -480,11 +478,11 @@ Returns the brush hit, or nil if missed.
 	c = [self count];
 	for (i=0 ; i<c ; i++)
 	{
-		ent = [self objectAt: i];		
+		ent = [self objectAtIndex: i];		
 		c2 = [ent count];
 		for (j=0 ; j<c2 ; j++)
 		{
-			brush = [ent objectAt: j];
+			brush = [ent objectAtIndex: j];
 			if (![brush selected])
 				continue;
 			[brush hitByRay: p1 : p2 : &time : &face];
@@ -524,11 +522,11 @@ getTextureRay
 	c = [self count];
 	for (i=0 ; i<c ; i++)
 	{
-		ent = [self objectAt: i];		
+		ent = [self objectAtIndex: i];		
 		c2 = [ent count];
 		for (j=0 ; j<c2 ; j++)
 		{
-			brush = [ent objectAt: j];
+			brush = [ent objectAtIndex: j];
 			[brush hitByRay: p1 : p2 : &time : &face];
 			if (time < 0 || time >besttime)
 				continue;
@@ -583,11 +581,11 @@ setTextureRay
 	c = [self count];
 	for (i=0 ; i<c ; i++)
 	{
-		ent = [self objectAt: i];		
+		ent = [self objectAtIndex: i];		
 		c2 = [ent count];
 		for (j=0 ; j<c2 ; j++)
 		{
-			brush = [ent objectAt: j];
+			brush = [ent objectAtIndex: j];
 			[brush hitByRay: p1 : p2 : &time : &face];
 			if (time < 0 || time >besttime)
 				continue;
@@ -622,12 +620,12 @@ setTextureRay
 	if (allsides)
 	{
 		[bestbrush setTexturedef: &td];
-		qprintf ("textured entity %i brush %i", [self indexOf:bestent], [bestent indexOf: bestbrush]);
+		qprintf ("textured entity %i brush %i", [self indexOfObject:bestent], [bestent indexOfObject: bestbrush]);
 	}
 	else 
 	{
 		[bestbrush setTexturedef: &td forFace: bestface];
-		qprintf ("deselected entity %i brush %i face %i", [self indexOf:bestent], [bestent indexOf: bestbrush], bestface);
+		qprintf ("deselected entity %i brush %i face %i", [self indexOfObject:bestent], [bestent indexOfObject: bestbrush], bestface);
 	}
 	[quakeed_i reenableFlushWindow];
 		
@@ -655,11 +653,11 @@ OPERATIONS ON SELECTIONS
 	c = [self count];
 	for (i=c-1 ; i>=0 ; i--)
 	{
-		ent = [self objectAt: i];
+		ent = [self objectAtIndex: i];
 		c2 = [ent count];
 		for (j = c2-1 ; j >=0 ; j--)
 		{
-			brush = [ent objectAt: j];
+			brush = [ent objectAtIndex: j];
 			if (! [brush selected] )
 				continue;
 			if ([brush regioned])
@@ -683,11 +681,11 @@ OPERATIONS ON SELECTIONS
 	c = [self count];
 	for (i=c-1 ; i>=0 ; i--)
 	{
-		ent = [self objectAt: i];
+		ent = [self objectAtIndex: i];
 		c2 = [ent count];
 		for (j = c2-1 ; j >=0 ; j--)
 		{
-			brush = [ent objectAt: j];
+			brush = [ent objectAtIndex: j];
 			if ( [brush selected] )
 				continue;
 			if ([brush regioned])
@@ -707,11 +705,11 @@ OPERATIONS ON SELECTIONS
 	c = [self count];
 	for (i=c-1 ; i>=0 ; i--)
 	{
-		ent = [self objectAt: i];
+		ent = [self objectAtIndex: i];
 		c2 = [ent count];
 		for (j = c2-1 ; j >=0 ; j--)
 		{
-			brush = [ent objectAt: j];
+			brush = [ent objectAtIndex: j];
 			if ([brush regioned])
 				continue;
 			[brush perform:sel];
@@ -729,11 +727,11 @@ OPERATIONS ON SELECTIONS
 	c = [self count];
 	for (i=c-1 ; i>=0 ; i--)
 	{
-		ent = [self objectAt: i];
+		ent = [self objectAtIndex: i];
 		c2 = [ent count];
 		for (j = c2-1 ; j >=0 ; j--)
 		{
-			brush = [ent objectAt: j];
+			brush = [ent objectAtIndex: j];
 			[brush perform:sel];
 		}
 	}
@@ -854,11 +852,11 @@ UI operations
 	sb_translate[2] = 0;
 
 // copy individual brushes in the world entity
-	o = [self objectAt: 0];
+	o = [self objectAtIndex: 0];
 	c = [o count];
 	for (i=0 ; i<c ; i++)
 	{
-		b = [o objectAt: i];
+		b = [o objectAtIndex: i];
 		if (![b selected])
 			continue;
 			
@@ -871,11 +869,11 @@ UI operations
 	}
 	
 // copy entire entities otherwise
-	originalElements = numElements;	// don't copy the new ones
+	originalElements = [self count];	// don't copy the new ones
 	for (i=1 ; i<originalElements ; i++)
 	{
-		o = [self objectAt: i];
-		if (![[o objectAt: 0] selected])
+		o = [self objectAtIndex: i];
+		if (![[o objectAtIndex: 0] selected])
 			continue;
 
 		new = [o copy];
@@ -883,12 +881,12 @@ UI operations
 
 		c = [o count];
 		for (j=0 ; j<c ; j++)
-			[[o objectAt: j] setSelected: NO];
+			[[o objectAtIndex: j] setSelected: NO];
 		
 		c = [new count];
 		for (j=0 ; j<c ; j++)
 		{
-			b = [new objectAt: j];
+			b = [new objectAtIndex: j];
 			[b translate];
 			[b setSelected: YES];
 		}
@@ -914,7 +912,7 @@ UI operations
 	o = [o parent];
 	c = [o count];
 	for (i=0 ; i<c ; i++)
-		[[o objectAt: i] setSelected: YES];	
+		[[o objectAtIndex: i] setSelected: YES];	
 	qprintf ("%i brushes selected", c);
 
 	[quakeed_i updateAll];
@@ -924,7 +922,7 @@ UI operations
 
 - makeEntity: sender
 {
-	if (currentEntity != [self objectAt: 0])
+	if (currentEntity != [self objectAtIndex: 0])
 	{
 		qprintf ("ERROR: can't makeEntity inside an entity");
 		NXBeep ();
@@ -945,7 +943,7 @@ UI operations
 	else
 	{	// throw out seed brush and select entity fixed brush
 		[self makeSelectedPerform: @selector(remove)];
-		[[sb_newowner objectAt: 0] setSelected: YES];
+		[[sb_newowner objectAtIndex: 0] setSelected: YES];
 	}
 	
 	[self addObject: sb_newowner];
@@ -1010,8 +1008,8 @@ UI operations
 	mins[2] = -2048;
 	maxs[2] = 2048;
 	
-	b = [[SetBrush alloc] initOwner: [map_i objectAt:0] mins: mins maxs: maxs texture: &td];
-	[[map_i objectAt: 0] addObject: b];
+	b = [[SetBrush alloc] initOwner: [map_i objectAtIndex:0] mins: mins maxs: maxs texture: &td];
+	[[map_i objectAtIndex: 0] addObject: b];
 	[b setSelected: YES];
 	[quakeed_i updateAll];
 		
@@ -1038,8 +1036,8 @@ UI operations
 	mins[2] = 0;
 	maxs[2] = 16;
 	
-	b = [[SetBrush alloc] initOwner: [map_i objectAt:0] mins: mins maxs: maxs texture: &td];
-	[[map_i objectAt: 0] addObject: b];
+	b = [[SetBrush alloc] initOwner: [map_i objectAtIndex:0] mins: mins maxs: maxs texture: &td];
+	[[map_i objectAtIndex: 0] addObject: b];
 	[b setSelected: YES];
 	[quakeed_i updateAll];
 	
@@ -1059,15 +1057,15 @@ subtractSelection
 	
 	qprintf ("performing brush subtraction...");
 
-	sourcelist = [[List alloc] init];
-	sellist = [[List alloc] init];
-	carve_in = [[List alloc] init];
-	carve_out = [[List alloc] init];
+	sourcelist = [[NSMutableArray alloc] init];
+	sellist = [[NSMutableArray alloc] init];
+	carve_in = [[NSMutableArray alloc] init];
+	carve_out = [[NSMutableArray alloc] init];
 	
 	c = [currentEntity count];
 	for (i=0 ; i<c ; i++)
 	{
-		o = [currentEntity objectAt: i];
+		o = [currentEntity objectAtIndex: i];
 		if ([o selected])
 			[sellist addObject: o];
 		else
@@ -1078,24 +1076,24 @@ subtractSelection
 	c = [sellist count];
 	for (i=0 ; i<c ; i++)
 	{
-		o = [sellist objectAt: i];
+		o = [sellist objectAtIndex: i];
 		[o setCarveVars];
 		
 		c2 = [sourcelist count];
 		for (j=0 ; j<c2 ; j++)
 		{
-			o2 = [sourcelist objectAt: j];
+			o2 = [sourcelist objectAtIndex: j];
 			[o2 carve];
 			[carve_in freeObjects];
 		}
 
 		[sourcelist free];	// the individual have been moved/freed
 		sourcelist = carve_out;
-		carve_out = [[List alloc] init];
+		carve_out = [[NSMutableArray alloc] init];
 	}
 
 // add the selection back to the remnants
-	[currentEntity empty];
+	[currentEntity removeAllObjects];
 	[currentEntity appendList: sourcelist];
 	[currentEntity appendList: sellist];
 
