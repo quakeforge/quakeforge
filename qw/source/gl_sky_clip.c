@@ -42,7 +42,6 @@
 #include "QF/render.h"
 #include "QF/sys.h"
 
-#include "client.h"
 #include "glquake.h"
 #include "view.h"
 
@@ -102,6 +101,7 @@ struct box_def {
 	struct face_def face[6];
 };
 
+
 /*
 	determine_face
 
@@ -133,13 +133,14 @@ determine_face (vec3_t v)
 		i = 2;
 	}
 	if (!m) {
-		Sys_Error ("%s speared by sky poly edge\n", cl_name->string);
+		Sys_Error ("You are speared by a sky poly edge\n");
 	}
 	if (v[i] < 0)
 		i += 3;
 	VectorScale (v, 1024 / m, v);
 	return i;
 }
+
 
 /*
 	find_intersect (for want of a better name)
@@ -200,6 +201,7 @@ find_intersect (int face1, vec3_t x1, int face2, vec3_t x2, vec3_t y)
 	return axis;
 }
 
+
 /*
 	find_cube_vertex
 
@@ -216,6 +218,7 @@ find_cube_vertex (int face1, int face2, int face3, vec3_t v)
 	v[face_axis[face2]] = face_offset[face2];
 	v[face_axis[face3]] = face_offset[face3];
 }
+
 
 /*
 	set_vertex
@@ -258,6 +261,7 @@ set_vertex (struct box_def *box, int face, int ind, vec3_t v)
 	}
 }
 
+
 /*
  	add_vertex
 
@@ -268,6 +272,7 @@ add_vertex (struct box_def *box, int face, vec3_t v)
 {
 	set_vertex (box, face, box->face[face].poly.numverts++, v);
 }
+
 
 /*
 	insert_cube_vertices
@@ -321,6 +326,7 @@ insert_cube_vertices (struct box_def *box, struct visit_def visit, int count,
 	}
 }
 
+
 /*
 	cross_cube_edge
 
@@ -361,6 +367,7 @@ cross_cube_edge (struct box_def *box, int face1, vec3_t v1, int face2,
 		add_vertex (box, face2, l);
 	}
 }
+
 
 /*
 	process_corners
@@ -566,6 +573,7 @@ process_corners (struct box_def *box)
 	}
 }
 
+
 /*
 	render_box
 
@@ -588,6 +596,7 @@ render_box (struct box_def *box)
 		glEnd ();
 	}
 }
+
 
 void
 R_DrawSkyBoxPoly (glpoly_t *poly)
@@ -646,6 +655,7 @@ R_DrawSkyBoxPoly (glpoly_t *poly)
 
 	render_box (&box);
 }
+
 
 void
 R_DrawSkyDomePoly (glpoly_t *poly)
