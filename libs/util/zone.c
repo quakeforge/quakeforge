@@ -75,14 +75,12 @@ typedef struct memblock_s
 	int         pad;		// pad to 64 bit boundary
 } memblock_t;
 
-typedef struct
+struct memzone_s
 {
 	int         size;		// total bytes malloced, including header
 	memblock_t  blocklist;	// start / end cap for linked list
 	memblock_t  *rover;
-} memzone_t;
-
-memzone_t   *mainzone;
+};
 
 void Z_ClearZone (memzone_t *zone, int size)
 {
@@ -104,7 +102,7 @@ void Z_ClearZone (memzone_t *zone, int size)
 }
 
 
-void Z_Free (void *ptr)
+void Z_Free (memzone_t *zone, void *ptr)
 {
 	memblock_t	*block, *other;
 	
@@ -120,34 +118,34 @@ void Z_Free (void *ptr)
 	block->tag = 0;		// mark as free
 	
 	other = block->prev;
-	if (!other->tag)
-	{	// merge with previous free block
+	if (!other->tag) {
+		// merge with previous free block
 		other->size += block->size;
 		other->next = block->next;
 		other->next->prev = other;
-		if (block == mainzone->rover)
-			mainzone->rover = other;
+		if (block == zone->rover)
+			zone->rover = other;
 		block = other;
 	}
 	
 	other = block->next;
-	if (!other->tag)
-	{	// merge the next free block onto the end
+	if (!other->tag) {
+		// merge the next free block onto the end
 		block->size += other->size;
 		block->next = other->next;
 		block->next->prev = block;
-		if (other == mainzone->rover)
-			mainzone->rover = block;
+		if (other == zone->rover)
+			zone->rover = block;
 	}
 }
 
 
-void *Z_Malloc (int size)
+void *Z_Malloc (memzone_t *zone, int size)
 {
 	void	*buf;
 	
-Z_CheckHeap ();	// DEBUG
-	buf = Z_TagMalloc (size, 1);
+Z_CheckHeap (zone);	// DEBUG
+	buf = Z_TagMalloc (zone, size, 1);
 	if (!buf)
 		Sys_Error ("Z_Malloc: failed on allocation of %i bytes",size);
 	memset (buf, 0, size);
@@ -155,7 +153,7 @@ Z_CheckHeap ();	// DEBUG
 	return buf;
 }
 
-void *Z_TagMalloc (int size, int tag)
+void *Z_TagMalloc (memzone_t *zone, int size, int tag)
 {
 	int		extra;
 	memblock_t	*start, *rover, *new, *base;
@@ -169,11 +167,10 @@ void *Z_TagMalloc (int size, int tag)
 	size += 4;					// space for memory trash tester
 	size = (size + 7) & ~7;		// align to 8-byte boundary
 	
-	base = rover = mainzone->rover;
+	base = rover = zone->rover;
 	start = base->prev;
 	
-	do
-	{
+	do {
 		if (rover == start)	// scaned all the way around the list
 			return NULL;
 		if (rover->tag)
@@ -184,8 +181,8 @@ void *Z_TagMalloc (int size, int tag)
 	
 	// found a block big enough
 	extra = base->size - size;
-	if (extra >  MINFRAGMENT)
-	{	// there will be a free fragment after the allocated block
+	if (extra >  MINFRAGMENT) {
+		// there will be a free fragment after the allocated block
 		new = (memblock_t *) ((byte *)base + size );
 		new->size = extra;
 		new->tag = 0;			// free block
@@ -199,7 +196,7 @@ void *Z_TagMalloc (int size, int tag)
 	
 	base->tag = tag;				// no longer a free block
 	
-	mainzone->rover = base->next;	// next allocation will start looking here
+	zone->rover = base->next;	// next allocation will start looking here
 	
 	base->id = ZONEID;
 
@@ -214,7 +211,7 @@ void Z_Print (memzone_t *zone)
 {
 	memblock_t	*block;
 	
-	Con_Printf ("zone size: %i  location: %p\n",mainzone->size,mainzone);
+	Con_Printf ("zone size: %i  location: %p\n",zone->size,zone);
 	
 	for (block = zone->blocklist.next ; ; block = block->next)
 	{
@@ -233,13 +230,13 @@ void Z_Print (memzone_t *zone)
 }
 
 
-void Z_CheckHeap (void)
+void Z_CheckHeap (memzone_t *zone)
 {
 	memblock_t	*block;
 	
-	for (block = mainzone->blocklist.next ; ; block = block->next)
+	for (block = zone->blocklist.next ; ; block = block->next)
 	{
-		if (block->next == &mainzone->blocklist)
+		if (block->next == &zone->blocklist)
 			break;			// all blocks have been hit	
 		if ( (byte *)block + block->size != (byte *)block->next)
 			Sys_Error ("Z_CheckHeap: block size does not touch the next block\n");

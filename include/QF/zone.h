@@ -94,15 +94,14 @@ Zone block
 
 */
 
+typedef struct memzone_s memzone_t;
+
 void Memory_Init (void *buf, int size);
 
-void Z_Free (void *ptr);
-void *Z_Malloc (int size);			// returns 0 filled memory
-void *Z_TagMalloc (int size, int tag);
-
-void Z_DumpHeap (void);
-void Z_CheckHeap (void);
-int Z_FreeMemory (void);
+void Z_Free (memzone_t *zone, void *ptr);
+void *Z_Malloc (memzone_t *zone, int size);			// returns 0 filled memory
+void *Z_TagMalloc (memzone_t *zone, int size, int tag);
+void Z_CheckHeap (memzone_t *zone);
 
 void *Hunk_Alloc (int size);		// returns 0 filled memory
 void *Hunk_AllocName (int size, const char *name);
