@@ -286,9 +286,9 @@ R_Init_Cvars (void)
 						  "Set to 0 to disable lightmap changes");
 	r_explosionclip = Cvar_Get ("r_explosionclip", "0", CVAR_ARCHIVE, NULL,
 								"Clip explosions.");
-	r_farclip = Cvar_Get ("r_farclip", "4096", CVAR_ARCHIVE, NULL,
-							"Distance of the far clipping plane from the player.");
-	r_firecolor = Cvar_Get ("r_firecolor", "0.9 0.4 0", CVAR_ARCHIVE, NULL,
+	r_farclip = Cvar_Get ("r_farclip", "4096", CVAR_ARCHIVE, NULL, "Distance "
+						  "of the far clipping plane from the player.");
+	r_firecolor = Cvar_Get ("r_firecolor", "0.9 0.7 0.0", CVAR_ARCHIVE, NULL,
 							"color of rocket and lava ball fires");
 	r_graphheight = Cvar_Get ("r_graphheight", "32", CVAR_NONE, NULL,
 							  "Set the number of lines displayed in the "
