@@ -29,10 +29,14 @@ MSVCRT_ZIP=bin-msvcrt-2000-03-27.zip
 MUMIT_URL=ftp://ftp.xraylith.wisc.edu/pub/khan/gnu-win32/mingw32/snapshots/gcc-2.95.2-1
 MUMIT_URL2=ftp://ftp.xraylith.wisc.edu/pub/khan/gnu-win32/mingw32/runtime
 
+# taniwha's binutils patch
+BINUTILS_PATCH=binutils-19990818-bison-patch
+TAN_URL=http://quakeforge.net/~taniwha/
+
 # this is from my archive
 
 GCC_PATCH=gcc-2.95.2-libio-patch
-RHK_URL=http://www.libsdl.org/Xmingw32/crossgcc
+RHK_URL=http://www.newimage.com/~rhk/crossgcc/
 OPENGL_TAR=opengl.tar.gz
 DIRECTX_TAR=directx.tar.gz
 
@@ -70,6 +74,7 @@ download_files()
 		exit 1
 	fi
 	download_file $BINUTILS_TAR $MUMIT_URL
+	download_file $BINUTILS_PATCH $TAN_URL
 	download_file $GCC_TAR $MUMIT_URL
 	download_file $MSVCRT_ZIP $MUMIT_URL2
 	download_file $GCC_PATCH $RHK_URL
@@ -95,6 +100,14 @@ extract_binutils()
 	rm -rf $BINUTILS
 	echo "Extracting binutils"
 	gzip -dc $SRCDIR/$BINUTILS_TAR | tar xf -
+	cd $TOPDIR
+}
+
+patch_binutils()
+{
+	echo "Patching binutils"
+	cd $SRCDIR/$BINUTILS
+	patch -p1 < $SRCDIR/$BINUTILS_PATCH
 	cd $TOPDIR
 }
 
@@ -191,6 +204,7 @@ download_files
 install_libs
 
 extract_binutils
+patch_binutils
 configure_binutils
 build_binutils
 install_binutils
