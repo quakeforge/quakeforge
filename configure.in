@@ -1426,30 +1426,37 @@ AC_SUBST(QW_TARGETS)
 
 dnl Output files
 AC_OUTPUT(
-	RPM/build_rpm
-	debian/Makefile
-	doc/Makefile
-	doc/texinfo/Makefile
-	doc/man/Makefile
+	Makefile
+
 	include/Makefile
 	include/QF/Makefile
 	include/win32/version.h
+
 	libs/Makefile
 	libs/audio/Makefile
 	libs/audio/cd/Makefile
 	libs/audio/targets/Makefile
 	libs/gamecode/Makefile
 	libs/util/Makefile
-	qw/include/Makefile
-	qw/source/Makefile
+
 	qw/Makefile
 	qw/quakeforge.lsm
-	Makefile
+	qw/include/Makefile
+	qw/source/Makefile
 	
+	nq/Makefile
+	nq/nuq.lsm
 	nq/include/Makefile
 	nq/source/Makefile
-	nq/Makefile
-	nq/nuq.lsm,
+
+	doc/Makefile
+	doc/man/Makefile
+	doc/texinfo/Makefile
+
+	debian/Makefile
+
+	RPM/build_rpm,
+
 	chmod +x RPM/build_rpm
 )
 

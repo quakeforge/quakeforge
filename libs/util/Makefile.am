@@ -1,3 +1,5 @@
+INCLUDES= -I$(top_srcdir)/include
+
 lib_LTLIBRARIES = libQFutil.la
 
 libQFutil_la_LDFLAGS = -version-info 1:0:0 $(Z_LIBS)

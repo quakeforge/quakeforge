@@ -124,9 +124,9 @@ YACCLEX_CLEANFILES= fbset_modes_y.c fbset_modes_y.h fbset_modes_y.tab.h fbset_mo
 EXTRA_nq_fbdev_SOURCES=fbset_modes_y.h
 
 fbset_modes_y.o: fbset_modes_y.c
-	$(CC) $(INCLUDES) $(CFLAGS) -Wno-error -c fbset_modes_y.c
+	$(COMPILE) -Wno-error -c fbset_modes_y.c
 fbset_modes_l.o: fbset_modes_l.c
-	$(CC) $(INCLUDES) $(CFLAGS) -Wno-error -c fbset_modes_l.c
+	$(COMPILE) -Wno-error -c fbset_modes_l.c
 
 nq_fbdev_SOURCES= $(combined_SOURCES) $(soft_SOURCES) $(fbdev_SOURCES)
 nq_fbdev_LDADD= $(client_LIBS)
@@ -229,3 +229,6 @@ nq_server_DEPENDENCIES=libqfnet.a
 # or it won't be distributed with 'make dist'
 #
 EXTRA_DIST=	#nq.dsp
+
+# Kill the temp files, hopefully.
+CLEANFILES  = *.i *.s $(YACCLEX_CLEANFILES)

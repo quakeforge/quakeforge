@@ -162,9 +162,9 @@ YACCLEX_CLEANFILES=	fbset_modes_y.c fbset_modes_y.h fbset_modes_y.tab.h fbset_mo
 EXTRA_qw_client_fbdev_SOURCES=fbset_modes_y.h
 
 fbset_modes_y.o: fbset_modes_y.c
-	$(CC) $(INCLUDES) $(CFLAGS) -Wno-error -c fbset_modes_y.c
+	$(COMPILE) -Wno-error -c fbset_modes_y.c
 fbset_modes_l.o: fbset_modes_l.c
-	$(CC) $(INCLUDES) $(CFLAGS) -Wno-error -c fbset_modes_l.c
+	$(COMPILE) -Wno-error -c fbset_modes_l.c
 
 qw_client_fbdev_SOURCES= $(common_SOURCES) $(client_SOURCES) $(soft_SOURCES) $(fbdev_SOURCES)
 qw_client_fbdev_LDADD= $(CLIENT_LIBS)
