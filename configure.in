@@ -781,7 +781,7 @@ if test -z "$JOYTYPE" -a "x$ac_cv_header_dinput_h" = "xyes"; then
 fi
 
 if test "$JOYTYPE"; then
-	AC_MSG_RESULT([yes ($JOYTYPE)])
+	AC_MSG_RESULT([$JOYTYPE])
 else
 	AC_MSG_RESULT([no, using null joystick driver])
 fi
@@ -809,14 +809,12 @@ AC_EGREP_CPP([QF_maGiC_VALUE],
 QF_maGiC_VALUE
 #endif
 	],
-	AC_MSG_RESULT([yes (Linux)])
-	CDTYPE="$CDTYPE LINUX"
+	CDTYPE="$CDTYPE LinuX"
 	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS libcd_linux.la"
 )
 
 dnl SDL CD audio
 if test "x$HAVE_SDL" = "xyes"; then
-	AC_MSG_RESULT([yes (SDL)])
 	CDTYPE="$CDTYPE SDL"
 	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS libcd_sdl.la"
 fi
@@ -829,7 +827,6 @@ AC_EGREP_CPP([QF_maGiC_VALUE],
 QF_maGiC_VALUE
 #endif
 	],
-	AC_MSG_RESULT([yes (SGI)])
 	CDTYPE="$CDTYPE SGI"
 	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS libcd_sgi.la"
 	SGI_CD_LIBS="-lcdaudio -lmediad -lds"
@@ -843,10 +840,14 @@ AC_EGREP_CPP([QF_maGiC_VALUE],
 QF_maGiC_VALUE
 #endif
 	],
-	AC_MSG_RESULT([yes (Win32)])
 	CDTYPE="$CDTYPE WIN32"
 	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS libcd_win.la"
 )
+if test "$CDTYPE"; then
+	AC_MSG_RESULT([$CDTYPE])
+else
+	AC_MSG_RESULT([no, using null CD driver])
+fi
 
 AC_SUBST(CD_LIBS)
 AC_SUBST(CD_CFLAGS)
