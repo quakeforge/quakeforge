@@ -34,6 +34,6 @@
 
 #include "QF/quakeio.h"
 
-struct tex_s *LoadImage (const char *imageFile, QFile *fp);
+struct tex_s *LoadImage (const char *imageFile);
 
 #endif//__QF_image_h

@@ -47,13 +47,14 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/tga.h"
 
 tex_t *
-LoadImage (const char *imageFile, QFile *fp)
+LoadImage (const char *imageFile)
 {
 	int         tmp;
 	dstring_t  *tmpFile;
 	char       *ext;
 	tex_t      *tex = NULL;
-	
+	QFile      *fp;
+
 	/* Get the file name without extension */
 	tmpFile = dstring_new ();
 	dstring_copystr (tmpFile, imageFile);
@@ -61,7 +62,7 @@ LoadImage (const char *imageFile, QFile *fp)
 	if (ext)
 		tmp = ext - tmpFile->str;
 	else
-		tmp = tmpFile->size;
+		tmp = tmpFile->size - 1;
 	
 	/* Check for a .png */
 	dstring_replace (tmpFile, tmp, tmpFile->size, ".png", 5);

@@ -43,12 +43,12 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "QF/cvar.h"
 #include "QF/dstring.h"
+#include "QF/image.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
-#include "QF/tga.h"
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/GL/qf_textures.h"
@@ -74,11 +74,9 @@ Mod_ProcessTexture (miptex_t *mt, texture_t *tx)
 void
 Mod_LoadExternalTextures (model_t *mod)
 {
-	char	   *filename;
 	int			i;
 	tex_t	   *targa;
 	texture_t  *tx;
-	QFile	   *f;
 
 	for (i = 0; i < mod->numtextures; i++) {
 		tx = mod->textures[i];
@@ -87,36 +85,24 @@ Mod_LoadExternalTextures (model_t *mod)
 
 		// FIXME: replace special flag characters with # or _?
 		if (tx->name[0] == '*') {
-			filename = va ("textures/%.*s/#%s.tga",
-						   (int) strlen (mod->name + 5) - 4,
-						   mod->name + 5, tx->name + 1);
-			QFS_FOpenFile (filename, &f);
-			if (!f) {
-				filename = va ("textures/#%s.tga", tx->name + 1);
-				QFS_FOpenFile (filename, &f);
-			}
-			if (!f) {
-				filename = va ("maps/#%s.tga", tx->name + 1);
-				QFS_FOpenFile (filename, &f);
-			}
+			targa = LoadImage (va ("textures/%.*s/#%s",
+								   (int) strlen (mod->name + 5) - 4,
+								   mod->name + 5, tx->name + 1));
+			if (!targa)
+				targa = LoadImage (va ("textures/#%s", tx->name + 1));
+			if (!targa)
+				targa = LoadImage (va ("maps/#%s", tx->name + 1));
 		} else {
-			filename = va ("textures/%.*s/%s.tga",
-						   (int) strlen (mod->name + 5) - 4,
-						   mod->name + 5, tx->name);
-			QFS_FOpenFile (filename, &f);
-			if (!f) {
-				filename = va ("textures/%s.tga", tx->name);
-				QFS_FOpenFile (filename, &f);
-			}
-			if (!f) {
-				filename = va ("maps/%s.tga", tx->name);
-				QFS_FOpenFile (filename, &f);
-			}
+			targa = LoadImage (va ("textures/%.*s/%s",
+								   (int) strlen (mod->name + 5) - 4,
+								   mod->name + 5, tx->name));
+			if (!targa)
+				targa = LoadImage (va ("textures/%s", tx->name));
+			if (!targa)
+				targa = LoadImage (va ("maps/%s", tx->name));
 		}
 
-		if (f) {
-			targa = LoadTGA (f);
-			Qclose (f);
+		if (targa) {
 			if (targa->format < 4) {
 				tx->gl_texturenum =
 					GL_LoadTexture (tx->name, targa->width, targa->height,

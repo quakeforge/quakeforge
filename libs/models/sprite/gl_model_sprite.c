@@ -39,10 +39,11 @@ static __attribute__ ((unused)) const char rcsid[] =
 #endif
 
 #include "QF/console.h"
+#include "QF/image.h"
 #include "QF/model.h"
 #include "QF/quakefs.h"
 #include "QF/texture.h"
-#include "QF/tga.h"
+#include "QF/va.h"
 #include "QF/GL/qf_textures.h"
 
 #include "compat.h"
@@ -50,18 +51,11 @@ static __attribute__ ((unused)) const char rcsid[] =
 void
 Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
 {
-	char        name[64];
-	char        filename[MAX_QPATH + 4];
 	tex_t      *targa;
-	QFile      *f;
+	const char *name;
 
-	snprintf (name, sizeof (name), "%s_%i", loadmodel->name, framenum);
-
-	snprintf (filename, sizeof (filename), "%s.tga", name);
-	QFS_FOpenFile (filename, &f);
-	if (f) {
-		targa = LoadTGA (f);
-		Qclose (f);
+	targa = LoadImage (name = va ("%s_%i", loadmodel->name, framenum));
+	if (targa) {
 		if (targa->format < 4)
 			pspriteframe->gl_texturenum = GL_LoadTexture (name,
 				targa->width, targa->height, targa->data,

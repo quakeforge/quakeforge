@@ -41,13 +41,13 @@ static __attribute__ ((unused)) const char rcsid[] =
 # include <strings.h>
 #endif
 
+#include "QF/image.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
-#include "QF/tga.h"
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/GL/qf_textures.h"
@@ -268,27 +268,18 @@ Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
 static void
 Mod_LoadExternalSkin (maliasskindesc_t *pskindesc, char *filename)
 {
-	tex_t		*targa;
-	QFile		*f;
+	tex_t		*tex;
 
-	QFS_FOpenFile (filename, &f);
-	if (!f) {
-		QFS_FOpenFile (va ("progs/%s", filename), &f);
-	}
-	if (!f) {
-		QFS_FOpenFile (va ("textures/%s", filename), &f);
-	}
-	if (f) {
-		targa = LoadTGA (f);
-		Qclose (f);
-		if (targa->format < 4)
+	tex = LoadImage (va ("progs/%s", filename));
+	if (!tex)
+		tex = LoadImage (va ("textures/%s", filename));
+	if (tex) {
+		if (tex->format < 4)
 			pskindesc->texnum = GL_LoadTexture
-				(filename, targa->width, targa->height, targa->data, true,
-				 false, 3);
+				(filename, tex->width, tex->height, tex->data, true, false, 3);
 		else
 			pskindesc->texnum = GL_LoadTexture
-				(filename, targa->width, targa->height, targa->data, true,
-				 false, 4);
+				(filename, tex->width, tex->height, tex->data, true, false, 4);
 	}
 }
 
@@ -304,13 +295,13 @@ Mod_LoadExternalSkins (model_t *mod)
 		pskindesc = ((maliasskindesc_t *)
 					 ((byte *) pheader + pheader->skindesc)) + i;
 		if (pskindesc->type == ALIAS_SKIN_SINGLE) {
-			snprintf (filename, sizeof (filename), "%s_%i.tga", mod->name, i);
+			snprintf (filename, sizeof (filename), "%s_%i", mod->name, i);
 			Mod_LoadExternalSkin (pskindesc, filename);
 		} else {
 			pskingroup = (maliasskingroup_t *)
 				((byte *) pheader + pskindesc->skin);
 			for (j = 0; j < pskingroup->numskins; j++) {
-				snprintf (filename, sizeof (filename), "%s_%i_%i.tga",
+				snprintf (filename, sizeof (filename), "%s_%i_%i",
 						  mod->name, i, j);
 				Mod_LoadExternalSkin (pskingroup->skindescs + j, filename);
 			}

@@ -45,12 +45,12 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/dstring.h"
+#include "QF/image.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
-#include "QF/tga.h"
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/GL/defines.h"
@@ -177,17 +177,11 @@ Draw_PicFromWad (const char *name)
 {
 	glpic_t    *gl;
 	qpic_t     *p;
-	dstring_t  *filename = dstring_new ();
-	QFile      *f;
 	tex_t      *targa;
 
 
-	dsprintf (filename, "%s.tga", name);
-	QFS_FOpenFile (filename->str, &f);
-	dstring_delete (filename);
-	if (f) {
-		targa = LoadTGA (f);
-		Qclose (f);
+	targa = LoadImage (name);
+	if (targa) {
 		p = malloc (sizeof (qpic_t));
 		p->width = targa->width;
 		p->height = targa->height;
@@ -223,9 +217,7 @@ Draw_CachePic (const char *path, qboolean alpha)
 	cachepic_t *pic;
 	int         i;
 	glpic_t    *gl;
-	QFile      *f;
 	tex_t      *targa;
-	char       *filename;
 
 	// First, check if its cached..
 	for (pic = cachepics, i = 0; i < numcachepics; pic++, i++)
@@ -239,13 +231,8 @@ Draw_CachePic (const char *path, qboolean alpha)
 	gl = (glpic_t *) pic->pic.data;
 
 	// Check for a .tga first
-	filename = strdup (path);
-	if (!strcmp (filename + strlen(filename) - 4, ".lmp"))
-		strcpy (filename + strlen(filename) - 4, ".tga");
-	QFS_FOpenFile (filename, &f);
-	if (f) {
-		targa = LoadTGA (f);
-		Qclose (f);
+	targa = LoadImage (path);
+	if (targa) {
 		if (targa->format < 4)
 			gl->texnum = GL_LoadTexture ("", targa->width, targa->height,
 				targa->data, false, alpha, 3);
@@ -277,11 +264,6 @@ Draw_CachePic (const char *path, qboolean alpha)
 	// Now lets mark this cache entry as used..
 	pic->dirty = false;
 	numcachepics++;
-
-	// FIXME: A really ugly kluge, keep a specific image in memory
-	//  for the menu system. Some days I really dislike legacy support..
-
-	free (filename);
 
 	// And now we are done, return what was asked for..
 	return &pic->pic;

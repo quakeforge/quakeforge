@@ -40,10 +40,11 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/image.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/texture.h"
-#include "QF/tga.h"
+#include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
@@ -113,9 +114,8 @@ vec5_t      skyvec[6][4] = {
 void
 R_LoadSkys (const char *skyname)
 {
-	char        name[64];
+	const char *name;
 	int         i, j;
-	QFile      *f;
 
 	if (strcasecmp (skyname, "none") == 0) {
 		skyloaded = false;
@@ -127,22 +127,17 @@ R_LoadSkys (const char *skyname)
 		tex_t	*targa;
 
 		qfglBindTexture (GL_TEXTURE_2D, SKY_TEX + i);
-		snprintf (name, sizeof (name), "env/%s%s.tga", skyname, suf[i]);
-		QFS_FOpenFile (name, &f);
-		if (!f) {
+		targa = LoadImage (name = va ("env/%s%s", skyname, suf[i]));
+		if (!targa) {
 			Con_DPrintf ("Couldn't load %s\n", name);
 			// also look in gfx/env, where Darkplaces looks for skies
-			snprintf (name, sizeof (name), "gfx/env/%s%s.tga", skyname,
-					  suf[i]);
-			QFS_FOpenFile (name, &f);
-			if (!f) {
+			targa = LoadImage (name = va ("gfx/env/%s%s", skyname, suf[i]));
+			if (!targa) {
 				Con_DPrintf ("Couldn't load %s\n", name);
 				skyloaded = false;
 				continue;
 			}
 		}
-		targa = LoadTGA (f);
-		Qclose (f);
 
 		qfglTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, targa->width,
 						targa->height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
