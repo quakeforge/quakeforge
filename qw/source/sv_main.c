@@ -71,6 +71,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/dstring.h"
 #include "QF/model.h"
 #include "QF/msg.h"
+#include "QF/object.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -2495,6 +2496,9 @@ SV_Init (void)
 	// execute +set as early as possible
 	Cmd_StuffCmds (sv_cbuf);
 	Cbuf_Execute_Sets (sv_cbuf);
+
+	// snax: Init experimental object system and run a test
+	Object_Init();
 
 	// execute the global configuration file if it exists
 	// would have been nice if Cmd_Exec_f could have been used, but it
