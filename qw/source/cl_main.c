@@ -284,7 +284,7 @@ CL_SendConnectPacket (void)
 
 	connect_time = realtime + t2 - t1;	// for retransmit requests
 
-	cls.qport = Cvar_VariableValue ("qport");
+	cls.qport = qport->int_val;
 
 	// Arrgh, this was not in the old binary only release, and eats up
 	// far too much of the 196 chars in the userinfo space, leaving nothing

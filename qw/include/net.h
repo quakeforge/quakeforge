@@ -51,6 +51,7 @@ extern	netadr_t	net_from;		// address of who sent the packet
 extern	struct msg_s *net_message;
 
 extern	struct cvar_s	*hostname;
+extern	struct cvar_s	*qport;
 
 extern	int		net_socket;
 
