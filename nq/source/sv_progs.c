@@ -388,7 +388,7 @@ resolve (progs_t *pr)
 		}
 	}
 	for (def = nq_opt_defs; def->name; def++) {
-		ddef = PR_FindGlobal (&sv_pr_state, "skill");
+		ddef = PR_FindGlobal (&sv_pr_state, def->name);
 		if (ddef) {
 			global = &G_FLOAT(pr, ddef->ofs);
 			set_address (def, global);
