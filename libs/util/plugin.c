@@ -42,6 +42,10 @@
 # include <strings.h>
 #endif
 
+#ifdef HAVE_WINDOWS_H
+# include <windows.h>
+#endif
+
 #ifdef HAVE_DLFCN_H
 # include <dlfcn.h>
 #endif
@@ -86,7 +90,6 @@ PI_Shutdown (void)
 plugin_t *
 PI_LoadPlugin (char *type, char *name)
 {
-#ifdef HAVE_DLOPEN
 	char			realname[4096];
 	char			*tmpname;
 	void			*dlhand = NULL;
@@ -99,31 +102,55 @@ PI_LoadPlugin (char *type, char *name)
 	tmpname = strrchr (name, '/');	// Get the base name, don't allow paths
 
 	// Build the path to the file to load
+#if defined(HAVE_DLOPEN)
 	snprintf (realname, sizeof (realname), "%s/lib%s_%s.so",
 				fs_pluginpath->string, type, (tmpname ? tmpname + 1 : name));
+#elif defined(_WIN32)
+	snprintf (realname, sizeof (realname), "%s/QF%s_%s.dll",
+				fs_pluginpath->string, type, (tmpname ? tmpname + 1 : name));
+#else
+# error "No shared library support. FIXME"
+	return NULL;
+#endif
 
+#if defined(HAVE_DLOPEN)
 	if (!(dlhand = dlopen (realname, RTLD_LAZY))) {	// lib not found
-		Con_Printf ("%s\n", dlerror());
+		Con_Printf ("Could not load plugin \"%s\": %s\n", realname, dlerror ());
 		return NULL;
 	}
+#elif defined (_WIN32)
+	if (!(dlhand = LoadLibrary (realname))) {	// lib not found
+		Con_Printf ("Could not load plugin \"%s\".\n", realname);
+		return NULL;
+	}
+#endif
 
+#if defined(HAVE_DLOPEN)
 	if (!(plugin_info = dlsym (dlhand, "PluginInfo"))) {	// info function not found
 		dlclose (dlhand);
-		Con_Printf ("info function not found\n");
+		Con_Printf ("Plugin info function not found\n");
 		return NULL;
 	}
+#elif defined (_WIN32)
+	if (!(plugin_info = GetProcAddress (dlhand, "PluginInfo"))) {	// info function not found
+		FreeLibrary (dlhand);
+		Con_Printf ("Plugin info function not found\n");
+		return NULL;
+	}
+#endif
 
 	if (!(plugin = plugin_info ())) {	// Something went badly wrong
+#if defined(HAVE_DLOPEN)
 		dlclose (dlhand);
-		Con_Printf ("soemthing went badly wrong\n");
+#elif defined (_WIN32)
+		FreeLibrary (dlhand);
+#endif
+		Con_Printf ("Something went badly wrong.\n");
 		return NULL;
 	}
 
 	plugin->handle = dlhand;
 	return plugin;
-#else
-	return NULL;	// no plugin support
-#endif
 }
 
 qboolean
@@ -137,9 +164,9 @@ PI_UnloadPlugin (plugin_t *plugin)
 	} else {
 		Con_Printf ("Warning: No shutdown function for plugin!");
 	}
-#ifdef HAVE_DLOPEN
+#if defined(HAVE_DLOPEN)
 	return (dlclose (plugin->handle) == 0);
-#else
-	return false;
+#elif defined (_WIN32)
+	return (FreeLibrary (plugin->handle) == 0);
 #endif
 }
