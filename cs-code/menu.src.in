@@ -8,6 +8,7 @@ menu.dat
 @srcdir@/key_defs.qc
 @srcdir@/menu_def.qc
 @srcdir@/string_def.qc
+@srcdir@/stringh_def.qc
 
 @srcdir@/options_util.qc
 

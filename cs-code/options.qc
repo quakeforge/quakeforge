@@ -180,7 +180,8 @@ CB_audio_options =
 	local float volume;
 
 	volume = cvar("volume");
-	volume = min_max_cnt(MIN_VOLUME, MAX_VOLUME, VOLUME_STEP, volume, (key == QFK_RIGHT) && (key != QFK_LEFT));
+	volume = min_max_cnt(MIN_VOLUME, MAX_VOLUME, VOLUME_STEP, volume, 
+		(key == QFK_RIGHT) && (key != QFK_LEFT));
 	cvar_set("volume", ftos(volume));
 
 	return 0;
@@ -246,8 +247,6 @@ integer (string text, integer key)
 CB_control_options =
 {
 	local float val;
-
-	load_keybindings();
 
 	switch (text) {
 	    case "in_grab":	    
@@ -344,8 +343,11 @@ MENU_control_options =
 	Menu_Begin (54, 40, "Controls");
 	Menu_FadeScreen (1);
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
+
 	Menu_Draw (DRAW_control_options);
-	control_bind_menu ();
+
+	MENU_control_binding ();
+
 	Menu_Item (54, 70, "in_grab", CB_control_options, 0);
 	Menu_Item (54, 80, "autorun", CB_control_options, 0);
 	Menu_Item (54, 90, "m_pitch", CB_control_options, 0);
@@ -353,6 +355,7 @@ MENU_control_options =
 	Menu_Item (54, 110, "freelook", CB_control_options, 0);
 	Menu_Item (54, 120, "lookspring", CB_control_options, 0);
 	Menu_Item (54, 130, "lookstrafe", CB_control_options, 0);
+
 	Menu_End ();
 };
 
@@ -435,7 +438,6 @@ integer (integer key, integer unicode, integer down)
 CB_options =
 {
 	// pre-loading of the bindings and set_key_flag == 0
-	load_keybindings();	
 	set_key_flag = 0;
 
 	return 0;
@@ -457,6 +459,7 @@ MENU_options =
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 	Menu_KeyEvent (CB_options);
+
 	MENU_control_options ();
 	MENU_video_options ();
 	MENU_audio_options ();
