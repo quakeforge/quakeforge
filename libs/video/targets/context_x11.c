@@ -99,7 +99,7 @@ Time 		x_time;
 static XF86VidModeModeInfo **vidmodes;
 static int	nummodes;
 static int	original_mode = 0;
-static double  x_gamma;
+static double  x_gamma = -1;
 static qboolean vidmode_avail = false;
 #endif
 
@@ -387,7 +387,8 @@ X11_SetVidMode (int width, int height)
 		vidmode_avail = VID_CheckVMode (x_disp, NULL, NULL);
 
 	if (vidmode_avail) {
-		vid_gamma_avail = ((x_gamma = X11_GetGamma ()) > 0);
+		if (x_gamma > 0 || (x_gamma = X11_GetGamma ()))
+			vid_gamma_avail = true;
 	}
 
 	if (vid_fullscreen->int_val && vidmode_avail) {
@@ -445,7 +446,7 @@ void X11_UpdateFullscreen (cvar_t *fullscreen)
 			window_saved = 0;
 		}
 		if (in_grab) {
-			IN_UpdateGrab(in_grab);
+			IN_UpdateGrab (in_grab);
 		}
 		return;
 	} else {
@@ -454,16 +455,17 @@ void X11_UpdateFullscreen (cvar_t *fullscreen)
 		}
 		if (X11_GetWindowCoords (&window_x, &window_y))
 			window_saved = 1;
+
 		X11_SetVidMode (scr_width, scr_height);
 		if (!vidmode_active) {
 			if (in_grab) {
-				IN_UpdateGrab(in_grab);
+				IN_UpdateGrab (in_grab);
 			}
 			window_saved = 0;
 			return;
 		}
 		if (in_grab) {
-			IN_UpdateGrab(in_grab);
+			IN_UpdateGrab (in_grab);
 		}
 		X11_ForceMove(0, 0);
 		XWarpPointer(x_disp,None,x_win,0,0,0,0,vid.width/2,vid.height/2);
