@@ -404,19 +404,16 @@ void
 CL_ParseDownload (void)
 {
 	byte        name[1024];
-	int         size, percent, r;
+	int         r;
+	net_svc_download_t download;
 
-	// read the data
-	size = MSG_ReadShort (net_message);
-	percent = MSG_ReadByte (net_message);
+	NET_SVC_Download_Parse (&download, net_message);
 
 	if (cls.demoplayback) {
-		if (size > 0)
-			net_message->readcount += size;
 		return;							// not in demo playback
 	}
 
-	if (size == -1) {
+	if (download.size == -1) {
 		Con_Printf ("File not found.\n");
 		if (cls.download) {
 			Con_Printf ("cls.download shouldn't have been set\n");
@@ -427,8 +424,8 @@ CL_ParseDownload (void)
 		return;
 	}
 
-	if (size == -2) {
-		const char *newname = MSG_ReadString (net_message);
+	if (download.size == -2) {
+		const char *newname = download.name;
 
 		if (strncmp (newname, cls.downloadname, strlen (cls.downloadname))
 			|| strstr (newname + strlen (cls.downloadname), "/")) {
@@ -446,6 +443,11 @@ CL_ParseDownload (void)
 		Con_Printf ("downloading to %s\n", cls.downloadname);
 		return;
 	}
+
+	if (download.size <= 0) {
+		Host_EndGame ("Bad download block, size %d", download.size);
+	}
+
 	// open the file if not opened yet
 	if (!cls.download) {
 		if (strncmp (cls.downloadtempname, "skins/", 6))
@@ -459,31 +461,28 @@ CL_ParseDownload (void)
 
 		cls.download = Qopen (name, "wb");
 		if (!cls.download) {
-			net_message->readcount += size;
 			Con_Printf ("Failed to open %s\n", cls.downloadtempname);
 			CL_RequestNextDownload ();
 			return;
 		}
 	}
 
-	Qwrite (cls.download, net_message->message->data + net_message->readcount,
-			size);
-	net_message->readcount += size;
+	Qwrite (cls.download, download.data, download.size);
 
-	if (percent != 100) {
+	if (download.percent != 100) {
 		// change display routines by zoid
 		// request next block
 #if 0
 		Con_Printf (".");
-		if (10 * (percent / 10) != cls.downloadpercent) {
-			cls.downloadpercent = 10 * (percent / 10);
+		if (10 * (download.percent / 10) != cls.downloadpercent) {
+			cls.downloadpercent = 10 * (download.percent / 10);
 			Con_Printf ("%i%%", cls.downloadpercent);
 		}
 #endif
-		if (percent != cls.downloadpercent)
+		if (download.percent != cls.downloadpercent)
 			VID_SetCaption (va ("Downloading %s %d%%", cls.downloadname,
-								percent));
-		cls.downloadpercent = percent;
+								download.percent));
+		cls.downloadpercent = download.percent;
 
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		SZ_Print (&cls.netchan.message, "nextdl");
@@ -598,6 +597,36 @@ CL_StopUpload (void)
 	if (upload_data)
 		free (upload_data);
 	upload_data = NULL;
+}
+
+void
+CL_ParsePrint (void)
+{
+	const char     *string;
+	char			tmpstring[2048];
+	net_svc_print_t	print;
+
+	NET_SVC_Print_Parse (&print, net_message);
+	string = print.message;
+
+	if (print.level == PRINT_CHAT) {
+		// TODO: cl_nofake 2 -- accept fake messages from
+		// teammates
+
+		if (cl_nofake->int_val) {
+			char		*c;
+			strncpy (tmpstring, string, sizeof (tmpstring));
+			tmpstring[sizeof (tmpstring) - 1] = 0;
+			for (c = tmpstring; *c; c++)
+				if (*c == '\r')
+					*c = '#';
+			string = tmpstring;
+		}
+		con_ormask = 128;
+		S_LocalSound ("misc/talk.wav");
+	}
+	Con_Printf ("%s", string);
+	con_ormask = 0;
 }
 
 /* SERVER CONNECTING MESSAGES */
@@ -1151,31 +1180,10 @@ CL_ParseServerMessage (void)
 					Host_EndGame ("Server disconnected");
 				break;
 
-			case svc_print: {
-				char p[2048];
-				i = MSG_ReadByte (net_message);
-				s = MSG_ReadString (net_message);
-				if (i == PRINT_CHAT) {
-					// TODO: cl_nofake 2 -- accept fake messages from
-					// teammates
-
-					if (cl_nofake->int_val) {
-						char       *c;
-						strncpy (p, s, sizeof (p));
-						p[sizeof (p) - 1] = 0;
-						for (c = p; *c; c++) {
-							if (*c == '\r')
-								*c = '#';
-						}
-						s = p;
-					}
-					con_ormask = 128;
-					S_LocalSound ("misc/talk.wav");
-				}
-				Con_Printf ("%s", s);
-				con_ormask = 0;
+			case svc_print:
+				CL_ParsePrint ();
 				break;
-			}
+
 			case svc_centerprint:
 				SCR_CenterPrint (MSG_ReadString (net_message));
 				break;

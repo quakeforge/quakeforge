@@ -34,6 +34,20 @@
 
 #include "bothdefs.h"
 
+typedef struct net_svc_print_s
+{
+	byte		level;
+	const char *message;
+} net_svc_print_t;
+
+typedef struct net_svc_download_s
+{
+	short		size;
+	byte		percent;
+	const char *name; // only one of name or data will be set
+	const byte *data;
+} net_svc_download_t;
+
 typedef struct net_svc_soundlist_s
 {
 	byte		startsound;
@@ -48,6 +62,8 @@ typedef struct net_svc_modellist_s
 	byte		nextmodel;
 } net_svc_modellist_t;
 
+void NET_SVC_Print_Parse (net_svc_print_t *print, msg_t *message);
+void NET_SVC_Download_Parse (net_svc_download_t *download, msg_t *message);
 void NET_SVC_Soundlist_Parse (net_svc_soundlist_t *soundlist, msg_t *message);
 void NET_SVC_Modellist_Parse (net_svc_modellist_t *modellist, msg_t *message);
 

@@ -50,6 +50,35 @@ static const char rcsid[] =
 #include "net_svc.h"
 
 void
+NET_SVC_Print_Parse (net_svc_print_t *print, msg_t *message)
+{
+	print->level = MSG_ReadByte (message);
+	print->message = MSG_ReadString (message);
+}
+
+void
+NET_SVC_Download_Parse (net_svc_download_t *download, msg_t *message)
+{
+	download->size = MSG_ReadShort (message);
+	download->percent = MSG_ReadByte (message);
+
+	if (download->size == -2)
+		download->name = MSG_ReadString (message);
+	else if (download->size > 0) {
+		// FIXME: this should really be a MSG function
+		if (message->readcount + download->size <= message->message->cursize) {
+			download->data = message->message->data + message->readcount;
+			message->readcount += download->size;
+		} else {
+			// size was beyond the end of the packet
+			message->readcount = message->message->cursize;
+			message->badread = true;
+			download->size = 0; // FIXME: CL_ParseDownload doesn't handle this
+		}
+	}
+}
+
+void
 NET_SVC_Soundlist_Parse (net_svc_soundlist_t *soundlist, msg_t *message)
 {
 	int i;
