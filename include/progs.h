@@ -79,6 +79,7 @@ void PR_Init_Cvars (void);
 
 void PR_ExecuteProgram (progs_t *pr, func_t fnum);
 void PR_LoadProgs (progs_t *pr, char *progsname);
+void PR_LoadStrings (progs_t *pr);
 
 void PR_Profile_f (void);
 
@@ -179,12 +180,25 @@ typedef struct {
 	dfunction_t *f;
 } prstack_t;
 
+typedef struct strref_s {
+	struct strref_s *next;
+	struct strref_s *prev;
+	char *string;
+	int count;
+} strref_t;
+
 struct progs_s {
 	dprograms_t		*progs;
 
 	struct hashtab_s *function_hash;
 	struct hashtab_s *global_hash;
 	struct hashtab_s *field_hash;
+
+	// garbage collected strings
+	strref_t		*static_strings;
+	strref_t		dynamic_strings[2]; // 0 = head, 1 = tail
+	struct hashtab_s *strref_hash;
+	int				num_strings;
 
 	dfunction_t		*pr_functions;
 	char			*pr_strings;

@@ -98,7 +98,7 @@ Hash_FlushTable (hashtab_t *tab)
 		while (tab->tab[i]) {
 			hashlink_t *t = tab->tab[i]->next;
 			if (tab->free_ele)
-				tab->free_ele (&tab->tab[i]->data, tab->user_data);
+				tab->free_ele (tab->tab[i]->data, tab->user_data);
 			free (tab->tab[i]);
 			tab->tab[i] = t;
 		}

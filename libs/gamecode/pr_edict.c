@@ -1052,6 +1052,9 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 	if ((pr->fields.think = ED_GetFieldIndex (pr, "think")) == -1)
 		PR_Error (pr, "%s: undefined field: think", progsname);
 
+	// initialise the strings managment code
+	PR_LoadStrings (pr);
+
 	// LordHavoc: bounds check anything static
 	for (i = 0, st = pr->pr_statements; i < pr->progs->numstatements; i++, st++) {
 		switch (st->op) {

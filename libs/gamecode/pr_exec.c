@@ -960,35 +960,3 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 		}
 	}
 }
-
-char       *
-PR_GetString (progs_t * pr, int num)
-{
-	if (num < 0) {
-		//Con_DPrintf("GET:%d == %s\n", num, pr->pr_strtbl[-num]);
-		return pr->pr_strtbl[-num];
-	}
-	return pr->pr_strings + num;
-}
-
-int
-PR_SetString (progs_t * pr, char *s)
-{
-	int         i = s - pr->pr_strings;
-
-	if (i < 0 || i > pr->pr_stringsize) {
-		for (i = 1; i <= pr->num_prstr; i++)
-			if (pr->pr_strtbl[i] == s
-				|| strequal (pr->pr_strtbl[i], s))
-				break;
-		if (i < pr->num_prstr)
-			return -i;
-		if (pr->num_prstr == MAX_PRSTR - 1)
-			Sys_Error ("MAX_PRSTR");
-		pr->num_prstr++;
-		pr->pr_strtbl[pr->num_prstr] = s;
-		//Con_DPrintf("SET:%d == %s\n", -pr->num_prstr, s);
-		return -pr->num_prstr;
-	}
-	return (int) (s - pr->pr_strings);
-}
