@@ -179,12 +179,15 @@ Con_ProcessInputLine (inputline_t *il, int ch)
 	i = il->linepos - 1;
 	if (il->scroll > i)
 		il->scroll = i;
-	if (il->scroll < i - (il->width - 2) + 1)
+	if (il->scroll + (il->width - 2) - 1 < i)
 		il->scroll = i - (il->width - 2) + 1;
 	text = il->lines[il->edit_line] + il->scroll;
 	if (strlen (text + 1) < il->width - 2) {
 		text = il->lines[il->edit_line];
-		il->scroll = strlen (text + 1) - (il->width - 2);
+		if ((i = strlen (text + 1)) > (il->width - 2))
+			il->scroll = i - (il->width - 2);
+		else
+			il->scroll = 0;
 		il->scroll = max (il->scroll, 0);
 	}
 	if (il->draw)
