@@ -1,6 +1,11 @@
 NEWS for the QuakeForge project
 -------------------------------
 
+Changes from 0.5.3
+    o CRITICAL: exploitable buffer overflow in qw-server fixed
+    o more gib regex and other text manipuation support
+    o snd_oss_rw ditched in favour of just trying both ways
+
 Changes from 0.5.2
 
     o General enhancements.
