@@ -198,7 +198,7 @@ AC_TRY_COMPILE(
 AH_VERBATIM([HAVE___ATTRIBUTE__],
 [/* Define this if the GCC __attribute__ keyword is available */
 #undef HAVE___ATTRIBUTE__
-#ifndef HAVE___ATTRIBUTE__
+#ifdef HAVE___ATTRIBUTE__
 # define __attribute__(x)
 #endif])
 
@@ -213,7 +213,7 @@ AC_TRY_COMPILE(
 AH_VERBATIM([HAVE___BUILTIN_EXPECT],
 [/* Define this if the GCC __builtin_expect keyword is available */
 #undef HAVE___BUILTIN_EXPECT
-#ifndef HAVE___BUILTIN_EXPECT
+#ifdef HAVE___BUILTIN_EXPECT
 # define __builtin_expect(x,c) x
 #endif])
 
