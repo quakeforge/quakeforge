@@ -51,7 +51,7 @@ typedef enum {
 #define	RESERVED_OFS	28
 
 
-enum {
+typedef enum {
 	OP_DONE,
 	OP_MUL_F,
 	OP_MUL_V,
@@ -129,7 +129,7 @@ enum {
 	OP_BITOR,
 
 	OP_ADD_S,
-};
+} pr_opcode_e;
 
 
 typedef struct statement_s
