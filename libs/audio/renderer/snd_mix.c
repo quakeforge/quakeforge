@@ -323,7 +323,7 @@ SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count)
 void
 SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
 {
-	int				data, left, right, leftvol, rightvol;
+	int		leftvol, rightvol;
 	unsigned int	left_phase, right_phase;	// Never allowed < 0 anyway
 	unsigned int	i = 0;
 	signed short   *sfx;
@@ -373,9 +373,8 @@ SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
 		c = min (count, max (count_right, count_left));
 		count -= c;
 		while (c) {
-			int         data = sfx[i];
-			int         left = (data * leftvol) >> 8;
-			int         right = (data * rightvol) >> 8;
+			int         left = (sfx[i] * leftvol) >> 8;
+			int         right = (sfx[i] * rightvol) >> 8;
 
 			if (new_phase_left < old_phase_left) {
 				if (!(count_left & 1)) {
@@ -383,11 +382,11 @@ SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
 					old_phase_left--;
 				}
 				count_left--;
-			} else if (new_phase_left > old_phase_left) {
-				paintbuffer[i + old_phase_left].left += left;
-				old_phase_left++;
-				paintbuffer[i + old_phase_left].left += left;
 			} else {
+				if (new_phase_left > old_phase_left) {
+					paintbuffer[i + old_phase_left].left += left;
+					old_phase_left++;
+				}
 				paintbuffer[i + old_phase_left].left += left;
 			}
 
@@ -397,11 +396,11 @@ SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
 					old_phase_right--;
 				}
 				count_right--;
-			} else if (new_phase_right > old_phase_right) {
-				paintbuffer[i + old_phase_right].right += right;
-				old_phase_right++;
-				paintbuffer[i + old_phase_right].right += right;
 			} else {
+				if (new_phase_right > old_phase_right) {
+					paintbuffer[i + old_phase_right].right += right;
+					old_phase_right++;
+				}
 				paintbuffer[i + old_phase_right].right += right;
 			}
 
@@ -411,10 +410,7 @@ SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
 	}
 
 	for (i = 0; i < count; i++) {
-		data = sfx[i];
-		left = (data * leftvol) >> 8;
-		right = (data * rightvol) >> 8;
-		paintbuffer[i + left_phase].left += left;
-		paintbuffer[i + right_phase].right += right;
+		paintbuffer[i + left_phase].left += (sfx[i] * leftvol) >> 8;
+		paintbuffer[i + right_phase].right += (sfx[i] * rightvol) >> 8;
 	}
 }
