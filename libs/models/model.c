@@ -205,6 +205,8 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	}
 	if (strequal (mod->name, "progs/player.mdl")) {
 		mod->min_light = 8;
+	} else if (strnequal (mod->name, "progs/v_", 8)) {
+		mod->min_light = 24;
 	} else {
 		mod->min_light = 0;
 	}

@@ -558,7 +558,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		}
 		// always give the gun some light
 		shade = max (shadecolor[0], max (shadecolor[1], shadecolor[2]));
-		minshade = e == r_view_model ? 24/200.0 : clmodel->min_light / 200.0;
+		minshade = clmodel->min_light / 200.0;
 		if (e == r_view_model && shade < minshade) {
 			shadecolor[0] += minshade - shade;
 			shadecolor[1] += minshade - shade;
