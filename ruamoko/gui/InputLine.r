@@ -41,7 +41,7 @@ string (inputline_t il) InputLine_GetText = #0;
 	control.ybase = pos.y;
 }
 
-- (void) setWidth: (integer)visibleWidth
+- (void) setWidth: (integer)width
 {
 	InputLine_SetWidth (il, width);
 }
