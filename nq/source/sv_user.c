@@ -39,7 +39,9 @@
 #include "view.h"
 #include "cmd.h"
 #include "host.h"
+#include "sv_progs.h"
 #include "sys.h"
+
 edict_t    *sv_player;
 
 cvar_t     *sv_edgefriction;
@@ -78,17 +80,17 @@ SV_SetIdealPitch (void)
 	int         i, j;
 	int         step, dir, steps;
 
-	if (!((int) sv_player->v.v.flags & FL_ONGROUND))
+	if (!((int) SVFIELD (sv_player, flags, float) & FL_ONGROUND))
 		return;
 
-	angleval = sv_player->v.v.angles[YAW] * M_PI * 2 / 360;
+	angleval = SVFIELD (sv_player, angles, vector)[YAW] * M_PI * 2 / 360;
 	sinval = sin (angleval);
 	cosval = cos (angleval);
 
 	for (i = 0; i < MAX_FORWARD; i++) {
-		top[0] = sv_player->v.v.origin[0] + cosval * (i + 3) * 12;
-		top[1] = sv_player->v.v.origin[1] + sinval * (i + 3) * 12;
-		top[2] = sv_player->v.v.origin[2] + sv_player->v.v.view_ofs[2];
+		top[0] = SVFIELD (sv_player, origin, vector)[0] + cosval * (i + 3) * 12;
+		top[1] = SVFIELD (sv_player, origin, vector)[1] + sinval * (i + 3) * 12;
+		top[2] = SVFIELD (sv_player, origin, vector)[2] + SVFIELD (sv_player, view_ofs, vector)[2];
 
 		bottom[0] = top[0];
 		bottom[1] = top[1];
@@ -121,13 +123,13 @@ SV_SetIdealPitch (void)
 	}
 
 	if (!dir) {
-		sv_player->v.v.idealpitch = 0;
+		SVFIELD (sv_player, idealpitch, float) = 0;
 		return;
 	}
 
 	if (steps < 2)
 		return;
-	sv_player->v.v.idealpitch = -dir * sv_idealpitchscale->value;
+	SVFIELD (sv_player, idealpitch, float) = -dir * sv_idealpitchscale->value;
 }
 
 
@@ -155,7 +157,7 @@ SV_UserFriction (void)
 // if the leading edge is over a dropoff, increase friction
 	start[0] = stop[0] = origin[0] + vel[0] / speed * 16;
 	start[1] = stop[1] = origin[1] + vel[1] / speed * 16;
-	start[2] = origin[2] + sv_player->v.v.mins[2];
+	start[2] = origin[2] + SVFIELD (sv_player, mins, vector)[2];
 	stop[2] = start[2] - 34;
 
 	trace = SV_Move (start, vec3_origin, vec3_origin, stop, true, sv_player);
@@ -254,12 +256,12 @@ DropPunchAngle (void)
 {
 	float       len;
 
-	len = VectorNormalize (sv_player->v.v.punchangle);
+	len = VectorNormalize (SVFIELD (sv_player, punchangle, vector));
 
 	len -= 10 * host_frametime;
 	if (len < 0)
 		len = 0;
-	VectorScale (sv_player->v.v.punchangle, len, sv_player->v.v.punchangle);
+	VectorScale (SVFIELD (sv_player, punchangle, vector), len, SVFIELD (sv_player, punchangle, vector));
 }
 
 /*
@@ -278,7 +280,7 @@ SV_WaterMove (void)
 //
 // user intentions
 //
-	AngleVectors (sv_player->v.v.v_angle, forward, right, up);
+	AngleVectors (SVFIELD (sv_player, v_angle, vector), forward, right, up);
 
 	for (i = 0; i < 3; i++)
 		wishvel[i] = forward[i] * cmd.forwardmove + right[i] * cmd.sidemove;
@@ -329,12 +331,12 @@ SV_WaterMove (void)
 void
 SV_WaterJump (void)
 {
-	if (sv.time > sv_player->v.v.teleport_time || !sv_player->v.v.waterlevel) {
-		sv_player->v.v.flags = (int) sv_player->v.v.flags & ~FL_WATERJUMP;
-		sv_player->v.v.teleport_time = 0;
+	if (sv.time > SVFIELD (sv_player, teleport_time, float) || !SVFIELD (sv_player, waterlevel, float)) {
+		SVFIELD (sv_player, flags, float) = (int) SVFIELD (sv_player, flags, float) & ~FL_WATERJUMP;
+		SVFIELD (sv_player, teleport_time, float) = 0;
 	}
-	sv_player->v.v.velocity[0] = sv_player->v.v.movedir[0];
-	sv_player->v.v.velocity[1] = sv_player->v.v.movedir[1];
+	SVFIELD (sv_player, velocity, vector)[0] = SVFIELD (sv_player, movedir, vector)[0];
+	SVFIELD (sv_player, velocity, vector)[1] = SVFIELD (sv_player, movedir, vector)[1];
 }
 
 
@@ -351,19 +353,19 @@ SV_AirMove (void)
 	vec3_t      wishvel;
 	float       fmove, smove;
 
-	AngleVectors (sv_player->v.v.angles, forward, right, up);
+	AngleVectors (SVFIELD (sv_player, angles, vector), forward, right, up);
 
 	fmove = cmd.forwardmove;
 	smove = cmd.sidemove;
 
 // hack to not let you back into teleporter
-	if (sv.time < sv_player->v.v.teleport_time && fmove < 0)
+	if (sv.time < SVFIELD (sv_player, teleport_time, float) && fmove < 0)
 		fmove = 0;
 
 	for (i = 0; i < 3; i++)
 		wishvel[i] = forward[i] * fmove + right[i] * smove;
 
-	if ((int) sv_player->v.v.movetype != MOVETYPE_WALK)
+	if ((int) SVFIELD (sv_player, movetype, float) != MOVETYPE_WALK)
 		wishvel[2] = cmd.upmove;
 	else
 		wishvel[2] = 0;
@@ -375,7 +377,7 @@ SV_AirMove (void)
 		wishspeed = sv_maxspeed->value;
 	}
 
-	if (sv_player->v.v.movetype == MOVETYPE_NOCLIP) {	// noclip
+	if (SVFIELD (sv_player, movetype, float) == MOVETYPE_NOCLIP) {	// noclip
 		VectorCopy (wishvel, velocity);
 	} else if (onground) {
 		SV_UserFriction ();
@@ -400,45 +402,45 @@ SV_ClientThink (void)
 {
 	vec3_t      v_angle;
 
-	if (sv_player->v.v.movetype == MOVETYPE_NONE)
+	if (SVFIELD (sv_player, movetype, float) == MOVETYPE_NONE)
 		return;
 
-	onground = (int) sv_player->v.v.flags & FL_ONGROUND;
+	onground = (int) SVFIELD (sv_player, flags, float) & FL_ONGROUND;
 
-	origin = sv_player->v.v.origin;
-	velocity = sv_player->v.v.velocity;
+	origin = SVFIELD (sv_player, origin, vector);
+	velocity = SVFIELD (sv_player, velocity, vector);
 
 	DropPunchAngle ();
 
 //
 // if dead, behave differently
 //
-	if (sv_player->v.v.health <= 0)
+	if (SVFIELD (sv_player, health, float) <= 0)
 		return;
 
 //
 // angles
 // show 1/3 the pitch angle and all the roll angle
 	cmd = host_client->cmd;
-	angles = sv_player->v.v.angles;
+	angles = SVFIELD (sv_player, angles, vector);
 
-	VectorAdd (sv_player->v.v.v_angle, sv_player->v.v.punchangle, v_angle);
+	VectorAdd (SVFIELD (sv_player, v_angle, vector), SVFIELD (sv_player, punchangle, vector), v_angle);
 	angles[ROLL] =
-		V_CalcRoll (sv_player->v.v.angles, sv_player->v.v.velocity) * 4;
-	if (!sv_player->v.v.fixangle) {
+		V_CalcRoll (SVFIELD (sv_player, angles, vector), SVFIELD (sv_player, velocity, vector)) * 4;
+	if (!SVFIELD (sv_player, fixangle, float)) {
 		angles[PITCH] = -v_angle[PITCH] / 3;
 		angles[YAW] = v_angle[YAW];
 	}
 
-	if ((int) sv_player->v.v.flags & FL_WATERJUMP) {
+	if ((int) SVFIELD (sv_player, flags, float) & FL_WATERJUMP) {
 		SV_WaterJump ();
 		return;
 	}
 //
 // walk
 //
-	if ((sv_player->v.v.waterlevel >= 2)
-		&& (sv_player->v.v.movetype != MOVETYPE_NOCLIP)) {
+	if ((SVFIELD (sv_player, waterlevel, float) >= 2)
+		&& (SVFIELD (sv_player, movetype, float) != MOVETYPE_NOCLIP)) {
 		SV_WaterMove ();
 		return;
 	}
@@ -468,7 +470,7 @@ SV_ReadClientMove (usercmd_t *move)
 	for (i = 0; i < 3; i++)
 		angle[i] = MSG_ReadAngle (net_message);
 
-	VectorCopy (angle, host_client->edict->v.v.v_angle);
+	VectorCopy (angle, SVFIELD (host_client->edict, v_angle, vector));
 
 // read movement
 	move->forwardmove = MSG_ReadShort (net_message);
@@ -477,16 +479,16 @@ SV_ReadClientMove (usercmd_t *move)
 
 // read buttons
 	bits = MSG_ReadByte (net_message);
-	host_client->edict->v.v.button0 = bits & 1;
-	host_client->edict->v.v.button2 = (bits & 2) >> 1;
+	SVFIELD (host_client->edict, button0, float) = bits & 1;
+	SVFIELD (host_client->edict, button2, float) = (bits & 2) >> 1;
 
 	i = MSG_ReadByte (net_message);
 	if (i)
-		host_client->edict->v.v.impulse = i;
+		SVFIELD (host_client->edict, impulse, float) = i;
 
 #ifdef QUAKE2
 // read light level
-	host_client->edict->v.v.light_level = MSG_ReadByte (net_message);
+	SVFIELD (host_client->edict, light_level, float) = MSG_ReadByte (net_message);
 #endif
 }
 

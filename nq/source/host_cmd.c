@@ -43,6 +43,7 @@
 #include "progs.h"
 #include "keys.h"
 #include "sys.h"
+#include "sv_progs.h"
 
 int         current_skill;
 
@@ -116,7 +117,7 @@ Host_Status_f (void)
 		} else
 			hours = 0;
 		print ("#%-2u %-16.16s  %3i  %2i:%02i:%02i\n", j + 1, client->name,
-			   (int) client->edict->v.v.frags, hours, minutes, seconds);
+			   (int) SVFIELD (client->edict, frags, float), hours, minutes, seconds);
 		print ("   %s\n", client->netconnection->address);
 	}
 }
@@ -137,11 +138,11 @@ Host_God_f (void)
 		return;
 	}
 
-	if (sv_pr_state.pr_global_struct->deathmatch && !host_client->privileged)
+	if (*sv_globals.deathmatch && !host_client->privileged)
 		return;
 
-	sv_player->v.v.flags = (int) sv_player->v.v.flags ^ FL_GODMODE;
-	if (!((int) sv_player->v.v.flags & FL_GODMODE))
+	SVFIELD (sv_player, flags, float) = (int) SVFIELD (sv_player, flags, float) ^ FL_GODMODE;
+	if (!((int) SVFIELD (sv_player, flags, float) & FL_GODMODE))
 		SV_ClientPrintf ("godmode OFF\n");
 	else
 		SV_ClientPrintf ("godmode ON\n");
@@ -155,11 +156,11 @@ Host_Notarget_f (void)
 		return;
 	}
 
-	if (sv_pr_state.pr_global_struct->deathmatch && !host_client->privileged)
+	if (*sv_globals.deathmatch && !host_client->privileged)
 		return;
 
-	sv_player->v.v.flags = (int) sv_player->v.v.flags ^ FL_NOTARGET;
-	if (!((int) sv_player->v.v.flags & FL_NOTARGET))
+	SVFIELD (sv_player, flags, float) = (int) SVFIELD (sv_player, flags, float) ^ FL_NOTARGET;
+	if (!((int) SVFIELD (sv_player, flags, float) & FL_NOTARGET))
 		SV_ClientPrintf ("notarget OFF\n");
 	else
 		SV_ClientPrintf ("notarget ON\n");
@@ -175,16 +176,16 @@ Host_Noclip_f (void)
 		return;
 	}
 
-	if (sv_pr_state.pr_global_struct->deathmatch && !host_client->privileged)
+	if (*sv_globals.deathmatch && !host_client->privileged)
 		return;
 
-	if (sv_player->v.v.movetype != MOVETYPE_NOCLIP) {
+	if (SVFIELD (sv_player, movetype, float) != MOVETYPE_NOCLIP) {
 		noclip_anglehack = true;
-		sv_player->v.v.movetype = MOVETYPE_NOCLIP;
+		SVFIELD (sv_player, movetype, float) = MOVETYPE_NOCLIP;
 		SV_ClientPrintf ("noclip ON\n");
 	} else {
 		noclip_anglehack = false;
-		sv_player->v.v.movetype = MOVETYPE_WALK;
+		SVFIELD (sv_player, movetype, float) = MOVETYPE_WALK;
 		SV_ClientPrintf ("noclip OFF\n");
 	}
 }
@@ -204,14 +205,14 @@ Host_Fly_f (void)
 		return;
 	}
 
-	if (sv_pr_state.pr_global_struct->deathmatch && !host_client->privileged)
+	if (*sv_globals.deathmatch && !host_client->privileged)
 		return;
 
-	if (sv_player->v.v.movetype != MOVETYPE_FLY) {
-		sv_player->v.v.movetype = MOVETYPE_FLY;
+	if (SVFIELD (sv_player, movetype, float) != MOVETYPE_FLY) {
+		SVFIELD (sv_player, movetype, float) = MOVETYPE_FLY;
 		SV_ClientPrintf ("flymode ON\n");
 	} else {
-		sv_player->v.v.movetype = MOVETYPE_WALK;
+		SVFIELD (sv_player, movetype, float) = MOVETYPE_WALK;
 		SV_ClientPrintf ("flymode OFF\n");
 	}
 }
@@ -511,7 +512,7 @@ Host_Savegame_f (void)
 	}
 
 	for (i = 0; i < svs.maxclients; i++) {
-		if (svs.clients[i].active && (svs.clients[i].edict->v.v.health <= 0)) {
+		if (svs.clients[i].active && (SVFIELD (svs.clients[i].edict, health, float) <= 0)) {
 			Con_Printf ("Can't savegame with a dead player\n");
 			return;
 		}
@@ -748,7 +749,7 @@ SaveGamestate ()
 
 	for (i = svs.maxclients + 1; i < sv.num_edicts; i++) {
 		ent = EDICT_NUM (i);
-		if ((int) ent->v.v.flags & FL_ARCHIVE_OVERRIDE)
+		if ((int) SVFIELD (ent, flags, float) & FL_ARCHIVE_OVERRIDE)
 			continue;
 		Qprintf (f, "%i\n", i);
 		ED_Write (f, ent);
@@ -936,7 +937,7 @@ Host_Name_f (void)
 		if (strcmp (host_client->name, newName) != 0)
 			Con_Printf ("%s renamed to %s\n", host_client->name, newName);
 	strcpy (host_client->name, newName);
-	host_client->edict->v.v.netname =
+	SVFIELD (host_client->edict, netname, float) =
 		host_client->name - sv_pr_state.pr_strings;
 
 // send notification to all clients
@@ -1002,7 +1003,7 @@ Host_Say (qboolean teamonly)
 		if (!client || !client->active || !client->spawned)
 			continue;
 		if (teamplay->int_val && teamonly
-			&& client->edict->v.v.team != save->edict->v.v.team) continue;
+			&& SVFIELD (client->edict, team, float) != SVFIELD (save->edict, team, float)) continue;
 		host_client = client;
 		SV_ClientPrintf ("%s", text);
 	}
@@ -1117,7 +1118,7 @@ Host_Color_f (void)
 	}
 
 	host_client->colors = playercolor;
-	host_client->edict->v.v.team = bottom + 1;
+	SVFIELD (host_client->edict, team, float) = bottom + 1;
 
 // send notification to all clients
 	MSG_WriteByte (&sv.reliable_datagram, svc_updatecolors);
@@ -1138,15 +1139,15 @@ Host_Kill_f (void)
 		return;
 	}
 
-	if (sv_player->v.v.health <= 0) {
+	if (SVFIELD (sv_player, health, float) <= 0) {
 		SV_ClientPrintf ("Can't suicide -- already dead!\n");
 		return;
 	}
 
-	sv_pr_state.pr_global_struct->time = sv.time;
-	sv_pr_state.pr_global_struct->self =
+	*sv_globals.time = sv.time;
+	*sv_globals.self =
 		EDICT_TO_PROG (&sv_pr_state, sv_player);
-	PR_ExecuteProgram (&sv_pr_state, sv_pr_state.pr_global_struct->ClientKill);
+	PR_ExecuteProgram (&sv_pr_state, sv_funcs.ClientKill);
 }
 
 
@@ -1171,11 +1172,11 @@ Host_Pause_f (void)
 		if (sv.paused) {
 			SV_BroadcastPrintf ("%s paused the game\n",
 								sv_pr_state.pr_strings +
-								sv_player->v.v.netname);
+								SVFIELD (sv_player, netname, string));
 		} else {
 			SV_BroadcastPrintf ("%s unpaused the game\n",
 								sv_pr_state.pr_strings +
-								sv_player->v.v.netname);
+								SVFIELD (sv_player, netname, string));
 		}
 
 		// send notification to all clients
@@ -1242,28 +1243,28 @@ Host_Spawn_f (void)
 		ent = host_client->edict;
 
 		memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
-		ent->v.v.colormap = NUM_FOR_EDICT (&sv_pr_state, ent);
-		ent->v.v.team = (host_client->colors & 15) + 1;
-		ent->v.v.netname = host_client->name - sv_pr_state.pr_strings;
+		SVFIELD (ent, colormap, float) = NUM_FOR_EDICT (&sv_pr_state, ent);
+		SVFIELD (ent, team, float) = (host_client->colors & 15) + 1;
+		SVFIELD (ent, netname, float) = host_client->name - sv_pr_state.pr_strings;
 
 		// copy spawn parms out of the client_t
 
 		for (i = 0; i < NUM_SPAWN_PARMS; i++)
-			(&sv_pr_state.pr_global_struct->parm1)[i] = host_client->spawn_parms[i];
+			sv_globals.parms[i] = host_client->spawn_parms[i];
 
 		// call the spawn function
 
-		sv_pr_state.pr_global_struct->time = sv.time;
-		sv_pr_state.pr_global_struct->self =
+		*sv_globals.time = sv.time;
+		*sv_globals.self =
 			EDICT_TO_PROG (&sv_pr_state, sv_player);
 		PR_ExecuteProgram (&sv_pr_state,
-						   sv_pr_state.pr_global_struct->ClientConnect);
+						   sv_funcs.ClientConnect);
 
 		if ((Sys_DoubleTime () - host_client->netconnection->connecttime) <=
 			sv.time) Sys_Printf ("%s entered the game\n", host_client->name);
 
 		PR_ExecuteProgram (&sv_pr_state,
-						   sv_pr_state.pr_global_struct->PutClientInServer);
+						   sv_funcs.PutClientInServer);
 	}
 
 
@@ -1299,22 +1300,22 @@ Host_Spawn_f (void)
 	MSG_WriteByte (&host_client->message, svc_updatestat);
 	MSG_WriteByte (&host_client->message, STAT_TOTALSECRETS);
 	MSG_WriteLong (&host_client->message,
-				   sv_pr_state.pr_global_struct->total_secrets);
+				   *sv_globals.total_secrets);
 
 	MSG_WriteByte (&host_client->message, svc_updatestat);
 	MSG_WriteByte (&host_client->message, STAT_TOTALMONSTERS);
 	MSG_WriteLong (&host_client->message,
-				   sv_pr_state.pr_global_struct->total_monsters);
+				   *sv_globals.total_monsters);
 
 	MSG_WriteByte (&host_client->message, svc_updatestat);
 	MSG_WriteByte (&host_client->message, STAT_SECRETS);
 	MSG_WriteLong (&host_client->message,
-				   sv_pr_state.pr_global_struct->found_secrets);
+				   *sv_globals.found_secrets);
 
 	MSG_WriteByte (&host_client->message, svc_updatestat);
 	MSG_WriteByte (&host_client->message, STAT_MONSTERS);
 	MSG_WriteLong (&host_client->message,
-				   sv_pr_state.pr_global_struct->killed_monsters);
+				   *sv_globals.killed_monsters);
 
 
 //
@@ -1326,7 +1327,7 @@ Host_Spawn_f (void)
 	ent = EDICT_NUM (&sv_pr_state, 1 + (host_client - svs.clients));
 	MSG_WriteByte (&host_client->message, svc_setangle);
 	for (i = 0; i < 2; i++)
-		MSG_WriteAngle (&host_client->message, ent->v.v.angles[i]);
+		MSG_WriteAngle (&host_client->message, SVFIELD (ent, angles, vector)[i]);
 	MSG_WriteAngle (&host_client->message, 0);
 
 	SV_WriteClientdataToMessage (sv_player, &host_client->message);
@@ -1377,7 +1378,7 @@ Host_Kick_f (void)
 			return;
 		}
 	}
-		else if (sv_pr_state.pr_global_struct->deathmatch
+		else if (*sv_globals.deathmatch
 				 && !host_client->privileged) return;
 
 	save = host_client;
@@ -1459,7 +1460,7 @@ Host_Give_f (void)
 		return;
 	}
 
-	if (sv_pr_state.pr_global_struct->deathmatch && !host_client->privileged)
+	if (*sv_globals.deathmatch && !host_client->privileged)
 		return;
 
 	t = Cmd_Argv (1);
@@ -1480,23 +1481,23 @@ Host_Give_f (void)
 		if (hipnotic) {
 			if (t[0] == '6') {
 				if (t[1] == 'a')
-					sv_player->v.v.items =
-						(int) sv_player->v.v.items | HIT_PROXIMITY_GUN;
+					SVFIELD (sv_player, items, float) =
+						(int) SVFIELD (sv_player, items, float) | HIT_PROXIMITY_GUN;
 				else
-					sv_player->v.v.items =
-						(int) sv_player->v.v.items | IT_GRENADE_LAUNCHER;
+					SVFIELD (sv_player, items, float) =
+						(int) SVFIELD (sv_player, items, float) | IT_GRENADE_LAUNCHER;
 			} else if (t[0] == '9')
-				sv_player->v.v.items =
-					(int) sv_player->v.v.items | HIT_LASER_CANNON;
+				SVFIELD (sv_player, items, float) =
+					(int) SVFIELD (sv_player, items, float) | HIT_LASER_CANNON;
 			else if (t[0] == '0')
-				sv_player->v.v.items = (int) sv_player->v.v.items | HIT_MJOLNIR;
+				SVFIELD (sv_player, items, float) = (int) SVFIELD (sv_player, items, float) | HIT_MJOLNIR;
 			else if (t[0] >= '2')
-				sv_player->v.v.items =
-					(int) sv_player->v.v.items | (IT_SHOTGUN << (t[0] - '2'));
+				SVFIELD (sv_player, items, float) =
+					(int) SVFIELD (sv_player, items, float) | (IT_SHOTGUN << (t[0] - '2'));
 		} else {
 			if (t[0] >= '2')
-				sv_player->v.v.items =
-					(int) sv_player->v.v.items | (IT_SHOTGUN << (t[0] - '2'));
+				SVFIELD (sv_player, items, float) =
+					(int) SVFIELD (sv_player, items, float) | (IT_SHOTGUN << (t[0] - '2'));
 		}
 		break;
 
@@ -1507,18 +1508,18 @@ Host_Give_f (void)
 				val->_float = v;
 		}
 
-		sv_player->v.v.ammo_shells = v;
+		SVFIELD (sv_player, ammo_shells, float) = v;
 		break;
 		case 'n':
 		if (rogue) {
 			val = GetEdictFieldValue (&sv_pr_state, sv_player, "ammo_nails1");
 			if (val) {
 				val->_float = v;
-				if (sv_player->v.v.weapon <= IT_LIGHTNING)
-					sv_player->v.v.ammo_nails = v;
+				if (SVFIELD (sv_player, weapon, float) <= IT_LIGHTNING)
+					SVFIELD (sv_player, ammo_nails, float) = v;
 			}
 		} else {
-			sv_player->v.v.ammo_nails = v;
+			SVFIELD (sv_player, ammo_nails, float) = v;
 		}
 		break;
 		case 'l':
@@ -1527,8 +1528,8 @@ Host_Give_f (void)
 				GetEdictFieldValue (&sv_pr_state, sv_player, "ammo_lava_nails");
 			if (val) {
 				val->_float = v;
-				if (sv_player->v.v.weapon > IT_LIGHTNING)
-					sv_player->v.v.ammo_nails = v;
+				if (SVFIELD (sv_player, weapon, float) > IT_LIGHTNING)
+					SVFIELD (sv_player, ammo_nails, float) = v;
 			}
 		}
 		break;
@@ -1537,11 +1538,11 @@ Host_Give_f (void)
 			val = GetEdictFieldValue (&sv_pr_state, sv_player, "ammo_rockets1");
 			if (val) {
 				val->_float = v;
-				if (sv_player->v.v.weapon <= IT_LIGHTNING)
-					sv_player->v.v.ammo_rockets = v;
+				if (SVFIELD (sv_player, weapon, float) <= IT_LIGHTNING)
+					SVFIELD (sv_player, ammo_rockets, float) = v;
 			}
 		} else {
-			sv_player->v.v.ammo_rockets = v;
+			SVFIELD (sv_player, ammo_rockets, float) = v;
 		}
 		break;
 		case 'm':
@@ -1551,24 +1552,24 @@ Host_Give_f (void)
 									"ammo_multi_rockets");
 			if (val) {
 				val->_float = v;
-				if (sv_player->v.v.weapon > IT_LIGHTNING)
-					sv_player->v.v.ammo_rockets = v;
+				if (SVFIELD (sv_player, weapon, float) > IT_LIGHTNING)
+					SVFIELD (sv_player, ammo_rockets, float) = v;
 			}
 		}
 		break;
 		case 'h':
-		sv_player->v.v.health = v;
+		SVFIELD (sv_player, health, float) = v;
 		break;
 		case 'c':
 		if (rogue) {
 			val = GetEdictFieldValue (&sv_pr_state, sv_player, "ammo_cells1");
 			if (val) {
 				val->_float = v;
-				if (sv_player->v.v.weapon <= IT_LIGHTNING)
-					sv_player->v.v.ammo_cells = v;
+				if (SVFIELD (sv_player, weapon, float) <= IT_LIGHTNING)
+					SVFIELD (sv_player, ammo_cells, float) = v;
 			}
 		} else {
-			sv_player->v.v.ammo_cells = v;
+			SVFIELD (sv_player, ammo_cells, float) = v;
 		}
 		break;
 		case 'p':
@@ -1576,8 +1577,8 @@ Host_Give_f (void)
 			val = GetEdictFieldValue (&sv_pr_state, sv_player, "ammo_plasma");
 			if (val) {
 				val->_float = v;
-				if (sv_player->v.v.weapon > IT_LIGHTNING)
-					sv_player->v.v.ammo_cells = v;
+				if (SVFIELD (sv_player, weapon, float) > IT_LIGHTNING)
+					SVFIELD (sv_player, ammo_cells, float) = v;
 			}
 		}
 		break;
@@ -1592,7 +1593,7 @@ FindViewthing (void)
 
 	for (i = 0; i < sv.num_edicts; i++) {
 		e = EDICT_NUM (&sv_pr_state, i);
-		if (!strcmp (sv_pr_state.pr_strings + e->v.v.classname, "viewthing"))
+		if (!strcmp (sv_pr_state.pr_strings + SVFIELD (e, classname, string), "viewthing"))
 			return e;
 	}
 	Con_Printf ("No viewthing on map\n");
@@ -1620,8 +1621,8 @@ Host_Viewmodel_f (void)
 		return;
 	}
 
-	e->v.v.frame = 0;
-	cl.model_precache[(int) e->v.v.modelindex] = m;
+	SVFIELD (e, frame, float) = 0;
+	cl.model_precache[(int) SVFIELD (e, modelindex, float)] = m;
 }
 
 /*
@@ -1639,13 +1640,13 @@ Host_Viewframe_f (void)
 	e = FindViewthing ();
 	if (!e)
 		return;
-	m = cl.model_precache[(int) e->v.v.modelindex];
+	m = cl.model_precache[(int) SVFIELD (e, modelindex, float)];
 
 	f = atoi (Cmd_Argv (1));
 	if (f >= m->numframes)
 		f = m->numframes - 1;
 
-	e->v.v.frame = f;
+	SVFIELD (e, frame, float) = f;
 }
 
 
@@ -1677,13 +1678,13 @@ Host_Viewnext_f (void)
 	e = FindViewthing ();
 	if (!e)
 		return;
-	m = cl.model_precache[(int) e->v.v.modelindex];
+	m = cl.model_precache[(int) SVFIELD (e, modelindex, float)];
 
-	e->v.v.frame = e->v.v.frame + 1;
-	if (e->v.v.frame >= m->numframes)
-		e->v.v.frame = m->numframes - 1;
+	SVFIELD (e, frame, float) = SVFIELD (e, frame, float) + 1;
+	if (SVFIELD (e, frame, float) >= m->numframes)
+		SVFIELD (e, frame, float) = m->numframes - 1;
 
-	PrintFrameName (m, e->v.v.frame);
+	PrintFrameName (m, SVFIELD (e, frame, float));
 }
 
 /*
@@ -1701,13 +1702,13 @@ Host_Viewprev_f (void)
 	if (!e)
 		return;
 
-	m = cl.model_precache[(int) e->v.v.modelindex];
+	m = cl.model_precache[(int) SVFIELD (e, modelindex, float)];
 
-	e->v.v.frame = e->v.v.frame - 1;
-	if (e->v.v.frame < 0)
-		e->v.v.frame = 0;
+	SVFIELD (e, frame, float) = SVFIELD (e, frame, float) - 1;
+	if (SVFIELD (e, frame, float) < 0)
+		SVFIELD (e, frame, float) = 0;
 
-	PrintFrameName (m, e->v.v.frame);
+	PrintFrameName (m, SVFIELD (e, frame, float));
 }
 
 /*

@@ -40,17 +40,14 @@
 #include "cmd.h"
 #include "console.h"
 #include "host.h"
-#include "progs.h"
 #include "server.h"
+#include "sv_progs.h"
 #include "world.h"
 
-int         eval_alpha;
-int         eval_scale;
-int         eval_glowsize;
-int         eval_glowcolor;
-int         eval_colormod;
-
 progs_t     sv_pr_state;
+sv_globals_t sv_globals;
+sv_funcs_t sv_funcs;
+sv_fields_t sv_fields;
 
 cvar_t     *r_skyname;
 cvar_t     *sv_progs;
@@ -93,12 +90,6 @@ FindEdictFieldOffsets (progs_t * pr)
 		EndFrame = 0;
 		if ((f = ED_FindFunction (&sv_pr_state, "EndFrame")) != NULL)
 			EndFrame = (func_t) (f - sv_pr_state.pr_functions);
-
-		eval_alpha = FindFieldOffset (&sv_pr_state, "alpha");
-		eval_scale = FindFieldOffset (&sv_pr_state, "scale");
-		eval_glowsize = FindFieldOffset (&sv_pr_state, "glow_size");
-		eval_glowcolor = FindFieldOffset (&sv_pr_state, "glow_color");
-		eval_colormod = FindFieldOffset (&sv_pr_state, "colormod");
 	}
 }
 
@@ -107,16 +98,16 @@ ED_Prune_Edict (progs_t *pr, edict_t *ent)
 {
 	// remove things from different skill levels or deathmatch
 	if (deathmatch->int_val) {
-		if (((int) ent->v.v.spawnflags & SPAWNFLAG_NOT_DEATHMATCH)) {
+		if (((int) SVFIELD (ent, spawnflags, float) & SPAWNFLAG_NOT_DEATHMATCH)) {
 			return 1;
 		}
 	} else if (
 			   (current_skill == 0
-				&& ((int) ent->v.v.spawnflags & SPAWNFLAG_NOT_EASY))
+				&& ((int) SVFIELD (ent, spawnflags, float) & SPAWNFLAG_NOT_EASY))
 			   || (current_skill == 1
-				   && ((int) ent->v.v.spawnflags & SPAWNFLAG_NOT_MEDIUM))
+				   && ((int) SVFIELD (ent, spawnflags, float) & SPAWNFLAG_NOT_MEDIUM))
 			   || (current_skill >= 2
-				   && ((int) ent->v.v.spawnflags & SPAWNFLAG_NOT_HARD))) {
+				   && ((int) SVFIELD (ent, spawnflags, float) & SPAWNFLAG_NOT_HARD))) {
 		return 1;
 	}
 	return 0;
