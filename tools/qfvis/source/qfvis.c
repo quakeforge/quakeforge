@@ -410,7 +410,7 @@ LeafFlow (int leafnum)
 {
 	byte		*dest, *outbuffer;
 	byte		compressed[MAX_MAP_LEAFS / 8];
-	int			numbvis, i, j;
+	int			numvis, i, j;
 	leaf_t		*leaf;
 	portal_t	*portal;
 
