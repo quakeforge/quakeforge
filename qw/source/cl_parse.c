@@ -1108,7 +1108,10 @@ CL_MuzzleFlash (void)
 
 	dl = R_AllocDlight (i);
 	VectorCopy (pl->origin, dl->origin);
-	AngleVectors (pl->viewangles, fv, rv, uv);
+	if (i - 1 == cl.playernum)
+		AngleVectors (cl.viewangles, fv, rv, uv);
+	else
+		AngleVectors (pl->viewangles, fv, rv, uv);
 
 	VectorMA (dl->origin, 18, fv, dl->origin);
 	dl->radius = 200 + (rand () & 31);
