@@ -92,8 +92,6 @@ Time 		x_time;
 
 qboolean    x_have_focus = false;
 
-#define X_MASK (VisibilityChangeMask | StructureNotifyMask | ExposureMask | FocusChangeMask | EnterWindowMask)
-
 #ifdef HAVE_VIDMODE
 static XF86VidModeModeInfo **vidmodes;
 static int		nummodes;
@@ -129,7 +127,6 @@ configure_notify (XEvent *event)
 				 c->width, c->height, c->border_width, c->above,
 				 c->override_redirect);
 }
-
 
 qboolean
 X11_AddEvent (int event, void (*event_handler) (XEvent *))
@@ -178,8 +175,7 @@ X11_WaitForEvent (int event)
 	int     type;
 
 	while (1) {
-		//XMaskEvent (x_disp, StructureNotifyMask, &ev);
-		XNextEvent (x_disp, &ev);
+		XMaskEvent (x_disp, X11_WINDOW_MASK, &ev);
 		type = ev.type;
 		X11_ProcessEventProxy (&ev);
 		if (type == event) 
@@ -481,7 +477,7 @@ X11_CreateWindow (int width, int height)
 	attr.background_pixel = 0;
 	attr.border_pixel = 0;
 	attr.colormap = XCreateColormap (x_disp, x_root, x_vis, AllocNone);
-	attr.event_mask = X_MASK;
+	attr.event_mask = X11_MASK;
 	mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
 
 	x_win = XCreateWindow (x_disp, x_root, 0, 0, width, height, 0,

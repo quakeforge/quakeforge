@@ -85,12 +85,6 @@ static qboolean dga_active;
 static keydest_t old_key_dest = key_none;
 static int  p_mouse_x, p_mouse_y;
 
-#define KEY_MASK (KeyPressMask | KeyReleaseMask)
-#define MOUSE_MASK (ButtonPressMask | ButtonReleaseMask | PointerMotionMask)
-#define FOCUS_MASK (FocusChangeMask | EnterWindowMask)
-#define INPUT_MASK (KEY_MASK | MOUSE_MASK | FOCUS_MASK)
-
-
 static void
 dga_on (void)
 {
@@ -609,7 +603,7 @@ IN_LL_Grab_Input (int grab)
 	if (grab) {
 		int         ret;
 
-		ret = XGrabPointer (x_disp, x_win, True, MOUSE_MASK, GrabModeAsync,
+		ret = XGrabPointer (x_disp, x_win, True, X11_MOUSE_MASK, GrabModeAsync,
 							GrabModeAsync, x_win, None, CurrentTime);
 		if (ret != GrabSuccess) {
 			grab_error (ret, "mouse");
@@ -673,7 +667,7 @@ IN_LL_Init (void)
 
 		XGetWindowAttributes (x_disp, x_win, &attribs_1);
 
-		attribs_2.event_mask = attribs_1.your_event_mask | INPUT_MASK;
+		attribs_2.event_mask = attribs_1.your_event_mask | X11_INPUT_MASK;
 
 		XChangeWindowAttributes (x_disp, x_win, attribmask, &attribs_2);
 	}
