@@ -45,6 +45,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 
+#include "entities.h"
 #include "options.h"
 
 const char *this_program;
@@ -55,6 +56,9 @@ static struct option const long_options[] = {
 	{"help", no_argument, 0, 'h'},
 	{"version", no_argument, 0, 'V'},
 	{"threads", required_argument, 0, 't'},
+	{"attenuation", required_argument, 0, 'a'},
+	{"noise", required_argument, 0, 'n'},
+	{"cutoff", required_argument, 0, 'c'},
 	{"extra", required_argument, 0, 'e'},
 	{"novis", no_argument, 0, 'N'},
 	{"distance", required_argument, 0, 'd'},	
@@ -70,6 +74,9 @@ static const char *short_options =
 	"V"		// version
 	"N"		// novis
 	"t:"	// threads
+	"a:"	// attenuation
+	"n:"	// noise
+	"c:"	// cutoff
 	"e:"	// extra sampling
 	"d:"	// scale distance
 	"r:"	// scale range
@@ -92,6 +99,10 @@ usage (int status)
 		"    -e, --extra [num]         Apply extra sampling\n"
 		"    -d, --distance [scale]    Scale distance\n"
 		"    -r, --range [scale]       Scale range\n"
+		"    -a, --attenuation [type]  linear,radius,inverse,realistic,none,\n"
+		"                              havoc\n"
+		"    -n, --noise [factor]      Scale noise. 0 (default) to disable\n"
+		"    -c, --cutoff [scale]      Scale cutoff. 0 to disable\n"
 		"    -f, --file [bspfile]      BSP file\n\n");
 	exit (status);
 }
@@ -108,6 +119,8 @@ DecodeArgs (int argc, char **argv)
 	options.distance = 1.0;
 	options.range = 0.5;
 	options.globallightscale = 1.0;
+	options.cutoff = 1.0;
+	options.attenuation = LIGHT_LINEAR;
 	bspfile = NULL;
 
 	while ((c = getopt_long (argc, argv, short_options, long_options, 0))
@@ -133,6 +146,37 @@ DecodeArgs (int argc, char **argv)
 				options.threads = strtol (optarg, &eptr, 10);
 				if (eptr == optarg || *eptr)
 					usage (1);
+				break;
+			case 'a':
+				if (!strcmp(optarg, "linear"))
+					options.attenuation = LIGHT_LINEAR;
+				else if (!strcmp(optarg, "radius"))
+					options.attenuation = LIGHT_RADIUS;
+				else if (!strcmp(optarg, "inverse"))
+					options.attenuation = LIGHT_INVERSE;
+				else if (!strcmp(optarg, "realistic"))
+					options.attenuation = LIGHT_REALISTIC;
+				else if (!strcmp(optarg, "none"))
+					options.attenuation = LIGHT_NO_ATTEN;
+				else if (!strcmp(optarg, "havoc"))
+					options.attenuation = LIGHT_REALISTIC;
+				else {
+					options.attenuation = strtol (optarg, &eptr, 10);
+					if (eptr == optarg || *eptr)
+						usage (1);
+				}
+				break;
+			case 'n':					// noise
+				options.noise = strtod (optarg, &eptr);
+				if (eptr == optarg || *eptr)
+					usage (1);
+				options.noise = bound (0, options.extrabit, 2);
+				break;
+			case 'c':					// cutoff
+				options.cutoff = strtod (optarg, &eptr);
+				if (eptr == optarg || *eptr)
+					usage (1);
+				options.cutoff = bound (0, options.extrabit, 2);
 				break;
 			case 'e':					// extra
 				options.extrabit = strtol (optarg, &eptr, 10);

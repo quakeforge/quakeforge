@@ -36,10 +36,13 @@ typedef struct {
 	int			threads;
 	int         novis;
 	int         extrabit;
+	int         attenuation;
 	vec_t       extrascale;
 	vec_t		distance;
 	vec_t		range;
 	vec_t       globallightscale;
+	vec_t       noise;
+	vec_t       cutoff;
 	const char *lightsfilename;
 } options_t;
 

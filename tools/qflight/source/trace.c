@@ -55,17 +55,17 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "light.h"
 
 typedef struct {
-	int type;
-	vec3_t normal;
-	float dist;
-	int children[2];
-	int pad;
+	int         type;
+	vec3_t      normal;
+	float       dist;
+	int         children[2];
+	int         pad;
 } tnode_t;
 
 typedef struct {
-	vec3_t backpt;
-	int side;
-	int node;
+	vec3_t     backpt;
+	int        side;
+	int        node;
 } tracestack_t;
 
 tnode_t *tnodes, *tnode_p;

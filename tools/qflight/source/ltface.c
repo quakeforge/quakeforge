@@ -57,6 +57,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "light.h"
 #include "entities.h"
+#include "noise.h"
 #include "options.h"
 #include "threads.h"
 
@@ -275,7 +276,8 @@ SingleLightFace (entity_t *light, lightinfo_t *l)
 	int			mapnum, i;
 	qboolean	hit;
 	vec3_t		incoming, spotvec;
-	vec_t		add, dist, idist, lightfalloff, lightsubtract, spotcone;
+	vec_t		add, angle, dist, idist, lightfalloff, lightsubtract, spotcone;
+	vec_t       intensity;
 	lightpoint_t *point;
 	lightsample_t *sample;
 
@@ -290,17 +292,14 @@ SingleLightFace (entity_t *light, lightinfo_t *l)
 	lightsubtract = light->subbrightness;
 
 	// don't bother with light too far away
-#if 0
-	if (dist > light->light) {
+	if (light->radius && dist > light->radius) {
 		c_culldistplane++;
 		return;
 	}
-#else
 	if (lightsubtract > (1.0 / (dist * dist * lightfalloff + LIGHTDISTBIAS))) {
 		c_culldistplane++;
 		return;
 	}
-#endif
 
 	for (mapnum = 0; mapnum < MAXLIGHTMAPS; mapnum++) {
 		if (l->lightstyles[mapnum] == light->style)
@@ -330,41 +329,96 @@ SingleLightFace (entity_t *light, lightinfo_t *l)
 		idist = 1.0 / dist;
 		VectorScale (incoming, idist, incoming);
 
+		if (light->radius && dist > light->radius)
+			continue;
+
 		// spotlight cutoff
 		if (spotcone > 0 && DotProduct (spotvec, incoming) > spotcone)
 			continue;
-#if 0
+
 		angle = DotProduct (incoming, l->facenormal);
-		angle = (1.0 - scalecos) + scalecos * angle;
-		add = light->light - dist;
-		add *= angle;
-		if (add < 0)
-			continue;
-		lightsamp[c] += add;
-		if (lightsamp[c] > 1)	
-			// ignore real tiny lights
-			hit = true;
-#else
-		// LordHavoc: changed to be more realistic (entirely different
-		// lighting model)
-		// LordHavoc: use subbrightness on all lights, simply to have
-		//some distance culling
-		add = (1.0 / (dist * dist * lightfalloff + LIGHTDISTBIAS)
-			   - lightsubtract);
+
+		switch (light->attenuation) {
+			case LIGHT_LINEAR:
+				add = light->light - dist;
+				break;
+			case LIGHT_RADIUS:
+				add = light->light * (light->radius - dist) / light->radius;
+				break;
+			case LIGHT_INVERSE:
+				add = light->light / dist;
+				break;
+			case LIGHT_REALISTIC:
+				add = light->light / (dist * dist);
+				break;
+			case LIGHT_LH:
+				add = 1 / (dist * dist * lightfalloff + LIGHTDISTBIAS);
+				// LordHavoc: changed to be more realistic (entirely different
+				// lighting model)
+				// LordHavoc: use subbrightness on all lights, simply to have
+				//some distance culling
+				add -= lightsubtract;
+				break;
+		}
+
+		if (light->noise) {
+			int         seed = light - entities;
+			vec3_t      snap;
+			lightpoint_t *noise_point = point;
+			if (options.extrascale) {
+				// FIXME not correct for extrascale > 2
+				// We don't want to oversample noise because that just
+				// waters it down.  So we "undersample" noise by using
+				// the same surf coord for every group of 4 lightmap pixels
+				// ("undersampling", "pixelation", "anti-interpolation" :-)
+				int         width = (l->texsize[0] + 1) * 2;
+				int         x = i % width;
+				int         y = i / width;
+
+				if (x % 2 && y % 2)
+					noise_point -= width * 3 + 3;
+				else if (y % 2)
+					noise_point -= width * 3;
+				else if (x % 2)
+					noise_point -= 3;
+			}
+			if (light->noisetype == NOISE_SMOOTH)
+				snap_vector (noise_point->v, snap, 0);
+			else
+				snap_vector (noise_point->v, snap, light->resolution);
+
+
+			if (light->noisetype == NOISE_RANDOM)
+				intensity = noise3d (snap, seed);
+			if (light->noisetype == NOISE_SMOOTH)
+				intensity = noise_scaled (snap, light->resolution, seed);
+			if (light->noisetype == NOISE_PERLIN)
+				intensity = noise_perlin (snap, light->persistence, seed);
+
+			add *= intensity * light->noise + 1.0 - light->noise;
+		}
+
 		if (add <= 0)
 			continue;
 		if (!TestLine (l, point->v, light->origin))
 			continue;
 
-		// LordHavoc: FIXME: decide this 0.5 bias based on shader properties
-		// (some are dull, some are shiny)
-		add *= (DotProduct (incoming, l->facenormal) * 0.5 + 0.5);
+		if (light->attenuation == LIGHT_LH) {
+			// LordHavoc: FIXME: decide this 0.5 bias based on shader
+			// properties (some are dull, some are shiny)
+			add *= angle * 0.5 + 0.5;
+		} else {
+			add *= angle;
+		}
 		add *= options.extrascale;
+
+		if (light->light < 0)
+			add *= -1;				// negative light
+
 		sample = &l->sample[mapnum][point->samplepos];
 		VectorMultAdd (sample->c, add, light->color, sample->c);
 		if (!hit && ((sample->c[0] + sample->c[1]  + sample->c[2]) >= 1))
 			hit = true;
-#endif
 	}
 
 	// if the style has some data now, make sure it is in the list

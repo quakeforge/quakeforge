@@ -33,6 +33,19 @@
 #define DEFAULTLIGHTLEVEL	300
 #define DEFAULTFALLOFF 1.0f
 
+// Open Quartz - attenuation types
+#define LIGHT_LINEAR	0	// regular attenuation (light - distance)
+#define LIGHT_RADIUS	1	// light * (distance - radius) / radius
+#define LIGHT_INVERSE	2	// light / distance
+#define LIGHT_REALISTIC 3	// light / (distance * distance)
+#define LIGHT_NO_ATTEN	4	// no attenuation
+#define LIGHT_LH		5	// LordHavocs version of realistic
+
+// Open Quartz - noise type flags
+#define NOISE_RANDOM	0	// completely random noise (default)
+#define	NOISE_SMOOTH	1	// low res noise with interpolation
+#define NOISE_PERLIN	2	// combines several noise frequencies
+
 typedef struct epair_s {
 	struct epair_s *next;
 	const char *key;
@@ -57,6 +70,17 @@ typedef struct entity_s {
 										// the visdata for the leaf this light
 										// is in
 	int         style;
+
+	// Open Quartz - special light feilds
+	int         noisetype;				// random noise type
+	float       noise;					// noise intensity
+	float       resolution;				// noise blockiness
+	float       persistence;			// perlin noise decay per octave
+	int         attenuation;			// light attenuation type
+	float       radius;					// the light's maximum range, minimum
+										// of cutoff range and _radius key, 0
+										// for no maximum
+
 	const char *target;
 	const char *targetname;
 	struct epair_s *epairs;

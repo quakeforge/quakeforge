@@ -172,6 +172,8 @@ LoadEntities (void)
 	entity_t   *entity;
 	epair_t    *epair;
 	int         i;
+	float       cutoff_range;
+	float       intensity;
 
 	data = bsp->entdata;
 
@@ -202,6 +204,7 @@ LoadEntities (void)
 		entity->falloff = DEFAULTFALLOFF * DEFAULTFALLOFF;
 		entity->lightradius = 0;
 		entity->lightoffset = LIGHTDISTBIAS;
+		entity->attenuation = options.attenuation;
 
 		// go through all the keys in this entity
 		while (1) {
@@ -295,15 +298,53 @@ LoadEntities (void)
 					temp = 1.0 / temp;
 				VectorScale (vec, temp, color2);
 			}
+			// Open Quartz - new keys
+			else if (!strcmp(key, "_attenuation")) {
+				if (!strcmp(com_token, "linear"))
+					entity->attenuation = LIGHT_LINEAR;
+				else if (!strcmp(com_token, "radius"))
+					entity->attenuation = LIGHT_RADIUS;
+				else if (!strcmp(com_token, "inverse"))
+					entity->attenuation = LIGHT_INVERSE;
+				else if (!strcmp(com_token, "realistic"))
+					entity->attenuation = LIGHT_REALISTIC;
+				else if (!strcmp(com_token, "none"))
+					entity->attenuation = LIGHT_NO_ATTEN;
+				else if (!strcmp(com_token, "havoc"))
+					entity->attenuation = LIGHT_REALISTIC;
+				else
+					entity->attenuation = atoi (com_token);
+			} else if (!strcmp(key, "_radius"))
+				entity->radius = atof (com_token);
+			else if (!strcmp(key, "_noise"))
+				entity->noise = atof (com_token);
+			else if (!strcmp(key, "_noisetype")) {
+				if (!strcmp(com_token, "random"))
+					entity->noisetype = NOISE_RANDOM;
+				else if (!strcmp(com_token, "smooth"))
+					entity->noisetype = NOISE_SMOOTH;
+				else if (!strcmp(com_token, "perlin"))
+					entity->noisetype = NOISE_PERLIN;
+				else
+					entity->noisetype = atoi (com_token);
+			} else if (!strcmp(key, "_persistence"))
+				entity->persistence = atof (com_token);
+			else if (!strcmp(key, "_resolution"))
+				entity->resolution = atof (com_token);
 		}
 
 		if (entity->targetname)
 			printf ("%s %d %d\n", entity->targetname, entity->light, entity->style);
 
 		// all fields have been parsed
-		if (entity->classname && !strncmp (entity->classname, "light", 5))
+		if (entity->classname && !strncmp (entity->classname, "light", 5)) {
 			if (!entity->light)
 				entity->light = DEFAULTLIGHTLEVEL;
+			if (!entity->noise)
+				entity->noise = options.noise;
+			if (!entity->persistence)
+				entity->persistence = 1;
+		}
 
 		if (entity->light) {
 			// convert to subtraction to the brightness for the whole light,
@@ -322,6 +363,38 @@ LoadEntities (void)
 											   + LIGHTDISTBIAS);
 			if (entity->subbrightness < (1.0 / 1048576.0))
 				entity->subbrightness = (1.0 / 1048576.0);
+
+			intensity = entity->light;
+			if (intensity < 0)
+				intensity = -intensity;
+			switch (entity->attenuation) {
+				case LIGHT_RADIUS:
+					// default radius is intensity (same as LIGHT_LINEAR)
+					if (!entity->radius)
+						entity->radius = intensity;
+					break;
+				case LIGHT_LINEAR:
+					// don't allow radius to be greater than intensity
+					if (entity->radius > intensity || entity->radius == 0)
+						entity->radius = intensity;
+					break;
+				case LIGHT_REALISTIC:
+					if (options.cutoff) {
+						// approximate limit for faster lighting
+						cutoff_range = sqrt (intensity / options.cutoff);
+						if (!entity->radius || cutoff_range < entity->radius)
+							entity->radius = cutoff_range;
+					}
+					break;
+				case LIGHT_INVERSE:
+					if (options.cutoff) {
+						// approximate limit for faster lighting
+						cutoff_range = intensity / options.cutoff;
+						if (!entity->radius || cutoff_range < entity->radius)
+							entity->radius = cutoff_range;
+					}
+					break;
+			}
 		}
 
 		if (entity->classname && !strcmp (entity->classname, "light")) {
