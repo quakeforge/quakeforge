@@ -50,7 +50,7 @@ static const char rcsid[] =
 
 #define PATHSEPERATOR   '/'
 
-char        com_token[1024];
+char        qfcc_com_token[1024];
 qboolean    com_eof;
 
 /*
@@ -84,7 +84,7 @@ Parse (char *data)
 	int         c;
 	int         len = 0;
 
-	com_token[0] = 0;
+	qfcc_com_token[0] = 0;
 
 	if (!data)
 		return NULL;
@@ -111,23 +111,23 @@ Parse (char *data)
 		do {
 			c = *data++;
 			if (c == '\"') {
-				com_token[len] = 0;
+				qfcc_com_token[len] = 0;
 				return data;
 			}
-			com_token[len] = c;
+			qfcc_com_token[len] = c;
 			len++;
 		} while (1);
 	}
 	// parse single characters
 	if (c == '{' || c == '}' || c == ')' || c == '(' || c == '\'' || c == ':') {
-		com_token[len] = c;
+		qfcc_com_token[len] = c;
 		len++;
-		com_token[len] = 0;
+		qfcc_com_token[len] = 0;
 		return data + 1;
 	}
 	// parse a regular word
 	do {
-		com_token[len] = c;
+		qfcc_com_token[len] = c;
 		data++;
 		len++;
 		c = *data;
@@ -136,7 +136,7 @@ Parse (char *data)
 			break;
 	} while (c > 32);
 
-	com_token[len] = 0;
+	qfcc_com_token[len] = 0;
 	return data;
 }
 

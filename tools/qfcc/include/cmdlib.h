@@ -63,7 +63,7 @@ int		LoadFile (char *filename, void **bufferptr);
 
 char *Parse (char *data);
 
-extern	char		com_token[1024];
+extern	char		qfcc_com_token[1024];
 extern	qboolean	com_eof;
 
 #endif

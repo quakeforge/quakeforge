@@ -916,14 +916,14 @@ main (int argc, char **argv)
 	if (!(src = Parse (src)))
 		Error ("No destination filename.  qfcc --help for info.\n");
 
-	strcpy (destfile, com_token);
+	strcpy (destfile, qfcc_com_token);
 	if (options.verbosity >= 1) {
 		printf ("outputfile: %s\n", destfile);
 	}
 	if (options.code.debug) {
 		char       *s;
 
-		strcpy (debugfile, com_token);
+		strcpy (debugfile, qfcc_com_token);
 
 		s = debugfile + strlen (debugfile);
 		while (s-- > debugfile) {
@@ -962,7 +962,7 @@ main (int argc, char **argv)
 		// yydebug = 1;
 
 		snprintf (filename, sizeof (filename), "%s%c%s", sourcedir,
-				  PATH_SEPARATOR, com_token);
+				  PATH_SEPARATOR, qfcc_com_token);
 		if (options.verbosity >= 2)
 			printf ("compiling %s\n", filename);
 
