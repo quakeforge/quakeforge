@@ -410,7 +410,7 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 	for (j = 0, cl = svs.clients, dcl = demo_frame->clients; j < MAX_CLIENTS;
 		 j++, cl++, dcl++) {
 
-		if (cl->state != cs_spawned)
+		if (cl->state != cs_spawned && cl->state != cs_server)
 			continue;
 
 		ent = cl->edict;
