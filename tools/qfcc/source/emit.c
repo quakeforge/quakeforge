@@ -89,31 +89,41 @@ emit_function_call (expr_t *e, def_t *dest)
 	expr_t *earg;
 	opcode_t *op;
 	int count = 0, ind;
+	def_t *args[MAX_PARMS];
 
 	for (earg = e->e.expr.e2; earg; earg = earg->next)
 		count++;
 	ind = count;
 	for (earg = e->e.expr.e2; earg; earg = earg->next) {
 		ind--;
-		parm = def_parms[ind];
-		parm.type = types[get_type (earg)];
-		arg = emit_sub_expr (earg, &parm);
+		args[ind] = PR_GetTempDef (types[get_type (earg)], pr_scope);
+		arg = emit_sub_expr (earg, args[ind]);
 		if (earg->type != ex_expr && earg->type != ex_uexpr) {
-			op = PR_Opcode_Find ("=", 5, arg, &parm, &parm);
-			emit_statement (e->line, op, arg, &parm, 0);
+			op = PR_Opcode_Find ("=", 5, arg, args[ind], args[ind]);
+			emit_statement (e->line, op, arg, args[ind], 0);
 		}
+	}
+	ind = count;
+	for (; ind > 0; ind--) {
+		ind--;
+		arg = args[ind];
+		parm = def_parms[ind];
+		parm.type = arg->type;
+		op = PR_Opcode_Find ("=", 5, arg, &parm, &parm);
+		emit_statement (e->line, op, arg, &parm, 0);
 	}
 	op = PR_Opcode_Find (va ("<CALL%d>", count), -1, &def_function,  &def_void, &def_void);
 	emit_statement (e->line, op, func, 0, 0);
 
 	def_ret.type = func->type->aux_type;
-	if (dest) {
+	if (def_ret.type->type != ev_void) {
+		if (!dest)
+			dest = PR_GetTempDef (def_ret.type, pr_scope);
 		op = PR_Opcode_Find ("=", 5, dest, &def_ret, &def_ret);
 		emit_statement (e->line, op, &def_ret, dest, 0);
 		return dest;
-	} else {
+	} else
 		return &def_ret;
-	}
 }
 
 def_t *

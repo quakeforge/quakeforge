@@ -10,6 +10,7 @@ float snafu = 2;
 float negative = -------2;
 
 void () eek;
+float (float a, float b) boing;
 
 float () main =
 {/*
@@ -33,7 +34,7 @@ float () main =
 		print (buffer);
 	} while (read_result == 1024);
 	close (handle);
-	eek ();*/
+	eek ();
 	traceon();
 	local float foo = 0;
 	foo += 1;
@@ -49,7 +50,10 @@ float () main =
 	bar = 12 % 5;
 	bar %= 3;
 	foo %= 5;
-	return foo;
+	return foo;*/
+	traceon ();
+	boing (boing (1, 2), boing (3, 4));
+	return 0;
 };
 
 float () baz =
@@ -86,6 +90,11 @@ void () blarg =
 	while (foo) {
 		bar = foo;
 	}
+};
+
+float (float a, float b) boing =
+{
+	return a + b;
 };
 
 float (float baz) test_int =
