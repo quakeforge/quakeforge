@@ -1946,7 +1946,7 @@ OutofBandPrintf (netadr_t where, const char *fmt, ...)
 	send[3] = 0xff;
 	send[4] = A2C_PRINT;
 	va_start (argptr, fmt);
-	vsnprintf (send + 5, sizeof (send - 5), fmt, argptr);
+	vsnprintf (send + 5, sizeof (send) - 5, fmt, argptr);
 	va_end (argptr);
 
 	Netchan_SendPacket (strlen (send) + 1, send, where);
