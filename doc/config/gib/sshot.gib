@@ -1,0 +1,91 @@
+//      sshot.gib
+//
+//      Screenshot script for GIB in QuakeForge 0.5.3
+//
+//      Copyright (C) 2003 Erik Jan Tromp
+//
+//      This program is free software; you can redistribute it and/or
+//      modify it under the terms of the GNU General Public License
+//      as published by the Free Software Foundation; either version 2
+//      of the License, or (at your option) any later version.
+//
+//      This program is distributed in the hope that it will be useful,
+//      but WITHOUT ANY WARRANTY; without even the implied warranty of
+//      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+//
+//      See the GNU General Public License for more details.
+//
+//      You should have received a copy of the GNU General Public License
+//      along with this program; if not, write to:
+//
+//              Free Software Foundation, Inc.
+//              59 Temple Place - Suite 330
+//              Boston, MA  02111-1307, USA
+//
+
+// Updated for QuakeForge 0.5.3 by Brian Koropoff
+
+// save settings, set maximum eyecandy, take shot, restore settings
+
+// eyecandy settings for screenshots:
+//	crosshair 0 (off)
+//	r_dlight_lightmap 1 (on)
+//	r_shadows 1 (on)
+//	r_wateralpha 0.3 (translucent)
+//	show_fps 0 (off)
+
+domain sshot
+
+global rcsid = "$Id$"
+
+global cvars = crosshair r_dlight_lightmap r_shadows r_wateralpha show_fps
+
+function cvar::save {
+	for i in @args[1:] {
+		dprint "Saving cvar ", $i, ".\n"
+		global hold_$i = ${$i}
+	}
+}
+
+function cvar::restore {
+	for i in @args[1:] {
+		dprint "Restoring cvar", $i, " to ", ${hold_$i}, ".\n"
+		set $i ${hold_$i}
+	}
+}
+
+function sshot {
+	cvar::save @cvars
+	set crosshair 0
+	set r_dlight_lightmap 1
+	set r_shadows 1
+	set r_wateralpha 0.3
+	set show_fps 0
+	wait
+	if (#args == 2) { // named screenshot
+		// find next available name
+		name_s = 0
+		for name_t in `file::find qf???.tga` {
+			if (`slice $name_t 2 5` > $name_s) {break}
+			name_s = ($name_s + 1)
+		}
+		// take shot _now_
+		screenshot
+		// pad & normalize source
+		name_s = "00", $name_s
+		name_s = "qf", `slice $name_s -3 0`, ".tga"
+		// destination specified with extension?
+		name_d = $args[1]
+		ifnot $(equal $(slice $name_d -4 0) ".tga") {
+			name_d = $name_d, ".tga"
+		}
+		// rename
+		file::move $name_s $name_d
+	} else {
+		screenshot // generic screenshot
+	}
+	wait
+	cvar::restore @cvars
+}
+
+function::export sshot

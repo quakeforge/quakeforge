@@ -1,0 +1,58 @@
+//      adjustvolume.gib
+//
+//      Volume adjustment script for GIB in QuakeForge 0.5.3
+//
+//      Copyright (C) 2003 Erik Jan Tromp
+//
+//      This program is free software; you can redistribute it and/or
+//      modify it under the terms of the GNU General Public License
+//      as published by the Free Software Foundation; either version 2
+//      of the License, or (at your option) any later version.
+//
+//      This program is distributed in the hope that it will be useful,
+//      but WITHOUT ANY WARRANTY; without even the implied warranty of
+//      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+//
+//      See the GNU General Public License for more details.
+//
+//      You should have received a copy of the GNU General Public License
+//      along with this program; if not, write to:
+//
+//              Free Software Foundation, Inc.
+//              59 Temple Place - Suite 330
+//              Boston, MA  02111-1307, USA
+//
+
+// Updated for QuakeForge 0.5.3 by Brian Koropoff
+
+// this thing is primitive. as such, any attempt to break it will
+// succeed. use your head!
+
+// simply set up a couple of bindings like the ones below..
+//	in_bind IMT_0 K_KP_MINUS "adjustvolume 5" // Increase 5 percent
+//	in_bind IMT_0 K_KP_PLUS "adjustvolume -5" // Decrease 5 percent
+// & something like this in autoexec.cfg..
+//	// on the fly volume adjust
+//	exec adjustvolume.gib
+//	set maxvolume (whatever max volume you want)
+
+domain adjustvolume
+
+global rcsid = "$Id$"
+
+global slider = "\129\129\129\129\129\129\129\129\129\129\129\129\129\129\129\129"
+set maxvolume 1.5
+
+function adjustvolume {
+	if (#args != 2) {return}
+	hold_volume = ($volume + $maxvolume * $args[1] / 100)
+	if ($hold_volume < 0) {hold_volume = 0} else if ($hold_volume > $maxvolume) {hold_volume = $maxvolume}
+	set volume $hold_volume
+	ratio = ($volume / $maxvolume)
+	percent = `split ($ratio * 100) .`
+	index = ($ratio * 15) 
+	print::center "Volume: ", $percent, "%\n\n", "\128", `slice $slider 0 $index`, "\131", `slice $slider $index -1`, "\130"
+	play "doors/runetry.wav"
+}
+
+function::export adjustvolume

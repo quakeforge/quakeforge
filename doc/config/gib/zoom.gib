@@ -22,9 +22,11 @@
 //              59 Temple Place - Suite 330
 //              Boston, MA  02111-1307, USA
 //
-// $Id$
 
 domain zoom
+
+global rcsid = "$Id$"
+
 global amp
 global fov
 global min
@@ -33,7 +35,7 @@ global step
 global mult
 global zoomed
 
-// clamp returns the second argument clamped
+// zoom::clamp returns the second argument clamped
 // between the first and third
 function zoom::clamp {
 	if ($args[2] < $args[1]) {
