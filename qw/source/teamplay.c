@@ -158,7 +158,7 @@ Team_ParseSay (const char *s)
 				t2[1] = 0;
 				t1 = t2;
 				break;
-			case 's':
+			case 'S':
 				bracket = 0;
 				t1 = skin->string;
 				break;
