@@ -157,9 +157,9 @@ plitem_t *PL_D_AllKeys (plitem_t *);
 
 //@{
 /**
-	\fn plitem_t *PL_D_AddObject (plitem_t *dict, plitem_t *key, plitem_t *value)
-	\fn plitem_t *PL_A_AddObject (plitem_t *array, plitem_t *item)
-	\fn plitem_t *PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int ind)
+	\fn qboolean PL_D_AddObject (plitem_t *dict, plitem_t *key, plitem_t *value)
+	\fn qboolean PL_A_AddObject (plitem_t *array, plitem_t *item)
+	\fn qboolean PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int ind)
 
 	\param dict The dictionary to add the key/value pair to
 	\param array The array to add the item to
@@ -171,9 +171,9 @@ plitem_t *PL_D_AllKeys (plitem_t *);
 
 	Note: the dictionary or array becomes the owner of the added item/pair.
 */
-int PL_D_AddObject (plitem_t *, plitem_t *, plitem_t *);
-int PL_A_AddObject (plitem_t *, plitem_t *);
-int PL_A_InsertObjectAtIndex (plitem_t *, plitem_t *, int ind);
+qboolean PL_D_AddObject (plitem_t *, plitem_t *, plitem_t *);
+qboolean PL_A_AddObject (plitem_t *, plitem_t *);
+qboolean PL_A_InsertObjectAtIndex (plitem_t *, plitem_t *, int ind);
 //@}
 
 plitem_t *PL_NewDictionary (void);

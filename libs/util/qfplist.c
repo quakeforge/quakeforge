@@ -190,16 +190,16 @@ PL_ObjectAtIndex (plitem_t *item, int index)
 	return index >= 0 && index < array->numvals ? array->values[index] : NULL;
 }
 
-int
+qboolean
 PL_D_AddObject (plitem_t *dict, plitem_t *key, plitem_t *value)
 {
 	dictkey_t	*k;
 
 	if (dict->type != QFDictionary)
-		return 0;
+		return false;
 
 	if (key->type != QFString)
-		return 0;
+		return false;
 
 	if ((k = Hash_Find ((hashtab_t *)dict->data, key->data))) {
 		PL_Free ((plitem_t *) k->value);
@@ -208,14 +208,14 @@ PL_D_AddObject (plitem_t *dict, plitem_t *key, plitem_t *value)
 		k = malloc (sizeof (dictkey_t));
 
 		if (!k)
-			return 0;
+			return false;
 
 		k->key = strdup ((char *) key->data);
 		k->value = value;
 
 		Hash_Add ((hashtab_t *)dict->data, k);
 	}
-	return 1;
+	return true;
 }
 
 int
@@ -224,7 +224,7 @@ PL_A_InsertObjectAtIndex (plitem_t *array_item, plitem_t *item, int index)
 	plarray_t  *array;
 
 	if (array_item->type != QFArray)
-		return 0;
+		return false;
 
 	array = (plarray_t *)array_item->data;
 
@@ -233,7 +233,8 @@ PL_A_InsertObjectAtIndex (plitem_t *array_item, plitem_t *item, int index)
 		plitem_t  **tmp = realloc (array->values, size);
 
 		if (!tmp)
-			return 0;
+			return false;
+
 		array->maxvals += 128;
 		array->values = tmp;
 		memset (array->values + array->numvals, 0,
@@ -244,16 +245,16 @@ PL_A_InsertObjectAtIndex (plitem_t *array_item, plitem_t *item, int index)
 		index = array->numvals;
 
 	if (index < 0 || index > array->numvals)
-		return 0;
+		return false;
 
 	memmove (array->values + index + 1, array->values + index,
 			 (array->numvals - index) * sizeof (plitem_t *));
 	array->values[index] = item;
 	array->numvals++;
-	return 1;
+	return true;
 }
 
-int
+qboolean
 PL_A_AddObject (plitem_t *array_item, plitem_t *item)
 {
 	return PL_A_InsertObjectAtIndex (array_item, item, -1);
