@@ -1179,10 +1179,10 @@ AC_DEFINE_UNQUOTED(FS_USERPATH, "$userpath", [Define this to the unshared game d
 
 AC_ARG_WITH(plugin-path,
 [  --with-plugin-path=DIR  Use DIR for loading plugins, defaults to
-                          \${sharepath}/QF/plugins],
+                          \${libdir}/quakeforge],
 plugindir=$withval, plugindir="auto")
 
-PLUGINDIR="\${sharepath}/QF/plugins"
+PLUGINDIR="\${libdir}/quakeforge"
 if test "x$plugindir" = "xauto" -o "x$plugindir" = "xyes" -o "x$plugindir" = "x"; then
 	plugindir="$PLUGINDIR"
 elif test "x$plugindir" = xno; then
