@@ -1293,12 +1293,13 @@ CL_Init_Cvars (void)
 							"display host processing times");
 	lookspring = Cvar_Get ("lookspring", "0", CVAR_ARCHIVE, NULL, "Snap view "
 						   "to center when moving and no mlook/klook");
-	m_forward = Cvar_Get ("m_forward", "1", CVAR_NONE, NULL,
+	m_forward = Cvar_Get ("m_forward", "1", CVAR_ARCHIVE, NULL,
 						  "mouse forward/back speed");
 	m_pitch = Cvar_Get ("m_pitch", "0.022", CVAR_ARCHIVE, NULL,
 						"mouse pitch (up/down) multipier");
-	m_side = Cvar_Get ("m_side", "0.8", CVAR_NONE, NULL, "mouse strafe speed");
-	m_yaw = Cvar_Get ("m_yaw", "0.022", CVAR_NONE, NULL,
+	m_side = Cvar_Get ("m_side", "0.8", CVAR_ARCHIVE, NULL,
+					   "mouse strafe speed");
+	m_yaw = Cvar_Get ("m_yaw", "0.022", CVAR_ARCHIVE, NULL,
 					  "mouse yaw (left/right) multiplier");
 	rcon_password = Cvar_Get ("rcon_password", "", CVAR_NONE, NULL,
 							  "remote control password");
