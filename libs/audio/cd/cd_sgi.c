@@ -2,6 +2,7 @@
 	cd_sgi.c
 
 	audio cd playback support for sgi irix machines
+	FIXME: Update for plugin API
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -53,7 +54,7 @@ static CDPLAYER *cdp = NULL;
 
 
 static void
-CDAudio_Eject (void)
+pCDAudio_Eject (void)
 {
 	if (cdp == NULL || !enabled)
 		return;							// no cd init'd
@@ -64,7 +65,7 @@ CDAudio_Eject (void)
 
 
 static int
-CDAudio_GetState (void)
+pCDAudio_GetState (void)
 {
 	CDSTATUS	cds;
 
@@ -81,7 +82,7 @@ CDAudio_GetState (void)
 
 
 static int
-CDAudio_MaxTrack (void)
+pCDAudio_MaxTrack (void)
 {
 	CDSTATUS	cds;
 
@@ -98,7 +99,18 @@ CDAudio_MaxTrack (void)
 
 
 void
-CDAudio_Play (byte track, qboolean looping)
+pCDAudio_Pause (void)
+{
+	if (cdp == NULL || !enabled || CDAudio_GetState () != CD_PLAYING)
+		return;
+
+	if (CDtogglepause (cdp) == 0)
+		Con_DPrintf ("CDAudio_PAUSE: CDtogglepause failed (%d)\n", errno);
+}
+
+
+void
+pCDAudio_Play (byte track, qboolean looping)
 {
 	int			maxtrack = CDAudio_MaxTrack ();
 
@@ -156,7 +168,31 @@ CDAudio_Play (byte track, qboolean looping)
 
 
 void
-CDAudio_Stop (void)
+pCDAudio_Resume (void)
+{
+	if (cdp == NULL || !enabled || CDAudio_GetState () != CD_PAUSED)
+		return;
+
+	if (CDtogglepause (cdp) == 0)
+		Con_DPrintf ("CDAudio_Resume: CDtogglepause failed (%d)\n", errno);
+}
+
+
+void
+pCDAudio_Shutdown (void)
+{
+	if (!initialized)
+		return;
+
+	CDAudio_Stop ();
+	CDclose (cdp);
+	cdp = NULL;
+	initialized = false;
+}
+
+
+void
+pCDAudio_Stop (void)
 {
 	if (cdp == NULL || !enabled || CDAudio_GetState () != CD_PLAYING)
 		return;
@@ -167,29 +203,31 @@ CDAudio_Stop (void)
 
 
 void
-CDAudio_Pause (void)
+pCDAudio_Update (void)
 {
-	if (cdp == NULL || !enabled || CDAudio_GetState () != CD_PLAYING)
+	if (!initialized || !enabled)
 		return;
 
-	if (CDtogglepause (cdp) == 0)
-		Con_DPrintf ("CDAudio_PAUSE: CDtogglepause failed (%d)\n", errno);
-}
+	if (bgmvolume->value != cdvolume) {
+		if (cdvolume) {
+			Cvar_SetValue (bgmvolume, 0.0);
+			cdvolume = bgmvolume->value;
+			CDAudio_Pause ();
+		} else {
+			Cvar_SetValue (bgmvolume, 1.0);
+			cdvolume = bgmvolume->value;
+			CDAudio_Resume ();
+		}
+	}
 
-
-void
-CDAudio_Resume (void)
-{
-	if (cdp == NULL || !enabled || CDAudio_GetState () != CD_PAUSED)
-		return;
-
-	if (CDtogglepause (cdp) == 0)
-		Con_DPrintf ("CDAudio_Resume: CDtogglepause failed (%d)\n", errno);
+	if (CDAudio_GetState () != CD_PLAYING &&
+		CDAudio_GetState () != CD_PAUSED && playLooping)
+			CDAudio_Play (playTrack, true);
 }
 
 
 static void
-CD_f (void)
+pCD_f (void)
 {
 	char       *command;
 	int         ret;
@@ -283,32 +321,8 @@ CD_f (void)
 }
 
 
-void
-CDAudio_Update (void)
-{
-	if (!initialized || !enabled)
-		return;
-
-	if (bgmvolume->value != cdvolume) {
-		if (cdvolume) {
-			Cvar_SetValue (bgmvolume, 0.0);
-			cdvolume = bgmvolume->value;
-			CDAudio_Pause ();
-		} else {
-			Cvar_SetValue (bgmvolume, 1.0);
-			cdvolume = bgmvolume->value;
-			CDAudio_Resume ();
-		}
-	}
-
-	if (CDAudio_GetState () != CD_PLAYING &&
-		CDAudio_GetState () != CD_PAUSED && playLooping)
-			CDAudio_Play (playTrack, true);
-}
-
-
 int
-CDAudio_Init (void)
+pCDAudio_Init (void)
 {
 	int         i;
 
@@ -351,17 +365,4 @@ CDAudio_Init (void)
 	Con_Printf ("CD Audio Initialized\n");
 
 	return 0;
-}
-
-
-void
-CDAudio_Shutdown (void)
-{
-	if (!initialized)
-		return;
-
-	CDAudio_Stop ();
-	CDclose (cdp);
-	cdp = NULL;
-	initialized = false;
 }

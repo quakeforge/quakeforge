@@ -313,7 +313,8 @@ SNDDMA_Submit (void)
 
 
 plugin_t *
-PluginInfo (void) {
+PluginInfo (void)
+{
     plugin_info.type = qfp_sound;
     plugin_info.api_version = QFPLUGIN_VERSION;
     plugin_info.plugin_version = "0.1";

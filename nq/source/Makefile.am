@@ -63,7 +63,7 @@ EXTRA_libqfnet_a_SOURCES= net_dos.c net_bw.c net_ipx.c net_mp.c net_ser.c \
 qf_client_LIBS= $(top_builddir)/libs/video/targets/libQFjs.la \
 		$(top_builddir)/libs/gamecode/libQFgamecode.la \
 		$(top_builddir)/libs/gib/libQFgib.la \
-		$(top_builddir)/libs/audio/cd/libQFcd.la \
+		$(top_builddir)/libs/audio/libQFcd.la \
 		$(top_builddir)/libs/audio/libQFsound.la \
 		$(top_builddir)/libs/util/libQFutil.la
 

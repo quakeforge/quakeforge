@@ -1,7 +1,7 @@
 /*
 	cd_linux.c
 
-	(description)
+	Linux CD Audio support
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -48,13 +48,23 @@
 #include <time.h>
 #include <linux/cdrom.h>
 
-#include "compat.h"
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
+
+#include "compat.h"
+
+plugin_t		plugin_info;
+plugin_data_t	plugin_info_data;
+plugin_funcs_t	plugin_info_funcs;
+general_data_t	plugin_info_general_data;
+general_funcs_t	plugin_info_general_funcs;
+//cd_data_t		plugin_info_cd_data;
+cd_funcs_t		plugin_info_cd_funcs;
 
 static qboolean cdValid = false;
 static qboolean playing = false;
@@ -71,18 +81,7 @@ cvar_t *mus_cddevice;
 
 
 static void
-CDAudio_Eject (void)
-{
-	if (cdfile == -1 || !mus_enabled)
-		return;							// no cd init'd
-
-	if (ioctl (cdfile, CDROMEJECT) == -1)
-		Con_DPrintf ("CDAudio: ioctl cdromeject failed\n");
-}
-
-
-static void
-CDAudio_CloseDoor (void)
+I_CDAudio_CloseDoor (void)
 {
 	if (cdfile == -1 || !mus_enabled)
 		return;							// no cd init'd
@@ -92,8 +91,19 @@ CDAudio_CloseDoor (void)
 }
 
 
+static void
+I_CDAudio_Eject (void)
+{
+	if (cdfile == -1 || !mus_enabled)
+		return;							// no cd init'd
+
+	if (ioctl (cdfile, CDROMEJECT) == -1)
+		Con_DPrintf ("CDAudio: ioctl cdromeject failed\n");
+}
+
+
 static int
-CDAudio_GetAudioDiskInfo (void)
+I_CDAudio_GetAudioDiskInfo (void)
 {
 	struct cdrom_tochdr tochdr;
 
@@ -117,7 +127,41 @@ CDAudio_GetAudioDiskInfo (void)
 
 
 void
-CDAudio_Play (byte track, qboolean looping)
+I_CDAudio_Pause (void)
+{
+	if (cdfile == -1 || !mus_enabled)
+		return;
+
+	if (!playing)
+		return;
+
+	if (ioctl (cdfile, CDROMPAUSE) == -1)
+		Con_DPrintf ("CDAudio: ioctl cdrompause failed\n");
+
+	wasPlaying = playing;
+	playing = false;
+}
+
+
+void
+I_CDAudio_Stop (void)
+{
+	if (cdfile == -1 || !mus_enabled)
+		return;
+
+	if (!playing)
+		return;
+
+	if (ioctl (cdfile, CDROMSTOP) == -1)
+		Con_DPrintf ("CDAudio: ioctl cdromstop failed (%d)\n", errno);
+
+	wasPlaying = false;
+	playing = false;
+}
+
+
+void
+I_CDAudio_Play (byte track, qboolean looping)
 {
 	struct cdrom_tocentry entry0;
 	struct cdrom_tocentry entry1;
@@ -127,7 +171,7 @@ CDAudio_Play (byte track, qboolean looping)
 		return;
 
 	if (!cdValid) {
-		CDAudio_GetAudioDiskInfo ();
+		I_CDAudio_GetAudioDiskInfo ();
 		if (!cdValid)
 			return;
 	}
@@ -135,7 +179,7 @@ CDAudio_Play (byte track, qboolean looping)
 	track = remap[track];
 
 	if (track < 1 || track > maxTrack) {
-		CDAudio_Stop ();
+		I_CDAudio_Stop ();
 		return;
 	}
 	// don't try to play a non-audio track
@@ -162,7 +206,7 @@ CDAudio_Play (byte track, qboolean looping)
 	if (playing) {
 		if (playTrack == track)
 			return;
-		CDAudio_Stop ();
+		I_CDAudio_Stop ();
 	}
 
 	msf.cdmsf_min0 = entry0.cdte_addr.msf.minute;
@@ -197,41 +241,7 @@ CDAudio_Play (byte track, qboolean looping)
 
 
 void
-CDAudio_Stop (void)
-{
-	if (cdfile == -1 || !mus_enabled)
-		return;
-
-	if (!playing)
-		return;
-
-	if (ioctl (cdfile, CDROMSTOP) == -1)
-		Con_DPrintf ("CDAudio: ioctl cdromstop failed (%d)\n", errno);
-
-	wasPlaying = false;
-	playing = false;
-}
-
-
-void
-CDAudio_Pause (void)
-{
-	if (cdfile == -1 || !mus_enabled)
-		return;
-
-	if (!playing)
-		return;
-
-	if (ioctl (cdfile, CDROMPAUSE) == -1)
-		Con_DPrintf ("CDAudio: ioctl cdrompause failed\n");
-
-	wasPlaying = playing;
-	playing = false;
-}
-
-
-void
-CDAudio_Resume (void)
+I_CDAudio_Resume (void)
 {
 	if (cdfile == -1 || !mus_enabled)
 		return;
@@ -248,8 +258,21 @@ CDAudio_Resume (void)
 }
 
 
-static void
-CD_f (void)
+void
+I_CDAudio_Shutdown (void)
+{
+	if (cdfile != -1)
+	{
+		I_CDAudio_Stop ();
+		close (cdfile);
+		cdfile = -1;
+	}
+	mus_enabled = false;
+}
+
+
+void // FIXME: was static
+I_CD_f (void)
 {
 	char       *command;
 	int         ret;
@@ -267,7 +290,7 @@ CD_f (void)
 
 	if (strequal (command, "off")) {
 		if (playing)
-			CDAudio_Stop ();
+			I_CDAudio_Stop ();
 		mus_enabled = false;
 		return;
 	}
@@ -275,10 +298,10 @@ CD_f (void)
 	if (strequal (command, "reset")) {
 		mus_enabled = true;
 		if (playing)
-			CDAudio_Stop ();
+			I_CDAudio_Stop ();
 		for (n = 0; n < 100; n++)
 			remap[n] = n;
-		CDAudio_GetAudioDiskInfo ();
+		I_CDAudio_GetAudioDiskInfo ();
 		return;
 	}
 
@@ -296,12 +319,12 @@ CD_f (void)
 	}
 
 	if (strequal (command, "close")) {
-		CDAudio_CloseDoor ();
+		I_CDAudio_CloseDoor ();
 		return;
 	}
 
 	if (!cdValid) {
-		CDAudio_GetAudioDiskInfo ();
+		I_CDAudio_GetAudioDiskInfo ();
 		if (!cdValid) {
 			Con_Printf ("No CD in player.\n");
 			return;
@@ -319,7 +342,7 @@ CD_f (void)
 	}
 
 	if (strequal (command, "stop")) {
-		CDAudio_Stop ();
+		I_CDAudio_Stop ();
 		return;
 	}
 
@@ -335,8 +358,8 @@ CD_f (void)
 
 	if (strequal (command, "eject")) {
 		if (playing)
-			CDAudio_Stop ();
-		CDAudio_Eject ();
+			I_CDAudio_Stop ();
+		I_CDAudio_Eject ();
 		cdValid = false;
 		return;
 	}
@@ -356,7 +379,7 @@ CD_f (void)
 
 
 void
-CDAudio_Update (void)
+I_CDAudio_Update (void)
 {
 	struct cdrom_subchnl subchnl;
 	static time_t lastchk;
@@ -413,7 +436,7 @@ Mus_CDChange (cvar_t *mus_cdaudio)
 		return;
 	}
 	
-	if (CDAudio_GetAudioDiskInfo ())
+	if (I_CDAudio_GetAudioDiskInfo ())
 	{
 		Con_Printf ("CDAudio_Init: No CD in player.\n");
 		cdValid = false;
@@ -426,18 +449,13 @@ Mus_CDChange (cvar_t *mus_cdaudio)
 }
 
 
-int
-CDAudio_Init (void)
+void
+I_CDAudio_Init (void)
 {
-#if 0
-	if (cls.state == ca_dedicated)
-		return -1;
-#endif
-
 	mus_cddevice = Cvar_Get("mus_cddevice", "/dev/cdrom", CVAR_NONE,
 			Mus_CDChange, "device to use for CD music");
 
-	Cmd_AddCommand ("cd", CD_f, "Control the CD player.\n"
+	Cmd_AddCommand ("cd", I_CD_f, "Control the CD player.\n"
 		"Commands:\n"
 		"eject - Eject the CD.\n"
 		"info - Reports information on the CD.\n"
@@ -452,19 +470,39 @@ CDAudio_Init (void)
 		"stop - Stops the currently playing track.");
 
 	Con_Printf ("CD Audio Initialized\n");
-
-	return 0;
 }
 
 
-void
-CDAudio_Shutdown (void)
+plugin_t *
+PluginInfo (void)
 {
-	if (cdfile != -1)
-	{
-		CDAudio_Stop ();
-		close (cdfile);
-		cdfile = -1;
-	}
-	mus_enabled = false;
+	plugin_info.type = qfp_cd;
+	plugin_info.api_version = QFPLUGIN_VERSION;
+	plugin_info.plugin_version = "0.1";
+	plugin_info.description = "Linux CD Audio output"
+		"Copyright (C) 2001  contributors of the QuakeForge project\n"
+		"Please see the file \"AUTHORS\" for a list of contributors\n";
+	plugin_info.functions = &plugin_info_funcs;
+	plugin_info.data = &plugin_info_data;
+
+	plugin_info_data.general = &plugin_info_general_data;
+//	plugin_info_data.cd = &plugin_info_cd_data;
+	plugin_info_data.input = NULL;
+	plugin_info_data.sound = NULL;
+
+	plugin_info_funcs.general = &plugin_info_general_funcs;
+	plugin_info_funcs.cd = &plugin_info_cd_funcs;
+	plugin_info_funcs.input = NULL;
+	plugin_info_funcs.sound = NULL;
+
+	plugin_info_general_funcs.p_Init = I_CDAudio_Init;
+	plugin_info_general_funcs.p_Shutdown = I_CDAudio_Shutdown;
+
+	plugin_info_cd_funcs.pCDAudio_Pause = I_CDAudio_Pause;
+	plugin_info_cd_funcs.pCDAudio_Play = I_CDAudio_Play;
+	plugin_info_cd_funcs.pCDAudio_Resume = I_CDAudio_Resume;
+	plugin_info_cd_funcs.pCDAudio_Update = I_CDAudio_Update;
+	plugin_info_cd_funcs.pCD_f = I_CD_f;
+	
+	return &plugin_info;
 }

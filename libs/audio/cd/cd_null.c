@@ -31,46 +31,89 @@
 #endif
 
 #include "QF/cdaudio.h"
+#include "QF/plugin.h"
+
+plugin_t		plugin_info;
+plugin_data_t	plugin_info_data;
+plugin_funcs_t	plugin_info_funcs;
+general_data_t	plugin_info_general_data;
+general_funcs_t	plugin_info_general_funcs;
+//cd_data_t		plugin_info_cd_data;
+cd_funcs_t		plugin_info_cd_funcs;
 
 
 void
-CDAudio_Play (byte track, qboolean looping)
+I_CDAudio_Pause (void)
 {
 }
 
 
 void
-CDAudio_Stop (void)
+I_CDAudio_Play (byte track, qboolean looping)
 {
 }
 
 
 void
-CDAudio_Pause (void)
+I_CDAudio_Resume (void)
 {
 }
 
 
 void
-CDAudio_Resume (void)
+I_CDAudio_Shutdown (void)
 {
 }
 
 
 void
-CDAudio_Update (void)
+I_CDAudio_Update (void)
 {
-}
-
-
-int
-CDAudio_Init (void)
-{
-	return 0;
 }
 
 
 void
-CDAudio_Shutdown (void)
+I_CDAudio_Init (void)
 {
+}
+
+
+void
+I_CD_f (void)
+{
+}
+
+
+plugin_t *
+PluginInfo (void)
+{
+	plugin_info.type = qfp_cd;
+	plugin_info.api_version = QFPLUGIN_VERSION;
+	plugin_info.plugin_version = "0.1";
+	plugin_info.description = "Null CD Audio output"
+		"Copyright (C) 2001  contributors of the QuakeForge project\n"
+		"Please see the file \"AUTHORS\" for a list of contributors\n";
+	plugin_info.functions = &plugin_info_funcs;
+	plugin_info.data = &plugin_info_data;
+
+	plugin_info_data.general = &plugin_info_general_data;
+//	plugin_info_data.cd = &plugin_info_cd_data;
+	plugin_info_data.input = NULL;
+	plugin_info_data.sound = NULL;
+
+	plugin_info_funcs.general = &plugin_info_general_funcs;
+	plugin_info_funcs.cd = &plugin_info_cd_funcs;
+	plugin_info_funcs.input = NULL;
+	plugin_info_funcs.sound = NULL;
+
+	plugin_info_general_funcs.p_Init = I_CDAudio_Init;
+	plugin_info_general_funcs.p_Shutdown = I_CDAudio_Shutdown;
+
+	plugin_info_cd_funcs.pCDAudio_Pause = I_CDAudio_Pause;
+	plugin_info_cd_funcs.pCDAudio_Play = I_CDAudio_Play;
+	plugin_info_cd_funcs.pCDAudio_Resume = I_CDAudio_Resume;
+	plugin_info_cd_funcs.pCDAudio_Update = I_CDAudio_Update;
+	plugin_info_cd_funcs.pCD_f = I_CD_f;
+     
+	return &plugin_info;
 }

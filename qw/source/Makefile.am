@@ -88,7 +88,7 @@ endif
 
 qf_client_LIBS=	$(top_builddir)/libs/video/targets/libQFjs.la \
 		$(top_builddir)/libs/gamecode/libQFgamecode.la \
-		$(top_builddir)/libs/audio/cd/libQFcd.la \
+		$(top_builddir)/libs/audio/libQFcd.la \
 		$(top_builddir)/libs/audio/libQFsound.la \
 		$(top_builddir)/libs/util/libQFutil.la
 

@@ -41,12 +41,23 @@
 
 #include <SDL.h>
 
-#include "compat.h"
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
+#include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
+
+#include "compat.h"
+
+plugin_t		plugin_info;
+plugin_data_t	plugin_info_data;
+plugin_funcs_t	plugin_info_funcs;
+general_data_t	plugin_info_general_data;
+general_funcs_t	plugin_info_general_funcs;
+//cd_data_t		plugin_info_cd_data;
+cd_funcs_t		plugin_info_cd_funcs;
 
 static qboolean cdValid = false;
 static qboolean initialized = false;
@@ -56,11 +67,9 @@ static qboolean playLooping = false;
 static SDL_CD  *cd_id;
 static float	cdvolume = 1.0;
 
-static void CD_f (void);
 
-
-static void
-CDAudio_Eject (void)
+void
+I_CDAudio_Eject (void)
 {
 	if (!cd_id || !enabled)
 		return;
@@ -69,45 +78,22 @@ CDAudio_Eject (void)
 		Con_DPrintf ("Unable to eject CD-ROM tray.\n");
 }
 
-void
-CDAudio_Play (byte track, qboolean looping)
-{
-	/* Initialize cd_stat to avoid warning */
-	/* XXX - Does this default value make sense? */
-	CDstatus    cd_stat = CD_ERROR;
 
+void
+I_CDAudio_Pause (void)
+{
 	if (!cd_id || !enabled)
 		return;
-
-	if (!cdValid) {
-		if (!CD_INDRIVE (cd_stat = SDL_CDStatus (cd_id)) || (!cd_id->numtracks))
-			return;
-		cdValid = true;
-	}
-
-	if ((track < 1) || (track >= cd_id->numtracks)) {
-		CDAudio_Stop ();
+	if (SDL_CDStatus (cd_id) != CD_PLAYING)
 		return;
-	}
-	track--;							/* Convert track from person to SDL
-										   value */
-	if (cd_stat == CD_PLAYING) {
-		if (cd_id->cur_track == track)
-			return;
-		CDAudio_Stop ();
-	}
 
-	if (SDL_CDPlay (cd_id, cd_id->track[track].offset,
-					cd_id->track[track].length)) {
-		Con_DPrintf ("CDAudio_Play: Unable to play track: %d\n", track + 1);
-		return;
-	}
-	playLooping = looping;
+	if (SDL_CDPause (cd_id))
+		Con_DPrintf ("CDAudio_Pause: Failed to pause track.\n");
 }
 
 
 void
-CDAudio_Stop (void)
+I_CDAudio_Stop (void)
 {
 	int			cdstate;
 
@@ -123,20 +109,43 @@ CDAudio_Stop (void)
 
 
 void
-CDAudio_Pause (void)
+I_CDAudio_Play (byte track, qboolean looping)
 {
+	/* Initialize cd_stat to avoid warning */
+	/* XXX - Does this default value make sense? */
+	CDstatus    cd_stat = CD_ERROR;
+
 	if (!cd_id || !enabled)
 		return;
-	if (SDL_CDStatus (cd_id) != CD_PLAYING)
-		return;
 
-	if (SDL_CDPause (cd_id))
-		Con_DPrintf ("CDAudio_Pause: Failed to pause track.\n");
+	if (!cdValid) {
+		if (!CD_INDRIVE (cd_stat = SDL_CDStatus (cd_id)) || (!cd_id->numtracks))
+			return;
+		cdValid = true;
+	}
+
+	if ((track < 1) || (track >= cd_id->numtracks)) {
+		I_CDAudio_Stop ();
+		return;
+	}
+	track--;						// Convert track from person to SDL value
+	if (cd_stat == CD_PLAYING) {
+		if (cd_id->cur_track == track)
+			return;
+		I_CDAudio_Stop ();
+	}
+
+	if (SDL_CDPlay (cd_id, cd_id->track[track].offset,
+					cd_id->track[track].length)) {
+		Con_DPrintf ("CDAudio_Play: Unable to play track: %d\n", track + 1);
+		return;
+	}
+	playLooping = looping;
 }
 
 
 void
-CDAudio_Resume (void)
+I_CDAudio_Resume (void)
 {
 	if (!cd_id || !enabled)
 		return;
@@ -147,8 +156,20 @@ CDAudio_Resume (void)
 		Con_DPrintf ("CDAudio_Resume: Failed tp resume track.\n");
 }
 
+
 void
-CDAudio_Update (void)
+I_CDAudio_Shutdown (void)
+{
+	if (!cd_id)
+		return;
+	I_CDAudio_Stop ();
+	SDL_CDClose (cd_id);
+	cd_id = NULL;
+}
+
+
+void
+I_CDAudio_Update (void)
 {
 	if (!cd_id || !enabled)
 		return;
@@ -169,75 +190,10 @@ CDAudio_Update (void)
 }
 
 
-int
-CDAudio_Init (void)
-{
-#ifdef UQUAKE
-	if (cls.state == ca_dedicated)
-		return -1;
-#endif
-
-	if (COM_CheckParm ("-nocdaudio"))
-		return -1;
-
-	if (SDL_Init (SDL_INIT_CDROM) < 0) {
-		Con_Printf ("Couldn't initialize SDL CD-AUDIO: %s\n", SDL_GetError ());
-		return -1;
-	}
-	cd_id = SDL_CDOpen (0);
-	if (!cd_id) {
-		Con_Printf ("CDAudio_Init: Unable to open default CD-ROM drive: %s\n",
-					SDL_GetError ());
-		return -1;
-	}
-
-	initialized = true;
-	enabled = true;
-	cdValid = true;
-
-	if (!CD_INDRIVE (SDL_CDStatus (cd_id))) {
-		Con_Printf ("CDAudio_Init: No CD in drive.\n");
-		cdValid = false;
-	}
-	if (!cd_id->numtracks) {
-		Con_Printf ("CDAudio_Init: CD contains no audio tracks.\n");
-		cdValid = false;
-	}
-	
-	Cmd_AddCommand ("cd", CD_f, "Control the CD player.\n"
-		"Commands:\n"
-		"eject - Eject the CD.\n"
-		"info - Reports information on the CD.\n"
-		"loop (track number) - Loops the specified track.\n"
-		"remap (track1) (track2) ... - Remap the current track order.\n"
-		"reset - Causes the CD audio to re-initialize.\n"
-		"resume - Will resume playback after pause.\n"
-		"off - Shuts down the CD audio system..\n"
-		"on - Re-enables the CD audio system after a cd off command.\n"
-		"pause - Pause the CD playback.\n"
-		"play (track number) - Plays the specified track one time.\n"
-		"stop - Stops the currently playing track.");
-	
-	Con_Printf ("CD Audio Initialized.\n");
-	return 0;
-}
-
-
-void
-CDAudio_Shutdown (void)
-{
-	if (!cd_id)
-		return;
-	CDAudio_Stop ();
-	SDL_CDClose (cd_id);
-	cd_id = NULL;
-}
-
-
 #define CD_f_DEFINED
 
-static void
-CD_f (void)
+void // FIXME: was static void
+I_CD_f (void)
 {
 	char       *command;
 	int			cdstate;
@@ -254,32 +210,32 @@ CD_f (void)
 			return;
 		cdstate = SDL_CDStatus (cd_id);
 		if ((cdstate == CD_PLAYING) || (cdstate == CD_PAUSED))
-			CDAudio_Stop ();
+			I_CDAudio_Stop ();
 		enabled = false;
 		return;
 	}
 	if (strequal (command, "play")) {
-		CDAudio_Play (atoi (Cmd_Argv (2)), false);
+		I_CDAudio_Play (atoi (Cmd_Argv (2)), false);
 		return;
 	}
 	if (strequal (command, "loop")) {
-		CDAudio_Play (atoi (Cmd_Argv (2)), true);
+		I_CDAudio_Play (atoi (Cmd_Argv (2)), true);
 		return;
 	}
 	if (strequal (command, "stop")) {
-		CDAudio_Stop ();
+		I_CDAudio_Stop ();
 		return;
 	}
 	if (strequal (command, "pause")) {
-		CDAudio_Pause ();
+		I_CDAudio_Pause ();
 		return;
 	}
 	if (strequal (command, "resume")) {
-		CDAudio_Resume ();
+		I_CDAudio_Resume ();
 		return;
 	}
 	if (strequal (command, "eject")) {
-		CDAudio_Eject ();
+		I_CDAudio_Eject ();
 		return;
 	}
 	if (strequal (command, "info")) {
@@ -297,4 +253,84 @@ CD_f (void)
 						cd_id->cur_track + 1);
 		return;
 	}
+}
+
+
+void
+I_CDAudio_Init (void)
+{
+	if (SDL_Init (SDL_INIT_CDROM) < 0) {
+		Con_Printf ("Couldn't initialize SDL CD-AUDIO: %s\n", SDL_GetError ());
+		return; // was -1
+	}
+	cd_id = SDL_CDOpen (0);
+	if (!cd_id) {
+		Con_Printf ("CDAudio_Init: Unable to open default CD-ROM drive: %s\n",
+					SDL_GetError ());
+		return; // was -1
+	}
+
+	initialized = true;
+	enabled = true;
+	cdValid = true;
+
+	if (!CD_INDRIVE (SDL_CDStatus (cd_id))) {
+		Con_Printf ("CDAudio_Init: No CD in drive.\n");
+		cdValid = false;
+	}
+	if (!cd_id->numtracks) {
+		Con_Printf ("CDAudio_Init: CD contains no audio tracks.\n");
+		cdValid = false;
+	}
+	
+	Cmd_AddCommand ("cd", I_CD_f, "Control the CD player.\n"
+		"Commands:\n"
+		"eject - Eject the CD.\n"
+		"info - Reports information on the CD.\n"
+		"loop (track number) - Loops the specified track.\n"
+		"remap (track1) (track2) ... - Remap the current track order.\n"
+		"reset - Causes the CD audio to re-initialize.\n"
+		"resume - Will resume playback after pause.\n"
+		"off - Shuts down the CD audio system..\n"
+		"on - Re-enables the CD audio system after a cd off command.\n"
+		"pause - Pause the CD playback.\n"
+		"play (track number) - Plays the specified track one time.\n"
+		"stop - Stops the currently playing track.");
+	
+	Con_Printf ("CD Audio Initialized.\n");
+}
+
+
+plugin_t *
+PluginInfo (void)
+{
+	plugin_info.type = qfp_cd;
+	plugin_info.api_version = QFPLUGIN_VERSION;
+	plugin_info.plugin_version = "0.1";
+	plugin_info.description = "Linux CD Audio output"
+		"Copyright (C) 2001  contributors of the QuakeForge project\n"
+		"Please see the file \"AUTHORS\" for a list of contributors\n";
+	plugin_info.functions = &plugin_info_funcs;
+	plugin_info.data = &plugin_info_data;
+
+	plugin_info_data.general = &plugin_info_general_data;
+//	plugin_info_data.cd = &plugin_info_cd_data;
+	plugin_info_data.input = NULL;
+	plugin_info_data.sound = NULL;
+
+	plugin_info_funcs.general = &plugin_info_general_funcs;
+	plugin_info_funcs.cd = &plugin_info_cd_funcs;
+	plugin_info_funcs.input = NULL;
+	plugin_info_funcs.sound = NULL;
+
+	plugin_info_general_funcs.p_Init = I_CDAudio_Init;
+	plugin_info_general_funcs.p_Shutdown = I_CDAudio_Shutdown;
+
+	plugin_info_cd_funcs.pCDAudio_Pause = I_CDAudio_Pause;
+	plugin_info_cd_funcs.pCDAudio_Play = I_CDAudio_Play;
+	plugin_info_cd_funcs.pCDAudio_Resume = I_CDAudio_Resume;
+	plugin_info_cd_funcs.pCDAudio_Update = I_CDAudio_Update;
+	plugin_info_cd_funcs.pCD_f = I_CD_f;
+        
+	return &plugin_info;
 }

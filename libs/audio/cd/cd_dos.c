@@ -2,6 +2,7 @@
 	cd_dos.c
 
 	support for cd music in dos.
+	FIXME: Update for plugin API
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
