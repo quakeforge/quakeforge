@@ -272,7 +272,6 @@ GL_ResampleTexture (unsigned int *in, int inwidth, int inheight,
 	} 
 } 
 
-#if defined(GL_SHARED_TEXTURE_PALETTE_EXT) && defined(HAVE_GL_COLOR_INDEX8_EXT)
 static void
 GL_Resample8BitTexture (unsigned char *in, int inwidth, int inheight,
 			unsigned char *out, int outwidth, int outheight) 
@@ -297,7 +296,6 @@ GL_Resample8BitTexture (unsigned char *in, int inwidth, int inheight,
 		}
 	}
 }
-#endif
 
 /*
 	GL_MipMap
@@ -329,7 +327,6 @@ GL_MipMap (byte * in, int width, int height)
  
 	Mipping for 8 bit textures
 */ 
-#if defined(GL_SHARED_TEXTURE_PALETTE_EXT) && defined(HAVE_GL_COLOR_INDEX8_EXT)
 static void
 GL_MipMap8Bit (byte * in, int width, int height)
 {
@@ -357,7 +354,6 @@ GL_MipMap8Bit (byte * in, int width, int height)
 			out[0] = d_15to8table[(r << 0) + (g << 5) + (b << 10)];
 		}
 }
-#endif
 
 static void
 GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
@@ -440,7 +436,6 @@ void
 GL_Upload8_EXT (byte * data, int width, int height, qboolean mipmap,
 		qboolean alpha)
 {
-#if defined(GL_SHARED_TEXTURE_PALETTE_EXT) && defined(HAVE_GL_COLOR_INDEX8_EXT)
 	byte       *scaled;
 	int         scaled_width, scaled_height;
 
@@ -502,7 +497,6 @@ GL_Upload8_EXT (byte * data, int width, int height, qboolean mipmap,
 	}
 
 	free (scaled);
-#endif
 }
 
 
@@ -538,15 +532,11 @@ GL_Upload8 (byte * data, int width, int height, qboolean mipmap, qboolean alpha)
 		}
 	}
 
-#if defined(GL_SHARED_TEXTURE_PALETTE_EXT) && defined(HAVE_GL_COLOR_INDEX8_EXT)
 	if (VID_Is8bit () && !alpha) {
 		GL_Upload8_EXT (data, width, height, mipmap, alpha);
 	} else {
-#else
-		{
-#endif
-			GL_Upload32 (trans, width, height, mipmap, alpha);
-		}
+		GL_Upload32 (trans, width, height, mipmap, alpha);
+	}
 
 	free (trans);
 }

@@ -37,6 +37,7 @@
 struct cvar_s;
 extern byte   *vid_basepal;
 extern byte   *vid_colormap;
+extern unsigned char d_15to8table[65536];
 
 extern struct cvar_s *vid_fullscreen;
 extern struct cvar_s *vid_system_gamma;
