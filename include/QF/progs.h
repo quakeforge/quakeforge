@@ -1203,6 +1203,7 @@ struct progs_s {
 
 	int         pr_edict_size;		///< in bytes
 	int         pr_edictareasize;	///< for bounds checking, starts at 0
+	func_t      edict_parse;
 
 	int         pr_argc;
 
