@@ -3,6 +3,7 @@
 *.dat.gz
 *.qfo
 *.sym
+*.sym.gz
 .deps
 .vimrc
 Makefile
