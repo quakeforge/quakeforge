@@ -66,8 +66,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "r_local.h"
 #include "view.h"
 
-#include "GL/gl.h"
-
 entity_t    r_worldentity;
 
 qboolean    r_cache_thrash;				// compatability
