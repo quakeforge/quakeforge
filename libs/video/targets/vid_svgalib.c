@@ -71,7 +71,6 @@ static byte vid_current_palette[768];
 static int  svgalib_inited = 0;
 static int  svgalib_backgrounded = 0;
 
-static cvar_t *vid_mode;
 static cvar_t *vid_redrawfull;
 static cvar_t *vid_waitforrefresh;
 
@@ -195,67 +194,6 @@ D_EndDirectRect (int x, int y, int width, int height)
 }
 
 static void
-VID_DescribeMode_f (void)
-{
-	int         modenum;
-
-	modenum = atoi (Cmd_Argv (1));
-	if ((modenum >= num_modes) || (modenum < 0) || !modes[modenum].width) {
-		Con_Printf ("Invalid video mode: %d!\n", modenum);
-	}
-	Con_Printf ("%d: %d x %d - ", modenum,
-				modes[modenum].width, modes[modenum].height);
-	if (modes[modenum].bytesperpixel == 0) {
-		Con_Printf ("ModeX\n");
-	} else {
-		Con_Printf ("%d bpp\n", modes[modenum].bytesperpixel << 3);
-	}
-}
-
-static void
-VID_DescribeModes_f (void)
-{
-	int         i;
-
-	for (i = 0; i < num_modes; i++) {
-		if (modes[i].width) {
-			Con_Printf ("%d: %d x %d - ", i, modes[i].width, modes[i].height);
-			if (modes[i].bytesperpixel == 0) {
-				Con_Printf ("ModeX\n");
-			} else {
-				Con_Printf ("%d bpp\n", modes[i].bytesperpixel << 3);
-			}
-		}
-	}
-}
-
-static int
-VID_NumModes (void)
-{
-	int         i, i1 = 0;
-
-	for (i = 0; i < num_modes; i++) {
-		i1 += modes[i].width ? 1 : 0;
-	}
-	return (i1);
-}
-
-static void
-VID_NumModes_f (void)
-{
-	Con_Printf ("%d modes\n", VID_NumModes ());
-}
-
-static void
-VID_Debug_f (void)
-{
-	Con_Printf ("mode: %d\n", current_mode);
-	Con_Printf ("height x width: %d x %d\n", vid.height, vid.width);
-	Con_Printf ("bpp: %d\n", modes[current_mode].bytesperpixel * 8);
-	Con_Printf ("vid.aspect: %f\n", vid.aspect);
-}
-
-static void
 VID_InitModes (void)
 {
 	int         i;
@@ -347,13 +285,10 @@ VID_SetMode (int modenum, unsigned char *palette)
 	int         err;
 
 	if ((modenum >= num_modes) || (modenum < 0) || !modes[modenum].width) {
-		Cvar_SetValue (vid_mode, current_mode);
 		Con_Printf ("No such video mode: %d\n", modenum);
 
 		return 0;
 	}
-
-	Cvar_SetValue (vid_mode, modenum);
 
 	current_mode = modenum;
 
@@ -445,16 +380,6 @@ VID_Init (unsigned char *palette)
 
 	VID_InitModes ();
 
-	Cmd_AddCommand ("vid_nummodes", VID_NumModes_f, "Reports the total "
-					"number of video modes available.");
-	Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f, "Report "
-					"information on specified video mode, default is "
-					"current.\n"
-					"(vid_describemode (mode))");
-	Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f, "Report "
-					"information on all video modes.");
-	Cmd_AddCommand ("vid_debug", VID_Debug_f, "FIXME: No Description");
-
 	/* Interpret command-line params */
 	VID_GetWindowSize (320, 200);
 
@@ -473,8 +398,6 @@ VID_Init (unsigned char *palette)
 void
 VID_Init_Cvars ()
 {
-	vid_mode = Cvar_Get ("vid_mode", "5", CVAR_NONE, NULL,
-						 "Sets the video mode");
 	vid_redrawfull = Cvar_Get ("vid_redrawfull", "0", CVAR_NONE, NULL,
 							   "Redraw entire screen each frame instead of "
 							   "just dirty areas");
@@ -541,10 +464,6 @@ VID_Update (vrect_t *rects)
 			}
 			rects = rects->pnext;
 		}
-	}
-
-	if (vid_mode->int_val != current_mode) {
-		VID_SetMode (vid_mode->int_val, vid_current_palette);
 	}
 }
 
