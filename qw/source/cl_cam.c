@@ -478,7 +478,6 @@ adjustang (float current, float ideal, float speed)
 			move = -speed;
 	}
 
-//Con_Printf("c/i: %4.2f/%4.2f move: %4.2f\n", current, ideal, move);
 	return anglemod (current + move);
 }
 #endif

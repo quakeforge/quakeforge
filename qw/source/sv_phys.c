@@ -546,8 +546,7 @@ SV_Physics_Pusher (edict_t *ent)
 		VectorSubtract (SVvector (ent, origin), oldorg, move);
 
 		l = Length (move);
-		if (l > 1.0 / 64) {
-//			Con_Printf ("**** snap: %f\n", Length (l));
+		if (l > (1.0 / 64.0)) {
 			VectorCopy (oldorg, SVvector (ent, origin));
 			SV_Push (ent, move);
 		}

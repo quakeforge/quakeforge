@@ -486,9 +486,6 @@ SL_Con_Details (server_entry_t *sldata, int slitemno)
 				playercount++;
 		Con_Printf("Players: %i/%s\n", playercount,
 				   Info_ValueForKey(cp->status, "maxclients"));
-
-		// For Debug of Server Info 
-		// Con_Printf("%s\n",cp->status);
 	} else
 		Con_Printf("No Details Available\n");
 }

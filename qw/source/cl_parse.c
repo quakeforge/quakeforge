@@ -467,15 +467,7 @@ CL_ParseDownload (void)
 	net_message->readcount += size;
 
 	if (percent != 100) {
-		// change display routines by zoid
 		// request next block
-#if 0
-		Con_Printf (".");
-		if (10 * (percent / 10) != cls.downloadpercent) {
-			cls.downloadpercent = 10 * (percent / 10);
-			Con_Printf ("%i%%", cls.downloadpercent);
-		}
-#endif
 		if (percent != cls.downloadpercent)
 			VID_SetCaption (va ("Downloading %s %d%%", cls.downloadname,
 								percent));
@@ -486,10 +478,6 @@ CL_ParseDownload (void)
 	} else {
 		char        oldn[MAX_OSPATH];
 		char        newn[MAX_OSPATH];
-
-#if 0
-		Con_Printf ("100%%\n");
-#endif
 
 		Qclose (cls.download);
 		VID_SetCaption (va ("Connecting to %s", cls.servername));
@@ -517,7 +505,6 @@ CL_ParseDownload (void)
 		cls.downloadpercent = 0;
 
 		// get another file if needed
-
 		CL_RequestNextDownload ();
 	}
 }
@@ -923,9 +910,7 @@ CL_ParseClientdata (void)
 	// calculate latency
 	latency = frame->receivedtime - frame->senttime;
 
-	if (latency < 0 || latency > 1.0) {
-//		Con_Printf ("Odd latency: %5.2f\n", latency);
-	} else {
+	if (!(latency < 0 || latency > 1.0)) {
 		// drift the average latency towards the observed latency
 		if (latency < cls.latency)
 			cls.latency = latency;
@@ -941,7 +926,7 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 	const char *s;
 
 	s = Info_ValueForKey (player->userinfo, "skin");
-	COM_StripExtension (s, skin);   // FIXME buffer overflow
+	COM_StripExtension (s, skin);   // FIXME: buffer overflow
 	if (!strequal (s, skin))
 		Info_SetValueForKey (player->userinfo, "skin", skin, 1);
 	strncpy (player->name, Info_ValueForKey (player->userinfo, "name"),
@@ -965,7 +950,6 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 		Skin_Find (player);
 
 	Sbar_Changed ();
-	//XXX CL_NewTranslation (slot);
 }
 
 void
@@ -1164,7 +1148,6 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_nop:
-//				Con_Printf ("svc_nop\n");
 				break;
 
 			case svc_disconnect:
@@ -1348,11 +1331,12 @@ CL_ParseServerMessage (void)
 				Con_DPrintf ("\n");
 				VectorCopy (vec3_origin, cl.simvel);
 
-				/* 
+				/*
 					automatic fraglogging (by elmex)
-					XXX: Should this _really_ called here?  
+					XXX: Should this _really_ called here?
 				*/
-				if(!cls.demoplayback) Sbar_LogFrags(); 
+				if (!cls.demoplayback)
+					Sbar_LogFrags();
 				break;
 
 			case svc_finale:

@@ -110,7 +110,6 @@ V_CalcBob (void)
 
 	bob = sqrt (cl.velocity[0] * cl.velocity[0] +
 				cl.velocity[1] * cl.velocity[1]) * cl_bob->value;
-//	Con_Printf ("speed: %5.1f\n", Length(cl.velocity));
 	bob = bob * 0.3 + bob * 0.7 * sin (cycle);
 	if (bob > 4)
 		bob = 4;
@@ -186,8 +185,6 @@ V_DriftPitch (void)
 
 	move = host_frametime * cl.pitchvel;
 	cl.pitchvel += host_frametime * v_centerspeed->value;
-
-//	Con_Printf ("move: %f (%f)\n", move, host_frametime);
 
 	if (delta > 0) {
 		if (move > delta) {

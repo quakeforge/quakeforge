@@ -268,12 +268,12 @@ NET_GetPacket (void)
 			Con_DPrintf ("error 10054 from %s\n", NET_AdrToString (net_from));
 			return false;
 		}
-#else /* _WIN32 */
+#else // _WIN32
 		int         err = errno;
 
 		if (err == ECONNREFUSED)
 			return false;
-#endif /* _WIN32 */
+#endif // _WIN32
 		if (err == EWOULDBLOCK)
 			return false;
 		Con_Printf ("NET_GetPacket: %d: %s\n", err, strerror (err));
@@ -315,9 +315,8 @@ NET_SendPacket (int length, void *data, netadr_t to)
 	if (net_packetlog->int_val)
 		Log_Outgoing_Packet(data,length);
 
-	ret =
-		sendto (net_socket, data, length, 0, (struct sockaddr *) &addr,
-				sizeof (addr));
+	ret = sendto (net_socket, data, length, 0, (struct sockaddr *) &addr,
+				  sizeof (addr));
 	if (ret == -1) {
 #ifdef _WIN32
 		int         err = WSAGetLastError ();
@@ -328,12 +327,12 @@ NET_SendPacket (int length, void *data, netadr_t to)
 			else
 				Con_Printf ("NET_SendPacket ERROR: %i\n", err);
 		}
-#else /* _WIN32 */
+#else // _WIN32
 		int         err = errno;
 
 		if (err == ECONNREFUSED)
 			return;
-#endif /* _WIN32 */
+#endif // _WIN32
 		if (err == EWOULDBLOCK)
 			return;
 

@@ -692,7 +692,6 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_nop:
-//				Con_Printf ("svc_nop\n");
 				break;
 
 			case svc_time:

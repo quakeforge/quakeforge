@@ -278,12 +278,10 @@ NET_StringToAdr (const char *s, netadr_t *a)
 		}
 	}
 
-//	Con_Printf ("NET_StringToAdr: addrs %s ports %s\n",addrs, ports);
-
 	if ((err = getaddrinfo (addrs, ports, &hints, &resultp))) {
 		// Error
-		Con_Printf ("NET_StringToAdr: string %s:\n%s\n", s, gai_strerror
-					(err));
+		Con_Printf ("NET_StringToAdr: string %s:\n%s\n", s,
+					gai_strerror (err));
 		return 0;
 	}
 
@@ -307,11 +305,11 @@ NET_StringToAdr (const char *s, netadr_t *a)
 
 			break;
 		default:
-			Con_Printf
-				("NET_StringToAdr: string %s:\nprotocol family %d not supported\n",
-				 s, resultp->ai_family);
-		return 0;
+			Con_Printf ("NET_StringToAdr: string %s:\nprotocol family %d not "
+						"supported\n", s, resultp->ai_family);
+			return 0;
 	}
+
 	SockadrToNetadr ((struct sockaddr_in6 *) &ss, a);
 
 	return true;
@@ -371,12 +369,12 @@ NET_GetPacket (void)
 						NET_AdrToString (net_from));
 			return false;
 		}
-#else /* _WIN32 */
+#else // _WIN32
 		int         err = errno;
 
 		if (err == ECONNREFUSED)
 			return false;
-#endif /* _WIN32 */
+#endif // _WIN32
 		if (err == EWOULDBLOCK)
 			return false;
 		Con_Printf ("NET_GetPacket: %s\n", strerror (err));

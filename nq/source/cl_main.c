@@ -484,19 +484,17 @@ CL_LerpPoint (void)
 		f = 0.1;
 	}
 	frac = (cl.time - cl.mtime[1]) / f;
-//	Con_Printf ("frac: %f\n",frac);
+
 	if (frac < 0) {
 		if (frac < -0.01) {
 			SetPal (1);
 			cl.time = cl.mtime[1];
-//			Con_Printf ("low frac\n");
 		}
 		frac = 0;
 	} else if (frac > 1) {
 		if (frac > 1.01) {
 			SetPal (2);
 			cl.time = cl.mtime[0];
-//			Con_Printf ("high frac\n");
 		}
 		frac = 1;
 	} else

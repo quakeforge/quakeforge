@@ -286,14 +286,6 @@ CL_SendConnectPacket (void)
 
 	cls.qport = qport->int_val;
 
-	// Arrgh, this was not in the old binary only release, and eats up
-	// far too much of the 196 chars in the userinfo space, leaving nothing
-	// for player use, thus, its commented out for the moment..
-	// 
-	// Info_SetValueForStarKey (cls.userinfo, "*ip", NET_AdrToString(adr),
-	// MAX_INFO_STRING);
-
-//	Con_Printf ("Connecting to %s...\n", cls.servername);
 	snprintf (data, sizeof (data), "%c%c%c%cconnect %i %i %i \"%s\"\n",
 			  255, 255, 255, 255, PROTOCOL_VERSION, cls.qport, cls.challenge,
 			  Info_MakeString (cls.userinfo, 0));
@@ -816,7 +808,6 @@ CL_NextDemo (void)
 	if (!cls.demos[cls.demonum][0] || cls.demonum == MAX_DEMOS) {
 		cls.demonum = 0;
 		if (!cls.demos[cls.demonum][0]) {
-//          Con_Printf ("No demos listed with startdemos\n");
 			cls.demonum = -1;
 			return;
 		}
@@ -896,7 +887,6 @@ CL_ConnectionlessPacket (void)
 		&& (cl_paranoid->int_val
 			|| !NET_CompareAdr (net_from, cls.server_addr)))
 		Con_Printf ("%s: ", NET_AdrToString (net_from));
-//	Con_DPrintf ("%s", net_message.data + 5);
 	if (c == S2C_CONNECTION) {
 		Con_Printf ("connection\n");
 		if (cls.state >= ca_connected) {

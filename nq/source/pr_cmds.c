@@ -1315,7 +1315,6 @@ PF_rotate_bbox (progs_t *pr)
 	VectorCopy (v[0], ch->mins);
 	VectorCopy (v[0], ch->maxs);
 	for (i = 0; i < 8; i++) {
-		//Con_Printf ("'%0.1f %0.1f %0.1f'\n", v[i][0], v[i][1], v[i][2]);
 		for (j = 0; j < 3; j++) {
 			ch->mins[j] = min (ch->mins[j], v[i][j]);
 			ch->maxs[j] = max (ch->maxs[j], v[i][j]);
@@ -1333,10 +1332,6 @@ PF_rotate_bbox (progs_t *pr)
 											  offsets[j]);
 			hull->planes[i].type = 4;
 			VectorCopy (dir[i / 2], hull->planes[i].normal);
-			//Con_Printf ("%f   %f %f %f\n",
-			//			hull->planes[i].dist,
-			//			hull->planes[i].normal[0], hull->planes[i].normal[1],
-			//			hull->planes[i].normal[2]);
 		}
 	}
 }

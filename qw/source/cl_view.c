@@ -220,8 +220,6 @@ V_DriftPitch (void)
 	move = host_frametime * cl.pitchvel;
 	cl.pitchvel += host_frametime * v_centerspeed->value;
 
-//	Con_Printf ("move: %f (%f)\n", move, host_frametime);
-
 	if (delta > 0) {
 		if (move > delta) {
 			cl.pitchvel = 0;

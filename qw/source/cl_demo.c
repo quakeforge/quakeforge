@@ -131,8 +131,6 @@ CL_WriteDemoCmd (usercmd_t *pcmd)
 	int			i;
 	usercmd_t	cmd;
 
-//	Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
-
 	fl = LittleFloat ((float) realtime);
 	Qwrite (cls.demofile, &fl, sizeof (fl));
 
@@ -169,8 +167,6 @@ CL_WriteDemoMessage (sizebuf_t *msg)
 	byte		c;
 	float		fl;
 	int			len;
-
-//	Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
 	if (!cls.demorecording)
 		return;
@@ -277,7 +273,6 @@ CL_GetDemoMessage (void)
 			Qread (cls.demofile, &net_message->message->cursize, 4);
 			net_message->message->cursize = LittleLong
 				(net_message->message->cursize);
-//			Con_Printf("read: %ld bytes\n", net_message->message->cursize);
 			if (net_message->message->cursize > MAX_MSGLEN + 8) //+8 for header
 				Host_Error ("Demo message > MAX_MSGLEN + 8: %d/%d",
 							net_message->message->cursize, MAX_MSGLEN + 8);
@@ -362,8 +357,6 @@ CL_WriteRecordDemoMessage (sizebuf_t *msg, int seq)
 	float		fl;
 	int			len, i;
 
-//	Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
-
 	if (!cls.demorecording)
 		return;
 
@@ -391,8 +384,6 @@ CL_WriteSetDemoMessage (void)
 	byte		c;
 	float		fl;
 	int			len;
-
-//	Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
 	if (!cls.demorecording)
 		return;
@@ -718,8 +709,8 @@ void
 CL_Record_f (void)
 {
 	if (Cmd_Argc () > 2) {
-		/* we use a demo name like year-month-day-hours-minutes-mapname.qwd
-		   if there is no argument */
+		// we use a demo name like year-month-day-hours-minutes-mapname.qwd
+		// if there is no argument
 		Con_Printf ("record [demoname]\n");
 		return;
 	}

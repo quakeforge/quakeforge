@@ -482,7 +482,6 @@ SV_ReadClientMessage (void)
 				return false;
 
 			case clc_nop:
-//				Con_Printf ("clc_nop\n");
 				break;
 
 			case clc_stringcmd:
@@ -538,7 +537,6 @@ SV_ReadClientMessage (void)
 				break;
 
 			case clc_disconnect:
-//				Con_Printf ("SV_ReadClientMessage: client disconnected\n");
 				return false;
 
 			case clc_move:

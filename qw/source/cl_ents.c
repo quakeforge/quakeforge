@@ -154,9 +154,7 @@ CL_NewDlight (int key, vec3_t org, int effects, byte glow_size,
 	}
 }
 
-/* PACKET ENTITY PARSING / LINKING */
-
-int         bitcounts[32];				// / just for protocol profiling
+// PACKET ENTITY PARSING / LINKING ============================================
 
 /*
 	CL_ParseDelta
@@ -178,12 +176,6 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 		i = MSG_ReadByte (net_message);
 		bits |= i;
 	}
-	// count the bits for net profiling
-#if 0
-	for (i=0 ; i<16 ; i++)
-		if (bits&(1<<i))
-			bitcounts[i]++;
-#endif
 
 	// LordHavoc: Endy neglected to mark this as being part of the QSG
 	// version 2 stuff...
@@ -344,7 +336,6 @@ CL_ParsePacketEntities (qboolean delta)
 
 		if (!word) {	// copy rest of ents from old packet
 			while (oldindex < oldp->num_entities) {	
-//				Con_Printf ("copy %i\n", oldp->entities[oldindex].number);
 				if (newindex >= MAX_PACKET_ENTITIES)
 					Host_Error ("CL_ParsePacketEntities: newindex == "
 								"MAX_PACKET_ENTITIES");
@@ -364,7 +355,6 @@ CL_ParsePacketEntities (qboolean delta)
 				FlushEntityPacket ();
 				return;
 			}
-//			Con_Printf ("copy %i\n", oldnum);
 			// copy one of the old entities over to the new packet unchanged
 			if (newindex >= MAX_PACKET_ENTITIES)
 				Host_Error ("CL_ParsePacketEntities: newindex == "
@@ -377,7 +367,6 @@ CL_ParsePacketEntities (qboolean delta)
 		}
 
 		if (newnum < oldnum) {			// new from baseline
-//			Con_Printf ("baseline %i\n", newnum);
 			if (word & U_REMOVE) {
 				if (full) {
 					cl.validsequence = 0;
@@ -408,7 +397,6 @@ CL_ParsePacketEntities (qboolean delta)
 				oldindex++;
 				continue;
 			}
-//			Con_Printf ("delta %i\n", newnum);
 			CL_ParseDelta (&oldp->entities[oldindex],
 						   &newp->entities[newindex], word);
 			newindex++;
