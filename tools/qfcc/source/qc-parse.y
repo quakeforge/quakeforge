@@ -317,11 +317,11 @@ statement
 	| statement_block { $$ = $1; }
 	| RETURN expr ';'
 		{
-			$$ = new_unary_expr ('r', $2);
+			$$ = return_expr (current_func, $2);
 		}
 	| RETURN ';'
 		{
-			$$ = new_unary_expr ('r', 0);
+			$$ = return_expr (current_func, 0);
 		}
 	| WHILE '(' expr ')' statement
 		{

@@ -917,6 +917,35 @@ function_expr (expr_t *e1, expr_t *e2)
 	return e;
 }
 
+expr_t *
+return_expr (function_t *f, expr_t *e)
+{
+	if (!e) {
+		if (f->def->type->aux_type != &type_void)
+			return error (e, "return from non-void function without a value");
+	} else {
+		type_t *t;
+		if (f->def->type->aux_type == &type_void)
+			return error (e, "returning a value for a void function");
+		if (e->type == ex_expr) {
+			t = e->e.expr.type;
+		} else if (e->type == ex_def) {
+			t = e->e.def->type;
+		} else {
+			if (f->def->type->aux_type == &type_float
+				&& e->type == ex_integer) {
+				e->type = ex_float;
+				e->e.float_val = e->e.integer_val;
+			}
+			t = types[get_type (e)];
+		}
+		if (f->def->type->aux_type != t)
+			return error (e, "type mismatch for return value of %s",
+							e->e.def->name);
+	}
+	return new_unary_expr ('r', e);
+}
+
 def_t *
 emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_c)
 {
