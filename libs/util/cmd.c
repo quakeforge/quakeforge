@@ -108,11 +108,11 @@ Cbuf_AddText (const char *text)
 
 	l = strlen (text);
 
-	if (cmd_text.cursize + l >= cmd_text.maxsize) {
-		Sys_Printf ("Cbuf_AddText: overflow\n");
+	if (cmd_text.cursize + l < cmd_text.maxsize) {
+		SZ_Write (&cmd_text, text, l + 1);
 		return;
 	}
-	SZ_Write (&cmd_text, text, strlen (text));
+	Sys_Printf ("Cbuf_AddText: overflow\n");
 }
 
 /*
