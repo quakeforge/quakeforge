@@ -272,16 +272,16 @@ get_info (QFile *file)
 	info.rate = dfmt->samples_per_sec;
 	info.width = dfmt->bits_per_sample / 8;
 	info.channels = dfmt->channels;
+	info.samples = 0;
 	if (cp) {
 		info.loopstart = cp->sample_offset;
 		if (dltxt)
 			info.samples = info.loopstart + dltxt->len;
-		else
-			info.samples = data->ck.len /  (info.width * info.channels);
 	} else {
 		info.loopstart = -1;
-		info.samples = data->ck.len / (info.width * info.channels);
 	}
+	if (!info.samples)
+		info.samples = data->ck.len / (info.width * info.channels);
 	info.dataofs = *(int *)data->data;
 	info.datalen = data->ck.len;
 

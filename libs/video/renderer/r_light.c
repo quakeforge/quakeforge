@@ -423,8 +423,10 @@ R_LightPoint (const vec3_t p)
 	vec3_t      end;
 	int         r;
 
-	if (!r_worldentity.model->lightdata)
+	if (!r_worldentity.model->lightdata) {
+		ambientcolor[2] = ambientcolor[1] = ambientcolor[0] = 255;
 		return 255;
+	}
 
 	end[0] = p[0];
 	end[1] = p[1];
