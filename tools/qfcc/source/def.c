@@ -49,8 +49,8 @@ typedef struct locref_s {
 	int         size;
 } locref_t;
 
-def_t       def_void = { &type_void, "temp" };
-def_t       def_function = { &type_function, "temp" };
+def_t       def_void = { &type_void, "def void" };
+def_t       def_function = { &type_function, "def function" };
 
 def_t       def_ret, def_parms[MAX_PARMS];
 
