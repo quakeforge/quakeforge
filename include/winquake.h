@@ -43,13 +43,17 @@
 #undef LPCWAVEFORMATEX
 #ifdef WINNT
 #undef WINNT
+#if 0
 #include <dsound.h>
 #include <ddraw.h>
+#endif
 #define WINNT
 #else
 #include <windows.h>
+#if 0
 #include <dsound.h>
 #include <ddraw.h>
+#endif
 #endif
 
 #ifdef HAVE_MGRAPH_H
@@ -67,7 +71,7 @@
 
 extern	HINSTANCE	global_hInstance;
 extern	int			global_nCmdShow;
-
+#if 0
 extern LPDIRECTDRAW		lpDD;
 extern qboolean			DDActive;
 extern LPDIRECTDRAWSURFACE	lpPrimary;
@@ -76,7 +80,7 @@ extern LPDIRECTDRAWSURFACE	lpBackBuffer;
 extern LPDIRECTDRAWPALETTE	lpDDPal;
 extern LPDIRECTSOUND pDS;
 extern LPDIRECTSOUNDBUFFER pDSBuf;
-
+#endif
 extern DWORD gSndBufSize;
 void	VID_LockBuffer (void);
 void	VID_UnlockBuffer (void);

@@ -54,7 +54,7 @@ case "$host_os" in
 		;;
         cygwin*)
                cygwin=yes
-               CPPFLAGS="$CPPFLAGS -mno-cygwin"
+               CPPFLAGS="$CPPFLAGS -mwindows -mno-cygwin"
                CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/include/win32"
                CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/include/win32/resources"
                if test $host != $build; then
@@ -64,7 +64,8 @@ case "$host_os" in
                        RANLIB=$host_cpu-$host_os-ranlib
                        endian="little"
                fi
-               LDFLAGS="$LDFLAGS -mno-cygwin"
+               LDFLAGS="$LDFLAGS -L/usr/local/lib"
+               LDFLAGS="$LDFLAGS -lSDL -mwindows -mno-cygwin"
                ;;
 esac
 

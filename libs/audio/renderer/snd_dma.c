@@ -570,11 +570,13 @@ SND_ClearBuffer (void)
 {
 	int			clear;
 
-#ifdef _WIN32
-	if (!sound_started || !shm || (!shm->buffer && !pDSBuf))
-#else
+
+//#ifdef _WIN32
+//	if (!sound_started || !shm || (!shm->buffer && !pDSBuf))
+//#endif
+
 	if (!sound_started || !shm || !shm->buffer)
-#endif
+//#endif
 		return;
 
 	if (shm->samplebits == 8)
@@ -582,10 +584,12 @@ SND_ClearBuffer (void)
 	else
 		clear = 0;
 
+#if 0
 #ifdef _WIN32
 	if (pDSBuf)
 		DSOUND_ClearBuffer (clear);
 	else
+#endif
 #endif
 	{
 		memset (shm->buffer, clear, shm->samples * shm->samplebits / 8);
@@ -823,9 +827,11 @@ SND_Update_ (void)
 	if (endtime - soundtime > samps)
 		endtime = soundtime + samps;
 
+#if 0
 #ifdef _WIN32
 	if (pDSBuf)
 		DSOUND_Restore ();
+#endif
 #endif
 
 	SND_PaintChannels (endtime);

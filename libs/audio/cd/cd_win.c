@@ -134,6 +134,7 @@ I_CDAudio_GetAudioDiskInfo (void)
 	return 0;
 }
 
+#if 0
 LONG
 static I_CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -166,6 +167,7 @@ static I_CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 
 	return 0;
 }
+#endif
 
 static void
 I_CDAudio_Pause (void)

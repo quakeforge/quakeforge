@@ -96,6 +96,8 @@ SND_TransferStereo16 (int endtime)
 	snd_p = (int *) paintbuffer;
 	lpaintedtime = paintedtime;
 
+
+#if 0
 #ifdef _WIN32
 	if (pDSBuf) {
 		pbuf = DSOUND_LockBuffer (true);
@@ -104,6 +106,7 @@ SND_TransferStereo16 (int endtime)
 			return;
 		}
 	} else
+#endif
 #endif
 	{
 		pbuf = (DWORD *) shm->buffer;
@@ -128,9 +131,11 @@ SND_TransferStereo16 (int endtime)
 		lpaintedtime += (snd_linear_count >> 1);
 	}
 
+#if 0
 #ifdef _WIN32
 	if (pDSBuf)
 		DSOUND_LockBuffer (false);
+#endif
 #endif
 }
 
@@ -153,6 +158,7 @@ SND_TransferPaintBuffer (int endtime)
 	step = 3 - shm->channels;
 	snd_vol = volume->value * 256;
 
+#if 0
 #ifdef _WIN32
 	if (pDSBuf) {
 		pbuf = DSOUND_LockBuffer (true);
@@ -161,6 +167,7 @@ SND_TransferPaintBuffer (int endtime)
 			return;
 		}
 	} else
+#endif
 #endif
 	{
 		pbuf = (DWORD *) shm->buffer;
@@ -193,9 +200,11 @@ SND_TransferPaintBuffer (int endtime)
 			out_idx = (out_idx + 1) & out_mask;
 		}
 	}
+#if 0
 #ifdef _WIN32
 	if (pDSBuf)
 		DSOUND_LockBuffer (false);
+#endif
 #endif
 }
 
