@@ -84,9 +84,9 @@ float		r_avertexnormals[NUMVERTEXNORMALS][3] = {
 
 // precalculated dot products for quantized angles
 #define SHADEDOT_QUANT 16
-float   r_avertexnormal_dots[SHADEDOT_QUANT][256] =
-	#include "anorm_dots.h"
-		;
+float   r_avertexnormal_dots[SHADEDOT_QUANT][256] = {
+#include "anorm_dots.h"
+};
 
 vec3_t		shadevector;
 
