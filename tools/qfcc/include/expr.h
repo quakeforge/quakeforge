@@ -13,7 +13,7 @@ typedef enum {
 	ex_func,
 	ex_pointer,
 	ex_quaternion,
-	ex_int,
+	ex_integer,
 } expr_type;
 
 typedef struct {

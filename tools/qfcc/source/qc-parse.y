@@ -216,13 +216,13 @@ opt_initializer
 			if (current_type->type != ev_func) {
 				error (0, "%s is not a function", current_def->name);
 			} else {
-				if ($3->type != ex_int && $3->type != ex_float) {
+				if ($3->type != ex_integer && $3->type != ex_float) {
 					error (0, "invalid constant for = #");
 				} else {
 					function_t	*f;
 
 					f = new_function ();
-					f->builtin = $3->type == ex_int
+					f->builtin = $3->type == ex_integer
 								 ? $3->e.int_val : (int)$3->e.float_val;
 					f->def = current_def;
 					build_function (f);
@@ -500,7 +500,7 @@ const
 	| INT_VAL
 		{
 			$$ = new_expr ();
-			$$->type = ex_int;
+			$$->type = ex_integer;
 			$$->e.int_val = $1;
 		}
 	;

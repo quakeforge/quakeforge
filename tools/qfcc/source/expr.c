@@ -26,7 +26,7 @@ static etype_t qc_types[] = {
 	ev_func,		// ex_func
 	ev_pointer,		// ex_pointer
 	ev_quaternion,	// ex_quaternion
-	ev_int,			// ex_int
+	ev_integer,		// ex_integer
 };
 
 static type_t *types[] = {
@@ -39,7 +39,7 @@ static type_t *types[] = {
 	&type_function,
 	&type_pointer,
 	&type_quaternion,
-	//XXX&type_int,
+	&type_integer,
 };
 
 static expr_type expr_types[] = {
@@ -52,7 +52,7 @@ static expr_type expr_types[] = {
 	ex_func,		// ev_func
 	ex_pointer,		// ev_pointer
 	ex_quaternion,	// ev_quaternion
-	ex_int,			// ev_int
+	ex_integer,		// ev_integer
 };
 
 static const char *type_names[] = {
@@ -89,7 +89,7 @@ get_type (expr_t *e)
 		case ex_pointer:
 		case ex_quaternion:
 			return qc_types[e->type];
-		case ex_int: //FIXME?
+		case ex_integer: //FIXME int should stay int, at least until code generation
 			e->type = ex_float;
 			e->e.float_val = e->e.int_val;
 			return ev_float;
@@ -114,7 +114,7 @@ error (expr_t *e, const char *fmt, ...)
 	fputs ("\n", stderr);
 	if (e) {
 		e = new_expr ();
-		e->type = ex_int;
+		e->type = ex_integer;
 	}
 	va_end (args);
 	pr_error_count++;
@@ -347,7 +347,7 @@ print_expr (expr_t *e)
 		case ex_field:
 		case ex_func:
 		case ex_pointer:
-		case ex_int:
+		case ex_integer:
 			printf ("%d", e->e.int_val);
 			break;
 	}
@@ -372,27 +372,27 @@ do_op_string (int op, expr_t *e1, expr_t *e2)
 			e1->e.string_val = buf;
 			break;
 		case LT:
-			e1->type = ex_int;
+			e1->type = ex_integer;
 			e1->e.int_val = strcmp (s1, s2) < 0;
 			break;
 		case GT:
-			e1->type = ex_int;
+			e1->type = ex_integer;
 			e1->e.int_val = strcmp (s1, s2) > 0;
 			break;
 		case LE:
-			e1->type = ex_int;
+			e1->type = ex_integer;
 			e1->e.int_val = strcmp (s1, s2) <= 0;
 			break;
 		case GE:
-			e1->type = ex_int;
+			e1->type = ex_integer;
 			e1->e.int_val = strcmp (s1, s2) >= 0;
 			break;
 		case EQ:
-			e1->type = ex_int;
+			e1->type = ex_integer;
 			e1->e.int_val = strcmp (s1, s2) == 0;
 			break;
 		case NE:
-			e1->type = ex_int;
+			e1->type = ex_integer;
 			e1->e.int_val = strcmp (s1, s2) != 0;
 			break;
 		default:
@@ -435,27 +435,27 @@ do_op_float (int op, expr_t *e1, expr_t *e2)
 			e1->e.float_val += f1 || f2;
 			break;
 		case LT:
-			e1->type = ex_int;
+			e1->type = ex_integer;
 			e1->e.int_val = f1 < f2;
 			break;
 		case GT:
-			e1->type = ex_int;
+			e1->type = ex_integer;
 			e1->e.int_val = f1 > f2;
 			break;
 		case LE:
-			e1->type = ex_int;
+			e1->type = ex_integer;
 			e1->e.int_val = f1 <= f2;
 			break;
 		case GE:
-			e1->type = ex_int;
+			e1->type = ex_integer;
 			e1->e.int_val = f1 >= f2;
 			break;
 		case EQ:
-			e1->type = ex_int;
+			e1->type = ex_integer;
 			e1->e.int_val = f1 == f2;
 			break;
 		case NE:
-			e1->type = ex_int;
+			e1->type = ex_integer;
 			e1->e.int_val = f1 != f2;
 			break;
 		default:
@@ -484,13 +484,13 @@ do_op_vector (int op, expr_t *e1, expr_t *e2)
 			e1->e.float_val = DotProduct (v1, v2);
 			break;
 		case EQ:
-			e1->type = ex_int;
+			e1->type = ex_integer;
 			e1->e.int_val = (v1[0] == v2[0])
 							&& (v1[1] == v2[1])
 							&& (v1[2] == v2[2]);
 			break;
 		case NE:
-			e1->type = ex_int;
+			e1->type = ex_integer;
 			e1->e.int_val = (v1[0] == v2[0])
 							|| (v1[1] != v2[1])
 							|| (v1[2] != v2[2]);
@@ -563,7 +563,7 @@ test_expr (expr_t *e, int test)
 		return unary_expr ('!', e);
 
 	switch (get_type (e)) {
-		case ev_int://FIXME
+		case ev_integer://FIXME just return e when int opcodes are supported
 		case ev_type_count:
 		case ev_void:
 			error (e, "internal error");
@@ -694,7 +694,7 @@ unary_expr (int op, expr_t *e)
 										 : e->e.expr.type;
 						return n;
 					}
-				case ex_int:
+				case ex_integer:
 					e->e.int_val *= -1;
 					return e;
 				case ex_float:
@@ -732,29 +732,29 @@ unary_expr (int op, expr_t *e)
 						n->e.expr.type = &type_float;
 						return n;
 					}
-				case ex_int:
+				case ex_integer:
 					e->e.int_val = !e->e.int_val;
 					return e;
 				case ex_float:
 					e->e.int_val = !e->e.float_val;
-					e->type = ex_int;
+					e->type = ex_integer;
 					return e;
 				case ex_string:
 					e->e.int_val = !e->e.string_val || !e->e.string_val[0];
-					e->type = ex_int;
+					e->type = ex_integer;
 					return e;
 				case ex_vector:
 					e->e.int_val = !e->e.vector_val[0]
 									&& !e->e.vector_val[1]
 									&& !e->e.vector_val[2];
-					e->type = ex_int;
+					e->type = ex_integer;
 					return e;
 				case ex_quaternion:
 					e->e.int_val = !e->e.quaternion_val[0]
 									&& !e->e.quaternion_val[1]
 									&& !e->e.quaternion_val[2]
 									&& !e->e.quaternion_val[3];
-					e->type = ex_int;
+					e->type = ex_integer;
 					return e;
 				case ex_entity:
 				case ex_field:
@@ -790,7 +790,8 @@ function_expr (expr_t *e1, expr_t *e2)
 	}
 
 	if (e1->type == ex_def && e2 && e2->type == ex_string) {
-		//XXX eww, I hate this, but it's needed :(
+		//FIXME eww, I hate this, but it's needed :(
+		//FIXME make a qc hook? :)
 		def_t *func = e1->e.def;
 		def_t *e = PR_ReuseConstant (e2, 0);
 
@@ -1086,7 +1087,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 		case ex_func:
 		case ex_pointer:
 		case ex_quaternion:
-		case ex_int:
+		case ex_integer:
 			return PR_ReuseConstant (e, 0);
 	}
 	return 0;
@@ -1176,7 +1177,7 @@ emit_expr (expr_t *e)
 		case ex_func:
 		case ex_pointer:
 		case ex_quaternion:
-		case ex_int:
+		case ex_integer:
 			warning (e, "Ignoring useless expression");
 			break;
 	}

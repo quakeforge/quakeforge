@@ -331,6 +331,7 @@ extern	type_t	type_function;
 extern	type_t	type_pointer;
 extern	type_t	type_floatfield;
 extern	type_t	type_quaternion;
+extern	type_t	type_integer;
 
 extern	def_t	def_void;
 extern	def_t	def_string;
@@ -341,6 +342,7 @@ extern	def_t	def_field;
 extern	def_t	def_function;
 extern	def_t	def_pointer;
 extern	def_t	def_quaternion;
+extern	def_t	def_integer;
 
 struct function_s
 {

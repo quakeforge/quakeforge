@@ -198,8 +198,8 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 			tab = pointer_imm_defs;
 			type = &type_pointer;
 			break;
-		case ex_int:
-			e.e.float_val = e.e.int_val; //FIXME
+		case ex_integer:
+			e.e.float_val = e.e.int_val; //FIXME want ints rather than floats
 		case ex_float:
 			sprintf (rep, "\001float:%08X\001", e.e.int_val);
 			tab = float_imm_defs;
