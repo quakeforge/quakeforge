@@ -76,7 +76,13 @@ defs
 	;
 
 def
-	: type {current_type = $1;} def_list {}
+	: type
+		{
+			current_type = $1;
+		}
+	  def_list
+		{
+		}
 	;
 
 type
@@ -105,7 +111,7 @@ def_list
 	;
 
 def_item
-	: def_name opt_initializer
+	: def_name opt_initializer { $$ = $1; }
 	| '('
 		{
 			$<scope>$.scope = pr_scope;
@@ -121,16 +127,50 @@ def_item
 			param_scope.scope_next = $<scope>2.pscope;
 			pr_scope = $<scope>2.scope;
 		}
-	  ')' { current_type = parse_params ($<def>4); } def_name opt_definition
+	  ')'
+		{
+			current_type = parse_params ($<def>4);
+		}
+	  def_name
+		{
+			$$ = $7->scope_next;
+			$7->scope_next = $<def>4;
+		}
+	  opt_definition
 	  	{
-			def_t scope;
-			scope.scope_next=$<def>4;
-			PR_FlushScope (&scope);
+			PR_FlushScope ($7);
+			$7->scope_next = $<def>8;
 
 			$$ = $7;
 		}
-	| '(' ')' { current_type = parse_params (0); } def_name opt_definition { $$ = $4; }
-	| '(' ELIPSIS ')' { current_type = parse_params ((def_t*)1); } def_name opt_definition { $$ = $5; }
+	| '(' ')'
+		{
+			current_type = parse_params (0);
+		}
+	  def_name
+		{
+			$$ = $4->scope_next;
+			$4->scope_next = 0;
+		}
+	  opt_definition
+		{
+			$4->scope_next = $<def>5;
+			$$ = $4;
+		}
+	| '(' ELIPSIS ')'
+		{
+			current_type = parse_params ((def_t*)1);
+		}
+	  def_name
+		{
+			$$ = $5->scope_next;
+			$5->scope_next = 0;
+		}
+	  opt_definition
+		{
+			$5->scope_next = $<def>6;
+			$$ = $5;
+		}
 	;
 
 def_name
