@@ -47,6 +47,7 @@ static const char rcsid[] =
 
 #include "compat.h"
 #include "crudefile.h"
+#include "pmove.h"
 #include "server.h"
 #include "sv_progs.h"
 #include "world.h"
@@ -424,4 +425,19 @@ SV_SpawnServer (const char *server)
 
 	Info_SetValueForKey (svs.info, "map", sv.name, !sv_highchars->int_val);
 	Con_DPrintf ("Server spawned.\n");
+}
+
+void
+SV_SetMoveVars (void)
+{
+	movevars.gravity = sv_gravity->value;
+	movevars.stopspeed = sv_stopspeed->value;
+	movevars.maxspeed = sv_maxspeed->value;
+	movevars.spectatormaxspeed = sv_spectatormaxspeed->value;
+	movevars.accelerate = sv_accelerate->value;
+	movevars.airaccelerate = sv_airaccelerate->value;
+	movevars.wateraccelerate = sv_wateraccelerate->value;
+	movevars.friction = sv_friction->value;
+	movevars.waterfriction = sv_waterfriction->value;
+	movevars.entgravity = 1.0;
 }
