@@ -416,7 +416,7 @@ def_item
 
 func_defs
 	: func_def_list ',' fdef_name func_term
-	| func_term {}
+	| def_name func_term {}
 	;
 
 func_term
