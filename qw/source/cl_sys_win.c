@@ -124,18 +124,6 @@ wfilelength (VFile *f)
 */
 
 
-void
-Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
-{
-	DWORD       flOldProtect;
-
-//@@@ copy on write or just read-write?
-	if (!VirtualProtect
-		((LPVOID) startaddr, length, PAGE_READWRITE,
-		 &flOldProtect)) Sys_Error ("Protection change failed\n");
-}
-
-
 /*
 	Sys_Init
 */

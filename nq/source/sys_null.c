@@ -162,11 +162,6 @@ SYSTEM IO
 ===============================================================================
 */
 
-void
-Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
-{
-}
-
 
 void
 Sys_Error (char *error, ...)

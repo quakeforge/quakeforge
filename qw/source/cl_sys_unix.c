@@ -180,12 +180,10 @@ Sys_LowFPPrecision (void)
 }
 #endif
 
-
 int         skipframes;
 
-
 int
-main (int c, char **v)
+main (int c, char *v[])
 {
 	double      time, oldtime, newtime;
 	int         j;
@@ -227,25 +225,4 @@ main (int c, char **v)
 		Host_Frame (time);
 		oldtime = newtime;
 	}
-}
-
-
-void
-Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
-{
-
-	int         r;
-	unsigned long addr;
-	int         psize = getpagesize ();
-
-	addr = (startaddr & ~(psize - 1)) - psize;
-
-//  fprintf(stderr, "writable code %lx(%lx)-%lx, length=%lx\n", startaddr,
-//          addr, startaddr+length, length);
-
-	r = mprotect ((char *) addr, length + startaddr - addr + psize, 7);
-
-	if (r < 0)
-		Sys_Error ("Protection change failed\n");
-
 }

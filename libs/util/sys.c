@@ -52,6 +52,9 @@
 #ifdef HAVE_WINDOWS_H
 # include <windows.h>
 #endif
+#ifdef HAVE_SYS_MMAN_H
+# include <sys/mman.h>
+#endif
 
 #include "compat.h"
 #include "QF/cvar.h"
@@ -204,5 +207,33 @@ Sys_DoubleTime (void)
 	}
 
 	return now - start_time;
+#endif
+}
+
+void
+Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
+{
+#ifdef HAVE_MPROTECT
+	int         r;
+	unsigned long addr;
+	int         psize = getpagesize ();
+
+	addr = (startaddr & ~(psize - 1)) - psize;
+
+//  fprintf(stderr, "writable code %lx(%lx)-%lx, length=%lx\n", startaddr,
+//          addr, startaddr+length, length);
+
+	r = mprotect ((char *) addr, length + startaddr - addr + psize, 7);
+
+	if (r < 0)
+		Sys_Error ("Protection change failed\n");
+#else
+# ifdef HAVE_VIRTUALPROTECT
+	DWORD       flOldProtect;
+
+	if (!VirtualProtect
+		((LPVOID) startaddr, length, PAGE_READWRITE,
+		 &flOldProtect)) Sys_Error ("Protection change failed\n");
+# endif
 #endif
 }
