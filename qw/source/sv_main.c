@@ -1341,7 +1341,7 @@ SV_CleanIPList (void)
 	char		*type;
 
 	for (i = 0; i < numipfilters;) {
-		if (ipfilters[i].time && (ipfilters[i].time <= realtime)) {
+		if (ipfilters[i].time && (ipfilters[i].time <= Sys_DoubleTime () )) {
 			switch (ipfilters[i].type) {
 				case ft_ban: type = "Ban"; break;
 				case ft_mute: type = "Mute"; break;
@@ -1393,7 +1393,7 @@ SV_AddIP_f (void)
 	}
 
 	if (SV_StringToFilter (Cmd_Argv (1), &ipfilters[numipfilters])) {
-		ipfilters[numipfilters].time = bantime ? realtime + bantime : 0.0;
+		ipfilters[numipfilters].time = bantime ? Sys_DoubleTime () + bantime : 0.0;
 		ipfilters[numipfilters].type = type;
 		// FIXME: this should boot any matching clients
 	    for (i = 0; i < MAX_CLIENTS; i++) {
@@ -1480,7 +1480,8 @@ SV_ListIP_f (void)
 
 		if (ipfilters[i].time)
 			snprintf (timestr, sizeof (timestr), "%ds",
-					  (int) (ipfilters[i].time ? ipfilters[i].time - realtime : 0));
+					 (int) (ipfilters[i].time ? ipfilters[i].time -
+					 Sys_DoubleTime () : 0));
 		else
 			strcpy (timestr, "Permanent");
 
@@ -1595,7 +1596,8 @@ SV_SendBan (double till)
 
 	if (till) {
 		snprintf (data + 5, sizeof (data) - 5,
-				  "\nbanned for %.1f more minutes.\n", (till - realtime)/60.0);
+				 "\nbanned for %.1f more minutes.\n", (till -
+					Sys_DoubleTime ())/60.0);
 	} else {
 		snprintf (data + 5, sizeof (data) - 5, "\nbanned permanently.\n");
 	}
@@ -1624,7 +1626,7 @@ SV_FilterIP (byte *ip, double *until)
 			if (!ipfilters[i].time) {
 				// normal ban
 				return filterban->int_val;
-			} else if (ipfilters[i].time > realtime) {
+			} else if (ipfilters[i].time > Sys_DoubleTime () ) {
 				*until = ipfilters[i].time;
 				return true;	// banned no matter what
 			} else {
@@ -2140,7 +2142,7 @@ SV_InitLocal (void)
 
 	// init fraglog stuff
 	svs.logsequence = 1;
-	svs.logtime = realtime;
+	svs.logtime = Sys_DoubleTime ();
 	svs.log[0].data = svs.log_buf[0];
 	svs.log[0].maxsize = sizeof (svs.log_buf[0]);
 	svs.log[0].cursize = 0;
@@ -2164,10 +2166,10 @@ Master_Heartbeat (void)
 	char        string[2048];
 	int         active, i;
 
-	if (realtime - svs.last_heartbeat < HEARTBEAT_SECONDS)
+	if (Sys_DoubleTime () - svs.last_heartbeat < HEARTBEAT_SECONDS)
 		return;							// not time to send yet
 
-	svs.last_heartbeat = realtime;
+	svs.last_heartbeat = Sys_DoubleTime ();
 
 	// count active users
 	active = 0;
