@@ -155,11 +155,261 @@ parse_field (progs_t *pr, const char *key, const char *value)
 	return 0;
 }
 
+typedef struct sv_def_s {
+	etype_t    type;
+	unsigned short offset;
+	const char *name;
+	void      *field;
+} sv_def_t;
+
+static sv_def_t nq_defs[] = {
+	{ev_entity,	28,	"self",					&sv_globals.self},
+	{ev_entity,	29,	"other",				&sv_globals.other},
+	{ev_entity,	30,	"world",				&sv_globals.world},
+	{ev_float,	31,	"time",					&sv_globals.time},
+	{ev_float,	32,	"frametime",			&sv_globals.frametime},
+	{ev_float,	33,	"force_retouch",		&sv_globals.force_retouch},
+	{ev_string,	34,	"mapname",				&sv_globals.mapname},
+	{ev_float,	35,	"deathmatch",			&sv_globals.deathmatch},
+	{ev_float,	36,	"coop",					&sv_globals.coop},
+	{ev_float,	37,	"teamplay",				&sv_globals.teamplay},
+	{ev_float,	38,	"serverflags",			&sv_globals.serverflags},
+	{ev_float,	39,	"total_secrets",		&sv_globals.total_secrets},
+	{ev_float,	40,	"total_monsters",		&sv_globals.total_monsters},
+	{ev_float,	41,	"found_secrets",		&sv_globals.found_secrets},
+	{ev_float,	42,	"killed_monsters",		&sv_globals.killed_monsters},
+	//parm1-16 form an array
+	{ev_float,	43,	"parm1",				&sv_globals.parms},
+	{ev_vector,	59,	"v_forward",			&sv_globals.v_forward},
+	{ev_vector,	62,	"v_up",					&sv_globals.v_up},
+	{ev_vector,	65,	"v_right",				&sv_globals.v_right},
+	{ev_float,	68,	"trace_allsolid",		&sv_globals.trace_allsolid},
+	{ev_float,	69,	"trace_startsolid",		&sv_globals.trace_startsolid},
+	{ev_float,	70,	"trace_fraction",		&sv_globals.trace_fraction},
+	{ev_vector,	71,	"trace_endpos",			&sv_globals.trace_endpos},
+	{ev_vector,	74,	"trace_plane_normal",	&sv_globals.trace_plane_normal},
+	{ev_float,	77,	"trace_plane_dist",		&sv_globals.trace_plane_dist},
+	{ev_entity,	78,	"trace_ent",			&sv_globals.trace_ent},
+	{ev_float,	79,	"trace_inopen",			&sv_globals.trace_inopen},
+	{ev_float,	80,	"trace_inwater",		&sv_globals.trace_inwater},
+	{ev_entity,	81,	"msg_entity",			&sv_globals.msg_entity},
+	{ev_void,	0,	0},
+};
+
+static sv_def_t nq_funcs[] = {
+	{ev_func,	82,	"main",					&sv_funcs.main},
+	{ev_func,	83,	"StartFrame",			&sv_funcs.StartFrame},
+	{ev_func,	84,	"PlayerPreThink",		&sv_funcs.PlayerPreThink},
+	{ev_func,	85,	"PlayerPostThink",		&sv_funcs.PlayerPostThink},
+	{ev_func,	86,	"ClientKill",			&sv_funcs.ClientKill},
+	{ev_func,	87,	"ClientConnect",		&sv_funcs.ClientConnect},
+	{ev_func,	88,	"PutClientInServer",	&sv_funcs.PutClientInServer},
+	{ev_func,	89,	"ClientDisconnect",		&sv_funcs.ClientDisconnect},
+	{ev_func,	90,	"SetNewParms",			&sv_funcs.SetNewParms},
+	{ev_func,	91,	"SetChangeParms",		&sv_funcs.SetChangeParms},
+	{ev_void,	0,	0},
+};
+
+static sv_def_t nq_fields[] = {
+	{ev_float,	0,	"modelindex",		&sv_fields.modelindex},
+	{ev_vector,	1,	"absmin",			&sv_fields.absmin},
+	{ev_vector,	4,	"absmax",			&sv_fields.absmax},
+	{ev_float,	7,	"ltime",			&sv_fields.ltime},
+	{ev_float,	8,	"movetype",			&sv_fields.movetype},
+	{ev_float,	9,	"solid",			&sv_fields.solid},
+	{ev_vector,	10,	"origin",			&sv_fields.origin},
+	{ev_vector,	13,	"oldorigin",		&sv_fields.oldorigin},
+	{ev_vector,	16,	"velocity",			&sv_fields.velocity},
+	{ev_vector,	19,	"angles",			&sv_fields.angles},
+	{ev_vector,	22,	"avelocity",		&sv_fields.avelocity},
+	{ev_vector,	25,	"punchangle",		&sv_fields.punchangle},
+	{ev_string,	28,	"classname",		&sv_fields.classname},
+	{ev_string,	29,	"model",			&sv_fields.model},
+	{ev_float,	30,	"frame",			&sv_fields.frame},
+	{ev_float,	31,	"skin",				&sv_fields.skin},
+	{ev_float,	32,	"effects",			&sv_fields.effects},
+	{ev_vector,	33,	"mins",				&sv_fields.mins},
+	{ev_vector,	36,	"maxs",				&sv_fields.maxs},
+	{ev_vector,	39,	"size",				&sv_fields.size},
+	{ev_func,	42,	"touch",			&sv_fields.touch},
+	{ev_func,	43,	"use",				&sv_fields.use},
+	{ev_func,	44,	"think",			&sv_fields.think},
+	{ev_func,	45,	"blocked",			&sv_fields.blocked},
+	{ev_float,	46,	"nextthink",		&sv_fields.nextthink},
+	{ev_entity,	47,	"groundentity",		&sv_fields.groundentity},
+	{ev_float,	48,	"health",			&sv_fields.health},
+	{ev_float,	49,	"frags",			&sv_fields.frags},
+	{ev_float,	50,	"weapon",			&sv_fields.weapon},
+	{ev_string,	51,	"weaponmodel",		&sv_fields.weaponmodel},
+	{ev_float,	52,	"weaponframe",		&sv_fields.weaponframe},
+	{ev_float,	53,	"currentammo",		&sv_fields.currentammo},
+	{ev_float,	54,	"ammo_shells",		&sv_fields.ammo_shells},
+	{ev_float,	55,	"ammo_nails",		&sv_fields.ammo_nails},
+	{ev_float,	56,	"ammo_rockets",		&sv_fields.ammo_rockets},
+	{ev_float,	57,	"ammo_cells",		&sv_fields.ammo_cells},
+	{ev_float,	58,	"items",			&sv_fields.items},
+	{ev_float,	59,	"takedamage",		&sv_fields.takedamage},
+	{ev_entity,	60,	"chain",			&sv_fields.chain},
+	{ev_float,	61,	"deadflag",			&sv_fields.deadflag},
+	{ev_vector,	62,	"view_ofs",			&sv_fields.view_ofs},
+	{ev_float,	65,	"button0",			&sv_fields.button0},
+	{ev_float,	66,	"button1",			&sv_fields.button1},
+	{ev_float,	67,	"button2",			&sv_fields.button2},
+	{ev_float,	68,	"impulse",			&sv_fields.impulse},
+	{ev_float,	69,	"fixangle",			&sv_fields.fixangle},
+	{ev_vector,	70,	"v_angle",			&sv_fields.v_angle},
+	{ev_float,	73,	"idealpitch",		&sv_fields.idealpitch},
+	{ev_string,	74,	"netname",			&sv_fields.netname},
+	{ev_entity,	75,	"enemy",			&sv_fields.enemy},
+	{ev_float,	76,	"flags",			&sv_fields.flags},
+	{ev_float,	77,	"colormap",			&sv_fields.colormap},
+	{ev_float,	78,	"team",				&sv_fields.team},
+	{ev_float,	79,	"max_health",		&sv_fields.max_health},
+	{ev_float,	80,	"teleport_time",	&sv_fields.teleport_time},
+	{ev_float,	81,	"armortype",		&sv_fields.armortype},
+	{ev_float,	82,	"armorvalue",		&sv_fields.armorvalue},
+	{ev_float,	83,	"waterlevel",		&sv_fields.waterlevel},
+	{ev_float,	84,	"watertype",		&sv_fields.watertype},
+	{ev_float,	85,	"ideal_yaw",		&sv_fields.ideal_yaw},
+	{ev_float,	86,	"yaw_speed",		&sv_fields.yaw_speed},
+	{ev_entity,	87,	"aiment",			&sv_fields.aiment},
+	{ev_entity,	88,	"goalentity",		&sv_fields.goalentity},
+	{ev_float,	89,	"spawnflags",		&sv_fields.spawnflags},
+	{ev_string,	90,	"target",			&sv_fields.target},
+	{ev_string,	91,	"targetname",		&sv_fields.targetname},
+	{ev_float,	92,	"dmg_take",			&sv_fields.dmg_take},
+	{ev_float,	93,	"dmg_save",			&sv_fields.dmg_save},
+	{ev_entity,	94,	"dmg_inflictor",	&sv_fields.dmg_inflictor},
+	{ev_entity,	95,	"owner",			&sv_fields.owner},
+	{ev_vector,	96,	"movedir",			&sv_fields.movedir},
+	{ev_string,	99,	"message",			&sv_fields.message},
+	{ev_float,	100,	"sounds",		&sv_fields.sounds},
+	{ev_string,	101,	"noise",		&sv_fields.noise},
+	{ev_string,	102,	"noise1",		&sv_fields.noise1},
+	{ev_string,	103,	"noise2",		&sv_fields.noise2},
+	{ev_string,	104,	"noise3",		&sv_fields.noise3},
+	{ev_void,	0,	0},
+};
+
+static sv_def_t nq_opt_defs[] = {
+	{ev_entity, 0,	"newmis",			&sv_globals.newmis},
+	{ev_void,	0,	0},
+};
+
+static sv_def_t nq_opt_funcs[] = {
+	{ev_func,	0,	"EndFrame",				&EndFrame},
+	{ev_void,	0,	0},
+};
+
+static sv_def_t nq_opt_fields[] = {
+	// Quake 2 fields?
+	{ev_float,		0,	"dmg",				&sv_fields.dmg},
+	{ev_float,		0,	"dmgtime",			&sv_fields.dmgtime},
+	{ev_float,		0,	"air_finished",		&sv_fields.air_finished},
+	{ev_float,		0,	"pain_finished",	&sv_fields.pain_finished},
+	{ev_float,		0,	"radsuit_finished",	&sv_fields.radsuit_finished},
+	{ev_float,		0,	"speed",			&sv_fields.speed},
+	{ev_float,		0,	"basevelocity",		&sv_fields.basevelocity},
+	{ev_float,		0,	"drawPercent",		&sv_fields.drawPercent},
+	{ev_float,		0,	"mass",				&sv_fields.mass},
+	{ev_float,		0,	"light_level",		&sv_fields.light_level},
+	{ev_float,		0,	"items2",			&sv_fields.items2},
+	{ev_float,		0,	"pitch_speed",		&sv_fields.pitch_speed},
+	{ev_float,		0,	"lastruntime",		&sv_fields.lastruntime},
+
+	{ev_integer,	0,	"rotated_bbox",		&sv_fields.rotated_bbox},
+	{ev_float,		0,	"gravity",			&sv_fields.gravity},
+	{ev_void,		0,	0},
+};
+
+static const unsigned  nq_crc = 5927;
+
+static void
+set_address (sv_def_t *def, void *address)
+{
+	switch (def->type) {
+		case ev_void:
+		case ev_short:
+		case ev_type_count:
+			break;
+		case ev_float:
+		case ev_vector:
+		case ev_quaternion:
+			*(float **)def->field = (float *) address;
+			break;
+		case ev_string:
+		case ev_entity:
+		case ev_field:
+		case ev_func:
+		case ev_pointer:
+		case ev_integer:
+		case ev_uinteger:
+		case ev_object:
+		case ev_class:
+		case ev_sel:
+		case ev_array:
+		case ev_struct:
+			*(int **)def->field = (int *) address;
+			break;
+	}
+}
+
+static int
+resolve (progs_t *pr)
+{
+	sv_def_t   *def;
+	ddef_t     *ddef;
+	dfunction_t *f;
+	void       *global;
+	func_t      func;
+
+	if (pr->progs->crc == nq_crc) {
+		for (def = nq_defs; def->name; def++) {
+			global = &G_FLOAT(pr, def->offset);
+			set_address (def, global);
+		}
+		for (def = nq_funcs; def->name; def++) {
+			func = G_FUNCTION (pr, def->offset);
+			*(func_t *)def->field = func;
+		}
+		for (def = nq_fields; def->name; def++) {
+			*(int *)def->field = def->offset;
+		}
+	} else {
+		for (def = nq_defs; def->name; def++) {
+			global = PR_GetGlobalPointer (pr, def->name);
+			set_address (def, global);
+		}
+		for (def = nq_funcs; def->name; def++) {
+			*(func_t *)def->field = PR_GetFunctionIndex (pr, def->name);
+		}
+		for (def = nq_fields; def->name; def++) {
+			*(int *)def->field = PR_GetFieldOffset (pr, def->name);
+		}
+	}
+	for (def = nq_opt_defs; def->name; def++) {
+		ddef = PR_FindGlobal (&sv_pr_state, "skill");
+		if (ddef) {
+			global = &G_FLOAT(pr, ddef->ofs);
+			set_address (def, global);
+		}
+	}
+	for (def = nq_opt_funcs; def->name; def++) {
+		if ((f = ED_FindFunction (pr, def->name)) != NULL)
+			*(func_t *)def->field = (func_t) (f - pr->pr_functions);
+	}
+	for (def = nq_opt_fields; def->name; def++) {
+		*(int *)def->field = ED_GetFieldIndex (pr, def->name);
+	}
+	// progs engine needs these globals anyway
+	sv_pr_state.globals.self = sv_globals.self;
+	sv_pr_state.globals.time = sv_globals.time;
+	return 1;
+}
+
 void
 SV_LoadProgs (void)
 {
-	ddef_t     *def;
-	dfunction_t *f;
 	const char *progs_name = "progs.dat";
 	const char *range;
 
@@ -184,183 +434,8 @@ SV_LoadProgs (void)
 				  sv_progs_zone->int_val * 1024);
 	if (!sv_pr_state.progs)
 		Host_Error ("SV_LoadProgs: couldn't load %s", progs_name);
-	// progs engine needs these globals anyway
-	sv_globals.self = sv_pr_state.globals.self;
-	sv_globals.time = sv_pr_state.globals.time;
 
-	(void *) sv_globals.other = PR_GetGlobalPointer (&sv_pr_state, "other");
-	(void *) sv_globals.world = PR_GetGlobalPointer (&sv_pr_state, "world");
-	(void *) sv_globals.time = PR_GetGlobalPointer (&sv_pr_state, "time");
-	(void *) sv_globals.frametime = PR_GetGlobalPointer (&sv_pr_state,
-														 "frametime");
-	(void *) sv_globals.force_retouch = PR_GetGlobalPointer (&sv_pr_state,
-															 "force_retouch");
-	(void *) sv_globals.mapname = PR_GetGlobalPointer (&sv_pr_state,
-													   "mapname");
-	(void *) sv_globals.deathmatch = PR_GetGlobalPointer (&sv_pr_state,
-														  "deathmatch");
-	(void *) sv_globals.coop = PR_GetGlobalPointer (&sv_pr_state, "coop");
-	(void *) sv_globals.teamplay = PR_GetGlobalPointer (&sv_pr_state,
-														"teamplay");
-	(void *) sv_globals.serverflags = PR_GetGlobalPointer (&sv_pr_state,
-														   "serverflags");
-	(void *) sv_globals.total_secrets = PR_GetGlobalPointer (&sv_pr_state,
-															 "total_secrets");
-	(void *) sv_globals.total_monsters = PR_GetGlobalPointer
-		(&sv_pr_state, "total_monsters");
-	(void *) sv_globals.found_secrets = PR_GetGlobalPointer (&sv_pr_state,
-															 "found_secrets");
-	(void *) sv_globals.killed_monsters = PR_GetGlobalPointer
-		(&sv_pr_state, "killed_monsters");
-	(void *) sv_globals.parms = PR_GetGlobalPointer (&sv_pr_state, "parm1");
-	(void *) sv_globals.v_forward = PR_GetGlobalPointer (&sv_pr_state,
-														 "v_forward");
-	(void *) sv_globals.v_up = PR_GetGlobalPointer (&sv_pr_state, "v_up");
-	(void *) sv_globals.v_right = PR_GetGlobalPointer (&sv_pr_state,
-													   "v_right");
-	(void *) sv_globals.trace_allsolid = PR_GetGlobalPointer
-		(&sv_pr_state, "trace_allsolid");
-	(void *) sv_globals.trace_startsolid = PR_GetGlobalPointer
-		(&sv_pr_state, "trace_startsolid");
-	(void *) sv_globals.trace_fraction = PR_GetGlobalPointer
-		(&sv_pr_state, "trace_fraction");
-	(void *) sv_globals.trace_endpos = PR_GetGlobalPointer (&sv_pr_state,
-															"trace_endpos");
-	(void *) sv_globals.trace_plane_normal = PR_GetGlobalPointer
-		(&sv_pr_state, "trace_plane_normal");
-	(void *) sv_globals.trace_plane_dist = PR_GetGlobalPointer
-		(&sv_pr_state, "trace_plane_dist");
-	(void *) sv_globals.trace_ent = PR_GetGlobalPointer (&sv_pr_state,
-														 "trace_ent");
-	(void *) sv_globals.trace_inopen = PR_GetGlobalPointer (&sv_pr_state,
-															"trace_inopen");
-	(void *) sv_globals.trace_inwater = PR_GetGlobalPointer (&sv_pr_state,
-															 "trace_inwater");
-	(void *) sv_globals.msg_entity = PR_GetGlobalPointer (&sv_pr_state,
-														  "msg_entity");
 
-	sv_funcs.main = PR_GetFunctionIndex (&sv_pr_state, "main");
-	sv_funcs.StartFrame = PR_GetFunctionIndex (&sv_pr_state, "StartFrame");
-	sv_funcs.PlayerPreThink = PR_GetFunctionIndex (&sv_pr_state,
-												   "PlayerPreThink");
-	sv_funcs.PlayerPostThink = PR_GetFunctionIndex (&sv_pr_state,
-													"PlayerPostThink");
-	sv_funcs.ClientKill = PR_GetFunctionIndex (&sv_pr_state, "ClientKill");
-	sv_funcs.ClientConnect = PR_GetFunctionIndex (&sv_pr_state,
-												  "ClientConnect");
-	sv_funcs.PutClientInServer = PR_GetFunctionIndex (&sv_pr_state,
-													  "PutClientInServer");
-	sv_funcs.ClientDisconnect = PR_GetFunctionIndex (&sv_pr_state,
-													 "ClientDisconnect");
-	sv_funcs.SetNewParms = PR_GetFunctionIndex (&sv_pr_state, "SetNewParms");
-	sv_funcs.SetChangeParms = PR_GetFunctionIndex (&sv_pr_state,
-												   "SetChangeParms");
-
-	sv_fields.modelindex = PR_GetFieldOffset (&sv_pr_state, "modelindex");
-	sv_fields.absmin = PR_GetFieldOffset (&sv_pr_state, "absmin");
-	sv_fields.absmax = PR_GetFieldOffset (&sv_pr_state, "absmax");
-	sv_fields.ltime = PR_GetFieldOffset (&sv_pr_state, "ltime");
-	sv_fields.movetype = PR_GetFieldOffset (&sv_pr_state, "movetype");
-	sv_fields.solid = PR_GetFieldOffset (&sv_pr_state, "solid");
-	sv_fields.origin = PR_GetFieldOffset (&sv_pr_state, "origin");
-	sv_fields.oldorigin = PR_GetFieldOffset (&sv_pr_state, "oldorigin");
-	sv_fields.velocity = PR_GetFieldOffset (&sv_pr_state, "velocity");
-	sv_fields.angles = PR_GetFieldOffset (&sv_pr_state, "angles");
-	sv_fields.avelocity = PR_GetFieldOffset (&sv_pr_state, "avelocity");
-	sv_fields.punchangle = PR_GetFieldOffset (&sv_pr_state, "punchangle");
-	sv_fields.classname = PR_GetFieldOffset (&sv_pr_state, "classname");
-	sv_fields.model = PR_GetFieldOffset (&sv_pr_state, "model");
-	sv_fields.frame = PR_GetFieldOffset (&sv_pr_state, "frame");
-	sv_fields.skin = PR_GetFieldOffset (&sv_pr_state, "skin");
-	sv_fields.effects = PR_GetFieldOffset (&sv_pr_state, "effects");
-	sv_fields.mins = PR_GetFieldOffset (&sv_pr_state, "mins");
-	sv_fields.maxs = PR_GetFieldOffset (&sv_pr_state, "maxs");
-	sv_fields.size = PR_GetFieldOffset (&sv_pr_state, "size");
-	sv_fields.touch = PR_GetFieldOffset (&sv_pr_state, "touch");
-	sv_fields.use = PR_GetFieldOffset (&sv_pr_state, "use");
-	sv_fields.think = PR_GetFieldOffset (&sv_pr_state, "think");
-	sv_fields.blocked = PR_GetFieldOffset (&sv_pr_state, "blocked");
-	sv_fields.nextthink = PR_GetFieldOffset (&sv_pr_state, "nextthink");
-	sv_fields.groundentity = PR_GetFieldOffset (&sv_pr_state, "groundentity");
-	sv_fields.health = PR_GetFieldOffset (&sv_pr_state, "health");
-	sv_fields.frags = PR_GetFieldOffset (&sv_pr_state, "frags");
-	sv_fields.weapon = PR_GetFieldOffset (&sv_pr_state, "weapon");
-	sv_fields.weaponmodel = PR_GetFieldOffset (&sv_pr_state, "weaponmodel");
-	sv_fields.weaponframe = PR_GetFieldOffset (&sv_pr_state, "weaponframe");
-	sv_fields.currentammo = PR_GetFieldOffset (&sv_pr_state, "currentammo");
-	sv_fields.ammo_shells = PR_GetFieldOffset (&sv_pr_state, "ammo_shells");
-	sv_fields.ammo_nails = PR_GetFieldOffset (&sv_pr_state, "ammo_nails");
-	sv_fields.ammo_rockets = PR_GetFieldOffset (&sv_pr_state, "ammo_rockets");
-	sv_fields.ammo_cells = PR_GetFieldOffset (&sv_pr_state, "ammo_cells");
-	sv_fields.items = PR_GetFieldOffset (&sv_pr_state, "items");
-	sv_fields.takedamage = PR_GetFieldOffset (&sv_pr_state, "takedamage");
-	sv_fields.chain = PR_GetFieldOffset (&sv_pr_state, "chain");
-	sv_fields.deadflag = PR_GetFieldOffset (&sv_pr_state, "deadflag");
-	sv_fields.view_ofs = PR_GetFieldOffset (&sv_pr_state, "view_ofs");
-	sv_fields.button0 = PR_GetFieldOffset (&sv_pr_state, "button0");
-	sv_fields.button1 = PR_GetFieldOffset (&sv_pr_state, "button1");
-	sv_fields.button2 = PR_GetFieldOffset (&sv_pr_state, "button2");
-	sv_fields.impulse = PR_GetFieldOffset (&sv_pr_state, "impulse");
-	sv_fields.fixangle = PR_GetFieldOffset (&sv_pr_state, "fixangle");
-	sv_fields.v_angle = PR_GetFieldOffset (&sv_pr_state, "v_angle");
-	sv_fields.idealpitch = PR_GetFieldOffset (&sv_pr_state, "idealpitch");
-	sv_fields.netname = PR_GetFieldOffset (&sv_pr_state, "netname");
-	sv_fields.enemy = PR_GetFieldOffset (&sv_pr_state, "enemy");
-	sv_fields.flags = PR_GetFieldOffset (&sv_pr_state, "flags");
-	sv_fields.colormap = PR_GetFieldOffset (&sv_pr_state, "colormap");
-	sv_fields.team = PR_GetFieldOffset (&sv_pr_state, "team");
-	sv_fields.max_health = PR_GetFieldOffset (&sv_pr_state, "max_health");
-	sv_fields.teleport_time = PR_GetFieldOffset (&sv_pr_state,
-												 "teleport_time");
-	sv_fields.armortype = PR_GetFieldOffset (&sv_pr_state, "armortype");
-	sv_fields.armorvalue = PR_GetFieldOffset (&sv_pr_state, "armorvalue");
-	sv_fields.waterlevel = PR_GetFieldOffset (&sv_pr_state, "waterlevel");
-	sv_fields.watertype = PR_GetFieldOffset (&sv_pr_state, "watertype");
-	sv_fields.ideal_yaw = PR_GetFieldOffset (&sv_pr_state, "ideal_yaw");
-	sv_fields.yaw_speed = PR_GetFieldOffset (&sv_pr_state, "yaw_speed");
-	sv_fields.aiment = PR_GetFieldOffset (&sv_pr_state, "aiment");
-	sv_fields.goalentity = PR_GetFieldOffset (&sv_pr_state, "goalentity");
-	sv_fields.spawnflags = PR_GetFieldOffset (&sv_pr_state, "spawnflags");
-	sv_fields.target = PR_GetFieldOffset (&sv_pr_state, "target");
-	sv_fields.targetname = PR_GetFieldOffset (&sv_pr_state, "targetname");
-	sv_fields.dmg_take = PR_GetFieldOffset (&sv_pr_state, "dmg_take");
-	sv_fields.dmg_save = PR_GetFieldOffset (&sv_pr_state, "dmg_save");
-	sv_fields.dmg_inflictor = PR_GetFieldOffset (&sv_pr_state,
-												 "dmg_inflictor");
-	sv_fields.owner = PR_GetFieldOffset (&sv_pr_state, "owner");
-	sv_fields.movedir = PR_GetFieldOffset (&sv_pr_state, "movedir");
-	sv_fields.message = PR_GetFieldOffset (&sv_pr_state, "message");
-	sv_fields.sounds = PR_GetFieldOffset (&sv_pr_state, "sounds");
-	sv_fields.noise = PR_GetFieldOffset (&sv_pr_state, "noise");
-	sv_fields.noise1 = PR_GetFieldOffset (&sv_pr_state, "noise1");
-	sv_fields.noise2 = PR_GetFieldOffset (&sv_pr_state, "noise2");
-	sv_fields.noise3 = PR_GetFieldOffset (&sv_pr_state, "noise3");
-	sv_fields.dmg = PR_GetFieldOffset (&sv_pr_state, "dmg");
-
-	// Quake 2 fields?
-	sv_fields.dmgtime = ED_GetFieldIndex (&sv_pr_state, "dmgtime");
-	sv_fields.air_finished = ED_GetFieldIndex (&sv_pr_state, "air_finished");
-	sv_fields.pain_finished = ED_GetFieldIndex (&sv_pr_state, "pain_finished");
-	sv_fields.radsuit_finished = ED_GetFieldIndex (&sv_pr_state,
-												   "radsuit_finished");
-	sv_fields.speed = ED_GetFieldIndex (&sv_pr_state, "speed");
-	sv_fields.basevelocity = ED_GetFieldIndex (&sv_pr_state, "basevelocity");
-	sv_fields.drawPercent = ED_GetFieldIndex (&sv_pr_state, "drawPercent");
-	sv_fields.gravity = ED_GetFieldIndex (&sv_pr_state, "gravity");
-	sv_fields.mass = ED_GetFieldIndex (&sv_pr_state, "mass");
-	sv_fields.light_level = ED_GetFieldIndex (&sv_pr_state, "light_level");
-	sv_fields.items2 = ED_GetFieldIndex (&sv_pr_state, "items2");
-	sv_fields.pitch_speed = ED_GetFieldIndex (&sv_pr_state, "pitch_speed");
-
-	sv_fields.rotated_bbox = ED_GetFieldIndex (&sv_pr_state, "rotated_bbox");
-	sv_fields.lastruntime = ED_GetFieldIndex (&sv_pr_state, "lastruntime");
-
-	def = PR_FindGlobal (&sv_pr_state, "newmis");
-	sv_globals.newmis = def ? &G_var (&sv_pr_state, def->ofs, entity) : 0;
-
-	EndFrame = 0;
-	if ((f = ED_FindFunction (&sv_pr_state, "EndFrame")) != NULL)
-		EndFrame = (func_t) (f - sv_pr_state.pr_functions);
 }
 
 void
@@ -374,6 +449,7 @@ SV_Progs_Init (void)
 	sv_pr_state.parse_field = parse_field;
 	sv_pr_state.prune_edict = prune_edict;
 	sv_pr_state.bi_map = bi_map;
+	sv_pr_state.resolve = resolve;
 
 	SV_PR_Cmds_Init ();
 

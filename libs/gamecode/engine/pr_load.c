@@ -294,14 +294,6 @@ PR_AddLoadFinishFunc (progs_t *pr, int (*func)(progs_t *))
 	pr->load_finish_funcs[pr->num_load_finish_funcs++] = func;
 }
 
-static int (*load_funcs[])(progs_t *) = {
-	PR_RelocateBuiltins,
-	PR_ResolveGlobals,
-	PR_Check_Opcodes,
-	PR_LoadStrings,
-	PR_LoadDebug,
-};
-
 static int
 pr_run_ctors (progs_t *pr)
 {
@@ -316,14 +308,46 @@ pr_run_ctors (progs_t *pr)
 	return 1;
 }
 
+static int (*load_funcs_1[])(progs_t *) = {
+	PR_RelocateBuiltins,
+	PR_LoadStrings,
+	PR_LoadDebug,
+	0,
+};
+
+static int (*load_funcs_2[])(progs_t *) = {
+	PR_ResolveGlobals,
+	PR_Check_Opcodes,
+	0,
+};
+
+static int
+run_load_funcs (progs_t *pr, int (**load_funcs)(progs_t *))
+{
+	int         (**lf)(progs_t *);
+
+	for (lf = load_funcs; *lf; lf++)
+		if (!(*lf)(pr))
+			return 0;
+	return 1;
+}
+
 int
 PR_RunLoadFuncs (progs_t *pr)
 {
 	int         i;
 
-	for (i = 0; i < sizeof (load_funcs) / sizeof (load_funcs[0]); i++)
-		if (!load_funcs[i] (pr))
+	memset (&pr->globals, 0, sizeof (pr->globals));
+	pr->fields.nextthink = -1;
+	pr->fields.frame = -1;
+	pr->fields.think = -1;
+	pr->fields.this = -1;
+
+	run_load_funcs(pr, load_funcs_1);
+	if (pr->resolve)
+		if (!pr->resolve (pr))
 			return 0;
+	run_load_funcs(pr, load_funcs_2);
 
 	for (i = 0; i < pr->num_load_funcs; i++)
 		if (!pr->load_funcs[i] (pr))

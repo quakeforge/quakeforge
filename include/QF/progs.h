@@ -331,7 +331,7 @@ struct progs_s {
 	struct hashtab_s *builtin_hash;
 	struct hashtab_s *builtin_num_hash;
 	unsigned    bi_next;
-	unsigned  (*bi_map)(progs_t *pr, unsigned binum);
+	unsigned  (*bi_map) (progs_t *pr, unsigned binum);
 
 	struct hashtab_s *function_hash;
 	struct hashtab_s *global_hash;
@@ -394,17 +394,19 @@ struct progs_s {
 
 	unsigned short crc;
 
-	void      (*unlink)(edict_t *ent);
-	void      (*flush)(void);
+	void      (*unlink) (edict_t *ent);
+	void      (*flush) (void);
 
-	int       (*parse_field)(progs_t *pr, const char *key, const char *value);
-	int       (*prune_edict)(progs_t *pr, edict_t *ent);
-	void      (*free_edict)(progs_t *pr, edict_t *ent);
+	int       (*parse_field) (progs_t *pr, const char *key, const char *value);
+	int       (*prune_edict) (progs_t *pr, edict_t *ent);
+	void      (*free_edict) (progs_t *pr, edict_t *ent);
 
-	void      (*file_error)(progs_t *pr, const char *path);
-	void     *(*load_file)(progs_t *pr, const char *path);
-	void     *(*allocate_progs_mem)(progs_t *pr, int size);
-	void      (*free_progs_mem)(progs_t *pr, void *mem);
+	void      (*file_error) (progs_t *pr, const char *path);
+	void     *(*load_file) (progs_t *pr, const char *path);
+	void     *(*allocate_progs_mem) (progs_t *pr, int size);
+	void      (*free_progs_mem) (progs_t *pr, void *mem);
+
+	int       (*resolve) (progs_t *pr);
 
 	pr_resource_t *resources;
 	struct hashtab_s *resource_hash;
