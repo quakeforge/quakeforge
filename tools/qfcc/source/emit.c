@@ -166,74 +166,52 @@ emit_function_call (expr_t *e, def_t *dest)
 }
 
 def_t *
-emit_assign_expr (const char *operator, expr_t *e)
+emit_assign_expr (int oper, expr_t *e)
 {
 	def_t      *def_a, *def_b, *def_c;
 	opcode_t   *op;
 	expr_t     *e1 = e->e.expr.e1;
 	expr_t     *e2 = e->e.expr.e2;
+	const char *operator = get_op_string (oper);
 
 	if (e1->type == ex_temp && e1->e.temp.users < 2) {
 		e1->e.temp.users--;
 		return 0;
 	}
-	if (e1->type == ex_expr && e1->e.expr.op == '.'
-		&& extract_type (e1->e.expr.e1) == ev_pointer) {
-		def_a = emit_sub_expr (e2, 0);
-		def_c = emit_sub_expr (e1->e.expr.e2, 0);
-		def_b = emit_sub_expr (e1->e.expr.e1, 0);
-		op = PR_Opcode_Find (operator, def_a, def_b, def_c);
-		emit_statement (e->line, op, def_a, def_b, def_c);
-	} else {
+	if (oper == '=') {
 		def_a = emit_sub_expr (e1, 0);
-		if (def_a->type->type == ev_pointer
-			&& e2->type != ex_uexpr
-			&& e2->e.expr.op != '&') {
-			def_b = emit_sub_expr (e2, 0);
-			if (def_b->type->type == ev_pointer) {
-				expr_t     *zero = new_expr ();
-				def_t      *z;
+		if (def_a->constant) {
+			if (options.code.cow) {
+				int         size = pr_type_size[def_a->type->type];
+				int         ofs = PR_NewLocation (def_a->type);
 
-				zero->type = ex_short;
-				z = emit_sub_expr (zero, 0);
-				op = PR_Opcode_Find (operator, def_b, def_a, z);
-				emit_statement (e->line, op, def_b, def_a, z);
+				memcpy (pr_globals + ofs, pr_globals + def_a->ofs, size);
+				def_a->ofs = ofs;
+				def_a->constant = 0;
+				if (options.warnings.cow)
+					warning (e1, "assignment to constant %s (Moooooooo!)",
+							 def_a->name);
 			} else {
-				op = PR_Opcode_Find (operator, def_b, def_a, &def_void);
-				emit_statement (e->line, op, def_b, def_a, 0);
-			}
-		} else {
-			if (def_a->constant) {
-				if (options.code.cow) {
-					int         size = pr_type_size[def_a->type->type];
-					int         ofs = PR_NewLocation (def_a->type);
-
-					memcpy (pr_globals + ofs, pr_globals + def_a->ofs, size);
-					def_a->ofs = ofs;
-					def_a->constant = 0;
-					if (options.warnings.cow)
-						warning (e1, "assignment to constant %s (Moooooooo!)",
-								 def_a->name);
-				} else {
-					error (e1, "assignment to constant %s", def_a->name);
-				}
-			}
-			if (e2->type == ex_expr && e2->e.expr.type->type == ev_pointer
-				&& e2->e.expr.op == '&') {
-				//def_b = emit_sub_expr (e2->e.expr.e1, 0);
-				//e2 = e2->e.expr.e2;
-				//operator = ".";
-				//def_b = emit_sub_expr (e2, def_b);
-				e2->e.expr.op = '.';
-				def_b = emit_sub_expr (e2, def_a);
-			} else {
-				def_b = emit_sub_expr (e2, def_a);
-			}
-			if (def_b != def_a) {
-				op = PR_Opcode_Find (operator, def_b, def_a, &def_void);
-				emit_statement (e->line, op, def_b, def_a, 0);
+				error (e1, "assignment to constant %s", def_a->name);
 			}
 		}
+		def_b = emit_sub_expr (e2, def_a);
+		if (def_b != def_a) {
+			op = PR_Opcode_Find (operator, def_b, def_a, &def_void);
+			emit_statement (e->line, op, def_b, def_a, 0);
+		}
+	} else {
+		def_b = emit_sub_expr (e2, 0);
+		if (e1->type == ex_expr && extract_type (e1->e.expr.e1) == ev_pointer) {
+			def_a = emit_sub_expr (e1->e.expr.e1, 0);
+			def_c = emit_sub_expr (e1->e.expr.e2, 0);
+			op = PR_Opcode_Find (operator, def_b, def_a, def_c);
+		} else {
+			def_a = emit_sub_expr (e1, 0);
+			def_c = 0;
+			op = PR_Opcode_Find (operator, def_b, def_a, &def_void);
+		}
+		emit_statement (e->line, op, def_b, def_a, def_c);
 	}
 	if (def_a->type->type != ev_pointer)
 		return def_a;
@@ -289,8 +267,8 @@ emit_sub_expr (expr_t *e, def_t *dest)
 				d = emit_function_call (e, dest);
 				break;
 			}
-			if (e->e.expr.op == '=') {
-				d = emit_assign_expr ("=", e);
+			if (e->e.expr.op == '=' || e->e.expr.op == PAS) {
+				d = emit_assign_expr (e->e.expr.op, e);
 				break;
 			}
 			if (e->e.expr.e1->type == ex_block
@@ -358,6 +336,9 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					dest = PR_GetTempDef (e->e.expr.type, pr_scope);
 					dest->users += 2;
 				}
+				if (e->e.expr.e1->type == ex_expr
+					&& e->e.expr.e1->e.expr.op == '&')
+					e->e.expr.e1->e.expr.op = '.';
 				d = emit_sub_expr (e->e.expr.e1, dest);
 				if (!d->name)
 					d->type = e->e.expr.type;
@@ -454,7 +435,7 @@ emit_expr (expr_t *e)
 			switch (e->e.expr.op) {
 				case PAS:
 				case '=':
-					emit_assign_expr (get_op_string (e->e.expr.op), e);
+					emit_assign_expr (e->e.expr.op, e);
 					break;
 				case 'n':
 					emit_branch (e->line, op_ifnot, e->e.expr.e1, e->e.expr.e2);

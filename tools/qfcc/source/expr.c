@@ -1331,15 +1331,15 @@ unary_expr (int op, expr_t *e)
 		case '.':
 			if (extract_type (e) != ev_pointer)
 				return error (e, "invalid type for unary .");
-			if (e->type == ex_expr && e->e.expr.op == '&'
-				&& (extract_type (e->e.expr.e1) == ev_entity
-					|| extract_type (e->e.expr.e1) == ev_pointer)) {
-				e->e.expr.op = '.';
-				e->e.expr.type = e->e.expr.type->aux_type;
-			} else {
+			//if (e->type == ex_expr && e->e.expr.op == '&'
+			//	&& (extract_type (e->e.expr.e1) == ev_entity
+			//		|| extract_type (e->e.expr.e1) == ev_pointer)) {
+			//	e->e.expr.op = '.';
+			//	e->e.expr.type = e->e.expr.type->aux_type;
+			//} else {
 				e = new_unary_expr ('.', e);
 				e->e.expr.type = get_type (e->e.expr.e1)->aux_type;
-			}
+			//}
 			return e;
 	}
 	error (e, "internal error");
@@ -1606,7 +1606,6 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 	if (!t)
 		t = get_type (e1);
 
-//	print_expr (e1);puts("");
 	switch (e1->type) {
 		case ex_def:
 			type = e1->e.def->type;
@@ -1629,9 +1628,6 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				e = e1;
 				e->e.expr.op = '&';
 				e->e.expr.type = pointer_type (e->e.expr.type);
-				print_expr (e);puts("");
-				printf ("%s %s\n", pr_type_name[e->e.expr.type->type],
-						pr_type_name[e->e.expr.type->aux_type->type]);
 				break;
 			}
 			return error (e1, "invalid type for unary &");
@@ -1653,18 +1649,13 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 		if (e->type == ex_pointer && e2->type == ex_short) {
 			e->e.pointer.val += e2->e.short_val;
 		} else {
-//			print_expr (e); puts("");
-//			print_expr (e2); puts("");
 			if (e2->type != ex_short || e2->e.short_val) {
-//				print_expr (e2);puts("");
 				e = new_binary_expr ('&', e, e2);
 			}
 			if (e->type == ex_expr || e->type == ex_uexpr)
 				e->e.expr.type = pointer_type (t);
 		}
 	}
-//	print_expr (e);puts("");
-//	puts("");
 	return e;
 }
 
@@ -1718,9 +1709,6 @@ assign_expr (expr_t *e1, expr_t *e2)
 		return type_mismatch (e1, e2, op);
 	else
 		type = t1;
-//print_expr (e1); printf(" %d\n", e1->line);
-//print_expr (e2); printf("\n");
-//printf ("%s  %s\n", pr_type_name[t1->type], pr_type_name[t2->type]);
 	if (is_indirect (e1) && is_indirect (e2)) {
 		expr_t     *temp = new_temp_def_expr (t1);
 
@@ -1750,7 +1738,9 @@ assign_expr (expr_t *e1, expr_t *e2)
 			if (e->type != ex_pointer
 				|| !(e->e.pointer.val > 0 && e->e.pointer.val < 65536)) {
 				e2 = e;
-				op = PAS;
+				if (e2->type == ex_expr && e2->e.expr.op == '&'
+					&& e2->e.expr.type->type == ev_pointer)
+					e2->e.expr.op = '.';
 			}
 		}
 	}

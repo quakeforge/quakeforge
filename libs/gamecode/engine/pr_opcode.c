@@ -142,6 +142,7 @@ opcode_t    pr_opcodes[] = {
 	{".=", "storep.fld", OP_STOREP_FLD, true, ev_field, ev_pointer, ev_void, PROG_ID_VERSION},
 	{".=", "storep.fnc", OP_STOREP_FNC, true, ev_func, ev_pointer, ev_void, PROG_ID_VERSION},
 	{".=", "storep.i",   OP_STOREP_I,   true, ev_integer, ev_pointer, ev_void, PROG_VERSION},
+	{".=", "storep.p",   OP_STOREP_P,   true, ev_pointer, ev_pointer, ev_void, PROG_VERSION},
 
 	{".=", "storeb.f",   OP_STOREB_F,   true, ev_float, ev_pointer, ev_integer, PROG_VERSION},
 	{".=", "storeb.v",   OP_STOREB_V,   true, ev_vector, ev_pointer, ev_integer, PROG_VERSION},

@@ -464,6 +464,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_STOREP_S:
 			case OP_STOREP_FNC:		// pointers
 			case OP_STOREP_I:
+			case OP_STOREP_P:
 				//FIXME put bounds checking back
 				ptr = pr->pr_globals + OPB.integer_var;
 				ptr->integer_var = OPA.integer_var;
