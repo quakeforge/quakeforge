@@ -554,6 +554,7 @@ void
 SND_ClearBuffer (void)
 {
 	int			clear;
+	int         i;
 
 
 //#ifdef _WIN32
@@ -576,9 +577,8 @@ SND_ClearBuffer (void)
 	else
 #endif
 #endif
-	{
-		memset (shm->buffer, clear, shm->samples * shm->samplebits / 8);
-	}
+	for (i = 0; i < shm->samples * shm->samplebits / 8; i++)
+		shm->buffer[i] = 0;
 }
 
 void
