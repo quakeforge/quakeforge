@@ -1452,8 +1452,10 @@ Host_Frame (float time)
 
 	// decide the simulation time
 	if ((sleeptime = Host_SimulationTime (time)) != 0) {
+#ifdef HAVE_USLEEP
 		if (sleeptime > 0.01) // minimum sleep time
 			usleep((unsigned long)((sleeptime - 0.001) * 1000000));
+#endif
 		return;					// framerate is too high
 	}
 

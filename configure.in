@@ -158,6 +158,8 @@ else
 	AC_C_BIGENDIAN
 fi
 
+AC_CHECK_FUNCS(usleep)
+
 AC_MSG_CHECKING(for fnmatch)
 AC_TRY_LINK(
 	[],
