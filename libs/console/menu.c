@@ -569,6 +569,8 @@ Menu_Draw (view_t *view)
 void
 Menu_Draw_Hud (view_t *view)
 {
+	*menu_pr_state.globals.time = *menu_pr_state.time;
+
 	PR_ExecuteProgram (&menu_pr_state, menu_draw_hud);
 }
 

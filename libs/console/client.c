@@ -743,13 +743,13 @@ C_NewMap (void)
 }
 
 static void
-C_GIB_HUD_Show_f (void)
+C_GIB_HUD_Enable_f (void)
 {
 	hud_view->visible = 1;
 }
 
 static void
-C_GIB_HUD_Hide_f (void)
+C_GIB_HUD_Disable_f (void)
 {
 	hud_view->visible = 0;
 }
@@ -859,8 +859,8 @@ C_Init (void)
 					
 	// register GIB builtins
 	GIB_Builtin_Add ("print::center", C_GIB_Print_Center_f);
-	GIB_Builtin_Add ("HUD::show", C_GIB_HUD_Show_f);
-	GIB_Builtin_Add ("HUD::hide", C_GIB_HUD_Hide_f);
+	GIB_Builtin_Add ("HUD::enable", C_GIB_HUD_Enable_f);
+	GIB_Builtin_Add ("HUD::disable", C_GIB_HUD_Disable_f);
 
 	con_initialized = true;
 }
