@@ -478,11 +478,9 @@ SL_MasterUpdate(void)
 	
 	SL_Del_All(slist);
 	slist = NULL;
-	NET_StringToAdr ("qwmaster.ocrana.de:27000", &addy);
+	NET_StringToAdr ("194.251.249.32:27000", &addy);
 	NET_SendPacket (3, data, addy);
 	NET_StringToAdr ("qwmaster.barrysworld.com:27000", &addy);
-	NET_SendPacket (3, data, addy);
-	NET_StringToAdr ("203.55.240.100:27000", &addy);
 	NET_SendPacket (3, data, addy);
 	NET_StringToAdr ("192.246.40.37:27000", &addy);
 	NET_SendPacket (3, data, addy);
@@ -494,7 +492,6 @@ SL_MasterUpdate(void)
 	NET_SendPacket (3, data, addy);
 	NET_StringToAdr ("192.246.40.37:27006", &addy);
 	NET_SendPacket (3, data, addy);
-	NET_StringToAdr ("203.9.148.7:27000", &addy);
 }
 
 void
