@@ -976,8 +976,10 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 void
 CL_UpdateUserinfo (void)
 {
-	int            slot;
+	int         slot;
 	player_info_t *player;
+	int         uid;
+	const char *info;
 
 	slot = MSG_ReadByte (net_message);
 	if (slot >= MAX_CLIENTS)
@@ -985,13 +987,19 @@ CL_UpdateUserinfo (void)
 			("CL_ParseServerMessage: svc_updateuserinfo > MAX_SCOREBOARD");
 
 	player = &cl.players[slot];
-	player->userid = MSG_ReadLong (net_message);
 	if (player->userinfo)
 		Info_Destroy (player->userinfo);
-	player->userinfo = Info_ParseString (MSG_ReadString (net_message),
-										 MAX_INFO_STRING);
-
-	CL_ProcessUserInfo (slot, player);
+	uid = MSG_ReadLong (net_message);
+	info = MSG_ReadString (net_message);
+	if (*info) {
+		// a totally empty userinfo string should not be possible
+		player->userid = uid;
+		player->userinfo = Info_ParseString (info, MAX_INFO_STRING);
+		CL_ProcessUserInfo (slot, player);
+	} else {
+		// the server dropped the client
+		memset (player, 0, sizeof (*player));
+	}
 }
 
 void
