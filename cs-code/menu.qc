@@ -1,7 +1,7 @@
 #include "QF/keys.h"
 
 void (integer x, integer y, string text) Menu_Begin = #0;
-void (void () func) Menu_Draw = #0;
+void (integer () func) Menu_Draw = #0;
 void (integer x, integer y, string name) Menu_Pic = #0;
 void (integer x, integer y, string name) Menu_CenterPic = #0;
 void (integer x, integer y, string text, void (string text, integer key) func) Menu_Item = #0;
@@ -178,7 +178,7 @@ void (string text, integer key) save_f =
 	Menu_SelectMenu ("save");
 };
 
-void () load_draw =
+integer () load_draw =
 {
 	local integer i;
 
@@ -186,9 +186,10 @@ void () load_draw =
 	for (i=0 ; i< MAX_SAVEGAMES; i++)
 		Draw_String (16, 32 + 8 * i, filenames[i]);
 	Draw_Character (8, 32 + load_cursor * 8, 12 + (integer (time * 4) & 1));
+	return 1;
 };
 
-void () save_draw =
+integer () save_draw =
 {
 	local integer i;
 
@@ -196,6 +197,7 @@ void () save_draw =
 	for (i=0 ; i< MAX_SAVEGAMES; i++)
 		Draw_String (16, 32 + 8 * i, filenames[i]);
 	Draw_Character (8, 32 + save_cursor * 8, 12 + (integer (time * 4) & 1));
+	return 1;
 };
 
 integer (integer key, integer unicode, integer down) load_keyevent =
@@ -288,13 +290,14 @@ integer (integer key, integer unicode, integer down) quit_keyevent =
 	return 0;
 };
 
-void () quit_draw =
+integer () quit_draw =
 {
 	text_box (56, 76, 24, 4);
 	Draw_String (64, 84, quitMessage[quit_index *4 + 0]);
 	Draw_String (64, 92, quitMessage[quit_index *4 + 1]);
 	Draw_String (64, 100, quitMessage[quit_index *4 + 2]);
 	Draw_String (64, 108, quitMessage[quit_index *4 + 3]);
+	return 1;
 };
 
 void () quit_menu =
@@ -331,14 +334,40 @@ void () single_player_menu =
 
 // ********* MULTIPLAYER
 
+integer () join_draw =
+{
+	local integer f = (320 - 26 * 8) / 2;
+	text_box (f, 134, 24, 4);
+	Draw_String (f, 142, " Commonly used to play  ");
+	Draw_String (f, 150, " over the Internet, but ");
+	Draw_String (f, 158, " also used on a Local   ");
+	Draw_String (f, 166, " Area Network.          ");
+	return 0;
+};
+
+void () join_menu =
+{
+	Menu_Begin (54, 32, "");
+	Menu_Pic (16, 4, "gfx/qplaque.lmp");
+	Menu_CenterPic (160, 4, "gfx/p_multi.lmp");
+	Menu_Pic (72, 32, "gfx/dim_modm.lmp");
+	Menu_Pic (72, 51, "gfx/dim_drct.lmp");
+	Menu_Pic (72, 70, "gfx/dim_ipx.lmp");
+	Menu_Pic (72, 89, "gfx/netmen4.lmp");
+	Menu_Draw (join_draw);
+	Menu_Cursor (spinner);
+	Menu_End ();
+};
+
 void () multi_player_menu =
 {
 	Menu_Begin (54, 52, "");
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/p_multi.lmp");
 	Menu_Pic (72, 32, "gfx/mp_menu.lmp");
-	Menu_Item (54, 32, "", quit_f);
-	Menu_Item (54, 52, "", quit_f);
+	join_menu ();
+	if (do_single_player)
+		Menu_Item (54, 52, "", quit_f);
 	Menu_Item (54, 72, "", quit_f);
 	Menu_Cursor (spinner);
 	Menu_End ();
