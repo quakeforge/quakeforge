@@ -37,7 +37,14 @@ static const char rcsid[] =
 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <fnmatch.h>
+#include <errno.h>
 
+#include "QF/quakeio.h"
+#include "QF/quakefs.h"
+#include "QF/zone.h"
 #include "QF/va.h"
 #include "QF/sys.h"
 #include "QF/cmd.h"
@@ -421,7 +428,154 @@ GIB_Thread_Kill_f (void)
 		}
 	}
 }
-			
+
+/* File access */
+
+int
+GIB_CollapsePath (char *str)
+{
+	char       *d, *p, *path;
+
+	p = path = str;
+	while (*p) {
+		if (p[0] == '.') {
+			if (p[1] == '.') {
+				if (p[2] == '/' || p[2] == 0) {
+					d = p;
+					if (d > path)
+						d--;
+					while (d > path && d[-1] != '/')
+						d--;
+					if (d == path
+						&& d[0] == '.' && d[1] == '.'
+						&& (d[2] == '/' || d[2] == '0')) {
+						p += 2 + (p[2] == '/');
+						continue;
+					}
+					strcpy (d, p + 2 + (p[2] == '/'));
+					p = d + (d != path);
+				}
+			} else if (p[1] == '/') {
+				strcpy (p, p + 2);
+				continue;
+			} else if (p[1] == 0) {
+				p[0] = 0;
+			}
+		}
+		while (*p && *p != '/')
+			p++;
+		if (*p == '/')
+			p++;
+	}
+	if ((!path[0])
+		|| (path[0] == '.' && path[1] == '.'
+			&& (path[2] == '/' || path[2] == 0))
+		|| (path[strlen (path) - 1] == '/')
+		|| path[0] == '~') {
+		return 0;
+	}
+	return 1;
+}
+
+void
+GIB_File_Read_f (void)
+{
+	char       *path, *contents;
+	int         mark;
+
+	if (GIB_Argc () != 2) {
+		Cbuf_Error ("syntax",
+		  "file.read: invalid syntax\n"
+		  "usage: file.read path_and_filename");
+		return;
+	}
+	path = cbuf_active->args->argv[1]->str;
+	if (!GIB_CollapsePath (path)) {
+		Cbuf_Error ("access"
+		  "file.read: access to %s denied", path);
+		return;
+	}
+	mark = Hunk_LowMark ();
+	contents = (char *) COM_LoadHunkFile (path);
+	if (!contents) {
+		Cbuf_Error ("file",
+		  "file.read: could not open %s for reading: %s", path, strerror (errno));
+		return;
+	}
+	GIB_Return (contents);
+	Hunk_FreeToLowMark (mark);
+}
+
+void
+GIB_File_Write_f (void)
+{
+	QFile      *file;
+	char       *path;
+	
+	if (GIB_Argc () != 3) {
+		Cbuf_Error ("syntax",
+		  "file.write: invalid syntax\n"
+		  "usage: file.write path_and_filename data");
+		return;
+	}
+	path = cbuf_active->args->argv[1]->str;
+	if (!GIB_CollapsePath (path)) {
+		Cbuf_Error ("access"
+		  "file.write: access to %s denied", path);
+		return;
+	}
+	if (!(file = Qopen (va ("%s/%s", com_gamedir, path), "w"))) {
+		Cbuf_Error ("file",
+		  "file.write: could not open %s for writing: %s", path, strerror (errno));
+		return;
+	}
+	Qprintf (file, "%s", GIB_Argv (2));
+	Qclose (file);
+}
+
+void
+GIB_File_Find_f (void)
+{
+	DIR        *directory;
+	struct dirent *entry;
+	char       *path;
+	dstring_t  *list;
+
+	if (GIB_Argc () < 2 || GIB_Argc () > 3) {
+		Cbuf_Error ("syntax",
+		  "file.find: invalid syntax\n"
+		  "usage: file.find glob [path]");
+		return;
+	}
+
+	if (GIB_Argc () == 3) {
+		path = cbuf_active->args->argv[2]->str;
+		if (!GIB_CollapsePath (path)) {
+			Cbuf_Error ("access"
+			  "file.find: access to %s denied", path);
+			return;
+		}
+	}
+	directory = opendir (va ("%s/%s", com_gamedir, GIB_Argv (2)));
+	if (!directory) {
+		Cbuf_Error ("file",
+		  "file.find: could not open directory %s: %s", GIB_Argv (2), strerror (errno));
+		return;
+	}
+	list = dstring_newstr ();
+	while ((entry = readdir (directory))) {
+		if (!fnmatch (GIB_Argv (1), entry->d_name, 0)) {
+			dstring_appendstr (list, "\n");
+			dstring_appendstr (list, entry->d_name);
+		}
+	}
+	if (list->str[0])
+		GIB_Return (list->str + 1);
+	else
+		GIB_Return ("");
+	dstring_delete (list);
+}
+		
 void
 GIB_Builtin_Init (void)
 {
@@ -441,4 +595,7 @@ GIB_Builtin_Init (void)
 	GIB_Builtin_Add ("string.equal", GIB_String_Equal_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("thread.create", GIB_Thread_Create_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("thread.kill", GIB_Thread_Kill_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("file.read", GIB_File_Read_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("file.write", GIB_File_Write_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("file.find", GIB_File_Find_f, GIB_BUILTIN_NORMAL);
 }
