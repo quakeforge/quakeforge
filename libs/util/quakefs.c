@@ -146,7 +146,7 @@ static const char *qfs_default_dirconf =
 	"	QuakeWorld = {"
 	"		Inherit = (Quake);"
 	"		Path = \"qw\";"
-	"		SkinPath = \"qw/skins\";"
+	"		SkinPath = \"${path}/skins\";"
 	"		GameCode = \"qwprogs.dat\";"
 	"	};"
 	"	\"qw:*\" = {"
@@ -174,13 +174,13 @@ qfs_var_free (void *_v, void *unused)
 	free (v);
 }
 
-static __attribute__ ((unused)) hashtab_t *
+static hashtab_t *
 qfs_new_vars (void)
 {
 	return Hash_NewTable (61, qfs_var_get_key, qfs_var_free, 0);
 }
 
-static __attribute__ ((unused)) void
+static void
 qfs_set_var (hashtab_t *vars, const char *var, const char *val)
 {
 	qfs_var_t  *v = Hash_Find (vars, var);
@@ -196,7 +196,14 @@ qfs_set_var (hashtab_t *vars, const char *var, const char *val)
 	v->val = strdup (val);
 }
 
-static __attribute__ ((unused)) char *
+static inline int
+qfs_isident (byte c)
+{
+	return ((c >= 'a' && c <='z') || (c >= 'A' && c <='Z')
+			|| (c >= '0' && c <= '9') || c == '_');
+}
+
+static char *
 qfs_var_subst (const char *string, hashtab_t *vars)
 {
 	dstring_t  *new = dstring_newstr ();
@@ -223,18 +230,18 @@ qfs_var_subst (const char *string, hashtab_t *vars)
 				dstring_appendsubstr (new, s, (e - s));
 				break;
 			}
-			var = va ("%*s", (e - s) - 1, s + 1);
+			var = va ("%.*s", (e - s) - 1, s + 1);
 			sub = Hash_Find (vars, var);
 			if (sub)
 				dstring_appendstr (new, sub->val);
 			else
 				dstring_appendsubstr (new, s - 1, (e - s) + 2);
 			s = ++e;
-		} else if (isalnum ((byte) *e) || *e == '_') {
+		} else if (qfs_isident (*e)) {
 			s = e;
-			while (isalnum ((byte) *e) || *e == '_')
+			while (qfs_isident (*e))
 				e++;
-			var = va ("%*s", e - s, s);
+			var = va ("%.*s", e - s, s);
 			sub = Hash_Find (vars, var);
 			if (sub)
 				dstring_appendstr (new, sub->val);
@@ -252,24 +259,32 @@ qfs_var_subst (const char *string, hashtab_t *vars)
 }
 
 static void
-qfs_get_gd_params (plitem_t *gdpl, gamedir_t *gamedir, dstring_t *path)
+qfs_get_gd_params (plitem_t *gdpl, gamedir_t *gamedir, dstring_t *path,
+				   hashtab_t *vars)
 {
 	plitem_t   *p;
 
-	if ((p = PL_ObjectForKey (gdpl, "Path"))) {
+	if ((p = PL_ObjectForKey (gdpl, "Path")) && *(char *) p->data) {
+		char       *str = qfs_var_subst (p->data, vars);
+		char       *e = strchr (str, '"');
+
+		if (!e)
+			e = str + strlen (str);
+		qfs_set_var (vars, "path", va ("%.*s", e - str, str));
 		if (path->str[0])
 			dstring_appendstr (path, ":");
-		dstring_appendstr (path, p->data);
+		dstring_appendstr (path, str);
+		free (str);
 	}
 	if (!gamedir->gamecode && (p = PL_ObjectForKey (gdpl, "GameCode")))
-		gamedir->gamecode = strdup (p->data);
+		gamedir->gamecode = qfs_var_subst (p->data, vars);
 	if (!gamedir->skinpath && (p = PL_ObjectForKey (gdpl, "SkinPath")))
-		gamedir->skinpath = strdup (p->data);
+		gamedir->skinpath = qfs_var_subst (p->data, vars);
 }
 
 static void
 qfs_inherit (plitem_t *plist, plitem_t *gdpl, gamedir_t *gamedir,
-			 dstring_t *path, hashtab_t *dirs)
+			 dstring_t *path, hashtab_t *dirs, hashtab_t *vars)
 {
 	plitem_t   *base;
 
@@ -283,9 +298,10 @@ qfs_inherit (plitem_t *plist, plitem_t *gdpl, gamedir_t *gamedir,
 			Sys_Printf ("base `%s' not found\n", (char *)base->data);
 			return;
 		}
+		qfs_set_var (vars, "gamedir", base->data);
 		Hash_Add (dirs, base->data);
-		qfs_get_gd_params (gdpl, gamedir, path);
-		qfs_inherit (plist, gdpl, gamedir, path, dirs);
+		qfs_get_gd_params (gdpl, gamedir, path, vars);
+		qfs_inherit (plist, gdpl, gamedir, path, dirs, vars);
 	} else if (base->type == QFArray) {
 		int         i;
 		plarray_t  *a = base->data;
@@ -298,9 +314,10 @@ qfs_inherit (plitem_t *plist, plitem_t *gdpl, gamedir_t *gamedir,
 				Sys_Printf ("base `%s' not found\n", (char *)base->data);
 				continue;
 			}
+			qfs_set_var (vars, "gamedir", base->data);
 			Hash_Add (dirs, base->data);
-			qfs_get_gd_params (gdpl, gamedir, path);
-			qfs_inherit (plist, gdpl, gamedir, path, dirs);
+			qfs_get_gd_params (gdpl, gamedir, path, vars);
+			qfs_inherit (plist, gdpl, gamedir, path, dirs, vars);
 		}
 	}
 }
@@ -340,31 +357,93 @@ qfs_find_gamedir (const char *name, hashtab_t *dirs)
 	return gdpl;
 }
 
-static gamedir_t *
-qfs_get_gamedir (const char *name)
+static void
+qfs_process_path (const char *path, const char *gamedir)
 {
+	const char *e = path + strlen (path);
+	const char *s = e;
+	dstring_t  *dir = dstring_new ();
+
+	while (s >= path) {
+		while (s != path && s[-1] !=':')
+			s--;
+		if (s != e) {
+			dsprintf (dir, "%.*s", e - s, s);
+			COM_AddGameDirectory (dir->str);
+		}
+		e = --s;
+	}
+	dstring_delete (dir);
+}
+
+static void
+qfs_build_gamedir (const char **list)
+{
+	int         j;
 	gamedir_t  *gamedir;
 	plitem_t   *gdpl;
 	dstring_t  *path;
 	hashtab_t  *dirs = Hash_NewTable (31, qfs_dir_get_key, 0, 0);
+	hashtab_t  *vars = qfs_new_vars ();
+	const char *dir = 0;
 
-	gdpl = qfs_find_gamedir (name, dirs);
-	if (!gdpl) {
-		Sys_Printf ("gamedir `%s' not found\n", name);
-		Hash_DelTable (dirs);
-		return 0;
+	qfs_set_var (vars, "game", qfs_game);
+
+	if (qfs_gamedir) {
+		if (qfs_gamedir->name)
+			free ((char *)qfs_gamedir->name);
+		if (qfs_gamedir->path)
+			free ((char *)qfs_gamedir->path);
+		if (qfs_gamedir->gamecode)
+			free ((char *)qfs_gamedir->gamecode);
+		if (qfs_gamedir->skinpath)
+			free ((char *)qfs_gamedir->skinpath);
+		free (qfs_gamedir);
 	}
-	Hash_Add (dirs, (void *)name);
 
+	while (com_searchpaths) {
+		searchpath_t *next;
+
+		if (com_searchpaths->pack) {
+			Qclose (com_searchpaths->pack->handle);
+			free (com_searchpaths->pack->files);
+			free (com_searchpaths->pack);
+		}
+		next = com_searchpaths->next;
+		free (com_searchpaths);
+		com_searchpaths = next;
+	}
+
+	for (j = 0; list[j]; j++)
+		;
 	gamedir = calloc (1, sizeof (gamedir_t));
-	gamedir->name = strdup (name);
 	path = dstring_newstr ();
-	qfs_get_gd_params (gdpl, gamedir, path);
-	qfs_inherit (qfs_gd_plist, gdpl, gamedir, path, dirs);
+	while (j--) {
+		const char *name = va ("%s:%s", qfs_game, dir = list[j]);
+		if (Hash_Find (dirs, name))
+			continue;
+		gdpl = qfs_find_gamedir (name, dirs);
+		if (!gdpl) {
+			Sys_Printf ("gamedir `%s' not found\n", name);
+			continue;
+		}
+		Hash_Add (dirs, (void *) name);
+		if (!j)
+			gamedir->name = strdup (name);
+		qfs_set_var (vars, "gamedir", dir);
+		qfs_get_gd_params (gdpl, gamedir, path, vars);
+		qfs_inherit (qfs_gd_plist, gdpl, gamedir, path, dirs, vars);
+	}
 	gamedir->path = path->str;
+	qfs_gamedir = gamedir;
+	Sys_DPrintf ("%s\n", qfs_gamedir->name);
+	Sys_DPrintf ("    %s\n", qfs_gamedir->path);
+	Sys_DPrintf ("    %s\n", qfs_gamedir->gamecode);
+	Sys_DPrintf ("    %s\n", qfs_gamedir->skinpath);
+	qfs_process_path (qfs_gamedir->path, dir);
 	free (path);
 	Hash_DelTable (dirs);
-	return gamedir;
+	Hash_DelTable (vars);
 }
 
 static void
@@ -396,27 +475,6 @@ qfs_load_config (void)
 	Sys_Printf ("not a dictionary\n");
 no_config:
 	qfs_gd_plist = PL_GetPropertyList (qfs_default_dirconf);
-}
-
-static void
-qfs_process_path (const char *path, const char *gamedir)
-{
-	const char *e = path + strlen (path);
-	const char *s = e;
-	dstring_t  *dir = dstring_new ();
-
-	while (s >= path) {
-		while (s != path && s[-1] !=':')
-			s--;
-		if (s != e) {
-			dsprintf (dir, "%.*s", e - s, s);
-			if (strequal (dir->str, "$gamedir"))
-				dsprintf (dir, "%s", gamedir);
-			COM_AddGameDirectory (dir->str);
-		}
-		e = --s;
-	}
-	dstring_delete (dir);
 }
 
 void
@@ -1033,40 +1091,9 @@ COM_AddGameDirectory (const char *dir)
 void
 COM_Gamedir (const char *dir)
 {
-	if (qfs_gamedir) {
-		if (qfs_gamedir->name)
-			free ((char *)qfs_gamedir->name);
-		if (qfs_gamedir->path)
-			free ((char *)qfs_gamedir->path);
-		if (qfs_gamedir->gamecode)
-			free ((char *)qfs_gamedir->gamecode);
-		if (qfs_gamedir->skinpath)
-			free ((char *)qfs_gamedir->skinpath);
-		free (qfs_gamedir);
-	}
+	const char *list[2] = {dir, 0};
 
-	while (com_searchpaths) {
-		searchpath_t *next;
-
-		if (com_searchpaths->pack) {
-			Qclose (com_searchpaths->pack->handle);
-			free (com_searchpaths->pack->files);
-			free (com_searchpaths->pack);
-		}
-		next = com_searchpaths->next;
-		free (com_searchpaths);
-		com_searchpaths = next;
-	}
-
-	qfs_gamedir = qfs_get_gamedir (va ("%s:%s", qfs_game, dir));
-	if (qfs_gamedir) {
-		Sys_DPrintf ("%s\n", qfs_gamedir->name);
-		Sys_DPrintf ("    %s\n", qfs_gamedir->path);
-		Sys_DPrintf ("    %s\n", qfs_gamedir->gamecode);
-		Sys_DPrintf ("    %s\n", qfs_gamedir->skinpath);
-		qfs_process_path (qfs_gamedir->path, dir);
-	}
-
+	qfs_build_gamedir (list);
 	// flush all data, so it will be forced to reload
 	Cache_Flush ();
 }
@@ -1098,13 +1125,8 @@ QFS_Init (const char *game)
 
 	if ((i = COM_CheckParm ("-game")) && i < com_argc - 1) {
 		char       *gamedirs = NULL;
-		char      **list;
+		const char **list;
 		char       *where;
-		char       *dir = 0;
-		gamedir_t  *gamedir;
-		plitem_t   *gdpl;
-		dstring_t  *path;
-		hashtab_t  *dirs = Hash_NewTable (31, qfs_dir_get_key, 0, 0);
 		int         j, count = 1;
 
 		gamedirs = strdup (com_argv[i + 1]);
@@ -1121,32 +1143,7 @@ QFS_Init (const char *game)
 			list[j++] = where;
 			where = strtok (NULL, ",");
 		}
-		gamedir = calloc (1, sizeof (gamedir_t));
-		path = dstring_newstr ();
-		while (j--) {
-			const char *name = va ("%s:%s", qfs_game, dir = list[j]);
-			if (Hash_Find (dirs, name))
-				continue;
-			gdpl = qfs_find_gamedir (name, dirs);
-			if (!gdpl) {
-				Sys_Printf ("gamedir `%s' not found\n", name);
-				continue;
-			}
-			Hash_Add (dirs, (void *) name);
-			if (!j)
-				gamedir->name = strdup (name);
-			qfs_get_gd_params (gdpl, gamedir, path);
-			qfs_inherit (qfs_gd_plist, gdpl, gamedir, path, dirs);
-		}
-		gamedir->path = path->str;
-		qfs_gamedir = gamedir;
-		Sys_DPrintf ("%s\n", qfs_gamedir->name);
-		Sys_DPrintf ("    %s\n", qfs_gamedir->path);
-		Sys_DPrintf ("    %s\n", qfs_gamedir->gamecode);
-		Sys_DPrintf ("    %s\n", qfs_gamedir->skinpath);
-		qfs_process_path (qfs_gamedir->path, dir);
-		free (path);
-		Hash_DelTable (dirs);
+		qfs_build_gamedir (list);
 		free (gamedirs);
 		free (list);
 	} else {
