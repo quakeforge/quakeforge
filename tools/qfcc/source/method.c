@@ -59,9 +59,6 @@ static const char rcsid[] =
 #include "struct.h"
 #include "type.h"
 
-static def_t   *send_message_def;
-static def_t   *send_message_super_def;
-
 method_t *
 new_method (type_t *ret_type, param_t *selector, param_t *opt_parms)
 {
@@ -170,27 +167,15 @@ new_keywordarg (const char *selector, struct expr_s *expr)
 	return k;
 }
 
-static void
-make_message_def (const char *name, def_t **def)
-{
-	expr_t     *zero = new_expr ();
-
-	zero->type = ex_integer;
-	*def = get_def (&type_IMP, name, pr.scope, st_extern);
-}
-
 expr_t *
 send_message (int super)
 {
 	expr_t     *e;
 
-	if (!send_message_def) {
-		make_message_def ("obj_msgSend", &send_message_def);
-		make_message_def ("obj_msgSend_super", &send_message_super_def);
-	}
 	e = new_expr ();
 	e->type = ex_def;
-	e->e.def = super ? send_message_super_def : send_message_def;
+	e->e.def = get_def (&type_IMP, super ? "obj_msgSend_super" : "obj_msgSend",
+						pr.scope, st_extern);
 	return e;
 }
 
