@@ -100,9 +100,6 @@ lmode_t lowresmodes[] = {
 	{512, 384},
 };
 
-// If you ever merge screen/gl_screen, don't forget this one
-qboolean	scr_skipupdate;
-
 static int		nummodes;
 static vmode_t	modelist[MAX_MODE_LIST];
 static vmode_t	badmode;
@@ -356,7 +353,7 @@ VID_SetFullDIBMode (int modenum)
 int
 VID_SetMode (int modenum, unsigned char *palette)
 {
-	int			original_mode, temp;
+	int			original_mode;
 	qboolean	stat = 0;
 	MSG			msg;
 
