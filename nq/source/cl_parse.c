@@ -495,11 +495,11 @@ CL_ParseBaseline (entity_t *ent)
 	}
 	// LordHavoc: set up the baseline to account for new effects (alpha,
 	// colormod, etc)
-	ent->alpha = 1;
-	ent->scale = 1;
-	ent->glow_color = 254;
-	ent->glow_size = 0;
-	ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1;
+	ent->baseline->alpha = 255;
+	ent->baseline->scale = 16;
+	ent->baseline->glow_color = 254;
+	ent->baseline->glow_size = 0;
+	ent->baseline->colormod = 255;
 }
 
 
