@@ -770,14 +770,16 @@ main (int argc, char **argv)
 	DecodeArgs (argc, argv);
 
 	if (!options.bspfile) {
-		Sys_Error ("%s: no bsp file specified.", this_program);
 		usage (1);
+		Sys_Error ("%s: no bsp file specified.", this_program);
 	}
 
 	QFS_StripExtension (options.bspfile, options.bspfile);
 	QFS_DefaultExtension (options.bspfile, ".bsp");
 	
 	f = Qopen (options.bspfile, "rb");
+	if (!f)
+		Sys_Error ("couldn't open %s for reading.", options.bspfile);
 	bsp = LoadBSPFile (f, Qfilesize (f));
 	Qclose (f);
 
@@ -805,6 +807,8 @@ main (int argc, char **argv)
 	CalcAmbientSounds ();
 
 	f = Qopen (options.bspfile, "wb");
+	if (!f)
+		Sys_Error ("couldn't open %s for writing.", options.bspfile);
 	WriteBSPFile (bsp, f);
 	Qclose (f);
 
