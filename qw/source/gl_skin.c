@@ -234,7 +234,7 @@ Skin_Process (skin_t *skin, tex_t *tex)
 
 	if (Mod_CalcFullbright (tex->data, ptexels, pixels)) {
 		skin->fb_texture = player_fb_textures + (skin - skin_cache);
-		build_skin (skin->fb_texture, ptexels, tex->width, tex->height, 
+		build_skin (skin->fb_texture, ptexels, tex->width, tex->height,
 					296, 194, true);
 	}
 }
