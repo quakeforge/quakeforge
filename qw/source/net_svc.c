@@ -49,31 +49,37 @@ static const char rcsid[] =
 #include "compat.h"
 #include "net_svc.h"
 
-void
+qboolean
 NET_SVC_Print_Parse (net_svc_print_t *print, msg_t *message)
 {
 	print->level = MSG_ReadByte (message);
 	print->message = MSG_ReadString (message);
+
+	return message->badread;
 }
 
-void
+qboolean
 NET_SVC_UpdateUserInfo_Parse (net_svc_updateuserinfo_t *updateuserinfo,
 							  msg_t *message)
 {
 	updateuserinfo->slot = MSG_ReadByte (message);
 	updateuserinfo->userid = MSG_ReadLong (message);
 	updateuserinfo->userinfo = MSG_ReadString (message);
+
+	return message->badread;
 }
 
-void
+qboolean
 NET_SVC_SetInfo_Parse (net_svc_setinfo_t *setinfo, msg_t *message)
 {
 	setinfo->slot = MSG_ReadByte (message);
 	setinfo->key = MSG_ReadString (message);
 	setinfo->value = MSG_ReadString (message);
+
+	return message->badread;
 }
 
-void
+qboolean
 NET_SVC_Download_Parse (net_svc_download_t *download, msg_t *message)
 {
 	download->size = MSG_ReadShort (message);
@@ -93,9 +99,11 @@ NET_SVC_Download_Parse (net_svc_download_t *download, msg_t *message)
 			download->size = 0; // FIXME: CL_ParseDownload doesn't handle this
 		}
 	}
+
+	return message->badread;
 }
 
-void
+qboolean
 NET_SVC_Soundlist_Parse (net_svc_soundlist_t *soundlist, msg_t *message)
 {
 	int i;
@@ -111,9 +119,11 @@ NET_SVC_Soundlist_Parse (net_svc_soundlist_t *soundlist, msg_t *message)
 	soundlist->sounds[MAX_SOUNDS] = "";
 
 	soundlist->nextsound = MSG_ReadByte (message);
+
+	return message->badread;
 }
 
-void
+qboolean
 NET_SVC_Modellist_Parse (net_svc_modellist_t *modellist, msg_t *message)
 {
 	int i;
@@ -129,5 +139,7 @@ NET_SVC_Modellist_Parse (net_svc_modellist_t *modellist, msg_t *message)
 	modellist->models[MAX_MODELS] = "";
 
 	modellist->nextmodel = MSG_ReadByte (message);
+
+	return message->badread;
 }
 
