@@ -36,12 +36,13 @@
 # include <strings.h>
 #endif
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/model.h"
-#include "pmove.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
+
+#include "compat.h"
+#include "pmove.h"
 
 static hull_t box_hull;
 static dclipnode_t box_clipnodes[6];
@@ -49,6 +50,7 @@ static mplane_t box_planes[6];
 
 extern vec3_t player_mins;
 extern vec3_t player_maxs;
+
 
 /*
 	PM_InitBoxHull
@@ -59,8 +61,7 @@ extern vec3_t player_maxs;
 void
 PM_InitBoxHull (void)
 {
-	int         i;
-	int         side;
+	int         side, i;
 
 	box_hull.clipnodes = box_clipnodes;
 	box_hull.planes = box_planes;
@@ -84,7 +85,6 @@ PM_InitBoxHull (void)
 
 }
 
-
 /*
 	PM_HullForBox
 
@@ -104,15 +104,11 @@ PM_HullForBox (vec3_t mins, vec3_t maxs)
 	return &box_hull;
 }
 
-
-/*
-	PM_HullPointContents
-*/
 int
 PM_HullPointContents (hull_t *hull, int num, vec3_t p)
 {
-	float       d;
 	dclipnode_t *node;
+	float       d;
 	mplane_t   *plane;
 
 	while (num >= 0) {
@@ -132,17 +128,14 @@ PM_HullPointContents (hull_t *hull, int num, vec3_t p)
 	return num;
 }
 
-/*
-	PM_PointContents
-*/
 int
 PM_PointContents (vec3_t p)
 {
-	float       d;
 	dclipnode_t *node;
-	mplane_t   *plane;
+	float       d;
 	hull_t     *hull;
 	int         num;
+	mplane_t   *plane;
 
 	hull = &pmove.physents[0].model->hulls[0];
 
@@ -165,28 +158,20 @@ PM_PointContents (vec3_t p)
 	return num;
 }
 
-/*
-	LINE TESTING IN HULLS
-*/
+/* LINE TESTING IN HULLS */
 
 // 1/32 epsilon to keep floating point happy
 #define	DIST_EPSILON	(0.03125)
 
-/*
-	PM_RecursiveHullCheck
-*/
 qboolean
 PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 					   vec3_t p2, pmtrace_t *trace)
 {
 	dclipnode_t *node;
+	float       frac, midf, t1, t2;
+	int         side, i;
 	mplane_t   *plane;
-	float       t1, t2;
-	float       frac;
-	int         i;
 	vec3_t      mid;
-	int         side;
-	float       midf;
 
   loc0:
 	// check for empty
@@ -251,8 +236,8 @@ PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 	if (PM_HullPointContents (hull, node->children[side ^ 1],
 							  mid) != CONTENTS_SOLID) {
 		// go past the node
-		return PM_RecursiveHullCheck (hull, node->children[side ^ 1], midf, p2f,
-									  mid, p2, trace);
+		return PM_RecursiveHullCheck (hull, node->children[side ^ 1], midf,
+									  p2f, mid, p2, trace);
 	}
 
 	if (trace->allsolid)
@@ -293,7 +278,6 @@ PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 	return false;
 }
 
-
 /*
 	PM_TestPlayerPosition
 
@@ -302,10 +286,10 @@ PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 qboolean
 PM_TestPlayerPosition (vec3_t pos)
 {
+	hull_t     *hull;
 	int         i;
 	physent_t  *pe;
 	vec3_t      mins, maxs, test;
-	hull_t     *hull;
 
 	for (i = 0; i < pmove.numphysent; i++) {
 		pe = &pmove.physents[i];
@@ -327,21 +311,17 @@ PM_TestPlayerPosition (vec3_t pos)
 	return true;
 }
 
-/*
-	PM_PlayerMove
-*/
+/* PM_PlayerMove */
 pmtrace_t
 PM_PlayerMove (vec3_t start, vec3_t end)
 {
-	pmtrace_t   trace, total;
-	vec3_t      offset;
-	vec3_t      start_l, end_l;
 	hull_t     *hull;
 	int         i;
 	physent_t  *pe;
-	vec3_t      mins, maxs;
+	pmtrace_t   trace, total;
+	vec3_t      maxs, mins, offset, start_l, end_l;
 
-// fill in a default trace
+	// fill in a default trace
 	memset (&total, 0, sizeof (pmtrace_t));
 
 	total.fraction = 1;
@@ -374,7 +354,7 @@ PM_PlayerMove (vec3_t start, vec3_t end)
 
 		trace.fraction = 1;
 		trace.allsolid = true;
-//      trace.startsolid = true;
+//		trace.startsolid = true;
 		VectorCopy (end, trace.endpos);
 
 		// trace a line through the apropriate clipping hull

@@ -39,7 +39,6 @@
 #include <stdlib.h>
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/msg.h"
@@ -50,6 +49,7 @@
 #include "bothdefs.h"
 #include "cl_cam.h"
 #include "client.h"
+#include "compat.h"
 #include "sbar.h"
 
 int         sb_updates;				// if >= vid.numpages, no update needed
@@ -88,6 +88,7 @@ static qboolean largegame = false;
 
 cvar_t     *cl_showscoresuid;
 
+
 /*
 	Sbar_ShowTeamScores
 
@@ -103,7 +104,6 @@ Sbar_ShowTeamScores (void)
 	sb_updates = 0;
 }
 
-
 /*
 	Sbar_DontShowTeamScores
 
@@ -115,7 +115,6 @@ Sbar_DontShowTeamScores (void)
 	sb_showteamscores = false;
 	sb_updates = 0;
 }
-
 
 /*
 	Sbar_ShowScores
@@ -132,7 +131,6 @@ Sbar_ShowScores (void)
 	sb_updates = 0;
 }
 
-
 /*
 	Sbar_DontShowScores
 
@@ -145,13 +143,11 @@ Sbar_DontShowScores (void)
 	sb_updates = 0;
 }
 
-
 void
 Sbar_Changed (void)
 {
 	sb_updates = 0;						// update next frame
 }
-
 
 void
 Sbar_Init (void)
@@ -249,14 +245,12 @@ Sbar_Init (void)
 								 "show uid instead of ping on scores");
 }
 
-
 // drawing routines are reletive to the status bar location
 void
 Sbar_DrawPic (int x, int y, qpic_t *pic)
 {
 	Draw_Pic (x, y + (vid.height - SBAR_HEIGHT), pic);
 }
-
 
 /*
 	Sbar_DrawSubPic
@@ -271,14 +265,12 @@ Sbar_DrawSubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 				 height);
 }
 
-
 void
 Sbar_DrawTransPic (int x, int y, qpic_t *pic)
 {
 	Draw_Pic (x, y + (vid.height - SBAR_HEIGHT),
 			  pic);
 }
-
 
 /*
 	Sbar_DrawCharacter
@@ -291,20 +283,17 @@ Sbar_DrawCharacter (int x, int y, int num)
 	Draw_Character (x + 4, y + vid.height - SBAR_HEIGHT, num);
 }
 
-
 void
 Sbar_DrawString (int x, int y, char *str)
 {
 	Draw_String (x, y + vid.height - SBAR_HEIGHT, str);
 }
 
-
 int
 Sbar_itoa (int num, char *buf)
 {
 	char       *str;
-	int         pow10;
-	int         dig;
+	int         dig, pow10;
 
 	str = buf;
 
@@ -326,7 +315,6 @@ Sbar_itoa (int num, char *buf)
 
 	return str - buf;
 }
-
 
 void
 Sbar_DrawNum (int x, int y, int num, int digits, int color)
@@ -354,7 +342,6 @@ Sbar_DrawNum (int x, int y, int num, int digits, int color)
 	}
 }
 
-
 //ZOID: this should be MAX_CLIENTS, not MAX_SCOREBOARD!!
 //int       fragsort[MAX_SCOREBOARD];
 int         fragsort[MAX_CLIENTS];
@@ -365,10 +352,10 @@ typedef struct {
 	int         players;
 	int         plow, phigh, ptotal;
 } team_t;
+
 team_t      teams[MAX_CLIENTS];
 int         teamsort[MAX_CLIENTS];
 int         scoreboardteams;
-
 
 void
 Sbar_SortFrags (qboolean includespec)
@@ -396,14 +383,12 @@ Sbar_SortFrags (qboolean includespec)
 			}
 }
 
-
 void
 Sbar_SortTeams (void)
 {
-	int         i, j, k;
-	player_info_t *s;
-	int         teamplay;
 	char        t[16 + 1];
+	int         teamplay, i, j, k;
+	player_info_t *s;
 
 	// request new ping times every two second
 	scoreboardteams = 0;
@@ -463,13 +448,11 @@ Sbar_SortTeams (void)
 			}
 }
 
-
 int
 Sbar_ColorForMap (int m)
 {
 	return (bound (0, m, 13) * 16) + 8;
 }
-
 
 void
 Sbar_SoloScoreboard (void)
@@ -488,16 +471,13 @@ Sbar_SoloScoreboard (void)
 	Sbar_DrawString (184, 4, str);
 }
 
-
 void
 Sbar_DrawInventory (void)
 {
-	int         i;
 	char        num[6];
 	float       time;
-	int         flashon;
-	qboolean    headsup;
-	qboolean    hudswap;
+	int         flashon, i;
+	qboolean    headsup, hudswap;
 
 	headsup = !(cl_sbar->int_val || scr_viewsize->int_val < 100);
 	hudswap = cl_hudswap->int_val;
@@ -522,8 +502,8 @@ Sbar_DrawInventory (void)
 			if (headsup) {
 				if (i || vid.height > 200)
 					Sbar_DrawSubPic ((hudswap) ? 0 : (vid.width - 24),
-									 -68 - (7 - i) * 16, sb_weapons[flashon][i],
-									 0, 0, 24, 16);
+									 -68 - (7 - i) * 16,
+									 sb_weapons[flashon][i], 0, 0, 24, 16);
 
 			} else
 				Sbar_DrawPic (i * 24, -16, sb_weapons[flashon][i]);
@@ -536,7 +516,8 @@ Sbar_DrawInventory (void)
 
 	// ammo counts
 	for (i = 0; i < 4; i++) {
-		snprintf (num, sizeof (num), "%3i", min (cl.stats[STAT_SHELLS + i], 999));
+		snprintf (num, sizeof (num), "%3i", min (cl.stats[STAT_SHELLS + i],
+												 999));
 		if (headsup) {
 #define HUD_X(dist)		((hudswap) ? dist : (vid.width - (42 - dist)))
 #define HUD_Y(n)		(-24 - (4 - n) * 11)
@@ -586,7 +567,6 @@ Sbar_DrawInventory (void)
 				sb_updates = 0;
 		}
 }
-
 
 void
 Sbar_DrawFrags (void)
@@ -642,7 +622,6 @@ Sbar_DrawFrags (void)
 	}
 }
 
-
 void
 Sbar_DrawFace (void)
 {
@@ -678,7 +657,6 @@ Sbar_DrawFace (void)
 		anim = 0;
 	Sbar_DrawPic (112, 0, sb_faces[f][anim]);
 }
-
 
 void
 Sbar_DrawNormal (void)
@@ -720,12 +698,11 @@ Sbar_DrawNormal (void)
 	Sbar_DrawNum (248, 0, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
 }
 
-
 void
 Sbar_Draw (int swap)
 {
-	qboolean    headsup;
 	char        st[512];
+	qboolean    headsup;
 
 	headsup = !(cl_sbar->int_val || scr_viewsize->int_val < 100);
 	if ((sb_updates >= vid.numpages) && !headsup)
@@ -791,7 +768,6 @@ Sbar_Draw (int swap)
 		Sbar_MiniDeathmatchOverlay ();
 }
 
-
 void
 Sbar_IntermissionNumber (int x, int y, int num, int digits, int color)
 {
@@ -818,7 +794,6 @@ Sbar_IntermissionNumber (int x, int y, int num, int digits, int color)
 	}
 }
 
-
 /*
 	Sbar_TeamOverlay
 
@@ -828,14 +803,10 @@ Sbar_IntermissionNumber (int x, int y, int num, int digits, int color)
 void
 Sbar_TeamOverlay (void)
 {
+	char        num[12], team[5];
+	int         pavg, plow, phigh, teamplay, i, k, l, x, y;
 	qpic_t     *pic;
-	int         i, k, l;
-	int         x, y;
-	char        num[12];
-	int         teamplay;
-	char        team[5];
 	team_t     *tm;
-	int         plow, phigh, pavg;
 
 	// request new ping times every two second
 	teamplay = atoi (Info_ValueForKey (cl.serverinfo, "teamplay"));
@@ -913,7 +884,6 @@ Sbar_TeamOverlay (void)
 	Sbar_DeathmatchOverlay (y);
 }
 
-
 /*
 	Sbar_DeathmatchOverlay
 
@@ -922,18 +892,11 @@ Sbar_TeamOverlay (void)
 void
 Sbar_DeathmatchOverlay (int start)
 {
-	qpic_t     *pic;
-	int         i, k, l;
-	int         top, bottom;
-	int         x, y, f;
-	char        num[12];
-	player_info_t *s;
-	int         total;
-	int         minutes;
-	int         p;
-	int         teamplay;
-	char        team[5];
+	char        num[12], team[5];
+	int         minutes, teamplay, total, top, bottom, f, i, k, l, p, x, y;
 	int         skip = 10;
+	player_info_t *s;
+	qpic_t     *pic;
 
 	if (largegame)
 		skip = 8;
@@ -972,7 +935,7 @@ Sbar_DeathmatchOverlay (int start)
 		else
 			Draw_String (x, y, " uid pl time frags team name");
 		y += 8;
-//      Draw_String ( x , y, "---- -- ---- ----- ---- ----------------");
+//		Draw_String ( x , y, "---- -- ---- ----- ---- ----------------");
 		Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1e\x1f "
 					 "\x1d\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1f \x1d\x1e\x1e"
 					 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
@@ -1080,7 +1043,6 @@ Sbar_DeathmatchOverlay (int start)
 		largegame = true;
 }
 
-
 /*
 	Sbar_MiniDeathmatchOverlay
 
@@ -1091,15 +1053,9 @@ Sbar_DeathmatchOverlay (int start)
 void
 Sbar_MiniDeathmatchOverlay (void)
 {
-	int         i, k;
-	int         top, bottom;
-	int         x, y, f;
-	char        num[12];
+	int         numlines, teamplay, top, bottom, f, i, k, x, y;
+	char        name[16 + 1], num[12], team[5];
 	player_info_t *s;
-	int         teamplay;
-	char        team[5];
-	int         numlines;
-	char        name[16 + 1];
 	team_t     *tm;
 
 	if (vid.width < 512 || !sb_lines)
@@ -1222,7 +1178,6 @@ Sbar_MiniDeathmatchOverlay (void)
 
 }
 
-
 void
 Sbar_IntermissionOverlay (void)
 {
@@ -1234,7 +1189,6 @@ Sbar_IntermissionOverlay (void)
 	else
 		Sbar_DeathmatchOverlay (0);
 }
-
 
 void
 Sbar_FinaleOverlay (void)

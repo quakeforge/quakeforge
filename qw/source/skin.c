@@ -36,7 +36,6 @@
 # include <strings.h>
 #endif
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
@@ -47,6 +46,7 @@
 #include "QF/vfs.h"
 
 #include "client.h"
+#include "compat.h"
 
 #define MAX_TEMP_SKINS 64	//XXX dynamic?
 
