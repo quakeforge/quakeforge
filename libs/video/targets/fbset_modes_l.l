@@ -23,6 +23,8 @@
 #include "fbset.h"
 #include "fbset_modes_y.h"
 
+#define YY_NO_UNPUT
+
 struct keyword {
     const char *name;
     int token;
