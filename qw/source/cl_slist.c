@@ -391,7 +391,6 @@ SL_Sort (server_entry_t *sort)
 					i++;
 				if (toupper(p->desc[i]) > toupper(q->desc[i]))
 				{
-					Con_Printf("%i <-> %s <-> %s\n", i, p->desc, q->desc);
 					SL_Swap(p,q);
 					q = p;
 				}
