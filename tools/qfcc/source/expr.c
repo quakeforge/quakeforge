@@ -1499,13 +1499,22 @@ unary_expr (int op, expr_t *e)
 				case ex_uexpr:
 					if (e->e.expr.op == '~')
 						return e->e.expr.e1;
+					goto bitnot_expr;
 				case ex_block:
 					if (!e->e.block.result)
 						return error (e, "invalid type for unary ~");
+					goto bitnot_expr;
 				case ex_expr:
 				case ex_def:
 				case ex_temp:
-					{
+bitnot_expr:
+					if (options.code.progsversion == PROG_ID_VERSION) {
+						expr_t     *n1 = new_expr ();
+
+						n1->type = ex_integer;
+						n1->e.integer_val = -1;
+						return binary_expr ('-', n1, e);
+					} else {
 						expr_t     *n = new_unary_expr (op, e);
 						type_t     *t = get_type (e);
 
