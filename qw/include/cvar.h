@@ -58,8 +58,6 @@ typedef struct cvar_alias_s
 #define	CVAR_USERINFO		2		// sent to server on connect or change
 #define	CVAR_SERVERINFO		4		// sent in response to front end requests
 #define	CVAR_SYSTEMINFO		8		// these cvars will be duplicated on all clients
-#define	CVAR_INIT			16		// don't allow change from console at all,
-									// but can be set from the command line
 #define	CVAR_NOTIFY			32		// Will notify players when changed.
 #define	CVAR_ROM			64		// display only, cannot be set by user at all
 #define	CVAR_USER_CREATED	128		// created by a set command
