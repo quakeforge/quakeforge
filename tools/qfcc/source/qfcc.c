@@ -56,11 +56,11 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <errno.h>
 
 #include <QF/cbuf.h>
-#include <QF/idparse.h>
 #include <QF/crc.h>
 #include <QF/dstring.h>
 #include <QF/hash.h>
 #include <QF/qendian.h>
+#include <QF/script.h>
 #include <QF/sys.h>
 #include <QF/va.h>
 
@@ -672,6 +672,7 @@ progs_src_compile (void)
 	dstring_t  *filename = dstring_newstr ();
 	const char *src;
 	int         crc = 0;
+	script_t   *script;
 
 	if (options.verbosity >= 1 && strcmp (sourcedir, "")) {
 		printf ("Source directory: %s\n", sourcedir);
@@ -691,14 +692,21 @@ progs_src_compile (void)
 				 strerror (errno));
 		return 1;
 	}
+	script = Script_New ();
+	Script_Start (script, filename->str, src);
 
-	if (!(src = COM_Parse (src))) {
+	if (!Script_GetToken (script, 1)) {
 		fprintf (stderr, "No destination filename.  qfcc --help for info.\n");
 		return 1;
 	}
+	// Consume any aditional tokens on this line.
+	// FIXME compilation options?
+	// FIXME could break some progs.src files, have an optional control?
+	while (Script_TokenAvailable (script, 0))
+		Script_GetToken (script, 0);
 
 	if (!options.output_file)
-		options.output_file = strdup (com_token);
+		options.output_file = save_string (script->token->str);
 	if (options.verbosity >= 1) {
 		printf ("output file: %s\n", options.output_file);
 	}
@@ -713,16 +721,25 @@ progs_src_compile (void)
 		setup_param_block ();
 
 	// compile all the files
-	while ((src = COM_Parse (src))) {
+	while (Script_GetToken (script, 1)) {
 		int         err;
 
 		if (*sourcedir)
 			dsprintf (filename, "%s%c%s", sourcedir, PATH_SEPARATOR,
-					  com_token);
+					  script->token->str);
 		else
-			dsprintf (filename, "%s", com_token);
+			dsprintf (filename, "%s", script->token->str);
 		if (options.verbosity >= 2)
 			printf ("compiling %s\n", filename->str);
+
+		// Consume any aditional tokens on this line, cumulatively adding them
+		// to the cpp command line.
+		// FIXME is non-cumulative more desirable? make an option?
+		// FIXME could break some progs.src files. have an optional control?
+		while (Script_TokenAvailable (script, 0)) {
+			Script_GetToken (script, 0);
+			add_cpp_def (save_string (script->token->str));
+		}
 
 		yyin = preprocess_file (filename->str);
 		if (!yyin)
