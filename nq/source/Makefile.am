@@ -71,7 +71,7 @@ client_LIB_DEPS=	libqfnet.a
 client_POST_LIBS=	$(top_builddir)/libs/video/targets/libQFjs.la
 
 client_SOURCES=	cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
-		cl_tent.c console.c keys.c sbar.c r_part.c r_view.c \
+		cl_tent.c console.c keys.c sbar.c r_efrag.c r_part.c r_view.c \
 		nonintel.c gib.c gib_instructions.c gib_vars.c \
 		gib_interpret.c gib_modules.c gib_parse.c gib_stack.c \
 		pcx.c tga.c
@@ -87,7 +87,7 @@ combined_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(server_SOURCES) \
 # ... Common stuff
 soft_SOURCES=	d_edge.c d_fill.c d_init.c d_modech.c d_part.c d_polyse.c \
 		d_scan.c d_sky.c d_sprite.c d_surf.c d_vars.c d_zpoint.c \
-		draw.c sw_raclip.c sw_ralias.c sw_rbsp.c sw_rdraw.c sw_redge.c sw_refrag.c \
+		draw.c sw_raclip.c sw_ralias.c sw_rbsp.c sw_rdraw.c sw_redge.c \
 		sw_rlight.c sw_rmain.c sw_rmisc.c sw_rpart.c sw_rsky.c sw_rsprite.c \
 		sw_rsurf.c sw_rvars.c screen.c \
 		sw_view.c $(soft_ASM)
@@ -122,7 +122,7 @@ nq_x11_DEPENDENCIES=$(client_LIB_DEPS)
 # ... Common stuff
 ogl_SOURCES=	noisetextures.c gl_textures.c gl_draw.c gl_dyn_fires.c	\
 		gl_dyn_part.c gl_dyn_textures.c \
-		gl_refrag.c gl_rlight.c gl_rmain.c gl_rmisc.c gl_rsurf.c \
+		gl_rlight.c gl_rmain.c gl_rmisc.c gl_rsurf.c \
 		gl_screen.c gl_sky.c gl_view.c gl_warp.c
 
 # ... 3Dfx Voodoo 1 and 2 SVGAlib-based console GL
