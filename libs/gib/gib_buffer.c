@@ -48,6 +48,7 @@ const char  rcsid[] = "$Id$";
 #include "QF/gib_tree.h"
 #include "QF/gib_vars.h"
 #include "QF/gib_execute.h"
+#include "QF/idparse.h"
 
 void
 GIB_Buffer_Construct (struct cbuf_s *cbuf)
@@ -101,7 +102,7 @@ GIB_Buffer_Reset (struct cbuf_s *cbuf)
 		free (g->script);
 	}
 	g->script = 0;
-	g->program = 0;
+	g->program = g->ip = 0;
 	g->stack.p = 0;
 	g->waitret = g->done = false;
 
@@ -130,12 +131,30 @@ GIB_Buffer_Add (cbuf_t * cbuf, const char *str)
 	gib_buffer_data_t *g = GIB_DATA (cbuf);
 	gib_tree_t **save, *cur;
 
-	if (g->program) {
+	// AddText should only be used to populate a buffer before
+	// executing it and shouldn't happen to a running GIB buffer,
+	// but if it does, try to find somewhere else to put the text.
+	if (g->ip) {
+		for (;cbuf; cbuf = cbuf->up)
+			if (cbuf->interpreter == &id_interp) {
+				Cbuf_AddText (cbuf, str);
+				return;
+			}
+		Sys_Printf (
+				"-------------\n"
+				"|GIB Warning|\n"
+				"-------------\n"
+				"Text added to running GIB buffer discarded.\n"
+				"Text: %s\n",
+				str
+		);
+		return;
+	} else if (g->program) {
 		for (cur = g->program; cur->next; cur = cur->next);
 		save = &cur->next;
 	} else
 		save = &g->program;
-	if (!(*save = GIB_Parse_Lines (str, 0, TREE_NORMAL)))
+	if (!(*save = GIB_Parse_Lines (str, 0)))
 		Sys_Printf (
 			"-----------------\n"
 			"|GIB Parse Error|\n"
@@ -153,11 +172,18 @@ GIB_Buffer_Insert (cbuf_t * cbuf, const char *str)
 	gib_buffer_data_t *g = GIB_DATA (cbuf);
 	gib_tree_t *lines, *cur;
 
-	if ((lines = GIB_Parse_Lines (str, 0, TREE_NORMAL))) {
+	// No GIB builtin should ever insert text into a running
+	// GIB buffer, so create an idparse buffer to handle the
+	// legacy console code.
+	if (g->ip) {
+		cbuf_t *new = Cbuf_New (&id_interp);
+		new->up = cbuf;
+		cbuf->down = new;
+		cbuf->state = CBUF_STATE_STACK;
+		Cbuf_InsertText (new, str);
+		return;
+	} else if ((lines = GIB_Parse_Lines (str, 0))) {
 		for (cur = lines; cur; cur = cur->next);
-		// if (g->ip) { // This buffer is already running!
-
-		GIB_Tree_Unref (&g->program);
 		cur->next = g->program;
 		g->program = lines;
 	} else

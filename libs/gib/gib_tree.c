@@ -43,11 +43,11 @@ const char  rcsid[] = "$Id$";
 #include "QF/gib_tree.h"
 
 gib_tree_t *
-GIB_Tree_New (gib_tree_flags_t flags)
+GIB_Tree_New (enum gib_tree_type_e type)
 {
 	gib_tree_t *new = calloc (1, sizeof (gib_tree_t));
 
-	new->flags = flags;
+	new->type = type;
 	// All nodes are created for a reason, so start with 1 ref
 	new->refs = 1;
 	return new;

@@ -101,7 +101,7 @@ GIB_Process_Embedded (gib_tree_t * node, cbuf_args_t * args)
 				dstring_appendstr (args->argv[args->argc - 1],
 								   retvals->dstrs[0]->str);
 			GIB_Buffer_Pop_Sstack (cbuf_active);
-		} else if (cur->flags & TREE_P_EMBED) {
+		} else if (cur->flags & TREE_A_EMBED) {
 			n = args->argv[args->argc - 1]->size - 1;
 			dstring_appendstr (args->argv[args->argc - 1], cur->str);
 			var = GIB_Var_Get_Very_Complex (&GIB_DATA (cbuf_active)->locals,

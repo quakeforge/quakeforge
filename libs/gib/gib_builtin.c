@@ -164,7 +164,7 @@ GIB_Function_f (void)
 		// Is the function program already tokenized?
 		if (GIB_Argm (2)->delim != '{') {
 			// Parse on the fly
-			if (!(program = GIB_Parse_Lines (GIB_Argv (2), 0, TREE_NORMAL))) {
+			if (!(program = GIB_Parse_Lines (GIB_Argv (2), 0))) {
 				// Error!
 				GIB_Error ("parse", "Parse error while defining function '%s'.",
 						   GIB_Argv (1));
@@ -304,10 +304,6 @@ GIB_For_f (void)
 	dstring_t  *dstr;
 	unsigned int i;
 
-	if (GIB_Argc () < 5) {
-		GIB_DATA (cbuf_active)->ip = GIB_DATA (cbuf_active)->ip->jump;
-		return;
-	}
 	GIB_Buffer_Push_Sstack (cbuf_active);
 	dstr = GIB_Buffer_Dsarray_Get (cbuf_active);
 	dstring_clearstr (dstr);
@@ -315,43 +311,6 @@ GIB_For_f (void)
 	for (i = GIB_Argc () - 2; i > 2; i--) {
 		dstr = GIB_Buffer_Dsarray_Get (cbuf_active);
 		dstring_appendstr (dstr, GIB_Argv (i));
-	}
-	GIB_Execute_For_Next (cbuf_active);
-}
-
-static void
-GIB_Break_f (void)
-{
-	if (!GIB_DATA (cbuf_active)->ip->jump) {
-		GIB_Error ("loop", "Break command attempted outside of a loop.");
-		return;
-	}
-	if (!GIB_DATA (cbuf_active)->ip->jump->flags & TREE_COND)	// In a for
-																// loop?
-		GIB_Buffer_Pop_Sstack (cbuf_active);	// Kill it
-	GIB_DATA (cbuf_active)->ip = GIB_DATA (cbuf_active)->ip->jump->jump;
-}
-
-static gib_tree_t gib_cont = {
-	"",
-	' ',
-	0, 0, 0, 0,
-	TREE_NORMAL
-};
-
-static void
-GIB_Continue_f (void)
-{
-	if (!GIB_DATA (cbuf_active)->ip->jump) {
-		GIB_Error ("loop", "Continue command attempted outside of a loop.");
-		return;
-	}
-	if (GIB_DATA (cbuf_active)->ip->jump->flags & TREE_COND) {
-		gib_cont.next = GIB_DATA (cbuf_active)->ip->jump;
-		GIB_DATA (cbuf_active)->ip = &gib_cont;
-	} else {
-		GIB_Execute_For_Next (cbuf_active);
-		GIB_DATA (cbuf_active)->ip = GIB_DATA (cbuf_active)->ip->jump;
 	}
 }
 
@@ -910,6 +869,26 @@ GIB_Print_f (void)
 	Sys_Printf ("%s", GIB_Argv (1));
 }
 
+static void
+GIB_bp1_f (void)
+{
+}
+
+static void
+GIB_bp2_f (void)
+{
+}
+
+static void
+GIB_bp3_f (void)
+{
+}
+
+static void
+GIB_bp4_f (void)
+{
+}
+
 void
 GIB_Builtin_Init (qboolean sandbox)
 {
@@ -929,8 +908,6 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("domain::clear", GIB_Domain_Clear_f);
 	GIB_Builtin_Add ("return", GIB_Return_f);
 	GIB_Builtin_Add ("for", GIB_For_f);
-	GIB_Builtin_Add ("break", GIB_Break_f);
-	GIB_Builtin_Add ("continue", GIB_Continue_f);
 	GIB_Builtin_Add ("length", GIB_Length_f);
 	GIB_Builtin_Add ("equal", GIB_Equal_f);
 	GIB_Builtin_Add ("count", GIB_Count_f);
@@ -952,4 +929,8 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("file::delete", GIB_File_Delete_f);
 	GIB_Builtin_Add ("range", GIB_Range_f);
 	GIB_Builtin_Add ("print", GIB_Print_f);
+	GIB_Builtin_Add ("bp1", GIB_bp1_f);
+	GIB_Builtin_Add ("bp2", GIB_bp2_f);
+	GIB_Builtin_Add ("bp3", GIB_bp3_f);
+	GIB_Builtin_Add ("bp4", GIB_bp4_f);
 }

@@ -39,8 +39,8 @@ char GIB_Parse_Match_Index (const char *str, unsigned int *i);
 char GIB_Parse_Match_Paren (const char *str, unsigned int *i);
 char GIB_Parse_Match_Var (const char *str, unsigned int *i);
 
-gib_tree_t *GIB_Parse_Lines (const char *program, unsigned int pofs, gib_tree_flags_t flags);
-gib_tree_t *GIB_Parse_Embedded (const char *program, unsigned int pofs, gib_tree_flags_t flags, gib_tree_t **embedded);
+gib_tree_t *GIB_Parse_Lines (const char *program, unsigned int pofs);
+gib_tree_t *GIB_Parse_Embedded (const char *program, unsigned int pofs, gib_tree_t **embedded);
 
 extern qboolean gib_parse_error;
 const char *GIB_Parse_ErrorMsg (void);

@@ -144,15 +144,15 @@ GIB_Execute_Prepare_Line (cbuf_t * cbuf, gib_tree_t * line)
 	args->argc = 0;
 
 	for (cur = line->children; cur; cur = cur->next) {
-		if (cur->flags & TREE_CONCAT) {
+		if (cur->flags & TREE_A_CONCAT) {
 			pos = args->argv[args->argc - 1]->size - 1;
-			if (cur->flags & TREE_P_EMBED) {
+			if (cur->flags & TREE_A_EMBED) {
 				GIB_Process_Embedded (cur, cbuf->args);
 			} else
 				dstring_appendstr (args->argv[args->argc - 1], cur->str);
 		} else {
 			pos = 0;
-			if (cur->flags & TREE_P_EMBED) {
+			if (cur->flags & TREE_A_EMBED) {
 				Cbuf_ArgsAdd (args, "");
 				GIB_Process_Embedded (cur, cbuf->args);
 			} else
@@ -162,7 +162,7 @@ GIB_Execute_Prepare_Line (cbuf_t * cbuf, gib_tree_t * line)
 		if (cur->delim == '('
 			&& GIB_Process_Math (args->argv[args->argc - 1], pos))
 			return -1;
-		if (cur->flags & TREE_SPLIT)
+		if (cur->flags & TREE_A_EXPAND)
 			GIB_Execute_Split_Var (cbuf);
 	}
 	return 0;
@@ -177,7 +177,7 @@ GIB_Execute_For_Next (cbuf_t * cbuf)
 		GIB_DATA (cbuf)->stack.values + GIB_DATA (cbuf)->stack.p - 1;
 	if (array->size == 1) {
 		GIB_Buffer_Pop_Sstack (cbuf);
-		return 0;
+		return -1;
 	}
 	array->size--;
 	var =
@@ -186,7 +186,7 @@ GIB_Execute_For_Next (cbuf_t * cbuf)
 							 &index, true);
 	dstring_clearstr (var->array[index].value);
 	dstring_appendstr (var->array[index].value, array->dstrs[array->size]->str);
-	return 1;
+	return 0;
 }
 
 void
@@ -195,63 +195,73 @@ GIB_Execute (cbuf_t * cbuf)
 	gib_buffer_data_t *g = GIB_DATA (cbuf);
 	gib_builtin_t *b;
 	gib_function_t *f;
-	double cond;
+	unsigned int index;
+	gib_var_t *var;
 
-	if (!g->program)
-		return;
-	if (!g->ip)
-		g->ip = g->program;
-	while (!g->done) {
-		if (GIB_Execute_Prepare_Line (cbuf, g->ip))
-			return;
-		if (g->ip->flags & TREE_COND) {
-			cond =	g->ip->flags & TREE_NOT ? 
-				atof (cbuf->args->argv[1]->str) :
-				!atof (cbuf->args->argv[1]->str);
-			if (cond)
+	g->ip = g->ip ? g->ip->next : g->program;
+	while (g->ip) {
+		switch (g->ip->type) {
+			case TREE_T_JUMP:
 				g->ip = g->ip->jump;
-		} else if (g->ip->flags & TREE_FORNEXT) {
-			if (GIB_Execute_For_Next (cbuf))
-				g->ip = g->ip->jump;
-		} else if (g->ip->flags & TREE_END) {
-			g->ip = g->ip->jump;
-			if (g->ip->flags & TREE_COND)
 				continue;
-		} else if (cbuf->args->argc) {
-			if (g->ip->flags & TREE_EMBED) {
-				// Get ready for return values
-				g->waitret = true;
-				GIB_Buffer_Push_Sstack (cbuf);
-			} else
-				g->waitret = false;
-			if (cbuf->args->argc >= 2 && !strcmp (cbuf->args->argv[1]->str, "=")
-				&& ((gib_tree_t *) cbuf->args->argm[1])->delim == ' ') {
-				unsigned int index;
-				gib_var_t  *var =
-					GIB_Var_Get_Complex (&g->locals, &g->globals,
-										 cbuf->args->argv[0]->str, &index,
-										 true);
-				GIB_Var_Assign (var, index, cbuf->args->argv + 2,
-								cbuf->args->argc - 2);
-			} else if ((b = GIB_Builtin_Find (cbuf->args->argv[0]->str))) {
-				b->func ();
-			} else if ((f = GIB_Function_Find (cbuf->args->argv[0]->str))) {
-				cbuf_t     *new = Cbuf_PushStack (&gib_interp);
-
-				GIB_Function_Execute (new, f, cbuf->args->argv,
-									  cbuf->args->argc);
-			} else {
-				GIB_Execute_Generate_Composite (cbuf);
-				if (Cmd_Command (cbuf->args))
-					GIB_Error ("command",
-							   "No builtin, function, or console command named '%s' was found.",
-							   cbuf->args->argv[0]->str);
-			}
+			case TREE_T_JUMPPLUS:
+				g->ip = g->ip->jump->next;
+				continue;
+			case TREE_T_FORNEXT:
+				if (GIB_Execute_For_Next (cbuf))
+					g->ip = g->ip->jump->next;
+				else
+					g->ip = g->ip->next;
+				continue;
+			case TREE_T_COND:
+				if (GIB_Execute_Prepare_Line (cbuf, g->ip))
+					return;
+				if (g->ip->flags & TREE_L_NOT ? atof (cbuf->args->argv[1]->str) : !atof (cbuf->args->argv[1]->str))
+					g->ip = g->ip->jump->next;
+				else
+					g->ip = g->ip->next;
+				continue;
+			case TREE_T_ASSIGN:
+				if (GIB_Execute_Prepare_Line (cbuf, g->ip))
+					return;
+				var = GIB_Var_Get_Complex (&g->locals, &g->globals, cbuf->args->argv[0]->str, &index, true);
+				GIB_Var_Assign (var, index, cbuf->args->argv + 2, cbuf->args->argc - 2);
+				g->ip = g->ip->next;
+				continue;
+			case TREE_T_CMD:
+				if (GIB_Execute_Prepare_Line (cbuf, g->ip))
+					return;
+				else if (cbuf->args->argc) {
+					if (g->ip->flags & TREE_L_EMBED) {
+						// Get ready for return values
+						g->waitret = true;
+						GIB_Buffer_Push_Sstack (cbuf);
+					} else
+						g->waitret = false;
+					if ((b = GIB_Builtin_Find (cbuf->args->argv[0]->str)))
+						b->func ();
+					else if ((f = GIB_Function_Find (cbuf->args->argv[0]->str))) {
+						cbuf_t     *new = Cbuf_PushStack (&gib_interp);
+						GIB_Function_Execute (new, f, cbuf->args->argv, cbuf->args->argc);
+					} else {
+						GIB_Execute_Generate_Composite (cbuf);
+						if (Cmd_Command (cbuf->args))
+							GIB_Error (
+								"command",
+								"No builtin, function, or console command named '%s' was found.",
+								cbuf->args->argv[0]->str
+							);
+					}
+					if (cbuf->state)
+						return;
+					g->ip = g->ip->next;
+				}
+				continue;
+			default:
+				GIB_Error ("QUAKEFORGE-BUG-PLEASE-REPORT", "Unknown instruction type; tastes like chicken.");
+				return;
 		}
-		if (!(g->ip = g->ip->next))		// No more commands
-			g->done = true;
-		if (cbuf->state)				// Let the stack walker figure out what 
-										// to do
-			return;
 	}
+	g->ip = g->program = 0;
+	g->script = 0;
 }

@@ -197,12 +197,12 @@ Cbuf_Execute_Stack (cbuf_t *cbuf)
 		sp->state = CBUF_STATE_JUNK;		
 		sp = sp->up;
 	}
-
 	if (cbuf->down) {
 		Cbuf_DeleteStack (cbuf->down);
 		cbuf->down = 0;
 	}
-	Cbuf_Reset (cbuf);
+	if (sp) // This should be null if we exited normally
+		Cbuf_Reset (cbuf);
 }
 
 void
