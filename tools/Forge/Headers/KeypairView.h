@@ -5,7 +5,7 @@ extern	id	keypairview_i;
 {
 }
 
-- calcViewSize;
+- (void) calcViewSize;
 
 #define	SPACING		4
 #define	FONTSIZE	12

@@ -10,7 +10,7 @@ id		inspcontrol_i;
 
 @implementation InspectorControl
 
-- awakeFromNib
+- (id) awakeFromNib
 {
 	inspcontrol_i = self;
 		
@@ -65,7 +65,7 @@ id		inspcontrol_i;
 	[inspectorView_i addSubview: inspectorSubview_i];
 
 	currentInspectorType = -1;
-	[self changeInspectorTo:i_project];
+	[self changeInspectorTo: i_project];
 
 	return self;
 }
@@ -75,19 +75,19 @@ id		inspcontrol_i;
 //	Sent by the PopUpList in the Inspector
 //	Each cell in the PopUpList must have the correct tag
 //
-- changeInspector:sender
+- (void) changeInspector: (id) sender
 {
 	id	cell;
 
 	cell = [sender selectedCell];
-	[self changeInspectorTo:[cell tag]];
-	return self;
+	[self changeInspectorTo: [cell tag]];
+	return;
 }
 
 //
 //	Change to specific Inspector
 //
-- changeInspectorTo:(insp_e)which
+- (void) changeInspectorTo: (insp_e) which
 {
 	id		newView;
 	NSRect	r;
@@ -95,7 +95,7 @@ id		inspcontrol_i;
 	NSRect	f;
 	
 	if (which == currentInspectorType)
-		return self;
+		return;
 	
 	currentInspectorType = which;
 	newView = [contentList objectAtIndex: which];
@@ -118,10 +118,10 @@ id		inspcontrol_i;
 	[inspectorSubview_i unlockFocus];
 	[inspectorView_i display];
 	
-	return self;
+	return;
 }
 
-- (insp_e)getCurrentInspector
+- (insp_e) currentInspector
 {
 	return currentInspectorType;
 }

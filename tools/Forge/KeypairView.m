@@ -10,87 +10,84 @@ id	keypairview_i;
 initFrame:
 ==================
 */
-- initFrame:(const NXRect *)frameRect
+- (id) initWithFrame: (NSRect) frameRect
 {
-	[super initFrame:frameRect];
+	[super initWithFrame: frameRect];
 	keypairview_i = self;
 	return self;
 }
 
 
-- calcViewSize
+- (void) calcViewSize
 {
-	NXCoord	w;
-	NXCoord	h;
-	NXRect	b;
-	NXPoint	pt;
-	int		count;
-	id		ent;
-	
-	ent = [map_i currentEntity];
-	count = [ent numPairs];
+	NSRect		b = [[self superview] bounds];
+	NSRect		newFrame;
+	NSPoint 	pt;
+	id			ent = [map_i currentEntity];
+	int			count = [ent numPairs];
 
-	[superview setFlipped: YES];
+//	[[self superview] setFlipped: YES];
+
+	newFrame = b;
+	newFrame.size.height = LINEHEIGHT * count + SPACING;
+
+	[[self superview] setNeedsDisplayInRect: newFrame];
+	[self setFrame: newFrame];
+	[self setNeedsDisplay: YES];
 	
-	[superview getBounds:&b];
-	w = b.size.width;
-	h = LINEHEIGHT*count + SPACING;
-	[self	sizeTo:w :h];
 	pt.x = pt.y = 0;
-	[self scrollPoint: &pt];
-	return self;
+	[self scrollPoint: pt];
+	return;
 }
 
-- drawSelf:(const NXRect *)rects :(int)rectCount
+- (void) drawSelf: (NSRect) aRect
 {
 	epair_t	*pair;
 	int		y;
-	
-	PSsetgray(NXGrayComponent(NX_COLORLTGRAY));
-	PSrectfill(0,0,bounds.size.width,bounds.size.height);
+
+	PSsetgray (NSLightGray);
+	NSRectFill (aRect);
 		
-	PSselectfont("Helvetica-Bold",FONTSIZE);
-	PSrotate(0);
-	PSsetgray(0);
+	PSselectfont ("Helvetica-Bold", FONTSIZE);
+	PSrotate (0);
+	PSsetgray (0);
 	
 	pair = [[map_i currentEntity] epairs];
-	y = bounds.size.height - LINEHEIGHT;
-	for ( ; pair ; pair=pair->next)
-	{
-		PSmoveto(SPACING, y);
-		PSshow(pair->key);
-		PSmoveto(100, y);
-		PSshow(pair->value);
+	y = [self bounds].size.height - LINEHEIGHT;
+	for (; pair; pair = pair->next) {
+		PSmoveto (SPACING, y);
+		PSshow (pair->key);
+		PSmoveto (100, y);
+		PSshow (pair->value);
 		y -= LINEHEIGHT;
 	}
-	PSstroke();
+	PSstroke ();
 	
-	return self;
+	return;
 }
 
-- mouseDown:(NXEvent *)theEvent
+- (void) mouseDown: (NSEvent *) theEvent
 {
-	NXPoint	loc;
+	NSPoint loc = [theEvent locationInWindow];
+	NSRect	bounds = [self bounds];
 	int		i;
 	epair_t	*p;
 
-	loc = theEvent->location;
-	[self convertPoint:&loc	fromView:NULL];
+	[self convertPoint: loc	fromView: NULL];
 	
 	i = (bounds.size.height - loc.y - 4) / LINEHEIGHT;
 
 	p = [[map_i currentEntity] epairs];
-	while (	i )
-	{
-		p=p->next;
+	while (	i )	{
+		p = p->next;
 		if (!p)
-			return self;
+			return;
 		i--;
 	}
 	if (p)
 		[things_i setSelectedKey: p];
 	
-	return self;
+	return;
 }
 
 @end

@@ -59,10 +59,10 @@ extern	id		inspcontrol_i;
 	id	itemHelp_i;			// docs
 }
 
-- awakeFromNib;
-- changeInspector:sender;
-- changeInspectorTo:(insp_e)which;
-- (insp_e)getCurrentInspector;
+- (id) awakeFromNib;
+- (void) changeInspector: (id) sender;
+- (void) changeInspectorTo: (insp_e) which;
+- (insp_e) currentInspector;
 
 @end
 
