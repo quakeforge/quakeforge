@@ -998,7 +998,7 @@ Host_Init (void)
 	CL_UpdateScreen (cl.time);
 
 	// make sure all + commands have been executed
-	Cbuf_Execute_Stack (cl_cbuf);
+	Cbuf_Execute_Stack (host_cbuf);
 
 	host_initialized = true;
 
