@@ -1870,15 +1870,17 @@ AC_SUBST(HAVE_SDL)
 AC_SUBST(HAVE_SVGA)
 AC_SUBST(HAVE_X)
 
+ALSA_PLUGIN="snd_output_alsa"
+if test "`echo $SOUND_TYPES | grep ALSA0_9`"; then
+	ALSA_PLUGIN="snd_output_alsa0_9"
+fi
+
 if test -n "$CL_TARGETS"; then
 	CD_TARGETS="libQFcd.la"
 	SND_TARGETS="libQFsound.la"
 	JOY_TARGETS="libQFjs.la"
-	if test "`echo $SOUND_TYPES | grep ALSA0_9`"; then
-		ALSA_PLUGIN="snd_output_alsa0_9"
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS $ALSA_PLUGIN.la"
-	elif test "`echo $SOUND_TYPES | grep ALSA`"; then
-		ALSA_PLUGIN="snd_output_alsa"
+	# the following will catch both ALSA and ALSA0_9
+	if test "`echo $SOUND_TYPES | grep ALSA`"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS $ALSA_PLUGIN.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep MME`"; then
