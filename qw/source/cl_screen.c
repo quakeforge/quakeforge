@@ -105,7 +105,7 @@ CL_UpdateScreen (double realtime)
 {
 	unsigned    index = cl.intermission;
 
-	if (index > sizeof (scr_funcs) / sizeof (scr_funcs[0]))
+	if (index >= sizeof (scr_funcs) / sizeof (scr_funcs[0]))
 		index = 0;
 
 	// don't allow cheats in multiplayer
