@@ -5,33 +5,45 @@ You /WILL/ indent with hard tabs, or you will be harmed. :) You can
 format for whatever tab spacing you like, but if you indent with spaces
 you will be hurt and you will have deserved it. :)
 
-For best results, use 4-space tabs, because that's what id used and what
-most of us use.
+For best results, and to keep other developers from saying things like
+"what bastard formatted this?", you should use 4-space tabs, because
+that's what id used and what most of us use. This is only a guideline,
+though, not a requirement.
 
-Each file should have a standard comment, formatted as in the example
-below. Please, when you create a new file, make sure you put an ID at
-the bottom of the opening comment. This is something special that CVS 
-translates into a string that shows information on what version the file
-is, when it was last edited, and so on. This is done by embedding
-[dollar sign]Id[dollar sign].
+Each source file should have a standard comment, formatted as in the
+example below.
+
+When you create a new source file, make sure you put an RCS ID below the
+opening comment. One of the things this lets us do is use the "ident"
+tool (comes with RCS) to identify all of the source files compiled into
+an executable. This is done by embedding [dollar sign]Id: [dollar sign]
+into the file, and CVS will automagically add the version information to
+the source file.
 
 All source files MUST #include "config.h" if the symbol HAVE_CONFIG_H
 is defined. Likewise, no source file may be compiled multiple times to
 produce different object files -- one source, one object.
 
-Atop each function you write, attach a /* */ comment heading, containing
-the name and a short, DESCRIPTIVE summary of the function's purpose.
-Indent both of these with one or more tabs. The function is to
-immediately follow the heading, with no space between.
+Atop each function you write, you should attach a /* */ comment heading,
+containing the name and a short, DESCRIPTIVE summary of the function's
+purpose. Indent both of these with one or more tabs. The function is to
+immediately follow the heading, with no space between. When you move or
+rename a function, or change what it does, change the heading to match.
 
 The return type should be located on the line previous to the function's
-name. This is to facilitate easy searches for a function using the
+name, and the function's name should begin with the very first character
+of a line. This is to facilitate easy searches for a function using the
 simple regular expression "^FuncName".
 
 Functions that do not take a value should be explicitly declared to
 accept void, not simply ().
 
-Please use the SECTION_ prefix for new functions.
+On brace style: QuakeForge code uses "cuddled" braces, also called K&R
+and the One True Brace Style (yes, it really is called that), so-called
+because it is the brace style used by the creators of the C language.
+
+Please use a prefix for new functions. The currently-defined prefixes
+are described below:
 
 Cross-target prefixes:
 IN_	Input
@@ -48,7 +60,7 @@ QFGL_	OpenGL portability aids
 SNDDMA_	DMA Sound (called from S_*)
 SV_	Server
 SW_	Software rendering
-x11_	X11R6-specific window handling
+X11_	X11R6-specific window handling
 
 An example:
 
@@ -76,9 +88,10 @@ An example:
 		Free Software Foundation, Inc.
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
-
-	$Id$
 */
+
+static const char rcsid[] = 
+        "$Id$";
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
