@@ -180,9 +180,9 @@ PF_vectoangles (progs_t *pr)
 			pitch += 360;
 	}
 
-	R_FLOAT (pr + 0) = pitch;
-	R_FLOAT (pr + 1) = yaw;
-	R_FLOAT (pr + 2) = 0;
+	R_VECTOR (pr)[0] = pitch;
+	R_VECTOR (pr)[1] = yaw;
+	R_VECTOR (pr)[2] = 0;
 }
 
 /*
