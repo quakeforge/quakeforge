@@ -40,6 +40,7 @@
 
 #include <GL/gl.h>
 #include <GL/fxmesa.h>
+#include <glide/glide.h>
 #include <glide/sst1vid.h>
 #include <sys/signal.h>
 
@@ -60,6 +61,8 @@
 
 // FIXME!!!!! This belongs in include/qfgl_ext.h -- deek
 typedef void (GLAPIENTRY * QF_3DfxSetDitherModeEXT) (GrDitherMode_t mode);
+
+cvar_t      *vid_system_gamma;
 
 static fxMesaContext fc = NULL;
 
@@ -275,6 +278,7 @@ VID_Init (unsigned char *palette)
 	GL_Init ();
 
 	GL_CheckBrightness (palette);
+	VID_InitGamma (palette);
 	VID_SetPalette (palette);
 
 	// Check for 3DFX Extensions and initialize them.
@@ -288,6 +292,7 @@ VID_Init (unsigned char *palette)
 void
 VID_Init_Cvars (void)
 {
+	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL, "Use system gamma control if available");
 }
 
 void
@@ -312,3 +317,14 @@ void
 VID_SetCaption (char *text)
 {
 }
+
+qboolean
+VID_SetGamma (double gamma)
+{
+	 // FIXME: Need function for HW gamma correction
+	 // return X11_SetGamma (gamma);
+	grGammaCorrectionValue((float) gamma);
+	return true;
+	 
+}
+
