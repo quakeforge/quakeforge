@@ -167,24 +167,12 @@ R_ReadPointFile_f (void)
 void
 R_ParticleExplosion (vec3_t org)
 {
-//	int			i;
-//	int			j = 1024;
-
 	if (numparticles >= r_maxparticles)
 		return;
-// 	else if (numparticles + j >= r_maxparticles)
-//		j = r_maxparticles - numparticles;
-		
+
 	particle_new_random (pt_smokecloud, part_tex_smoke, org, 4,
 						 30, 8, r_realtime + 5, (rand () & 7) + 8,
 						 128 + (rand () & 63));
-
-/*	for (i=0; i < j; i++) {
-		particle_new_random (pt_fallfadespark, part_tex_spark, org, 16,
-							 1.5, 256, r_realtime + 5, ramp[rand () & 7],
-							 255);
-	}
-*/
 }
 
 void
@@ -281,16 +269,15 @@ R_RunPuffEffect (vec3_t org, particle_effect_t type, byte count)
 			break;
 		case PE_LIGHTNINGBLOOD:
 			R_BloodPuff (org, 50);
-			count = 4 + (rand () % 5);
 
 			if (numparticles >= r_maxparticles)
 				return;
-			else if (numparticles + count >= r_maxparticles)
-				count = r_maxparticles - numparticles - 1;
-
 			particle_new (pt_smokecloud, part_tex_smoke, org,
 						  3, vec3_origin, r_realtime + 9,
 						  12 + (rand () & 3), 64 + (rand () & 31));
+			count = 7;
+			if (numparticles + count >= r_maxparticles)
+				count = r_maxparticles - numparticles;
 			while (count--)
 				particle_new_random (pt_fallfadespark, part_tex_spark, org,
 									 12, 2, 128, r_realtime + 5,
@@ -357,11 +344,11 @@ R_LavaSplash (vec3_t org)
 //		k = r_maxparticles - numparticles;
 //	}
 
+	dir[2] = 256;
 	for (i = -128; i < 128; i += 16) {
 		for (j = -128; j < 128; j += 16) {
 			dir[0] = j + (rand () & 7);
 			dir[1] = i + (rand () & 7);
-			dir[2] = 256;
 
 			porg[0] = org[0] + dir[0];
 			porg[1] = org[1] + dir[1];
@@ -391,11 +378,11 @@ R_TeleportSplash (vec3_t org)
 //		l = r_maxparticles - numparticles;
 //	}
 
-	for (i = -16; i < 16; i += 4)
-		for (j = -16; j < 16; j += 4)
+	for (i = -16; i < 16; i += 4) {
+		dir[1] = i * 8;
+		for (j = -16; j < 16; j += 4) {
+			dir[0] = j * 8;
 			for (k = -24; k < 32; k += 4) {
-				dir[0] = j * 8;
-				dir[1] = i * 8;
 				dir[2] = k * 8;
 
 				porg[0] = org[0] + i + (rand () & 3);
@@ -406,9 +393,11 @@ R_TeleportSplash (vec3_t org)
 				vel = 50 + (rand () & 63);
 				VectorScale (dir, vel, pvel);
 				particle_new (pt_grav, part_tex_spark, porg, 0.6, pvel,
-							  (r_realtime + 0.2 + (rand () & 7) * 0.02),
+							  (r_realtime + 0.2 + (rand () & 15) * 0.01),
 							  (7 + (rand () & 7)), 255);
 			}
+		}
+	}
 }
 
 void
@@ -758,7 +747,7 @@ R_DrawParticles (void)
 				part->scale += r_frametime * 4;
 //				part->org[2] += r_frametime * 30 - grav;
 				break;
-			case pt_smokecloud: // DESPAIR
+			case pt_smokecloud:
 				if ((part->alpha -= r_frametime * 140) < 1)
 				{
 					part->die = -1;

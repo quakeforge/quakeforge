@@ -234,39 +234,39 @@ set_vertex (struct box_def *box, int face, int ind, vec3_t v)
 	switch (face) {
 		case 0:
 			box->face[face].poly.verts[ind][3] = (1024 - v[1] + 4) *
-				(1 / BOX_WIDTH);
+				(1.0 / BOX_WIDTH);
 			box->face[face].poly.verts[ind][4] = (1024 - v[2] + 4) *
-				(1 / BOX_WIDTH);
+				(1.0 / BOX_WIDTH);
 			break;
 		case 1:
 			box->face[face].poly.verts[ind][3] = (1024 + v[0] + 4) *
-				(1 / BOX_WIDTH);
+				(1.0 / BOX_WIDTH);
 			box->face[face].poly.verts[ind][4] = (1024 - v[2] + 4) *
-				(1 / BOX_WIDTH);
+				(1.0 / BOX_WIDTH);
 			break;
 		case 2:
 			box->face[face].poly.verts[ind][3] = (1024 + v[0] + 4) *
-				(1 / BOX_WIDTH);
+				(1.0 / BOX_WIDTH);
 			box->face[face].poly.verts[ind][4] = (1024 + v[1] + 4) *
-				(1 / BOX_WIDTH);
+				(1.0 / BOX_WIDTH);
 			break;
 		case 3:
 			box->face[face].poly.verts[ind][3] = (1024 + v[1] + 4) *
-				(1 / BOX_WIDTH);
+				(1.0 / BOX_WIDTH);
 			box->face[face].poly.verts[ind][4] = (1024 - v[2] + 4) *
-				(1 / BOX_WIDTH);
+				(1.0 / BOX_WIDTH);
 			break;
 		case 4:
 			box->face[face].poly.verts[ind][3] = (1024 - v[0] + 4) *
-				(1 / BOX_WIDTH);
+				(1.0 / BOX_WIDTH);
 			box->face[face].poly.verts[ind][4] = (1024 - v[2] + 4) *
-				(1 / BOX_WIDTH);
+				(1.0 / BOX_WIDTH);
 			break;
 		case 5:
 			box->face[face].poly.verts[ind][3] = (1024 + v[0] + 4) *
-				(1 / BOX_WIDTH);
+				(1.0 / BOX_WIDTH);
 			box->face[face].poly.verts[ind][4] = (1024 - v[1] + 4) *
-				(1 / BOX_WIDTH);
+				(1.0 / BOX_WIDTH);
 			break;
 	}
 }
