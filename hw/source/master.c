@@ -127,6 +127,7 @@ server_t *
 SVL_New (netadr_t *adr)
 {
 	server_t   *sv;
+
 	sv = (server_t *) calloc (1, sizeof (server_t));
 	sv->heartbeat = 0;
 	sv->info[0] = 0;
@@ -178,8 +179,9 @@ SVL_Find (netadr_t adr)
 static void
 NET_Filter (void)
 {
-	netadr_t    filter_adr;
 	int         hold_port;
+	netadr_t    filter_adr;
+	filter_t   *filter;
 
 	hold_port = net_from.port;
 	NET_StringToAdr ("127.0.0.1:26950", &filter_adr);
@@ -191,9 +193,8 @@ NET_Filter (void)
 		}
 		return;
 	}
-	// if no compare with filter list
-	filter_t   *filter;
 
+	// if no compare with filter list
 	if ((filter = FL_Find (net_from))) {
 		NET_CopyAdr (&net_from, &filter->to);
 		net_from.port = hold_port;
@@ -203,8 +204,9 @@ NET_Filter (void)
 void
 SV_InitNet (void)
 {
-	int         port;
-	int         p;
+	char        str[64];
+	int         port, p;
+	FILE       *filters;
 
 	port = PORT_MASTER;
 	p = COM_CheckParm ("-port");
@@ -215,9 +217,6 @@ SV_InitNet (void)
 	NET_Init (port);
 
 	// Add filters
-	FILE       *filters;
-	char        str[64];
-
 	if ((filters = fopen ("filters.ini", "rt"))) {
 		while (fgets (str, 64, filters)) {
 			Cbuf_AddText (mst_cbuf, "filter add ");
@@ -260,18 +259,15 @@ AnalysePacket (void)
 		c = p[0];
 		if (c == '\n')
 			Con_Printf ("  \\n ");
-
 		else if (c >= 32 && c <= 127)
 			Con_Printf ("   %c ", c);
-
 		else if (c < 10)
 			Con_Printf ("  \\%1i ", c);
-
 		else if (c < 100)
 			Con_Printf (" \\%2i ", c);
-
 		else
 			Con_Printf ("\\%3i ", c);
+
 		if (i % 8 == 7)
 			Con_Printf ("\n");
 	}
@@ -320,8 +316,7 @@ Mst_Packet (void)
 	char        msg;
 	server_t   *sv;
 
-
-	// NET_Filter();
+//	NET_Filter();
 	msg = net_message->message->data[1];
 	if (msg == A2A_PING) {
 		NET_Filter ();
@@ -331,9 +326,7 @@ Mst_Packet (void)
 			SVL_Add (sv);
 		}
 		sv->timeout = Sys_DoubleTime ();
-	}
-
-	else if (msg == S2M_HEARTBEAT) {
+	} else if (msg == S2M_HEARTBEAT) {
 		NET_Filter ();
 		Con_Printf ("%s >> S2M_HEARTBEAT\n", NET_AdrToString (net_from));
 		if (!(sv = SVL_Find (net_from))) {
@@ -341,24 +334,18 @@ Mst_Packet (void)
 			SVL_Add (sv);
 		}
 		sv->timeout = Sys_DoubleTime ();
-	}
-
-	else if (msg == S2M_SHUTDOWN) {
+	} else if (msg == S2M_SHUTDOWN) {
 		NET_Filter ();
 		Con_Printf ("%s >> S2M_SHUTDOWN\n", NET_AdrToString (net_from));
 		if ((sv = SVL_Find (net_from))) {
 			SVL_Remove (sv);
 			free (sv);
 		}
-	}
-
-	else if (msg == 'c') {
+	} else if (msg == 'c') {
 		Con_Printf ("%s >> ", NET_AdrToString (net_from));
 		Con_Printf ("Gamespy server list request\n");
 		Mst_SendList ();
-	}
-
-	else {
+	} else {
 		byte       *p;
 
 		p = net_message->message->data;
@@ -366,9 +353,7 @@ Mst_Packet (void)
 		Con_Printf ("Pingtool server list request\n");
 		if (p[0] == 0 && p[1] == 'y') {
 			Mst_SendList ();
-		}
-
-		else {
+		} else {
 			Con_Printf ("%s >> ", NET_AdrToString (net_from));
 			Con_Printf ("%c\n", net_message->message->data[1]);
 			AnalysePacket ();
@@ -387,7 +372,8 @@ SV_ReadPackets (void)
 void
 SV_ConnectionlessPacket (void)
 {
-	Con_Printf ("%s>>%s\n", NET_AdrToString (net_from), net_message->message->data);
+	Con_Printf ("%s>>%s\n", NET_AdrToString (net_from),
+				net_message->message->data);
 }
 
 int         argv_index_add;
@@ -399,8 +385,8 @@ Cmd_FilterAdd (void)
 	netadr_t    to, from;
 
 	if (Cmd_Argc () < 4 + argv_index_add) {
-		Con_Printf
-			("Invalid command parameters. Usage:\nfilter add x.x.x.x:port x.x.x.x:port\n\n");
+		Con_Printf ("Invalid command parameters. "
+					"Usage:\nfilter add x.x.x.x:port x.x.x.x:port\n\n");
 		return;
 	}
 	NET_StringToAdr (Cmd_Argv (2 + argv_index_add), &from);
@@ -414,9 +400,7 @@ Cmd_FilterAdd (void)
 				Cmd_Argv (3 + argv_index_add));
 		filter = FL_New (&from, &to);
 		FL_Add (filter);
-	}
-
-	else
+	} else
 		Con_Printf ("%s already defined\n\n", Cmd_Argv (2 + argv_index_add));
 }
 
@@ -427,8 +411,8 @@ Cmd_FilterRemove (void)
 	netadr_t    from;
 
 	if (Cmd_Argc () < 3 + argv_index_add) {
-		Con_Printf
-			("Invalid command parameters. Usage:\nfilter remove x.x.x.x:port\n\n");
+		Con_Printf ("Invalid command parameters. Usage:\n"
+					"filter remove x.x.x.x:port\n\n");
 		return;
 	}
 	NET_StringToAdr (Cmd_Argv (2 + argv_index_add), &from);
@@ -436,9 +420,7 @@ Cmd_FilterRemove (void)
 		Con_Printf ("Removed %s\n\n", Cmd_Argv (2 + argv_index_add));
 		FL_Remove (filter);
 		free (filter);
-	}
-
-	else
+	} else
 		Con_Printf ("Cannot find %s\n\n", Cmd_Argv (2 + argv_index_add));
 }
 
@@ -469,24 +451,17 @@ Cmd_Filter_f (void)
 	argv_index_add = 0;
 	if (!strcmp (Cmd_Argv (1), "add"))
 		Cmd_FilterAdd ();
-
 	else if (!strcmp (Cmd_Argv (1), "remove"))
 		Cmd_FilterRemove ();
-
 	else if (!strcmp (Cmd_Argv (1), "clear"))
 		Cmd_FilterClear ();
-
 	else if (Cmd_Argc () == 3) {
 		argv_index_add = -1;
 		Cmd_FilterAdd ();
-	}
-
-	else if (Cmd_Argc () == 2) {
+	} else if (Cmd_Argc () == 2) {
 		argv_index_add = -1;
 		Cmd_FilterRemove ();
-	}
-
-	else
+	} else
 		Cmd_FilterList ();
 }
 
@@ -496,11 +471,12 @@ SV_WriteFilterList (void)
 	FILE       *filters;
 
 	if ((filters = fopen ("filters.ini", "wt"))) {
+		filter_t   *filter;
+
 		if (filter_list == NULL) {
 			fclose (filters);
 			return;
 		}
-		filter_t   *filter;
 
 		for (filter = filter_list; filter; filter = filter->next) {
 			fprintf (filters, "%s", NET_AdrToString (filter->from));
@@ -524,7 +500,6 @@ SV_Shutdown (void)
 static void
 SV_TimeOut (void)
 {
-
 	// Remove listed severs that havnt sent a heartbeat for some time
 	double      time = Sys_DoubleTime ();
 	server_t   *sv;
@@ -532,6 +507,7 @@ SV_TimeOut (void)
 
 	if (sv_list == NULL)
 		return;
+
 	for (sv = sv_list; sv;) {
 		if (sv->timeout + SV_TIMEOUT < time) {
 			next = sv->next;
@@ -539,9 +515,7 @@ SV_TimeOut (void)
 			SVL_Remove (sv);
 			free (sv);
 			sv = next;
-		}
-
-		else
+		} else
 			sv = sv->next;
 	}
 }
