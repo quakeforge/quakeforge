@@ -1312,7 +1312,12 @@ if test "x$optimize" = xyes; then
 		CC_SUB=$3
 		IFS=" "
 		AC_MSG_RESULT($CCVER)
-		heavy="-O2 -frename-registers -finline-limit=32000 -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
+		saved_cflags="$CFLAGS"
+		CFLAGS=""
+		QF_CC_OPTION(-frename-registers)
+		QF_CC_OPTION(-finline-limit=32000 -Winline)
+		heavy="-O2 $CFLAGS -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
+		CFLAGS="$saved_cflags"
 		light="-O2"
 		AC_ARG_ENABLE(strict-aliasing,
 	[  --enable-strict-aliasing enable the -fstrict-aliasing ooption of gcc])
@@ -1423,21 +1428,7 @@ if test "x$GCC" = xyes; then
 	)
 fi
 if test "x$check_pipe" = xyes; then
-	AC_MSG_CHECKING(whether -pipe works)
-	save_CFLAGS="$CFLAGS"
-	CFLAGS="$CFLAGS -pipe"
-	pipe_ok=no
-	AC_TRY_COMPILE(
-		[],
-		[],
-		pipe_ok=yes
-		AC_MSG_RESULT(yes),
-		AC_MSG_RESULT(no)
-	)
-	CFLAGS="$save_CFLAGS"
-	if test "x$pipe_ok" = xyes; then
-		CFLAGS="$CFLAGS -pipe"
-	fi
+	QF_CC_OPTION(-pipe)
 fi
 
 dnl QuakeForge uses lots of BCPL-style (//) comments, which can cause problems
@@ -1472,7 +1463,7 @@ AC_ARG_ENABLE(Werror,
 dnl We want warnings, lots of warnings...
 if test "x$GCC" = "xyes"; then
 	if test "x$enable_Werror" $cvs_def_enabled; then
-		CFLAGS="$CFLAGS -Wall -Werror -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Winline"
+		CFLAGS="$CFLAGS -Wall -Werror -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations"
 	else
 		CFLAGS="$CFLAGS -Wall"
 	fi

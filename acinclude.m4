@@ -1155,3 +1155,21 @@ else
 	done
 fi
 ])
+
+AC_DEFUN(QF_CC_OPTION, [
+AC_MSG_CHECKING(whether $1 works)
+save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS $1"
+qf_opt_ok=no
+AC_TRY_COMPILE(
+	[],
+	[],
+	qf_opt_ok=yes
+	AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+)
+CFLAGS="$save_CFLAGS"
+if test "x$qf_opt_ok" = xyes; then
+	CFLAGS="$CFLAGS $1"
+fi
+])
