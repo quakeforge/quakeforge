@@ -95,20 +95,25 @@ m		([\-+]?)
 						s_file = ReuseString (pr_immediate_string);
 					}
 
+[+\-*/&|^%]=		{
+						yylval.op = yytext[0];
+						printf ("%s\n", yytext);
+						return ASX;
+					}
+
+"<<="				{
+						yylval.op = SHL;
+						return ASX;
+					}
+
+">>="				{
+						yylval.op = SHR;
+						return ASX;
+					}
+
 [!(){}.*/&|^~+\-=\[\];,#%?:]	return yytext[0];
 
 "..."	return ELIPSIS;
-
-"+="	return ASADD;
-"-="	return ASSUB;
-"*="	return ASMUL;
-"/="	return ASDIV;
-"&="	return ASAND;
-"|="	return ASOR;
-"^="	return ASXOR;
-"%="	return ASMOD;
-"<<="	return ASSHL;
-">>="	return ASSHR;
 
 "<<"	return SHL;
 ">>"	return SHR;
@@ -121,6 +126,16 @@ m		([\-+]?)
 ">="	return GE;
 "<"		return LT;
 ">"		return GT;
+
+"++"				{
+						yylval.op = '+';
+						return INCOP;
+					}
+
+"--"				{
+						yylval.op = '-';
+						return INCOP;
+					}
 
 "$"{s}*{ID}			{
 						int ret = do_grab(yytext);

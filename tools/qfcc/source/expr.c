@@ -812,31 +812,7 @@ asx_expr (int op, expr_t *e1, expr_t *e2)
 {
 	expr_t *e = new_expr ();
 	*e = *e1;
-	switch (op) {
-		case ASADD:
-			return binary_expr ('=', e, binary_expr ('+', e1, e2));
-		case ASSUB:
-			return binary_expr ('=', e, binary_expr ('-', e1, e2));
-		case ASMUL:
-			return binary_expr ('=', e, binary_expr ('*', e1, e2));
-		case ASDIV:
-			return binary_expr ('=', e, binary_expr ('/', e1, e2));
-		case ASAND:
-			return binary_expr ('=', e, binary_expr ('&', e1, e2));
-		case ASOR:
-			return binary_expr ('=', e, binary_expr ('|', e1, e2));
-		case ASXOR:
-			return binary_expr ('=', e, binary_expr ('^', e1, e2));
-		case ASMOD:
-			return binary_expr ('=', e, binary_expr ('%', e1, e2));
-		case ASSHL:
-			return binary_expr ('=', e, binary_expr (SHL, e1, e2));
-		case ASSHR:
-			return binary_expr ('=', e, binary_expr (SHR, e1, e2));
-		default:
-			error (e1, "invalid operand for asx");
-	}
-	return 0;
+	return binary_expr ('=', e, binary_expr (op, e1, e2));
 }
 
 expr_t *
@@ -1137,4 +1113,30 @@ conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2)
 		append_expr (block, e1);
 	append_expr (block, elabel);
 	return block;
+}
+
+expr_t *
+incop_expr (int op, expr_t *e, int postop)
+{
+	expr_t     *one = new_expr ();
+	expr_t     *incop;
+	
+	one->type = ex_integer;		// integer constants get auto-cast to float
+	one->e.integer_val = 1;
+	incop = asx_expr (op, e, one);
+	if (postop) {
+		expr_t     *temp;
+		type_t     *type;
+		expr_t     *block = new_block_expr ();
+
+		type = e->type == ex_def
+				? e->e.def->type
+				: e->e.expr.type;
+		temp = new_temp_def_expr (type);
+		append_expr (block, binary_expr ('=', temp, e));
+		append_expr (block, incop);
+		block->e.block.result = temp;
+		return block;
+	}
+	return incop;
 }

@@ -11,9 +11,9 @@ X	<op>= operator ( var += expr, etc. )
 X	allow temp defs at higher levels
 X	move the chained funcion support out of emit_function_expr into
 	funciton_expr
+X	pre- and post- increment operators (++ and --)
 I	gut out old parser
 o	switch/case, for any type
 o	break/continue keywords for switch() and for(;;)
 o	quaternion type. Tricky: requires 4 word args/return
-o	pre- and post- increment operators (++ and --)
 o	CSE optimisations

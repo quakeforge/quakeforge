@@ -33,6 +33,7 @@ typedef struct {
 %}
 
 %union {
+	int		op;
 	scope_t	scope;
 	def_t	*def;
 	type_t	*type;
@@ -45,14 +46,15 @@ typedef struct {
 	function_t *function;
 }
 
-%right	'=' ASADD ASSUB ASMUL ASDIV ASAND ASOR ASXOR ASMOD ASSHL ASSHR
+%right	<op> '=' ASX
 %right	'?' ':'
 %left	OR AND
 %left	EQ NE LE GE LT GT
 %left	SHL SHR
 %left	'+' '-'
 %left	'*' '/' '&' '|' '^' '%'
-%left	'!' '~'
+//%left	'!' '~'
+%right	<op> UNARY INCOP
 %right	'('
 %left	'.'
 
@@ -442,16 +444,7 @@ opt_expr
 
 expr
 	: expr '=' expr				{ $$ = binary_expr ('=', $1, $3); }
-	| expr ASADD expr			{ $$ = asx_expr (ASADD, $1, $3); }
-	| expr ASSUB expr			{ $$ = asx_expr (ASSUB, $1, $3); }
-	| expr ASMUL expr			{ $$ = asx_expr (ASMUL, $1, $3); }
-	| expr ASDIV expr			{ $$ = asx_expr (ASDIV, $1, $3); }
-	| expr ASAND expr			{ $$ = asx_expr (ASAND, $1, $3); }
-	| expr ASOR expr			{ $$ = asx_expr (ASOR, $1, $3); }
-	| expr ASXOR expr			{ $$ = asx_expr (ASXOR, $1, $3); }
-	| expr ASMOD expr			{ $$ = asx_expr (ASMOD, $1, $3); }
-	| expr ASSHL expr			{ $$ = asx_expr (ASSHL, $1, $3); }
-	| expr ASSHR expr			{ $$ = asx_expr (ASSHR, $1, $3); }
+	| expr ASX expr				{ $$ = asx_expr ($2, $1, $3); }
 	| expr '?' expr ':' expr 	{ $$ = conditional_expr ($1, $3, $5); }
 	| expr AND expr				{ $$ = binary_expr (AND, $1, $3); }
 	| expr OR expr				{ $$ = binary_expr (OR,  $1, $3); }
@@ -474,9 +467,12 @@ expr
 	| expr '(' arg_list ')'		{ $$ = function_expr ($1, $3); }
 	| expr '(' ')'				{ $$ = function_expr ($1, 0); }
 	| expr '.' expr				{ $$ = binary_expr ('.', $1, $3); }
-	| '-' expr %prec '!'		{ $$ = unary_expr ('-', $2); }
-	| '!' expr					{ $$ = unary_expr ('!', $2); }
-	| '~' expr					{ $$ = unary_expr ('~', $2); }
+	| '+' expr %prec UNARY		{ $$ = $2; }
+	| '-' expr %prec UNARY		{ $$ = unary_expr ('-', $2); }
+	| '!' expr %prec UNARY		{ $$ = unary_expr ('!', $2); }
+	| '~' expr %prec UNARY		{ $$ = unary_expr ('~', $2); }
+	| INCOP expr				{ $$ = incop_expr ($1, $2, 0); }
+	| expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
 	| NAME
 		{
 			$$ = new_expr ();

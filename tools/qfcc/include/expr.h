@@ -92,6 +92,7 @@ expr_t *unary_expr (int op, expr_t *e);
 expr_t *function_expr (expr_t *e1, expr_t *e2);
 expr_t *return_expr (function_t *f, expr_t *e);
 expr_t *conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2);
+expr_t *incop_expr (int op, expr_t *e, int postop);
 
 def_t *emit_statement (int line, opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_c);
 void emit_expr (expr_t *e);
