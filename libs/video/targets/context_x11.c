@@ -452,7 +452,6 @@ void
 X11_ForceViewPort (void)
 {
 #ifdef HAVE_VIDMODE
-	printf("in thinger\n");
 	if (vidmode_avail && vid_context_created) {
 		Window theroot,scrap;
 		int x,y,ax,ay;
