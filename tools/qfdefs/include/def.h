@@ -17,4 +17,10 @@ extern def_t qw_global_defs[];
 extern def_t qw_field_defs[];
 extern int qw_crc;
 
+void Init_Defs (def_t *gtab, def_t *ftab);
+def_t *Find_Global_Def_name (const char *name);
+def_t *Find_Global_Def_offs (int offs);
+def_t *Find_Field_Def_name (const char *name);
+def_t *Find_Field_Def_offs (int offs);
+
 #endif//__def_h

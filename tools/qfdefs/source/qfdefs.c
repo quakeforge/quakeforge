@@ -24,6 +24,8 @@ progs_t progs;
 int
 main (int argc, char **argv)
 {
+	def_t *globals, *fields, *def;
+
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
 	membase = malloc (memsize);
@@ -32,9 +34,9 @@ main (int argc, char **argv)
 	Cbuf_Init ();
 	Cmd_Init ();
 
-	Cvar_Get ("fs_basegame", ".", 0, 0, 0);
-	Cvar_Get ("fs_userpath", "/", 0, 0, 0);
-	Cvar_Get ("fs_sharepath", "/", 0, 0, 0);
+	Cvar_Get ("fs_basegame", "", 0, 0, 0);
+	Cvar_Get ("fs_userpath", "", 0, 0, 0);
+	Cvar_Get ("fs_sharepath", "", 0, 0, 0);
 
 	PR_Init_Cvars ();
 	COM_Filesystem_Init_Cvars ();
@@ -60,18 +62,32 @@ main (int argc, char **argv)
 					progs.progs->version & 0xfff);
 		if (progs.progs->crc == nq_crc) {
 			printf ("%s: netquake crc\n", *argv);
+			Init_Defs (nq_global_defs, nq_field_defs);
+			globals = nq_global_defs;
+			fields = nq_field_defs;
 		} else if (progs.progs->crc == qw_crc) {
 			printf ("%s: quakeworld crc\n", *argv);
+			Init_Defs (qw_global_defs, qw_field_defs);
+			globals = qw_global_defs;
+			fields = qw_field_defs;
 		} else {
 			printf ("%s: unknown crc %d\n", *argv, progs.progs->crc);
+			continue;
 		}
-		printf ("statements: %d @ %d\n", progs.progs->numstatements, progs.progs->ofs_statements);
-		printf ("globaldefs: %d @ %d\n", progs.progs->numglobaldefs, progs.progs->ofs_globaldefs);
-		printf ("fielddefs: %d @ %d\n", progs.progs->numfielddefs, progs.progs->ofs_fielddefs);
-		printf ("functions: %d @ %d\n", progs.progs->numfunctions, progs.progs->ofs_functions);
-		printf ("strings: %d @ %d\n", progs.progs->numstrings, progs.progs->ofs_strings);
-		printf ("globals: %d @ %d\n", progs.progs->numglobals, progs.progs->ofs_globals);
-		printf ("fields: %d\n", progs.progs->entityfields);
+		for (def = globals; def->name; def++)
+			if (!PR_FindGlobal (&progs, def->name))
+				break;
+		if (!def->name)
+			printf ("%s: all system globals accounted for\n", *argv);
+		else
+			printf ("%s: some system globals missing\n", *argv);
+		for (def = fields; def->name; def++)
+			if (!ED_FindField (&progs, def->name))
+				break;
+		if (!def->name)
+			printf ("%s: all system fields accounted for\n", *argv);
+		else
+			printf ("%s: some system fields missing\n", *argv);
 	}
 	return 0;
 }

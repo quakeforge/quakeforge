@@ -77,6 +77,7 @@ main (int argc, char **argv)
 				state++;
 			case 2:
 				if (buf[0] == '}') {
+					fputs ("\t{ev_void,\t0,\t0},\n", out);
 					fputs ("};\n", out);
 					state++;
 					break;
@@ -100,6 +101,7 @@ main (int argc, char **argv)
 				output_def (out, buf);
 				break;
 			case 6:
+				fputs ("\t{ev_void,\t0,\t0},\n", out);
 				fputs ("};\n", out);
 				state++;
 				break;
