@@ -1280,13 +1280,13 @@ CL_Init_Cvars (void)
 	rcon_address = Cvar_Get ("rcon_address", "", CVAR_NONE, NULL, "server IP "
 							 "address when client not connected - for "
 							 "sending rcon commands");
-	show_fps = Cvar_Get ("show_fps", "0", CVAR_NONE, NULL,
+	show_fps = Cvar_Get ("show_fps", "0", CVAR_ARCHIVE, NULL,
 						 "display realtime frames per second");
-	show_ping = Cvar_Get ("show_ping", "0", CVAR_NONE, NULL,
+	show_ping = Cvar_Get ("show_ping", "0", CVAR_ARCHIVE, NULL,
 						  "display current ping to server");
-	show_pl = Cvar_Get ("show_pl", "0", CVAR_NONE, NULL,
+	show_pl = Cvar_Get ("show_pl", "0", CVAR_ARCHIVE, NULL,
 						"display current packet loss to server");
-	show_time = Cvar_Get ("show_time", "0", CVAR_NONE, NULL,
+	show_time = Cvar_Get ("show_time", "0", CVAR_ARCHIVE, NULL,
 						  "Display the current time, 1 24hr, 2 AM/PM");
 	cl_predict_players = Cvar_Get ("cl_predict_players", "1", CVAR_NONE, NULL,
 								   "If this is 0, no player prediction is "
