@@ -69,6 +69,9 @@ void X11_RestoreVidMode (void);
 void X11_SetCaption (const char *);
 void X11_SetScreenSaver (void);
 void X11_SetVidMode (int, int);
+void X11_SaveMouseAcceleration (void);
+void X11_RemoveMouseAcceleration (void);
+void X11_RestoreMouseAcceleration (void);
 qboolean X11_GetWindowCoords (int *ax, int *ay);
 
 #endif	// __context_x11_h_

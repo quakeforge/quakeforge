@@ -114,6 +114,11 @@ static int	xss_interval;
 static int	xss_blanking;
 static int	xss_exposures;
 
+static qboolean	accel_saved = false;
+static int	accel_numerator;
+static int	accel_denominator;
+static int	accel_threshold;
+
 
 qboolean
 X11_AddEvent (int event, void (*event_handler) (XEvent *))
@@ -614,4 +619,30 @@ X11_RestoreScreenSaver (void)
 {
 	XSetScreenSaver (x_disp, xss_timeout, xss_interval, xss_blanking,
 					 xss_exposures);
+}
+
+
+void
+X11_SaveMouseAcceleration (void)
+{
+	accel_saved = true;
+	XGetPointerControl(x_disp, &accel_numerator, &accel_denominator,
+					   &accel_threshold);
+}
+
+void
+X11_RemoveMouseAcceleration (void)
+{
+	XChangePointerControl(x_disp, false, false, 0, 0, 0);
+}
+
+void
+X11_RestoreMouseAcceleration (void)
+{
+	if (!accel_saved)
+		return;
+
+	XChangePointerControl(x_disp, true, true, accel_numerator,
+						  accel_denominator, accel_threshold);
+	accel_saved = false;
 }

@@ -78,6 +78,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 cvar_t	   *in_snd_block;
 cvar_t	   *in_dga;
+cvar_t	   *in_mouse_accel;
 
 static qboolean dga_avail;
 static qboolean dga_active;
@@ -122,6 +123,17 @@ in_dga_f (cvar_t *var)
 		} else {
 			dga_off ();
 		}
+	}
+}
+
+static void
+in_mouse_accel_f (cvar_t *var)
+{
+	if (var->int_val) {
+		X11_RestoreMouseAcceleration ();
+	} else {
+		X11_SaveMouseAcceleration ();
+		X11_RemoveMouseAcceleration ();
 	}
 }
 
@@ -635,6 +647,8 @@ IN_LL_Shutdown (void)
 		XAutoRepeatOn (x_disp);
 		dga_off ();
 	}
+	if (!in_mouse_accel->int_val)
+		X11_RestoreMouseAcceleration();
 	X11_CloseDisplay ();
 }
 
@@ -690,6 +704,9 @@ IN_LL_Init_Cvars (void)
 							 "block sound output on window focus loss");
 	in_dga = Cvar_Get ("in_dga", "1", CVAR_ARCHIVE, in_dga_f,
 					   "DGA Input support");
+	in_mouse_accel = Cvar_Get ("in_mouse_accel", "1", CVAR_ARCHIVE,
+							   in_mouse_accel_f,
+							   "set to 0 to remove mouse acceleration");
 }
 
 void
