@@ -65,6 +65,7 @@ cvar_t     *con_notifytime;				// seconds
 
 #define	NUM_CON_TIMES 4
 float       con_times[NUM_CON_TIMES];	// realtime time the line was generated
+
 										// for transparent notify lines
 
 int         con_vislines;
@@ -186,7 +187,7 @@ Con_Resize (console_t *con)
 	if (width == con_linewidth)
 		return;
 
-	if (width < 1) {	// video hasn't been initialized yet
+	if (width < 1) {					// video hasn't been initialized yet
 		width = 38;
 		con_linewidth = width;
 		con_totallines = CON_TEXTSIZE / con_linewidth;
@@ -255,10 +256,14 @@ Con_Init (void)
 //
 // register our commands
 //
-	Cmd_AddCommand ("toggleconsole", Con_ToggleConsole_f, "Toggle the console up and down");
-	Cmd_AddCommand ("togglechat", Con_ToggleChat_f, "Toggle the console up and down");
-	Cmd_AddCommand ("messagemode", Con_MessageMode_f, "Prompt to send a message to everyone");
-	Cmd_AddCommand ("messagemode2", Con_MessageMode2_f, "Prompt to send a message to only people on your team");
+	Cmd_AddCommand ("toggleconsole", Con_ToggleConsole_f,
+					"Toggle the console up and down");
+	Cmd_AddCommand ("togglechat", Con_ToggleChat_f,
+					"Toggle the console up and down");
+	Cmd_AddCommand ("messagemode", Con_MessageMode_f,
+					"Prompt to send a message to everyone");
+	Cmd_AddCommand ("messagemode2", Con_MessageMode2_f,
+					"Prompt to send a message to only people on your team");
 	Cmd_AddCommand ("clear", Con_Clear_f, "Clear the console");
 	con_initialized = true;
 }
@@ -266,7 +271,9 @@ Con_Init (void)
 void
 Con_Init_Cvars (void)
 {
-	con_notifytime = Cvar_Get ("con_notifytime", "3", CVAR_NONE, "How long in seconds messages are displayed on screen");
+	con_notifytime =
+		Cvar_Get ("con_notifytime", "3", CVAR_NONE,
+				  "How long in seconds messages are displayed on screen");
 }
 
 
@@ -282,8 +289,8 @@ Con_Linefeed (void)
 	con->current++;
 	if (con->numlines < con_totallines)
 		con->numlines++;
-	memset (&con->text[(con->current % con_totallines) * con_linewidth]
-			, ' ', con_linewidth);
+	memset (&con->text[(con->current % con_totallines) * con_linewidth],
+			' ', con_linewidth);
 }
 
 /*
@@ -300,6 +307,16 @@ Con_Print (char *txt)
 	int         c, l;
 	static int  cr;
 	int         mask;
+
+	// echo to debugging console
+	Sys_Printf ("%s", txt);
+
+	// log all messages to file
+	if (con_debuglog)
+		Sys_DebugLog (va ("%s/qconsole.log", com_gamedir), "%s", txt);
+
+	if (!con_initialized)
+		return;
 
 	if (txt[0] == 1 || txt[0] == 2) {
 		mask = 128;						// go to colored text
@@ -373,16 +390,6 @@ Con_Printf (char *fmt, ...)
 	vsnprintf (msg, sizeof (msg), fmt, argptr);
 	va_end (argptr);
 
-	// also echo to debugging console
-	Sys_Printf ("%s", msg);				// also echo to debugging console
-
-	// log all messages to file
-	if (con_debuglog)
-		Sys_DebugLog (va ("%s/qconsole.log", com_gamedir), "%s", msg);
-
-	if (!con_initialized)
-		return;
-
 	// write it to the scrollable buffer
 	Con_Print (msg);
 }
@@ -400,13 +407,13 @@ Con_DPrintf (char *fmt, ...)
 
 	if (!developer->int_val)
 		return;							// don't confuse non-developers with
-										// techie stuff...
+	// techie stuff...
 
 	va_start (argptr, fmt);
 	vsnprintf (msg, sizeof (msg), fmt, argptr);
 	va_end (argptr);
 
-	Con_Printf ("%s", msg);
+	Con_Print (msg);
 }
 
 /*
@@ -429,7 +436,7 @@ Con_DrawInput (void)
 
 	if (key_dest != key_console && cls.state == ca_active)
 		return;							// don't draw anything (always draw
-										// if not active)
+	// if not active)
 
 	text = strcpy (temp, key_lines[edit_line]);
 
@@ -613,7 +620,6 @@ Con_DrawConsole (int lines)
 		for (i = 0; i < strlen (dlbar); i++)
 			Draw_Character8 ((i + 1) << 3, y, dlbar[i]);
 	}
-
 // draw the input prompt, user text, and cursor if desired
 	Con_DrawInput ();
 }
