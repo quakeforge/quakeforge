@@ -260,14 +260,46 @@ Condump_f (void)
 	Qclose (file);
 }
 
+qboolean
+CheckForCommand (const char *line)
+{
+	char        command[128];
+	const char *cmd;
+	int         i;
+
+	for (i = 0; i < 127; i++)
+
+		if (line[i] <= ' ')
+			break;
+		else
+			command[i] = line[i];
+	command[i] = 0;
+	
+	cmd = Cmd_CompleteCommand (command);
+	if (!cmd || strcmp (cmd, command))
+		cmd = Cvar_CompleteVariable (command);
+	if (!cmd || strcmp (cmd, command))
+		return false;					// just a chat message
+	return true;
+}
+
 static void
 C_ExecLine (const char *line)
 {
-	Con_Printf ("%s\n", line);
-	if (line[0] == '/')
-		line++; 
-	Cbuf_AddText (line);
+	if (line[0] == '/' && line [1] == '/')
+		goto no_lf;
+	else if (line[0] == '\\' || line[0] == '/')
+		Cbuf_AddText (line + 1);
+	else if (cl_chatmode->int_val != 1 && CheckForCommand (line))
+		Cbuf_AddText (line);
+	else if (cl_chatmode->int_val) {
+		Cbuf_AddText ("say ");
+		Cbuf_AddText (line);
+	} else
+		Cbuf_AddText (line);
 	Cbuf_AddText ("\n");
+  no_lf:
+	Con_Printf ("%s\n", line);
 }
 
 static void
