@@ -531,6 +531,7 @@ X11_GrabKeyboardBool(qboolean yes)
 		is_grabbed = false;
 	}
 }
+
 #if 0
 static void
 X11_UngrabKeyboard (void)
