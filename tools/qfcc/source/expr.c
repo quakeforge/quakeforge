@@ -1508,6 +1508,52 @@ is_logic (int op)
 	return 0;
 }
 
+static expr_t *
+check_precedence (int op, expr_t *e1, expr_t *e2)
+{
+	if (e1->type == ex_uexpr && e1->e.expr.op == '!' && !e1->paren) {
+		if (options.traditional) {
+			if (op != AND && op != OR && op != '=') {
+				notice (e1, "precedence of `!' and `%s' inverted for "
+							"traditional code", get_op_string (op));
+				e1->e.expr.e1->paren = 1;
+				return unary_expr ('!', binary_expr (op, e1->e.expr.e1, e2));
+			}
+		} else if (op == '&' || op == '|') {
+			warning (e1, "ambiguous logic. Suggest explicit parentheses with "
+					 "expressions involving ! and %s", get_op_string (op));
+		}
+	}
+	if (options.traditional) {
+		if (e2->type == ex_expr && !e2->paren) {
+			if (((op == '&' || op == '|')
+				 && (e2->e.expr.op == '*' || e2->e.expr.op == '/'
+					 || e2->e.expr.op == '+' || e2->e.expr.op == '-'
+					 || is_compare (e2->e.expr.op)))
+				|| (op == '='
+					&& (e2->e.expr.op == OR || e2->e.expr.op == AND))) {
+				notice (e1, "precedence of `%s' and `%s' inverted for "
+							"traditional code", get_op_string (op),
+							get_op_string (e2->e.expr.op));
+				e1 = binary_expr (op, e1, e2->e.expr.e1);
+				e1->paren = 1;
+				return binary_expr (e2->e.expr.op, e1, e2->e.expr.e2);
+			}
+			if (((op == EQ || op == NE) && is_compare (e2->e.expr.op))
+				|| (op == OR && e2->e.expr.op == AND)
+				|| (op == '|' && e2->e.expr.op == '&')) {
+				notice (e1, "precedence of `%s' raised to `%s' for "
+							"traditional code", get_op_string (op),
+							get_op_string (e2->e.expr.op));
+				e1 = binary_expr (op, e1, e2->e.expr.e1);
+				e1->paren = 1;
+				return binary_expr (e2->e.expr.op, e1, e2->e.expr.e2);
+			}
+		}
+	}
+	return 0;
+}
+
 expr_t *
 binary_expr (int op, expr_t *e1, expr_t *e2)
 {
@@ -1626,18 +1672,8 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if (e1->type >= ex_string && e2->type >= ex_string)
 		return binary_const (op, e1, e2);
 
-	if ((op == '&' || op == '|' || is_compare (op))
-		&& e1->type == ex_uexpr && e1->e.expr.op == '!' && !e1->paren) {
-		if (options.traditional) {
-			notice (e1, "precedence of `!' and `%s' inverted for traditional "
-					    "code", get_op_string (op));
-			e1->e.expr.e1->paren = 1;
-			return unary_expr ('!', binary_expr (op, e1->e.expr.e1, e2));
-		} else if (!is_compare (op)) {
-			warning (e1, "ambiguous logic. Suggest explicit parentheses with "
-					 "expressions involving ! and %s", get_op_string (op));
-		}
-	}
+	if ((e = check_precedence (op, e1, e2)))
+		return e;
 
 	if (t1 != t2) {
 		switch (t1->type) {
