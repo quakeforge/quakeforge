@@ -58,7 +58,6 @@ int MSG_ReadShort (msg_t *msg);
 int MSG_ReadLong (msg_t *msg);
 float MSG_ReadFloat (msg_t *msg);
 const char *MSG_ReadString (msg_t *msg);
-const char *MSG_ReadStringLine (msg_t *msg);
 
 float MSG_ReadCoord (msg_t *msg);
 void MSG_ReadCoordV (msg_t *msg, vec3_t coord);
