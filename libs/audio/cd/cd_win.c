@@ -51,6 +51,7 @@ static general_funcs_t	plugin_info_general_funcs;
 //static cd_data_t		plugin_info_cd_data; 
 static cd_funcs_t		plugin_info_cd_funcs;
 
+extern HWND mainwindow;		//FIXME
 
 static qboolean cdValid = false;
 static qboolean playing = false;

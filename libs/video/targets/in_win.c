@@ -60,6 +60,8 @@ HRESULT (WINAPI * pDirectInputCreate) (HINSTANCE hinst, DWORD dwVersion,
 
 void        VID_UpdateWindowStatus (int window_x, int window_y);
 
+extern qboolean win_canalttab;
+extern DEVMODE win_gdevmode;
 
 // mouse public variables
 unsigned int uiWheelMessage;
@@ -395,11 +397,11 @@ IN_MouseEvent (int mstate)
 		// perform button actions
 		for (i = 0; i < mouse_buttons; i++) {
 			if ((mstate & (1 << i)) && !(mouse_oldbuttonstate & (1 << i))) {
-				Key_Event (M_BUTTON1 + i, -1, true);
+				Key_Event (QFM_BUTTON1 + i, -1, true);
 			}
 
 			if (!(mstate & (1 << i)) && (mouse_oldbuttonstate & (1 << i))) {
-				Key_Event (M_BUTTON1 + i, -1, false);
+				Key_Event (QFM_BUTTON1 + i, -1, false);
 			}
 		}
 
@@ -507,11 +509,11 @@ IN_LL_SendKeyEvents (void)
 		// perform button actions
 		for (i = 0; i < mouse_buttons; i++) {
 			if ((mstate_di & (1 << i)) && !(mouse_oldbuttonstate & (1 << i))) {
-				Key_Event (M_BUTTON1 + i, -1, true);
+				Key_Event (QFM_BUTTON1 + i, -1, true);
 			}
 
 			if (!(mstate_di & (1 << i)) && (mouse_oldbuttonstate & (1 << i))) {
-				Key_Event (M_BUTTON1 + i, -1, false);
+				Key_Event (QFM_BUTTON1 + i, -1, false);
 			}
 		}
 
@@ -539,17 +541,17 @@ unsigned short scantokey[128] = {
 //  0       1        2       3       4       5       6       7
 //  8       9        A       B       C       D       E       F
 	0, 27, '1', '2', '3', '4', '5', '6',
-	'7', '8', '9', '0', '-', '=', K_BACKSPACE, 9,	// 0
+	'7', '8', '9', '0', '-', '=', QFK_BACKSPACE, 9,	// 0
 	'q', 'w', 'e', 'r', 't', 'y', 'u', 'i',
-	'o', 'p', '[', ']', 13, K_LCTRL, 'a', 's',	// 1
+	'o', 'p', '[', ']', 13, QFK_LCTRL, 'a', 's',	// 1
 	'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',
-	'\'', '`', K_LSHIFT, '\\', 'z', 'x', 'c', 'v',	// 2
-	'b', 'n', 'm', ',', '.', '/', K_RSHIFT, K_KP_MULTIPLY,
-	K_LALT, ' ', K_CAPSLOCK, K_F1, K_F2, K_F3, K_F4, K_F5,	// 3
-	K_F6, K_F7, K_F8, K_F9, K_F10, K_PAUSE, K_SCROLLOCK, K_KP7,
-	K_KP8, K_KP9, K_KP_MINUS, K_KP4, K_KP5, K_KP6, K_KP_PLUS, K_KP1,	// 4
-	K_KP2, K_KP3, K_KP0, K_KP_PERIOD, 0, 0, 0, K_F11,
-	K_F12, 0, 0, 0, 0, 0, 0, 0,			// 5
+	'\'', '`', QFK_LSHIFT, '\\', 'z', 'x', 'c', 'v',	// 2
+	'b', 'n', 'm', ',', '.', '/', QFK_RSHIFT, QFK_KP_MULTIPLY,
+	QFK_LALT, ' ', QFK_CAPSLOCK, QFK_F1, QFK_F2, QFK_F3, QFK_F4, QFK_F5,	// 3
+	QFK_F6, QFK_F7, QFK_F8, QFK_F9, QFK_F10, QFK_PAUSE, QFK_SCROLLOCK, QFK_KP7,
+	QFK_KP8, QFK_KP9, QFK_KP_MINUS, QFK_KP4, QFK_KP5, QFK_KP6, QFK_KP_PLUS, QFK_KP1,	// 4
+	QFK_KP2, QFK_KP3, QFK_KP0, QFK_KP_PERIOD, 0, 0, 0, QFK_F11,
+	QFK_F12, 0, 0, 0, 0, 0, 0, 0,			// 5
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -560,17 +562,17 @@ unsigned short shift_scantokey[128] = {
 //  0       1        2       3       4       5       6       7
 //  8       9        A       B       C       D       E       F
 	0, 27, '!', '@', '#', '$', '%', '^',
-	'&', '*', '(', ')', '_', '+', K_BACKSPACE, 9,	// 0
+	'&', '*', '(', ')', '_', '+', QFK_BACKSPACE, 9,	// 0
 	'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I',
-	'O', 'P', '{', '}', 13, K_LCTRL, 'A', 'S',	// 1
+	'O', 'P', '{', '}', 13, QFK_LCTRL, 'A', 'S',	// 1
 	'D', 'F', 'G', 'H', 'J', 'K', 'L', ':',
-	'"', '~', K_LSHIFT, '|', 'Z', 'X', 'C', 'V',	// 2
-	'B', 'N', 'M', '<', '>', '?', K_RSHIFT, K_KP_MULTIPLY,
-	K_LALT, ' ', K_CAPSLOCK, K_F1, K_F2, K_F3, K_F4, K_F5,	// 3
-	K_F6, K_F7, K_F8, K_F9, K_F10, K_PAUSE, K_SCROLLOCK, K_KP7,
-	K_KP8, K_KP9, K_KP_MINUS, K_KP4, K_KP5, K_KP6, K_KP_PLUS, K_KP1,	// 4
-	K_KP2, K_KP3, K_KP0, K_KP_PERIOD, 0, 0, 0, K_F11,
-	K_F12, 0, 0, 0, 0, 0, 0, 0,			// 5
+	'"', '~', QFK_LSHIFT, '|', 'Z', 'X', 'C', 'V',	// 2
+	'B', 'N', 'M', '<', '>', '?', QFK_RSHIFT, QFK_KP_MULTIPLY,
+	QFK_LALT, ' ', QFK_CAPSLOCK, QFK_F1, QFK_F2, QFK_F3, QFK_F4, QFK_F5,	// 3
+	QFK_F6, QFK_F7, QFK_F8, QFK_F9, QFK_F10, QFK_PAUSE, QFK_SCROLLOCK, QFK_KP7,
+	QFK_KP8, QFK_KP9, QFK_KP_MINUS, QFK_KP4, QFK_KP5, QFK_KP6, QFK_KP_PLUS, QFK_KP1,	// 4
+	QFK_KP2, QFK_KP3, QFK_KP0, QFK_KP_PERIOD, 0, 0, 0, QFK_F11,
+	QFK_F12, 0, 0, 0, 0, 0, 0, 0,			// 5
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -581,17 +583,17 @@ unsigned short ext_scantokey[128] = {
 //  0       1        2       3       4       5       6       7
 //  8       9        A       B       C       D       E       F
 	0, 27, '1', '2', '3', '4', '5', '6',					// 0
-	'7', '8', '9', '0', '-', '=', K_BACKSPACE, 9,
+	'7', '8', '9', '0', '-', '=', QFK_BACKSPACE, 9,
 	'q', 'w', 'e', 'r', 't', 'y', 'u', 'i',					// 1
-	'o', 'p', '[', ']', K_KP_ENTER, K_RCTRL, 'a', 's',
+	'o', 'p', '[', ']', QFK_KP_ENTER, QFK_RCTRL, 'a', 's',
 	'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',					// 2
-	'\'', '`', K_LSHIFT, '\\', 'z', 'x', 'c', 'v',
-	'b', 'n', 'm', ',', '.', K_KP_DIVIDE, K_RSHIFT, '*',	// 3
-	K_RALT, ' ', K_CAPSLOCK, K_F1, K_F2, K_F3, K_F4, K_F5,
-	K_F6, K_F7, K_F8, K_F9, K_F10, K_NUMLOCK, 0, K_HOME,	// 4
-	K_UP, K_PAGEUP, '-', K_LEFT, '5', K_RIGHT, '+', K_END,
-	K_DOWN, K_PAGEDOWN, K_INSERT, K_DELETE, 0, 0, 0, K_F11,	// 5
-	K_F12, 0, 0, 0, 0, 0, 0, 0,
+	'\'', '`', QFK_LSHIFT, '\\', 'z', 'x', 'c', 'v',
+	'b', 'n', 'm', ',', '.', QFK_KP_DIVIDE, QFK_RSHIFT, '*',	// 3
+	QFK_RALT, ' ', QFK_CAPSLOCK, QFK_F1, QFK_F2, QFK_F3, QFK_F4, QFK_F5,
+	QFK_F6, QFK_F7, QFK_F8, QFK_F9, QFK_F10, QFK_NUMLOCK, 0, QFK_HOME,	// 4
+	QFK_UP, QFK_PAGEUP, '-', QFK_LEFT, '5', QFK_RIGHT, '+', QFK_END,
+	QFK_DOWN, QFK_PAGEDOWN, QFK_INSERT, QFK_DELETE, 0, 0, 0, QFK_F11,	// 5
+	QFK_F12, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -602,17 +604,17 @@ unsigned short shift_ext_scantokey[128] = {
 //  0       1        2       3       4       5       6       7
 //  8       9        A       B       C       D       E       F
 	0, 27, '!', '@', '#', '$', '%', '^',
-	'&', '*', '(', ')', '_', '+', K_BACKSPACE, 9,	// 0
+	'&', '*', '(', ')', '_', '+', QFK_BACKSPACE, 9,	// 0
 	'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I',
-	'O', 'P', '{', '}', K_KP_ENTER, K_RCTRL, 'A', 'S',	// 1
+	'O', 'P', '{', '}', QFK_KP_ENTER, QFK_RCTRL, 'A', 'S',	// 1
 	'D', 'F', 'G', 'H', 'J', 'K', 'L', ':',
-	'"', '~', K_LSHIFT, '|', 'Z', 'X', 'C', 'V',	// 2
-	'B', 'N', 'M', '<', '>', K_KP_DIVIDE, K_RSHIFT, '*',
-	K_RALT, ' ', K_CAPSLOCK, K_F1, K_F2, K_F3, K_F4, K_F5,	// 3
-	K_F6, K_F7, K_F8, K_F9, K_F10, K_NUMLOCK, 0, K_HOME,
-	K_UP, K_PAGEUP, '-', K_LEFT, '5', K_RIGHT, '+', K_END,	// 4
-	K_DOWN, K_PAGEDOWN, K_INSERT, K_DELETE, 0, 0, 0, K_F11,
-	K_F12, 0, 0, 0, 0, 0, 0, 0,			// 5
+	'"', '~', QFK_LSHIFT, '|', 'Z', 'X', 'C', 'V',	// 2
+	'B', 'N', 'M', '<', '>', QFK_KP_DIVIDE, QFK_RSHIFT, '*',
+	QFK_RALT, ' ', QFK_CAPSLOCK, QFK_F1, QFK_F2, QFK_F3, QFK_F4, QFK_F5,	// 3
+	QFK_F6, QFK_F7, QFK_F8, QFK_F9, QFK_F10, QFK_NUMLOCK, 0, QFK_HOME,
+	QFK_UP, QFK_PAGEUP, '-', QFK_LEFT, '5', QFK_RIGHT, '+', QFK_END,	// 4
+	QFK_DOWN, QFK_PAGEDOWN, QFK_INSERT, QFK_DELETE, 0, 0, 0, QFK_F11,
+	QFK_F12, 0, 0, 0, 0, 0, 0, 0,			// 5
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -665,19 +667,19 @@ MapKey (unsigned int keycode, int press, int *k, int *u)
 		uc = 0;
 
 	switch (key) {
-		case K_RSHIFT:
+		case QFK_RSHIFT:
 			shifts &= mask;
 			shifts |= press;
 			break;
-		case K_LSHIFT:
+		case QFK_LSHIFT:
 			shifts &= ROTL(mask, 1);
 			shifts |= ROTL(press, 1);
 			break;
-		case K_RCTRL:
+		case QFK_RCTRL:
 			shifts &= ROTL(mask, 2);
 			shifts |= ROTL(press, 2);
 			break;
-		case K_LCTRL:
+		case QFK_LCTRL:
 			shifts &= ROTL(mask, 3);
 			shifts |= ROTL(press, 3);
 			break;
@@ -832,11 +834,11 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	// It's delta is either positive or neg, and we generate the proper Event.
 	case WM_MOUSEWHEEL:
 		if ((short) HIWORD (wParam) > 0) {
-			Key_Event (M_WHEEL_UP, -1, true);
-			Key_Event (M_WHEEL_UP, -1, false);
+			Key_Event (QFM_WHEEL_UP, -1, true);
+			Key_Event (QFM_WHEEL_UP, -1, false);
 		} else {
-			Key_Event (M_WHEEL_DOWN, -1, true);
-			Key_Event (M_WHEEL_DOWN, -1, false);
+			Key_Event (QFM_WHEEL_DOWN, -1, true);
+			Key_Event (QFM_WHEEL_DOWN, -1, false);
 		}
 		break;
 

@@ -55,7 +55,7 @@ static const char rcsid[] =
 #include "resource.h"
 #include "sbar.h"
 
-
+extern const char *gl_renderer;
 
 HGLRC (GLAPIENTRY *qf_wglCreateContext) (HDC);
 BOOL (GLAPIENTRY *qf_wglDeleteContext) (HGLRC);
