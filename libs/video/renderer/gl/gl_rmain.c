@@ -154,19 +154,19 @@ void
 R_DisplayErrors (void)
 {
 	if (InvalidEnum)
-		printf ("%d OpenGL errors: Invalid Enum!", InvalidEnum);
+		printf ("%d OpenGL errors: Invalid Enum!\n", InvalidEnum);
 	if (InvalidValue)
-		printf ("%d OpenGL errors: Invalid Value!", InvalidValue);
+		printf ("%d OpenGL errors: Invalid Value!\n", InvalidValue);
 	if (InvalidOperation)
-		printf ("%d OpenGL errors: Invalid Operation!", InvalidOperation);
+		printf ("%d OpenGL errors: Invalid Operation!\n", InvalidOperation);
 	if (StackOverflow)
-		printf ("%d OpenGL errors: Stack Overflow!", StackOverflow);
+		printf ("%d OpenGL errors: Stack Overflow!\n", StackOverflow);
 	if (StackUnderflow)
-		printf ("%d OpenGL errors: Stack Underflow!", StackUnderflow);
+		printf ("%d OpenGL errors: Stack Underflow\n!", StackUnderflow);
 	if (OutOfMemory)
-		printf ("%d OpenGL errors: Out Of Memory!", OutOfMemory);
+		printf ("%d OpenGL errors: Out Of Memory!\n", OutOfMemory);
 	if (Unknown)
-		printf ("%d Unknown OpenGL errors!", Unknown);
+		printf ("%d Unknown OpenGL errors!\n", Unknown);
 }
 
 void
