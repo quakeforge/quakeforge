@@ -1,0 +1,22 @@
+{
+	QuakeEd = {
+		basePath = "/raid/quake/id1";
+		maps = "";
+		desc = "";
+		WadFiles = (
+			"gfx/medieval.wad",
+			"gfx/base.wad",
+			"gfx/wizard.wad",
+			"gfx/metal.wad",
+			"gfx/tim.wad",
+			"gfx/items.wad",
+			"gfx/start.wad"
+		);
+		bspfullvis = "ssh satan \"/Local/Tools/qbsp $1 $2 ; /Local/Tools/light -extra $2 ; /Local/Tools/vis $2\"";
+		bspfastvis = "ssh satan \"/Local/Tools/qbsp $1 $2 ; /Local/Tools/light  $2 ; /Local/Tools/vis -fast $2\"";
+		bspnovis = "ssh satan \"/Local/Tools/qbsp $1 $2 ; /Local/Tools/light $2\"";
+		bsprelight = "ssh satan \"/Local/Tools/qbsp -onlyents $1 $2 ; /Local/Tools/light -extra $2\"";
+		bspleaktest = "ssh satan \"/Local/Tools/qbsp -mark -notjunc $1 $2 ; /Local/Tools/light $2\"";
+		bspentities = "ssh satan \"/Local/Tools/qbsp -onlyents $1 $2\"";
+	};
+}
