@@ -225,6 +225,9 @@ char        soundlist_name[] = "soundlist %i %i";
 
 void        CL_RSShot_f (void);
 
+extern cvar_t *cl_showscoresuid;
+
+
 
 void
 CL_Sbar_f (cvar_t *var)
@@ -603,6 +606,7 @@ CL_FullServerinfo_f (void)
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "teamplay")) && *p) {
 		cl.teamplay = atoi (p);
+		Sbar_DMO_Init_f (cl_showscoresuid); // HUD setup, cl.teamplay changed
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "watervis")) && *p) {
 		cl.watervis = atoi (p);

@@ -95,6 +95,10 @@ cvar_t     *cl_showscoresuid;
 cvar_t     *fs_fraglog;
 cvar_t     *cl_fraglog;
 
+
+static void (*Sbar_Draw_DMO_func) (int l, int y, int skip);
+
+
 /*
 	Sbar_ShowTeamScores
 
@@ -247,9 +251,9 @@ Sbar_Init (void)
 	sb_ibar = Draw_PicFromWad ("ibar");
 	sb_scorebar = Draw_PicFromWad ("scorebar");
 
-	cl_showscoresuid = Cvar_Get ("cl_showscoresuid", "0", CVAR_NONE, NULL,
-								 "Set to 1 to show uid instead of ping. Set "
-								 "to 2 to show both.");
+	cl_showscoresuid = Cvar_Get ("cl_showscoresuid", "0", CVAR_NONE,
+								 Sbar_DMO_Init_f, "Set to 1 to show uid "
+								 "instead of ping. Set to 2 to show both.");
 	fs_fraglog = Cvar_Get ("fs_fraglog", "qw-scores.log", CVAR_ARCHIVE, NULL,
 						   "Filename of the automatic frag-log.");
 	cl_fraglog = Cvar_Get ("cl_fraglog", "0", CVAR_ARCHIVE, NULL,
@@ -354,10 +358,6 @@ Sbar_DrawNum (int x, int y, int num, int digits, int color)
 	}
 }
 
-//ZOID: this should be MAX_CLIENTS, not MAX_SCOREBOARD!!
-//int       fragsort[MAX_SCOREBOARD];
-int         fragsort[MAX_CLIENTS];
-int         scoreboardlines;
 typedef struct {
 	char        team[16 + 1];
 	int         frags;
@@ -367,7 +367,8 @@ typedef struct {
 
 team_t      teams[MAX_CLIENTS];
 int         teamsort[MAX_CLIENTS];
-int         scoreboardteams;
+int         fragsort[MAX_CLIENTS]; // ZOID changed this from [MAX_SCOREBOARD]
+int         scoreboardlines, scoreboardteams;
 
 void
 Sbar_SortFrags (qboolean includespec)
@@ -518,7 +519,6 @@ Sbar_DrawInventory (void)
 
 			} else
 				Sbar_DrawPic (i * 24, -16, sb_weapons[flashon][i]);
-//			Sbar_DrawSubPic (0, 0, 20, 20, i*24, -16, sb_weapons[flashon][i]);
 
 			if (flashon > 1)
 				sb_updates = 0;			// force update to remove flash
@@ -816,8 +816,7 @@ Sbar_TeamOverlay (void)
 	qpic_t     *pic;
 	team_t     *tm;
 
-	// request new ping times every two second
-	if (!cl.teamplay) {
+	if (!cl.teamplay) { // FIXME: if not teamplay, why teamoverlay?
 		Sbar_DeathmatchOverlay (0);
 		return;
 	}
@@ -886,6 +885,25 @@ Sbar_TeamOverlay (void)
 	Sbar_DeathmatchOverlay (y);
 }
 
+static inline int
+calc_fph (int frags, int total)
+{
+	int		fph;
+
+	if (total != 0) {
+		fph = (3600 * frags) / total;
+
+		if (fph >= 999)
+			fph = 999;
+		else if (fph <= -999)
+			fph = -999;
+	} else {
+		fph = 0;
+	}
+
+	return fph;
+}
+
 /*
 	Sbar_LogFrags
 
@@ -915,14 +933,12 @@ Sbar_LogFrags (void)
 	memset (&e_path, 0, MAX_OSPATH);
     Qexpand_squiggle (fs_userpath->string, e_path);
 
-	if ((file = Qopen (va ("%s/%s", e_path, fs_fraglog->string),
-					   "a")) == NULL) {
+	if ((file = Qopen (va ("%s/%s", e_path, fs_fraglog->string), "a")) == NULL)
 		return;
-	}
 
 	t = ctime (&tt);
 	if (t)
-		Qwrite (file, t ,strlen(t));
+		Qwrite (file, t, strlen (t));
 
 	Qwrite (file, cls.servername, strlen (cls.servername));
 	Qwrite (file, "\n", 1);
@@ -936,7 +952,6 @@ Sbar_LogFrags (void)
 
 	// draw the text
 	l = scoreboardlines;
-
 
 	if (cl.teamplay) {
 		// TODO: test if the teamplay does correct output
@@ -961,33 +976,22 @@ Sbar_LogFrags (void)
 			total = cl.completed_time - s->entertime;
 		else
 			total = realtime - s->entertime;
-		minutes = (int) total / 60;
+		minutes = total / 60;
 
 		// get frags
 		f = s->frags;
 
-		// get fph
-		if (total != 0) {
-			fph = (3600 / total) * f;
-
-			if (fph >= 999)
-				fph = 999;
-			else if (fph <= -999)
-				fph = -999;
-		}
-		else {
-			fph = 0;
-		}
+		fph = calc_fph (f, total);
 
 		memset (&conv, 0, 512);
 		for (cp = (unsigned char *) s->name, d = 0; *cp; cp++, d++)
 			conv[d] = sys_char_map[(unsigned int) *cp];
 		
-		if(s->spectator) {
+		if (s->spectator) {
 			snprintf (num, sizeof (num), "%-3i%% %s (spectator)", s->pl,
 					  (char *) &conv);
 		} else {
-			if(cl.teamplay) {
+			if (cl.teamplay) {
 				memset (&conv2, 0, 512);
 				for (cp = (unsigned char *) s->team->value, d = 0; *cp; cp++,
 						 d++)
@@ -1008,104 +1012,369 @@ Sbar_LogFrags (void)
 	Qclose(file);
 }
 
-
-/*
-	Sbar_DeathmatchOverlay
-
-	ping time frags name
-*/
-void
-Sbar_DeathmatchOverlay (int start)
+static void
+Sbar_Draw_DMO_Team_Ping (int l, int y, int skip)
 {
-	char        num[12];
-	int         minutes, fph, total, top, bottom, f, i, k, l, p, x, y;
-	int         skip = 10;
+	char		num[12];
+	int			fph, minutes, total, top, bottom, f, i, k, p, x;
 	player_info_t *s;
-	qpic_t     *pic;
 
-	// FIXME: magic number, gained through experimentation
-	if (vid.width < 244)
-		return;
+	x = 4;
+//						0    40 64  104  152   192
+	Draw_String (x, y, "ping pl fph time frags team name");
+	y += 8;
+	Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
+				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1f "
+				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+	y += 8;
 
-	if (largegame)
-		skip = 8;
+	for (i = 0; i < l && y <= vid.height - 10; i++) {
+		k = fragsort[i];
+		s = &cl.players[k];
+		if (!s->name[0])
+			continue;
 
-	// request new ping times every two second
-	if (realtime - cl.last_ping_request > 2) {
-		cl.last_ping_request = realtime;
-		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-		SZ_Print (&cls.netchan.message, "pings");
-	}
+		// draw ping
+		p = s->ping;
+		if (p < 0 || p > 999)
+			p = 999;
+		snprintf (num, sizeof (num), "%4i", p);
+		Draw_String (x, y, num);
 
-	scr_copyeverything = 1;
-	scr_fullupdate = 0;
+ 		// draw pl
+		p = s->pl;
+		snprintf (num, sizeof (num), "%3i", p);
+		if (p > 25)
+			Draw_AltString (x + 32, y, num);
+		else
+			Draw_String (x + 32, y, num);
 
-	if (!start) {
-		pic = Draw_CachePic ("gfx/ranking.lmp", true);
-		Draw_Pic (160 - pic->width / 2, 0, pic);
-	}
-	// scores   
-	Sbar_SortFrags (true);
-
-	// draw the text
-	l = scoreboardlines;
-
-	if (start)
-		y = start;
-	else
-		y = 24;
-
-	if (cl.teamplay) {
-		x = 4;
-//								0    40 64  104  152   192
-		if (cl_showscoresuid->int_val > 1) {
-			Draw_String (x, y, "ping pl fph time frags team  uid name");
-			y += 8;
-			Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
-						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
-						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1f "
-						 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
-		} else if (cl_showscoresuid->int_val > 0) {
-			Draw_String (x, y, " uid pl fph time frags team name");
-			y += 8;
-			Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
-						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
-						 "\x1d\x1e\x1e\x1f "
-						 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
-		} else {
-			Draw_String (x, y, "ping pl fph time frags team name");
-			y += 8;
-			Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
-						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
-						 "\x1d\x1e\x1e\x1f "
-						 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+		if (s->spectator) {
+			Draw_String (x + 72, y, "(spectator)");
+			Draw_String (x + 184 + 40, y, s->name);			// draw name
+			y += skip;
+			continue;
 		}
-	} else {
-		x = 16;
-//								0    40 64  104  152
-		if (cl_showscoresuid->int_val > 1) {
-			Draw_String (x, y, "ping pl fph time frags  uid name");
-			y += 8;
-			Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
-						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
-						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1e\x1e\x1e"
-						 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
-		} else if (cl_showscoresuid->int_val > 0) {
-			Draw_String (x, y, " uid pl fph time frags name");
-			y += 8;
-			Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
-						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
-						 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e"
-						 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+
+		// get time
+		if (cl.intermission)
+			total = cl.completed_time - s->entertime;
+		else
+			total = realtime - s->entertime;
+		minutes = total / 60;
+
+		// get frags
+		f = s->frags;
+
+		// draw fph
+		fph = calc_fph (f, total);
+		snprintf (num, sizeof (num), "%3i", fph);
+		Draw_String (x + 64, y, num);
+		
+		//draw time
+		snprintf (num, sizeof (num), "%4i", minutes);
+		Draw_String (x + 96, y, num);
+
+		// draw background
+		top = Sbar_ColorForMap (s->topcolor);
+		bottom = Sbar_ColorForMap (s->bottomcolor);
+		if (largegame)
+			Draw_Fill (x + 136, y + 1, 40, 3, top);
+		else
+			Draw_Fill (x + 136, y, 40, 4, top);
+		Draw_Fill (x + 136, y + 4, 40, 4, bottom);
+
+		// draw frags
+		if (k != cl.playernum) {
+			snprintf (num, sizeof (num), " %3i ", f);
 		} else {
-			Draw_String (x, y, "ping pl fph time frags name");
-			y += 8;
-			Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
-						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
-						 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e"
-						 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+			snprintf (num, sizeof (num), "\x10%3i\x11", f);
 		}
+		Draw_nString (x + 136, y, num, 5);
+
+		Draw_nString (x + 184, y, s->team->value, 4);	// draw team
+		Draw_String (x + 184 + 40, y, s->name);			// draw name
+		y += skip;
 	}
+}
+
+static void
+Sbar_Draw_DMO_Team_UID (int l, int y, int skip)
+{
+	char		num[12];
+	int			fph, minutes, total, top, bottom, f, i, k, p, x;
+	player_info_t *s;
+
+	x = 4;
+//						0    40 64  104  152   192
+	Draw_String (x, y, " uid pl fph time frags team name");
+	y += 8;
+	Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
+				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1f "
+				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+	y += 8;
+
+	for (i = 0; i < l && y <= vid.height - 10; i++) {
+		k = fragsort[i];
+		s = &cl.players[k];
+		if (!s->name[0])
+			continue;
+
+		// draw userid
+		p = s->userid;
+		snprintf (num, sizeof (num), "%4i", p);
+		Draw_String (x, y, num);
+
+ 		// draw pl
+		p = s->pl;
+		snprintf (num, sizeof (num), "%3i", p);
+		if (p > 25)
+			Draw_AltString (x + 32, y, num);
+		else
+			Draw_String (x + 32, y, num);
+
+		if (s->spectator) {
+			Draw_String (x + 72, y, "(spectator)");
+			Draw_String (x + 184 + 40, y, s->name);			// draw name
+			y += skip;
+			continue;
+		}
+
+		// get time
+		if (cl.intermission)
+			total = cl.completed_time - s->entertime;
+		else
+			total = realtime - s->entertime;
+		minutes = total / 60;
+
+		// get frags
+		f = s->frags;
+
+		// draw fph
+		fph = calc_fph (f, total);
+		snprintf (num, sizeof (num), "%3i", fph);
+		Draw_String (x + 64, y, num);
+		
+		//draw time
+		snprintf (num, sizeof (num), "%4i", minutes);
+		Draw_String (x + 96, y, num);
+
+		// draw background
+		top = Sbar_ColorForMap (s->topcolor);
+		bottom = Sbar_ColorForMap (s->bottomcolor);
+		if (largegame)
+			Draw_Fill (x + 136, y + 1, 40, 3, top);
+		else
+			Draw_Fill (x + 136, y, 40, 4, top);
+		Draw_Fill (x + 136, y + 4, 40, 4, bottom);
+
+		// draw frags
+		if (k != cl.playernum) {
+			snprintf (num, sizeof (num), " %3i ", f);
+		} else {
+			snprintf (num, sizeof (num), "\x10%3i\x11", f);
+		}
+		Draw_nString (x + 136, y, num, 5);
+
+		Draw_nString (x + 184, y, s->team->value, 4);	// draw team
+		Draw_String (x + 184 + 40, y, s->name);			// draw name
+		y += skip;
+	}
+}
+
+static void
+Sbar_Draw_DMO_Team_Ping_UID (int l, int y, int skip)
+{
+	char		num[12];
+	int			fph, minutes, total, top, bottom, f, i, k, p, x;
+	player_info_t *s;
+
+	x = 4;
+//						0    40 64  104  152   192
+	Draw_String (x, y, "ping pl fph time frags team  uid name");
+	y += 8;
+	Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
+				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
+				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1f "
+				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+	y += 8;
+
+	for (i = 0; i < l && y <= vid.height - 10; i++) {
+		k = fragsort[i];
+		s = &cl.players[k];
+		if (!s->name[0])
+			continue;
+
+		// draw ping
+		p = s->ping;
+		if (p < 0 || p > 999)
+			p = 999;
+		snprintf (num, sizeof (num), "%4i", p);
+		Draw_String (x, y, num);
+
+ 		// draw pl
+		p = s->pl;
+		snprintf (num, sizeof (num), "%3i", p);
+		if (p > 25)
+			Draw_AltString (x + 32, y, num);
+		else
+			Draw_String (x + 32, y, num);
+
+		if (s->spectator) {
+			Draw_String (x + 72, y, "(spectator)");
+			p = s->userid;
+			snprintf (num, sizeof (num), "%4i", p);
+			Draw_String (x + 184 + 40, y, num);				// draw uid
+			Draw_String (x + 184 + 80, y, s->name);			// draw name
+			y += skip;
+			continue;
+		}
+
+		// get time
+		if (cl.intermission)
+			total = cl.completed_time - s->entertime;
+		else
+			total = realtime - s->entertime;
+		minutes = total / 60;
+
+		// get frags
+		f = s->frags;
+
+		// draw fph
+		fph = calc_fph (f, total);
+		snprintf (num, sizeof (num), "%3i", fph);
+		Draw_String (x + 64, y, num);
+		
+		//draw time
+		snprintf (num, sizeof (num), "%4i", minutes);
+		Draw_String (x + 96, y, num);
+
+		// draw background
+		top = Sbar_ColorForMap (s->topcolor);
+		bottom = Sbar_ColorForMap (s->bottomcolor);
+		if (largegame)
+			Draw_Fill (x + 136, y + 1, 40, 3, top);
+		else
+			Draw_Fill (x + 136, y, 40, 4, top);
+		Draw_Fill (x + 136, y + 4, 40, 4, bottom);
+
+		// draw frags
+		if (k != cl.playernum) {
+			snprintf (num, sizeof (num), " %3i ", f);
+		} else {
+			snprintf (num, sizeof (num), "\x10%3i\x11", f);
+		}
+		Draw_nString (x + 136, y, num, 5);
+
+		Draw_nString (x + 184, y, s->team->value, 4);	// draw team
+		p = s->userid;
+		snprintf (num, sizeof (num), "%4i", p);
+		Draw_String (x + 184 + 40, y, num);				// draw uid
+		Draw_String (x + 184 + 80, y, s->name);			// draw name
+		y += skip;
+	}
+}
+
+static void
+Sbar_Draw_DMO_Ping (int l, int y, int skip)
+{
+	char		num[12];
+	int			fph, minutes, total, top, bottom, f, i, k, p, x;
+	player_info_t *s;
+
+	x = 16;
+//						0    40 64  104  152
+	Draw_String (x, y, "ping pl fph time frags name");
+	y += 8;
+	Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
+				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
+				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e"
+				 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+	y += 8;
+
+	for (i = 0; i < l && y <= vid.height - 10; i++) {
+		k = fragsort[i];
+		s = &cl.players[k];
+		if (!s->name[0])
+			continue;
+
+		// draw ping
+		p = s->ping;
+		if (p < 0 || p > 999)
+			p = 999;
+		snprintf (num, sizeof (num), "%4i", p);
+		Draw_String (x, y, num);
+
+ 		// draw pl
+		p = s->pl;
+		snprintf (num, sizeof (num), "%3i", p);
+		if (p > 25)
+			Draw_AltString (x + 32, y, num);
+		else
+			Draw_String (x + 32, y, num);
+
+		if (s->spectator) {
+			Draw_String (x + 72, y, "(spectator)");
+			Draw_String (x + 184, y, s->name);			// draw name
+			y += skip;
+			continue;
+		}
+
+		// get time
+		if (cl.intermission)
+			total = cl.completed_time - s->entertime;
+		else
+			total = realtime - s->entertime;
+		minutes =  total / 60;
+
+		// get frags
+		f = s->frags;
+
+		// draw fph
+		fph = calc_fph (f, total);
+		snprintf (num, sizeof (num), "%3i", fph);
+		Draw_String (x + 64, y, num);
+		
+		//draw time
+		snprintf (num, sizeof (num), "%4i", minutes);
+		Draw_String (x + 96, y, num);
+
+		// draw background
+		top = Sbar_ColorForMap (s->topcolor);
+		bottom = Sbar_ColorForMap (s->bottomcolor);
+		if (largegame)
+			Draw_Fill (x + 136, y + 1, 40, 3, top);
+		else
+			Draw_Fill (x + 136, y, 40, 4, top);
+		Draw_Fill (x + 136, y + 4, 40, 4, bottom);
+
+		// draw frags
+		if (k != cl.playernum) {
+			snprintf (num, sizeof (num), " %3i ", f);
+		} else {
+			snprintf (num, sizeof (num), "\x10%3i\x11", f);
+		}
+		Draw_nString (x + 136, y, num, 5);
+
+		Draw_String (x + 184, y, s->name);				// draw name
+		y += skip;
+	}
+}
+
+static void
+Sbar_Draw_DMO_UID (int l, int y, int skip)
+{
+	char		num[12];
+	int			fph, minutes, total, top, bottom, f, i, k, p, x;
+	player_info_t *s;
+
+	x = 16;
+	Draw_String (x, y, " uid pl fph time frags name");
+	y += 8;
+	Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
+				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
+				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e"
+				 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 	y += 8;
 
 	for (i = 0; i < l && y <= vid.height - 10; i++) {
@@ -1125,7 +1394,7 @@ Sbar_DeathmatchOverlay (int start)
 		snprintf (num, sizeof (num), "%4i", p);
 		Draw_String (x, y, num);
 
- 		// draw pl
+		// draw pl
 		p = s->pl;
 		snprintf (num, sizeof (num), "%3i", p);
 		if (p > 25)
@@ -1135,24 +1404,7 @@ Sbar_DeathmatchOverlay (int start)
 
 		if (s->spectator) {
 			Draw_String (x + 72, y, "(spectator)");
-			// draw name
-			if (cl.teamplay) {
-				if (cl_showscoresuid->int_val > 1) {
-					p = s->userid;
-					snprintf (num, sizeof (num), "%4i", p);
-					Draw_String (x + 184 + 40, y, num);
-					Draw_String (x + 184 + 80, y, s->name);
-				} else
-					Draw_String (x + 184 + 40, y, s->name);
-			} else {
-				if (cl_showscoresuid->int_val > 1) {
-					p = s->userid;
-					snprintf (num, sizeof (num), "%4i", p);
-					Draw_String (x + 184, y, num);
-					Draw_String (x + 184 + 40, y, s->name);
-				} else
-					Draw_String (x + 184, y, s->name);
-			}
+			Draw_String (x + 184, y, s->name);			// draw name
 			y += skip;
 			continue;
 		}
@@ -1162,36 +1414,23 @@ Sbar_DeathmatchOverlay (int start)
 			total = cl.completed_time - s->entertime;
 		else
 			total = realtime - s->entertime;
-		minutes = (int) total / 60;
+		minutes = total / 60;
 
 		// get frags
 		f = s->frags;
 
-		// get fph
-		if (total != 0) {
-			fph = (3600 / total) * f;
-
-			if (fph >= 999)
-				fph = 999;
-			else if (fph <= -999)
-				fph = -999;
-		} else {
-			fph = 0;
-		}
 		// draw fph
+		fph = calc_fph (f, total);
 		snprintf (num, sizeof (num), "%3i", fph);
 		Draw_String (x + 64, y, num);
-		
+                
 		//draw time
 		snprintf (num, sizeof (num), "%4i", minutes);
 		Draw_String (x + 96, y, num);
 
 		// draw background
-		top = s->topcolor;
-		bottom = s->bottomcolor;
-		top = Sbar_ColorForMap (top);
-		bottom = Sbar_ColorForMap (bottom);
-
+		top = Sbar_ColorForMap (s->topcolor);
+		bottom = Sbar_ColorForMap (s->bottomcolor);
 		if (largegame)
 			Draw_Fill (x + 136, y + 1, 40, 3, top);
 		else
@@ -1206,26 +1445,169 @@ Sbar_DeathmatchOverlay (int start)
 		}
 		Draw_nString (x + 136, y, num, 5);
 
-		// draw name (and team if cl.teamplay)
-		if (cl.teamplay) {
-			Draw_nString (x + 184, y, s->team->value, 4);
-			if (cl_showscoresuid->int_val > 1) {
-				p = s->userid;
-				snprintf (num, sizeof (num), "%4i", p);
-				Draw_String (x + 184 + 40, y, num);
-				Draw_String (x + 184 + 80, y, s->name);
-			} else
-				Draw_String (x + 184 + 40, y, s->name);
-		} else
-			if (cl_showscoresuid->int_val > 1) {
-				p = s->userid;
-				snprintf (num, sizeof (num), "%4i", p);
-				Draw_String (x + 184, y, num);
-				Draw_String (x + 184 + 40, y, s->name);
-			} else
-				Draw_String (x + 184, y, s->name);
+		Draw_String (x + 184, y, s->name);				// draw name
 		y += skip;
 	}
+}
+
+static void
+Sbar_Draw_DMO_Ping_UID (int l, int y, int skip)
+{
+	char		num[12];
+	int			fph, minutes, total, top, bottom, f, i, k, p, x;
+	player_info_t *s;
+
+	x = 16;
+	Draw_String (x, y, "ping pl fph time frags  uid name");
+	y += 8;
+	Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
+				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
+				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1e\x1e\x1e"
+				 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+	y += 8;
+
+	for (i = 0; i < l && y <= vid.height - 10; i++) {
+		k = fragsort[i];
+		s = &cl.players[k];
+		if (!s->name[0])
+			continue;
+
+		// draw ping
+		p = s->ping;
+		if (p < 0 || p > 999)
+			p = 999;
+		snprintf (num, sizeof (num), "%4i", p);
+		Draw_String (x, y, num);
+
+		// draw pl
+		p = s->pl;
+		snprintf (num, sizeof (num), "%3i", p);
+		if (p > 25)
+			Draw_AltString (x + 32, y, num);
+		else
+			Draw_String (x + 32, y, num);
+
+		if (s->spectator) {
+			Draw_String (x + 72, y, "(spectator)");
+			p = s->userid;
+			snprintf (num, sizeof (num), "%4i", p);
+			Draw_String (x + 184, y, num);
+			Draw_String (x + 184 + 40, y, s->name);
+			y += skip;
+			continue;
+		}
+
+		// get time
+		if (cl.intermission)
+			total = cl.completed_time - s->entertime;
+		else
+			total = realtime - s->entertime;
+		minutes = total / 60;
+
+		// get frags
+		f = s->frags;
+
+		// draw fph
+		fph = calc_fph (f, total);
+		snprintf (num, sizeof (num), "%3i", fph);
+		Draw_String (x + 64, y, num);
+
+		//draw time
+		snprintf (num, sizeof (num), "%4i", minutes);
+		Draw_String (x + 96, y, num);
+
+		// draw background
+		top = Sbar_ColorForMap (s->topcolor);
+		bottom = Sbar_ColorForMap (s->bottomcolor);
+		if (largegame)
+			Draw_Fill (x + 136, y + 1, 40, 3, top);
+		else
+			Draw_Fill (x + 136, y, 40, 4, top);
+		Draw_Fill (x + 136, y + 4, 40, 4, bottom);
+
+		// draw frags
+		if (k != cl.playernum) {
+			snprintf (num, sizeof (num), " %3i ", f);
+		} else {
+			snprintf (num, sizeof (num), "\x10%3i\x11", f);
+		}
+		Draw_nString (x + 136, y, num, 5);
+
+		p = s->userid;
+		snprintf (num, sizeof (num), "%4i", p);
+		Draw_String (x + 184, y, num);						// draw UID
+		Draw_String (x + 184 + 40, y, s->name);				// draw name
+		y += skip;
+	}
+}
+
+void
+Sbar_DMO_Init_f (cvar_t *var)
+{
+	// "var" is "cl_showscoresuid"
+	if (!var) {
+		Sbar_Draw_DMO_func = Sbar_Draw_DMO_Ping;
+		return;
+	}
+
+	if (cl.teamplay)
+		if (var->int_val > 1)
+			Sbar_Draw_DMO_func = Sbar_Draw_DMO_Team_Ping_UID;
+		else if (var->int_val > 0)
+			Sbar_Draw_DMO_func = Sbar_Draw_DMO_Team_UID;
+		else
+			Sbar_Draw_DMO_func = Sbar_Draw_DMO_Team_Ping;
+	else
+		if (var->int_val > 1)
+			Sbar_Draw_DMO_func = Sbar_Draw_DMO_Ping_UID;
+		else if (var->int_val > 0)
+			Sbar_Draw_DMO_func = Sbar_Draw_DMO_UID;
+		else
+			Sbar_Draw_DMO_func = Sbar_Draw_DMO_Ping;
+}
+
+/*
+	Sbar_DeathmatchOverlay
+
+	ping time frags name
+*/
+void
+Sbar_DeathmatchOverlay (int start)
+{
+	int			l, y;
+	int			skip = 10;
+	qpic_t     *pic;
+
+	if (vid.width < 244) // FIXME: magic number, gained through experimentation
+		return;
+
+	if (largegame)
+		skip = 8;
+
+	// request new ping times every two second
+	if (realtime - cl.last_ping_request > 2.0) {
+		cl.last_ping_request = realtime;
+		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+		SZ_Print (&cls.netchan.message, "pings");
+	}
+
+	scr_copyeverything = 1;
+	scr_fullupdate = 0;
+
+	if (!start) {
+		pic = Draw_CachePic ("gfx/ranking.lmp", true);
+		Draw_Pic (160 - pic->width / 2, 0, pic);
+		y = 24;
+	} else
+		y = start;
+
+	// scores
+	Sbar_SortFrags (true);
+
+	// draw the text
+	l = scoreboardlines;
+
+	Sbar_Draw_DMO_func (l, y, skip);	// func ptr, avoids absurd if testing
 
 	if (y >= vid.height - 10)			// we ran over the screen size, squish
 		largegame = true;
