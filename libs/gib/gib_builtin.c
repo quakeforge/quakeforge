@@ -626,6 +626,44 @@ GIB_Regex_Extract_f (void)
 }
 
 static void
+GIB_Text_White_f (void)
+{
+	if (GIB_Argc () != 2)
+		GIB_USAGE ("text");
+	else if (GIB_CanReturn ()) {
+		unsigned int i;
+		dstring_t *dstr;
+		char *str;
+
+		dstr = GIB_Return (0);
+		dstring_appendstr (dstr, GIB_Argv(1));
+		str = dstr->str;
+
+		for (i = 0; i < dstr->size-1; i++)
+			str[i] = str[i] & ~0x80;
+	}
+}
+
+static void
+GIB_Text_Brown_f (void)
+{
+	if (GIB_Argc () != 2)
+		GIB_USAGE ("text");
+	else if (GIB_CanReturn ()) {
+		unsigned int i;
+		dstring_t *dstr;
+		char *str;
+
+		dstr = GIB_Return (0);
+		dstring_appendstr (dstr, GIB_Argv(1));
+		str = dstr->str;
+
+		for (i = 0; i < dstr->size-1; i++)
+			str[i] = str[i] | 0x80;
+	}
+}
+
+static void
 GIB_Thread_Create_f (void)
 {
 	gib_function_t *f;
@@ -976,6 +1014,8 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("regex::match", GIB_Regex_Match_f);
 	GIB_Builtin_Add ("regex::replace", GIB_Regex_Replace_f);
 	GIB_Builtin_Add ("regex::extract", GIB_Regex_Extract_f);
+	GIB_Builtin_Add ("text::white", GIB_Text_White_f);
+	GIB_Builtin_Add ("text::brown", GIB_Text_Brown_f);
 	GIB_Builtin_Add ("thread::create", GIB_Thread_Create_f);
 	GIB_Builtin_Add ("thread::kill", GIB_Thread_Kill_f);
 	GIB_Builtin_Add ("thread::getList", GIB_Thread_List_f);
