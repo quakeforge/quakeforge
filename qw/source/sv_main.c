@@ -327,7 +327,9 @@ SV_DropClient (client_t *drop)
 	drop->old_frags = 0;
 	SVfloat (drop->edict, frags) = 0;
 	drop->name[0] = 0;
-	memset (drop->userinfo, 0, sizeof (drop->userinfo));
+
+	Info_Destroy (drop->userinfo);
+	drop->userinfo = 0;
 
 	// send notification to all remaining clients
 	SV_FullClientUpdate (drop, &sv.reliable_datagram);
@@ -355,6 +357,12 @@ SV_CalcPing (client_t *cl)
 	return ping * 1000;
 }
 
+static int
+make_info_string_filter (const char *key)
+{
+	return *key == '_' || Info_FilterForKey (key, client_info_filters);
+}
+
 /*
 	SV_FullClientUpdate
 
@@ -363,7 +371,7 @@ SV_CalcPing (client_t *cl)
 void
 SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 {
-	char        info[MAX_INFO_STRING];
+	char       *info;
 	int         i;
 	net_svc_updateuserinfo_t block;
 
@@ -387,8 +395,8 @@ SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 	MSG_WriteByte (buf, i);
 	MSG_WriteFloat (buf, realtime - client->connection_started);
 
-	strncpy (info, client->userinfo, sizeof (info));
-	Info_RemovePrefixedKeys (info, '_', client_info_filters);	// server passwords, etc
+	info = client->userinfo ? Info_MakeString (client->userinfo,
+											   make_info_string_filter) : "";
 
 	block.slot = i;
 	block.userid = client->userid;
@@ -405,7 +413,9 @@ SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 void
 SV_FullClientUpdateToClient (client_t *client, client_t *cl)
 {
-	ClientReliableCheckBlock (cl, 24 + strlen (client->userinfo));
+	if (client->state < cs_connected)
+		return;
+	ClientReliableCheckBlock (cl, 24 + client->userinfo->cursize);
 	if (cl->num_backbuf) {
 		SV_FullClientUpdate (client, &cl->backbuf);
 		ClientReliable_FinishWrite (cl);
@@ -507,7 +517,7 @@ SVC_Status (void)
 	con_printf_no_log = 1;
 	Cmd_TokenizeString ("status");
 	SV_BeginRedirect (RD_PACKET);
-	SV_Printf ("%s\n", svs.info);
+	SV_Printf ("%s\n", Info_MakeString (svs.info, 0));
 	for (i = 0; i < MAX_CLIENTS; i++) {
 		cl = &svs.clients[i];
 		if ((cl->state == cs_connected || cl->state == cs_spawned)
@@ -670,7 +680,7 @@ SVC_GetChallenge (void)
 void
 SVC_DirectConnect (void)
 {
-	char        userinfo[1024];
+	info_t     *userinfo;
 	const char *s;
 	client_t   *cl, *newcl;
 	client_t    temp;
@@ -695,12 +705,10 @@ SVC_DirectConnect (void)
 
 	challenge = atoi (Cmd_Argv (3));
 
-	// note an extra byte is needed to replace spectator key
-	strncpy (userinfo, Cmd_Argv (4), sizeof (userinfo) - 2);
-	userinfo[sizeof (userinfo) - 2] = 0;
+	userinfo = Info_ParseString (Cmd_Argv (4), 1023);
 
 	// Validate the userinfo string.
-	if (!Info_Validate(userinfo)) {
+	if (!userinfo) {
 		Netchan_OutOfBandPrint (net_from, "%c\nInvalid userinfo string.\n",
 								A2C_PRINT);
 		return;
@@ -750,7 +758,7 @@ SVC_DirectConnect (void)
 			return;
 		}
 		Info_RemoveKey (userinfo, "spectator");	// remove passwd
-		Info_SetValueForStarKey (userinfo, "*spectator", "1", MAX_INFO_STRING,
+		Info_SetValueForStarKey (userinfo, "*spectator", "1",
 								 !sv_highchars->int_val);
 		spectator = true;
 	} else {
@@ -786,7 +794,7 @@ SVC_DirectConnect (void)
 			if (*q > 31 && *q <= 127)
 				*p++ = *q;
 	} else
-		strncpy (newcl->userinfo, userinfo, sizeof (newcl->userinfo) - 1);
+		newcl->userinfo = userinfo;
 
 	// if there is allready a slot for this ip, drop it
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
@@ -1801,11 +1809,11 @@ SV_CheckVars (void)
 
 	SV_Printf ("Updated needpass.\n");
 	if (!v)
-		Info_SetValueForKey (svs.info, "needpass", "", MAX_SERVERINFO_STRING,
+		Info_SetValueForKey (svs.info, "needpass", "",
 							 !sv_highchars->int_val);
 	else
 		Info_SetValueForKey (svs.info, "needpass", va ("%i", v),
-							 MAX_SERVERINFO_STRING, !sv_highchars->int_val);
+							 !sv_highchars->int_val);
 }
 
 /*
@@ -2083,13 +2091,13 @@ SV_InitLocal (void)
 		snprintf (localmodels[i], sizeof (localmodels[i]), "*%i", i);
 
 	Info_SetValueForStarKey (svs.info, "*version", QW_VERSION,
-							 MAX_SERVERINFO_STRING, !sv_highchars->int_val);
+							 !sv_highchars->int_val);
 
 	// Brand server as QF, with appropriate QSG standards version  --KB
 	Info_SetValueForStarKey (svs.info, "*qf_version", VERSION,
-							 MAX_SERVERINFO_STRING, !sv_highchars->int_val);
+							 !sv_highchars->int_val);
 	Info_SetValueForStarKey (svs.info, "*qsg_version", QW_QSG_VERSION,
-							 MAX_SERVERINFO_STRING, !sv_highchars->int_val);
+							 !sv_highchars->int_val);
 
 	CF_Init ();
 
@@ -2242,7 +2250,7 @@ SV_ExtractFromUserinfo (client_t *cl)
 
 	// set the name
 	if (strcmp (newname, val) || strcmp (cl->name, newname)) {
-		Info_SetValueForKey (cl->userinfo, "name", newname, MAX_INFO_STRING,
+		Info_SetValueForKey (cl->userinfo, "name", newname,
 							 !sv_highchars->int_val);
 		val = Info_ValueForKey (cl->userinfo, "name");
 		SVstring (cl->edict, netname) = PR_SetString (&sv_pr_state, newname);
@@ -2352,6 +2360,9 @@ SV_Init (void)
 	Cvar_Init ();
 	Sys_Init_Cvars ();
 	Sys_Init ();
+
+	svs.info = Info_ParseString ("", MAX_SERVERINFO_STRING);
+	localinfo = Info_ParseString ("", MAX_LOCALINFO_STRING);
 
 	Cbuf_Init ();
 	Cmd_Init ();

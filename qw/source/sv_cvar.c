@@ -62,11 +62,9 @@ Cvar_Info (cvar_t *var)
 			}
 			*p = 0;
 			Info_SetValueForKey (svs.info, var->name, info,
-								 MAX_SERVERINFO_STRING,
 								 (sv_highchars && !sv_highchars->int_val));
 		} else
 			Info_SetValueForKey (svs.info, var->name, var->string,
-								 MAX_SERVERINFO_STRING,
 								 (sv_highchars && !sv_highchars->int_val));
 
 		SV_SendServerInfoChange (var->name, var->string);

@@ -294,7 +294,7 @@ CL_SendConnectPacket (void)
 //	Con_Printf ("Connecting to %s...\n", cls.servername);
 	snprintf (data, sizeof (data), "%c%c%c%cconnect %i %i %i \"%s\"\n",
 			  255, 255, 255, 255, PROTOCOL_VERSION, cls.qport, cls.challenge,
-			  cls.userinfo);
+			  Info_MakeString (cls.userinfo, 0));
 	NET_SendPacket (strlen (data), data, adr);
 }
 
@@ -419,7 +419,9 @@ CL_ClearState (void)
 	R_ClearFires ();
 
 	// wipe the entire cl structure
+	Info_Destroy (cl.serverinfo);
 	memset (&cl, 0, sizeof (cl));
+	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING);
 
 	SZ_Clear (&cls.netchan.message);
 
@@ -572,8 +574,9 @@ CL_FullServerinfo_f (void)
 	}
 
 	Con_DPrintf ("Cmd_Argv(1): '%s'\n", Cmd_Argv (1));
-	strcpy (cl.serverinfo, Cmd_Argv (1));
-	Con_DPrintf ("cl.serverinfo: '%s'\n", cl.serverinfo);
+	Info_Destroy (cl.serverinfo);
+	cl.serverinfo = Info_ParseString (Cmd_Argv (1), MAX_SERVERINFO_STRING);
+	Con_DPrintf ("cl.serverinfo: '%s'\n", Info_MakeString (cl.serverinfo, 0));
 
 	if ((p = Info_ValueForKey (cl.serverinfo, "*qf_version")) && *p) {
 		if (server_version == NULL)
@@ -620,11 +623,9 @@ CL_AddQFInfoKeys (void)
 #ifdef HAVE_ZLIB
 	strncat (cap, "z", sizeof (cap) - strlen (cap) - 1);
 #endif
-	Info_SetValueForStarKey (cls.userinfo, "*cap", cap, MAX_INFO_STRING, 0);
-	Info_SetValueForStarKey (cls.userinfo, "*qf_version", VERSION,
-							 MAX_INFO_STRING, 0);
-	Info_SetValueForStarKey (cls.userinfo, "*qsg_version", QW_QSG_VERSION,
-							 MAX_INFO_STRING, 0);
+	Info_SetValueForStarKey (cls.userinfo, "*cap", cap, 0);
+	Info_SetValueForStarKey (cls.userinfo, "*qf_version", VERSION, 0);
+	Info_SetValueForStarKey (cls.userinfo, "*qsg_version", QW_QSG_VERSION, 0);
 	Con_Printf ("QuakeForge server detected\n");
 }
 
@@ -680,7 +681,7 @@ CL_FullInfo_f (void)
 		if (strcaseequal (key, pmodel_name) || strcaseequal (key, emodel_name))
 			continue;
 
-		Info_SetValueForKey (cls.userinfo, key, value, MAX_INFO_STRING,
+		Info_SetValueForKey (cls.userinfo, key, value,
 							 (!strequal (key, "name"))
 							 | (strequal (key, "team") << 1));
 	}
@@ -707,7 +708,6 @@ CL_SetInfo_f (void)
 		return;
 
 	Info_SetValueForKey (cls.userinfo, Cmd_Argv (1), Cmd_Argv (2),
-						 MAX_INFO_STRING,
 						 (!strequal (Cmd_Argv (1), "name"))
 						  | (strequal (Cmd_Argv (2), "team") << 1));
 	if (cls.state >= ca_connected)
@@ -1092,14 +1092,14 @@ CL_Init (void)
 
 	CL_SetState (ca_disconnected);
 
-	Info_SetValueForKey (cls.userinfo, "name", "unnamed", MAX_INFO_STRING, 0);
-	Info_SetValueForKey (cls.userinfo, "topcolor", "0", MAX_INFO_STRING, 0);
-	Info_SetValueForKey (cls.userinfo, "bottomcolor", "0", MAX_INFO_STRING, 0);
-	Info_SetValueForKey (cls.userinfo, "rate", "2500", MAX_INFO_STRING, 0);
-	Info_SetValueForKey (cls.userinfo, "msg", "1", MAX_INFO_STRING, 0);
+	Info_SetValueForKey (cls.userinfo, "name", "unnamed", 0);
+	Info_SetValueForKey (cls.userinfo, "topcolor", "0", 0);
+	Info_SetValueForKey (cls.userinfo, "bottomcolor", "0", 0);
+	Info_SetValueForKey (cls.userinfo, "rate", "2500", 0);
+	Info_SetValueForKey (cls.userinfo, "msg", "1", 0);
 //	snprintf (st, sizeof(st), "%s-%04d", QW_VERSION, build_number());
 	snprintf (st, sizeof (st), "%s", QW_VERSION);
-	Info_SetValueForStarKey (cls.userinfo, "*ver", st, MAX_INFO_STRING, 0);
+	Info_SetValueForStarKey (cls.userinfo, "*ver", st, 0);
 
 	CL_Input_Init ();
 	CL_Ents_Init ();
@@ -1576,6 +1576,9 @@ Host_Init (void)
 	Cvar_Init ();
 	Sys_Init_Cvars ();
 	Sys_Init ();
+
+	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING);
+	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING);
 
 	Cbuf_Init ();
 	Cmd_Init ();

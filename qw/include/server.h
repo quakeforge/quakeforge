@@ -161,7 +161,7 @@ typedef struct client_s
 	int				lossage;			// loss percentage
 
 	int				userid;							// identifying number
-	char			userinfo[MAX_INFO_STRING];		// infostring
+	struct info_s   *userinfo;			// infostring
 
 	usercmd_t		lastcmd;			// for filling in big drops and partial predictions
 	double			localtime;			// of last message
@@ -276,7 +276,7 @@ typedef struct
 	int			heartbeat_sequence;
 	svstats_t	stats;
 
-	char		info[MAX_SERVERINFO_STRING];
+	info_t		*info;
 
 	// log messages are used so that fraglog processes can get stats
 	int			logsequence;	// the message currently being filled
@@ -397,7 +397,7 @@ extern	struct cvar_s	*fraglimit;
 extern	struct cvar_s	*timelimit;
 
 extern	server_static_t	svs;				// persistant server info
-extern	char	*svs_info;					// evil memory saving hack :)
+extern	struct info_s	**svs_info;
 extern	server_t		sv;					// local server
 
 extern	client_t	*host_client;
@@ -406,7 +406,7 @@ extern	struct edict_s		*sv_player;
 
 extern	char		localmodels[MAX_MODELS][5];	// inline model names for precache
 
-extern	char		localinfo[MAX_LOCALINFO_STRING+1];
+extern	struct info_s	*localinfo;
 
 extern	int			host_hunklevel;
 extern	VFile		*sv_logfile;

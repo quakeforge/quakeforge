@@ -36,13 +36,27 @@
 #define	MAX_SERVERINFO_STRING	512
 #define	MAX_LOCALINFO_STRING	32768
 
+typedef struct info_s {
+	struct hashtab_s	*tab;
+	int					maxsize;
+	int					cursize;
+} info_t;
+
+typedef struct info_key_s {
+	const char			*key;
+	const char			*value;
+} info_key_t;
+
 qboolean Info_FilterForKey (const char *key, const char **filter_list);
-void Info_Print (const char *s);
-void Info_RemoveKey (char *s, const char *key);
-void Info_RemovePrefixedKeys (char *start, char prefix, const char **filter_list);
-void Info_SetValueForKey (char *s, const char *key, const char *value, size_t maxsize, int flags);
-void Info_SetValueForStarKey (char *s, const char *key, const char *value, size_t maxsize, int flags);
-const char *Info_ValueForKey (const char *s, const char *key);
-qboolean Info_Validate (const char *s);
+
+void Info_Print (info_t *info);
+void Info_RemoveKey (info_t *info, const char *key);
+void Info_SetValueForKey (info_t *info, const char *key, const char *value, int flags);
+void Info_SetValueForStarKey (info_t *info, const char *key, const char *value, int flags);
+const char *Info_ValueForKey (info_t *info, const char *key);
+
+info_t *Info_ParseString (const char *s, int maxsize);
+void Info_Destroy (info_t *info);
+char *Info_MakeString (info_t *info, int (*filter)(const char *));
 
 #endif	// _INFO_H

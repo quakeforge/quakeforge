@@ -141,7 +141,8 @@ SV_New_f (void)
 	// send server info string
 	MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
 	MSG_WriteString (&host_client->netchan.message,
-					 va ("fullserverinfo \"%s\"\n", svs.info));
+					 va ("fullserverinfo \"%s\"\n",
+						 Info_MakeString (svs.info, 0)));
 }
 
 /*
@@ -1165,7 +1166,7 @@ SV_SetInfo_f (void)
 
 		strcpy (oldval, Info_ValueForKey (host_client->userinfo, Cmd_Argv (1)));
 		Info_SetValueForKey (host_client->userinfo, Cmd_Argv (1), Cmd_Argv (2),
-							 MAX_INFO_STRING, !sv_highchars->int_val);
+							 !sv_highchars->int_val);
 		if (strequal
 			(Info_ValueForKey (host_client->userinfo, Cmd_Argv (1)), oldval))
 			return;								// key hasn't changed

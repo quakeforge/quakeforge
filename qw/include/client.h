@@ -75,7 +75,7 @@ typedef struct player_state_s {
 typedef struct player_info_s
 {
 	int		userid;
-	char	userinfo[MAX_INFO_STRING];
+	struct info_s	*userinfo;
 
 	// scoreboard information
 	char	name[MAX_SCOREBOARDNAME];
@@ -148,7 +148,7 @@ typedef struct
 	netchan_t	netchan;
 
 // private userinfo for sending to masterless servers
-	char		userinfo[MAX_INFO_STRING];
+	struct info_s	*userinfo;
 
 	char		servername[MAX_OSPATH];	// name of server from original connect
 
@@ -190,7 +190,7 @@ typedef struct
 {
 	int			servercount;	// server identification for prespawns
 
-	char		serverinfo[MAX_SERVERINFO_STRING];
+	struct info_s	*serverinfo;
 
 	int			parsecount;		// server message counter
 	int			validsequence;	// this is the sequence number of the last good

@@ -483,7 +483,8 @@ CL_Record_f (void)
 
 	// send server info string
 	MSG_WriteByte (&buf, svc_stufftext);
-	MSG_WriteString (&buf, va ("fullserverinfo \"%s\"\n", cl.serverinfo));
+	MSG_WriteString (&buf, va ("fullserverinfo \"%s\"\n",
+							   Info_MakeString (cl.serverinfo, 0)));
 
 	// flush packet
 	CL_WriteRecordDemoMessage (&buf, seq++);
@@ -626,7 +627,7 @@ CL_Record_f (void)
 		MSG_WriteByte (&buf, svc_updateuserinfo);
 		MSG_WriteByte (&buf, i);
 		MSG_WriteLong (&buf, player->userid);
-		MSG_WriteString (&buf, player->userinfo);
+		MSG_WriteString (&buf, Info_MakeString (player->userinfo, 0));
 
 		if (buf.cursize > MAX_MSGLEN / 2) {
 			CL_WriteRecordDemoMessage (&buf, seq++);

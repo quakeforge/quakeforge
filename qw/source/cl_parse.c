@@ -300,7 +300,7 @@ Model_NextDownload (void)
 			aliashdr_t *ahdr = Cache_Get
 				(&cl.model_precache[i]->cache);
 			Info_SetValueForKey (cls.userinfo, info_key, va ("%d", ahdr->crc),
-								 MAX_INFO_STRING, 0);
+								 0);
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			SZ_Print (&cls.netchan.message, va ("setinfo %s %d", info_key,
 												ahdr->crc));
@@ -1039,8 +1039,10 @@ CL_ParseUpdateUserInfo (void)
 
 	player = &cl.players[updateuserinfo.slot];
 	player->userid = updateuserinfo.userid;
-	strncpy (player->userinfo, updateuserinfo.userinfo,
-			 sizeof (player->userinfo) - 1);
+	if (player->userinfo)
+		Info_Destroy (player->userinfo);
+	player->userinfo = Info_ParseString (updateuserinfo.userinfo,
+										 MAX_INFO_STRING);
 
 	CL_ProcessUserInfo (updateuserinfo.slot, player);
 }
@@ -1063,14 +1065,15 @@ CL_SetInfo (void)
 	}
 
 	player = &cl.players[setinfo.slot];
+	if (!player->userinfo)
+		player->userinfo = Info_ParseString ("", MAX_INFO_STRING);
 
 	Con_DPrintf ("SETINFO %s: %s=%s\n", player->name, setinfo.key,
 				 setinfo.value);
 
 	flags = !strequal (setinfo.key, "name");
 	flags |= strequal (setinfo.key, "team") << 1;
-	Info_SetValueForKey (player->userinfo, setinfo.key, setinfo.value,
-						 MAX_INFO_STRING, flags);
+	Info_SetValueForKey (player->userinfo, setinfo.key, setinfo.value, flags);
 
 	CL_ProcessUserInfo (setinfo.slot, player);
 }
@@ -1087,8 +1090,7 @@ CL_ServerInfo (void)
 
 	Con_DPrintf ("SERVERINFO: %s=%s\n", block.key, block.value);
 
-	Info_SetValueForKey (cl.serverinfo, block.key, block.value,
-						 MAX_SERVERINFO_STRING, 0);
+	Info_SetValueForKey (cl.serverinfo, block.key, block.value, 0);
 	if (strequal (block.key, "chase")) {
 		cl.chase = atoi (block.value);
 	} else if (strequal (block.key, "watervis")) {

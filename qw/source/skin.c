@@ -101,7 +101,7 @@ Skin_Find (player_info_t *sc)
 		strcpy (name, "base");
 
 	if (!allskins[0] && (!s || !strcaseequal (name, s)))
-		Info_SetValueForKey (sc->userinfo, "skin", name, MAX_INFO_STRING, 1);
+		Info_SetValueForKey (sc->userinfo, "skin", name, 1);
 
 	COM_StripExtension (name, name);
 

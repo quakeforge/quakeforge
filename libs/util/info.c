@@ -40,8 +40,10 @@ static const char rcsid[] =
 #include <stdio.h>
 #include <ctype.h>
 
+#include "QF/hash.h"
 #include "QF/info.h"
 #include "QF/sys.h"
+#include "QF/zone.h"
 
 #include "compat.h"
 
@@ -71,139 +73,31 @@ Info_FilterForKey (const char *key, const char **filter_list)
 	key and returns the associated value, or an empty string.
 */
 const char *
-Info_ValueForKey (const char *s, const char *key)
+Info_ValueForKey (info_t *info, const char *key)
 {
-	char        pkey[512];
-	static char value[4][512];			// use two buffers so compares
+	info_key_t *k = Hash_Find (info->tab, key);
+	if (k)
+		return k->value;
+	return "";
+}
 
-	// work without stomping on each other
-	static int  valueindex;
-	char       *o;
+void
+Info_RemoveKey (info_t *info, const char *key)
+{
+	info_key_t *k = Hash_Del (info->tab, key);
 
-	valueindex = (valueindex + 1) % 4;
-	if (*s == '\\')
-		s++;
-	while (1) {
-		o = pkey;
-		while (*s != '\\') {
-			if (!*s)
-				return "";
-			*o++ = *s++;
-		}
-		*o = 0;
-		s++;
-
-		o = value[valueindex];
-
-		while (*s != '\\' && *s) {
-			if (!*s)
-				return "";
-			*o++ = *s++;
-		}
-		*o = 0;
-
-		if (!strcmp (key, pkey))
-			return value[valueindex];
-
-		if (!*s)
-			return "";
-		s++;
+	if (k) {
+		free ((char*)k->key);
+		free ((char*)k->value);
+		free (k);
 	}
 }
 
 void
-Info_RemoveKey (char *s, const char *key)
+Info_SetValueForStarKey (info_t *info, const char *key, const char *value, int flags)
 {
-	char       *start;
-	char        pkey[512];
-	char        value[512];
-	char       *o;
-
-	if (strstr (key, "\\")) {
-		Sys_Printf ("Can't use a key with a \\\n");
-		return;
-	}
-
-	while (1) {
-		start = s;
-		if (*s == '\\')
-			s++;
-		o = pkey;
-		while (*s != '\\') {
-			if (!*s)
-				return;
-			*o++ = *s++;
-		}
-		*o = 0;
-		s++;
-
-		o = value;
-		while (*s != '\\' && *s) {
-			if (!*s)
-				return;
-			*o++ = *s++;
-		}
-		*o = 0;
-
-		if (!strcmp (key, pkey)) {
-			strcpy (start, s);			// remove this part
-			return;
-		}
-
-		if (!*s)
-			return;
-	}
-
-}
-
-void
-Info_RemovePrefixedKeys (char *start, char prefix, const char **filter_list)
-{
-	char       *s;
-	char        pkey[512];
-	char        value[512];
-	char       *o;
-
-	s = start;
-
-	while (1) {
-		if (*s == '\\')
-			s++;
-		o = pkey;
-		while (*s != '\\') {
-			if (!*s)
-				return;
-			*o++ = *s++;
-		}
-		*o = 0;
-		s++;
-
-		o = value;
-		while (*s != '\\' && *s) {
-			if (!*s)
-				return;
-			*o++ = *s++;
-		}
-		*o = 0;
-
-		if (pkey[0] == prefix
-			|| (filter_list && !Info_FilterForKey (pkey, filter_list))) {
-			Info_RemoveKey (start, pkey);
-			s = start;
-		}
-
-		if (!*s)
-			return;
-	}
-
-}
-
-void
-Info_SetValueForStarKey (char *s, const char *key, const char *value, size_t maxsize, int flags)
-{
-	char        newstr[1024];
-	const char *v;
-	int         c;
+	info_key_t *k;
+	int         cursize;
 
 	if (strstr (key, "\\") || strstr (value, "\\")) {
 		Sys_Printf ("Can't use keys or values with a \\\n");
@@ -219,110 +113,137 @@ Info_SetValueForStarKey (char *s, const char *key, const char *value, size_t max
 		Sys_Printf ("Keys and values must be < 64 characters.\n");
 		return;
 	}
-	// this next line is kinda trippy
-	if (*(v = Info_ValueForKey (s, key))) {
-		// key exists, make sure we have enough room for new value, if we
-		// don't,
-		// don't change it!
-		if (strlen (value) - strlen (v) + strlen (s) > maxsize) {
-			Sys_Printf ("Info string length exceeded\n");
-			return;
-		}
+	k = Hash_Find (info->tab, key);
+	cursize = info->cursize;
+	if (k) {
+		cursize -= strlen (k->key) + 1;
+		cursize -= strlen (k->value) + 1;
 	}
-	Info_RemoveKey (s, key);
-	if (!value || !strlen (value))
-		return;
-
-	snprintf (newstr, sizeof (newstr), "\\%s\\%s", key, value);
-
-	if ((int) (strlen (newstr) + strlen (s)) > maxsize) {
+	if (cursize + strlen (key) + 1 + strlen (value) + 1 > info->maxsize) {
 		Sys_Printf ("Info string length exceeded\n");
 		return;
 	}
-	// only copy ascii values
-	s += strlen (s);
-	v = newstr;
-	while (*v) {
-		c = (unsigned char) *v++;
-		// client only allows highbits on name
-		if (flags & 1) {
-			c &= 127;
-			if (c < 32 || c > 127)
-				continue;
-			// auto lowercase team
-			if (flags & 2)
-				c = tolower (c);
-		}
-		if (c > 13)
-			*s++ = c;
+	if (k) {
+		if (strequal (k->value, value))
+			return;
+		free ((char*)k->value);
+	} else {
+		if (!(k = malloc (sizeof (info_key_t))))
+			Sys_Error ("Info_SetValueForStarKey: out of memory\n");
+		if (!(k->key = strdup (key)))
+			Sys_Error ("Info_SetValueForStarKey: out of memory\n");
+		info->cursize += strlen (key) + 1;
+		Hash_Add (info->tab, k);
 	}
-	*s = 0;
+	if (!(k->value = strdup (value)))
+		Sys_Error ("Info_SetValueForStarKey: out of memory\n");
+	info->cursize += strlen (value) + 1;
 }
 
 void
-Info_SetValueForKey (char *s, const char *key, const char *value,
-					 size_t maxsize, int flags)
+Info_SetValueForKey (info_t *info, const char *key, const char *value,
+					 int flags)
 {
 	if (key[0] == '*') {
 		Sys_Printf ("Can't set * keys\n");
 		return;
 	}
 
-	Info_SetValueForStarKey (s, key, value, maxsize, flags);
+	Info_SetValueForStarKey (info, key, value, flags);
 }
 
 void
-Info_Print (const char *s)
+Info_Print (info_t *info)
 {
-	char        key[512];
-	char        value[512];
-	char       *o;
-	int         l;
+	info_key_t **key_list;
+	info_key_t **key;
 
-	if (*s == '\\')
-		s++;
-	while (*s) {
-		o = key;
-		while (*s && *s != '\\')
-			*o++ = *s++;
+	key_list = (info_key_t **)Hash_GetList (info->tab);
 
-		l = o - key;
-		if (l < 20) {
-			memset (o, ' ', 20 - l);
-			key[20] = 0;
-		} else
-			*o = 0;
-		Sys_Printf ("%s", key);
-
-		if (!*s) {
-			Sys_Printf ("MISSING VALUE\n");
-			return;
-		}
-
-		o = value;
-		s++;
-		while (*s && *s != '\\')
-			*o++ = *s++;
-		*o = 0;
-
-		if (*s)
-			s++;
-		Sys_Printf ("%s\n", value);
+	for (key = key_list; *key; key++) {
+		Sys_Printf ("%20s %s\n", (*key)->key, (*key)->value);
 	}
+	free (key_list);
 }
 
-qboolean
-Info_Validate (const char *s)
+static const char *
+get_key (void *k, void *unused)
 {
-	int count;
-	const char *p;
+	return ((info_key_t *)k)->key;
+}
 
-	if (!s || *s == '\0')
-		return false;
+static void
+free_key (void *_k, void *unused)
+{
+	info_key_t *k = (info_key_t *)_k;
+	free ((char*)k->key);
+	free ((char*)k->value);
+	free (k);
+}
 
-	for (p = s, count = 0; *p != '\0'; p++)
-		if (*p == '\\')
-			count++;
+info_t *
+Info_ParseString (const char *s, int maxsize)
+{
+	info_t     *info;
+	char       *string = Hunk_TempAlloc (strlen (s) + 1);
+	char       *key, *value, *end;
 
-	return (!(count % 2));
+	info = malloc (sizeof (info_t));
+	info->tab = Hash_NewTable (61, get_key, free_key, 0);
+	info->maxsize = maxsize;
+	info->cursize = 0;
+
+	strcpy (string, s);
+	key = string;
+	if (*key == '\\')
+		key++;
+	while (*key) {
+		value = key;
+		while (*value && *value != '\\')
+			value++;
+		if (*value) {
+			*value++ = 0;
+			for (end = value; *end && *end != '\\'; end++)
+				;
+			if (*end)
+				*end++ = 0;
+		} else {
+			value = end = "";
+		}
+		Info_SetValueForStarKey (info, key, value, 0);
+		key = end;
+	}
+	return info;
+}
+
+void
+Info_Destroy (info_t *info)
+{
+	Hash_DelTable (info->tab);
+	free (info);
+}
+
+char *
+Info_MakeString (info_t *info, int (*filter)(const char *))
+{
+	char       *string = Hunk_TempAlloc (info->cursize + 1);
+	const char *s;
+	char       *d = string;;
+	info_key_t **key_list;
+	info_key_t **key;
+
+	key_list = (info_key_t **)Hash_GetList (info->tab);
+
+	for (key = key_list; *key; key++) {
+		if (filter && filter ((*key)->key))
+			continue;
+		*d++ = '\\';
+		for (s = (*key)->key; *s; s++)
+			*d++ = *s;
+		*d++ = '\\';
+		for (s = (*key)->value; *s; s++)
+			*d++ = *s;
+	}
+	free (key_list);
+	return string;
 }

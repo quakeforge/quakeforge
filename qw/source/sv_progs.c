@@ -155,8 +155,7 @@ parse_field (progs_t *pr, const char *key, const char *value)
 	if (strcaseequal (key, "skyname")		// QuakeForge
 		|| strcaseequal (key, "sky")		// Q2/DarkPlaces
 		|| strcaseequal (key, "qlsky")) {	// QuakeLives
-		Info_SetValueForKey (svs.info, "skybox", "1", MAX_SERVERINFO_STRING,
-							 !sv_highchars->int_val);
+		Info_SetValueForKey (svs.info, "skybox", "1", !sv_highchars->int_val);
 		Cvar_Set (r_skyname, value);
 		return 1;
 	}

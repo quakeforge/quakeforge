@@ -75,7 +75,7 @@ static const char rcsid[] =
 typedef struct server_entry_s {
 	char *server;
 	char *desc;
-	char *status;
+	info_t *status;
 	int waitstatus;
 	double pingsent;
 	double pongback;
@@ -480,11 +480,15 @@ SL_Con_Details (server_entry_t *sldata, int slitemno)
 		Con_Printf("N/A\n");
 	if (cp->status)
 	{
+		char *s;
+
 		Con_Printf("Name: %s\n", cp->desc);
 		Con_Printf("Game: %s\n", Info_ValueForKey (cp->status, "*gamedir"));
 		Con_Printf("Map: %s\n", Info_ValueForKey (cp->status, "map"));
-		for (i = 0; i < strlen(cp->status); i++)
-			if (cp->status[i] == '\n')
+
+		s = Info_MakeString (cp->status, 0);
+		for (i = 0; i < strlen (s); i++)
+			if (s[i] == '\n')
 				playercount++;
 		Con_Printf("Players: %i/%s\n", playercount,
 				   Info_ValueForKey(cp->status, "maxclients"));
@@ -693,13 +697,14 @@ SL_CheckStatus (const char *cs_from, const char *cs_data)
 		{
 			if (strcmp (cs_from, temp->server) == 0)
 			{
-				int i;
-				temp->status = realloc(temp->status, strlen(cs_data) + 1);
-				strcpy(temp->status, cs_data);
+				//int i;
+				if (temp->status)
+					Info_Destroy (temp->status);
+				temp->status = Info_ParseString (cs_data, strlen (cs_data));
 				temp->waitstatus = 0;
 				tmp_desc = Info_ValueForKey (temp->status, "hostname");
-				if (tmp_desc[0] != '\0')
-				{
+				/*FIXME update for new info api
+				if (tmp_desc[0] != '\0') {
 					temp->desc = realloc(temp->desc, strlen(tmp_desc) + 1);
 					strcpy(temp->desc, tmp_desc);
 				} else {
@@ -707,11 +712,11 @@ SL_CheckStatus (const char *cs_from, const char *cs_data)
 					strcpy(temp->desc, temp->server);
 				}
 				for (i = 0; i < strlen(temp->status); i++)
-					if (temp->status[i] == '\n')
-					{
+					if (temp->status[i] == '\n') {
 						temp->status[i] = '\\';
 						break;
 					}
+				*/
 				return (1);
 			}
 		}		

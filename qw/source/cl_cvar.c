@@ -49,7 +49,6 @@ Cvar_Info (cvar_t *var)
 {
 	if (var->flags & CVAR_USERINFO) {
 		Info_SetValueForKey (cls.userinfo, var->name, var->string,
-							 MAX_INFO_STRING,
 							 ((!strequal(var->name, "name"))
 							  |(strequal(var->name, "team") << 1)));
 		if (cls.state >= ca_connected) {

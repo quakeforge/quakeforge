@@ -866,7 +866,7 @@ SV_Serverinfo_f (void)
 		return;
 	}
 	Info_SetValueForKey (svs.info, Cmd_Argv (1), Cmd_Argv (2),
-						 MAX_SERVERINFO_STRING, !sv_highchars->int_val);
+						 !sv_highchars->int_val);
 
 	// if this is a cvar, change it too 
 	var = Cvar_FindVar (Cmd_Argv (1));
@@ -902,7 +902,7 @@ SV_Localinfo_f (void)
 		return;
 	}
 	Info_SetValueForKey (localinfo, Cmd_Argv (1), Cmd_Argv (2),
-						 MAX_LOCALINFO_STRING, !sv_highchars->int_val);
+						 !sv_highchars->int_val);
 }
 
 /*
@@ -953,7 +953,7 @@ SV_Gamedir (void)
 		return;
 	}
 
-	Info_SetValueForStarKey (svs.info, "*gamedir", dir, MAX_SERVERINFO_STRING,
+	Info_SetValueForStarKey (svs.info, "*gamedir", dir, 
 							 !sv_highchars->int_val);
 }
 
@@ -1102,8 +1102,7 @@ SV_InitOperatorCommands (void)
 {
 	if (COM_CheckParm ("-cheats")) {
 		sv_allow_cheats = true;
-		Info_SetValueForStarKey (svs.info, "*cheats", "ON",
-								 MAX_SERVERINFO_STRING, 0);
+		Info_SetValueForStarKey (svs.info, "*cheats", "ON", 0);
 	}
 
 	Cmd_AddCommand ("logfile", SV_Logfile_f, "Toggles logging of console text "

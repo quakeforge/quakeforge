@@ -39,6 +39,7 @@ static const char rcsid[] =
 
 #include "QF/crc.h"
 #include "QF/cvar.h"
+#include "QF/info.h"
 #include "QF/msg.h"
 #include "QF/va.h"
 #include "QF/vfs.h"
@@ -50,7 +51,7 @@ static const char rcsid[] =
 #include "sv_progs.h"
 #include "world.h"
 
-char        localinfo[MAX_LOCALINFO_STRING + 1];	// local game info
+info_t     *localinfo;	// local game info
 char        localmodels[MAX_MODELS][5];	// inline model names for precache
 
 entity_state_t baselines[MAX_EDICTS];
@@ -332,7 +333,7 @@ SV_SpawnServer (const char *server)
 	// edict is
 	SV_LoadProgs ();
 	Info_SetValueForStarKey (svs.info, "*progs", va ("%i", sv_pr_state.crc),
-							 MAX_SERVERINFO_STRING, !sv_highchars->int_val);
+							 !sv_highchars->int_val);
 
 	// allocate edicts
 	sv.edicts = PR_InitEdicts (&sv_pr_state, MAX_EDICTS);
@@ -423,7 +424,6 @@ SV_SpawnServer (const char *server)
 	SV_CreateBaseline ();
 	sv.signon_buffer_size[sv.num_signon_buffers - 1] = sv.signon.cursize;
 
-	Info_SetValueForKey (svs.info, "map", sv.name, MAX_SERVERINFO_STRING,
-						 !sv_highchars->int_val);
+	Info_SetValueForKey (svs.info, "map", sv.name, !sv_highchars->int_val);
 	Con_DPrintf ("Server spawned.\n");
 }
