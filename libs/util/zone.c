@@ -38,6 +38,18 @@
 
 #include <stdlib.h>
 
+#undef MMAPPED_CACHE
+#ifdef MMAPPED_CACHE
+# include <unistd.h>
+# include <sys/mman.h>
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <fcntl.h>
+# ifndef _POSIX_MAPPED_FILES
+#  error No _POSIX_MAPPED_FILES?  erk!
+# endif
+#endif
+
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -524,9 +536,11 @@ typedef struct cache_system_s {
 } cache_system_t;
 
 cache_system_t *Cache_TryAlloc (int size, qboolean nobottom);
+void Cache_Profile (void);
 
 cache_system_t cache_head;
 
+#ifndef MMAPPED_CACHE
 void
 Cache_Move (cache_system_t * c)
 {
@@ -548,6 +562,7 @@ Cache_Move (cache_system_t * c)
 		Cache_Free (c->user);			// tough luck...
 	}
 }
+#endif
 
 /*
 	Cache_FreeLow
@@ -557,6 +572,7 @@ Cache_Move (cache_system_t * c)
 void
 Cache_FreeLow (int new_low_hunk)
 {
+#ifndef MMAPPED_CACHE
 	cache_system_t *c;
 
 	while (1) {
@@ -567,6 +583,7 @@ Cache_FreeLow (int new_low_hunk)
 			return;						// there is space to grow the hunk
 		Cache_Move (c);					// reclaim the space
 	}
+#endif
 }
 
 /*
@@ -577,6 +594,7 @@ Cache_FreeLow (int new_low_hunk)
 void
 Cache_FreeHigh (int new_high_hunk)
 {
+#ifndef MMAPPED_CACHE
 	cache_system_t *c, *prev;
 
 	prev = NULL;
@@ -593,6 +611,7 @@ Cache_FreeHigh (int new_high_hunk)
 			prev = c;
 		}
 	}
+#endif
 }
 
 void
@@ -628,6 +647,7 @@ Cache_MakeLRU (cache_system_t * cs)
 cache_system_t *
 Cache_TryAlloc (int size, qboolean nobottom)
 {
+#ifndef MMAPPED_CACHE
 	cache_system_t *cs, *new;
 
 	// is the cache completely empty?
@@ -692,6 +712,29 @@ Cache_TryAlloc (int size, qboolean nobottom)
 	}
 
 	return NULL;						// couldn't allocate
+#else
+	cache_system_t *new;
+	int fd;
+
+	fd = open ("/dev/zero", O_RDWR);
+	if (fd < 0)
+		return NULL;
+	new = mmap (0, size, PROT_READ | PROT_WRITE,
+				MAP_PRIVATE, fd, 0);
+	close (fd);
+	if (new == MAP_FAILED)
+		return NULL;
+
+	new->size = size;
+	new->next = &cache_head;
+	new->prev = cache_head.prev;
+	cache_head.prev->next = new;
+	cache_head.prev = new;
+
+	Cache_MakeLRU (new);
+
+	return new;
+#endif
 }
 
 /*
@@ -736,6 +779,7 @@ Cache_Init (void)
 	cache_head.lru_next = cache_head.lru_prev = &cache_head;
 
 	Cmd_AddCommand ("flush", Cache_Flush, "Clears the current game cache");
+	Cmd_AddCommand ("cache_profile", Cache_Profile, "Prints a profile of the current cache");
 }
 
 /*
@@ -753,6 +797,8 @@ Cache_Free (cache_user_t *c)
 
 	cs = ((cache_system_t *) c->data) - 1;
 
+	Con_DPrintf ("Cache_Free: freeing '%s'\n", cs->name);
+
 	cs->prev->next = cs->next;
 	cs->next->prev = cs->prev;
 	cs->next = cs->prev = NULL;
@@ -760,6 +806,11 @@ Cache_Free (cache_user_t *c)
 	c->data = NULL;
 
 	Cache_UnlinkLRU (cs);
+
+#ifdef MMAPPED_CACHE
+	if (munmap (cs, cs->size))
+		Sys_Error ("Cache_Free: munmap failed!\n");
+#endif
 }
 
 void       *
@@ -809,6 +860,41 @@ Cache_Alloc (cache_user_t *c, int size, const char *name)
 	}
 
 	return Cache_Check (c);
+}
+
+void
+Cache_Profile ()
+{
+	cache_system_t *cs;
+	unsigned int i;
+	unsigned int items[31] = {};
+	unsigned int sizes[31] = {};
+	int count = 0;
+	int total = 0;
+
+	cs = cache_head.next;
+	while (cs != &cache_head) {
+		for (i = 0; (cs->size >> (i + 1)) && i < 30; i++)
+			;
+		items[i]++;
+		sizes[i] += cs->size;
+		total += cs->size;
+		count++;
+		cs = cs->next;
+	}
+	Con_Printf ("Cache Profile:\n");
+	Con_Printf ("%8s  %8s  %8s  %8s  %8s\n",
+				"count", "min", "max", "average", "percent");
+	for (i = 0; i < 31; i++) {
+		if (!items[i])
+			continue;
+		Con_Printf ("%8d  %8d  %8d  %8d  %7d%%\n",
+					items[i], 1 << i, (1 << (i + 1)) - 1,
+					sizes[i] / items[i],
+					(int) (sizes[i] / (float) total * 100));
+	}
+	Con_Printf ("Total allocations: %d in %d allocations, average of"
+				" %d per allocation\n", total, count, total / count);
 }
 
 //============================================================================
