@@ -386,7 +386,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				OPC.integer_var = !OPA.string_var ||
 					!*PR_GetString (pr, OPA.string_var);
 				break;
-			case OP_NOT_FNC:
+			case OP_NOT_FN:
 				OPC.integer_var = !OPA.func_var;
 				break;
 			case OP_NOT_ENT:
@@ -402,7 +402,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_EQ_E:
 				OPC.integer_var = OPA.integer_var == OPB.integer_var;
 				break;
-			case OP_EQ_FNC:
+			case OP_EQ_FN:
 				OPC.integer_var = OPA.func_var == OPB.func_var;
 				break;
 			case OP_NE_F:
@@ -436,7 +436,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_NE_E:
 				OPC.integer_var = OPA.integer_var != OPB.integer_var;
 				break;
-			case OP_NE_FNC:
+			case OP_NE_FN:
 				OPC.integer_var = OPA.func_var != OPB.func_var;
 				break;
 
@@ -445,7 +445,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_STORE_ENT:
 			case OP_STORE_FLD:			// integers
 			case OP_STORE_S:
-			case OP_STORE_FNC:			// pointers
+			case OP_STORE_FN:			// pointers
 			case OP_STORE_I:
 			case OP_STORE_U:
 			case OP_STORE_P:
@@ -459,7 +459,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_STOREP_ENT:
 			case OP_STOREP_FLD:		// integers
 			case OP_STOREP_S:
-			case OP_STOREP_FNC:		// pointers
+			case OP_STOREP_FN:		// pointers
 			case OP_STOREP_I:
 			case OP_STOREP_U:
 			case OP_STOREP_P:
@@ -493,7 +493,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_ADDRESS_S:
 			case OP_ADDRESS_ENT:
 			case OP_ADDRESS_FLD:
-			case OP_ADDRESS_FNC:
+			case OP_ADDRESS_FN:
 			case OP_ADDRESS_I:
 			case OP_ADDRESS_U:
 			case OP_ADDRESS_P:
@@ -504,7 +504,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_LOAD_FLD:
 			case OP_LOAD_ENT:
 			case OP_LOAD_S:
-			case OP_LOAD_FNC:
+			case OP_LOAD_FN:
 			case OP_LOAD_I:
 			case OP_LOAD_U:
 			case OP_LOAD_P:
@@ -538,7 +538,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_LOADB_S:
 			case OP_LOADB_ENT:
 			case OP_LOADB_FLD:
-			case OP_LOADB_FNC:
+			case OP_LOADB_FN:
 			case OP_LOADB_I:
 			case OP_LOADB_U:
 			case OP_LOADB_P:
@@ -558,7 +558,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_LOADBI_S:
 			case OP_LOADBI_ENT:
 			case OP_LOADBI_FLD:
-			case OP_LOADBI_FNC:
+			case OP_LOADBI_FN:
 			case OP_LOADBI_I:
 			case OP_LOADBI_U:
 			case OP_LOADBI_P:
@@ -588,7 +588,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_STOREB_S:
 			case OP_STOREB_ENT:
 			case OP_STOREB_FLD:
-			case OP_STOREB_FNC:
+			case OP_STOREB_FN:
 			case OP_STOREB_I:
 			case OP_STOREB_U:
 			case OP_STOREB_P:
@@ -608,7 +608,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_STOREBI_S:
 			case OP_STOREBI_ENT:
 			case OP_STOREBI_FLD:
-			case OP_STOREBI_FNC:
+			case OP_STOREBI_FN:
 			case OP_STOREBI_I:
 			case OP_STOREBI_U:
 			case OP_STOREBI_P:
