@@ -477,7 +477,9 @@ GIB_Thread_Kill_f (void)
 			return;
 		}
 		for (cur = thread->cbuf; cur; cur = cur->down) {
-			GIB_DATA(cur)->type = GIB_BUFFER_NORMAL;
+			// Kill all loops
+			if (GIB_DATA(cur)->type == GIB_BUFFER_LOOP)
+				GIB_DATA(cur)->type = GIB_BUFFER_PROXY; // Proxy to prevent shared locals being freed
 			dstring_clearstr (cur->line);
 			dstring_clearstr (cur->buf);
 		}
@@ -661,6 +663,18 @@ GIB_Range_f (void)
 }
 
 void
+GIB_Print_f (void)
+{
+	if (GIB_Argc() != 2) {
+		Cbuf_Error ("syntax",
+		  "print: invalid syntax\n"
+		  "usage: print text");
+		return;
+	}
+	Sys_Printf ("%s", GIB_Argv(1));
+}
+
+void
 GIB_Builtin_Init (void)
 {
 	gib_globals = Hash_NewTable (512, GIB_Var_Get_Key, GIB_Var_Free, 0);
@@ -685,4 +699,5 @@ GIB_Builtin_Init (void)
 	GIB_Builtin_Add ("file.write", GIB_File_Write_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("file.find", GIB_File_Find_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("range", GIB_Range_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("print", GIB_Print_f, GIB_BUILTIN_NORMAL);
 }

@@ -55,6 +55,7 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
+#include "QF/gib_builtin.h"
 
 #include "compat.h"
 
@@ -339,6 +340,19 @@ C_SayTeam (const char *line)
 }
 
 
+void
+C_GIB_Print_Center_f (void)
+{
+	if (GIB_Argc () != 2) {
+		Cbuf_Error ("syntax",
+		  "print.center: invalid syntax\n"
+		  "usage: print.center text");
+		return;
+	}
+	SCR_CenterPrint (GIB_Argv(1));
+}
+
+
 static void
 C_Init (void)
 {
@@ -393,6 +407,10 @@ C_Init (void)
 	Cmd_AddCommand ("clear", Clear_f, "Clear the console");
 	Cmd_AddCommand ("condump", Condump_f, "dump the console text to a "
 					"file");
+					
+	// register GIB builtins
+	GIB_Builtin_Add ("print.center", C_GIB_Print_Center_f, GIB_BUILTIN_NORMAL);
+	
 	con_initialized = true;
 }
 
