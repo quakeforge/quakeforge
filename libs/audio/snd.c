@@ -55,10 +55,9 @@ plugin_t              *snd_render_module = NULL;
 plugin_t              *snd_output_module = NULL;
 
 // FIXME: ewwwies
-extern double host_frametime; // From host.h
-
-extern struct model_s       **snd_worldmodel;
-extern int snd_viewentity;
+extern double				host_frametime; // From host.h
+extern int					snd_viewentity;
+extern struct model_s	  **snd_worldmodel;
 
 
 void

@@ -124,9 +124,9 @@ static byte chktbl[1024 + 4] = {
 byte
 COM_BlockSequenceCRCByte (const byte * base, int length, int sequence)
 {
-	unsigned short crc;
-	byte       *p;
 	byte        chkb[60 + 4];
+	byte       *p;
+	unsigned short crc;
 
 	p = chktbl + (sequence % (sizeof (chktbl) - 8));
 
@@ -151,8 +151,8 @@ COM_BlockSequenceCRCByte (const byte * base, int length, int sequence)
 unsigned int
 Com_BlockChecksum (const void *buffer, int length)
 {
-	int         digest[4];
-	unsigned int val;
+	int				digest[4];
+	unsigned int	val;
 
 	mdfour ((unsigned char *) digest, (unsigned char *) buffer, length);
 

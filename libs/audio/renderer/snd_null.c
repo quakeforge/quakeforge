@@ -30,24 +30,13 @@
 */
 
 #include "QF/cvar.h"
-#include "QF/sound.h"
 #include "QF/plugin.h"
+#include "QF/sound.h"
 
 // =======================================================================
 // Various variables also defined in snd_dma.c
 // FIXME - should be put in one place
 // =======================================================================
-
-extern channel_t       channels[MAX_CHANNELS];
-extern int             total_channels;
-extern volatile dma_t *shm;
-extern cvar_t         *snd_loadas8bit;
-extern int             paintedtime;				// sample PAIRS
-extern qboolean        snd_initialized;
-
-extern cvar_t         *bgmvolume;
-extern cvar_t         *volume;
-extern cvar_t         *snd_interp;
 
 plugin_t           plugin_info;
 plugin_data_t      plugin_info_data;
@@ -58,6 +47,17 @@ sound_data_t       plugin_info_sound_data;
 sound_funcs_t      plugin_info_sound_funcs;
 
 void SND_Init_Cvars (void);
+
+extern int             paintedtime;				// sample PAIRS
+extern int             total_channels;
+extern channel_t       channels[MAX_CHANNELS];
+extern volatile dma_t *shm;
+extern qboolean        snd_initialized;
+
+extern cvar_t         *bgmvolume;
+extern cvar_t         *volume;
+extern cvar_t         *snd_interp;
+extern cvar_t         *snd_loadas8bit;
 
 
 void

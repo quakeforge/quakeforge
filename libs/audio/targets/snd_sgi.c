@@ -34,10 +34,10 @@
 #include <dmedia/audio.h>
 
 #include "QF/console.h"
-#include "QF/qtypes.h"
-#include "QF/qargs.h"
-#include "QF/sound.h"
 #include "QF/plugin.h"
+#include "QF/qargs.h"
+#include "QF/qtypes.h"
+#include "QF/sound.h"
 
 static int  snd_inited = 0;
 static ALconfig alc;
@@ -63,9 +63,9 @@ static sound_funcs_t      plugin_info_sound_funcs;
 static qboolean
 SNDDMA_Init (void)
 {
-	ALpv        alpv;
-	int         i;
-	char       *s;
+	char	   *s;
+	int			i;
+	ALpv		alpv;
 
 	alc = alNewConfig ();
 
@@ -159,8 +159,8 @@ SNDDMA_Init (void)
 	/* channels */
 	while (shm->channels > 0) {
 		if (alSetChannels (alc, shm->channels) < 0) {
-			Con_Printf ("Unable to set number of channels to %d, trying half\n",
-						shm->channels);
+			Con_Printf ("Unable to set number of channels to %d, "
+						"trying half\n", shm->channels);
 			shm->channels /= 2;
 		} else
 			break;
@@ -184,9 +184,10 @@ SNDDMA_Init (void)
 		return 0;
 	}
 
-	/* set sizes of buffers relative to sizes of those for ** the 'standard'
-	   frequency of 11025 ** ** use *huge* buffers since at least my indigo2
-	   has enough ** to do to get sound on the way anyway */
+	/* set sizes of buffers relative to sizes of those for the 'standard'
+	   frequency of 11025 use *huge* buffers since at least my indigo2
+	   has enough to do to get sound on the way anyway
+	*/
 	bufsize = 32768 * (int) ((double) shm->speed / 11025.0);
 
 	dma_buffer = malloc (bufsize);
@@ -201,8 +202,8 @@ SNDDMA_Init (void)
 	write_buffer = malloc (bufsize);
 
 	if (write_buffer == NULL) {
-		Con_Printf ("Could not get %d bytes of memory for audio write buffer\n",
-					bufsize);
+		Con_Printf ("Could not get %d bytes of memory for audio write "
+					"buffer\n", bufsize);
 		free (dma_buffer);
 		alFreeConfig (alc);
 		return 0;
@@ -255,7 +256,6 @@ SNDDMA_Init (void)
 	return 1;
 }
 
-
 static int
 SNDDMA_GetDMAPos (void)
 {
@@ -265,7 +265,6 @@ SNDDMA_GetDMAPos (void)
 					  * shm->channels) % shm->samples;
 	return shm->samplepos;
 }
-
 
 static void
 SNDDMA_Shutdown (void)
@@ -279,7 +278,6 @@ SNDDMA_Shutdown (void)
 	}
 }
 
-
 /*
 	SNDDMA_Submit
 
@@ -288,11 +286,9 @@ SNDDMA_Shutdown (void)
 static void
 SNDDMA_Submit (void)
 {
-	int         bsize;
-	int         bytes, b;
-	unsigned char *p;
-	int         idx;
-	int         stop = *plugin_info_snd_output_data.paintedtime;
+	unsigned char  *p;
+	int				bsize, bytes, idx, b;
+	int				stop = *plugin_info_snd_output_data.paintedtime;
 
 	if (snd_blocked)
 		return;
@@ -325,15 +321,26 @@ SNDDMA_Submit (void)
 	framecount += bytes / bsize;
 }
 
+static void
+SNDDMA_BlockSound (void)
+{
+}
+
+static void
+SNDDMA_UnblockSound (void)
+{
+}
 
 plugin_t *
 snd_output_sgi_PluginInfo (void) {
-    plugin_info.type = qfp_sound;
-    plugin_info.api_version = QFPLUGIN_VERSION;
-    plugin_info.plugin_version = "0.1";
-    plugin_info.description = "SGI digital output";
-    plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
-        "Copyright (C) 1999,2000,2001  contributors of the QuakeForge project\n"        "Please see the file \"AUTHORS\" for a list of contributors";
+	plugin_info.type = qfp_sound;
+	plugin_info.api_version = QFPLUGIN_VERSION;
+	plugin_info.plugin_version = "0.1";
+	plugin_info.description = "SGI digital output";
+	plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
+		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge "
+		"project\n"
+		"Please see the file \"AUTHORS\" for a list of contributors";
     plugin_info.functions = &plugin_info_funcs;
     plugin_info.data = &plugin_info_data;
 
@@ -367,14 +374,4 @@ snd_output_sgi_PluginInfo (void) {
 	plugin_info_sound_funcs.pS_UnblockSound = SND_UnblockSound;
 
     return &plugin_info;
-}
-
-static void
-SNDDMA_BlockSound (void)
-{
-}
-
-static void
-SNDDMA_UnblockSound (void)
-{
 }

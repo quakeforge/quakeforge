@@ -183,7 +183,7 @@ SCR_DrawCenterString (void)
 	int         remaining, j, l, x, y;
 
 	// the finale prints the characters one at a time
-	if (r_force_fullscreen /*FIXME better test*/)
+	if (r_force_fullscreen /* FIXME: better test */)
 		remaining = scr_printspeed->value * (r_realtime -
 											 scr_centertime_start);
 	else
@@ -245,11 +245,11 @@ CalcFov (float fov_x, float width, float height)
 	if (fov_x < 1 || fov_x > 179)
 		Sys_Error ("Bad fov: %f", fov_x);
 
-	x = width / tan (fov_x / 360 * M_PI);
+	x = width / tan (fov_x * (M_PI / 360));
 
 	a = (x == 0) ? 90 : atan (height / x);	// 0 shouldn't happen
 
-	a = a * 360 / M_PI;
+	a = a * (360 / M_PI);
 
 	return a;
 }
@@ -293,7 +293,7 @@ SCR_CalcRefdef (void)
 		size = scr_viewsize->int_val;
 	}
 	// intermission is always full screen
-	if (r_force_fullscreen /*FIXME better test*/) {
+	if (r_force_fullscreen /* FIXME: better test */) {
 		full = true;
 		size = 100.0;
 		sb_lines = 0;
@@ -536,9 +536,7 @@ SCR_DrawConsole (int swap)
 	}
 }
 
-/*
-   SCREEN SHOTS
-*/
+/* SCREEN SHOTS */
 
 tex_t *
 SCR_ScreenShot (int width, int height)
@@ -578,7 +576,7 @@ SCR_ScreenShot (int width, int height)
 				dey++;					// at least one
 
 			count = 0;
-			for ( /* */ ; dy < dey; dy++) {
+			for (; dy < dey; dy++) {
 				src = tex->data + (vid.width * 3 * dy) + dx * 3;
 				for (nx = dx; nx < dex; nx++) {
 					r += *src++;
@@ -647,9 +645,11 @@ MipColor (int r, int g, int b)
 	bestdist = 256 * 256 * 3;
 
 	for (i = 0; i < 256; i++) {
-		r1 = vid_basepal[i * 3] - r;
-		g1 = vid_basepal[i * 3 + 1] - g;
-		b1 = vid_basepal[i * 3 + 2] - b;
+		static int	j;
+		j = i * 3;
+		r1 = vid_basepal[j] - r;
+		g1 = vid_basepal[j + 1] - g;
+		b1 = vid_basepal[j + 2] - b;
 		dist = r1 * r1 + g1 * g1 + b1 * b1;
 		if (dist < bestdist) {
 			bestdist = dist;

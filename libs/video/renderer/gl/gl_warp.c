@@ -201,11 +201,11 @@ EmitWaterPolys (msurface_t *fa)
 
 			s = os + turbsin[(int) ((ot * 0.125 + r_realtime) * TURBSCALE) &
 							 255];
-			s *= (1.0 / 64);
+			s *= (1.0 / 64.0);
 
 			t = ot + turbsin[(int) ((os * 0.125 + r_realtime) * TURBSCALE) &
 							 255];
-			t *= (1.0 / 64);
+			t *= (1.0 / 64.0);
 
 			qfglTexCoord2f (s, t);
 

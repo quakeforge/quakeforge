@@ -43,10 +43,10 @@
 
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
-#include "QF/plugin.h"
 
 static dma_t the_shm;
 static int  snd_inited;
@@ -67,9 +67,7 @@ static snd_output_funcs_t      plugin_info_snd_output_funcs;
 static void
 paint_audio (void *unused, Uint8 * stream, int len)
 {
-	int streamsamples;
-	int sampleposbytes;
-	int samplesbytes;
+	int sampleposbytes, samplesbytes, streamsamples;
 
 	if (shm) {
 		streamsamples = len / (shm->samplebits / 8);
@@ -231,34 +229,35 @@ SNDDMA_UnblockSound (void)
 }
 
 plugin_t *
-snd_output_sdl_PluginInfo (void) {
-    plugin_info.type = qfp_snd_output;
-    plugin_info.api_version = QFPLUGIN_VERSION;
-    plugin_info.plugin_version = "0.1";
-    plugin_info.description = "SDL digital output";
-    plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
-        "Copyright (C) 1999,2000,2001  contributors of the QuakeForge "
+snd_output_sdl_PluginInfo (void)
+{
+	plugin_info.type = qfp_snd_output;
+	plugin_info.api_version = QFPLUGIN_VERSION;
+	plugin_info.plugin_version = "0.1";
+	plugin_info.description = "SDL digital output";
+	plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
+		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge "
 		"project\n"
 		"Please see the file \"AUTHORS\" for a list of contributors";
-    plugin_info.functions = &plugin_info_funcs;
-    plugin_info.data = &plugin_info_data;
+	plugin_info.functions = &plugin_info_funcs;
+	plugin_info.data = &plugin_info_data;
 
-    plugin_info_data.general = &plugin_info_general_data;
-    plugin_info_data.input = NULL;
-    plugin_info_data.snd_output = &plugin_info_snd_output_data;
+	plugin_info_data.general = &plugin_info_general_data;
+	plugin_info_data.input = NULL;
+	plugin_info_data.snd_output = &plugin_info_snd_output_data;
 
-    plugin_info_funcs.general = &plugin_info_general_funcs;
-    plugin_info_funcs.input = NULL;
-    plugin_info_funcs.snd_output = &plugin_info_snd_output_funcs;
+	plugin_info_funcs.general = &plugin_info_general_funcs;
+	plugin_info_funcs.input = NULL;
+	plugin_info_funcs.snd_output = &plugin_info_snd_output_funcs;
 
-    plugin_info_general_funcs.p_Init = SNDDMA_Init_Cvars;
-    plugin_info_general_funcs.p_Shutdown = NULL;
+	plugin_info_general_funcs.p_Init = SNDDMA_Init_Cvars;
+	plugin_info_general_funcs.p_Shutdown = NULL;
 	plugin_info_snd_output_funcs.pS_O_Init = SNDDMA_Init;
 	plugin_info_snd_output_funcs.pS_O_Shutdown = SNDDMA_Shutdown;
-    plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
-    plugin_info_snd_output_funcs.pS_O_Submit = SNDDMA_Submit;
-    plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;
-    plugin_info_snd_output_funcs.pS_O_UnblockSound = SNDDMA_UnblockSound;
+	plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
+	plugin_info_snd_output_funcs.pS_O_Submit = SNDDMA_Submit;
+	plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;
+	plugin_info_snd_output_funcs.pS_O_UnblockSound = SNDDMA_UnblockSound;
 
-    return &plugin_info;
+	return &plugin_info;
 }

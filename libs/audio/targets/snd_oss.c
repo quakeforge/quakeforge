@@ -29,14 +29,13 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#include <sys/types.h>
 #ifdef HAVE_SYS_IOCTL_H
 # include <sys/ioctl.h>
 #endif
 #ifdef HAVE_SYS_MMAN_H
 # include <sys/mman.h>
 #endif
-#if defined HAVE_SYS_SOUNDCARD_H
+#ifdef HAVE_SYS_SOUNDCARD_H
 # include <sys/soundcard.h>
 #elif defined HAVE_LINUX_SOUNDCARD_H
 # include <linux/soundcard.h>
@@ -44,21 +43,21 @@
 # include <machine/soundcard.h>
 #endif
 
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/shm.h>
-#include <sys/wait.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/shm.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
-#include "QF/plugin.h"
 
 #ifndef MAP_FAILED
 # define MAP_FAILED ((void *) -1)
@@ -85,6 +84,7 @@ static general_funcs_t    plugin_info_general_funcs;
 static snd_output_data_t       plugin_info_snd_output_data;
 static snd_output_funcs_t      plugin_info_snd_output_funcs;
 
+
 static void
 SNDDMA_Init_Cvars (void)
 {
@@ -103,13 +103,9 @@ SNDDMA_Init_Cvars (void)
 static qboolean
 SNDDMA_Init (void)
 {
-	int         rc;
-	int         fmt;
-	int         tmp;
-	int         i;
+	int				caps, fmt, rc, tmp, i;
+	int		        retries = 3;
 	struct audio_buf_info info;
-	int         caps;
-	int         retries = 3;
 
 	snd_inited = 0;
 	mmaped_io = snd_oss_mmaped->int_val;
@@ -198,10 +194,9 @@ SNDDMA_Init (void)
 
 	if (mmaped_io) {
 		// memory map the dma buffer
-		shm->buffer = (unsigned char *) mmap (NULL, info.fragstotal
-											  * info.fragsize,
-											  PROT_WRITE, // was also | PROT_READ
-										  MAP_FILE | MAP_SHARED, audio_fd, 0);
+		shm->buffer = (unsigned char *) mmap
+			(NULL, info.fragstotal * info.fragsize, PROT_WRITE,
+			 MAP_FILE | MAP_SHARED, audio_fd, 0);
 	
 		if (shm->buffer == MAP_FAILED) {
 			perror (snd_dev);
@@ -267,8 +262,7 @@ SNDDMA_Init (void)
 		return 0;
 	}
 
-// toggle the trigger & start her up
-
+	// toggle the trigger & start her up
 	tmp = 0;
 	rc = ioctl (audio_fd, SNDCTL_DSP_SETTRIGGER, &tmp);
 	if (rc < 0) {
@@ -290,13 +284,11 @@ SNDDMA_Init (void)
 
 	snd_inited = 1;
 	return 1;
-
 }
 
 static int
 SNDDMA_GetDMAPos (void)
 {
-
 	struct count_info count;
 
 	if (!snd_inited)
@@ -344,8 +336,10 @@ SNDDMA_Submit (void)
 		if (shm->samplepos + BYTES <= shm->samples)
 			write (audio_fd, shm->buffer + BYTES, samples);
 		else {
-			write (audio_fd, shm->buffer + BYTES, shm->samples - shm->samplepos);
-			write (audio_fd, shm->buffer, BYTES - (shm->samples - shm->samplepos));
+			write (audio_fd, shm->buffer + BYTES, shm->samples -
+				   shm->samplepos);
+			write (audio_fd, shm->buffer, BYTES - (shm->samples -
+												   shm->samplepos));
 		}
 		*plugin_info_snd_output_data.soundtime += samples;
 	}
@@ -363,12 +357,14 @@ SNDDMA_UnblockSound (void)
 
 plugin_t *
 snd_output_oss_PluginInfo (void) {
-    plugin_info.type = qfp_snd_output;
-    plugin_info.api_version = QFPLUGIN_VERSION;
-    plugin_info.plugin_version = "0.1";
-    plugin_info.description = "OSS digital output";
-    plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
-		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge project\n"        "Please see the file \"AUTHORS\" for a list of contributors";
+	plugin_info.type = qfp_snd_output;
+	plugin_info.api_version = QFPLUGIN_VERSION;
+	plugin_info.plugin_version = "0.1";
+	plugin_info.description = "OSS digital output";
+	plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
+		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge "
+		"project\n"
+		"Please see the file \"AUTHORS\" for a list of contributors";
 	plugin_info.functions = &plugin_info_funcs;
 	plugin_info.data = &plugin_info_data;
 
@@ -389,5 +385,5 @@ snd_output_oss_PluginInfo (void) {
 	plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;
 	plugin_info_snd_output_funcs.pS_O_UnblockSound = SNDDMA_UnblockSound;
 
-    return &plugin_info;
+	return &plugin_info;
 }

@@ -51,7 +51,7 @@ static qboolean	snd_firsttime = true, snd_iswave;
 
 static int	sample16;
 static int	snd_sent, snd_completed;
-static int snd_blocked = 0;
+static int	snd_blocked = 0;
 
 static HPSTR		lpData;
 static LPWAVEHDR	lpWaveHdr;
@@ -60,8 +60,7 @@ static DWORD		gSndBufSize;
 static volatile dma_t sn;
 
 
-/* MME Callback function
- */
+/* MME Callback function */
 static void
 mme_callback ( HANDLE h, UINT wMsg, DWORD instance, LPARAM p1, LPARAM p2 )
 {
@@ -70,12 +69,6 @@ mme_callback ( HANDLE h, UINT wMsg, DWORD instance, LPARAM p1, LPARAM p2 )
 	}
 }
 
-
-/*
-==================
-S_BlockSound
-==================
-*/
 static void
 S_BlockSound ( void )
 {
@@ -83,12 +76,6 @@ S_BlockSound ( void )
 		waveOutReset(hWaveOut);
 }
 
-
-/*
-==================
-S_UnblockSound
-==================
-*/
 static void
 S_UnblockSound ( void )
 {
@@ -97,12 +84,6 @@ S_UnblockSound ( void )
 	snd_blocked--;
 }
 
-
-/*
-==================
-FreeSound
-==================
-*/
 static void
 FreeSound ( void )
 {
@@ -130,17 +111,15 @@ FreeSound ( void )
 
 
 /*
-==================
-SNDDM_InitWav
+  SNDDM_InitWav
 
-Crappy windows multimedia base
-==================
+  Crappy windows multimedia base
 */
 static qboolean
 SNDDMA_InitWav ( void )
 {
+	int hr, i;
 	LPPCMWAVEFORMAT format;
-	int i, hr;
 
 	if ((format = (LPPCMWAVEFORMAT)
 		mmeAllocMem(sizeof(*format))) == NULL) {
@@ -185,10 +164,9 @@ SNDDMA_InitWav ( void )
 	mmeFreeMem(format);
 
 	/*
-	 * Allocate and lock memory for the waveform data. The memory
-	 * for waveform data must be globally allocated with
-	 * GMEM_MOVEABLE and GMEM_SHARE flags.
-
+	  Allocate and lock memory for the waveform data. The memory
+	  for waveform data must be globally allocated with
+	  GMEM_MOVEABLE and GMEM_SHARE flags.
 	*/
 	gSndBufSize = WAV_BUFFERS*WAV_BUFFER_SIZE;
 	lpData = mmeAllocBuffer(gSndBufSize);
@@ -200,10 +178,10 @@ SNDDMA_InitWav ( void )
 	memset (lpData, 0, gSndBufSize);
 
 	/*
-	 * Allocate and lock memory for the header. This memory must
-	 * also be globally allocated with GMEM_MOVEABLE and
-	 * GMEM_SHARE flags.
-	 */
+	  Allocate and lock memory for the header. This memory must
+	  also be globally allocated with GMEM_MOVEABLE and
+	  GMEM_SHARE flags.
+	*/
 	lpWaveHdr = mmeAllocMem(sizeof(WAVEHDR) * WAV_BUFFERS);
 
 	if (lpWaveHdr == NULL)
@@ -235,14 +213,11 @@ SNDDMA_InitWav ( void )
 }
 
 /*
-==================
-SNDDMA_Init
+  SNDDMA_Init
 
-Try to find a sound device to mix for.
-Returns false if nothing is found.
-==================
+  Try to find a sound device to mix for.
+  Returns false if nothing is found.
 */
-
 static qboolean
 SNDDMA_Init ( void )
 {
@@ -273,13 +248,11 @@ SNDDMA_Init ( void )
 }
 
 /*
-==============
-SNDDMA_GetDMAPos
+  SNDDMA_GetDMAPos
 
-return the current sample position (in mono samples read)
-inside the recirculating dma buffer, so the mixing code will know
-how many sample are required to fill it up.
-===============
+  return the current sample position (in mono samples read)
+  inside the recirculating dma buffer, so the mixing code will know
+  how many sample are required to fill it up.
 */
 static int
 SNDDMA_GetDMAPos ( void )
@@ -298,17 +271,15 @@ SNDDMA_GetDMAPos ( void )
 }
 
 /*
-==============
-SNDDMA_Submit
+  SNDDMA_Submit
 
-Send sound to device if buffer isn't really the dma buffer
-===============
+  Send sound to device if buffer isn't really the dma buffer
 */
 static void
 SNDDMA_Submit ( void )
 {
-	LPWAVEHDR	h;
 	int			wResult;
+	LPWAVEHDR	h;
 
 	if (!wav_init) return;
 
@@ -318,9 +289,7 @@ SNDDMA_Submit ( void )
 		Con_DPrintf ("Sound overrun\n");
 	}
 
-	//
 	// submit two new sound blocks
-	//
 	while (((snd_sent - snd_completed) >> sample16) < 4)
 	{
 		int i = (snd_sent&WAV_MASK);
@@ -332,10 +301,10 @@ SNDDMA_Submit ( void )
 
 		snd_sent++;
 		/*
-		 * Now the data block can be sent to the output device. The
-		 * waveOutWrite function returns immediately and waveform
-		 * data is sent to the output device in the background.
-		 */
+		  Now the data block can be sent to the output device. The
+		  waveOutWrite function returns immediately and waveform
+		  data is sent to the output device in the background.
+		*/
 		wResult = waveOutWrite(hWaveOut, h, sizeof(WAVEHDR));
 
 		if (wResult != MMSYSERR_NOERROR)
@@ -348,11 +317,9 @@ SNDDMA_Submit ( void )
 }
 
 /*
-==============
-SNDDMA_Shutdown
+  SNDDMA_Shutdown
 
-Reset the sound device for exiting
-===============
+  Reset the sound device for exiting
 */
 static void
 SNDDMA_Shutdown ( void )

@@ -53,13 +53,10 @@ sfxcache_t *SND_LoadSound (sfx_t *sfx, cache_allocator_t allocator);
 void
 SND_ResampleSfx (sfxcache_t *sc, int inrate, int inwidth, byte * data)
 {
-	int         outcount;
-	int         srcsample;
-	float       stepscale;
-	int         i;
-	int         sample, samplefrac, fracstep;
-	short      *is, *os;
 	unsigned char *ib, *ob;
+	int			fracstep, outcount, sample, samplefrac, srcsample, i;
+	float		stepscale;
+	short	   *is, *os;
 
 	is = (short *) data;
 	os = (short *) sc->data;
@@ -99,8 +96,8 @@ SND_ResampleSfx (sfxcache_t *sc, int inrate, int inwidth, byte * data)
 	} else {
 		// general case
 		if (snd_interp->int_val && stepscale < 1) {
-			int         points = 1 / stepscale;
-			int         j;
+			int			j;
+			int			points = 1 / stepscale;
 
 			for (i = 0; i < sc->length; i++) {
 				int         s1, s2;
@@ -153,8 +150,6 @@ SND_ResampleSfx (sfxcache_t *sc, int inrate, int inwidth, byte * data)
 	if (sc->loopstart != -1)
 		sc->loopstart = sc->loopstart / stepscale;
 }
-
-//=============================================================================
 
 sfxcache_t *
 SND_LoadSound (sfx_t *sfx, cache_allocator_t allocator)
@@ -217,16 +212,16 @@ SND_CallbackLoad (void *object, cache_allocator_t allocator)
 
 /* WAV loading */
 
-byte       *data_p;
-byte       *iff_end;
-byte       *last_chunk;
-byte       *iff_data;
-int         iff_chunk_len;
+byte	   *data_p;
+byte	   *iff_end;
+byte	   *last_chunk;
+byte	   *iff_data;
+int			iff_chunk_len;
 
 short
 SND_GetLittleShort (void)
 {
-	short       val = 0;
+	short		val = 0;
 
 	val = *data_p;
 	val = val + (*(data_p + 1) << 8);
@@ -237,7 +232,7 @@ SND_GetLittleShort (void)
 int
 SND_GetLittleLong (void)
 {
-	int         val = 0;
+	int			val = 0;
 
 	val = *data_p;
 	val = val + (*(data_p + 1) << 8);
@@ -282,7 +277,7 @@ SND_FindChunk (char *name)
 void
 SND_DumpChunks (void)
 {
-	char        str[5];
+	char		str[5];
 
 	str[4] = 0;
 	data_p = iff_data;
@@ -299,10 +294,8 @@ SND_DumpChunks (void)
 wavinfo_t
 SND_GetWavinfo (const char *name, byte * wav, int wavlength)
 {
-	wavinfo_t   info;
-	int         i;
-	int         format;
-	int         samples;
+	int			format, samples, i;
+	wavinfo_t	info;
 
 	memset (&info, 0, sizeof (info));
 

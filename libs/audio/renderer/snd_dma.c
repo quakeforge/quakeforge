@@ -372,9 +372,7 @@ SND_PrecacheSound (const char *name)
 channel_t *
 SND_PickChannel (int entnum, int entchannel)
 {
-	int			ch_idx;
-	int			first_to_die;
-	int			life_left;
+	int			ch_idx, first_to_die, life_left;
 
 	// Check for replacement sound, or find the best one to replace
 	first_to_die = -1;
@@ -413,10 +411,8 @@ SND_PickChannel (int entnum, int entchannel)
 void
 SND_Spatialize (channel_t *ch)
 {
-	vec_t		dot;
-	vec_t		dist;
 	int			phase;					// in samples
-	vec_t		lscale, rscale, scale;
+	vec_t		dist, dot, lscale, rscale, scale;
 	vec3_t		source_vec;
 
 	// anything coming from the view entity will always be full volume
@@ -463,11 +459,9 @@ void
 SND_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin,
 				float fvol, float attenuation)
 {
+	int			ch_idx, skip, vol;
 	channel_t  *target_chan, *check;
 	sfxcache_t *sc;
-	int			vol;
-	int			ch_idx;
-	int			skip;
 
 	if (!sound_started)
 		return;
@@ -524,7 +518,6 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin,
 			target_chan->end -= skip;
 			break;
 		}
-
 	}
 }
 
@@ -642,10 +635,10 @@ SND_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
 void
 SND_UpdateAmbientSounds (void)
 {
-	mleaf_t    *l;
 	float		vol;
 	int			ambient_channel;
 	channel_t  *chan;
+	mleaf_t    *l;
 
 	if (!snd_ambient)
 		return;
@@ -697,10 +690,8 @@ SND_UpdateAmbientSounds (void)
 void
 SND_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 {
-	int			i, j;
-	int			total;
-	channel_t  *ch;
-	channel_t  *combine;
+	int			total, i, j;
+	channel_t  *ch, *combine;
 
 	if (!sound_started || (snd_blocked > 0))
 		return;
@@ -777,10 +768,8 @@ SND_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 void
 SND_GetSoundtime (void)
 {
-	int			samplepos;
-	static int	buffers;
-	static int	oldsamplepos;
-	int			fullsamples;
+	int			fullsamples, samplepos;
+	static int	buffers, oldsamplepos;
 
 	fullsamples = shm->samples / shm->channels;
 
@@ -814,8 +803,8 @@ SND_ExtraUpdate (void)
 void
 SND_Update_ (void)
 {
-	unsigned int endtime;
-	int			samps;
+	int				samps;
+	unsigned int	endtime;
 
 	if (!sound_started || (snd_blocked > 0))
 		return;
@@ -848,9 +837,9 @@ SND_Update_ (void)
 void
 SND_Play (void)
 {
-	static int	hash = 345;
-	int			i;
 	char		name[256];
+	int			i;
+	static int	hash = 345;
 	sfx_t	   *sfx;
 
 	i = 1;
@@ -869,10 +858,10 @@ SND_Play (void)
 void
 SND_PlayVol (void)
 {
-	static int	hash = 543;
-	int			i;
-	float		vol;
 	char		name[256];
+	float		vol;
+	int			i;
+	static int	hash = 543;
 	sfx_t	   *sfx;
 
 	i = 1;
@@ -892,11 +881,9 @@ SND_PlayVol (void)
 void
 SND_SoundList (void)
 {
-	int			i;
+	int			load, size, total, i;
 	sfx_t	   *sfx;
 	sfxcache_t *sc;
-	int			size, total;
-	int			load;
 
 	if (Cmd_Argc() >= 2 && Cmd_Argv (1)[0])
 		load = 1;
@@ -977,7 +964,8 @@ SND_UnblockSound (void)
 }
 
 plugin_t *
-snd_render_default_PluginInfo (void) {
+snd_render_default_PluginInfo (void)
+{
 	plugin_info.type = qfp_snd_render;
 	plugin_info.api_version = QFPLUGIN_VERSION;
 	plugin_info.plugin_version = "0.1";

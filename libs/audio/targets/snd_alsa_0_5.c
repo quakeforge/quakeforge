@@ -33,18 +33,13 @@
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <sys/types.h>
 #ifdef HAVE_SYS_IOCTL_H
 # include <sys/ioctl.h>
 #endif
 #ifdef HAVE_SYS_MMAN_H
 # include <sys/mman.h>
 #endif
-#if defined HAVE_SYS_SOUNDCARD_H
+#ifdef HAVE_SYS_SOUNDCARD_H
 # include <sys/soundcard.h>
 #elif defined HAVE_LINUX_SOUNDCARD_H
 # include <linux/soundcard.h>
@@ -52,7 +47,11 @@
 # include <machine/soundcard.h>
 #endif
 
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <sys/asoundlib.h>
+#include <sys/types.h>
 
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -90,6 +89,7 @@ static general_funcs_t    plugin_info_general_funcs;
 static snd_output_data_t       plugin_info_snd_output_data;
 static snd_output_funcs_t      plugin_info_snd_output_funcs;
 
+
 static void
 SNDDMA_Init_Cvars (void)
 {
@@ -106,9 +106,9 @@ SNDDMA_Init_Cvars (void)
 static int
 check_card (int card)
 {
+	int			rc;
 	snd_ctl_t  *handle;
 	snd_ctl_hw_info_t info;
-	int         rc;
 
 	if ((rc = snd_ctl_open (&handle, card)) < 0) {
 		Con_Printf ("Error: control open (%i): %s\n", card, snd_strerror (rc));
@@ -144,9 +144,9 @@ check_card (int card)
 static qboolean
 SNDDMA_Init (void)
 {
-	int         rc = 0, i;
-	char       *err_msg = "";
-	int         rate = -1, format = -1, bps, stereo = -1, frag_size;
+	char	   *err_msg = "";
+	int			bps, frag_size, i;
+	int			format = -1, rate = -1, stereo = -1, rc = 0;
 	unsigned int mask;
 
 	mask = snd_cards_mask ();
@@ -197,7 +197,8 @@ SNDDMA_Init (void)
 			if ((rc = snd_pcm_open (&pcm_handle, card, dev,
 									SND_PCM_OPEN_PLAYBACK
 									| SND_PCM_OPEN_NONBLOCK)) < 0) {
-				Con_Printf ("Error: audio open error: %s\n", snd_strerror (rc));
+				Con_Printf ("Error: audio open error: %s\n",
+							snd_strerror (rc));
 				return 0;
 			}
 			goto dev_openned;
@@ -247,9 +248,9 @@ SNDDMA_Init (void)
 		frag_size /= 2;
 	}
 
-//  err_msg="audio flush";
-//  if ((rc=snd_pcm_channel_flush(pcm_handle, SND_PCM_CHANNEL_PLAYBACK))<0)
-//      goto error;
+//	err_msg="audio flush";
+//	if ((rc=snd_pcm_channel_flush(pcm_handle, SND_PCM_CHANNEL_PLAYBACK))<0)
+//		goto error;
 	err_msg = "audio munmap";
 	if ((rc = snd_pcm_munmap (pcm_handle, SND_PCM_CHANNEL_PLAYBACK)) < 0)
 		goto error;
@@ -266,9 +267,9 @@ SNDDMA_Init (void)
 	params.buf.block.frag_size = frag_size;
 	params.buf.block.frags_min = 1;
 	params.buf.block.frags_max = -1;
-//  err_msg="audio flush";
-//  if ((rc=snd_pcm_channel_flush(pcm_handle, SND_PCM_CHANNEL_PLAYBACK))<0)
-//      goto error;
+//	err_msg="audio flush";
+//	if ((rc=snd_pcm_channel_flush(pcm_handle, SND_PCM_CHANNEL_PLAYBACK))<0)
+//		goto error;
 	err_msg = "audio params";
 	if ((rc = snd_pcm_channel_params (pcm_handle, &params)) < 0)
 		goto error;
@@ -297,12 +298,8 @@ SNDDMA_Init (void)
 	shm->submission_chunk = 128;		// don't mix less than this #
 	shm->samplepos = 0;					// in mono samples
 	shm->samplebits = setup.format.format == SND_PCM_SFMT_S16_LE ? 16 : 8;
-	shm->samples =
-		setup.buf.block.frags * setup.buf.block.frag_size / (shm->samplebits / 8);	// mono 
-																					// 
-	// samples 
-	// in 
-	// buffer
+	shm->samples = setup.buf.block.frags * setup.buf.block.frag_size /
+		(shm->samplebits / 8);	// mono samples in buffer
 	shm->speed = setup.format.rate;
 	shm->buffer = (unsigned char *) mmap_data;
 	Con_Printf ("%5d stereo\n", shm->channels - 1);
@@ -328,9 +325,8 @@ SNDDMA_GetDMAPos (void)
 {
 	if (!snd_inited)
 		return 0;
-	shm->samplepos =
-		(mmap_control->status.frag_io +
-		 1) * setup.buf.block.frag_size / (shm->samplebits / 8);
+	shm->samplepos = (mmap_control->status.frag_io + 1) *
+		setup.buf.block.frag_size / (shm->samplebits / 8);
 	return shm->samplepos;
 }
 
@@ -351,10 +347,9 @@ SNDDMA_Shutdown (void)
 static void
 SNDDMA_Submit (void)
 {
-	int         count = *plugin_info_snd_output_data.paintedtime
-					- *plugin_info_snd_output_data.soundtime;
-	int         i, s, e;
-	int         rc;
+	int		rc, e, i, s;
+	int		count = (*plugin_info_snd_output_data.paintedtime -
+					 *plugin_info_snd_output_data.soundtime);
 
 	if (snd_blocked)
 		return;
@@ -366,18 +361,17 @@ SNDDMA_Submit (void)
 		mmap_control->fragments[i % setup.buf.block.frags].data = 1;
 	switch (mmap_control->status.status) {
 		case SND_PCM_STATUS_PREPARED:
-			if ((rc = snd_pcm_channel_go (pcm_handle, SND_PCM_CHANNEL_PLAYBACK))
-				< 0) {
-				Sys_Error ("unable to start playback. %s\n", snd_strerror (rc));
+			if ((rc = snd_pcm_channel_go (pcm_handle,
+										  SND_PCM_CHANNEL_PLAYBACK)) < 0) {
+				Sys_Error ("unable to start playback. %s\n",
+						   snd_strerror (rc));
 			}
 			break;
 		case SND_PCM_STATUS_RUNNING:
 			break;
 		case SND_PCM_STATUS_UNDERRUN:
-			if (
-				(rc =
-				 snd_pcm_plugin_prepare (pcm_handle,
-										 SND_PCM_CHANNEL_PLAYBACK)) < 0) {
+			if ((rc = snd_pcm_plugin_prepare (pcm_handle,
+											  SND_PCM_CHANNEL_PLAYBACK)) < 0) {
 				Sys_Error ("underrun: playback channel prepare error. %s\n",
 						   snd_strerror (rc));
 			}
@@ -410,7 +404,9 @@ snd_output_alsa0_5_PluginInfo (void) {
 	plugin_info.plugin_version = "0.1";
 	plugin_info.description = "ALSA 0.5.x digital output";
 	plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
-        "Copyright (C) 1999,2000,2001  contributors of the QuakeForge project\n"        "Please see the file \"AUTHORS\" for a list of contributors";
+		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge "
+		"project\n"
+		"Please see the file \"AUTHORS\" for a list of contributors";
 	plugin_info.functions = &plugin_info_funcs;
 	plugin_info.data = &plugin_info_data;
 
@@ -426,10 +422,10 @@ snd_output_alsa0_5_PluginInfo (void) {
 	plugin_info_general_funcs.p_Shutdown = NULL;
 	plugin_info_snd_output_funcs.pS_O_Init = SNDDMA_Init;
 	plugin_info_snd_output_funcs.pS_O_Shutdown = SNDDMA_Shutdown;
-    plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
-    plugin_info_snd_output_funcs.pS_O_Submit = SNDDMA_Submit;
-    plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;
-    plugin_info_snd_output_funcs.pS_O_UnblockSound = SNDDMA_UnblockSound;
+	plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
+	plugin_info_snd_output_funcs.pS_O_Submit = SNDDMA_Submit;
+	plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;
+	plugin_info_snd_output_funcs.pS_O_UnblockSound = SNDDMA_UnblockSound;
 
 	return &plugin_info;
 }

@@ -62,10 +62,10 @@ static int  snd_sent, snd_completed;
 static int snd_blocked = 0;
 static volatile dma_t sn;
 
-/* 
- * Global variables. Must be visible to window-procedure function 
- *  so it can unlock and free the data block after it has been played. 
- */
+/*
+  Global variables. Must be visible to window-procedure function
+  so it can unlock and free the data block after it has been played.
+*/
 
 static HANDLE      hData;
 static HPSTR       lpData;//, lpData2;
@@ -90,9 +90,6 @@ static sndinitstat SNDDMA_InitDirect (void);
 static qboolean    SNDDMA_InitWav (void);
 
 
-/*
-	S_BlockSound
-*/
 void
 S_BlockSound (void)
 {
@@ -102,10 +99,6 @@ S_BlockSound (void)
 			waveOutReset (hWaveOut);
 }
 
-
-/*
-	S_UnblockSound
-*/
 void
 S_UnblockSound (void)
 {
@@ -115,10 +108,6 @@ S_UnblockSound (void)
 			--snd_blocked;
 }
 
-
-/*
-	FreeSound
-*/
 static void
 FreeSound (void)
 {
@@ -173,7 +162,6 @@ FreeSound (void)
 	wav_init = false;
 }
 
-
 /*
 	SNDDMA_InitDirect
 
@@ -181,13 +169,13 @@ FreeSound (void)
 */
 static sndinitstat SNDDMA_InitDirect (void)
 {
-	DSBUFFERDESC dsbuf;
-	DSBCAPS     dsbcaps;
-	DWORD       dwSize, dwWrite;
-	DSCAPS      dscaps;
-	WAVEFORMATEX format, pformat;
-	HRESULT     hresult;
-	int         reps;
+	int				reps;
+	DSBUFFERDESC	dsbuf;
+	DSBCAPS			dsbcaps;
+	DSCAPS			dscaps;
+	DWORD			dwSize, dwWrite;
+	HRESULT			hresult;
+	WAVEFORMATEX	format, pformat;
 
 	memset ((void *) &sn, 0, sizeof (sn));
 
@@ -250,8 +238,8 @@ static sndinitstat SNDDMA_InitDirect (void)
 		FreeSound ();
 		return SIS_FAILURE;
 	}
-// get access to the primary buffer, if possible, so we can set the
-// sound hardware format
+	// get access to the primary buffer, if possible, so we can set the
+	// sound hardware format
 	memset (&dsbuf, 0, sizeof (dsbuf));
 	dsbuf.dwSize = sizeof (DSBUFFERDESC);
 	dsbuf.dwFlags = DSBCAPS_PRIMARYBUFFER;
@@ -322,7 +310,7 @@ static sndinitstat SNDDMA_InitDirect (void)
 
 	gSndBufSize = dsbcaps.dwBufferBytes;
 
-// initialize the buffer
+	// initialize the buffer
 	reps = 0;
 
 	while ((hresult = IDirectSoundBuffer_Lock (pDSBuf, 0, gSndBufSize,
@@ -343,7 +331,7 @@ static sndinitstat SNDDMA_InitDirect (void)
 	}
 
 	memset (lpData, 0, dwSize);
-//      lpData[4] = lpData[5] = 0x7f;   // force a pop for debugging
+//	lpData[4] = lpData[5] = 0x7f;   // force a pop for debugging
 
 	IDirectSoundBuffer_Unlock (pDSBuf, lpData, dwSize, NULL, 0);
 
@@ -369,7 +357,6 @@ static sndinitstat SNDDMA_InitDirect (void)
 	return SIS_SUCCESS;
 }
 
-
 /*
 	SNDDM_InitWav
 
@@ -378,9 +365,9 @@ static sndinitstat SNDDMA_InitDirect (void)
 static qboolean
 SNDDMA_InitWav (void)
 {
+	int			i;
+	HRESULT		hr;
 	WAVEFORMATEX format;
-	int         i;
-	HRESULT     hr;
 
 	snd_sent = 0;
 	snd_completed = 0;
@@ -413,11 +400,10 @@ SNDDMA_InitWav (void)
 	}
 
 	/* 
-	 * Allocate and lock memory for the waveform data. The memory 
-	 * for waveform data must be globally allocated with 
-	 * GMEM_MOVEABLE and GMEM_SHARE flags. 
-
-	 */
+	   Allocate and lock memory for the waveform data. The memory 
+	   for waveform data must be globally allocated with 
+	   GMEM_MOVEABLE and GMEM_SHARE flags. 
+	*/
 	gSndBufSize = WAV_BUFFERS * WAV_BUFFER_SIZE;
 	hData = GlobalAlloc (GMEM_MOVEABLE | GMEM_SHARE, gSndBufSize);
 	if (!hData) {
@@ -489,7 +475,6 @@ SNDDMA_InitWav (void)
 	Try to find a sound device to mix for.
 	Returns false if nothing is found.
 */
-
 qboolean
 SNDDMA_Init (void)
 {
@@ -559,9 +544,9 @@ SNDDMA_Init (void)
 static int
 SNDDMA_GetDMAPos (void)
 {
-	MMTIME      mmtime;
-	int         s = 0;
-	DWORD       dwWrite;
+	int			s = 0;
+	DWORD		dwWrite;
+	MMTIME		mmtime;
 
 	if (dsound_init) {
 		mmtime.wType = TIME_SAMPLES;
@@ -588,15 +573,13 @@ SNDDMA_GetDMAPos (void)
 static void
 SNDDMA_Submit (void)
 {
-	LPWAVEHDR   h;
-	int         wResult;
+	int			wResult;
+	LPWAVEHDR	h;
 
 	if (!wav_init)
 		return;
 
-	// 
 	// find which sound blocks have completed
-	// 
 	while (1) {
 		if (snd_completed == snd_sent) {
 			Con_DPrintf ("Sound overrun\n");
@@ -610,18 +593,16 @@ SNDDMA_Submit (void)
 		snd_completed++;				// this buffer has been played
 	}
 
-	// 
 	// submit two new sound blocks
-	// 
 	while (((snd_sent - snd_completed) >> sample16) < 4) {
 		h = lpWaveHdr + (snd_sent & WAV_MASK);
 
 		snd_sent++;
 		/* 
-		 * Now the data block can be sent to the output device. The 
-		 * waveOutWrite function returns immediately and waveform 
-		 * data is sent to the output device in the background. 
-		 */
+		   Now the data block can be sent to the output device. The 
+		   waveOutWrite function returns immediately and waveform 
+		   data is sent to the output device in the background. 
+		*/
 		wResult = waveOutWrite (hWaveOut, h, sizeof (WAVEHDR));
 
 		if (wResult != MMSYSERR_NOERROR) {
@@ -646,7 +627,7 @@ SNDDMA_Shutdown (void)
 DWORD      *
 DSOUND_LockBuffer (qboolean lockit)
 {
-	int         reps;
+	int		reps;
 
 	static DWORD dwSize;
 	static DWORD dwSize2;
@@ -659,10 +640,9 @@ DSOUND_LockBuffer (qboolean lockit)
 
 	if (lockit) {
 		reps = 0;
-		while ((hresult = IDirectSoundBuffer_Lock (pDSBuf, 0, gSndBufSize,
-												   (LPVOID *) & pbuf1, &dwSize,
-												   (LPVOID *) & pbuf2, &dwSize2,
-												   0)) != DS_OK) {
+		while ((hresult = IDirectSoundBuffer_Lock
+				(pDSBuf, 0, gSndBufSize, (LPVOID *) & pbuf1, &dwSize,
+				 (LPVOID *) & pbuf2, &dwSize2, 0)) != DS_OK) {
 			if (hresult != DSERR_BUFFERLOST) {
 				Con_Printf
 					("S_TransferStereo16: DS::Lock Sound Buffer Failed\n");

@@ -197,11 +197,11 @@ R_DrawSkyLayer (float s)
 
 		qfglBegin (GL_TRIANGLE_STRIP);
 		qfglTexCoord2f (0.5 + s * (1.0 / 128.0), 0.5 + s * (1.0 / 128.0));
-		qfglVertex3f (r_refdef.vieworg[0],
-					r_refdef.vieworg[1], r_refdef.vieworg[2] + domescale[2]);
+		qfglVertex3f (r_refdef.vieworg[0], r_refdef.vieworg[1],
+					  r_refdef.vieworg[2] + domescale[2]);
 		for (b = 1; b < 8; b++) {
-			x = bubble_costable[b * 2 + 16];
-			y = -bubble_sintable[b * 2 + 16];
+			x = bubble_costable[(b << 1) + 16];
+			y = -bubble_sintable[(b << 1) + 16];
 
 			v[0] = a1x * x;
 			v[1] = a1y * x;

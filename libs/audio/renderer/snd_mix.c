@@ -62,8 +62,7 @@ void        SND_WriteLinearBlastStereo16 (void);
 void
 SND_WriteLinearBlastStereo16 (void)
 {
-	int         i;
-	int         val;
+	int			val, i;
 
 	for (i = 0; i < snd_linear_count; i += 2) {
 		val = (snd_p[i] * snd_vol) >> 8;
@@ -88,9 +87,8 @@ SND_WriteLinearBlastStereo16 (void)
 void
 SND_TransferStereo16 (int endtime)
 {
-	int         lpos;
-	int         lpaintedtime;
-	DWORD      *pbuf;
+	int			lpaintedtime, lpos;
+	DWORD	   *pbuf;
 
 	snd_vol = volume->value * 256;
 
@@ -138,14 +136,9 @@ SND_TransferStereo16 (int endtime)
 void
 SND_TransferPaintBuffer (int endtime)
 {
-	int         out_idx;
-	int         count;
-	int         out_mask;
-	int        *p;
-	int         step;
-	int         val;
-	int         snd_vol;
-	DWORD      *pbuf;
+	int			count, out_idx, out_mask, snd_vol, step, val;
+	int		   *p;
+	DWORD	   *pbuf;
 
 	if (shm->samplebits == 16 && shm->channels == 2) {
 		SND_TransferStereo16 (endtime);
@@ -213,11 +206,9 @@ void       SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int endtime);
 void
 SND_PaintChannels (int endtime)
 {
-	int         i;
-	int         end;
+	int			end, ltime, count, i;
 	channel_t  *ch;
 	sfxcache_t *sc;
-	int         ltime, count;
 
 	while (paintedtime < endtime) {
 		// if paintbuffer is smaller than DMA buffer
@@ -289,7 +280,7 @@ SND_PaintChannels (int endtime)
 void
 SND_InitScaletable (void)
 {
-	int         i, j;
+	int			i, j;
 
 	for (i = 0; i < 32; i++)
 		for (j = 0; j < 256; j++)
@@ -300,10 +291,9 @@ SND_InitScaletable (void)
 void
 SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count)
 {
-	int         data;
-	int        *lscale, *rscale;
-	unsigned char *sfx;
-	int         i;
+	unsigned char  *sfx;
+	int				data, i;
+	int		       *lscale, *rscale;
 
 	if (ch->leftvol > 255)
 		ch->leftvol = 255;
@@ -327,12 +317,10 @@ SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count)
 void
 SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
 {
-	int         data;
-	int         left, right;
-	int         leftvol, rightvol;
-	signed short *sfx;
-	unsigned int i = 0;
-	unsigned int left_phase, right_phase;	// Never allowed < 0 anyway
+	int				data, left, right, leftvol, rightvol;
+	unsigned int	left_phase, right_phase;	// Never allowed < 0 anyway
+	unsigned int	i = 0;
+	signed short   *sfx;
 
 	leftvol = ch->leftvol;
 	rightvol = ch->rightvol;

@@ -73,10 +73,9 @@ fgetLittleLong (VFile *f)
 byte *
 LoadTGA (VFile *fin)
 {
-	int         columns, rows, numPixels;
-	byte       *pixbuf;
-	int         row, column;
-	unsigned char red = 0, green = 0, blue = 0, alphabyte = 0;
+	byte		   *pixbuf;
+	unsigned char	red = 0, green = 0, blue = 0, alphabyte = 0;
+	int				column, row, columns, rows, numPixels;
 
 	TargaHeader targa_header;
 	byte       *targa_rgba;

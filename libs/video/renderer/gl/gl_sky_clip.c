@@ -675,7 +675,7 @@ EmitSkyPolys (float speedscale, msurface_t *fa)
 			dir[2] *= 3;	// flatten the sphere
 
 			length = DotProduct (dir, dir);
-			length = 6 * 63 / sqrt (length);
+			length = (6 * 63) / sqrt (length);
 
 			dir[0] *= length;
 			dir[1] *= length;

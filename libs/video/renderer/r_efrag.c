@@ -41,9 +41,7 @@ efrag_t    *r_free_efrags;
 // FIXME: put this on hunk?
 efrag_t     r_efrags[MAX_EFRAGS];
 
-/*
-  ENTITY FRAGMENT FUNCTIONS
-*/
+/* ENTITY FRAGMENT FUNCTIONS */
 
 efrag_t   **lastlink;
 

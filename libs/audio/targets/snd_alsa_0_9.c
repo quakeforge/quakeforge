@@ -61,6 +61,7 @@ static general_funcs_t    plugin_info_general_funcs;
 static snd_output_data_t       plugin_info_snd_output_data;
 static snd_output_funcs_t      plugin_info_snd_output_funcs;
 
+
 void
 static SNDDMA_Init_Cvars (void)
 {
@@ -79,10 +80,10 @@ static int SNDDMA_GetDMAPos (void);
 static qboolean
 SNDDMA_Init (void)
 {
-	int         err;
-	int         rate = -1, bps = -1, stereo = -1, frag_size;
-	snd_pcm_hw_params_t *hw;
-	snd_pcm_sw_params_t *sw;
+	int			err, frag_size;
+	int			rate = -1, bps = -1, stereo = -1;
+	snd_pcm_hw_params_t	*hw;
+	snd_pcm_sw_params_t	*sw;
 
 	snd_pcm_hw_params_alloca (&hw);
 	snd_pcm_sw_params_alloca (&sw);
@@ -114,7 +115,6 @@ SNDDMA_Init (void)
 
 	Con_Printf ("Using PCM %s.\n", pcmname);
 	snd_pcm_hw_params_any (pcm, hw);
-
 
 	switch (rate) {
 		case -1:
@@ -250,9 +250,9 @@ error:
 static int
 SNDDMA_GetDMAPos (void)
 {
+	const snd_pcm_channel_area_t *areas;
 	snd_pcm_uframes_t offset;
 	snd_pcm_uframes_t nframes = shm->samples/shm->channels;
-	const snd_pcm_channel_area_t *areas;
 
 	if (!snd_inited)
 		return 0;
@@ -282,12 +282,12 @@ SNDDMA_Shutdown (void)
 static void
 SNDDMA_Submit (void)
 {
-	snd_pcm_uframes_t offset;
-	snd_pcm_uframes_t nframes;
+	int			state;
+	int			count = (*plugin_info_snd_output_data.paintedtime -
+						 *plugin_info_snd_output_data.soundtime);
 	const snd_pcm_channel_area_t *areas;
-	int         state;
-	int         count = *plugin_info_snd_output_data.paintedtime
-					- *plugin_info_snd_output_data.soundtime;
+	snd_pcm_uframes_t nframes;
+	snd_pcm_uframes_t offset;
 
 	if (snd_blocked)
 		return;
@@ -330,33 +330,33 @@ SNDDMA_UnblockSound (void)
 plugin_t *
 snd_output_alsa0_9_PluginInfo (void)
 {
-    plugin_info.type = qfp_snd_output;
-    plugin_info.api_version = QFPLUGIN_VERSION;
-    plugin_info.plugin_version = "0.1";
-    plugin_info.description = "ALSA 0.9.x digital output";
-    plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
-        "Copyright (C) 1999,2000,2001  contributors of the QuakeForge"
-		" project\n"
+	plugin_info.type = qfp_snd_output;
+	plugin_info.api_version = QFPLUGIN_VERSION;
+	plugin_info.plugin_version = "0.1";
+	plugin_info.description = "ALSA 0.9.x digital output";
+	plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
+		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge "
+		"project\n"
 		"Please see the file \"AUTHORS\" for a list of contributors";
-    plugin_info.functions = &plugin_info_funcs;
-    plugin_info.data = &plugin_info_data;
+	plugin_info.functions = &plugin_info_funcs;
+	plugin_info.data = &plugin_info_data;
 
-    plugin_info_data.general = &plugin_info_general_data;
-    plugin_info_data.input = NULL;
-    plugin_info_data.snd_output = &plugin_info_snd_output_data;
+	plugin_info_data.general = &plugin_info_general_data;
+	plugin_info_data.input = NULL;
+	plugin_info_data.snd_output = &plugin_info_snd_output_data;
 
-    plugin_info_funcs.general = &plugin_info_general_funcs;
-    plugin_info_funcs.input = NULL;
-    plugin_info_funcs.snd_output = &plugin_info_snd_output_funcs;
+	plugin_info_funcs.general = &plugin_info_general_funcs;
+	plugin_info_funcs.input = NULL;
+	plugin_info_funcs.snd_output = &plugin_info_snd_output_funcs;
 
-    plugin_info_general_funcs.p_Init = SNDDMA_Init_Cvars;
-    plugin_info_general_funcs.p_Shutdown = NULL;
+	plugin_info_general_funcs.p_Init = SNDDMA_Init_Cvars;
+	plugin_info_general_funcs.p_Shutdown = NULL;
 	plugin_info_snd_output_funcs.pS_O_Init = SNDDMA_Init;
 	plugin_info_snd_output_funcs.pS_O_Shutdown = SNDDMA_Shutdown;
-    plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
-    plugin_info_snd_output_funcs.pS_O_Submit = SNDDMA_Submit;
-    plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;
-    plugin_info_snd_output_funcs.pS_O_UnblockSound = SNDDMA_UnblockSound;
+	plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
+	plugin_info_snd_output_funcs.pS_O_Submit = SNDDMA_Submit;
+	plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;
+	plugin_info_snd_output_funcs.pS_O_UnblockSound = SNDDMA_UnblockSound;
 
-    return &plugin_info;
+	return &plugin_info;
 }

@@ -51,17 +51,17 @@
 static byte translate[256];
 static unsigned int translate32[256];
 
+
 void
 Skin_Set_Translate (int top, int bottom, void *_dest)
 {
 	int         i;
 
-	top = bound (0, top, 13) * 16;
-	bottom = bound (0, bottom, 13) * 16;
+	top = bound (0, top, 13) << 4;
+	bottom = bound (0, bottom, 13) << 4;
 
 	for (i = 0; i < 16; i++) {
-		if (top < 128)				// the artists made some backwards
-									// ranges.  sigh.
+		if (top < 128)		// the artists made some backwards ranges. sigh.
 			translate[TOP_RANGE + i] = top + i;
 		else
 			translate[TOP_RANGE + i] = top + 15 - i;
