@@ -47,6 +47,7 @@ static const char rcsid[] =
 #include "QF/hash.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 #include "QF/vfs.h"
 
 #include "compat.h"
@@ -423,19 +424,26 @@ Cvar_CvarList_f (void)
 	cvar_t     *var;
 	int         i;
 	int         showhelp = 0;
+	const char *flags;
 
-	if (Cmd_Argc () > 1)
+	if (Cmd_Argc () > 1) {
 		showhelp = 1;
+		if (strequal (Cmd_Argv (1), "cfg"))
+			showhelp++;
+	}
 	for (var = cvar_vars, i = 0; var; var = var->next, i++) {
-		Sys_Printf ("%c%c%c%c ",
+		flags = va ("%c%c%c%c",
 					var->flags & CVAR_ROM ? 'r' : ' ',
 					var->flags & CVAR_ARCHIVE ? '*' : ' ',
 					var->flags & CVAR_USERINFO ? 'u' : ' ',
 					var->flags & CVAR_SERVERINFO ? 's' : ' ');
-		if (showhelp)
-			Sys_Printf ("%-20s : %s\n", var->name, var->description);
+		if (showhelp == 2)
+			Sys_Printf ("//%s %s\n%s \"%s\"\n\n", flags, var->description,
+						var->name, var->string);
+		else if (showhelp)
+			Sys_Printf ("%s %-20s : %s\n", flags, var->name, var->description);
 		else
-			Sys_Printf ("%s\n", var->name);
+			Sys_Printf ("%s %s\n", flags, var->name);
 	}
 
 	Sys_Printf ("------------\n%d variables\n", i);
