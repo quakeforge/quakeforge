@@ -132,7 +132,7 @@ o         \--- world              3D layout engine (includes objects)
                 alias       alias model loading code
                 brush       brush model loading code
                 sprite      sprite model loading code
-                textures    texture reading/writing code
+            textures        texture reading/writing/management code
 
 Decided old menu structure was pointless and nobody cared.
 So we don't forget something in the binds menu:
