@@ -74,7 +74,7 @@ get_type (expr_t *e)
 	switch (e->type) {
 		case ex_label:
 		case ex_block:
-			return ev_type_count;
+			return ev_type_count;		// something went very wrong
 		case ex_expr:
 		case ex_uexpr:
 			return e->e.expr.type->type;
@@ -109,12 +109,13 @@ error (expr_t *e, const char *fmt, ...)
 	fprintf (stderr, "%s:%d: ", strings + file, line);
 	vfprintf (stderr, fmt, args);
 	fputs ("\n", stderr);
+	va_end (args);
+	pr_error_count++;
+
 	if (e) {
 		e = new_expr ();
 		e->type = ex_integer;
 	}
-	va_end (args);
-	pr_error_count++;
 	return e;
 }
 
@@ -145,52 +146,29 @@ const char *
 get_op_string (int op)
 {
 	switch (op) {
-		case OR:
-			return "||";
-		case AND:
-			return "&&";
-		case EQ:
-			return "==";
-		case NE:
-			return "!=";
-		case LE:
-			return "<=";
-		case GE:
-			return ">=";
-		case LT:
-			return "<";
-		case GT:
-			return ">";
-		case '=':
-			return "=";
-		case '+':
-			return "+";
-		case '-':
-			return "-";
-		case '*':
-			return "*";
-		case '/':
-			return "/";
-		case '&':
-			return "&";
-		case '|':
-			return "|";
-		case '!':
-			return "!";
-		case '(':
-			return "(";
-		case '.':
-			return ".";
-		case 'i':
-			return "<if>";
-		case 'n':
-			return "<ifnot>";
-		case 'g':
-			return "<goto>";
-		case 'r':
-			return "<return>";
-		default:
-			return "unknown";
+		case OR:	return "||";
+		case AND:	return "&&";
+		case EQ:	return "==";
+		case NE:	return "!=";
+		case LE:	return "<=";
+		case GE:	return ">=";
+		case LT:	return "<";
+		case GT:	return ">";
+		case '=':	return "=";
+		case '+':	return "+";
+		case '-':	return "-";
+		case '*':	return "*";
+		case '/':	return "/";
+		case '&':	return "&";
+		case '|':	return "|";
+		case '!':	return "!";
+		case '(':	return "(";
+		case '.':	return ".";
+		case 'i':	return "<if>";
+		case 'n':	return "<ifnot>";
+		case 'g':	return "<goto>";
+		case 'r':	return "<return>";
+		default:	return "unknown";
 	}
 }
 
@@ -201,7 +179,6 @@ type_mismatch (expr_t *e1, expr_t *e2, int op)
 
 	t1 = get_type (e1);
 	t2 = get_type (e2);
-
 
 	return error (e1, "type mismatch: %s %s %s",
 				  type_names[t1], get_op_string (op), type_names[t2]);
@@ -331,8 +308,8 @@ print_expr (expr_t *e)
 			break;
 		case ex_vector:
 			printf ("'%g", e->e.vector_val[0]);
-			printf ( " %g", e->e.vector_val[1]);
-			printf ( " %g'", e->e.vector_val[2]);
+			printf (" %g", e->e.vector_val[1]);
+			printf (" %g'", e->e.vector_val[2]);
 			break;
 		case ex_quaternion:
 			printf ("'%g", e->e.quaternion_val[0]);
@@ -458,7 +435,7 @@ do_op_float (int op, expr_t *e1, expr_t *e2)
 			e1->e.integer_val = f1 != f2;
 			break;
 		default:
-			return error (e1, "invalid operand for string");
+			return error (e1, "invalid operand for float");
 	}
 	return e1;
 }
@@ -495,7 +472,7 @@ do_op_vector (int op, expr_t *e1, expr_t *e2)
 							|| (v1[2] != v2[2]);
 			break;
 		default:
-			return error (e1, "invalid operand for string");
+			return error (e1, "invalid operand for vector");
 	}
 	return e1;
 }
@@ -559,7 +536,7 @@ do_op_integer (int op, expr_t *e1, expr_t *e2)
 			e1->e.integer_val = i1 != i2;
 			break;
 		default:
-			return error (e1, "invalid operand for string");
+			return error (e1, "invalid operand for integer");
 	}
 	return e1;
 }
@@ -777,6 +754,7 @@ unary_expr (int op, expr_t *e)
 			switch (e->type) {
 				case ex_label:
 				case ex_block:
+					error (e, "internal error");
 					abort ();
 				case ex_uexpr:
 					if (e->e.expr.op == '-')
