@@ -11,6 +11,8 @@ integer (integer handle, integer pos, integer whence) seek = #9;
 void() traceon = #10;          // turns statment trace on
 void() traceoff = #11;
 
+void (...) printf = #12;
+
 
 float time;
 entity self;

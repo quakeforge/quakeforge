@@ -58,6 +58,11 @@ void () blarg =
 {
 	local float foo = -1;
 	local float bar;
+	local entity te;
+	while (te) {
+		if (bar)
+			bar = 0;
+	}
 	do {
 		foo = 1;
 	} while (foo);
@@ -78,6 +83,8 @@ entity sent;
 void () eek =
 {
 	local string bop = "";
+	local vector v = '1 2 3';
+
 	traceon();
 	if (sent && sent.owner != self )
 		self.origin = '0 0 0';
@@ -85,6 +92,13 @@ void () eek =
 	test_int (1);
 	if (bop)
 		traceoff();
+	printf ("%v\n", v);
+	v = 2 * v;
+	printf ("%v\n", v);
+	v = v * 2;
+	printf ("%v\n", v);
+	v = -v;
+	printf ("%v\n", v);
 };
 
 void () assign =
@@ -97,4 +111,9 @@ void () assign =
 	foo = bar = bar + 1;
 	foo = self.nextthink = self.nextthink + 1.0;
 	self.frame = self.nextthink = self.nextthink + 1.0;
+	foo = self.nextthink = foo + 1.0;
+	self.nextthink = foo = foo + 1.0;
+	self.frame = self.nextthink = foo + 1.0;
+	foo = self.nextthink = foo;
+	self.frame = self.nextthink = foo;
 };

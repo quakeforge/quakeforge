@@ -112,6 +112,42 @@ bi_traceoff (progs_t *pr)
 	    pr->pr_trace = false;
 }
 
+static void
+bi_printf (progs_t *pr)
+{
+	const char *fmt = G_STRING (pr, OFS_PARM0);
+	char c;
+	int count = 0;
+	float *v;
+
+	while ((c = *fmt++)) {
+		if (c == '%' && count < 7) {
+			switch (c = *fmt++) {
+				case 'i':
+					fprintf (stdout, "%i", G_INT (pr, OFS_PARM1 + count++ * 3));
+					break;
+				case 'f':
+					fprintf (stdout, "%f", G_FLOAT (pr, OFS_PARM1 + count++ * 3));
+					break;
+				case 's':
+					fputs (G_STRING (pr, OFS_PARM1 + count++ * 3), stdout);
+					break;
+				case 'v':
+					v = G_VECTOR (pr, OFS_PARM1 + count++ * 3);
+					fprintf (stdout, "'%f %f %f'", v[0], v[1], v[2]);
+					break;
+				default:
+					fputc ('%', stdout);
+					fputc (c, stdout);
+					count = 7;
+					break;
+			}
+		} else {
+			fputc (c, stdout);
+		}
+	}
+}
+
 builtin_t   builtins[] = {
 	bi_fixme,
 	bi_print,
@@ -125,6 +161,7 @@ builtin_t   builtins[] = {
 	bi_seek,
 	bi_traceon,
 	bi_traceoff,
+	bi_printf,
 };
 
 void
