@@ -101,9 +101,9 @@ particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 
 	for (j = 0; j < 3; j++) {
 		if (org_fuzz)
-			porg[j] = lhrandom (-org_fuzz, org_fuzz) + org[j];
+			porg[j] = qfrandom (2.0 * org_fuzz) - org_fuzz + org[j];
 		if (vel_fuzz)
-			pvel[j] = lhrandom (-vel_fuzz, vel_fuzz);
+			pvel[j] = qfrandom (2.0 * vel_fuzz) - vel_fuzz;
 	}
 	return particle_new (type, texnum, porg, scale, pvel, die, color, alpha);
 }
@@ -268,7 +268,7 @@ R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 	while (count--)
 		particle_new_random (pt_fallfadespark, part_tex_spark, org,
 							 ofuzz * .75, 1, 96, r_realtime + 5,
-							 ramp[rand () % 6], lhrandom (0, 255));
+							 ramp[rand () % 6], rand () % 255);
 }
 
 inline static void
@@ -447,23 +447,28 @@ R_RocketTrail (int type, entity_t *ent)
 	pcolor = 0;
 	pscale = pscalenext = 4.5;
 	dist = 3;
+/*
+  This switch isn't just to avoid unnecessary variable unassignments, the main
+  reason for it is to set the first pscale, since you need both it and the next
+  to calculate the distance to the 2nd particle -- Despair
+*/
 	switch (type) {
 		case 0:					// rocket trail
-			pscale = lhrandom (1.5, 3);
+			pscale = 1.5 + (float) (1.5 * rand() / (RAND_MAX + 1.0));
 			ptype = pt_smoke;
 			break;
 		case 1:					// grenade trail
-			pscale = lhrandom (6, 13);
+			pscale = 6.0 + (float) (7.0 * rand() / (RAND_MAX + 1.0));
 			ptype = pt_smoke;
 			break;
 		case 2:					// blood
-			pscale = lhrandom (5, 15);
+			pscale = 5.0 + (float) (10.0 * rand() / (RAND_MAX + 1.0));
 			ptype = pt_grav;
 			break;
 		case 4:					// slight blood
 			palpha = 192;
 			pdie = r_realtime + 1.5;
-			pscale = lhrandom (1.5, 9);
+			pscale = 1.5 + (float) (7.5 * rand() / (RAND_MAX + 1.0));
 			ptype = pt_grav;
 			break;
 		case 3:					// green tracer
@@ -486,7 +491,7 @@ R_RocketTrail (int type, entity_t *ent)
 
 		switch (type) {
 			case 0:					// rocket trail
-				pscalenext = lhrandom (1.5, 3);
+				pscalenext = 1.5 + qfrandom (1.5);
 				dist =  (pscale + pscalenext) * 1.3;
 //				pcolor = (rand () & 255); // Misty-chan's Easter Egg
 				pcolor = (rand () & 3) + 12;
@@ -495,7 +500,7 @@ R_RocketTrail (int type, entity_t *ent)
 				ptex = part_tex_smoke[rand () & 7];
 				break;
 			case 1:					// grenade trail
-			pscalenext = lhrandom (6, 13);
+			pscalenext = 6.0 + qfrandom (7.0);
 				dist = (pscale + pscalenext) * 2;
 //				pcolor = (rand () & 255); // Misty-chan's Easter Egg
 				pcolor = (rand () & 3);
@@ -504,23 +509,23 @@ R_RocketTrail (int type, entity_t *ent)
 				ptex = part_tex_smoke[rand () & 7];
 				break;
 			case 2:					// blood
-				pscalenext = lhrandom (5, 15);
+				pscalenext = 5.0 + qfrandom (10.0);
 				dist = (pscale + pscalenext) * 1.5;
 				ptex = part_tex_smoke[rand () & 7];
 				pcolor = 68 + (rand () & 3);
 				for (j = 0; j < 3; j++) {
-					pvel[j] = lhrandom (-3, 3) * type;
-					porg[j] = ent->old_origin[j] + lhrandom (-1.5, 1.5);
+					pvel[j] = (qfrandom (6) - 3) * type;
+					porg[j] = ent->old_origin[j] + qfrandom (3.0) - 1.5;
 				}
 				break;
 			case 4:					// slight blood
-				pscalenext = lhrandom (1.5, 9);
+				pscalenext =  1.5 + qfrandom (7.5);
 				dist = (pscale + pscalenext) * 1.5;
 				ptex = part_tex_smoke[rand () & 7];
 				pcolor = 68 + (rand () & 3);
 				for (j = 0; j < 3; j++) {
-					pvel[j] = lhrandom (-3, 3) * type;
-					porg[j] = ent->old_origin[j] + lhrandom (-1.5, 1.5);
+					pvel[j] = (qfrandom (6) - 3) * type;
+					porg[j] = ent->old_origin[j] + qfrandom (3.0) - 1.5;
 				}
 				break;
 			case 3:					// green tracer
@@ -529,7 +534,7 @@ R_RocketTrail (int type, entity_t *ent)
 				static int  tracercount;
 
 				ptex = part_tex_smoke[rand () & 7];
-				pscale = lhrandom (2, 3);
+				pscale = 2.0 + qfrandom (1.0);
 				if (type == 3)
 					pcolor = 52 + ((tracercount & 4) << 1);
 				else
@@ -549,9 +554,9 @@ R_RocketTrail (int type, entity_t *ent)
 			break;
 			case 6:					// voor trail
 				pcolor = 9 * 16 + 8 + (rand () & 3);
-				pscale = lhrandom (1, 2);
+				pscale = 1.0 + qfrandom (1.0);
 				for (j = 0; j < 3; j++)
-					porg[j] = ent->old_origin[j] + lhrandom (-8, 8);
+					porg[j] = ent->old_origin[j] + qfrandom (16.0) - 8.0;
 				break;
 		}
 

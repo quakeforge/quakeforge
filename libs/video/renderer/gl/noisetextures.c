@@ -52,7 +52,7 @@ noise_diamondsquare (unsigned char *noise, int size)
 	int         size1 = size - 1;
 	int        *noisebuf;
 
-#define n(x,y) noisebuf[((y)&size1)*size+((x)&size1)]
+#define n(x, y) noisebuf[((y) & size1) * size + ((x) & size1)]
 	noisebuf = calloc (size * size, sizeof (int));
 
 	amplitude = 32767;
@@ -113,19 +113,19 @@ noise_plasma (unsigned char *noise, int size)
 
 	memset(noise, 128, sizeof (*noise));
 
-	for (i=size; i > 0; i/=2) {
-		for (j=0; j < size; j+=i) {
-			for (k=0; k < size; k+=i) {
-				if (d>=0)
+	for (i = size; i > 0; i /= 2) {
+		for (j=0; j < size; j += i) {
+			for (k=0; k < size; k += i) {
+				if (d >= 0)
 				        c = i * d;
 				else
 					c = -i / d;
 
-				c=lhrandom(-c, c);
+				c = qfrandom (c * 2) - c;
 
-				for (a=j; a < j+i; a++)
-					for (b=k; b < k+i; b++)
-						noise[a*size+b] += c;
+				for (a=j; a < j + i; a++)
+					for (b = k; b < k + i; b++)
+						noise[a * size + b] += c;
 			}
 		}
 	}
