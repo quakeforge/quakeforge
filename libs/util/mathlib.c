@@ -437,7 +437,7 @@ CrossProduct (const vec3_t v1, const vec3_t v2, vec3_t cross)
 double      sqrt (double x);
 
 vec_t
-Length (vec3_t v)
+_Length (vec3_t v)
 {
 	int         i;
 	float       length;

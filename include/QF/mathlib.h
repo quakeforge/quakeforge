@@ -46,6 +46,7 @@ extern  int nanmask;
 #define VectorAdd(a,b,c) {(c)[0]=(a)[0]+(b)[0];(c)[1]=(a)[1]+(b)[1];(c)[2]=(a)[2]+(b)[2];}
 #define VectorCopy(a,b) {(b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2];}
 #define VectorMA(a,s,b,c) {(c)[0]=(a)[0]+(s)*(b)[0];(c)[1]=(a)[1]+(s)*(b)[1];(c)[2]=(a)[2]+(s)*(b)[2];}
+#define Length(a) sqrt(DotProduct(a, a))
 
 /*
  * VectorDistance, the distance between two points.
@@ -75,7 +76,7 @@ void _VectorAdd (vec3_t veca, vec3_t vecb, vec3_t out);
 void _VectorCopy (vec3_t in, vec3_t out);
 
 int VectorCompare (vec3_t v1, vec3_t v2);
-vec_t Length (vec3_t v);
+//vec_t Length (vec3_t v);
 void CrossProduct (const vec3_t v1, const vec3_t v2, vec3_t cross);
 float VectorNormalize (vec3_t v);	       // returns vector length
 void VectorInverse (vec3_t v);
