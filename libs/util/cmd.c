@@ -332,7 +332,7 @@ static void
 Cmd_Alias_f (void)
 {
 	cmdalias_t *alias;
-	char       *cmd;
+	dstring_t  *cmd;
 	int         i, c;
 	const char *s;
 
@@ -371,17 +371,17 @@ Cmd_Alias_f (void)
 		return;
 	}
 	// copy the rest of the command line
-	cmd = malloc (strlen (Cmd_Args (1)) + 2);	// can never be longer
-	SYS_CHECKMEM (cmd);
-	cmd[0] = 0;							// start out with a null string
+	puts (Cmd_Args(1));
+	cmd = dstring_newstr ();
 	c = Cmd_Argc ();
 	for (i = 2; i < c; i++) {
-		strcat (cmd, Cmd_Argv (i));
+		dstring_appendstr (cmd, Cmd_Argv (i));
 		if (i != c - 1)
-			strcat (cmd, " ");
+			dstring_appendstr (cmd, " ");
 	}
+	puts (cmd->str);
 
-	alias->value = cmd;
+	alias->value = dstring_freeze (cmd);
 }
 
 static void
