@@ -1269,6 +1269,10 @@ return_expr (function_t *f, expr_t *e)
 			e->e.float_val = e->e.integer_val;
 			t = &type_float;
 		}
+		if (t == &type_void) {
+			t = f->def->type->aux_type;
+			e->type = expr_types[t->type];
+		}
 		if (f->def->type->aux_type != t)
 			return error (e, "type mismatch for return value of %s",
 							f->def->name);
