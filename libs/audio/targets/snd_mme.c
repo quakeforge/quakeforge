@@ -56,6 +56,7 @@ static HPSTR		lpData;
 static LPWAVEHDR	lpWaveHdr;
 static HWAVEOUT		hWaveOut;
 static DWORD		gSndBufSize;
+volatile dma_t sn;
 
 
 /* MME Callback function

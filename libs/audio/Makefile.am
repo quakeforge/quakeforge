@@ -1,4 +1,4 @@
-SUBDIRS=	cd targets
+SUBDIRS=	cd targets renderer
 
 clean-local:
 	rm -f *.a

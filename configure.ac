@@ -1269,7 +1269,7 @@ NQ_TARGETS=""
 
 CD_TARGETS=""
 SND_TARGETS=""
-SND_PLUGIN_TARGETS="libsound_null.la libsound_disk.la"
+SND_PLUGIN_TARGETS="libsnd_output_disk.la"
 VID_TARGETS=""
 BUILD_SND_RENDERER=no
 BUILD_GL=no
@@ -1391,35 +1391,30 @@ if test -n "$CL_TARGETS"; then
 	CD_TARGETS="libQFcd.la"
 	SND_TARGETS="libQFsound.la"
 	if test "`echo $SOUND_TYPES | grep ALSA0.5`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_alsa0_5.la"
-		BUILD_SND_RENDERER=yes
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsnd_output_alsa0_5.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep ALSA0.9`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_alsa0_9.la"
-		BUILD_SND_RENDERER=yes
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsnd_output_alsa0_9.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep MME`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_mme.la"
-		BUILD_SND_RENDERER=yes
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsnd_output_mme.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep OSS`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_oss.la"
-		BUILD_SND_RENDERER=yes
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsnd_output_oss.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep SDL`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_sdl.la"
-		BUILD_SND_RENDERER=yes
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsnd_output_sdl.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep SGI`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_sgi.la"
-		BUILD_SND_RENDERER=yes
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsnd_output_sgi.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep SUN`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_sun.la"
-		BUILD_SND_RENDERER=yes
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsnd_output_sun.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep Win32`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_win.la"
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsnd_output_win.la"
+	fi
+	if test "$SOUND_TYPES"; then
 		BUILD_SND_RENDERER=yes
 	fi
 	VID_TARGETS="libQFjs.la $VID_TARGETS"
@@ -1458,6 +1453,7 @@ AC_OUTPUT(
 	libs/audio/Makefile
 	libs/audio/cd/Makefile
 	libs/audio/targets/Makefile
+	libs/audio/renderer/Makefile
 	libs/console/Makefile
 	libs/gamecode/Makefile
 	libs/gamecode/engine/Makefile

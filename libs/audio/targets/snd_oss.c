@@ -1,7 +1,7 @@
 /*
 	snd_oss.c
 
-	OSS sound plugin.
+	OSS sound output plugin.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -66,6 +66,11 @@
 static int         audio_fd;
 static int         snd_inited;
 static const char *snd_dev = "/dev/dsp";
+volatile dma_t sn;
+cvar_t     *snd_stereo;
+cvar_t     *snd_rate;
+cvar_t     *snd_device;
+cvar_t     *snd_bits;
 
 static int  tryrates[] = { 11025, 22050, 22051, 44100, 8000 };
 
@@ -74,8 +79,21 @@ plugin_data_t      plugin_info_data;
 plugin_funcs_t     plugin_info_funcs;
 general_data_t     plugin_info_general_data;
 general_funcs_t    plugin_info_general_funcs;
-sound_data_t       plugin_info_sound_data;
-sound_funcs_t      plugin_info_sound_funcs;
+snd_output_data_t       plugin_info_snd_output_data;
+snd_output_funcs_t      plugin_info_snd_output_funcs;
+
+void
+SNDDMA_Init_Cvars (void)
+{
+	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM, NULL,
+						   "sound stereo output");
+	snd_rate = Cvar_Get ("snd_rate", "0", CVAR_ROM, NULL,
+						 "sound playback rate. 0 is system default");
+	snd_device = Cvar_Get ("snd_device", "", CVAR_ROM, NULL,
+						   "sound device. \"\" is system default");
+	snd_bits = Cvar_Get ("snd_bits", "0", CVAR_ROM, NULL,
+						 "sound sample depth. 0 is system default");
+}
 
 qboolean
 SNDDMA_Init (void)
@@ -89,6 +107,8 @@ SNDDMA_Init (void)
 	int         retries = 3;
 
 	snd_inited = 0;
+
+	SNDDMA_Init_Cvars ();
 
 	// open snd_dev, confirm capability to mmap, and get size of dma buffer
 	if (snd_device->string[0])
@@ -302,48 +322,6 @@ void
 SNDDMA_Submit (void)
 {
 }
-plugin_t *
-PluginInfo (void) {
-    plugin_info.type = qfp_sound;
-    plugin_info.api_version = QFPLUGIN_VERSION;
-    plugin_info.plugin_version = "0.1";
-    plugin_info.description = "OSS digital output";
-    plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
-        "Copyright (C) 1999,2000,2001  contributors of the QuakeForge project\n"        "Please see the file \"AUTHORS\" for a list of contributors";
-    plugin_info.functions = &plugin_info_funcs;
-    plugin_info.data = &plugin_info_data;
-
-    plugin_info_data.general = &plugin_info_general_data;
-    plugin_info_data.input = NULL;
-    plugin_info_data.sound = &plugin_info_sound_data;
-
-    plugin_info_funcs.general = &plugin_info_general_funcs;
-    plugin_info_funcs.input = NULL;
-    plugin_info_funcs.sound = &plugin_info_sound_funcs;
-
-    plugin_info_general_funcs.p_Init = SND_Init;
-    plugin_info_general_funcs.p_Shutdown = SND_Shutdown;
-
-    plugin_info_sound_funcs.pS_AmbientOff = SND_AmbientOff;
-    plugin_info_sound_funcs.pS_AmbientOn = SND_AmbientOn;
-    plugin_info_sound_funcs.pS_TouchSound = SND_TouchSound;
-    plugin_info_sound_funcs.pS_ClearBuffer = SND_ClearBuffer;
-    plugin_info_sound_funcs.pS_StaticSound = SND_StaticSound;
-    plugin_info_sound_funcs.pS_StartSound = SND_StartSound;
-    plugin_info_sound_funcs.pS_StopSound = SND_StopSound;
-    plugin_info_sound_funcs.pS_PrecacheSound = SND_PrecacheSound;
-    plugin_info_sound_funcs.pS_ClearPrecache = SND_ClearPrecache;
-    plugin_info_sound_funcs.pS_Update = SND_Update;
-    plugin_info_sound_funcs.pS_StopAllSounds = SND_StopAllSounds;
-    plugin_info_sound_funcs.pS_BeginPrecaching = SND_BeginPrecaching;
-    plugin_info_sound_funcs.pS_EndPrecaching = SND_EndPrecaching;
-    plugin_info_sound_funcs.pS_ExtraUpdate = SND_ExtraUpdate;
-    plugin_info_sound_funcs.pS_LocalSound = SND_LocalSound;
-	plugin_info_sound_funcs.pS_BlockSound = SND_BlockSound;
-	plugin_info_sound_funcs.pS_UnblockSound = SND_UnblockSound;
-
-    return &plugin_info;
-}
 
 void
 SNDDMA_BlockSound (void)
@@ -353,4 +331,35 @@ SNDDMA_BlockSound (void)
 void
 SNDDMA_UnblockSound (void)
 {
+}
+
+plugin_t *
+PluginInfo (void) {
+    plugin_info.type = qfp_snd_output;
+    plugin_info.api_version = QFPLUGIN_VERSION;
+    plugin_info.plugin_version = "0.1";
+    plugin_info.description = "OSS digital output";
+    plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
+		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge project\n"        "Please see the file \"AUTHORS\" for a list of contributors";
+	plugin_info.functions = &plugin_info_funcs;
+	plugin_info.data = &plugin_info_data;
+
+	plugin_info_data.general = &plugin_info_general_data;
+	plugin_info_data.input = NULL;
+	plugin_info_data.snd_output = &plugin_info_snd_output_data;
+
+	plugin_info_funcs.general = &plugin_info_general_funcs;
+	plugin_info_funcs.input = NULL;
+	plugin_info_funcs.snd_output = &plugin_info_snd_output_funcs;
+
+	plugin_info_general_funcs.p_Init = SNDDMA_Init_Cvars;
+	plugin_info_general_funcs.p_Shutdown = NULL;
+	plugin_info_snd_output_funcs.pS_O_Init = SNDDMA_Init;
+	plugin_info_snd_output_funcs.pS_O_Shutdown = SNDDMA_Shutdown;
+	plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
+	plugin_info_snd_output_funcs.pS_O_Submit = SNDDMA_Submit;
+	plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;
+	plugin_info_snd_output_funcs.pS_O_UnblockSound = SNDDMA_UnblockSound;
+
+    return &plugin_info;
 }

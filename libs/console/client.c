@@ -615,13 +615,11 @@ static plugin_funcs_t plugin_info_funcs = {
 	&plugin_info_general_funcs,
 	0,
 	0,
-	0,
 	&plugin_info_console_funcs,
 };
 
 static plugin_data_t plugin_info_data = {
 	&plugin_info_general_data,
-	0,
 	0,
 	0,
 	&plugin_info_console_data,

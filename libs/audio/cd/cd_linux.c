@@ -472,12 +472,10 @@ PluginInfo (void)
 	plugin_info_data.general = &plugin_info_general_data;
 //	plugin_info_data.cd = &plugin_info_cd_data;
 	plugin_info_data.input = NULL;
-	plugin_info_data.sound = NULL;
 
 	plugin_info_funcs.general = &plugin_info_general_funcs;
 	plugin_info_funcs.cd = &plugin_info_cd_funcs;
 	plugin_info_funcs.input = NULL;
-	plugin_info_funcs.sound = NULL;
 
 	plugin_info_general_funcs.p_Init = I_CDAudio_Init;
 	plugin_info_general_funcs.p_Shutdown = I_CDAudio_Shutdown;

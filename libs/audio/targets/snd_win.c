@@ -59,6 +59,7 @@ static qboolean primary_format_set;
 
 static int  sample16;
 static int  snd_sent, snd_completed;
+volatile dma_t sn;
 
 /* 
  * Global variables. Must be visible to window-procedure function 

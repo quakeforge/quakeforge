@@ -49,6 +49,7 @@ static unsigned char *dma_buffer, *write_buffer;
 static int  bufsize;
 static int  wbufp;
 static int  framecount;
+volatile dma_t sn;
 
 plugin_t           plugin_info;
 plugin_data_t      plugin_info_data;
@@ -291,16 +292,16 @@ SNDDMA_Submit (void)
 	int         bytes, b;
 	unsigned char *p;
 	int         idx;
-	int         stop = paintedtime;
+	int         stop = *plugin_info_snd_output_data.paintedtime;
 
 	if (snd_blocked)
 		return;
 
-	if (paintedtime < wbufp)
+	if (*plugin_info_snd_output_data.paintedtime < wbufp)
 		wbufp = 0;						// reset
 
 	bsize = shm->channels * (shm->samplebits / 8);
-	bytes = (paintedtime - wbufp) * bsize;
+	bytes = (*plugin_info_snd_output_data.paintedtime - wbufp) * bsize;
 
 	if (!bytes)
 		return;

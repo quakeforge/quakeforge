@@ -1,7 +1,7 @@
 /*
-	QF/plugin/sound.h
+	QF/plugin/snd_render.h
 
-	Sound plugin data types
+	Sound Renderer plugin data types
 
 	Copyright (C) 2001 Jeff Teunissen <deek@quakeforge.net>
 
@@ -25,8 +25,8 @@
 
 	$Id$
 */
-#ifndef __QF_plugin_sound_h_
-#define __QF_plugin_sound_h_
+#ifndef __QF_plugin_snd_render_h_
+#define __QF_plugin_snd_render_h_
 
 #include <QF/qtypes.h>
 #include <QF/sound.h>
@@ -55,7 +55,7 @@ typedef void (QFPLUGIN *P_S_LocalSound) (const char *s);
 typedef void (QFPLUGIN *P_S_BlockSound) (void);
 typedef void (QFPLUGIN *P_S_UnblockSound) (void);
 
-typedef struct sound_funcs_s {
+typedef struct snd_render_funcs_s {
 	P_S_AmbientOff 		pS_AmbientOff;
 	P_S_AmbientOn  		pS_AmbientOn;
 	P_S_TouchSound 		pS_TouchSound;
@@ -73,12 +73,15 @@ typedef struct sound_funcs_s {
 	P_S_LocalSound		pS_LocalSound;
 	P_S_BlockSound		pS_BlockSound;
 	P_S_UnblockSound	pS_UnblockSound;
-} sound_funcs_t;
+} snd_render_funcs_t;
 
-typedef struct sound_data_s {
+typedef struct snd_render_data_s {
 	struct model_s ***worldmodel;
 	double *host_frametime;
 	int *viewentity;
-} sound_data_t;
 
-#endif // __QF_plugin_sound_h_
+	int *soundtime;
+	int *paintedtime;
+} snd_render_data_t;
+
+#endif // __QF_plugin_snd_render_h_

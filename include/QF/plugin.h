@@ -38,30 +38,34 @@
 #include <QF/plugin/console.h>
 #include <QF/plugin/general.h>
 #include <QF/plugin/input.h>
-#include <QF/plugin/sound.h>
+#include <QF/plugin/snd_output.h>
+#include <QF/plugin/snd_render.h>
 
 typedef enum {
 	qfp_null = 0,	// Not real
 	qfp_input,		// Input (pointing devices, joysticks, etc)
 	qfp_cd,			// CD Audio
-	qfp_sound,		// Wave output (OSS, ALSA, Win32)
 	qfp_console,	// Console `driver'
+	qfp_snd_output,	// Sound output (OSS, ALSA, Win32)
+	qfp_snd_render,	// Sound mixing
 } plugin_type_t;
 
 typedef struct plugin_funcs_s {
 	general_funcs_t *general;
 	input_funcs_t	*input;
 	cd_funcs_t		*cd;
-	sound_funcs_t	*sound;
 	console_funcs_t	*console;
+	snd_output_funcs_t	*snd_output;
+	snd_render_funcs_t	*snd_render;
 } plugin_funcs_t;
 
 typedef struct plugin_data_s {
 	general_data_t	*general;
 	input_data_t	*input;
 	cd_data_t		*cd;
-	sound_data_t	*sound;
 	console_data_t	*console;
+	snd_output_data_t	*snd_output;
+	snd_render_data_t	*snd_render;
 } plugin_data_t;
 
 typedef struct plugin_s {
@@ -92,5 +96,7 @@ plugin_t *PI_LoadPlugin (const char *, const char *);
 qboolean PI_UnloadPlugin (plugin_t *);
 void PI_Init (void);
 void PI_Shutdown (void);
+
+// FIXME: we need a generic function to initialize unused fields
 
 #endif	// __QF_plugin_h_

@@ -63,6 +63,7 @@ static audio_info_t info;
 unsigned char dma_buffer[BUFFER_SIZE];
 unsigned char pend_buffer[BUFFER_SIZE];
 int         pending;
+volatile dma_t sn;
 
 plugin_t           plugin_info;
 plugin_data_t      plugin_info_data;
@@ -205,16 +206,16 @@ SNDDMA_Submit (void)
 	static unsigned char writebuf[1024];
 	unsigned char *p;
 	int         idx;
-	int         stop = paintedtime;
+	int         stop = *plugin_info_snd_output_data.paintedtime;
 
 	if (snd_blocked)
 		return;
 
-	if (paintedtime < wbufp)
+	if (*plugin_info_snd_output_data.paintedtime < wbufp)
 		wbufp = 0;						// reset
 
 	bsize = shm->channels * (shm->samplebits / 8);
-	bytes = (paintedtime - wbufp) * bsize;
+	bytes = (*plugin_info_snd_output_data.paintedtime - wbufp) * bsize;
 
 	if (!bytes)
 		return;

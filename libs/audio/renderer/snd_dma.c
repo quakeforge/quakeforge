@@ -21,7 +21,7 @@
 
 		Free Software Foundation, Inc.
 		59 Temple Place - Suite 330
-		Boston, MA  02111-1307, USA
+		Boston, MA	02111-1307, USA
 
 	$Id$
 */
@@ -51,12 +51,12 @@
 #include "QF/sound.h"
 #include "QF/plugin.h"
 
-void        SND_Play (void);
-void        SND_PlayVol (void);
-void        SND_SoundList (void);
-void        SND_Update_ (void);
-void        SND_StopAllSounds (qboolean clear);
-void        SND_StopAllSoundsC (void);
+void		SND_Play (void);
+void		SND_PlayVol (void);
+void		SND_SoundList (void);
+void		SND_Update_ (void);
+void		SND_StopAllSounds (qboolean clear);
+void		SND_StopAllSoundsC (void);
 
 sfx_t		*SND_PrecacheSound (const char *name);
 sfxcache_t	*SND_LoadSound (sfx_t *s);
@@ -71,55 +71,59 @@ void		SND_Init_Cvars ();
 // Internal sound data & structures ===========================================
 
 extern channel_t   channels[MAX_CHANNELS];
-extern int         total_channels;
+extern int		   total_channels;
 //extern double host_frametime; // From host.h
 
-int         snd_blocked = 0;
+int			snd_blocked = 0;
 static qboolean snd_ambient = 1;
 extern qboolean    snd_initialized;
 
 // pointer should go away
 extern volatile dma_t *shm;
-volatile dma_t sn;
 
-vec3_t      listener_origin;
-vec3_t      listener_forward;
-vec3_t      listener_right;
-vec3_t      listener_up;
-vec_t       sound_nominal_clip_dist = 1000.0;
+vec3_t		listener_origin;
+vec3_t		listener_forward;
+vec3_t		listener_right;
+vec3_t		listener_up;
+vec_t		sound_nominal_clip_dist = 1000.0;
 
-int         soundtime;					// sample PAIRS
-extern int  paintedtime;				// sample PAIRS
+int			soundtime;					// sample PAIRS
+extern int	paintedtime;				// sample PAIRS
 
 #define	MAX_SFX		512
-sfx_t      *known_sfx;					// hunk allocated [MAX_SFX]
-int         num_sfx;
+sfx_t	   *known_sfx;					// hunk allocated [MAX_SFX]
+int			num_sfx;
 
-sfx_t      *ambient_sfx[NUM_AMBIENTS];
+sfx_t	   *ambient_sfx[NUM_AMBIENTS];
 
-int         desired_speed = 11025;
-int         desired_bits = 16;
+int			desired_speed = 11025;
+int			desired_bits = 16;
 
-int         sound_started = 0;
+int			sound_started = 0;
 
-extern cvar_t     *snd_loadas8bit;
-extern cvar_t     *snd_interp;
-extern cvar_t     *bgmvolume;
-extern cvar_t     *volume;
+extern cvar_t	  *snd_loadas8bit;
+extern cvar_t	  *snd_interp;
+extern cvar_t	  *bgmvolume;
+extern cvar_t	  *volume;
 
-cvar_t     *ambient_fade;
-cvar_t     *ambient_level;
-cvar_t     *nosound;
-cvar_t     *precache;
-cvar_t     *snd_bits;
-cvar_t     *snd_device;
-cvar_t     *snd_mixahead;
-cvar_t     *snd_noextraupdate;
-cvar_t     *snd_phasesep;
-cvar_t     *snd_rate;
-cvar_t     *snd_show;
-cvar_t     *snd_stereo;
-cvar_t     *snd_volumesep;
+cvar_t	   *ambient_fade;
+cvar_t	   *ambient_level;
+cvar_t	   *nosound;
+cvar_t	   *precache;
+cvar_t	   *snd_mixahead;
+cvar_t	   *snd_noextraupdate;
+cvar_t	   *snd_phasesep;
+cvar_t	   *snd_show;
+cvar_t	   *snd_volumesep;
+
+
+plugin_t				plugin_info;
+plugin_data_t			plugin_info_data;
+plugin_funcs_t			plugin_info_funcs;
+general_data_t			plugin_info_general_data;
+general_funcs_t			plugin_info_general_funcs;
+snd_render_data_t		plugin_info_snd_render_data;
+snd_render_funcs_t		plugin_info_snd_render_funcs;
 
 
 // User-setable variables =====================================================
@@ -128,13 +132,8 @@ cvar_t     *snd_volumesep;
 // isolating performance in the renderer.  The fakedma_updates is
 // number of times SND_Update() is called per second.
 
-qboolean    fakedma = false;
-int         fakedma_updates = 15;
-
-// FIXME: Evil hack that doesn't deserve to see the light of day.
-// (pending merge of nq and qw client_stat_t's)
-extern sound_data_t plugin_info_sound_data;
-
+qboolean	fakedma = false;
+int			fakedma_updates = 15;
 
 void
 SND_AmbientOff (void)
@@ -169,17 +168,17 @@ SND_SoundInfo_f (void)
 void
 SND_Startup (void)
 {
-	int         rc;
+	int			rc;
 
 	if (!snd_initialized)
 		return;
 
 	if (!fakedma) {
-		rc = SNDDMA_Init ();
+		rc = S_O_Init ();
 
 		if (!rc) {
 #ifndef	_WIN32
-			Con_Printf ("S_Startup: SNDDMA_Init failed.\n");
+			Con_Printf ("S_Startup: S_O_Init failed.\n");
 #endif
 			sound_started = 0;
 			return;
@@ -275,10 +274,6 @@ SND_Init_Cvars (void)
 						  "Volume of CD music");
 	volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
 					   "Set the volume for sound playback");
-	snd_bits = Cvar_Get ("snd_bits", "0", CVAR_ROM, NULL,
-						 "sound sample depth. 0 is system default");
-	snd_device = Cvar_Get ("snd_device", "", CVAR_ROM, NULL,
-						   "sound device. \"\" is system default");
 	snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, NULL,
 						   "control sample interpolation");
 	snd_loadas8bit = Cvar_Get ("snd_loadas8bit", "0", CVAR_NONE, NULL,
@@ -292,12 +287,8 @@ SND_Init_Cvars (void)
 	snd_phasesep = Cvar_Get ("snd_phasesep", "0.0", CVAR_ARCHIVE, NULL,
 							 "max stereo phase separation in ms. 0.6 is for "
 							 "20cm head");
-	snd_rate = Cvar_Get ("snd_rate", "0", CVAR_ROM, NULL,
-						 "sound playback rate. 0 is system default");
 	snd_show = Cvar_Get ("snd_show", "0", CVAR_NONE, NULL,
 						 "Toggles display of sounds currently being played");
-	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM, NULL,
-						   "sound stereo output");
 	snd_volumesep = Cvar_Get ("snd_volumesep", "1.0", CVAR_ARCHIVE, NULL,
 							  "max stereo volume separation. 1.0 is max");
 }
@@ -316,7 +307,7 @@ SND_Shutdown (void)
 	sound_started = 0;
 
 	if (!fakedma) {
-		SNDDMA_Shutdown ();
+		S_O_Shutdown ();
 	}
 
 	shm = 0;
@@ -326,8 +317,8 @@ SND_Shutdown (void)
 sfx_t *
 SND_FindName (const char *name)
 {
-	int         i;
-	sfx_t      *sfx;
+	int			i;
+	sfx_t	   *sfx;
 
 	if (!name)
 		Sys_Error ("S_FindName: NULL\n");
@@ -355,7 +346,7 @@ SND_FindName (const char *name)
 void
 SND_TouchSound (const char *name)
 {
-	sfx_t      *sfx;
+	sfx_t	   *sfx;
 
 	if (!sound_started)
 		return;
@@ -367,7 +358,7 @@ SND_TouchSound (const char *name)
 sfx_t *
 SND_PrecacheSound (const char *name)
 {
-	sfx_t      *sfx;
+	sfx_t	   *sfx;
 
 	if (!sound_started || nosound->int_val)
 		return NULL;
@@ -386,9 +377,9 @@ SND_PrecacheSound (const char *name)
 channel_t *
 SND_PickChannel (int entnum, int entchannel)
 {
-	int         ch_idx;
-	int         first_to_die;
-	int         life_left;
+	int			ch_idx;
+	int			first_to_die;
+	int			life_left;
 
 	// Check for replacement sound, or find the best one to replace
 	first_to_die = -1;
@@ -404,8 +395,8 @@ SND_PickChannel (int entnum, int entchannel)
 			break;
 		}
 		// don't let monster sounds override player sounds
-		if (channels[ch_idx].entnum == *plugin_info_sound_data.viewentity
-			&& entnum != *plugin_info_sound_data.viewentity
+		if (channels[ch_idx].entnum == *plugin_info_snd_render_data.viewentity
+			&& entnum != *plugin_info_snd_render_data.viewentity
 			&& channels[ch_idx].sfx)
 			continue;
 
@@ -427,15 +418,15 @@ SND_PickChannel (int entnum, int entchannel)
 void
 SND_Spatialize (channel_t *ch)
 {
-	vec_t       dot;
-	vec_t       dist;
-	int         phase;					// in samples
-	vec_t       lscale, rscale, scale;
-	vec3_t      source_vec;
-	sfx_t      *snd;
+	vec_t		dot;
+	vec_t		dist;
+	int			phase;					// in samples
+	vec_t		lscale, rscale, scale;
+	vec3_t		source_vec;
+	sfx_t	   *snd;
 
 	// anything coming from the view entity will always be full volume
-	if (ch->entnum == *plugin_info_sound_data.viewentity) {
+	if (ch->entnum == *plugin_info_snd_render_data.viewentity) {
 		ch->leftvol = ch->master_vol;
 		ch->rightvol = ch->master_vol;
 		ch->phase = 0;
@@ -481,9 +472,9 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin,
 {
 	channel_t  *target_chan, *check;
 	sfxcache_t *sc;
-	int         vol;
-	int         ch_idx;
-	int         skip;
+	int			vol;
+	int			ch_idx;
+	int			skip;
 
 	if (!sound_started)
 		return;
@@ -546,7 +537,7 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin,
 void
 SND_StopSound (int entnum, int entchannel)
 {
-	int         i;
+	int			i;
 
 	for (i = 0; i < MAX_DYNAMIC_CHANNELS; i++) {
 		if (channels[i].entnum == entnum
@@ -561,7 +552,7 @@ SND_StopSound (int entnum, int entchannel)
 void
 SND_StopAllSounds (qboolean clear)
 {
-	int         i;
+	int			i;
 
 	if (!sound_started)
 		return;
@@ -587,7 +578,7 @@ SND_StopAllSoundsC (void)
 void
 SND_ClearBuffer (void)
 {
-	int         clear;
+	int			clear;
 
 #ifdef _WIN32
 	if (!sound_started || !shm || (!shm->buffer && !pDSBuf))
@@ -653,18 +644,18 @@ void
 SND_UpdateAmbientSounds (void)
 {
 	mleaf_t    *l;
-	float       vol;
-	int         ambient_channel;
+	float		vol;
+	int			ambient_channel;
 	channel_t  *chan;
 
 	if (!snd_ambient)
 		return;
 
 	// calc ambient sound levels
-	if (!**plugin_info_sound_data.worldmodel) // FIXME: eww
+	if (!**plugin_info_snd_render_data.worldmodel) // FIXME: eww
 		return;
 
-	l = Mod_PointInLeaf (listener_origin, **plugin_info_sound_data.worldmodel);
+	l = Mod_PointInLeaf (listener_origin, **plugin_info_snd_render_data.worldmodel);
 	if (!l || !ambient_level->value) {
 		for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
 			 ambient_channel++)
@@ -683,12 +674,12 @@ SND_UpdateAmbientSounds (void)
 
 		// don't adjust volume too fast
 		if (chan->master_vol < vol) {
-			chan->master_vol += *plugin_info_sound_data.host_frametime
+			chan->master_vol += *plugin_info_snd_render_data.host_frametime
 				* ambient_fade->value;
 			if (chan->master_vol > vol)
 				chan->master_vol = vol;
 		} else if (chan->master_vol > vol) {
-			chan->master_vol -= *plugin_info_sound_data.host_frametime
+			chan->master_vol -= *plugin_info_snd_render_data.host_frametime
 				* ambient_fade->value;
 			if (chan->master_vol < vol)
 				chan->master_vol = vol;
@@ -706,8 +697,8 @@ SND_UpdateAmbientSounds (void)
 void
 SND_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 {
-	int         i, j;
-	int         total;
+	int			i, j;
+	int			total;
 	channel_t  *ch;
 	channel_t  *combine;
 
@@ -724,7 +715,7 @@ SND_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 
 	combine = NULL;
 
-	// update spatialization for static and dynamic sounds  
+	// update spatialization for static and dynamic sounds	
 	ch = channels + NUM_AMBIENTS;
 	for (i = NUM_AMBIENTS; i < total_channels; i++, ch++) {
 		if (!ch->sfx)
@@ -786,16 +777,16 @@ SND_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 void
 SND_GetSoundtime (void)
 {
-	int         samplepos;
-	static int  buffers;
-	static int  oldsamplepos;
-	int         fullsamples;
+	int			samplepos;
+	static int	buffers;
+	static int	oldsamplepos;
+	int			fullsamples;
 
 	fullsamples = shm->samples / shm->channels;
 
 	// it is possible to miscount buffers if it has wrapped twice between
 	// calls to SND_Update.  Oh well.
-	samplepos = SNDDMA_GetDMAPos ();
+	samplepos = S_O_GetDMAPos ();
 
 	if (samplepos < oldsamplepos) {
 		buffers++;						// buffer wrapped
@@ -824,7 +815,7 @@ void
 SND_Update_ (void)
 {
 	unsigned int endtime;
-	int         samps;
+	int			samps;
 
 	if (!sound_started || (snd_blocked > 0))
 		return;
@@ -850,7 +841,7 @@ SND_Update_ (void)
 
 	SND_PaintChannels (endtime);
 
-	SNDDMA_Submit ();
+	S_O_Submit ();
 }
 
 /*
@@ -860,10 +851,10 @@ SND_Update_ (void)
 void
 SND_Play (void)
 {
-	static int  hash = 345;
-	int         i;
-	char        name[256];
-	sfx_t      *sfx;
+	static int	hash = 345;
+	int			i;
+	char		name[256];
+	sfx_t	   *sfx;
 
 	i = 1;
 	while (i < Cmd_Argc ()) {
@@ -881,11 +872,11 @@ SND_Play (void)
 void
 SND_PlayVol (void)
 {
-	static int  hash = 543;
-	int         i;
-	float       vol;
-	char        name[256];
-	sfx_t      *sfx;
+	static int	hash = 543;
+	int			i;
+	float		vol;
+	char		name[256];
+	sfx_t	   *sfx;
 
 	i = 1;
 	while (i < Cmd_Argc ()) {
@@ -904,10 +895,10 @@ SND_PlayVol (void)
 void
 SND_SoundList (void)
 {
-	int         i;
-	sfx_t      *sfx;
+	int			i;
+	sfx_t	   *sfx;
 	sfxcache_t *sc;
-	int         size, total;
+	int			size, total;
 
 	total = 0;
 	for (sfx = known_sfx, i = 0; i < num_sfx; i++, sfx++) {
@@ -928,7 +919,7 @@ SND_SoundList (void)
 void
 SND_LocalSound (const char *sound)
 {
-	sfx_t      *sfx;
+	sfx_t	   *sfx;
 
 	if (nosound->int_val)
 		return;
@@ -940,7 +931,7 @@ SND_LocalSound (const char *sound)
 		Con_Printf ("S_LocalSound: can't cache %s\n", sound);
 		return;
 	}
-	SND_StartSound (*plugin_info_sound_data.viewentity, -1, sfx, vec3_origin,
+	SND_StartSound (*plugin_info_snd_render_data.viewentity, -1, sfx, vec3_origin,
 					1, 1);
 }
 
@@ -963,7 +954,7 @@ void
 SND_BlockSound (void)
 {
 	if (++snd_blocked == 1)
-		SNDDMA_BlockSound ();
+		S_O_BlockSound ();
 }
 
 void
@@ -972,5 +963,53 @@ SND_UnblockSound (void)
 	if (!snd_blocked)
 		return;
 	if (!--snd_blocked)
-		SNDDMA_UnblockSound ();
+		S_O_UnblockSound ();
 }
+
+plugin_t *
+PluginInfo (void) {
+	plugin_info.type = qfp_snd_render;
+	plugin_info.api_version = QFPLUGIN_VERSION;
+	plugin_info.plugin_version = "0.1";
+	plugin_info.description = "Sound Renderer";
+	plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
+		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge project\n"
+		"Please see the file \"AUTHORS\" for a list of contributors";
+	plugin_info.functions = &plugin_info_funcs;
+	plugin_info.data = &plugin_info_data;
+
+	plugin_info_data.general = &plugin_info_general_data;
+	plugin_info_data.input = NULL;
+	plugin_info_data.snd_render = &plugin_info_snd_render_data;
+
+	plugin_info_snd_render_data.soundtime = &soundtime;
+	plugin_info_snd_render_data.paintedtime = &paintedtime;
+
+	plugin_info_funcs.general = &plugin_info_general_funcs;
+	plugin_info_funcs.input = NULL;
+	plugin_info_funcs.snd_render = &plugin_info_snd_render_funcs;
+
+	plugin_info_general_funcs.p_Init = SND_Init;
+	plugin_info_general_funcs.p_Shutdown = SND_Shutdown;
+
+	plugin_info_snd_render_funcs.pS_AmbientOff = SND_AmbientOff;
+	plugin_info_snd_render_funcs.pS_AmbientOn = SND_AmbientOn;
+	plugin_info_snd_render_funcs.pS_TouchSound = SND_TouchSound;
+	plugin_info_snd_render_funcs.pS_ClearBuffer = SND_ClearBuffer;
+	plugin_info_snd_render_funcs.pS_StaticSound = SND_StaticSound;
+	plugin_info_snd_render_funcs.pS_StartSound = SND_StartSound;
+	plugin_info_snd_render_funcs.pS_StopSound = SND_StopSound;
+	plugin_info_snd_render_funcs.pS_PrecacheSound = SND_PrecacheSound;
+	plugin_info_snd_render_funcs.pS_ClearPrecache = SND_ClearPrecache;
+	plugin_info_snd_render_funcs.pS_Update = SND_Update;
+	plugin_info_snd_render_funcs.pS_StopAllSounds = SND_StopAllSounds;
+	plugin_info_snd_render_funcs.pS_BeginPrecaching = SND_BeginPrecaching;
+	plugin_info_snd_render_funcs.pS_EndPrecaching = SND_EndPrecaching;
+	plugin_info_snd_render_funcs.pS_ExtraUpdate = SND_ExtraUpdate;
+	plugin_info_snd_render_funcs.pS_LocalSound = SND_LocalSound;
+	plugin_info_snd_render_funcs.pS_BlockSound = SND_BlockSound;
+	plugin_info_snd_render_funcs.pS_UnblockSound = SND_UnblockSound;
+
+	return &plugin_info;
+}
+

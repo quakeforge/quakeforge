@@ -165,7 +165,7 @@ PI_UnloadPlugin (plugin_t *plugin)
 			&& plugin->functions->general->p_Shutdown) {
 		plugin->functions->general->p_Shutdown ();
 	} else {
-		Con_Printf ("Warning: No shutdown function for plugin!");
+		Con_Printf ("Warning: No shutdown function for type %d plugin!\n", plugin->type);
 	}
 #if defined(HAVE_DLOPEN)
 	return (dlclose (plugin->handle) == 0);

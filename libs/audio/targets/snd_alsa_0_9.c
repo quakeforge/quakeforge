@@ -45,15 +45,34 @@ static int  snd_inited;
 static snd_pcm_t *pcm;
 static const char *pcmname = NULL;
 size_t      buffer_size;
+int snd_blocked = 0;
+volatile dma_t sn;
+
+cvar_t     *snd_stereo;
+cvar_t     *snd_rate;
+cvar_t     *snd_device;
+cvar_t     *snd_bits;
 
 plugin_t           plugin_info;
 plugin_data_t      plugin_info_data;
 plugin_funcs_t     plugin_info_funcs;
 general_data_t     plugin_info_general_data;
 general_funcs_t    plugin_info_general_funcs;
-sound_data_t       plugin_info_sound_data;
-sound_funcs_t      plugin_info_sound_funcs;
+snd_output_data_t       plugin_info_snd_output_data;
+snd_output_funcs_t      plugin_info_snd_output_funcs;
 
+void
+SNDDMA_Init_Cvars (void)
+{
+	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM, NULL,
+						   "sound stereo output");
+	snd_rate = Cvar_Get ("snd_rate", "0", CVAR_ROM, NULL,
+						 "sound playback rate. 0 is system default");
+	snd_device = Cvar_Get ("snd_device", "", CVAR_ROM, NULL,
+						 "sound device. \"\" is system default");
+	snd_bits = Cvar_Get ("snd_bits", "0", CVAR_ROM, NULL,
+						 "sound sample depth. 0 is system default");
+}
 
 qboolean
 SNDDMA_Init (void)
@@ -62,6 +81,8 @@ SNDDMA_Init (void)
 	int         rate = -1, bps = -1, stereo = -1, frag_size;
 	snd_pcm_hw_params_t *hw;
 	snd_pcm_sw_params_t *sw;
+
+	SNDDMA_Init_Cvars ();
 
 	snd_pcm_hw_params_alloca (&hw);
 	snd_pcm_sw_params_alloca (&sw);
@@ -265,7 +286,8 @@ SNDDMA_Submit (void)
 	snd_pcm_uframes_t nframes;
 	const snd_pcm_channel_area_t *areas;
 	int         state;
-	int         count = paintedtime - soundtime;
+	int         count = *plugin_info_snd_output_data.paintedtime
+					- *plugin_info_snd_output_data.soundtime;
 
 	if (snd_blocked)
 		return;
@@ -289,10 +311,26 @@ SNDDMA_Submit (void)
 	}
 }
 
+void
+SNDDMA_BlockSound (void)
+{
+	if (++snd_blocked == 1)
+		snd_pcm_pause (pcm, 1);
+}
+
+void
+SNDDMA_UnblockSound (void)
+{
+	if (!snd_blocked)
+		return;
+	if (!--snd_blocked)
+		snd_pcm_pause (pcm, 0);
+}
+
 plugin_t *
 PluginInfo (void)
 {
-    plugin_info.type = qfp_sound;
+    plugin_info.type = qfp_snd_output;
     plugin_info.api_version = QFPLUGIN_VERSION;
     plugin_info.plugin_version = "0.1";
     plugin_info.description = "ALSA 0.9.x digital output";
@@ -311,38 +349,14 @@ PluginInfo (void)
     plugin_info_funcs.input = NULL;
     plugin_info_funcs.sound = &plugin_info_sound_funcs;
 
-    plugin_info_general_funcs.p_Init = SND_Init;
-    plugin_info_general_funcs.p_Shutdown = SND_Shutdown;
-
-    plugin_info_sound_funcs.pS_AmbientOff = SND_AmbientOff;
-    plugin_info_sound_funcs.pS_AmbientOn = SND_AmbientOn;
-    plugin_info_sound_funcs.pS_TouchSound = SND_TouchSound;
-    plugin_info_sound_funcs.pS_ClearBuffer = SND_ClearBuffer;
-    plugin_info_sound_funcs.pS_StaticSound = SND_StaticSound;
-    plugin_info_sound_funcs.pS_StartSound = SND_StartSound;
-    plugin_info_sound_funcs.pS_StopSound = SND_StopSound;
-    plugin_info_sound_funcs.pS_PrecacheSound = SND_PrecacheSound;
-    plugin_info_sound_funcs.pS_ClearPrecache = SND_ClearPrecache;
-    plugin_info_sound_funcs.pS_Update = SND_Update;
-    plugin_info_sound_funcs.pS_StopAllSounds = SND_StopAllSounds;
-    plugin_info_sound_funcs.pS_BeginPrecaching = SND_BeginPrecaching;
-    plugin_info_sound_funcs.pS_EndPrecaching = SND_EndPrecaching;
-    plugin_info_sound_funcs.pS_ExtraUpdate = SND_ExtraUpdate;
-    plugin_info_sound_funcs.pS_LocalSound = SND_LocalSound;
-	plugin_info_sound_funcs.pS_BlockSound = SND_BlockSound;
-	plugin_info_sound_funcs.pS_UnblockSound = SND_UnblockSound;
+    plugin_info_general_funcs.p_Init = SNDDMA_Init_Cvars;
+    plugin_info_general_funcs.p_Shutdown = NULL;
+	plugin_info_snd_output_funcs.pS_O_Init = SNDDMA_Init;
+	plugin_info_snd_output_funcs.pS_O_Shutdown = SNDDMA_Shutdown;
+    plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
+    plugin_info_snd_output_funcs.pS_O_Submit = SNDDMA_Submit;
+    plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;
+    plugin_info_snd_output_funcs.pS_O_UnblockSound = SNDDMA_UnblockSound;
 
     return &plugin_info;
-}
-
-void
-SNDDMA_BlockSound (void)
-{
-	snd_pcm_pause (pcm, 1);
-}
-
-void
-SNDDMA_UnblockSound (void)
-{
-	snd_pcm_pause (pcm, 0);
 }
