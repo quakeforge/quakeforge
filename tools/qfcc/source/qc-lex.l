@@ -72,6 +72,7 @@ extern int element_flag;
 %}
 
 DIGIT	[0-9]
+XDIGIT	[0-9a-fA-F]
 ID		[a-zA-Z_][a-zA-Z_0-9]*
 FLOAT	{DIGIT}+"."{DIGIT}*
 NUM		({DIGIT}+("."{DIGIT}*)?)
@@ -101,6 +102,22 @@ m		([\-+]?)
 
 {DIGIT}+			{
 						yylval.integer_val = atoi (yytext);
+						return INT_VAL;
+					}
+
+0x{XDIGIT}+			{
+						const char *c = yytext + 2;
+						yylval.integer_val = 0;
+						while (*c) {
+							yylval.integer_val *= 16;
+							yylval.integer_val += *c - '0';
+							if (*c > '9')
+								yylval.integer_val -= 'A' - '9' - 1;
+							if (*c > 'F')
+								yylval.integer_val -= 'a' - 'A';
+							c++;
+						}
+						printf ("%x\n", yylval.integer_val);
 						return INT_VAL;
 					}
 
