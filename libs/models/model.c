@@ -76,7 +76,7 @@ Mod_Init (void)
 {
 	byte   *dest;
 	int		m, x, y;
-	int mip0size = 16*16, mip1size = 8*8, mip2size = 4*4, mip3size = 2*2;
+	int		mip0size = 16*16, mip1size = 8*8, mip2size = 4*4, mip3size = 2*2;
 
 	memset (mod_novis, 0xff, sizeof (mod_novis));
 	r_notexture_mip = Hunk_AllocName (sizeof (texture_t) + mip0size + mip1size
@@ -174,9 +174,8 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	byte		stackbuf[1024];			// avoid dirtying the cache heap
 
 	// load the file
-	buf =
-		(unsigned int *) COM_LoadStackFile (mod->name, stackbuf,
-											sizeof (stackbuf));
+	buf = (unsigned int *) COM_LoadStackFile (mod->name, stackbuf,
+											  sizeof (stackbuf));
 	if (!buf) {
 		if (crash)
 			Sys_Error ("Mod_LoadModel: %s not found", mod->name);
