@@ -634,8 +634,6 @@ init_types (void)
 	new_struct_field (type, &type_integer, "size", vis_public);
 	new_struct_field (type, &type_string, "name", vis_public);
 	new_struct_field (type, &type_pointer, "symtab", vis_public);
-
-	type_obj_exec_class.parm_types[0] = pointer_type (type_module);
 }
 
 void
@@ -666,6 +664,8 @@ chain_initial_types (void)
 	chain_type (type_ivar);
 	chain_type (type_module);
 	chain_type (&type_obj_exec_class);
+
+	type_obj_exec_class.parm_types[0] = pointer_type (type_module);
 }
 
 void
