@@ -223,8 +223,8 @@ Info_SetValueForStarKey (char *s, char *key, char *value, size_t maxsize)
 	// only copy ascii values
 	s += strlen (s);
 	v = newstr;
-	is_name = stricmp (key, "name") == 0;
-	is_team = stricmp (key, "team") == 0;
+	is_name = strcasecmp (key, "name") == 0;
+	is_team = strcasecmp (key, "team") == 0;
 	while (*v) {
 		c = (unsigned char) *v++;
 		// client only allows highbits on name

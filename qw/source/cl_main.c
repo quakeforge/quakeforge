@@ -591,7 +591,7 @@ CL_FullServerinfo_f (void)
 			Con_Printf ("Invalid standards version: %s", p);
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "skybox")) && *p) {
-		if (stricmp (p, "none") == 0) {
+		if (strcasecmp (p, "none") == 0) {
 			allowskybox = false;
 		} else {
 			allowskybox = true;
@@ -689,7 +689,7 @@ CL_FullInfo_f (void)
 		if (*s)
 			s++;
 
-		if (!stricmp (key, pmodel_name) || !stricmp (key, emodel_name))
+		if (!strcasecmp (key, pmodel_name) || !strcasecmp (key, emodel_name))
 			continue;
 
 		Info_SetValueForKey (cls.userinfo, key, value, MAX_INFO_STRING);
@@ -712,7 +712,7 @@ CL_SetInfo_f (void)
 		Con_Printf ("usage: setinfo [ <key> <value> ]\n");
 		return;
 	}
-	if (!stricmp (Cmd_Argv (1), pmodel_name)
+	if (!strcasecmp (Cmd_Argv (1), pmodel_name)
 		|| !strcmp (Cmd_Argv (1), emodel_name)) return;
 
 	Info_SetValueForKey (cls.userinfo, Cmd_Argv (1), Cmd_Argv (2),
@@ -1125,7 +1125,7 @@ CL_Init (void)
 //  snprintf (st, sizeof(st), "%s-%04d", QW_VERSION, build_number());
 	snprintf (st, sizeof (st), "%s", QW_VERSION);
 	Info_SetValueForStarKey (cls.userinfo, "*ver", st, MAX_INFO_STRING);
-	Info_SetValueForStarKey (cls.userinfo, "stdver", QSG_VERSION,
+	Info_SetValueForStarKey (cls.userinfo, "stdver", QW_QSG_VERSION,
 							 MAX_INFO_STRING);
 #ifdef PACKET_LOGGING
         Net_Log_Init();
