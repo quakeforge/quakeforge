@@ -60,6 +60,16 @@ Software's very popular DOOM series. Its primary development goal is to
 remain compatible with the original games released by id Software while
 adding portability and optional extensions to enhance gameplay.
 
+%package master
+Summary:	QuakeForge 3D game engine - Master Server
+Group:		Amusements/Games
+#Requires:
+%description master
+QuakeForge is a source port of Quake and QuakeWorld, the successors to id
+Software's very popular DOOM series. Its primary development goal is to
+remain compatible with the original games released by id Software while
+adding portability and optional extensions to enhance gameplay.
+
 %if "%{HAVE_3DFX}"=="'yes'"
 %package 3dfx
 Summary:	QuakeForge 3D game engine - 3dfx client
@@ -300,11 +310,12 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_render_default.so.1
 %attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_render_default.so.1.0.0
 
-%if "%{HAVE_SERVER}"=="'yes'"
 %files server
 %attr(-,root,root)	%{_prefix}/bin/qw-server
 #%attr(-,root,root)	%{_prefix}/bin/nq-server
-%endif
+
+%files master
+%attr(-,root,root)	%{_prefix}/bin/qw-master
 
 %if "%{HAVE_3DFX}"=="'yes'"
 %files 3dfx

@@ -92,6 +92,7 @@ AC_HEADER_STDC
 AC_HEADER_MAJOR
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(
+	alsa/asoundlib.h \
 	arpa/inet.h asm/io.h assert.h conio.h ctype.h ddraw.h dinput.h \
 	direct.h dirent.h dlfcn.h dmedia/audio.h dmedia/cdaudio.h dpmi.h \
 	dsound.h errno.h execinfo.h fcntl.h fnmatch.h glide/sst1vid.h io.h \
@@ -607,34 +608,36 @@ SOUND_TYPES=
 AC_MSG_CHECKING(for sound support)
 
 HAVE_ALSA=no
-if test "x$enable_alsa" != "xno" -a \
-		"x$ac_cv_header_sys_asoundlib_h" = "xyes"; then
-	AC_EGREP_CPP([QF_maGiC_VALUE],
-		[
+if test "x$enable_alsa" != "xno"; then
+	if test "x$ac_cv_header_sys_asoundlib_h" = "xyes" -o \
+		"x$ac_cv_header_alsa_asoundlib_h" = "xyes"; then
+	    AC_EGREP_CPP([QF_maGiC_VALUE],
+		    [
 #include <sys/asoundlib.h>
 #if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
 #if SND_LIB_MAJOR > 0 || (SND_LIB_MAJOR == 0 && SND_LIB_MINOR == 5)
 QF_maGiC_VALUE
 #endif
 #endif
-		],
-		SOUND_TYPES="$SOUND_TYPES ALSA0.5"
-		ALSA_LIBS="-lasound"
-		HAVE_ALSA=yes,
-		AC_EGREP_CPP([QF_maGiC_VALUE],
-			[
-#include <sys/asoundlib.h>
+		    ],
+		    SOUND_TYPES="$SOUND_TYPES ALSA0.5"
+		    ALSA_LIBS="-lasound"
+		    HAVE_ALSA=yes,
+		    AC_EGREP_CPP([QF_maGiC_VALUE],
+			    [
+#include <alsa/asoundlib.h>
 #if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
 #if SND_LIB_MAJOR > 0 || (SND_LIB_MAJOR == 0 && SND_LIB_MINOR >= 9)
 QF_maGiC_VALUE
 #endif
 #endif
-			],
-			SOUND_TYPES="$SOUND_TYPES ALSA0.9"
-			ALSA_LIBS="-lasound"
-			HAVE_ALSA=yes
-		)
-	)
+			    ],
+			    SOUND_TYPES="$SOUND_TYPES ALSA0.9"
+			    ALSA_LIBS="-lasound"
+			    HAVE_ALSA=yes
+		    )
+	    )
+	fi
 fi
 AC_SUBST(ALSA_LIBS)
 AC_SUBST(HAVE_ALSA)
