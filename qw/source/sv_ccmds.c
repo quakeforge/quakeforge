@@ -738,7 +738,7 @@ SV_Ban_f (void)
 			continue;
 		if (cl->userid == uid) {
 			SV_BroadcastPrintf (PRINT_HIGH, "Admin Banned user %s %s\n",
-								cl->name, mins ? va("for %.1f minutes",mins)
+								cl->name, mins ? va("for %.1f minutes", mins)
 											   : "permanently");
 			SV_DropClient (cl);
 			Cmd_ExecuteString (

@@ -35,6 +35,9 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#ifdef HAVE_ARPA_INET_H
+# include <arpa/inet.h>
+#endif
 
 #include <stdarg.h>
 #include <stdlib.h>
@@ -1073,9 +1076,14 @@ SV_ConnectionlessPacket (void)
 */
 
 typedef struct {
-	unsigned int mask;
-	unsigned int compare;
-	double       time;
+	int				mask;
+#ifdef HAVE_IPV6
+	byte			ip[16];
+#else
+	byte			ip[4];
+#endif
+	double			time;
+	filtertype_t	type;
 } ipfilter_t;
 
 #define	MAX_IPFILTERS	1024
@@ -1083,63 +1091,216 @@ typedef struct {
 cvar_t     *filterban;
 int         numipfilters;
 ipfilter_t  ipfilters[MAX_IPFILTERS];
-filtertype_t filttypes[MAX_IPFILTERS];
+unsigned int ipmasks[33]; // network byte order
 
-qboolean
-StringToFilter (const char *s, ipfilter_t * f)
+void
+SV_GenerateIPMasks (void)
 {
-	byte        b[4], m[4];
-	char        num[128];
-	int         i, j;
+	int i;
+	unsigned long int j = 0xFFFFFFFF;
 
-	for (i = 0; i < 4; i++) {
-		b[i] = 0;
-		m[i] = 0;
+	for (i = 32; i >= 0; i--) {
+		ipmasks[i] = htonl (j);
+		j = j << 1;
 	}
+}
 
-	for (i = 0; i < 4; i++) {
-		if (*s < '0' || *s > '9') {
-			SV_Printf ("Bad filter address: %s\n", s);
+static inline void
+SV_MaskIPTrim (byte *ip, int mask)
+{
+    int i;
+#ifdef HAVE_IPV6
+    int intcount = 4;
+#else
+    int intcount = 1;
+#endif
+
+    for (i = 0; i < intcount; i++) {
+        ((unsigned int *)ip)[i] &= ipmasks[mask > 32 ? 32 : mask];
+        if ((mask -= 32) < 0)
+            mask = 0;
+    }
+}
+
+// assumes b has already been masked
+static inline qboolean
+SV_MaskIPCompare (byte *a, byte *b, int mask)
+{
+	int i;
+#ifdef HAVE_IPV6
+	int intcount = 4;
+#else
+	int intcount = 1;
+#endif
+
+	for (i = 0; i < intcount; i++) {
+		if ((((unsigned int *)a)[i] & ipmasks[mask > 32 ? 32 : mask]) != ((unsigned int *)b)[i])
 			return false;
-		}
-
-		j = 0;
-		while (*s >= '0' && *s <= '9') {
-			num[j++] = *s++;
-		}
-		num[j] = 0;
-		b[i] = atoi (num);
-		if (b[i] != 0)
-			m[i] = 255;
-
-		if (!*s)
-			break;
-		s++;
+		if ((mask -= 32) < 0)
+			mask = 0;
 	}
-
-	f->mask = *(unsigned int *) m;
-	f->compare = *(unsigned int *) b;
 
 	return true;
 }
 
-void
-CleanIPlist (void)
+static inline qboolean
+SV_IPCompare (byte *a, byte *b)
 {
-	int         i, j;
+	int i;
+#ifdef HAVE_IPV6
+	int intcount = 4;
+#else
+	int intcount = 1;
+#endif
 
-	for (i=0 ; i<numipfilters ; i++) {
-		 if (ipfilters[i].time && (ipfilters[i].time < realtime))
-			 ipfilters[i].compare = 0xffffffff;
-		 if (ipfilters[i].compare == 0xffffffff) {
-			 for (j=i+1 ; j<numipfilters ; j++) {
-				 ipfilters[j - 1] = ipfilters[j];
-				 filttypes[j - 1] = filttypes[j];
-			 }
-			 numipfilters--;
-			 i--;
-			 Sys_Printf ("CleanIPlist: an IP filter removed.\n");
-		 }
+	for (i = 0; i < intcount; i++)
+		if (((unsigned int *)a)[i] != ((unsigned int *)b)[i])
+			return false;
+
+	return true;
+}
+
+static inline void
+SV_IPCopy (byte *dest, byte *src)
+{
+	int i;
+#ifdef HAVE_IPV6
+	int intcount = 4;
+#else
+	int intcount = 1;
+#endif
+
+	for (i = 0; i < intcount; i++)
+		((unsigned int *)dest)[i] = ((unsigned int *)src)[i];
+}
+
+qboolean
+SV_StringToFilter (const char *address, ipfilter_t *f)
+{
+#ifdef HAVE_IPV6
+	byte		b[16];
+#else
+	byte        b[4];
+#endif
+	int			mask;
+	int			i;
+	char		*s;
+	char		*slash;
+
+	Con_Printf ("SV_StringToFilter: '%s'\n", address);
+
+	s = strdup (address);
+	if (!s)
+		Sys_Error ("SV_StringToFilter: memory allocation failure\n");
+
+	if ((slash = strchr (s, '/'))) {
+		char *endptr;
+		*slash = '\0';
+		slash++;
+		if (*slash <= '0' || *slash >= '9') {
+			Con_Printf ("a\n");
+			goto bad_address;
+		}
+		if (strchr (slash, '/')) {
+			Con_Printf ("b\n");
+			goto bad_address;
+		}
+		mask = strtol (slash, &endptr, 10);
+		if (!*slash || *endptr) {
+			Con_Printf ("c '%s' %c %c\n", slash, *slash, *endptr);
+			goto bad_address;
+		}
+	} else
+		mask = -1;
+
+#ifdef HAVE_IPV6
+	// FIXME: we *must* fill in the extra bytes here if we're doing ipv6
+#error Prefix bytes not set for parsing ipv4 addresses
+#endif
+	i = inet_pton (AF_INET, s, b);
+	if (i == 1) {
+		if (mask == -1) {
+			if (!b[3]) { // FIXME: should check a cvar
+				if (!b[2]) {
+					if (!b[1]) {
+						if (!b[0]) {
+							mask = 0;
+						} else
+							mask = 8;
+					} else
+						mask = 16;
+				} else
+					mask = 24;
+			} else
+				mask = 32;
+		}
+	} else {
+#ifdef HAVE_IPV6
+	    i = inet_pton (AF_INET6, s, b);
+#endif
+	}
+    if (i != 1)
+        goto bad_address;
+
+#ifdef HAVE_IPV6
+	if (mask > 128)
+#else
+	if (mask > 32)
+#endif
+		goto bad_address;
+
+	SV_MaskIPTrim (b, mask);
+	f->mask = mask;
+	SV_IPCopy (f->ip, b);
+
+	free (s);
+	return true;
+
+bad_address:
+	SV_Printf ("Bad filter address: %s\n", address);
+	free (s);
+	return false;
+}
+
+void
+SV_RemoveIPFilter (int i)
+{
+	for (; i + 1 < numipfilters; i++)
+		ipfilters[i] = ipfilters[i + 1];
+
+	numipfilters--;
+}
+
+
+void
+SV_CleanIPList (void)
+{
+	// FIXME: some of this is duplicated from listip
+	int         i;
+	char *type;
+
+	for (i = 0; i < numipfilters;) {
+		if (ipfilters[i].time && (ipfilters[i].time < realtime)) {
+#ifdef HAVE_IPV6
+			char buf[INET6_ADDRSTRLEN];
+			if (!inet_ntop (AF_INET6, ipfilters[i].ip, buf, INET6_ADDRSTRLEN))
+				Sys_Error ("SV_CleanIPList: inet_ntop failed.  wtf?\n");
+#else
+			char buf[INET_ADDRSTRLEN];
+			if (!inet_ntop (AF_INET, ipfilters[i].ip, buf, INET_ADDRSTRLEN))
+				Sys_Error ("SV_CleanIPList: inet_ntop_failed.  wtf?\n");
+#endif
+			switch (ipfilters[i].type) {
+				case ft_ban: type = "Ban"; break;
+				case ft_mute: type = "Mute"; break;
+				case ft_cuff: type = "Cuff"; break;
+				default: Sys_Error ("SV_CleanIPList: invalid filter type");
+			}
+			SV_Printf ("SV_CleanIPList: %s for %s/%d removed\n",
+					   type, buf, ipfilters[i].mask);
+			SV_RemoveIPFilter (i);
+		} else
+			i++;
 	}
 }
 
@@ -1147,35 +1308,94 @@ void
 SV_AddIP_f (void)
 {
 	int         i;
+	double		bantime;
+	filtertype_t	type;
 
-	for (i = 0; i < numipfilters; i++)
-		if (ipfilters[i].compare == 0xffffffff)
-			break;						// free spot
-	if (i == numipfilters) {
-		if (numipfilters == MAX_IPFILTERS) {
-			SV_Printf ("IP filter list is full\n");
+	if (Cmd_Argc () < 2 || Cmd_Argc () > 4) {
+		SV_Printf ("Usage: addip <ip>/<mask> [<time> [<ban/mute/cuff>] ]\n");
+		return;
+	}
+
+	if (Cmd_Argc () >= 3)
+		bantime = atof (Cmd_Argv (2)) * 60;
+	else
+		bantime = 0.0;
+
+	if (Cmd_Argc () >= 4) {
+		if (strequal ("ban", Cmd_Argv (3)))
+			type = ft_ban;
+		else if (strequal ("mute", Cmd_Argv (3)))
+			type = ft_mute;
+		else if (strequal ("cuff", Cmd_Argv (3)))
+			type = ft_cuff;
+		else {
+			SV_Printf ("Unknown filter type '%s'\n", Cmd_Argv (3));
 			return;
+		}
+	} else
+		type = ft_ban;
+
+	if (numipfilters == MAX_IPFILTERS) {
+		SV_Printf ("IP filter list is full\n");
+		return;
+	}
+
+	if (SV_StringToFilter (Cmd_Argv (1), &ipfilters[numipfilters])) {
+		ipfilters[numipfilters].time = bantime ? realtime + bantime : 0.0;
+		ipfilters[numipfilters].type = type;
+		// FIXME: this should boot any matching clients
+	    for (i = 0; i < MAX_CLIENTS; i++) {
+			client_t *cl = &svs.clients[i];
+			char text[1024];
+			char *typestr;
+			char timestr[1024];
+			if (SV_MaskIPCompare (cl->netchan.remote_address.ip,
+								  ipfilters[numipfilters].ip,
+								  ipfilters[numipfilters].mask)) {
+				switch (type) {
+					case ft_ban:
+						typestr = "banned";
+						SV_DropClient (cl);
+						break;
+					case ft_mute:
+						typestr = "muted";
+						cl->lockedtill = bantime;
+						break;
+					case ft_cuff:
+						typestr = "cuffed";
+						cl->cuff_time = bantime;
+						break;
+					default:
+						Sys_Error ("SV_AddIP_f: unknown filter type %d", type);
+				}
+				if (bantime)
+					snprintf (timestr, sizeof (timestr), "for %.1f minutes",
+							  bantime / 60);
+				else
+					strncpy (timestr, "permanently", sizeof (timestr));
+				snprintf (text, sizeof (text), "You are %s %s\n%s",
+						  typestr, timestr, type == ft_ban ? "" :
+						  "\nReconnecting won't help...");
+				ClientReliableWrite_Begin (cl, svc_centerprint, strlen (text) + 2);
+				ClientReliableWrite_String (cl, text);
+				// FIXME: print on the console too
+			}
 		}
 		numipfilters++;
 	}
-
-	if (!StringToFilter (Cmd_Argv (1), &ipfilters[i]))
-		ipfilters[i].compare = 0xffffffff;
 }
 
 void
 SV_RemoveIP_f (void)
 {
-	int         i, j;
+	int         i;
 	ipfilter_t  f;
 
-	if (!StringToFilter (Cmd_Argv (1), &f))
+	if (!SV_StringToFilter (Cmd_Argv (1), &f))
 		return;
 	for (i = 0; i < numipfilters; i++)
-		if (ipfilters[i].mask == f.mask && ipfilters[i].compare == f.compare) {
-			for (j = i + 1; j < numipfilters; j++)
-				ipfilters[j - 1] = ipfilters[j];
-			numipfilters--;
+		if (ipfilters[i].mask == f.mask && SV_IPCompare (ipfilters[i].ip, f.ip)) {
+			SV_RemoveIPFilter (i);
 			SV_Printf ("Removed.\n");
 			return;
 		}
@@ -1185,20 +1405,44 @@ SV_RemoveIP_f (void)
 void
 SV_ListIP_f (void)
 {
-	byte        b[4];
 	int         i;
+	char		*type;
+#ifdef HAVE_IPV6
+	char buf[INET6_ADDRSTRLEN + 1];
+#else
+	char buf[INET_ADDRSTRLEN + 1];
+#endif
+	char		timestr[30];
 
 	SV_Printf ("Filter list:\n");
 	for (i = 0; i < numipfilters; i++) {
-		*(unsigned int *) b = ipfilters[i].compare;
-		SV_Printf ("%3i.%3i.%3i.%3i\n", b[0], b[1], b[2], b[3]);
+#ifdef HAVE_IPV6
+		if (!inet_ntop (AF_INET6, ipfilters[i].ip, buf, sizeof (buf)))
+#else
+		if (!inet_ntop (AF_INET, ipfilters[i].ip, buf, sizeof (buf)))
+#endif
+			Sys_Error ("SV_CleanIPList: inet_ntop_failed.  wtf?\n");
+
+		switch (ipfilters[i].type) {
+			case ft_ban: type = "Ban:"; break;
+			case ft_mute: type = "Mute:"; break;
+			case ft_cuff: type = "Cuff:"; break;
+			default: Sys_Error ("SV_ListIP_f: invalid filter type");
+		}
+
+		if (ipfilters[i].time)
+			snprintf (timestr, sizeof (timestr), "%ds",
+					  (int) (ipfilters[i].time ? ipfilters[i].time - realtime : 0));
+		else
+			strcpy (timestr, "Permanent");
+		SV_Printf ("%-5s %-10s %s/%u\n", type, timestr, buf, ipfilters[i].mask);
 	}
 }
 
 void
 SV_WriteIP_f (void)
 {
-	byte        b[4];
+	byte        *b;
 	char        name[MAX_OSPATH];
 	int         i;
 	VFile      *f;
@@ -1214,7 +1458,7 @@ SV_WriteIP_f (void)
 	}
 
 	for (i = 0; i < numipfilters; i++) {
-		*(unsigned int *) b = ipfilters[i].compare;
+		b = ipfilters[i].ip;
 		Qprintf (f, "addip %i.%i.%i.%i\n", b[0], b[1], b[2], b[3]);
 	}
 
@@ -1283,6 +1527,7 @@ void
 SV_SendBan (double till)
 {
 	char        data[128];
+//	char       *data2;
 
 	if (CheckForFlood (FLOOD_BAN))
 		return;
@@ -1298,20 +1543,26 @@ SV_SendBan (double till)
 	}
 
 	NET_SendPacket (strlen (data), data, net_from);
+
+/*	data[4] = A2C_CLIENT_COMMAND;
+	snprintf (data + 5, sizeof (data) - 5, "disconnect\n");
+	data2 = data + strlen (data) + 1;
+	snprintf (data2, sizeof (data) - (data2 - data), "12345");
+	NET_SendPacket (strlen (data) + strlen (data2) + 2, data, net_from);*/
+	// FIXME: this should send a disconnect to the client!
 }
 
 qboolean
-SV_FilterPacket (double *until)
+SV_FilterIP (byte *ip, double *until)
 {
 	int         i;
-	unsigned int in;
 
-	in = *(unsigned int *) net_from.ip;
+	*until = 0;
 
 	for (i = 0; i < numipfilters; i++) {
-		if (filttypes[i] != ft_ban)
+		if (ipfilters[i].type != ft_ban)
 			continue;
-		if ((in & ipfilters[i].mask) == ipfilters[i].compare) {
+		if (SV_MaskIPCompare (ip, ipfilters[i].ip, ipfilters[i].mask)) {
 			if (!ipfilters[i].time) {
 				// normal ban
 				return filterban->int_val;
@@ -1320,7 +1571,8 @@ SV_FilterPacket (double *until)
 				return true;	// banned no matter what
 			} else {
 				// time expired, set free
-				ipfilters[i].compare = 0xffffffff;
+				SV_RemoveIPFilter (i);
+				i--; // counter the increment, so we don't skip any
 			}
 		}
 	}
@@ -1330,27 +1582,30 @@ SV_FilterPacket (double *until)
 void
 SV_SavePenaltyFilter (client_t *cl, filtertype_t type, double pentime)
 {
-	int         i;
-	unsigned int ip;
-
-	ip = *(unsigned int *) cl->netchan.remote_address.ip;
-
-	// delete any existing penalty filter of same type
-	for (i=0 ; i<numipfilters; i++) {
-		if ( type == filttypes[i] && ip == ipfilters[i].compare ) {
-			ipfilters[i].compare = 0xffffffff;
-			break;
-		}
-	}
-	CleanIPlist();
-	// save a new penalty
-	if ( pentime < realtime )   // no point
+	int i;
+	byte *b;
+	if (pentime < realtime)   // no point
 		return;
-	Con_Printf ("Penalty saved for user=%d\n",cl->userid);
-	ipfilters[numipfilters].mask = 0;
-	ipfilters[numipfilters].compare = ip;
+
+	b = cl->netchan.remote_address.ip;
+
+	for (i = 0; i < numipfilters; i++)
+		if (ipfilters[i].mask == 32 && SV_IPCompare (ipfilters[i].ip, b)
+			&& ipfilters[i].type == type) {
+			Con_Printf ("Penalty for user %d already exists\n", cl->userid);
+			return;
+		}
+
+	if (numipfilters == MAX_IPFILTERS) {
+		Con_Printf ("IP filter list is full\n");
+		return;
+	}
+
+	Con_Printf ("Penalty saved for user %d\n", cl->userid);
+	ipfilters[numipfilters].mask = 32;
+	SV_IPCopy (ipfilters[numipfilters].ip, b);
 	ipfilters[numipfilters].time = pentime;
-	filttypes[numipfilters] = type;
+	ipfilters[numipfilters].type = type;
 	numipfilters++;
 	return;
 }
@@ -1359,15 +1614,14 @@ double
 SV_RestorePenaltyFilter (client_t *cl, filtertype_t type)
 {
 	int         i;
-	unsigned int ip;
+	byte		*ip;
 
-	ip = * (unsigned int *) cl->netchan.remote_address.ip;
+	ip = cl->netchan.remote_address.ip;
 
-	CleanIPlist ();
 	// search for existing penalty filter of same type
-	for (i=0 ; i<numipfilters; i++) {
-		if (type == filttypes[i] && ip == ipfilters[i].compare) {
-			Sys_Printf("Penalty restored for user=%d\n",cl->userid);
+	for (i = 0; i < numipfilters; i++) {
+		if (type == ipfilters[i].type && SV_IPCompare (ip, ipfilters[i].ip)) {
+			Sys_Printf ("Penalty restored for user %d\n", cl->userid);
 			return ipfilters[i].time;
 		}
 	}
@@ -1384,7 +1638,7 @@ SV_ReadPackets (void)
 
 	good = false;
 	while (NET_GetPacket ()) {
-		if (SV_FilterPacket (&until)) {
+		if (SV_FilterIP (net_from.ip, &until)) {
 			SV_SendBan (until);			// tell them we aren't listening...
 			continue;
 		}
@@ -1564,6 +1818,9 @@ SV_Frame (float time)
 
 	// toggle the log buffer if full
 	SV_CheckLog ();
+
+	// clean out expired bans/cuffs/mutes
+	SV_CleanIPList ();
 
 	// move autonomous things around if enough time has passed
 	if (!sv.paused)
@@ -2011,6 +2268,8 @@ void
 SV_InitNet (void)
 {
 	int         port, p;
+
+	SV_GenerateIPMasks ();
 
 	port = PORT_SERVER;
 	p = COM_CheckParm ("-port");
