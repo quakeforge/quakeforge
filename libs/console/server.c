@@ -174,23 +174,25 @@ C_Shutdown (void)
 static void
 C_Print (const char *fmt, va_list args)
 {
+	static unsigned char *buffer;
+	unsigned char *txt;
+	int         size;
+	static int  buffer_size;
+
+	size = vsnprintf (buffer, buffer_size, fmt, args);
+	if (size + 1 > buffer_size) {
+		buffer_size = ((size + 1 + 1024) / 1024) * 1024; // 1k multiples
+		buffer = realloc (buffer, buffer_size);
+		if (!buffer)
+			Sys_Error ("console: could not allocate %d bytes\n",
+					   buffer_size);
+		vsnprintf (buffer, buffer_size, fmt, args);
+	}
+
+	txt = buffer;
 #ifdef HAVE_CURSES_H
 	if (use_curses) {
-		char		   *txt;
-		static char	   *buffer;
-		int				size;
-		static int		buffer_size;
 		chtype			ch;
-
-		size = vsnprintf (buffer, buffer_size, fmt, args);
-		if (size + 1 > buffer_size) {
-			buffer_size = ((size + 1 + 1024) / 1024) * 1024; // 1k multiples
-			buffer = realloc (buffer, buffer_size);
-			if (!buffer)
-				Sys_Error ("console: could not allocate %d bytes\n",
-						   buffer_size);
-			vsnprintf (buffer, buffer_size, fmt, args);
-		}
 
 		txt = buffer;
 
@@ -203,12 +205,8 @@ C_Print (const char *fmt, va_list args)
 	} else
 #endif
 	{
-		char        msg[4096];
-		unsigned char *p;
-
-		vsnprintf (msg, sizeof (msg), fmt, args);
-		for (p = (unsigned char *) msg; *p; p++)
-			putc (sys_char_map[*p], stdout);
+		while (*txt)
+			putc (sys_char_map[*txt++], stdout);
 		fflush (stdout);
 	}
 }
