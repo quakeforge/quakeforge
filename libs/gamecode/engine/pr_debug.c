@@ -53,6 +53,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/zone.h"
 
+#include "compat.h"
+
 typedef struct {
 	char *text;
 	size_t len;
@@ -376,13 +378,16 @@ PR_DumpState (progs_t *pr)
 {
 	if (pr_debug->int_val && pr->debug) {
 		pr_lineno_t *lineno;
+		pr_auxfunction_t *func = 0;
 		int         addr = pr->pr_xstatement;
 
 		lineno = PR_Find_Lineno (pr, addr);
-		if (lineno
-			&& PR_Get_Lineno_Func (pr, lineno)
-			&& PR_Get_Source_File (pr, lineno))
+		if (lineno)
+			func = PR_Get_Lineno_Func (pr, lineno);
+		if (func && pr->pr_xfunction == pr->pr_functions + func->function)
 			addr =PR_Get_Lineno_Addr (pr, lineno);
+		else
+			addr = max (pr->pr_xfunction->first_statement, addr - 5);
 
 		while (addr != pr->pr_xstatement)
 			PR_PrintStatement (pr, pr->pr_statements + addr++);
