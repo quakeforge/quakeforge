@@ -255,8 +255,7 @@ R_ParticleExplosion_QF (const vec3_t org)
 static void
 R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
 {
-	unsigned int	i;
-	unsigned int	colorMod = 0, j = 512;
+	unsigned int	i, j = 512;
 
 	if (numparticles >= r_maxparticles)
 		return;
@@ -266,8 +265,7 @@ R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
 	for (i = 0; i < j; i++) {
 		particle_new_random (pt_blob, part_tex_dot, org, 16, 2, 256, 
 							 r_realtime + 0.3,
-							 colorStart + (colorMod % colorLength), 1.0, 0.0);
-		colorMod++;
+							 colorStart + (i % colorLength), 1.0, 0.0);
 	}
 }
 
@@ -1119,6 +1117,93 @@ R_TeleportSplash_ID (const vec3_t org)
 }
 
 static void
+R_DarkFieldParticles_ID (entity_t *ent)
+{
+	int				i, j, k, l;
+	unsigned int	rnd;
+	float			vel;
+	vec3_t			dir, org, porg, pvel;
+
+	if (numparticles + l >= r_maxparticles) {
+		return;
+	} // else if (numparticles + l >= r_maxparticles) {
+//		l = r_maxparticles - numparticles;
+//	}
+
+	VectorCopy (ent->origin, org);
+
+	for (i = -16; i < 16; i += 8) {
+		dir [1] = i * 8;
+		for (j = -16; j < 16; j += 8) {
+			dir [0] = j * 8;
+			for (k = 0; k < 32; k += 8) {
+				dir [2] = k * 8;
+				rnd = rand ();
+
+				porg[0] = org[0] + i + ((rnd >> 3) & 3);
+				porg[1] = org[1] + j + ((rnd >> 5) & 3);
+				porg[2] = org[2] + k + ((rnd >> 7) & 3);
+
+				VectorNormalize (dir);
+				vel = 50 + ((rnd >> 9) & 63);
+				VectorScale (dir, vel, pvel);
+				particle_new (pt_slowgrav, part_tex_dot, porg, 1.5, pvel,
+							  (r_realtime + 0.2 + (rnd & 7) * 0.02),
+							  (150 + rand () % 6), 1.0, 0.0);
+            }
+		}
+	}
+}
+
+static vec3_t		avelocities[NUMVERTEXNORMALS];
+
+static void
+R_EntityParticles_ID (entity_t *ent)
+{
+	int         i, j;
+	float       angle, sp, sy, cp, cy; // cr, sr
+	float       beamlength = 16.0, dist = 64.0;
+	vec3_t      forward, porg;
+
+	if (numparticles + j >= r_maxparticles) {
+		return;
+	} else if (numparticles + j >= r_maxparticles) {
+		j = r_maxparticles - numparticles;
+	}
+
+	if (!avelocities[0][0]) {
+		for (i = 0; i < NUMVERTEXNORMALS * 3; i++)
+			avelocities[0][i] = (rand () & 255) * 0.01;
+	}
+
+	for (i = 0; i < j; i++) {
+		angle = r_realtime * avelocities[i][0];
+		cy = cos (angle);
+		sy = sin (angle);
+		angle = r_realtime * avelocities[i][1];
+		cp = cos (angle);
+		sp = sin (angle);
+// Next 3 lines results aren't currently used, may be in future. --Despair
+//		angle = r_realtime * avelocities[i][2];
+//		sr = sin (angle);
+//		cr = cos (angle);
+
+		forward[0] = cp * cy;
+		forward[1] = cp * sy;
+		forward[2] = -sp;
+
+		porg[0] = ent->origin[0] + r_avertexnormals[i][0] * dist +
+			forward[0] * beamlength;
+		porg[1] = ent->origin[1] + r_avertexnormals[i][1] * dist +
+			forward[1] * beamlength;
+		porg[2] = ent->origin[2] + r_avertexnormals[i][2] * dist +
+			forward[2] * beamlength;
+		particle_new (pt_explode, part_tex_dot, porg, 1.0, vec3_origin,
+					  r_realtime + 0.01, 0x6f, 1.0, 0);
+	}
+}
+
+static void
 R_RocketTrail_ID (entity_t *ent)
 {
 	float		maxlen;
@@ -1642,6 +1727,8 @@ r_particles_style_f (cvar_t *var)
 			R_VoorTrail = R_VoorTrail_ID;
 		}
 	}
+	R_DarkFieldParticles = R_DarkFieldParticles_ID;
+	R_EntityParticles = R_EntityParticles_ID;
 	R_ParticleExplosion2 = R_ParticleExplosion2_QF;
 	R_GlowTrail = R_GlowTrail_QF;
 	// Handle R_GrenadeTrail, R_RocketTrail, R_ParticleExplosion,

@@ -1,7 +1,7 @@
 /*
 	r_part.c
 
-	@description@
+	Interface for particles
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -44,14 +44,14 @@ unsigned int	r_maxparticles, numparticles;
 particle_t	   *active_particles, *free_particles, *particles, **freeparticles;
 vec3_t			r_pright, r_pup, r_ppn;
 
-void (*R_RocketTrail) (struct entity_s *ent);
-void (*R_GrenadeTrail) (struct entity_s *ent);
-void (*R_BloodTrail) (struct entity_s *ent);
-void (*R_SlightBloodTrail) (struct entity_s *ent);
-void (*R_WizTrail) (struct entity_s *ent);
-void (*R_FlameTrail) (struct entity_s *ent);
-void (*R_VoorTrail) (struct entity_s *ent);
-void (*R_GlowTrail) (struct entity_s *ent, int glow_color);
+void (*R_RocketTrail) (const struct entity_s *ent);
+void (*R_GrenadeTrail) (const struct entity_s *ent);
+void (*R_BloodTrail) (const struct entity_s *ent);
+void (*R_SlightBloodTrail) (const struct entity_s *ent);
+void (*R_WizTrail) (const struct entity_s *ent);
+void (*R_FlameTrail) (const struct entity_s *ent);
+void (*R_VoorTrail) (const struct entity_s *ent);
+void (*R_GlowTrail) (const struct entity_s *ent, int glow_color);
 void (*R_RunParticleEffect) (const vec3_t org, const vec3_t dir, int color, int count);
 void (*R_BloodPuffEffect) (const vec3_t org, int count);
 void (*R_GunshotEffect) (const vec3_t org, int count);
@@ -65,6 +65,8 @@ void (*R_ParticleExplosion) (const vec3_t org);
 void (*R_ParticleExplosion2) (const vec3_t org, int colorStart, int colorLength);
 void (*R_LavaSplash) (const vec3_t org);
 void (*R_TeleportSplash) (const vec3_t org);
+void (*R_DarkFieldParticles) (const struct entity_s *ent);
+void (*R_EntityParticles) (const struct entity_s *ent);
 
 
 /*
@@ -111,100 +113,4 @@ R_MaxParticlesCheck (cvar_t *r_particles, cvar_t *r_particles_max)
 
 	if (r_init)
 		R_InitParticles ();
-}
-
-void
-R_DarkFieldParticles (entity_t *ent)
-{
-	int				i, j, k;
-	unsigned int	rnd;
-	float			vel;
-	particle_t	   *p;
-	vec3_t	   		dir, org;
-
-	org[0] = ent->origin[0];
-	org[1] = ent->origin[1];
-	org[2] = ent->origin[2];
-	for (i = -16; i < 16; i += 8) {
-		for (j = -16; j < 16; j += 8) {
-			for (k = 0; k < 32; k += 8) {
-				if (!free_particles)
-					return;
-				p = free_particles;
-				free_particles = p->next;
-				p->next = active_particles;
-				active_particles = p;
-
-				rnd = rand ();
-
-				p->die = r_realtime + 0.2 + (rnd & 7) * 0.02;
-				p->color = 150 + rand () % 6;
-				p->type = pt_slowgrav;
-
-				dir[0] = j * 8;
-				dir[1] = i * 8;
-				dir[2] = k * 8;
-
-				p->org[0] = org[0] + i + ((rnd >> 3) & 3);
-				p->org[1] = org[1] + j + ((rnd >> 5) & 3);
-				p->org[2] = org[2] + k + ((rnd >> 7) & 3);
-
-				VectorNormalize (dir);
-				vel = 50 + ((rnd >> 9) & 63);
-				VectorScale (dir, vel, p->vel);
-			}
-		}
-	}
-}
-
-static vec3_t		avelocities[NUMVERTEXNORMALS];
-
-void
-R_EntityParticles (entity_t *ent)
-{
-	int			i;
-	float		angle, sp, sy, cp, cy; // cr, sr
-	float		beamlength = 16.0, dist = 64.0;
-	particle_t *p;
-	vec3_t      forward;
-
-	if (!avelocities[0][0]) {
-		for (i = 0; i < NUMVERTEXNORMALS * 3; i++)
-			avelocities[0][i] = (rand () & 255) * 0.01;
-	}
-
-	for (i = 0; i < NUMVERTEXNORMALS; i++) {
-		angle = r_realtime * avelocities[i][0];
-		cy = cos (angle);
-		sy = sin (angle);
-		angle = r_realtime * avelocities[i][1];
-		cp = cos (angle);
-		sp = sin (angle);
-// Next 3 lines results aren't currently used, may be in future. --Despair
-//		angle = r_realtime * avelocities[i][2];
-//		sr = sin (angle);
-//		cr = cos (angle);
-
-		forward[0] = cp * cy;
-		forward[1] = cp * sy;
-		forward[2] = -sp;
-
-		if (!free_particles)
-			return;
-		p = free_particles;
-		free_particles = p->next;
-		p->next = active_particles;
-		active_particles = p;
-
-		p->die = r_realtime + 0.01;
-		p->color = 0x6f;
-		p->type = pt_explode;
-
-		p->org[0] = ent->origin[0] + r_avertexnormals[i][0] * dist +
-			forward[0] * beamlength;
-		p->org[1] = ent->origin[1] + r_avertexnormals[i][1] * dist +
-			forward[1] * beamlength;
-		p->org[2] = ent->origin[2] + r_avertexnormals[i][2] * dist +
-			forward[2] * beamlength;
-	}
 }
