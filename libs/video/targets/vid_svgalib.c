@@ -220,12 +220,12 @@ get_mode (int width, int height, int depth)
 {
 	int         i, ok, match;
 
-	match = (!!depth) << 2 + (!!height) << 1 + (!!width);
+	match = ((!!depth) << 2) + ((!!height) << 1) + (!!width);
 
 	for (i = 0; i < num_modes; i++) {
 		if (modes[i].width) {
-			ok = (modes[i].bytesperpixel == (depth / 8)) << 2
-				+ (modes[i].height == height) << 1
+			ok = ((modes[i].bytesperpixel == (depth / 8)) << 2)
+				+ ((modes[i].height == height) << 1)
 				+ (modes[i].width == width);
 			if ((ok & match) == match)
 				break;
