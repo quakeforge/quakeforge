@@ -194,17 +194,12 @@ SV_LoadProgs (void)
 	sv_fields.velocity = PR_GetFieldOffset (&sv_pr_state, "velocity");
 	sv_fields.angles = PR_GetFieldOffset (&sv_pr_state, "angles");
 	sv_fields.avelocity = PR_GetFieldOffset (&sv_pr_state, "avelocity");
-	sv_fields.basevelocity = PR_GetFieldOffset (&sv_pr_state, "basevelocity");
 	sv_fields.punchangle = PR_GetFieldOffset (&sv_pr_state, "punchangle");
 	sv_fields.classname = PR_GetFieldOffset (&sv_pr_state, "classname");
 	sv_fields.model = PR_GetFieldOffset (&sv_pr_state, "model");
 	sv_fields.frame = PR_GetFieldOffset (&sv_pr_state, "frame");
 	sv_fields.skin = PR_GetFieldOffset (&sv_pr_state, "skin");
 	sv_fields.effects = PR_GetFieldOffset (&sv_pr_state, "effects");
-	sv_fields.drawPercent = PR_GetFieldOffset (&sv_pr_state, "drawPercent");
-	sv_fields.gravity = PR_GetFieldOffset (&sv_pr_state, "gravity");
-	sv_fields.mass = PR_GetFieldOffset (&sv_pr_state, "mass");
-	sv_fields.light_level = PR_GetFieldOffset (&sv_pr_state, "light_level");
 	sv_fields.mins = PR_GetFieldOffset (&sv_pr_state, "mins");
 	sv_fields.maxs = PR_GetFieldOffset (&sv_pr_state, "maxs");
 	sv_fields.size = PR_GetFieldOffset (&sv_pr_state, "size");
@@ -225,7 +220,6 @@ SV_LoadProgs (void)
 	sv_fields.ammo_rockets = PR_GetFieldOffset (&sv_pr_state, "ammo_rockets");
 	sv_fields.ammo_cells = PR_GetFieldOffset (&sv_pr_state, "ammo_cells");
 	sv_fields.items = PR_GetFieldOffset (&sv_pr_state, "items");
-	sv_fields.items2 = PR_GetFieldOffset (&sv_pr_state, "items2");
 	sv_fields.takedamage = PR_GetFieldOffset (&sv_pr_state, "takedamage");
 	sv_fields.chain = PR_GetFieldOffset (&sv_pr_state, "chain");
 	sv_fields.deadflag = PR_GetFieldOffset (&sv_pr_state, "deadflag");
@@ -237,7 +231,6 @@ SV_LoadProgs (void)
 	sv_fields.fixangle = PR_GetFieldOffset (&sv_pr_state, "fixangle");
 	sv_fields.v_angle = PR_GetFieldOffset (&sv_pr_state, "v_angle");
 	sv_fields.idealpitch = PR_GetFieldOffset (&sv_pr_state, "idealpitch");
-	sv_fields.pitch_speed = PR_GetFieldOffset (&sv_pr_state, "pitch_speed");
 	sv_fields.netname = PR_GetFieldOffset (&sv_pr_state, "netname");
 	sv_fields.enemy = PR_GetFieldOffset (&sv_pr_state, "enemy");
 	sv_fields.flags = PR_GetFieldOffset (&sv_pr_state, "flags");
@@ -273,6 +266,15 @@ SV_LoadProgs (void)
 	sv_fields.pain_finished = PR_GetFieldOffset (&sv_pr_state, "pain_finished");
 	sv_fields.radsuit_finished = PR_GetFieldOffset (&sv_pr_state, "radsuit_finished");
 	sv_fields.speed = PR_GetFieldOffset (&sv_pr_state, "speed");
+
+	// Quake 2 fields?
+	sv_fields.basevelocity = ED_GetFieldIndex (&sv_pr_state, "basevelocity");
+	sv_fields.drawPercent = ED_GetFieldIndex (&sv_pr_state, "drawPercent");
+	sv_fields.gravity = ED_GetFieldIndex (&sv_pr_state, "gravity");
+	sv_fields.mass = ED_GetFieldIndex (&sv_pr_state, "mass");
+	sv_fields.light_level = ED_GetFieldIndex (&sv_pr_state, "light_level");
+	sv_fields.items2 = ED_GetFieldIndex (&sv_pr_state, "items2");
+	sv_fields.pitch_speed = ED_GetFieldIndex (&sv_pr_state, "pitch_speed");
 }
 
 extern builtin_t sv_builtins[];
