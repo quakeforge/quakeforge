@@ -69,6 +69,8 @@ param_t *copy_params (param_t *params);
 struct type_s *parse_params (struct type_s *type, param_t *params);
 void build_scope (function_t *f, struct def_s *func, param_t *params);
 function_t *new_function (const char *name);
+function_t *build_code_function (function_t *f, struct expr_s *state_expr,
+								 struct expr_s *statements);
 function_t *build_builtin_function (struct def_s *def, struct expr_s *bi_val);
 void build_function (function_t *f);
 void finish_function (function_t *f);

@@ -246,6 +246,42 @@ simple_defs
 simple_def
 	: non_func_type def_list ';' { }
 	| func_type func_defs { }
+	| cfunction { }
+	;
+
+cfunction
+	: non_func_type NAME function_decl ';'
+		{
+			type_t     *type;
+			def_t      *def;
+			
+			type = parse_params ($1, $3);
+			def = get_def (type, $2, current_scope, current_storage);
+		}
+	| non_func_type NAME function_decl '=' '#' fexpr ';'
+		{
+			type_t     *type;
+			def_t      *def;
+			
+			type = parse_params ($1, $3);
+			def = get_def (type, $2, current_scope, current_storage);
+			$6 = constant_expr ($6);
+			build_builtin_function (def, $6);
+		}
+	| non_func_type NAME function_decl
+	  opt_state_expr
+		{ $<op>$ = current_storage; }
+		{
+			type_t     *type;
+			
+			current_params = $3;
+			type = parse_params ($1, $3);
+			$<def>$ = get_def (type, $2, current_scope, current_storage);
+		}
+	  begin_function statement_block { $<op>$ = $<op>5; } end_function
+	    {
+			build_code_function ($7, $4, $8);
+		}
 	;
 
 storage_class
@@ -446,9 +482,6 @@ non_code_func
 		}
 	| /* emtpy */
 		{
-			if ($<def>0 && !$<def>0->local
-				&& $<def>0->type->type != ev_func)
-				def_initialized ($<def>0);
 		}
 	;
 
@@ -458,14 +491,7 @@ code_func
 		{ $<def>$ = $<def>0; }
 	  begin_function statement_block { $<op>$ = $<op>3; } end_function
 		{
-			build_function ($5);
-			if ($2) {
-				$2->next = $6;
-				emit_function ($5, $2);
-			} else {
-				emit_function ($5, $6);
-			}
-			finish_function ($5);
+			build_code_function ($5, $2, $6);
 		}
 	;
 
@@ -1287,15 +1313,7 @@ methoddef
 		}
 	  begin_function statement_block { $<op>$ = $<op>5; } end_function
 		{
-			$2->func = $7;
-			build_function ($7);
-			if ($4) {
-				$4->next = $8;
-				emit_function ($7, $4);
-			} else {
-				emit_function ($7, $8);
-			}
-			finish_function ($7);
+			$2->func = build_code_function ($7, $4, $8);
 		}
 	| ci methoddecl '=' '#' const ';'
 		{

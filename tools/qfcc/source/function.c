@@ -197,6 +197,20 @@ new_function (const char *name)
 }
 
 function_t *
+build_code_function (function_t *f, expr_t *state_expr, expr_t *statements)
+{
+	build_function (f);
+	if (state_expr) {
+		state_expr->next = statements;
+		emit_function (f, state_expr);
+	} else {
+		emit_function (f, statements);
+	}
+	finish_function (f);
+	return f;
+}
+
+function_t *
 build_builtin_function (def_t *def, expr_t *bi_val)
 {
 	function_t *f;
