@@ -82,6 +82,7 @@ server_sources= crudefile.c sv_ccmds.c sv_cvar.c sv_ents.c \
 
 qf_server_LIBS= \
 		$(SERVER_PLUGIN_STATIC_LIBS) \
+		$(top_builddir)/libs/gamecode/builtins/libQFcsqc.la \
 		$(top_builddir)/libs/models/libQFmodels.la \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
 		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \

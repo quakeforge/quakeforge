@@ -39,6 +39,7 @@ static const char rcsid[] =
 #include <signal.h>
 
 #include "QF/cmd.h"
+#include "QF/csqc.h"		//FIXME d'oh, dumb name after all
 #include "QF/cvar.h"
 #include "QF/sys.h"
 
@@ -366,7 +367,9 @@ SV_Progs_Init (void)
 	sv_pr_state.prune_edict = prune_edict;
 	sv_pr_state.free_edict = free_edict; // eww, I hate the need for this :(
 
+	PR_Resources_Init (&sv_pr_state);
 	SV_PR_Cmds_Init ();
+	Cmd_Progs_Init (&sv_pr_state);
 
 	Cmd_AddCommand ("edict", ED_PrintEdict_f, "Report information on a given "
 					"edict in the game. (edict (edict number))");
