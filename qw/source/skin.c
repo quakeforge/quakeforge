@@ -45,10 +45,10 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/texture.h"
 #include "QF/vfs.h"
-#include "QF/skin_stencil.h"
 
 #include "client.h"
 #include "compat.h"
+#include "skin_stencil.h"
 
 #define MAX_TEMP_SKINS 64	//XXX dynamic?
 
