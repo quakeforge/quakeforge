@@ -33,6 +33,18 @@
 
 #import <AppKit/NSView.h>
 
-@interface PrefsView: NSView
-{
-}
+// size of a PrefsView
+#define PrefsRect NSMakeRect (0, 0, 486, 228)
+
+@protocol PrefsViewController <NSObject>
+
+- (void) savePrefs: (id) sender;
+- (void) loadPrefs: (id) sender;
+- (void) resetPrefsToDefault: (id) sender;
+
+- (NSView *) view;
+
+@end
+
+@interface PrefsViewController <PrefsViewController>
+@end

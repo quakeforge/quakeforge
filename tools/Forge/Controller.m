@@ -109,13 +109,7 @@ static PrefsController	*prefsController = nil;
 - (void) showPreferencesPanel: (id) sender;
 {
 	NSDebugLog (@"Showing Preferences panel...");
-
-	if (!prefsController)
-		prefsController = [[PrefsController alloc] init];
-
-	[prefsController orderFrontPreferencesPanel: self];
-
-	return;
+	[[PrefsController sharedPrefsController] orderFrontPreferencesPanel: self];
 }
 
 /*
@@ -152,8 +146,6 @@ static PrefsController	*prefsController = nil;
 	[menu addItemWithTitle: _(@"Project")	action: NULL	keyEquivalent: @""];
 	[menu addItemWithTitle: _(@"File")		action: NULL	keyEquivalent: @""];
 	[menu addItemWithTitle: _(@"Edit")		action: NULL	keyEquivalent: @""];
-	[menu addItemWithTitle: _(@"BSP")		action: NULL	keyEquivalent: @""];
-	[menu addItemWithTitle: _(@"Brush")		action: NULL	keyEquivalent: @""];
 	[menu addItemWithTitle: _(@"Windows")	action: NULL	keyEquivalent: @""];
 	[menu addItemWithTitle: _(@"Services")	action: NULL	keyEquivalent: @""];
 
@@ -253,22 +245,6 @@ static PrefsController	*prefsController = nil;
 	[edit addItemWithTitle: _(@"Select All")
 					action: @selector (selectAll:)
 			 keyEquivalent: @"a"];
-
-	/*
-		BSP
-	*/
-	bsp = [[[NSMenu alloc] init] autorelease];
-	[menu setSubmenu: bsp forItem: [menu itemWithTitle: _(@"BSP")]];
-	
-	[bsp addItemWithTitle: _(@"None")	action: @selector(nothing:)	keyEquivalent: @""];
-
-	/*
-		Brush
-	*/
-	brush = [[[NSMenu alloc] init] autorelease];
-	[menu setSubmenu: brush forItem: [menu itemWithTitle: _(@"Brush")]];
-	
-	[brush addItemWithTitle: _(@"None")	action: @selector(nothing:)	keyEquivalent: @""];
 
 	/*
 		Windows

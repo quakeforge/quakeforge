@@ -1,12 +1,12 @@
 /*
-	PrefsController.h
+	ForgePrefsView.h
 
-	Preferences window controller class
+	Forge internal preferences view
 
 	Copyright (C) 2001 Dusk to Dawn Computing, Inc.
 
 	Author: Jeff Teunissen <deek@d2dc.net>
-	Date:	11 Nov 2001
+	Date:	17 Nov 2001
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License as
@@ -31,33 +31,7 @@
 # include "Config.h"
 #endif
 
-#import <AppKit/NSWindowController.h>
-
 #import "PrefsView.h"
 
-@interface PrefsController: NSWindowController
-{
-}
-
-+ (PrefsController *) sharedPrefsController;
-- (id) init;
-- (void) dealloc;
-
-/*
-	Notification methods
-*/
-- (void) windowWillClose: (NSNotification *) aNotification;
-
-/***
-	Stuff we do in our subclass
-***/
-- (void) orderFrontPreferencesPanel: (id) sender;
-- (void) addPrefsViewController: (id <PrefsViewController>) aPrefsViewController;
-
-- (void) savePreferences: (id) sender;
-- (void) savePreferencesAndCloseWindow: (id) sender;
-
-- (void) loadPreferences: (id) sender;
-- (void) resetToDefaults: (id) sender;
-
+@interface MainPrefsView: NSView
 @end

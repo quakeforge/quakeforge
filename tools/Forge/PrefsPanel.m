@@ -34,6 +34,7 @@ static const char rcsid[] =
 # include "Config.h"
 #endif
 
+#import <Foundation/NSGeometry.h>
 #import <AppKit/NSButton.h>
 #import <AppKit/NSButtonCell.h>
 #import <AppKit/NSFont.h>
@@ -46,7 +47,7 @@ static const char rcsid[] =
 
 - (void) initUI
 {
-	NSButton		*ok, *apply, *cancel;
+	NSButton		*ok, *apply, *cancel, *revert;
 	NSButtonCell	*prototype;
 	NSScrollView	*iconScrollView;
 
@@ -60,10 +61,11 @@ static const char rcsid[] =
 	Scroll area is 86 pixels tall, 500 wide
 	content view size: (520, 414)
 */
-	
+
 	prefsViewBox = [[NSBox alloc] initWithFrame: NSMakeRect (8, 40, 500, 242)];
 	[prefsViewBox setTitlePosition: NSNoTitle];
 	[prefsViewBox setBorderType: NSGrooveBorder];
+	NSDebugLog (@"prefsViewBox bounds: %@", NSStringFromRect ([[prefsViewBox contentView] bounds]));
 
 	[[self contentView] addSubview: prefsViewBox];
 
@@ -87,10 +89,10 @@ static const char rcsid[] =
 	[iconScrollView setHasVerticalScroller: NO];
 	[iconScrollView setDocumentView: prefsViewList];
 	[[self contentView] addSubview: iconScrollView];
-	
+
 	/* Create the buttons */
 	// OK
-	ok = [[NSButton alloc] initWithFrame: NSMakeRect (312, 8, 60, 24)];
+	ok = [[NSButton alloc] initWithFrame: NSMakeRect (244, 8, 60, 24)];
 	[ok autorelease];
 
 	[ok setTitle: _(@"OK")];
@@ -98,8 +100,8 @@ static const char rcsid[] =
 	[ok setAction: @selector(savePreferencesAndCloseWindow:)];
 	[[self contentView] addSubview: ok];
 
-	// cancel
-	cancel = [[NSButton alloc] initWithFrame: NSMakeRect (380, 8, 60, 24)];
+	// Cancel
+	cancel = [[NSButton alloc] initWithFrame: NSMakeRect (312, 8, 60, 24)];
 	[cancel autorelease];
 
 	[cancel setTitle: _(@"Cancel")];
@@ -107,25 +109,34 @@ static const char rcsid[] =
 	[cancel setAction: @selector(close)];
 	[[self contentView] addSubview: cancel];
 
-	// apply
-	apply = [[NSButton alloc] initWithFrame: NSMakeRect (448, 8, 60, 24)];
+	// Apply
+	apply = [[NSButton alloc] initWithFrame: NSMakeRect (380, 8, 60, 24)];
 	[apply autorelease];
 
 	[apply setTitle: _(@"Apply")];
 	[apply setTarget: [self windowController]];
 	[apply setAction: @selector(savePreferences:)];
 	[[self contentView] addSubview: apply];
+
+	// Defaults
+	revert = [[NSButton alloc] initWithFrame: NSMakeRect (448, 8, 60, 24)];
+	[revert autorelease];
+
+	[revert setTitle: _(@"Default")];
+	[revert setTarget: [self windowController]];
+	[revert setAction: @selector(resetToDefaults:)];
+	[[self contentView] addSubview: revert];
 }
 
 - (void) dealloc
 {
-	NSDebugLog (@"PrefsWindow -dealloc");
+	NSDebugLog (@"PrefsPanel -dealloc");
 	[prefsViewBox release];
 
 	[super dealloc];
 }
 
-- (void) addPrefsViewButtonWithDescription: (NSString *) desc andImage: (NSImage *) img
+- (void) addPrefsViewButtonWithTitle: (NSString *) desc andImage: (NSImage *) img
 {
 	NSButtonCell	*button = [[NSButtonCell alloc] init];
 

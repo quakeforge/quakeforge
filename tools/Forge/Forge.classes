@@ -1,4 +1,13 @@
 {
+    BundleController = {
+	Actions = (
+	    setDelegate:
+	);
+	Outlets = (
+	    delegate
+	);
+	Super = NSObject;
+    };
     Controller = {
 	Actions = (
 	    createNew:,
@@ -76,13 +85,6 @@
 	    delegate
 	);
 	Super = NSResponder;
-    };
-    NewClass = {
-	Actions = (
-	);
-	Outlets = (
-	);
-	Super = NSObject;
     };
     Preferences = {
 	Actions = (

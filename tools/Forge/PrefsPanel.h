@@ -47,8 +47,7 @@
 
 - (void) initUI;
 - (void) dealloc;
-
-- (void) addPrefsViewButtonWithDescription: (NSString *) desc andImage: (NSImage *) img;
+- (void) addPrefsViewButtonWithTitle: (NSString *) desc andImage: (NSImage *) img;
 
 - (NSBox *) prefsViewBox;
 - (NSMatrix *) prefsViewList;

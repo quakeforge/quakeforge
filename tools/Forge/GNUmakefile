@@ -30,6 +30,8 @@ include $(GNUSTEP_MAKEFILES)/common.make
 #
 # Subprojects
 #
+SUBPROJECTS=	\
+	Bundles/MainPrefs
 
 #
 # Main application
@@ -49,6 +51,7 @@ ADDITIONAL_GUI_LIBS +=
 #
 Forge_MAIN_MODEL_FILE=	Forge.gorm
 Forge_RESOURCE_FILES= \
+	Bundles/MainPrefs/MainPrefs.forgeb \
 	Forge.gorm \
 	Forge.tiff \
 	ForgeInfo.plist
@@ -64,6 +67,7 @@ Forge_LANGUAGES= \
 # Header files
 #
 Forge_HEADERS= \
+	BundleController.h \
 	Controller.h \
 	Preferences.h \
 	PrefsPanel.h \
@@ -73,6 +77,7 @@ Forge_HEADERS= \
 # Class files
 #
 Forge_OBJC_FILES= \
+	BundleController.m \
 	Controller.m \
 	Preferences.m \
 	PrefsPanel.m \

@@ -1,12 +1,13 @@
 /*
-	PrefsController.h
+	BundleController.h
 
-	Preferences window controller class
+	Bundle manager class and protocol
 
 	Copyright (C) 2001 Dusk to Dawn Computing, Inc.
+	Additional copyrights here
 
 	Author: Jeff Teunissen <deek@d2dc.net>
-	Date:	11 Nov 2001
+	Date:	20 Nov 2001
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License as
@@ -31,33 +32,37 @@
 # include "Config.h"
 #endif
 
-#import <AppKit/NSWindowController.h>
+#import <Foundation/NSArray.h>
+#import <Foundation/NSBundle.h>
+#import <Foundation/NSObject.h>
 
-#import "PrefsView.h"
+/*
+	Bundle Delegate protocol
 
-@interface PrefsController: NSWindowController
+	App controllers need to adopt this protocol to receive notifications
+*/
+@class BundleController;			// forward reference so the compiler doesn't get confused
+@protocol BundleDelegate <NSObject>
+
+// Notification, sent when a bundle is loaded.
+- (void) bundleController: (BundleController *) aController didLoadBundle: (NSBundle *) aBundle;
+
+@end
+
+@interface BundleController: NSObject <BundleDelegate>
 {
+	id				delegate;
+	NSMutableArray	*loadedBundles;
 }
 
-+ (PrefsController *) sharedPrefsController;
 - (id) init;
 - (void) dealloc;
 
-/*
-	Notification methods
-*/
-- (void) windowWillClose: (NSNotification *) aNotification;
+- (id) delegate;
+- (void) setDelegate: (id) aDelegate;
 
-/***
-	Stuff we do in our subclass
-***/
-- (void) orderFrontPreferencesPanel: (id) sender;
-- (void) addPrefsViewController: (id <PrefsViewController>) aPrefsViewController;
+- (void) loadBundles;
 
-- (void) savePreferences: (id) sender;
-- (void) savePreferencesAndCloseWindow: (id) sender;
-
-- (void) loadPreferences: (id) sender;
-- (void) resetToDefaults: (id) sender;
+- (NSArray *) loadedBundles;
 
 @end

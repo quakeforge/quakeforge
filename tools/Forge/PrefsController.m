@@ -37,31 +37,46 @@ static const char rcsid[] =
 
 #import "PrefsController.h"
 #import "PrefsPanel.h"
+#import "PrefsView.h"
 
 @implementation PrefsController
+
+static PrefsController	*sharedInstance = nil;
+static NSMutableArray	*prefsViews = nil;
+
++ (PrefsController *) sharedPrefsController
+{
+	return (sharedInstance ? sharedInstance : [[self alloc] init]);
+}
 
 - (id) init
 {
 	PrefsPanel		*prefsPanel;
 
-	prefsViews = [[NSMutableArray alloc] initWithCapacity: 5];
-	
-	prefsPanel = [[PrefsPanel alloc]
-					initWithContentRect: NSMakeRect (250, 250, 516, 386)
-					styleMask: NSTitledWindowMask
-							 | NSMiniaturizableWindowMask
-							 | NSClosableWindowMask
-					backing: NSBackingStoreRetained
-					defer: NO
-				  ];
-	[prefsPanel setTitle: _(@"Preferences")];
+	if (sharedInstance) {
+		[self dealloc];
+	} else {
+		[super init];
+		sharedInstance = self;
 
-	[super initWithWindow: prefsPanel];
-	[prefsPanel initUI];
-	[prefsPanel setDelegate: self];
-	[prefsPanel release];
+		prefsViews = [[[NSMutableArray alloc] initWithCapacity: 5] retain];
 
-	return self;	
+		prefsPanel = [[PrefsPanel alloc]
+						initWithContentRect: NSMakeRect (250, 250, 516, 386)
+						styleMask: NSTitledWindowMask
+								 | NSMiniaturizableWindowMask
+								 | NSClosableWindowMask
+						backing: NSBackingStoreRetained
+						defer: NO
+					  ];
+		[prefsPanel setTitle: [NSString stringWithFormat: @"%@ %@", _(@"Forge"), _(@"Preferences")]];
+
+		[super initWithWindow: prefsPanel];
+		[prefsPanel initUI];
+		[prefsPanel setDelegate: self];
+		[prefsPanel release];
+	}
+	return sharedInstance;	
 }
 
 - (void) dealloc
@@ -90,8 +105,8 @@ static const char rcsid[] =
 
 - (void) savePreferences: (id) sender
 {
-	NSEnumerator	*enumerator = [prefsViews objectEnumerator];
-	id				current;
+	NSEnumerator				*enumerator = [prefsViews objectEnumerator];
+	id <PrefsViewController>	current;
 
 	NSDebugLog (@"Saving all preferences...");
 	while ((current = [enumerator nextObject])) {
@@ -101,19 +116,45 @@ static const char rcsid[] =
 	[[NSUserDefaults standardUserDefaults] synchronize];
 }
 
-- (void) addPrefsView: (id) aPrefsView;
+- (void) loadPreferences: (id) sender
+{
+	NSEnumerator				*enumerator = [prefsViews objectEnumerator];
+	id <PrefsViewController>	current;
+
+	NSDebugLog (@"Loading all preferences from database...");
+	while ((current = [enumerator nextObject])) {
+		[current loadPrefs: self];
+	}
+
+	[[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+- (void) resetToDefaults: (id) sender
+{
+	NSEnumerator				*enumerator = [prefsViews objectEnumerator];
+	id <PrefsViewController>	current;
+
+	NSDebugLog (@"Setting all preferences to default values...");
+	while ((current = [enumerator nextObject])) {
+		[current resetPrefsToDefault: self];
+	}
+
+	[[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+- (void) addPrefsViewController: (id <PrefsViewController>) controller;
 {
 	PrefsPanel		*prefsPanel;
 
 	prefsPanel = (PrefsPanel *) [self window];
 
-	if (! [prefsViews containsObject: aPrefsView]) {
-		[prefsViews addObject: aPrefsView];
-		[aPrefsView autorelease];
+	if (! [prefsViews containsObject: controller]) {
+		[prefsViews addObject: controller];
+		[controller autorelease];
 	}
 
-	[[prefsPanel prefsViewBox] setContentView: aPrefsView];
-	[[prefsPanel prefsViewBox] display];
+	[[prefsPanel prefsViewBox] setContentView: [controller view]];
+	[[prefsPanel prefsViewBox] setNeedsDisplay: YES];
 }
 
 @end
