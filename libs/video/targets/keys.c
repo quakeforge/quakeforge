@@ -49,8 +49,10 @@
 #include "QF/keys.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
+#include "QF/zone.h"
 
 #include "compat.h"
+#include "old_keys.h"
 
 /*
   key up events are sent even if in console mode
@@ -830,12 +832,13 @@ Key_In_Bind (const char *kgt, const char *key, const char *cmd)
 void
 Key_In_Bind_f (void)
 {
-	int         c;
+	int         c, i;
 	const char *kgt, *key, *cmd = 0;
+	char        cmd_buf[1024];
 
 	c = Cmd_Argc ();
 
-	if (c != 3 && c != 4) {
+	if (c < 3) {
 		Con_Printf ("in_bind <kgt> <key> [command] : attach a command to a key\n");
 		return;
 	}
@@ -844,8 +847,14 @@ Key_In_Bind_f (void)
 
 	key = Cmd_Argv (2);
 
-	if (c == 4) {
-		cmd = Cmd_Args (3);
+	if (c >= 4) {
+		cmd = cmd_buf;
+		cmd_buf[0] = 0;
+		for (i = 3; i < c; i++) {
+			strncat (cmd_buf, Cmd_Argv (i), sizeof (cmd_buf) - strlen (cmd_buf));
+			if (i != (c - 1))
+				strncat (cmd_buf, " ", sizeof (cmd_buf) - strlen (cmd_buf));
+		}
 	}
 
 	Key_In_Bind (kgt, key, cmd);
@@ -864,22 +873,29 @@ Key_Unbind_f (void)
 void
 Key_Bind_f (void)
 {
-	int         c;
+	int         c, i;
 	const char *kgt, *key, *cmd = 0;
+	char        cmd_buf[1024];
 
 	c = Cmd_Argc ();
 
-	if (c != 2 && c != 3) {
+	if (c < 2) {
 		Con_Printf ("bind <key> [command] : attach a command to a key\n");
 		return;
 	}
 
 	kgt = in_bind_kgt->string;
 
-	key = Cmd_Argv (1);
+	key = OK_TranslateKeyName (Cmd_Argv (1));
 
-	if (c == 4) {
-		cmd = Cmd_Args (2);
+	if (c >= 3) {
+		cmd = cmd_buf;
+		cmd_buf[0] = 0;
+		for (i = 2; i < c; i++) {
+			strncat (cmd_buf, Cmd_Argv (i), sizeof (cmd_buf) - strlen (cmd_buf));
+			if (i != (c - 1))
+				strncat (cmd_buf, " ", sizeof (cmd_buf) - strlen (cmd_buf));
+		}
 	}
 
 	Key_In_Bind (kgt, key, cmd);
@@ -1027,6 +1043,8 @@ void
 Key_Init (void)
 {
 	int         i;
+
+	OK_Init ();
 
 	for (i = 0; i < 32; i++) {
 		key_lines[i][0] = ']';

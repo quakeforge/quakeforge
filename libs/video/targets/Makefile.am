@@ -30,7 +30,7 @@ libQFjs.la: $(libQFjs_la_OBJECTS) $(libQFjs_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libQFjs_la_LDFLAGS) $(libQFjs_la_OBJECTS) $(libQFjs_la_LIBADD) $(LIBS)
 EXTRA_DIST= joy.c joy_linux.c joy_null.c joy_win.c
 
-in_common_SOURCE=	in_common.c in_event.c keys.c
+in_common_SOURCE=	in_common.c in_event.c keys.c old_keys.c
 
 # Linux FBdev
 YFLAGS = -d
