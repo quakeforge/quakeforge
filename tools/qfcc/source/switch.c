@@ -291,17 +291,16 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		int         low = tree->low->e.integer_val;
 		int         high = tree->high->e.integer_val;
 		def_t      *def;
-		expr_t     *table = new_expr ();
+		expr_t     *table;
 		const char *name = new_label_name ();
 		int         i;
 		expr_t     *range = binary_expr ('-', tree->high, tree->low);
 
 		range->type = ex_uinteger;
 
-		def = PR_GetArray (&type_uinteger, name, high - low + 1, 0,
-						   &pr.num_globals);
-		table->type = ex_def;
-		table->e.def = def;
+		def = PR_GetDef (array_type (&type_uinteger, high - low + 1), name, 0,
+						 &pr.num_globals);
+		table = new_def_expr (def);
 
 		if (tree->left) {
 			branch = new_binary_expr (IFB, temp, low_label);

@@ -67,9 +67,6 @@ extern	def_t	def_ret, def_parms[MAX_PARMS];
 extern	def_t	def_void;
 extern	def_t	def_function;
 
-struct def_s *PR_GetArray (struct type_s *etype, const char *name, int size,
-		                   struct def_s *scope, int *allocate);
-
 struct def_s *PR_GetDef (struct type_s *type, const char *name,
 						 struct def_s *scope, int *allocate);
 struct def_s *PR_NewDef (struct type_s *type, const char *name,

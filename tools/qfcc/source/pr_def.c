@@ -91,23 +91,6 @@ check_for_name (type_t *type, const char *name, def_t *scope, int *allocate)
 	return 0;
 }
 
-def_t *
-PR_GetArray (type_t *etype, const char *name, int size, def_t *scope,
-			 int *allocate)
-{
-	type_t     *type = pointer_type (etype);
-	def_t      *def = check_for_name (type, name, scope, allocate);
-
-	if (def || !allocate)
-		return def;
-	def = PR_NewDef (type, name, scope);
-	def->ofs = *allocate;
-	def->initialized = def->constant = 1;
-	*allocate += type_size (type) * size + 1;
-	G_INT (def->ofs) = def->ofs + 1;
-	return def;
-}
-
 /*
 	PR_GetDef
 
