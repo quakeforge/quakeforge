@@ -180,12 +180,12 @@ Sys_LowFPPrecision (void)
 }
 #endif
 
+void (*Sys_Printf) (const char *fmt, ...);
 
 int         skipframes;
 
-
 int
-main (int c, char **v)
+main (int c, char *v[])
 {
 	double      time, oldtime, newtime;
 	int         j;
@@ -194,6 +194,8 @@ main (int c, char **v)
 
 //	signal(SIGFPE, floating_point_exception_handler);
 	signal (SIGFPE, SIG_IGN);
+
+	Sys_Printf = Sys_StdPrintf;
 
 	memset (&host_parms, 0, sizeof (host_parms));
 

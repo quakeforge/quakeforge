@@ -170,6 +170,8 @@ Sys_LowFPPrecision (void)
 
 #endif
 
+void (*Sys_Printf) (const char *fmt, ...);
+
 int
 main (int c, char *v[])
 {
@@ -181,6 +183,8 @@ main (int c, char *v[])
 	int         j;
 
 	signal (SIGFPE, SIG_IGN);
+
+	Sys_Printf = Sys_StdPrintf;
 
 	memset (&parms, 0, sizeof (parms));
 

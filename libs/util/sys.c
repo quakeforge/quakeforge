@@ -139,10 +139,10 @@ Sys_FileTime (const char *path)
 }
 
 /*
-	Sys_Printf
+	Sys_StdPrintf
 */
 void
-Sys_Printf (const char *fmt, ...)
+Sys_StdPrintf (const char *fmt, ...)
 {
 	va_list     argptr;
 	char        msg[MAXPRINTMSG];

@@ -155,6 +155,8 @@ Sys_Init (void)
 #endif
 }
 
+void (*Sys_Printf) (const char *fmt, ...);
+
 /*
 	main
 */
@@ -165,6 +167,8 @@ main (int argc, char *argv[])
 	fd_set      fdset;
 	extern int  net_socket;
 	int         j;
+
+	Sys_Printf = Sys_StdPrintf;
 
 	memset (&host_parms, 0, sizeof (host_parms));
 
