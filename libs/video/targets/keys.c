@@ -59,7 +59,7 @@
 */
 
 cvar_t     *cl_chatmode;
-cvar_t     *in_bind_kgt;
+cvar_t     *in_bind_imt;
 
 #define		MAXCMDLINE	256
 char        key_lines[32][MAXCMDLINE];
@@ -70,9 +70,9 @@ int         edit_line = 0;
 int         history_line = 0;
 
 keydest_t   key_dest = key_console;
-kgt_t		game_target = KGT_CONSOLE;
+imt_t		game_target = IMT_CONSOLE;
 
-char       *keybindings[KGT_LAST][K_LAST];
+char       *keybindings[IMT_LAST][K_LAST];
 int			keydown[K_LAST];
 
 qboolean    chat_team;
@@ -81,29 +81,29 @@ int         chat_bufferlen = 0;
 
 typedef struct {
 	char	*name;
-	kgt_t	kgtnum;
-} kgtname_t;
+	imt_t	imtnum;
+} imtname_t;
 
-kgtname_t   kgtnames[] = {
-	{"KGT_CONSOLE",	KGT_CONSOLE},
-	{"KGT_DEFAULT",	KGT_DEFAULT},
-	{"KGT_0",		KGT_DEFAULT},
-	{"KGT_1",		KGT_1},
-	{"KGT_2",		KGT_2},
-	{"KGT_3",		KGT_3},
-	{"KGT_4",		KGT_4},
-	{"KGT_5",		KGT_5},
-	{"KGT_6",		KGT_6},
-	{"KGT_7",		KGT_7},
-	{"KGT_8",		KGT_8},
-	{"KGT_9",		KGT_9},
-	{"KGT_10",		KGT_10},
-	{"KGT_11",		KGT_11},
-	{"KGT_12",		KGT_12},
-	{"KGT_13",		KGT_13},
-	{"KGT_14",		KGT_14},
-	{"KGT_15",		KGT_15},
-	{"KGT_16",		KGT_16},
+imtname_t   imtnames[] = {
+	{"IMT_CONSOLE",	IMT_CONSOLE},
+	{"IMT_DEFAULT",	IMT_DEFAULT},
+	{"IMT_0",		IMT_DEFAULT},
+	{"IMT_1",		IMT_1},
+	{"IMT_2",		IMT_2},
+	{"IMT_3",		IMT_3},
+	{"IMT_4",		IMT_4},
+	{"IMT_5",		IMT_5},
+	{"IMT_6",		IMT_6},
+	{"IMT_7",		IMT_7},
+	{"IMT_8",		IMT_8},
+	{"IMT_9",		IMT_9},
+	{"IMT_10",		IMT_10},
+	{"IMT_11",		IMT_11},
+	{"IMT_12",		IMT_12},
+	{"IMT_13",		IMT_13},
+	{"IMT_14",		IMT_14},
+	{"IMT_15",		IMT_15},
+	{"IMT_16",		IMT_16},
 
 	{NULL, 0}
 };
@@ -433,8 +433,8 @@ Key_Game (knum_t key, short unicode)
 	char        cmd[1024];
 
 	kb = Key_GetBinding(game_target, key);
-	if (!kb && (game_target > KGT_DEFAULT))
-		kb = Key_GetBinding(KGT_DEFAULT, key);
+	if (!kb && (game_target > IMT_DEFAULT))
+		kb = Key_GetBinding(IMT_DEFAULT, key);
 
 	/*
 	Con_Printf("kb %p, game_target %d, key_dest %d, key %d\n", kb,
@@ -617,7 +617,7 @@ Key_Message (knum_t key, short unicode)
 		Cbuf_AddText ("\"\n");
 
 		key_dest = key_game;
-		game_target = KGT_DEFAULT;
+		game_target = IMT_DEFAULT;
 		chat_bufferlen = 0;
 		chat_buffer[0] = 0;
 		return;
@@ -625,7 +625,7 @@ Key_Message (knum_t key, short unicode)
 
 	if (unicode == '\x1b' || key == K_ESCAPE) {
 		key_dest = key_game;
-		game_target = KGT_DEFAULT;
+		game_target = IMT_DEFAULT;
 		chat_bufferlen = 0;
 		chat_buffer[0] = 0;
 		return;
@@ -654,50 +654,49 @@ Key_Message (knum_t key, short unicode)
 
 /*
 ===================
-Key_StringToKgtnum
+Key_StringToImtnum
 
-Returns a kgt number to be used to index kgtbindings[] by looking at
+Returns a imt number to be used to index imtbindings[] by looking at
 the given string.  Single ascii characters return themselves, while
 the K_* names are matched up.
 ===================
 */
 int
-Key_StringToKgtnum (const char *str)
+Key_StringToImtnum (const char *str)
 {
-	kgtname_t  *kn;
+	imtname_t  *kn;
 
 	if (!str || !str[0])
 		return -1;
 
-	for (kn = kgtnames; kn->name; kn++) {
+	for (kn = imtnames; kn->name; kn++) {
 		if (!strcasecmp (str, kn->name))
-			return kn->kgtnum;
+			return kn->imtnum;
 	}
 	return -1;
 }
 
 /*
 ===================
-Key_KgtnumToString
+Key_ImtnumToString
 
 Returns a string (a K_* name) for the
-given kgtnum.
-FIXME: handle quote special (general escape sequence?)
+given imtnum.
 ===================
 */
 char *
-Key_KgtnumToString (const int kgtnum)
+Key_ImtnumToString (const int imtnum)
 {
-	kgtname_t  *kn;
+	imtname_t  *kn;
 
-	if (kgtnum == -1)
-		return "<KGT NOT FOUND>";
+	if (imtnum == -1)
+		return "<IMT NOT FOUND>";
 
-	for (kn = kgtnames; kn->name; kn++)
-		if (kgtnum == kn->kgtnum)
+	for (kn = imtnames; kn->name; kn++)
+		if (imtnum == kn->imtnum)
 			return kn->name;
 
-	return "<UNKNOWN KGTNUM>";
+	return "<UNKNOWN IMTNUM>";
 }
 
 /*
@@ -755,13 +754,13 @@ Key_In_Unbind_f
 */
 
 void
-Key_In_Unbind (const char *kgt, const char *key)
+Key_In_Unbind (const char *imt, const char *key)
 {
 	int t, b;
 
-	t = Key_StringToKgtnum (kgt);
+	t = Key_StringToImtnum (imt);
 	if (t == -1) {
-		Con_Printf ("\"%s\" isn't a valid kgt\n", kgt);
+		Con_Printf ("\"%s\" isn't a valid imt\n", imt);
 		return;
 	}
 
@@ -778,7 +777,7 @@ void
 Key_In_Unbind_f (void)
 {
 	if (Cmd_Argc () != 3) {
-		Con_Printf ("in_unbind <kgt> <key> : remove commands from a key\n");
+		Con_Printf ("in_unbind <imt> <key> : remove commands from a key\n");
 		return;
 	}
 	Key_In_Unbind (Cmd_Argv (1), Cmd_Argv (2));
@@ -789,7 +788,7 @@ Key_Unbindall_f (void)
 {
 	int         i, j;
 
-	for (j = 0; j < KGT_LAST; j++)
+	for (j = 0; j < IMT_LAST; j++)
 		for (i = 0; i < K_LAST; i++)
 			Key_SetBinding (j, i, NULL);
 }
@@ -802,13 +801,13 @@ Key_In_Bind_f
 */
 
 void
-Key_In_Bind (const char *kgt, const char *key, const char *cmd)
+Key_In_Bind (const char *imt, const char *key, const char *cmd)
 {
 	int t, b;
 
-	t = Key_StringToKgtnum (kgt);
+	t = Key_StringToImtnum (imt);
 	if (t == -1) {
-		Con_Printf ("\"%s\" isn't a valid kgt\n", kgt);
+		Con_Printf ("\"%s\" isn't a valid imt\n", imt);
 		return;
 	}
 
@@ -820,10 +819,10 @@ Key_In_Bind (const char *kgt, const char *key, const char *cmd)
 
 	if (!cmd) {
 		if (Key_GetBinding(t, b))
-			Con_Printf ("\"%s\"[\"%s\"] = \"%s\"\n", key, kgt,
+			Con_Printf ("\"%s\"[\"%s\"] = \"%s\"\n", key, imt,
 						Key_GetBinding(t, b));
 		else
-			Con_Printf ("\"%s\"[\"%s\"] is not bound\n", key, kgt);
+			Con_Printf ("\"%s\"[\"%s\"] is not bound\n", key, imt);
 		return;
 	}
 	Key_SetBinding (t, b, cmd);
@@ -833,17 +832,17 @@ void
 Key_In_Bind_f (void)
 {
 	int         c, i;
-	const char *kgt, *key, *cmd = 0;
+	const char *imt, *key, *cmd = 0;
 	char        cmd_buf[1024];
 
 	c = Cmd_Argc ();
 
 	if (c < 3) {
-		Con_Printf ("in_bind <kgt> <key> [command] : attach a command to a key\n");
+		Con_Printf ("in_bind <imt> <key> [command] : attach a command to a key\n");
 		return;
 	}
 
-	kgt = Cmd_Argv (1);
+	imt = Cmd_Argv (1);
 
 	key = Cmd_Argv (2);
 
@@ -857,7 +856,7 @@ Key_In_Bind_f (void)
 		}
 	}
 
-	Key_In_Bind (kgt, key, cmd);
+	Key_In_Bind (imt, key, cmd);
 }
 
 void
@@ -870,14 +869,14 @@ Key_Unbind_f (void)
 		return;
 	}
 	key = OK_TranslateKeyName (Cmd_Argv (1));
-	Key_In_Unbind (in_bind_kgt->string, key);
+	Key_In_Unbind (in_bind_imt->string, key);
 }
 
 void
 Key_Bind_f (void)
 {
 	int         c, i;
-	const char *kgt, *key, *cmd = 0;
+	const char *imt, *key, *cmd = 0;
 	char        cmd_buf[1024];
 
 	c = Cmd_Argc ();
@@ -887,7 +886,7 @@ Key_Bind_f (void)
 		return;
 	}
 
-	kgt = in_bind_kgt->string;
+	imt = in_bind_imt->string;
 
 	key = OK_TranslateKeyName (Cmd_Argv (1));
 
@@ -901,16 +900,16 @@ Key_Bind_f (void)
 		}
 	}
 
-	Key_In_Bind (kgt, key, cmd);
+	Key_In_Bind (imt, key, cmd);
 }
 
 void
-in_bind_kgt_f (cvar_t *var)
+in_bind_imt_f (cvar_t *var)
 {
-	if (Key_StringToKgtnum (var->string) == -1) {
-		Con_Printf ("\"%s\" is not a valid kgt. setting to \"kgt_default\"\n",
+	if (Key_StringToImtnum (var->string) == -1) {
+		Con_Printf ("\"%s\" is not a valid imt. setting to \"imt_default\"\n",
 					var->string);
-		Cvar_Set (var, "kgt_default");
+		Cvar_Set (var, "imt_default");
 	}
 }
 
@@ -920,20 +919,21 @@ Key_GameTarget_f
 ===================
 */
 void
-Key_GameTarget_f (void)
+Key_InputMappingTable_f (void)
 {
 	int         c, t;
 
 	c = Cmd_Argc ();
 
 	if (c != 2) {
-		Con_Printf ("kgt <kgt> : set to a specific key game target\n");
+		Con_Printf ("Current imt is %s\n", Key_ImtnumToString(game_target));
+		Con_Printf ("imt <imt> : set to a specific input mapping table\n");
 		return;
 	}
 
-	t = Key_StringToKgtnum (Cmd_Argv (1));
+	t = Key_StringToImtnum (Cmd_Argv (1));
 	if (t == -1) {
-		Con_Printf ("\"%s\" isn't a valid kgt\n", Cmd_Argv (1));
+		Con_Printf ("\"%s\" isn't a valid imt\n", Cmd_Argv (1));
 		return;
 	}
 
@@ -953,10 +953,10 @@ Key_WriteBindings (VFile *f)
 	int			i, j;
 	const char	*bind;
 
-	for (j = 0; j < KGT_LAST; j++)
+	for (j = 0; j < IMT_LAST; j++)
 		for (i = 0; i < K_LAST; i++)
 			if ((bind = Key_GetBinding(j, i)))
-				Qprintf (f, "in_bind %s %s \"%s\"\n", Key_KgtnumToString (j),
+				Qprintf (f, "in_bind %s %s \"%s\"\n", Key_ImtnumToString (j),
 						 Key_KeynumToString (i), bind);
 }
 
@@ -1059,27 +1059,18 @@ Key_Init (void)
 	Cmd_AddCommand ("in_bind", Key_In_Bind_f,
 					"Assign a command or a set of commands to a key.\n"
 					"Note: To bind multiple commands to a key, enclose the "
-					"commands in quotes and separate with semi-colons. \n"
-					"To bind to non-printable keys, use the key name.\n"
-					"Key Name List: Escape, F1-F12, pause, backspace, tab, "
-					"semicolon, enter, shift, ctrl, alt, space, ins,\n"
-					"home, pgup, del, end, pgdn, uparrow, downarrow, "
-					"leftarrow, rightarrow, mouse1-mouse3, aux1-aux9, "
-					"joy1-joy4,\n"
-					"mwheelup, mwheeldown\n"
-					"Special: The escape, and ~ (tilde) keys can only be "
-					"bound from an external configuration file.");
+					"commands in quotes and separate with semi-colons.");
 	Cmd_AddCommand ("in_unbind", Key_In_Unbind_f,
 					"Remove the bind from the the selected key");
 	Cmd_AddCommand ("unbindall", Key_Unbindall_f,
 					"Remove all binds (USE CAUTIOUSLY!!!)");
-	Cmd_AddCommand ("kgt", Key_GameTarget_f, "");
+	Cmd_AddCommand ("imt", Key_InputMappingTable_f, "");
 
 	Cmd_AddCommand ("bind", Key_Bind_f,
-					"wrapper for in_bind that uses in_bind_kgt for the kgt "
+					"wrapper for in_bind that uses in_bind_imt for the imt "
 					"parameter");
 	Cmd_AddCommand ("unbind", Key_Unbind_f,
-					"wrapper for in_unbind that uses in_bind_kgt for the kgt "
+					"wrapper for in_unbind that uses in_bind_imt for the imt "
 					"parameter");
 }
 
@@ -1089,8 +1080,8 @@ Key_Init_Cvars (void)
 	cl_chatmode = Cvar_Get ("cl_chatmode", "2", CVAR_NONE, NULL,
 							"Controls when console text will be treated as a "
 							"chat message: 0 - never, 1 - always, 2 - smart");
-	in_bind_kgt = Cvar_Get ("in_bind_kgt", "kgt_default", CVAR_ARCHIVE,
-							in_bind_kgt_f, "kgt parameter for the bind and "
+	in_bind_imt = Cvar_Get ("in_bind_imt", "imt_default", CVAR_ARCHIVE,
+							in_bind_imt_f, "imt parameter for the bind and "
 							"unbind wrappers to in_bind and in_unbind");
 }
 
@@ -1102,13 +1093,13 @@ Key_ClearTyping (void)
 }
 
 char *
-Key_GetBinding (kgt_t kgt, knum_t key)
+Key_GetBinding (imt_t imt, knum_t key)
 {
-	return keybindings[kgt][key];
+	return keybindings[imt][key];
 }
 
 void
-Key_SetBinding (kgt_t target, knum_t keynum, const char *binding)
+Key_SetBinding (imt_t target, knum_t keynum, const char *binding)
 {
 	if (keynum == -1)
 		return;

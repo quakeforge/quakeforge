@@ -342,34 +342,34 @@ typedef struct
 } kbutton_t;
 
 typedef enum {
-	KGT_CONSOLE,
-	KGT_DEFAULT,
-	KGT_1,
-	KGT_2,
-	KGT_3,
-	KGT_4,
-	KGT_5,
-	KGT_6,
-	KGT_7,
-	KGT_8,
-	KGT_9,
-	KGT_10,
-	KGT_11,
-	KGT_12,
-	KGT_13,
-	KGT_14,
-	KGT_15,
-	KGT_16,
-	KGT_LAST,
-} kgt_t;
+	IMT_CONSOLE,
+	IMT_DEFAULT,
+	IMT_1,
+	IMT_2,
+	IMT_3,
+	IMT_4,
+	IMT_5,
+	IMT_6,
+	IMT_7,
+	IMT_8,
+	IMT_9,
+	IMT_10,
+	IMT_11,
+	IMT_12,
+	IMT_13,
+	IMT_14,
+	IMT_15,
+	IMT_16,
+	IMT_LAST,
+} imt_t;
 
 // key_none should, preferably, be last
 typedef enum {key_game, key_console, key_message, key_none} keydest_t;
 
 extern keydest_t	key_dest;
-extern kgt_t		game_target;
+extern imt_t		game_target;
 
-extern char		*keybindings[KGT_LAST][K_LAST];
+extern char		*keybindings[IMT_LAST][K_LAST];
 extern int		keydown[K_LAST];
 extern int		key_lastpress;
 
@@ -382,8 +382,8 @@ void Key_Init (void);
 void Key_Init_Cvars (void);
 void Key_WriteBindings (VFile *f);
 void Key_ClearStates (void);
-char *Key_GetBinding (kgt_t kgt, knum_t key);
-void Key_SetBinding (kgt_t target, knum_t keynum, const char *binding);
+char *Key_GetBinding (imt_t imt, knum_t key);
+void Key_SetBinding (imt_t target, knum_t keynum, const char *binding);
 
 
 void Key_ClearTyping (void);
