@@ -1,30 +1,21 @@
 INCLUDES= -I$(top_srcdir)/include
 
+noinst_LTLIBRARIES=	libsprite_gl.la libsprite_sw.la libsprite_sw32.la
+
 if BUILD_GL
-SPRITE_GL = libsprite_gl.la
+libsprite_gl_la_SOURCES=	gl_model_sprite.c model_sprite.c
 else
-SPRITE_GL =
+libsprite_gl_la_SOURCES=
 endif
 
 if BUILD_SW
-SPRITE_SW = libsprite_sw.la
+libsprite_sw_la_SOURCES=	sw_model_sprite.c model_sprite.c
 else
-SPRITE_SW =
+libsprite_sw_la_SOURCES=
 endif
 
 if BUILD_SW32
-SPRITE_SW32 = libsprite_sw32.la
+libsprite_sw32_la_SOURCES=	sw32_model_sprite.c model_sprite.c
 else
-SPRITE_SW32 =
+libsprite_sw32_la_SOURCES=
 endif
-
-noinst_LTLIBRARIES = $(SPRITE_GL) $(SPRITE_SW) $(SPRITE_SW32)
-
-libsprite_gl_la_LDFLAGS = -version-info 1:0:0
-libsprite_gl_la_SOURCES = gl_model_sprite.c model_sprite.c
-
-libsprite_sw_la_LDFLAGS = -version-info 1:0:0
-libsprite_sw_la_SOURCES = sw_model_sprite.c model_sprite.c
-
-libsprite_sw32_la_LDFLAGS = -version-info 1:0:0
-libsprite_sw32_la_SOURCES = sw32_model_sprite.c model_sprite.c
