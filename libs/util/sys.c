@@ -260,8 +260,8 @@ Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 	DWORD       flOldProtect;
 
 	if (!VirtualProtect
-		((LPVOID) startaddr, length, PAGE_READWRITE,
-		 &flOldProtect)) Sys_Error ("Protection change failed\n");
+		((LPVOID) startaddr, length, PAGE_READWRITE, &flOldProtect))
+		Sys_Error ("Protection change failed\n");
 #else
 # ifdef HAVE_MPROTECT
 	int         r;
