@@ -485,7 +485,7 @@ NET_SVC_PacketEntities_Parse (net_svc_packetentities_t *block, msg_t *msg)
 	unsigned short	bits;
 
 	for (word = 0, delta = 0; !msg->badread; word++) {
-		if (word >= MAX_EDICTS)
+		if (word >= MAX_PACKET_ENTITIES)
 			return 1; // FIXME: differentiate from short packet
 		bits = (unsigned short) MSG_ReadShort (msg);
 		block->words[word] = bits;
@@ -499,6 +499,7 @@ NET_SVC_PacketEntities_Parse (net_svc_packetentities_t *block, msg_t *msg)
 		}
 	}
 
+	block->words[word] = 0;
 	block->numwords = word;
 	block->numdeltas = delta;
 
@@ -514,7 +515,7 @@ NET_SVC_DeltaPacketEntities_Parse (net_svc_deltapacketentities_t *block,
 
 	block->from = MSG_ReadByte (msg);
 	for (word = 0, delta = 0; !msg->badread; word++) {
-		if (word >= MAX_EDICTS)
+		if (word >= MAX_PACKET_ENTITIES)
 			return 1; // FIXME: differentiate from short packet
 		bits = (unsigned short) MSG_ReadShort (msg);
 		block->words[word] = bits;
@@ -528,6 +529,7 @@ NET_SVC_DeltaPacketEntities_Parse (net_svc_deltapacketentities_t *block,
 		}
 	}
 
+	block->words[word] = 0;
 	block->numwords = word;
 	block->numdeltas = delta;
 
