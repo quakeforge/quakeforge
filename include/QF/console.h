@@ -102,7 +102,7 @@ void Con_BasicCompleteCommandLine (inputline_t *il);
 // formatted in columns on the console
 void Con_DisplayList(const char **list, int con_linewidth);
 
-inputline_t *Con_CreateInputLine (int lines, int width, char prompt);
+inputline_t *Con_CreateInputLine (int lines, int lsize, char prompt);
 void Con_DestroyInputLine (inputline_t *inputline);
 void Con_ClearTyping (inputline_t *il);
 void Con_ProcessInputLine (inputline_t *il, int ch);

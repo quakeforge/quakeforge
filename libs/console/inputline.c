@@ -48,7 +48,7 @@ static const char rcsid[] =
 #include "compat.h"
 
 struct inputline_s *
-Con_CreateInputLine (int lines, int width, char prompt)
+Con_CreateInputLine (int lines, int lsize, char prompt)
 {
 	char		   *l, **p;
 	int				size;
@@ -57,7 +57,7 @@ Con_CreateInputLine (int lines, int width, char prompt)
 
 	size = sizeof (inputline_t);	// space for the header
 	size += sizeof (char *[lines]);	// space for the line pointers
-	size += lines * width;			// space for the lines themselves
+	size += lines * lsize;			// space for the lines themselves
 
 	inputline = calloc (1, size);
 	p = (char**)(inputline + 1);
@@ -65,10 +65,10 @@ Con_CreateInputLine (int lines, int width, char prompt)
 
 	inputline->lines = p;
 	inputline->num_lines = lines;
-	inputline->line_size = width;
+	inputline->line_size = lsize;
 	while (lines--) {
 		*p++ = l;
-		l += width;
+		l += lsize;
 	}
 	inputline->prompt_char = prompt;
 
