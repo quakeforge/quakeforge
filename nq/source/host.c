@@ -946,6 +946,7 @@ Host_Init (quakeparms_t *parms)
 	Key_Init ();
 	Con_Init ();
 	M_Init ();
+	PR_Init_Cvars ();
 	PR_Init ();
 	SV_Progs_Init_Cvars ();
 	SV_Progs_Init ();

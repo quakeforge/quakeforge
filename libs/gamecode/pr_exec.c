@@ -974,9 +974,9 @@ PR_GetString (progs_t * pr, int num)
 int
 PR_SetString (progs_t * pr, char *s)
 {
-	int         i;
+	int         i = s - pr->pr_strings;
 
-	if (s - pr->pr_strings < 0) {
+	if (i < 0 || i > pr->pr_stringsize) {
 		for (i = 0; i <= pr->num_prstr; i++)
 			if (pr->pr_strtbl[i] == s)
 				break;

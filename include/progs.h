@@ -183,6 +183,7 @@ struct progs_s {
 	dprograms_t		*progs;
 	dfunction_t		*pr_functions;
 	char			*pr_strings;
+	int				pr_stringsize;
 	ddef_t			*pr_globaldefs;
 	ddef_t			*pr_fielddefs;
 	dstatement_t	*pr_statements;
