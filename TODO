@@ -6,6 +6,7 @@ I = in progress
 W = waiting on other work
 
 
+
 X  fix skybox/dome vis problems (workable solution found, needs new renderer)
 X  It's possible to stick on some obtuse-angled corners qwsv 2.3x didn't
 X  ~/.quakeforgerc should support all commands, not just set and setrom

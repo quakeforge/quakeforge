@@ -891,15 +891,18 @@ sub parse_date_and_author ()
   # Parses the date/time and author out of a line like: 
   #
   # date: 1999/02/19 23:29:05;  author: apharris;  state: Exp;
+  #
+  # new line format:
+  # date: 2001-01-09 05:58:40 +0000;  author: taniwha;  state: Exp;
 
   my $line = shift;
 
-  my ($year, $mon, $mday, $hours, $min, $secs, $author) = $line =~
-      m#(\d+)/(\d+)/(\d+)\s+(\d+):(\d+):(\d+);\s+author:\s+([^;]+);#
+  my ($year, $mon, $mday, $hours, $min, $secs, $offset, $author) = $line =~
+      m#(\d+)-(\d+)-(\d+)\s+(\d+):(\d+):(\d+)\s+([+-]\d+);\s+author:\s+([^;]+);#
           or  die "Couldn't parse date ``$line''";
   die "Bad date or Y2K issues" unless ($year > 1969 and $year < 2258);
   # Kinda arbitrary, but useful as a sanity check
-  my $time = timegm($secs,$min,$hours,$mday,$mon-1,$year-1900);
+  my $time = timegm($secs,$min,$hours,$mday,$mon-1,$year);
 
   return ($time, $author);
 }
