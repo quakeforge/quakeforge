@@ -277,13 +277,31 @@ new_expr (void)
 	return e;
 }
 
+static int
+num_digits (int val)
+{
+	int         num = 1;
+
+	printf ("%d ", val);
+	if (val < 0) {
+		num++;
+		val = -val;
+	}
+	while (val > 9) {
+		val /= 10;
+		num++;
+	}
+	printf ("%d\n", num);
+	return num;
+}
+
 expr_t *
 new_label_expr (void)
 {
 	static int  label = 0;
 	int         lnum = ++label;
 	const char *fname = current_func->def->name;
-	int         len = 1 + strlen (fname) + 1 + ceil (log10 (lnum) + 1) + 1;
+	int         len = 1 + strlen (fname) + 1 + num_digits (lnum) + 1;
 
 	expr_t *l = new_expr ();
 	l->type = ex_label;
