@@ -19,7 +19,7 @@ string (inputline_t il) InputLine_GetText = #0;
 	return [super free];
 }
 
--initAt:(Point)p Lines:(integer)l Size:(integer)s Prompt:(integer)prompt
+-initAt:(Point)p HistoryLines:(integer)l LineSize:(integer)s PromptChar:(integer)prompt
 {
 	[super init];
 	id(at) = [[Point alloc] initWithPoint:p];
@@ -28,9 +28,9 @@ string (inputline_t il) InputLine_GetText = #0;
 	return self;
 }
 
--setWidth:(integer)width
+-setWidth:(integer)visibleWidth
 {
-	InputLine_SetWidth (il, width);
+	InputLine_SetWidth (il, visibleWidth);
 	return self;
 }
 

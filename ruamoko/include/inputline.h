@@ -22,8 +22,8 @@ typedef _inputline_t [] inputline_t;
 	inputline_t il;
 }
 -free;
--initAt:(Point)p Lines:(integer)l Size:(integer)s Prompt:(integer)prompt;
--setWidth:(integer)width;
+-initAt:(Point)p HistoryLines:(integer)l LineSize:(integer)s PromptChar:(integer)prompt;
+-setWidth:(integer)visibleWidth;
 -process:(integer)key;
 -draw:(BOOL)cursor;
 -setText:(string)text;
