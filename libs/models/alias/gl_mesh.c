@@ -41,6 +41,7 @@
 #include "QF/console.h"
 #include "QF/mdfour.h"
 #include "QF/model.h"
+#include "QF/sys.h"
 #include "QF/vfs.h"
 
 #include "compat.h"
@@ -52,24 +53,78 @@
 model_t    *aliasmodel;
 aliashdr_t *paliashdr;
 
-qboolean    used[8192];
+qboolean   *used;
+int         used_size;
 
 // the command list holds counts and s/t values that are valid for
 // every frame
-int         commands[8192];
+int        *commands;
 int         numcommands;
+int         commands_size;
 
 // all frames will have their vertexes rearranged and expanded
 // so they are in the order expected by the command list
-int         vertexorder[8192];
+int        *vertexorder;
 int         numorder;
+int         vertexorder_size;
 
 int         allverts, alltris;
 
-int         stripverts[128];
-int         striptris[128];
+int        *stripverts;
+int        *striptris;
 int         stripcount;
+int         strip_size;
 
+void
+alloc_used (int size)
+{
+	if (size <= used_size)
+		return;
+	size = (size + 1023) & ~1023;
+	used = realloc (used, size * sizeof (used[0]));
+	if (!used)
+		Sys_Error ("gl_mesh: out of memory");
+	used_size = size;
+}
+
+void
+add_command (int cmd)
+{
+	if (numcommands + 1 > commands_size) {
+		commands_size += 1024;
+		commands = realloc (commands, commands_size * sizeof (commands[0]));
+		if (!commands)
+			Sys_Error ("gl_mesh: out of memory");
+	}
+	commands[numcommands++] = cmd;
+}
+
+void
+add_vertex (int vert)
+{
+	if (numorder + 1 > vertexorder_size) {
+		vertexorder_size += 1024;
+		vertexorder = realloc (vertexorder, vertexorder_size * sizeof (vertexorder[0]));
+		if (!vertexorder)
+			Sys_Error ("gl_mesh: out of memory");
+	}
+	vertexorder[numorder++] = vert;
+}
+
+void
+add_strip (int vert, int tri)
+{
+	if (stripcount + 1 > strip_size) {
+		strip_size += 1024;
+		stripverts = realloc (stripverts, strip_size * sizeof (stripverts[0]));
+		striptris = realloc (striptris, strip_size * sizeof (striptris[0]));
+		if (!stripverts || !striptris)
+			Sys_Error ("gl_mesh: out of memory");
+	}
+	stripverts[stripcount] = vert;
+	striptris[stripcount] = tri;
+	stripcount++;
+}
 
 int
 StripLength (int starttri, int startv)
@@ -83,12 +138,10 @@ StripLength (int starttri, int startv)
 
 	last = &triangles[starttri];
 
-	stripverts[0] = last->vertindex[(startv) % 3];
-	stripverts[1] = last->vertindex[(startv + 1) % 3];
-	stripverts[2] = last->vertindex[(startv + 2) % 3];
-
-	striptris[0] = starttri;
-	stripcount = 1;
+	stripcount = 0;
+	add_strip (last->vertindex[(startv) % 3], starttri);
+	add_strip (last->vertindex[(startv + 1) % 3], starttri);
+	add_strip (last->vertindex[(startv + 2) % 3], starttri);
 
 	m1 = last->vertindex[(startv + 2) % 3];
 	m2 = last->vertindex[(startv + 1) % 3];
@@ -117,9 +170,7 @@ nexttri:
 			else
 				m1 = check->vertindex[(k + 2) % 3];
 
-			stripverts[stripcount + 2] = check->vertindex[(k + 2) % 3];
-			striptris[stripcount] = j;
-			stripcount++;
+			add_strip (check->vertindex[(k + 2) % 3], j);
 
 			used[j] = 2;
 			goto nexttri;
@@ -132,7 +183,7 @@ done:
 		if (used[j] == 2)
 			used[j] = 0;
 
-	return stripcount;
+	return stripcount - 2;
 }
 
 int
@@ -147,12 +198,10 @@ FanLength (int starttri, int startv)
 
 	last = &triangles[starttri];
 
-	stripverts[0] = last->vertindex[(startv) % 3];
-	stripverts[1] = last->vertindex[(startv + 1) % 3];
-	stripverts[2] = last->vertindex[(startv + 2) % 3];
-
-	striptris[0] = starttri;
-	stripcount = 1;
+	stripcount = 0;
+	add_strip (last->vertindex[(startv) % 3], starttri);
+	add_strip (last->vertindex[(startv + 1) % 3], starttri);
+	add_strip (last->vertindex[(startv + 2) % 3], starttri);
 
 	m1 = last->vertindex[(startv + 0) % 3];
 	m2 = last->vertindex[(startv + 2) % 3];
@@ -179,9 +228,7 @@ FanLength (int starttri, int startv)
 			// the new edge
 			m2 = check->vertindex[(k + 2) % 3];
 
-			stripverts[stripcount + 2] = m2;
-			striptris[stripcount] = j;
-			stripcount++;
+			add_strip (m2, j);
 
 			used[j] = 2;
 			goto nexttri;
@@ -194,7 +241,7 @@ FanLength (int starttri, int startv)
 		if (used[j] == 2)
 			used[j] = 0;
 
-	return stripcount;
+	return stripcount - 2;
 }
 
 
@@ -211,14 +258,17 @@ BuildTris (void)
 	int         startv;
 	float       s, t;
 	int         len, bestlen, besttype = 0;
-	int         bestverts[1024];
-	int         besttris[1024];
+	int        *bestverts = 0;
+	int        *besttris = 0;
 	int         type;
 
 	// build tristrips
 	numorder = 0;
 	numcommands = 0;
-	memset (used, 0, sizeof (used));
+	stripcount = 0;
+	alloc_used (pheader->mdl.numtris);
+	memset (used, 0, used_size * sizeof (used[0]));
+
 	for (i = 0; i < pheader->mdl.numtris; i++) {
 		// pick an unused triangle and start the trifan
 		if (used[i])
@@ -236,27 +286,31 @@ BuildTris (void)
 				if (len > bestlen) {
 					besttype = type;
 					bestlen = len;
-					for (j = 0; j < bestlen + 2; j++)
-						bestverts[j] = stripverts[j];
-					for (j = 0; j < bestlen; j++)
-						besttris[j] = striptris[j];
+					if (bestverts)
+						free (bestverts);
+					if (besttris)
+						free (besttris);
+					bestverts = stripverts;
+					besttris = striptris;
+					stripverts = striptris = 0;
+					strip_size = 0;
 				}
 			}
 		}
 
 		// mark the tris on the best strip as used
 		for (j = 0; j < bestlen; j++)
-			used[besttris[j]] = 1;
+			used[besttris[j + 2]] = 1;
 
 		if (besttype == 1)
-			commands[numcommands++] = (bestlen + 2);
+			add_command (bestlen + 2);
 		else
-			commands[numcommands++] = -(bestlen + 2);
+			add_command (-(bestlen + 2));
 
 		for (j = 0; j < bestlen + 2; j++) {
 			// emit a vertex into the reorder buffer
 			k = bestverts[j];
-			vertexorder[numorder++] = k;
+			add_vertex (k);
 
 			// emit s/t coords into the commands stream
 			s = stverts[k].s;
@@ -266,18 +320,23 @@ BuildTris (void)
 			s = (s + 0.5) / pheader->mdl.skinwidth;
 			t = (t + 0.5) / pheader->mdl.skinheight;
 
-			*(float *) &commands[numcommands++] = s;
-			*(float *) &commands[numcommands++] = t;
+			add_command (*(int*)&s);
+			add_command (*(int*)&t);
 		}
 	}
 
-	commands[numcommands++] = 0;		// end of list marker
+	add_command (0);					// end of list marker
 
 	Con_DPrintf ("%3i tri %3i vert %3i cmd\n", pheader->mdl.numtris, numorder,
 				 numcommands);
 
 	allverts += numorder;
 	alltris += pheader->mdl.numtris;
+
+	if (bestverts)
+		free (bestverts);
+	if (besttris)
+		free (besttris);
 }
 
 void
@@ -301,34 +360,46 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 	strcpy (cache, "glquake/");
 	COM_StripExtension (m->name + strlen ("progs/"),
 						cache + strlen ("glquake/"));
-	strncat (cache, ".ms2", sizeof (cache) - strlen (cache));
+	strncat (cache, ".qfms", sizeof (cache) - strlen (cache));
 
 	COM_FOpenFile (cache, &f);
 	if (f) {
 		unsigned char d1[MDFOUR_DIGEST_BYTES];
 		unsigned char d2[MDFOUR_DIGEST_BYTES];
 		struct mdfour md;
-		int         c[8192];
-		int         nc;
-		int         vo[8192];
-		int         no;
+		int        *c = 0;
+		int         nc = 0;
+		int        *vo = 0;
+		int         no = 0;
+		int			len;
+		int			vers;
 
 		memset (d1, 0, sizeof (d1));
 		memset (d2, 0, sizeof (d2));
-		Qread (f, &nc, 4);
-		Qread (f, &no, 4);
-		if (nc <= 8192 && no <= 8192) {
-			Qread (f, &c, nc * sizeof (c[0]));
-			Qread (f, &vo, no * sizeof (vo[0]));
+
+		Qread (f, &vers, sizeof (int));
+		Qread (f, &len, sizeof (int));
+		Qread (f, &nc, sizeof (int));
+		Qread (f, &no, sizeof (int));
+
+		if (vers == 1 && (nc + no) == len) {
+			c = malloc (((nc + 1023) & ~1023) * sizeof (c[0]));
+			vo = malloc (((no + 1023) & ~1023) * sizeof (vo[0]));
+			if (!c || !vo)
+				Sys_Error ("gl_mesh.c: out of memory");
+			Qread (f, c, nc * sizeof (c[0]));
+			Qread (f, vo, no * sizeof (vo[0]));
 			Qread (f, d1, MDFOUR_DIGEST_BYTES);
 			Qread (f, d2, MDFOUR_DIGEST_BYTES);
 			Qclose (f);
 
 			mdfour_begin (&md);
-			mdfour_update (&md, (unsigned char *) &nc, 4);
-			mdfour_update (&md, (unsigned char *) &no, 4);
-			mdfour_update (&md, (unsigned char *) &c, nc * sizeof (c[0]));
-			mdfour_update (&md, (unsigned char *) &vo, no * sizeof (vo[0]));
+			mdfour_update (&md, (unsigned char *) &vers, sizeof(int));
+			mdfour_update (&md, (unsigned char *) &len, sizeof(int));
+			mdfour_update (&md, (unsigned char *) &nc, sizeof(int));
+			mdfour_update (&md, (unsigned char *) &no, sizeof(int));
+			mdfour_update (&md, (unsigned char *) c, nc * sizeof (c[0]));
+			mdfour_update (&md, (unsigned char *) vo, no * sizeof (vo[0]));
 			mdfour_update (&md, d1, MDFOUR_DIGEST_BYTES);
 			mdfour_result (&md, mesh_digest);
 
@@ -337,8 +408,24 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 				remesh = false;
 				numcommands = nc;
 				numorder = no;
-				memcpy (commands, c, numcommands * sizeof (c[0]));
-				memcpy (vertexorder, vo, numorder * sizeof (vo[0]));
+				if (numcommands > commands_size) {
+					if (commands)
+						free (commands);
+					commands_size = (numcommands + 1023) & ~1023;
+					commands = c;
+				} else {
+					memcpy (commands, c, numcommands * sizeof (c[0]));
+					free(c);
+				}
+				if (numorder > vertexorder_size) {
+					if (vertexorder)
+						free (vertexorder);
+					vertexorder_size = (numorder + 1023) & ~1023;
+					vertexorder = vo;
+				} else {
+					memcpy (vertexorder, vo, numorder * sizeof (vo[0]));
+					free (vo);
+				}
 			}
 		}
 	}
@@ -358,21 +445,27 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 
 		if (f) {
 			struct mdfour md;
+			int         vers = 1;
+			int         len = numcommands + numorder;
 
 			mdfour_begin (&md);
-			mdfour_update (&md, (unsigned char *) &numcommands, 4);
-			mdfour_update (&md, (unsigned char *) &numorder, 4);
-			mdfour_update (&md, (unsigned char *) &commands,
+			mdfour_update (&md, (unsigned char *) &vers, sizeof (int));
+			mdfour_update (&md, (unsigned char *) &len, sizeof (int));
+			mdfour_update (&md, (unsigned char *) &numcommands, sizeof (int));
+			mdfour_update (&md, (unsigned char *) &numorder, sizeof (int));
+			mdfour_update (&md, (unsigned char *) commands,
 						   numcommands * sizeof (commands[0]));
-			mdfour_update (&md, (unsigned char *) &vertexorder,
+			mdfour_update (&md, (unsigned char *) vertexorder,
 						   numorder * sizeof (vertexorder[0]));
 			mdfour_update (&md, model_digest, MDFOUR_DIGEST_BYTES);
 			mdfour_result (&md, mesh_digest);
 
-			Qwrite (f, &numcommands, 4);
-			Qwrite (f, &numorder, 4);
-			Qwrite (f, &commands, numcommands * sizeof (commands[0]));
-			Qwrite (f, &vertexorder, numorder * sizeof (vertexorder[0]));
+			Qwrite (f, &vers, sizeof (int));
+			Qwrite (f, &len, sizeof (int));
+			Qwrite (f, &numcommands, sizeof (int));
+			Qwrite (f, &numorder, sizeof (int));
+			Qwrite (f, commands, numcommands * sizeof (commands[0]));
+			Qwrite (f, vertexorder, numorder * sizeof (vertexorder[0]));
 			Qwrite (f, model_digest, MDFOUR_DIGEST_BYTES);
 			Qwrite (f, mesh_digest, MDFOUR_DIGEST_BYTES);
 			Qclose (f);
@@ -382,9 +475,9 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 	// save the data out
 	paliashdr->poseverts = numorder;
 
-	cmds = Hunk_Alloc (numcommands * 4);
+	cmds = Hunk_Alloc (numcommands * sizeof (int));
 	paliashdr->commands = (byte *) cmds - (byte *) paliashdr;
-	memcpy (cmds, commands, numcommands * 4);
+	memcpy (cmds, commands, numcommands * sizeof (int));
 
 	verts = Hunk_Alloc (paliashdr->numposes * paliashdr->poseverts
 
