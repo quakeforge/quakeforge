@@ -33,13 +33,14 @@
 #include "QF/zone.h"
 
 #define MAX_CACHED_SKINS 128
+#define MAX_SKIN_LENGTH	32
 
 #define RSSHOT_WIDTH 320
 #define RSSHOT_HEIGHT 200
 
 typedef struct skin_s
 {
-	char		name[16];
+	char		name[MAX_SKIN_LENGTH];
 	qboolean	failedload;		// the name isn't a valid skin
 	union {
 		cache_user_t	cache;

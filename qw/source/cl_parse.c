@@ -977,14 +977,19 @@ CL_ParseClientdata (void)
 static void
 CL_ProcessUserInfo (int slot, player_info_t *player)
 {
-	char       *skin;
+	char       skin[MAX_SKIN_LENGTH] = { 0 };
 	const char *s;
 
 	s = Info_ValueForKey (player->userinfo, "skin");
-	skin = alloca (strlen (s) + 1);
-	QFS_StripExtension (s, skin);
-	if (!strequal (s, skin))
+
+	if (strlen(s) < sizeof skin) {
+		QFS_StripExtension (s, skin);
+		if (!strequal (s, skin))
+			Info_SetValueForKey (player->userinfo, "skin", skin, 1);
+	} else {
 		Info_SetValueForKey (player->userinfo, "skin", skin, 1);
+	}
+
 	s = Info_ValueForKey (player->userinfo, "name");
 	if (!*s)
 		Info_SetValueForKey (player->userinfo, "name", va ("user-%i [exploit]", player->userid), 1);
