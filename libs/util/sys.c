@@ -172,9 +172,9 @@ Sys_Printf (const char *fmt, ...)
 double
 Sys_DoubleTime (void)
 {
+	static qboolean first = true;
 #ifdef _WIN32
 	static DWORD starttime;
-	static qboolean first = true;
 	DWORD       now;
 
 	now = timeGetTime ();
@@ -195,15 +195,17 @@ Sys_DoubleTime (void)
 #else
 	struct timeval tp;
 	struct timezone tzp;
-	static int  secbase;
+	double now;
+	static double start_time;
 
 	gettimeofday (&tp, &tzp);
+	now = tp.tv_sec + tp.tv_usec / 1e6;
 
-	if (!secbase) {
-		secbase = tp.tv_sec;
-		return tp.tv_usec / 1000000.0;
+	if (first) {
+		first = false;
+		start_time = now;
 	}
 
-	return (tp.tv_sec - secbase) + tp.tv_usec / 1000000.0;
+	return now - start_time;
 #endif
 }
