@@ -6,15 +6,13 @@ EXTRA_LTLIBRARIES= \
 	libQFjs.la libQFfbdev.la libQFglx.la libQFsvga.la libQFx11.la \
 	libQFsdl.la libQFsdl32.la libQFsgl.la libQFwgl.la
 
+noinst_LTLIBRARIES= libasm.la @VID_TARGETS_NOINST@
+
 if ASM_ARCH
-asm= libasm.la
-else
-asm=
-endif
-
-noinst_LTLIBRARIES=	$(asm) @VID_TARGETS_NOINST@
-
 libasm_la_SOURCES= d_copy.S
+else
+libasm_la_SOURCES=
+endif
 
 joy_linux_src= joy_linux.c
 joy_win_src= joy_win.c
@@ -44,7 +42,6 @@ fbdev_h= fbset_modes_y.h
 YFLAGS = -d
 YACCLEX_CLEANFILES=	$(fbdev_c) $(fbdev_h)
 
-libQFfbdev_la_LDFLAGS=	-version-info 1:0:0 -rpath $(libdir)
 libQFfbdev_la_SOURCES=	fbset.c fbset_modes_y.y fbset_modes_l.l \
 			in_fbdev.c vid.c vid_common_sw.c vid_fbdev.c \
 			$(in_common_SOURCE)
@@ -57,8 +54,6 @@ fbset_modes_l.lo: $(srcdir)/fbset_modes_l.c
 #
 # OpenGL in X Window
 #
-libQFglx_la_LDFLAGS=	-version-info 1:0:0 -rpath $(libdir)
-libQFglx_la_LIBADD=	$(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS)
 libQFglx_la_SOURCES=	in_x11.c vid.c context_x11.c dga_check.c qfgl_ext.c \
 			vid_common_gl.c vid_glx.c \
 			$(in_common_SOURCE)
@@ -66,16 +61,14 @@ libQFglx_la_SOURCES=	in_x11.c vid.c context_x11.c dga_check.c qfgl_ext.c \
 #
 # Simple DirectMedia Library
 #
-libQFsdl_la_LDFLAGS=	-version-info 1:0:0 -rpath $(libdir)
 libQFsdl_la_SOURCES=	in_sdl.c vid.c vid_common_sw.c vid_sdl.c \
 			$(in_common_SOURCE)
 
-libQFsdl32_la_LDFLAGS=	-version-info 1:0:0 -rpath $(libdir)
 libQFsdl32_la_SOURCES=	in_sdl.c vid.c vid_common_sw32.c vid_sdl32.c \
 			$(in_common_SOURCE)
 
-libQFsgl_la_LDFLAGS=	-version-info 1:0:0 -rpath $(libdir)
-libQFsgl_la_SOURCES=	$(in_common_SOURCE) in_sdl.c qfgl_ext.c vid.c vid_common_gl.c vid_sgl.c
+libQFsgl_la_SOURCES=	in_sdl.c qfgl_ext.c vid.c vid_common_gl.c vid_sgl.c \
+			$(in_common_SOURCE)
 
 #
 # SVGAlib
@@ -88,15 +81,15 @@ libQFsvga_la_SOURCES=	in_svgalib.c vid.c vid_common_sw.c vid_svgalib.c \
 #
 # OpenGL in Win32
 #
-libQFwgl_la_LDFLAGS=	-version-info 1:0:0 -rpath $(libdir)
-libQFwgl_la_SOURCES=	$(in_common_SOURCE) in_win.c qfgl_ext.c vid.c vid_common_gl.c vid_wgl.c
+libQFwgl_la_SOURCES=	in_win.c qfgl_ext.c vid.c vid_common_gl.c vid_wgl.c \
+			$(in_common_SOURCE)
 
 #
 # X11 software rendering
 #
-libQFx11_la_LDFLAGS=	-version-info 1:0:0 -rpath $(libdir)
-libQFx11_la_LIBADD=	$(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB)
-libQFx11_la_SOURCES=	$(in_common_SOURCE) in_x11.c vid.c context_x11.c dga_check.c vid_common_sw.c vid_x11.c
+libQFx11_la_SOURCES=	in_x11.c vid.c context_x11.c dga_check.c \
+			vid_common_sw.c vid_x11.c \
+			$(in_common_SOURCE)
 
 # Kill the temp files, hopefully.
 CLEANFILES  = *.i *.s $(YACCLEX_CLEANFILES)
