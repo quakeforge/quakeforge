@@ -259,8 +259,8 @@ check_branch (progs_t *pr, dstatement_t *st, opcode_t *op, short offset)
 	
 	address += offset;
 	if (address < 0 || address >= pr->progs->numstatements)
-		PR_Error (pr, "PR_Check_Opcodes: invalid branch (statement %d: %s)\n",
-				  (int)(st - pr->pr_statements), op->opname);
+		PR_Error (pr, "PR_Check_Opcodes: invalid branch (statement %ld: %s)\n",
+				  (long)(st - pr->pr_statements), op->opname);
 }
 
 static inline void
@@ -269,9 +269,9 @@ check_global (progs_t *pr, dstatement_t *st, opcode_t *op, etype_t type,
 {
 	if (type == ev_void && operand) {
 		if (st->op != OP_RETURN && st->op != OP_DONE)	//FIXME need better "not used flags"
-			PR_Error (pr, "PR_Check_Opcodes: non-zero global index in void operand (statement %d: %s)\n", (int)(st - pr->pr_statements), op->opname);
+			PR_Error (pr, "PR_Check_Opcodes: non-zero global index in void operand (statement %ld: %s)\n", (long)(st - pr->pr_statements), op->opname);
 	} else if (operand >= pr->progs->numglobals) {
-		PR_Error (pr, "PR_Check_Opcodes: out of bounds global index (statement %d: %s)\n", (int)(st - pr->pr_statements), op->opname);
+		PR_Error (pr, "PR_Check_Opcodes: out of bounds global index (statement %ld: %s)\n", (long)(st - pr->pr_statements), op->opname);
 	}
 }
 
@@ -287,8 +287,8 @@ PR_Check_Opcodes (progs_t *pr)
 		op = PR_Opcode (st->op);
 		if (!op) {
 			PR_Error (pr,
-					  "PR_Check_Opcodes: unknown opcode %d at statement %d\n",
-					  st->op, (int)(st - pr->pr_statements));
+					  "PR_Check_Opcodes: unknown opcode %d at statement %ld\n",
+					  st->op, (long)(st - pr->pr_statements));
 		}
 		switch (st->op) {
 			case OP_IF:

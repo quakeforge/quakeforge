@@ -208,20 +208,17 @@ SL_InsB (server_entry_t *start, server_entry_t *place, char *ip, char *desc)
 void
 SL_Swap (server_entry_t *swap1, server_entry_t *swap2)
 {
-	int i;
 	server_entry_t *next1, *next2, *prev1, *prev2;
+	server_entry_t temp;
 	
 	next1 = swap1->next;
 	next2 = swap2->next;
 	prev1 = swap1->prev;
 	prev2 = swap2->prev;
 
-	for (i = 0; i < sizeof(server_entry_t); i++)
-	{
-		((char *)swap1)[i] ^= ((char *)swap2)[i];
-		((char *)swap2)[i] ^= ((char *)swap1)[i];
-		((char *)swap1)[i] ^= ((char *)swap2)[i];
-	}
+	temp = *swap1;
+	*swap1 = *swap2;
+	*swap2 = temp;
 
 	swap1->next = next1;
 	swap2->next = next2;

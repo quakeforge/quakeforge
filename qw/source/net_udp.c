@@ -122,7 +122,7 @@ NetadrToSockadr (netadr_t *a, struct sockaddr_in *s)
 void
 SockadrToNetadr (struct sockaddr_in *s, netadr_t *a)
 {
-	*(int *) &a->ip = *(int *) &s->sin_addr;
+	memcpy (&a->ip, &s->sin_addr, 4);
 	a->port = s->sin_port;
 }
 
@@ -195,11 +195,12 @@ NET_StringToAdr (const char *s, netadr_t *a)
 		}
 
 	if (copy[0] >= '0' && copy[0] <= '9') {
-		*(int *) &sadr.sin_addr = inet_addr (copy);
+		int         addr = inet_addr (copy);
+		memcpy (&sadr.sin_addr, &addr, 4);
 	} else {
 		if (!(h = gethostbyname (copy)))
 			return 0;
-		*(int *) &sadr.sin_addr = *(int *) h->h_addr_list[0];
+		memcpy (&sadr.sin_addr, h->h_addr_list[0], 4);
 	}
 
 	SockadrToNetadr (&sadr, a);
