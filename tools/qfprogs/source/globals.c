@@ -67,11 +67,16 @@ dump_globals (progs_t *pr)
 
 		if (def->type == ev_func) {
 			func_t      func = G_FUNCTION (pr, offset);
-			int         start = pr->pr_functions[func].first_statement;
-			if (start > 0)
-				comment = va (" %d @ %d", func, start);
-			else
-				comment = va (" %d = #%d", func, -start);
+			int         start;
+			if (func >= 0 && func < pr->progs->numfunctions) {
+				start = pr->pr_functions[func].first_statement;
+				if (start > 0)
+					comment = va (" %d @ %d", func, start);
+				else
+					comment = va (" %d = #%d", func, -start);
+			} else {
+				comment = va (" %d = illegal function", func);
+			}
 		}
 
 		printf ("%s %d %d %s%s\n", type, saveglobal, offset, name, comment);

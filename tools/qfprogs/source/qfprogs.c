@@ -52,10 +52,9 @@ static const char rcsid[] =
 #include "QF/pr_comp.h"
 #include "QF/progs.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 #include "QF/vfile.h"
 #include "QF/zone.h"
-
-#include "QF/vfile.h"
 
 #include "disassemble.h"
 #include "globals.h"
@@ -115,8 +114,10 @@ load_file (progs_t *pr, const char *name)
 
 	file = open_file (name, &size);
 	if (!file) {
-		perror (name);
-		return 0;
+		file = open_file (va ("%s.gz", name), &size);
+		if (!file) {
+			return 0;
+		}
 	}
 	sym = malloc (size);
 	Qread (file, sym, size);
