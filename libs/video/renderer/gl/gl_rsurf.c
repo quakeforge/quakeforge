@@ -112,7 +112,7 @@ msurface_t **sky_chain_tail;
 #endif
 
 void (*R_AddDynamicLights) (msurface_t *surf);
-void (*R_BuildLightMap) (msurface_t *surf, byte *dest, int stride);
+void (*R_BuildLightMap) (msurface_t *surf);
 
 
 // LordHavoc: place for gl_rsurf setup code
@@ -274,10 +274,10 @@ R_AddDynamicLights_3 (msurface_t *surf)
 }
 
 static void
-R_BuildLightMap_1 (msurface_t *surf, byte *dest, int stride)
+R_BuildLightMap_1 (msurface_t *surf)
 {
-	byte		   *lightmap;
-	int				maps, shift, size, smax, tmax, i, j;
+	byte		   *dest;
+	int				maps, size, smax, tmax, i, j, stride;
 	unsigned int	scale;
 	unsigned int   *bl;
 
@@ -286,7 +286,6 @@ R_BuildLightMap_1 (msurface_t *surf, byte *dest, int stride)
 	smax = (surf->extents[0] >> 4) + 1;
 	tmax = (surf->extents[1] >> 4) + 1;
 	size = smax * tmax;
-	lightmap = surf->samples;
 
 	// set to full bright if no light data
 	if (!r_worldentity.model->lightdata) {
@@ -298,7 +297,10 @@ R_BuildLightMap_1 (msurface_t *surf, byte *dest, int stride)
 	memset (&blocklights[0], 0, gl_internalformat * size * sizeof(int));
 
 	// add all the lightmaps
-	if (lightmap) {
+	if (surf->samples) {
+		byte		   *lightmap;
+
+		lightmap = surf->samples;
 		for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255;
 			 maps++) {
 			scale = d_lightstylevalue[surf->styles[maps]];
@@ -315,32 +317,24 @@ R_BuildLightMap_1 (msurface_t *surf, byte *dest, int stride)
 
   store:
 	// bound and shift
-	stride -= smax * lightmap_bytes;
+	stride = (BLOCK_WIDTH - smax) * lightmap_bytes;
 	bl = blocklights;
 
-#if 0
-	if (gl_mtex_active) {
-		shift = 7;		// 0-1 lightmap range.
-	} else {
-#endif
-		shift = 8;		// 0-2 lightmap range.
-#if 0
-	}
-#endif
-
+	dest = lightmaps[surf->lightmaptexturenum]
+			+ (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
 	for (i = 0; i < tmax; i++, dest += stride) {
 		for (j = 0; j < smax; j++) {
-			*dest++ = min (*bl >> shift, 255);
+			*dest++ = min (*bl >> 8, 255);
 			bl++;
 		}
 	}
 }
 
 static void
-R_BuildLightMap_3 (msurface_t *surf, byte *dest, int stride)
+R_BuildLightMap_3 (msurface_t *surf)
 {
-	byte		   *lightmap;
-	int				maps, shift, size, smax, tmax, i, j;
+	byte		   *dest;
+	int				maps, size, smax, tmax, i, j, stride;
 	unsigned int	scale;
 	unsigned int   *bl;
 
@@ -349,7 +343,6 @@ R_BuildLightMap_3 (msurface_t *surf, byte *dest, int stride)
 	smax = (surf->extents[0] >> 4) + 1;
 	tmax = (surf->extents[1] >> 4) + 1;
 	size = smax * tmax;
-	lightmap = surf->samples;
 
 	// set to full bright if no light data
 	if (!r_worldentity.model->lightdata) {
@@ -361,7 +354,10 @@ R_BuildLightMap_3 (msurface_t *surf, byte *dest, int stride)
 	memset (&blocklights[0], 0, gl_internalformat * size * sizeof(int));
 
 	// add all the lightmaps
-	if (lightmap) {
+	if (surf->samples) {
+		byte		   *lightmap;
+
+		lightmap = surf->samples;
 		for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255;
 			 maps++) {
 			scale = d_lightstylevalue[surf->styles[maps]];
@@ -378,36 +374,28 @@ R_BuildLightMap_3 (msurface_t *surf, byte *dest, int stride)
 
   store:
 	// bound and shift
-	stride -= smax * lightmap_bytes;
+	stride = (BLOCK_WIDTH - smax) * lightmap_bytes;
 	bl = blocklights;
 
-#if 0
-	if (gl_mtex_active) {
-		shift = 7;		// 0-1 lightmap range.
-	} else {
-#endif
-		shift = 8;		// 0-2 lightmap range.
-#if 0
-	}
-#endif
-
+	dest = lightmaps[surf->lightmaptexturenum]
+			+ (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
 	for (i = 0; i < tmax; i++, dest += stride) {
 		for (j = 0; j < smax; j++) {
-			*dest++ = min (*bl >> shift, 255);
+			*dest++ = min (*bl >> 8, 255);
 			bl++;
-			*dest++ = min (*bl >> shift, 255);
+			*dest++ = min (*bl >> 8, 255);
 			bl++;
-			*dest++ = min (*bl >> shift, 255);
+			*dest++ = min (*bl >> 8, 255);
 			bl++;
 		}
 	}
 }
 
 static void
-R_BuildLightMap_4 (msurface_t *surf, byte * dest, int stride)
+R_BuildLightMap_4 (msurface_t *surf)
 {
-	byte		   *lightmap;
-	int				maps, shift, size, smax, tmax, i, j;
+	byte		   *dest;
+	int				maps, size, smax, tmax, i, j, stride;
 	unsigned int	scale;
 	unsigned int   *bl;
 
@@ -416,7 +404,6 @@ R_BuildLightMap_4 (msurface_t *surf, byte * dest, int stride)
 	smax = (surf->extents[0] >> 4) + 1;
 	tmax = (surf->extents[1] >> 4) + 1;
 	size = smax * tmax;
-	lightmap = surf->samples;
 
 	// set to full bright if no light data
 	if (!r_worldentity.model->lightdata) {
@@ -428,7 +415,10 @@ R_BuildLightMap_4 (msurface_t *surf, byte * dest, int stride)
 	memset (&blocklights[0], 0, gl_internalformat * size * sizeof(int));
 
 	// add all the lightmaps
-	if (lightmap) {
+	if (surf->samples) {
+		byte		   *lightmap;
+
+		lightmap = surf->samples;
 		for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255;
 			 maps++) {
 			scale = d_lightstylevalue[surf->styles[maps]];
@@ -445,26 +435,18 @@ R_BuildLightMap_4 (msurface_t *surf, byte * dest, int stride)
 
   store:
 	// bound and shift
-	stride -= smax * lightmap_bytes;
+	stride = (BLOCK_WIDTH - smax) * lightmap_bytes;
 	bl = blocklights;
 
-#if 0
-	if (gl_mtex_active) {
-		shift = 7;		// 0-1 lightmap range.
-	} else {
-#endif
-		shift = 8;		// 0-2 lightmap range.
-#if 0
-	}
-#endif
-
+	dest = lightmaps[surf->lightmaptexturenum]
+			+ (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
 	for (i = 0; i < tmax; i++, dest += stride) {
 		for (j = 0; j < smax; j++) {
-			*dest++ = min (*bl >> shift, 255);
+			*dest++ = min (*bl >> 8, 255);
 			bl++;
-			*dest++ = min (*bl >> shift, 255);
+			*dest++ = min (*bl >> 8, 255);
 			bl++;
-			*dest++ = min (*bl >> shift, 255);
+			*dest++ = min (*bl >> 8, 255);
 			bl++;
 			dest++;			// `*dest++ = 255;` for RGBA internal format
 			// instead of RGB
@@ -570,11 +552,7 @@ R_DrawMultitexturePoly (msurface_t *s)
 
 		if ((s->dlightframe == r_framecount) || s->cached_dlight)	{
 		  dynamic:
-			R_BuildLightMap (s,
-							 lightmaps[s->lightmaptexturenum] +
-							 (s->light_t * BLOCK_WIDTH +
-							  s->light_s) * lightmap_bytes,
-							 BLOCK_WIDTH * lightmap_bytes);
+			R_BuildLightMap (s);
 			GL_UploadLightmap (i, s->light_s, s->light_t,
 							   (s->extents[0] >> 4) + 1,
 							   (s->extents[1] >> 4) + 1);
@@ -663,7 +641,6 @@ R_RenderFullbrights (void)
 void
 R_RenderBrushPoly (msurface_t *fa)
 {
-	byte       *base;
 	float      *v;
 	int         maps, smax, tmax, i;
 	glRect_t   *theRect;
@@ -709,9 +686,7 @@ R_RenderBrushPoly (msurface_t *fa)
 				theRect->w = (fa->light_s - theRect->l) + smax;
 			if ((theRect->h + theRect->t) < (fa->light_t + tmax))
 				theRect->h = (fa->light_t - theRect->t) + tmax;
-			base = lightmaps[fa->lightmaptexturenum] +
-				(fa->light_t * BLOCK_WIDTH + fa->light_s) * lightmap_bytes;
-			R_BuildLightMap (fa, base, BLOCK_WIDTH * lightmap_bytes);
+			R_BuildLightMap (fa);
 		}
 	}
 }
@@ -1214,7 +1189,6 @@ BuildSurfaceDisplayList (msurface_t *fa)
 static void
 GL_CreateSurfaceLightmap (msurface_t *surf)
 {
-	byte       *base;
 	int         smax, tmax;
 
 	if (surf->flags & (SURF_DRAWSKY | SURF_DRAWTURB))
@@ -1225,9 +1199,7 @@ GL_CreateSurfaceLightmap (msurface_t *surf)
 
 	surf->lightmaptexturenum =
 		AllocBlock (smax, tmax, &surf->light_s, &surf->light_t);
-	base = lightmaps[surf->lightmaptexturenum] +
-		(surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
-	R_BuildLightMap (surf, base, BLOCK_WIDTH * lightmap_bytes);
+	R_BuildLightMap (surf);
 }
 
 /*
