@@ -147,7 +147,7 @@ typedef struct msurface_s
 	struct surfcache_s	*cachespots[MIPLEVELS];
 
 	short		texturemins[2];
-	short		extents[2];
+	unsigned short extents[2];
 
 	int			light_s, light_t;	// gl lightmap coordinates
 
