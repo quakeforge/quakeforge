@@ -35,6 +35,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
+#include "QF/mathlib.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
@@ -121,7 +122,8 @@ void
 SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 			   float attenuation)
 {
-	int         ent, field_mask, sound_num, i;
+	int         ent, field_mask, sound_num;
+	vec3_t      v;
 
 	if (volume < 0 || volume > 255)
 		Sys_Error ("SV_StartSound: volume = %i", volume);
@@ -165,10 +167,9 @@ SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 		MSG_WriteByte (&sv.datagram, attenuation * 64);
 	MSG_WriteShort (&sv.datagram, channel);
 	MSG_WriteByte (&sv.datagram, sound_num);
-	for (i=0; i < 3; i++) // FIXME: replace with MSG_WriteCoordV?
-		MSG_WriteCoord (&sv.datagram, SVvector (entity, origin)[i] + 0.5 *
-						(SVvector (entity, mins)[i] +
-						 SVvector (entity, maxs)[i]));
+	VectorBlend (SVvector (entity, mins), SVvector (entity, maxs), 0.5, v);
+	VectorAdd (v, SVvector (entity, origin), v);
+	MSG_WriteCoordV (&sv.datagram, v);
 }
 
 // CLIENT SPAWNING ============================================================
@@ -509,6 +510,7 @@ void
 SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 {
 	int         bits, items, i;
+	vec3_t      v;
 	edict_t    *other;
 
 	// send a damage message
@@ -517,10 +519,9 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 		MSG_WriteByte (msg, svc_damage);
 		MSG_WriteByte (msg, SVfloat (ent, dmg_save));
 		MSG_WriteByte (msg, SVfloat (ent, dmg_take));
-		for (i=0; i < 3; i++) // FIXME: replace with MSG_WriteCoordV
-			MSG_WriteCoord (msg, SVvector (other, origin)[i] + 0.5 *
-							(SVvector (other, mins)[i] +
-							 SVvector (other, maxs)[i]));
+		VectorBlend (SVvector (other, mins), SVvector (other, maxs), 0.5, v);
+		VectorAdd (v, SVvector (other, origin), v);
+		MSG_WriteCoordV (msg, v);
 		SVfloat (ent, dmg_take) = 0;
 		SVfloat (ent, dmg_save) = 0;
 	}

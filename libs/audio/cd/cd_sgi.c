@@ -2,7 +2,6 @@
 	cd_sgi.c
 
 	audio cd playback support for sgi irix machines
-	FIXME: Update for plugin API
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 

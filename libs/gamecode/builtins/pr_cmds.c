@@ -52,7 +52,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 
-//FIXME lines to #undef U really shouldn't be here
 #include "QF/csqc.h"
 #define U __attribute__ ((unused))
 static U void (*const gib_progs_init)(progs_t *) = GIB_Progs_Init;
