@@ -51,115 +51,57 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 
 static inline byte *
-blit_rgb (byte *buf, int count, byte red, byte green, byte blue)
+blit_rgb (byte *buf, int count, byte red, byte green, byte blue, int dir)
 {
 	while (count--) {
-		*buf++ = red;
-		*buf++ = green;
-		*buf++ = blue;
-		*buf++ = 255;
+		*buf = red;
+		buf += dir;
+		*buf = green;
+		buf += dir;
+		*buf = blue;
+		buf += dir;
+		*buf = 255;
+		buf += dir;
 	}
 	return buf;
 }
 
 static inline byte *
-blit_rgba (byte *buf, int count, byte red, byte green, byte blue, byte alpha)
+blit_rgba (byte *buf, int count, byte red, byte green, byte blue, byte alpha,
+		   int dir)
 {
 	while (count--) {
-		*buf++ = red;
-		*buf++ = green;
-		*buf++ = blue;
-		*buf++ = alpha;
+		*buf = red;
+		buf += dir;
+		*buf = green;
+		buf += dir;
+		*buf = blue;
+		buf += dir;
+		*buf = alpha;
+		buf += dir;
 	}
 	return buf;
 }
 
 static inline byte *
-reverse_blit_rgb (byte *buf, int count, byte red, byte green, byte blue)
-{
-	while (count--) {
-		*buf-- = 255;
-		*buf-- = blue;
-		*buf-- = green;
-		*buf-- = red;
-	}
-	return buf;
-}
-
-static inline byte *
-reverse_blit_rgba (byte *buf, int count, byte red, byte green, byte blue,
-				   byte alpha)
-{
-	while (count--) {
-		*buf-- = alpha;
-		*buf-- = blue;
-		*buf-- = green;
-		*buf-- = red;
-	}
-	return buf;
-}
-
-static inline byte *
-read_bgr (byte *buf, int count, byte **data)
+read_bgr (byte *buf, int count, byte **data, int dir)
 {
 	byte		blue = *(*data)++;
 	byte		green = *(*data)++;
 	byte		red = *(*data)++;
 
-	return blit_rgb (buf, count, red, green, blue);
+	return blit_rgb (buf, count, red, green, blue, dir);
 }
 
 static inline byte *
-read_bgra (byte *buf, int count, byte **data)
+read_bgra (byte *buf, int count, byte **data, int dir)
 {
 	byte		blue = *(*data)++;
 	byte		green = *(*data)++;
 	byte		red = *(*data)++;
 	byte		alpha = *(*data)++;
 
-	return blit_rgba (buf, count, red, green, blue, alpha);
-}
-
-static inline byte *
-read_rgb (byte *buf, int count, byte **data)
-{
-	byte		red = *(*data)++;
-	byte		green = *(*data)++;
-	byte		blue = *(*data)++;
-
-	return blit_rgb (buf, count, red, green, blue);
-}
-
-static inline byte *
-read_rgba (byte *buf, int count, byte **data)
-{
-	byte		red = *(*data)++;
-	byte		green = *(*data)++;
-	byte		blue = *(*data)++;
-	byte		alpha = *(*data)++;
-
-	return blit_rgba (buf, count, red, green, blue, alpha);
-}
-
-static inline byte *
-reverse_read_bgr (byte *buf, int count, byte **data)
-{
-	byte		blue = *(*data)++;
-	byte		green = *(*data)++;
-	byte		red = *(*data)++;
-
-	return reverse_blit_rgb (buf, count, red, green, blue);
-}
-
-static inline byte *
-reverse_read_bgra (byte *buf, int count, byte **data)
-{
-	byte		blue = *(*data)++;
-	byte		green = *(*data)++;
-	byte		red = *(*data)++;
-	byte		alpha = *(*data)++;
-
-	return reverse_blit_rgba (buf, count, red, green, blue, alpha);
+	return blit_rgba (buf, count, red, green, blue, alpha, dir);
 }
 
 struct tex_s *
@@ -224,14 +166,14 @@ LoadTGA (QFile *fin)
 				for (row = rows - 1; row >= 0; row--, pixrow -= span) {
 					pixcol = pixrow;
 					for (column = 0; column < columns; column++)
-						pixcol = read_bgr (pixcol, 1, &dataByte);
+						pixcol = read_bgr (pixcol, 1, &dataByte, 1);
 				}
 				break;
 			case 32:
 				for (row = rows - 1; row >= 0; row--, pixrow -= span) {
 					pixcol = pixrow;
 					for (column = 0; column < columns; column++)
-						pixcol = read_bgra (pixcol, 1, &dataByte);
+						pixcol = read_bgra (pixcol, 1, &dataByte, 1);
 				}
 				break;
 			}
@@ -243,14 +185,14 @@ LoadTGA (QFile *fin)
 				for (row = rows - 1; row >= 0; row--, pixrow -= span) {
 					pixcol = pixrow;
 					for (column = columns - 1; column >= 0; column--)
-						pixcol = reverse_read_bgr (pixcol, 1, &dataByte);
+						pixcol = read_bgr (pixcol, 1, &dataByte, -1);
 				}
 				break;
 			case 32:
 				for (row = rows - 1; row >= 0; row--, pixrow -= span) {
 					pixcol = pixrow;
 					for (column = columns - 1; column >= 0; column--)
-						pixcol = reverse_read_bgra (pixcol, 1, &dataByte);
+						pixcol = read_bgra (pixcol, 1, &dataByte, -1);
 				}
 				break;
 			}
@@ -262,14 +204,14 @@ LoadTGA (QFile *fin)
 				for (row = 0; row < rows; row++, pixrow += span) {
 					pixcol = pixrow;
 					for (column = 0; column < columns; column++)
-						pixcol = read_bgr (pixcol, 1, &dataByte);
+						pixcol = read_bgr (pixcol, 1, &dataByte, 1);
 				}
 				break;
 			case 32:
 				for (row = 0; row < rows; row++, pixrow += span) {
 					pixcol = pixrow;
 					for (column = 0; column < columns; column++)
-						pixcol = read_bgra (pixcol, 1, &dataByte);
+						pixcol = read_bgra (pixcol, 1, &dataByte, 1);
 				}
 				break;
 			}
@@ -281,14 +223,14 @@ LoadTGA (QFile *fin)
 				for (row = 0; row < rows; row++, pixrow += span) {
 					pixcol = pixrow;
 					for (column = columns - 1; column >= 0; column--)
-						pixcol = reverse_read_bgr (pixcol, 1, &dataByte);
+						pixcol = read_bgr (pixcol, 1, &dataByte, -1);
 				}
 				break;
 			case 32:
 				for (row = 0; row < rows; row++, pixrow += span) {
 					pixcol = pixrow;
 					for (column = columns - 1; column >= 0; column--)
-						pixcol = reverse_read_bgra (pixcol, 1, &dataByte);
+						pixcol = read_bgra (pixcol, 1, &dataByte, -1);
 				}
 				break;
 			}
@@ -297,7 +239,7 @@ LoadTGA (QFile *fin)
 	} else if (targa->image_type == 10) {	// RLE compressed image
 		unsigned char packetHeader, packetSize;
 
-		byte *(*expand) (byte *buf, int count, byte **data);
+		byte *(*expand) (byte *buf, int count, byte **data, int dir);
 
 		pixrow = tex->data + (rows - 1) * span;
 
@@ -316,10 +258,10 @@ LoadTGA (QFile *fin)
 
 					packetSize -= count;
 					if (packetHeader & 0x80) {		// run-length packet
-						expand (pixcol, count, &dataByte);
+						expand (pixcol, count, &dataByte, 1);
 					} else {						// non run-length packet
 						while (count--)
-							expand (pixcol, 1, &dataByte);
+							expand (pixcol, 1, &dataByte, 1);
 					}
 					column = 0;
 					pixcol = (pixrow -= span);
@@ -328,10 +270,10 @@ LoadTGA (QFile *fin)
 				}
 				column += packetSize;
 				if (packetHeader & 0x80) {			// run-length packet
-					pixcol = expand (pixcol, packetSize, &dataByte);
+					pixcol = expand (pixcol, packetSize, &dataByte, 1);
 				} else {							// non run-length packet
 					while (packetSize--)
-						pixcol = expand (pixcol, 1, &dataByte);
+						pixcol = expand (pixcol, 1, &dataByte, 1);
 				}
 			}
 		}
