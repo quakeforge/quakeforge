@@ -255,6 +255,11 @@ PF_newstr (progs_t * pr)
 
 	dstring_copystr (dstr, s);
 
+	if (pr->pr_argc > 1 && P_FLOAT (pr, 1) > dstr->size) {
+		dstr->size = P_FLOAT (pr, 1);
+		dstring_adjust (dstr);
+	}
+
 	R_STRING (pr) = i;
 }
 
