@@ -832,54 +832,19 @@ arg_list
 	;
 
 const
-	: FLOAT_VAL
-		{
-			$$ = new_expr ();
-			$$->type = ex_float;
-			$$->e.float_val = $1;
-		}
-	| string_val
-		{
-			$$ = $1;
-		}
-	| VECTOR_VAL
-		{
-			$$ = new_expr ();
-			$$->type = ex_vector;
-			memcpy ($$->e.vector_val, $1, sizeof ($$->e.vector_val));
-		}
-	| QUATERNION_VAL
-		{
-			$$ = new_expr ();
-			$$->type = ex_quaternion;
-			memcpy ($$->e.quaternion_val, $1, sizeof ($$->e.quaternion_val));
-		}
-	| INT_VAL
-		{
-			$$ = new_expr ();
-			$$->type = ex_integer;
-			$$->e.integer_val = $1;
-		}
-	| NIL
-		{
-			$$ = new_expr ();
-			$$->type = ex_nil;
-		}
+	: FLOAT_VAL					{ $$ = new_float_expr ($1); }
+	| string_val				{ $$ = $1; }
+	| VECTOR_VAL				{ $$ = new_vector_expr ($1); }
+	| QUATERNION_VAL			{ $$ = new_quaternion_expr ($1); }
+	| INT_VAL					{ $$ = new_integer_expr ($1); }
+	| NIL						{ $$ = new_nil_expr (); }
 	;
 
 string_val
-	: STRING_VAL
-		{
-			$$ = new_expr ();
-			$$->type = ex_string;
-			$$->e.string_val = $1;
-		}
+	: STRING_VAL				{ $$ = new_string_expr ($1); }
 	| string_val STRING_VAL
 		{
-			expr_t     *e = new_expr ();
-			e->type = ex_string;
-			e->e.string_val = $2;
-			$$ = binary_expr ('+', $1, e);
+			$$ = binary_expr ('+', $1, new_string_expr ($2));
 		}
 	;
 
@@ -1277,12 +1242,12 @@ obj_messageexpr
 
 receiver
 	: expr
-	| CLASS_NAME					{ $$ = new_name_expr ($1); }
-	| SUPER							{ $$ = new_name_expr ("super"); }
+	| CLASS_NAME				{ $$ = new_name_expr ($1); }
+	| SUPER						{ $$ = new_name_expr ("super"); }
 	;
 
 messageargs
-	: selector			{ $$ = new_keywordarg ($1, 0); }
+	: selector					{ $$ = new_keywordarg ($1, 0); }
 	| keywordarglist
 	;
 
@@ -1296,12 +1261,12 @@ keywordarglist
 	;
 
 keywordarg
-	: selector ':' arg_list	{ $$ = new_keywordarg ($1, $3); }
-	| ':' arg_list			{ $$ = new_keywordarg ("", $2); }
+	: selector ':' arg_list		{ $$ = new_keywordarg ($1, $3); }
+	| ':' arg_list				{ $$ = new_keywordarg ("", $2); }
 	;
 
 selectorarg
-	: selector			{ $$ = new_keywordarg ($1, 0); }
+	: selector					{ $$ = new_keywordarg ($1, 0); }
 	| keywordnamelist
 	;
 
@@ -1315,23 +1280,15 @@ keywordnamelist
 	;
 
 keywordname
-	: selector ':'		{ $$ = new_keywordarg ($1, 0); }
-	| ':'				{ $$ = new_keywordarg ("", 0); }
+	: selector ':'				{ $$ = new_keywordarg ($1, 0); }
+	| ':'						{ $$ = new_keywordarg ("", 0); }
 	;
 
 obj_string
-	: '@' STRING_VAL
-		{
-			$$ = new_expr ();
-			$$->type = ex_string;
-			$$->e.string_val = $2;
-		}
+	: '@' STRING_VAL			{ $$ = new_string_expr ($2); }
 	| obj_string '@' STRING_VAL
 		{
-			expr_t     *e = new_expr ();
-			e->type = ex_string;
-			e->e.string_val = $3;
-			$$ = binary_expr ('+', $1, e);
+			$$ = binary_expr ('+', $1, new_string_expr ($3));
 		}
 	;
 

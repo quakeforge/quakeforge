@@ -183,13 +183,9 @@ copy_keywordargs (const keywordarg_t *kwargs)
 expr_t *
 send_message (int super)
 {
-	expr_t     *e;
-
-	e = new_expr ();
-	e->type = ex_def;
-	e->e.def = get_def (&type_IMP, super ? "obj_msgSend_super" : "obj_msgSend",
-						pr.scope, st_extern);
-	return e;
+	return new_def_expr (get_def (&type_IMP,
+								  super ? "obj_msgSend_super" : "obj_msgSend",
+								  pr.scope, st_extern));
 }
 
 void

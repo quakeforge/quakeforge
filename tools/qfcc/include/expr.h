@@ -127,15 +127,31 @@ struct type_s *get_type (expr_t *e);
 etype_t extract_type (expr_t *e);
 
 expr_t *new_expr (void);
+
 const char *new_label_name (void);
+
 expr_t *new_label_expr (void);
 expr_t *new_block_expr (void);
 expr_t *new_binary_expr (int op, expr_t *e1, expr_t *e2);
 expr_t *new_unary_expr (int op, expr_t *e1);
-expr_t *new_temp_def_expr (struct type_s *type);
-expr_t *new_bind_expr (expr_t *e1, expr_t *e2);
-expr_t *new_name_expr (const char *name);
 expr_t *new_def_expr (struct def_s *def);
+expr_t *new_temp_def_expr (struct type_s *type);
+expr_t *new_nil_expr (void);
+expr_t *new_name_expr (const char *name);
+
+expr_t *new_string_expr (const char *string_val);
+expr_t *new_float_expr (float float_val);
+expr_t *new_vector_expr (float *vector_val);
+expr_t *new_entity_expr (int entity_val);
+expr_t *new_field_expr (int field_val);
+expr_t *new_func_expr (int func_val);
+//expr_t *new_pointer_expr ();
+expr_t *new_quaternion_expr (float *quaternion_val);
+expr_t *new_integer_expr (int integer_val);
+expr_t *new_uinteger_expr (unsigned int uinteger_val);
+expr_t *new_short_expr (short short_val);
+
+expr_t *new_bind_expr (expr_t *e1, expr_t *e2);
 expr_t *new_self_expr (void);
 expr_t *new_this_expr (void);
 

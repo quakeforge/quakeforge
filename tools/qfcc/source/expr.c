@@ -477,12 +477,129 @@ new_unary_expr (int op, expr_t *e1)
 }
 
 expr_t *
+new_def_expr (def_t *def)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_def;
+	e->e.def = def;
+	return e;
+}
+
+expr_t *
 new_temp_def_expr (type_t *type)
 {
 	expr_t     *e = new_expr ();
 
 	e->type = ex_temp;
 	e->e.temp.type = type;
+	return e;
+}
+
+expr_t *
+new_nil_expr (void)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_nil;
+	return e;
+}
+
+expr_t *
+new_name_expr (const char *name)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_name;
+	e->e.string_val = name;
+	return e;
+}
+
+expr_t *
+new_string_expr (const char *string_val)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_string;
+	e->e.string_val = string_val;
+	return e;
+}
+
+expr_t *
+new_float_expr (float float_val)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_float;
+	e->e.float_val = float_val;
+	return e;
+}
+
+expr_t *
+new_vector_expr (float *vector_val)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_vector;
+	memcpy (e->e.vector_val, vector_val, sizeof (e->e.vector_val));
+	return e;
+}
+
+expr_t *
+new_entity_expr (int entity_val)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_entity;
+	e->e.entity_val = entity_val;
+	return e;
+}
+
+expr_t *
+new_field_expr (int field_val)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_field;
+	e->e.field_val = field_val;
+	return e;
+}
+
+expr_t *
+new_func_expr (int func_val)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_func;
+	e->e.func_val = func_val;
+	return e;
+}
+
+//expr_t *new_pointer_expr ();
+expr_t *
+new_quaternion_expr (float *quaternion_val)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_quaternion;
+	memcpy (e->e.quaternion_val, quaternion_val, sizeof (e->e.quaternion_val));
+	return e;
+}
+
+expr_t *
+new_integer_expr (int integer_val)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_integer;
+	e->e.integer_val = integer_val;
+	return e;
+}
+
+expr_t *
+new_uinteger_expr (unsigned int uinteger_val)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_uinteger;
+	e->e.uinteger_val = uinteger_val;
+	return e;
+}
+
+expr_t *
+new_short_expr (short short_val)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_short;
+	e->e.short_val = short_val;
 	return e;
 }
 
@@ -500,24 +617,6 @@ new_bind_expr (expr_t *e1, expr_t *e2)
 	e->e.expr.op = 'b';
 	e->e.expr.e1 = e1;
 	e->e.expr.e2 = e2;
-	return e;
-}
-
-expr_t *
-new_name_expr (const char *name)
-{
-	expr_t     *e = new_expr ();
-	e->type = ex_name;
-	e->e.string_val = name;
-	return e;
-}
-
-expr_t *
-new_def_expr (def_t *def)
-{
-	expr_t     *e = new_expr ();
-	e->type = ex_def;
-	e->e.def = def;
 	return e;
 }
 
@@ -1121,6 +1220,7 @@ field_expr (expr_t *e1, expr_t *e2)
 expr_t *
 test_expr (expr_t *e, int test)
 {
+	static float zero[4] = {0, 0, 0, 0};
 	expr_t     *new = 0;
 	etype_t     type;
 
@@ -1142,8 +1242,7 @@ test_expr (expr_t *e, int test)
 		case ev_void:
 			return error (e, "void has no value");
 		case ev_string:
-			new = new_expr ();
-			new->type = ex_string;
+			new = new_string_expr (0);
 			break;
 		case ev_uinteger:
 		case ev_integer:
@@ -1152,32 +1251,25 @@ test_expr (expr_t *e, int test)
 		case ev_float:
 			if (options.code.progsversion == PROG_ID_VERSION)
 				return e;
-			new = new_expr ();
-			new->type = ex_float;
+			new = new_float_expr (0);
 			break;
 		case ev_vector:
-			new = new_expr ();
-			new->type = ex_vector;
+			new = new_vector_expr (zero);
 			break;
 		case ev_entity:
-			new = new_expr ();
-			new->type = ex_entity;
+			new = new_entity_expr (0);
 			break;
 		case ev_field:
-			new = new_expr ();
-			new->type = ex_nil;
+			new = new_field_expr (0);
 			break;
 		case ev_func:
-			new = new_expr ();
-			new->type = ex_nil;
+			new = new_func_expr (0);
 			break;
 		case ev_pointer:
-			new = new_expr ();
-			new->type = ex_nil;
+			new = new_nil_expr ();
 			break;
 		case ev_quaternion:
-			new = new_expr ();
-			new->type = ex_quaternion;
+			new = new_quaternion_expr (zero);
 			break;
 		case ev_struct:
 		case ev_object:
@@ -1509,10 +1601,7 @@ unary_expr (int op, expr_t *e)
 				case ex_temp:
 bitnot_expr:
 					if (options.code.progsversion == PROG_ID_VERSION) {
-						expr_t     *n1 = new_expr ();
-
-						n1->type = ex_integer;
-						n1->e.integer_val = -1;
+						expr_t     *n1 = new_integer_expr (-1);
 						return binary_expr ('-', n1, e);
 					} else {
 						expr_t     *n = new_unary_expr (op, e);
@@ -1716,12 +1805,9 @@ function_expr (expr_t *e1, expr_t *e2)
 	e->e.expr.type = ftype->aux_type;
 	append_expr (call, e);
 	if (ftype->aux_type != &type_void) {
-		expr_t     *ret = new_expr ();
+		expr_t     *ret = new_def_expr (new_def (ftype->aux_type, 0, 0));
 
-		ret->type = ex_def;
-		ret->e.def = new_def (ftype->aux_type, 0, 0);
 		ret->e.def->ofs = def_ret.ofs;
-
 		call->e.block.result = ret;
 	}
 	return call;
@@ -1734,8 +1820,7 @@ return_expr (function_t *f, expr_t *e)
 		if (f->def->type->aux_type != &type_void) {
 			if (options.traditional) {
 				warning (e, "return from non-void function without a value");
-				e = new_expr ();
-				e->type = ex_nil;
+				e = new_nil_expr ();
 			} else {
 				e = error (e, "return from non-void function without a value");
 				return e;
@@ -1800,14 +1885,13 @@ conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2)
 expr_t *
 incop_expr (int op, expr_t *e, int postop)
 {
-	expr_t     *one = new_expr ();
+	expr_t     *one;
 	expr_t     *incop;
 
 	if (e->type == ex_error)
 		return e;
 
-	one->type = ex_integer;			// integer constants get auto-cast to float
-	one->e.integer_val = 1;
+	one = new_integer_expr (1);		// integer constants get auto-cast to float
 	incop = asx_expr (op, e, one);
 	if (postop) {
 		expr_t     *temp;
@@ -2149,11 +2233,10 @@ expr_t *
 encode_expr (type_t *type)
 {
 	dstring_t  *encoding = dstring_newstr ();
-	expr_t     *e = new_expr ();
+	expr_t     *e;
 
 	encode_type (encoding, type);
-	e->type = ex_string;
-	e->e.string_val = encoding->str;
+	e = new_string_expr (encoding->str);
 	free (encoding);
 	return e;
 }
@@ -2216,8 +2299,6 @@ sizeof_expr (expr_t *expr, struct type_s *type)
 	}
 	if (!type)
 		type = get_type (expr);
-	expr = new_expr ();
-	expr->type = ex_integer;
-	expr->e.integer_val = type_size (type);
+	expr = new_integer_expr (type_size (type));
 	return expr;
 }
