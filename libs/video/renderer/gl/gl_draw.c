@@ -224,7 +224,6 @@ Draw_CachePic (const char *path, qboolean alpha)
 	cachepic_t *pic;
 	int         i;
 	glpic_t    *gl;
-	qpic_t     *dat;
 	QFile      *f;
 	tex_t      *targa;
 	char       *filename;
@@ -258,7 +257,7 @@ Draw_CachePic (const char *path, qboolean alpha)
 		pic->pic.height = targa->height;
 	} else if (!strcmp (path + strlen (path) - 4, ".lmp")) {
 		// Load the picture..
-		dat = (qpic_t *) QFS_LoadTempFile (path);
+		qpic_t     *dat = (qpic_t *) QFS_LoadTempFile (path);
 		if (!dat)
 			Sys_Error ("Draw_CachePic: failed to load %s", path);
 
@@ -269,7 +268,8 @@ Draw_CachePic (const char *path, qboolean alpha)
 								 false, alpha, 1);
 		pic->pic.width = dat->width;
 		pic->pic.height = dat->height;
-
+		if (!strcmp (path, "gfx/menuplyr.lmp"))
+			memcpy (menuplyr_pixels, dat->data, dat->width * dat->height);
 	} else
 		Sys_Error ("Draw_CachePic: failed to load %s", path);
 
@@ -281,8 +281,6 @@ Draw_CachePic (const char *path, qboolean alpha)
 
 	// FIXME: A really ugly kluge, keep a specific image in memory
 	//  for the menu system. Some days I really dislike legacy support..
-	if (!strcmp (path, "gfx/menuplyr.lmp"))
-		memcpy (menuplyr_pixels, dat->data, dat->width * dat->height);
 
 	free (filename);
 
