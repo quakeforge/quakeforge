@@ -112,7 +112,7 @@ static unsigned long r_mask, g_mask, b_mask;
 static void
 shiftmask_init (void)
 {
-	unsigned int x;
+	unsigned long long x;
 
 	r_mask = x_vis->red_mask;
 	g_mask = x_vis->green_mask;
