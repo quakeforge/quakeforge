@@ -70,11 +70,72 @@ Mod_ProcessTexture (miptex_t *mt, texture_t *tx)
 						true, false, 1);
 }
 
+static tex_t *
+Mod_ProcessLuma (tex_t *luma)
+{
+	byte	   *data;
+	int			i;
+	size_t		size = luma->width * luma->height;
+	tex_t	   *newluma = luma;
+
+	if (luma->format < 3)
+		return luma;
+
+	if (luma->format == 3) {
+		// Doesn't have alpha, let's give it some.
+		newluma = Hunk_TempAlloc (field_offset (tex_t, data[size * 4]));
+
+		for (i = 0; i < size; i++) {
+			newluma->data[i * 4] = luma->data[i * 3];
+			newluma->data[i * 4 + 1] = luma->data[i * 3 + 1];
+			newluma->data[i * 4 + 2] = luma->data[i * 3 + 2];
+			newluma->data[i * 4 + 3] = 0xFF;
+		}
+
+		newluma->format = 4;
+	}
+
+	data = newluma->data;
+
+	for (i = 0; i < size * 4; i += 4) {
+		if (!(data[i] | data[i + 1] | data[i + 2]))
+			data[i + 3] = 0;
+	}
+
+	return newluma;
+}
+
+static tex_t *
+Mod_LoadAnExternalTexture (char * tname, char *mname)
+{
+	char		rname[32];
+	tex_t	   *image;
+
+	memcpy (rname, tname, strlen (tname) + 1);
+
+	if (rname[0] == '*') rname[0] = '#';
+
+	image = LoadImage (va ("textures/%.*s/%s", (int) strlen (mname + 5) - 4,
+						   mname + 5, rname));
+	if (!image)
+		image = LoadImage (va ("maps/%.*s/%s",
+								   (int) strlen (mname + 5) - 4,
+								   mname + 5, rname));
+//	if (!image)
+//			image = LoadImage (va ("textures/bmodels/%s", rname));
+	if (!image)
+			image = LoadImage (va ("textures/%s", rname));
+	if (!image)
+			image = LoadImage (va ("maps/%s", rname));
+
+	return image;
+}
+
 void
 Mod_LoadExternalTextures (model_t *mod)
 {
 	int			i;
-	tex_t	   *targa;
+	tex_t	   *base, *luma;
 	texture_t  *tx;
 
 	for (i = 0; i < mod->numtextures; i++) {
@@ -82,34 +143,26 @@ Mod_LoadExternalTextures (model_t *mod)
 		if (!tx)
 			continue;
 
-		// FIXME: replace special flag characters with # or _?
-		if (tx->name[0] == '*') {
-			targa = LoadImage (va ("textures/%.*s/#%s",
-								   (int) strlen (mod->name + 5) - 4,
-								   mod->name + 5, tx->name + 1));
-			if (!targa)
-				targa = LoadImage (va ("textures/#%s", tx->name + 1));
-			if (!targa)
-				targa = LoadImage (va ("maps/#%s", tx->name + 1));
-		} else {
-			targa = LoadImage (va ("textures/%.*s/%s",
-								   (int) strlen (mod->name + 5) - 4,
-								   mod->name + 5, tx->name));
-			if (!targa)
-				targa = LoadImage (va ("textures/%s", tx->name));
-			if (!targa)
-				targa = LoadImage (va ("maps/%s", tx->name));
-		}
+		if ((base = Mod_LoadAnExternalTexture (tx->name, mod->name))) {
+			tx->gl_texturenum =
+				GL_LoadTexture (tx->name, base->width, base->height,
+								base->data, true, false, base->format);
 
-		if (targa) {
-			if (targa->format < 4) {
-				tx->gl_texturenum =
-					GL_LoadTexture (tx->name, targa->width, targa->height,
-									targa->data, true, false, 3);
-			} else {
-				tx->gl_texturenum =
-					GL_LoadTexture (tx->name, targa->width, targa->height,
-									targa->data, true, false, 4);
+			luma = Mod_LoadAnExternalTexture (va ("%s_luma", tx->name),
+											  mod->name);
+			if (!luma)
+				luma = Mod_LoadAnExternalTexture (va ("%s_glow", tx->name),
+												  mod->name);
+
+			tx->gl_fb_texturenum = 0;	// what about paletted (pcx)?
+			if (luma) {
+				if (luma->format > 2)	// If false, something's on crack
+					luma = Mod_ProcessLuma (luma);
+
+				tx->gl_fb_texturenum =
+					GL_LoadTexture (va ("fb_%s", tx->name), luma->width,
+									luma->height, luma->data, true, true,
+									luma->format);
 			}
 		}
 	}
