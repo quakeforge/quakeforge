@@ -324,7 +324,8 @@ SV_DropClient (client_t *drop)
 	SVfloat (drop->edict, frags) = 0;
 	drop->name[0] = 0;
 
-	Info_Destroy (drop->userinfo);
+	if (drop->userinfo)
+		Info_Destroy (drop->userinfo);
 	drop->userinfo = 0;
 
 	// send notification to all remaining clients
