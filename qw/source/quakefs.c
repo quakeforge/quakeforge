@@ -1096,12 +1096,12 @@ COM_SkipPath (char *pathname)
 {
 	char       *last;
 
-	last = pathname;
-	while (*pathname) {
-		if (*pathname == '/')
-			last = pathname + 1;
-		pathname++;
-	}
+	// char after last / on the line
+	if ((last = strrchr (pathname, '/')))
+		last++;
+	else
+		last = pathname;
+
 	return last;
 }
 
