@@ -185,8 +185,8 @@ PF_setmodel (progs_t *pr)
 {
 	edict_t    *e;
 	const char *m, **check;
-	int         i;
 	model_t    *mod;
+	int         i;
 
 	e = G_EDICT (pr, OFS_PARM0);
 	m = G_STRING (pr, OFS_PARM1);
