@@ -23,6 +23,7 @@
 #include <setjmp.h>
 
 #include "QF/pr_comp.h"
+#include "QF/pr_debug.h"
 
 /*
 	TODO:
