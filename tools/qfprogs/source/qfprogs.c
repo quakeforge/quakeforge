@@ -72,6 +72,7 @@ static const struct option long_options[] = {
 	{"functions", no_argument, 0, 'F'},
 	{"lines", no_argument, 0, 'l'},
 	{"modules", no_argument, 0, 'M'},
+	{"verbose", no_argument, 0, 'v'},
 	{NULL, 0, NULL, 0},
 };
 
@@ -81,6 +82,8 @@ static int      reserved_edicts = 1;
 static progs_t  pr;
 static void    *membase;
 static int      memsize = 1024*1024;
+
+static int      verbosity = 0;
 
 static hashtab_t *func_tab;
 
@@ -162,7 +165,7 @@ init_qf (void)
 	membase = malloc (memsize);
 	Memory_Init (membase, memsize);
 
-	Cvar_Get ("pr_debug", "1", 0, 0, "");
+	Cvar_Get ("pr_debug", va ("%d", verbosity), 0, 0, "");
 	PR_Init_Cvars ();
 	PR_Init ();
 
@@ -210,8 +213,7 @@ main (int argc, char **argv)
 	int         c;
 	void      (*func)(progs_t *pr) = dump_globals;
 
-	init_qf ();
-	while ((c = getopt_long (argc, argv, "dgsfFlM", long_options, 0)) != EOF) {
+	while ((c = getopt_long (argc, argv, "dgsfFlMv", long_options, 0)) != EOF) {
 		switch (c) {
 			case 'd':
 				func = disassemble_progs;
@@ -234,10 +236,14 @@ main (int argc, char **argv)
 			case 'M':
 				func = dump_modules;
 				break;
+			case 'v':
+				verbosity++;
+				break;
 			default:
 				return 1;
 		}
 	}
+	init_qf ();
 	while (optind < argc) {
 		load_progs (argv[optind++]);
 		func (&pr);
