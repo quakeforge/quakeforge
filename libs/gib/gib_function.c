@@ -79,6 +79,7 @@ GIB_Function_Free (void *ele, void *ptr)
 	gib_function_t *func = (gib_function_t *)ele;
 	dstring_delete (func->name);
 	dstring_delete (func->program);
+	free (func);
 }
 
 /*
