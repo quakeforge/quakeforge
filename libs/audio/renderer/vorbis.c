@@ -95,7 +95,9 @@ SND_LoadOgg (VFile *file, sfx_t *sfx, cache_allocator_t allocator)
 	long        samples, size;
 	byte       *data, *d;
 	int         current_section;
+	int         sample_start = -1, sample_count = 0;
 	sfxcache_t *sc = 0;
+	char      **ptr;
 
 	if (ov_open_callbacks (file, &vf, 0, 0, callbacks) < 0) {
 		Sys_Printf ("Input does not appear to be an Ogg bitstream.\n");
@@ -103,12 +105,19 @@ SND_LoadOgg (VFile *file, sfx_t *sfx, cache_allocator_t allocator)
 	}
 	vi = ov_info (&vf, -1);
 	samples = ov_pcm_total (&vf, -1);
+
+	for (ptr = ov_comment (&vf, -1)->user_comments; *ptr; ptr++) {
+		Sys_DPrintf ("%s\n", *ptr);
+		if (strncmp ("CUEPOINT=", *ptr, 9) == 0) {
+			sscanf (*ptr + 9, "%d %d", &sample_start, &sample_count);
+		} else {
+			sample_count = samples;
+		}
+	}
+	if (sample_start != -1)
+		samples = sample_count;
 	size = samples * vi->channels * 2;
 	if (developer->int_val) {
-		char      **ptr = ov_comment (&vf, -1)->user_comments;
-
-		while (*ptr)
-			Sys_Printf ("%s\n", *ptr++);
 		Sys_Printf ("\nBitstream is %d channel, %ldHz\n",
 					vi->channels, vi->rate);
 		Sys_Printf ("\nDecoded length: %ld samples (%ld bytes)\n",
@@ -135,7 +144,7 @@ SND_LoadOgg (VFile *file, sfx_t *sfx, cache_allocator_t allocator)
 			break;
 		}
 	}
-	sc->loopstart = -1;		//FIXME this breaks looped sounds
+	sc->loopstart = sample_start;
 	SND_ResampleSfx (sc, data);
   bail:
 	if (data)
