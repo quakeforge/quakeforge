@@ -1,0 +1,142 @@
+//      infobot.gib
+//
+//      Infobot for QuakeForge 0.5.3
+//
+//      Copyright (C) 2003  Brian Koropoff
+//
+//      This program is free software; you can redistribute it and/or
+//      modify it under the terms of the GNU General Public License
+//      as published by the Free Software Foundation; either version 2
+//      of the License, or (at your option) any later version.
+//
+//      This program is distributed in the hope that it will be useful,
+//      but WITHOUT ANY WARRANTY; without even the implied warranty of
+//      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+//
+//      See the GNU General Public License for more details.
+//
+//      You should have received a copy of the GNU General Public License
+//      along with this program; if not, write to:
+//
+//              Free Software Foundation, Inc.
+//              59 Temple Place - Suite 330
+//              Boston, MA  02111-1307, USA
+//
+
+domain infobot
+
+global rcsid = "$Id$"
+
+global facts addr_cmds cmds
+global botname = "Console"
+
+// Set up some cvars if they aren't already
+ifnot $infobot_restrict {
+	set infobot_restrict 0
+}
+
+ifnot $(length $infobot_password) {
+	set infobot_password ""
+}
+
+function infobot::makeKey {
+	return $(regex::replace $args[1] \. -- \_)_
+}
+
+function infobot::hasAccess {
+	return $(equal $(client::getInfo $args[1] "infopass") $infobot_password)
+}
+
+function infobot::defineFactoid {
+	if (!$infobot_restrict || $(infobot::hasAccess $args[1])) {
+		key = $(infobot::makeKey $args[2])
+		facts.$key = @args[3:]
+		return 0
+	}
+	return -1
+}
+
+function infobot::chatEvent {
+	// Ignore teamtalk/spectalk
+	if $args[3] {
+		return
+	}
+	
+	from = $(client::getInfo $args[1] "name")
+	mesg = $args[2]
+	local res
+	
+	// see if we are being addressed by name
+	res = $(regex::extract $mesg $botname, "[:,][[:space:]]+(.+)" i)
+	if #res {
+		mesg = $res[2]
+		local addr = 1
+	} else {
+		local addr = 0
+	}
+	
+	res = $(regex::extract $mesg "([^[:space:]]+)[\?!]$" --)
+	if #res {
+		local key = $(infobot::makeKey $res[2])
+		if #{facts.$key} {
+			if $addr {
+				say $from, ": ", $res[2], " ", ${facts.${key}[1]}, " ", ${facts.$key}, "."
+			} else {
+				say "Well, ", $res[2], " ", ${facts.${key}[1]}, " ", ${facts.$key}, "."
+			}
+		} else if $addr { // Nothing found, and we were addressed
+			say $from, ": Sorry, I don't know anything about ", $res[2], "."
+		}
+		return
+	}
+	res = $(regex::extract $mesg "^([^[:space:]]+)[[:space:]]+(is|are)[[:space:]]+(.+)" i)
+	if #res {
+		if ($(infobot::defineFactoid $args[1] $res[2] $res[4] $res[3]) && $addr) {
+			say $from, ": You do not have the privelegdes to alter factoids."
+		} else if $addr {
+			say $from, ": Understood."
+		}
+		return
+	}
+	
+	local cmd = $(split $mesg)
+	if $addr {
+		if #{addr_cmds.$cmd} {
+			${addr_cmds.$cmd} $args[1] $from @cmd[1:];
+		} else {
+			say $from, ": I'm sorry, I don't understand."
+		}
+	} else if #{cmds.$cmd} {
+		${cmds.$cmd} $args[1] $from @cmd[1:];
+	}
+}
+
+function infobot::cmdAddrRegister {
+	addr_cmds.$args[1] = $args[2]
+}
+
+function infobot::cmdRegister {
+	cmds.$args[1] = $args[2]
+}
+
+function infobot::forget {
+	ifnot (!$infobot_restrict || $(infobot::hasAccess $args[1])) {
+		say $args[2], ": You do not have the privelegdes to alter factoids."
+		return
+	}
+	fact = $(infobot::makeKey $args[3])
+	if #{facts.$fact} {
+		delete facts.$fact
+		say $args[2], ": I forgot about ", $args[3], "."
+	} else {
+		say $args[2], ": I don't know anything about ", $args[3], "."
+	}
+}
+
+function infobot::stats {
+	say $args[2], ": I currently reference ", $(count %facts), " factoid(s) and ", ($(count %cmds) + $(count %addr_cmds)), " command(s)."
+}
+
+event::register chat infobot::chatEvent
+infobot::cmdAddrRegister "forget" infobot::forget
+infobot::cmdAddrRegister "infostats" infobot::stats
