@@ -688,9 +688,12 @@ SV_UpdateToReliableMessages (void)
 		if (sv_fields.gravity != -1
 			&& host_client->entgravity != SVfloat (ent, gravity)) {
 			host_client->entgravity = SVfloat (ent, gravity);
-			MSG_ReliableWrite_Begin (&host_client->backbuf, svc_entgravity, 5);
-			MSG_ReliableWrite_Float (&host_client->backbuf,
-									 host_client->entgravity);
+			if (host_client->state != cs_server) {
+				MSG_ReliableWrite_Begin (&host_client->backbuf,
+										 svc_entgravity, 5);
+				MSG_ReliableWrite_Float (&host_client->backbuf,
+										 host_client->entgravity);
+			}
 			if (sv.demorecording) {
 				DemoWrite_Begin (dem_single, i, 5);
 				MSG_WriteByte (&demo.dbuf->sz, svc_entgravity);
@@ -700,9 +703,12 @@ SV_UpdateToReliableMessages (void)
 		if (sv_fields.maxspeed != -1
 			&& host_client->maxspeed != SVfloat (ent, maxspeed)) {
 			host_client->maxspeed = SVfloat (ent, maxspeed);
-			MSG_ReliableWrite_Begin (&host_client->backbuf, svc_maxspeed, 5);
-			MSG_ReliableWrite_Float (&host_client->backbuf,
-									 host_client->maxspeed);
+			if (host_client->state != cs_server) {
+				MSG_ReliableWrite_Begin (&host_client->backbuf,
+										 svc_maxspeed, 5);
+				MSG_ReliableWrite_Float (&host_client->backbuf,
+										 host_client->maxspeed);
+			}
 			if (sv.demorecording) {
 				DemoWrite_Begin (dem_single, i, 5);
 				MSG_WriteByte (&demo.dbuf->sz, svc_maxspeed);
