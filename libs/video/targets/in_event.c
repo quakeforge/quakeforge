@@ -60,6 +60,11 @@ IE_Init_Cvars (void)
 {
 }
 
+void
+IE_Shutdown (void)
+{
+}
+
 int
 IE_Send_Event (const IE_event_t *event)
 {

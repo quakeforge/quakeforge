@@ -50,6 +50,7 @@
 
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/in_event.h"
 #include "QF/input.h"
 #include "QF/joystick.h"
 #include "QF/keys.h"
@@ -131,11 +132,14 @@ IN_Shutdown (void)
 
 	Con_Printf ("IN_Shutdown\n");
 	IN_LL_Shutdown ();
+
+	IE_Shutdown ();
 }
 
 void
 IN_Init (void)
 {
+	IE_Init ();
 	IN_LL_Init ();
 
 	JOY_Init ();
@@ -146,6 +150,7 @@ IN_Init (void)
 void
 IN_Init_Cvars (void)
 {
+	IE_Init_Cvars ();
 	JOY_Init_Cvars ();
 	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, NULL,
 			"With this set to 1, quake will grab the mouse from X");

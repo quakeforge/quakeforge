@@ -70,6 +70,7 @@ typedef struct {
 
 void IE_Init (void);
 void IE_Init_Cvars (void);
+void IE_Shutdown (void);
 int IE_Send_Event (const IE_event_t *event);
 int IE_Add_Handler (int (*event_handler)(const IE_event_t*));
 void IE_Remove_Handler (int handle);
