@@ -365,7 +365,7 @@ Draw_AltString (int x, int y, const char *str)
 	qfglBegin (GL_QUADS);
 
 	while (*str) {
-		if ((num = *str++ | 0x80) != 32) // Don't render spaces
+		if ((num = *str++ | 0x80) != (0x80 | 32)) // Don't render spaces
 		{
 			frow = (num >> 4) * CELL_SIZE;
 			fcol = (num & 15) * CELL_SIZE;

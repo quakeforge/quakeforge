@@ -39,7 +39,6 @@ void Draw_Character (int x, int y, int num);
 void Draw_Pic (int x, int y, qpic_t *pic);
 void Draw_SubPic(int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
 void Draw_TextBox (int x, int y, int width, int lines, byte alpha);
-void Draw_TransPic (int x, int y, qpic_t *pic);
 void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation);
 void Draw_ConsoleBackground (int lines);
 void Draw_Crosshair (void);
