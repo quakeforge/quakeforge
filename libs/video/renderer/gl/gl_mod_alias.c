@@ -223,9 +223,9 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, vert_order_t *vo)
 vert_order_t *
 GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 {
-	float		  interval;
-	int			  count, numposes, pose, i;
-	trivertx_t	 *verts;
+	float		interval;
+	int			count, numposes, pose, i;
+	trivertx16_t *verts;
 	vert_order_t *vo;
 	blended_vert_t *vo_v;
 
@@ -239,7 +239,7 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 	pose = paliashdr->frames[frame].firstpose;
 	numposes = paliashdr->frames[frame].numposes;
 
-	verts = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
+	verts = (trivertx16_t *) ((byte *) paliashdr + paliashdr->posedata);
 
 	count = paliashdr->poseverts;
 	vo = Hunk_TempAlloc (sizeof (*vo) + count * sizeof (blended_vert_t));
@@ -263,7 +263,7 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 	}
 
 	if (gl_lerp_anim->int_val) {
-		trivertx_t *verts1, *verts2;
+		trivertx16_t *verts1, *verts2;
 		float       blend;
 		vec3_t      v1, v2;
 
@@ -286,8 +286,8 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 		if (r_paused || blend > 1)
 			blend = 1;
 
-		verts1 = verts + e->pose1 * count * 2;
-		verts2 = verts + e->pose2 * count * 2;
+		verts1 = verts + e->pose1 * count;
+		verts2 = verts + e->pose2 * count;
 
 		if (!blend) {
 			verts = verts1;
@@ -296,8 +296,8 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 		} else {
 			for (i = 0, vo_v = vo->verts; i < count;
 				 i++, vo_v++, verts1++, verts2++) {
-				VectorMA (verts1->v, 1 / 256.0, (verts1 + count)->v, v1);
-				VectorMA (verts2->v, 1 / 256.0, (verts2 + count)->v, v2);
+				VectorScale (verts1->v, 1 / 256.0, v1);
+				VectorScale (verts2->v, 1 / 256.0, v2);
 				VectorBlend (v1, v2, blend, vo_v->vert);
 				vo_v->lightdot =
 					shadedots[verts1->lightnormalindex] * (1 - blend)
@@ -306,10 +306,10 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 			return vo;
 		}
 	} else {
-		verts += pose * count * 2;
+		verts += pose * count;
 	}
 	for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
-		VectorMA (verts->v, 1 / 256.0, (verts + count)->v, vo_v->vert);
+		VectorScale (verts->v, 1 / 256.0, vo_v->vert);
 		vo_v->lightdot = shadedots[verts->lightnormalindex];
 	}
 	return vo;

@@ -93,6 +93,11 @@ typedef struct {
 } trivertx_t;
 
 typedef struct {
+	unsigned short	v[3];
+	unsigned short	lightnormalindex;
+} trivertx16_t;
+
+typedef struct {
 	trivertx_t	bboxmin;	// lightnormal isn't used
 	trivertx_t	bboxmax;	// lightnormal isn't used
 	char		name[16];	// frame name from grabbing

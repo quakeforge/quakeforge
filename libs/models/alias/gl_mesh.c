@@ -346,7 +346,6 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, i
 {
 	int         i, j;
 	int        *cmds;
-	trivertx_t *verts;
 	char        cache[MAX_QPATH], fullpath[MAX_OSPATH];
 	VFile      *f;
 	unsigned char model_digest[MDFOUR_DIGEST_BYTES];
@@ -489,21 +488,30 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, i
 	paliashdr->commands = (byte *) cmds - (byte *) paliashdr;
 	memcpy (cmds, commands, numcommands * sizeof (int));
 
-	if (extra)
-		verts = Hunk_Alloc (paliashdr->numposes * paliashdr->poseverts
-						* sizeof (trivertx_t) * 2);
-	else
-		verts = Hunk_Alloc (paliashdr->numposes * paliashdr->poseverts
-						* sizeof (trivertx_t));
 
-	paliashdr->posedata = (byte *) verts - (byte *) paliashdr;
-
-	for (i = 0; i < paliashdr->numposes; i++)
-	{
-		for (j = 0; j < numorder; j++)
-				*verts++ = poseverts[i][vertexorder[j]];
-		if (extra)
+	if (extra) {
+		trivertx16_t *verts;
+		verts = Hunk_Alloc (paliashdr->numposes * paliashdr->poseverts
+							* sizeof (trivertx16_t));
+		paliashdr->posedata = (byte *) verts - (byte *) paliashdr;
+		for (i = 0; i < paliashdr->numposes; i++) {
+			for (j = 0; j < numorder; j++) {
+				trivertx16_t v;
+				VectorMA (poseverts[i][vertexorder[j] + hdr->mdl.numverts].v,
+						  256, poseverts[i][vertexorder[j]].v, v.v);
+				v.lightnormalindex =
+					poseverts[i][vertexorder[j]].lightnormalindex;
+				*verts++ = v;
+			}
+		}
+	} else {
+		trivertx_t *verts;
+		verts = Hunk_Alloc (paliashdr->numposes * paliashdr->poseverts
+							* sizeof (trivertx_t));
+		paliashdr->posedata = (byte *) verts - (byte *) paliashdr;
+		for (i = 0; i < paliashdr->numposes; i++) {
 			for (j = 0; j < numorder; j++)
-				*verts++ = poseverts[i][vertexorder[j] + hdr->mdl.numverts];
+				*verts++ = poseverts[i][vertexorder[j]];
+		}
 	}
 }
