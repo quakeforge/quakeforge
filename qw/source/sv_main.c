@@ -1089,6 +1089,7 @@ typedef struct {
 #define	MAX_IPFILTERS	1024
 
 cvar_t     *filterban;
+cvar_t     *sv_filter_automask;
 int         numipfilters;
 ipfilter_t  ipfilters[MAX_IPFILTERS];
 unsigned int ipmasks[33]; // network byte order
@@ -1245,13 +1246,14 @@ SV_StringToFilter (const char *address, ipfilter_t *f)
 			goto bad_address;
 
 		// change trailing 0 segments to be a mask, eg 1.2.0.0 gives a /16 mask
-		// FIXME: should check a cvar
 		if (mask == -1) {
 			mask = 0;
-			i = sizeof (b) - 1;
-			while (i >= 0 && !b[i]) {
-				mask += 8;
-				i--;
+			if (sv_filter_automask->int_val) {
+				i = sizeof (b) - 1;
+				while (i >= 0 && !b[i]) {
+					mask += 8;
+					i--;
+				}
 			}
 		}
 #ifdef HAVE_IPV6
@@ -1445,10 +1447,10 @@ SV_ListIP_f (void)
 void
 SV_WriteIP_f (void)
 {
-	byte        *b;
 	char        name[MAX_OSPATH];
 	int         i;
 	VFile      *f;
+	char		*type;
 
 	snprintf (name, sizeof (name), "%s/listip.cfg", com_gamedir);
 
@@ -1461,8 +1463,14 @@ SV_WriteIP_f (void)
 	}
 
 	for (i = 0; i < numipfilters; i++) {
-		b = ipfilters[i].ip;
-		Qprintf (f, "addip %i.%i.%i.%i\n", b[0], b[1], b[2], b[3]);
+		switch (ipfilters[i].type) {
+			case ft_ban: type = "ban"; break;
+			case ft_mute: type = "mute"; break;
+			case ft_cuff: type = "cuff"; break;
+			default: Sys_Error ("SV_WriteIP_f: invalid filter type");
+		}
+		Qprintf (f, "addip %s/%u 0 %s\n", SV_PrintIP (ipfilters[i].ip),
+				 ipfilters[i].mask, type);
 	}
 
 	Qclose (f);
@@ -2002,6 +2010,11 @@ SV_InitLocal (void)
 						  "0 Only IP addresses on the Ban list will be "
 						  "allowed onto the server, 1 Only IP addresses NOT "
 						  "on the Ban list will be allowed onto the server");
+	sv_filter_automask = Cvar_Get ("sv_filter_automask", "1", CVAR_NONE, NULL,
+									"Automatically determine the mask length "
+									"when it is not explicitely given.  e.g. "
+									"\"addip 1.2.0.0\" would be the same as "
+									"\"addip 1.2.0.0/16\"");
 	allow_download = Cvar_Get ("allow_download", "1", CVAR_NONE, NULL,
 							   "Toggle if clients can download game data from "
 							   "the server");
