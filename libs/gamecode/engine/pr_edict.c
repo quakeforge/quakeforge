@@ -1131,9 +1131,15 @@ PR_LoadProgsFile (progs_t * pr, const char *progsname)
 	pr->pr_globals =
 		(pr_type_t *) ((byte *) pr->progs + pr->progs->ofs_globals);
 
-	pr->pr_edict_size =
-
-		pr->progs->entityfields * 4 + sizeof (edict_t) - sizeof (pr_type_t);
+	// size of edict ascked for by progs
+	pr->pr_edict_size = pr->progs->entityfields * 4;
+	// size of engine data
+	pr->pr_edict_size += sizeof (edict_t) - sizeof (pr_type_t);
+	// round off to next highest whole word address (esp for Alpha)
+	// this ensures that pointers in the engine data area are always
+	// properly aligned
+	pr->pr_edict_size += sizeof (void*) - 1;
+	pr->pr_edict_size &= ~(sizeof (void*) - 1);
 
 	pr->pr_edictareasize = 0;
 
