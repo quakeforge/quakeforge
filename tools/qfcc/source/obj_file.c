@@ -472,7 +472,7 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 	pr->scope->num_defs = qfo->num_defs;
 	pr->scope->head = calloc (pr->scope->num_defs, sizeof (def_t));
 	for (i = 0, pd = pr->scope->head, qd = qfo->defs;
-		 i < pr->scope->num_defs; i++, pd++) {
+		 i < pr->scope->num_defs; i++, pd++, qd++) {
 		*pr->scope->tail = pd;
 		pr->scope->tail = &pd->def_next;
 		pd->type = parse_type (qfo->types + qd->full_type);
@@ -496,18 +496,18 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 	pr->func_head = calloc (pr->num_functions, sizeof (function_t));
 	pr->func_tail = &pr->func_head;
 	for (i = 0, pf = pr->func_head, qf = qfo->functions;
-		 i < pr->num_functions; i++, pf++) {
+		 i < pr->num_functions; i++, pf++, qf++) {
 		*pr->func_tail = pf;
 		pr->func_tail = &pf->next;
 		pf->aux = new_auxfunction ();
-		pf->aux->function = i + 1;
+		pf->aux->function = i;
 		pf->aux->source_line = qf->line;
 		pf->aux->line_info = qf->line_info;
 		pf->aux->local_defs = qf->local_defs;
 		pf->aux->num_locals = qf->num_local_defs;
 		pf->builtin = qf->builtin;
 		pf->code = qf->code;
-		pf->function_num = i + 1;
+		pf->function_num = i;
 		pf->s_file = qf->file;
 		pf->s_name = qf->name;
 		pf->file_line = qf->line;
