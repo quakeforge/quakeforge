@@ -84,10 +84,10 @@ typedef enum {
 	OP_NE_E,
 	OP_NE_FNC,
 	
-	OP_LE,
-	OP_GE,
-	OP_LT,
-	OP_GT,
+	OP_LE_F,
+	OP_GE_F,
+	OP_LT_F,
+	OP_GT_F,
 
 	OP_LOAD_F,
 	OP_LOAD_V,
@@ -243,6 +243,13 @@ typedef enum {
 	OP_LOAD_P,
 	OP_STORE_P,
 	OP_STOREP_P,
+	OP_NOT_P,
+	OP_EQ_P,
+	OP_NE_P,
+	OP_LE_P,
+	OP_GE_P,
+	OP_LT_P,
+	OP_GT_P,
 } pr_opcode_e;
 
 typedef struct

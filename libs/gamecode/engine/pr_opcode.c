@@ -76,12 +76,12 @@ opcode_t    pr_opcodes[] = {
 	{"!=", "ne.e",   OP_NE_E,   false, ev_entity, ev_entity, ev_integer, PROG_ID_VERSION},
 	{"!=", "ne.fnc", OP_NE_FNC, false, ev_func, ev_func, ev_integer, PROG_ID_VERSION},
 
-	{"<=", "le.f", OP_LE,   false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
-	{">=", "ge.f", OP_GE,   false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
+	{"<=", "le.f", OP_LE_F,   false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
+	{">=", "ge.f", OP_GE_F,   false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
 	{"<=", "le.s", OP_LE_S, false, ev_string, ev_string, ev_integer, PROG_VERSION},
 	{">=", "ge.s", OP_GE_S, false, ev_string, ev_string, ev_integer, PROG_VERSION},
-	{"<",  "lt.f", OP_LT,   false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
-	{">",  "gt.f", OP_GT,   false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
+	{"<",  "lt.f", OP_LT_F, false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
+	{">",  "gt.f", OP_GT_F, false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
 	{"<",  "lt.s", OP_LT_S, false, ev_string, ev_string, ev_integer, PROG_VERSION},
 	{">",  "gt.s", OP_GT_S, false, ev_string, ev_string, ev_integer, PROG_VERSION},
 
@@ -173,6 +173,7 @@ opcode_t    pr_opcodes[] = {
 	{"!", "not.s",   OP_NOT_S,   false, ev_string, ev_void, ev_integer, PROG_ID_VERSION},
 	{"!", "not.ent", OP_NOT_ENT, false, ev_entity, ev_void, ev_integer, PROG_ID_VERSION},
 	{"!", "not.fnc", OP_NOT_FNC, false, ev_func, ev_void, ev_integer, PROG_ID_VERSION},
+	{"!", "not.p",   OP_NOT_P,   false, ev_pointer, ev_void, ev_integer, PROG_VERSION},
 
 	{"<IF>",    "if",    OP_IF,    false, ev_integer, ev_void, ev_void, PROG_ID_VERSION},
 	{"<IFNOT>", "ifnot", OP_IFNOT, false, ev_integer, ev_void, ev_void, PROG_ID_VERSION},
@@ -238,6 +239,15 @@ opcode_t    pr_opcodes[] = {
 	{"~", "bitnot.f", OP_BITNOT_F, false, ev_float, ev_void, ev_float, PROG_VERSION},
 	{"^", "bitxor.i", OP_BITXOR_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"~", "bitnot.i", OP_BITNOT_I, false, ev_integer, ev_void, ev_integer, PROG_VERSION},
+
+	{">=", "ge.p", OP_GE_P, false, ev_pointer, ev_pointer, ev_integer, PROG_VERSION},
+	{"<=", "le.p", OP_LE_P, false, ev_pointer, ev_pointer, ev_integer, PROG_VERSION},
+	{">",  "gt.p", OP_GT_P, false, ev_pointer, ev_pointer, ev_integer, PROG_VERSION},
+	{"<",  "lt.p", OP_LT_P, false, ev_pointer, ev_pointer, ev_integer, PROG_VERSION},
+	{"==", "eq.p", OP_EQ_P, false, ev_pointer, ev_pointer, ev_integer, PROG_VERSION},
+	{"!=", "ne.p", OP_NE_P, false, ev_pointer, ev_pointer, ev_integer, PROG_VERSION},
+
+	// end of table
 	{0},
 };
 

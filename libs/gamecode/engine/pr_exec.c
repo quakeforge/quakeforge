@@ -363,16 +363,16 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_SHR_I:
 				OPC.integer_var = OPA.integer_var >> OPB.integer_var;
 				break;
-			case OP_GE:
+			case OP_GE_F:
 				OPC.float_var = OPA.float_var >= OPB.float_var;
 				break;
-			case OP_LE:
+			case OP_LE_F:
 				OPC.float_var = OPA.float_var <= OPB.float_var;
 				break;
-			case OP_GT:
+			case OP_GT_F:
 				OPC.float_var = OPA.float_var > OPB.float_var;
 				break;
-			case OP_LT:
+			case OP_LT_F:
 				OPC.float_var = OPA.float_var < OPB.float_var;
 				break;
 			case OP_AND:	// OPA and OPB have to be float for -0.0
@@ -785,15 +785,19 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 
 			case OP_GE_I:
+			case OP_GE_P:
 				OPC.integer_var = OPA.integer_var >= OPB.integer_var;
 				break;
 			case OP_LE_I:
+			case OP_LE_P:
 				OPC.integer_var = OPA.integer_var <= OPB.integer_var;
 				break;
 			case OP_GT_I:
+			case OP_GT_P:
 				OPC.integer_var = OPA.integer_var > OPB.integer_var;
 				break;
 			case OP_LT_I:
+			case OP_LT_P:
 				OPC.integer_var = OPA.uinteger_var < OPB.uinteger_var;
 				break;
 			case OP_GE_UI:
@@ -816,12 +820,15 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				OPC.integer_var = OPA.integer_var || OPB.integer_var;
 				break;
 			case OP_NOT_I:
+			case OP_NOT_P:
 				OPC.integer_var = !OPA.integer_var;
 				break;
 			case OP_EQ_I:
+			case OP_EQ_P:
 				OPC.integer_var = OPA.integer_var == OPB.integer_var;
 				break;
 			case OP_NE_I:
+			case OP_NE_P:
 				OPC.integer_var = OPA.integer_var != OPB.integer_var;
 				break;
 
