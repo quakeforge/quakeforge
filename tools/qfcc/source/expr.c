@@ -1226,8 +1226,13 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 
 	if ((op == '&' || op == '|')
 		&& e1->type == ex_uexpr && e1->e.expr.op == '!' && !e1->paren) {
-		warning (e1, "ambiguous logic. Suggest explicit parentheses with "
-				 "expressions involving ! and %c", op);
+		if (options.traditional) {
+			e1->e.expr.e1->paren = 1;
+			return unary_expr ('!', binary_expr (op, e1->e.expr.e1, e2));
+		} else {
+			warning (e1, "ambiguous logic. Suggest explicit parentheses with "
+					 "expressions involving ! and %c", op);
+		}
 	}
 
 	if (t1 != t2) {
