@@ -784,6 +784,12 @@ main (int argc, char **argv)
 
 	start = Sys_DoubleTime ();
 
+#ifdef _WIN32
+	if (putenv ("POSIXLY_INCORRECT_GETOPT=1")) {
+		fprintf (stderr, "Warning: putenv failed\n");
+	}
+#endif
+	
 	this_program = NORMALIZE (argv[0]);
 
 	DecodeArgs (argc, argv);
