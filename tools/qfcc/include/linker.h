@@ -34,6 +34,6 @@
 
 void linker_begin (void);
 void linker_add_object_file (const char *filename);
-void linker_finish (void);
+struct qfo_s *linker_finish (void);
 
 #endif//__linker_h

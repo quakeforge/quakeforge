@@ -525,6 +525,8 @@ qfo_new (void)
 void
 qfo_add_code (qfo_t *qfo, dstatement_t *code, int code_size)
 {
+	if (!code_size)
+		return;
 	qfo->code = malloc (code_size * sizeof (dstatement_t));
 	qfo->code_size = code_size;
 	memcpy (qfo->code, code, code_size * sizeof (dstatement_t));
@@ -533,6 +535,8 @@ qfo_add_code (qfo_t *qfo, dstatement_t *code, int code_size)
 void
 qfo_add_data (qfo_t *qfo, pr_type_t *data, int data_size)
 {
+	if (!data_size)
+		return;
 	qfo->data = malloc (data_size * sizeof (pr_type_t));
 	qfo->data_size = data_size;
 	memcpy (qfo->data, data, data_size * sizeof (pr_type_t));
@@ -541,6 +545,8 @@ qfo_add_data (qfo_t *qfo, pr_type_t *data, int data_size)
 void
 qfo_add_far_data (qfo_t *qfo, pr_type_t *far_data, int far_data_size)
 {
+	if (!far_data_size)
+		return;
 	qfo->far_data = malloc (far_data_size * sizeof (pr_type_t));
 	qfo->far_data_size = far_data_size;
 	memcpy (qfo->far_data, far_data, far_data_size * sizeof (pr_type_t));
@@ -549,6 +555,8 @@ qfo_add_far_data (qfo_t *qfo, pr_type_t *far_data, int far_data_size)
 void
 qfo_add_strings (qfo_t *qfo, const char *strings, int strings_size)
 {
+	if (!strings_size)
+		return;
 	qfo->strings = malloc (strings_size);
 	qfo->strings_size = strings_size;
 	memcpy (qfo->strings, strings, strings_size);
@@ -557,6 +565,8 @@ qfo_add_strings (qfo_t *qfo, const char *strings, int strings_size)
 void
 qfo_add_relocs (qfo_t *qfo, qfo_reloc_t *relocs, int num_relocs)
 {
+	if (!num_relocs)
+		return;
 	qfo->relocs = malloc (num_relocs * sizeof (qfo_reloc_t));
 	qfo->num_relocs = num_relocs;
 	memcpy (qfo->relocs, relocs, num_relocs * sizeof (qfo_reloc_t));
@@ -565,6 +575,8 @@ qfo_add_relocs (qfo_t *qfo, qfo_reloc_t *relocs, int num_relocs)
 void
 qfo_add_defs (qfo_t *qfo, qfo_def_t *defs, int num_defs)
 {
+	if (!num_defs)
+		return;
 	qfo->defs = malloc (num_defs * sizeof (qfo_def_t));
 	qfo->num_defs = num_defs;
 	memcpy (qfo->defs, defs, num_defs * sizeof (qfo_def_t));
@@ -573,6 +585,8 @@ qfo_add_defs (qfo_t *qfo, qfo_def_t *defs, int num_defs)
 void
 qfo_add_functions (qfo_t *qfo, qfo_function_t *functions, int num_functions)
 {
+	if (!num_functions)
+		return;
 	qfo->functions = malloc (num_functions * sizeof (qfo_function_t));
 	qfo->num_functions = num_functions;
 	memcpy (qfo->functions, functions, num_functions * sizeof (qfo_function_t));
@@ -581,6 +595,8 @@ qfo_add_functions (qfo_t *qfo, qfo_function_t *functions, int num_functions)
 void
 qfo_add_lines (qfo_t *qfo, pr_lineno_t *lines, int num_lines)
 {
+	if (!num_lines)
+		return;
 	qfo->lines = malloc (num_lines * sizeof (pr_lineno_t));
 	qfo->num_lines = num_lines;
 	memcpy (qfo->lines, lines, num_lines * sizeof (pr_lineno_t));
@@ -589,6 +605,8 @@ qfo_add_lines (qfo_t *qfo, pr_lineno_t *lines, int num_lines)
 void
 qfo_add_types (qfo_t *qfo, const char *types, int types_size)
 {
+	if (!types_size)
+		return;
 	qfo->types = malloc (types_size);
 	qfo->types_size = types_size;
 	memcpy (qfo->types, types, types_size);

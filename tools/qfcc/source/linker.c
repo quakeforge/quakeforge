@@ -47,6 +47,7 @@ static const char rcsid[] =
 #include "emit.h"
 #include "expr.h"
 #include "immediate.h"
+#include "linker.h"
 #include "obj_file.h"
 #include "qfcc.h"
 #include "reloc.h"
@@ -93,7 +94,7 @@ defs_get_key (void *_def, void *unused)
 {
 	qfo_def_t  *def = (qfo_def_t *) _def;
 
-	return G_GETSTR (def->name);
+	return strings->strings + def->name;
 }
 
 static void
@@ -101,7 +102,7 @@ add_strings (qfo_t *qfo)
 {
 	int         i;
 
-	for (i = 0; i < qfo->strings_size; i += strlen (qfo->strings + i))
+	for (i = 0; i < qfo->strings_size; i += strlen (qfo->strings + i) + 1)
 		strpool_addstr (strings, qfo->strings + i);
 }
 
@@ -171,29 +172,25 @@ add_defs (qfo_t *qfo)
 			qfo_def_t  *d;
 
 			if (def->flags & QFOD_GLOBAL) {
-				if ((d = Hash_Find (defined_defs, G_GETSTR (def->name)))) {
+				if ((d = Hash_Find (defined_defs,
+									strings->strings + def->name))) {
 					pr.source_file = def->file;
 					pr.source_line = def->line;
-					error (0, "%s redefined", G_GETSTR (def->name));
+					error (0, "%s redefined", strings->strings + def->name);
 				}
-			}
-			if (def->basic_type == ev_string && def->ofs
-				&& QFO_var (qfo, string, def->ofs)) {
-				string_t    s;
-				s = strpool_addstr (strings, QFO_STRING (qfo, def->ofs));
-				QFO_var (qfo, string, def->ofs) = s;
 			}
 			if (def->ofs)
 				def->ofs += data_base;
 			if (def->flags & QFOD_GLOBAL) {
-				while ((d = Hash_Find (extern_defs, G_GETSTR (def->name)))) {
-					Hash_Del (extern_defs, G_GETSTR (d->name));
+				while ((d = Hash_Find (extern_defs,
+									   strings->strings + def->name))) {
+					Hash_Del (extern_defs, strings->strings + d->name);
 					if (d->full_type != def->full_type) {
 						pr.source_file = def->file;
 						pr.source_line = def->line;
-						error (0, "type mismatch %s %s",
-							   G_GETSTR (def->full_type),
-							   G_GETSTR (d->full_type));
+						error (0, "type mismatch `%s' `%s'",
+							   type_strings->strings + def->full_type,
+							   type_strings->strings + d->full_type);
 					}
 				}
 				Hash_Add (defined_defs, def);
@@ -339,6 +336,21 @@ linker_add_object_file (const char *filename)
 	fixup_relocs (qfo);
 	
 	qfo_delete (qfo);
+}
+
+qfo_t *
+linker_finish (void)
+{
+	qfo_def_t **undef_defs, **def;
+	qfo_t      *qfo;
+
+	undef_defs = (qfo_def_t **) Hash_GetList (extern_defs);
+	for (def = undef_defs; *def; def++) {
+		pr.source_file = (*def)->file;
+		pr.source_line = (*def)->line;
+		error (0, "undefined symbol %s", strings->strings + (*def)->name);
+		return 0;
+	}
 
 	qfo = qfo_new ();
 	qfo_add_code (qfo, code->code, code->size);
@@ -348,17 +360,7 @@ linker_add_object_file (const char *filename)
 	qfo_add_relocs (qfo, relocs.relocs, relocs.num_relocs);
 	qfo_add_defs (qfo, defs.defs, defs.num_defs);
 	qfo_add_functions (qfo, funcs.funcs, funcs.num_funcs);
+	qfo_add_lines (qfo, lines.lines, lines.num_lines);
 	qfo_add_types (qfo, type_strings->strings, type_strings->size);
-}
-
-void
-linker_finish (void)
-{
-	qfo_def_t **undef_defs, **def;
-	undef_defs = (qfo_def_t **) Hash_GetList (extern_defs);
-	for (def = undef_defs; *def; def++) {
-		pr.source_file = (*def)->file;
-		pr.source_line = (*def)->line;
-		error (0, "undefined symbol %s", G_GETSTR ((*def)->name));
-	}
+	return qfo;
 }

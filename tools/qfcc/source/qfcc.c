@@ -540,11 +540,17 @@ separate_compile (void)
 		}
 	}
 	if (!err && !options.compile) {
+		qfo_t      *qfo;
 		linker_begin ();
 		for (file = source_files; *file; file++) {
 			linker_add_object_file (*file);
 		}
-		linker_finish ();
+		qfo = linker_finish ();
+		if (qfo) {
+			qfo_to_progs (qfo, &pr);
+			finish_compilation ();
+			WriteData (0);
+		}
 	}
 	return err;
 }

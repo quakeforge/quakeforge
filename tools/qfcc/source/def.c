@@ -126,7 +126,8 @@ defspace_adddata (defspace_t *space, pr_type_t *data, int size)
 							   space->max_size * sizeof (pr_type_t));
 	}
 	if (data)
-		memcpy (space->data, data, space->max_size * sizeof (pr_type_t));
+		memcpy (space->data + space->size, data, size * sizeof (pr_type_t));
+	space->size += size;
 }
 
 scope_t *
