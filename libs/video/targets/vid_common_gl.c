@@ -48,6 +48,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/extensions.h"
@@ -93,8 +94,13 @@ qboolean			is8bit = false;
 
 qboolean			gl_feature_mach64 = false;
 
+// ATI PN_triangles
+qboolean			TruForm;
+GLint				tess, tess_max;
+
 cvar_t      *gl_max_size;
 cvar_t      *gl_multitexture;
+cvar_t		*gl_tessellate;
 cvar_t      *gl_vaelements_max;
 cvar_t      *gl_screenshot_byte_swap;
 cvar_t      *vid_mode;
@@ -130,14 +136,22 @@ gl_screenshot_byte_swap_f (cvar_t *var)
 }
 
 static void
+gl_tessellate_f (cvar_t * var)
+{
+	if (TruForm) {
+		if (var)
+			tess = (bound (0, var->int_val, tess_max));
+		qfglPNTrianglesiATI (GL_PN_TRIANGLES_TESSELATION_LEVEL_ATI, tess);
+	} else {
+		tess = 0;
+	}
+}
+
+static void
 GL_Common_Init_Cvars (void)
 {
 	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,	"Use 8-bit "
 							"shared palettes.");
-	gl_vaelements_max = Cvar_Get ("gl_vaelements_max", "0", CVAR_ROM, NULL,
-								  "Limit the vertex array size for buggy "
-								  "drivers. 0 (default) uses driver provided "
-								  "limit, -1 disables use of vertex arrays.");
 	gl_max_size = Cvar_Get ("gl_max_size", "0", CVAR_NONE, gl_max_size_f,
 							"Texture dimension");
 	gl_multitexture = Cvar_Get ("gl_multitexture", "0", CVAR_ARCHIVE,
@@ -148,6 +162,14 @@ GL_Common_Init_Cvars (void)
 				  gl_screenshot_byte_swap_f, "Swap the bytes for gl "
 				  "screenshots. Needed if you get screenshots with red and "
 				  "blue swapped.");
+	gl_tessellate = Cvar_Get ("gl_tessellate", "0", CVAR_NONE, gl_tessellate_f,
+							  va ("Specifies tessellation level from 0 to %i. "
+								  "Quadruples the triangle count at each "
+								  "tessellation level.", tess_max));
+	gl_vaelements_max = Cvar_Get ("gl_vaelements_max", "0", CVAR_ROM, NULL,
+								  "Limit the vertex array size for buggy "
+								  "drivers. 0 (default) uses driver provided "
+								  "limit, -1 disables use of vertex arrays.");
 }
 
 /*
@@ -170,8 +192,10 @@ CheckMultiTextureExtensions (void)
 		qfglGetIntegerv (GL_MAX_TEXTURE_UNITS_ARB, &max_texture_units);
 		if (max_texture_units >= 2) {
 			Con_Printf ("enabled, %d TMUs.\n", max_texture_units);
-			qglMultiTexCoord2f = QFGL_ExtensionAddress ("glMultiTexCoord2fARB");
-			qglMultiTexCoord2fv = QFGL_ExtensionAddress ("glMultiTexCoord2fvARB");
+			qglMultiTexCoord2f =
+				QFGL_ExtensionAddress ("glMultiTexCoord2fARB");
+			qglMultiTexCoord2fv =
+				QFGL_ExtensionAddress ("glMultiTexCoord2fvARB");
 			qglActiveTexture = QFGL_ExtensionAddress ("glActiveTextureARB");
 			gl_mtex_enum = GL_TEXTURE0_ARB;
 			if (qglMultiTexCoord2f && gl_mtex_enum)
@@ -184,6 +208,24 @@ CheckMultiTextureExtensions (void)
 		}
 	} else {
 		Con_Printf ("not found.\n");
+	}
+}
+
+static void
+CheckTruFormExtensions (void)
+{
+	if (QFGL_ExtensionPresent ("GL_ATI_pn_triangles")) {
+		TruForm = true;
+		qfglGetIntegerv (GL_MAX_PN_TRIANGLES_TESSELATION_LEVEL_ATI,
+						 &tess_max);
+		qfglPNTrianglesiATI (GL_PN_TRIANGLES_NORMAL_MODE_ATI,
+							 GL_PN_TRIANGLES_NORMAL_MODE_LINEAR_ATI);
+		qfglPNTrianglesiATI (GL_PN_TRIANGLES_POINT_MODE_ATI,
+							 GL_PN_TRIANGLES_POINT_MODE_CUBIC_ATI);
+	} else {
+		TruForm = false;
+		tess = 0;
+		tess_max = 0;
 	}
 }
 
@@ -204,7 +246,7 @@ VID_SetPalette (unsigned char *palette)
 	byte       *pal;
 	char        s[255];
 	float       dist, bestdist;
-	int         r1, g1, b1, k;
+	int			r1, g1, b1, k;
 	unsigned int r, g, b, v;
 	unsigned short i;
 	unsigned int *table;
@@ -212,7 +254,7 @@ VID_SetPalette (unsigned char *palette)
 	QFile      *f;
 
 	// 8 8 8 encoding
-//	Con_Printf("Converting 8to24\n");
+//	Con_Printf ("Converting 8to24\n");
 
 	pal = palette;
 	table = d_8to24table;
@@ -244,7 +286,7 @@ VID_SetPalette (unsigned char *palette)
 		for (i = 0; i < (1 << 15); i++) {
 			/* Maps
 			   000000000000000
-			   000000000011111 = Red  = 0x1F
+			   000000000011111 = Red  = 0x001F
 			   000001111100000 = Blue = 0x03E0 
 			   111110000000000 = Grn  = 0x7C00
 			*/
@@ -318,8 +360,6 @@ GL_Init_Common (void)
 	if (strstr (gl_renderer, "Mesa DRI Mach64"))
 		gl_feature_mach64 = true;
 
-	GL_Common_Init_Cvars ();
-
 	qfglClearColor (0, 0, 0, 0);
 	qfglCullFace (GL_FRONT);
 	qfglEnable (GL_TEXTURE_2D);
@@ -339,6 +379,8 @@ GL_Init_Common (void)
 	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	CheckMultiTextureExtensions ();
+	CheckTruFormExtensions ();
+	GL_Common_Init_Cvars ();
 	CheckVertexArraySize ();
 }
 

@@ -48,6 +48,8 @@
 # endif
 #endif
 
+#include "QF/GL/ati.h"		// Uses defines, types, APIENTRY
+
 // OpenGL numbers for extensions we use or want to use
 #ifndef GL_EXT_bgra
 # define GL_EXT_bgra

@@ -411,6 +411,9 @@ QFGL_NEED (void, glVertex4sv, (const GLshort * v))
 QFGL_NEED (void, glVertexPointer, (GLint size, GLenum type, GLsizei stride, const GLvoid * ptr))
 QFGL_NEED (void, glViewport, (GLint x, GLint y, GLsizei width, GLsizei height))
 
+// ATI Extensions
+QFGL_NEED (void, glPNTrianglesiATI, (GLenum pname, GLint param))
+
 #ifdef UNDEF_QFGL_DONT_NEED
 #undef QFGL_DONT_NEED
 #endif

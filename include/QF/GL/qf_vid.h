@@ -42,7 +42,7 @@ extern qboolean					gl_mtex_capable;
 extern GLenum					gl_mtex_enum;
 extern float					gldepthmin, gldepthmax;
 extern int						texture_extension_number;
-
+extern int						tess;
 extern qboolean					gl_feature_mach64;
 
 void GL_EndRendering (void);

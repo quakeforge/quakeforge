@@ -259,6 +259,8 @@ R_DrawEntitiesOnList (void)
 
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+	if (tess)
+		qfglEnable (GL_PN_TRIANGLES_ATI);
 	for (i = 0; i < r_numvisedicts; i++) {
 		if (r_visedicts[i]->model->type != mod_alias)
 			continue;
@@ -269,6 +271,8 @@ R_DrawEntitiesOnList (void)
 
 		R_DrawAliasModel (currententity);
 	}
+	if (tess)
+		qfglDisable (GL_PN_TRIANGLES_ATI);
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
 
