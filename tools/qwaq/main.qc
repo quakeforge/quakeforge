@@ -3,7 +3,12 @@
 #define NIT_TELEPORTER       131072 //CH Teleporter
 #define PC_ENGINEER_TF_ITEMS NIT_TESLA | NIT_SECURITY_CAMERA | NIT_TELEPORTER
 
-void () eek;
+struct foo = {
+	integer result;
+	string buffer;
+};
+
+void (foo bar) eek;
 float (float a, float b) boing;
 
 float () main =
@@ -12,7 +17,6 @@ float () main =
 	local integer handle;
 	local string buffer;
 
-	traceon();
 	messed_or = PC_ENGINEER_TF_ITEMS;
 	handle = open ("main.qc", 0);
 	if (handle == -1) {

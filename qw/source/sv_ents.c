@@ -488,7 +488,7 @@ void
 SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 {
 	byte       *pvs;
-	int         e, i;
+	int         e, i, num_edicts;
 	vec3_t      org;
 	client_frame_t *frame;
 	edict_t    *clent, *ent;
@@ -513,8 +513,10 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 
 	numnails = 0;
 
+	num_edicts = min (sv.num_edicts, 512);	//FIXME stupid protocol limit
+
 	for (e = MAX_CLIENTS + 1, ent = EDICT_NUM (&sv_pr_state, e);
-		 e < sv.num_edicts;
+		 e < num_edicts;
 		 e++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
 		if (ent->free)
 			continue;
