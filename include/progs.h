@@ -196,7 +196,7 @@ struct progs_s {
 
 	// garbage collected strings
 	strref_t		*static_strings;
-	strref_t		dynamic_strings[2]; // 0 = head, 1 = tail
+	strref_t		dynamic_strings; // head of linked list;
 	struct hashtab_s *strref_hash;
 	int				num_strings;
 
