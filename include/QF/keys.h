@@ -186,6 +186,8 @@ void Key_WriteBindings (VFile *f);
 void Key_SetBinding (int keynum, char *binding);
 void Key_ClearStates (void);
 
+void Key_ClearTyping (void);
+
 float Key_KeyState (kbutton_t *key);
 char *Key_KeynumToString (int keynum);
 

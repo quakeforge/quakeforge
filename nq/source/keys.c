@@ -867,3 +867,9 @@ Key_ClearStates (void)
 	}
 }
 
+void
+Key_ClearTyping (void)
+{
+	key_lines[edit_line][1] = 0;		// clear any typing
+	key_linepos = 1;
+}

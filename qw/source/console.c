@@ -83,14 +83,6 @@ qboolean    con_initialized;
 
 
 void
-Key_ClearTyping (void)
-{
-	key_lines[edit_line][1] = 0;		// clear any typing
-	key_linepos = 1;
-}
-
-
-void
 Con_ToggleConsole_f (void)
 {
 	Key_ClearTyping ();

@@ -947,7 +947,7 @@ CL_ConnectionlessPacket (void)
 			Con_Printf("status response\n");
 			return;
 		} 
-		Con_Print (s);
+		Con_Printf ("%s", s);
 		return;
 	}
 	// ping from somewhere
