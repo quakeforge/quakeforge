@@ -40,7 +40,7 @@ libQFjs_la_SOURCES=		joy.c $(joy_src)
 EXTRA_libQFjs_la_SOURCES= $(joy_linux_src) $(joy_win_src) $(joy_null_src)
 
 libvid_common_la_SOURCES=	\
-		in_common.c in_event.c keys.c old_keys.c pr_keys.c vid.c
+		in_common.c in_event.c keys.c old_keys.c vid.c
 libvid_common_la_CFLAGS=	@PREFER_NON_PIC@
 libvid_common_la_LDFLAGS=	@STATIC@
 
