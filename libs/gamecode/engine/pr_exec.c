@@ -451,6 +451,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_STORE_S:
 			case OP_STORE_FNC:			// pointers
 			case OP_STORE_I:
+			case OP_STORE_P:
 				OPB.integer_var = OPA.integer_var;
 				break;
 			case OP_STORE_V:
