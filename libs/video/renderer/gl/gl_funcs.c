@@ -94,7 +94,7 @@ QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 #if defined(HAVE_DLOPEN)
 	static QF_glXGetProcAddressARB	glGetProcAddress = NULL;
 #elif defined(_WIN32)
-	static void * (* wglGetProcAddress)	(char *)	glGetProcAddress = NULL;
+	static void * (* glGetProcAddress) (const char *) = NULL;
 #else
 	static void *glGetProcAddress = NULL;
 #endif
@@ -109,7 +109,7 @@ QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 #if defined(HAVE_DLOPEN)
 		glGetProcAddress = dlsym (handle, "glXGetProcAddressARB");
 #elif defined(_WIN32)
-		glGetProcAddress = GetProcAddress (handle, "wglGetProcAddress");
+		(FARPROC)glGetProcAddress = GetProcAddress (handle, "wglGetProcAddress");
 #endif
 	}
 

@@ -58,8 +58,10 @@
 #endif
 
 #include "QF/cvar.h"
-#include <QF/plugin.h>
-#include <QF/console.h>
+#include "QF/plugin.h"
+#include "QF/console.h"
+
+#include "compat.h"
 
 cvar_t	*fs_pluginpath;
 
@@ -132,7 +134,7 @@ PI_LoadPlugin (char *type, char *name)
 		return NULL;
 	}
 #elif defined (_WIN32)
-	if (!(plugin_info = GetProcAddress (dlhand, "PluginInfo"))) {	// info function not found
+	if (!(plugin_info = (P_PluginInfo) GetProcAddress (dlhand, "PluginInfo"))) {	// info function not found
 		FreeLibrary (dlhand);
 		Con_Printf ("Plugin info function not found\n");
 		return NULL;

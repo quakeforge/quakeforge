@@ -29,8 +29,6 @@
 #ifndef __QF_qfplist_h_
 #define __QF_qfplist_h_
 
-#include <glob.h>
-
 #include "QF/qtypes.h"
 
 //	Ugly defines for fast checking and conversion from char to number

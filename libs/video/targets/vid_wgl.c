@@ -32,6 +32,7 @@
 
 #include "winquake.h"
 
+#include "QF/GL/funcs.h"
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
@@ -49,8 +50,8 @@
 
 #include "compat.h"
 #include "sbar.h"
-#include "glquake.h"
 #include "in_win.h"
+#include "r_cvar.h"
 #include "resource.h"
 
 extern void GL_Init_Common (void);
@@ -58,6 +59,12 @@ extern void VID_Init8bitPalette (void);
 
 extern void (*vid_menudrawfn) (void);
 extern void (*vid_menukeyfn) (int);
+
+HGLRC (*qf_wglCreateContext) (HDC);
+BOOL (*qf_wglDeleteContext) (HGLRC);
+HGLRC (*qf_wglGetCurrentContext) (void);
+HDC (*qf_wglGetCurrentDC) (void);
+BOOL (*qf_wglMakeCurrent) (HDC, HGLRC);
 
 #define MAX_MODE_LIST	30
 #define VID_ROW_SIZE	3
@@ -100,6 +107,7 @@ const char *gl_vendor;
 const char *gl_renderer;
 const char *gl_version;
 const char *gl_extensions;
+void       *libgl_handle;
 
 // 8-bit and permedia support
 qboolean			isPermedia = false;
@@ -517,10 +525,10 @@ VID_Shutdown (void)
 
 	if (vid.initialized) {
 		vid_canalttab = false;
-		hRC = wglGetCurrentContext ();
-		hDC = wglGetCurrentDC ();
+		hRC = qf_wglGetCurrentContext ();
+		hDC = qf_wglGetCurrentDC ();
 
-		wglMakeCurrent (NULL, NULL);
+		qf_wglMakeCurrent (NULL, NULL);
 
 		// LordHavoc: free textures before closing (may help NVIDIA)
 		for (i = 0; i < 8192; i++)
@@ -528,7 +536,7 @@ VID_Shutdown (void)
 		qfglDeleteTextures (8192, temp);
 
 		if (hRC)
-			wglDeleteContext (hRC);
+			qf_wglDeleteContext (hRC);
 
                 if (hDC && mainwindow)
                         ReleaseDC (mainwindow, hDC);
@@ -1197,6 +1205,17 @@ VID_Init (unsigned char *palette)
 	HGLRC       baseRC;
 	DWORD lasterror;
 
+	if (!(libgl_handle = LoadLibrary (gl_libgl->string))) {
+		Sys_Error ("Can't open OpenGL library \"%s\"\n", gl_libgl->string);
+		return;
+	}
+
+	qf_wglCreateContext = QFGL_ProcAddress (libgl_handle, "wglCreateContext", true);
+	qf_wglDeleteContext = QFGL_ProcAddress (libgl_handle, "wglDeleteContext", true);
+	qf_wglGetCurrentContext = QFGL_ProcAddress (libgl_handle, "wglGetCurrentContext", true);
+	qf_wglGetCurrentDC = QFGL_ProcAddress (libgl_handle, "wglGetCurrentDC", true);
+	qf_wglMakeCurrent = QFGL_ProcAddress (libgl_handle, "wglMakeCurrent", true);
+
 	memset (&devmode, 0, sizeof (devmode));
 
 	Cmd_AddCommand ("vid_nummodes", VID_NumModes_f, "Reports the total number of video modes available");
@@ -1384,7 +1403,7 @@ VID_Init (unsigned char *palette)
 	maindc = GetDC (mainwindow);
 	bSetupPixelFormat (maindc);
 
-	baseRC = wglCreateContext (maindc);
+	baseRC = qf_wglCreateContext (maindc);
 	if (!baseRC) {
 		lasterror=GetLastError();
 		if (maindc && mainwindow)
@@ -1392,10 +1411,10 @@ VID_Init (unsigned char *palette)
 		Sys_Error("Could not initialize GL (wglCreateContext failed).\n\nMake sure you in are 65535 color mode, and try running -window. \nError code: (%lx)\r\n",lasterror);
 	}
 
-	if (!wglMakeCurrent (maindc, baseRC)) {
+	if (!qf_wglMakeCurrent (maindc, baseRC)) {
 		lasterror=GetLastError();
 		if (baseRC)
-			wglDeleteContext (baseRC);
+			qf_wglDeleteContext (baseRC);
                 if (maindc && mainwindow)
        	                ReleaseDC (mainwindow, maindc);
 		Sys_Error ("wglMakeCurrent failed (%lx)\r\n",lasterror);

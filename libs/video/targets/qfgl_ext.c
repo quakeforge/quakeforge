@@ -60,6 +60,10 @@
 
 #include "QF/GL/extensions.h"
 #include "QF/GL/funcs.h"
+#include "QF/cvar.h"
+#include "QF/sys.h"
+
+#include "r_cvar.h"
 
 /*
 	ParseExtensionList
@@ -108,47 +112,43 @@ QFGL_ExtensionPresent (const char *name)
 void *
 QFGL_ExtensionAddress (const char *name)
 {
-#if defined(HAVE_GLX) && defined(HAVE_DLOPEN)
-	void       *dlhand = NULL;
-
+	void       *handle;
 	static qboolean glProcAddress_present = true;
-	static QF_glXGetProcAddressARB qfglXGetProcAddress = NULL;
+#if defined(HAVE_GLX)
+	static QF_glXGetProcAddressARB glGetProcAddress = NULL;
+#else
+	static void * (* glGetProcAddress) (const char *) = NULL;
+#endif
 
-	if (glProcAddress_present && !qfglXGetProcAddress) {
+#if defined(HAVE_DLOPEN)
+	if (!(handle = dlopen (gl_libgl->string, RTLD_NOW))) {
+		Sys_Error ("Couldn't load OpenGL library %s: %s\n", gl_libgl->string, dlerror ());
+		return 0;
+	}
+#elif defined(_WIN32)
+	if (!(handle = LoadLibrary (gl_libgl->string))) {
+		Sys_Error ("Couldn't load OpenGL library %s!\n", gl_libgl->string);
+		return 0;
+	}
+#else
+# error "Cannot load libraries: %s was not configured with DSO support"
+#endif
+
+	if (glProcAddress_present && !glGetProcAddress) {
 		if (QFGL_ExtensionPresent ("GLX_ARB_get_proc_address")) {
-			if ((dlhand = dlopen (NULL, RTLD_LAZY))) {
-				qfglXGetProcAddress = dlsym (dlhand, "glXGetProcAddressARB");
-				dlclose (dlhand);
-			} else {
+#if defined(HAVE_GLX)
+			glGetProcAddress = QFGL_ProcAddress (handle, "glXGetProcAddressARB", false);
+#elif defined (_WIN32)
+			glGetProcAddress = QFGL_ProcAddress (handle, "wglGetProcAddress", false);
+#endif
+			if (!glGetProcAddress)
 				glProcAddress_present = false;
-			}
 		} else {
 			glProcAddress_present = false;
 		}
 	}
-#endif
 
-	if (name) {
-#if defined(HAVE_GLX) && defined(HAVE_DLOPEN)
-		if (glProcAddress_present) {
-			return qfglXGetProcAddress ((const GLubyte *) name);
-		} else {
-			if ((dlhand = dlopen (NULL, RTLD_LAZY))) {
-				void       *handle;
-
-				handle = dlsym (dlhand, name);
-				dlclose (dlhand);
-				return handle;
-			}
-			return NULL;
-		}
-#else
-# ifdef _WIN32
-		return wglGetProcAddress (name);
-# else
-		return NULL;
-# endif
-#endif
-	}
+	if (name && glProcAddress_present)
+		return glGetProcAddress (name);
 	return NULL;
 }
