@@ -1,5 +1,6 @@
 extern struct cvar_s     *cl_crossx;
 extern struct cvar_s     *cl_crossy;
+extern struct cvar_s     *cl_surprise;
 extern struct cvar_s     *cl_verstring;
 extern struct cvar_s     *crosshair;
 extern struct cvar_s     *crosshaircolor;
