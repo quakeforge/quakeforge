@@ -87,7 +87,7 @@ ED_PrintEdict_f (void)
 	int         i;
 
 	i = atoi (Cmd_Argv (1));
-	Con_Printf ("\n EDICT %i:\n", i);
+	SV_Printf ("\n EDICT %i:\n", i);
 	ED_PrintNum (&sv_pr_state, i);
 }
 

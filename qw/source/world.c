@@ -559,7 +559,7 @@ SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 #ifdef PARANOID
 	if (SV_HullPointContents (sv_hullmodel, mid, node->children[side])
 		== CONTENTS_SOLID) {
-		Con_Printf ("mid PointInHullSolid\n");
+		SV_Printf ("mid PointInHullSolid\n");
 		return false;
 	}
 #endif
@@ -589,7 +589,7 @@ SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 		if (frac < 0) {
 			trace->fraction = midf;
 			VectorCopy (mid, trace->endpos);
-			Con_Printf ("backup past 0\n");
+			SV_Printf ("backup past 0\n");
 			return false;
 		}
 		midf = p1f + (p2f - p1f) * frac;

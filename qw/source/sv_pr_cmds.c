@@ -82,7 +82,7 @@ PF_error (progs_t *pr)
 	edict_t    *ed;
 
 	s = PF_VarString (pr, 0);
-	Con_Printf ("======SERVER ERROR in %s:\n%s\n",
+	SV_Printf ("======SERVER ERROR in %s:\n%s\n",
 				PR_GetString (pr, pr->pr_xfunction->s_name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed);
@@ -105,7 +105,7 @@ PF_objerror (progs_t *pr)
 	edict_t    *ed;
 
 	s = PF_VarString (pr, 0);
-	Con_Printf ("======OBJECT ERROR in %s:\n%s\n",
+	SV_Printf ("======OBJECT ERROR in %s:\n%s\n",
 				PR_GetString (pr, pr->pr_xfunction->s_name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed);
@@ -251,7 +251,7 @@ PF_sprint (progs_t *pr)
 	s = PF_VarString (pr, 2);
 
 	if (entnum < 1 || entnum > MAX_CLIENTS) {
-		Con_Printf ("tried to sprint to a non-client\n");
+		SV_Printf ("tried to sprint to a non-client\n");
 		return;
 	}
 
@@ -279,7 +279,7 @@ PF_centerprint (progs_t *pr)
 	s = PF_VarString (pr, 1);
 
 	if (entnum < 1 || entnum > MAX_CLIENTS) {
-		Con_Printf ("tried to sprint to a non-client\n");
+		SV_Printf ("tried to sprint to a non-client\n");
 		return;
 	}
 
@@ -440,7 +440,7 @@ PF_ambientsound (progs_t *pr)
 			break;
 
 	if (!*check) {
-		Con_Printf ("no precache: %s\n", samp);
+		SV_Printf ("no precache: %s\n", samp);
 		return;
 	}
 // add an svc_spawnambient command to the level signon packet
@@ -494,7 +494,7 @@ PF_sound (progs_t *pr)
 void
 PF_break (progs_t *pr)
 {
-	Con_Printf ("break statement\n");
+	SV_Printf ("break statement\n");
 	*(int *) -4 = 0;					// dump to debugger
 //  PR_RunError (pr, "break statement");
 }
@@ -752,7 +752,7 @@ PF_cvar_set (progs_t *pr)
 		var = Cvar_FindAlias (var_name);
 	if (!var) {
 		// FIXME: make Con_DPrint?
-		Con_Printf ("PF_cvar_set: variable %s not found\n", var_name);
+		SV_Printf ("PF_cvar_set: variable %s not found\n", var_name);
 		return;
 	}
 
@@ -807,7 +807,7 @@ PF_findradius (progs_t *pr)
 void
 PF_dprint (progs_t *pr)
 {
-	Con_Printf ("%s", PF_VarString (pr, 0));
+	SV_Printf ("%s", PF_VarString (pr, 0));
 }
 
 char        pr_string_temp[128];
@@ -1472,7 +1472,7 @@ PF_makestatic (progs_t *pr)
 	MSG_WriteByte (&sv.signon, svc_spawnstatic);
 
 	model = PR_GetString (pr, SVFIELD (ent, model, string));
-//Con_Printf ("Model: %d %s\n", SVFIELD (ent, model, string), model);
+//SV_Printf ("Model: %d %s\n", SVFIELD (ent, model, string), model);
 	MSG_WriteByte (&sv.signon, SV_ModelIndex (model));
 
 	MSG_WriteByte (&sv.signon, SVFIELD (ent, frame, float));

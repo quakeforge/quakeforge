@@ -472,6 +472,7 @@ void SV_SetMoveVars(void);
 //
 // sv_send.c
 //
+void SV_Printf (char *fmt, ...) __attribute__((format(printf,1,2)));
 void SV_SendClientMessages (void);
 
 void SV_Multicast (vec3_t origin, int to);

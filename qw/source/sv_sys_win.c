@@ -202,9 +202,9 @@ main (int argc, char **argv)
 		Cvar_Set (sys_sleep, "0");
 	} else {
 		if (!SetPriorityClass (GetCurrentProcess (), HIGH_PRIORITY_CLASS))
-			Con_Printf ("SetPriorityClass() failed\n");
+			SV_Printf ("SetPriorityClass() failed\n");
 		else
-			Con_Printf ("Process priority class set to HIGH\n");
+			SV_Printf ("Process priority class set to HIGH\n");
 	}
 
 	// sys_sleep > 0 seems to cause packet loss on WinNT (why?)

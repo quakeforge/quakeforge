@@ -92,7 +92,7 @@ SV_CheckAllEnts (void)
 			|| SVFIELD (check, movetype, float) == MOVETYPE_NOCLIP) continue;
 
 		if (SV_TestEntityPosition (check))
-			Con_Printf ("entity in invalid position\n");
+			SV_Printf ("entity in invalid position\n");
 	}
 }
 
@@ -110,12 +110,12 @@ SV_CheckVelocity (edict_t *ent)
 //
 	for (i = 0; i < 3; i++) {
 		if (IS_NAN (SVFIELD (ent, velocity, vector)[i])) {
-			Con_Printf ("Got a NaN velocity on %s\n",
+			SV_Printf ("Got a NaN velocity on %s\n",
 						PR_GetString (&sv_pr_state, SVFIELD (ent, classname, string)));
 			SVFIELD (ent, velocity, vector)[i] = 0;
 		}
 		if (IS_NAN (SVFIELD (ent, origin, vector)[i])) {
-			Con_Printf ("Got a NaN origin on %s\n",
+			SV_Printf ("Got a NaN origin on %s\n",
 						PR_GetString (&sv_pr_state, SVFIELD (ent, classname, string)));
 			SVFIELD (ent, origin, vector)[i] = 0;
 		}
@@ -339,7 +339,7 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 			VectorCopy (new_velocity, SVFIELD (ent, velocity, vector));
 		} else {						// go along the crease
 			if (numplanes != 2) {
-//              Con_Printf ("clip velocity, numplanes == %i\n",numplanes);
+//              SV_Printf ("clip velocity, numplanes == %i\n",numplanes);
 				VectorCopy (vec3_origin, SVFIELD (ent, velocity, vector));
 				return 7;
 			}
@@ -592,7 +592,7 @@ SV_Physics_Pusher (edict_t *ent)
 
 		l = Length (move);
 		if (l > 1.0 / 64) {
-//          Con_Printf ("**** snap: %f\n", Length (l));
+//          SV_Printf ("**** snap: %f\n", Length (l));
 			VectorCopy (oldorg, SVFIELD (ent, origin, vector));
 			SV_Push (ent, move);
 		}
@@ -815,7 +815,7 @@ SV_PPushMove (edict_t *pusher, float movetime)	// player push
 
 		// Stage 2: Is it a player we can push?
 		if (SVFIELD (check, movetype, float) == MOVETYPE_WALK) {
-			Con_Printf ("Pusher encountered a player\n");	// Yes!@#!@
+			SV_Printf ("Pusher encountered a player\n");	// Yes!@#!@
 			SVFIELD (pusher, solid, float) = SOLID_NOT;
 			SV_PushEntity (check, move);
 			SVFIELD (pusher, solid, float) = oldsolid;

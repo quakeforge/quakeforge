@@ -52,6 +52,8 @@
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
+#include "server.h"
+
 static WINDOW *output;
 static WINDOW *status;
 static WINDOW *input;
@@ -181,7 +183,7 @@ Con_ProcessInput (void)
 				Cbuf_AddText (key_lines[edit_line] + 1);
 			Cbuf_AddText ("\n");
 		  no_lf:
-			Con_Printf ("%s\n", key_lines[edit_line]);
+			SV_Printf ("%s\n", key_lines[edit_line]);
 			edit_line = (edit_line + 1) & 31;
 			history_line = edit_line;
 			key_lines[edit_line][0] = ']';
@@ -358,24 +360,24 @@ Con_CompleteCommandLine (void)
 				cmd_len++;
 		} while (i == 3);
 		// 'quakebar'
-		Con_Printf("\n\35");
+		SV_Printf("\n\35");
 		for (i = 0; i < screen_x - 4; i++)
-			Con_Printf("\36");
-		Con_Printf("\37\n");
+			SV_Printf("\36");
+		SV_Printf("\37\n");
 
 		// Print Possible Commands
 		if (c) {
-			Con_Printf("%i possible command%s\n", c, (c > 1) ? "s: " : ":");
+			SV_Printf("%i possible command%s\n", c, (c > 1) ? "s: " : ":");
 			Con_DisplayList(list[0], screen_x);
 		}
 		
 		if (v) {
-			Con_Printf("%i possible variable%s\n", v, (v > 1) ? "s: " : ":");
+			SV_Printf("%i possible variable%s\n", v, (v > 1) ? "s: " : ":");
 			Con_DisplayList(list[1], screen_x);
 		}
 		
 		if (a) {
-			Con_Printf("%i possible aliases%s\n", a, (a > 1) ? "s: " : ":");
+			SV_Printf("%i possible aliases%s\n", a, (a > 1) ? "s: " : ":");
 			Con_DisplayList(list[2], screen_x);
 		}
 	}

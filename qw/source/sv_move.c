@@ -192,7 +192,7 @@ SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
 			if (relink)
 				SV_LinkEdict (ent, true);
 			SVFIELD (ent, flags, float) = (int) SVFIELD (ent, flags, float) & ~FL_ONGROUND;
-//  Con_Printf ("fall down\n"); 
+//  SV_Printf ("fall down\n"); 
 			return true;
 		}
 
@@ -215,7 +215,7 @@ SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
 	}
 
 	if ((int) SVFIELD (ent, flags, float) & FL_PARTIALGROUND) {
-//      Con_Printf ("back on ground\n"); 
+//      SV_Printf ("back on ground\n"); 
 		SVFIELD (ent, flags, float) = (int) SVFIELD (ent, flags, float) & ~FL_PARTIALGROUND;
 	}
 	SVFIELD (ent, groundentity, entity) = EDICT_TO_PROG (&sv_pr_state, trace.ent);
@@ -270,7 +270,7 @@ SV_StepDirection (edict_t *ent, float yaw, float dist)
 void
 SV_FixCheckBottom (edict_t *ent)
 {
-//  Con_Printf ("SV_FixCheckBottom\n");
+//  SV_Printf ("SV_FixCheckBottom\n");
 
 	SVFIELD (ent, flags, float) = (int) SVFIELD (ent, flags, float) | FL_PARTIALGROUND;
 }

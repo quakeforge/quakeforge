@@ -55,7 +55,7 @@
 #define CHAN_BODY   4
 
 /*
-	Con_Printf redirection
+	SV_Printf redirection
 */
 
 char        outputbuf[8000];
@@ -98,7 +98,7 @@ SV_FlushRedirect (void)
 /*
 	SV_BeginRedirect
 
-	Send Con_Printf data to the remote client
+	Send SV_Printf data to the remote client
 	instead of the console
 */
 void
@@ -117,14 +117,14 @@ SV_EndRedirect (void)
 
 
 /*
-	Con_Printf
+	SV_Printf
 
 	Handles cursor positioning, line wrapping, etc
 */
 #define	MAXPRINTMSG	4096
 
 void
-Con_Printf (char *fmt, ...)
+SV_Printf (char *fmt, ...)
 {
 	static int  pending = 0;			// partial line being printed
 	va_list     argptr;
@@ -166,31 +166,10 @@ Con_Printf (char *fmt, ...)
 			pending = 0;
 		}
 
-		Con_Print (msg2);		// also echo to debugging console
+		Con_Printf ("%s", msg2);		// also echo to debugging console
 		if (sv_logfile)
 			Qprintf (sv_logfile, "%s", msg2);
 	}
-}
-
-/*
-	Con_DPrintf
-
-	A Con_Printf that only shows up if the "developer" cvar is set
-*/
-void
-Con_DPrintf (char *fmt, ...)
-{
-	va_list     argptr;
-	char        msg[MAXPRINTMSG];
-
-	if (!developer->int_val)
-		return;
-
-	va_start (argptr, fmt);
-	vsnprintf (msg, sizeof (msg), fmt, argptr);
-	va_end (argptr);
-
-	Con_Printf ("%s", msg);
 }
 
 /*
@@ -244,7 +223,7 @@ SV_BroadcastPrintf (int level, char *fmt, ...)
 	vsnprintf (string, sizeof (string), fmt, argptr);
 	va_end (argptr);
 
-	Con_Printf ("%s", string);			// print to the console
+	SV_Printf ("%s", string);			// print to the console
 
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
 		if (level < cl->messagelevel)
@@ -348,7 +327,7 @@ SV_Multicast (vec3_t origin, int to)
 			// -1 is because pvs rows are 1 based, not 0 based like leafs
 			leafnum = leaf - sv.worldmodel->leafs - 1;
 			if (!(mask[leafnum >> 3] & (1 << (leafnum & 7)))) {
-//              Con_Printf ("supressed multicast\n");
+//              SV_Printf ("supressed multicast\n");
 				continue;
 			}
 		}
@@ -407,7 +386,7 @@ SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
 			break;
 
 	if (sound_num == MAX_SOUNDS || !sv.sound_precache[sound_num]) {
-		Con_Printf ("SV_StartSound: %s not precacheed\n", sample);
+		SV_Printf ("SV_StartSound: %s not precacheed\n", sample);
 		return;
 	}
 
@@ -617,7 +596,7 @@ SV_SendClientDatagram (client_t *client)
 	// copy the accumulated multicast datagram
 	// for this client out to the message
 	if (client->datagram.overflowed)
-		Con_Printf ("WARNING: datagram overflowed for %s\n", client->name);
+		SV_Printf ("WARNING: datagram overflowed for %s\n", client->name);
 	else
 		SZ_Write (&msg, client->datagram.data, client->datagram.cursize);
 	SZ_Clear (&client->datagram);
@@ -627,7 +606,7 @@ SV_SendClientDatagram (client_t *client)
 		SV_UpdateClientStats (client);
 
 	if (msg.overflowed) {
-		Con_Printf ("WARNING: msg overflowed for %s\n", client->name);
+		SV_Printf ("WARNING: msg overflowed for %s\n", client->name);
 		SZ_Clear (&msg);
 	}
 	// send the datagram
@@ -773,7 +752,7 @@ SV_SendClientMessages (void)
 			SZ_Clear (&c->netchan.message);
 			SZ_Clear (&c->datagram);
 			SV_BroadcastPrintf (PRINT_HIGH, "%s overflowed\n", c->name);
-			Con_Printf ("WARNING: reliable overflow for %s\n", c->name);
+			SV_Printf ("WARNING: reliable overflow for %s\n", c->name);
 			SV_DropClient (c);
 			c->send_message = true;
 			c->netchan.cleartime = 0;	// don't choke this message

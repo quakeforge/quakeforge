@@ -210,7 +210,7 @@ SV_Error (char *error, ...)
 	vsnprintf (string, sizeof (string), error, argptr);
 	va_end (argptr);
 
-	Con_Printf ("SV_Error: %s\n", string);
+	SV_Printf ("SV_Error: %s\n", string);
 
 	SV_FinalMessage (va ("server crashed: %s\n", string));
 
@@ -272,9 +272,9 @@ SV_DropClient (client_t *drop)
 		}
 	}
 	if (drop->spectator)
-		Con_Printf ("Spectator %s removed\n", drop->name);
+		SV_Printf ("Spectator %s removed\n", drop->name);
 	else
-		Con_Printf ("Client %s removed\n", drop->name);
+		SV_Printf ("Client %s removed\n", drop->name);
 
 	if (drop->download) {
 		Qclose (drop->download);
@@ -340,7 +340,7 @@ SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 
 	i = client - svs.clients;
 
-//  Con_Printf("SV_FullClientUpdate:  Updated frags for client %d\n", i);
+//  SV_Printf("SV_FullClientUpdate:  Updated frags for client %d\n", i);
 
 	MSG_WriteByte (buf, svc_updatefrags);
 	MSG_WriteByte (buf, i);
@@ -438,7 +438,7 @@ CheckForFlood (flood_enum_t cmdtype)
 			floodstatus[cmdtype][i].floodcount += 1;
 			if (floodstatus[cmdtype][i].floodcount > netdosvalues[cmdtype]) {
 				if ((lastmessagetime + 5) < currenttime)
-					Con_Printf ("Blocking type %d flood from (or to) %s\n",
+					SV_Printf ("Blocking type %d flood from (or to) %s\n",
 								cmdtype, NET_AdrToString (net_from));
 				floodstatus[cmdtype][i].floodcount = 0;
 				floodstatus[cmdtype][i].issued = currenttime;
@@ -487,7 +487,7 @@ SVC_Status (void)
 	con_printf_no_log = 1;
 	Cmd_TokenizeString ("status");
 	SV_BeginRedirect (RD_PACKET);
-	Con_Printf ("%s\n", svs.info);
+	SV_Printf ("%s\n", svs.info);
 	for (i = 0; i < MAX_CLIENTS; i++) {
 		cl = &svs.clients[i];
 		if ((cl->state == cs_connected || cl->state == cs_spawned)
@@ -497,7 +497,7 @@ SVC_Status (void)
 			top = (top < 0) ? 0 : ((top > 13) ? 13 : top);
 			bottom = (bottom < 0) ? 0 : ((bottom > 13) ? 13 : bottom);
 			ping = SV_CalcPing (cl);
-			Con_Printf ("%i %i %i %i \"%s\" \"%s\" %i %i\n", cl->userid,
+			SV_Printf ("%i %i %i %i \"%s\" \"%s\" %i %i\n", cl->userid,
 						cl->old_frags,
 						(int) (realtime - cl->connection_started) / 60, ping,
 						cl->name, Info_ValueForKey (cl->userinfo, "skin"), top,
@@ -529,7 +529,7 @@ SV_CheckLog (void)
 		svs.logsequence++;
 		sz = &svs.log[svs.logsequence & 1];
 		sz->cursize = 0;
-		Con_Printf ("beginning fraglog sequence %i\n", svs.logsequence);
+		SV_Printf ("beginning fraglog sequence %i\n", svs.logsequence);
 	}
 
 }
@@ -672,7 +672,7 @@ SVC_DirectConnect (void)
 	if (version != PROTOCOL_VERSION) {
 		Netchan_OutOfBandPrint (net_from, "%c\nServer is version %s.\n",
 								A2C_PRINT, QW_VERSION);
-		Con_Printf ("* rejected connect from version %i\n", version);
+		SV_Printf ("* rejected connect from version %i\n", version);
 		return;
 	}
 
@@ -710,7 +710,7 @@ SVC_DirectConnect (void)
 	s = Info_ValueForKey (userinfo, "*qf_version");
 	if ((!s[0]) || sv_minqfversion->string[0]) {	// kick old clients?
 		if (ver_compare (s, sv_minqfversion->string) < 0) {
-			Con_Printf ("%s: Version %s is less than minimum version %s.\n",
+			SV_Printf ("%s: Version %s is less than minimum version %s.\n",
 						NET_AdrToString (net_from), s, sv_minqfversion->string);
 
 			Netchan_OutOfBandPrint (net_from,
@@ -725,7 +725,7 @@ SVC_DirectConnect (void)
 		if (spectator_password->string[0] &&
 			!strcaseequal (spectator_password->string, "none") &&
 			!strequal (spectator_password->string, s)) {	// failed
-			Con_Printf ("%s: spectator password failed\n",
+			SV_Printf ("%s: spectator password failed\n",
 						NET_AdrToString (net_from));
 			Netchan_OutOfBandPrint (net_from,
 									"%c\nrequires a spectator password\n\n",
@@ -740,7 +740,7 @@ SVC_DirectConnect (void)
 		if (password->string[0]
 			&& !strcaseequal (password->string, "none")
 			&& !strequal (password->string, s)) {
-			Con_Printf ("%s:password failed\n", NET_AdrToString (net_from));
+			SV_Printf ("%s:password failed\n", NET_AdrToString (net_from));
 			Netchan_OutOfBandPrint (net_from,
 									"%c\nserver requires a password\n\n",
 									A2C_PRINT);
@@ -778,12 +778,12 @@ SVC_DirectConnect (void)
 			&& (cl->netchan.qport == qport
 				|| adr.port == cl->netchan.remote_address.port)) {
 			if (cl->state == cs_connected) {
-				Con_Printf ("%s:dup connect\n", NET_AdrToString (adr));
+				SV_Printf ("%s:dup connect\n", NET_AdrToString (adr));
 				userid--;
 				return;
 			}
 
-			Con_Printf ("%s:reconnect\n", NET_AdrToString (adr));
+			SV_Printf ("%s:reconnect\n", NET_AdrToString (adr));
 			SV_DropClient (cl);
 			break;
 		}
@@ -810,7 +810,7 @@ SVC_DirectConnect (void)
 		Cvar_SetValue (maxspectators, MAX_CLIENTS - maxclients->int_val);
 	if ((spectator && spectators >= maxspectators->int_val)
 		|| (!spectator && clients >= maxclients->int_val)) {
-		Con_Printf ("%s:full connect\n", NET_AdrToString (adr));
+		SV_Printf ("%s:full connect\n", NET_AdrToString (adr));
 		Netchan_OutOfBandPrint (adr, "%c\nserver is full\n\n", A2C_PRINT);
 		return;
 	}
@@ -823,7 +823,7 @@ SVC_DirectConnect (void)
 		}
 	}
 	if (!newcl) {
-		Con_Printf ("WARNING: miscounted available clients\n");
+		SV_Printf ("WARNING: miscounted available clients\n");
 		return;
 	}
 	// build a new connection
@@ -865,7 +865,7 @@ SVC_DirectConnect (void)
 		newcl->spawn_parms[i] = sv_globals.parms[i];
 
 	if (newcl->spectator)
-		Con_Printf ("Spectator %s connected\n", newcl->name);
+		SV_Printf ("Spectator %s connected\n", newcl->name);
 	else
 		Con_DPrintf ("Client %s connected\n", newcl->name);
 	newcl->sendinfo = true;
@@ -949,9 +949,9 @@ SVC_RemoteCommand (void)
 			SV_BroadcastPrintf (PRINT_HIGH, "Admin %s issued %s command:\n",
 								name, Cmd_Argv(2));
 		} else if (admin_cmd) {
-			Con_Printf ("Admin %s issued %s command:\n", name, Cmd_Argv(2));
+			SV_Printf ("Admin %s issued %s command:\n", name, Cmd_Argv(2));
 		} else {
-			Con_Printf("User %s %s rcon command:\n", name,
+			SV_Printf("User %s %s rcon command:\n", name,
 					   do_cmd? "issued":"attempted");
 		}
 	}
@@ -965,7 +965,7 @@ SVC_RemoteCommand (void)
 			len += strlen (Cmd_Argv (i)) + 1;	// +1 for " "
 		}
 
-		Con_Printf ("Rcon from %s:\n\trcon (hidden) %s\n",
+		SV_Printf ("Rcon from %s:\n\trcon (hidden) %s\n",
 					NET_AdrToString (net_from), remaining);
 
 		SV_BeginRedirect (RD_PACKET);
@@ -974,14 +974,14 @@ SVC_RemoteCommand (void)
 		Cmd_ExecuteString (remaining, src_command);
 		rcon_from_user = false;
 	} else {
-		Con_Printf ("Bad rcon from %s:\n%s\n", NET_AdrToString (net_from),
+		SV_Printf ("Bad rcon from %s:\n%s\n", NET_AdrToString (net_from),
 					net_message->message->data + 4);
 
 		SV_BeginRedirect (RD_PACKET);
 		if (admin_cmd) {
-			Con_Printf("Command not valid with admin password.\n");
+			SV_Printf("Command not valid with admin password.\n");
 		} else {
-			Con_Printf ("Bad rcon_password.\n");
+			SV_Printf ("Bad rcon_password.\n");
 		}
 	}
 
@@ -1018,7 +1018,7 @@ SV_ConnectionlessPacket (void)
 		return;
 	}
 	if (c[0] == A2A_ACK && (c[1] == 0 || c[1] == '\n')) {
-		Con_Printf ("A2A_ACK from %s\n", NET_AdrToString (net_from));
+		SV_Printf ("A2A_ACK from %s\n", NET_AdrToString (net_from));
 		return;
 	} else if (!strcmp (c, "status")) {
 		SVC_Status ();
@@ -1035,7 +1035,7 @@ SV_ConnectionlessPacket (void)
 	} else if (!strcmp (c, "rcon"))
 		SVC_RemoteCommand ();
 	else
-		Con_Printf ("bad connectionless packet from %s:\n%s\n",
+		SV_Printf ("bad connectionless packet from %s:\n%s\n",
 					NET_AdrToString (net_from), s);
 }
 
@@ -1104,7 +1104,7 @@ StringToFilter (char *s, ipfilter_t * f)
 
 	for (i = 0; i < 4; i++) {
 		if (*s < '0' || *s > '9') {
-			Con_Printf ("Bad filter address: %s\n", s);
+			SV_Printf ("Bad filter address: %s\n", s);
 			return false;
 		}
 
@@ -1141,7 +1141,7 @@ SV_AddIP_f (void)
 			break;						// free spot
 	if (i == numipfilters) {
 		if (numipfilters == MAX_IPFILTERS) {
-			Con_Printf ("IP filter list is full\n");
+			SV_Printf ("IP filter list is full\n");
 			return;
 		}
 		numipfilters++;
@@ -1167,10 +1167,10 @@ SV_RemoveIP_f (void)
 			for (j = i + 1; j < numipfilters; j++)
 				ipfilters[j - 1] = ipfilters[j];
 			numipfilters--;
-			Con_Printf ("Removed.\n");
+			SV_Printf ("Removed.\n");
 			return;
 		}
-	Con_Printf ("Didn't find %s.\n", Cmd_Argv (1));
+	SV_Printf ("Didn't find %s.\n", Cmd_Argv (1));
 }
 
 /*
@@ -1182,10 +1182,10 @@ SV_ListIP_f (void)
 	int         i;
 	byte        b[4];
 
-	Con_Printf ("Filter list:\n");
+	SV_Printf ("Filter list:\n");
 	for (i = 0; i < numipfilters; i++) {
 		*(unsigned int *) b = ipfilters[i].compare;
-		Con_Printf ("%3i.%3i.%3i.%3i\n", b[0], b[1], b[2], b[3]);
+		SV_Printf ("%3i.%3i.%3i.%3i\n", b[0], b[1], b[2], b[3]);
 	}
 }
 
@@ -1202,11 +1202,11 @@ SV_WriteIP_f (void)
 
 	snprintf (name, sizeof (name), "%s/listip.cfg", com_gamedir);
 
-	Con_Printf ("Writing %s.\n", name);
+	SV_Printf ("Writing %s.\n", name);
 
 	f = Qopen (name, "wb");
 	if (!f) {
-		Con_Printf ("Couldn't open %s\n", name);
+		SV_Printf ("Couldn't open %s\n", name);
 		return;
 	}
 
@@ -1228,17 +1228,17 @@ SV_netDoSexpire_f (void)
 	int         i;
 
 	if (Cmd_Argc () == 1) {
-		Con_Printf ("Current DoS prot. expire settings: ");
+		SV_Printf ("Current DoS prot. expire settings: ");
 		for (i = 0; i < DOSFLOODCMDS; i++)
-			Con_Printf ("%f ", netdosexpire[i]);
-		Con_Printf ("\n");
+			SV_Printf ("%f ", netdosexpire[i]);
+		SV_Printf ("\n");
 		if (!sv_netdosprotect->int_val)
-			Con_Printf ("(disabled)\n");
+			SV_Printf ("(disabled)\n");
 		return;
 	}
 
 	if (Cmd_Argc () != DOSFLOODCMDS + 1) {
-		Con_Printf
+		SV_Printf
 			("Usage: netdosexpire <ping> <log> <connect> <status> <rcon> <ban>\n");
 		return;
 	}
@@ -1261,17 +1261,17 @@ SV_netDoSvalues_f (void)
 	int         i;
 
 	if (Cmd_Argc () == 1) {
-		Con_Printf ("Current DoS prot. value settings: ");
+		SV_Printf ("Current DoS prot. value settings: ");
 		for (i = 0; i < DOSFLOODCMDS; i++)
-			Con_Printf ("%f ", netdosvalues[i]);
-		Con_Printf ("\n");
+			SV_Printf ("%f ", netdosvalues[i]);
+		SV_Printf ("\n");
 		if (!sv_netdosprotect->int_val)
-			Con_Printf ("(disabled)\n");
+			SV_Printf ("(disabled)\n");
 		return;
 	}
 
 	if (Cmd_Argc () != DOSFLOODCMDS + 1) {
-		Con_Printf
+		SV_Printf
 			("Usage: netdosvalues <ping> <log> <connect> <status> <rcon> <ban>\n");
 		return;
 	}
@@ -1347,7 +1347,7 @@ SV_ReadPackets (void)
 		}
 
 		if (net_message->message->cursize < 11) {
-			Con_Printf ("%s: Runt packet\n", NET_AdrToString (net_from));
+			SV_Printf ("%s: Runt packet\n", NET_AdrToString (net_from));
 			continue;
 		}
 		// read the qport out of the message so we can fix up
@@ -1385,7 +1385,7 @@ SV_ReadPackets (void)
 			continue;
 
 		// packet is not from a known client
-		// Con_Printf ("%s:sequenced packet without connection\n"
+		// SV_Printf ("%s:sequenced packet without connection\n"
 		// ,NET_AdrToString(net_from));
 	}
 }
@@ -1465,7 +1465,7 @@ SV_CheckVars (void)
 	if (spw && spw[0] && strcmp (spw, "none"))
 		v |= 2;
 
-	Con_Printf ("Updated needpass.\n");
+	SV_Printf ("Updated needpass.\n");
 	if (!v)
 		Info_SetValueForKey (svs.info, "needpass", "", MAX_SERVERINFO_STRING);
 	else
@@ -1785,7 +1785,7 @@ Master_Heartbeat (void)
 	// send to group master
 	for (i = 0; i < MAX_MASTERS; i++)
 		if (master_adr[i].port) {
-			Con_Printf ("Sending heartbeat to %s\n",
+			SV_Printf ("Sending heartbeat to %s\n",
 						NET_AdrToString (master_adr[i]));
 			NET_SendPacket (strlen (string), string, master_adr[i]);
 		}
@@ -1807,7 +1807,7 @@ Master_Shutdown (void)
 	// send to group master
 	for (i = 0; i < MAX_MASTERS; i++)
 		if (master_adr[i].port) {
-			Con_Printf ("Sending heartbeat to %s\n",
+			SV_Printf ("Sending heartbeat to %s\n",
 						NET_AdrToString (master_adr[i]));
 			NET_SendPacket (strlen (string), string, master_adr[i]);
 		}
@@ -1894,7 +1894,7 @@ SV_ExtractFromUserinfo (client_t *cl)
 							"%c\nPlease choose a different name.\n", A2C_PRINT);
 				SV_ClientPrintf (cl, PRINT_HIGH,
 								 "Please choose a different name.\n");
-				Con_Printf("Client %d kicked for invalid name\n", cl->userid);
+				SV_Printf("Client %d kicked for invalid name\n", cl->userid);
 				SV_DropClient (cl);
 				return;
 			}
@@ -1963,7 +1963,7 @@ SV_InitNet (void)
 	p = COM_CheckParm ("-port");
 	if (p && p < com_argc) {
 		port = atoi (com_argv[p + 1]);
-		Con_Printf ("Port: %i\n", port);
+		SV_Printf ("Port: %i\n", port);
 	}
 	NET_Init (port);
 
@@ -2068,13 +2068,15 @@ SV_Init (void)
 
 	host_initialized = true;
 
-//  Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
-	Con_Printf ("%4.1f megabyte heap\n", host_parms.memsize / (1024 * 1024.0));
+//  SV_Printf ("Exe: "__TIME__" "__DATE__"\n");
+	SV_Printf ("%4.1f megabyte heap\n", host_parms.memsize / (1024 * 1024.0));
 
-	Con_Printf ("\n%s server, Version %s (build %04d)\n\n", PROGRAM, VERSION,
+	SV_Printf ("\n");
+	SV_Printf ("%s server, Version %s (build %04d)\n", PROGRAM, VERSION,
 				build_number ());
+	SV_Printf ("\n");
 
-	Con_Printf ("<==> %s initialized <==>\n", PROGRAM);
+	SV_Printf ("<==> %s initialized <==>\n", PROGRAM);
 
 	// process command line arguments
 	Cmd_Exec_File (fs_usercfg->string);

@@ -210,7 +210,7 @@ SV_CalcPHS (void)
 	byte       *scan;
 	int         count, vcount;
 
-	Con_Printf ("Building PHS...\n");
+	SV_Printf ("Building PHS...\n");
 
 	num = sv.worldmodel->numleafs;
 	rowwords = (num + 31) >> 5;
@@ -263,7 +263,7 @@ SV_CalcPHS (void)
 				count++;
 	}
 
-	Con_Printf ("Average leafs visible / hearable / total: %i / %i / %i\n",
+	SV_Printf ("Average leafs visible / hearable / total: %i / %i / %i\n",
 				vcount / num, count / num, num);
 }
 
@@ -280,7 +280,7 @@ SV_CheckModel (char *mdl)
 	if (buf) {
 		crc = CRC_Block (buf, com_filesize);
 	} else {
-		Con_Printf ("WARNING: cannot generate checksum for %s\n", mdl);
+		SV_Printf ("WARNING: cannot generate checksum for %s\n", mdl);
 	}
 
 	return crc;

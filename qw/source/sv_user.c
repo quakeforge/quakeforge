@@ -115,7 +115,7 @@ SV_New_f (void)
 //NOTE:  This doesn't go through ClientReliableWrite since it's before the user
 //spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
-		Con_Printf ("WARNING %s: [SV_New] Back buffered (%d0, clearing",
+		SV_Printf ("WARNING %s: [SV_New] Back buffered (%d0, clearing",
 					host_client->name, host_client->netchan.message.cursize);
 		host_client->num_backbuf = 0;
 		SZ_Clear (&host_client->netchan.message);
@@ -167,26 +167,26 @@ SV_Soundlist_f (void)
 	unsigned    n;
 
 	if (host_client->state != cs_connected) {
-		Con_Printf ("soundlist not valid -- already spawned\n");
+		SV_Printf ("soundlist not valid -- already spawned\n");
 		return;
 	}
 	// handle the case of a level changing while a client was connecting
 	if (atoi (Cmd_Argv (1)) != svs.spawncount) {
-		Con_Printf ("SV_Soundlist_f from different level\n");
+		SV_Printf ("SV_Soundlist_f from different level\n");
 		SV_New_f ();
 		return;
 	}
 
 	n = atoi (Cmd_Argv (2));
 	if (n >= MAX_SOUNDS) {
-		Con_Printf ("SV_Soundlist_f: Invalid soundlist index\n");
+		SV_Printf ("SV_Soundlist_f: Invalid soundlist index\n");
 		SV_New_f ();
 		return;
 	}
 //NOTE:  This doesn't go through ClientReliableWrite since it's before the user
 //spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
-		Con_Printf ("WARNING %s: [SV_Soundlist] Back buffered (%d0, clearing",
+		SV_Printf ("WARNING %s: [SV_Soundlist] Back buffered (%d0, clearing",
 					host_client->name, host_client->netchan.message.cursize);
 		host_client->num_backbuf = 0;
 		SZ_Clear (&host_client->netchan.message);
@@ -217,26 +217,26 @@ SV_Modellist_f (void)
 	unsigned    n;
 
 	if (host_client->state != cs_connected) {
-		Con_Printf ("modellist not valid -- already spawned\n");
+		SV_Printf ("modellist not valid -- already spawned\n");
 		return;
 	}
 	// handle the case of a level changing while a client was connecting
 	if (atoi (Cmd_Argv (1)) != svs.spawncount) {
-		Con_Printf ("SV_Modellist_f from different level\n");
+		SV_Printf ("SV_Modellist_f from different level\n");
 		SV_New_f ();
 		return;
 	}
 
 	n = atoi (Cmd_Argv (2));
 	if (n >= MAX_MODELS) {
-		Con_Printf ("SV_Modellist_f: Invalid modellist index\n");
+		SV_Printf ("SV_Modellist_f: Invalid modellist index\n");
 		SV_New_f ();
 		return;
 	}
 //NOTE:  This doesn't go through ClientReliableWrite since it's before the user
 //spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
-		Con_Printf ("WARNING %s: [SV_Modellist] Back buffered (%d0, clearing",
+		SV_Printf ("WARNING %s: [SV_Modellist] Back buffered (%d0, clearing",
 					host_client->name, host_client->netchan.message.cursize);
 		host_client->num_backbuf = 0;
 		SZ_Clear (&host_client->netchan.message);
@@ -266,12 +266,12 @@ SV_PreSpawn_f (void)
 	unsigned int check;
 
 	if (host_client->state != cs_connected) {
-		Con_Printf ("prespawn not valid -- already spawned\n");
+		SV_Printf ("prespawn not valid -- already spawned\n");
 		return;
 	}
 	// handle the case of a level changing while a client was connecting
 	if (atoi (Cmd_Argv (1)) != svs.spawncount) {
-		Con_Printf ("SV_PreSpawn_f from different level\n");
+		SV_Printf ("SV_PreSpawn_f from different level\n");
 		SV_New_f ();
 		return;
 	}
@@ -302,7 +302,7 @@ SV_PreSpawn_f (void)
 	// the user
 	// spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
-		Con_Printf ("WARNING %s: [SV_PreSpawn] Back buffered (%d0, clearing",
+		SV_Printf ("WARNING %s: [SV_PreSpawn] Back buffered (%d0, clearing",
 					host_client->name, host_client->netchan.message.cursize);
 		host_client->num_backbuf = 0;
 		SZ_Clear (&host_client->netchan.message);
@@ -336,12 +336,12 @@ SV_Spawn_f (void)
 	int         n;
 
 	if (host_client->state != cs_connected) {
-		Con_Printf ("Spawn not valid -- already spawned\n");
+		SV_Printf ("Spawn not valid -- already spawned\n");
 		return;
 	}
 // handle the case of a level changing while a client was connecting
 	if (atoi (Cmd_Argv (1)) != svs.spawncount) {
-		Con_Printf ("SV_Spawn_f from different level\n");
+		SV_Printf ("SV_Spawn_f from different level\n");
 		SV_New_f ();
 		return;
 	}
@@ -350,7 +350,7 @@ SV_Spawn_f (void)
 
 	// make sure n is valid
 	if (n < 0 || n > MAX_CLIENTS) {
-		Con_Printf ("SV_Spawn_f invalid client start\n");
+		SV_Printf ("SV_Spawn_f invalid client start\n");
 		SV_New_f ();
 		return;
 	}
@@ -460,7 +460,7 @@ SV_Begin_f (void)
 
 	// handle the case of a level changing while a client was connecting
 	if (atoi (Cmd_Argv (1)) != svs.spawncount) {
-		Con_Printf ("SV_Begin_f from different level\n");
+		SV_Printf ("SV_Begin_f from different level\n");
 		SV_New_f ();
 		return;
 	}
@@ -615,13 +615,13 @@ SV_NextUpload (void)
 	if (!host_client->upload) {
 		host_client->upload = Qopen (host_client->uploadfn, "wb");
 		if (!host_client->upload) {
-			Con_Printf ("Can't create %s\n", host_client->uploadfn);
+			SV_Printf ("Can't create %s\n", host_client->uploadfn);
 			ClientReliableWrite_Begin (host_client, svc_stufftext, 8);
 			ClientReliableWrite_String (host_client, "stopul");
 			*host_client->uploadfn = 0;
 			return;
 		}
-		Con_Printf ("Receiving %s from %d...\n", host_client->uploadfn,
+		SV_Printf ("Receiving %s from %d...\n", host_client->uploadfn,
 					host_client->userid);
 		if (host_client->remote_snap)
 			OutofBandPrintf (host_client->snap_from,
@@ -641,7 +641,7 @@ SV_NextUpload (void)
 		Qclose (host_client->upload);
 		host_client->upload = NULL;
 
-		Con_Printf ("%s upload completed.\n", host_client->uploadfn);
+		SV_Printf ("%s upload completed.\n", host_client->uploadfn);
 
 		if (host_client->remote_snap) {
 			char       *p;
@@ -730,7 +730,7 @@ SV_BeginDownload_f (void)
 			host_client->download = NULL;
 		}
 
-		Con_Printf ("Couldn't download %s to %s\n", name, host_client->name);
+		SV_Printf ("Couldn't download %s to %s\n", name, host_client->name);
 		ClientReliableWrite_Begin (host_client, svc_download, 4);
 		ClientReliableWrite_Short (host_client, -1);
 		ClientReliableWrite_Byte (host_client, 0);
@@ -738,7 +738,7 @@ SV_BeginDownload_f (void)
 	}
 
 	if (zip && strcmp (realname, name)) {
-		Con_Printf ("download renamed to %s\n", realname);
+		SV_Printf ("download renamed to %s\n", realname);
 		ClientReliableWrite_Begin (host_client, svc_download,
 								   strlen (realname) + 5);
 		ClientReliableWrite_Short (host_client, -2);
@@ -748,7 +748,7 @@ SV_BeginDownload_f (void)
 	}
 
 	SV_NextDownload_f ();
-	Con_Printf ("Downloading %s to %s\n", name, host_client->name);
+	SV_Printf ("Downloading %s to %s\n", name, host_client->name);
 }
 
 //=============================================================================
@@ -820,7 +820,7 @@ SV_Say (qboolean team)
 	strncat (text, p, sizeof (text) - strlen (text));
 	strncat (text, "\n", sizeof (text) - strlen (text));
 
-	Con_Printf ("%s", text);
+	SV_Printf ("%s", text);
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
 		if (client->state < cs_connected)	// Clients connecting can hear.
@@ -1091,13 +1091,13 @@ SV_SetInfo_f (void)
 
 
 	if (Cmd_Argc () == 1) {
-		Con_Printf ("User info settings:\n");
+		SV_Printf ("User info settings:\n");
 		Info_Print (host_client->userinfo);
 		return;
 	}
 
 	if (Cmd_Argc () != 3) {
-		Con_Printf ("usage: setinfo [ <key> <value> ]\n");
+		SV_Printf ("usage: setinfo [ <key> <value> ]\n");
 		return;
 	}
 
@@ -1217,7 +1217,7 @@ SV_ExecuteUserCommand (char *s)
 
 	if (!u) {
 		SV_BeginRedirect (RD_CLIENT);
-		Con_Printf ("Bad user command: %s\n", Cmd_Argv (0));
+		SV_Printf ("Bad user command: %s\n", Cmd_Argv (0));
 		SV_EndRedirect ();
 	} else {
 		if (!u->no_redirect)
@@ -1534,7 +1534,7 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 		after = PM_TestPlayerPosition (pmove.origin);
 
 		if (SVFIELD (sv_player, health, float) > 0 && before && !after)
-			Con_Printf ("player %s got stuck in playermove!!!!\n",
+			SV_Printf ("player %s got stuck in playermove!!!!\n",
 						host_client->name);
 	}
 #else
@@ -1656,7 +1656,7 @@ SV_ExecuteClientMessage (client_t *cl)
 	cl->delta_sequence = -1;			// no delta unless requested
 	while (1) {
 		if (net_message->badread) {
-			Con_Printf ("SV_ReadClientMessage: badread\n");
+			SV_Printf ("SV_ReadClientMessage: badread\n");
 			SV_DropClient (cl);
 			return;
 		}
@@ -1667,7 +1667,7 @@ SV_ExecuteClientMessage (client_t *cl)
 
 		switch (c) {
 			default:
-				Con_Printf ("SV_ReadClientMessage: unknown command char\n");
+				SV_Printf ("SV_ReadClientMessage: unknown command char\n");
 				SV_DropClient (cl);
 				return;
 
