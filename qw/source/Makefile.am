@@ -35,19 +35,17 @@ INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/qw/include
 bin_PROGRAMS=	@QW_TARGETS@
 GLIDE_LIBS= @GLIDE_LIBS@
 
-EXTRA_PROGRAMS= qw-client-3dfx qw-client-fbdev qw-client-glx qw-client-mgl \
-		qw-client-sdl qw-client-sdl32 qw-client-sgl qw-client-svga \
-		qw-client-wgl qw-client-x11 qw-server qw-master
+EXTRA_PROGRAMS= qw-client-fbdev qw-client-glx qw-client-mgl qw-client-sdl \
+		qw-client-sdl32 qw-client-sgl qw-client-svga qw-client-wgl \
+		qw-client-x11 qw-server qw-master
 
 if ASM_ARCH
-ASM = libasm.la
+libasm_la_SOURCES= sys_x86.S worlda.S
 else
-ASM =
+libasm_la_SOURCES=
 endif
 
-noinst_LTLIBRARIES= libqfnet.la $(ASM)
-
-libasm_la_SOURCES = sys_x86.S worlda.S
+noinst_LTLIBRARIES= libqfnet.la libasm.la
 
 common_SOURCES= buildnum.c com.c game.c msg_ucmd.c pmove.c pmovetst.c \
 		net_packetlog.c
@@ -83,9 +81,9 @@ qf_server_LIBS= $(top_builddir)/libs/models/libQFmodels.la \
 		$(top_builddir)/libs/util/libQFutil.la
 
 qw_server_SOURCES=	$(common_SOURCES) $(server_SOURCES)
-qw_server_LDADD=	libqfnet.la $(ASM) $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
+qw_server_LDADD=	libqfnet.la libasm.la $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
 qw_server_LDFLAGS=	$(common_ldflags)
-qw_server_DEPENDENCIES=	libqfnet.la $(ASM) $(qf_server_LIBS)
+qw_server_DEPENDENCIES=	libqfnet.la libasm.la $(qf_server_LIBS)
 
 qw_master_SOURCES=	master.c
 qw_master_LDADD=	$(NET_LIBS)
@@ -98,8 +96,8 @@ qf_client_LIBS=	$(top_builddir)/libs/video/targets/libQFjs.la \
 		$(top_builddir)/libs/audio/libQFsound.la \
 		$(top_builddir)/libs/util/libQFutil.la
 
-client_LIBS= libqfnet.la $(ASM) $(qf_client_LIBS) $(NET_LIBS)
-client_LIB_DEPS=	libqfnet.la $(ASM) $(qf_client_LIBS)
+client_LIBS= libqfnet.la libasm.la $(qf_client_LIBS) $(NET_LIBS)
+client_LIB_DEPS=	libqfnet.la libasm.la $(qf_client_LIBS)
 # libQFjs is seperate because it needs to be linked after when building statically
 
 client_SOURCES= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
@@ -109,68 +107,117 @@ client_SOURCES= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
 
 # Software-rendering clients
 
+# We need libQFrenderer_sw to always be static -- there's assembler in there
+soft_LIBS=	$(top_builddir)/libs/video/renderer/.libs/libQFrenderer_sw.a \
+		$(top_builddir)/libs/models/libQFmodels_sw.la
+
 # ... Linux FBDev
-qw_client_fbdev_SOURCES= $(common_SOURCES) $(client_SOURCES) cl_sys_unix.c
-qw_client_fbdev_LDADD= ../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFfbdev.la $(client_LIBS)
-qw_client_fbdev_LDFLAGS= $(common_ldflags)
-qw_client_fbdev_DEPENDENCIES=../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFfbdev.la  $(client_LIB_DEPS)
+qw_client_fbdev_SOURCES=$(common_SOURCES) $(client_SOURCES) cl_sys_unix.c
+qw_client_fbdev_LDADD=	$(soft_LIBS) \
+			$(top_builddir)/libs/video/targets/libQFfbdev.la \
+			$(client_LIBS)
+qw_client_fbdev_LDFLAGS=$(common_ldflags)
+qw_client_fbdev_DEPENDENCIES= \
+			$(soft_LIBS) \
+			$(top_builddir)/libs/video/targets/libQFfbdev.la \
+			$(client_LIB_DEPS)
 
 # ... SciTech MGL
 qw_client_mgl_SOURCES=	$(common_SOURCES) $(client_SOURCES) cl_sys_win.c
-qw_client_mgl_LDADD=	../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFmgl.la $(client_LIBS) $(MGL_LIBS)
+qw_client_mgl_LDADD=	$(soft_LIBS) \
+			$(top_builddir)/libs/video/targets/libQFmgl.la \
+			$(client_LIBS) $(MGL_LIBS)
 qw_client_mgl_LDFLAGS=  $(common_ldflags)
-qw_client_mgl_DEPENDENCIES=../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFmgl.la $(client_LIB_DEPS)
+qw_client_mgl_DEPENDENCIES= \
+			$(soft_LIBS) \
+			$(top_builddir)/libs/video/targets/libQFmgl.la \
+			$(client_LIB_DEPS)
 
 # ... Simple DirectMedia Layer, version 1.2 and higher
 qw_client_sdl_SOURCES=	$(common_SOURCES) $(client_SOURCES) cl_sys_sdl.c
-qw_client_sdl_LDADD=	../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsdl.la $(client_LIBS) $(SDL_LIBS)
+qw_client_sdl_LDADD=	$(soft_LIBS) \
+			$(top_builddir)/libs/video/targets/libQFsdl.la \
+			$(client_LIBS) $(SDL_LIBS)
 qw_client_sdl_LDFLAGS=  $(common_ldflags)
-qw_client_sdl_DEPENDENCIES=../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsdl.la $(client_LIB_DEPS)
+qw_client_sdl_DEPENDENCIES= \
+			$(soft_LIBS) \
+			$(top_builddir)/libs/video/targets/libQFsdl.la \
+			$(client_LIB_DEPS)
 
-# ... Simple DirectMedia Layer, version 1.2 and higher
-qw_client_sdl32_SOURCES= $(common_SOURCES) $(client_SOURCES) cl_sys_sdl.c
-qw_client_sdl32_LDADD=	 ../../libs/video/renderer/.libs/libQFrenderer_sw32.a ../../libs/models/libQFmodels_sw32.la ../../libs/video/targets/libQFsdl32.la $(client_LIBS) $(SDL_LIBS)
-qw_client_sdl32_LDFLAGS= $(common_ldflags)
-qw_client_sdl32_DEPENDENCIES=../../libs/video/renderer/.libs/libQFrenderer_sw32.a ../../libs/models/libQFmodels_sw32.la ../../libs/video/targets/libQFsdl32.la $(client_LIB_DEPS)
+# ... 32-bit software, SDL
+qw_client_sdl32_SOURCES=$(qw_client_sdl_SOURCES)
+qw_client_sdl32_LDADD=	$(top_builddir)/libs/video/renderer/.libs/libQFrenderer_sw32.a \
+			$(top_builddir)/libs/models/libQFmodels_sw32.la \
+			$(top_builddir)/libs/video/targets/libQFsdl32.la \
+			$(client_LIBS) $(SDL_LIBS)
+qw_client_sdl32_LDFLAGS=$(common_ldflags)
+qw_client_sdl32_DEPENDENCIES= \
+			$(top_builddir)/libs/video/renderer/.libs/libQFrenderer_sw32.a \
+			$(top_builddir)/libs/models/libQFmodels_sw32.la \
+			$(top_builddir)/libs/video/targets/libQFsdl32.la \
+			$(client_LIB_DEPS)
 
 # ... Linux SVGAlib
 qw_client_svga_SOURCES= $(common_SOURCES) $(client_SOURCES) cl_sys_unix.c
-qw_client_svga_LDADD=	../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsvga.la $(client_LIBS) $(SVGA_LIBS)
+qw_client_svga_LDADD=	$(soft_LIBS) \
+			$(top_builddir)/libs/video/targets/libQFsvga.la \
+			$(client_LIBS) $(SVGA_LIBS)
 qw_client_svga_LDFAGS=  $(common_ldflags)
-qw_client_svga_DEPENDENCIES=../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsvga.la $(client_LIB_DEPS)
+qw_client_svga_DEPENDENCIES= \
+			$(soft_LIBS) \
+			$(top_builddir)/libs/video/targets/libQFsvga.la \
+			$(client_LIB_DEPS)
 
 # ... X11
 qw_client_x11_SOURCES=	$(common_SOURCES) $(client_SOURCES) cl_sys_unix.c
-qw_client_x11_LDADD=	../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFx11.la $(client_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB)
+qw_client_x11_LDADD=	$(soft_LIBS) \
+			$(top_builddir)/libs/video/targets/libQFx11.la \
+			$(client_LIBS) \
+			$(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB)
 qw_client_x11_LDFLAGS=	$(common_ldflags)
-qw_client_x11_DEPENDENCIES=../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFx11.la $(client_LIB_DEPS)
-
+qw_client_x11_DEPENDENCIES= \
+			$(soft_LIBS) \
+			$(top_builddir)/libs/video/targets/libQFx11.la \
+			$(client_LIB_DEPS)
 
 # OpenGL-using clients
 
-# ... 3Dfx Voodoo 1 and 2 SVGAlib-based console GL
-qw_client_3dfx_SOURCES=	$(common_SOURCES) $(client_SOURCES) cl_sys_unix.c
-qw_client_3dfx_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFtdfx.la $(client_LIBS) $(GLIDE_LIBS) $(SVGA_LIBS) $(DL_LIBS)
-qw_client_3dfx_LDFLAGS= $(common_ldflags)
-qw_client_3dfx_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFtdfx.la $(client_LIB_DEPS)
+opengl_LIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
+		$(top_builddir)/libs/models/libQFmodels_gl.la
 
 # ... OpenGL in X Window
 qw_client_glx_SOURCES=	$(common_SOURCES) $(client_SOURCES) cl_sys_unix.c
-qw_client_glx_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFglx.la $(client_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 -lXext $(X_EXTRA_LIBS) $(DL_LIBS)
+qw_client_glx_LDADD=	$(opengl_LIBS) \
+			$(top_builddir)/libs/video/targets/libQFglx.la \
+			$(client_LIBS) \
+			$(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 -lXext $(X_EXTRA_LIBS) $(DL_LIBS)
 qw_client_glx_LDFLAGS=  $(common_ldflags)
-qw_client_glx_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFglx.la $(client_LIB_DEPS)
+qw_client_glx_DEPENDENCIES= \
+			$(opengl_LIBS) \
+			$(top_builddir)/libs/video/targets/libQFglx.la \
+			$(client_LIB_DEPS)
 
 # ... Simple DirectMedia Layer, version 1.2 and higher, in GL mode
 qw_client_sgl_SOURCES=	$(common_SOURCES) $(client_SOURCES) cl_sys_sdl.c
-qw_client_sgl_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFsgl.la $(client_LIBS) $(SDL_LIBS) $(X_LIBS) $(DL_LIBS)
+qw_client_sgl_LDADD=	$(opengl_LIBS) \
+			$(top_builddir)/libs/video/targets/libQFsgl.la \
+			$(client_LIBS) $(SDL_LIBS) $(DL_LIBS)
 qw_client_sgl_LDFLAGS=  $(common_ldflags)
-qw_client_sgl_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFsgl.la $(client_LIB_DEPS)
+qw_client_sgl_DEPENDENCIES= \
+			$(opengl_LIBS) \
+			$(top_builddir)/libs/video/targets/libQFsgl.la \
+			$(client_LIB_DEPS)
 
 # ... SGI/Microsoft WGL (Windows OpenGL)
 qw_client_wgl_SOURCES=	$(common_SOURCES) $(client_SOURCES) cl_sys_win.c
-qw_client_wgl_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFwgl.la $(client_LIBS) -lgdi32 -lwinmm
+qw_client_wgl_LDADD=	$(opengl_LIBS) \
+			$(top_builddir)/libs/video/targets/libQFwgl.la \
+			$(client_LIBS) -lgdi32 -lwinmm
 qw_client_wgl_LDFLAGS=  $(common_ldflags)
-qw_client_wgl_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFwgl.la $(client_LIB_DEPS)
+qw_client_wgl_DEPENDENCIES= \
+			$(opengl_LIBS) \
+			$(top_builddir)/libs/video/targets/libQFwgl.la \
+			$(client_LIB_DEPS)
 
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,
 # or it won't be distributed with 'make dist'
