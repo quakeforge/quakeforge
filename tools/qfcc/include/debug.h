@@ -1,0 +1,50 @@
+/*
+	debug.h
+
+	#DESCRIPTION#
+
+	Copyright (C) 2001 #AUTHOR#
+
+	Author: #AUTHOR#
+	Date: #DATE#
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+	$Id$
+*/
+
+#ifndef __debug_h
+#define __debug_h
+
+#include "QF/pr_debug.h"
+
+extern	int         num_auxfunctions;
+extern	pr_auxfunction_t *auxfunctions;
+
+extern	int         num_linenos;
+extern	pr_lineno_t *linenos;
+
+extern	int         num_locals;
+extern	struct ddef_s *locals;
+
+pr_auxfunction_t *new_auxfunction (void);
+pr_lineno_t *new_lineno (void);
+struct ddef_s *new_local (void);
+
+#endif//__debug_h

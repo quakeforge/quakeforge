@@ -46,6 +46,8 @@ static const char rcsid[] =
 #include <QF/sys.h>
 
 #include "qfcc.h"
+#include "debug.h"
+#include "def.h"
 #include "expr.h"
 #include "function.h"
 #include "immediate.h"
@@ -87,7 +89,7 @@ void free_local_inits (hashtab_t *def_list);
 
 %union {
 	int			op;
-	def_t		*def;
+	struct def_s *def;
 	struct hashtab_s	*def_list;
 	type_t		*type;
 	expr_t		*expr;

@@ -57,7 +57,7 @@ typedef enum {
 } expr_type;
 
 typedef struct {
-	statref_t	*refs;
+	struct statref_s *refs;
 	dstatement_t *statement;
 	const char *name;
 } ex_label_t;

@@ -50,6 +50,7 @@ static const char rcsid[] =
 
 #include "expr.h"
 #include "class.h"
+#include "def.h"
 #include "immediate.h"
 #include "method.h"
 #include "struct.h"

@@ -33,6 +33,8 @@ static const char rcsid[] =
 #include <QF/hash.h>
 
 #include "qfcc.h"
+#include "def.h"
+#include "opcodes.h"
 #include "options.h"
 #include "type.h"
 

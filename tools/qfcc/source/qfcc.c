@@ -65,11 +65,13 @@ static const char rcsid[] =
 #include "class.h"
 #include "cmdlib.h"
 #include "cpp.h"
+#include "debug.h"
 #include "def.h"
 #include "expr.h"
 #include "function.h"
 #include "idstuff.h"
 #include "immediate.h"
+#include "opcodes.h"
 #include "options.h"
 #include "type.h"
 
@@ -136,7 +138,7 @@ WriteData (int crc)
 	FILE       *h;
 	int         i;
 
-	for (def = pr.def_head.def_next; def; def = def->def_next) {
+	for (def = pr.def_head; def; def = def->def_next) {
 		if (def->scope)
 			continue;
 		if (def->type->type == ev_func) {
@@ -354,7 +356,7 @@ qboolean PR_FinishCompilation (void)
 	class_finish_module ();
 	// check to make sure all functions prototyped have code
 	if (options.warnings.undefined_function)
-		for (d = pr.def_head.def_next; d; d = d->def_next) {
+		for (d = pr.def_head; d; d = d->def_next) {
 			if (d->type->type == ev_func && !d->scope) {	// function args ok
 				if (d->used) {
 					if (!d->initialized) {
@@ -375,7 +377,7 @@ qboolean PR_FinishCompilation (void)
 									  &numpr_globals));
 	}
 
-	for (def = pr.def_head.def_next; def; def = def->def_next) {
+	for (def = pr.def_head; def; def = def->def_next) {
 		if (def->scope || def->absolute)
 			continue;
 		PR_RelocateRefs (def);

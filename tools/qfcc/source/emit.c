@@ -44,10 +44,13 @@ static const char rcsid[] =
 #include <QF/mathlib.h>
 #include <QF/va.h>
 
-#include "qfcc.h"
+#include "def.h"
+#include "debug.h"
 #include "expr.h"
 #include "immediate.h"
+#include "opcodes.h"
 #include "options.h"
+#include "qfcc.h"
 #include "type.h"
 #include "qc-parse.h"
 

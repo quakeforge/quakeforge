@@ -41,7 +41,9 @@ static const char rcsid[] =
 #endif
 #include <stdlib.h>
 
-#include "qfcc.h"
+#include "QF/pr_comp.h"
+
+#include "debug.h"
 
 static int  auxfunctions_size;
 int         num_auxfunctions;

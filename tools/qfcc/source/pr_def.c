@@ -35,6 +35,7 @@ static const char rcsid[] =
 #include <QF/va.h>
 
 #include "qfcc.h"
+#include "def.h"
 #include "expr.h"
 #include "struct.h"
 #include "type.h"
@@ -215,8 +216,8 @@ PR_NewDef (type_t *type, const char *name, def_t *scope)
 	def = calloc (1, sizeof (def_t));
 
 	if (name) {
-		pr.def_tail->def_next = def;
-		pr.def_tail = def;
+		*pr.def_tail = def;
+		pr.def_tail = &def->def_next;
 	}
 
 	if (scope) {
