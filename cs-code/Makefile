@@ -1,2 +1,2 @@
 menu.dat: menu.src menu.qc
-	qfcc -P menu.src
+	qfcc -gP menu.src
