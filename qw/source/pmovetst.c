@@ -45,6 +45,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 #include "pmove.h"
+#include "world.h"
 
 static hull_t box_hull;
 static dclipnode_t box_clipnodes[6];
@@ -157,223 +158,6 @@ PM_PointContents (const vec3_t p)
 	return num;
 }
 
-/* LINE TESTING IN HULLS */
-
-// 1/32 epsilon to keep floating point happy
-#define	DIST_EPSILON	(0.03125)
-#if 1
-static inline void
-visit_leaf (int num, pmtrace_t *trace)
-{
-	if (num != CONTENTS_SOLID) {
-		trace->allsolid = false;
-		if (num == CONTENTS_EMPTY)
-			trace->inopen = true;
-		else
-			trace->inwater = true;
-	} else
-		trace->startsolid = true;
-}
-
-static inline void
-fill_trace (hull_t *hull, int num, int side,
-			const vec3_t p1, const vec3_t p2, float p1f, float p2f,
-			float t1, float t2, pmtrace_t *trace)
-{
-	float        frac;
-	int          i;
-	mplane_t	*plane;
-
-	// the other side of the node is solid, this is the impact point
-	// put the crosspoint DIST_EPSILON pixels on the near side to guarantee
-	// mid is on the correct side of the plane
-	plane = hull->planes + hull->clipnodes[num].planenum;
-	if (!side) {
-		VectorCopy (plane->normal, trace->plane.normal);
-		trace->plane.dist = plane->dist;
-		frac = (t1 - DIST_EPSILON) / (t1 - t2);
-	} else {
-		VectorSubtract (vec3_origin, plane->normal, trace->plane.normal);
-		trace->plane.dist = -plane->dist;
-		frac = (t1 + DIST_EPSILON) / (t1 - t2);
-	}
-
-	frac = bound (0, frac, 1);
-
-	trace->fraction = p1f + (p2f - p1f) * frac;
-	for (i = 0; i < 3; i++)
-		trace->endpos[i] = p1[i] + frac * (p2[i] - p1[i]);
-}
-
-static inline float
-calc_mid (float t1, float t2, const vec3_t p1, const vec3_t p2,
-		  float p1f, float p2f, vec3_t mid)
-{
-	float       frac = t1 / (t1 - t2);
-	int         i;
-
-	for (i=0 ; i<3 ; i++)
-		mid[i] = p1[i] + frac*(p2[i] - p1[i]);
-	return p1f + (p2f - p1f)*frac;
-}
-
-static inline void
-calc_dists (const mplane_t *plane, const vec3_t p1, const vec3_t p2,
-			float *t1, float *t2)
-{
-	if (plane->type < 3) {
-		*t1 = p1[plane->type] - plane->dist;
-		*t2 = p2[plane->type] - plane->dist;
-	} else {
-		*t1 = DotProduct (plane->normal, p1) - plane->dist;
-		*t2 = DotProduct (plane->normal, p2) - plane->dist;
-	}
-}
-
-qboolean
-PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
-					   const vec3_t p1, const vec3_t p2, pmtrace_t *trace)
-{
-	int         front, back, side;
-	dclipnode_t *node;
-	float		midf, t1, t2;
-	vec3_t      mid, _p1;
-
-	while (1) {
-		while (num >= 0) {
-			node = hull->clipnodes + num;
-			calc_dists (hull->planes + node->planenum, p1, p2, &t1, &t2);
-			
-			side = (t1 < 0);
-			if (t1 >= 0 != t2 >= 0)
-				break;
-			num = node->children[side];
-		}
-		if (num < 0) {
-			visit_leaf (num, trace);
-			return true;
-		}
-
-		midf = calc_mid (t1, t2, p1, p2, p1f, p2f, mid);
-
-		front = node->children[side];
-		if (!PM_RecursiveHullCheck (hull, front, p1f, midf, p1, mid, trace))
-			return false;
-
-		back = node->children[side ^ 1];
-		if (PM_HullPointContents (hull, back, mid) == CONTENTS_SOLID) {
-			// got out of the solid area?
-			if (!trace->allsolid)
-				fill_trace (hull, num, side, p1, p2, p1f, p2f,
-							t1, t2, trace);
-			return false;
-		}
-		num = back;
-		VectorCopy (mid, _p1);
-		p1f = midf;
-		p1 = _p1;
-	}
-}
-#else
-qboolean
-PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
-					   const vec3_t p1, const vec3_t p2, pmtrace_t *trace)
-{
-	dclipnode_t *node;
-	float       frac, midf, t1, t2;
-	int         side, i;
-	mplane_t   *plane;
-	vec3_t      mid;
-
-  loc0:
-	// check for empty
-	if (num < 0) {
-		if (num != CONTENTS_SOLID) {
-			trace->allsolid = false;
-			if (num == CONTENTS_EMPTY)
-				trace->inopen = true;
-			else
-				trace->inwater = true;
-		} else
-			trace->startsolid = true;
-		return true;					// empty
-	}
-
-	// find the point distances
-	node = hull->clipnodes + num;
-	plane = hull->planes + node->planenum;
-
-	if (plane->type < 3) {
-		t1 = p1[plane->type] - plane->dist;
-		t2 = p2[plane->type] - plane->dist;
-	} else {
-		t1 = DotProduct (plane->normal, p1) - plane->dist;
-		t2 = DotProduct (plane->normal, p2) - plane->dist;
-	}
-
-	// LordHavoc: recursion optimization
-	if (t1 >= 0 && t2 >= 0) {
-		num = node->children[0];
-		goto loc0;
-	}
-	if (t1 < 0 && t2 < 0) {
-		num = node->children[1];
-		goto loc0;
-	}
-	side = (t1 < 0);
-	frac = t1 / (t1 - t2);
-	//frac = bound (0, frac, 1); // is this needed?
-
-	midf = p1f + (p2f - p1f) * frac;
-	for (i = 0; i < 3; i++)
-		mid[i] = p1[i] + frac * (p2[i] - p1[i]);
-
-	// move up to the node
-	if (!PM_RecursiveHullCheck (hull, node->children[side],
-								p1f, midf, p1, mid, trace))
-		return false;
-
-	if (PM_HullPointContents (hull, node->children[side ^ 1], mid)
-		!= CONTENTS_SOLID) {
-		// go past the node
-		return PM_RecursiveHullCheck (hull, node->children[side ^ 1], midf,
-									  p2f, mid, p2, trace);
-	}
-
-	if (trace->allsolid)
-		return false;					// never got out of the solid area
-
-	// the other side of the node is solid, this is the impact point
-	if (!side) {
-		VectorCopy (plane->normal, trace->plane.normal);
-		trace->plane.dist = plane->dist;
-	} else {
-		// invert plane paramterers
-		trace->plane.normal[0] = -plane->normal[0];
-		trace->plane.normal[1] = -plane->normal[1];
-		trace->plane.normal[2] = -plane->normal[2];
-		trace->plane.dist = -plane->dist;
-	}
-
-	// put the crosspoint DIST_EPSILON pixels on the near side to guarantee
-	// mid is on the correct side of the plane
-	if (side)
-		frac = (t1 + DIST_EPSILON) / (t1 - t2);
-	else
-		frac = (t1 - DIST_EPSILON) / (t1 - t2);
-	frac = bound (0, frac, 1);
-
-	midf = p1f + (p2f - p1f) * frac;
-	for (i = 0; i < 3; i++)
-		mid[i] = p1[i] + frac * (p2[i] - p1[i]);
-
-	trace->fraction = midf;
-	VectorCopy (mid, trace->endpos);
-
-	return false;
-}
-#endif
-
 /*
 	PM_TestPlayerPosition
 
@@ -421,21 +205,21 @@ bboxes_touch (const vec3_t min1, const vec3_t max1,
 }
 
 /* PM_PlayerMove */
-pmtrace_t
+trace_t
 PM_PlayerMove (const vec3_t start, const vec3_t end)
 {
 	hull_t     *hull;
 	int         i, check_box, move_missed;
 	physent_t  *pe;
-	pmtrace_t   trace, total;
+	trace_t     trace, total;
 	vec3_t      maxs, mins, offset, start_l, end_l;
 	vec3_t      move[2];
 
 	// fill in a default trace
-	memset (&total, 0, sizeof (pmtrace_t));
+	memset (&total, 0, sizeof (trace_t));
 
 	total.fraction = 1;
-	total.ent = -1;
+	total.ent = 0;
 	VectorCopy (end, total.endpos);
 
 	for (i = 0; i < pmove.numphysent; i++) {
@@ -464,7 +248,7 @@ PM_PlayerMove (const vec3_t start, const vec3_t end)
 		VectorSubtract (end, offset, end_l);
 
 		// fill in a default trace
-		memset (&trace, 0, sizeof (pmtrace_t));
+		memset (&trace, 0, sizeof (trace_t));
 
 		trace.fraction = 1;
 		trace.allsolid = true;
@@ -479,7 +263,7 @@ PM_PlayerMove (const vec3_t start, const vec3_t end)
 			move[1][0] = max (start_l[0], end_l[0]);
 			move[1][1] = max (start_l[1], end_l[1]);
 			move[1][2] = max (start_l[2], end_l[2]);
-			if (!bboxes_touch (move[0], move[1], mins, maxs))
+			if (!bboxes_touch (move[0], move[1], mins, maxs)) {
 				move_missed = 1;
 				if (PM_HullPointContents (hull, hull->firstclipnode,
 										  start_l) != CONTENTS_SOLID) {
@@ -488,12 +272,12 @@ PM_PlayerMove (const vec3_t start, const vec3_t end)
 					// is not solid, the whole trace is not solid
 					trace.allsolid = false;
 				}
+			}
 		}
 
 		if (!move_missed) {
 			// trace a line through the appropriate clipping hull
-			PM_RecursiveHullCheck (hull, hull->firstclipnode, 0, 1,
-								   start_l, end_l, &trace);
+			MOD_TraceLine (hull, hull->firstclipnode, start_l, end_l, &trace);
 		}
 
 		if (trace.allsolid)
@@ -506,7 +290,7 @@ PM_PlayerMove (const vec3_t start, const vec3_t end)
 			// fix trace up by the offset
 			VectorAdd (trace.endpos, offset, trace.endpos);
 			total = trace;
-			total.ent = i;
+			total.ent = (struct edict_s *) &pmove.physents[i];
 		}
 
 	}

@@ -481,106 +481,6 @@ SV_TestEntityPosition (edict_t *ent)
 	return NULL;
 }
 
-/* LINE TESTING IN HULLS */
-
-// 1/32 epsilon to keep floating point happy
-#define	DIST_EPSILON	(0.03125)
-
-qboolean
-SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
-					   const vec3_t p1, const vec3_t p2, trace_t *trace)
-{
-	dclipnode_t *node;
-	float       frac, midf, t1, t2;
-	int         side, i;
-	mplane_t   *plane;
-	vec3_t      mid;
-
-	// check for empty
-	if (num < 0) {
-		if (num != CONTENTS_SOLID) {
-			trace->allsolid = false;
-			if (num == CONTENTS_EMPTY)
-				trace->inopen = true;
-			else
-				trace->inwater = true;
-		} else
-			trace->startsolid = true;
-		return true;					// empty
-	}
-
-	// find the point distances
-	node = hull->clipnodes + num;
-	plane = hull->planes + node->planenum;
-
-	if (plane->type < 3) {
-		t1 = p1[plane->type] - plane->dist;
-		t2 = p2[plane->type] - plane->dist;
-	} else {
-		t1 = DotProduct (plane->normal, p1) - plane->dist;
-		t2 = DotProduct (plane->normal, p2) - plane->dist;
-	}
-
-	if (t1 >= 0 && t2 >= 0)
-		return SV_RecursiveHullCheck (hull, node->children[0], p1f, p2f, p1,
-									  p2, trace);
-	if (t1 < 0 && t2 < 0)
-		return SV_RecursiveHullCheck (hull, node->children[1], p1f, p2f, p1,
-									  p2, trace);
-
-	side = (t1 < 0);
-	frac = t1 / (t1 - t2);
-	//frac = bound (0, frac, 1); // is this needed?
-
-	midf = p1f + (p2f - p1f) * frac;
-	for (i = 0; i < 3; i++)
-		mid[i] = p1[i] + frac * (p2[i] - p1[i]);
-
-	// move up to the node
-	if (!SV_RecursiveHullCheck (hull, node->children[side],
-								p1f, midf, p1, mid, trace))
-		return false;
-
-	if (SV_HullPointContents (hull, node->children[side ^ 1], mid)
-		!= CONTENTS_SOLID) {
-		// go past the node
-		return SV_RecursiveHullCheck (hull, node->children[side ^ 1], midf,
-									  p2f, mid, p2, trace);
-	}
-
-	if (trace->allsolid)
-		return false;					// never got out of the solid area
-
-	// the other side of the node is solid, this is the impact point
-	if (!side) {
-		VectorCopy (plane->normal, trace->plane.normal);
-		trace->plane.dist = plane->dist;
-	} else {
-		// invert plane paramterers
-		trace->plane.normal[0] = -plane->normal[0];
-		trace->plane.normal[1] = -plane->normal[1];
-		trace->plane.normal[2] = -plane->normal[2];
-		trace->plane.dist = -plane->dist;
-	}
-
-	// put the crosspoint DIST_EPSILON pixels on the near side to guarantee
-	// mid is on the correct side of the plane
-	if (side)
-		frac = (t1 + DIST_EPSILON) / (t1 - t2);
-	else
-		frac = (t1 - DIST_EPSILON) / (t1 - t2);
-	frac = bound (0, frac, 1);
-
-	midf = p1f + (p2f - p1f) * frac;
-	for (i = 0; i < 3; i++)
-		mid[i] = p1[i] + frac * (p2[i] - p1[i]);
-
-	trace->fraction = midf;
-	VectorCopy (mid, trace->endpos);
-
-	return false;
-}
-
 /*
 	SV_ClipMoveToEntity
 
@@ -588,7 +488,7 @@ SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
 	eventually rotation) of the end points
 */
 static trace_t
-SV_ClipMoveToEntity (edict_t *touched, edict_t *mover, const vec3_t start,
+SV_ClipMoveToEntity (edict_t *touched, const vec3_t start,
 					 const vec3_t mins, const vec3_t maxs, const vec3_t end)
 {
 	hull_t     *hull;
@@ -609,8 +509,7 @@ SV_ClipMoveToEntity (edict_t *touched, edict_t *mover, const vec3_t start,
 	VectorSubtract (end, offset, end_l);
 
 	// trace a line through the apropriate clipping hull
-	SV_RecursiveHullCheck (hull, hull->firstclipnode, 0, 1, start_l, end_l,
-						   &trace);
+	MOD_TraceLine (hull, hull->firstclipnode, start_l, end_l, &trace);
 
 	// fix trace up by the offset
 	if (trace.fraction != 1)
@@ -675,10 +574,10 @@ SV_ClipToLinks (areanode_t *node, moveclip_t * clip)
 		}
 
 		if ((int) SVfloat (touch, flags) & FL_MONSTER)
-			trace = SV_ClipMoveToEntity (touch, clip->passedict, clip->start,
+			trace = SV_ClipMoveToEntity (touch, clip->start,
 										 clip->mins2, clip->maxs2, clip->end);
 		else
-			trace = SV_ClipMoveToEntity (touch, clip->passedict, clip->start,
+			trace = SV_ClipMoveToEntity (touch, clip->start,
 										 clip->mins, clip->maxs, clip->end);
 		if (trace.allsolid || trace.startsolid
 			|| trace.fraction < clip->trace.fraction) {
@@ -735,7 +634,7 @@ SV_Move (const vec3_t start, const vec3_t mins, const vec3_t maxs,
 	memset (&clip, 0, sizeof (moveclip_t));
 
 	// clip to world
-	clip.trace = SV_ClipMoveToEntity (sv.edicts, passedict, start,
+	clip.trace = SV_ClipMoveToEntity (sv.edicts, start,
 									  mins, maxs, end);
 
 	clip.start = start;

@@ -1734,7 +1734,7 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 
 		// touch other objects
 		for (i = 0; i < pmove.numtouch; i++) {
-			n = pmove.physents[pmove.touchindex[i]].info;
+			n = pmove.touchindex[i]->info;
 			ent = EDICT_NUM (&sv_pr_state, n);
 			if (!SVfunc (ent, touch) || (playertouch[n / 8] & (1 << (n % 8))))
 				continue;

@@ -33,29 +33,12 @@
 #include "QF/mathlib.h"
 #include "QF/model.h"
 
+#include "world.h"
+
 #define STOP_EPSILON 0.1
 
-typedef struct
-{
-	vec3_t	normal;
-	float	dist;
-} pmplane_t;
-
-typedef struct
-{
-	qboolean	allsolid;	// if true, plane is not valid
-	qboolean	startsolid;	// if true, the initial point was in a solid area
-	qboolean	inopen, inwater;
-	float		fraction;		// time completed, 1.0 = didn't hit anything
-	vec3_t		endpos;			// final position
-	pmplane_t		plane;			// surface normal at impact
-	int			ent;			// entity the surface is on
-} pmtrace_t;
-
-
 #define	MAX_PHYSENTS	(MAX_CLIENTS + MAX_PACKET_ENTITIES)
-typedef struct
-{
+typedef struct {
 	vec3_t	origin;
 	model_t	*model;		// only for bsp models
 	vec3_t	mins, maxs;	// only for non-bsp models
@@ -64,31 +47,30 @@ typedef struct
 } physent_t;
 
 
-typedef struct
-{
-	int		sequence;	// just for debugging prints
+typedef struct {
+	int         sequence;	// just for debugging prints
 
 	// player state
-	vec3_t	origin;
-	vec3_t	angles;
-	vec3_t	velocity;
-	int		oldbuttons;
-	int		oldonground;
-	float		waterjumptime;
-	qboolean	dead;
-	qboolean	flying;
-	int		spectator;
+	vec3_t      origin;
+	vec3_t      angles;
+	vec3_t      velocity;
+	int         oldbuttons;
+	int         oldonground;
+	float       waterjumptime;
+	qboolean    dead;
+	qboolean    flying;
+	int         spectator;
 
 	// world state
-	int		numphysent;
-	physent_t	physents[MAX_PHYSENTS];	// 0 should be the world
+	int         numphysent;
+	physent_t   physents[MAX_PHYSENTS];	// 0 should be the world
 
 	// input
-	usercmd_t	cmd;
+	usercmd_t   cmd;
 
 	// results
-	int		numtouch;
-	int		touchindex[MAX_PHYSENTS];
+	int         numtouch;
+	physent_t  *touchindex[MAX_PHYSENTS];
 } playermove_t;
 
 typedef struct {
@@ -126,9 +108,6 @@ int PM_HullPointContents (hull_t *hull, int num, const vec3_t p);
 
 int PM_PointContents (const vec3_t point);
 qboolean PM_TestPlayerPosition (const vec3_t point);
-pmtrace_t PM_PlayerMove (const vec3_t start, const vec3_t stop);
-qboolean PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
-								const vec3_t p1, const vec3_t p2,
-								pmtrace_t *trace);
+trace_t PM_PlayerMove (const vec3_t start, const vec3_t stop);
 
 #endif // _PMOVE_H
