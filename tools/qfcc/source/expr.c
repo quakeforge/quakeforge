@@ -2185,3 +2185,18 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	call->e.block.result->e.def->type = rec_type;
 	return call;
 }
+
+expr_t *
+sizeof_expr (expr_t *expr, struct type_s *type)
+{
+	if (!((!expr) ^ (!expr))) {
+		error (0, "internal error");
+		abort ();
+	}
+	if (!type)
+		type = get_type (expr);
+	expr = new_expr ();
+	expr->type = ex_integer;
+	expr->e.integer_val = type_size (type);
+	return expr;
+}

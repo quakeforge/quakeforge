@@ -177,5 +177,6 @@ expr_t *selector_expr (struct keywordarg_s *selector);
 expr_t *protocol_expr (const char *protocol);
 expr_t *encode_expr (struct type_s *type);
 expr_t *message_expr (expr_t *receiver, struct keywordarg_s *message);
+expr_t *sizeof_expr (expr_t *expr, struct type_s *type);
 
 #endif//__expr_h

@@ -301,6 +301,7 @@ static keyword_t keywords[] = {
 	{"@argv",		ARGV,	0,					0, PROG_VERSION},
 	{"@extern",		EXTERN,	0,					0, PROG_VERSION},
 	{"@static",		STATIC,	0,					0, PROG_VERSION},
+	{"@sizeof",		SIZEOF,	0,					0, PROG_VERSION},
 };
 
 static const char *
@@ -315,6 +316,7 @@ type_or_name (char *token)
 	static hashtab_t *keyword_tab;
 	keyword_t  *keyword;
 	type_t     *type;
+	class_t    *class;
 
 	if (!keyword_tab) {
 		int i;
@@ -337,6 +339,10 @@ type_or_name (char *token)
 	if ((type = find_struct (token)) || (type = get_typedef (token))) {
 		yylval.type = type;
 		return TYPE;
+	}
+	if ((class = get_class (token, 0))) {
+		yylval.string_val = save_string (token);
+		return CLASS_NAME;
 	}
 	yylval.string_val = save_string (token);
 	return NAME;

@@ -119,7 +119,7 @@ void free_local_inits (hashtab_t *def_list);
 %right	'(' '['
 %left	'.'
 
-%token	<string_val> NAME STRING_VAL
+%token	<string_val> CLASS_NAME NAME STRING_VAL
 %token	<integer_val> INT_VAL
 %token	<float_val> FLOAT_VAL
 %token	<vector_val> VECTOR_VAL
@@ -128,10 +128,9 @@ void free_local_inits (hashtab_t *def_list);
 %token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS NIL
 %token	IFBE IFB IFAE IFA
 %token	SWITCH CASE DEFAULT STRUCT UNION ENUM TYPEDEF SUPER SELF THIS
-%token	ARGC ARGV EXTERN STATIC
+%token	ARGC ARGV EXTERN STATIC SIZEOF
 %token	ELE_START
 %token	<type> TYPE
-
 %token	CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE PROTECTED
 %token	PROTOCOL PUBLIC SELECTOR
 
@@ -148,7 +147,7 @@ void free_local_inits (hashtab_t *def_list);
 %type	<def_list> save_inits
 %type	<switch_block> switch_block
 
-%type	<string_val> selector reserved_word
+%type	<string_val> selector reserved_word maybe_class
 %type	<param>	optparmlist unaryselector keyworddecl keywordselector
 %type	<method> methodproto methoddecl
 %type	<expr>	obj_expr identifier_list obj_messageexpr obj_string receiver
@@ -161,7 +160,7 @@ void free_local_inits (hashtab_t *def_list);
 %type	<methodlist> methodprotolist methodprotolist2
 %type	<type>	ivar_decl_list
 
-%expect 2	// statement : if | if else, defs : defs def ';' | defs obj_def
+%expect 3	// statement : if | if else, class_name : maybe_class | category_name : maybe_class '(' maybe_class ')', type_name : TYPE | expr : TYPE '(' expr ')'
 
 %{
 
@@ -287,7 +286,15 @@ non_field_type
 
 type_name
 	: TYPE { $$ = $1; }
-	| class_name { $$ = $1->type; }
+	| CLASS_NAME
+		{
+			class_t    *class = get_class ($1, 0);
+			if (!class) {
+				error (0, "undefined symbol `%s'", $1);
+				class = get_class (0, 1);
+			}
+			$$ = class->type;
+		}
 	;
 
 function_decl
@@ -805,6 +812,8 @@ expr
 	| ARGV						{ $$ = new_name_expr (".argv"); }
 	| SELF						{ $$ = new_self_expr (); }
 	| THIS						{ $$ = new_this_expr (); }
+	| SIZEOF '(' expr ')'		{ $$ = sizeof_expr ($3, 0); }
+	| SIZEOF '(' type ')'		{ $$ = sizeof_expr (0, $3); }
 	| const						{ $$ = $1; }
 	| '(' expr ')'				{ $$ = $2; $$->paren = 1; }
 	;
@@ -907,8 +916,13 @@ classdecl
 		}
 	;
 
-class_name
+maybe_class
 	: NAME
+	| CLASS_NAME
+	;
+
+class_name
+	: maybe_class
 		{
 			$$ = get_class ($1, 0);
 			if (!$$) {
@@ -919,7 +933,7 @@ class_name
 	;
 
 new_class_name
-	: NAME
+	: maybe_class
 		{
 			$$ = get_class ($1, 1);
 			if ($$->defined) {
@@ -950,7 +964,7 @@ new_class_with_super
 	;
 
 category_name
-	: NAME '(' NAME ')'
+	: maybe_class '(' maybe_class ')'
 		{
 			$$ = get_category ($1, $3, 0);
 			if (!$$) {
@@ -961,7 +975,7 @@ category_name
 	;
 
 new_category_name
-	: NAME '(' NAME ')'
+	: maybe_class '(' maybe_class ')'
 		{
 			$$ = get_category ($1, $3, 1);
 			if ($$->defined) {
@@ -973,7 +987,7 @@ new_category_name
 	;
 
 protocol_name
-	: NAME
+	: maybe_class
 		{
 			$$ = get_protocol ($1, 0);
 			if ($$) {
@@ -1208,7 +1222,7 @@ keywordselector
 	;
 
 selector
-	: NAME
+	: maybe_class
 	| TYPE						{ $$ = save_string (yytext); }
 	| reserved_word
 	;
@@ -1248,7 +1262,7 @@ keyworddecl
 obj_expr
 	: obj_messageexpr
 	| SELECTOR '(' selectorarg ')'	{ $$ = selector_expr ($3); }
-	| PROTOCOL '(' NAME ')'			{ $$ = protocol_expr ($3); }
+	| PROTOCOL '(' maybe_class ')'	{ $$ = protocol_expr ($3); }
 	| ENCODE '(' type ')'			{ $$ = encode_expr ($3); }
 	| obj_string /* FIXME string object? */
 	;
@@ -1259,6 +1273,7 @@ obj_messageexpr
 
 receiver
 	: expr
+	| CLASS_NAME					{ $$ = new_name_expr ($1); }
 	| SUPER							{ $$ = new_name_expr ("super"); }
 	;
 
