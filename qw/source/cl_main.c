@@ -863,16 +863,17 @@ CL_ConnectionlessPacket (void)
 		Con_Printf ("client command\n");
 
 		if (!cl_allow_cmd_pkt->int_val
-			|| !NET_CompareBaseAdr (net_from, net_local_adr)
-			|| !NET_CompareBaseAdr (net_from, net_loopback_adr)) {
-			if (cl_cmd_pkt_adr->string[0]
-				&& NET_CompareBaseAdr (net_from, cl_cmd_packet_address)) {
-				allowremotecmd = false; // force password checking
-			} else {
-				Con_Printf ("Command packet from remote host.  Ignored.\n");
-				return;
-			}
+			|| (!NET_CompareBaseAdr (net_from, net_local_adr)
+				&& !NET_CompareBaseAdr (net_from, net_loopback_adr)
+				&& (!cl_cmd_pkt_adr->string[0]
+					|| !NET_CompareBaseAdr (net_from,
+											cl_cmd_packet_address)))) {
+			Con_Printf ("Command packet from remote host.  Ignored.\n");
+			return;
 		}
+		if (cl_cmd_pkt_adr->string[0]
+			&& NET_CompareBaseAdr (net_from, cl_cmd_packet_address))
+			allowremotecmd = false; // force password checking
 		s = MSG_ReadString (net_message);
 
 		cmdtext = alloca (strlen (s) + 1);
