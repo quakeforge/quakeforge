@@ -96,7 +96,6 @@ void Con_ToggleConsole_f (void);
 // or to list possible matches grouped by type
 // (i.e. will display possible variables, aliases, commands
 // that match what they've typed so far)
-void Con_CompleteCommandLine(void);
 void Con_BasicCompleteCommandLine (inputline_t *il);
 
 // Generic libs/util/console.c function to display a list
