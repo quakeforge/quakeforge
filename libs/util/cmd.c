@@ -77,25 +77,27 @@ typedef struct cmdalias_s {
 	struct cmdalias_s *next;
 	const char *name;
 	const char *value;
-	qboolean restricted; // Created from restricted buffer
-	qboolean legacy; // Created from a legacy buffer
+	qboolean    restricted;				// Created from restricted buffer
+	qboolean    legacy;					// Created from a legacy buffer
 } cmdalias_t;
 
 cmdalias_t *cmd_alias;
 cmd_source_t cmd_source;
 
-cmd_buffer_t *cmd_consolebuffer;	// Console buffer
-cmd_buffer_t *cmd_legacybuffer;         // Server stuffcmd buffer with
-					// absolute backwards-compatibility
-cmd_buffer_t *cmd_privatebuffer;	// Buffer for internal command execution
-cmd_buffer_t *cmd_keybindbuffer;        // Buffer for commands from bound keys
-cmd_buffer_t *cmd_activebuffer;         // Buffer currently being executed
+cmd_buffer_t *cmd_consolebuffer;		// Console buffer
+cmd_buffer_t *cmd_legacybuffer;			// Server stuffcmd buffer with
+										// absolute backwards-compatibility
+cmd_buffer_t *cmd_privatebuffer;		// Buffer for internal command
+										// execution
+cmd_buffer_t *cmd_keybindbuffer;		// Buffer for commands from bound keys
+cmd_buffer_t *cmd_activebuffer;			// Buffer currently being executed
 
-cmd_buffer_t *cmd_recycled;		// Recycled buffers
+cmd_buffer_t *cmd_recycled;				// Recycled buffers
 
 
-cmd_thread_t *cmd_threads;		// Detached buffers running by themselves
-long int cmd_threadid;			// The id of the last thread + 1
+cmd_thread_t *cmd_threads;				// Detached buffers running by
+										// themselves
+long int    cmd_threadid;				// The id of the last thread + 1
 
 dstring_t  *cmd_backtrace;
 
@@ -132,12 +134,12 @@ Cmd_NewLocal (const char *key, const char *value)
 }
 
 /* Gets a local variable from a command buffer */
-cmd_localvar_t	*
+cmd_localvar_t *
 Cmd_GetLocal (cmd_buffer_t *buffer, const char *key)
 {
 	cmd_localvar_t *var;
 
-	var = (cmd_localvar_t *)Hash_Find(buffer->locals, key);
+	var = (cmd_localvar_t *) Hash_Find (buffer->locals, key);
 	return var;
 }
 
@@ -147,7 +149,7 @@ Cmd_SetLocal (cmd_buffer_t *buffer, const char *key, const char *value)
 {
 	cmd_localvar_t *var;
 
-	var = (cmd_localvar_t *)Hash_Find(buffer->locals, key);
+	var = (cmd_localvar_t *) Hash_Find (buffer->locals, key);
 	if (!var) {
 		var = Cmd_NewLocal (key, value);
 		Hash_Add (buffer->locals, (void *) var);
@@ -175,30 +177,30 @@ Cmd_LocalFree (void *ele, void *ptr)
 /* Token management */
 
 /* Creates a new token */
-cmd_token_t	*
-Cmd_NewToken (void) {
+cmd_token_t *
+Cmd_NewToken (void)
+{
 	cmd_token_t *new;
 
-	new = calloc(1,sizeof(cmd_token_t));
+	new = calloc (1, sizeof (cmd_token_t));
 	SYS_CHECKMEM (new);
-	new->original = dstring_newstr();
-	new->processed = dstring_newstr();
+	new->original = dstring_newstr ();
+	new->processed = dstring_newstr ();
 	return new;
 }
 
 /* Command buffer management */
 
 /* Creates a command buffer with or without its own local variables */
-cmd_buffer_t	*
+cmd_buffer_t *
 Cmd_NewBuffer (qboolean ownvars)
 {
 	cmd_buffer_t *new;
 
-	if (cmd_recycled) { // If we have old buffers lying around
+	if (cmd_recycled) {					// If we have old buffers lying around
 		new = cmd_recycled;
 		cmd_recycled = new->next;
-	}
-	else {
+	} else {
 		new = calloc (1, sizeof (cmd_buffer_t));
 		new->buffer = dstring_newstr ();
 		new->line = dstring_newstr ();
@@ -223,9 +225,10 @@ Cmd_NewBuffer (qboolean ownvars)
 */
 
 void
-Cmd_FreeBuffer (cmd_buffer_t *free) {
+Cmd_FreeBuffer (cmd_buffer_t *free)
+{
 	if (free->ownvars)
-		Hash_DelTable(free->locals); // Local variables are always deadbeef
+		Hash_DelTable (free->locals);	// Local variables are always deadbeef
 	free->subroutine = false;
 	free->again = false;
 	free->wait = false;
@@ -236,7 +239,7 @@ Cmd_FreeBuffer (cmd_buffer_t *free) {
 	free->restricted = false;
 
 	free->timeleft = 0.0;
-	
+
 	dstring_clearstr (free->buffer);
 	dstring_clearstr (free->line);
 	dstring_clearstr (free->realline);
@@ -249,10 +252,11 @@ Cmd_FreeBuffer (cmd_buffer_t *free) {
 
 /* Frees an entire linked list (stack) of buffers */
 void
-Cmd_FreeStack (cmd_buffer_t *stack) {
+Cmd_FreeStack (cmd_buffer_t *stack)
+{
 	cmd_buffer_t *temp;
 
-	for (;stack; stack = temp) {
+	for (; stack; stack = temp) {
 		temp = stack->next;
 		Cmd_FreeBuffer (stack);
 	}
@@ -261,11 +265,12 @@ Cmd_FreeStack (cmd_buffer_t *stack) {
 /* Thread management */
 
 /* Creates a new thread */
-cmd_thread_t	*
-Cmd_NewThread (long int id) {
+cmd_thread_t *
+Cmd_NewThread (long int id)
+{
 	cmd_thread_t *new;
 
-	new = calloc (1, sizeof(cmd_thread_t));
+	new = calloc (1, sizeof (cmd_thread_t));
 	SYS_CHECKMEM (new);
 	new->id = id;
 	new->cbuf = Cmd_NewBuffer (true);
@@ -275,7 +280,8 @@ Cmd_NewThread (long int id) {
 
 /* Frees a thread */
 void
-Cmd_FreeThread (cmd_thread_t *thread) {
+Cmd_FreeThread (cmd_thread_t *thread)
+{
 	Cmd_FreeBuffer (thread->cbuf);
 	free (thread);
 	return;
@@ -283,7 +289,8 @@ Cmd_FreeThread (cmd_thread_t *thread) {
 
 /* Adds a thread to a linked list */
 void
-Cmd_AddThread (cmd_thread_t **list, cmd_thread_t *thread) {
+Cmd_AddThread (cmd_thread_t **list, cmd_thread_t *thread)
+{
 	thread->next = *list;
 	thread->prev = 0;
 	if (*list)
@@ -293,7 +300,8 @@ Cmd_AddThread (cmd_thread_t **list, cmd_thread_t *thread) {
 
 /* Removes a thread from a linked list and frees it */
 void
-Cmd_RemoveThread (cmd_thread_t **list, cmd_thread_t *thread) {
+Cmd_RemoveThread (cmd_thread_t **list, cmd_thread_t *thread)
+{
 	if (thread == *list)
 		*list = thread->next;
 	if (thread->next)
@@ -309,45 +317,41 @@ Cmd_RemoveThread (cmd_thread_t **list, cmd_thread_t *thread) {
 /* Escape character functions used by most of the parser */
 
 /* Determines if a character is escaped */
-inline
-qboolean
+inline qboolean
 escaped (const char *str, int i)
 {
 	int         n, c;
 
 	if (!i)
 		return 0;
-	for (n = i - 1, c = 0; n >= 0 && str[n] == '\\'; n--, c++)
-		;
+	for (n = i - 1, c = 0; n >= 0 && str[n] == '\\'; n--, c++);
 	return c & 1;
 }
 
 /* Escapes a list of characters in a dstring */
-inline
-void
-escape (dstring_t * dstr, const char *clist)
+inline void
+escape (dstring_t *dstr, const char *clist)
 {
 	int         i;
 
 	for (i = 0; i < strlen (dstr->str); i++) {
-		if (strchr(clist, dstr->str[i]) && !escaped(dstr->str,i)) {
-				dstring_insertstr (dstr, "\\", i);
-				i++;
-				continue;
+		if (strchr (clist, dstr->str[i]) && !escaped (dstr->str, i)) {
+			dstring_insertstr (dstr, "\\", i);
+			i++;
+			continue;
 		}
 	}
 }
 
 /* Unescapes a character and all backslashes preceding it in a dstring */
-inline
-int
-unescape (dstring_t * dstr, int start)
+inline int
+unescape (dstring_t *dstr, int start)
 {
-	int i;
+	int         i;
 
-	for (i = start; i && dstr->str[i-1] == '\\'; i--);
-	dstring_snip (dstr, i, (int) ((start - i)/2.0+0.5));
-	return (int) ((start - i)/2.0+.05);
+	for (i = start; i && dstr->str[i - 1] == '\\'; i--);
+	dstring_snip (dstr, i, (int) ((start - i) / 2.0 + 0.5));
+	return (int) ((start - i) / 2.0 + .05);
 }
 
 
@@ -420,10 +424,10 @@ Cbuf_InsertText (const char *text)
 */
 
 void
-Cbuf_ExtractLine (dstring_t * buffer, dstring_t * line, qboolean legacy)
+Cbuf_ExtractLine (dstring_t *buffer, dstring_t *line, qboolean legacy)
 {
 	int         i, dquotes = 0, braces = 0, n;
-	char		*tmp;
+	char       *tmp;
 
 	for (i = 0; buffer->str[i]; i++) {
 		if (!escaped (buffer->str, i)) {
@@ -436,21 +440,20 @@ Cbuf_ExtractLine (dstring_t * buffer, dstring_t * line, qboolean legacy)
 			else if (!legacy && buffer->str[i] == '}' && !dquotes)
 				braces--;
 		}
-		if (buffer->str[i] == '/' && buffer->str[i + 1] == '/'
-		  && !dquotes) {
+		if (buffer->str[i] == '/' && buffer->str[i + 1] == '/' && !dquotes) {
 			// Filter out comments until newline
-			if ((tmp = strchr (buffer->str+i, '\n')))
-				n = tmp - (buffer->str+i);
-			else if ((tmp = strchr (buffer->str+i, '\r')))
-				n = tmp - (buffer->str+i);
+			if ((tmp = strchr (buffer->str + i, '\n')))
+				n = tmp - (buffer->str + i);
+			else if ((tmp = strchr (buffer->str + i, '\r')))
+				n = tmp - (buffer->str + i);
 			else
-				n = strlen(buffer->str+i); // snip till \0
+				n = strlen (buffer->str + i);	// snip till \0
 			dstring_snip (buffer, i, n);
 			i--;
-		}
-		else if ((buffer->str[i] == '\n' || buffer->str[i] == '\r') && !braces) {
+		} else if ((buffer->str[i] == '\n' || buffer->str[i] == '\r')
+				   && !braces) {
 			if (escaped (buffer->str, i)) {
-				dstring_snip (buffer, i-1, 2);
+				dstring_snip (buffer, i - 1, 2);
 				i -= 2;
 			} else
 				break;
@@ -485,11 +488,12 @@ Cbuf_ExecuteBuffer (cmd_buffer_t *buffer)
 {
 	dstring_t  *buf = dstring_newstr ();
 	cmd_buffer_t *temp = cmd_activebuffer;	// save old context
-	int ret;
+	int         ret;
 
 
 	if (buffer->timeleft) {
-		double newtime = Sys_DoubleTime ();
+		double      newtime = Sys_DoubleTime ();
+
 		buffer->timeleft -= newtime - buffer->lasttime;
 		buffer->lasttime = newtime;
 		if (buffer->timeleft < 0.0)
@@ -502,17 +506,17 @@ Cbuf_ExecuteBuffer (cmd_buffer_t *buffer)
 	buffer->again = false;
 
 	while (1) {
-		if (!strlen(buffer->buffer->str) && buffer->position == cmd_ready) {
+		if (!strlen (buffer->buffer->str) && buffer->position == cmd_ready) {
 			if (buffer->loop) {
 				if (cmd_maxloop->value && buffer->loop > cmd_maxloop->value) {
-					Cmd_Error(va("GIB: Loop lasted longer than %i iterations, forcefully terminating.\n",
-								(int)cmd_maxloop->value));
+					Cmd_Error (va
+							   ("GIB: Loop lasted longer than %i iterations, forcefully terminating.\n",
+								(int) cmd_maxloop->value));
 					break;
 				}
-				Cbuf_InsertTextTo(buffer, buffer->looptext->str);
+				Cbuf_InsertTextTo (buffer, buffer->looptext->str);
 				buffer->loop++;
-			}
-			else
+			} else
 				break;
 		}
 
@@ -564,12 +568,13 @@ Cbuf_ExecuteStack (cmd_buffer_t *buffer)
 	cmd_error = false;
 
 	for (cur = buffer; cur->next; cur = cur->next);
-	for (;cur; cur = temp) {
+	for (; cur; cur = temp) {
 		temp = cur->prev;
 		Cbuf_ExecuteBuffer (cur);
 		if (cmd_error || cur->wait)
 			break;
-		if (cur->subroutine) { // Something was added to the stack, follow it
+		if (cur->subroutine) {			// Something was added to the stack,
+										// follow it
 			cur->subroutine = false;
 			temp = cur->next;
 			continue;
@@ -627,11 +632,12 @@ Cbuf_Execute (void)
 void
 Cbuf_ExecuteSubroutine (cmd_buffer_t *buffer)
 {
-	if (cmd_activebuffer->next) // Get rid of anything already there
+	if (cmd_activebuffer->next)			// Get rid of anything already there
 		Cmd_FreeStack (cmd_activebuffer->next);
-	cmd_activebuffer->next = buffer; // Link it in
+	cmd_activebuffer->next = buffer;	// Link it in
 	buffer->prev = cmd_activebuffer;
-	cmd_activebuffer->subroutine = true; // Signal that a subroutine is beginning
+	cmd_activebuffer->subroutine = true;	// Signal that a subroutine is
+											// beginning
 	if (cmd_activebuffer->restricted)
 		buffer->restricted = true;
 	return;
@@ -654,7 +660,8 @@ Cbuf_Execute_Sets (void)
 	dstring_t  *buf = dstring_newstr ();
 
 	while (strlen (cmd_consolebuffer->buffer->str)) {
-		Cbuf_ExtractLine (cmd_consolebuffer->buffer, buf, cmd_consolebuffer->legacy);
+		Cbuf_ExtractLine (cmd_consolebuffer->buffer, buf,
+						  cmd_consolebuffer->legacy);
 		if (!strncmp (buf->str, "set", 3) && isspace ((int) buf->str[3])) {
 			Cmd_ExecuteString (buf->str, src_command);
 		} else if (!strncmp (buf->str, "setrom", 6)
@@ -700,8 +707,7 @@ Cmd_StuffCmds_f (void)
 			for (j = i; !((com_cmdline[j] == '+')
 						  || (com_cmdline[j] == '-'
 							  && (j == 0 || com_cmdline[j - 1] == ' '))
-						  || (com_cmdline[j] == 0)); j++)
-				;
+						  || (com_cmdline[j] == 0)); j++);
 
 			c = com_cmdline[j];
 			com_cmdline[j] = 0;
@@ -767,13 +773,16 @@ Cmd_Error (const char *message)
 /* Returns a value to the previous buffer
 in the stack, but only if it wants one */
 void
-Cmd_Return (const char *value) {
-	if (cmd_activebuffer->prev && cmd_activebuffer->prev->returned == cmd_waiting) {
+Cmd_Return (const char *value)
+{
+	if (cmd_activebuffer->prev
+		&& cmd_activebuffer->prev->returned == cmd_waiting) {
 		dstring_clearstr (cmd_activebuffer->prev->retval);
 		dstring_appendstr (cmd_activebuffer->prev->retval, value);
 		cmd_activebuffer->prev->returned = cmd_returned;
 	} else
-		Sys_DPrintf ("GIB warning:  Return value \"%s\" was unwanted.\n", value);
+		Sys_DPrintf ("GIB warning:  Return value \"%s\" was unwanted.\n",
+					 value);
 }
 
 
@@ -786,7 +795,7 @@ typedef struct cmd_function_s {
 	const char *name;
 	xcommand_t  function;
 	const char *description;
-	qboolean pure;
+	qboolean    pure;
 } cmd_function_t;
 
 static cmd_function_t *cmd_functions;	// possible commands to execute
@@ -938,20 +947,19 @@ Cmd_GetToken (const char *str, qboolean legacy)
 	if (*str == '\"')
 		return Cmd_EndDoubleQuote (str, legacy);
 	for (i = 0; i < strlen (str); i++) {
-		if (isspace ((byte)str[i]))
+		if (isspace ((byte) str[i]))
 			break;
 		if (!escaped (str, i) || legacy) {
 			if (str[i] == '{' && !legacy) {
-				ret = Cmd_EndBrace (str+i);
+				ret = Cmd_EndBrace (str + i);
 				if (ret < 0)
 					return ret;
 				i += ret;
 				continue;
-			}
-			else if (str[i] == '}' && !legacy)
+			} else if (str[i] == '}' && !legacy)
 				return -1;
 			else if (str[i] == '\"') {
-				ret = Cmd_EndDoubleQuote (str+i, legacy);
+				ret = Cmd_EndDoubleQuote (str + i, legacy);
 				if (ret < 0)
 					return ret;
 				i += ret;
@@ -963,8 +971,8 @@ Cmd_GetToken (const char *str, qboolean legacy)
 }
 
 /* These are only used internally, but need to be declared in advance */
-int Cmd_ProcessVariables (dstring_t * dstr);
-int Cmd_ProcessEmbedded (cmd_token_t *tok, dstring_t * dstr);
+int         Cmd_ProcessVariables (dstring_t *dstr);
+int         Cmd_ProcessEmbedded (cmd_token_t *tok, dstring_t *dstr);
 
 /* HTML-like tag information */
 int         tag_shift = 0;
@@ -975,27 +983,21 @@ struct stable_s {
 	char        a, b;
 } stable1[] = {
 	{'f', 0x0D},							// Fake message
-
 	{'[', 0x90},							// Gold braces
 	{']', 0x91},
-
 	{'(', 0x80},							// Scroll bar characters
 	{'=', 0x81},
 	{')', 0x82},
 	{'|', 0x83},
-
 	{'<', 0x9D},							// Vertical line characters
 	{'-', 0x9E},
 	{'>', 0x9F},
-
 	{'.', 0x05},							// White dot
-
 	{'#', 0x0B},							// White block
-
 	{'a', 0x7F},							// White arrow.
-	// DO NOT USE <s>a</s> WITH <b> TAG IN ANYTHING SENT TO SERVER.  PERIOD.
+		// DO NOT USE <s>a</s> WITH <b> TAG IN ANYTHING SENT TO SERVER.
+		// PERIOD.
 	{'A', 0x8D},							// Brown arrow
-
 	{'0', 0x92},							// Golden numbers
 	{'1', 0x93},
 	{'2', 0x94},
@@ -1021,7 +1023,7 @@ struct stable_s {
 */
 
 void
-Cmd_ProcessTags (dstring_t * dstr)
+Cmd_ProcessTags (dstring_t *dstr)
 {
 	int         close = 0, ignore = 0, i, n, c;
 
@@ -1029,9 +1031,8 @@ Cmd_ProcessTags (dstring_t * dstr)
 		if (dstr->str[i] == '<' && !escaped (dstr->str, i)) {
 			close = 0;
 			for (n = 1;
-				 dstr->str[i+n] != '>' || escaped (dstr->str, i + n);
-				 n++)
-				if (dstr->str[i+n] == 0)
+				 dstr->str[i + n] != '>' || escaped (dstr->str, i + n); n++)
+				if (dstr->str[i + n] == 0)
 					return;
 			if (dstr->str[i + 1] == '/')
 				close = 1;
@@ -1078,19 +1079,20 @@ and feeds them through the EXP math interpreter,
 replacing them with the answer in the string */
 
 int
-Cmd_ProcessMath (dstring_t * dstr)
+Cmd_ProcessMath (dstring_t *dstr)
 {
 	dstring_t  *statement;
 	int         i, n;
-	double       value;
+	double      value;
 	char       *temp;
 	int         ret = 0;
 
 	statement = dstring_newstr ();
 
 	for (i = 0; i < strlen (dstr->str); i++) {
-		if (dstr->str[i] == '#' && dstr->str[i + 1] == '{' && !escaped (dstr->str, i)) {
-			n = Cmd_EndBrace (dstr->str+i+1)+1;
+		if (dstr->str[i] == '#' && dstr->str[i + 1] == '{'
+			&& !escaped (dstr->str, i)) {
+			n = Cmd_EndBrace (dstr->str + i + 1) + 1;
 			if (n < 0) {
 				Cmd_Error ("Unmatched brace in math expression.\n");
 				ret = -1;
@@ -1107,7 +1109,9 @@ Cmd_ProcessMath (dstring_t * dstr)
 				i += strlen (temp) - 1;
 			} else {
 				ret = -2;
-				Cmd_Error (va("Math error: invalid expression %s\n", statement->str));
+				Cmd_Error (va
+						   ("Math error: invalid expression %s\n",
+							statement->str));
 				break;					// Math evaluation error
 			}
 		}
@@ -1121,11 +1125,11 @@ Cmd_ProcessMath (dstring_t * dstr)
 removes it from the string, and stores the range
 specified in the index into two ints */
 int
-Cmd_ProcessIndex (dstring_t * dstr, int start, int *val1, int *val2)
+Cmd_ProcessIndex (dstring_t *dstr, int start, int *val1, int *val2)
 {
-	dstring_t *index;
-	char *sep;
-	int i,n, temp;
+	dstring_t  *index;
+	char       *sep;
+	int         i, n, temp;
 
 	i = Cmd_EndBracket (dstr->str + start);
 	if (i < 0) {
@@ -1133,9 +1137,9 @@ Cmd_ProcessIndex (dstring_t * dstr, int start, int *val1, int *val2)
 		return i;
 	}
 	index = dstring_newstr ();
-	dstring_insert (index, dstr->str+start+1, i-1, 0);
-	dstring_snip (dstr, start, i+1);
-	n = Cmd_ProcessVariables(index);
+	dstring_insert (index, dstr->str + start + 1, i - 1, 0);
+	dstring_snip (dstr, start, i + 1);
+	n = Cmd_ProcessVariables (index);
 	if (n < 0) {
 		dstring_delete (index);
 		return n;
@@ -1145,11 +1149,11 @@ Cmd_ProcessIndex (dstring_t * dstr, int start, int *val1, int *val2)
 		dstring_delete (index);
 		return n;
 	}
-	if ((sep = strchr(index->str, ':'))) {
+	if ((sep = strchr (index->str, ':'))) {
 		*val1 = atoi (index->str);
-		*val2 = atoi (sep+1);
+		*val2 = atoi (sep + 1);
 	} else {
-		*val1 = *val2 = atoi(index->str);
+		*val1 = *val2 = atoi (index->str);
 	}
 	dstring_delete (index);
 	if (*val2 < *val1) {
@@ -1170,18 +1174,19 @@ Cmd_ProcessIndex (dstring_t * dstr, int start, int *val1, int *val2)
 */
 
 int
-Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
+Cmd_ProcessVariablesRecursive (dstring_t *dstr, int start)
 {
 	cmd_localvar_t *lvar;
 	cvar_t     *cvar;
 	int         i, n, braces = 0;
 
-	if (dstr->str[start+1] == '{')
+	if (dstr->str[start + 1] == '{')
 		braces = 1;
 	for (i = start + 1 + braces;; i++) {
 		if (!escaped (dstr->str, i)) {
-			// If we are within braces or two $ appear next to each other, consider it recursive
-			if (dstr->str[i] == '$' && (braces || dstr->str[i-1] == '$')) {
+			// If we are within braces or two $ appear next to each other,
+			// consider it recursive
+			if (dstr->str[i] == '$' && (braces || dstr->str[i - 1] == '$')) {
 				n = Cmd_ProcessVariablesRecursive (dstr, i);
 				if (n < 0) {
 					break;
@@ -1189,10 +1194,14 @@ Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
 					i += n - 1;
 					continue;
 				}
-			} else if ((braces && dstr->str[i] == '}') || (!braces && !isalnum((byte)dstr->str[i]) && dstr->str[i] != '_')) {
-				dstring_t *varname = dstring_newstr ();
-				dstring_t *copy = dstring_newstr ();
-				dstring_insert (varname, dstr->str + start + 1 + braces, i - start - 1 - braces, 0);
+			} else if ((braces && dstr->str[i] == '}')
+					   || (!braces && !isalnum ((byte) dstr->str[i])
+						   && dstr->str[i] != '_')) {
+				dstring_t  *varname = dstring_newstr ();
+				dstring_t  *copy = dstring_newstr ();
+
+				dstring_insert (varname, dstr->str + start + 1 + braces,
+								i - start - 1 - braces, 0);
 				// Nuke it, even if no match is found
 				dstring_snip (dstr, start, i - start + braces);
 				lvar = (cmd_localvar_t *) Hash_Find (cmd_activebuffer->locals,
@@ -1205,32 +1214,37 @@ Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
 					dstring_appendstr (copy, cvar->string);
 				}
 				n = 0;
-				dstring_clearstr (varname); // Reuse variable
+				dstring_clearstr (varname);	// Reuse variable
 				if (dstr->str[start] == '[') {
-					int val1, val2, res;
+					int         val1, val2, res;
+
 					res = Cmd_ProcessIndex (dstr, start, &val1, &val2);
 					if (res < 0)
 						n = -1;
-					else if (val1 >= strlen(copy->str) || val1 < 0)
+					else if (val1 >= strlen (copy->str) || val1 < 0)
 						n = 0;
-					else if (val2 < strlen(copy->str))
-						dstring_insert (varname, copy->str+val1, val2-val1+1, 0);
+					else if (val2 < strlen (copy->str))
+						dstring_insert (varname, copy->str + val1,
+										val2 - val1 + 1, 0);
 					else
-						dstring_insert (varname, copy->str+val1, strlen(copy->str)-val1, 0);
+						dstring_insert (varname, copy->str + val1,
+										strlen (copy->str) - val1, 0);
 				} else
 					dstring_appendstr (varname, copy->str);
 				if (n >= 0) {
-					escape (varname, "<#\\"); // Preserve backslashes, tags, and math as unprocessed
+					escape (varname, "<#\\");	// Preserve backslashes, tags,
+												// and math as unprocessed
 					dstring_insertstr (dstr, varname->str, start);
-					n = strlen(varname->str);
+					n = strlen (varname->str);
 				}
 				dstring_delete (copy);
 				dstring_delete (varname);
 				break;
 			}
 		}
-		if (!dstr->str[i] && braces) {		// No closing brace
-			Cmd_Error ("Unmatched brace in variable substitution expression.\n");
+		if (!dstr->str[i] && braces) {	// No closing brace
+			Cmd_Error
+				("Unmatched brace in variable substitution expression.\n");
 			n = -1;
 			break;
 		}
@@ -1242,7 +1256,7 @@ Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
 ${var} and calls a recursive function to handle
 them */
 int
-Cmd_ProcessVariables (dstring_t * dstr)
+Cmd_ProcessVariables (dstring_t *dstr)
 {
 	int         i, n;
 
@@ -1267,27 +1281,28 @@ it should return a value to this buffer.  When
 this function is called again, it will see that a
 value is available and substitute it into the string */
 int
-Cmd_ProcessEmbeddedSingle (dstring_t * dstr, int start)
+Cmd_ProcessEmbeddedSingle (dstring_t *dstr, int start)
 {
-	int		n;
-	dstring_t *command;
+	int         n;
+	dstring_t  *command;
 	cmd_buffer_t *sub;
 
-	n = Cmd_EndBrace (dstr->str+start+1)+1;
+	n = Cmd_EndBrace (dstr->str + start + 1) + 1;
 	if (n < 0) {
 		Cmd_Error ("GIB:  Unmatched brace in embedded command expression.\n");
 		return -1;
 	}
 	if (cmd_activebuffer->returned == cmd_waiting) {
 		cmd_activebuffer->returned = cmd_normal;
-		Cmd_Error ("Embedded command expression did not result in a return value.\n");
+		Cmd_Error
+			("Embedded command expression did not result in a return value.\n");
 		return -1;
 	}
 	if (cmd_activebuffer->returned == cmd_returned) {
 		escape (cmd_activebuffer->retval, "<#$\\");
-		dstring_snip(dstr, start, n+1);
+		dstring_snip (dstr, start, n + 1);
 		dstring_insertstr (dstr, cmd_activebuffer->retval->str, start);
-		n = strlen(cmd_activebuffer->retval->str);
+		n = strlen (cmd_activebuffer->retval->str);
 		cmd_activebuffer->returned = cmd_normal;
 	} else {
 		command = dstring_newstr ();
@@ -1307,12 +1322,13 @@ Cmd_ProcessEmbeddedSingle (dstring_t * dstr, int start)
 /* Scans for instances of ~{commands} and calls a function
 to handle it */
 int
-Cmd_ProcessEmbedded (cmd_token_t *tok, dstring_t * dstr)
+Cmd_ProcessEmbedded (cmd_token_t *tok, dstring_t *dstr)
 {
-	int i, n;
+	int         i, n;
 
-	for (i = tok->pos; i < strlen(dstr->str); i++) {
-		if (dstr->str[i] == '~' && dstr->str[i+1] == '{' && !escaped (dstr->str, i)) {
+	for (i = tok->pos; i < strlen (dstr->str); i++) {
+		if (dstr->str[i] == '~' && dstr->str[i + 1] == '{'
+			&& !escaped (dstr->str, i)) {
 			n = Cmd_ProcessEmbeddedSingle (dstr, i);
 			if (n == -2) {
 				tok->pos = i;
@@ -1321,7 +1337,7 @@ Cmd_ProcessEmbedded (cmd_token_t *tok, dstring_t * dstr)
 			if (n < 0)
 				return n;
 			else
-				i += n-1;
+				i += n - 1;
 		}
 	}
 	return 0;
@@ -1342,11 +1358,11 @@ Cmd_ProcessEmbedded (cmd_token_t *tok, dstring_t * dstr)
 */
 
 int
-Cmd_ProcessEscapes (dstring_t * dstr, const char *noprocess)
+Cmd_ProcessEscapes (dstring_t *dstr, const char *noprocess)
 {
 	int         i;
 
-	if (strlen(dstr->str) == 1)
+	if (strlen (dstr->str) == 1)
 		return 0;
 	for (i = 0; i < strlen (dstr->str); i++)
 		if (dstr->str[i] == '\\') {
@@ -1362,7 +1378,7 @@ Cmd_ProcessEscapes (dstring_t * dstr, const char *noprocess)
 int
 Cmd_ProcessToken (cmd_token_t *token)
 {
-	int res;
+	int         res;
 
 	if (!token->pos) {
 		dstring_clearstr (token->processed);
@@ -1379,7 +1395,7 @@ Cmd_ProcessToken (cmd_token_t *token)
 		return res;
 	Cmd_ProcessTags (token->processed);
 	res = Cmd_ProcessEscapes (token->processed, "$#~");
-		if (res < 0)
+	if (res < 0)
 		return res;
 	token->state = cmd_done;
 	return 0;
@@ -1394,19 +1410,23 @@ Cmd_ProcessToken (cmd_token_t *token)
 int
 Cmd_Process (void)
 {
-	int arg, res;
-	dstring_t *str;
-	dstring_t *org;
-	int quotes;
+	int         arg, res;
+	dstring_t  *str;
+	dstring_t  *org;
+	int         quotes;
 	unsigned int adj = 0;
 	cmd_function_t *cmd;
 
-	if (cmd_activebuffer->legacy) // Legacy buffers will never require processing, ever
+	if (cmd_activebuffer->legacy)		// Legacy buffers will never require
+										// processing, ever
 		return 0;
-	if (!Cmd_Argc()) // No tokens, don't bother
+	if (!Cmd_Argc ())					// No tokens, don't bother
 		return 0;
-	cmd = (cmd_function_t *) Hash_Find (cmd_hash, cmd_activebuffer->argv[0]->original->str);
-	if (cmd && cmd->pure) // If the function is pure, don't bother processing
+	cmd =
+		(cmd_function_t *) Hash_Find (cmd_hash,
+									  cmd_activebuffer->argv[0]->original->str);
+	if (cmd && cmd->pure)				// If the function is pure, don't
+										// bother processing
 		return 0;
 
 	tag_shift = 0;
@@ -1421,8 +1441,8 @@ Cmd_Process (void)
 		}
 	}
 
-	/* Here we edit the composite command line to reflect
-	the changes made to individual tokens. */
+	/* Here we edit the composite command line to reflect the changes made to
+	   individual tokens. */
 	dstring_clearstr (cmd_activebuffer->line);
 	dstring_appendstr (cmd_activebuffer->line, cmd_activebuffer->realline->str);
 	for (arg = 0; arg < cmd_activebuffer->argc; arg++) {
@@ -1438,7 +1458,9 @@ Cmd_Process (void)
 		cmd_activebuffer->args[arg] = cmd_activebuffer->argsu[arg] + adj;
 		adj += (str->size - 1) - (org->size - 1);
 		dstring_replace (cmd_activebuffer->line, str->str, str->size - 1,
-						 cmd_activebuffer->args[arg] + quotes + (cmd_activebuffer->argv[arg]->delim == '{'), org->size - 1);
+						 cmd_activebuffer->args[arg] + quotes +
+						 (cmd_activebuffer->argv[arg]->delim == '{'),
+						 org->size - 1);
 	}
 	return 0;
 }
@@ -1451,7 +1473,7 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 	int         i = 0, len = 0, quotes, braces;
 	const char *str = text;
 	unsigned int cmd_argc = 0;
-	qboolean process = true;
+	qboolean    process = true;
 
 	dstring_clearstr (cmd_activebuffer->realline);
 	dstring_appendstr (cmd_activebuffer->realline, text);
@@ -1463,7 +1485,7 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 		str++;
 	}
 	while (strlen (str + i)) {
-		while (isspace ((byte)str[i])) // Get rid of white space
+		while (isspace ((byte) str[i]))	// Get rid of white space
 			i++;
 		len = Cmd_GetToken (str + i, legacy);
 		if (len < 0) {
@@ -1476,10 +1498,11 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 		cmd_argc++;
 		if (cmd_argc > cmd_activebuffer->maxargc) {
 			cmd_activebuffer->argv = realloc (cmd_activebuffer->argv,
-											  sizeof (cmd_token_t *) * cmd_argc);
+											  sizeof (cmd_token_t *) *
+											  cmd_argc);
 			SYS_CHECKMEM (cmd_activebuffer->argv);
 			cmd_activebuffer->argsu = realloc (cmd_activebuffer->argsu,
-											  sizeof (int) * cmd_argc);
+											   sizeof (int) * cmd_argc);
 			SYS_CHECKMEM (cmd_activebuffer->argsu);
 
 			cmd_activebuffer->args = realloc (cmd_activebuffer->args,
@@ -1489,13 +1512,13 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 			cmd_activebuffer->argv[cmd_argc - 1] = Cmd_NewToken ();
 			cmd_activebuffer->maxargc++;
 		}
-		dstring_clearstr (cmd_activebuffer->argv[cmd_argc-1]->original);
+		dstring_clearstr (cmd_activebuffer->argv[cmd_argc - 1]->original);
 		/* Remove surrounding quotes or double quotes or braces */
 		quotes = 0;
 		braces = 0;
 		cmd_activebuffer->argsu[cmd_argc - 1] = i;
 		if (str[i] == '"' && str[i + len] == '"') {
-			cmd_activebuffer->argv[cmd_argc-1]->delim = str[i];
+			cmd_activebuffer->argv[cmd_argc - 1]->delim = str[i];
 			i++;
 			len -= 1;
 			quotes = 1;
@@ -1503,15 +1526,16 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 			i++;
 			len -= 1;
 			braces = 1;
-			cmd_activebuffer->argv[cmd_argc-1]->delim = '{';
+			cmd_activebuffer->argv[cmd_argc - 1]->delim = '{';
 		} else
 			cmd_activebuffer->argv[cmd_argc - 1]->delim = ' ';
-		dstring_insert (cmd_activebuffer->argv[cmd_argc-1]->original, str + i, len, 0);
+		dstring_insert (cmd_activebuffer->argv[cmd_argc - 1]->original, str + i,
+						len, 0);
 		if (!legacy && !braces && process)
-			cmd_activebuffer->argv[cmd_argc-1]->state = cmd_process;
+			cmd_activebuffer->argv[cmd_argc - 1]->state = cmd_process;
 		else
-			cmd_activebuffer->argv[cmd_argc-1]->state = cmd_original;
-		cmd_activebuffer->argv[cmd_argc-1]->pos = 0;
+			cmd_activebuffer->argv[cmd_argc - 1]->state = cmd_original;
+		cmd_activebuffer->argv[cmd_argc - 1]->pos = 0;
 		i += len + quotes + braces;		/* If we ended on a quote or brace,
 										   skip it */
 	}
@@ -1546,11 +1570,10 @@ Cmd_ExecuteParsed (cmd_source_t src)
 		return;
 
 	// Check for assignment
-	if (Cmd_Argc() == 3 && !strcmp(Cmd_Argv(1), "=")) {
-		Cmd_SetLocal (cmd_activebuffer, Cmd_Argv(0), Cmd_Argv(2));
+	if (Cmd_Argc () == 3 && !strcmp (Cmd_Argv (1), "=")) {
+		Cmd_SetLocal (cmd_activebuffer, Cmd_Argv (0), Cmd_Argv (2));
 		return;
 	}
-
 	// check alias
 
 
@@ -1559,13 +1582,15 @@ Cmd_ExecuteParsed (cmd_source_t src)
 }
 
 /* Executes a single command in an internal buffer context */
-int Cmd_ExecuteString (const char *text, cmd_source_t src)
+int
+Cmd_ExecuteString (const char *text, cmd_source_t src)
 {
-	cmd_buffer_t *old = cmd_activebuffer; // Save context
-	int ret;
+	cmd_buffer_t *old = cmd_activebuffer;	// Save context
+	int         ret;
+
 	cmd_activebuffer = cmd_privatebuffer;
 	Cmd_TokenizeString (text, cmd_activebuffer->legacy);
-	if (!Cmd_Argc()) {
+	if (!Cmd_Argc ()) {
 		cmd_activebuffer = old;
 		return -1;
 	}
@@ -1792,10 +1817,10 @@ Cmd_Exec_f (void)
 		&& (cmd_warncmd->int_val || (developer && developer->int_val)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
 	sub = Cmd_NewBuffer (true);
-	if (!strcasecmp (Cmd_Argv(1), "quake.rc")
-	  || !strcasecmp (Cmd_Argv(1), "default.cfg")
-	  || !strcasecmp (Cmd_Argv(1), "config.cfg"))
-	  	sub->legacy = true;
+	if (!strcasecmp (Cmd_Argv (1), "quake.rc")
+		|| !strcasecmp (Cmd_Argv (1), "default.cfg")
+		|| !strcasecmp (Cmd_Argv (1), "config.cfg"))
+		sub->legacy = true;
 	Cbuf_AddTextTo (sub, f);
 	Hunk_FreeToLowMark (mark);
 	Cbuf_ExecuteSubroutine (sub);		// Execute file in it's own buffer
@@ -1809,8 +1834,8 @@ Cmd_Exec_f (void)
 void
 Cmd_Echo_f (void)
 {
-	if (Cmd_Argc() == 2)
-		Sys_Printf ("%s\n", Cmd_Argv(1));
+	if (Cmd_Argc () == 2)
+		Sys_Printf ("%s\n", Cmd_Argv (1));
 	else
 		Sys_Printf ("%s\n", Cmd_Args (1));
 }
@@ -1842,15 +1867,17 @@ cmd_get_key (void *c, void *unused)
 	return cmd->name;
 }
 
-void Cmd_Runalias_f (void)
+void
+Cmd_Runalias_f (void)
 {
 	cmdalias_t *a;
-	
+
 	a = (cmdalias_t *) Hash_Find (cmd_alias_hash, Cmd_Argv (0));
-	
+
 	if (a) {
-		int i;
-		cmd_buffer_t *sub; // Create a new buffer to execute the alias in
+		int         i;
+		cmd_buffer_t *sub;				// Create a new buffer to execute the
+										// alias in
 		sub = Cmd_NewBuffer (true);
 		sub->restricted = a->restricted;
 		sub->legacy = a->legacy;
@@ -1861,8 +1888,10 @@ void Cmd_Runalias_f (void)
 		Cbuf_ExecuteSubroutine (sub);
 		return;
 	} else {
-			Sys_Printf ("BUG: No alias found for registered command.  Please report this to the QuakeForge development team.");
-			Cmd_Error ("Fatal bug encountered.  Execution aborted.  Please contact the QuakeForge team.");
+		Sys_Printf
+			("BUG: No alias found for registered command.  Please report this to the QuakeForge development team.");
+		Cmd_Error
+			("Fatal bug encountered.  Execution aborted.  Please contact the QuakeForge team.");
 	}
 }
 
@@ -1892,7 +1921,7 @@ Cmd_Alias_f (void)
 	alias = (cmdalias_t *) Hash_Find (cmd_alias_hash, s);
 	if (Cmd_Argc () == 2) {
 		if (alias)
-			Sys_Printf("alias \"%s\" {%s}\n", alias->name, alias->value);
+			Sys_Printf ("alias \"%s\" {%s}\n", alias->name, alias->value);
 		return;
 	}
 	if (alias)
@@ -1946,9 +1975,8 @@ Cmd_UnAlias_f (void)
 		cmdalias_t **a;
 
 		Cmd_RemoveCommand (alias->name);
-		
-		for (a = &cmd_alias; *a != alias; a = &(*a)->next)
-			;
+
+		for (a = &cmd_alias; *a != alias; a = &(*a)->next);
 		*a = alias->next;
 
 		free ((char *) alias->name);
@@ -1965,6 +1993,7 @@ void
 Cmd_Wait_f (void)
 {
 	cmd_buffer_t *cur;
+
 	for (cur = cmd_activebuffer; cur; cur = cur->prev)
 		cur->wait = true;
 }
@@ -1973,11 +2002,11 @@ Cmd_Wait_f (void)
 void
 Cmd_Sleep_f (void)
 {
-	if (Cmd_Argc() != 2) {
+	if (Cmd_Argc () != 2) {
 		Cmd_Error ("sleep: invalid number of arguments.\n");
 		return;
 	}
-	cmd_activebuffer->timeleft = (double)atof(Cmd_Argv(1));
+	cmd_activebuffer->timeleft = (double) atof (Cmd_Argv (1));
 	cmd_activebuffer->lasttime = Sys_DoubleTime ();
 	Cmd_Wait_f ();
 	return;
@@ -1990,7 +2019,7 @@ Cmd_CmdList_f (void)
 	cmd_function_t *cmd;
 	int         i;
 	int         show_description = 0;
-	
+
 	if (Cmd_Argc () > 1)
 		show_description = 1;
 	for (cmd = cmd_functions, i = 0; cmd; cmd = cmd->next, i++) {
@@ -2020,8 +2049,7 @@ Cmd_Help_f (void)
 	name = Cmd_Argv (1);
 
 	for (cmd = cmd_functions; cmd && strcasecmp (name, cmd->name);
-		 cmd = cmd->next)
-		;
+		 cmd = cmd->next);
 	if (cmd) {
 		Sys_Printf ("%s\n", cmd->description);
 		return;
@@ -2051,36 +2079,36 @@ void
 Cmd_If_f (void)
 {
 	long int    num;
-	int ret;
+	int         ret;
 
-	if ((Cmd_Argc () !=3 && !(Cmd_Argc () >= 5)) || (Cmd_Argc () > 5 && strcmp(Cmd_Argv(3),"else"))) {
+	if ((Cmd_Argc () != 3 && !(Cmd_Argc () >= 5))
+		|| (Cmd_Argc () > 5 && strcmp (Cmd_Argv (3), "else"))) {
 		Cmd_Error ("Malformed if statement.\n");
 		return;
 	}
 
-	/* HACK HACK HACK
-	If is set as a pure command, but it needs the first argument
-	to be evaluated.  Normally this would mean Cmd_Args is out
-	of sync, but since if uses Cmd_Argsu (4) and no other commands
-	will need these tokens, it is safe.
-	*/
+	/* HACK HACK HACK If is set as a pure command, but it needs the first
+	   argument to be evaluated.  Normally this would mean Cmd_Args is out of
+	   sync, but since if uses Cmd_Argsu (4) and no other commands will need
+	   these tokens, it is safe. */
 	ret = Cmd_ProcessToken (cmd_activebuffer->argv[1]);
 	if (ret < 0) {
 		if (ret == -2)
-			cmd_activebuffer->again = true; // Embedded command needs a return value first
+			cmd_activebuffer->again = true;	// Embedded command needs a return
+											// value first
 		return;
 	}
 
-	num = strtol (Cmd_Argv(1), 0, 10);
+	num = strtol (Cmd_Argv (1), 0, 10);
 
-	if (!strcmp(Cmd_Argv(0), "ifnot"))
+	if (!strcmp (Cmd_Argv (0), "ifnot"))
 		num = !num;
 
 	if (num)
 		Cbuf_InsertText (Cmd_Argv (2));
-	if (!num && Cmd_Argc() == 5)
+	if (!num && Cmd_Argc () == 5)
 		Cbuf_InsertText (Cmd_Argv (4));
-	if (!num && Cmd_Argc() > 5) {
+	if (!num && Cmd_Argc () > 5) {
 		Cbuf_InsertText (Cmd_Argsu (4));
 	}
 	return;
@@ -2089,24 +2117,28 @@ Cmd_If_f (void)
 /* Executes a block of code while a condition
 is met */
 void
-Cmd_While_f (void) {
+Cmd_While_f (void)
+{
 	cmd_buffer_t *sub;
 
-	if (Cmd_Argc() < 3) {
-		Sys_Printf("Usage: while {condition} {commands}\n");
+	if (Cmd_Argc () < 3) {
+		Sys_Printf ("Usage: while {condition} {commands}\n");
 		return;
 	}
 
 	sub = Cmd_NewBuffer (false);
-	sub->locals = cmd_activebuffer->locals; // Use current local variables
+	sub->locals = cmd_activebuffer->locals;	// Use current local variables
 	sub->loop = true;
 	if (cmd_activebuffer->argv[1]->delim == '{')
-		dstring_appendstr (sub->looptext, va("ifnot {%s} break\n", Cmd_Argv(1)));
+		dstring_appendstr (sub->looptext,
+						   va ("ifnot {%s} break\n", Cmd_Argv (1)));
 	else if (cmd_activebuffer->argv[1]->delim == '\"')
-		dstring_appendstr (sub->looptext, va("ifnot \"%s\" break\n", Cmd_Argv(1)));
+		dstring_appendstr (sub->looptext,
+						   va ("ifnot \"%s\" break\n", Cmd_Argv (1)));
 	else
-		dstring_appendstr (sub->looptext, va("ifnot %s break\n", Cmd_Argv(1)));
-	dstring_appendstr (sub->looptext, Cmd_Argv(2));
+		dstring_appendstr (sub->looptext,
+						   va ("ifnot %s break\n", Cmd_Argv (1)));
+	dstring_appendstr (sub->looptext, Cmd_Argv (2));
 	Cbuf_ExecuteSubroutine (sub);
 	return;
 }
@@ -2114,12 +2146,14 @@ Cmd_While_f (void) {
 /* Works exactly like for in C:
 for {initializer; condition; iterator} {code} */
 void
-Cmd_For_f (void) {
+Cmd_For_f (void)
+{
 	cmd_buffer_t *sub;
-	dstring_t *arg1, *init, *cond, *inc;
+	dstring_t  *arg1, *init, *cond, *inc;
 
-	if (Cmd_Argc() < 2 || Cmd_Argc() > 3 || cmd_activebuffer->argv[1]->delim != '{') {
-		Cmd_Error("Malformed for statement.\n");
+	if (Cmd_Argc () < 2 || Cmd_Argc () > 3
+		|| cmd_activebuffer->argv[1]->delim != '{') {
+		Cmd_Error ("Malformed for statement.\n");
 		return;
 	}
 
@@ -2128,21 +2162,21 @@ Cmd_For_f (void) {
 	cond = dstring_newstr ();
 	inc = dstring_newstr ();
 
-	dstring_appendstr (arg1, Cmd_Argv(1));
+	dstring_appendstr (arg1, Cmd_Argv (1));
 	Cbuf_ExtractLine (arg1, init, true);
 	Cbuf_ExtractLine (arg1, cond, true);
 	Cbuf_ExtractLine (arg1, inc, true);
-	if (!strlen(arg1->str)) {
+	if (!strlen (arg1->str)) {
 		sub = Cmd_NewBuffer (false);
-		sub->locals = cmd_activebuffer->locals; // Use current local variables
+		sub->locals = cmd_activebuffer->locals;	// Use current local variables
 		sub->loop = true;
-		dstring_appendstr (sub->looptext, va("ifnot %s break\n", cond->str));
-		dstring_appendstr (sub->looptext, va("%s\n", Cmd_Argv(2)));
-		dstring_appendstr (sub->looptext, va("%s", inc->str));
+		dstring_appendstr (sub->looptext, va ("ifnot %s break\n", cond->str));
+		dstring_appendstr (sub->looptext, va ("%s\n", Cmd_Argv (2)));
+		dstring_appendstr (sub->looptext, va ("%s", inc->str));
 		Cbuf_InsertTextTo (sub, init->str);
 		Cbuf_ExecuteSubroutine (sub);
 	} else
-		Cmd_Error("Malformed for statement.\n");
+		Cmd_Error ("Malformed for statement.\n");
 	dstring_delete (arg1);
 	dstring_delete (init);
 	dstring_delete (cond);
@@ -2152,40 +2186,48 @@ Cmd_For_f (void) {
 
 /* Breaks out of a loop buffer */
 void
-Cmd_Break_f (void) {
+Cmd_Break_f (void)
+{
 	if (cmd_activebuffer->loop) {
 		cmd_activebuffer->loop = false;
-		dstring_clearstr(cmd_activebuffer->buffer);
+		dstring_clearstr (cmd_activebuffer->buffer);
 		return;
 	} else {
-		Cmd_Error("Break command used outside of loop!\n");
+		Cmd_Error ("Break command used outside of loop!\n");
 		return;
 	}
 }
 
 /* Returns a value to the buffer that requested it */
 void
-Cmd_Return_f (void) {
-	int argc = Cmd_Argc();
-	const char *val = Cmd_Argv(1);
-	cmd_buffer_t *old = cmd_activebuffer; // save context
+Cmd_Return_f (void)
+{
+	int         argc = Cmd_Argc ();
+	const char *val = Cmd_Argv (1);
+	cmd_buffer_t *old = cmd_activebuffer;	// save context
+
 	if (argc > 2) {
-		Cmd_Error("GIB:  Invalid return statement.  Return takes either one argument or none.\n");
+		Cmd_Error
+			("GIB:  Invalid return statement.  Return takes either one argument or none.\n");
 		return;
 	}
-	while (cmd_activebuffer->loop) { // We need to get out of any loops
-		dstring_clearstr(cmd_activebuffer->buffer);
+	while (cmd_activebuffer->loop) {	// We need to get out of any loops
+		dstring_clearstr (cmd_activebuffer->buffer);
 		cmd_activebuffer->loop = false;
 		cmd_activebuffer = cmd_activebuffer->prev;
 	}
 	if (!cmd_activebuffer->prev) {
-		Cmd_Error("GIB:  Return attempted in a root buffer\n");
+		Cmd_Error ("GIB:  Return attempted in a root buffer\n");
 		cmd_activebuffer = old;
 		return;
 	}
-	dstring_clearstr (cmd_activebuffer->buffer); // Clear the buffer out no matter what
-	if (!cmd_activebuffer->embedded) // If this isn't an embedded command buffer
-		cmd_activebuffer = cmd_activebuffer->prev; // The buffer we want must be two places up on the stack
+	dstring_clearstr (cmd_activebuffer->buffer);	// Clear the buffer out no
+													// matter what
+	if (!cmd_activebuffer->embedded)	// If this isn't an embedded command
+										// buffer
+		cmd_activebuffer = cmd_activebuffer->prev;	// The buffer we want must
+													// be two places up on the
+													// stack
 	if (argc == 2)
 		Cmd_Return (val);
 	cmd_activebuffer = old;
@@ -2208,7 +2250,8 @@ void
 Cmd_Detach_f (void)
 {
 	cmd_thread_t *thread;
-	if (Cmd_Restricted()) {
+
+	if (Cmd_Restricted ()) {
 		Cmd_Error ("detach: access to restricted command denied");
 		return;
 	}
@@ -2220,21 +2263,23 @@ Cmd_Detach_f (void)
 
 	thread = Cmd_NewThread (cmd_threadid++);
 	Cmd_AddThread (&cmd_threads, thread);
-	Cbuf_AddTextTo (thread->cbuf, Cmd_Argv(1));
-	Cbuf_ExecuteStack (thread->cbuf); // Execute it now
-	cmd_error = false; // Don't let errors cross into this stack
-	Cmd_Return (va("%li", thread->id));
+	Cbuf_AddTextTo (thread->cbuf, Cmd_Argv (1));
+	Cbuf_ExecuteStack (thread->cbuf);	// Execute it now
+	cmd_error = false;					// Don't let errors cross into this
+										// stack
+	Cmd_Return (va ("%li", thread->id));
 }
 
 /* Kills a thread based on its thread id */
 void
 Cmd_Killthread_f (void)
 {
-	long int id;
+	long int    id;
 	cmd_thread_t *t;
-	if (Cmd_Argc() != 2)
+
+	if (Cmd_Argc () != 2)
 		Cmd_Error ("killthread: invalid number of arguments.\n");
-	id = atol (Cmd_Argv(1));
+	id = atol (Cmd_Argv (1));
 	for (t = cmd_threads; t; t = t->next)
 		if (id == t->id) {
 			if (t->cbuf->next)
@@ -2250,15 +2295,22 @@ Cmd_Killthread_f (void)
 
 /* Generates a random integer between two values */
 void
-Cmd_Randint_f (void) {
-	int low, high;
+Cmd_Randint_f (void)
+{
+	int         low, high;
+
 	if (Cmd_Argc () != 3) {
 		Cmd_Error ("randint: invalid number of arguments.\n");
 		return;
 	}
-	low = atoi(Cmd_Argv(1));
-	high = atoi(Cmd_Argv(2));
-	Cmd_Return (va("%i", (int)(low+(float)rand()/(float)RAND_MAX*(float)(high-low+1))));
+	low = atoi (Cmd_Argv (1));
+	high = atoi (Cmd_Argv (2));
+	Cmd_Return (va
+				("%i",
+				 (int) (low +
+						(float) rand () / (float) RAND_MAX * (float) (high -
+																	  low +
+																	  1))));
 }
 
 /* Returns 1 if two strings are equal, zero otherwise */
@@ -2269,7 +2321,7 @@ Cmd_Streq_f (void)
 		Cmd_Error ("streq: invalid number of arguments.\n");
 		return;
 	}
-	Cmd_Return (va("%i",!strcmp (Cmd_Argv(1), Cmd_Argv(2))));
+	Cmd_Return (va ("%i", !strcmp (Cmd_Argv (1), Cmd_Argv (2))));
 }
 
 /* Returns the length of a string */
@@ -2280,7 +2332,7 @@ Cmd_Strlen_f (void)
 		Cmd_Error ("strlen: invalid number of arguments.\n");
 		return;
 	}
-	Cmd_Return (va("%ld", (long) strlen (Cmd_Argv(1))));
+	Cmd_Return (va ("%ld", (long) strlen (Cmd_Argv (1))));
 }
 
 
@@ -2299,7 +2351,8 @@ Cmd_Strlen_f (void)
 int
 Cmd_CollapsePath (char *str)
 {
-	char *d, *p, *path;
+	char       *d, *p, *path;
+
 	p = path = str;
 	while (*p) {
 		if (p[0] == '.') {
@@ -2331,10 +2384,11 @@ Cmd_CollapsePath (char *str)
 		if (*p == '/')
 			p++;
 	}
-	if ( (!path[0])
-	  || (path[0] == '.' && path[1] == '.' && (path[2] == '/' || path [2] == 0))
-	  || (path[strlen (path) - 1] =='/') 
-	  || path[0] == '~') {
+	if ((!path[0])
+		|| (path[0] == '.' && path[1] == '.'
+			&& (path[2] == '/' || path[2] == 0))
+		|| (path[strlen (path) - 1] == '/')
+		|| path[0] == '~') {
 		return 0;
 	}
 	return 1;
@@ -2343,30 +2397,32 @@ Cmd_CollapsePath (char *str)
 void
 Cmd_File_read_f (void)
 {
-	char *path, *contents;
-	int mark;
+	char       *path, *contents;
+	int         mark;
 
 	if (Cmd_Restricted ()) {
 		Cmd_Error ("file_read: access to restricted command denied.\n");
 		return;
 	}
-	if (Cmd_Argc() != 2) {
+	if (Cmd_Argc () != 2) {
 		Cmd_Error ("file_read: invalid number of arguments.\n");
 		return;
 	}
-	path = strdup (Cmd_Argv(1));
+	path = strdup (Cmd_Argv (1));
 	SYS_CHECKMEM (path);
 	if (!Cmd_CollapsePath (path)) {
-			free (path);
-			Cmd_Error ("file_read: access to restricted directory/file denied.\n");
-			return;
+		free (path);
+		Cmd_Error ("file_read: access to restricted directory/file denied.\n");
+		return;
 	}
-	free(path);
+	free (path);
 	Sys_DPrintf ("file_read: opening %s/%s\n", com_gamedir, path);
 	mark = Hunk_LowMark ();
-	contents = (char *) COM_LoadHunkFile (Cmd_Argv(1));
+	contents = (char *) COM_LoadHunkFile (Cmd_Argv (1));
 	if (!contents) {
-		Cmd_Error (va ("file_read: could not open file for reading: %s\n", strerror (errno)));
+		Cmd_Error (va
+				   ("file_read: could not open file for reading: %s\n",
+					strerror (errno)));
 		return;
 	}
 	Cmd_Return (contents);
@@ -2376,85 +2432,90 @@ Cmd_File_read_f (void)
 void
 Cmd_File_write_f (void)
 {
-	VFile *file;
-	char *path;
+	VFile      *file;
+	char       *path;
 
 	if (Cmd_Restricted ()) {
 		Cmd_Error ("file_write: access to restricted command denied.\n");
 		return;
 	}
-	if (Cmd_Argc() != 3) {
+	if (Cmd_Argc () != 3) {
 		Cmd_Error ("file_write: invalid number of arguments.\n");
 		return;
 	}
-	path = strdup (Cmd_Argv(1));
+	path = strdup (Cmd_Argv (1));
 	SYS_CHECKMEM (path);
 	if (!Cmd_CollapsePath (path)) {
-			free (path);
-			Cmd_Error ("file_write: access to restricted directory/file denied.\n");
-			return;
-	}
-	free(path);
-	Sys_DPrintf ("file_write: opening %s/%s\n", com_gamedir, path);
-	if (!(file = Qopen (va("%s/%s", com_gamedir, Cmd_Argv(1)), "w"))) {
-		Cmd_Error (va ("file_write: could not open file for writing: %s\n", strerror (errno)));
+		free (path);
+		Cmd_Error ("file_write: access to restricted directory/file denied.\n");
 		return;
 	}
-	Qprintf (file, "%s", Cmd_Argv(2));
+	free (path);
+	Sys_DPrintf ("file_write: opening %s/%s\n", com_gamedir, path);
+	if (!(file = Qopen (va ("%s/%s", com_gamedir, Cmd_Argv (1)), "w"))) {
+		Cmd_Error (va
+				   ("file_write: could not open file for writing: %s\n",
+					strerror (errno)));
+		return;
+	}
+	Qprintf (file, "%s", Cmd_Argv (2));
 	Qclose (file);
 }
 
 void
 Cmd_File_find_f (void)
 {
-	DIR *directory;
+	DIR        *directory;
 	struct dirent *entry;
-	char *path;
-	dstring_t *list;
-	
+	char       *path;
+	dstring_t  *list;
+
 	if (Cmd_Restricted ()) {
 		Cmd_Error ("file_find: access to restricted command denied.\n");
 		return;
 	}
-	if (Cmd_Argc() < 2 || Cmd_Argc() > 3) {
+	if (Cmd_Argc () < 2 || Cmd_Argc () > 3) {
 		Cmd_Error ("file_find: invalid number of arguments.\n");
 		return;
 	}
 
-	if (Cmd_Argc() == 3) {
-		path = strdup (Cmd_Argv(2));
+	if (Cmd_Argc () == 3) {
+		path = strdup (Cmd_Argv (2));
 		if (!Cmd_CollapsePath (path)) {
 			free (path);
-			Cmd_Error ("file_find: access to restricted directory/file denied.\n");
+			Cmd_Error
+				("file_find: access to restricted directory/file denied.\n");
 			return;
 		}
 		free (path);
 	}
-	directory = opendir (va ("%s/%s", com_gamedir, Cmd_Argv(2)));
+	directory = opendir (va ("%s/%s", com_gamedir, Cmd_Argv (2)));
 	if (!directory) {
-			Cmd_Error (va ("file_find: could not open directory: %s\n", strerror (errno)));
-			return;
+		Cmd_Error (va
+				   ("file_find: could not open directory: %s\n",
+					strerror (errno)));
+		return;
 	}
 	list = dstring_newstr ();
 	while ((entry = readdir (directory))) {
-		if (!fnmatch (Cmd_Argv(1), entry->d_name, 0)) {
+		if (!fnmatch (Cmd_Argv (1), entry->d_name, 0)) {
 			dstring_appendstr (list, "\n");
 			dstring_appendstr (list, entry->d_name);
 		}
 	}
 	if (list->str[0])
-		Cmd_Return (list->str+1);
+		Cmd_Return (list->str + 1);
 	else
 		Cmd_Return ("");
 	dstring_delete (list);
 }
-			
-	
+
+
 void
 Cmd_Eval_f (void)
 {
-	if (Cmd_Argc() < 2) {
-		Cmd_Error("eval: invalid number of arguments.\n");
+	if (Cmd_Argc () < 2) {
+		Cmd_Error ("eval: invalid number of arguments.\n");
 		return;
 	}
 	Cbuf_InsertText (Cmd_Args (1));
@@ -2463,7 +2524,7 @@ Cmd_Eval_f (void)
 void
 Cmd_Legacy_f (void)
 {
-	if (Cmd_Argc() < 2) {
+	if (Cmd_Argc () < 2) {
 		Cmd_Error ("legacy: invalid number of arguments.\n");
 		return;
 	}
@@ -2487,7 +2548,7 @@ Cmd_Threadstats_f (void)
 
 	Sys_Printf ("Currently running threads:\n");
 	for (t = cmd_threads; t; t = t->next)
-		Sys_Printf("%li\n", t->id);
+		Sys_Printf ("%li\n", t->id);
 }
 
 /*
@@ -2526,28 +2587,43 @@ Cmd_Init (void)
 
 	Cmd_AddCommand ("if", Cmd_If_f, "Conditionally execute a set of commands.");
 	Cmd_SetPure ("if");
-	Cmd_AddCommand ("ifnot", Cmd_If_f, "Conditionally execute a set of commands if the condition is false.");
-	Cmd_AddCommand ("while", Cmd_While_f, "Execute a set of commands while a condition is true.");
+	Cmd_AddCommand ("ifnot", Cmd_If_f,
+					"Conditionally execute a set of commands if the condition is false.");
+	Cmd_AddCommand ("while", Cmd_While_f,
+					"Execute a set of commands while a condition is true.");
 	Cmd_SetPure ("while");
-	Cmd_AddCommand ("for", Cmd_For_f, "A while loop with initialization and iteration commands.");
+	Cmd_AddCommand ("for", Cmd_For_f,
+					"A while loop with initialization and iteration commands.");
 	Cmd_SetPure ("for");
 	Cmd_AddCommand ("break", Cmd_Break_f, "Break out of a loop.");
-	Cmd_AddCommand ("return", Cmd_Return_f, "Return a value to calling buffer.");
-	Cmd_AddCommand ("lset", Cmd_Lset_f, "Sets the value of a local variable (not cvar).");
-	Cmd_AddCommand ("backtrace", Cmd_Backtrace_f, "Show a description of the last GIB error and a backtrace.");
+	Cmd_AddCommand ("return", Cmd_Return_f,
+					"Return a value to calling buffer.");
+	Cmd_AddCommand ("lset", Cmd_Lset_f,
+					"Sets the value of a local variable (not cvar).");
+	Cmd_AddCommand ("backtrace", Cmd_Backtrace_f,
+					"Show a description of the last GIB error and a backtrace.");
 
-	Cmd_AddCommand ("randint", Cmd_Randint_f, "Returns a random integer between $1 and $2");
-	Cmd_AddCommand ("streq", Cmd_Streq_f, "Returns 1 if $1 and $2 are the same string, 0 otherwise");
+	Cmd_AddCommand ("randint", Cmd_Randint_f,
+					"Returns a random integer between $1 and $2");
+	Cmd_AddCommand ("streq", Cmd_Streq_f,
+					"Returns 1 if $1 and $2 are the same string, 0 otherwise");
 	Cmd_AddCommand ("strlen", Cmd_Strlen_f, "Returns the length of $1");
-	Cmd_AddCommand ("file_read", Cmd_File_read_f, "Reads file $1 in the current gamedir and returns its contents.");
-	Cmd_AddCommand ("file_write", Cmd_File_write_f, "Write $2 to the file $1 in the current gamedir");
-	Cmd_AddCommand ("file_find", Cmd_File_find_f, "Finds a file matching pattern $1 in subdirectory $2 of the gamedir.");
-	Cmd_AddCommand ("eval", Cmd_Eval_f, "Evaluates a command.  Useful for callbacks or dynamically generated commands.");
-	Cmd_AddCommand ("legacy", Cmd_Legacy_f, "Adds a command to the legacy buffer");
+	Cmd_AddCommand ("file_read", Cmd_File_read_f,
+					"Reads file $1 in the current gamedir and returns its contents.");
+	Cmd_AddCommand ("file_write", Cmd_File_write_f,
+					"Write $2 to the file $1 in the current gamedir");
+	Cmd_AddCommand ("file_find", Cmd_File_find_f,
+					"Finds a file matching pattern $1 in subdirectory $2 of the gamedir.");
+	Cmd_AddCommand ("eval", Cmd_Eval_f,
+					"Evaluates a command.  Useful for callbacks or dynamically generated commands.");
+	Cmd_AddCommand ("legacy", Cmd_Legacy_f,
+					"Adds a command to the legacy buffer");
 	Cmd_SetPure ("legacy");
-	Cmd_AddCommand ("detach", Cmd_Detach_f, "Starts a thread with an initial program of $1");
+	Cmd_AddCommand ("detach", Cmd_Detach_f,
+					"Starts a thread with an initial program of $1");
 	Cmd_AddCommand ("killthread", Cmd_Killthread_f, "Kills thread with id $1");
-	Cmd_AddCommand ("threadstats", Cmd_Threadstats_f, "Shows statistics about threads");
+	Cmd_AddCommand ("threadstats", Cmd_Threadstats_f,
+					"Shows statistics about threads");
 
 	cmd_warncmd = Cvar_Get ("cmd_warncmd", "0", CVAR_NONE, NULL, "Toggles the "
 							"display of error messages for unknown commands");
@@ -2555,8 +2631,10 @@ Cmd_Init (void)
 							"maximum number of iterations a loop in GIB can do "
 							"before being forcefully terminated.  0 is infinite.");
 	// Constants for the math interpreter
-	// We don't need to assign the return values to anything because these are never used elsewhere
-	Cvar_Get ("M_PI", "3.1415926535897932384626433832795029", CVAR_ROM, NULL, "Pi");
+	// We don't need to assign the return values to anything because these are
+	// never used elsewhere
+	Cvar_Get ("M_PI", "3.1415926535897932384626433832795029", CVAR_ROM, NULL,
+			  "Pi");
 }
 
 
