@@ -610,6 +610,8 @@ CL_Record_f (void)
 
 	for (i = 0; i < MAX_CLIENTS; i++) {
 		player = cl.players + i;
+		if (!player->userinfo)
+			continue;
 
 		MSG_WriteByte (&buf, svc_updatefrags);
 		MSG_WriteByte (&buf, i);
