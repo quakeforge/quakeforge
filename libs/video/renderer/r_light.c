@@ -50,6 +50,7 @@ static const char rcsid[] =
 
 dlight_t    *r_dlights;
 lightstyle_t r_lightstyle[MAX_LIGHTSTYLES];
+vec3_t      ambientcolor;
 
 unsigned int r_maxdlights;
 
@@ -318,12 +319,73 @@ R_PushDlights (const vec3_t entorigin)
 mplane_t   *lightplane;
 vec3_t      lightspot;
 
+static int
+calc_lighting_1 (msurface_t  *surf, int ds, int dt)
+{
+	int         se_s = ((surf->extents[0] >> 4) + 1);
+	int         se_t = ((surf->extents[0] >> 4) + 1);
+	int         se_size = se_s * se_t;
+	int         r = 0, maps;
+	byte       *lightmap;
+	unsigned int scale;
+
+	ds >>= 4;
+	dt >>= 4;
+
+	lightmap = surf->samples;
+	if (lightmap) {
+		lightmap += dt * se_s + ds;
+
+		for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255;
+			 maps++) {
+			scale = d_lightstylevalue[surf->styles[maps]];
+			r += *lightmap * scale;
+			lightmap += se_size;
+		}
+
+		r >>= 8;
+	}
+
+	ambientcolor[2] = ambientcolor[1] = ambientcolor[0] = r;
+
+	return r;
+}
+
+static int
+calc_lighting_3 (msurface_t  *surf, int ds, int dt)
+{
+	int         se_s = ((surf->extents[0] >> 4) + 1);
+	int         se_t = ((surf->extents[0] >> 4) + 1);
+	int         se_size = se_s * se_t * 3;
+	int         r = 0, maps;
+	byte       *lightmap;
+	float       scale;
+
+	ds >>= 4;
+	dt >>= 4;
+
+	VectorZero (ambientcolor);
+
+	lightmap = surf->samples;
+	if (lightmap) {
+		lightmap += dt * se_s * 3 + ds;
+
+		for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255;
+			 maps++) {
+			scale = d_lightstylevalue[surf->styles[maps]] / 256.0;
+			VectorMA (ambientcolor, scale, lightmap, ambientcolor);
+			lightmap += se_size;
+		}
+	}
+
+	r = (ambientcolor[0] + ambientcolor[1] + ambientcolor[2]) / 3;
+	return r;
+}
+
 int
 RecursiveLightPoint (mnode_t *node, const vec3_t start, const vec3_t end)
 {
-	int			 i, r, s, t, ds, dt, maps, side;
-	unsigned int scale;
-	byte		*lightmap;
+	int			 i, r, s, t, ds, dt, side;
 	float		 front, back, frac;
 	mplane_t	*plane;
 	msurface_t	*surf;
@@ -383,24 +445,10 @@ loop:
 		if (!surf->samples)
 			return 0;
 
-		ds >>= 4;
-		dt >>= 4;
-
-		lightmap = surf->samples;
-		r = 0;
-		if (lightmap) {
-			lightmap += (dt * ((surf->extents[0] >> 4) + 1) + ds) * mod_lightmap_bytes;
-
-			for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255;
-				 maps++) {
-				scale = d_lightstylevalue[surf->styles[maps]];
-				r += *lightmap * scale;
-				lightmap += ((surf->extents[0] >> 4) + 1) *
-					((surf->extents[1] >> 4) + 1) * mod_lightmap_bytes;
-			}
-
-			r >>= 8;
-		}
+		if (r_lightmap_components->int_val == 1)
+			return calc_lighting_1 (surf, ds, dt);
+		else
+			return calc_lighting_3 (surf, ds, dt);
 
 		return r;
 	}
