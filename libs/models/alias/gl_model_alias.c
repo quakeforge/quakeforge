@@ -278,7 +278,7 @@ Mod_LoadExternalSkin (maliasskindesc_t *pskindesc, char *filename)
 
 	tex = LoadImage (filename);
 	if (!tex)
-		tex = LoadImage (va ("textures/%s", ptr));
+		tex = LoadImage (va ("textures/%s", ptr + 1));
 	if (tex) {
 		pskindesc->texnum = GL_LoadTexture (filename, tex->width, tex->height,
 											tex->data, true, false,
@@ -290,9 +290,9 @@ Mod_LoadExternalSkin (maliasskindesc_t *pskindesc, char *filename)
 		if (!glow)
 			glow = LoadImage (va ("%s_glow", filename));
 		if (!glow)
-			glow = LoadImage (va ("textures/%s_luma", ptr));
+			glow = LoadImage (va ("textures/%s_luma", ptr + 1));
 		if (!glow)
-			glow = LoadImage (va ("textures/%s_glow", ptr));
+			glow = LoadImage (va ("textures/%s_glow", ptr + 1));
 		if (glow)
 			pskindesc->fb_texnum =
 				GL_LoadTexture (va ("fb_%s", filename), glow->width,
