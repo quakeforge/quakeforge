@@ -113,7 +113,8 @@ QFGL_ProcAddress (void *handle, const char *name)
 #endif
 	}
 
-	Sys_Printf ("DEBUG: Finding symbol %s ... ", name);
+	if (developer && developer->int_val)
+		Sys_Printf ("DEBUG: Finding symbol %s ... ", name);
 #if defined(HAVE_DLOPEN)
 		glfunc = dlsym (handle, name);
 #elif defined(_WIN32)
@@ -128,7 +129,7 @@ QFGL_ProcAddress (void *handle, const char *name)
 		glfunc = glGetProcAddress (name);
 
 	if (glfunc) {
-		Con_Printf ("found [%p]\n", glfunc);
+		Con_DPrintf ("found [%p]\n", glfunc);
 		return glfunc;
 	}
 	
