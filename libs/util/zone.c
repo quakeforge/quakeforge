@@ -60,7 +60,6 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/zone.h"
 
-#define	DYNAMIC_SIZE	0x20000
 #define	ZONEID			0x1d4a11
 #define	HUNK_SENTINAL	0x1df001ed
 
