@@ -275,7 +275,8 @@ AC_FUNC_MMAP
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(
-	gethostname gethostbyname connect gettimeofday getwd mkdir \
+	access _access \
+	gethostname gethostbyname connect gettimeofday getwd mkdir _mkdir \
 	ftime _ftime fcntl stat putenv select socket strerror strstr \
 	snprintf _snprintf vsnprintf _vsnprintf strsep dlopen getaddrinfo \
 	getnameinfo
@@ -288,18 +289,6 @@ if test "x$ac_cv_func_dlopen" != "xyes"; then
 	)
 fi
 AC_SUBST(DL_LIBS)
-
-dnl Checks for access/_access
-AC_CHECK_FUNC(access,
-	AC_DEFINE(HAVE_access),
-	AC_CHECK_FUNC(_access, AC_DEFINE(HAVE__access))
-)
-
-dnl Checks for mkdir/_mkdir
-AC_CHECK_FUNC(mkdir,
-	AC_DEFINE(HAVE_mkdir),
-	AC_CHECK_FUNC(mkdir, AC_DEFINE(HAVE__mkdir))
-)
 
 dnl Checks for stricmp/strcasecmp
 AC_CHECK_FUNC(strcasecmp,

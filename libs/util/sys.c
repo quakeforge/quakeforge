@@ -101,7 +101,7 @@ static char qfont_table[256] = {
 void
 Sys_mkdir (const char *path)
 {
-#ifdef HAVE_mkdir
+#ifdef HAVE_MKDIR
 # ifdef _WIN32
 	if (mkdir (path) == 0)
 		return;
@@ -110,7 +110,7 @@ Sys_mkdir (const char *path)
 		return;
 # endif
 #else
-# ifdef HAVE__mkdir
+# ifdef HAVE__MKDIR
 	if (_mkdir (path) == 0)
 		return;
 # else
@@ -124,15 +124,15 @@ Sys_mkdir (const char *path)
 int
 Sys_FileTime (const char *path)
 {
-#ifdef HAVE_access
+#ifdef HAVE_ACCESS
 	if (access (path, R_OK) == 0)
 		return 0;
 #else
-# ifdef HAVE__access
+# ifdef HAVE__ACCESS
 	if (_access (path, R_OK) == 0)
 		return 0;
 # else
-#  error do not know how to make directories
+#  error do not know how to check access
 # endif
 #endif
 	return -1;
