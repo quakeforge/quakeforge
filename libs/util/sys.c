@@ -41,12 +41,19 @@
 # include <strings.h>
 #endif
 #ifdef HAVE_UNISTD_H
-#include <unistd.h>
+# include <unistd.h>
+#endif
+#ifdef HAVE_LIMITS_H
+# include <limits.h>
 #endif
 #ifdef HAVE_IO_H
-#include <io.h>
+# include <io.h>
+#endif
+#ifdef HAVE_WINDOWS_H
+# include <windows.h>
 #endif
 
+#include "QF/compat.h"
 #include "QF/cvar.h"
 #include "QF/sys.h"
 
@@ -95,8 +102,13 @@ void
 Sys_mkdir (const char *path)
 {
 #ifdef HAVE_mkdir
+	if (mkdir (path) == 0)
+		return;
+# ifdef _WIN32
+# else
 	if (mkdir (path, 0777) == 0)
 		return;
+# endif
 #else
 # ifdef HAVE__mkdir
 	if (_mkdir (path) == 0)
