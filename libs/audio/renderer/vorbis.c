@@ -95,6 +95,7 @@ SND_LoadOgg (VFile *file, sfx_t *sfx, cache_allocator_t allocator)
 	}
 	vi = ov_info (&vf, -1);
 	samples = ov_pcm_total (&vf, -1);
+	size = samples * vi->channels * 2;
 	if (developer->int_val) {
 		char      **ptr = ov_comment (&vf, -1)->user_comments;
 
@@ -102,10 +103,10 @@ SND_LoadOgg (VFile *file, sfx_t *sfx, cache_allocator_t allocator)
 			Sys_Printf ("%s\n", *ptr++);
 		Sys_Printf ("\nBitstream is %d channel, %ldHz\n",
 					vi->channels, vi->rate);
-		Sys_Printf ("\nDecoded length: %ld samples\n", samples);
+		Sys_Printf ("\nDecoded length: %ld samples (%ld bytes)\n",
+					samples, size);
 		Sys_Printf ("Encoded by: %s\n\n", ov_comment (&vf, -1)->vendor);
 	}
-	size = samples * vi->channels * 2;
 	data = malloc (size);
 	if (!data)
 		goto bail;
@@ -116,7 +117,7 @@ SND_LoadOgg (VFile *file, sfx_t *sfx, cache_allocator_t allocator)
 	sc->length = samples;
 	sc->loopstart = 0;
 	sc->speed = vi->rate;
-	sc->width = 16;
+	sc->width = 2;
 	sc->stereo = vi->channels;
 	SND_ResampleSfx (sc, sc->speed, sc->width, data);
   bail:

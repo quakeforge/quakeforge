@@ -156,26 +156,27 @@ sfxcache_t *
 SND_LoadSound (sfx_t *sfx, cache_allocator_t allocator)
 {
 	char		namebuffer[256];
+	char		foundname[256];
 	byte	   *data;
 	wavinfo_t	info;
 	int			len;
 	float		stepscale;
 	sfxcache_t *sc;
 	byte		stackbuf[1 * 1024];		// avoid dirtying the cache heap
+	VFile      *file;
 
 	// load it in
 	strcpy (namebuffer, "sound/");
 	strncat (namebuffer, sfx->name, sizeof (namebuffer) - strlen (namebuffer));
-
-	if (strcmp (".ogg", COM_FileExtension (sfx->name)) == 0) {
-		VFile      *file;
-		COM_FOpenFile (namebuffer, &file);
-		if (!file) {
-			Sys_Printf ("Couldn't load %s\n", namebuffer);
-			return 0;
-		}
+	_COM_FOpenFile (namebuffer, &file, foundname, 1);
+	if (!file) {
+		Sys_Printf ("Couldn't load %s\n", namebuffer);
+		return 0;
+	}
+	if (strcmp (".ogg", COM_FileExtension (foundname)) == 0) {
 		return SND_LoadOgg (file, sfx, allocator);
 	}
+	Qclose (file); //FIXME this is a dumb way to do this
 	data = COM_LoadStackFile (namebuffer, stackbuf, sizeof (stackbuf));
 
 	if (!data) {
