@@ -36,6 +36,7 @@
 #include "game.h"
 
 qboolean standard_quake = false;
+qboolean hipnotic, rogue, abyss;
 
 /*
     Game_Init
@@ -49,12 +50,15 @@ Game_Init (void)
 	if ((i = COM_CheckParm ("-hipnotic"))) {
 		COM_CreateGameDirectory ("hipnotic");
 		standard_quake = false;
+		hipnotic = true;
 	}
 	if ((i = COM_CheckParm ("-rogue"))) {
 		COM_CreateGameDirectory ("rogue");
 		standard_quake = false;
+		rogue = true;
 	}
 	if ((i = COM_CheckParm ("-abyss"))) {
 		COM_CreateGameDirectory ("abyss");
+		abyss = true;
 	}
 }
