@@ -1805,12 +1805,35 @@ PF_setinfokey (progs_t *pr)
 }
 
 
+static void
+PF_testentitypos (progs_t *pr)
+{
+	edict_t    *ent = G_EDICT (pr, OFS_PARM0);
+	RETURN_EDICT (pr, SV_TestEntityPosition (ent));
+}
+
+
 #define MAX_PF_HULLS 64		// FIXME make dynamic?
 static int pf_hull_list_inited;
 static hull_t *pf_free_hulls;
 static dclipnode_t pf_clipnodes[MAX_PF_HULLS][6];
 static mplane_t pf_planes[MAX_PF_HULLS][6];
 hull_t pf_hull_list[MAX_PF_HULLS];
+
+static void
+PF_hullpointcontents (progs_t *pr)
+{
+	edict_t    *edict = G_EDICT (pr, OFS_PARM0);
+	float      *point = G_VECTOR (pr, OFS_PARM1);
+	float       size = G_FLOAT (pr, OFS_PARM2);
+	hull_t     *hull;
+	vec3_t      offset;
+	static vec3_t mins;		// always 0;
+	vec3_t      maxs = {size, 0, 0};
+
+	hull = SV_HullForEntity (edict, mins, maxs, offset);
+	G_INT (pr, OFS_RETURN) = SV_HullPointContents (hull, 0, point);
+}
 
 static void
 PF_getboxbounds (progs_t *pr)
@@ -2069,8 +2092,8 @@ builtin_t   sv_builtins[] = {
 	PF_Fixme,			// 89
 	PF_Fixme,			// 90
 	PF_Fixme,			// 91
-	PF_Fixme,			// 92
-	PF_Fixme,			// 93
+	PF_testentitypos,	// entity (enitty ent) testentitypos = #92
+	PF_hullpointcontents,// integer (entity ent, vector point) hullpointcontents = #93
 	PF_getboxbounds,	// vector (integer hull, integer max) getboxbounds = #94
 	PF_getboxhull,		// integer () getboxhull = #95
 	PF_freeboxhull,		// void (integer hull) freeboxhull = #96
