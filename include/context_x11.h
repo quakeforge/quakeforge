@@ -44,6 +44,7 @@ extern XVisualInfo *x_visinfo;
 extern double	x_gamma;
 extern int		x_screen;
 extern int		x_shmeventtype;
+extern Time		x_time;
 extern qboolean doShm;
 extern qboolean oktodraw;
 

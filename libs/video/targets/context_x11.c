@@ -89,6 +89,7 @@ Visual		*x_vis;
 Window		x_win;
 Cursor		nullcursor = None;
 static Atom aWMDelete = 0;
+Time 		x_time;
 
 #define X_MASK (VisibilityChangeMask | StructureNotifyMask | ExposureMask)
 #define MOUSE_MASK (ButtonPressMask | ButtonReleaseMask | PointerMotionMask)
@@ -180,13 +181,7 @@ X11_ProcessEvent (void)
 	XEvent      x_event;
 
 	XNextEvent (x_disp, &x_event);
-	if (x_event.type >= LASTEvent) {
-		if (x_event.type == x_shmeventtype)
-			oktodraw = 1;
-		return;
-	}
-	if (event_handlers[x_event.type])
-		event_handlers[x_event.type] (&x_event);
+	X11_ProcessEventProxy (&x_event);
 }
 
 void

@@ -133,21 +133,20 @@ in_paste_buffer_f (void)
 	if (XGetSelectionOwner (x_disp, XA_PRIMARY) == None)
 		return;
 	property = XInternAtom (x_disp, "GETCLIPBOARDDATA_PROP", False);
-	//FIXME shouldn't use CurrentTime but rather the timestamp of the event
-	//triggering this (timestamp of the last event?)
-	XConvertSelection (x_disp, XA_PRIMARY, XA_STRING, property, x_win,
-					   CurrentTime);
+	XConvertSelection (x_disp, XA_PRIMARY, XA_STRING, property, x_win, x_time);
 	XFlush (x_disp);
 }
 
 static void
-selection_notify (XEvent * event)
+selection_notify (XEvent *event)
 {
 	unsigned char *data, *p;
 	unsigned long num_bytes;
 	unsigned long tmp, len;
 	int         format;
 	Atom        type, property;
+
+	x_time = event->xselection.time;
 
 	if ((property = event->xselection.property) == None)
 		return;
@@ -423,9 +422,11 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 }
 
 static void
-event_key (XEvent * event)
+event_key (XEvent *event)
 {
 	int key, unicode;
+
+	x_time = event->xkey.time;
 	if (old_key_dest != key_dest) {
 		old_key_dest = key_dest;
 		if (key_dest == key_game) {
@@ -439,9 +440,11 @@ event_key (XEvent * event)
 }
 
 static void
-event_button (XEvent * event)
+event_button (XEvent *event)
 {
 	int         but;
+
+	x_time = event->xbutton.time;
 
 	but = event->xbutton.button;
 	if (but == 2)
@@ -464,7 +467,7 @@ event_button (XEvent * event)
 }
 
 static void
-event_focusout (XEvent * event)
+event_focusout (XEvent *event)
 {
 	XAutoRepeatOn (x_disp);
 	if (in_snd_block->int_val) {
@@ -474,7 +477,7 @@ event_focusout (XEvent * event)
 }
 
 static void
-event_focusin (XEvent * event)
+event_focusin (XEvent *event)
 {
 	if (key_dest == key_game)
 		XAutoRepeatOff (x_disp);
@@ -498,8 +501,10 @@ center_pointer (void)
 }
 
 static void
-event_motion (XEvent * event)
+event_motion (XEvent *event)
 {
+	x_time = event->xmotion.time;
+
 	if (dga_active) {
 		in_mouse_x += event->xmotion.x_root;
 		in_mouse_y += event->xmotion.y_root;
