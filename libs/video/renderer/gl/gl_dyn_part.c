@@ -60,8 +60,7 @@ static const char rcsid[] =
 int			ramp[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
 
 
-
-inline particle_t *
+inline static void
 particle_new (ptype_t type, int texnum, vec3_t org, float scale, vec3_t vel,
 			  float die, byte color, byte alpha)
 {
@@ -84,11 +83,9 @@ particle_new (ptype_t type, int texnum, vec3_t org, float scale, vec3_t vel,
 	part->alpha = alpha;
 	part->tex = texnum;
 	part->scale = scale;
-
-	return part;
 }
 
-inline particle_t *
+inline static void
 particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 					 float scale, int vel_fuzz, float die, byte color,
 					 byte alpha)
@@ -102,7 +99,7 @@ particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 		if (vel_fuzz)
 			pvel[j] = qfrandom (vel_fuzz * 2) - vel_fuzz;
 	}
-	return particle_new (type, texnum, porg, scale, pvel, die, color, alpha);
+	particle_new (type, texnum, porg, scale, pvel, die, color, alpha);
 }
 
 void
@@ -336,7 +333,7 @@ void
 R_LavaSplash (vec3_t org)
 {
 	float       vel;
-	int         i, j;
+	int         rnd, i, j;
 	int			k = 256;
 	vec3_t      dir, porg, pvel;
 
@@ -349,19 +346,21 @@ R_LavaSplash (vec3_t org)
 	dir[2] = 256;
 	for (i = -128; i < 128; i += 16) {
 		for (j = -128; j < 128; j += 16) {
-			dir[0] = j + (rand () & 7);
-			dir[1] = i + (rand () & 7);
+			rnd = rand ();
+			dir[0] = j + (rnd & 7);
+			dir[1] = i + ((rnd >> 6) & 7);
 
 			porg[0] = org[0] + dir[0];
 			porg[1] = org[1] + dir[1];
-			porg[2] = org[2] + (rand () & 63);
+			porg[2] = org[2] + ((rnd >> 9) & 63);
 
 			VectorNormalize (dir);
-			vel = 50 + (rand () & 63);
+			rnd = rand ();
+			vel = 50 + (rnd & 63);
 			VectorScale (dir, vel, pvel);
 			particle_new (pt_grav, part_tex_dot, porg, 3, pvel,
-						  (r_realtime + 2 + (rand () & 31) * 0.02),
-						  (224 + (rand () & 7)), 193);
+						  (r_realtime + 2 + ((rnd >> 7) & 31) * 0.02),
+						  (224 + ((rnd >> 12) & 7)), 193);
 		}
 	}
 }
@@ -370,7 +369,7 @@ void
 R_TeleportSplash (vec3_t org)
 {
 	float       vel;
-	int         i, j, k;
+	int         rnd, i, j, k;
 	int			l = 896;
 	vec3_t      dir, porg, pvel;
 
@@ -386,17 +385,18 @@ R_TeleportSplash (vec3_t org)
 			dir[0] = j * 8;
 			for (k = -24; k < 32; k += 4) {
 				dir[2] = k * 8;
-
-				porg[0] = org[0] + i + (rand () & 3);
-				porg[1] = org[1] + j + (rand () & 3);
-				porg[2] = org[2] + k + (rand () & 3);
+				
+				rnd = rand ();
+				porg[0] = org[0] + i + (rnd & 3);
+				porg[1] = org[1] + j + ((rnd >> 2) & 3);
+				porg[2] = org[2] + k + ((rnd >> 4) & 3);
 
 				VectorNormalize (dir);
-				vel = 50 + (rand () & 63);
+				vel = 50 + ((rnd >> 6) & 63);
 				VectorScale (dir, vel, pvel);
 				particle_new (pt_grav, part_tex_spark, porg, 0.6, pvel,
 							  (r_realtime + 0.2 + (rand () & 15) * 0.01),
-							  (7 + (rand () & 7)), 255);
+							  (7 + ((rnd >> 12) & 7)), 255);
 			}
 		}
 	}
@@ -501,7 +501,7 @@ R_BloodTrail (entity_t *ent)
 		dist = (pscale + pscalenext) * 1.5;
 
 		for (j = 0; j < 3; j++) {
-			pvel[j] = (qfrandom (24.0) - 12.0);
+			pvel[j] = qfrandom (24.0) - 12.0;
 			porg[j] = ent->old_origin[j] + qfrandom (3.0) - 1.5;
 		}
 
@@ -676,7 +676,7 @@ R_VoorTrail (entity_t *ent)
 void
 R_DrawParticles (void)
 {
-	byte			i;
+//	byte			i;
 	unsigned char  *at;
 	float			dvel, grav, fast_grav, minparticledist, scale,
 					bloodcloud_alpha, bloodcloud_scale, fallfadespark_alpha,
@@ -693,10 +693,14 @@ R_DrawParticles (void)
 	// LordHavoc: particles should not affect zbuffer
 	qfglDepthMask (GL_FALSE);
 
-	varray[0].texcoord[0] = 0; varray[0].texcoord[1] = 1;
-	varray[1].texcoord[0] = 0; varray[1].texcoord[1] = 0;
-	varray[2].texcoord[0] = 1; varray[2].texcoord[1] = 0;
-	varray[3].texcoord[0] = 1; varray[3].texcoord[1] = 1;
+	varray[0].texcoord[0] = 0;
+	varray[0].texcoord[1] = 1;
+	varray[1].texcoord[0] = 0;
+	varray[1].texcoord[1] = 0;
+	varray[2].texcoord[0] = 1;
+	varray[2].texcoord[1] = 0;
+	varray[3].texcoord[0] = 1;
+	varray[3].texcoord[1] = 1;
 
 	grav = (fast_grav = r_frametime * 800) * 0.05;
 	dvel = bloodcloud_scale = smoke_scale = r_frametime * 4;
@@ -757,20 +761,17 @@ R_DrawParticles (void)
 			qfglDrawArrays (GL_QUADS, 0, 4);
 		}
 
-		for (i = 0; i < 3; i++)
-			part->org[i] += part->vel[i] * r_frametime;
+		VectorMA (part->org, r_frametime, part->vel, part->org);
 
 		switch (part->type) {
 			case pt_static:
 				break;
 			case pt_blob:
-				for (i = 0; i < 3; i++)
-					part->vel[i] += part->vel[i] * dvel;
+				VectorMA (part->vel, dvel, part->vel, part->vel);
 				part->vel[2] -= grav;
 				break;
 			case pt_blob2:
-				for (i = 0; i < 2; i++)
-					part->vel[i] -= part->vel[i] * dvel;
+				VectorMA (part->vel, dvel, part->vel, part->vel);
 				part->vel[2] -= grav;
 				break;
 			case pt_grav:
