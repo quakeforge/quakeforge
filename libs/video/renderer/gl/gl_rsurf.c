@@ -144,12 +144,13 @@ R_AddDynamicLights (msurface_t *surf)
 {
 	float		  dist;
 	int			  lnum, maxdist, maxdist2, maxdist3, red, green, blue, smax,
-				  tmax, td, i, j, s, t;
+				  smax3, tmax, td, i, j, s, t;
 	int           sdtable[18];
 	unsigned int *bl;
 	vec3_t		  impact, local;
 
 	smax = (surf->extents[0] >> 4) + 1;
+	smax3 = smax * 3;
 	tmax = (surf->extents[1] >> 4) + 1;
 
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
@@ -194,14 +195,15 @@ R_AddDynamicLights (msurface_t *surf)
 				for (s = 0; s < smax; s++) {
 					if (sdtable[s] < maxdist2) {
 						j = dlightdivtable[(sdtable[s] + td) >> 7];
-						bl[0] += (red * j) >> 7;
-						bl[1] += (green * j) >> 7;
-						bl[2] += (blue * j) >> 7;
+						*bl++ += (red * j) >> 7;
+						*bl++ += (green * j) >> 7;
+						*bl++ += (blue * j) >> 7;
+					} else {
+						bl += 3;
 					}
-					bl += 3;
 				}
 			} else
-				bl += smax * 3;			// skip line
+				bl += smax3;			// skip line
 		}
 	}
 }
@@ -436,7 +438,6 @@ R_BlendLightmaps (void)
 	glpoly_t   *p;
 
 	qfglDepthMask (GL_FALSE);					// don't bother writing Z
-
 	qfglBlendFunc (GL_DST_COLOR, GL_SRC_COLOR);
 
 	for (i = 0; i < MAX_LIGHTMAPS; i++) {
@@ -464,7 +465,6 @@ R_BlendLightmaps (void)
 
 	// Return to normal blending  --KB
 	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 	qfglDepthMask (GL_TRUE);					// back to normal Z buffering
 }
 
@@ -549,8 +549,7 @@ R_RenderBrushPoly (msurface_t *fa)
 				theRect->w = (fa->light_s - theRect->l) + smax;
 			if ((theRect->h + theRect->t) < (fa->light_t + tmax))
 				theRect->h = (fa->light_t - theRect->t) + tmax;
-			base =
-				lightmaps[fa->lightmaptexturenum] +
+			base = lightmaps[fa->lightmaptexturenum] +
 				(fa->light_t * BLOCK_WIDTH + fa->light_s) * lightmap_bytes;
 			R_BuildLightMap (fa, base, BLOCK_WIDTH * lightmap_bytes);
 		}
@@ -560,10 +559,7 @@ R_RenderBrushPoly (msurface_t *fa)
 void
 GL_WaterSurface (msurface_t *s)
 {
-	int         i;
-
-	i = s->texinfo->texture->gl_texturenum;
-	qfglBindTexture (GL_TEXTURE_2D, i);
+	qfglBindTexture (GL_TEXTURE_2D, s->texinfo->texture->gl_texturenum);
 	if (r_wateralpha->value < 1.0) {
 		qfglDepthMask (GL_FALSE);
 		color_white[3] = r_wateralpha->value * 255;
@@ -644,8 +640,6 @@ R_DrawBrushModel (entity_t *e)
 	msurface_t *psurf;
 	qboolean    rotated;
 	vec3_t      mins, maxs;
-
-	currententity = e;
 
 	clmodel = e->model;
 
