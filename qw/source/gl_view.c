@@ -121,8 +121,8 @@ V_CalcPowerupCshift (void)
 			INFO_CSHIFT_POWERUP))
 		return;
 
-	if (gl_dlight_polyblend->int_val ||
-		!(gl_dlight_lightmap->int_val && gl_dlight_polyblend->int_val)) {
+	if (gl_dlight_polyblend->int_val
+		|| !(gl_dlight_lightmap->int_val && gl_dlight_polyblend->int_val)) {
 		V_CalcGlowCshift ();
 	} else {
 		V_CalcItemCshift ();
