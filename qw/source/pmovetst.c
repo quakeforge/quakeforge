@@ -207,10 +207,6 @@ PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 			trace->startsolid = true;
 		return true;					// empty
 	}
-	// LordHavoc: this can be eliminated by validating in the loader...  but
-	// Mercury told me not to bother
-	if (num < hull->firstclipnode || num > hull->lastclipnode)
-		Sys_Error ("PM_RecursiveHullCheck: bad node number");
 
 	// find the point distances
 	node = hull->clipnodes + num;

@@ -747,6 +747,13 @@ Mod_LoadClipnodes (lump_t *l)
 		out->planenum = LittleLong (in->planenum);
 		out->children[0] = LittleShort (in->children[0]);
 		out->children[1] = LittleShort (in->children[1]);
+		if ((out->children[0] >= 0
+			 && (out->children[0] < hull->firstclipnode
+				 || out->children[0] > hull->lastclipnode))
+			|| (out->children[1] >= 0
+				&& (out->children[1] < hull->firstclipnode
+					|| out->children[1] > hull->lastclipnode)))
+			Sys_Error ("Mod_LoadClipnodes: bad node number");
 	}
 }
 
