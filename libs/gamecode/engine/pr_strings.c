@@ -306,9 +306,11 @@ PR_ClearReturnStrings (progs_t *pr)
 {
 	int         i;
 
-	for (i = 0; i < PR_RS_SLOTS; i++)
+	for (i = 0; i < PR_RS_SLOTS; i++) {
 		if (pr->return_strings[i])
 			free_string_ref (pr, pr->return_strings[i]);
+		pr->return_strings[i] = 0;
+	}
 }
 
 int
