@@ -1168,7 +1168,7 @@ AC_ARG_WITH(gl-driver,
 	gl_driver=$withval,
 	gl_driver=auto
 )
-if test "$gl_driver" = auto; then
+if test "$gl_driver" = auto -o "$gl_driver" = yes; then
 	if test "$SYSTYPE" = WIN32; then
 		gl_driver="OPENGL32.DLL"
 	else
