@@ -173,17 +173,11 @@ Resize (old_console_t *con)
 	if (width < 1) {					// video hasn't been initialized yet
 		width = 38;
 		con_linewidth = width;
-		say_team_line->width = con_linewidth - 10;
-		say_line->width = con_linewidth - 5;
-		input_line->width = con_linewidth;
 		con_totallines = CON_TEXTSIZE / con_linewidth;
 		memset (con->text, ' ', CON_TEXTSIZE);
 	} else {
 		oldwidth = con_linewidth;
 		con_linewidth = width;
-		say_team_line->width = con_linewidth - 10;
-		say_line->width = con_linewidth - 5;
-		input_line->width = con_linewidth;
 		oldtotallines = con_totallines;
 		con_totallines = CON_TEXTSIZE / con_linewidth;
 		numlines = oldtotallines;
@@ -209,7 +203,10 @@ Resize (old_console_t *con)
 
 		ClearNotify ();
 	}
-
+	say_team_line->width = con_linewidth - 9;
+	say_line->width = con_linewidth - 4;
+	input_line->width = con_linewidth;
+							
 	con->current = con_totallines - 1;
 	con->display = con->current;
 }
@@ -606,7 +603,7 @@ DrawNotify (void)
 
 		if (chat_team) {
 			Draw_String (8, v, "say_team:");
-			DrawInputLine (88, v, say_team_line);
+			DrawInputLine (80, v, say_team_line);
 		} else {
 			Draw_String (8, v, "say:");
 			DrawInputLine (40, v, say_line);
