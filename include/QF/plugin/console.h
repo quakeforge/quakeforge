@@ -43,6 +43,9 @@ typedef struct console_func_s {
 } console_funcs_t;
 
 typedef struct console_data_s {
+	const char			*dl_name;
+	int					dl_percent;
+	double				realtime;
 } console_data_t;
 
 #endif // __QF_plugin_console_h_

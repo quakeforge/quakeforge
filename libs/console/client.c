@@ -54,6 +54,10 @@
 
 #include "compat.h"
 
+static general_data_t plugin_info_general_data;
+static console_data_t plugin_info_console_data;
+#define con_data plugin_info_console_data
+
 int         con_ormask;
 console_t   con_main;
 console_t   con_chat;
@@ -332,10 +336,8 @@ C_Print (const char *fmt, va_list args)
 		if (!con->x) {
 			Con_Linefeed ();
 			// mark time for transparent overlay
-/*XXX
 			if (con->current >= 0)
-				con_times[con->current % NUM_CON_TIMES] = realtime;
-*/
+				con_times[con->current % NUM_CON_TIMES] = con_data.realtime;
 		}
 
 		switch (c) {
@@ -387,10 +389,8 @@ Con_DrawInput (void)
 		text[i] = ' ';
 
 	// add the cursor frame
-/*XXX
-	if ((int) (realtime * con_cursorspeed) & 1)
+	if ((int) (con_data.realtime * con_cursorspeed) & 1)
 		text[key_linepos] = 11;
-*/
 
 	//  prestep if horizontally scrolling
 	if (key_linepos >= con_linewidth)
@@ -422,9 +422,7 @@ Con_DrawNotify (void)
 		time = con_times[i % NUM_CON_TIMES];
 		if (time == 0)
 			continue;
-/*XXX
-		time = realtime - time;
-*/
+		time = con_data.realtime - time;
 		if (time > con_notifytime->value)
 			continue;
 		text = con->text + (i % con_totallines) * con_linewidth;
@@ -458,10 +456,8 @@ Con_DrawNotify (void)
 			Draw_Character ((x + skip) << 3, v, s[x]);
 			x++;
 		}
-/* XXX
 		Draw_Character ((x + skip) << 3, v,
-				  10 + ((int) (realtime * con_cursorspeed) & 1));
-*/
+				  10 + ((int) (con_data.realtime * con_cursorspeed) & 1));
 		v += 8;
 	}
 
@@ -525,15 +521,13 @@ void
 Con_DrawDownload (int lines)
 {
 	char		dlbar[1024];
-	const char *text = 0; //XXX
-	int			i, j, x, y, n = 0; //XXX n
+	const char *text;
+	int			i, j, x, y, n;
 
-/*XXX
-	if (!cls.download)
+	if (!con_data.dl_name)
 		return;
 
-	text = COM_SkipPath(cls.downloadname);
-*/
+	text = COM_SkipPath(con_data.dl_name);
 
 	x = con_linewidth - ((con_linewidth * 7) / 40);
 	y = x - strlen (text) - 8;
@@ -549,12 +543,11 @@ Con_DrawDownload (int lines)
 	i = strlen (dlbar);
 	dlbar[i++] = '\x80';
 	// where's the dot go?
-/*XXX
-	if (cls.downloadpercent == 0)
+	if (con_data.dl_percent == 0)
 		n = 0;
 	else
-		n = y * cls.downloadpercent / 100;
-*/
+		n = y * con_data.dl_percent / 100;
+
 	for (j = 0; j < y; j++)
 		if (j == n)
 			dlbar[i++] = '\x83';
@@ -563,10 +556,9 @@ Con_DrawDownload (int lines)
 	dlbar[i++] = '\x82';
 	dlbar[i] = 0;
 
-/*XXX
 	snprintf (dlbar + strlen (dlbar), sizeof (dlbar) - strlen (dlbar),
-			  " %02d%%", cls.downloadpercent);
-*/
+			  " %02d%%", con_data.dl_percent);
+
 	// draw it
 	y = lines - 22 + 8;
 	for (i = 0; i < strlen (dlbar); i++)
@@ -583,8 +575,6 @@ static general_funcs_t plugin_info_general_funcs = {
 	C_Shutdown,
 };
 
-static general_data_t plugin_info_general_data;
-static console_data_t plugin_info_console_data;
 static console_funcs_t plugin_info_console_funcs = {
 	C_Print,
 	C_ProcessInput,
