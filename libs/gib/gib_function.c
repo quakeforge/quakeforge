@@ -121,19 +121,26 @@ GIB_Function_Find (const char *name)
 	return (gib_function_t *) Hash_Find (gib_functions, name);
 }
 
+void
+GIB_Function_Prepare_Args (cbuf_t *cbuf, cbuf_args_t *args)
+{
+	int i;
+	
+	for (i = 0; i < args->argc; i++)
+		GIB_Var_Set_Local (cbuf, va("%i", i), args->argv[i]->str);
+	GIB_Var_Set_Local (cbuf, "argc", va("%i", args->argc));
+}
+
 /*
 	GIB_Function_Execute
 	
 	Prepares a buffer to execute
 	a GIB function with certain arguments
 */
+
 void
 GIB_Function_Execute (cbuf_t *cbuf, gib_function_t *func, cbuf_args_t *args)
 {
-		int i;
-		
-		Cbuf_AddText (cbuf, func->program->str);
-		for (i = 0; i < args->argc; i++)
-			GIB_Var_Set_Local (cbuf, va("%i", i), args->argv[i]->str);
-		GIB_Var_Set_Local (cbuf, "argc", va("%i", args->argc));
+	Cbuf_AddText (cbuf, func->program->str);
+	GIB_Function_Prepare_Args (cbuf, args);
 }

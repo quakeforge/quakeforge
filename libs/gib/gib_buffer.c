@@ -50,6 +50,7 @@ GIB_Buffer_Construct (struct cbuf_s *cbuf)
 	GIB_DATA (cbuf)->arg_composite = dstring_newstr ();
 	GIB_DATA (cbuf)->current_token = dstring_newstr ();
 	GIB_DATA (cbuf)->ret.retval = dstring_newstr ();
+	cbuf->strict = true;
 }
 
 void

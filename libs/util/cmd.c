@@ -128,7 +128,9 @@ Cmd_Command (cbuf_args_t *args)
 	if (Cvar_Command ())
 		return;
 
-	if (cmd_warncmd->int_val || developer->int_val)
+	if (cbuf_active->strict)
+		Cbuf_Error ("command", "Command '%s' not found.", args->argv[0]->str);
+	else if (cmd_warncmd->int_val || developer->int_val)
 		Sys_Printf ("Unknown command \"%s\"\n", Cmd_Argv (0));
 }
 

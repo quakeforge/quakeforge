@@ -1469,7 +1469,7 @@ QF_WITH_TARGETS(
 QF_WITH_TARGETS(
 	tools,
 	[  --with-tools=<list>     compile qf tools:],
-	[pak,qfbsp,qfcc,qfdefs,qflight,qfmodelgen,qfprogs,qfvis,qwaq,wav],dummy
+	[carne,pak,qfbsp,qfcc,qfdefs,qflight,qfmodelgen,qfprogs,qfvis,qwaq,wav],dummy
 )
 
 unset CL_TARGETS
@@ -1631,6 +1631,7 @@ if test "x$ENABLE_servers_qw" = xyes; then
 	QF_NEED(qw, [common net server])
 fi
 
+unset CARNE_TARGETS
 unset PAK_TARGETS
 unset QFCC_TARGETS
 unset QFDEFS_TARGETS
@@ -1641,6 +1642,9 @@ unset QFVIS_TARGETS
 unset QWAQ_TARGETS
 unset WAV_TARGETS
 unset TOOLS_TARGETS
+if test "x$ENABLE_tools_carne" = xyes; then
+	TOOLS_TARGETS="$TOOLS_TARGETS carne"
+fi
 if test "x$ENABLE_tools_pak" = xyes; then
 	TOOLS_TARGETS="$TOOLS_TARGETS pak"
 fi
@@ -1671,6 +1675,8 @@ fi
 if test "x$ENABLE_tools_wav" = xyes; then
 	TOOLS_TARGETS="$TOOLS_TARGETS wav"
 fi
+
+AM_CONDITIONAL(BUILD_CARNE, test "$ENABLE_tools_carne" = "yes")
 AM_CONDITIONAL(BUILD_PAK, test "$ENABLE_tools_pak" = "yes")
 AM_CONDITIONAL(BUILD_QFBSP, test "$ENABLE_tools_qfbsp" = "yes")
 AM_CONDITIONAL(BUILD_QFCC, test "$ENABLE_tools_qfcc" = "yes")
@@ -1919,6 +1925,11 @@ QF_DEPS(QWAQ,
 	[$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
+QF_DEPS(CARNE,
+	[],
+	[$(top_builddir)/libs/gib/libQFgib.la $(top_builddir)/libs/util/libQFutil.la],
+	[$(WIN32_LIBS)],
+)
 QF_DEPS(PAK,
 	[],
 	[$(top_builddir)/libs/util/libQFutil.la],
@@ -1996,6 +2007,7 @@ AC_OUTPUT(
 	qw/source/Makefile
 
 	tools/Makefile
+	tools/carne/Makefile
 	tools/pak/Makefile
 	tools/qfbsp/Makefile
 	tools/qfbsp/include/Makefile

@@ -312,7 +312,7 @@ GIB_Field_Get_f (void)
 	if (GIB_Argc() == 4)
 			ifs = GIB_Argv (3);
 	else if (!(ifs = GIB_Var_Get_Local (cbuf_active, "ifs")))
-			ifs = " \t\n";
+			ifs = " \t\n\r";
 	for (list = GIB_Argv(1); *list && strchr(ifs, *list); list++);
 	while (field) {
 		while (!strchr(ifs, *list))
@@ -389,7 +389,7 @@ GIB_For_f (void)
 		if (GIB_Argc() == 7)
 			ifs = GIB_Argv (5);
 		else if (!(ifs = GIB_Var_Get_Local (cbuf_active, "ifs")))
-			ifs = " \n\t";
+			ifs = " \n\r\t";
 		dstring_append (GIB_DATA(sub)->loop_data, ifs, strlen(ifs)+1);
 		// Store pointers to data
 		ll = GIB_DATA(sub)->loop_data->str;

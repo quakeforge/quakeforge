@@ -59,6 +59,8 @@ typedef struct cbuf_s {
 		CBUF_STATE_STACK, // A buffer has been added to the stack
 	}	state;
 	
+	qboolean strict; // Should we tolerate unknown commands?
+	
 	double resumetime; // Time when stack can be executed again
 	
 	void *data; // Pointer to a custom structure if needed
