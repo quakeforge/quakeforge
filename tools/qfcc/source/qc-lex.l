@@ -440,6 +440,7 @@ make_string (char *token)
 					c = '\a';
 					break;
 				case 'b':
+					//XXX mask ^= 0x80;
 					c = '\b';
 					break;
 				case 'e':
@@ -462,12 +463,51 @@ make_string (char *token)
 						error (0, "Unexpected end of string after \\^");
 					boldnext = 1;
 					continue;
+				case '[':
+					c = 0x90;
+					break;
+				case ']':
+					c = 0x91;
+					break;
+				case '.':
+					c = 28;
+					break;
 				case '<':
+					//XXX c = 29;
 					mask = 0x80;
 					continue;
+				case '-':
+					c = 30;
+					break;
 				case '>':
+					//XXX c = 31;
 					mask = 0x00;
 					continue;
+				case '(':
+					c = 128;
+					break;
+				case '=':
+					c = 129;
+					break;
+				case ')':
+					c = 130;
+					break;
+				case '{':
+					c = 0;
+					while (*token && *token != '}'
+						   && isdigit ((unsigned char)*token)) {
+						c *= 10;
+						c += *token - '0';
+					}
+					if (!*token)
+						error (0, "EOF inside quote");
+					if (*token != '}')
+						error (0, "non-digit inside \\{}");
+					else
+						token++;
+					if (c > 255)
+						warning (0, "\\{%d} > 255", c);
+					break;
 				default:
 					error (0, "Unknown escape char");
 					break;
