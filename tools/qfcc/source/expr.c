@@ -1275,8 +1275,8 @@ expr_t *
 conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2)
 {
 	expr_t    *block = new_block_expr ();
-	type_t    *type1 = types[extract_type (e1)];
-	type_t    *type2 = types[extract_type (e2)];
+	type_t    *type1 = get_type (e1);
+	type_t    *type2 = get_type (e2);
 	expr_t    *tlabel = new_label_expr ();
 	expr_t    *elabel = new_label_expr ();
 

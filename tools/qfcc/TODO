@@ -15,7 +15,7 @@ X	pre- and post- increment operators (++ and --)
 X	break/continue keywords for switch() and for(;;)
 X	full scoping
 I	gut out old parser
-o	switch/case, for any type
+X	switch/case, for any type
 o	short circuit logic for && and || (optional?)
 o	warn for local shaddowing parameter
 o	quaternion type. Tricky: requires 4 word args/return

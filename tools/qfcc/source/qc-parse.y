@@ -35,6 +35,8 @@ static const char rcsid[] =
 #include <QF/hash.h>
 #include <QF/sys.h>
 
+#include "switch.h"
+
 #define YYDEBUG 1
 #define YYERROR_VERBOSE 1
 
@@ -84,6 +86,7 @@ typedef struct {
 	float		vector_val[3];
 	float		quaternion_val[4];
 	function_t *function;
+	struct switch_block_s	*switch_block;
 }
 
 %right	<op> '=' ASX
@@ -105,6 +108,7 @@ typedef struct {
 %token	<quaternion_val> QUATERNION_VAL
 
 %token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELIPSIS NIL
+%token	SWITCH CASE DEFAULT
 %token	<type> TYPE
 
 %type	<type>	type maybe_func
@@ -114,6 +118,7 @@ typedef struct {
 %type	<expr>	break_label continue_label
 %type	<function> begin_function
 %type	<def_list> save_inits
+%type	<switch_block> switch_block
 
 %expect 1
 
@@ -126,6 +131,7 @@ function_t *current_func;
 expr_t	*local_expr;
 expr_t	*break_label;
 expr_t	*continue_label;
+switch_block_t *switch_block;
 
 def_t		*pr_scope;					// the function being parsed, or NULL
 string_t	s_file;						// filename for function definition
@@ -410,17 +416,39 @@ statement
 		}
 	| BREAK ';'
 		{
+			$$ = 0;
 			if (break_label)
 				$$ = new_unary_expr ('g', break_label);
 			else
-				$$ = error (0, "break outside of loop or switch");
+				error (0, "break outside of loop or switch");
 		}
 	| CONTINUE ';'
 		{
+			$$ = 0;
 			if (continue_label)
 				$$ = new_unary_expr ('g', continue_label);
 			else
-				$$ = error (0, "continue outside of loop");
+				error (0, "continue outside of loop");
+		}
+	| CASE expr ':'
+		{
+			$$ = case_label_expr (switch_block, $2);
+		}
+	| DEFAULT ':'
+		{
+			$$ = case_label_expr (switch_block, 0);
+		}
+	| SWITCH break_label switch_block '(' expr ')'
+		{
+			switch_block->test = $5;
+		}
+	  save_inits statement_block
+		{
+			restore_local_inits ($8);
+			free_local_inits ($8);
+			$$ = switch_expr (switch_block, break_label, $9);
+			switch_block = $3;
+			break_label = $2;
 		}
 	| WHILE break_label continue_label '(' expr ')' save_inits statement
 		{
@@ -528,7 +556,8 @@ statement
 			free_local_inits (else_ini);
 			free_local_inits ($<def_list>8);
 		}
-	| FOR break_label continue_label '(' opt_expr ';' opt_expr ';' opt_expr ')' save_inits statement
+	| FOR break_label continue_label
+			'(' opt_expr ';' opt_expr ';' opt_expr ')' save_inits statement
 		{
 			expr_t *l1 = new_label_expr ();
 			expr_t *l2 = break_label;
@@ -569,6 +598,13 @@ continue_label
 		{
 			$$ = continue_label;
 			continue_label = new_label_expr ();
+		}
+
+switch_block
+	: /* empty */
+		{
+			$$ = switch_block;
+			switch_block = new_switch_block ();
 		}
 
 save_inits
