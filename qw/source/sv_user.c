@@ -171,7 +171,8 @@ SV_New_f (ucmd_t *cmd)
 
 	// Trigger GIB connection event
 	if (sv_client_connect_e->func)
-		GIB_Event_Callback (sv_client_connect_e, 1, va("%u", host_client->userid));
+		GIB_Event_Callback (sv_client_connect_e, 1, va ("%u",
+														host_client->userid));
 }
 
 static void
@@ -294,7 +295,7 @@ SV_PreSpawn_f (ucmd_t *cmd)
 		// should be three numbers following containing checksums
 		check = atoi (Cmd_Argv (3));
 
-//      Con_DPrintf("Client check = %d\n", check);
+//      Con_DPrintf ("Client check = %d\n", check);
 
 		if (sv_mapcheck->int_val && check != sv.worldmodel->checksum &&
 			check != sv.worldmodel->checksum2) {
@@ -317,7 +318,7 @@ SV_PreSpawn_f (ucmd_t *cmd)
 	else
 		command = va ("cmd prespawn %i %i\n", svs.spawncount, buf + 1);
 
-	size = sv.signon_buffer_size[buf] + 1 + strlen(command) + 1;
+	size = sv.signon_buffer_size[buf] + 1 + strlen (command) + 1;
 
 	ClientReliableCheckBlock (host_client, size);
 	if (host_client->num_backbuf)
@@ -546,7 +547,8 @@ SV_Begin_f (ucmd_t *cmd)
 
 	// Trigger GIB events
 	if (sv_client_spawn_e->func)
-		GIB_Event_Callback (sv_client_spawn_e, 1, va("%u", host_client->userid));
+		GIB_Event_Callback (sv_client_spawn_e, 1, va ("%u",
+													  host_client->userid));
 }
 
 //=============================================================================
@@ -801,7 +803,7 @@ SV_Say (qboolean team)
 		host_client->whensaid[host_client->whensaidhead] = realtime;
 	}
 
-	p = Hunk_TempAlloc (strlen(Cmd_Args (1)) + 1);
+	p = Hunk_TempAlloc (strlen (Cmd_Args (1)) + 1);
 	strcpy (p, Cmd_Args (1));
 
 	if (*p == '"') {
@@ -824,7 +826,8 @@ SV_Say (qboolean team)
 		}
 
 	if (sv_chat_e->func)
-		GIB_Event_Callback (sv_chat_e, 2, va("%i", host_client->userid), p, type);
+		GIB_Event_Callback (sv_chat_e, 2, va ("%i", host_client->userid), p,
+							type);
 		
 	strncat (text, p, sizeof (text) - strlen (text));
 	strncat (text, "\n", sizeof (text) - strlen (text));

@@ -298,7 +298,7 @@ Log_Outgoing_Packet (const char *p, int len, int has_sequence)
 }
 
 static void
-Log_Delta(int bits)
+Log_Delta (int bits)
 {
 	entity_state_t to;
 	int i;
@@ -354,21 +354,21 @@ Log_Delta(int bits)
 
 // Ender (QSG - Begin)
 	if (bits & U_ALPHA)
-		Net_LogPrintf(" Alpha: %d", MSG_ReadByte (&packet));
+		Net_LogPrintf (" Alpha: %d", MSG_ReadByte (&packet));
 	if (bits & U_SCALE)
-		Net_LogPrintf(" Scale: %d", MSG_ReadByte (&packet));
+		Net_LogPrintf (" Scale: %d", MSG_ReadByte (&packet));
 	if (bits & U_EFFECTS2)
-		Net_LogPrintf(" U_EFFECTS2: %d", (to.effects & 0xFF) |
-					  (MSG_ReadByte (&packet) << 8));
+		Net_LogPrintf (" U_EFFECTS2: %d", (to.effects & 0xFF) |
+					   (MSG_ReadByte (&packet) << 8));
 	if (bits & U_GLOWSIZE)
-		Net_LogPrintf(" GlowSize: %d", MSG_ReadByte (&packet));
+		Net_LogPrintf (" GlowSize: %d", MSG_ReadByte (&packet));
 	if (bits & U_GLOWCOLOR)
-		Net_LogPrintf(" ColorGlow: %d", MSG_ReadByte (&packet));
+		Net_LogPrintf (" ColorGlow: %d", MSG_ReadByte (&packet));
 	if (bits & U_COLORMOD)
-		Net_LogPrintf(" Colormod: %d", MSG_ReadByte (&packet));
+		Net_LogPrintf (" Colormod: %d", MSG_ReadByte (&packet));
 	if (bits & U_FRAME2)
-		Net_LogPrintf(" Uframe2: %d", ((to.frame & 0xFF) |
-									   (MSG_ReadByte (&packet) << 8)));
+		Net_LogPrintf (" Uframe2: %d", ((to.frame & 0xFF) |
+										(MSG_ReadByte (&packet) << 8)));
 // Ender (QSG - End)
 
 	return;
@@ -767,14 +767,14 @@ Parse_Server_Packet (int has_sequence)
 					break;
 				case svc_packetentities:
 					while (1) {
-						mask1 = (unsigned short) MSG_ReadShort(&packet);
+						mask1 = (unsigned short) MSG_ReadShort (&packet);
 						if (packet.badread) {
 							Net_LogPrintf ("Badread\n");
 							return;
 						}
 						if (!mask1) break;
-						if (mask1 & U_REMOVE) Net_LogPrintf("UREMOVE ");
-						Log_Delta(mask1);
+						if (mask1 & U_REMOVE) Net_LogPrintf ("UREMOVE ");
+						Log_Delta (mask1);
 					}
 					break;
 				case svc_deltapacketentities:

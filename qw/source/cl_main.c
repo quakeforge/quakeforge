@@ -580,7 +580,7 @@ CL_FullServerinfo_f (void)
 		return;
 	}
 
-	Con_DPrintf ("Cmd_Argv(1): '%s'\n", Cmd_Argv (1));
+	Con_DPrintf ("Cmd_Argv (1): '%s'\n", Cmd_Argv (1));
 	Info_Destroy (cl.serverinfo);
 	cl.serverinfo = Info_ParseString (Cmd_Argv (1), MAX_SERVERINFO_STRING, 0);
 	Con_DPrintf ("cl.serverinfo: '%s'\n", Info_MakeString (cl.serverinfo, 0));
@@ -936,9 +936,9 @@ CL_ConnectionlessPacket (void)
 	// print command from somewhere
 	if (c == A2C_PRINT) {
 		s = MSG_ReadString (net_message);
-		if (SL_CheckStatus(NET_AdrToString (net_from), s))
+		if (SL_CheckStatus (NET_AdrToString (net_from), s))
 		{
-			Con_Printf("status response\n");
+			Con_Printf ("status response\n");
 			return;
 		} else if (!cls.demoplayback
 				   && (cl_paranoid->int_val
@@ -987,10 +987,10 @@ CL_ConnectionlessPacket (void)
 
 	if (c == M2C_MASTER_REPLY)
 	{
-		Con_Printf("Master Server Reply\n");
+		Con_Printf ("Master Server Reply\n");
 		clcp_temp = MSG_ReadByte (net_message);
 		s = MSG_ReadString (net_message);
-		MSL_ParseServerList(s);
+		MSL_ParseServerList (s);
 		return;
 	}
 	if (c == svc_disconnect) {
@@ -1013,8 +1013,8 @@ CL_ReadPackets (void)
 			continue;
 
 		if (cls.demoplayback && net_packetlog->int_val)
-			Log_Incoming_Packet(net_message->message->data,
-								net_message->message->cursize, 0);
+			Log_Incoming_Packet (net_message->message->data,
+								 net_message->message->cursize, 0);
 
 		// remote command packet
 		if (*(int *) net_message->message->data == -1) {
@@ -1752,7 +1752,7 @@ Host_Init (void)
 	Key_Init (cl_cbuf);
 	Mod_Init ();
 
-	CL_Demo_Init();
+	CL_Demo_Init ();
 
 	Con_Printf ("%4.1f megabyte heap.\n", cl_mem_size->value);
 

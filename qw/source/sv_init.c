@@ -297,7 +297,7 @@ SV_CheckModel (const char *mdl)
 	Change the server to a new map, taking all connected
 	clients along with it.
 
-	This is only called from the SV_Map_f() function.
+	This is only called from the SV_Map_f () function.
 */
 void
 SV_SpawnServer (const char *server)

@@ -65,7 +65,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 	This is a TERMINAL error, which will kill off the entire server.
 	Dumps self.
 
-	error(value)
+	error (value)
 */
 void
 PF_error (progs_t *pr)
@@ -88,7 +88,7 @@ PF_error (progs_t *pr)
 	Dumps out self, then an error message.  The program is aborted and self is
 	removed, but the level can continue.
 
-	objerror(value)
+	objerror (value)
 */
 void
 PF_objerror (progs_t *pr)
@@ -110,7 +110,7 @@ PF_objerror (progs_t *pr)
 	PF_makevectors
 
 	Writes new values for v_forward, v_up, and v_right based on angles
-	makevectors(vector)
+	makevectors (vector)
 */
 void
 PF_makevectors (progs_t *pr)
@@ -207,12 +207,12 @@ PF_setmodel (progs_t *pr)
 
 	broadcast print to everyone on server
 
-	bprint(value)
+	bprint (value)
 */
 void
 PF_bprint (progs_t *pr)
 {
-	const char       *s;
+	const char *s;
 	int         level;
 
 	level = P_FLOAT (pr, 0);
@@ -226,12 +226,12 @@ PF_bprint (progs_t *pr)
 
 	single print to a specific client
 
-	sprint(clientent, value)
+	sprint (clientent, value)
 */
 void
 PF_sprint (progs_t *pr)
 {
-	const char       *s;
+	const char *s;
 	client_t   *client;
 	int         entnum, level;
 
@@ -258,12 +258,12 @@ PF_sprint (progs_t *pr)
 
 	single print to a specific client
 
-	centerprint(clientent, value)
+	centerprint (clientent, value)
 */
 void
 PF_centerprint (progs_t *pr)
 {
-	const char       *s;
+	const char *s;
 	client_t   *cl;
 	int         entnum;
 
@@ -590,7 +590,7 @@ PF_stuffcmd (progs_t *pr)
 		ClientReliableWrite_Begin (cl, svc_stufftext, 2 + p - buf);
 		ClientReliableWrite_String (cl, buf);
 		if (sv.demorecording) {
-			DemoWrite_Begin (dem_single, cl - svs.clients, 2 + strlen(buf));
+			DemoWrite_Begin (dem_single, cl - svs.clients, 2 + strlen (buf));
 			MSG_WriteByte (&demo.dbuf->sz, svc_stufftext);
 			MSG_WriteString (&demo.dbuf->sz, buf);
 		}
@@ -756,7 +756,7 @@ PF_precache_model (progs_t *pr)
 /*
 	PF_walkmove
 
-	float(float yaw, float dist) walkmove
+	float (float yaw, float dist) walkmove
 */
 void
 PF_walkmove (progs_t *pr)
@@ -796,7 +796,7 @@ PF_walkmove (progs_t *pr)
 /*
 	PF_droptofloor
 
-	void() droptofloor
+	void () droptofloor
 */
 void
 PF_droptofloor (progs_t *pr)
@@ -827,7 +827,7 @@ PF_droptofloor (progs_t *pr)
 /*
 	PF_lightstyle
 
-	void(float style, string value) lightstyle
+	void (float style, string value) lightstyle
 */
 void
 PF_lightstyle (progs_t *pr)
@@ -890,7 +890,7 @@ cvar_t     *sv_aim;
 	PF_aim
 
 	Pick a vector for the player to shoot along
-	vector aim(entity, missilespeed)
+	vector aim (entity, missilespeed)
 */
 void
 PF_aim (progs_t *pr)
@@ -1020,7 +1020,7 @@ PF_changeyaw (progs_t *pr)
 #define	MSG_ONE			1				// reliable to one (msg_entity)
 #define	MSG_ALL			2				// reliable to all
 #define	MSG_INIT		3				// write to the init string
-#define	MSG_MULTICAST	4				// for multicast()
+#define	MSG_MULTICAST	4				// for multicast ()
 
 static sizebuf_t  *
 WriteDest (progs_t *pr)
@@ -1386,7 +1386,7 @@ PF_logfrag (progs_t *pr)
 /*
 	PF_infokey
 
-	string(entity e, string key) infokey
+	string (entity e, string key) infokey
 */
 void
 PF_infokey (progs_t *pr)
@@ -1433,7 +1433,7 @@ PF_infokey (progs_t *pr)
 /*
 	PF_multicast
 
-	void(vector where, float set) multicast
+	void (vector where, float set) multicast
 */
 void
 PF_multicast (progs_t *pr)
@@ -1450,7 +1450,7 @@ PF_multicast (progs_t *pr)
 /*
 	PF_cfopen
 
-	float(string path, string mode) cfopen
+	float (string path, string mode) cfopen
 */
 static void
 PF_cfopen (progs_t *pr)
@@ -1478,7 +1478,7 @@ PF_cfclose (progs_t *pr)
 static void
 PF_cfread (progs_t *pr)
 {
-	RETURN_STRING (pr, CF_Read((int) P_FLOAT (pr, 0)));
+	RETURN_STRING (pr, CF_Read ((int) P_FLOAT (pr, 0)));
 }
 
 /*
@@ -1489,7 +1489,7 @@ PF_cfread (progs_t *pr)
 static void
 PF_cfwrite (progs_t *pr)
 {
-	R_FLOAT (pr) = CF_Write((int) P_FLOAT (pr, 0), P_STRING (pr, 1));
+	R_FLOAT (pr) = CF_Write ((int) P_FLOAT (pr, 0), P_STRING (pr, 1));
 }
 
 /*
@@ -1511,7 +1511,7 @@ PF_cfeof (progs_t *pr)
 static void
 PF_cfquota (progs_t *pr)
 {
-	R_FLOAT (pr) = CF_Quota();
+	R_FLOAT (pr) = CF_Quota ();
 }
 
 static void
@@ -1731,7 +1731,7 @@ PF_Fixme (progs_t *pr)
 static void
 PF_Checkextension (progs_t *pr)
 {
-	R_FLOAT(pr) = 0;	 //FIXME make this function actually useful :P
+	R_FLOAT (pr) = 0;	 // FIXME: make this function actually useful :P
 }
 
 static void
@@ -1782,7 +1782,7 @@ PF_SV_FreeClient (progs_t *pr)
 	cl->state = cs_free;
 
 	//if (sv_client_disconnect_e->func)
-	//	GIB_Event_Callback (sv_client_disconnect_e, 2, va("%u", cl->userid),
+	//	GIB_Event_Callback (sv_client_disconnect_e, 2, va ("%u", cl->userid),
 	//						"server");
 }
 
@@ -1845,7 +1845,7 @@ SV_PR_Cmds_Init ()
 
 	PR_AddBuiltin (&sv_pr_state, "makevectors", PF_makevectors, 1); // void (entity e) makevectors
 	PR_AddBuiltin (&sv_pr_state, "setorigin", PF_setorigin, 2); // void (entity e, vector o) setorigin
-	PR_AddBuiltin (&sv_pr_state, "setmodel", PF_setmodel, 3); // void(entity e, string m) setmodel
+	PR_AddBuiltin (&sv_pr_state, "setmodel", PF_setmodel, 3); // void (entity e, string m) setmodel
 	PR_AddBuiltin (&sv_pr_state, "setsize", PF_setsize, 4); // void (entity e, vector min, vector max) setsize
 	PR_AddBuiltin (&sv_pr_state, "fixme", PF_Fixme, 5); // void (entity e, vector min, vector max) setabssize
 	PR_AddBuiltin (&sv_pr_state, "sound", PF_sound, 8); // void (entity e, float chan, string samp) sound
@@ -1873,13 +1873,13 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "WriteBytes", PF_WriteBytes, -1); // void (float to, ...) WriteBytes
 	PR_AddBuiltin (&sv_pr_state, "writechar", PF_WriteChar, 53); // void (float to, float f) WriteChar
 	PR_AddBuiltin (&sv_pr_state, "writeshort", PF_WriteShort, 54); // void (float to, float f) WriteShort
-	PR_AddBuiltin (&sv_pr_state, "writelong", PF_WriteLong, 55); // void(float to, float f) WriteLong
-	PR_AddBuiltin (&sv_pr_state, "writecoord", PF_WriteCoord, 56); // void(float to, float f) WriteCoord
-	PR_AddBuiltin (&sv_pr_state, "writeangle", PF_WriteAngle, 57); // void(float to, float f) WriteAngle
-	PR_AddBuiltin (&sv_pr_state, "WriteCoordV", PF_WriteCoordV, -1); // void(float to, vector v) WriteCoordV
-	PR_AddBuiltin (&sv_pr_state, "WriteAngleV", PF_WriteAngleV, -1); // void(float to, vector v) WriteAngleV
-	PR_AddBuiltin (&sv_pr_state, "writestring", PF_WriteString, 58); // void(float to, string s) WriteString
-	PR_AddBuiltin (&sv_pr_state, "writeentity", PF_WriteEntity, 59); // void(float to, entity s) WriteEntity
+	PR_AddBuiltin (&sv_pr_state, "writelong", PF_WriteLong, 55); // void (float to, float f) WriteLong
+	PR_AddBuiltin (&sv_pr_state, "writecoord", PF_WriteCoord, 56); // void (float to, float f) WriteCoord
+	PR_AddBuiltin (&sv_pr_state, "writeangle", PF_WriteAngle, 57); // void (float to, float f) WriteAngle
+	PR_AddBuiltin (&sv_pr_state, "WriteCoordV", PF_WriteCoordV, -1); // void (float to, vector v) WriteCoordV
+	PR_AddBuiltin (&sv_pr_state, "WriteAngleV", PF_WriteAngleV, -1); // void (float to, vector v) WriteAngleV
+	PR_AddBuiltin (&sv_pr_state, "writestring", PF_WriteString, 58); // void (float to, string s) WriteString
+	PR_AddBuiltin (&sv_pr_state, "writeentity", PF_WriteEntity, 59); // void (float to, entity s) WriteEntity
 	PR_AddBuiltin (&sv_pr_state, "movetogoal", SV_MoveToGoal, 67); // void (float step) movetogoal
 	PR_AddBuiltin (&sv_pr_state, "precache_file", PF_precache_file, 68); // string (string s) precache_file
 	PR_AddBuiltin (&sv_pr_state, "makestatic", PF_makestatic, 69); // void (entity e) makestatic

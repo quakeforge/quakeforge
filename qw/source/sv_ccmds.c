@@ -219,7 +219,7 @@ SV_Fraglogfile_f (void)
 /*
 	SV_SetPlayer
 
-	Sets host_client and sv_player to the player with idnum Cmd_Argv(1)
+	Sets host_client and sv_player to the player with idnum Cmd_Argv (1)
 */
 static qboolean
 SV_SetPlayer (void)
@@ -434,7 +434,7 @@ SV_Kick_f (void)
 		SV_Printf ("usage: kick <name/userid>\n");
 		return;
 	}
-	if (!(cl = SV_Match_User (Cmd_Argv(1))))
+	if (!(cl = SV_Match_User (Cmd_Argv (1))))
 		return;
 
 	SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked\n", cl->name);
@@ -560,31 +560,30 @@ SV_Cuff_f (void)
 	client_t    *cl = 0;
 	char        text[1024];
 
-	if (Cmd_Argc() != 2 && Cmd_Argc() != 3) {
+	if (Cmd_Argc () != 2 && Cmd_Argc () != 3) {
 		SV_Printf ("usage: cuff <name/userid/ALL> [minutes]\n"
 				   "       (default = 0.5, 0 = cancel cuff).\n");
 		return;
 	}
 
-	if (strequal (Cmd_Argv(1), "ALL")) {
+	if (strequal (Cmd_Argv (1), "ALL")) {
 		all = true;
 	} else {
-		cl = SV_Match_User (Cmd_Argv(1));
+		cl = SV_Match_User (Cmd_Argv (1));
 	}
 	if (!all && !cl)
 		return;
-	if (Cmd_Argc() == 3) {
-		mins = atof(Cmd_Argv(2));
+	if (Cmd_Argc () == 3) {
+		mins = atof (Cmd_Argv (2));
 		if (mins < 0.0 || mins > MAXPENALTY)
 			mins = MAXPENALTY;
 	}
 	if (cl) {
-		cl->cuff_time = realtime + mins*60.0;
+		cl->cuff_time = realtime + mins * 60.0;
 		if (mins) {
-			sprintf(text,
-					"You are cuffed for %.1f minutes\n\n"
-					"reconnecting won't help...\n", mins);
-			ClientReliableWrite_Begin(cl,svc_centerprint, 2+strlen(text));
+			sprintf (text, "You are cuffed for %.1f minutes\n\n"
+					 "reconnecting won't help...\n", mins);
+			ClientReliableWrite_Begin (cl, svc_centerprint, 2 + strlen (text));
 			ClientReliableWrite_String (cl, text);
 		}
 	}
@@ -592,13 +591,13 @@ SV_Cuff_f (void)
 		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
 			if (cl->state < cs_zombie)
 				continue;
-			cl->cuff_time = realtime + mins*60.0;
+			cl->cuff_time = realtime + mins * 60.0;
 			done = true;
 			if (mins) {
-				sprintf(text,
-						"You are cuffed for %.1f minutes\n\n"
-						"reconnecting won't help...\n", mins);
-				ClientReliableWrite_Begin(cl,svc_centerprint, 2+strlen(text));
+				sprintf (text, "You are cuffed for %.1f minutes\n\n"
+						 "reconnecting won't help...\n", mins);
+				ClientReliableWrite_Begin (cl, svc_centerprint,
+										   2 + strlen (text));
 				ClientReliableWrite_String (cl, text);
 			}
 		}
@@ -623,30 +622,30 @@ SV_Mute_f (void)
 	client_t    *cl = 0;
 	char        text[1024];
 
-	if (Cmd_Argc() != 2 && Cmd_Argc() != 3) {
+	if (Cmd_Argc () != 2 && Cmd_Argc () != 3) {
 		SV_Printf ("usage: mute <name/userid/ALL> [minutes]\n"
 				   "       (default = 0.5, 0 = cancel mute).\n");
 		return;
 	}
-	if (strequal(Cmd_Argv(1),"ALL")) {
+	if (strequal (Cmd_Argv (1),"ALL")) {
 		all = true;
 	} else {
-		cl = SV_Match_User (Cmd_Argv(1));
+		cl = SV_Match_User (Cmd_Argv (1));
 	}
 	if (!all && !cl)
 		return;
-	if (Cmd_Argc() == 3) {
-		mins = atof(Cmd_Argv(2));
+	if (Cmd_Argc () == 3) {
+		mins = atof (Cmd_Argv (2));
 		if (mins < 0.0 || mins > MAXPENALTY)
 			mins = MAXPENALTY;
 	}
 	if (cl) {
-		cl->lockedtill = realtime + mins*60.0;
+		cl->lockedtill = realtime + mins * 60.0;
 		done = true;
 		if (mins) {
-			sprintf(text, "You are muted for %.1f minutes\n\n"
-					"reconnecting won't help...\n", mins);
-			ClientReliableWrite_Begin(cl,svc_centerprint, 2+strlen(text));
+			sprintf (text, "You are muted for %.1f minutes\n\n"
+					 "reconnecting won't help...\n", mins);
+			ClientReliableWrite_Begin (cl, svc_centerprint, 2 + strlen (text));
 			ClientReliableWrite_String (cl, text);
 		}
 	}
@@ -654,12 +653,13 @@ SV_Mute_f (void)
 		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
 			if (cl->state < cs_zombie)
 				continue;
-			cl->lockedtill = realtime + mins*60.0;
+			cl->lockedtill = realtime + mins * 60.0;
 			done = true;
 			if (mins) {
-				sprintf(text, "You are muted for %.1f minutes\n\n"
-						"reconnecting won't help...\n", mins);
-				ClientReliableWrite_Begin(cl,svc_centerprint, 2+strlen(text));
+				sprintf (text, "You are muted for %.1f minutes\n\n"
+						 "reconnecting won't help...\n", mins);
+				ClientReliableWrite_Begin (cl, svc_centerprint,
+										   2 + strlen (text));
 				ClientReliableWrite_String (cl, text);
 			}
 		}
@@ -686,10 +686,10 @@ SV_Tell (const char *prefix)
 		SV_Printf ("usage: tell <name/userid> <text...>\n");
 		return;
 	}
-	if (!(cl = SV_Match_User (Cmd_Argv(1))))
+	if (!(cl = SV_Match_User (Cmd_Argv (1))))
 		return;
 
-	p = Hunk_TempAlloc (strlen(Cmd_Args (2)) + 1);
+	p = Hunk_TempAlloc (strlen (Cmd_Args (2)) + 1);
 	strcpy (p, Cmd_Args (2));
 	if (*p == '"') {
 		p++;
@@ -714,36 +714,36 @@ SV_Ban_f (void)
 	double      mins = 30.0;
 	client_t    *cl;
 
-	if (Cmd_Argc() != 2 && Cmd_Argc() != 3) {
+	if (Cmd_Argc () != 2 && Cmd_Argc () != 3) {
 		SV_Printf ("usage: ban <name/userid> [minutes]\n"
 				   "       (default = 30, 0 = permanent).\n");
 		return;
 	}
-	if (!(cl = SV_Match_User(Cmd_Argv(1))))
+	if (!(cl = SV_Match_User (Cmd_Argv (1))))
 		return;
-	if (Cmd_Argc() == 3) {
-		mins = atof(Cmd_Argv(2));
-		if (mins<0.0 || mins > 1000000.0)				// bout 2 yrs
+	if (Cmd_Argc () == 3) {
+		mins = atof (Cmd_Argv (2));
+		if (mins < 0.0 || mins > 1000000.0)				// bout 2 yrs
 			mins = 0.0;
 	}
 	SV_BroadcastPrintf (PRINT_HIGH, "Admin Banned user %s %s\n",
-						cl->name, mins ? va("for %.1f minutes", mins)
+						cl->name, mins ? va ("for %.1f minutes", mins)
 									   : "permanently");
 	SV_DropClient (cl);
 	Cmd_ExecuteString (va ("addip %s %f",
-						   NET_BaseAdrToString(cl->netchan.remote_address),
+						   NET_BaseAdrToString (cl->netchan.remote_address),
 						   mins), src_command);
 }
 
 static void
 SV_Match_f (void)
 {
-	if (Cmd_Argc() != 2) {
+	if (Cmd_Argc () != 2) {
 		SV_Printf ("usage: match <name/userid>\n");
 		return;
 	}
 
-	if (!SV_Match_User (Cmd_Argv(1)))
+	if (!SV_Match_User (Cmd_Argv (1)))
 		SV_Printf ("No unique uid/name matched\n");
 }
 
@@ -759,7 +759,7 @@ SV_ConSay (const char *prefix)
 	if (Cmd_Argc () < 2)
 		return;
 
-	p = Hunk_TempAlloc (strlen(Cmd_Args (1)) + 1);
+	p = Hunk_TempAlloc (strlen (Cmd_Args (1)) + 1);
 	strcpy (p, Cmd_Args (1));
 	if (*p == '"') {
 		p++;
@@ -801,15 +801,15 @@ static void
 SV_ConSay_f (void)
 {
 	if (rcon_from_user)
-		SV_ConSay("Admin");
+		SV_ConSay ("Admin");
 	else
-		SV_ConSay("Console");
+		SV_ConSay ("Console");
 }
 
 static void
 SV_ConSay_Info_f (void)
 {
-	SV_ConSay("Info");
+	SV_ConSay ("Info");
 }
 
 static void

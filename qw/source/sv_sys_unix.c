@@ -65,7 +65,7 @@ info_t    **svs_info = &svs.info;
 
 #ifdef __alpha__
 static inline unsigned long
-rdfpcr(void)
+rdfpcr (void)
 {
 	unsigned long tmp, ret;
 
@@ -89,7 +89,7 @@ rdfpcr(void)
 }
 
 static inline void
-wrfpcr(unsigned long val)
+wrfpcr (unsigned long val)
 {
 	unsigned long tmp;
 

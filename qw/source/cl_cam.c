@@ -188,7 +188,7 @@ Cam_Lock (int playernum)
 
 	snprintf (st, sizeof (st), "ptrack %i", playernum);
 	if (cls.demoplayback2) {
-		memcpy(cl.stats, cl.players[playernum].stats, sizeof (cl.stats));
+		memcpy (cl.stats, cl.players[playernum].stats, sizeof (cl.stats));
 	}
 
 	if (!cls.demoplayback) {
@@ -350,7 +350,7 @@ InitFlyby (player_state_t * self, player_state_t * player, int checkvis)
 	}
 	// ack, can't find him
 	if (max >= 1000) {
-//		Cam_Unlock();
+//		Cam_Unlock ();
 		return false;
 	}
 	locked = true;
@@ -623,7 +623,7 @@ Cam_FinishMove (usercmd_t *cmd)
 		}
 		oldbuttons |= BUTTON_JUMP;		// don't jump again until released
 	}
-//	Con_Printf("Selecting track target...\n");
+//	Con_Printf ("Selecting track target...\n");
 
 	if (locked && autocam)
 		end = (spec_track + 1) % MAX_CLIENTS;

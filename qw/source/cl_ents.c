@@ -519,7 +519,7 @@ CL_LinkPacketEntities (void)
 			(*ent)->angles[1] = anglemod (100 * cl.time);
 			(*ent)->angles[2] = 0;
 		} else {
-			VectorCopy(s1->angles, (*ent)->angles);
+			VectorCopy (s1->angles, (*ent)->angles);
 		}
 
 		// add automatic particle trails
@@ -682,10 +682,10 @@ CL_ParsePlayerinfo (void)
 			cls.findtrack = false;
 		}
 
-		memcpy(state, prevstate, sizeof(player_state_t));
+		memcpy (state, prevstate, sizeof (player_state_t));
 
 		flags = MSG_ReadShort (net_message);
-		state->flags = TranslateFlags(flags);
+		state->flags = TranslateFlags (flags);
 		state->messagenum = cl.parsecount;
 		state->command.msec = 0;
 		state->frame = MSG_ReadByte (net_message);
@@ -1076,7 +1076,7 @@ CL_SetUpPlayerPrediction (qboolean dopred)
 	CL_SetSolid
 
 	Builds all the pmove physents for the current frame
-	Note that CL_SetUpPlayerPrediction() must be called first!
+	Note that CL_SetUpPlayerPrediction () must be called first!
 	pmove must be setup with world and solid entity hulls before calling
 	(via CL_PredictMove)
 */

@@ -83,7 +83,7 @@ locs_find (const vec3_t target)
 {
 	int i;
 
-	i = locs_nearest(target);
+	i = locs_nearest (target);
 	if (i == -1) 
 		return NULL;
 	return locations[i];
@@ -139,7 +139,7 @@ locs_load (const char *filename)
 	vec3_t      loc;
 	QFile      *file;
 	
-	snprintf(tmp,sizeof(tmp), "maps/%s",filename);
+	snprintf (tmp, sizeof (tmp), "maps/%s", filename);
 	templength = _QFS_FOpenFile (tmp, &file, foundname, 1);
 	if (!file) {
 		Con_Printf ("Couldn't load %s\n", tmp);
@@ -156,7 +156,7 @@ locs_load (const char *filename)
 		if (t2 == t1)
 			continue;
 		loc[2] = strtol (t2, &t1, 0) * (1.0 / 8);
-		if ((t1 == t2) || (strlen(t1) < 2))
+		if ((t1 == t2) || (strlen (t1) < 2))
 			continue;
 		t1++;
 		t2 = strrchr (t1, '\n');
@@ -199,31 +199,29 @@ locs_save (const char *filename, qboolean gz)
 	QFile *locfd;
 	
 	if (gz) {
-		if (strncmp(filename + strlen(filename) - 3,".gz",3) != 0)
-			snprintf (locfile, sizeof (locfile), "%s.gz",filename);
+		if (strncmp (filename + strlen (filename) - 3,".gz", 3) != 0)
+			snprintf (locfile, sizeof (locfile), "%s.gz", filename);
 		else
-			strcpy(locfile,filename);
-		locfd = Qopen (locfile,"z9w+");
+			strcpy (locfile, filename);
+		locfd = Qopen (locfile, "z9w+");
 	} else
-		locfd = Qopen (filename,"w+");
+		locfd = Qopen (filename, "w+");
 	if (locfd == 0) {
-		Con_Printf("ERROR: Unable to open %s\n",filename);
+		Con_Printf ("ERROR: Unable to open %s\n", filename);
 		return;
 	}
-	for (i=0; i < locations_count; i++) 
-		Qprintf(locfd,"%.0f %.0f %.0f %s\n",
-				locations[i]->loc[0] * 8,
-				locations[i]->loc[1] * 8,
-				locations[i]->loc[2] * 8,
-				locations[i]->name);
+	for (i = 0; i < locations_count; i++) 
+		Qprintf (locfd,"%.0f %.0f %.0f %s\n", locations[i]->loc[0] * 8,
+				 locations[i]->loc[1] * 8, locations[i]->loc[2] * 8,
+				 locations[i]->name);
 	Qclose (locfd);
 }
 
 void
 locs_mark (const vec3_t loc, const char *desc)
 {
-	locs_add (loc,desc);
-	Con_Printf ("Marked current location: %s\n",desc);
+	locs_add (loc, desc);
+	Con_Printf ("Marked current location: %s\n", desc);
 }
 
 /*
@@ -240,7 +238,7 @@ locs_edit (const vec3_t loc, const char *desc)
 	if (locations_count) {
 		i = locs_nearest (loc);
 		if (!desc) {
-			VectorCopy (loc,locations[i]->loc);
+			VectorCopy (loc, locations[i]->loc);
 			Con_Printf ("Moving location marker for %s\n",
 					locations[i]->name);
 		} else {
@@ -277,10 +275,10 @@ map_to_loc (const char *mapname, char *filename)
 {
 	char *t1;
 	
-	strcpy(filename, mapname);
-	t1 = strrchr(filename,'.');
+	strcpy (filename, mapname);
+	t1 = strrchr (filename, '.');
 	if (!t1)
 		Sys_Error ("Can't find .!");
 	t1++;
-	strcpy(t1,"loc");
+	strcpy (t1, "loc");
 }

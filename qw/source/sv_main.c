@@ -260,7 +260,7 @@ SV_Shutdown (void)
 		sv_fraglogfile = NULL;
 	}
 	if (sv.demorecording)
-		SV_Stop_f();
+		SV_Stop_f ();
 
 	NET_Shutdown ();
 	Con_Shutdown ();
@@ -386,7 +386,8 @@ SV_DropClient (client_t *drop)
 	
 	// Trigger GIB event
 	if (sv_client_disconnect_e->func)
-		GIB_Event_Callback (sv_client_disconnect_e, 1, va("%u", drop->userid));
+		GIB_Event_Callback (sv_client_disconnect_e, 1,
+							va ("%u", drop->userid));
 }
 
 int
@@ -432,7 +433,7 @@ SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 
 	i = client - svs.clients;
 
-//	SV_Printf("SV_FullClientUpdate:  Updated frags for client %d\n", i);
+//	SV_Printf ("SV_FullClientUpdate:  Updated frags for client %d\n", i);
 
 	MSG_WriteByte (buf, svc_updatefrags);
 	MSG_WriteByte (buf, i);
@@ -648,9 +649,9 @@ SVC_Log (void)
 	Con_DPrintf ("sending log %i to %s\n", svs.logsequence - 1,
 				 NET_AdrToString (net_from));
 
-//	snprintf (data, sizeof (data), "stdlog %i\n", svs.logsequence-1);
-//	strncat (data,  (char *)svs.log_buf[((svs.logsequence-1)&1)],
-//	sizeof(data) - strlen (data));
+//	snprintf (data, sizeof (data), "stdlog %i\n", svs.logsequence - 1);
+//	strncat (data,  (char *) svs.log_buf[((svs.logsequence - 1) & 1)],
+//	sizeof (data) - strlen (data));
 	snprintf (data, sizeof (data), "stdlog %i\n%s",
 			  svs.logsequence - 1,
 			  (char *) svs.log_buf[((svs.logsequence - 1) & 1)]);
@@ -925,7 +926,7 @@ SVC_DirectConnect (void)
 	for (i = 0; i < 10; i++)
 		newcl->whensaid[i] = 0.0;
 	newcl->whensaidhead = 0;
-	newcl->lockedtill = SV_RestorePenaltyFilter(newcl, ft_mute);
+	newcl->lockedtill = SV_RestorePenaltyFilter (newcl, ft_mute);
 
 	// call the progs to get default spawn parms for the new client
 	PR_ExecuteProgram (&sv_pr_state, sv_funcs.SetNewParms);
@@ -945,7 +946,7 @@ SVC_DirectConnect (void)
 	newcl->msec_cheating = 0;
 	newcl->last_check = -1;
 
-	newcl->cuff_time = SV_RestorePenaltyFilter(newcl, ft_cuff);
+	newcl->cuff_time = SV_RestorePenaltyFilter (newcl, ft_cuff);
 }
 
 static int
@@ -969,7 +970,7 @@ Name_of_sender (void)
 	for (i=0, cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++) {
 		if (cl->state < cs_zombie)
 			continue;
-		if (!NET_CompareBaseAdr(net_from, cl->netchan.remote_address))
+		if (!NET_CompareBaseAdr (net_from, cl->netchan.remote_address))
 			continue;
 		if (cl->netchan.remote_address.port != net_from.port)
 			continue;
@@ -1000,27 +1001,27 @@ SVC_RemoteCommand (void)
 		do_cmd = true;
 	} else if (Rcon_Validate (admin_password)) {
 		admin_cmd = true;
-		if (strcmp(Cmd_Argv(2), "say") == 0
-			||  strcmp(Cmd_Argv(2), "kick") == 0
-			||  strcmp(Cmd_Argv(2), "ban") == 0
-			||  strcmp(Cmd_Argv(2), "mute") == 0
-			||  strcmp(Cmd_Argv(2), "cuff") == 0
-			||  strcmp(Cmd_Argv(2), "exec") == 0
-			||  strcmp(Cmd_Argv(2), "addip") == 0
-			||  strcmp(Cmd_Argv(2), "listip") == 0
-			||  strcmp(Cmd_Argv(2), "writeip") == 0
-			||  strcmp(Cmd_Argv(2), "removeip") == 0)
+		if (strcmp (Cmd_Argv (2), "say") == 0
+			||  strcmp (Cmd_Argv (2), "kick") == 0
+			||  strcmp (Cmd_Argv (2), "ban") == 0
+			||  strcmp (Cmd_Argv (2), "mute") == 0
+			||  strcmp (Cmd_Argv (2), "cuff") == 0
+			||  strcmp (Cmd_Argv (2), "exec") == 0
+			||  strcmp (Cmd_Argv (2), "addip") == 0
+			||  strcmp (Cmd_Argv (2), "listip") == 0
+			||  strcmp (Cmd_Argv (2), "writeip") == 0
+			||  strcmp (Cmd_Argv (2), "removeip") == 0)
 			do_cmd = true;
 	}
-	if ((name = Name_of_sender())) {			// log issuer
+	if ((name = Name_of_sender ())) {			// log issuer
 		if (do_cmd && admin_cmd) {
 			SV_BroadcastPrintf (PRINT_HIGH, "Admin %s issued %s command:\n",
-								name, Cmd_Argv(2));
+								name, Cmd_Argv (2));
 		} else if (admin_cmd) {
-			SV_Printf ("Admin %s issued %s command:\n", name, Cmd_Argv(2));
+			SV_Printf ("Admin %s issued %s command:\n", name, Cmd_Argv (2));
 		} else {
-			SV_Printf("User %s %s rcon command:\n", name,
-					   do_cmd? "issued":"attempted");
+			SV_Printf ("User %s %s rcon command:\n", name,
+					   do_cmd ? "issued" : "attempted");
 		}
 	}
 	
@@ -1041,7 +1042,7 @@ SVC_RemoteCommand (void)
 
 		SV_BeginRedirect (RD_PACKET);
 		if (admin_cmd) {
-			SV_Printf("Command not valid with admin password.\n");
+			SV_Printf ("Command not valid with admin password.\n");
 		} else {
 			SV_Printf ("Bad rcon_password.\n");
 		}
@@ -1752,8 +1753,8 @@ SV_ReadPackets (void)
 	good = false;
 	while (NET_GetPacket ()) {
 		if (net_packetlog->int_val)
-			Log_Incoming_Packet(net_message->message->data,
-								net_message->message->cursize, 1);
+			Log_Incoming_Packet (net_message->message->data,
+								 net_message->message->cursize, 1);
 		if (SV_FilterIP (net_from.ip, &until)) {
 			SV_SendBan (until);			// tell them we aren't listening...
 			continue;
@@ -1804,7 +1805,7 @@ SV_ReadPackets (void)
 
 		// packet is not from a known client
 //		SV_Printf ("%s:sequenced packet without connection\n",
-//				   NET_AdrToString(net_from));
+//				   NET_AdrToString (net_from));
 	}
 }
 
@@ -2368,8 +2369,8 @@ SV_ExtractFromUserinfo (client_t *cl)
 									"different name.\n", A2C_PRINT);
 			SV_ClientPrintf (1, cl, PRINT_HIGH, "Please choose a "
 							 "different name.\n");
-			SV_Printf("Client %d kicked for having a invalid name\n",
-					  cl->userid);
+			SV_Printf ("Client %d kicked for having a invalid name\n",
+					   cl->userid);
 			cl->drop = true;
 			return;
 		}
@@ -2435,7 +2436,7 @@ SV_InitNet (void)
 
 	Netchan_Init ();
 
-	Net_Log_Init(sv.sound_precache);
+	Net_Log_Init (sv.sound_precache);
 
 	svs.last_heartbeat = -99999;		// send immediately
 	sv_net_initialized = 1;

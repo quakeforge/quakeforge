@@ -488,7 +488,7 @@ CL_ParseDownload (void)
 	}
 	// open the file if not opened yet
 	if (!cls.download) {
-		dstring_t  *name = dstring_newstr();
+		dstring_t  *name = dstring_newstr ();
 		const char *fname, *path;
 
 		if (strncmp (cls.downloadtempname, "skins/", 6) == 0) {
@@ -769,7 +769,7 @@ CL_ParseSoundlist (void)
 	int			numsounds, n;
 
 	// precache sounds
-//	memset (cl.sound_precache, 0, sizeof(cl.sound_precache));
+//	memset (cl.sound_precache, 0, sizeof (cl.sound_precache));
 
 	numsounds = MSG_ReadByte (net_message);
 
@@ -1123,7 +1123,7 @@ CL_SetStat (int stat, int value)
 			break;
 		case STAT_HEALTH:
 			if (cl_player_health_e->func)
-				GIB_Event_Callback (cl_player_health_e, 1, va("%i", value));
+				GIB_Event_Callback (cl_player_health_e, 1, va ("%i", value));
 			if (value <= 0)
 				Team_Dead ();
 			break;
@@ -1164,7 +1164,9 @@ CL_MuzzleFlash (void)
 	dl->color[2] = 0.05;
 }
 
-#define SHOWNET(x) if (cl_shownet->int_val == 2) Con_Printf ("%3i:%s\n", net_message->readcount-1, x);
+#define SHOWNET(x) \
+	if (cl_shownet->int_val == 2) \
+		Con_Printf ("%3i:%s\n", net_message->readcount-1, x);
 
 int			received_framecount;
 
@@ -1247,7 +1249,7 @@ CL_ParseServerMessage (void)
 					S_LocalSound ("misc/talk.wav");
 					if (cl_chat_e->func)
 						GIB_Event_Callback (cl_chat_e, 1, s);
-					Team_ParseChat(s);
+					Team_ParseChat (s);
 				}
 				Con_Printf ("%s", s);
 				Con_SetOrMask (0);
@@ -1271,7 +1273,7 @@ CL_ParseServerMessage (void)
 				} else {
 					Con_DPrintf ("partial stufftext: %s\n", s);
 					if (!stuffbuf)
-						stuffbuf = dstring_newstr();
+						stuffbuf = dstring_newstr ();
 					dstring_appendstr (stuffbuf, s);
 				}
 				break;
@@ -1422,7 +1424,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_finale:
-				Con_Printf("svc_finale\n");
+				Con_Printf ("svc_finale\n");
 				cl.intermission = 2;
 				cl.completed_time = realtime;
 				vid.recalc_refdef = true;				// go to full screen

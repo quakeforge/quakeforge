@@ -184,8 +184,8 @@ CL_PredictMove (void)
 	if (to->senttime == from->senttime)
 		f = 0;
 	else
-		f = bound(0, (cl.time - from->senttime) /
-				  (to->senttime - from->senttime), 1);
+		f = bound (0, (cl.time - from->senttime) /
+				   (to->senttime - from->senttime), 1);
 
 	for (i = 0; i < 3; i++)
 		if (fabs (from->playerstate[cl.playernum].origin[i] -

@@ -406,8 +406,8 @@ CL_GetMessage (void)
 		return false;
 
 	if (net_packetlog->int_val)
-		Log_Incoming_Packet(net_message->message->data,
-							net_message->message->cursize, 1);
+		Log_Incoming_Packet (net_message->message->data,
+							 net_message->message->cursize, 1);
 
 	CL_WriteDemoMessage (net_message->message);
 
@@ -965,7 +965,7 @@ CL_FinishTimeDemo (void)
 	Con_Printf ("%i frames %5.2f seconds %5.2f fps\n", frames, time,
 				frames / time);
 
-	CL_TimeFrames_DumpLog();
+	CL_TimeFrames_DumpLog ();
 	cl_timeframes_isactive = 0;
 
 	timedemo_count--;
@@ -1050,7 +1050,7 @@ void
 CL_TimeFrames_Reset (void)
 {
 	cl_timeframes_index = 0;
-	free(cl_timeframes_array);
+	free (cl_timeframes_array);
 	cl_timeframes_array = NULL;
 }
 
@@ -1060,7 +1060,7 @@ CL_TimeFrames_AddTimestamp (void)
 	if (cl_timeframes_isactive) {
 		if (!(cl_timeframes_index % CL_TIMEFRAMES_ARRAYBLOCK))
 			cl_timeframes_array = realloc
-				(cl_timeframes_array, sizeof(cl_timeframes_array[0]) *
+				(cl_timeframes_array, sizeof (cl_timeframes_array[0]) *
 				 ((cl_timeframes_index / CL_TIMEFRAMES_ARRAYBLOCK) + 1) *
 				 CL_TIMEFRAMES_ARRAYBLOCK);
 		if (cl_timeframes_array == NULL)

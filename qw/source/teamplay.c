@@ -352,52 +352,52 @@ locs_loc (void)
 	mapname = malloc (sizeof (cl.worldmodel->name));
 	if (!mapname)
 		Sys_Error ("Can't duplicate mapname!");
-	map_to_loc (cl.worldmodel->name,mapname);
+	map_to_loc (cl.worldmodel->name, mapname);
 	snprintf (locfile, sizeof (locfile), "%s/%s/%s", fs_userpath->string,
 			  qfs_gamedir->dir.def, mapname);
-	free(mapname);
+	free (mapname);
 
-	if (strcasecmp (Cmd_Argv(1),"save") == 0) {
+	if (strcasecmp (Cmd_Argv (1), "save") == 0) {
 		if (Cmd_Argc () == 2) {
 			locs_save (locfile, false);
 		} else
 			Con_Printf ("loc save :saves locs from memory into a .loc file\n");
 	}
 
-	if (strcasecmp (Cmd_Argv(1),"zsave") == 0) {
+	if (strcasecmp (Cmd_Argv (1), "zsave") == 0) {
 		if (Cmd_Argc () == 2) {
 			locs_save (locfile, true);
 		} else
 			Con_Printf ("loc save :saves locs from memory into a .loc file\n");
 	}
 
-	if (strcasecmp (Cmd_Argv(1),"add") == 0) {
+	if (strcasecmp (Cmd_Argv (1), "add") == 0) {
 		if (Cmd_Argc () >= 3)
-			locs_mark (cl.simorg,desc);
+			locs_mark (cl.simorg, desc);
 		else
 			Con_Printf ("loc add <description> :marks the current location "
 						"with the description and records the information "
 						"into a loc file.\n");
 	}
 
-	if (strcasecmp (Cmd_Argv(1),"rename") == 0) {
+	if (strcasecmp (Cmd_Argv (1), "rename") == 0) {
 		if (Cmd_Argc () >= 3)
-			locs_edit (cl.simorg,desc);
+			locs_edit (cl.simorg, desc);
 		else
 			Con_Printf ("loc rename <description> :changes the description of "
 					    "the nearest location marker\n");
 	}
 
-	if (strcasecmp (Cmd_Argv(1),"delete") == 0) {
+	if (strcasecmp (Cmd_Argv (1),"delete") == 0) {
 		if (Cmd_Argc () == 2)
 			locs_del (cl.simorg);
 		else
 			Con_Printf ("loc delete :removes nearest location marker\n");
 	}
 
-	if (strcasecmp (Cmd_Argv(1),"move") == 0) {
+	if (strcasecmp (Cmd_Argv (1),"move") == 0) {
 		if (Cmd_Argc () == 2)
-			locs_edit (cl.simorg,NULL);
+			locs_edit (cl.simorg, NULL);
 		else
 			Con_Printf ("loc move :moves the nearest location marker to your "
 						"current location\n");
@@ -409,7 +409,7 @@ Locs_Loc_Get (void)
 {
 	location_t *location;
 
-	if (GIB_Argc() != 1)
+	if (GIB_Argc () != 1)
 		GIB_USAGE ("");
 	else {
 		location = locs_find (cl.simorg);
@@ -436,7 +436,7 @@ Team_F_Skins (char *args)
 {
 	int		totalfb, l;
 
-	while(isspace((byte) *args))
+	while (isspace ((byte) *args))
 		args++;
 	for (l = 0; args[l] && !isspace ((byte) args[l]); l++);
 
@@ -469,8 +469,8 @@ Team_ParseChat (const char *string)
 	if (!cl_freply->value)
 		return;
 
-	s = strchr(string, ':');
-	if (!(s = strchr(string, ':')))
+	s = strchr (string, ':');
+	if (!(s = strchr (string, ':')))
 		return;
 	s++;
 	while (isspace ((byte) *s))

@@ -238,13 +238,13 @@ CL_NewTranslation (int slot, skin_t *skin)
 			Skin_Find (player);
 		memcpy (skin, player->skin, sizeof (*skin));
 		skin->texture = skin_textures + slot;		// FIXME
-		skin->data.texels = Skin_Cache(player->skin);
+		skin->data.texels = Skin_Cache (player->skin);
 				// FIXME: breaks cache ownership
 		Skin_Do_Translation (player->skin, slot, skin);
 	} else {
 		memcpy (skin, player->skin, sizeof (*skin));
 		skin->texture = skin_textures + slot;		// FIXME
-		skin->data.texels = Skin_Cache(player->skin);
+		skin->data.texels = Skin_Cache (player->skin);
 				// FIXME: breaks cache ownership
 	}
 }

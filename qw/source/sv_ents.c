@@ -372,7 +372,7 @@ SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 							client->netchan.incoming_sequence & UPDATE_MASK,
 							client->delta_sequence & UPDATE_MASK);
 				if (!client->edict)
-					Sys_Printf("demo\n");
+					Sys_Printf ("demo\n");
 			}
 			ent = EDICT_NUM (&sv_pr_state, newnum);
 //			SV_Printf ("baseline %i\n", newnum);

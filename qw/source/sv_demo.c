@@ -56,12 +56,10 @@ demo_t      demo;
 
 #define MIN_DEMO_MEMORY 0x100000
 #define USACACHE (sv_demoUseCache->int_val && svs.demomemsize)
-#define DWRITE(a,b,d) dwrite((QFile *)d,a,b)
+#define DWRITE(a,b,d) dwrite((QFile *) d, a, b)
 #define MAXSIZE (demobuffer->end < demobuffer->last ? \
-				demobuffer->start - demobuffer->end : \
-				demobuffer->maxsize - demobuffer->end)
-
-
+				 demobuffer->start - demobuffer->end : \
+				 demobuffer->maxsize - demobuffer->end)
 
 static int  demo_max_size;
 static int  demo_size;
@@ -717,7 +715,7 @@ SV_WriteSetDemoMessage (void)
 	int         len;
 	byte        c;
 
-//  Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
+//  Con_Printf ("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
 	if (!sv.demorecording)
 		return;
@@ -1217,13 +1215,14 @@ SV_EasyRecord_f (void)
 						  Dem_PlayerName (1), Dem_PlayerName (2), sv.name);
 			} else {
 				// FFA
-				dsprintf (name, "ffa_%s(%d)", sv.name, i);
+				dsprintf (name, "ffa_%s (%d)", sv.name, i);
 			}
 		}
 	}
 
 	// Make sure the filename doesn't contain illegal characters
-	dsprintf (name2, "%s/%s/%s/%s%s%s", fs_userpath->string, qfs_gamedir->dir.def, sv_demoDir->string,
+	dsprintf (name2, "%s/%s/%s/%s%s%s", fs_userpath->string,
+			  qfs_gamedir->dir.def, sv_demoDir->string,
 			  sv_demoPrefix->string, SV_CleanName (name->str),
 			  sv_demoSuffix->string);
 	QFS_CreatePath (name2->str);

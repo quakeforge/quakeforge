@@ -71,12 +71,12 @@ SV_GIB_Client_GetList_f (void)
 	client_t *cl;
 	int i;
 	
-	if (GIB_Argc() != 1)
-		GIB_USAGE("");
-	else if (GIB_CanReturn())
+	if (GIB_Argc () != 1)
+		GIB_USAGE ("");
+	else if (GIB_CanReturn ())
 		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 			if (cl->state  >= cs_connected)
-				dsprintf (GIB_Return(0), "%i", cl->userid);
+				dsprintf (GIB_Return (0), "%i", cl->userid);
 }
 
 static void
@@ -84,14 +84,16 @@ SV_GIB_Client_GetKeys_f (void)
 {
 	client_t *cl;
 	
-	if (GIB_Argc() != 2)
-		GIB_USAGE("");
-	else if (!(cl = SV_GIB_GetClient (atoi(GIB_Argv(1)))))
-		GIB_Error ("uid", "No user with id '%s' was found on the server.", GIB_Argv(1));
+	if (GIB_Argc () != 2)
+		GIB_USAGE ("");
+	else if (!(cl = SV_GIB_GetClient (atoi (GIB_Argv (1)))))
+		GIB_Error ("uid", "No user with id '%s' was found on the server.",
+				   GIB_Argv (1));
 	else if (GIB_CanReturn ()) {
-		info_key_t **key, **keys = (info_key_t **) Hash_GetList (cl->userinfo->tab);
+		info_key_t **key, **keys =
+			(info_key_t **) Hash_GetList (cl->userinfo->tab);
 		for (key = keys; *key; key++)
-			dstring_appendstr (GIB_Return(0), (*key)->key);
+			dstring_appendstr (GIB_Return (0), (*key)->key);
 		free (keys);
 	}
 }
@@ -102,11 +104,12 @@ SV_GIB_Client_GetInfo_f (void)
 	client_t *cl;
 	const char *str;
 	
-	if (GIB_Argc() != 3)
-		GIB_USAGE("");
-	else if (!(cl = SV_GIB_GetClient (atoi(GIB_Argv(1)))))
-		GIB_Error ("uid", "No user with id '%s' was found on the server.", GIB_Argv(1));
-	else if ((str = Info_ValueForKey (cl->userinfo, GIB_Argv(2))))
+	if (GIB_Argc () != 3)
+		GIB_USAGE ("");
+	else if (!(cl = SV_GIB_GetClient (atoi (GIB_Argv (1)))))
+		GIB_Error ("uid", "No user with id '%s' was found on the server.",
+				   GIB_Argv (1));
+	else if ((str = Info_ValueForKey (cl->userinfo, GIB_Argv (2))))
 		GIB_Return (str);
 }
 		
@@ -115,25 +118,27 @@ SV_GIB_Client_Print_f (void)
 {
 	client_t *cl;
 	
-	if (GIB_Argc() != 3)
-		GIB_USAGE("uid message");
-	else if (!(cl = SV_GIB_GetClient (atoi(GIB_Argv(1)))))
-		GIB_Error ("uid", "No user with id '%s' was found on the server.", GIB_Argv(1));
+	if (GIB_Argc () != 3)
+		GIB_USAGE ("uid message");
+	else if (!(cl = SV_GIB_GetClient (atoi (GIB_Argv (1)))))
+		GIB_Error ("uid", "No user with id '%s' was found on the server.",
+				   GIB_Argv (1));
 	else
-		SV_ClientPrintf (0, cl, GIB_Argv(0)[13] ? PRINT_CHAT : PRINT_HIGH, "%s", GIB_Argv(2));
+		SV_ClientPrintf (0, cl, GIB_Argv (0)[13] ? PRINT_CHAT : PRINT_HIGH,
+						 "%s", GIB_Argv (2));
 }
 
 static void
 SV_GIB_Client_Print_All_f (void)
 {
 	client_t *cl;
-	int i, level = GIB_Argv(0)[16] ? PRINT_CHAT : PRINT_HIGH;
+	int i, level = GIB_Argv (0)[16] ? PRINT_CHAT : PRINT_HIGH;
 	
-	if (GIB_Argc() != 2)
-		GIB_USAGE("message");
+	if (GIB_Argc () != 2)
+		GIB_USAGE ("message");
 	else for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
-		if (cl->state  >= cs_connected)
-			SV_ClientPrintf (0, cl, level, "%s", GIB_Argv(1));
+		if (cl->state >= cs_connected)
+			SV_ClientPrintf (0, cl, level, "%s", GIB_Argv (1));
 }
 
 void	

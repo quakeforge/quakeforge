@@ -152,7 +152,7 @@ CF_BuildQuota (void)
 
 	cf_cursize = 0;
 
-	while ((i = readdir(dir))) {
+	while ((i = readdir (dir))) {
 		cf_cursize += CF_GetFileSize (va ("%s/%s", path->str, i->d_name));
 	}
 	closedir (dir);
@@ -166,7 +166,7 @@ CF_BuildQuota (void)
 void
 CF_Init (void)
 {
-	CF_BuildQuota();
+	CF_BuildQuota ();
 	crudefile_quota = Cvar_Get ("crudefile_quota", "-1", CVAR_ROM, NULL,
 								"Maximum space available to the Crude File "
 								"system, -1 to totally disable file writing");
@@ -187,7 +187,7 @@ CF_CloseAllFiles ()
 		if (cf_filep[i].file) {
 			Con_DPrintf ("Warning: closing Crude File %d left over from last "
 						 "map\n", i);
-			CF_Close(i);
+			CF_Close (i);
 		}
 }
 
@@ -211,11 +211,11 @@ CF_Open (const char *path, const char *mode)
 	}
 
 	// check for paths with ..
-	if (strequal(path, "..")
-		|| !strncmp(path, "../", 3)
-		|| strstr(path, "/../")
-		|| (strlen(path) >= 3
-			&& strequal(path + strlen(path) - 3, "/.."))) {
+	if (strequal (path, "..")
+		|| !strncmp (path, "../", 3)
+		|| strstr (path, "/../")
+		|| (strlen (path) >= 3
+			&& strequal (path + strlen (path) - 3, "/.."))) {
 		return -1;
 	}
 
@@ -230,12 +230,12 @@ CF_Open (const char *path, const char *mode)
 	dsprintf (fullpath, "%s/%s/%s/%s", fs_userpath->string,
 			  qfs_gamedir->dir.def, CF_DIR, path);
 
-	j = fullpath->str + strlen(fullpath->str) - strlen (path);
+	j = fullpath->str + strlen (fullpath->str) - strlen (path);
 	for (i = 0; path[i]; i++, j++) // strcpy, but force lowercase
-		*j = tolower(path[i]);
+		*j = tolower (path[i]);
 	*j = '\0';
 
-	if (CF_AlreadyOpen(fullpath->str, mode[0])) {
+	if (CF_AlreadyOpen (fullpath->str, mode[0])) {
 		dstring_delete (fullpath);
 		return -1;
 	}
@@ -249,7 +249,7 @@ CF_Open (const char *path, const char *mode)
 	if (file) {
 		if (cf_openfiles >= cf_filepcount) {
 			cf_filepcount++;
-			cf_filep = realloc(cf_filep, sizeof(cf_file_t) * cf_filepcount);
+			cf_filep = realloc (cf_filep, sizeof (cf_file_t) * cf_filepcount);
 			if (!cf_filep) {
 				Sys_Error ("CF_Open: memory allocation error!");
 			}
@@ -285,21 +285,21 @@ CF_Close (int desc)
 {
 	char *path;
 
-	if (!CF_ValidDesc(desc))
+	if (!CF_ValidDesc (desc))
 		return;
 
 	if (cf_filep[desc].mode == 'w' && !cf_filep[desc].writtento)
-		unlink(cf_filep[desc].path);
+		unlink (cf_filep[desc].path);
 
 	path = cf_filep[desc].path;
 
 	Qclose (cf_filep[desc].file);
 	cf_filep[desc].file = 0;
-	free(cf_filep[desc].buf);
+	free (cf_filep[desc].buf);
 	cf_openfiles--;
 
 	cf_cursize -= CF_GetFileSize (path);
-	free(path);
+	free (path);
 }
 
 /*
@@ -313,7 +313,7 @@ CF_Read (int desc)
 {
 	int len = 0;
 
-	if (!CF_ValidDesc(desc) || cf_filep[desc].mode != 'r') {
+	if (!CF_ValidDesc (desc) || cf_filep[desc].mode != 'r') {
 		return "";
 	}
 
@@ -328,7 +328,7 @@ CF_Read (int desc)
 			cf_filep[desc].buf = t;
 			cf_filep[desc].size += CF_BUFFERSIZE;
 		}
-		foo = Qgetc(cf_filep[desc].file);
+		foo = Qgetc (cf_filep[desc].file);
 		if (foo == EOF)
 			foo = 0;
 		cf_filep[desc].buf[len] = (char) foo;
@@ -351,17 +351,17 @@ CF_Write (int desc, const char *buf) // should be const char *, but Qwrite isn't
 {
 	int len;
 
-	if (!CF_ValidDesc(desc) || cf_filep[desc].mode != 'w' || cf_cursize >=
+	if (!CF_ValidDesc (desc) || cf_filep[desc].mode != 'w' || cf_cursize >=
 		cf_maxsize) {
 		return 0;
 	}
 
-	len = strlen(buf) + 1;
+	len = strlen (buf) + 1;
 	if (len > cf_maxsize - cf_cursize) {
 		return 0;
 	}
 
-	len = Qwrite(cf_filep[desc].file, buf, len);
+	len = Qwrite (cf_filep[desc].file, buf, len);
 	if (len < 0)
 		len = 0;
 
@@ -380,7 +380,7 @@ CF_Write (int desc, const char *buf) // should be const char *, but Qwrite isn't
 int
 CF_EOF (int desc)
 {
-	if (!CF_ValidDesc(desc)) {
+	if (!CF_ValidDesc (desc)) {
 		return -1;
 	}
 
@@ -390,11 +390,11 @@ CF_EOF (int desc)
 /*
 	CF_Quota
 
-	cfquota returns the number of characters left in the quota, or
-	<= 0 if it's met or (somehow) exceeded.
+	returns the number of characters left in the quota, or <= 0 if it's met or
+	(somehow) exceeded.
 */
 int
-CF_Quota()
+CF_Quota ()
 {
 	return cf_maxsize - cf_cursize;
 }

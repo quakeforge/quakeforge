@@ -304,8 +304,8 @@ QW_SendHearts (int sock, msghdr_t *msghdr, server_t *servers, int serverlen)
 			p[1] = ((unsigned char *) &servers[i].addr.sin_addr.s_addr)[1];
 			p[2] = ((unsigned char *) &servers[i].addr.sin_addr.s_addr)[2];
 			p[3] = ((unsigned char *) &servers[i].addr.sin_addr.s_addr)[3];
-			p[4] = (unsigned char) (ntohs(servers[i].addr.sin_port) >> 8);
-			p[5] = (unsigned char) (ntohs(servers[i].addr.sin_port) & 0xFF);
+			p[4] = (unsigned char) (ntohs (servers[i].addr.sin_port) >> 8);
+			p[5] = (unsigned char) (ntohs (servers[i].addr.sin_port) & 0xFF);
 			++cpos;
 		}
 	}

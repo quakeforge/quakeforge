@@ -926,12 +926,12 @@ Sbar_LogFrags (void)
 	char        num[512];
 	char        conv[512];
 	char        conv2[512];
-	char       *cp   = NULL;
+	char       *cp = NULL;
 	QFile      *file = NULL;
-	int         minutes, fph, total, f, i, k, l, p, d;
+	int         minutes, fph, total, d, f, i, k, l, p;
 	player_info_t *s = NULL;
-	const char *t    = NULL;
-	time_t      tt   = time(NULL);
+	const char *t = NULL;
+	time_t      tt = time (NULL);
 	char        e_path[MAX_OSPATH];
 
 	if (!cl_fraglog->int_val)
@@ -1004,19 +1004,19 @@ Sbar_LogFrags (void)
 						 d++)
 					conv2[d] = sys_char_map[(unsigned int) *cp];
 
-				snprintf(num, sizeof (num), "%-3i%% %-3i %-4i %-3i    "
-						 "%-4s %s", s->pl, fph, minutes, f, (char *) &conv2,
-						 (char *) &conv);
+				snprintf (num, sizeof (num), "%-3i%% %-3i %-4i %-3i    "
+						  "%-4s %s", s->pl, fph, minutes, f, (char *) &conv2,
+						  (char *) &conv);
 			} else {
-				snprintf(num, sizeof (num), "%-3i%% %-3i %-4i %-3i   %s",
-						 s->pl, fph, minutes, f, (char *) &conv);
+				snprintf (num, sizeof (num), "%-3i%% %-3i %-4i %-3i   %s",
+						  s->pl, fph, minutes, f, (char *) &conv);
 			}
 		}
-		Qwrite(file, num, strlen(num));
-		Qwrite(file, "\n\n", 1);
+		Qwrite (file, num, strlen (num));
+		Qwrite (file, "\n\n", 1);
 	}
 	
-	Qclose(file);
+	Qclose (file);
 }
 
 static void

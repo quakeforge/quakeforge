@@ -139,7 +139,7 @@ SL_Add (server_entry_t *start, const char *ip, const char *desc)
 	}
 
 	for (p = start; p->next; p = p->next)  //Get to end of list
-		if (strcmp(ip,p->server) == 0) //don't add duplicate
+		if (strcmp (ip, p->server) == 0) //don't add duplicate
 			return (start);
 
 	p->next = calloc (1, sizeof (server_entry_t));
@@ -230,23 +230,21 @@ static int
 SL_CheckFilter (server_entry_t *sl_filteritem)
 {
 	if (!sl_filter->int_val)
-		return(1);
+		return (1);
 	if (!sl_filteritem->status)
-		return(0);
-	if (strlen(sl_game->string))
-	{
-		if (strcasecmp(Info_ValueForKey (sl_filteritem->status,	"*gamedir"), 
-					sl_game->string) != 0)
-			return(0);
+		return (0);
+	if (strlen (sl_game->string)) {
+		if (strcasecmp (Info_ValueForKey (sl_filteritem->status, "*gamedir"), 
+						sl_game->string) != 0)
+			return (0);
 	}
-	if (sl_ping->int_val)
-	{
+	if (sl_ping->int_val) {
 		if (!sl_filteritem->pongback)
-			return(0);
-		if (((int)(sl_filteritem->pongback * 1000)) >= sl_ping->int_val)
-			return(0);
+			return (0);
+		if (((int) (sl_filteritem->pongback * 1000)) >= sl_ping->int_val)
+			return (0);
 	}
-	return(1);
+	return (1);
 }
 
 static server_entry_t *
@@ -256,7 +254,7 @@ SL_Get_By_Num (server_entry_t *start, int n)
 
 	for (i = 0; i <= n; i++)
 	{
-		if(!start)
+		if (!start)
 			break;
 		if (!SL_CheckFilter (start))
 			i--;
@@ -380,25 +378,21 @@ SL_SortEntry (server_entry_t *start)
 	if (!start || !sl_sortby)
 		return;
 
-	for (q = start->next; q; q = q->next)
-	{
-		if (sl_sortby->int_val)
-		{
+	for (q = start->next; q; q = q->next) {
+		if (sl_sortby->int_val) {
 			if ((q->pongback) && (start->pongback) && (start->pongback >
-													   q->pongback))
-			{
-				SL_Swap(start,q);
+													   q->pongback)) {
+				SL_Swap (start, q);
 				q = start;
 			}
 		} else {
 			i = 0;
 			
 			while ((start->desc[i] != '\0') && (q->desc[i] != '\0') &&
-				   (toupper(start->desc[i]) == toupper(q->desc[i])))
+				   (toupper (start->desc[i]) == toupper (q->desc[i])))
 				i++;
-			if (toupper(start->desc[i]) > toupper(q->desc[i]))
-			{
-				SL_Swap(start,q);
+			if (toupper (start->desc[i]) > toupper (q->desc[i])) {
+				SL_Swap (start, q);
 				q = start;
 			}
 		}
@@ -422,15 +416,14 @@ SL_Con_List (server_entry_t *sldata)
 {
 	int serv;
 	server_entry_t *cp;
-	
-	SL_Sort(sl_sortby);
-	
-	for(serv = 0; serv < SL_Len (sldata); serv++)
-	{
+
+	SL_Sort (sl_sortby);
+
+	for (serv = 0; serv < SL_Len (sldata); serv++) {
 		cp = SL_Get_By_Num (sldata, serv);
 		if (!cp)
 			break;
-		Con_Printf("%i) %s\n",(serv + 1),cp->desc);
+		Con_Printf ("%i) %s\n", (serv + 1), cp->desc);
 	}
 }
 
@@ -439,7 +432,7 @@ SL_Connect (server_entry_t *sldata, int slitemno)
 {
 	CL_Disconnect ();
 	strncpy (cls.servername, SL_Get_By_Num (sldata, (slitemno - 1))->server,
-		sizeof (cls.servername) - 0);
+			 sizeof (cls.servername) - 0);
 	CL_BeginServerConnect ();
 }
 
@@ -470,37 +463,36 @@ SL_Con_Details (server_entry_t *sldata, int slitemno)
 	cp = SL_Get_By_Num (sldata, (slitemno - 1));
 	if (!cp)
 		return;
-	Con_Printf("Server: %s\n", cp->server);
-	Con_Printf("Ping: ");
+	Con_Printf ("Server: %s\n", cp->server);
+	Con_Printf ("Ping: ");
 	if (cp->pongback)
-		Con_Printf("%i\n", (int)(cp->pongback * 1000));
+		Con_Printf ("%i\n", (int) (cp->pongback * 1000));
 	else
-		Con_Printf("N/A\n");
-	if (cp->status)
-	{
+		Con_Printf ("N/A\n");
+	if (cp->status) {
 		char *s;
 
-		Con_Printf("Name: %s\n", cp->desc);
-		Con_Printf("Game: %s\n", Info_ValueForKey (cp->status, "*gamedir"));
-		Con_Printf("Map: %s\n", Info_ValueForKey (cp->status, "map"));
+		Con_Printf ("Name: %s\n", cp->desc);
+		Con_Printf ("Game: %s\n", Info_ValueForKey (cp->status, "*gamedir"));
+		Con_Printf ("Map: %s\n", Info_ValueForKey (cp->status, "map"));
 
 		s = Info_MakeString (cp->status, 0);
 		for (i = 0; i < strlen (s); i++)
 			if (s[i] == '\n')
 				playercount++;
-		Con_Printf("Players: %i/%s\n", playercount,
-				   Info_ValueForKey(cp->status, "maxclients"));
+		Con_Printf ("Players: %i/%s\n", playercount,
+					Info_ValueForKey (cp->status, "maxclients"));
 	} else
-		Con_Printf("No Details Available\n");
+		Con_Printf ("No Details Available\n");
 }
 
 static void
-SL_MasterUpdate(void)
+SL_MasterUpdate (void)
 {
 	char data[] = "c\n\0";
 	netadr_t addy;
 	
-	SL_Del_All(slist);
+	SL_Del_All (slist);
 	slist = NULL;
 	NET_StringToAdr ("194.251.249.32:27000", &addy);
 	Netchan_SendPacket (3, data, addy);
@@ -523,8 +515,7 @@ SL_MasterUpdate(void)
 static int
 SL_Switch (void)
 {
-	if (!which_slist)
-	{
+	if (!which_slist) {
 		fav_slist = slist;
 		slist = all_slist;
 		which_slist = 1;
@@ -543,77 +534,65 @@ SL_Command (void)
 	int sltemp = 0;
 	
 	if (Cmd_Argc () == 1)
-		SL_Con_List(slist); 
-	else if (strcasecmp(Cmd_Argv(1),"switch") == 0)
-	{
+		SL_Con_List (slist); 
+	else if (strcasecmp (Cmd_Argv (1), "switch") == 0) {
 		if (SL_Switch ())
-			Con_Printf("Switched to Server List from Masters\n");
+			Con_Printf ("Switched to Server List from Masters\n");
 		else
-			Con_Printf("Switched to Favorite Server List\n");
-	}	
-	else if (strcasecmp(Cmd_Argv(1),"refresh") == 0)
-	{
+			Con_Printf ("Switched to Favorite Server List\n");
+	} else if (strcasecmp (Cmd_Argv (1), "refresh") == 0) {
 		if (Cmd_Argc () == 2)
-			SL_Update(slist);
+			SL_Update (slist);
 		else
-			Con_Printf("Syntax: slist refresh\n");
-	}
-	else if (strcasecmp(Cmd_Argv(1),"update") == 0)
-	{
-		if (Cmd_Argc () == 2)
-		{
-			if(!which_slist)
-				Con_Printf("ERROR: This of for updating the servers from a "
-						   "list of masters\n");
+			Con_Printf ("Syntax: slist refresh\n");
+	} else if (strcasecmp (Cmd_Argv (1),"update") == 0) {
+		if (Cmd_Argc () == 2) {
+			if (!which_slist)
+				Con_Printf ("ERROR: This of for updating the servers from a "
+							"list of masters\n");
 			else
-				SL_MasterUpdate();
-		}
-		else
-			Con_Printf("Syntax: slist update\n");
-	}
-	else if (strcasecmp(Cmd_Argv(1),"connect") == 0)
-	{
-		if (Cmd_Argc () == 3)
-		{
-			sltemp = atoi(Cmd_Argv(2)); 
-			if(sltemp && (sltemp <= SL_Len (slist)))
-				SL_Connect(slist,sltemp);
+				SL_MasterUpdate ();
+		} else
+			Con_Printf ("Syntax: slist update\n");
+	} else if (strcasecmp (Cmd_Argv (1), "connect") == 0) {
+		if (Cmd_Argc () == 3) {
+			sltemp = atoi (Cmd_Argv (2)); 
+			if (sltemp && (sltemp <= SL_Len (slist)))
+				SL_Connect (slist, sltemp);
 			else
-				Con_Printf("Error: Invalid Server Number -> %s\n",Cmd_Argv(2));
-		} 
-		else if ((Cmd_Argc () == 2) && slist_last_details)
-			SL_Connect(slist,slist_last_details);
+				Con_Printf ("Error: Invalid Server Number -> %s\n",
+							Cmd_Argv (2));
+		} else if ((Cmd_Argc () == 2) && slist_last_details)
+			SL_Connect (slist, slist_last_details);
 		else
-			Con_Printf("Syntax: slist connect #\n");
-	}
-	else
-	{
-		sltemp = atoi(Cmd_Argv(1));
-		if((Cmd_Argc () == 2) && sltemp && (sltemp <= SL_Len (slist)))
-			SL_Con_Details(slist,sltemp);
+			Con_Printf ("Syntax: slist connect #\n");
+	} else {
+		sltemp = atoi (Cmd_Argv (1));
+		if ((Cmd_Argc () == 2) && sltemp && (sltemp <= SL_Len (slist)))
+			SL_Con_Details (slist, sltemp);
 	}
 }
 
 void
-MSL_ParseServerList(const char *msl_data)
+MSL_ParseServerList (const char *msl_data)
 {
 	int msl_ptr;
 
-	for (msl_ptr = 0; msl_ptr < strlen(msl_data); msl_ptr = msl_ptr + 6)
-	{
-		slist = SL_Add(slist, va("%i.%i.%i.%i:%i",
-			(byte)msl_data[msl_ptr],
-			(byte)msl_data[msl_ptr+1],
-			(byte)msl_data[msl_ptr+2],
-			(byte)msl_data[msl_ptr+3],
-			((byte)msl_data[msl_ptr+4]<<8)|(byte)msl_data[msl_ptr+5]), NULL);
+	for (msl_ptr = 0; msl_ptr < strlen (msl_data); msl_ptr = msl_ptr + 6) {
+		slist = SL_Add (slist, va ("%i.%i.%i.%i:%i",
+								   (byte) msl_data[msl_ptr],
+								   (byte) msl_data[msl_ptr+1],
+								   (byte) msl_data[msl_ptr+2],
+								   (byte) msl_data[msl_ptr+3],
+								   ((byte) msl_data[msl_ptr + 4] << 8)
+								   | (byte) msl_data[msl_ptr + 5]), NULL);
 	}
 }
 
 static server_entry_t *
 SL_LoadF (QFile *f, server_entry_t *start)
 {
-	//This could get messy
+	// This could get messy
 	char        line[256];      /* Long lines get truncated. */
 	char       *addr, *st;
 	int         len, i;
@@ -669,8 +648,8 @@ SL_Init (void)
 	fav_slist = slist;
 	all_slist = NULL;
 	which_slist = 0;
-	Cmd_AddCommand("slist",SL_Command,"console commands to access server "
-				   "list\n");
+	Cmd_AddCommand ("slist", SL_Command, "console commands to access server "
+					"list\n");
 	sl_sortby = Cvar_Get ("sl_sortby", "0", CVAR_ARCHIVE, SL_Sort, "0 = sort "
 						  "by name, 1 = sort by ping");
 	sl_filter = Cvar_Get ("sl_filter", "0", CVAR_NONE, NULL, "enable server "
@@ -688,14 +667,13 @@ SL_CheckStatus (const char *cs_from, const char *cs_data)
 	server_entry_t *temp;
 	
 	for (temp = slist; temp; temp = temp->next)
-		if (temp->waitstatus)
-		{
-			if (strcmp (cs_from, temp->server) == 0)
-			{
+		if (temp->waitstatus) {
+			if (strcmp (cs_from, temp->server) == 0) {
 				int i;
 				char *data = strdup (cs_data);
+
 				strcpy (data, cs_data);
-				for (i = 0; i < strlen(data); i++)
+				for (i = 0; i < strlen (data); i++)
 					if (data[i] == '\n') {
 						data[i] = '\\';
 						break;
@@ -706,11 +684,11 @@ SL_CheckStatus (const char *cs_from, const char *cs_data)
 				temp->waitstatus = 0;
 				tmp_desc = Info_ValueForKey (temp->status, "hostname");
 				if (tmp_desc[0] != '\0') {
-					temp->desc = realloc(temp->desc, strlen(tmp_desc) + 1);
-					strcpy(temp->desc, tmp_desc);
+					temp->desc = realloc (temp->desc, strlen (tmp_desc) + 1);
+					strcpy (temp->desc, tmp_desc);
 				} else {
-					temp->desc = realloc(temp->desc, strlen(data) + 1);
-					strcpy(temp->desc, data);
+					temp->desc = realloc (temp->desc, strlen (data) + 1);
+					strcpy (temp->desc, data);
 				}
 				free (data);
 				return (1);
@@ -728,7 +706,7 @@ SL_CheckPing (const char *cp_from)
 		if (temp->pingsent && !temp->pongback) {
 			if (strcmp (cp_from, temp->server)) {
 				temp->pongback = Sys_DoubleTime ();
-				timepassed(temp->pingsent, &temp->pongback);
+				timepassed (temp->pingsent, &temp->pongback);
 			}
 		}
 }
