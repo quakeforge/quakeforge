@@ -665,7 +665,8 @@ emit_expr (expr_t *e)
 					emit_statement (e, op_jumpb, def_a, def_b, 0);
 					break;
 				default:
-					warning (e, "Ignoring useless expression");
+					warning (e, "Non-executable statement; "
+							 "executing programmer instead.");
 					break;
 			}
 			break;
@@ -681,7 +682,8 @@ emit_expr (expr_t *e)
 					emit_branch (e, op_goto, 0, e->e.expr.e1);
 					break;
 				default:
-					warning (e, "useless expression");
+					warning (e, "Non-executable statement; "
+							 "executing programmer instead.");
 					emit_expr (e->e.expr.e1);
 					break;
 			}
@@ -701,7 +703,8 @@ emit_expr (expr_t *e)
 		case ex_short:
 		case ex_name:
 		case ex_nil:
-			warning (e, "Ignoring useless expression");
+			warning (e, "Non-executable statement; "
+					 "executing programmer instead.");
 			break;
 	}
 	free_tempdefs ();
