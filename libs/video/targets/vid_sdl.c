@@ -146,10 +146,21 @@ VID_Init (unsigned char *palette)
 }
 
 void
+VID_UpdateFullscreen (cvar_t *vid_fullscreen)
+{
+	if (!vid.initialized)
+		return;
+	if ((vid_fullscreen->int_val && !(screen->flags & SDL_FULLSCREEN))
+		|| (!vid_fullscreen->int_val && screen->flags & SDL_FULLSCREEN))
+		if (!SDL_WM_ToggleFullScreen (screen))
+			Con_Printf ("VID_UpdateFullscreen: error setting fullscreen\n");
+}
+
+void
 VID_Init_Cvars ()
 {
 	vid_fullscreen =
-		Cvar_Get ("vid_fullscreen", "0", CVAR_ROM, NULL,
+		Cvar_Get ("vid_fullscreen", "0", CVAR_NONE, VID_UpdateFullscreen,
 				  "Toggles fullscreen game mode");
 	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
 								 "Use system gamma control if available");
