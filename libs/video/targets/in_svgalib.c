@@ -57,7 +57,7 @@ static int  UseKeyboard = 1;
 static int  UseMouse = 1;
 static int  in_svgalib_inited = 0;
 
-static unsigned char scantokey[128];
+static unsigned short scantokey[128];
 static int  mouse_buttons;
 static int  mouse_buttonstate;
 static int  mouse_oldbuttonstate;
