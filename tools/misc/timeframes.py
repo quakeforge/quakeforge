@@ -38,7 +38,7 @@ f = open ("timeframes.txt", "rt")
 lines = f.readlines ()
 f.close
 
-times = map (lambda x: (int(x) + 5)/100, lines[2:])
+times = map (lambda x: (int(x) + 5)/100, lines)
 
 sum = 0
 min=max=times[0]
@@ -56,6 +56,15 @@ group = 1
 width = (len (times) + group - 1) / group
 height = max + 1
 a = array.array ('B', '\0' * height * width * 3)
+
+hline (0, width - 1, 0, white)
+vline (0, 0, height - 1, white)
+for y in range (0, height - 1, 10):
+	hline (0, 3, y, white)
+for y in range (0, height - 1, 100):
+	hline (0, 6, y, white)
+for x in range (0, width - 1, 100):
+	vline (x, 0, 3, white)
 
 ravg = 0.0
 ravg_span = 20
@@ -87,13 +96,6 @@ for x in range (width):
 			ravg -= times[x - ravg_span]/float(ravg_span)
 		ravg += times[x]/float(ravg_span)
 hline (0, width - 1, average, blue)
-
-hline (0, width - 1, 0, white)
-vline (0, 0, height - 1, white)
-for y in range (0, height - 1, 10):
-	hline (0, 3, y, white)
-for x in range (0, width - 1, 100):
-	vline (x, 0, 3, white)
 
 f = open ("timeframes.ppm", "wb")
 f.write ("P6\n")
