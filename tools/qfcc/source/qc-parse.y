@@ -119,7 +119,7 @@ typedef struct {
 %type	<def>	def_name
 %type	<def>	def_item def_list
 %type	<expr>	const opt_expr expr arg_list element_list element_list1 element
-%type	<expr>	string_val opt_state_expr
+%type	<expr>	string_val opt_state_expr obj_expr
 %type	<expr>	statement statements statement_block
 %type	<expr>	break_label continue_label enum_list enum
 %type	<function> begin_function
@@ -128,6 +128,7 @@ typedef struct {
 %type	<scope>	param_scope
 
 %type	<string_val> selector
+%type	<param>	keyworddecl keywordselector
 
 %expect 1
 
@@ -785,7 +786,7 @@ expr
 	| '&' expr %prec UNARY		{ $$ = address_expr ($2, 0, 0); }
 	| INCOP expr				{ $$ = incop_expr ($1, $2, 0); }
 	| expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
-	| obj_expr					{ /* XXX */ }
+	| obj_expr					{ $$ = $1; }
 	| NAME						{ $$ = new_name_expr ($1); }
 	| const						{ $$ = $1; }
 	| '(' expr ')'				{ $$ = $2; $$->paren = 1; }
@@ -852,7 +853,7 @@ string_val
 		}
 	;
 
-obj_def
+obj_def /* XXX */
 	: classdef
 	| classdecl
 	| protocoldef
@@ -860,16 +861,16 @@ obj_def
 	| END
 	;
 
-identifier_list
-	: NAME { /* XXX */ }
+identifier_list /* XXX */
+	: NAME {}
 	| identifier_list ',' NAME
 	;
 
-classdecl
+classdecl /* XXX */
 	: CLASS identifier_list
 	;
 
-classdef
+classdef /* XXX */
 	: INTERFACE NAME protocolrefs '{'
 	  ivar_decl_list '}'
 	  methodprotolist
@@ -896,46 +897,46 @@ classdef
 	| IMPLEMENTATION NAME '(' NAME ')'
 	;
 
-protocoldef
+protocoldef /* XXX */
 	: PROTOCOL NAME protocolrefs
 	  methodprotolist END
 	;
 
-protocolrefs
+protocolrefs /* XXX */
 	: /* emtpy */
 	| '<' identifier_list '>'
 	;
 
-ivar_decl_list
+ivar_decl_list /* XXX */
 	: ivar_decl_list visibility_spec ivar_decls
 	| ivar_decls
 	;
 
-visibility_spec
+visibility_spec /* XXX */
 	: PRIVATE
 	| PROTECTED
 	| PUBLIC
 	;
 
-ivar_decls
+ivar_decls /* XXX */
 	: /* empty */
 	| ivar_decls ivar_decl ';'
 	;
 
-ivar_decl
-	: type ivars { /* XXX */ }
+ivar_decl /* XXX */
+	: type ivars {}
 	;
 
-ivars
+ivars /* XXX */
 	: ivar_declarator
 	| ivars ',' ivar_declarator
 	;
 
-ivar_declarator
-	: NAME { /* XXX */ }
+ivar_declarator /* XXX */
+	: NAME {}
 	;
 
-methoddef
+methoddef /* XXX */
 	: '+'
 	  methoddecl opt_state_expr
 	  begin_function statement_block end_function
@@ -944,40 +945,40 @@ methoddef
 	  begin_function statement_block end_function
 	;
 
-methodprotolist
+methodprotolist /* XXX */
 	: /* emtpy */
 	| methodprotolist2
 	;
 
-methodprotolist2
+methodprotolist2 /* XXX */
 	: methodproto
 	| methodprotolist2 methodproto
 	;
 
-methodproto
+methodproto /* XXX */
 	: '+' methoddecl ';'
 	| '-' methoddecl ';'
 	;
 
-methoddecl
+methoddecl /* XXX */
 	: '(' type ')' unaryselector
 	| unaryselector
-	| '(' type ')' keywordselector optparmlist
-	| keywordselector optparmlist
+	| '(' type ')' keywordselector optparmlist {}
+	| keywordselector optparmlist {}
 	;
 
-optparmlist
+optparmlist /* XXX */
 	: /* empty */
 	| ',' ELLIPSIS
 	;
 
-unaryselector
-	: selector { /* XXX */ }
+unaryselector /* XXX */
+	: selector {}
 	;
 
 keywordselector
 	: keyworddecl
-	| keywordselector keyworddecl
+	| keywordselector keyworddecl { $2->next = $1; $$ = $2; }
 	;
 
 selector
@@ -985,63 +986,63 @@ selector
 	;
 
 keyworddecl
-	: selector ':' '(' type ')' NAME { /* XXX */ }
-	| selector ':' NAME { /* XXX */ }
-	| ':' '(' type ')' NAME { /* XXX */ }
-	| ':' NAME { /* XXX */ }
+	: selector ':' '(' type ')' NAME
+		{ $$ = new_param ($1, $4, $6); }
+	| selector ':' NAME
+		{ $$ = new_param ($1, 0/*&type_id*/, $3); }
+	| ':' '(' type ')' NAME
+		{ $$ = new_param (0, $3, $5); }
+	| ':' NAME
+		{ $$ = new_param (0, 0/*&type_id*/, $2); }
 	;
 
-messageargs
-	: selector { /* XXX */ }
+messageargs /* XXX */
+	: selector {}
 	| keywordarglist
 	;
 
-keywordarglist
+keywordarglist /* XXX */
 	: keywordarg
 	| keywordarglist keywordarg
 	;
 
-keywordexpr
-	: expr { /* XXX */ }
+keywordarg /* XXX */
+	: selector ':' expr {}
+	| ':' expr
 	;
 
-keywordarg
-	: selector ':' keywordexpr { /* XXX */ }
-	| ':' keywordexpr
+receiver /* XXX */
+	: expr {}
 	;
 
-receiver
-	: expr { /* XXX */ }
+obj_expr /* XXX */
+	: obj_messageexpr {}
+	| SELECTOR '(' selectorarg ')' {}
+	| PROTOCOL '(' NAME ')' {}
+	| ENCODE '(' type ')' {}
+	| obj_string {}
 	;
 
-obj_expr
-	: obj_messageexpr
-	| SELECTOR '(' selectorarg ')'
-	| PROTOCOL '(' NAME ')'
-	| ENCODE '(' type ')'
-	| obj_string
-	;
-
-obj_messageexpr
+obj_messageexpr /* XXX */
 	: '[' receiver messageargs ']'
 	;
 
-selectorarg
-	: selector { /* XXX */ }
+selectorarg /* XXX */
+	: selector {}
 	| keywordnamelist
 	;
 
-keywordnamelist
+keywordnamelist /* XXX */
 	: keywordname
 	| keywordnamelist keywordname
 	;
 
-keywordname
-	: selector ':' { /* XXX */ }
+keywordname /* XXX */
+	: selector ':' {}
 	| ':'
 	;
 
-obj_string
+obj_string /* XXX */
 	: '@' STRING_VAL
 	| obj_string '@' STRING_VAL
 	;
