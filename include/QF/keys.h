@@ -303,6 +303,8 @@ typedef enum {
 	QFM_BUTTON3,
 	QFM_WHEEL_UP,
 	QFM_WHEEL_DOWN,
+	QFM_BUTTON6,
+	QFM_BUTTON7,
 
 //
 // joystick buttons

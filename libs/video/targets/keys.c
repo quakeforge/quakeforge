@@ -351,6 +351,8 @@ keyname_t   keynames[] = {
 	{ "M_BUTTON3",		QFM_BUTTON3 },
 	{ "M_WHEEL_UP",		QFM_WHEEL_UP },
 	{ "M_WHEEL_DOWN",	QFM_WHEEL_DOWN },
+	{ "M_BUTTON6",		QFM_BUTTON6 },
+	{ "M_BUTTON7",		QFM_BUTTON7 },
 
 	{ "J_BUTTON1",		QFJ_BUTTON1 },
 	{ "J_BUTTON2",		QFJ_BUTTON2 },

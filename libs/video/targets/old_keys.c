@@ -127,6 +127,8 @@ old_keyname_t   old_keynames[] = {
 	{"MOUSE1",			"M_BUTTON1"},
 	{"MOUSE2",			"M_BUTTON2"},
 	{"MOUSE3",			"M_BUTTON3"},
+	{"MOUSE6",			"M_BUTTON6"},
+	{"MOUSE7",			"M_BUTTON7"},
 
 	{"JOY1",			"J_BUTTON1"},
 	{"JOY2",			"J_BUTTON2"},

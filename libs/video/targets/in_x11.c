@@ -487,6 +487,8 @@ event_button (XEvent *event)
 		case 1:
 		case 2:
 		case 3:
+		case 6:
+		case 7:
 			Key_Event (QFM_BUTTON1 + but - 1, 0, event->type == ButtonPress);
 			break;
 		case 4:
