@@ -212,6 +212,12 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 		cn = PR_NewDef (type, "IMMEDIATE", 0);
 		cn->ofs = PR_NewLocation (type);
 		pr_global_defs[cn->ofs] = cn;
+		if (type == &type_vector || type == &type_quaternion) {
+			int i;
+
+			for (i = 0; i< 3 + (type == &type_quaternion); i++)
+				PR_NewDef (&type_float, "IMMEDIATE", 0);
+		}
 	}
 	cn->initialized = 1;
 	// copy the immediate to the global area
