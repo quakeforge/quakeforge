@@ -27,48 +27,6 @@ if test "x$GCC" = xyes; then
 #	CFLAGS="$CFLAGS -Wall -pedantic"
 fi
 
-dnl Objective-C checks
-AC_CHECK_PROGS(OBJC, $OBJC egcs, "")
-if test "x$OBJC" = "x"; then
-	AC_CHECK_PROGS(OBJC, $OBJC egcc, "")
-	if test "x$OBJC" = "x"; then
-		AC_CHECK_PROGS(OBJC, $OBJC gcc, "")
-	fi
-fi
-
-OBJC_LIBS="-lobjc"
-AC_CHECK_FUNC(sched_yield,, [
-	AC_CHECK_LIB(posix4, sched_yield, OBJC_LIBS="$OBJC_LIBS -lposix4",, $OBJC_LIBS)
-])
-AC_SUBST(OBJC_LIBS)
-
-AC_CACHE_CHECK(
-	[whether the Objective-C compiler ($OBJC) works],
-	ac_cv_prog_objc_works,
-	[
-	if test -n "$OBJC"; then
-		cat > conftest.m <<EOF
-#include <objc/Object.h>
-int main (void) {
-	id myid = [[Object new]];
-	[[myid free]];
-	return 0;
-}
-EOF
-		$OBJC $CFLAGS -o conftest $LDFLAGS conftest.m $OBJC_LIBS 1>&AC_FD_CC 2>&1
-		result=$?
-		rm -f conftest*
-
-		if test $result -eq 0; then
-			ac_cv_prog_objc_works=yes
-		else
-			ac_cv_prog_objc_works=no
-		fi
-	else
-		ac_cv_prog_objc_works=no
-	fi
-])
-
 dnl Checks for libraries.
 
 dnl Checks for header files.
