@@ -141,9 +141,7 @@ CL_PredictMove (void)
 	if (cls.state == ca_onserver) {		// first update is the final signon
 										// stage
 		VID_SetCaption (cls.servername);
-		cls.state = ca_active;
-		key_dest = key_game;
-		game_target = IMT_DEFAULT;
+		CL_SetState (ca_active);
 	}
 
 	if (cl_nopred->int_val) {

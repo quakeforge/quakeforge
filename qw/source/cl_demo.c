@@ -76,7 +76,7 @@ CL_StopPlayback (void)
 
 	Qclose (cls.demofile);
 	cls.demofile = NULL;
-	cls.state = ca_disconnected;
+	CL_SetState (ca_disconnected);
 	cls.demoplayback = 0;
 	demotime_cached = 0;
 
@@ -752,7 +752,7 @@ CL_PlayDemo_f (void)
 	}
 
 	cls.demoplayback = true;
-	cls.state = ca_demostart;
+	CL_SetState (ca_demostart);
 	Netchan_Setup (&cls.netchan, net_from, 0);
 	realtime = 0;
 }

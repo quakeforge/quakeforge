@@ -711,7 +711,7 @@ CL_ParseServerData (void)
 					 va (soundlist_name, cl.servercount, 0));
 
 	// now waiting for downloads, etc
-	cls.state = ca_onserver;
+	CL_SetState (ca_onserver);
 
 	CL_ClearBaselines ();
 }

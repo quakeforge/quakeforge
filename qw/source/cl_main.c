@@ -495,7 +495,7 @@ CL_Disconnect (void)
 		Netchan_Transmit (&cls.netchan, 6, final);
 		Netchan_Transmit (&cls.netchan, 6, final);
 
-		cls.state = ca_disconnected;
+		CL_SetState (ca_disconnected);
 
 		cls.demoplayback = cls.demorecording = cls.timedemo = false;
 
@@ -824,7 +824,7 @@ CL_Changing_f (void)
 
 	S_StopAllSounds (true);
 	cl.intermission = 0;
-	cls.state = ca_connected;			// not active anymore, but not
+	CL_SetState (ca_connected);			// not active anymore, but not
 										// disconnected
 	Con_Printf ("\nChanging map...\n");
 }
@@ -890,7 +890,7 @@ CL_ConnectionlessPacket (void)
 		Netchan_Setup (&cls.netchan, net_from, cls.qport);
 		MSG_WriteChar (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message, "new");
-		cls.state = ca_connected;
+		CL_SetState (ca_connected);
 		Con_Printf ("Connected.\n");
 		allowremotecmd = false;			// localid required now for remote
 										// cmds
@@ -1098,11 +1098,27 @@ Force_CenterView_f (void)
 
 
 void
+CL_SetState (cactive_t state)
+{
+	cls.state = state;
+	if (cls.state == ca_active) {
+		r_active = true;
+		game_target = IMT_DEFAULT;
+		key_dest = key_game;
+	} else {
+		r_active = false;
+		game_target = IMT_CONSOLE;
+		key_dest = key_console;
+	}
+}
+
+
+void
 CL_Init (void)
 {
 	char        st[80];
 
-	cls.state = ca_disconnected;
+	CL_SetState (ca_disconnected);
 
 	Info_SetValueForKey (cls.userinfo, "name", "unnamed", MAX_INFO_STRING, 0);
 	Info_SetValueForKey (cls.userinfo, "topcolor", "0", MAX_INFO_STRING, 0);
@@ -1662,7 +1678,7 @@ Host_Init (void)
 
 	S_Init ();
 
-	cls.state = ca_disconnected;
+	CL_SetState (ca_disconnected);
 	Sbar_Init ();
 	CL_Skin_Init ();
 	CL_Init ();
@@ -1674,7 +1690,7 @@ Host_Init (void)
 
 	S_Init ();
 
-	cls.state = ca_disconnected;
+	CL_SetState (ca_disconnected);
 	CDAudio_Init ();
 	Sbar_Init ();
 	CL_Skin_Init ();
