@@ -30,6 +30,17 @@
 static const char rcsid[] =
 	"$Id$";
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+#include <stdlib.h>
+
 #include "QF/dstring.h"
 
 #include "qfcc.h"
@@ -125,8 +136,10 @@ build_scope (function_t *f, def_t *func, param_t *params)
 			continue;					// non-param selector
 		def = PR_GetDef (p->type, p->name, func, func->alloc);
 		f->parm_ofs[i] = def->ofs;
-		if (i > 0 && f->parm_ofs[i] < f->parm_ofs[i - 1])
-			Error ("bad parm order");
+		if (i > 0 && f->parm_ofs[i] < f->parm_ofs[i - 1]) {
+			error (0, "bad parm order");
+			abort ();
+		}
 		//printf ("%s%s %d\n", p == params ? "" : "    ", p->name, def->ofs);
 		def->used = 1;				// don't warn for unused params
 		PR_DefInitialized (def);	// params are assumed to be initialized

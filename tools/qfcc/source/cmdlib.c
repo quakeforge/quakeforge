@@ -39,6 +39,8 @@ static const char rcsid[] =
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdlib.h>
+#include <errno.h>
 
 #ifdef NeXT
 #include <libc.h>
@@ -51,7 +53,6 @@ static const char rcsid[] =
 #define PATHSEPERATOR   '/'
 
 char        qfcc_com_token[1024];
-qboolean    com_eof;
 
 /*
 	Error
@@ -93,7 +94,6 @@ Parse (char *data)
   skipwhite:
 	while ((c = *data) <= ' ') {
 		if (c == 0) {
-			com_eof = true;
 			return NULL;				// end of file;
 		}
 		data++;

@@ -26,7 +26,6 @@
 # include "config.h"
 #endif
 
-#include "cmdlib.h"
 #include <stdio.h>
 #include <setjmp.h>
 

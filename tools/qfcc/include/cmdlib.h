@@ -25,34 +25,10 @@
 #define __CMDLIB__
 
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <ctype.h>
-#include <time.h>
-#include <stdarg.h>
-
-#ifndef _DEF_BYTE_
-# define _DEF_BYTE_
-typedef unsigned char byte;
-#endif
-
-#ifndef _DEF_BOOL_
-# define _DEF_BOOL_
-typedef enum    {false, true} qboolean;
-#endif
-
-// the dec offsetof macro doesn't work very well...
-#define myoffsetof(type,identifier) ((size_t)&((type *)0)->identifier)
-
-// set these before calling CheckParm
-extern int myargc;
-extern char **myargv;
 
 int FileLength (FILE *f);
 
 void	Error (char *error, ...)__attribute__((format(printf, 1,2)));
-int		CheckParm (char *check);
 
 FILE	*SafeOpenWrite (char *filename);
 FILE	*SafeOpenRead (char *filename);
@@ -64,6 +40,5 @@ int		LoadFile (char *filename, void **bufferptr);
 char *Parse (char *data);
 
 extern	char		qfcc_com_token[1024];
-extern	qboolean	com_eof;
 
 #endif

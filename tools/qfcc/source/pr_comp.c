@@ -22,6 +22,12 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include <QF/va.h>
 
@@ -44,8 +50,10 @@ PrecacheSound (def_t *e, int ch)
 		}
 	}
 
-	if (numsounds == MAX_SOUNDS)
-		Error ("PrecacheSound: numsounds == MAX_SOUNDS");
+	if (numsounds == MAX_SOUNDS) {
+		error (0, "PrecacheSound: numsounds == MAX_SOUNDS");
+		return;
+	}
 
 	strcpy (precache_sounds[i], n);
 	if (ch >= '1' && ch <= '9')
@@ -73,8 +81,10 @@ PrecacheModel (def_t *e, int ch)
 		}
 	}
 
-	if (nummodels == MAX_MODELS)
-		Error ("PrecacheModels: nummodels == MAX_MODELS");
+	if (nummodels == MAX_MODELS) {
+		error (0, "PrecacheModels: nummodels == MAX_MODELS");
+		return;
+	}
 
 	strcpy (precache_models[i], n);
 	if (ch >= '1' && ch <= '9')
@@ -102,8 +112,10 @@ PrecacheFile (def_t *e, int ch)
 		}
 	}
 
-	if (numfiles == MAX_FILES)
-		Error ("PrecacheFile: numfiles == MAX_FILES");
+	if (numfiles == MAX_FILES) {
+		error (0, "PrecacheFile: numfiles == MAX_FILES");
+		return;
+	}
 
 	strcpy (precache_files[i], n);
 	if (ch >= '1' && ch <= '9')

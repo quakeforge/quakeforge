@@ -30,6 +30,17 @@
 static const char rcsid[] =
 	"$Id$";
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+#include <stdlib.h>
+
 #include <QF/dstring.h>
 #include <QF/hash.h>
 #include <QF/pr_obj.h>
