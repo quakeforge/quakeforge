@@ -259,12 +259,6 @@ ReuseConstant (expr_t *expr, def_t *def)
 	} else {
 		cn = new_def (type, ".imm", pr.scope);
 		cn->ofs = new_location (type, pr.near_data);
-		if (type == &type_vector || type == &type_quaternion) {
-			int         i;
-
-			for (i = 0; i < 3 + (type == &type_quaternion); i++)
-				new_def (&type_float, ".imm", pr.scope);
-		}
 	}
 	cn->initialized = cn->constant = 1;
 	// copy the immediate to the global area
