@@ -78,6 +78,8 @@ static cd_funcs_t plugin_info_cd_funcs;
 
 static char *xmms_cmd = "xmms";
 static char *xmms_args[] = {"xmms", 0};
+// Session number, gets set to 0 in I_XMMS_Init if not set
+static int sessionNo;
 
 // don't need either of these now
 // static int xmmsPid = '0';
@@ -91,7 +93,6 @@ static qboolean playing = false;
 static qboolean wasPlaying = false;
 static qboolean musEnabled = true;
 
-
 static void I_XMMS_Running(void);
 static void I_XMMS_Stop(void);
 static void I_XMMS_Play(int, qboolean);
@@ -100,6 +101,7 @@ static void I_XMMS_Resume(void);
 static void I_XMMS_Next(void);
 static void I_XMMS_Prev(void);
 static void I_XMMS_Update(void);
+static void XMMS_SessionChg(cvar_t *);
 static void I_XMMS_Init(void);
 static void I_XMMS_Shutdown(void);
 static void I_XMMS_Kill(void);
@@ -108,6 +110,7 @@ static void I_XMMS_Off(void);
 static void I_XMMS_Shuffle(void);
 static void I_XMMS_Repeat(void);
 static void I_XMMS_Pos(int);
+static void I_XMMS_Info(void);
 static void I_XMMS_f(void);
 QFPLUGIN plugin_t *cd_xmms_PluginInfo (void);
 
@@ -117,7 +120,8 @@ QFPLUGIN plugin_t *cd_xmms_PluginInfo (void);
 /* static byte maxTrack; */
 
 // FIXME: All of this code assumes that the xmms_remote_* functions succeed
-// FIXME: All of this code assumes that we want to alter session 0 :/
+// FIXME: shouldn't I use gint for all the xmms stuff like
+// FIXME (cont): /usr/include/xmms/xmmsctrl.h says ?
 
 static void
 I_XMMS_Running (void)
@@ -127,7 +131,7 @@ I_XMMS_Running (void)
 	int         i;
 	int         fd_size = getdtablesize ();
 
-	if (!xmms_remote_is_running (0)) {
+	if (!xmms_remote_is_running (sessionNo)) {
 
 		// this method is used over a system() call, so that we know child's
 		// pid (not that is particularly important) but so we can close
@@ -184,10 +188,10 @@ I_XMMS_Stop (void)						// stop playing
 	if (!musEnabled)
 		return;
 	I_XMMS_Running ();
-	if (!xmms_remote_is_playing (0))
+	if (!xmms_remote_is_playing (sessionNo))
 		return;							// check that its actually playing
 
-	xmms_remote_stop (0);				// stop it
+	xmms_remote_stop (sessionNo);				// stop it
 
 	wasPlaying = playing;
 	playing = false;
@@ -195,7 +199,7 @@ I_XMMS_Stop (void)						// stop playing
 }
 
 // Play
-static void
+static void // start it playing, (unless disabled)
 I_XMMS_Play (int track, qboolean looping) // looping for compatability 
 {
 	// don't try if "xmms off" has been called
@@ -203,16 +207,16 @@ I_XMMS_Play (int track, qboolean looping) // looping for compatability
 		return;
 	I_XMMS_Running ();					// Check its on
 	/* i think this will fix some wierdness */
-	if (xmms_remote_is_paused (0)) {
-		xmms_remote_pause (0);
+	if (xmms_remote_is_paused (sessionNo)) {
+		xmms_remote_pause (sessionNo);
 		return;
 	}
 
-	if(track >= 0) xmms_remote_set_playlist_pos(0, track); // set position
+	if(track >= 0) xmms_remote_set_playlist_pos(sessionNo, track); // set position
 
-	if (xmms_remote_is_playing (0)) return;
+	if (xmms_remote_is_playing (sessionNo)) return;
 
-	xmms_remote_play (0);
+	xmms_remote_play (sessionNo);
 
 	wasPlaying = playing;
 	playing = true;
@@ -226,10 +230,10 @@ I_XMMS_Pause (void)
 	if (!musEnabled)
 		return;
 	I_XMMS_Running ();					// It runnin ?
-	if (!xmms_remote_is_playing (0))
+	if (!xmms_remote_is_playing (sessionNo))
 		return;
 
-	xmms_remote_pause (0);
+	xmms_remote_pause (sessionNo);
 
 	wasPlaying = playing;
 	playing = false;
@@ -246,14 +250,14 @@ I_XMMS_Resume (void)
 		return;
 	I_XMMS_Running ();					// Is it on ? if not, make it so
 	/* i think this will fix some wierdness */
-	if (xmms_remote_is_paused (0)) {
-		xmms_remote_pause (0);
+	if (xmms_remote_is_paused (sessionNo)) {
+		xmms_remote_pause (sessionNo);
 		return;
 	}
-	if (xmms_remote_is_playing (0))
+	if (xmms_remote_is_playing (sessionNo))
 		return;
 
-	xmms_remote_play (0);
+	xmms_remote_play (sessionNo);
 
 	wasPlaying = playing;
 	playing = true;
@@ -268,7 +272,7 @@ I_XMMS_Prev (void)
 		return;
 	I_XMMS_Running ();					// Running ?
 
-	xmms_remote_playlist_prev (0);
+	xmms_remote_playlist_prev (sessionNo);
 
 	return;
 
@@ -282,7 +286,7 @@ I_XMMS_Next (void)
 		return;
 	I_XMMS_Running ();					// Running or not ?
 
-	xmms_remote_playlist_next (0);
+	xmms_remote_playlist_next (sessionNo);
 
 	return;
 
@@ -296,8 +300,19 @@ I_XMMS_Update (void)
 }
 
 static void
+XMMS_SessionChg(cvar_t *xmms_session)
+{
+
+	sessionNo = xmms_session->int_val;
+
+	return;
+}
+
+static void
 I_XMMS_Init (void)
 {
+	cvar_t *tmp;
+
 	I_XMMS_Running ();
 	Cmd_AddCommand ("xmms", I_XMMS_f, "Control the XMMS player.\n"
 					"Commands:\n"
@@ -311,7 +326,14 @@ I_XMMS_Init (void)
 					"prev - Plays the previous track in the playlist.\n"
 					"shuffle - Toggle shuffling the playlist.\n"
 					"repeat - Toggle repeating of the playlist.\n"
-					"pos - Set playlist position.");
+					"pos - Set playlist position.\n"
+					"info - Get information about currently playing song.");
+
+	tmp = Cvar_Get("xmms_session", "0", CVAR_NONE, XMMS_SessionChg,
+				   "XMMS Session number to use");
+
+	sessionNo = tmp->int_val;
+	
 	return;
 
 }
@@ -325,7 +347,7 @@ I_XMMS_Shutdown (void)
 static void
 I_XMMS_Kill (void)
 {
-	xmms_remote_quit (0);
+	xmms_remote_quit (sessionNo);
 	return;
 }
 
@@ -362,8 +384,8 @@ I_XMMS_Shuffle (void)
 	if (!musEnabled)
 		return;
 	I_XMMS_Running ();					// It even running ?
-	shuf = xmms_remote_is_shuffle (0);
-	xmms_remote_toggle_shuffle (0);
+	shuf = xmms_remote_is_shuffle (sessionNo);
+	xmms_remote_toggle_shuffle (sessionNo);
 	if (shuf == 1)
 		Sys_Printf ("XMMSAudio: Shuffling Disabled\n");
 	else if (shuf == 0)
@@ -387,8 +409,8 @@ I_XMMS_Repeat (void)
 	if (!musEnabled)
 		return;
 	I_XMMS_Running ();					// It even running ?
-	rep = xmms_remote_is_repeat (0);
-	xmms_remote_toggle_repeat (0);
+	rep = xmms_remote_is_repeat (sessionNo);
+	xmms_remote_toggle_repeat (sessionNo);
 	if (rep == 1)
 		Sys_Printf ("XMMSAudio: Repeat Disabled\n");
 	else if (rep == 0)
@@ -399,12 +421,55 @@ I_XMMS_Repeat (void)
 	return;
 }
 
-static void
+static void // sets playlist position
 I_XMMS_Pos (int track)
 {
-	if(!musEnabled) return;
-	if(track < 0) return;
-	xmms_remote_set_playlist_pos(0, track);
+	if(!musEnabled) return; // allowed to or not ?
+	if(track < 0) return; // -ve track numbers are dumb
+	xmms_remote_set_playlist_pos(sessionNo, track); // and set the pos....
+	return; // all done
+}
+
+static void // returns info about track playing and list progress
+I_XMMS_Info (void) // this is untested with really long tracks, prolly works
+{
+
+	int pos;
+	char *title;
+	unsigned int ctime; // -ve times are dumb, will this help ?
+	unsigned int cmin; // current no of mins
+	byte csecs; // current no of secs
+
+	unsigned int ttime; // total track time
+	unsigned int tmin; // total no of mins
+	byte tsecs; // total no of secs
+
+	unsigned int len; // playlist length
+
+	if(!musEnabled) return; // enabled ?
+
+	I_XMMS_Running(); // is it running ?
+
+	pos = xmms_remote_get_playlist_pos(sessionNo); // get the playlist position
+	len = xmms_remote_get_playlist_length(sessionNo); // playlist length
+	title = xmms_remote_get_playlist_title(sessionNo, pos); // get track title
+	ctime = xmms_remote_get_output_time(sessionNo); // get track elapsed time
+	ttime = xmms_remote_get_playlist_time(sessionNo, pos);
+	
+	// The time returned by xmms_remote_get_output_time is in milliseconds 
+	// elapsed, so, divide by (60*1000) to get mins (its an int, no decimals)
+	// and divide by 1000 mod 60 to get seconds. its a byte, no decimals too.
+
+	cmin=ctime/(60000);
+	csecs=ctime/(1000) % 60;
+	
+	tmin=ttime/(60000);
+	tsecs=ttime/(1000) % 60;
+
+	// tell the user.
+	Sys_Printf("XMMS:    %d/%d        %s        %d:%02d/%d:%02d\n",
+			   pos, len, title, cmin, csecs, tmin, tsecs);
+
 	return;
 }
 
@@ -473,6 +538,11 @@ I_XMMS_f (void)
 
 	if (strequal (command, "pos")) {
 		I_XMMS_Pos (atoi (Cmd_Argv (2)) - 1);
+		return;
+	}
+
+	if (strequal (command, "info")) {
+		I_XMMS_Info ();
 		return;
 	}
 
