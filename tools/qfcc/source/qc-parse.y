@@ -158,7 +158,7 @@ defs
 	;
 
 def
-	: type { current_type = $1} def_list
+	: type { current_type = $1; } def_list
 	| STRUCT NAME
 	  { struct_type = new_struct ($2); } '=' '{' struct_defs '}'
 	| ENUM '{' enum_list opt_comma '}'
