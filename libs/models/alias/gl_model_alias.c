@@ -51,6 +51,7 @@
 byte        player_8bit_texels[320 * 200];
 
 extern model_t *loadmodel;
+extern char loadname[];
 
 /*
 	ALIAS MODELS
