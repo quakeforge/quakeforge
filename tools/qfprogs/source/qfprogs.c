@@ -66,6 +66,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "qfprogs.h"
 #include "strings.h"
 
+int         sorted = 0;
+int         verbosity = 0;
+
 static const struct option long_options[] = {
 	{"disassemble", no_argument, 0, 'd'},
 	{"globals", no_argument, 0, 'g'},
@@ -76,6 +79,7 @@ static const struct option long_options[] = {
 	{"modules", no_argument, 0, 'M'},
 	{"path", required_argument, 0, 'P'},
 	{"verbose", no_argument, 0, 'v'},
+	{"numeric", no_argument, 0, 'n'},
 	{NULL, 0, NULL, 0},
 };
 
@@ -86,7 +90,6 @@ static progs_t  pr;
 static void    *membase;
 static int      memsize = 1024*1024;
 
-static int      verbosity = 0;
 static const char *source_path = "";
 
 static hashtab_t *func_tab;
@@ -225,7 +228,7 @@ main (int argc, char **argv)
 	void      (*func)(progs_t *pr) = dump_globals;
 
 	while ((c = getopt_long (argc, argv,
-							 "dgsfFlMP:v", long_options, 0)) != EOF) {
+							 "dgsfFlMP:vn", long_options, 0)) != EOF) {
 		switch (c) {
 			case 'd':
 				func = disassemble_progs;
@@ -253,6 +256,9 @@ main (int argc, char **argv)
 				break;
 			case 'v':
 				verbosity++;
+				break;
+			case 'n':
+				sorted = 1;
 				break;
 			default:
 				return 1;

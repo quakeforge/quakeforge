@@ -35,12 +35,27 @@ static __attribute__ ((unused)) const char rcsid[] =
 	"$Id$";
 
 #include <stdlib.h>
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include "QF/progs.h"
 #include "QF/va.h"
 
 #include "qfprogs.h"
 #include "globals.h"
+
+static int
+cmp (const void *_a, const void *_b)
+{
+	const ddef_t *a = (const ddef_t *)_a;
+	const ddef_t *b = (const ddef_t *)_b;
+
+	return a->ofs - b->ofs;
+}
 
 void
 dump_globals (progs_t *pr)
@@ -51,9 +66,16 @@ dump_globals (progs_t *pr)
 	int         saveglobal;
 	int         offset;
 	const char *comment;
+	ddef_t     *global_defs = pr->pr_globaldefs;
 
+	if (sorted) {
+		global_defs = malloc (pr->progs->numglobaldefs * sizeof (ddef_t));
+		memcpy (global_defs, pr->pr_globaldefs,
+				pr->progs->numglobaldefs * sizeof (ddef_t));
+		qsort (global_defs, pr->progs->numglobaldefs, sizeof (ddef_t), cmp);
+	}
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
-		ddef_t *def = &pr->pr_globaldefs[i];
+		ddef_t *def = &global_defs[i];
 
 		if (!def->type && !def->ofs && !def->s_name)
 			continue;
