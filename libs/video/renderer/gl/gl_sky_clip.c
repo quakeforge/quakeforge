@@ -714,7 +714,6 @@ draw_skybox_sky_polys (msurface_t *sky_chain)
 {
 	msurface_t *sc = sky_chain;
 
-//	qfglDepthRange (gldepthmax, gldepthmax);
 	qfglDepthMask (GL_FALSE);
 	qfglDisable (GL_DEPTH_TEST);
 	while (sc) {
@@ -728,7 +727,6 @@ draw_skybox_sky_polys (msurface_t *sky_chain)
 	}
 	qfglEnable (GL_DEPTH_TEST);
 	qfglDepthMask (GL_TRUE);
-//	qfglDepthRange (gldepthmin, gldepthmax);
 }
 
 static void

@@ -30,39 +30,15 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#ifdef HAVE_STRING_H
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "QF/console.h"
-#include "QF/cvar.h"
-#include "QF/locs.h"
-#include "QF/mathlib.h"
-#include "QF/qargs.h"
-#include "QF/render.h"
-#include "QF/skin.h"
-#include "QF/sound.h"
-#include "QF/sys.h"
-#include "QF/vid.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
-#include "QF/GL/qf_rlight.h"
-#include "QF/GL/qf_rsurf.h"
-#include "QF/GL/qf_screen.h"
-#include "QF/GL/qf_vid.h"
 
-#include "compat.h"
-#include "r_cvar.h"
-#include "r_dynamic.h"
-#include "r_local.h"
-#include "view.h"
+#include "QF/console.h"
+#include "QF/model.h"
+#include "QF/render.h"
+
+#include "r_shared.h"
 
 static mspriteframe_t *
 R_GetSpriteFrame (entity_t *currententity)

@@ -112,8 +112,6 @@ inline void
 R_SkyBoxPolyVec (vec5_t v)
 {
 	// avoid interpolation seams
-//	s = s * (254.0/256.0) + (1.0/256.0);
-//	t = t * (254.0/256.0) + (1.0/256.0);
 	qfglTexCoord2fv (v);
 	qfglVertex3f (r_refdef.vieworg[0] + v[2], r_refdef.vieworg[1] + v[3],
 				  r_refdef.vieworg[2] + v[4]);
@@ -173,7 +171,6 @@ R_DrawSkyBox (void)
 
 	qfglDisable (GL_DEPTH_TEST);
 	qfglDepthMask (GL_FALSE);
-//	qfglDepthRange (gldepthmax, gldepthmax);
 	for (i = 0; i < 6; i++) {
 		qfglBindTexture (GL_TEXTURE_2D, SKY_TEX + i);
 		qfglBegin (GL_QUADS);
@@ -184,7 +181,6 @@ R_DrawSkyBox (void)
 
 	qfglDepthMask (GL_TRUE);
 	qfglEnable (GL_DEPTH_TEST);
-//	qfglDepthRange (gldepthmin, gldepthmax);
 }
 
 vec3_t      domescale;
@@ -240,7 +236,6 @@ R_DrawSkyDome (void)
 
 	qfglDisable (GL_DEPTH_TEST);
 	qfglDepthMask (GL_FALSE);
-//	qfglDepthRange (gldepthmax, gldepthmax);
 
 	qfglDisable (GL_BLEND);
 
@@ -267,7 +262,6 @@ R_DrawSkyDome (void)
 
 	qfglDepthMask (GL_TRUE);
 	qfglEnable (GL_DEPTH_TEST);
-//	qfglDepthRange (gldepthmin, gldepthmax);
 }
 
 inline void

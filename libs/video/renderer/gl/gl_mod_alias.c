@@ -322,7 +322,7 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 
 	if (gl_lerp_anim->int_val) {
 		trivertx_t *verts1, *verts2;
-		float       blend, lerp;
+		float       blend;
 
 		e->frame_interval = interval;
 
@@ -342,7 +342,6 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 		// wierd things start happening if blend passes 1
 		if (r_paused || blend > 1)
 			blend = 1;
-		lerp = 1 - blend;
 
 		verts1 = verts + e->pose1 * count;
 		verts2 = verts + e->pose2 * count;
@@ -354,11 +353,9 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 		} else {
 			for (i = 0, vo_v = vo->verts; i < count;
 				 i++, vo_v++, verts1++, verts2++) {
-				vo_v->vert[0] = verts1->v[0] * lerp + verts2->v[0] * blend;
-				vo_v->vert[1] = verts1->v[1] * lerp + verts2->v[1] * blend;
-				vo_v->vert[2] = verts1->v[2] * lerp + verts2->v[2] * blend;
+				VectorBlend (verts1->v, verts2->v, blend, vo_v->vert);
 				vo_v->lightdot =
-					shadedots[verts1->lightnormalindex] * lerp
+					shadedots[verts1->lightnormalindex] * (1 - blend)
 					+ shadedots[verts2->lightnormalindex] * blend;
 			}
 			lastposenum0 = e->pose1;
@@ -479,9 +476,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		VectorNormalize (shadevector);
 	}
 
-	shadecolor[0] = e->colormod[0] * 2.0 * shadelight;
-	shadecolor[1] = e->colormod[1] * 2.0 * shadelight;
-	shadecolor[2] = e->colormod[2] * 2.0 * shadelight;
+	VectorScale (e->colormod, 2.0 * shadelight, shadecolor);
 	modelalpha = e->alpha;
 
 	// locate the proper data

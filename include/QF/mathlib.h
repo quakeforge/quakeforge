@@ -54,6 +54,13 @@ extern vec3_t	vec3_origin;
 #define VectorIsZero(a) ((a)[0] == 0 && (a)[1] == 0 && (a)[2] == 0)
 #define VectorZero(a) ((a)[2] = (a)[1] = (a)[0] = 0);
 
+#define VectorBlend(v1,v2,b,v) \
+	{ \
+		(v)[0] = (v1)[0] * (1 - (b)) + (v2)[0] * (b); \
+		(v)[1] = (v1)[1] * (1 - (b)) + (v2)[1] * (b); \
+		(v)[2] = (v1)[2] * (1 - (b)) + (v2)[2] * (b); \
+	}
+
 /*
  * VectorDistance, the distance between two points.
  * Yes, this is the same as sqrt(VectorSubtract then DotProduct), 
