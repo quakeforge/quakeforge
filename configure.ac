@@ -843,43 +843,30 @@ if test "x$enable_alsa" != "xno"; then
 	if test "x$ac_cv_header_sys_asoundlib_h" = "xyes" -o \
 		"x$ac_cv_header_alsa_asoundlib_h" = "xyes"; then
 			AC_EGREP_CPP([QF_maGiC_VALUE],
-				[
-#include <sys/asoundlib.h>
-#if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
-#if SND_LIB_MAJOR > 0 || (SND_LIB_MAJOR == 0 && SND_LIB_MINOR == 5)
-QF_maGiC_VALUE
-#endif
-#endif
-				],
-				SOUND_TYPES="$SOUND_TYPES ALSA0.5"
-				ALSA_LIBS="-lasound"
-				HAVE_ALSA=yes,
-				AC_EGREP_CPP([QF_maGiC_VALUE],
-				[
+			[
 #include <alsa/asoundlib.h>
 #if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
 #if SND_LIB_MAJOR > 0 || (SND_LIB_MAJOR == 0 && SND_LIB_MINOR >= 9)
 QF_maGiC_VALUE
 #endif
 #endif
-				],
-				SOUND_TYPES="$SOUND_TYPES ALSA0.9"
-				ALSA_LIBS="-lasound"
-				HAVE_ALSA=yes,
-				AC_EGREP_CPP([QF_maGiC_VALUE],
-					[
+			],
+			SOUND_TYPES="$SOUND_TYPES ALSA"
+			ALSA_LIBS="-lasound"
+			HAVE_ALSA=yes,
+			AC_EGREP_CPP([QF_maGiC_VALUE],
+				[
 #include <sys/asoundlib.h>
 #if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
 #if SND_LIB_MAJOR > 0 || (SND_LIB_MAJOR == 0 && SND_LIB_MINOR >= 9)
 QF_maGiC_VALUE
 #endif
 #endif
-					],
-					SOUND_TYPES="$SOUND_TYPES ALSA0.9"
-					ALSA_LIBS="-lasound"
-					HAVE_ALSA=yes
-				)
-		    )
+				],
+				SOUND_TYPES="$SOUND_TYPES ALSA"
+				ALSA_LIBS="-lasound"
+				HAVE_ALSA=yes
+			)
 	    )
 	fi
 fi
@@ -1820,11 +1807,8 @@ if test -n "$CL_TARGETS"; then
 	CD_TARGETS="libQFcd.la"
 	SND_TARGETS="libQFsound.la"
 	JOY_TARGETS="libQFjs.la"
-	if test "`echo $SOUND_TYPES | grep ALSA0.5`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_alsa0_5.la"
-	fi
-	if test "`echo $SOUND_TYPES | grep ALSA0.9`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_alsa0_9.la"
+	if test "`echo $SOUND_TYPES | grep ALSA`"; then
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_alsa.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep MME`"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_mme.la"

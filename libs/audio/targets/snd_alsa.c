@@ -1,5 +1,5 @@
 /*
-	snd_alsa_0_9.c
+	snd_alsa.c
 
 	Support for ALSA 0.9 sound driver (cvs development version)
 
@@ -363,7 +363,7 @@ SNDDMA_UnblockSound (void)
 		qfsnd_pcm_pause (pcm, 0);
 }
 
-PLUGIN_INFO(snd_output, alsa0_9)
+PLUGIN_INFO(snd_output, alsa)
 {
 	plugin_info.type = qfp_snd_output;
 	plugin_info.api_version = QFPLUGIN_VERSION;
