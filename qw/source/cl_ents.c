@@ -739,7 +739,7 @@ CL_LinkPlayers (void)
 {
 	double			playertime;
 	int				msec, oldphysent, i, j;
-	entity_t	  **_ent;
+	//entity_t	  **_ent;
 	entity_t	   *ent;
 	frame_t		   *frame;
 	player_info_t  *info;
@@ -755,6 +755,9 @@ CL_LinkPlayers (void)
 
 	for (j = 0, info = cl.players, state = frame->playerstate; j < MAX_CLIENTS;
 		 j++, info++, state++) {
+		ent = &cl_player_ents[j];
+		if (ent->efrag)
+			R_RemoveEfrags (ent);
 		if (state->messagenum != cl.parsecount)
 			continue;					// not present this frame
 
@@ -790,11 +793,8 @@ CL_LinkPlayers (void)
 				|| i == 93 || i == 102))
 			continue;
 
-		// grab an entity to fill in
-		_ent = R_NewEntity ();
-		if (!_ent)						// object list is full
-			break;
-		ent = *_ent = &cl_player_ents[j];
+		// stuff entity in map
+		R_AddEfrags (ent);
 
 		ent->frame = state->frame;
 		ent->model = cl.model_precache[state->modelindex];

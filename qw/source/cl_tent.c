@@ -182,6 +182,22 @@ CL_AllocExplosion (void)
 	return &cl_explosions[index];
 }
 
+beam_t *
+CL_AllocBeam (int ent)
+{
+	int         i;
+	beam_t     *b;
+	// override any beam with the same entity
+	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++)
+		return b;
+	// find a free beam
+	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++)
+		if (!b->model || b->endtime < cl.time)
+			return b;
+	Con_Printf ("beam list overflow!\n");
+	return 0;
+}
+
 void
 CL_ParseBeam (model_t *m)
 {
@@ -194,30 +210,17 @@ CL_ParseBeam (model_t *m)
 	MSG_ReadCoordV (net_message, start);
 	MSG_ReadCoordV (net_message, end);
 
-	// override any beam with the same entity
-	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++)
-		if (b->entity == ent) {
-			b->entity = ent;
-			b->model = m;
-			b->endtime = cl.time + 0.2;
-			b->seed = rand();
-			VectorCopy (start, b->start);
-			VectorCopy (end, b->end);
-			return;
-		}
-	// find a free beam
-	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++) {
-		if (!b->model || b->endtime < cl.time) {
-			b->entity = ent;
-			b->model = m;
-			b->endtime = cl.time + 0.2;
-			b->seed = rand();
-			VectorCopy (start, b->start);
-			VectorCopy (end, b->end);
-			return;
-		}
+	if ((b = CL_AllocBeam (ent))) {
+		for (i = 0; i < b->ent_count; i++)
+			if (b->ent_list[i].efrag)
+				R_RemoveEfrags (&b->ent_list[i]);
+		b->entity = ent;
+		b->model = m;
+		b->endtime = cl.time + 0.2;
+		b->seed = rand();
+		VectorCopy (start, b->start);
+		VectorCopy (end, b->end);
 	}
-	Con_Printf ("beam list overflow!\n");
 }
 
 void
@@ -298,6 +301,8 @@ CL_ParseTEnt (void)
 
 			// sprite
 			ex = CL_AllocExplosion ();
+			if (ex->ent.efrag)
+				R_RemoveEfrags (&ex->ent);
 			VectorCopy (pos, ex->ent.origin);
 			ex->start = cl.time;
 			ex->ent.model = cl_spr_explod;
@@ -397,7 +402,7 @@ void
 CL_UpdateBeams (void)
 {
 	beam_t     *b;
-	entity_t  **ent;
+	entity_t   *ent;
 	float       forward, pitch, yaw, d;
 	int         i, ent_count;
 	vec3_t      dist, org;
@@ -405,8 +410,11 @@ CL_UpdateBeams (void)
 
 	// update lightning
 	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++) {
-		if (!b->model || b->endtime < cl.time)
+		if (!b->model || b->endtime < cl.time) {
+			while (b->ent_count)
+				R_RemoveEfrags (&b->ent_list[--b->ent_count]);
 			continue;
+		}
 
 		// if coming from the player, update the start position
 		if (b->entity == cl.viewentity) {
@@ -444,16 +452,15 @@ CL_UpdateBeams (void)
 		b->ent_count = ent_count;
 		d = 0;
 		while (ent_count--) {
-			ent = R_NewEntity ();
-			if (!ent)
-				return;
-			*ent = &b->ent_list[ent_count];
-			VectorMA (org, d, dist, (*ent)->origin);
+			ent = &b->ent_list[ent_count];
+			VectorMA (org, d, dist, ent->origin);
 			d += 1;
-			(*ent)->model = b->model;
-			(*ent)->angles[0] = pitch;
-			(*ent)->angles[1] = yaw;
-			(*ent)->angles[2] = (seed = seed * BEAM_SEED_PRIME) % 360;
+			ent->model = b->model;
+			ent->angles[0] = pitch;
+			ent->angles[1] = yaw;
+			ent->angles[2] = (seed = seed * BEAM_SEED_PRIME) % 360;
+			if (!ent->efrag)
+				R_AddEfrags (ent);
 		}
 	}
 }
@@ -462,7 +469,6 @@ void
 CL_UpdateExplosions (void)
 {
 	int          f, i;
-	entity_t   **ent;
 	explosion_t *ex;
 
 	for (i = 0, ex = cl_explosions; i < MAX_EXPLOSIONS; i++, ex++) {
@@ -470,15 +476,14 @@ CL_UpdateExplosions (void)
 			continue;
 		f = 10 * (cl.time - ex->start);
 		if (f >= ex->ent.model->numframes) {
+			R_RemoveEfrags (&ex->ent);
 			ex->ent.model = NULL;
 			continue;
 		}
 
-		ent = R_NewEntity ();
-		if (!ent)
-			return;
 		ex->ent.frame = f;
-		*ent = &ex->ent;
+		if (!ex->ent.efrag)
+			R_AddEfrags (&ex->ent);
 	}
 }
 
