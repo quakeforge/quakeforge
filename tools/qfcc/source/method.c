@@ -301,7 +301,8 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 			ReuseString (method->types);
 		methods->method_list[i].method_types =
 			methods->method_list[i].method_name.sel_types;
-		methods->method_list[i].method_imp = method->def->ofs;
+		methods->method_list[i].method_imp = G_FUNCTION (method->def->ofs);
+		i++;
 	}
 	return methods_def->ofs;
 }
