@@ -1816,7 +1816,7 @@ SV_UserInit (void)
 			"Toggles the ability of spectators to talk to players");
 	sv_mapcheck = Cvar_Get ("sv_mapcheck", "1", CVAR_NONE, NULL, 
 		"Toggle the use of map checksumming to check for players who edit maps to cheat");
-	sv_kickfake = Cvar_Get ("sv_kickfake", "1", CVAR_NONE, NULL,
+	sv_kickfake = Cvar_Get ("sv_kickfake", "0", CVAR_NONE, NULL,
 			"Kick users sending to send fake talk messages");
 }
 
