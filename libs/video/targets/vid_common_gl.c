@@ -159,6 +159,8 @@ void
 CheckVertexArraySize (void)
 {
 	qfglGetIntegerv (GL_MAX_ELEMENTS_VERTICES, &vaelements);
+	if (vaelements > 65536)
+		vaelements = 65536;
 //	qfglGetIntegerv (MAX_ELEMENTS_INDICES, *vaindices);
 }
 
