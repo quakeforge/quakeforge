@@ -1,4 +1,5 @@
 #!/bin/bash
+# create pak files with gzipped internals
 
 if [ $# -eq 0 ]; then
 	echo 'usage: $0 <pakfile> ...'
