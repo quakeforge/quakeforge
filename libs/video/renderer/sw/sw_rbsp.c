@@ -456,7 +456,7 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 
 		if (c) {
 			do {
-				(*mark)->visframe = r_framecount;
+				(*mark)->visframe = r_visframecount;
 				mark++;
 			} while (--c);
 		}
@@ -505,7 +505,7 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 			if (dot < -BACKFACE_EPSILON) {
 				do {
 					if ((surf->flags & SURF_PLANEBACK) &&
-						(surf->visframe == r_framecount)) {
+						(surf->visframe == r_visframecount)) {
 						if (r_drawpolys) {
 							if (r_worldpolysbacktofront) {
 								if (numbtofpolys < MAX_BTOFPOLYS) {
@@ -527,7 +527,7 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 			} else if (dot > BACKFACE_EPSILON) {
 				do {
 					if (!(surf->flags & SURF_PLANEBACK) &&
-						(surf->visframe == r_framecount)) {
+						(surf->visframe == r_visframecount)) {
 						if (r_drawpolys) {
 							if (r_worldpolysbacktofront) {
 								if (numbtofpolys < MAX_BTOFPOLYS) {

@@ -671,7 +671,6 @@ R_DrawBEntitiesOnList (void)
 
 	VectorCopy (modelorg, oldorigin);
 	insubmodel = true;
-	r_dlightframecount = r_framecount;
 
 	for (i = 0; i < r_numvisedicts; i++) {
 		currententity = r_visedicts[i];
@@ -713,10 +712,9 @@ R_DrawBEntitiesOnList (void)
 
 							VectorSubtract (r_dlights[k].origin,
 											currententity->origin, lightorigin);
-							R_MarkLights (lightorigin, &r_dlights[k], 1 << k,
-											(model_t*)(//FIXME this is so evil
+							R_RecursiveMarkLights (lightorigin, &r_dlights[k], 1 << k,
 										  clmodel->nodes +
-										  clmodel->hulls[0].firstclipnode));
+										  clmodel->hulls[0].firstclipnode);
 						}
 					}
 					// if the driver wants polygons, deliver those.
@@ -852,11 +850,11 @@ R_RenderView_ (void)
 	if (r_timegraph->int_val || r_speeds->int_val || r_dspeeds->int_val)
 		r_time1 = Sys_DoubleTime ();
 
-	R_PushDlights (vec3_origin);
-
 	R_SetupFrame ();
 
 	R_MarkLeaves ();				// done here so we know if we're in water
+
+	R_PushDlights (vec3_origin);
 
 // make FDIV fast. This reduces timing precision after we've been running for a
 // while, so we don't do it globally.  This also sets chop mode, and we do it
