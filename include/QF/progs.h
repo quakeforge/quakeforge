@@ -35,16 +35,15 @@
 #include "QF/quakeio.h"
 
 #define	MAX_ENT_LEAFS	16
-typedef struct edict_s
-{
-	qboolean	free;
-	link_t		area;				// linked to a division node or leaf
-	
-	int			num_leafs;
-	short		leafnums[MAX_ENT_LEAFS];
+typedef struct edict_s {
+	qboolean    free;
+	link_t      area;			// linked to a division node or leaf
 
-	float		freetime;			// sv.time when the object was freed
-	void		*data;			// external per-edict data
+	int         num_leafs;
+	short       leafnums[MAX_ENT_LEAFS];
+
+	float       freetime;		// sv.time when the object was freed
+	void       *data;			// external per-edict data
 	pr_type_t   v[1];			// fields from progs
 } edict_t;
 #define	EDICT_FROM_AREA(l) STRUCT_FROM_LINK(l,edict_t,area)
@@ -64,10 +63,10 @@ typedef struct pr_resource_s pr_resource_t;
 void PR_Init (void);
 void PR_Init_Cvars (void);
 
-void PR_PrintStatement (progs_t * pr, dstatement_t *s);
-void PR_EnterFunction (progs_t * pr, dfunction_t *f);
+void PR_PrintStatement (progs_t *pr, dstatement_t *s);
+void PR_EnterFunction (progs_t *pr, dfunction_t *f);
 void PR_ExecuteProgram (progs_t *pr, func_t fnum);
-void PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts,
+void PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int edicts,
 					   int zone);
 void PR_LoadProgs (progs_t *pr, const char *progsname, int edicts, int zone);
 int PR_LoadStrings (progs_t *pr);
@@ -77,7 +76,7 @@ int PR_Check_Opcodes (progs_t *pr);
 
 void PR_Profile_f (void);
 
-void ED_ClearEdict (progs_t * pr, edict_t *e, int val);
+void ED_ClearEdict (progs_t *pr, edict_t *e, int val);
 edict_t *ED_Alloc (progs_t *pr);
 void ED_Free (progs_t *pr, edict_t *ed);
 
@@ -182,7 +181,7 @@ typedef struct {
 } builtin_t;
 
 ddef_t *PR_FindGlobal (progs_t *pr, const char *name);
-ddef_t *ED_GlobalAtOfs (progs_t * pr, int ofs);
+ddef_t *ED_GlobalAtOfs (progs_t *pr, int ofs);
 
 pr_type_t *PR_GetGlobalPointer (progs_t *pr, const char *name);
 func_t PR_GetFunctionIndex (progs_t *pr, const char *name);
@@ -258,7 +257,7 @@ const char *PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno);
 const char *PR_Get_Source_Line (progs_t *pr, unsigned int addr);
 ddef_t *PR_Get_Local_Def (progs_t *pr, int offs);
 void PR_DumpState (progs_t *pr);
-void PR_StackTrace (progs_t * pr);
+void PR_StackTrace (progs_t *pr);
 
 extern struct cvar_s *pr_debug;
 extern struct cvar_s *pr_deadbeef_ents;
@@ -286,89 +285,89 @@ typedef struct {
 } prstack_t;
 
 typedef struct strref_s {
-	struct strref_s * next;
+	struct strref_s *next;
 	char *string;
 	int count;
 } strref_t;
 
 struct progs_s {
-	const char		*progs_name;
-	dprograms_t		*progs;
-	int				progs_size;
+	const char *progs_name;
+	dprograms_t *progs;
+	int         progs_size;
 
 	struct memzone_s *zone;
-	int             zone_size;
+	int         zone_size;
 
 	struct hashtab_s *builtin_hash;
 	struct hashtab_s *function_hash;
 	struct hashtab_s *global_hash;
 	struct hashtab_s *field_hash;
 
-	int             num_load_funcs;
-	int             max_load_funcs;
+	int         num_load_funcs;
+	int         max_load_funcs;
 	pr_load_func_t **load_funcs;
 
 	// garbage collected strings
-	strref_t		*static_strings;
-	strref_t		**dynamic_strings;
-	strref_t		*free_string_refs;
-	unsigned int	dyn_str_size;
+	strref_t   *static_strings;
+	strref_t  **dynamic_strings;
+	strref_t   *free_string_refs;
+	unsigned    dyn_str_size;
 	struct hashtab_s *strref_hash;
-	int				num_strings;
+	int         num_strings;
 
-	dfunction_t		*pr_functions;
-	char			*pr_strings;
-	int				pr_stringsize;
-	ddef_t			*pr_globaldefs;
-	ddef_t			*pr_fielddefs;
-	dstatement_t	*pr_statements;
-	pr_type_t		*pr_globals;			// same as pr_global_struct
-	int				globals_size;
+	dfunction_t *pr_functions;
+	char       *pr_strings;
+	int         pr_stringsize;
+	ddef_t     *pr_globaldefs;
+	ddef_t     *pr_fielddefs;
+	dstatement_t *pr_statements;
+	pr_type_t  *pr_globals;			// same as pr_global_struct
+	int         globals_size;
 
-	pr_type_t		*pr_return;
-	pr_type_t		*pr_params[MAX_PARMS];
-	int             pr_param_size;		// covers both params and return
+	pr_type_t  *pr_return;
+	pr_type_t  *pr_params[MAX_PARMS];
+	int         pr_param_size;		// covers both params and return
 
-	int				pr_edict_size;	// in bytes
-	int				pr_edictareasize; // for bounds checking, starts at 0
+	int         pr_edict_size;	// in bytes
+	int         pr_edictareasize; // for bounds checking, starts at 0
 
-	int				pr_argc;
+	int         pr_argc;
 
-	qboolean		pr_trace;
-	dfunction_t		*pr_xfunction;
-	int				pr_xstatement;
+	qboolean    pr_trace;
+	dfunction_t *pr_xfunction;
+	int         pr_xstatement;
 
-	prstack_t		pr_stack[MAX_STACK_DEPTH];
-	int				pr_depth;
+	prstack_t   pr_stack[MAX_STACK_DEPTH];
+	int         pr_depth;
 
-	int				localstack[LOCALSTACK_SIZE];
-	int				localstack_used;
+	int         localstack[LOCALSTACK_SIZE];
+	int         localstack_used;
 
-	edict_t			**edicts;
-	int				*num_edicts;
-	int				*reserved_edicts;	//alloc will start at reserved_edicts+1
-	double			*time;
-	int				null_bad;
-	int				no_exec_limit;
+	edict_t   **edicts;
+	int        *num_edicts;
+	int        *reserved_edicts;	//alloc will start at reserved_edicts+1
+	double     *time;
+	int         null_bad;
+	int         no_exec_limit;
 
-	unsigned short	crc;
+	unsigned short crc;
 
-	void			(*unlink)(edict_t *ent);
-	void			(*flush)(void);
+	void      (*unlink)(edict_t *ent);
+	void      (*flush)(void);
 
-	int				(*parse_field)(progs_t *pr, const char *key, const char *value);
-	int				(*prune_edict)(progs_t *pr, edict_t *ent);
-	void			(*free_edict)(progs_t *pr, edict_t *ent);
+	int       (*parse_field)(progs_t *pr, const char *key, const char *value);
+	int       (*prune_edict)(progs_t *pr, edict_t *ent);
+	void      (*free_edict)(progs_t *pr, edict_t *ent);
 
-	void            (*file_error)(progs_t *pr, const char *path);
-	void            *(*load_file)(progs_t *pr, const char *path);
-	void			*(*allocate_progs_mem)(progs_t *pr, int size);
-	void			(*free_progs_mem)(progs_t *pr, void *mem);
+	void      (*file_error)(progs_t *pr, const char *path);
+	void     *(*load_file)(progs_t *pr, const char *path);
+	void     *(*allocate_progs_mem)(progs_t *pr, int size);
+	void      (*free_progs_mem)(progs_t *pr, void *mem);
 
-	builtin_t		**builtins;
-	int				numbuiltins;
+	builtin_t **builtins;
+	int         numbuiltins;
 
-	pr_resource_t	*resources;
+	pr_resource_t *resources;
 	struct hashtab_s *resource_hash;
 
 	// obj info
@@ -378,24 +377,24 @@ struct progs_s {
 	struct hashtab_s *protocols;
 
 	// debug info
-	const char		*debugfile;
+	const char *debugfile;
 	struct pr_debug_header_s *debug;
 	struct pr_auxfunction_s *auxfunctions;
 	struct pr_auxfunction_s **auxfunction_map;
 	struct pr_lineno_s *linenos;
-	ddef_t			*local_defs;
+	ddef_t     *local_defs;
 
 	// required globals
 	struct {
-		float		*time;
-		int			*self;
+		float      *time;
+		int        *self;
 	} globals;
 	// required fields (offsets into the edict)
 	struct {
-		int			nextthink;
-		int			frame;
-		int			think;
-		int			this;
+		int         nextthink;
+		int         frame;
+		int         think;
+		int         this;
 	} fields;
 };
 
