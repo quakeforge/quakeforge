@@ -596,46 +596,10 @@ draw_frags (view_t *view)
 	}
 }
 
-
 static void
 draw_face (view_t *view)
 {
 	int         f, anim;
-
-	// PGM 01/19/97 - team color drawing
-	// PGM 03/02/97 - fixed so color swatch only appears in CTF modes
-	if (rogue && (cl.maxclients != 1)
-		&& (teamplay->int_val > 3) && (teamplay->int_val < 7)) {
-
-		int         top, bottom;
-		int         xofs;
-		scoreboard_t *s;
-
-		s = &cl.scores[cl.viewentity - 1];
-
-		// draw background
-		top = (s->colors & 0xf0);
-		bottom = ((s->colors & 15) << 4);
-		top = Sbar_ColorForMap (top);
-		bottom = Sbar_ColorForMap (bottom);
-
-		if (sbar_centered)
-			xofs = ((vid.width - 320) >> 1) + 113;
-		else
-			xofs = 113;
-
-		draw_pic (view, 112, 0, rsb_teambord);
-		Draw_Fill (xofs, vid.height - SBAR_HEIGHT + 3, 22, 9, top);
-		Draw_Fill (xofs, vid.height - SBAR_HEIGHT + 12, 22, 9, bottom);
-
-		// draw number
-		f = s->frags;
-
-		draw_smallnum (view, 108, 3, f, 1, top == 8);
-
-		return;
-	}
-	// PGM 01/19/97 - team color drawing
 
 	if ((cl.stats[STAT_ITEMS] & (IT_INVISIBILITY | IT_INVULNERABILITY))
 		== (IT_INVISIBILITY | IT_INVULNERABILITY)) {
@@ -674,14 +638,9 @@ draw_status_bar (view_t *view)
 	draw_pic (view, 0, 0, sb_sbar);
 }
 
-static void
-draw_status (view_t *view)
+static inline void
+draw_armor (view_t *view)
 {
-	if (sb_showscores || cl.stats[STAT_HEALTH] <= 0) {
-		draw_solo (view);
-		return;
-	}
-	// armor
 	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
 		draw_num (view, 24, 0, 666, 3, 1);
 	} else {
@@ -694,15 +653,18 @@ draw_status (view_t *view)
 		else if (cl.stats[STAT_ITEMS] & IT_ARMOR1)
 			draw_pic (view, 0, 0, sb_armor[0]);
 	}
+}
 
-	// face
-	draw_face (view);
-
-	// health
+static inline void
+draw_health (view_t *view)
+{
 	draw_num (view, 136, 0, cl.stats[STAT_HEALTH], 3,
 			  cl.stats[STAT_HEALTH] <= 25);
+}
 
-	// ammo icon
+static inline void
+draw_ammo (view_t *view)
+{
 	if (cl.stats[STAT_ITEMS] & IT_SHELLS)
 		draw_pic (view, 224, 0, sb_ammo[0]);
 	else if (cl.stats[STAT_ITEMS] & IT_NAILS)
@@ -712,6 +674,20 @@ draw_status (view_t *view)
 	else if (cl.stats[STAT_ITEMS] & IT_CELLS)
 		draw_pic (view, 224, 0, sb_ammo[3]);
 	draw_num (view, 248, 0, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
+}
+
+static void
+draw_status (view_t *view)
+{
+	if (sb_showscores || cl.stats[STAT_HEALTH] <= 0) {
+		draw_solo (view);
+		return;
+	}
+
+	draw_armor (view);
+	draw_face (view);
+	draw_health (view);
+	draw_ammo (view);
 }
 
 static void
@@ -725,14 +701,56 @@ draw_rogue_weapons_sbar (view_t *view)
 	if (cl.stats[STAT_ACTIVEWEAPON] >= RIT_LAVA_NAILGUN) {
 		for (i = 0; i < 5; i++) {
 			if (cl.stats[STAT_ACTIVEWEAPON] == (RIT_LAVA_NAILGUN << i)) {
-				draw_pic (view, (i + 2) * 24, -16, rsb_weapons[i]);
+				draw_pic (view, (i + 2) * 24, 0, rsb_weapons[i]);
 			}
 		}
 	}
 }
 
 static void
-draw_rogue_items_sbar (view_t *view)
+draw_rogue_weapons_hud (view_t *view)
+{
+	int         flashon, i, x = 0;
+
+	if (view->parent->gravity == grav_southeast)
+		x = view->xlen - 24;
+
+	for (i = 0; i < 7; i++) {
+		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
+			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
+			draw_subpic (view, x, i * 16, sb_weapons[flashon][i], 0, 0, 24, 16);
+			if (flashon > 1)
+				sb_updates = 0;			// force update to remove flash
+		}
+	}
+	for (i = 0; i < 5; i++) {
+		//if (cl.stats[STAT_ACTIVEWEAPON] == (RIT_LAVA_NAILGUN << i)) {
+		if (cl.stats[STAT_ITEMS] & (RIT_LAVA_NAILGUN << i)) {
+			draw_pic (view, x, i * 16 + 112, rsb_weapons[i]);
+		}
+	}
+}
+
+static void
+draw_rogue_ammo_hud (view_t *view)
+{
+	int         i, count;
+	qpic_t     *pic;
+
+	if (cl.stats[STAT_ACTIVEWEAPON] >= RIT_LAVA_NAILGUN)
+		pic = rsb_invbar[0];
+	else
+		pic = rsb_invbar[1];
+
+	for (i = 0; i < 4; i++) {
+		count = cl.stats[STAT_SHELLS + i];
+		draw_subpic (view, 0, i * 11, pic, 3 + (i * 48), 0, 42, 11);
+		draw_smallnum (view, 7, i * 11, count, 0, 1);
+	}
+}
+
+static void
+draw_rogue_items (view_t *view)
 {
 	int         i;
 	float       time;
@@ -742,7 +760,7 @@ draw_rogue_items_sbar (view_t *view)
 	for (i = 0; i < 2; i++) {
 		if (cl.stats[STAT_ITEMS] & (1 << (29 + i))) {
 			time = cl.item_gettime[29 + i];
-			draw_pic (view, 288 + i * 16, -16, rsb_items[i]);
+			draw_pic (view, 96 + i * 16, 0, rsb_items[i]);
 			if (time && time > (cl.time - 2))
 				sb_updates = 0;
 		}
@@ -753,13 +771,51 @@ static void
 draw_rogue_inventory_sbar (view_t *view)
 {
 	if (cl.stats[STAT_ACTIVEWEAPON] >= RIT_LAVA_NAILGUN)
-		draw_pic (view, 0, -24, rsb_invbar[0]);
+		draw_pic (view, 0, 0, rsb_invbar[0]);
 	else
-		draw_pic (view, 0, -24, rsb_invbar[1]);
+		draw_pic (view, 0, 0, rsb_invbar[1]);
 
-	draw_rogue_weapons_sbar (view);
-	draw_ammo_sbar (view);
-	draw_rogue_items_sbar (view);
+	view_draw (view);
+}
+
+static void
+draw_rogue_face (view_t *view)
+{
+	int         top, bottom;
+	scoreboard_t *s;
+
+	// PGM 01/19/97 - team color drawing
+
+	s = &cl.scores[cl.viewentity - 1];
+
+	top = (s->colors & 0xf0);
+	bottom = ((s->colors & 15) << 4);
+	top = Sbar_ColorForMap (top);
+	bottom = Sbar_ColorForMap (bottom);
+
+	draw_pic (view, 112, 0, rsb_teambord);
+	draw_fill (view, 113, 3, 22, 9, top);
+	draw_fill (view, 113, 12, 22, 9, bottom);
+
+	draw_smallnum (view, 108, 3, s->frags, 1, top == 8);
+}
+
+static void
+draw_rogue_status (view_t *view)
+{
+	if (sb_showscores || cl.stats[STAT_HEALTH] <= 0) {
+		draw_solo (view);
+		return;
+	}
+
+	draw_armor (view);
+	// PGM 03/02/97 - fixed so color swatch only appears in CTF modes
+	if (cl.maxclients != 1 || teamplay->int_val > 3 || teamplay->int_val < 7)
+		draw_rogue_face (view);
+	else
+		draw_face (view);
+	draw_health (view);
+	draw_ammo (view);
 }
 
 static void
@@ -900,56 +956,17 @@ draw_hipnotic_inventory_sbar (view_t *view)
 }
 
 static void
-draw_rogue_status (view_t *view)
-{
-	draw_pic (view, 0, 0, sb_sbar);
-
-	// armor
-	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
-		draw_num (view, 24, 0, 666, 3, 1);
-	} else {
-		draw_num (view, 24, 0, cl.stats[STAT_ARMOR], 3,
-				  cl.stats[STAT_ARMOR] <= 25);
-		if (cl.stats[STAT_ITEMS] & RIT_ARMOR3)
-			draw_pic (view, 0, 0, sb_armor[2]);
-		else if (cl.stats[STAT_ITEMS] & RIT_ARMOR2)
-			draw_pic (view, 0, 0, sb_armor[1]);
-		else if (cl.stats[STAT_ITEMS] & RIT_ARMOR1)
-			draw_pic (view, 0, 0, sb_armor[0]);
-	}
-
-	// face
-	draw_face (view);
-
-	// health
-	draw_num (view, 136, 0, cl.stats[STAT_HEALTH], 3,
-				  cl.stats[STAT_HEALTH] <= 25);
-
-	// ammo icon
-	if (cl.stats[STAT_ITEMS] & RIT_SHELLS)
-		draw_pic (view, 224, 0, sb_ammo[0]);
-	else if (cl.stats[STAT_ITEMS] & RIT_NAILS)
-		draw_pic (view, 224, 0, sb_ammo[1]);
-	else if (cl.stats[STAT_ITEMS] & RIT_ROCKETS)
-		draw_pic (view, 224, 0, sb_ammo[2]);
-	else if (cl.stats[STAT_ITEMS] & RIT_CELLS)
-		draw_pic (view, 224, 0, sb_ammo[3]);
-	else if (cl.stats[STAT_ITEMS] & RIT_LAVA_NAILS)
-		draw_pic (view, 224, 0, rsb_ammo[0]);
-	else if (cl.stats[STAT_ITEMS] & RIT_PLASMA_AMMO)
-		draw_pic (view, 224, 0, rsb_ammo[1]);
-	else if (cl.stats[STAT_ITEMS] & RIT_MULTI_ROCKETS)
-		draw_pic (view, 224, 0, rsb_ammo[2]);
-	draw_num (view, 248, 0, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
-}
-
-static void
 draw_hipnotic_status (view_t *view)
 {
-	draw_status (view);
-
-	if (sb_showscores || cl.stats[STAT_HEALTH] <= 0)
+	if (sb_showscores || cl.stats[STAT_HEALTH] <= 0) {
+		draw_solo (view);
 		return;
+	}
+
+	draw_armor (view);
+	draw_face (view);
+	draw_health (view);
+	draw_ammo (view);
 
 	if (cl.stats[STAT_ITEMS] & IT_KEY1)
 		draw_pic (view, 209, 3, sb_items[0]);
@@ -1223,7 +1240,7 @@ init_hud_views (void)
 
 	hud_armament_view = view_new (0, 48, 42, 156, grav_southeast);
 
-	view = view_new (0, 0, 42, 44, grav_northeast);
+	view = view_new (0, 0, 42, 112, grav_northeast);
 	view->draw = draw_weapons_hud;
 	view_add (hud_armament_view, view);
 
@@ -1370,23 +1387,97 @@ init_rogue_sbar_views (void)
 {
 	view_t     *view;
 
-	sbar_view = hud_view = view_new (0, 0, 320, 48, grav_south);
+	sbar_view = view_new (0, 0, 320, 48, grav_south);
+
+	sbar_frags_view = view_new (0, 0, 130, 8, grav_northeast);
+	sbar_frags_view->draw = draw_frags;
+
+	sbar_inventory_view = view_new (0, 0, 320, 24, grav_northwest);
+	sbar_inventory_view->draw = draw_rogue_inventory_sbar;
+
+	view = view_new (0, 0, 224, 16, grav_southwest);
+	view->draw = draw_rogue_weapons_sbar;
+	view_add (sbar_inventory_view, view);
+
+	view = view_new (0, 0, 32, 8, grav_northwest);
+	view->draw = draw_ammo_sbar;
+	view_add (sbar_inventory_view, view);
+
+	view = view_new (0, 0, 128, 16, grav_southeast);
+	view->draw = draw_rogue_items;
+	view_add (sbar_inventory_view, view);
+
+	if (sbar_frags_view)
+		view_add (sbar_inventory_view, sbar_frags_view);
+
+	view_add (sbar_view, sbar_inventory_view);
+
+	view = view_new (0, 0, 320, 24, grav_southwest);
+	view->draw = draw_status_bar;
+	view_add (sbar_view, view);
 
 	view = view_new (0, 0, 320, 24, grav_southwest);
 	view->draw = draw_rogue_status;
-	view_add (hud_view, view);
+	view_add (sbar_view, view);
 
-	view = view_new (0, 0, 320, 24, grav_northwest);
-	view->draw = draw_rogue_inventory_sbar;
-	view_add (hud_view, view);
+	if (vid.width > 320) {
+		int         l = (vid.width - 320) / 2;
 
-	if (con_module)
-		view_insert (con_module->data->console->view, hud_view, 0);
+		view = view_new (-l, 0, l, 48, grav_southwest);
+		view->draw = draw_tile;
+		view->resize_y = 1;
+		view_add (sbar_view, view);
+
+		view = view_new (-l, 0, l, 48, grav_southeast);
+		view->draw = draw_tile;
+		view->resize_y = 1;
+		view_add (sbar_view, view);
+	}
 }
 
 static void
 init_rogue_hud_views (void)
 {
+	view_t     *view;
+
+	hud_view = view_new (0, 0, 320, 48, grav_south);
+	hud_frags_view = view_new (0, 0, 130, 8, grav_northeast);
+	hud_frags_view->draw = draw_frags;
+
+	hud_view->resize_y = 1;
+
+	hud_armament_view = view_new (0, 48, 42, 236, grav_southeast);
+
+	view = view_new (0, 0, 42, 192, grav_northeast);
+	view->draw = draw_rogue_weapons_hud;
+	view_add (hud_armament_view, view);
+
+	view = view_new (0, 0, 42, 44, grav_southeast);
+	view->draw = draw_rogue_ammo_hud;
+	view_add (hud_armament_view, view);
+
+	hud_inventory_view = view_new (0, 0, 320, 24, grav_northwest);
+	view_add (hud_view, hud_inventory_view);
+
+	view = view_new (0, 0, 320, 24, grav_southwest);
+	view->draw = draw_rogue_status;
+	view_add (hud_view, view);
+
+	view = view_new (0, 0, 128, 16, grav_southeast);
+	view->draw = draw_rogue_items;
+	view_add (hud_inventory_view, view);
+
+	if (hud_frags_view)
+		view_add (hud_inventory_view, hud_frags_view);
+
+	view = view_new (0, 0, vid.conwidth, 48, grav_south);
+	view_add (view, hud_view);
+	hud_view = view;
+
+	view_add (hud_view, hud_armament_view);
+
+	if (con_module)
+		view_insert (con_module->data->console->view, hud_view, 0);
 }
 
 static void
