@@ -52,7 +52,8 @@
 typedef struct qpic_s
 {
 	int			width, height;
-	byte		data[4];			// variably sized
+//	byte		data[4];			// variably sized
+	byte		data[ZERO_LENGTH_ARRAY];			// variably sized
 } qpic_t;
 
 typedef struct
