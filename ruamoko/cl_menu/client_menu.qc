@@ -342,20 +342,20 @@ integer (integer x, integer y) lanconfig_draw =
 				 lanConfig_portname);
 
 	if (JoiningGame) {
-		Draw_String (basex, lanConfig_cursor_table[1], "Search for local "
+		Draw_String (basex, y + lanConfig_cursor_table[1], "Search for local "
 					 "games...");
-		Draw_String (basex, 108, "Join game at:");
-		text_box (basex + 8, lanConfig_cursor_table[2] - 8, 22, 1);
+		Draw_String (basex, y + 108, "Join game at:");
+		text_box (basex + 8, y + lanConfig_cursor_table[2] - 8, 22, 1);
 		[lanConfig_join_il setBasePos:x y:y];
 		[lanConfig_join_il draw:lanConfig_cursor == 2 && input_active];
-		Draw_String (basex + 16, lanConfig_cursor_table[2],
+		Draw_String (basex + 16, y + lanConfig_cursor_table[2],
 					 lanConfig_joinname);
 	} else {
-		text_box (basex, lanConfig_cursor_table[1] - 8, 2, 1);
-		Draw_String (basex + 8, lanConfig_cursor_table[1], "OK");
+		text_box (basex, y + lanConfig_cursor_table[1] - 8, 2, 1);
+		Draw_String (basex + 8, y + lanConfig_cursor_table[1], "OK");
 	}
 	if (!input_active)
-		Draw_Character (basex - 8, lanConfig_cursor_table[lanConfig_cursor],
+		Draw_Character (basex - 8, y + lanConfig_cursor_table[lanConfig_cursor],
 						12 + (integer) (time * 4) & 1);
 
 	return 0;
