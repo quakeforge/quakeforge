@@ -72,6 +72,8 @@ static struct option const long_options[] =
 char        destfile[1024];
 char        debugfile[1024];
 
+pr_info_t	pr;
+
 float       pr_globals[MAX_REGS];
 int         numpr_globals;
 
@@ -82,6 +84,7 @@ dstatement_t statements[MAX_STATEMENTS];
 int         numstatements;
 int         statement_linenums[MAX_STATEMENTS];
 
+function_t *pr_functions;
 dfunction_t functions[MAX_FUNCTIONS];
 int         numfunctions;
 

@@ -27,15 +27,6 @@ static const char rcsid[] =
 
 #include "qfcc.h"
 
-
-pr_info_t	pr;
-def_t		*pr_global_defs[MAX_REGS];	// to find def for a global variable
-
-
-
-
-
-
 void
 PrecacheSound (def_t *e, int ch)
 {
