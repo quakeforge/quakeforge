@@ -40,141 +40,19 @@ static __attribute__ ((unused)) const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-
 #include <stdlib.h>
 
-#include "QF/sys.h"
 #include "QF/in_event.h"
 
-#define IE_MAX_DEPTH 100
-
-float ie_time;
-
-
-void
-IE_Threshold_Event (ie_event_t *event, float value)
-{
-	int i, total;
-	ie_threshold_data_t *data = event->data.p;
-
-	// add new value to the history
-	while (data->history_count
-		   && data->history[data->history_count - 1].time
-			  < ie_time - data->time)
-		data->history_count--;
-	data->history_count++;
-	data->history = realloc (data->history, data->history_count);
-	if (!data->history)
-		Sys_Error ("IE_Event: memory allocation failure!");
-	data->history[data->history_count - 1].time = ie_time;
-	data->history[data->history_count - 1].value = value;
-
-	// total up the values in the history
-	for (i = 0, total = 0; i < data->history_count; i++)
-		total += data->history[i].value;
-
-	// call the handler
-	if (total >= data->threshold)
-		IE_CallHandler (data->handler, data->nextevent, total);
-}
-
-void
-IE_Translation_Event (ie_event_t *event, float value)
-{
-	ie_translation_data_t *data = event->data.p;
-	ie_translation_index_t *index = data->index;
-	ie_event_t *nextevent = 0;
-	int i;
-
-	for (i = 0; !nextevent && i < index->maxtables; i++)
-		if (index->tables[i]->maxevents > data->offset)
-			nextevent = index->tables[i]->events[data->offset];
-	if (!nextevent) // no handler for it
-		return;
-
-	IE_CallHandler (nextevent->handler, nextevent, value);
-}
-
-ie_translation_table_t *
-IE_Translation_Table_Create (void)
-{
-	ie_translation_table_t *table;
-
-	table = malloc (sizeof (ie_translation_table_t));
-	if (!table)
-		Sys_Error ("IE_Translation_Table_Create: memory allocation failure");
-
-	table->maxevents = 0;
-	table->events = 0;
-	return table;
-}
-
-void
-IE_Translation_Table_Modify (ie_translation_table_t *table, int offset,
-							 ie_event_t *event)
-{
-	int i;
-
-	if (offset >= table->maxevents) {
-		i = table->maxevents;
-		table->maxevents++;
-		table->events = realloc (table->events, sizeof (ie_translation_table_t
-														*) * table->maxevents);
-		if (!table->events)
-			Sys_Error ("IE_Translation_Table_Modify: memory allocation "
-					   "failure");
-		for (; i < table->maxevents; i++)
-			table->events[i] = 0;
-	}
-	table->events[offset] = event;
-}
-
-ie_translation_index_t *
-IE_Translation_Index_Create (void)
-{
-	ie_translation_index_t *index;
-
-	index = malloc (sizeof (ie_translation_index_t));
-	if (!index)
-		Sys_Error ("IE_Translation_Index_Create: memory allocation failure");
-
-	index->maxtables = 0;
-	index->tables = 0;
-	return index;
-}
-
-void
-IE_Multiplier_Event (ie_event_t *event, float value)
-{
-	ie_multiplier_data_t *data = event->data.p;
-	IE_CallHandler (data->handler, data->nextevent, value * data->multiplier);
-}
-
-void
-IE_CallHandler (ie_handler handler, ie_event_t *event, float value)
-{
-	static int depth = 0;
-	depth++;
-	if (depth > IE_MAX_DEPTH)
-		Sys_Error ("IE_CallHandler: max recursion depth hit");
-	else
-		handler (event, value);
-	depth--;
-}
-
-/*
 static int (**event_handler_list)(const IE_event_t*);
 static int eh_list_size;
 static int focus;
-*/
 
 void
 IE_Init (void)
 {
-/*
 	eh_list_size = 8;	// start with 8 slots. will grow dynamicly if needed
 	event_handler_list = calloc (eh_list_size, sizeof (event_handler_list[0]));
-*/
 }
 
 void
@@ -187,7 +65,6 @@ IE_Shutdown (void)
 {
 }
 
-/*
 int
 IE_Send_Event (const IE_event_t *event)
 {
@@ -239,4 +116,3 @@ IE_Set_Focus (int handle)
 		IE_Send_Event (&event);
 	}
 }
-*/
