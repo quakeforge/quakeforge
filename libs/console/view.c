@@ -155,7 +155,7 @@ view_remove (view_t *par, view_t *view)
 		if (par->children[i] == view) {
 			memcpy (par->children + i, par->children + i + 1,
 					(par->num_children - i - 1) * sizeof (view_t *));
-			par->children [par->num_children--] = 0;
+			par->children [--par->num_children] = 0;
 			break;
 		}
 	}
