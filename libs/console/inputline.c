@@ -33,12 +33,6 @@
 # include "config.h"
 #endif
 #include <stdlib.h>
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif
-#ifdef HAVE_CURSES_H
-# include <curses.h>
-#endif
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -48,155 +42,123 @@
 
 #include "QF/cmd.h"
 #include "QF/console.h"
-#include "QF/cvar.h"
-#include "QF/qtypes.h"
-#include "QF/sys.h"
+#include "QF/keys.h"
 
-static WINDOW *output;
-static WINDOW *status;
-static WINDOW *input;
-static int screen_x, screen_y;
+struct inputline_s *
+Con_CreateInputLine (int lines, int width, char prompt)
+{
+	int size;
+	inputline_t *inputline;
+	char **p;
+	char *l;
 
-#define     MAXCMDLINE  256
-char        key_lines[32][MAXCMDLINE];
-int         edit_line;
-int         history_line;
-int         key_linepos;
+	size = sizeof (inputline_t);	// space for the header
+	size += sizeof (char *[lines]);	// space for the line pointers
+	size += lines * width;			// space for the lines themselves
+
+	inputline = calloc (1, size);
+	p = (char**)(inputline + 1);
+	l = (char*)&p[lines];
+
+	inputline->num_lines = lines;
+	inputline->line_width = width;
+	while (lines--) {
+		*p++ = l;
+		l += width;
+	}
+	inputline->prompt_char = prompt;
+	return inputline;
+}
 
 void
-Con_ProcessInput (void)
+Con_DestroyInputLine (inputline_t *inputline)
 {
-	int         ch = wgetch (input);
-	int         i;
-	int         curs_x;
-	char       *text = 0;
+	free (inputline);
+}
 
-	static int  scroll;
+void
+Con_ProcessInput (inputline_t *il, int ch)
+{
+	int         i;
 
 	switch (ch) {
-		case KEY_ENTER:
-		case '\n':
-		case '\r':
-			if (key_lines[edit_line][1] == '/'
-				&& key_lines[edit_line][2] == '/')
-				goto no_lf;
-			else if (key_lines[edit_line][1] == '\\'
-					 || key_lines[edit_line][1] == '/')
-				Cbuf_AddText (key_lines[edit_line] + 2);
-			else
-				Cbuf_AddText (key_lines[edit_line] + 1);
-			Cbuf_AddText ("\n");
-		  no_lf:
-			Con_Printf ("%s\n", key_lines[edit_line]);
-			edit_line = (edit_line + 1) & 31;
-			history_line = edit_line;
-			key_lines[edit_line][0] = ']';
-			key_lines[edit_line][1] = 0;
-			key_linepos = 1;
+		case K_ENTER:
+			if (il->enter)
+				il->enter (il->lines[il->edit_line] + 1);
+			il->edit_line = (il->edit_line + 1) % il->num_lines;
+			il->history_line = il->edit_line;
+			il->lines[il->edit_line][0] = il->prompt_char;
+			il->lines[il->edit_line][1] = 0;
+			il->linepos = 1;
 			break;
-		case '\t':
-			Con_CompleteCommandLine();
+		case K_TAB:
+			if (il->complete)
+				il->complete (il);
 			break;
-		case KEY_BACKSPACE:
-			if (key_linepos > 1) {
-				strcpy (key_lines[edit_line] + key_linepos - 1,
-						key_lines[edit_line] + key_linepos);
-				key_linepos--;
+		case K_BACKSPACE:
+			if (il->linepos > 1) {
+				strcpy (il->lines[il->edit_line] + il->linepos - 1,
+						il->lines[il->edit_line] + il->linepos);
+				il->linepos--;
 			}
 			break;
-		case KEY_DC:
-			if (key_linepos < strlen (key_lines[edit_line]))
-				strcpy (key_lines[edit_line] + key_linepos,
-						key_lines[edit_line] + key_linepos + 1);
+		case K_DEL:
+			if (il->linepos < strlen (il->lines[il->edit_line]))
+				strcpy (il->lines[il->edit_line] + il->linepos,
+						il->lines[il->edit_line] + il->linepos + 1);
 			break;
-		case KEY_RIGHT:
-			if (key_linepos < strlen (key_lines[edit_line]))
-				key_linepos++;
+		case K_RIGHTARROW:
+			if (il->linepos < strlen (il->lines[il->edit_line]))
+				il->linepos++;
 			break;
-		case KEY_LEFT:
-			if (key_linepos > 1)
-				key_linepos--;
+		case K_LEFTARROW:
+			if (il->linepos > 1)
+				il->linepos--;
 			break;
-		case KEY_UP:
+		case K_UPARROW:
 			do {
-				history_line = (history_line - 1) & 31;
-			} while (history_line != edit_line && !key_lines[history_line][1]);
-			if (history_line == edit_line)
-				history_line = (edit_line + 1) & 31;
-			strcpy (key_lines[edit_line], key_lines[history_line]);
-			key_linepos = strlen (key_lines[edit_line]);
+				il->history_line = (il->history_line - 1) % il->num_lines;
+			} while (il->history_line != il->edit_line
+					 && !il->lines[il->history_line][1]);
+			if (il->history_line == il->edit_line)
+				il->history_line = (il->edit_line + 1) % il->num_lines;
+			strcpy (il->lines[il->edit_line], il->lines[il->history_line]);
+			il->linepos = strlen (il->lines[il->edit_line]);
 			break;
-		case KEY_DOWN:
-			if (history_line == edit_line)
+		case K_DOWNARROW:
+			if (il->history_line == il->edit_line)
 				break;
 			do {
-				history_line = (history_line + 1) & 31;
-			} while (history_line != edit_line && !key_lines[history_line][1]);
-			if (history_line == edit_line) {
-				key_lines[edit_line][0] = ']';
-				key_lines[edit_line][1] = 0;
-				key_linepos = 1;
+				il->history_line = (il->history_line + 1) % il->num_lines;
+			} while (il->history_line != il->edit_line
+					 && !il->lines[il->history_line][1]);
+			if (il->history_line == il->edit_line) {
+				il->lines[il->edit_line][0] = ']';
+				il->lines[il->edit_line][1] = 0;
+				il->linepos = 1;
 			} else {
-				strcpy (key_lines[edit_line], key_lines[history_line]);
-				key_linepos = strlen (key_lines[edit_line]);
+				strcpy (il->lines[il->edit_line], il->lines[il->history_line]);
+				il->linepos = strlen (il->lines[il->edit_line]);
 			}
 			break;
-		case KEY_PPAGE:
+		case K_HOME:
+			il->linepos = 1;
 			break;
-		case KEY_NPAGE:
-			break;
-		case KEY_HOME:
-			key_linepos = 1;
-			break;
-		case KEY_END:
-			key_linepos = strlen (key_lines[edit_line]);
+		case K_END:
+			il->linepos = strlen (il->lines[il->edit_line]);
 			break;
 		default:
-			if (ch >= ' ' && ch < 127) {
-				i = strlen (key_lines[edit_line]);
-				if (i >= MAXCMDLINE - 1)
+			if (ch >= ' ' && ch < 256 && ch != 127) {
+				i = strlen (il->lines[il->edit_line]);
+				if (i >= il->line_width - 1)
 					break;
 				// This also moves the ending \0
-				memmove (key_lines[edit_line] + key_linepos + 1,
-						key_lines[edit_line] + key_linepos,
-						i - key_linepos + 1);
-				key_lines[edit_line][key_linepos] = ch;
-				key_linepos++;
+				memmove (il->lines[il->edit_line] + il->linepos + 1,
+						il->lines[il->edit_line] + il->linepos,
+						i - il->linepos + 1);
+				il->lines[il->edit_line][il->linepos] = ch;
+				il->linepos++;
 			}
 			break;
 	}
-
-	i = key_linepos - 1;
-	if (scroll > i)
-		scroll = i;
-	if (scroll < i - (screen_x - 2) + 1)
-		scroll = i - (screen_x - 2) + 1;
-	text = key_lines[edit_line] + scroll + 1;
-	if ((int)strlen (text) < screen_x - 2) {
-		scroll = strlen (key_lines[edit_line] + 1) - (screen_x - 2);
-		if (scroll < 0)
-			scroll = 0;
-		text = key_lines[edit_line] + scroll + 1;
-	}
-
-	curs_x = key_linepos - scroll;
-
-	wmove (input, 0, 0);
-	if (scroll) {
-		waddch (input, '<');
-	} else {
-		waddch (input, key_lines[edit_line][0]);
-	}
-	for (i = 0; i < screen_x - 2 && *text; i++)
-		waddch (input, *text++);
-	while (i++ < screen_x - 2)
-		waddch (input, ' ');
-	if (*text) {
-		waddch (input, '>');
-	} else {
-		waddch (input, ' ');
-	}
-	wmove (input, 0, curs_x);
-	touchline (stdscr, screen_y - 1, 1);
-	wrefresh (input);
 }

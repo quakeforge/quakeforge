@@ -45,6 +45,20 @@ typedef struct
 	int		numlines;		// number of non-blank text lines, used for backscroling
 } console_t;
 
+typedef struct inputline_s
+{
+	char	**lines;		// array of lines for input history
+	int		num_lines;		// number of lines in arry. 1 == no history
+	int		line_width;		// space available in each line. includes \0
+	char	prompt_char;	// char placed at the beginning of the line
+	int		edit_line;		// current line being edited
+	int		history_line;	// current history line
+	int		linepos;		// cursor position within the current edit line
+	int		scroll;			// beginning of displayed line
+	void	(*complete)(struct inputline_s *); // tab key pressed
+	void	(*enter)(const char *line); // enter key pressed
+} inputline_t;
+
 extern	console_t	con_main;
 extern	console_t	con_chat;
 extern	console_t	*con;			// point to either con_main or con_chat
@@ -62,7 +76,7 @@ void Con_CheckResize (void);
 void Con_Init (const char *plugin_name);
 void Con_Shutdown (void);
 void Con_Init_Cvars (void);
-void Con_ProcessInput (void);
+void Con_ProcessInput (inputline_t *il, int ch);
 void Con_DrawConsole (int lines);
 void Con_DrawDownload (int lines);
 void Con_Print (const char *txt);
@@ -82,6 +96,9 @@ void Con_CompleteCommandLine(void);
 // Generic libs/util/console.c function to display a list
 // formatted in columns on the console
 void Con_DisplayList(const char **list, int con_linewidth);
+
+inputline_t *Con_CreateInputLine (int lines, int width, char prompt);
+void Con_DestroyInputLine (inputline_t *inputline);
 
 extern struct cvar_s *developer;
 

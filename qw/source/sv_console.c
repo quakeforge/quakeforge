@@ -160,15 +160,15 @@ Con_Print (const char *txt)
 }
 
 void
-Con_ProcessInput (void)
+Con_ProcessInput (inputline_t *il, int ch)
 {
-	int         ch = wgetch (input);
 	int         i;
 	int         curs_x;
 	char       *text = 0;
 
 	static int  scroll;
 
+	ch = wgetch (input);
 	switch (ch) {
 		case KEY_ENTER:
 		case '\n':
