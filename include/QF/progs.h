@@ -136,7 +136,8 @@ int NUM_FOR_BAD_EDICT(progs_t *pr, edict_t *e);
 #define	G_VECTOR(p,o)	G_var (p, o, vector)
 #define	G_STRING(p,o)	PR_GetString (p, G_var (p, o, string))
 #define	G_FUNCTION(p,o)	G_var (p, o, func)
-#define	G_STRUCT(p,t,o)	(*(t *)&(p)->pr_globals[o])
+#define	G_POINTER(p,o)	PR_Pointer (p, o)
+#define	G_STRUCT(p,t,o)	(*(t *)G_POINTER (p, o))
 
 #define RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].integer_var = PR_SetString((p), s))
 #define RETURN_EDICT(p, e) ((p)->pr_globals[OFS_RETURN].integer_var = EDICT_TO_PROG(p, e))
@@ -354,5 +355,11 @@ struct progs_s {
 		int			think;
 	} fields;
 };
+
+static inline pr_type_t *
+PR_Pointer (progs_t *pr, int o)
+{
+	return o ? pr->pr_globals + o : 0;
+}
 
 #endif//__QF_progs_h
