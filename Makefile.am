@@ -1,9 +1,9 @@
 ## Process this file with automake to produce Makefile.in
 AUTOMAKE_OPTIONS= foreign
 
-SUBDIRS=	debian doc include libs qw nq
+SUBDIRS=	RPM debian doc include libs qw nq
 
-EXTRA_DIST=	ChangeLog RPM/build_rpm.in RPM/quakeforge.spec.in RPM/rpmrc \
+EXTRA_DIST=	ChangeLog \
 		tools/cross/cross-configure.sh tools/cross/cross-make.sh \
 		tools/cross/cross.sh \
 		tools/gas2masm/Makefile tools/gas2masm/gas2masm.c \

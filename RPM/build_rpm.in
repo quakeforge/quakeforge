@@ -8,6 +8,7 @@ top_builddir=..
 
 rm -rf BUILD SPECS RPMS SOURCES SRPMS
 mkdir -p BUILD SPECS RPMS/{noarch,i386,i686} SOURCES SRPMS
+make -C $top_builddir changelog
 make -C $top_builddir dist
 mv $top_builddir/quakeforge-${version}.tar.gz SOURCES
 cat > rpmmacros <<EOF

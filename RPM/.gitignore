@@ -1,3 +1,4 @@
+Makefile.in
 build_rpm
 quakeforge.conf
 quakeforge.spec
