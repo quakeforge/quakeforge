@@ -2,6 +2,8 @@ NEWS for the QuakeForge project
 -------------------------------
 
 Changes from 0.5.4
+    o bring back a bunch of fixes from 0.5.3 (including news items) that got
+      lost in the rushed release of 0.5.4
     o more cvar renaming: scr_consize -> con_size, scr_conspeed -> con_speed,
       gl_conalpha -> con_alpha, vid_conwidth -> con_width,
       vid_conheight -> con_height, show_fps -> hud_fps, show_ping -> hud_ping,
