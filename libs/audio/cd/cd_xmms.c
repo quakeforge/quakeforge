@@ -27,7 +27,7 @@
 		Boston, MA  02111-1307, USA
 
 */
-static const char rcsid[] = 
+static const char rcsid[] =
 	"$Id$";
 
 
@@ -67,17 +67,19 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-static plugin_t		plugin_info;
-static plugin_data_t	plugin_info_data;
-static plugin_funcs_t	plugin_info_funcs;
-static general_data_t	plugin_info_general_data;
-static general_funcs_t	plugin_info_general_funcs;
-//static cd_data_t		plugin_info_cd_data;
-static cd_funcs_t		plugin_info_cd_funcs;
+static plugin_t plugin_info;
+static plugin_data_t plugin_info_data;
+static plugin_funcs_t plugin_info_funcs;
+static general_data_t plugin_info_general_data;
+static general_funcs_t plugin_info_general_funcs;
+
+//static cd_data_t      plugin_info_cd_data;
+static cd_funcs_t plugin_info_cd_funcs;
 
 static char *xmms_cmd = "xmms";
-static char *xmms_arg = " "; // Please tell me if i am being dumb
+static char *xmms_arg = " ";			// Please tell me if i am being dumb
 static char *xmms_args[1];
+
 // this appears to be the only way to get this thingy _not_ to segfault on
 // execvp, :/ xmms_args[0] = xmms_arg; is further down
 
@@ -88,6 +90,7 @@ static char *xmms_args[1];
 
 
 static qboolean playing = false;
+
 // no idea why i have wasPlaying, prolly cos this code was based on 
 // cd_linux.c :/
 static qboolean wasPlaying = false;
@@ -108,47 +111,51 @@ static void
 I_XMMS_Running (void)
 {
 
-	int res;
-	int i;
-	int fd_size = getdtablesize();
+	int         res;
+	int         i;
+	int         fd_size = getdtablesize ();
 
-	if(!xmms_remote_is_running(0)) {
+	if (!xmms_remote_is_running (0)) {
 
-	// this method is used over a system() call, so that we know child's pid
-	// (not that is partic important) but so we can close(net_socket) 
+		// this method is used over a system() call, so that we know child's
+		// pid (not that is particularly important) but so we can close
+		// unneeded descriptors
 
-	res = fork(); // fork
+		res = fork ();
 
-	switch(res) {
+		switch (res) {
 
-	case 0: // Child
+			case 0:					// Child
 
-		// Well, we don't want the child to be running about with
-		// 27001 still open
+				// Well, we don't want the child to be running about with
+				// 27001 still open
 
-		for (i = 3; i < fd_size; i++)
-			close(i);
+				for (i = 3; i < fd_size; i++)
+					close (i);
 
-		// run xmms
-		if(execvp(xmms_cmd, xmms_args)) { // Oh dear
-			// can we even use Sys_DPrinf ?, we are child so
-			// we have access to them ? but wouldn't it just try rendering it 
-			// and screw stuff up ? better not find out
-			
-			exit(1); // Well, we can't just hang about causing trouble can we ?
-			} 
+				// run xmms
+				if (execvp (xmms_cmd, xmms_args)) {
+					// Oh dear, can we even use Sys_DPrinf ?, we are child so
+					// we have access to them ? but wouldn't it just try
+					// rendering it 
+					// and screw stuff up ? better not find out
 
-		break;
-	case -1: // ICH !
-		Sys_DPrintf("XMMSAudio: error, can't fork !?\n"); // inform user
-		break;
-	default: // Parent
-		// don't need now :/
-//		xmmsPid = res; // so we can kill it later 
-		break;
-	}
-	
-	return;
+					exit (1);			// Well, we can't just hang about
+										// causing trouble can we ?
+				}
+
+				break;
+			case -1:					// ICH !
+				// inform user
+				Sys_DPrintf ("XMMSAudio: error, can't fork !?\n");
+				break;
+			default:					// Parent
+				// don't need now :/
+//				xmmsPid = res; // so we can kill it later 
+				break;
+		}
+
+		return;
 
 	}
 
@@ -158,34 +165,40 @@ I_XMMS_Running (void)
 
 
 static void
-I_XMMS_Stop (void) // stop playing
+I_XMMS_Stop (void)						// stop playing
 {
 
-	if(!musEnabled) return; // don't try if "xmms off" has been called
-    I_XMMS_Running();
-	if(!xmms_remote_is_playing(0)) return; // check that its actually playing
+	// don't try if "xmms off" has been called
+	if (!musEnabled)
+		return;
+	I_XMMS_Running ();
+	if (!xmms_remote_is_playing (0))
+		return;							// check that its actually playing
 
-	xmms_remote_stop(0); // stop it
+	xmms_remote_stop (0);				// stop it
 
-	wasPlaying = playing; 
+	wasPlaying = playing;
 	playing = false;
 	return;
 }
 
-static void // Play, don't use track and looping atm, :/
-I_XMMS_Play (byte track, qboolean looping) 
+// Play, don't use track and looping atm, :/
+static void
+I_XMMS_Play (byte track, qboolean looping)
 {
-
-   	if(!musEnabled) return; // don't try if "xmms off" has been called
-	I_XMMS_Running();  // Check its on
-    /* i think this will fix some wierdness */
-	if(xmms_remote_is_paused(0)) {
-		xmms_remote_pause(0);
+	// don't try if "xmms off" has been called
+	if (!musEnabled)
+		return;
+	I_XMMS_Running ();					// Check its on
+	/* i think this will fix some wierdness */
+	if (xmms_remote_is_paused (0)) {
+		xmms_remote_pause (0);
 		return;
 	}
-	if(xmms_remote_is_playing(0)) return;
+	if (xmms_remote_is_playing (0))
+		return;
 
-	xmms_remote_play(0);
+	xmms_remote_play (0);
 
 	wasPlaying = playing;
 	playing = true;
@@ -195,12 +208,14 @@ I_XMMS_Play (byte track, qboolean looping)
 static void
 I_XMMS_Pause (void)
 {
+	// don't try if "xmms off" has been called
+	if (!musEnabled)
+		return;
+	I_XMMS_Running ();					// It runnin ?
+	if (!xmms_remote_is_playing (0))
+		return;
 
-   	if(!musEnabled) return; // don't try if "xmms off" has been called
-	I_XMMS_Running(); // It runnin ?
-	if(!xmms_remote_is_playing(0)) return;
-
-	xmms_remote_pause(0);
+	xmms_remote_pause (0);
 
 	wasPlaying = playing;
 	playing = false;
@@ -212,16 +227,19 @@ static void
 I_XMMS_Resume (void)
 {
 
-	if(!musEnabled) return; // don't try if "xmms off" has been called
-	I_XMMS_Running(); // Is it on ? if not, make it so
-    /* i think this will fix some wierdness */
-	if(xmms_remote_is_paused(0)) {
-		xmms_remote_pause(0);
+	// don't try if "xmms off" has been called
+	if (!musEnabled)
+		return;
+	I_XMMS_Running ();					// Is it on ? if not, make it so
+	/* i think this will fix some wierdness */
+	if (xmms_remote_is_paused (0)) {
+		xmms_remote_pause (0);
 		return;
 	}
-	if(xmms_remote_is_playing(0)) return;
+	if (xmms_remote_is_playing (0))
+		return;
 
-	xmms_remote_play(0);
+	xmms_remote_play (0);
 
 	wasPlaying = playing;
 	playing = true;
@@ -231,10 +249,12 @@ I_XMMS_Resume (void)
 static void
 I_XMMS_Prev (void)
 {
-	if(!musEnabled) return; // don't try if "xmms off" has been called
-	I_XMMS_Running(); // Running ?
+	// don't try if "xmms off" has been called
+	if (!musEnabled)
+		return;
+	I_XMMS_Running ();					// Running ?
 
-	xmms_remote_playlist_prev(0);
+	xmms_remote_playlist_prev (0);
 
 	return;
 
@@ -243,10 +263,12 @@ I_XMMS_Prev (void)
 static void
 I_XMMS_Next (void)
 {
-	if(!musEnabled) return; // don't try if "xmms off" has been called
-	I_XMMS_Running(); // Running or not ?
+	// don't try if "xmms off" has been called
+	if (!musEnabled)
+		return;
+	I_XMMS_Running ();					// Running or not ?
 
-	xmms_remote_playlist_next(0);
+	xmms_remote_playlist_next (0);
 
 	return;
 
@@ -263,20 +285,19 @@ static void
 I_XMMS_Init (void)
 {
 	xmms_args[0] = xmms_arg;
-   	I_XMMS_Running();
-	Cmd_AddCommand (
-		"xmms", I_XMMS_f, "Control the XMMS player.\n"
-		"Commands:\n"
-		"resume - Will resume playback after pause.\n"
-		"off - Stops control and playback of XMMS.\n"
-		"on - Starts XMMS if not running, or enables playback.\n"
-		"pause - Pause the XMMS playback.\n"
-		"play - Begins playing tracks according to the playlist.\n"
-		"stop - Stops the currently playing track.\n"
-		"next - Plays the next track in the playlist.\n"
-		"prev - Plays the previous track in the playlist.\n"
-		"shuffle - Toggle shuffling the playlist.\n"
-		"repeat - Toggle repeating of the playlist.");
+	I_XMMS_Running ();
+	Cmd_AddCommand ("xmms", I_XMMS_f, "Control the XMMS player.\n"
+					"Commands:\n"
+					"resume - Will resume playback after pause.\n"
+					"off - Stops control and playback of XMMS.\n"
+					"on - Starts XMMS if not running, or enables playback.\n"
+					"pause - Pause the XMMS playback.\n"
+					"play - Begins playing tracks according to the playlist.\n"
+					"stop - Stops the currently playing track.\n"
+					"next - Plays the next track in the playlist.\n"
+					"prev - Plays the previous track in the playlist.\n"
+					"shuffle - Toggle shuffling the playlist.\n"
+					"repeat - Toggle repeating of the playlist.");
 	return;
 
 }
@@ -290,7 +311,7 @@ I_XMMS_Shutdown (void)
 static void
 I_XMMS_Kill (void)
 {
-	xmms_remote_quit(0);
+	xmms_remote_quit (0);
 	return;
 }
 
@@ -298,7 +319,7 @@ static void
 I_XMMS_On (void)
 {
 	musEnabled = true;
-	I_XMMS_Running();
+	I_XMMS_Running ();
 	return;
 }
 
@@ -306,15 +327,15 @@ static void
 I_XMMS_Off (void)
 {
 	musEnabled = false;
-	I_XMMS_Kill();
+	I_XMMS_Kill ();
 	return;
 }
 
-static void // Toggle Shuffling
+static void								// Toggle Shuffling
 I_XMMS_Shuffle (void)
 {
 
-	int shuf;
+	int         shuf;
 
 	// for some reason, it reports shuffle wrong,
 	// probably because it relies on a timer that doesn't time out straight
@@ -323,33 +344,43 @@ I_XMMS_Shuffle (void)
 	// SO, we check before, and assuming it works, we know that it will be the
 	// opposite of what it _WAS_, if you get my meaning :/
 
-	if(!musEnabled) return; // don't try if "xmms off" has been called
-	I_XMMS_Running(); // It even running ?
-	shuf = xmms_remote_is_shuffle(0);
-	xmms_remote_toggle_shuffle(0);
-	if(shuf==1) Sys_Printf("XMMSAudio: Shuffling Disabled\n");
-	else if(shuf==0) Sys_Printf("XMMSAudio: Shuffling Enabled\n");
-	else return; // ACH !
+	// don't try if "xmms off" has been called
+	if (!musEnabled)
+		return;
+	I_XMMS_Running ();					// It even running ?
+	shuf = xmms_remote_is_shuffle (0);
+	xmms_remote_toggle_shuffle (0);
+	if (shuf == 1)
+		Sys_Printf ("XMMSAudio: Shuffling Disabled\n");
+	else if (shuf == 0)
+		Sys_Printf ("XMMSAudio: Shuffling Enabled\n");
+	else
+		return;							// ACH !
 
 	return;
 
 }
 
-static void // toggles playlist repeating
+static void								// toggles playlist repeating
 I_XMMS_Repeat (void)
 {
 	// Similar situation as with I_XMMS_Shuffle();
 	// same code too :)
 
-	int rep;
+	int         rep;
 
-	if(!musEnabled) return; // don't try if "xmms off" has been called
-	I_XMMS_Running(); // It even running ?
-	rep = xmms_remote_is_repeat(0);
-	xmms_remote_toggle_repeat(0);
-	if(rep==1) Sys_Printf("XMMSAudio: Repeat Disabled\n");
-	else if(rep==0) Sys_Printf("XMMSAudio: Repeat Enabled\n");
-	else return; // ACH !
+	// don't try if "xmms off" has been called
+	if (!musEnabled)
+		return;
+	I_XMMS_Running ();					// It even running ?
+	rep = xmms_remote_is_repeat (0);
+	xmms_remote_toggle_repeat (0);
+	if (rep == 1)
+		Sys_Printf ("XMMSAudio: Repeat Disabled\n");
+	else if (rep == 0)
+		Sys_Printf ("XMMSAudio: Repeat Enabled\n");
+	else
+		return;							// ACH !
 
 	return;
 }
@@ -359,6 +390,7 @@ I_XMMS_f (void)
 {
 
 	const char *command;
+
 /*	int         ret;
 	int         n;  */
 
@@ -424,7 +456,7 @@ I_XMMS_f (void)
 
 }
 
-plugin_t *
+plugin_t   *
 cd_xmms_PluginInfo (void)
 {
 	plugin_info.type = qfp_cd;
@@ -437,7 +469,7 @@ cd_xmms_PluginInfo (void)
 	plugin_info.data = &plugin_info_data;
 
 	plugin_info_data.general = &plugin_info_general_data;
-//	plugin_info_data.cd = &plugin_info_cd_data;
+//  plugin_info_data.cd = &plugin_info_cd_data;
 	plugin_info_data.input = NULL;
 
 	plugin_info_funcs.general = &plugin_info_general_funcs;
@@ -452,6 +484,6 @@ cd_xmms_PluginInfo (void)
 	plugin_info_cd_funcs.pCDAudio_Resume = I_XMMS_Resume;
 	plugin_info_cd_funcs.pCDAudio_Update = I_XMMS_Update;
 	plugin_info_cd_funcs.pCD_f = I_XMMS_f;
-	
+
 	return &plugin_info;
 }
