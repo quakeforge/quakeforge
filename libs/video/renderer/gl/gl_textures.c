@@ -551,10 +551,7 @@ GL_LoadTexture (const char *identifier, int width, int height, byte *data,
 	gltexture_t *glt;
 
 	// LordHavoc: now just using a standard CRC for texture validation
-	if (bytesperpixel == 1)
-		crc = CRC_Block (data, width * height * bytesperpixel);
-	else
-		crc = CRC_Block (data, width * height * 4);
+	crc = CRC_Block (data, width * height * bytesperpixel);
 
 	// see if the texture is already present
 	if (identifier[0]) {
@@ -597,7 +594,20 @@ SetupTexture:
 		GL_Upload8 (data, width, height, mipmap, alpha);
 		break;
 	case 3:
-		GL_Upload32 ((GLuint *) data, width, height, mipmap, 0);
+		{
+			int          count = width * height;
+			byte        *data32 = malloc (count * 4);
+			byte        *d = data32;
+
+			while (count--) {
+				*d++ = *data++;
+				*d++ = *data++;
+				*d++ = *data++;
+				*d++ = 255;			// alpha 1.0
+			}
+			GL_Upload32 ((GLuint *) data32, width, height, mipmap, 0);
+			free (data32);
+		}
 		break;
 	case 4:
 		GL_Upload32 ((GLuint *) data, width, height, mipmap, alpha);
