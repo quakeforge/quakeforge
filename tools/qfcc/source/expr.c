@@ -3027,11 +3027,32 @@ sizeof_expr (expr_t *expr, struct type_s *type)
 }
 
 static void
+report_function (expr_t *e)
+{
+	static function_t *last_func = (function_t *)-1L;
+	string_t    file = pr.source_file;
+
+	if (e)
+		file = e->file;
+
+	if (current_func != last_func) {
+		if (current_func) {
+			fprintf (stderr, "%s: In function `%s':\n", G_GETSTR (file),
+					 current_func->def->name);
+		} else {
+			fprintf (stderr, "%s: At top level:\n", G_GETSTR (file));
+		}
+	}
+	last_func = current_func;
+}
+
+static void
 _warning (expr_t *e, const char *fmt, va_list args)
 {
 	string_t    file = pr.source_file;
 	int         line = pr.source_line;
 
+	report_function (e);
 	if (options.warnings.promote) {
 		options.warnings.promote = 0;	// only want to do this once
 		fprintf (stderr, "%s: warnings treated as errors\n", "qfcc");
@@ -3062,6 +3083,7 @@ notice (expr_t *e, const char *fmt, ...)
 		string_t    file = pr.source_file;
 		int         line = pr.source_line;
 
+		report_function (e);
 		if (e) {
 			file = e->file;
 			line = e->line;
@@ -3090,6 +3112,7 @@ error (expr_t *e, const char *fmt, ...)
 	string_t    file = pr.source_file;
 	int         line = pr.source_line;
 
+	report_function (e);
 	va_start (args, fmt);
 	if (e) {
 		file = e->file;

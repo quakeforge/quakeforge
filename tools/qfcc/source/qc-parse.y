@@ -561,6 +561,7 @@ end_function
 	: /*empty*/
 		{
 			current_scope = current_scope->parent;
+			current_func = 0;
 		}
 	;
 
