@@ -1,0 +1,90 @@
+/*
+	console.c
+
+	console api
+
+	Copyright (C) 2001       Bill Currie <bill@taniwha.org>
+
+	Author: Bill Currie <bill@taniwha.org>
+	Date: 2001/7/16
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+	$Id$
+*/
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+#include <stdarg.h>
+
+#include "QF/console.h"
+#include "QF/cvar.h"
+#include "QF/plugin.h"
+
+static plugin_t *con_module;
+
+void
+Con_Init (const char *plugin_name)
+{
+	con_module = PI_LoadPlugin ("console", plugin_name);
+	if (con_module) {
+		con_module->functions->console->pC_Init ();
+	}
+}
+
+void
+Con_Init_Cvars (void)
+{
+}
+
+void
+Con_Shutdown (void)
+{
+	if (con_module) {
+		con_module->functions->console->pC_Shutdown ();
+		PI_UnloadPlugin (con_module);
+	}
+}
+
+void
+Con_Printf (const char *fmt, ...)
+{
+	va_list     args;
+	va_start (args, fmt);
+	if (con_module)
+		con_module->functions->console->pC_Print (fmt, args);
+	else
+		vfprintf (stdout, fmt, args);
+	va_end (args);
+}
+
+void
+Con_DPrintf (const char *fmt, ...)
+{
+	if (developer && developer->int_val) {
+		va_list     args;
+		va_start (args, fmt);
+		if (con_module)
+			con_module->functions->console->pC_Print (fmt, args);
+		else
+			vfprintf (stdout, fmt, args);
+		va_end (args);
+	}
+}

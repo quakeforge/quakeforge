@@ -92,7 +92,7 @@ static const byte attr_map[256] = {
 };
 
 void
-Con_Init (void)
+Con_Init (const char *plugin_name)
 {
 	int i;
 

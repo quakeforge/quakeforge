@@ -35,6 +35,7 @@
 
 #include <QF/qtypes.h>
 #include <QF/plugin/cd.h>
+#include <QF/plugin/console.h>
 #include <QF/plugin/general.h>
 #include <QF/plugin/input.h>
 #include <QF/plugin/sound.h>
@@ -44,6 +45,7 @@ typedef enum {
 	qfp_input,		// Input (pointing devices, joysticks, etc)
 	qfp_cd,			// CD Audio
 	qfp_sound,		// Wave output (OSS, ALSA, Win32)
+	qfp_console,	// Console `driver'
 } plugin_type_t;
 
 typedef struct plugin_funcs_s {
@@ -51,6 +53,7 @@ typedef struct plugin_funcs_s {
 	input_funcs_t	*input;
 	cd_funcs_t		*cd;
 	sound_funcs_t	*sound;
+	console_funcs_t	*console;
 } plugin_funcs_t;
 
 typedef struct plugin_data_s {
@@ -58,6 +61,7 @@ typedef struct plugin_data_s {
 	input_data_t	*input;
 //	cd_data_t		*cd;
 	sound_data_t	*sound;
+	console_data_t	*console;
 } plugin_data_t;
 
 typedef struct plugin_s {

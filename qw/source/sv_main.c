@@ -2030,7 +2030,7 @@ SV_Init (void)
 
 	PI_Init ();
 
-	Con_Init ();
+	Con_Init ("server");
 
 	COM_Filesystem_Init_Cvars ();
 	Game_Init_Cvars ();

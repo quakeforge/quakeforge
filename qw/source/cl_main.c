@@ -1630,7 +1630,7 @@ Host_Init (void)
 
 	W_LoadWadFile ("gfx.wad");
 	Key_Init ();
-	Con_Init ();
+	Con_Init ("client");
 	Mod_Init ();
 
 //  Con_Printf ("Exe: "__TIME__" "__DATE__"\n");

@@ -958,7 +958,7 @@ Host_Init (quakeparms_t *parms)
 	Host_InitLocal ();
 	W_LoadWadFile ("gfx.wad");
 	Key_Init ();
-	Con_Init ();
+	Con_Init ("client");
 	// FIXME: MENUCODE
 //	M_Init ();
 	PR_Init ();

@@ -217,7 +217,7 @@ Con_CheckResize (void)
 
 
 void
-Con_Init (void)
+Con_Init (const char *plugin_name)
 {
 	con_debuglog = COM_CheckParm ("-condebug");
 

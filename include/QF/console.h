@@ -59,7 +59,7 @@ extern	int	con_notifylines;		// scan lines to clear for notify lines
 void Con_DrawCharacter (int cx, int line, int num);
 
 void Con_CheckResize (void);
-void Con_Init (void);
+void Con_Init (const char *plugin_name);
 void Con_Shutdown (void);
 void Con_Init_Cvars (void);
 void Con_ProcessInput (void);
