@@ -58,8 +58,6 @@ CL_NetGraph (void)
 	if (!r_netgraph->int_val)
 		return;
 
-	a = 0; // shut up gcc
-
 	x = hudswap ? vid.width - (NET_TIMINGS + 16): 0;
 	y = vid.height - sb_lines - 24 - r_graphheight->int_val - 1;
 
@@ -76,7 +74,7 @@ CL_NetGraph (void)
 	l = NET_TIMINGS;
 	if (l > r_refdef.vrect.width - 8)
 		l = r_refdef.vrect.width - 8;
-	i = (cls.netchan.outgoing_sequence - a) & NET_TIMINGSMASK;
+	i = cls.netchan.outgoing_sequence & NET_TIMINGSMASK;
 	a = i - l;
 	if (a < 0) {
 		R_LineGraph (x, y, &packet_latency[a + NET_TIMINGS], -a);

@@ -70,14 +70,15 @@ SCR_DrawNet (void)
 void
 CL_NetStats (void)
 {
-	int x, y;
+	int		x, y;
+
 	if (!show_ping->int_val && !show_pl->int_val)
 		return;
 	if (cls.state != ca_active)
 		return;
 	x = hudswap ? vid.width - 104 : 0;
 	y = vid.height - sb_lines - 16;
-	// request new ping times every two second
+	// request new ping times every two seconds
 	if (realtime - cl.last_ping_request > 2) {
 		cl.last_ping_request = realtime;
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
@@ -115,11 +116,8 @@ static SCR_Func scr_funcs[] = {
 	SCR_CheckDrawCenterString,
 	Sbar_Draw,
 	SCR_DrawConsole,
-	// FIXME: MENUCODE
-//	M_Draw,
 	0
 };
-
 
 
 void
@@ -149,7 +147,7 @@ CL_RSShot_f (void)
 	if (CL_IsUploading ())
 		return;							// already one pending
 	if (cls.state < ca_onserver)
-		return;							// gotta be connected
+		return;							// must be connected
 
 	Con_Printf ("Remote screen shot requested.\n");
 

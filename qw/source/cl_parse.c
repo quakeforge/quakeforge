@@ -162,22 +162,21 @@ int         cl_h_playerindex, cl_gib1index, cl_gib2index, cl_gib3index;
 int         packet_latency[NET_TIMINGS];
 
 
-
 int
 CL_CalcNet (void)
 {
-	int         lost, a, i;
-	frame_t    *frame;
+	int			lost, a, i;
+	frame_t	   *frame;
 
 	for (i = cls.netchan.outgoing_sequence - UPDATE_BACKUP + 1;
 		 i <= cls.netchan.outgoing_sequence; i++) {
 		frame = &cl.frames[i & UPDATE_MASK];
 		if (frame->receivedtime == -1)
-			packet_latency[i & NET_TIMINGSMASK] = 9999;	// dropped
+			packet_latency[i & NET_TIMINGSMASK] = 9999;		// dropped
 		else if (frame->receivedtime == -2)
 			packet_latency[i & NET_TIMINGSMASK] = 10000;	// choked
 		else if (frame->invalid)
-			packet_latency[i & NET_TIMINGSMASK] = 9998;	// invalid delta
+			packet_latency[i & NET_TIMINGSMASK] = 9998;		// invalid delta
 		else
 			packet_latency[i & NET_TIMINGSMASK] =
 				(frame->receivedtime - frame->senttime) * 20;
@@ -201,7 +200,7 @@ CL_CalcNet (void)
 qboolean
 CL_CheckOrDownloadFile (const char *filename)
 {
-	VFile      *f;
+	VFile	   *f;
 
 	if (strstr (filename, "..")) {
 		Con_Printf ("Refusing to download a path with ..\n");
@@ -231,9 +230,8 @@ CL_CheckOrDownloadFile (const char *filename)
 	strcpy (cls.downloadname, filename);
 	Con_Printf ("Downloading %s...\n", cls.downloadname);
 
-	// download to a temp name, and only rename
-	// to the real name when done, so if interrupted
-	// a runt file wont be left
+	// download to a temp name, and only rename to the real name when done,
+	// so if interrupted a runt file wont be left
 	COM_StripExtension (cls.downloadname, cls.downloadtempname);
 	strncat (cls.downloadtempname, ".tmp",
 			 sizeof (cls.downloadtempname) - strlen (cls.downloadtempname));
@@ -250,8 +248,8 @@ CL_CheckOrDownloadFile (const char *filename)
 void
 Model_NextDownload (void)
 {
-	char       *s;
-	int         i;
+	char	   *s;
+	int			i;
 
 	if (cls.downloadnumber == 0) {
 		Con_Printf ("Checking models...\n");
@@ -263,9 +261,9 @@ Model_NextDownload (void)
 	for (; cl.model_name[cls.downloadnumber][0]; cls.downloadnumber++) {
 		s = cl.model_name[cls.downloadnumber];
 		if (s[0] == '*')
-			continue;					// inline brush model
+			continue;							// inline brush model
 		if (!CL_CheckOrDownloadFile (s))
-			return;						// started a download
+			return;								// started a download
 	}
 
 	for (i = 1; i < MAX_MODELS; i++) {
@@ -320,7 +318,7 @@ Model_NextDownload (void)
 	R_NewMap (cl.worldmodel, cl.model_precache, MAX_MODELS);
 	Team_NewMap ();
 	Con_NewMap ();
-	Hunk_Check ();						// make sure nothing is hurt
+	Hunk_Check ();								// make sure nothing is hurt
 
 	// done with modellist, request first of static signon messages
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
@@ -332,8 +330,8 @@ Model_NextDownload (void)
 void
 Sound_NextDownload (void)
 {
-	char       *s;
-	int         i;
+	char	   *s;
+	int			i;
 
 	if (cls.downloadnumber == 0) {
 		Con_Printf ("Checking sounds...\n");
@@ -396,8 +394,8 @@ CL_RequestNextDownload (void)
 void
 CL_ParseDownload (void)
 {
-	byte        name[1024];
-	int         size, percent, r;
+	byte		name[1024];
+	int			size, percent, r;
 
 	// read the data
 	size = MSG_ReadShort (net_message);
@@ -423,7 +421,7 @@ CL_ParseDownload (void)
 	}
 
 	if (size == -2) {
-		const char *newname = MSG_ReadString (net_message);
+		const char	   *newname = MSG_ReadString (net_message);
 
 		if (strncmp (newname, cls.downloadname, strlen (cls.downloadname))
 			|| strstr (newname + strlen (cls.downloadname), "/")) {
@@ -476,8 +474,8 @@ CL_ParseDownload (void)
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		SZ_Print (&cls.netchan.message, "nextdl");
 	} else {
-		char        oldn[MAX_OSPATH];
-		char        newn[MAX_OSPATH];
+		char		oldn[MAX_OSPATH];
+		char		newn[MAX_OSPATH];
 
 		Qclose (cls.download);
 		VID_SetCaption (va ("Connecting to %s", cls.servername));
@@ -510,13 +508,13 @@ CL_ParseDownload (void)
 }
 
 static byte *upload_data;
-static int  upload_pos, upload_size;
+static int	upload_pos, upload_size;
 
 void
 CL_NextUpload (void)
 {
-	byte        buffer[1024];
-	int         percent, size, r;
+	byte		buffer[1024];
+	int			percent, size, r;
 
 	if (!upload_data)
 		return;
@@ -552,7 +550,7 @@ void
 CL_StartUpload (byte * data, int size)
 {
 	if (cls.state < ca_onserver)
-		return;							// gotta be connected
+		return;							// must be connected
 
 	// override
 	if (upload_data)
@@ -584,7 +582,7 @@ CL_StopUpload (void)
 	upload_data = NULL;
 }
 
-/* SERVER CONNECTING MESSAGES */
+// SERVER CONNECTING MESSAGES =================================================
 
 void Draw_ClearCache (void);
 void CL_ClearBaselines (void);		// LordHavoc: BIG BUG-FIX!
@@ -592,10 +590,10 @@ void CL_ClearBaselines (void);		// LordHavoc: BIG BUG-FIX!
 void
 CL_ParseServerData (void)
 {
-	char        fn[MAX_OSPATH];
+	char		fn[MAX_OSPATH];
 	const char *str;
-	int         protover;
-	qboolean    cflag = false;
+	int			protover;
+	qboolean	cflag = false;
 
 	extern char gamedirfile[MAX_OSPATH];
 
@@ -607,12 +605,11 @@ CL_ParseServerData (void)
 	// parse protocol version number
 	// allow 2.2 and 2.29 demos to play
 	protover = MSG_ReadLong (net_message);
-	if (protover != PROTOCOL_VERSION &&
-		!(cls.demoplayback
-		  && (protover <= 26 && protover >= 28)))
-			Host_Error ("Server returned version %i, not %i\nYou probably "
-						"need to upgrade.\nCheck http://www.quakeworld.net/",
-						protover, PROTOCOL_VERSION);
+	if (protover != PROTOCOL_VERSION
+		&& !(cls.demoplayback && (protover <= 26 && protover >= 28)))
+		Host_Error ("Server returned version %i, not %i\nYou probably "
+					"need to upgrade.\nCheck http://www.quakeworld.net/",
+					protover, PROTOCOL_VERSION);
 
 	cl.servercount = MSG_ReadLong (net_message);
 
@@ -628,8 +625,7 @@ CL_ParseServerData (void)
 
 	COM_Gamedir (str);
 
-	// ZOID--run the autoexec.cfg in the gamedir
-	// if it exists
+	// ZOID--run the autoexec.cfg in the gamedir if it exists
 	if (cflag) {
 		int         cmd_warncmd_val = cmd_warncmd->int_val;
 
@@ -690,7 +686,7 @@ CL_ParseServerData (void)
 void
 CL_ClearBaselines (void)
 {
-	int         i;
+	int			i;
 
 	memset (cl_baselines, 0, sizeof (cl_baselines));
 	for (i = 0; i < MAX_EDICTS; i++) {
@@ -706,7 +702,7 @@ void
 CL_ParseSoundlist (void)
 {
 	const char *str;
-	int         numsounds, n;
+	int			numsounds, n;
 
 	// precache sounds
 //	memset (cl.sound_precache, 0, sizeof(cl.sound_precache));
@@ -740,7 +736,7 @@ CL_ParseSoundlist (void)
 void
 CL_ParseModellist (void)
 {
-	int         nummodels, n;
+	int			nummodels, n;
 	const char *str;
 
 	// precache models and note certain default indexes
@@ -813,8 +809,8 @@ CL_ParseBaseline (entity_state_t *es)
 void
 CL_ParseStatic (void)
 {
-	entity_t   *ent;
-	entity_state_t es;
+	entity_t	   *ent;
+	entity_state_t	es;
 
 	CL_ParseBaseline (&es);
 
@@ -837,8 +833,8 @@ CL_ParseStatic (void)
 void
 CL_ParseStaticSound (void)
 {
-	int         sound_num, vol, atten;
-	vec3_t      org;
+	int			sound_num, vol, atten;
+	vec3_t		org;
 
 	MSG_ReadCoordV (net_message, org);
 	sound_num = MSG_ReadByte (net_message);
@@ -848,14 +844,14 @@ CL_ParseStaticSound (void)
 	S_StaticSound (cl.sound_precache[sound_num], org, vol, atten);
 }
 
-/* ACTION MESSAGES */
+// ACTION MESSAGES ============================================================
 
 void
 CL_ParseStartSoundPacket (void)
 {
-	float       attenuation;
-	int         channel, ent, sound_num, volume;
-	vec3_t      pos;
+	float		attenuation;
+	int			channel, ent, sound_num, volume;
+	vec3_t		pos;
 
 	channel = MSG_ReadShort (net_message);
 
@@ -891,9 +887,9 @@ CL_ParseStartSoundPacket (void)
 void
 CL_ParseClientdata (void)
 {
-	float       latency;
-	frame_t    *frame;
-	int         i;
+	float		latency;
+	frame_t	   *frame;
+	int			i;
 
 	// calculate simulated time of message
 	oldparsecountmod = parsecountmod;
@@ -922,7 +918,7 @@ CL_ParseClientdata (void)
 void
 CL_ProcessUserInfo (int slot, player_info_t *player)
 {
-	char        skin[512];
+	char		skin[512];
 	const char *s;
 
 	s = Info_ValueForKey (player->userinfo, "skin");
@@ -955,10 +951,9 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 void
 CL_UpdateUserinfo (void)
 {
-	int         slot;
-	player_info_t *player;
-	int         uid;
-	const char *info;
+	int				slot, uid;
+	const char	   *info;
+	player_info_t  *player;
 
 	slot = MSG_ReadByte (net_message);
 	if (slot >= MAX_CLIENTS)
@@ -984,10 +979,9 @@ CL_UpdateUserinfo (void)
 void
 CL_SetInfo (void)
 {
-	char        key[MAX_MSGLEN], value[MAX_MSGLEN];
-	int         slot;
-	int         flags;
-	player_info_t *player;
+	char			key[MAX_MSGLEN], value[MAX_MSGLEN];
+	int				flags, slot;
+	player_info_t  *player;
 
 	slot = MSG_ReadByte (net_message);
 	if (slot >= MAX_CLIENTS)
@@ -1015,7 +1009,7 @@ CL_SetInfo (void)
 void
 CL_ServerInfo (void)
 {
-	char        key[MAX_MSGLEN], value[MAX_MSGLEN];
+	char		key[MAX_MSGLEN], value[MAX_MSGLEN];
 
 	strncpy (key, MSG_ReadString (net_message), sizeof (key) - 1);
 	key[sizeof (key) - 1] = 0;
@@ -1041,10 +1035,9 @@ CL_ServerInfo (void)
 void
 CL_SetStat (int stat, int value)
 {
-	int         j;
+	int			j;
 
 	if (stat < 0 || stat >= MAX_CL_STATS)
-//		Sys_Error ("CL_SetStat: %i is invalid", stat);
 		Host_Error ("CL_SetStat: %i is invalid", stat);
 
 	Sbar_Changed ();
@@ -1069,9 +1062,9 @@ void
 CL_MuzzleFlash (void)
 {
 	dlight_t   *dl;
-	int         i;
+	int			i;
 	player_state_t *pl;
-	vec3_t      fv, rv, uv;
+	vec3_t		fv, rv, uv;
 
 	i = MSG_ReadShort (net_message);
 
@@ -1100,7 +1093,7 @@ CL_MuzzleFlash (void)
 
 #define SHOWNET(x) if (cl_shownet->int_val == 2) Con_Printf ("%3i:%s\n", net_message->readcount-1, x);
 
-int         received_framecount;
+int			received_framecount;
 
 void Sbar_LogFrags(void);
 
@@ -1109,7 +1102,7 @@ CL_ParseServerMessage (void)
 {
 	const char *s;
 	static dstring_t *stuffbuf;
-	int         cmd, i, j;
+	int			cmd, i, j;
 
 	received_framecount = host_framecount;
 	cl.last_servermessage = realtime;
@@ -1159,14 +1152,16 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_print: {
- 				char p[2048];
+ 				char	p[2048];
+
 				i = MSG_ReadByte (net_message);
 				s = MSG_ReadString (net_message);
 				if (i == PRINT_CHAT) {
 					// TODO: cl_nofake 2 -- accept fake messages from teammates
 
 					if (cl_nofake->int_val) {
-						char *c;
+						char	*c;
+
 						strncpy (p, s, sizeof (p));
 						p[sizeof (p) - 1] = 0;
 						for (c = p; *c; c++) {
@@ -1211,21 +1206,19 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_serverdata:
-				Cbuf_Execute ();		// make sure any stuffed commands are 
-										// done
+				Cbuf_Execute ();	// make sure any stuffed commands are done
 				CL_ParseServerData ();
 				vid.recalc_refdef = true;	// leave full screen intermission
 				break;
 
 			case svc_setangle:
 				MSG_ReadAngleV (net_message, cl.viewangles);
-//				cl.viewangles[PITCH] = cl.viewangles[ROLL] = 0;
+// FIXME		cl.viewangles[PITCH] = cl.viewangles[ROLL] = 0;
 				break;
 
 			case svc_lightstyle:
 				i = MSG_ReadByte (net_message);
 				if (i >= MAX_LIGHTSTYLES)
-//					Sys_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
 					Host_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
 				strcpy (r_lightstyle[i].map, MSG_ReadString (net_message));
 				r_lightstyle[i].length = strlen (r_lightstyle[i].map);
@@ -1279,9 +1272,15 @@ CL_ParseServerMessage (void)
 				i = MSG_ReadShort (net_message);
 				CL_ParseBaseline (&cl_baselines[i]);
 				break;
+
 			case svc_spawnstatic:
 				CL_ParseStatic ();
 				break;
+
+			case svc_spawnstaticsound:
+				CL_ParseStaticSound ();
+				break;
+
 			case svc_temp_entity:
 				CL_ParseTEnt ();
 				break;
@@ -1299,14 +1298,11 @@ CL_ParseServerMessage (void)
 				j = MSG_ReadByte (net_message);
 				CL_SetStat (i, j);
 				break;
+
 			case svc_updatestatlong:
 				i = MSG_ReadByte (net_message);
 				j = MSG_ReadLong (net_message);
 				CL_SetStat (i, j);
-				break;
-
-			case svc_spawnstaticsound:
-				CL_ParseStaticSound ();
 				break;
 
 			case svc_cdtrack:
@@ -1331,10 +1327,8 @@ CL_ParseServerMessage (void)
 				Con_DPrintf ("\n");
 				VectorCopy (vec3_origin, cl.simvel);
 
-				/*
-					automatic fraglogging (by elmex)
-					XXX: Should this _really_ called here?
-				*/
+				// automatic fraglogging (by elmex)
+				// XXX: Should this _really_ called here?
 				if (!cls.demoplayback)
 					Sbar_LogFrags();
 				break;
@@ -1343,7 +1337,7 @@ CL_ParseServerMessage (void)
 				Con_Printf("svc_finale\n");
 				cl.intermission = 2;
 				cl.completed_time = realtime;
-				vid.recalc_refdef = true;	// go to full screen
+				vid.recalc_refdef = true;				// go to full screen
 				SCR_CenterPrint (MSG_ReadString (net_message));
 				break;
 
@@ -1354,6 +1348,7 @@ CL_ParseServerMessage (void)
 			case svc_smallkick:
 				cl.punchangle = -2;
 				break;
+
 			case svc_bigkick:
 				cl.punchangle = -4;
 				break;
@@ -1389,9 +1384,8 @@ CL_ParseServerMessage (void)
 			case svc_chokecount:		// some preceding packets were choked
 				i = MSG_ReadByte (net_message);
 				for (j = 0; j < i; j++)
-					cl.
-						frames[(cls.netchan.incoming_acknowledged - 1 - j) &
-							   UPDATE_MASK].receivedtime = -2;
+					cl.frames[(cls.netchan.incoming_acknowledged - 1 - j) &
+							  UPDATE_MASK].receivedtime = -2;
 				break;
 
 			case svc_modellist:
@@ -1425,7 +1419,6 @@ CL_ParseServerMessage (void)
 				else
 					CDAudio_Resume ();
 				break;
-
 		}
 	}
 

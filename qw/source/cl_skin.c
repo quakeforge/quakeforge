@@ -56,7 +56,6 @@ cvar_t     *topcolor;
 cvar_t     *bottomcolor;
 
 
-
 void
 Skin_NextDownload (void)
 {

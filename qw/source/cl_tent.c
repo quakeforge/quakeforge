@@ -144,7 +144,7 @@ CL_Init_Entity (entity_t *ent)
 void
 CL_ClearTEnts (void)
 {
-	int i;
+	int		i;
 
 	memset (&cl_beams, 0, sizeof (cl_beams));
 	memset (&cl_explosions, 0, sizeof (cl_explosions));
@@ -152,11 +152,11 @@ CL_ClearTEnts (void)
 		int j;
 
 		for (j = 0; j < MAX_BEAM_ENTS; j++) {
-			CL_Init_Entity(&cl_beams[i].ent_list[j]);
+			CL_Init_Entity (&cl_beams[i].ent_list[j]);
 		}
 	}
 	for (i = 0; i < MAX_EXPLOSIONS; i++) {
-		CL_Init_Entity(&cl_explosions[i].ent);
+		CL_Init_Entity (&cl_explosions[i].ent);
 	}
 }
 
@@ -186,6 +186,7 @@ CL_AllocBeam (int ent)
 {
 	int         i;
 	beam_t     *b;
+
 	// override any beam with the same entity
 	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++)
 		return b;
@@ -247,7 +248,7 @@ setup_beam (beam_t *b)
 	while (ent_count--) {
 		ent = &b->ent_list[ent_count];
 		VectorMA (org, d, dist, ent->origin);
-		d += 1;
+		d += 1.0;
 		ent->model = b->model;
 		ent->angles[0] = pitch;
 		ent->angles[1] = yaw;
@@ -289,7 +290,7 @@ CL_ParseTEnt (void)
 	byte         type;
 	dlight_t    *dl;
 	explosion_t *ex;
-	int          colorStart, colorLength, rnd;
+	int          colorStart, colorLength;
 	int          cnt = -1;
 	vec3_t       pos;
 
@@ -311,16 +312,19 @@ CL_ParseTEnt (void)
 			MSG_ReadCoordV (net_message, pos);
 			R_SpikeEffect (pos);
 
-			if (rand () % 5)
-				S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
-			else {
-				rnd = rand () & 3;
-				if (rnd == 1)
+			switch (rand () % 20) {
+				case 19:
 					S_StartSound (-1, 0, cl_sfx_ric1, pos, 1, 1);
-				else if (rnd == 2)
+					break;
+				case 18:
 					S_StartSound (-1, 0, cl_sfx_ric2, pos, 1, 1);
-				else
+					break;
+				case 17:
+				case 16:
 					S_StartSound (-1, 0, cl_sfx_ric3, pos, 1, 1);
+					break;
+				default:
+					S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
 			}
 			break;
 
@@ -328,16 +332,19 @@ CL_ParseTEnt (void)
 			MSG_ReadCoordV (net_message, pos);
 			R_SuperSpikeEffect (pos);
 
-			if (rand () % 5)
-				S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
-			else {
-				rnd = rand () & 3;
-				if (rnd == 1)
+			switch (rand () % 20) {
+				case 19:
 					S_StartSound (-1, 0, cl_sfx_ric1, pos, 1, 1);
-				else if (rnd == 2)
+					break;
+				case 18:
 					S_StartSound (-1, 0, cl_sfx_ric2, pos, 1, 1);
-				else
+					break;
+				case 17:
+				case 16:
 					S_StartSound (-1, 0, cl_sfx_ric3, pos, 1, 1);
+					break;
+				default:
+					S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
 			}
 			break;
 
@@ -370,7 +377,7 @@ CL_ParseTEnt (void)
 			ex->ent.model = cl_spr_explod;
 			break;
 
-		case TE_TAREXPLOSION:			// tarbaby explosion
+		case TE_TAREXPLOSION:		// tarbaby explosion
 			MSG_ReadCoordV (net_message, pos);
 			R_BlobExplosion (pos);
 
@@ -426,13 +433,13 @@ CL_ParseTEnt (void)
 									   3 + 2] * (1.0 / 255.0);
 			break;
 
-		case TE_GUNSHOT:				// bullet hitting wall
+		case TE_GUNSHOT:			// bullet hitting wall
 			cnt = MSG_ReadByte (net_message) * 20;
 			MSG_ReadCoordV (net_message, pos);
 			R_GunshotEffect (pos, cnt);
 			break;
 
-		case TE_BLOOD:					// bullet hitting body
+		case TE_BLOOD:				// bullet hitting body
 			cnt = MSG_ReadByte (net_message) * 20;
 			MSG_ReadCoordV (net_message, pos);
 			R_BloodPuffEffect (pos, cnt);

@@ -374,8 +374,8 @@ CL_Rcon_f (void)
 		to = cls.netchan.remote_address;
 	else {
 		if (!rcon_address->string[0]) {
-			Con_Printf ("You must either be connected,\n"
-						"or set the 'rcon_address' cvar\n"
+			Con_Printf ("You must either be connected, "
+						"or set the 'rcon_address' cvar "
 						"to issue rcon commands\n");
 
 			return;
@@ -611,7 +611,7 @@ CL_FullServerinfo_f (void)
 		cl.watervis = atoi (p);
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "skybox")) && *p) {
-		//FIXME didn't actually do anything anyway
+		// FIXME: Didn't actually do anything anyway
 	}
 }
 
@@ -701,8 +701,8 @@ CL_FullInfo_f (void)
 			continue;
 
 		Info_SetValueForKey (cls.userinfo, key, value,
-							 (!strequal (key, "name"))
-							 | (strequal (key, "team") << 1));
+							 (!strequal (key, "name")) |
+							 (strequal (key, "team") << 1));
 	}
 }
 
@@ -727,8 +727,8 @@ CL_SetInfo_f (void)
 		return;
 
 	Info_SetValueForKey (cls.userinfo, Cmd_Argv (1), Cmd_Argv (2),
-						 (!strequal (Cmd_Argv (1), "name"))
-						  | (strequal (Cmd_Argv (2), "team") << 1));
+						 (!strequal (Cmd_Argv (1), "name")) |
+						 (strequal (Cmd_Argv (2), "team") << 1));
 	if (cls.state >= ca_connected)
 		Cmd_ForwardToServer ();
 }
@@ -753,7 +753,6 @@ CL_GetInfo_f (void)
 	CL_Packet_f
 
 	packet <destination> <contents>
-
 	Contents allows \n escape character
 */
 void
@@ -912,8 +911,8 @@ CL_ConnectionlessPacket (void)
 
 		if (!cl_allow_cmd_pkt->int_val ||
 			((*(unsigned int *) net_from.ip !=
-			  *(unsigned int *) net_local_adr.ip
-			  && *(unsigned int *) net_from.ip != htonl (INADDR_LOOPBACK)))) {
+			  *(unsigned int *) net_local_adr.ip &&
+			  *(unsigned int *) net_from.ip != htonl (INADDR_LOOPBACK)))) {
 			Con_Printf ("Command packet from remote host.  Ignored.\n");
 			return;
 		}
@@ -930,10 +929,9 @@ CL_ConnectionlessPacket (void)
 		while (len && isspace ((byte) s[len - 1]))
 			len--;
 
-		if (!allowremotecmd
-			&& (!*localid->string
-				|| strlen (localid->string) > len
-				|| strncmp (localid->string, s, len))) {
+		if (!allowremotecmd && (!*localid->string ||
+								strlen (localid->string) > len ||
+								strncmp (localid->string, s, len))) {
 			if (!*localid->string) {
 				Con_Printf ("===========================\n");
 				Con_Printf ("Command packet received from local host, but no "
@@ -1014,7 +1012,6 @@ CL_ConnectionlessPacket (void)
 			Host_EndGame ("End of demo");
 		else
 			Con_Printf ("svc_disconnect\n");
-//		Host_EndGame ("Server disconnected");
 		return;
 	}
 
@@ -1024,7 +1021,6 @@ CL_ConnectionlessPacket (void)
 void
 CL_ReadPackets (void)
 {
-//  while (NET_GetPacket ())
 	while (CL_GetMessage ()) {
 
 		if (net_message->message->cursize == -1)
@@ -1057,11 +1053,8 @@ CL_ReadPackets (void)
 			continue;
 		}
 		if (!Netchan_Process (&cls.netchan))
-			continue;					// wasn't accepted for some reason
+			continue;						// wasn't accepted for some reason
 		CL_ParseServerMessage ();
-
-//		if (cls.demoplayback && cls.state >= ca_active && !CL_DemoBehind())
-//			return;
 	}
 
 	// check timeout
@@ -1102,7 +1095,7 @@ CL_Download_f (void)
 		SZ_Print (&cls.netchan.message, va ("download %s\n", Cmd_Argv (1)));
 	} else {
 		Con_Printf ("error downloading %s: %s\n", Cmd_Argv (1),
-		            strerror (errno));
+					strerror (errno));
 	}
 }
 
@@ -1135,7 +1128,7 @@ CL_SetState (cactive_t state)
 
 		// Auto demo recorder starts here
 		if(cl_autorecord->int_val && !cls.demoplayback && !cls.demorecording)
-			CL_Record (0);		// FIXME might want a cvar here
+			CL_Record (0);					// FIXME: might want a cvar here
 	} else {
 		r_active = false;
 		game_target = IMT_CONSOLE;
@@ -1161,7 +1154,6 @@ CL_Init (void)
 	Info_SetValueForKey (cls.userinfo, "bottomcolor", "0", 0);
 	Info_SetValueForKey (cls.userinfo, "rate", "2500", 0);
 	Info_SetValueForKey (cls.userinfo, "msg", "1", 0);
-//	snprintf (st, sizeof(st), "%s-%04d", QW_VERSION, build_number());
 	snprintf (st, sizeof (st), "%s", QW_VERSION);
 	Info_SetValueForStarKey (cls.userinfo, "*ver", st, 0);
 
@@ -1176,8 +1168,10 @@ CL_Init (void)
 	Cmd_AddCommand ("version", CL_Version_f, "Report version information");
 	Cmd_AddCommand ("changing", CL_Changing_f, "Used when maps are changing");
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "Disconnect from server");
-	Cmd_AddCommand ("record", CL_Record_f, "Record a demo, if no filename argument is given\n"
-					"the demo will be called Year-Month-Day-Hour-Minute-Mapname");
+	Cmd_AddCommand ("record", CL_Record_f, "Record a demo, if no filename "
+					"argument is given\n"
+					"the demo will be called Year-Month-Day-Hour-Minute-"
+					"Mapname");
 	Cmd_AddCommand ("rerecord", CL_ReRecord_f, "Rerecord a demo on the same "
 					"server");
 	Cmd_AddCommand ("snap", CL_RSShot_f, "Take a screenshot and upload it to "
@@ -1212,20 +1206,20 @@ CL_Init (void)
 					"that Quake should switch to upon a backpack pickup.\n "
 					"w_switch - Determines the highest weapon that Quake "
 					"should switch to upon a weapon pickup.");
-	Cmd_AddCommand ("getinfo", CL_GetInfo_f, "Returns the value of client info key $1");
+	Cmd_AddCommand ("getinfo", CL_GetInfo_f, "Returns the value of client "
+					"info key $1");
 	Cmd_AddCommand ("fullinfo", CL_FullInfo_f, "Used by GameSpy and Qlist to "
 					"set setinfo variables");
 	Cmd_AddCommand ("fullserverinfo", CL_FullServerinfo_f, "Used by GameSpy "
 					"and Qlist to obtain server variables");
-	Cmd_AddCommand ("getserverinfo", CL_Getserverinfo_f, "Returns the value corresponding to key"
-					" $1 in the server info.");
+	Cmd_AddCommand ("getserverinfo", CL_Getserverinfo_f, "Returns the value "
+					"corresponding to key $1 in the server info.");
 	Cmd_AddCommand ("download", CL_Download_f, "Manually download a quake "
 					"file from the server");
 	Cmd_AddCommand ("nextul", CL_NextUpload, "Tells the client to send the "
 					"next upload");
 	Cmd_AddCommand ("stopul", CL_StopUpload, "Tells the client to stop "
 					"uploading");
-
 	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "force the view "
 					"to be level");
 	// forward to server commands
@@ -1360,8 +1354,8 @@ CL_Init_Cvars (void)
 						  "Turn this on to save cpu when fps limited. "
 						  "May affect frame rate adversely depending on "
 						  "local machine/os conditions");
-	cl_autorecord = Cvar_Get ("cl_autorecord", "0", CVAR_ARCHIVE, NULL,
-			"Turn this on, if you want to record every game");
+	cl_autorecord = Cvar_Get ("cl_autorecord", "0", CVAR_ARCHIVE, NULL, "Turn "
+							  "this on, if you want to record every game");
 }
 
 /*
@@ -1494,11 +1488,11 @@ int         nopacketcount;
 void
 Host_Frame (float time)
 {
-	static double time1 = 0;
-	static double time2 = 0;
-	static double time3 = 0;
-	float sleeptime;
-	int         pass1, pass2, pass3;
+	static double	time1 = 0;
+	static double	time2 = 0;
+	static double	time3 = 0;
+	float			sleeptime;
+	int				pass1, pass2, pass3;
 
 	if (setjmp (host_abort))
 		// something bad happened, or the server disconnected
@@ -1794,7 +1788,7 @@ Host_Init (void)
 				build_number ());
 
 	Con_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n", PROGRAM);
-	Con_NewMap ();			// force the menus to be loaded
+	Con_NewMap ();							// force the menus to be loaded
 
 	CL_UpdateScreen (realtime);
 
