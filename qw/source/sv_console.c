@@ -213,6 +213,7 @@ Con_ProcessInput (inputline_t *il, int ch)
 			Con_CompleteCommandLine();
 			break;
 		case KEY_BACKSPACE:
+		case '\b':
 			if (key_linepos > 1) {
 				strcpy (key_lines[edit_line] + key_linepos - 1,
 						key_lines[edit_line] + key_linepos);
