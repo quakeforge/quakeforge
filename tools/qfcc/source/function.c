@@ -170,7 +170,7 @@ new_function (void)
 	f = calloc (1, sizeof (function_t));
 	*pr.func_tail = f;
 	pr.func_tail = &f->next;
-
+	f->function_num = pr.num_functions++;
 	return f;
 }
 
@@ -203,7 +203,7 @@ build_function (function_t *f)
 {
 	f->def->constant = 1;
 	f->def->initialized = 1;
-	G_FUNCTION (f->def->ofs) = pr.num_functions;
+	G_FUNCTION (f->def->ofs) = f->function_num;
 }
 
 void
@@ -233,7 +233,7 @@ finish_function (function_t *f)
 
 	if (f->aux) {
 		def_t *def;
-		f->aux->function = pr.num_functions;
+		f->aux->function = f->function_num;
 		for (def = f->scope->head; def; def = def->def_next) {
 			if (def->name) {
 				ddef_t *d = new_local ();
@@ -245,7 +245,6 @@ finish_function (function_t *f)
 			}
 		}
 	}
-	pr.num_functions++;
 }
 
 void

@@ -40,6 +40,7 @@ typedef struct function_s {
 	pr_auxfunction_t	*aux;		// debug info;
 	int					builtin;	// if non 0, call an internal function
 	int					code;		// first statement
+	int					function_num;
 	const char			*file;		// source file with definition
 	int					file_line;
 	struct def_s		*def;
