@@ -209,6 +209,8 @@ const char *COM_Parse (const char *data);
 
 // Returns a value to GIB so that it can be picked up for embedded commands
 void	Cmd_Return (const char *value);
+// Generates a GIB error
+void	Cmd_Error (const char *message);
 
 extern struct cvar_s *cmd_warncmd;
 

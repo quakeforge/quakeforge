@@ -107,14 +107,15 @@ void
 dstring_replace (dstring_t *dstr, const char *data, unsigned int len,
 				 unsigned int pos, unsigned int rlen)
 {
+	unsigned int oldsize = dstr->size;
 	if (rlen < len) {
 		dstr->size += len - rlen;
 		dstring_adjust (dstr);
 		memmove (dstr->str + pos + len, dstr->str + pos + rlen,
-				 dstr->size - (pos + rlen));
+				 oldsize - (pos + rlen));
 	} else if (rlen > len) {
 		memmove (dstr->str + pos + len, dstr->str + pos + rlen,
-				 dstr->size - (pos + rlen));
+				 oldsize - (pos + rlen));
 		dstr->size -= rlen - len;
 		dstring_adjust (dstr);
 	}

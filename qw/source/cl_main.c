@@ -616,6 +616,16 @@ CL_FullServerinfo_f (void)
 }
 
 void
+CL_Getserverinfo_f (void)
+{
+	if (Cmd_Argc () != 2) {
+		Cmd_Error ("getserverinfo: invalid number of arguments.\n");
+		return;
+	}
+	Cmd_Return (Info_ValueForKey (cl.serverinfo, Cmd_Argv(1)));
+}
+
+void
 CL_AddQFInfoKeys (void)
 {
 	char        cap[100] = "";			// max of 98 or so flags
@@ -1192,6 +1202,8 @@ CL_Init (void)
 					"set setinfo variables");
 	Cmd_AddCommand ("fullserverinfo", CL_FullServerinfo_f, "Used by GameSpy "
 					"and Qlist to obtain server variables");
+	Cmd_AddCommand ("getserverinfo", CL_Getserverinfo_f, "Returns the value corresponding to key"
+					" $1 in the server info.");
 	Cmd_AddCommand ("download", CL_Download_f, "Manually download a quake "
 					"file from the server");
 	Cmd_AddCommand ("nextul", CL_NextUpload, "Tells the client to send the "

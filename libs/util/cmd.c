@@ -52,6 +52,7 @@ static const char rcsid[] =
 #include "QF/dstring.h"
 #include "QF/exp.h"
 #include "QF/va.h"
+#include "QF/info.h"
 
 typedef struct cmdalias_s {
 	struct cmdalias_s *next;
@@ -215,14 +216,6 @@ Cmd_FreeStack (cmd_buffer_t *stack) {
 	}
 }
 		
-void
-Cmd_Return (const char *value) {
-	if (cmd_activebuffer->prev && cmd_activebuffer->prev->returned == cmd_waiting) {
-		dstring_clearstr (cmd_activebuffer->prev->retval);
-		dstring_appendstr (cmd_activebuffer->prev->retval, value);
-		cmd_activebuffer->prev->returned = cmd_returned;
-	}
-}
 
 /*void
 Cmd_FreeBuffer (cmd_buffer_t *del)
@@ -319,6 +312,16 @@ Cmd_Error (const char *message)
 		dstring_appendstr (cmd_backtrace, va ("--> %s\n", cur->realline->str));
 	}
 }
+
+void
+Cmd_Return (const char *value) {
+	if (cmd_activebuffer->prev && cmd_activebuffer->prev->returned == cmd_waiting) {
+		dstring_clearstr (cmd_activebuffer->prev->retval);
+		dstring_appendstr (cmd_activebuffer->prev->retval, value);
+		cmd_activebuffer->prev->returned = cmd_returned;
+	}
+}
+
 
 
 /*
@@ -1017,9 +1020,9 @@ Cmd_ProcessTags (dstring_t * dstr)
 		if (dstr->str[i] == '<' && !escaped (dstr->str, i)) {
 			close = 0;
 			for (n = 1;
-				 dstr->str[i + n] != '>' || escaped (dstr->str, i + n);
+				 dstr->str[i+n] != '>' || escaped (dstr->str, i + n);
 				 n++)
-				if (dstr->str[n] == 0)
+				if (dstr->str[i+n] == 0)
 					return;
 			if (dstr->str[i + 1] == '/')
 				close = 1;
@@ -1312,8 +1315,7 @@ int
 Cmd_ProcessToken (cmd_token_t *token)
 {
 	int res;
-	
-	Cmd_ProcessTags (token->processed);
+
 	res = Cmd_ProcessEmbedded (token, token->processed);
 	if (res < 0)
 		return res;
@@ -1323,6 +1325,7 @@ Cmd_ProcessToken (cmd_token_t *token)
 	res = Cmd_ProcessMath (token->processed);
 	if (res < 0)
 		return res;
+	Cmd_ProcessTags (token->processed);
 	Cmd_ProcessEscapes (token->processed);
 	return 0;
 }
@@ -2025,7 +2028,8 @@ Cmd_Randint_f (void) {
 }
 
 void
-Cmd_Streq_f (void) {
+Cmd_Streq_f (void)
+{
 	if (Cmd_Argc () != 3) {
 		Cmd_Error ("streq: invalid number of arguments.\n");
 		return;
@@ -2034,7 +2038,8 @@ Cmd_Streq_f (void) {
 }
 
 void
-Cmd_Strlen_f (void) {
+Cmd_Strlen_f (void)
+{
 	if (Cmd_Argc () != 2) {
 		Cmd_Error ("strlen: invalid number of arguments.\n");
 		return;
