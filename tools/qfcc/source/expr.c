@@ -1856,30 +1856,34 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 
 	switch (e1->type) {
 		case ex_def:
-			type = e1->e.def->type;
-			if (type->type == ev_struct) {
-				int         abs = e1->e.def->global;
+			{
 				def_t      *def = e1->e.def;
+				type = def->type;
+				if (type->type == ev_struct) {
+					int         abs = e1->e.def->global;
+					def_t      *def = e1->e.def;
 
-				e = e1;
-				e->type = ex_pointer;
-				e->e.pointer.val = def->ofs;
-				e->e.pointer.type = t;
-				e->e.pointer.abs = abs;
-			} else if (type->type == ev_array) {
-				int         abs = e1->e.def->global;
-				def_t      *def = e1->e.def;
+					e = e1;
+					e->type = ex_pointer;
+					e->e.pointer.val = def->ofs;
+					e->e.pointer.type = t;
+					e->e.pointer.abs = abs;
+				} else if (type->type == ev_array) {
+					int         abs = e1->e.def->global;
+					def_t      *def = e1->e.def;
 
-				e = e1;
-				e->type = ex_pointer;
-				e->e.pointer.val = def->ofs;
-				e->e.pointer.type = t;
-				e->e.pointer.abs = abs;
-			} else {
-				e = new_unary_expr ('&', e1);
-				e->e.expr.type = pointer_type (type);
+					e = e1;
+					e->type = ex_pointer;
+					e->e.pointer.val = def->ofs;
+					e->e.pointer.type = t;
+					e->e.pointer.abs = abs;
+				} else {
+					e = new_unary_expr ('&', e1);
+					e->e.expr.type = pointer_type (type);
+				}
+				e->e.pointer.def = def;
+				break;
 			}
-			break;
 		case ex_expr:
 			if (e1->e.expr.op == '.') {
 				e = e1;

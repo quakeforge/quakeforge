@@ -94,7 +94,7 @@ dump_defs (qfo_t *qfo)
 //						qfo->strings + qfo->data[def->ofs].string_var);
 		} else if (def->basic_type == ev_func) {
 			printf ("    %4d %s\n", qfo->data[def->ofs].func_var,
-					qfo->strings + qfo->functions[qfo->data[def->ofs].func_var].name);
+					qfo->strings + qfo->functions[qfo->data[def->ofs].func_var - 1].name);
 		} else {
 //				printf ("    %4d\n", qfo->data[def->ofs].integer_var);
 		}
