@@ -98,6 +98,7 @@ Info_SetValueForStarKey (info_t *info, const char *key, const char *value, int f
 {
 	info_key_t *k;
 	int         cursize;
+	char       *str;
 
 	if (strstr (key, "\\") || strstr (value, "\\")) {
 		Sys_Printf ("Can't use keys or values with a \\\n");
@@ -136,9 +137,24 @@ Info_SetValueForStarKey (info_t *info, const char *key, const char *value, int f
 		info->cursize += strlen (key) + 1;
 		Hash_Add (info->tab, k);
 	}
-	if (!(k->value = strdup (value)))
+	if (!(str = strdup (value)))
 		Sys_Error ("Info_SetValueForStarKey: out of memory\n");
-	info->cursize += strlen (value) + 1;
+	if (flags & 1) {
+		byte       *s, *d;
+		for (d = s = str; *s; s++)
+			if ((*s & 127) >= 32 && (*s & 127) <=127)
+				*d++ = *s & 127;
+		if (flags & 2)
+			for (d = s = str; *s; s++)
+					*d++ = tolower (*s);
+	} else {
+		byte       *s, *d;
+		for (d = s = str; *s; s++)
+			if (*s >= 13)
+				*d++ = *s;
+	}
+	info->cursize += strlen (str) + 1;
+	k->value = str;
 }
 
 void
