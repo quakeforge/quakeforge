@@ -157,7 +157,6 @@ Netchan_OutOfBand (netadr_t adr, int length, byte * data)
 			NET_SendPacket (send.cursize, send.data, adr);
 	} else
 		NET_SendPacket (send.cursize, send.data, adr);
-
 }
 
 /*
@@ -174,7 +173,6 @@ Netchan_OutOfBandPrint (netadr_t adr, const char *format, ...)
 	va_start (argptr, format);
 	vsnprintf (string, sizeof (string), format, argptr);
 	va_end (argptr);
-
 
 	Netchan_OutOfBand (adr, strlen (string), (byte *) string);
 }
@@ -361,7 +359,7 @@ Netchan_Process (netchan_t *chan)
 					sequence_ack, reliable_ack, net_message->message->cursize);
 
 	// get a rate estimation
-#if 0
+#if 0 // FIXME: Dead code
 	if (chan->outgoing_sequence - sequence_ack < MAX_LATENT) {
 		int         i;
 		double      time, rate;
@@ -404,8 +402,7 @@ Netchan_Process (netchan_t *chan)
 		if (showdrop->int_val)
 			Con_Printf ("%s:Dropped %i packets at %i\n",
 						NET_AdrToString (chan->remote_address),
-						sequence - (chan->incoming_sequence + 1)
-						, sequence);
+						sequence - (chan->incoming_sequence + 1), sequence);
 	}
 
 	// if the current outgoing reliable message has been acknowledged

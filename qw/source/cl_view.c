@@ -735,8 +735,6 @@ DropPunchAngle (void)
 void
 V_RenderView (void)
 {
-//	if (cl.simangles[ROLL])
-//		Sys_Error ("cl.simangles[ROLL]");   // DEBUG
 	cl.simangles[ROLL] = 0;				// FIXME @@@
 
 	if (cls.state != ca_active)

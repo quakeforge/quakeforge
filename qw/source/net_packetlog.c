@@ -333,63 +333,53 @@ Log_Delta(int bits)
 	to.flags = bits;
 
 	if (bits & U_MODEL)
-                Net_LogPrintf (" MdlIdx: %d", MSG_ReadByte (&packet));
-
-        if (bits & U_FRAME) {
-                to.frame = MSG_ReadByte (&packet);
-                Net_LogPrintf (" Frame: %d", to.frame);
-        }
-
+		Net_LogPrintf (" MdlIdx: %d", MSG_ReadByte (&packet));
+	if (bits & U_FRAME) {
+		to.frame = MSG_ReadByte (&packet);
+		Net_LogPrintf (" Frame: %d", to.frame);
+	}
 	if (bits & U_COLORMAP)
-                Net_LogPrintf (" Colormap: %d", MSG_ReadByte (&packet));
-
+		Net_LogPrintf (" Colormap: %d", MSG_ReadByte (&packet));
 	if (bits & U_SKIN)
-                Net_LogPrintf (" Skinnum: %d", MSG_ReadByte (&packet));
-
-        if (bits & U_EFFECTS) {
-                to.effects = MSG_ReadByte (&packet);
-                Net_LogPrintf (" Effects: %d", to.effects);
-        }
-
+		Net_LogPrintf (" Skinnum: %d", MSG_ReadByte (&packet));
+	if (bits & U_EFFECTS) {
+		to.effects = MSG_ReadByte (&packet);
+		Net_LogPrintf (" Effects: %d", to.effects);
+	}
 	if (bits & U_ORIGIN1)
-                Net_LogPrintf (" X: %f", MSG_ReadCoord (&packet));
-
+		Net_LogPrintf (" X: %f", MSG_ReadCoord (&packet));
 	if (bits & U_ANGLE1)
-                Net_LogPrintf (" Pitch: %d", MSG_ReadAngle (&packet));
-
+		Net_LogPrintf (" Pitch: %d", MSG_ReadAngle (&packet));
 	if (bits & U_ORIGIN2)
-                Net_LogPrintf (" Y: %f", MSG_ReadCoord (&packet));
-
+		Net_LogPrintf (" Y: %f", MSG_ReadCoord (&packet));
 	if (bits & U_ANGLE2)
-                Net_LogPrintf (" Yaw: %d", MSG_ReadAngle (&packet));
-
+		Net_LogPrintf (" Yaw: %d", MSG_ReadAngle (&packet));
 	if (bits & U_ORIGIN3)
-                Net_LogPrintf (" Z: %f", MSG_ReadCoord (&packet));
-
+		Net_LogPrintf (" Z: %f", MSG_ReadCoord (&packet));
 	if (bits & U_ANGLE3)
-                Net_LogPrintf (" Roll: %d", MSG_ReadAngle (&packet));
+		Net_LogPrintf (" Roll: %d", MSG_ReadAngle (&packet));
 
 // Ender (QSG - Begin)
 	if (bits & U_ALPHA)
-                Net_LogPrintf(" Alpha: %d", MSG_ReadByte (&packet));
+		Net_LogPrintf(" Alpha: %d", MSG_ReadByte (&packet));
 	if (bits & U_SCALE)
-                Net_LogPrintf(" Scale: %d", MSG_ReadByte (&packet));
+		Net_LogPrintf(" Scale: %d", MSG_ReadByte (&packet));
 	if (bits & U_EFFECTS2)
-                Net_LogPrintf(" U_EFFECTS2: %d", (to.effects & 0xFF) | (MSG_ReadByte (&packet) << 8));
+		Net_LogPrintf(" U_EFFECTS2: %d", (to.effects & 0xFF) |
+					  (MSG_ReadByte (&packet) << 8));
 	if (bits & U_GLOWSIZE)
-                Net_LogPrintf(" GlowSize: %d", MSG_ReadByte (&packet));
+		Net_LogPrintf(" GlowSize: %d", MSG_ReadByte (&packet));
 	if (bits & U_GLOWCOLOR)
-                Net_LogPrintf(" ColorGlow: %d", MSG_ReadByte (&packet));
+		Net_LogPrintf(" ColorGlow: %d", MSG_ReadByte (&packet));
 	if (bits & U_COLORMOD)
-                Net_LogPrintf(" Colormod: %d", MSG_ReadByte (&packet));
+		Net_LogPrintf(" Colormod: %d", MSG_ReadByte (&packet));
 	if (bits & U_FRAME2)
-                Net_LogPrintf(" Uframe2: %d", ((to.frame & 0xFF) | (MSG_ReadByte (&packet) << 8)));
+		Net_LogPrintf(" Uframe2: %d", ((to.frame & 0xFF) |
+									   (MSG_ReadByte (&packet) << 8)));
 // Ender (QSG - End)
 
-        return;
+	return;
 }
-
-
 
 void
 Analyze_Server_Packet (const byte * data, int len)
@@ -418,7 +408,6 @@ Parse_Server_Packet ()
 
 	if (seq1 == -1) {
 		Net_LogPrintf ("Special Packet");
-
 	} else {
 		seq2 = MSG_ReadLong (&packet);
 		// FIXME: display seqs right when reliable
@@ -437,12 +426,10 @@ Parse_Server_Packet ()
 			c = MSG_ReadByte (&packet);
 			if (c == -1)
 				break;
-//			Net_LogPrintf("\n<%ld,%ld> ",seq1 & 0x7FFFFFFF,seq2 & 0x7FFFFFFF);
 			Net_LogPrintf ("<%06x> [0x%02x] ", MSG_GetReadCount (&packet), c);
 
 			if (c < 53)
 				Net_LogPrintf ("%s: ", svc_string[c]);
-//			else Net_LogPrintf("(UNK: %d): ",c);
 
 			if (MSG_GetReadCount (&packet) > packet.message->cursize)
 				return;
@@ -867,10 +854,6 @@ Parse_Client_Packet (void)
 
 		Net_LogPrintf ("\nSeq: %ld Ack: %ld ", seq1 & 0x7FFFFFFF,
 					   seq2 & 0x7FFFFFFF);
-/*
-		if ((seq1 >>31) &0x01) Net_LogPrintf("CL_REL ");
-		if ((seq2 >>31) &0x01) Net_LogPrintf("CL_RELACK ");
-*/
 
 		Net_LogPrintf ("QP: %u\n", MSG_ReadShort (&packet));
 
@@ -880,7 +863,6 @@ Parse_Client_Packet (void)
 			c = MSG_ReadByte (&packet);
 			if (c == -1)
 				break;
-//			Net_LogPrintf("<%ld,%ld> ",seq1 & 0x7FFFFFFF,seq2 & 0x7FFFFFFF);
 			Net_LogPrintf ("\n<%06x> [0x%02x] ", MSG_GetReadCount (&packet),
 						   c);
 			if (c < 8)

@@ -70,7 +70,6 @@ MSG_WriteDeltaUsercmd (sizebuf_t *buf, usercmd_t *from, usercmd_t *cmd)
 		bits |= CM_BUTTONS;
 	if (cmd->impulse != from->impulse)
 		bits |= CM_IMPULSE;
-
 	MSG_WriteByte (buf, bits);
 
 	if (bits & CM_ANGLE1)
