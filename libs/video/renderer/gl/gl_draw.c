@@ -326,7 +326,8 @@ Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 void
 Draw_Init (void)
 {
-	int         i;
+	int	i;
+	tex_t	*image;
 
 	Cmd_AddCommand ("gl_texturemode", &GL_TextureMode_f,
 					"Texture mipmap quality.");
@@ -334,14 +335,28 @@ Draw_Init (void)
 	// load the console background and the charset by hand, because we need to
 	// write the version string into the background before turning it into a
 	// texture
-	draw_chars = W_GetLumpName ("conchars");
-	for (i = 0; i < 256 * 64; i++)
-		if (draw_chars[i] == 0)
-			draw_chars[i] = 255;		// proper transparent color
+	
+	image = LoadImage ("gfx/conchars.png");
+	if (image) {	
+		if (image->format < 4)
+			char_texture = GL_LoadTexture ("charset",
+										   image->width, image->height,
+										   image->data, false, false, 3);
+		else
+			char_texture = GL_LoadTexture ("charset",
+										   image->width, image->height,
+										   image->data, false, true, 4);
+	} else {
+		draw_chars = W_GetLumpName ("conchars");
+		for (i = 0; i < 256 * 64; i++)
+			if (draw_chars[i] == 0)
+				draw_chars[i] = 255;		// proper transparent color
+		
+		char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars,
+									   false, true, 1);
+	}
 
 	// now turn them into textures
-	char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, false,
-								   true, 1);
 	cs_texture = GL_LoadTexture ("crosshair", 8, 16, cs_data, false, true, 1);
 
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
