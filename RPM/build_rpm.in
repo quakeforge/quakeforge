@@ -1,5 +1,7 @@
 #!/bin/sh -x
 
+set -e
+
 version=@VERSION@
 temp_dir=/var/tmp
 srcdir=@srcdir@
