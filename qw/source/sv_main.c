@@ -2452,8 +2452,6 @@ void
 SV_Init (void)
 {
 	COM_InitArgv (host_parms.argc, (const char**)host_parms.argv);
-//	COM_AddParm ("-game");
-//	COM_AddParm ("qw");
 
 	sv_cbuf = Cbuf_New (&id_interp);
 	sv_args = Cbuf_ArgsNew ();
@@ -2505,6 +2503,7 @@ SV_Init (void)
 	localinfo = Info_ParseString ("", 0);	// unlimited
 	SV_InitOperatorCommands ();
 
+	QFS_Init ("qw");
 	PI_Init ();
 
 	sv_console_plugin = Cvar_Get ("sv_console_plugin", "server",
@@ -2517,7 +2516,6 @@ SV_Init (void)
 	Sys_SetStdPrintf (SV_Print);
 	Sys_SetErrPrintf (SV_Error);
 
-	COM_Filesystem_Init_Cvars ();
 	Game_Init_Cvars ();
 	COM_Init_Cvars ();
 	Mod_Init_Cvars ();
@@ -2530,7 +2528,6 @@ SV_Init (void)
 	Cmd_StuffCmds (sv_cbuf);
 	Cbuf_Execute_Sets (sv_cbuf);
 
-	COM_Filesystem_Init ();
 	Game_Init ();
 	COM_Init ();
 

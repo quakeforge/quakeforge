@@ -899,11 +899,11 @@ Host_Init (void)
 
 	pr_gametype = "netquake";
 
+	QFS_Init ("nq");
 	PI_Init ();
 
 	Chase_Init_Cvars ();
 	CL_InitCvars ();
-	COM_Filesystem_Init_Cvars ();
 	IN_Init_Cvars ();
 	VID_Init_Cvars ();
 	S_Init_Cvars ();
@@ -921,7 +921,6 @@ Host_Init (void)
 	BI_Init ();
 
 	V_Init ();
-	COM_Filesystem_Init ();
 	Game_Init ();
 	COM_Init ();
 

@@ -1710,6 +1710,7 @@ Host_Init (void)
 	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING);
 	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING);
 
+	QFS_Init ("qw");
 	PI_Init ();
 
 	CL_Cam_Init_Cvars ();
@@ -1719,7 +1720,6 @@ Host_Init (void)
 	CL_Prediction_Init_Cvars ();
 	COM_Init_Cvars ();
 	Con_Init_Cvars ();
-	COM_Filesystem_Init_Cvars ();
 	Game_Init_Cvars ();
 	IN_Init_Cvars ();
 	Key_Init_Cvars ();
@@ -1739,7 +1739,6 @@ Host_Init (void)
 
 	CL_Cmd_Init ();
 	V_Init ();
-	COM_Filesystem_Init ();
 	Game_Init ();
 	COM_Init ();
 

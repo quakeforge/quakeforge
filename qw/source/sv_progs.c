@@ -40,6 +40,7 @@ static const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/csqc.h"		//FIXME d'oh, dumb name after all
 #include "QF/cvar.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
 
 #include "compat.h"
@@ -169,11 +170,17 @@ SV_LoadProgs (void)
 {
 	ddef_t *def;
 	dfunction_t *f;
+	const char *progs_name = "qwprogs.dat";
 
-	PR_LoadProgs (&sv_pr_state, sv_progs->string, MAX_EDICTS,
+	if (qfs_gamedir->gamecode && *qfs_gamedir->gamecode)
+		progs_name = qfs_gamedir->gamecode;
+	if (*sv_progs->string)
+		progs_name = sv_progs->string;
+
+	PR_LoadProgs (&sv_pr_state, progs_name, MAX_EDICTS,
 				  sv_progs_zone->int_val * 1024);
 	if (!sv_pr_state.progs || !PR_RelocateBuiltins (&sv_pr_state))
-		Sys_Error ("SV_LoadProgs: couldn't load %s", sv_progs->string);
+		Sys_Error ("SV_LoadProgs: couldn't load %s", progs_name);
 	// progs engine needs these globals anyway
 	sv_globals.self = sv_pr_state.globals.self;
 	sv_globals.time = sv_pr_state.globals.time;
@@ -377,9 +384,8 @@ SV_Progs_Init_Cvars (void)
 {
 	r_skyname = Cvar_Get ("r_skyname", "", CVAR_SERVERINFO, Cvar_Info,
 						 "name of skybox");
-	sv_progs = Cvar_Get ("sv_progs", "qwprogs.dat", CVAR_NONE, NULL,
-						 "Allows selectable game progs if you have several "
-						 "of them in the gamedir");
+	sv_progs = Cvar_Get ("sv_progs", "", CVAR_NONE, NULL,
+						 "Override the default game progs.");
 	sv_progs_zone = Cvar_Get ("sv_progs_zone", "256", CVAR_NONE, NULL,
 							  "size of the zone for progs in kb");
 	pr_checkextensions = Cvar_Get ("pr_checkextensions", "1", CVAR_ROM, NULL,

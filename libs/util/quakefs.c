@@ -69,11 +69,13 @@ static const char rcsid[] =
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/pak.h"
 #include "QF/pakfile.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
+#include "QF/qfplist.h"
 #include "QF/qtypes.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
@@ -113,8 +115,7 @@ int fnmatch (const char *__pattern, const char *__string, int __flags);
 
 cvar_t     *fs_userpath;
 cvar_t     *fs_sharepath;
-cvar_t     *fs_basegame;
-cvar_t     *fs_skinbase;
+cvar_t     *fs_dirconf;
 
 char        gamedirfile[MAX_OSPATH];
 
@@ -122,8 +123,192 @@ char        com_gamedir[MAX_OSPATH];
 int         com_filesize;
 
 searchpath_t *com_searchpaths;
-searchpath_t *com_base_searchpaths;		// without gamedirs
 
+//QFS
+
+static void COM_AddGameDirectory (const char *dir); //FIXME
+
+gamedir_t  *qfs_gamedir;
+static plitem_t *qfs_gd_plist;
+static const char *qfs_game = "";
+static const char *qfs_default_dirconf =
+	"{"
+	"	Quake = {"
+	"		Path = \"id1\";"
+	"	};"
+	"	QuakeWorld = {"
+	"		Inherit = (Quake);"
+	"		Path = \"qw\";"
+	"		SkinPath = \"qw/skins\";"
+	"	};"
+	"	\"qw:*\" = {"
+	"		Inherit = (QuakeWorld);"
+	"		Path = \"$gamedir\";"
+	"		GameCode = \"qwprogs.dat\";"
+	"	};"
+	"	\"nq:*\" = {"
+	"		Inherit = (Quake);"
+	"		GameCode = \"progs.dat\";"
+	"	};"
+	"}";
+
+static void
+qfs_get_gd_params (plitem_t *gdpl, gamedir_t *gamedir, dstring_t *path)
+{
+	plitem_t   *p;
+
+	if ((p = PL_ObjectForKey (gdpl, "Path"))) {
+		if (path->str[0])
+			dstring_appendstr (path, ":");
+		dstring_appendstr (path, p->data);
+	}
+	if (!gamedir->gamecode && (p = PL_ObjectForKey (gdpl, "GameCode")))
+		gamedir->gamecode = strdup (p->data);
+}
+
+static void
+qfs_inherit (plitem_t *plist, plitem_t *gdpl, gamedir_t *gamedir,
+			 dstring_t *path, hashtab_t *dirs)
+{
+	plitem_t   *base;
+
+	if (!(base = PL_ObjectForKey (gdpl, "Inherit")))
+		return;
+	if (base->type == QFString) {
+		if (Hash_Find (dirs, base->data))
+			return;
+		gdpl = PL_ObjectForKey (plist, base->data);
+		if (!gdpl) {
+			Sys_Printf ("base `%s' not found\n", (char *)base->data);
+			return;
+		}
+		Hash_Add (dirs, base->data);
+		qfs_get_gd_params (gdpl, gamedir, path);
+		qfs_inherit (plist, gdpl, gamedir, path, dirs);
+	} else if (base->type == QFArray) {
+		int         i;
+		plarray_t  *a = base->data;
+		for (i = 0; i < a->numvals; i++) {
+			base = a->values[i];
+			if (Hash_Find (dirs, base->data))
+				continue;
+			gdpl = PL_ObjectForKey (plist, base->data);
+			if (!gdpl) {
+				Sys_Printf ("base `%s' not found\n", (char *)base->data);
+				continue;
+			}
+			Hash_Add (dirs, base->data);
+			qfs_get_gd_params (gdpl, gamedir, path);
+			qfs_inherit (plist, gdpl, gamedir, path, dirs);
+		}
+	}
+}
+
+static int
+qfs_compare (const void *a, const void *b)
+{
+	return strcmp ((*(dictkey_t **)a)->key, (*(dictkey_t **)b)->key);
+}
+
+static const char *
+qfs_dir_get_key (void *_k, void *unused)
+{
+	return _k;
+}
+
+static gamedir_t *
+qfs_get_gamedir (const char *name)
+{
+	gamedir_t  *gamedir;
+	plitem_t   *gdpl;
+	dstring_t  *path;
+	hashtab_t  *dirs = Hash_NewTable (31, qfs_dir_get_key, 0, 0);
+
+	gdpl = PL_ObjectForKey (qfs_gd_plist, name);
+	if (!gdpl) {
+		dictkey_t **list = (dictkey_t **) Hash_GetList (qfs_gd_plist->data);
+		dictkey_t **l;
+		for (l = list; *l; l++)
+			;
+		qsort (list, l - list, sizeof (char *), qfs_compare);
+		while (l-- != list) {
+			if (!fnmatch ((*l)->key, name, 0)) {
+				gdpl = (*l)->value;
+				Hash_Add (dirs, (*l)->key);
+				break;
+			}
+		}
+		free (list);
+		if (!gdpl) {
+			Sys_Printf ("gamedir `%s' not found\n", name);
+			Hash_DelTable (dirs);
+			return 0;
+		}
+	} else {
+		Hash_Add (dirs, (void *)name);
+	}
+	gamedir = calloc (1, sizeof (gamedir_t));
+	gamedir->name = strdup (name);
+	path = dstring_newstr ();
+	qfs_get_gd_params (gdpl, gamedir, path);
+	qfs_inherit (qfs_gd_plist, gdpl, gamedir, path, dirs);
+	gamedir->path = path->str;
+	free (path);
+	Hash_DelTable (dirs);
+	return gamedir;
+}
+
+static void
+qfs_load_config (void)
+{
+	QFile      *f;
+	int         len;
+	char       *buf;
+
+	if (!(f = Qopen (fs_dirconf->string, "rt"))) {
+		Sys_DPrintf ("Could not load `%s', using builtin defaults\n",
+					fs_dirconf->string);
+		goto no_config;
+	}
+	len = Qfilesize (f);
+	buf = malloc (len + 3); // +3 for { } and \0
+
+	Qread (f, buf + 1, len);
+	Qclose (f);
+
+	// convert the config file to a plist dictionary
+	buf[0] = '{';
+	buf[len + 1] = '}';
+	buf[len + 2] = 0;
+	qfs_gd_plist = PL_GetPropertyList (buf);
+	free (buf);
+	if (qfs_gd_plist && qfs_gd_plist->type == QFDictionary)
+		return;		// done
+	Sys_Printf ("not a dictionary\n");
+no_config:
+	qfs_gd_plist = PL_GetPropertyList (qfs_default_dirconf);
+}
+
+static void
+qfs_process_path (const char *path, const char *gamedir)
+{
+	const char *e = path + strlen (path);
+	const char *s = e;
+	dstring_t  *dir = dstring_new ();
+
+	while (s >= path) {
+		while (s != path && s[-1] !=':')
+			s--;
+		if (s != e) {
+			dsprintf (dir, "%.*s", e - s, s);
+			if (strequal (dir->str, "$gamedir"))
+				dsprintf (dir, "%s", gamedir);
+			COM_AddGameDirectory (dir->str);
+		}
+		e = --s;
+	}
+	dstring_delete (dir);
+}
 
 void
 COM_FileBase (const char *in, char *out)
@@ -159,8 +344,6 @@ COM_Path_f (void)
 
 	Sys_Printf ("Current search path:\n");
 	for (s = com_searchpaths; s; s = s->next) {
-		if (s == com_base_searchpaths)
-			Sys_Printf ("----------\n");
 		if (s->pack)
 			Sys_Printf ("%s (%i files)\n", s->pack->filename,
 						s->pack->numfiles);
@@ -723,6 +906,8 @@ COM_AddDirectory (const char *dir)
 static void
 COM_AddGameDirectory (const char *dir)
 {
+	if (!*dir)
+		return;
 	Sys_DPrintf ("COM_AddGameDirectory (\"%s/%s\")\n",
 				 fs_sharepath->string, dir);
 
@@ -739,20 +924,19 @@ COM_AddGameDirectory (const char *dir)
 void
 COM_Gamedir (const char *dir)
 {
-	searchpath_t *next;
-
-	if (strstr (dir, "..") || strstr (dir, "/")
-		|| strstr (dir, "\\") || strstr (dir, ":")) {
-		Sys_Printf ("Gamedir should be a single filename, not a path\n");
-		return;
+	if (qfs_gamedir) {
+		if (qfs_gamedir->name)
+			free ((char *)qfs_gamedir->name);
+		if (qfs_gamedir->path)
+			free ((char *)qfs_gamedir->path);
+		if (qfs_gamedir->gamecode)
+			free ((char *)qfs_gamedir->gamecode);
+		free (qfs_gamedir);
 	}
 
-	if (strcmp (gamedirfile, dir) == 0)
-		return;							// still the same
-	strcpy (gamedirfile, dir);
+	while (com_searchpaths) {
+		searchpath_t *next;
 
-	// free up any current game dir info
-	while (com_searchpaths != com_base_searchpaths) {
 		if (com_searchpaths->pack) {
 			Qclose (com_searchpaths->pack->handle);
 			free (com_searchpaths->pack->files);
@@ -763,13 +947,16 @@ COM_Gamedir (const char *dir)
 		com_searchpaths = next;
 	}
 
+	qfs_gamedir = qfs_get_gamedir (va ("%s:%s", qfs_game, dir));
+	if (qfs_gamedir) {
+		Sys_DPrintf ("%s\n", qfs_gamedir->name);
+		Sys_DPrintf ("    %s\n", qfs_gamedir->path);
+		Sys_DPrintf ("    %s\n", qfs_gamedir->gamecode);
+		qfs_process_path (qfs_gamedir->path, dir);
+	}
+
 	// flush all data, so it will be forced to reload
 	Cache_Flush ();
-
-	if (fs_skinbase && strcmp (dir, fs_skinbase->string) == 0)
-		return;
-
-	COM_AddGameDirectory (dir);
 }
 
 void
@@ -781,44 +968,21 @@ COM_CreateGameDirectory (const char *gamename)
 }
 
 void
-COM_Filesystem_Init (void)
-{
-	int         i;
-
-	// start up with basegame->string by default
-	COM_CreateGameDirectory (fs_basegame->string);
-
-	// If we're dealing with id1, use qw too
-	if (fs_skinbase && !strequal (fs_basegame->string, fs_skinbase->string)) {
-		COM_CreateGameDirectory (fs_skinbase->string);
-	}
-
-	if ((i = COM_CheckParm ("-game")) && i < com_argc - 1) {
-		char       *gamedirs = NULL;
-		char       *where;
-
-		gamedirs = strdup (com_argv[i + 1]);
-		where = strtok (gamedirs, ",");
-		while (where) {
-			COM_CreateGameDirectory (where);
-			where = strtok (NULL, ",");
-		}
-		free (gamedirs);
-	}
-	// any set gamedirs will be freed up to here
-	com_base_searchpaths = com_searchpaths;
-}
-
-void
-COM_Filesystem_Init_Cvars (void)
+QFS_Init (const char *game)
 {
 	fs_sharepath = Cvar_Get ("fs_sharepath", FS_SHAREPATH, CVAR_ROM, NULL,
 							 "location of shared (read only) game "
 							 "directories");
 	fs_userpath = Cvar_Get ("fs_userpath", FS_USERPATH, CVAR_ROM, NULL,
 							"location of your game directories");
-	fs_basegame = Cvar_Get ("fs_basegame", "id1", CVAR_ROM, NULL,
-							"game to use by default");
+	fs_dirconf = Cvar_Get ("fs_dirconf", "", CVAR_ROM, NULL,
+							"full path to gamedir.conf FIXME");
+
+	qfs_load_config ();
+
+	qfs_game = game;
+
+	COM_Gamedir ("");
 }
 
 const char *

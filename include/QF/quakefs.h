@@ -44,12 +44,17 @@ typedef struct searchpath_s {
 	struct searchpath_s *next;
 } searchpath_t;
 
+typedef struct gamedir_s {
+	const char *name;
+	const char *path;
+	const char *gamecode;
+} gamedir_t;
+
 extern searchpath_t *com_searchpaths;
+extern gamedir_t *qfs_gamedir;
 
 extern struct cvar_s *fs_userpath;
 extern struct cvar_s *fs_sharepath;
-extern struct cvar_s *fs_basegame;
-extern struct cvar_s *fs_skinbase;
 
 extern int file_from_pak;
 extern int com_filesize;
@@ -81,8 +86,7 @@ byte *COM_LoadHunkFile (const char *path);
 void COM_LoadCacheFile (const char *path, struct cache_user_s *cu);
 void COM_CreatePath (const char *path);
 void COM_Gamedir (const char *dir);
-void COM_Filesystem_Init (void);
-void COM_Filesystem_Init_Cvars (void);
+void QFS_Init (const char *game);
 void COM_Path_f (void);
 void COM_CreateGameDirectory (const char *gamename);
 
