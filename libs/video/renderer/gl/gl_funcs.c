@@ -147,9 +147,14 @@ QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 
 	Con_DPrintf ("not found\n");
 
-	if (crit)
-		Sys_Error ("Couldn't load critical OpenGL function %s, exiting...",
-				   name);
+	if (crit) {
+		if (strncmp("fxMesa", name,6) == 0) {
+			
+			Con_DPrintf ("This is a console only client. It requires a mesa-glide compatable library\n");
+			Con_DPrintf ("If you are trying to run QuakeForge in X, please use -glx clients\n");
+		}
+		Sys_Error ("Couldn't load critical OpenGL function %s, exiting...", name);
+	}
 
 	return NULL;
 }

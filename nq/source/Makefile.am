@@ -191,7 +191,7 @@ nq_3dfx_libs=  \
 			$(top_builddir)/libs/video/targets/libQFtdfx.la \
 			$(client_LIBS)
 nq_3dfx_SOURCES= 	$(combined_sources) sys_unix.c
-nq_3dfx_LDADD=		$(nq_3dfx_libs) $(GLIDE_LIBS) $(SVGA_LIBS) $(NET_LIBS)
+nq_3dfx_LDADD=		$(nq_3dfx_libs) $(SVGA_LIBS) $(NET_LIBS)
 nq_3dfx_LDFLAGS=		$(common_ldflags)
 nq_3dfx_DEPENDENCIES= 	$(nq_3dfx_libs)
 							

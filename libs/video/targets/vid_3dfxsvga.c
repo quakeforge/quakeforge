@@ -42,8 +42,6 @@ static const char rcsid[] =
 # include <dlfcn.h>
 #endif
 
-#include <glide/glide.h>
-#include <glide/sst1vid.h>
 #include <setjmp.h>
 #include <sys/signal.h>
 
@@ -75,6 +73,29 @@ static const char rcsid[] =
 #define GL_DITHER                               0x0BD0
 
 typedef struct tfxMesaContext *fxMesaContext;
+
+typedef long	FxI32;
+typedef FxI32 GrScreenResolution_t;
+typedef FxI32 GrDitherMode_t;
+typedef FxI32 GrScreenRefresh_t;
+
+#define GR_REFRESH_75Hz   0x3
+
+#define GR_DITHER_2x2           0x1
+#define GR_DITHER_4x4           0x2
+#define GR_RESOLUTION_320x200   0x0
+#define GR_RESOLUTION_320x240   0x1
+#define GR_RESOLUTION_400x256   0x2
+#define GR_RESOLUTION_512x384   0x3
+#define GR_RESOLUTION_640x200   0x4
+#define GR_RESOLUTION_640x350   0x5
+#define GR_RESOLUTION_640x400   0x6
+#define GR_RESOLUTION_640x480   0x7
+#define GR_RESOLUTION_800x600   0x8
+#define GR_RESOLUTION_960x720   0x9
+#define GR_RESOLUTION_512x256   0xb
+#define GR_RESOLUTION_856x480   0xa
+#define GR_RESOLUTION_400x300   0xF
 
 void (* qf_fxMesaDestroyContext) (fxMesaContext ctx);
 void (* qf_fxMesaSwapBuffers) (void);
@@ -382,6 +403,5 @@ VID_SetCaption (const char *text)
 qboolean
 VID_SetGamma (double gamma)
 {
-	grGammaCorrectionValue((float) gamma);
 	return true;
 }
