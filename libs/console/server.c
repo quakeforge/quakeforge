@@ -450,7 +450,7 @@ C_ProcessInput (void)
 			const char *cmd = Sys_ConsoleInput ();
 			if (!cmd)
 				break;
-			Cbuf_AddText (con_data.cbuf, cmd);
+			C_ExecLine (cmd);
 		}
 }
 
