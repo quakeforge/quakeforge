@@ -151,7 +151,7 @@ CL_ParseStartSoundPacket (void)
 	if (ent > MAX_EDICTS)
 		Host_Error ("CL_ParseStartSoundPacket: ent = %i", ent);
 
-	MSG_ReadCoord3 (net_message, pos);
+	MSG_ReadCoordV (net_message, pos);
 
 	S_StartSound (ent, channel, cl.sound_precache[sound_num], pos,
 				  volume / 255.0, attenuation);
@@ -484,18 +484,15 @@ CL_ParseUpdate (int bits)
 void
 CL_ParseBaseline (cl_entity_state_t *state)
 {
-	int         i;
-
 	state->baseline.modelindex = MSG_ReadByte (net_message);
 	state->baseline.frame = MSG_ReadByte (net_message);
 	state->baseline.colormap = MSG_ReadByte (net_message);
 	state->baseline.skin = MSG_ReadByte (net_message);
-	for (i = 0; i < 3; i++) {
-		state->baseline.origin[i] = MSG_ReadCoord (net_message);
-		state->baseline.angles[i] = MSG_ReadAngle (net_message);
-	}
-	// LordHavoc: set up the baseline to account for new effects (alpha,
-	// colormod, etc)
+
+	MSG_ReadCoordAngleV (net_message, state->baseline.origin,
+						 state->baseline.angles);
+
+	// LordHavoc: set up baseline for new effects (alpha, colormod, etc)
 	state->baseline.alpha = 255;
 	state->baseline.scale = 16;
 	state->baseline.glow_color = 254;
@@ -646,7 +643,7 @@ CL_ParseStaticSound (void)
 	int         sound_num, vol, atten;
 	vec3_t      org;
 
-	MSG_ReadCoord3 (net_message, org);
+	MSG_ReadCoordV (net_message, org);
 	sound_num = MSG_ReadByte (net_message);
 	vol = MSG_ReadByte (net_message);
 	atten = MSG_ReadByte (net_message);
@@ -746,8 +743,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_setangle:
-				for (i = 0; i < 3; i++)
-					cl.viewangles[i] = MSG_ReadAngle (net_message);
+				MSG_ReadAngleV (net_message, cl.viewangles);
 				break;
 
 			case svc_setview:
@@ -778,7 +774,7 @@ CL_ParseServerMessage (void)
 				if (i >= cl.maxclients)
 					Host_Error ("CL_ParseServerMessage: svc_updatename > "
 								"MAX_SCOREBOARD");
-					strcpy (cl.scores[i].name, MSG_ReadString (net_message));
+				strcpy (cl.scores[i].name, MSG_ReadString (net_message));
 				break;
 
 			case svc_updatefrags:

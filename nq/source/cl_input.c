@@ -540,7 +540,7 @@ void
 CL_SendMove (usercmd_t *cmd)
 {
 	byte        data[128];
-	int         bits, i;
+	int         bits;
 	sizebuf_t   buf;
 
 	buf.maxsize = 128;
@@ -554,8 +554,7 @@ CL_SendMove (usercmd_t *cmd)
 
 	MSG_WriteFloat (&buf, cl.mtime[0]);	// so server can get ping times
 
-	for (i = 0; i < 3; i++)
-		MSG_WriteAngle (&buf, cl.viewangles[i]);
+	MSG_WriteAngleV (&buf, cl.viewangles);
 
 	MSG_WriteShort (&buf, cmd->forwardmove);
 	MSG_WriteShort (&buf, cmd->sidemove);

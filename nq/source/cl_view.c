@@ -216,7 +216,7 @@ V_ParseDamage (void)
 
 	armor = MSG_ReadByte (net_message);
 	blood = MSG_ReadByte (net_message);
-	MSG_ReadCoord3 (net_message, from);
+	MSG_ReadCoordV (net_message, from);
 
 	count = blood * 0.5 + armor * 0.5;
 	if (count < 10)

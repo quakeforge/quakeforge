@@ -91,9 +91,7 @@ SV_StartParticle (vec3_t org, vec3_t dir, int color, int count)
 	if (sv.datagram.cursize > MAX_DATAGRAM - 16)
 		return;
 	MSG_WriteByte (&sv.datagram, svc_particle);
-	MSG_WriteCoord (&sv.datagram, org[0]);
-	MSG_WriteCoord (&sv.datagram, org[1]);
-	MSG_WriteCoord (&sv.datagram, org[2]);
+	MSG_WriteCoordV (&sv.datagram, org);
 	for (i = 0; i < 3; i++) {
 		v = dir[i] * 16;
 		if (v > 127)
@@ -166,7 +164,7 @@ SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 		MSG_WriteByte (&sv.datagram, attenuation * 64);
 	MSG_WriteShort (&sv.datagram, channel);
 	MSG_WriteByte (&sv.datagram, sound_num);
-	for (i = 0; i < 3; i++)
+	for (i=0; i < 3; i++)
 		MSG_WriteCoord (&sv.datagram, SVvector (entity, origin)[i] + 0.5 *
 						(SVvector (entity, mins)[i] +
 						 SVvector (entity, maxs)[i]));
@@ -523,11 +521,10 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 		MSG_WriteByte (msg, svc_damage);
 		MSG_WriteByte (msg, SVfloat (ent, dmg_save));
 		MSG_WriteByte (msg, SVfloat (ent, dmg_take));
-		for (i = 0; i < 3; i++)
+		for (i=0; i < 3; i++)
 			MSG_WriteCoord (msg, SVvector (other, origin)[i] + 0.5 *
 							(SVvector (other, mins)[i] +
 							 SVvector (other, maxs)[i]));
-
 		SVfloat (ent, dmg_take) = 0;
 		SVfloat (ent, dmg_save) = 0;
 	}
@@ -538,8 +535,7 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	// a fixangle might get lost in a dropped packet.  Oh well.
 	if (SVfloat (ent, fixangle)) {
 		MSG_WriteByte (msg, svc_setangle);
-		for (i = 0; i < 3; i++)
-			MSG_WriteAngle (msg, SVvector (ent, angles)[i]);
+		MSG_WriteAngleV (msg, SVvector (ent, angles));
 		SVfloat (ent, fixangle) = 0;
 	}
 
@@ -807,7 +803,7 @@ SV_ModelIndex (const char *name)
 void
 SV_CreateBaseline (void)
 {
-	int         entnum, i;
+	int         entnum;
 	edict_t    *svent;
 
 	for (entnum = 0; entnum < sv.num_edicts; entnum++) {
@@ -844,15 +840,12 @@ SV_CreateBaseline (void)
 		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->frame);
 		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->colormap);
 		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->skin);
-		for (i = 0; i < 3; i++) {
-			MSG_WriteCoord (&sv.signon,
-							((entity_state_t*)svent->data)->origin[i]);
-			MSG_WriteAngle (&sv.signon,
-							((entity_state_t*)svent->data)->angles[i]);
-		}
+
+		MSG_WriteCoordAngleV (&sv.signon,
+							  ((entity_state_t*)svent->data)->origin,
+							  ((entity_state_t*)svent->data)->angles);
 	}
 }
-
 
 /*
   SV_SendReconnect

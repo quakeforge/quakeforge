@@ -566,10 +566,7 @@ CL_Record_f (void)
 		MSG_WriteByte (&buf, ent->frame);
 		MSG_WriteByte (&buf, 0);
 		MSG_WriteByte (&buf, ent->skinnum);
-		for (j = 0; j < 3; j++) {
-			MSG_WriteCoord (&buf, ent->origin[j]);
-			MSG_WriteAngle (&buf, ent->angles[j]);
-		}
+		MSG_WriteCoordAngleV (&buf, ent->origin, ent->angles);
 
 		if (buf.cursize > MAX_MSGLEN / 2) {
 			CL_WriteRecordDemoMessage (&buf, seq++);
@@ -593,10 +590,7 @@ CL_Record_f (void)
 			MSG_WriteByte (&buf, es->frame);
 			MSG_WriteByte (&buf, es->colormap);
 			MSG_WriteByte (&buf, es->skinnum);
-			for (j = 0; j < 3; j++) {
-				MSG_WriteCoord (&buf, es->origin[j]);
-				MSG_WriteAngle (&buf, es->angles[j]);
-			}
+			MSG_WriteCoordAngleV (&buf, es->origin, es->angles);
 
 			if (buf.cursize > MAX_MSGLEN / 2) {
 				CL_WriteRecordDemoMessage (&buf, seq++);

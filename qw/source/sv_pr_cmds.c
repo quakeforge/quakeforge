@@ -281,7 +281,7 @@ PF_ambientsound (progs_t *pr)
 	const char       *samp;
 	float      *pos;
 	float       vol, attenuation;
-	int         i, soundnum;
+	int         soundnum;
 
 	pos = G_VECTOR (pr, OFS_PARM0);
 	samp = G_STRING (pr, OFS_PARM1);
@@ -300,8 +300,7 @@ PF_ambientsound (progs_t *pr)
 
 	// add an svc_spawnambient command to the level signon packet
 	MSG_WriteByte (&sv.signon, svc_spawnstaticsound);
-	for (i = 0; i < 3; i++)
-		MSG_WriteCoord (&sv.signon, pos[i]);
+	MSG_WriteCoordV (&sv.signon, pos);
 
 	MSG_WriteByte (&sv.signon, soundnum);
 
@@ -1145,7 +1144,6 @@ PF_makestatic (progs_t *pr)
 {
 	const char *model;
 	edict_t    *ent;
-	int         i;
 
 	ent = G_EDICT (pr, OFS_PARM0);
 
@@ -1158,11 +1156,9 @@ PF_makestatic (progs_t *pr)
 	MSG_WriteByte (&sv.signon, SVfloat (ent, frame));
 	MSG_WriteByte (&sv.signon, SVfloat (ent, colormap));
 	MSG_WriteByte (&sv.signon, SVfloat (ent, skin));
-	for (i = 0; i < 3; i++) {
-		MSG_WriteCoord (&sv.signon, SVvector (ent, origin)[i]);
-		MSG_WriteAngle (&sv.signon, SVvector (ent, angles)[i]);
-	}
 
+	MSG_WriteCoordAngleV (&sv.signon, SVvector (ent, origin),
+						  SVvector (ent, angles));
 	// throw the entity away now
 	ED_Free (pr, ent);
 }

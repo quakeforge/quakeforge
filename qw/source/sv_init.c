@@ -104,7 +104,7 @@ SV_FlushSignon (void)
 void
 SV_CreateBaseline (void)
 {
-	int         i, entnum;
+	int			entnum;
 	edict_t    *svent;
 
 	for (entnum = 0; entnum < sv.num_edicts; entnum++) {
@@ -150,12 +150,10 @@ SV_CreateBaseline (void)
 		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->frame);
 		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->colormap);
 		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->skinnum);
-		for (i = 0; i < 3; i++) {
-			MSG_WriteCoord (&sv.signon,
-							((entity_state_t*)svent->data)->origin[i]);
-			MSG_WriteAngle (&sv.signon,
-							((entity_state_t*)svent->data)->angles[i]);
-		}
+
+		MSG_WriteCoordAngleV (&sv.signon,
+							  ((entity_state_t*)svent->data)->origin,
+							  ((entity_state_t*)svent->data)->angles);
 	}
 }
 

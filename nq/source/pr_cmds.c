@@ -370,18 +370,18 @@ PF_particle (progs_t *pr)
 void
 PF_ambientsound (progs_t *pr)
 {
-	const char      **check;
-	const char       *samp;
-	float      *pos;
-	float       vol, attenuation;
-	int         i, soundnum;
+	const char **check;
+	const char  *samp;
+	float		*pos;
+	float		 vol, attenuation;
+	int			 soundnum;
 
 	pos = G_VECTOR (pr, OFS_PARM0);
 	samp = G_STRING (pr, OFS_PARM1);
 	vol = G_FLOAT (pr, OFS_PARM2);
 	attenuation = G_FLOAT (pr, OFS_PARM3);
 
-// check to see if samp was properly precached
+	// check to see if samp was properly precached
 	for (soundnum = 0, check = sv.sound_precache; *check; check++, soundnum++)
 		if (!strcmp (*check, samp))
 			break;
@@ -390,14 +390,11 @@ PF_ambientsound (progs_t *pr)
 		Con_Printf ("no precache: %s\n", samp);
 		return;
 	}
-// add an svc_spawnambient command to the level signon packet
 
+	// add an svc_spawnambient command to the level signon packet
 	MSG_WriteByte (&sv.signon, svc_spawnstaticsound);
-	for (i = 0; i < 3; i++)
-		MSG_WriteCoord (&sv.signon, pos[i]);
-
+	MSG_WriteCoordV (&sv.signon, pos);
 	MSG_WriteByte (&sv.signon, soundnum);
-
 	MSG_WriteByte (&sv.signon, vol * 255);
 	MSG_WriteByte (&sv.signon, attenuation * 64);
 
@@ -1114,23 +1111,26 @@ void
 PF_makestatic (progs_t *pr)
 {
 	edict_t    *ent;
-	int         i;
 
 	ent = G_EDICT (pr, OFS_PARM0);
 
 	MSG_WriteByte (&sv.signon, svc_spawnstatic);
 
-	MSG_WriteByte (&sv.signon, SV_ModelIndex (PR_GetString (pr, SVstring (ent, model))));
+	MSG_WriteByte (&sv.signon,
+				   SV_ModelIndex (PR_GetString (pr, SVstring (ent, model))));
 
 	MSG_WriteByte (&sv.signon, SVfloat (ent, frame));
 	MSG_WriteByte (&sv.signon, SVfloat (ent, colormap));
 	MSG_WriteByte (&sv.signon, SVfloat (ent, skin));
-	for (i = 0; i < 3; i++) {
+
+	MSG_WriteCoordAngleV (&sv.signon, SVvector (ent, origin),
+						  SVvector (ent, angles));
+/*	for (i = 0; i < 3; i++) { // FIXME: DESPAIR
 		MSG_WriteCoord (&sv.signon, SVvector (ent, origin)[i]);
 		MSG_WriteAngle (&sv.signon, SVvector (ent, angles)[i]);
-	}
+		} */
 
-// throw the entity away now
+	// throw the entity away now
 	ED_Free (pr, ent);
 }
 
@@ -1166,7 +1166,7 @@ PF_changelevel (progs_t *pr)
 {
 	char       *s;
 
-// make sure we don't issue two changelevels
+	// make sure we don't issue two changelevels
 	if (svs.changelevel_issued)
 		return;
 	svs.changelevel_issued = true;
@@ -1334,7 +1334,8 @@ PF_rotate_bbox (progs_t *pr)
 		VectorScale (offsets[j][0], -1, hull->clip_maxs);
 		// set up the clip planes
 		for (i = 0; i < 6; i++) {
-			hull->planes[i].dist = calc_dist (verts[i], dir[i / 2], offsets[j]);
+			hull->planes[i].dist = calc_dist (verts[i], dir[i / 2],
+											  offsets[j]);
 			hull->planes[i].type = 4;
 			VectorCopy (dir[i / 2], hull->planes[i].normal);
 			//Con_Printf ("%f   %f %f %f\n",
@@ -1344,7 +1345,6 @@ PF_rotate_bbox (progs_t *pr)
 		}
 	}
 }
-
 
 void
 PF_Fixme (progs_t *pr)

@@ -610,7 +610,7 @@ CL_ParsePlayerinfo (void)
 	flags = state->flags = MSG_ReadShort (net_message);
 
 	state->messagenum = cl.parsecount;
-	MSG_ReadCoord3 (net_message, state->origin);
+	MSG_ReadCoordV (net_message, state->origin);
 
 	state->frame = MSG_ReadByte (net_message);
 

@@ -116,21 +116,50 @@ MSG_WriteString (sizebuf_t *sb, const char *s)
 }
 
 void
-MSG_WriteCoord (sizebuf_t *sb, float f)
+MSG_WriteCoord (sizebuf_t *sb, float coord)
 {
-	MSG_WriteShort (sb, (unsigned int) (f * 8.0));
+	MSG_WriteShort (sb, (unsigned int) (coord * 8.0));
 }
 
 void
-MSG_WriteAngle (sizebuf_t *sb, float f)
+MSG_WriteCoordV (sizebuf_t *sb, vec3_t coord)
 {
-	MSG_WriteByte (sb, (unsigned int) (f * 256 / 360) & 255);
+	int		i;
+
+	for (i = 0; i < 3; i++)
+		MSG_WriteShort (sb, (unsigned int) (coord[i] * 8.0));
 }
 
 void
-MSG_WriteAngle16 (sizebuf_t *sb, float f)
+MSG_WriteCoordAngleV (sizebuf_t *sb, vec3_t coord, vec3_t angles)
 {
-	MSG_WriteShort (sb, (unsigned int) (f * 65536 / 360) & 65535);
+	int		i;
+
+	for (i = 0; i < 3; i++) {
+		MSG_WriteShort (sb, (unsigned int) (coord[i] * 8.0));
+		MSG_WriteByte (sb, (unsigned int) (angles[i] * 256 / 360) & 255);
+	}
+}
+
+void
+MSG_WriteAngle (sizebuf_t *sb, float angle)
+{
+	MSG_WriteByte (sb, (unsigned int) (angle * 256 / 360) & 255);
+}
+
+void
+MSG_WriteAngleV (sizebuf_t *sb, vec3_t angles)
+{
+	int		i;
+
+	for (i = 0; i < 3; i++)
+		MSG_WriteByte (sb, (unsigned int) (angles[i] * 256 / 360) & 255);
+}
+
+void
+MSG_WriteAngle16 (sizebuf_t *sb, float angle16)
+{
+	MSG_WriteShort (sb, (unsigned int) (angle16 * 65536 / 360) & 65535);
 }
 
 
@@ -272,17 +301,38 @@ MSG_ReadCoord (msg_t *msg)
 }
 
 void
-MSG_ReadCoord3 (msg_t *msg, vec3_t coord)
+MSG_ReadCoordV (msg_t *msg, vec3_t coord)
 {
-	coord[0] = MSG_ReadShort (msg) * (1.0 / 8.0);
-	coord[1] = MSG_ReadShort (msg) * (1.0 / 8.0);
-	coord[2] = MSG_ReadShort (msg) * (1.0 / 8.0);
+	int		i;
+
+	for (i = 0; i < 3; i++)
+		coord[i] = MSG_ReadShort (msg) * (1.0 / 8.0);
+}
+
+void
+MSG_ReadCoordAngleV (msg_t *msg, vec3_t coord, vec3_t angles)
+{
+	int		i;
+
+	for (i = 0; i < 3; i++) {
+		coord[i] = MSG_ReadShort (msg) * (1.0 / 8.0);
+		angles[i] = MSG_ReadChar (msg) * (360.0 / 256.0);
+	}
 }
 
 float
 MSG_ReadAngle (msg_t *msg)
 {
 	return MSG_ReadChar (msg) * (360.0 / 256.0);
+}
+
+void
+MSG_ReadAngleV (msg_t *msg, vec3_t angles)
+{
+	int		i;
+
+	for (i = 0; i < 3; i++)
+		angles[i] = MSG_ReadChar (msg) * (360.0 / 256.0);
 }
 
 float

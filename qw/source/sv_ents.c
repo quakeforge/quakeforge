@@ -430,8 +430,7 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 		MSG_WriteByte (msg, j);
 		MSG_WriteShort (msg, pflags);
 
-		for (i = 0; i < 3; i++)
-			MSG_WriteCoord (msg, SVvector (ent, origin)[i]);
+		MSG_WriteCoordV (msg, SVvector (ent, origin));
 
 		MSG_WriteByte (msg, SVfloat (ent, frame));
 

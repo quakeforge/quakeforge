@@ -548,7 +548,8 @@ SV_Begin_f (void)
 	ent = EDICT_NUM (&sv_pr_state, 1 + (host_client - svs.clients));
 	MSG_WriteByte (&host_client->netchan.message, svc_setangle);
 	for (i = 0; i < 2; i++)
-		MSG_WriteAngle (&host_client->netchan.message, SVvector (ent, angles)[i]);
+		MSG_WriteAngle (&host_client->netchan.message,
+						SVvector (ent, angles)[i]);
 	MSG_WriteAngle (&host_client->netchan.message, 0);
 #endif
 }
@@ -1782,7 +1783,7 @@ SV_ExecuteClientMessage (client_t *cl)
 				break;
 
 			case clc_tmove:
-				MSG_ReadCoord3 (net_message, o);
+				MSG_ReadCoordV (net_message, o);
 				// only allowed by spectators
 				if (host_client->spectator) {
 					VectorCopy (o, SVvector (sv_player, origin));

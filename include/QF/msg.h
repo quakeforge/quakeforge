@@ -36,9 +36,12 @@ void MSG_WriteShort (sizebuf_t *sb, unsigned int c);
 void MSG_WriteLong (sizebuf_t *sb, unsigned int c);
 void MSG_WriteFloat (sizebuf_t *sb, float f);
 void MSG_WriteString (sizebuf_t *sb, const char *s);
-void MSG_WriteCoord (sizebuf_t *sb, float f);
-void MSG_WriteAngle (sizebuf_t *sb, float f);
-void MSG_WriteAngle16 (sizebuf_t *sb, float f);
+void MSG_WriteCoord (sizebuf_t *sb, float coord);
+void MSG_WriteCoordV (sizebuf_t *sb, vec3_t coord);
+void MSG_WriteCoordAngleV (sizebuf_t *sb, vec3_t coord, vec3_t angles);
+void MSG_WriteAngle (sizebuf_t *sb, float angle);
+void MSG_WriteAngleV (sizebuf_t *sb, vec3_t angles);
+void MSG_WriteAngle16 (sizebuf_t *sb, float angle16);
 
 typedef struct msg_s {
 	int readcount;
@@ -59,8 +62,10 @@ const char *MSG_ReadString (msg_t *msg);
 const char *MSG_ReadStringLine (msg_t *msg);
 
 float MSG_ReadCoord (msg_t *msg);
-void MSG_ReadCoord3 (msg_t *msg, vec3_t coord);
+void MSG_ReadCoordV (msg_t *msg, vec3_t coord);
 float MSG_ReadAngle (msg_t *msg);
+void MSG_ReadCoordAngleV (msg_t *msg, vec3_t coord, vec3_t angles);
+void MSG_ReadAngleV (msg_t *msg, vec3_t angles);
 float MSG_ReadAngle16 (msg_t *msg);
 
 #endif

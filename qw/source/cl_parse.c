@@ -802,18 +802,14 @@ CL_ParseModellist (void)
 void
 CL_ParseBaseline (entity_state_t *es)
 {
-	int         i;
-
 	es->modelindex = MSG_ReadByte (net_message);
 	es->frame = MSG_ReadByte (net_message);
 	es->colormap = MSG_ReadByte (net_message);
 	es->skinnum = MSG_ReadByte (net_message);
-	for (i = 0; i < 3; i++) {
-		es->origin[i] = MSG_ReadCoord (net_message);
-		es->angles[i] = MSG_ReadAngle (net_message);
-	}
-	// LordHavoc: set up the baseline to account for new effects (alpha,
-	// colormod, etc)
+
+	MSG_ReadCoordAngleV (net_message, es->origin, es->angles);
+
+	// LordHavoc: set up baseline to for new effects (alpha, colormod, etc)
 	es->alpha = 255;
 	es->scale = 16;
 	es->glow_color = 254;
@@ -857,7 +853,7 @@ CL_ParseStaticSound (void)
 	int         sound_num, vol, atten;
 	vec3_t      org;
 
-	MSG_ReadCoord3 (net_message, org);
+	MSG_ReadCoordV (net_message, org);
 	sound_num = MSG_ReadByte (net_message);
 	vol = MSG_ReadByte (net_message);
 	atten = MSG_ReadByte (net_message);
@@ -888,7 +884,7 @@ CL_ParseStartSoundPacket (void)
 
 	sound_num = MSG_ReadByte (net_message);
 
-	MSG_ReadCoord3 (net_message, pos);
+	MSG_ReadCoordV (net_message, pos);
 
 	ent = (channel >> 3) & 1023;
 	channel &= 7;
@@ -1214,8 +1210,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_setangle:
-				for (i = 0; i < 3; i++)
-					cl.viewangles[i] = MSG_ReadAngle (net_message);
+				MSG_ReadAngleV (net_message, cl.viewangles);
 //				cl.viewangles[PITCH] = cl.viewangles[ROLL] = 0;
 				break;
 
@@ -1317,15 +1312,13 @@ CL_ParseServerMessage (void)
 				cl.completed_time = realtime;
 				vid.recalc_refdef = true;	// go to full screen
 				Con_DPrintf ("intermission simorg: ");
-				MSG_ReadCoord3 (net_message, cl.simorg);
-				for (i = 0; i < 3; i++) {
+				MSG_ReadCoordV (net_message, cl.simorg);
+				for (i = 0; i < 3; i++)
 					Con_DPrintf ("%f ", cl.simorg[i]);
-				}
 				Con_DPrintf ("\nintermission simangles: ");
-				for (i = 0; i < 3; i++) {
-					cl.simangles[i] = MSG_ReadAngle (net_message);
+				MSG_ReadAngleV (net_message, cl.simangles);
+				for (i = 0; i < 3; i++)
 					Con_DPrintf ("%f ", cl.simangles[i]);
-				}
 				Con_DPrintf ("\n");
 				VectorCopy (vec3_origin, cl.simvel);
 				break;

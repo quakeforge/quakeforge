@@ -420,8 +420,7 @@ SV_ReadClientMove (usercmd_t *move)
 	host_client->num_pings++;
 
 	// read current angles  
-	for (i = 0; i < 3; i++)
-		angle[i] = MSG_ReadAngle (net_message);
+	MSG_ReadAngleV (net_message, angle);
 
 	VectorCopy (angle, SVvector (host_client->edict, v_angle));
 

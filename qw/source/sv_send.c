@@ -483,8 +483,7 @@ SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 	if (channel & SND_ATTENUATION)
 		MSG_WriteByte (&sv.multicast, attenuation * 64);
 	MSG_WriteByte (&sv.multicast, sound_num);
-	for (i = 0; i < 3; i++)
-		MSG_WriteCoord (&sv.multicast, origin[i]);
+	MSG_WriteCoordV (&sv.multicast, origin);
 
 	if (use_phs)
 		SV_Multicast (origin, reliable ? MULTICAST_PHS_R : MULTICAST_PHS);
@@ -541,15 +540,13 @@ SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 			MSG_WriteCoord (msg, SVvector (other, origin)[i] + 0.5 *
 							(SVvector (other, mins)[i] +
 							 SVvector (other, maxs)[i]));
-
 		SVfloat (ent, dmg_take) = 0;
 		SVfloat (ent, dmg_save) = 0;
 	}
 	// a fixangle might get lost in a dropped packet.  Oh well.
 	if (SVfloat (ent, fixangle)) {
 		MSG_WriteByte (msg, svc_setangle);
-		for (i = 0; i < 3; i++)
-			MSG_WriteAngle (msg, SVvector (ent, angles)[i]);
+		MSG_WriteAngleV (msg, SVvector (ent, angles));
 		SVfloat (ent, fixangle) = 0;
 	}
 }

@@ -52,11 +52,6 @@ int         current_skill;
 
 void        Mod_Print (void);
 
-/*
-==================
-Host_Quit_f
-==================
-*/
 
 void
 Host_Quit_f (void)
@@ -71,12 +66,6 @@ Host_Quit_f (void)
 	Sys_Quit ();
 }
 
-
-/*
-==================
-Host_Status_f
-==================
-*/
 void
 Host_Status_f (void)
 {
@@ -125,11 +114,9 @@ Host_Status_f (void)
 
 
 /*
-==================
-Host_God_f
+  Host_God_f
 
-Sets client to godmode
-==================
+  Sets client to godmode
 */
 void
 Host_God_f (void)
@@ -160,7 +147,8 @@ Host_Notarget_f (void)
 	if (*sv_globals.deathmatch && !host_client->privileged)
 		return;
 
-	SVfloat (sv_player, flags) = (int) SVfloat (sv_player, flags) ^ FL_NOTARGET;
+	SVfloat (sv_player, flags) = (int) SVfloat (sv_player, flags) ^
+		FL_NOTARGET;
 	if (!((int) SVfloat (sv_player, flags) & FL_NOTARGET))
 		SV_ClientPrintf ("notarget OFF\n");
 	else
@@ -192,11 +180,9 @@ Host_Noclip_f (void)
 }
 
 /*
-==================
-Host_Fly_f
+  Host_Fly_f
 
-Sets client to flymode
-==================
+  Sets client to flymode
 */
 void
 Host_Fly_f (void)
@@ -218,13 +204,6 @@ Host_Fly_f (void)
 	}
 }
 
-
-/*
-==================
-Host_Ping_f
-
-==================
-*/
 void
 Host_Ping_f (void)
 {
@@ -249,23 +228,14 @@ Host_Ping_f (void)
 	}
 }
 
-/*
-===============================================================================
-
-SERVER TRANSITIONS
-
-===============================================================================
-*/
-
+// SERVER TRANSITIONS =========================================================
 
 /*
-======================
-Host_Map_f
+  Host_Map_f
 
-handle a 
-map <servername>
-command from the console.  Active clients are kicked off.
-======================
+  handle a 
+  map <servername>
+  command from the console.  Active clients are kicked off.
 */
 void
 Host_Map_f (void)
@@ -315,11 +285,9 @@ Host_Map_f (void)
 }
 
 /*
-==================
-Host_Changelevel_f
+  Host_Changelevel_f
 
-Goes to a new map, taking all clients along
-==================
+  Goes to a new map, taking all clients along
 */
 void
 Host_Changelevel_f (void)
@@ -327,7 +295,8 @@ Host_Changelevel_f (void)
 	char        level[MAX_QPATH];
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("changelevel <levelname> : continue game on a new level\n");
+		Con_Printf ("changelevel <levelname> : continue game on a new "
+					"level\n");
 		return;
 	}
 	if (!sv.active || cls.demoplayback) {
@@ -340,11 +309,9 @@ Host_Changelevel_f (void)
 }
 
 /*
-==================
-Host_Restart_f
+  Host_Restart_f
 
-Restarts the current server for a dead player
-==================
+  Restarts the current server for a dead player
 */
 void
 Host_Restart_f (void)
@@ -357,18 +324,15 @@ Host_Restart_f (void)
 	if (cmd_source != src_command)
 		return;
 	strcpy (mapname, sv.name);			// must copy out, because it gets
-	// cleared
-	// in sv_spawnserver
+										// cleared in sv_spawnserver
 	SV_SpawnServer (mapname);
 }
 
 /*
-==================
-Host_Reconnect_f
+  Host_Reconnect_f
 
-This command causes the client to wait for the signon messages again.
-This is sent just before a server changes levels
-==================
+  This command causes the client to wait for the signon messages again.
+  This is sent just before a server changes levels
 */
 void
 Host_Reconnect_f (void)
@@ -378,11 +342,9 @@ Host_Reconnect_f (void)
 }
 
 /*
-=====================
-Host_Connect_f
+  Host_Connect_f
 
-User command to connect to server
-=====================
+  User command to connect to server
 */
 void
 Host_Connect_f (void)
@@ -399,23 +361,14 @@ Host_Connect_f (void)
 	Host_Reconnect_f ();
 }
 
-
-/*
-===============================================================================
-
-LOAD / SAVE GAME
-
-===============================================================================
-*/
+// LOAD / SAVE GAME ===========================================================
 
 #define	SAVEGAME_VERSION	5
 
 /*
-===============
-Host_SavegameComment
+  Host_SavegameComment
 
-Writes a SAVEGAME_COMMENT_LENGTH character comment describing the current 
-===============
+  Writes a SAVEGAME_COMMENT_LENGTH character comment describing the current 
 */
 void
 Host_SavegameComment (char *text)
@@ -429,19 +382,13 @@ Host_SavegameComment (char *text)
 	snprintf (kills, sizeof (kills), "kills:%3i/%3i", cl.stats[STAT_MONSTERS],
 			  cl.stats[STAT_TOTALMONSTERS]);
 	memcpy (text + 22, kills, strlen (kills));
-// convert space to _ to make stdio happy
+	// convert space to _ to make stdio happy
 	for (i = 0; i < SAVEGAME_COMMENT_LENGTH; i++)
 		if (text[i] == ' ')
 			text[i] = '_';
 	text[SAVEGAME_COMMENT_LENGTH] = '\0';
 }
 
-
-/*
-===============
-Host_Savegame_f
-===============
-*/
 void
 Host_Savegame_f (void)
 {
@@ -479,7 +426,8 @@ Host_Savegame_f (void)
 	}
 
 	for (i = 0; i < svs.maxclients; i++) {
-		if (svs.clients[i].active && (SVfloat (svs.clients[i].edict, health) <= 0)) {
+		if (svs.clients[i].active && (SVfloat (svs.clients[i].edict, health)
+									  <= 0)) {
 			Con_Printf ("Can't savegame with a dead player\n");
 			return;
 		}
@@ -504,8 +452,7 @@ Host_Savegame_f (void)
 	Qprintf (f, "%s\n", sv.name);
 	Qprintf (f, "%f\n", sv.time);
 
-// write the light styles
-
+	// write the light styles
 	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
 		if (sv.lightstyles[i])
 			Qprintf (f, "%s\n", sv.lightstyles[i]);
@@ -523,12 +470,6 @@ Host_Savegame_f (void)
 	Con_Printf ("done.\n");
 }
 
-
-/*
-===============
-Host_Loadgame_f
-===============
-*/
 void
 Host_Loadgame_f (void)
 {
@@ -558,8 +499,8 @@ Host_Loadgame_f (void)
 	snprintf (name, sizeof (name), "%s/%s", com_gamedir, Cmd_Argv (1));
 	COM_DefaultExtension (name, ".sav");
 
-// we can't call SCR_BeginLoadingPlaque, because too much stack space has
-// been used.  The menu calls it before stuffing loadgame command
+	// we can't call SCR_BeginLoadingPlaque, because too much stack space has
+	// been used.  The menu calls it before stuffing loadgame command
 //  SCR_BeginLoadingPlaque ();
 
 	Con_Printf ("Loading game from %s...\n", name);
@@ -583,7 +524,8 @@ Host_Loadgame_f (void)
 		Qgets (f, buf, sizeof (buf));
 		sscanf (buf, "%f\n", &spawn_parms[i]);
 	}
-// this silliness is so we can load 1.06 save files, which have float skill values
+	// this silliness is so we can load 1.06 save files, which have float skill
+	// values
 	Qgets (f, buf, sizeof (buf));
 	sscanf (buf, "%f\n", &tfloat);
 	current_skill = (int) (tfloat + 0.1);
@@ -604,8 +546,7 @@ Host_Loadgame_f (void)
 	sv.paused = true;					// pause until all clients connect
 	sv.loadgame = true;
 
-// load the light styles
-
+	// load the light styles
 	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
 		Qgets (f, buf, sizeof (buf));
 		sscanf (buf, "%s\n", str);
@@ -613,7 +554,7 @@ Host_Loadgame_f (void)
 		strcpy (sv.lightstyles[i], str);
 	}
 
-// load the edicts out of the savegame file
+	// load the edicts out of the savegame file
 	entnum = -1;						// -1 is the globals
 	while (!Qeof (f)) {
 		for (i = 0; i < sizeof (str) - 1; i++) {
@@ -667,14 +608,8 @@ Host_Loadgame_f (void)
 	}
 }
 
-
 //============================================================================
 
-/*
-======================
-Host_Name_f
-======================
-*/
 void
 Host_Name_f (void)
 {
@@ -705,13 +640,11 @@ Host_Name_f (void)
 	SVstring (host_client->edict, netname) =
 		PR_SetString (&sv_pr_state, host_client->name);
 
-// send notification to all clients
-
+	// send notification to all clients
 	MSG_WriteByte (&sv.reliable_datagram, svc_updatename);
 	MSG_WriteByte (&sv.reliable_datagram, host_client - svs.clients);
 	MSG_WriteString (&sv.reliable_datagram, host_client->name);
 }
-
 
 void
 Host_Version_f (void)
@@ -747,12 +680,12 @@ Host_Say (qboolean teamonly)
 
 	p = Hunk_TempAlloc (strlen(Cmd_Args (1)) + 1);
 	strcpy (p, Cmd_Args (1));
-// remove quotes if present
+	// remove quotes if present
 	if (*p == '"') {
 		p++;
 		p[strlen (p) - 1] = 0;
 	}
-// turn on color set 1
+	// turn on color set 1
 	if (!fromServer)
 		snprintf (text, sizeof (text), "%c%s: ", 1, save->name);
 	else
@@ -768,8 +701,9 @@ Host_Say (qboolean teamonly)
 	for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++) {
 		if (!client || !client->active || !client->spawned)
 			continue;
-		if (teamplay->int_val && teamonly
-			&& SVfloat (client->edict, team) != SVfloat (save->edict, team)) continue;
+		if (teamplay->int_val && teamonly && SVfloat (client->edict, team) !=
+			SVfloat (save->edict, team))
+			continue;
 		host_client = client;
 		SV_ClientPrintf ("%s", text);
 	}
@@ -778,20 +712,17 @@ Host_Say (qboolean teamonly)
 	Con_Printf ("%s", &text[1]);
 }
 
-
 void
 Host_Say_f (void)
 {
 	Host_Say (false);
 }
 
-
 void
 Host_Say_Team_f (void)
 {
 	Host_Say (true);
 }
-
 
 void
 Host_Tell_f (void)
@@ -816,12 +747,12 @@ Host_Tell_f (void)
 	p = Hunk_TempAlloc (strlen(Cmd_Args (1)) + 1);
 	strcpy (p, Cmd_Args (1));
 
-// remove quotes if present
+	// remove quotes if present
 	if (*p == '"') {
 		p++;
 		p[strlen (p) - 1] = 0;
 	}
-// check length & truncate if necessary
+	// check length & truncate if necessary
 	j = sizeof (text) - 2 - strlen (text);	// -2 for /n and null terminator
 	if (strlen (p) > j)
 		p[j] = 0;
@@ -842,11 +773,6 @@ Host_Tell_f (void)
 	host_client = save;
 }
 
-/*
-==================
-Host_Kill_f
-==================
-*/
 void
 Host_Kill_f (void)
 {
@@ -861,17 +787,10 @@ Host_Kill_f (void)
 	}
 
 	*sv_globals.time = sv.time;
-	*sv_globals.self =
-		EDICT_TO_PROG (&sv_pr_state, sv_player);
+	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
 	PR_ExecuteProgram (&sv_pr_state, sv_funcs.ClientKill);
 }
 
-
-/*
-==================
-Host_Pause_f
-==================
-*/
 void
 Host_Pause_f (void)
 {
@@ -887,10 +806,12 @@ Host_Pause_f (void)
 
 		if (sv.paused) {
 			SV_BroadcastPrintf ("%s paused the game\n",
-								PR_GetString (&sv_pr_state, SVstring (sv_player, netname)));
+								PR_GetString (&sv_pr_state,
+											  SVstring (sv_player, netname)));
 		} else {
 			SV_BroadcastPrintf ("%s unpaused the game\n",
-								PR_GetString (&sv_pr_state, SVstring (sv_player, netname)));
+								PR_GetString (&sv_pr_state,
+											  SVstring (sv_player, netname)));
 		}
 
 		// send notification to all clients
@@ -901,12 +822,6 @@ Host_Pause_f (void)
 
 //===========================================================================
 
-
-/*
-==================
-Host_PreSpawn_f
-==================
-*/
 void
 Host_PreSpawn_f (void)
 {
@@ -926,11 +841,6 @@ Host_PreSpawn_f (void)
 	host_client->sendsignon = true;
 }
 
-/*
-==================
-Host_Spawn_f
-==================
-*/
 void
 Host_Spawn_f (void)
 {
@@ -947,45 +857,36 @@ Host_Spawn_f (void)
 		Con_Printf ("Spawn not valid -- already spawned\n");
 		return;
 	}
-// run the entrance script
-	if (sv.loadgame) {					// loaded games are fully inited
-		// already
+	// run the entrance script
+	if (sv.loadgame) {				// loaded games are fully inited already
 		// if this is the last client to be connected, unpause
 		sv.paused = false;
 	} else {
 		// set up the edict
 		ent = host_client->edict;
-
 		memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
 		SVfloat (ent, colormap) = NUM_FOR_EDICT (&sv_pr_state, ent);
 		SVfloat (ent, team) = (host_client->colors & 15) + 1;
-		SVstring (ent, netname) = PR_SetString (&sv_pr_state, host_client->name);
+		SVstring (ent, netname) = PR_SetString (&sv_pr_state,
+												host_client->name);
 
 		// copy spawn parms out of the client_t
-
 		for (i = 0; i < NUM_SPAWN_PARMS; i++)
 			sv_globals.parms[i] = host_client->spawn_parms[i];
 
 		// call the spawn function
-
 		*sv_globals.time = sv.time;
-		*sv_globals.self =
-			EDICT_TO_PROG (&sv_pr_state, sv_player);
-		PR_ExecuteProgram (&sv_pr_state,
-						   sv_funcs.ClientConnect);
-
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
+		PR_ExecuteProgram (&sv_pr_state, sv_funcs.ClientConnect);
 		if ((Sys_DoubleTime () - host_client->netconnection->connecttime) <=
 			sv.time) Con_Printf ("%s entered the game\n", host_client->name);
-
-		PR_ExecuteProgram (&sv_pr_state,
-						   sv_funcs.PutClientInServer);
+		PR_ExecuteProgram (&sv_pr_state, sv_funcs.PutClientInServer);
 	}
 
-
-// send all current names, colors, and frag counts
+	// send all current names, colors, and frag counts
 	SZ_Clear (&host_client->message);
 
-// send time of update
+	// send time of update
 	MSG_WriteByte (&host_client->message, svc_time);
 	MSG_WriteFloat (&host_client->message, sv.time);
 
@@ -1001,16 +902,14 @@ Host_Spawn_f (void)
 		MSG_WriteByte (&host_client->message, client->colors);
 	}
 
-// send all current light styles
+	// send all current light styles
 	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
 		MSG_WriteByte (&host_client->message, svc_lightstyle);
 		MSG_WriteByte (&host_client->message, (char) i);
 		MSG_WriteString (&host_client->message, sv.lightstyles[i]);
 	}
 
-//
-// send some stats
-//
+	// send some stats
 	MSG_WriteByte (&host_client->message, svc_updatestat);
 	MSG_WriteByte (&host_client->message, STAT_TOTALSECRETS);
 	MSG_WriteLong (&host_client->message,
@@ -1031,17 +930,15 @@ Host_Spawn_f (void)
 	MSG_WriteLong (&host_client->message,
 				   *sv_globals.killed_monsters);
 
-
-//
-// send a fixangle
-// Never send a roll angle, because savegames can catch the server
-// in a state where it is expecting the client to correct the angle
-// and it won't happen if the game was just loaded, so you wind up
-// with a permanent head tilt
+	// send a fixangle
+	// Never send a roll angle, because savegames can catch the server
+	// in a state where it is expecting the client to correct the angle
+	// and it won't happen if the game was just loaded, so you wind up
+	// with a permanent head tilt
 	ent = EDICT_NUM (&sv_pr_state, 1 + (host_client - svs.clients));
 	MSG_WriteByte (&host_client->message, svc_setangle);
-	for (i = 0; i < 2; i++)
-		MSG_WriteAngle (&host_client->message, SVvector (ent, angles)[i]);
+	MSG_WriteAngle (&host_client->message, SVvector (ent, angles)[0]);
+	MSG_WriteAngle (&host_client->message, SVvector (ent, angles)[1]);
 	MSG_WriteAngle (&host_client->message, 0);
 
 	SV_WriteClientdataToMessage (sv_player, &host_client->message);
@@ -1051,11 +948,6 @@ Host_Spawn_f (void)
 	host_client->sendsignon = true;
 }
 
-/*
-==================
-Host_Begin_f
-==================
-*/
 void
 Host_Begin_f (void)
 {
@@ -1069,13 +961,10 @@ Host_Begin_f (void)
 
 //===========================================================================
 
-
 /*
-==================
-Host_Kick_f
+  Host_Kick_f
 
-Kicks a user off of the server
-==================
+  Kicks a user off of the server
 */
 void
 Host_Kick_f (void)
@@ -1149,21 +1038,10 @@ Host_Kick_f (void)
 	host_client = save;
 }
 
-/*
-===============================================================================
-
-DEBUGGING TOOLS
-
-===============================================================================
-*/
+// DEBUGGING TOOLS ============================================================
 
 // FIXME: This cheat should be re-implemented OUTSIDE the engine!
 #if 0
-/*
-==================
-Host_Give_f
-==================
-*/
 void
 Host_Give_f (void)
 {
@@ -1302,7 +1180,6 @@ Host_Give_f (void)
 }
 #endif
 
-
 edict_t    *
 FindViewthing (void)
 {
@@ -1311,18 +1188,14 @@ FindViewthing (void)
 
 	for (i = 0; i < sv.num_edicts; i++) {
 		e = EDICT_NUM (&sv_pr_state, i);
-		if (!strcmp (PR_GetString (&sv_pr_state, SVstring (e, classname)), "viewthing"))
+		if (!strcmp (PR_GetString (&sv_pr_state, SVstring (e, classname)),
+					 "viewthing"))
 			return e;
 	}
 	Con_Printf ("No viewthing on map\n");
 	return NULL;
 }
 
-/*
-==================
-Host_Viewmodel_f
-==================
-*/
 void
 Host_Viewmodel_f (void)
 {
@@ -1343,11 +1216,6 @@ Host_Viewmodel_f (void)
 	cl.model_precache[(int) SVfloat (e, modelindex)] = m;
 }
 
-/*
-==================
-Host_Viewframe_f
-==================
-*/
 void
 Host_Viewframe_f (void)
 {
@@ -1367,7 +1235,6 @@ Host_Viewframe_f (void)
 	SVfloat (e, frame) = f;
 }
 
-
 void
 PrintFrameName (model_t *m, int frame)
 {
@@ -1383,11 +1250,6 @@ PrintFrameName (model_t *m, int frame)
 	Cache_Release (&m->cache);
 }
 
-/*
-==================
-Host_Viewnext_f
-==================
-*/
 void
 Host_Viewnext_f (void)
 {
@@ -1406,11 +1268,6 @@ Host_Viewnext_f (void)
 	PrintFrameName (m, SVfloat (e, frame));
 }
 
-/*
-==================
-Host_Viewprev_f
-==================
-*/
 void
 Host_Viewprev_f (void)
 {
@@ -1430,20 +1287,8 @@ Host_Viewprev_f (void)
 	PrintFrameName (m, SVfloat (e, frame));
 }
 
-/*
-===============================================================================
+// DEMO LOOP CONTROL ==========================================================
 
-DEMO LOOP CONTROL
-
-===============================================================================
-*/
-
-
-/*
-==================
-Host_Startdemos_f
-==================
-*/
 void
 Host_Startdemos_f (void)
 {
@@ -1472,13 +1317,10 @@ Host_Startdemos_f (void)
 		cls.demonum = -1;
 }
 
-
 /*
-==================
-Host_Demos_f
+  Host_Demos_f
 
-Return to looping demos
-==================
+  Return to looping demos
 */
 void
 Host_Demos_f (void)
@@ -1492,11 +1334,9 @@ Host_Demos_f (void)
 }
 
 /*
-==================
-Host_Stopdemo_f
+  Host_Stopdemo_f
 
-Return to looping demos
-==================
+  Return to looping demos
 */
 void
 Host_Stopdemo_f (void)
@@ -1511,11 +1351,6 @@ Host_Stopdemo_f (void)
 
 //=============================================================================
 
-/*
-==================
-Host_InitCommands
-==================
-*/
 void
 Host_InitCommands (void)
 {
