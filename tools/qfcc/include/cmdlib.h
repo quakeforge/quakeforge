@@ -37,8 +37,4 @@ void	SafeWrite (FILE *f, void *buffer, int count);
 
 int		LoadFile (const char *filename, void **bufferptr);
 
-char *Parse (char *data);
-
-extern	char		qfcc_com_token[1024];
-
 #endif
