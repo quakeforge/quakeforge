@@ -530,7 +530,8 @@ separate_compile (void)
 		if (strncmp (*file, "-l", 2)
 			&& (!strcmp (extension->str, ".r")
 				|| !strcmp (extension->str, ".qc"))) {
-			printf ("%s %s\n", *file, output_file->str);
+			if (options.verbosity >= 2)
+				printf ("%s %s\n", *file, output_file->str);
 			err = compile_to_obj (*file, output_file->str) || err;
 
 			free ((char *)*file);

@@ -541,7 +541,8 @@ linker_add_object_file (const char *filename)
 	if (!qfo)
 		return;  
 
-	puts(filename);
+	if (options.verbosity >= 2)
+		puts (filename);
 
 	code_base = code->size;
 	data_base = data->size;
