@@ -52,6 +52,9 @@ static const char rcsid[] =
 #ifdef HAVE_NETDB_H
 # include <netdb.h>
 #endif
+#ifdef HAVE_SYS_UIO_H
+# include <sys/uio.h>
+#endif
 
 #include <sys/types.h>
 #include <time.h>
