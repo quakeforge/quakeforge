@@ -658,7 +658,7 @@ aiee (int sig)
 static void
 signal_handler (int sig)
 {
-	int         recover = 0;
+	int volatile recover = 0;	// volatile for longjump
 
 	printf ("Received signal %d, exiting...\n", sig);
 
