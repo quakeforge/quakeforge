@@ -26,7 +26,7 @@
 #
 AUTOMAKE_OPTIONS= foreign
 
-SUBDIRS=	include source
+SUBDIRS=	include source doc
 
 #  uncomment the following if qfcc requires the math library
 #qfcc_LDADD=-lm
