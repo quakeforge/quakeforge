@@ -965,7 +965,11 @@ CL_ConnectionlessPacket (void)
 		{
 			Con_Printf("status response\n");
 			return;
-		} 
+		} else if (!cls.demoplayback
+				   && (cl_paranoid->int_val
+					   || !NET_CompareAdr (net_from, cls.server_addr))) {
+			Con_Printf ("print\n");
+		}
 		Con_Printf ("%s", s);
 		return;
 	}
