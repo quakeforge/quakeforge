@@ -80,39 +80,45 @@ main (int argc, char **argv)
 	}
 	while (--argc) {
 		int fix = 0;
-		PR_LoadProgsFile (&progs, *++argv);
-		if (!progs.progs) {
-			fprintf (stderr, "failed to load %s\n", *argv);
+		int size;
+		VFile *file;
+
+		progs.progs_name = *++argv;
+		size = COM_FOpenFile (progs.progs_name, &file);
+		if (size != -1)
+			PR_LoadProgsFile (&progs, file, size, 0, 0);
+		if (size == -1 || !progs.progs) {
+			fprintf (stderr, "failed to load %s\n", progs.progs_name);
 			return 1;
 		}
 		if (progs.progs->version < 0x100)
-			printf ("%s: version %d\n", *argv, progs.progs->version);
+			printf ("%s: version %d\n", progs.progs_name, progs.progs->version);
 		else
-			printf ("%s: version %x.%03x.%03x\n", *argv,
+			printf ("%s: version %x.%03x.%03x\n", progs.progs_name,
 					(progs.progs->version >> 24) & 0xff,
 					(progs.progs->version >> 12) & 0xfff,
 					progs.progs->version & 0xfff);
 		if (progs.progs->crc == nq_crc) {
-			printf ("%s: netquake crc\n", *argv);
+			printf ("%s: netquake crc\n", progs.progs_name);
 			Init_Defs (nq_global_defs, nq_field_defs);
 			globals = nq_global_defs;
 			fields = nq_field_defs;
 		} else if (progs.progs->crc == qw_crc) {
-			printf ("%s: quakeworld crc\n", *argv);
+			printf ("%s: quakeworld crc\n", progs.progs_name);
 			Init_Defs (qw_global_defs, qw_field_defs);
 			globals = qw_global_defs;
 			fields = qw_field_defs;
 		} else {
-			printf ("%s: unknown crc %d\n", *argv, progs.progs->crc);
+			printf ("%s: unknown crc %d\n", progs.progs_name, progs.progs->crc);
 			continue;
 		}
 		for (def = globals; def->name; def++)
 			if (!PR_FindGlobal (&progs, def->name))
 				break;
 		if (!def->name)
-			printf ("%s: all system globals accounted for\n", *argv);
+			printf ("%s: all system globals accounted for\n", progs.progs_name);
 		else {
-			printf ("%s: some system globals missing\n", *argv);
+			printf ("%s: some system globals missing\n", progs.progs_name);
 			fix_missing_globals (&progs, globals);
 			fix++;
 		}
@@ -120,13 +126,13 @@ main (int argc, char **argv)
 			if (!ED_FindField (&progs, def->name))
 				break;
 		if (!def->name)
-			printf ("%s: all system fields accounted for\n", *argv);
+			printf ("%s: all system fields accounted for\n", progs.progs_name);
 		else {
-			printf ("%s: some system fields missing\n", *argv);
+			printf ("%s: some system fields missing\n", progs.progs_name);
 		}
 		if (fix) {
 			//XXX FIXME endian fixups
-			FILE *f = fopen (va ("%s.new", *argv), "wb");
+			FILE *f = fopen (va ("%s.new", progs.progs_name), "wb");
 			fwrite (progs.progs, progs.progs_size, 1, f);
 			fclose (f);
 		}
