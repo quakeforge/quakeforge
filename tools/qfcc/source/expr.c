@@ -90,7 +90,7 @@ etype_t     qc_types[] = {
 	ev_short,							// ex_short
 };
 
-type_t     *types[] = {
+type_t     *ev_types[] = {
 	&type_void,
 	&type_string,
 	&type_float,
@@ -209,7 +209,7 @@ get_type (expr_t *e)
 		case ex_quaternion:
 		case ex_uinteger:
 		case ex_short:
-			return types[qc_types[e->type]];
+			return ev_types[qc_types[e->type]];
 	}
 	return 0;
 }

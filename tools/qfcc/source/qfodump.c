@@ -145,6 +145,10 @@ const char *reloc_names[] = {
 	"def_func",
 	"def_string",
 	"def_field",
+	"op_a_def_ofs",
+	"op_b_def_ofs",
+	"op_c_def_ofs",
+	"def_def_ofs",
 };
 
 static void

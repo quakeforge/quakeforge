@@ -299,7 +299,7 @@ process_def (qfo_def_t *def)
 						size * sizeof (pr_type_t));
 				for (i = 0; i < relocs.num_relocs; i++) {
 					qfo_reloc_t *reloc = relocs.relocs + i;
-					if (reloc->type >= rel_def_op
+					if (reloc->type >= rel_def_def
 						&& reloc->type <= rel_def_field)
 						if (reloc->ofs == def->ofs)
 							reloc->ofs = d->ofs;

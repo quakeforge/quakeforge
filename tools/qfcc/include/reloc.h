@@ -53,6 +53,7 @@ typedef enum {
 
 typedef struct reloc_s {
 	struct reloc_s *next;
+	struct ex_label_s *label;
 	int			ofs;
 	reloc_type	type;
 	int			line;
@@ -70,5 +71,6 @@ void reloc_def_def_ofs (struct def_s *def, int ofs);
 void reloc_def_func (struct function_s *func, int ofs);
 void reloc_def_string (int ofs);
 void reloc_def_field (struct def_s *def, int ofs);
+void reloc_def_op (struct ex_label_s *label, int ofs);
 
 #endif//__reloc_h

@@ -211,3 +211,12 @@ reloc_def_field (def_t *def, int ofs)
 	ref->next = def->refs;
 	def->refs = ref;
 }
+
+void
+reloc_def_op (ex_label_t *label, int ofs)
+{
+	reloc_t    *ref = new_reloc (ofs, rel_def_op);
+	ref->next = pr.relocs;
+	ref->label = label;
+	pr.relocs = ref;
+}

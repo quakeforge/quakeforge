@@ -49,6 +49,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "debug.h"
 #include "def.h"
 #include "emit.h"
+#include "expr.h"
 #include "function.h"
 #include "immediate.h"
 #include "obj_file.h"
@@ -222,7 +223,7 @@ setup_data (void)
 	}
 	for (r = pr.relocs; r; r = r->next)
 		if (r->type == rel_def_op)
-			write_one_reloc (r, &reloc, G_INT (r->ofs));
+			write_one_reloc (r, &reloc, r->label->ofs);
 		else
 			write_one_reloc (r, &reloc, 0);
 	for (st = pr.code->code; st - pr.code->code < pr.code->size; st++) {

@@ -119,7 +119,7 @@ typedef struct expr_s {
 } expr_t;
 
 extern etype_t qc_types[];
-extern struct type_s *types[];
+extern struct type_s *ev_types[];
 extern expr_type expr_types[];
 
 extern expr_t *local_expr;

@@ -150,7 +150,7 @@ emit_statement (expr_t *e, opcode_t *op, def_t *var_a, def_t *var_b,
 		ret = var_a;
 	} else {							// allocate result space
 		if (!var_c) {
-			var_c = get_tempdef (types[op->type_c], current_scope);
+			var_c = get_tempdef (ev_types[op->type_c], current_scope);
 			var_c->users += 2;
 		}
 		statement->c = var_c->ofs;
