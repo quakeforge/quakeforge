@@ -877,12 +877,12 @@ PF_aim (progs_t *pr)
 	float       speed;
 	const char       *noaim;
 
+	if (sv_aim->value >= 1.0) {
+		VectorCopy (*sv_globals.v_forward, G_VECTOR (pr, OFS_RETURN));
+		return;
+	}
+
 	ent = G_EDICT (pr, OFS_PARM0);
-	speed = G_FLOAT (pr, OFS_PARM1);
-
-	VectorCopy (SVvector (ent, origin), start);
-	start[2] += 20;
-
 	// noaim option
 	i = NUM_FOR_EDICT (pr, ent);
 	if (i > 0 && i < MAX_CLIENTS) {
@@ -892,6 +892,12 @@ PF_aim (progs_t *pr)
 			return;
 		}
 	}
+
+	speed = G_FLOAT (pr, OFS_PARM1);
+
+	VectorCopy (SVvector (ent, origin), start);
+	start[2] += 20;
+
 	// try sending a trace straight
 	VectorCopy (*sv_globals.v_forward, dir);
 	VectorMA (start, 2048, dir, end);
