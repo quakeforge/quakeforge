@@ -884,6 +884,15 @@ Host_Init (quakeparms_t *parms)
 
 	IN_Init_Cvars ();
 	VID_Init_Cvars ();
+	S_Init_Cvars ();
+	SCR_Init_Cvars ();
+	Key_Init_Cvars ();
+	Con_Init_Cvars ();
+	PR_Init_Cvars ();
+	SV_Progs_Init_Cvars ();
+	Draw_Init_Cvars ();
+	R_Particles_Init_Cvars ();
+	Mod_Init_Cvars ();
 
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute_Sets ();
@@ -891,9 +900,6 @@ Host_Init (quakeparms_t *parms)
 	PI_Init ();
 
 	V_Init ();
-	S_Init_Cvars ();
-	SCR_Init_Cvars ();
-	VID_Init_Cvars ();
 	COM_Init ();
 
 	// reparse the command line for + commands other than set
@@ -905,15 +911,11 @@ Host_Init (quakeparms_t *parms)
 	Host_InitVCR (parms);
 	Host_InitLocal ();
 	W_LoadWadFile ("gfx.wad");
-	Key_Init_Cvars ();
-	Con_Init_Cvars ();
 	Key_Init ();
 	Con_Init ();
 	// FIXME: MENUCODE
 //	M_Init ();
-	PR_Init_Cvars ();
 	PR_Init ();
-	SV_Progs_Init_Cvars ();
 	SV_Progs_Init ();
 	Mod_Init ();
 	NET_Init ();
@@ -943,8 +945,6 @@ Host_Init (quakeparms_t *parms)
 		VID_Init (vid_basepal);
 		IN_Init ();
 
-		Draw_Init_Cvars ();
-		R_Particles_Init_Cvars ();
 
 		Draw_Init ();
 		SCR_Init ();
