@@ -1196,7 +1196,7 @@ if test "x$optimize" = xyes; then
 		shift
 		args="$*"
 		AC_MSG_CHECKING(for gcc version)
-		CCVER="gcc `gcc --version`"
+		CCVER="gcc `$CC --version`"
 		set $CCVER
 		IFS="."
 		set $2
