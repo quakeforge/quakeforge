@@ -456,6 +456,7 @@ X11_UpdateFullscreen (cvar_t *fullscreen)
 			window_saved = 0;
 		}
 		IN_UpdateGrab (in_grab);
+		X11_SetMouse ();
 		return;
 	} else {
 
