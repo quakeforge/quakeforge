@@ -253,6 +253,7 @@ selector_def (const char *_sel_id, const char *_sel_types)
 	sel_def->sel_id = sel_id;
 	sel_def->sel_types = sel_types;
 	sel_def->def = PR_NewDef (type_SEL.aux_type, ".imm", 0);
+	sel_def->def->initialized = sel_def->def->constant = 1;
 	sel_def->def->ofs = PR_NewLocation (type_SEL.aux_type);
 	G_INT (sel_def->def->ofs) = sel_id;
 	G_INT (sel_def->def->ofs + 1) = sel_types;
@@ -270,9 +271,13 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 	pr_method_list_t *methods;
 	type_t     *method_list;
 
+	if (!_methods)
+		return 0;
 	for (count = 0, method = _methods->head; method; method = method->next)
 		if (!method->instance == !instance)
 			count++;
+	if (!count)
+		return 0;
 	method_list = new_struct (0);
 	new_struct_field (method_list, &type_pointer, "method_next", vis_public);
 	new_struct_field (method_list, &type_integer, "method_count", vis_public);
@@ -280,6 +285,7 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 		new_struct_field (method_list, type_method, 0, vis_public);
 	methods_def = PR_GetDef (method_list, va ("_OBJ_%s_METHODS_%s", type, name),
 							 0, &numpr_globals);
+	methods_def->initialized = methods_def->constant = 1;
 	methods = &G_STRUCT (pr_method_list_t, methods_def->ofs);
 	methods->method_next = 0;
 	methods->method_count = count;

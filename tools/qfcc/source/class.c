@@ -138,6 +138,7 @@ class_finish (class_t *class)
 									  class->class_name,
 									  class->category_name),
 								  0, &numpr_globals);
+		category_def->initialized = category_def->constant = 1;
 		category = &G_STRUCT (pr_category_t, category_def->ofs);
 	} else if (class->class_name) {
 		def_t      *meta_def;
@@ -147,6 +148,7 @@ class_finish (class_t *class)
 		meta_def = PR_GetDef (type_Class.aux_type,
 							  va ("_OBJ_METACLASS_%s", class->class_name),
 							  0, &numpr_globals);
+		meta_def->initialized = meta_def->constant = 1;
 		meta = &G_STRUCT (pr_class_t, meta_def->ofs);
 		memset (meta, 0, sizeof (*meta));
 		meta->class_pointer  = ReuseString (class->class_name);
@@ -158,8 +160,9 @@ class_finish (class_t *class)
 											  class->class_name);
 
 		class->def = PR_GetDef (type_Class.aux_type,
-								va ("_OBJ_METACLASS_%s", class->class_name),
+								va ("_OBJ_CLASS_%s", class->class_name),
 								0, &numpr_globals);
+		class->def->initialized = class->def->constant = 1;
 		cls = &G_STRUCT (pr_class_t, class->def->ofs);
 		cls->class_pointer = meta_def->ofs;
 		if (class->super_class)
@@ -354,6 +357,7 @@ emit_protocol (protocol_t *protocol)
 	proto_def = PR_GetDef (type_Protocol.aux_type,
 						   va ("_OBJ_PROTOCOL_%s", protocol->name),
 						   0, &numpr_globals);
+	proto_def->initialized = proto_def->constant = 1;
 	proto = &G_STRUCT (pr_protocol_t, proto_def->ofs);
 	proto->class_pointer = 0;
 	proto->protocol_name = ReuseString (protocol->name);
@@ -384,6 +388,7 @@ emit_protocol_list (protocollist_t *protocols, const char *name)
 	proto_list_def = PR_GetDef (type_Protocol.aux_type,
 								va ("_OBJ_PROTOCOLS_%s", name),
 								0, &numpr_globals);
+	proto_list_def->initialized = proto_list_def->constant = 1;
 	proto_list = &G_STRUCT (pr_protocol_list_t, proto_list_def->ofs);
 	proto_list->next = 0;
 	proto_list->count = protocols->count;

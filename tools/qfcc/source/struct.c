@@ -191,6 +191,7 @@ emit_struct(type_t *strct, const char *name)
 	if (ivars_def)
 		goto done;
 	ivars_def = PR_GetDef (ivar_list, ivars_name->str, 0, &numpr_globals);
+	ivars_def->initialized = ivars_def->constant = 1;
 	ivars = &G_STRUCT (pr_ivar_list_t, ivars_def->ofs);
 	ivars->ivar_count = count;
 	for (i = 0, field = strct->struct_head; field; i++, field = field->next) {

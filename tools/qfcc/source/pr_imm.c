@@ -93,7 +93,7 @@ int_imm_get_key (void *_def, void *_str)
 def_t *
 PR_ReuseConstant (expr_t *expr, def_t *def)
 {
-	def_t      *cn = 0;
+	def_t      *cn;
 	char        rep[60];
 	const char *r = rep;
 	hashtab_t  *tab = 0;
@@ -112,12 +112,18 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 			Hash_NewTable (16381, quaternion_imm_get_key, 0, 0);
 		integer_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "integer");
 
-		Hash_Add (string_imm_defs, PR_NewDef (&type_string, ".imm", 0));
-		Hash_Add (float_imm_defs, PR_NewDef (&type_float, ".imm", 0));
-		Hash_Add (entity_imm_defs, PR_NewDef (&type_entity, ".imm", 0));
-		Hash_Add (pointer_imm_defs, PR_NewDef (&type_pointer, ".imm", 0));
-		Hash_Add (integer_imm_defs, PR_NewDef (&type_integer, ".imm", 0));
+		Hash_Add (string_imm_defs, cn = PR_NewDef (&type_string, ".imm", 0));
+		cn->initialized = cn->constant = 1;
+		Hash_Add (float_imm_defs, cn = PR_NewDef (&type_float, ".imm", 0));
+		cn->initialized = cn->constant = 1;
+		Hash_Add (entity_imm_defs, cn = PR_NewDef (&type_entity, ".imm", 0));
+		cn->initialized = cn->constant = 1;
+		Hash_Add (pointer_imm_defs, cn = PR_NewDef (&type_pointer, ".imm", 0));
+		cn->initialized = cn->constant = 1;
+		Hash_Add (integer_imm_defs, cn = PR_NewDef (&type_integer, ".imm", 0));
+		cn->initialized = cn->constant = 1;
 	}
+	cn = 0;
 	switch (e.type) {
 		case ex_entity:
 			snprintf (rep, sizeof (rep), "\001entity:%08X\001",
