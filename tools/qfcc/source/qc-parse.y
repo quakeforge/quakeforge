@@ -410,7 +410,7 @@ expr
 			$$->e.def = PR_GetDef (NULL, $1, pr_scope, false);
 		}
 	| const			{ $$ = $1; }
-	| '(' expr ')'	{ $$ = $2; }
+	| '(' expr ')'	{ $$ = $2; $$->paren = 1; }
 	;
 
 arg_list

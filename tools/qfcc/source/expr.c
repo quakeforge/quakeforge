@@ -438,6 +438,12 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if (e1->type >= ex_int && e2->type >= ex_int)
 		return binary_const (op, e1, e2);
 
+	if ((op == '&' || op == '|')
+		&& e1->type == ex_uexpr && e1->e.expr.op == '!' && !e1->paren) {
+		fprintf (stderr, "%s:%d: warning: ambiguous logic. Suggest explicit parentheses with expressions involving ! and &\n",
+				 strings + e1->file, e1->line);
+	}
+
 	t1 = get_type (e1);
 	t2 = get_type (e2);
 	if (t1 == ev_void || t2 == ev_void) {

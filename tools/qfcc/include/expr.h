@@ -27,6 +27,7 @@ typedef struct expr_s {
 	expr_type	type;
 	int			line;
 	string_t	file;
+	int			paren;
 	union {
 		label_t label;
 		block_t block;
