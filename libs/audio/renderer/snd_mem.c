@@ -62,7 +62,7 @@ snd_noop (sfx_t *sfx)
 sfxbuffer_t *
 SND_CacheRetain (sfx_t *sfx)
 {
-	return Cache_TryGet (&((sfxblock_t *) sfx)->cache);
+	return Cache_TryGet (&((sfxblock_t *) sfx->data)->cache);
 }
 
 void
@@ -114,12 +114,12 @@ SND_Load (sfx_t *sfx)
 	Qread (file, buf, 4);
 	Qseek (file, 0, SEEK_SET);
 	if (strnequal ("OggS", buf, 4)) {
-		free (name);
+		Sys_DPrintf ("SND_Load: ogg file\n");
 		SND_LoadOgg (file, sfx, realname);
 		return;
 	}
 	if (strnequal ("RIFF", buf, 4)) {
-		free (name);
+		Sys_DPrintf ("SND_Load: wav file\n");
 		SND_LoadWav (file, sfx, realname);
 		return;
 	}
