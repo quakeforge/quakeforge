@@ -24,16 +24,16 @@ integer	deathmatch;
 	local integer	i;
 	self = [super init];
 
-	self.head = NIL;
+	head = NIL;
 
 	for (i = 0; i < MAX_BODIES; i++) {
 		local GameEntity	ent = NIL;
 		ent = [[GameEntity alloc] init];
-		self.bodies[i] = ent.ent;
+		bodies[i] = ent.ent;
 	}
 #if 0
 	for (i = 0; i < MAX_BODIES; i++) {
-		self.bodies[i] = [[[GameEntity alloc] init] ent];
+		bodies[i] = [[[GameEntity alloc] init] ent];
 	}
 #endif
 }

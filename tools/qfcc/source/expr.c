@@ -284,6 +284,12 @@ type_mismatch (expr_t *e1, expr_t *e2, int op)
 	t1 = extract_type (e1);
 	t2 = extract_type (e2);
 
+	if (1) {
+		print_type (get_type (e1));
+		print_type (get_type (e2));
+		printf ("\n%p %p\n", get_type (e1), get_type (e2));
+	}
+
 	return error (e1, "type mismatch: %s %s %s",
 				  pr_type_name[t1], get_op_string (op), pr_type_name[t2]);
 }

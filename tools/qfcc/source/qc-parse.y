@@ -1401,14 +1401,11 @@ methodproto
 	: '+' methoddecl ';'
 		{
 			$2->instance = 0;
-			$2->params->type = &type_Class;
 			$$ = $2;
 		}
 	| '-' methoddecl ';'
 		{
 			$2->instance = 1;
-			if ($<class>-1)
-				$2->params->type = $<class>-1->type;
 			$$ = $2;
 		}
 	;

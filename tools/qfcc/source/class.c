@@ -137,17 +137,35 @@ get_class (const char *name, int create)
 	return c;
 }
 
+static void
+set_self_type (class_t *class, method_t *method)
+{
+	if (method->instance)
+		method->params->type = class->type;
+	else
+		method->params->type = &type_Class;
+}
+
+static void
+methods_set_self_type (class_t *class, methodlist_t *methods)
+{
+	method_t   *method;
+
+	for (method = methods->head; method; method = method->next)
+		set_self_type (class, method);
+}
+
 void
 class_add_methods (class_t *class, methodlist_t *methods)
 {
 	if (!methods)
 		return;
 
-	if (!class->methods)
-		class->methods = new_methodlist ();
 	*class->methods->tail = methods->head;
 	class->methods->tail = methods->tail;
 	free (methods);
+
+	methods_set_self_type (class, class->methods);
 }
 
 void
