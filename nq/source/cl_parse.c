@@ -731,7 +731,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_stufftext:
-				Cbuf_AddText (MSG_ReadString (net_message));
+				Cbuf_AddTextTo (cmd_legacybuffer, MSG_ReadString (net_message));
 				break;
 
 			case svc_damage:

@@ -122,7 +122,6 @@ Cbuf_AddTextTo (dstring_t *buffer, const char *text)
 void
 Cbuf_AddText (const char *text)
 {
-
 	Cbuf_AddTextTo (cmd_activebuffer, text);
 }
 
@@ -193,7 +192,7 @@ Cbuf_ExecuteBuffer (dstring_t *buffer)
 		
 	while (strlen(buffer->str)) {
 		extract_line (buffer, buf);
-		Cmd_ExecuteString(buf->str, cmd_source);
+		Cmd_ExecuteString(buf->str, src_command);
 		if (cmd_wait) {
 			cmd_wait = false;
 			break;
@@ -232,9 +231,9 @@ Cbuf_Execute_Sets (void)
 	while (strlen(cmd_buffer->str)) {
 		extract_line (cmd_buffer, buf);
 		if (!strncmp (buf->str, "set", 3) && isspace ((int) buf->str[3])) {
-			Cmd_ExecuteString (buf->str, cmd_source);
+			Cmd_ExecuteString (buf->str, src_command);
 		} else if (!strncmp (buf->str, "setrom", 6) && isspace ((int) buf->str[6])) {
-			Cmd_ExecuteString (buf->str, cmd_source);
+			Cmd_ExecuteString (buf->str, src_command);
 		}
 		dstring_clearstr(buf);
 	}
@@ -353,11 +352,7 @@ Cmd_Exec_f (void)
 void
 Cmd_Echo_f (void)
 {
-	int         i;
-
-	for (i = 1; i < Cmd_Argc (); i++)
-		Sys_Printf ("%s ", Cmd_Argv (i));
-	Sys_Printf ("\n");
+	Sys_Printf ("%s\n", Cmd_Args (1));
 }
 
 /*
