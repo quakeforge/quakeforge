@@ -114,6 +114,7 @@ int					gl_max_lights;
 
 cvar_t		*gl_doublebright;
 cvar_t      *gl_fb_bmodels;
+cvar_t      *gl_finish;
 cvar_t      *gl_max_size;
 cvar_t      *gl_multitexture;
 cvar_t		*gl_tessellate;
@@ -258,6 +259,8 @@ GL_Common_Init_Cvars (void)
 	gl_fb_bmodels = Cvar_Get ("gl_fb_bmodels", "1", CVAR_ARCHIVE,
 							  gl_fb_bmodels_f, "Toggles fullbright color "
 							  "support for bmodels");
+	gl_finish = Cvar_Get ("gl_finish", "1", CVAR_ARCHIVE, NULL,
+							"wait for rendering to finish");
 	gl_max_size = Cvar_Get ("gl_max_size", "0", CVAR_NONE, gl_max_size_f,
 							"Texture dimension");
 	gl_multitexture = Cvar_Get ("gl_multitexture", "0", CVAR_ARCHIVE,

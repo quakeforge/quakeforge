@@ -271,4 +271,9 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 
 	GL_FlushText ();
 	qfglFlush ();
+
+	if (gl_finish->int_val) {
+		GL_EndRendering ();
+		begun = 0;
+	}
 }
