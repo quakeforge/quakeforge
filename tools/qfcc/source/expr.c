@@ -563,6 +563,8 @@ constant_expr (expr_t *var)
 			return new_integer_expr (G_INT (var->e.def->ofs));
 		case ev_uinteger:
 			return new_uinteger_expr (G_INT (var->e.def->ofs));
+		case ev_func:			// can't convert
+			return var;
 		default:
 			error (var, "internal error");
 			abort ();
@@ -1762,6 +1764,10 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		return e1;
 	if (e2->type == ex_error)
 		return e2;
+	if (e1->type == ex_def && e1->e.def->constant)
+		e1 = constant_expr (e1);
+	if (e2->type == ex_def && e2->e.def->constant)
+		e2 = constant_expr (e2);
 	t1 = get_type (e1);
 	t2 = get_type (e2);
 	if (!t1 || !t2) {
