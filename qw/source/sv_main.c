@@ -260,10 +260,12 @@ SV_Error (const char *error, va_list argptr)
 	dstring_appendstr (string, "\n");
 	SV_FinalMessage (string->str);
 
-	if (con_module)
+	if (con_module) {
 		con_module->functions->console->pC_Print (error, argptr);
-	else
+		con_module->functions->console->pC_Print ("\n", 0);
+	} else {
 		Sys_Print (stderr, error, argptr);
+	}
 }
 
 /*
