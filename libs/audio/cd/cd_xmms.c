@@ -73,7 +73,7 @@ static plugin_funcs_t plugin_info_funcs;
 static general_data_t plugin_info_general_data;
 static general_funcs_t plugin_info_general_funcs;
 
-//static cd_data_t      plugin_info_cd_data;
+//static cd_data_t plugin_info_cd_data;
 static cd_funcs_t plugin_info_cd_funcs;
 
 static char *xmms_cmd = "xmms";
@@ -82,13 +82,12 @@ static char *xmms_args[] = {"xmms", 0};
 static int sessionNo;
 
 // don't need either of these now
-// static int xmmsPid = '0';
+//static int xmmsPid = '0';
 //static int sigNo = '2';
-
 
 static qboolean playing = false;
 
-// no idea why i have wasPlaying, prolly cos this code was based on 
+// no idea why I have wasPlaying, prolly cos this code was based on 
 // cd_linux.c :/
 static qboolean wasPlaying = false;
 static qboolean musEnabled = true;
@@ -140,9 +139,7 @@ I_XMMS_Running (void)
 		res = fork ();
 
 		switch (res) {
-
 			case 0:					// Child
-
 				// Well, we don't want the child to be running about with
 				// 27001 still open
 
@@ -151,32 +148,26 @@ I_XMMS_Running (void)
 
 				// run xmms
 				if (execvp (xmms_cmd, xmms_args)) {
-					// Oh dear, can we even use Sys_DPrinf ?, we are child so
-					// we have access to them ? but wouldn't it just try
-					// rendering it 
-					// and screw stuff up ? better not find out
+					// Oh dear, can we even use Sys_DPrinf? We are child so
+					// we have access to them? But wouldn't it just try
+					// rendering it and screw stuff up? Better not find out.
 
 					exit (1);			// Well, we can't just hang about
 										// causing trouble can we ?
 				}
-
 				break;
-			case -1:					// ICH !
+			case -1:					// ICH!
 				// inform user
-				Sys_DPrintf ("XMMSAudio: error, can't fork !?\n");
+				Sys_DPrintf ("XMMSAudio: error, can't fork!?\n");
 				break;
 			default:					// Parent
 				// don't need now :/
-//				xmmsPid = res; // so we can kill it later 
+//				xmmsPid = res;			// so we can kill it later 
 				break;
 		}
-
 		return;
-
 	}
-
 	return;
-
 }
 
 
@@ -191,7 +182,7 @@ I_XMMS_Stop (void)						// stop playing
 	if (!xmms_remote_is_playing (sessionNo))
 		return;							// check that its actually playing
 
-	xmms_remote_stop (sessionNo);				// stop it
+	xmms_remote_stop (sessionNo);		// stop it
 
 	wasPlaying = playing;
 	playing = false;
@@ -199,20 +190,22 @@ I_XMMS_Stop (void)						// stop playing
 }
 
 // Play
-static void // start it playing, (unless disabled)
-I_XMMS_Play (int track, qboolean looping) // looping for compatability 
+// start it playing, (unless disabled)
+static void
+I_XMMS_Play (int track, qboolean looping)		// looping for compatability 
 {
 	// don't try if "xmms off" has been called
 	if (!musEnabled)
 		return;
-	I_XMMS_Running ();					// Check its on
-	/* i think this will fix some wierdness */
+	I_XMMS_Running ();					// Check it's on
+	/* I think this will fix some wierdness */
 	if (xmms_remote_is_paused (sessionNo)) {
 		xmms_remote_pause (sessionNo);
 		return;
 	}
 
-	if(track >= 0) xmms_remote_set_playlist_pos(sessionNo, track); // set position
+	// set position
+	if(track >= 0) xmms_remote_set_playlist_pos(sessionNo, track);
 
 	if (xmms_remote_is_playing (sessionNo)) return;
 
@@ -238,13 +231,11 @@ I_XMMS_Pause (void)
 	wasPlaying = playing;
 	playing = false;
 	return;
-
 }
 
 static void
 I_XMMS_Resume (void)
 {
-
 	// don't try if "xmms off" has been called
 	if (!musEnabled)
 		return;
@@ -275,7 +266,6 @@ I_XMMS_Prev (void)
 	xmms_remote_playlist_prev (sessionNo);
 
 	return;
-
 }
 
 static void
@@ -289,20 +279,17 @@ I_XMMS_Next (void)
 	xmms_remote_playlist_next (sessionNo);
 
 	return;
-
 }
 
 static void
 I_XMMS_Update (void)
 {
-
 	return;
 }
 
 static void
 XMMS_SessionChg(cvar_t *xmms_session)
 {
-
 	sessionNo = xmms_session->int_val;
 
 	return;
@@ -320,7 +307,8 @@ I_XMMS_Init (void)
 					"off - Stops control and playback of XMMS.\n"
 					"on - Starts XMMS if not running, or enables playback.\n"
 					"pause - Pause the XMMS playback.\n"
-					"play (position) - Begins playing tracks (from position) according to the playlist.\n"
+					"play (position) - Begins playing tracks (from position) "
+					"according to the playlist.\n"
 					"stop - Stops the currently playing track.\n"
 					"next - Plays the next track in the playlist.\n"
 					"prev - Plays the previous track in the playlist.\n"
@@ -335,7 +323,6 @@ I_XMMS_Init (void)
 	sessionNo = tmp->int_val;
 	
 	return;
-
 }
 
 static void
@@ -370,7 +357,6 @@ I_XMMS_Off (void)
 static void								// Toggle Shuffling
 I_XMMS_Shuffle (void)
 {
-
 	int         shuf;
 
 	// for some reason, it reports shuffle wrong,
@@ -394,7 +380,6 @@ I_XMMS_Shuffle (void)
 		return;							// ACH !
 
 	return;
-
 }
 
 static void								// toggles playlist repeating
@@ -433,18 +418,15 @@ I_XMMS_Pos (int track)
 static void // returns info about track playing and list progress
 I_XMMS_Info (void) // this is untested with really long tracks, prolly works
 {
-
 	int pos;
 	char *title;
-	unsigned int ctime; // -ve times are dumb, will this help ?
-	unsigned int cmin; // current no of mins
-	byte csecs; // current no of secs
-
-	unsigned int ttime; // total track time
-	unsigned int tmin; // total no of mins
-	byte tsecs; // total no of secs
-
-	unsigned int len; // playlist length
+	unsigned int ctime;	// -ve times are dumb, will this help ?
+	unsigned int cmin;	// current no of mins
+	byte csecs;		// current no of secs
+	unsigned int ttime;	// total track time
+	unsigned int tmin;	// total no of mins
+	byte tsecs;		// total no of secs
+	unsigned int len;	// playlist length
 
 	if(!musEnabled) return; // enabled ?
 
@@ -476,9 +458,7 @@ I_XMMS_Info (void) // this is untested with really long tracks, prolly works
 static void
 I_XMMS_f (void)
 {
-
 	const char *command;
-
 /*	int         ret;
 	int         n;  */
 
@@ -551,7 +531,6 @@ I_XMMS_f (void)
 		return;
 	}
 	return;
-
 }
 
 QFPLUGIN plugin_t   *
