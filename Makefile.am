@@ -12,9 +12,8 @@ EXTRA_DIST=	ChangeLog RPM/build_rpm.in \
 		tools/zpak
 
 changelog::
-	-touch ChangeLog
-	-$(top_srcdir)/tools/cvs2cl/cvs2cl.pl -b --utc
-	-rm -f ChangeLog.bak
+	( cd $(top_srcdir); \
+	tools/cvs2cl/cvs2cl.pl --stdout -b --utc ) > ChangeLog
 
 NOCONV_DIST=	$(distdir)/include/win32/resources/icon1.ico
 
