@@ -3,7 +3,7 @@ INCLUDES= -I$(top_srcdir)/include
 lib_LTLIBRARIES=	libQFconsole.la
 plugin_LTLIBRARIES= libconsole_server.la #libconsole_client.la
 
-common_sources= buffer.c complete.c console.c inputline.c list.c
+common_sources= buffer.c complete.c console.c inputline.c list.c maplist.c
 client_sources= client.c
 server_sources= server.c
 

@@ -1130,7 +1130,7 @@ CL_Init (void)
 	Cmd_AddCommand ("playdemo", CL_PlayDemo_f, "Play a recorded demo");
 	Cmd_AddCommand ("timedemo", CL_TimeDemo_f, "Play a demo as fast as your "
 					"hardware can. Useful for benchmarking.");
-	Cmd_AddCommand ("maplist", COM_Maplist_f, "List maps available");
+	Cmd_AddCommand ("maplist", Con_Maplist_f, "List maps available");
 	Cmd_AddCommand ("quit", CL_Quit_f, "Exit the program");
 	Cmd_AddCommand ("connect", CL_Connect_f, "Connect to a server 'connect "
 					"hostname:port'");

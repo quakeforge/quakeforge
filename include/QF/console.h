@@ -128,4 +128,6 @@ void Con_Shutdown (void);
 
 void Con_ProcessInput (void);
 
+void Con_Maplist_f (void);
+
 #endif // __console_h

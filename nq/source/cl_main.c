@@ -738,7 +738,7 @@ CL_Init (void)
 	Cmd_AddCommand ("stop", CL_Stop_f, "No Description");
 	Cmd_AddCommand ("playdemo", CL_PlayDemo_f, "No Description");
 	Cmd_AddCommand ("timedemo", CL_TimeDemo_f, "No Description");
-	Cmd_AddCommand ("maplist", COM_Maplist_f, "No Description");
+	Cmd_AddCommand ("maplist", Con_Maplist_f, "No Description");
 	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "force the view "
 					"to be level");
 

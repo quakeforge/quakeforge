@@ -41,6 +41,7 @@ static const char rcsid[] =
 #include <ctype.h>
 
 #include "QF/cmd.h"
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/qargs.h"
@@ -1202,7 +1203,7 @@ SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("floodprotmsg", SV_Floodprotmsg_f, "Sets the message "
 					"displayed after flood protection is invoked (floodprotmsg "
 					"message)");
-	Cmd_AddCommand ("maplist", COM_Maplist_f, "List all maps on the server");
+	Cmd_AddCommand ("maplist", Con_Maplist_f, "List all maps on the server");
 	Cmd_AddCommand ("say", SV_ConSay_f, "Say something to everyone on the "
 					"server. Will show up as the name 'Console' (or 'Admin') "
 					"in game");

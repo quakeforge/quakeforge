@@ -63,7 +63,8 @@ EXTRA_libqfnet_la_SOURCES= \
 client_LIBFILES= \
 		$(top_builddir)/libs/video/targets/libQFjs.la \
 		$(top_builddir)/libs/audio/libQFcd.la \
-		$(top_builddir)/libs/audio/libQFsound.la
+		$(top_builddir)/libs/audio/libQFsound.la \
+		$(top_builddir)/libs/console/maplist.o
 
 server_LIBFILES= \
 		$(top_builddir)/libs/models/libQFmodels.la \

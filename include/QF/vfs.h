@@ -38,6 +38,31 @@
 
 #define	MAX_OSPATH	128		// max length of a filesystem pathname
 
+/*
+	In-memory pack file structs
+*/
+
+typedef struct {
+	char        name[MAX_QPATH];
+	int         filepos, filelen;
+} packfile_t;
+
+typedef struct pack_s {
+	char                filename[MAX_OSPATH];
+	VFile              *handle;
+	int                 numfiles;
+	packfile_t         *files;
+	struct hashtab_s   *file_hash;
+} pack_t;
+
+typedef struct searchpath_s {
+	char        filename[MAX_OSPATH];
+	pack_t     *pack;				// only one of filename / pack will be used
+	struct searchpath_s *next;
+} searchpath_t;
+
+extern searchpath_t *com_searchpaths;
+
 extern struct cvar_s *fs_userpath;
 extern struct cvar_s *fs_sharepath;
 extern struct cvar_s *fs_basegame;
@@ -74,7 +99,6 @@ void COM_Gamedir (const char *dir);
 void COM_Filesystem_Init (void);
 void COM_Filesystem_Init_Cvars (void);
 void COM_Path_f (void);
-void COM_Maplist_f (void);
 void COM_CreateGameDirectory (const char *gamename);
 
 #endif // __quakefs_h
