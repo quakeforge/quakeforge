@@ -35,6 +35,9 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#ifdef HAVE_ERRNO_H
+# include <errno.h>
+#endif
 
 #include <stdlib.h>
 
@@ -332,7 +335,7 @@ PF_Find (progs_t *pr)
 	ddef_t     *field_def;
 	int			type;
 
-	const char *s = NULL, *t; // ev_string
+	const char *s = 0, *t; // ev_string
 	int i; // ev_vector
 
 	e = G_EDICTNUM (pr, OFS_PARM0);
@@ -543,6 +546,244 @@ PF_getbuiltin (progs_t *pr)
 	G_FUNCTION (pr, OFS_RETURN) = -i;
 }
 
+#if (INT_MAX == 2147483647) && (INT_MIN == -2147483648)
+# define INT_WIDTH 11
+#else /* I hope... */
+# define INT_WIDTH 20
+#endif
+
+#define MAX_ARG 23
+
+void
+PF_sprintf (progs_t *pr)
+{
+	char *out = 0;
+	int out_size = 0;
+	int out_max = 32;
+	char *format;
+	char *c; // current
+	char new_format[INT_WIDTH * 2 + 9]; // "%0-+ #." and conversion
+	int new_format_i;
+	int looping;
+	int ret;
+	int curarg = 3;
+
+	int fmt_leadzero;
+	int fmt_leftjust;
+	int fmt_signed;
+	int fmt_space;
+	int fmt_alternate;
+
+	int fmt_minwidth;
+	int fmt_precision;
+
+	format = G_STRING (pr, OFS_PARM0);
+	c = format;
+
+	out = malloc (out_size);
+	if (!out)
+		goto mallocerror;
+
+	while (*c) {
+		if (*c == '%' && c[1] != '%' && c[1] != 's') {
+			c++;
+			if (curarg > MAX_ARG)
+				goto maxargs;
+			// flags
+			looping = 1;
+			fmt_leadzero = 0;
+			fmt_leftjust = 0;
+			fmt_signed = 0;
+			fmt_space = 0;
+			fmt_alternate = 0;
+			while (looping)
+				switch (*c++) {
+					case '0':	fmt_leadzero = 1; break;
+					case '-':	fmt_leftjust = 1; break;
+					case '+':	fmt_signed = 1; break;
+					case ' ':	fmt_space = 1; break;
+					case '#':	fmt_alternate = 1; break;
+					case '\0':	goto endofstring;
+					default:	looping = 0; c--; break;
+				}
+			// minimum field width
+			fmt_minwidth = 0;
+			if (*c >= '1' && *c <= '9')
+				while (*c >= '0' && *c <= '9') {
+					fmt_minwidth *= 10;
+					fmt_minwidth += *c - '0';
+					c++;
+				}
+			else if (*c == '*') {
+				fmt_minwidth = G_INT (pr, OFS_PARM0 + curarg);
+				curarg += 3;
+			}
+			// precision
+			fmt_precision = 6;
+			if (*c == '.') {
+				c++;
+				if (*c >= '1' && *c <= '9') {
+					fmt_precision = 0;
+					while (*c >= '0' && *c <= '9') {
+						fmt_precision *= 10;
+						fmt_precision += *c - '0';
+						c++;
+					}
+				} else if (*c == '*') {
+					fmt_precision = G_INT (pr, OFS_PARM0 + curarg);
+					curarg += 3;
+				}
+			}
+			if (!*c)
+				goto endofstring;
+			// length?  Nope, not in QC
+			// conversion
+			new_format_i = 0;
+			new_format[new_format_i++] = '%';
+			if (fmt_leadzero) new_format[new_format_i++] = '0';
+			if (fmt_leftjust) new_format[new_format_i++] = '-';
+			if (fmt_signed) new_format[new_format_i++] = '+';
+			if (fmt_space) new_format[new_format_i++] = ' ';
+			if (fmt_alternate) new_format[new_format_i++] = '#';
+			if (fmt_minwidth)
+				if ((new_format_i += snprintf (new_format + new_format_i,
+											   sizeof (new_format) - new_format_i,
+											   "%d",
+											   fmt_minwidth))
+					>= sizeof (new_format))
+					PR_Error (pr, "PF_sprintf: new_format overflowed?!");
+			new_format[new_format_i++] = '.';
+			if ((new_format_i += snprintf (new_format + new_format_i,
+										   sizeof (new_format) - new_format_i,
+										   "%d",
+										   fmt_precision))
+				>= sizeof (new_format))
+				PR_Error (pr, "PF_sprintf: new_format overflowed?!");
+			switch (*c) {
+				case 'i': new_format[new_format_i++] = 'd'; break;
+				case 'f': new_format[new_format_i++] = 'f'; break;
+				case 'v': new_format[new_format_i++] = 'f'; break;
+				default: PR_Error (pr, "PF_sprintf: unknown type '%c'!", *c);
+			}
+			new_format[new_format_i++] = '\0';
+			switch (*c) {
+				case 'i':
+					while ((ret = snprintf (&out[out_size],
+											out_max - out_size,
+											new_format,
+											G_INT (pr, OFS_PARM0 + curarg)))
+						   >= out_max - out_size) {
+						char *o;
+						out_max *= 2;
+						o = realloc (out, out_max);
+						if (!o)
+							goto mallocerror;
+						out = o;
+					}
+					out_size += ret;
+					curarg += 3;
+					break;
+				case 'f':
+					while ((ret = snprintf (&out[out_size],
+											out_max - out_size,
+											new_format,
+											G_FLOAT (pr, OFS_PARM0 + curarg)))
+						   >= out_max - out_size) {
+						char *o;
+						out_max *= 2;
+						o = realloc (out, out_max);
+						if (!o)
+							goto mallocerror;
+						out = o;
+					}
+					out_size += ret;
+					curarg += 3;
+					break;
+				case 'v': {
+					int i;
+					for (i = 0; i <= 2; i++) {
+						if (curarg > MAX_ARG)
+							goto maxargs;
+						while ((ret = snprintf (&out[out_size],
+												out_max - out_size,
+												new_format,
+												G_FLOAT (pr, OFS_PARM0 + curarg)))
+							   >= out_max - out_size) {
+							char *o;
+							out_max *= 2;
+							o = realloc (out, out_max);
+							if (!o)
+								goto mallocerror;
+							out = o;
+						}
+						out_size += ret;
+						curarg++;
+						i++;
+					}
+					break;
+				}
+			}
+			c++;
+		} else if (*c == '%' && *(c + 1) == 's') {
+			char *s;
+			if (curarg > MAX_ARG)
+				goto maxargs;
+			s = G_STRING (pr, OFS_PARM0 + curarg);
+			while ((ret = snprintf (&out[out_size], out_max - out_size, "%s", s))
+				   >= out_max - out_size) {
+				char *o;
+				out_max *= 2;
+				o = realloc (out, out_max);
+				if (!o)
+					goto mallocerror;
+				out = o;
+			}
+			out_size += ret;
+			curarg += 3;
+			c += 2;
+		} else {
+			if (*c == '%')
+				c++;
+
+			if (out_size == out_max) {
+				char *o;
+				out_max *= 2;
+				o = realloc (out, out_max);
+				if (!o)
+					goto mallocerror;
+				out = o;
+			}
+			out[out_size] = *c;
+			out_size++;
+			c++;
+		}
+	}
+	if (out_size == out_max) {
+		char *o;
+		out_max *= 2;
+		o = realloc (out, out_max);
+		if (!o)
+			goto mallocerror;
+		out = o;
+	}
+	out[out_size] = '\0';
+	RETURN_STRING (pr, out);
+	free (out);
+	return;
+
+	mallocerror:
+//		if (errno == ENOMEM)
+			// hopefully we can free up some mem so it can be used during shutdown
+//			free (out);
+		PR_Error (pr, "PF_sprintf: memory allocation error!\n");
+
+	endofstring:
+		PR_Error (pr, "PF_sprintf: unexpected end of string!\n");
+
+	maxargs:
+		PR_Error (pr, "PF_sprintf: argument limit exceeded\n");
+}
+
 void
 PR_Cmds_Init (progs_t *pr)
 {
@@ -574,5 +815,5 @@ PR_Cmds_Init (progs_t *pr)
 	PR_AddBuiltin (pr, "stof", PF_stof, 81);	// float (string s) stof
 	PR_AddBuiltin (pr, "strlen", PF_strlen, 100);	// float (string s) strlen
 	PR_AddBuiltin (pr, "charcount", PF_charcount, 101);	// float (string goal, string s) charcount
-//	PR_AddBuiltin (pr, "sprintf", PF_sprintf, 109); // string (...) sprintf
+	PR_AddBuiltin (pr, "sprintf", PF_sprintf, 109); // string (...) sprintf
 };
