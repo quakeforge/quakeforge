@@ -989,7 +989,10 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 	for (i = 0; i < GEFV_CACHESIZE; i++)
 		gefvCache[i].field[0] = 0;
 
-	pr->progs = (dprograms_t *) COM_LoadHunkFile (progsname);
+	if (progsname)
+		pr->progs = (dprograms_t *) COM_LoadHunkFile (progsname);
+	else
+		progsname = "(preloaded)";
 	if (!pr->progs)
 		return;
 
