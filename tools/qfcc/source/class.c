@@ -643,4 +643,6 @@ clear_classes (void)
 		Hash_FlushTable (protocol_hash);
 	if (category_hash)
 		Hash_FlushTable (category_hash);
+	if (class_hash)
+		class_Class.super_class = get_class ("Object", 1);
 }
