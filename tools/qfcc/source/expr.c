@@ -1990,14 +1990,14 @@ init_elements (def_t *def, expr_t *eles)
 		} else if (e->type >= ex_string) {
 			if (get_type (e) != def->type->aux_type) {
 				error (e, "type mismatch in initializer");
-				g += type_size (def->type->aux_type->type);
+				g += type_size (def->type->aux_type);
 			} else {
 				if (e->type == ex_string) {
 					*(int*)g = ReuseString (e->e.string_val);
 				} else {
-					memcpy (g, &e->e, type_size (extract_type (e)) * 4);
+					memcpy (g, &e->e, type_size (get_type (e)) * 4);
 				}
-				g += type_size (extract_type (e));
+				g += type_size (get_type (e));
 			}
 		} else {
 			error (e, "non-constant initializer");

@@ -267,7 +267,7 @@ PR_NewLocation (type_t *type)
 void
 PR_FreeLocation (def_t *def)
 {
-	int         size = type_size (def->type->type);
+	int         size = type_size (def->type);
 	locref_t   *loc;
 
 	if (!free_free_locs) {
@@ -288,7 +288,7 @@ PR_FreeLocation (def_t *def)
 def_t *
 PR_GetTempDef (type_t *type, def_t *scope)
 {
-	int         size = type_size (type->type);
+	int         size = type_size (type);
 	def_t      *def;
 
 	if (free_temps[size]) {
@@ -298,7 +298,7 @@ PR_GetTempDef (type_t *type, def_t *scope)
 	} else {
 		def = PR_NewDef (type, 0, scope);
 		def->ofs = *scope->alloc;
-		*scope->alloc += type_size (size);
+		*scope->alloc += size;
 	}
 	def->freed = def->removed = def->users = 0;
 	def->next = temp_scope.next;
@@ -322,7 +322,7 @@ PR_FreeTempDefs (void)
 				printf ("%s:%d: warning: %s %3d %3d %d\n", pr.strings + d->file,
 						d->line, pr_type_name[d->type->type], d->ofs, d->users,
 						d->managed);
-			size = type_size (d->type->type);
+			size = type_size (d->type);
 			if (d->expr)
 				d->expr->e.temp.def = 0;
 

@@ -205,7 +205,7 @@ emit_assign_expr (int oper, expr_t *e)
 		def_a = emit_sub_expr (e1, 0);
 		if (def_a->constant) {
 			if (options.code.cow) {
-				int         size = type_size (def_a->type->type);
+				int         size = type_size (def_a->type);
 				int         ofs = PR_NewLocation (def_a->type);
 
 				memcpy (pr.globals + ofs, pr.globals + def_a->ofs, size);
