@@ -37,15 +37,14 @@ YFLAGS = -d
 
 if BUILD_QFCC
 qfcc=qfcc
-qfodump=qfodump
+qfprogs=qfprogs
 else
 qfcc=
-qfodump=
+qfprogs=
 endif
 
-bin_PROGRAMS=	$(qfcc)
-noinst_PROGRAMS= $(qfodump)
-EXTRA_PROGRAMS= qfcc qfodump
+bin_PROGRAMS=	$(qfcc) $(qfprogs)
+EXTRA_PROGRAMS= qfcc qfprogs
 
 qfcc_SOURCES= \
 	class.c constfold.c cpp.c debug.c def.c emit.c expr.c function.c \
@@ -55,9 +54,10 @@ qfcc_SOURCES= \
 qfcc_LDADD=			$(QFCC_LIBS)
 qfcc_DEPENDENCIES=	$(QFCC_DEPS)
 
-qfodump_SOURCES=		obj_file.c qfodump.c strpool.c
-qfodump_LDADD=			$(QFCC_LIBS)
-qfodump_DEPENDENCIES=	$(QFCC_DEPS)
+qfprogs_SOURCES= \
+	disassemble.c globals.c lines.c modules.c qfprogs.c strings.c
+qfprogs_LDADD=	$(QFCC_LIBS)
+qfprogs_DEPENDENCIES= $(QFCC_DEPS)
 
 constfold.$(OBJEXT) emit.$(OBJEXT) expr.$(OBJEXT) switch.$(OBJEXT) qc-lex.$(OBJEXT): qc-parse.h
 

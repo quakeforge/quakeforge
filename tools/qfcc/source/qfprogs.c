@@ -65,12 +65,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/va.h"
 #include "QF/zone.h"
 
-#include "disassemble.h"
-#include "globals.h"
-#include "lines.h"
-#include "modules.h"
 #include "qfprogs.h"
-#include "strings.h"
 
 int         sorted = 0;
 int         verbosity = 0;

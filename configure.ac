@@ -1646,7 +1646,7 @@ QF_WITH_TARGETS(
 QF_WITH_TARGETS(
 	tools,
 	[  --with-tools=<list>     compile qf tools:],
-	[bsp2img,carne,pak,qfbsp,qfcc,qflight,qfmodelgen,qfprogs,qfvis,qwaq,wad,wav],dummy
+	[bsp2img,carne,pak,qfbsp,qfcc,qflight,qfmodelgen,qfvis,qwaq,wad,wav],dummy
 )
 
 unset CL_TARGETS
@@ -1832,9 +1832,6 @@ fi
 if test "x$ENABLE_tools_qfmodelgen" = xyes; then
 	TOOLS_TARGETS="$TOOLS_TARGETS qfmodelgen"
 fi
-if test "x$ENABLE_tools_qfprogs" = xyes; then
-	TOOLS_TARGETS="$TOOLS_TARGETS qfprogs"
-fi
 if test "x$ENABLE_tools_qfvis" = xyes; then
 	TOOLS_TARGETS="$TOOLS_TARGETS qfvis"
 fi
@@ -1855,7 +1852,6 @@ AM_CONDITIONAL(BUILD_QFBSP, test "$ENABLE_tools_qfbsp" = "yes")
 AM_CONDITIONAL(BUILD_QFCC, test "$ENABLE_tools_qfcc" = "yes")
 AM_CONDITIONAL(BUILD_QFLIGHT, test "$ENABLE_tools_qflight" = "yes")
 AM_CONDITIONAL(BUILD_QFMODELGEN, test "$ENABLE_tools_qfmodelgen" = "yes")
-AM_CONDITIONAL(BUILD_QFPROGS, test "$ENABLE_tools_qfprogs" = "yes")
 AM_CONDITIONAL(BUILD_QFVIS, test "$ENABLE_tools_qfvis" = "yes")
 AM_CONDITIONAL(BUILD_QWAQ, test "$ENABLE_tools_qwaq" = "yes" -a "$ENABLE_tools_qfcc" = "yes")
 AM_CONDITIONAL(BUILD_WAD, test "$ENABLE_tools_wad" = "yes")
@@ -2107,11 +2103,6 @@ QF_DEPS(QFVIS,
 	[$(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
-QF_DEPS(QFPROGS,
-	[-I$(top_srcdir)/tools/qfprogs/include],
-	[$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la],
-	[$(WIN32_LIBS)],
-)
 QF_DEPS(QWAQ,
 	[],
 	[$(top_builddir)/libs/ruamoko/libQFruamoko.la $(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la],
@@ -2227,9 +2218,6 @@ AC_OUTPUT(
 	tools/qfmodelgen/Makefile
 	tools/qfmodelgen/include/Makefile
 	tools/qfmodelgen/source/Makefile
-	tools/qfprogs/Makefile
-	tools/qfprogs/include/Makefile
-	tools/qfprogs/source/Makefile
 	tools/qfvis/Makefile
 	tools/qfvis/include/Makefile
 	tools/qfvis/source/Makefile

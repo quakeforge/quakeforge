@@ -50,17 +50,10 @@ static __attribute__ ((unused)) const char rcsid[] =
 # include <sys/fcntl.h>
 #endif
 
-#include "QF/cmd.h"
-#include "QF/cvar.h"
 #include "QF/progs.h"
-#include "QF/quakeio.h"
 #include "QF/sys.h"
-#include "QF/zone.h"
-
-#include "QF/quakeio.h"
 
 #include "qfprogs.h"
-#include "disassemble.h"
 
 void
 disassemble_progs (progs_t *pr)

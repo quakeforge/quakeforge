@@ -46,7 +46,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/progs.h"
 
 #include "qfprogs.h"
-#include "lines.h"
 
 void
 dump_lines (progs_t *pr)

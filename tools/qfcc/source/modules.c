@@ -48,7 +48,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/va.h"
 
 #include "qfprogs.h"
-#include "modules.h"
 
 static void
 dump_methods (progs_t *pr, pr_method_list_t *methods, int class)

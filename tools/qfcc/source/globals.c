@@ -46,7 +46,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/va.h"
 
 #include "qfprogs.h"
-#include "globals.h"
 
 static int
 cmp (const void *_a, const void *_b)
