@@ -321,7 +321,7 @@ void Cvar_Set_f(void)
 	}
 	else
 	{
-		var = Cvar_Get (var_name, value, CVAR_USER_CREATED|CVAR_HEAP,
+		var = Cvar_Get (var_name, value, CVAR_USER_CREATED,
 				"User created cvar");
 	}
 }
@@ -476,7 +476,6 @@ cvar_t *Cvar_Get(char *name, char *string, int cvarflags, char *description)
 	}
 	// Cvar does exist, so we update the flags and return.
 	v->flags ^= CVAR_USER_CREATED;
-	v->flags ^= CVAR_HEAP;
 	v->flags |= cvarflags;
 	if (!strcmp (v->description,"User created cvar"))
 	{	
