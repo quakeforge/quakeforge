@@ -359,8 +359,8 @@ pr_obj_get_uninstalled_dtable (progs_t *pr)
 static void
 pr_obj_msgSend (progs_t *pr)
 {
-	pr_id_t    *self;
-	pr_sel_t   *_cmd;
+	pr_id_t    *self = P_POINTER (pr, pr_id_t, 0);
+	pr_sel_t   *_cmd = P_POINTER (pr, pr_sel_t, 1);
 	func_t      imp;
 
 	if (!self) {
@@ -380,8 +380,8 @@ pr_obj_msgSend (progs_t *pr)
 static void
 pr_obj_msgSend_super (progs_t *pr)
 {
-	pr_id_t    *self;
-	pr_sel_t   *_cmd;
+	pr_id_t    *self = P_POINTER (pr, pr_id_t, 0);
+	pr_sel_t   *_cmd = P_POINTER (pr, pr_sel_t, 1);
 	func_t      imp;
 
 	if (!self) {
