@@ -342,15 +342,11 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			break;
 		case EQ:
 			e1->type = ex_integer;
-			e1->e.integer_val = (v1[0] == v2[0])
-							 && (v1[1] == v2[1])
-							 && (v1[2] == v2[2]);
+			e1->e.integer_val = VectorCompare (v1, v2);
 			break;
 		case NE:
 			e1->type = ex_integer;
-			e1->e.integer_val = (v1[0] == v2[0])
-							 || (v1[1] != v2[1])
-							 || (v1[2] != v2[2]);
+			e1->e.integer_val = !VectorCompare (v1, v2);
 			break;
 		default:
 			internal_error (e1);
@@ -415,7 +411,7 @@ do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	static int  valid[] = {'=', 'b', PAS, '&', 'M', '.', EQ, NE, 0};
 
 	if (!valid_op (op, valid))
-		return error (e1, "invalid operand for quaternion");
+		return error (e1, "invalid operand for pointer");
 
 	if (op == PAS && (type = get_type (e1)->aux_type) != get_type (e2)) {
 		// make sure auto-convertions happen
@@ -487,40 +483,32 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 
 	switch (op) {
 		case '+':
-			VectorAdd (q1, q2, q1);
+			QuatAdd (q1, q2, q1);
 			break;
 		case '-':
-			VectorSubtract (q1, q2, q1);
+			QuatSubtract (q1, q2, q1);
 			break;
 		case '/':
 			if (!q2[0])
 				return error (e1, "divide by zero");
-			VectorScale (q1, 1 / q2[0], q1);
+			QuatScale (q1, 1 / q2[0], q1);
 			q1[3] /= q2[0];
 			break;
 		case '*':
 			if (get_type (e2) == &type_quaternion) {
-				e1->type = ex_float;
-				e1->e.float_val = DotProduct (q1, q2);
-				e1->e.float_val += q1[3] * q2[3];
+				QuatMult (q1, q2, q1);
 			} else {
-				VectorScale (q1, q2[0], q1);
+				QuatScale (q1, q2[0], q1);
 				q1[3] *= q2[0];
 			}
 			break;
 		case EQ:
 			e1->type = ex_integer;
-			e1->e.integer_val = (q1[0] == q2[0])
-							 && (q1[1] == q2[1])
-							 && (q1[2] == q2[2])
-							 && (q1[3] == q2[3]);
+			e1->e.integer_val = QuatCompare (q1, q2);
 			break;
 		case NE:
 			e1->type = ex_integer;
-			e1->e.integer_val = (q1[0] == q2[0])
-							 || (q1[1] != q2[1])
-							 || (q1[2] != q2[2])
-							 || (q1[3] != q2[3]);
+			e1->e.integer_val = !QuatCompare (q1, q2);
 			break;
 		default:
 			internal_error (e1);
@@ -1075,7 +1063,7 @@ static operation_t op_quaternion[ev_type_count] = {
 	do_op_invalid,						// ev_void
 	do_op_invalid,						// ev_string
 	do_op_quaternion,					// ev_float
-	do_op_quaternion,					// ev_vector
+	do_op_invalid,						// ev_vector
 	do_op_invalid,						// ev_entity
 	do_op_invalid,						// ev_field
 	do_op_invalid,						// ev_func

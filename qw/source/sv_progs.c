@@ -338,7 +338,7 @@ set_address (sv_def_t *def, void *address)
 			break;
 		case ev_float:
 		case ev_vector:
-		case ev_quaternion:
+		case ev_quat:
 			*(float **)def->field = (float *) address;
 			break;
 		case ev_string:

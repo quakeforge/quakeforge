@@ -86,7 +86,7 @@ etype_t     qc_types[] = {
 	ev_field,							// ex_field
 	ev_func,							// ex_func
 	ev_pointer,							// ex_pointer
-	ev_quaternion,						// ex_quaternion
+	ev_quat,						// ex_quaternion
 	ev_integer,							// ex_integer
 	ev_uinteger,						// ex_uinteger
 	ev_short,							// ex_short
@@ -121,7 +121,7 @@ expr_type   expr_types[] = {
 	ex_field,							// ev_field
 	ex_func,							// ev_func
 	ex_pointer,							// ev_pointer
-	ex_quaternion,						// ev_quaternion
+	ex_quaternion,						// ev_quat
 	ex_integer,							// ev_integer
 	ex_uinteger,						// ev_uinteger
 	ex_short,							// ev_short
@@ -1054,7 +1054,7 @@ test_expr (expr_t *e, int test)
 		case ev_pointer:
 			new = new_nil_expr ();
 			break;
-		case ev_quaternion:
+		case ev_quat:
 			new = new_quaternion_expr (zero);
 			break;
 		case ev_struct:

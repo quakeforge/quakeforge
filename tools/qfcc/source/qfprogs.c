@@ -247,7 +247,7 @@ get_auxtype (const char *type)
 			case '^':
 				return ev_pointer;
 			case 'Q':
-				return ev_quaternion;
+				return ev_quat;
 			case 'i':
 				return ev_integer;
 			case 'I':

@@ -523,7 +523,7 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 			else
 				dsprintf (line, "[$%x]", ofs);
 			break;
-		case ev_quaternion:
+		case ev_quat:
 			dsprintf (line, "'%g %g %g %g'",
 					  val->vector_var[0], val->vector_var[1],
 					  val->vector_var[2], val->vector_var[3]);

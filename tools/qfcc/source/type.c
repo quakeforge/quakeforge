@@ -74,7 +74,7 @@ type_t      type_field = { ev_field, "field", NULL, &type_void };
 // type_function is a void() function used for state defs
 type_t      type_function = { ev_func, "function", NULL, &type_void };
 type_t      type_pointer = { ev_pointer, "pointer", NULL, &type_void };
-type_t      type_quaternion = { ev_quaternion, "quaternion" };
+type_t      type_quaternion = { ev_quat, "quaternion" };
 type_t      type_integer = { ev_integer, "integer" };
 type_t      type_uinteger = { ev_uinteger, "uiniteger" };
 type_t      type_short = { ev_short, "short" };
@@ -351,7 +351,7 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 					break;
 			}
 			break;
-		case ev_quaternion:
+		case ev_quat:
 			dstring_appendstr (encoding, "Q");
 			break;
 		case ev_integer:
@@ -601,7 +601,7 @@ type_size (type_t *type)
 		case ev_field:
 		case ev_func:
 		case ev_pointer:
-		case ev_quaternion:
+		case ev_quat:
 		case ev_integer:
 		case ev_uinteger:
 		case ev_short:
