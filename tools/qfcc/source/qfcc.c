@@ -180,7 +180,8 @@ WriteData (int crc)
 	for (def = pr.scope->head; def; def = def->def_next) {
 		if (def->local || !def->name)
 			continue;
-		if (options.traditional && *def->name == '.')
+		if (options.traditional && *def->name == '.'
+			&& strcmp (def->name, ".debug_file") != 0)
 			continue;
 		if (def->type->type == ev_func) {
 		} else if (def->type->type == ev_field) {

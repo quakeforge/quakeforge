@@ -1401,8 +1401,16 @@ convert_nil (expr_t *e, type_t *t)
 static int
 is_compare (int op)
 {
-	if (op == OR || op == AND || op == EQ || op == NE || op == LE
-		|| op == GE || op == LT || op == GT || op == '>' || op == '<')
+	if (op == EQ || op == NE || op == LE || op == GE || op == LT || op == GT
+		|| op == '>' || op == '<')
+		return 1;
+	return 0;
+}
+
+static int
+is_logic (int op)
+{
+	if (op == OR || op == AND)
 		return 1;
 	return 0;
 }
@@ -1562,7 +1570,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	} else {
 		type = t1;
 	}
-	if (is_compare (op)) {
+	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
 			type = &type_integer;
 		else
