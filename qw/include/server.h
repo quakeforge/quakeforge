@@ -223,7 +223,9 @@ typedef struct client_s
 // getting kicked off by the server operator
 // a program error, like an overflowed reliable buffer
 
-//=============================================================================
+extern qboolean rcon_from_user;			// current command is a from a user
+
+//============================================================================
 
 
 #define	STATFRAMES	100

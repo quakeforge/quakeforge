@@ -63,6 +63,8 @@
 quakeparms_t host_parms;
 qboolean    host_initialized;			// true if into command execution
 
+qboolean    rcon_from_user;
+
 double      sv_frametime;
 double      realtime;					// without any filtering or bounding
 
@@ -97,6 +99,7 @@ cvar_t     *zombietime;					// seconds to sink messages after
 										// disconnect
 
 cvar_t     *rcon_password;				// password for remote server
+cvar_t     *admin_password;				// password for admin
 
 										// commands
 
@@ -873,16 +876,35 @@ SVC_DirectConnect (void)
 }
 
 int
-Rcon_Validate (void)
+Rcon_Validate (cvar_t *pass)
 {
-	if (!strlen (rcon_password->string))
+	if (!strlen (pass->string))
 		return 0;
 
-	if (strcmp (Cmd_Argv (1), rcon_password->string))
+	if (strcmp (Cmd_Argv (1), pass->string))
 		return 0;
 
 	return 1;
 }
+
+char *
+Name_of_sender (void)
+{
+	int         i;
+	client_t   *cl;
+
+	for (i=0, cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++) {
+		if (cl->state == cs_free)
+			continue;
+		if (!NET_CompareBaseAdr(net_from, cl->netchan.remote_address))
+			continue;
+		if (cl->netchan.remote_address.port != net_from.port)
+			continue;
+		return cl->name;
+	}
+	return NULL;
+}
+
 
 /*
 	SVC_RemoteCommand
@@ -897,20 +919,42 @@ SVC_RemoteCommand (void)
 	int         i;
 	int         len = 0;
 	char        remaining[1024];
+	char       *name;
+	qboolean    do_cmd = false;
+	qboolean    admin_cmd = false;
 
 	if (CheckForFlood (FLOOD_RCON))
 		return;
 
-	if (!Rcon_Validate ()) {
-		Con_Printf ("Bad rcon from %s:\n%s\n", NET_AdrToString (net_from),
-					net_message->message->data + 4);
-
-		SV_BeginRedirect (RD_PACKET);
-
-		Con_Printf ("Bad rcon_password.\n");
-
-	} else {
-
+	if (Rcon_Validate (rcon_password)) {
+		do_cmd = true;
+	} else if (Rcon_Validate (admin_password)) {
+		admin_cmd = true;
+		if (strcmp(Cmd_Argv(2), "say") == 0
+			||  strcmp(Cmd_Argv(2), "kick") == 0
+			||  strcmp(Cmd_Argv(2), "ban") == 0
+			||  strcmp(Cmd_Argv(2), "mute") == 0
+			||  strcmp(Cmd_Argv(2), "cuff") == 0
+			||  strcmp(Cmd_Argv(2), "exec") == 0
+			||  strcmp(Cmd_Argv(2), "addip") == 0
+			||  strcmp(Cmd_Argv(2), "listip") == 0
+			||  strcmp(Cmd_Argv(2), "writeip") == 0
+			||  strcmp(Cmd_Argv(2), "removeip") == 0)
+			do_cmd = true;
+	}
+	if ((name = Name_of_sender())) {			// log issuer
+		if (do_cmd && admin_cmd) {
+			SV_BroadcastPrintf (PRINT_HIGH, "Admin %s issued %s command:\n",
+								name, Cmd_Argv(2));
+		} else if (admin_cmd) {
+			Con_Printf ("Admin %s issued %s command:\n", name, Cmd_Argv(2));
+		} else {
+			Con_Printf("User %s %s rcon command:\n", name,
+					   do_cmd? "issued":"attempted");
+		}
+	}
+	
+	if (do_cmd) {
 		remaining[0] = 0;
 
 		for (i = 2; i < Cmd_Argc (); i++) {
@@ -923,9 +967,20 @@ SVC_RemoteCommand (void)
 					NET_AdrToString (net_from), remaining);
 
 		SV_BeginRedirect (RD_PACKET);
-
+		if (name)
+			rcon_from_user = true;
 		Cmd_ExecuteString (remaining, src_command);
+		rcon_from_user = false;
+	} else {
+		Con_Printf ("Bad rcon from %s:\n%s\n", NET_AdrToString (net_from),
+					net_message->message->data + 4);
 
+		SV_BeginRedirect (RD_PACKET);
+		if (admin_cmd) {
+			Con_Printf("Command not valid with admin password.\n");
+		} else {
+			Con_Printf ("Bad rcon_password.\n");
+		}
 	}
 
 	SV_EndRedirect ();
@@ -1524,7 +1579,8 @@ SV_InitLocal (void)
 
 	SV_UserInit ();
 
-	rcon_password = Cvar_Get ("rcon_password", "", CVAR_NONE, NULL, "Set the password for rcon commands");
+	rcon_password = Cvar_Get ("rcon_password", "", CVAR_NONE, NULL, "Set the password for rcon 'root' commands");
+	admin_password = Cvar_Get ("admin_password", "", CVAR_NONE, NULL, "Set the password for rcon admin commands");
 	password = Cvar_Get ("password", "", CVAR_NONE, NULL, "Set the server password for players");
 	spectator_password = Cvar_Get ("spectator_password", "", CVAR_NONE, NULL, "Set the spectator password");
 

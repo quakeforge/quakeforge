@@ -484,11 +484,8 @@ SV_Status_f (void)
 	Con_Printf ("\n");
 }
 
-/*
-	SV_ConSay_f
-*/
 void
-SV_ConSay_f (void)
+SV_ConSay (const char *prefix)
 {
 	client_t   *client;
 	int         j;
@@ -498,21 +495,43 @@ SV_ConSay_f (void)
 	if (Cmd_Argc () < 2)
 		return;
 
-	strcpy (text, "console: ");
 	p = Cmd_Args ();
-
 	if (*p == '"') {
 		p++;
 		p[strlen (p) - 1] = 0;
 	}
-
-	strncat (text, p, sizeof (text) - strlen (text));
+	strcpy (text, prefix);				// bold header
+	strcat (text, "\x8d ");				// and arrow
+	j = strlen (text);
+	strncat (text, p, sizeof (text) - j);
+	while (text[j])
+		text[j++] |= 0x80;				// non-bold text
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
-		if (client->state != cs_spawned)
+		if (client->state != cs_spawned)	// kk just has !client->state
 			continue;
-		SV_ClientPrintf (client, PRINT_CHAT, "%s\n", text);
+		SV_ClientPrintf (client, PRINT_HIGH, "%s\n", text);
+		if (*prefix != 'I')		// beep, except for Info says
+			SV_ClientPrintf(client, PRINT_CHAT, "%s", "");
 	}
+}
+
+/*
+	SV_ConSay_f
+*/
+void
+SV_ConSay_f (void)
+{
+	if (rcon_from_user)
+		SV_ConSay("Admin");
+	else
+		SV_ConSay("Console");
+}
+
+void
+SV_ConSay_Info_f (void)
+{
+	SV_ConSay("Info");
 }
 
 
@@ -833,7 +852,6 @@ SV_InitOperatorCommands (void)
 		"setmaster 192.246.40.12:27002\n"
 		"setmaster 192.246.40.12:27002 192.246.40.12:27004");
 
-	Cmd_AddCommand ("say", SV_ConSay_f, "Say something to everyone on the server, will show up as the name 'console' in game");
 	Cmd_AddCommand ("heartbeat", SV_Heartbeat_f, "Force a heartbeat to be sent to the master server.\n"
 		"A heartbeat tells the Master the server's IP address and that it is still alive.");
 	Cmd_AddCommand ("quit", SV_Quit_f, "Shut down the server");
@@ -880,7 +898,15 @@ SV_InitOperatorCommands (void)
 		"(floodprot (number of messages) (number of seconds) (silence time in seconds))");
 
 	Cmd_AddCommand ("floodprotmsg", SV_Floodprotmsg_f, "Sets the message displayed after flood protection is invoked (floodprotmsg message)");
+
 	Cmd_AddCommand ("maplist", COM_Maplist_f, "List all maps on the server");
+
+	Cmd_AddCommand ("say", SV_ConSay_f, "Say something to everyone on the server, will show up as the name 'Console' (or 'Admin') in game");
+	Cmd_AddCommand ("sayinfo", SV_ConSay_Info_f, "Say something to everyone on the server, will show up as the name 'Info' in game");
+	//XXX Cmd_AddCommand ("cuff", SV_Cuff_f);
+	//XXX Cmd_AddCommand ("mute", SV_Mute_f);
+	//XXX Cmd_AddCommand ("tell", SV_Tell_f);
+	//XXX Cmd_AddCommand ("ban", SV_Ban_f);
 
 	cl_warncmd =
 		Cvar_Get ("cl_warncmd", "1", CVAR_NONE, NULL,
