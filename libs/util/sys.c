@@ -234,7 +234,14 @@ Sys_DoubleTime (void)
 void
 Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 {
-#ifdef HAVE_MPROTECT
+#ifdef _WIN32
+	DWORD       flOldProtect;
+
+	if (!VirtualProtect
+		((LPVOID) startaddr, length, PAGE_READWRITE,
+		 &flOldProtect)) Sys_Error ("Protection change failed\n");
+#else
+# ifdef HAVE_MPROTECT
 	int         r;
 	unsigned long addr;
 	int         psize = getpagesize ();
@@ -248,13 +255,6 @@ Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 
 	if (r < 0)
 		Sys_Error ("Protection change failed\n");
-#else
-# ifdef HAVE_VIRTUALPROTECT
-	DWORD       flOldProtect;
-
-	if (!VirtualProtect
-		((LPVOID) startaddr, length, PAGE_READWRITE,
-		 &flOldProtect)) Sys_Error ("Protection change failed\n");
 # endif
 #endif
 }
