@@ -58,14 +58,6 @@ void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboole
 int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel);
 int GL_FindTexture (char *identifier);
 
-typedef struct {
-	float	x, y, z;
-	float	s, t;
-	float	r, g, b;
-} glvert_t;
-
-extern glvert_t glv;
-
 extern	int glx, gly, glwidth, glheight;
 
 #define ALIAS_BASE_SIZE_RATIO		(1.0 / 11.0)

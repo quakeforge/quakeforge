@@ -509,18 +509,24 @@ CL_LinkPacketEntities (void)
 		if (!model->flags)
 			continue;
 
-		// No trail if too far.
-		if (VectorDistance_fast((*ent)->old_origin, (*ent)->origin) > (256*256))
-			VectorCopy ((*ent)->origin, (*ent)->old_origin);
-
 		if (model->flags & EF_ROCKET) {
 			dl = R_AllocDlight (-(*ent)->keynum);
 			VectorCopy ((*ent)->origin, dl->origin);
 			VectorCopy (r_firecolor->vec, dl->color);
 			dl->radius = 200;
 			dl->die = cl.time + 0.1;
+		}
+
+		// No trail if too far.
+		if (VectorDistance_fast((*ent)->old_origin, (*ent)->origin) >
+				(256*256)) {
+			VectorCopy ((*ent)->origin, (*ent)->old_origin);
+			continue;
+		}
+
+		if (model->flags & EF_ROCKET)
 			R_RocketTrail (0, (*ent));
-		} else if (model->flags & EF_GRENADE)
+		else if (model->flags & EF_GRENADE)
 			R_RocketTrail (1, (*ent));
 		else if (model->flags & EF_GIB)
 			R_RocketTrail (2, (*ent));
