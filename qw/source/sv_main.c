@@ -565,11 +565,10 @@ SV_CheckLog (void)
 
 	sz = &svs.log[svs.logsequence & 1];
 
-	// bump sequence if almost full, or ten minutes have passed and
+	// bump sequence if allmost full, or ten minutes have passed and
 	// there is something still sitting there
 	if (sz->cursize > LOG_HIGHWATER
-		|| ((realtime - svs.logtime) > LOG_FLUSH && sz->cursize)
-		|| (realtime - svs.logtime) < 0) {
+		|| (realtime - svs.logtime > LOG_FLUSH && sz->cursize)) {
 		// swap buffers and bump sequence
 		svs.logtime = realtime;
 		svs.logsequence++;
@@ -578,6 +577,7 @@ SV_CheckLog (void)
 		SV_Printf ("beginning fraglog sequence %i\n", svs.logsequence);
 	}
 }
+
 /*
 	SVC_Log
 
@@ -1340,7 +1340,7 @@ SV_CleanIPList (void)
 	char		*type;
 
 	for (i = 0; i < numipfilters;) {
-		if (ipfilters[i].time && (ipfilters[i].time <= Sys_DoubleTime () )) {
+		if (ipfilters[i].time && (ipfilters[i].time <= realtime)) {
 			switch (ipfilters[i].type) {
 				case ft_ban: type = "Ban"; break;
 				case ft_mute: type = "Mute"; break;
@@ -1392,7 +1392,7 @@ SV_AddIP_f (void)
 	}
 
 	if (SV_StringToFilter (Cmd_Argv (1), &ipfilters[numipfilters])) {
-		ipfilters[numipfilters].time = bantime ? Sys_DoubleTime () + bantime : 0.0;
+		ipfilters[numipfilters].time = bantime ? realtime + bantime : 0.0;
 		ipfilters[numipfilters].type = type;
 		// FIXME: this should boot any matching clients
 	    for (i = 0; i < MAX_CLIENTS; i++) {
@@ -1479,8 +1479,7 @@ SV_ListIP_f (void)
 
 		if (ipfilters[i].time)
 			snprintf (timestr, sizeof (timestr), "%ds",
-					 (int) (ipfilters[i].time ? ipfilters[i].time -
-					 Sys_DoubleTime () : 0));
+					  (int) (ipfilters[i].time ? ipfilters[i].time - realtime : 0));
 		else
 			strcpy (timestr, "Permanent");
 
@@ -1595,8 +1594,7 @@ SV_SendBan (double till)
 
 	if (till) {
 		snprintf (data + 5, sizeof (data) - 5,
-				 "\nbanned for %.1f more minutes.\n", (till -
-					Sys_DoubleTime ())/60.0);
+				  "\nbanned for %.1f more minutes.\n", (till - realtime)/60.0);
 	} else {
 		snprintf (data + 5, sizeof (data) - 5, "\nbanned permanently.\n");
 	}
@@ -1625,7 +1623,7 @@ SV_FilterIP (byte *ip, double *until)
 			if (!ipfilters[i].time) {
 				// normal ban
 				return filterban->int_val;
-			} else if (ipfilters[i].time > Sys_DoubleTime () ) {
+			} else if (ipfilters[i].time > realtime) {
 				*until = ipfilters[i].time;
 				return true;	// banned no matter what
 			} else {
@@ -1643,7 +1641,7 @@ SV_SavePenaltyFilter (client_t *cl, filtertype_t type, double pentime)
 {
 	int i;
 	byte *b;
-	if (pentime < Sys_DoubleTime () )   // no point
+	if (pentime < realtime)   // no point
 		return;
 
 	b = cl->netchan.remote_address.ip;
@@ -1886,25 +1884,19 @@ SV_Frame (float time)
 	if (!sv.paused) {
 		static double old_time;
 
-		// Misty: Make sure we don't set sv_frametime to 0 or less than 0.
-		// Progs HATES it when we do that.
-		if (realtime - old_time > 0) {
 		// don't bother running a frame if sys_ticrate seconds haven't passed
-			sv_frametime = realtime - old_time;
-			if (sv_frametime >= sv_mintic->value) {
-				if (sv_frametime > sv_maxtic->value) {
-					sv_frametime = sv_maxtic->value;
-				}
-				old_time = realtime;
-
-				*sv_globals.frametime = sv_frametime;
-
-				SV_Physics ();
-			}
-		} else {
+		sv_frametime = realtime - old_time;
+		if (sv_frametime >= sv_mintic->value) {
+			if (sv_frametime > sv_maxtic->value)
+				sv_frametime = sv_maxtic->value;
 			old_time = realtime;
+
+			*sv_globals.frametime = sv_frametime;
+
+			SV_Physics ();
 		}
 	}
+
 	// get packets
 	SV_ReadPackets ();
 
@@ -2165,8 +2157,9 @@ Master_Heartbeat (void)
 	char        string[2048];
 	int         active, i;
 
-	if ((realtime - svs.last_heartbeat) < HEARTBEAT_SECONDS)
+	if (realtime - svs.last_heartbeat < HEARTBEAT_SECONDS)
 		return;							// not time to send yet
+
 	svs.last_heartbeat = realtime;
 
 	// count active users

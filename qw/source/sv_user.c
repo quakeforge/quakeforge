@@ -798,11 +798,10 @@ SV_Say (qboolean team)
 	}
 
 	if (fp_messages) {
-		if (!sv.paused && Sys_DoubleTime () < host_client->lockedtill) {
+		if (!sv.paused && realtime < host_client->lockedtill) {
 			SV_ClientPrintf (host_client, PRINT_CHAT,
-							"You can't talk for %d more seconds\n",
-							(int) (host_client->lockedtill - 
-								Sys_DoubleTime () ));
+							 "You can't talk for %d more seconds\n",
+							 (int) (host_client->lockedtill - realtime));
 			return;
 		}
 		tmp = host_client->whensaidhead - fp_messages + 1;
@@ -811,7 +810,7 @@ SV_Say (qboolean team)
 		if (!sv.paused &&
 			host_client->whensaid[tmp]
 			&& (realtime - host_client->whensaid[tmp] < fp_persecond)) {
-			host_client->lockedtill = Sys_DoubleTime () + fp_secondsdead;
+			host_client->lockedtill = realtime + fp_secondsdead;
 			if (fp_msg[0])
 				SV_ClientPrintf (host_client, PRINT_CHAT,
 								 "FloodProt: %s\n", fp_msg);
@@ -1506,7 +1505,7 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 	SVfloat (sv_player, button2) = (ucmd->buttons & 2) >> 1;
 	if (ucmd->impulse)
 		SVfloat (sv_player, impulse) = ucmd->impulse;
-	if (host_client->cuff_time > Sys_DoubleTime() )
+	if (host_client->cuff_time > realtime)
 		SVfloat (sv_player, button0) = SVfloat (sv_player, impulse) = 0;
 
 //
