@@ -495,7 +495,9 @@ R_RocketTrail (int type, entity_t *ent)
 				pdie = cl.time + 60;
 				ptype = pt_smokering;
 				pscale = lhrandom (10, 15);
-				pcolor = (rand () & 3) + 12;
+				// Misty-chan: Temporary easter egg
+				pcolor = (rand () & 255);
+				// pcolor = (rand () & 3) + 12;
 				palpha = 220 + (rand () & 31);
 				VectorVectors(vec, right, up);
 				VectorCopy (ent->old_origin, porg);
@@ -506,7 +508,9 @@ R_RocketTrail (int type, entity_t *ent)
 				pdie = cl.time + 1;
 				ptype = pt_smoke;
 				pscale = lhrandom (6, 9);
-				pcolor = (rand () & 3) + 3;
+				// Misty-chan: Temporary easter egg.
+				pcolor = (rand () & 255);
+				// pcolor = (rand () & 3) + 3;
 				palpha = 48 + (rand () & 31);
 				VectorCopy (ent->old_origin, porg);
 				ptex = part_tex_smoke[rand () & 7];
