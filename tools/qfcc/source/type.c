@@ -61,34 +61,35 @@ typedef struct typedef_s {
 } typedef_t;
 
 // simple types.  function types are dynamically allocated
-type_t      type_void = { ev_void };
-type_t      type_string = { ev_string };
-type_t      type_float = { ev_float };
-type_t      type_vector = { ev_vector };
-type_t      type_entity = { ev_entity };
-type_t      type_field = { ev_field };
+type_t      type_void = { ev_void, "void" };
+type_t      type_string = { ev_string, "string" };
+type_t      type_float = { ev_float, "float" };
+type_t      type_vector = { ev_vector, "vector" };
+type_t      type_entity = { ev_entity, "entity" };
+type_t      type_field = { ev_field, "field" };
 
 // type_function is a void() function used for state defs
-type_t      type_function = { ev_func, NULL, &type_void };
-type_t      type_pointer = { ev_pointer, NULL, &type_void };
-type_t      type_quaternion = { ev_quaternion };
-type_t      type_integer = { ev_integer };
-type_t      type_uinteger = { ev_uinteger };
-type_t      type_short = { ev_short };
-type_t      type_struct = { ev_struct };
+type_t      type_function = { ev_func, "function", NULL, &type_void };
+type_t      type_pointer = { ev_pointer, "pointer", NULL, &type_void };
+type_t      type_quaternion = { ev_quaternion, "quaternion" };
+type_t      type_integer = { ev_integer, "integer" };
+type_t      type_uinteger = { ev_uinteger, "uiniteger" };
+type_t      type_short = { ev_short, "short" };
+type_t      type_struct = { ev_struct, "struct" };
 // these will be built up further
-type_t      type_id = { ev_pointer };
-type_t      type_Class = { ev_pointer };
-type_t      type_Protocol = { ev_pointer };
-type_t      type_SEL = { ev_pointer };
-type_t      type_IMP = { ev_func, NULL, &type_id, -3, { &type_id, &type_SEL }};
-type_t      type_obj_exec_class = { ev_func, NULL, &type_void, 1, { 0 }};
-type_t      type_Method = { ev_pointer };
+type_t      type_id = { ev_pointer, "id" };
+type_t      type_Class = { ev_pointer, "Class" };
+type_t      type_Protocol = { ev_pointer, "Protocol" };
+type_t      type_SEL = { ev_pointer, "SEL" };
+type_t      type_IMP = { ev_func, "IMP", NULL, &type_id, -3, { &type_id,
+															   &type_SEL }};
+type_t      type_obj_exec_class = { ev_func, "function", NULL, &type_void, 1, { 0 }};
+type_t      type_Method = { ev_pointer, "Method" };
 type_t     *type_category;
 type_t     *type_ivar;
 type_t     *type_module;
 
-type_t      type_floatfield = { ev_field, NULL, &type_float };
+type_t      type_floatfield = { ev_field, ".float", NULL, &type_float };
 
 static type_t *free_types;
 
@@ -331,7 +332,7 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 		case ev_object:
 		case ev_class:
 			dstring_appendstr (encoding, "{");
-			//XXX dstring_appendstr (encoding, name);
+			dstring_appendstr (encoding, type->name);
 			if (level < 2) {
 				dstring_appendstr (encoding, "=");
 				for (field = type->struct_head; field; field = field->next)
@@ -345,7 +346,7 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 		case ev_array:
 			dstring_appendstr (encoding, "[");
 			dstring_appendstr (encoding, va ("%d ", type->num_parms));
-			//XXX dstring_appendstr (encoding, name);
+			_encode_type (encoding, type->aux_type, level + 1);
 			dstring_appendstr (encoding, "]");
 			break;
 		case ev_type_count:

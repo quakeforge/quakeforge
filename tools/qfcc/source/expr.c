@@ -366,7 +366,7 @@ new_label_name (void)
 	const char *fname = current_func->def->name;
 	char       *lname;
 
-	lname = strdup (va ("$%s_%d", fname, lnum));
+	lname = nva ("$%s_%d", fname, lnum);
 	SYS_CHECKMEM (lname);
 	return lname;
 }

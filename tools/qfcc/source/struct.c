@@ -136,8 +136,10 @@ new_struct (const char *name)
 	strct->type->type = ev_struct;
 	strct->type->struct_tail = &strct->type->struct_head;
 	strct->type->struct_fields = Hash_NewTable (61, struct_field_get_key, 0, 0);
-	if (name)
+	if (name) {
+		strct->type->name = strdup (name);
 		Hash_Add (structs, strct);
+	}
 	return strct->type;
 }
 

@@ -36,6 +36,7 @@
 
 typedef struct type_s {
 	etype_t			type;
+	const char		*name;
 	struct type_s	*next;
 // function/pointer/struct types are more complex
 	struct type_s	*aux_type;	// return type or field type

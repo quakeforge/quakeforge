@@ -255,7 +255,7 @@ DecodeArgs (int argc, char **argv)
 					char       *temp = strtok (opts, ",");
 
 					while (temp) {
-						add_cpp_def (strdup (va ("%s%s", "-D", temp)));
+						add_cpp_def (nva ("%s%s", "-D", temp));
 						temp = strtok (NULL, ",");
 					}
 					free (opts);
@@ -266,7 +266,7 @@ DecodeArgs (int argc, char **argv)
 					char       *temp = strtok (opts, ",");
 
 					while (temp) {
-						add_cpp_def (strdup (va ("%s%s", "-I", temp)));
+						add_cpp_def (nva ("%s%s", "-I", temp));
 						temp = strtok (NULL, ",");
 					}
 					free (opts);
@@ -277,7 +277,7 @@ DecodeArgs (int argc, char **argv)
 					char       *temp = strtok (opts, ",");
 
 					while (temp) {
-						add_cpp_def (strdup (va ("%s%s", "-U", temp)));
+						add_cpp_def (nva ("%s%s", "-U", temp));
 						temp = strtok (NULL, ",");
 					}
 					free (opts);

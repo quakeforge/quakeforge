@@ -30,16 +30,17 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include <stdarg.h>
-#include <stdio.h>
 
 #include "QF/dstring.h"
-#include "QF/qtypes.h"
-#include "QF/sys.h"
 #include "QF/va.h"
-
-#include "compat.h"
 
 
 /*
@@ -62,4 +63,20 @@ va (const char *fmt, ...)
 	va_end (args);
 
 	return string->str;
+}
+
+char *
+nva (const char *fmt, ...)
+{
+	va_list     args;
+	static dstring_t *string;
+
+	if (!string)
+		string = dstring_new ();
+
+	va_start (args, fmt);
+	dvsprintf (string, fmt, args);
+	va_end (args);
+
+	return strdup (string->str);
 }
