@@ -1,7 +1,7 @@
 /*
-	funcs.h
+	glx_funcs_list.h
 
-	GL function defs.
+	QF GLX function list.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -26,24 +26,25 @@
 	$Id$
 */
 
-#ifndef __QF_GL_funcs_h_
-#define __QF_GL_funcs_h_
-
-#include "QF/GL/extensions.h"
-#include "QF/GL/types.h"
-#include "QF/qtypes.h"
-
-#ifdef _WIN32
-# include <windows.h>
+#ifndef QFGL_DONT_NEED
+#define QFGL_DONT_NEED(ret, func, params)
+#define UNDEF_QFGL_DONT_NEED
 #endif
 
-#define QFGL_NEED(ret, name, args)	extern ret (GLAPIENTRY * qf##name) args;
-#include "QF/GL/qf_funcs_list.h"
-#undef QFGL_NEED
+#ifndef QFGL_NEED
+#define QFGL_NEED(ret, func, params)
+#define UNDEF_QFGL_NEED
+#endif
 
-extern void *libgl_handle;
+QFGL_NEED (void, glXSwapBuffers, (Display *dpy, GLXDrawable drawable))
+QFGL_NEED (void, glXChooseVisual, (Display *dpy, int screen, int *attribList))
+QFGL_NEED (void, glXCreateContext, (Display *dpy, XVisualInfo *vis, GLXContext shareList, Bool direct))
+QFGL_NEED (void, glXMakeCurrent, (Display *dpy, GLXDrawable drawable, GLXContext ctx))
 
-qboolean GLF_Init (void);
-void *QFGL_ProcAddress (void *, const char *, qboolean);
+#ifdef UNDEF_QFGL_DONT_NEED
+#undef QFGL_DONT_NEED
+#endif
 
-#endif // __QF_GL_funcs_h_
+#ifdef UNDEF_QFGL_NEED
+#undef QFGL_DONT_NEED
+#endif

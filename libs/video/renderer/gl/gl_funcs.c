@@ -56,7 +56,7 @@ static const char rcsid[] =
 
 // First we need to get all the function pointers declared.
 #define QFGL_NEED(ret, name, args) \
-ret (GLAPIENTRY * qf##name) args 
+ret (GLAPIENTRY * qf##name) args;
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
 
@@ -122,7 +122,7 @@ GLF_Init (void)
 	libgl_handle = QFGL_LoadLibrary ();
 
 #define QFGL_NEED(ret, name, args)	\
-	qf##name = QFGL_ProcAddress (libgl_handle, #name, true)
+	qf##name = QFGL_ProcAddress (libgl_handle, #name, true);
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
 
