@@ -169,6 +169,14 @@ PR_RunError (progs_t * pr, const char *error, ...)
 	vsnprintf (string, sizeof (string), error, argptr);
 	va_end (argptr);
 
+	if (pr_debug->int_val) {
+		int addr = pr->pr_xstatement;
+		
+		while (!PR_Get_Source_Line (pr, addr))
+			addr--;
+		while (addr != pr->pr_xstatement)
+			PR_PrintStatement (pr, pr->pr_statements + addr++);
+	}
 	PR_PrintStatement (pr, pr->pr_statements + pr->pr_xstatement);
 	PR_StackTrace (pr);
 	Con_Printf ("%s\n", string);
