@@ -1,3 +1,4 @@
+.deps
 Makefile
 Makefile.in
 aclocal.m4
@@ -6,4 +7,5 @@ config.h
 config.log
 config.status
 configure
+stamp-h1
 texturepaint
