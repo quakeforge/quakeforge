@@ -118,7 +118,7 @@ endif
 client_SOURCES= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
 	cl_main.c cl_misc.c cl_parse.c cl_pred.c cl_slist.c cl_tent.c \
 	console.c keys.c locs.c model_alias.c model_sprite.c nonintel.c \
-	pcx.c r_efrag.c r_view.c sbar.c skin.c teamplay.c tga.c wad.c vid.c $(client_ASM) $(syscl_SRC)
+	pcx.c r_efrag.c r_view.c sbar.c skin.c teamplay.c tga.c wad.c $(client_ASM) $(syscl_SRC)
 
 #
 # Software-rendering clients
