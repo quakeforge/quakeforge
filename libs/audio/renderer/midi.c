@@ -128,7 +128,23 @@ midi_stream_open (sfx_t *_sfx)
 	wavinfo_t  *info = &stream->wavinfo;
 	int         samples;
 	int         size;
-	QFile *file = stream->file;
+	QFile	   *file;
+	midi	   *handle;
+	unsigned char *local_buffer;
+	unsigned long int local_buffer_size;
+
+	QFS_FOpenFile (stream->file, &file);
+	
+	local_buffer_size = Qfilesize(file);
+	
+	local_buffer = malloc(local_buffer_size);
+	Qread(file, local_buffer, local_buffer_size);
+	Qclose(file);
+
+	handle = WildMidi_OpenBuffer(local_buffer, local_buffer_size);
+	
+	if (handle == NULL) 
+		return NULL;	
 	
 	sfx = calloc (1, sizeof (sfx_t));
 	samples = shm->speed * 0.3;
@@ -148,7 +164,7 @@ midi_stream_open (sfx_t *_sfx)
 	sfx->close = midi_stream_close;
 
 	stream->sfx = sfx;
-	stream->file = file;
+	stream->file = handle;
 	stream->resample = SND_NoResampleStereo;
 
 	stream->read = midi_stream_read;
@@ -187,14 +203,18 @@ SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 	
 	local_buffer = malloc(local_buffer_size);
 	Qread(file, local_buffer, local_buffer_size);
+	Qclose(file);
 
 	// WildMidi takes ownership, so be damned if you touch it
 	handle = WildMidi_OpenBuffer(local_buffer, local_buffer_size);
 	
+
 	if (handle == NULL) 
 		return;
 	
 	info = get_info (handle);
+	
+	WildMidi_Close (handle);
 		
 	Sys_DPrintf ("stream %s\n", realname);
 	
@@ -206,7 +226,7 @@ SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 	sfx->release = SND_StreamRelease;
 	sfx->data = stream;
 	
-	stream->file = handle;
+	stream->file = realname;
 	stream->wavinfo = info;
 }
 #endif // HAVE_WILDMIDI
