@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <values.h>
 #include <stdint.h>
 
+#include "QF/bspfile.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/pcx.h"
@@ -46,81 +47,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define MEMSIZE (12 * 1024 * 1024)
 
+#define X point[0]
+#define Y point[1]
+#define Z point[2]
+
 /*
 Thanks fly to Id for a hackable game! :)
-
-Types are copied from the BSP section of the Quake specs,
-thanks to Olivier Montanuy et al.
 */
-
-/* Data structs */
-typedef struct dentry_t {
-	long        offset;
-	long        size;
-} dentry_t;
-
-typedef struct dheader_t {
-	long        version;
-	dentry_t    entities;
-	dentry_t    planes;
-
-	dentry_t    miptex;
-	dentry_t    vertices;
-
-	dentry_t    visilist;
-	dentry_t    nodes;
-
-	dentry_t    texinfo;
-	dentry_t    faces;
-
-	dentry_t    lightmaps;
-	dentry_t    clipnodes;
-
-	dentry_t    leaves;
-
-	dentry_t    iface;
-	dentry_t    edges;
-
-	dentry_t    ledges;
-	dentry_t    models;
-
-} dheader_t;
-
-/* vertices */
-typedef struct vertex_t {
-	float       X;
-	float       Y;
-	float       Z;
-} vertex_t;
-
-/* edges */
-typedef struct edge_t {
-	unsigned short vertex0;				// index of start vertex,
-										// 0..numvertices
-	unsigned short vertex1;				// index of end vertex, 0..numvertices
-} edge_t;
-
-/* faces */
-typedef struct face_t {
-	unsigned short plane_id;
-
-	unsigned short side;
-	long        ledge_id;
-
-	unsigned short ledge_num;
-	unsigned short texinfo_id;
-
-	unsigned char typelight;
-	unsigned char baselight;
-	unsigned char light[2];
-	long        lightmap;
-} face_t;
 
 /* MW */
 typedef struct edge_extra_t {
 	long        num_face_ref;
 	long        ref_faces[MAX_REF_FACES];	// which faces are referenced
-	vertex_t    ref_faces_normal[MAX_REF_FACES];	// normal of referenced
+	dvertex_t   ref_faces_normal[MAX_REF_FACES];	// normal of referenced
 													// faces
 	int         ref_faces_area[MAX_REF_FACES];	// area of the referenced faces 
 } edge_extra_t;
@@ -547,22 +486,16 @@ main (int argc, char *argv[])
 	QFile      *bspfile = NULL;
 	QFile      *outfile = NULL;
 	long        i = 0, j = 0, k = 0, x = 0;
-	struct dheader_t bsp_header;
 
-	struct vertex_t *vertexlist = NULL;
-	struct edge_t *edgelist = NULL;
-	struct face_t *facelist = NULL;
-	int        *ledges = NULL;
+	dvertex_t  *vertexlist;
+	dedge_t    *edgelist;
+	dface_t    *facelist;
+	int        *ledges;
 
 	/* edge removal stuff */
 	struct edge_extra_t *edge_extra = NULL;
-	struct vertex_t v0, v1, vect;
+	dvertex_t   v0, v1, vect;
 	int         area = 0, usearea;
-
-	long        numedges = 0;
-	long        numlistedges = 0;
-	long        numvertices = 0;
-	long        numfaces = 0;
 
 	float       minX = 0.0, maxX = 0.0, minY = 0.0, maxY = 0.0, minZ = 0.0;
 	float       maxZ = 0.0, midZ = 0.0, tempf = 0.0;
@@ -572,6 +505,8 @@ main (int argc, char *argv[])
 	image_t    *image;
 	struct options_t options;
 	int         drawcol;
+
+	bsp_t      *bsp;
 
 
 	/* Enough args? */
@@ -585,144 +520,18 @@ main (int argc, char *argv[])
 	get_options (&options, argc, argv);
 	show_options (&options);
 
-	bspfile = Qopen (options.bspf_name, "r");
+	bspfile = Qopen (options.bspf_name, "rbz");
 	if (bspfile == NULL) {
 		fprintf (stderr, "Error opening bsp file %s.\n", options.bspf_name);
 		return 1;
 	}
-
-	/* Read header */
-	printf ("Reading header...");
-	i = Qread (bspfile, &bsp_header, sizeof (struct dheader_t));
-	if (i != sizeof (struct dheader_t)) {
-		printf ("error %s!\n", strerror (errno));
-		return 1;
-	} else {
-		printf ("done.\n");
-	}
-
-	numvertices = (bsp_header.vertices.size / sizeof (struct vertex_t));
-	numedges = (bsp_header.edges.size / sizeof (struct edge_t));
-	numlistedges = (bsp_header.ledges.size / sizeof (short));
-	numfaces = (bsp_header.faces.size / sizeof (struct face_t));
-
-	/* display header */
-	printf ("Header info:\n\n");
-	printf (" version %ld\n", bsp_header.version);
-	printf (" vertices - offset %ld\n", bsp_header.vertices.offset);
-	printf ("          - size %ld", bsp_header.vertices.size);
-	printf (" [numvertices = %ld]\n", numvertices);
-	printf ("\n");
-
-	printf ("    edges - offset %ld\n", bsp_header.edges.offset);
-	printf ("          - size %ld", bsp_header.edges.size);
-	printf (" [numedges = %ld]\n", numedges);
-	printf ("\n");
-
-	printf ("   ledges - offset %ld\n", bsp_header.ledges.offset);
-	printf ("          - size %ld", bsp_header.ledges.size);
-	printf (" [numledges = %ld]\n", numlistedges);
-	printf ("\n");
-
-	printf ("    faces - offset %ld\n", bsp_header.faces.offset);
-	printf ("          - size %ld", bsp_header.faces.size);
-	printf (" [numfaces = %ld]\n", numfaces);
-	printf ("\n");
-
-	/* Read vertices - - - - - - - - - - - - - - - - - - - */
-	vertexlist = malloc (sizeof (struct vertex_t) * numvertices);
-	if (vertexlist == NULL) {
-		fprintf (stderr, "Error allocating %ld bytes for vertices.",
-				 sizeof (struct vertex_t) * numvertices);
-		return 2;
-	}
-
-	printf ("Reading %ld vertices...", numvertices);
-	if (Qseek (bspfile, bsp_header.vertices.offset, SEEK_SET) == -1) {
-		fprintf (stderr, "error seeking to %ld\n", bsp_header.vertices.offset);
-		return 1;
-	} else {
-		printf ("seek to %ld...", Qtell (bspfile));
-	}
-	i = Qread (bspfile, vertexlist, sizeof (struct vertex_t) * numvertices);
-	if (i != sizeof (struct vertex_t) * numvertices) {
-		fprintf (stderr, "error %s! only %ld read.\n", strerror (errno), i);
-		return 1;
-	} else {
-		printf ("successfully read %ld vertices.\n", i);
-	}
-
-	/* Read edges - - - - - - - - - - - - - - - - - - - - */
-	edgelist = malloc (sizeof (struct edge_t) * numedges);
-	if (edgelist == NULL) {
-		fprintf (stderr, "Error allocating %ld bytes for vertices.",
-				 sizeof (struct edge_t) * numedges);
-		return 2;
-	}
-
-	printf ("Reading %ld edges...", numedges);
-	if (Qseek (bspfile, bsp_header.edges.offset, SEEK_SET) == -1) {
-		fprintf (stderr, "error seeking to %ld\n", bsp_header.vertices.offset);
-		return 1;
-	} else {
-		printf ("seek to %ld...", Qtell (bspfile));
-	}
-	i = Qread (bspfile, edgelist, sizeof (struct edge_t) * numedges);
-	if (i != sizeof (struct edge_t) * numedges) {
-		fprintf (stderr, "error %s! only %ld read.\n", strerror (errno), i);
-		return 1;
-	} else {
-		printf ("successfully read %ld edges.\n", i);
-	}
-
-	/* Read ledges - - - - - - - - - - - - - - - - - - - */
-	ledges = malloc (sizeof (short) * numlistedges);
-	if (ledges == NULL) {
-		fprintf (stderr, "Error allocating %ld bytes for ledges.",
-				 sizeof (short) * numlistedges);
-		return 2;
-	}
-
-	printf ("Reading ledges...");
-	if (Qseek (bspfile, bsp_header.ledges.offset, SEEK_SET) == -1) {
-		fprintf (stderr, "error seeking to %ld\n", bsp_header.ledges.offset);
-		return 1;
-	} else {
-		printf ("seek to %ld...", Qtell (bspfile));
-	}
-	i = Qread (bspfile, ledges, sizeof (short) * numlistedges);
-	if (i != sizeof (short) * numlistedges) {
-		fprintf (stderr, "error %s! only %ld read.\n", strerror (errno), i);
-		return 1;
-	} else {
-		printf ("successfully read %ld ledges.\n", i);
-	}
-
-	/* Read faces - - - - - - - - - - - - - - - - - - - - */
-	facelist = malloc (sizeof (struct face_t) * numfaces);
-	if (facelist == NULL) {
-		fprintf (stderr, "Error allocating %ld bytes for faces.",
-				 sizeof (short) * numfaces);
-		return 2;
-	}
-
-	printf ("Reading faces...");
-	if (Qseek (bspfile, bsp_header.faces.offset, SEEK_SET) == -1) {
-		fprintf (stderr, "error seeking to %ld\n", bsp_header.faces.offset);
-		return 1;
-	} else {
-		printf ("seek to %ld...", Qtell (bspfile));
-	}
-	i = Qread (bspfile, facelist, sizeof (struct face_t) * numfaces);
-	if (i != sizeof (struct face_t) * numfaces) {
-		fprintf (stderr, "error %s! only %ld read.\n", strerror (errno), i);
-		return 1;
-	} else {
-		printf ("successfully read %ld faces.\n", i);
-	}
-
-	/* Should be done reading stuff - - - - - - - - - - - - - - */
+	bsp = LoadBSPFile (bspfile, Qfilesize (bspfile));
 	Qclose (bspfile);
+
+	vertexlist = bsp->vertexes;
+	edgelist = bsp->edges;
+	facelist = bsp->faces;
+	ledges = bsp->surfedges;
 
 	/* Precalc stuff if we're removing edges - - - - - - - - - - - */
 	/* 
@@ -732,33 +541,33 @@ main (int argc, char *argv[])
 
 	if (options.edgeremove) {
 		printf ("Precalc edge removal stuff...\n");
-		edge_extra = malloc (sizeof (struct edge_extra_t) * numedges);
+		edge_extra = malloc (sizeof (struct edge_extra_t) * bsp->numedges);
 		if (edge_extra == NULL) {
 			fprintf (stderr, "Error allocating %ld bytes for extra edge info.",
-					 sizeof (struct edge_extra_t) * numedges);
+					 (long) sizeof (struct edge_extra_t) * bsp->numedges);
 			return 2;
 		}
 		/* initialize the array */
-		for (i = 0; i < numedges; i++) {
+		for (i = 0; i < bsp->numedges; i++) {
 			edge_extra[i].num_face_ref = 0;
 			for (j = 0; j < MAX_REF_FACES; j++) {
 				edge_extra[i].ref_faces[j] = -1;
 			}
 		}
 
-		for (i = 0; i < numfaces; i++) {
+		for (i = 0; i < bsp->numfaces; i++) {
 			/* calculate the normal (cross product) */
-			/* starting edge: edgelist[ledges[facelist[i].ledge_id]] */
-			/* number of edges: facelist[i].ledge_num; */
+			/* starting edge: edgelist[ledges[facelist[i].firstedge]] */
+			/* number of edges: facelist[i].numedges; */
 
 			/* quick hack - just take the first 2 edges */
-			j = facelist[i].ledge_id;
+			j = facelist[i].firstedge;
 			k = j;
 			vect.X = 0.0;
 			vect.Y = 0.0;
 			vect.Z = 0.0;
 			while (vect.X == 0.0 && vect.Y == 0.0 && vect.Z == 0.0
-				   && k < (facelist[i].ledge_num + j)) {
+				   && k < (facelist[i].numedges + j)) {
 				/* If the first 2 are parællel edges, go with the next one */
 				k++;
 				/* 
@@ -766,45 +575,45 @@ main (int argc, char *argv[])
 
 				if (ledges[j] > 0) {
 					v0.X =
-						vertexlist[edgelist[abs ((int) ledges[j])].vertex0].X -
-						vertexlist[edgelist[abs ((int) ledges[j])].vertex1].X;
+						vertexlist[edgelist[abs ((int) ledges[j])].v[0]].X -
+						vertexlist[edgelist[abs ((int) ledges[j])].v[1]].X;
 					v0.Y =
-						vertexlist[edgelist[abs ((int) ledges[j])].vertex0].Y -
-						vertexlist[edgelist[abs ((int) ledges[j])].vertex1].Y;
+						vertexlist[edgelist[abs ((int) ledges[j])].v[0]].Y -
+						vertexlist[edgelist[abs ((int) ledges[j])].v[1]].Y;
 					v0.Z =
-						vertexlist[edgelist[abs ((int) ledges[j])].vertex0].Z -
-						vertexlist[edgelist[abs ((int) ledges[j])].vertex1].Z;
+						vertexlist[edgelist[abs ((int) ledges[j])].v[0]].Z -
+						vertexlist[edgelist[abs ((int) ledges[j])].v[1]].Z;
 
 					v1.X =
-						vertexlist[edgelist[abs ((int) ledges[k])].vertex0].X -
-						vertexlist[edgelist[abs ((int) ledges[k])].vertex1].X;
+						vertexlist[edgelist[abs ((int) ledges[k])].v[0]].X -
+						vertexlist[edgelist[abs ((int) ledges[k])].v[1]].X;
 					v1.Y =
-						vertexlist[edgelist[abs ((int) ledges[k])].vertex0].Y -
-						vertexlist[edgelist[abs ((int) ledges[k])].vertex1].Y;
+						vertexlist[edgelist[abs ((int) ledges[k])].v[0]].Y -
+						vertexlist[edgelist[abs ((int) ledges[k])].v[1]].Y;
 					v1.Z =
-						vertexlist[edgelist[abs ((int) ledges[k])].vertex0].Z -
-						vertexlist[edgelist[abs ((int) ledges[k])].vertex1].Z;
+						vertexlist[edgelist[abs ((int) ledges[k])].v[0]].Z -
+						vertexlist[edgelist[abs ((int) ledges[k])].v[1]].Z;
 				} else {
 					/* negative index, therefore walk in reverse order */
 					v0.X =
-						vertexlist[edgelist[abs ((int) ledges[j])].vertex1].X -
-						vertexlist[edgelist[abs ((int) ledges[j])].vertex0].X;
+						vertexlist[edgelist[abs ((int) ledges[j])].v[1]].X -
+						vertexlist[edgelist[abs ((int) ledges[j])].v[0]].X;
 					v0.Y =
-						vertexlist[edgelist[abs ((int) ledges[j])].vertex1].Y -
-						vertexlist[edgelist[abs ((int) ledges[j])].vertex0].Y;
+						vertexlist[edgelist[abs ((int) ledges[j])].v[1]].Y -
+						vertexlist[edgelist[abs ((int) ledges[j])].v[0]].Y;
 					v0.Z =
-						vertexlist[edgelist[abs ((int) ledges[j])].vertex1].Z -
-						vertexlist[edgelist[abs ((int) ledges[j])].vertex0].Z;
+						vertexlist[edgelist[abs ((int) ledges[j])].v[1]].Z -
+						vertexlist[edgelist[abs ((int) ledges[j])].v[0]].Z;
 
 					v1.X =
-						vertexlist[edgelist[abs ((int) ledges[k])].vertex1].X -
-						vertexlist[edgelist[abs ((int) ledges[k])].vertex0].X;
+						vertexlist[edgelist[abs ((int) ledges[k])].v[1]].X -
+						vertexlist[edgelist[abs ((int) ledges[k])].v[0]].X;
 					v1.Y =
-						vertexlist[edgelist[abs ((int) ledges[k])].vertex1].Y -
-						vertexlist[edgelist[abs ((int) ledges[k])].vertex0].Y;
+						vertexlist[edgelist[abs ((int) ledges[k])].v[1]].Y -
+						vertexlist[edgelist[abs ((int) ledges[k])].v[0]].Y;
 					v1.Z =
-						vertexlist[edgelist[abs ((int) ledges[k])].vertex1].Z -
-						vertexlist[edgelist[abs ((int) ledges[k])].vertex0].Z;
+						vertexlist[edgelist[abs ((int) ledges[k])].v[1]].Z -
+						vertexlist[edgelist[abs ((int) ledges[k])].v[0]].Z;
 				}
 
 				/* cross product */
@@ -841,10 +650,10 @@ main (int argc, char *argv[])
 			// printf("(%8.3f, %8.3f, %8.3f)\n",vect.X, vect.Y, vect.Z);
 
 			/* Now go put ref in all edges... */
-			/* printf("<id=%ld|num=%ld>",facelist[i].ledge_id,
-			   facelist[i].ledge_num); */
-			for (j = 0; j < facelist[i].ledge_num; j++) {
-				k = j + facelist[i].ledge_id;
+			/* printf("<id=%ld|num=%ld>",facelist[i].firstedge,
+			   facelist[i].numedges); */
+			for (j = 0; j < facelist[i].numedges; j++) {
+				k = j + facelist[i].firstedge;
 				x = edge_extra[abs ((int) ledges[k])].num_face_ref;
 				/* 
 				   printf("e%d(le%ld)",abs((int)ledges[k]),k); */
@@ -874,7 +683,7 @@ main (int argc, char *argv[])
 
 	printf ("Collecting min/max\n");
 	/* Collect min and max */
-	for (i = 0; i < numvertices; i++) {
+	for (i = 0; i < bsp->numvertexes; i++) {
 		/* DEBUG - print vertices */
 		// printf("vertex %ld: (%f, %f, %f)\n", i, vertexlist[i].X,
 		// vertexlist[i].Y, vertexlist[i].Z);
@@ -1036,15 +845,15 @@ main (int argc, char *argv[])
 	fprintf (stderr, "Plotting edges...");
 	k = 0;
 	drawcol = (options.edgeremove) ? 64 : 32;
-	for (i = 0; i < numedges; i++) {
+	for (i = 0; i < bsp->numedges; i++) {
 		/* 
 		   fprintf(stderr, "Edge %ld: vertex %d (%f, %f, %f) -> %d (%f, %f,
-		   %f)\n", i, edgelist[i].vertex0, vertexlist[edgelist[i].vertex0].X,
-		   vertexlist[edgelist[i].vertex0].Y,
-		   vertexlist[edgelist[i].vertex0].Z, edgelist[i].vertex1,
-		   vertexlist[edgelist[i].vertex1].X,
-		   vertexlist[edgelist[i].vertex1].Y,
-		   vertexlist[edgelist[i].vertex1].Z); */
+		   %f)\n", i, edgelist[i].v[0], vertexlist[edgelist[i].v[0]].X,
+		   vertexlist[edgelist[i].v[0]].Y,
+		   vertexlist[edgelist[i].v[0]].Z, edgelist[i].v[1],
+		   vertexlist[edgelist[i].v[1]].X,
+		   vertexlist[edgelist[i].v[1]].Y,
+		   vertexlist[edgelist[i].v[1]].Z); */
 		/* Do a check on this line ... see if we keep this line or not */
 		/* 
 		   fprintf(stderr,"edge %ld is referenced by %ld
@@ -1098,39 +907,39 @@ main (int argc, char *argv[])
 		if ((abs (tempf) < options.flat_threshold) &&
 			(usearea > options.area_threshold) &&
 			(sqrt
-			 ((vertexlist[edgelist[i].vertex0].X -
-			   vertexlist[edgelist[i].vertex1].X) *
-			  (vertexlist[edgelist[i].vertex0].X -
-			   vertexlist[edgelist[i].vertex1].X) +
-			  (vertexlist[edgelist[i].vertex0].Y -
-			   vertexlist[edgelist[i].vertex1].Y) *
-			  (vertexlist[edgelist[i].vertex0].Y -
-			   vertexlist[edgelist[i].vertex1].Y) +
-			  (vertexlist[edgelist[i].vertex0].Z -
-			   vertexlist[edgelist[i].vertex1].Z) *
-			  (vertexlist[edgelist[i].vertex0].Z -
-			   vertexlist[edgelist[i].vertex1].Z)) >
+			 ((vertexlist[edgelist[i].v[0]].X -
+			   vertexlist[edgelist[i].v[1]].X) *
+			  (vertexlist[edgelist[i].v[0]].X -
+			   vertexlist[edgelist[i].v[1]].X) +
+			  (vertexlist[edgelist[i].v[0]].Y -
+			   vertexlist[edgelist[i].v[1]].Y) *
+			  (vertexlist[edgelist[i].v[0]].Y -
+			   vertexlist[edgelist[i].v[1]].Y) +
+			  (vertexlist[edgelist[i].v[0]].Z -
+			   vertexlist[edgelist[i].v[1]].Z) *
+			  (vertexlist[edgelist[i].v[0]].Z -
+			   vertexlist[edgelist[i].v[1]].Z)) >
 			 options.linelen_threshold)) {
 			Zoffset0 =
 				(long) (options.z_pad *
-						(vertexlist[edgelist[i].vertex0].Z - midZ) / (maxZ -
+						(vertexlist[edgelist[i].v[0]].Z - midZ) / (maxZ -
 																	  minZ));
 			Zoffset1 =
 				(long) (options.z_pad *
-						(vertexlist[edgelist[i].vertex1].Z - midZ) / (maxZ -
+						(vertexlist[edgelist[i].v[1]].Z - midZ) / (maxZ -
 																	  minZ));
 
 			bresline (image,
-					  (long) ((vertexlist[edgelist[i].vertex0].X -
+					  (long) ((vertexlist[edgelist[i].v[0]].X -
 							   minX) / options.scaledown + options.image_pad +
 							  options.z_pad + (float) (Zoffset0 * Z_Xdir)),
-					  (long) ((vertexlist[edgelist[i].vertex0].Y -
+					  (long) ((vertexlist[edgelist[i].v[0]].Y -
 							   minY) / options.scaledown + options.image_pad +
 							  options.z_pad + (float) (Zoffset0 * Z_Ydir)),
-					  (long) ((vertexlist[edgelist[i].vertex1].X -
+					  (long) ((vertexlist[edgelist[i].v[1]].X -
 							   minX) / options.scaledown + options.image_pad +
 							  options.z_pad + (float) (Zoffset1 * Z_Xdir)),
-					  (long) ((vertexlist[edgelist[i].vertex1].Y -
+					  (long) ((vertexlist[edgelist[i].v[1]].Y -
 							   minY) / options.scaledown + options.image_pad +
 							  options.z_pad + (float) (Zoffset1 * Z_Ydir)),
 					  drawcol);
@@ -1139,7 +948,7 @@ main (int argc, char *argv[])
 		}
 
 	}
-	printf ("%ld edges plotted", numedges);
+	printf ("%d edges plotted", bsp->numedges);
 	if (options.edgeremove) {
 		printf (" (%ld edges removed)\n", k);
 	} else {
