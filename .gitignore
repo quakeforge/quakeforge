@@ -1,1 +1,10 @@
 ChangeLog
+Makefile
+Makefile.in
+aclocal.m4
+build-stamp
+config.cache
+config.log
+config.status
+configure
+configure-stamp

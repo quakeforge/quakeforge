@@ -31,9 +31,9 @@ AUTOMAKE_OPTIONS=	foreign
 #
 # Stuff that is common to both client and server
 #
-INCLUDES=	-I$(top_srcdir)/include $(GGI_CFLAGS) $(MGL_CFLAGS) $(SDL_CFLAGS) $(SVGA_CFLAGS) $(X_CFLAGS) $(GLX_CFLAGS) $(TDFXGL_CFLAGS)
+INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/qw/include $(GGI_CFLAGS) $(MGL_CFLAGS) $(SDL_CFLAGS) $(SVGA_CFLAGS) $(X_CFLAGS) $(GLX_CFLAGS) $(TDFXGL_CFLAGS)
 
-bin_PROGRAMS =	@TARGETS@
+bin_PROGRAMS =	@QW_TARGETS@
 
 EXTRA_PROGRAMS= qf-server \
 		qf-client-3dfx qf-client-fbdev qf-client-ggi qf-client-glx \

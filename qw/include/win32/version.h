@@ -32,6 +32,6 @@
 #define PROGRAM 	"QuakeForge"
 #define VERSION 	"0.3.0"
 #define QW_VERSION	"2.40"
-#define QSG_VERSION	"2.0"
+#define QSG_VERSION	""
 
 #endif	// _VERSION_H

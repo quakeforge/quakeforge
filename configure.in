@@ -1,0 +1,1469 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_PREREQ(2.13)
+AC_INIT(qw/source/sv_main.c)
+AC_REVISION($Revision$) dnl
+AM_CONFIG_HEADER(include/config.h)
+AC_CANONICAL_SYSTEM
+AC_VALIDATE_CACHED_SYSTEM_TUPLE(
+	rm $cache_file
+	echo restart configure
+	exit 1
+)
+
+
+dnl This is the only place where the package version appears
+AM_INIT_AUTOMAKE(quakeforge, 0.3.0)
+
+dnl Define the proper name and extra version numbers for package
+PROGRAM=QuakeForge
+NQ_VERSION=1.09
+NQ_QSG_VERSION=1.0
+QW_VERSION=2.40
+QW_QSG_VERSION=2.0
+
+AC_DEFINE_UNQUOTED(PROGRAM, 	"$PROGRAM")
+AC_DEFINE_UNQUOTED(NQ_VERSION,	"$NQ_VERSION")
+AC_DEFINE_UNQUOTED(QW_VERSION,	"$QW_VERSION")
+AC_DEFINE_UNQUOTED(QSG_VERSION,	"$QSG_VERSION")
+
+AC_SUBST(PROGRAM)
+AC_SUBST(NQ_VERSION)
+AC_SUBST(QW_VERSION)
+AC_SUBST(QSG_VERSION)
+
+ISODATE=`date +%Y-%m-%d`
+AC_SUBST(ISODATE)
+
+AC_LANG_C
+
+endian=""
+case "$host_os" in
+	mingw32*)
+		mingw=yes
+		CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/include/win32"
+		CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/include/win32/resources"
+		if test $host != $build; then
+			CC=$host_cpu-$host_os-gcc
+			endian="little"
+		fi
+		;;
+esac
+
+dnl ==================================================================
+dnl Checks for programs.
+dnl ==================================================================
+
+AC_PROG_INSTALL
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_LN_S
+AC_PROG_RANLIB
+AM_PROG_LEX
+AC_PROG_YACC
+
+AC_CHECK_LIB(l, main, LEXLIB="-ll", AC_CHECK_LIB(fl, main, LEXLIB="-lfl"))
+AC_SUBST(LEXLIB)
+
+set $CC
+if test "$1" = gcc; then
+	shift
+	args="$*"
+	AC_MSG_CHECKING(for fubared gcc)
+	if test `gcc --version` = 2.96; then
+		AC_MSG_RESULT(yes. you poor sod. Hope you have egcs)
+		CC="egcs $args"
+		set $CPP
+		shift
+		CPP="egcs $*"
+	else
+		AC_MSG_RESULT(no. good)
+	fi
+fi
+
+dnl ==================================================================
+dnl Checks for system services
+dnl ==================================================================
+
+AC_SYS_LONG_FILE_NAMES
+AC_EXEEXT
+AC_OBJEXT
+
+
+dnl ==================================================================
+dnl Checks for header files.
+dnl ==================================================================
+
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_HEADER_MAJOR
+AC_HEADER_SYS_WAIT
+AC_CHECK_HEADERS(
+	arpa/inet.h asm/io.h assert.h conio.h ctype.h ddraw.h dinput.h \
+	direct.h dirent.h dlfcn.h dmedia/audio.h dmedia/cdaudio.h dpmi.h \
+	dsound.h errno.h fcntl.h fnmatch.h ggi/ggi.h glide/sst1vid.h io.h \
+	libc.h limits.h linux/cdrom.h linux/joystick.h linux/soundcard.h \
+	machine/soundcard.h malloc.h math.h mgraph.h _mingw.h netdb.h \
+	netinet/in.h pwd.h setjmp.h signal.h stdarg.h stdio.h stdlib.h \
+	string.h strings.h sys/asoundlib.h sys/audioio.h sys/filio.h \
+	sys/ioctl.h sys/io.h sys/ipc.h sys/mman.h sys/param.h sys/poll.h \
+	sys/shm.h sys/signal.h sys/socket.h sys/soundcard.h sys/stat.h \
+	sys/time.h sys/types.h sys/wait.h time.h unistd.h vga.h \
+	vgakeyboard.h vgamouse.h windows.h winsock.h zlib.h
+)
+if test "x$mingw" = xyes; then
+	AC_MSG_CHECKING(for fnmatch.h)
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(HAVE_FNMATCH_H)
+else
+	AC_CHECK_HEADERS(fnmatch.h)
+fi
+
+dnl ==================================================================
+dnl Checks for typedefs, structures, and compiler characteristics
+dnl ==================================================================
+
+AC_C_CONST
+AC_C_INLINE
+AC_TYPE_SIZE_T
+AC_STRUCT_ST_BLKSIZE
+AC_HEADER_TIME
+AC_STRUCT_TM
+
+if test "x$cross_compiling" = xyes; then
+	AC_MSG_CHECKING(whether byte ordering is bigendian)
+	AC_ARG_WITH(endian,
+[  --with-endian=TYPE            set endian of target system for
+                                cross-compiling. TYPE = little or big.],
+		endian="$withval",
+	)
+	case "x$endian" in
+		xbig)
+			AC_DEFINE(WORDS_BIGENDIAN)
+			AC_MSG_RESULT(yes)
+			;;
+		xlittle)
+			AC_MSG_RESULT(no)
+			;;
+		x)
+			AC_MSG_RESULT(unspecified, use --with-endian={big,little})
+			exit 1
+			;;
+		x*)
+			AC_MSG_RESULT(unregognized endianess)
+			exit 1
+			;;
+	esac
+else
+	AC_C_BIGENDIAN
+fi
+
+AC_MSG_CHECKING(that fnmatch is in fnmatch.h)
+AC_TRY_COMPILE(
+	[#include "fnmatch.h"],
+	[int (*foo)() = fnmatch;],
+	AC_DEFINE(HAVE_FNMATCH_PROTO)
+	AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+)
+
+AC_MSG_CHECKING(for type of fpos_t)
+AC_TRY_COMPILE(
+	[#include <stdio.h>],
+	[fpos_t x = 0],
+	AC_MSG_RESULT(off_t),
+	AC_DEFINE(HAVE_FPOS_T_STRUCT)
+	AC_MSG_RESULT(struct)
+)
+
+AC_MSG_CHECKING(for socklen_t in sys/types.h)
+AC_TRY_COMPILE(
+	[#include <sys/types.h>],
+	[ socklen_t x = 0;],
+	AC_DEFINE(HAVE_SOCKLEN_T)
+	AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+	dnl FreeBSD 4.0 has it in sys/socket.h
+	AC_MSG_CHECKING(for socklen_t in sys/socket.h)
+	AC_TRY_COMPILE(
+		[#include <sys/types.h>
+		#include <sys/socket.h>],
+		[ socklen_t x = 0;],
+		AC_DEFINE(HAVE_SOCKLEN_T) AC_MSG_RESULT(yes),
+		AC_MSG_RESULT(no)
+	)
+)
+
+AC_MSG_CHECKING(for underscore prefix in names)
+AC_TRY_LINK(
+	[asm(".long _bar");
+	int bar;],
+	[],
+	AC_DEFINE(HAVE_SYM_PREFIX_UNDERSCORE) AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+)
+
+AC_MSG_CHECKING(for size_t in sys/types.h)
+AC_TRY_COMPILE(
+	[#include <sys/types.h>],
+	[ size_t x = 0;],
+	AC_DEFINE(HAVE_SIZE_T) AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+)
+
+dnl maybe these two (at least the 2nd) should only be checked if ipv6 is enabled?
+AC_MSG_CHECKING(for ss_len in struct sockaddr_storage)
+AC_TRY_COMPILE(
+	[#include <sys/types.h>
+	#include <sys/socket.h>],
+	[ void f(void) { struct sockaddr_storage ss; ss.ss_len=0; }],
+	AC_DEFINE(HAVE_SS_LEN) AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+)
+
+AC_MSG_CHECKING(for sin6_len in struct sockaddr_in6)
+AC_TRY_COMPILE(
+	[#include <sys/types.h>
+	#include <netinet/in.h>],
+	[ void f(void) { struct sockaddr_in6 s6; s6.sin6_len=0; }],
+	AC_DEFINE(HAVE_SIN6_LEN) AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+)
+
+AC_MSG_CHECKING(for sa_len in struct sockaddr)
+AC_TRY_COMPILE(
+	[#include <sys/types.h>
+	#include <netinet/in.h>],
+	[ void f(void) { struct sockaddr sa; sa.sa_len=0; }],
+	AC_DEFINE(HAVE_SA_LEN) AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+)
+
+AC_MSG_CHECKING(for zero length array syntax)
+AC_TRY_COMPILE(
+	[],
+	[struct { int foo; int bar[0]; } foo;],
+	AC_DEFINE(ZERO_LENGTH_ARRAY,0) AC_MSG_RESULT([0]),
+	AC_TRY_COMPILE(
+	    [],
+		[struct { int foo; int bar[]; } foo;],
+		AC_DEFINE(ZERO_LENGTH_ARRAY,) AC_MSG_RESULT([]),
+		AC_DEFINE(ZERO_LENGTH_ARRAY,1) AC_MSG_RESULT([1] sorry about the waste)
+	)
+)
+
+dnl ==================================================================
+dnl Checks for library functions.
+dnl ==================================================================
+
+AC_FUNC_ALLOCA
+AC_FUNC_MEMCMP
+AC_FUNC_MMAP
+AC_TYPE_SIGNAL
+AC_FUNC_VPRINTF
+AC_CHECK_FUNCS(
+	gethostname gethostbyname connect gettimeofday getwd mkdir \
+	ftime _ftime fcntl stat putenv select socket strerror strstr \
+	snprintf _snprintf vsnprintf _vsnprintf strsep dlopen getaddrinfo \
+	getnameinfo
+)
+
+DL_LIBS=""
+if test "x$ac_cv_func_dlopen" != "xyes"; then
+	AC_CHECK_LIB(dl, dlopen,
+		AC_DEFINE(HAVE_DLOPEN) DL_LIBS="-ldl"
+	)
+fi
+AC_SUBST(DL_LIBS)
+
+dnl Checks for stricmp/strcasecmp
+AC_CHECK_FUNC(stricmp,,
+	AC_CHECK_FUNC(strcasecmp, AC_DEFINE(stricmp,strcasecmp)))
+
+dnl Check for vsnprintf
+if test "x$ac_cv_func_vsnprintf" = "xno" -a \
+	"x$ac_cv_func__vsnprintf" = "xno"; then
+	dnl libdb may have this
+	AC_CHECK_LIB(db,vsnprintf)
+fi
+
+dnl Checks for working -lm
+AC_CHECK_LIB(m, pow,, AC_MSG_ERROR([math library (-lm) appears broken]))
+
+AC_ARG_ENABLE(zlib,
+[  --disable-zlib          disable zlib support],
+)
+
+if test "x$enable_zlib" != "xno"; then
+  dnl Check for working -lz
+  dnl Note - must have gztell *and* gzgets in -lz *and* zlib.h
+  AC_CHECK_LIB(z, gztell, HAVE_ZLIB=yes, HAVE_ZLIB=no, [$LIBS])
+  if test "x$HAVE_ZLIB" = "xyes"; then
+     AC_CHECK_LIB(z, gzgets, HAVE_ZLIB=yes, HAVE_ZLIB=no, [$LIBS])
+     if test "x$HAVE_ZLIB" = "xyes"; then
+        AC_CHECK_HEADER(zlib.h, HAVE_ZLIB=yes, HAVE_ZLIB=no)
+        if test "x$HAVE_ZLIB" = "xyes"; then
+           Z_LIBS="-lz"
+           AC_DEFINE(HAVE_ZLIB)
+        fi
+     fi
+  fi
+fi
+
+
+AC_ARG_WITH(ipv6,
+[  --with-ipv6             enable IPv6 support. Optional argument specifies
+                          location of inet6 libraries.],
+	if test "x$withval" = xno ; then
+		NETTYPE_IPV6=no
+	else
+		AC_DEFINE(HAVE_IPV6)
+		NETTYPE_IPV6=yes
+		if test "x$withval" != xyes ; then
+			LIBS="$LIBS -L${withval}"
+		fi
+	fi
+,
+	NETTYPE_IPV6=no
+)
+AM_CONDITIONAL(NETTYPE_IPV6, test "x$NETTYPE_IPV6" = "xyes")
+
+dnl Checks for MGL support
+AC_ARG_WITH(mgl,
+[  --with-mgl[=DIR]        use MGL found in DIR],
+HAVE_MGL=$withval, HAVE_MGL=auto)
+if test "x$HAVE_MGL" != xno; then
+	if test "x$ac_cv_header_windows_h" != "xyes"; then
+		HAVE_MGL=no
+	else
+		if test "x$HAVE_MGL" != xauto; then
+			MGL_CFLAGS="$MGL_CFLAGS -I$withval/include"
+			MGL_LIBS="$MGL_LIBS -L$withval/lib"
+		fi
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $MGL_CFLAGS"
+		AC_CHECK_HEADER(mgraph.h, HAVE_MGL=yes, HAVE_MGL=no)
+		CPPFLAGS="$save_CPPFLAGS"
+
+		dnl Make sure -lmgllt or -lmglfx works
+		if test "x$HAVE_MGL" = xyes; then
+			for lib in mglfx mgllt; do 
+				MGL_LIBS="$MGL_LIBS -lgdi32 -lwinmm -ldinput -lddraw"
+				AC_CHECK_LIB($lib, MGL_registerDriver,
+					MGL_LIBS="-l$lib $MGL_LIBS"
+					HAVE_MGL=yes
+					break,
+					HAVE_MGL=no,
+					[$MGL_LIBS]
+				)
+			done
+		fi
+	fi
+	if test "x$HAVE_MGL" != xyes; then
+		MGL_CFLAGS="" MGL_LIBS=""
+	fi
+fi
+AC_SUBST(HAVE_MGL)
+AC_SUBST(MGL_CFLAGS)
+AC_SUBST(MGL_LIBS)
+
+dnl Checks for LibGGI support
+AC_ARG_WITH(ggi,
+[  --with-ggi[=DIR]        use LibGGI found in DIR],
+HAVE_GGI=$withval, HAVE_GGI=auto)
+if test "x$HAVE_GGI" != xno; then
+	if test "x$HAVE_GGI" != xauto; then
+		GGI_CFLAGS="$GGI_CFLAGS= -I$withval/include"
+		GGI_LIBS="$GGI_LIBS -L$withval/lib"
+		dnl The default system location is /usr/include or /usr/local/include
+		dnl and we (obviously) do not need to set CFLAGS for that
+	fi
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $GGI_CFLAGS"
+	AC_CHECK_HEADER(ggi/ggi.h, HAVE_GGI=yes, HAVE_GGI=no)
+	CPPFLAGS="$save_CPPFLAGS"
+
+	dnl Make sure -lggi works
+	if test "x$HAVE_GGI" = xyes; then
+		AC_CHECK_LIB(ggi, ggiEventsQueued,
+			GGI_LIBS="$GGI_LIBS -lggi"
+			HAVE_GGI=yes,
+			HAVE_GGI=no,
+			[$GGI_LIBS]
+		)
+	fi 
+	if test "x$HAVE_GGI" != xyes; then
+		GGI_CFLAGS="" GGI_LIBS=""
+	fi
+fi
+AC_SUBST(HAVE_GGI)
+AC_SUBST(GGI_CFLAGS)
+AC_SUBST(GGI_LIBS)
+
+dnl Checks for Linux FBDev support
+AC_ARG_WITH(fbdev,
+[  --with-fbdev            use Linux framebuffer device],
+HAVE_FBDEV=$withval, HAVE_FBDEV=auto)
+if test "x$HAVE_FBDEV" != xno; then
+	dnl We should still be able to compile it even if
+	dnl there is no fbdev support in the running kernel
+	AC_CHECK_HEADERS(linux/fb.h fbset.h, HAVE_FBDEV=yes, HAVE_FBDEV=no)
+fi
+AC_SUBST(HAVE_FBDEV)
+if test "x$HAVE_FBDEV" = xyes; then
+	AC_MSG_CHECKING(for FB_AUX_VGA_PLANES_VGA4)
+	AC_TRY_COMPILE(
+		[#include "linux/fb.h"],
+		[int foo = FB_AUX_VGA_PLANES_VGA4;],
+		AC_DEFINE(HAVE_FB_AUX_VGA_PLANES_VGA4)
+		AC_MSG_RESULT(yes),
+		AC_MSG_RESULT(no)
+	)
+	AC_MSG_CHECKING(for FB_AUX_VGA_PLANES_CFB4)
+	AC_TRY_COMPILE(
+		[#include "linux/fb.h"],
+		[int foo = FB_AUX_VGA_PLANES_CFB4;],
+		AC_DEFINE(HAVE_FB_AUX_VGA_PLANES_CFB4)
+		AC_MSG_RESULT(yes),
+		AC_MSG_RESULT(no)
+	)
+	AC_MSG_CHECKING(for FB_AUX_VGA_PLANES_CFB8)
+	AC_TRY_COMPILE(
+		[#include "linux/fb.h"],
+		[int foo = FB_AUX_VGA_PLANES_CFB8;],
+		AC_DEFINE(HAVE_FB_AUX_VGA_PLANES_CFB8)
+		AC_MSG_RESULT(yes),
+		AC_MSG_RESULT(no)
+	)
+fi
+
+dnl Checks for SVGALib support
+AC_ARG_WITH(svga,
+[  --with-svga[=DIR]       use SVGALib found in DIR],
+HAVE_SVGA=$withval, HAVE_SVGA=auto)
+if test "x$HAVE_SVGA" != xno; then
+	if test "x$HAVE_SVGA" != xauto; then
+		SVGA_CFLAGS="$SVGA_CFLAGS -I$withval/include"
+		SVGA_LIBS="$SVGA_LIBS -L$withval/lib"
+		dnl The default system location is /usr/include or /usr/local/include
+		dnl and we (obviously) do not need to set CFLAGS for that
+	fi
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $SVGA_CFLAGS"
+	AC_CHECK_HEADER(vga.h, HAVE_SVGA=yes, HAVE_SVGA=no)
+	CPPFLAGS="$save_CPPFLAGS"
+
+	dnl Make sure -lvga works
+	if test "x$HAVE_SVGA" = xyes; then
+		AC_CHECK_LIB(vga, vga_getmousetype, SVGA_LIBS="$SVGA_LIBS -lvga"
+			HAVE_SVGA=yes, HAVE_SVGA=no, [$SVGA_LIBS]
+		)
+	fi 
+	if test "x$HAVE_SVGA" != xyes; then
+		SVGA_CFLAGS="" SVGA_LIBS=""
+	fi
+fi
+AC_SUBST(HAVE_SVGA)
+AC_SUBST(SVGA_CFLAGS)
+AC_SUBST(SVGA_LIBS)
+
+dnl Checks for X11 and XShm
+AC_PATH_XTRA
+if test "x$no_x" = x; then
+	HAVE_X=yes
+	AC_CHECK_LIB(Xext, XShmQueryExtension,
+		X_SHM_LIB=-lXext,
+		HAVE_X=no,
+		[ $X_LIBS -lX11 $X_EXTRA_LIBS ]
+	)
+fi
+AC_SUBST(X_SHM_LIB)
+
+dnl Check for XFree86-VidMode support
+AC_ARG_ENABLE(vidmode,
+[  --enable-vidmode        use XFree86 VidMode extension, if available],
+HAVE_VIDMODE=$enable_vidmode, HAVE_VIDMODE=auto)
+if test "x$HAVE_VIDMODE" != xno; then
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$X_CFLAGS $CPPFLAGS"
+	AC_CHECK_HEADER(X11/extensions/xf86vmode.h,
+		dnl Make sure the library works
+		AC_CHECK_LIB(Xxf86vm, XF86VidModeSwitchToMode,
+			AC_DEFINE(HAVE_VIDMODE)
+			VIDMODE_LIBS="-lXxf86vm",,
+			[$X_LIBS -lXext -lX11 $X_EXTRA_LIBS]
+		)
+	)
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+AC_SUBST(VIDMODE_LIBS)
+
+dnl Check for DGA support
+AC_ARG_ENABLE(dga,
+[  --enable-dga            use XFree86 DGA extension, if available],
+HAVE_DGA=$enable_dga, HAVE_DGA=auto)
+if test "x$HAVE_DGA" != xno; then
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$X_CFLAGS $CPPFLAGS"
+	AC_CHECK_HEADER(X11/extensions/xf86dga.h,
+		dnl Make sure the library works
+		AC_CHECK_LIB(Xxf86dga, XF86DGAQueryVersion,
+			AC_DEFINE(HAVE_DGA)
+			DGA_LIBS="-lXxf86dga",,
+			[$X_LIBS -lXext -lX11 $X_EXTRA_LIBS]
+		)
+	)
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+AC_SUBST(DGA_LIBS)
+
+dnl Checks for GLIDE support
+AC_ARG_WITH(glide,
+[  --with-glide=DIR        use the GLIDE 2.x SDK found in DIR],
+HAS_GLIDE=$withval, HAS_GLIDE=auto)
+if test "x$HAS_GLIDE" != xno; then
+	if test "x$HAS_GLIDE" != xauto; then
+		GLIDE_CFLAGS="$GLIDE_CFLAGS -I$withval/include"
+		GLIDE_LIBS="$GLIDE_LIBS -L$withval/lib"
+	else
+		GLIDE_CFLAGS="$GLIDE_CFLAGS -I/usr/include/glide -I/usr/local/include/glide"
+	fi
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $GLIDE_CFLAGS"
+	AC_CHECK_HEADER(glide.h, HAS_GLIDE=yes, HAS_GLIDE=no)
+	if test "x$HAS_GLIDE" != xyes; then
+		HAS_GLIDE=no
+	else
+		AC_DEFINE(HAVE_GLIDE)
+	fi
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+AC_SUBST(GLIDE_CFLAGS)
+AC_SUBST(GLIDE_LIBS)
+
+dnl Checks for GLX support
+AC_ARG_WITH(glx,
+[  --with-glx[=DIR]        use GLX with libraries found in DIR],
+	glx_libraries=$withval, glx_libraries=auto
+)
+AC_ARG_WITH(glx-includes,
+[  --with-glx-includes[=DIR]
+                          use GLX with header files found in DIR],
+	glx_includes=$withval, glx_includes=auto
+)
+if test "x$glx_includes" = xno; then
+	glx_libraries=""
+fi
+if test "x$glx_librariesS" = xno; then
+	glx_includes=""
+fi
+
+dnl Checks for GLX headers. lib[Mesa]GL should be either in a standard
+dnl include directory or the X include directory. Either way, we
+dnl use X_CFLAGS.
+if test "x$glx_includes" != xauto -a "x$glx_includes" != x; then
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS -I$glx_includes"
+	AC_CHECK_HEADER($glx_includes/GL/gl.h, HAVE_GLX=yes, HAVE_GLX=no )
+	CPPFLAGS="$save_CPPFLAGS"
+else
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $X_CFLAGS"
+	AC_CHECK_HEADER(GL/gl.h, HAVE_GLX=yes, HAVE_GLX=no)
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+
+save_CPPFLAGS="$CPPFLAGS"
+CPPFLAGS="$CPPFLAGS $X_CFLAGS"
+dnl Checks for OpenGL features in headers
+if test "x$HAVE_GLX" != xno; then
+	AC_MSG_CHECKING(for GL_COLOR_INDEX8_EXT in GL/gl.h)
+	AC_TRY_COMPILE([#include "GL/gl.h"],
+		[ int x = (int) GL_COLOR_INDEX8_EXT;],
+		AC_DEFINE(HAVE_GL_COLOR_INDEX8_EXT) AC_MSG_RESULT(yes),
+		AC_MSG_RESULT(no)
+	)
+	AC_CHECK_HEADERS(GL/glext.h, HAVE_GL_GLEXT_H=yes)
+fi
+CPPFLAGS="$save_CPPFLAGS"
+
+dnl Make sure -lGL or -lMesaGL works
+if test "x$glx_libraries" != xauto -a "x$glx_libraries" != xno -a "x$glx_libraries" != x; then
+	if test "x$HAVE_GLX" = xyes; then
+		HAVE_GLX=no
+		AC_CHECK_LIB(GL, glColor4f,
+			HAVE_GLX=yes
+			OGL_NAME=GL,,
+			[ -L$glx_libraries ]
+		)
+		if test "x$HAVE_GLX" != xyes; then
+			AC_CHECK_LIB(MesaGL, glColor4f,
+				HAVE_GLX=yes
+				OGL_NAME=MesaGL,,
+				[ -L$glx_libraries ]
+			)
+		fi
+	fi
+else
+	if test "x$glx_libraries" != xauto \
+			-o "x$glx_libraries" != xno \
+			-o "x$glx_libraries" != x; then
+		glx_libraries=""
+	fi
+	
+	if test "x$HAVE_GLX" = xyes; then
+		HAVE_GLX=no
+		AC_CHECK_LIB(GL, glColor4f,
+			HAVE_GLX=yes
+			OGL_NAME=GL,,
+			[ $X_LIBS ]
+		)
+		if test "x$HAVE_GLX" != xyes; then
+			AC_CHECK_LIB(MesaGL, glColor4f,
+				HAVE_GLX=yes
+				OGL_NAME=MesaGL,,
+				[ $X_LIBS ]
+			)
+		fi
+	fi
+fi
+
+if test "x$HAVE_GLX" = xyes; then
+	test "x$GLX_CFLAGS" != x &&	GLX_CFLAGS="-I$GLX_CFLAGS"
+	test "x$glx_libraries" != x && GLX_LIBS="-L$glx_libraries"
+	GLX_LIBS="$GLX_LIBS -l$OGL_NAME"
+	AC_DEFINE(HAVE_GLX)
+else
+	GLX_CFLAGS=""
+	GLX_LIBS=""
+fi
+AC_SUBST(GLX_CFLAGS)
+AC_SUBST(GLX_LIBS)
+
+dnl SDL/SDL-GL checks
+AM_PATH_SDL(1.0.1, HAVE_SDL=yes, HAVE_SDL=no)
+
+if test "x$HAVE_SDL" != xno; then
+	AM_CHECK_SGL(1.1.1, HAVE_SGL=yes, HAVE_SGL=no)
+fi
+AC_SUBST(HAVE_SDL)
+AC_SUBST(HAVE_SGL)
+
+# 3Dfx stuff..
+
+# First we see if we can use mesa with glide support..
+# if not then try the MiniGL..
+
+TDFXGL_NAME=""
+AC_ARG_WITH(3dfx,
+[  --with-3dfx             support 3Dfx output for the V1/V2, if an argument
+                          is specified it will be used as the GL wrapper lib
+                          for glide.],
+
+   HAS_3dfx=$withval, HAS_3dfx=auto)
+if test "x$HAS_3dfx" != "xno" -a "x$HAS_SVGA" != "xno" \
+        -a "x$HAS_GLIDE" != "xno"; then
+   if test "x$HAS_3dfx" != "xauto" -a "x$HAS_3dfx" != "xyes"; then
+      TDFXGL_NAME="$HAS_3dfx"
+   fi
+   if test -z "$TDFXGL_NAME"; then
+       dnl Check in reverse order of preference
+       for a in 3dfxgl $OGL_NAME; do
+          AC_CHECK_LIB($a, fxMesaCreateContext, TDFXGL_NAME=$a, qwfoo=qwfoo,
+          [$GLIDE_LIBS $TDFXGL_LIBS])
+       done
+   fi
+fi
+AC_MSG_CHECKING(for 3Dfx support)
+if test -n "$TDFXGL_NAME"; then
+   TDFXGL_CFLAGS="$GLIDE_CFLAGS"
+   TDFXGL_LIBS="$GLIDE_LIBS -l$TDFXGL_NAME"
+   HAVE_TDFXGL="yes"
+   AC_MSG_RESULT(yes (using $TDFXGL_NAME))
+else
+   TDFXGL_CFLAGS=""
+   TDFXGL_NAME=""
+   TDFXGL_LIBS=""
+   AC_MSG_RESULT(no)
+fi
+AC_SUBST(TDFXGL_CFLAGS)
+AC_SUBST(TDFXGL_LIBS)
+
+dnl ==================================================================
+dnl Checks for system type
+dnl ==================================================================
+
+dnl Checks for which system driver to use
+AC_MSG_CHECKING(for system driver)
+case "${host}" in
+   i?86-*-mingw32*)
+	SYSTYPE=WIN32
+	AC_MSG_RESULT([Win32 driver])
+	;;
+   *)
+	SYSTYPE=POSIX
+	AC_MSG_RESULT([default POSIX driver])
+	;;
+esac
+AM_CONDITIONAL(SYSTYPE_WIN32, test "$SYSTYPE" = "WIN32")
+
+dnl Check for ia32
+AC_MSG_CHECKING(for an ia32 machine)
+case "${host}" in
+	i?86-*-*)
+		AC_MSG_RESULT(yes)
+		AC_MSG_CHECKING(to see if we should disable asm optimizations)
+		AC_ARG_ENABLE(asmopt,
+			[  --disable-asmopt        disable assembler optimization],
+			AC_MSG_RESULT(yes),
+ 			AC_DEFINE(USE_INTEL_ASM)
+			ASM_ARCH=yes
+			AC_MSG_RESULT(no)
+		)
+		;;
+	*) AC_MSG_RESULT(no)
+esac
+AM_CONDITIONAL(ASM_ARCH, test "$ASM_ARCH")
+
+dnl ==================================================================
+dnl Checks for sound
+dnl ==================================================================
+
+AC_CHECK_LIB(mme,waveOutOpen,HAVE_LIBMME=yes)
+
+AC_ARG_ENABLE(alsa,
+[  --disable-alsa          disable alsa support],
+)      
+
+SNDTYPE=""
+SOUND_LIBS=""
+SOUND_CFLAGS=""
+AC_MSG_CHECKING(for sound support)
+
+dnl SDL digital audio
+AC_ARG_ENABLE(sdl-audio,
+[  --enable-sdl-audio      use SDL for audio output],
+	if test -z "$SNDTYPE" -a "x$HAVE_SDL" = "xyes"; then
+		SNDTYPE="SDL"
+		SOUND_LIBS="$SDL_LIBS"
+	fi
+)
+
+if test "x$enable_alsa" != "xno"; then
+	if test -z "$SNDTYPE" -a "x$ac_cv_header_sys_asoundlib_h" = "xyes"; then
+		AC_EGREP_CPP([QF_maGiC_VALUE],
+			[
+#include <sys/asoundlib.h>
+#if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
+#if SND_LIB_MAJOR>0 || (SND_LIB_MAJOR==0 && SND_LIB_MINOR==5)
+QF_maGiC_VALUE
+#endif
+#endif
+			],
+			SNDTYPE="ALSA_0_5"
+			SOUND_LIBS="-lasound",
+			AC_EGREP_CPP([QF_maGiC_VALUE],
+				[
+#include <sys/asoundlib.h>
+#if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
+#if SND_LIB_MAJOR>0 || (SND_LIB_MAJOR==0 && SND_LIB_MINOR>=6)
+QF_maGiC_VALUE
+#endif
+#endif
+				],
+				SNDTYPE="ALSA_0_6"
+				SOUND_LIBS="-lasound"
+			)
+		)
+	fi
+fi
+
+dnl MME
+if test -z "$SNDTYPE" -a "x$ac_cv_header_mme_mmsystem_h" = "xyes" -a "x$HAVE_LIBMME" = "xyes"; then
+	AC_EGREP_CPP([QF_maGiC_VALUE],
+		[
+#include <mme/mmsystem.h>
+#ifdef WAVE_OPEN_SHAREABLE
+QF_maGiC_VALUE
+#endif
+		],
+		SNDTYPE="MME"
+		SOUND_LIBS="-lmme"
+	)
+fi
+
+dnl OSS
+if test -z "$SNDTYPE" -a "x$ac_cv_header_sys_soundcard_h" = "xyes"; then
+	AC_EGREP_CPP([QF_maGiC_VALUE],[
+#include <sys/soundcard.h>
+#ifdef SNDCTL_DSP_SETTRIGGER
+QF_maGiC_VALUE
+#endif
+	], SNDTYPE="OSS")
+fi
+if test -z "$SNDTYPE" -a "x$ac_cv_header_linux_soundcard_h" = "xyes"; then
+	AC_EGREP_CPP([QF_maGiC_VALUE],[
+#include <linux/soundcard.h>
+#ifdef SNDCTL_DSP_SETTRIGGER
+QF_maGiC_VALUE
+#endif
+	], SNDTYPE="OSS")
+fi
+if test -z "$SNDTYPE" -a "x$ac_cv_header_machine_soundcard_h" = "xyes"; then
+	AC_EGREP_CPP([QF_maGiC_VALUE],[
+#include <machine/soundcard.h>
+#ifdef SNDCTL_DSP_SETTRIGGER
+QF_maGiC_VALUE
+#endif
+	], SNDTYPE="OSS")
+fi
+
+dnl SGI
+if test -z "$SNDTYPE" -a "x$ac_cv_header_dmedia_audio_h" = "xyes"; then
+   AC_EGREP_CPP([QF_maGiC_VALUE],[
+#include <dmedia/audio.h>
+#ifdef AL_SAMPLE_16
+#ifdef AL_RATE
+QF_maGiC_VALUE
+#endif
+#endif
+	], SNDTYPE="SGI" SOUND_LIBS="-laudio")
+fi
+
+dnl Sun
+if test -z "$SNDTYPE" -a "x$ac_cv_header_sys_audioio_h" = "xyes"; then
+   AC_EGREP_CPP([QF_maGiC_VALUE],[
+#include <sys/audioio.h>
+#ifdef AUDIO_SETINFO
+QF_maGiC_VALUE
+#endif
+	], SNDTYPE="SUN")
+fi
+
+dnl Win32
+if test -z "$SNDTYPE" -a "x$ac_cv_header_windows_h" = "xyes" -a \
+	"x$ac_cv_header_mmsystem_h" = "xyes"; then
+  AC_EGREP_CPP([QF_maGiC_VALUE],[
+#include <windows.h>
+#include <mmsystem.h>
+#ifdef GMEM_MOVEABLE
+#ifdef WAVE_FORMAT_PCM
+QF_maGiC_VALUE
+#endif
+#endif
+    ], SNDTYPE="WIN32"
+       SOUND_LIBS="-lwinmm")
+fi
+
+if test "$SNDTYPE"; then
+	AC_MSG_RESULT([yes ($SNDTYPE)])
+else
+	AC_MSG_RESULT([no, using null sound driver])
+fi
+AC_SUBST(SOUND_LIBS)
+AC_SUBST(SOUND_CFLAGS)
+
+AM_CONDITIONAL(SNDTYPE_ALSA_0_5, test "$SNDTYPE" = "ALSA_0_5")
+AM_CONDITIONAL(SNDTYPE_ALSA_0_6, test "$SNDTYPE" = "ALSA_0_6")
+AM_CONDITIONAL(SNDTYPE_MME, test "$SNDTYPE" = "MME")
+AM_CONDITIONAL(SNDTYPE_OSS, test "$SNDTYPE" = "OSS")
+AM_CONDITIONAL(SNDTYPE_SDL, test "$SNDTYPE" = "SDL")
+AM_CONDITIONAL(SNDTYPE_SGI, test "$SNDTYPE" = "SGI")
+AM_CONDITIONAL(SNDTYPE_SUN, test "$SNDTYPE" = "SUN")
+AM_CONDITIONAL(SNDTYPE_WIN32, test "$SNDTYPE" = "WIN32")
+AM_CONDITIONAL(SNDTYPE_NULL, test "$SNDTYPE" != "ALSA_0_5" -a "$SNDTYPE" != "ALSA_0_6" -a "$SNDTYPE" != "MME" -a "$SNDTYPE" != "OSS" -a "$SNDTYPE" != "SDL" -a "$SNDTYPE" != "SGI" -a "$SNDTYPE" != "SUN" -a "$SNDTYPE" != "WIN32")
+
+dnl Tests for joystick support
+AC_MSG_CHECKING(for joystick support)
+if test -z "$JOYTYPE" -a "x$ac_cv_header_linux_joystick_h" = "xyes"; then
+	AC_EGREP_CPP([QF_maGiC_VALUE],[
+#include <linux/joystick.h>
+#ifdef JS_VERSION
+QF_maGiC_VALUE
+#endif
+	], JOYTYPE="Linux")
+fi
+
+if test -z "$JOYTYPE" -a "x$ac_cv_header_dinput_h" = "xyes"; then
+	JOYTYPE="Win32"
+fi
+
+if test "$JOYTYPE"; then
+	AC_MSG_RESULT([yes ($JOYTYPE)])
+else
+	AC_MSG_RESULT([no, using null joystick driver])
+fi
+AC_SUBST(JOY_LIBS)
+AC_SUBST(JOY_CFLAGS)
+AM_CONDITIONAL(JOYTYPE_LINUX, test "$JOYTYPE" = "Linux")
+AM_CONDITIONAL(JOYTYPE_WIN32, test "$JOYTYPE" = "Win32")
+AM_CONDITIONAL(JOYTYPE_NULL, test "$JOYTYPE" != "Linux" -a "$JOYTYPE" != "Win32")
+
+dnl ==================================================================
+dnl Checks for CD-ROM
+dnl ==================================================================
+
+CD_LIBS=""
+CD_CFLAGS=""
+
+AC_MSG_CHECKING(for CD audio support)
+
+dnl SDL CD audio
+AC_ARG_ENABLE(sdl-cd-audio,
+[  --enable-sdl-cd-audio   use SDL for CD audio output],
+	if test -z "$CDTYPE" -a "x$HAVE_SDL" = "xyes"; then
+		AC_MSG_RESULT([yes (SDL)])
+		CDTYPE=SDL
+		CD_LIBS="$SDL_LIBS"
+	fi
+)
+
+dnl Linux
+if test -z "$CDTYPE"; then
+	AC_EGREP_CPP([QF_maGiC_VALUE],
+		[
+#include <linux/cdrom.h>
+#ifdef CDROMREADTOCENTRY
+QF_maGiC_VALUE
+#endif
+		],
+		AC_MSG_RESULT([yes (Linux)])
+		CDTYPE=LINUX
+	)
+fi
+
+dnl SGI
+if test -z "$CDTYPE"; then
+	AC_EGREP_CPP([QF_maGiC_VALUE],
+		[
+#include <dmedia/cdaudio.h>
+#ifdef CD_READY
+QF_maGiC_VALUE
+#endif
+		],
+		AC_MSG_RESULT([yes (SGI)])
+		CDTYPE=SGI
+		CD_LIBS="-lcdaudio -lmediad -lds"
+	)
+fi
+
+if test -z "$CDTYPE"; then
+	AC_EGREP_CPP([QF_maGIC_VALUE],
+		[
+#include <windows.h>
+#if defined(MCI_SET_DOOR_OPEN)
+QF_maGiC_VALUE
+#endif
+		],
+		AC_MSG_RESULT([yes (Win32)])
+	    CDTYPE=WIN32
+	)
+fi
+
+test -z "$CDTYPE" && AC_MSG_RESULT([no, using null CD audio driver])
+AC_SUBST(CD_LIBS)
+AC_SUBST(CD_CFLAGS)
+
+AM_CONDITIONAL(CDTYPE_LINUX, test "$CDTYPE" = "LINUX")
+AM_CONDITIONAL(CDTYPE_SDL, test "$CDTYPE" = "SDL")
+AM_CONDITIONAL(CDTYPE_SGI, test "$CDTYPE" = "SGI")
+AM_CONDITIONAL(CDTYPE_WIN32, test "$CDTYPE" = "WIN32")
+AM_CONDITIONAL(CDTYPE_NULL, test "$CDTYPE" != "LINUX" -a "$CDTYPE" != "SDL" -a "$CDTYPE" != "SGI" -a "$CDTYPE" != "WIN32")
+
+dnl ==================================================================
+dnl Checks for networking
+dnl ==================================================================
+
+if test "x$ac_cv_func_connect" != "xyes"; then
+	AC_CHECK_LIB(socket, connect,
+					NET_LIBS="$NET_LIBS -lsocket"
+					ac_cv_func_connect=yes
+				)
+fi
+if test "x$ac_cv_func_gethostbyname" != "xyes"; then
+	AC_CHECK_LIB(nsl, gethostbyname,
+					NET_LIBS="$NET_LIBS -lnsl"
+					ac_cv_func_gethostbyname=yes
+				)
+fi
+
+AC_MSG_CHECKING([for connect in -lwsock32])
+SAVELIBS="$LIBS"
+LIBS="$LIBS -lwsock32"
+AC_TRY_LINK([
+#include <winsock.h>
+],[
+connect(0, NULL, 42);
+],
+	NET_LIBS="$NET_LIBS -lwsock32 -lwinmm"
+	ac_cv_func_connect=yes
+	ac_cv_func_gethostbyname=yes
+	HAVE_WSOCK=yes
+	AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+)
+LIBS="$SAVELIBS"
+
+AC_MSG_CHECKING(for UDP support)
+if test "x$ac_cv_func_connect" = "xyes" -a "x$ac_cv_func_gethostbyname" = "xyes"; then
+	HAVE_UDP=yes
+	AC_MSG_RESULT(yes)
+else
+	AC_MSG_RESULT(no)
+fi
+
+if test "x$ac_cv_func_connect" != "xyes"; then
+	AC_MSG_CHECKING([for connect in -lwsock32])
+	SAVELIBS="$LIBS"
+	LIBS="$LIBS -lwsock32"
+	AC_TRY_LINK([
+#include <winsock.h>
+],[
+connect(0, NULL, 42);
+],
+	    NET_LIBS="$NET_LIBS -lwsock32 -lwinmm"
+	    AC_MSG_RESULT(yes),
+	    AC_MSG_RESULT(no)
+	)
+	LIBS="$SAVELIBS"
+fi
+AC_SUBST(NET_LIBS)
+
+
+dnl ==================================================================
+dnl Misc checks
+dnl ==================================================================
+
+dnl Set $prefix and $exec_prefix to $ac_default_prefix if they are not set
+test "x$prefix" = xNONE && prefix=$ac_default_prefix
+test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
+
+AC_ARG_WITH(oldstyle,
+[  --with-oldstyle         compile with defaults used by Id Software instead
+                          of the slightly saner defaults normally used by
+			  QuakeForge.],
+	oldstyle=$withval, oldstyle=auto
+)
+AC_MSG_CHECKING([configuration style])
+if test "x$oldstyle" = xyes -o "x$oldstyle" = "x"; then
+	AC_MSG_RESULT([old style (id Software defaults)])
+	AC_DEFINE(BASEGAME, "id1")
+	AC_DEFINE(SKINBASE, "qw")
+	if test "x$SYSTYPE" = xWIN32; then
+		default_globalconf="%WINDIR%/$PACKAGE.conf"
+		default_userconf=""
+	else
+		default_globalconf="/etc/$PACKAGE.conf"
+		default_userconf=""
+	fi
+	default_sharepath="."
+	default_userpath="."
+else
+	AC_MSG_RESULT([new style])
+	AC_DEFINE(NEWSTYLE)
+	AC_DEFINE(BASEGAME, "base")
+	AC_DEFINE(SKINBASE, "base")
+	default_globalconf="/etc/$PACKAGE.conf"
+	default_userconf="~/.${PACKAGE}rc"
+	eval foo="$datadir"
+	default_sharepath="$foo/games/$PACKAGE"
+	default_userpath="~/.$PACKAGE"
+fi
+
+AC_ARG_WITH(global-cfg,
+[  --with-global-cfg=FILE  If set will change the name and location of the
+                          global config file used by QuakeForge.  Defaults to
+                          /etc/quakeforge.conf.],
+globalconf="$withval", globalconf="auto")
+if test "x$globalconf" = "xauto" || test "x$globalconf" = "xyes" || \
+	test "x$globalconf" = "xno"; then  dnl yes/no sanity checks
+	globalconf="$default_globalconf"
+fi
+AC_DEFINE_UNQUOTED(FS_GLOBALCFG, "$globalconf")
+
+AC_ARG_WITH(user-cfg,
+[  --with-user-cfg=FILE    If set will change the name and location of the
+                          global config file used by QuakeForge.  Defaults to
+                          /etc/quakeforge.conf.],
+globalconf="$withval", userconf="auto")
+if test "x$userconf" = "xauto" || test "x$userconf" = "xyes" || \
+	test "x$userconf" = "xno"; then  dnl yes/no sanity checks
+	userconf="$default_userconf"
+fi
+AC_DEFINE_UNQUOTED(FS_USERCFG, "$userconf")
+
+AC_ARG_WITH(sharepath,
+[  --with-sharepath=DIR    Use DIR for shared game data, defaults to
+                          '.' or \${datadir}/games/quakeforge (if new style)],
+sharepath=$withval, sharepath="auto")
+if test "x$sharepath" = "xauto" -o "x$sharepath" = "xyes" -o "x$sharepath" = "x"; then
+	sharepath="$default_sharepath"
+elif test "x$sharepath" = xno; then
+	sharepath="."
+fi
+AC_DEFINE_UNQUOTED(FS_SHAREPATH, "$sharepath")
+
+AC_ARG_WITH(userpath,
+[  --with-userpath=DIR     Use DIR for unshared game data, defaults to
+                          '.' or ~/.quakeforge (if new style)],
+userpath=$withval, userpath="auto")
+if test "x$userpath" = "xauto" -o "x$userpath" = "xyes" -o "x$userpath" = "x"; then
+	userpath="$default_userpath"
+elif test "x$userpath" = xno; then
+	userpath="."
+fi
+AC_DEFINE_UNQUOTED(FS_USERPATH, "$userpath")
+
+dnl CFLAGS for release and devel versions
+CFLAGS=""
+AC_ARG_ENABLE(debug,
+	[  --enable-debug          compile with debugging (for development)],
+	debug=$enable_debug
+)
+AC_MSG_CHECKING(for debugging)
+if test "x$debug" = xyes; then
+	AC_MSG_RESULT(yes)
+	BUILD_TYPE="$BUILD_TYPE Debug"
+	CFLAGS="$CFLAGS -g"
+else
+	AC_MSG_RESULT(no)
+fi
+
+AC_ARG_ENABLE(packetlog,
+	[  --enable-packetlog	   compile with packet logger (for development)],
+	packetlog=$enable_packetlog
+)
+
+AC_ARG_ENABLE(optimize,
+	[  --disable-optimize      compile without optimizations (for development)],
+	optimize=$disable_optimize,
+	optimize=yes
+)
+AC_ARG_WITH(amd,
+	[  --with-amd              Optimize for AMD processors instead of Intel],
+	HAVE_AMD="yes",
+	HAVE_AMD="no"
+)
+AC_MSG_CHECKING(for optimization)
+if test "x$optimize" = xyes; then
+	AC_MSG_RESULT(yes)
+	BUILD_TYPE="$BUILD_TYPE Optimize"
+	if test "x$GCC" = xyes; then
+		CFLAGS="$CFLAGS -O6 -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
+		AC_MSG_CHECKING(for special compiler settings)
+		case "${host_cpu}" in
+			i?86)
+				if test "x$HAVE_AMD" = "xyes"; then
+					MORE_CFLAGS="-march=k6 -malign-loops=2 -malign-jumps=2 -malign-functions=2"
+				else
+					MORE_CFLAGS="-march=${host_cpu} -malign-loops=2 -malign-jumps=2 -malign-functions=2"
+				fi
+				;;
+			*)
+				MORE_CFLAGS=""
+				;;
+		esac
+		if test "x$MORE_CFLAGS" = x; then
+			AC_MSG_RESULT(no)
+		else
+			AC_MSG_RESULT(yes)
+			CFLAGS="$CFLAGS $MORE_CFLAGS"
+		fi
+	else
+		CFLAGS=-O2
+	fi
+else
+	AC_MSG_RESULT(no)
+	CFLAGS="$CFLAGS -O"
+fi
+
+AC_MSG_CHECKING(for packet logging)
+if test "x$packetlog" = xyes; then
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(PACKET_LOGGING)
+else
+	AC_MSG_RESULT(no)
+fi
+
+AM_CONDITIONAL(PACKETLOG, test "x$packetlog" = "xyes")
+
+dnl CFLAGS for release and devel versions
+AC_ARG_ENABLE(profile,
+	[  --enable-profile        compile with profiling (for development)],
+	profile=$enable_profile
+)
+if test "x$profile" = xyes; then
+	BUILD_TYPE="$BUILD_TYPE Profile"
+	if test "x$GCC" = xyes; then
+		CFLAGS="`echo $CFLAGS | sed -e 's/-fomit-frame-pointer//g'` -pg"
+		LDFLAGS="$LDFLAGS -pg"
+	else
+		CFLAGS="$CFLAGS -p"
+	fi
+fi
+
+check_pipe=no
+if test "x$GCC" = xyes; then
+	dnl Check for -pipe vs -save-temps.
+	AC_MSG_CHECKING(for -pipe vs -save-temps)
+	AC_ARG_ENABLE(save-temps,
+		[  --enable-save-temps     save temporary files],
+		AC_MSG_RESULT(-save-temps); CFLAGS="$CFLAGS -save-temps"; BUILD_TYPE="$BUILD_TYPE Save-temps",
+		AC_MSG_RESULT(-pipe); check_pipe=yes)
+fi
+if test "x$check_pipe" = xyes; then
+	AC_MSG_CHECKING(whether -pipe works)
+	save_CFLAGS="$CFLAGS"
+	CFLAGS="$CFLAGS -pipe"
+	pipe_ok=no
+	AC_TRY_COMPILE(
+		[],
+		[],
+		pipe_ok=yes
+		AC_MSG_RESULT(yes),
+		AC_MSG_RESULT(no)
+	)
+	CFLAGS="$save_CFLAGS"
+	if test "x$pipe_ok" = xyes; then
+		CFLAGS="$CFLAGS -pipe"
+	fi
+fi
+
+dnl QuakeForge uses lots of BCPL-style (//) comments, which can cause problems
+dnl with many compilers that don't support the latest ISO standards. Well,
+dnl that is our cover story -- the reality is that we like them and don't want
+dnl to give them up. :)
+dnl Make the compiler swallow its pride...
+if test "x$GCC" != xyes; then
+   AC_MSG_CHECKING(for how to deal with BCPL-style comments)
+   case "${host}" in
+   *-aix*)
+	CFLAGS="$CFLAGS -qcpluscmt"
+        AC_MSG_RESULT([-qcpluscmt])
+	;;
+   *-irix6*)
+	CFLAGS="$CFLAGS -Xcpluscomm"
+        AC_MSG_RESULT([-Xcpluscomm])
+	;;
+   *-solaris*)
+	CFLAGS="$CFLAGS -xCC"
+        AC_MSG_RESULT([-xCC])
+	;;
+   *)
+        AC_MSG_RESULT(nothing needed or no switch known)
+	;;
+  esac
+fi
+
+dnl We want warnings, lots of warnings...
+if test "x$GCC" = xyes; then
+	CFLAGS="$CFLAGS -Wall -Werror"
+#	CFLAGS="$CFLAGS -Wall -pedantic"
+fi
+
+dnl ==================================================================
+dnl Make sure we link against a working zlib
+dnl ==================================================================
+
+AC_MSG_CHECKING(for libz.a in X11)
+need_abs_libz=no
+for d in `echo $X_LIBS | sed -e 's/-L//'`; do
+	if test -f $d/libz.a; then
+		need_abs_libz=yes
+		break
+	fi
+done
+AC_MSG_RESULT($need_abs_libz)
+
+AC_ARG_WITH(libz,
+[  --with-libz=<path list> specify directories to search for zlib],
+zlib_paths="$withval", zlib_paths="")
+if test "x$need_abs_libz" = "xyes"; then
+	AC_MSG_CHECKING(for location of libz.a or libz.so)
+	zlib_location="unknown"
+	for d in $zlib_paths /usr/local/lib /usr/lib /lib; do
+		for f in libz.so libz.a; do
+			if test -f $d/$f; then
+			zlib_location=$d/$f
+			break
+		fi
+		done
+	done
+	AC_MSG_RESULT($zlib_location)
+	if test "$zlib_location" = unknown; then
+		echo need to specify zlib location with --with-libz
+		exit 1
+	fi
+	Z_LIBS="$zlib_location"
+fi
+AC_SUBST(Z_LIBS)
+
+dnl ==================================================================
+dnl Find out what to build and finish
+dnl ==================================================================
+
+AC_ARG_WITH(clients,
+	[  --with-clients=<list>   compile clients in <list>;
+                          3dfx,fbdev,ggi,glx,mgl,sdl,sgl,svga,x11],
+	clients="$withval",
+	clients="all"
+)
+if test "$clients" = "all"; then
+	ENABLE_3DFX=yes
+	ENABLE_FBDEV=yes
+	ENABLE_GGI=yes
+	ENABLE_GLX=yes
+	ENABLE_MGL=yes
+	ENABLE_SDL=yes
+	ENABLE_SGL=yes
+	ENABLE_SVGA=yes
+	ENABLE_X11=yes
+else
+	ENABLE_3DFX=no
+	ENABLE_FBDEV=no
+	ENABLE_GGI=no
+	ENABLE_GLX=no
+	ENABLE_MGL=no
+	ENABLE_SDL=no
+	ENABLE_SGL=no
+	ENABLE_SVGA=no
+	ENABLE_X11=no
+	IFS=","
+	for client in $clients; do
+		case "$client" in
+			3dfx)
+				ENABLE_3DFX=yes
+				;;
+			fbdev)
+				ENABLE_FBDEV=yes
+				;;
+			ggi)
+				ENABLE_GGI=yes
+				;;
+			glx)
+				ENABLE_GLX=yes
+				;;
+			mgl)
+				ENABLE_MGL=yes
+				;;
+			sdl)
+				ENABLE_SDL=yes
+				;;
+			sgl)
+				ENABLE_SGL=yes
+				;;
+			svga)
+				ENABLE_SVGA=yes
+				;;
+			x11)
+				ENABLE_X11=yes
+				;;
+		esac
+	done
+	IFS=" "
+fi
+
+AC_ARG_WITH(server,
+	[  --with-server           compile dedicated server],
+	SV_TARGETS="$withval", SV_TARGETS=yes
+)
+
+CL_TARGETS=""
+QW_TARGETS=""
+NQ_TARGETS=""
+if test "x$HAVE_TDFXGL" = xyes -a "x$ENABLE_3DFX" = xyes; then
+	QW_TARGETS="$QW_TARGETS qf-client-3dfx\$(EXEEXT)"
+	NQ_TARGETS="$NQ_TARGETS nq-3dfx\$(EXEEXT)"
+	CL_TARGETS="$CL_TARGETS 3dfx"
+fi
+if test "x$HAVE_FBDEV" = xyes -a "x$ENABLE_FBDEV" = xyes; then
+	QW_TARGETS="$QW_TARGETS qf-client-fbdev\$(EXEEXT)"
+	NQ_TARGETS="$NQ_TARGETS nq-fbdev\$(EXEEXT)"
+	CL_TARGETS="$CL_TARGETS FBDEV"
+fi
+if test "x$HAVE_GGI" = xyes -a "x$ENABLE_GGI" = xyes; then
+	QW_TARGETS="$QW_TARGETS qf-client-ggi\$(EXEEXT)"
+	NQ_TARGETS="$NQ_TARGETS nq-ggi\$(EXEEXT)"
+	CL_TARGETS="$CL_TARGETS GGI"
+fi
+if test "x$HAVE_X" = xyes; then
+	if test "x$HAVE_GLX" = xyes -a "x$ENABLE_GLX" = xyes; then
+		QW_TARGETS="$QW_TARGETS qf-client-glx\$(EXEEXT)"
+		NQ_TARGETS="$NQ_TARGETS nq-glx\$(EXEEXT)"
+		CL_TARGETS="$CL_TARGETS GLX"
+	fi
+fi
+if test "x$HAVE_MGL" = xyes -a "x$ENABLE_MGL" = xyes; then
+	QW_TARGETS="$QW_TARGETS qf-client-mgl\$(EXEEXT)"
+	NQ_TARGETS="$NQ_TARGETS nq-mgl\$(EXEEXT)"
+	CL_TARGETS="$CL_TARGETS MGL"
+fi
+if test "x$HAVE_SDL" = xyes -a "x$ENABLE_SDL" = xyes; then
+	QW_TARGETS="$QW_TARGETS qf-client-sdl\$(EXEEXT)"
+	NQ_TARGETS="$NQ_TARGETS nq-sdl\$(EXEEXT)"
+	CL_TARGETS="$CL_TARGETS SDL"
+fi
+if test "x$HAVE_SGL" = xyes; then
+	if test "x$HAVE_GLX" = xyes -a "x$ENABLE_SGL" = xyes; then
+		QW_TARGETS="$QW_TARGETS qf-client-sgl\$(EXEEXT)"
+		NQ_TARGETS="$NQ_TARGETS nq-sgl\$(EXEEXT)"
+		CL_TARGETS="$CL_TARGETS SDL-GL"
+	fi
+fi
+if test "x$HAVE_SVGA" = xyes -a "x$ENABLE_SVGA" = xyes; then
+	QW_TARGETS="$QW_TARGETS qf-client-svga\$(EXEEXT)"
+	NQ_TARGETS="$NQ_TARGETS nq-svga\$(EXEEXT)"
+	CL_TARGETS="$CL_TARGETS SVGAlib"
+fi
+if test "x$HAVE_X" = xyes -a "x$ENABLE_X11" = xyes; then
+	QW_TARGETS="$QW_TARGETS qf-client-x11\$(EXEEXT)"
+	NQ_TARGETS="$NQ_TARGETS nq-x11\$(EXEEXT)"
+	CL_TARGETS="$CL_TARGETS X11"
+fi
+if test "x$SV_TARGETS" = xyes; then
+	QW_TARGETS="qf-server\$(EXEEXT) $QW_TARGETS"
+#	NQ_TARGETS="nq-ded\$(EXEEXT) $NQ_TARGETS"
+fi
+AC_SUBST(NQ_TARGETS)
+AC_SUBST(QW_TARGETS)
+
+dnl Output files
+AC_OUTPUT(
+	RPM/build_rpm
+	debian/Makefile
+	doc/Makefile
+	doc/texinfo/Makefile
+	doc/man/Makefile
+	qw/include/Makefile
+	qw/include/win32/version.h
+	qw/source/Makefile
+	qw/Makefile
+	qw/quakeforge.lsm
+	Makefile
+	
+	nq/include/Makefile
+	nq/include/win32/version.h
+	nq/source/Makefile
+	nq/Makefile
+	nq/nuq.lsm,
+	chmod +x RPM/build_rpm
+)
+
+AC_MSG_RESULT([
+	QuakeForge has been configured successfully.
+
+	Build type:$BUILD_TYPE
+	Server support: $SV_TARGETS
+	Client support:$CL_TARGETS
+	Sound system: $SNDTYPE
+	IPv6 networking: $NETTYPE_IPV6
+
+	Shared game data directory: $sharepath
+	Per-user game data directory: $userpath
+	Global configuration file: $globalconf
+	User configuration file: $userconf
+])
+if test -d $srcdir/CVS; then
+	echo "WARNING: Hackers at work, watch for falling bits of code."
+	echo "(This is from a development CVS tree. Expect problems)"
+	echo
+fi

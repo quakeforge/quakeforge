@@ -28,10 +28,10 @@
 #define _VERSION_H
 
 /* Version strings */
-#define PACKAGE 		"nuq"
-#define PROGRAM 		"QuakeForge: nuq"
-#define VERSION 		"0.2.99alpha0"
-#define QSG_VERSION		"1.0"
-#define QUAKE_VERSION	"1.09"
+#define PACKAGE 		"quakeforge"
+#define PROGRAM 		"QuakeForge"
+#define VERSION 		"0.3.0"
+#define QSG_VERSION		""
+#define QUAKE_VERSION	"@QUAKE_VERSION@"
 
 #endif	// _VERSION_H
