@@ -50,20 +50,25 @@ static __attribute__ ((unused)) const char rcsid[] =
 cvar_t *in_snd_block;
 
 static keydest_t old_key_dest = key_none;
+static int have_focus;
 
 
 static void
 event_focusout (void)
 {
-	if (in_snd_block->int_val) {
-		S_BlockSound ();
-		CDAudio_Pause ();
+	if (have_focus) {
+		have_focus = 0;
+		if (in_snd_block->int_val) {
+			S_BlockSound ();
+			CDAudio_Pause ();
+		}
 	}
 }
 
 static void
 event_focusin (void)
 {
+	have_focus = 1;
 	if (in_snd_block->int_val) {
 		S_UnblockSound ();
 		CDAudio_Resume ();
