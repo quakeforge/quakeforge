@@ -2235,7 +2235,6 @@ function_expr (expr_t *e1, expr_t *e2)
 		parm_count = -ftype->num_parms - 1;
 	} else if (ftype->num_parms >= 0) {
 		if (arg_count > ftype->num_parms) {
-			printf ("%d %d %s\n", arg_count, ftype->num_parms, e1->e.def->name);
 			return error (e1, "too many arguments");
 		} else if (arg_count < ftype->num_parms) {
 			if (!options.traditional)
