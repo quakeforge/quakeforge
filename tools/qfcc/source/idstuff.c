@@ -214,6 +214,8 @@ WriteProgdefs (char *filename)
 	for (d = pr.scope->head; d; d = d->def_next) {
 		if (!strcmp (d->name, "end_sys_globals"))
 			break;
+		if (!d->ofs)
+			continue;
 
 		switch (d->type->type) {
 			case ev_float:
@@ -245,7 +247,7 @@ WriteProgdefs (char *filename)
 		if (!strcmp (d->name, "end_sys_fields"))
 			break;
 
-		if (d->type->type != ev_field)
+		if (!d->ofs || d->type->type != ev_field)
 			continue;
 
 		switch (d->type->aux_type->type) {

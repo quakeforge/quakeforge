@@ -576,10 +576,17 @@ separate_compile (void)
 			if (options.partial_link) {
 				qfo_write (qfo, options.output_file);
 			} else {
+				int         crc = 0;
+
 				qfo_to_progs (qfo, &pr);
 				setup_sym_file (options.output_file);
 				finish_compilation ();
-				WriteData (0);
+
+				// write progdefs.h
+				if (options.code.progsversion == PROG_ID_VERSION)
+					crc = WriteProgdefs ("progdefs.h");
+
+				WriteData (crc);
 			}
 		} else {
 			err = 1;
