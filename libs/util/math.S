@@ -45,15 +45,31 @@ Ljmptab:	.long	Lcase0, Lcase1, Lcase2, Lcase3
 
 	.extern C(BOPS_Error)
 
-
+#ifdef PIC
+#define EMINS	8+4
+#define EMAXS	8+8
+#define P		8+12
+#else
 #define EMINS	4+4
 #define EMAXS	4+8
 #define P		4+12
+#endif
 
 	.align 2
 .globl C(BoxOnPlaneSide)
+#ifdef PIC
+	.type	C(BoxOnPlaneSide),@function
+#endif
 C(BoxOnPlaneSide):
 	pushl	%ebx
+#ifdef PIC
+	pushl	%esi
+	call	.Lpic
+.Lpic:
+	popl	%esi
+	addl	$_GLOBAL_OFFSET_TABLE_+[.-.Lpic],%esi
+#endif
+
 
 	movl	P(%esp),%edx
 	movl	EMINS(%esp),%ecx
@@ -64,7 +80,11 @@ C(BoxOnPlaneSide):
 	jge		Lerror
 	flds	pl_normal(%edx)		// p->normal[0]
 	fld		%st(0)				// p->normal[0] | p->normal[0]
+#ifdef PIC
+	jmp		*Ljmptab@GOTOFF(%esi,%eax,4)
+#else
 	jmp		*Ljmptab(,%eax,4)
+#endif
 
 
 //dist1= p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2];
@@ -348,6 +368,9 @@ LSetSides:
 
 //	return sides;
 
+#ifdef PIC
+	popl	%esi
+#endif
 	popl	%ebx
 	movl	%ecx,%eax	// return status
 
@@ -355,6 +378,12 @@ LSetSides:
 
 
 Lerror:
+#ifdef PIC
+	call	C(BOPS_Error)@PLT
+.Lfe1:
+	.size	C(BoxOnPlaneSide),.Lfe1-C(BoxOnPlaneSide)
+#else
 	call	C(BOPS_Error)
+#endif
 
 #endif	// USE_INTEL_ASM
