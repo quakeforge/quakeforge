@@ -207,16 +207,17 @@ reverse_read_l (byte *buf, int count, byte **data, cmap_t *cmap)
 }
 
 static inline void
-setup_pixrow_span (TargaHeader *targa, tex_t *tex, byte **_pixrow, int *_span)
+setup_pixrow_span (TargaHeader *targa, tex_t *tex, byte **_pixrow, int *_span,
+				   int pixbytes)
 {
 	byte       *pixrow;
 	int         span;
 
-	span = targa->width * 4;
+	span = targa->width * pixbytes;
 	pixrow = tex->data;
 	if (targa->attributes & 0x10) {
 		// right to left
-		pixrow += span - 4;
+		pixrow += span - pixbytes;
 	}
 	if (!(targa->attributes & 0x20)) {
 		// bottom to top
@@ -331,7 +332,7 @@ decode_colormap (TargaHeader *targa, tex_t *tex, byte *dataByte)
 	columns = targa->width;
 	rows = targa->height;
 
-	setup_pixrow_span (targa, tex, &pixrow, &span);
+	setup_pixrow_span (targa, tex, &pixrow, &span, 4);
 
 	if (targa->attributes & 0x10) {
 		// right to left
@@ -361,7 +362,7 @@ decode_truecolor_24 (TargaHeader *targa, tex_t *tex, byte *dataByte)
 	columns = targa->width;
 	rows = targa->height;
 
-	setup_pixrow_span (targa, tex, &pixrow, &span);
+	setup_pixrow_span (targa, tex, &pixrow, &span, 4);
 
 	if (targa->attributes & 0x10) {
 		// right to left
@@ -391,7 +392,7 @@ decode_truecolor_32 (TargaHeader *targa, tex_t *tex, byte *dataByte)
 	columns = targa->width;
 	rows = targa->height;
 
-	setup_pixrow_span (targa, tex, &pixrow, &span);
+	setup_pixrow_span (targa, tex, &pixrow, &span, 4);
 
 	if (targa->attributes & 0x10) {
 		// right to left
@@ -463,7 +464,7 @@ decode_colormap_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
 	columns = targa->width;
 	rows = targa->height;
 
-	setup_pixrow_span (targa, tex, &pixrow, &span);
+	setup_pixrow_span (targa, tex, &pixrow, &span, 4);
 
 	if (targa->attributes & 0x10)	// right to left
 		rle_expand (reverse_read_cmap);
@@ -481,7 +482,7 @@ decode_truecolor_24_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
 	columns = targa->width;
 	rows = targa->height;
 
-	setup_pixrow_span (targa, tex, &pixrow, &span);
+	setup_pixrow_span (targa, tex, &pixrow, &span, 4);
 
 	if (targa->attributes & 0x10)	// right to left
 		rle_expand (reverse_read_bgr);
@@ -499,7 +500,7 @@ decode_truecolor_32_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
 	columns = targa->width;
 	rows = targa->height;
 
-	setup_pixrow_span (targa, tex, &pixrow, &span);
+	setup_pixrow_span (targa, tex, &pixrow, &span, 4);
 
 	if (targa->attributes & 0x10)	// right to left
 		rle_expand (reverse_read_bgra);
@@ -560,7 +561,7 @@ decode_greyscale (TargaHeader *targa, tex_t *tex, byte *dataByte)
 	columns = targa->width;
 	rows = targa->height;
 
-	setup_pixrow_span (targa, tex, &pixrow, &span);
+	setup_pixrow_span (targa, tex, &pixrow, &span, 1);
 
 	if (targa->attributes & 0x10) {
 		// right to left
@@ -597,7 +598,7 @@ decode_greyscale_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
 	columns = targa->width;
 	rows = targa->height;
 
-	setup_pixrow_span (targa, tex, &pixrow, &span);
+	setup_pixrow_span (targa, tex, &pixrow, &span, 1);
 
 	if (targa->attributes & 0x10)	// right to left
 		rle_expand (reverse_read_l);
