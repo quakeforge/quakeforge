@@ -245,6 +245,9 @@ SV_ClearWorld (void)
 	SV_CreateAreaNode (0, sv.worldmodel->mins, sv.worldmodel->maxs);
 }
 
+link_t        **sv_link_next;
+link_t        **sv_link_prev;
+
 
 void
 SV_UnlinkEdict (edict_t *ent)
@@ -252,6 +255,10 @@ SV_UnlinkEdict (edict_t *ent)
 	if (!ent->area.prev)
 		return;							// not linked in anywhere
 	RemoveLink (&ent->area);
+	if (sv_link_next && *sv_link_next == &ent->area)
+		*sv_link_next = ent->area.next;
+	if (sv_link_prev && *sv_link_prev == &ent->area)
+		*sv_link_prev = ent->area.prev;
 	ent->area.prev = ent->area.next = NULL;
 }
 
@@ -264,6 +271,7 @@ SV_TouchLinks (edict_t *ent, areanode_t *node)
 	link_t     *l, *next;
 
 	// touch linked edicts
+	sv_link_next = &next;
 	for (l = node->trigger_edicts.next; l != &node->trigger_edicts; l = next) {
 		next = l->next;
 		touch = EDICT_FROM_AREA (l);
@@ -291,6 +299,7 @@ SV_TouchLinks (edict_t *ent, areanode_t *node)
 		*sv_globals.self = old_self;
 		*sv_globals.other = old_other;
 	}
+	sv_link_next = 0;
 
 	// recurse down both sides
 	if (node->axis == -1)
