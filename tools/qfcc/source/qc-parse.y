@@ -154,7 +154,7 @@ expr_t *argv_expr (void);
 
 %type	<type>	type non_field_type type_name def simple_def struct_def
 %type	<type>	struct_def_item ivar_decl ivar_declarator def_item def_list
-%type	<type>	struct_def_list ivars func_type non_func_type
+%type	<type>	struct_def_list ivars func_type non_func_type func_def
 %type	<param> function_decl
 %type	<param>	param param_list
 %type	<def>	def_name opt_initializer methoddef var_initializer
@@ -198,8 +198,6 @@ struct_t *current_ivars;
 scope_t *current_scope;
 storage_class_t current_storage = st_global;
 
-int      element_flag;
-
 %}
 
 %expect 4
@@ -241,7 +239,7 @@ simple_defs
 
 simple_def
 	: non_func_type { $$ = $1; } def_list ';' { }
-	| func_type { $$ = $1; } def_list ';' { }
+	| func_type { $$ = $1; } func_def ';' { }
 	;
 
 storage_class
@@ -410,6 +408,34 @@ def_item
 		}
 	;
 
+func_def
+	: def_name '=' '#' fexpr
+		{
+			$4 = constant_expr ($4);
+			build_builtin_function ($1, $4);
+		}
+	| def_name '=' opt_state_expr
+		{ $<op>$ = current_storage; }
+		{ $<def>$ = $1; }
+	  begin_function statement_block { $<op>$ = $<op>4; } end_function
+		{
+			build_function ($6);
+			if ($3) {
+				$3->next = $7;
+				emit_function ($6, $3);
+			} else {
+				emit_function ($6, $7);
+			}
+			finish_function ($6);
+		}
+	| def_name
+		{
+			if ($1 && !$1->local
+				&& $1->type->type != ev_func)
+				def_initialized ($1);
+		}
+	;
+
 def_name
 	: NAME
 		{
@@ -427,8 +453,8 @@ def_name
 
 opt_initializer
 	: /*empty*/ { }
-	| { element_flag = $<def>0->type->type != ev_func; $$ = $<def>0; }
-	  var_initializer { element_flag = 0; }
+	| { $$ = $<def>0; }
+	  var_initializer { }
 	;
 
 var_initializer
@@ -457,27 +483,10 @@ var_initializer
 				}
 			}
 		}
-	| '=' ELE_START { current_init = new_block_expr (); } element_list '}'
+	| '=' '{' { current_init = new_block_expr (); } element_list '}'
 		{
 			init_elements ($<def>0, $4);
 			current_init = 0;
-		}
-	| '=' '#' fexpr
-		{
-			$3 = constant_expr ($3);
-			build_builtin_function ($<def>0, $3);
-		}
-	| '=' opt_state_expr { $<op>$ = current_storage; } { $$ = $<def>0; }
-	  begin_function statement_block { $<op>$ = $<op>3; } end_function
-		{
-			build_function ($5);
-			if ($2) {
-				$2->next = $6;
-				emit_function ($5, $2);
-			} else {
-				emit_function ($5, $6);
-			}
-			finish_function ($5);
 		}
 	;
 

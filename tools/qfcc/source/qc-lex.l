@@ -88,7 +88,6 @@ void add_frame_macro (char *token);
 const char *make_string (char *token);
 
 extern YYSTYPE yylval;
-extern int element_flag;
 
 %}
 
@@ -219,10 +218,6 @@ m		([\-+]?)
 					}
 
 [!(){}.*/&|^~+\-=\[\];,#%?:] {
-						if (yytext[0] == '{' && element_flag) {
-							element_flag = 0;
-							return ELE_START;
-						}
 						return yytext[0];
 					}
 
