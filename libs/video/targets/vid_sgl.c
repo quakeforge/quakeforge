@@ -268,5 +268,8 @@ VID_SetCaption (const char *text)
 qboolean
 VID_SetGamma (double gamma)
 {
+#if SDL_VERSIONNUM(SDL_MAJOR_VERSION,SDL_MINOR_VERSION,SDL_PATCHLEVEL) \
+	>= SDL_VERSIONNUM(1,1,5)
 	return SDL_SetGamma((float) gamma, (float) gamma, (float) gamma); 
+#endif
 }
