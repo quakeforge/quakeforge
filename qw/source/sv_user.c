@@ -1221,11 +1221,13 @@ ucmds_free (void *_c, void *unused)
 	}
 }
 
-// hash and compare functions: user commands are accessed by name but
-// removed by pointer (because they are overridable and multiple commands
-// can be stored under the same command name) so we define a get_hash
-// functions that hashes the key and a compare function that compares the
-// pointer.
+/*
+	hash and compare functions: user commands are accessed by name but
+	removed by pointer (because they are overridable and multiple commands
+	can be stored under the same command name) so we define a get_hash
+	functions that hashes the key and a compare function that compares the
+	pointer.
+*/
 
 static unsigned long
 ucmd_get_hash (void *_a, void *data)
@@ -1248,11 +1250,8 @@ ucmd_compare (void *a, void *b, void *data)
 	exists and is not overridable.
 */
 void *
-SV_AddUserCommand (const char *name,
-				   void (*func) (void *userdata),
-				   int flags,
-				   void *userdata,
-				   void (*on_free) (void *userdata))
+SV_AddUserCommand (const char *name, void (*func) (void *userdata), int flags,
+				   void *userdata, void (*on_free) (void *userdata))
 {
 	ucmd_t *cmd;
 
@@ -1816,7 +1815,6 @@ SV_ExecuteClientMessage (client_t *cl)
 				cl->lastcmd.buttons = 0;	// avoid multiple fires on lag
 				break;
 
-
 			case clc_stringcmd:
 				s = MSG_ReadString (net_message);
 				SV_ExecuteUserCommand (s);
@@ -1834,7 +1832,6 @@ SV_ExecuteClientMessage (client_t *cl)
 			case clc_upload:
 				SV_NextUpload ();
 				break;
-
 		}
 	}
 }
