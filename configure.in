@@ -580,7 +580,7 @@ if test "x$glx_libraries" != xauto -a "x$glx_libraries" != xno -a "x$glx_librari
 		AC_CHECK_LIB(GL, glColor4f,
 			HAVE_GLX=yes
 			OGL_NAME=GL,,
-			[ -L$glx_libraries-lX11 $X_EXTRA_LIBS ]
+			[ -L$glx_libraries -lX11 $X_EXTRA_LIBS ]
 		)
 		if test "x$HAVE_GLX" != xyes; then
 			AC_CHECK_LIB(MesaGL, glColor4f,
@@ -673,16 +673,19 @@ AC_ARG_WITH(3dfx,
 if test "x$HAVE_3dfx" != "xno" -a "x$HAVE_SVGA" != "xno" \
 		-a "x$HAVE_GLIDE" != "xno"; then
 	if test "x$HAVE_3dfx" != "xauto" -a "x$HAVE_3dfx" != "xyes"; then
-		TDFX_NAME="$HAVE_3dfx"
+		TDFXGL_NAME="$HAVE_3dfx"
 	fi
-	if test -z "$TDFX_NAME"; then
-		AC_CHECK_LIB($OGL_NAME, fxMesaCreateContext, TDFXGL_NAME=$OGL_NAME,,
+	if test -z "$TDFXGL_NAME"; then
+		TDFXGL_NAME=$OGL_NAME
+		TDFXGL_LIBS=$OGL_LIBS
+	fi
+	HAVE_3dfx=no
+        AC_CHECK_LIB($TDFXGL_NAME, fxMesaCreateContext, HAVE_3dfx=yes,,
 		[$GLIDE_LIBS $TDFXGL_LIBS])
-	fi
 fi
 
 AC_MSG_CHECKING(for 3Dfx support)
-if test -n "$TDFXGL_NAME"; then
+if test "x$HAVE_3dfx" = "xyes"; then
    TDFXGL_CFLAGS="$GLIDE_CFLAGS"
    TDFXGL_LIBS="$GLIDE_LIBS -l$TDFXGL_NAME"
    HAVE_TDFXGL="yes"
@@ -1520,3 +1523,4 @@ if test -d $srcdir/CVS; then
 	echo "(This is from a development CVS tree. Expect problems)"
 	echo
 fi
+
