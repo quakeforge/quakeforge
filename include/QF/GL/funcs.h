@@ -46,10 +46,11 @@ extern void *libgl_handle;
 qboolean GLF_Init (void);
 void *QFGL_ProcAddress (void *, const char *, qboolean);
 
-extern void *(*glGetProcAddress) (const char *); 
 #ifdef _WIN32
+extern void *(WINAPI *glGetProcAddress) (const char *); 
 extern FARPROC (WINAPI *getProcAddress) (HINSTANCE, LPCSTR);
 #else
+extern void *(*glGetProcAddress) (const char *); 
 extern void *(*getProcAddress) (void *, const char *); 
 #endif
 extern void *QFGL_LoadLibrary (void); 

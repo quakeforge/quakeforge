@@ -141,7 +141,7 @@ void        GL_Init (void);
 
 #if defined(_WIN32)
 
-void * (* glGetProcAddress) (const char *symbol) = NULL;
+void * (WINAPI *glGetProcAddress) (const char *symbol) = NULL;
 FARPROC (WINAPI *getProcAddress) (HINSTANCE, LPCSTR);
 
 void *

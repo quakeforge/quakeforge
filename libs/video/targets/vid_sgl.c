@@ -70,13 +70,15 @@ int			modestate;
 
 static SDL_Surface *screen = NULL;
 
-void * (* glGetProcAddress) (const char *symbol) = NULL; // FIXME
-//# error "Cannot load libraries: %s was not configured with DSO support"
 
 // the following is to avoid other compiler errors
 #ifdef _WIN32
+void * (WINAPI *glGetProcAddress) (const char *symbol) = NULL; // FIXME
+//# error "Cannot load libraries: %s was not configured with DSO support"
 FARPROC (WINAPI *getProcAddress) (HINSTANCE, LPCSTR);
 #else
+void * (* glGetProcAddress) (const char *symbol) = NULL; // FIXME
+//# error "Cannot load libraries: %s was not configured with DSO support"
 void * (* getProcAddress) (void *, const char *); 
 #endif
 
