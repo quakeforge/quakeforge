@@ -555,6 +555,7 @@ int	CopyString (const char *str);
 int	ReuseString (const char *str);
 
 typedef struct {
+	qboolean	cpp;				// use the C pre-processor
 	qboolean	cow;				// Turn constants into variables if written to
 	qboolean	debug;				// Generate debug info for the engine
 	int			progsversion;		// Progs version to generate code for

@@ -55,6 +55,8 @@ options_t	options;
 
 char		*sourcedir;
 
+const char *this_program;
+
 static struct option const long_options[] =
 {
   {"source", required_argument, 0, 's'},
@@ -297,7 +299,7 @@ WriteData (int crc)
 //	PrintGlobals ();
 	strofs = (strofs + 3) & ~3;
 
-	if (options.verbosity > 1) {
+	if (options.verbosity) {
 		printf ("%6i strofs\n", strofs);
 		printf ("%6i statements\n", numstatements);
 		printf ("%6i functions\n", numfunctions);
@@ -362,7 +364,7 @@ WriteData (int crc)
 
 	SafeWrite (h, pr_globals, numpr_globals * 4);
 
-	if (options.verbosity > 1)
+	if (options.verbosity)
 		printf ("%6i TOTAL SIZE\n", (int) ftell (h));
 
 	progs.entityfields = pr.size_fields;
@@ -782,7 +784,7 @@ PR_WriteProgdefs (char *filename)
 	unsigned short	crc;
 	int 			c;
 
-	if (options.verbosity)
+	if (options.verbosity > 1)
 		printf ("writing %s\n", filename);
 	f = fopen (filename, "w");
 
@@ -923,8 +925,8 @@ PR_PrintFunction (def_t *def)
 static void
 usage (int status)
 {
-	printf ("%s - the QuakeForge Code Compiler\n", myargv[0]);
-	printf ("Usage: %s [options]\n", myargv[0]);
+	printf ("%s - the QuakeForge Code Compiler\n", this_program);
+	printf ("Usage: %s [options]\n", this_program);
 	printf (
 "Options:\n"
 "	-s, --source DIR	look for progs.src in DIR instead of \".\"\n"
@@ -944,6 +946,7 @@ DecodeArgs (int argc, char **argv)
 {
 	int		c;
 
+	options.code.cpp = 1;
 	options.code.progsversion = PROG_VERSION;
 	options.warnings.uninited_variable = 1;
 	options.verbosity = 2;
@@ -985,6 +988,10 @@ DecodeArgs (int argc, char **argv)
 							options.code.cow = true;
 						} else if (!(strcasecmp (temp, "no-cow"))) {
 							options.code.cow = false;
+						} else if (!(strcasecmp (temp, "cpp"))) {
+							options.code.cpp = true;
+						} else if (!(strcasecmp (temp, "no-cpp"))) {
+							options.code.cpp = false;
 						} else if (!(strcasecmp (temp, "debug"))) {
 							options.code.debug = true;
 						} else if (!(strcasecmp (temp, "no-debug"))) {
@@ -1061,18 +1068,12 @@ main (int argc, char **argv)
 	char		filename[1024];
 	long int 	crc;
 	double		start, stop;
-	qboolean	no_cpp = false;
 
 	start = Sys_DoubleTime ();
 
-	myargc = argc;
-	myargv = argv;
+	this_program = argv[0];
 
 	DecodeArgs (argc, argv);
-	
-	if (CheckParm ("--no-cpp")) {
-		no_cpp = true;
-	}
 
 	if (strcmp (sourcedir, ".")) {
 		printf ("Source directory: %s\n", sourcedir);
@@ -1089,7 +1090,7 @@ main (int argc, char **argv)
 		Error ("No destination filename.  qfcc --help for info.\n");
 
 	strcpy (destfile, com_token);
-	if (options.verbosity) {
+	if (options.verbosity > 1) {
 		printf ("outputfile: %s\n", destfile);
 	}
 	if (options.code.debug) {
@@ -1106,7 +1107,7 @@ main (int argc, char **argv)
 			}
 		}
 		strcpy (s, ".sym");
-		if (options.verbosity)
+		if (options.verbosity > 1)
 			printf ("debug file: %s\n", debugfile);
 	}
 
@@ -1131,11 +1132,11 @@ main (int argc, char **argv)
 		//yydebug = 1;
 
 		sprintf (filename, "%s%c%s", sourcedir, PATH_SEPARATOR, com_token);
-		if (options.verbosity)
+		if (options.verbosity > 1)
 			printf ("compiling %s\n", filename);
 
 #ifdef USE_CPP
-		if (!no_cpp) {
+		if (options.code.cpp) {
 			temp1 = getenv ("TMPDIR");
 			if ((!temp1) || (!temp1[0])) {
 				temp1 = getenv ("TEMP");
@@ -1197,7 +1198,7 @@ main (int argc, char **argv)
 		error = yyparse () || pr_error_count;
 		fclose (yyin);
 #ifdef USE_CPP
-		if (!no_cpp) {
+		if (options.code.cpp) {
 			if (unlink (tempname)) {
 				perror ("unlink");
 				exit (1);
@@ -1221,7 +1222,7 @@ main (int argc, char **argv)
 	WriteFiles ();
 
 	stop = Sys_DoubleTime ();
-	if (options.verbosity > 1)
+	if (options.verbosity)
 		printf ("Compilation time: %0.3g seconds.\n", (stop - start));
 	return 0;
 }
