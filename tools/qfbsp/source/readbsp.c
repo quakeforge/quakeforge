@@ -117,7 +117,7 @@ static void
 load_faces (void)
 {
 	dface_t    *f;
-	int         i, j, k, l;
+	int         i, j;
 	winding_t  *points;
 
 	mfaces = calloc (bsp->numfaces, sizeof (face_t));
@@ -141,23 +141,6 @@ load_faces (void)
 				v = edges[e].v[0];
 			}
 			VectorCopy (vertices[v].point, points->points[j]);
-		}
-		for (j = 0; j < points->numpoints - 2; j++) {
-			vec3_t      v1, v2, v3;
-			VectorSubtract (points->points[j + 1], points->points[j], v1);
-			l = -1;
-			for (k = j + 2; k < points->numpoints; k++) {
-				VectorSubtract (points->points[k], points->points[j], v2);
-				CrossProduct (v1, v2, v3);
-				if (VectorLength (v3) > 0.0001)
-					break;
-				l = k;
-			}
-			if (l - j > 1) {
-				memmove (points->points[j + 1], points->points[l],
-						 (points->numpoints - j) * sizeof (vec3_t));
-				points->numpoints -= l - j - 1;
-			}
 		}
 	}
 }
