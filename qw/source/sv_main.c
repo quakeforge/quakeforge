@@ -1895,6 +1895,8 @@ SV_CheckVars (void)
 	SV_GarbageCollect
 
 	Run string GC on progs every pr_gc_interval frames
+	
+	snax: run QFobject GC as well
 */
 static void
 SV_GarbageCollect (void)
@@ -1905,6 +1907,7 @@ SV_GarbageCollect (void)
 		if (pr_gc_count >= pr_gc_interval->int_val) {
 			pr_gc_count = 0;
 			PR_GarbageCollect (&sv_pr_state);
+			Object_Garbage_Collect ();
 		}
 	} else {
 		// Make sure the count gets reset if the gc is disabled.  I

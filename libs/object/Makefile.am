@@ -7,4 +7,4 @@ lib_LTLIBRARIES= libQFobject.la
 libQFobject_la_LDFLAGS=		-version-info 1:0:0
 libQFobject_la_SOURCES= \
 	ArrayList.c Collection.c Double.c Integer.c Iterator.c \
-	List.c Number.c String.c object.c
+	List.c Number.c String.c garbage.c object.c

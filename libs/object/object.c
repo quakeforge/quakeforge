@@ -52,7 +52,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/object.h"
 #include "QF/va.h"
-#include "QF/object.h"
+#include "garbage.h"
 
 #include "QF/classes/ArrayList.h"
 #include "QF/classes/Integer.h"
@@ -67,7 +67,6 @@ Object_ToString_f (Object *self)
 static void
 Object_Init_f (Object *self) 
 {
-	self->refs = -1; // Floating reference
 	self->toString = Object_ToString_f;
 	Sys_DPrintf("%s@%p initing...\n", self->cl->name, self);
 }
@@ -105,10 +104,16 @@ Class_Deinit_f (Object *self) {
 
 
 Object *
-Object_Create (Class *cl)
+Object_Create (Class *cl, qboolean floating)
 {
 	Object *new = malloc (cl->size);
 	new->cl = cl;
+	new->junked = false;
+	if (floating) {
+		new->refs = 0;
+		Garbage_Junk_Object (new);
+	} else
+		new->refs = 1;
 	return new;
 }
 
@@ -123,23 +128,15 @@ Object_Delete (Object *obj)
 Object *
 Object_Retain (Object *obj)
 {
-	if (obj->refs == -1) {
-		obj->refs = 1;
-	} else {
-		obj->refs++;
-	}
+	obj->refs++;
 	return obj;
 }
 
 Object *
 Object_Release (Object *obj)
 {
-	if (obj->refs == -1)
-		Sys_Error ("%s@%p with floating reference released.", obj->cl->name, obj);
-	if (--obj->refs < 1) {
-		Object_Delete (obj);
-		return NULL;
-	}
+	if (obj->refs && --obj->refs == 0)
+		Garbage_Junk_Object (obj);
 	return obj;
 }
 
@@ -213,4 +210,12 @@ Object_Init (void)
 
 	/* Run test */
 	Object_Test();
+}
+
+void
+Object_Garbage_Collect (void)
+{
+	unsigned int amount;
+	if ((amount = Garbage_Amount()))
+		Garbage_Collect (amount / 2 + 1);
 }

@@ -214,7 +214,7 @@ static void
 ArrayList_Deinit_f (Object *self)
 {
 	unsigned int i;
-	for (i = COLLECTION(self)->count; --i > 0;)
+	for (i = 0; i < COLLECTION(self)->count; i++)
 		if (ARRAYLIST(self)->elements[i])
 			release(ARRAYLIST(self)->elements[i]);
 	free(ARRAYLIST(self)->elements);
