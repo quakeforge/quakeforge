@@ -1,5 +1,6 @@
 aclocal.m4
 Makefile.in
+confdefs.h
 configure
 config.log
 config.cache

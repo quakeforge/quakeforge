@@ -54,44 +54,40 @@ dnl Checks for typedefs, structures, and compiler characteristics.
 
 dnl Checks for library functions.
 
-AC_ARG_WITH(qf-headers,
-[  --with-qf-headers=DIR   use the QuakeForge headers found in DRI],
-QF_INCL=$withval, QF_INCL=auto)
-AC_ARG_WITH(qf-libs,
-[  --with-qf-libs=DIR      use the QuakeForge libs found in DRI],
-QF_LIBS=$withval, QF_LIBS=auto)
 
-AC_MSG_CHECKING(for QF headers location)
-if test "x$QF_INCL" = xauto; then
-	qf_dir=`cd ${srcdir}/../..; pwd`
-	if test -r ${qf_dir}/include/QF/qtypes.h; then
-		QF_INCL="-I${qf_dir}/include"
-	else
-		QF_INCL=''
-	fi
-else
-	QF_INCL="-I${QF_INCL}"
-fi
-AC_MSG_RESULT($QF_INCL)
-AC_SUBST(QF_INCL)
+AC_ARG_ENABLE(zlib,
+[  --disable-zlib          disable zlib support],
+)
 
-AC_MSG_CHECKING(for QF libs location)
-QF_DEPS=""
-if test "x$QF_LIBS" = xauto; then
-	qf_dir=`cd ${srcdir}/../..; pwd`
-	if test -r ${qf_dir}/libs/util/qfplist.c; then
-		QF_LIBS="-L ${qf_dir}/libs"
-		QF_DEPS="${qf_dir}/libs/libqfutil.a"
-	else
-		QF_LIBS=''
-	fi
-else
-	QF_LIBS="-L ${QF_LIBS}"
+Z_LIBS=
+if test "x$enable_zlib" != "xno"; then
+  dnl Check for working -lz
+  dnl Note - must have gztell *and* gzgets in -lz *and* zlib.h
+  AC_CHECK_LIB(z, gztell, HAVE_ZLIB=yes, HAVE_ZLIB=no, [$LIBS])
+  if test "x$HAVE_ZLIB" = "xyes"; then
+     AC_CHECK_LIB(z, gzgets, HAVE_ZLIB=yes, HAVE_ZLIB=no, [$LIBS])
+     if test "x$HAVE_ZLIB" = "xyes"; then
+        AC_CHECK_HEADER(zlib.h, HAVE_ZLIB=yes, HAVE_ZLIB=no)
+        if test "x$HAVE_ZLIB" = "xyes"; then
+           Z_LIBS="-lz"
+        fi
+     fi
+  fi
 fi
-AC_MSG_RESULT($QF_LIBS)
-QF_LIBS="${QF_LIBS} -lqfutil"
-AC_SUBST(QF_LIBS)
-AC_SUBST(QF_DEPS)
+
+AC_CHECK_HEADER(QF/qtypes.h, HAVE_QF=yes, HAVE_QF=no)
+if test "$HAVE_QF" = yes; then
+	AC_CHECK_LIB(QFutil, Qopen,
+	    HAVE_QF=yes, HAVE_QF=no,
+	    [$Z_LIBS]
+	)
+fi
+if test "$HAVE_QF" != yes; then
+	echo '***'
+	echo '*** You seem to not have the QuakeForge libs & headers installed'
+	echo '***'
+	exit 1
+fi
 
 AC_OUTPUT(
 	include/Makefile
