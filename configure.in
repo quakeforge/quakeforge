@@ -566,13 +566,13 @@ if test "x$glx_libraries" != xauto -a "x$glx_libraries" != xno -a "x$glx_librari
 		AC_CHECK_LIB(GL, glColor4f,
 			HAVE_GLX=yes
 			OGL_NAME=GL,,
-			[ -L$glx_libraries ]
+			[ -L$glx_libraries -lX11 $X_EXTRA_LIBS ]
 		)
 		if test "x$HAVE_GLX" != xyes; then
 			AC_CHECK_LIB(MesaGL, glColor4f,
 				HAVE_GLX=yes
 				OGL_NAME=MesaGL,,
-				[ -L$glx_libraries ]
+				[ -L$glx_libraries -lX11 $X_EXTRA_LIBS ]
 			)
 		fi
 	fi
@@ -588,13 +588,13 @@ else
 		AC_CHECK_LIB(GL, glColor4f,
 			HAVE_GLX=yes
 			OGL_NAME=GL,,
-			[ $X_LIBS ]
+			[ $X_LIBS -lX11 $X_EXTRA_LIBS ]
 		)
 		if test "x$HAVE_GLX" != xyes; then
 			AC_CHECK_LIB(MesaGL, glColor4f,
 				HAVE_GLX=yes
 				OGL_NAME=MesaGL,,
-				[ $X_LIBS ]
+				[ $X_LIBS -lX11 $X_EXTRA_LIBS ]
 			)
 		fi
 	fi
