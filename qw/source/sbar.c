@@ -103,7 +103,6 @@ static view_t *miniteam_view;
 static view_t *inventory_view;
 static view_t *frags_view;
 static view_t *status_view;
-static view_t *solo_view;
 
 static void (*Sbar_Draw_DMO_func) (int l, int y, int skip);
 
@@ -598,6 +597,11 @@ draw_sigils (view_t *view)
 static void
 draw_inventory (view_t *view)
 {
+	if (cl.spectator && autocam == CAM_TRACK) {
+		if (frags_view)
+			view_draw (frags_view);
+		return;
+	}
 	draw_pic (view, 0, 0, sb_ibar);
 
 	view_draw (view);
@@ -732,11 +736,38 @@ Sbar_DrawNormal (void)
 	Sbar_DrawNum (248, 0, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
 }
 */
+
+static void
+draw_spectator (view_t *view)
+{
+	char        st[512];
+
+	if (autocam != CAM_TRACK) {
+		draw_pic (view, 0, 0, sb_scorebar);
+		draw_string (view, 160 - 7 * 8, 4, "SPECTATOR MODE");
+		draw_string (view, 160 - 14 * 8 + 4, 12,
+					 "Press [ATTACK] for AutoCamera");
+	} else {
+//		Sbar_DrawString (160-14*8+4,4, "SPECTATOR MODE - TRACK CAMERA");
+		snprintf (st, sizeof (st), "Tracking %-.13s, [JUMP] for next",
+				  cl.players[spec_track].name);
+		draw_string (view, 0, -8, st);
+	}
+}
+
 static void
 draw_status (view_t *view)
 {
 	draw_pic (view, 0, 0, sb_sbar);
 
+	if (cl.spectator) {
+		draw_spectator (view);
+		if (autocam != CAM_TRACK)
+			return;
+	} if (sb_showscores || cl.stats[STAT_HEALTH] <= 0) {
+		draw_solo (view);
+		return;
+	}
 	// armor
 	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
 		draw_num (view, 24, 0, 666, 3, 1);
@@ -791,64 +822,6 @@ Sbar_Draw (void)
 	if (scr_con_current == vid.height)
 		return;
 
-	if (!sb_lines)
-		return;
-
-	sbar_view->visible = 1;
-
-	scr_copyeverything = 1;
-	sb_updates++;
-}
-/*
-void
-Sbar_Draw (void)
-{
-	char        st[512];
-	qboolean    headsup;
-
-	headsup = !(cl_sbar->int_val || scr_viewsize->int_val < 100);
-	if ((sb_updates >= vid.numpages) && !headsup)
-		return;
-
-	if (scr_con_current == vid.height)
-		return;							// console is full screen
-
-	scr_copyeverything = 1;
-//	scr_fullupdate = 0;
-
-	sb_updates++;
-
-	// top line
-	if (sb_lines > 24) {
-		if (!cl.spectator || autocam == CAM_TRACK)
-			Sbar_DrawInventory ();
-		if (!headsup || vid.width < 512)
-			Sbar_DrawFrags ();
-	}
-	// main area
-	if (sb_lines > 0) {
-		if (cl.spectator) {
-			if (autocam != CAM_TRACK) {
-				Sbar_DrawPic (0, 0, sb_scorebar);
-				Sbar_DrawString (160 - 7 * 8, 4, "SPECTATOR MODE");
-				Sbar_DrawString (160 - 14 * 8 + 4, 12,
-								 "Press [ATTACK] for AutoCamera");
-			} else {
-				if (sb_showscores || cl.stats[STAT_HEALTH] <= 0)
-					Sbar_SoloScoreboard ();
-				else
-					Sbar_DrawNormal ();
-
-//				Sbar_DrawString (160-14*8+4,4, "SPECTATOR MODE - TRACK CAMERA");
-				snprintf (st, sizeof (st), "Tracking %-.13s, [JUMP] for next",
-						  cl.players[spec_track].name);
-				Sbar_DrawString (0, -8, st);
-			}
-		} else if (sb_showscores || cl.stats[STAT_HEALTH] <= 0)
-			Sbar_SoloScoreboard ();
-		else
-			Sbar_DrawNormal ();
-	}
 	// main screen deathmatch rankings
 	// if we're dead show team scores in team games
 	if (cl.stats[STAT_HEALTH] <= 0 && !cl.spectator)
@@ -861,15 +834,18 @@ Sbar_Draw (void)
 	else if (sb_showteamscores)
 		Sbar_TeamOverlay ();
 
+	if (!sb_lines)
+		return;
+
+	sbar_view->visible = 1;
+
+	scr_copyeverything = 1;
+	sb_updates++;
+
 	if (sb_showscores || sb_showteamscores || cl.stats[STAT_HEALTH] <= 0)
 		sb_updates = 0;
-	if (vid.width > 320 && !headsup)
-		Draw_TileClear (320, vid.height - sb_lines, vid.width - 320, sb_lines);
-
-	if (sb_lines > 0)
-		Sbar_MiniDeathmatchOverlay ();
 }
-*/
+
 /*
 	Sbar_TeamOverlay
 
@@ -1890,9 +1866,6 @@ init_views (void)
 
 	status_view = view_new (0, 0, 320, 24, grav_southwest);
 	status_view->draw = draw_status;
-
-	solo_view = view_new (0, 0, 320, 24, grav_southwest);
-	solo_view->draw = draw_solo;
 
 	view_add (sbar_view, inventory_view);
 	view_add (sbar_view, status_view);
