@@ -159,6 +159,16 @@ SND_LocalSound (const char *s)
 {
 }
 
+void
+SND_BlockSound (void)
+{
+}
+
+void
+SND_UnblockSound (void)
+{
+}
+
 plugin_t *
 PluginInfo (void) {
     plugin_info.type = qfp_sound;
@@ -201,14 +211,4 @@ PluginInfo (void) {
 	plugin_info_sound_funcs.pS_UnblockSound = SND_UnblockSound;
 
     return &plugin_info;
-}
-
-void
-SNDDMA_BlockSound (void)
-{
-}
-
-void
-SNDDMA_UnblockSound (void)
-{
 }
