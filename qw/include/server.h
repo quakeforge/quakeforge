@@ -165,7 +165,6 @@ typedef struct client_s
 
 	int				userid;							// identifying number
 	struct info_s   *userinfo;			// infostring
-	const char *team;//FIXME demo
 
 	usercmd_t		lastcmd;			// for filling in big drops and partial predictions
 	double			localtime;			// of last message

@@ -766,11 +766,12 @@ SV_WriteSetDemoMessage (void)
 static char *
 SV_PrintTeams (void)
 {
-	const char *teams[MAX_CLIENTS];
+	char        teams[MAX_CLIENTS][128];
 	char       *p;
 	int         i, j, numcl = 0, numt = 0;
 	client_t   *clients[MAX_CLIENTS];
 	char        buf[2048] = { 0 };
+	const char *team;
 
 	// count teams and players
 	for (i = 0; i < MAX_CLIENTS; i++) {
@@ -779,14 +780,15 @@ SV_PrintTeams (void)
 		if (svs.clients[i].spectator)
 			continue;
 
+		team = Info_ValueForKey (svs.clients[i].userinfo, "team");
 		clients[numcl++] = &svs.clients[i];
 		for (j = 0; j < numt; j++)
-			if (!strcmp (svs.clients[i].team, teams[j]))
+			if (!strcmp (team, teams[j]))
 				break;
 		if (j != numt)
 			continue;
 
-		teams[numt++] = svs.clients[i].team;
+		strcpy (teams[numt++], team);
 	}
 
 	// create output
@@ -803,9 +805,11 @@ SV_PrintTeams (void)
 	} else {							// teamplay
 		for (j = 0; j < numt; j++) {
 			sprintf (buf + strlen (buf), "team %s:\n", teams[j]);
-			for (i = 0; i < numcl; i++)
-				if (!strcmp (clients[i]->team, teams[j]))
+			for (i = 0; i < numcl; i++) {
+				team = Info_ValueForKey (svs.clients[i].userinfo, "team");
+				if (!strcmp (team, teams[j]))
 					sprintf (buf + strlen (buf), "  %s\n", clients[i]->name);
+			}
 		}
 	}
 
@@ -1167,6 +1171,7 @@ Dem_Team (int num)
 	qboolean    first = true;
 	client_t   *client;
 	static int  index = 0;
+	const char *team;
 
 	index = 1 - index;
 
@@ -1174,10 +1179,11 @@ Dem_Team (int num)
 		if (!client->name[0] || client->spectator)
 			continue;
 
-		if (first || strcmp (lastteam[index], client->team)) {
+		team = Info_ValueForKey (svs.clients[i].userinfo, "team");
+		if (first || strcmp (lastteam[index], team)) {
 			first = false;
 			num--;
-			lastteam[index] = client->team;
+			lastteam[index] = team;
 		}
 	}
 
