@@ -584,8 +584,9 @@ _COM_FOpenFile (const char *filename, QFile **gzfile, char *foundname, int zip)
 	// search through the path, one element at a time
 	for (search = com_searchpaths; search; search = search->next) {
 #ifdef HAVE_VORBIS
+		//NOTE gzipped oggs not supported
 		if (oggfilename[0]
-			&& open_file (search, oggfilename, gzfile, foundname, zip) != -1)
+			&& open_file (search, oggfilename, gzfile, foundname, false) != -1)
 			goto ok;
 #endif
 #ifdef HAVE_ZLIB
