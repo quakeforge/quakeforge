@@ -519,7 +519,7 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 static ddef_t *
 def_string (progs_t *pr, int ofs, dstring_t *dstr)
 {
-	ddef_t     *def;
+	ddef_t     *def = 0;
 	const char *name;
 
 	if (pr_debug->int_val && pr->debug)
