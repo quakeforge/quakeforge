@@ -592,6 +592,8 @@ PR_gametype (progs_t *pr)
 	RETURN_STRING (pr, pr_gametype);
 }
 
+#define QF (PR_RANGE_QF << PR_RANGE_SHIFT) |
+
 static builtin_t builtins[] = {
 	{"break",		PF_break,		6},
 	{"random",		PF_random,		7},
@@ -617,15 +619,15 @@ static builtin_t builtins[] = {
 	{"stof",		PF_stof,		81},
 
 
-	{"strlen",		PF_strlen,		100},
-	{"charcount",	PF_charcount,	101},
-	{"sprintf",		PF_sprintf,		109},
-	{"ftoi",		PF_ftoi,		110},
-	{"itof",		PF_itof,		111},
-	{"itos",		PF_itos,		112},
-	{"stoi",		PF_stoi,		113},
-	{"stov",		PF_stov,		114},
-	{"gametype",	PR_gametype,	115},
+	{"strlen",		PF_strlen,		QF 100},
+	{"charcount",	PF_charcount,	QF 101},
+	{"sprintf",		PF_sprintf,		QF 109},
+	{"ftoi",		PF_ftoi,		QF 110},
+	{"itof",		PF_itof,		QF 111},
+	{"itos",		PF_itos,		QF 112},
+	{"stoi",		PF_stoi,		QF 113},
+	{"stov",		PF_stov,		QF 114},
+	{"gametype",	PR_gametype,	QF 115},
 	{0}
 };
 

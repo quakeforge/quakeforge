@@ -1912,6 +1912,8 @@ PR_SV_Spawn (progs_t *pr)
 	SV_Spawn (cl);
 }
 
+#define QF (PR_RANGE_QF << PR_RANGE_SHIFT) |
+
 static builtin_t builtins[] = {
 	{"makevectors",			PF_makevectors,			1},
 	{"setorigin",			PF_setorigin,			2},
@@ -1974,22 +1976,22 @@ static builtin_t builtins[] = {
 	{"logfrag",				PF_logfrag,				79},
 	{"infokey",				PF_infokey,				80},
 	{"multicast",			PF_multicast,			82},
-	{"testentitypos",		PF_testentitypos,		92},
-	{"hullpointcontents",	PF_hullpointcontents,	93},
-	{"getboxbounds",		PF_getboxbounds,		94},
-	{"getboxhull",			PF_getboxhull,			95},
-	{"freeboxhull",			PF_freeboxhull,			96},
-	{"rotate_bbox",			PF_rotate_bbox,			97},
+	{"testentitypos",		PF_testentitypos,		QF 92},
+	{"hullpointcontents",	PF_hullpointcontents,	QF 93},
+	{"getboxbounds",		PF_getboxbounds,		QF 94},
+	{"getboxhull",			PF_getboxhull,			QF 95},
+	{"freeboxhull",			PF_freeboxhull,			QF 96},
+	{"rotate_bbox",			PF_rotate_bbox,			QF 97},
 
-	{"checkmove",			PF_checkmove,			98},
-	{"checkextension",		PF_checkextension,		99},
-	{"setinfokey",			PF_setinfokey,			102},
-	{"cfopen",				PF_cfopen,				103},
-	{"cfclose",				PF_cfclose,				104},
-	{"cfread",				PF_cfread,				105},
-	{"cfwrite",				PF_cfwrite,				106},
-	{"cfeof",				PF_cfeof,				107},
-	{"cfquota",				PF_cfquota,				108},
+	{"checkmove",			PF_checkmove,			QF 98},
+	{"checkextension",		PF_checkextension,		QF 99},
+	{"setinfokey",			PF_setinfokey,			QF 102},
+	{"cfopen",				PF_cfopen,				QF 103},
+	{"cfclose",				PF_cfclose,				QF 104},
+	{"cfread",				PF_cfread,				QF 105},
+	{"cfwrite",				PF_cfwrite,				QF 106},
+	{"cfeof",				PF_cfeof,				QF 107},
+	{"cfquota",				PF_cfquota,				QF 108},
 
 	{"SV_AllocClient",		PF_SV_AllocClient,		-1},
 	{"SV_FreeClient",		PF_SV_FreeClient,		-1},

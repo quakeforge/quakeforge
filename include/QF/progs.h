@@ -178,6 +178,23 @@ qboolean PR_EdictValid (progs_t *pr, int e);
 #define E_GSTRING(p,e,o) (PR_GetString (p, E_STRING (e, o)))
 #define E_DSTRING(p,e,o) (PR_GetDString (p, E_STRING (e, o)))
 
+/*
+	Builtins are arranged into groups of 65536 to allow for diffent expantion
+	sets. eg, stock id is 0x0000xxxx, quakeforge is 0x000fxxxx. predefined
+	groups go up to 0x0fffxxxx allowing 4096 different groups. Builtins
+	0x10000000 to 0x7fffffff are reserved for auto-allocation. The range
+	0x8000000 to 0xffffffff is unavailable due to the builtin number being
+	a negative statement address.
+*/
+#define PR_RANGE_SHIFT	16
+#define PR_RANGE_MASK	0xffff0000
+
+#define PR_RANGE_QF		0x000f
+
+#define PR_RANGE_AUTO	0x1000
+#define PR_RANGE_NONE	0xffff
+#define PR_AUTOBUILTIN	(PR_RANGE_AUTO << PR_RANGE_SHIFT)
+
 typedef void (*builtin_proc) (progs_t *pr);
 typedef struct {
 	const char *name;

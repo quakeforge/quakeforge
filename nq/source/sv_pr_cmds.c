@@ -1351,6 +1351,8 @@ PF_checkextension (progs_t *pr)
 	R_FLOAT (pr) = 0;			// FIXME: make this function actually useful
 }
 
+#define QF (PR_RANGE_QF << PR_RANGE_SHIFT) |
+
 static builtin_t builtins[] = {
 	{"makevectors",			PF_makevectors,			1},
 	{"setorigin",			PF_setorigin,			2},
@@ -1397,12 +1399,12 @@ static builtin_t builtins[] = {
 	{"precache_sound2",		PF_precache_sound,		76},
 	{"precache_file2",		PF_precache_file,		77},
 	{"setspawnparms",		PF_setspawnparms,		78},
-	{"hullpointcontents",	PF_hullpointcontents,	93},
-	{"getboxbounds",		PF_getboxbounds,		94},
-	{"getboxhull",			PF_getboxhull,			95},
-	{"freeboxhull",			PF_freeboxhull,			96},
-	{"rotate_bbox",			PF_rotate_bbox,			97},
-	{"checkextension",		PF_checkextension,		99},
+	{"hullpointcontents",	PF_hullpointcontents,	QF 93},
+	{"getboxbounds",		PF_getboxbounds,		QF 94},
+	{"getboxhull",			PF_getboxhull,			QF 95},
+	{"freeboxhull",			PF_freeboxhull,			QF 96},
+	{"rotate_bbox",			PF_rotate_bbox,			QF 97},
+	{"checkextension",		PF_checkextension,		QF 99},
 	{0}
 };
 

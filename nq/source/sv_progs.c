@@ -43,6 +43,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/quakefs.h"
 
+#include "compat.h"
 #include "host.h"
 #include "server.h"
 #include "sv_progs.h"
@@ -55,6 +56,7 @@ sv_fields_t sv_fields;
 
 cvar_t     *sv_progs;
 cvar_t     *sv_progs_zone;
+cvar_t     *sv_progs_ext;
 cvar_t     *pr_checkextensions;
 
 cvar_t     *nomonsters;
@@ -70,6 +72,22 @@ cvar_t     *saved3;
 cvar_t     *saved4;
 
 func_t      EndFrame;
+
+static int sv_range;
+
+static unsigned
+bi_map (progs_t *pr, unsigned binum)
+{
+	unsigned    range;
+
+	if (sv_range != PR_RANGE_NONE) {
+		range = (binum & PR_RANGE_MASK) >> PR_RANGE_SHIFT;
+
+		if (!range && binum > PR_RANGE_ID_MAX)
+			binum |= sv_range << PR_RANGE_SHIFT;
+	}
+	return binum;
+}
 
 static int
 prune_edict (progs_t *pr, edict_t *ent)
@@ -143,11 +161,24 @@ SV_LoadProgs (void)
 	ddef_t     *def;
 	dfunction_t *f;
 	const char *progs_name = "progs.dat";
+	const char *range;
 
 	if (qfs_gamedir->gamecode && *qfs_gamedir->gamecode)
 		progs_name = qfs_gamedir->gamecode;
 	if (*sv_progs->string)
 		progs_name = sv_progs->string;
+
+	if (strequal (sv_progs_ext->string, "qf")) {
+		sv_range = PR_RANGE_QF;
+		range = "QF";
+	} else if (strequal (sv_progs_ext->string, "id")) {
+		sv_range = PR_RANGE_ID;
+		range = "ID";
+	} else {
+		sv_range = PR_RANGE_NONE;
+		range = "None";
+	}
+	Con_DPrintf ("Using %s builtin extention mapping\n", range);
 
 	PR_LoadProgs (&sv_pr_state, progs_name, sv.max_edicts,
 				  sv_progs_zone->int_val * 1024);
@@ -342,6 +373,7 @@ SV_Progs_Init (void)
 	sv_pr_state.unlink = SV_UnlinkEdict;
 	sv_pr_state.parse_field = parse_field;
 	sv_pr_state.prune_edict = prune_edict;
+	sv_pr_state.bi_map = bi_map;
 
 	SV_PR_Cmds_Init ();
 
@@ -362,6 +394,9 @@ SV_Progs_Init_Cvars (void)
 						 "Override the default game progs.");
 	sv_progs_zone = Cvar_Get ("sv_progs_zone", "256", CVAR_NONE, NULL,
 							  "size of the zone for progs in kb");
+	sv_progs_ext = Cvar_Get ("sv_progs_ext", "qf", CVAR_NONE, NULL,
+							 "extention mapping to use: "
+							 "none, id, qf");
 	pr_checkextensions = Cvar_Get ("pr_checkextensions", "1", CVAR_ROM, NULL,
 								   "indicate the presence of the "
 								   "checkextentions qc function");

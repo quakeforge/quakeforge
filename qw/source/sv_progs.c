@@ -43,6 +43,7 @@
 #include "compat.h"
 #include "server.h"
 #include "sv_progs.h"
+#include "sv_pr_qwe.h"
 #include "world.h"
 
 sv_globals_t sv_globals;
@@ -53,11 +54,28 @@ progs_t	    sv_pr_state;
 cvar_t     *r_skyname;
 cvar_t     *sv_progs;
 cvar_t     *sv_progs_zone;
+cvar_t     *sv_progs_ext;
 cvar_t     *pr_checkextensions;
 cvar_t     *sv_old_entity_free;
 cvar_t     *sv_hide_version_info;
 
 static int reserved_edicts = MAX_CLIENTS;
+
+static int sv_range;
+
+static unsigned
+bi_map (progs_t *pr, unsigned binum)
+{
+	unsigned    range;
+
+	if (sv_range != PR_RANGE_NONE) {
+		range = (binum & PR_RANGE_MASK) >> PR_RANGE_SHIFT;
+
+		if (!range && binum > PR_RANGE_ID_MAX)
+			binum |= sv_range << PR_RANGE_SHIFT;
+	}
+	return binum;
+}
 
 static void
 free_edict (progs_t *pr, edict_t *ent)
@@ -162,8 +180,25 @@ SV_LoadProgs (void)
 	ddef_t *def;
 	dfunction_t *f;
 	const char *progs_name = "qwprogs.dat";
+	const char *range;
 
 	memset (&sv_funcs, 0, sizeof (sv_funcs));
+
+	if (strequal (sv_progs_ext->string, "qf")) {
+		sv_range = PR_RANGE_QF;
+		range = "QF";
+	} else if (strequal (sv_progs_ext->string, "id")) {
+		sv_range = PR_RANGE_ID;
+		range = "ID";
+	} else if (strequal (sv_progs_ext->string, "qwe")
+			   || strequal (sv_progs_ext->string, "ktpro")) {
+		sv_range = PR_RANGE_QWE;
+		range = "QWE/KTPro";
+	} else {
+		sv_range = PR_RANGE_NONE;
+		range = "None";
+	}
+	Con_DPrintf ("Using %s builtin extention mapping\n", range);
 
 	if (qfs_gamedir->gamecode && *qfs_gamedir->gamecode)
 		progs_name = qfs_gamedir->gamecode;
@@ -351,9 +386,11 @@ SV_Progs_Init (void)
 	sv_pr_state.parse_field = parse_field;
 	sv_pr_state.prune_edict = prune_edict;
 	sv_pr_state.free_edict = free_edict; // eww, I hate the need for this :(
+	sv_pr_state.bi_map = bi_map;
 
 	PR_Resources_Init (&sv_pr_state);
 	SV_PR_Cmds_Init ();
+	SV_PR_QWE_Init (&sv_pr_state);
 	Cmd_Progs_Init (&sv_pr_state);
 	Hash_Progs_Init (&sv_pr_state);
 
@@ -376,6 +413,9 @@ SV_Progs_Init_Cvars (void)
 						 "Override the default game progs.");
 	sv_progs_zone = Cvar_Get ("sv_progs_zone", "256", CVAR_NONE, NULL,
 							  "size of the zone for progs in kb");
+	sv_progs_ext = Cvar_Get ("sv_progs_ext", "qf", CVAR_NONE, NULL,
+							 "extention mapping to use: "
+							 "none, id, qf, qwe, ktpro");
 	pr_checkextensions = Cvar_Get ("pr_checkextensions", "1", CVAR_ROM, NULL,
 								   "indicate the presence of the "
 								   "checkextentions qc function");

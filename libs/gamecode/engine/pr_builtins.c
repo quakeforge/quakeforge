@@ -54,16 +54,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 
-/*
-	Builtins are arranged into groups of 65536 to allow for diffent expantion
-	sets. eg, stock id is 0x0000xxxx, quakeforge is 0x000fxxxx. predefined
-	groups go up to 0x0fffxxxx allowing 4096 different groups. Builtins
-	0x10000000 to 0x7fffffff are reserved for auto-allocation. The range
-	0x8000000 to 0xffffffff is unavailable due to the builtin number being
-	a negative statement address.
-*/
-#define PR_AUTOBUILTIN 0x10000000
-
 static const char *
 builtin_get_key (void *_bi, void *unused)
 {
