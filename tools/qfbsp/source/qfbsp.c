@@ -789,6 +789,9 @@ ProcessFile (void)
 
 	QFS_StripExtension (options.bspfile, options.pointfile);
 	strcat (options.pointfile, ".pts");
+	bsp = BSP_New ();
+	// load brushes and entities
+	LoadMapFile (options.mapfile);
 
 	if (!options.onlyents) {
 		remove (options.bspfile);
@@ -801,9 +804,6 @@ ProcessFile (void)
 		remove (options.portfile);
 		remove (options.pointfile);
 	}
-	bsp = BSP_New ();
-	// load brushes and entities
-	LoadMapFile (options.mapfile);
 	if (options.onlyents) {
 		UpdateEntLump ();
 		return;

@@ -32,6 +32,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #endif
 #include <stdlib.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include "QF/dstring.h"
 #include "QF/quakefs.h"
@@ -133,15 +134,15 @@ TokenAvailable (qboolean crossline)
 	if (unget)
 		return true;
   skipspace:
-	while (*script_p <= 32) {
-		if (!*script_p)
-			return false;
+	while (isspace ((unsigned char) *script_p)) {
 		if (*script_p++ == '\n') {
 			if (!crossline)
 				return false;
 			scriptline++;
 		}
 	}
+	if (!*script_p)
+		return false;
 
 	if (script_p[0] == '/' && script_p[1] == '/') {		// comment field
 		while (*script_p && *script_p != '\n')
@@ -186,7 +187,7 @@ GetToken (qboolean crossline)
 		}
 		script_p++;
 	} else
-		while (*script_p > 32) {
+		while (*script_p && !isspace ((unsigned char) *script_p)) {
 			*token_p++ = *script_p++;
 			if (token_p > &token[MAXTOKEN - 1])
 				Sys_Error ("Token too large on line %i", scriptline);
