@@ -71,6 +71,7 @@ static const char rcsid[] =
 
 #include "cmdlib.h"
 #include "qfcc.h"
+#include "expr.h"
 #include "class.h"
 #include "type.h"
 
@@ -122,6 +123,9 @@ dstring_t  *tempname;
 #endif
 
 pr_info_t   pr;
+
+int         pr_source_line;
+int         pr_error_count;
 
 float       pr_globals[MAX_REGS];
 int         numpr_globals;

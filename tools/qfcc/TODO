@@ -23,4 +23,5 @@ o	CSE optimisations. Hard?
 X	clean up error expression handling to minimuse follow on errors
 o	fix local structure used/uninitialized warnings
 o	arrays in entities/structures?
-o	object oriented features ala Objective-C
+M	object oriented features ala Objective-C
+?	pass the first two parms in call->b and call->c

@@ -32,6 +32,7 @@ static const char rcsid[] =
 #include <QF/va.h>
 
 #include "qfcc.h"
+#include "expr.h"
 
 void
 PrecacheSound (def_t *e, int ch)
