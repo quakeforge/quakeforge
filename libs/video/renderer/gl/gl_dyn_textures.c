@@ -132,6 +132,7 @@ GDT_InitSmokeParticleTexture (void)
 	float       dx, dy2;
 	int         x, y, c;
 
+	memset (noise1, 0, sizeof (noise1));
 	noise_plasma (&noise1[0][0], 32);
 	noise_diamondsquare (&noise2[0][0], 32, 4);
 	for (y = 0; y < 32; y++) {
