@@ -240,7 +240,7 @@ GIB_Execute (cbuf_t * cbuf)
 					&g->locals,
 					&g->globals,
 					cbuf->args->argv[0]->str, &index, true);
-				GIB_Var_Assign (var, index, cbuf->args->argv + 2, cbuf->args->argc - 2);
+				GIB_Var_Assign (var, index, cbuf->args->argv + 2, cbuf->args->argc - 2, cbuf->args->argv[0]->str[strlen (cbuf->args->argv[0]->str) - 1] != ']');
 				if (g->ip->flags & TREE_L_EMBED) {
 					GIB_Buffer_Push_Sstack (cbuf);
 					g->waitret = true;

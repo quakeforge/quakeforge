@@ -114,8 +114,8 @@ GIB_Builtin_Remove (const char *name)
 {
 	gib_builtin_t *del;
 
-	if ((del = Hash_Find (gib_builtins, name)))
-		Hash_Free (gib_builtins, Hash_DelElement (gib_builtins, del));
+	if ((del = Hash_Del (gib_builtins, name)))
+		Hash_Free (gib_builtins, del);
 }
 
 qboolean
@@ -225,7 +225,7 @@ GIB_Local_f (void)
 								 GIB_Argv (1), &index, true);
 		if (GIB_Argc () >= 3)
 			GIB_Var_Assign (var, index, cbuf_active->args->argv + 3,
-							GIB_Argc () - 3);
+							GIB_Argc () - 3, GIB_Argv (1)[strlen (GIB_Argv(1)) - 1] != ']');
 		if (GIB_CanReturn ())
 			for (i = 3; i < GIB_Argc(); i++)
 				GIB_Return (GIB_Argv(i));
@@ -250,7 +250,7 @@ GIB_Global_f (void)
 								 GIB_Argv (1), &index, true);
 		if (GIB_Argc () >= 3)
 			GIB_Var_Assign (var, index, cbuf_active->args->argv + 3,
-							GIB_Argc () - 3);
+							GIB_Argc () - 3, GIB_Argv (1)[strlen (GIB_Argv(1)) - 1] != ']');
 		if (GIB_CanReturn ())
 			for (i = 3; i < GIB_Argc(); i++)
 				GIB_Return (GIB_Argv(i));
@@ -510,6 +510,30 @@ GIB_Split_f (void)
 			*(end++) = 0;
 		GIB_Return (start);
 	}
+}
+
+static void
+GIB_Chomp_f (void)
+{
+	char *str;
+	const char *junk;
+	unsigned int i;
+
+	if (GIB_Argc () < 2 || GIB_Argc () > 3) {
+		GIB_USAGE ("string [junk]");
+		return;
+	}
+
+	str = GIB_Argv (1);
+	if (GIB_Argc () == 2)
+		junk = " \t\n\r";
+	else
+		junk = GIB_Argv (2);
+
+	for (; *str && strchr (junk, *str); str++);
+	for (i = strlen(str) - 1; i && strchr (junk, str[i]); i--);
+	str[i+1] = 0;
+	GIB_Return (str);
 }
 
 static void
@@ -948,6 +972,7 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("slice", GIB_Slice_f);
 	GIB_Builtin_Add ("slice::find", GIB_Slice_Find_f);
 	GIB_Builtin_Add ("split", GIB_Split_f);
+	GIB_Builtin_Add ("chomp", GIB_Chomp_f);
 	GIB_Builtin_Add ("regex::match", GIB_Regex_Match_f);
 	GIB_Builtin_Add ("regex::replace", GIB_Regex_Replace_f);
 	GIB_Builtin_Add ("regex::extract", GIB_Regex_Extract_f);

@@ -242,7 +242,7 @@ GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *ke
 
 void
 GIB_Var_Assign (gib_var_t * var, unsigned int index, dstring_t ** values,
-				unsigned int numv)
+				unsigned int numv, qboolean shrink)
 {
 	unsigned int i, len;
 
@@ -253,7 +253,7 @@ GIB_Var_Assign (gib_var_t * var, unsigned int index, dstring_t ** values,
 		memset (var->array + var->size, 0,
 				(len - var->size) * sizeof (struct gib_varray_s));
 		var->size = len;
-	} else if (len < var->size) {
+	} else if (len < var->size && shrink) {
 		for (i = len; i < var->size; i++) {
 			if (var->array[i].value)
 				dstring_delete (var->array[i].value);
@@ -261,8 +261,8 @@ GIB_Var_Assign (gib_var_t * var, unsigned int index, dstring_t ** values,
 				Hash_DelTable (var->array[i].leaves);
 		}
 		var->array = realloc (var->array, len * sizeof (struct gib_varray_s));
+		var->size = len;
 	}
-	var->size = len;
 	for (i = 0; i < numv; i++) {
 		if (var->array[i + index].value)
 			dstring_clearstr (var->array[i + index].value);

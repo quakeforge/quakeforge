@@ -81,7 +81,7 @@ GIB_Handle_Free (unsigned long int num, unsigned short int class)
 void *
 GIB_Handle_Get (unsigned long int num, unsigned short int class)
 {
-	if (num >= gib_next_handle || gib_handles[num]->class != class)
+	if (num >= gib_next_handle || !gib_handles[num] || gib_handles[num]->class != class)
 		return 0;
 	return gib_handles[num]->data;
 }
