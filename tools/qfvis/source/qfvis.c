@@ -114,7 +114,7 @@ NewWinding (int points)
 	if (points > MAX_POINTS_ON_WINDING)
 		Sys_Error ("NewWinding: %i points", points);
 
-	size = (int) ((winding_t *) 0)->points[points];
+	size = (long) ((winding_t *) 0)->points[points];
 	winding = calloc (1, size);
 
 	return winding;
@@ -133,7 +133,7 @@ CopyWinding (winding_t *winding)
 	int         size;
 	winding_t  *copy;
 
-	size = (int) ((winding_t *) 0)->points[winding->numpoints];
+	size = (long) ((winding_t *) 0)->points[winding->numpoints];
 	copy = malloc (size);
 	memcpy (copy, winding, size);
 	copy->original = false;
@@ -373,7 +373,7 @@ LeafFlow (int leafnum)
 void
 CalcPortalVis (void)
 {
-	int         i;
+	long        i;
 
 	// fastvis just uses mightsee for a very loose bound
 	if (options.minimal) {

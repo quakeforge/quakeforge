@@ -458,7 +458,7 @@ GIB_String_Length_f (void)
 	  	"string.length: invalid syntax\n"
 		  "usage: string.length string");
 	else
-		GIB_Return (va("%i", strlen(GIB_Argv(1))));
+		GIB_Return (va("%i", (int) strlen(GIB_Argv(1))));
 }
 
 void

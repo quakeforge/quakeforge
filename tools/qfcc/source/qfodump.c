@@ -81,8 +81,8 @@ dump_defs (qfo_t *qfo)
 	qfo_func_t *func;
 
 	for (def = qfo->defs; def - qfo->defs < qfo->num_defs; def++) {
-		printf ("%5d %4d %4x %d %s %s %d %d %s:%d\n",
-				def - qfo->defs,
+		printf ("%5ld %4d %4x %d %s %s %d %d %s:%d\n",
+				(long) (def - qfo->defs),
 				def->ofs,
 				def->flags,
 				def->basic_type,

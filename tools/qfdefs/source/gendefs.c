@@ -53,26 +53,26 @@ output_def (FILE *out, const char *line)
 		;
 	if (strncmp ("int", type, type_e - type) == 0) {
 		fprintf (out, "\t{ev_entity | DEF_SAVEGLOBAL,\t%d,\t\"%.*s\"},\n",
-				 offset, name_e - name, name);
+				 offset, (int) (name_e - name), name);
 		offset += 1;
 	} else if (strncmp ("float", type, type_e - type) == 0) {
 		fprintf (out, "\t{ev_float | DEF_SAVEGLOBAL,\t%d,\t\"%.*s\"},\n",
-				 offset, name_e - name, name);
+				 offset, (int) (name_e - name), name);
 		offset += 1;
 	} else if (strncmp ("string_t", type, type_e - type) == 0) {
 		fprintf (out, "\t{ev_string | DEF_SAVEGLOBAL,\t%d,\t\"%.*s\"},\n",
-				 offset, name_e - name, name);
+				 offset, (int) (name_e - name), name);
 		offset += 1;
 	} else if (strncmp ("vec3_t", type, type_e - type) == 0) {
 		fprintf (out, "\t{ev_vector | DEF_SAVEGLOBAL,\t%d,\t\"%.*s\"},\n",
-				 offset, name_e - name, name);
+				 offset, (int) (name_e - name), name);
 		offset += 3;
 	} else if (strncmp ("func_t", type, type_e - type) == 0) {
 		fprintf (out, "\t{ev_func,\t%d,\t\"%.*s\"},\n",
-				 offset, name_e - name, name);
+				 offset, (int) (name_e - name), name);
 		offset += 1;
 	} else {
-		fprintf (stderr, "unknown type %.*s\n", type_e - type, type);
+		fprintf (stderr, "unknown type %.*s\n", (int) (type_e - type), type);
 		exit (1);
 	}
 }

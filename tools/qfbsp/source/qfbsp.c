@@ -755,12 +755,12 @@ CreateHulls (void)
 	if (!fork ()) {
 		hullnum = 1;
 		options.verbosity = 0;
-		drawflag = false;
+		options.drawflag = false;
 		sprintf (argv0, "HUL%i", hullnum);
 	} else if (!fork ()) {
 		hullnum = 2;
 		options.verbosity = 0;
-		drawflag = false;
+		options.drawflag = false;
 		sprintf (argv0, "HUL%i", hullnum);
 	}
 	CreateSingleHull ();

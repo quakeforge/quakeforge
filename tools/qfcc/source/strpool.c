@@ -48,7 +48,7 @@ static const char rcsid[] =
 static const char *
 strpool_get_key (void *_str, void *_strpool)
 {
-	int         str = (long) _str;
+	long        str = (long) _str;
 	strpool_t  *strpool = (strpool_t *) _strpool;
 
 	return strpool->strings + str;
@@ -70,7 +70,7 @@ strpool_new (void)
 strpool_t *
 strpool_build (const char *strings, int size)
 {
-	int         s;
+	long        s;
 
 	strpool_t  *strpool = malloc (sizeof (strpool_t));
 	strpool->str_tab = Hash_NewTable (16381, strpool_get_key, 0, strpool);
@@ -96,7 +96,7 @@ strpool_delete (strpool_t *strpool)
 int
 strpool_addstr (strpool_t *strpool, const char *str)
 {
-	int         s;
+	long        s;
 	int         len;
 
 	if (!str || !*str)

@@ -122,50 +122,131 @@ byte       *skinstart;
 #undef USE_INTEL_ASM //XXX asm pic hack
 #endif
 
+
+void
+D_PolysetSetEdgeTable (void)
+{
+	int         edgetableindex;
+
+	// assume the vertices are already in top to bottom order
+	edgetableindex = 0;
+
+	// determine which edges are right & left, and the order in which
+	// to rasterize them
+	if (r_p0[1] >= r_p1[1]) {
+		if (r_p0[1] == r_p1[1]) {
+			if (r_p0[1] < r_p2[1])
+				pedgetable = &edgetables[2];
+			else
+				pedgetable = &edgetables[5];
+
+			return;
+		} else {
+			edgetableindex = 1;
+		}
+	}
+
+	if (r_p0[1] == r_p2[1]) {
+		if (edgetableindex)
+			pedgetable = &edgetables[8];
+		else
+			pedgetable = &edgetables[9];
+
+		return;
+	} else if (r_p1[1] == r_p2[1]) {
+		if (edgetableindex)
+			pedgetable = &edgetables[10];
+		else
+			pedgetable = &edgetables[11];
+
+		return;
+	}
+
+	if (r_p0[1] > r_p2[1])
+		edgetableindex += 2;
+
+	if (r_p1[1] > r_p2[1])
+		edgetableindex += 4;
+
+	pedgetable = &edgetables[edgetableindex];
+}
+
 #ifndef USE_INTEL_ASM
 
 void
-D_PolysetDraw (void)
+D_PolysetRecursiveTriangle (int *lp1, int *lp2, int *lp3)
 {
-	spanpackage_t spans[DPS_MAXSPANS + 1 +
-						((CACHE_SIZE - 1) / sizeof (spanpackage_t)) + 1];
-
-	// one extra because of cache line pretouching
-
-	a_spans = (spanpackage_t *)
-		(((long) &spans[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
-
-	if (r_affinetridesc.drawtype) {
-		D_DrawSubdiv ();
-	} else {
-		D_DrawNonSubdiv ();
-	}
-}
-
-
-void
-D_PolysetDrawFinalVerts (finalvert_t *fv, int numverts)
-{
-	int         i, z;
+	int        *temp;
+	int         d;
+	int         new[6];
+	int         z;
 	short      *zbuf;
 
-	for (i = 0; i < numverts; i++, fv++) {
-		// valid triangle coordinates for filling can include the bottom and
-		// right clip edges, due to the fill rule; these shouldn't be drawn
-		if ((fv->v[0] < r_refdef.vrectright) &&
-			(fv->v[1] < r_refdef.vrectbottom)) {
-			z = fv->v[5] >> 16;
-			zbuf = zspantable[fv->v[1]] + fv->v[0];
-			if (z >= *zbuf) {
-				int         pix;
+	d = lp2[0] - lp1[0];
+	if (d < -1 || d > 1)
+		goto split;
+	d = lp2[1] - lp1[1];
+	if (d < -1 || d > 1)
+		goto split;
 
-				*zbuf = z;
-				pix = skintable[fv->v[3] >> 16][fv->v[2] >> 16];
-				pix = ((byte *) acolormap)[pix + (fv->v[4] & 0xFF00)];
-				d_viewbuffer[d_scantable[fv->v[1]] + fv->v[0]] = pix;
-			}
-		}
+	d = lp3[0] - lp2[0];
+	if (d < -1 || d > 1)
+		goto split2;
+	d = lp3[1] - lp2[1];
+	if (d < -1 || d > 1)
+		goto split2;
+
+	d = lp1[0] - lp3[0];
+	if (d < -1 || d > 1)
+		goto split3;
+	d = lp1[1] - lp3[1];
+	if (d < -1 || d > 1) {
+	  split3:
+		temp = lp1;
+		lp1 = lp3;
+		lp3 = lp2;
+		lp2 = temp;
+
+		goto split;
 	}
+
+	return;								// entire tri is filled
+
+  split2:
+	temp = lp1;
+	lp1 = lp2;
+	lp2 = lp3;
+	lp3 = temp;
+
+  split:
+	// split this edge
+	new[0] = (lp1[0] + lp2[0]) >> 1;
+	new[1] = (lp1[1] + lp2[1]) >> 1;
+	new[2] = (lp1[2] + lp2[2]) >> 1;
+	new[3] = (lp1[3] + lp2[3]) >> 1;
+	new[5] = (lp1[5] + lp2[5]) >> 1;
+
+	// draw the point if splitting a leading edge
+	if (lp2[1] > lp1[1])
+		goto nodraw;
+	if ((lp2[1] == lp1[1]) && (lp2[0] < lp1[0]))
+		goto nodraw;
+
+
+	z = new[5] >> 16;
+	zbuf = zspantable[new[1]] + new[0];
+	if (z >= *zbuf) {
+		int         pix;
+
+		*zbuf = z;
+		pix = d_pcolormap[skintable[new[3] >> 16][new[2] >> 16]];
+		d_viewbuffer[d_scantable[new[1]] + new[0]] = pix;
+	}
+
+  nodraw:
+	// recursively continue
+	D_PolysetRecursiveTriangle (lp3, lp1, new);
+	D_PolysetRecursiveTriangle (lp3, new, lp2);
 }
 
 
@@ -282,79 +363,47 @@ D_DrawNonSubdiv (void)
 
 
 void
-D_PolysetRecursiveTriangle (int *lp1, int *lp2, int *lp3)
+D_PolysetDraw (void)
 {
-	int        *temp;
-	int         d;
-	int         new[6];
-	int         z;
+	spanpackage_t spans[DPS_MAXSPANS + 1 +
+						((CACHE_SIZE - 1) / sizeof (spanpackage_t)) + 1];
+
+	// one extra because of cache line pretouching
+
+	a_spans = (spanpackage_t *)
+		(((long) &spans[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
+
+	if (r_affinetridesc.drawtype) {
+		D_DrawSubdiv ();
+	} else {
+		D_DrawNonSubdiv ();
+	}
+}
+
+
+void
+D_PolysetDrawFinalVerts (finalvert_t *fv, int numverts)
+{
+	int         i, z;
 	short      *zbuf;
 
-	d = lp2[0] - lp1[0];
-	if (d < -1 || d > 1)
-		goto split;
-	d = lp2[1] - lp1[1];
-	if (d < -1 || d > 1)
-		goto split;
+	for (i = 0; i < numverts; i++, fv++) {
+		// valid triangle coordinates for filling can include the bottom and
+		// right clip edges, due to the fill rule; these shouldn't be drawn
+		if ((fv->v[0] < r_refdef.vrectright) &&
+			(fv->v[1] < r_refdef.vrectbottom)) {
+			z = fv->v[5] >> 16;
+			zbuf = zspantable[fv->v[1]] + fv->v[0];
+			if (z >= *zbuf) {
+				int         pix;
 
-	d = lp3[0] - lp2[0];
-	if (d < -1 || d > 1)
-		goto split2;
-	d = lp3[1] - lp2[1];
-	if (d < -1 || d > 1)
-		goto split2;
-
-	d = lp1[0] - lp3[0];
-	if (d < -1 || d > 1)
-		goto split3;
-	d = lp1[1] - lp3[1];
-	if (d < -1 || d > 1) {
-	  split3:
-		temp = lp1;
-		lp1 = lp3;
-		lp3 = lp2;
-		lp2 = temp;
-
-		goto split;
+				*zbuf = z;
+				pix = skintable[fv->v[3] >> 16][fv->v[2] >> 16];
+				pix = ((byte *) acolormap)[pix + (fv->v[4] & 0xFF00)];
+				d_viewbuffer[d_scantable[fv->v[1]] + fv->v[0]] = pix;
+			}
+		}
 	}
-
-	return;								// entire tri is filled
-
-  split2:
-	temp = lp1;
-	lp1 = lp2;
-	lp2 = lp3;
-	lp3 = temp;
-
-  split:
-	// split this edge
-	new[0] = (lp1[0] + lp2[0]) >> 1;
-	new[1] = (lp1[1] + lp2[1]) >> 1;
-	new[2] = (lp1[2] + lp2[2]) >> 1;
-	new[3] = (lp1[3] + lp2[3]) >> 1;
-	new[5] = (lp1[5] + lp2[5]) >> 1;
-
-	// draw the point if splitting a leading edge
-	if (lp2[1] > lp1[1])
-		goto nodraw;
-	if ((lp2[1] == lp1[1]) && (lp2[0] < lp1[0]))
-		goto nodraw;
-
-
-	z = new[5] >> 16;
-	zbuf = zspantable[new[1]] + new[0];
-	if (z >= *zbuf) {
-		int         pix;
-
-		*zbuf = z;
-		pix = d_pcolormap[skintable[new[3] >> 16][new[2] >> 16]];
-		d_viewbuffer[d_scantable[new[1]] + new[0]] = pix;
-	}
-
-  nodraw:
-	// recursively continue
-	D_PolysetRecursiveTriangle (lp3, lp1, new);
-	D_PolysetRecursiveTriangle (lp3, new, lp2);
 }
 
 #endif // !USE_INTEL_ASM
@@ -833,55 +882,6 @@ D_RasterizeAliasPolySmooth (void)
 		// mark end of the spanpackages
 		D_PolysetDrawSpans8 (pstart);
 	}
-}
-
-
-void
-D_PolysetSetEdgeTable (void)
-{
-	int         edgetableindex;
-
-	// assume the vertices are already in top to bottom order
-	edgetableindex = 0;
-
-	// determine which edges are right & left, and the order in which
-	// to rasterize them
-	if (r_p0[1] >= r_p1[1]) {
-		if (r_p0[1] == r_p1[1]) {
-			if (r_p0[1] < r_p2[1])
-				pedgetable = &edgetables[2];
-			else
-				pedgetable = &edgetables[5];
-
-			return;
-		} else {
-			edgetableindex = 1;
-		}
-	}
-
-	if (r_p0[1] == r_p2[1]) {
-		if (edgetableindex)
-			pedgetable = &edgetables[8];
-		else
-			pedgetable = &edgetables[9];
-
-		return;
-	} else if (r_p1[1] == r_p2[1]) {
-		if (edgetableindex)
-			pedgetable = &edgetables[10];
-		else
-			pedgetable = &edgetables[11];
-
-		return;
-	}
-
-	if (r_p0[1] > r_p2[1])
-		edgetableindex += 2;
-
-	if (r_p1[1] > r_p2[1])
-		edgetableindex += 4;
-
-	pedgetable = &edgetables[edgetableindex];
 }
 
 

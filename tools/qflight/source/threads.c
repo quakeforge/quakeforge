@@ -81,7 +81,7 @@ RunThreadsOn (threadfunc_t *func)
 		pthread_t work_threads[256];
 		void *status;
 		pthread_attr_t attrib;
-		int			i;
+		long        i;
 
 		if (pthread_attr_init (&attrib) == -1)
 			fprintf (stderr, "pthread_attr_init failed");
@@ -89,7 +89,8 @@ RunThreadsOn (threadfunc_t *func)
 			fprintf (stderr, "pthread_attr_setstacksize failed");
 
 		for (i = 0; i < options.threads; i++) {
-			if (pthread_create (&work_threads[i], &attrib, func, (void *) i) == -1)
+			if (pthread_create (&work_threads[i], &attrib, func,
+								(void *) i) == -1)
 				fprintf (stderr, "pthread_create failed");
 		}
 
