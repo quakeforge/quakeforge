@@ -48,6 +48,7 @@ static void (*init_funcs[])(progs_t *, int) = {
 	RUA_Plist_Init,
 	RUA_QFile_Init,
 	RUA_QFS_Init,
+	RUA_Script_Init,
 	RUA_String_Init,
 };
 

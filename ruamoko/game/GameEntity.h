@@ -2,6 +2,7 @@
 #define __GameEntity_h
 
 #include "Entity.h"
+#include "entities.h"
 
 @extern .vector angles;
 @extern .float modelindex;

@@ -112,12 +112,15 @@ PR_PopFrame (progs_t *pr)
 	pr->pr_xtstr      = frame->tstr;
 }
 
-/*
-	PR_EnterFunction
-
-	Returns the new program statement counter
+/** Setup the stackframe prior to calling a progs function. Saves all local
+	data the called function will trample on and copies the parameters used
+	by the function into the function's local data space.
+	\param pr pointer to progs_t VM struct
+	\param f pointer to the descriptor for the called function
+	\note Passing a descriptor for a builtin function will result in
+	undefined behavior.
 */
-void
+static void
 PR_EnterFunction (progs_t *pr, dfunction_t *f)
 {
 	int			i, j, c, o;
@@ -242,6 +245,24 @@ signal_hook (int sig, void *data)
 	return 0;
 }
 
+int
+PR_CallFunction (progs_t *pr, func_t fnum)
+{
+	dfunction_t *f;
+
+	if (!fnum)
+		PR_RunError (pr, "NULL function");
+	f = pr->pr_functions + fnum;
+	if (f->first_statement < 0) {
+		// negative statements are built in functions
+		((bfunction_t *) f)->func (pr);
+		return 0;
+	} else {
+		PR_EnterFunction (pr, f);
+		return 1;
+	}
+}
+
 /*
 	PR_ExecuteProgram
 
@@ -252,30 +273,22 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 {
 	int				exitdepth, profile, startprofile;
 	unsigned int    pointer;
-	dfunction_t	   *f;
 	dstatement_t   *st;
 	edict_t		   *ed;
 	pr_type_t	   *ptr;
 
-	if (!fnum || fnum >= pr->progs->numfunctions) {
-		if (*pr->globals.self)
-			ED_Print (pr, PROG_TO_EDICT (pr, *pr->globals.self));
-		PR_RunError (pr, "PR_ExecuteProgram: NULL function");
-	}
-
-	f = &pr->pr_functions[fnum];
-	//Sys_Printf("%s:\n", PR_GetString(pr,f->s_name));
-
-	pr->pr_trace = false;
-
 	// make a stack frame
 	exitdepth = pr->pr_depth;
-
-	PR_EnterFunction (pr, f);
-	st = pr->pr_statements + pr->pr_xstatement;
 	startprofile = profile = 0;
 
 	Sys_PushSignalHook (signal_hook, pr);
+
+	if (!PR_CallFunction (pr, fnum)) {
+		// called a builtin instead of progs code
+		Sys_PopSignalHook ();
+		return;
+	}
+	st = pr->pr_statements + pr->pr_xstatement;
 
 	while (1) {
 		pr_type_t  *op_a, *op_b, *op_c;
@@ -306,16 +319,11 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				QuatAdd (OPA.quat_var, OPB.quat_var, OPC.quat_var);
 				break;
 			case OP_ADD_S:
-				{
-					const char *a = PR_GetString (pr, OPA.string_var);
-					const char *b = PR_GetString (pr, OPB.string_var);
-					int lena = strlen (a);
-					int size = lena + strlen (b) + 1;
-					char *c = Hunk_TempAlloc (size);
-					strcpy (c, a);
-					strcpy (c + lena, b);
-					OPC.string_var = PR_SetTempString (pr, c);
-				}
+				OPC.string_var = PR_CatStrings (pr,
+												PR_GetString (pr,
+															  OPA.string_var),
+												PR_GetString (pr,
+															  OPB.string_var));
 				break;
 			case OP_SUB_F:
 				OPC.float_var = OPA.float_var - OPB.float_var;
@@ -776,15 +784,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				pr->pr_xfunction->profile += profile - startprofile;
 				startprofile = profile;
 				pr->pr_argc = st->op - OP_CALL0;
-				if (!OPA.func_var)
-					PR_RunError (pr, "NULL function");
-				f = &pr->pr_functions[OPA.func_var];
-				// negative statements are built in functions
-				if (f->first_statement < 0) {
-					((bfunction_t *) f)->func (pr);
-				} else {
-					PR_EnterFunction (pr, f);
-				}
+				PR_CallFunction (pr, OPA.func_var);
 				st = pr->pr_statements + pr->pr_xstatement;
 				break;
 			case OP_DONE:
@@ -800,6 +800,8 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				PR_LeaveFunction (pr);
 				st = pr->pr_statements + pr->pr_xstatement;
 				if (pr->pr_depth == exitdepth) {
+					if (pr->pr_trace && pr->pr_depth <= pr->pr_trace_depth)
+						pr->pr_trace = false;
 					Sys_PopSignalHook ();
 					return;					// all done
 				}

@@ -130,6 +130,8 @@
 
 	BUILTIN (setspawnparms, #78, void, entity e);
 
+	BUILTIN (EntityParseFunction, #0, void, void (string ent_data) func);
+
 #ifndef __RUA_INTERNAL_IMPLEMENT
 };
 #endif	// __RUA_INTERNAL_IMPLEMENT

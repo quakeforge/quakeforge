@@ -55,8 +55,7 @@ typedef struct trace_s
 #define	MOVE_NOMONSTERS	1
 #define	MOVE_MISSILE	2
 
-typedef struct areanode_s
-{
+typedef struct areanode_s {
 	int		axis;		// -1 = leaf node
 	float	dist;
 	struct areanode_s	*children[2];
@@ -116,5 +115,7 @@ hull_t *SV_HullForEntity (struct edict_s *ent, const vec3_t mins,
 qboolean SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
 								const vec3_t p1, const vec3_t p2,
 								trace_t *trace);
+qboolean MOD_TraceLine (hull_t *hull, int num,
+						const vec3_t start, const vec3_t end, trace_t *trace);
 
 #endif // __world_h

@@ -37,7 +37,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "host.h"
 #include "server.h"
-#include "sv_progs.h"
 #include "world.h"
 
 #define sv_frametime host_frametime
@@ -93,9 +92,6 @@ SV_CheckAllEnts (void)
 void
 SV_CheckVelocity (edict_t *ent)
 {
-#if 0
-	float       wishspeed;
-#endif
 	int         i;
 
 	// bound velocity
@@ -112,29 +108,20 @@ SV_CheckVelocity (edict_t *ent)
 															  classname)));
 			SVvector (ent, origin)[i] = 0;
 		}
-#if 1
 		if (SVvector (ent, velocity)[i] > sv_maxvelocity->value)
 			SVvector (ent, velocity)[i] = sv_maxvelocity->value;
 		else if (SVvector (ent, velocity)[i] < -sv_maxvelocity->value)
 			SVvector (ent, velocity)[i] = -sv_maxvelocity->value;
-#endif
 	}
-#if 0
-	wishspeed = VectorLength (SVvector (ent, velocity));
-	if (wishspeed > sv_maxvelocity->value) {
-		VectorScale (SVvector (ent, velocity), sv_maxvelocity->value /
-					 wishspeed, SVvector (ent, velocity));
-	}
-#endif
 }
 
 /*
-  SV_RunThink
+	SV_RunThink
 
-  Runs thinking code if time.  There is some play in the exact time the think
-  function will be called, because it is called before any movement is done
-  in a frame.  Not used for pushmove objects, because they must be exact.
-  Returns false if the entity removed itself.
+	Runs thinking code if time.  There is some play in the exact time the think
+	function will be called, because it is called before any movement is done
+	in a frame.  Not used for pushmove objects, because they must be exact.
+	Returns false if the entity removed itself.
 */
 qboolean
 SV_RunThink (edict_t *ent)
@@ -188,10 +175,10 @@ SV_Impact (edict_t *e1, edict_t *e2)
 }
 
 /*
-  ClipVelocity
+	ClipVelocity
 
-  Slide off of the impacting object
-  returns the blocked flags (1 = floor, 2 = step / wall)
+	Slide off of the impacting object
+	returns the blocked flags (1 = floor, 2 = step / wall)
 */
 static int
 ClipVelocity (vec3_t in, vec3_t normal, vec3_t out, float overbounce)
@@ -743,6 +730,7 @@ SV_RunEntity (edict_t *ent)
 		default:
 			Sys_Error ("SV_Physics: bad movetype %i",
 					   (int) SVfloat (ent, movetype));
+			break;
 	}
 }
 

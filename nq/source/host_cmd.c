@@ -39,16 +39,18 @@ static __attribute__ ((unused)) const char rcsid[] =
 #endif
 
 #include "QF/cbuf.h"
-#include "QF/idparse.h"
 #include "QF/cmd.h"
-#include "QF/cvar.h"
-#include "QF/va.h"
-#include "QF/screen.h"
-#include "QF/msg.h"
-#include "QF/model.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
+#include "QF/dstring.h"
+#include "QF/idparse.h"
 #include "QF/keys.h"
+#include "QF/model.h"
+#include "QF/msg.h"
+#include "QF/screen.h"
+#include "QF/script.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "client.h"
 #include "compat.h"
@@ -410,22 +412,26 @@ Host_Connect_f (void)
   Writes a SAVEGAME_COMMENT_LENGTH character comment describing the current 
 */
 static void
-Host_SavegameComment (char *text)
+Host_SavegameComment (QFile *file)
 {
-	int         i;
-	char        kills[20];
+	unsigned    i;
+	dstring_t  *comment = dstring_newstr ();
 
-	for (i = 0; i < SAVEGAME_COMMENT_LENGTH; i++)
-		text[i] = ' ';
-	memcpy (text, cl.levelname, strlen (cl.levelname));
-	snprintf (kills, sizeof (kills), "kills:%3i/%3i", cl.stats[STAT_MONSTERS],
-			  cl.stats[STAT_TOTALMONSTERS]);
-	memcpy (text + 22, kills, strlen (kills));
+	dsprintf (comment, "%-21s kills:%3i/%3i", cl.levelname,
+			  cl.stats[STAT_MONSTERS], cl.stats[STAT_TOTALMONSTERS]);
+	if ((i = comment->size - 1) < SAVEGAME_COMMENT_LENGTH) {
+		comment->size = SAVEGAME_COMMENT_LENGTH + 1;
+		dstring_adjust (comment);
+		while (i < comment->size - 1)
+			comment->str[i++] = ' ';
+	}
+	comment->str[SAVEGAME_COMMENT_LENGTH] = '\n';
+	comment->str[SAVEGAME_COMMENT_LENGTH + 1] = '\0';
 	// convert space to _ to make stdio happy
 	for (i = 0; i < SAVEGAME_COMMENT_LENGTH; i++)
-		if (text[i] == ' ')
-			text[i] = '_';
-	text[SAVEGAME_COMMENT_LENGTH] = '\0';
+		if (comment->str[i] == ' ')
+			comment->str[i] = '_';
+	Qwrite (file, comment->str, SAVEGAME_COMMENT_LENGTH + 1);
 }
 
 static void
@@ -434,7 +440,6 @@ Host_Savegame_f (void)
 	char        name[256];
 	QFile      *f;
 	int         i;
-	char        comment[SAVEGAME_COMMENT_LENGTH + 1];
 
 	if (cmd_source != src_command)
 		return;
@@ -484,8 +489,7 @@ Host_Savegame_f (void)
 	}
 
 	Qprintf (f, "%i\n", SAVEGAME_VERSION);
-	Host_SavegameComment (comment);
-	Qprintf (f, "%s\n", comment);
+	Host_SavegameComment (f);
 	for (i = 0; i < NUM_SPAWN_PARMS; i++)
 		Qprintf (f, "%f\n", svs.clients->spawn_parms[i]);
 	Qprintf (f, "%d\n", current_skill);
@@ -513,77 +517,88 @@ Host_Savegame_f (void)
 static void
 Host_Loadgame_f (void)
 {
-	char        name[MAX_OSPATH];
+	dstring_t  *name = 0;
 	QFile      *f;
-	char        mapname[MAX_QPATH];
+	char       *mapname = 0;
+	script_t   *script = 0;
+	char       *str = 0;
 	float       time, tfloat;
-	char        str[32768];
-	const char *start;
 	unsigned int i;
-	int         r;
 	edict_t    *ent;
 	int         entnum;
 	int         version;
 	float       spawn_parms[NUM_SPAWN_PARMS];
-	char        buf[100];
 
 	if (cmd_source != src_command)
-		return;
+		goto end;
 
 	if (Cmd_Argc () != 2) {
 		Con_Printf ("load <savename> : load a game\n");
-		return;
+		goto end;
 	}
 
 	cls.demonum = -1;					// stop demo loop in case this fails
 
-	snprintf (name, sizeof (name), "%s/%s", 
-			  qfs_gamedir->dir.def, Cmd_Argv (1));
-	QFS_DefaultExtension (name, ".sav");
+	name = dstring_newstr ();
+	dsprintf (name, "%s/%s", qfs_gamedir->dir.def, Cmd_Argv (1));
+	name->size += 4;
+	dstring_adjust (name);
+			  
+	QFS_DefaultExtension (name->str, ".sav");
 
 	// we can't call SCR_BeginLoadingPlaque, because too much stack space has
 	// been used.  The menu calls it before stuffing loadgame command
 //  SCR_BeginLoadingPlaque ();
 
-	Con_Printf ("Loading game from %s...\n", name);
-	f = QFS_Open (name, "rz");
+	Con_Printf ("Loading game from %s...\n", name->str);
+	f = QFS_Open (name->str, "rz");
 	if (!f) {
 		Con_Printf ("ERROR: couldn't open.\n");
-		return;
+		goto end;
 	}
+	str = malloc (Qfilesize (f) + 1);
+	i = Qread (f, str, Qfilesize (f));
+	str[i] = 0;
+	Qclose (f);
 
-	Qgets (f, buf, sizeof (buf));
-	sscanf (buf, "%i\n", &version);
+	script = Script_New ();
+	Script_Start (script, name->str, str);
+
+	Script_GetToken (script, 1);
+	sscanf (script->token->str, "%i", &version);
 	if (version != SAVEGAME_VERSION) {
-		Qclose (f);
 		Con_Printf ("Savegame is version %i, not %i\n", version,
 					SAVEGAME_VERSION);
-		return;
+		goto end;
 	}
-	Qgets (f, buf, sizeof (buf));
-	sscanf (buf, "%s\n", str);
+
+	// savegame comment (ignored)
+	Script_GetToken (script, 1);
+
 	for (i = 0; i < NUM_SPAWN_PARMS; i++) {
-		Qgets (f, buf, sizeof (buf));
-		sscanf (buf, "%f\n", &spawn_parms[i]);
+		Script_GetToken (script, 1);
+		sscanf (script->token->str, "%f", &spawn_parms[i]);
 	}
+
 	// this silliness is so we can load 1.06 save files, which have float skill
 	// values
-	Qgets (f, buf, sizeof (buf));
-	sscanf (buf, "%f\n", &tfloat);
+	Script_GetToken (script, 1);
+	sscanf (script->token->str, "%f", &tfloat);
 	current_skill = (int) (tfloat + 0.1);
 	Cvar_SetValue (skill, (float) current_skill);
 
-	Qgets (f, buf, sizeof (buf));
-	sscanf (buf, "%s\n", mapname);
-	Qgets (f, buf, sizeof (buf));
-	sscanf (buf, "%f\n", &time);
+	Script_GetToken (script, 1);
+	mapname = strdup (script->token->str);
+
+	Script_GetToken (script, 1);
+	sscanf (script->token->str, "%f", &time);
 
 	CL_Disconnect_f ();
 
 	SV_SpawnServer (mapname);
 	if (!sv.active) {
-		Con_Printf ("Couldn't load map\n");
-		return;
+		Con_Printf ("Couldn't load map %s\n", mapname);
+		goto end;
 	}
 	sv.paused = true;					// pause until all clients connect
 	sv.loadgame = true;
@@ -591,44 +606,27 @@ Host_Loadgame_f (void)
 	// load the light styles
 	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
 		char       *s;
-		Qgets (f, buf, sizeof (buf));
-		sscanf (buf, "%s\n", str);
-		s = Hunk_Alloc (strlen (str) + 1);
-		strcpy (s, str);
+
+		Script_GetToken (script, 1);
+		s = Hunk_Alloc (strlen (script->token->str) + 1);
+		strcpy (s, script->token->str);
 		sv.lightstyles[i] = s;
 	}
 
 	// load the edicts out of the savegame file
 	entnum = -1;						// -1 is the globals
-	while (!Qeof (f)) {
-		for (i = 0; i < sizeof (str) - 1; i++) {
-			r = Qgetc (f);
-			if (r == EOF || !r)
-				break;
-			str[i] = r;
-			if (r == '}') {
-				i++;
-				break;
-			}
-		}
-		if (i == sizeof (str) - 1)
-			Sys_Error ("Loadgame buffer overflow");
-		str[i] = 0;
-		start = str;
-		start = COM_Parse (str);
-		if (!com_token[0])
-			break;						// end of file
-		if (strcmp (com_token, "{"))
+	while (Script_GetToken (script, 1)) {
+		if (strcmp (script->token->str, "{"))
 			Sys_Error ("First token isn't a brace");
 
 		if (entnum == -1) {				// parse the global vars
-			ED_ParseGlobals (&sv_pr_state, start);
+			ED_ParseGlobals (&sv_pr_state, script);
 		} else {						// parse an edict
 
 			ent = EDICT_NUM (&sv_pr_state, entnum);
 			memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
 			ent->free = false;
-			ED_ParseEdict (&sv_pr_state, start, ent);
+			ED_ParseEdict (&sv_pr_state, script, ent);
 
 			// link it into the bsp tree
 			if (!ent->free)
@@ -641,8 +639,6 @@ Host_Loadgame_f (void)
 	sv.num_edicts = entnum;
 	sv.time = time;
 
-	Qclose (f);
-
 	for (i = 0; i < NUM_SPAWN_PARMS; i++)
 		svs.clients->spawn_parms[i] = spawn_parms[i];
 
@@ -650,6 +646,15 @@ Host_Loadgame_f (void)
 		CL_EstablishConnection ("local");
 		Host_Reconnect_f ();
 	}
+end:
+	if (mapname)
+		free (mapname);
+	if (script)
+		Script_Delete (script);
+	if (str)
+		free (str);
+	if (name)
+		dstring_delete (name);
 }
 
 //============================================================================

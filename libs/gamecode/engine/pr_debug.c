@@ -146,11 +146,8 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 	if (!f)
 		return 0;
 	for (dir = source_paths; *dir && !f->text; dir++) {
-		int         len;
-		len = strlen (*dir) + strlen (fname) + 2;
-		path = Hunk_TempAlloc (len);
-		sprintf (path, "%s%s%s", *dir, **dir ? "/" : "", fname);
-		f->text = pr->load_file (pr, path);
+		f->text = pr->load_file (pr, va ("%s%s%s", *dir, **dir ? "/" : "",
+										 fname));
 	}
 	if (!f->text) {
 		pr->file_error (pr, path);
@@ -192,7 +189,6 @@ PR_LoadDebug (progs_t *pr)
 	char		*sym_path;
 	const char	*path_end, *sym_file;
 	unsigned int i;
-	int			start = Hunk_LowMark ();
 	ddef_t	   *def;
 	pr_type_t  *str = 0;
 
@@ -219,13 +215,13 @@ PR_LoadDebug (progs_t *pr)
 	pr->debugfile = PR_GetString (pr, str->string_var);
 	sym_file = QFS_SkipPath (pr->debugfile);
 	path_end = QFS_SkipPath (pr->progs_name);
-	sym_path = Hunk_TempAlloc (strlen (sym_file) + (path_end - pr->progs_name)
-							   + 1);
+	sym_path = malloc (strlen (sym_file) + (path_end - pr->progs_name) + 1);
 	strncpy (sym_path, pr->progs_name, path_end - pr->progs_name);
 	strcpy (sym_path + (path_end - pr->progs_name), sym_file);
 	pr->debug = pr->load_file (pr, sym_path);
 	if (!pr->debug) {
 		Sys_Printf ("can't load %s for debug info\n", sym_path);
+		free (sym_path);
 		return 1;
 	}
 	pr->debug->version = LittleLong (pr->debug->version);
@@ -235,8 +231,8 @@ PR_LoadDebug (progs_t *pr)
 					(pr->debug->version >> 24) & 0xff,
 					(pr->debug->version >> 12) & 0xfff,
 					pr->debug->version & 0xfff);
-		Hunk_FreeToLowMark (start);
 		pr->debug = 0;
+		free (sym_path);
 		return 1;
 	}
 	pr->debug->crc = LittleShort (pr->debug->crc);
@@ -247,10 +243,11 @@ PR_LoadDebug (progs_t *pr)
 					pr->progs_name,
 					pr->debug->crc,
 					pr->crc);
-		Hunk_FreeToLowMark (start);
 		pr->debug = 0;
+		free (sym_path);
 		return 1;
 	}
+	free (sym_path);
 	pr->debug->you_tell_me_and_we_will_both_know = LittleShort
 		(pr->debug->you_tell_me_and_we_will_both_know);
 	pr->debug->auxfunctions = LittleLong (pr->debug->auxfunctions);
@@ -355,7 +352,6 @@ PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno)
 const char *
 PR_Get_Source_Line (progs_t *pr, unsigned int addr)
 {
-	char			   *str;
 	const char		   *fname;
 	unsigned int		line;
 	file_t			   *file;
@@ -374,16 +370,11 @@ PR_Get_Source_Line (progs_t *pr, unsigned int addr)
 
 	file = PR_Load_Source_File (pr, fname);
 
-	str = Hunk_TempAlloc (strlen (fname) + 12);
-	sprintf (str, "%s:%d", fname, line);
-
 	if (!file || line > file->num_lines)
-		return str;
+		return va ("%s:%d", fname, line);
 
-	str = Hunk_TempAlloc (strlen (str) + file->lines[line - 1].len + 2);
-	sprintf (str, "%s:%d:%.*s", fname, line,
-			 (int)file->lines[line - 1].len, file->lines[line - 1].text);
-	return str;
+	return va ("%s:%d:%.*s", fname, line, (int)file->lines[line - 1].len,
+			   file->lines[line - 1].text);
 }
 
 ddef_t *
@@ -495,7 +486,7 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 			}
 			break;
 		case ev_field:
-			def = ED_FieldAtOfs (pr, val->integer_var);
+			def = PR_FieldAtOfs (pr, val->integer_var);
 			if (def)
 				dsprintf (line, ".%s", PR_GetString (pr, def->s_name));
 			else
@@ -517,7 +508,7 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 			if (pr_debug->int_val && pr->debug)
 				def = PR_Get_Local_Def (pr, ofs);
 			if (!def)
-				def = ED_GlobalAtOfs (pr, ofs);
+				def = PR_GlobalAtOfs (pr, ofs);
 			if (def && def->s_name)
 				dsprintf (line, "&%s", PR_GetString (pr, def->s_name));
 			else
@@ -554,7 +545,7 @@ def_string (progs_t *pr, int ofs, dstring_t *dstr)
 	if (pr_debug->int_val && pr->debug)
 		def = PR_Get_Local_Def (pr, ofs);
 	if (!def)
-		def = ED_GlobalAtOfs (pr, ofs);
+		def = PR_GlobalAtOfs (pr, ofs);
 	if (!def || !*(name = PR_GetString (pr, def->s_name)))
 		dsprintf (dstr, "[$%x]", ofs);
 	else
@@ -844,6 +835,8 @@ ED_Print (progs_t *pr, edict_t *ed)
 			case ev_vector:
 				if (!v[0].float_var && !v[1].float_var && !v[2].float_var)
 					continue;
+				break;
+			case ev_void:
 				break;
 			default:
 				PR_Error (pr, "ED_Print: Unhandled type %d", type);

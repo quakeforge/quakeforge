@@ -55,6 +55,7 @@ typedef struct {
 static inline void
 return_plitem (progs_t *pr, plitem_t *plitem)
 {
+	memset (&R_INT (pr), 0, 8);
 	memcpy (&R_INT (pr), &plitem, sizeof (plitem));
 }
 
@@ -93,6 +94,27 @@ bi_PL_GetPropertyList (progs_t *pr)
 }
 
 static void
+bi_PL_WritePropertyList (progs_t *pr)
+{
+	char       *pl = PL_WritePropertyList (p_plitem (pr, 0));
+	R_STRING (pr) = PR_SetDynamicString (pr, pl);
+	free (pl);
+}
+
+static void
+bi_PL_Type (progs_t *pr)
+{
+	R_INT (pr) = PL_Type (p_plitem (pr, 0));
+}
+
+static void
+bi_PL_String (progs_t *pr)
+{
+	const char *str = PL_String (p_plitem (pr, 0));
+	RETURN_STRING (pr, str);
+}
+
+static void
 bi_PL_ObjectForKey (progs_t *pr)
 {
 	return_plitem (pr, PL_ObjectForKey (p_plitem (pr, 0), P_GSTRING (pr, 1)));
@@ -102,6 +124,18 @@ static void
 bi_PL_ObjectAtIndex (progs_t *pr)
 {
 	return_plitem (pr, PL_ObjectAtIndex (p_plitem (pr, 0), P_INT (pr, 1)));
+}
+
+static void
+bi_PL_D_AllKeys (progs_t *pr)
+{
+	return_plitem (pr, PL_D_AllKeys (p_plitem (pr, 0)));
+}
+
+static void
+bi_PL_D_NumKeys (progs_t *pr)
+{
+	R_INT (pr) = PL_D_NumKeys (p_plitem (pr, 0));
 }
 
 static void
@@ -120,6 +154,12 @@ bi_PL_A_AddObject (progs_t *pr)
 }
 
 static void
+bi_PL_A_NumObjects (progs_t *pr)
+{
+	R_INT (pr) = PL_A_NumObjects (p_plitem (pr, 0));
+}
+
+static void
 bi_PL_A_InsertObjectAtIndex (progs_t *pr)
 {
 	R_INT (pr) = PL_A_InsertObjectAtIndex (p_plitem (pr, 0),
@@ -128,9 +168,9 @@ bi_PL_A_InsertObjectAtIndex (progs_t *pr)
 }
 
 static void
-bi_PL_NewDictionary (progs_t *pr)
+bi_PL_Free (progs_t *pr)
 {
-	return_plitem (pr, record_plitem (pr, PL_NewDictionary ()));
+	PL_Free (remove_plitem (pr, p_plitem (pr, 0)));
 }
 
 static void
@@ -138,16 +178,24 @@ bi_PL_NewArray (progs_t *pr)
 {
 	return_plitem (pr, record_plitem (pr, PL_NewArray ()));
 }
-/*
+
 static void
 bi_PL_NewData (progs_t *pr)
 {
+	return_plitem (pr, record_plitem (pr, PL_NewData (P_GPOINTER (pr, 0),
+													  P_INT (pr, 1))));
 }
-*/
+
 static void
 bi_PL_NewString (progs_t *pr)
 {
 	return_plitem (pr, record_plitem (pr, PL_NewString (P_GSTRING (pr, 0))));
+}
+
+static void
+bi_PL_NewDictionary (progs_t *pr)
+{
+	return_plitem (pr, record_plitem (pr, PL_NewDictionary ()));
 }
 
 static void
@@ -172,22 +220,29 @@ plist_compare (void *k1, void *k2, void *unused)
 
 static builtin_t builtins[] = {
 	{"PL_GetPropertyList",			bi_PL_GetPropertyList,			-1},
+	{"PL_WritePropertyList",		bi_PL_WritePropertyList,		-1},
+	{"PL_Type",						bi_PL_Type,						-1},
+	{"PL_String",					bi_PL_String,					-1},
 	{"PL_ObjectForKey",				bi_PL_ObjectForKey,				-1},
 	{"PL_ObjectAtIndex",			bi_PL_ObjectAtIndex,			-1},
+	{"PL_D_AllKeys",				bi_PL_D_AllKeys,				-1},
+	{"PL_D_NumKeys",				bi_PL_D_NumKeys,				-1},
 	{"PL_D_AddObject",				bi_PL_D_AddObject,				-1},
 	{"PL_A_AddObject",				bi_PL_A_AddObject,				-1},
+	{"PL_A_NumObjects",				bi_PL_A_NumObjects,				-1},
 	{"PL_A_InsertObjectAtIndex",	bi_PL_A_InsertObjectAtIndex,	-1},
 	{"PL_NewDictionary",			bi_PL_NewDictionary,			-1},
 	{"PL_NewArray",					bi_PL_NewArray,					-1},
-//	{"PL_NewData",					bi_PL_NewData,					-1},
+	{"PL_NewData",					bi_PL_NewData,					-1},
 	{"PL_NewString",				bi_PL_NewString,				-1},
+	{"PL_Free",						bi_PL_Free,						-1},
 	{0}
 };
 
 void
 RUA_Plist_Init (progs_t *pr, int secure)
 {
-	plist_resources_t *res = malloc (sizeof (plist_resources_t));
+	plist_resources_t *res = calloc (1, sizeof (plist_resources_t));
 	res->items = Hash_NewTable (1021, 0, 0, 0);
 	Hash_SetHashCompare (res->items, plist_get_hash, plist_compare);
 

@@ -139,7 +139,7 @@ ED_Count_f (void)
 	ED_Count (&sv_pr_state);
 }
 
-void
+static void
 PR_Profile_f (void)
 {
 	if (!sv_pr_state.progs) {
@@ -360,65 +360,101 @@ set_address (sv_def_t *def, void *address)
 }
 
 static int
+resolve_globals (progs_t *pr, sv_def_t *def, int mode)
+{
+	ddef_t     *ddef;
+	int         ret = 1;
+
+	if (mode == 2) {
+		for (; def->name; def++)
+			set_address (def, &G_FLOAT (pr, def->offset));
+		return 1;
+	}
+	for (; def->name; def++) {
+		ddef = PR_FindGlobal (pr, def->name);
+		if (ddef) {
+			set_address (def, &G_FLOAT(pr, ddef->ofs));
+		} else if (mode) {
+			PR_Undefined (pr, "global", def->name);
+			ret = 0;
+		}
+	}
+	return ret;
+}
+
+static int
+resolve_functions (progs_t *pr, sv_def_t *def, int mode)
+{
+	dfunction_t *dfunc;
+	int         ret = 1;
+
+	if (mode == 2) {
+		for (; def->name; def++)
+			*(func_t *) def->field = G_FUNCTION (pr, def->offset);
+		return 1;
+	}
+	for (; def->name; def++) {
+		dfunc = PR_FindFunction (pr, def->name);
+		if (dfunc) {
+			*(func_t *) def->field = dfunc - pr->pr_functions;
+		} else if (mode) {
+			PR_Undefined (pr, "function", def->name);
+			ret = 0;
+		}
+	}
+	return ret;
+}
+
+static int
+resolve_fields (progs_t *pr, sv_def_t *def, int mode)
+{
+	ddef_t     *ddef;
+	int         ret = 1;
+
+	if (mode == 2) {
+		for (; def->name; def++)
+			*(int *) def->field = def->offset;
+		return 1;
+	}
+	for (; def->name; def++) {
+		*(int *)def->field = -1;
+		ddef = PR_FindField (pr, def->name);
+		if (ddef) {
+			*(int *)def->field = ddef->ofs;
+		} else if (mode) {
+			PR_Undefined (pr, "field", def->name);
+			ret = 0;
+		}
+	}
+	return ret;
+}
+
+static int
 resolve (progs_t *pr)
 {
-	sv_def_t   *def;
-	ddef_t     *ddef;
-	dfunction_t *f;
-	void       *global;
-	func_t      func;
-
+	int         ret = 1;
 	if (pr->progs->crc == nq_crc) {
-		global = &G_FLOAT(pr, nq_self[0].offset);
-		set_address (&nq_self[0], global);
-		for (def = nq_defs; def->name; def++) {
-			global = &G_FLOAT(pr, def->offset);
-			set_address (def, global);
-		}
-		for (def = nq_funcs; def->name; def++) {
-			func = G_FUNCTION (pr, def->offset);
-			*(func_t *)def->field = func;
-		}
-		for (def = nq_fields; def->name; def++) {
-			*(int *)def->field = def->offset;
-		}
+		resolve_globals (pr, nq_self, 2);
+		resolve_globals (pr, nq_defs, 2);
+		resolve_functions (pr, nq_funcs, 2);
+		resolve_fields (pr, nq_fields, 2);
 	} else {
-		for (def = nq_self; def->name; def++) {
-			ddef = PR_FindGlobal (&sv_pr_state, def->name);
-			if (ddef) {
-				global = &G_FLOAT(pr, ddef->ofs);
-				set_address (def, global);
-			}
-		}
-		for (def = nq_defs; def->name; def++) {
-			global = PR_GetGlobalPointer (pr, def->name);
-			set_address (def, global);
-		}
-		for (def = nq_funcs; def->name; def++) {
-			*(func_t *)def->field = PR_GetFunctionIndex (pr, def->name);
-		}
-		for (def = nq_fields; def->name; def++) {
-			*(int *)def->field = PR_GetFieldOffset (pr, def->name);
-		}
+		if (!resolve_globals (pr, nq_self, 0))
+			ret = 0;
+		if (!resolve_globals (pr, nq_defs, 1))
+			ret = 0;
+		if (!resolve_functions (pr, nq_funcs, 1))
+			ret = 0;
+		if (!resolve_fields (pr, nq_fields, 1))
+			ret = 0;
 	}
-	for (def = nq_opt_defs; def->name; def++) {
-		ddef = PR_FindGlobal (&sv_pr_state, def->name);
-		if (ddef) {
-			global = &G_FLOAT(pr, ddef->ofs);
-			set_address (def, global);
-		}
-	}
-	for (def = nq_opt_funcs; def->name; def++) {
-		if ((f = ED_FindFunction (pr, def->name)) != NULL)
-			*(func_t *)def->field = (func_t) (f - pr->pr_functions);
-	}
-	for (def = nq_opt_fields; def->name; def++) {
-		*(int *)def->field = ED_GetFieldIndex (pr, def->name);
-	}
+	resolve_globals (pr, nq_opt_defs, 0);
+	resolve_functions (pr, nq_opt_funcs, 0);
+	resolve_fields (pr, nq_opt_fields, 0);
 	// progs engine needs these globals anyway
 	sv_pr_state.globals.self = sv_globals.self;
 	sv_pr_state.globals.time = sv_globals.time;
-	return 1;
+	return ret;
 }
 
 void
@@ -457,7 +493,6 @@ SV_Progs_Init (void)
 {
 	sv_pr_state.edicts = &sv.edicts;
 	sv_pr_state.num_edicts = &sv.num_edicts;
-	sv_pr_state.time = &sv.time;
 	sv_pr_state.reserved_edicts = &svs.maxclients;
 	sv_pr_state.unlink = SV_UnlinkEdict;
 	sv_pr_state.parse_field = parse_field;

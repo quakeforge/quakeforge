@@ -47,20 +47,13 @@ typedef struct {
 static cbuf_t *
 get_cbuf (progs_t *pr, int arg, const char *func)
 {
-	pr_type_t  *handle;
-	cbuf_t     *cbuf;
+	cbuf_t     *cbuf = 0;
 
 	if (arg == 0) {
 		cbuf_resources_t *res = PR_Resources_Find (pr, "Cbuf");
 		cbuf = res->cbuf;
 	} else {
-		if (arg <= ((pr_type_t *) pr->zone - pr->pr_globals)
-			|| (size_t) arg >= (pr->zone_size / sizeof (pr_type_t)))
-			PR_RunError (pr, "%s: Invalid cbuf_t", func);
-
-		handle = pr->pr_globals + arg;
-
-		cbuf = *(cbuf_t **)handle;
+		PR_RunError (pr, "%s: Invalid cbuf_t", func);
 	}
 	if (!cbuf)
 		PR_RunError (pr, "Invalid cbuf_t");

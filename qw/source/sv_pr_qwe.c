@@ -178,7 +178,7 @@ PF_substr (progs_t * pr)
 
 	tmp = Hunk_TempAlloc (len);
 	strncpy (tmp, s, len - 1);
-	tmp[len] = 0;
+	tmp[len - 1] = 0;
 
 	RETURN_STRING (pr, tmp);
 }
@@ -238,8 +238,7 @@ PF_str2short (progs_t * pr)
 	PF_newstr
 
 	string newstr (string str [, float size])
-
-	ignores size (there for compatability with qwe)
+	The new string will be at least as big as size, if given.
 */
 static void
 PF_newstr (progs_t * pr)
@@ -250,10 +249,15 @@ PF_newstr (progs_t * pr)
 
 	s = P_GSTRING (pr, 0);
 
-	i = PR_NewString (pr);
-	dstr = PR_GetDString (pr, i);
+	i = PR_NewMutableString (pr);
+	dstr = PR_GetMutableString (pr, i);
 
 	dstring_copystr (dstr, s);
+
+	if (pr->pr_argc > 1 && P_FLOAT (pr, 1) > dstr->size) {
+		dstr->size = P_FLOAT (pr, 1);
+		dstring_adjust (dstr);
+	}
 
 	R_STRING (pr) = i;
 }
@@ -335,7 +339,7 @@ PF_calltimeofday (progs_t * pr)
 	date_t      date;
 	dfunction_t *f;
 
-	if ((f = ED_FindFunction (pr, "timeofday")) != NULL) {
+	if ((f = PR_FindFunction (pr, "timeofday")) != NULL) {
 
 		Sys_TimeOfDay (&date);
 
@@ -547,7 +551,7 @@ qwe_load (progs_t * pr)
 	size_t      i;
 
 	for (i = 0; i < sizeof (qwe_func_list) / sizeof (qwe_func_list[0]); i++) {
-		dfunction_t *f = ED_FindFunction (pr, qwe_func_list[i].name);
+		dfunction_t *f = PR_FindFunction (pr, qwe_func_list[i].name);
 
 		*qwe_func_list[i].field = 0;
 		if (f)

@@ -29,6 +29,13 @@
 #ifndef __QF_plugin_h_
 #define __QF_plugin_h_
 
+/** \addtogroup utils */
+//@{
+
+/** \defgroup plugin Plugins
+*/
+//@{
+
 #define QFPLUGIN_VERSION	"1.0"
 
 #include <QF/qtypes.h>
@@ -109,5 +116,8 @@ void PI_Init (void);
 void PI_Shutdown (void);
 
 // FIXME: we need a generic function to initialize unused fields
+
+//@}
+//@}
 
 #endif	// __QF_plugin_h_

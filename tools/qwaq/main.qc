@@ -1,3 +1,53 @@
+string read_file (string filename)
+{
+	local QFile file;
+	local string data = NIL, d;
+	file = Qopen (filename, "rtz");
+	if (!file) {
+		printf ("Can't open %s for reading."
+				" Probably a bad hardcoded filename:)\n");
+		return NIL;
+	}
+	while ((d = Qgetline (file)))
+		data = data + d;
+	//FIXME can't read to a string, can't convert a pointer to a string ...
+	//Qread (file, data, 1023);
+	Qclose (file);
+	d = str_new ();
+	str_copy (d, data);
+	return d;
+}
+
+void test_plist (void)
+{
+	local string data, l;
+	local plitem_t pl;
+
+	data = read_file ("/home/bill/.quakeforge.dir");
+	pl = PL_GetPropertyList ("{" + data + "}");
+	l = PL_WritePropertyList (pl);
+	printf ("%s", data);
+	printf ("%s", l);
+	PL_Free (pl);
+	str_free (data);
+}
+
+void test_script (void)
+{
+	local script_t script;
+	local string token;
+	local string data;
+
+	data = read_file ("progs.src");
+	script = Script_New ();
+	token = Script_Start (script, "progs.src", data);
+	while (Script_GetToken (script, 1)) {
+		printf ("%s\n", token);
+	}
+	Script_Delete (script);
+	str_free (data);
+}
+
 void () test_str =
 {
 	local string a,b,c,d;
@@ -47,5 +97,7 @@ integer (integer argc, string []argv) main =
 	} else
 		print ("did not find selector for `run:with:me:'\n");
 	test_str ();
+	test_script ();
+	test_plist ();
 	return 0;
 };

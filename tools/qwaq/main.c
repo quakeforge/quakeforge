@@ -53,8 +53,6 @@ static edict_t *edicts;
 static int num_edicts;
 static int reserved_edicts;
 static progs_t pr;
-static void *membase;
-static int memsize = 16*1024*1024;
 
 static QFile *
 open_file (const char *path, int *len)
@@ -74,7 +72,7 @@ load_file (progs_t *pr, const char *name)
 {
 	QFile      *file;
 	int         size;
-	void       *sym;
+	char       *sym;
 
 	file = open_file (name, &size);
 	if (!file) {
@@ -83,7 +81,8 @@ load_file (progs_t *pr, const char *name)
 			return 0;
 		}
 	}
-	sym = malloc (size);
+	sym = malloc (size + 1);
+	sym[size] = 0;
 	Qread (file, sym, size);
 	return sym;
 }
@@ -109,9 +108,6 @@ init_qf (void)
 	Sys_Init_Cvars ();
 	Cmd_Init ();
 
-	membase = malloc (memsize);
-	Memory_Init (membase, memsize);
-
 	Cvar_Get ("pr_debug", "1", 0, 0, 0);
 	Cvar_Get ("pr_boundscheck", "0", 0, 0, 0);
 
@@ -121,6 +117,7 @@ init_qf (void)
 	pr.load_file = load_file;
 	pr.allocate_progs_mem = allocate_progs_mem;
 	pr.free_progs_mem = free_progs_mem;
+	pr.no_exec_limit = 1;
 
 	PR_Init_Cvars ();
 	PR_Init ();
@@ -149,7 +146,8 @@ load_progs (const char *name)
 int
 main (int argc, char **argv)
 {
-	func_t main_func;
+	dfunction_t *dfunc;
+	func_t      main_func = 0;
 	const char *name = "qwaq.dat";
 	string_t   *pr_argv;
 	int         pr_argc = 1, i;
@@ -171,9 +169,12 @@ main (int argc, char **argv)
 		pr_argv[i] = PR_SetTempString (&pr, argv[1 + i]);
 	pr_argv[i] = 0;
 
-	main_func = PR_GetFunctionIndex (&pr, "main");
-	P_POINTER (&pr, 0) = pr_argc;
-	P_POINTER (&pr, 1) = POINTER_TO_PROG (&pr, pr_argv);
+	if ((dfunc = PR_FindFunction (&pr, "main")))
+		main_func = dfunc - pr.pr_functions;
+	else
+		PR_Undefined (&pr, "function", "main");
+	P_INT (&pr, 0) = pr_argc;
+	P_POINTER (&pr, 1) = PR_SetPointer (&pr, pr_argv);
 	PR_ExecuteProgram (&pr, main_func);
 	PR_PopFrame (&pr);
 	return R_INT (&pr);

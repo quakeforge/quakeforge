@@ -91,17 +91,21 @@ static int
 menu_resolve_globals (progs_t *pr)
 {
 	const char *sym;
+	ddef_t     *def;
 	dfunction_t *f;
 
-	if (!(f = ED_FindFunction (pr, sym = "menu_init")))
+	if (!(f = PR_FindFunction (pr, sym = "menu_init")))
 		goto error;
 	menu_init = (func_t)(f - menu_pr_state.pr_functions);
-	if (!(f = ED_FindFunction (pr, sym = "menu_draw_hud")))
+	if (!(f = PR_FindFunction (pr, sym = "menu_draw_hud")))
 		goto error;
 	menu_draw_hud = (func_t)(f - pr->pr_functions);
+	if (!(def = PR_FindGlobal (pr, sym = "time")))
+		goto error;
+	menu_pr_state.globals.time = &G_FLOAT (pr, def->ofs);
 	return 1;
 error:
-	Con_Printf ("%s: undefined function %s\n", pr->progs_name, sym);
+	Con_Printf ("%s: undefined symbol %s\n", pr->progs_name, sym);
 	return 0;
 }
 
@@ -444,6 +448,7 @@ Menu_Init (void)
 	menu_pr_state.allocate_progs_mem = menu_allocate_progs_mem;
 	menu_pr_state.free_progs_mem = menu_free_progs_mem;
 	menu_pr_state.load_file = menu_load_file;
+	menu_pr_state.resolve = menu_resolve_globals;
 
 	menu_hash = Hash_NewTable (61, menu_get_key, menu_free, 0);
 
@@ -457,15 +462,12 @@ Menu_Init (void)
 	PR_Cmds_Init (&menu_pr_state);
 	R_Progs_Init (&menu_pr_state);
 
-	PR_AddLoadFunc (&menu_pr_state, menu_resolve_globals);
-
 	confirm_quit = Cvar_Get ("confirm_quit", "1", CVAR_ARCHIVE, NULL,
 							 "confirm quit command");
 
 	Cmd_AddCommand ("togglemenu", togglemenu_f,
 					"Toggle the display of the menu");
 	Cmd_AddCommand ("quit", quit_f, "Exit the program");
-
 }
 
 void
@@ -473,8 +475,6 @@ Menu_Load (void)
 {
 	int         size;
 	QFile      *file;
-
-	menu_pr_state.time = con_data.realtime;
 
 	Hash_FlushTable (menu_hash);
 	menu = 0;
@@ -519,7 +519,7 @@ Menu_Draw (view_t *view)
 	if (menu->fadescreen)
 		Draw_FadeScreen ();
 
-	*menu_pr_state.globals.time = *menu_pr_state.time;
+	*menu_pr_state.globals.time = *con_data.realtime;
 
 	if (menu->draw) {
 		P_INT (&menu_pr_state, 0) = x;
@@ -563,7 +563,7 @@ Menu_Draw (view_t *view)
 void
 Menu_Draw_Hud (view_t *view)
 {
-	*menu_pr_state.globals.time = *menu_pr_state.time;
+	*menu_pr_state.globals.time = *con_data.realtime;
 
 	PR_ExecuteProgram (&menu_pr_state, menu_draw_hud);
 }

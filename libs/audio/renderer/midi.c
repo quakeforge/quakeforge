@@ -91,7 +91,6 @@ get_info (void * handle) {
 static int
 midi_stream_read (void *file, byte *buf, int count, wavinfo_t *info)
 {
-	// FIXME: need to check what the return of this function /should/ be
 	return WildMidi_GetOutput (file, (char *)buf, (unsigned long int)count);
 }
 
@@ -103,7 +102,6 @@ midi_stream_seek (void *file, int pos, wavinfo_t *info)
 	pos += info->dataofs;
 	new_pos = pos;
 	
-	// FIXME: need to check what the return of this function /should/ be
 	return WildMidi_SampledSeek(file, &new_pos);
 }
 

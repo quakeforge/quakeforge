@@ -1,5 +1,4 @@
 void (string str) print = #1;
-void () garbage_collect = #2;
 integer () errno = #3;
 string (integer err) strerror = #4;
 integer (...) open = #5; // string path, float flags[, float mode]

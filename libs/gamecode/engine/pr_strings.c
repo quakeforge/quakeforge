@@ -46,11 +46,22 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/hash.h"
 #include "QF/progs.h"
 
+typedef enum {
+	str_static,
+	str_dynamic,
+	str_mutable,
+	str_temp,
+	str_return,
+} str_e;
+
 struct strref_s {
 	strref_t   *next;
-	char       *string;
-	dstring_t  *dstring;
-	int         count;
+	strref_t  **prev;
+	str_e       type;
+	union {
+		char       *string;
+		dstring_t  *dstring;
+	} s;
 };
 
 // format adjustments
@@ -107,12 +118,12 @@ new_string_ref (progs_t *pr)
 
 		pr->dyn_str_size++;
 		size = pr->dyn_str_size * sizeof (strref_t *);
-		pr->dynamic_strings = realloc (pr->dynamic_strings, size);
-		if (!pr->dynamic_strings)
+		pr->string_map = realloc (pr->string_map, size);
+		if (!pr->string_map)
 			PR_Error (pr, "out of memory");
 		if (!(pr->free_string_refs = calloc (1024, sizeof (strref_t))))
 			PR_Error (pr, "out of memory");
-		pr->dynamic_strings[pr->dyn_str_size - 1] = pr->free_string_refs;
+		pr->string_map[pr->dyn_str_size - 1] = pr->free_string_refs;
 		for (i = 0, sr = pr->free_string_refs; i < 1023; i++, sr++)
 			sr->next = sr + 1;
 		sr->next = 0;
@@ -126,8 +137,8 @@ new_string_ref (progs_t *pr)
 static void
 free_string_ref (progs_t *pr, strref_t *sr)
 {
-	sr->string = 0;
-	sr->dstring = 0;
+	if (sr->prev)
+		*sr->prev = sr->next;
 	sr->next = pr->free_string_refs;
 	pr->free_string_refs = sr;
 }
@@ -139,9 +150,9 @@ string_index (progs_t *pr, strref_t *sr)
 	unsigned int i;
 
 	if (o >= 0 && o < pr->num_strings)
-		return sr->string - pr->pr_strings;
+		return sr->s.string - pr->pr_strings;
 	for (i = 0; i < pr->dyn_str_size; i++) {
-		int d = sr - pr->dynamic_strings[i];
+		int d = sr - pr->string_map[i];
 		if (d >= 0 && d < 1024)
 			return ~(i * 1024 + d);
 	}
@@ -153,7 +164,8 @@ strref_get_key (void *_sr, void *notused)
 {
 	strref_t	*sr = (strref_t*)_sr;
 
-	return sr->string;
+	// only static strings will ever be in the hash table
+	return sr->s.string;
 }
 
 static void
@@ -196,7 +208,7 @@ PR_LoadStrings (progs_t *pr)
 	} else {
 		pr->strref_hash = Hash_NewTable (1021, strref_get_key, strref_free,
 										 pr);
-		pr->dynamic_strings = 0;
+		pr->string_map = 0;
 		pr->free_string_refs = 0;
 		pr->dyn_str_size = 0;
 	}
@@ -207,11 +219,16 @@ PR_LoadStrings (progs_t *pr)
 	count = 0;
 	str = pr->pr_strings;
 	while (str < end) {
-		pr->static_strings[count].string = str;
+		if (!Hash_Find (pr->strref_hash, str)) {
+			pr->static_strings[count].type = str_static;
+			pr->static_strings[count].s.string = str;
+			Hash_Add (pr->strref_hash, &pr->static_strings[count]);
+			count++;
+		}
 		str += strlen (str) + 1;
-		Hash_Add (pr->strref_hash, &pr->static_strings[count]);
-		count++;
 	}
+	pr->static_strings = realloc (pr->static_strings,
+								  count * sizeof (strref_t));
 	pr->num_strings = count;
 	return 1;
 }
@@ -226,7 +243,7 @@ get_strref (progs_t *pr, int num)
 
 		if (row >= pr->dyn_str_size)
 			return 0;
-		return &pr->dynamic_strings[row][num];
+		return &pr->string_map[row][num];
 	} else {
 		return 0;
 	}
@@ -239,9 +256,16 @@ get_string (progs_t *pr, int num)
 		strref_t   *ref = get_strref (pr, num);
 		if (!ref)
 			return 0;
-		if (ref->dstring)
-			return ref->dstring->str;
-		return ref->string;
+		switch (ref->type) {
+			case str_static:
+			case str_temp:
+			case str_dynamic:
+			case str_return:
+				return ref->s.string;
+			case str_mutable:
+				return ref->s.dstring->str;
+		}
+		PR_Error (pr, "internal string error");
 	} else {
 		if (num >= pr->pr_stringsize)
 			return 0;
@@ -267,22 +291,33 @@ PR_GetString (progs_t *pr, int num)
 }
 
 dstring_t *
-PR_GetDString (progs_t *pr, int num)
+PR_GetMutableString (progs_t *pr, int num)
 {
 	strref_t   *ref = get_strref (pr, num);
 	if (ref) {
-		if (ref->dstring)
-			return ref->dstring;
+		if (ref->type == str_mutable)
+			return ref->s.dstring;
 		PR_RunError (pr, "not a dstring: %d", num);
 	}
 	PR_RunError (pr, "Invalid string offset: %d", num);
 }
 
 static inline char *
+pr_stralloc (progs_t *pr, int len)
+{
+	return PR_Zone_Malloc (pr, len + 1);
+}
+
+static inline void
+pr_strfree (progs_t *pr, char *s)
+{
+	PR_Zone_Free (pr, s);
+}
+
+static inline char *
 pr_strdup (progs_t *pr, const char *s)
 {
-	size_t      len = strlen (s) + 1;
-	char       *new = PR_Zone_Malloc (pr, len);
+	char       *new = pr_stralloc (pr, strlen (s));
 	strcpy (new, s);
 	return new;
 }
@@ -290,12 +325,16 @@ pr_strdup (progs_t *pr, const char *s)
 int
 PR_SetString (progs_t *pr, const char *s)
 {
-	strref_t   *sr = Hash_Find (pr->strref_hash, s);
+	strref_t   *sr;
+	
+	if (!s)
+		s = "";
+	sr = Hash_Find (pr->strref_hash, s);
 
 	if (!sr) {
 		sr = new_string_ref (pr);
-		sr->string = pr_strdup(pr, s);
-		sr->count = 0;
+		sr->type = str_static;
+		sr->s.string = pr_strdup(pr, s);
 		Hash_Add (pr->strref_hash, sr);
 	}
 	return string_index (pr, sr);
@@ -325,17 +364,47 @@ PR_SetReturnString (progs_t *pr, const char *s)
 	}
 
 	if ((sr = pr->return_strings[pr->rs_slot])) {
-		if (sr->string)
-			PR_Zone_Free (pr, sr->string);
+		if (sr->type != str_return)
+			PR_Error (pr, "internal string error");
+		pr_strfree (pr, sr->s.string);
 	} else {
 		sr = new_string_ref (pr);
 	}
-	sr->string = pr_strdup(pr, s);
-	sr->count = 0;
+	sr->type = str_return;
+	sr->s.string = pr_strdup(pr, s);
 
 	pr->return_strings[pr->rs_slot++] = sr;
 	pr->rs_slot %= PR_RS_SLOTS;
 	return string_index (pr, sr);
+}
+
+static inline int
+pr_settempstring (progs_t *pr, char *s)
+{
+	strref_t   *sr;
+
+	sr = new_string_ref (pr);
+	sr->type = str_temp;
+	sr->s.string = s;
+	sr->next = pr->pr_xtstr;
+	pr->pr_xtstr = sr;
+	return string_index (pr, sr);
+}
+
+int
+PR_CatStrings (progs_t *pr, const char *a, const char *b)
+{
+	int         lena;
+	char       *c;
+
+	lena = strlen (a);
+
+	c = pr_stralloc (pr, lena + strlen (b));
+
+	strcpy (c, a);
+	strcpy (c + lena, b);
+
+	return pr_settempstring (pr, c);
 }
 
 int
@@ -346,11 +415,28 @@ PR_SetTempString (progs_t *pr, const char *s)
 	if (!s)
 		return PR_SetString (pr, "");
 
+	if ((sr = Hash_Find (pr->strref_hash, s))) {
+		return string_index (pr, sr);
+	}
+
+	return pr_settempstring (pr, pr_strdup (pr, s));
+}
+
+int
+PR_SetDynamicString (progs_t *pr, const char *s)
+{
+	strref_t   *sr;
+
+	if (!s)
+		return PR_SetString (pr, "");
+
+	if ((sr = Hash_Find (pr->strref_hash, s))) {
+		return string_index (pr, sr);
+	}
+
 	sr = new_string_ref (pr);
-	sr->string = pr_strdup(pr, s);
-	sr->count = 0;
-	sr->next = pr->pr_xtstr;
-	pr->pr_xtstr = sr;
+	sr->type = str_dynamic;
+	sr->s.string = pr_strdup (pr, s);
 	return string_index (pr, sr);
 }
 
@@ -361,23 +447,26 @@ PR_MakeTempString (progs_t *pr, int str)
 
 	if (!sr)
 		PR_RunError (pr, "invalid string %d", str);
-	if (sr->dstring) {
-		if (sr->dstring->str)
-			sr->string = sr->dstring->str;
-		PR_Zone_Free (pr, sr->dstring);
+	if (sr->type != str_mutable)
+		PR_RunError (pr, "not a dstring: %d", str);
+	if (sr->s.dstring->str) {
+		sr->s.string = dstring_freeze (sr->s.dstring);
+	} else {
+		dstring_delete (sr->s.dstring);
 	}
-	if (!sr->string)
-		sr->string = pr_strdup (pr, "");
-	sr->count = 0;
+	if (!sr->s.string)
+		sr->s.string = pr_strdup (pr, "");
+	sr->type = str_temp;
 	sr->next = pr->pr_xtstr;
 	pr->pr_xtstr = sr;
 }
 
 int
-PR_NewString (progs_t *pr)
+PR_NewMutableString (progs_t *pr)
 {
 	strref_t   *sr = new_string_ref (pr);
-	sr->dstring = _dstring_newstr (pr->ds_mem);
+	sr->type = str_mutable;
+	sr->s.dstring = _dstring_newstr (pr->ds_mem);
 	return string_index (pr, sr);
 }
 
@@ -387,14 +476,25 @@ PR_FreeString (progs_t *pr, int str)
 	strref_t   *sr = get_strref (pr, str);
 
 	if (sr) {
-		if (sr->dstring)
-			dstring_delete (sr->dstring);
-		else
-			PR_Zone_Free (pr, sr->string);
+		switch (sr->type) {
+			case str_static:
+			case str_temp:
+				return;
+			case str_mutable:
+				dstring_delete (sr->s.dstring);
+				break;
+			case str_dynamic:
+				pr_strfree (pr, sr->s.string);
+				break;
+			case str_return:
+			default:
+				PR_Error (pr, "internal string error");
+		}
 		free_string_ref (pr, sr);
 		return;
 	}
-	PR_RunError (pr, "attempt to free invalid string %d", str);
+	if (!get_string (pr, str))
+		PR_RunError (pr, "attempt to free invalid string %d", str);
 }
 
 void
@@ -404,7 +504,9 @@ PR_FreeTempStrings (progs_t *pr)
 
 	for (sr = pr->pr_xtstr; sr; sr = t) {
 		t = sr->next;
-		PR_Zone_Free (pr, sr->string);
+		if (sr->type != str_temp)
+			PR_Error (pr, "internal string error");
+		pr_strfree (pr, sr->s.string);
 		free_string_ref (pr, sr);
 	}
 	pr->pr_xtstr = 0;
@@ -462,14 +564,18 @@ I_DoPrint (dstring_t *result, fmt_item_t *formatting)
 				PRINT (string);
 				break;
 			case 'i':
-				dstring_appendstr (tmp, "ld");
+				dstring_appendstr (tmp, "d");
+				PRINT (integer);
+				break;
+			case 'x':
+				dstring_appendstr (tmp, "x");
 				PRINT (integer);
 				break;
 			case 'u':
 				if (current->flags & FMT_HEX)
-					dstring_appendstr (tmp, "lx");
+					dstring_appendstr (tmp, "x");
 				else
-					dstring_appendstr (tmp, "lu");
+					dstring_appendstr (tmp, "u");
 				PRINT (uinteger);
 				break;
 			case 'f':

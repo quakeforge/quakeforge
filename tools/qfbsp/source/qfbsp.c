@@ -207,21 +207,21 @@ ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 	sides[i] = sides[0];
 	dists[i] = dists[0];
 
-	if (keepon && !counts[0] && !counts[1])
+	if (keepon && !counts[SIDE_FRONT] && !counts[SIDE_BACK])
 		return in;
 
-	if (!counts[0]) {
+	if (!counts[SIDE_FRONT]) {
 		FreeWinding (in);
 		return NULL;
 	}
-	if (!counts[1])
+	if (!counts[SIDE_BACK])
 		return in;
-#if 0
-	maxpts = in->numpoints + 4;			// can't use counts[0]+2 because of fp
-										// grouping errors
-#else
-	maxpts = counts[0] + 2;
-#endif
+	for (maxpts = 0, i = 0; i < in->numpoints; i++) {
+		if (!(sides[i] & 1))
+			maxpts++;
+		if ((sides[i] ^ 1) == sides[i + 1])
+			maxpts++;
+	}
 	neww = NewWinding (maxpts);
 
 	for (i = 0; i < in->numpoints; i++) {
@@ -283,7 +283,7 @@ void
 DivideWinding (winding_t *in, plane_t *split, winding_t **front,
 			   winding_t **back)
 {
-	int         maxpts, i;
+	int         i;
 	int         counts[3];
 	plane_t     plane;
 	vec_t       dot;
@@ -310,9 +310,6 @@ DivideWinding (winding_t *in, plane_t *split, winding_t **front,
 		*front = in;
 		return;
 	}
-
-	maxpts = in->numpoints + 4;			// can't use counts[0]+2 because
-										// of fp grouping errors
 
 	tmp = CopyWinding (in);
 	*front = ClipWinding (tmp, split, 0);

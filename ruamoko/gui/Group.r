@@ -13,7 +13,7 @@
 
 - (void) dealloc
 {
-	[views dealloc];
+	[views release];
 	[super dealloc];
 }
 
@@ -21,6 +21,13 @@
 {
 	[views addItem:aView];
 	return aView;
+}
+
+- (id) addViews: (Array)viewlist
+{
+	while ([viewlist count])
+		[self addView:[viewlist removeItemAt:0]];
+	return self;
 }
 
 - (void) moveTo: (integer)x y:(integer)y
@@ -33,7 +40,7 @@
 	[super setBasePos:pos];
 	local Point point = [[Point alloc] initWithComponents:xabs :yabs];
 	[views makeObjectsPerformSelector:@selector (setBasePos:) withObject:point];
-	[point dealloc];
+	[point release];
 }
 
 - (void) draw

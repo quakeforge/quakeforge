@@ -126,13 +126,14 @@ bi_seek (progs_t *pr)
 static void
 bi_traceon (progs_t *pr)
 {
-	    pr->pr_trace = true;
+	pr->pr_trace = true;
+	pr->pr_trace_depth = pr->pr_depth;
 }
 
 static void
 bi_traceoff (progs_t *pr)
 {   
-	    pr->pr_trace = false;
+	pr->pr_trace = false;
 }
 
 static void

@@ -92,9 +92,9 @@ typedef struct memblock_s
 struct memzone_s
 {
 	int         size;		// total bytes malloced, including header
+	int         used;		// ammount used, including header
 	memblock_t  blocklist;	// start / end cap for linked list
 	memblock_t  *rover;
-	int         pad;		// pad to 64 bit boundary
 };
 
 
@@ -105,12 +105,15 @@ Z_ClearZone (memzone_t *zone, int size)
 	
 	// set the entire zone to one free block
 
-	zone->blocklist.next = zone->blocklist.prev = block =
-		(memblock_t *) ((byte *) zone + sizeof (memzone_t));
+	block = (memblock_t *) (zone + 1);
+	zone->blocklist.next = block;
+	zone->blocklist.prev = block;
 	zone->blocklist.tag = 1;	// in use block
 	zone->blocklist.id = 0;
 	zone->blocklist.size = 0;
 	zone->rover = block;
+	zone->size = size;
+	zone->used = sizeof (memzone_t);
 	
 	block->prev = block->next = &zone->blocklist;
 	block->tag = 0;			// free block
@@ -133,6 +136,7 @@ Z_Free (memzone_t *zone, void *ptr)
 		Sys_Error ("Z_Free: freed a freed pointer");
 
 	block->tag = 0;		// mark as free
+	zone->used -= block->size;
 	
 	other = block->prev;
 	if (!other->tag) {
@@ -219,10 +223,12 @@ Z_TagMalloc (memzone_t *zone, int size, int tag)
 	
 	base->id = ZONEID;
 
+	zone->used += base->size;
+
 	// marker for memory trash testing
 	*(int *) ((byte *) base + base->size - 4) = ZONEID;
 
-	return (void *) ((byte *) base + sizeof (memblock_t));
+	return (void *) (base + 1);
 }
 
 void *
@@ -254,18 +260,19 @@ Z_Realloc (memzone_t *zone, void *ptr, int size)
 
 	return ptr;
 }
-/*
-static void
+
+void
 Z_Print (memzone_t *zone)
 {
 	memblock_t	*block;
 	
-	Sys_Printf ("zone size: %i  location: %p\n",zone->size,zone);
+	Sys_Printf ("zone size: %i  location: %p  used: %i\n",
+				zone->size, zone, zone->used);
 	
 	for (block = zone->blocklist.next ; ; block = block->next)
 	{
-		Sys_Printf ("block:%p    size:%7i    tag:%3i\n",
-			block, block->size, block->tag);
+		Sys_Printf ("block:%p    size:%7i    tag:%3i ofs:%d\n",
+			block, block->size, block->tag, (byte *) block - (byte *) zone);
 		
 		if (block->next == &zone->blocklist)
 			break;			// all blocks have been hit	
@@ -275,9 +282,13 @@ Z_Print (memzone_t *zone)
 			Sys_Printf ("ERROR: next block doesn't have proper back link\n");
 		if (!block->tag && !block->next->tag)
 			Sys_Printf ("ERROR: two consecutive free blocks\n");
+		if (block->tag
+			&& (*(int *) ((byte *) block + block->size - 4) != ZONEID))
+			Sys_Printf ("ERROR: memory trashed in block\n");
+		fflush (stdout);
 	}
 }
-*/
+
 void
 Z_CheckHeap (memzone_t *zone)
 {

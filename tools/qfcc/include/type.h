@@ -48,6 +48,12 @@ typedef struct type_s {
 	} s;
 } type_t;
 
+typedef struct typedef_s {
+	struct typedef_s *next;
+	const char *name;
+	type_t     *type;
+} typedef_t;
+
 extern	type_t	type_void;
 extern	type_t	type_string;
 extern	type_t	type_float;
@@ -70,6 +76,7 @@ extern	type_t	type_IMP;
 extern  type_t  type_supermsg;
 extern	type_t	type_obj_exec_class;
 extern	type_t	type_Method;
+extern	type_t	type_method_description;
 extern	type_t	*type_category;
 extern	type_t	*type_ivar;
 extern	type_t	*type_module;
@@ -86,12 +93,13 @@ struct dstring_s;
 type_t *new_type (void);
 type_t *find_type (type_t *new);
 void new_typedef (const char *name, type_t *type);
-type_t *get_typedef (const char *name);
+typedef_t *get_typedef (const char *name);
 type_t *field_type (type_t *aux);
 type_t *pointer_type (type_t *aux);
 type_t *array_type (type_t *aux, int size);
 void print_type (type_t *type);
-void encode_type (struct dstring_s *encodking, type_t *type);
+const char *encode_params (type_t *type);
+void encode_type (struct dstring_s *encoding, type_t *type);
 type_t *parse_type (const char *str);
 int type_assignable (type_t *dst, type_t *src);
 int type_size (type_t *type);

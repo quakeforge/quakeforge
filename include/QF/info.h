@@ -29,6 +29,13 @@
 #ifndef _INFO_H
 #define _INFO_H
 
+/** \addtogroup utils */
+//@{
+
+/** \defgroup info Info Keys
+*/
+//@{
+
 #include <stdlib.h> // for size_t. sys/types.h SHOULD be used, but can't :(bc)
 #include <QF/qtypes.h>
 
@@ -59,5 +66,8 @@ info_t *Info_ParseString (const char *s, int maxsize, int flags);
 void Info_Destroy (info_t *info);
 char *Info_MakeString (info_t *info, int (*filter)(const char *));
 void Info_AddKeys (info_t *info, info_t *keys);
+
+//@}
+//@}
 
 #endif	// _INFO_H

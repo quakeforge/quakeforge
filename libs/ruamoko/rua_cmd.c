@@ -78,7 +78,7 @@ bi_cmd_free (void *_c, void *unused)
 }
 
 static void
-bi_cmd_f (void *pr)
+bi_cmd_f (void)
 {
 	bi_cmd_t   *cmd = Hash_Find (bi_cmds, Cmd_Argv (0));
 
@@ -95,7 +95,7 @@ bi_Cmd_AddCommand (progs_t *pr)
 	char       *name = strdup (P_GSTRING (pr, 0));
 	func_t      func = P_FUNCTION (pr, 1);
 
-	if (!cmd || !name || !Cmd_AddCommand (name, (void(*)(void))bi_cmd_f, "CSQC command")) {
+	if (!cmd || !name || !Cmd_AddCommand (name, bi_cmd_f, "CSQC command")) {
 		if (name)
 			free (name);
 		if (cmd)
@@ -159,7 +159,7 @@ static builtin_t builtins[] = {
 void
 RUA_Cmd_Init (progs_t *pr, int secure)
 {
-	cmd_resources_t *res = malloc (sizeof (cmd_resources_t));
+	cmd_resources_t *res = calloc (1, sizeof (cmd_resources_t));
 
 	res->cmds = 0;
 	PR_Resources_Register (pr, "Cmd", res, bi_cmd_clear);

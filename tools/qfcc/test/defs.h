@@ -441,7 +441,7 @@
 //================================================
 
 //
-// world fields (FIXME: make globals)
+// world fields
 //
 @extern .string         wad;
 @extern .string         map;

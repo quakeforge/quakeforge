@@ -55,16 +55,22 @@ dump_methods (progs_t *pr, pr_method_list_t *methods, int class)
 	int         i;
 	char        mark = class ? '+' : '-';
 	const char *sel_id;
+	const char *types;
 
 	while (methods) {
 		pr_method_t *method = methods->method_list;
 		for (i = 0; i < methods->method_count; i++) {
-			if (PR_StringValid (pr, method->method_name.sel_id))
-				sel_id = PR_GetString (pr, method->method_name.sel_id);
+			if (PR_StringValid (pr, method->method_name))
+				sel_id = PR_GetString (pr, method->method_name);
 			else
 				sel_id = "<invalid string>";
-			printf ("        %c%s %d @ %d\n", mark, sel_id, method->method_imp,
-					POINTER_TO_PROG (pr, method));
+			if (PR_StringValid (pr, method->method_types))
+				types = PR_GetString (pr, method->method_types);
+			else
+				types = "<invalid string>";
+			printf ("        %c%s %d @ %d %s\n", mark, sel_id,
+					method->method_imp,
+					PR_SetPointer (pr, method), types);
 			method++;
 		}
 		methods = &G_STRUCT (pr, pr_method_list_t, methods->method_next);
@@ -87,6 +93,31 @@ dump_selector (progs_t *pr, pr_sel_t *sel)
 }
 
 static void
+dump_protocol (progs_t *pr, pr_protocol_t *proto)
+{
+	const char *protocol_name = "<invalid string>";
+	printf ("                %d\n", proto->class_pointer);
+	if (PR_StringValid (pr, proto->protocol_name))
+		protocol_name = PR_GetString (pr, proto->protocol_name);
+	printf ("                <%s>\n", protocol_name);
+}
+
+static void
+dump_protocol_list (progs_t *pr, pr_protocol_list_t *list)
+{
+	int         i;
+	printf ("            %d\n", list->next);
+	printf ("            %d\n", list->count);
+	for (i = 0; i < list->count; i++) {
+		if (list->list[i] <= 0 || list->list[i] >= pr->globals_size) {
+			printf ("invalid pointer\n");
+			break;
+		}
+		dump_protocol (pr, &G_STRUCT (pr, pr_protocol_t, list->list[i]));
+	}
+}
+
+static void
 dump_class (progs_t *pr, pr_class_t *class)
 {
 	pr_class_t *meta = &G_STRUCT (pr, pr_class_t, class->class_pointer);
@@ -98,15 +129,19 @@ dump_class (progs_t *pr, pr_class_t *class)
 	if (class->super_class) {
 		if (PR_StringValid (pr, class->super_class))
 			super_class_name = PR_GetString (pr, class->super_class);
-		printf ("    %s @ %d : %s\n", class_name, POINTER_TO_PROG (pr, class),
+		printf ("    %s @ %d : %s\n", class_name, PR_SetPointer (pr, class),
 				super_class_name);
 	} else {
-		printf ("    %s @ %d\n", class_name, POINTER_TO_PROG (pr, class));
+		printf ("    %s @ %d\n", class_name, PR_SetPointer (pr, class));
 	}
 	printf ("        %d %d %u %d\n", class->class_pointer, class->version,
 			class->info, class->instance_size);
 	dump_methods (pr, &G_STRUCT (pr, pr_method_list_t, class->methods), 0);
 	dump_methods (pr, &G_STRUCT (pr, pr_method_list_t, meta->methods), 1);
+	printf ("        %d\n", class->protocols);
+	if (class->protocols)
+		dump_protocol_list (pr, &G_STRUCT (pr, pr_protocol_list_t,
+										   class->protocols));
 }
 
 static void
@@ -120,13 +155,17 @@ dump_category (progs_t *pr, pr_category_t *category)
 	if (PR_StringValid (pr, category->class_name))
 		class_name = PR_GetString (pr, category->class_name);
 	printf ("    %s (%s) @ %d\n", class_name, category_name,
-			POINTER_TO_PROG (pr, category));
+			PR_SetPointer (pr, category));
 	dump_methods (pr,
 				  &G_STRUCT (pr, pr_method_list_t, category->instance_methods),
 				  0);
 	dump_methods (pr,
 				  &G_STRUCT (pr, pr_method_list_t, category->class_methods),
 				  1);
+	printf ("        %d\n", category->protocols);
+	if (category->protocols)
+		dump_protocol_list (pr, &G_STRUCT (pr, pr_protocol_list_t,
+										   category->protocols));
 }
 
 static void

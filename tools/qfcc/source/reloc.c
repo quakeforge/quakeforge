@@ -138,6 +138,9 @@ relocate_refs (reloc_t *refs, int ofs)
 			case rel_def_def_ofs:
 				G_INT (refs->ofs) += ofs;
 				break;
+			case rel_def_field_ofs:
+				G_INT (refs->ofs) += G_INT (ofs);
+				break;
 		}
 		refs = refs->next;
 	}
@@ -208,6 +211,14 @@ void
 reloc_def_field (def_t *def, int ofs)
 {
 	reloc_t    *ref = new_reloc (ofs, rel_def_field);
+	ref->next = def->refs;
+	def->refs = ref;
+}
+
+void
+reloc_def_field_ofs (def_t *def, int ofs)
+{
+	reloc_t    *ref = new_reloc (ofs, rel_def_field_ofs);
 	ref->next = def->refs;
 	def->refs = ref;
 }

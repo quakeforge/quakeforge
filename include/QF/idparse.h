@@ -31,6 +31,13 @@
 #ifndef __QF_idparse_h
 #define __QF_idparse_h
 
+/** \addtogroup utils */
+//@{
+
+/** \addtogroup cbuf
+*/
+//@{
+
 extern const char *com_token;
 
 struct cbuf_args_s;
@@ -39,5 +46,8 @@ const char *COM_Parse (const char *data);
 void COM_TokenizeString (const char *str, struct cbuf_args_s *args);
 
 extern struct cbuf_interpreter_s id_interp;
+
+//@}
+//@}
 
 #endif//__QF_idparse_h

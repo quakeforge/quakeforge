@@ -92,7 +92,7 @@ bi_gib_builtin_f (void)
 		pr_list[i].integer_var = PR_SetTempString (builtin->pr, GIB_Argv(i));
 
 	P_INT (builtin->pr, 0) = GIB_Argc();
-	P_INT (builtin->pr, 1) = POINTER_TO_PROG (builtin->pr, pr_list);
+	P_INT (builtin->pr, 1) = PR_SetPointer (builtin->pr, pr_list);
 	PR_ExecuteProgram (builtin->pr, builtin->func);
 	PR_PopFrame (builtin->pr);
 	PR_Zone_Free (builtin->pr, pr_list);

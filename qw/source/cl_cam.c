@@ -202,7 +202,7 @@ Cam_Lock (int playernum)
 	Sbar_Changed ();
 }
 
-static pmtrace_t
+static trace_t
 Cam_DoTrace (vec3_t vec1, vec3_t vec2)
 {
 #if 0
@@ -223,7 +223,7 @@ Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
 			  qboolean checkvis)
 {
 	float       len;
-	pmtrace_t   trace;
+	trace_t     trace;
 	vec3_t      v;
 
 	vectoangles (vec, v);
@@ -256,7 +256,7 @@ static qboolean
 Cam_IsVisible (player_state_t * player, vec3_t vec)
 {
 	float       d;
-	pmtrace_t   trace;
+	trace_t     trace;
 	vec3_t      v;
 
 	trace = Cam_DoTrace (player->origin, vec);
@@ -682,10 +682,10 @@ CL_Cam_Init_Cvars (void)
 static void
 TraceLine (vec3_t start, vec3_t end, vec3_t impact)
 {
-	pmtrace_t     trace;
+	trace_t     trace;
 
 	memset (&trace, 0, sizeof (trace));
-	PM_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, start, end, &trace);
+	MOD_TraceLine (cl.worldmodel->hulls, 0, start, end, &trace);
 
 	VectorCopy (trace.endpos, impact);
 }

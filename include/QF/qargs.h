@@ -31,6 +31,13 @@
 #ifndef __qargs_h
 #define __qargs_h
 
+/** \addtogroup utils */
+//@{
+
+/** \addtogroup misc
+*/
+//@{
+
 #include "QF/qtypes.h"
 
 extern	int		com_argc;
@@ -43,5 +50,8 @@ void COM_AddParm (const char *parm);
 void COM_Init (void);
 void COM_Init_Cvars (void);
 void COM_InitArgv (int argc, const char **argv);
+
+//@}
+//@}
 
 #endif // __qargs_h

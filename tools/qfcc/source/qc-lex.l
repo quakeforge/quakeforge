@@ -298,7 +298,7 @@ static keyword_t keywords[] = {
 	{"function",	TYPE,	&type_function,		0, PROG_VERSION},
 	{"id",			TYPE,	&type_id,			0, PROG_VERSION},
 	{"Class",		TYPE,	&type_Class,		0, PROG_VERSION},
-	{"Protocol",	TYPE,	&type_Protocol,		0, PROG_VERSION},
+//	{"Protocol",	TYPE,	&type_Protocol,		0, PROG_VERSION},
 	{"Method",		TYPE,	&type_Method,		0, PROG_VERSION},
 	{"Super",		TYPE,	&type_Super,		0, PROG_VERSION},
 	{"SEL",			TYPE,	&type_SEL,			0, PROG_VERSION},
@@ -339,10 +339,12 @@ static keyword_t keywords[] = {
 	{"@argc",		ARGC,	0,					0, PROG_VERSION},
 	{"@argv",		ARGV,	0,					0, PROG_VERSION},
 	{"@va_list",	TYPE,	&type_va_list,		0, PROG_VERSION},
+	{"@param",		TYPE,	&type_param,		0, PROG_VERSION},
 	{"@extern",		EXTERN,	0,					1, PROG_ID_VERSION},
 	{"@static",		STATIC,	0,					1, PROG_ID_VERSION},
 	{"@system",		SYSTEM,	0,					1, PROG_ID_VERSION},
 	{"@sizeof",		SIZEOF,	0,					0, PROG_VERSION},
+	{"@overload",	OVERLOAD, 0,				0, PROG_VERSION},
 };
 
 static const char *
@@ -356,7 +358,7 @@ type_or_name (char *token)
 {
 	static hashtab_t *keyword_tab;
 	keyword_t  *keyword;
-	type_t     *type;
+	typedef_t  *typename;
 	class_t    *class;
 
 	if (!keyword_tab) {
@@ -378,9 +380,9 @@ type_or_name (char *token)
 	if (token[0] == '@') {
 		return '@';
 	}
-	if ((type = get_typedef (token))) {
-		yylval.type = type;
-		return TYPE;
+	if ((typename = get_typedef (token))) {
+		yylval.typename = typename;
+		return TYPE_NAME;
 	}
 	if ((class = get_class (token, 0))) {
 		yylval.string_val = save_string (token);

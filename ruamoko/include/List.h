@@ -10,7 +10,6 @@
 	struct list_bucket_s [][] tail;
 }
 - (id) init;
-- (void) free;
 - (id) getItemAt: (integer) index;
 - (id) head;
 - (id) tail;

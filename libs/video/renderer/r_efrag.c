@@ -31,6 +31,8 @@
 static __attribute__ ((unused)) const char rcsid[] = 
 	"$Id$";
 
+#include <stdlib.h>
+
 #include "QF/console.h"
 #include "QF/render.h"
 #include "QF/sys.h"
@@ -38,18 +40,47 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "r_local.h"
 
 mnode_t    *r_pefragtopnode;
-efrag_t    *r_free_efrags;
-// FIXME: put this on hunk?
-efrag_t     r_efrags[MAX_EFRAGS];
+vec3_t      r_emins, r_emaxs;
+
+typedef struct s_efrag_list {
+	struct s_efrag_list *next;
+	efrag_t     efrags[MAX_EFRAGS];
+} t_efrag_list;
+
+static efrag_t    *r_free_efrags;
+static t_efrag_list *efrag_list;
 
 /* ENTITY FRAGMENT FUNCTIONS */
 
-efrag_t   **lastlink;
+static efrag_t   **lastlink;
+static entity_t   *r_addent;
 
-vec3_t      r_emins, r_emaxs;
 
-entity_t   *r_addent;
+static inline void
+init_efrag_list (t_efrag_list *efl)
+{
+	int i;
 
+	for (i = 0; i < MAX_EFRAGS - 1; i++)
+		efl->efrags[i].entnext = &efl->efrags[i + 1];
+	efl->efrags[i].entnext = NULL;
+}
+
+void
+R_ClearEfrags (void)
+{
+	t_efrag_list *efl;
+
+	if (!efrag_list)
+		efrag_list = calloc (1, sizeof (t_efrag_list));
+
+	r_free_efrags = efrag_list->efrags;;
+	for (efl = efrag_list; efl; efl = efl->next) {
+		init_efrag_list (efl);
+		if (efl->next)
+			efl->efrags[MAX_EFRAGS - 1].entnext = &efl->next->efrags[0];
+	}
+}
 
 /*
   R_RemoveEfrags
@@ -112,8 +143,11 @@ R_SplitEntityOnNode (mnode_t *node)
 			// grab an efrag off the free list
 			ef = r_free_efrags;
 			if (__builtin_expect (!ef, 0)) {
-				Con_Printf ("Too many efrags!\n");
-				return;						// no free fragments...
+				t_efrag_list *efl = calloc (1, sizeof (t_efrag_list));
+				SYS_CHECKMEM (efl);
+				efl->next = efrag_list;
+				efrag_list = efl;
+				ef = r_free_efrags = &efl->efrags[0];
 			}
 			r_free_efrags = r_free_efrags->entnext;
 
@@ -258,16 +292,4 @@ R_StoreEfrags (efrag_t **ppefrag)
 						   model->type);
 		}
 	}
-}
-
-void
-R_ClearEfrags (void)
-{
-	// allocate the efrags and chain together into a free list
-	int i;
-
-	r_free_efrags = r_efrags;
-	for (i = 0; i < MAX_EFRAGS - 1; i++)
-		r_free_efrags[i].entnext = &r_free_efrags[i + 1];
-	r_free_efrags[i].entnext = NULL;
 }

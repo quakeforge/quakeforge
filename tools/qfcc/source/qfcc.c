@@ -56,11 +56,11 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <errno.h>
 
 #include <QF/cbuf.h>
-#include <QF/idparse.h>
 #include <QF/crc.h>
 #include <QF/dstring.h>
 #include <QF/hash.h>
 #include <QF/qendian.h>
+#include <QF/script.h>
 #include <QF/sys.h>
 #include <QF/va.h>
 
@@ -184,7 +184,8 @@ WriteData (int crc)
 			&& strcmp (def->name, ".debug_file") != 0)
 			continue;
 		if (def->type->type == ev_func) {
-		} else if (def->type->type == ev_field) {
+		} else if (def->type->type == ev_field
+				   && strcmp (def->name, ".imm") != 0) {
 			dd = &fields[numfielddefs++];
 			def_to_ddef (def, dd, 1);
 			dd->ofs = G_INT (def->ofs);
@@ -590,7 +591,8 @@ separate_compile (void)
 		}
 		if (strncmp (*file, "-l", 2)
 			&& (!strcmp (extension->str, ".r")
-				|| !strcmp (extension->str, ".qc"))) {
+				|| !strcmp (extension->str, ".qc")
+				|| !strcmp (extension->str, ".c"))) {
 			if (options.verbosity >= 2)
 				printf ("%s %s\n", *file, output_file->str);
 			temp_files[i++] = save_string (output_file->str);
@@ -672,6 +674,7 @@ progs_src_compile (void)
 	dstring_t  *filename = dstring_newstr ();
 	const char *src;
 	int         crc = 0;
+	script_t   *script;
 
 	if (options.verbosity >= 1 && strcmp (sourcedir, "")) {
 		printf ("Source directory: %s\n", sourcedir);
@@ -691,14 +694,21 @@ progs_src_compile (void)
 				 strerror (errno));
 		return 1;
 	}
+	script = Script_New ();
+	Script_Start (script, filename->str, src);
 
-	if (!(src = COM_Parse (src))) {
+	if (!Script_GetToken (script, 1)) {
 		fprintf (stderr, "No destination filename.  qfcc --help for info.\n");
 		return 1;
 	}
+	// Consume any aditional tokens on this line.
+	// FIXME compilation options?
+	// FIXME could break some progs.src files, have an optional control?
+	while (Script_TokenAvailable (script, 0))
+		Script_GetToken (script, 0);
 
 	if (!options.output_file)
-		options.output_file = strdup (com_token);
+		options.output_file = save_string (script->token->str);
 	if (options.verbosity >= 1) {
 		printf ("output file: %s\n", options.output_file);
 	}
@@ -713,16 +723,25 @@ progs_src_compile (void)
 		setup_param_block ();
 
 	// compile all the files
-	while ((src = COM_Parse (src))) {
+	while (Script_GetToken (script, 1)) {
 		int         err;
 
 		if (*sourcedir)
 			dsprintf (filename, "%s%c%s", sourcedir, PATH_SEPARATOR,
-					  com_token);
+					  script->token->str);
 		else
-			dsprintf (filename, "%s", com_token);
+			dsprintf (filename, "%s", script->token->str);
 		if (options.verbosity >= 2)
 			printf ("compiling %s\n", filename->str);
+
+		// Consume any aditional tokens on this line, cumulatively adding them
+		// to the cpp command line.
+		// FIXME is non-cumulative more desirable? make an option?
+		// FIXME could break some progs.src files. have an optional control?
+		while (Script_TokenAvailable (script, 0)) {
+			Script_GetToken (script, 0);
+			add_cpp_def (save_string (script->token->str));
+		}
 
 		yyin = preprocess_file (filename->str);
 		if (!yyin)

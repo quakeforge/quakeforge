@@ -157,7 +157,7 @@ decode_args (int argc, char **argv)
 	return optind;
 }
 
-static byte default_palette[] = {
+byte default_palette[] = {
 	0x00, 0x00, 0x00, 0x0F, 0x0F, 0x0F, 0x1F, 0x1F, 0x1F, 0x2F, 0x2F, 0x2F,
 	0x3F, 0x3F, 0x3F, 0x4B, 0x4B, 0x4B, 0x5B, 0x5B, 0x5B, 0x6B, 0x6B, 0x6B,
 	0x7B, 0x7B, 0x7B, 0x8B, 0x8B, 0x8B, 0x9B, 0x9B, 0x9B, 0xAB, 0xAB, 0xAB,
@@ -339,7 +339,7 @@ main (int argc, char **argv)
 	decode_args (argc, argv);
 
 	if (!options.wadfile) {
-		fprintf (stderr, "%s: no archive file specified.\n",
+		fprintf (stderr, "%s: no archive/script file specified.\n",
 						 this_program);
 		usage (1);
 	}
@@ -399,20 +399,7 @@ main (int argc, char **argv)
 			wad_close (wad);
 			break;
 		case mo_create:
-/*			wad = wad_create (options.wadfile);
-			if (!wad) {
-				fprintf (stderr, "%s: error creating %s: %s\n", this_program,
-								 options.wadfile,
-								 strerror (errno));
-				return 1;
-			}
-			wad->pad = options.pad;
-			while (optind < argc) {
-				if (options.verbosity > 0)
-					printf ("%s\n", argv[optind]);
-				wad_add (wad, argv[optind++]);
-			}
-			wad_close (wad);*/
+			process_wad_script (options.wadfile);
 			break;
 		default:
 			fprintf (stderr, "%s: No command given.\n",

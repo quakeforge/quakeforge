@@ -28,6 +28,13 @@
 #ifndef _MSG_H
 #define _MSG_H
 
+/** \addtogroup utils */
+//@{
+
+/** \defgroup msg Message reading and writing
+*/
+//@{
+
 #include "QF/sizebuf.h"
 
 void MSG_WriteByte (sizebuf_t *sb, int c);
@@ -65,5 +72,8 @@ float MSG_ReadAngle (qmsg_t *msg);
 void MSG_ReadCoordAngleV (qmsg_t *msg, vec3_t coord, vec3_t angles);
 void MSG_ReadAngleV (qmsg_t *msg, vec3_t angles);
 float MSG_ReadAngle16 (qmsg_t *msg);
+
+//@}
+//@}
 
 #endif

@@ -1440,6 +1440,9 @@ static builtin_t builtins[] = {
 	{"freeboxhull",			PF_freeboxhull,			QF 96},
 	{"rotate_bbox",			PF_rotate_bbox,			QF 97},
 	{"checkextension",		PF_checkextension,		QF 99},
+
+	{"EntityParseFunction", ED_EntityParseFunction,	-1},
+
 	{0}
 };
 

@@ -102,6 +102,7 @@ expr_t *argv_expr (void);
 	struct def_s *def;
 	struct hashtab_s *def_list;
 	struct type_s	*type;
+	struct typedef_s *typename;
 	struct expr_s	*expr;
 	int			integer_val;
 	float		float_val;
@@ -116,6 +117,7 @@ expr_t *argv_expr (void);
 	struct category_s *category;
 	struct class_type_s	*class_type;
 	struct protocol_s *protocol;
+	struct protocollist_s *protocol_list;
 	struct keywordarg_s *keywordarg;
 	struct methodlist_s *methodlist;
 	struct struct_s *strct;
@@ -146,16 +148,17 @@ expr_t *argv_expr (void);
 %token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS NIL
 %token	IFBE IFB IFAE IFA
 %token	SWITCH CASE DEFAULT STRUCT UNION ENUM TYPEDEF SUPER SELF THIS
-%token	ARGS ARGC ARGV EXTERN STATIC SYSTEM SIZEOF
+%token	ARGS ARGC ARGV EXTERN STATIC SYSTEM SIZEOF OVERLOAD
 %token	<type> TYPE
+%token	<typename> TYPE_NAME
 %token	CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE PROTECTED
 %token	PROTOCOL PUBLIC SELECTOR
 
 %type	<type>	type non_field_type type_name def simple_def struct_def
 %type	<type>	struct_def_item ivar_decl ivar_declarator def_item def_list
 %type	<type>	struct_def_list ivars func_type non_func_type
-%type	<type>	non_code_func code_func func_def func_defs func_def_list
-%type	<def>	fdef_name
+%type	<type>	non_code_func code_func func_init func_defs func_def_list
+%type	<def>	fdef_name cfunction_def func_def
 %type	<param> function_decl
 %type	<param>	param param_list
 %type	<def>	def_name opt_initializer methoddef var_initializer
@@ -167,12 +170,13 @@ expr_t *argv_expr (void);
 %type	<function> begin_function
 %type	<def_list> save_inits
 %type	<switch_block> switch_block
+%type	<string_val> identifier
 
-%type	<string_val> selector reserved_word maybe_class
+%type	<string_val> selector reserved_word
 %type	<param>	optparmlist unaryselector keyworddecl keywordselector
 %type	<method> methodproto methoddecl
 %type	<expr>	obj_expr identifier_list obj_messageexpr obj_string receiver
-%type	<expr>	protocolrefs protocol_list
+%type	<protocol_list>	protocolrefs protocol_list
 %type	<keywordarg> messageargs keywordarg keywordarglist selectorarg
 %type	<keywordarg> keywordnamelist keywordname
 %type	<class> class_name new_class_name class_with_super new_class_with_super
@@ -212,25 +216,30 @@ defs
 	;
 
 def
-	: simple_def { }
-	| storage_class simple_def { current_storage = st_global; }
+	: simple_def				{ }
+	| storage_class simple_def	{ current_storage = st_global; }
 	| storage_class '{' simple_defs '}' ';'
 	  { current_storage = st_global; }
-	| STRUCT NAME
-	  { current_struct = new_struct ($2); } '=' '{' struct_defs '}' ';' { }
-	| UNION NAME
-	  { current_struct = new_union ($2); } '=' '{' struct_defs '}' ';' { }
-	| STRUCT NAME ';'			{ decl_struct ($2); }
-	| UNION NAME ';'			{ decl_union ($2); }
+	| STRUCT identifier
+	  { current_struct = new_struct ($2); } opt_eq '{' struct_defs '}' ';' { }
+	| UNION identifier
+	  { current_struct = new_union ($2); } opt_eq '{' struct_defs '}' ';' { }
+	| STRUCT identifier ';'		{ decl_struct ($2); }
+	| UNION identifier ';'		{ decl_union ($2); }
 	| ENUM '{' enum_list opt_comma '}' ';'
 	  { process_enum ($3); }
-	| TYPEDEF type NAME ';'
+	| TYPEDEF type identifier ';'
 	  { new_typedef ($3, $2); }
-	| TYPEDEF ENUM '{' enum_list opt_comma '}' NAME ';'
+	| TYPEDEF ENUM '{' enum_list opt_comma '}' identifier ';'
 		{
 			process_enum ($4);
 			new_typedef ($7, &type_integer);
 		}
+	;
+
+opt_eq
+	: /* empty */
+	| '='
 	;
 
 opt_semi
@@ -245,56 +254,53 @@ simple_defs
 
 simple_def
 	: non_func_type def_list ';' { }
-	| func_type func_defs { }
-	| cfunction { }
+	| func_type func_defs		{ }
+	| cfunction	{ }
 	;
 
 cfunction
-	: non_func_type NAME function_decl ';'
+	: cfunction_def ';'
 		{
-			type_t     *type;
-			def_t      *def;
-			
-			type = parse_params ($1, $3);
-			def = get_def (type, $2, current_scope, current_storage);
 		}
-	| non_func_type NAME function_decl '=' '#' fexpr ';'
+	| cfunction_def '=' '#' fexpr ';'
 		{
-			type_t     *type;
-			def_t      *def;
-			
-			type = parse_params ($1, $3);
-			def = get_def (type, $2, current_scope, current_storage);
-			$6 = constant_expr ($6);
-			build_builtin_function (def, $6);
+			build_builtin_function ($1, $4);
 		}
-	| non_func_type NAME function_decl
-	  opt_state_expr
+	| cfunction_def opt_state_expr
 		{ $<op>$ = current_storage; }
-		{
-			type_t     *type;
-			
-			current_params = $3;
-			type = parse_params ($1, $3);
-			$<def>$ = get_def (type, $2, current_scope, current_storage);
-		}
-	  begin_function statement_block { $<op>$ = $<op>5; } end_function
+		{ $<def>$ = $1; }
+	  begin_function statement_block { $<op>$ = $<op>3; } end_function
 	    {
-			build_code_function ($7, $4, $8);
+			build_code_function ($5, $2, $6);
 			current_func = 0;
 		}
 	;
 
+cfunction_def
+	: OVERLOAD non_func_type identifier function_decl 
+		{
+			type_t     *type = parse_params ($2, current_params = $4);
+			$$ = get_function_def ($3, type, current_scope,
+								   current_storage, 1, 1);
+		}
+	| non_func_type identifier function_decl 
+		{
+			type_t     *type = parse_params ($1, current_params = $3);
+			$$ = get_function_def ($2, type, current_scope,
+								   current_storage, 0, 1);
+		}
+	;
+
 storage_class
-	: EXTERN		{ current_storage = st_extern; }
-	| STATIC		{ current_storage = st_static; }
-	| SYSTEM		{ current_storage = st_system; }
+	: EXTERN					{ current_storage = st_extern; }
+	| STATIC					{ current_storage = st_static; }
+	| SYSTEM					{ current_storage = st_system; }
 	;
 
 struct_defs
 	: /* empty */
 	| struct_defs struct_def ';'
-	| DEFS '(' maybe_class ')'
+	| DEFS '(' identifier ')'
 		{
 			class_t    *class = get_class ($3, 0);
 
@@ -324,8 +330,8 @@ enum_list
 	;
 
 enum
-	: NAME { $$ = new_name_expr ($1); }
-	| NAME '=' fexpr
+	: identifier				{ $$ = new_name_expr ($1); }
+	| identifier '=' fexpr
 		{
 			$$ = 0;
 			$3 = constant_expr ($3);
@@ -345,8 +351,8 @@ type
 	;
 
 non_func_type
-	: '.' type { $$ = field_type ($2); }
-	| non_field_type { $$ = $1; }
+	: '.' type					{ $$ = field_type ($2); }
+	| non_field_type			{ $$ = $1; }
 	;
 
 func_type
@@ -358,7 +364,7 @@ func_type
 	;
 
 non_field_type
-	: '(' type ')' { $$ = $2; }
+	: '(' type ')'				{ $$ = $2; }
 	| non_field_type array_decl
 		{
 			if ($2)
@@ -366,11 +372,12 @@ non_field_type
 			else
 				$$ = pointer_type ($1);
 		}
-	| type_name { $$ = $1; }
+	| type_name					{ $$ = $1; }
 	;
 
 type_name
-	: TYPE { $$ = $1; }
+	: TYPE						{ $$ = $1; }
+	| TYPE_NAME					{ $$ = $1->type; }
 	| CLASS_NAME
 		{
 			class_t    *class = get_class ($1, 0);
@@ -380,26 +387,26 @@ type_name
 			}
 			$$ = class->type;
 		}
-	| STRUCT NAME			{ $$ = decl_struct ($2)->type; }
-	| UNION NAME			{ $$ = decl_union ($2)->type; }
+	| STRUCT identifier			{ $$ = decl_struct ($2)->type; }
+	| UNION identifier			{ $$ = decl_union ($2)->type; }
 	;
 
 function_decl
-	: '(' param_list ')'	{ $$ = reverse_params ($2); }
+	: '(' param_list ')'		{ $$ = reverse_params ($2); }
 	| '(' param_list ',' ELLIPSIS ')'
 		{
 			$$ = new_param (0, 0, 0);
 			$$->next = $2;
 			$$ = reverse_params ($$);
 		}
-	| '(' ELLIPSIS ')'		{ $$ = new_param (0, 0, 0); }
+	| '(' ELLIPSIS ')'			{ $$ = new_param (0, 0, 0); }
 	| '(' TYPE ')'
 		{
 			if ($2 != &type_void)
 				PARSE_ERROR;
 			$$ = 0;
 		}
-	| '(' ')'				{ $$ = 0; }
+	| '(' ')'					{ $$ = 0; }
 	;
 
 param_list
@@ -412,7 +419,7 @@ param_list
 	;
 
 param
-	: type NAME { $$ = new_param (0, $1, $2); }
+	: type identifier			{ $$ = new_param (0, $1, $2); }
 	;
 
 array_decl
@@ -425,7 +432,7 @@ array_decl
 				$$ = $2;
 			}
 		}
-	| '[' ']' { $$ = 0; }
+	| '[' ']'					{ $$ = 0; }
 	;
 
 struct_def_list
@@ -434,7 +441,10 @@ struct_def_list
 	;
 
 struct_def_item
-	: NAME { new_struct_field (current_struct, $<type>0, $1, vis_public); }
+	: identifier
+		{
+			new_struct_field (current_struct, $<type>0, $1, vis_public);
+		}
 	;
 
 def_list
@@ -453,24 +463,37 @@ def_item
 
 func_defs
 	: func_def_list ',' fdef_name func_term
-	| def_name func_term {}
+	| func_def func_term		{}
 	;
 
 func_term
-	: non_code_func ';' {}
-	| code_func opt_semi {}
+	: non_code_func ';'			{}
+	| code_func opt_semi		{}
 	;
 
 func_def_list
-	: func_def_list ',' fdef_name func_def
-	| def_name func_def { $$ = $<type>0; }
+	: func_def_list ',' fdef_name func_init
+	| func_def func_init		{ $$ = $<type>0; }
 	;
 
 fdef_name
-	: { $<type>$ = $<type>-1; } def_name { $$ = $2; }
+	: { $<type>$ = $<type>-1; } func_def { $$ = $2; }
 	;
 
 func_def
+	: identifier
+		{
+			$$ = get_function_def ($1, $<type>0, current_scope,
+								   current_storage, 0, 1);
+		}
+	| OVERLOAD identifier
+		{
+			$$ = get_function_def ($2, $<type>0, current_scope,
+								   current_storage, 1, 1);
+		}
+	;
+
+func_init
 	: non_code_func
 	| code_func
 	;
@@ -498,7 +521,7 @@ code_func
 	;
 
 def_name
-	: NAME
+	: identifier
 		{
 			if (current_scope->type == sc_local
 				&& current_scope->parent->type == sc_params) {
@@ -513,9 +536,9 @@ def_name
 	;
 
 opt_initializer
-	: /*empty*/ { }
+	: /*empty*/					{ }
 	| { $$ = $<def>0; }
-	  var_initializer { }
+	  var_initializer			{ }
 	;
 
 var_initializer
@@ -715,8 +738,8 @@ statements
 	;
 
 statement
-	: ';' { $$ = 0; }
-	| statement_block { $$ = $1; }
+	: ';'						{ $$ = 0; }
+	| statement_block			{ $$ = $1; }
 	| RETURN fexpr ';'
 		{
 			$$ = return_expr (current_func, $2);
@@ -1028,12 +1051,12 @@ unary_expr
 	| '!' cast_expr %prec UNARY	{ $$ = unary_expr ('!', $2); }
 	| '~' cast_expr %prec UNARY	{ $$ = unary_expr ('~', $2); }
 	| '&' cast_expr %prec UNARY	{ $$ = address_expr ($2, 0, 0); }
-	| SIZEOF unary_expr	%prec UNARY 		{ $$ = sizeof_expr ($2, 0); }
+	| SIZEOF unary_expr	%prec UNARY	{ $$ = sizeof_expr ($2, 0); }
 	| SIZEOF '(' type ')'	 %prec HYPERUNARY	{ $$ = sizeof_expr (0, $3); }
 	;
 
 primary
-	: NAME						{ $$ = new_name_expr ($1); }
+	: NAME      				{ $$ = new_name_expr ($1); }
 	| ARGS						{ $$ = new_name_expr (".args"); }
 	| ARGC						{ $$ = argc_expr (); }
 	| ARGV						{ $$ = argv_expr (); }
@@ -1114,6 +1137,14 @@ string_val
 		}
 	;
 
+identifier
+	: NAME
+	| CLASS_NAME
+	| TYPE_NAME					{ $$ = $1->name; }
+	;
+
+// Objective-QC stuff
+
 obj_def
 	: classdef					{ }
 	| classdecl
@@ -1130,12 +1161,12 @@ obj_def
 	;
 
 identifier_list
-	: maybe_class
+	: identifier
 		{
 			$$ = new_block_expr ();
 			append_expr ($$, new_name_expr ($1));
 		}
-	| identifier_list ',' maybe_class
+	| identifier_list ',' identifier
 		{
 			append_expr ($1, new_name_expr ($3));
 			$$ = $1;
@@ -1151,13 +1182,8 @@ classdecl
 		}
 	;
 
-maybe_class
-	: NAME
-	| CLASS_NAME
-	;
-
 class_name
-	: maybe_class
+	: identifier
 		{
 			$$ = get_class ($1, 0);
 			if (!$$) {
@@ -1168,7 +1194,7 @@ class_name
 	;
 
 new_class_name
-	: maybe_class
+	: identifier
 		{
 			$$ = get_class ($1, 1);
 			if ($$->defined) {
@@ -1196,7 +1222,7 @@ new_class_with_super
 	;
 
 category_name
-	: maybe_class '(' maybe_class ')'
+	: identifier '(' identifier ')'
 		{
 			$$ = get_category ($1, $3, 0);
 			if (!$$) {
@@ -1207,7 +1233,7 @@ category_name
 	;
 
 new_category_name
-	: maybe_class '(' maybe_class ')'
+	: identifier '(' identifier ')'
 		{
 			$$ = get_category ($1, $3, 1);
 			if ($$->defined) {
@@ -1218,7 +1244,7 @@ new_category_name
 	;
 
 protocol_name
-	: maybe_class
+	: identifier
 		{
 			$$ = get_protocol ($1, 0);
 			if ($$) {
@@ -1232,29 +1258,29 @@ protocol_name
 
 classdef
 	: INTERFACE new_class_name
-	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
+	  protocolrefs						{ class_add_protocols ($2, $3);}
 	  '{'								{ $$ = $2; }
 	  ivar_decl_list '}'				{ class_add_ivars ($2, $7); $$ = $2; }
 	  methodprotolist					{ class_add_methods ($2, $10); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_class_name
-	  protocolrefs					{ class_add_protocol_methods ($2, $3); }
+	  protocolrefs					{ class_add_protocols ($2, $3); }
 					{ class_add_ivars ($2, class_new_ivars ($2)); $$ = $2; }
 	  methodprotolist					{ class_add_methods ($2, $6); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_class_with_super
-	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
+	  protocolrefs						{ class_add_protocols ($2, $3);}
 	  '{'								{ $$ = $2; }
 	  ivar_decl_list '}'				{ class_add_ivars ($2, $7); $$ = $2; }
 	  methodprotolist					{ class_add_methods ($2, $10); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_class_with_super
-	  protocolrefs					{ class_add_protocol_methods ($2, $3); }
+	  protocolrefs						{ class_add_protocols ($2, $3); }
 					{ class_add_ivars ($2, class_new_ivars ($2)); $$ = $2; }
 	  methodprotolist					{ class_add_methods ($2, $6); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_category_name
-	  protocolrefs	{ category_add_protocol_methods ($2, $3); $$ = $2->class;}
+	  protocolrefs		{ category_add_protocols ($2, $3); $$ = $2->class;}
 	  methodprotolist					{ category_add_methods ($2, $5); }
 	  END								{ current_class = 0; }
 	| IMPLEMENTATION class_name			{ class_begin (&$2->class_type); }
@@ -1270,26 +1296,25 @@ classdef
 
 protocoldef
 	: PROTOCOL protocol_name 
-	  protocolrefs	{ protocol_add_protocol_methods ($2, $3); $<class>$ = 0; }
+	  protocolrefs			{ protocol_add_protocols ($2, $3); $<class>$ = 0; }
 	  methodprotolist			{ protocol_add_methods ($2, $5); }
 	  END
 	;
 
 protocolrefs
 	: /* emtpy */				{ $$ = 0; }
-	| LT protocol_list GT		{ $$ = $2->e.block.head; }
+	| LT 						{ $$ = new_protocol_list (); }
+	  protocol_list GT			{ $$ = $3; }
 	;
 
 protocol_list
-	: maybe_class
+	: identifier
 		{
-			$$ = new_block_expr ();
-			append_expr ($$, new_name_expr ($1));
+			$$ = add_protocol ($<protocol_list>0, $1);
 		}
-	| protocol_list ',' maybe_class
+	| protocol_list ',' identifier
 		{
-			append_expr ($1, new_name_expr ($3));
-			$$ = $1;
+			$$ = add_protocol ($1, $3);
 		}
 	;
 
@@ -1323,7 +1348,7 @@ ivar_decls
 	;
 
 ivar_decl
-	: type { $$ = $1; } ivars { }
+	: type { $$ = $1; } ivars	{ }
 	;
 
 ivars
@@ -1332,7 +1357,7 @@ ivars
 	;
 
 ivar_declarator
-	: NAME
+	: identifier
 		{
 			new_struct_field (current_ivars, $<type>0, $1, current_visibility);
 		}
@@ -1392,14 +1417,11 @@ methodproto
 	: '+' methoddecl ';'
 		{
 			$2->instance = 0;
-			$2->params->type = &type_Class;
 			$$ = $2;
 		}
 	| '-' methoddecl ';'
 		{
 			$2->instance = 1;
-			if ($<class>-1)
-				$2->params->type = $<class>-1->type;
 			$$ = $2;
 		}
 	;
@@ -1436,8 +1458,10 @@ keywordselector
 	;
 
 selector
-	: maybe_class
+	: NAME						{ $$ = save_string ($1); }
+	| CLASS_NAME				{ $$ = save_string ($1); }
 	| TYPE						{ $$ = save_string (yytext); }
+	| TYPE_NAME					{ $$ = save_string ($1->name); }
 	| reserved_word
 	;
 
@@ -1463,20 +1487,20 @@ reserved_word
 	;
 
 keyworddecl
-	: selector ':' '(' type ')' NAME
+	: selector ':' '(' type ')' identifier
 		{ $$ = new_param ($1, $4, $6); }
-	| selector ':' NAME
+	| selector ':' identifier
 		{ $$ = new_param ($1, &type_id, $3); }
-	| ':' '(' type ')' NAME
+	| ':' '(' type ')' identifier
 		{ $$ = new_param ("", $3, $5); }
-	| ':' NAME
+	| ':' identifier
 		{ $$ = new_param ("", &type_id, $2); }
 	;
 
 obj_expr
 	: obj_messageexpr
 	| SELECTOR '(' selectorarg ')'	{ $$ = selector_expr ($3); }
-	| PROTOCOL '(' maybe_class ')'	{ $$ = protocol_expr ($3); }
+	| PROTOCOL '(' identifier ')'	{ $$ = protocol_expr ($3); }
 	| ENCODE '(' type ')'			{ $$ = encode_expr ($3); }
 	| obj_string /* FIXME string object? */
 	;

@@ -370,7 +370,7 @@ typedef struct pr_va_list_s {
 } pr_va_list_t;
 
 #define	PROG_ID_VERSION	6
-#define	PROG_VERSION	0x00fff004	// MMmmmRRR 0.fff.004 (hex)
+#define	PROG_VERSION	0x00fff005	// MMmmmRRR 0.fff.005 (hex)
 
 typedef struct dprograms_s {
 	unsigned int version;

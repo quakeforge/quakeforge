@@ -50,8 +50,6 @@ static general_data_t	plugin_info_general_data;
 static general_funcs_t	plugin_info_general_funcs; 
 static cd_funcs_t		plugin_info_cd_funcs;
 
-extern HWND mainwindow;		//FIXME
-
 static qboolean cdValid = false;
 static qboolean playing = false;
 static qboolean wasPlaying = false;
@@ -208,7 +206,7 @@ I_CDAudio_Play (int track, qboolean looping)
 			return;
 	}
 
-	if (track < 0 || track >= sizeof (remap)) {
+	if (track < 0 || track >= (int) sizeof (remap)) {
 		Sys_Printf ("CDAudio: invalid track number\n");
 		return;
 	}

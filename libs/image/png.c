@@ -67,6 +67,13 @@ user_write_data (png_structp png_ptr, png_bytep data, png_size_t length)
 	Qwrite ((QFile *) png_get_io_ptr (png_ptr), data, length);
 }
 
+/* Qflush wrapper for libpng */
+static void 
+user_flush_data (png_structp png_ptr)
+{
+	Qflush ((QFile *) png_get_io_ptr (png_ptr));
+}
+
 /* Basicly taken from the libpng example rpng-x */
 static int
 readpng_init (QFile *infile, png_structp *png_ptr, png_infop *info_ptr)
@@ -223,8 +230,7 @@ WritePNG (const char *fileName, byte *data, int width, int height)
 		return; /* Can't open file */
 	}
 	
-	/* FIXME: NULL should be a QF equiv to fflush? */
-	png_set_write_fn (png_ptr, outfile, user_write_data, NULL);
+	png_set_write_fn (png_ptr, outfile, user_write_data, user_flush_data);
 	
 	/* Write the header */
 	if (setjmp(png_jmpbuf(png_ptr))) {

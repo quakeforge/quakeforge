@@ -34,6 +34,14 @@
 
 #include "QF/pr_comp.h"
 
+typedef struct overloaded_function_s {
+	struct overloaded_function_s *next;
+	const char *name;
+	const char *full_name;
+	struct type_s *type;
+	int         overloaded;
+} overloaded_function_t;
+
 typedef struct function_s {
 	struct function_s  *next;
 	pr_auxfunction_t   *aux;		// debug info;
@@ -67,6 +75,12 @@ param_t *_reverse_params (param_t *params, param_t *next);
 param_t *reverse_params (param_t *params);
 param_t *copy_params (param_t *params);
 struct type_s *parse_params (struct type_s *type, param_t *params);
+overloaded_function_t *get_function (const char *name, struct type_s *type,
+									 int overload, int create);
+struct def_s *get_function_def (const char *name, struct type_s *type,
+								struct scope_s *scope, storage_class_t storage,
+								int overload, int create);
+struct expr_s *find_function (struct expr_s *fexpr, struct expr_s *params);
 void build_scope (function_t *f, struct def_s *func, param_t *params);
 function_t *new_function (const char *name);
 function_t *build_code_function (function_t *f, struct expr_s *state_expr,

@@ -101,6 +101,7 @@ static const char *short_options =
 	"p:"	// strip path
 	"S"		// save temps
 	"D:"	// define
+	"E"		// preprocess only
 	"I:"	// set includes
 	"U:"	// undefine
 	"N:"	// notice options
@@ -168,6 +169,7 @@ int
 DecodeArgs (int argc, char **argv)
 {
 	int         c;
+	int         saw_E = 0, saw_MD = 0;
 
 	add_cpp_def ("-D__QFCC__=1");
 	add_cpp_def ("-D__QUAKEC__=1");
@@ -385,6 +387,11 @@ DecodeArgs (int argc, char **argv)
 			case 'D':					// defines for cpp
 				add_cpp_def (nva ("%s%s", "-D", optarg));
 				break;
+			case 'E':					// defines for cpp
+				saw_E = 1;
+				options.preprocess_only = 1;
+				add_cpp_def ("-E");
+				break;
 			case 259:					// include-file
 				add_cpp_def (nva ("%s", "-include"));
 				add_cpp_def (nva ("%s", optarg));
@@ -396,10 +403,11 @@ DecodeArgs (int argc, char **argv)
 				add_cpp_def (nva ("%s%s", "-U", optarg));
 				break;
 			case 'M':
+				options.preprocess_only = 1;
 				if (optarg) {
 					add_cpp_def (nva ("-M%s", optarg));
-					if (!strchr (optarg, 'D'))
-						options.preprocess_only = 1;
+					if (strchr (optarg, 'D'))
+						saw_MD = 1;
 					if (strchr ("FQT", optarg[0]))
 						add_cpp_def (argv[optind++]);
 				} else {
@@ -411,6 +419,12 @@ DecodeArgs (int argc, char **argv)
 				usage (1);
 		}
 	}
+	if (saw_E && saw_MD) {
+		fprintf (stderr, "%s: cannot use -E and -MD together\n", this_program);
+		exit (1);
+	}
+	if (saw_MD)
+		options.preprocess_only = 0;
 	if (!source_files && !options.advanced) {
 		// progs.src mode without --advanced implies --traditional
 		options.traditional = true;

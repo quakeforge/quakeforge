@@ -32,17 +32,16 @@
 #define __ruamoko_Entity_h
 
 #include "Object.h"
-#include "entities.h"
 
 @interface Entity: Object
 {
 @public
 	entity		ent;
+	integer		own;
 }
 
 - (id) init;
 - (id) initWithEntity: (entity) e;
-- (void) free;
 
 - (entity) ent;
 

@@ -41,7 +41,7 @@ string (inputline_t il) InputLine_GetText = #0;
 	control.ybase = pos.y;
 }
 
-- (void) setWidth: (integer)visibleWidth
+- (void) setWidth: (integer)width
 {
 	InputLine_SetWidth (il, width);
 }
@@ -92,7 +92,7 @@ string (inputline_t il) InputLine_GetText = #0;
 	yl = aRect.size.height;
 	r = [[Rect alloc] initWithComponents:xp :yp :xl :yl];
 	input_line = [[InputLine alloc] initWithBounds:r promptCharacter:char];
-	[r dealloc];
+	[r release];
 	return self;
 }
 

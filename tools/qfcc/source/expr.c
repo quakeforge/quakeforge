@@ -284,6 +284,12 @@ type_mismatch (expr_t *e1, expr_t *e2, int op)
 	t1 = extract_type (e1);
 	t2 = extract_type (e2);
 
+	if (1) {
+		print_type (get_type (e1));
+		print_type (get_type (e2));
+		printf ("\n%p %p\n", get_type (e1), get_type (e2));
+	}
+
 	return error (e1, "type mismatch: %s %s %s",
 				  pr_type_name[t1], get_op_string (op), pr_type_name[t2]);
 }
@@ -295,7 +301,7 @@ check_initialized (expr_t *e)
 
 	if (e->type == ex_def
 		&& !(e->e.def->type->type == ev_func
-			 && e->e.def->global)
+			 && !e->e.def->local)
 		&& !(e->e.def->type->type == ev_struct)
 		&& !e->e.def->external
 		&& !e->e.def->initialized) {
@@ -514,11 +520,13 @@ new_entity_expr (int entity_val)
 }
 
 expr_t *
-new_field_expr (int field_val)
+new_field_expr (int field_val, type_t *type, def_t *def)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_field;
-	e->e.field_val = field_val;
+	e->e.pointer.val = field_val;
+	e->e.pointer.type = type;
+	e->e.pointer.def = def;
 	return e;
 }
 
@@ -600,7 +608,8 @@ constant_expr (expr_t *var)
 		case ev_vector:
 			return new_vector_expr (G_VECTOR (var->e.def->ofs));
 		case ev_field:
-			return new_field_expr (G_INT (var->e.def->ofs));
+			return new_field_expr (G_INT (var->e.def->ofs), var->e.def->type,
+								   var->e.def);
 		case ev_integer:
 			return new_integer_expr (G_INT (var->e.def->ofs));
 		case ev_uinteger:
@@ -814,8 +823,10 @@ print_expr (expr_t *e)
 			printf ("(%s)[%d]", pr_type_name[e->e.pointer.type->type],
 					e->e.pointer.val);
 			break;
-		case ex_entity:
 		case ex_field:
+			printf ("%d", e->e.pointer.val);
+			break;
+		case ex_entity:
 		case ex_func:
 		case ex_integer:
 			printf ("%d", e->e.integer_val);
@@ -961,15 +972,22 @@ field_expr (expr_t *e1, expr_t *e2)
 						if (e1->e.expr.op == '.'
 							&& extract_type (e1->e.expr.e1) == ev_entity) {
 							int         ofs;
+							def_t      *def;
+							type_t     *type;
 
-							if (e1->e.expr.e2->type == ex_def)
-								ofs = G_INT (e1->e.expr.e2->e.def->ofs);
-							else if (e1->e.expr.e2->type == ex_field)
-								ofs = e1->e.expr.e2->e.field_val;
-							else
+							if (e1->e.expr.e2->type == ex_def) {
+								ofs = 0;
+								def = e1->e.expr.e2->e.def;
+								type = def->type;
+							} else if (e1->e.expr.e2->type == ex_field) {
+								ofs = e1->e.expr.e2->e.pointer.val;
+								def = e1->e.expr.e2->e.pointer.def;
+								type = e1->e.expr.e2->e.pointer.type;
+							} else
 								break;
 							if (field->offset) {
-								e = new_field_expr (ofs + field->offset);
+								e = new_field_expr (ofs + field->offset,
+													type, def);
 								e = new_binary_expr ('.', e1->e.expr.e1, e);
 							} else {
 								e = e1;
@@ -1088,7 +1106,7 @@ test_expr (expr_t *e, int test)
 			new = new_entity_expr (0);
 			break;
 		case ev_field:
-			new = new_field_expr (0);
+			new = new_field_expr (0, 0, 0);
 			break;
 		case ev_func:
 			new = new_func_expr (0);
@@ -1863,7 +1881,7 @@ bitnot_expr:
 	abort ();
 }
 
-static expr_t *
+expr_t *
 build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 {
 	expr_t     *e;
@@ -1920,8 +1938,8 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 			if (e->type == ex_error)
 				return e;
 			if (!type_assignable (ftype->parm_types[i], t)) {
-				//print_type (ftype->parm_types[i]); puts ("");
-				//print_type (t); puts ("");
+				print_type (ftype->parm_types[i]); puts ("");
+				print_type (t); puts ("");
 				err = error (e, "type mismatch for parameter %d of %s",
 							 i + 1, fexpr->e.def->name);
 			}
@@ -1987,6 +2005,7 @@ function_expr (expr_t *fexpr, expr_t *params)
 {
 	type_t     *ftype;
 
+	find_function (fexpr, params);
 	ftype = get_type (fexpr);
 
 	if (fexpr->type == ex_error)
@@ -2259,6 +2278,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 			return e2;
 		if (e->type == ex_pointer && e2->type == ex_short) {
 			e->e.pointer.val += e2->e.short_val;
+			e->e.pointer.type = t;
 		} else {
 			if (e2->type != ex_short || e2->e.short_val) {
 				if (e->type == ex_expr && e->e.expr.op == '&') {
@@ -2339,13 +2359,18 @@ assign_expr (expr_t *e1, expr_t *e2)
 		else
 			return error (e1, "invalid lvalue in assignment");
 	}
-	//XXX func = func ???
-	check_initialized (e2);
 	t1 = get_type (e1);
 	t2 = get_type (e2);
 	if (!t1 || !t2) {
 		error (e1, "internal error");
 		abort ();
+	}
+	//XXX func = func ???
+	if (t1->type != ev_pointer || t2->type != ev_array)
+		check_initialized (e2);
+	else {
+		e2 = address_expr (e2, 0, t2->aux_type);
+		t2 = get_type (e2);
 	}
 	if (e2->type == ex_bool)
 		e2 = convert_from_bool (e2, t1);
@@ -2477,15 +2502,18 @@ void
 init_elements (def_t *def, expr_t *eles)
 {
 	expr_t     *e, *c;
-	int         count, i, num_params;
+	int         count, i, num_params, ofs;
 	pr_type_t  *g;
 	def_t      *elements;
 
+	ofs = def->ofs;
+	if (def->local && local_expr)
+		ofs = 0;
 	if (def->type->type == ev_array) {
 		elements = calloc (def->type->num_parms, sizeof (def_t));
 		for (i = 0; i < def->type->num_parms; i++) {
 			elements[i].type = def->type->aux_type;
-			elements[i].ofs = def->ofs + i * type_size (def->type->aux_type);
+			elements[i].ofs = ofs + i * type_size (def->type->aux_type);
 		}
 		num_params = i;
 	} else if (def->type->type == ev_struct) {
@@ -2498,7 +2526,7 @@ init_elements (def_t *def, expr_t *eles)
 		for (i = 0, field = def->type->s.strct->struct_head; field;
 			 i++, field = field->next) {
 			elements[i].type = field->type;
-			elements[i].ofs = def->ofs + field->offset;
+			elements[i].ofs = ofs + field->offset;
 		}
 		num_params = i;
 	} else {
@@ -2525,6 +2553,7 @@ init_elements (def_t *def, expr_t *eles)
 				continue;
 			}
 			init_elements (&elements[i], c);
+			continue;
 		} else if (c->type >= ex_string) {
 			if (c->type == ex_integer
 				&& elements[i].type->type == ev_float)
@@ -2542,13 +2571,24 @@ init_elements (def_t *def, expr_t *eles)
 				error (e, "type mismatch in initializer");
 				continue;
 			}
+		} else {
+			if (!def->local || !local_expr) {
+				error (e, "non-constant initializer");
+				continue;
+			}
+		}
+		if (def->local && local_expr) {
+			int         ofs = elements[i].ofs;
+			type_t     *type = elements[i].type;
+			expr_t     *ptr = new_pointer_expr (ofs, type, def);
+
+			append_expr (local_expr, assign_expr (unary_expr ('.', ptr), c));
+		} else {
 			if (c->type == ex_string) {
 				EMIT_STRING (g->string_var, c->e.string_val);
 			} else {
 				memcpy (g, &c->e, type_size (get_type (c)) * 4);
 			}
-		} else {
-			error (e, "non-constant initializer");
 		}
 	}
 	free (elements);
@@ -2558,7 +2598,6 @@ expr_t *
 selector_expr (keywordarg_t *selector)
 {
 	dstring_t  *sel_id = dstring_newstr ();
-	dstring_t  *sel_types = dstring_newstr ();
 	expr_t     *sel;
 	def_t      *sel_def;
 	int         index;
@@ -2566,15 +2605,12 @@ selector_expr (keywordarg_t *selector)
 	selector = copy_keywordargs (selector);
 	selector = (keywordarg_t *) reverse_params ((param_t *) selector);
 	selector_name (sel_id, selector);
-	selector_types (sel_types, selector);
-	//printf ("'%s' '%s'\n", sel_id->str, sel_types->str);
-	index = selector_index (sel_id->str, sel_types->str);
+	index = selector_index (sel_id->str);
 	index *= type_size (type_SEL.aux_type);
 	sel_def = get_def (type_SEL.aux_type, "_OBJ_SELECTOR_TABLE", pr.scope,
 					   st_extern);
 	sel = new_def_expr (sel_def);
 	dstring_delete (sel_id);
-	dstring_delete (sel_types);
 	return address_expr (sel, new_short_expr (index), 0);
 }
 

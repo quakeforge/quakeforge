@@ -22,7 +22,7 @@
 {
 	local integer i;
 	for (i = 0; i < count; i++)
-		[array[i] dealloc];
+		[array[i] release];
 	obj_free (array);
 	[super dealloc];
 }

@@ -121,5 +121,5 @@ CDAudio_Init (void)
 		"play (track number) - Plays the specified track one time.\n"
 		"stop - Stops the currently playing track.");
 	Sys_Printf ("CD Audio Initialized\n");
-	return 0; // FIXME: Assumes success
+	return 0;
 }

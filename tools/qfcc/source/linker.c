@@ -243,6 +243,7 @@ add_relocs (qfo_t *qfo)
 							qfo->strings + DATA (reloc->ofs)->string_var);
 				break;
 			case rel_def_field:
+			case rel_def_field_ofs:
 				//FIXME more?
 				reloc->ofs += data_base;
 				break;
@@ -478,6 +479,7 @@ fixup_relocs (void)
 			case rel_op_b_def_ofs:
 			case rel_op_c_def_ofs:
 			case rel_def_def_ofs:
+			case rel_def_field_ofs:
 				def = defs.defs + reloc->def;
 				if (def->flags & (QFOD_EXTERNAL | QFOD_LOCAL | QFOD_ABSOLUTE))
 					continue;
@@ -510,6 +512,7 @@ fixup_relocs (void)
 			case rel_op_b_def_ofs:
 			case rel_op_c_def_ofs:
 			case rel_def_def_ofs:
+			case rel_def_field_ofs:
 				break;
 			case rel_def_op:
 				DATA (reloc->ofs)->integer_var = reloc->def;

@@ -1066,7 +1066,7 @@ QFS_LoadGameDirectory (const char *dir)
 		pak = QFS_LoadPackFile (pakfiles[i]);
 
 		if (!pak) {
-			Sys_Error (va ("Bad pakfile %s!!", pakfiles[i]));
+			Sys_Error ("Bad pakfile %s!!", pakfiles[i]);
 		} else {
 			search = calloc (1, sizeof (searchpath_t));
 			search->pack = pak;

@@ -106,8 +106,8 @@ typedef struct pr_protocol_s {
 	pointer_t   class_pointer;		// pr_class_t
 	string_t    protocol_name;
 	pointer_t   protocol_list;		// pr_protocol_list_t
-	pointer_t   instance_methods;	// pr_method_list_t
-	pointer_t   class_methods;		// pr_method_list_t
+	pointer_t   instance_methods;	// pr_method_description_list_t
+	pointer_t   class_methods;		// pr_method_description_list_t
 } pr_protocol_t;
 
 typedef struct pr_category_s {
@@ -121,19 +121,28 @@ typedef struct pr_category_s {
 typedef struct pr_protocol_list_s {
 	pointer_t   next;
 	int         count;
-	pointer_t   list[1];
+	pointer_t   list[1];			// pr_protocol_t
 } pr_protocol_list_t;
 
 typedef struct pr_method_list_s {
 	pointer_t   method_next;
 	int         method_count;
 	struct pr_method_s {
-		pr_sel_t    method_name;
+		pointer_t   method_name;	// pr_sel_t
 		string_t    method_types;
 		func_t      method_imp;		// typedef id (id, SEL, ...) IMP
 	} method_list[1];
 } pr_method_list_t;
 typedef struct pr_method_s pr_method_t;
+
+typedef struct pr_method_description_list_s {
+	int         count;
+	struct pr_method_description_s {
+		pointer_t   name;			// pr_sel_t
+		string_t    types;
+	} list[1];
+} pr_method_description_list_t;
+typedef struct pr_method_description_s pr_method_description_t;
 
 typedef struct pr_ivar_list_s {
 	int         ivar_count;
@@ -145,13 +154,24 @@ typedef struct pr_ivar_list_s {
 } pr_ivar_list_t;
 typedef struct pr_ivar_s pr_ivar_t;
 
+typedef struct pr_static_instances_s {
+	// one per staticly instanced class per module (eg, 3 instances of Object
+	// will produce one of these structs with 3 pointers to those instances in
+	// instances[]
+	string_t    class_name;
+	pointer_t   instances[1];		// null terminated array of pr_id_t
+} pr_static_instances_t;
+
 typedef struct pr_symtab_s {
 	int         sel_ref_cnt;
 	pointer_t   refs;				// pr_sel_t
 	int         cls_def_cnt;
 	int         cat_def_cnt;
-	pointer_t   defs[1];			// variable array of class pointers then
-									// category pointers
+	pointer_t   defs[1];			// variable array of cls_def_cnt class
+									// pointers then cat_def_cnt category
+									// pointers followed by a null terminated
+									// array of pr_static_instances (not yet
+									// implemented in qfcc)
 } pr_symtab_t;
 
 typedef struct pr_module_s {

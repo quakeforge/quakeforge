@@ -57,12 +57,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "struct.h"
 #include "type.h"
 
-typedef struct typedef_s {
-	struct typedef_s *next;
-	const char *name;
-	type_t     *type;
-} typedef_t;
-
 // simple types.  function types are dynamically allocated
 type_t      type_void = { ev_void, "void" };
 type_t      type_string = { ev_string, "string" };
@@ -91,11 +85,12 @@ type_t      type_supermsg = { ev_func, ".supermsg", NULL, &type_id, -3,
 type_t      type_obj_exec_class = { ev_func, "function", NULL, &type_void, 1, { 0 }};
 type_t      type_Method = { ev_pointer, "Method" };
 type_t      type_Super = { ev_pointer, "Super" };
+type_t      type_method_description = { ev_struct, "obj_method_description" };
 type_t     *type_category;
 type_t     *type_ivar;
 type_t     *type_module;
-type_t      type_va_list;
-type_t      type_param;
+type_t      type_va_list = { ev_struct, "@va_list" };
+type_t      type_param = { ev_struct, "@param" };
 type_t      type_zero;
 
 struct_t   *vector_struct;
@@ -192,17 +187,12 @@ new_typedef (const char *name, type_t *type)
 	Hash_Add (typedef_hash, td);
 }
 
-type_t *
+typedef_t *
 get_typedef (const char *name)
 {
-	typedef_t  *td;
-
 	if (!typedef_hash)
 		return 0;
-	td = Hash_Find (typedef_hash, name);
-	if (!td)
-		return 0;
-	return td->type;
+	return Hash_Find (typedef_hash, name);
 }
 
 type_t *
@@ -291,13 +281,35 @@ print_type (type_t *type)
 	}
 }
 
+const char *
+encode_params (type_t *type)
+{
+	const char *ret;
+	dstring_t  *encoding = dstring_newstr ();
+	int         i, count;
+
+	if (type->num_parms < 0)
+		count = -type->num_parms - 1;
+	else
+		count = type->num_parms;
+	for (i = 0; i < count; i++)
+		encode_type (encoding, type->parm_types[i]);
+	if (type->num_parms < 0)
+		dstring_appendstr (encoding, ".");
+
+	ret = save_string (encoding->str);
+	dstring_delete (encoding);
+	return ret;
+}
+
 static void
 _encode_type (dstring_t *encoding, type_t *type, int level)
 {
 	struct_field_t *field;
-	int         i, count;
 	struct_t   *strct;
 
+	if (!type)
+		return;
 	switch (type->type) {
 		case ev_void:
 			dstring_appendstr (encoding, "v");
@@ -321,14 +333,7 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 		case ev_func:
 			dstring_appendstr (encoding, "(");
 			_encode_type (encoding, type->aux_type, level + 1);
-			if (type->num_parms < 0)
-				count = -type->num_parms - 1;
-			else
-				count = type->num_parms;
-			for (i = 0; i < count; i++)
-				_encode_type (encoding, type->parm_types[i], level + 1);
-			if (type->num_parms < 0)
-				dstring_appendstr (encoding, ".");
+			dstring_appendstr (encoding, encode_params (type));
 			dstring_appendstr (encoding, ")");
 			break;
 		case ev_pointer:
@@ -680,7 +685,7 @@ init_types (void)
 
 	strct = get_struct (0, 1);
 	init_struct (strct, new_type (), str_struct, 0);
-	new_struct_field (strct, type_SEL.aux_type, "method_name", vis_public);
+	new_struct_field (strct, &type_SEL, "method_name", vis_public);
 	new_struct_field (strct, &type_string, "method_types", vis_public);
 	new_struct_field (strct, &type_IMP, "method_imp", vis_public);
 	type_Method.aux_type = strct->type;
@@ -726,6 +731,11 @@ init_types (void)
 	class_id.ivars = strct;
 
 	strct = get_struct (0, 1);
+	init_struct (strct, &type_method_description, str_struct, 0);
+	new_struct_field (strct, &type_string, "name", vis_public);
+	new_struct_field (strct, &type_string, "types", vis_public);
+
+	strct = get_struct (0, 1);
 	init_struct (strct, new_type (), str_struct, 0);
 	new_struct_field (strct, &type_string, "category_name", vis_public);
 	new_struct_field (strct, &type_string, "class_name", vis_public);
@@ -740,11 +750,6 @@ init_types (void)
 	new_struct_field (strct, &type_string, "ivar_type", vis_public);
 	new_struct_field (strct, &type_integer, "ivar_offset", vis_public);
 	type_ivar = strct->type;
-
-	strct = calloc (sizeof (struct_t), 1);
-	init_struct (strct, &type_va_list, str_union, 0);
-	new_struct_field (strct, &type_integer, "count", vis_public);
-	new_struct_field (strct, pointer_type (&type_param), "list", vis_public);
 
 	strct = get_struct ("Super", 1);
 	init_struct (strct, new_type (), str_struct, 0);
@@ -794,11 +799,17 @@ chain_initial_types (void)
 	chain_type (&type_Class);
 	chain_type (&type_Protocol);
 	chain_type (&type_id);
+	chain_type (&type_method_description);
 	chain_type (type_category);
 	chain_type (type_ivar);
 
 	type_supermsg.parm_types[0] = &type_Super;
 	chain_type (&type_supermsg);
+
+	strct = calloc (sizeof (struct_t), 1);
+	init_struct (strct, &type_va_list, str_struct, 0);
+	new_struct_field (strct, &type_integer, "count", vis_public);
+	new_struct_field (strct, pointer_type (&type_param), "list", vis_public);
 
 	strct = get_struct ("obj_module_s", 1);
 	init_struct (strct, new_type (), str_struct, 0);

@@ -2,7 +2,7 @@ This is our new development tree (we're back to "quakeforge"), where we're again
 
 While almost always in working order, it's under heavy development so be prepared to encounter some issues (Wear your hard hat!). Please check the docs.
 
-UNIX users: because of the diversity of machines QuakeForge runs on, we do not provide UNIX binaries. You need to compile QuakeForge yourself however, QuakeForge is very easy to compile once you have the following packages installed:
+UNIX users: because of the diversity of machines QuakeForge runs on, we do not provide UNIX binaries. You need to compile QuakeForge yourself, however QuakeForge is very easy to compile once you have the following packages installed:
 
     * GNU autoconf 2.50 or later
     * GNU automake 1.6 or later

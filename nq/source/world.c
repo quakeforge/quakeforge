@@ -647,8 +647,8 @@ SV_ClipToLinks (areanode_t *node, moveclip_t * clip)
 		if (SVfloat (touch, solid) == SOLID_TRIGGER)
 			Sys_Error ("Trigger in clipping list");
 
-		if (clip->type == MOVE_NOMONSTERS && SVfloat (touch, solid)
-			!= SOLID_BSP)
+		if (clip->type == MOVE_NOMONSTERS
+			&& SVfloat (touch, solid) != SOLID_BSP)
 			continue;
 
 		if (clip->boxmins[0] > SVvector (touch, absmax)[0]

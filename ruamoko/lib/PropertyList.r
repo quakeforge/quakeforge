@@ -1,0 +1,206 @@
+#include "PropertyList.h"
+
+@implementation PLItem
+
++ (PLItem) newDictionary
+{
+	return [PLDictionary new];
+}
+
++ (PLItem) newArray
+{
+	return [PLArray new];
+}
+
++ (PLItem) newData:(void[]) data size:(integer) len
+{
+	return [PLData new:data size:len];
+}
+
++ (PLItem) newString:(string) str
+{
+	return [PLString new:str];
+}
+
++ (PLItem) newFromString:(string) str
+{
+	return [PLItem itemClass: PL_GetPropertyList (str)];
+}
+
++itemClass:(plitem_t) item
+{
+	local string classname = NIL;
+	local Class class;
+
+	if (!PL_TEST (item))
+		return NIL;
+	switch (PL_Type (item)) {
+	case QFDictionary:
+		classname = "PLDictionary";
+		break;
+	case QFArray:
+		classname = "PLArray";
+		break;
+	case QFBinary:
+		classname = "PLData";
+		break;
+	case QFString:
+		classname = "PLString";
+		break;
+	default:
+		return NIL;
+	}
+	class = obj_lookup_class (classname);
+	return [[class alloc] initWithItem: item];
+}
+
+-initWithItem:(plitem_t) item
+{
+	if (!(self = [super init]))
+		return self;
+	self.item = item;
+	own = 0;
+	return self;
+}
+
+-initWithOwnItem:(plitem_t) item
+{
+	if (!(self = [super init]))
+		return self;
+	self.item = item;
+	own = 1;
+	return self;
+}
+
+-dealloc
+{
+	if (own)
+		PL_Free (item);
+	[super dealloc];
+}
+
+- (string) write
+{
+	return PL_WritePropertyList (item);
+}
+
+- (pltype_t) type
+{
+	return PL_Type (item);
+}
+
+@end
+
+
+@implementation PLDictionary
+
++ (PLDictionary) new
+{
+	return [[PLDictionary alloc] initWithOwnItem: PL_NewDictionary ()];
+}
+
+- (integer) count
+{
+	return PL_D_NumKeys (item);
+}
+
+- (integer) numKeys
+{
+	return PL_D_NumKeys (item);
+}
+
+- (PLItem) getObjectForKey:(string) key
+{
+	return [PLItem itemClass: PL_ObjectForKey (item, key)];
+}
+
+- (PLItem) allKeys
+{
+	return [PLItem itemClass: PL_D_AllKeys (item)];
+}
+
+- addKey:(PLItem) key value:(PLItem) value
+{
+	if (!key.own || !value.own) {
+		obj_error (self, 0, "add of unowned key/value to PLDictionary");
+		return self;
+	}
+	PL_D_AddObject (item, key.item, value.item);
+	key.own = value.own = 0;
+	[key release];
+	[value release];
+	return self;
+}
+
+@end
+
+@implementation PLArray
+
++ (PLArray) new
+{
+	return [[PLArray alloc] initWithOwnItem: PL_NewArray ()];
+}
+
+- (integer) count
+{
+	return PL_A_NumObjects (item);
+}
+
+- (integer) numObjects
+{
+	return PL_A_NumObjects (item);
+}
+
+- (PLItem) getObjectAtIndex:(integer) index
+{
+	return [PLItem itemClass: PL_ObjectAtIndex (item, index)];
+}
+
+- addObject:(PLItem) object
+{
+	if (!object.own) {
+		obj_error (self, 0, "add of unowned object to PLArray");
+		return self;
+	}
+	PL_A_AddObject (item, object.item);
+	object.own = 0;
+	[object release];
+	return self;
+}
+
+- insertObject:(PLItem) object atIndex:(integer) index
+{
+	if (!object.own) {
+		obj_error (self, 0, "add of unowned object to PLArray");
+		return self;
+	}
+	PL_A_InsertObjectAtIndex (item, object.item, index);
+	object.own = 0;
+	[object release];
+	return self;
+}
+
+@end
+
+@implementation PLData
+
++ (PLData) new:(void[]) data size:(integer) len
+{
+	return [[PLData alloc] initWithOwnItem: PL_NewData (data, len)];
+}
+
+@end
+
+@implementation PLString
+
++ (PLString) new: (string) str
+{
+	return [[PLString alloc] initWithOwnItem: PL_NewString (str)];
+}
+
+- (string) string
+{
+	return PL_String (item);
+}
+
+@end

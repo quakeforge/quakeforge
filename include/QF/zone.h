@@ -28,71 +28,70 @@
 #ifndef __zone_h
 #define __zone_h
 
-/*
- memory allocation
+/** \addtogroup utils */
+//@{
+
+/** \defgroup zone Memory Management
+
+	H_??? The hunk manages the entire memory block given to quake.  It must be
+	contiguous.  Memory can be allocated from either the low or high end in a
+	stack fashion.  The only way memory is released is by resetting one of the
+	pointers.
+
+	Hunk allocations should be given a name, so the Hunk_Print () function
+	can display usage.
+
+	Hunk allocations are guaranteed to be 16 byte aligned.
+
+	The video buffers are allocated high to avoid leaving a hole underneath
+	server allocations when changing to a higher video mode.
 
 
-H_??? The hunk manages the entire memory block given to quake.  It must be
-contiguous.  Memory can be allocated from either the low or high end in a
-stack fashion.  The only way memory is released is by resetting one of the
-pointers.
+	Z_??? Zone memory functions used for small, dynamic allocations like text
+	strings from command input.  There is only about 48K for it, allocated at
+	the very bottom of the hunk.
 
-Hunk allocations should be given a name, so the Hunk_Print () function
-can display usage.
+	Cache_??? Cache memory is for objects that can be dynamically loaded and
+	can usefully stay persistant between levels.  The size of the cache
+	fluctuates from level to level.
 
-Hunk allocations are guaranteed to be 16 byte aligned.
-
-The video buffers are allocated high to avoid leaving a hole underneath
-server allocations when changing to a higher video mode.
+	To allocate a cachable object
 
 
-Z_??? Zone memory functions used for small, dynamic allocations like text
-strings from command input.  There is only about 48K for it, allocated at
-the very bottom of the hunk.
-
-Cache_??? Cache memory is for objects that can be dynamically loaded and
-can usefully stay persistant between levels.  The size of the cache
-fluctuates from level to level.
-
-To allocate a cachable object
+	Temp_??? Temp memory is used for file loading and surface caching.  The
+	size of the cache memory is adjusted so that there is a minimum of 512k
+	remaining for temp memory.
 
 
-Temp_??? Temp memory is used for file loading and surface caching.  The size
-of the cache memory is adjusted so that there is a minimum of 512k remaining
-for temp memory.
+	------ Top of Memory -------
 
+	high hunk allocations
 
------- Top of Memory -------
+	<--- high hunk reset point held by vid
 
-high hunk allocations
+	video buffer
 
-<--- high hunk reset point held by vid
+	z buffer
 
-video buffer
+	surface cache
 
-z buffer
+	<--- high hunk used
 
-surface cache
+	cachable memory
 
-<--- high hunk used
+	<--- low hunk used
 
-cachable memory
+	client and server low hunk allocations
 
-<--- low hunk used
+	<-- low hunk reset point held by host
 
-client and server low hunk allocations
+	startup hunk allocations
 
-<-- low hunk reset point held by host
+	Zone block
 
-startup hunk allocations
-
-Zone block
-
------ Bottom of Memory -----
-
-
-
+	----- Bottom of Memory -----
 */
+//@{
 
 typedef struct memzone_s memzone_t;
 
@@ -103,6 +102,7 @@ void Z_Free (memzone_t *zone, void *ptr);
 void *Z_Malloc (memzone_t *zone, int size);			// returns 0 filled memory
 void *Z_TagMalloc (memzone_t *zone, int size, int tag);
 void *Z_Realloc (memzone_t *zone, void *ptr, int size);
+void Z_Print (memzone_t *zone);
 void Z_CheckHeap (memzone_t *zone);
 
 void *Hunk_Alloc (int size);		// returns 0 filled memory
@@ -173,5 +173,8 @@ void *QA_calloc (size_t nmemb, size_t size);
 void *QA_realloc (void *ptr, size_t size);
 void QA_free (void *ptr);
 char *QA_strdup (const char *s);
+
+//@}
+//@}
 
 #endif // __zone_h

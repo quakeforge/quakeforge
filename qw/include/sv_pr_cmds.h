@@ -29,11 +29,6 @@
 #ifndef __sv_pr_cmds_h
 #define __sv_pr_cmds_h
 
-#ifndef PROGS_T
-typedef struct progs_s progs_t;
-# define PROGS_T
-#endif
-
 void PF_error (progs_t *pr);
 void PF_objerror (progs_t *pr);
 void PF_makevectors (progs_t *pr);

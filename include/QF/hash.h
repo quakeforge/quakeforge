@@ -29,6 +29,13 @@
 #ifndef __hash_h
 #define __hash_h
 
+/** \addtogroup utils */
+//@{
+
+/** \defgroup hash Hash tables
+*/
+//@{
+
 typedef struct hashtab_s hashtab_t;
 
 /** create a new hash table:
@@ -105,7 +112,9 @@ void *Hash_FindElement (hashtab_t *tab, void *ele);
 		tab:	the table to search
 		key:	the key string identifying the elements being searched for
 	returns a null terminated list of element pointers if at least one found,
-	otherwise 0.
+	otherwise 0. returned list is guaranteed to be in reverse order of
+	insertion. ie, deleting items from the list in list order will delete the
+	correct items.
 */
 void **Hash_FindList (hashtab_t *tab, const char *key);
 void **Hash_FindElementList (hashtab_t *tab, void *ele);
@@ -151,5 +160,8 @@ void **Hash_GetList (hashtab_t *tab);
 /** dump statistics about the hash table
 */
 void Hash_Stats (hashtab_t *tab);
+
+//@}
+//@}
 
 #endif // __hash_h

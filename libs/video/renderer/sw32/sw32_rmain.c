@@ -226,6 +226,9 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	for (i = 0; i < r_worldentity.model->numleafs; i++)
 		r_worldentity.model->leafs[i].efrags = NULL;
 
+	if (worldmodel->skytexture)
+		R_InitSky (worldmodel->skytexture);
+
 	r_viewleaf = NULL;
 	R_ClearParticles ();
 
