@@ -46,7 +46,9 @@
 #define out			12+8+12
 
 .globl C(R_Alias_clip_bottom)
+#ifdef PIC
 	.type	R_Alias_clip_bottom,@function
+#endif
 C(R_Alias_clip_bottom):
 	pushl	%esi
 	pushl	%edi
@@ -177,13 +179,17 @@ LDo3Forward:
 	popl	%esi
 
 	ret
+#ifdef PIC
 .Lsize1:
 	.size	R_Alias_clip_bottom,.Lsize1-R_Alias_clip_bottom
+#endif
 	.align 4
 
 
 .globl C(R_Alias_clip_top)
+#ifdef PIC
 	.type	R_Alias_clip_top,@function
+#endif
 C(R_Alias_clip_top):
 	pushl	%esi
 	pushl	%edi
@@ -208,14 +214,18 @@ C(R_Alias_clip_top):
 	movl	rd_aliasvrect+4(%eax),%eax
 	movl	%edx,point5(%esp)
 	jmp		LDoForwardOrBackward
+#ifdef PIC
 .Lsize2:
 	.size	R_Alias_clip_top,.Lsize2-R_Alias_clip_top
+#endif
 	.align 4
 
 
 
 .globl C(R_Alias_clip_right)
+#ifdef PIC
 	.type	R_Alias_clip_right,@function
+#endif
 C(R_Alias_clip_right):
 	pushl	%esi
 	pushl	%edi
@@ -260,13 +270,17 @@ LRightLeftEntry:
 LDoForward2:
 
 	jmp		LDoForward
+#ifdef PIC
 .Lsize3:
 	.size	R_Alias_clip_right,.Lsize3-R_Alias_clip_right
+#endif
 	.align 4
 
 
 .globl C(R_Alias_clip_left)
+#ifdef PIC
 	.type	R_Alias_clip_left,@function
+#endif
 C(R_Alias_clip_left):
 	pushl	%esi
 	pushl	%edi
@@ -291,8 +305,10 @@ C(R_Alias_clip_left):
 	movl	rd_aliasvrect+0(%eax),%eax
 	movl	%edx,point5(%esp)
 	jmp		LRightLeftEntry
+#ifdef PIC
 .Lsize4:
 	.size	R_Alias_clip_left,.Lsize4-R_Alias_clip_left
+#endif
 	.align 4
 
 
