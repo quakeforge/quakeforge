@@ -110,11 +110,16 @@ IE_Translation_Table_Create ()
 void
 IE_Translation_Table_Modify (ie_translation_table_t *table, int offset, ie_event_t *event)
 {
+	int i;
+
 	if (offset >= table->maxevents) {
+		i = table->maxevents;
 		table->maxevents++;
 		table->events = realloc (table->events, sizeof (ie_translation_table_t *) * table->maxevents);
 		if (!table->events)
 			Sys_Error ("IE_Translation_Table_Modify: memory allocation failure");
+		for (; i < table->maxevents; i++)
+			table->events[i] = 0;
 	}
 	table->events[offset] = event;
 }
