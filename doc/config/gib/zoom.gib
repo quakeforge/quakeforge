@@ -1,8 +1,8 @@
 //      zoom.gib
 //
-//      zoom script for GIB in QuakeForge 0.5
+//      zoom script for GIB in QuakeForge 0.5.3
 //
-//      Copyright (C) 2002  Brian Koropoff
+//      Copyright (C) 2002,2003  Brian Koropoff
 //
 //      This program is free software; you can redistribute it and/or
 //      modify it under the terms of the GNU General Public License
@@ -24,70 +24,82 @@
 //
 // $Id$
 
-global zoom
+domain zoom
+global amp
+global fov
+global min
+global max
+global step
+global mult
+global zoomed
+
+// clamp returns the second argument clamped
+// between the first and second 
+function clamp {
+	if ($args[2] < $args[1]) {
+		return $args[1]
+	} else if ($args[2] > $args[3]) {
+		return $args[3]
+	} else return $args[2]
+}
 
 function zoom::init { // Initialize basic options
-	if ($argc != 6) {
-		echo "Usage: ", $0, " base_amp base_fov min_zoom max_zoom zoom_step"
+	if (#args != 6) {
+		print "Usage: ", $args[0], " base_amp base_fov min_zoom max_zoom zoom_step\n"
 		return
 	}
-	zoom.amp = $1
-	zoom.fov = $2
-	zoom.mult.lower = $3
-	zoom.mult = $3
-	zoom.mult.upper = $4
-	zoom.mult.step = $5
-	zoom.zoomed = 0
-	set fov ${zoom.fov}
-	set in_amp ${zoom.amp}
+	amp = $args[1]
+	fov = $args[2]
+	min = $args[3]
+	max = $args[4]
+	step = $args[5]
+	mult = $min
+	zoomed = 0
+	set fov $fov
+	set in_amp $amp
 }
 
 // Default initial values
-zoom::init 1 90 1 90 1.15
+zoom::init 1 90 1.15 90 1.15
 
 function zoom::adjust { // Adjust fov and sensitivity to match zoom factor
-	if ${zoom.zoomed} {
-		set fov (${zoom.fov}/${zoom.mult})
-		set in_amp (${zoom.amp}/${zoom.mult})
-		return
+	if $zoomed {
+		set fov ($fov/$mult)
+		set in_amp ($amp/$mult)
 	} else {
-		set fov ${zoom.fov}
-		set in_amp ${zoom.amp}
+		set fov $fov
+		set in_amp $amp
 	}
 }
 
 function zoom::in {
-	zoom.zoomed = 1
+	zoomed = 1
 	zoom::adjust
 }
 
 function zoom::out {
-	zoom.zoomed = 0
+	zoomed = 0
 	zoom::adjust
 }
 
 function zoom::toggle {
-	zoom.zoomed = (!${zoom.zoomed})
+	zoomed = (!$zoomed)
 	zoom::adjust
 }
 
 function zoom::increase {
-	ifnot ${zoom.zoomed} {
+	if (!$zoomed) {
 		return
 	}
-	zoom.mult *= ${zoom.mult.step}
-	if (${zoom.mult} > ${zoom.mult.upper}) {
-		zoom.mult = ${zoom.mult.upper}
-	}
+	mult = `cap $min ($mult*$step) $max`
 	zoom::adjust
 }
 
 function zoom::decrease {
-	ifnot ${zoom.zoomed} return
-	zoom.mult /= ${zoom.mult.step}
-	if (${zoom.mult} < ${zoom.mult.lower}) {
-		zoom.mult = ${zoom.mult.lower}
+	if (!$zoomed) {
+		return
 	}
+	mult = `cap $min ($mult/$step) $max`
 	zoom::adjust
 }
 
