@@ -225,7 +225,7 @@ WriteData (int crc)
 	progs.ofs_globals = ftell (h);
 	progs.numglobals = pr.num_globals;
 	for (i = 0; i < pr.num_globals; i++)
-		((int *) pr.globals)[i] = LittleLong (((int *) pr.globals)[i]);
+		G_INT (i) = LittleLong (G_INT (i));
 	SafeWrite (h, pr.globals, pr.num_globals * 4);
 
 	if (options.verbosity >= -1)
