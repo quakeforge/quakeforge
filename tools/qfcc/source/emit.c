@@ -388,6 +388,13 @@ emit_expr (expr_t *e)
 					def_b = emit_sub_expr (e->e.expr.e2, 0);
 					emit_statement (e->line, op_state, def_a, def_b, 0);
 					break;
+				case 'b':
+					if (!e->e.expr.e2 || e->e.expr.e2->type != ex_temp) {
+						error (e, "internal error");
+						abort ();
+					}
+					e->e.expr.e2->e.temp.def = emit_sub_expr (e->e.expr.e1, e->e.expr.e2->e.temp.def);
+					break;
 				default:
 					warning (e, "Ignoring useless expression");
 					break;

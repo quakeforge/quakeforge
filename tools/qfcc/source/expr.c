@@ -332,6 +332,10 @@ print_expr (expr_t *e)
 					p = p->next;
 				}
 				printf (")");
+			} else if (e->e.expr.op == 'b') {
+				print_expr (e->e.expr.e1);
+				printf ("<-->");
+				print_expr (e->e.expr.e2);
 			} else {
 				print_expr (e->e.expr.e2);
 				printf (" %s", get_op_string (e->e.expr.op));
@@ -1106,24 +1110,33 @@ function_expr (expr_t *e1, expr_t *e2)
 	for (e = e2, i = 0; e; e = e->next, i++) {
 		if (has_function_call (e)) {
 			*a = new_temp_def_expr (arg_types[i]);
-			if (i)	// compensate for new_binary_expr and the first arg
-				inc_users(*a);
-			append_expr (call, binary_expr ('=', *a, e));
+			if (e->next) {
+				if (i)	// compensate for new_binary_expr and the first arg
+					inc_users(*a);
+				append_expr (call, binary_expr ('=', *a, e));
+			} else {
+				e = new_binary_expr ('b', e, *a);
+				append_expr (call, e);
+			}
 		} else {
 			*a = e;
-		}
-		a = &(*a)->next;
-	}
+		} a = &(*a)->next; }
 	e = new_binary_expr ('c', e1, args);
 	e->e.expr.type = ftype->aux_type;
 	append_expr (call, e);
 	if (ftype->aux_type != &type_void) {
 		expr_t     *ret = new_expr ();
 		ret->type = ex_def;
+#if 0
+		ret->e.def = memcpy (malloc (sizeof (def_t)), &def_ret, sizeof (def_t));
+		ret->e.def->type = ftype->aux_type;
+		call->e.block.result = ret;
+#else
 		ret->e.def = &def_ret;
 		e = new_temp_def_expr (ftype->aux_type);
 		append_expr (call, new_binary_expr ('=', e, ret));
 		call->e.block.result = e;
+#endif
 	}
 	return call;
 }
