@@ -33,13 +33,7 @@ static const char rcsid[] =
 #endif
 
 #include <stdio.h>
-#ifdef HAVE_ALSA_ASOUNDLIB_H	// newer alsa 0.9
-# include <alsa/asoundlib.h>
-#else
-# ifdef HAVE_SYS_ASOUNDLIB_H		// older alsa 0.9
-#  include <sys/asoundlib.h>
-# endif
-#endif
+#include <alsa/asoundlib.h>
 
 #include "QF/cvar.h"
 #include "QF/plugin.h"
