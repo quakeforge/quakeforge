@@ -84,6 +84,7 @@ static struct option const long_options[] = {
 	{"define", required_argument, 0, 'D'},
 	{"include", required_argument, 0, 'I'},
 	{"undefine", required_argument, 0, 'U'},
+	{"cpp", required_argument, 0, 256},
 #endif
 	{NULL, 0, NULL, 0}
 };
@@ -786,9 +787,9 @@ build_cpp_args (const char *in_name, const char *out_name)
 		}
 	}
 	*arg = 0;
-	for (arg = cpp_argv; *arg; arg++)
-		printf ("%s ", *arg);
-	puts ("");
+	//for (arg = cpp_argv; *arg; arg++)
+	//	printf ("%s ", *arg);
+	//puts ("");
 }
 #endif
 
@@ -804,7 +805,6 @@ DecodeArgs (int argc, char **argv)
 	add_cpp_def ("-D__RAUMOKO__=1");
 #endif
 
-	options.code.cpp = true;
 	options.code.progsversion = PROG_VERSION;
 	options.warnings.uninited_variable = true;
 
@@ -866,10 +866,8 @@ DecodeArgs (int argc, char **argv)
 							options.code.cow = true;
 						} else if (!(strcasecmp (temp, "no-cow"))) {
 							options.code.cow = false;
-						} else if (!(strcasecmp (temp, "cpp"))) {
-							options.code.cpp = true;
 						} else if (!(strcasecmp (temp, "no-cpp"))) {
-							options.code.cpp = false;
+							cpp_name = 0;
 						} else if (!(strcasecmp (temp, "debug"))) {
 							options.code.debug = true;
 						} else if (!(strcasecmp (temp, "no-debug"))) {
@@ -935,6 +933,9 @@ DecodeArgs (int argc, char **argv)
 				}
 				break;
 #ifdef USE_CPP
+			case 256:					// --cpp=
+				cpp_name = strdup (optarg);
+				break;
 			case 'S':					// save temps
 				options.save_temps = true;
 				break;
@@ -1081,7 +1082,7 @@ main (int argc, char **argv)
 			printf ("compiling %s\n", filename);
 
 #ifdef USE_CPP
-		if (options.code.cpp) {
+		if (cpp_name) {
 			if (options.save_temps) {
 				char	*basename = strdup (filename);
 				char	*temp;
@@ -1183,7 +1184,7 @@ main (int argc, char **argv)
 		error = yyparse () || pr_error_count;
 		fclose (yyin);
 #ifdef USE_CPP
-		if (options.code.cpp && (!options.save_temps)) {
+		if (cpp_name && (!options.save_temps)) {
 			if (unlink (tempname)) {
 				perror ("unlink");
 				exit (1);
