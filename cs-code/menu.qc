@@ -1,5 +1,6 @@
 float () random = #0;
 float () traceon = #0;
+float () traceoff = #0;
 string () gametype = #0;
 string (...) sprintf = #0;
 

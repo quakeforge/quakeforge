@@ -26,7 +26,10 @@ static const char rcsid[] =
 #include <QF/sys.h>
 
 #include "qfcc.h"
+#include "expr.h"
 #include "struct.h"
+
+extern expr_t *local_expr;				// FIXME just where should this go?
 
 typedef struct locref_s {
 	struct locref_s *next;
@@ -192,27 +195,29 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 			size = PR_GetTypeSize (type->aux_type);
 			pr.size_fields += size;
 		}
-	} else if (type->type == ev_pointer) {
-		dstatement_t *st;
-		statref_t  *ref;
-		int         ofs;
-
-		if (pr_scope) {
-			st = (dstatement_t *) &G_INT (def->ofs);
-			ref = PR_NewStatref (st, 4);
-			ref->next = def->refs;
-			def->refs = ref;
-			ofs = 1;
-		} else {
-			ofs = *allocate;
-		}
+	} else if (type->type == ev_pointer && type->num_parms) {
+		int         ofs = *allocate;
 
 		size = PR_GetTypeSize (type->aux_type);
-		if (type->num_parms) {
-			*allocate += type->num_parms * size;
-			def->initialized = def->constant = 1;
+		*allocate += type->num_parms * size;
+
+		if (pr_scope) {
+			expr_t     *e1 = new_expr ();
+			expr_t     *e2 = new_expr ();
+
+			e1->type = ex_def;
+			e1->e.def = def;
+
+			e2->type = ex_def;
+			e2->e.def = PR_NewDef (type->aux_type, 0, pr_scope);
+			e2->e.def->ofs = ofs;
+
+			append_expr (local_expr, new_binary_expr ('=', e1, address_expr (e2, 0, 0)));
+		} else {
 			G_INT (def->ofs) = ofs;
+			def->constant = 1;
 		}
+		def->initialized = 1;
 	}
 
 	return def;
