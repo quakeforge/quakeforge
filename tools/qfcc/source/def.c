@@ -193,7 +193,7 @@ get_def (type_t *type, const char *name, scope_t *scope,
 		 storage_class_t storage)
 {
 	def_t      *def = check_for_name (type, name, scope, storage);
-	defspace_t *space;
+	defspace_t *space = NULL;
 
 	if (storage == st_none)
 		return def;
@@ -228,10 +228,8 @@ get_def (type_t *type, const char *name, scope_t *scope,
 			def->ofs = new_location (type, space);
 	}
 
-	/* 
-		make automatic defs for the vectors elements .origin can be accessed
-		as .origin_x, .origin_y, and .origin_z
-	*/
+	// make automatic defs for the vectors elements .origin can be accessed
+	// as .origin_x, .origin_y, and .origin_z
 	if (type->type == ev_vector && name) {
 		vector_component (0, def, 0, scope, storage);
 		vector_component (0, def, 1, scope, storage);
