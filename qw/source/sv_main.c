@@ -91,6 +91,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "sv_demo.h"
 #include "sv_progs.h"
 #include "sv_gib.h"
+#include "sv_qtv.h"
 
 SERVER_PLUGIN_PROTOS
 static plugin_list_t server_plugin_list[] = {
@@ -777,7 +778,7 @@ SVC_DirectConnect (void)
 
 	s = Cmd_Argv (1);
 	if (!strcmp (s, "qtv")) {
-		SV_Printf ("QTV proxy connection: %s\n", s);
+		SV_qtvConnect ();
 		return;
 	}
 
