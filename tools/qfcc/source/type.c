@@ -99,6 +99,11 @@ print_type (type_t *type)
 		return;
 	}
 	switch (type->type) {
+		case ev_field:
+			printf (" .(");
+			print_type (type->aux_type);
+			printf (")");
+			break;
 		case ev_func:
 			print_type (type->aux_type);
 			if (type->num_parms < 0) {
