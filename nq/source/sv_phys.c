@@ -549,12 +549,12 @@ SV_PushMove (edict_t *pusher, float movetime)
 
 			// if the pusher has a "blocked" function, call it
 			// otherwise, just stay in place until the obstacle is gone
-			if (SVFIELD (pusher, blocked, float)) {
+			if (SVFIELD (pusher, blocked, func)) {
 				*sv_globals.self =
 					EDICT_TO_PROG (&sv_pr_state, pusher);
 				*sv_globals.other =
 					EDICT_TO_PROG (&sv_pr_state, check);
-				PR_ExecuteProgram (&sv_pr_state, SVFIELD (pusher, blocked, float));
+				PR_ExecuteProgram (&sv_pr_state, SVFIELD (pusher, blocked, func));
 			}
 			// move back any entities we already moved
 			for (i = 0; i < num_moved; i++) {
