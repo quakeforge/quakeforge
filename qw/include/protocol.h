@@ -302,6 +302,7 @@ typedef struct
 typedef struct usercmd_s
 {
 	byte	msec;
+	byte	padding[3];		// make sure non-aligning compilers get it right
 	vec3_t	angles;
 	short	forwardmove, sidemove, upmove;
 	byte	buttons;

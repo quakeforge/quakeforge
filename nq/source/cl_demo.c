@@ -39,15 +39,14 @@
 
 #include "QF/qendian.h"
 #include "QF/va.h"
+#include "host.h"
 #include "QF/msg.h"
+#include "client.h"
+#include "compat.h"
 #include "QF/sys.h"
 #include "QF/console.h"
 #include "QF/cmd.h"
 #include "QF/keys.h"
-
-#include "client.h"
-#include "compat.h"
-#include "host.h"
 
 void        CL_FinishTimeDemo (void);
 
@@ -91,11 +90,16 @@ CL_StopPlayback (void)
 void
 CL_WriteDemoMessage (void)
 {
+	int         len;
 	int         i;
+	float       f;
 
-	WriteLong (cls.demofile, net_message->message->cursize);
-	for (i = 0; i < 3; i++)
-		WriteFloat (cls.demofile, cl.viewangles[i]);
+	len = LittleLong (net_message->message->cursize);
+	Qwrite (cls.demofile, &len, 4);
+	for (i = 0; i < 3; i++) {
+		f = LittleFloat (cl.viewangles[i]);
+		Qwrite (cls.demofile, &f, 4);
+	}
 	Qwrite (cls.demofile, net_message->message->data,
 			net_message->message->cursize);
 	Qflush (cls.demofile);
@@ -111,6 +115,7 @@ int
 CL_GetMessage (void)
 {
 	int         r, i;
+	float       f;
 
 	if (cls.demoplayback) {
 		// decide if it is time to grab the next message        
@@ -129,11 +134,15 @@ CL_GetMessage (void)
 			}
 		}
 		// get the next message
+		Qread (cls.demofile, &net_message->message->cursize, 4);
 		VectorCopy (cl.mviewangles[0], cl.mviewangles[1]);
-		net_message->message->cursize = ReadLong (cls.demofile);
-		for (i = 0; i < 3; i++)
-			cl.mviewangles[0][i] = ReadFloat (cls.demofile);
+		for (i = 0; i < 3; i++) {
+			r = Qread (cls.demofile, &f, 4);
+			cl.mviewangles[0][i] = LittleFloat (f);
+		}
 
+		net_message->message->cursize =
+			LittleLong (net_message->message->cursize);
 		if (net_message->message->cursize > MAX_MSGLEN)
 			Sys_Error ("Demo message > MAX_MSGLEN");
 		r =

@@ -99,26 +99,33 @@ void
 CL_WriteDemoCmd (usercmd_t *pcmd)
 {
 	int         i;
+	float       fl;
+	byte        c;
+	usercmd_t   cmd;
 
 //	Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
-	WriteFloat (cls.demofile, realtime);
-	WriteByte (cls.demofile, dem_cmd);
+	fl = LittleFloat ((float) realtime);
+	Qwrite (cls.demofile, &fl, sizeof (fl));
 
-	WriteByte (cls.demofile, pcmd->msec);
-	WriteByte (cls.demofile, 0);			// padding
-	WriteByte (cls.demofile, 0);			// padding
-	WriteByte (cls.demofile, 0);			// padding
-	for (i = 0; i < 3; i++)
-		WriteFloat (cls.demofile, pcmd->angles[i]);
-	WriteShort (cls.demofile, pcmd->forwardmove);
-	WriteShort (cls.demofile, pcmd->sidemove);
-	WriteShort (cls.demofile, pcmd->upmove);
-	WriteByte (cls.demofile, pcmd->buttons);
-	WriteByte (cls.demofile, pcmd->impulse);
+	c = dem_cmd;
+	Qwrite (cls.demofile, &c, sizeof (c));
+
+	// correct for byte order, bytes don't matter
+	cmd = *pcmd;
 
 	for (i = 0; i < 3; i++)
-		WriteFloat (cls.demofile, cl.viewangles[i]);
+		cmd.angles[i] = LittleFloat (cmd.angles[i]);
+	cmd.forwardmove = LittleShort (cmd.forwardmove);
+	cmd.sidemove = LittleShort (cmd.sidemove);
+	cmd.upmove = LittleShort (cmd.upmove);
+
+	Qwrite (cls.demofile, &cmd, sizeof (cmd));
+
+	for (i = 0; i < 3; i++) {
+		fl = LittleFloat (cl.viewangles[i]);
+		Qwrite (cls.demofile, &fl, 4);
+	}
 
 	Qflush (cls.demofile);
 }
@@ -132,14 +139,23 @@ CL_WriteDemoCmd (usercmd_t *pcmd)
 void
 CL_WriteDemoMessage (sizebuf_t *msg)
 {
+	int         len;
+	float       fl;
+	byte        c;
+
 //	Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
 	if (!cls.demorecording)
 		return;
 
-	WriteFloat (cls.demofile, realtime);
-	WriteByte (cls.demofile, dem_read);
-	WriteLong (cls.demofile, msg->cursize);
+	fl = LittleFloat ((float) realtime);
+	Qwrite (cls.demofile, &fl, sizeof (fl));
+
+	c = dem_read;
+	Qwrite (cls.demofile, &c, sizeof (c));
+
+	len = LittleLong (msg->cursize);
+	Qwrite (cls.demofile, &len, 4);
 	Qwrite (cls.demofile, msg->data, msg->cursize);
 
 	Qflush (cls.demofile);
@@ -149,7 +165,8 @@ CL_WriteDemoMessage (sizebuf_t *msg)
 qboolean
 CL_GetDemoMessage (void)
 {
-	int         r, i;
+	int         r, i, j;
+	float       f;
 	float       demotime;
 	byte        c;
 	usercmd_t  *pcmd;
@@ -160,7 +177,8 @@ CL_GetDemoMessage (void)
 		demotime = cached_demotime;
 		demotime_cached = 0;
 	} else {
-		demotime = ReadFloat (cls.demofile);
+		Qread (cls.demofile, &demotime, sizeof (demotime));
+		demotime = LittleFloat (demotime);
 	}
 
 	// decide if it is time to grab the next message        
@@ -202,34 +220,37 @@ CL_GetDemoMessage (void)
 		Host_Error ("CL_GetDemoMessage: cls.state != ca_active");
 
 	// get the msg type
-	c = ReadByte (cls.demofile);
+	Qread (cls.demofile, &c, sizeof (c));
 
 	switch (c) {
 		case dem_cmd:
 			// user sent input
 			i = cls.netchan.outgoing_sequence & UPDATE_MASK;
 			pcmd = &cl.frames[i].cmd;
-			pcmd->msec = ReadByte (cls.demofile);
-			ReadByte (cls.demofile);				// skip padding
-			ReadByte (cls.demofile);				// skip padding
-			ReadByte (cls.demofile);				// skip padding
-			for (i = 0; i < 3; i++)
-				pcmd->angles[i] = ReadFloat (cls.demofile);
-			pcmd->forwardmove = ReadShort (cls.demofile);
-			pcmd->sidemove = ReadShort (cls.demofile);
-			pcmd->upmove = ReadShort (cls.demofile);
-			pcmd->buttons = ReadByte (cls.demofile);
-			pcmd->impulse = ReadByte (cls.demofile);
+			r = Qread (cls.demofile, pcmd, sizeof (*pcmd));
+			if (r != sizeof (*pcmd)) {
+				CL_StopPlayback ();
+				return 0;
+			}
+			// byte order stuff
+			for (j = 0; j < 3; j++)
+				pcmd->angles[j] = LittleFloat (pcmd->angles[j]);
+			pcmd->forwardmove = LittleShort (pcmd->forwardmove);
+			pcmd->sidemove = LittleShort (pcmd->sidemove);
+			pcmd->upmove = LittleShort (pcmd->upmove);
 			cl.frames[i].senttime = demotime;
 			cl.frames[i].receivedtime = -1;	// we haven't gotten a reply yet
 			cls.netchan.outgoing_sequence++;
-			for (i = 0; i < 3; i++)
-				cl.viewangles[i] = ReadFloat (cls.demofile);
+			for (i = 0; i < 3; i++) {
+				Qread (cls.demofile, &f, 4);
+				cl.viewangles[i] = LittleFloat (f);
+			}
 			break;
 
 		case dem_read:
 			// get the next message
-			net_message->message->cursize = ReadLong (cls.demofile);
+			Qread (cls.demofile, &net_message->message->cursize, 4);
+			net_message->message->cursize = LittleLong (net_message->message->cursize);
 //				Con_Printf("read: %ld bytes\n", net_message->message->cursize);
 			if (net_message->message->cursize > MAX_MSGLEN)
 //				Sys_Error ("Demo message > MAX_MSGLEN");
@@ -242,8 +263,10 @@ CL_GetDemoMessage (void)
 			break;
 
 		case dem_set:
-			cls.netchan.outgoing_sequence = ReadLong (cls.demofile);
-			cls.netchan.incoming_sequence = ReadLong (cls.demofile);
+			Qread (cls.demofile, &i, 4);
+			cls.netchan.outgoing_sequence = LittleLong (i);
+			Qread (cls.demofile, &i, 4);
+			cls.netchan.incoming_sequence = LittleLong (i);
 			break;
 
 		default:
@@ -311,16 +334,29 @@ CL_Stop_f (void)
 void
 CL_WriteRecordDemoMessage (sizebuf_t *msg, int seq)
 {
+	int         len;
+	int         i;
+	float       fl;
+	byte        c;
+
 //	Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
 	if (!cls.demorecording)
 		return;
 
-	WriteLong (cls.demofile, realtime);
-	WriteByte (cls.demofile, dem_read);
-	WriteLong (cls.demofile, msg->cursize + 8);
-	WriteLong (cls.demofile, seq);
-	WriteLong (cls.demofile, seq);
+	fl = LittleFloat ((float) realtime);
+	Qwrite (cls.demofile, &fl, sizeof (fl));
+
+	c = dem_read;
+	Qwrite (cls.demofile, &c, sizeof (c));
+
+	len = LittleLong (msg->cursize + 8);
+	Qwrite (cls.demofile, &len, 4);
+
+	i = LittleLong (seq);
+	Qwrite (cls.demofile, &i, 4);
+	Qwrite (cls.demofile, &i, 4);
+
 	Qwrite (cls.demofile, msg->data, msg->cursize);
 
 	Qflush (cls.demofile);
@@ -330,15 +366,25 @@ CL_WriteRecordDemoMessage (sizebuf_t *msg, int seq)
 void
 CL_WriteSetDemoMessage (void)
 {
+	int         len;
+	float       fl;
+	byte        c;
+
 //Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
 	if (!cls.demorecording)
 		return;
 
-	WriteFloat (cls.demofile, realtime);
-	WriteByte (cls.demofile, dem_set);
-	WriteLong (cls.demofile, cls.netchan.outgoing_sequence);
-	WriteLong (cls.demofile, cls.netchan.incoming_sequence);
+	fl = LittleFloat ((float) realtime);
+	Qwrite (cls.demofile, &fl, sizeof (fl));
+
+	c = dem_set;
+	Qwrite (cls.demofile, &c, sizeof (c));
+
+	len = LittleLong (cls.netchan.outgoing_sequence);
+	Qwrite (cls.demofile, &len, 4);
+	len = LittleLong (cls.netchan.incoming_sequence);
+	Qwrite (cls.demofile, &len, 4);
 
 	Qflush (cls.demofile);
 }
