@@ -77,7 +77,6 @@ int         noconinput;
 
 #ifdef _WIN32
 # include "winquake.h"
-void        MaskExceptions (void);
 #endif
 
 void
@@ -88,9 +87,8 @@ Sys_Init (void)
 #endif
 #ifdef USE_INTEL_ASM
 #ifdef _WIN32
-	MaskExceptions ();
+	Sys_MaskExceptions ();
 #endif
-	Sys_SetFPCW ();
 #endif
 
 #ifdef _WIN32

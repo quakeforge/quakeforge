@@ -86,9 +86,6 @@ Sys_Init (void)
 #ifdef WIN32
 	OSVERSIONINFO vinfo;
 #endif
-#ifdef USE_INTEL_ASM
-	Sys_SetFPCW ();
-#endif
 
 #ifdef _WIN32
 	// make sure the timer is high precision, otherwise NT gets 18ms resolution

@@ -66,9 +66,6 @@ qboolean    isDedicated = false;
 void
 Sys_Init (void)
 {
-#ifdef USE_INTEL_ASM
-	Sys_SetFPCW ();
-#endif
 }
 
 static void

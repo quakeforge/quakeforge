@@ -1,5 +1,5 @@
 /*
-	sys_ia32.S
+	sw_fpua.S
 
 	Intel 32-bit assembly language dependent routines.
 
@@ -118,40 +118,40 @@ pushed_cw:	.long	0
 
 	.text
 
-F_BEGIN(Sys_LowFPPrecision)
+F_BEGIN(R_LowFPPrecision)
 	got_base(3)
 	fldcw	got_var(single_cw)
 
 	ret
-F_END(Sys_LowFPPrecision)
+F_END(R_LowFPPrecision)
 
 
-F_BEGIN(Sys_HighFPPrecision)
+F_BEGIN(R_HighFPPrecision)
 	got_base(4)
 	fldcw	got_var(full_cw)
 
 	ret
-F_END(Sys_HighFPPrecision)
+F_END(R_HighFPPrecision)
 
 
-F_BEGIN(Sys_PushFPCW_SetHigh)
+F_BEGIN(R_PushFPCW_SetHigh)
 	got_base(5)
 	fnstcw	got_var(pushed_cw)
 	fldcw	got_var(full_cw)
 
 	ret
-F_END(Sys_PushFPCW_SetHigh)
+F_END(R_PushFPCW_SetHigh)
 
 
-F_BEGIN(Sys_PopFPCW)
+F_BEGIN(R_PopFPCW)
 	got_base(6)
 	fldcw	got_var(pushed_cw)
 
 	ret
-F_END(Sys_PopFPCW)
+F_END(R_PopFPCW)
 
 
-F_BEGIN(Sys_SetFPCW)
+F_BEGIN(R_SetFPCW)
 	got_base(7)
 	fnstcw	got_var(cw)
 	movl	got_var(cw),%eax
@@ -168,5 +168,5 @@ F_BEGIN(Sys_SetFPCW)
 	movl	%eax,got_var(ceil_cw)
 
 	ret
-F_END(Sys_SetFPCW)
+F_END(R_SetFPCW)
 #endif /* USE_INTEL_ASM */

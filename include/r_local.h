@@ -337,4 +337,8 @@ void R_MarkLights (const vec3_t lightorigin, struct dlight_s *light, int bit,
 
 void R_LoadSkys (const char *);
 
+void R_LowFPPrecision (void);
+void R_HighFPPrecision (void);
+void R_SetFPCW (void);
+
 #endif // _R_LOCAL_H

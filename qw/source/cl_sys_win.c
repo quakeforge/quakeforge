@@ -96,11 +96,6 @@ Sys_Init (void)
 									 1,	/* Maximum count */
 									 "qwcl"); /* Semaphore name */
 
-#ifdef USE_INTEL_ASM
-	MaskExceptions ();
-	Sys_SetFPCW ();
-#endif
-
 	// make sure the timer is high precision, otherwise NT gets 18ms resolution
 	timeBeginPeriod (1);
 

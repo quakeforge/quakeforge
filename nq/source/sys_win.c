@@ -92,13 +92,6 @@ findhandle (void)
 // SYSTEM IO ==================================================================
 
 
-#ifndef USE_INTEL_ASM
-void
-MaskExceptions (void)
-{
-}
-#endif
-
 void
 Sys_Init (void)
 {
@@ -106,8 +99,7 @@ Sys_Init (void)
 	unsigned int lowpart, highpart;
 	OSVERSIONINFO vinfo;
 
-	MaskExceptions ();
-	Sys_SetFPCW ();
+	Sys_MaskExceptions ();
 
 	if (!QueryPerformanceFrequency (&PerformanceFreq))
 		Sys_Error ("No hardware timer available");

@@ -133,27 +133,7 @@ const char sys_char_map[256] = {
 
 #ifndef USE_INTEL_ASM
 void
-Sys_HighFPPrecision (void)
-{
-}
-
-void
-Sys_LowFPPrecision (void)
-{   
-}   
-
-void
-Sys_SetFPCW (void)
-{
-}
-
-void
-Sys_PushFPCW_SetHigh (void)
-{
-}
-
-void
-Sys_PopFPCW (void)
+Sys_MaskExceptions (void)
 {
 }
 #endif

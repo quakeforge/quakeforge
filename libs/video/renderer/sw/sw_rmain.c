@@ -147,6 +147,7 @@ R_Init (void)
 	// get stack position so we can guess if we are going to overflow
 	r_stack_start = (byte *) & dummy;
 
+	R_SetFPCW ();
 	R_InitVars ();
 
 	R_InitTurb ();
@@ -858,7 +859,7 @@ R_RenderView_ (void)
 // while, so we don't do it globally.  This also sets chop mode, and we do it
 // here so that setup stuff like the refresh area calculations match what's
 // done in screen.c
-	Sys_LowFPPrecision ();
+	R_LowFPPrecision ();
 
 	if (!r_worldentity.model)
 		Sys_Error ("R_RenderView: NULL worldmodel");
@@ -928,7 +929,7 @@ R_RenderView_ (void)
 		Con_Printf ("Short roughly %d edges\n", r_outofedges * 2 / 3);
 
 	// back to high floating-point precision
-	Sys_HighFPPrecision ();
+	R_HighFPPrecision ();
 }
 
 void

@@ -70,10 +70,7 @@ int Sys_TimeID (void);
 // called to yield for a little bit so as
 // not to hog cpu when paused or debugging
 
-void Sys_LowFPPrecision (void);
-void Sys_HighFPPrecision (void);
-void Sys_SetFPCW (void);
-void MaskExceptions (void);
+void Sys_MaskExceptions (void);
 
 // send text to the console
 
