@@ -427,26 +427,26 @@ statement
 	;
 
 expr
-	: expr '=' expr	{ $$ = binary_expr ('=', $1, $3); }
-	| expr AND expr	{ $$ = binary_expr (AND, $1, $3); }
-	| expr OR expr	{ $$ = binary_expr (OR,  $1, $3); }
-	| expr EQ expr	{ $$ = binary_expr (EQ,  $1, $3); }
-	| expr NE expr	{ $$ = binary_expr (NE,  $1, $3); }
-	| expr LE expr	{ $$ = binary_expr (LE,  $1, $3); }
-	| expr GE expr	{ $$ = binary_expr (GE,  $1, $3); }
-	| expr LT expr	{ $$ = binary_expr (LT,  $1, $3); }
-	| expr GT expr	{ $$ = binary_expr (GT,  $1, $3); }
-	| expr '+' expr	{ $$ = binary_expr ('+', $1, $3); }
-	| expr '-' expr	{ $$ = binary_expr ('-', $1, $3); }
-	| expr '*' expr	{ $$ = binary_expr ('*', $1, $3); }
-	| expr '/' expr	{ $$ = binary_expr ('/', $1, $3); }
-	| expr '&' expr	{ $$ = binary_expr ('&', $1, $3); }
-	| expr '|' expr	{ $$ = binary_expr ('|', $1, $3); }
+	: expr '=' expr			{ $$ = binary_expr ('=', $1, $3); }
+	| expr AND expr			{ $$ = binary_expr (AND, $1, $3); }
+	| expr OR expr			{ $$ = binary_expr (OR,  $1, $3); }
+	| expr EQ expr			{ $$ = binary_expr (EQ,  $1, $3); }
+	| expr NE expr			{ $$ = binary_expr (NE,  $1, $3); }
+	| expr LE expr			{ $$ = binary_expr (LE,  $1, $3); }
+	| expr GE expr			{ $$ = binary_expr (GE,  $1, $3); }
+	| expr LT expr			{ $$ = binary_expr (LT,  $1, $3); }
+	| expr GT expr			{ $$ = binary_expr (GT,  $1, $3); }
+	| expr '+' expr			{ $$ = binary_expr ('+', $1, $3); }
+	| expr '-' expr			{ $$ = binary_expr ('-', $1, $3); }
+	| expr '*' expr			{ $$ = binary_expr ('*', $1, $3); }
+	| expr '/' expr			{ $$ = binary_expr ('/', $1, $3); }
+	| expr '&' expr			{ $$ = binary_expr ('&', $1, $3); }
+	| expr '|' expr			{ $$ = binary_expr ('|', $1, $3); }
 	| expr '(' arg_list ')'	{ $$ = function_expr ($1, $3); }
 	| expr '(' ')'			{ $$ = function_expr ($1, 0); }
-	| expr '.' expr	{ $$ = binary_expr ('.', $1, $3); }
-	| '-' expr		{ $$ = unary_expr ('-', $2); }
-	| '!' expr		{ $$ = unary_expr ('!', $2); }
+	| expr '.' expr			{ $$ = binary_expr ('.', $1, $3); }
+	| '-' expr %prec '!'	{ $$ = unary_expr ('-', $2); }
+	| '!' expr				{ $$ = unary_expr ('!', $2); }
 	| NAME
 		{
 			$$ = new_expr ();

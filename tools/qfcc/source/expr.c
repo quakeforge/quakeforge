@@ -1233,6 +1233,8 @@ emit_sub_expr (expr_t *e, def_t *dest)
 			} else {
 				abort ();
 			}
+			if (!dest)
+				dest = PR_GetTempDef (e->e.expr.type, pr_scope);
 			op = PR_Opcode_Find (operator, priority, def_a, def_b, dest);
 			return emit_statement (e->line, op, def_a, def_b, dest);
 		case ex_def:
