@@ -7,13 +7,13 @@
 
 	This file is part of Quakeforge and lib3Dfxgl.
 
-	WildMidi is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; either version 2 of the License, or
-	(at your option) any later version.
+	Quakeforge and lib3Dfxgl are free software; you can redistribute them
+	and/or modify them under the terms of the GNU General Public License 
+	as published by the Free Software Foundation; either version 2 of the 
+	License, or (at your option) any later version.
 
-	WildMidi is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	Quakeforge and lib3Dfxgl are distributed in the hope that they will be 
+	useful,	but WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 	
 	See the	GNU General Public License for more details.
