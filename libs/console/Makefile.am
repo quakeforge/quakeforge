@@ -15,7 +15,8 @@ libQFconsole_la_LDFLAGS=	$(plugin_LDFLAGS) -version-info 1:0:0
 libQFconsole_la_LIBADD=		$(plugin_LIBADD)
 libQFconsole_la_SOURCES=	$(common_sources)
 
-libconsole_client_la_LDFLAGS=	-version-info 1:0:0
+libconsole_client_la_LDFLAGS=	$(plugin_LDFLAGS) -version-info 1:0:0 $(PLUGIN_RPATH)
+libconsole_client_la_LIBADD=	$(plugin_LIBADD)
 libconsole_client_la_SOURCES=	$(client_sources)
 
 libconsole_server_la_LDFLAGS=	$(plugin_LDFLAGS) -version-info 1:0:0 $(PLUGIN_RPATH)
