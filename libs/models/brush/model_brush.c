@@ -52,17 +52,18 @@ static const char rcsid[] =
 #include "compat.h"
 
 byte        mod_novis[MAX_MAP_LEAFS / 8];
+
 cvar_t		*gl_sky_divide;
 
-void        GL_SubdivideSurface (msurface_t *fa);
-void		R_InitSky (struct texture_s *mt);
+void GL_SubdivideSurface (msurface_t *fa);
+void R_InitSky (struct texture_s *mt);
 
 
 mleaf_t    *
 Mod_PointInLeaf (const vec3_t p, model_t *model)
 {
-	mnode_t    *node;
 	float       d;
+	mnode_t    *node;
 	mplane_t   *plane;
 
 	if (!model || !model->nodes)
@@ -87,9 +88,8 @@ byte       *
 Mod_DecompressVis (byte * in, model_t *model)
 {
 	static byte decompressed[MAX_MAP_LEAFS / 8];
-	int         c;
 	byte       *out;
-	int         row;
+	int			row, c;
 
 	row = (model->numleafs + 7) >> 3;
 	out = decompressed;
@@ -138,12 +138,11 @@ byte       *mod_base;
 void
 Mod_LoadTextures (lump_t *l)
 {
-	int         i, j, pixels, num, max, altmax;
-	miptex_t   *mt;
-	texture_t  *tx, *tx2;
-	texture_t  *anims[10];
-	texture_t  *altanims[10];
-	dmiptexlump_t *m;
+	dmiptexlump_t  *m;
+	int				i, j, pixels, num, max, altmax;
+	miptex_t	   *mt;
+	texture_t	   *tx, *tx2;
+	texture_t	   *anims[10], *altanims[10];
 
 	if (!l->filelen) {
 		loadmodel->textures = NULL;
@@ -296,8 +295,8 @@ void
 Mod_LoadVertexes (lump_t *l)
 {
 	dvertex_t  *in;
+	int         count, i;
 	mvertex_t  *out;
-	int         i, count;
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
@@ -318,9 +317,8 @@ Mod_LoadVertexes (lump_t *l)
 void
 Mod_LoadSubmodels (lump_t *l)
 {
-	dmodel_t   *in;
-	dmodel_t   *out;
-	int         i, j, count;
+	dmodel_t   *in, *out;
+	int         count, i, j;
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
@@ -349,8 +347,8 @@ void
 Mod_LoadEdges (lump_t *l)
 {
 	dedge_t    *in;
+	int         count, i;
 	medge_t    *out;
-	int         i, count;
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
@@ -370,11 +368,10 @@ Mod_LoadEdges (lump_t *l)
 void
 Mod_LoadTexinfo (lump_t *l)
 {
-	texinfo_t  *in;
-	mtexinfo_t *out;
-	int         i, j, count;
-	int         miptex;
 	float       len1, len2;
+	int         count, miptex, i, j;
+	mtexinfo_t *out;
+	texinfo_t  *in;
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
@@ -429,11 +426,11 @@ Mod_LoadTexinfo (lump_t *l)
 void
 CalcSurfaceExtents (msurface_t *s)
 {
-	float       mins[2], maxs[2], val;
-	int         i, j, e;
-	mvertex_t  *v;
+	float		mins[2], maxs[2], val;
+	int			e, i, j;
+	int			bmins[2], bmaxs[2];
 	mtexinfo_t *tex;
-	int         bmins[2], bmaxs[2];
+	mvertex_t  *v;
 
 	mins[0] = mins[1] = 999999;
 	maxs[0] = maxs[1] = -99999;
@@ -475,9 +472,8 @@ void
 Mod_LoadFaces (lump_t *l)
 {
 	dface_t    *in;
+	int			count, planenum, side, surfnum, i;
 	msurface_t *out;
-	int         i, count, surfnum;
-	int         planenum, side;
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
@@ -552,8 +548,8 @@ Mod_SetParent (mnode_t *node, mnode_t *parent)
 void
 Mod_LoadNodes (lump_t *l)
 {
-	int         i, j, count, p;
 	dnode_t    *in;
+	int			count, i, j, p;
 	mnode_t    *out;
 
 	in = (void *) (mod_base + l->fileofs);
@@ -593,8 +589,8 @@ void
 Mod_LoadLeafs (lump_t *l)
 {
 	dleaf_t    *in;
+	int			count, i, j, p;
 	mleaf_t    *out;
-	int         i, j, count, p;
 	qboolean    isnotmap = true;
 
 	in = (void *) (mod_base + l->fileofs);
@@ -648,8 +644,8 @@ void
 Mod_LoadClipnodes (lump_t *l)
 {
 	dclipnode_t *in, *out;
-	int         i, count;
-	hull_t     *hull;
+	hull_t		*hull;
+	int			 count, i;
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
@@ -706,10 +702,10 @@ Mod_LoadClipnodes (lump_t *l)
 void
 Mod_MakeHull0 (void)
 {
-	mnode_t    *in, *child;
 	dclipnode_t *out;
-	int         i, j, count;
-	hull_t     *hull;
+	hull_t		*hull;
+	int			 count, i, j;
+	mnode_t		*in, *child;
 
 	hull = &loadmodel->hulls[0];
 
@@ -737,9 +733,9 @@ Mod_MakeHull0 (void)
 void
 Mod_LoadMarksurfaces (lump_t *l)
 {
-	int         i, j, count;
-	short      *in;
+	int			 count, i, j;
 	msurface_t **out;
+	short       *in;
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
@@ -761,8 +757,8 @@ Mod_LoadMarksurfaces (lump_t *l)
 void
 Mod_LoadSurfedges (lump_t *l)
 {
-	int         i, count;
-	int        *in, *out;
+	int		 count, i;
+	int		*in, *out;
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
@@ -780,9 +776,9 @@ Mod_LoadSurfedges (lump_t *l)
 void
 Mod_LoadPlanes (lump_t *l)
 {
-	int         i, j, bits, count;
-	mplane_t   *out;
 	dplane_t   *in;
+	int			bits, count, i, j;
+	mplane_t   *out;
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
@@ -810,9 +806,9 @@ Mod_LoadPlanes (lump_t *l)
 void
 Mod_LoadBrushModel (model_t *mod, void *buffer)
 {
-	int         i, j;
 	dheader_t  *header;
 	dmodel_t   *bm;
+	int			i, j;
 
 	loadmodel->type = mod_brush;
 
@@ -891,7 +887,7 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 
 		if (i < mod->numsubmodels - 1) {
 			// duplicate the basic information
-			char        name[10];
+			char	name[10];
 
 			snprintf (name, sizeof (name), "*%i", i + 1);
 			loadmodel = Mod_FindName (name);

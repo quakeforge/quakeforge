@@ -52,24 +52,17 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-byte        player_8bit_texels[320 * 200];
+byte		player_8bit_texels[320 * 200];
 
 
 // a pose is a single set of vertexes.  a frame may be
 // an animating sequence of poses
 
-//=========================================================
-
-/*
-	Mod_FloodFillSkin
-
-	Fill background pixels so mipmapping doesn't have haloes - Ed
-*/
+// =========================================================
 
 typedef struct {
-	short       x, y;
+	short		x, y;
 } floodfill_t;
-
 
 // must be a power of 2
 #define FLOODFILL_FIFO_SIZE 0x1000
@@ -86,13 +79,17 @@ typedef struct {
 	else if (pos[off] != 255) fdc = pos[off]; \
 }
 
+/*
+	Mod_FloodFillSkin
+
+	Fill background pixels so mipmapping doesn't have halos - Ed
+*/
 void
 Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight)
 {
 	byte        fillcolor = *skin;		// assume this is the pixel to fill
 	floodfill_t fifo[FLOODFILL_FIFO_SIZE];
-	int         inpt = 0, outpt = 0;
-	int         filledcolor = -1;
+	int			filledcolor = -1, inpt = 0, outpt = 0;
 	int         i;
 
 	if (filledcolor == -1) {
@@ -115,8 +112,7 @@ Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight)
 	inpt = (inpt + 1) & FLOODFILL_FIFO_MASK;
 
 	while (outpt != inpt) {
-		int         x = fifo[outpt].x, y = fifo[outpt].y;
-		int         fdc = filledcolor;
+		int		x = fifo[outpt].x, y = fifo[outpt].y, fdc = filledcolor;
 		byte       *pos = &skin[x + skinwidth * y];
 
 		outpt = (outpt + 1) & FLOODFILL_FIFO_MASK;
@@ -137,10 +133,9 @@ void *
 Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
 			  maliasskindesc_t *skindesc)
 {
-	char        name[32];
-	int         fb_texnum = 0;
-	int         texnum = 0;
-	byte       *pskin;
+	byte   *pskin;
+	char	name[32];
+	int		fb_texnum = 0, texnum = 0;
 
 	pskin = Hunk_AllocName (skinsize, loadname);
 	skindesc->skin = (byte *) pskin - (byte *) pheader;
@@ -184,9 +179,9 @@ void *
 Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
 					int extra)
 {
-	trivertx_t *pinframe;
-	int         i;
-	daliasframe_t *pdaliasframe;
+	daliasframe_t  *pdaliasframe;
+	int				i;
+	trivertx_t	   *pinframe;
 
 	pdaliasframe = (daliasframe_t *) pin;
 
@@ -217,12 +212,13 @@ Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
 }
 
 void *
-Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame, int extra)
+Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
+					int extra)
 {
-	daliasgroup_t *pingroup;
-	int         i, numframes;
+	daliasgroup_t	 *pingroup;
 	daliasinterval_t *pin_intervals;
-	void       *ptemp;
+	int				  i, numframes;
+	void			 *ptemp;
 
 	pingroup = (daliasgroup_t *) pin;
 
@@ -282,25 +278,25 @@ Mod_LoadExternalSkin (maliasskindesc_t *pskindesc, char *filename)
 		targa = LoadTGA (f);
 		Qclose (f);
 		if (targa->format < 4)
-			pskindesc->texnum = GL_LoadTexture ("", targa->width,
-				targa->height, targa->data, true, false, 3);
+			pskindesc->texnum = GL_LoadTexture
+				("", targa->width, targa->height, targa->data, true, false, 3);
 		else
-			pskindesc->texnum = GL_LoadTexture ("", targa->width,
-				targa->height, targa->data, true, true, 4);
+			pskindesc->texnum = GL_LoadTexture
+				("", targa->width, targa->height, targa->data, true, true, 4);
 	}
 }
 
 void
 Mod_LoadExternalSkins (model_t *mod)
 {
-	char filename[MAX_QPATH + 4];
-	maliasskindesc_t *pskindesc;
+	char			   filename[MAX_QPATH + 4];
+	int				   i, j;
+	maliasskindesc_t  *pskindesc;
 	maliasskingroup_t *pskingroup;
-	int i, j;
 
 	for (i = 0; i < pheader->mdl.numskins; i++) {
 		pskindesc = ((maliasskindesc_t *)
-			((byte *) pheader + pheader->skindesc)) + i;
+					 ((byte *) pheader + pheader->skindesc)) + i;
 		if (pskindesc->type == ALIAS_SKIN_SINGLE) {
 			snprintf (filename, sizeof (filename), "%s_%i.tga", mod->name, i);
 			Mod_LoadExternalSkin (pskindesc, filename);

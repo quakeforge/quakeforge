@@ -56,7 +56,7 @@ int   mod_lightmap_bytes = 3;
 void
 Mod_ProcessTexture (miptex_t *mt, texture_t *tx)
 {
-	char        name[32];
+	char		name[32];
 
 	snprintf (name, sizeof (name), "fb_%s", mt->name);
 	tx->gl_fb_texturenum =
@@ -69,11 +69,11 @@ Mod_ProcessTexture (miptex_t *mt, texture_t *tx)
 void
 Mod_LoadExternalTextures (model_t *mod)
 {
-	texture_t	*tx;
 	char		filename[MAX_QPATH + 8];
-	VFile		*f;
-	tex_t		*targa;
-	int			i, length;
+	int			length, i;
+	VFile	   *f;
+	tex_t	   *targa;
+	texture_t  *tx;
 
 	for (i = 0; i < mod->numtextures; i++)
 	{
@@ -112,10 +112,10 @@ Mod_LoadExternalTextures (model_t *mod)
 void
 Mod_LoadLighting (lump_t *l)
 {
-	int         i;
-	byte       *in, *out, *data;
 	byte        d;
+	byte       *in, *out, *data;
 	char        litfilename[1024];
+	int         i;
 
 	loadmodel->lightdata = NULL;
 	if (mod_lightmap_bytes > 1) {
@@ -147,17 +147,14 @@ Mod_LoadLighting (lump_t *l)
 	in = mod_base + l->fileofs;
 	out = loadmodel->lightdata;
 
-	if (mod_lightmap_bytes > 1) {
+	if (mod_lightmap_bytes > 1)
 		for (i = 0; i < l->filelen ; i++) {
 			d = *in++;
 			*out++ = d;
 			*out++ = d;
 			*out++ = d;
 		}
-	} else {
-		for (i = 0; i < l->filelen ; i++) {
-			d = *in++;
-			*out++ = d;
-		}
-	}
+	else
+		for (i = 0; i < l->filelen ; i++)
+			*out++ = *in++;
 }

@@ -1,7 +1,7 @@
 /*
-	gl_model.c
+	model_sprite.c
 
-	model loading and caching
+	sprite model loading and caching
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -48,7 +48,7 @@ Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
 {
 	dspriteframe_t *pinframe;
 	mspriteframe_t *pspriteframe;
-	int         width, height, size, origin[2];
+	int				width, height, size, origin[2];
 
 	pinframe = (dspriteframe_t *) pin;
 
@@ -82,12 +82,12 @@ Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
 void *
 Mod_LoadSpriteGroup (void *pin, mspriteframe_t **ppframe, int framenum)
 {
-	dspritegroup_t *pingroup;
-	mspritegroup_t *pspritegroup;
-	int         i, numframes;
-	dspriteinterval_t *pin_intervals;
-	float      *poutintervals;
-	void       *ptemp;
+	dspritegroup_t		*pingroup;
+	dspriteinterval_t	*pin_intervals;
+	float				*poutintervals;
+	int					 numframes, i;
+	mspritegroup_t		*pspritegroup;
+	void				*ptemp;
 
 	pingroup = (dspritegroup_t *) pin;
 
@@ -129,13 +129,10 @@ Mod_LoadSpriteGroup (void *pin, mspriteframe_t **ppframe, int framenum)
 void
 Mod_LoadSpriteModel (model_t *mod, void *buffer)
 {
-	int         i;
-	int         version;
-	dsprite_t  *pin;
-	msprite_t  *psprite;
-	int         numframes;
-	int         size;
-	dspriteframetype_t *pframetype;
+	dsprite_t			*pin;
+	dspriteframetype_t	*pframetype;
+	int					 numframes, size, version, i;
+	msprite_t			*psprite;
 
 	pin = (dsprite_t *) buffer;
 
@@ -173,7 +170,7 @@ Mod_LoadSpriteModel (model_t *mod, void *buffer)
 	pframetype = (dspriteframetype_t *) (pin + 1);
 
 	for (i = 0; i < numframes; i++) {
-		spriteframetype_t frametype;
+		spriteframetype_t	frametype;
 
 		frametype = LittleLong (pframetype->type);
 		psprite->frames[i].type = frametype;

@@ -1,5 +1,5 @@
 /*
-	sw_model_bursh.c
+	sw_model_brush.c
 
 	model loading and caching
 
@@ -41,7 +41,6 @@ static const char rcsid[] =
 #endif
 
 #include "QF/model.h"
-
 
 int   mod_lightmap_bytes = 1;
 
