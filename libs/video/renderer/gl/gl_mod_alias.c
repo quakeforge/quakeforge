@@ -89,7 +89,6 @@ float		shadelight;
 float	   *shadedots = r_avertexnormal_dots[0];
 vec3_t		shadevector;
 
-
 static void
 GL_DrawAliasFrame (vert_order_t *vo)
 {
@@ -156,6 +155,47 @@ GL_DrawAliasFrame_fb (vert_order_t *vo)
 			// texture coordinates come from the draw list
 			qfglTexCoord2fv ((float *) order);
 			order += 2;
+
+			qfglVertex3fv (verts->vert);
+			verts++;
+		} while (--count);
+
+		qfglEnd ();
+	}
+}
+
+static void
+GL_DrawAliasFrameMulti (vert_order_t *vo)
+{
+	float			color[4];
+	int				count;
+	int			   *order;
+	blended_vert_t *verts;
+
+	verts = vo->verts;
+	order = vo->order;
+
+	color[3] = modelalpha;
+	
+	while ((count = *order++)) {
+		// get the vertex count and primitive type
+		if (count < 0) {
+			count = -count;
+			qfglBegin (GL_TRIANGLE_FAN);
+		} else {
+			qfglBegin (GL_TRIANGLE_STRIP);
+		}
+
+		do {
+			// texture coordinates come from the draw list
+			qglMultiTexCoord2fv (gl_mtex_enum + 0, (float *) order);
+			qglMultiTexCoord2fv (gl_mtex_enum + 1, (float *) order);
+			order += 2;
+
+			// normals and vertexes come from the frame list
+			VectorScale (shadecolor, verts->lightdot, color);
+
+			qfglColor4fv (color);
 
 			qfglVertex3fv (verts->vert);
 			verts++;
@@ -544,8 +584,6 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 			fb_texture = skindesc->fb_texnum;
 	}
 
-	qfglBindTexture (GL_TEXTURE_2D, texture);
-
 	if (paliashdr->mdl.ident == POLYHEADER16)
 		vo = GL_GetAliasFrameVerts16 (e->frame, paliashdr, e);
 	else
@@ -554,12 +592,31 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	if (modelalpha != 1.0)
 		qfglDepthMask (GL_FALSE);
 
-	GL_DrawAliasFrame (vo);
+	if (!fb_texture) {	// Model has no fullbrights, don't bother with multi
+		qfglBindTexture (GL_TEXTURE_2D, texture);
+		GL_DrawAliasFrame (vo);
+	} else {	// try multitexture
+		if (gl_mtex_active) {	// set up the textures
+			qglActiveTexture (gl_mtex_enum + 0);
+			qfglBindTexture (GL_TEXTURE_2D, texture);
 
-	// This block is GL fullbright support for objects...
-	if (fb_texture) {
-		qfglBindTexture (GL_TEXTURE_2D, fb_texture);
-		GL_DrawAliasFrame_fb (vo);
+			qglActiveTexture (gl_mtex_enum + 1);
+			qfglBindTexture (GL_TEXTURE_2D, fb_texture);
+			qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+			qfglEnable (GL_TEXTURE_2D);
+
+			GL_DrawAliasFrameMulti (vo);	// do the heavy lifting
+
+			// restore the settings
+			qfglDisable (GL_TEXTURE_2D);
+			qglActiveTexture (gl_mtex_enum + 0);
+		} else {
+			qfglBindTexture (GL_TEXTURE_2D, texture);
+			GL_DrawAliasFrame (vo);
+
+			qfglBindTexture (GL_TEXTURE_2D, fb_texture);
+			GL_DrawAliasFrame_fb (vo);
+		}
 	}
 
 	if (modelalpha != 1.0)

@@ -262,11 +262,15 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 	stride -= smax * lightmap_bytes;
 	bl = blocklights;
 
+#if 0
 	if (gl_mtex_active) {
 		shift = 7;		// 0-1 lightmap range.
 	} else {
+#endif
 		shift = 8;		// 0-2 lightmap range.
+#if 0
 	}
+#endif
 
 	switch (lightmap_bytes) {
 	case 4:
@@ -367,6 +371,7 @@ GL_UploadLightmap (int i, int x, int y, int w, int h)
 	}
 }
 
+#if 0
 static void
 R_DrawMultitexturePoly (msurface_t *s)
 {
@@ -430,6 +435,7 @@ R_DrawMultitexturePoly (msurface_t *s)
 
 	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }
+#endif
 
 static void
 R_BlendLightmaps (void)
@@ -704,8 +710,10 @@ R_DrawBrushModel (entity_t *e)
 			} else if (psurf->flags & SURF_DRAWSKY) {
 				CHAIN_SURF (psurf, sky_chain);
 				return;
+#if 0
 			} else if (gl_mtex_active) {
 				R_DrawMultitexturePoly (psurf);
+#endif
 			} else {
 				texture_t  *tex;
 				if (!psurf->texinfo->texture->anim_total)
@@ -722,7 +730,9 @@ R_DrawBrushModel (entity_t *e)
 		}
 	}
 
+#if 0
 	if (!gl_mtex_active)
+#endif
 		R_BlendLightmaps ();
 
 	if (gl_fb_bmodels->int_val)
@@ -794,8 +804,10 @@ R_RecursiveWorldNode (mnode_t *node)
 //					CHAIN_SURF (surf, waterchain);
 			} else if (surf->flags & SURF_DRAWSKY) {
 				CHAIN_SURF (surf, sky_chain);
+#if 0
 			} else if (gl_mtex_active) {
 				R_DrawMultitexturePoly (surf);
+#endif
 			} else {
 				texture_t  *tex;
 				if (!surf->texinfo->texture->anim_total)
@@ -841,7 +853,9 @@ R_DrawWorld (void)
 
 	DrawTextureChains ();
 
+#if 0
 	if (!gl_mtex_active)
+#endif
 		R_BlendLightmaps ();
 
 	if (gl_fb_bmodels->int_val)
@@ -1114,8 +1128,10 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		}
 	}
 
+#if 0
 	if (gl_mtex_active)
 		qglActiveTexture (gl_mtex_enum + 1);
+#endif
 
 	// upload all lightmaps that were filled
 	for (i = 0; i < MAX_LIGHTMAPS; i++) {
@@ -1134,6 +1150,8 @@ GL_BuildLightmaps (model_t **models, int num_models)
 					  GL_UNSIGNED_BYTE, lightmaps[i]);
 	}
 
+#if 0
 	if (gl_mtex_active)
 		qglActiveTexture (gl_mtex_enum + 0);
+#endif
 }

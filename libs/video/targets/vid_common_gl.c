@@ -61,8 +61,9 @@ static const char rcsid[] =
 unsigned char	d_15to8table[65536];
 unsigned int	d_8to24table[256];
 
-QF_glActiveTextureARB	qglActiveTexture = NULL;
-QF_glMultiTexCoord2fARB	qglMultiTexCoord2f = NULL;
+QF_glActiveTextureARB		qglActiveTexture = NULL;
+QF_glMultiTexCoord2fARB		qglMultiTexCoord2f = NULL;
+QF_glMultiTexCoord2fvARB	qglMultiTexCoord2fv = NULL;
 
 const char		   *gl_extensions;
 const char		   *gl_renderer;
@@ -138,8 +139,8 @@ CheckMultiTextureExtensions (void)
 		qfglGetIntegerv (GL_MAX_TEXTURE_UNITS_ARB, &max_texture_units);
 		if (max_texture_units >= 2) {
 			Con_Printf ("enabled, %d TMUs.\n", max_texture_units);
-			qglMultiTexCoord2f = QFGL_ExtensionAddress
-				("glMultiTexCoord2fARB");
+			qglMultiTexCoord2f = QFGL_ExtensionAddress ("glMultiTexCoord2fARB");
+			qglMultiTexCoord2fv = QFGL_ExtensionAddress ("glMultiTexCoord2fvARB");
 			qglActiveTexture = QFGL_ExtensionAddress ("glActiveTextureARB");
 			gl_mtex_enum = GL_TEXTURE0_ARB;
 			if (qglMultiTexCoord2f && gl_mtex_enum)

@@ -36,6 +36,7 @@
 // Multitexturing
 extern QF_glActiveTextureARB	qglActiveTexture;
 extern QF_glMultiTexCoord2fARB	qglMultiTexCoord2f;
+extern QF_glMultiTexCoord2fvARB	qglMultiTexCoord2fv;
 extern qboolean					gl_mtex_active;
 extern qboolean					gl_mtex_capable;
 extern GLenum					gl_mtex_enum;
