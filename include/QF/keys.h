@@ -383,7 +383,7 @@ void Key_Init_Cvars (void);
 void Key_WriteBindings (VFile *f);
 void Key_ClearStates (void);
 char *Key_GetBinding (kgt_t kgt, knum_t key);
-void Key_SetBinding (kgt_t target, knum_t keynum, char *binding);
+void Key_SetBinding (kgt_t target, knum_t keynum, const char *binding);
 
 
 void Key_ClearTyping (void);

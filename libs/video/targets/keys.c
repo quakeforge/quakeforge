@@ -57,6 +57,7 @@
 */
 
 cvar_t     *cl_chatmode;
+cvar_t     *in_bind_kgt;
 
 #define		MAXCMDLINE	256
 char        key_lines[32][MAXCMDLINE];
@@ -747,32 +748,38 @@ Key_KeynumToString (knum_t keynum)
 
 /*
 ===================
-Key_Unbind_f
+Key_In_Unbind_f
 ===================
 */
+
 void
-Key_Unbind_f (void)
+Key_In_Unbind (const char *kgt, const char *key)
 {
-	int         b, t;
+	int t, b;
 
-	if (Cmd_Argc () != 3) {
-		Con_Printf ("in_unbind <kgt> <key> : remove commands from a key\n");
-		return;
-	}
-
-	t = Key_StringToKgtnum (Cmd_Argv (1));
+	t = Key_StringToKgtnum (kgt);
 	if (t == -1) {
-		Con_Printf ("\"%s\" isn't a valid kgt\n", Cmd_Argv (1));
+		Con_Printf ("\"%s\" isn't a valid kgt\n", kgt);
 		return;
 	}
 
-	b = Key_StringToKeynum (Cmd_Argv (2));
+	b = Key_StringToKeynum (key);
 	if (b == -1) {
-		Con_Printf ("\"%s\" isn't a valid key\n", Cmd_Argv (2));
+		Con_Printf ("\"%s\" isn't a valid key\n", key);
 		return;
 	}
 
 	Key_SetBinding (t, b, NULL);
+}
+
+void
+Key_In_Unbind_f (void)
+{
+	if (Cmd_Argc () != 3) {
+		Con_Printf ("in_unbind <kgt> <key> : remove commands from a key\n");
+		return;
+	}
+	Key_In_Unbind (Cmd_Argv (1), Cmd_Argv (2));
 }
 
 void
@@ -788,14 +795,43 @@ Key_Unbindall_f (void)
 
 /*
 ===================
-Key_Bind_f
+Key_In_Bind_f
 ===================
 */
+
 void
-Key_Bind_f (void)
+Key_In_Bind (const char *kgt, const char *key, const char *cmd)
 {
-	int         i, c, t, b;
-	char        cmd[1024];
+	int t, b;
+
+	t = Key_StringToKgtnum (kgt);
+	if (t == -1) {
+		Con_Printf ("\"%s\" isn't a valid kgt\n", kgt);
+		return;
+	}
+
+	b = Key_StringToKeynum (key);
+	if (b == -1) {
+		Con_Printf ("\"%s\" isn't a valid key\n", key);
+		return;
+	}
+
+	if (!cmd) {
+		if (Key_GetBinding(t, b))
+			Con_Printf ("\"%s\"[\"%s\"] = \"%s\"\n", key, kgt,
+						Key_GetBinding(t, b));
+		else
+			Con_Printf ("\"%s\"[\"%s\"] is not bound\n", key, kgt);
+		return;
+	}
+	Key_SetBinding (t, b, cmd);
+}
+
+void
+Key_In_Bind_f (void)
+{
+	int         c;
+	const char *kgt, *key, *cmd = 0;
 
 	c = Cmd_Argc ();
 
@@ -804,36 +840,59 @@ Key_Bind_f (void)
 		return;
 	}
 
-	t = Key_StringToKgtnum (Cmd_Argv (1));
-	if (t == -1) {
-		Con_Printf ("\"%s\" isn't a valid kgt\n", Cmd_Argv (1));
+	kgt = Cmd_Argv (1);
+
+	key = Cmd_Argv (2);
+
+	if (c == 4) {
+		cmd = Cmd_Args (3);
+	}
+
+	Key_In_Bind (kgt, key, cmd);
+}
+
+void
+Key_Unbind_f (void)
+{
+	if (Cmd_Argc () != 2) {
+		Con_Printf ("unbind <key> : remove commands from a key\n");
+		return;
+	}
+	Key_In_Unbind (in_bind_kgt->string, Cmd_Argv (1));
+}
+
+void
+Key_Bind_f (void)
+{
+	int         c;
+	const char *kgt, *key, *cmd = 0;
+
+	c = Cmd_Argc ();
+
+	if (c != 2 && c != 3) {
+		Con_Printf ("bind <key> [command] : attach a command to a key\n");
 		return;
 	}
 
-	b = Key_StringToKeynum (Cmd_Argv (2));
-	if (b == -1) {
-		Con_Printf ("\"%s\" isn't a valid key\n", Cmd_Argv (2));
-		return;
+	kgt = in_bind_kgt->string;
+
+	key = Cmd_Argv (1);
+
+	if (c == 4) {
+		cmd = Cmd_Args (2);
 	}
 
-	if (c == 3) {
-		if (Key_GetBinding(t, b))
-			Con_Printf ("\"%s\"[\"%s\"] = \"%s\"\n", Cmd_Argv (2), Cmd_Argv (1),
-						Key_GetBinding(t, b));
-		else
-			Con_Printf ("\"%s\"[\"%s\"] is not bound\n", Cmd_Argv (2),
-						Cmd_Argv (1));
-		return;
-	}
-// copy the rest of the command line
-	cmd[0] = 0;							// start out with a null string
-	for (i = 3; i < c; i++) {
-		strcat (cmd, Cmd_Argv (i));
-		if (i != (c - 1))
-			strcat (cmd, " ");
-	}
+	Key_In_Bind (kgt, key, cmd);
+}
 
-	Key_SetBinding (t, b, cmd);
+void
+in_bind_kgt_f (cvar_t *var)
+{
+	if (Key_StringToKgtnum (var->string) == -1) {
+		Con_Printf ("\"%s\" is not a valid kgt. setting to \"kgt_default\"\n",
+					var->string);
+		Cvar_Set (var, "kgt_default");
+	}
 }
 
 /*
@@ -976,7 +1035,7 @@ Key_Init (void)
 	key_linepos = 1;
 
 	// register our functions
-	Cmd_AddCommand ("in_bind", Key_Bind_f,
+	Cmd_AddCommand ("in_bind", Key_In_Bind_f,
 					"Assign a command or a set of commands to a key.\n"
 					"Note: To bind multiple commands to a key, enclose the "
 					"commands in quotes and separate with semi-colons. \n"
@@ -989,11 +1048,18 @@ Key_Init (void)
 					"mwheelup, mwheeldown\n"
 					"Special: The escape, and ~ (tilde) keys can only be "
 					"bound from an external configuration file.");
-	Cmd_AddCommand ("in_unbind", Key_Unbind_f,
+	Cmd_AddCommand ("in_unbind", Key_In_Unbind_f,
 					"Remove the bind from the the selected key");
 	Cmd_AddCommand ("unbindall", Key_Unbindall_f,
 					"Remove all binds (USE CAUTIOUSLY!!!)");
 	Cmd_AddCommand ("kgt", Key_GameTarget_f, "");
+
+	Cmd_AddCommand ("bind", Key_Bind_f,
+					"wrapper for in_bind that uses in_bind_kgt for the kgt "
+					"parameter");
+	Cmd_AddCommand ("unbind", Key_Unbind_f,
+					"wrapper for in_unbind that uses in_bind_kgt for the kgt "
+					"parameter");
 }
 
 void
@@ -1002,7 +1068,11 @@ Key_Init_Cvars (void)
 	cl_chatmode = Cvar_Get ("cl_chatmode", "2", CVAR_NONE, NULL,
 							"Controls when console text will be treated as a "
 							"chat message: 0 - never, 1 - always, 2 - smart");
+	in_bind_kgt = Cvar_Get ("in_bind_kgt", "kgt_default", CVAR_ARCHIVE,
+							in_bind_kgt_f, "kgt parameter for the bind and "
+							"unbind wrappers to in_bind and in_unbind");
 }
+
 void
 Key_ClearTyping (void)
 {
@@ -1017,7 +1087,7 @@ Key_GetBinding (kgt_t kgt, knum_t key)
 }
 
 void
-Key_SetBinding (kgt_t target, knum_t keynum, char *binding)
+Key_SetBinding (kgt_t target, knum_t keynum, const char *binding)
 {
 	if (keynum == -1)
 		return;
