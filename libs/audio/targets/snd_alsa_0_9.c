@@ -139,7 +139,7 @@ SNDDMA_Init (void)
 	}
 	stereo = snd_stereo->int_val;
 	if (!pcmname)
-		pcmname = "plughw:0,0";
+		pcmname = "default";
 	if ((err = qfsnd_pcm_open (&pcm, pcmname,
 							   SND_PCM_STREAM_PLAYBACK,
 							   SND_PCM_NONBLOCK)) < 0) {
