@@ -84,7 +84,7 @@ o         +--- filesystem         Filesystem code
           |       |               (the code for normal fs is also here)
 o         |       +--- pakfile    Quake Pakfiles
 o         |       +--- qfp        QuakeForge Package
-o         +--- formats
+o         +--- formats [1]
 o         |       +--- bsp29      Quake BSP read/write
 o         |       +--- bsp66      QuakeForge native BSP read/write
 o         |       +--- mdl        Quake model read/write
@@ -125,6 +125,14 @@ o         \--- world              3D layout engine (includes objects)
                                   Talks to the sound and video renderers
                                   to output frames
 
+[1] taniwha feels that formats is wrong and is using models with the
+    following structure:
+        libs
+            models          generic api code
+                alias       alias model loading code
+                brush       brush model loading code
+                sprite      sprite model loading code
+                textures    texture reading/writing code
 
 Decided old menu structure was pointless and nobody cared.
 So we don't forget something in the binds menu:
