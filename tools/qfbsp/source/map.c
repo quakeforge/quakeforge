@@ -569,13 +569,15 @@ LoadMapFile (const char *filename)
 {
 	char       *buf;
 	QFile      *file;
+	int         bytes;
 
 	file = Qopen (filename, "rt");
 	if (!file)
 		Sys_Error ("couldn't open %s. %s", filename, strerror(errno));
-	buf = malloc (Qfilesize (file) + 1);
-	buf[Qfilesize (file)] = 0;
-	Qread (file, buf, Qfilesize (file));
+	bytes = Qfilesize (file);
+	buf = malloc (bytes + 1);
+	bytes = Qread (file, buf, bytes);
+	buf[bytes] = 0;
 	Qclose (file);
 
 	script_file = filename;
