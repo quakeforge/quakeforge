@@ -103,10 +103,11 @@ method_def (class_t *class, method_t *method)
 			  class->class_name,
 			  class->category_name ? class->category_name : "",
 			  method->name);
+	str->str[--str->size - 1] = 0;
 	for (s = str->str; *s; s++)
 		if (*s == ':')
 			*s = '_';
-	//printf ("%s %s %s\n", method->name, method->types, str->str);
+	//printf ("%s %s %s %ld\n", method->name, method->types, str->str, str->size);
 	// FIXME need a file scope
 	def = PR_GetDef (method->type, str->str, 0, &numpr_globals);
 	dstring_delete (str);
