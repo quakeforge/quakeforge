@@ -13,3 +13,4 @@ o	?: operator
 o	<op>= operator ( var += expr, etc. )
 o	pre- and post- increment operators (++ and --)
 o	CSE optimisations
+o	gut out old parser
