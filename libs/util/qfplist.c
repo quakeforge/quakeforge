@@ -218,7 +218,7 @@ PL_D_AddObject (plitem_t *dict, plitem_t *key, plitem_t *value)
 	return true;
 }
 
-int
+qboolean
 PL_A_InsertObjectAtIndex (plitem_t *array_item, plitem_t *item, int index)
 {
 	plarray_t  *array;
