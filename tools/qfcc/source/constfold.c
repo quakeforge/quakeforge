@@ -150,6 +150,7 @@ convert_to_float (expr_t *e)
 		case ex_expr:
 		case ex_uexpr:
 		case ex_temp:
+		case ex_block:
 			return cast_expr (&type_float, e);
 		default:
 			internal_error (e);
@@ -646,6 +647,7 @@ convert_to_uinteger (expr_t *e)
 		case ex_expr:
 		case ex_uexpr:
 		case ex_temp:
+		case ex_block:
 			return cast_expr (&type_uinteger, e);
 		default:
 			internal_error (e);
