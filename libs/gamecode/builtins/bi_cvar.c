@@ -51,7 +51,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 static void
 bi_Cvar_GetCvarString (progs_t *pr)
 {
-	const char *varname = P_STRING (pr, 0);
+	const char *varname = P_GSTRING (pr, 0);
 
 	RETURN_STRING (pr, Cvar_VariableString (varname));
 }

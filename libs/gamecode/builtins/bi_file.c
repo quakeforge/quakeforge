@@ -119,8 +119,8 @@ bi_File_Open (progs_t *pr)
 {
 	qfile_resources_t *res = PR_Resources_Find (pr, "QFile");
 	QFile     **file = QFile_AllocHandle (pr, res);
-	const char *pth = P_STRING (pr, 0);
-	const char *mode = P_STRING (pr, 1);
+	const char *pth = P_GSTRING (pr, 0);
+	const char *mode = P_GSTRING (pr, 1);
 	char       *path;
 	char       *p;
 	int         do_write = 0;
@@ -148,7 +148,7 @@ bi_File_Open (progs_t *pr)
 	}
 
 	path = QFS_CompressPath (pth);
-	//printf ("'%s'  '%s'\n", P_STRING (pr, 0), path);
+	//printf ("'%s'  '%s'\n", P_GSTRING (pr, 0), path);
 	if (!path[0])
 		goto error;
 	if (path[0] == '.' && path[1] == '.' && (path[2] == '/' || path [2] == 0))

@@ -69,11 +69,11 @@ PF_VarString (progs_t *pr, int first)
 	int			len, i;
 
 	for (len = 0, i = first; i < pr->pr_argc; i++)
-		len += strlen (G_STRING (pr, (OFS_PARM0 + i * 3)));
+		len += strlen (P_GSTRING (pr, i));
 	out = Hunk_TempAlloc (len + 1);
 	out[0] = 0;
 	for (i = first; i < pr->pr_argc; i++)
-		strcat (out, G_STRING (pr, (OFS_PARM0 + i * 3)));
+		strcat (out, P_GSTRING (pr, i));
 	return out;
 }
 
@@ -230,7 +230,7 @@ PF_localcmd (progs_t *pr)
 {
 	const char		*str;
 
-	str = P_STRING (pr, 0);
+	str = P_GSTRING (pr, 0);
 	Cbuf_AddText (str);
 }
 #endif
@@ -245,7 +245,7 @@ PF_cvar (progs_t *pr)
 {
 	const char		*str;
 
-	str = P_STRING (pr, 0);
+	str = P_GSTRING (pr, 0);
 
 	R_FLOAT (pr) = Cvar_VariableValue (str);
 }
@@ -261,8 +261,8 @@ PF_cvar_set (progs_t *pr)
 	const char	*var_name, *val;
 	cvar_t		*var;
 
-	var_name = P_STRING (pr, 0);
-	val = P_STRING (pr, 1);
+	var_name = P_GSTRING (pr, 0);
+	val = P_GSTRING (pr, 1);
 	var = Cvar_FindVar (var_name);
 	if (!var)
 		var = Cvar_FindAlias (var_name);
@@ -302,7 +302,7 @@ PF_Find (progs_t *pr)
 	type = field_def->type & ~DEF_SAVEGLOBAL;
 
 	if (type == ev_string) {
-		s = P_STRING (pr, 2);
+		s = P_GSTRING (pr, 2);
 		if (!s)
 			PR_RunError (pr, "PF_Find: bad search string");
 	}
@@ -313,7 +313,7 @@ PF_Find (progs_t *pr)
 			continue;
 		switch (type) {
 			case ev_string:
-				t = E_STRING (pr, ed, f);
+				t = E_GSTRING (pr, ed, f);
 				if (!t)
 					continue;
 				if (strcmp (t, s))
@@ -503,7 +503,7 @@ PF_itos (progs_t *pr)
 static void
 PF_stof (progs_t *pr)
 {
-	R_FLOAT (pr) = atof (P_STRING (pr, 0));
+	R_FLOAT (pr) = atof (P_GSTRING (pr, 0));
 }
 
 /*
@@ -514,7 +514,7 @@ PF_stof (progs_t *pr)
 static void
 PF_stoi (progs_t *pr)
 {
-	R_INT (pr) = atoi (P_STRING (pr, 0));
+	R_INT (pr) = atoi (P_GSTRING (pr, 0));
 }
 
 /*
@@ -527,7 +527,7 @@ PF_stov (progs_t *pr)
 {
 	float v[3] = {0, 0, 0};
 
-	sscanf (P_STRING (pr, 0), "'%f %f %f'", v, v + 1, v + 2);
+	sscanf (P_GSTRING (pr, 0), "'%f %f %f'", v, v + 1, v + 2);
 
 	RETURN_VECTOR (pr, v);
 }
@@ -560,7 +560,7 @@ PF_strlen (progs_t *pr)
 {
 	const char	*s;
 
-	s = P_STRING (pr, 0);
+	s = P_GSTRING (pr, 0);
 	R_FLOAT (pr) = strlen(s);
 }
 
@@ -576,14 +576,14 @@ PF_charcount (progs_t *pr)
 	const char *s;
 	int			count;
 
-	goal = (P_STRING (pr, 0))[0];
+	goal = (P_GSTRING (pr, 0))[0];
 	if (goal == '\0') {
 		R_FLOAT (pr) = 0;
 		return;
 	}
 
 	count = 0;
-	s = P_STRING (pr, 1);
+	s = P_GSTRING (pr, 1);
 	while (*s) {
 		if (*s == goal)
 			count++;
@@ -613,7 +613,7 @@ PF_sprintf (progs_t *pr)
 	size_t	new_format_i; 
 	int		curarg = 3, out_max = 32, out_size = 0;
 
-	format = P_STRING (pr, 0);
+	format = P_GSTRING (pr, 0);
 	c = format;
 
 	out = malloc (out_max);
@@ -779,7 +779,7 @@ PF_sprintf (progs_t *pr)
 			char *s;
 			if (curarg > MAX_ARG)
 				goto maxargs;
-			s = P_STRING (pr, 0 + curarg);
+			s = P_GSTRING (pr, 0 + curarg);
 			while ((ret = snprintf (&out[out_size], out_max - out_size, "%s",
 									s))
 				   >= out_max - out_size) {

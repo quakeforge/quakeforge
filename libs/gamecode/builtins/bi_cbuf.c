@@ -70,7 +70,7 @@ get_cbuf (progs_t *pr, int arg, const char *func)
 static void
 bi_Cbuf_AddText (progs_t *pr)
 {
-	const char *text = P_STRING (pr, 0);
+	const char *text = P_GSTRING (pr, 0);
 	cbuf_t     *cbuf = get_cbuf (pr, 0, __FUNCTION__);
 	Cbuf_AddText (cbuf, text);
 }
@@ -78,7 +78,7 @@ bi_Cbuf_AddText (progs_t *pr)
 static void
 bi_Cbuf_InsertText (progs_t *pr)
 {
-	const char *text = P_STRING (pr, 0);
+	const char *text = P_GSTRING (pr, 0);
 	cbuf_t     *cbuf = get_cbuf (pr, 0, __FUNCTION__);
 	Cbuf_InsertText (cbuf, text);
 }

@@ -53,7 +53,7 @@ bi_Key_SetBinding (progs_t *pr)
 {
 	int	        target  = P_INT (pr, 0);
 	int         keynum  = P_INT (pr, 1);
-	const char *binding = P_STRING (pr, 2);
+	const char *binding = P_GSTRING (pr, 2);
 
 	if(strlen(binding) == 0 || binding[0] == '\0') {
 		binding = NULL;	/* unbind a binding */
@@ -72,7 +72,7 @@ bi_Key_LookupBinding (progs_t *pr)
 {
 	int	        target  = P_INT (pr, 0);
 	int	        bindnum = P_INT (pr, 1);
-	const char *binding = P_STRING (pr, 2);
+	const char *binding = P_GSTRING (pr, 2);
 	int i;
 	knum_t keynum = -1;
 	const char *keybind = NULL;
@@ -101,7 +101,7 @@ static void
 bi_Key_CountBinding (progs_t *pr)
 {
 	int	        target  = P_INT (pr, 0);
-	const char *binding = P_STRING (pr, 1);
+	const char *binding = P_GSTRING (pr, 1);
 	int i, res = 0;
 	const char *keybind = NULL;
 

@@ -112,8 +112,7 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 	if (f->numparms >= 0) {
 		for (i = 0; i < f->numparms; i++) {
 			for (j = 0; j < f->parm_size[i]; j++) {
-				memcpy (&pr->pr_globals[o],
-						&pr->pr_globals[OFS_PARM0 + i * 3 + j],
+				memcpy (&pr->pr_globals[o], &P_INT (pr, i) + j,
 						sizeof (pr_type_t));
 				o++;
 			}
@@ -123,8 +122,7 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 		pr_type_t  *argv = &pr->pr_globals[o++];
 		for (i = 0; i < -f->numparms - 1; i++) {
 			for (j = 0; j < f->parm_size[i]; j++) {
-				memcpy (&pr->pr_globals[o],
-						&pr->pr_globals[OFS_PARM0 + i * 3 + j],
+				memcpy (&pr->pr_globals[o], &P_INT (pr, i) + j,
 						sizeof (pr_type_t));
 				o++;
 			}
@@ -132,9 +130,7 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 		argc->integer_var = pr->pr_argc - i;
 		argv->integer_var = o;
 		while (i < MAX_PARMS) {
-			memcpy (&pr->pr_globals[o],
-					&pr->pr_globals[OFS_PARM0 + i * 3],
-					3);
+			memcpy (&pr->pr_globals[o], &P_INT (pr, i), 3);
 			o += 3;
 			i++;
 		}
@@ -683,7 +679,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 			case OP_DONE:
 			case OP_RETURN:
-				memcpy (&pr->pr_globals[OFS_RETURN], &OPA, 3 * sizeof (OPA));
+				memcpy (&R_INT (pr), &OPA, 3 * sizeof (OPA));
 				PR_LeaveFunction (pr);
 				st = pr->pr_statements + pr->pr_xstatement;
 				if (pr->pr_depth == exitdepth) {

@@ -178,5 +178,5 @@ main (int argc, char **argv)
 	P_INT (&pr, 0) = pr_argc;
 	P_INT (&pr, 1) = POINTER_TO_PROG (&pr, pr_argv);
 	PR_ExecuteProgram (&pr, main_func);
-	return G_INT (&pr, OFS_RETURN);
+	return R_INT (&pr);
 }

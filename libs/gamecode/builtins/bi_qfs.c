@@ -73,8 +73,8 @@ check_buffer (progs_t *pr, pr_type_t *buf, int count, const char *name)
 static void
 bi_QFS_Rename (progs_t *pr)
 {
-	const char *old = P_STRING (pr, 0);
-	const char *new = P_STRING (pr, 1);
+	const char *old = P_GSTRING (pr, 0);
+	const char *new = P_GSTRING (pr, 1);
 
 	R_INT (pr) = QFS_Rename (old, new);
 }
@@ -82,7 +82,7 @@ bi_QFS_Rename (progs_t *pr)
 static void
 bi_QFS_LoadFile (progs_t *pr)
 {
-	const char *filename = P_STRING (pr, 0);
+	const char *filename = P_GSTRING (pr, 0);
 	QFile      *file;
 	int         size;
 	void       *buffer;
@@ -109,7 +109,7 @@ bi_QFS_OpenFile (progs_t *pr)
 {
 	qfile_resources_t *res = PR_Resources_Find (pr, "QFile");
 	QFile     **file = QFile_AllocHandle (pr, res);
-	const char *filename = P_STRING (pr, 0);
+	const char *filename = P_GSTRING (pr, 0);
 
 	QFS_FOpenFile (filename, file);
 	if (!*file) {
@@ -122,8 +122,8 @@ bi_QFS_OpenFile (progs_t *pr)
 static void
 bi_QFS_WriteFile (progs_t *pr)
 {
-	const char *filename = P_STRING (pr, 0);
-	pr_type_t  *buf = P_POINTER (pr, 1);
+	const char *filename = P_GSTRING (pr, 0);
+	pr_type_t  *buf = P_GPOINTER (pr, 1);
 	int         count = P_INT (pr, 2);
 
 	check_buffer (pr, buf, count, "QFS_WriteFile");

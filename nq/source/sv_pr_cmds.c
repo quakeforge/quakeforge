@@ -242,7 +242,7 @@ PF_setmodel (progs_t *pr)
 	int         i;
 
 	e = P_EDICT (pr, 0);
-	m = P_STRING (pr, 1);
+	m = P_GSTRING (pr, 1);
 
 // check to see if model was properly precached
 	for (i = 0, check = sv.model_precache; *check; i++, check++)
@@ -365,7 +365,7 @@ PF_ambientsound (progs_t *pr)
 	int			 soundnum;
 
 	pos = P_VECTOR (pr, 0);
-	samp = P_STRING (pr, 1);
+	samp = P_GSTRING (pr, 1);
 	vol = P_FLOAT (pr, 2);
 	attenuation = P_FLOAT (pr, 3);
 
@@ -410,7 +410,7 @@ PF_sound (progs_t *pr)
 
 	entity = P_EDICT (pr, 0);
 	channel = P_FLOAT (pr, 1);
-	sample = P_STRING (pr, 2);
+	sample = P_GSTRING (pr, 2);
 	volume = P_FLOAT (pr, 3) * 255;
 	attenuation = P_FLOAT (pr, 4);
 
@@ -598,7 +598,7 @@ PF_stuffcmd (progs_t *pr)
 	entnum = P_EDICTNUM (pr, 0);
 	if (entnum < 1 || entnum > svs.maxclients)
 		PR_RunError (pr, "Parm 0 not a client");
-	str = P_STRING (pr, 1);
+	str = P_GSTRING (pr, 1);
 
 	old = host_client;
 	host_client = &svs.clients[entnum - 1];
@@ -618,7 +618,7 @@ PF_localcmd (progs_t *pr)
 {
 	const char       *str;
 
-	str = P_STRING (pr, 0);
+	str = P_GSTRING (pr, 0);
 	Cbuf_AddText (host_cbuf, str);
 }
 
@@ -705,7 +705,7 @@ PF_precache_sound (progs_t *pr)
 		PR_RunError (pr, "PF_Precache_*: Precache can only be done in spawn "
 					 "functions");
 
-	s = P_STRING (pr, 0);
+	s = P_GSTRING (pr, 0);
 	R_INT (pr) = P_INT (pr, 0);
 	PR_CheckEmptyString (pr, s);
 
@@ -730,7 +730,7 @@ PF_precache_model (progs_t *pr)
 		PR_RunError (pr, "PF_Precache_*: Precache can only be done in spawn "
 					 "functions");
 
-	s = P_STRING (pr, 0);
+	s = P_GSTRING (pr, 0);
 	R_INT (pr) = P_INT (pr, 0);
 	PR_CheckEmptyString (pr, s);
 
@@ -833,7 +833,7 @@ PF_lightstyle (progs_t *pr)
 	int         j;
 
 	style = P_FLOAT (pr, 0);
-	val = P_STRING (pr, 1);
+	val = P_GSTRING (pr, 1);
 
 // change the string in sv
 	sv.lightstyles[style] = val;
@@ -1062,7 +1062,7 @@ PF_WriteCoord (progs_t *pr)
 void
 PF_WriteString (progs_t *pr)
 {
-	MSG_WriteString (WriteDest (pr), P_STRING (pr, 1));
+	MSG_WriteString (WriteDest (pr), P_GSTRING (pr, 1));
 }
 
 void
@@ -1131,7 +1131,7 @@ PF_changelevel (progs_t *pr)
 		return;
 	svs.changelevel_issued = true;
 
-	s = P_STRING (pr, 0);
+	s = P_GSTRING (pr, 0);
 	Cbuf_AddText (host_cbuf, va ("changelevel %s\n", s));
 }
 
@@ -1311,7 +1311,7 @@ PF_Fixme (progs_t *pr)
 static void
 PF_checkextension (progs_t *pr)
 {
-	G_FLOAT (pr, OFS_RETURN) = 0; // FIXME: make this function actually useful
+	R_FLOAT (pr) = 0;			// FIXME: make this function actually useful
 }
 
 void

@@ -165,7 +165,7 @@ PR_GarbageCollect (progs_t *pr)
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
 		def = &pr->pr_globaldefs[i];
 		if ((def->type & ~DEF_SAVEGLOBAL) == ev_string) {
-			str = G_STRING (pr, def->ofs);
+			str = G_GSTRING (pr, def->ofs);
 			if (str) {
 				sr = Hash_Find (pr->strref_hash, str);
 				if (sr)
@@ -177,7 +177,7 @@ PR_GarbageCollect (progs_t *pr)
 		def = &pr->pr_fielddefs[i];
 		if ((def->type & ~DEF_SAVEGLOBAL) == ev_string) {
 			for (j = 0; j < *pr->num_edicts; j++) {
-				str = E_STRING (pr, EDICT_NUM (pr, j), def->ofs);
+				str = E_GSTRING (pr, EDICT_NUM (pr, j), def->ofs);
 				if (str) {
 					sr = Hash_Find (pr->strref_hash, str);
 					if (sr)

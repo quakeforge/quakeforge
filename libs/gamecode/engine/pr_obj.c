@@ -303,7 +303,7 @@ pr_obj_error (progs_t *pr)
 {
 	//pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	//int         code = P_INT (pr, 1);
-	//const char *fmt = P_STRING (pr, 2);
+	//const char *fmt = P_GSTRING (pr, 2);
 	//...
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
@@ -314,7 +314,7 @@ pr_obj_verror (progs_t *pr)
 {
 	//pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	//int         code = P_INT (pr, 1);
-	//const char *fmt = P_STRING (pr, 2);
+	//const char *fmt = P_GSTRING (pr, 2);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -349,7 +349,7 @@ pr_obj_msg_sendv (progs_t *pr)
 {
 	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
-	pr_va_list_t args = G_STRUCT (pr, pr_va_list_t, OFS_PARM2);
+	pr_va_list_t args = P_STRUCT (pr, pr_va_list_t, 2);
 	func_t      imp = obj_msg_lookup (pr, receiver, op);
 
 	if (!imp)
@@ -358,7 +358,7 @@ pr_obj_msg_sendv (progs_t *pr)
 					 PR_GetString (pr, op->sel_id));
 	if (args.count > 6)
 		args.count = 6;
-	memcpy (G_POINTER (pr, OFS_PARM2), G_POINTER (pr, args.list),
+	memcpy (P_GPOINTER (pr, 2), G_GPOINTER (pr, args.list),
 			args.count * 4 * 3);
 	call_function (pr, imp);
 }
@@ -393,7 +393,7 @@ pr_obj_valloc (progs_t *pr)
 static void
 pr_obj_realloc (progs_t *pr)
 {
-	void       *mem = (void*)P_POINTER (pr, 0);
+	void       *mem = (void*)P_GPOINTER (pr, 0);
 	int         size = P_INT (pr, 1) * sizeof (pr_type_t);
 
 	mem = PR_Zone_Realloc (pr, mem, size);
@@ -413,7 +413,7 @@ pr_obj_calloc (progs_t *pr)
 static void
 pr_obj_free (progs_t *pr)
 {
-	void       *mem = (void*)P_POINTER (pr, 0);
+	void       *mem = (void*)P_GPOINTER (pr, 0);
 
 	PR_Zone_Free (pr, mem);
 }
@@ -471,7 +471,7 @@ pr_obj_msgSend_super (progs_t *pr)
 static void
 pr_obj_get_class (progs_t *pr)
 {
-	const char *name = P_STRING (pr, 0);
+	const char *name = P_GSTRING (pr, 0);
 	pr_class_t *class;
 
 	class = Hash_Find (pr->classes, name);
@@ -483,7 +483,7 @@ pr_obj_get_class (progs_t *pr)
 static void
 pr_obj_lookup_class (progs_t *pr)
 {
-	const char *name = P_STRING (pr, 0);
+	const char *name = P_GSTRING (pr, 0);
 	pr_class_t *class;
 
 	class = Hash_Find (pr->classes, name);
@@ -516,7 +516,7 @@ pr_sel_get_type (progs_t *pr)
 static void
 pr_sel_get_uid (progs_t *pr)
 {
-	//const char *name = P_STRING (pr, 0);
+	//const char *name = P_GSTRING (pr, 0);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -524,7 +524,7 @@ pr_sel_get_uid (progs_t *pr)
 static void
 pr_sel_get_any_uid (progs_t *pr)
 {
-	//const char *name = P_STRING (pr, 0);
+	//const char *name = P_GSTRING (pr, 0);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -532,7 +532,7 @@ pr_sel_get_any_uid (progs_t *pr)
 static void
 pr_sel_get_any_typed_uid (progs_t *pr)
 {
-	//const char *name = P_STRING (pr, 0);
+	//const char *name = P_GSTRING (pr, 0);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -540,8 +540,8 @@ pr_sel_get_any_typed_uid (progs_t *pr)
 static void
 pr_sel_get_typed_uid (progs_t *pr)
 {
-	//const char *name = P_STRING (pr, 0);
-	//const char *type = P_STRING (pr, 1);
+	//const char *name = P_GSTRING (pr, 0);
+	//const char *type = P_GSTRING (pr, 1);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -549,7 +549,7 @@ pr_sel_get_typed_uid (progs_t *pr)
 static void
 pr_sel_register_name (progs_t *pr)
 {
-	//const char *name = P_STRING (pr, 0);
+	//const char *name = P_GSTRING (pr, 0);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -557,8 +557,8 @@ pr_sel_register_name (progs_t *pr)
 static void
 pr_sel_register_typed_name (progs_t *pr)
 {
-	//const char *name = P_STRING (pr, 0);
-	//const char *type = P_STRING (pr, 1);
+	//const char *name = P_GSTRING (pr, 0);
+	//const char *type = P_GSTRING (pr, 1);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
@@ -690,7 +690,7 @@ static void
 pr_class_ivar_set_gcinvisible (progs_t *pr)
 {
 	//pr_class_t *imposter = &P_STRUCT (pr, pr_class_t, 0);
-	//const char *ivarname = P_STRING (pr, 1);
+	//const char *ivarname = P_GSTRING (pr, 1);
 	//int         gcInvisible = P_INT (pr, 2);
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
@@ -888,7 +888,7 @@ static void
 pr__i_Object__error (progs_t *pr)
 {
 	//pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
-	//const char *fmt = P_STRING (pr, 2);
+	//const char *fmt = P_GSTRING (pr, 2);
 	//...
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);

@@ -54,15 +54,14 @@ typedef struct {
 static inline void
 return_plitem (progs_t *pr, plitem_t *plitem)
 {
-	memcpy (pr->pr_globals + OFS_RETURN, &plitem, sizeof (plitem));
+	memcpy (&R_INT (pr), &plitem, sizeof (plitem));
 }
 
 static inline plitem_t *
 p_plitem (progs_t *pr, int n)
 {
 	plitem_t   *plitem;
-	memcpy (&plitem, pr->pr_globals + OFS_PARM0 + n * sizeof (pr_type_t),
-			sizeof (plitem));
+	memcpy (&plitem, &P_INT (pr, n), sizeof (plitem));
 	return plitem;
 }
 
@@ -87,7 +86,7 @@ remove_plitem (progs_t *pr, plitem_t *plitem)
 static void
 bi_PL_GetPropertyList (progs_t *pr)
 {
-	plitem_t   *plitem = PL_GetPropertyList (P_STRING (pr, 0));	
+	plitem_t   *plitem = PL_GetPropertyList (P_GSTRING (pr, 0));	
 
 	return_plitem (pr, record_plitem (pr, plitem));
 }
@@ -95,7 +94,7 @@ bi_PL_GetPropertyList (progs_t *pr)
 static void
 bi_PL_ObjectForKey (progs_t *pr)
 {
-	return_plitem (pr, PL_ObjectForKey (p_plitem (pr, 0), P_STRING (pr, 1)));
+	return_plitem (pr, PL_ObjectForKey (p_plitem (pr, 0), P_GSTRING (pr, 1)));
 }
 
 static void
@@ -147,7 +146,7 @@ bi_PL_NewData (progs_t *pr)
 static void
 bi_PL_NewString (progs_t *pr)
 {
-	return_plitem (pr, record_plitem (pr, PL_NewString (P_STRING (pr, 0))));
+	return_plitem (pr, record_plitem (pr, PL_NewString (P_GSTRING (pr, 0))));
 }
 
 static void

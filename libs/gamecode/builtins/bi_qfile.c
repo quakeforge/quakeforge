@@ -96,8 +96,8 @@ secured (progs_t *pr)
 static void
 bi_Qrename (progs_t *pr)
 {
-	const char *old = P_STRING (pr, 0);
-	const char *new = P_STRING (pr, 1);
+	const char *old = P_GSTRING (pr, 0);
+	const char *new = P_GSTRING (pr, 1);
 
 	R_INT (pr) = Qrename (old, new);
 }
@@ -105,7 +105,7 @@ bi_Qrename (progs_t *pr)
 static void
 bi_Qremove (progs_t *pr)
 {
-	const char *path = P_STRING (pr, 0);
+	const char *path = P_GSTRING (pr, 0);
 
 	R_INT (pr) = Qremove (path);
 }
@@ -114,8 +114,8 @@ static void
 bi_Qopen (progs_t *pr)
 {
 	qfile_resources_t *res = PR_Resources_Find (pr, "QFile");
-	const char *path = P_STRING (pr, 0);
-	const char *mode = P_STRING (pr, 1);
+	const char *path = P_GSTRING (pr, 0);
+	const char *mode = P_GSTRING (pr, 1);
 	QFile     **h = QFile_AllocHandle (pr, res);
 
 	if (!h) {
@@ -172,7 +172,7 @@ bi_Qread (progs_t *pr)
 {
 	int         handle = P_INT (pr, 0);
 	QFile     **h = get_qfile (pr, handle, "Qread");
-	pr_type_t  *buf = P_POINTER (pr, 1);
+	pr_type_t  *buf = P_GPOINTER (pr, 1);
 	int         count = P_INT (pr, 2);
 
 	check_buffer (pr, buf, count, "Qread");
@@ -184,7 +184,7 @@ bi_Qwrite (progs_t *pr)
 {
 	int         handle = P_INT (pr, 0);
 	QFile     **h = get_qfile (pr, handle, "Qwrite");
-	pr_type_t  *buf = P_POINTER (pr, 1);
+	pr_type_t  *buf = P_GPOINTER (pr, 1);
 	int         count = P_INT (pr, 2);
 
 	check_buffer (pr, buf, count, "Qwrite");
@@ -196,7 +196,7 @@ bi_Qputs (progs_t *pr)
 {
 	int         handle = P_INT (pr, 0);
 	QFile     **h = get_qfile (pr, handle, "Qputs");
-	const char *str = P_STRING (pr, 1);
+	const char *str = P_GSTRING (pr, 1);
 
 	R_INT (pr) = Qputs (*h, str);
 }
@@ -206,7 +206,7 @@ bi_Qgets (progs_t *pr)
 {
 	int         handle = P_INT (pr, 0);
 	QFile     **h = get_qfile (pr, handle, "Qgets");
-	pr_type_t  *buf = P_POINTER (pr, 1);
+	pr_type_t  *buf = P_GPOINTER (pr, 1);
 	int         count = P_INT (pr, 2);
 
 	check_buffer (pr, buf, count, "Qgets");

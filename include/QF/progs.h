@@ -123,36 +123,46 @@ qboolean PR_EdictValid (progs_t *pr, int e);
 #define	G_FLOAT(p,o)	G_var (p, o, float)
 #define	G_INT(p,o)		G_var (p, o, integer)
 #define	G_UINT(p,o)		G_var (p, o, uinteger)
+#define	G_VECTOR(p,o)	G_var (p, o, vector)
+#define G_STRING(p,o)	G_var (p, o, string)
+#define	G_FUNCTION(p,o)	G_var (p, o, func)
+#define G_POINTER(p,o)	G_var (p, o, pointer)
+
 #define G_EDICT(p,o)	((edict_t *)(PR_edicts (p) + G_INT (p, o)))
 #define G_EDICTNUM(p,o)	NUM_FOR_EDICT(p, G_EDICT (p, o))
-#define	G_VECTOR(p,o)	G_var (p, o, vector)
-#define	G_STRING(p,o)	PR_GetString (p, G_var (p, o, string))
-#define	G_FUNCTION(p,o)	G_var (p, o, func)
-#define	G_POINTER(p,o)	PR_Pointer (p, o)
-#define	G_STRUCT(p,t,o)	(*(t *)G_POINTER (p, o))
+#define	G_GSTRING(p,o)	PR_GetString (p, G_STRING (p, o))
+#define	G_GPOINTER(p,o)	PR_GetPointer (p, o)
+#define	G_STRUCT(p,t,o)	(*(t *)G_GPOINTER (p, o))
 
-#define P_var(p,n,t)	G_var (p, OFS_PARM##n, t)
+#define P_var(p,n,t)	G_var (p, (OFS_PARM0 + (n) * 3), t)
+
 #define P_FLOAT(p,n)	P_var (p, n, float)
 #define P_INT(p,n)		P_var (p, n, integer)
 #define P_UINT(p,n)		P_var (p, n, uinteger)
+#define P_VECTOR(p,n)	P_var (p, n, vector)
+#define P_STRING(p,n)	P_var (p, n, string)
+#define P_FUNCTION(p,n)	P_var (p, n, func)
+#define P_POINTER(p,n)	P_var (p, n, pointer)
+
 #define P_EDICT(p,n)	((edict_t *)(PR_edicts (p) + P_INT (p, n)))
 #define P_EDICTNUM(p,n)	NUM_FOR_EDICT (p, P_EDICT (p, n))
-#define P_VECTOR(p,n)	P_var (p, n, vector)
-#define P_STRING(p,n)	PR_GetString (p, P_var (p, n, string))
-#define P_FUNCTION(p,n)	P_var (p, n, func)
-#define P_POINTER(p,n)	G_POINTER (p, P_INT (p, n))
-#define P_STRUCT(p,t,n)	(*(t *)P_POINTER (p, n))
+#define P_GSTRING(p,n)	PR_GetString (p, P_STRING (p, n))
+#define P_GPOINTER(p,n)	PR_GetPointer (p, P_POINTER (p, n))
+#define P_STRUCT(p,t,n)	(*(t *)P_GPOINTER (p, n))
 
 #define R_var(p,t)		G_var (p, OFS_RETURN, t)
+
 #define R_FLOAT(p)		R_var (p, float)
 #define R_INT(p)		R_var (p, integer)
 #define R_UINT(p)		R_var (p, uinteger)
 #define R_VECTOR(p)		R_var (p, vector)
+#define R_STRING(p)		R_var (p, string)
 #define R_FUNCTION(p)	R_var (p, func)
+#define R_POINTER(p)	R_var (p, pointer)
 
-#define RETURN_STRING(p, s) (R_INT (p) = PR_SetString((p), s))
-#define RETURN_EDICT(p, e) (R_INT (p) = EDICT_TO_PROG(p, e))
-#define	RETURN_POINTER(pr,p) (R_INT (pr) = POINTER_TO_PROG (pr, p))
+#define RETURN_STRING(p, s) (R_STRING (p) = PR_SetString((p), s))
+#define RETURN_EDICT(p, e) (R_STRING (p) = EDICT_TO_PROG(p, e))
+#define	RETURN_POINTER(pr,p) (R_POINTER (pr) = POINTER_TO_PROG (pr, p))
 #define	RETURN_VECTOR(p, v)	(VectorCopy (v, R_VECTOR (p)))
 
 #define E_var(e,o,t)	((e)->v[o].t##_var)
@@ -161,7 +171,11 @@ qboolean PR_EdictValid (progs_t *pr, int e);
 #define	E_INT(e,o)		E_var (e, o, integer)
 #define	E_UINT(e,o)		E_var (e, o, uinteger)
 #define	E_VECTOR(e,o)	E_var (e, o, vector)
-#define	E_STRING(p,e,o)	(PR_GetString (p, E_var (e, o, string)))
+#define E_STRING(e,o)	E_var (e, o, string)
+#define E_FUNCTION(p)	E_var (p, o, func)
+#define E_POINTER(p)	E_var (p, o, pointer)
+
+#define	E_GSTRING(p,e,o) (PR_GetString (p, E_STRING (e, o)))
 
 typedef void (*builtin_proc) (progs_t *pr);
 typedef struct {
@@ -376,7 +390,7 @@ struct progs_s {
 };
 
 static inline pr_type_t *
-PR_Pointer (progs_t *pr, int o)
+PR_GetPointer (progs_t *pr, int o)
 {
 	return o ? pr->pr_globals + o : 0;
 }

@@ -179,7 +179,7 @@ PF_setmodel (progs_t *pr)
 	model_t    *mod;
 
 	e = P_EDICT (pr, 0);
-	m = P_STRING (pr, 1);
+	m = P_GSTRING (pr, 1);
 
 	// check to see if model was properly precached
 	for (i = 0, check = sv.model_precache; *check; i++, check++)
@@ -304,7 +304,7 @@ PF_ambientsound (progs_t *pr)
 	int         soundnum;
 
 	pos = P_VECTOR (pr, 0);
-	samp = P_STRING (pr, 1);
+	samp = P_GSTRING (pr, 1);
 	vol = P_FLOAT (pr, 2);
 	attenuation = P_FLOAT (pr, 3);
 
@@ -351,7 +351,7 @@ PF_sound (progs_t *pr)
 
 	entity = P_EDICT (pr, 0);
 	channel = P_FLOAT (pr, 1);
-	sample = P_STRING (pr, 2);
+	sample = P_GSTRING (pr, 2);
 	volume = P_FLOAT (pr, 3) * 255;
 	attenuation = P_FLOAT (pr, 4);
 
@@ -569,7 +569,7 @@ PF_stuffcmd (progs_t *pr)
 	if (cl->state == cs_server)
 		return;
 
-	str = P_STRING (pr, 1);
+	str = P_GSTRING (pr, 1);
 
 	buf = cl->stufftext_buf;
 	if (strlen (buf) + strlen (str) >= MAX_STUFFTEXT)
@@ -612,7 +612,7 @@ PF_localcmd (progs_t *pr)
 {
 	const char       *str;
 
-	str = P_STRING (pr, 0);
+	str = P_GSTRING (pr, 0);
 	Cbuf_AddText (sv_cbuf, str);
 }
 
@@ -739,7 +739,7 @@ PF_precache_file (progs_t *pr)
 void
 PF_precache_sound (progs_t *pr)
 {
-	do_precache (pr, sv.sound_precache, MAX_SOUNDS, P_STRING (pr, 0),
+	do_precache (pr, sv.sound_precache, MAX_SOUNDS, P_GSTRING (pr, 0),
 				 "precache_sound");
 	R_INT (pr) = P_INT (pr, 0);
 }
@@ -749,7 +749,7 @@ PF_precache_model (progs_t *pr)
 {
 	R_INT (pr) = P_INT (pr, 0);
 
-	do_precache (pr, sv.model_precache, MAX_MODELS, P_STRING (pr, 0),
+	do_precache (pr, sv.model_precache, MAX_MODELS, P_GSTRING (pr, 0),
 				 "precache_model");
 }
 
@@ -837,7 +837,7 @@ PF_lightstyle (progs_t *pr)
 	int         style, j;
 
 	style = P_FLOAT (pr, 0);
-	val = P_STRING (pr, 1);
+	val = P_GSTRING (pr, 1);
 
 	// change the string in sv
 	sv.lightstyles[style] = val;
@@ -1088,7 +1088,7 @@ PF_WriteBytes (progs_t *pr)
 		if (sv.demorecording)
 			DemoWrite_Begin (dem_single, cl - svs.clients, pr->pr_argc);
 		for (i = 1; i < pr->pr_argc; i++) {
-			p = G_FLOAT (pr, OFS_PARM0 + i * (OFS_PARM1 - OFS_PARM0));
+			p = P_FLOAT (pr, i);
 			if (cl->state != cs_server)
 				ClientReliableWrite_Byte (cl, p);
 			if (sv.demorecording)
@@ -1097,7 +1097,7 @@ PF_WriteBytes (progs_t *pr)
 	} else {
 		sizebuf_t  *msg = WriteDest (pr);
 		for (i = 1; i < pr->pr_argc; i++) {
-			p = G_FLOAT (pr, OFS_PARM0 + i * (OFS_PARM1 - OFS_PARM0));
+			p = P_FLOAT (pr, i);
 			MSG_WriteByte (msg, p);
 		}
 	}
@@ -1258,16 +1258,16 @@ PF_WriteString (progs_t *pr)
 		client_t   *cl = Write_GetClient (pr);
 
 		if (cl->state != cs_server) {
-			ClientReliableCheckBlock (cl, 1 + strlen (P_STRING (pr, 1)));
-			ClientReliableWrite_String (cl, P_STRING (pr, 1));
+			ClientReliableCheckBlock (cl, 1 + strlen (P_GSTRING (pr, 1)));
+			ClientReliableWrite_String (cl, P_GSTRING (pr, 1));
 		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients,
-							 1 + strlen (P_STRING (pr, 1)));
-			MSG_WriteString (&demo.dbuf->sz, P_STRING (pr, 1));
+							 1 + strlen (P_GSTRING (pr, 1)));
+			MSG_WriteString (&demo.dbuf->sz, P_GSTRING (pr, 1));
 		}
 	} else
-		MSG_WriteString (WriteDest (pr), P_STRING (pr, 1));
+		MSG_WriteString (WriteDest (pr), P_GSTRING (pr, 1));
 }
 
 void
@@ -1348,7 +1348,7 @@ PF_changelevel (progs_t *pr)
 		return;
 	last_spawncount = svs.spawncount;
 
-	s = P_STRING (pr, 0);
+	s = P_GSTRING (pr, 0);
 	Cbuf_AddText (sv_cbuf, va ("map %s\n", s));
 }
 
@@ -1398,7 +1398,7 @@ PF_infokey (progs_t *pr)
 
 	e = P_EDICT (pr, 0);
 	e1 = NUM_FOR_EDICT (pr, e);
-	key = P_STRING (pr, 1);
+	key = P_GSTRING (pr, 1);
 
 	if (sv_hide_version_info->int_val
 		&& (strequal (key, "*qf_version")
@@ -1455,8 +1455,8 @@ PF_multicast (progs_t *pr)
 static void
 PF_cfopen (progs_t *pr)
 {
-	R_FLOAT (pr) = CF_Open (P_STRING (pr, 0),
-										P_STRING (pr, 1));
+	R_FLOAT (pr) = CF_Open (P_GSTRING (pr, 0),
+										P_GSTRING (pr, 1));
 }
 
 /*
@@ -1489,7 +1489,7 @@ PF_cfread (progs_t *pr)
 static void
 PF_cfwrite (progs_t *pr)
 {
-	R_FLOAT (pr) = CF_Write ((int) P_FLOAT (pr, 0), P_STRING (pr, 1));
+	R_FLOAT (pr) = CF_Write ((int) P_FLOAT (pr, 0), P_GSTRING (pr, 1));
 }
 
 /*
@@ -1519,8 +1519,8 @@ PF_setinfokey (progs_t *pr)
 {
 	edict_t    *edict = P_EDICT (pr, 0);
 	int         e1 = NUM_FOR_EDICT (pr, edict);
-	const char *key = P_STRING (pr, 1);
-	const char *value = P_STRING (pr, 2);
+	const char *key = P_GSTRING (pr, 1);
+	const char *value = P_GSTRING (pr, 2);
 
 	if (e1 == 0) {
 		if (*value)
@@ -1739,7 +1739,7 @@ PF_sv_cvar (progs_t *pr)
 {
 	const char      *str;
 
-	str = P_STRING (pr, 0);
+	str = P_GSTRING (pr, 0);
 
 	if (sv_hide_version_info->int_val
 		&& strequal (str, "sv_hide_version_info")) {
@@ -1791,7 +1791,7 @@ PF_SV_SetUserinfo (progs_t *pr)
 {
 	int         entnum = P_EDICTNUM (pr, 0);
 	client_t   *cl = svs.clients + entnum - 1;
-	const char *str = P_STRING (pr, 1);
+	const char *str = P_GSTRING (pr, 1);
 
 	if (entnum < 1 || entnum > MAX_CLIENTS || cl->state != cs_server)
 		PR_RunError (pr, "not a server client");

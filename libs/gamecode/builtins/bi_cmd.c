@@ -91,7 +91,7 @@ bi_Cmd_AddCommand (progs_t *pr)
 {
 	cmd_resources_t *res = PR_Resources_Find (pr, "Cmd");
 	bi_cmd_t   *cmd = malloc (sizeof (bi_cmd_t));
-	char       *name = strdup (P_STRING (pr, 0));
+	char       *name = strdup (P_GSTRING (pr, 0));
 	func_t      func = P_FUNCTION (pr, 1);
 
 	if (!cmd || !name || !Cmd_AddCommand (name, (void(*)(void))bi_cmd_f, "CSQC command")) {

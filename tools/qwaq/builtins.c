@@ -51,7 +51,7 @@ bi_print (progs_t *pr)
 {
 	char *str;
 
-	str = G_STRING (pr, (OFS_PARM0));
+	str = P_GSTRING (pr, 0);
 	fprintf (stdout, "%s", str);
 }
 
@@ -77,7 +77,7 @@ bi_strerror (progs_t *pr)
 static void
 bi_open (progs_t *pr)
 {
-	char *path = P_STRING (pr, 0);
+	char *path = P_GSTRING (pr, 0);
 	int flags = P_INT (pr, 1);
 	int mode = P_INT (pr, 2);
 	R_INT (pr) = open (path, flags, mode);
@@ -95,7 +95,7 @@ bi_read (progs_t *pr)
 {
 	int handle = P_INT (pr, 0);
 	int count = P_INT (pr, 1);
-	int *read_result = (int *)P_POINTER (pr, 2);
+	int *read_result = (int *)P_GPOINTER (pr, 2);
 	int res;
 	char *buffer;
 
@@ -112,7 +112,7 @@ static void
 bi_write (progs_t *pr)
 {
 	int handle = P_INT (pr, 0);
-	char *buffer = P_STRING (pr, 1);
+	char *buffer = P_GSTRING (pr, 1);
 	int count = P_INT (pr, 2);
 
 	R_INT (pr) = write (handle, buffer, count);
@@ -143,7 +143,7 @@ bi_traceoff (progs_t *pr)
 static void
 bi_printf (progs_t *pr)
 {
-	const char *fmt = P_STRING (pr, 0);
+	const char *fmt = P_GSTRING (pr, 0);
 	char c;
 	int count = 0;
 	float *v;
@@ -158,7 +158,7 @@ bi_printf (progs_t *pr)
 					fprintf (stdout, "%f", P_FLOAT (pr, 1 + count++ * 3));
 					break;
 				case 's':
-					fputs (P_STRING (pr, 1 + count++ * 3), stdout);
+					fputs (P_GSTRING (pr, 1 + count++ * 3), stdout);
 					break;
 				case 'v':
 					v = P_VECTOR (pr, 1 + count++ * 3);

@@ -1113,10 +1113,8 @@ SV_SetInfo_f (ucmd_t *cmd)
 
 	if (UserInfoCallback) {
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
-		G_var (&sv_pr_state, OFS_PARM0, string) = PR_SetString (&sv_pr_state,
-																Cmd_Argv (1));
-		G_var (&sv_pr_state, OFS_PARM1, string) = PR_SetString (&sv_pr_state,
-																Cmd_Argv (2));
+		P_STRING (&sv_pr_state, 0) = PR_SetString (&sv_pr_state, Cmd_Argv (1));
+		P_STRING (&sv_pr_state, 1) = PR_SetString (&sv_pr_state, Cmd_Argv (2));
 		PR_ExecuteProgram (&sv_pr_state, UserInfoCallback);
 		return;
 	} else {
@@ -1227,7 +1225,7 @@ ucmds_free (void *_c, void *unused)
 static void
 SV_AddUserCommand (progs_t *pr)
 {
-	const char *name = P_STRING (pr, 0);
+	const char *name = P_GSTRING (pr, 0);
 	ucmd_t     *cmd;
 
 	cmd = Hash_Find (ucmd_table, name);

@@ -77,7 +77,7 @@ static void
 bi_Draw_CachePic (progs_t *pr)
 {
 	draw_resources_t *res = PR_Resources_Find (pr, "Draw");
-	const char *path = P_STRING (pr, 0);
+	const char *path = P_GSTRING (pr, 0);
 	int         alpha = P_INT (pr, 1);
 	qpic_t     *pic = Draw_CachePic (path, alpha);
 	bi_qpic_t  *qpic;
@@ -154,7 +154,7 @@ bi_Draw_String (progs_t *pr)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
-	const char *text = P_STRING (pr, 2);
+	const char *text = P_GSTRING (pr, 2);
 
 	Draw_String (x, y, text);
 }
@@ -164,7 +164,7 @@ bi_Draw_nString (progs_t *pr)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
-	const char *text = P_STRING (pr, 2);
+	const char *text = P_GSTRING (pr, 2);
 	int         n = P_INT (pr, 3);
 
 	Draw_nString (x, y, text, n);
@@ -175,7 +175,7 @@ bi_Draw_AltString (progs_t *pr)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
-	const char *text = P_STRING (pr, 2);
+	const char *text = P_GSTRING (pr, 2);
 
 	Draw_AltString (x, y, text);
 }

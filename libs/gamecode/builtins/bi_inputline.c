@@ -112,7 +112,7 @@ bi_InputLine_SetUserData (progs_t *pr)
 {
 	inputline_t *line = get_inputline (pr, P_INT (pr, 0),
 									   "InputLine_SetWidth");
-	pr_type_t  *data = P_POINTER (pr, 1);
+	pr_type_t  *data = P_GPOINTER (pr, 1);
 
 	line->user_data = data;
 }
@@ -181,7 +181,7 @@ static void
 bi_InputLine_SetText (progs_t *pr)
 {
 	inputline_t *il = get_inputline (pr, P_INT (pr, 0), "InputLine_SetText");
-	const char  *str = P_STRING (pr, 1);
+	const char  *str = P_GSTRING (pr, 1);
 
 	/* this was segfault trap:
 		 il->lines[il->edit_line][0] is promt character

@@ -310,6 +310,7 @@ typedef union pr_type_u {
 	int		entity_var;
 	float	vector_var[1];		// really 3, but this structure must be 32 bits
 	int		integer_var;
+	pointer_t pointer_var;
 	unsigned int uinteger_var;
 } pr_type_t;
 

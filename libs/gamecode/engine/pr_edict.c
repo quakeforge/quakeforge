@@ -448,7 +448,8 @@ ED_PrintEdicts (progs_t *pr, const char *fieldval)
 	if (fieldval && fieldval[0] && def) {
 		count = 0;
 		for (i = 0; i < *(pr)->num_edicts; i++)
-			if (strequal(fieldval, E_STRING (pr, EDICT_NUM(pr, i), def->ofs))) {
+			if (strequal(fieldval,
+						 E_GSTRING (pr, EDICT_NUM(pr, i), def->ofs))) {
 				ED_PrintNum (pr, i);
 				count++;
 			}

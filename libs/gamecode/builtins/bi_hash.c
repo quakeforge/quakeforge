@@ -69,7 +69,7 @@ bi_get_key (void *key, void *_ht)
 	P_INT (ht->pr, 0) = (long) (key);
 	P_INT (ht->pr, 1) = ht->ud;
 	PR_ExecuteProgram (ht->pr, ht->gk);
-	return G_STRING (ht->pr, OFS_RETURN);
+	return PR_GetString (ht->pr, R_STRING (ht->pr));
 }
 
 static unsigned long
@@ -181,7 +181,7 @@ bi_Hash_Find (progs_t *pr)
 {
 	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
 
-	R_INT (pr) = (long) Hash_Find (ht->tab, P_STRING (pr, 1));
+	R_INT (pr) = (long) Hash_Find (ht->tab, P_GSTRING (pr, 1));
 }
 
 static void
@@ -201,7 +201,7 @@ bi_Hash_FindList (progs_t *pr)
 	pr_type_t  *pr_list;
 	int         count;
 
-	list = Hash_FindList (ht->tab, P_STRING (pr, 1));
+	list = Hash_FindList (ht->tab, P_GSTRING (pr, 1));
 	for (count = 1, l = list; *l; l++)
 		count++;
 	pr_list = PR_Zone_Malloc (pr, count * sizeof (pr_type_t));
@@ -234,7 +234,7 @@ bi_Hash_Del (progs_t *pr)
 {
 	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
 
-	R_INT (pr) = (long) Hash_Del (ht->tab, P_STRING (pr, 1));
+	R_INT (pr) = (long) Hash_Del (ht->tab, P_GSTRING (pr, 1));
 }
 
 static void
@@ -257,13 +257,13 @@ bi_Hash_Free (progs_t *pr)
 static void
 bi_Hash_String (progs_t *pr)
 {
-	R_INT (pr) = Hash_String (P_STRING (pr, 0));
+	R_INT (pr) = Hash_String (P_GSTRING (pr, 0));
 }
 
 static void
 bi_Hash_Buffer (progs_t *pr)
 {
-	R_INT (pr) = Hash_Buffer (P_POINTER (pr, 0), P_INT (pr, 1));
+	R_INT (pr) = Hash_Buffer (P_GPOINTER (pr, 0), P_INT (pr, 1));
 }
 
 static void

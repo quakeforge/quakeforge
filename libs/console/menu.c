@@ -174,7 +174,7 @@ bi_Menu_Begin (progs_t *pr)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
-	const char *text = P_STRING (pr, 2);
+	const char *text = P_GSTRING (pr, 2);
 	menu_item_t *m = calloc (sizeof (menu_item_t), 1);
 
 	m->x = x;
@@ -216,7 +216,7 @@ bi_Menu_Pic (progs_t *pr)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
-	const char *name = P_STRING (pr, 2);
+	const char *name = P_GSTRING (pr, 2);
 
 	menu_pic (x, y, name, 0, 0, -1, -1);
 }
@@ -226,7 +226,7 @@ bi_Menu_SubPic (progs_t *pr)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
-	const char *name = P_STRING (pr, 2);
+	const char *name = P_GSTRING (pr, 2);
 	int         srcx = P_INT (pr, 3);
 	int         srcy = P_INT (pr, 4);
 	int         width = P_INT (pr, 5);
@@ -240,7 +240,7 @@ bi_Menu_CenterPic (progs_t *pr)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
-	const char *name = P_STRING (pr, 2);
+	const char *name = P_GSTRING (pr, 2);
 	qpic_t     *qpic = Draw_CachePic (name, 1);
 
 	if (!qpic)
@@ -254,7 +254,7 @@ bi_Menu_CenterSubPic (progs_t *pr)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
-	const char *name = P_STRING (pr, 2);
+	const char *name = P_GSTRING (pr, 2);
 	qpic_t     *qpic = Draw_CachePic (name, 1);
 	int         srcx = P_INT (pr, 3);
 	int         srcy = P_INT (pr, 4);
@@ -272,7 +272,7 @@ bi_Menu_Item (progs_t *pr)
 {
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
-	const char *text = P_STRING (pr, 2);
+	const char *text = P_GSTRING (pr, 2);
 	func_t      func = P_FUNCTION (pr, 3);
 	int         allkeys = P_INT (pr, 4);
 	menu_item_t *mi = calloc (sizeof (menu_item_t), 1);
@@ -311,7 +311,7 @@ bi_Menu_End (progs_t *pr)
 static void
 bi_Menu_TopMenu (progs_t *pr)
 {
-	const char *name = P_STRING (pr, 0);
+	const char *name = P_GSTRING (pr, 0);
 
 	if (top_menu)
 		free ((char*)top_menu);
@@ -321,7 +321,7 @@ bi_Menu_TopMenu (progs_t *pr)
 static void
 bi_Menu_SelectMenu (progs_t *pr)
 {
-	const char *name = P_STRING (pr, 0);
+	const char *name = P_GSTRING (pr, 0);
 
 	menu = 0;
 	if (name && *name)
@@ -385,7 +385,7 @@ quit_f (void)
 {
 	if (confirm_quit->int_val && menu_quit) {
 		PR_ExecuteProgram (&menu_pr_state, menu_quit);
-		if (!G_INT (&menu_pr_state, OFS_RETURN))
+		if (!R_INT (&menu_pr_state))
 			return;
 	}
 	bi_Menu_Quit (&menu_pr_state);
@@ -520,7 +520,7 @@ Menu_Draw (void)
 
 	if (menu->draw) {
 		PR_ExecuteProgram (&menu_pr_state, menu->draw);
-		if (G_INT (&menu_pr_state, OFS_RETURN))
+		if (R_INT (&menu_pr_state))
 			return;
 	}
 
@@ -545,8 +545,8 @@ Menu_Draw (void)
 		return;
 	item = menu->items[menu->cur_item];
 	if (menu->cursor) {
-		G_INT (&menu_pr_state, OFS_PARM0) = item->x;
-		G_INT (&menu_pr_state, OFS_PARM1) = item->y;
+		P_INT (&menu_pr_state, 0) = item->x;
+		P_INT (&menu_pr_state, 1) = item->y;
 		PR_ExecuteProgram (&menu_pr_state, menu->cursor);
 	} else {
 		Draw_Character (item->x, item->y,
@@ -562,23 +562,23 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 	if (!menu)
 		return;
 	if (menu->keyevent) {
-		G_INT (&menu_pr_state, OFS_PARM0) = key;
-		G_INT (&menu_pr_state, OFS_PARM1) = unicode;
-		G_INT (&menu_pr_state, OFS_PARM2) = down;
+		P_INT (&menu_pr_state, 0) = key;
+		P_INT (&menu_pr_state, 1) = unicode;
+		P_INT (&menu_pr_state, 2) = down;
 		PR_ExecuteProgram (&menu_pr_state, menu->keyevent);
-		if (G_INT (&menu_pr_state, OFS_RETURN))
+		if (R_INT (&menu_pr_state))
 			return;
 	} else if (menu->items && menu->items[menu->cur_item]->func
 			   && menu->items[menu->cur_item]->allkeys) {
 		item = menu->items[menu->cur_item];
 		if (item->text)
-			G_INT (&menu_pr_state, OFS_PARM0) =
+			P_INT (&menu_pr_state, 0) =
 				PR_SetString (&menu_pr_state, item->text);
 		else
-			G_INT (&menu_pr_state, OFS_PARM0) = 0;
-		G_INT (&menu_pr_state, OFS_PARM1) = key;
+			P_INT (&menu_pr_state, 0) = 0;
+		P_INT (&menu_pr_state, 1) = key;
 		PR_ExecuteProgram (&menu_pr_state, item->func);
-		if (G_INT (&menu_pr_state, OFS_RETURN))
+		if (R_INT (&menu_pr_state))
 			return;
 	}
 	if (!menu || !menu->items)
@@ -600,11 +600,11 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 				item = menu->items[menu->cur_item];
 				if (item->func) {
 					if (item->text)
-						G_INT (&menu_pr_state, OFS_PARM0) =
+						P_INT (&menu_pr_state, 0) =
 							PR_SetString (&menu_pr_state, item->text);
 					else
-						G_INT (&menu_pr_state, OFS_PARM0) = 0;
-					G_INT (&menu_pr_state, OFS_PARM1) = key;
+						P_INT (&menu_pr_state, 0) = 0;
+					P_INT (&menu_pr_state, 1) = key;
 					PR_ExecuteProgram (&menu_pr_state, item->func);
 				} else {
 					menu = item;
