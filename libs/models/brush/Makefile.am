@@ -12,7 +12,10 @@ else
 BRUSH_SW =
 endif
 
-noinst_LTLIBRARIES = $(BRUSH_GL) $(BRUSH_SW)
+noinst_LTLIBRARIES = $(BRUSH_GL) $(BRUSH_SW) libbrush.la
+
+libbrush_la_LDFLAGS = -version-info 1:0:0
+libbrush_la_SOURCES = model_brush.c
 
 libbrush_gl_la_LDFLAGS = -version-info 1:0:0
 libbrush_gl_la_SOURCES = gl_model_brush.c model_brush.c
