@@ -6,6 +6,8 @@ else
 asm=
 endif
 
+lib_LTLIBRARIES= @JOY_TARGETS@
+
 noinst_LTLIBRARIES= @VID_TARGETS@
 
 EXTRA_LTLIBRARIES= \
