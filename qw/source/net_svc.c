@@ -147,6 +147,30 @@ NET_SVC_ServerData_Parse (net_svc_serverdata_t *block, msg_t *msg)
 }
 
 net_status_t
+NET_SVC_Sound_Emit (net_svc_sound_t *block, sizebuf_t *buf)
+{
+	int i, header;
+
+	header = block->channel;
+	header |= block->entity << 3;
+	if (block->volume != DEFAULT_SOUND_PACKET_VOLUME)
+		header |= SND_VOLUME;
+	if (block->attenuation != DEFAULT_SOUND_PACKET_VOLUME)
+		header |= SND_ATTENUATION;
+	
+	MSG_WriteShort (buf, header);
+	if (header & SND_VOLUME)
+		MSG_WriteByte (buf, block->volume * 255);
+	if (header & SND_ATTENUATION)
+		MSG_WriteByte (buf, block->attenuation * 64);
+	MSG_WriteByte (buf, block->sound_num);
+	for (i = 0; i < 3; i++)
+		MSG_WriteCoord (buf, block->position[i]);
+
+	return buf->overflowed;
+}
+
+net_status_t
 NET_SVC_Sound_Parse (net_svc_sound_t *block, msg_t *msg)
 {
 	int i, header;
@@ -174,6 +198,25 @@ NET_SVC_Sound_Parse (net_svc_sound_t *block, msg_t *msg)
 }
 
 net_status_t
+NET_SVC_SpawnBaseline_Emit (net_svc_spawnbaseline_t *block, sizebuf_t *buf)
+{
+	int i;
+
+	MSG_WriteShort (buf, block->num);
+	MSG_WriteByte (buf, block->modelindex);
+	MSG_WriteByte (buf, block->frame);
+	MSG_WriteByte (buf, block->colormap);
+	MSG_WriteByte (buf, block->skinnum);
+
+	for (i = 0; i < 3; i++) {
+		MSG_WriteCoord (buf, block->origin[i]);
+		MSG_WriteAngle (buf, block->angles[i]);
+	}
+
+	return buf->overflowed;
+}
+
+net_status_t
 NET_SVC_SpawnBaseline_Parse (net_svc_spawnbaseline_t *block, msg_t *msg)
 {
 	int i;
@@ -194,6 +237,23 @@ NET_SVC_SpawnBaseline_Parse (net_svc_spawnbaseline_t *block, msg_t *msg)
 }
 
 net_status_t
+NET_SVC_SpawnStatic_Emit (net_svc_spawnstatic_t *block, sizebuf_t *buf)
+{
+	int i;
+
+	MSG_WriteByte (buf, block->modelindex);
+	MSG_WriteByte (buf, block->frame);
+	MSG_WriteByte (buf, block->colormap);
+	MSG_WriteByte (buf, block->skinnum);
+	for (i = 0; i < 3; i++) {
+		MSG_WriteCoord (buf, block->origin[i]);
+		MSG_WriteAngle (buf, block->angles[i]);
+	}
+
+	return buf->overflowed;
+}
+
+net_status_t
 NET_SVC_SpawnStatic_Parse (net_svc_spawnstatic_t *block, msg_t *msg)
 {
 	int i;
@@ -204,12 +264,60 @@ NET_SVC_SpawnStatic_Parse (net_svc_spawnstatic_t *block, msg_t *msg)
 	block->skinnum = MSG_ReadByte (msg);
 
 	// these are interlaced?  bad drugs...
-	for (i = 0; i < 3; i ++) {
+	for (i = 0; i < 3; i++) {
 		block->origin[i] = MSG_ReadCoord (msg);
 		block->angles[i] = MSG_ReadAngle (msg);
 	}
 
 	return msg->badread;
+}
+
+net_status_t
+NET_SVC_TempEntity_Emit (net_svc_tempentity_t *block, sizebuf_t *buf)
+{
+	int i;
+
+	MSG_WriteByte (buf, block->type);
+	switch (block->type) {
+		case TE_WIZSPIKE:
+		case TE_KNIGHTSPIKE:
+		case TE_SPIKE:
+		case TE_SUPERSPIKE:
+		case TE_EXPLOSION:
+		case TE_TAREXPLOSION:
+		case TE_LAVASPLASH:
+		case TE_TELEPORT:
+		case TE_LIGHTNINGBLOOD:
+			for (i = 0; i < 3; i++)
+				MSG_WriteCoord (buf, block->position[i]);
+			break;
+		case TE_LIGHTNING1:
+		case TE_LIGHTNING2:
+		case TE_LIGHTNING3:
+		case TE_BEAM:
+			MSG_WriteShort (buf, block->beamentity);
+			for (i = 0; i < 3; i++)
+				MSG_WriteShort (buf, block->position[i]);
+			for (i = 0; i < 3; i++)
+				MSG_WriteCoord (buf, block->beamend[i]);
+			break;
+		case TE_EXPLOSION2:
+			for (i = 0; i < 3; i++)
+				MSG_WriteCoord (buf, block->position[i]);
+			MSG_WriteByte (buf, block->colorstart);
+			MSG_WriteByte (buf, block->colorlength);
+			break;
+		case TE_GUNSHOT:
+		case TE_BLOOD:
+			MSG_WriteByte (buf, block->gunshotcount);
+			for (i = 0; i < 3; i++)
+				MSG_WriteCoord (buf, block->position[i]);
+			break;
+		default:
+			return NET_ERROR;
+	}
+
+	return buf->overflowed;
 }
 
 net_status_t
@@ -253,6 +361,8 @@ NET_SVC_TempEntity_Parse (net_svc_tempentity_t *block, msg_t *msg)
 			for (i = 0; i < 3; i++)
 				block->position[i] = MSG_ReadCoord (msg);
 			break;
+		default:
+			return NET_ERROR;
 	}
 
 	return msg->badread;

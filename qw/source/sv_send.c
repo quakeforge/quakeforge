@@ -429,16 +429,16 @@ SV_Multicast (vec3_t origin, int to)
 	Larger attenuations will drop off.  (max 4 attenuation)
 */
 void
-SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
-			   float attenuation)
+SV_StartSound (edict_t *entity, int channel, const char *sample,
+			   float volume, float attenuation)
 {
-	int         ent, field_mask, sound_num, i;
+	int         i, sound_num;
 	qboolean    use_phs;
 	qboolean    reliable = false;
-	vec3_t      origin;
+	net_svc_sound_t block;
 
-	if (volume < 0 || volume > 255)
-		SV_Error ("SV_StartSound: volume = %i", volume);
+	if (volume < 0 || volume > 1)
+		SV_Error ("SV_StartSound: volume = %f", volume);
 
 	if (attenuation < 0 || attenuation > 4)
 		SV_Error ("SV_StartSound: attenuation = %f", attenuation);
@@ -457,7 +457,9 @@ SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 		return;
 	}
 
-	ent = NUM_FOR_EDICT (&sv_pr_state, entity);
+	block.sound_num = sound_num;
+
+	block.entity = NUM_FOR_EDICT (&sv_pr_state, entity);
 
 	if ((channel & 8) || !sv_phs->int_val)	// no PHS flag
 	{
@@ -472,37 +474,34 @@ SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 //	if (channel == CHAN_BODY || channel == CHAN_VOICE)
 //		reliable = true;
 
-	channel = (ent << 3) | channel;
+	block.channel = channel;
 
-	field_mask = 0;
-	if (volume != DEFAULT_SOUND_PACKET_VOLUME)
-		channel |= SND_VOLUME;
-	if (attenuation != DEFAULT_SOUND_PACKET_ATTENUATION)
-		channel |= SND_ATTENUATION;
+	block.volume = volume;
+	// 4 * 64 == 256, which overflows a byte.  4 is the stated max for
+	// it, and I don't want to break any progs, so I just nudge it
+	// down instead
+	if (attenuation == 4)
+		attenuation = 3.999;
+	block.attenuation = attenuation;
 
 	// use the entity origin unless it is a bmodel
 	if (SVfloat (entity, solid) == SOLID_BSP) {
 		for (i = 0; i < 3; i++)
-			origin[i] = SVvector (entity, origin)[i] + 0.5 *
+			block.position[i] = SVvector (entity, origin)[i] + 0.5 *
 				(SVvector (entity, mins)[i] + SVvector (entity, maxs)[i]);
 	} else {
-		VectorCopy (SVvector (entity, origin), origin);
+		VectorCopy (SVvector (entity, origin), block.position);
 	}
 
 	MSG_WriteByte (&sv.multicast, svc_sound);
-	MSG_WriteShort (&sv.multicast, channel);
-	if (channel & SND_VOLUME)
-		MSG_WriteByte (&sv.multicast, volume);
-	if (channel & SND_ATTENUATION)
-		MSG_WriteByte (&sv.multicast, attenuation * 64);
-	MSG_WriteByte (&sv.multicast, sound_num);
-	for (i = 0; i < 3; i++)
-		MSG_WriteCoord (&sv.multicast, origin[i]);
+	NET_SVC_Sound_Emit (&block, &sv.multicast);
 
 	if (use_phs)
-		SV_Multicast (origin, reliable ? MULTICAST_PHS_R : MULTICAST_PHS);
+		SV_Multicast (block.position,
+					  reliable ? MULTICAST_PHS_R : MULTICAST_PHS);
 	else
-		SV_Multicast (origin, reliable ? MULTICAST_ALL_R : MULTICAST_ALL);
+		SV_Multicast (block.position,
+					  reliable ? MULTICAST_ALL_R : MULTICAST_ALL);
 }
 
 /* FRAME UPDATES */

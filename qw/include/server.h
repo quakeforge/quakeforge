@@ -498,8 +498,8 @@ void SV_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void SV_SendClientMessages (void);
 
 void SV_Multicast (vec3_t origin, int to);
-void SV_StartSound (struct edict_s *entity, int channel, const char *sample, int volume,
-    float attenuation);
+void SV_StartSound (struct edict_s *entity, int channel, const char *sample,
+					float volume, float attenuation);
 void SV_ClientPrintf (client_t *cl, int level, const char *fmt, ...) __attribute__((format(printf,3,4)));
 void SV_BroadcastPrintf (int level, const char *fmt, ...) __attribute__((format(printf,2,3)));
 void SV_BroadcastCommand (const char *fmt, ...) __attribute__((format(printf,1,2)));

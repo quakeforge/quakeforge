@@ -45,6 +45,7 @@ static const char rcsid[] =
 
 #include "compat.h"
 #include "crudefile.h"
+#include "net_svc.h"
 #include "server.h"
 #include "sv_pr_cmds.h"
 #include "sv_progs.h"
@@ -327,13 +328,13 @@ PF_sound (progs_t *pr)
 {
 	const char       *sample;
 	edict_t    *entity;
-	float       attenuation;
-	int         channel, volume;
+	float       volume, attenuation;
+	int         channel;
 
 	entity = G_EDICT (pr, OFS_PARM0);
 	channel = G_FLOAT (pr, OFS_PARM1);
 	sample = G_STRING (pr, OFS_PARM2);
-	volume = G_FLOAT (pr, OFS_PARM3) * 255;
+	volume = G_FLOAT (pr, OFS_PARM3);
 	attenuation = G_FLOAT (pr, OFS_PARM4);
 
 	SV_StartSound (entity, channel, sample, volume, attenuation);
@@ -1142,25 +1143,21 @@ int         SV_ModelIndex (const char *name);
 void
 PF_makestatic (progs_t *pr)
 {
-	const char *model;
 	edict_t    *ent;
-	int         i;
+	net_svc_spawnstatic_t block;
 
 	ent = G_EDICT (pr, OFS_PARM0);
 
-	MSG_WriteByte (&sv.signon, svc_spawnstatic);
-
-	model = PR_GetString (pr, SVstring (ent, model));
 //	SV_Printf ("Model: %d %s\n", SVstring (ent, model), model);
-	MSG_WriteByte (&sv.signon, SV_ModelIndex (model));
+	block.modelindex = SV_ModelIndex (PR_GetString (pr, SVstring (ent, model)));
+	block.frame = SVfloat (ent, frame);
+	block.colormap = SVfloat (ent, colormap);
+	block.skinnum = SVfloat (ent, skin);
+	VectorCopy (SVvector (ent, origin), block.origin);
+	VectorCopy (SVvector (ent, angles), block.angles);
 
-	MSG_WriteByte (&sv.signon, SVfloat (ent, frame));
-	MSG_WriteByte (&sv.signon, SVfloat (ent, colormap));
-	MSG_WriteByte (&sv.signon, SVfloat (ent, skin));
-	for (i = 0; i < 3; i++) {
-		MSG_WriteCoord (&sv.signon, SVvector (ent, origin)[i]);
-		MSG_WriteAngle (&sv.signon, SVvector (ent, angles)[i]);
-	}
+	MSG_WriteByte (&sv.signon, svc_spawnstatic);
+	NET_SVC_SpawnStatic_Emit (&block, &sv.signon);
 
 	// throw the entity away now
 	ED_Free (pr, ent);
