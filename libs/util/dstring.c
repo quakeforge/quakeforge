@@ -71,6 +71,14 @@ dstring_adjust (dstring_t *dstr)
 }
 
 void
+dstring_copy (dstring_t *dstr, const char *data, unsigned int len)
+{
+	dstr->size = len;
+	dstring_adjust (dstr);
+	memcpy (dstr->str, data, len);
+}
+
+void
 dstring_append (dstring_t *dstr, const char *data, unsigned int len)
 {
 	unsigned int ins = dstr->size;		// Save insertion point
@@ -147,6 +155,14 @@ dstring_newstr (void)
 	dstring_adjust (new);
 	new->str[0] = 0;
 	return new;
+}
+
+void
+dstring_copystr (dstring_t *dstr, const char *str)
+{
+	dstr->size = strlen (str) + 1;
+	dstring_adjust (dstr);
+	strcpy (dstr->str, str);
 }
 
 void
