@@ -385,9 +385,9 @@ C_Print (const char *fmt, va_list args)
 	static int  buffer_size, cr;
 
 	size = vsnprintf (buffer, buffer_size, fmt, args) + 1;	// +1 for nul
-	while (size < 0 || size > buffer_size) {
+	while (size <= 0 || size > buffer_size) {
 		if (size > 0)
-			buffer_size = (size + 1024) % 1024; // 1k multiples
+			buffer_size = (size + 1023) & ~1023; // 1k multiples
 		else
 			buffer_size += 1024;
 		buffer = realloc (buffer, buffer_size);
