@@ -32,7 +32,6 @@
 
 #include "QF/mathlib.h"
 #include "QF/model.h"
-#include "QF/progs.h"
 
 typedef struct
 {

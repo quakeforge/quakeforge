@@ -38,13 +38,14 @@
 #endif
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/cvar.h"
 
+#include "compat.h"
 #include "server.h"
-#include "progdefs.h"
 #include "sv_progs.h"
 #include "world.h"
+
+#define PROGHEADER_CRC 54730
 
 sv_globals_t sv_globals;
 sv_funcs_t sv_funcs;

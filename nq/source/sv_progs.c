@@ -42,9 +42,10 @@
 
 #include "host.h"
 #include "server.h"
-#include "progdefs.h" // must be after "server.h"
 #include "sv_progs.h"
 #include "world.h"
+
+#define PROGHEADER_CRC 5927
 
 progs_t     sv_pr_state;
 sv_globals_t sv_globals;

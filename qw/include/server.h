@@ -32,7 +32,6 @@
 
 #include "QF/gcc_attr.h"
 #include "QF/model.h"
-#include "QF/progs.h"
 #include "QF/sizebuf.h"
 #include "QF/info.h"
 #include "QF/vfile.h"
@@ -80,8 +79,8 @@ typedef struct
 	struct model_s		*models[MAX_MODELS];
 
 	int			num_edicts;			// increases towards MAX_EDICTS
-	edict_t		*edicts;			// can NOT be array indexed, because
-									// edict_t is variable sized, but can
+	struct edict_s		*edicts;			// can NOT be array indexed, because
+									// struct edict_s is variable sized, but can
 									// be used to reference the world ent
 
 	byte		*pvs, *phs;			// fully expanded and decompressed
@@ -162,7 +161,7 @@ typedef struct client_s
 	float			maxspeed;			// localized maxspeed
 	float			entgravity;			// localized ent gravity
 
-	edict_t			*edict;				// EDICT_NUM(clientnum+1)
+	struct edict_s			*edict;				// EDICT_NUM(clientnum+1)
 	char			name[32];			// for printing to other people
 										// extracted from userinfo
 	int				messagelevel;		// for filtering printed messages
@@ -392,7 +391,7 @@ extern	server_t		sv;					// local server
 
 extern	client_t	*host_client;
 
-extern	edict_t		*sv_player;
+extern	struct edict_s		*sv_player;
 
 extern	char		localmodels[MAX_MODELS][5];	// inline model names for precache
 
@@ -405,7 +404,7 @@ extern	VFile		*sv_fraglogfile;
 extern	double		sv_frametime;
 extern	double		realtime;
 
-extern	progs_t		sv_pr_state;
+extern	struct progs_s		sv_pr_state;
 
 //===========================================================
 // FIXME: declare exported functions in their own relevant .h
@@ -432,8 +431,8 @@ void SV_FullClientUpdate (client_t *client, sizebuf_t *buf);
 
 int SV_ModelIndex (const char *name);
 
-qboolean SV_CheckBottom (edict_t *ent);
-qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink);
+qboolean SV_CheckBottom (struct edict_s *ent);
+qboolean SV_movestep (struct edict_s *ent, vec3_t move, qboolean relink);
 
 void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg);
 
@@ -442,7 +441,7 @@ void SV_MoveToGoal (struct progs_s *pr);
 
 void SV_SaveSpawnparms (void);
 
-void SV_Physics_Client (edict_t	*ent);
+void SV_Physics_Client (struct edict_s	*ent);
 
 void SV_ExecuteUserCommand (const char *s);
 void SV_InitOperatorCommands (void);
@@ -466,12 +465,12 @@ void SV_FlushSignon (void);
 //
 void SV_ProgStartFrame (void);
 void SV_Physics (void);
-void SV_CheckVelocity (edict_t *ent);
-void SV_AddGravity (edict_t *ent, float scale);
-qboolean SV_RunThink (edict_t *ent);
-void SV_Physics_Toss (edict_t *ent);
+void SV_CheckVelocity (struct edict_s *ent);
+void SV_AddGravity (struct edict_s *ent, float scale);
+qboolean SV_RunThink (struct edict_s *ent);
+void SV_Physics_Toss (struct edict_s *ent);
 void SV_RunNewmis (void);
-void SV_Impact (edict_t *e1, edict_t *e2);
+void SV_Impact (struct edict_s *e1, struct edict_s *e2);
 void SV_SetMoveVars(void);
 
 //
@@ -481,7 +480,7 @@ void SV_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void SV_SendClientMessages (void);
 
 void SV_Multicast (vec3_t origin, int to);
-void SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
+void SV_StartSound (struct edict_s *entity, int channel, const char *sample, int volume,
     float attenuation);
 void SV_ClientPrintf (client_t *cl, int level, const char *fmt, ...) __attribute__((format(printf,3,4)));
 void SV_BroadcastPrintf (int level, const char *fmt, ...) __attribute__((format(printf,2,3)));
