@@ -194,15 +194,20 @@ Sys_Print (FILE *stream, const char *fmt, va_list args)
 
 	dvsprintf (msg, fmt, args);
 
+	if (stream == stderr) {
 #ifdef WIN32
-	if (stream == stderr)
-		MessageBox (NULL, msg->str, "Error", 0 /* MB_OK */ );
+		MessageBox (NULL, msg->str, "Fatal Error", 0 /* MB_OK */ );
 #endif
+		fputs ("Fatal Error: ", stream);
+	}
 
 	/* translate to ASCII instead of printing [xx]  --KB */
 	for (p = (unsigned char *) msg->str; *p; p++)
 		putc (sys_char_map[*p], stream);
 
+	if (stream == stderr) {
+		fputs ("\n", stream);
+	}
 	fflush (stream);
 }
 
@@ -217,7 +222,6 @@ Sys_StdPrintf (const char *fmt, va_list args)
 static void
 Sys_ErrPrintf (const char *fmt, va_list args)
 {
-	fprintf (stderr, "Fatal Error: ");
 	Sys_Print (stderr, fmt, args);
 }
 
@@ -291,7 +295,7 @@ Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 
 	if (!VirtualProtect
 		((LPVOID) startaddr, length, PAGE_READWRITE, &flOldProtect))
-		Sys_Error ("Protection change failed\n");
+		Sys_Error ("Protection change failed");
 #else
 # ifdef HAVE_MPROTECT
 	int         r;
@@ -306,7 +310,7 @@ Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 	r = mprotect ((char *) addr, length + startaddr - addr + psize, 7);
 
 	if (r < 0)
-		Sys_Error ("Protection change failed\n");
+		Sys_Error ("Protection change failed");
 # endif
 #endif
 }
@@ -358,7 +362,6 @@ Sys_Error (const char *error, ...)
 	va_start (argptr, error);
 	sys_err_printf_function (error, argptr);
 	va_end (argptr);
-	sys_err_printf_function ("\r\n", argptr);		// FIXME is argptr ok?
 
 	Sys_Shutdown ();
 
