@@ -54,6 +54,7 @@ static const char rcsid[] =
 
 #include <stdarg.h>
 #include <stdlib.h>
+#include <setjmp.h>
 
 #include "QF/cmd.h"
 #include "QF/console.h"
@@ -177,6 +178,9 @@ int         pr_gc_count = 0;
 
 void        SV_AcceptClient (netadr_t adr, int userid, char *userinfo);
 void        Master_Shutdown (void);
+
+static jmp_buf client_abort;	//Dwonis want's me to FIXME this,
+								//not that I blam him ;)
 
 
 const char *client_info_filters[] = {  // Info keys needed by client
@@ -336,6 +340,7 @@ SV_DropClient (client_t *drop)
 
 	// send notification to all remaining clients
 	SV_FullClientUpdate (drop, &sv.reliable_datagram);
+	longjmp (client_abort, 1);
 }
 
 int
@@ -1674,7 +1679,8 @@ SV_RestorePenaltyFilter (client_t *cl, filtertype_t type)
 void
 SV_ReadPackets (void)
 {
-	client_t   *cl;
+	//NOTE star volatile, not volatile star
+	client_t   *volatile cl;			// * volatile for longjmp
 	int         qport, i;
 	qboolean    good;
 	double      until;
@@ -1714,17 +1720,15 @@ SV_ReadPackets (void)
 				Con_DPrintf ("SV_ReadPackets: fixing up a translated port\n");
 				cl->netchan.remote_address.port = net_from.port;
 			}
-			if (cl->state == cs_zombie) {
-				// we dropped them, so drop their packets on the floor
-				break;
-			}
 			if (Netchan_Process (&cl->netchan)) {
 				// this is a valid, sequenced packet, so process it
 				svs.stats.packets++;
 				good = true;
 				cl->send_message = true;	// reply at end of frame
-				if (cl->state != cs_zombie)
-					SV_ExecuteClientMessage (cl);
+				if (cl->state != cs_zombie) {
+					if (!setjmp (client_abort))
+						SV_ExecuteClientMessage (cl);
+				}
 			}
 			break;
 		}
