@@ -678,7 +678,11 @@ R_DrawParticles (void)
 {
 	byte			i;
 	unsigned char  *at;
-	float			dvel, grav, fast_grav, minparticledist, scale;
+	float			dvel, grav, fast_grav, minparticledist, scale,
+					bloodcloud_alpha, bloodcloud_scale, fallfadespark_alpha,
+					fire_alpha, fire_scale, smoke_alpha, smoke_scale,
+					smokecloud_alpha, smokecloud_org, smokecloud_scale;
+
 	int				activeparticles, maxparticle, j, k;
 	particle_t	   *part;
 	vec3_t			up_scale, right_scale, up_right_scale, down_right_scale;
@@ -695,7 +699,15 @@ R_DrawParticles (void)
 	varray[3].texcoord[0] = 1; varray[3].texcoord[1] = 1;
 
 	grav = (fast_grav = r_frametime * 800) * 0.05;
-	dvel = 4 * r_frametime;
+	dvel = bloodcloud_scale = smoke_scale = r_frametime * 4;
+	smoke_alpha = r_frametime * 100;
+	smokecloud_alpha = r_frametime * 140;
+	smokecloud_scale = r_frametime * 50;
+	smokecloud_org = r_frametime * 30;
+	bloodcloud_alpha = r_frametime * 65;
+	fallfadespark_alpha = r_frametime * 256;
+	fire_alpha = r_frametime * 32;
+	fire_scale = r_frametime * 2;
 
 	minparticledist = DotProduct (r_refdef.vieworg, vpn) + 32.0f;
 
@@ -765,38 +777,38 @@ R_DrawParticles (void)
 				part->vel[2] -= grav;
 				break;
 			case pt_smoke:
-				if ((part->alpha -= r_frametime * 100) < 1)
+				if ((part->alpha -= smoke_alpha) < 1)
 					part->die = -1;
-				part->scale += r_frametime * 4;
-//				part->org[2] += r_frametime * 30 - grav;
+				part->scale += smoke_scale;
+//				part->org[2] += smokecloud_org - grav;
 				break;
 			case pt_smokecloud:
-				if ((part->alpha -= r_frametime * 140) < 1)
+				if ((part->alpha -= smokecloud_alpha) < 1)
 				{
 					part->die = -1;
 					break;
 				}
-				part->scale += r_frametime * 50;
-				part->org[2] += r_frametime * 30;
+				part->scale += smokecloud_scale;
+				part->org[2] += smokecloud_org;
 				break;
 			case pt_bloodcloud:
-				if ((part->alpha -= r_frametime * 65) < 1)
+				if ((part->alpha -= bloodcloud_alpha) < 1)
 				{
 					part->die = -1;
 					break;
 				}
-				part->scale += r_frametime * 4;
+				part->scale += bloodcloud_scale;
 				part->vel[2] -= grav;
 				break;
 			case pt_fallfadespark:
-				if ((part->alpha -= r_frametime * 256) < 1)
+				if ((part->alpha -= fallfadespark_alpha) < 1)
 					part->die = -1;
 				part->vel[2] -= fast_grav;
 				break;
 			case pt_fire:
-				if ((part->alpha -= r_frametime * 32) < 1)
+				if ((part->alpha -= fire_alpha) < 1)
 					part->die = -1;
-				part->scale -= r_frametime * 2;
+				part->scale -= fire_scale;
 				break;
 			default:
 				Con_DPrintf ("unhandled particle type %d\n", part->type);
