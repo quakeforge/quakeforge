@@ -85,7 +85,7 @@ WriteFiles (void)
 	int 	i;
 	char	filename[1024];
 
-	sprintf (filename, "%sfiles.dat", sourcedir);
+	sprintf (filename, "%s/files.dat", sourcedir);
 	f = fopen (filename, "w");
 	if (!f)
 		Error ("Couldn't open %s", filename);
