@@ -787,31 +787,6 @@ SV_Say (qboolean team)
 		host_client->whensaid[host_client->whensaidhead] = realtime;
 	}
 
-	if (sv_funcs.ChatMessage) {
-		P_STRING (&sv_pr_state, 0) = PR_SetString (&sv_pr_state, p);
-		G_FLOAT (&sv_pr_state, 1) = (float) team;
-
-		*sv_globals.time = sv.time;
-		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
-		PR_ExecuteProgram (&sv_pr_state, sv_funcs.ChatMessage);
-		if (R_FLOAT (&sv_pr_state))
-			return;
-	}
-
-	text = dstring_new ();
-
-	if (host_client->spectator && (!sv_spectalk->int_val || team)) {
-		fmt = "[SPEC] %s: ";
-		type = "2";
-	} else if (team) {
-		fmt = "(%s): ";
-		type = "1";
-	} else {
-		fmt = "%s: ";
-		type = "0";
-	}
-	dsprintf (text, fmt, host_client->name);
-
 	p = Hunk_TempAlloc (strlen (Cmd_Args (1)) + 1);
 	strcpy (p, Cmd_Args (1));
 
@@ -829,11 +804,34 @@ SV_Say (qboolean team)
 				SV_ClientPrintf (1, host_client, PRINT_HIGH, "You were kicked "
 								 "for attempting to fake messages\n");
 				SV_DropClient (host_client);
-				dstring_delete (text);
 				return;
 			} else
 				*i = '#';
 		}
+
+	if (sv_funcs.ChatMessage) {
+		P_STRING (&sv_pr_state, 0) = PR_SetString (&sv_pr_state, p);
+		G_FLOAT (&sv_pr_state, 1) = (float) team;
+
+		*sv_globals.time = sv.time;
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
+		PR_ExecuteProgram (&sv_pr_state, sv_funcs.ChatMessage);
+		if (R_FLOAT (&sv_pr_state))
+			return;
+	}
+
+	text = dstring_new ();
+	if (host_client->spectator && (!sv_spectalk->int_val || team)) {
+		fmt = "[SPEC] %s: ";
+		type = "2";
+	} else if (team) {
+		fmt = "(%s): ";
+		type = "1";
+	} else {
+		fmt = "%s: ";
+		type = "0";
+	}
+	dsprintf (text, fmt, host_client->name);
 
 	if (sv_chat_e->func)
 		GIB_Event_Callback (sv_chat_e, 2, va ("%i", host_client->userid), p,
