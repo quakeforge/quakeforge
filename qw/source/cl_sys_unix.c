@@ -30,19 +30,26 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 
+#include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <signal.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <unistd.h>
-#include <stdarg.h>
-#include <string.h>
-#include <ctype.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <limits.h>
-#include <sys/types.h>
 #include <sys/mman.h>
+#include <sys/types.h>
 
 #include "QF/cvar.h"
 #include "QF/qargs.h"
@@ -79,9 +86,6 @@ Sys_Init (void)
 #endif
 }
 
-/*
-	Sys_Quit
-*/
 void
 Sys_Quit (void)
 {
@@ -93,16 +97,13 @@ Sys_Quit (void)
 	exit (0);
 }
 
-/*
-	Sys_Error
-*/
 void
 Sys_Error (const char *error, ...)
 {
-	va_list     argptr;
 	char        string[1024];
+	va_list     argptr;
 
-// change stdin to non blocking
+	// change stdin to non blocking
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
 
 	va_start (argptr, error);
@@ -142,14 +143,12 @@ Sys_DebugLog (const char *file, const char *fmt, ...)
 	close (fd);
 }
 
-
 void
 floating_point_exception_handler (int whatever)
 {
 //	Sys_Warn("floating point exception\n");
 	signal (SIGFPE, floating_point_exception_handler);
 }
-
 
 /*
 	Sys_ConsoleInput
@@ -176,13 +175,11 @@ Sys_ConsoleInput (void)
 	return NULL;
 }
 
-
 #ifndef USE_INTEL_ASM
 void
 Sys_HighFPPrecision (void)
 {
 }
-
 
 void
 Sys_LowFPPrecision (void)
@@ -192,14 +189,11 @@ Sys_LowFPPrecision (void)
 
 int         skipframes;
 
-/*
-	main
-*/
 int
 main (int c, const char *v[])
 {
-	double      time, oldtime, newtime;
 	int         j;
+	double      time, oldtime, newtime;
 
 //	static char cwd[1024];
 

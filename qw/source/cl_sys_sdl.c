@@ -29,37 +29,40 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
-#ifdef HAVE_IO_H
-# include <io.h>
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
 #endif
 #ifdef HAVE_CONIO_H
 # include <conio.h>
 #endif
+#ifdef HAVE_IO_H
+# include <io.h>
+#endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 
 #ifndef _WIN32
-# include <unistd.h>
 # include <stdarg.h>
-# include <string.h>
 # include <ctype.h>
-# include <fcntl.h>
 # include <signal.h>
-# include <limits.h>
 # include <sys/types.h>
 # include <sys/mman.h>
 #endif
 
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <SDL.h>
 #include <SDL_main.h>
 
 #include "QF/cvar.h"
 #include "QF/sys.h"
-#include "QF/qargs.h"
 #include "QF/qargs.h"
 
 #include "client.h"
@@ -74,8 +77,7 @@ int         noconinput;
 
 #ifdef _WIN32
 # include "winquake.h"
-						// FIXME: minimized is not currently supported under
-						// SDL
+// FIXME: minimized is not currently supported under SDL
 qboolean    Minimized = false;
 void        MaskExceptions (void);
 #endif
@@ -110,8 +112,7 @@ Sys_Init (void)
 #endif
 
 #ifdef _WIN32
-	// make sure the timer is high precision, otherwise
-	// NT gets 18ms resolution
+	// make sure the timer is high precision, otherwise NT gets 18ms resolution
 	timeBeginPeriod (1);
 
 	vinfo.dwOSVersionInfoSize = sizeof (vinfo);
@@ -127,9 +128,6 @@ Sys_Init (void)
 #endif
 }
 
-/*
-	Sys_Quit
-*/
 void
 Sys_Quit (void)
 {
@@ -137,15 +135,11 @@ Sys_Quit (void)
 	exit (0);
 }
 
-
-/*
-	Sys_Error
-*/
 void
 Sys_Error (const char *error, ...)
 {
-	va_list     argptr;
 	char        text[1024];
+	va_list     argptr;
 
 #ifndef _WIN32
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
@@ -180,7 +174,6 @@ Sys_DebugLog (const char *file, const char *fmt, ...)
 	close (fd);
 };
 
-
 /*
 	Sys_ConsoleInput
 
@@ -193,13 +186,11 @@ Sys_ConsoleInput (void)
 	return NULL;
 }
 
-
 #ifndef USE_INTEL_ASM
 void
 Sys_HighFPPrecision (void)
 {
 }
-
 
 void
 Sys_LowFPPrecision (void)
@@ -207,25 +198,20 @@ Sys_LowFPPrecision (void)
 }
 #endif
 
-
 void
 Sys_Sleep (void)
 {
 }
 
-
 #ifndef SDL_main
 # define SDL_main main
 #endif
 
-/*
-	main
-*/
 int
 SDL_main (int c, char **v)
 {
-	double      time, oldtime, newtime;
 	int         j;
+	double      time, oldtime, newtime;
 
 #ifndef WIN32
 	signal (SIGFPE, SIG_IGN);

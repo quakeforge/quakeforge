@@ -29,13 +29,17 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_CONIO_H
+# include <conio.h>
+#endif
+#ifdef HAVE_IO_H
+# include <io.h>
+#endif
 
-#include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
-#include <io.h>
-#include <conio.h>
+#include <stdio.h>
 #include <windows.h>
 
 #include "QF/console.h"
@@ -52,35 +56,32 @@
 #include "net.h"
 #include "resource.h"
 
-qboolean    is_server = false;
-char       *svs_info;
-
-#define MINIMUM_WIN_MEMORY	0x0c00000
 #define MAXIMUM_WIN_MEMORY	0x1000000
+#define MINIMUM_WIN_MEMORY	0x0c00000
 
 #define PAUSE_SLEEP		50				// sleep time on pause or
 										// minimization
 #define NOT_FOCUS_SLEEP	20				// sleep time when not focus
 
+char       *svs_info;
+
 int         starttime;
-qboolean    ActiveApp, Minimized;
-qboolean    WinNT;
+
+qboolean    ActiveApp, Minimized, WinNT;
+qboolean    is_server = false;
 
 HWND        hwnd_dialog;				// startup dialog box
 
-static HANDLE hinput, houtput;
-
 HANDLE      qwclsemaphore;
 
-static HANDLE tevent;
+static HANDLE hinput, houtput, tevent;
 
 extern cvar_t *sys_nostdout;
-
-void        Sys_InitFloatTime (void);
 
 void        MaskExceptions (void);
 void        Sys_PopFPCW (void);
 void        Sys_PushFPCW_SetHigh (void);
+void        Sys_InitFloatTime (void);
 
 
 /*
@@ -92,8 +93,8 @@ void        Sys_PushFPCW_SetHigh (void);
 void
 Sys_Init_Cvars (void)
 {
-	sys_nostdout = Cvar_Get ("sys_nostdout", "1", CVAR_NONE, NULL,
-							 "unset to enable std out - windows does NOT support this");
+	sys_nostdout = Cvar_Get ("sys_nostdout", "1", CVAR_NONE, NULL, "unset to "
+							 "enable std out - windows does NOT support this");
 }
 
 void
@@ -101,29 +102,27 @@ Sys_Init (void)
 {
 	OSVERSIONINFO vinfo;
 
-	// allocate a named semaphore on the client so the
-	// front end can tell if it is alive
+	// allocate named semaphore on client so front end can tell if it's alive
 
 	// mutex will fail if semephore allready exists
-	qwclsemaphore = CreateMutex (NULL,	/* Security attributes */
-								 0,		/* owner       */
-								 "qwcl");	/* Semaphore name      */
+	qwclsemaphore = CreateMutex (NULL, /* Security attributes */
+								 0,	/* owner */
+								 "qwcl"); /* Semaphore name */
 	if (!qwclsemaphore)
 		Sys_Error ("QWCL is already running on this system");
 	CloseHandle (qwclsemaphore);
 
-	qwclsemaphore = CreateSemaphore (NULL,	/* Security attributes */
-									 0,	/* Initial count       */
-									 1,	/* Maximum count       */
-									 "qwcl");	/* Semaphore name      */
+	qwclsemaphore = CreateSemaphore (NULL, /* Security attributes */
+									 0,	/* Initial count */
+									 1,	/* Maximum count */
+									 "qwcl"); /* Semaphore name */
 
 #ifdef USE_INTEL_ASM
 	MaskExceptions ();
 	Sys_SetFPCW ();
 #endif
 
-	// make sure the timer is high precision, otherwise
-	// NT gets 18ms resolution
+	// make sure the timer is high precision, otherwise NT gets 18ms resolution
 	timeBeginPeriod (1);
 
 	vinfo.dwOSVersionInfoSize = sizeof (vinfo);
@@ -143,9 +142,6 @@ Sys_Init (void)
 		WinNT = false;
 }
 
-/*
-	Sys_Quit
-*/
 void
 Sys_Quit (void)
 {
@@ -164,16 +160,12 @@ Sys_Quit (void)
 	exit (0);
 }
 
-/*
-	Sys_Error
-*/
 void
 Sys_Error (const char *error, ...)
 {
-	va_list     argptr;
 	char        text[1024];				// , text2[1024];
-
-//  DWORD       dummy;
+	va_list     argptr;
+//	DWORD       dummy;
 
 	Host_Shutdown ();
 
@@ -191,9 +183,9 @@ Sys_Error (const char *error, ...)
 void
 Sys_DebugLog (const char *file, const char *fmt, ...)
 {
-	va_list     argptr;
 	static char data[1024];
 	int         fd;
+	va_list     argptr;
 
 	va_start (argptr, fmt);
 	vsnprintf (data, sizeof (data), fmt, argptr);
@@ -203,12 +195,10 @@ Sys_DebugLog (const char *file, const char *fmt, ...)
 	close (fd);
 };
 
-
 int
 wfilelength (VFile *f)
 {
-	int         pos;
-	int         end;
+	int         end, pos;
 
 	pos = Qtell (f);
 	Qseek (f, 0, SEEK_END);
@@ -227,16 +217,13 @@ wfilelength (VFile *f)
 const char *
 Sys_ConsoleInput (void)
 {
-	static char text[256];
-	static int  len;
+	char        *clipText, *textCopied;
+	int          ch, i;										// , count;
+	static char  text[256];
+	static int   len;
 	INPUT_RECORD recs[1024];
-
-//  int     count;
-	int         i;
-	int         ch;
-	DWORD       numread, numevents, dummy;
-	HANDLE      th;
-	char       *clipText, *textCopied;
+	DWORD        numread, numevents, dummy;
+	HANDLE       th;
 
 	for (;;) {
 		if (!GetNumberOfConsoleInputEvents (hinput, &numevents))
@@ -296,7 +283,7 @@ Sys_ConsoleInput (void)
 										textCopied =
 											malloc (GlobalSize (th) + 1);
 										strcpy (textCopied, clipText);
-/* Substitutes a NULL for every token */
+										// Substitutes a NULL for every token
 											strtok (textCopied, "\n\r\b");
 										i = strlen (textCopied);
 										if (i + len >= 256)
@@ -344,25 +331,20 @@ SleepUntilInput (int time)
 	MsgWaitForMultipleObjects (1, &tevent, FALSE, time, QS_ALLINPUT);
 }
 
-
 HINSTANCE   global_hInstance;
 int         global_nCmdShow;
 char       *argv[MAX_NUM_ARGVS];
 static char *empty_string = "";
 
-
-/*
-	main
-*/
 int WINAPI
 WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		 int nCmdShow)
 {
 //	MSG               msg;
-	double      time, oldtime, newtime;
-	MEMORYSTATUS lpBuffer;
 	static char cwd[1024];
 	int         t;
+	double      time, oldtime, newtime;
+	MEMORYSTATUS lpBuffer;
 #ifdef SPLASH_SCREEN
 	RECT        rect;
 #endif
@@ -412,8 +394,8 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	host_parms.argv = com_argv;
 
 #ifdef SPLASH_SCREEN
-	hwnd_dialog =
-		CreateDialog (hInstance, MAKEINTRESOURCE (IDD_DIALOG1), NULL, NULL);
+	hwnd_dialog = CreateDialog (hInstance, MAKEINTRESOURCE (IDD_DIALOG1),
+								NULL, NULL);
 
 	if (hwnd_dialog) {
 		if (GetWindowRect (hwnd_dialog, &rect)) {
@@ -430,9 +412,9 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	}
 #endif
 
-// take the greater of all the available memory or half the total memory,
-// but at least 8 Mb and no more than 16 Mb, unless they explicitly
-// request otherwise
+	// take the greater of all the available memory or half the total memory,
+	// but at least 8 Mb and no more than 16 Mb, unless they explicitly
+	// request otherwise
 	host_parms.memsize = lpBuffer.dwAvailPhys;
 
 	if (host_parms.memsize < MINIMUM_WIN_MEMORY)
@@ -462,7 +444,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		Sys_Error ("Couldn't create event");
 
 	// because sound is off until we become active
-	//XXX S_BlockSound ();
+	// XXX S_BlockSound ();
 
 	Sys_Printf ("Host_Init\n");
 	Host_Init ();
@@ -471,8 +453,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 
 	/* main window message loop */
 	while (1) {
-		// yield the CPU for a little while when paused, minimized, or not
-		// the focus
+		// yield CPU for a little bit when paused, minimized, or not the focus
 		if ((cl.paused && (!ActiveApp && !DDActive)) || Minimized
 			|| block_drawing) {
 			SleepUntilInput (PAUSE_SLEEP);
