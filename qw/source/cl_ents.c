@@ -797,6 +797,7 @@ CL_LinkPlayers (void)
 		// spawn light flashes, even ones coming from invisible objects
 		if (j == cl.playernum) {
 			VectorCopy (cl.simorg, org);
+			r_player_entity = &cl_player_ents[state - frame->playerstate];
 		} else
 			VectorCopy (state->origin, org);
 
@@ -805,9 +806,12 @@ CL_LinkPlayers (void)
 		// things (due to lack of lights?), so I'm leaving this as is for now.
 
 		// the player object never gets added
-		if (j == cl.playernum && !Cam_DrawPlayer (j)) {
-			r_player_entity = &cl_player_ents[state - frame->playerstate];
-			continue;
+		if (j == cl.playernum) {
+			if (!Cam_DrawPlayer (-1))
+				continue;
+		} else {
+			if (!Cam_DrawPlayer (j))
+				continue;
 		}
 
 		if (!state->modelindex)
@@ -818,9 +822,6 @@ CL_LinkPlayers (void)
 			&& ((i = state->frame) == 49 || i == 60 || i == 69 || i == 84
 				|| i == 93 || i == 102))
 			continue;
-
-		//if (Cam_DrawPlayer (j))
-		//	continue;
 
 		// grab an entity to fill in
 		ent = R_NewEntity ();

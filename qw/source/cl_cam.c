@@ -158,12 +158,20 @@ Cam_DrawViewModel (void)
 qboolean
 Cam_DrawPlayer (int playernum)
 {
-	if (cl.chase == 0 || chase_active->int_val == 0)
-		return false;
-
-	if (cl.spectator && autocam && locked && cl_chasecam->int_val &&
-		spec_track == playernum)
-		return true;
+	if (playernum < 0) {
+		// client player
+		if (cl.chase == 0 || chase_active->int_val == 0)
+			return false;
+		if (!cl.spectator)
+			return true;
+	} else {
+		if (!cl_chasecam->int_val)
+			return true;
+		if (cl.spectator && autocam && locked && spec_track == playernum)
+			return false;
+		if (cl.chase == 0 || chase_active->int_val == 0)
+			return true;
+	}
 	return false;
 }
 
