@@ -64,6 +64,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "server.h"
 #include "sv_demo.h"
 #include "sv_progs.h"
+#include "sv_gib.h"
 #include "world.h"
 
 typedef struct ucmd_s {
@@ -93,8 +94,6 @@ cvar_t     *sv_timekick_fuzz;
 cvar_t     *sv_timekick_interval;
 cvar_t     *sv_timecheck_fuzz;
 cvar_t     *sv_timecheck_decay;
-
-gib_event_t	*sv_chat_e;
 
 //	USER STRINGCMD EXECUTION host_client and sv_player will be valid.
 
@@ -169,6 +168,10 @@ SV_New_f (ucmd_t *cmd)
 	MSG_WriteString (&host_client->netchan.message,
 					 va ("fullserverinfo \"%s\"\n",
 						 Info_MakeString (svs.info, 0)));
+
+	// Trigger GIB connection event
+	if (sv_client_connect_e->func)
+		GIB_Event_Callback (sv_client_connect_e, 1, va("%u", host_client->userid));
 }
 
 static void
@@ -540,6 +543,10 @@ SV_Begin_f (ucmd_t *cmd)
 						SVvector (ent, angles)[i]);
 	MSG_WriteAngle (&host_client->netchan.message, 0);
 #endif
+
+	// Trigger GIB events
+	if (sv_client_spawn_e->func)
+		GIB_Event_Callback (sv_client_spawn_e, 1, va("%u", host_client->userid));
 }
 
 //=============================================================================
@@ -1811,5 +1818,4 @@ SV_UserInit (void)
 								   "\"forgiven\".");
 	sv_kickfake = Cvar_Get ("sv_kickfake", "1", CVAR_NONE, NULL,
 							"Kick users sending to send fake talk messages");
-	sv_chat_e = GIB_Event_New ("chat");
 }

@@ -94,6 +94,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "server.h"
 #include "sv_demo.h"
 #include "sv_progs.h"
+#include "sv_gib.h"
 
 SERVER_PLUGIN_PROTOS
 static plugin_list_t server_plugin_list[] = {
@@ -382,6 +383,10 @@ SV_DropClient (client_t *drop)
 
 	// send notification to all remaining clients
 	SV_FullClientUpdate (drop, &sv.reliable_datagram);
+	
+	// Trigger GIB event
+	if (sv_client_disconnect_e->func)
+		GIB_Event_Callback (sv_client_disconnect_e, 1, va("%u", drop->userid));
 }
 
 int

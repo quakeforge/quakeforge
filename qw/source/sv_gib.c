@@ -42,9 +42,15 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/hash.h"
 #include "QF/info.h"
 #include "QF/gib_builtin.h"
+#include "QF/gib_thread.h"
 
 #include "server.h"
 #include "client.h"
+
+gib_event_t *sv_chat_e;
+gib_event_t *sv_client_connect_e;
+gib_event_t *sv_client_disconnect_e;
+gib_event_t *sv_client_spawn_e;
 
 static client_t *
 SV_GIB_GetClient (int uid)
@@ -107,7 +113,14 @@ SV_GIB_Client_GetInfo_f (void)
 void	
 SV_GIB_Init (void)
 {
+	// Builtins
 	GIB_Builtin_Add ("client::getList", SV_GIB_Client_GetList_f);
 	GIB_Builtin_Add ("client::getKeys", SV_GIB_Client_GetKeys_f);
 	GIB_Builtin_Add ("client::getInfo", SV_GIB_Client_GetInfo_f);
+	
+	// Events
+	sv_chat_e = GIB_Event_New ("chat");
+	sv_client_connect_e = GIB_Event_New ("client.connect");
+	sv_client_disconnect_e = GIB_Event_New ("client.disconnect");
+	sv_client_spawn_e = GIB_Event_New ("client.spawn");
 }
