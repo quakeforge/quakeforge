@@ -370,7 +370,8 @@ type_or_name (char *token)
 	}
 	keyword = Hash_Find (keyword_tab, token);
 	if (keyword) {
-		if (token[0] == '@' && !class_Class.super_class)
+		if (!options.traditional && token[0] == '@'
+			&& !class_Class.super_class)
 			class_init ();
 		yylval.type = keyword->type;
 		return keyword->value;
