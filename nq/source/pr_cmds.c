@@ -1358,6 +1358,7 @@ void
 SV_PR_Cmds_Init ()
 {
 	PR_Cmds_Init (&sv_pr_state);
+	PR_Obj_Progs_Init (&sv_pr_state);
 
 	PR_AddBuiltin (&sv_pr_state, "makevectors", PF_makevectors, 1);	// void(entity e) makevectors = #1
 	PR_AddBuiltin (&sv_pr_state, "setorigin", PF_setorigin, 2);	// void(entity e, vector o) setorigin = #2

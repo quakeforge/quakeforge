@@ -1601,6 +1601,7 @@ void
 SV_PR_Cmds_Init ()
 {
 	PR_Cmds_Init (&sv_pr_state);
+	PR_Obj_Progs_Init (&sv_pr_state);
 
 	sv_pr_state.builtins[45] = 0;	// (override standard builtin)
 	PR_AddBuiltin (&sv_pr_state, "cvar", PF_sv_cvar, 45);
