@@ -238,8 +238,8 @@ S_EndPrecaching (void)
 void
 S_ExtraUpdate (void)
 {
-	if (snd_render_funcs)
-		snd_render_funcs->pS_ExtraUpdate ();
+	//if (snd_render_funcs)
+	//	snd_render_funcs->pS_ExtraUpdate ();
 }
 
 void

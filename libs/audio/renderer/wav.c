@@ -145,6 +145,9 @@ wav_stream (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
 	stream->buffer.advance = SND_StreamAdvance;
 	stream->buffer.sfx = sfx;
 
+	stream->resample (&stream->buffer, 0, 0);		// get sfx setup properly
+	stream->seek (stream->file, 0, &stream->wavinfo);
+
 	stream->buffer.advance (&stream->buffer, 0);
 }
 
@@ -236,10 +239,10 @@ get_info (QFile *file)
 		if (dltxt)
 			info.samples = info.loopstart + dltxt->len;
 		else
-			info.samples = data->ck.len / info.width;
+			info.samples = data->ck.len /  (info.width * info.channels);
 	} else {
 		info.loopstart = -1;
-		info.samples = data->ck.len / info.width;
+		info.samples = data->ck.len / (info.width * info.channels);
 	}
 	info.dataofs = *(int *)data->data;
 	info.datalen = data->ck.len;
@@ -261,10 +264,10 @@ SND_LoadWav (QFile *file, sfx_t *sfx, char *realname)
 	}
 
 	if (info.samples / info.rate < 3) {
-		printf ("cache %s\n", realname);
+		Sys_DPrintf ("cache %s\n", realname);
 		wav_cache (sfx, realname, file, info);
 	} else {
-		printf ("stream %s\n", realname);
+		Sys_DPrintf ("stream %s\n", realname);
 		wav_stream (sfx, realname, file, info);
 	}
 }

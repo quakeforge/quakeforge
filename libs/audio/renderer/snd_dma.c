@@ -529,11 +529,14 @@ SND_UpdateAmbientSounds (void)
 	}
 }
 
+extern double realtime;
+
 static void
 SND_GetSoundtime (void)
 {
 	int			fullsamples, samplepos;
 	static int	buffers, oldsamplepos;
+	static double oldrealtime;
 
 	fullsamples = shm->samples / shm->channels;
 
@@ -557,6 +560,9 @@ SND_GetSoundtime (void)
 	sound_delta = soundtime;
 	soundtime = buffers * fullsamples + samplepos / shm->channels;
 	sound_delta = soundtime - sound_delta;
+
+	sound_delta = (int)((realtime - oldrealtime) * shm->speed);
+	oldrealtime = realtime;
 }
 
 static void

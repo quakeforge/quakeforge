@@ -46,6 +46,7 @@ QF_ALSA_NEED (snd_pcm_uframes_t, snd_pcm_hw_params_set_period_size_near, (snd_pc
 QF_ALSA_NEED (unsigned int, snd_pcm_hw_params_set_rate_near, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, unsigned int val, int *dir))
 QF_ALSA_NEED (size_t, snd_pcm_hw_params_sizeof, (void))
 QF_ALSA_NEED (int, snd_pcm_mmap_begin, (snd_pcm_t *pcm, const snd_pcm_channel_area_t **areas, snd_pcm_uframes_t *offset, snd_pcm_uframes_t *frames))
+QF_ALSA_NEED (int, snd_pcm_avail_update, (snd_pcm_t *pcm))
 QF_ALSA_NEED (snd_pcm_sframes_t, snd_pcm_mmap_commit, (snd_pcm_t *pcm, snd_pcm_uframes_t offset, snd_pcm_uframes_t frames))
 QF_ALSA_NEED (int, snd_pcm_open, (snd_pcm_t **pcm, const char *name, snd_pcm_stream_t stream, int mode))
 QF_ALSA_NEED (int, snd_pcm_pause, (snd_pcm_t *pcm, int enable))

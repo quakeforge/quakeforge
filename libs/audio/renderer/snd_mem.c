@@ -116,6 +116,7 @@ read_samples (sfxbuffer_t *buffer, int count)
 	if (buffer->head + count > buffer->length) {
 		count -= buffer->length - buffer->head;
 		read_samples (buffer, buffer->length - buffer->head);
+		read_samples (buffer, count);
 	} else {
 		byte       *data;
 		float       stepscale;
@@ -123,6 +124,9 @@ read_samples (sfxbuffer_t *buffer, int count)
 		sfx_t      *sfx = buffer->sfx;
 		sfxstream_t *stream = (sfxstream_t *) sfx->data;
 		wavinfo_t  *info = &stream->wavinfo;
+
+		if (count <= 0)
+			Sys_Error ("read_samples: count <= 0");
 
 		stepscale = (float) info->rate / shm->speed;	// usually 0.5, 1, or 2
 
@@ -162,6 +166,8 @@ SND_StreamAdvance (sfxbuffer_t *buffer, int count)
 			headpos = sfx->length;
 		else
 			headpos -= sfx->length - sfx->loopstart;
+		if (headpos > sfx->length)
+			Sys_Error ("huh");
 	}
 
 	if (samples < count) {
@@ -261,6 +267,7 @@ SND_Load (sfx_t *sfx)
 		SND_LoadWav (file, sfx, realname);
 		return;
 	}
+	Qclose (file);
 	free (realname);
 }
 
@@ -326,6 +333,9 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length)
 		outwidth = 2;
 		sc->paint = SND_PaintChannelFrom16;
 	}
+
+	if (!length)
+		return;
 
 	// resample / decimate to the current source rate
 	if (stepscale == 1) {
@@ -443,6 +453,9 @@ SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length)
 		sc->paint = SND_PaintChannelStereo16;
 	}
 
+	if (!length)
+		return;
+
 	// resample / decimate to the current source rate
 	if (stepscale == 1) {
 		if (inwidth == 1 && outwidth == 1) {
@@ -532,5 +545,11 @@ SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length)
 				}
 			}
 		}
+	}
+	{
+		byte       *x = sc->data + sc->length * outwidth * 2;
+		if (memcmp (x, "\xde\xad\xbe\xef", 4))
+			Sys_Error ("SND_ResampleMono screwed the pooch %02x%02x%02x%02x",
+					   x[0], x[1], x[2], x[3]);
 	}
 }

@@ -275,6 +275,9 @@ vorbis_stream (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 	stream->buffer.advance = SND_StreamAdvance;
 	stream->buffer.sfx = sfx;
 
+	stream->resample (&stream->buffer, 0, 0);		// get sfx setup properly
+	stream->seek (stream->file, 0, &stream->wavinfo);
+
 	stream->buffer.advance (&stream->buffer, 0);
 }
 
@@ -296,10 +299,10 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 		return;
 	}
 	if (info.samples / info.rate < 3) {
-		printf ("cache %s\n", realname);
+		Sys_DPrintf ("cache %s\n", realname);
 		vorbis_cache (sfx, realname, &vf, info);
 	} else {
-		printf ("stream %s\n", realname);
+		Sys_DPrintf ("stream %s\n", realname);
 		vorbis_stream (sfx, realname, &vf, info);
 	}
 }

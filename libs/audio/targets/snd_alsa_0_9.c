@@ -291,6 +291,7 @@ SNDDMA_GetDMAPos (void)
 	if (!snd_inited)
 		return 0;
 
+	qfsnd_pcm_avail_update (pcm);
 	qfsnd_pcm_mmap_begin (pcm, &areas, &offset, &nframes);
 	offset *= shm->channels;
 	nframes *= shm->channels;
