@@ -87,6 +87,11 @@ sfx_t      *cl_sfx_imp;
 sfx_t      *cl_sfx_rail;
 #endif
 
+model_t    *cl_mod_bolt;
+model_t    *cl_mod_bolt2;
+model_t    *cl_mod_bolt3;
+model_t    *cl_spr_explod;
+
 static const particle_effect_t prot_to_rend[]={
 	PE_SPIKE,				// TE_SPIKE
 	PE_SUPERSPIKE,			// TE_SUPERSPIKE
@@ -123,6 +128,11 @@ CL_TEnts_Init (void)
 	cl_sfx_imp = S_PrecacheSound ("shambler/sattck1.wav");
 	cl_sfx_rail = S_PrecacheSound ("weapons/lstart.wav");
 #endif
+
+	cl_mod_bolt = Mod_ForName ("progs/bolt.mdl", true);
+	cl_mod_bolt2 = Mod_ForName ("progs/bolt2.mdl", true);
+	cl_mod_bolt3 = Mod_ForName ("progs/bolt3.mdl", true);
+	cl_spr_explod = Mod_ForName ("progs/s_explod.spr", true);
 }
 
 
@@ -320,7 +330,7 @@ CL_ParseTEnt (void)
 			ex = CL_AllocExplosion ();
 			VectorCopy (pos, ex->ent.origin);
 			ex->start = cl.time;
-			ex->ent.model = Mod_ForName ("progs/s_explod.spr", true);
+			ex->ent.model = cl_spr_explod;
 			break;
 
 		case TE_TAREXPLOSION:			// tarbaby explosion
@@ -333,15 +343,15 @@ CL_ParseTEnt (void)
 			break;
 
 		case TE_LIGHTNING1:			// lightning bolts
-			CL_ParseBeam (Mod_ForName ("progs/bolt.mdl", true));
+			CL_ParseBeam (cl_mod_bolt);
 			break;
 
 		case TE_LIGHTNING2:			// lightning bolts
-			CL_ParseBeam (Mod_ForName ("progs/bolt2.mdl", true));
+			CL_ParseBeam (cl_mod_bolt2);
 			break;
 
 		case TE_LIGHTNING3:			// lightning bolts
-			CL_ParseBeam (Mod_ForName ("progs/bolt3.mdl", true));
+			CL_ParseBeam (cl_mod_bolt3);
 			break;
 
 		// PGM 01/21/97
