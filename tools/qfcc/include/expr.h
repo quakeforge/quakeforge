@@ -163,9 +163,6 @@ expr_t *cast_expr (struct type_s *t, expr_t *e);
 
 void init_elements (struct def_s *def, expr_t *eles);
 
-struct def_s *emit_statement (int line, opcode_t *op, struct def_s *var_a, struct def_s *var_b, struct def_s *var_c);
-void emit_expr (expr_t *e);
-
 expr_t *error (expr_t *e, const char *fmt, ...) __attribute__((format(printf, 2,3)));
 void warning (expr_t *e, const char *fmt, ...) __attribute__((format(printf, 2,3)));
 void notice (expr_t *e, const char *fmt, ...) __attribute__((format(printf, 2,3)));

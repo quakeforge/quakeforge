@@ -47,6 +47,7 @@ static const char rcsid[] =
 
 #include "debug.h"
 #include "def.h"
+#include "emit.h"
 #include "expr.h"
 #include "function.h"
 #include "immediate.h"
@@ -253,7 +254,7 @@ emit_function (function_t *f, expr_t *e)
 		emit_expr (e);
 		e = e->next;
 	}
-	emit_statement (pr.source_line, op_done, 0, 0, 0);
+	emit_statement (0, op_done, 0, 0, 0);
 	flush_scope (current_scope, 0);
 	current_scope = pr.scope;
 	reset_tempdefs ();

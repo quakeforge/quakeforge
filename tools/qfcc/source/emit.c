@@ -46,6 +46,7 @@ static const char rcsid[] =
 
 #include "def.h"
 #include "debug.h"
+#include "emit.h"
 #include "expr.h"
 #include "immediate.h"
 #include "opcodes.h"
@@ -74,22 +75,18 @@ add_statement_ref (def_t *def, dstatement_t *st, reloc_type type)
 }
 
 def_t *
-emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b,
+emit_statement (expr_t *e, opcode_t *op, def_t *var_a, def_t *var_b,
 				def_t *var_c)
 {
 	dstatement_t *statement;
 	def_t      *ret;
 
 	if (!op) {
-		expr_t      e;
-
-		e.line = sline;
-		e.file = pr.source_file;
-		error (&e, "ice ice baby\n");
+		error (e, "ice ice baby\n");
 		abort ();
 	}
 	if (options.code.debug) {
-		int         line = sline - lineno_base;
+		int         line = e->line - lineno_base;
 
 		if (line != linenos[num_linenos - 1].line) {
 			pr_lineno_t *lineno = new_lineno ();
@@ -142,7 +139,7 @@ emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b,
 }
 
 void
-emit_branch (int line, opcode_t *op, expr_t *e, expr_t *l)
+emit_branch (expr_t *_e, opcode_t *op, expr_t *e, expr_t *l)
 {
 	dstatement_t *st;
 	reloc_t    *ref;
@@ -152,7 +149,7 @@ emit_branch (int line, opcode_t *op, expr_t *e, expr_t *l)
 	if (e)
 		def = emit_sub_expr (e, 0);
 	st = &pr.statements[ofs = pr.num_statements];
-	emit_statement (line, op, def, 0, 0);
+	emit_statement (_e, op, def, 0, 0);
 	if (l->e.label.ofs) {
 		if (op == op_goto)
 			st->a = l->e.label.ofs - ofs;
@@ -185,17 +182,17 @@ emit_function_call (expr_t *e, def_t *dest)
 		arg = emit_sub_expr (earg, &parm);
 		if (earg->type != ex_expr && earg->type != ex_uexpr) {
 			op = opcode_find ("=", arg, &parm, &def_void);
-			emit_statement (e->line, op, arg, &parm, 0);
+			emit_statement (e, op, arg, &parm, 0);
 		}
 	}
 	op = opcode_find (va ("<CALL%d>", count), &def_function, &def_void,
 						 &def_void);
-	emit_statement (e->line, op, func, 0, 0);
+	emit_statement (e, op, func, 0, 0);
 
 	def_ret.type = func->type->aux_type;
 	if (dest) {
 		op = opcode_find ("=", dest, &def_ret, &def_void);
-		emit_statement (e->line, op, &def_ret, dest, 0);
+		emit_statement (e, op, &def_ret, dest, 0);
 		return dest;
 	} else {
 		return &def_ret;
@@ -239,7 +236,7 @@ emit_assign_expr (int oper, expr_t *e)
 		def_b = emit_sub_expr (e2, def_a);
 		if (def_b != def_a) {
 			op = opcode_find (operator, def_b, def_a, &def_void);
-			emit_statement (e->line, op, def_b, def_a, 0);
+			emit_statement (e, op, def_b, def_a, 0);
 		}
 		return def_a;
 	} else {
@@ -256,7 +253,7 @@ emit_assign_expr (int oper, expr_t *e)
 			def_c = 0;
 			op = opcode_find (operator, def_b, def_a, &def_void);
 		}
-		emit_statement (e->line, op, def_b, def_a, def_c);
+		emit_statement (e, op, def_b, def_a, def_c);
 		return def_b;
 	}
 }
@@ -294,7 +291,7 @@ emit_address_expr (expr_t *e)
 	def_a = emit_sub_expr (e->e.expr.e1, 0);
 	def_b = emit_sub_expr (e->e.expr.e2, 0);
 	op = opcode_find ("&", def_a, def_b, 0);
-	d = emit_statement (e->line, op, def_a, def_b, 0);
+	d = emit_statement (e, op, def_a, def_b, 0);
 	return d;
 }
 
@@ -317,7 +314,7 @@ emit_deref_expr (expr_t *e, def_t *dest)
 			zero.type = ex_short;
 			z = emit_sub_expr (&zero, 0);
 			op = opcode_find (".", d, z, dest);
-			d = emit_statement (e->line, op, d, z, dest);
+			d = emit_statement (e, op, d, z, dest);
 		}
 		return d;
 	}
@@ -338,7 +335,7 @@ emit_deref_expr (expr_t *e, def_t *dest)
 		zero.type = ex_short;
 		z = emit_sub_expr (&zero, 0);
 		op = opcode_find (".", d, z, dest);
-		d = emit_statement (e->line, op, d, z, dest);
+		d = emit_statement (e, op, d, z, dest);
 	} else {
 		if (!d->name)
 			d->type = type;
@@ -397,7 +394,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 				dest->users += 2;
 			}
 			op = opcode_find (operator, def_a, def_b, dest);
-			d = emit_statement (e->line, op, def_a, def_b, dest);
+			d = emit_statement (e, op, def_a, def_b, dest);
 			break;
 		case ex_uexpr:
 			switch (e->e.expr.op) {
@@ -459,7 +456,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					abort ();
 			}
 			op = opcode_find (operator, def_a, def_b, dest);
-			d = emit_statement (e->line, op, def_a, def_b, dest);
+			d = emit_statement (e, op, def_a, def_b, dest);
 			break;
 		case ex_def:
 			d = e->e.def;
@@ -528,22 +525,22 @@ emit_expr (expr_t *e)
 					emit_assign_expr (e->e.expr.op, e);
 					break;
 				case 'n':
-					emit_branch (e->line, op_ifnot, e->e.expr.e1, e->e.expr.e2);
+					emit_branch (e, op_ifnot, e->e.expr.e1, e->e.expr.e2);
 					break;
 				case 'i':
-					emit_branch (e->line, op_if, e->e.expr.e1, e->e.expr.e2);
+					emit_branch (e, op_if, e->e.expr.e1, e->e.expr.e2);
 					break;
 				case IFBE:
-					emit_branch (e->line, op_ifbe, e->e.expr.e1, e->e.expr.e2);
+					emit_branch (e, op_ifbe, e->e.expr.e1, e->e.expr.e2);
 					break;
 				case IFB:
-					emit_branch (e->line, op_ifb, e->e.expr.e1, e->e.expr.e2);
+					emit_branch (e, op_ifb, e->e.expr.e1, e->e.expr.e2);
 					break;
 				case IFAE:
-					emit_branch (e->line, op_ifae, e->e.expr.e1, e->e.expr.e2);
+					emit_branch (e, op_ifae, e->e.expr.e1, e->e.expr.e2);
 					break;
 				case IFA:
-					emit_branch (e->line, op_ifa, e->e.expr.e1, e->e.expr.e2);
+					emit_branch (e, op_ifa, e->e.expr.e1, e->e.expr.e2);
 					break;
 				case 'c':
 					emit_function_call (e, 0);
@@ -551,7 +548,7 @@ emit_expr (expr_t *e)
 				case 's':
 					def_a = emit_sub_expr (e->e.expr.e1, 0);
 					def_b = emit_sub_expr (e->e.expr.e2, 0);
-					emit_statement (e->line, op_state, def_a, def_b, 0);
+					emit_statement (e, op_state, def_a, def_b, 0);
 					break;
 				case 'b':
 					emit_bind_expr (e->e.expr.e1, e->e.expr.e2);
@@ -559,7 +556,7 @@ emit_expr (expr_t *e)
 				case 'g':
 					def_a = emit_sub_expr (e->e.expr.e1, 0);
 					def_b = emit_sub_expr (e->e.expr.e2, 0);
-					emit_statement (e->line, op_jumpb, def_a, def_b, 0);
+					emit_statement (e, op_jumpb, def_a, def_b, 0);
 					break;
 				default:
 					warning (e, "Ignoring useless expression");
@@ -572,10 +569,10 @@ emit_expr (expr_t *e)
 					def = 0;
 					if (e->e.expr.e1)
 						def = emit_sub_expr (e->e.expr.e1, 0);
-					emit_statement (e->line, op_return, def, 0, 0);
+					emit_statement (e, op_return, def, 0, 0);
 					break;
 				case 'g':
-					emit_branch (e->line, op_goto, 0, e->e.expr.e1);
+					emit_branch (e, op_goto, 0, e->e.expr.e1);
 					break;
 				default:
 					warning (e, "useless expression");
