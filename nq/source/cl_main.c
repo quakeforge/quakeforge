@@ -532,6 +532,8 @@ CL_RelinkEntities (void)
 			continue;
 		}
 
+		VectorCopy (ent->origin, ent->old_origin);
+
 		if (state->forcelink) {
 			// The entity was not updated in the last message so move to the
 			// final spot
@@ -574,8 +576,6 @@ CL_RelinkEntities (void)
 				}
 			}
 		}
-
-		VectorCopy (ent->origin, ent->old_origin);
 
 		// rotate binary objects locally
 		if (ent->model->flags & EF_ROTATE)
