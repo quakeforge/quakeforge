@@ -1837,10 +1837,10 @@ PF_getboxhull (progs_t *pr)
 static void
 PF_freeboxhull (progs_t *pr)
 {
-	int      h = G_INT (pr, OFS_PARM0);
+	int      h = G_INT (pr, OFS_PARM0) - 1;
 	hull_t  *hull = &pf_hull_list[h];
 
-	if (h < 1 || h > MAX_PF_HULLS
+	if (h < 0 || h > MAX_PF_HULLS - 1
 		|| hull->clipnodes != pf_clipnodes[h]
 		|| hull->planes != pf_planes[h])
 		PR_RunError (pr, "PF_freeboxhull: invalid box hull handle\n");
@@ -1852,7 +1852,7 @@ PF_freeboxhull (progs_t *pr)
 static void
 PF_rotate_bbox (progs_t *pr)
 {
-	int      h = G_INT (pr, OFS_PARM0);
+	int      h = G_INT (pr, OFS_PARM0) - 1;
 	float   *angles = G_VECTOR (pr, OFS_PARM1);
 	float   *mins = G_VECTOR (pr, OFS_PARM2);
 	float   *maxs = G_VECTOR (pr, OFS_PARM3);
