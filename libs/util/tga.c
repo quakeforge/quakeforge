@@ -242,7 +242,7 @@ do {                                                                          \
 				pixcol = pixrow;                                              \
 				pixrow += span;                                               \
 				if (rows-- <= 0)                                              \
-					goto done_##expand;                                        \
+					goto done_##expand;                                       \
 			}                                                                 \
 			column -= packetSize;                                             \
 			if (packetHeader & 0x80) {			/* run-length packet */       \
@@ -253,7 +253,7 @@ do {                                                                          \
 			}                                                                 \
 		}                                                                     \
 	}                                                                         \
-	done_##expand:;                                                            \
+	done_##expand:;                                                           \
 } while (0)
 
 static void
@@ -285,9 +285,9 @@ decode_truecolor_32_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
 	setup_pixrow_span (targa, tex, &pixrow, &span);
 
 	if (targa->attributes & 0x10)
-		rle_expand (reverse_read_bgr);
+		rle_expand (reverse_read_bgra);
 	else
-		rle_expand (read_bgr);
+		rle_expand (read_bgra);
 }
 
 struct tex_s *
