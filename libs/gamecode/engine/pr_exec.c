@@ -774,6 +774,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 						|| !pr->builtins[i]->proc)
 						PR_RunError (pr, "Bad builtin call number");
 					pr->builtins[i]->proc (pr);
+					st = pr->pr_statements + pr->pr_xstatement;
 					break;
 				}
 

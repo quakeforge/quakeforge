@@ -65,6 +65,7 @@ void PR_Init (void);
 void PR_Init_Cvars (void);
 
 void PR_PrintStatement (progs_t * pr, dstatement_t *s);
+int PR_EnterFunction (progs_t * pr, dfunction_t *f);
 void PR_ExecuteProgram (progs_t *pr, func_t fnum);
 void PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts,
 					   int zone);

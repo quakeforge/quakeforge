@@ -48,6 +48,25 @@ static const char rcsid[] =
 
 #include "compat.h"
 
+static void
+call_function (progs_t *pr, func_t func)
+{
+	dfunction_t *newf;
+
+	newf = pr->pr_functions + func;
+	if (newf->first_statement < 0) {
+		// negative statements are built in functions
+		int         i = -newf->first_statement;
+
+		if (i >= pr->numbuiltins || !pr->builtins[i]
+			|| !pr->builtins[i]->proc)
+			PR_RunError (pr, "Bad builtin call number");
+		pr->builtins[i]->proc (pr);
+	} else {
+		pr->pr_xstatement = PR_EnterFunction (pr, newf);
+	}
+}
+
 static const char *
 class_get_key (void *c, void *pr)
 {
@@ -357,7 +376,8 @@ pr_obj_msgSend (progs_t *pr)
 		PR_RunError (pr, "%s does not respond to %s",
 					 PR_GetString (pr, object_get_class_name (pr, self)),
 					 PR_GetString (pr, _cmd->sel_id));
-	PR_ExecuteProgram (pr, imp);
+
+	call_function (pr, imp);
 }
 
 static void
@@ -378,7 +398,7 @@ pr_obj_msgSend_super (progs_t *pr)
 		PR_RunError (pr, "%s does not respond to %s",
 					 PR_GetString (pr, object_get_class_name (pr, self)),
 					 PR_GetString (pr, _cmd->sel_id));
-	PR_ExecuteProgram (pr, imp);
+	call_function (pr, imp);
 }
 
 static void
