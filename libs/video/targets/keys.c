@@ -400,8 +400,11 @@ Key_Game (knum_t key, short unicode)
 	if (!kb)
 		return false;
 
+	if (keydown[key] > 1) 
+		return true;
+
 	if (kb[0] == '+') {
-		if (keydown[key] == 1)
+		if (keydown[key])
 			snprintf (cmd, sizeof (cmd), "%s %d\n", kb, key);
 		else
 			snprintf (cmd, sizeof (cmd), "-%s %d\n", kb + 1, key);
