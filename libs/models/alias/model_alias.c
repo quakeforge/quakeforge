@@ -68,8 +68,8 @@ aliashdr_t *pheader;
 stvert_t    stverts[MAXALIASVERTS];
 mtriangle_t triangles[MAXALIASTRIS];
 
-// a pose is a single set of vertexes.  a frame may be
-// an animating sequence of poses
+// a pose is a single set of vertexes.  a frame may be an animating
+// sequence of poses
 trivertx_t *poseverts[MAXALIASFRAMES];
 int         posenum = 0;
 
@@ -79,9 +79,6 @@ void       *Mod_LoadAliasGroup (void *pin, maliasframedesc_t *frame);
 
 //=========================================================================
 
-/*
-	Mod_LoadAliasModel
-*/
 void
 Mod_LoadAliasModel (model_t *mod, void *buffer)
 {
@@ -111,10 +108,8 @@ Mod_LoadAliasModel (model_t *mod, void *buffer)
 		Sys_Error ("%s has wrong version number (%i should be %i)",
 				  mod->name, version, ALIAS_VERSION);
 
-//
-// allocate space for a working header, plus all the data except the frames,
-// skin and group info
-//
+	// allocate space for a working header, plus all the data except the
+	// frames, skin and group info
 	size = field_offset (aliashdr_t, frames[LittleLong (pinmodel->numframes)]);
 	pheader = Hunk_AllocName (size, loadname);
 	memset (pheader, 0, size);
@@ -125,9 +120,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer)
 
 	mod->flags = LittleLong (pinmodel->flags);
 
-//
-// endian-adjust and copy the data, starting with the alias model header
-//
+	// endian-adjust and copy the data, starting with the alias model header
 	pmodel->boundingradius = LittleFloat (pinmodel->boundingradius);
 	pmodel->numskins = LittleLong (pinmodel->numskins);
 	pmodel->skinwidth = LittleLong (pinmodel->skinwidth);
@@ -165,17 +158,12 @@ Mod_LoadAliasModel (model_t *mod, void *buffer)
 		pmodel->eyeposition[i] = LittleFloat (pinmodel->eyeposition[i]);
 	}
 
-
-//
-// load the skins
-//
+	// load the skins
 	pskintype = (daliasskintype_t *) &pinmodel[1];
 	pskintype =
 		Mod_LoadAllSkins (pheader->mdl.numskins, pskintype, &pheader->skindesc);
 
-//
-// load base s and t vertices
-//
+	// load base s and t vertices
 	pinstverts = (stvert_t *) pskintype;
 
 	for (i = 0; i < pheader->mdl.numverts; i++) {
@@ -184,9 +172,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer)
 		stverts[i].t = LittleLong (pinstverts[i].t);
 	}
 
-//
-// load triangle lists
-//
+	// load triangle lists
 	pintriangles = (dtriangle_t *) &pinstverts[pheader->mdl.numverts];
 
 	for (i = 0; i < pheader->mdl.numtris; i++) {
@@ -198,9 +184,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer)
 		}
 	}
 
-//
-// load the frames
-//
+	// load the frames
 	posenum = 0;
 	pframetype = (daliasframetype_t *) &pintriangles[pheader->mdl.numtris];
 
@@ -227,14 +211,10 @@ Mod_LoadAliasModel (model_t *mod, void *buffer)
 	mod->mins[0] = mod->mins[1] = mod->mins[2] = -16;
 	mod->maxs[0] = mod->maxs[1] = mod->maxs[2] = 16;
 
-	// 
 	// build the draw lists
-	// 
 	GL_MakeAliasModelDisplayLists (mod, pheader, buffer, com_filesize);
 
-//
-// move the complete, relocatable alias model to the cache
-//  
+	// move the complete, relocatable alias model to the cache
 	end = Hunk_LowMark ();
 	total = end - start;
 

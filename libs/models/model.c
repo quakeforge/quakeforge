@@ -26,8 +26,10 @@
 	$Id$
 */
 
-// models are the only shared resource between a client and server running
-// on the same machine.
+/*
+  Models are the only shared resource between a client and server running
+  on the same machine.
+*/
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -63,9 +65,7 @@ extern byte mod_novis[MAX_MAP_LEAFS / 8];
 
 texture_t  *r_notexture_mip;
 
-/*
-	Mod_Init
-*/
+
 void
 Mod_Init (void)
 {
@@ -105,12 +105,9 @@ Mod_Init_Cvars (void)
 {
 	gl_subdivide_size =
 		Cvar_Get ("gl_subdivide_size", "128", CVAR_ARCHIVE, NULL,
-				"Sets the division value for the sky brushes.");
+				  "Sets the division value for the sky brushes.");
 }
 
-/*
-	Mod_ClearAll
-*/
 void
 Mod_ClearAll (void)
 {
@@ -122,9 +119,6 @@ Mod_ClearAll (void)
 			mod->needload = true;
 }
 
-/*
-	Mod_FindName
-*/
 model_t    *
 Mod_FindName (const char *name)
 {
@@ -134,9 +128,7 @@ Mod_FindName (const char *name)
 	if (!name[0])
 		Sys_Error ("Mod_FindName: NULL name");
 
-//
-// search the currently loaded models
-//
+	// search the currently loaded models
 	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++)
 		if (!strcmp (mod->name, name))
 			break;
@@ -172,9 +164,8 @@ Mod_LoadModel (model_t *mod, qboolean crash)
 		} else
 			return mod;					// not cached at all
 	}
-//
-// load the file
-//
+
+	// load the file
 	buf =
 		(unsigned int *) COM_LoadStackFile (mod->name, stackbuf,
 											sizeof (stackbuf));
@@ -183,18 +174,15 @@ Mod_LoadModel (model_t *mod, qboolean crash)
 			Sys_Error ("Mod_LoadModel: %s not found", mod->name);
 		return NULL;
 	}
-//
-// allocate a new model
-//
+
+	// allocate a new model
 	COM_FileBase (mod->name, loadname);
 
 	loadmodel = mod;
 
-//
-// fill it in
-//
+	// fill it in
 
-// call the apropriate loader
+	// call the apropriate loader
 	mod->needload = false;
 	mod->hasfullbrights = false;
 
@@ -252,9 +240,6 @@ Mod_Extradata (model_t *mod)
 	return mod->cache.data;
 }
 
-/*
-	Mod_TouchModel
-*/
 void
 Mod_TouchModel (const char *name)
 {
@@ -268,9 +253,6 @@ Mod_TouchModel (const char *name)
 	}
 }
 
-/*
-	Mod_Print
-*/
 void
 Mod_Print (void)
 {

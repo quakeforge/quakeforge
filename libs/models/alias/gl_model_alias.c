@@ -114,8 +114,7 @@ Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight)
 				break;
 			}
 	}
-	// can't fill to filled color or to transparent color (used as visited
-	// marker)
+	// can't fill to filled color or transparent color (used as visited marker)
 	if ((fillcolor == filledcolor) || (fillcolor == 255)) {
 		//printf ("not filling skin from %d to %d\n", fillcolor, filledcolor);
 		return;
@@ -187,9 +186,6 @@ Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group)
 	return skin + skinsize;
 }
 
-/*
-	Mod_LoadAllSkins
-*/
 void       *
 Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 {
@@ -243,9 +239,6 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 	return pskintype;
 }
 
-/*
-	Mod_LoadAliasFrame
-*/
 void *
 Mod_LoadAliasFrame (void *pin, maliasframedesc_t *frame)
 {
@@ -275,9 +268,6 @@ Mod_LoadAliasFrame (void *pin, maliasframedesc_t *frame)
 	return (void *) pinframe;
 }
 
-/*
-	Mod_LoadAliasGroup
-*/
 void *
 Mod_LoadAliasGroup (void *pin, maliasframedesc_t *frame)
 {

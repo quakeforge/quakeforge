@@ -26,9 +26,6 @@
 	$Id$
 */
 
-// models are the only shared resource between a client and server running
-// on the same machine.
-
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -43,12 +40,8 @@ extern model_t *loadmodel;
 extern char loadname[];
 
 void       *Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe,
-
 								 int framenum);
 
-/*
-	Mod_LoadSpriteGroup
-*/
 void       *
 Mod_LoadSpriteGroup (void *pin, mspriteframe_t **ppframe, int framenum)
 {
@@ -96,9 +89,6 @@ Mod_LoadSpriteGroup (void *pin, mspriteframe_t **ppframe, int framenum)
 	return ptemp;
 }
 
-/*
-	Mod_LoadSpriteModel
-*/
 void
 Mod_LoadSpriteModel (model_t *mod, void *buffer)
 {
@@ -137,9 +127,7 @@ Mod_LoadSpriteModel (model_t *mod, void *buffer)
 	mod->mins[2] = -psprite->maxheight / 2;
 	mod->maxs[2] = psprite->maxheight / 2;
 
-//
-// load the frames
-//
+	// load the frames
 	if (numframes < 1)
 		Sys_Error ("Mod_LoadSpriteModel: Invalid # of frames: %d\n", numframes);
 

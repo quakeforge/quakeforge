@@ -38,11 +38,12 @@
 
 #include <stdio.h>
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/mdfour.h"
 #include "QF/model.h"
 #include "QF/vfs.h"
+
+#include "compat.h"
 
 /*
 	ALIAS MODEL DISPLAY LIST GENERATION
@@ -69,9 +70,7 @@ int         stripverts[128];
 int         striptris[128];
 int         stripcount;
 
-/*
-	StripLength
-*/
+
 int
 StripLength (int starttri, int startv)
 {
@@ -136,9 +135,6 @@ done:
 	return stripcount;
 }
 
-/*
-	FanLength
-*/
 int
 FanLength (int starttri, int startv)
 {
@@ -219,9 +215,7 @@ BuildTris (void)
 	int         besttris[1024];
 	int         type;
 
-	// 
 	// build tristrips
-	// 
 	numorder = 0;
 	numcommands = 0;
 	memset (used, 0, sizeof (used));
@@ -286,10 +280,6 @@ BuildTris (void)
 	alltris += pheader->mdl.numtris;
 }
 
-
-/*
-	GL_MakeAliasModelDisplayLists
-*/
 void
 GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 {
@@ -307,9 +297,7 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 
 	mdfour (model_digest, (unsigned char *) _m, _s);
 
-	// 
 	// look for a cached version
-	// 
 	strcpy (cache, "glquake/");
 	COM_StripExtension (m->name + strlen ("progs/"),
 						cache + strlen ("glquake/"));
@@ -355,16 +343,12 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 		}
 	}
 	if (remesh) {
-		// 
 		// build it from scratch
-		// 
 		Con_Printf ("meshing %s...\n", m->name);
 
 		BuildTris ();					// trifans or lists
 
-		// 
 		// save out the cached version
-		// 
 		snprintf (fullpath, sizeof (fullpath), "%s/%s", com_gamedir, cache);
 		f = Qopen (fullpath, "wbz9");
 		if (!f) {

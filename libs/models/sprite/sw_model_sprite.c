@@ -26,8 +26,8 @@
 	$Id$
 */
 
-// models are the only shared resource between a client and server running
-// on the same machine.
+// models are the only shared resource between a client and server running 
+// on the same machine. 
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -48,9 +48,7 @@
 extern model_t *loadmodel;
 extern char loadname[];
 
-/*
-	Mod_LoadSpriteFrame
-*/
+
 void       *
 Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
 {

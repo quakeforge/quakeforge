@@ -47,6 +47,7 @@ extern byte *mod_base;
 
 const int   mod_lightmap_bytes = 1;
 
+
 void
 GL_SubdivideSurface (msurface_t *fa)
 {
@@ -57,9 +58,6 @@ Mod_ProcessTexture (miptex_t *mt, texture_t *tx)
 {
 }
 
-/*
-	Mod_LoadLighting
-*/
 void
 Mod_LoadLighting (lump_t *l)
 {

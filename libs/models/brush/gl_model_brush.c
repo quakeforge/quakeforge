@@ -39,12 +39,13 @@
 # include <strings.h>
 #endif
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/vfs.h"
 #include "QF/GL/qf_textures.h"
+
+#include "compat.h"
 
 int         Mod_Fullbright (byte * skin, int width, int height, char *name);
 
@@ -54,6 +55,7 @@ extern char loadname[];
 extern byte *mod_base;
 
 const int   mod_lightmap_bytes = 3;
+
 
 void
 Mod_ProcessTexture (miptex_t *mt, texture_t *tx)
@@ -68,9 +70,6 @@ Mod_ProcessTexture (miptex_t *mt, texture_t *tx)
 						true, false, 1);
 }
 
-/*
-	Mod_LoadLighting
-*/
 void
 Mod_LoadLighting (lump_t *l)
 {

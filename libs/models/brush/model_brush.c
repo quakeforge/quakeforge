@@ -43,11 +43,12 @@
 
 
 #include "QF/checksum.h"
-#include "compat.h"
 #include "QF/cvar.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
+
+#include "compat.h"
 
 extern struct texture_s *r_notexture_mip;
 void R_InitSky (struct texture_s *mt);
@@ -62,9 +63,7 @@ byte        mod_novis[MAX_MAP_LEAFS / 8];
 void        GL_SubdivideSurface (msurface_t *fa);
 cvar_t		*gl_sky_divide;
 
-/*
-	Mod_PointInLeaf
-*/
+
 mleaf_t    *
 Mod_PointInLeaf (vec3_t p, model_t *model)
 {
@@ -90,10 +89,6 @@ Mod_PointInLeaf (vec3_t p, model_t *model)
 	return NULL;						// never reached
 }
 
-
-/*
-	Mod_DecompressVis
-*/
 byte       *
 Mod_DecompressVis (byte * in, model_t *model)
 {
@@ -148,10 +143,6 @@ Mod_LeafPVS (mleaf_t *leaf, model_t *model)
 
 byte       *mod_base;
 
-
-/*
-	Mod_LoadTextures
-*/
 void
 Mod_LoadTextures (lump_t *l)
 {
@@ -207,9 +198,7 @@ Mod_LoadTextures (lump_t *l)
 		}
 	}
 
-//
-// sequence the animations
-//
+	// sequence the animations
 	for (i = 0; i < m->nummiptex; i++) {
 		tx = loadmodel->textures[i];
 		if (!tx || tx->name[0] != '+')
@@ -289,9 +278,6 @@ Mod_LoadTextures (lump_t *l)
 	}
 }
 
-/*
-	Mod_LoadVisibility
-*/
 void
 Mod_LoadVisibility (lump_t *l)
 {
@@ -303,10 +289,6 @@ Mod_LoadVisibility (lump_t *l)
 	memcpy (loadmodel->visdata, mod_base + l->fileofs, l->filelen);
 }
 
-
-/*
-	Mod_LoadEntities
-*/
 void
 Mod_LoadEntities (lump_t *l)
 {
@@ -318,10 +300,6 @@ Mod_LoadEntities (lump_t *l)
 	memcpy (loadmodel->entities, mod_base + l->fileofs, l->filelen);
 }
 
-
-/*
-	Mod_LoadVertexes
-*/
 void
 Mod_LoadVertexes (lump_t *l)
 {
@@ -345,9 +323,6 @@ Mod_LoadVertexes (lump_t *l)
 	}
 }
 
-/*
-	Mod_LoadSubmodels
-*/
 void
 Mod_LoadSubmodels (lump_t *l)
 {
@@ -378,9 +353,6 @@ Mod_LoadSubmodels (lump_t *l)
 	}
 }
 
-/*
-	Mod_LoadEdges
-*/
 void
 Mod_LoadEdges (lump_t *l)
 {
@@ -403,9 +375,6 @@ Mod_LoadEdges (lump_t *l)
 	}
 }
 
-/*
-	Mod_LoadTexinfo
-*/
 void
 Mod_LoadTexinfo (lump_t *l)
 {
@@ -508,10 +477,6 @@ CalcSurfaceExtents (msurface_t *s)
 	}
 }
 
-
-/*
-	Mod_LoadFaces
-*/
 void
 Mod_LoadFaces (lump_t *l)
 {
@@ -583,10 +548,6 @@ Mod_LoadFaces (lump_t *l)
 	}
 }
 
-
-/*
-	Mod_SetParent
-*/
 void
 Mod_SetParent (mnode_t *node, mnode_t *parent)
 {
@@ -597,9 +558,6 @@ Mod_SetParent (mnode_t *node, mnode_t *parent)
 	Mod_SetParent (node->children[1], node);
 }
 
-/*
-	Mod_LoadNodes
-*/
 void
 Mod_LoadNodes (lump_t *l)
 {
@@ -640,9 +598,6 @@ Mod_LoadNodes (lump_t *l)
 	Mod_SetParent (loadmodel->nodes, NULL);	// sets nodes and leafs
 }
 
-/*
-	Mod_LoadLeafs
-*/
 void
 Mod_LoadLeafs (lump_t *l)
 {
@@ -700,9 +655,6 @@ Mod_LoadLeafs (lump_t *l)
 	}
 }
 
-/*
-	Mod_LoadClipnodes
-*/
 void
 Mod_LoadClipnodes (lump_t *l)
 {
@@ -793,9 +745,6 @@ Mod_MakeHull0 (void)
 	}
 }
 
-/*
-	Mod_LoadMarksurfaces
-*/
 void
 Mod_LoadMarksurfaces (lump_t *l)
 {
@@ -820,9 +769,6 @@ Mod_LoadMarksurfaces (lump_t *l)
 	}
 }
 
-/*
-	Mod_LoadSurfedges
-*/
 void
 Mod_LoadSurfedges (lump_t *l)
 {
@@ -842,9 +788,6 @@ Mod_LoadSurfedges (lump_t *l)
 		out[i] = LittleLong (in[i]);
 }
 
-/*
-	Mod_LoadPlanes
-*/
 void
 Mod_LoadPlanes (lump_t *l)
 {
@@ -877,9 +820,6 @@ Mod_LoadPlanes (lump_t *l)
 	}
 }
 
-/*
-	RadiusFromBounds
-*/
 float
 RadiusFromBounds (vec3_t mins, vec3_t maxs)
 {
@@ -894,9 +834,6 @@ RadiusFromBounds (vec3_t mins, vec3_t maxs)
 	return Length (corner);
 }
 
-/*
-	Mod_LoadBrushModel
-*/
 void
 Mod_LoadBrushModel (model_t *mod, void *buffer)
 {
@@ -914,7 +851,7 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 			("Mod_LoadBrushModel: %s has wrong version number (%i should be %i)",
 			 mod->name, i, BSPVERSION);
 
-// swap all the lumps
+	// swap all the lumps
 	mod_base = (byte *) header;
 
 	for (i = 0; i < sizeof (dheader_t) / 4; i++)
@@ -941,7 +878,7 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 						 header->lumps[i].filelen));
 	}
 
-// load into heap
+	// load into heap
 
 	Mod_LoadVertexes (&header->lumps[LUMP_VERTEXES]);
 	Mod_LoadEdges (&header->lumps[LUMP_EDGES]);
@@ -963,9 +900,7 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 
 	mod->numframes = 2;					// regular and alternate animation
 
-//
-// set up the submodels (FIXME: this is confusing)
-//
+	// set up the submodels (FIXME: this is confusing)
 	for (i = 0; i < mod->numsubmodels; i++) {
 		bm = &mod->submodels[i];
 

@@ -39,17 +39,15 @@
 # include <strings.h>
 #endif
 
-#include "compat.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/GL/qf_textures.h"
 
+#include "compat.h"
+
 extern model_t *loadmodel;
 extern char loadname[];
 
-/*
-	Mod_LoadSpriteFrame
-*/
 void       *
 Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
 {
