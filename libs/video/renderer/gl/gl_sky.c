@@ -351,21 +351,21 @@ R_DrawSkyLayer (float speedscale)
 static void
 R_DrawSkyDome (void)
 {
-	float       speedscale;					// for top sky and bottom sky
+	float       speedscale;						// for top sky and bottom sky
 
 	// base sky
 	qfglDisable (GL_BLEND);
 	qfglBindTexture (GL_TEXTURE_2D, solidskytexture);
-	speedscale = r_realtime / 16;
-	speedscale -= floor (speedscale);;
+	speedscale = r_realtime / 16.0;
+	speedscale -= floor (speedscale);
 	R_DrawSkyLayer (speedscale);
 	qfglEnable (GL_BLEND);
 
 	// clouds
 	if (gl_sky_multipass->int_val) {
 		qfglBindTexture (GL_TEXTURE_2D, alphaskytexture);
-		speedscale = r_realtime / 16;
-		speedscale -= floor (speedscale);;
+		speedscale = r_realtime / 4.0;
+		speedscale -= floor (speedscale);
 		R_DrawSkyLayer (speedscale);
 	}
 	if (gl_sky_debug->int_val) {
