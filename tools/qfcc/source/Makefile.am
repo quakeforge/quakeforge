@@ -44,4 +44,5 @@ qfcc_SOURCES= \
 
 qfcc_LDADD=			$(QFCC_LIBS)
 qfcc_DEPENDENCIES=	$(QFCC_DEPS)
-EXTRA_DIST= qc-parse.h
+
+emit.c expr.c switch.c qc-lex.l: qc-parse.h
