@@ -509,53 +509,81 @@ Draw_AltString (int x, int y, const char *str)
 	}
 }
 
+static void
+crosshair_1 (int x, int y)
+{
+	Draw_Character (x - 4, y - 4, '+');
+}
+
+static void
+crosshair_2 (int x, int y)
+{
+	unsigned char *pColor;
+
+	pColor = (unsigned char *) &d_8to24table[crosshaircolor->int_val];
+	qfglColor4ubv (pColor);
+	qfglBindTexture (GL_TEXTURE_2D, cs_texture);
+
+	qfglBegin (GL_QUADS);
+
+	qfglTexCoord2f (0, 0);
+	qfglVertex2f (x - 6, y - 6);
+	qfglTexCoord2f (1, 0);
+	qfglVertex2f (x + 9, y - 6);
+	qfglTexCoord2f (1, 0.5);
+	qfglVertex2f (x + 9, y + 9);
+	qfglTexCoord2f (0, 0.5);
+	qfglVertex2f (x - 6, y + 9);
+
+	qfglEnd ();
+	qfglColor3ubv (color_white);
+}
+
+static void
+crosshair_3 (int x, int y)
+{
+	unsigned char *pColor;
+
+	pColor = (unsigned char *) &d_8to24table[crosshaircolor->int_val];
+	qfglColor4ubv (pColor);
+	qfglBindTexture (GL_TEXTURE_2D, cs_texture);
+
+	qfglBegin (GL_QUADS);
+
+	qfglTexCoord2f (0, 0.5);
+	qfglVertex2f (x - 6, y - 6);
+	qfglTexCoord2f (1, 0.5);
+	qfglVertex2f (x + 9, y - 6);
+	qfglTexCoord2f (1, 1);
+	qfglVertex2f (x + 9, y + 9);
+	qfglTexCoord2f (0, 1);
+	qfglVertex2f (x - 6, y + 9);
+
+	qfglEnd ();
+	qfglColor3ubv (color_white);
+}
+
 void
 Draw_Crosshair (void)
 {
-	unsigned char *pColor;
 	int            x, y;
 
+	if (!crosshair->int_val)
+		return;
+
+	x = scr_vrect.x + scr_vrect.width / 2 + cl_crossx->int_val;
+	y = scr_vrect.y + scr_vrect.height / 2 + cl_crossy->int_val;
+
 	switch (crosshair->int_val) {
-		case 0:
-			break;
-		case 1:
 		default:
-			Draw_Character (scr_vrect.x + scr_vrect.width / 2 - 4 +
-							cl_crossx->int_val,
-							scr_vrect.y + scr_vrect.height / 2 - 4 +
-							cl_crossy->int_val, '+');
+		case 1:
+			crosshair_1 (x, y);
 			break;
 		case 2:
+			crosshair_2 (x, y);
+			break;
 		case 3:
-			x = scr_vrect.x + scr_vrect.width / 2 - 3 + cl_crossx->int_val;
-			y = scr_vrect.y + scr_vrect.height / 2 - 3 + cl_crossy->int_val;
-
-			pColor = (unsigned char *) &d_8to24table[crosshaircolor->int_val];
-			qfglColor4ubv (pColor);
-			qfglBindTexture (GL_TEXTURE_2D, cs_texture);
-
-			qfglBegin (GL_QUADS);
-			if (crosshair->int_val == 2) {
-				qfglTexCoord2f (0, 0);
-				qfglVertex2f (x - 4, y - 4);
-				qfglTexCoord2f (1, 0);
-				qfglVertex2f (x + 12, y - 4);
-				qfglTexCoord2f (1, 0.5);
-				qfglVertex2f (x + 12, y + 12);
-				qfglTexCoord2f (0, 0.5);
-				qfglVertex2f (x - 4, y + 12);
-			} else {
-				qfglTexCoord2f (0, 0.5);
-				qfglVertex2f (x - 4, y - 4);
-				qfglTexCoord2f (1, 0.5);
-				qfglVertex2f (x + 12, y - 4);
-				qfglTexCoord2f (1, 1);
-				qfglVertex2f (x + 12, y + 12);
-				qfglTexCoord2f (0, 1);
-				qfglVertex2f (x - 4, y + 12);
-			}
-			qfglEnd ();
-			qfglColor3ubv (color_white);
+			crosshair_3 (x, y);
 			break;
 	}
 }

@@ -366,29 +366,64 @@ Draw_Pixel (int x, int y, byte color)
 	}
 }
 
+static void
+crosshair_1 (int x, int y)
+{
+	Draw_Character (x - 4, y - 4, '+');
+}   
+
+static void
+crosshair_2 (int x, int y)
+{
+	byte        c = crosshaircolor->int_val;
+
+	Draw_Pixel (x - 1, y, c);
+	Draw_Pixel (x - 3, y, c);
+	Draw_Pixel (x + 1, y, c);
+	Draw_Pixel (x + 3, y, c);
+	Draw_Pixel (x, y - 1, c);
+	Draw_Pixel (x, y - 3, c);
+	Draw_Pixel (x, y + 1, c);
+	Draw_Pixel (x, y + 3, c);
+}
+
+static void
+crosshair_3 (int x, int y)
+{
+	byte        c = crosshaircolor->int_val;
+
+	Draw_Pixel (x - 3, y - 3, c);
+	Draw_Pixel (x + 3, y - 3, c);
+	Draw_Pixel (x - 2, y - 2, c);
+	Draw_Pixel (x + 2, y - 2, c);
+	Draw_Pixel (x - 3, y + 3, c);
+	Draw_Pixel (x + 2, y + 2, c);
+	Draw_Pixel (x - 2, y + 2, c);
+	Draw_Pixel (x + 3, y + 3, c);
+}
 
 void
 Draw_Crosshair (void)
 {
 	int         x, y;
-	byte        c = crosshaircolor->int_val;
 
-	if (crosshair->int_val == 2) {
-		x = scr_vrect.x + scr_vrect.width / 2 + cl_crossx->int_val;
-		y = scr_vrect.y + scr_vrect.height / 2 + cl_crossy->int_val;
-		Draw_Pixel (x - 1, y, c);
-		Draw_Pixel (x - 3, y, c);
-		Draw_Pixel (x + 1, y, c);
-		Draw_Pixel (x + 3, y, c);
-		Draw_Pixel (x, y - 1, c);
-		Draw_Pixel (x, y - 3, c);
-		Draw_Pixel (x, y + 1, c);
-		Draw_Pixel (x, y + 3, c);
-	} else if (crosshair->int_val)
-		Draw_Character (scr_vrect.x + scr_vrect.width / 2 - 4 +
-						cl_crossx->int_val,
-						scr_vrect.y + scr_vrect.height / 2 - 4 +
-						cl_crossy->int_val, '+');
+	if (!crosshair->int_val)
+		return;
+
+	x = scr_vrect.x + scr_vrect.width / 2 + cl_crossx->int_val;
+	y = scr_vrect.y + scr_vrect.height / 2 + cl_crossy->int_val;
+	switch (crosshair->int_val) {
+		default:
+		case 1:
+			crosshair_1 (x, y);
+			break;
+		case 2:
+			crosshair_2 (x, y);
+			break;
+		case 3:
+			crosshair_3 (x, y);
+			break;
+	}
 }
 
 
