@@ -35,12 +35,15 @@
 #define MULTICAST_PVS_R 5
 
 @extern void (...) bprint;
+@extern void (float to, ...) WriteBytes;
 @extern void (float to, float f) WriteByte;
 @extern void (float to, float f) WriteChar;
 @extern void (float to, float f) WriteShort;
 @extern void (float to, float f) WriteLong;
 @extern void (float to, float f) WriteCoord;
 @extern void (float to, float f) WriteAngle;
+@extern void (float to, vector v) WriteCoordV;
+@extern void (float to, vector v) WriteAngleV;
 @extern void (float to, string s) WriteString;
 @extern void (float to, entity s) WriteEntity;
 @extern void (...) centerprint;
