@@ -17,3 +17,4 @@ o	switch/case, for any type
 o	break/continue keywords for switch() and for(;;)
 o	quaternion type. Tricky: requires 4 word args/return
 o	CSE optimisations
+o	full scoping
