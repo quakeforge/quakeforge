@@ -812,7 +812,7 @@ CL_LinkPlayers (void)
 			VectorCopy (state->origin, org);
 			clientplayer = false;
 		}
-		CL_NewDlight (j, org, state->effects, state->glow_size,
+		CL_NewDlight (j + 1, org, state->effects, state->glow_size,
 					  state->glow_color);
 
 		// Draw player?
