@@ -425,6 +425,26 @@ C_ProcessInput (void)
 		}
 }
 
+void
+C_KeyEvent (knum_t key, short unicode, qboolean down)
+{
+}
+
+void
+C_DrawConsole (int lines)
+{
+}
+
+void
+C_CheckResize (void)
+{
+}
+
+void
+C_NewMap (void)
+{
+}
+
 static general_funcs_t plugin_info_general_funcs = {
 	C_Init,
 	C_Shutdown,
@@ -434,10 +454,10 @@ static general_data_t plugin_info_general_data;
 static console_funcs_t plugin_info_console_funcs = {
 	C_Print,
 	C_ProcessInput,
-	0,
-	0,
-	0,
-	0,
+	C_KeyEvent,
+	C_DrawConsole,
+	C_CheckResize,
+	C_NewMap,
 };
 static console_data_t plugin_info_console_data;
 
