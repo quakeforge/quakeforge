@@ -29,7 +29,7 @@ EXTRA_LIBRARIES= $(ruamoko_libs)
 libr_a_SOURCES=\
 	crudefile.r debug.r hash.r entities.r infokey.r math.r message.r \
 	nq_message.r physics.r plist.r qfile.r qw_message.r qw_physics.r qw_sys.r \
-	sound.r \
+	server.r sound.r \
 	string.r system.r \
 	Object.r AutoreleasePool.r Array.r Entity.r List.r ListNode.r Point.r \
 	Rect.r Size.r Stack.r

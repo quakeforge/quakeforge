@@ -35,6 +35,7 @@
 #define MULTICAST_PVS_R 5
 
 @extern void (...) bprint;
+@extern void (entity client, string s) sprint;
 @extern void (float to, ...) WriteBytes;
 @extern void (float to, float f) WriteByte;
 @extern void (float to, float f) WriteChar;

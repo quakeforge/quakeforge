@@ -88,13 +88,6 @@
 @extern vector v_forward, v_up, v_right;
 
 /*
-	makevectors
-
-	Set v_forward, v_up, v_right global vectors from the vector ang
-*/
-@extern void (vector ang) makevectors;
-
-/*
 	normalize
 
 	Transform vector v into a unit vector (a vector with a length of 1).

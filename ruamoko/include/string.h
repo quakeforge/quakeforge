@@ -1,7 +1,6 @@
 #ifndef __ruamoko_string_h
 #define __ruamoko_string_h
 
-@extern void (entity client, string s) sprint;
 @extern string (float f) ftos;
 @extern string (vector v) vtos;
 @extern float (string s) stof;

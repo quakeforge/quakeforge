@@ -1,6 +1,5 @@
 #include "string.h"
 
-void (entity client, string s) sprint = #24;
 string (float f) ftos = #26;
 string (vector v) vtos = #27;
 float (string s) stof = #81;

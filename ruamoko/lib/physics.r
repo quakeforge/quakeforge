@@ -11,6 +11,7 @@ float		trace_inopen;
 float		trace_inwater;
 
 
+void (vector ang) makevectors = #1;
 void (vector v1, vector v2, float nomonsters, entity forent) traceline = #16;
 entity () checkclient = #17;
 float (float yaw, float dist) walkmove = #32;

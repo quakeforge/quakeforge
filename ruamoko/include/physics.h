@@ -11,6 +11,12 @@
 @extern float		trace_inopen;
 @extern float		trace_inwater;
 
+/*
+	makevectors
+
+	Set v_forward, v_up, v_right global vectors from the vector ang
+*/
+@extern void (vector ang) makevectors;
 @extern void (vector v1, vector v2, float nomonsters, entity forent) traceline;
 @extern entity () checkclient;
 @extern float (float yaw, float dist) walkmove;
