@@ -68,8 +68,6 @@ typedef struct particle_s
 {
 // driver-usable fields
 	vec3_t		org;
-	vec3_t		up;
-	vec3_t		right;
 	int			tex;
 	float		color;
 	float		alpha;

@@ -446,26 +446,25 @@ R_RocketTrail (int type, entity_t *ent)
 	ptype = pt_static;
 	palpha = 255;
 	pcolor = 0;
-	pscale = pscalenext = 3;
+	pscale = pscalenext = 4.5;
 	dist = 3;
 	switch (type) {
 		case 0:					// rocket trail
-			pdie = r_realtime + 0.4;
-			pscale = lhrandom (1, 2);
+			pscale = lhrandom (1.5, 3);
 			ptype = pt_smoke;
 			break;
 		case 1:					// grenade trail
-			pscale = lhrandom (4, 9);
+			pscale = lhrandom (6, 13);
 			ptype = pt_smoke;
 			break;
 		case 2:					// blood
-			pscale = lhrandom (4, 10);
+			pscale = lhrandom (5, 15);
 			ptype = pt_grav;
 			break;
 		case 4:					// slight blood
 			palpha = 192;
-			pdie = r_realtime + 1.3;
-			pscale = lhrandom (1, 6);
+			pdie = r_realtime + 1.5;
+			pscale = lhrandom (1.5, 9);
 			ptype = pt_grav;
 			break;
 		case 3:					// green tracer
@@ -488,8 +487,8 @@ R_RocketTrail (int type, entity_t *ent)
 
 		switch (type) {
 			case 0:					// rocket trail
-				pscalenext = lhrandom (1, 2);
-				dist =  (pscale + pscalenext) * 4;
+				pscalenext = lhrandom (1.5, 3);
+				dist =  (pscale + pscalenext) * 1.3;
 //				pcolor = (rand () & 255); // Misty-chan's Easter Egg
 				pcolor = (rand () & 3) + 12;
 				palpha = 128 + (rand () & 31);
@@ -500,8 +499,8 @@ R_RocketTrail (int type, entity_t *ent)
 				ptex = part_tex_smoke[rand () & 7];
 				break;
 			case 1:					// grenade trail
-				pscalenext = lhrandom (4, 9);
-				dist = (pscale + pscalenext) * 4;
+			pscalenext = lhrandom (6, 13);
+				dist = (pscale + pscalenext) * 2;
 //				pcolor = (rand () & 255); // Misty-chan's Easter Egg
 				pcolor = (rand () & 3);
 				palpha = 128 + (rand () & 31);
@@ -509,8 +508,8 @@ R_RocketTrail (int type, entity_t *ent)
 				ptex = part_tex_smoke[rand () & 7];
 				break;
 			case 2:					// blood
-				pscalenext = lhrandom (4, 10);
-				dist = (pscale + pscalenext) * 4;
+				pscalenext = lhrandom (5, 15);
+				dist = (pscale + pscalenext) * 1.5;
 				ptex = part_tex_smoke[rand () & 7];
 				pcolor = 68 + (rand () & 3);
 				for (j = 0; j < 3; j++) {
@@ -519,8 +518,8 @@ R_RocketTrail (int type, entity_t *ent)
 				}
 				break;
 			case 4:					// slight blood
-				pscalenext = lhrandom (1, 6);
-				dist = (pscale + pscalenext) * 4;
+				pscalenext = lhrandom (1.5, 9);
+				dist = (pscale + pscalenext) * 1.5;
 				ptex = part_tex_smoke[rand () & 7];
 				pcolor = 68 + (rand () & 3);
 				for (j = 0; j < 3; j++) {
@@ -534,7 +533,7 @@ R_RocketTrail (int type, entity_t *ent)
 				static int  tracercount;
 
 				ptex = part_tex_smoke[rand () & 7];
-				pscale = lhrandom (1, 2);
+				pscale = lhrandom (2, 3);
 				if (type == 3)
 					pcolor = 52 + ((tracercount & 4) << 1);
 				else
@@ -554,7 +553,7 @@ R_RocketTrail (int type, entity_t *ent)
 			break;
 			case 6:					// voor trail
 				pcolor = 9 * 16 + 8 + (rand () & 3);
-				pscale = lhrandom (.75, 1.5);
+				pscale = lhrandom (1, 2);
 				for (j = 0; j < 3; j++)
 					porg[j] = ent->old_origin[j] + lhrandom (-8, 8);
 				break;
@@ -580,11 +579,14 @@ R_DrawParticles (void)
 	vec3_t		up, right;
 	vec3_t		up_scale, right_scale, up_right_scale, down_right_scale;
 	
+	if (!r_particles->int_val)
+		return;
+
 	// LordHavoc: particles should not affect zbuffer
 	qfglDepthMask (GL_FALSE);
 
-	VectorScale (vup, 1.5, up);
-	VectorScale (vright, 1.5, right);
+	VectorCopy (vup, up);
+	VectorCopy (vright, right);
 
 	varray[0].texcoord[0] = 0; varray[0].texcoord[1] = 1;
 	varray[1].texcoord[0] = 0; varray[1].texcoord[1] = 0;

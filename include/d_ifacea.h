@@ -53,19 +53,17 @@
 // !!! if this is changed, it must be changed in d_iface.h too !!!
 // driver-usable fields
 #define pt_org				0
-#define pt_up				12
-#define pt_right			24
-#define pt_tex				36
-#define pt_color			40
-#define pt_alpha			44
-#define pt_scale			48
+#define pt_tex				12
+#define pt_color			16
+#define pt_alpha			20
+#define pt_scale			24
 // drivers never touch the following fields
-#define pt_next				52
-#define pt_vel				56
-#define pt_ramp				60
-#define pt_die				64
-#define pt_type				68
-#define pt_size				72
+#define pt_next				28
+#define pt_vel				32
+#define pt_ramp				36
+#define pt_die				40
+#define pt_type				44
+#define pt_size				48
 
 #define PARTICLE_Z_CLIP	8.0
 
