@@ -175,9 +175,14 @@ CLEANFILES	= *.i *.s $(YACCLEX_CLEANFILES)
 
 cl_sys_sdl.o: cl_sys_sdl.c
 	@echo '$(COMPILE) $(SDL_CFLAGS) -c $<'; \
-	$(COMPILE) $(SDL_CFLAGS) -Wp,-MD,.deps/$(*F).pp -c $<
-	@-cp .deps/$(*F).pp .deps/$(*F).P; \
+	if test -d .deps; then \
+		$(COMPILE) $(SDL_CFLAGS) -Wp,-MD,.deps/$(*F).pp -c $<; \
+	else \
+		$(COMPILE) $(SDL_CFLAGS) -c $<; \
+	fi
+	@-if test -d .deps; then cp .deps/$(*F).pp .deps/$(*F).P; \
 	tr ' ' '\012' < .deps/$(*F).pp \
 	  | sed -e 's/^\\$$//' -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/ :/' \
 	    >> .deps/$(*F).P; \
-	rm .deps/$(*F).pp
+	rm .deps/$(*F).pp; \
+	fi
