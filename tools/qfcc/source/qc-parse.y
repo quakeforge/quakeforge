@@ -35,6 +35,7 @@ static const char rcsid[] =
 #include <QF/hash.h>
 #include <QF/sys.h>
 
+#include "function.h"
 #include "struct.h"
 #include "switch.h"
 #include "type.h"
@@ -54,12 +55,6 @@ yyerror (const char *s)
 int yylex (void);
 type_t *PR_FindType (type_t *new);
 
-type_t *parse_params (type_t *type, def_t *parms, int elipsis);
-function_t *new_function (void);
-void build_function (function_t *f);
-void finish_function (function_t *f);
-void emit_function (function_t *f, expr_t *e);
-void build_scope (function_t *f, def_t *func);
 type_t *build_type (int is_field, type_t *type);
 type_t *build_array_type (type_t *type, int size);
 
@@ -89,7 +84,7 @@ typedef struct {
 	float		quaternion_val[4];
 	function_t *function;
 	struct switch_block_s	*switch_block;
-	param_t		params;
+	struct param_s	*param;
 }
 
 %right	<op> '=' ASX PAS /* pointer assign */
@@ -108,7 +103,7 @@ typedef struct {
 %token	<vector_val> VECTOR_VAL
 %token	<quaternion_val> QUATERNION_VAL
 
-%token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELIPSIS NIL
+%token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS NIL
 %token	IFBE IFB IFAE IFA
 %token	SWITCH CASE DEFAULT STRUCT ENUM TYPEDEF
 %token	ELE_START
@@ -118,9 +113,10 @@ typedef struct {
 %token	PROTOCOL PUBLIC SELECTOR
 
 %type	<type>	type type_name
-%type	<params> function_decl
+%type	<param> function_decl
 %type	<integer_val> array_decl
-%type	<def>	param param_list def_name
+%type	<param>	param param_list
+%type	<def>	def_name
 %type	<def>	def_item def_list
 %type	<expr>	const opt_expr expr arg_list element_list element_list1 element
 %type	<expr>	string_val opt_state_expr
@@ -131,6 +127,8 @@ typedef struct {
 %type	<switch_block> switch_block
 %type	<scope>	param_scope
 
+%type	<string_val> selector
+
 %expect 1
 
 %{
@@ -138,6 +136,7 @@ typedef struct {
 type_t	*current_type;
 def_t	*current_def;
 function_t *current_func;
+param_t *current_params;
 expr_t	*local_expr;
 expr_t	*break_label;
 expr_t	*continue_label;
@@ -218,7 +217,8 @@ type
 	| type array_decl { $$ = build_type (0, build_array_type ($1, $2)); }
 	| type_name function_decl
 		{
-			$$ = build_type (0, parse_params ($1, $2.params, $2.elipsis));
+			current_params = $2;
+			$$ = build_type (0, parse_params ($1, $2));
 		}
 	| type_name { $$ = build_type (0, $1); }
 	| '(' type ')' { $$ = $2; }
@@ -236,26 +236,23 @@ function_decl
 		}
 	  ')'
 		{
-			$$.params = $3;
-			$$.elipsis = 0;
+			$$ = $3;
 		}
-	| '(' param_scope param_list ',' ELIPSIS ')'
+	| '(' param_scope param_list ',' ELLIPSIS ')'
 		{
 			PR_FlushScope (pr_scope, 1);
 			pr_scope = $<scope>2;
 
-			$$.params = $3;
-			$$.elipsis = 1;
+			$$ = new_param (0, 0, 0);
+			$$->next = $3;
 		}
-	| '(' ELIPSIS ')'
+	| '(' ELLIPSIS ')'
 		{
-			$$.params = 0;
-			$$.elipsis = 1;
+			$$ = new_param (0, 0, 0);
 		}
 	| '(' ')'
 		{
-			$$.params = 0;
-			$$.elipsis = 0;
+			$$ = 0;
 		}
 	;
 
@@ -273,22 +270,13 @@ param_list
 	: param
 	| param_list ',' param
 		{
-			if ($3->next) {
-				error (0, "parameter redeclared: %s", $3->name);
-				$$ = $1;
-			} else {
-				$3->next = $1;
-				$$ = $3;
-			}
+			$3->next = $1;
+			$$ = $3;
 		}
 	;
 
 param
-	: type {current_type = $1;} def_name
-		{
-			$3->type = $1;
-			$$ = $3;
-		}
+	: type NAME { $$ = new_param (0, $1, $2); }
 	;
 
 array_decl
@@ -493,7 +481,7 @@ begin_function
 				lineno->fa.func = $$->aux - auxfunctions;
 			}
 			pr_scope = current_def;
-			build_scope ($$, current_def);
+			build_scope ($$, current_def, current_params);
 		}
 	;
 
@@ -980,11 +968,11 @@ methoddecl
 
 optparmlist
 	: /* empty */
-	| ',' ELIPSIS
+	| ',' ELLIPSIS
 	;
 
 unaryselector
-	: selector
+	: selector { /* XXX */ }
 	;
 
 keywordselector
@@ -993,18 +981,18 @@ keywordselector
 	;
 
 selector
-	: NAME { /* XXX */ }
+	: NAME
 	;
 
 keyworddecl
-	: selector ':' '(' type ')' NAME
-	| selector ':' NAME
-	| ':' '(' type ')' NAME
-	| ':' NAME
+	: selector ':' '(' type ')' NAME { /* XXX */ }
+	| selector ':' NAME { /* XXX */ }
+	| ':' '(' type ')' NAME { /* XXX */ }
+	| ':' NAME { /* XXX */ }
 	;
 
 messageargs
-	: selector
+	: selector { /* XXX */ }
 	| keywordarglist
 	;
 
@@ -1018,7 +1006,7 @@ keywordexpr
 	;
 
 keywordarg
-	: selector ':' keywordexpr
+	: selector ':' keywordexpr { /* XXX */ }
 	| ':' keywordexpr
 	;
 
@@ -1039,7 +1027,7 @@ obj_messageexpr
 	;
 
 selectorarg
-	: selector
+	: selector { /* XXX */ }
 	| keywordnamelist
 	;
 
@@ -1049,7 +1037,7 @@ keywordnamelist
 	;
 
 keywordname
-	: selector ':'
+	: selector ':' { /* XXX */ }
 	| ':'
 	;
 
@@ -1059,60 +1047,6 @@ obj_string
 	;
 
 %%
-
-type_t *
-parse_params (type_t *type, def_t *parms, int elipsis)
-{
-	type_t		new;
-	def_t		*p;
-	int			i;
-
-	memset (&new, 0, sizeof (new));
-	new.type = ev_func;
-	new.aux_type = type;
-	new.num_parms = 0;
-
-	if (elipsis) {
-		new.num_parms = -1;			// variable args
-	} else if (!parms) {
-	} else {
-		for (p = parms; p; p = p->next, new.num_parms++)
-			;
-		if (new.num_parms > MAX_PARMS) {
-			error (0, "too many params");
-			return current_type;
-		}
-		i = 1;
-		do {
-			//puts (parms->name);
-			strcpy (pr_parm_names[new.num_parms - i], parms->name);
-			new.parm_types[new.num_parms - i] = parms->type;
-			i++;
-			parms = parms->next;
-		} while (parms);
-	}
-	//print_type (&new); puts("");
-	return PR_FindType (&new);
-}
-
-void
-build_scope (function_t *f, def_t *func)
-{
-	int i;
-	def_t *def;
-	type_t *ftype = func->type;
-
-	func->alloc = &func->locals;
-
-	for (i = 0; i < ftype->num_parms; i++) {
-		def = PR_GetDef (ftype->parm_types[i], pr_parm_names[i], func, func->alloc);
-		f->parm_ofs[i] = def->ofs;
-		if (i > 0 && f->parm_ofs[i] < f->parm_ofs[i - 1])
-			Error ("bad parm order");
-		def->used = 1;				// don't warn for unused params
-		PR_DefInitialized (def);	// params are assumed to be initialized
-	}
-}
 
 type_t *
 build_type (int is_field, type_t *type)
@@ -1138,91 +1072,6 @@ build_array_type (type_t *type, int size)
 	new.aux_type = type;
 	new.num_parms = size;
 	return PR_FindType (&new);
-}
-
-function_t *
-new_function (void)
-{
-	function_t	*f;
-
-	f = calloc (1, sizeof (function_t));
-	f->next = pr_functions;
-	pr_functions = f;
-
-	return f;
-}
-
-void
-build_function (function_t *f)
-{
-	f->def->constant = 1;
-	f->def->initialized = 1;
-	G_FUNCTION (f->def->ofs) = numfunctions;
-}
-
-void
-finish_function (function_t *f)
-{
-	dfunction_t *df;
-	int i;
-
-	// fill in the dfunction
-	df = &functions[numfunctions];
-	numfunctions++;
-	f->dfunc = df;
-
-	if (f->builtin)
-		df->first_statement = -f->builtin;
-	else
-		df->first_statement = f->code;
-
-	df->s_name = ReuseString (f->def->name);
-	df->s_file = s_file;
-	df->numparms = f->def->type->num_parms;
-	df->locals = f->def->locals;
-	df->parm_start = 0;
-	for (i = 0; i < df->numparms; i++)
-		df->parm_size[i] = pr_type_size[f->def->type->parm_types[i]->type];
-
-	if (f->aux) {
-		def_t *def;
-		f->aux->function = df - functions;
-		for (def = f->def->scope_next; def; def = def->scope_next) {
-			if (def->name) {
-				ddef_t *d = new_local ();
-				d->type = def->type->type;
-				d->ofs = def->ofs;
-				d->s_name = ReuseString (def->name);
-
-				f->aux->num_locals++;
-			}
-		}
-	}
-}
-
-void
-emit_function (function_t *f, expr_t *e)
-{
-	//printf (" %s =\n", f->def->name);
-
-	if (f->aux)
-		lineno_base = f->aux->source_line;
-
-	pr_scope = f->def;
-	while (e) {
-		//printf ("%d ", pr_source_line);
-		//print_expr (e);
-		//puts("");
-
-		emit_expr (e);
-		e = e->next;
-	}
-	emit_statement (pr_source_line, op_done, 0, 0, 0);
-	PR_FlushScope (pr_scope, 0);
-	pr_scope = 0;
-	PR_ResetTempDefs ();
-
-	//puts ("");
 }
 
 typedef struct {

@@ -34,10 +34,9 @@ static const char rcsid[] =
 #include <QF/sys.h>
 
 #include "qfcc.h"
+#include "function.h"
 
 int         pr_source_line;
-
-char        pr_parm_names[MAX_PARMS][MAX_NAME];
 
 char       *pr_file_p;
 char       *pr_line_start;				// start of current source line

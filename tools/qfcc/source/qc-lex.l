@@ -172,7 +172,7 @@ m		([\-+]?)
 						return yytext[0];
 					}
 
-"..."	return ELIPSIS;
+"..."	return ELLIPSIS;
 
 "<<"	return SHL;
 ">>"	return SHR;

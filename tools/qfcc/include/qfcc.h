@@ -331,11 +331,6 @@ typedef struct def_s {
 	struct def_s	*parent;		// vector/quaternion member
 } def_t;
 
-typedef struct param_s {
-	def_t	*params;
-	int		elipsis;
-} param_t;
-
 //============================================================================
 
 // pr_loc.h -- program local defs
@@ -502,7 +497,6 @@ void PR_PrintDefs (void);
 void PR_PrintFunction (def_t *def);
 void PR_SkipToSemicolon (void);
 
-extern	char		pr_parm_names[MAX_PARMS][MAX_NAME];
 extern	qboolean	pr_trace;
 
 #define	G_FLOAT(o) (pr_globals[o])

@@ -35,6 +35,7 @@ static const char rcsid[] =
 #include "QF/hash.h"
 
 #include "qfcc.h"
+#include "function.h"
 
 typedef struct {
 	const char *name;

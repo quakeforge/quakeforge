@@ -1,0 +1,204 @@
+/*
+	function.c
+
+	QC function support code
+
+	Copyright (C) 2001 Bill Currie
+
+	Author: Bill Currie <bill@taniwha.org>
+	Date: 2002/5/7
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+*/
+static const char rcsid[] =
+	"$Id$";
+
+#include "qfcc.h"
+
+#include "function.h"
+#include "type.h"
+
+param_t *
+new_param (const char *selector, type_t *type, const char *name)
+{
+	param_t    *param = malloc (sizeof (param_t));
+
+	param->next = 0;
+	param->selector = selector;
+	param->type = type;
+	param->name = name;
+
+	return param;
+}
+
+type_t *
+parse_params (type_t *type, param_t *parms)
+{
+	int         ellipsis = 0, i;
+	param_t    *p;
+	type_t      new;
+
+	memset (&new, 0, sizeof (new));
+	new.type = ev_func;
+	new.aux_type = type;
+	new.num_parms = 0;
+
+	if (parms && !parms->selector && !parms->type && !parms->name) {
+		ellipsis = 1;
+		parms = parms->next;
+	}
+
+	if (ellipsis) {
+		new.num_parms = -1;			// variable args
+	} else if (!parms) {
+	} else {
+		for (p = parms; p; p = p->next, new.num_parms++)
+			;
+		if (new.num_parms > MAX_PARMS) {
+			error (0, "too many params");
+			return type;
+		}
+		i = 1;
+		do {
+			//puts (parms->name);
+			new.parm_types[new.num_parms - i] = parms->type;
+			i++;
+			parms = parms->next;
+		} while (parms);
+	}
+	//print_type (&new); puts("");
+	return PR_FindType (&new);
+}
+
+void
+build_scope (function_t *f, def_t *func, param_t *params)
+{
+	int i, count;
+	def_t *def;
+	param_t   **param_list, *p;
+
+	for (p = params, count = 0; p; p = p->next, count++)
+		;
+	param_list = alloca (sizeof (param_t *) * i);
+	i = count;
+	for (p = params; p; p = p->next)
+		param_list[--i] = p;
+
+	func->alloc = &func->locals;
+
+	for (i = 0; i < count; i++) {
+		if (!param_list[i]->selector
+			&& !param_list[i]->type
+			&& !param_list[i]->name)
+			continue;					// ellipsis marker
+		def = PR_GetDef (param_list[i]->type, param_list[i]->name,
+						 func, func->alloc);
+		f->parm_ofs[i] = def->ofs;
+		if (i > 0 && f->parm_ofs[i] < f->parm_ofs[i - 1])
+			Error ("bad parm order");
+		def->used = 1;				// don't warn for unused params
+		PR_DefInitialized (def);	// params are assumed to be initialized
+	}
+}
+
+function_t *
+new_function (void)
+{
+	function_t	*f;
+
+	f = calloc (1, sizeof (function_t));
+	f->next = pr_functions;
+	pr_functions = f;
+
+	return f;
+}
+
+void
+build_function (function_t *f)
+{
+	f->def->constant = 1;
+	f->def->initialized = 1;
+	G_FUNCTION (f->def->ofs) = numfunctions;
+}
+
+void
+finish_function (function_t *f)
+{
+	dfunction_t *df;
+	int i;
+
+	// fill in the dfunction
+	df = &functions[numfunctions];
+	numfunctions++;
+	f->dfunc = df;
+
+	if (f->builtin)
+		df->first_statement = -f->builtin;
+	else
+		df->first_statement = f->code;
+
+	df->s_name = ReuseString (f->def->name);
+	df->s_file = s_file;
+	df->numparms = f->def->type->num_parms;
+	df->locals = f->def->locals;
+	df->parm_start = 0;
+	for (i = 0; i < df->numparms; i++)
+		df->parm_size[i] = pr_type_size[f->def->type->parm_types[i]->type];
+
+	if (f->aux) {
+		def_t *def;
+		f->aux->function = df - functions;
+		for (def = f->def->scope_next; def; def = def->scope_next) {
+			if (def->name) {
+				ddef_t *d = new_local ();
+				d->type = def->type->type;
+				d->ofs = def->ofs;
+				d->s_name = ReuseString (def->name);
+
+				f->aux->num_locals++;
+			}
+		}
+	}
+}
+
+void
+emit_function (function_t *f, expr_t *e)
+{
+	//printf (" %s =\n", f->def->name);
+
+	if (f->aux)
+		lineno_base = f->aux->source_line;
+
+	pr_scope = f->def;
+	while (e) {
+		//printf ("%d ", pr_source_line);
+		//print_expr (e);
+		//puts("");
+
+		emit_expr (e);
+		e = e->next;
+	}
+	emit_statement (pr_source_line, op_done, 0, 0, 0);
+	PR_FlushScope (pr_scope, 0);
+	pr_scope = 0;
+	PR_ResetTempDefs ();
+
+	//puts ("");
+}
