@@ -125,7 +125,7 @@ new_string_ref (progs_t *pr)
 }
 
 static void
-free_string_ref (progs_t *pr, strref_t *sr)
+free_string_ref (strref_t *sr)
 {
 	sr->string = 0;
 	sr->dstring = 0;
@@ -169,7 +169,7 @@ strref_free (void *_sr, void *_pr)
 
 	// free the string and ref only if it's not a static string
 	if (sr < pr->static_strings || sr >= pr->static_strings + pr->num_strings) {
-		free_string_ref (pr, sr);
+		free_string_ref (sr);
 	}
 }
 
@@ -302,6 +302,41 @@ PR_SetString (progs_t *pr, const char *s)
 	return string_index (pr, sr);
 }
 
+void
+PR_ClearReturnStrings (progs_t *pr)
+{
+	int         i;
+
+	for (i = 0; i < PR_RS_SLOTS; i++)
+		if (pr->return_strings[i])
+			free_string_ref (pr->return_strings[i]);
+}
+
+int
+PR_SetReturnString (progs_t *pr, const char *s)
+{
+	strref_t   *sr;
+
+	if (!s)
+		s = "";
+	if ((sr = Hash_Find (pr->strref_hash, s))) {
+		return string_index (pr, sr);
+	}
+
+	if ((sr = pr->return_strings[pr->rs_slot])) {
+		if (sr->string)
+			PR_Zone_Free (pr, sr->string);
+	} else {
+		sr = new_string_ref (pr);
+	}
+	sr->string = pr_strdup(pr, s);
+	sr->count = 0;
+
+	pr->return_strings[pr->rs_slot++] = sr;
+	pr->rs_slot %= PR_RS_SLOTS;
+	return string_index (pr, sr);
+}
+
 int
 PR_SetTempString (progs_t *pr, const char *s)
 {
@@ -355,7 +390,7 @@ PR_FreeString (progs_t *pr, int str)
 			dstring_delete (sr->dstring);
 		else
 			PR_Zone_Free (pr, sr->string);
-		free_string_ref (pr, sr);
+		free_string_ref (sr);
 		return;
 	}
 	PR_RunError (pr, "attempt to free invalid string %d", str);
@@ -369,7 +404,7 @@ PR_FreeTempStrings (progs_t *pr)
 	for (sr = pr->pr_xtstr; sr; sr = t) {
 		t = sr->next;
 		PR_Zone_Free (pr, sr->string);
-		free_string_ref (pr, sr);
+		free_string_ref (sr);
 	}
 	pr->pr_xtstr = 0;
 }

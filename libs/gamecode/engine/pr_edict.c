@@ -422,8 +422,9 @@ ED_Print (progs_t *pr, edict_t *ed)
 					continue;
 				break;
 			case ev_string:
-				if (!PR_GetString (pr, v->string_var)[0])
-					continue;
+				if (PR_StringValid (pr, v->string_var))
+					if (!PR_GetString (pr, v->string_var)[0])
+						continue;
 				break;
 			case ev_float:
 				if (!v->float_var)

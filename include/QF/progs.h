@@ -160,7 +160,7 @@ qboolean PR_EdictValid (progs_t *pr, int e);
 #define R_FUNCTION(p)	R_var (p, func)
 #define R_POINTER(p)	R_var (p, pointer)
 
-#define RETURN_STRING(p, s)		(R_STRING (p) = PR_SetTempString((p), s))
+#define RETURN_STRING(p, s)		(R_STRING (p) = PR_SetReturnString((p), s))
 #define RETURN_EDICT(p, e)		(R_STRING (p) = EDICT_TO_PROG(p, e))
 #define RETURN_POINTER(pr,p)	(R_POINTER (pr) = POINTER_TO_PROG (pr, p))
 #define RETURN_VECTOR(p, v)		(VectorCopy (v, R_VECTOR (p)))
@@ -251,9 +251,11 @@ qboolean PR_StringValid (progs_t *pr, int num);
 const char *PR_GetString(progs_t *pr, int num);
 struct dstring_s *PR_GetDString(progs_t *pr, int num);
 int PR_SetString(progs_t *pr, const char *s);
+int PR_SetReturnString(progs_t *pr, const char *s);
 int PR_SetTempString(progs_t *pr, const char *s);
 void PR_MakeTempString(progs_t *pr, int str);
 int PR_NewString (progs_t *pr);
+void PR_ClearReturnStrings (progs_t *pr);
 void PR_FreeString (progs_t *pr, int str);
 void PR_FreeTempStrings (progs_t *pr);
 void PR_Sprintf (progs_t *pr, struct dstring_s *result, const char *name,
@@ -313,6 +315,7 @@ void PR_Cmds_Init (progs_t *pr);
 
 #define MAX_STACK_DEPTH		64
 #define LOCALSTACK_SIZE		4096
+#define PR_RS_SLOTS			16
 
 typedef struct strref_s strref_t;
 
@@ -346,6 +349,8 @@ struct progs_s {
 	struct dstring_mem_s *ds_mem;
 	strref_t   *static_strings;
 	strref_t  **dynamic_strings;
+	strref_t   *return_strings[PR_RS_SLOTS];
+	int         rs_slot;
 	unsigned    dyn_str_size;
 	struct hashtab_s *strref_hash;
 	int         num_strings;

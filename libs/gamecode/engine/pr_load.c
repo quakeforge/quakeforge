@@ -171,6 +171,7 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 		pr->free_progs_mem = free_progs_mem;
 
 	PR_Resources_Clear (pr);
+	PR_ClearReturnStrings (pr);
 	if (pr->progs)
 		pr->free_progs_mem (pr, pr->progs);
 	mem_size = pr->progs_size + pr->zone_size + pr->pr_edictareasize;

@@ -187,14 +187,14 @@ ED_WriteGlobals (progs_t *pr, QFile *f)
 }
 
 
-static char *
+static int
 ED_NewString (progs_t *pr, const char *string)
 {
 	char		*new, *new_p;
 	int			i, l;
 
 	l = strlen (string) + 1;
-	new = Hunk_Alloc (l);
+	new = Hunk_TempAlloc (l);
 	new_p = new;
 
 	for (i = 0; i < l; i++) {
@@ -208,7 +208,7 @@ ED_NewString (progs_t *pr, const char *string)
 			*new_p++ = string[i];
 	}
 
-	return new;
+	return PR_SetString (pr, new);
 }
 
 
@@ -232,7 +232,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s)
 
 	switch (key->type & ~DEF_SAVEGLOBAL) {
 		case ev_string:
-			d->string_var = PR_SetString (pr, ED_NewString (pr, s));
+			d->string_var = ED_NewString (pr, s);
 			break;
 
 		case ev_float:
