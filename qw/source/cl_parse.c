@@ -1188,6 +1188,9 @@ CL_ParseServerMessage (void)
 
 	// parse the message
 	while (1) {
+		if (cls.state == ca_disconnected)
+			break; // something called Host_NetError
+
 		if (net_message->badread) {
 			Host_NetError ("CL_ParseServerMessage: Bad server message");
 			break;
