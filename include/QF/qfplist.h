@@ -62,9 +62,11 @@ inrange((ch), '0', '9') ? ((ch) - 0x30) \
 	underscore character, '_'. Quoted strings may contain whitespace, C escape
 	sequences, and so on. The quote character is '"'.
 
+	<!-- in the following paragram, the \< and \> are just < and >. the \ is
+		 for doxygen -->
 	QFBinary data (though not loaded currently) is hex-encoded and contained
-	within angle brackets, < >. The length of the encoded data must be an even
-	number, so while <FF00> is valid, <F00> isn't.
+	within angle brackets, \< \>. The length of the encoded data must be an even
+	number, so while \<FF00\> is valid, \<F00\> isn't.
 
 	Property lists may contain C-style or BCPL-style comments.
 */
