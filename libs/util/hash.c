@@ -422,7 +422,7 @@ Hash_GetList (hashtab_t *tab)
 	void      **l;
 	size_t      ind;
 
-	l = list = malloc ((tab->num_ele + 1) * sizeof (void*));
+	l = list = malloc ((tab->num_ele + 1) * sizeof (void *));
 	if (!list)
 		return 0;
 	for (ind = 0; ind < tab->tab_size; ind++) {
