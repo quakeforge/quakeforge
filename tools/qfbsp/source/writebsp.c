@@ -33,8 +33,10 @@
 #include "QF/dstring.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "bsp5.h"
+#include "options.h"
 
 int         headclipnode;
 int         firstface;
@@ -320,15 +322,20 @@ CleanupName (char *in, char *out)
 		out[i] = 0;
 }
 
-void
+int
 TEX_InitFromWad (char *path)
 {
 	int         i;
 	wadlist_t  *wl;
 
-	texfile = Qopen (path, "rb");
+	texfile = Qopen (path, "rbz");
+#ifdef HAVE_ZLIB
 	if (!texfile)
-		Sys_Error ("couldn't open %s", path);
+		texfile = Qopen (va ("%s.gz", path), "rbz");
+#endif
+	if (!texfile)
+		return -1;
+	printf ("wadfile: %s\n", path);
 
 	wl = calloc (1, sizeof (wadlist_t));
 
@@ -348,6 +355,7 @@ TEX_InitFromWad (char *path)
 	}
 	wl->next = wadlist;
 	wadlist = wl;
+	return 0;
 }
 
 int
@@ -415,32 +423,58 @@ void
 WriteMiptex (void)
 {
 	dstring_t  *data;
-	char       *path, *p;
-	char        fullpath[1024];
+	char       *wad_list, *wad, *w;
+	char       *path_list, *path, *p;
+	dstring_t  *fullpath;
 	dmiptexlump_t *l;
-	int         i, len;
+	int         i, len, res = -1;
 
-	path = ValueForKey (&entities[0], "_wad");
-	if (!path || !path[0]) {
-		path = ValueForKey (&entities[0], "wad");
-		if (!path || !path[0]) {
+	wad_list = ValueForKey (&entities[0], "_wad");
+	if (!wad_list || !wad_list[0]) {
+		wad_list = ValueForKey (&entities[0], "wad");
+		if (!wad_list || !wad_list[0]) {
 			printf ("WARNING: no wadfile specified\n");
 			bsp->texdatasize = 0;
 			return;
 		}
 	}
-	path = strdup (path);
-	p = strtok (path, ";");	// yeah yeah. but it works :)
-	while (p) {
-		sprintf (fullpath, "%s/%s", /* FIXME gamedir */ ".", p);
-
-		TEX_InitFromWad (fullpath);
+	fullpath = dstring_new ();
+	wad = wad_list = strdup (wad_list);
+	w = strchr (wad, ';');
+	if (w)
+		*w++ = 0;
+	while (1) {
+		path = path_list = strdup (options.wadpath);
+		p = strchr (path, ';');
+		if (p)
+			*p++ = 0;
+		while (1) {
+			dsprintf (fullpath, "%s%s%s", path, path[0] ? "/" : "", wad);
+			res = TEX_InitFromWad (fullpath->str);
+			if (!res)
+				break;
+			path = p;
+			if (!path || !*path)
+				break;
+			p = strchr (path, ';');
+			if (p)
+				*p++ = 0;
+		}
+		free (path_list);
+		if (res == -1)
+			Sys_Error ("couldn't open %s[.gz]", wad);
 
 		AddAnimatingTextures ();
 
-		p = strtok (0, ";");
+		wad = w;
+		if (!wad || !*wad)
+			break;
+		w = strchr (wad, ';');
+		if (w)
+			*w++ = 0;
 	}
-	free (path);
+	free (wad_list);
+	dstring_delete (fullpath);
 
 	data = dstring_new ();
 	data->size = sizeof (dmiptexlump_t);
@@ -485,12 +519,12 @@ FinishBSPFile (void)
 	QFile      *f;
 
 	printf ("--- FinishBSPFile ---\n");
-	printf ("WriteBSPFile: %s\n", bspfilename);
+	printf ("WriteBSPFile: %s\n", options.bspfile);
 
 	WriteMiptex ();
 
 // XXX	PrintBSPFileSizes ();
-	f = Qopen (bspfilename, "wb");
+	f = Qopen (options.bspfile, "wb");
 	WriteBSPFile (bsp, f);
 	Qclose (f);
 }

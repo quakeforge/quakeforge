@@ -246,25 +246,11 @@ qboolean FillOutside (node_t *node);
 
 //=============================================================================
 
-extern	qboolean	drawflag;
-extern	qboolean nofill;
-extern	qboolean notjunc;
-extern	qboolean noclip;
-extern	qboolean	verbose;
-
-extern	int		subdivide_size;
-
-extern	int		hullnum;
-
 extern	brushset_t	*brushset;
 
 void qprintf (char *fmt, ...);	// only prints if verbose
 
 extern	int		valid;
-
-extern	char	portfilename[1024];
-extern	char	bspfilename[1024];
-extern	char	pointfilename[1024];
 
 extern	qboolean	worldmodel;
 

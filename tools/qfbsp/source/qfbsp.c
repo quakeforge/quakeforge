@@ -35,29 +35,15 @@
 #include "QF/sys.h"
 
 #include "bsp5.h"
+#include "options.h"
+
+options_t   options;
 
 bsp_t      *bsp;
-
-// command line flags
-qboolean    drawflag;
-qboolean    nofill;
-qboolean    notjunc;
-qboolean    noclip;
-qboolean    onlyents;
-qboolean    verbose = true;
-qboolean    allverbose;
-qboolean    usehulls;
-
-int         subdivide_size = 240;
 
 brushset_t *brushset;
 
 int         valid;
-
-char        bspfilename[1024];
-char        pointfilename[1024];
-char        portfilename[1024];
-char        hullfilename[1024];
 
 char       *argv0;						// changed after fork();
 
@@ -71,7 +57,7 @@ qprintf (char *fmt, ...)
 {
 	va_list     argptr;
 
-	if (!verbose)
+	if (!options.verbosity)
 		return;
 
 	va_start (argptr, fmt);
@@ -525,7 +511,7 @@ ProcessEntity (int entnum)
 		if (entnum == 1)
 			qprintf ("--- Internal Entities ---\n");
 		sprintf (mod, "*%i", bsp->nummodels);
-		if (verbose)
+		if (options.verbosity)
 			PrintEntity (ent);
 
 		if (hullnum == 0)
@@ -548,7 +534,8 @@ ProcessEntity (int entnum)
 
 	if (hullnum != 0) {
 		nodes = SolidBSP (surfs, true);
-		if (entnum == 0 && !nofill) {	// assume non-world bmodels are simple
+		if (entnum == 0 && !options.nofill) {
+			// assume non-world bmodels are simple
 			PortalizeWorld (nodes);
 			if (FillOutside (nodes)) {
 				surfs = GatherNodeFaces (nodes);
@@ -569,7 +556,8 @@ ProcessEntity (int entnum)
 
 		// build all the portals in the bsp tree
 		// some portals are solid polygons, and some are paths to other leafs
-		if (entnum == 0 && !nofill) {	// assume non-world bmodels are simple
+		if (entnum == 0 && !options.nofill) {
+			// assume non-world bmodels are simple
 			PortalizeWorld (nodes);
 
 			if (FillOutside (nodes)) {
@@ -619,11 +607,11 @@ UpdateEntLump (void)
 	}
 
 	printf ("Updating entities lump...\n");
-	f = Qopen (bspfilename, "rb");
+	f = Qopen (options.bspfile, "rb");
 	bsp = LoadBSPFile (f, Qfilesize (f));
 	Qclose (f);
 	WriteEntitiesToString ();
-	f = Qopen (bspfilename, "wb");
+	f = Qopen (options.bspfile, "wb");
 	WriteBSPFile (bsp, f);
 	Qclose (f);
 }
@@ -643,14 +631,14 @@ WriteClipHull (void)
 	dplane_t    *p;
 	int          i;
 
-	hullfilename[strlen (hullfilename) - 1] = '0' + hullnum;
+	options.hullfile[strlen (options.hullfile) - 1] = '0' + hullnum;
 
 	qprintf ("---- WriteClipHull ----\n");
-	qprintf ("Writing %s\n", hullfilename);
+	qprintf ("Writing %s\n", options.hullfile);
 
-	f = fopen (hullfilename, "w");
+	f = fopen (options.hullfile, "w");
 	if (!f)
-		Sys_Error ("Couldn't open %s", hullfilename);
+		Sys_Error ("Couldn't open %s", options.hullfile);
 
 	fprintf (f, "%i\n", bsp->nummodels);
 
@@ -688,14 +676,14 @@ ReadClipHull (int hullnum)
 	int          firstclipnode, junk, c1, c2, i, j, n;
 	vec3_t       norm;
 
-	hullfilename[strlen (hullfilename) - 1] = '0' + hullnum;
+	options.hullfile[strlen (options.hullfile) - 1] = '0' + hullnum;
 
-	f = fopen (hullfilename, "r");
+	f = fopen (options.hullfile, "r");
 	if (!f)
-		Sys_Error ("Couldn't open %s", hullfilename);
+		Sys_Error ("Couldn't open %s", options.hullfile);
 
 	if (fscanf (f, "%i\n", &n) != 1)
-		Sys_Error ("Error parsing %s", hullfilename);
+		Sys_Error ("Error parsing %s", options.hullfile);
 
 	if (n != bsp->nummodels)
 		Sys_Error ("ReadClipHull: hull had %i models, base had %i", n,
@@ -715,7 +703,7 @@ ReadClipHull (int hullnum)
 			Sys_Error ("ReadClipHull: MAX_MAP_CLIPNODES");
 		if (fscanf (f, "%i : %f %f %f %f : %i %i\n", &junk, &f1, &f2, &f3, &f4,
 					&c1, &c2) != 7)
-			Sys_Error ("Error parsing %s", hullfilename);
+			Sys_Error ("Error parsing %s", options.hullfile);
 
 		p.normal[0] = f1;
 		p.normal[1] = f2;
@@ -743,8 +731,8 @@ CreateSingleHull (void)
 // for each entity in the map file that has geometry
 	for (entnum = 0; entnum < num_entities; entnum++) {
 		ProcessEntity (entnum);
-		if (!allverbose)
-			verbose = false;			// don't print rest of entities
+		if (options.verbosity < 2)
+			options.verbosity = 0;	// don't print rest of entities
 	}
 
 	if (hullnum)
@@ -760,12 +748,12 @@ CreateHulls (void)
 		exit (0);
 	}
 // commanded to use the allready existing hulls 1 and 2
-	if (usehulls) {
+	if (options.usehulls) {
 		CreateSingleHull ();
 		return;
 	}
 // commanded to ignore the hulls altogether
-	if (noclip) {
+	if (options.noclip) {
 		CreateSingleHull ();
 		return;
 	}
@@ -778,12 +766,12 @@ CreateHulls (void)
 	fflush (stdout);
 	if (!fork ()) {
 		hullnum = 1;
-		verbose = false;
+		options.verbosity = 0;
 		drawflag = false;
 		sprintf (argv0, "HUL%i", hullnum);
 	} else if (!fork ()) {
 		hullnum = 2;
-		verbose = false;
+		options.verbosity = 0;
 		drawflag = false;
 		sprintf (argv0, "HUL%i", hullnum);
 	}
@@ -818,40 +806,34 @@ CreateHulls (void)
 }
 
 void
-ProcessFile (char *sourcebase, char *bspfilename1)
+ProcessFile ()
 {
 // create filenames
-	strcpy (bspfilename, bspfilename1);
-	COM_StripExtension (bspfilename, bspfilename);
-	strcat (bspfilename, ".bsp");
 
-	strcpy (hullfilename, bspfilename1);
-	COM_StripExtension (hullfilename, hullfilename);
-	strcat (hullfilename, ".h0");
+	COM_StripExtension (options.bspfile, options.hullfile);
+	strcat (options.hullfile, ".h0");
 
-	strcpy (portfilename, bspfilename1);
-	COM_StripExtension (portfilename, portfilename);
-	strcat (portfilename, ".prt");
+	COM_StripExtension (options.bspfile, options.portfile);
+	strcat (options.portfile, ".prt");
 
-	strcpy (pointfilename, bspfilename1);
-	COM_StripExtension (pointfilename, pointfilename);
-	strcat (pointfilename, ".pts");
+	COM_StripExtension (options.bspfile, options.pointfile);
+	strcat (options.pointfile, ".pts");
 
-	if (!onlyents) {
-		remove (bspfilename);
-		if (!usehulls) {
-			hullfilename[strlen (hullfilename) - 1] = '1';
-			remove (hullfilename);
-			hullfilename[strlen (hullfilename) - 1] = '2';
-			remove (hullfilename);
+	if (!options.onlyents) {
+		remove (options.bspfile);
+		if (!options.usehulls) {
+			options.hullfile[strlen (options.hullfile) - 1] = '1';
+			remove (options.hullfile);
+			options.hullfile[strlen (options.hullfile) - 1] = '2';
+			remove (options.hullfile);
 		}
-		remove (portfilename);
-		remove (pointfilename);
+		remove (options.portfile);
+		remove (options.pointfile);
 	}
 	bsp = BSP_New ();
 // load brushes and entities
-	LoadMapFile (sourcebase);
-	if (onlyents) {
+	LoadMapFile (options.mapfile);
+	if (options.onlyents) {
 		UpdateEntLump ();
 		return;
 	}
@@ -874,58 +856,16 @@ main (int argc, char **argv)
 	char        sourcename[1024];
 	char        destname[1024];
 	double      start, end;
-	int         i;
 
 //	malloc_debug (15);
 
 // check command line flags
-	for (i = 1; i < argc; i++) {
-		if (argv[i][0] != '-')
-			break;
-		else if (!strcmp (argv[i], "-draw"))
-			drawflag = true;
-		else if (!strcmp (argv[i], "-notjunc"))
-			notjunc = true;
-		else if (!strcmp (argv[i], "-nofill"))
-			nofill = true;
-		else if (!strcmp (argv[i], "-noclip"))
-			noclip = true;
-		else if (!strcmp (argv[i], "-onlyents"))
-			onlyents = true;
-		else if (!strcmp (argv[i], "-verbose"))
-			allverbose = true;
-		else if (!strcmp (argv[i], "-usehulls"))
-			usehulls = true;			// don't fork -- use the existing files
-		else if (!strcmp (argv[i], "-hullnum")) {
-			hullnum = atoi (argv[i + 1]);
-			i++;
-		} else if (!strcmp (argv[i], "-subdivide")) {
-			subdivide_size = atoi (argv[i + 1]);
-			i++;
-		} else
-			Sys_Error ("qbsp: Unknown option '%s'", argv[i]);
-	}
-
-	if (i != argc - 2 && i != argc - 1)
-		Sys_Error
-			("usage: qbsp [options] sourcefile [destfile]\noptions: -nojunc -nofill -threads[124] -draw -onlyents -verbose -proj <projectpath>");
+	DecodeArgs (argc, argv);
 
 // XXX	SetQdirFromPath (argv[i]);
 
 // let forked processes change name for ps status
 	argv0 = argv[0];
-
-// create destination name if not specified
-	strcpy (sourcename, argv[i]);
-	COM_DefaultExtension (sourcename, ".map");
-
-	if (i != argc - 2) {
-		strcpy (destname, argv[i]);
-		COM_StripExtension (destname, destname);
-		strcat (destname, ".bsp");
-		printf ("outputfile: %s\n", destname);
-	} else
-		strcpy (destname, argv[i + 1]);
 
 // do it!
 	start = Sys_DoubleTime ();

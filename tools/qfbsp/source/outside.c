@@ -24,6 +24,7 @@
 #include "QF/sys.h"
 
 #include "bsp5.h"
+#include "options.h"
 
 int         outleafs;
 
@@ -67,7 +68,7 @@ MarkLeakTrail (portal_t *n2)
 	portal_t   *n1;
 	vec3_t      p1, p2, dir;
 
-	if (hullnum)
+	if (options.hullnum)
 		return;
 
 	n1 = prevleaknode;
@@ -188,7 +189,7 @@ FillOutside (node_t *node)
 
 	qprintf ("----- FillOutside ----\n");
 
-	if (nofill) {
+	if (options.nofill) {
 		printf ("skipped\n");
 		return false;
 	}
@@ -203,7 +204,7 @@ FillOutside (node_t *node)
 
 	if (!inside) {
 		printf ("Hullnum %i: No entities in empty space -- no filling "
-				"performed\n", hullnum);
+				"performed\n", options.hullnum);
 		return false;
 	}
 
@@ -215,10 +216,10 @@ FillOutside (node_t *node)
 
 	prevleaknode = NULL;
 
-	if (!hullnum) {
-		leakfile = fopen (pointfilename, "w");
+	if (!options.hullnum) {
+		leakfile = fopen (options.pointfile, "w");
 		if (!leakfile)
-			Sys_Error ("Couldn't open %s\n", pointfilename);
+			Sys_Error ("Couldn't open %s\n", options.pointfile);
 	}
 
 	if (RecursiveFillOutside (outside_node.portals->nodes[s], false)) {
@@ -227,13 +228,13 @@ FillOutside (node_t *node)
 		qprintf ("reached occupant at: (%4.0f,%4.0f,%4.0f)\n", v[0], v[1],
 				 v[2]);
 		qprintf ("no filling performed\n");
-		if (!hullnum)
+		if (!options.hullnum)
 			fclose (leakfile);
-		qprintf ("leak file written to %s\n", pointfilename);
+		qprintf ("leak file written to %s\n", options.pointfile);
 		qprintf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 		return false;
 	}
-	if (!hullnum)
+	if (!options.hullnum)
 		fclose (leakfile);
 
 // now go back and fill things in

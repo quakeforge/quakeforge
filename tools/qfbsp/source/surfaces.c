@@ -31,6 +31,7 @@
 #include "QF/sys.h"
 
 #include "bsp5.h"
+#include "options.h"
 
 /*
 a surface has all of the faces that could be drawn on a given plane
@@ -80,7 +81,7 @@ SubdivideFace (face_t *f, face_t **prevptr)
 					maxs = v;
 			}
 
-			if (maxs - mins <= subdivide_size)
+			if (maxs - mins <= options.subdivide_size)
 				break;
 
 			// split it
@@ -89,7 +90,7 @@ SubdivideFace (face_t *f, face_t **prevptr)
 			VectorCopy (tex->vecs[axis], plane.normal);
 			v = VectorLength (plane.normal);
 			VectorNormalize (plane.normal);
-			plane.dist = (mins + subdivide_size - 16) / v;
+			plane.dist = (mins + options.subdivide_size - 16) / v;
 			next = f->next;
 			SplitFace (f, &plane, &front, &back);
 			if (!front || !back)

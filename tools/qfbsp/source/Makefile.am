@@ -17,8 +17,8 @@ bin_PROGRAMS=	$(qfbsp)
 EXTRA_PROGRAMS= qfbsp
 
 qfbsp_SOURCES= \
-		brush.c csg4.c map.c merge.c nodraw.c outside.c portals.c qfbsp.c \
-		region.c solidbsp.c surfaces.c tjunc.c writebsp.c
+		brush.c csg4.c map.c merge.c nodraw.c options.c outside.c portals.c \
+		qfbsp.c region.c solidbsp.c surfaces.c tjunc.c writebsp.c
 
 qfbsp_LDFLAGS=		$(PTHREAD_FLAGS)
 qfbsp_LDADD=		$(QFBSP_LIBS)

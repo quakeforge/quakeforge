@@ -30,6 +30,7 @@
 #include "QF/sys.h"
 
 #include "bsp5.h"
+#include "options.h"
 
 typedef struct wvert_s {
 	vec_t       t;
@@ -437,7 +438,7 @@ tjunc (node_t *headnode)
 
 	qprintf ("---- tjunc ----\n");
 
-	if (notjunc)
+	if (options.notjunc)
 		return;
 
 // identify all points on common edges

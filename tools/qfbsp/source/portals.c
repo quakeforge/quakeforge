@@ -28,6 +28,7 @@
 #include "QF/sys.h"
 
 #include "bsp5.h"
+#include "options.h"
 
 node_t      outside_node;				// portals outside the world face this
 
@@ -504,10 +505,10 @@ WritePortalfile (node_t *headnode)
 	NumberLeafs_r (headnode);
 
 // write the file
-	printf ("writing %s\n", portfilename);
-	pf = fopen (portfilename, "w");
+	printf ("writing %s\n", options.portfile);
+	pf = fopen (options.portfile, "w");
 	if (!pf)
-		Sys_Error ("Error opening %s", portfilename);
+		Sys_Error ("Error opening %s", options.portfile);
 
 	fprintf (pf, "%s\n", PORTALFILE);
 	fprintf (pf, "%i\n", num_visleafs);
