@@ -1601,6 +1601,8 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 	pmove.flying = SVfloat (sv_player, movetype) == MOVETYPE_FLY;
 	pmove.spectator = host_client->spectator;
 	pmove.waterjumptime = SVfloat (sv_player, teleport_time);
+	if (pmove.waterjumptime)
+		pmove.waterjumptime -= sv.time;
 	pmove.numphysent = 1;
 	pmove.physents[0].model = sv.worldmodel;
 	pmove.cmd = *ucmd;
@@ -1640,6 +1642,10 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 
 	host_client->oldbuttons = pmove.oldbuttons;
 	host_client->oldonground = pmove.oldonground;
+	if (pmove.waterjumptime > 0)
+		pmove.waterjumptime += sv.time;
+	else
+		pmove.waterjumptime = 0;
 	SVfloat (sv_player, teleport_time) = pmove.waterjumptime;
 	SVfloat (sv_player, waterlevel) = waterlevel;
 	SVfloat (sv_player, watertype) = watertype;
