@@ -23,22 +23,6 @@ AC_PROG_CPP
 AC_PROG_YACC
 AM_PROG_LEX
 
-set $CC
-if test "$1" = gcc; then
-	shift
-	args="$*"
-	AC_MSG_CHECKING(for broken gcc)
-	if test `gcc --version` = 2.96; then
-		AC_MSG_RESULT(yes. You poor sod, hope you have egcs)
-		CC="egcs $args"
-		set $CPP
-		shift
-		CPP="egcs $*"
-	else
-		AC_MSG_RESULT(no. good.)
-	fi
-fi
-
 dnl We want warnings, lots of warnings...
 if test "x$GCC" = xyes; then
 	CFLAGS="$CFLAGS -Wall -Werror"
