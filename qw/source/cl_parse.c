@@ -997,22 +997,23 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 }
 
 void
-CL_UpdateUserinfo (void)
+CL_ParseUpdateUserInfo (void)
 {
-	int            slot;
 	player_info_t *player;
+	net_svc_updateuserinfo_t updateuserinfo;
 
-	slot = MSG_ReadByte (net_message);
-	if (slot >= MAX_CLIENTS)
+	NET_SVC_UpdateUserInfo_Parse (&updateuserinfo, net_message);
+
+	if (updateuserinfo.slot >= MAX_CLIENTS)
 		Host_EndGame
 			("CL_ParseServerMessage: svc_updateuserinfo > MAX_SCOREBOARD");
 
-	player = &cl.players[slot];
-	player->userid = MSG_ReadLong (net_message);
-	strncpy (player->userinfo, MSG_ReadString (net_message),
+	player = &cl.players[updateuserinfo.slot];
+	player->userid = updateuserinfo.userid;
+	strncpy (player->userinfo, updateuserinfo.userinfo,
 			 sizeof (player->userinfo) - 1);
 
-	CL_ProcessUserInfo (slot, player);
+	CL_ProcessUserInfo (updateuserinfo.slot, player);
 }
 
 void
@@ -1345,7 +1346,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_updateuserinfo:
-				CL_UpdateUserinfo ();
+				CL_ParseUpdateUserInfo ();
 				break;
 
 			case svc_setinfo:
