@@ -374,6 +374,7 @@ struct progs_s {
 		int			nextthink;
 		int			frame;
 		int			think;
+		int			this;
 	} fields;
 };
 

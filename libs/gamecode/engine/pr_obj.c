@@ -913,6 +913,7 @@ PR_InitRuntime (progs_t *pr)
 		pr->classes = Hash_NewTable (1021, class_get_key, 0, pr);
 	else
 		Hash_FlushTable (pr->classes);
+	pr->fields.this = ED_GetFieldIndex (pr, ".this");
 	for (fnum = 0; fnum < pr->progs->numfunctions; fnum++) {
 		if (strequal (PR_GetString (pr, pr->pr_functions[fnum].s_name),
 					  ".ctor")) {
