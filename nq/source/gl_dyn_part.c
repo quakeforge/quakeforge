@@ -48,8 +48,8 @@
 #include "client.h"
 #include "glquake.h"
 #include "host.h"
-#include "render.h"
 #include "r_dynamic.h"
+#include "render.h"
 
 static particle_t *particles, **freeparticles;
 static short r_numparticles, numparticles;

@@ -43,7 +43,6 @@
 
 #include "client.h"
 #include "glquake.h"
-#include "render.h"
 
 #define MAX_FIRES				128		// rocket flames
 

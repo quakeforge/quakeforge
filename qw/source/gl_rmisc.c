@@ -55,7 +55,7 @@
 varray_t2f_c4f_v3f_t varray[MAX_VARRAY_VERTS];
 
 qboolean    VID_Is8bit (void);
-qboolean	allowskybox;				// allow skyboxes?  --KB
+qboolean    allowskybox;				// allow skyboxes?  --KB
 void        R_InitBubble (void);
 
 extern cvar_t	*gl_lerp_anim;
@@ -188,7 +188,7 @@ R_Init (void)
 	Cmd_AddCommand ("loadsky", R_LoadSky_f, "Load a skybox");
 
 	R_InitBubble ();
-	
+
 	GDT_Init ();
 	
 	netgraphtexture = texture_extension_number;
@@ -233,11 +233,14 @@ R_NewMap (void)
 
 	// identify sky texture
 	skytexturenum = -1;
+	mirrortexturenum = -1;
 	for (i = 0; i < cl.worldmodel->numtextures; i++) {
 		if (!cl.worldmodel->textures[i])
 			continue;
 		if (!strncmp (cl.worldmodel->textures[i]->name, "sky", 3))
 			skytexturenum = i;
+		if (!strncmp (cl.worldmodel->textures[i]->name, "window02_1", 10))
+			mirrortexturenum = i;
 		cl.worldmodel->textures[i]->texturechain = NULL;
 	}
 	r_skyname = Cvar_FindVar ("r_skyname");

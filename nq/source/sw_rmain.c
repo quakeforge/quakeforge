@@ -144,11 +144,11 @@ void        SetVisibilityByPassages (void);
 
 /*
 ==================
-R_InitTextures
+R_Textures_Init
 ==================
 */
 void
-R_InitTextures (void)
+R_Textures_Init (void)
 {
 	int         x, y, m;
 	byte       *dest;

@@ -41,19 +41,13 @@
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
-#include "QF/draw.h"
-#include "QF/mathlib.h"
-#include "QF/model.h"
+#include "QF/skin.h"
 #include "QF/sys.h"
-#include "QF/varrays.h"
 #include "QF/vid.h"
-#include "QF/wad.h"
+#include "QF/varrays.h"
 
 #include "client.h"
 #include "glquake.h"
-#include "net.h"
-#include "protocol.h"
-#include "sbar.h"
 #include "r_dynamic.h"
 #include "r_local.h"
 #include "render.h"
@@ -64,7 +58,8 @@ qboolean    VID_Is8bit (void);
 qboolean    allowskybox;				// allow skyboxes?  --KB
 void        R_InitBubble (void);
 
-extern cvar_t  *r_netgraph;
+extern cvar_t	*gl_lerp_anim;
+extern cvar_t	*r_netgraph;
 
 extern void GDT_Init ();
 
@@ -72,7 +67,7 @@ extern entity_t r_worldentity;
 
 
 void
-R_InitTextures (void)
+R_Textures_Init (void)
 {
 	int         x, y, m;
 	byte       *dest;
@@ -197,9 +192,23 @@ R_Init (void)
 	R_InitBubble ();
 
 	GDT_Init ();
+	
+	//XXX netgraphtexture = texture_extension_number;
+	//XXX texture_extension_number++;
 
 	playertextures = texture_extension_number;
-	texture_extension_number += 16;
+	texture_extension_number += 16;//MAX_CLIENTS;
+	player_fb_textures = texture_extension_number;
+	texture_extension_number += MAX_CACHED_SKINS;
+
+	glEnableClientState (GL_COLOR_ARRAY);
+	glEnableClientState (GL_VERTEX_ARRAY);
+	glEnableClientState (GL_TEXTURE_COORD_ARRAY);
+
+//	glInterleavedArrays(GL_T2F_C4F_N3F_V3F, 0, varray);
+	glTexCoordPointer (2, GL_FLOAT, sizeof(varray[0]), varray[0].texcoord);
+	glColorPointer (4, GL_FLOAT, sizeof(varray[0]), varray[0].color);
+	glVertexPointer (3, GL_FLOAT, sizeof(varray[0]), varray[0].vertex);
 }
 
 
@@ -354,8 +363,8 @@ R_TranslatePlayerSkin (int playernum)
 void
 R_NewMap (void)
 {
-	int			 i;
-	cvar_t		*r_skyname;
+	int         i;
+	cvar_t     *r_skyname;
 
 	for (i = 0; i < 256; i++)
 		d_lightstylevalue[i] = 264;		// normal light value

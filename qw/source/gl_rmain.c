@@ -76,6 +76,10 @@ qboolean    envmap;						// true during envmap command capture
 int         playertextures;				// up to 16 color translated skins
 int         player_fb_textures;			// up to 128 skin fullbright maps
 
+int         mirrortexturenum;			// quake texturenum, not gltexturenum
+qboolean    mirror;
+mplane_t   *mirror_plane;
+
 // view origin
 vec3_t      vup;
 vec3_t      vpn;
@@ -1050,7 +1054,6 @@ R_Clear (void)
 
 	glDepthRange (gldepthmin, gldepthmax);
 }
-
 
 void
 R_RenderScene (void)

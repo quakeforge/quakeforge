@@ -48,7 +48,6 @@
 #include "QF/sys.h"
 #include "QF/tga.h"
 
-//#include "cl_parse.h"
 #include "client.h"
 #include "glquake.h"
 #include "host.h"

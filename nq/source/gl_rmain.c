@@ -75,6 +75,7 @@ qboolean    envmap;						// true during envmap command capture
 
 
 int         playertextures;				// up to 16 color translated skins
+int         player_fb_textures;			// up to 128 skin fullbright maps
 
 int         mirrortexturenum;			// quake texturenum, not gltexturenum
 qboolean    mirror;
@@ -853,9 +854,10 @@ static void
 R_DrawViewModel (void)
 {
 	currententity = &cl.viewent;
-	if (!r_drawviewmodel->int_val
-		|| chase_active->int_val
-		|| envmap || !r_drawentities->int_val || (cl.items & IT_INVISIBILITY)
+	if (!r_drawviewmodel->int_val || chase_active->int_val
+		|| envmap
+		|| !r_drawentities->int_val
+		|| (cl.items & IT_INVISIBILITY)
 		|| cl.stats[STAT_HEALTH] <= 0 || !currententity->model)
 		return;
 

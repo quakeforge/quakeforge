@@ -59,7 +59,7 @@ typedef struct {
 	char        identifier[64];
 	int         width, height;
 	int         bytesperpixel;
-//	int         texelformat; // eventually replace bytesperpixel
+//	int         texelformat;  // eventually replace bytesperpixel
 	qboolean    mipmap;
 	unsigned short crc;  // LordHavoc: CRC for texure validation
 } gltexture_t;
@@ -420,7 +420,6 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
 
 	free (scaled);
 }
-
 
 
 /* 

@@ -175,7 +175,6 @@ static glformat_t formats[] = {
 
 int gl_alpha_format = 4, gl_lightmap_format = 4, gl_solid_format = 3;
 
-
 void
 GL_TextureMode_f (void)
 {
