@@ -121,7 +121,7 @@ typedef struct glpoly_s
 	struct	glpoly_s	*chain;
 	struct	glpoly_s	*fb_chain;
 	int		numverts;
-	int		flags;			// for SURF_UNDERWATER
+	int		flags;					// for SURF_UNDERWATER
 	float	verts[4][VERTEXSIZE];	// variable sized (xyz s1t1 s2t2)
 } glpoly_t;
 
@@ -134,7 +134,7 @@ typedef struct msurface_s
 
 	int			firstedge;	// look up in model->surfedges[], negative numbers
 	int			numedges;	// are backwards edges
-	
+
 	struct surfcache_s	*cachespots[MIPLEVELS];
 
 	short		texturemins[2];
@@ -144,9 +144,10 @@ typedef struct msurface_s
 
 	glpoly_t	*polys;				// multiple if warped
 	struct	msurface_s	*texturechain;
+//	struct msurface_s	*lightmapchain;		// Quake 2 ???
 
 	mtexinfo_t	*texinfo;
-	
+
 // lighting info
 	int			dlightframe;
 	int			dlightbits;
@@ -163,14 +164,14 @@ typedef struct mnode_s
 // common with leaf
 	int			contents;		// 0, to differentiate from leafs
 	int			visframe;		// node needs to be traversed if current
-	
+
 	float		minmaxs[6];		// for bounding box culling
 
 	struct mnode_s	*parent;
 
 // node specific
 	mplane_t	*plane;
-	struct mnode_s	*children[2];	
+	struct mnode_s	*children[2];
 
 	unsigned short		firstsurface;
 	unsigned short		numsurfaces;
@@ -418,7 +419,6 @@ typedef struct model_s
 
 // additional model data
 	cache_user_t cache;		// only access through Mod_Extradata
-
 } model_t;
 
 // ============================================================================
@@ -455,7 +455,10 @@ void	 Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum);
 void	 Mod_LoadBrushModel (model_t *mod, void *buffer);
 void	 Mod_LoadAliasModel (model_t *mod, void *buffer,
 							 cache_allocator_t allocator);
+void	 Mod_LoadAlias2Model (model_t *mod, void *buffer,
+							 cache_allocator_t allocator);
 void	 Mod_LoadSpriteModel (model_t *mod, void *buffer);
+void	 Mod_LoadSprite2Model (model_t *mod, void *buffer);
 void	 Mod_SubdivideSurface (msurface_t *fa);
 
 void	 Mod_Print (void);

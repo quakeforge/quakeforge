@@ -65,10 +65,11 @@ typedef	enum	{false, true} qboolean;
 // From mathlib...
 typedef float	vec_t;
 typedef vec_t	vec3_t[3];
+typedef vec_t	vec4_t[4];
 typedef vec_t	vec5_t[5];
-typedef	int	fixed4_t;
-typedef	int	fixed8_t;
-typedef	int	fixed16_t;
+typedef	int		fixed4_t;
+typedef int		fixed8_t;
+typedef	int		fixed16_t;
 
 #define SIDE_FRONT  0
 #define SIDE_BACK   1

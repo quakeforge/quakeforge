@@ -37,7 +37,8 @@
 
 #include "QF/mathlib.h"
 
-#define ALIAS_VERSION	6
+#define ALIAS_VERSION_MDL	6		// .mdl
+#define ALIAS_VERSION_MD2	8		// .md2
 
 #define ALIAS_ONSEAM				0x0020
 
@@ -133,10 +134,13 @@ typedef struct {
 	aliasskintype_t	type;
 } daliasskintype_t;
 
-#define IDPOLYHEADER	(('O'<<24)+('P'<<16)+('D'<<8)+'I')
-														// little-endian "IDPO"
+// little-endian "IDPO"
+#define IDHEADER_MDL	(('O'<<24)+('P'<<16)+('D'<<8)+'I')
+	
+// little-endian "MD16" -- 16 bit vertices
+#define HEADER_MDL16	(('6'<<24)+('1'<<16)+('D'<<8)+'M')
 
-// special header indicating 16 bit vertices - little-endian "MD16"
-#define POLYHEADER16	(('6'<<24)+('1'<<16)+('D'<<8)+'M')
+// little-endian "IDP2"
+#define IDHEADER_MD2	(('2'<<24)+('P'<<16)+('D'<<8)+'I')
 
 #endif // _MODELGEN_H

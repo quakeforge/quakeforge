@@ -67,9 +67,12 @@
 
 //=============================================================================
 
+// little-endian PACK
+#define IDPAKHEADER		(('K'<<24)+('C'<<16)+('A'<<8)+'P')
 
-#define BSPVERSION	29
-#define	TOOLVERSION	2
+#define BSPVERSION		29
+#define Q2BSPVERSION	38
+#define	TOOLVERSION		2
 
 typedef struct lump_s {
 	int		fileofs;
@@ -91,7 +94,6 @@ typedef struct lump_s {
 #define	LUMP_EDGES		12
 #define	LUMP_SURFEDGES	13
 #define	LUMP_MODELS		14
-
 #define	HEADER_LUMPS	15
 
 typedef struct dmodel_s {
@@ -200,7 +202,6 @@ typedef struct dface_s {
 	byte		styles[MAXLIGHTMAPS];
 	int			lightofs;		// start of [numstyles*surfsize] samples
 } dface_t;
-
 
 
 #define	AMBIENT_WATER	0

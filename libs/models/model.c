@@ -126,7 +126,7 @@ Mod_ClearAll (void)
 	}
 }
 
-model_t    *
+model_t *
 Mod_FindName (const char *name)
 {
 	int         i;
@@ -173,43 +173,43 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	loadmodel = mod;
 
 	// fill it in
-	if (strequal (mod->name, "progs/grenade.mdl")) {
-		mod->shadow_alpha = 0;
-	} else {
-		mod->shadow_alpha = 255;
-	}
-
-	if (strnequal (mod->name, "progs/flame", 11)
-		|| strnequal (mod->name, "progs/bolt", 10)) {
-		mod->fullbright = 1;
-		mod->shadow_alpha = 0;
-	} else {
-		mod->fullbright = 0;
-	}
-
-	if (strequal (mod->name, "progs/player.mdl")) {
-		mod->min_light = 0.04;
-	} else if (strnequal (mod->name, "progs/v_", 8)) {
-		mod->min_light = 0.12;
-	} else {
-		mod->min_light = 0.0;
-	}
+	mod->fullbright = 0;
+	mod->shadow_alpha = 255;
+	mod->min_light = 0.0;
 
 	// call the apropriate loader
 	mod->needload = false;
 	mod->hasfullbrights = false;
 
 	switch (LittleLong (*(unsigned int *) buf)) {
-		case IDPOLYHEADER:
-		case POLYHEADER16:
+		case IDHEADER_MDL:			// Type 6: Quake 1 .mdl
+		case HEADER_MDL16:			// QF Type 6 extended for 16bit precision
+			if (strequal (mod->name, "progs/grenade.mdl")) {
+				mod->fullbright = 0;
+				mod->shadow_alpha = 0;
+			} else if (strnequal (mod->name, "progs/flame", 11)
+					   || strnequal (mod->name, "progs/bolt", 10)) {
+				mod->fullbright = 1;
+				mod->shadow_alpha = 0;
+			}
+			if (strnequal (mod->name, "progs/v_", 8)) {
+				mod->min_light = 0.12;
+			} else if (strequal (mod->name, "progs/player.mdl")) {
+				mod->min_light = 0.04;
+			}
 			Mod_LoadAliasModel (mod, buf, allocator);
 			break;
-
-		case IDSPRITEHEADER:
+		case IDHEADER_MD2:			// Type 8: Quake 2 .md2
+//			Mod_LoadMD2 (mod, buf, allocator);
+			break;
+		case IDHEADER_SPR:			// Type 1: Quake 1 .spr
 			Mod_LoadSpriteModel (mod, buf);
 			break;
-
-		default:
+		case IDHEADER_SP2:			// Type 2: Quake 2 .sp2
+//			Mod_LoadSP2 (mod, buf);
+			break;
+		default:					// Version 29: Quake 1 .bsp
+									// Version 38: Quake 2 .bsp
 			Mod_LoadBrushModel (mod, buf);
 
 			if (gl_textures_external->int_val)
@@ -258,7 +258,7 @@ Mod_CallbackLoad (void *object, cache_allocator_t allocator)
 
 	Loads in a model for the given name
 */
-model_t    *
+model_t *
 Mod_ForName (const char *name, qboolean crash)
 {
 	model_t    *mod;

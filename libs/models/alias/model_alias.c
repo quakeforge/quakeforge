@@ -135,19 +135,18 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 void
 Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 {
-	int         i, j, size, version, numframes, start, end, total;
+	int         size, version, numframes, start, end, total, i, j;
+	int			extra = 0;		// extra precision bytes
+	void       *mem;
 	dtriangle_t *pintriangles;
 	daliasframetype_t *pframetype;
 	daliasskintype_t *pskintype;
 	mdl_t      *pinmodel, *pmodel;
 	unsigned short crc;
 	stvert_t   *pinstverts;
-	void       *mem;
 
-	int extra = 0; // extra precision bytes
-
-	if (LittleLong (*(unsigned int *) buffer) == POLYHEADER16)
-		extra = 1; // extra precision bytes
+	if (LittleLong (* (unsigned int *) buffer) == HEADER_MDL16)
+		extra = 1;		// extra precision bytes
 
 	CRC_Init (&crc);
 	CRC_ProcessBlock (buffer, &crc, qfs_filesize);
@@ -157,9 +156,9 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	pinmodel = (mdl_t *) buffer;
 
 	version = LittleLong (pinmodel->version);
-	if (version != ALIAS_VERSION)
+	if (version != ALIAS_VERSION_MDL)
 		Sys_Error ("%s has wrong version number (%i should be %i)",
-				  mod->name, version, ALIAS_VERSION);
+				   mod->name, version, ALIAS_VERSION_MDL);
 
 	// allocate space for a working header, plus all the data except the
 	// frames, skin and group info
@@ -182,7 +181,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 
 	if (pmodel->skinheight > MAX_LBM_HEIGHT)
 		Sys_Error ("model %s has a skin taller than %d", mod->name,
-				  MAX_LBM_HEIGHT);
+				   MAX_LBM_HEIGHT);
 
 	pmodel->numverts = LittleLong (pinmodel->numverts);
 

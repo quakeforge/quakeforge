@@ -138,9 +138,9 @@ static void
 WriteFrame (QFile *modelouthandle, int framenum)
 {
 	int				j, k;
-	trivert_t		*pframe;
-	daliasframe_t	aframe;
 	float			v;
+	daliasframe_t	aframe;
+	trivert_t	   *pframe;
 
 	pframe = verts[framenum];
 
@@ -152,7 +152,7 @@ WriteFrame (QFile *modelouthandle, int framenum)
 	}
 
 	for (j = 0; j < model.numverts; j++) {
-	// all of these are byte values, so no need to deal with endianness
+		// all of these are byte values, so no need to deal with endianness
 		tarray[j].lightnormalindex = pframe[j].lightnormalindex;
 
 		if (tarray[j].lightnormalindex > NUMVERTEXNORMALS)
@@ -173,7 +173,6 @@ WriteFrame (QFile *modelouthandle, int framenum)
 	}
 
 	Qwrite (modelouthandle, &aframe, sizeof (aframe));
-
 	Qwrite (modelouthandle, &tarray[0], model.numverts * sizeof(tarray[0]));
 }
 
@@ -219,7 +218,7 @@ WriteModelFile (QFile *modelouthandle)
 	float	dist[3];
 	mdl_t	modeltemp;
 
-// Calculate the bounding box for this model
+	// Calculate the bounding box for this model
 	for (i = 0; i < 3; i++) {
 		printf ("framesmins[%d]: %f, framesmaxs[%d]: %f\n",
 				i, framesmins[i], i, framesmaxs[i]);
@@ -236,9 +235,9 @@ WriteModelFile (QFile *modelouthandle)
 								 dist[1] * dist[1] +
 								 dist[2] * dist[2]);
 
-// write out the model header
-	modeltemp.ident = LittleLong (IDPOLYHEADER);
-	modeltemp.version = LittleLong (ALIAS_VERSION);
+	// write out the model header
+	modeltemp.ident = LittleLong (IDHEADER_MDL);
+	modeltemp.version = LittleLong (ALIAS_VERSION_MDL);
 	modeltemp.boundingradius = LittleFloat (model.boundingradius);
 
 	for (i = 0; i < 3; i++) {

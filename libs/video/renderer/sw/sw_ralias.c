@@ -39,7 +39,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "d_ifacea.h"
 #include "r_local.h"
-
 #include "stdlib.h"
 
 #define LIGHT_MIN	5					// lowest light value we'll allow, to
@@ -88,6 +87,7 @@ static aedge_t aedges[12] = {
 float       r_avertexnormals[NUMVERTEXNORMALS][3] = {
 #include "anorms.h"
 };
+
 
 qboolean
 R_AliasCheckBBox (void)
@@ -236,7 +236,6 @@ R_AliasCheckBBox (void)
 	return true;
 }
 
-
 void
 R_AliasTransformVector (vec3_t in, vec3_t out)
 {
@@ -244,7 +243,6 @@ R_AliasTransformVector (vec3_t in, vec3_t out)
 	out[1] = DotProduct (in, aliastransform[1]) + aliastransform[1][3];
 	out[2] = DotProduct (in, aliastransform[2]) + aliastransform[2][3];
 }
-
 
 static void
 R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av)
@@ -267,7 +265,8 @@ R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 }
 
 static void
-R_AliasTransformFinalVert16 (finalvert_t *fv, auxvert_t *av, trivertx_t *pverts)
+R_AliasTransformFinalVert16 (finalvert_t *fv, auxvert_t *av,
+							 trivertx_t *pverts)
 {
 	trivertx_t  * pextra;
 	float       vextra[3];
@@ -315,17 +314,16 @@ R_AliasPreparePoints (void)
 	fv = pfinalverts;
 	av = pauxverts;
 
-	if (pmdl->ident == POLYHEADER16) {
+	if (pmdl->ident == HEADER_MDL16) {
 		for (i = 0; i < r_anumverts; i++, fv++, av++, r_apverts++,
-				pstverts++) {
+				 pstverts++) {
 			R_AliasTransformFinalVert16 (fv, av, r_apverts);
 			R_AliasTransformFinalVert (fv, av, r_apverts, pstverts);
 			R_AliasClipAndProjectFinalVert (fv, av);
 		}
-	}
-	else {
+	} else {
 		for (i = 0; i < r_anumverts; i++, fv++, av++, r_apverts++,
-				pstverts++) {
+				 pstverts++) {
 			R_AliasTransformFinalVert8 (fv, av, r_apverts);
 			R_AliasTransformFinalVert (fv, av, r_apverts, pstverts);
 			R_AliasClipAndProjectFinalVert (fv, av);
@@ -355,7 +353,6 @@ R_AliasPreparePoints (void)
 		}
 	}
 }
-
 
 void
 R_AliasSetUpTransform (int trivial_accept)
@@ -416,7 +413,7 @@ R_AliasSetUpTransform (int trivial_accept)
 // correspondingly so the projected x and y come out right
 // FIXME: make this work for clipped case too?
 
-	if (trivial_accept && pmdl->ident != POLYHEADER16) {
+	if (trivial_accept && pmdl->ident != HEADER_MDL16) {
 		for (i = 0; i < 4; i++) {
 			aliastransform[0][i] *= aliasxscale *
 				(1.0 / ((float) 0x8000 * 0x10000));
@@ -552,15 +549,13 @@ R_AliasPrepareUnclippedPoints (void)
 	D_PolysetDraw ();
 }
 
-
 static void
 R_AliasSetupSkin (void)
 {
-	int         skinnum;
-	int         i, numskins;
-	maliasskingroup_t *paliasskingroup;
-	float      *pskinintervals, fullskininterval;
+	int         numskins, skinnum, i;
 	float       skintargettime, skintime;
+	float      *pskinintervals, fullskininterval;
+	maliasskingroup_t *paliasskingroup;
 
 	skinnum = currententity->skinnum;
 	if ((skinnum >= pmdl->numskins) || (skinnum < 0)) {
@@ -642,7 +637,6 @@ R_AliasSetupLighting (alight_t *plighting)
 	r_plightvec[2] = DotProduct (plighting->plightvec, alias_up);
 }
 
-
 /*
 	R_AliasSetupFrame
 
@@ -651,10 +645,10 @@ R_AliasSetupLighting (alight_t *plighting)
 static void
 R_AliasSetupFrame (void)
 {
-	int         frame;
-	int         i, numframes;
+	int         frame, numframes, i;
+	float		fullinterval, targettime, time;
+	float      *pintervals;
 	maliasgroup_t *paliasgroup;
-	float      *pintervals, fullinterval, targettime, time;
 
 	frame = currententity->frame;
 	if ((frame >= pmdl->numframes) || (frame < 0)) {
@@ -693,7 +687,7 @@ R_AliasSetupFrame (void)
 void
 R_AliasDrawModel (alight_t *plighting)
 {
-	int         size;
+	int          size;
 	finalvert_t *finalverts;
 
 	r_amodels_drawn++;
@@ -702,8 +696,8 @@ R_AliasDrawModel (alight_t *plighting)
 	pmdl = (mdl_t *) ((byte *) paliashdr + paliashdr->model);
 
 	size = (CACHE_SIZE - 1)
-		   + sizeof (finalvert_t) * (pmdl->numverts + 1)
-		   + sizeof (auxvert_t) * pmdl->numverts;
+		+ sizeof (finalvert_t) * (pmdl->numverts + 1)
+		+ sizeof (auxvert_t) * pmdl->numverts;
 	finalverts = (finalvert_t *) Hunk_TempAlloc (size);
 	if (!finalverts)
 		Sys_Error ("R_AliasDrawModel: out of memory");
@@ -739,7 +733,7 @@ R_AliasDrawModel (alight_t *plighting)
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
-	if (currententity->trivial_accept && pmdl->ident != POLYHEADER16)
+	if (currententity->trivial_accept && pmdl->ident != HEADER_MDL16)
 		R_AliasPrepareUnclippedPoints ();
 	else
 		R_AliasPreparePoints ();

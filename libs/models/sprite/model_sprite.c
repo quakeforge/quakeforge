@@ -138,9 +138,9 @@ Mod_LoadSpriteModel (model_t *mod, void *buffer)
 	pin = (dsprite_t *) buffer;
 
 	version = LittleLong (pin->version);
-	if (version != SPRITE_VERSION)
+	if (version != SPR_VERSION)
 		Sys_Error ("%s has wrong version number "
-				  "(%i should be %i)", mod->name, version, SPRITE_VERSION);
+				  "(%i should be %i)", mod->name, version, SPR_VERSION);
 
 	numframes = LittleLong (pin->numframes);
 

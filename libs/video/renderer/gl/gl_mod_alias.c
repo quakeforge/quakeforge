@@ -1,7 +1,7 @@
 /*
 	gl_mod_alias.c
 
-	(description)
+	Draw Alias Model
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -95,9 +95,9 @@ static inline void
 GL_DrawAliasFrameTri (vert_order_t *vo)
 {
 	float			color[4];
-	int			count;
-	blended_vert_t	*verts;
-	tex_coord_t		*tex_coord;
+	int				count;
+	blended_vert_t *verts;
+	tex_coord_t	   *tex_coord;
 
 	verts = vo->verts;
 	tex_coord = vo->tex_coord;
@@ -119,10 +119,11 @@ GL_DrawAliasFrameTri (vert_order_t *vo)
 static inline void
 GL_DrawAliasFrameTri_fb (vert_order_t *vo)
 {
+	float			color[4] = { 1.0, 1.0, 1.0, 0.0};
 	int				count;
-	float color[4] = { 1.0, 1.0, 1.0, 0.0};
 	blended_vert_t *verts;
-	tex_coord_t *tex_coord;
+	tex_coord_t	   *tex_coord;
+
 	verts = vo->verts;
 	color[3] = modelalpha * 1.0;
 	count = vo->count;
@@ -145,7 +146,7 @@ GL_DrawAliasFrameTriMulti (vert_order_t *vo)
 	float			color[4];
 	int				count;
 	blended_vert_t *verts;
-	tex_coord_t	*tex_coord;
+	tex_coord_t	   *tex_coord;
 
 	verts = vo->verts;
 	tex_coord = vo->tex_coord;	
@@ -688,7 +689,7 @@ R_DrawAliasModel (entity_t *e)
 			fb_texture = skindesc->fb_texnum;
 	}
 
-	if (paliashdr->mdl.ident == POLYHEADER16) {
+	if (paliashdr->mdl.ident == HEADER_MDL16) {
 		VectorScale (paliashdr->mdl.scale, e->scale / 256.0, scale);
 		vo = GL_GetAliasFrameVerts16 (e->frame, paliashdr, e);
 	} else {

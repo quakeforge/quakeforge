@@ -315,7 +315,7 @@ R_AliasPreparePoints (void)
 	fv = pfinalverts;
 	av = pauxverts;
 
-	if (pmdl->ident == POLYHEADER16) {
+	if (pmdl->ident == HEADER_MDL16) {
 		for (i = 0; i < r_anumverts; i++, fv++, av++, r_apverts++,
 				pstverts++) {
 			R_AliasTransformFinalVert16 (fv, av, r_apverts);
@@ -727,7 +727,7 @@ R_AliasDrawModel (alight_t *plighting)
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
-	if (currententity->trivial_accept && pmdl->ident != POLYHEADER16)
+	if (currententity->trivial_accept && pmdl->ident != HEADER_MDL16)
 		R_AliasPrepareUnclippedPoints ();
 	else
 		R_AliasPreparePoints ();

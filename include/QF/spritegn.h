@@ -49,7 +49,8 @@
 #ifndef _SPRITEGN_H
 #define _SPRITEGN_H
 
-#define SPRITE_VERSION	1
+#define SPR_VERSION		1
+#define SP2_VERSION		2
 
 // must match definition in modelgen.h
 #ifndef SYNCTYPE_T
@@ -96,6 +97,10 @@ typedef struct {
 	spriteframetype_t	type;
 } dspriteframetype_t;
 
-#define IDSPRITEHEADER	(('P'<<24)+('S'<<16)+('D'<<8)+'I')
-														// little-endian "IDSP"
+// little-endian "IDSP"
+#define IDHEADER_SPR	(('P'<<24)+('S'<<16)+('D'<<8)+'I')
+
+// little-endian "IDS2"
+#define IDHEADER_SP2 (('2'<<24)+('S'<<16)+('D'<<8)+'I')
+
 #endif // _SPRITEGN_H
