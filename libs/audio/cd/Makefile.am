@@ -1,4 +1,5 @@
 INCLUDES= -I$(top_srcdir)/include $(SDL_CFLAGS)
+SDL_LIBS = @SDL_LIBS@
 
 plugin_LTLIBRARIES=	@CD_PLUGIN_TARGETS@
 EXTRA_LTLIBRARIES=	libcd_linux.la libcd_sdl.la libcd_sgi.la libcd_win.la libcd_null.la
