@@ -30,7 +30,7 @@ libr_a_SOURCES=\
 	crudefile.r debug.r hash.r entities.r infokey.r math.r message.r \
 	nq_message.r physics.r plist.r qfile.r qw_message.r qw_physics.r qw_sys.r \
 	sound.r \
-	string.r system.r Object.r Array.r Entity.r Point.r Size.r Rect.r
+	string.r system.r Object.r Array.r Entity.r List.r Point.r Size.r Rect.r
 libr_a_AR=$(PAK) -cf
 
 libgui_a_SOURCES=\
