@@ -1409,6 +1409,7 @@ if test "x$HAVE_ZLIB" = xyes; then
 	fi
 fi
 AC_SUBST(Z_LIBS)
+AM_CONDITIONAL(HAVE_ZLIB, test "$HAVE_ZLIB" = "yes")
 
 dnl ==================================================================
 dnl Find out what to build
