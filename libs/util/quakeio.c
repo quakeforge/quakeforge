@@ -58,6 +58,7 @@ static const char rcsid[] =
 #include <stdarg.h>
 #include <stdlib.h>
 
+#include "QF/dstring.h"
 #include "QF/vfile.h"
 #include "QF/vfs.h"
 
@@ -261,17 +262,15 @@ Qprintf (VFile *file, const char *fmt, ...)
 		ret = vfprintf (file->file, fmt, args);
 #ifdef HAVE_ZLIB
 	else {
-		char        buf[4096];
+		static dstring_t *buf;
+
+		if (!buf)
+			buf = dstring_new ();
 
 		va_start (args, fmt);
-#ifdef HAVE_VSNPRINTF
-		(void) vsnprintf (buf, sizeof (buf), fmt, args);
-#else
-		(void) vsprintf (buf, fmt, args);
-#endif
+		dvsprintf (buf, fmt, args);
 		va_end (args);
-		ret = strlen (buf);				/* some *snprintf don't return the nb 
-										   of bytes written */
+		ret = strlen (buf->str);
 		if (ret > 0)
 			ret = gzwrite (file->gzfile, buf, (unsigned) ret);
 	}

@@ -34,6 +34,7 @@ static const char rcsid[] =
 #include <stdarg.h>
 #include <stdio.h>
 
+#include "QF/dstring.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 #include "QF/va.h"
@@ -47,30 +48,18 @@ static const char rcsid[] =
 	does a varargs printf into a temp buffer, so I don't need to have
 	varargs versions of all text functions.
 */
-char       *
+char *
 va (const char *fmt, ...)
 {
 	va_list     args;
-	static char *string;
-	int         size;
-	static int  string_size;
+	static dstring_t *string;
+
+	if (!string)
+		string = dstring_new ();
 
 	va_start (args, fmt);
-	size = vsnprintf (string, string_size, fmt, args) + 1;  // +1 for nul
-	//printf ("size = %d\n", size);
-	while (size <= 0 || size > string_size) {
-		if (size > 0)
-			string_size = (size + 1023) & ~1023; // 1k multiples
-		else
-			string_size += 1024;
-		string = realloc (string, string_size);
-		if (!string)
-			Sys_Error ("console: could not allocate %d bytes\n",
-					   string_size);
-		size = vsnprintf (string, string_size, fmt, args) + 1;
-		//printf ("size = %d\n", size);
-	}
+	dvsprintf (string, fmt, args);
 	va_end (args);
 
-	return string;
+	return string->str;
 }

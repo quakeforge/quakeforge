@@ -60,6 +60,7 @@ static const char rcsid[] =
 #include <sys/types.h>
 
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/sys.h"
 
 #include "compat.h"
@@ -185,18 +186,21 @@ Sys_SetErrPrintf (sys_printf_t func)
 void
 Sys_Print (FILE *stream, const char *fmt, va_list args)
 {
-	char        msg[MAXPRINTMSG];
+	static dstring_t *msg;
 	unsigned char *p;
 
-	vsnprintf (msg, sizeof (msg), fmt, args);
+	if (!msg)
+		msg = dstring_new ();
+
+	dvsprintf (msg, fmt, args);
 
 #ifdef WIN32
 	if (stream == stderr)
-		MessageBox (NULL, msg, "Error", 0 /* MB_OK */ );
+		MessageBox (NULL, msg->str, "Error", 0 /* MB_OK */ );
 #endif
 
 	/* translate to ASCII instead of printing [xx]  --KB */
-	for (p = (unsigned char *) msg; *p; p++)
+	for (p = (unsigned char *) msg->str; *p; p++)
 		putc (sys_char_map[*p], stream);
 
 	fflush (stream);

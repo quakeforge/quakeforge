@@ -29,6 +29,10 @@
 #ifndef __dstring_h
 #define __dstring_h
 
+#include <stdarg.h>
+
+#include "QF/gcc_attr.h"
+
 typedef struct dstring_s {
 	unsigned long int size, truesize;
 	char *str;
@@ -50,4 +54,8 @@ dstring_t *dstring_newstr (void);
 void dstring_appendstr (dstring_t *dstr, const char *str);
 void dstring_insertstr (dstring_t *dstr, const char *str, unsigned int pos);
 void dstring_clearstr (dstring_t *dstr);
+
+int dvsprintf (dstring_t *dstr, const char *fmt, va_list args);
+int dsprintf (dstring_t *dstr, const char *fmt, ...) __attribute__((format(printf,2,3)));
+
 #endif // __dstring_h

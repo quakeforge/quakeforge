@@ -299,30 +299,18 @@ C_Shutdown (void)
 static void
 C_Print (const char *fmt, va_list args)
 {
-	static unsigned char *buffer;
+	static dstring_t *buffer;
 	unsigned char *txt;
-	int         size;
-	static int  buffer_size;
 
-	size = vsnprintf (buffer, buffer_size, fmt, args) + 1;	// +1 for nul
-	//printf ("size = %d\n", size);
-	while (size <= 0 || size > buffer_size) {
-		if (size > 0)
-			buffer_size = (size + 1023) & ~1023; // 1k multiples
-		else
-			buffer_size += 1024;
-		buffer = realloc (buffer, buffer_size);
-		if (!buffer)
-			Sys_Error ("console: could not allocate %d bytes\n",
-					   buffer_size);
-		size = vsnprintf (buffer, buffer_size, fmt, args) + 1;
-		//printf ("size = %d\n", size);
-	}
+	if (!buffer)
+		buffer = dstring_new ();
 
-	txt = buffer;
+	dvsprintf (buffer, fmt, args);
+
+	txt = buffer->str;
 #ifdef HAVE_CURSES_H
 	if (use_curses) {
-		Con_BufferAddText (output_buffer, buffer);
+		Con_BufferAddText (output_buffer, buffer->str);
 		while (*txt)
 			draw_fun_char (output, *txt++);
 		wrefresh (output);

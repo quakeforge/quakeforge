@@ -107,7 +107,7 @@ SNDDMA_Init (void)
 	}
 	stereo = snd_stereo->int_val;
 	if (!pcmname)
-		pcmname = "plug:0,0";
+		pcmname = "plughw:0,0";
 	if ((err = snd_pcm_open (&pcm, pcmname,
 							 SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK)) < 0) {
 		Sys_Printf ("Error: audio open error: %s\n", snd_strerror (err));

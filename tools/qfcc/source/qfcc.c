@@ -1025,14 +1025,10 @@ preprocess_file (const char *filename)
 				temp++;
 
 			if (*sourcedir) {
-				tempname->size = strlen (sourcedir) + 1 + strlen (temp) + 1;
-				dstring_adjust (tempname);
-				sprintf (tempname->str, "%s%c%s", sourcedir,
-						 PATH_SEPARATOR, temp);
+				dsprintf (tempname, "%s%c%s", sourcedir,
+						  PATH_SEPARATOR, temp);
 			} else {
-				tempname->size = strlen (temp) + 2 + 1;
-				dstring_adjust (tempname);
-				sprintf (tempname->str, "%s.p", temp);
+				dsprintf (tempname, "%s.p", temp);
 			}
 			free (basename);
 		} else {
@@ -1044,10 +1040,7 @@ preprocess_file (const char *filename)
 				}
 			}
 
-			tempname->size = strlen (temp1) + 1
-							 + strlen (temp2 ? temp2 + 1 : this_program) + 1;
-			dstring_adjust (tempname);
-			sprintf (tempname->str, "%s%c%sXXXXXX", temp1,
+			dsprintf (tempname, "%s%c%sXXXXXX", temp1,
 					  PATH_SEPARATOR, temp2 ? temp2 + 1 : this_program);
 		}
 		build_cpp_args (filename, tempname->str);

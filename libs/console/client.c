@@ -411,31 +411,23 @@ void
 C_Print (const char *fmt, va_list args)
 {
 	char       *s;
-	static char	*buffer;
-	int         mask, size, c, l, y;
-	static int  buffer_size, cr;
+	static dstring_t *buffer;
+	int         mask, c, l, y;
+	static int  cr;
 
-	size = vsnprintf (buffer, buffer_size, fmt, args) + 1;	// +1 for nul
-	while (size <= 0 || size > buffer_size) {
-		if (size > 0)
-			buffer_size = (size + 1023) & ~1023; // 1k multiples
-		else
-			buffer_size += 1024;
-		buffer = realloc (buffer, buffer_size);
-		if (!buffer)
-			Sys_Error ("console: could not allocate %d bytes\n",
-					   buffer_size);
-		size = vsnprintf (buffer, buffer_size, fmt, args) + 1;
-	}
+	if (!buffer)
+		buffer = dstring_new ();
+
+	dvsprintf (buffer, fmt, args);
 
 	// log all messages to file
 	if (con_debuglog)
-		Sys_DebugLog (va ("%s/qconsole.log", com_gamedir), "%s", buffer);
+		Sys_DebugLog (va ("%s/qconsole.log", com_gamedir), "%s", buffer->str);
 
 	if (!con_initialized)
 		return;
 
-	s = buffer;
+	s = buffer->str;
 
 	if (s[0] == 1 || s[0] == 2) {
 		mask = 128;						// go to colored text
@@ -489,10 +481,10 @@ C_Print (const char *fmt, va_list args)
 	}
 
 	// echo to debugging console
-	if ((byte)buffer[0] > 2)
-		fputs (buffer, stdout);
-	else if ((byte)buffer[0])
-		fputs (buffer + 1, stdout);
+	if ((byte)buffer->str[0] > 2)
+		fputs (buffer->str, stdout);
+	else if ((byte)buffer->str[0])
+		fputs (buffer->str + 1, stdout);
 }
 
 static void

@@ -33,6 +33,8 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/dstring.h"
 
+#include "compat.h"
+
 dstring_t *
 dstring_new (void)
 {
@@ -134,4 +136,35 @@ dstring_clearstr (dstring_t *dstr)
 	dstr->size = 1;
 	dstring_adjust (dstr);
 	dstr->str[0] = 0;
+}
+
+int
+dvsprintf (dstring_t *dstr, const char *fmt, va_list args)
+{
+	int         size;
+
+	size = vsnprintf (dstr->str, dstr->truesize, fmt, args) + 1;  // +1 for nul
+	while (size <= 0 || size > dstr->truesize) {
+		if (size > 0)
+			dstr->size = (size + 1023) & ~1023; // 1k multiples
+		else
+			dstr->size = dstr->truesize + 1024;
+		dstring_adjust (dstr);
+		size = vsnprintf (dstr->str, dstr->truesize, fmt, args) + 1;
+	}
+	dstr->size = size;
+	return size - 1;
+}
+
+int
+dsprintf (dstring_t *dstr, const char *fmt, ...)
+{
+	va_list     args;
+	int         ret;
+
+	va_start (args, fmt);
+	ret = dvsprintf (dstr, fmt, args);
+	va_end (args);
+
+	return ret;
 }
