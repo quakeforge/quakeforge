@@ -1924,6 +1924,7 @@ SV_Init (void)
 	Cbuf_Execute_Sets ();
 
 	COM_Filesystem_Init ();
+	Game_Init ();
 	COM_Init ();
 
 	PR_Init ();
