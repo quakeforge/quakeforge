@@ -466,6 +466,11 @@ Sys_CheckInput (int idle, int net_socket)
 
 	_timeout.tv_sec = 0;
 	_timeout.tv_usec = 100;
+	timeout = &_timeout;
+	if (_kbhit ()) {
+		stdin_ready = 1;
+		return 1;
+	}
 #else
 	_timeout.tv_sec = 0;
 	_timeout.tv_usec = 10000;
@@ -478,7 +483,7 @@ Sys_CheckInput (int idle, int net_socket)
 	if (do_stdin)
 		FD_SET (0, &fdset);
 	FD_SET (net_socket, &fdset);
-
+printf ("%d\n", do_stdin);
 	if (!idle || !sys_dead_sleep->int_val)
 		timeout = &_timeout;
 
