@@ -65,11 +65,10 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "r_dynamic.h"
 #include "r_local.h"
 #include "view.h"
-#include "varrays.h"
 
 typedef struct {
-	vec3_t      normal;
-	vec3_t      vert;
+	vec3_t		vert;
+	vec3_t		normal;
 } blended_vert_t;
 
 typedef struct {
@@ -101,11 +100,13 @@ GL_DrawAliasFrameTri (vert_order_t *vo)
 
 	qfglBegin (GL_TRIANGLES);
 	do {
+		// texture coordinates come from the draw list
 		qfglTexCoord2fv (tex_coord->st);
+		tex_coord++;
+
+		// normals and vertices come from the frame list
 		qfglNormal3fv (verts->normal);
 		qfglVertex3fv (verts->vert);
-
-		tex_coord++;
 		verts++;
 	} while (count--);
 	qfglEnd ();
@@ -536,30 +537,19 @@ R_DrawAliasModel (entity_t *e)
 
 		for (l = r_dlights, lnum = 0; lnum < r_maxdlights; lnum++, l++) {
 			if (l->die >= r_realtime) {
-				// Argh, hax
-				if (e == r_view_model) {
-					VectorSubtract (l->origin, r_refdef.vieworg, dist);
-					
-					if ((d = DotProduct (dist, dist)) > 
-						((l->radius + 32) * (l->radius + 32))) {
-						continue;
-					}
-				} else {
-					VectorSubtract (l->origin, e->origin, dist);
-								
-					if ((d = DotProduct (dist, dist)) > 
-						((l->radius + radius) * (l->radius + radius))) {
-						continue;					// Out of range
-					}
+				VectorSubtract (l->origin, e->origin, dist);
+				if ((d = DotProduct (dist, dist)) >
+					((l->radius + radius) * (l->radius + radius))) {
+					continue;								// Out of range
 				}
-
-				if (d < 512) { // Argh, more hax
-					VectorMultAdd (emission, 2.0, l->color, emission);
+				if (d < (radius * radius * 0.25)) {			// Inside the model
+					VectorMultAdd (emission, 1.5, l->color, emission);
 					continue;
 				}
 				if (used_lights >= gl_max_lights) { // too many, use emission
-					VectorMultAdd (emission, 2.0 * (1 - (d / (l->radius * l->radius))),
-								 l->color, emission);
+					VectorMultAdd (emission,
+								   1.5 * (1 - (d / (l->radius * l->radius))),
+								   l->color, emission);
 					continue;
 				}
 
@@ -574,20 +564,19 @@ R_DrawAliasModel (entity_t *e)
 				qfglLightfv (gl_light, GL_AMBIENT, color);
 				qfglLightfv (gl_light, GL_DIFFUSE, color);
 				qfglLightfv (gl_light, GL_SPECULAR, color);
-				qfglLightf (gl_light, GL_QUADRATIC_ATTENUATION, 2 / (l->radius * l->radius));
-				qfglLightf (gl_light, GL_CONSTANT_ATTENUATION, 100 / l->radius);
+				qfglLightf (gl_light, GL_QUADRATIC_ATTENUATION,
+							5.0 / (l->radius * l->radius));
 				used_lights++;
 			}
 		}
 
 		VectorAdd (ambientcolor, emission, emission);
 		d = max (emission[0], max (emission[1], emission[2]));
-		if (d > 1.3) {
-			VectorScale (emission, 1.3 / d, emission);
-		} else if ((d = model->min_light - d) > 0) {
-			emission[0] += d;
-			emission[1] += d;
-			emission[2] += d;
+		if (d > 1.0) {
+			VectorScale (emission, 1.0 / d, emission);
+		} else if (d < model->min_light && !used_lights) {
+			ambientcolor[2] = ambientcolor[1] =
+				ambientcolor[0] = model->min_light;
 		}
 
 		qfglMaterialfv (GL_FRONT, GL_EMISSION, emission);
@@ -712,9 +701,8 @@ R_DrawAliasModel (entity_t *e)
 
 		if (!tess)
 			qfglDisable (GL_NORMALIZE);
-
-		qfglDisable (GL_TEXTURE_2D);
 		qfglDisable (GL_LIGHTING);
+		qfglDisable (GL_TEXTURE_2D);
 		qfglDepthMask (GL_FALSE);
 
 		if (modelalpha < 1.0) {
