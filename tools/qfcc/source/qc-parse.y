@@ -554,16 +554,25 @@ opt_state_expr
 		{
 			$$ = 0;
 		}
-	| '[' const ',' { $<type>$ = &type_function; } def_name opt_step ']'
+	| '[' fexpr ',' { $<type>$ = &type_function; } def_name opt_step ']'
 		{
 			if ($2->type == ex_integer)
 				convert_int ($2);
 			else if ($2->type == ex_uinteger)
 				convert_uint ($2);
-			if ($2->type != ex_float)
+			if (!type_assignable (&type_float, get_type ($2)))
 				error ($2, "invalid type for frame number");
+			$2 = cast_expr (&type_float, $2);
 			if ($5->type->type != ev_func)
 				error ($2, "invalid type for think");
+			if ($6) {
+				if ($6->type == ex_integer)
+					convert_int ($6);
+				else if ($6->type == ex_uinteger)
+					convert_uint ($6);
+				if (!type_assignable (&type_float, get_type ($6)))
+					error ($6, "invalid type for time step");
+			}
 
 			$$ = new_state_expr ($2, new_def_expr ($5), $6);
 		}
