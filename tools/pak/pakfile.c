@@ -181,6 +181,10 @@ pack_add (pack_t *pack, const char *filename)
 
 	pf = &pack->files[pack->numfiles++];
 
+	if (filename[0] == '/') {
+		fprintf (stderr, "removing leading /");
+		filename++;
+	}
 	strncpy (pf->name, filename, sizeof (pf->name));
 	pf->name[sizeof (pf->name) - 1] = 0;
 
@@ -191,9 +195,20 @@ pack_add (pack_t *pack, const char *filename)
 		fwrite (buffer, 1, bytes, pack->handle);
 		pf->filelen += bytes;
 	}
+	fclose (file);
 	if (pf->filelen & 3) {
 		static char buf[4];
 		fwrite (buf, 1, 4 - (pf->filelen & 3), pack->handle);
 	}
+	Hash_Add (pack->file_hash, pf);
+	return 0;
+}
+
+int
+pack_extract (pack_t *pack, dpackfile_t *pf)
+{
+	//const char *name = pf->name;
+
+	//fseek (pack->handle, pf->filepos, SEEK_SET);
 	return 0;
 }
