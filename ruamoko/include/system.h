@@ -1,6 +1,8 @@
 #ifndef __ruamoko_system_h
 #define __ruamoko_system_h
 
+@extern float time;
+
 @extern void (string s) precache_sound;
 @extern void (string s) precache_model;
 @extern void (entity client, string s) stuffcmd;
