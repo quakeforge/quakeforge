@@ -521,22 +521,22 @@ Con_DrawDownload (int lines)
 	char       *text;
 	char        dlbar[1024];
 
-    if (!cls.download)
-        return;
+	if (!cls.download)
+		return;
 
-	text = COM_SkipPath(cls.downloadname); 
- 
-    x = con_linewidth - ((con_linewidth * 7) / 40); 
-    y = x - strlen (text) - 8; 
-    i = con_linewidth / 3; 
-    if (strlen (text) > i) { 
-        y = x - i - 11; 
-        strncpy (dlbar, text, i); 
-        dlbar[i] = 0; 
-        strncat (dlbar, "...", sizeof (dlbar) - strlen (dlbar)); 
-    } else 
-        strncpy (dlbar, text, sizeof (dlbar));
-	strncat (dlbar, ": ", sizeof (dlbar) - strlen (dlbar)); 
+	text = COM_SkipPath(cls.downloadname);
+
+	x = con_linewidth - ((con_linewidth * 7) / 40);
+	y = x - strlen (text) - 8;
+	i = con_linewidth / 3;
+	if (strlen (text) > i) {
+		y = x - i - 11;
+		strncpy (dlbar, text, i);
+		dlbar[i] = 0;
+		strncat (dlbar, "...", sizeof (dlbar) - strlen (dlbar));
+	} else
+		strncpy (dlbar, text, sizeof (dlbar));
+	strncat (dlbar, ": ", sizeof (dlbar) - strlen (dlbar));
 	i = strlen (dlbar);
 	dlbar[i++] = '\x80';
 	// where's the dot go?
@@ -552,7 +552,7 @@ Con_DrawDownload (int lines)
 	dlbar[i++] = '\x82';
 	dlbar[i] = 0;
 
-    snprintf (dlbar + strlen (dlbar), sizeof (dlbar) - strlen (dlbar),
+	snprintf (dlbar + strlen (dlbar), sizeof (dlbar) - strlen (dlbar),
 			  " %02d%%", cls.downloadpercent);
 	// draw it
 	y = lines - 22 + 8;

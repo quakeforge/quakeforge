@@ -544,7 +544,7 @@ Con_DrawDownload (int lines)
 		n = 0;
 	else
 		n = y * cls.downloadpercent / 100;
-		for (j = 0; j < y; j++)
+	for (j = 0; j < y; j++)
 		if (j == n)
 			dlbar[i++] = '\x83';
 		else
