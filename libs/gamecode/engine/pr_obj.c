@@ -99,18 +99,19 @@ pr___obj_exec_class (progs_t *pr)
 	pr_symtab_t *symtab;
 	pointer_t   *ptr;
 	int          i;
-	//int          d = developer->int_val;
+	int          d = developer->int_val;
 	pr_class_t  *object_class;
 	pointer_t    object_ptr;
 
 	if (!module)
 		return;
-	//developer->int_val = 1;
+	developer->int_val = 1;
 	symtab = &G_STRUCT (pr, pr_symtab_t, module->symtab);
 	if (!symtab)
 		return;
-	Sys_DPrintf ("Initializing %s module with %d classes and %d categories\n",
-				 PR_GetString (pr, module->name),
+	Sys_DPrintf ("Initializing %s module with symtab @ %d : %d classes and %d "
+				 "categories\n",
+				 PR_GetString (pr, module->name), module->symtab,
 				 symtab->cls_def_cnt, symtab->cat_def_cnt);
 	ptr = symtab->defs;
 	for (i = 0; i < symtab->cls_def_cnt; i++) {
@@ -181,7 +182,7 @@ pr___obj_exec_class (progs_t *pr)
 		ptr++;
 	}
 
-	//developer->int_val = d;
+	developer->int_val = d;
 }
 
 //====================================================================
