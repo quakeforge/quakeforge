@@ -63,8 +63,7 @@ endif
 libnq_net_a_SOURCES= net_dgrm.c net_loop.c net_main.c net_vcr.c $(net_sources)
 
 EXTRA_libnq_net_a_SOURCES= \
-		net_dos.c net_bw.c net_bsd.c net_ipx.c net_mp.c net_win.c net_wins.c \
-		net_wipx.c net_udp.c
+		net_bsd.c net_win.c net_wins.c net_udp.c
 
 cl_plugin_LIBS= \
 		$(CLIENT_PLUGIN_STATIC_LIBS) \
