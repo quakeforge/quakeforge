@@ -20,6 +20,8 @@ dnl Checks for programs.
 AC_PROG_INSTALL
 AC_PROG_CC
 AC_PROG_CPP
+AC_PROG_YACC
+AM_PROG_LEX
 
 set $CC
 if test "$1" = gcc; then
