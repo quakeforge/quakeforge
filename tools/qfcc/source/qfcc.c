@@ -611,6 +611,10 @@ PR_FinishCompilation (void)
 {
 	def_t		*d;
 	qboolean	errors = false;
+	function_t	*f;
+	int			num_locals = 0;
+	def_t		*def;
+	statref_t	*ref;
 
 	// check to make sure all functions prototyped have code
 	for (d = pr.def_head.next; d; d = d->next) {
@@ -623,6 +627,35 @@ PR_FinishCompilation (void)
 			}
 		}
 	}
+
+	if (errors)
+		return !errors;
+
+	for (f = pr_functions; f; f = f->next) {
+		if (f->builtin)
+			continue;
+		if (f->def->num_locals > num_locals)
+			num_locals = f->def->num_locals;
+		f->dfunc->parm_start = numpr_globals;
+		for (def = f->def->scope_next; def; def = def->scope_next) {
+			for (ref = def->refs; ref; ref = ref->next) {
+				switch (ref->field) {
+					case 0:
+						ref->statement->a += numpr_globals;
+						break;
+					case 1:
+						ref->statement->b += numpr_globals;
+						break;
+					case 2:
+						ref->statement->c += numpr_globals;
+						break;
+					default:
+						abort();
+				}
+			}
+		}
+	}
+	numpr_globals += num_locals;
 
 	return !errors;
 }
@@ -727,7 +760,7 @@ PR_WriteProgdefs (char *filename)
 
 
 void
-PrintFunction (char *name)
+PrintFunction (const char *name)
 {
 	int 			i;
 	dstatement_t	*ds;
@@ -750,6 +783,23 @@ PrintFunction (char *name)
 		if (!ds->op)
 			break;
 		ds++;
+	}
+}
+
+void
+PR_PrintFunction (def_t *def)
+{
+	def_t *d;
+	statref_t *r;
+
+	printf ("%s\n", def->name);
+	for (d = def->scope_next; d; d = d->scope_next) {
+		printf ("%s: %d %d %d\n",
+				d->name ? d->name : "<temp>",
+				d->ofs, d->type->type, type_size[d->type->type]);
+		for (r = d->refs; r; r = r->next)
+			printf (" %d", r->statement - statements);
+		printf ("\n");
 	}
 }
 

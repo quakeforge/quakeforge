@@ -51,7 +51,7 @@ defs_get_key (void *_def, void *_tab)
 	If allocate is true, a new def will be allocated if it can't be found
 */
 def_t *
-PR_GetDef (type_t *type, const char *name, def_t *scope, qboolean allocate)
+PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 {
 	def_t	*def;
 	char	element[MAX_NAME];
@@ -77,8 +77,8 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, qboolean allocate)
 	def = PR_NewDef (type, name, scope);
 	Hash_Add (defs_by_name, def);
 
-	def->ofs = numpr_globals;
-	pr_global_defs[numpr_globals] = def;
+	def->ofs = *allocate;
+	pr_global_defs[*allocate] = def;
 
 	/*
 		make automatic defs for the vectors elements
@@ -86,15 +86,15 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, qboolean allocate)
 	*/
 	if (type->type == ev_vector) {
 		sprintf (element, "%s_x", name);
-		PR_GetDef (&type_float, element, scope, true);
+		PR_GetDef (&type_float, element, scope, allocate);
 
 		sprintf (element, "%s_y", name);
-		PR_GetDef (&type_float, element, scope, true);
+		PR_GetDef (&type_float, element, scope, allocate);
 
 		sprintf (element, "%s_z", name);
-		PR_GetDef (&type_float, element, scope, true);
+		PR_GetDef (&type_float, element, scope, allocate);
 	} else {
-		numpr_globals += type_size[type->type];
+		*allocate += type_size[type->type];
 	}
 
 	if (type->type == ev_field) {
@@ -102,13 +102,13 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, qboolean allocate)
 
 		if (type->aux_type->type == ev_vector) {
 			sprintf (element, "%s_x", name);
-			PR_GetDef (&type_floatfield, element, scope, true);
+			PR_GetDef (&type_floatfield, element, scope, allocate);
 
 			sprintf (element, "%s_y", name);
-			PR_GetDef (&type_floatfield, element, scope, true);
+			PR_GetDef (&type_floatfield, element, scope, allocate);
 
 			sprintf (element, "%s_z", name);
-			PR_GetDef (&type_floatfield, element, scope, true);
+			PR_GetDef (&type_floatfield, element, scope, allocate);
 		} else {
 			pr.size_fields += type_size[type->aux_type->type];
 		}
@@ -156,10 +156,8 @@ PR_GetTempDef (type_t *type, def_t *scope)
 		def->type = type;
 	} else {
 		def = PR_NewDef (type, 0, scope);
-	}
-	if (!def->ofs) {
-		def->ofs = numpr_globals;
-		numpr_globals += type_size[size];
+		def->ofs = scope->num_locals;
+		scope->num_locals += type_size[size];
 	}
 	def->next = temp_scope.next;
 	temp_scope.next = def;
@@ -187,7 +185,7 @@ PR_ResetTempDefs (void)
 	int i;
 	//def_t *d;
 
-	for (i = 0; i < ev_type_count; i++) {
+	for (i = 0; i < sizeof (free_temps) / sizeof (free_temps[0]); i++) {
 		free_temps[i] = 0;
 	}
 }

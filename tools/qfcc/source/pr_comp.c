@@ -457,7 +457,7 @@ PR_ParseState (void)
 	PR_Expect (tt_punct, ",");
 
 	name = PR_ParseName ();
-	def = PR_GetDef (&type_function, name, 0, true);
+	def = PR_GetDef (&type_function, name, 0, &numpr_globals);
 
 	PR_Expect (tt_punct, "]");
 
@@ -478,6 +478,9 @@ PR_ParseImmediateStatements (type_t *type)
 
 	f = malloc (sizeof (function_t));
 
+	f->next = pr_functions;
+	pr_functions = f;
+
 	// check for builtin function definition #1, #2, etc
 	if (PR_Check (tt_punct, "#")) {
 		if (pr_token_type != tt_immediate
@@ -495,7 +498,7 @@ PR_ParseImmediateStatements (type_t *type)
 
 	// define the parms
 	for (i = 0; i < type->num_parms; i++) {
-		defs[i] = PR_GetDef (type->parm_types[i], pr_parm_names[i], pr_scope, true);
+		defs[i] = PR_GetDef (type->parm_types[i], pr_parm_names[i], pr_scope, &pr_scope->num_locals);
 		f->parm_ofs[i] = defs[i]->ofs;
 		if (i > 0 && f->parm_ofs[i] < f->parm_ofs[i - 1])
 			Error ("bad parm order");
@@ -543,7 +546,7 @@ PR_ParseDefs (void)
 	do {
 		name = PR_ParseName ();
 
-		def = PR_GetDef (type, name, pr_scope, true);
+		def = PR_GetDef (type, name, pr_scope, pr_scope ? &pr_scope->num_locals : &numpr_globals);
 
 		// check for an initialization
 		if (PR_Check (tt_punct, "=")) {
@@ -563,17 +566,11 @@ PR_ParseDefs (void)
 
 //				if (pr_dumpasm)
 //					PR_PrintFunction (def);
-				//{
-				//	def_t *d;
-				//	printf ("%s\n", def->name);
-				//	for (d = def->scope_next; d; d = d->scope_next) {
-				//		printf ("%s: %d %d %d\n", d->name, d->ofs, d->type->type, type_size[d->type->type]);
-				//	}
-				//}
 
 				// fill in the dfunction
 				df = &functions[numfunctions];
 				numfunctions++;
+				f->dfunc = df;
 
 				if (f->builtin)
 					df->first_statement = -f->builtin;
@@ -583,7 +580,7 @@ PR_ParseDefs (void)
 				df->s_name = ReuseString (f->def->name);
 				df->s_file = s_file;
 				df->numparms = f->def->type->num_parms;
-				df->locals = locals_end - locals_start;
+				df->locals = f->def->num_locals;
 				df->parm_start = locals_start;
 				for (i = 0; i < df->numparms; i++)
 					df->parm_size[i] = type_size[f->def->type->parm_types[i]->type];

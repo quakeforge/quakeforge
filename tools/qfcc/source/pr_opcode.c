@@ -131,6 +131,18 @@ opcode_t    pr_opcodes[] = {
 	{"|", "BITOR", OP_BITOR, 2, false, &def_float, &def_float, &def_float},
 };
 
+void
+PR_AddStatementRef (def_t *def, dstatement_t *st, int field)
+{
+	if (def) {
+		statref_t *ref = calloc (1, sizeof (statref_t));
+		ref->next = def->refs;
+		def->refs = ref;
+		ref->statement = st;
+		ref->field = field;
+	}
+}
+
 /*
 	PR_Statement
 
@@ -157,6 +169,9 @@ PR_Statement (opcode_t * op, def_t * var_a, def_t * var_b)
 		var_c = PR_GetTempDef (op->type_c->type, pr_scope);
 		statement->c = var_c->ofs;
 	}
+	PR_AddStatementRef (var_a, statement, 0);
+	PR_AddStatementRef (var_b, statement, 1);
+	PR_AddStatementRef (var_c, statement, 2);
 
 	if (op->right_associative)
 		return var_a;
