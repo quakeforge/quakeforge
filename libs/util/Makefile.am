@@ -2,20 +2,22 @@ INCLUDES= -I$(top_srcdir)/include
 
 lib_LTLIBRARIES= libQFutil.la
 
-noinst_LTLIBRARIES=	libasm.la
-
 if ASM_ARCH
-libasm_la_SOURCES=	math.S
+noinst_LTLIBRARIES=	libasm.la
 else
-libasm_la_SOURCES=
+noinst_LTLIBRARIES=
 endif
-EXTRA_libasm_la_SOURCES=math.S
+
+asm_src= math.S
+
+libasm_la_SOURCES=	$(asm_src)
 
 
+fnmatch_src=	fnmatch.c dirent.c
 if BUILD_FNMATCH
-fnmatch_SRC=	fnmatch.c dirent.c
+fnmatch= $(fnmatch_src)
 else
-fnmatch_SRC=
+fnmatch=
 endif
 
 libQFutil_la_LDFLAGS=		-version-info 1:0:0
@@ -25,6 +27,6 @@ libQFutil_la_SOURCES= \
 	checksum.c cmd.c console.c con_print.c crc.c cvar.c fendian.c hash.c \
 	info.c link.c mathlib.c mdfour.c msg.c pcx.c plugin.c qargs.c \
 	qendian.c qfplist.c quakefs.c quakeio.c sizebuf.c sys.c tga.c va.c \
-	ver_check.c wad.c zone.c $(fnmatch_SRC)
+	ver_check.c wad.c zone.c $(fnmatch)
 
-EXTRA_libQFutil_la_SOURCES=	fnmatch.c dirent.c
+EXTRA_DIST= $(asm_src) $(fnmatch_src)

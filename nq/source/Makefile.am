@@ -39,12 +39,16 @@ EXTRA_PROGRAMS= nq-fbdev nq-glx nq-mgl nq-sdl nq-sdl32 nq-sgl nq-svga nq-wgl \
 		nq-x11 nq-server
 
 if ASM_ARCH
-libasm_la_SOURCES= sys_ia32.S worlda.S
+asm= libasm.la
 else
-libasm_la_SOURCES=
+asm=
 endif
 
-noinst_LTLIBRARIES= libqfnet.la libasm.la
+asm_src= sys_ia32.S worlda.S
+
+libasm_la_SOURCES= $(asm_src)
+
+noinst_LTLIBRARIES= libqfnet.la $(asm)
 
 common_sources=	game.c host_skin.c skin.c world.c com.c
 
@@ -203,7 +207,7 @@ nq_server_DEPENDENCIES=	libqfnet.la libasm.la
 
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,
 # or it won't be distributed with 'make dist'
-EXTRA_DIST=	sys_win.c sys_unix.c #nq.dsp
+EXTRA_DIST=	$(asm_src)
 
 # Kill the temp files, hopefully.
 CLEANFILES  = *.i *.s $(YACCLEX_CLEANFILES)

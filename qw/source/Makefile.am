@@ -40,12 +40,16 @@ EXTRA_PROGRAMS= qw-client-fbdev qw-client-glx qw-client-mgl qw-client-sdl \
 		qw-client-x11 qw-server qw-master
 
 if ASM_ARCH
-libasm_la_SOURCES= sys_x86.S worlda.S
+asm= libasm.la
 else
-libasm_la_SOURCES=
+asm=
 endif
 
-noinst_LTLIBRARIES= libqfnet.la libasm.la
+asm_src= sys_x86.S worlda.S
+
+libasm_la_SOURCES= $(asm_src)
+
+noinst_LTLIBRARIES= libqfnet.la $(asm)
 
 common_sources= buildnum.c com.c game.c msg_ucmd.c pmove.c pmovetst.c \
 		net_packetlog.c
@@ -53,12 +57,15 @@ common_sources= buildnum.c com.c game.c msg_ucmd.c pmove.c pmovetst.c \
 common_ldflags= -export-dynamic
 
 # ... Network type
+ipv6_src= net_udp6.c
+ipv4_src= net_udp.c
 if NETTYPE_IPV6
-libqfnet_la_SOURCES=	net_chan.c net_udp6.c
+ipvX_src= $(ipv6_src)
 else
-libqfnet_la_SOURCES=	net_chan.c net_udp.c
+ipvX_src= $(ipv4_src)
 endif
-EXTRA_libqfnet_la_SOURCES= net_chan.c net_udp.c net_udp6.c
+libqfnet_la_SOURCES=	net_chan.c $(ipvX_src)
+EXTRA_libqfnet_la_SOURCES= $(ipv4_src) $(ipv6_src)
 
 # Server builds
 #
@@ -221,7 +228,7 @@ qw_client_wgl_DEPENDENCIES= \
 
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,
 # or it won't be distributed with 'make dist'
-EXTRA_DIST=	cl_sys_win.c sv_sys_win.c cl_sys_sdl.c
+EXTRA_DIST=	$(asm_src)
 
 # Kill the temp files, hopefully.
 CLEANFILES	= *.i *.s $(YACCLEX_CLEANFILES)

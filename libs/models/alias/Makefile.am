@@ -1,21 +1,34 @@
 INCLUDES= -I$(top_srcdir)/include
 
-noinst_LTLIBRARIES=	libalias_gl.la libalias_sw.la libalias_sw32.la
-
 if BUILD_GL
-libalias_gl_la_SOURCES= gl_mesh.c gl_model_alias.c model_alias.c
+gl= libalias_gl.la
 else
-libalias_gl_la_SOURCES=
+gl=
 endif
 
 if BUILD_SW
-libalias_sw_la_SOURCES= sw_model_alias.c model_alias.c
+sw= libalias_sw.la
 else
-libalias_sw_la_SOURCES=
+sw=
 endif
 
 if BUILD_SW32
-libalias_sw32_la_SOURCES=	sw32_model_alias.c model_alias.c
+sw32= libalias_sw32.la
 else
-libalias_sw32_la_SOURCES=
+sw32=
 endif
+
+noinst_LTLIBRARIES=	$(gl) $(sw) $(sw32)
+
+alias_src= model_alias.c
+gl_src= gl_mesh.c gl_model_alias.c
+sw_src= sw_model_alias.c
+sw32_src= sw32_model_alias.c
+
+libalias_gl_la_SOURCES= $(gl_src) $(alias_src)
+
+libalias_sw_la_SOURCES= $(sw_src) $(alias_src)
+
+libalias_sw32_la_SOURCES= $(sw32_src) $(alias_src)
+
+EXTRA_DIST= $(gl_src) $(sw_src) $(sw32_src) $(alias_src)

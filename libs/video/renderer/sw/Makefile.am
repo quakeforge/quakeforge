@@ -32,5 +32,4 @@ libsw_la_LIBADD= $(asm)
 libsw_la_DEPENDENCIES= $(asm)
 endif
 
-EXTRA_libasm_la_SOURCES= $(asm_src)
-EXTRA_libsw_la_SOURCES= $(sw_src)
+EXTRA_DIST= $(sw_src) $(asm_src)

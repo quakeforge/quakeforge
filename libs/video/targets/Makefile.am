@@ -6,36 +6,43 @@ EXTRA_LTLIBRARIES= \
 	libQFjs.la libQFfbdev.la libQFglx.la libQFsvga.la libQFx11.la \
 	libQFsdl.la libQFsdl32.la libQFsgl.la libQFwgl.la
 
-noinst_LTLIBRARIES=	libasm.la @VID_TARGETS_NOINST@
-
 if ASM_ARCH
-libasm_la_SOURCES= d_copy.S
+asm= libasm.la
 else
-libasm_la_SOURCES=
+asm=
 endif
-EXTRA_libasm_la_SOURCES= d_copy.S
+
+noinst_LTLIBRARIES=	$(asm) @VID_TARGETS_NOINST@
+
+libasm_la_SOURCES= d_copy.S
+
+joy_linux_src= joy_linux.c
+joy_win_src= joy_win.c
+joy_null_src= joy_null.c
+if JOYTYPE_LINUX
+joy_src=      $(joy_linux_src)
+else
+if JOYTYPE_WIN32
+joy_src=      $(joy_win_src)
+else
+joy_src=      $(joy_null_src)
+endif
+endif
 
 libQFjs_la_LDFLAGS=	-version-info 1:0:0 -rpath $(libdir)
 libQFjs_la_CFLAGS=      $(JOY_CFLAGS)
-if JOYTYPE_LINUX
-libQFjs_la_SOURCES=      joy.c joy_linux.c
-else
-if JOYTYPE_WIN32
-libQFjs_la_SOURCES=      joy.c joy_win.c
-else
-libQFjs_la_SOURCES=      joy.c joy_null.c
-endif
-endif
-EXTRA_libQFjs_la_SOURCES= joy.c joy_linux.c joy_null.c joy_win.c
+libQFjs_la_SOURCES=      joy.c $(joy_src)
+EXTRA_libQFjs_la_SOURCES= $(joy_linux_src) $(joy_win_src) $(joy_null_src)
 
 in_common_SOURCE=	in_common.c in_event.c keys.c old_keys.c
 
 #
 # Linux FBdev
 #
+fbdev_c= fbset_modes_y.c fbset_modes_l.c
+fbdev_h= fbset_modes_y.h
 YFLAGS = -d
-YACCLEX_CLEANFILES=	fbset_modes_y.c fbset_modes_y.h \
-			fbset_modes_y.tab.h fbset_modes_l.c
+YACCLEX_CLEANFILES=	$(fbdev_c) $(fbdev_h)
 
 libQFfbdev_la_LDFLAGS=	-version-info 1:0:0 -rpath $(libdir)
 libQFfbdev_la_SOURCES=	fbset.c fbset_modes_y.y fbset_modes_l.l \
@@ -93,3 +100,5 @@ libQFx11_la_SOURCES=	$(in_common_SOURCE) in_x11.c vid.c context_x11.c dga_check.
 
 # Kill the temp files, hopefully.
 CLEANFILES  = *.i *.s $(YACCLEX_CLEANFILES)
+
+EXTRA_DIST= $(libasm_la_SOURCES) $(fbdev_c) $(fbdev_h)
