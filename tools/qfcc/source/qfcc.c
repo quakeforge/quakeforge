@@ -1095,9 +1095,9 @@ preprocess_file (const char *filename)
 					perror ("wait");
 					exit (1);
 				}
-				fprintf (stderr, "%s: The wrong child (%d) died. Don't ask me, I don't know either.\n",
+				fprintf (stderr, "%s: The wrong child (%ld) died. Don't ask me, I don't know either.\n",
 						this_program,
-						rc);
+						(long) rc);
 				exit (1);
 			}
 			if (WIFEXITED (status)) {
