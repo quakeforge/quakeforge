@@ -886,12 +886,6 @@ R_RenderView_ (void)
 #endif
 	R_PushDlights (vec3_origin);
 
-// make FDIV fast. This reduces timing precision after we've been running for a
-// while, so we don't do it globally.  This also sets chop mode, and we do it
-// here so that setup stuff like the refresh area calculations match what's
-// done in screen.c
-//	Sys_LowFPPrecision (); // LordHavoc: no assembly
-
 	if (!r_worldentity.model)
 		Sys_Error ("R_RenderView: NULL worldmodel");
 
@@ -958,9 +952,6 @@ R_RenderView_ (void)
 
 	if (r_reportedgeout->int_val && r_outofedges)
 		Con_Printf ("Short roughly %d edges\n", r_outofedges * 2 / 3);
-
-	// back to high floating-point precision
-	//	Sys_HighFPPrecision (); // LordHavoc: no assembly
 }
 
 void

@@ -72,11 +72,6 @@ static HANDLE hFile;
 static HANDLE heventParent;
 static HANDLE heventChild;
 
-void        MaskExceptions (void);
-void        Sys_PushFPCW_SetHigh (void);
-void        Sys_PopFPCW (void);
-
-
 // FILE IO ====================================================================
 
 #define	MAX_HANDLES		10
