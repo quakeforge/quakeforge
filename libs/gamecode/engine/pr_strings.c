@@ -193,24 +193,38 @@ PR_GarbageCollect (progs_t *pr)
 	}
 }
 
-char *
-PR_GetString (progs_t *pr, int num)
+static inline char *
+get_string (progs_t *pr, unsigned int num)
 {
-	if (num < 0) {
-		int		row = ~num / 1024;
+	if ((int) num < 0) {
+		unsigned int row = ~num / 1024;
 
 		num = ~num % 1024;
 
-		if (row < 0 || row >= pr->dyn_str_size)
-			goto bad_string_offset;
+		if (row >= pr->dyn_str_size)
+			return 0;
 		return pr->dynamic_strings[row][num].string;
 	} else {
 		if (num >= pr->pr_stringsize)
-			goto bad_string_offset;
+			return 0;
 		return pr->pr_strings + num;
 	}
+}
 
-bad_string_offset:
+qboolean
+PR_StringValid (progs_t *pr, int num)
+{
+	return get_string (pr, num) != 0;
+}
+
+char *
+PR_GetString (progs_t *pr, int num)
+{
+	char       *str;
+
+	str = get_string (pr, num);
+	if (str)
+		return str;
 	PR_RunError (pr, "Invalid string offset %u", num);
 }
 

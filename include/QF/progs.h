@@ -107,6 +107,7 @@ int PR_AccessField (progs_t *pr, const char *name, etype_t type,
 edict_t *EDICT_NUM(progs_t *pr, int n);
 int NUM_FOR_EDICT(progs_t *pr, edict_t *e);
 int NUM_FOR_BAD_EDICT(progs_t *pr, edict_t *e);
+qboolean PR_EdictValid (progs_t *pr, int e);
 
 #define	NEXT_EDICT(p,e) ((edict_t *)( (byte *)e + (p)->pr_edict_size))
 
@@ -204,6 +205,7 @@ void PR_InitRuntime (progs_t *pr);
 // PR Strings stuff
 //
 
+qboolean PR_StringValid (progs_t *pr, int num);
 char *PR_GetString(progs_t *pr, int num);
 int PR_SetString(progs_t *pr, const char *s);
 void PR_GarbageCollect (progs_t *pr);

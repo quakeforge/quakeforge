@@ -545,3 +545,13 @@ NUM_FOR_EDICT (progs_t *pr, edict_t *e)
 
 	return b;
 }
+
+qboolean
+PR_EdictValid (progs_t *pr, int e)
+{
+	if (e < 0 || e >= pr->pr_edictareasize)
+		return false;
+	if (e % pr->pr_edict_size)
+		return false;
+	return true;
+}
