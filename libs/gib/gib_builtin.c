@@ -495,7 +495,7 @@ GIB_String_Findsub_f (void)
 	else if (pos >= strlen (haystack))
 		GIB_Return ("-1");
 	else if ((res = strstr(haystack+pos, GIB_Argv(2))))
-		GIB_Return (va("%i", res - haystack));
+		GIB_Return (va("%lu", (unsigned long int)(res - haystack)));
 	else
 		GIB_Return ("-1");
 }
