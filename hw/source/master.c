@@ -131,9 +131,6 @@ FL_Find (netadr_t adr)
 	return NULL;
 }
 
-
-
-
 static void
 Filter (void)
 {
@@ -158,9 +155,6 @@ Filter (void)
 		net_from.port = hold_port;
 	}
 }
-
-
-
 
 static void
 SVL_Remove (server_t *sv)
@@ -264,7 +258,7 @@ AnalysePacket (void)
 	size = net_message->message->cursize;
 
 	for (p = data; (rsize = min (size - (p - data), 16)); p += rsize) {
-		Con_Printf ("%04X:", (unsigned int) (p - data));
+		Con_Printf ("%04X:", (unsigned) (p - data));
 		memcpy (buf, p, rsize);
 		for (i = 0; i < rsize; i++) {
 			Con_Printf (" %02X", buf[i]);
@@ -316,7 +310,7 @@ Mst_Packet (void)
 	char        msg;
 	server_t   *sv;
 
-//	Filter();
+//	Filter ();
 	msg = net_message->message->data[1];
 	if (msg == A2A_PING) {
 		Filter ();
