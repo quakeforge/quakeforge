@@ -721,7 +721,7 @@ Sbar_DrawNormal (void)
 
 
 void
-Sbar_Draw (void)
+Sbar_Draw (int swap)
 {
 	qboolean    headsup;
 	char        st[512];

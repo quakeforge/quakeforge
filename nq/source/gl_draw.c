@@ -359,7 +359,7 @@ Draw_AltString8 (int x, int y, char *str)
 
 
 void
-Draw_Crosshair (void)
+Draw_Crosshair (int swap)
 {
 	int         x, y;
 	extern vrect_t scr_vrect;

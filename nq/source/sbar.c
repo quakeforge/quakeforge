@@ -843,7 +843,7 @@ Sbar_DrawNormal (void)
 
 
 void
-Sbar_Draw (void)
+Sbar_Draw (int swap)
 {
 	// FIXME: MISSIONHUD
 //	if (hipnotic || rogue) {

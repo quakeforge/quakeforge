@@ -327,7 +327,7 @@ Draw_Pixel (int x, int y, byte color)
 
 
 void
-Draw_Crosshair (void)
+Draw_Crosshair (int swap)
 {
 	int         x, y;
 	extern cvar_t *crosshair, *cl_crossx, *cl_crossy, *crosshaircolor;

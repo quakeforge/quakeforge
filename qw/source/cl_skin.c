@@ -64,7 +64,7 @@ Skin_NextDownload (void)
 
 	if (cls.downloadnumber == 0) {
 		Con_Printf ("Checking skins...\n");
-		SCR_UpdateScreen (realtime);
+		CL_UpdateScreen (realtime);
 	}
 	cls.downloadtype = dl_skin;
 

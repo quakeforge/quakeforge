@@ -72,8 +72,8 @@ qf_client_LIBS= $(top_builddir)/libs/video/targets/libQFjs.la \
 client_LIBS=	-L. -lqfnet $(qf_client_LIBS) $(NET_LIBS)
 client_LIB_DEPS=	libqfnet.a $(qf_client_LIBS)
 
-client_SOURCES=	cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
-		cl_tent.c \
+client_SOURCES=	cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_screen.c \
+		cl_parse.c cl_tent.c \
 		console.c keys.c sbar.c r_cvar.c r_efrag.c r_ent.c r_graph.c r_main.c \
 		r_part.c r_view.c nonintel.c locs.c pcx.c tga.c
 

@@ -360,4 +360,6 @@ extern	double			realtime;
 
 void Cvar_Info (struct cvar_s *var);
 
+void CL_UpdateScreen (double realtime);
+
 #endif // __client_h

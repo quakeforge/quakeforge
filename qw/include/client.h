@@ -318,6 +318,10 @@ extern	double		realtime;
 
 void Cvar_Info (struct cvar_s *var);
 
-void CL_NetGraph (void);
+void CL_NetGraph (int swap);
+void CL_UpdateScreen (double realtime);
+
+#define RSSHOT_WIDTH 320
+#define RSSHOT_HEIGHT 200
 
 #endif // _CLIENT_H

@@ -300,7 +300,7 @@ Key_Console (int key)
 			key_lines[edit_line][1] = 0;
 			key_linepos = 1;
 			if (cls.state == ca_disconnected)
-				SCR_UpdateScreen (realtime);	// force an update, because the
+				CL_UpdateScreen (realtime);	// force an update, because the
 										// command may take some time
 			return;
 

@@ -49,7 +49,7 @@
 #define	TYP_SOUND		67
 #define	TYP_MIPTEX		68
 
-typedef struct
+typedef struct qpic_s
 {
 	int			width, height;
 	byte		data[4];			// variably sized

@@ -203,6 +203,14 @@ char        soundlist_name[] = "soundlist %i %i";
 
 cvar_t     *confirm_quit;
 
+void        CL_RSShot_f (void);
+
+void
+CL_Sbar_f (cvar_t *var)
+{
+	vid.recalc_refdef = true;
+	r_lineadj = var->int_val ? sb_lines : 0;
+}
 
 void
 CL_Quit_f (void)
@@ -1136,6 +1144,7 @@ CL_Init (void)
 					"server'");
 	Cmd_AddCommand ("rerecord", CL_ReRecord_f, "Rerecord a demo on the same "
 					"server");
+	Cmd_AddCommand ("snap", CL_RSShot_f, "Take a screenshot and upload it to the server");
 	Cmd_AddCommand ("stop", CL_Stop_f, "Stop recording a demo");
 	Cmd_AddCommand ("playdemo", CL_PlayDemo_f, "Play a recorded demo");
 	Cmd_AddCommand ("timedemo", CL_TimeDemo_f, "Play a demo as fast as your "
@@ -1228,7 +1237,7 @@ CL_Init_Cvars (void)
 							"write config files?");
 	cl_shownet = Cvar_Get ("cl_shownet", "0", CVAR_NONE, NULL,
 						   "show network packets. 0=off, 1=basic, 2=verbose");
-	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, NULL, "status bar mode");
+	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, CL_Sbar_f, "status bar mode");
 	cl_sbar_separator = Cvar_Get ("cl_sbar_separator", "0", CVAR_ARCHIVE, NULL,
 								  "turns on status bar separator");
 	cl_hudswap = Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, NULL,
@@ -1492,7 +1501,7 @@ Host_Frame (float time)
 	if (!atoi (Info_ValueForKey (cl.serverinfo, "watervis")))
 		Cvar_SetValue (r_wateralpha, 1);
 
-	SCR_UpdateScreen (realtime);
+	CL_UpdateScreen (realtime);
 
 	if (host_speeds->int_val)
 		time2 = Sys_DoubleTime ();
@@ -1687,7 +1696,7 @@ Host_Init (void)
 
 	Con_Printf ("€‚ %s initialized €‚\n", PROGRAM);
 
-	SCR_UpdateScreen (realtime);
+	CL_UpdateScreen (realtime);
 }
 
 

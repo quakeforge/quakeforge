@@ -92,6 +92,14 @@ entity_state_t    cl_static_entity_baselines[MAX_STATIC_ENTITIES];
 
 
 void
+CL_Sbar_f (cvar_t *var)
+{   
+	vid.recalc_refdef = true;
+	r_lineadj = var->int_val ? sb_lines : 0;
+}
+
+
+void
 CL_InitCvars (void)
 {
 	cl_cshift_bonus = Cvar_Get ("cl_cshift_bonus", "1", CVAR_ARCHIVE, NULL,
@@ -130,7 +138,7 @@ CL_InitCvars (void)
 						   "show network packets. 0=off, 1=basic, 2=verbose");
 	cl_nolerp = Cvar_Get ("cl_nolerp", "0", CVAR_NONE, NULL,
 						  "linear motion interpolation");
-	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, NULL,
+	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, CL_Sbar_f,
 						"status bar mode");
 	cl_hudswap = Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, NULL,
 						   "new HUD on left side?");

@@ -36,7 +36,9 @@
 void SCR_Init_Cvars (void);
 void SCR_Init (void);
 
-void SCR_UpdateScreen (double realtime);
+typedef void (*SCR_Func)(int);
+// scr_funcs is a null terminated array
+void SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap);
 void SCR_UpdateWholeScreen (void);
 
 void SCR_SizeUp (void);
@@ -47,6 +49,17 @@ void SCR_CenterPrint (char *str);
 void SCR_BeginLoadingPlaque (void);
 void SCR_EndLoadingPlaque (void);
 
+void SCR_DrawRam (int swap);
+void SCR_DrawFPS (int swap);
+void SCR_DrawTime (int swap);
+void SCR_DrawTurtle (int swap);
+void SCR_DrawPause (int swap);
+void SCR_CheckDrawCenterString (int swap);
+void SCR_DrawConsole (int swap);
+
+struct tex_s *SCR_ScreenShot (int width, int height);
+void SCR_DrawStringToSnap (const char *s, struct tex_s *tex, int x, int y);
+int MipColor (int r, int g, int b);
 int SCR_ModalMessage (char *text);
 
 extern	float		scr_con_current;
@@ -69,5 +82,9 @@ extern	int			scr_copytop;
 extern	int			scr_copyeverything;
 
 extern qboolean        block_drawing;
+
+extern struct qpic_s *scr_ram;
+extern struct qpic_s *scr_net;
+extern struct qpic_s *scr_turtle;
 
 #endif // __screen_h

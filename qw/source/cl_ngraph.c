@@ -36,18 +36,22 @@
 
 #include "cl_parse.h"
 #include "client.h"
+#include "r_cvar.h" //XXX
 #include "sbar.h"
 
 void
-CL_NetGraph (void)
+CL_NetGraph (int swap)
 {
 	int         a, l, x, y, h, i;
 	int         lost;
 	char        st[80];
 
+	if (!r_netgraph->int_val)
+		return;
+
 	a = 0; // shut up gcc
 
-	x = cl_hudswap->int_val ? vid.width - (NET_TIMINGS + 16): 0;
+	x = swap ? vid.width - (NET_TIMINGS + 16): 0;
 	y = vid.height - sb_lines - 24 - r_graphheight->int_val - 1;
 
 	h = r_graphheight->int_val % 8;
@@ -55,7 +59,7 @@ CL_NetGraph (void)
 	Draw_TextBox (x, y, NET_TIMINGS / 8, r_graphheight->int_val / 8 + 1);
 
 	lost = CL_CalcNet ();
-	x = cl_hudswap->int_val ? vid.width - (NET_TIMINGS + 8) : 8;
+	x = swap ? vid.width - (NET_TIMINGS + 8) : 8;
 	y = vid.height - sb_lines - 9;
 
 	l = NET_TIMINGS;
@@ -73,7 +77,7 @@ CL_NetGraph (void)
 
 	y = vid.height - sb_lines - 24 - r_graphheight->int_val + 7;
 	snprintf (st, sizeof (st), "%3i%% packet loss", lost);
-	if (cl_hudswap->int_val) {
+	if (swap) {
 		Draw_String8 (vid.width - ((strlen (st) * 8) + 8), y, st);
 	} else {
 		Draw_String8 (8, y, st);

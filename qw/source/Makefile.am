@@ -95,8 +95,8 @@ client_LIB_DEPS=	libqfnet.a $(qf_client_LIBS)
 # libQFjs is seperate because it needs to be linked after when building statically
 
 client_SOURCES= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
-		cl_main.c cl_misc.c cl_ngraph.c cl_parse.c cl_pred.c cl_skin.c \
-		cl_slist.c cl_tent.c \
+		cl_main.c cl_misc.c cl_ngraph.c cl_parse.c cl_screen.c cl_pred.c \
+		cl_skin.c cl_slist.c cl_tent.c \
 		console.c keys.c locs.c nonintel.c pcx.c r_cvar.c r_efrag.c \
 		r_ent.c r_graph.c r_main.c r_view.c sbar.c skin.c teamplay.c tga.c \
 		wad.c cl_math.S $(syscl_SRC)

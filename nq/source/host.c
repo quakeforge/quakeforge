@@ -713,7 +713,7 @@ _Host_Frame (float time)
 	r_active = cls.state == ca_active;
 	r_view_model = &cl.viewent;
 
-	SCR_UpdateScreen (cl.time);
+	CL_UpdateScreen (cl.time);
 
 	if (host_speeds->int_val)
 		time2 = Sys_DoubleTime ();
@@ -1009,7 +1009,7 @@ Host_Init (quakeparms_t *parms)
 
 	Sys_Printf ("========Quake Initialized=========\n");
 
-	SCR_UpdateScreen (cl.time);
+	CL_UpdateScreen (cl.time);
 }
 
 
