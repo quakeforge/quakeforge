@@ -1109,6 +1109,10 @@ if test "x$optimize" = xyes; then
 	BUILD_TYPE="$BUILD_TYPE Optimize"
 	if test "x$GCC" = xyes; then
 		CFLAGS="$CFLAGS -O3 -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
+		AC_ARG_ENABLE(strict-aliasing,
+	[  --enable-strict-aliasing enable the -fstrict-aliasing ooption of gcc],
+			CFLAGS="$CFLAGS -fstrict-aliasing"
+		)
 		AC_MSG_CHECKING(for special compiler settings)
 		case "${host_cpu}" in
 			i?86)
@@ -1734,6 +1738,7 @@ AC_MSG_RESULT([
 	IPv6 networking    : $NETTYPE_IPV6
 	Compression support: $HAVE_ZLIB
 	Compiler version   : $CCVER
+	Compiler flags     : $CFLAGS
 
 	Shared game data directory: $sharepath
 	Per-user game data directory: $userpath
