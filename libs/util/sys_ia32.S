@@ -52,33 +52,45 @@ fpenv:
 	addl	$C(_GLOBAL_OFFSET_TABLE_)+[.-.Lpic##n],%edx
 
 #define got_var(v) v@GOT(%edx)
+
+#define F_BEGIN(name)			\
+.globl C(name)					;\
+	.type	C(name),@function	;\
+C(name):
+
+#define F_END(name) .size	C(name),.-C(name)
+
 #else
 #define got_base(n)
 #define got_var(v) v
+
+#define F_BEGIN(name)			\
+.globl C(name)					;\
+C(name):
+
+#define F_END(name)
+
 #endif
 
 	.text
 
-.globl C(MaskExceptions)
-#ifdef PIC
-	.type	C(MaskExceptions),@function
-#endif
-C(MaskExceptions):
+F_BEGIN(MaskExceptions)
 	got_base(1)
 	fnstenv	got_var(fpenv)
 	orl		$0x3F,got_var(fpenv)
 	fldenv	got_var(fpenv)
 
 	ret
+F_END(MaskExceptions)
 
 #if 0
-.globl C(unmaskexceptions)
-C(unmaskexceptions):
+F_BEGIN(unmaskexceptions)
 	fnstenv	got_var(fpenv)
 	andl		$0xFFFFFFE0,got_var(fpenv)
 	fldenv	got_var(fpenv)
 
 	ret
+F_END(unmaskexceptions)
 #endif
 
 	.data
@@ -93,33 +105,32 @@ pushed_cw:	.long	0
 
 	.text
 
-.globl C(Sys_LowFPPrecision)
-C(Sys_LowFPPrecision):
+F_BEGIN(Sys_LowFPPrecision)
 	fldcw	got_var(single_cw)
 
 	ret
+F_END(Sys_LowFPPrecision)
 
-.globl C(Sys_HighFPPrecision)
-C(Sys_HighFPPrecision):
+F_BEGIN(Sys_HighFPPrecision)
 	fldcw	got_var(full_cw)
 
 	ret
+F_END(Sys_HighFPPrecision)
 
-.globl C(Sys_PushFPCW_SetHigh)
-C(Sys_PushFPCW_SetHigh):
+F_BEGIN(Sys_PushFPCW_SetHigh)
 	fnstcw	got_var(pushed_cw)
 	fldcw	got_var(full_cw)
 
 	ret
+F_END(Sys_PushFPCW_SetHigh)
 
-.globl C(Sys_PopFPCW)
-C(Sys_PopFPCW):
+F_BEGIN(Sys_PopFPCW)
 	fldcw	got_var(pushed_cw)
 
 	ret
+F_END(Sys_PopFPCW)
 
-.globl C(Sys_SetFPCW)
-C(Sys_SetFPCW):
+F_BEGIN(Sys_SetFPCW)
 	fnstcw	got_var(cw)
 	movl	got_var(cw),%eax
 	andb	$0xF0,%ah
@@ -135,4 +146,5 @@ C(Sys_SetFPCW):
 	movl	%eax,got_var(ceil_cw)
 
 	ret
+F_END(Sys_SetFPCW)
 #endif /* USE_INTEL_ASM */
