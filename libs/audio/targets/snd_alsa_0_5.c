@@ -150,7 +150,7 @@ check_card (int card)
 static qboolean
 SNDDMA_Init (void)
 {
-	char	   *err_msg = "";
+	const char *err_msg = "";
 	int			bps, frag_size, i;
 	int			format = -1, rate = -1, stereo = -1, rc = 0;
 	unsigned int mask;
