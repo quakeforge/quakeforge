@@ -469,10 +469,10 @@ CL_LinkPacketEntities (void)
 			(*ent)->colormod[0] = (*ent)->colormod[1] =
 				(*ent)->colormod[2] = 1.0;
 		} else {
-			(*ent)->colormod[0] = (float) ((s1->colormod >> 5) & 7) * (1.0 /
-																	   7.0);
-			(*ent)->colormod[1] = (float) ((s1->colormod >> 2) & 7) * (1.0 /
-																	   7.0);
+			(*ent)->colormod[0] = (float) ((s1->colormod >> 5) & 7) *
+				(1.0 / 7.0);
+			(*ent)->colormod[1] = (float) ((s1->colormod >> 2) & 7) *
+				(1.0 / 7.0);
 			(*ent)->colormod[2] = (float) (s1->colormod & 3) * (1.0 / 3.0);
 		}
 		(*ent)->colormod[3] = s1->alpha / 255.0;
@@ -520,11 +520,8 @@ CL_LinkPacketEntities (void)
 				dl->die = cl.time + 0.1;
 				VectorCopy (r_firecolor->vec, dl->color);
 			}
-		}
-
-		if (model->flags & EF_ROCKET)
 			R_RocketTrail (*ent);
-		else if (model->flags & EF_GRENADE)
+		} else if (model->flags & EF_GRENADE)
 			R_GrenadeTrail (*ent);
 		else if (model->flags & EF_GIB)
 			R_BloodTrail (*ent);
