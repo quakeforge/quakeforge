@@ -471,7 +471,7 @@ CL_ParseUpdate (int bits)
 		state->msg_angles[0][2] = state->baseline.angles[2];
 
 	if (bits & U_NOLERP)
-		state->forcelink = true;
+		forcelink = true;
 
 	if (forcelink) {					// didn't have an update last message
 		VectorCopy (state->msg_origins[0], state->msg_origins[1]);

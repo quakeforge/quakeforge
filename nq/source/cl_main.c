@@ -546,30 +546,30 @@ CL_RelinkEntities (void)
 
 		if (state->forcelink) {		// the entity was not updated in the
 									// last message so move to the final spot
-			VectorCopy (state->msg_origins[0], ent->origin);
-			VectorCopy (state->msg_angles[0], ent->angles);
 			ent->pose1 = ent->pose2 = -1;
 		} else {					// if the delta is large, assume a
 									// teleport and don't lerp
 			f = frac;
-			for (j = 0; j < 3; j++) {
-				delta[j] = state->msg_origins[0][j] - state->msg_origins[1][j];
-				if (delta[j] > 100 || delta[j] < -100)
-					f = 1;				// assume a teleportation, not a motion
+			VectorSubtract (state->msg_origins[0],
+							state->msg_origins[1], delta);
+			if (fabs (delta[0]) > 100 || fabs (delta[1] > 100)
+				|| fabs (delta[2]) > 100) {
+				// assume a teleportation, not a motion
+				VectorCopy (state->msg_origins[0], ent->origin);
+				VectorCopy (state->msg_angles[0], ent->angles);
+				ent->pose1 = ent->pose2 = -1;
+			} else {
+				VectorMA (state->msg_origins[1], f, delta, ent->origin);
+				// interpolate the origin and angles
+				for (j = 0; j < 3; j++) {
+					d = state->msg_angles[0][j] - state->msg_angles[1][j];
+					if (d > 180)
+						d -= 360;
+					else if (d < -180)
+						d += 360;
+					ent->angles[j] = state->msg_angles[1][j] + f * d;
+				}
 			}
-
-			// interpolate the origin and angles
-			for (j = 0; j < 3; j++) {
-				ent->origin[j] = state->msg_origins[1][j] + f * delta[j];
-
-				d = state->msg_angles[0][j] - state->msg_angles[1][j];
-				if (d > 180)
-					d -= 360;
-				else if (d < -180)
-					d += 360;
-				ent->angles[j] = state->msg_angles[1][j] + f * d;
-			}
-
 		}
 
 		// rotate binary objects locally
