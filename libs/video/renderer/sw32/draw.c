@@ -486,7 +486,7 @@ void
 Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 			 int height)
 {
-	byte       *source;
+	byte       *source, tbyte;
 	int   v, u;
 
 	if ((x < 0) ||
@@ -502,7 +502,9 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 		byte       *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
 
 		for (v = 0; v < height; v++) {
-			memcpy (dest, source, width);
+			for (u = 0; u < width; u++)
+				if ((tbyte = source[u]) != TRANSPARENT_COLOR)
+					dest[u] = tbyte;
 			dest += vid.rowbytes;
 			source += pic->width;
 		}
@@ -515,7 +517,8 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 		for (v = 0; v < height; v++, dest += vid.rowbytes >> 1,
 				 source += pic->width)
 			for (u = 0; u < width; u++)
-				dest[u] = d_8to16table[source[u]];
+				if ((tbyte = source[u]) != TRANSPARENT_COLOR)
+					dest[u] = d_8to16table[tbyte];
 	}
 	break;
 	case 4:
@@ -525,7 +528,8 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 		for (v = 0; v < height; v++, dest += vid.rowbytes >> 2,
 				 source += pic->width)
 			for (u = 0; u < width; u++)
-				dest[u] = d_8to24table[source[u]];
+				if ((tbyte = source[u]) != TRANSPARENT_COLOR)
+					dest[u] = d_8to24table[tbyte];
 	}
 	break;
 	default:
