@@ -55,7 +55,6 @@ D_SurfaceCacheAddress (void)
 	return sc_base;
 }
 
-
 int
 D_SurfaceCacheForRes (int width, int height)
 {
@@ -72,10 +71,8 @@ D_SurfaceCacheForRes (int width, int height)
 	if (pix > 64000)
 		size += (pix - 64000) * 3;
 
-
 	return size;
 }
-
 
 void
 D_CheckCacheGuard (void)
@@ -89,7 +86,6 @@ D_CheckCacheGuard (void)
 			Sys_Error ("D_CheckCacheGuard: failed");
 }
 
-
 void
 D_ClearCacheGuard (void)
 {
@@ -100,7 +96,6 @@ D_ClearCacheGuard (void)
 	for (i = 0; i < GUARDSIZE; i++)
 		s[i] = (byte) i;
 }
-
 
 void
 D_InitCaches (void *buffer, int size)
@@ -119,7 +114,6 @@ D_InitCaches (void *buffer, int size)
 
 	D_ClearCacheGuard ();
 }
-
 
 void
 D_FlushCaches (void)
@@ -140,7 +134,6 @@ D_FlushCaches (void)
 	sc_base->size = sc_size;
 }
 
-
 surfcache_t *
 D_SCAlloc (int width, int size)
 {
@@ -153,10 +146,10 @@ D_SCAlloc (int width, int size)
 	if ((size <= 0) || (size > 0x40000))	// FIXME ditto
 		Sys_Error ("D_SCAlloc: bad cache size %d", size);
 
-	/* This adds the offset of data[0] in the surfcache_t struct. */
+	// This adds the offset of data[0] in the surfcache_t struct.
 	size += field_offset (surfcache_t, data);
 
-#define SIZE_ALIGN	(sizeof(surfcache_t*)-1)
+#define SIZE_ALIGN	(sizeof (surfcache_t *) - 1)
 	size = (size + SIZE_ALIGN) & ~SIZE_ALIGN;
 #undef SIZE_ALIGN
 	size = (size + 3) & ~3;
@@ -219,7 +212,6 @@ D_SCAlloc (int width, int size)
 	return new;
 }
 
-
 void
 D_SCDump (void)
 {
@@ -232,7 +224,6 @@ D_SCDump (void)
 					test->width);
 	}
 }
-
 
 // if the num is not a power of 2, assume it will not repeat
 int
@@ -249,7 +240,6 @@ MaskForNum (int num)
 	return 255;
 }
 
-
 int
 D_log2 (int num)
 {
@@ -261,7 +251,6 @@ D_log2 (int num)
 		c++;
 	return c;
 }
-
 
 surfcache_t *
 D_CacheSurface (msurface_t *surface, int miplevel)
