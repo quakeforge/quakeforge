@@ -19,7 +19,7 @@ EXTRA_LTLIBRARIES= \
 	libvid_sw.la libvid_sw32.la libvid_svga.la libvid_x11.la
 
 libvid_asm_la_SOURCES=		d_copy.S
-libvid_asmn_la_CFLAGS=		@PREFER_NON_PIC@
+libvid_asm_la_CFLAGS=		@PREFER_NON_PIC@
 
 joy_linux_src= joy_linux.c
 joy_win_src= joy_win.c
