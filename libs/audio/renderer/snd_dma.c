@@ -752,6 +752,7 @@ SND_SoundList (void)
 				continue;
 		}
 		total += sfx->length;
+		Sys_Printf ("%6d %6d %s\n", sfx->loopstart, sfx->length, sfx->name);
 
 		if (load)
 			sfx->release (sfx);

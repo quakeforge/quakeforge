@@ -203,6 +203,8 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length)
 	sc->sfx->length = outcount;
 	if (info->loopstart != -1)
 		sc->sfx->loopstart = info->loopstart / stepscale;
+	else
+		sc->sfx->loopstart = -1;
 
 	if (snd_loadas8bit->int_val) {
 		outwidth = 1;
@@ -314,6 +316,8 @@ SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length)
 	sc->sfx->length = outcount;
 	if (info->loopstart != -1)
 		sc->sfx->loopstart = info->loopstart / stepscale;
+	else
+		sc->sfx->loopstart = -1;
 
 	if (snd_loadas8bit->int_val) {
 		outwidth = 1;
