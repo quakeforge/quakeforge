@@ -1,6 +1,13 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+#include <stdlib.h>
 
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
@@ -10,24 +17,25 @@
 #include "QF/msg.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
+#include "QF/qendian.h"
 #include "QF/sizebuf.h"
 #include "QF/sys.h"
+
 #include "netchan.h"
-#include "defs.h"
 
-int         sv_mode;
+#define MAX_SERVERINFO_STRING   512
+#define PORT_MASTER 26900
+#define PORT_SERVER 26950
 
-qboolean is_server = true;
+// M = master, S = server, C = client, A = any
+// the second character will allways be \n if the message isn't a single
+// byte long (?? not true anymore?)
 
-static cbuf_t *mst_cbuf;
+#define S2C_CHALLENGE       'c'
+#define A2A_PING            'k'
 
-cvar_t     *sv_console_plugin;
-
-SERVER_PLUGIN_PROTOS
-static plugin_list_t server_plugin_list[] = {
-	SERVER_PLUGIN_LIST
-};
-
+#define S2M_HEARTBEAT       'a' // + serverinfo + userlist + fraglist
+#define S2M_SHUTDOWN        'C'
 
 typedef struct filter_s {
 	netadr_t    from;
@@ -36,6 +44,28 @@ typedef struct filter_s {
 	struct filter_s *previous;
 } filter_t;
 
+typedef struct server_s {
+	netadr_t    ip;
+	int         heartbeat;
+	int         players;
+	char        info[MAX_SERVERINFO_STRING];
+	struct server_s *next;
+	struct server_s *previous;
+	double timeout;
+} server_t;
+
+cvar_t     *sv_console_plugin;
+SERVER_PLUGIN_PROTOS
+static plugin_list_t server_plugin_list[] = {
+	SERVER_PLUGIN_LIST
+};
+
+qboolean is_server = true;
+
+static cbuf_t *mst_cbuf;
+
+#define SV_TIMEOUT 450
+server_t   *sv_list = NULL;
 filter_t   *filter_list = NULL;
 
 static void
@@ -62,7 +92,6 @@ FL_Clear (void)
 
 			FL_Remove (filter);
 			free (filter);
-			filter = NULL;
 			filter = next;
 		}
 	}
@@ -76,9 +105,9 @@ FL_New (netadr_t *adr1, netadr_t *adr2)
 
 	filter = (filter_t *) calloc (1, sizeof (filter_t));
 	if (adr1)
-		NET_CopyAdr (&filter->from, adr1);
+		filter->from = *adr1;
 	if (adr2)
-		NET_CopyAdr (&filter->to, adr2);
+		filter->to = *adr2;
 	return filter;
 }
 
@@ -104,77 +133,8 @@ FL_Find (netadr_t adr)
 	return NULL;
 }
 
-server_t   *sv_list = NULL;
 
-void
-SVL_Clear (void)
-{
-	server_t   *sv;
 
-	for (sv = sv_list; sv;) {
-		if (sv) {
-			server_t   *next = sv->next;
-
-			SVL_Remove (sv);
-			free (sv);
-			sv = NULL;
-			sv = next;
-		}
-	} sv_list = NULL;
-}
-
-server_t *
-SVL_New (netadr_t *adr)
-{
-	server_t   *sv;
-
-	sv = (server_t *) calloc (1, sizeof (server_t));
-	sv->heartbeat = 0;
-	sv->info[0] = 0;
-	sv->ip.ip[0] = sv->ip.ip[1] = sv->ip.ip[2] = sv->ip.ip[3] = 0;
-	sv->ip.port = 0;
-	sv->next = NULL;
-	sv->previous = NULL;
-	sv->players = 0;
-	if (adr)
-		NET_CopyAdr (&sv->ip, adr);
-	return sv;
-}
-
-void
-SVL_Add (server_t *sv)
-{
-	sv->next = sv_list;
-	sv->previous = NULL;
-	if (sv_list)
-		sv_list->previous = sv;
-	sv_list = sv;
-}
-
-void
-SVL_Remove (server_t *sv)
-{
-	if (sv_list == sv)
-		sv_list = sv->next;
-	if (sv->previous)
-		sv->previous->next = sv->next;
-	if (sv->next)
-		sv->next->previous = sv->previous;
-	sv->next = NULL;
-	sv->previous = NULL;
-}
-
-server_t *
-SVL_Find (netadr_t adr)
-{
-	server_t   *sv;
-
-	for (sv = sv_list; sv; sv = sv->next) {
-		if (NET_CompareAdr (sv->ip, adr))
-			return sv;
-	}
-	return NULL;
-}
 
 static void
 NET_Filter (void)
@@ -188,7 +148,7 @@ NET_Filter (void)
 	if (NET_CompareBaseAdr (net_from, filter_adr)) {
 		NET_StringToAdr ("0.0.0.0:26950", &filter_adr);
 		if (!NET_CompareBaseAdr (net_local_adr, filter_adr)) {
-			NET_CopyAdr (&net_from, &net_local_adr);
+			net_from = net_local_adr;
 			net_from.port = hold_port;
 		}
 		return;
@@ -196,17 +156,83 @@ NET_Filter (void)
 
 	// if no compare with filter list
 	if ((filter = FL_Find (net_from))) {
-		NET_CopyAdr (&net_from, &filter->to);
+		net_from = filter->to;
 		net_from.port = hold_port;
 	}
 }
 
-void
+
+
+
+static void
+SVL_Remove (server_t *sv)
+{
+	if (sv_list == sv)
+		sv_list = sv->next;
+	if (sv->previous)
+		sv->previous->next = sv->next;
+	if (sv->next)
+		sv->next->previous = sv->previous;
+	sv->next = NULL;
+	sv->previous = NULL;
+}
+
+static void
+SVL_Clear (void)
+{
+	server_t   *sv;
+
+	for (sv = sv_list; sv;) {
+		if (sv) {
+			server_t   *next = sv->next;
+
+			SVL_Remove (sv);
+			free (sv);
+			sv = next;
+		}
+	}
+	sv_list = NULL;
+}
+
+static server_t *
+SVL_New (netadr_t *adr)
+{
+	server_t   *sv;
+
+	sv = (server_t *) calloc (1, sizeof (server_t));
+	if (adr)
+		sv->ip = *adr;
+	return sv;
+}
+
+static void
+SVL_Add (server_t *sv)
+{
+	sv->next = sv_list;
+	sv->previous = NULL;
+	if (sv_list)
+		sv_list->previous = sv;
+	sv_list = sv;
+}
+
+static server_t *
+SVL_Find (netadr_t adr)
+{
+	server_t   *sv;
+
+	for (sv = sv_list; sv; sv = sv->next) {
+		if (NET_CompareAdr (sv->ip, adr))
+			return sv;
+	}
+	return NULL;
+}
+
+static void
 SV_InitNet (void)
 {
-	char        str[64];
+	const char *str;
 	int         port, p;
-	FILE       *filters;
+	QFile      *filters;
 
 	port = PORT_MASTER;
 	p = COM_CheckParm ("-port");
@@ -217,24 +243,14 @@ SV_InitNet (void)
 	NET_Init (port);
 
 	// Add filters
-	if ((filters = fopen ("filters.ini", "rt"))) {
-		while (fgets (str, 64, filters)) {
+	if ((filters = Qopen ("filters.ini", "rt"))) {
+		while ((str = Qgetline (filters))) {
 			Cbuf_AddText (mst_cbuf, "filter add ");
 			Cbuf_AddText (mst_cbuf, str);
 			Cbuf_AddText (mst_cbuf, "\n");
 		}
-		fclose (filters);
+		Qclose (filters);
 	}
-}
-
-void
-NET_CopyAdr (netadr_t *a, netadr_t *b)
-{
-	a->ip[0] = b->ip[0];
-	a->ip[1] = b->ip[1];
-	a->ip[2] = b->ip[2];
-	a->ip[3] = b->ip[3];
-	a->port = b->port;
 }
 
 static void
@@ -252,8 +268,7 @@ AnalysePacket (void)
 		if (i % 8 == 7)
 			Con_Printf ("\n");
 	}
-	Con_Printf ("\n");
-	Con_Printf ("\n");
+	Con_Printf ("\n\n");
 	p = net_message->message->data;
 	for (i = 0; i < net_message->message->cursize; i++, p++) {
 		c = p[0];
@@ -340,7 +355,7 @@ Mst_Packet (void)
 			SVL_Remove (sv);
 			free (sv);
 		}
-	} else if (msg == 'c') {
+	} else if (msg == S2C_CHALLENGE) {
 		Con_Printf ("%s >> ", NET_AdrToString (net_from));
 		Con_Printf ("Gamespy server list request\n");
 		Mst_SendList ();
@@ -360,7 +375,7 @@ Mst_Packet (void)
 	}
 }
 
-void
+static void
 SV_ReadPackets (void)
 {
 	while (NET_GetPacket ()) {
@@ -368,59 +383,50 @@ SV_ReadPackets (void)
 	}
 }
 
-void
-SV_ConnectionlessPacket (void)
-{
-	Con_Printf ("%s>>%s\n", NET_AdrToString (net_from),
-				net_message->message->data);
-}
-
-int         argv_index_add;
-
 static void
-Cmd_FilterAdd (void)
+Cmd_FilterAdd (int arg)
 {
 	filter_t   *filter;
 	netadr_t    to, from;
 
-	if (Cmd_Argc () < 4 + argv_index_add) {
+	if (Cmd_Argc () - arg != 2) {
 		Con_Printf ("Invalid command parameters. "
 					"Usage:\nfilter add x.x.x.x:port x.x.x.x:port\n\n");
 		return;
 	}
-	NET_StringToAdr (Cmd_Argv (2 + argv_index_add), &from);
-	NET_StringToAdr (Cmd_Argv (3 + argv_index_add), &to);
+	NET_StringToAdr (Cmd_Argv (arg), &from);
+	NET_StringToAdr (Cmd_Argv (arg + 1), &to);
 	if (to.port == 0)
 		from.port = BigShort (PORT_SERVER);
 	if (from.port == 0)
 		from.port = BigShort (PORT_SERVER);
 	if (!(filter = FL_Find (from))) {
-		Con_Printf ("Added filter %s\t\t%s\n", Cmd_Argv (2 + argv_index_add),
-				Cmd_Argv (3 + argv_index_add));
+		Con_Printf ("Added filter %s\t\t%s\n", Cmd_Argv (arg),
+					Cmd_Argv (arg + 1));
 		filter = FL_New (&from, &to);
 		FL_Add (filter);
 	} else
-		Con_Printf ("%s already defined\n\n", Cmd_Argv (2 + argv_index_add));
+		Con_Printf ("%s already defined\n\n", Cmd_Argv (arg));
 }
 
 static void
-Cmd_FilterRemove (void)
+Cmd_FilterRemove (int arg)
 {
 	filter_t   *filter;
 	netadr_t    from;
 
-	if (Cmd_Argc () < 3 + argv_index_add) {
+	if (Cmd_Argc () - arg != 1) {
 		Con_Printf ("Invalid command parameters. Usage:\n"
 					"filter remove x.x.x.x:port\n\n");
 		return;
 	}
-	NET_StringToAdr (Cmd_Argv (2 + argv_index_add), &from);
+	NET_StringToAdr (Cmd_Argv (arg), &from);
 	if ((filter = FL_Find (from))) {
-		Con_Printf ("Removed %s\n\n", Cmd_Argv (2 + argv_index_add));
+		Con_Printf ("Removed %s\n\n", Cmd_Argv (arg));
 		FL_Remove (filter);
 		free (filter);
 	} else
-		Con_Printf ("Cannot find %s\n\n", Cmd_Argv (2 + argv_index_add));
+		Con_Printf ("Cannot find %s\n\n", Cmd_Argv (arg));
 }
 
 static void
@@ -444,22 +450,19 @@ Cmd_FilterClear (void)
 	FL_Clear ();
 }
 
-void
+static void
 Cmd_Filter_f (void)
 {
-	argv_index_add = 0;
 	if (!strcmp (Cmd_Argv (1), "add"))
-		Cmd_FilterAdd ();
+		Cmd_FilterAdd (2);
 	else if (!strcmp (Cmd_Argv (1), "remove"))
-		Cmd_FilterRemove ();
+		Cmd_FilterRemove (2);
 	else if (!strcmp (Cmd_Argv (1), "clear"))
 		Cmd_FilterClear ();
 	else if (Cmd_Argc () == 3) {
-		argv_index_add = -1;
-		Cmd_FilterAdd ();
+		Cmd_FilterAdd (1);
 	} else if (Cmd_Argc () == 2) {
-		argv_index_add = -1;
-		Cmd_FilterRemove ();
+		Cmd_FilterRemove (1);
 	} else
 		Cmd_FilterList ();
 }
@@ -467,25 +470,25 @@ Cmd_Filter_f (void)
 static void
 SV_WriteFilterList (void)
 {
-	FILE       *filters;
+	QFile      *filters;
 
-	if ((filters = fopen ("filters.ini", "wt"))) {
+	if ((filters = Qopen ("filters.ini", "wt"))) {
 		filter_t   *filter;
 
 		if (filter_list == NULL) {
-			fclose (filters);
+			Qclose (filters);
 			return;
 		}
 
 		for (filter = filter_list; filter; filter = filter->next) {
-			fprintf (filters, "%s", NET_AdrToString (filter->from));
-			fprintf (filters, " %s\n", NET_AdrToString (filter->to));
+			Qprintf (filters, "%s", NET_AdrToString (filter->from));
+			Qprintf (filters, " %s\n", NET_AdrToString (filter->to));
 		}
-		fclose (filters);
+		Qclose (filters);
 	}
 }
 
-void
+static void
 SV_Shutdown (void)
 {
 	NET_Shutdown ();
@@ -495,7 +498,6 @@ SV_Shutdown (void)
 	Con_Shutdown ();
 }
 
-#define SV_TIMEOUT 450
 static void
 SV_TimeOut (void)
 {
@@ -519,8 +521,8 @@ SV_TimeOut (void)
 	}
 }
 
-void
-SV_Frame ()
+static void
+SV_Frame (void)
 {
 	Sys_CheckInput (1, net_socket);
 	Con_ProcessInput ();
@@ -553,6 +555,8 @@ main (int argc, const char **argv)
 	Cmd_Init ();
 
 	Cmd_AddCommand ("quit", MST_Quit_f, "Shut down the master server");
+	Cmd_AddCommand ("clear", SVL_Clear, "Clear the server list");
+	Cmd_AddCommand ("filter", Cmd_Filter_f, "Manipulate filtering");
 
 	Cmd_StuffCmds (mst_cbuf);
 	Cbuf_Execute_Sets (mst_cbuf);
