@@ -63,20 +63,19 @@ main ()
 
 	*progs.edicts = PR_InitEdicts (&progs, MAX_EDICTS);
 	for (i = 0; i < progs.progs->numstatements; i++) {
-		printf ("%-6d ", i);
 		PR_PrintStatement (&progs, &progs.pr_statements[i]);
 	}
-#if 0
 	printf ("\n");
 	for (i = 0; i < progs.progs->numfunctions; i++) {
 		dfunction_t *func = &progs.pr_functions[i];
 		int j;
 
-		printf ("%d %d %d %d %s %s %d", func->first_statement, func->parm_start, func->locals, func->profile, PR_GetString (&progs, func->s_name), PR_GetString (&progs, func->s_file), func->numparms);
+		printf ("%d %d %d %d %d %s %s %d", func->first_statement, func->parm_start, func->numparms, func->locals, func->profile, PR_GetString (&progs, func->s_name), PR_GetString (&progs, func->s_file), func->numparms);
 		for (j = 0; j < func->numparms; j++)
 			printf (" %d", func->parm_size[j]);
 		printf ("\n");
 	}
+#if 0
 	printf ("\n");
 	for (i = 0; i < progs.progs->numglobaldefs; i++) {
 		ddef_t *def = &progs.pr_globaldefs[i];
