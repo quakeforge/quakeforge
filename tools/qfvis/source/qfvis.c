@@ -468,7 +468,7 @@ LeafFlow (int leafnum)
 		int p = vismap_p - dvisdata;
 		int e = vismap_end - dvisdata;
 		visdatasize = p;
-		dvisdata = realloc (dvisdata, visdatasize);
+		vismap = dvisdata = realloc (dvisdata, visdatasize);
 		dest = dvisdata + d;
 		vismap_p = dvisdata + p;
 		vismap_end = dvisdata + e;
