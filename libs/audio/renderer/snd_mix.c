@@ -80,7 +80,7 @@ SND_WriteLinearBlastStereo16 (void)
 }
 
 static void
-SND_TransferStereo16 (int endtime)
+s_xfer_stereo_16 (int endtime)
 {
 	int			lpaintedtime, lpos;
 	unsigned long *pbuf;
@@ -114,14 +114,14 @@ SND_TransferStereo16 (int endtime)
 }
 
 static void
-SND_TransferPaintBuffer (int endtime)
+s_xfer_paint_buffer (int endtime)
 {
 	int			count, out_idx, out_mask, snd_vol, step, val;
 	int		   *p;
 	unsigned long *pbuf;
 
 	if (shm->samplebits == 16 && shm->channels == 2) {
-		SND_TransferStereo16 (endtime);
+		s_xfer_stereo_16 (endtime);
 		return;
 	}
 
@@ -231,7 +231,7 @@ SND_PaintChannels (unsigned int endtime)
 		}
 
 		// transfer out according to DMA format
-		SND_TransferPaintBuffer (end);
+		s_xfer_paint_buffer (end);
 
 		memmove (paintbuffer, paintbuffer + end - paintedtime,
 				 max_overpaint * sizeof (paintbuffer[0]));
