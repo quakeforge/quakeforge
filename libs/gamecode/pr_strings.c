@@ -181,7 +181,6 @@ PR_GarbageCollect (progs_t *pr)
 		for (j = 0; j < 1024; j++) {
 			sr = &pr->dynamic_strings[i][j];
 			if (sr->string && !sr->count) {
-				sr = 
 				Hash_Del (pr->strref_hash, sr->string);
 				strref_free (sr, pr);
 			}
