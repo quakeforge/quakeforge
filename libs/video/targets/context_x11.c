@@ -45,11 +45,6 @@ static const char rcsid[] =
 # include <execinfo.h>
 #endif
 
-#include <setjmp.h>
-#include <errno.h>
-#include <limits.h>
-#include <signal.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ipc.h>
@@ -114,25 +109,6 @@ static int	xss_interval;
 static int	xss_blanking;
 static int	xss_exposures;
 
-
-void
-dump_core_callback (cvar_t *sys_dump_core)
-{
-#ifndef HAVE_UNISTD_H
-	if (sys_dump_core->int_val)
-		Con_Printf ("support for dumping core has not been compiled in!\n");
-#endif
-}
-
-void
-backtrace_callback (cvar_t *sys_backtrace)
-{
-#ifndef HAVE_EXECINFO_H
-	if (sys_backtrace->int_val)
-		Con_Printf ("support for printing backtraces has not been compiled in!\n");
-#endif
-}
-
 qboolean
 X11_AddEvent (int event, void (*event_handler) (XEvent *))
 {
@@ -191,52 +167,6 @@ X11_ProcessEvents (void)
 	}
 }
 
-// ========================================================================
-// Tragic death handler
-// ========================================================================
-
-static jmp_buf  aiee_abort;
-
-static void
-aiee (int sig)
-{
-	printf ("AIEE, signal %d in shutdown code, giving up\n", sig);
-	longjmp (aiee_abort, 1);
-}
-
-static void
-TragicDeath (int sig)
-{
-	printf ("Received signal %d, exiting...\n", sig);
-
-	switch (sig) {
-		case SIGHUP:
-		case SIGINT:
-		case SIGTERM:
-			signal (SIGHUP, SIG_DFL);
-			signal (SIGINT, SIG_DFL);
-			signal (SIGTERM, SIG_DFL);
-			Sys_Quit ();
-		default:
-			signal (SIGQUIT, aiee);
-			signal (SIGILL, aiee);
-			signal (SIGTRAP, aiee);
-			signal (SIGIOT, aiee);
-			signal (SIGBUS, aiee);
-			signal (SIGSEGV, aiee);
-
-			if (!setjmp (aiee_abort))
-				Sys_Shutdown ();
-
-			signal (SIGQUIT, SIG_DFL);
-			signal (SIGILL, SIG_DFL);
-			signal (SIGTRAP, SIG_DFL);
-			signal (SIGIOT, SIG_DFL);
-			signal (SIGBUS, SIG_DFL);
-			signal (SIGSEGV, SIG_DFL);
-	}
-}
-
 void
 X11_OpenDisplay (void)
 {
@@ -249,18 +179,6 @@ X11_OpenDisplay (void)
 
 		x_screen = DefaultScreen (x_disp);
 		x_root = RootWindow (x_disp, x_screen);
-
-		// catch signals
-		signal (SIGHUP, TragicDeath);
-		signal (SIGINT, TragicDeath);
-		signal (SIGQUIT, TragicDeath);
-		signal (SIGILL, TragicDeath);
-		signal (SIGTRAP, TragicDeath);
-		signal (SIGIOT, TragicDeath);
-		signal (SIGBUS, TragicDeath);
-		signal (SIGSEGV, TragicDeath);
-		signal (SIGTERM, TragicDeath);
-//		signal (SIGFPE, TragicDeath);
 
 		// for debugging only
 		XSynchronize (x_disp, True);

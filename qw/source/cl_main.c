@@ -1667,6 +1667,8 @@ Host_Init (void)
 	Cvar_Init ();
 	Sys_Init_Cvars ();
 
+	Sys_Init ();
+
 	Cmd_Init ();
 
 	// execute +set as early as possible

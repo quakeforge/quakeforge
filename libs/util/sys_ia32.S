@@ -74,12 +74,12 @@ C(name):
 
 	.text
 
-F_BEGIN(Sys_MaskExceptions)
+F_BEGIN(Sys_MaskFPUExceptions)
 	got_base(1)
 	fnstenv	got_var(fpenv)
 	orl		$0x3F,got_var(fpenv)
 	fldenv	got_var(fpenv)
 
 	ret
-F_END(Sys_MaskExceptions)
+F_END(Sys_MaskFPUExceptions)
 #endif /* USE_INTEL_ASM */

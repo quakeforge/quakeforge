@@ -2406,6 +2406,8 @@ SV_Init (void)
 	Cvar_Init ();
 	Sys_Init_Cvars ();
 
+	Sys_Init ();
+
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
 
 	Cmd_Init ();

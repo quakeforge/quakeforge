@@ -96,7 +96,7 @@ startup (void)
 	unsigned int lowpart, highpart;
 	OSVERSIONINFO vinfo;
 
-	Sys_MaskExceptions ();
+	Sys_MaskFPUExceptions ();
 
 	if (!QueryPerformanceFrequency (&PerformanceFreq))
 		Sys_Error ("No hardware timer available");

@@ -43,7 +43,6 @@ static const char rcsid[] =
 #endif
 
 #include <setjmp.h>
-#include <sys/signal.h>
 
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -164,63 +163,6 @@ VID_Shutdown (void)
 		return;
 
 	qf_fxMesaDestroyContext (fc);
-}
-
-static jmp_buf  aiee_abort;
-
-static void
-aiee (int sig)
-{
-	printf ("AIEE, signal %d in shutdown code, giving up\n", sig);
-	longjmp (aiee_abort, 1);
-}
-
-void
-signal_handler (int sig)
-{
-	printf ("Received signal %d, exiting...\n", sig);
-	
-	switch (sig) {
-		case SIGHUP:
-		case SIGINT:
-		case SIGTERM:
-			signal (SIGHUP, SIG_DFL);
-			signal (SIGINT, SIG_DFL);
-			signal (SIGTERM, SIG_DFL);
-			Sys_Quit ();
-		default:
-			signal (SIGQUIT, aiee);
-			signal (SIGILL, aiee);
-			signal (SIGTRAP, aiee);
-			signal (SIGIOT, aiee);
-			signal (SIGBUS, aiee);
-			signal (SIGSEGV, aiee);
-
-			if (!setjmp (aiee_abort))
-				Sys_Shutdown ();
-
-			signal (SIGQUIT, SIG_DFL);
-			signal (SIGILL, SIG_DFL);
-			signal (SIGTRAP, SIG_DFL);
-			signal (SIGIOT, SIG_DFL);
-			signal (SIGBUS, SIG_DFL);
-			signal (SIGSEGV, SIG_DFL);
-	}
-}
-
-void
-InitSig (void)
-{
-	signal (SIGHUP, signal_handler);
-	signal (SIGINT, signal_handler);
-	signal (SIGQUIT, signal_handler);
-	signal (SIGILL, signal_handler);
-	signal (SIGTRAP, signal_handler);
-//  signal(SIGIOT, signal_handler);
-	signal (SIGBUS, signal_handler);
-//  signal(SIGFPE, signal_handler);
-	signal (SIGSEGV, signal_handler);
-	signal (SIGTERM, signal_handler);
 }
 
 void
@@ -395,8 +337,6 @@ VID_Init (unsigned char *palette)
 
 	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
 	vid.numpages = 2;
-
-	InitSig ();							// trap evil signals
 
 	vid_gamma_avail = 1;
 	

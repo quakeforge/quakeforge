@@ -70,7 +70,9 @@ int Sys_TimeID (void);
 // called to yield for a little bit so as
 // not to hog cpu when paused or debugging
 
-void Sys_MaskExceptions (void);
+void Sys_MaskFPUExceptions (void);
+void Sys_PushSignalHook (void (*hook)(int, void*), void *data);
+void Sys_PopSignalHook (void);
 
 // send text to the console
 

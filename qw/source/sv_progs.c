@@ -36,7 +36,6 @@ static const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-#include <signal.h>
 
 #include "QF/cmd.h"
 #include "QF/csqc.h"		//FIXME d'oh, dumb name after all
@@ -67,7 +66,6 @@ func_t	SpectatorThink;
 func_t	UserInfoCallback;
 
 static int reserved_edicts = MAX_CLIENTS;
-static void (*old_seg_handler) (int);
 
 static void
 free_edict (progs_t *pr, edict_t *ent)
@@ -163,14 +161,6 @@ parse_field (progs_t *pr, const char *key, const char *value)
 		return 1;
 	}
 	return 0;
-}
-
-static void
-seg_fault_handler(int whatever)
-{
-	if (sv_pr_state.pr_xfunction)
-		PR_DumpState (&sv_pr_state);
-	signal (SIGSEGV, old_seg_handler);
 }
 
 void
@@ -379,8 +369,6 @@ SV_Progs_Init (void)
 					"Display summary information on the edicts in the game.");
 	Cmd_AddCommand ("profile", PR_Profile_f, "FIXME: Report information about "
 					"QuakeC Stuff (\?\?\?) No Description");
-
-	old_seg_handler = signal (SIGSEGV, seg_fault_handler);
 }
 
 void

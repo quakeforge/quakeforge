@@ -54,6 +54,8 @@ static const char rcsid[] =
 # include <sys/mman.h>
 #endif
 
+#include <signal.h>
+#include <setjmp.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
@@ -133,7 +135,7 @@ const char sys_char_map[256] = {
 
 #ifndef USE_INTEL_ASM
 void
-Sys_MaskExceptions (void)
+Sys_MaskFPUExceptions (void)
 {
 }
 #endif
@@ -572,4 +574,113 @@ Sys_ConsoleInput (void)
 
 	return text;
 #endif
+}
+
+static jmp_buf  aiee_abort;
+
+typedef struct sh_stack_s {
+	struct sh_stack_s *next;
+	void (*signal_hook)(int,void*);
+	void *data;
+} sh_stack_t;
+
+static sh_stack_t *sh_stack;
+static sh_stack_t *free_sh;
+static void (*signal_hook)(int,void*);
+static void *signal_hook_data;
+
+void
+Sys_PushSignalHook (void (*hook)(int, void *), void *data)
+{
+	sh_stack_t *s;
+
+	if (free_sh) {
+		s = free_sh;
+	} else {
+		s = malloc (sizeof (sh_stack_t));
+		s->next = 0;
+	}
+	s->signal_hook = signal_hook;
+	s->data = signal_hook_data;
+	signal_hook = hook;
+	signal_hook_data = data;
+
+	free_sh = s->next;
+	s->next = sh_stack;
+	sh_stack = s;
+}
+
+void
+Sys_PopSignalHook (void)
+{
+	if (sh_stack) {
+		sh_stack_t *s;
+
+		signal_hook = sh_stack->signal_hook;
+		signal_hook_data = sh_stack->data;
+
+		s = sh_stack->next;
+		sh_stack->next = free_sh;
+		free_sh = sh_stack;
+		sh_stack = s;
+	}
+}
+
+static void
+aiee (int sig)
+{
+	printf ("AIEE, signal %d in shutdown code, giving up\n", sig);
+	longjmp (aiee_abort, 1);
+}
+
+static void
+signal_handler (int sig)
+{
+	printf ("Received signal %d, exiting...\n", sig);
+
+	switch (sig) {
+		case SIGHUP:
+		case SIGINT:
+		case SIGTERM:
+			signal (SIGHUP, SIG_DFL);
+			signal (SIGINT, SIG_DFL);
+			signal (SIGTERM, SIG_DFL);
+			Sys_Quit ();
+		default:
+			signal (SIGQUIT, aiee);
+			signal (SIGILL, aiee);
+			signal (SIGTRAP, aiee);
+			signal (SIGIOT, aiee);
+			signal (SIGBUS, aiee);
+			signal (SIGSEGV, aiee);
+
+			if (!setjmp (aiee_abort)) {
+				if (signal_hook)
+					signal_hook (sig, signal_hook_data);
+				Sys_Shutdown ();
+			}
+
+			signal (SIGQUIT, SIG_DFL);
+			signal (SIGILL, SIG_DFL);
+			signal (SIGTRAP, SIG_DFL);
+			signal (SIGIOT, SIG_DFL);
+			signal (SIGBUS, SIG_DFL);
+			signal (SIGSEGV, SIG_DFL);
+	}
+}
+
+void
+Sys_Init (void)
+{
+	// catch signals
+	signal (SIGHUP, signal_handler);
+	signal (SIGINT, signal_handler);
+	signal (SIGQUIT, signal_handler);
+	signal (SIGILL, signal_handler);
+	signal (SIGTRAP, signal_handler);
+	signal (SIGIOT, signal_handler);
+	signal (SIGBUS, signal_handler);
+	signal (SIGSEGV, signal_handler);
+	signal (SIGTERM, signal_handler);
+//	signal (SIGFPE, signal_handler);
 }

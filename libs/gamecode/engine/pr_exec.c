@@ -268,6 +268,13 @@ PR_LeaveFunction (progs_t * pr)
 	return pr->pr_stack[pr->pr_depth].s;
 }
 
+static void
+signal_hook (int sig, void *data)
+{
+	progs_t    *pr = (progs_t *) data;
+	PR_DumpState (pr);
+}
+
 #define OPA (*op_a)
 #define OPB (*op_b)
 #define OPC (*op_c)
@@ -310,6 +317,8 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 
 	st = &pr->pr_statements[PR_EnterFunction (pr, f)];
 	startprofile = profile = 0;
+
+	Sys_PushSignalHook (signal_hook, pr);
 
 	while (1) {
 		pr_type_t  *op_a, *op_b, *op_c;
@@ -511,13 +520,11 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs attempted to address an out of "
 								 "bounds edict");
-					return;
 				}
 				if (pr_boundscheck->int_val
 					&& (OPA.entity_var == 0 && pr->null_bad)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "assignment to world entity");
-					return;
 				}
 				if (pr_boundscheck->int_val
 					&& (OPB.integer_var < 0 || OPB.integer_var >=
@@ -525,7 +532,6 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs attempted to address an invalid "
 								 "field in an edict");
-					return;
 				}
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
 				OPC.integer_var = &ed->v[OPB.integer_var] - pr->pr_globals;
@@ -554,7 +560,6 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs attempted to read an out of "
 								 "bounds edict number");
-					return;
 				}
 				if (pr_boundscheck->int_val
 					&& (OPB.integer_var < 0 || OPB.integer_var >=
@@ -562,7 +567,6 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs attempted to read an invalid "
 								 "field in an edict");
-					return;
 				}
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
 				OPC.integer_var = ed->v[OPB.integer_var].integer_var;
@@ -574,7 +578,6 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs attempted to read an out of "
 								 "bounds edict number");
-					return;
 				}
 				if (pr_boundscheck->int_val
 					&& (OPB.integer_var < 0
@@ -582,7 +585,6 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs attempted to read an invalid "
 								 "field in an edict");
-					return;
 				}
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
 				memcpy (&OPC, &ed->v[OPB.integer_var], 3 * sizeof (OPC));
@@ -707,7 +709,6 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					&& (OPA.uinteger_var >= pr->progs->numstatements)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Invalid jump destination");
-					return;
 				}
 				st = &pr->pr_statements[OPA.uinteger_var];
 				break;
@@ -720,7 +721,6 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					&& (pointer >= pr->progs->numstatements)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Invalid jump destination");
-					return;
 				}
 				st = &pr->pr_statements[pointer];
 				break;
@@ -758,8 +758,10 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_RETURN:
 				memcpy (&pr->pr_globals[OFS_RETURN], &OPA, 3 * sizeof (OPA));
 				st = &pr->pr_statements[PR_LeaveFunction (pr)];
-				if (pr->pr_depth == exitdepth)
+				if (pr->pr_depth == exitdepth) {
+					Sys_PopSignalHook ();
 					return;					// all done
+				}
 				break;
 			case OP_STATE:
 				ed = PROG_TO_EDICT (pr, *pr->globals.self);
@@ -868,7 +870,6 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError (pr, "Progs boundcheck failed at line number "
 					"%d, value is < 0 or >= %d", st->b, st->c);
-					return;
 				}
 				break;
 
