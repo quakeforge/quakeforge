@@ -296,13 +296,13 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root) /etc/quakeforge.conf
 %attr(-,root,root) %{_prefix}/lib/libQFcd.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFconsole.so.*
-%attr(-,root,root) %{_prefix}/lib/libQFcsqc.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFgamecode.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFgamecode_builtins.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFgib.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFimage.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFjs.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFmodels.so.*
+%attr(-,root,root) %{_prefix}/lib/libQFruamoko.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFsound.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFutil.so.*
 %attr(-,root,root) %{_prefix}/lib/quakeforge/cd_linux.so*
@@ -316,8 +316,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/lib/libQFcd.so
 %attr(-,root,root)	%{_prefix}/lib/libQFconsole.*a
 %attr(-,root,root)	%{_prefix}/lib/libQFconsole.so
-%attr(-,root,root)	%{_prefix}/lib/libQFcsqc.*a
-%attr(-,root,root)	%{_prefix}/lib/libQFcsqc.so
 %attr(-,root,root)	%{_prefix}/lib/libQFgamecode.*a
 %attr(-,root,root)	%{_prefix}/lib/libQFgamecode.so
 %attr(-,root,root)	%{_prefix}/lib/libQFgamecode_builtins.*a
@@ -330,6 +328,8 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/lib/libQFjs.so
 %attr(-,root,root)	%{_prefix}/lib/libQFmodels.*a
 %attr(-,root,root)	%{_prefix}/lib/libQFmodels.so
+%attr(-,root,root)	%{_prefix}/lib/libQFruamoko.*a
+%attr(-,root,root)	%{_prefix}/lib/libQFruamoko.so
 %attr(-,root,root)	%{_prefix}/lib/libQFsound.*a
 %attr(-,root,root)	%{_prefix}/lib/libQFsound.so
 %attr(-,root,root)	%{_prefix}/lib/libQFutil.*a
