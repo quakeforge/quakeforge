@@ -81,6 +81,7 @@ def_t	*def_for_type[8] = {
 };
 
 void PR_LexWhitespace (void);
+void PR_LexString (void);
 
 /*
 	PR_PrintNextLine
@@ -111,6 +112,29 @@ PR_NewLine (void)
 		m = true;
 	} else
 		m = false;
+
+	if (*pr_file_p == '#') {
+		char *p;
+		int line;
+
+		pr_file_p ++;			// skip over #
+		line = strtol (pr_file_p, &p, 10);
+		pr_file_p = p;
+		while (isspace (*pr_file_p))
+			pr_file_p++;
+		if (!*pr_file_p)
+			PR_ParseError ("Unexpected end of file");
+		PR_LexString ();		// grab the filename
+		if (!*pr_file_p)
+			PR_ParseError ("Unexpected end of file");
+		while (*pr_file_p && *pr_file_p != '\n')	// ignore flags
+			pr_file_p++;
+		if (!*pr_file_p)
+			PR_ParseError ("Unexpected end of file");
+		m = false;
+		pr_source_line = line - 1;
+		s_file = ReuseString (pr_immediate_string);
+	}
 
 	pr_source_line++;
 	pr_line_start = pr_file_p;
