@@ -35,9 +35,8 @@ INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/nq/include $(MGL_CFLAGS) $(SDL
 
 bin_PROGRAMS =	@NQ_TARGETS@
 
-EXTRA_PROGRAMS= nq-mgl nq-sdl \
-		nq-svga nq-x11 nq-3dfx \
-		nq-glx nq-sgl nq-wgl nq-server
+EXTRA_PROGRAMS= nq-3dfx nq-fbdev nq-glx nq-mgl nq-sdl \
+		nq-sgl nq-svga nq-wgl nq-x11 nq-server
 
 noinst_LIBRARIES= libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
 
@@ -155,6 +154,23 @@ soft_SOURCES=	d_edge.c d_fill.c d_init.c d_modech.c d_part.c d_polyse.c \
 		r_light.c r_main.c r_misc.c sw_part.c r_sky.c r_sprite.c \
 		r_surf.c r_vars.c screen.c sw_model_alias.c sw_model_brush.c \
 		sw_model_sprite.c sw_view.c $(soft_ASM)
+
+#
+# ... Linux FBDev
+#
+YFLAGS = -d
+fbdev_SOURCES=      fbset.c fbset_modes_y.y fbset_modes_l.l vid_fbdev.c in_fbdev.c
+YACCLEX_CLEANFILES= fbset_modes_y.c fbset_modes_y.h fbset_modes_y.tab.h fbset_modes_l.c
+EXTRA_nq_fbdev_SOURCES=fbset_modes_y.h
+
+fbset_modes_y.o: fbset_modes_y.c
+	$(CC) $(INCLUDES) $(CFLAGS) -Wno-error -c fbset_modes_y.c
+fbset_modes_l.o: fbset_modes_l.c
+	$(CC) $(INCLUDES) $(CFLAGS) -Wno-error -c fbset_modes_l.c
+
+nq_fbdev_SOURCES= $(combined_SOURCES) $(soft_SOURCES) $(fbdev_SOURCES)
+nq_fbdev_LDADD= $(client_LIBS)
+nq_fbdev_DEPENDENCIES= $(client_LIB_DEPS)
 
 #
 # ... SciTech MGL

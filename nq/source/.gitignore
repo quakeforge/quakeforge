@@ -7,7 +7,11 @@
 .vimrc
 Makefile
 Makefile.in
+fbset_modes_l.c
+fbset_modes_y.c
+fbset_modes_y.h
 nq-3dfx
+nq-fbdev
 nq-glx
 nq-sdl
 nq-sgl

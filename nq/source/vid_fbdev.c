@@ -702,3 +702,8 @@ void
 VID_SetCaption (char *text)
 {
 }
+
+void
+VID_HandlePause (qboolean paused)
+{
+}
