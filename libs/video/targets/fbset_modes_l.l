@@ -15,8 +15,6 @@
 
 %{
 
-#define YYSTYPE		long
-
 #include <string.h>
 #include <stdlib.h>
 
@@ -76,6 +74,7 @@ static int FindToken(const char *s)
 
     for (i = 0; keywords[i].token > 0; i++)
 	if (!strcasecmp(s, keywords[i].name)) {
+		yylval.int_val = keywords[i].value;
 	    return keywords[i].token;
 	}
     Die("%s:%d: Unknown keyword `%s'\n", Opt_modedb, line, s);
@@ -108,17 +107,16 @@ junk	.
 %%
 
 {keyword}   {
-		yylval = FindToken(yytext);
-		return yylval;
+		return FindToken(yytext);
 	    }
 
 {number}    {
-		yylval = strtoul(yytext, NULL, 0);
+		yylval.int_val = strtoul(yytext, NULL, 0);
 		return NUMBER;
 	    }
 
 {string}    {
-		yylval = (unsigned long)CopyString(yytext);
+		yylval.string = CopyString(yytext);
 		return STRING;
 	    }
 

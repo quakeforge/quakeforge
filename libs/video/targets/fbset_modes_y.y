@@ -14,8 +14,6 @@
 
 %{
 
-#define YYSTYPE		long
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,10 +39,15 @@ static void ClearVideoMode(void)
 
 %start file
 
+%union {
+	int		int_val;
+	char	*string;
+}
+
 %token MODE GEOMETRY TIMINGS HSYNC VSYNC CSYNC GSYNC EXTSYNC BCAST LACED DOUBLE
        RGBA NONSTD ACCEL GRAYSCALE
-       ENDMODE POLARITY BOOLEAN STRING NUMBER 
-
+%token <int_val>	ENDMODE POLARITY BOOLEAN NUMBER 
+%token <string>		STRING
 %%
 
 file	  : vmodes
@@ -57,7 +60,7 @@ vmodes	  : /* empty */
 
 vmode	  : MODE STRING geometry timings options ENDMODE
 	    {
-		VideoMode.name = (char *)$2;
+		VideoMode.name = $2;
 		AddVideoMode(&VideoMode);
 		ClearVideoMode();
 	    }
