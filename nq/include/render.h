@@ -122,6 +122,7 @@ extern vec3_t	r_origin, vpn, vright, vup;
 
 extern	struct texture_s	*r_notexture_mip;
 
+extern entity_t r_worldentity;
 
 void R_Init (void);
 void R_InitEfrags (void);

@@ -32,7 +32,6 @@
 
 #include "QF/sound.h"
 
-#include "client.h"		//XXX goes with cl_entities
 #include "d_ifacea.h"
 #include "r_local.h"
 #include "render.h"
@@ -91,7 +90,7 @@ R_DrawCulledPolys (void)
 	surf_t     *s;
 	msurface_t *pface;
 
-	currententity = &cl_entities[0];
+	currententity = &r_worldentity;
 
 	if (r_worldpolysbacktofront) {
 		for (s = surface_p - 1; s > &surfaces[1]; s--) {

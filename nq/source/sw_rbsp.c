@@ -47,8 +47,11 @@ vec3_t      modelorg, base_modelorg;
 								// the currently rendering entity
 vec3_t      r_entorigin;		// the currently rendering entity in world
 								// coordinates
+
 float       entity_rotation[3][3];
+
 vec3_t      r_worldmodelorg;
+
 int         r_currentbkey;
 
 typedef enum { touchessolid, drawnode, nodrawnode } solidstate_t;
@@ -419,8 +422,8 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 				continue;				// don't need to clip against it
 
 			// generate accept and reject points
-// FIXME: do with fast look-ups or integer tests based on the
-// sign bit of the floating point values
+// FIXME: do with fast look-ups or integer tests based on the sign bit
+// of the floating point values
 
 			pindex = pfrustum_indexes[i];
 
@@ -563,7 +566,7 @@ R_RenderWorld (void)
 
 	pbtofpolys = btofpolys;
 
-	currententity = &cl_entities[0];
+	currententity = &r_worldentity;
 	VectorCopy (r_origin, modelorg);
 	clmodel = currententity->model;
 	r_pcurrentvertbase = clmodel->vertexes;

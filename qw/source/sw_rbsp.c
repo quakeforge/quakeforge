@@ -325,7 +325,6 @@ R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
 		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
 			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
 // FIXME: use bounding-box-based frustum clipping info?
-
 			// copy the edges to bedges, flipping if necessary so always
 			// clockwise winding
 // FIXME: if edges and vertices get caches, these assignments must move
@@ -391,7 +390,7 @@ R_DrawSubmodelPolygons (model_t *pmodel, int clipflags)
 			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
 			r_currentkey = ((mleaf_t *) currententity->topnode)->key;
 
-// FIXME: use bounding-box-based frustum clipping info?
+			// FIXME: use bounding-box-based frustum clipping info?
 			R_RenderFace (psurf, clipflags);
 		}
 	}
