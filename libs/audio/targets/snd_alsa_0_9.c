@@ -178,8 +178,10 @@ SNDDMA_Init (void)
 	}
 
 	snd_pcm_sw_params_current (pcm, sw);
-	snd_pcm_sw_params_set_start_mode (pcm, sw, SND_PCM_START_EXPLICIT);
-	snd_pcm_sw_params_set_xrun_mode (pcm, sw, SND_PCM_XRUN_NONE);
+//	snd_pcm_sw_params_set_start_mode (pcm, sw, SND_PCM_START_EXPLICIT);
+	snd_pcm_sw_params_set_start_threshold (pcm, sw, ~0U);
+//	snd_pcm_sw_params_set_xrun_mode (pcm, sw, SND_PCM_XRUN_NONE);
+	snd_pcm_sw_params_set_stop_threshold (pcm, sw, ~0U);
 
 	err = snd_pcm_sw_params (pcm, sw);
 	if (err < 0) {
