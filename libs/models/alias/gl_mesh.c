@@ -38,7 +38,6 @@
 
 #include <stdio.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/mdfour.h"
 #include "QF/model.h"
@@ -330,7 +329,7 @@ BuildTris (void)
 
 	add_command (0);					// end of list marker
 
-	Con_DPrintf ("%3i tri %3i vert %3i cmd\n", pheader->mdl.numtris, numorder,
+	Sys_DPrintf ("%3i tri %3i vert %3i cmd\n", pheader->mdl.numtris, numorder,
 				 numcommands);
 
 	allverts += numorder;
@@ -440,7 +439,7 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 	}
 	if (remesh) {
 		// build it from scratch
-		Con_DPrintf ("meshing %s...\n", m->name);
+		Sys_DPrintf ("meshing %s...\n", m->name);
 
 		BuildTris ();					// trifans or lists
 

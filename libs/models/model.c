@@ -41,7 +41,6 @@
 # include <strings.h>
 #endif
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
@@ -238,7 +237,7 @@ Mod_ForName (const char *name, qboolean crash)
 
 	mod = Mod_FindName (name);
 
-	Con_DPrintf ("Mod_ForName: %s, %p\n", name, mod);
+	Sys_DPrintf ("Mod_ForName: %s, %p\n", name, mod);
 	return Mod_LoadModel (mod, crash);
 }
 
@@ -261,8 +260,8 @@ Mod_Print (void)
 	int         i;
 	model_t    *mod;
 
-	Con_Printf ("Cached models:\n");
+	Sys_Printf ("Cached models:\n");
 	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++) {
-		Con_Printf ("%8p : %s\n", mod->cache.data, mod->name);
+		Sys_Printf ("%8p : %s\n", mod->cache.data, mod->name);
 	}
 }

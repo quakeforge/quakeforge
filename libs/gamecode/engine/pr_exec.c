@@ -38,7 +38,6 @@
 
 #include <stdarg.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/mathlib.h"
 #include "QF/progs.h"
@@ -60,36 +59,36 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s)
 		const char *source_line = PR_Get_Source_Line (pr, addr);
 
 		if (source_line)
-			Con_Printf ("%s\n", source_line);
+			Sys_Printf ("%s\n", source_line);
 	}
-	Con_Printf ("%-7d ", addr);
+	Sys_Printf ("%-7d ", addr);
 	op = PR_Opcode (s->op);
 	if (!op) {
-		Con_Printf ("unknown opcode %d\n", s->op);
+		Sys_Printf ("unknown opcode %d\n", s->op);
 		return;
 	}
-	Con_Printf ("%-9s ", op->opname);
+	Sys_Printf ("%-9s ", op->opname);
 
 	if (s->op == OP_IF || s->op == OP_IFNOT)
-		Con_Printf ("%sbranch %i (%i)",
+		Sys_Printf ("%sbranch %i (%i)",
 					PR_GlobalString (pr, s->a, ev_integer), s->b, addr + s->b);
 	else if (s->op == OP_GOTO) {
-		Con_Printf ("branch %i (%i)", s->a, addr + s->a);
+		Sys_Printf ("branch %i (%i)", s->a, addr + s->a);
 	} else if (s->op == OP_RETURN || s->op == OP_DONE) {
-		Con_Printf ("%s", PR_GlobalString (pr, s->a, ev_void));
+		Sys_Printf ("%s", PR_GlobalString (pr, s->a, ev_void));
 	} else {
 		if (op->type_a != ev_void)
-			Con_Printf ("%s", PR_GlobalString (pr, s->a, op->type_a));
+			Sys_Printf ("%s", PR_GlobalString (pr, s->a, op->type_a));
 		if (op->type_b != ev_void) {
 			if (op->type_c != ev_void)
-				Con_Printf ("%s", PR_GlobalString (pr, s->b, op->type_b));
+				Sys_Printf ("%s", PR_GlobalString (pr, s->b, op->type_b));
 			else
-				Con_Printf ("%s", PR_GlobalStringNoContents (pr, s->b));
+				Sys_Printf ("%s", PR_GlobalStringNoContents (pr, s->b));
 		}
 		if (op->type_c != ev_void)
-			Con_Printf ("%s", PR_GlobalStringNoContents (pr, s->c));
+			Sys_Printf ("%s", PR_GlobalStringNoContents (pr, s->c));
 	}
-	Con_Printf ("\n");
+	Sys_Printf ("\n");
 }
 
 void
@@ -99,7 +98,7 @@ PR_StackTrace (progs_t * pr)
 	dfunction_t	   *f;
 
 	if (pr->pr_depth == 0) {
-		Con_Printf ("<NO STACK>\n");
+		Sys_Printf ("<NO STACK>\n");
 		return;
 	}
 
@@ -108,9 +107,9 @@ PR_StackTrace (progs_t * pr)
 		f = pr->pr_stack[i].f;
 
 		if (!f) {
-			Con_Printf ("<NO FUNCTION>\n");
+			Sys_Printf ("<NO FUNCTION>\n");
 		} else
-			Con_Printf ("%12s : %s\n", PR_GetString (pr, f->s_file),
+			Sys_Printf ("%12s : %s\n", PR_GetString (pr, f->s_file),
 						PR_GetString (pr, f->s_name));
 	}
 }
@@ -134,7 +133,7 @@ PR_Profile (progs_t * pr)
 		}
 		if (best) {
 			if (num < 10)
-				Con_Printf ("%7i %s\n", best->profile,
+				Sys_Printf ("%7i %s\n", best->profile,
 							PR_GetString (pr, best->s_name));
 			num++;
 			best->profile = 0;
@@ -167,7 +166,7 @@ PR_RunError (progs_t * pr, const char *error, ...)
 	}
 	PR_PrintStatement (pr, pr->pr_statements + pr->pr_xstatement);
 	PR_StackTrace (pr);
-	Con_Printf ("%s\n", string);
+	Sys_Printf ("%s\n", string);
 
 	pr->pr_depth = 0;					// dump the stack so PR_Error can
 										// shutdown functions

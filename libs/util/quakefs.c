@@ -62,7 +62,6 @@
 #include <limits.h>
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/qargs.h"
@@ -225,15 +224,15 @@ COM_Path_f (void)
 {
 	searchpath_t *s;
 
-	Con_Printf ("Current search path:\n");
+	Sys_Printf ("Current search path:\n");
 	for (s = com_searchpaths; s; s = s->next) {
 		if (s == com_base_searchpaths)
-			Con_Printf ("----------\n");
+			Sys_Printf ("----------\n");
 		if (s->pack)
-			Con_Printf ("%s (%i files)\n", s->pack->filename,
+			Sys_Printf ("%s (%i files)\n", s->pack->filename,
 						s->pack->numfiles);
 		else
-			Con_Printf ("%s\n", s->filename);
+			Sys_Printf ("%s\n", s->filename);
 	}
 }
 
@@ -305,12 +304,12 @@ maplist_print (struct maplist *maplist)
 		for (i = 0; i < maplist->count - 1; i++) {
 			name = maplist->list[i];
 			end = strstr (name, ".bsp");
-			Con_Printf ("%-8.*s%c", end - name, name,
+			Sys_Printf ("%-8.*s%c", end - name, name,
 						((i + 1) % 4) ? ' ' : '\n');
 		}
 		name = maplist->list[i];
 		end = strstr (name, ".bsp");
-		Con_Printf ("%-9.*s\n", end - name, name);
+		Sys_Printf ("%-9.*s\n", end - name, name);
 	}
 }
 
@@ -333,7 +332,7 @@ COM_Maplist_f (void)
 			pack_t     *pak = search->pack;
 			struct maplist *maplist = maplist_new ();
 
-			Con_Printf ("Looking in %s...\n", search->pack->filename);
+			Sys_Printf ("Looking in %s...\n", search->pack->filename);
 			for (i = 0; i < pak->numfiles; i++) {
 				char       *name = pak->files[i].name;
 
@@ -348,7 +347,7 @@ COM_Maplist_f (void)
 
 			snprintf (buf, sizeof (buf), "%s/maps", search->filename);
 			dir_ptr = opendir (buf);
-			Con_Printf ("Looking in %s...\n", buf);
+			Sys_Printf ("Looking in %s...\n", buf);
 			if (!dir_ptr)
 				continue;
 			while ((dirent = readdir (dir_ptr)))
@@ -578,7 +577,7 @@ _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip)
 
 	// make sure they're not trying to do wierd stuff with our private files
 	if (contains_updir(filename)) {
-		Con_Printf ("FindFile: %s: attempt to escape directory tree!\n", filename);
+		Sys_Printf ("FindFile: %s: attempt to escape directory tree!\n", filename);
 		goto error;
 	}
 
@@ -596,7 +595,7 @@ _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip)
 													 gzfilename);
 #endif
 			if (packfile) {
-				Con_DPrintf ("PackFile: %s : %s\n", search->pack->filename,
+				Sys_DPrintf ("PackFile: %s : %s\n", search->pack->filename,
 							 packfile->name);
 				// open a new file on the pakfile
 				strncpy (foundname, packfile->name, MAX_OSPATH);
@@ -625,7 +624,7 @@ _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip)
 					continue;
 			}
 
-			Con_DPrintf ("FindFile: %s\n", netpath);
+			Sys_DPrintf ("FindFile: %s\n", netpath);
 
 			*gzfile = COM_OpenRead (netpath, -1, -1, zip);
 			return com_filesize;
@@ -633,7 +632,7 @@ _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip)
 
 	}
 
-	Con_DPrintf ("FindFile: can't find %s\n", filename);
+	Sys_DPrintf ("FindFile: can't find %s\n", filename);
 error:
 	*gzfile = NULL;
 	com_filesize = -1;
@@ -796,7 +795,7 @@ COM_LoadPackFile (char *packfile)
 	pack->files = newfiles;
 	pack->file_hash = hash;
 
-	Con_Printf ("Added packfile %s (%i files)\n", packfile, numpackfiles);
+	Sys_Printf ("Added packfile %s (%i files)\n", packfile, numpackfiles);
 	return pack;
 }
 
@@ -846,7 +845,7 @@ COM_LoadGameDirectory (const char *dir)
 	char      **pakfiles = NULL;
 	int         i = 0, bufsize = 0, count = 0;
 
-	Con_DPrintf ("COM_LoadGameDirectory (\"%s\")\n", dir);
+	Sys_DPrintf ("COM_LoadGameDirectory (\"%s\")\n", dir);
 
 	pakfiles = calloc (1, FBLOCK_SIZE * sizeof (char *));
 
@@ -952,7 +951,7 @@ COM_AddDirectory (const char *dir)
 void
 COM_AddGameDirectory (const char *dir)
 {
-	Con_DPrintf ("COM_AddGameDirectory (\"%s/%s\")\n",
+	Sys_DPrintf ("COM_AddGameDirectory (\"%s/%s\")\n",
 				 fs_sharepath->string, dir);
 
 	if (strcmp (fs_sharepath->string, fs_userpath->string) != 0)
@@ -972,7 +971,7 @@ COM_Gamedir (const char *dir)
 
 	if (strstr (dir, "..") || strstr (dir, "/")
 		|| strstr (dir, "\\") || strstr (dir, ":")) {
-		Con_Printf ("Gamedir should be a single filename, not a path\n");
+		Sys_Printf ("Gamedir should be a single filename, not a path\n");
 		return;
 	}
 

@@ -37,7 +37,6 @@
 
 #include "QF/GL/qf_textures.h"
 #include "QF/checksum.h"
-#include "QF/console.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
 
@@ -73,7 +72,7 @@ Mod_Fullbright (byte * skin, int width, int height, char *name)
 	// ptexels = Hunk_Alloc(s);
 	ptexels = malloc (pixels);
 	if (Mod_CalcFullbright (skin, ptexels, pixels)) {
-		Con_DPrintf ("FB Model ID: '%s'\n", name);
+		Sys_DPrintf ("FB Model ID: '%s'\n", name);
 		texnum = GL_LoadTexture (name, width, height, ptexels, true, true, 1);
 	}
 	free (ptexels);

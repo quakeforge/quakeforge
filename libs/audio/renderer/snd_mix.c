@@ -36,9 +36,9 @@
 # include <strings.h>
 #endif
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/sound.h"
+#include "QF/sys.h"
 
 #include "compat.h"
 
@@ -99,7 +99,7 @@ SND_TransferStereo16 (int endtime)
 	if (pDSBuf) {
 		pbuf = DSOUND_LockBuffer (true);
 		if (!pbuf) {
-			Con_Printf ("DSOUND_LockBuffer fails!\n");
+			Sys_Printf ("DSOUND_LockBuffer fails!\n");
 			return;
 		}
 	} else
@@ -156,7 +156,7 @@ SND_TransferPaintBuffer (int endtime)
 	if (pDSBuf) {
 		pbuf = DSOUND_LockBuffer (true);
 		if (!pbuf) {
-			Con_Printf ("DSOUND_LockBuffer fails!\n");
+			Sys_Printf ("DSOUND_LockBuffer fails!\n");
 			return;
 		}
 	} else

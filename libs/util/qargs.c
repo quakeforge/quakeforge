@@ -42,7 +42,6 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "QF/console.h"
 #include "QF/cmd.h"
 #include "QF/crc.h"
 #include "QF/qtypes.h"

@@ -191,6 +191,18 @@ Sys_Printf (const char *fmt, ...)
 	va_end (args);
 }
 
+void
+Sys_DPrintf (const char *fmt, ...)
+{
+	va_list     args;
+
+	if (!developer || !developer->int_val)
+		return;
+	va_start (args, fmt);
+	sys_printf_function (fmt, args);
+	va_end (args);
+}
+
 double
 Sys_DoubleTime (void)
 {

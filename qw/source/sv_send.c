@@ -119,10 +119,9 @@ SV_EndRedirect (void)
 	Handles cursor positioning, line wrapping, etc
 */
 void
-SV_Printf (const char *fmt, ...)
+SV_Print (const char *fmt, va_list args)
 {
 	static int  pending = 0;			// partial line being printed
-	va_list     argptr;
 	char        msg[MAXPRINTMSG];
 	char        msg2[MAXPRINTMSG];
 	char        msg3[MAXPRINTMSG];
@@ -131,9 +130,7 @@ SV_Printf (const char *fmt, ...)
 	struct tm  *local = NULL;
 	qboolean    timestamps = false;
 
-	va_start (argptr, fmt);
-	vsnprintf (msg, sizeof (msg), fmt, argptr);
-	va_end (argptr);
+	vsnprintf (msg, sizeof (msg), fmt, args);
 
 	if (sv_redirected) {				// Add to redirected message
 		if (strlen (msg) + strlen (outputbuf) > sizeof (outputbuf) - 1)
@@ -165,6 +162,16 @@ SV_Printf (const char *fmt, ...)
 		if (sv_logfile)
 			Qprintf (sv_logfile, "%s", msg2);
 	}
+}
+
+void
+SV_Printf (const char *fmt, ...)
+{
+	va_list     argptr;
+
+	va_start (argptr, fmt);
+	SV_Print (fmt, argptr);
+	va_end (argptr);
 }
 
 /* EVENT MESSAGES */

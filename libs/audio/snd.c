@@ -28,11 +28,11 @@
 	$Id$
 */
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/sound.h"
 #include "QF/model.h"
 #include "QF/plugin.h"
+#include "QF/sys.h"
 
 // =======================================================================
 // Various variables also defined in snd_dma.c
@@ -65,18 +65,18 @@ S_Init (void)
 {
 	S_Init_Cvars ();
 	if (!*snd_output->string || !*snd_render->string) {
-		Con_Printf ("Not loading sound due to no renderer/output\n");
+		Sys_Printf ("Not loading sound due to no renderer/output\n");
 		return;
 	}
 
 	snd_output_module = PI_LoadPlugin ("snd_output", snd_output->string);
 	if (!snd_output_module) {
-		Con_Printf ("Loading of sound output module: %s failed!\n",
+		Sys_Printf ("Loading of sound output module: %s failed!\n",
 					snd_output->string);
 	} else {
 		snd_render_module = PI_LoadPlugin ("snd_render", snd_render->string);
 		if (!snd_render_module) {
-			Con_Printf ("Loading of sound render module: %s failed!\n",
+			Sys_Printf ("Loading of sound render module: %s failed!\n",
 						snd_render->string);
 			PI_UnloadPlugin (snd_output_module);
 			snd_output_module = NULL;

@@ -221,6 +221,8 @@ Con_Init (const char *plugin_name)
 	con_linewidth = -1;
 	Con_CheckResize ();
 
+	Sys_SetPrintf (Con_Print);
+
 	Con_Printf ("Console initialized.\n");
 
 	// register our commands
@@ -265,11 +267,14 @@ Con_Linefeed (void)
 	If no console is visible, the notify window will pop up.
 */
 void
-Con_Print (const char *txt)
+Con_Print (const char *fmt, va_list args)
 {
 	int         mask, c, l, y;
 	static int  cr;
+	char        txt[1024];
 	const char *s;
+
+	vsnprintf (txt, sizeof (txt), fmt, args);
 
 	// echo to debugging console
 	for (s = txt; *s; s++)
@@ -282,23 +287,25 @@ Con_Print (const char *txt)
 	if (!con_initialized)
 		return;
 
-	if (txt[0] == 1 || txt[0] == 2) {
+	s = txt;
+
+	if (s[0] == 1 || s[0] == 2) {
 		mask = 128;						// go to colored text
-		txt++;
+		s++;
 	} else
 		mask = 0;
 
-	while ((c = *txt)) {
+	while ((c = *s)) {
 		// count word length
 		for (l = 0; l < con_linewidth; l++)
-			if (txt[l] <= ' ')
+			if (s[l] <= ' ')
 				break;
 
 		// word wrap
 		if (l != con_linewidth && (con->x + l > con_linewidth))
 			con->x = 0;
 
-		txt++;
+		s++;
 
 		if (cr) {
 			con->current--;

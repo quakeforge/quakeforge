@@ -35,8 +35,8 @@
 
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/gib.h"
+#include "QF/sys.h"
 #include "QF/vfs.h"
 
 #include "compat.h"
@@ -63,11 +63,11 @@ GIB_Gib_f (void)
 	gib_sub_t	   *sub;
 
 	if (!(mod = GIB_Get_ModSub_Mod (Cmd_Argv (1)))) {
-		Con_Printf ("Module not found!\n");
+		Sys_Printf ("Module not found!\n");
 		return;
 	}
 	if (!(sub = GIB_Get_ModSub_Sub (Cmd_Argv (1))))
-		Con_Printf ("Subroutine not found!\n");
+		Sys_Printf ("Subroutine not found!\n");
 	else {
 		gib_subargc = Cmd_Argc () - 1;
 		gib_subargv[0] = sub->name;
@@ -75,7 +75,7 @@ GIB_Gib_f (void)
 			gib_subargv[i] = Cmd_Argv (i + 1);
 		ret = GIB_Run_Sub (mod, sub);
 		if (ret != 0)
-			Con_Printf ("Error in execution of %s!\nError code: %i\n",
+			Sys_Printf ("Error in execution of %s!\nError code: %i\n",
 						Cmd_Argv (1), ret);
 	}
 }
@@ -93,5 +93,5 @@ GIB_Load_f (void)
 		GIB_Module_Load (Cmd_Argv (1), f);
 		Qclose (f);
 	} else
-		Con_Printf ("gibload: File not found.\n");
+		Sys_Printf ("gibload: File not found.\n");
 }

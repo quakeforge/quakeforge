@@ -40,14 +40,13 @@
 
 #include "QF/cmd.h"
 #include "compat.h"
-#include "QF/console.h"
 #include "QF/crc.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/progs.h"
 #include "QF/qdefs.h"
 #include "QF/qendian.h"
-#include "QF/sys.h"	//XXX
+#include "QF/sys.h"
 #include "QF/zone.h"
 #include "QF/va.h"
 #include "QF/vfs.h"
@@ -138,7 +137,7 @@ ED_Alloc (progs_t * pr)
 	}
 
 	if (i == max_edicts) {
-		Con_Printf ("WARNING: ED_Alloc: no free edicts\n");
+		Sys_Printf ("WARNING: ED_Alloc: no free edicts\n");
 		i--;							// step on whatever is the last edict
 		e = EDICT_NUM (pr, i);
 		if (pr->unlink)
@@ -165,7 +164,7 @@ ED_FreeRefs (progs_t * pr, edict_t *ed)
 		def = &pr->pr_globaldefs[i];
 		if ((def->type & ~DEF_SAVEGLOBAL) == ev_entity) {
 			if (ed == G_EDICT (pr, def->ofs)) {
-				Con_Printf ("Reference found to free'd edict: %p\n", ed);
+				Sys_Printf ("Reference found to free'd edict: %p\n", ed);
 			}
 		}
 	}
@@ -175,7 +174,7 @@ ED_FreeRefs (progs_t * pr, edict_t *ed)
 			for (j = 0; j < *pr->num_edicts; j++) {
 				k = E_var (EDICT_NUM (pr, j), def->ofs, entity);
 				if (ed == PROG_TO_EDICT (pr, k))
-					Con_Printf ("Reference found to free'd edict: %p\n", ed);
+					Sys_Printf ("Reference found to free'd edict: %p\n", ed);
 			}
 		}
 	}
@@ -540,11 +539,11 @@ ED_Print (progs_t * pr, edict_t *ed)
 	int         type;
 
 	if (ed->free) {
-		Con_Printf ("FREE\n");
+		Sys_Printf ("FREE\n");
 		return;
 	}
 
-	Con_Printf ("\nEDICT %i:\n", NUM_FOR_EDICT (pr, ed));
+	Sys_Printf ("\nEDICT %i:\n", NUM_FOR_EDICT (pr, ed));
 	for (i = 1; i < pr->progs->numfielddefs; i++) {
 		d = &pr->pr_fielddefs[i];
 		name = PR_GetString (pr, d->s_name);
@@ -580,12 +579,12 @@ ED_Print (progs_t * pr, edict_t *ed)
 				PR_Error (pr, "ED_Print: Unhandled type %d\n", type);
 		}
 
-		Con_Printf ("%s", name);
+		Sys_Printf ("%s", name);
 		l = strlen (name);
 		while (l++ < 15)
-			Con_Printf (" ");
+			Sys_Printf (" ");
 
-		Con_Printf ("%s\n", PR_ValueString (pr, d->type, v));
+		Sys_Printf ("%s\n", PR_ValueString (pr, d->type, v));
 	}
 }
 
@@ -660,11 +659,11 @@ ED_PrintEdicts (progs_t *pr, const char *fieldval)
 				ED_PrintNum (pr, i);
 				count++;
 			}
-		Con_Printf ("%i entities\n", count);
+		Sys_Printf ("%i entities\n", count);
 	} else {
 		for (i = 0; i < *(pr)->num_edicts; i++)
 			ED_PrintNum (pr, i);
-		Con_Printf ("%i entities\n", *(pr)->num_edicts);
+		Sys_Printf ("%i entities\n", *(pr)->num_edicts);
 	}
 }
 
@@ -699,11 +698,11 @@ ED_Count (progs_t * pr)
 			models++;
 	}
 
-	Con_Printf ("num_edicts:%3i\n", *(pr)->num_edicts);
-	Con_Printf ("active    :%3i\n", active);
-	Con_Printf ("view      :%3i\n", models);
-	Con_Printf ("touch     :%3i\n", solid);
-	Con_Printf ("zombie    :%3i\n", zombie);
+	Sys_Printf ("num_edicts:%3i\n", *(pr)->num_edicts);
+	Sys_Printf ("active    :%3i\n", active);
+	Sys_Printf ("view      :%3i\n", models);
+	Sys_Printf ("touch     :%3i\n", solid);
+	Sys_Printf ("zombie    :%3i\n", zombie);
 }
 
 /*
@@ -771,7 +770,7 @@ ED_ParseGlobals (progs_t * pr, const char *data)
 
 		key = PR_FindGlobal (pr, keyname);
 		if (!key) {
-			Con_Printf ("'%s' is not a global\n", keyname);
+			Sys_Printf ("'%s' is not a global\n", keyname);
 			continue;
 		}
 
@@ -858,7 +857,7 @@ ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, const char *s)
 		case ev_field:
 			def = ED_FindField (pr, s);
 			if (!def) {
-				Con_Printf ("Can't find field %s\n", s);
+				Sys_Printf ("Can't find field %s\n", s);
 				return false;
 			}
 			d->integer_var = G_INT (pr, def->ofs);
@@ -867,7 +866,7 @@ ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, const char *s)
 		case ev_func:
 			func = ED_FindFunction (pr, s);
 			if (!func) {
-				Con_Printf ("Can't find function %s\n", s);
+				Sys_Printf ("Can't find function %s\n", s);
 				return false;
 			}
 			d->func_var = func - pr->pr_functions;
@@ -949,7 +948,7 @@ ED_ParseEdict (progs_t * pr, const char *data, edict_t *ent)
 		key = ED_FindField (pr, keyname);
 		if (!key) {
 			if (!pr->parse_field || !pr->parse_field (pr, keyname, com_token)) {
-				Con_Printf ("'%s' is not a field\n", keyname);
+				Sys_Printf ("'%s' is not a field\n", keyname);
 				continue;
 			}
 		} else {
@@ -1025,7 +1024,7 @@ ED_LoadFromFile (progs_t * pr, const char *data)
 		//
 		def = ED_FindField (pr, "classname");
 		if (!def) {
-			Con_Printf ("No classname for:\n");
+			Sys_Printf ("No classname for:\n");
 			ED_Print (pr, ent);
 			ED_Free (pr, ent);
 			continue;
@@ -1035,7 +1034,7 @@ ED_LoadFromFile (progs_t * pr, const char *data)
 		func = ED_FindFunction (pr, PR_GetString (pr, classname->string_var));
 
 		if (!func) {
-			Con_Printf ("No spawn function for:\n");
+			Sys_Printf ("No spawn function for:\n");
 			ED_Print (pr, ent);
 			ED_Free (pr, ent);
 			continue;
@@ -1047,7 +1046,7 @@ ED_LoadFromFile (progs_t * pr, const char *data)
 			pr->flush ();
 	}
 
-	Con_DPrintf ("%i entities inhibited\n", inhibit);
+	Sys_DPrintf ("%i entities inhibited\n", inhibit);
 }
 
 static const char *
@@ -1079,7 +1078,7 @@ PR_LoadProgsFile (progs_t * pr, const char *progsname)
 		return;
 
 	pr->progs_size = com_filesize;
-	Con_DPrintf ("Programs occupy %iK.\n", com_filesize / 1024);
+	Sys_DPrintf ("Programs occupy %iK.\n", com_filesize / 1024);
 
 	// store prog crc
 	pr->crc = CRC_Block ((byte *) pr->progs, com_filesize);

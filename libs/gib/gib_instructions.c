@@ -42,9 +42,9 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-#include "QF/console.h"
 #include "QF/cmd.h"
 #include "QF/gib.h"
+#include "QF/sys.h"
 
 #include "gib_error.h"
 #include "gib_instructions.h"
@@ -96,7 +96,7 @@ GIB_Init_Instructions (void)
 int
 GIB_Echo_f (void)
 {
-	Con_Printf (GIB_Argv (1));
+	Sys_Printf (GIB_Argv (1));
 	return 0;
 }
 
@@ -136,9 +136,9 @@ GIB_VarPrint_f (void)
 		var = GIB_Var_FindLocal (GIB_Argv (i));
 		if (!var)
 			return GIB_E_NOVAR;
-		Con_Printf ("%s", var->value);
+		Sys_Printf ("%s", var->value);
 	}
-	Con_Printf ("\n");
+	Sys_Printf ("\n");
 	return 0;
 }
 

@@ -55,7 +55,7 @@
 
 #include "QF/cvar.h"
 #include "QF/plugin.h"
-#include "QF/console.h"
+#include "QF/sys.h"
 
 #include "compat.h"
 
@@ -119,13 +119,13 @@ PI_LoadPlugin (const char *type, const char *name)
 #if defined(HAVE_DLOPEN)
 	if (!(dlhand = dlopen (realname, RTLD_GLOBAL | RTLD_NOW))) {
 		// lib not found
-		Con_Printf ("Could not load plugin \"%s\": %s\n", realname,
+		Sys_Printf ("Could not load plugin \"%s\": %s\n", realname,
 					dlerror ());
 		return NULL;
 	}
 #elif defined (_WIN32)
 	if (!(dlhand = LoadLibrary (realname))) {	// lib not found
-		Con_Printf ("Could not load plugin \"%s\".\n", realname);
+		Sys_Printf ("Could not load plugin \"%s\".\n", realname);
 		return NULL;
 	}
 #endif
@@ -134,7 +134,7 @@ PI_LoadPlugin (const char *type, const char *name)
 	if (!(plugin_info = dlsym (dlhand, plugin_info_name))) {
 		// info function not found
 		dlclose (dlhand);
-		Con_Printf ("Plugin info function not found\n");
+		Sys_Printf ("Plugin info function not found\n");
 		return NULL;
 	}
 #elif defined (_WIN32)
@@ -142,7 +142,7 @@ PI_LoadPlugin (const char *type, const char *name)
 													   plugin_info_name))) {
 		// info function not found
 		FreeLibrary (dlhand);
-		Con_Printf ("Plugin info function not found\n");
+		Sys_Printf ("Plugin info function not found\n");
 		return NULL;
 	}
 #endif
@@ -153,7 +153,7 @@ PI_LoadPlugin (const char *type, const char *name)
 #elif defined (_WIN32)
 		FreeLibrary (dlhand);
 #endif
-		Con_Printf ("Something went badly wrong.\n");
+		Sys_Printf ("Something went badly wrong.\n");
 		return NULL;
 	}
 
@@ -170,7 +170,7 @@ PI_UnloadPlugin (plugin_t *plugin)
 			&& plugin->functions->general->p_Shutdown) {
 		plugin->functions->general->p_Shutdown ();
 	} else {
-		Con_Printf ("Warning: No shutdown function for type %d plugin!\n", plugin->type);
+		Sys_Printf ("Warning: No shutdown function for type %d plugin!\n", plugin->type);
 	}
 #if defined(HAVE_DLOPEN)
 	return (dlclose (plugin->handle) == 0);

@@ -2371,6 +2371,7 @@ SV_Init (void)
 	sv_console_plugin = Cvar_Get ("sv_console_plugin", "server",
 								  CVAR_ROM, 0, "Plugin used for the console");
 	Con_Init (sv_console_plugin->string);
+	Sys_SetPrintf (SV_Print);
 
 	COM_Filesystem_Init_Cvars ();
 	Game_Init_Cvars ();

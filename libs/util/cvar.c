@@ -42,10 +42,10 @@
 #include <stdlib.h>
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/qargs.h"
+#include "QF/sys.h"
 #include "QF/vfs.h"
 
 #include "compat.h"
@@ -86,11 +86,11 @@ Cvar_Alias_Get (const char *name, cvar_t *cvar)
 	cvar_t			*var;
 
 	if (Cmd_Exists (name)) {
-		Con_Printf ("CAlias_Get: %s is a command\n", name);
+		Sys_Printf ("CAlias_Get: %s is a command\n", name);
 		return;
 	}
 	if (Cvar_FindVar (name)) {
-		Con_Printf ("CAlias_Get: tried to alias used cvar name %s\n", name);
+		Sys_Printf ("CAlias_Get: tried to alias used cvar name %s\n", name);
 		return;
 	}
 	var = Cvar_FindAlias (name);
@@ -232,7 +232,7 @@ Cvar_Set (cvar_t *var, const char *value)
 		return;
 
 	if (var->flags & CVAR_ROM) {
-		Con_DPrintf ("Cvar \"%s\" is read-only, cannot modify\n", var->name);
+		Sys_DPrintf ("Cvar \"%s\" is read-only, cannot modify\n", var->name);
 		return;
 	}
 
@@ -307,7 +307,7 @@ Cvar_Command (void)
 
 	// perform a variable print or set
 	if (Cmd_Argc () == 1) {
-		Con_Printf ("\"%s\" is \"%s\"\n", v->name, v->string);
+		Sys_Printf ("\"%s\" is \"%s\"\n", v->name, v->string);
 		return true;
 	}
 
@@ -339,7 +339,7 @@ Cvar_Set_f (void)
 	const char *var_name;
 
 	if (Cmd_Argc () != 3) {
-		Con_Printf ("usage: set <cvar> <value>\n");
+		Sys_Printf ("usage: set <cvar> <value>\n");
 		return;
 	}
 	var_name = Cmd_Argv (1);
@@ -351,7 +351,7 @@ Cvar_Set_f (void)
 
 	if (var) {
 		if (var->flags & CVAR_ROM) {
-			Con_DPrintf ("Cvar \"%s\" is read-only, cannot modify\n",
+			Sys_DPrintf ("Cvar \"%s\" is read-only, cannot modify\n",
 						 var_name);
 		} else {
 			Cvar_Set (var, value);
@@ -370,7 +370,7 @@ Cvar_Setrom_f (void)
 	const char *var_name;
 
 	if (Cmd_Argc () != 3) {
-		Con_Printf ("usage: setrom <cvar> <value>\n");
+		Sys_Printf ("usage: setrom <cvar> <value>\n");
 		return;
 	}
 	var_name = Cmd_Argv (1);
@@ -382,7 +382,7 @@ Cvar_Setrom_f (void)
 
 	if (var) {
 		if (var->flags & CVAR_ROM) {
-			Con_DPrintf ("Cvar \"%s\" is read-only, cannot modify\n",
+			Sys_DPrintf ("Cvar \"%s\" is read-only, cannot modify\n",
 						 var_name);
 		} else {
 			Cvar_Set (var, value);
@@ -400,7 +400,7 @@ Cvar_Toggle_f (void)
 	cvar_t     *var;
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("toggle <cvar> : toggle a cvar on/off\n");
+		Sys_Printf ("toggle <cvar> : toggle a cvar on/off\n");
 		return;
 	}
 
@@ -408,7 +408,7 @@ Cvar_Toggle_f (void)
 	if (!var)
 		var = Cvar_FindAlias (Cmd_Argv (1));
 	if (!var) {
-		Con_Printf ("Unknown variable \"%s\"\n", Cmd_Argv (1));
+		Sys_Printf ("Unknown variable \"%s\"\n", Cmd_Argv (1));
 		return;
 	}
 
@@ -425,18 +425,18 @@ Cvar_CvarList_f (void)
 	if (Cmd_Argc () > 1)
 		showhelp = 1;
 	for (var = cvar_vars, i = 0; var; var = var->next, i++) {
-		Con_Printf ("%c%c%c%c ",
+		Sys_Printf ("%c%c%c%c ",
 					var->flags & CVAR_ROM ? 'r' : ' ',
 					var->flags & CVAR_ARCHIVE ? '*' : ' ',
 					var->flags & CVAR_USERINFO ? 'u' : ' ',
 					var->flags & CVAR_SERVERINFO ? 's' : ' ');
 		if (showhelp)
-			Con_Printf ("%-20s : %s\n", var->name, var->description);
+			Sys_Printf ("%-20s : %s\n", var->name, var->description);
 		else
-			Con_Printf ("%s\n", var->name);
+			Sys_Printf ("%s\n", var->name);
 	}
 
-	Con_Printf ("------------\n%d variables\n", i);
+	Sys_Printf ("------------\n%d variables\n", i);
 }
 
 static void
@@ -525,7 +525,7 @@ Cvar_Get (const char *name, const char *string, int cvarflags,
 	cvar_t     *var;
 
 	if (Cmd_Exists (name)) {
-		Con_Printf ("Cvar_Get: %s is a command\n", name);
+		Sys_Printf ("Cvar_Get: %s is a command\n", name);
 		return NULL;
 	}
 	var = Cvar_FindVar (name);

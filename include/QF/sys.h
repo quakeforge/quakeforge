@@ -38,6 +38,9 @@ extern	struct cvar_s	*sys_extrasleep;
 extern	struct cvar_s	*sys_dead_sleep;
 extern	struct cvar_s	*sys_sleep;
 
+extern struct cvar_s *developer;
+
+
 extern const char sys_char_map[256];
 
 int	Sys_FileTime (const char *path);
@@ -48,6 +51,7 @@ typedef void (*sys_printf_t) (const char *fmt, va_list args);
 void Sys_SetPrintf (sys_printf_t func);
 
 void Sys_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
+void Sys_DPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void Sys_Error (const char *error, ...) __attribute__((format(printf,1,2), noreturn));
 void Sys_Quit (void);
 double Sys_DoubleTime (void);

@@ -30,10 +30,10 @@
 
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/plugin.h"
 #include "QF/qtypes.h"
+#include "QF/sys.h"
 
 cvar_t                *cd_plugin;
 plugin_t              *cdmodule = NULL;
@@ -88,7 +88,7 @@ CDAudio_Init (void)
 						  "CD Plugin to use");
 	cdmodule = PI_LoadPlugin ("cd", cd_plugin->string);
 	if (!cdmodule) {
-		Con_Printf ("Loading of cd module: %s failed!\n", cd_plugin->string);
+		Sys_Printf ("Loading of cd module: %s failed!\n", cd_plugin->string);
 		return -1;
 	} else {
 		cdmodule->functions->general->p_Init ();
@@ -108,5 +108,5 @@ CDAudio_Init (void)
 		"pause - Pause the CD playback.\n"
 		"play (track number) - Plays the specified track one time.\n"
 		"stop - Stops the currently playing track.");
-	Con_Printf ("CD Audio Initialized\n");
+	Sys_Printf ("CD Audio Initialized\n");
 }

@@ -40,7 +40,6 @@
 #endif
 
 #include "compat.h"
-#include "QF/console.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/skin.h"
@@ -213,7 +212,7 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 			}
 		} else {
 			// animating skin group.  yuck.
-			// Con_Printf("Animating Skin Group, if you get this message
+			// Sys_Printf("Animating Skin Group, if you get this message
 			// please notify warp@debian.org\n");
 			pskintype++;
 			pinskingroup = (daliasskingroup_t *) pskintype;

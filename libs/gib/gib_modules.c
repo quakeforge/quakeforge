@@ -45,8 +45,8 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-#include "QF/console.h"
 #include "QF/gib.h"
+#include "QF/sys.h"
 #include "QF/vfile.h"
 
 #include "gib_modules.h"
@@ -135,7 +135,7 @@ GIB_Read_Sub (gib_sub_t * sub, VFile *f)
 	Qsetpos (f, &begin);
 	Qread (f, sub->code, sublen);
 	sub->code[sublen] = 0;
-	Con_Printf ("Loaded sub %s\n", sub->name);
+	Sys_Printf ("Loaded sub %s\n", sub->name);
 }
 
 gib_module_t *
@@ -172,19 +172,19 @@ GIB_Stats_f (void)
 	gib_sub_t	   *sub;
 
 	modc = 0;
-	Con_Printf ("---=== GIB statistics ===---\n");
+	Sys_Printf ("---=== GIB statistics ===---\n");
 	for (mod = gibmodules; mod; mod = mod->next) {
-		Con_Printf ("\nSubroutines for module %s:\n", mod->name);
-		Con_Printf ("-------------------------------------\n");
+		Sys_Printf ("\nSubroutines for module %s:\n", mod->name);
+		Sys_Printf ("-------------------------------------\n");
 		subc = 0;
 		for (sub = mod->subs; sub; sub = sub->next) {
-			Con_Printf ("%s::%s\n", mod->name, sub->name);
+			Sys_Printf ("%s::%s\n", mod->name, sub->name);
 			subc++;
 		}
-		Con_Printf ("-------------------------------------\nSubroutines: %i\n",
+		Sys_Printf ("-------------------------------------\nSubroutines: %i\n",
 					subc);
 		modc++;
 	}
-	Con_Printf ("Modules installed: %i\n", modc);
-	Con_Printf ("---=== GIB statistics ===---\n");
+	Sys_Printf ("Modules installed: %i\n", modc);
+	Sys_Printf ("---=== GIB statistics ===---\n");
 }

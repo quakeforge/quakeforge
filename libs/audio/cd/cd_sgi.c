@@ -37,9 +37,9 @@
 
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
+#include "QF/sys.h"
 
 static qboolean initialized = false;
 static qboolean enabled = true;
@@ -60,7 +60,7 @@ pCDAudio_Eject (void)
 		return;							// no cd init'd
 
 	if (CDeject (cdp) == 0)
-		Con_DPrintf ("CDAudio_Eject: CDeject failed\n");
+		Sys_DPrintf ("CDAudio_Eject: CDeject failed\n");
 }
 
 static int
@@ -72,7 +72,7 @@ pCDAudio_GetState (void)
 		return -1;						// no cd init'd
 
 	if (CDgetstatus (cdp, &cds) == 0) {
-		Con_DPrintf ("CDAudio_GetStatus: CDgetstatus failed\n");
+		Sys_DPrintf ("CDAudio_GetStatus: CDgetstatus failed\n");
 		return -1;
 	}
 
@@ -88,7 +88,7 @@ pCDAudio_MaxTrack (void)
 		return -1;						// no cd init'd
 
 	if (CDgetstatus (cdp, &cds) == 0) {
-		Con_DPrintf ("CDAudio_MaxTrack: CDgetstatus failed\n");
+		Sys_DPrintf ("CDAudio_MaxTrack: CDgetstatus failed\n");
 		return -1;
 	}
 
@@ -102,7 +102,7 @@ pCDAudio_Pause (void)
 		return;
 
 	if (CDtogglepause (cdp) == 0)
-		Con_DPrintf ("CDAudio_PAUSE: CDtogglepause failed (%d)\n", errno);
+		Sys_DPrintf ("CDAudio_PAUSE: CDtogglepause failed (%d)\n", errno);
 }
 
 void
@@ -115,12 +115,12 @@ pCDAudio_Play (byte track, qboolean looping)
 
 	/* cd == audio cd? */
 	if (CDAudio_GetState () != CD_READY) {
-		Con_Printf ("CDAudio_Play: CD in player not an audio CD.\n");
+		Sys_Printf ("CDAudio_Play: CD in player not an audio CD.\n");
 		return;
 	}
 
 	if (maxtrack < 0) {
-		Con_DPrintf ("CDAudio_Play: Error getting maximum track number\n");
+		Sys_DPrintf ("CDAudio_Play: Error getting maximum track number\n");
 		return;
 	}
 
@@ -133,16 +133,16 @@ pCDAudio_Play (byte track, qboolean looping)
 	// don't try to play a non-audio track
 /* mw: how to do this on irix? entry0.cdte_track = track;
 	   entry0.cdte_format = CDROM_MSF; if ( ioctl(cdfile, CDROMREADTOCENTRY,
-	   &entry0) == -1 ) { Con_DPrintf("CDAudio: ioctl cdromreadtocentry
+	   &entry0) == -1 ) { Sys_DPrintf("CDAudio: ioctl cdromreadtocentry
 	   failed\n"); return; }
 
 	   entry1.cdte_track = track + 1; entry1.cdte_format = CDROM_MSF; if
 	   (entry1.cdte_track > maxTrack) { entry1.cdte_track = CDROM_LEADOUT; }
 
 	   if ( ioctl(cdfile, CDROMREADTOCENTRY, &entry1) == -1 ) {
-	   Con_DPrintf("CDAudio: ioctl cdromreadtocentry failed\n"); return; }
+	   Sys_DPrintf("CDAudio: ioctl cdromreadtocentry failed\n"); return; }
 
-	   if (entry0.cdte_ctrl == CDROM_DATA_TRACK) { Con_Printf("track %i is
+	   if (entry0.cdte_ctrl == CDROM_DATA_TRACK) { Sys_Printf("track %i is
 	   not audio\n", track); return; }
 */
 
@@ -154,7 +154,7 @@ pCDAudio_Play (byte track, qboolean looping)
 	}
 
 	if (CDplaytrack (cdp, track, cdvolume == 0.0 ? 0 : 1) == 0) {
-		Con_DPrintf ("CDAudio_Play: CDplay failed (%d)\n", errno);
+		Sys_DPrintf ("CDAudio_Play: CDplay failed (%d)\n", errno);
 		return;
 	}
 
@@ -169,7 +169,7 @@ pCDAudio_Resume (void)
 		return;
 
 	if (CDtogglepause (cdp) == 0)
-		Con_DPrintf ("CDAudio_Resume: CDtogglepause failed (%d)\n", errno);
+		Sys_DPrintf ("CDAudio_Resume: CDtogglepause failed (%d)\n", errno);
 }
 
 void
@@ -191,7 +191,7 @@ pCDAudio_Stop (void)
 		return;
 
 	if (CDstop (cdp) == 0)
-		Con_DPrintf ("CDAudio_Stop: CDStop failed (%d)\n", errno);
+		Sys_DPrintf ("CDAudio_Stop: CDStop failed (%d)\n", errno);
 }
 
 void
@@ -256,7 +256,7 @@ pCD_f (void)
 		if (ret <= 0) {
 			for (n = 1; n < 100; n++)
 				if (remap[n] != n)
-					Con_Printf ("  %u -> %u\n", n, remap[n]);
+					Sys_Printf ("  %u -> %u\n", n, remap[n]);
 			return;
 		}
 
@@ -298,15 +298,15 @@ pCD_f (void)
 	}
 
 	if (strequal (command, "info")) {
-		Con_Printf ("%u tracks\n", CDAudio_MaxTrack ());
+		Sys_Printf ("%u tracks\n", CDAudio_MaxTrack ());
 		if (CDAudio_GetState () == CD_PLAYING)
-			Con_Printf ("Currently %s track %u\n",
+			Sys_Printf ("Currently %s track %u\n",
 						playLooping ? "looping" : "playing", playTrack);
 		else if (CDAudio_GetState () == CD_PAUSED)
-			Con_Printf ("Paused %s track %u\n",
+			Sys_Printf ("Paused %s track %u\n",
 						playLooping ? "looping" : "playing", playTrack);
 
-		Con_Printf ("Volume is %g\n", cdvolume);
+		Sys_Printf ("Volume is %g\n", cdvolume);
 		return;
 	}
 }
@@ -327,7 +327,7 @@ pCDAudio_Init (void)
 	cdp = CDopen (cd_dev, "r");
 
 	if (cdp == NULL) {
-		Con_Printf ("CDAudio_Init: open of \"%s\" failed (%i)\n",
+		Sys_Printf ("CDAudio_Init: open of \"%s\" failed (%i)\n",
 					cd_dev, errno);
 		return -1;
 	}
@@ -338,7 +338,7 @@ pCDAudio_Init (void)
 	initialized = true;
 	enabled = true;
 
-	Con_Printf ("CD Audio Initialized\n");
+	Sys_Printf ("CD Audio Initialized\n");
 
 	return 0;
 }

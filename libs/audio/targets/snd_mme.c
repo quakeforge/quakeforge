@@ -38,8 +38,8 @@
 # include <mme/mme_public.h>
 #endif
 
-#include "console.h"
 #include "sound.h"
+#include "QF/sys.h"
 
 // 64K is > 1 second at 16-bit, 11025 Hz
 #define	WAV_BUFFERS		64
@@ -123,7 +123,7 @@ SNDDMA_InitWav ( void )
 
 	if ((format = (LPPCMWAVEFORMAT)
 		mmeAllocMem(sizeof(*format))) == NULL) {
-		Con_Printf("Failed to allocate PCMWAVEFORMAT struct\n");
+		Sys_Printf("Failed to allocate PCMWAVEFORMAT struct\n");
 		return false;
 	}
 
@@ -155,10 +155,10 @@ SNDDMA_InitWav ( void )
 	{
 		if (hr != MMSYSERR_ALLOCATED) {
 			mmeFreeMem(format);
-			Con_Printf ("waveOutOpen failed: %d\n", hr);
+			Sys_Printf ("waveOutOpen failed: %d\n", hr);
 			return false;
 		} else {
-			Con_Printf ("waveOutOpen failed 2222\n");
+			Sys_Printf ("waveOutOpen failed 2222\n");
 		}
 	}
 	mmeFreeMem(format);
@@ -171,7 +171,7 @@ SNDDMA_InitWav ( void )
 	gSndBufSize = WAV_BUFFERS*WAV_BUFFER_SIZE;
 	lpData = mmeAllocBuffer(gSndBufSize);
 	if (!lpData) {
-		Con_Printf ("Sound: Out of memory.\n");
+		Sys_Printf ("Sound: Out of memory.\n");
 		FreeSound ();
 		return false;
 	}
@@ -186,7 +186,7 @@ SNDDMA_InitWav ( void )
 
 	if (lpWaveHdr == NULL)
 	{
-		Con_Printf ("Sound: Failed to Alloc header.\n");
+		Sys_Printf ("Sound: Failed to Alloc header.\n");
 		FreeSound ();
 		return false;
 	}
@@ -229,9 +229,9 @@ SNDDMA_Init ( void )
 
 		if (snd_iswave) {
 			if (snd_firsttime)
-				Con_Printf ("Wave sound initialized\n");
+				Sys_Printf ("Wave sound initialized\n");
 		} else {
-			Con_Printf ("Wave sound failed to init\n");
+			Sys_Printf ("Wave sound failed to init\n");
 		}
 	}
 
@@ -239,7 +239,7 @@ SNDDMA_Init ( void )
 
 	if (!wav_init) {
 		if (snd_firsttime)
-			Con_Printf ("No sound device initialized\n");
+			Sys_Printf ("No sound device initialized\n");
 
 		return 0;
 	}
@@ -286,7 +286,7 @@ SNDDMA_Submit ( void )
 	if (mmeCheckForCallbacks()) mmeProcessCallbacks();
 
 	if (snd_completed == snd_sent) {
-		Con_DPrintf ("Sound overrun\n");
+		Sys_DPrintf ("Sound overrun\n");
 	}
 
 	// submit two new sound blocks
@@ -309,7 +309,7 @@ SNDDMA_Submit ( void )
 
 		if (wResult != MMSYSERR_NOERROR)
 		{
-			Con_Printf ("Failed to write block to device\n");
+			Sys_Printf ("Failed to write block to device\n");
 			FreeSound ();
 			return;
 		}

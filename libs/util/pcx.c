@@ -36,10 +36,10 @@
 # include <strings.h>
 #endif
 
-#include "QF/console.h"
 #include "QF/pcx.h"
 #include "QF/qendian.h"
 #include "QF/qtypes.h"
+#include "QF/sys.h"
 #include "QF/texture.h"
 #include "QF/vfs.h"
 #include "QF/zone.h"
@@ -78,7 +78,7 @@ LoadPCX (VFile *f, int convert, byte *pal)
 		|| pcx->version != 5
 		|| pcx->encoding != 1
 		|| pcx->bits_per_pixel != 8 || pcx->xmax >= 320 || pcx->ymax >= 256) {
-		Con_Printf ("Bad pcx file\n");
+		Sys_Printf ("Bad pcx file\n");
 		return 0;
 	}
 
@@ -138,7 +138,7 @@ LoadPCX (VFile *f, int convert, byte *pal)
 	}
 	Hunk_FreeToLowMark (pcx_mark);
 	if (count || runLength) {
-		Con_Printf ("PCX was malformed. You should delete it.\n");
+		Sys_Printf ("PCX was malformed. You should delete it.\n");
 		return 0;
 	}
 	return tex;
@@ -153,7 +153,7 @@ EncodePCX (byte * data, int width, int height,
 	byte	*pack;
 
 	if (!(pcx = Hunk_TempAlloc (width * height * 2 + 1000))) {
-		Con_Printf ("EncodePCX: not enough memory\n");
+		Sys_Printf ("EncodePCX: not enough memory\n");
 		return 0;
 	}
 

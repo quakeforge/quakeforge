@@ -34,18 +34,11 @@
 #include "QF/sys.h"
 
 
-/*
-	Con_Print
-
-	Handles cursor positioning, line wrapping, etc
-	All console printing must go through this in order to be logged to disk
-	If no console is visible, the notify window will pop up.
-*/
 void
-QFutil_Con_Print (char *txt)
+QFutil_Con_Print (const char *fmt, va_list args)
 {
-	// echo to debugging console
-	Sys_Printf ("%s", txt);
+	vfprintf (stdout, fmt, args);
 }
 
-void Con_Print (const char *) __attribute ((weak, alias ("QFutil_Con_Print")));
+void Con_Print (const char *, va_list)
+	__attribute ((weak, alias ("QFutil_Con_Print")));

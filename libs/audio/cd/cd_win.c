@@ -34,11 +34,11 @@
 
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
+#include "QF/sys.h"
 
 #include "compat.h"
 
@@ -77,7 +77,7 @@ I_CDAudio_CloseDoor (void)
 	dwReturn =
 		mciSendCommand (wDeviceID, MCI_SET, MCI_SET_DOOR_CLOSED, (DWORD) NULL);
 	if (dwReturn) {
-		Con_DPrintf ("MCI_SET_DOOR_CLOSED failed (%li)\n", dwReturn);
+		Sys_DPrintf ("MCI_SET_DOOR_CLOSED failed (%li)\n", dwReturn);
 	}
 }
 
@@ -89,7 +89,7 @@ I_CDAudio_Eject (void)
 	dwReturn = mciSendCommand (wDeviceID, MCI_SET, MCI_SET_DOOR_OPEN,
 							   (DWORD) NULL);
 	if (dwReturn) {
-		Con_DPrintf ("MCI_SET_DOOR_OPEN failed (%li)\n", dwReturn);
+		Sys_DPrintf ("MCI_SET_DOOR_OPEN failed (%li)\n", dwReturn);
 	}
 }
 
@@ -106,11 +106,11 @@ I_CDAudio_GetAudioDiskInfo (void)
 		mciSendCommand (wDeviceID, MCI_STATUS, MCI_STATUS_ITEM | MCI_WAIT,
 						(DWORD) (LPVOID) & mciStatusParms);
 	if (dwReturn) {
-		Con_DPrintf ("CDAudio: drive ready test - get status failed\n");
+		Sys_DPrintf ("CDAudio: drive ready test - get status failed\n");
 		return -1;
 	}
 	if (!mciStatusParms.dwReturn) {
-		Con_DPrintf ("CDAudio: drive not ready\n");
+		Sys_DPrintf ("CDAudio: drive not ready\n");
 		return -1;
 	}
 
@@ -119,11 +119,11 @@ I_CDAudio_GetAudioDiskInfo (void)
 		mciSendCommand (wDeviceID, MCI_STATUS, MCI_STATUS_ITEM | MCI_WAIT,
 						(DWORD) (LPVOID) & mciStatusParms);
 	if (dwReturn) {
-		Con_DPrintf ("CDAudio: get tracks - status failed\n");
+		Sys_DPrintf ("CDAudio: get tracks - status failed\n");
 		return -1;
 	}
 	if (mciStatusParms.dwReturn < 1) {
-		Con_DPrintf ("CDAudio: no music tracks\n");
+		Sys_DPrintf ("CDAudio: no music tracks\n");
 		return -1;
 	}
 
@@ -153,13 +153,13 @@ static I_CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 			break;
 
 		case MCI_NOTIFY_FAILURE:
-			Con_DPrintf ("MCI_NOTIFY_FAILURE\n");
+			Sys_DPrintf ("MCI_NOTIFY_FAILURE\n");
 			I_CDAudio_Stop ();
 			cdValid = false;
 			break;
 
 		default:
-			Con_DPrintf ("Unexpected MM_MCINOTIFY type (%i)\n", wParam);
+			Sys_DPrintf ("Unexpected MM_MCINOTIFY type (%i)\n", wParam);
 			return 1;
 	}
 
@@ -183,7 +183,7 @@ I_CDAudio_Pause (void)
 		mciSendCommand (wDeviceID, MCI_PAUSE, 0,
 						(DWORD) (LPVOID) & mciGenericParms);
 	if (dwReturn) {
-		Con_DPrintf ("MCI_PAUSE failed (%li)", dwReturn);
+		Sys_DPrintf ("MCI_PAUSE failed (%li)", dwReturn);
 	}
 
 	wasPlaying = playing;
@@ -220,11 +220,11 @@ I_CDAudio_Play (byte track, qboolean looping)
 						MCI_STATUS_ITEM | MCI_TRACK | MCI_WAIT,
 						(DWORD) (LPVOID) & mciStatusParms);
 	if (dwReturn) {
-		Con_DPrintf ("MCI_STATUS failed (%li)\n", dwReturn);
+		Sys_DPrintf ("MCI_STATUS failed (%li)\n", dwReturn);
 		return;
 	}
 	if (mciStatusParms.dwReturn != MCI_CDA_TRACK_AUDIO) {
-		Con_Printf ("CDAudio: track %i is not audio\n", track);
+		Sys_Printf ("CDAudio: track %i is not audio\n", track);
 		return;
 	}
 	// get the length of the track to be played
@@ -235,7 +235,7 @@ I_CDAudio_Play (byte track, qboolean looping)
 						MCI_STATUS_ITEM | MCI_TRACK | MCI_WAIT,
 						(DWORD) (LPVOID) & mciStatusParms);
 	if (dwReturn) {
-		Con_DPrintf ("MCI_STATUS failed (%li)\n", dwReturn);
+		Sys_DPrintf ("MCI_STATUS failed (%li)\n", dwReturn);
 		return;
 	}
 
@@ -252,7 +252,7 @@ I_CDAudio_Play (byte track, qboolean looping)
 		mciSendCommand (wDeviceID, MCI_PLAY, MCI_NOTIFY | MCI_FROM | MCI_TO,
 						(DWORD) (LPVOID) & mciPlayParms);
 	if (dwReturn) {
-		Con_DPrintf ("CDAudio: MCI_PLAY failed (%li)\n", dwReturn);
+		Sys_DPrintf ("CDAudio: MCI_PLAY failed (%li)\n", dwReturn);
 		return;
 	}
 
@@ -286,7 +286,7 @@ I_CDAudio_Resume (void)
 		mciSendCommand (wDeviceID, MCI_PLAY, MCI_TO | MCI_NOTIFY,
 						(DWORD) (LPVOID) & mciPlayParms);
 	if (dwReturn) {
-		Con_DPrintf ("CDAudio: MCI_PLAY failed (%li)\n", dwReturn);
+		Sys_DPrintf ("CDAudio: MCI_PLAY failed (%li)\n", dwReturn);
 		return;
 	}
 	playing = true;
@@ -299,7 +299,7 @@ I_CDAudio_Shutdown (void)
 		return;
 	I_CDAudio_Stop ();
 	if (mciSendCommand (wDeviceID, MCI_CLOSE, MCI_WAIT, (DWORD) NULL))
-		Con_DPrintf ("CDAudio_Shutdown: MCI_CLOSE failed\n");
+		Sys_DPrintf ("CDAudio_Shutdown: MCI_CLOSE failed\n");
 }
 
 static void
@@ -315,7 +315,7 @@ I_CDAudio_Stop (void)
 
 	dwReturn = mciSendCommand (wDeviceID, MCI_STOP, 0, (DWORD) NULL);
 	if (dwReturn) {
-		Con_DPrintf ("MCI_STOP failed (%li)", dwReturn);
+		Sys_DPrintf ("MCI_STOP failed (%li)", dwReturn);
 	}
 
 	wasPlaying = false;
@@ -380,7 +380,7 @@ I_CD_f (void)
 		if (ret <= 0) {
 			for (n = 1; n < 100; n++)
 				if (remap[n] != n)
-					Con_Printf ("  %u -> %u\n", n, remap[n]);
+					Sys_Printf ("  %u -> %u\n", n, remap[n]);
 			return;
 		}
 		for (n = 1; n <= ret; n++)
@@ -396,7 +396,7 @@ I_CD_f (void)
 	if (!cdValid) {
 		I_CDAudio_GetAudioDiskInfo ();
 		if (!cdValid) {
-			Con_Printf ("No CD in player.\n");
+			Sys_Printf ("No CD in player.\n");
 			return;
 		}
 	}
@@ -435,14 +435,14 @@ I_CD_f (void)
 	}
 
 	if (strequal (command, "info")) {
-		Con_Printf ("%u tracks\n", maxTrack);
+		Sys_Printf ("%u tracks\n", maxTrack);
 		if (playing)
-			Con_Printf ("Currently %s track %u\n",
+			Sys_Printf ("Currently %s track %u\n",
 						playLooping ? "looping" : "playing", playTrack);
 		else if (wasPlaying)
-			Con_Printf ("Paused %s track %u\n",
+			Sys_Printf ("Paused %s track %u\n",
 						playLooping ? "looping" : "playing", playTrack);
-		Con_Printf ("Volume is %f\n", cdvolume);
+		Sys_Printf ("Volume is %f\n", cdvolume);
 		return;
 	}
 }
@@ -460,7 +460,7 @@ I_CDAudio_Init (void)
 		mciSendCommand (0, MCI_OPEN, MCI_OPEN_TYPE | MCI_OPEN_SHAREABLE,
 						(DWORD) (LPVOID) & mciOpenParms);
 	if (dwReturn) {
-		Con_Printf ("CDAudio_Init: MCI_OPEN failed (%li)\n", dwReturn);
+		Sys_Printf ("CDAudio_Init: MCI_OPEN failed (%li)\n", dwReturn);
 		return; // was -1
 	}
 	wDeviceID = mciOpenParms.wDeviceID;
@@ -471,7 +471,7 @@ I_CDAudio_Init (void)
 		mciSendCommand (wDeviceID, MCI_SET, MCI_SET_TIME_FORMAT,
 						(DWORD) (LPVOID) & mciSetParms);
 	if (dwReturn) {
-		Con_Printf ("MCI_SET_TIME_FORMAT failed (%li)\n", dwReturn);
+		Sys_Printf ("MCI_SET_TIME_FORMAT failed (%li)\n", dwReturn);
 		mciSendCommand (wDeviceID, MCI_CLOSE, 0, (DWORD) NULL);
 		return; // was -1
 	}
@@ -482,7 +482,7 @@ I_CDAudio_Init (void)
 	enabled = true;
 
 	if (I_CDAudio_GetAudioDiskInfo ()) {
-		Con_Printf ("CDAudio_Init: No CD in player.\n");
+		Sys_Printf ("CDAudio_Init: No CD in player.\n");
 		cdValid = false;
 		enabled = false;
 	}

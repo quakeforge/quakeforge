@@ -33,11 +33,11 @@
 #include <limits.h>
 #include <dmedia/audio.h>
 
-#include "QF/console.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/qtypes.h"
 #include "QF/sound.h"
+#include "QF/sys.h"
 
 static int  snd_inited = 0;
 static ALconfig alc;
@@ -70,7 +70,7 @@ SNDDMA_Init (void)
 	alc = alNewConfig ();
 
 	if (!alc) {
-		Con_Printf ("Could not make an new sound config: %s\n",
+		Sys_Printf ("Could not make an new sound config: %s\n",
 					alGetErrorString (oserror ()));
 		return 0;
 	}
@@ -81,7 +81,7 @@ SNDDMA_Init (void)
 	/* get & probe settings */
 	/* sample format */
 	if (alSetSampFmt (alc, AL_SAMPFMT_TWOSCOMP) < 0) {
-		Con_Printf ("Could not sample format of default output to two's "
+		Sys_Printf ("Could not sample format of default output to two's "
 					"complement\n");
 		alFreeConfig (alc);
 		return 0;
@@ -98,7 +98,7 @@ SNDDMA_Init (void)
 		alpv.param = AL_WORDSIZE;
 
 		if (alGetParams (AL_DEFAULT_OUTPUT, &alpv, 1) < 0) {
-			Con_Printf ("Could not get supported wordsize of default "
+			Sys_Printf ("Could not get supported wordsize of default "
 						"output: %s\n", alGetErrorString (oserror ()));
 			return 0;
 		}
@@ -109,7 +109,7 @@ SNDDMA_Init (void)
 			if (alpv.value.i >= 8)
 				shm->samplebits = 8;
 			else {
-				Con_Printf ("Sound disabled since interface "
+				Sys_Printf ("Sound disabled since interface "
 							"doesn't even support 8 bit.");
 				alFreeConfig (alc);
 				return 0;
@@ -134,7 +134,7 @@ SNDDMA_Init (void)
 		}
 
 		if (i >= sizeof (tryrates) / sizeof (int)) {
-			Con_Printf ("Sound disabled since interface doesn't even "
+			Sys_Printf ("Sound disabled since interface doesn't even "
 						"support a sample rate of %d\n", tryrates[i - 1]);
 			alFreeConfig (alc);
 			return 0;
@@ -159,7 +159,7 @@ SNDDMA_Init (void)
 	/* channels */
 	while (shm->channels > 0) {
 		if (alSetChannels (alc, shm->channels) < 0) {
-			Con_Printf ("Unable to set number of channels to %d, "
+			Sys_Printf ("Unable to set number of channels to %d, "
 						"trying half\n", shm->channels);
 			shm->channels /= 2;
 		} else
@@ -167,7 +167,7 @@ SNDDMA_Init (void)
 	}
 
 	if (shm->channels <= 0) {
-		Con_Printf ("Sound disabled since interface doesn't even support 1 "
+		Sys_Printf ("Sound disabled since interface doesn't even support 1 "
 					"channel\n");
 		alFreeConfig (alc);
 		return 0;
@@ -178,7 +178,7 @@ SNDDMA_Init (void)
 	alpv.value.ll = alDoubleToFixed (shm->speed);
 
 	if (alSetParams (AL_DEFAULT_OUTPUT, &alpv, 1) < 0) {
-		Con_Printf ("Could not set samplerate of default output to %d: %s\n",
+		Sys_Printf ("Could not set samplerate of default output to %d: %s\n",
 					shm->speed, alGetErrorString (oserror ()));
 		alFreeConfig (alc);
 		return 0;
@@ -193,7 +193,7 @@ SNDDMA_Init (void)
 	dma_buffer = malloc (bufsize);
 
 	if (dma_buffer == NULL) {
-		Con_Printf ("Could not get %d bytes of memory for audio dma buffer\n",
+		Sys_Printf ("Could not get %d bytes of memory for audio dma buffer\n",
 					bufsize);
 		alFreeConfig (alc);
 		return 0;
@@ -202,7 +202,7 @@ SNDDMA_Init (void)
 	write_buffer = malloc (bufsize);
 
 	if (write_buffer == NULL) {
-		Con_Printf ("Could not get %d bytes of memory for audio write "
+		Sys_Printf ("Could not get %d bytes of memory for audio write "
 					"buffer\n", bufsize);
 		free (dma_buffer);
 		alFreeConfig (alc);
@@ -225,7 +225,7 @@ SNDDMA_Init (void)
 	}
 
 	if (alSetWidth (alc, i) < 0) {
-		Con_Printf ("Could not set wordsize of default output to %d: %s\n",
+		Sys_Printf ("Could not set wordsize of default output to %d: %s\n",
 					shm->samplebits, alGetErrorString (oserror ()));
 		free (write_buffer);
 		free (dma_buffer);
@@ -236,7 +236,7 @@ SNDDMA_Init (void)
 	alp = alOpenPort ("quakeforge", "w", alc);
 
 	if (!alp) {
-		Con_Printf ("Could not open sound port: %s\n",
+		Sys_Printf ("Could not open sound port: %s\n",
 					alGetErrorString (oserror ()));
 		free (write_buffer);
 		free (dma_buffer);
@@ -259,7 +259,7 @@ SNDDMA_Init (void)
 static int
 SNDDMA_GetDMAPos (void)
 {
-	/* Con_Printf("framecount: %d %d\n", (framecount * shm->channels) %
+	/* Sys_Printf("framecount: %d %d\n", (framecount * shm->channels) %
 	   shm->samples, alGetFilled(alp)); */
 	shm->samplepos = ((framecount - alGetFilled (alp))
 					  * shm->channels) % shm->samples;

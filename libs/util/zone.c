@@ -54,7 +54,6 @@
 #endif
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
@@ -231,21 +230,21 @@ Z_Print (memzone_t *zone)
 {
 	memblock_t	*block;
 	
-	Con_Printf ("zone size: %i  location: %p\n",zone->size,zone);
+	Sys_Printf ("zone size: %i  location: %p\n",zone->size,zone);
 	
 	for (block = zone->blocklist.next ; ; block = block->next)
 	{
-		Con_Printf ("block:%p    size:%7i    tag:%3i\n",
+		Sys_Printf ("block:%p    size:%7i    tag:%3i\n",
 			block, block->size, block->tag);
 		
 		if (block->next == &zone->blocklist)
 			break;			// all blocks have been hit	
 		if ( (byte *)block + block->size != (byte *)block->next)
-			Con_Printf ("ERROR: block size does not touch the next block\n");
+			Sys_Printf ("ERROR: block size does not touch the next block\n");
 		if ( block->next->prev != block)
-			Con_Printf ("ERROR: next block doesn't have proper back link\n");
+			Sys_Printf ("ERROR: next block doesn't have proper back link\n");
 		if (!block->tag && !block->next->tag)
-			Con_Printf ("ERROR: two consecutive free blocks\n");
+			Sys_Printf ("ERROR: two consecutive free blocks\n");
 	}
 }
 
@@ -332,16 +331,16 @@ Hunk_Print (qboolean all)
 	starthigh = (hunk_t *) (hunk_base + hunk_size - hunk_high_used);
 	endhigh = (hunk_t *) (hunk_base + hunk_size);
 
-	Con_Printf ("          :%8i total hunk size\n", hunk_size);
-	Con_Printf ("-------------------------\n");
+	Sys_Printf ("          :%8i total hunk size\n", hunk_size);
+	Sys_Printf ("-------------------------\n");
 
 	while (1) {
 		// skip to the high hunk if done with low hunk
 		if (h == endlow) {
-			Con_Printf ("-------------------------\n");
-			Con_Printf ("          :%8i REMAINING\n",
+			Sys_Printf ("-------------------------\n");
+			Sys_Printf ("          :%8i REMAINING\n",
 						hunk_size - hunk_low_used - hunk_high_used);
-			Con_Printf ("-------------------------\n");
+			Sys_Printf ("-------------------------\n");
 			h = starthigh;
 		}
 		// if totally done, break
@@ -362,13 +361,13 @@ Hunk_Print (qboolean all)
 		// print the single block
 		memcpy (name, h->name, 8);
 		if (all)
-			Con_Printf ("%8p :%8i %8s\n", h, h->size, name);
+			Sys_Printf ("%8p :%8i %8s\n", h, h->size, name);
 
 		// print the total
 		if (next == endlow || next == endhigh ||
 			strncmp (h->name, next->name, 8)) {
 			if (!all)
-				Con_Printf ("          :%8i %8s (TOTAL)\n", sum, name);
+				Sys_Printf ("          :%8i %8s (TOTAL)\n", sum, name);
 			count = 0;
 			sum = 0;
 		}
@@ -376,8 +375,8 @@ Hunk_Print (qboolean all)
 		h = next;
 	}
 
-	Con_Printf ("-------------------------\n");
-	Con_Printf ("%8i total blocks\n", totalblocks);
+	Sys_Printf ("-------------------------\n");
+	Sys_Printf ("%8i total blocks\n", totalblocks);
 }
 
 void       *
@@ -486,7 +485,7 @@ Hunk_HighAllocName (int size, const char *name)
 	size = sizeof (hunk_t) + ((size + 15) & ~15);
 
 	if (hunk_size - hunk_low_used - hunk_high_used < size) {
-		Con_Printf ("Hunk_HighAlloc: failed on %i bytes\n", size);
+		Sys_Printf ("Hunk_HighAlloc: failed on %i bytes\n", size);
 		return NULL;
 	}
 
@@ -566,7 +565,7 @@ Cache_Move (cache_system_t * c)
 	// we are clearing up space at the bottom, so only allocate it late
 	new = Cache_TryAlloc (c->size, true);
 	if (new) {
-		Con_DPrintf ("cache_move ok\n");
+		Sys_DPrintf ("cache_move ok\n");
 
 		memcpy (new + 1, c + 1, c->size - sizeof (cache_system_t));
 		new->user = c->user;
@@ -574,7 +573,7 @@ Cache_Move (cache_system_t * c)
 		Cache_RealFree (c->user);
 		new->user->data = (void *) (new + 1);
 	} else {
-		Con_DPrintf ("cache_move failed\n");
+		Sys_DPrintf ("cache_move failed\n");
 
 		Cache_RealFree (c->user);			// tough luck...
 	}
@@ -683,7 +682,7 @@ Cache_TryAlloc (int size, qboolean nobottom)
 
 	if (!nobottom && cache_head.prev == &cache_head) {
 		if (hunk_size - hunk_high_used - hunk_low_used < size) {
-			Con_Printf ("Cache_TryAlloc: %i is greater then free hunk", size);
+			Sys_Printf ("Cache_TryAlloc: %i is greater then free hunk", size);
 			return NULL;
 		}
 
@@ -787,7 +786,7 @@ Cache_Print (void)
 
 	CACHE_WRITE_LOCK;
 	for (cd = cache_head.next; cd != &cache_head; cd = cd->next) {
-		Con_Printf ("%8i : %s\n", cd->size, cd->name);
+		Sys_Printf ("%8i : %s\n", cd->size, cd->name);
 	}
 	CACHE_WRITE_UNLOCK;
 }
@@ -796,7 +795,7 @@ void
 Cache_Report (void)
 {
 	CACHE_WRITE_LOCK;
-	Con_DPrintf ("%4.1f megabyte data cache\n",
+	Sys_DPrintf ("%4.1f megabyte data cache\n",
 				 (hunk_size - hunk_high_used -
 				  hunk_low_used) / (float) (1024 * 1024));
 	CACHE_WRITE_UNLOCK;
@@ -842,7 +841,7 @@ Cache_RealFree (cache_user_t *c)
 
 	cs = ((cache_system_t *) c->data) - 1;
 
-	Con_DPrintf ("Cache_Free: freeing '%s'\n", cs->name);
+	Sys_DPrintf ("Cache_Free: freeing '%s'\n", cs->name);
 
 	cs->prev->next = cs->next;
 	cs->next->prev = cs->prev;
@@ -946,18 +945,18 @@ Cache_Profile (void)
 		count++;
 		cs = cs->next;
 	}
-	Con_Printf ("Cache Profile:\n");
-	Con_Printf ("%8s  %8s  %8s  %8s  %8s\n",
+	Sys_Printf ("Cache Profile:\n");
+	Sys_Printf ("%8s  %8s  %8s  %8s  %8s\n",
 				"count", "min", "max", "average", "percent");
 	for (i = 0; i < 31; i++) {
 		if (!items[i])
 			continue;
-		Con_Printf ("%8d  %8d  %8d  %8d  %7d%%\n",
+		Sys_Printf ("%8d  %8d  %8d  %8d  %7d%%\n",
 					items[i], 1 << i, (1 << (i + 1)) - 1,
 					sizes[i] / items[i],
 					(sizes[i] * 100) / total);
 	}
-	Con_Printf ("Total allocations: %d in %d allocations, average of"
+	Sys_Printf ("Total allocations: %d in %d allocations, average of"
 				" %d per allocation\n", total, count, total / count);
 
 	CACHE_WRITE_UNLOCK;

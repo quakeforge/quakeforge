@@ -43,11 +43,11 @@
 
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
+#include "QF/sys.h"
 
 #include "compat.h"
 
@@ -75,7 +75,7 @@ I_CDAudio_Eject (void)
 		return;
 
 	if (SDL_CDEject (cd_id))
-		Con_DPrintf ("Unable to eject CD-ROM tray.\n");
+		Sys_DPrintf ("Unable to eject CD-ROM tray.\n");
 }
 
 static void
@@ -87,7 +87,7 @@ I_CDAudio_Pause (void)
 		return;
 
 	if (SDL_CDPause (cd_id))
-		Con_DPrintf ("CDAudio_Pause: Failed to pause track.\n");
+		Sys_DPrintf ("CDAudio_Pause: Failed to pause track.\n");
 }
 
 static void
@@ -102,7 +102,7 @@ I_CDAudio_Stop (void)
 		return;
 
 	if (SDL_CDStop (cd_id))
-		Con_DPrintf ("CDAudio_Stop: Failed to stop track.\n");
+		Sys_DPrintf ("CDAudio_Stop: Failed to stop track.\n");
 }
 
 static void
@@ -135,7 +135,7 @@ I_CDAudio_Play (byte track, qboolean looping)
 
 	if (SDL_CDPlay (cd_id, cd_id->track[track].offset,
 					cd_id->track[track].length)) {
-		Con_DPrintf ("CDAudio_Play: Unable to play track: %d\n", track + 1);
+		Sys_DPrintf ("CDAudio_Play: Unable to play track: %d\n", track + 1);
 		return;
 	}
 	playLooping = looping;
@@ -150,7 +150,7 @@ I_CDAudio_Resume (void)
 		return;
 
 	if (SDL_CDResume (cd_id))
-		Con_DPrintf ("CDAudio_Resume: Failed tp resume track.\n");
+		Sys_DPrintf ("CDAudio_Resume: Failed tp resume track.\n");
 }
 
 static void
@@ -236,13 +236,13 @@ I_CD_f (void)
 		if (!cd_id)
 			return;
 		cdstate = SDL_CDStatus (cd_id);
-		Con_Printf ("%d tracks\n", cd_id->numtracks);
+		Sys_Printf ("%d tracks\n", cd_id->numtracks);
 		if (cdstate == CD_PLAYING)
-			Con_Printf ("Currently %s track %d\n",
+			Sys_Printf ("Currently %s track %d\n",
 						playLooping ? "looping" : "playing",
 						cd_id->cur_track + 1);
 		else if (cdstate == CD_PAUSED)
-			Con_Printf ("Paused %s track %d\n",
+			Sys_Printf ("Paused %s track %d\n",
 						playLooping ? "looping" : "playing",
 						cd_id->cur_track + 1);
 		return;
@@ -253,12 +253,12 @@ static void
 I_CDAudio_Init (void)
 {
 	if (SDL_Init (SDL_INIT_CDROM) < 0) {
-		Con_Printf ("Couldn't initialize SDL CD-AUDIO: %s\n", SDL_GetError ());
+		Sys_Printf ("Couldn't initialize SDL CD-AUDIO: %s\n", SDL_GetError ());
 		return; // was -1
 	}
 	cd_id = SDL_CDOpen (0);
 	if (!cd_id) {
-		Con_Printf ("CDAudio_Init: Unable to open default CD-ROM drive: %s\n",
+		Sys_Printf ("CDAudio_Init: Unable to open default CD-ROM drive: %s\n",
 					SDL_GetError ());
 		return; // was -1
 	}
@@ -268,15 +268,15 @@ I_CDAudio_Init (void)
 	cdValid = true;
 
 	if (!CD_INDRIVE (SDL_CDStatus (cd_id))) {
-		Con_Printf ("CDAudio_Init: No CD in drive.\n");
+		Sys_Printf ("CDAudio_Init: No CD in drive.\n");
 		cdValid = false;
 	}
 	if (!cd_id->numtracks) {
-		Con_Printf ("CDAudio_Init: CD contains no audio tracks.\n");
+		Sys_Printf ("CDAudio_Init: CD contains no audio tracks.\n");
 		cdValid = false;
 	}
 	
-	Con_Printf ("CD Audio Initialized.\n");
+	Sys_Printf ("CD Audio Initialized.\n");
 }
 
 plugin_t *

@@ -42,7 +42,6 @@
 #include <stdlib.h>
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
@@ -104,7 +103,7 @@ SNDDMA_Init (void)
 	snd_inited = 0;
 
 	if (SDL_Init (SDL_INIT_AUDIO) < 0) {
-		Con_Printf ("Couldn't initialize SDL AUDIO: %s\n", SDL_GetError ());
+		Sys_Printf ("Couldn't initialize SDL AUDIO: %s\n", SDL_GetError ());
 		return 0;
 	};
 
@@ -121,7 +120,7 @@ SNDDMA_Init (void)
 				desired.format = AUDIO_S16LSB;
 			break;
 		default:
-			Con_Printf ("Unknown number of audio bits: %d\n", desired_bits);
+			Sys_Printf ("Unknown number of audio bits: %d\n", desired_bits);
 			return 0;
 	}
 	desired.channels = 2;
@@ -130,7 +129,7 @@ SNDDMA_Init (void)
 
 	/* Open the audio device */
 	if (SDL_OpenAudio (&desired, &obtained) < 0) {
-		Con_Printf ("Couldn't open SDL audio: %s\n", SDL_GetError ());
+		Sys_Printf ("Couldn't open SDL audio: %s\n", SDL_GetError ());
 		return 0;
 	}
 
@@ -153,7 +152,7 @@ SNDDMA_Init (void)
 			/* Not supported -- force SDL to do our bidding */
 			SDL_CloseAudio ();
 			if (SDL_OpenAudio (&desired, NULL) < 0) {
-				Con_Printf ("Couldn't open SDL audio: %s\n", SDL_GetError ());
+				Sys_Printf ("Couldn't open SDL audio: %s\n", SDL_GetError ());
 				return 0;
 			}
 			memcpy (&obtained, &desired, sizeof (desired));

@@ -46,11 +46,11 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "QF/console.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/qtypes.h"
 #include "QF/sound.h"
+#include "QF/sys.h"
 
 static int		audio_fd;
 static int		snd_inited;
@@ -90,16 +90,16 @@ SNDDMA_Init (void)
 
 	if (audio_fd < 0) {
 		if (errno == EBUSY) {
-			Con_Printf ("Audio device is being used by another process\n");
+			Sys_Printf ("Audio device is being used by another process\n");
 		}
 		perror ("/dev/audio");
-		Con_Printf ("Could not open /dev/audio\n");
+		Sys_Printf ("Could not open /dev/audio\n");
 		return (0);
 	}
 
 	if (ioctl (audio_fd, AUDIO_GETINFO, &info) < 0) {
 		perror ("/dev/audio");
-		Con_Printf ("Could not communicate with audio device.\n");
+		Sys_Printf ("Could not communicate with audio device.\n");
 		close (audio_fd);
 		return 0;
 	}
@@ -126,15 +126,15 @@ SNDDMA_Init (void)
 		info.play.channels = 1;
 		info.play.precision = 16;
 		if (ioctl (audio_fd, AUDIO_SETINFO, &info) < 0) {
-			Con_Printf ("Incapable sound hardware.\n");
+			Sys_Printf ("Incapable sound hardware.\n");
 			close (audio_fd);
 			return 0;
 		}
-		Con_Printf ("16 bit mono sound initialized\n");
+		Sys_Printf ("16 bit mono sound initialized\n");
 		shm->samplebits = 16;
 		shm->channels = 1;
 	} else {							// 16 bit stereo
-		Con_Printf ("16 bit stereo sound initialized\n");
+		Sys_Printf ("16 bit stereo sound initialized\n");
 		shm->samplebits = 16;
 		shm->channels = 2;
 	}
@@ -158,7 +158,7 @@ SNDDMA_GetDMAPos (void)
 
 	if (ioctl (audio_fd, AUDIO_GETINFO, &info) < 0) {
 		perror ("/dev/audio");
-		Con_Printf ("Could not communicate with audio device.\n");
+		Sys_Printf ("Could not communicate with audio device.\n");
 		close (audio_fd);
 		snd_inited = 0;
 		return (0);
@@ -175,7 +175,7 @@ SNDDMA_GetSamples (void)
 
 	if (ioctl (audio_fd, AUDIO_GETINFO, &info) < 0) {
 		perror ("/dev/audio");
-		Con_Printf ("Could not communicate with audio device.\n");
+		Sys_Printf ("Could not communicate with audio device.\n");
 		close (audio_fd);
 		snd_inited = 0;
 		return (0);

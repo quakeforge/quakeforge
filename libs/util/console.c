@@ -56,14 +56,10 @@ void
 Con_Printf (const char *fmt, ...)
 {
 	va_list     argptr;
-	char        msg[MAXPRINTMSG];
 
 	va_start (argptr, fmt);
-	vsnprintf (msg, sizeof (msg), fmt, argptr);
+	Con_Print (fmt, argptr);
 	va_end (argptr);
-
-	// write it to the scrollable buffer
-	Con_Print (msg);
 }
 
 /*
@@ -75,17 +71,14 @@ void
 Con_DPrintf (const char *fmt, ...)
 {
 	va_list     argptr;
-	char        msg[MAXPRINTMSG];
 
 	if (!developer->int_val)
 		return;							// don't confuse non-developers with
 	// techie stuff...
 
 	va_start (argptr, fmt);
-	vsnprintf (msg, sizeof (msg), fmt, argptr);
+	Con_Print (fmt, argptr);
 	va_end (argptr);
-
-	Con_Print (msg);
 }
 
 /*

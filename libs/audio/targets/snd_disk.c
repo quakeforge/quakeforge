@@ -45,11 +45,11 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
+#include "QF/sys.h"
 
 static int  snd_inited;
 static VFile      *snd_file;
@@ -80,14 +80,14 @@ SNDDMA_Init (void)
 	shm->speed = 44100;
 	shm->buffer = malloc (shm->samples * shm->channels * shm->samplebits / 8);
 
-	Con_Printf ("%5d stereo\n", shm->channels - 1);
-	Con_Printf ("%5d samples\n", shm->samples);
-	Con_Printf ("%5d samplepos\n", shm->samplepos);
-	Con_Printf ("%5d samplebits\n", shm->samplebits);
-	Con_Printf ("%5d submission_chunk\n", shm->submission_chunk);
-	Con_Printf ("%5d speed\n", shm->speed);
-	Con_Printf ("0x%x dma buffer\n", (int) shm->buffer);
-	Con_Printf ("%5d total_channels\n", total_channels);
+	Sys_Printf ("%5d stereo\n", shm->channels - 1);
+	Sys_Printf ("%5d samples\n", shm->samples);
+	Sys_Printf ("%5d samplepos\n", shm->samplepos);
+	Sys_Printf ("%5d samplebits\n", shm->samplebits);
+	Sys_Printf ("%5d submission_chunk\n", shm->submission_chunk);
+	Sys_Printf ("%5d speed\n", shm->speed);
+	Sys_Printf ("0x%x dma buffer\n", (int) shm->buffer);
+	Sys_Printf ("%5d total_channels\n", total_channels);
 
 	if (!(snd_file = Qopen ("qf.raw", "wb")))
 		return 0;

@@ -39,9 +39,9 @@
 # include <strings.h>
 #endif
 
-#include "QF/console.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
+#include "QF/sys.h"
 #include "QF/vfs.h"
 #include "QF/GL/qf_textures.h"
 
@@ -89,13 +89,13 @@ Mod_LoadLighting (lump_t *l)
 			&& data[3] == 'T') {
 			i = LittleLong (((int *) data)[1]);
 			if (i == 1) {
-				Con_DPrintf ("%s loaded", litfilename);
+				Sys_DPrintf ("%s loaded", litfilename);
 				loadmodel->lightdata = data + 8;
 				return;
 			} else
-				Con_Printf ("Unknown .lit file version (%d)\n", i);
+				Sys_Printf ("Unknown .lit file version (%d)\n", i);
 		} else
-			Con_Printf ("Corrupt .lit file (old version?), ignoring\n");
+			Sys_Printf ("Corrupt .lit file (old version?), ignoring\n");
 	}
 	// LordHavoc: oh well, expand the white lighting data
 	if (!l->filelen)

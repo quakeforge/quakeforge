@@ -39,8 +39,8 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#include "QF/console.h"
 #include "QF/info.h"
+#include "QF/sys.h"
 
 #include "compat.h"
 
@@ -119,7 +119,7 @@ Info_RemoveKey (char *s, const char *key)
 	char       *o;
 
 	if (strstr (key, "\\")) {
-		Con_Printf ("Can't use a key with a \\\n");
+		Sys_Printf ("Can't use a key with a \\\n");
 		return;
 	}
 
@@ -205,17 +205,17 @@ Info_SetValueForStarKey (char *s, const char *key, const char *value, size_t max
 	int         c;
 
 	if (strstr (key, "\\") || strstr (value, "\\")) {
-		Con_Printf ("Can't use keys or values with a \\\n");
+		Sys_Printf ("Can't use keys or values with a \\\n");
 		return;
 	}
 
 	if (strstr (key, "\"") || strstr (value, "\"")) {
-		Con_Printf ("Can't use keys or values with a \"\n");
+		Sys_Printf ("Can't use keys or values with a \"\n");
 		return;
 	}
 
 	if (strlen (key) > 63 || strlen (value) > 63) {
-		Con_Printf ("Keys and values must be < 64 characters.\n");
+		Sys_Printf ("Keys and values must be < 64 characters.\n");
 		return;
 	}
 	// this next line is kinda trippy
@@ -224,7 +224,7 @@ Info_SetValueForStarKey (char *s, const char *key, const char *value, size_t max
 		// don't,
 		// don't change it!
 		if (strlen (value) - strlen (v) + strlen (s) > maxsize) {
-			Con_Printf ("Info string length exceeded\n");
+			Sys_Printf ("Info string length exceeded\n");
 			return;
 		}
 	}
@@ -235,7 +235,7 @@ Info_SetValueForStarKey (char *s, const char *key, const char *value, size_t max
 	snprintf (newstr, sizeof (newstr), "\\%s\\%s", key, value);
 
 	if ((int) (strlen (newstr) + strlen (s)) > maxsize) {
-		Con_Printf ("Info string length exceeded\n");
+		Sys_Printf ("Info string length exceeded\n");
 		return;
 	}
 	// only copy ascii values
@@ -263,7 +263,7 @@ Info_SetValueForKey (char *s, const char *key, const char *value,
 					 size_t maxsize, int flags)
 {
 	if (key[0] == '*') {
-		Con_Printf ("Can't set * keys\n");
+		Sys_Printf ("Can't set * keys\n");
 		return;
 	}
 
@@ -291,10 +291,10 @@ Info_Print (const char *s)
 			key[20] = 0;
 		} else
 			*o = 0;
-		Con_Printf ("%s", key);
+		Sys_Printf ("%s", key);
 
 		if (!*s) {
-			Con_Printf ("MISSING VALUE\n");
+			Sys_Printf ("MISSING VALUE\n");
 			return;
 		}
 
@@ -306,7 +306,7 @@ Info_Print (const char *s)
 
 		if (*s)
 			s++;
-		Con_Printf ("%s\n", value);
+		Sys_Printf ("%s\n", value);
 	}
 }
 

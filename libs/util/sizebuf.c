@@ -36,7 +36,6 @@
 # include <strings.h>
 #endif
 
-#include "QF/console.h"
 #include "QF/sizebuf.h"
 #include "QF/sys.h"
 #include "QF/zone.h"
@@ -72,7 +71,7 @@ SZ_GetSpace (sizebuf_t *buf, int length)
 		if (length > buf->maxsize)
 			Sys_Error ("SZ_GetSpace: %i is > full buffer size", length);
 
-		Con_Printf ("SZ_GetSpace: overflow\n");
+		Sys_Printf ("SZ_GetSpace: overflow\n");
 		SZ_Clear (buf);
 		buf->overflowed = true;
 	}

@@ -53,7 +53,6 @@
 #include <sys/asoundlib.h>
 #include <sys/types.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
@@ -111,11 +110,11 @@ check_card (int card)
 	snd_ctl_hw_info_t info;
 
 	if ((rc = snd_ctl_open (&handle, card)) < 0) {
-		Con_Printf ("Error: control open (%i): %s\n", card, snd_strerror (rc));
+		Sys_Printf ("Error: control open (%i): %s\n", card, snd_strerror (rc));
 		return rc;
 	}
 	if ((rc = snd_ctl_hw_info (handle, &info)) < 0) {
-		Con_Printf ("Error: control hardware info (%i): %s\n", card,
+		Sys_Printf ("Error: control hardware info (%i): %s\n", card,
 					snd_strerror (rc));
 		snd_ctl_close (handle);
 		return rc;
@@ -151,7 +150,7 @@ SNDDMA_Init (void)
 
 	mask = snd_cards_mask ();
 	if (!mask) {
-		Con_Printf ("No sound cards detected\n");
+		Sys_Printf ("No sound cards detected\n");
 		return 0;
 	}
 	if (snd_device->string[0]) {
@@ -164,14 +163,14 @@ SNDDMA_Init (void)
 		} else if (i == 8) {
 			format = SND_PCM_SFMT_U8;
 		} else {
-			Con_Printf ("Error: invalid sample bits: %d\n", i);
+			Sys_Printf ("Error: invalid sample bits: %d\n", i);
 			return 0;
 		}
 	}
 	if (snd_rate->int_val) {
 		rate = snd_rate->int_val;
 		if (rate != 44100 && rate != 22050 && rate != 11025) {
-			Con_Printf ("Error: invalid sample rate: %d\n", rate);
+			Sys_Printf ("Error: invalid sample rate: %d\n", rate);
 			return 0;
 		}
 	}
@@ -197,22 +196,22 @@ SNDDMA_Init (void)
 			if ((rc = snd_pcm_open (&pcm_handle, card, dev,
 									SND_PCM_OPEN_PLAYBACK
 									| SND_PCM_OPEN_NONBLOCK)) < 0) {
-				Con_Printf ("Error: audio open error: %s\n",
+				Sys_Printf ("Error: audio open error: %s\n",
 							snd_strerror (rc));
 				return 0;
 			}
 			goto dev_openned;
 		}
 	}
-	Con_Printf ("Error: audio open error: %s\n", snd_strerror (rc));
+	Sys_Printf ("Error: audio open error: %s\n", snd_strerror (rc));
 	return 0;
 
   dev_openned:
-	Con_Printf ("Using card %d, device %d.\n", card, dev);
+	Sys_Printf ("Using card %d, device %d.\n", card, dev);
 	memset (&cinfo, 0, sizeof (cinfo));
 	cinfo.channel = SND_PCM_CHANNEL_PLAYBACK;
 	snd_pcm_channel_info (pcm_handle, &cinfo);
-	Con_Printf ("%08x %08x %08x\n", cinfo.flags, cinfo.formats, cinfo.rates);
+	Sys_Printf ("%08x %08x %08x\n", cinfo.flags, cinfo.formats, cinfo.rates);
 	if ((rate == -1 || rate == 44100) && cinfo.rates & SND_PCM_RATE_44100) {
 		rate = 44100;
 		frag_size = 512;				/* assuming stereo 8 bit */
@@ -225,7 +224,7 @@ SNDDMA_Init (void)
 		rate = 11025;
 		frag_size = 128;				/* assuming stereo 8 bit */
 	} else {
-		Con_Printf ("ALSA: desired rates not supported\n");
+		Sys_Printf ("ALSA: desired rates not supported\n");
 		goto error_2;
 	}
 	if ((format == -1 || format == SND_PCM_SFMT_S16_LE)
@@ -238,7 +237,7 @@ SNDDMA_Init (void)
 		format = SND_PCM_SFMT_U8;
 		bps = 8;
 	} else {
-		Con_Printf ("ALSA: desired formats not supported\n");
+		Sys_Printf ("ALSA: desired formats not supported\n");
 		goto error_2;
 	}
 	if (stereo && cinfo.max_voices >= 2) {
@@ -302,19 +301,19 @@ SNDDMA_Init (void)
 		(shm->samplebits / 8);	// mono samples in buffer
 	shm->speed = setup.format.rate;
 	shm->buffer = (unsigned char *) mmap_data;
-	Con_Printf ("%5d stereo\n", shm->channels - 1);
-	Con_Printf ("%5d samples\n", shm->samples);
-	Con_Printf ("%5d samplepos\n", shm->samplepos);
-	Con_Printf ("%5d samplebits\n", shm->samplebits);
-	Con_Printf ("%5d submission_chunk\n", shm->submission_chunk);
-	Con_Printf ("%5d speed\n", shm->speed);
-	Con_Printf ("0x%x dma buffer\n", (int) shm->buffer);
-	Con_Printf ("%5d total_channels\n", total_channels);
+	Sys_Printf ("%5d stereo\n", shm->channels - 1);
+	Sys_Printf ("%5d samples\n", shm->samples);
+	Sys_Printf ("%5d samplepos\n", shm->samplepos);
+	Sys_Printf ("%5d samplebits\n", shm->samplebits);
+	Sys_Printf ("%5d submission_chunk\n", shm->submission_chunk);
+	Sys_Printf ("%5d speed\n", shm->speed);
+	Sys_Printf ("0x%x dma buffer\n", (int) shm->buffer);
+	Sys_Printf ("%5d total_channels\n", total_channels);
 
 	snd_inited = 1;
 	return 1;
   error:
-	Con_Printf ("Error: %s: %s\n", err_msg, snd_strerror (rc));
+	Sys_Printf ("Error: %s: %s\n", err_msg, snd_strerror (rc));
   error_2:
 	snd_pcm_close (pcm_handle);
 	return 0;

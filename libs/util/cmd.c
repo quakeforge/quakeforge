@@ -39,7 +39,6 @@
 #include <ctype.h>
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/qargs.h"
@@ -108,7 +107,7 @@ Cbuf_AddText (const char *text)
 	l = strlen (text);
 
 	if (cmd_text.cursize + l >= cmd_text.maxsize) {
-		Con_Printf ("Cbuf_AddText: overflow\n");
+		Sys_Printf ("Cbuf_AddText: overflow\n");
 		return;
 	}
 	SZ_Write (&cmd_text, text, strlen (text));
@@ -128,7 +127,7 @@ Cbuf_InsertText (const char *text)
 
 	textlen = strlen (text);
 	if (cmd_text.cursize + 1 + textlen >= cmd_text.maxsize) {
-		Con_Printf ("Cbuf_InsertText: overflow\n");
+		Sys_Printf ("Cbuf_InsertText: overflow\n");
 		return;
 	}
 
@@ -189,7 +188,7 @@ Cbuf_Execute (void)
 	while (cmd_text.cursize) {
 		extract_line (line);
 		// execute the command line
-		// Con_DPrintf("+%s\n",line),
+		// Sys_DPrintf("+%s\n",line),
 		Cmd_ExecuteString (line, src_command);
 
 		if (cmd_wait) {					// skip out while text still remains
@@ -210,10 +209,10 @@ Cbuf_Execute_Sets (void)
 		extract_line (line);
 		// execute the command line
 		if (strnequal (line, "set", 3) && isspace ((int) line[3])) {
-			// Con_DPrintf ("+%s\n",line);
+			// Sys_DPrintf ("+%s\n",line);
 			Cmd_ExecuteString (line, src_command);
 		} else if (strnequal (line, "setrom", 6) && isspace ((int) line[6])) {
-			// Con_DPrintf ("+%s\n",line);
+			// Sys_DPrintf ("+%s\n",line);
 			Cmd_ExecuteString (line, src_command);
 		}
 	}
@@ -265,7 +264,7 @@ Cmd_StuffCmds_f (void)
 		}
 	}
 
-	// Con_Printf("[\n%s]\n",build);
+	// Sys_Printf("[\n%s]\n",build);
 
 	if (build[0])
 		Cbuf_InsertText (build);
@@ -301,19 +300,19 @@ Cmd_Exec_f (void)
 	int         mark;
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("exec <filename> : execute a script file\n");
+		Sys_Printf ("exec <filename> : execute a script file\n");
 		return;
 	}
 	// FIXME: is this safe freeing the hunk here?
 	mark = Hunk_LowMark ();
 	f = (char *) COM_LoadHunkFile (Cmd_Argv (1));
 	if (!f) {
-		Con_Printf ("couldn't exec %s\n", Cmd_Argv (1));
+		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
 		return;
 	}
 	if (!Cvar_Command () && ((cl_warncmd && cl_warncmd->int_val)
 							 || (developer && developer->int_val)))
-		Con_Printf ("execing %s\n", Cmd_Argv (1));
+		Sys_Printf ("execing %s\n", Cmd_Argv (1));
 
 	Cbuf_InsertText (f);
 	Hunk_FreeToLowMark (mark);
@@ -330,8 +329,8 @@ Cmd_Echo_f (void)
 	int         i;
 
 	for (i = 1; i < Cmd_Argc (); i++)
-		Con_Printf ("%s ", Cmd_Argv (i));
-	Con_Printf ("\n");
+		Sys_Printf ("%s ", Cmd_Argv (i));
+	Sys_Printf ("\n");
 }
 
 /*
@@ -358,9 +357,9 @@ Cmd_Alias_f (void)
 	const char       *s;
 
 	if (Cmd_Argc () == 1) {
-		Con_Printf ("Current alias commands:\n");
+		Sys_Printf ("Current alias commands:\n");
 		for (alias = cmd_alias; alias; alias = alias->next)
-			Con_Printf ("%s : %s\n", alias->name, alias->value);
+			Sys_Printf ("%s : %s\n", alias->name, alias->value);
 		return;
 	}
 
@@ -403,7 +402,7 @@ Cmd_UnAlias_f (void)
 	const char       *s;
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("unalias <alias>: erase an existing alias\n");
+		Sys_Printf ("unalias <alias>: erase an existing alias\n");
 		return;
 	}
 
@@ -421,7 +420,7 @@ Cmd_UnAlias_f (void)
 		free ((char*)alias->value);
 		free (alias);
 	} else {
-		Con_Printf ("Unknown alias \"%s\"\n", s);
+		Sys_Printf ("Unknown alias \"%s\"\n", s);
 	}
 }
 
@@ -514,7 +513,7 @@ Cmd_TokenizeString (const char *text)
 
 		if (cmd_argc < MAX_ARGS) {
 			if (argv_idx + strlen (com_token) + 1 > MAX_COM_TOKEN) {
-				Con_Printf ("Cmd_TokenizeString: overflow\n");
+				Sys_Printf ("Cmd_TokenizeString: overflow\n");
 				return;
 			}
 			cmd_argv[cmd_argc] = argv_buf + argv_idx;
@@ -534,13 +533,13 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function, const char *descripti
 
 	// fail if the command is a variable name
 	if (Cvar_FindVar (cmd_name)) {
-		Con_Printf ("Cmd_AddCommand: %s already defined as a var\n", cmd_name);
+		Sys_Printf ("Cmd_AddCommand: %s already defined as a var\n", cmd_name);
 		return;
 	}
 	// fail if the command already exists
 	cmd = (cmd_function_t*)Hash_Find (cmd_hash, cmd_name);
 	if (cmd) {
-		Con_Printf ("Cmd_AddCommand: %s already defined\n", cmd_name);
+		Sys_Printf ("Cmd_AddCommand: %s already defined\n", cmd_name);
 		return;
 	}
 
@@ -860,7 +859,7 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 	}
 
 	if (cl_warncmd->int_val || developer->int_val)
-		Con_Printf ("Unknown command \"%s\"\n", Cmd_Argv (0));
+		Sys_Printf ("Unknown command \"%s\"\n", Cmd_Argv (0));
 }
 
 /*
@@ -895,13 +894,13 @@ Cmd_CmdList_f (void)
 		show_description = 1;
 	for (cmd = cmd_functions, i = 0; cmd; cmd = cmd->next, i++) {
 		if (show_description) {
-			Con_Printf ("%-20s :\n%s\n", cmd->name, cmd->description);
+			Sys_Printf ("%-20s :\n%s\n", cmd->name, cmd->description);
 		} else {
-			Con_Printf ("%s\n", cmd->name);
+			Sys_Printf ("%s\n", cmd->name);
 		}
 	}
 
-	Con_Printf ("------------\n%d commands\n", i);
+	Sys_Printf ("------------\n%d commands\n", i);
 }
 
 void
@@ -912,7 +911,7 @@ Cmd_Help_f (void)
 	cmd_function_t *cmd;
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("usage: help <cvar/command>\n");
+		Sys_Printf ("usage: help <cvar/command>\n");
 		return;
 	}
 
@@ -922,7 +921,7 @@ Cmd_Help_f (void)
 		 cmd = cmd->next)
 		;
 	if (cmd) {
-		Con_Printf ("%s\n", cmd->description);
+		Sys_Printf ("%s\n", cmd->description);
 		return;
 	}
 
@@ -930,11 +929,11 @@ Cmd_Help_f (void)
 	if (!var)
 		var = Cvar_FindAlias (name);
 	if (var) {
-		Con_Printf ("%s\n", var->description);
+		Sys_Printf ("%s\n", var->description);
 		return;
 	}
 
-	Con_Printf ("variable/command not found\n");
+	Sys_Printf ("variable/command not found\n");
 }
 
 static void

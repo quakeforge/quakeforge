@@ -34,11 +34,11 @@
 #include <stdio.h>
 #include <alsa/asoundlib.h>
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
+#include "QF/sys.h"
 
 static int  snd_inited;
 
@@ -93,14 +93,14 @@ SNDDMA_Init (void)
 	if (snd_bits->int_val) {
 		bps = snd_bits->int_val;
 		if (bps != 16 && bps != 8) {
-			Con_Printf ("Error: invalid sample bits: %d\n", bps);
+			Sys_Printf ("Error: invalid sample bits: %d\n", bps);
 			return 0;
 		}
 	}
 	if (snd_rate->int_val) {
 		rate = snd_rate->int_val;
 		if (rate != 44100 && rate != 22050 && rate != 11025) {
-			Con_Printf ("Error: invalid sample rate: %d\n", rate);
+			Sys_Printf ("Error: invalid sample rate: %d\n", rate);
 			return 0;
 		}
 	}
@@ -109,11 +109,11 @@ SNDDMA_Init (void)
 		pcmname = "plug:0,0";
 	if ((err = snd_pcm_open (&pcm, pcmname,
 							 SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK)) < 0) {
-		Con_Printf ("Error: audio open error: %s\n", snd_strerror (err));
+		Sys_Printf ("Error: audio open error: %s\n", snd_strerror (err));
 		return 0;
 	}
 
-	Con_Printf ("Using PCM %s.\n", pcmname);
+	Sys_Printf ("Using PCM %s.\n", pcmname);
 	snd_pcm_hw_params_any (pcm, hw);
 
 	switch (rate) {
@@ -130,7 +130,7 @@ SNDDMA_Init (void)
 				frag_size = 64;			/* assuming stereo 8 bit */
 				rate = 11025;
 			} else {
-				Con_Printf ("ALSA: no useable rates\n");
+				Sys_Printf ("ALSA: no useable rates\n");
 				goto error;
 			}
 			break;
@@ -143,7 +143,7 @@ SNDDMA_Init (void)
 			}
 			/* Fall through */
 		default:
-			Con_Printf ("ALSA: desired rate not supported\n");
+			Sys_Printf ("ALSA: desired rate not supported\n");
 			goto error;
 	}
 
@@ -157,7 +157,7 @@ SNDDMA_Init (void)
 					   >= 0) {
 				bps = 8;
 			} else {
-				Con_Printf ("ALSA: no useable formats\n");
+				Sys_Printf ("ALSA: no useable formats\n");
 				goto error;
 			}
 			break;
@@ -170,13 +170,13 @@ SNDDMA_Init (void)
 			}
 			/* Fall through */
 		default:
-			Con_Printf ("ALSA: desired format not supported\n");
+			Sys_Printf ("ALSA: desired format not supported\n");
 			goto error;
 	}
 
 	if (snd_pcm_hw_params_set_access (pcm, hw,
 									  SND_PCM_ACCESS_MMAP_INTERLEAVED) < 0) {
-		Con_Printf ("ALSA: interleaved is not supported\n");
+		Sys_Printf ("ALSA: interleaved is not supported\n");
 		goto error;
 	}
 
@@ -187,7 +187,7 @@ SNDDMA_Init (void)
 			} else if (snd_pcm_hw_params_set_channels (pcm, hw, 1) >= 0) {
 				stereo = 0;
 			} else {
-				Con_Printf ("ALSA: no useable channels\n");
+				Sys_Printf ("ALSA: no useable channels\n");
 				goto error;
 			}
 			break;
@@ -197,7 +197,7 @@ SNDDMA_Init (void)
 				break;
 			/* Fall through */
 		default:
-			Con_Printf ("ALSA: desired channels not supported\n");
+			Sys_Printf ("ALSA: desired channels not supported\n");
 			goto error;
 	}
 
@@ -205,7 +205,7 @@ SNDDMA_Init (void)
 
 	err = snd_pcm_hw_params (pcm, hw);
 	if (err < 0) {
-		Con_Printf ("ALSA: unable to install hw params\n");
+		Sys_Printf ("ALSA: unable to install hw params\n");
 		goto error;
 	}
 
@@ -215,7 +215,7 @@ SNDDMA_Init (void)
 
 	err = snd_pcm_sw_params (pcm, sw);
 	if (err < 0) {
-		Con_Printf ("ALSA: unable to install sw params\n");
+		Sys_Printf ("ALSA: unable to install sw params\n");
 		goto error;
 	}
 
@@ -231,14 +231,14 @@ SNDDMA_Init (void)
 	shm->samples = buffer_size * shm->channels;	// mono samples in buffer
 	shm->speed = rate;
 	SNDDMA_GetDMAPos ();//XXX sets shm->buffer
-	Con_Printf ("%5d stereo\n", shm->channels - 1);
-	Con_Printf ("%5d samples\n", shm->samples);
-	Con_Printf ("%5d samplepos\n", shm->samplepos);
-	Con_Printf ("%5d samplebits\n", shm->samplebits);
-	Con_Printf ("%5d submission_chunk\n", shm->submission_chunk);
-	Con_Printf ("%5d speed\n", shm->speed);
-	Con_Printf ("0x%x dma buffer\n", (int) shm->buffer);
-	Con_Printf ("%5d total_channels\n", total_channels);
+	Sys_Printf ("%5d stereo\n", shm->channels - 1);
+	Sys_Printf ("%5d samples\n", shm->samples);
+	Sys_Printf ("%5d samplepos\n", shm->samplepos);
+	Sys_Printf ("%5d samplebits\n", shm->samplebits);
+	Sys_Printf ("%5d submission_chunk\n", shm->submission_chunk);
+	Sys_Printf ("%5d speed\n", shm->speed);
+	Sys_Printf ("0x%x dma buffer\n", (int) shm->buffer);
+	Sys_Printf ("%5d total_channels\n", total_channels);
 
 	snd_inited = 1;
 	return 1;

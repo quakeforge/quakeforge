@@ -53,11 +53,11 @@
 #include <sys/wait.h>
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
+#include "QF/sys.h"
 
 #ifndef MAP_FAILED
 # define MAP_FAILED ((void *) -1)
@@ -124,34 +124,34 @@ SNDDMA_Init (void)
 		}
 		if (audio_fd < 0) {
 			perror (snd_dev);
-			Con_Printf ("Could not open %s\n", snd_dev);
+			Sys_Printf ("Could not open %s\n", snd_dev);
 			return 0;
 		}
 	}
 
 	if ((rc = ioctl (audio_fd, SNDCTL_DSP_RESET, 0)) < 0) {
 		perror (snd_dev);
-		Con_Printf ("Could not reset %s\n", snd_dev);
+		Sys_Printf ("Could not reset %s\n", snd_dev);
 		close (audio_fd);
 		return 0;
 	}
 
 	if (ioctl (audio_fd, SNDCTL_DSP_GETCAPS, &caps) == -1) {
 		perror (snd_dev);
-		Con_Printf ("Sound driver too old\n");
+		Sys_Printf ("Sound driver too old\n");
 		close (audio_fd);
 		return 0;
 	}
 
 	if (!(caps & DSP_CAP_TRIGGER) || !(caps & DSP_CAP_MMAP)) {
-		Con_Printf ("Sound device can't do memory-mapped I/O.\n");
+		Sys_Printf ("Sound device can't do memory-mapped I/O.\n");
 		close (audio_fd);
 		return 0;
 	}
 
 	if (ioctl (audio_fd, SNDCTL_DSP_GETOSPACE, &info) == -1) {
 		perror ("GETOSPACE");
-		Con_Printf ("Um, can't do GETOSPACE?\n");
+		Sys_Printf ("Um, can't do GETOSPACE?\n");
 		close (audio_fd);
 		return 0;
 	}
@@ -200,14 +200,14 @@ SNDDMA_Init (void)
 	
 		if (shm->buffer == MAP_FAILED) {
 			perror (snd_dev);
-			Con_Printf ("Could not mmap %s\n", snd_dev);
+			Sys_Printf ("Could not mmap %s\n", snd_dev);
 			close (audio_fd);
 			return 0;
 		}
 	} else {
 		shm->buffer = malloc (shm->samples * (shm->samplebits / 8) * 2);
 		if (!shm->buffer) {
-			Con_Printf ("SNDDMA_Init: memory allocation failure\n");
+			Sys_Printf ("SNDDMA_Init: memory allocation failure\n");
 			close (audio_fd);
 			return 0;
 		}
@@ -219,7 +219,7 @@ SNDDMA_Init (void)
 	rc = ioctl (audio_fd, SNDCTL_DSP_STEREO, &tmp);
 	if (rc < 0) {
 		perror (snd_dev);
-		Con_Printf ("Could not set %s to stereo=%d", snd_dev, shm->channels);
+		Sys_Printf ("Could not set %s to stereo=%d", snd_dev, shm->channels);
 		close (audio_fd);
 		return 0;
 	}
@@ -232,7 +232,7 @@ SNDDMA_Init (void)
 	rc = ioctl (audio_fd, SNDCTL_DSP_SPEED, &shm->speed);
 	if (rc < 0) {
 		perror (snd_dev);
-		Con_Printf ("Could not set %s speed to %d", snd_dev, shm->speed);
+		Sys_Printf ("Could not set %s speed to %d", snd_dev, shm->speed);
 		close (audio_fd);
 		return 0;
 	}
@@ -242,7 +242,7 @@ SNDDMA_Init (void)
 		rc = ioctl (audio_fd, SNDCTL_DSP_SETFMT, &rc);
 		if (rc < 0) {
 			perror (snd_dev);
-			Con_Printf ("Could not support 16-bit data.  Try 8-bit.\n");
+			Sys_Printf ("Could not support 16-bit data.  Try 8-bit.\n");
 			close (audio_fd);
 			return 0;
 		}
@@ -251,13 +251,13 @@ SNDDMA_Init (void)
 		rc = ioctl (audio_fd, SNDCTL_DSP_SETFMT, &rc);
 		if (rc < 0) {
 			perror (snd_dev);
-			Con_Printf ("Could not support 8-bit data.\n");
+			Sys_Printf ("Could not support 8-bit data.\n");
 			close (audio_fd);
 			return 0;
 		}
 	} else {
 		perror (snd_dev);
-		Con_Printf ("%d-bit sound not supported.", shm->samplebits);
+		Sys_Printf ("%d-bit sound not supported.", shm->samplebits);
 		close (audio_fd);
 		return 0;
 	}
@@ -267,7 +267,7 @@ SNDDMA_Init (void)
 	rc = ioctl (audio_fd, SNDCTL_DSP_SETTRIGGER, &tmp);
 	if (rc < 0) {
 		perror (snd_dev);
-		Con_Printf ("Could not toggle.\n");
+		Sys_Printf ("Could not toggle.\n");
 		close (audio_fd);
 		return 0;
 	}
@@ -275,7 +275,7 @@ SNDDMA_Init (void)
 	rc = ioctl (audio_fd, SNDCTL_DSP_SETTRIGGER, &tmp);
 	if (rc < 0) {
 		perror (snd_dev);
-		Con_Printf ("Could not toggle.\n");
+		Sys_Printf ("Could not toggle.\n");
 		close (audio_fd);
 		return 0;
 	}
@@ -296,7 +296,7 @@ SNDDMA_GetDMAPos (void)
 
 	if (ioctl (audio_fd, SNDCTL_DSP_GETOPTR, &count) == -1) {
 		perror (snd_dev);
-		Con_Printf ("Uh, sound dead.\n");
+		Sys_Printf ("Uh, sound dead.\n");
 		close (audio_fd);
 		snd_inited = 0;
 		return 0;

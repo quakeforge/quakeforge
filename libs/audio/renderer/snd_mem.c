@@ -36,7 +36,6 @@
 # include <strings.h>
 #endif
 
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qendian.h"
 #include "QF/sound.h"
@@ -169,13 +168,13 @@ SND_LoadSound (sfx_t *sfx, cache_allocator_t allocator)
 	data = COM_LoadStackFile (namebuffer, stackbuf, sizeof (stackbuf));
 
 	if (!data) {
-		Con_Printf ("Couldn't load %s\n", namebuffer);
+		Sys_Printf ("Couldn't load %s\n", namebuffer);
 		return NULL;
 	}
 
 	info = SND_GetWavinfo (sfx->name, data, com_filesize);
 	if (info.channels != 1) {
-		Con_Printf ("%s is a stereo sample\n", sfx->name);
+		Sys_Printf ("%s is a stereo sample\n", sfx->name);
 		return NULL;
 	}
 
@@ -285,7 +284,7 @@ SND_DumpChunks (void)
 		memcpy (str, data_p, 4);
 		data_p += 4;
 		iff_chunk_len = SND_GetLittleLong ();
-		Con_Printf ("0x%x : %s (%d)\n", (int) (data_p - 4), str,
+		Sys_Printf ("0x%x : %s (%d)\n", (int) (data_p - 4), str,
 					iff_chunk_len);
 		data_p += (iff_chunk_len + 1) & ~1;
 	} while (data_p < iff_end);
@@ -308,7 +307,7 @@ SND_GetWavinfo (const char *name, byte * wav, int wavlength)
 	// find "RIFF" chunk
 	SND_FindChunk ("RIFF");
 	if (!(data_p && !strncmp (data_p + 8, "WAVE", 4))) {
-		Con_Printf ("Missing RIFF/WAVE chunks\n");
+		Sys_Printf ("Missing RIFF/WAVE chunks\n");
 		return info;
 	}
 	// get "fmt " chunk
@@ -317,13 +316,13 @@ SND_GetWavinfo (const char *name, byte * wav, int wavlength)
 
 	SND_FindChunk ("fmt ");
 	if (!data_p) {
-		Con_Printf ("Missing fmt chunk\n");
+		Sys_Printf ("Missing fmt chunk\n");
 		return info;
 	}
 	data_p += 8;
 	format = SND_GetLittleShort ();
 	if (format != 1) {
-		Con_Printf ("Microsoft PCM format only\n");
+		Sys_Printf ("Microsoft PCM format only\n");
 		return info;
 	}
 
@@ -354,7 +353,7 @@ SND_GetWavinfo (const char *name, byte * wav, int wavlength)
 	// find data chunk
 	SND_FindChunk ("data");
 	if (!data_p) {
-		Con_Printf ("Missing data chunk\n");
+		Sys_Printf ("Missing data chunk\n");
 		return info;
 	}
 

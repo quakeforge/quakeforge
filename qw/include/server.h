@@ -30,6 +30,8 @@
 #ifndef _SERVER_H
 #define _SERVER_H
 
+#include <stdarg.h>
+
 #include "QF/gcc_attr.h"
 #include "QF/model.h"
 #include "QF/sizebuf.h"
@@ -489,6 +491,7 @@ void SV_SetMoveVars(void);
 //
 // sv_send.c
 //
+void SV_Print (const char *fmt, va_list args);
 void SV_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void SV_SendClientMessages (void);
 

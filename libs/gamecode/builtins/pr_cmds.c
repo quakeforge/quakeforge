@@ -43,11 +43,11 @@
 
 #include "QF/clip_hull.h"
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/mathlib.h"
 #include "QF/msg.h"
 #include "QF/progs.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/zone.h"
 
@@ -58,7 +58,7 @@
 
 /* BUILT-IN FUNCTIONS */
 
-// FIXME: Hunk_TempAlloc, Con_Printf, Cvar_*, PR_SetString, PR_RunError, ED_PrintEdicts, PF_traceon, PF_traceoff, ED_PrintNum, PR_FindBuiltin isn't threadsafe/reentrant
+// FIXME: Hunk_TempAlloc, Sys_Printf, Cvar_*, PR_SetString, PR_RunError, ED_PrintEdicts, PF_traceon, PF_traceoff, ED_PrintNum, PR_FindBuiltin isn't threadsafe/reentrant
 
 
 const char *
@@ -209,7 +209,7 @@ PF_random (progs_t *pr)
 void
 PF_break (progs_t *pr)
 {
-	Con_Printf ("break statement\n");
+	Sys_Printf ("break statement\n");
 	*(int *) -4 = 0;					// dump to debugger
 //  PR_RunError (pr, "break statement");
 }
@@ -265,7 +265,7 @@ PF_cvar_set (progs_t *pr)
 		var = Cvar_FindAlias (var_name);
 	if (!var) {
 		// FIXME: make Con_DPrint?
-		Con_Printf ("PF_cvar_set: variable %s not found\n", var_name);
+		Sys_Printf ("PF_cvar_set: variable %s not found\n", var_name);
 		return;
 	}
 
@@ -411,7 +411,7 @@ PF_eprint (progs_t *pr)
 void
 PF_dprint (progs_t *pr)
 {
-	Con_Printf ("%s", PF_VarString (pr, 0));
+	Sys_Printf ("%s", PF_VarString (pr, 0));
 }
 
 void
