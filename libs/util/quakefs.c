@@ -996,7 +996,7 @@ COM_Gamedir (const char *dir)
 void
 COM_CreateGameDirectory (const char *gamename)
 {
-	if (strcmp (fs_userpath->string, FS_USERPATH))
+	if (strcmp (fs_userpath->string, "."))
 		COM_CreatePath (va ("%s/%s/dummy", fs_userpath->string, gamename));
 	COM_AddGameDirectory (gamename);
 }
