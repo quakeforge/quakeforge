@@ -382,8 +382,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/lib/libQFmodels_sw.so.1
 %attr(-,root,root)	%{_prefix}/lib/libQFmodels_sw.so.1.0.0
 %if "%{HAVE_SDL}"=="'yes'"
-%attr(-,root,root)	%{_prefix}/lib/libQFmodels_sw32.so.1
-%attr(-,root,root)	%{_prefix}/lib/libQFmodels_sw32.so.1.0.0
 %attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw32.so.1
 %attr(-,root,root)	%{_prefix}/lib/libQFrenderer_sw32.so.1.0.0
 %endif
