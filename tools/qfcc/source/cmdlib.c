@@ -50,8 +50,6 @@ static const char rcsid[] =
 
 #include "cmdlib.h"
 
-#define PATHSEPERATOR   '/'
-
 char        qfcc_com_token[1024];
 
 /*
