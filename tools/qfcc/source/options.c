@@ -344,9 +344,16 @@ DecodeArgs (int argc, char **argv)
 				}
 				break;
 			case 'M':
-				add_cpp_def (nva ("-M%s", optarg));
-				if (strchr ("FQT", optarg[0]))
-					add_cpp_def (argv[optind++]);
+				if (optarg) {
+					add_cpp_def (nva ("-M%s", optarg));
+					if (!strchr (optarg, 'D'))
+						options.preprocess_only = 1;
+					if (strchr ("FQT", optarg[0]))
+						add_cpp_def (argv[optind++]);
+				} else {
+					options.preprocess_only = 1;
+					add_cpp_def (nva ("-M"));
+				}
 				break;
 			default:
 				usage (1);

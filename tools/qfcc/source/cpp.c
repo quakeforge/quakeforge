@@ -131,9 +131,12 @@ build_cpp_args (const char *in_name, const char *out_name)
 		} else if (!strcmp (cpp_arg->arg, "%i")) {
 			*arg++ = in_name;
 		} else if (!strcmp (cpp_arg->arg, "%o")) {
-			*arg++ = out_name;
+			if (!options.preprocess_only) {
+				*arg++ = out_name;
+			}
 		} else {
-			*arg++ = cpp_arg->arg;
+			if (!options.preprocess_only || strcmp (cpp_arg->arg, "-o") != 0)
+				*arg++ = cpp_arg->arg;
 		}
 	}
 	*arg = 0;
@@ -220,6 +223,8 @@ preprocess_file (const char *filename)
 			}
 		}
 
+		if (options.preprocess_only)
+			return 0;
 		return fopen (tempname->str, "rt");
 #else
 		if (!options.save_temps)
@@ -268,7 +273,9 @@ preprocess_file (const char *filename)
 				exit (1);
 			}
 		}
-		if (options.save_temps)
+		if (options.preprocess_only)
+			return 0;
+		else if (options.save_temps)
 			return fopen (tempname->str, "rt");
 		else
 			return fdopen (tempfd, "r+t");

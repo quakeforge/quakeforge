@@ -463,6 +463,8 @@ compile_to_obj (const char *file, const char *obj)
 	int         err;
 
 	yyin = preprocess_file (file);
+	if (!yyin)
+		return !options.preprocess_only;
 
 	InitData ();
 	clear_frame_macros ();
@@ -478,7 +480,7 @@ compile_to_obj (const char *file, const char *obj)
 	pr.source_file = ReuseString (strip_path (file));
 	err = yyparse () || pr.error_count;
 	fclose (yyin);
-	if (cpp_name && (!options.save_temps)) {
+	if (cpp_name && !options.save_temps) {
 		if (unlink (tempname->str)) {
 			perror ("unlink");
 			exit (1);
@@ -623,6 +625,8 @@ progs_src_compile (void)
 			printf ("compiling %s\n", filename->str);
 
 		yyin = preprocess_file (filename->str);
+		if (!yyin)
+			return !options.preprocess_only;
 
 		pr.source_file = ReuseString (strip_path (filename->str));
 		pr.source_line = 1;
