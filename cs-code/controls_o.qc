@@ -1,7 +1,7 @@
 /*
-    options.qc
+    controls_o.qc
 
-    Options menu
+    Controls settings menu
 
     Copyright (C) 2002 Robin Redeker <elmex@x-paste.de>
 
@@ -24,50 +24,6 @@
         Boston, MA  02111-1307, USA
 */
 
-
-/*
-	This is a array of the commands, which
-	can be binded by menu.
-*/
-#define NUM_BINDED_KEYS 34
-string [NUM_BINDED_KEYS] key_bindings = 
-{
-	"+attack",
-	"impulse 10",
-	"+jump",
-	"+forward",
-	"+back",
-	"+left",
-	"+right",
-	"+speed",
-	"+moveleft",
-	"+moveright",
-	"+strafe",
-	"+loookup",
-	"+lookdown",
-	"centerview",
-	"+mlook",
-	"+klook",
-	"+moveup",
-	"+movedown",
-#define NUM_BASIC_KEYS 18
-	"pause",
-	"toggle in_grab",
-	"messagemode",
-	"screenshot",
-#define NUM_MISC_KEYS NUM_BASIC_KEYS + 4
-	"impulse 1",
-	"impulse 2",
-	"impulse 3",
-	"impulse 4",
-	"impulse 5",
-	"impulse 6",
-	"impulse 7",
-	"impulse 8"
-#define NUM_WEAPON_KEYS NUM_MISC_KEYS + 9
-};
-// this array holds readable information about the binded keys
-string [NUM_BINDED_KEYS] key_bindings_desc;
 
 integer set_key_flag;	// holds flag for the key-setting
  
@@ -159,24 +115,6 @@ get_keyname =
 	} else {
 		keyname = Key_KeynumToString(keynum);
 		// cut away the "K_", thats maybe enough as description for now
-		keyname = String_Cut(0, 2, keyname);
-	}
-	return keyname;
-};
-
-//XXX: make_key_desc will be removed soon
-string (integer key, integer bindnum) 
-make_key_desc =
-{
-	local integer keynum;
-	local string keyname;
-
-	keynum = Key_LookupBinding(IMT_0, bindnum, key_bindings[key]);
-	if(keynum == -1) {
-		keyname = "";
-	} else {
-		keyname = Key_KeynumToString(keynum);
-		// cut away the "K_"
 		keyname = String_Cut(0, 2, keyname);
 	}
 	return keyname;
