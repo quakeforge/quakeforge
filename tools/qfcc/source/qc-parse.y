@@ -624,6 +624,8 @@ opt_comma
 begin_function
 	: /*empty*/
 		{
+			if ($<def>0->constant)
+				error (0, "%s redefined", $<def>0->name);
 			$$ = current_func = new_function ($<def>0->name);
 			$$->def = $<def>0;
 			$$->refs = new_reloc ($$->def->ofs, rel_def_func);

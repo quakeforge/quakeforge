@@ -219,6 +219,10 @@ build_builtin_function (def_t *def, expr_t *bi_val)
 		error (bi_val, "%s is not a function", def->name);
 		return 0;
 	}
+	if (def->constant) {
+		error (bi_val, "%s redefined", def->name);
+		return 0;
+	}
 
 	if (bi_val->type != ex_integer && bi_val->type != ex_float) {
 		error (bi_val, "invalid constant for = #");
