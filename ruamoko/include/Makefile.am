@@ -9,4 +9,4 @@ include_HEADERS= \
 	\
 	cbuf.h cmd.h cvar.h file.h gib.h hash.h plist.h \
 	Object.h AutoreleasePool.h Array.h Entity.h List.h ListNode.h \
-	InputLine.h Point.h Rect.h Size.h
+	InputLine.h Point.h Rect.h Size.h Stack.h
