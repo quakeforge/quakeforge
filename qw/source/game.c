@@ -40,6 +40,7 @@
 
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/info.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -93,4 +94,11 @@ Game_Init (void)
 {
 	Cmd_AddCommand ("gamedir", SV_Gamedir_f,
 					"Specifies the directory to be used while playing.");
+}
+
+void
+Game_Init_Cvars (void)
+{
+	fs_skinbase = Cvar_Get ("fs_skinbase", "qw", CVAR_ROM,
+							"location of skins dir for downloads");
 }

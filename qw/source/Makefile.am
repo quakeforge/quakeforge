@@ -51,7 +51,7 @@ math_ASM = sys_x86.S
 endif
 common_SOURCES= buildnum.c com.c \
 	game.c model.c model_brush.c msg_ucmd.c \
-	pmove.c pmovetst.c quakefs.c \
+	pmove.c pmovetst.c \
 	$(math_ASM) $(packetlogger)
 
 #

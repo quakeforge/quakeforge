@@ -38,5 +38,6 @@
 extern cvar_t		*registered;
 
 void Game_Init (void);
+void Game_Init_Cvars (void);
 
 #endif // __game_h

@@ -112,6 +112,7 @@ char        gamedirfile[MAX_OSPATH];
 cvar_t     *fs_userpath;
 cvar_t     *fs_sharepath;
 cvar_t     *fs_basegame;
+cvar_t     *fs_skinbase;
 
 int         com_filesize;
 
@@ -984,6 +985,9 @@ COM_Gamedir (char *dir)
 	// 
 	Cache_Flush ();
 
+	if (fs_skinbase && strcmp (dir, fs_skinbase->string) == 0)
+		return;
+
 	COM_AddGameDirectory (dir);
 }
 
@@ -1008,6 +1012,11 @@ COM_Filesystem_Init (void)
 
 	// start up with basegame->string by default
 	COM_CreateGameDirectory (fs_basegame->string);
+
+	// If we're dealing with id1, use qw too
+	if (fs_skinbase && !strequal (fs_basegame->string, fs_skinbase->string)) {
+		COM_CreateGameDirectory (fs_skinbase->string);
+	}
 
 	if ((i = COM_CheckParm ("-game")) && i < com_argc - 1) {
 		char       *gamedirs = NULL;

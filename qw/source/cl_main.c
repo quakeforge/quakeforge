@@ -1589,6 +1589,7 @@ Host_Init (void)
 	Con_Init_Cvars ();
 	Draw_Init_Cvars ();
 	COM_Filesystem_Init_Cvars ();
+	Game_Init_Cvars ();
 	IN_Init_Cvars ();
 	Key_Init_Cvars ();
 	Mod_Init_Cvars ();

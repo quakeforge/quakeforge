@@ -1916,6 +1916,7 @@ SV_Init (void)
 
 
 	COM_Filesystem_Init_Cvars ();
+	Game_Init_Cvars ();
 	COM_Init_Cvars ();
 	Mod_Init_Cvars ();
 	Netchan_Init_Cvars ();
