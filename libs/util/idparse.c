@@ -218,7 +218,7 @@ static void
 COM_execute_sets (cbuf_t *cbuf)
 {
 	dstring_t *buf = DATA(cbuf)->buf;
-	dstring_t *line = DATA(cbuf)->buf;
+	dstring_t *line = DATA(cbuf)->line;
 	while (*buf->str) {
 		COM_extract_line (cbuf);
 		COM_TokenizeString (line->str, cbuf->args);
