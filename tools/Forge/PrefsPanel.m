@@ -1,7 +1,7 @@
 /*
-	PrefsWindow.m
+	PrefsPanel.m
 
-	Preferences window class
+	Preferences panel class
 
 	Copyright (C) 2001 Dusk to Dawn Computing, Inc.
 
@@ -41,6 +41,7 @@ static const char rcsid[] =
 #import <AppKit/NSMatrix.h>
 #import <AppKit/NSScrollView.h>
 
+#import "BundleController.h"
 #import "PrefsPanel.h"
 
 @implementation PrefsPanel
@@ -81,7 +82,6 @@ static const char rcsid[] =
 	[prefsViewList setPrototype: prototype];
 	[prefsViewList setTarget: [self windowController]];
 	[prefsViewList setAction: @selector(cellWasClicked:)];
-	[prefsViewList addRow];		// No columns yet, they'll get added as views do
 
 	iconScrollView = [[NSScrollView alloc] initWithFrame: NSMakeRect (8, 290, 500, 86)];
 	[iconScrollView autorelease];
@@ -136,15 +136,17 @@ static const char rcsid[] =
 	[super dealloc];
 }
 
-- (void) addPrefsViewButtonWithTitle: (NSString *) desc andImage: (NSImage *) img
+- (void) addPrefsViewButton: (id <PrefsViewController>) aController
 {
 	NSButtonCell	*button = [[NSButtonCell alloc] init];
 
 	[button setTag: _topTag++];
-	[button setTitle: desc];
-	[button setFont: [NSFont systemFontOfSize: 8]];
-	[button setImage: img];
+	[button setTitle: [aController buttonCaption]];
+	[button setFont: [NSFont systemFontOfSize: 9]];
+	[button setImage: [aController buttonImage]];
 	[button setImagePosition: NSImageAbove];
+	[button setTarget: aController];
+	[button setAction: [aController buttonSelector]];
 	[prefsViewList addColumnWithCells: [NSArray arrayWithObject: button]];
 	[prefsViewList sizeToCells];
 	[prefsViewList setNeedsDisplay: YES];

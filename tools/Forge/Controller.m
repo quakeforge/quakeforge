@@ -129,6 +129,7 @@ static const char rcsid[] =
 */
 - (void) applicationWillFinishLaunching: (NSNotification *) not;
 {
+#if 0
 	NSMenu	*menu = [[[NSMenu alloc] init] autorelease];
 	NSMenu	*info;
 	NSMenu	*project;
@@ -260,6 +261,7 @@ static const char rcsid[] =
 	[menu setSubmenu: services	forItem: [menu itemWithTitle: _(@"Services")]];
 
 	[NSApp setMainMenu: menu];
+#endif
 
 	{	// yeah, yeah, shaddap
 		id	controller = [[BundleController alloc] init];
@@ -284,23 +286,29 @@ static const char rcsid[] =
 
 - (void) bundleController: (BundleController *) aController didLoadBundle: (NSBundle *) aBundle
 {
+	NSDictionary	*info = nil;
+
 	if (!aBundle) {
 		NSLog (@"Controller -bundleController: sent nil bundle");
 		return;
 	}
 
+	info = [aBundle infoDictionary];
 	if (![aBundle principalClass]) {
-		NSDictionary	*info = [aBundle infoDictionary];
 		
 		if (!(info || [info objectForKey: @"NSExecutable"])) {
 			NSLog (@"%@ has no principal class and no info dictionary", aBundle);
 			return;
 		}
 
-		NSLog (@"Bundle `%@' has no principal class!", [info objectForKey: @"NSExecutable"]);
+		NSLog (@"Bundle `%@' has no principal class!", [[info objectForKey: @"NSExecutable"] lastPathComponent]);
 		return;
 	}
-	[[[aBundle principalClass] alloc] init];
+	if (![[aBundle principalClass] conformsToProtocol: @protocol(ForgeBundle)]) {
+		NSLog (@"Bundle %@'s principal class does not conform to the ForgeBundle protocol.", [[info objectForKey: @"NSExecutable"] lastPathComponent]);
+		return;
+	}	
+	[[(id <ForgeBundle>) [aBundle principalClass] alloc] initWithOwner: self];
 }
 
 - (BOOL) registerPrefsController: (id <PrefsViewController>) aPrefsController

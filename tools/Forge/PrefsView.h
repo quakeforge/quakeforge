@@ -31,7 +31,9 @@
 # include "Config.h"
 #endif
 
+#import <Foundation/NSObject.h>
 #import <AppKit/NSView.h>
+#import <AppKit/NSButtonCell.h>
 
 // size of a PrefsView
 #define PrefsRect NSMakeRect (0, 0, 486, 228)
@@ -42,9 +44,9 @@
 - (void) loadPrefs: (id) sender;
 - (void) resetPrefsToDefault: (id) sender;
 
+- (NSString *) buttonCaption;
+- (NSImage *) buttonImage;
+- (SEL) buttonSelector;
 - (NSView *) view;
 
-@end
-
-@interface PrefsViewController <PrefsViewController>
 @end

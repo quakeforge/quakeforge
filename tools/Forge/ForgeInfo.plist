@@ -1,5 +1,5 @@
 {
-    ApplicationDescription = "A map editor for QuakeForge";
+    ApplicationDescription = "A game editor for QuakeForge";
     ApplicationIcon = "Forge.tiff";
     ApplicationName = Forge;
     ApplicationRelease = "0.1.0 (Development)";
@@ -7,7 +7,7 @@
     Authors = (
 	"Jeff Teunissen <deek@d2dc.net>",
     );
-    Copyright = "Copyright (C) 2001 Dusk To Dawn Computing";
-    CopyrightDescription = "This program is released under the GNU General Public License";
+    Copyright = "Copyright (C) 2001 Dusk To Dawn Computing, Inc.";
+    CopyrightDescription = "Released under the GNU GPL. See COPYING for details.";
     FullVersionID = "0.1.0 (Development)";
 }

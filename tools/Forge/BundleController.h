@@ -62,6 +62,15 @@
 
 @end
 
+/*
+	Forge bundles need an owner to send their messages to
+*/
+@protocol ForgeBundle <NSObject>
+
+- (id) initWithOwner: (id <BundleDelegate>) anOwner;
+
+@end
+
 @interface BundleController: NSObject
 {
 	id				delegate;

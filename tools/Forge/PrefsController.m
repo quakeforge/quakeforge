@@ -153,8 +153,7 @@ static NSMutableArray	*prefsViews = nil;
 		[controller autorelease];
 	}
 
-	[[prefsPanel prefsViewBox] setContentView: [controller view]];
-	[[prefsPanel prefsViewBox] setNeedsDisplay: YES];
+	[prefsPanel addPrefsViewButton: controller];
 }
 
 @end

@@ -1,7 +1,7 @@
 /*
-	PrefsWindow.h
+	PrefsPanel.h
 
-	Preferences window class
+	Preferences panel class
 
 	Copyright (C) 2001 Dusk to Dawn Computing, Inc.
 
@@ -47,7 +47,11 @@
 
 - (void) initUI;
 - (void) dealloc;
-- (void) addPrefsViewButtonWithTitle: (NSString *) desc andImage: (NSImage *) img;
+#if 0
+- (NSButtonCell *) addPrefsViewButtonWithTitle: (NSString *) desc andImage: (NSImage *) img;
+#else
+- (void) addPrefsViewButton: (NSButtonCell *) aButton;
+#endif
 
 - (NSBox *) prefsViewBox;
 - (NSMatrix *) prefsViewList;

@@ -12,9 +12,11 @@
 	Actions = (
 	    createNew:,
 	    createNewProject:,
+	    infoPanel:,
 	    open:,
 	    openProject:,
-	    saveAll:
+	    saveAll:,
+	    showPreferencesPanel:
 	);
 	Outlets = (
 	);
