@@ -40,39 +40,40 @@
 #include "checksum.h"
 #include "glquake.h"
 
-int Mod_Fullbright (byte *skin, int width, int height, char *name)
+int
+Mod_Fullbright (byte * skin, int width, int height, char *name)
 {
-	int		j;
-	int		pixels;
-	qboolean hasfullbrights = false;
-	int		texnum;
+	int         j;
+	int         pixels;
+	qboolean    hasfullbrights = false;
+	int         texnum;
 
 	// Check for fullbright pixels..
 	pixels = width * height;
 
-	for (j=0 ; j<pixels ; j++) {
-		if (skin[j] >= 256-32) {
+	for (j = 0; j < pixels; j++) {
+		if (skin[j] >= 256 - 32) {
 			hasfullbrights = true;
 			break;
 		}
 	}
 
 	if (hasfullbrights) {
-		byte	*ptexels;
+		byte       *ptexels;
 
-		//ptexels = Hunk_Alloc(s);
-		ptexels = malloc(pixels);
+		// ptexels = Hunk_Alloc(s);
+		ptexels = malloc (pixels);
 
-		Con_DPrintf("FB Model ID: '%s'\n", name);
-		for (j=0 ; j<pixels ; j++) {
-			if (skin[j] >= 256-32) {
+		Con_DPrintf ("FB Model ID: '%s'\n", name);
+		for (j = 0; j < pixels; j++) {
+			if (skin[j] >= 256 - 32) {
 				ptexels[j] = skin[j];
 			} else {
 				ptexels[j] = 255;
 			}
 		}
 		texnum = GL_LoadTexture (name, width, height, ptexels, true, true, 1);
-		free(ptexels);
+		free (ptexels);
 		return texnum;
 	}
 	return 0;

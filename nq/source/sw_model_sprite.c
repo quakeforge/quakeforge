@@ -43,24 +43,27 @@ extern char loadname[];
 Mod_LoadSpriteFrame
 =================
 */
-void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
+void       *
+Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
 {
-	dspriteframe_t		*pinframe;
-	mspriteframe_t		*pspriteframe;
-	int					i, width, height, size, origin[2];
-	unsigned short		*ppixout;
-	byte				*ppixin;
+	dspriteframe_t *pinframe;
+	mspriteframe_t *pspriteframe;
+	int         i, width, height, size, origin[2];
+	unsigned short *ppixout;
+	byte       *ppixin;
 
-	pinframe = (dspriteframe_t *)pin;
+	pinframe = (dspriteframe_t *) pin;
 
 	width = LittleLong (pinframe->width);
 	height = LittleLong (pinframe->height);
 	size = width * height;
 
-	pspriteframe = Hunk_AllocName (sizeof (mspriteframe_t) + size*r_pixbytes,
+	pspriteframe = Hunk_AllocName (sizeof (mspriteframe_t) + size * r_pixbytes,
+
 								   loadname);
 
 	memset (pspriteframe, 0, sizeof (mspriteframe_t) + size);
+
 	*ppframe = pspriteframe;
 
 	pspriteframe->width = width;
@@ -73,23 +76,18 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 	pspriteframe->left = origin[0];
 	pspriteframe->right = width + origin[0];
 
-	if (r_pixbytes == 1)
-	{
-		memcpy (&pspriteframe->pixels[0], (byte *)(pinframe + 1), size);
-	}
-	else if (r_pixbytes == 2)
-	{
-		ppixin = (byte *)(pinframe + 1);
-		ppixout = (unsigned short *)&pspriteframe->pixels[0];
+	if (r_pixbytes == 1) {
+		memcpy (&pspriteframe->pixels[0], (byte *) (pinframe + 1), size);
+	} else if (r_pixbytes == 2) {
+		ppixin = (byte *) (pinframe + 1);
+		ppixout = (unsigned short *) &pspriteframe->pixels[0];
 
-		for (i=0 ; i<size ; i++)
+		for (i = 0; i < size; i++)
 			ppixout[i] = d_8to16table[ppixin[i]];
-	}
-	else
-	{
+	} else {
 		Sys_Error ("Mod_LoadSpriteFrame: driver set invalid r_pixbytes: %d\n",
-				 r_pixbytes);
+				   r_pixbytes);
 	}
 
-	return (void *)((byte *)pinframe + sizeof (dspriteframe_t) + size);
+	return (void *) ((byte *) pinframe + sizeof (dspriteframe_t) + size);
 }

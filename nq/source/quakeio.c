@@ -54,151 +54,151 @@
 #include <limits.h>
 
 void
-Qexpand_squiggle(const char *path, char *dest)
+Qexpand_squiggle (const char *path, char *dest)
 {
-	char *home;
+	char       *home;
+
 #ifndef _WIN32
 	struct passwd *pwd_ent;
 #endif
 
-	if (strncmp (path, "~/",2) != 0) {
-		strcpy (dest,path);
+	if (strncmp (path, "~/", 2) != 0) {
+		strcpy (dest, path);
 		return;
 	}
-
 #ifndef _WIN32
-	if ((pwd_ent = getpwuid (getuid()))) {
+	if ((pwd_ent = getpwuid (getuid ()))) {
 		home = pwd_ent->pw_dir;
 	} else
 #endif
-		home = getenv("HOME");
+		home = getenv ("HOME");
 
 	if (home) {
 		strcpy (dest, home);
-		strcat (dest, path+1); // skip leading ~
+		strcat (dest, path + 1);		// skip leading ~
 	} else
-		strcpy (dest,path);
+		strcpy (dest, path);
 }
 
 int
-Qrename(const char *old, const char *new)
+Qrename (const char *old, const char *new)
 {
-	char e_old[PATH_MAX];
-	char e_new[PATH_MAX];
+	char        e_old[PATH_MAX];
+	char        e_new[PATH_MAX];
 
 	Qexpand_squiggle (old, e_old);
 	Qexpand_squiggle (new, e_new);
 	return rename (e_old, e_new);
 }
 
-QFile *
-Qopen(const char *path, const char *mode)
+QFile      *
+Qopen (const char *path, const char *mode)
 {
-	QFile *file;
-	char m[80],*p;
-	int zip=0;
-	char e_path[PATH_MAX];
+	QFile      *file;
+	char        m[80], *p;
+	int         zip = 0;
+	char        e_path[PATH_MAX];
 
 	Qexpand_squiggle (path, e_path);
 	path = e_path;
 
-	for (p=m; *mode && p-m<(sizeof(m)-1); mode++) {
-		if (*mode=='z') {
-			zip=1;
+	for (p = m; *mode && p - m < (sizeof (m) - 1); mode++) {
+		if (*mode == 'z') {
+			zip = 1;
 			continue;
 		}
-		*p++=*mode;
+		*p++ = *mode;
 	}
-	*p=0;
+	*p = 0;
 
-	file=calloc(sizeof(*file),1);
+	file = calloc (sizeof (*file), 1);
 	if (!file)
 		return 0;
 #ifdef HAVE_ZLIB
 	if (zip) {
-		file->gzfile=gzopen(path,m);
+		file->gzfile = gzopen (path, m);
 		if (!file->gzfile) {
-			free(file);
+			free (file);
 			return 0;
 		}
 	} else
 #endif
 	{
-		file->file=fopen(path,m);
+		file->file = fopen (path, m);
 		if (!file->file) {
-			free(file);
+			free (file);
 			return 0;
 		}
 	}
 	return file;
 }
 
-QFile *
-Qdopen(int fd, const char *mode)
+QFile      *
+Qdopen (int fd, const char *mode)
 {
-	QFile *file;
-	char m[80],*p;
-	int zip=0;
+	QFile      *file;
+	char        m[80], *p;
+	int         zip = 0;
 
-	for (p=m; *mode && p-m<(sizeof(m)-1); mode++) {
-		if (*mode=='z') {
-			zip=1;
+	for (p = m; *mode && p - m < (sizeof (m) - 1); mode++) {
+		if (*mode == 'z') {
+			zip = 1;
 			continue;
 		}
-		*p++=*mode;
+		*p++ = *mode;
 	}
 
-	*p=0;
+	*p = 0;
 
-	file=calloc(sizeof(*file),1);
+	file = calloc (sizeof (*file), 1);
 	if (!file)
 		return 0;
 #ifdef HAVE_ZLIB
 	if (zip) {
-		file->gzfile=gzdopen(fd,m);
+		file->gzfile = gzdopen (fd, m);
 		if (!file->gzfile) {
-			free(file);
+			free (file);
 			return 0;
 		}
 	} else
 #endif
 	{
-		file->file=fdopen(fd,m);
+		file->file = fdopen (fd, m);
 		if (!file->file) {
-			free(file);
+			free (file);
 			return 0;
 		}
 	}
 #ifdef WIN32
 #ifdef __BORLANDC__
-	setmode(_fileno(file->file),O_BINARY);
+	setmode (_fileno (file->file), O_BINARY);
 #else
-	_setmode(_fileno(file->file),_O_BINARY);
+	_setmode (_fileno (file->file), _O_BINARY);
 #endif
 #endif
 	return file;
 }
 
 void
-Qclose(QFile *file)
+Qclose (QFile *file)
 {
 	if (file->file)
-		fclose(file->file);
+		fclose (file->file);
 #ifdef HAVE_ZLIB
 	else
-		gzclose(file->gzfile);
+		gzclose (file->gzfile);
 #endif
-	free(file);
+	free (file);
 }
 
 int
-Qread(QFile *file, void *buf, int count)
+Qread (QFile *file, void *buf, int count)
 {
 	if (file->file)
-		return fread(buf, 1, count, file->file);
+		return fread (buf, 1, count, file->file);
 #ifdef HAVE_ZLIB
 	else
-		return gzread(file->gzfile,buf,count);
+		return gzread (file->gzfile, buf, count);
 #else
 	return -1;
 #endif
@@ -208,152 +208,154 @@ int
 Qwrite (QFile *file, void *buf, int count)
 {
 	if (file->file)
-		return fwrite(buf, 1, count, file->file);
+		return fwrite (buf, 1, count, file->file);
 #ifdef HAVE_ZLIB
 	else
-		return gzwrite(file->gzfile,buf,count);
+		return gzwrite (file->gzfile, buf, count);
 #else
 	return -1;
 #endif
 }
 
 int
-Qprintf(QFile *file, const char *fmt, ...)
+Qprintf (QFile *file, const char *fmt, ...)
 {
-	va_list args;
-	int ret=-1;
+	va_list     args;
+	int         ret = -1;
 
-	va_start(args,fmt);
+	va_start (args, fmt);
 	if (file->file)
-		ret=vfprintf(file->file, fmt, args);
+		ret = vfprintf (file->file, fmt, args);
 #ifdef HAVE_ZLIB
 	else {
-		char buf[4096];
-		va_start(args, fmt);
+		char        buf[4096];
+
+		va_start (args, fmt);
 #ifdef HAVE_VSNPRINTF
-		(void)vsnprintf(buf, sizeof(buf), fmt, args);
+		(void) vsnprintf (buf, sizeof (buf), fmt, args);
 #else
-		(void)vsprintf(buf, fmt, args);
+		(void) vsprintf (buf, fmt, args);
 #endif
-		va_end(args);
-		ret = strlen(buf); /* some *sprintf don't return the nb of bytes written */
-		if (ret>0)
-			ret=gzwrite(file, buf, (unsigned)ret);
+		va_end (args);
+		ret = strlen (buf);				/* some *sprintf don't return the nb
+										   of bytes written */
+		if (ret > 0)
+			ret = gzwrite (file, buf, (unsigned) ret);
 	}
 #endif
-	va_end(args);
+	va_end (args);
 	return ret;
 }
 
-char *
-Qgets(QFile *file, char *buf, int count)
+char       *
+Qgets (QFile *file, char *buf, int count)
 {
 	if (file->file)
-		return fgets(buf, count, file->file);
+		return fgets (buf, count, file->file);
 #ifdef HAVE_ZLIB
 	else
-		return gzgets(file->gzfile,buf,count);
+		return gzgets (file->gzfile, buf, count);
 #else
 	return 0;
 #endif
 }
 
 int
-Qgetc(QFile *file)
+Qgetc (QFile *file)
 {
 	if (file->file)
-		return fgetc(file->file);
+		return fgetc (file->file);
 #ifdef HAVE_ZLIB
 	else
-		return gzgetc(file->gzfile);
+		return gzgetc (file->gzfile);
 #else
 	return -1;
 #endif
 }
 
 int
-Qputc(QFile *file, int c)
+Qputc (QFile *file, int c)
 {
 	if (file->file)
-		return fputc(c, file->file);
+		return fputc (c, file->file);
 #ifdef HAVE_ZLIB
 	else
-		return gzputc(file->gzfile,c);
+		return gzputc (file->gzfile, c);
 #else
 	return -1;
 #endif
 }
 
 int
-Qseek(QFile *file, long offset, int whence)
+Qseek (QFile *file, long offset, int whence)
 {
 	if (file->file)
-		return fseek(file->file, offset, whence);
+		return fseek (file->file, offset, whence);
 #ifdef HAVE_ZLIB
 	else
-		return gzseek(file->gzfile,offset,whence);
+		return gzseek (file->gzfile, offset, whence);
 #else
 	return -1;
 #endif
 }
 
 long
-Qtell(QFile *file)
+Qtell (QFile *file)
 {
 	if (file->file)
-		return ftell(file->file);
+		return ftell (file->file);
 #ifdef HAVE_ZLIB
 	else
-		return gztell(file->gzfile);
+		return gztell (file->gzfile);
 #else
 	return -1;
 #endif
 }
 
 int
-Qflush(QFile *file)
+Qflush (QFile *file)
 {
 	if (file->file)
-		return fflush(file->file);
+		return fflush (file->file);
 #ifdef HAVE_ZLIB
 	else
-		return gzflush(file->gzfile,Z_SYNC_FLUSH);
+		return gzflush (file->gzfile, Z_SYNC_FLUSH);
 #else
 	return -1;
 #endif
 }
 
 int
-Qeof(QFile *file)
+Qeof (QFile *file)
 {
 	if (file->file)
-		return feof(file->file);
+		return feof (file->file);
 #ifdef HAVE_ZLIB
 	else
-		return gzeof(file->gzfile);
+		return gzeof (file->gzfile);
 #else
 	return -1;
 #endif
 }
 
 int
-Qgetpos(QFile *file, fpos_t *pos)
+Qgetpos (QFile *file, fpos_t * pos)
 {
 #ifdef HAVE_FPOS_T_STRUCT
-	pos->__pos = Qtell(file);
-	return pos->__pos==-1?-1:0;
+	pos->__pos = Qtell (file);
+	return pos->__pos == -1 ? -1 : 0;
 #else
-	*pos = Qtell(file);
-	return *pos==-1?-1:0;
+	*pos = Qtell (file);
+	return *pos == -1 ? -1 : 0;
 #endif
 }
 
 int
-Qsetpos(QFile *file, fpos_t *pos)
+Qsetpos (QFile *file, fpos_t * pos)
 {
 #ifdef HAVE_FPOS_T_STRUCT
-	return Qseek(file, pos->__pos, 0);
+	return Qseek (file, pos->__pos, 0);
 #else
-	return Qseek(file, *pos, 0);
+	return Qseek (file, *pos, 0);
 #endif
 }

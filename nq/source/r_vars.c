@@ -43,7 +43,6 @@
 // FIXME: make into one big structure, like cl or sv
 // FIXME: do separately for refresh engine and driver
 
-int	r_bmodelactive;
+int         r_bmodelactive;
 
-#endif	// USE_INTEL_ASM
-
+#endif // USE_INTEL_ASM

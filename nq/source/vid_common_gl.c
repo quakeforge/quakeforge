@@ -1,3 +1,4 @@
+
 /*
 	vid_common_gl.c
 
@@ -60,20 +61,20 @@
 #define WARP_HEIGHT             200
 
 #ifdef HAVE_DLOPEN
-static void 	*dlhand = NULL;
+static void *dlhand = NULL;
 #endif
 
-//unsigned short	d_8to16table[256];
-unsigned int	d_8to24table[256];
-unsigned char	d_15to8table[65536];
+//unsigned short    d_8to16table[256];
+unsigned int d_8to24table[256];
+unsigned char d_15to8table[65536];
 
-cvar_t	*vid_mode;
+cvar_t     *vid_mode;
 
 /*-----------------------------------------------------------------------*/
 
-int 	texture_mode = GL_LINEAR;
-int		texture_extension_number = 1;
-float	gldepthmin, gldepthmax;
+int         texture_mode = GL_LINEAR;
+int         texture_extension_number = 1;
+float       gldepthmin, gldepthmax;
 
 const char *gl_vendor;
 const char *gl_renderer;
@@ -81,12 +82,12 @@ const char *gl_version;
 const char *gl_extensions;
 
 // ARB Multitexture
-int gl_mtex_enum = TEXTURE0_SGIS;
-qboolean gl_arb_mtex = false;
-qboolean gl_mtexable = false;
+int         gl_mtex_enum = TEXTURE0_SGIS;
+qboolean    gl_arb_mtex = false;
+qboolean    gl_mtexable = false;
 
-qboolean is8bit = false;
-cvar_t *vid_use8bit;
+qboolean    is8bit = false;
+cvar_t     *vid_use8bit;
 
 /*-----------------------------------------------------------------------*/
 
@@ -110,32 +111,32 @@ CheckMultiTextureExtensions (void)
 		Con_Printf ("unable to check\n");
 		return;
 	}
-	if (strstr(gl_extensions, "GL_ARB_multitexture ")) {
+	if (strstr (gl_extensions, "GL_ARB_multitexture ")) {
 		Con_Printf ("GL_ARB_multitexture\n");
-		qglMTexCoord2f = (void *)dlsym(dlhand, "glMultiTexCoord2fARB");
-		qglSelectTexture = (void *)dlsym(dlhand, "glActiveTextureARB");
+		qglMTexCoord2f = (void *) dlsym (dlhand, "glMultiTexCoord2fARB");
+		qglSelectTexture = (void *) dlsym (dlhand, "glActiveTextureARB");
 		gl_mtex_enum = GL_TEXTURE0_ARB;
 		gl_mtexable = true;
 		gl_arb_mtex = true;
-	} else if (strstr(gl_extensions, "GL_SGIS_multitexture ")) {
+	} else if (strstr (gl_extensions, "GL_SGIS_multitexture ")) {
 		Con_Printf ("GL_SGIS_multitexture\n");
-		qglMTexCoord2f = (void *)dlsym(dlhand, "glMTexCoord2fSGIS");
-		qglSelectTexture = (void *)dlsym(dlhand, "glSelectTextureSGIS");
+		qglMTexCoord2f = (void *) dlsym (dlhand, "glMTexCoord2fSGIS");
+		qglSelectTexture = (void *) dlsym (dlhand, "glSelectTextureSGIS");
 		gl_mtex_enum = TEXTURE0_SGIS;
 		gl_mtexable = true;
 		gl_arb_mtex = false;
-	} else if (strstr(gl_extensions, "GL_EXT_multitexture ")) {
+	} else if (strstr (gl_extensions, "GL_EXT_multitexture ")) {
 		Con_Printf ("GL_EXT_multitexture\n");
-		qglMTexCoord2f = (void *)dlsym(dlhand, "glMTexCoord2fEXT");
-		qglSelectTexture = (void *)dlsym(dlhand, "glSelectTextureEXT");
+		qglMTexCoord2f = (void *) dlsym (dlhand, "glMTexCoord2fEXT");
+		qglSelectTexture = (void *) dlsym (dlhand, "glSelectTextureEXT");
 		gl_mtex_enum = TEXTURE0_SGIS;
 		gl_mtexable = true;
 		gl_arb_mtex = false;
 	} else {
 		Con_Printf ("none found\n");
 	}
-	dlclose(dlhand);
-	dlhand = NULL;          
+	dlclose (dlhand);
+	dlhand = NULL;
 #else
 	gl_mtexable = false;
 #endif
@@ -144,37 +145,40 @@ CheckMultiTextureExtensions (void)
 void
 VID_SetPalette (unsigned char *palette)
 {
-	byte	*pal;
-	unsigned int r,g,b;
+	byte       *pal;
+	unsigned int r, g, b;
 	unsigned int v;
-	int     r1,g1,b1;
-	int		k;
+	int         r1, g1, b1;
+	int         k;
 	unsigned short i;
-	unsigned int	*table;
-	QFile *f;
-	char s[255];
-	float dist, bestdist;
+	unsigned int *table;
+	QFile      *f;
+	char        s[255];
+	float       dist, bestdist;
 	static qboolean palflag = false;
 
 //
 // 8 8 8 encoding
 //
-//	Con_Printf("Converting 8to24\n");
+//  Con_Printf("Converting 8to24\n");
 
 	pal = palette;
 	table = d_8to24table;
-	for (i = 0; i < 255; i++) { // used to be i<256, see d_8to24table below
+	for (i = 0; i < 255; i++) {			// used to be i<256, see d_8to24table 
+										// 
+		// 
+		// below
 		r = pal[0];
 		g = pal[1];
 		b = pal[2];
 		pal += 3;
 
-//		v = (255<<24) + (r<<16) + (g<<8) + (b<<0);
-//		v = (255<<0) + (r<<8) + (g<<16) + (b<<24);
-		v = (255<<24) + (r<<0) + (g<<8) + (b<<16);
+//      v = (255<<24) + (r<<16) + (g<<8) + (b<<0);
+//      v = (255<<0) + (r<<8) + (g<<16) + (b<<24);
+		v = (255 << 24) + (r << 0) + (g << 8) + (b << 16);
 		*table++ = v;
 	}
-	d_8to24table[255] = 0;		// 255 is transparent
+	d_8to24table[255] = 0;				// 255 is transparent
 
 	// JACK: 3D distance calcs - k is last closest, l is the distance.
 	// FIXME: Precalculate this and cache to disk.
@@ -182,41 +186,38 @@ VID_SetPalette (unsigned char *palette)
 		return;
 	palflag = true;
 
-	COM_FOpenFile("glquake/15to8.pal", &f);
+	COM_FOpenFile ("glquake/15to8.pal", &f);
 	if (f) {
-		Qread(f, d_15to8table, 1<<15);
-		Qclose(f);
+		Qread (f, d_15to8table, 1 << 15);
+		Qclose (f);
 	} else {
-		for (i = 0; i < (1<<15); i++) {
-			/* Maps
- 			000000000000000
- 			000000000011111 = Red  = 0x1F
- 			000001111100000 = Blue = 0x03E0
- 			111110000000000 = Grn  = 0x7C00
- 			*/
- 			r = ((i & 0x1F) << 3) + 4;
- 			g = ((i & 0x03E0) >> 2) + 4;
- 			b = ((i & 0x7C00) >> 7) + 4;
+		for (i = 0; i < (1 << 15); i++) {
+			/* Maps 000000000000000 000000000011111 = Red  = 0x1F
+			   000001111100000 = Blue = 0x03E0 111110000000000 = Grn  =
+			   0x7C00 */
+			r = ((i & 0x1F) << 3) + 4;
+			g = ((i & 0x03E0) >> 2) + 4;
+			b = ((i & 0x7C00) >> 7) + 4;
 
 			pal = (unsigned char *) d_8to24table;
 
-			for (v=0, k=0, bestdist = 10000.0; v<256; v++,pal+=4) {
- 				r1 = (int)r - (int)pal[0];
- 				g1 = (int)g - (int)pal[1];
- 				b1 = (int)b - (int)pal[2];
-				dist = sqrt(((r1*r1)+(g1*g1)+(b1*b1)));
+			for (v = 0, k = 0, bestdist = 10000.0; v < 256; v++, pal += 4) {
+				r1 = (int) r - (int) pal[0];
+				g1 = (int) g - (int) pal[1];
+				b1 = (int) b - (int) pal[2];
+				dist = sqrt (((r1 * r1) + (g1 * g1) + (b1 * b1)));
 				if (dist < bestdist) {
-					k=v;
+					k = v;
 					bestdist = dist;
 				}
 			}
-			d_15to8table[i]=k;
+			d_15to8table[i] = k;
 		}
-		snprintf(s, sizeof(s), "%s/glquake/15to8.pal", com_gamedir);
+		snprintf (s, sizeof (s), "%s/glquake/15to8.pal", com_gamedir);
 		COM_CreatePath (s);
-		if ((f = Qopen(s, "wb")) != NULL) {
-			Qwrite(f, d_15to8table, 1<<15);
-			Qclose(f);
+		if ((f = Qopen (s, "wb")) != NULL) {
+			Qwrite (f, d_15to8table, 1 << 15);
+			Qclose (f);
 		}
 	}
 }
@@ -239,29 +240,29 @@ GL_Init_Common (void)
 	gl_extensions = glGetString (GL_EXTENSIONS);
 	Con_Printf ("GL_EXTENSIONS: %s\n", gl_extensions);
 
-	glClearColor (0,0,0,0);
-	glCullFace(GL_FRONT);
-	glEnable(GL_TEXTURE_2D);
+	glClearColor (0, 0, 0, 0);
+	glCullFace (GL_FRONT);
+	glEnable (GL_TEXTURE_2D);
 
-	glEnable(GL_ALPHA_TEST);
-	glAlphaFunc(GL_GREATER, 0.666);
+	glEnable (GL_ALPHA_TEST);
+	glAlphaFunc (GL_GREATER, 0.666);
 
 	glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
 	glShadeModel (GL_FLAT);
 
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-	glEnable(GL_BLEND);
+	glEnable (GL_BLEND);
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	CheckMultiTextureExtensions ();
-	
+
 }
 
 /*
@@ -277,16 +278,18 @@ GL_BeginRendering (int *x, int *y, int *width, int *height)
 	*height = scr_height;
 }
 
-qboolean VID_Is8bit(void)
+qboolean
+VID_Is8bit (void)
 {
 	return is8bit;
 }
 
 #ifdef HAVE_TDFXGL
-void 3dfx_Init8bitPalette()
+void        3
+dfx_Init8bitPalette ()
 {
 // Check for 8bit Extensions and initialize them.
-	int i;
+	int         i;
 
 	dlhand = dlopen (NULL, RTLD_LAZY);
 
@@ -297,28 +300,29 @@ void 3dfx_Init8bitPalette()
 		return;
 	}
 
-	if (strstr(gl_extensions, "3DFX_set_global_palette")) {
-		char *oldpal;
-		GLubyte table[256][4];
+	if (strstr (gl_extensions, "3DFX_set_global_palette")) {
+		char       *oldpal;
+		GLubyte     table[256][4];
 		gl3DfxSetPaletteEXT_FUNC load_texture = NULL;
 
-		Con_Printf("3DFX_set_global_palette.\n");
-		load_texture = (void *) dlsym(dlhand, "gl3DfxSetPaletteEXT");
+		Con_Printf ("3DFX_set_global_palette.\n");
+		load_texture = (void *) dlsym (dlhand, "gl3DfxSetPaletteEXT");
 
-		glEnable( GL_SHARED_TEXTURE_PALETTE_EXT );
-		oldpal = (char *) d_8to24table; //d_8to24table3dfx;
-		for (i=0;i<256;i++) {
+		glEnable (GL_SHARED_TEXTURE_PALETTE_EXT);
+		oldpal = (char *) d_8to24table;	// d_8to24table3dfx;
+		for (i = 0; i < 256; i++) {
 			table[i][2] = *oldpal++;
 			table[i][1] = *oldpal++;
 			table[i][0] = *oldpal++;
 			table[i][3] = 255;
 			oldpal++;
 		}
-		load_texture((GLuint *)table);
+		load_texture ((GLuint *) table);
 		is8bit = true;
-	} else Shared_Init8bitPalette();
+	} else
+		Shared_Init8bitPalette ();
 
-	dlclose(dlhand);
+	dlclose (dlhand);
 	dlhand = NULL;
 	Con_Printf ("not found.\n");
 }
@@ -326,25 +330,26 @@ void 3dfx_Init8bitPalette()
 
 #ifdef GL_SHARED_TEXTURE_PALETTE_EXT
 void
-Shared_Init8bitPalette()
+Shared_Init8bitPalette ()
 {
-	int i;
-	char thePalette[256*3];
-	char *oldPalette, *newPalette;
+	int         i;
+	char        thePalette[256 * 3];
+	char       *oldPalette, *newPalette;
 
-	if (strstr(gl_extensions, "GL_EXT_shared_texture_palette") == NULL)
+	if (strstr (gl_extensions, "GL_EXT_shared_texture_palette") == NULL)
 		return;
 
 #ifdef HAVE_TDFXGL
 	glColorTableEXT_FUNC load_texture = NULL;
-	load_texture = (void *) dlsym(dlhand, "glColorTableEXT");
+
+	load_texture = (void *) dlsym (dlhand, "glColorTableEXT");
 #endif
 
-	Con_Printf("8-bit GL extensions enabled.\n");
-	glEnable( GL_SHARED_TEXTURE_PALETTE_EXT );
-	oldPalette = (char *) d_8to24table; //d_8to24table3dfx;
+	Con_Printf ("8-bit GL extensions enabled.\n");
+	glEnable (GL_SHARED_TEXTURE_PALETTE_EXT);
+	oldPalette = (char *) d_8to24table;	// d_8to24table3dfx;
 	newPalette = thePalette;
-	for (i=0;i<256;i++) {
+	for (i = 0; i < 256; i++) {
 		*newPalette++ = *oldPalette++;
 		*newPalette++ = *oldPalette++;
 		*newPalette++ = *oldPalette++;
@@ -352,47 +357,51 @@ Shared_Init8bitPalette()
 	}
 	is8bit = true;
 
-	if strstr(gl_renderer, "Mesa Glide") {
+	if strstr
+		(gl_renderer, "Mesa Glide") {
 #ifdef HAVE_TDFXGL
-		load_texture(GL_SHARED_TEXTURE_PALETTE_EXT, GL_RGB, 256, GL_RGB, GL_UNSIGNED_BYTE, (void *) thePalette);
+		load_texture (GL_SHARED_TEXTURE_PALETTE_EXT, GL_RGB, 256, GL_RGB,
+					  GL_UNSIGNED_BYTE, (void *) thePalette);
 #endif
 	} else
-		glColorTable(GL_SHARED_TEXTURE_PALETTE_EXT, GL_RGB, 256, GL_RGB, GL_UNSIGNED_BYTE, (void *) thePalette);
+		glColorTable (GL_SHARED_TEXTURE_PALETTE_EXT, GL_RGB, 256, GL_RGB,
+					  GL_UNSIGNED_BYTE, (void *) thePalette);
 }
+
 #endif
 
 void
-VID_Init8bitPalette(void)
+VID_Init8bitPalette (void)
 {
-	if (COM_CheckParm("-no8bit")) {
-		Con_Printf("disabled.\n");
+	if (COM_CheckParm ("-no8bit")) {
+		Con_Printf ("disabled.\n");
 		return;
 	}
 	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM,
-				"Whether to use Shared Palettes.");
+							"Whether to use Shared Palettes.");
 	if (vid_use8bit->value) {
 #ifdef HAVE_TDFXGL
-		3dfx_Init8bitPalette();
+		3           dfx_Init8bitPalette ();
 #else
- #ifdef GL_SHARED_TEXTURE_PALETTE_EXT
-		Shared_Init8bitPalette();
- #endif
+#ifdef GL_SHARED_TEXTURE_PALETTE_EXT
+		Shared_Init8bitPalette ();
+#endif
 #endif
 	}
 }
 
 void
-VID_LockBuffer ( void )
+VID_LockBuffer (void)
 {
 }
 
 void
-VID_UnlockBuffer ( void )
+VID_UnlockBuffer (void)
 {
 }
 
 void
-D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
+D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
 {
 }
 

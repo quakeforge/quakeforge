@@ -1,3 +1,4 @@
+
 /*
 	vid_sgl.c
 
@@ -50,22 +51,23 @@
 #define	WARP_WIDTH	320
 #define	WARP_HEIGHT	200
 
-static qboolean	vid_initialized = false;
+static qboolean vid_initialized = false;
 
-cvar_t  *vid_fullscreen;
+cvar_t     *vid_fullscreen;
 
 #ifdef WIN32
 /* FIXME: this is evil hack */
 #include <windows.h>
-HWND 		mainwindow;
+HWND        mainwindow;
 #endif
 
-int VID_options_items = 1;
-int modestate;
+int         VID_options_items = 1;
+int         modestate;
 
-extern void GL_Init_Common(void);
-extern void VID_Init8bitPalette(void);
-/*-----------------------------------------------------------------------*/ 
+extern void GL_Init_Common (void);
+extern void VID_Init8bitPalette (void);
+
+/*-----------------------------------------------------------------------*/
 
 void
 VID_Shutdown (void)
@@ -80,33 +82,34 @@ VID_Shutdown (void)
 
 #ifndef WIN32
 static void
-signal_handler(int sig)
+signal_handler (int sig)
 {
-	printf("Received signal %d, exiting...\n", sig);
-	Sys_Quit();
-	exit(sig);
+	printf ("Received signal %d, exiting...\n", sig);
+	Sys_Quit ();
+	exit (sig);
 }
 
 static void
-InitSig(void)
+InitSig (void)
 {
-	signal(SIGHUP, signal_handler);
-	signal(SIGINT, signal_handler);
-	signal(SIGQUIT, signal_handler);
-	signal(SIGILL, signal_handler);
-	signal(SIGTRAP, signal_handler);
-	signal(SIGIOT, signal_handler);
-	signal(SIGBUS, signal_handler);
-//	signal(SIGFPE, signal_handler);
-	signal(SIGSEGV, signal_handler);
-	signal(SIGTERM, signal_handler);
+	signal (SIGHUP, signal_handler);
+	signal (SIGINT, signal_handler);
+	signal (SIGQUIT, signal_handler);
+	signal (SIGILL, signal_handler);
+	signal (SIGTRAP, signal_handler);
+	signal (SIGIOT, signal_handler);
+	signal (SIGBUS, signal_handler);
+//  signal(SIGFPE, signal_handler);
+	signal (SIGSEGV, signal_handler);
+	signal (SIGTERM, signal_handler);
 }
+
 #endif
 
 void
 GL_Init (void)
 {
-	GL_Init_Common();
+	GL_Init_Common ();
 }
 
 void
@@ -119,25 +122,25 @@ GL_EndRendering (void)
 void
 VID_Init (unsigned char *palette)
 {
-	Uint32 flags = SDL_OPENGL;
-	int i;
+	Uint32      flags = SDL_OPENGL;
+	int         i;
 
 	VID_GetWindowSize (640, 480);
 
 	vid.maxwarpwidth = WARP_WIDTH;
 	vid.maxwarpheight = WARP_HEIGHT;
 	vid.colormap = host_colormap;
-	vid.fullbright = 256 - LittleLong (*((int *)vid.colormap + 2048));
+	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap + 2048));
 
 	// Interpret command-line params
 
 	// Set vid parameters
 	if ((i = COM_CheckParm ("-conwidth")) != 0)
-		vid.conwidth = atoi(com_argv[i+1]);
+		vid.conwidth = atoi (com_argv[i + 1]);
 	else
 		vid.conwidth = scr_width;
 
-	vid.conwidth &= 0xfff8; // make it a multiple of eight
+	vid.conwidth &= 0xfff8;				// make it a multiple of eight
 	if (vid.conwidth < 320)
 		vid.conwidth = 320;
 
@@ -145,19 +148,23 @@ VID_Init (unsigned char *palette)
 	vid.conheight = vid.conwidth * 3 / 4;
 
 	i = COM_CheckParm ("-conheight");
-	if ( i != 0 )   // Set console height, but no smaller than 200 px
-		vid.conheight = max (atoi (com_argv[i+1]), 200);
+	if (i != 0)							// Set console height, but no smaller 
+										// 
+		// 
+		// than 200 px
+		vid.conheight = max (atoi (com_argv[i + 1]), 200);
 
 	// Initialize the SDL library 
-	if (SDL_Init (SDL_INIT_VIDEO) < 0) 
-	   Sys_Error ("Couldn't initialize SDL: %s\n", SDL_GetError ());
+	if (SDL_Init (SDL_INIT_VIDEO) < 0)
+		Sys_Error ("Couldn't initialize SDL: %s\n", SDL_GetError ());
 
 	// Check if we want fullscreen
 	if (vid_fullscreen->value) {
 		flags |= SDL_FULLSCREEN;
 		// Don't annoy Mesa/3dfx folks
 #ifndef WIN32
-		// FIXME: Maybe this could be put in a different spot, but I don't know where.
+		// FIXME: Maybe this could be put in a different spot, but I don't
+		// know where.
 		// Anyway, it's to work around a 3Dfx Glide bug.
 		SDL_ShowCursor (0);
 		SDL_WM_GrabInput (SDL_GRAB_ON);
@@ -173,10 +180,10 @@ VID_Init (unsigned char *palette)
 	SDL_GL_SetAttribute (SDL_GL_BLUE_SIZE, 1);
 	SDL_GL_SetAttribute (SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute (SDL_GL_DEPTH_SIZE, 1);
-	
+
 	if (SDL_SetVideoMode (scr_width, scr_height, 8, flags) == NULL) {
-	   Sys_Error ("Couldn't set video mode: %s\n", SDL_GetError ());
-	   SDL_Quit ();
+		Sys_Error ("Couldn't set video mode: %s\n", SDL_GetError ());
+		SDL_Quit ();
 	}
 
 	vid.height = vid.conheight = min (vid.conheight, scr_height);
@@ -186,19 +193,18 @@ VID_Init (unsigned char *palette)
 	vid.numpages = 2;
 
 #ifndef WIN32
-	InitSig (); // trap evil signals
+	InitSig ();							// trap evil signals
 #endif
 
-	GL_Init();
+	GL_Init ();
 
-	//XXX not yet GL_CheckBrightness (palette);
+	// XXX not yet GL_CheckBrightness (palette);
 	VID_SetPalette (palette);
 
 	// Check for 3DFX Extensions and initialize them.
-	VID_Init8bitPalette();
+	VID_Init8bitPalette ();
 
-	Con_Printf ("Video mode %dx%d initialized.\n",
-				scr_width, scr_height);
+	Con_Printf ("Video mode %dx%d initialized.\n", scr_width, scr_height);
 
 	vid_initialized = true;
 
@@ -206,22 +212,23 @@ VID_Init (unsigned char *palette)
 	// FIXME: EVIL thing - but needed for win32 until we get
 	// SDL_sound ready - without this DirectSound fails.
 	// could replace this with SDL_SysWMInfo
-	mainwindow=GetActiveWindow();
+	mainwindow = GetActiveWindow ();
 #endif
-	vid.recalc_refdef = 1;	  // force a surface cache flush
+	vid.recalc_refdef = 1;				// force a surface cache flush
 }
 
 void
 VID_Init_Cvars ()
 {
-	vid_fullscreen = Cvar_Get ("vid_fullscreen","0",0,"None");
+	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", 0, "None");
 }
 
 void
 VID_SetCaption (char *text)
 {
 	if (text && *text) {
-		char *temp = strdup (text);
+		char       *temp = strdup (text);
+
 		SDL_WM_SetCaption (va ("%s %s: %s", PROGRAM, VERSION, temp), NULL);
 		free (temp);
 	} else {
@@ -229,6 +236,7 @@ VID_SetCaption (char *text)
 	}
 }
 
-void VID_HandlePause (qboolean paused)
+void
+VID_HandlePause (qboolean paused)
 {
 }

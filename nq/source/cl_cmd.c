@@ -48,25 +48,24 @@
 
 	Sends the entire command line over to the server
 */
-void Cmd_ForwardToServer (void)
+void
+Cmd_ForwardToServer (void)
 {
-	if (cls.state != ca_connected)
-	{
-		Con_Printf ("Can't \"%s\", not connected\n", Cmd_Argv(0));
+	if (cls.state != ca_connected) {
+		Con_Printf ("Can't \"%s\", not connected\n", Cmd_Argv (0));
 		return;
 	}
 
 	if (cls.demoplayback)
-		return;         // not really connected
+		return;							// not really connected
 
 	MSG_WriteByte (&cls.message, clc_stringcmd);
-	if (strcasecmp(Cmd_Argv(0), "cmd") != 0)
-	{
-		SZ_Print (&cls.message, Cmd_Argv(0));
+	if (strcasecmp (Cmd_Argv (0), "cmd") != 0) {
+		SZ_Print (&cls.message, Cmd_Argv (0));
 		SZ_Print (&cls.message, " ");
 	}
-	if (Cmd_Argc() > 1)
-		SZ_Print (&cls.message, Cmd_Args());
+	if (Cmd_Argc () > 1)
+		SZ_Print (&cls.message, Cmd_Args ());
 	else
 		SZ_Print (&cls.message, "\n");
 }
@@ -74,7 +73,7 @@ void Cmd_ForwardToServer (void)
 /*
 	cl_Cmd_Init
 */
-void 
+void
 cl_Cmd_Init (void)
 {
 //

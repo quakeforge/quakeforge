@@ -51,15 +51,15 @@ ALIAS MODELS
 ==============================================================================
 */
 
-extern	aliashdr_t	*pheader;
+extern aliashdr_t *pheader;
 
-extern	stvert_t	stverts[MAXALIASVERTS];
-extern	mtriangle_t	triangles[MAXALIASTRIS];
+extern stvert_t stverts[MAXALIASVERTS];
+extern mtriangle_t triangles[MAXALIASTRIS];
 
 // a pose is a single set of vertexes.  a frame may be
 // an animating sequence of poses
-extern	trivertx_t	*poseverts[MAXALIASFRAMES];
-extern	int			posenum;
+extern trivertx_t *poseverts[MAXALIASFRAMES];
+extern int  posenum;
 
 /*
 =================
@@ -69,9 +69,8 @@ Fill background pixels so mipmapping doesn't have haloes - Ed
 =================
 */
 
-typedef struct
-{
-	short		x, y;
+typedef struct {
+	short       x, y;
 } floodfill_t;
 
 extern unsigned d_8to24table[];
@@ -91,85 +90,95 @@ extern unsigned d_8to24table[];
 	else if (pos[off] != 255) fdc = pos[off]; \
 }
 
-void Mod_FloodFillSkin( byte *skin, int skinwidth, int skinheight )
+void
+Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight)
 {
-	byte				fillcolor = *skin; // assume this is the pixel to fill
-	floodfill_t			fifo[FLOODFILL_FIFO_SIZE];
-	int					inpt = 0, outpt = 0;
-	int					filledcolor = -1;
-	int					i;
+	byte        fillcolor = *skin;		// assume this is the pixel to fill
+	floodfill_t fifo[FLOODFILL_FIFO_SIZE];
+	int         inpt = 0, outpt = 0;
+	int         filledcolor = -1;
+	int         i;
 
-	if (filledcolor == -1)
-	{
+	if (filledcolor == -1) {
 		filledcolor = 0;
 		// attempt to find opaque black
 		for (i = 0; i < 256; ++i)
-			if (d_8to24table[i] == (255 << 0)) // alpha 1.0
+			if (d_8to24table[i] == (255 << 0))	// alpha 1.0
 			{
 				filledcolor = i;
 				break;
 			}
 	}
-
-	// can't fill to filled color or to transparent color (used as visited marker)
-	if ((fillcolor == filledcolor) || (fillcolor == 255))
-	{
-		//printf( "not filling skin from %d to %d\n", fillcolor, filledcolor );
+	// can't fill to filled color or to transparent color (used as visited
+	// marker)
+	if ((fillcolor == filledcolor) || (fillcolor == 255)) {
+		// printf( "not filling skin from %d to %d\n", fillcolor, filledcolor 
+		// 
+		// 
+		// );
 		return;
 	}
 
 	fifo[inpt].x = 0, fifo[inpt].y = 0;
 	inpt = (inpt + 1) & FLOODFILL_FIFO_MASK;
 
-	while (outpt != inpt)
-	{
-		int			x = fifo[outpt].x, y = fifo[outpt].y;
-		int			fdc = filledcolor;
-		byte		*pos = &skin[x + skinwidth * y];
+	while (outpt != inpt) {
+		int         x = fifo[outpt].x, y = fifo[outpt].y;
+		int         fdc = filledcolor;
+		byte       *pos = &skin[x + skinwidth * y];
 
 		outpt = (outpt + 1) & FLOODFILL_FIFO_MASK;
 
-		if (x > 0)				FLOODFILL_STEP( -1, -1, 0 );
-		if (x < skinwidth - 1)	FLOODFILL_STEP( 1, 1, 0 );
-		if (y > 0)				FLOODFILL_STEP( -skinwidth, 0, -1 );
-		if (y < skinheight - 1)	FLOODFILL_STEP( skinwidth, 0, 1 );
+		if (x > 0)
+			FLOODFILL_STEP (-1, -1, 0);
+		if (x < skinwidth - 1)
+			FLOODFILL_STEP (1, 1, 0);
+		if (y > 0)
+			FLOODFILL_STEP (-skinwidth, 0, -1);
+		if (y < skinheight - 1)
+			FLOODFILL_STEP (skinwidth, 0, 1);
 		skin[x + skinwidth * y] = fdc;
 	}
 }
 
-int Mod_Fullbright(byte *skin, int width, int height, char *name);
+int         Mod_Fullbright (byte * skin, int width, int height, char *name);
 
-void *Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum, qboolean group)
+void       *
+Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group)
 {
-	char name[32];
-	int fbtexnum;
+	char        name[32];
+	int         fbtexnum;
 
-	Mod_FloodFillSkin( skin, pheader->mdl.skinwidth, pheader->mdl.skinheight );
+	Mod_FloodFillSkin (skin, pheader->mdl.skinwidth, pheader->mdl.skinheight);
 	// save 8 bit texels for the player model to remap
-	if (!strcmp(loadmodel->name,"progs/player.mdl")) {
-		byte *texels = Hunk_AllocName(skinsize, loadname);
-		pheader->texels[snum] = texels - (byte *)pheader;
+	if (!strcmp (loadmodel->name, "progs/player.mdl")) {
+		byte       *texels = Hunk_AllocName (skinsize, loadname);
+
+		pheader->texels[snum] = texels - (byte *) pheader;
 		memcpy (texels, skin, skinsize);
 	}
 
 	if (group) {
-		snprintf(name, sizeof(name), "fb_%s_%i_%i", loadmodel->name,snum,gnum);
+		snprintf (name, sizeof (name), "fb_%s_%i_%i", loadmodel->name, snum,
+				  gnum);
 	} else {
-		snprintf(name, sizeof(name), "fb_%s_%i", loadmodel->name,snum);
+		snprintf (name, sizeof (name), "fb_%s_%i", loadmodel->name, snum);
 	}
-	fbtexnum = Mod_Fullbright(skin+1, pheader->mdl.skinwidth, pheader->mdl.skinheight, name);
-	if ((loadmodel->hasfullbrights=(fbtexnum))) {
+	fbtexnum =
+		Mod_Fullbright (skin + 1, pheader->mdl.skinwidth,
+						pheader->mdl.skinheight, name);
+	if ((loadmodel->hasfullbrights = (fbtexnum))) {
 		pheader->gl_fb_texturenum[snum][gnum] = fbtexnum;
 	}
 	if (group) {
-		snprintf(name, sizeof(name), "%s_%i_%i", loadmodel->name,snum,gnum);
+		snprintf (name, sizeof (name), "%s_%i_%i", loadmodel->name, snum, gnum);
 	} else {
-		snprintf(name, sizeof(name), "%s_%i", loadmodel->name,snum);
+		snprintf (name, sizeof (name), "%s_%i", loadmodel->name, snum);
 	}
 	pheader->gl_texturenum[snum][gnum] =
-		GL_LoadTexture (name, pheader->mdl.skinwidth, 
+		GL_LoadTexture (name, pheader->mdl.skinwidth,
 						pheader->mdl.skinheight, skin, true, false, 1);
-						// alpha param was true for non group skins
+	// alpha param was true for non group skins
 	return skin + skinsize;
 }
 
@@ -178,56 +187,54 @@ void *Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum, qboolean group
 Mod_LoadAllSkins
 ===============
 */
-void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
+void       *
+Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 {
-	int		i, j, k;
-	int		skinsize;
-	byte	*skin;
-	daliasskingroup_t		*pinskingroup;
-	int		groupskins;
-	daliasskininterval_t	*pinskinintervals;
+	int         i, j, k;
+	int         skinsize;
+	byte       *skin;
+	daliasskingroup_t *pinskingroup;
+	int         groupskins;
+	daliasskininterval_t *pinskinintervals;
 
 	if (numskins < 1 || numskins > MAX_SKINS)
 		Sys_Error ("Mod_LoadAliasModel: Invalid # of skins: %d\n", numskins);
 
 	skinsize = pheader->mdl.skinwidth * pheader->mdl.skinheight;
 
-	for (i=0 ; i<numskins ; i++)
-	{
+	for (i = 0; i < numskins; i++) {
 		if (pskintype->type == ALIAS_SKIN_SINGLE) {
-			skin = (byte *)(pskintype+1);
+			skin = (byte *) (pskintype + 1);
 			skin = Mod_LoadSkin (skin, skinsize, i, 0, false);
 
-			for (j=1; j < 4; j++) {
-				pheader->gl_texturenum[i][j] = 
-						pheader->gl_texturenum[i][j - 1]; 
-				pheader->gl_fb_texturenum[i][j] = 
-						pheader->gl_fb_texturenum[i][j - 1]; 
+			for (j = 1; j < 4; j++) {
+				pheader->gl_texturenum[i][j] = pheader->gl_texturenum[i][j - 1];
+				pheader->gl_fb_texturenum[i][j] =
+					pheader->gl_fb_texturenum[i][j - 1];
 			}
 		} else {
 			// animating skin group.  yuck.
-			//Con_Printf("Animating Skin Group, if you get this message please notify warp@debian.org\n");
+			// Con_Printf("Animating Skin Group, if you get this message
+			// please notify warp@debian.org\n");
 			pskintype++;
-			pinskingroup = (daliasskingroup_t *)pskintype;
+			pinskingroup = (daliasskingroup_t *) pskintype;
 			groupskins = LittleLong (pinskingroup->numskins);
-			pinskinintervals = (daliasskininterval_t *)(pinskingroup + 1);
+			pinskinintervals = (daliasskininterval_t *) (pinskingroup + 1);
 
-			pskintype = (void *)(pinskinintervals + groupskins);
-			skin = (byte *)pskintype;
+			pskintype = (void *) (pinskinintervals + groupskins);
+			skin = (byte *) pskintype;
 
-			for (j=0 ; j<groupskins ; j++)
-			{
-				skin = Mod_LoadSkin (skin, skinsize, i, j&3, true);
+			for (j = 0; j < groupskins; j++) {
+				skin = Mod_LoadSkin (skin, skinsize, i, j & 3, true);
 			}
 			k = j;
-			for (/* */; j < 4; j++) {
-				pheader->gl_texturenum[i][j] = 
-						pheader->gl_texturenum[i][j - k]; 
-				pheader->gl_fb_texturenum[i][j] = 
-						pheader->gl_fb_texturenum[i][j - k]; 
+			for ( /* */ ; j < 4; j++) {
+				pheader->gl_texturenum[i][j] = pheader->gl_texturenum[i][j - k];
+				pheader->gl_fb_texturenum[i][j] =
+					pheader->gl_fb_texturenum[i][j - k];
 			}
 		}
-		pskintype = (daliasskintype_t*)skin;
+		pskintype = (daliasskintype_t *) skin;
 	}
 
 	return pskintype;
@@ -238,34 +245,34 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinind
 Mod_LoadAliasFrame
 =================
 */
-void * Mod_LoadAliasFrame (void * pin, maliasframedesc_t *frame)
+void       *
+Mod_LoadAliasFrame (void *pin, maliasframedesc_t *frame)
 {
-	trivertx_t		*pinframe;
-	int				i;
-	daliasframe_t	*pdaliasframe;
+	trivertx_t *pinframe;
+	int         i;
+	daliasframe_t *pdaliasframe;
 
-	pdaliasframe = (daliasframe_t *)pin;
+	pdaliasframe = (daliasframe_t *) pin;
 
 	strcpy (frame->name, pdaliasframe->name);
 	frame->firstpose = posenum;
 	frame->numposes = 1;
 
-	for (i=0 ; i<3 ; i++)
-	{
-	// these are byte values, so we don't have to worry about
-	// endianness
+	for (i = 0; i < 3; i++) {
+		// these are byte values, so we don't have to worry about
+		// endianness
 		frame->bboxmin.v[i] = pdaliasframe->bboxmin.v[i];
 		frame->bboxmin.v[i] = pdaliasframe->bboxmax.v[i];
 	}
 
-	pinframe = (trivertx_t *)(pdaliasframe + 1);
+	pinframe = (trivertx_t *) (pdaliasframe + 1);
 
 	poseverts[posenum] = pinframe;
 	posenum++;
 
 	pinframe += pheader->mdl.numverts;
 
-	return (void *)pinframe;
+	return (void *) pinframe;
 }
 
 /*
@@ -273,41 +280,42 @@ void * Mod_LoadAliasFrame (void * pin, maliasframedesc_t *frame)
 Mod_LoadAliasGroup
 =================
 */
-void *Mod_LoadAliasGroup (void * pin,  maliasframedesc_t *frame)
+void       *
+Mod_LoadAliasGroup (void *pin, maliasframedesc_t *frame)
 {
-	daliasgroup_t		*pingroup;
-	int					i, numframes;
-	daliasinterval_t	*pin_intervals;
-	void				*ptemp;
+	daliasgroup_t *pingroup;
+	int         i, numframes;
+	daliasinterval_t *pin_intervals;
+	void       *ptemp;
 
-	pingroup = (daliasgroup_t *)pin;
+	pingroup = (daliasgroup_t *) pin;
 
 	numframes = LittleLong (pingroup->numframes);
 
 	frame->firstpose = posenum;
 	frame->numposes = numframes;
 
-	for (i=0 ; i<3 ; i++)
-	{
-	// these are byte values, so we don't have to worry about endianness
+	for (i = 0; i < 3; i++) {
+		// these are byte values, so we don't have to worry about endianness
 		frame->bboxmin.v[i] = pingroup->bboxmin.v[i];
 		frame->bboxmin.v[i] = pingroup->bboxmax.v[i];
 	}
 
-	pin_intervals = (daliasinterval_t *)(pingroup + 1);
+	pin_intervals = (daliasinterval_t *) (pingroup + 1);
 
 	frame->interval = LittleFloat (pin_intervals->interval);
 
 	pin_intervals += numframes;
 
-	ptemp = (void *)pin_intervals;
+	ptemp = (void *) pin_intervals;
 
-	for (i=0 ; i<numframes ; i++)
-	{
-		poseverts[posenum] = (trivertx_t *)((daliasframe_t *)ptemp + 1);
+	for (i = 0; i < numframes; i++) {
+		poseverts[posenum] = (trivertx_t *) ((daliasframe_t *) ptemp + 1);
 		posenum++;
 
-		ptemp = (trivertx_t *)((daliasframe_t *)ptemp + 1) + pheader->mdl.numverts;
+		ptemp =
+			(trivertx_t *) ((daliasframe_t *) ptemp + 1) +
+			pheader->mdl.numverts;
 	}
 
 	return ptemp;

@@ -51,23 +51,26 @@
   Check for the presence of the XFree86-DGA X server extension
 */
 qboolean
-VID_CheckDGA (Display *dpy, int *maj_ver, int *min_ver, int *hasvideo)
+VID_CheckDGA (Display * dpy, int *maj_ver, int *min_ver, int *hasvideo)
 {
 #ifdef HAVE_DGA
-	int event_base, error_base, dgafeat, dummy;
+	int         event_base, error_base, dgafeat, dummy;
 
 	if (!XF86DGAQueryExtension (dpy, &event_base, &error_base)) {
 		return false;
 	}
 
-	if (!maj_ver) maj_ver = &dummy;
-	if (!min_ver) min_ver = &dummy;
+	if (!maj_ver)
+		maj_ver = &dummy;
+	if (!min_ver)
+		min_ver = &dummy;
 
 	if (!XF86DGAQueryVersion (dpy, maj_ver, min_ver)) {
 		return false;
 	}
 
-	if (!hasvideo) hasvideo = &dummy;
+	if (!hasvideo)
+		hasvideo = &dummy;
 
 	if (!XF86DGAQueryDirectVideo (dpy, DefaultScreen (dpy), &dgafeat)) {
 		*hasvideo = 0;
@@ -78,7 +81,7 @@ VID_CheckDGA (Display *dpy, int *maj_ver, int *min_ver, int *hasvideo)
 	return true;
 #else
 	return false;
-#endif	// HAVE_DGA
+#endif // HAVE_DGA
 }
 
 
@@ -88,25 +91,27 @@ VID_CheckDGA (Display *dpy, int *maj_ver, int *min_ver, int *hasvideo)
   Check for the presence of the XFree86-VidMode X server extension
 */
 qboolean
-VID_CheckVMode (Display *dpy, int *maj_ver, int *min_ver)
+VID_CheckVMode (Display * dpy, int *maj_ver, int *min_ver)
 {
 #if defined(HAVE_VIDMODE)
-	int event_base, error_base;
-	int dummy;
+	int         event_base, error_base;
+	int         dummy;
 
-	if (! XF86VidModeQueryExtension(dpy, &event_base, &error_base)) {
+	if (!XF86VidModeQueryExtension (dpy, &event_base, &error_base)) {
 		return false;
 	}
 
-	if (maj_ver == NULL) maj_ver = &dummy;
-	if (min_ver == NULL) min_ver = &dummy;
+	if (maj_ver == NULL)
+		maj_ver = &dummy;
+	if (min_ver == NULL)
+		min_ver = &dummy;
 
-	if (! XF86VidModeQueryVersion(dpy, maj_ver, min_ver)) {
+	if (!XF86VidModeQueryVersion (dpy, maj_ver, min_ver)) {
 		return false;
 	}
 
 	return true;
 #else
 	return false;
-#endif	// HAVE_VIDMODE
+#endif // HAVE_VIDMODE
 }

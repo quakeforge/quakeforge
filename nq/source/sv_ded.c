@@ -38,60 +38,63 @@
 #include "keys.h"
 #include "client.h"
 
-int m_return_state;
-qboolean m_return_onerror;
-char m_return_reason[32];
-enum {m_none, m_main, m_singleplayer, m_load, m_save, m_multiplayer, m_setup, m_net, m_options, m_video, m_keys, m_help, m_quit, m_serialconfig, m_modemconfig, m_lanconfig, m_gameoptions, m_search, m_slist} m_state;
-keydest_t key_dest;
+int         m_return_state;
+qboolean    m_return_onerror;
+char        m_return_reason[32];
+enum { m_none, m_main, m_singleplayer, m_load, m_save, m_multiplayer, m_setup,
+	m_net, m_options, m_video, m_keys, m_help, m_quit, m_serialconfig,
+	m_modemconfig, m_lanconfig, m_gameoptions, m_search, m_slist
+} m_state;
+keydest_t   key_dest;
 client_static_t cls;
 client_state_t cl;
-vec3_t vright,vup,vleft,vpn;
-float scr_centertime_off;
+vec3_t      vright, vup, vleft, vpn;
+float       scr_centertime_off;
 
 void
-Con_Printf(char *fmt, ...)
+Con_Printf (char *fmt, ...)
 {
-	va_list args;
+	va_list     args;
 
-	va_start(args,fmt);
-	vprintf(fmt,args);
-	va_end(args);
+	va_start (args, fmt);
+	vprintf (fmt, args);
+	va_end (args);
 }
 
 void
-Con_DPrintf(char *fmt, ...)
+Con_DPrintf (char *fmt, ...)
 {
-	va_list args;
+	va_list     args;
 
 	if (!developer->int_val)
 		return;
 
-	va_start(args,fmt);
-	vprintf(fmt,args);
-	va_end(args);
+	va_start (args, fmt);
+	vprintf (fmt, args);
+	va_end (args);
 }
 
 void
-SCR_UpdateScreen(void)
+SCR_UpdateScreen (void)
 {
 }
 
 void
-SCR_BeginLoadingPlaque(void)
+SCR_BeginLoadingPlaque (void)
 {
 }
 
 void
-SCR_EndLoadingPlaque(void)
+SCR_EndLoadingPlaque (void)
 {
 }
 
 void
-Draw_BeginDisc(void)
+Draw_BeginDisc (void)
 {
 }
 
 void
-Draw_EndDisc(void)
+Draw_EndDisc (void)
 {
 }

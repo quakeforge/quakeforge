@@ -38,8 +38,8 @@
 #include "game.h"
 #include "cmd.h"
 
-cvar_t	*cmdline;
-int	static_registered = 1;
+cvar_t     *cmdline;
+int         static_registered = 1;
 
 /*
 ================
@@ -51,17 +51,18 @@ Immediately exits out if an alternate game was attempted to be started without
 being registered.
 ================
 */
-void COM_CheckRegistered (void)
+void
+COM_CheckRegistered (void)
 {
-	QFile	*h;
-	unsigned short	check[128];
+	QFile      *h;
+	unsigned short check[128];
 
-	COM_FOpenFile("gfx/pop.lmp", &h);
+	COM_FOpenFile ("gfx/pop.lmp", &h);
 	static_registered = 0;
 
 	if (h) {
 		static_registered = 1;
-		Qread (h, check, sizeof(check));
+		Qread (h, check, sizeof (check));
 		Qclose (h);
 	}
 
@@ -76,28 +77,29 @@ void COM_CheckRegistered (void)
 COM_Init
 ================
 */
-void COM_Init ()
+void
+COM_Init ()
 {
 #ifndef WORDS_BIGENDIAN
-		bigendien = false;
-		BigShort = ShortSwap;
-		LittleShort = ShortNoSwap;
-		BigLong = LongSwap;
-		LittleLong = LongNoSwap;
-		BigFloat = FloatSwap;
-		LittleFloat = FloatNoSwap;
+	bigendien = false;
+	BigShort = ShortSwap;
+	LittleShort = ShortNoSwap;
+	BigLong = LongSwap;
+	LittleLong = LongNoSwap;
+	BigFloat = FloatSwap;
+	LittleFloat = FloatNoSwap;
 #else
-		bigendien = true;
-		BigShort = ShortNoSwap;
-		LittleShort = ShortSwap;
-		BigLong = LongNoSwap;
-		LittleLong = LongSwap;
-		BigFloat = FloatNoSwap;
-		LittleFloat = FloatSwap;
+	bigendien = true;
+	BigShort = ShortNoSwap;
+	LittleShort = ShortSwap;
+	BigLong = LongNoSwap;
+	LittleLong = LongSwap;
+	BigFloat = FloatNoSwap;
+	LittleFloat = FloatSwap;
 #endif
 
-	registered = Cvar_Get("registered", "0", CVAR_NONE, "None");
-	cmdline = Cvar_Get("cmdline", "0", CVAR_SERVERINFO, "None");
+	registered = Cvar_Get ("registered", "0", CVAR_NONE, "None");
+	cmdline = Cvar_Get ("cmdline", "0", CVAR_SERVERINFO, "None");
 	Cmd_AddCommand ("path", COM_Path_f, "No Description");
 
 	COM_Filesystem_Init_Cvars ();

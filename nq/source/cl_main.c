@@ -1,3 +1,4 @@
+
 /*
 	cl_main.c
 
@@ -47,72 +48,100 @@
 // references them even when on a unix system.
 
 // these two are not intended to be set directly
-cvar_t	*cl_name;
-cvar_t	*cl_color;
+cvar_t     *cl_name;
+cvar_t     *cl_color;
 
-cvar_t	*cl_shownet;
-cvar_t	*cl_nolerp;
+cvar_t     *cl_shownet;
+cvar_t     *cl_nolerp;
 
-cvar_t	*cl_sbar;
-cvar_t	*cl_hudswap;
+cvar_t     *cl_sbar;
+cvar_t     *cl_hudswap;
 
-cvar_t	*cl_freelook;
-cvar_t	*lookspring;
-cvar_t	*lookstrafe;
-cvar_t	*sensitivity;
+cvar_t     *cl_freelook;
+cvar_t     *lookspring;
+cvar_t     *lookstrafe;
+cvar_t     *sensitivity;
 
-cvar_t	*m_pitch;
-cvar_t	*m_yaw;
-cvar_t	*m_forward;
-cvar_t	*m_side;
+cvar_t     *m_pitch;
+cvar_t     *m_yaw;
+cvar_t     *m_forward;
+cvar_t     *m_side;
 
-cvar_t	*show_fps;
-cvar_t	*show_time;
+cvar_t     *show_fps;
+cvar_t     *show_time;
 
-int	fps_count;
+int         fps_count;
 
-client_static_t	cls;
-client_state_t	cl;
+client_static_t cls;
+client_state_t cl;
+
 // FIXME: put these on hunk?
-efrag_t			cl_efrags[MAX_EFRAGS];
-entity_t		cl_entities[MAX_EDICTS];
-entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
-lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
-dlight_t		cl_dlights[MAX_DLIGHTS];
+efrag_t     cl_efrags[MAX_EFRAGS];
+entity_t    cl_entities[MAX_EDICTS];
+entity_t    cl_static_entities[MAX_STATIC_ENTITIES];
+lightstyle_t cl_lightstyle[MAX_LIGHTSTYLES];
+dlight_t    cl_dlights[MAX_DLIGHTS];
 
-int				cl_numvisedicts;
-entity_t		*cl_visedicts[MAX_VISEDICTS];
+int         cl_numvisedicts;
+entity_t   *cl_visedicts[MAX_VISEDICTS];
 
 void
-CL_InitCvars(void)
+CL_InitCvars (void)
 {
-	show_fps = Cvar_Get("show_fps", "0", CVAR_NONE, "display realtime frames per second");
-		// Misty: I like to be able to see the time when I play
-	show_time = Cvar_Get("show_time", "0", CVAR_NONE,
-			"display the current time");
-	cl_warncmd = Cvar_Get("cl_warncmd",  "0", CVAR_NONE, "inform when execing a command");
-	cl_name = Cvar_Get("_cl_name", "player", CVAR_ARCHIVE, "Player name");
-	cl_color = Cvar_Get("_cl_color", "0", CVAR_ARCHIVE, "Player color");
-	cl_upspeed = Cvar_Get("cl_upspeed", "200", CVAR_NONE, "swim/fly up/down speed");
-	cl_forwardspeed = Cvar_Get("cl_forwardspeed", "200", CVAR_ARCHIVE, "forward speed");
-	cl_backspeed = Cvar_Get("cl_backspeed", "200", CVAR_ARCHIVE, "backward speed");
-	cl_sidespeed = Cvar_Get("cl_sidespeed", "350", CVAR_NONE, "strafe speed");
-	cl_movespeedkey = Cvar_Get("cl_movespeedkey", "2.0", CVAR_NONE, "move `run' speed multiplier");
-	cl_yawspeed = Cvar_Get("cl_yawspeed", "140", CVAR_NONE, "turning speed");
-	cl_pitchspeed = Cvar_Get("cl_pitchspeed", "150", CVAR_NONE, "look up/down speed");
-	cl_anglespeedkey = Cvar_Get("cl_anglespeedkey", "1.5", CVAR_NONE, "turn `run' speed multiplier");
-	cl_shownet = Cvar_Get("cl_shownet", "0", CVAR_NONE, "show network packets. 0=off, 1=basic, 2=verbose");
-	cl_nolerp = Cvar_Get("cl_nolerp", "0", CVAR_NONE, "linear motion interpolation");
-	cl_sbar = Cvar_Get ("cl_sbar",  "0", CVAR_ARCHIVE, "status bar mode");
-	cl_hudswap = Cvar_Get ("cl_hudswap",  "0", CVAR_ARCHIVE, "new HUD on left side?");
-	cl_freelook = Cvar_Get("freelook", "0", CVAR_ARCHIVE, "force +mlook");
-	lookspring = Cvar_Get("lookspring", "0", CVAR_ARCHIVE, "Snap view to center when moving and no mlook/klook");
-	lookstrafe = Cvar_Get("lookstrafe", "0", CVAR_ARCHIVE, "when mlook/klook on player will strafe");
-	sensitivity = Cvar_Get("sensitivity", "3", CVAR_ARCHIVE, "mouse sensitivity multiplier");
-	m_pitch = Cvar_Get("m_pitch", "0.022", CVAR_ARCHIVE, "mouse pitch (up/down) multipier");
-	m_yaw = Cvar_Get("m_yaw", "0.022", CVAR_ARCHIVE, "mouse yaw (left/right) multipiler");
-	m_forward = Cvar_Get("m_forward", "1", CVAR_ARCHIVE, "mouse forward/back speed");
-	m_side = Cvar_Get("m_side", "0.8", CVAR_ARCHIVE, "mouse strafe speed");
+	show_fps =
+		Cvar_Get ("show_fps", "0", CVAR_NONE,
+				  "display realtime frames per second");
+	// Misty: I like to be able to see the time when I play
+	show_time = Cvar_Get ("show_time", "0", CVAR_NONE,
+						  "display the current time");
+	cl_warncmd =
+		Cvar_Get ("cl_warncmd", "0", CVAR_NONE,
+				  "inform when execing a command");
+	cl_name = Cvar_Get ("_cl_name", "player", CVAR_ARCHIVE, "Player name");
+	cl_color = Cvar_Get ("_cl_color", "0", CVAR_ARCHIVE, "Player color");
+	cl_upspeed =
+		Cvar_Get ("cl_upspeed", "200", CVAR_NONE, "swim/fly up/down speed");
+	cl_forwardspeed =
+		Cvar_Get ("cl_forwardspeed", "200", CVAR_ARCHIVE, "forward speed");
+	cl_backspeed =
+		Cvar_Get ("cl_backspeed", "200", CVAR_ARCHIVE, "backward speed");
+	cl_sidespeed = Cvar_Get ("cl_sidespeed", "350", CVAR_NONE, "strafe speed");
+	cl_movespeedkey =
+		Cvar_Get ("cl_movespeedkey", "2.0", CVAR_NONE,
+				  "move `run' speed multiplier");
+	cl_yawspeed = Cvar_Get ("cl_yawspeed", "140", CVAR_NONE, "turning speed");
+	cl_pitchspeed =
+		Cvar_Get ("cl_pitchspeed", "150", CVAR_NONE, "look up/down speed");
+	cl_anglespeedkey =
+		Cvar_Get ("cl_anglespeedkey", "1.5", CVAR_NONE,
+				  "turn `run' speed multiplier");
+	cl_shownet =
+		Cvar_Get ("cl_shownet", "0", CVAR_NONE,
+				  "show network packets. 0=off, 1=basic, 2=verbose");
+	cl_nolerp =
+		Cvar_Get ("cl_nolerp", "0", CVAR_NONE, "linear motion interpolation");
+	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, "status bar mode");
+	cl_hudswap =
+		Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, "new HUD on left side?");
+	cl_freelook = Cvar_Get ("freelook", "0", CVAR_ARCHIVE, "force +mlook");
+	lookspring =
+		Cvar_Get ("lookspring", "0", CVAR_ARCHIVE,
+				  "Snap view to center when moving and no mlook/klook");
+	lookstrafe =
+		Cvar_Get ("lookstrafe", "0", CVAR_ARCHIVE,
+				  "when mlook/klook on player will strafe");
+	sensitivity =
+		Cvar_Get ("sensitivity", "3", CVAR_ARCHIVE,
+				  "mouse sensitivity multiplier");
+	m_pitch =
+		Cvar_Get ("m_pitch", "0.022", CVAR_ARCHIVE,
+				  "mouse pitch (up/down) multipier");
+	m_yaw =
+		Cvar_Get ("m_yaw", "0.022", CVAR_ARCHIVE,
+				  "mouse yaw (left/right) multipiler");
+	m_forward =
+		Cvar_Get ("m_forward", "1", CVAR_ARCHIVE, "mouse forward/back speed");
+	m_side = Cvar_Get ("m_side", "0.8", CVAR_ARCHIVE, "mouse strafe speed");
 }
 
 /*
@@ -121,32 +150,33 @@ CL_ClearState
 
 =====================
 */
-void CL_ClearState (void)
+void
+CL_ClearState (void)
 {
-	int			i;
+	int         i;
 
 	if (!sv.active)
 		Host_ClearMemory ();
 
 // wipe the entire cl structure
-	memset (&cl, 0, sizeof(cl));
+	memset (&cl, 0, sizeof (cl));
 
 	SZ_Clear (&cls.message);
 
-// clear other arrays	
-	memset (cl_efrags, 0, sizeof(cl_efrags));
-	memset (cl_entities, 0, sizeof(cl_entities));
-	memset (cl_dlights, 0, sizeof(cl_dlights));
-	memset (cl_lightstyle, 0, sizeof(cl_lightstyle));
-	memset (cl_temp_entities, 0, sizeof(cl_temp_entities));
-	memset (cl_beams, 0, sizeof(cl_beams));
+// clear other arrays   
+	memset (cl_efrags, 0, sizeof (cl_efrags));
+	memset (cl_entities, 0, sizeof (cl_entities));
+	memset (cl_dlights, 0, sizeof (cl_dlights));
+	memset (cl_lightstyle, 0, sizeof (cl_lightstyle));
+	memset (cl_temp_entities, 0, sizeof (cl_temp_entities));
+	memset (cl_beams, 0, sizeof (cl_beams));
 
 //
 // allocate the efrags and chain together into a free list
 //
 	cl.free_efrags = cl_efrags;
-	for (i=0 ; i<MAX_EFRAGS-1 ; i++)
-		cl.free_efrags[i].entnext = &cl.free_efrags[i+1];
+	for (i = 0; i < MAX_EFRAGS - 1; i++)
+		cl.free_efrags[i].entnext = &cl.free_efrags[i + 1];
 	cl.free_efrags[i].entnext = NULL;
 }
 
@@ -158,19 +188,19 @@ Sends a disconnect message to the server
 This is also called on Host_Error, so it shouldn't cause any errors
 =====================
 */
-void CL_Disconnect (void)
+void
+CL_Disconnect (void)
 {
 // stop sounds (especially looping!)
 	S_StopAllSounds (true);
-	
+
 // bring the console down and fade the colors back to normal
-//	SCR_BringDownConsole ();
+//  SCR_BringDownConsole ();
 
 // if running a local server, shut it down
 	if (cls.demoplayback)
 		CL_StopPlayback ();
-	else if (cls.state == ca_connected)
-	{
+	else if (cls.state == ca_connected) {
 		if (cls.demorecording)
 			CL_Stop_f ();
 
@@ -183,14 +213,15 @@ void CL_Disconnect (void)
 
 		cls.state = ca_disconnected;
 		if (sv.active)
-			Host_ShutdownServer(false);
+			Host_ShutdownServer (false);
 	}
 
 	cls.demoplayback = cls.timedemo = false;
 	cls.signon = 0;
 }
 
-void CL_Disconnect_f (void)
+void
+CL_Disconnect_f (void)
 {
 	CL_Disconnect ();
 	if (sv.active)
@@ -207,7 +238,8 @@ CL_EstablishConnection
 Host should be either "local" or a net address to be passed on
 =====================
 */
-void CL_EstablishConnection (char *host)
+void
+CL_EstablishConnection (char *host)
 {
 	if (cls.state == ca_dedicated)
 		return;
@@ -221,10 +253,11 @@ void CL_EstablishConnection (char *host)
 	if (!cls.netcon)
 		Host_Error ("CL_Connect: connect failed\n");
 	Con_DPrintf ("CL_EstablishConnection: connected to %s\n", host);
-	
-	cls.demonum = -1;			// not in the demo loop now
+
+	cls.demonum = -1;					// not in the demo loop now
 	cls.state = ca_connected;
-	cls.signon = 0;				// need all the signon messages before playing
+	cls.signon = 0;						// need all the signon messages
+	// before playing
 }
 
 /*
@@ -234,38 +267,40 @@ CL_SignonReply
 An svc_signonnum has been received, perform a client side setup
 =====================
 */
-void CL_SignonReply (void)
+void
+CL_SignonReply (void)
 {
-	char 	str[8192];
+	char        str[8192];
 
-Con_DPrintf ("CL_SignonReply: %i\n", cls.signon);
+	Con_DPrintf ("CL_SignonReply: %i\n", cls.signon);
 
-	switch (cls.signon)
-	{
-	case 1:
+	switch (cls.signon) {
+		case 1:
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message, "prespawn");
 		break;
-		
-	case 2:		
+
+		case 2:
 		MSG_WriteByte (&cls.message, clc_stringcmd);
-		MSG_WriteString (&cls.message, va("name \"%s\"\n", cl_name->string));
-	
+		MSG_WriteString (&cls.message, va ("name \"%s\"\n", cl_name->string));
+
 		MSG_WriteByte (&cls.message, clc_stringcmd);
-		MSG_WriteString (&cls.message, va("color %i %i\n", (cl_color->int_val)>>4, (cl_color->int_val)&15));
-	
+		MSG_WriteString (&cls.message,
+						 va ("color %i %i\n", (cl_color->int_val) >> 4,
+							 (cl_color->int_val) & 15));
+
 		MSG_WriteByte (&cls.message, clc_stringcmd);
-		snprintf (str, sizeof(str), "spawn %s", cls.spawnparms);
+		snprintf (str, sizeof (str), "spawn %s", cls.spawnparms);
 		MSG_WriteString (&cls.message, str);
 		break;
-		
-	case 3:	
+
+		case 3:
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message, "begin");
-		Cache_Report ();		// print remaining memory
+		Cache_Report ();				// print remaining memory
 		break;
-		
-	case 4:
+
+		case 4:
 		SCR_EndLoadingPlaque ();		// allow normal screen updates
 		break;
 	}
@@ -278,27 +313,26 @@ CL_NextDemo
 Called to play the next demo in the demo loop
 =====================
 */
-void CL_NextDemo (void)
+void
+CL_NextDemo (void)
 {
-	char	str[1024];
+	char        str[1024];
 
 	if (cls.demonum == -1)
-		return;		// don't play demos
+		return;							// don't play demos
 
 	SCR_BeginLoadingPlaque ();
 
-	if (!cls.demos[cls.demonum][0] || cls.demonum == MAX_DEMOS)
-	{
+	if (!cls.demos[cls.demonum][0] || cls.demonum == MAX_DEMOS) {
 		cls.demonum = 0;
-		if (!cls.demos[cls.demonum][0])
-		{
+		if (!cls.demos[cls.demonum][0]) {
 			Con_Printf ("No demos listed with startdemos\n");
 			cls.demonum = -1;
 			return;
 		}
 	}
 
-	snprintf (str, sizeof(str), "playdemo %s\n", cls.demos[cls.demonum]);
+	snprintf (str, sizeof (str), "playdemo %s\n", cls.demos[cls.demonum]);
 	Cbuf_InsertText (str);
 	cls.demonum++;
 }
@@ -308,21 +342,22 @@ void CL_NextDemo (void)
 CL_PrintEntities_f
 ==============
 */
-void CL_PrintEntities_f (void)
+void
+CL_PrintEntities_f (void)
 {
-	entity_t	*ent;
-	int			i;
-	
-	for (i=0,ent=cl_entities ; i<cl.num_entities ; i++,ent++)
-	{
-		Con_Printf ("%3i:",i);
-		if (!ent->model)
-		{
+	entity_t   *ent;
+	int         i;
+
+	for (i = 0, ent = cl_entities; i < cl.num_entities; i++, ent++) {
+		Con_Printf ("%3i:", i);
+		if (!ent->model) {
 			Con_Printf ("EMPTY\n");
 			continue;
 		}
-		Con_Printf ("%s:%2i  (%5.1f,%5.1f,%5.1f) [%5.1f %5.1f %5.1f]\n"
-		,ent->model->name,ent->frame, ent->origin[0], ent->origin[1], ent->origin[2], ent->angles[0], ent->angles[1], ent->angles[2]);
+		Con_Printf ("%s:%2i  (%5.1f,%5.1f,%5.1f) [%5.1f %5.1f %5.1f]\n",
+					ent->model->name, ent->frame, ent->origin[0],
+					ent->origin[1], ent->origin[2], ent->angles[0],
+					ent->angles[1], ent->angles[2]);
 	}
 }
 
@@ -334,36 +369,32 @@ SetPal
 Debugging tool, just flashes the screen
 ===============
 */
-void SetPal (int i)
+void
+SetPal (int i)
 {
 #if 0
-	static int old;
-	byte	pal[768];
-	int		c;
-	
+	static int  old;
+	byte        pal[768];
+	int         c;
+
 	if (i == old)
 		return;
 	old = i;
 
-	if (i==0)
+	if (i == 0)
 		VID_SetPalette (host_basepal);
-	else if (i==1)
-	{
-		for (c=0 ; c<768 ; c+=3)
-		{
+	else if (i == 1) {
+		for (c = 0; c < 768; c += 3) {
 			pal[c] = 0;
-			pal[c+1] = 255;
-			pal[c+2] = 0;
+			pal[c + 1] = 255;
+			pal[c + 2] = 0;
 		}
 		VID_SetPalette (pal);
-	}
-	else
-	{
-		for (c=0 ; c<768 ; c+=3)
-		{
+	} else {
+		for (c = 0; c < 768; c += 3) {
 			pal[c] = 0;
-			pal[c+1] = 0;
-			pal[c+2] = 255;
+			pal[c + 1] = 0;
+			pal[c + 2] = 255;
 		}
 		VID_SetPalette (pal);
 	}
@@ -376,34 +407,29 @@ CL_AllocDlight
 
 ===============
 */
-dlight_t *CL_AllocDlight (int key)
+dlight_t   *
+CL_AllocDlight (int key)
 {
-	int		i;
-	dlight_t	*dl;
+	int         i;
+	dlight_t   *dl;
 
 // first look for an exact key match
-	if (key)
-	{
+	if (key) {
 		dl = cl_dlights;
-		for (i=0 ; i<MAX_DLIGHTS ; i++, dl++)
-		{
-			if (dl->key == key)
-			{
-				memset (dl, 0, sizeof(*dl));
+		for (i = 0; i < MAX_DLIGHTS; i++, dl++) {
+			if (dl->key == key) {
+				memset (dl, 0, sizeof (*dl));
 				dl->key = key;
 				dl->color = dl->_color;
 				return dl;
 			}
 		}
 	}
-
 // then look for anything else
 	dl = cl_dlights;
-	for (i=0 ; i<MAX_DLIGHTS ; i++, dl++)
-	{
-		if (dl->die < cl.time)
-		{
-			memset (dl, 0, sizeof(*dl));
+	for (i = 0; i < MAX_DLIGHTS; i++, dl++) {
+		if (dl->die < cl.time) {
+			memset (dl, 0, sizeof (*dl));
 			dl->key = key;
 			dl->color = dl->_color;
 			return dl;
@@ -411,7 +437,7 @@ dlight_t *CL_AllocDlight (int key)
 	}
 
 	dl = &cl_dlights[0];
-	memset (dl, 0, sizeof(*dl));
+	memset (dl, 0, sizeof (*dl));
 	dl->key = key;
 	dl->color = dl->_color;
 	return dl;
@@ -422,10 +448,11 @@ dlight_t *CL_AllocDlight (int key)
 CL_NewDlight
 ===============
 */
-void CL_NewDlight (int key, float x, float y, float z, float radius, float time,
-				   int type)
+void
+CL_NewDlight (int key, float x, float y, float z, float radius, float time,
+			  int type)
 {
-	dlight_t        *dl;
+	dlight_t   *dl;
 
 	dl = CL_AllocDlight (key);
 	dl->origin[0] = x;
@@ -433,29 +460,28 @@ void CL_NewDlight (int key, float x, float y, float z, float radius, float time,
 	dl->origin[2] = z;
 	dl->radius = radius;
 	dl->die = cl.time + time;
-	switch (type)
-	{
+	switch (type) {
 		default:
 		case 0:
-			dl->color[0] = 0.4;
-			dl->color[1] = 0.2;
-			dl->color[2] = 0.05;
-			break;
-		case 1: // blue
-			dl->color[0] = 0.05;
-			dl->color[1] = 0.05;
-			dl->color[2] = 0.5;
-			break;
-		case 2: // red
-			dl->color[0] = 0.5;
-			dl->color[1] = 0.05;
-			dl->color[2] = 0.05;
-			break;
-		case 3: // purple
-			dl->color[0] = 0.5;
-			dl->color[1] = 0.05;
-			dl->color[2] = 0.5;
-			break;
+		dl->color[0] = 0.4;
+		dl->color[1] = 0.2;
+		dl->color[2] = 0.05;
+		break;
+		case 1:						// blue
+		dl->color[0] = 0.05;
+		dl->color[1] = 0.05;
+		dl->color[2] = 0.5;
+		break;
+		case 2:						// red
+		dl->color[0] = 0.5;
+		dl->color[1] = 0.05;
+		dl->color[2] = 0.05;
+		break;
+		case 3:						// purple
+		dl->color[0] = 0.5;
+		dl->color[1] = 0.05;
+		dl->color[2] = 0.5;
+		break;
 	}
 }
 
@@ -465,21 +491,21 @@ CL_DecayLights
 
 ===============
 */
-void CL_DecayLights (void)
+void
+CL_DecayLights (void)
 {
-	int			i;
-	dlight_t	*dl;
-	float		time;
-	
+	int         i;
+	dlight_t   *dl;
+	float       time;
+
 	time = cl.time - cl.oldtime;
 
 	dl = cl_dlights;
-	for (i=0 ; i<MAX_DLIGHTS ; i++, dl++)
-	{
+	for (i = 0; i < MAX_DLIGHTS; i++, dl++) {
 		if (dl->die < cl.time || !dl->radius)
 			continue;
-		
-		dl->radius -= time*dl->decay;
+
+		dl->radius -= time * dl->decay;
 		if (dl->radius < 0)
 			dl->radius = 0;
 	}
@@ -494,48 +520,41 @@ Determines the fraction between the last two messages that the objects
 should be put at.
 ===============
 */
-float	CL_LerpPoint (void)
+float
+CL_LerpPoint (void)
 {
-	float	f, frac;
+	float       f, frac;
 
 	f = cl.mtime[0] - cl.mtime[1];
-	
-	if (!f || cl_nolerp->int_val || cls.timedemo || sv.active)
-	{
+
+	if (!f || cl_nolerp->int_val || cls.timedemo || sv.active) {
 		cl.time = cl.mtime[0];
 		return 1;
 	}
-		
-	if (f > 0.1)
-	{	// dropped packet, or start of demo
+
+	if (f > 0.1) {						// dropped packet, or start of demo
 		cl.mtime[1] = cl.mtime[0] - 0.1;
 		f = 0.1;
 	}
 	frac = (cl.time - cl.mtime[1]) / f;
 //Con_Printf ("frac: %f\n",frac);
-	if (frac < 0)
-	{
-		if (frac < -0.01)
-		{
-SetPal(1);
+	if (frac < 0) {
+		if (frac < -0.01) {
+			SetPal (1);
 			cl.time = cl.mtime[1];
-//				Con_Printf ("low frac\n");
+//              Con_Printf ("low frac\n");
 		}
 		frac = 0;
-	}
-	else if (frac > 1)
-	{
-		if (frac > 1.01)
-		{
-SetPal(2);
+	} else if (frac > 1) {
+		if (frac > 1.01) {
+			SetPal (2);
 			cl.time = cl.mtime[0];
-//				Con_Printf ("high frac\n");
+//              Con_Printf ("high frac\n");
 		}
 		frac = 1;
-	}
-	else
-		SetPal(0);
-		
+	} else
+		SetPal (0);
+
 	return frac;
 }
 
@@ -545,17 +564,18 @@ SetPal(2);
 CL_RelinkEntities
 ===============
 */
-void CL_RelinkEntities (void)
+void
+CL_RelinkEntities (void)
 {
-	entity_t	*ent;
-	int			i, j;
-	float		frac, f, d;
-	vec3_t		delta;
-	float		bobjrotate;
-	vec3_t		oldorg;
-	dlight_t	*dl;
+	entity_t   *ent;
+	int         i, j;
+	float       frac, f, d;
+	vec3_t      delta;
+	float       bobjrotate;
+	vec3_t      oldorg;
+	dlight_t   *dl;
 
-// determine partial update time	
+// determine partial update time    
 	frac = CL_LerpPoint ();
 
 	cl_numvisedicts = 0;
@@ -563,74 +583,66 @@ void CL_RelinkEntities (void)
 //
 // interpolate player info
 //
-	for (i=0 ; i<3 ; i++)
-		cl.velocity[i] = cl.mvelocity[1][i] + 
+	for (i = 0; i < 3; i++)
+		cl.velocity[i] = cl.mvelocity[1][i] +
 			frac * (cl.mvelocity[0][i] - cl.mvelocity[1][i]);
 
-	if (cls.demoplayback)
-	{
-	// interpolate the angles	
-		for (j=0 ; j<3 ; j++)
-		{
+	if (cls.demoplayback) {
+		// interpolate the angles   
+		for (j = 0; j < 3; j++) {
 			d = cl.mviewangles[0][j] - cl.mviewangles[1][j];
 			if (d > 180)
 				d -= 360;
 			else if (d < -180)
 				d += 360;
-			cl.viewangles[j] = cl.mviewangles[1][j] + frac*d;
+			cl.viewangles[j] = cl.mviewangles[1][j] + frac * d;
 		}
 	}
-	
-	bobjrotate = anglemod(100*cl.time);
-	
+
+	bobjrotate = anglemod (100 * cl.time);
+
 // start on the entity after the world
-	for (i=1,ent=cl_entities+1 ; i<cl.num_entities ; i++,ent++)
-	{
-		if (!ent->model)
-		{	// empty slot
+	for (i = 1, ent = cl_entities + 1; i < cl.num_entities; i++, ent++) {
+		if (!ent->model) {				// empty slot
 			if (ent->forcelink)
 				R_RemoveEfrags (ent);	// just became empty
 			continue;
 		}
-
 // if the object wasn't included in the last packet, remove it
-		if (ent->msgtime != cl.mtime[0])
-		{
+		if (ent->msgtime != cl.mtime[0]) {
 			ent->model = NULL;
 			continue;
 		}
 
 		VectorCopy (ent->origin, oldorg);
 
-		if (ent->forcelink)
-		{	// the entity was not updated in the last message
+		if (ent->forcelink) {			// the entity was not updated in the
+			// last message
 			// so move to the final spot
 			VectorCopy (ent->msg_origins[0], ent->origin);
 			VectorCopy (ent->msg_angles[0], ent->angles);
-		}
-		else
-		{	// if the delta is large, assume a teleport and don't lerp
+		} else {						// if the delta is large, assume a
+			// teleport and don't lerp
 			f = frac;
-			for (j=0 ; j<3 ; j++)
-			{
+			for (j = 0; j < 3; j++) {
 				delta[j] = ent->msg_origins[0][j] - ent->msg_origins[1][j];
 				if (delta[j] > 100 || delta[j] < -100)
-					f = 1;		// assume a teleportation, not a motion
+					f = 1;				// assume a teleportation, not a
+				// motion
 			}
 
-		// interpolate the origin and angles
-			for (j=0 ; j<3 ; j++)
-			{
-				ent->origin[j] = ent->msg_origins[1][j] + f*delta[j];
+			// interpolate the origin and angles
+			for (j = 0; j < 3; j++) {
+				ent->origin[j] = ent->msg_origins[1][j] + f * delta[j];
 
 				d = ent->msg_angles[0][j] - ent->msg_angles[1][j];
 				if (d > 180)
 					d -= 360;
 				else if (d < -180)
 					d += 360;
-				ent->angles[j] = ent->msg_angles[1][j] + f*d;
+				ent->angles[j] = ent->msg_angles[1][j] + f * d;
 			}
-			
+
 		}
 
 // rotate binary objects locally
@@ -643,17 +655,16 @@ void CL_RelinkEntities (void)
 		if (ent->effects & EF_DARKFIELD)
 			R_DarkFieldParticles (ent);
 #endif
-		if (ent->effects & EF_MUZZLEFLASH)
-		{
-			vec3_t		fv, rv, uv;
+		if (ent->effects & EF_MUZZLEFLASH) {
+			vec3_t      fv, rv, uv;
 
 			dl = CL_AllocDlight (i);
-			VectorCopy (ent->origin,  dl->origin);
+			VectorCopy (ent->origin, dl->origin);
 			dl->origin[2] += 16;
 			AngleVectors (ent->angles, fv, rv, uv);
-			 
+
 			VectorMA (dl->origin, 18, fv, dl->origin);
-			dl->radius = 200 + (rand()&31);
+			dl->radius = 200 + (rand () & 31);
 			dl->minlight = 32;
 			dl->die = cl.time + 0.1;
 			dl->color[0] = 0.2;
@@ -661,28 +672,31 @@ void CL_RelinkEntities (void)
 			dl->color[2] = 0.05;
 		}
 		if ((ent->effects & (EF_BLUE | EF_RED)) == (EF_BLUE | EF_RED))
-			CL_NewDlight (i, ent->origin[0], ent->origin[1], ent->origin[2], 200 + (rand()&31), 0.1, 3);
+			CL_NewDlight (i, ent->origin[0], ent->origin[1], ent->origin[2],
+						  200 + (rand () & 31), 0.1, 3);
 		if (ent->effects & EF_BLUE)
-			CL_NewDlight (i, ent->origin[0], ent->origin[1], ent->origin[2], 200 + (rand()&31), 0.1, 1);
+			CL_NewDlight (i, ent->origin[0], ent->origin[1], ent->origin[2],
+						  200 + (rand () & 31), 0.1, 1);
 		if (ent->effects & EF_RED)
-			CL_NewDlight (i, ent->origin[0], ent->origin[1], ent->origin[2], 200 + (rand()&31), 0.1, 2);
+			CL_NewDlight (i, ent->origin[0], ent->origin[1], ent->origin[2],
+						  200 + (rand () & 31), 0.1, 2);
 		if (ent->effects & EF_BRIGHTLIGHT)
-			CL_NewDlight (i, ent->origin[0], ent->origin[1], ent->origin[2] + 16, 400 + (rand()&31), 0.001, 0);
+			CL_NewDlight (i, ent->origin[0], ent->origin[1],
+						  ent->origin[2] + 16, 400 + (rand () & 31), 0.001, 0);
 		if (ent->effects & EF_DIMLIGHT)
-			CL_NewDlight (i, ent->origin[0], ent->origin[1], ent->origin[2], 200 + (rand()&31), 0.001, 0);
+			CL_NewDlight (i, ent->origin[0], ent->origin[1], ent->origin[2],
+						  200 + (rand () & 31), 0.001, 0);
 #ifdef QUAKE2
-		if (ent->effects & EF_DARKLIGHT)
-		{
+		if (ent->effects & EF_DARKLIGHT) {
 			dl = CL_AllocDlight (i);
-			VectorCopy (ent->origin,  dl->origin);
-			dl->radius = 200.0 + (rand()&31);
+			VectorCopy (ent->origin, dl->origin);
+			dl->radius = 200.0 + (rand () & 31);
 			dl->die = cl.time + 0.001;
 			dl->dark = true;
 		}
-		if (ent->effects & EF_LIGHT)
-		{
+		if (ent->effects & EF_LIGHT) {
 			dl = CL_AllocDlight (i);
-			VectorCopy (ent->origin,  dl->origin);
+			VectorCopy (ent->origin, dl->origin);
 			dl->radius = 200;
 			dl->die = cl.time + 0.001;
 		}
@@ -696,15 +710,13 @@ void CL_RelinkEntities (void)
 			R_RocketTrail (oldorg, ent->origin, 3, ent);
 		else if (ent->model->flags & EF_TRACER2)
 			R_RocketTrail (oldorg, ent->origin, 5, ent);
-		else if (ent->model->flags & EF_ROCKET)
-		{
+		else if (ent->model->flags & EF_ROCKET) {
 			R_RocketTrail (oldorg, ent->origin, 0, ent);
 			dl = CL_AllocDlight (i);
 			VectorCopy (ent->origin, dl->origin);
 			dl->radius = 200;
 			dl->die = cl.time + 0.01;
-		}
-		else if (ent->model->flags & EF_GRENADE)
+		} else if (ent->model->flags & EF_GRENADE)
 			R_RocketTrail (oldorg, ent->origin, 1, ent);
 		else if (ent->model->flags & EF_TRACER3)
 			R_RocketTrail (oldorg, ent->origin, 6, ent);
@@ -715,11 +727,10 @@ void CL_RelinkEntities (void)
 			continue;
 
 #ifdef QUAKE2
-		if ( ent->effects & EF_NODRAW )
+		if (ent->effects & EF_NODRAW)
 			continue;
 #endif
-		if (cl_numvisedicts < MAX_VISEDICTS)
-		{
+		if (cl_numvisedicts < MAX_VISEDICTS) {
 			cl_visedicts[cl_numvisedicts] = ent;
 			cl_numvisedicts++;
 		}
@@ -735,25 +746,25 @@ CL_ReadFromServer
 Read all incoming data from the server
 ===============
 */
-int CL_ReadFromServer (void)
+int
+CL_ReadFromServer (void)
 {
-	int		ret;
+	int         ret;
 
 	cl.oldtime = cl.time;
 	cl.time += host_frametime;
-	
-	do
-	{
+
+	do {
 		ret = CL_GetMessage ();
 		if (ret == -1)
 			Host_Error ("CL_ReadFromServer: lost server connection");
 		if (!ret)
 			break;
-		
+
 		cl.last_received_message = realtime;
 		CL_ParseServerMessage ();
 	} while (ret && cls.state == ca_connected);
-	
+
 	if (cl_shownet->int_val)
 		Con_Printf ("\n");
 
@@ -771,38 +782,35 @@ int CL_ReadFromServer (void)
 CL_SendCmd
 =================
 */
-void CL_SendCmd (void)
+void
+CL_SendCmd (void)
 {
-	usercmd_t		cmd;
+	usercmd_t   cmd;
 
 	if (cls.state != ca_connected)
 		return;
 
-	if (cls.signon == SIGNONS)
-	{
-	// get basic movement from keyboard
+	if (cls.signon == SIGNONS) {
+		// get basic movement from keyboard
 		CL_BaseMove (&cmd);
-	
-	// allow mice or other external controllers to add to the move
+
+		// allow mice or other external controllers to add to the move
 		IN_Move (&cmd);
-	
-	// send the unreliable message
+
+		// send the unreliable message
 		CL_SendMove (&cmd);
-	
+
 	}
 
-	if (cls.demoplayback)
-	{
+	if (cls.demoplayback) {
 		SZ_Clear (&cls.message);
 		return;
 	}
-	
 // send the reliable message
 	if (!cls.message.cursize)
-		return;		// no message at all
-	
-	if (!NET_CanSendMessage (cls.netcon))
-	{
+		return;							// no message at all
+
+	if (!NET_CanSendMessage (cls.netcon)) {
 		Con_DPrintf ("CL_WriteToServer: can't send\n");
 		return;
 	}
@@ -818,8 +826,9 @@ void CL_SendCmd (void)
 CL_Init
 =================
 */
-void CL_Init (void)
-{	
+void
+CL_Init (void)
+{
 	SZ_Alloc (&cls.message, 1024);
 
 	CL_InitInput ();
@@ -833,5 +842,3 @@ void CL_Init (void)
 	Cmd_AddCommand ("timedemo", CL_TimeDemo_f, "No Description");
 	Cmd_AddCommand ("maplist", COM_Maplist_f, "No Description");
 }
-	
-

@@ -1,3 +1,4 @@
+
 /*
 	view.c
 
@@ -44,70 +45,68 @@
 void
 V_UpdatePalette (void)
 {
-	int		i, j;
-	qboolean	new;
-	byte	*basepal, *newpal;
-	byte	pal[768];
-	int		r,g,b;
-	qboolean force;
+	int         i, j;
+	qboolean    new;
+	byte       *basepal, *newpal;
+	byte        pal[768];
+	int         r, g, b;
+	qboolean    force;
 
 	V_CalcPowerupCshift ();
-	
+
 	new = false;
-	
-	for (i=0 ; i<NUM_CSHIFTS ; i++)
-	{
-		if (cl.cshifts[i].percent != cl.prev_cshifts[i].percent)
-		{
+
+	for (i = 0; i < NUM_CSHIFTS; i++) {
+		if (cl.cshifts[i].percent != cl.prev_cshifts[i].percent) {
 			new = true;
 			cl.prev_cshifts[i].percent = cl.cshifts[i].percent;
 		}
-		for (j=0 ; j<3 ; j++)
-			if (cl.cshifts[i].destcolor[j] != cl.prev_cshifts[i].destcolor[j])
-			{
+		for (j = 0; j < 3; j++)
+			if (cl.cshifts[i].destcolor[j] != cl.prev_cshifts[i].destcolor[j]) {
 				new = true;
 				cl.prev_cshifts[i].destcolor[j] = cl.cshifts[i].destcolor[j];
 			}
 	}
-	
+
 // drop the damage value
-	cl.cshifts[CSHIFT_DAMAGE].percent -= host_frametime*150;
+	cl.cshifts[CSHIFT_DAMAGE].percent -= host_frametime * 150;
 	if (cl.cshifts[CSHIFT_DAMAGE].percent <= 0)
 		cl.cshifts[CSHIFT_DAMAGE].percent = 0;
 
 // drop the bonus value
-	cl.cshifts[CSHIFT_BONUS].percent -= host_frametime*100;
+	cl.cshifts[CSHIFT_BONUS].percent -= host_frametime * 100;
 	if (cl.cshifts[CSHIFT_BONUS].percent <= 0)
 		cl.cshifts[CSHIFT_BONUS].percent = 0;
 
 	force = V_CheckGamma ();
 	if (!new && !force)
 		return;
-			
+
 	basepal = host_basepal;
 	newpal = pal;
-	
-	for (i=0 ; i<256 ; i++)
-	{
+
+	for (i = 0; i < 256; i++) {
 		r = basepal[0];
 		g = basepal[1];
 		b = basepal[2];
 		basepal += 3;
-	
-		for (j=0 ; j<NUM_CSHIFTS ; j++)	
-		{
-			r += (cl.cshifts[j].percent*(cl.cshifts[j].destcolor[0]-r))>>8;
-			g += (cl.cshifts[j].percent*(cl.cshifts[j].destcolor[1]-g))>>8;
-			b += (cl.cshifts[j].percent*(cl.cshifts[j].destcolor[2]-b))>>8;
+
+		for (j = 0; j < NUM_CSHIFTS; j++) {
+			r +=
+				(cl.cshifts[j].percent * (cl.cshifts[j].destcolor[0] - r)) >> 8;
+			g +=
+				(cl.cshifts[j].percent * (cl.cshifts[j].destcolor[1] - g)) >> 8;
+			b +=
+				(cl.cshifts[j].percent * (cl.cshifts[j].destcolor[2] - b)) >> 8;
 		}
-		
+
 		newpal[0] = gammatable[r];
 		newpal[1] = gammatable[g];
 		newpal[2] = gammatable[b];
 		newpal += 3;
 	}
 
-	VID_ShiftPalette (pal);	
+	VID_ShiftPalette (pal);
 }
 
 /*
@@ -118,28 +117,26 @@ The player's clipping box goes from (-16 -16 -24) to (16 16 32) from
 the entity origin, so any view position inside that will be valid
 ==================
 */
-extern vrect_t	scr_vrect;
+extern vrect_t scr_vrect;
 
-void V_RenderView (void)
+void
+V_RenderView (void)
 {
 	if (!cl.worldmodel || cls.signon != SIGNONS)
 		return;
 
 // don't allow cheats in multiplayer
-	if (cl.maxclients > 1)
-	{
-		Cvar_Set(scr_ofsx, "0");
-		Cvar_Set(scr_ofsy, "0");
-		Cvar_Set(scr_ofsz, "0");
+	if (cl.maxclients > 1) {
+		Cvar_Set (scr_ofsx, "0");
+		Cvar_Set (scr_ofsy, "0");
+		Cvar_Set (scr_ofsz, "0");
 	}
 
-	if (cl.intermission)
-	{	// intermission / finale rendering
-		V_CalcIntermissionRefdef ();	
-	}
-	else
-	{
-		if (!cl.paused /* && (sv.maxclients > 1 || key_dest == key_game) */ )
+	if (cl.intermission) {				// intermission / finale rendering
+		V_CalcIntermissionRefdef ();
+	} else {
+		if (!cl.paused					/* && (sv.maxclients > 1 || key_dest
+										   == key_game) */ )
 			V_CalcRefdef ();
 	}
 
@@ -148,22 +145,22 @@ void V_RenderView (void)
 	R_RenderView ();
 
 	if (crosshair->int_val)
-		Draw_Crosshair();
+		Draw_Crosshair ();
 }
 
 void
 BuildGammaTable (float b, float c)
 {
-	int		i, j;
-	int 	inf = 0;
-	
+	int         i, j;
+	int         inf = 0;
+
 	if ((b == 1.0) && (c == 1.0)) {
 		for (i = 0; i < 256; i++)
 			gammatable[i] = i;
 		return;
 	}
-	
-	for (i=0 ; i<256 ; i++) {
+
+	for (i = 0; i < 256; i++) {
 		if (!(i == 128)) {
 			if (i < 128) {
 				j = i + (int) ((128 - i) * (1 - c));
@@ -173,9 +170,9 @@ BuildGammaTable (float b, float c)
 		} else {
 			j = i;
 		}
-		inf = (j * b);	// gamma is brightness now, and positive
-		inf = bound(0, inf, 255);
+		inf = (j * b);					// gamma is brightness now, and
+		// positive
+		inf = bound (0, inf, 255);
 		gammatable[i] = inf;
 	}
 }
-

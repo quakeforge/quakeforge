@@ -1,3 +1,4 @@
+
 /*
 	keys.c
 
@@ -72,8 +73,20 @@ keydest_t   key_dest;
 char       *keybindings[256];
 qboolean    consolekeys[256];			// if true, can't be rebound while in 
 
+										// 
+
+										// 
+
+										// 
+
 										// console
 qboolean    menubound[256];				// if true, can't be rebound while in 
+
+										// 
+
+										// 
+
+										// 
 
 										// menu
 int         keyshift[256];				// key to map to if shift held down
@@ -204,7 +217,7 @@ keyname_t   keynames[] = {
 	{"MWHEELDOWN", K_MWHEELDOWN},
 
 	{"SEMICOLON", ';'},					// because a raw semicolon seperates
-										// commands
+	// commands
 
 	{NULL, 0}
 };
@@ -277,123 +290,123 @@ Key_Console (int key)
 
 	switch (key) {
 		case K_ENTER:
-			// backslash text are commands
-			if (key_lines[edit_line][1] == '/'
-				&& key_lines[edit_line][2] == '/') goto no_lf;
-			else if (key_lines[edit_line][1] == '\\'
-					 || key_lines[edit_line][1] == '/')
+		// backslash text are commands
+		if (key_lines[edit_line][1] == '/' && key_lines[edit_line][2] == '/')
+			goto no_lf;
+		else if (key_lines[edit_line][1] == '\\'
+				 || key_lines[edit_line][1] == '/')
 				Cbuf_AddText (key_lines[edit_line] + 2);	// skip the ]/
-			else if (cl_chatmode->int_val != 1 && CheckForCommand ())
-				Cbuf_AddText (key_lines[edit_line] + 1);	// valid command
-			else if ((cls.state >= ca_connected && cl_chatmode->int_val == 2)
-					 || cl_chatmode->int_val == 1) {
-				if (cls.state < ca_connected)	// can happen if cl_chatmode
-												// is 1
-					goto no_lf;			// the text goes to /dev/null :)
+		else if (cl_chatmode->int_val != 1 && CheckForCommand ())
+			Cbuf_AddText (key_lines[edit_line] + 1);	// valid command
+		else if ((cls.state >= ca_connected && cl_chatmode->int_val == 2)
+				 || cl_chatmode->int_val == 1) {
+			if (cls.state < ca_connected)	// can happen if cl_chatmode
+				// is 1
+				goto no_lf;				// the text goes to /dev/null :)
 
-				// convert to a chat message
-				Cbuf_AddText ("say ");
-				Cbuf_AddText (key_lines[edit_line] + 1);
-			} else
-				Cbuf_AddText (key_lines[edit_line] + 1);	// skip the ]
+			// convert to a chat message
+			Cbuf_AddText ("say ");
+			Cbuf_AddText (key_lines[edit_line] + 1);
+		} else
+			Cbuf_AddText (key_lines[edit_line] + 1);	// skip the ]
 
-			Cbuf_AddText ("\n");
-		  no_lf:
-			Con_Printf ("%s\n", key_lines[edit_line]);
-			edit_line = (edit_line + 1) & 31;
-			history_line = edit_line;
+		Cbuf_AddText ("\n");
+	  no_lf:
+		Con_Printf ("%s\n", key_lines[edit_line]);
+		edit_line = (edit_line + 1) & 31;
+		history_line = edit_line;
+		key_lines[edit_line][0] = ']';
+		key_lines[edit_line][1] = 0;
+		key_linepos = 1;
+		if (cls.state == ca_disconnected)
+			SCR_UpdateScreen ();		// force an update, because the
+		// command
+		// may take some time
+		return;
+
+		case K_TAB:
+		// command completion
+		CompleteCommand ();
+		return;
+
+		case K_BACKSPACE:
+		if (key_linepos > 1) {
+			strcpy (key_lines[edit_line] + key_linepos - 1,
+					key_lines[edit_line] + key_linepos);
+			key_linepos--;
+		}
+		return;
+
+		case K_DEL:
+		if (key_linepos < strlen (key_lines[edit_line]))
+			strcpy (key_lines[edit_line] + key_linepos,
+					key_lines[edit_line] + key_linepos + 1);
+		return;
+
+		case K_RIGHTARROW:
+		if (key_linepos < strlen (key_lines[edit_line]))
+			key_linepos++;
+		return;
+
+		case K_LEFTARROW:
+		if (key_linepos > 1)
+			key_linepos--;
+		return;
+
+		case K_UPARROW:
+		do {
+			history_line = (history_line - 1) & 31;
+		} while (history_line != edit_line && !key_lines[history_line][1]);
+		if (history_line == edit_line)
+			history_line = (edit_line + 1) & 31;
+		strcpy (key_lines[edit_line], key_lines[history_line]);
+		key_linepos = strlen (key_lines[edit_line]);
+		return;
+
+		case K_DOWNARROW:
+		if (history_line == edit_line)
+			return;
+		do {
+			history_line = (history_line + 1) & 31;
+		} while (history_line != edit_line && !key_lines[history_line][1]);
+
+		if (history_line == edit_line) {
 			key_lines[edit_line][0] = ']';
 			key_lines[edit_line][1] = 0;
 			key_linepos = 1;
-			if (cls.state == ca_disconnected)
-				SCR_UpdateScreen ();	// force an update, because the
-										// command
-			// may take some time
-			return;
-
-		case K_TAB:
-			// command completion
-			CompleteCommand ();
-			return;
-
-		case K_BACKSPACE:
-			if (key_linepos > 1) {
-				strcpy (key_lines[edit_line] + key_linepos - 1,
-						key_lines[edit_line] + key_linepos);
-				key_linepos--;
-			}
-			return;
-
-		case K_DEL:
-			if (key_linepos < strlen (key_lines[edit_line]))
-				strcpy (key_lines[edit_line] + key_linepos,
-						key_lines[edit_line] + key_linepos + 1);
-			return;
-
-		case K_RIGHTARROW:
-			if (key_linepos < strlen (key_lines[edit_line]))
-				key_linepos++;
-			return;
-
-		case K_LEFTARROW:
-			if (key_linepos > 1)
-				key_linepos--;
-			return;
-
-		case K_UPARROW:
-			do {
-				history_line = (history_line - 1) & 31;
-			} while (history_line != edit_line && !key_lines[history_line][1]);
-			if (history_line == edit_line)
-				history_line = (edit_line + 1) & 31;
+		} else {
 			strcpy (key_lines[edit_line], key_lines[history_line]);
 			key_linepos = strlen (key_lines[edit_line]);
-			return;
-
-		case K_DOWNARROW:
-			if (history_line == edit_line)
-				return;
-			do {
-				history_line = (history_line + 1) & 31;
-			} while (history_line != edit_line && !key_lines[history_line][1]);
-
-			if (history_line == edit_line) {
-				key_lines[edit_line][0] = ']';
-				key_lines[edit_line][1] = 0;
-				key_linepos = 1;
-			} else {
-				strcpy (key_lines[edit_line], key_lines[history_line]);
-				key_linepos = strlen (key_lines[edit_line]);
-			}
-			return;
+		}
+		return;
 
 		case K_MWHEELUP:
 		case K_PGUP:
-			if (con->display - con->current + con->numlines > 2)
-				con->display -= 2;
-			return;
+		if (con->display - con->current + con->numlines > 2)
+			con->display -= 2;
+		return;
 
 		case K_MWHEELDOWN:
 		case K_PGDN:
-			con->display += 2;
-			if (con->display > con->current)
-				con->display = con->current;
-			return;
+		con->display += 2;
+		if (con->display > con->current)
+			con->display = con->current;
+		return;
 
 		case K_HOME:
-			if (keydown[K_CTRL]) {
-				if (con->numlines > 10)
-					con->display = con->current - con->numlines + 10;
-			} else
-				key_linepos = 1;
-			return;
+		if (keydown[K_CTRL]) {
+			if (con->numlines > 10)
+				con->display = con->current - con->numlines + 10;
+		} else
+			key_linepos = 1;
+		return;
 
 		case K_END:
-			if (keydown[K_CTRL])
-				con->display = con->current;
-			else
-				key_linepos = strlen (key_lines[edit_line]);
-			return;
+		if (keydown[K_CTRL])
+			con->display = con->current;
+		else
+			key_linepos = strlen (key_lines[edit_line]);
+		return;
 	}
 #ifdef _WIN32
 	if ((key == 'V' || key == 'v') && GetKeyState (VK_CONTROL) < 0) {
@@ -658,7 +671,10 @@ Key_WriteBindings (QFile *f)
 		if (keybindings[i])
 			Qprintf (f, "bind \"%s\" \"%s\"\n", Key_KeynumToString (i),
 					 keybindings[i]);	// 1999-12-26 bound keys not saved in 
-										// quotes fix by Maddes
+										// 
+	// 
+	// 
+	// quotes fix by Maddes
 }
 
 
@@ -732,16 +748,19 @@ Key_Init (void)
 //
 // register our functions
 //
-	Cmd_AddCommand ("bind", Key_Bind_f, "Assign a command or a set of commands to a key.\n"
-		"Note: To bind multiple commands to a key, enclose the commands in quotes and separate with semi-colons. \n"
-		"To bind to non-printable keys, use the key name.\n"
-		"Key Name List: Escape, F1-F12, pause, backspace, tab, semicolon, enter, shift, ctrl, alt, space, ins,\n"
-		"home, pgup, del, end, pgdn, uparrow, downarrow, leftarrow, rightarrow, mouse1-mouse3, aux1-aux9, joy1-joy4,\n"
-		"mwheelup, mwheeldown\n"
-		"Special: The escape, and ~ (tilde) keys can only be bound from an external configuration file.");
+	Cmd_AddCommand ("bind", Key_Bind_f,
+					"Assign a command or a set of commands to a key.\n"
+					"Note: To bind multiple commands to a key, enclose the commands in quotes and separate with semi-colons. \n"
+					"To bind to non-printable keys, use the key name.\n"
+					"Key Name List: Escape, F1-F12, pause, backspace, tab, semicolon, enter, shift, ctrl, alt, space, ins,\n"
+					"home, pgup, del, end, pgdn, uparrow, downarrow, leftarrow, rightarrow, mouse1-mouse3, aux1-aux9, joy1-joy4,\n"
+					"mwheelup, mwheeldown\n"
+					"Special: The escape, and ~ (tilde) keys can only be bound from an external configuration file.");
 
-	Cmd_AddCommand ("unbind", Key_Unbind_f, "Remove the bind from the the selected key");
-	Cmd_AddCommand ("unbindall", Key_Unbindall_f, "Remove all binds (USE CAUTIOUSLY!!!)");
+	Cmd_AddCommand ("unbind", Key_Unbind_f,
+					"Remove the bind from the the selected key");
+	Cmd_AddCommand ("unbindall", Key_Unbindall_f,
+					"Remove all binds (USE CAUTIOUSLY!!!)");
 }
 
 void
@@ -806,17 +825,17 @@ Key_Event (int key, int alt_key, qboolean down)
 			return;
 		switch (key_dest) {
 			case key_message:
-				Key_Message (key);
-				break;
+			Key_Message (key);
+			break;
 			case key_menu:
-				M_Keydown (key);
-				break;
+			M_Keydown (key);
+			break;
 			case key_game:
 			case key_console:
-				M_ToggleMenu_f ();
-				break;
+			M_ToggleMenu_f ();
+			break;
 			default:
-				Sys_Error ("Bad key_dest");
+			Sys_Error ("Bad key_dest");
 		}
 		return;
 	}
@@ -861,7 +880,7 @@ Key_Event (int key, int alt_key, qboolean down)
 		kb = keybindings[key];
 		if (kb) {
 			if (kb[0] == '+') {			// button commands add keynum as a
-										// parm
+				// parm
 				snprintf (cmd, sizeof (cmd), "%s %i\n", kb, key);
 				Cbuf_AddText (cmd);
 			} else {
@@ -875,25 +894,25 @@ Key_Event (int key, int alt_key, qboolean down)
 
 	if (!down)
 		return;							// other systems only care about key
-										// down events
+	// down events
 
 	if (alt_key > 0)
 		key = alt_key;
 
 	switch (key_dest) {
 		case key_message:
-			Key_Message (key);
-			break;
+		Key_Message (key);
+		break;
 		case key_menu:
-			M_Keydown (key);
-			break;
+		M_Keydown (key);
+		break;
 
 		case key_game:
 		case key_console:
-			Key_Console (key);
-			break;
+		Key_Console (key);
+		break;
 		default:
-			Sys_Error ("Bad key_dest");
+		Sys_Error ("Bad key_dest");
 	}
 }
 

@@ -1,3 +1,4 @@
+
 /*
 	gl_view.c
 
@@ -36,8 +37,8 @@
 #include "console.h"
 #include "compat.h"
 
-byte		ramps[3][256];
-float		v_blend[4];		// rgba 0.0 - 1.0
+byte        ramps[3][256];
+float       v_blend[4];					// rgba 0.0 - 1.0
 
 /*
 	V_CalcBlend
@@ -48,28 +49,29 @@ float		v_blend[4];		// rgba 0.0 - 1.0
 void
 V_CalcBlend (void)
 {
-	float	r = 0;
-	float	g = 0;
-	float	b = 0;
-	float	a = 0;
+	float       r = 0;
+	float       g = 0;
+	float       b = 0;
+	float       a = 0;
 
-	float	a2, a3;
-	int		i;
+	float       a2, a3;
+	int         i;
 
 	for (i = 0; i < NUM_CSHIFTS; i++) {
 		if (!gl_cshiftpercent->value)
 			continue;
 
-		a2 = ((cl.cshifts[i].percent * gl_cshiftpercent->value) / 100.0) / 255.0;
+		a2 =
+			((cl.cshifts[i].percent * gl_cshiftpercent->value) / 100.0) / 255.0;
 
 		if (!a2)
 			continue;
 
-		a2 = min(a2, 1.0);
-		r += (cl.cshifts[i].destcolor[0]-r) * a2;
-		g += (cl.cshifts[i].destcolor[1]-g) * a2;
-		b += (cl.cshifts[i].destcolor[2]-b) * a2;
-		
+		a2 = min (a2, 1.0);
+		r += (cl.cshifts[i].destcolor[0] - r) * a2;
+		g += (cl.cshifts[i].destcolor[1] - g) * a2;
+		b += (cl.cshifts[i].destcolor[2] - b) * a2;
+
 		a3 = (1.0 - a) * (1.0 - a2);
 		a = 1.0 - a3;
 	}
@@ -80,7 +82,7 @@ V_CalcBlend (void)
 		r *= a2;
 		g *= a2;
 		b *= a2;
-		//	don't clamp alpha here, we do it below
+		// don't clamp alpha here, we do it below
 	}
 
 	v_blend[0] = min (r, 255.0) / 255.0;
@@ -98,14 +100,14 @@ V_CalcBlend (void)
 void
 V_UpdatePalette (void)
 {
-	int			i, j;
-	qboolean	new;
-	qboolean	force;
+	int         i, j;
+	qboolean    new;
+	qboolean    force;
 
 	V_CalcPowerupCshift ();
-	
+
 	new = false;
-	
+
 	for (i = 0; i < NUM_CSHIFTS; i++) {
 		if (cl.cshifts[i].percent != cl.prev_cshifts[i].percent) {
 			new = true;
@@ -118,14 +120,16 @@ V_UpdatePalette (void)
 			}
 		}
 	}
-	
+
 	// drop the damage value
-	cl.cshifts[CSHIFT_DAMAGE].percent -= host_frametime*150;
-	cl.cshifts[CSHIFT_DAMAGE].percent = max (cl.cshifts[CSHIFT_DAMAGE].percent, 0);
+	cl.cshifts[CSHIFT_DAMAGE].percent -= host_frametime * 150;
+	cl.cshifts[CSHIFT_DAMAGE].percent =
+		max (cl.cshifts[CSHIFT_DAMAGE].percent, 0);
 
 	// drop the bonus value
-	cl.cshifts[CSHIFT_BONUS].percent -= host_frametime*100;
-	cl.cshifts[CSHIFT_BONUS].percent = max (cl.cshifts[CSHIFT_BONUS].percent, 0);
+	cl.cshifts[CSHIFT_BONUS].percent -= host_frametime * 100;
+	cl.cshifts[CSHIFT_BONUS].percent =
+		max (cl.cshifts[CSHIFT_BONUS].percent, 0);
 
 	force = V_CheckGamma ();
 	if (!new && !force)
@@ -144,7 +148,7 @@ V_UpdatePalette (void)
 	The player's clipping box goes from (-16 -16 -24) to (16 16 32) from
 	the entity origin, so any view position inside that will be valid
 */
-extern vrect_t	scr_vrect;
+extern vrect_t scr_vrect;
 
 void
 V_RenderView (void)
@@ -154,15 +158,16 @@ V_RenderView (void)
 
 // don't allow cheats in multiplayer
 	if (cl.maxclients > 1) {
-		Cvar_Set(scr_ofsx, "0");
-		Cvar_Set(scr_ofsy, "0");
-		Cvar_Set(scr_ofsz, "0");
+		Cvar_Set (scr_ofsx, "0");
+		Cvar_Set (scr_ofsy, "0");
+		Cvar_Set (scr_ofsz, "0");
 	}
 
-	if (cl.intermission) {	// intermission / finale rendering
-		V_CalcIntermissionRefdef ();	
+	if (cl.intermission) {				// intermission / finale rendering
+		V_CalcIntermissionRefdef ();
 	} else {
-		if (!cl.paused /* && (sv.maxclients > 1 || key_dest == key_game) */ )
+		if (!cl.paused					/* && (sv.maxclients > 1 || key_dest
+										   == key_game) */ )
 			V_CalcRefdef ();
 	}
 
@@ -181,7 +186,7 @@ V_RenderView (void)
 void
 BuildGammaTable (float b, float c)
 {
-	int		i;
+	int         i;
 
 	for (i = 0; i < 256; i++)
 		gammatable[i] = i;

@@ -94,7 +94,7 @@ StripLength (int starttri, int startv)
 	m2 = last->vertindex[(startv + 1) % 3];
 
 	// look for a matching triangle
-nexttri:
+  nexttri:
 	for (j = starttri + 1, check = &triangles[starttri + 1];
 		 j < pheader->mdl.numtris; j++, check++) {
 		if (check->facesfront != last->facesfront)
@@ -125,7 +125,7 @@ nexttri:
 			goto nexttri;
 		}
 	}
-done:
+  done:
 
 	// clear the temp used flags
 	for (j = starttri + 1; j < pheader->mdl.numtris; j++)
@@ -304,7 +304,7 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 	aliasmodel = m;
 	paliashdr = hdr;					// (aliashdr_t *)Mod_Extradata (m);
 
-	mdfour (model_digest, (unsigned char*)_m, _s);
+	mdfour (model_digest, (unsigned char *) _m, _s);
 
 	// 
 	// look for a cached version
@@ -319,10 +319,10 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 		unsigned char d1[MDFOUR_DIGEST_BYTES];
 		unsigned char d2[MDFOUR_DIGEST_BYTES];
 		struct mdfour md;
-		int c[8192];
-		int nc;
-		int vo[8192];
-		int no;
+		int         c[8192];
+		int         nc;
+		int         vo[8192];
+		int         no;
 
 		memset (d1, 0, sizeof (d1));
 		memset (d2, 0, sizeof (d2));
@@ -336,14 +336,15 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 			Qclose (f);
 
 			mdfour_begin (&md);
-			mdfour_update (&md, (unsigned char*)&nc, 4);
-			mdfour_update (&md, (unsigned char*)&no, 4);
-			mdfour_update (&md, (unsigned char*)&c, nc * sizeof (c[0]));
-			mdfour_update (&md, (unsigned char*)&vo, no * sizeof (vo[0]));
+			mdfour_update (&md, (unsigned char *) &nc, 4);
+			mdfour_update (&md, (unsigned char *) &no, 4);
+			mdfour_update (&md, (unsigned char *) &c, nc * sizeof (c[0]));
+			mdfour_update (&md, (unsigned char *) &vo, no * sizeof (vo[0]));
 			mdfour_update (&md, d1, MDFOUR_DIGEST_BYTES);
 			mdfour_result (&md, mesh_digest);
 
-			if (memcmp (d2, mesh_digest, MDFOUR_DIGEST_BYTES) == 0 && memcmp (d1, model_digest, MDFOUR_DIGEST_BYTES) == 0) {
+			if (memcmp (d2, mesh_digest, MDFOUR_DIGEST_BYTES) == 0
+				&& memcmp (d1, model_digest, MDFOUR_DIGEST_BYTES) == 0) {
 				remesh = false;
 				numcommands = nc;
 				numorder = no;
@@ -374,10 +375,11 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 			struct mdfour md;
 
 			mdfour_begin (&md);
-			mdfour_update (&md, (unsigned char*)&numcommands, 4);
-			mdfour_update (&md, (unsigned char*)&numorder, 4);
-			mdfour_update (&md, (unsigned char*)&commands, numcommands * sizeof (commands[0]));
-			mdfour_update (&md, (unsigned char*)&vertexorder,
+			mdfour_update (&md, (unsigned char *) &numcommands, 4);
+			mdfour_update (&md, (unsigned char *) &numorder, 4);
+			mdfour_update (&md, (unsigned char *) &commands,
+						   numcommands * sizeof (commands[0]));
+			mdfour_update (&md, (unsigned char *) &vertexorder,
 						   numorder * sizeof (vertexorder[0]));
 			mdfour_update (&md, model_digest, MDFOUR_DIGEST_BYTES);
 			mdfour_result (&md, mesh_digest);
@@ -391,8 +393,6 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 			Qclose (f);
 		}
 	}
-
-
 	// save the data out
 
 	paliashdr->poseverts = numorder;

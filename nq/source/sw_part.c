@@ -1,3 +1,4 @@
+
 /*
 	r_part.c
 
@@ -41,16 +42,17 @@ R_DrawParticles
 ===============
 */
 
-void R_DrawParticles (void)
+void
+R_DrawParticles (void)
 {
-	particle_t		*p, *kill;
-	float			grav;
-	int				i;
-	float			time2, time3;
-	float			time1;
-	float			dvel;
-	float			frametime;
-	
+	particle_t *p, *kill;
+	float       grav;
+	int         i;
+	float       time2, time3;
+	float       time1;
+	float       dvel;
+	float       frametime;
+
 	D_StartParticles ();
 
 	VectorScale (vright, xscaleshrink, r_pright);
@@ -59,16 +61,14 @@ void R_DrawParticles (void)
 
 	frametime = cl.time - cl.oldtime;
 	time3 = frametime * 15;
-	time2 = frametime * 10; // 15;
+	time2 = frametime * 10;				// 15;
 	time1 = frametime * 5;
 	grav = frametime * sv_gravity->value * 0.05;
-	dvel = 4*frametime;
-	
-	for ( ;; ) 
-	{
+	dvel = 4 * frametime;
+
+	for (;;) {
 		kill = active_particles;
-		if (kill && kill->die < cl.time)
-		{
+		if (kill && kill->die < cl.time) {
 			active_particles = kill->next;
 			kill->next = free_particles;
 			free_particles = kill;
@@ -77,13 +77,10 @@ void R_DrawParticles (void)
 		break;
 	}
 
-	for (p=active_particles ; p ; p=p->next)
-	{
-		for ( ;; )
-		{
+	for (p = active_particles; p; p = p->next) {
+		for (;;) {
 			kill = p->next;
-			if (kill && kill->die < cl.time)
-			{
+			if (kill && kill->die < cl.time) {
 				p->next = kill->next;
 				kill->next = free_particles;
 				free_particles = kill;
@@ -94,63 +91,62 @@ void R_DrawParticles (void)
 
 		D_DrawParticle (p);
 
-		p->org[0] += p->vel[0]*frametime;
-		p->org[1] += p->vel[1]*frametime;
-		p->org[2] += p->vel[2]*frametime;
-		
-		switch (p->type)
-		{
-		case pt_static:
+		p->org[0] += p->vel[0] * frametime;
+		p->org[1] += p->vel[1] * frametime;
+		p->org[2] += p->vel[2] * frametime;
+
+		switch (p->type) {
+			case pt_static:
 			break;
-		case pt_fire:
+			case pt_fire:
 			p->ramp += time1;
 			if (p->ramp >= 6)
 				p->die = -1;
 			else
-				p->color = ramp3[(int)p->ramp];
+				p->color = ramp3[(int) p->ramp];
 			p->vel[2] += grav;
 			break;
 
-		case pt_explode:
+			case pt_explode:
 			p->ramp += time2;
-			if (p->ramp >=8)
+			if (p->ramp >= 8)
 				p->die = -1;
 			else
-				p->color = ramp1[(int)p->ramp];
-			for (i=0 ; i<3 ; i++)
-				p->vel[i] += p->vel[i]*dvel;
+				p->color = ramp1[(int) p->ramp];
+			for (i = 0; i < 3; i++)
+				p->vel[i] += p->vel[i] * dvel;
 			p->vel[2] -= grav;
 			break;
 
-		case pt_explode2:
+			case pt_explode2:
 			p->ramp += time3;
-			if (p->ramp >=8)
+			if (p->ramp >= 8)
 				p->die = -1;
 			else
-				p->color = ramp2[(int)p->ramp];
-			for (i=0 ; i<3 ; i++)
-				p->vel[i] -= p->vel[i]*frametime;
+				p->color = ramp2[(int) p->ramp];
+			for (i = 0; i < 3; i++)
+				p->vel[i] -= p->vel[i] * frametime;
 			p->vel[2] -= grav;
 			break;
 
-		case pt_blob:
-			for (i=0 ; i<3 ; i++)
-				p->vel[i] += p->vel[i]*dvel;
+			case pt_blob:
+			for (i = 0; i < 3; i++)
+				p->vel[i] += p->vel[i] * dvel;
 			p->vel[2] -= grav;
 			break;
 
-		case pt_blob2:
-			for (i=0 ; i<2 ; i++)
-				p->vel[i] -= p->vel[i]*dvel;
+			case pt_blob2:
+			for (i = 0; i < 2; i++)
+				p->vel[i] -= p->vel[i] * dvel;
 			p->vel[2] -= grav;
 			break;
 
-		case pt_grav:
+			case pt_grav:
 #ifdef QUAKE2
 			p->vel[2] -= grav * 20;
 			break;
 #endif
-		case pt_slowgrav:
+			case pt_slowgrav:
 			p->vel[2] -= grav;
 			break;
 		}
@@ -160,6 +156,6 @@ void R_DrawParticles (void)
 }
 
 void
-R_AddFire(vec3_t start, vec3_t end, entity_t *ent)
+R_AddFire (vec3_t start, vec3_t end, entity_t *ent)
 {
 }

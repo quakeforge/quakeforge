@@ -45,19 +45,22 @@ extern model_t *loadmodel;
 extern byte mod_novis[];
 extern byte *mod_base;
 
-int Mod_Fullbright(byte *skin, int width, int height, char *name);
+int         Mod_Fullbright (byte * skin, int width, int height, char *name);
 
-const int mod_lightmap_bytes = 3;
+const int   mod_lightmap_bytes = 3;
 
 void
-Mod_ProcessTexture(miptex_t *mt, texture_t	*tx)
+Mod_ProcessTexture (miptex_t *mt, texture_t *tx)
 {
-	char name[32];
+	char        name[32];
 
-	texture_mode = GL_LINEAR_MIPMAP_NEAREST; //_LINEAR;
-	snprintf (name, sizeof(name), "fb_%s", mt->name);
-	tx->gl_fb_texturenum = Mod_Fullbright ((byte *)(tx+1), tx->width, tx->height, name);
-	tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)(tx+1), true, false, 1);
+	texture_mode = GL_LINEAR_MIPMAP_NEAREST;	// _LINEAR;
+	snprintf (name, sizeof (name), "fb_%s", mt->name);
+	tx->gl_fb_texturenum =
+		Mod_Fullbright ((byte *) (tx + 1), tx->width, tx->height, name);
+	tx->gl_texturenum =
+		GL_LoadTexture (mt->name, tx->width, tx->height, (byte *) (tx + 1),
+						true, false, 1);
 	texture_mode = GL_LINEAR;
 }
 
@@ -66,32 +69,34 @@ Mod_ProcessTexture(miptex_t *mt, texture_t	*tx)
 Mod_LoadLighting
 =================
 */
-void Mod_LoadLighting (lump_t *l)
+void
+Mod_LoadLighting (lump_t *l)
 {
-	int		i;
-	byte		*in, *out;
-	byte		d;
-	char		litfilename[1024];
+	int         i;
+	byte       *in, *out;
+	byte        d;
+	char        litfilename[1024];
 
-	if (!l->filelen)
-	{
+	if (!l->filelen) {
 		loadmodel->lightdata = NULL;
 		return;
 	}
 
-	strcpy(litfilename, loadmodel->name);
-	COM_StripExtension(litfilename, litfilename);
-	strcat(litfilename, ".lit");
+	strcpy (litfilename, loadmodel->name);
+	COM_StripExtension (litfilename, litfilename);
+	strcat (litfilename, ".lit");
 
-	loadmodel->lightdata = (byte*) COM_LoadHunkFile (litfilename);
-	if (!loadmodel->lightdata) // expand the white lighting data
+	loadmodel->lightdata = (byte *) COM_LoadHunkFile (litfilename);
+	if (!loadmodel->lightdata)			// expand the white lighting data
 	{
-		loadmodel->lightdata = Hunk_AllocName ( l->filelen*3, litfilename);
-		in = loadmodel->lightdata + l->filelen*2; // place the file at the end, so it will not be overwritten until the very last write
+		loadmodel->lightdata = Hunk_AllocName (l->filelen * 3, litfilename);
+		in = loadmodel->lightdata + l->filelen * 2;	// place the file at the
+		// end, so it will not be 
+		// overwritten until the
+		// very last write
 		out = loadmodel->lightdata;
 		memcpy (in, mod_base + l->fileofs, l->filelen);
-		for (i = 0;i < l->filelen;i++)
-		{
+		for (i = 0; i < l->filelen; i++) {
 			d = *in++;
 			*out++ = d;
 			*out++ = d;

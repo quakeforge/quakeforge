@@ -1,3 +1,4 @@
+
 /*
 	vid_glx.c
 
@@ -57,12 +58,13 @@
 #define WARP_WIDTH		320
 #define WARP_HEIGHT 	200
 
-static qboolean		vid_initialized = false;
+static qboolean vid_initialized = false;
 
-static GLXContext	ctx = NULL;
+static GLXContext ctx = NULL;
 
 extern void GL_Init_Common (void);
 extern void VID_Init8bitPalette (void);
+
 /*-----------------------------------------------------------------------*/
 
 const char *gl_vendor;
@@ -105,6 +107,7 @@ InitSig (void)
 	signal (SIGSEGV, signal_handler);
 	signal (SIGTERM, signal_handler);
 }
+
 #endif
 
 /*
@@ -129,8 +132,8 @@ GL_EndRendering (void)
 void
 VID_Init (unsigned char *palette)
 {
-	int i;
-	int attrib[] = {
+	int         i;
+	int         attrib[] = {
 		GLX_RGBA,
 		GLX_RED_SIZE, 1,
 		GLX_GREEN_SIZE, 1,
@@ -146,31 +149,32 @@ VID_Init (unsigned char *palette)
 	vid.colormap = host_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap + 2048));
 
-	/* Interpret command-line params
-	 */
+	/* Interpret command-line params */
 
 	/* Set vid parameters */
 
 	if ((i = COM_CheckParm ("-conwidth")))
-		vid.conwidth = atoi(com_argv[i+1]);
+		vid.conwidth = atoi (com_argv[i + 1]);
 	else
 		vid.conwidth = scr_width;
 
-	vid.conwidth &= 0xfff8; // make it a multiple of eight
+	vid.conwidth &= 0xfff8;				// make it a multiple of eight
 	vid.conwidth = max (vid.conwidth, 320);
 
 	// pick a conheight that matches with correct aspect
 	vid.conheight = vid.conwidth * 3 / 4;
 
-	if ((i = COM_CheckParm ("-conheight")))	// conheight no smaller than 200px
-		vid.conheight = atoi (com_argv[i+1]);
+	if ((i = COM_CheckParm ("-conheight")))	// conheight no smaller than
+		// 200px
+		vid.conheight = atoi (com_argv[i + 1]);
 	vid.conheight = max (vid.conheight, 200);
 
 	x11_open_display ();
 
 	x_visinfo = glXChooseVisual (x_disp, x_screen, attrib);
 	if (!x_visinfo) {
-		fprintf (stderr, "Error couldn't get an RGB, Double-buffered, Depth visual\n");
+		fprintf (stderr,
+				 "Error couldn't get an RGB, Double-buffered, Depth visual\n");
 		exit (1);
 	}
 	x_vis = x_visinfo->visual;
@@ -194,11 +198,11 @@ VID_Init (unsigned char *palette)
 	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
 	vid.numpages = 2;
 
-	//InitSig (); // trap evil signals
+	// InitSig (); // trap evil signals
 
 	GL_Init ();
 
-	//XXX not yet GL_CheckBrightness (palette);
+	// XXX not yet GL_CheckBrightness (palette);
 	VID_SetPalette (palette);
 
 	// Check for 8-bit extension and initialize if present
@@ -208,20 +212,21 @@ VID_Init (unsigned char *palette)
 
 	vid_initialized = true;
 
-	vid.recalc_refdef = 1;		// force a surface cache flush
+	vid.recalc_refdef = 1;				// force a surface cache flush
 }
 
 void
 VID_Init_Cvars ()
 {
-	x11_Init_Cvars();
+	x11_Init_Cvars ();
 }
 
 void
 VID_SetCaption (char *text)
 {
 	if (text && *text) {
-		char *temp = strdup (text);
+		char       *temp = strdup (text);
+
 		x11_set_caption (va ("%s %s: %s", PROGRAM, VERSION, temp));
 		free (temp);
 	} else {
@@ -229,6 +234,7 @@ VID_SetCaption (char *text)
 	}
 }
 
-void VID_HandlePause (qboolean paused)
+void
+VID_HandlePause (qboolean paused)
 {
 }

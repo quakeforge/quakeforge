@@ -42,8 +42,11 @@
 extern char loadname[];
 extern model_t *loadmodel;
 
-void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex);
-void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *model, int size);
+void       *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype,
+
+							  int *pskinindex);
+void        GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr,
+										   void *model, int size);
 
 /*
 ==============================================================================
@@ -53,18 +56,18 @@ ALIAS MODELS
 ==============================================================================
 */
 
-aliashdr_t	*pheader;
+aliashdr_t *pheader;
 
-stvert_t	stverts[MAXALIASVERTS];
-mtriangle_t	triangles[MAXALIASTRIS];
+stvert_t    stverts[MAXALIASVERTS];
+mtriangle_t triangles[MAXALIASTRIS];
 
 // a pose is a single set of vertexes.  a frame may be
 // an animating sequence of poses
-trivertx_t	*poseverts[MAXALIASFRAMES];
-int			posenum;
+trivertx_t *poseverts[MAXALIASFRAMES];
+int         posenum;
 
-void *Mod_LoadAliasFrame (void * pin, maliasframedesc_t *frame);
-void *Mod_LoadAliasGroup (void * pin, maliasframedesc_t *frame);
+void       *Mod_LoadAliasFrame (void *pin, maliasframedesc_t *frame);
+void       *Mod_LoadAliasGroup (void *pin, maliasframedesc_t *frame);
 
 //=========================================================================
 
@@ -73,36 +76,37 @@ void *Mod_LoadAliasGroup (void * pin, maliasframedesc_t *frame);
 Mod_LoadAliasModel
 =================
 */
-void Mod_LoadAliasModel (model_t *mod, void *buffer)
+void
+Mod_LoadAliasModel (model_t *mod, void *buffer)
 {
-	int					i, j;
-	mdl_t				*pinmodel, *pmodel;
-	stvert_t			*pinstverts;
-	dtriangle_t			*pintriangles;
-	int					version, numframes;
-	int					size;
-	daliasframetype_t	*pframetype;
-	daliasskintype_t	*pskintype;
-	int					start, end, total;
+	int         i, j;
+	mdl_t      *pinmodel, *pmodel;
+	stvert_t   *pinstverts;
+	dtriangle_t *pintriangles;
+	int         version, numframes;
+	int         size;
+	daliasframetype_t *pframetype;
+	daliasskintype_t *pskintype;
+	int         start, end, total;
 
 	start = Hunk_LowMark ();
 
-	pinmodel = (mdl_t *)buffer;
+	pinmodel = (mdl_t *) buffer;
 
 	version = LittleLong (pinmodel->version);
 	if (version != ALIAS_VERSION)
 		Sys_Error ("%s has wrong version number (%i should be %i)",
-				 mod->name, version, ALIAS_VERSION);
+				   mod->name, version, ALIAS_VERSION);
 
 //
 // allocate space for a working header, plus all the data except the frames,
 // skin and group info
 //
-	size = (int)&((aliashdr_t*)0)->frames[LittleLong (pinmodel->numframes)];
+	size = (int) &((aliashdr_t *) 0)->frames[LittleLong (pinmodel->numframes)];
 	pheader = Hunk_AllocName (size, loadname);
-	memset(pheader, 0, size);
+	memset (pheader, 0, size);
 	pmodel = &pheader->mdl;
-	pheader->model = (byte*)pmodel - (byte*)pheader;
+	pheader->model = (byte *) pmodel - (byte *) pheader;
 
 	mod->flags = LittleLong (pinmodel->flags);
 
@@ -140,8 +144,7 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	mod->synctype = LittleLong (pinmodel->synctype);
 	mod->numframes = pmodel->numframes;
 
-	for (i=0 ; i<3 ; i++)
-	{
+	for (i = 0; i < 3; i++) {
 		pmodel->scale[i] = LittleFloat (pinmodel->scale[i]);
 		pmodel->scale_origin[i] = LittleFloat (pinmodel->scale_origin[i]);
 		pmodel->eyeposition[i] = LittleFloat (pinmodel->eyeposition[i]);
@@ -151,16 +154,16 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 //
 // load the skins
 //
-	pskintype = (daliasskintype_t *)&pinmodel[1];
-	pskintype = Mod_LoadAllSkins (pheader->mdl.numskins, pskintype, &pheader->skindesc);
+	pskintype = (daliasskintype_t *) &pinmodel[1];
+	pskintype =
+		Mod_LoadAllSkins (pheader->mdl.numskins, pskintype, &pheader->skindesc);
 
 //
 // load base s and t vertices
 //
-	pinstverts = (stvert_t *)pskintype;
+	pinstverts = (stvert_t *) pskintype;
 
-	for (i=0 ; i<pheader->mdl.numverts ; i++)
-	{
+	for (i = 0; i < pheader->mdl.numverts; i++) {
 		stverts[i].onseam = LittleLong (pinstverts[i].onseam);
 		stverts[i].s = LittleLong (pinstverts[i].s);
 		stverts[i].t = LittleLong (pinstverts[i].t);
@@ -169,16 +172,14 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 //
 // load triangle lists
 //
-	pintriangles = (dtriangle_t *)&pinstverts[pheader->mdl.numverts];
+	pintriangles = (dtriangle_t *) &pinstverts[pheader->mdl.numverts];
 
-	for (i=0 ; i<pheader->mdl.numtris ; i++)
-	{
+	for (i = 0; i < pheader->mdl.numtris; i++) {
 		triangles[i].facesfront = LittleLong (pintriangles[i].facesfront);
 
-		for (j=0 ; j<3 ; j++)
-		{
+		for (j = 0; j < 3; j++) {
 			triangles[i].vertindex[j] =
-					LittleLong (pintriangles[i].vertindex[j]);
+				LittleLong (pintriangles[i].vertindex[j]);
 		}
 	}
 
@@ -186,24 +187,20 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 // load the frames
 //
 	posenum = 0;
-	pframetype = (daliasframetype_t *)&pintriangles[pheader->mdl.numtris];
+	pframetype = (daliasframetype_t *) &pintriangles[pheader->mdl.numtris];
 
-	for (i=0 ; i<numframes ; i++)
-	{
-		aliasframetype_t	frametype;
+	for (i = 0; i < numframes; i++) {
+		aliasframetype_t frametype;
 
 		frametype = LittleLong (pframetype->type);
 		pheader->frames[i].type = frametype;
 
-		if (frametype == ALIAS_SINGLE)
-		{
+		if (frametype == ALIAS_SINGLE) {
 			pframetype = (daliasframetype_t *)
-					Mod_LoadAliasFrame (pframetype + 1, &pheader->frames[i]);
-		}
-		else
-		{
+				Mod_LoadAliasFrame (pframetype + 1, &pheader->frames[i]);
+		} else {
 			pframetype = (daliasframetype_t *)
-					Mod_LoadAliasGroup (pframetype + 1, &pheader->frames[i]);
+				Mod_LoadAliasGroup (pframetype + 1, &pheader->frames[i]);
 		}
 	}
 
@@ -215,14 +212,14 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	mod->mins[0] = mod->mins[1] = mod->mins[2] = -16;
 	mod->maxs[0] = mod->maxs[1] = mod->maxs[2] = 16;
 
-	//
+	// 
 	// build the draw lists
-	//
+	// 
 	GL_MakeAliasModelDisplayLists (mod, pheader, buffer, com_filesize);
 
 //
 // move the complete, relocatable alias model to the cache
-//	
+//  
 	end = Hunk_LowMark ();
 	total = end - start;
 

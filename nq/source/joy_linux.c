@@ -1,3 +1,4 @@
+
 /*
 	joy_linux.c
 
@@ -129,35 +130,31 @@ JOY_Move (usercmd_t *cmd)
 	for (i = 0; i < JOY_MAX_AXES; i++) {
 		switch (joy_axes[i].axis->int_val) {
 			case 1:
-				cl.viewangles[YAW] -=
-					m_yaw->value * (float) (joy_axes[i].current /
+			cl.viewangles[YAW] -=
+				m_yaw->value * (float) (joy_axes[i].current /
+										(201 - (joy_sensitivity->value * 4)));
+			break;
+			case 2:
+			cmd->forwardmove -=
+				m_forward->value * (float) (joy_axes[i].current /
 											(201 -
 											 (joy_sensitivity->value * 4)));
-				break;
-			case 2:
-				cmd->forwardmove -=
-					m_forward->value * (float) (joy_axes[i].current /
-												(201 -
-												 (joy_sensitivity->value * 4)));
-				break;
+			break;
 			case 3:
-				cmd->sidemove +=
-					m_side->value * (float) (joy_axes[i].current /
-											 (201 -
-											  (joy_sensitivity->value * 4)));
-				break;
+			cmd->sidemove +=
+				m_side->value * (float) (joy_axes[i].current /
+										 (201 - (joy_sensitivity->value * 4)));
+			break;
 			case 4:
-				if (joy_axes[i].current) {
-					V_StopPitchDrift ();
-					cl.viewangles[PITCH] -=
-						m_pitch->value * (float) (joy_axes[i].current /
-												  (201 -
-												   (joy_sensitivity->value *
-													4)));
-					cl.viewangles[PITCH] =
-						bound (-70, cl.viewangles[PITCH], 80);
-				}
-				break;
+			if (joy_axes[i].current) {
+				V_StopPitchDrift ();
+				cl.viewangles[PITCH] -=
+					m_pitch->value * (float) (joy_axes[i].current /
+											  (201 -
+											   (joy_sensitivity->value * 4)));
+				cl.viewangles[PITCH] = bound (-70, cl.viewangles[PITCH], 80);
+			}
+			break;
 		}
 	}
 }

@@ -37,12 +37,12 @@
 #include "client.h"
 
 // Joystick variables and structures
-cvar_t		*joy_device;		// Joystick device name
-cvar_t		*joy_enable;		// Joystick enabling flag
-cvar_t		*joy_sensitivity;	// Joystick sensitivity
+cvar_t     *joy_device;					// Joystick device name
+cvar_t     *joy_enable;					// Joystick enabling flag
+cvar_t     *joy_sensitivity;			// Joystick sensitivity
 
-qboolean	joy_found = false;
-qboolean	joy_active = false;
+qboolean    joy_found = false;
+qboolean    joy_active = false;
 
 void
 JOY_Command (void)
@@ -63,9 +63,15 @@ JOY_Init (void)
 void
 JOY_Init_Cvars (void)
 {
-	joy_device = Cvar_Get ("joy_device", "none", CVAR_NONE|CVAR_ROM, "Joystick device");
-	joy_enable = Cvar_Get ("joy_enable", "1", CVAR_NONE|CVAR_ARCHIVE, "Joystick enable flag");
-	joy_sensitivity = Cvar_Get ("joy_sensitivity", "1", CVAR_NONE|CVAR_ARCHIVE, "Joystick sensitivity");
+	joy_device =
+		Cvar_Get ("joy_device", "none", CVAR_NONE | CVAR_ROM,
+				  "Joystick device");
+	joy_enable =
+		Cvar_Get ("joy_enable", "1", CVAR_NONE | CVAR_ARCHIVE,
+				  "Joystick enable flag");
+	joy_sensitivity =
+		Cvar_Get ("joy_sensitivity", "1", CVAR_NONE | CVAR_ARCHIVE,
+				  "Joystick sensitivity");
 }
 
 void

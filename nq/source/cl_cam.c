@@ -34,60 +34,64 @@
 #include "client.h"
 #include "world.h"
 
-qboolean SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1, vec3_t p2, trace_t *trace);
+qboolean    SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
+								   vec3_t p1, vec3_t p2, trace_t *trace);
 
-cvar_t	*chase_back;
-cvar_t	*chase_up;
-cvar_t	*chase_right;
-cvar_t	*chase_active;
+cvar_t     *chase_back;
+cvar_t     *chase_up;
+cvar_t     *chase_right;
+cvar_t     *chase_active;
 
-vec3_t	chase_pos;
-vec3_t	chase_angles;
+vec3_t      chase_pos;
+vec3_t      chase_angles;
 
-vec3_t	chase_dest;
-vec3_t	chase_dest_angles;
+vec3_t      chase_dest;
+vec3_t      chase_dest_angles;
 
 
-void Chase_Init (void)
+void
+Chase_Init (void)
 {
-	chase_back = Cvar_Get("chase_back", "100", CVAR_NONE, "None");
-	chase_up = Cvar_Get("chase_up", "16", CVAR_NONE, "None");
-	chase_right = Cvar_Get("chase_right", "0", CVAR_NONE, "None");
-	chase_active = Cvar_Get("chase_active", "0", CVAR_NONE, "None");
+	chase_back = Cvar_Get ("chase_back", "100", CVAR_NONE, "None");
+	chase_up = Cvar_Get ("chase_up", "16", CVAR_NONE, "None");
+	chase_right = Cvar_Get ("chase_right", "0", CVAR_NONE, "None");
+	chase_active = Cvar_Get ("chase_active", "0", CVAR_NONE, "None");
 }
 
-void Chase_Reset (void)
+void
+Chase_Reset (void)
 {
 	// for respawning and teleporting
-//	start position 12 units behind head
+//  start position 12 units behind head
 }
 
-void TraceLine (vec3_t start, vec3_t end, vec3_t impact)
+void
+TraceLine (vec3_t start, vec3_t end, vec3_t impact)
 {
-	trace_t	trace;
+	trace_t     trace;
 
-	memset (&trace, 0, sizeof(trace));
+	memset (&trace, 0, sizeof (trace));
 	SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, start, end, &trace);
 
 	VectorCopy (trace.endpos, impact);
 }
 
-void Chase_Update (void)
+void
+Chase_Update (void)
 {
-	int		i;
-	float	dist;
-	vec3_t	forward, up, right;
-	vec3_t	dest, stop;
+	int         i;
+	float       dist;
+	vec3_t      forward, up, right;
+	vec3_t      dest, stop;
 
 
 	// if can't see player, reset
 	AngleVectors (cl.viewangles, forward, right, up);
 
 	// calc exact destination
-	for (i=0 ; i<3 ; i++)
-		chase_dest[i] = r_refdef.vieworg[i] 
-		- forward[i]*chase_back->value
-		- right[i]*chase_right->value;
+	for (i = 0; i < 3; i++)
+		chase_dest[i] = r_refdef.vieworg[i]
+			- forward[i] * chase_back->value - right[i] * chase_right->value;
 	chase_dest[2] = r_refdef.vieworg[2] + chase_up->value;
 
 	// find the spot the player is looking at
@@ -99,11 +103,11 @@ void Chase_Update (void)
 	dist = DotProduct (stop, forward);
 	if (dist < 1)
 		dist = 1;
-	r_refdef.viewangles[PITCH] = -atan(stop[2] / dist) / M_PI * 180;
+	r_refdef.viewangles[PITCH] = -atan (stop[2] / dist) / M_PI * 180;
 
-	TraceLine(r_refdef.vieworg, chase_dest, stop);
-	if (Length(stop) != 0)
-		VectorCopy(stop, chase_dest);
+	TraceLine (r_refdef.vieworg, chase_dest, stop);
+	if (Length (stop) != 0)
+		VectorCopy (stop, chase_dest);
 
 	// move towards destination
 	VectorCopy (chase_dest, r_refdef.vieworg);

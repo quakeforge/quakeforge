@@ -1,3 +1,4 @@
+
 /*
 	in_sdl.c
 
@@ -80,244 +81,240 @@ IN_SendKeyEvents (void)
 		switch (event.type) {
 			case SDL_KEYDOWN:
 			case SDL_KEYUP:
-				sym = event.key.keysym.sym;
-				state = event.key.state;
-				modstate = SDL_GetModState ();
-				switch (sym) {
-					case SDLK_DELETE:
-						sym = K_DEL;
-						break;
-					case SDLK_BACKSPACE:
-						sym = K_BACKSPACE;
-						break;
-					case SDLK_F1:
-						sym = K_F1;
-						break;
-					case SDLK_F2:
-						sym = K_F2;
-						break;
-					case SDLK_F3:
-						sym = K_F3;
-						break;
-					case SDLK_F4:
-						sym = K_F4;
-						break;
-					case SDLK_F5:
-						sym = K_F5;
-						break;
-					case SDLK_F6:
-						sym = K_F6;
-						break;
-					case SDLK_F7:
-						sym = K_F7;
-						break;
-					case SDLK_F8:
-						sym = K_F8;
-						break;
-					case SDLK_F9:
-						sym = K_F9;
-						break;
-					case SDLK_F10:
-						sym = K_F10;
-						break;
-					case SDLK_F11:
-						sym = K_F11;
-						break;
-					case SDLK_F12:
-						sym = K_F12;
-						break;
-					case SDLK_BREAK:
-					case SDLK_PAUSE:
-						sym = K_PAUSE;
-						break;
-					case SDLK_UP:
-						sym = K_UPARROW;
-						break;
-					case SDLK_DOWN:
-						sym = K_DOWNARROW;
-						break;
-					case SDLK_RIGHT:
-						sym = K_RIGHTARROW;
-						break;
-					case SDLK_LEFT:
-						sym = K_LEFTARROW;
-						break;
-					case SDLK_INSERT:
-						sym = K_INS;
-						break;
-					case SDLK_HOME:
-						sym = K_HOME;
-						break;
-					case SDLK_END:
-						sym = K_END;
-						break;
-					case SDLK_PAGEUP:
-						sym = K_PGUP;
-						break;
-					case SDLK_PAGEDOWN:
-						sym = K_PGDN;
-						break;
-					case SDLK_RSHIFT:
-					case SDLK_LSHIFT:
-						sym = K_SHIFT;
-						break;
-					case SDLK_RCTRL:
-					case SDLK_LCTRL:
-						sym = K_CTRL;
-						break;
-					case SDLK_RALT:
-					case SDLK_LALT:
-						sym = K_ALT;
-						break;
-					case SDLK_CAPSLOCK:
-						sym = K_CAPSLOCK;
-						break;
-					case SDLK_KP0:
-						if (modstate & KMOD_NUM)
-							sym = K_INS;
-						else
-							sym = SDLK_0;
-						break;
-					case SDLK_KP1:
-						if (modstate & KMOD_NUM)
-							sym = K_END;
-						else
-							sym = SDLK_1;
-						break;
-					case SDLK_KP2:
-						if (modstate & KMOD_NUM)
-							sym = K_DOWNARROW;
-						else
-							sym = SDLK_2;
-						break;
-					case SDLK_KP3:
-						if (modstate & KMOD_NUM)
-							sym = K_PGDN;
-						else
-							sym = SDLK_3;
-						break;
-					case SDLK_KP4:
-						if (modstate & KMOD_NUM)
-							sym = K_LEFTARROW;
-						else
-							sym = SDLK_4;
-						break;
-					case SDLK_KP5:
-						sym = SDLK_5;
-						break;
-					case SDLK_KP6:
-						if (modstate & KMOD_NUM)
-							sym = K_RIGHTARROW;
-						else
-							sym = SDLK_6;
-						break;
-					case SDLK_KP7:
-						if (modstate & KMOD_NUM)
-							sym = K_HOME;
-						else
-							sym = SDLK_7;
-						break;
-					case SDLK_KP8:
-						if (modstate & KMOD_NUM)
-							sym = K_UPARROW;
-						else
-							sym = SDLK_8;
-						break;
-					case SDLK_KP9:
-						if (modstate & KMOD_NUM)
-							sym = K_PGUP;
-						else
-							sym = SDLK_9;
-						break;
-					case SDLK_KP_PERIOD:
-						if (modstate & KMOD_NUM)
-							sym = K_DEL;
-						else
-							sym = SDLK_PERIOD;
-						break;
-					case SDLK_KP_DIVIDE:
-						sym = SDLK_SLASH;
-						break;
-					case SDLK_KP_MULTIPLY:
-						sym = SDLK_ASTERISK;
-						break;
-					case SDLK_KP_MINUS:
-						sym = SDLK_MINUS;
-						break;
-					case SDLK_KP_PLUS:
-						sym = SDLK_PLUS;
-						break;
-					case SDLK_KP_ENTER:
-						sym = SDLK_RETURN;
-						break;
-					case SDLK_KP_EQUALS:
-						sym = SDLK_EQUALS;
-						break;
-				}
-				// If we're not directly handled and still above 255
-				// just force it to 0
-				if (sym > 255)
-					sym = 0;
-				Key_Event (sym, -1, state);
+			sym = event.key.keysym.sym;
+			state = event.key.state;
+			modstate = SDL_GetModState ();
+			switch (sym) {
+				case SDLK_DELETE:
+				sym = K_DEL;
 				break;
+				case SDLK_BACKSPACE:
+				sym = K_BACKSPACE;
+				break;
+				case SDLK_F1:
+				sym = K_F1;
+				break;
+				case SDLK_F2:
+				sym = K_F2;
+				break;
+				case SDLK_F3:
+				sym = K_F3;
+				break;
+				case SDLK_F4:
+				sym = K_F4;
+				break;
+				case SDLK_F5:
+				sym = K_F5;
+				break;
+				case SDLK_F6:
+				sym = K_F6;
+				break;
+				case SDLK_F7:
+				sym = K_F7;
+				break;
+				case SDLK_F8:
+				sym = K_F8;
+				break;
+				case SDLK_F9:
+				sym = K_F9;
+				break;
+				case SDLK_F10:
+				sym = K_F10;
+				break;
+				case SDLK_F11:
+				sym = K_F11;
+				break;
+				case SDLK_F12:
+				sym = K_F12;
+				break;
+				case SDLK_BREAK:
+				case SDLK_PAUSE:
+				sym = K_PAUSE;
+				break;
+				case SDLK_UP:
+				sym = K_UPARROW;
+				break;
+				case SDLK_DOWN:
+				sym = K_DOWNARROW;
+				break;
+				case SDLK_RIGHT:
+				sym = K_RIGHTARROW;
+				break;
+				case SDLK_LEFT:
+				sym = K_LEFTARROW;
+				break;
+				case SDLK_INSERT:
+				sym = K_INS;
+				break;
+				case SDLK_HOME:
+				sym = K_HOME;
+				break;
+				case SDLK_END:
+				sym = K_END;
+				break;
+				case SDLK_PAGEUP:
+				sym = K_PGUP;
+				break;
+				case SDLK_PAGEDOWN:
+				sym = K_PGDN;
+				break;
+				case SDLK_RSHIFT:
+				case SDLK_LSHIFT:
+				sym = K_SHIFT;
+				break;
+				case SDLK_RCTRL:
+				case SDLK_LCTRL:
+				sym = K_CTRL;
+				break;
+				case SDLK_RALT:
+				case SDLK_LALT:
+				sym = K_ALT;
+				break;
+				case SDLK_CAPSLOCK:
+				sym = K_CAPSLOCK;
+				break;
+				case SDLK_KP0:
+				if (modstate & KMOD_NUM)
+					sym = K_INS;
+				else
+					sym = SDLK_0;
+				break;
+				case SDLK_KP1:
+				if (modstate & KMOD_NUM)
+					sym = K_END;
+				else
+					sym = SDLK_1;
+				break;
+				case SDLK_KP2:
+				if (modstate & KMOD_NUM)
+					sym = K_DOWNARROW;
+				else
+					sym = SDLK_2;
+				break;
+				case SDLK_KP3:
+				if (modstate & KMOD_NUM)
+					sym = K_PGDN;
+				else
+					sym = SDLK_3;
+				break;
+				case SDLK_KP4:
+				if (modstate & KMOD_NUM)
+					sym = K_LEFTARROW;
+				else
+					sym = SDLK_4;
+				break;
+				case SDLK_KP5:
+				sym = SDLK_5;
+				break;
+				case SDLK_KP6:
+				if (modstate & KMOD_NUM)
+					sym = K_RIGHTARROW;
+				else
+					sym = SDLK_6;
+				break;
+				case SDLK_KP7:
+				if (modstate & KMOD_NUM)
+					sym = K_HOME;
+				else
+					sym = SDLK_7;
+				break;
+				case SDLK_KP8:
+				if (modstate & KMOD_NUM)
+					sym = K_UPARROW;
+				else
+					sym = SDLK_8;
+				break;
+				case SDLK_KP9:
+				if (modstate & KMOD_NUM)
+					sym = K_PGUP;
+				else
+					sym = SDLK_9;
+				break;
+				case SDLK_KP_PERIOD:
+				if (modstate & KMOD_NUM)
+					sym = K_DEL;
+				else
+					sym = SDLK_PERIOD;
+				break;
+				case SDLK_KP_DIVIDE:
+				sym = SDLK_SLASH;
+				break;
+				case SDLK_KP_MULTIPLY:
+				sym = SDLK_ASTERISK;
+				break;
+				case SDLK_KP_MINUS:
+				sym = SDLK_MINUS;
+				break;
+				case SDLK_KP_PLUS:
+				sym = SDLK_PLUS;
+				break;
+				case SDLK_KP_ENTER:
+				sym = SDLK_RETURN;
+				break;
+				case SDLK_KP_EQUALS:
+				sym = SDLK_EQUALS;
+				break;
+			}
+			// If we're not directly handled and still above 255
+			// just force it to 0
+			if (sym > 255)
+				sym = 0;
+			Key_Event (sym, -1, state);
+			break;
 
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEBUTTONUP:
-				but = event.button.button;
-				if (but == 2)
-					but = 3;
-				else if (but == 3)
-					but = 2;
+			but = event.button.button;
+			if (but == 2)
+				but = 3;
+			else if (but == 3)
+				but = 2;
 
-				switch (but) {
-					case 1:
-					case 2:
-					case 3:
-						Key_Event (K_MOUSE1 + but - 1, 0, event.type
-								   == SDL_MOUSEBUTTONDOWN);
-						break;
-					case 4:
-						Key_Event (K_MWHEELUP, 0,
-								   event.type == SDL_MOUSEBUTTONDOWN);
-						break;
-					case 5:
-						Key_Event (K_MWHEELDOWN, 0,
-								   event.type == SDL_MOUSEBUTTONDOWN);
-						break;
-				}
+			switch (but) {
+				case 1:
+				case 2:
+				case 3:
+				Key_Event (K_MOUSE1 + but - 1, 0, event.type
+						   == SDL_MOUSEBUTTONDOWN);
 				break;
+				case 4:
+				Key_Event (K_MWHEELUP, 0, event.type == SDL_MOUSEBUTTONDOWN);
+				break;
+				case 5:
+				Key_Event (K_MWHEELDOWN, 0, event.type == SDL_MOUSEBUTTONDOWN);
+				break;
+			}
+			break;
 
 			case SDL_MOUSEMOTION:
-				if (_windowed_mouse->value) {
-					if ((event.motion.x != (vid.width / 2))
-						|| (event.motion.y != (vid.height / 2))) {
-						// *2 for vid_sdl.c, *10 for vid_sgl.c.
-						mouse_x = event.motion.xrel * 5;
-						mouse_y = event.motion.yrel * 5;
-						if (
-							(event.motion.x <
-							 ((vid.width / 2) - (vid.width / 4)))
-							|| (event.motion.x >
-								((vid.width / 2) + (vid.width / 4)))
-							|| (event.motion.y <
-								((vid.height / 2) - (vid.height / 4)))
-							|| (event.motion.y >
-								((vid.height / 2) + (vid.height / 4))))
-							SDL_WarpMouse (vid.width / 2, vid.height / 2);
-					}
-				} else {
-					// following are *2 in vid_sdl.c, vid_sgl.c is *10
+			if (_windowed_mouse->value) {
+				if ((event.motion.x != (vid.width / 2))
+					|| (event.motion.y != (vid.height / 2))) {
+					// *2 for vid_sdl.c, *10 for vid_sgl.c.
 					mouse_x = event.motion.xrel * 5;
 					mouse_y = event.motion.yrel * 5;
+					if ((event.motion.x < ((vid.width / 2) - (vid.width / 4)))
+						|| (event.motion.x >
+							((vid.width / 2) + (vid.width / 4)))
+						|| (event.motion.y <
+							((vid.height / 2) - (vid.height / 4)))
+						|| (event.motion.y >
+							((vid.height / 2) + (vid.height / 4))))
+							SDL_WarpMouse (vid.width / 2, vid.height / 2);
 				}
-				break;
+			} else {
+				// following are *2 in vid_sdl.c, vid_sgl.c is *10
+				mouse_x = event.motion.xrel * 5;
+				mouse_y = event.motion.yrel * 5;
+			}
+			break;
 
 			case SDL_QUIT:
-				CL_Disconnect ();
-				Sys_Quit ();
-				break;
+			CL_Disconnect ();
+			Sys_Quit ();
+			break;
 			default:
-				break;
+			break;
 		}
 	}
 }
@@ -360,8 +357,11 @@ IN_Init_Cvars (void)
 {
 	JOY_Init_Cvars ();
 
-	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, "If set to 1, quake will grab the mouse in X");
-	// m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, "Toggle mouse input filtering");
+	_windowed_mouse =
+		Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE,
+				  "If set to 1, quake will grab the mouse in X");
+	// m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, "Toggle mouse
+	// input filtering");
 }
 
 void
@@ -384,12 +384,12 @@ IN_Frame (void)
 	mouse_buttonstate = (i & ~0x06) | ((i & 0x02) << 1) | ((i & 0x04) >> 1);
 	for (i = 0; i < 3; i++) {
 		if ((mouse_buttonstate & (1 << i))
-			&& !(mouse_oldbuttonstate & (1 << i))) Key_Event (K_MOUSE1 + i, 0,
-															  true);
+			&& !(mouse_oldbuttonstate & (1 << i)))
+			Key_Event (K_MOUSE1 + i, 0, true);
 
 		if (!(mouse_buttonstate & (1 << i))
-			&& (mouse_oldbuttonstate & (1 << i))) Key_Event (K_MOUSE1 + i, 0,
-															 false);
+			&& (mouse_oldbuttonstate & (1 << i)))
+			Key_Event (K_MOUSE1 + i, 0, false);
 	}
 	mouse_oldbuttonstate = mouse_buttonstate;
 }

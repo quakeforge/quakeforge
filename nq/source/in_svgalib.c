@@ -1,3 +1,4 @@
+
 /*
 	in_svgalib.c
 
@@ -69,8 +70,8 @@ static int  mx, my;
 static void IN_InitKeyboard (void);
 static void IN_InitMouse (void);
 
-cvar_t		*_windowed_mouse;
-cvar_t		*m_filter;
+cvar_t     *_windowed_mouse;
+cvar_t     *m_filter;
 
 static void
 keyhandler (int scancode, int state)
@@ -87,7 +88,8 @@ keyhandler (int scancode, int state)
 
 
 static void
-mousehandler (int buttonstate, int dx, int dy, int dz, int drx, int dry, int drz)
+mousehandler (int buttonstate, int dx, int dy, int dz, int drx, int dry,
+			  int drz)
 {
 	mouse_buttonstate = buttonstate;
 	mx += dx;
@@ -263,7 +265,8 @@ IN_InitMouse (void)
 	char       *mousedev;
 	int         mouserate = MOUSE_DEFAULTSAMPLERATE;
 
-	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "Force viewpoint of player to center");
+	Cmd_AddCommand ("force_centerview", Force_CenterView_f,
+					"Force viewpoint of player to center");
 
 	mouse_buttons = 3;
 

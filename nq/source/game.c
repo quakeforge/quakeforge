@@ -38,7 +38,8 @@
 /*
     Game_Init
 */
-void Game_Init (void)
+void
+Game_Init (void)
 {
 	if (COM_CheckParm ("-abyss")) {
 		abyss = true;
@@ -49,7 +50,7 @@ void Game_Init (void)
 		rogue = true;
 		standard_quake = false;
 	}
- 
+
 	if (COM_CheckParm ("-hipnotic")) {
 		hipnotic = true;
 		standard_quake = false;

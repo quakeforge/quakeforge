@@ -1,3 +1,4 @@
+
 /*
 	in_x11.c
 
@@ -104,197 +105,197 @@ XLateKey (XKeyEvent * ev, qboolean modified)
 
 	switch (keysym) {
 		case XK_KP_Page_Up:
-			key = KP_PGUP;
-			break;
+		key = KP_PGUP;
+		break;
 		case XK_Page_Up:
-			key = K_PGUP;
-			break;
+		key = K_PGUP;
+		break;
 
 		case XK_KP_Page_Down:
-			key = KP_PGDN;
-			break;
+		key = KP_PGDN;
+		break;
 		case XK_Page_Down:
-			key = K_PGDN;
-			break;
+		key = K_PGDN;
+		break;
 
 		case XK_KP_Home:
-			key = KP_HOME;
-			break;
+		key = KP_HOME;
+		break;
 		case XK_Home:
-			key = K_HOME;
-			break;
+		key = K_HOME;
+		break;
 
 		case XK_KP_End:
-			key = KP_END;
-			break;
+		key = KP_END;
+		break;
 		case XK_End:
-			key = K_END;
-			break;
+		key = K_END;
+		break;
 
 		case XK_KP_Left:
-			key = KP_LEFTARROW;
-			break;
+		key = KP_LEFTARROW;
+		break;
 		case XK_Left:
-			key = K_LEFTARROW;
-			break;
+		key = K_LEFTARROW;
+		break;
 
 		case XK_KP_Right:
-			key = KP_RIGHTARROW;
-			break;
+		key = KP_RIGHTARROW;
+		break;
 		case XK_Right:
-			key = K_RIGHTARROW;
-			break;
+		key = K_RIGHTARROW;
+		break;
 
 		case XK_KP_Down:
-			key = KP_DOWNARROW;
-			break;
+		key = KP_DOWNARROW;
+		break;
 		case XK_Down:
-			key = K_DOWNARROW;
-			break;
+		key = K_DOWNARROW;
+		break;
 
 		case XK_KP_Up:
-			key = KP_UPARROW;
-			break;
+		key = KP_UPARROW;
+		break;
 		case XK_Up:
-			key = K_UPARROW;
-			break;
+		key = K_UPARROW;
+		break;
 
 		case XK_Escape:
-			key = K_ESCAPE;
-			break;
+		key = K_ESCAPE;
+		break;
 
 		case XK_KP_Enter:
-			key = KP_ENTER;
-			break;
+		key = KP_ENTER;
+		break;
 		case XK_Return:
-			key = K_ENTER;
-			break;
+		key = K_ENTER;
+		break;
 
 		case XK_Tab:
-			key = K_TAB;
-			break;
+		key = K_TAB;
+		break;
 
 		case XK_F1:
-			key = K_F1;
-			break;
+		key = K_F1;
+		break;
 		case XK_F2:
-			key = K_F2;
-			break;
+		key = K_F2;
+		break;
 		case XK_F3:
-			key = K_F3;
-			break;
+		key = K_F3;
+		break;
 		case XK_F4:
-			key = K_F4;
-			break;
+		key = K_F4;
+		break;
 		case XK_F5:
-			key = K_F5;
-			break;
+		key = K_F5;
+		break;
 		case XK_F6:
-			key = K_F6;
-			break;
+		key = K_F6;
+		break;
 		case XK_F7:
-			key = K_F7;
-			break;
+		key = K_F7;
+		break;
 		case XK_F8:
-			key = K_F8;
-			break;
+		key = K_F8;
+		break;
 		case XK_F9:
-			key = K_F9;
-			break;
+		key = K_F9;
+		break;
 		case XK_F10:
-			key = K_F10;
-			break;
+		key = K_F10;
+		break;
 		case XK_F11:
-			key = K_F11;
-			break;
+		key = K_F11;
+		break;
 		case XK_F12:
-			key = K_F12;
-			break;
+		key = K_F12;
+		break;
 
 		case XK_BackSpace:
-			key = K_BACKSPACE;
-			break;
+		key = K_BACKSPACE;
+		break;
 
 		case XK_KP_Delete:
-			key = KP_DEL;
-			break;
+		key = KP_DEL;
+		break;
 		case XK_Delete:
-			key = K_DEL;
-			break;
+		key = K_DEL;
+		break;
 
 		case XK_Pause:
-			key = K_PAUSE;
-			break;
+		key = K_PAUSE;
+		break;
 
 		case XK_Shift_L:
 		case XK_Shift_R:
-			key = K_SHIFT;
-			break;
+		key = K_SHIFT;
+		break;
 
 		case XK_Execute:
 		case XK_Control_L:
 		case XK_Control_R:
-			key = K_CTRL;
-			break;
+		key = K_CTRL;
+		break;
 
 		case XK_Mode_switch:
 		case XK_Alt_L:
 		case XK_Meta_L:
 		case XK_Alt_R:
 		case XK_Meta_R:
-			key = K_ALT;
-			break;
+		key = K_ALT;
+		break;
 
 		case XK_Caps_Lock:
-			key = K_CAPSLOCK;
-			break;
+		key = K_CAPSLOCK;
+		break;
 		case XK_KP_Begin:
-			key = KP_5;
-			break;
+		key = KP_5;
+		break;
 
 		case XK_Insert:
-			key = K_INS;
-			break;
+		key = K_INS;
+		break;
 		case XK_KP_Insert:
-			key = KP_INS;
-			break;
+		key = KP_INS;
+		break;
 
 		case XK_KP_Multiply:
-			key = KP_MULTIPLY;
-			break;
+		key = KP_MULTIPLY;
+		break;
 		case XK_KP_Add:
-			key = KP_PLUS;
-			break;
+		key = KP_PLUS;
+		break;
 		case XK_KP_Subtract:
-			key = KP_MINUS;
-			break;
+		key = KP_MINUS;
+		break;
 		case XK_KP_Divide:
-			key = KP_DIVIDE;
-			break;
+		key = KP_DIVIDE;
+		break;
 
-			/* For Sun keyboards */
+		/* For Sun keyboards */
 		case XK_F27:
-			key = K_HOME;
-			break;
+		key = K_HOME;
+		break;
 		case XK_F29:
-			key = K_PGUP;
-			break;
+		key = K_PGUP;
+		break;
 		case XK_F33:
-			key = K_END;
-			break;
+		key = K_END;
+		break;
 		case XK_F35:
-			key = K_PGDN;
-			break;
+		key = K_PGDN;
+		break;
 
 		default:
-			if (keysym < 128) {
-				/* ASCII keys */
-				key = keysym;
-				if (!modified && ((key >= 'A') && (key <= 'Z'))) {
-					key = key + ('a' - 'A');
-				}
+		if (keysym < 128) {
+			/* ASCII keys */
+			key = keysym;
+			if (!modified && ((key >= 'A') && (key <= 'Z'))) {
+				key = key + ('a' - 'A');
 			}
-			break;
+		}
+		break;
 	}
 
 	return key;
@@ -331,14 +332,14 @@ event_button (XEvent * event)
 		case 1:
 		case 2:
 		case 3:
-			Key_Event (K_MOUSE1 + but - 1, 0, event->type == ButtonPress);
-			break;
+		Key_Event (K_MOUSE1 + but - 1, 0, event->type == ButtonPress);
+		break;
 		case 4:
-			Key_Event (K_MWHEELUP, 0, event->type == ButtonPress);
-			break;
+		Key_Event (K_MWHEELUP, 0, event->type == ButtonPress);
+		break;
 		case 5:
-			Key_Event (K_MWHEELDOWN, 0, event->type == ButtonPress);
-			break;
+		Key_Event (K_MWHEELDOWN, 0, event->type == ButtonPress);
+		break;
 	}
 }
 
@@ -505,7 +506,7 @@ IN_Init (void)
 		Sys_Error ("IN: No window!!\n");
 
 	x11_open_display ();				// call to increment the reference
-										// counter
+	// counter
 
 	{
 		int         attribmask = CWEventMask;
@@ -541,15 +542,20 @@ IN_Init (void)
 	x11_add_event (ButtonRelease, &event_button);
 	x11_add_event (MotionNotify, &event_motion);
 
-	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "Force view of player to center");
+	Cmd_AddCommand ("force_centerview", Force_CenterView_f,
+					"Force view of player to center");
 }
 
 void
 IN_Init_Cvars (void)
 {
 	JOY_Init_Cvars ();
-	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, "With this set to 1, quake will grab the mouse from X");
-	m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, "Toggle mouse input filtering.");
+	_windowed_mouse =
+		Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE,
+				  "With this set to 1, quake will grab the mouse from X");
+	m_filter =
+		Cvar_Get ("m_filter", "0", CVAR_ARCHIVE,
+				  "Toggle mouse input filtering.");
 	in_dga = Cvar_Get ("in_dga", "1", CVAR_ARCHIVE, "DGA Input support");
 	in_dga_mouseaccel = Cvar_Get ("in_dga_mouseaccel", "1", CVAR_ARCHIVE,
 								  "DGA Mouse accelleration multiplier");

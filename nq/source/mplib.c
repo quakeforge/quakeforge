@@ -1,3 +1,4 @@
+
 /*
 	mplib.c
 
@@ -91,29 +92,35 @@ typedef unsigned long DWORD;
 //#include "rtq.h"
 #define RTQ_NODE struct rtq_node
 
-RTQ_NODE
-   {
-      RTQ_NODE *self; // Ring zero address of this node
-      RTQ_NODE *left; // Ring zero address of preceding node
-      RTQ_NODE *right; // Ring zero address of succeding node
-      BYTE *      rtqDatum;  // Ring 3 Datum of Buffer (start of preface)
-      BYTE *      rtqInsert; // Ring 3 insertion position
-      WORD     rtqLen; // Length of buffer, excluding preface
-      WORD     rtqUpCtr;  // Up Counter of bytes used so far
-      WORD     rtqQCtr;   // number of nodes attached
-      WORD     padding;   // DWORD alignment
-   };
+RTQ_NODE {
+	RTQ_NODE   *self;					// Ring zero address of this node
+	RTQ_NODE   *left;					// Ring zero address of preceding
+
+	// node
+	RTQ_NODE   *right;					// Ring zero address of succeding
+
+	// node
+	BYTE       *rtqDatum;				// Ring 3 Datum of Buffer (start of
+
+	// preface)
+	BYTE       *rtqInsert;				// Ring 3 insertion position
+	WORD        rtqLen;					// Length of buffer, excluding
+
+	// preface
+	WORD        rtqUpCtr;				// Up Counter of bytes used so far
+	WORD        rtqQCtr;				// number of nodes attached
+	WORD        padding;				// DWORD alignment
+};
 
 #define RTQ_PARAM_MOVENODE struct rtq_param_movenode
-RTQ_PARAM_MOVENODE
-   {
-      WORD     rtqFromDQ;
-      WORD     rtqToDQ;
-   };
+RTQ_PARAM_MOVENODE {
+	WORD        rtqFromDQ;
+	WORD        rtqToDQ;
+};
 
-RTQ_NODE* rtq_fetch(RTQ_NODE*, RTQ_NODE*); // To, From
+RTQ_NODE   *rtq_fetch (RTQ_NODE *, RTQ_NODE *);	// To, From
 
-int _int86(int vector, __dpmi_regs *iregs, __dpmi_regs *oregs);
+int         _int86 (int vector, __dpmi_regs * iregs, __dpmi_regs * oregs);
 
 #define CHUNNEL_INT 0x48
 
@@ -121,115 +128,123 @@ int _int86(int vector, __dpmi_regs *iregs, __dpmi_regs *oregs);
 #define REGISTERS	__dpmi_regs
 
 void
-Yield(void)
+Yield (void)
 {
-	__dpmi_yield();
+	__dpmi_yield ();
 }
 
 void
-PostWindowsMessage(void)
+PostWindowsMessage (void)
 {
-   REGISTERS regs;
+	REGISTERS   regs;
 
-   regs.d.eax = DPMIAPI_POST_WINDOWS_ORD << 16 | MGENVXD_DEVICE_ID;
-   regs.d.ebx = 0;
-   regs.d.ecx = 0;
-   int386(CHUNNEL_INT, &regs, &regs);
+	regs.d.eax = DPMIAPI_POST_WINDOWS_ORD << 16 | MGENVXD_DEVICE_ID;
+	regs.d.ebx = 0;
+	regs.d.ecx = 0;
+	int386 (CHUNNEL_INT, &regs, &regs);
 }
 
 int
-MGenWait(void)
+MGenWait (void)
 {
-   REGISTERS regs;
+	REGISTERS   regs;
 
-   regs.d.eax = MGENVXD_WAIT_ORD << 16 | MGENVXD_DEVICE_ID;
-   int386(CHUNNEL_INT, &regs, &regs);
-   return regs.d.eax;
+	regs.d.eax = MGENVXD_WAIT_ORD << 16 | MGENVXD_DEVICE_ID;
+	int386 (CHUNNEL_INT, &regs, &regs);
+	return regs.d.eax;
 }
 
-int MGenGetQueueCtr(int qNo)
+int
+MGenGetQueueCtr (int qNo)
 {
-   REGISTERS   regs;
+	REGISTERS   regs;
 
-   regs.d.eax = MGENVXD_GETQUEUECTR_ORD << 16 | MGENVXD_DEVICE_ID;
-   regs.d.ebx = qNo;
-   int386(CHUNNEL_INT, &regs, &regs);
+	regs.d.eax = MGENVXD_GETQUEUECTR_ORD << 16 | MGENVXD_DEVICE_ID;
+	regs.d.ebx = qNo;
+	int386 (CHUNNEL_INT, &regs, &regs);
 
-   return regs.d.eax;
+	return regs.d.eax;
 }
 
-RTQ_NODE *MGenMoveTo(int qFrom, int qTo)
+RTQ_NODE   *
+MGenMoveTo (int qFrom, int qTo)
 {
-   REGISTERS   regs;
+	REGISTERS   regs;
 
-   regs.d.eax = MGENVXD_MOVENODE_ORD << 16 | MGENVXD_DEVICE_ID;
-   regs.d.ebx = qFrom;
-   regs.d.ecx = qTo;
-   int386(CHUNNEL_INT, &regs, &regs);
+	regs.d.eax = MGENVXD_MOVENODE_ORD << 16 | MGENVXD_DEVICE_ID;
+	regs.d.ebx = qFrom;
+	regs.d.ecx = qTo;
+	int386 (CHUNNEL_INT, &regs, &regs);
 
-   return (RTQ_NODE *) regs.d.eax;
+	return (RTQ_NODE *) regs.d.eax;
 }
 
-RTQ_NODE *MGenGetNode(int q)
+RTQ_NODE   *
+MGenGetNode (int q)
 {
-   REGISTERS   regs;
+	REGISTERS   regs;
 
-   regs.d.eax = MGENVXD_GETNODE_ORD << 16 | MGENVXD_DEVICE_ID;
-   regs.d.ebx = q;
-   int386(CHUNNEL_INT, &regs, &regs);
+	regs.d.eax = MGENVXD_GETNODE_ORD << 16 | MGENVXD_DEVICE_ID;
+	regs.d.ebx = q;
+	int386 (CHUNNEL_INT, &regs, &regs);
 
-   return (RTQ_NODE *) regs.d.eax;
+	return (RTQ_NODE *) regs.d.eax;
 }
 
-RTQ_NODE *MGenGetMasterNode(unsigned *size)
+RTQ_NODE   *
+MGenGetMasterNode (unsigned *size)
 {
-   REGISTERS   regs;
+	REGISTERS   regs;
 
-   regs.d.eax = MGENVXD_MASTERNODE_ORD << 16 | MGENVXD_DEVICE_ID;
-   int386(CHUNNEL_INT, &regs, &regs);
-   *size = regs.d.ecx;
+	regs.d.eax = MGENVXD_MASTERNODE_ORD << 16 | MGENVXD_DEVICE_ID;
+	int386 (CHUNNEL_INT, &regs, &regs);
+	*size = regs.d.ecx;
 
-   return (RTQ_NODE *) regs.d.eax;
+	return (RTQ_NODE *) regs.d.eax;
 }
 
-RTQ_NODE *MGenFlushNodes(int qFrom, int qTo)
+RTQ_NODE   *
+MGenFlushNodes (int qFrom, int qTo)
 {
-   REGISTERS   regs;
+	REGISTERS   regs;
 
-   regs.d.eax = MGENVXD_FLUSHNODE_ORD << 16 | MGENVXD_DEVICE_ID;
-   regs.d.ebx = qFrom;
-   regs.d.ecx = qTo;
-   int386(CHUNNEL_INT, &regs, &regs);
+	regs.d.eax = MGENVXD_FLUSHNODE_ORD << 16 | MGENVXD_DEVICE_ID;
+	regs.d.ebx = qFrom;
+	regs.d.ecx = qTo;
+	int386 (CHUNNEL_INT, &regs, &regs);
 
-   return (RTQ_NODE *) regs.d.eax;
+	return (RTQ_NODE *) regs.d.eax;
 }
 
-int MGenMCount(unsigned lowerOrderBits, unsigned upperOrderBits)
+int
+MGenMCount (unsigned lowerOrderBits, unsigned upperOrderBits)
 {
-   REGISTERS   regs;
+	REGISTERS   regs;
 
-   regs.d.eax = MGENVXD_MCOUNT_ORD << 16 | MGENVXD_DEVICE_ID;
-   regs.d.ebx = lowerOrderBits;
-   regs.d.ecx = upperOrderBits;
-   int386(CHUNNEL_INT, &regs, &regs);
+	regs.d.eax = MGENVXD_MCOUNT_ORD << 16 | MGENVXD_DEVICE_ID;
+	regs.d.ebx = lowerOrderBits;
+	regs.d.ecx = upperOrderBits;
+	int386 (CHUNNEL_INT, &regs, &regs);
 
-   return regs.d.eax;
+	return regs.d.eax;
 }
 
-int MGenSanityCheck(void)
+int
+MGenSanityCheck (void)
 {
-   REGISTERS   regs;
+	REGISTERS   regs;
 
-   regs.d.eax = MGENVXD_SANITYCHECK_ORD << 16 | MGENVXD_DEVICE_ID;
-   int386(CHUNNEL_INT, &regs, &regs);
+	regs.d.eax = MGENVXD_SANITYCHECK_ORD << 16 | MGENVXD_DEVICE_ID;
+	int386 (CHUNNEL_INT, &regs, &regs);
 
-   return regs.d.eax;
+	return regs.d.eax;
 }
 
-void MGenWakeupDll(void)
+void
+MGenWakeupDll (void)
 {
-   REGISTERS   regs;
+	REGISTERS   regs;
 
-   regs.d.eax = MGENVXD_WAKEUPDLL_ORD << 16 | MGENVXD_DEVICE_ID;
-   int386(CHUNNEL_INT, &regs, &regs);
+	regs.d.eax = MGENVXD_WAKEUPDLL_ORD << 16 | MGENVXD_DEVICE_ID;
+	int386 (CHUNNEL_INT, &regs, &regs);
 }
