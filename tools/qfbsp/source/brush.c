@@ -567,27 +567,34 @@ LoadBrush (mbrush_t *mb, int hullnum)
 	mface_t    *f;
 
 	// check texture name for attributes
-	name = miptex[bsp->texinfo[mb->faces->texinfo].miptex];
+	if (mb->faces->texinfo < 0) {
+		// ignore HINT and SKIP in clip hulls
+		if (hullnum)
+			return NULL;
+		contents = CONTENTS_EMPTY;
+	} else {
+		name = miptex[bsp->texinfo[mb->faces->texinfo].miptex];
 
-	if (!strcasecmp (name, "clip") && hullnum == 0)
-		return NULL;		// "clip" brushes don't show up in the draw hull
+		if (!strcasecmp (name, "clip") && hullnum == 0)
+			return NULL;		// "clip" brushes don't show up in the draw hull
 
-	if (name[0] == '*' && worldmodel) {	// entities never use water merging
-		if (!strncasecmp (name + 1, "lava", 4))
-			contents = CONTENTS_LAVA;
-		else if (!strncasecmp (name + 1, "slime", 5))
-			contents = CONTENTS_SLIME;
+		if (name[0] == '*' && worldmodel) {	// entities never use water merging
+			if (!strncasecmp (name + 1, "lava", 4))
+				contents = CONTENTS_LAVA;
+			else if (!strncasecmp (name + 1, "slime", 5))
+				contents = CONTENTS_SLIME;
+			else
+				contents = CONTENTS_WATER;
+		} else if (!strncasecmp (name, "sky", 3) && worldmodel && hullnum == 0)
+			contents = CONTENTS_SKY;
 		else
-			contents = CONTENTS_WATER;
-	} else if (!strncasecmp (name, "sky", 3) && worldmodel && hullnum == 0)
-		contents = CONTENTS_SKY;
-	else
-		contents = CONTENTS_SOLID;
+			contents = CONTENTS_SOLID;
 
-	if (hullnum && contents != CONTENTS_SOLID && contents != CONTENTS_SKY)
-		return NULL;		// water brushes don't show up in clipping hulls
+		if (hullnum && contents != CONTENTS_SOLID && contents != CONTENTS_SKY)
+			return NULL;		// water brushes don't show up in clipping hulls
 
-	// no seperate textures on clip hull
+		// no seperate textures on clip hull
+	}
 
 	// create the faces
 	brush_faces = NULL;
