@@ -469,17 +469,32 @@ R_BuildLightMap_4 (msurface_t *surf)
 
 // BRUSH MODELS ===============================================================
 
+static inline void
+do_subimage_2 (int i)
+{
+	byte       *block, *lm, *b;
+	int         stride, width;
+	glRect_t   *rect = &lightmap_rectchange[i];
+
+	width = rect->w * lightmap_bytes;
+	stride = BLOCK_WIDTH * lightmap_bytes;
+	b = block = Hunk_TempAlloc (rect->h * width);
+	lm = lightmaps[i] + (rect->t * BLOCK_WIDTH + rect->l) * lightmap_bytes;
+	for (i = rect->h; i > 0; i--) {
+		memcpy (b, lm, width);
+		b += width;
+		lm += stride;
+	}
+	qfglTexSubImage2D (GL_TEXTURE_2D, 0, rect->l, rect->t, rect->w, rect->h,
+					   gl_lightmap_format, GL_UNSIGNED_BYTE, block);
+}
+
 static void
 GL_UploadLightmap (int i)
 {
 	switch (gl_lightmap_subimage->int_val) {
 	case 2:
-		qfglTexSubImage2D (GL_TEXTURE_2D, 0, lightmap_rectchange[i].l,
-						   lightmap_rectchange[i].t, lightmap_rectchange[i].w,
-						   lightmap_rectchange[i].h, gl_lightmap_format,
-						   GL_UNSIGNED_BYTE, lightmaps[i] +
-						   (lightmap_rectchange[i].t * BLOCK_WIDTH +
-							lightmap_rectchange[i].l) * lightmap_bytes);
+		do_subimage_2 (i);
 		break;
 	case 1:
 		qfglTexSubImage2D (GL_TEXTURE_2D, 0, 0, lightmap_rectchange[i].t,
