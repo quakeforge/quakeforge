@@ -952,7 +952,6 @@ CL_ConnectionlessPacket (void)
 					return;
 				}
 			} 
-		Con_Printf ("print\n");
 		Con_Print (s);
 		return;
 	}
