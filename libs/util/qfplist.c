@@ -327,36 +327,31 @@ PL_ParsePropertyListItem (pldata_t *pl)
 					return NULL;
 
 				if (!(PL_SkipSpace (pl))) {
-					free (key->data);
-					free (key);
+					PL_FreeItem (key);
 					return NULL;
 				}
 
 				if (key->type != QFString) {
 					pl->error = "Key is not a string";
-					free (key->data);
-					free (key);
+					PL_FreeItem (key);
 					return NULL;
 				}
 
 				if (pl->ptr[pl->pos] != '=') {
 					pl->error = "Unexpected character (expected '=')";
-					free (key->data);
-					free (key);
+					PL_FreeItem (key);
 					return NULL;
 				}
 				pl->pos++;
 
 				// If there is no value, lose the key				
 				if (!(value = PL_ParsePropertyListItem (pl))) {
-					free (key->data);
-					free (key);
+					PL_FreeItem (key);
 					return NULL;
 				}
 
 				if (!(PL_SkipSpace (pl))) {
-					free (key->data);
-					free (key);
+					PL_FreeItem (key);
 					PL_FreeItem (value);
 					return NULL;
 				}
@@ -365,8 +360,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 					pl->pos++;
 				} else if (pl->ptr[pl->pos] != '}') {
 					pl->error = "Unexpected character (wanted ';' or '}')";
-					free (key->data);
-					free (key);
+					PL_FreeItem (key);
 					PL_FreeItem (value);
 					return NULL;
 				}
@@ -375,8 +369,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 					dictkey_t	*k = calloc (1, sizeof (dictkey_t));
 
 					if (!k) {
-						free (key->data);
-						free (key);
+						PL_FreeItem (key);
 						PL_FreeItem (value);
 						return NULL;
 					}
@@ -390,10 +383,9 @@ PL_ParsePropertyListItem (pldata_t *pl)
 
 			if (pl->pos >= pl->end) {	// Catch the error
 				pl->error = "Unexpected end of string when parsing dictionary";
-				free (dict);
+				Hash_DelTable (dict);
 				return NULL;
 			}
-
 			pl->pos++;
 
 			item = calloc (1, sizeof (plitem_t));
