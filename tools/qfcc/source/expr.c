@@ -1200,6 +1200,10 @@ function_expr (expr_t *e1, expr_t *e2)
 			t = &type_float;
 		}
 		if (ftype->num_parms != -1) {
+			if (t == &type_void) {
+				t = ftype->parm_types[i - 1];
+				e->type = expr_types[t->type];
+			}
 			if (t != ftype->parm_types[i - 1])
 				err = error (e, "type mismatch for parameter %d of %s",
 							 i, e1->e.def->name);
