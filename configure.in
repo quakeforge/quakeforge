@@ -272,9 +272,12 @@ AC_SUBST(DL_LIBS)
 
 AC_CHECK_LIB(ncurses, initscr,
 	CURSES_LIBS=-lncurses,
-	AC_CHECK_LIB(curses, initscr,
-		CURSES_LIBS=-ncurses,
-		CURSES_LIBS=
+	AC_CHECK_LIB(pdcurses, initscr,
+		CURSES_LIBS=-lpdcurses,
+		AC_CHECK_LIB(curses, initscr,
+			CURSES_LIBS=-lcurses,
+			CURSES_LIBS=
+		)
 	)
 )
 AC_SUBST(CURSES_LIBS)
