@@ -287,12 +287,12 @@ CheckForCommand (const char *line)
 	const char *cmd;
 	int         i;
 
-	for (i = 0; i < 127; i++)
-
+	for (i = 0; i < 127; i++) {
 		if (line[i] <= ' ')
 			break;
 		else
 			command[i] = line[i];
+	}
 	command[i] = 0;
 	
 	cmd = Cmd_CompleteCommand (command);
