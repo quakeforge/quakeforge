@@ -116,9 +116,16 @@ R_ClipSpriteFace (int nump, clipplane_t *pclipplane)
 
 		if (dists[i] == 0 || dists[i + 1] == 0)
 			continue;
-
+#if __APPLE_CC__ == 1173
+		// bug in gcc (GCC) 3.1 20020420 (prerelease) for darwin
+		if ((dists[i] > 0) && (dists[i + 1] > 0))
+			continue;
+		if ((dists[i] <= 0) && (dists[i + 1] <= 0))
+			continue;
+#else
 		if ((dists[i] > 0) == (dists[i + 1] > 0))
 			continue;
+#endif
 
 		// split it into a new vertex
 		frac = dists[i] / (dists[i] - dists[i + 1]);
