@@ -607,7 +607,20 @@ QF_maGiC_VALUE
 			    ],
 			    SOUND_TYPES="$SOUND_TYPES ALSA0.9"
 			    ALSA_LIBS="-lasound"
-			    HAVE_ALSA=yes
+			    HAVE_ALSA=yes,
+				AC_EGREP_CPP([QF_maGiC_VALUE],
+					[
+#include <sys/asoundlib.h>
+#if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
+#if SND_LIB_MAJOR > 0 || (SND_LIB_MAJOR == 0 && SND_LIB_MINOR >= 9)
+QF_maGiC_VALUE
+#endif
+#endif
+					],
+					SOUND_TYPES="$SOUND_TYPES ALSA0.9"
+					ALSA_LIBS="-lasound"
+					HAVE_ALSA=yes
+				)
 		    )
 	    )
 	fi
