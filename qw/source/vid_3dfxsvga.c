@@ -50,7 +50,7 @@
 #include "host.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
-#include "qfgl_ext.h"
+#include "QF/qfgl_ext.h"
 #include "QF/quakefs.h"
 #include "sbar.h"
 #include "QF/sys.h"

@@ -50,7 +50,7 @@
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "glquake.h"
-#include "qfgl_ext.h"
+#include "QF/qfgl_ext.h"
 #include "sbar.h"
 
 #define WARP_WIDTH              320

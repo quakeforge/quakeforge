@@ -64,7 +64,7 @@
 # include <strings.h>
 #endif
 
-#include "qfgl_ext.h"
+#include "QF/qfgl_ext.h"
 #include "QF/qtypes.h"
 
 /*
