@@ -98,13 +98,16 @@ void () scan_saves =
 	local integer	i;
 	local QFile		f;
 	for (i = 0; i < MAX_SAVEGAMES; i++) {
+		if (!filenames[i])
+			filenames[i] = str_new ();
 		loadable[i] = 0;
-		filenames[i] = "--- UNUSED SLOT ---";
 		f = File_Open (sprintf ("s%i.sav", i), "rz");
-		if (!f)
+		if (!f) {
+			str_copy (filenames[i], "--- UNUSED SLOT ---");
 			continue;
+		}
 		Qgetline (f);
-		filenames[i] = Qgetline (f);
+		str_copy (filenames[i], Qgetline (f));
 		loadable[i] = 1;
 		Qclose (f);
 	}

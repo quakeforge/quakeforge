@@ -463,6 +463,7 @@ Menu_Init (void)
 	QFS_Progs_Init (&menu_pr_state);
 	PR_Cmds_Init (&menu_pr_state);
 	R_Progs_Init (&menu_pr_state);
+	String_Progs_Init (&menu_pr_state);
 
 	PR_AddLoadFunc (&menu_pr_state, menu_resolve_globals);
 

@@ -9,3 +9,8 @@ string (...) sprintf = #0x000f0000 + 109;
 string (integer i) itos = #0x000f0000 + 112;
 integer (string s) stoi = #0x000f0000 + 113;
 vector (string s) stov = #0x000f0000 + 114;
+
+string (void) str_new = #0;
+string (string str) str_free = #0;
+string (string dst, string src) str_copy = #0;
+string (string str) str_clear = #0;

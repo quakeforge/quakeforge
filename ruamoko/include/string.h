@@ -11,4 +11,9 @@
 @extern integer (string s) stoi;
 @extern vector (string s) stov;
 
+@extern string (void) str_new;
+@extern string (string str) str_free;
+@extern string (string dst, string src) str_copy;
+@extern string (string str) str_clear;
+
 #endif//__ruamoko_string_h
