@@ -14,17 +14,16 @@ EXTRA_libsw_la_SOURCES= \
 	sw_redge.c sw_rmain.c sw_rmisc.c sw_rpart.c sw_rsky.c sw_rsprite.c \
 	sw_rsurf.c sw_skin.c
 
-if BUILD_SW
- if ASM_ARCH
-  libasm_la_SOURCES= $(EXTRA_libasm_la_SOURCES)
- else
-  libasm_la_SOURCES=
- endif
+if BUILD_SW_ASM
+ libasm_la_SOURCES= $(EXTRA_libasm_la_SOURCES)
+else
+ libasm_la_SOURCES=
+endif
 
+if BUILD_SW
  libsw_la_LIBADD= libasm.la
  libsw_la_SOURCES= $(EXTRA_libsw_la_SOURCES)
  libsw_la_DEPENDENCIES= libasm.la
 else
- libasm_la_SOURCES=
  libsw_la_SOURCES=
 endif
