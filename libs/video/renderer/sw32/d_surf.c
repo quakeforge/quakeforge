@@ -149,10 +149,10 @@ D_SCAlloc (int width, int size)
 	surfcache_t *new;
 	qboolean    wrapped_this_time;
 
-	if ((width < 0) || (width > 256))
+	if ((width < 0) || (width > 512))	// FIXME shouldn't really have a max
 		Sys_Error ("D_SCAlloc: bad cache width %d", width);
 
-	if ((size <= 0) || (size > (0x10000 * r_pixbytes)))
+	if ((size <= 0) || (size > (0x40000 * r_pixbytes))) //FIXME ditto
 		Sys_Error ("D_SCAlloc: bad cache size %d", size);
 
 	/* This adds the offset of data[0] in the surfcache_t struct. */

@@ -67,7 +67,7 @@ int          lightmap_textures;
 // LordHavoc: changed to be allocated at runtime (typically lower memory usage)
 byte        *lightmaps[MAX_LIGHTMAPS];
 
-unsigned int blocklights[18 * 18 * 3];
+unsigned int blocklights[34 * 34 * 3];	//FIXME make dynamic
 int          allocated[MAX_LIGHTMAPS][BLOCK_WIDTH];
 
 glpoly_t	*lightmap_modified[MAX_GLTEXTURES];

@@ -60,7 +60,7 @@ static void (*surfmiptable[4]) (void) = {
 	R_DrawSurfaceBlock_mip0, R_DrawSurfaceBlock_mip1,
 	R_DrawSurfaceBlock_mip2, R_DrawSurfaceBlock_mip3};
 
-unsigned int blocklights[18 * 18];
+unsigned int blocklights[34 * 34];	//FIXME make dynamic
 
 
 void
