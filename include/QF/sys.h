@@ -61,6 +61,7 @@ void Sys_Shutdown (void);
 void Sys_RegisterShutdown (void (*func) (void));
 double Sys_DoubleTime (void);
 
+int Sys_CheckInput (int idle, int net_socket);
 const char *Sys_ConsoleInput (void);
 
 void Sys_Sleep (void);

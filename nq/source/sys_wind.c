@@ -47,40 +47,6 @@ static const char rcsid[] =
 
 qboolean	isDedicated = true;
 
-const char       *
-Sys_ConsoleInput (void)
-{
-	static char text[256];
-	static int  len;
-	int         c;
-
-	// read a line out
-	while (_kbhit ()) {
-		c = _getch ();
-		putch (c);
-		if (c == '\r') {
-			text[len] = 0;
-			putch ('\n');
-			len = 0;
-			return text;
-		}
-		if (c == 8) {
-			putch (' ');
-			putch (c);
-			len--;
-			text[len] = 0;
-			continue;
-		}
-		text[len] = c;
-		len++;
-		text[len] = 0;
-		if (len == sizeof (text))
-			len = 0;
-	}
-
-	return NULL;
-}
-
 static void
 shutdown (void)
 {

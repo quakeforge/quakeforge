@@ -85,6 +85,9 @@ typedef struct shutdown_list_s {
 
 static shutdown_list_t *shutdown_list;
 
+static int  do_stdin = 1;
+qboolean    stdin_ready;
+
 /* The translation table between the graphical font and plain ASCII  --KB */
 const char sys_char_map[256] = {
 	'\0', '#', '#', '#', '#', '.', '#', '#',
@@ -124,6 +127,33 @@ const char sys_char_map[256] = {
 
 #define MAXPRINTMSG 4096
 
+
+#ifndef USE_INTEL_ASM
+void
+Sys_HighFPPrecision (void)
+{
+}
+
+void
+Sys_LowFPPrecision (void)
+{   
+}   
+
+void
+Sys_SetFPCW (void)
+{
+}
+
+void
+Sys_PushFPCW_SetHigh (void)
+{
+}
+
+void
+Sys_PopFPCW (void)
+{
+}
+#endif
 
 void
 Sys_mkdir (const char *path)
@@ -430,29 +460,105 @@ Sys_DebugLog (const char *file, const char *fmt, ...)
 	close (fd);
 }
 
-#ifndef USE_INTEL_ASM
-void
-Sys_HighFPPrecision (void)
+int
+Sys_CheckInput (int idle, int net_socket)
 {
-}
+	fd_set      fdset;
+	struct timeval _timeout;
+	struct timeval *timeout = 0;
 
-void
-Sys_LowFPPrecision (void)
-{   
-}   
+#ifdef _WIN32
+	// Now we want to give some processing time to other applications,
+	// such as qw_client, running on this machine.
+	sleep_msec = sys_sleep->int_val;
+	if (sleep_msec > 0) {
+		if (sleep_msec > 13)
+			sleep_msec = 13;
+		Sleep (sleep_msec);
+	}
 
-void
-Sys_SetFPCW (void)
-{
-}
-
-void
-Sys_PushFPCW_SetHigh (void)
-{
-}
-
-void
-Sys_PopFPCW (void)
-{
-}
+	_timeout.tv_sec = 0;
+	_timeout.tv_usec = 100;
+#else
+	_timeout.tv_sec = 0;
+	_timeout.tv_usec = 10000;
 #endif
+	// select on the net socket and stdin
+	// the only reason we have a timeout at all is so that if the last
+	// connected client times out, the message would not otherwise
+	// be printed until the next event.
+	FD_ZERO (&fdset);
+	if (do_stdin)
+		FD_SET (0, &fdset);
+	FD_SET (net_socket, &fdset);
+
+	if (!idle || !sys_dead_sleep->int_val)
+		timeout = &_timeout;
+
+	if (select (net_socket + 1, &fdset, NULL, NULL, timeout) == -1
+		&& errno != EINTR)
+		return 0;
+	stdin_ready = FD_ISSET (0, &fdset);
+	return 1;
+}
+
+/*
+	Sys_ConsoleInput
+
+	Checks for a complete line of text typed in at the console, then forwards
+	it to the host command processor
+*/
+const char *
+Sys_ConsoleInput (void)
+{
+	static char text[256];
+	int         len;
+
+#ifdef _WIN32
+	int         c;
+
+	// read a line out
+	while (kbhit ()) {
+		c = _getch ();
+		putch (c);
+		if (c == '\r') {
+			text[len] = 0;
+			putch ('\n');
+			len = 0;
+			return text;
+		}
+		if (c == 8) {
+			if (len) {
+				putch (' ');
+				putch (c);
+				len--;
+				text[len] = 0;
+			}
+			continue;
+		}
+		text[len] = c;
+		len++;
+		text[len] = 0;
+		if (len == sizeof (text))
+			len = 0;
+	}
+
+	return NULL;
+#else
+	if (!stdin_ready || !do_stdin)
+		return NULL;					// the select didn't say it was ready
+	stdin_ready = false;
+
+	len = read (0, text, sizeof (text));
+	if (len == 0) {
+		// end of file
+		do_stdin = 0;
+		return NULL;
+	}
+	if (len < 1)
+		return NULL;
+	text[len - 1] = 0;					// rip off the \n and terminate
+
+	return text;
+#endif
+}

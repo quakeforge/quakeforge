@@ -118,18 +118,6 @@ shutdown (void)
 #endif
 }
 
-/*
-	Sys_ConsoleInput
-
-	Checks for a complete line of text typed in at the console, then forwards
-	it to the host command processor
-*/
-const char *
-Sys_ConsoleInput (void)
-{
-	return NULL;
-}
-
 #ifndef SDL_main
 # define SDL_main main
 #endif

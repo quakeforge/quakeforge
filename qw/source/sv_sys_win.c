@@ -77,58 +77,13 @@ Sys_Init (void)
 		WinNT = false;
 }
 
-
-/*
-	Sys_ConsoleInput
-
-	Checks for a complete line of text typed in at the console, then forwards
-	it to the host command processor
-*/
-const char *
-Sys_ConsoleInput (void)
-{
-	static char text[256];
-	static int  len;
-	int         c;
-
-	// read a line out
-	while (kbhit ()) {
-		c = _getch ();
-		putch (c);
-		if (c == '\r') {
-			text[len] = 0;
-			putch ('\n');
-			len = 0;
-			return text;
-		}
-		if (c == 8) {
-			if (len) {
-				putch (' ');
-				putch (c);
-				len--;
-				text[len] = 0;
-			}
-			continue;
-		}
-		text[len] = c;
-		len++;
-		text[len] = 0;
-		if (len == sizeof (text))
-			len = 0;
-	}
-
-	return NULL;
-}
-
 char       *newargv[256];
 
 int
 main (int argc, const char **argv)
 {
 	double      newtime, time, oldtime;
-	fd_set      fdset;
 	int         sleep_msec;
-	struct timeval timeout;
 
 	COM_InitArgv (argc, argv);
 
@@ -158,23 +113,7 @@ main (int argc, const char **argv)
 	// main loop
 	oldtime = Sys_DoubleTime () - 0.1;
 	while (1) {
-		// Now we want to give some processing time to other applications,
-		// such as qw_client, running on this machine.
-		sleep_msec = sys_sleep->int_val;
-		if (sleep_msec > 0) {
-			if (sleep_msec > 13)
-				sleep_msec = 13;
-			Sleep (sleep_msec);
-		}
-		// select on the net socket and stdin
-		// the only reason we have a timeout at all is so that if the last
-		// connected client times out, the message would not otherwise
-		// be printed until the next event.
-		FD_ZERO (&fdset);
-		FD_SET (net_socket, &fdset);
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 100;
-		if (select (net_socket + 1, &fdset, NULL, NULL, &timeout) == -1)
+		if (!Sys_CheckInput (!svs.num_clients, net_socket))
 			continue;
 
 		// find time passed since last cycle

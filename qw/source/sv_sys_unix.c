@@ -59,7 +59,6 @@ static const char rcsid[] =
 #endif
 
 qboolean    is_server = true;
-qboolean    stdin_ready;
 server_static_t svs;
 info_t    **svs_info = &svs.info;
 
@@ -122,42 +121,10 @@ Sys_Init (void)
 #endif
 }
 
-static int  do_stdin = 1;
-
-/*
-	Sys_ConsoleInput
-
-	Checks for a complete line of text typed in at the console, then forwards
-	it to the host command processor
-*/
-const char *
-Sys_ConsoleInput (void)
-{
-	static char text[256];
-	int         len;
-
-	if (!stdin_ready || !do_stdin)
-		return NULL;					// the select didn't say it was ready
-	stdin_ready = false;
-
-	len = read (0, text, sizeof (text));
-	if (len == 0) {
-		// end of file
-		do_stdin = 0;
-		return NULL;
-	}
-	if (len < 1)
-		return NULL;
-	text[len - 1] = 0;					// rip off the \n and terminate
-
-	return text;
-}
-
 int
 main (int argc, const char *argv[])
 {
 	double      time, oldtime, newtime;
-	fd_set      fdset;
 
 	memset (&host_parms, 0, sizeof (host_parms));
 
@@ -175,26 +142,8 @@ main (int argc, const char *argv[])
 	// main loop
 	oldtime = Sys_DoubleTime () - 0.1;
 	while (1) {
-		struct timeval _timeout;
-		struct timeval *timeout = 0;
-		// select on the net socket and stdin
-		// the only reason we have a timeout at all is so that if the last
-		// connected client times out, the message would not otherwise
-		// be printed until the next event.
-		FD_ZERO (&fdset);
-		if (do_stdin)
-			FD_SET (0, &fdset);
-		FD_SET (net_socket, &fdset);
-
-		_timeout.tv_sec = 0;
-		_timeout.tv_usec = 10000;
-		if (svs.num_clients || !sys_dead_sleep->int_val)
-			timeout = &_timeout;
-
-		if (select (net_socket + 1, &fdset, NULL, NULL, timeout) == -1
-			&& errno != EINTR)
+		if (!Sys_CheckInput (!svs.num_clients, net_socket))
 			continue;
-		stdin_ready = FD_ISSET (0, &fdset);
 
 		// find time passed since last cycle
 		newtime = Sys_DoubleTime ();
