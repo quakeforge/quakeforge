@@ -291,21 +291,19 @@ void
 Mod_LoadExternalSkins (model_t *mod)
 {
 	char filename[MAX_QPATH + 4];
-	aliashdr_t *paliashdr;
 	maliasskindesc_t *pskindesc;
 	maliasskingroup_t *pskingroup;
 	int i, j;
 
-	paliashdr = Cache_Get (&mod->cache);
-	for (i = 0; i < paliashdr->mdl.numskins; i++) {
+	for (i = 0; i < pheader->mdl.numskins; i++) {
 		pskindesc = ((maliasskindesc_t *)
-			((byte *) paliashdr + paliashdr->skindesc)) + i;
+			((byte *) pheader + pheader->skindesc)) + i;
 		if (pskindesc->type == ALIAS_SKIN_SINGLE) {
 			snprintf (filename, sizeof (filename), "%s_%i.tga", mod->name, i);
 			Mod_LoadExternalSkin (pskindesc, filename);
 		} else {
 			pskingroup = (maliasskingroup_t *)
-				((byte *) paliashdr + pskindesc->skin);
+				((byte *) pheader + pskindesc->skin);
 			for (j = 0; j < pskingroup->numskins; j++) {
 				snprintf (filename, sizeof (filename), "%s_%i_%i.tga", mod->name, i, j);
 				Mod_LoadExternalSkin (pskingroup->skindescs + j, filename);
