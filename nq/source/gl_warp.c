@@ -49,7 +49,6 @@ extern double realtime;
 extern model_t *loadmodel;
 
 extern int  skytexturenum;
-extern qboolean lighthalf;
 
 int         solidskytexture;
 int         alphaskytexture;
@@ -580,7 +579,7 @@ R_DrawSkyBox (void)
 //  glDisable (GL_BLEND);
 //  glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	glDepthRange (gldepthmax, gldepthmax);
-	if (lighthalf)
+	if (gl_lightmode->int_val)
 		glColor3f (0.5, 0.5, 0.5);
 	else
 		glColor3f (1, 1, 1);
@@ -656,7 +655,7 @@ R_DrawSkyDome (void)
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthRange (gldepthmax, gldepthmax);
 	glDisable (GL_BLEND);
-	if (lighthalf)
+	if (gl_lightmode->int_val)
 		glColor3f (0.5, 0.5, 0.5);
 	else
 		glColor3f (1, 1, 1);

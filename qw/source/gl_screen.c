@@ -906,12 +906,8 @@ SCR_TileClear (void)
 	}
 }
 
-extern void R_ForceLightUpdate (void);
-
 int 			oldviewsize = 0;
-unsigned char	lighthalf_v[3];
-qboolean		lighthalf;
-extern cvar_t	*gl_lightmode;
+unsigned char	white_v[3];
 extern cvar_t	*brightness;
 /*
 	SCR_UpdateScreen
@@ -976,15 +972,6 @@ SCR_UpdateScreen (void)
 
 	// do 3D refresh drawing, and then update the screen
 
-	if (lighthalf != gl_lightmode->int_val) {
-		lighthalf = gl_lightmode->int_val;
-		if (lighthalf)
-			lighthalf_v[0] = lighthalf_v[1] = lighthalf_v[2] = 128;
-		else
-			lighthalf_v[0] = lighthalf_v[1] = lighthalf_v[2] = 255;
-		R_ForceLightUpdate ();
-	}
-
 	SCR_SetUpToDrawConsole ();
 
 	V_RenderView ();
@@ -1024,7 +1011,7 @@ SCR_UpdateScreen (void)
 	glDisable (GL_TEXTURE_2D);
 
 	Cvar_SetValue (brightness, bound (1, brightness->value, 5));
-	if (lighthalf)						// LordHavoc: render was done at half 
+	if (gl_lightmode->int_val)						// LordHavoc: render was done at half 
 										// 
 		// brightness
 		f = brightness->value * 2;
@@ -1046,7 +1033,7 @@ SCR_UpdateScreen (void)
 			f *= 0.5;
 		}
 		glEnd ();
-		glColor3ubv (lighthalf_v);
+		glColor3ubv (white_v);
 		glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 
@@ -1060,7 +1047,7 @@ SCR_UpdateScreen (void)
 		glVertex2f (0, vid.height);
 
 		glEnd ();
-		glColor3ubv (lighthalf_v);
+		glColor3ubv (white_v);
 	}
 
 	glEnable (GL_TEXTURE_2D);

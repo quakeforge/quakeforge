@@ -662,7 +662,7 @@ R_DrawSkyChain (msurface_t *sky_chain)
 	msurface_t *sc = sky_chain;
 	float l = 1 / (256 * brightness->value);
 	
-	glColor3f (lighthalf_v[0] * l, lighthalf_v[1] * l, lighthalf_v[2] * l);
+	glColor3f (white_v[0] * l, white_v[1] * l, white_v[2] * l);
 	if (skyloaded) {
 		glDepthRange (gldepthmax, gldepthmax);
 		while (sc) {
@@ -710,7 +710,7 @@ R_DrawSkyChain (msurface_t *sky_chain)
 		sc = sc->texturechain;
 	}
 #endif
-	glColor3ubv (lighthalf_v);
+	glColor3ubv (white_v);
 #if 0
 	glDisable (GL_TEXTURE_2D);
 	sc = sky_chain;
@@ -768,7 +768,7 @@ R_DrawSkyChain (msurface_t *sky_chain)
 			glEnd ();
 		}
 	}
-	glColor3ubv (lighthalf_v);
+	glColor3ubv (white_v);
 	glEnable (GL_TEXTURE_2D);
 #endif
 }

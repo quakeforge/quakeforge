@@ -146,7 +146,7 @@ R_DrawFire (fire_t *f)
 	}
 	// we're not - draw it
 	glBegin (GL_TRIANGLE_FAN);
-	if (lighthalf)
+	if (gl_lightmode->int_val)
 		glColor3f (f->color[0] * 0.5, f->color[1] * 0.5, f->color[2] * 0.5);
 	else
 		glColor3fv (f->color);
@@ -170,7 +170,7 @@ R_DrawFire (fire_t *f)
 		b_cos += 2;
 	}
 	glEnd ();
-	glColor3ubv (lighthalf_v);
+	glColor3ubv (white_v);
 }
 
 /*

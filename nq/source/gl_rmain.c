@@ -141,7 +141,6 @@ cvar_t     *gl_fb_bmodels;
 extern cvar_t *scr_fov;
 
 extern byte gammatable[256];
-extern qboolean lighthalf;
 static float vid_gamma = 1.0;
 
 // LordHavoc: place for gl_rmain setup code
@@ -306,7 +305,7 @@ R_DrawSpriteModel (entity_t *e)
 		right = vright;
 	}
 
-	if (lighthalf)
+	if (gl_lightmode->int_val)
 		glColor4f (0.5, 0.5, 0.5, 1);
 	else
 		glColor4f (1, 1, 1, 1);
@@ -390,7 +389,7 @@ GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
 
 	if (fb)
 		glColor3f (1, 1, 1);
-	else if (lighthalf)
+	else if (gl_lightmode->int_val)
 		shadelight *= 2;
 	while (1) {
 		// get the vertex count and primitive type

@@ -206,6 +206,7 @@ extern	cvar_t	*gl_particles;
 extern	cvar_t	*gl_fires;
 extern	cvar_t	*gl_fb_models;
 extern	cvar_t	*gl_fb_bmodels;
+extern	cvar_t	*gl_lightmode;
 
 extern	int		gl_lightmap_format;
 extern	int		gl_solid_format;
@@ -219,7 +220,6 @@ extern	cvar_t	*gl_skymultipass;
 
 extern	int			mirrortexturenum;	// quake texturenum, not gltexturenum
 extern	qboolean	mirror;
-extern	qboolean	lighthalf;
 extern	mplane_t	*mirror_plane;
 
 extern	float	r_world_matrix[16];

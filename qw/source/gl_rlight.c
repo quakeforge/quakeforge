@@ -42,7 +42,6 @@
 #include "glquake.h"
 
 int         r_dlightframecount;
-extern qboolean lighthalf;
 
 
 /*
@@ -126,7 +125,7 @@ R_RenderDlight (dlight_t *light)
 
 	glBegin (GL_TRIANGLE_FAN);
 
-	if (lighthalf)
+	if (gl_lightmode->int_val)
 		glColor3f (light->color[0] * 0.5, light->color[1] * 0.5,
 			   light->color[2] * 0.5);
 	else
@@ -152,7 +151,7 @@ R_RenderDlight (dlight_t *light)
 
 	glEnd ();
 
-	// Don't glColor3ubv(lighthalf_v), as we reset in the function which
+	// Don't glColor3ubv(white_v), as we reset in the function which
 	// calls this one, because this is called in a big loop.
 }
 
@@ -184,7 +183,7 @@ R_RenderDlights (void)
 
 	if (!gl_dlight_smooth->int_val)
 		glShadeModel (GL_FLAT);
-	glColor3ubv (lighthalf_v);
+	glColor3ubv (white_v);
 	glEnable (GL_TEXTURE_2D);
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthMask (GL_TRUE);

@@ -96,8 +96,6 @@ byte       *lightmaps[MAX_LIGHTMAPS];
 
 msurface_t *waterchain = NULL;
 
-extern qboolean lighthalf;
-
 // LordHavoc: place for gl_rsurf setup code
 void
 glrsurf_init ()
@@ -122,7 +120,7 @@ recursivelightupdate (mnode_t *node)
 
 // LordHavoc: function to force all lightmaps to be updated
 void
-R_ForceLightUpdate ()
+R_ForceLightUpdate (cvar_t *gl_lightmode)
 {
 	if (cl.worldmodel && cl.worldmodel->nodes
 		&& cl.worldmodel->nodes->contents >= 0)
@@ -312,7 +310,7 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 	if (gl_colorlights->int_val) {
 		stride -= smax * 3;
 		bl = blocklights;
-		if (lighthalf) {
+		if (gl_lightmode->int_val) {
 			for (i = 0; i < tmax; i++, dest += stride)
 				for (j = 0; j < smax; j++) {
 					t = (int) *bl++ >> 8;
@@ -336,7 +334,7 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 	} else {
 		stride -= smax;
 		bl = blocklights;
-		if (lighthalf) {
+		if (gl_lightmode->int_val) {
 			for (i = 0; i < tmax; i++, dest += stride)
 				for (j = 0; j < smax; j++) {
 					t = (int) *bl++ >> 8;
@@ -658,7 +656,7 @@ GL_WaterSurface (msurface_t *s)
 	int         i;
 
 	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	if (lighthalf)
+	if (gl_lightmode->int_val)
 		glColor4f (0.5, 0.5, 0.5, r_wateralpha->value);
 	else
 		glColor4f (1, 1, 1, r_wateralpha->value);
@@ -692,7 +690,7 @@ R_DrawWaterSurfaces (void)
 	glLoadMatrixf (r_world_matrix);
 
 	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	if (lighthalf)
+	if (gl_lightmode->int_val)
 		glColor4f (0.5, 0.5, 0.5, r_wateralpha->value);
 	else
 		glColor4f (1, 1, 1, r_wateralpha->value);
