@@ -168,27 +168,7 @@ static const char **Net_sound_precache;
 static sizebuf_t   _packet;
 static msg_t       packet = {0, 0, &_packet};
 
-
-/*
-	NET_LogPrintf
-
-	Prints packet to logfile, adds time stamp etc.
-*/
-static void
-Net_LogPrintf (const char *fmt, ...)
-{
-	char        text[2048];
-	va_list     argptr;
-
-	va_start (argptr, fmt);
-	vsnprintf (text, sizeof (text), fmt, argptr);
-	va_end (argptr);
-	if (!Net_PacketLog)
-		return;
-
-	Qprintf (Net_PacketLog, "%s", text);
-	Qflush (Net_PacketLog);
-}
+static void Net_LogPrintf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
 static int
 Net_LogStart (const char *fname)
@@ -342,15 +322,15 @@ Log_Delta (int bits)
 	if (bits & U_ORIGIN1)
 		Net_LogPrintf (" X: %f", MSG_ReadCoord (&packet));
 	if (bits & U_ANGLE1)
-		Net_LogPrintf (" Pitch: %d", MSG_ReadAngle (&packet));
+		Net_LogPrintf (" Pitch: %f", MSG_ReadAngle (&packet));
 	if (bits & U_ORIGIN2)
 		Net_LogPrintf (" Y: %f", MSG_ReadCoord (&packet));
 	if (bits & U_ANGLE2)
-		Net_LogPrintf (" Yaw: %d", MSG_ReadAngle (&packet));
+		Net_LogPrintf (" Yaw: %f", MSG_ReadAngle (&packet));
 	if (bits & U_ORIGIN3)
 		Net_LogPrintf (" Z: %f", MSG_ReadCoord (&packet));
 	if (bits & U_ANGLE3)
-		Net_LogPrintf (" Roll: %d", MSG_ReadAngle (&packet));
+		Net_LogPrintf (" Roll: %f", MSG_ReadAngle (&packet));
 
 // Ender (QSG - Begin)
 	if (bits & U_ALPHA)
@@ -472,8 +452,8 @@ Parse_Server_Packet (int has_sequence)
 						Net_LogPrintf ("%f ", MSG_ReadAngle (&packet));
 					break;
 				case svc_serverdata:
-					Net_LogPrintf ("Ver: %ld", MSG_ReadLong (&packet));
-					Net_LogPrintf (" Client ID: %ld", MSG_ReadLong (&packet));
+					Net_LogPrintf ("Ver: %d", MSG_ReadLong (&packet));
+					Net_LogPrintf (" Client ID: %d", MSG_ReadLong (&packet));
 					Net_LogPrintf (" Dir: %s", MSG_ReadString (&packet));
 					Net_LogPrintf (" User ID: %d", MSG_ReadByte (&packet));
 					Net_LogPrintf (" Map: %s", MSG_ReadString (&packet));
@@ -538,7 +518,7 @@ Parse_Server_Packet (int has_sequence)
 					Net_LogPrintf (" Skin: %d", MSG_ReadByte (&packet));
 					for (i = 0; i < 3; i++) {
 						Net_LogPrintf (" %f", MSG_ReadCoord (&packet));
-						Net_LogPrintf (" %d", MSG_ReadAngle (&packet));
+						Net_LogPrintf (" %f", MSG_ReadAngle (&packet));
 					};
 					break;
 				case svc_temp_entity:
@@ -638,7 +618,7 @@ Parse_Server_Packet (int has_sequence)
 
 				case svc_updatestatlong:
 					i = MSG_ReadByte (&packet);
-					Net_LogPrintf ("%d value: %ld", i, MSG_ReadLong (&packet));
+					Net_LogPrintf ("%d value: %d", i, MSG_ReadLong (&packet));
 					break;
 
 				case svc_muzzleflash:
@@ -647,7 +627,7 @@ Parse_Server_Packet (int has_sequence)
 
 				case svc_updateuserinfo:
 					Net_LogPrintf ("Player: %d ", MSG_ReadByte (&packet));
-					Net_LogPrintf ("ID: %ld ", MSG_ReadLong (&packet));
+					Net_LogPrintf ("ID: %d ", MSG_ReadLong (&packet));
 					Net_LogPrintf ("Info: %s", MSG_ReadString (&packet));
 					break;
 				case svc_download:
@@ -979,4 +959,25 @@ Net_Log_Init (const char **sound_precache)
 	Cmd_AddCommand ("net_packetlog_zap", Net_PacketLog_Zap_f,
 					"clear the packet log file");
 	return 0;
+}
+
+/*
+	NET_LogPrintf
+
+	Prints packet to logfile, adds time stamp etc.
+*/
+static void
+Net_LogPrintf (const char *fmt, ...)
+{
+	char        text[2048];
+	va_list     argptr;
+
+	va_start (argptr, fmt);
+	vsnprintf (text, sizeof (text), fmt, argptr);
+	va_end (argptr);
+	if (!Net_PacketLog)
+		return;
+
+	Qprintf (Net_PacketLog, "%s", text);
+	Qflush (Net_PacketLog);
 }
