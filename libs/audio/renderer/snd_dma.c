@@ -181,6 +181,9 @@ s_load_sound (const char *name)
 	int			i;
 	sfx_t	   *sfx;
 
+	if (!known_sfx)
+		return 0;
+
 	// see if already loaded
 	for (i = 0; i < num_sfx; i++)
 		if (known_sfx[i].name && !strcmp (known_sfx[i].name, name)) {
