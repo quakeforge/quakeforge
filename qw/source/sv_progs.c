@@ -81,6 +81,14 @@ FindEdictFieldOffsets (progs_t *pr)
 	}
 }
 
+int
+ED_Prune_Edict (progs_t *pr, edict_t *ent)
+{
+	if (((int) ent->v.v.spawnflags & SPAWNFLAG_NOT_DEATHMATCH))
+		return 1;
+	return 0;
+}
+
 void
 ED_PrintEdicts_f (void)
 {

@@ -44,12 +44,29 @@
 #include "server.h"
 #include "world.h"
 
-int         eval_alpha, eval_scale, eval_glowsize, eval_glowcolor,
+int         eval_alpha;
+int         eval_scale;
+int         eval_glowsize;
+int         eval_glowcolor;
+int         eval_colormod;
 
-	eval_colormod;
 progs_t     sv_pr_state;
+
 cvar_t     *r_skyname;
 cvar_t     *sv_progs;
+cvar_t     *nomonsters;
+cvar_t     *gamecfg;
+cvar_t     *scratch1;
+cvar_t     *scratch2;
+cvar_t     *scratch3;
+cvar_t     *scratch4;
+cvar_t     *savedgamecfg;
+cvar_t     *saved1;
+cvar_t     *saved2;
+cvar_t     *saved3;
+cvar_t     *saved4;
+
+
 
 func_t      EndFrame;
 func_t      SpectatorConnect;
@@ -83,6 +100,26 @@ FindEdictFieldOffsets (progs_t * pr)
 		eval_glowcolor = FindFieldOffset (&sv_pr_state, "glow_color");
 		eval_colormod = FindFieldOffset (&sv_pr_state, "colormod");
 	}
+}
+
+int
+ED_Prune_Edict (progs_t *pr, edict_t *ent)
+{
+	// remove things from different skill levels or deathmatch
+	if (deathmatch->int_val) {
+		if (((int) ent->v.v.spawnflags & SPAWNFLAG_NOT_DEATHMATCH)) {
+			return 1;
+		}
+	} else if (
+			   (current_skill == 0
+				&& ((int) ent->v.v.spawnflags & SPAWNFLAG_NOT_EASY))
+			   || (current_skill == 1
+				   && ((int) ent->v.v.spawnflags & SPAWNFLAG_NOT_MEDIUM))
+			   || (current_skill >= 2
+				   && ((int) ent->v.v.spawnflags & SPAWNFLAG_NOT_HARD))) {
+		return 1;
+	}
+	return 0;
 }
 
 void
@@ -157,4 +194,15 @@ SV_Progs_Init_Cvars (void)
 	sv_progs = Cvar_Get ("sv_progs", "progs.dat", CVAR_ROM,
 						 "Allows selectable game progs if you have several "
 						 "of them in the gamedir");
+	nomonsters = Cvar_Get ("nomonsters", "0", CVAR_NONE, "No Description");
+	gamecfg = Cvar_Get ("gamecfg", "0", CVAR_NONE, "No Description");
+	scratch1 = Cvar_Get ("scratch1", "0", CVAR_NONE, "No Description");
+	scratch2 = Cvar_Get ("scratch2", "0", CVAR_NONE, "No Description");
+	scratch3 = Cvar_Get ("scratch3", "0", CVAR_NONE, "No Description");
+	scratch4 = Cvar_Get ("scratch4", "0", CVAR_NONE, "No Description");
+	savedgamecfg = Cvar_Get ("savedgamecfg", "0", CVAR_ARCHIVE, "No Description");
+	saved1 = Cvar_Get ("saved1", "0", CVAR_ARCHIVE, "No Description");
+	saved2 = Cvar_Get ("saved2", "0", CVAR_ARCHIVE, "No Description");
+	saved3 = Cvar_Get ("saved3", "0", CVAR_ARCHIVE, "No Description");
+	saved4 = Cvar_Get ("saved4", "0", CVAR_ARCHIVE, "No Description");
 }
