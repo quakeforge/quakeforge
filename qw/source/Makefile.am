@@ -78,11 +78,11 @@ endif
 server_sources= crudefile.c sv_ccmds.c sv_cvar.c sv_ents.c \
 		sv_init.c sv_main.c sv_model.c sv_move.c \
 		sv_nchan.c sv_phys.c sv_pr_cmds.c sv_progs.c sv_send.c \
-		sv_user.c world.c $(syssv_SRC) \
-		$(top_srcdir)/libs/gamecode/builtins/bi_cmd.c
+		sv_user.c world.c $(syssv_SRC)
 
 qf_server_LIBS= \
 		$(SERVER_PLUGIN_STATIC_LIBS) \
+		$(top_builddir)/libs/gamecode/builtins/bi_cmd.lo \
 		$(top_builddir)/libs/models/libQFmodels.la \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
 		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
