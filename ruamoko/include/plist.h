@@ -8,9 +8,9 @@ typedef struct plitem_s plitem_t;
 @extern plitem_t (plitem_t item, string key) PL_ObjectForKey;
 @extern plitem_t (plitem_t item, integer index) PL_ObjectAtIndex;
 
-@extern plitem_t (plitem_t dict, plitem_t key, plitem_t value) PL_D_AddObject;
-@extern plitem_t (plitem_t array_item, plitem_t item) PL_A_AddObject;
-@extern plitem_t (plitem_t array_item, plitem_t item, integer index) PL_A_InsertObjectAtIndex;
+@extern integer (plitem_t dict, plitem_t key, plitem_t value) PL_D_AddObject;
+@extern integer (plitem_t array_item, plitem_t item) PL_A_AddObject;
+@extern integer (plitem_t array_item, plitem_t item, integer index) PL_A_InsertObjectAtIndex;
 
 @extern plitem_t () PL_NewDictionary;
 @extern plitem_t () PL_NewArray;

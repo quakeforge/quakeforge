@@ -155,9 +155,26 @@ plitem_t *PL_ObjectAtIndex (plitem_t *, int);
 */
 plitem_t *PL_D_AllKeys (plitem_t *);
 
-plitem_t *PL_D_AddObject (plitem_t *, plitem_t *, plitem_t *);
-plitem_t *PL_A_AddObject (plitem_t *, plitem_t *);
-plitem_t *PL_A_InsertObjectAtIndex (plitem_t *, plitem_t *, int ind);
+//@{
+/**
+	\fn plitem_t *PL_D_AddObject (plitem_t *dict, plitem_t *key, plitem_t *value)
+	\fn plitem_t *PL_A_AddObject (plitem_t *array, plitem_t *item)
+	\fn plitem_t *PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int ind)
+
+	\param dict The dictionary to add the key/value pair to
+	\param array The array to add the item to
+	\param item The item to be added to the array
+	\param key The key of the key/value pair to be added to the dictionary
+	\param value The value of the key/value pair to be added to the dictionary
+
+	\return true on success, false on failure
+
+	Note: the dictionary or array becomes the owner of the added item/pair.
+*/
+int PL_D_AddObject (plitem_t *, plitem_t *, plitem_t *);
+int PL_A_AddObject (plitem_t *, plitem_t *);
+int PL_A_InsertObjectAtIndex (plitem_t *, plitem_t *, int ind);
+//@}
 
 plitem_t *PL_NewDictionary (void);
 plitem_t *PL_NewArray (void);

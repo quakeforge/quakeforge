@@ -106,24 +106,24 @@ bi_PL_ObjectAtIndex (progs_t *pr)
 static void
 bi_PL_D_AddObject (progs_t *pr)
 {
-	return_plitem (pr, PL_D_AddObject (p_plitem (pr, 0),
-									   remove_plitem (pr, p_plitem (pr, 1)),
-									   remove_plitem (pr, p_plitem (pr, 2))));
+	R_INT (pr) = PL_D_AddObject (p_plitem (pr, 0),
+								 remove_plitem (pr, p_plitem (pr, 1)),
+								 remove_plitem (pr, p_plitem (pr, 2)));
 }
 
 static void
 bi_PL_A_AddObject (progs_t *pr)
 {
-	return_plitem (pr, PL_A_AddObject (p_plitem (pr, 0),
-									   remove_plitem (pr, p_plitem (pr, 1))));
+	R_INT (pr) = PL_A_AddObject (p_plitem (pr, 0),
+								 remove_plitem (pr, p_plitem (pr, 1)));
 }
 
 static void
 bi_PL_A_InsertObjectAtIndex (progs_t *pr)
 {
-	return_plitem (pr, PL_A_InsertObjectAtIndex (p_plitem (pr, 0),
+	R_INT (pr) = PL_A_InsertObjectAtIndex (p_plitem (pr, 0),
 									   remove_plitem (pr, p_plitem (pr, 1)),
-									   P_INT (pr, 2)));
+									   P_INT (pr, 2));
 }
 
 static void
