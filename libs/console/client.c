@@ -482,36 +482,30 @@ C_KeyEvent (key_t key, short unicode, qboolean down)
 
 /* DRAWING */
 
-/*
-	DrawInput
+static void
+DrawInputLine (int x, int y, inputline_t *il)
+{
+	const char *s = il->lines[il->edit_line] + il->scroll;
 
-	The input line scrolls horizontally if typing goes beyond the right edge
-*/
+	if (il->scroll) {
+		Draw_Character (x, y, '<' | 0x80);
+		Draw_nString (x + 8, y, s + 1, il->width - 2);
+	} else {
+		Draw_nString (x, y, s, il->width - 1);
+	}
+	Draw_Character (x + ((il->linepos - il->scroll) << 3), y,
+					10 + ((int) (*con_data.realtime * con_cursorspeed) & 1));
+	if (strlen (s) >= il->width)
+		Draw_Character (x + ((il->width - 1) << 3), y, '>' | 0x80);
+}
+
 static void
 DrawInput (void)
 {
-	int			i, y;
-	char		temp[MAXCMDLINE];
-	char	   *text;
-
 	if (key_dest != key_console && !con_data.force_commandline)
 		return;				// don't draw anything (always draw if not active)
 
-	text = strcpy (temp, input_line->lines[input_line->edit_line]
-						 + input_line->scroll);
-
-	// fill out remainder with spaces
-	for (i = strlen (text); i < MAXCMDLINE; i++)
-		text[i] = ' ';
-
-	// add the cursor frame
-	if ((int) (*con_data.realtime * con_cursorspeed) & 1)
-		text[input_line->linepos - input_line->scroll] = 11;
-
-	// draw it
-	y = con_vislines - 22;
-
-	Draw_nString (8, y, text, con_linewidth);
+	DrawInputLine (8, con_vislines - 22, input_line);
 }
 
 /*
@@ -522,10 +516,9 @@ DrawInput (void)
 static void
 DrawNotify (void)
 {
-	int			skip, i, v, x;
-	char	   *text, *s;
+	int			i, v;
+	char	   *text;
 	float		time;
-	inputline_t *il;
 
 	v = 0;
 	for (i = con->current - NUM_CON_TIMES + 1; i <= con->current; i++) {
@@ -552,29 +545,11 @@ DrawNotify (void)
 
 		if (chat_team) {
 			Draw_String (8, v, "say_team:");
-			skip = 11;
-			il = say_team_line;
+			DrawInputLine (88, v, say_team_line);
 		} else {
 			Draw_String (8, v, "say:");
-			skip = 5;
-			il = say_line;
+			DrawInputLine (40, v, say_line);
 		}
-		text = il->lines[il->edit_line] + il->scroll;
-
-		s = text;
-		x = 0;
-		if (il->scroll) {
-			Draw_Character (skip << 3, v, '<' | 0x80);
-			Draw_nString ((skip + 1) << 3, v, s + 1, con_linewidth - skip - 2);
-		} else {
-			Draw_nString (skip << 3, v, s, con_linewidth - skip - 1);
-		}
-		i = il->linepos - il->scroll + skip;
-		Draw_Character (i << 3, v,
-						10 + ((int) (*con_data.realtime
-									 * con_cursorspeed) & 1));
-		if (strlen (s) + skip > con_linewidth - 1)
-			Draw_Character ((con_linewidth - 1) << 3, v, '>' | 0x80);
 		v += 8;
 	}
 
