@@ -7,7 +7,7 @@
 	Structs for pack files on disk
 */
 
-#define PAK_PATH_LENGTH
+#define PAK_PATH_LENGTH 56
 
 typedef struct {
 	char        name[PAK_PATH_LENGTH];
@@ -79,7 +79,7 @@ open_pack (const char *name)
 		goto error;
 	}
 	pack->files = malloc (numpackfiles * sizeof (packfile_t));
-	if (!pack->files)
+	if (!pack->files) {
 		fprintf (stderr, "out of memory\n");
 		goto error;
 	}
