@@ -7,7 +7,7 @@ cyan    = (  0,255,255)
 red     = (255,  0,  0)
 magenta = (255,  0,255)
 yellow  = (255,255,  0)
-white   = (255,255,  0)
+white   = (255,255,255)
 
 def plot (x, y, color):
 	y = height - 1 - y
@@ -87,6 +87,13 @@ for x in range (width):
 			ravg -= times[x - ravg_span]/float(ravg_span)
 		ravg += times[x]/float(ravg_span)
 hline (0, width - 1, average, blue)
+
+hline (0, width - 1, 0, white)
+vline (0, 0, height - 1, white)
+for y in range (0, height - 1, 10):
+	hline (0, 3, y, white)
+for x in range (0, width - 1, 100):
+	vline (x, 0, 3, white)
 
 f = open ("timeframes.ppm", "wb")
 f.write ("P6\n")
