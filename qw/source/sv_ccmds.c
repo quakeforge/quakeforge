@@ -839,34 +839,12 @@ SV_SendServerInfoChange (const char *key, const char *value)
 	MSG_WriteString (&sv.reliable_datagram, value);
 }
 
-/*
-
-	Cvar_Info
-
-	Sets a given cvar (key,value) into svs.info (serverinfo)
-	high char filtering is performed according to sv_highchars.value
-
-*/
 void
 Cvar_Info (cvar_t *var)
 {
 	if (var->flags & CVAR_SERVERINFO) {
-		unsigned char info[1024], *p;
-		const unsigned char *c;
-
-		if (!sv_highchars || !sv_highchars->int_val) {
-			for (p = info, c = var->string;
-				 *c && (p - info < (int) sizeof (info) - 1);) {
-				if ((*c & 0x7f) >= 32)
-					*p++ = *c & 0x7f;
-				c++;
-			}
-			*p = 0;
-			Info_SetValueForKey (svs.info, var->name, info,
-								 (sv_highchars && !sv_highchars->int_val));
-		} else
-			Info_SetValueForKey (svs.info, var->name, var->string,
-								 (sv_highchars && !sv_highchars->int_val));
+		Info_SetValueForKey (svs.info, var->name, var->string,
+							 (!sv_highchars || !sv_highchars->int_val));
 
 		SV_SendServerInfoChange (var->name, var->string);
 	}
