@@ -424,7 +424,8 @@ opt_initializer
 var_initializer
 	: '=' expr
 		{
-			if (current_scope->type == sc_local) {
+			if (current_scope->type == sc_local
+				|| current_scope->type == sc_params) {
 				append_expr (local_expr,
 							 assign_expr (new_def_expr ($<def>0), $2));
 				def_initialized ($<def>0);
