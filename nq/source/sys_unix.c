@@ -162,6 +162,8 @@ main (int c, const char *v[])
 
 	parms.memsize = 16 * 1024 * 1024;
 
+	isDedicated = (COM_CheckParm ("-dedicated") != 0);
+
 	j = COM_CheckParm ("-mem");
 	if (j)
 		parms.memsize = (int) (atof (com_argv[j + 1]) * 1024 * 1024);

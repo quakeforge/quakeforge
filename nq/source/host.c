@@ -983,8 +983,8 @@ Host_Init (quakeparms_t *parms)
 		CDAudio_Init ();
 		Sbar_Init ();
 		CL_Init ();
+		CL_SetState (ca_disconnected);
 	}
-	CL_SetState (ca_disconnected);
 
 	if (cl_quakerc->int_val)
 		Cbuf_InsertText ("exec quake.rc\n");
@@ -1026,12 +1026,11 @@ Host_Shutdown (void)
 
 	Host_WriteConfiguration ();
 
-	CDAudio_Shutdown ();
 	NET_Shutdown ();
-	S_Shutdown ();
-	IN_Shutdown ();
-
 	if (cls.state != ca_dedicated) {
+		CDAudio_Shutdown ();
+		S_Shutdown ();
+		IN_Shutdown ();
 		VID_Shutdown ();
 	}
 }
