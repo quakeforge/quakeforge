@@ -64,7 +64,6 @@ static snd_output_funcs_t      plugin_info_snd_output_funcs;
 void
 static SNDDMA_Init_Cvars (void)
 {
-	puts("boo bee boo");
 	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM, NULL,
 						   "sound stereo output");
 	snd_rate = Cvar_Get ("snd_rate", "0", CVAR_ROM, NULL,

@@ -74,21 +74,21 @@ static struct snd_pcm_channel_setup setup;
 static snd_pcm_mmap_control_t *mmap_control = NULL;
 static char *mmap_data = NULL;
 static int  card = -1, dev = -1;
-int snd_blocked = 0;
-volatile dma_t sn;
+static int snd_blocked = 0;
+static volatile dma_t sn;
 
-cvar_t     *snd_stereo;
-cvar_t     *snd_rate;
-cvar_t     *snd_device;
-cvar_t     *snd_bits;
+static cvar_t     *snd_stereo;
+static cvar_t     *snd_rate;
+static cvar_t     *snd_device;
+static cvar_t     *snd_bits;
 
-plugin_t           plugin_info;
-plugin_data_t      plugin_info_data;
-plugin_funcs_t     plugin_info_funcs;
-general_data_t     plugin_info_general_data;
-general_funcs_t    plugin_info_general_funcs;
-snd_output_data_t       plugin_info_snd_output_data;
-snd_output_funcs_t      plugin_info_snd_output_funcs;
+static plugin_t           plugin_info;
+static plugin_data_t      plugin_info_data;
+static plugin_funcs_t     plugin_info_funcs;
+static general_data_t     plugin_info_general_data;
+static general_funcs_t    plugin_info_general_funcs;
+static snd_output_data_t       plugin_info_snd_output_data;
+static snd_output_funcs_t      plugin_info_snd_output_funcs;
 
 static void
 SNDDMA_Init_Cvars (void)

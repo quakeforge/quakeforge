@@ -110,13 +110,13 @@ cvar_t	   *snd_phasesep;
 cvar_t	   *snd_show;
 cvar_t	   *snd_volumesep;
 
-plugin_t				plugin_info;
-plugin_data_t			plugin_info_data;
-plugin_funcs_t			plugin_info_funcs;
-general_data_t			plugin_info_general_data;
-general_funcs_t			plugin_info_general_funcs;
-snd_render_data_t		plugin_info_snd_render_data;
-snd_render_funcs_t		plugin_info_snd_render_funcs;
+static plugin_t					plugin_info;
+static plugin_data_t			plugin_info_data;
+static plugin_funcs_t			plugin_info_funcs;
+static general_data_t			plugin_info_general_data;
+static general_funcs_t			plugin_info_general_funcs;
+static snd_render_data_t		plugin_info_snd_render_data;
+static snd_render_funcs_t		plugin_info_snd_render_funcs;
 
 
 // User-setable variables =====================================================
