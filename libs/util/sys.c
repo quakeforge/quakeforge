@@ -364,7 +364,7 @@ Sys_Init_Cvars (void)
 							   "microseconds you want. Mostly "
 							   "useful to generate simulated bad "
 							   "connections.");
-	sys_dead_sleep = Cvar_Get ("sys_dead_sleep", "1", CVAR_NONE, NULL,
+	sys_dead_sleep = Cvar_Get ("sys_dead_sleep", "0", CVAR_NONE, NULL,
 							   "When set, the server gets NO cpu if no "
 							   "clients are connected and there's no other "
 							   "activity. *MIGHT* cause problems with some "
