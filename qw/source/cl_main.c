@@ -1535,7 +1535,7 @@ Host_Frame (float time)
 	IN_Commands ();
 
 	// process console commands
-	Cbuf_Execute (cl_cbuf);
+	Cbuf_Execute_Stack (cl_cbuf);
 
 	// fetch results from server
 	CL_ReadPackets ();

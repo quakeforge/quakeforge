@@ -69,7 +69,9 @@ GIB_Process_Variables_All (struct dstring_s *token)
 	for (i = 0; token->str[i]; i++) {
 		if (token->str[i] == '$') {
 			for (n = 1; token->str[i+n] == '$'; n++); // get past $s
-			for (; isalnum(token->str[i+n]); n++); // find end of var
+			for (; isalnum(token->str[i+n]) ||
+			       token->str[i+n] == '.' ||
+			       token->str[i+n] == '_'; n++); // find end of var
 			dstring_insert (var, 0, token->str+i, n); // extract it
 			GIB_Process_Variable (var);
 			dstring_replace (token, i, n, var->str, strlen(var->str));
@@ -114,9 +116,9 @@ GIB_Process_Embedded (struct dstring_s *token)
 		i = 0;
 	
 	for (; token->str[i]; i++) {
-		if (token->str[i] == '<') {
+		if (token->str[i] == '`') {
 			n = i;
-			if ((c = GIB_Parse_Match_Angle (token->str, &i))) {
+			if ((c = GIB_Parse_Match_Backtick (token->str, &i))) {
 				Cbuf_Error ("parse", "Could not find matching %c", c);
 				return -1;
 			}

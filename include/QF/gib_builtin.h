@@ -31,13 +31,13 @@
 typedef struct gib_builtin_s {
 	struct dstring_s *name;
 	void (*func) (void);
-	enum {
-		GIB_BUILTIN_NORMAL, // Normal argument processing
-		GIB_BUILTIN_NOPROCESS, // Don't process arguments
-		GIB_BUILTIN_FIRSTONLY, // Process only the first argument
+	enum gib_builtin_type_e {
+		GIB_BUILTIN_NORMAL = 0, // Normal argument processing
+		GIB_BUILTIN_NOPROCESS = 1, // Don't process arguments
+		GIB_BUILTIN_FIRSTONLY = 2, // Process only the first argument
 	} type;
 } gib_builtin_t;
 
-void GIB_Builtin_Add (const char *name, void (*func) (void));
+void GIB_Builtin_Add (const char *name, void (*func) (void), enum gib_builtin_type_e type);
 gib_builtin_t *GIB_Builtin_Find (const char *name);
 void GIB_Builtin_Init (void);

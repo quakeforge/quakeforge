@@ -607,7 +607,7 @@ _Host_Frame (float time)
 
 	// process console commands
 	cmd_source = src_command;
-	Cbuf_Execute (host_cbuf);
+	Cbuf_Execute_Stack (host_cbuf);
 
 	NET_Poll ();
 

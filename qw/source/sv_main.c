@@ -2408,7 +2408,7 @@ SV_Init (void)
 //	COM_AddParm ("-game");
 //	COM_AddParm ("qw");
 
-	sv_cbuf = Cbuf_New (&gib_interp);
+	sv_cbuf = Cbuf_New (&id_interp);
 	sv_args = Cbuf_ArgsNew ();
 
 	Sys_RegisterShutdown (SV_Shutdown);

@@ -37,17 +37,20 @@ typedef struct gib_local_s {
 typedef struct gib_buffer_data_s {
 	struct dstring_s *arg_composite;
 	struct dstring_s *current_token;
+	struct dstring_s *loop_program;
 	
 	// Data for handling return values
 	struct {
 		qboolean waiting, available; // Return value states
-		
+		struct dstring_s *retval; // Returned value
+				
 		// Data saved by tokenizer/processor
 		unsigned int line_pos; // Position within line
 		unsigned int token_pos; // Position within token
 		qboolean cat; // Concatenate to previous token?
+		int noprocess; // Process tokens?
 		char delim; // delimiter of token
-		struct dstring_s *retval; // Returned value
+
 	} ret;
 	
 	struct hashtab_s *locals; // Local variables

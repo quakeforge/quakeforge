@@ -53,6 +53,7 @@ static const char rcsid[] =
 #include "QF/vfs.h"
 #include "QF/zone.h"
 #include "QF/gib_builtin.h"
+#include "QF/gib_parse.h"
 
 typedef struct cmdalias_s {
 	struct cmdalias_s *next;
@@ -489,9 +490,19 @@ Cmd_Exec_f (void)
 	if (!Cvar_Command ()
 		&& (cmd_warncmd->int_val || (developer && developer->int_val)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
-	Cbuf_InsertText (cbuf_active, f);
+	
+	if (!strcmp (Cmd_Argv (1) + strlen (Cmd_Argv(1)) - 4, ".gib")) {
+		// GIB script, put it in a new buffer on the stack
+		cbuf_t *sub = Cbuf_New (&gib_interp);
+		if (cbuf_active->down)
+			Cbuf_DeleteStack (cbuf_active->down);
+		cbuf_active->down = sub;
+		sub->up = cbuf_active;
+		cbuf_active->state = CBUF_STATE_STACK;
+		Cbuf_AddText (sub, f);
+	} else
+		Cbuf_InsertText (cbuf_active, f);
 	Hunk_FreeToLowMark (mark);
-	Cbuf_Execute (cbuf_active);
 }
 
 /*

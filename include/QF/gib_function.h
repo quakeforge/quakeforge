@@ -30,6 +30,7 @@
 
 typedef struct gib_function_s {
 	struct dstring_s *name, *program;
+	qboolean exported;
 } gib_function_t;
 
 void GIB_Function_Define (const char *name, const char *program);
