@@ -92,7 +92,7 @@ vec3_t		shadevector;
 
 
 static void
-GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
+GL_DrawAliasFrame (vert_order_t *vo)
 {
 	float			color[4];
 	int				count;
@@ -103,14 +103,6 @@ GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
 	order = vo->order;
 
 	color[3] = modelalpha;
-
-	if (modelalpha != 1.0)
-		qfglDepthMask (GL_FALSE);
-
-	if (fb) {
-		color_white[3] = modelalpha * 255;
-		qfglColor4ubv (color_white);
-	}
 
 	while ((count = *order++)) {
 		// get the vertex count and primitive type
@@ -126,12 +118,10 @@ GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
 			qfglTexCoord2fv ((float *) order);
 			order += 2;
 
-			if (!fb) {
-				// normals and vertexes come from the frame list
-				VectorScale (shadecolor, verts->lightdot, color);
+			// normals and vertexes come from the frame list
+			VectorScale (shadecolor, verts->lightdot, color);
 
-				qfglColor4fv (color);
-			}
+			qfglColor4fv (color);
 
 			qfglVertex3fv (verts->vert);
 			verts++;
@@ -139,9 +129,41 @@ GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
 
 		qfglEnd ();
 	}
+}
 
-	if (modelalpha != 1.0)
-		qfglDepthMask (GL_TRUE);
+static void
+GL_DrawAliasFrame_fb (vert_order_t *vo)
+{
+	int				count;
+	int			   *order;
+	blended_vert_t *verts;
+
+	verts = vo->verts;
+	order = vo->order;
+
+	color_white[3] = modelalpha * 255;
+	qfglColor4ubv (color_white);
+
+	while ((count = *order++)) {
+		// get the vertex count and primitive type
+		if (count < 0) {
+			count = -count;
+			qfglBegin (GL_TRIANGLE_FAN);
+		} else {
+			qfglBegin (GL_TRIANGLE_STRIP);
+		}
+
+		do {
+			// texture coordinates come from the draw list
+			qfglTexCoord2fv ((float *) order);
+			order += 2;
+
+			qfglVertex3fv (verts->vert);
+			verts++;
+		} while (--count);
+
+		qfglEnd ();
+	}
 }
 
 /*
@@ -158,12 +180,10 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, vert_order_t *vo)
 	vec3_t		point;
 	blended_vert_t *verts;
 
-	lheight = currententity->origin[2] - lightspot[2];
-
-	height = 0;
 	verts = vo->verts;
 	order = vo->order;
 
+	lheight = currententity->origin[2] - lightspot[2];
 	height = -lheight + 1.0;
 
 	while ((count = *order++)) {
@@ -176,9 +196,7 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, vert_order_t *vo)
 			qfglBegin (GL_TRIANGLE_STRIP);
 
 		do {
-			// texture coordinates come from the draw list
-			// (skipped for shadows) qfglTexCoord2fv ((float *)order);
-			order += 2;
+			order += 2;		// skip texture coords
 
 			// normals and vertexes come from the frame list
 			point[0] =
@@ -194,7 +212,6 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, vert_order_t *vo)
 			point[0] -= shadevector[0] * (point[2] + lheight);
 			point[1] -= shadevector[1] * (point[2] + lheight);
 			point[2] = height;
-//			height -= 0.001;
 			qfglVertex3fv (point);
 
 			verts++;
@@ -419,8 +436,8 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	qfglScalef (paliashdr->mdl.scale[0], paliashdr->mdl.scale[1],
 				paliashdr->mdl.scale[2]);
 
-	// we can't dynamically colormap textures, so they are cached
-	// seperately for the players.  Heads are just uncolored.
+	// if the model has a colorised/external skin, use it, otherwise use
+	// the skin embedded in the model data
 	if (e->skin && !gl_nocolors->int_val) {
 		skin_t *skin = e->skin;
 
@@ -441,13 +458,19 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 
 	vo = GL_GetAliasFrameVerts (e->frame, paliashdr, e);
 
-	GL_DrawAliasFrame (vo, false);
+	if (modelalpha != 1.0)
+		qfglDepthMask (GL_FALSE);
+
+	GL_DrawAliasFrame (vo);
 
 	// This block is GL fullbright support for objects...
 	if (fb_texture) {
 		qfglBindTexture (GL_TEXTURE_2D, fb_texture);
-		GL_DrawAliasFrame (vo, true);
+		GL_DrawAliasFrame_fb (vo);
 	}
+
+	if (modelalpha != 1.0)
+		qfglDepthMask (GL_TRUE);
 
 	qfglPopMatrix ();
 
