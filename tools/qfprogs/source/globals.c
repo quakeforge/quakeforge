@@ -126,7 +126,7 @@ dump_functions (progs_t *pr)
 		else
 			comment = va (" = #%d", -start);
 
-		printf ("%s%s: %d", name, comment, func->numparms);
+		printf ("%-5d %s%s: %d", i, name, comment, func->numparms);
 		if (func->numparms < 0)
 			count = -func->numparms - 1;
 		else
