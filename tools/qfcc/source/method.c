@@ -125,7 +125,6 @@ method_def (class_type_t *class_type, method_t *method)
 			  class_name,
 			  category_name,
 			  method->name);
-	str->str[--str->size - 1] = 0;
 	for (s = str->str; *s; s++)
 		if (*s == ':')
 			*s = '_';
@@ -207,7 +206,8 @@ selector_name (dstring_t *sel_id, keywordarg_t *selector)
 	dstring_clearstr (sel_id);
 	while (selector && selector->selector) {
 		dstring_appendstr (sel_id, selector->selector);
-		dstring_appendstr (sel_id, ":");
+		if (selector->expr)
+			dstring_appendstr (sel_id, ":");
 		selector = selector->next;
 	}
 }
