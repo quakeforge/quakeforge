@@ -36,6 +36,7 @@
 #endif
 
 #define byte __hide_byte
+#define shutdown __hide_shutdown
 
 #define LPCWAVEFORMATEX __hide_LPCWAVEFORMATEX
 #include <windows.h>
@@ -56,6 +57,7 @@
 #endif
 
 #undef byte
+#undef shutdown
 
 #include "QF/qtypes.h"
 

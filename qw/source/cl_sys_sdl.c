@@ -30,9 +30,6 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#ifdef _WIN32
-# define shutdown win32_shutdown
-#endif
 #ifdef HAVE_CONIO_H
 # include <conio.h>
 #endif
@@ -64,10 +61,6 @@ static const char rcsid[] =
 #include <stdlib.h>
 #include <SDL.h>
 #include <SDL_main.h>
-
-#ifdef _WIN32
-# undef shutdown
-#endif
 
 #include "QF/sys.h"
 #include "QF/qargs.h"
