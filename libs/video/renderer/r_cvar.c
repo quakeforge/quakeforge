@@ -132,20 +132,20 @@ cvar_t     *scr_viewsize;
 extern unsigned int  r_maxparticles;
 extern cvar_t       *gl_sky_divide;		// FIXME
 
-extern void R_MaxParticlesCheck (cvar_t *var);
+extern void R_MaxParticlesCheck (cvar_t *r_particles, cvar_t *cl_max_particles);
 extern void R_MaxDlightsCheck (cvar_t *var);
 
 
 static void
 r_particles_f (cvar_t *var)
 {
-	if (!var->int_val)
-		R_ClearParticles ();
-	r_maxparticles = 0;
-	if (var->int_val && cl_max_particles)
-		r_maxparticles = cl_max_particles->int_val;
-	if (cl_max_particles)
-		R_MaxParticlesCheck (cl_max_particles);
+	R_MaxParticlesCheck (var, cl_max_particles);
+}
+
+static void
+cl_max_particles_f (cvar_t *var)
+{
+	R_MaxParticlesCheck (r_particles, var);
 }
 
 void
@@ -156,7 +156,7 @@ R_Init_Cvars (void)
 	cl_crossy = Cvar_Get ("cl_crossy", "0", CVAR_ARCHIVE, NULL,
 						  "Sets the position of the crosshair on the Y-axis.");
 	cl_max_particles = Cvar_Get ("cl_max_particles", "2048", CVAR_ARCHIVE,
-								 R_MaxParticlesCheck, "Maximum amount of "
+								 cl_max_particles_f, "Maximum amount of "
 								 "particles to display. No maximum, minimum " 
 								 "is 0.");
 	cl_verstring = Cvar_Get ("cl_verstring", PROGRAM " " VERSION, CVAR_NONE,

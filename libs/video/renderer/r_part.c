@@ -56,7 +56,7 @@ extern cvar_t  *r_particles;
   others.
 */
 void
-R_MaxParticlesCheck (cvar_t *var)
+R_MaxParticlesCheck (cvar_t *r_particles, cvar_t *cl_max_particles)
 {
 /*
 	Catchall. If the user changed the setting to a number less than zero *or*
@@ -66,7 +66,7 @@ R_MaxParticlesCheck (cvar_t *var)
 	we'd sig11 right here at startup.
 */
 	if (r_particles && r_particles->int_val)
-		r_maxparticles = var->int_val;
+		r_maxparticles = cl_max_particles ? cl_max_particles->int_val : 0;
 	else
 		r_maxparticles = 0;
 
