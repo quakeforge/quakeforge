@@ -44,6 +44,18 @@ static expr_type expr_types[] = {
 	ex_label,		// ev_pointer (ick)
 };
 
+static const char *type_names[] = {
+	"void",
+	"string",
+	"float",
+	"vector",
+	"entity",
+	"field",
+	"function",
+	"pointer",
+	"quaternion",
+};
+
 static etype_t
 get_type (expr_t *e)
 {
@@ -115,6 +127,64 @@ warning (expr_t *e, const char *fmt, ...)
 	vfprintf (stderr, fmt, args);
 	fputs ("\n", stderr);
 	va_end (args);
+}
+
+expr_t *
+type_mismatch (expr_t *e1, expr_t *e2, int op)
+{
+	etype_t t1, t2;
+	char opname[4];
+
+	t1 = get_type (e1);
+	t2 = get_type (e2);
+
+	switch (op) {
+		case OR:
+			opname[0] = '|';
+			opname[1] = '|';
+			opname[2] = 0;
+			break;
+		case AND:
+			opname[0] = '&';
+			opname[1] = '&';
+			opname[2] = 0;
+			break;
+		case EQ:
+			opname[0] = '=';
+			opname[1] = '=';
+			opname[2] = 0;
+			break;
+		case NE:
+			opname[0] = '!';
+			opname[1] = '=';
+			opname[2] = 0;
+			break;
+		case LE:
+			opname[0] = '<';
+			opname[1] = '=';
+			opname[2] = 0;
+			break;
+		case GE:
+			opname[0] = '>';
+			opname[1] = '=';
+			opname[2] = 0;
+			break;
+		case LT:
+			opname[0] = '<';
+			opname[1] = 0;
+			break;
+		case GT:
+			opname[0] = '>';
+			opname[1] = 0;
+			break;
+		default:
+			opname[0] = op;
+			opname[1] = 0;
+			break;
+	}
+
+	return error (e1, "type mismatch: %s %s %s",
+				  type_names[t1], opname, type_names[t2]);
 }
 
 expr_t *
@@ -441,8 +511,7 @@ binary_const (int op, expr_t *e1, expr_t *e2)
 	if (t1 == t2) {
 		return do_op[t1](op, e1, e2);
 	} else {
-		return error (e1, "type mismatch for %d (%c)",
-					  op, (op > ' ' && op < 127) ? op : ' ');
+		return type_mismatch (e1, e2, op);
 	}
 }
 
@@ -527,7 +596,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 				}
 			default:
 type_mismatch:
-				return error (e1, "type mismatch %d %d", t1, t2);
+				return type_mismatch (e1, e2, op);
 		}
 	}
 }
