@@ -264,7 +264,7 @@ QFGL_DONT_NEED (void, glPixelMapfv, (GLenum map, GLint mapsize, const GLfloat * 
 QFGL_DONT_NEED (void, glPixelMapuiv, (GLenum map, GLint mapsize, const GLuint * values));
 QFGL_DONT_NEED (void, glPixelMapusv, (GLenum map, GLint mapsize, const GLushort * values));
 QFGL_DONT_NEED (void, glPixelStoref, (GLenum pname, GLfloat param));
-QFGL_DONT_NEED (void, glPixelStorei, (GLenum pname, GLint param));
+QFGL_NEED (void, glPixelStorei, (GLenum pname, GLint param));
 QFGL_DONT_NEED (void, glPixelTransferf, (GLenum pname, GLfloat param));
 QFGL_DONT_NEED (void, glPixelTransferi, (GLenum pname, GLint param));
 QFGL_DONT_NEED (void, glPixelZoom, (GLfloat xfactor, GLfloat yfactor));

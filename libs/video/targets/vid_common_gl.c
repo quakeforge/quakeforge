@@ -83,6 +83,7 @@ QF_glColorTableEXT	qglColorTableEXT = NULL;
 qboolean			is8bit = false;
 
 cvar_t			   *gl_multitexture;
+cvar_t			   *gl_screenshot_byte_swap;
 cvar_t			   *vid_mode;
 cvar_t			   *vid_use8bit;
 
@@ -97,6 +98,12 @@ gl_multitexture_f (cvar_t *var)
 		gl_mtex_active = gl_mtex_capable && var->int_val;
 }
 
+static void
+gl_screenshot_byte_swap_f (cvar_t *var)
+{
+	qfglPixelStorei (GL_PACK_SWAP_BYTES, var->int_val ? GL_TRUE : GL_FALSE);
+}
+
 void
 GL_Common_Init_Cvars (void)
 {
@@ -105,6 +112,11 @@ GL_Common_Init_Cvars (void)
 	gl_multitexture = Cvar_Get ("gl_multitexture", "0", CVAR_ARCHIVE,
 								gl_multitexture_f, "Use multitexture when "
 								"available");
+	gl_screenshot_byte_swap =
+		Cvar_Get ("gl_screenshot_byte_swap", "0",
+				  CVAR_NONE, gl_screenshot_byte_swap_f,
+				  "Swap the bytes for gl screenshots. Needed if you get "
+				  "screenshots with red and blue swapped.");
 }
 
 /*
