@@ -1,4 +1,3 @@
-
 /*
 	obj_file.h
 
@@ -41,27 +40,14 @@
 typedef struct qfo_header_s {
 	char        qfo[4];
 	int         version;
-
-	int         code_ofs;
 	int         code_size;
-
-	int         data_ofs;
 	int         data_size;
-
-	int         far_data_ofs;
 	int         far_data_size;
-
-	int         strings_ofs;
 	int         strings_size;
-
-	int         relocs_ofs;
 	int         num_relocs;
-
-	int         defs_ofs;
 	int         num_defs;
-
-	int         functions_ofs;
 	int         num_functions;
+	int         somthing_or_other;
 } qfo_header_t;
 
 typedef struct qfo_def_s {
@@ -70,8 +56,8 @@ typedef struct qfo_def_s {
 	string_t    name;
 	int         ofs;
 
-	int         refs;
-	int         num_refs;
+	int         relocs;
+	int         num_relocs;
 
 	unsigned    flags;
 
@@ -104,14 +90,31 @@ typedef struct qfo_function_s {
 	int         num_parms;
 	byte        parm_size[MAX_PARMS];
 
-	int         refs;
-	int         num_refs;
+	int         relocs;
+	int         num_relocs;
 } qfo_function_t;
 
-typedef struct qfo_ref_s {
+typedef struct qfo_reloc_s {
 	int         ofs;
 	int         type;
-} qfo_ref_t;
+} qfo_reloc_t;
+
+typedef struct qfo_s {
+	dstatement_t *code;
+	int         code_size;
+	pr_type_t  *data;
+	int         data_size;
+	pr_type_t  *far_data;
+	int         far_data_size;
+	char       *strings;
+	int         strings_size;
+	qfo_reloc_t *relocs;
+	int         num_relocs;
+	qfo_def_t  *defs;
+	int         num_defs;
+	qfo_function_t *functions;
+	int         num_functions;
+} qfo_t;
 
 int write_obj_file (const char *filename);
 

@@ -57,16 +57,16 @@ static qfo_def_t *defs;
 static int  num_defs;
 static qfo_function_t *functions;
 static int  num_functions;
-static qfo_ref_t *refs;
-static int  num_refs;
+static qfo_reloc_t *relocs;
+static int  num_relocs;
 
 static int
-count_refs (reloc_t *ref)
+count_relocs (reloc_t *reloc)
 {
 	int         num = 0;
-	while (ref) {
+	while (reloc) {
 		num++;
-		ref = ref->next;
+		reloc = reloc->next;
 	}
 	return num;
 }
@@ -79,20 +79,20 @@ allocate_stuff (void)
 
 	num_defs = pr.scope->num_defs;
 	num_functions = pr.num_functions;
-	num_refs = 0;
+	num_relocs = 0;
 	for (def = pr.scope->head; def; def = def->def_next) {
-		num_refs += count_refs (def->refs);
+		num_relocs += count_relocs (def->refs);
 	}
 	for (func = pr.func_head; func; func = func->next) {
-		num_refs += count_refs (func->refs);
+		num_relocs += count_relocs (func->refs);
 		num_defs += func->scope->num_defs;
 		for (def = func->scope->head; def; def = def->def_next) {
-			num_refs += count_refs (def->refs);
+			num_relocs += count_relocs (def->refs);
 		}
 	}
 	defs = calloc (num_defs, sizeof (qfo_def_t));
 	functions = calloc (num_functions, sizeof (qfo_function_t));
-	refs = calloc (num_refs, sizeof (qfo_ref_t));
+	relocs = calloc (num_relocs, sizeof (qfo_reloc_t));
 }
 
 static string_t
@@ -124,30 +124,30 @@ flags (def_t *d)
 }
 
 static void
-write_refs (reloc_t *r, qfo_ref_t **ref)
+write_relocs (reloc_t *r, qfo_reloc_t **reloc)
 {
 	while (r) {
-		(*ref)->ofs  = LittleLong (r->ofs);
-		(*ref)->type = LittleLong (r->type);
-		(*ref)++;
+		(*reloc)->ofs  = LittleLong (r->ofs);
+		(*reloc)->type = LittleLong (r->type);
+		(*reloc)++;
 		r = r->next;
 	}
 }
 
 static void
-write_def (def_t *d, qfo_def_t *def, qfo_ref_t **ref)
+write_def (def_t *d, qfo_def_t *def, qfo_reloc_t **reloc)
 {
 	d->obj_def = def - defs;
 	def->basic_type = LittleLong (d->type->type);
 	def->full_type  = LittleLong (type_encoding (d->type));
 	def->name       = LittleLong (ReuseString (d->name));
 	def->ofs        = LittleLong (d->ofs);
-	def->refs       = LittleLong (*ref - refs);
-	def->num_refs   = LittleLong (count_refs (d->refs));
+	def->relocs     = LittleLong (*reloc - relocs);
+	def->num_relocs = LittleLong (count_relocs (d->refs));
 	def->flags      = LittleLong (flags (d));
 	def->file       = LittleLong (d->file);
 	def->line       = LittleLong (d->line);
-	write_refs (d->refs, ref);
+	write_relocs (d->refs, reloc);
 }
 
 static void
@@ -157,10 +157,10 @@ setup_data (void)
 	def_t      *d;
 	qfo_function_t *func = functions;
 	function_t   *f;
-	qfo_ref_t    *ref = refs;
+	qfo_reloc_t  *reloc = relocs;
 
 	for (d = pr.scope->head; d; d = d->def_next)
-		write_def (d, def++, &ref);
+		write_def (d, def++, &reloc);
 	for (f = pr.func_head; f; f = f->next) {
 		func->name           = LittleLong (f->dfunc->s_name);
 		func->file           = LittleLong (f->dfunc->s_file);
@@ -171,7 +171,7 @@ setup_data (void)
 			func->def        = LittleLong (f->def->obj_def);
 		else {
 			func->def        = LittleLong (def - defs);
-			write_def (f->def, def++, &ref);
+			write_def (f->def, def++, &reloc);
 		}
 		func->locals_size    = LittleLong (f->scope->space->size);
 		func->local_defs     = LittleLong (def - defs);
@@ -180,11 +180,11 @@ setup_data (void)
 		//func->num_lines
 		func->num_parms       = LittleLong (f->dfunc->numparms);
 		memcpy (func->parm_size, f->dfunc->parm_size, MAX_PARMS);
-		func->refs           = LittleLong (ref - refs);
-		write_refs (f->refs, &ref);
+		func->relocs          = LittleLong (reloc - relocs);
+		write_relocs (f->refs, &reloc);
 
 		for (d = f->scope->head; d; d = d->def_next)
-			write_def (d, def++, &ref);
+			write_def (d, def++, &reloc);
 	}
 }
 
@@ -193,7 +193,6 @@ write_obj_file (const char *filename)
 {
 	qfo_header_t hdr;
 	VFile      *file;
-	int         ofs;
 
 	allocate_stuff ();
 	setup_data ();
@@ -204,40 +203,88 @@ write_obj_file (const char *filename)
 
 	memset (&hdr, 0, sizeof (hdr));
 
-	ofs = Qwrite (file, &hdr, sizeof (hdr));
-
 	memcpy (hdr.qfo, QFO, sizeof (hdr.qfo));
 	hdr.version       = LittleLong (QFO_VERSION);
-	hdr.code_ofs      = LittleLong (ofs);
 	hdr.code_size     = LittleLong (pr.num_statements);
-	ofs += Qwrite (file, pr.statements,
-				   pr.num_statements * sizeof (dstatement_t));
-	hdr.data_ofs      = LittleLong (ofs);
 	hdr.data_size     = LittleLong (pr.near_data->size);
-	ofs += Qwrite (file, pr.near_data->data,
-				   pr.near_data->size * sizeof (pr_type_t));
 	if (pr.far_data) {
-		hdr.far_data_ofs  = LittleLong (ofs);
 		hdr.far_data_size = LittleLong (pr.far_data->size);
-		ofs += Qwrite (file, pr.far_data->data,
-					   pr.far_data->size * sizeof (pr_type_t));
 	}
-	hdr.strings_ofs   = LittleLong (ofs);
 	hdr.strings_size  = LittleLong (pr.strofs);
-	ofs += Qwrite (file, pr.strings, pr.strofs);
-	hdr.relocs_ofs    = LittleLong (ofs);
-	hdr.num_relocs    = LittleLong (num_refs);
-	ofs += Qwrite (file, refs, num_refs * sizeof (qfo_ref_t));
-	hdr.defs_ofs      = LittleLong (ofs);
+	hdr.num_relocs    = LittleLong (num_relocs);
 	hdr.num_defs      = LittleLong (num_defs);
-	ofs += Qwrite (file, defs, num_defs * sizeof (qfo_def_t));
-	hdr.functions_ofs = LittleLong (ofs);
 	hdr.num_functions = LittleLong (num_functions);
+
+	Qwrite (file, &hdr, sizeof (hdr));
+	Qwrite (file, pr.statements, pr.num_statements * sizeof (dstatement_t));
+	Qwrite (file, pr.near_data->data, pr.near_data->size * sizeof (pr_type_t));
+	if (pr.far_data) {
+		Qwrite (file, pr.far_data->data,
+				pr.far_data->size * sizeof (pr_type_t));
+	}
+	Qwrite (file, pr.strings, pr.strofs);
+	Qwrite (file, relocs, num_relocs * sizeof (qfo_reloc_t));
+	Qwrite (file, defs, num_defs * sizeof (qfo_def_t));
 	Qwrite (file, defs, num_functions * sizeof (qfo_function_t));
 
-	Qseek (file, 0, SEEK_SET);
-	Qwrite (file, &hdr, sizeof (hdr));
-	Qseek (file, 0, SEEK_END);
 	Qclose (file);
+	return 0;
+}
+
+qfo_t *
+read_obj_file (const char *filename)
+{
+	VFile      *file;
+	qfo_header_t hdr;
+	qfo_t      *qfo;
+
+	file = Qopen (filename, "rbz");
+
+	Qread (file, &hdr, sizeof (hdr));
+
+	if (strcmp (hdr.qfo, QFO)) {
+		fprintf (stderr, "not a qfo file\n");
+		Qclose (file);
+		return 0;
+	}
+
+	qfo = calloc (1, sizeof (qfo_t));
+
+	hdr.version        = LittleLong (hdr.version);
+	qfo->code_size     = LittleLong (hdr.code_size);
+	qfo->data_size     = LittleLong (hdr.data_size);
+	qfo->far_data_size = LittleLong (hdr.far_data_size);
+	qfo->strings_size  = LittleLong (hdr.strings_size);
+	qfo->num_relocs    = LittleLong (hdr.num_relocs);
+	qfo->num_defs      = LittleLong (hdr.num_defs);
+	qfo->num_functions = LittleLong (hdr.num_functions);
+
+	if (hdr.version != QFO_VERSION) {
+		fprintf (stderr, "can't read version %x.%03x.%03x\n",
+				 (hdr.version >> 24) & 0xff, (hdr.version >> 12) & 0xfff,
+				 hdr.version & 0xfff);
+		Qclose (file);
+		free (qfo);
+		return 0;
+	}
+
+	qfo->code = malloc (qfo->code_size * sizeof (dstatement_t));
+	qfo->data = malloc (qfo->data_size * sizeof (pr_type_t));
+	qfo->far_data = malloc (qfo->far_data_size * sizeof (pr_type_t));
+	qfo->strings = malloc (qfo->strings_size);
+	qfo->relocs = malloc (qfo->num_relocs * sizeof (qfo_reloc_t));
+	qfo->defs = malloc (qfo->num_defs * sizeof (qfo_def_t));
+	qfo->functions = malloc (qfo->num_functions * sizeof (qfo_function_t));
+
+	Qread (file, qfo->code, qfo->code_size * sizeof (dstatement_t));
+	Qread (file, qfo->data, qfo->data_size * sizeof (pr_type_t));
+	Qread (file, qfo->far_data, qfo->far_data_size * sizeof (pr_type_t));
+	Qread (file, qfo->strings, qfo->strings_size);
+	Qread (file, qfo->relocs, qfo->num_relocs * sizeof (qfo_reloc_t));
+	Qread (file, qfo->defs, qfo->num_defs * sizeof (qfo_def_t));
+	Qread (file, qfo->functions, qfo->num_functions * sizeof (qfo_function_t));
+
+	Qclose (file);
+
 	return 0;
 }
