@@ -521,7 +521,7 @@ new_def_expr (def_t *def)
 expr_t *
 new_self_expr (void)
 {
-	def_t      *def = get_def (&type_entity, ".self", pr.scope, st_global);
+	def_t      *def = get_def (&type_entity, ".self", pr.scope, st_extern);
 
 	def_initialized (def);
 	return new_def_expr (def);
@@ -531,7 +531,7 @@ expr_t *
 new_this_expr (void)
 {
 	type_t     *type = field_type (&type_id);
-	def_t      *def = get_def (type, ".this", pr.scope, st_global);
+	def_t      *def = get_def (type, ".this", pr.scope, st_extern);
 
 	def_initialized (def);
 	return new_def_expr (def);

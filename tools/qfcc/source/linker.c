@@ -167,25 +167,9 @@ add_relocs (qfo_t *qfo)
 }
 
 static void
-fixup_def (qfo_t *qfo, qfo_def_t *def, int def_num)
+process_def (qfo_def_t *def)
 {
 	qfo_def_t  *d;
-	int         i;
-	qfo_reloc_t *reloc;
-	qfo_function_t *func;
-
-	def->full_type = strpool_addstr (type_strings,
-									 qfo->types + def->full_type);
-	def->name = strpool_addstr (strings, qfo->strings + def->name);
-	def->relocs += reloc_base;
-	for (i = 0, reloc = relocs.relocs + def->relocs;
-		 i < def->num_relocs;
-		 i++, reloc++)
-		reloc->def = def_num;
-	def->file = strpool_addstr (strings, qfo->strings + def->file);
-
-	if ((def->flags & (QFOD_LOCAL | QFOD_ABSOLUTE)))
-		return;
 
 	if (def->flags & QFOD_EXTERNAL) {
 		if ((d = Hash_Find (defined_defs, strings->strings + def->name))) {
@@ -195,7 +179,6 @@ fixup_def (qfo_t *qfo, qfo_def_t *def, int def_num)
 			Hash_Add (extern_defs, def);
 		}
 	} else {
-		def->ofs += data_base;
 		if (def->flags & QFOD_GLOBAL) {
 			if ((d = Hash_Find (defined_defs,
 								strings->strings + def->name))) {
@@ -221,11 +204,36 @@ fixup_def (qfo_t *qfo, qfo_def_t *def, int def_num)
 			}
 			Hash_Add (defined_defs, def);
 		}
+	}
+}
+
+static void
+fixup_def (qfo_t *qfo, qfo_def_t *def, int def_num)
+{
+	int         i;
+	qfo_reloc_t *reloc;
+	qfo_function_t *func;
+
+	def->full_type = strpool_addstr (type_strings,
+									 qfo->types + def->full_type);
+	def->name = strpool_addstr (strings, qfo->strings + def->name);
+	def->relocs += reloc_base;
+	for (i = 0, reloc = relocs.relocs + def->relocs;
+		 i < def->num_relocs;
+		 i++, reloc++)
+		reloc->def = def_num;
+	def->file = strpool_addstr (strings, qfo->strings + def->file);
+
+	if ((def->flags & (QFOD_LOCAL | QFOD_ABSOLUTE)))
+		return;
+	if (!def->flags & QFOD_EXTERNAL) {
+		def->ofs += data_base;
 		if (def->basic_type == ev_func && (def->flags & QFOD_INITIALIZED)) {
 			func = funcs.funcs + data->data[def->ofs].func_var - 1 + func_base;
 			func->def = def_num;
 		}
 	}
+	process_def (def);
 }
 
 static void
@@ -387,6 +395,23 @@ merge_defgroups (void)
 	}
 }
 
+static void
+define_def (const char *name, etype_t basic_type, const char *full_type)
+{
+	qfo_def_t   d;
+	pr_type_t   val = {0};
+
+	memset (&d, 0, sizeof (d));
+	d.basic_type = basic_type;
+	d.full_type = strpool_addstr (type_strings, full_type);
+	d.name = strpool_addstr (strings, name);
+	d.ofs = data->size;
+	d.flags = QFOD_GLOBAL;
+	defspace_adddata (data, &val, 1);
+	defgroup_add_defs (&global_defs, &d, 1);
+	process_def (&d);
+}
+
 void
 linker_begin (void)
 {
@@ -437,13 +462,31 @@ linker_finish (void)
 	qfo_def_t **undef_defs, **def;
 	qfo_t      *qfo;
 
-	undef_defs = (qfo_def_t **) Hash_GetList (extern_defs);
 	if (!options.partial_link) {
+		int         did_self = 0, did_this = 0;
+
+		undef_defs = (qfo_def_t **) Hash_GetList (extern_defs);
 		for (def = undef_defs; *def; def++) {
+			const char *name = strings->strings + (*def)->name;
+
+			if (strcmp (name, ".self") == 0 && !did_self) {
+				define_def (".self", ev_entity, "E");
+				did_self = 1;
+			} else if (strcmp (name, ".this") == 0 && !did_this) {
+				define_def (".this", ev_field, "F@");
+				did_this = 1;
+			}
+		}
+		free (undef_defs);
+		undef_defs = (qfo_def_t **) Hash_GetList (extern_defs);
+		for (def = undef_defs; *def; def++) {
+			const char *name = strings->strings + (*def)->name;
 			pr.source_file = (*def)->file;
 			pr.source_line = (*def)->line;
-			error (0, "undefined symbol %s", strings->strings + (*def)->name);
+			pr.strings = strings;
+			error (0, "undefined symbol %s", name);
 		}
+		free (undef_defs);
 		if (pr.error_count)
 			return 0;
 	}
