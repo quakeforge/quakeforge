@@ -574,7 +574,6 @@ CB_ME_player_options =
 	} else {
 		playername_cvar = "_cl_name";
 	}
-	dprint("DOO\n");
 	InputLine_SetText (player_config_plname_il, Cvar_GetCvarString(playername_cvar)); 
 };
 
