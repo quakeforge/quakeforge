@@ -1123,7 +1123,7 @@ C(D_PolysetDraw):
 	movl	C(r_affinetridesc)+atd_numtriangles,%ebp
 
 	pushl	%esi				// preserve register variables
-	shll	$4,%ebp
+	shll	$mtri_shift,%ebp
 
 	pushl	%ebx
 //	ptri = r_affinetridesc.ptriangles;
@@ -1148,11 +1148,11 @@ Llooptop:
 //		index0 = pfv + ptri[i].vertindex[0];
 //		index1 = pfv + ptri[i].vertindex[1];
 //		index2 = pfv + ptri[i].vertindex[2];
-	movl	mtri_vertindex-16+0(%ebx,%ebp,),%ecx
-	movl	mtri_vertindex-16+4(%ebx,%ebp,),%esi
+	movl	mtri_vertindex-mtri_size+0(%ebx,%ebp,),%ecx
+	movl	mtri_vertindex-mtri_size+4(%ebx,%ebp,),%esi
 
 	shll	$(fv_shift),%ecx
-	movl	mtri_vertindex-16+8(%ebx,%ebp,),%edx
+	movl	mtri_vertindex-mtri_size+8(%ebx,%ebp,),%edx
 
 	shll	$(fv_shift),%esi
 	addl	%edi,%ecx
@@ -1199,7 +1199,7 @@ Llooptop:
 //		if (ptri[i].facesfront)
 //		{
 //			D_PolysetRecursiveTriangle(index0->v, index1->v, index2->v);
-	movl	mtri_facesfront-16(%ebx,%ebp,),%eax
+	movl	mtri_facesfront-mtri_size(%ebx,%ebp,),%eax
 	testl	%eax,%eax
 	jz		Lfacesback
 
@@ -1208,7 +1208,7 @@ Llooptop:
 	pushl	%ecx
 	call	C(D_PolysetRecursiveTriangle)
 
-	subl	$16,%ebp
+	subl	$mtri_size,%ebp
 	jnz		Llooptop
 	jmp		Ldone2
 
@@ -1272,7 +1272,7 @@ Lp13:
 //		}
 //	}
 Lskip:
-	subl	$16,%ebp
+	subl	$mtri_size,%ebp
 	jnz		Llooptop
 
 Ldone2:
@@ -1737,7 +1737,7 @@ LFacesFront:
 
 LNextTri:
 		movl	C(r_affinetridesc)+atd_ptriangles,%esi
-		subl	$16,%ebp
+		subl	$mtri_size,%ebp
 		jnz		LNDLoop
 //	}
 
