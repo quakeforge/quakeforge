@@ -1,7 +1,7 @@
 /*
 	gl_rmain.c
 
-	(description)
+	(no description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
