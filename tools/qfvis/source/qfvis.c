@@ -109,7 +109,7 @@ NewWinding (int points)
 	int 		size;
 
 	if (points > MAX_POINTS_ON_WINDING)
-		fprintf (stderr, "NewWinding: %i points\n", points);
+		Sys_Error ("NewWinding: %i points", points);
 
 	size = (int) ((winding_t *) 0)->points[points];
 	winding = calloc (1, size);
@@ -229,7 +229,7 @@ ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 	}
 
 	if (neww->numpoints > maxpts)
-		fprintf (stderr, "ClipWinding: points exceeded estimate\n");
+		Sys_Error ("ClipWinding: points exceeded estimate");
 	// free the original winding
 	FreeWinding (in);
 
@@ -341,13 +341,13 @@ LeafFlow (int leafnum)
 	for (i = 0; i < leaf->numportals; i++) {
 		portal = leaf->portals[i];
 		if (portal->status != stat_done)
-			fprintf (stderr, "portal not done\n");
+			Sys_Error ("portal not done");
 		for (j = 0; j < bitbytes; j++)
 			outbuffer[j] |= portal->visbits[j];
 	}
 
 	if (outbuffer[leafnum >> 3] & (1 << (leafnum & 7)))
-		fprintf (stderr, "Leaf portals saw into leaf\n");
+		Sys_Error ("Leaf portals saw into leaf");
 
 	outbuffer[leafnum >> 3] |= (1 << (leafnum & 7));
 
@@ -390,24 +390,24 @@ CalcPortalVis (void)
 
 		my_mutex = malloc (sizeof (*my_mutex));
 		if (pthread_mutex_init (my_mutex, 0) == -1)
-			fprintf (stderr, "pthread_mutex_init failed\n");
+			Sys_Error ("pthread_mutex_init failed");
 		if (pthread_attr_init (&attrib) == -1)
-			fprintf (stderr, "pthread_attr_create failed\n");
+			Sys_Error ("pthread_attr_create failed");
 		if (pthread_attr_setstacksize (&attrib, 0x100000) == -1)
-			fprintf (stderr, "pthread_attr_setstacksize failed\n");
+			Sys_Error ("pthread_attr_setstacksize failed");
 		for (i = 0; i < options.threads; i++) {
 			if (pthread_create (&work_threads[i], &attrib, LeafThread,
 								(void *) i) == -1)
-				fprintf (stderr, "pthread_create failed\n");
+				Sys_Error ("pthread_create failed");
 		}
 
 		for (i = 0; i < options.threads; i++) {
 			if (pthread_join (work_threads[i], &status) == -1)
-				fprintf (stderr, "pthread_join failed\n");
+				Sys_Error ("pthread_join failed");
 		}
 
 		if (pthread_mutex_destroy (my_mutex) == -1)
-			fprintf (stderr, "pthread_mutex_destroy failed\n");
+			Sys_Error ("pthread_mutex_destroy failed");
 	}
 #else
 	LeafThread (0);
@@ -634,9 +634,9 @@ LoadPortals (char *name)
 	}
 
 	if (fscanf (f, "%79s\n%i\n%i\n", magic, &portalleafs, &numportals) != 3)
-		fprintf (stderr, "LoadPortals: failed to read header\n");
+		Sys_Error ("LoadPortals: failed to read header");
 	if (strcmp (magic, PORTALFILE))
-		fprintf (stderr, "LoadPortals: not a portal file\n");
+		Sys_Error ("LoadPortals: not a portal file");
 
 	if (options.verbosity >= 0) {
 		printf ("%4i portalleafs\n", portalleafs);
@@ -657,13 +657,12 @@ LoadPortals (char *name)
 	for (i = 0, portal = portals; i < numportals; i++) {
 		if (fscanf (f, "%i %i %i ", &numpoints, &leafnums[0],
 					&leafnums[1]) != 3)
-			fprintf (stderr, "LoadPortals: reading portal %i\n", i);
+			Sys_Error ("LoadPortals: reading portal %i", i);
 		if (numpoints > MAX_POINTS_ON_WINDING)
-			fprintf (stderr, "LoadPortals: portal %i has too many points\n",
-					 i);
+			Sys_Error ("LoadPortals: portal %i has too many points", i);
 		if ((unsigned) leafnums[0] > portalleafs
 			|| (unsigned) leafnums[1] > portalleafs)
-			fprintf (stderr, "LoadPortals: reading portal %i\n", i);
+			Sys_Error ("LoadPortals: reading portal %i", i);
 
 		winding = portal->winding = NewWinding (numpoints);
 		winding->original = true;
@@ -675,7 +674,7 @@ LoadPortals (char *name)
 
 			// scanf into double, then assign to vec_t
 			if (fscanf (f, "(%lf %lf %lf ) ", &v[0], &v[1], &v[2]) != 3)
-				fprintf (stderr, "LoadPortals: reading portal %i\n", i);
+				Sys_Error ("LoadPortals: reading portal %i", i);
 
 			for (k = 0; k < 3; k++)		
 				winding->points[j][k] = v[k];
@@ -689,7 +688,7 @@ LoadPortals (char *name)
 		// create forward portal
 		leaf = &leafs[leafnums[0]];
 		if (leaf->numportals == MAX_PORTALS_ON_LEAF)
-			fprintf (stderr, "Leaf with too many portals\n");
+			Sys_Error ("Leaf with too many portals");
 		leaf->portals[leaf->numportals] = portal;
 		leaf->numportals++;
 
@@ -702,7 +701,7 @@ LoadPortals (char *name)
 		// create backwards portal
 		leaf = &leafs[leafnums[1]];
 		if (leaf->numportals == MAX_PORTALS_ON_LEAF)
-			fprintf (stderr, "Leaf with too many portals\n");
+			Sys_Error ("Leaf with too many portals");
 		leaf->portals[leaf->numportals] = portal;
 		leaf->numportals++;
 
@@ -728,7 +727,7 @@ main (int argc, char **argv)
 	DecodeArgs (argc, argv);
 
 	if (!options.bspfile) {
-		fprintf (stderr, "%s: no bsp file specified.\n", this_program);
+		Sys_Error ("%s: no bsp file specified.", this_program);
 		usage (1);
 	}
 

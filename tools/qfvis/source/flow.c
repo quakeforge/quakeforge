@@ -74,7 +74,7 @@ CheckStack (leaf_t *leaf, threaddata_t *thread)
 	
     for (p = thread->pstack_head.next; p; p = p->next)
 		if (p->leaf == leaf)
-			fprintf (stderr, "CheckStack: leaf recursion");
+			Sys_Error ("CheckStack: leaf recursion");
 }
 
 /*
@@ -358,7 +358,7 @@ PortalFlow (portal_t *p)
     threaddata_t	data;
 
     if (p->status != stat_working)
-		fprintf (stderr, "PortalFlow: reflowed");
+		Sys_Error ("PortalFlow: reflowed");
     p->status = stat_working;
 
     p->visbits = calloc (1, bitbytes);
