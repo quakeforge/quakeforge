@@ -56,8 +56,8 @@ typedef struct riff_d_cue_s {
 typedef struct riff_d_format_s {
 	unsigned short format_tag;
 	unsigned short channels;
-	unsigned    samples_pre_sec;
-	unsigned    byte_per_sec;
+	unsigned    samples_per_sec;
+	unsigned    bytes_per_sec;
 	unsigned short align;
 } riff_d_format_t;
 

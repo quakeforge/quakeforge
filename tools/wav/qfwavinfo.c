@@ -27,6 +27,17 @@ main (int argc, char **argv)
 		sample_count = -1;
 		for (ck = riff->chunks; *ck; ck++) {
 			RIFF_SWITCH ((*ck)->name) {
+				case RIFF_CASE ('f', 'm', 't', ' '):
+					/*{
+						riff_format_t *_fmt = (riff_format_t *) *ck;
+						riff_d_format_t *fmt = (riff_d_format_t *) _fmt->fdata;
+						printf ("fmt.format_tag      = %d\n", fmt->format_tag);
+						printf ("fmt.channels        = %d\n", fmt->channels);
+						printf ("fmt.samples_per_sec = %d\n", fmt->samples_per_sec);
+						printf ("fmt.bytes_per_sec    = %d\n", fmt->bytes_per_sec);
+						printf ("fmt.align           = %d\n", fmt->align);
+					}*/
+					break;
 				case RIFF_CASE ('c', 'u', 'e', ' '):
 					{
 						riff_cue_t      *cue = (riff_cue_t *)*ck;

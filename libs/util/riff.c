@@ -312,6 +312,18 @@ riff_read (QFile *f)
 					chunk = &list->ck;
 				}
 				break;
+			case RIFF_CASE ('f','m','t',' '):
+				{
+					riff_format_t *fmt;
+					fmt = malloc (sizeof (riff_format_t) + ck.len);
+					fmt->ck = ck;
+					if (!Rread (f, fmt->fdata, ck.len)) {
+						free (fmt);
+					} else {
+						chunk = &fmt->ck;
+					}
+				}
+				break;
 			case RIFF_CASE ('d','a','t','a'):
 				{
 					riff_data_t     *data = malloc (sizeof (riff_data_t));
@@ -454,6 +466,9 @@ riff_free (riff_t *riff)
 			case RIFF_CASE ('L','I','S','T'):
 				list = (riff_list_t *) *ck;
 				free_list (list);
+				break;
+			case RIFF_CASE ('f','m','t',' '):
+				free (*ck);
 				break;
 			default:
 				data = (riff_data_t *) *ck;
