@@ -2203,6 +2203,14 @@ SV_ExtractFromUserinfo (client_t *cl)
 	if (!*newname)
 		badname = true;
 
+	// ':' is used in chat messages
+	if (strchr (newname, ':'))
+		badname = true;
+
+	// I dunno if this is possible, but better safe than sorry
+	if (strchr (newname, '"'))
+		badname = true;
+
 	// impersonating an user-xxx name.  if they're using it
 	// legitimately it'll be a no-op later on
 	if (!strncasecmp (newname, "user-", 5))
@@ -2227,7 +2235,7 @@ SV_ExtractFromUserinfo (client_t *cl)
 		snprintf (newname, sizeof (newname), "user-%d", cl->userid);
 
 	// set the name
-	if (strcmp (cl->name, newname)) {
+	if (strcmp (newname, val) || strcmp (cl->name, newname)) {
 		Info_SetValueForKey (cl->userinfo, "name", newname, MAX_INFO_STRING,
 							 !sv_highchars->int_val);
 		val = Info_ValueForKey (cl->userinfo, "name");
@@ -2261,9 +2269,10 @@ SV_ExtractFromUserinfo (client_t *cl)
 			}
 		}
 
-		// finally, report it to all our friends
+		// finally, report it to all our friends, but only if more
+		// than whitespace changed
 //		if (cl->state >= cs_spawned && !cl->spectator)
-		if (*cl->name)
+		if (*cl->name && strcmp (cl->name, newname))
 			SV_BroadcastPrintf (PRINT_HIGH, "%s changed name to %s\n",
 								cl->name, newname);
 		strcpy (cl->name, newname);
