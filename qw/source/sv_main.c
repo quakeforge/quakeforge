@@ -1552,6 +1552,7 @@ SV_Frame (float time)
 		svs.stats.packets = 0;
 		svs.stats.count = 0;
 	}
+	Con_ProcessInput ();		//XXX evil hack to get the cursor in the right place
 }
 
 /*

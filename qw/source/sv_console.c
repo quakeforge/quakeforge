@@ -259,35 +259,36 @@ Con_ProcessInput (void)
 			}
 			break;
 	}
-	curs_x = key_linepos - scroll;
-	if (curs_x < 1) {
-		scroll += curs_x - 1;
-		curs_x = 1;
-	} else if (curs_x > screen_x - 2) {
-		scroll += curs_x - (screen_x - 2);
-		curs_x = screen_x - 2;
-	}
-	text = key_lines[edit_line] + scroll;
-	if (scroll && strlen (text) < screen_x - 2) {
-		scroll = strlen (key_lines[edit_line]) - (screen_x - 2);
-		text = key_lines[edit_line] + scroll;
-		curs_x = key_linepos - scroll;
+
+	i = key_linepos - 1;
+	if (scroll > i)
+		scroll = i;
+	if (scroll < i - (screen_x - 2) + 1)
+		scroll = i - (screen_x - 2) + 1;
+	text = key_lines[edit_line] + scroll + 1;
+	if ((int)strlen (text) < screen_x - 2) {
+		scroll = strlen (key_lines[edit_line] + 1) - (screen_x - 2);
+		if (scroll < 0)
+			scroll = 0;
+		text = key_lines[edit_line] + scroll + 1;
 	}
 
-	werase (input);
+	curs_x = key_linepos - scroll;
+
 	wmove (input, 0, 0);
-	i = 0;
-#if 0
 	if (scroll) {
 		waddch (input, '<');
-		text++;
-		i++;
+	} else {
+		waddch (input, key_lines[edit_line][0]);
 	}
-#endif
-	for (; i < screen_x - 2 && *text; i++)
+	for (i = 0; i < screen_x - 2 && *text; i++)
 		waddch (input, *text++);
+	while (i++ < screen_x - 2)
+		waddch (input, ' ');
 	if (*text) {
 		waddch (input, '>');
+	} else {
+		waddch (input, ' ');
 	}
 	wmove (input, 0, curs_x);
 	touchline (stdscr, screen_y - 1, 1);
