@@ -3,10 +3,10 @@ NEWS for the QuakeForge project
 
 changes from 0.3.0
 
- o	progs engine re-write
+ o  progs engine re-write
      o  fully modular. mod/server independent allowing for standalone
         quakec interpreter and client-side quakec.
-     o	no longer dependent on progdefs.h (causes problems with quakec
+     o  no longer dependent on progdefs.h (causes problems with quakec
         compilers that strip def names but those progs can be fixed using
         qfdefs)
      o  new opcodes and types for version 0.fff.002 progs (version 6 still
@@ -56,7 +56,7 @@ changes from 0.3.0
      o  library file support (.qfo files in a .pak file)
      o  strict type checking
 
- o      Enhanced console scripting - GIB
+ o  Enhanced console scripting - GIB
      o  New language derived from the quake console.
      o  Functions with arguments and return values.
      o  Looping (while, for) and branching (if) commands.
@@ -65,13 +65,13 @@ changes from 0.3.0
      o  A basic math interpreter that respects order of operations
         and provides most arithmetic and logic operators.
      o  Non-preemptive threading and callbacks to GIB functions in
-	response to game events (limited but functional at the moment)
+        response to game events (limited but functional at the moment)
      o  File reading, writing, and searching.
      o  Integrates with console -- GIB functions can be exported as
         console commands to be used at the console or in binds.
      o  See gib.html in doc for more information.
 
- o      Enhanced time cheat (speed cheat) protection
+ o  Enhanced time cheat (speed cheat) protection
      o  Speed cheat only works for a split second before protection
         kicks in.
      o  Players moving at the wrong speed are sped up/slowed down to
