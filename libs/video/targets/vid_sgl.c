@@ -42,6 +42,7 @@
 #include <SDL.h>
 
 #include "compat.h"
+#include "QF/GL/funcs.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
@@ -50,7 +51,6 @@
 #include "QF/va.h"
 #include "QF/vid.h"
 
-#include "glquake.h"
 #include "sbar.h"
 
 #ifdef WIN32
