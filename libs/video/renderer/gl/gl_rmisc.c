@@ -194,14 +194,15 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	skytexturenum = -1;
 	mirrortexturenum = -1;
 	for (i = 0; i < r_worldentity.model->numtextures; i++) {
-		if (!r_worldentity.model->textures[i])
+		texture_t  *tex = r_worldentity.model->textures[i];
+		if (!tex)
 			continue;
-		if (!strncmp (r_worldentity.model->textures[i]->name, "sky", 3))
+		if (!strncmp (tex->name, "sky", 3))
 			skytexturenum = i;
-		if (!strncmp (r_worldentity.model->textures[i]->name,
-					  "window02_1", 10))
+		if (!strncmp (tex->name, "window02_1", 10))
 			mirrortexturenum = i;
-		r_worldentity.model->textures[i]->texturechain = NULL;
+		tex->texturechain = NULL;
+		tex->texturechain_tail = &tex->texturechain;
 	}
 	r_skyname = Cvar_FindVar ("r_skyname");
 	if (r_skyname != NULL)

@@ -86,6 +86,7 @@ typedef struct texture_s
 	int			gl_texturenum;
 	int			gl_fb_texturenum;
 	struct msurface_s	*texturechain;	// for gl_texsort drawing
+	struct msurface_s	**texturechain_tail;
 	int			anim_total;				// total tenths in sequence ( 0 = no)
 	int			anim_min, anim_max;		// time for this frame min <=time< max
 	struct texture_s *anim_next;		// in the animation sequence

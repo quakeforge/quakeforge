@@ -88,7 +88,28 @@ glpoly_t    *lightmap_polys[MAX_LIGHTMAPS];
 glRect_t     lightmap_rectchange[MAX_LIGHTMAPS];
 
 msurface_t  *waterchain = NULL;
+msurface_t **waterchain_tail = &waterchain;
 msurface_t  *sky_chain;
+msurface_t **sky_chain_tail;
+
+#define CHAIN_SURF_F2B(surf,chain)				\
+	do { 										\
+		*(chain##_tail) = (surf);				\
+		(chain##_tail) = &(surf)->texturechain;	\
+		*(chain##_tail) = 0;					\
+	} while (0)
+
+#define CHAIN_SURF_B2F(surf,chain) 				\
+	do { 										\
+		(surf)->texturechain = (chain);			\
+		(chain) = (surf);						\
+	} while (0)
+
+#if 1
+# define CHAIN_SURF CHAIN_SURF_F2B
+#else
+# define CHAIN_SURF CHAIN_SURF_B2F
+#endif
 
 
 // LordHavoc: place for gl_rsurf setup code
@@ -582,6 +603,7 @@ R_DrawWaterSurfaces (void)
 	}
 
 	waterchain = NULL;
+	waterchain_tail = &waterchain;
 
 	if (r_wateralpha->value < 1.0) {
 		qfglDepthMask (GL_TRUE);
@@ -598,12 +620,14 @@ DrawTextureChains (void)
 	qfglDisable (GL_BLEND);
 
 	for (i = 0; i < r_worldentity.model->numtextures; i++) {
-		if (!r_worldentity.model->textures[i])
+		texture_t  *tex = r_worldentity.model->textures[i];
+		if (!tex)
 			continue;
-		for (s = r_worldentity.model->textures[i]->texturechain; s;
-			 s = s->texturechain) R_RenderBrushPoly (s);
+		for (s = tex->texturechain; s; s = s->texturechain)
+			R_RenderBrushPoly (s);
 
-		r_worldentity.model->textures[i]->texturechain = NULL;
+		tex->texturechain = NULL;
+		tex->texturechain_tail = &tex->texturechain;
 	}
 
 	qfglEnable (GL_BLEND);
@@ -689,8 +713,7 @@ R_DrawBrushModel (entity_t *e)
 			if (psurf->flags & SURF_DRAWTURB) {
 				GL_WaterSurface (psurf);
 			} else if (psurf->flags & SURF_DRAWSKY) {
-				psurf->texturechain = sky_chain;
-				sky_chain = psurf;
+				CHAIN_SURF (psurf, sky_chain);
 				return;
 			} else if (gl_mtex_active) {
 				R_DrawMultitexturePoly (psurf);
@@ -766,16 +789,16 @@ R_RecursiveWorldNode (mnode_t *node)
 				continue;				// wrong side
 
 			if (surf->flags & SURF_DRAWTURB) {
-				surf->texturechain = waterchain;
-				waterchain = surf;
+				if (r_wateralpha->value < 1)
+					CHAIN_SURF_B2F (surf, waterchain);
+				else
+					CHAIN_SURF (surf, waterchain);
 			} else if (surf->flags & SURF_DRAWSKY) {
-				surf->texturechain = sky_chain;
-				sky_chain = surf;
+				CHAIN_SURF (surf, sky_chain);
 			} else if (gl_mtex_active) {
 				R_DrawMultitexturePoly (surf);
 			} else {
-				surf->texturechain = surf->texinfo->texture->texturechain;
-				surf->texinfo->texture->texturechain = surf;
+				CHAIN_SURF (surf, surf->texinfo->texture->texturechain);
 			}
 		}
 	}
@@ -799,6 +822,7 @@ R_DrawWorld (void)
 	memset (fullbright_polys, 0, sizeof (fullbright_polys));
 
 	sky_chain = 0;
+	sky_chain_tail = &sky_chain;
 	if (!gl_sky_clip->int_val) {
 		R_DrawSky ();
 	}
