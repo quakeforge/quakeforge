@@ -616,7 +616,7 @@ CL_AddQFInfoKeys (void)
 {
 	char        cap[100] = "";			// max of 98 or so flags
 
-	// set the capabilities info. single char flags (possibly with modifiefs)
+	// set the capabilities info. single char flags (possibly with modifiers)
 	// defined capabilities (* = not implemented):
 	// z   client can accept gzipped files.
 	// h    * http transfers
@@ -1167,9 +1167,9 @@ CL_Init (void)
 					"that Quake should switch to upon a backpack pickup.\n "
 					"w_switch - Determines the highest weapon that Quake "
 					"should switch to upon a weapon pickup.");
-	Cmd_AddCommand ("fullinfo", CL_FullInfo_f, "Used by QuakeSpy and Qlist to "
+	Cmd_AddCommand ("fullinfo", CL_FullInfo_f, "Used by GameSpy and Qlist to "
 					"set setinfo variables");
-	Cmd_AddCommand ("fullserverinfo", CL_FullServerinfo_f, "Used by QuakeSpy "
+	Cmd_AddCommand ("fullserverinfo", CL_FullServerinfo_f, "Used by GameSpy "
 					"and Qlist to obtain server variables");
 	Cmd_AddCommand ("download", CL_Download_f, "Manually download a quake "
 					"file from the server");
@@ -1271,21 +1271,21 @@ CL_Init_Cvars (void)
 							 "sending rcon commands");
 	show_fps = Cvar_Get ("show_fps", "0", CVAR_NONE, NULL,
 						 "display realtime frames per second");
-	show_ping = Cvar_Get ("show_ping", "o", CVAR_NONE, NULL,
+	show_ping = Cvar_Get ("show_ping", "0", CVAR_NONE, NULL,
 						  "display current ping to server");
-	show_pl = Cvar_Get ("show_pl", "o", CVAR_NONE, NULL,
+	show_pl = Cvar_Get ("show_pl", "0", CVAR_NONE, NULL,
 						"display current packet loss to server");
 	show_time = Cvar_Get ("show_time", "0", CVAR_NONE, NULL,
-						  "display the current time");
+						  "Display the current time, 1 24hr, 2 AM/PM");
 	cl_predict_players = Cvar_Get ("cl_predict_players", "1", CVAR_NONE, NULL,
 								   "If this is 0, no player prediction is "
 								   "done");
 	cl_solid_players = Cvar_Get ("cl_solid_players", "1", CVAR_NONE, NULL,
 								 "Are players solid? If off, you can walk "
 								 "through them with difficulty");
-	localid = Cvar_Get ("localid", "", CVAR_NONE, NULL, "FIXME: This has "
-						"something to do with client authentication."
-						"No description");
+	localid = Cvar_Get ("localid", "", CVAR_NONE, NULL, "Used by "
+								 "gamespy+others to authenticate when sending " 
+								 "commands to the client");
 	cl_timeframes = Cvar_Get ("cl_timeframes", "0", CVAR_ARCHIVE, NULL,
 							  "write timestamps for every frame");
 	// info mirrors
