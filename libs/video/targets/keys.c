@@ -54,23 +54,13 @@ static const char rcsid[] =
 
 /*  key up events are sent even if in console mode */
 
-cvar_t     *cl_chatmode;
 cvar_t     *in_bind_imt;
-
-int         key_lastpress;
-
-int         edit_line = 0;
-int         history_line = 0;
 
 keydest_t   key_dest = key_console;
 imt_t		game_target = IMT_CONSOLE;
 
 char       *keybindings[IMT_LAST][QFK_LAST];
 int			keydown[QFK_LAST];
-
-qboolean    chat_team;
-char        chat_buffer[MAXCMDLINE];
-int         chat_bufferlen = 0;
 
 typedef struct {
 	char	*name;
@@ -436,53 +426,6 @@ Key_Console (knum_t key, short unicode)
 	Con_KeyEvent (key, unicode, keydown[key]);
 }
 
-void
-Key_Message (knum_t key, short unicode)
-{
-	if (keydown[key] != 1)
-		return;
-
-	if (unicode == '\x0D' || key == QFK_RETURN) {
-		if (chat_team)
-			Cbuf_AddText ("say_team \"");
-		else
-			Cbuf_AddText ("say \"");
-		Cbuf_AddText (chat_buffer);
-		Cbuf_AddText ("\"\n");
-
-		key_dest = key_game;
-		game_target = IMT_0;
-		chat_bufferlen = 0;
-		chat_buffer[0] = 0;
-		return;
-	}
-
-	if (unicode == '\x1b' || key == QFK_ESCAPE) {
-		key_dest = key_game;
-		game_target = IMT_0;
-		chat_bufferlen = 0;
-		chat_buffer[0] = 0;
-		return;
-	}
-
-	if (unicode == '\x08') {
-		if (chat_bufferlen) {
-			chat_bufferlen--;
-			chat_buffer[chat_bufferlen] = 0;
-		}
-		return;
-	}
-
-	if (chat_bufferlen == sizeof (chat_buffer) - 1)
-		return;							// all full
-
-	if (key < 32 || key > 127)
-		return;							// non printable
-
-	chat_buffer[chat_bufferlen++] = unicode;
-	chat_buffer[chat_bufferlen] = 0;
-}
-
 //============================================================================
 
 /*
@@ -782,15 +725,13 @@ Key_Event (knum_t key, short unicode, qboolean down)
 	else
 		keydown[key] = 0;
 
-	key_lastpress = key;
-
 	// handle escape specially, so the user can never unbind it
 	if (unicode == '\x1b' || key == QFK_ESCAPE) {
 		if (!down || (keydown[key] > 1))
 			return;
 		switch (key_dest) {
 			case key_message:
-				Key_Message (key, unicode);
+				Key_Console (key, unicode);
 				break;
 			case key_game:
 			case key_console:
@@ -808,7 +749,7 @@ Key_Event (knum_t key, short unicode, qboolean down)
 	// if not a consolekey, send to the interpreter no matter what mode is
 	switch (key_dest) {
 		case key_message:
-			Key_Message (key, unicode);
+			Key_Console (key, unicode);
 			break;
 		case key_game:
 			Key_Game (key, unicode);
@@ -858,9 +799,6 @@ Key_Init (void)
 void
 Key_Init_Cvars (void)
 {
-	cl_chatmode = Cvar_Get ("cl_chatmode", "2", CVAR_NONE, NULL,
-							"Controls when console text will be treated as a "
-							"chat message: 0 - never, 1 - always, 2 - smart");
 	in_bind_imt = Cvar_Get ("in_bind_imt", "imt_default", CVAR_ARCHIVE,
 							in_bind_imt_f, "imt parameter for the bind and "
 							"unbind wrappers to in_bind and in_unbind");

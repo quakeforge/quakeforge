@@ -67,6 +67,7 @@ static old_console_t  *con;
 static float       con_cursorspeed = 4;
 
 static cvar_t *con_notifytime;				// seconds
+static cvar_t *cl_chatmode;
 
 #define	NUM_CON_TIMES 4
 static float con_times[NUM_CON_TIMES];	// realtime time the line was generated
@@ -77,9 +78,12 @@ static int  con_vislines;
 static int  con_notifylines;			// scan lines to clear for notify lines
 
 static qboolean con_debuglog;
+static qboolean chat_team;
 
 #define		MAXCMDLINE	256
 static inputline_t *input_line;
+static inputline_t *say_line;
+static inputline_t *say_team_line;
 
 static qboolean con_initialized;
 
@@ -143,6 +147,7 @@ MessageMode_f (void)
 		return;
 	chat_team = false;
 	key_dest = key_message;
+	game_target = IMT_CONSOLE;
 }
 
 static void
@@ -152,6 +157,7 @@ MessageMode2_f (void)
 		return;
 	chat_team = true;
 	key_dest = key_message;
+	game_target = IMT_CONSOLE;
 }
 
 static void
@@ -168,12 +174,16 @@ Resize (old_console_t *con)
 	if (width < 1) {					// video hasn't been initialized yet
 		width = 38;
 		con_linewidth = width;
+		say_team_line->width = con_linewidth - 9;
+		say_line->width = con_linewidth - 4;
 		input_line->width = con_linewidth;
 		con_totallines = CON_TEXTSIZE / con_linewidth;
 		memset (con->text, ' ', CON_TEXTSIZE);
 	} else {
 		oldwidth = con_linewidth;
 		con_linewidth = width;
+		say_team_line->width = con_linewidth - 9;
+		say_line->width = con_linewidth - 4;
 		input_line->width = con_linewidth;
 		oldtotallines = con_totallines;
 		con_totallines = CON_TEXTSIZE / con_linewidth;
@@ -262,6 +272,26 @@ C_ExecLine (const char *line)
 	Cbuf_AddText (line);
 }
 
+static void
+C_Say (const char *line)
+{
+	Cbuf_AddText ("say \"");
+	Cbuf_AddText (line);
+	Cbuf_AddText ("\"\n");
+	key_dest = key_game;
+	game_target = IMT_0;
+}
+
+static void
+C_SayTeam (const char *line)
+{
+	Cbuf_AddText ("say_team \"");
+	Cbuf_AddText (line);
+	Cbuf_AddText ("\"\n");
+	key_dest = key_game;
+	game_target = IMT_0;
+}
+
 
 static void
 C_Init (void)
@@ -269,6 +299,9 @@ C_Init (void)
 	con_notifytime = Cvar_Get ("con_notifytime", "3", CVAR_NONE, NULL,
 							   "How long in seconds messages are displayed "
 							   "on screen");
+	cl_chatmode = Cvar_Get ("cl_chatmode", "2", CVAR_NONE, NULL,
+							"Controls when console text will be treated as a "
+							"chat message: 0 - never, 1 - always, 2 - smart");
 
 	con_debuglog = COM_CheckParm ("-condebug");
 
@@ -281,6 +314,20 @@ C_Init (void)
 	input_line->width = con_linewidth;
 	input_line->user_data = 0;
 	input_line->draw = 0;//C_DrawInput;
+
+	say_line = Con_CreateInputLine (32, MAXCMDLINE, ' ');
+	say_line->complete = 0;
+	say_line->enter = C_Say;
+	say_line->width = con_linewidth - 4;
+	say_line->user_data = 0;
+	say_line->draw = 0;//C_DrawInput;
+
+	say_team_line = Con_CreateInputLine (32, MAXCMDLINE, ' ');
+	say_team_line->complete = 0;
+	say_team_line->enter = C_SayTeam;
+	say_team_line->width = con_linewidth - 9;
+	say_team_line->user_data = 0;
+	say_team_line->draw = 0;//C_DrawInput;
 
 	C_CheckResize ();
 
@@ -416,7 +463,21 @@ C_KeyEvent (key_t key, short unicode, qboolean down)
 {
 	if (!down)
 		return;
-	Con_ProcessInputLine (input_line, key);
+
+	if (key_dest == key_message) {
+		if (key == QFK_ESCAPE) {
+			key_dest = key_game;
+			game_target = IMT_0;
+			return;
+		}
+		if (chat_team) {
+			Con_ProcessInputLine (say_team_line, key);
+		} else {
+			Con_ProcessInputLine (say_line, key);
+		}
+	} else {
+		Con_ProcessInputLine (input_line, key);
+	}
 }
 
 /* DRAWING */
@@ -491,14 +552,16 @@ DrawNotify (void)
 		if (chat_team) {
 			Draw_String (8, v, "say_team:");
 			skip = 11;
+			text = say_team_line->lines[say_team_line->edit_line]
+					 + say_team_line->scroll;
 		} else {
 			Draw_String (8, v, "say:");
 			skip = 5;
+			text = say_line->lines[say_line->edit_line]
+					 + say_line->scroll;
 		}
 
-		s = chat_buffer;
-		if (chat_bufferlen > (vid.width >> 3) - (skip + 1))
-			s += chat_bufferlen - ((vid.width >> 3) - (skip + 1));
+		s = text;
 		x = 0;
 		Draw_String (skip << 3, v, s);
 		Draw_Character ((strlen(s) + skip) << 3, v,

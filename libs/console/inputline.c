@@ -146,7 +146,7 @@ Con_ProcessInputLine (inputline_t *il, int ch)
 				break; // don't let it wrap
 			il->history_line = (il->history_line + 1) % il->num_lines;
 			if (il->history_line == il->edit_line) {
-				il->lines[il->edit_line][0] = ']';
+				il->lines[il->edit_line][0] = il->prompt_char;
 				il->lines[il->edit_line][1] = 0;
 				il->linepos = 1;
 			} else {
