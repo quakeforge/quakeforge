@@ -15,5 +15,6 @@ Once you have determined which plugin you wish to use, you can put <code>set snd
 <li>In UNIX, QuakeForge defaults to looking for the game directories in <code>$prefix/share/games/quakeforge</code> (<code>fs_sharepath</code>) and <code>~/.quakeforge</code> (<code>fs_userpath</code>).</li>
 <li>In MS-Windows, QuakeForge defaults to looking for the game directories in the traditional location (the current directory). <code>fs_sharepath</code> and <code>fs_userpath</code> <em>are</em> available to MS-Windows users, they both default to "<code>.</code>"</li>
 <li>QuakeForge only ever writes files to <code>fs_userpath</code>, <strong>never</strong> to <code>fs_sharepath</code> and QuakeForge will search for files within <code>fs_userpath</code> before looking in <code>fs_sharepath</code></li>
+<li>QuakeForge 0.5 has a powerful new key binding system that isn't compatable with the old system, though most configs <em>usually</em> work just fine thanks to a compatability layer. Information about this system can be found <a href="/doc/bind.txt">here</a>.</li>
 <li>Um, I'm tired. You're lucky you got these docs :P. More will follow</li>
 </ol>

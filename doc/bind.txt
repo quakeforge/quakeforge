@@ -1,0 +1,76 @@
+To: Colin Thompson
+Subject: Re: toggle console problem
+From: Bill Currie
+Date: Sat, 19 Jan 2002 01:15:16 -0700
+
+On Fri, Jan 18, 2002 at 07:33:38AM -0000, Colin Thompson wrote:
+> Hi all,
+> 
+> I noticed a problem with binding a key to toggle the console. the
+> 'traditional' key is usually tilde but it only brings the console down -
+> after that the keypress is is captured by the console code and won't send it
+> back up again....
+
+This is actually by design.
+
+> I'm not sure if this is classed as a bug or not, but I noticed that Taniwha
+> is working with the console code so I thought this list would be more
+> appropriate...
+
+Yeah, I've been busy of late (finally got back into the swing of things:).
+
+> Should the console only be capturing certain keys? or everything?
+
+Well, the console /is/ capturing the keys. They're just not bound to any
+action. qf 0.5 has a rather powerful key binding system (thanks to Mercury)
+that can drasticly simplify config scripts. Rather than the one key binding
+table you're used to, qf has eighteen: one for the console (IMT_CONSOLE) and
+17 for in-game (IMT_0 to IMT_16). There is also IMT_DEFAULT, but that just
+maps to IMT_0. The way to bind keys in this system is (eg): in_bind
+imt_console k_backquote toggleconsole (there, even answered your main
+question:). IMT -> input mapping table. Here's another, longer example:
+
+-----8<-----
+
+exec configs/common/alias/zoom.cfg
+bind mwheeldown z_out
+bind mwheelup z_in
+init__zoom.cfg
+
+in_bind imt_1 m_wheel_down "impulse 12"
+in_bind imt_1 m_wheel_up "impulse 10"
+in_bind imt_0 k_capslock +goto_imt_1
+// unbound keys in imt_[1-16] fall through to imt_0
+alias +goto_imt_1 "imt imt_1"
+alias -goto_imt_1 "imt imt_0"
+
+-----8<-----
+
+Now, bind acts as a compatability layer taking the old bind syntax (and key
+names), converting them to the new using the imt specified in the in_bind_imt
+cvar (which defaults to imt_default (which points to imt_0: the main game
+imt)). The imt command selects the current imt that the input engine is to
+check for a binding.
+
+What this setup does is give me variable zoom using my mouse wheel by default.
+When I hold down the capslock key, the wheel cycles though my weapons.
+
+As stated in the comment in the config, if the input engine doesn't find a
+binding for a key in tables 1-16, it will look in table 0. If it still doesn't
+find a binding, it drops the key.
+
+imt_console is /totally/ independent of imt 0-16. /any/ time you leave the
+game, imt_console is made the `default' and imt_0 to imt_16 are ignored. In
+game, imt_0 is default with imt_1 to imt_16 being available.
+
+Ways to leave the game: bring down the console (or have it forced down via
+disconnect); go to the menu (they're not functional yet, but I'm making
+progress); messagemode1 and messagemode2.
+
+HTH
+Bill
+
+PS: incase nobodie's noticed: chat now has input history. just use the up/down
+arrow keys.
+-- 
+Leave others their otherness. -- Aratak
