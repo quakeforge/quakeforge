@@ -425,6 +425,9 @@ R_MarkLeaves (void)
 {
 	byte       *vis;
 	mnode_t    *node;
+	mleaf_t    *leaf;
+	msurface_t **mark;
+	int         c;
 	int         i;
 
 	if (r_oldviewleaf == r_viewleaf)
@@ -437,7 +440,16 @@ R_MarkLeaves (void)
 
 	for (i = 0; i < r_worldentity.model->numleafs; i++) {
 		if (vis[i >> 3] & (1 << (i & 7))) {
-			node = (mnode_t *) &r_worldentity.model->leafs[i + 1];
+			leaf = &r_worldentity.model->leafs[i + 1];
+			mark = leaf->firstmarksurface;
+			c = leaf->nummarksurfaces;
+			if (c) {
+				do {
+					(*mark)->visframe = r_visframecount;
+					mark++;
+				} while (--c);
+			}
+			node = (mnode_t*)leaf;
 			do {
 				if (node->visframe == r_visframecount)
 					break;

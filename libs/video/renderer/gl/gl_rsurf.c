@@ -789,7 +789,7 @@ R_RecursiveWorldNode (mnode_t *node)
 {
 	int         c, side;
 	mplane_t   *plane;
-	msurface_t *surf, **mark;
+	msurface_t *surf;
 	mleaf_t    *pleaf;
 	double      dot;
 
@@ -803,14 +803,6 @@ R_RecursiveWorldNode (mnode_t *node)
 	// if a leaf node, draw stuff
 	if (node->contents < 0) {
 		pleaf = (mleaf_t *) node;
-
-		if ((c = pleaf->nummarksurfaces)) {
-			mark = pleaf->firstmarksurface;
-			do {
-				(*mark)->visframe = r_visframecount;
-				mark++;
-			} while (--c);
-		}
 		// deal with model fragments in this leaf
 		if (pleaf->efrags)
 			R_StoreEfrags (&pleaf->efrags);
@@ -930,7 +922,10 @@ R_MarkLeaves (void)
 {
 	byte       *vis;
 	mnode_t    *node;
+	mleaf_t    *leaf;
+	msurface_t **mark;
 	int         i;
+	int         c;
 	byte        solid[4096];
 
 	if (r_oldviewleaf == r_viewleaf && !r_novis->int_val)
@@ -947,7 +942,15 @@ R_MarkLeaves (void)
 
 	for (i = 0; i < r_worldentity.model->numleafs; i++) {
 		if (vis[i >> 3] & (1 << (i & 7))) {
-			node = (mnode_t *) &r_worldentity.model->leafs[i + 1];
+			leaf = &r_worldentity.model->leafs[i + 1];
+			if ((c = leaf->nummarksurfaces)) {
+				mark = leaf->firstmarksurface;
+				do {
+					(*mark)->visframe = r_visframecount;
+					mark++;
+				} while (--c);
+			}
+			node = (mnode_t *) leaf;
 			do {
 				if (node->visframe == r_visframecount)
 					break;

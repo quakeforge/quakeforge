@@ -402,7 +402,7 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 	int         i, c, side, *pindex;
 	vec3_t      acceptpt, rejectpt;
 	mplane_t   *plane;
-	msurface_t *surf, **mark;
+	msurface_t *surf;
 	mleaf_t    *pleaf;
 	double      d, dot;
 
@@ -450,16 +450,6 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 	// if a leaf node, draw stuff
 	if (node->contents < 0) {
 		pleaf = (mleaf_t *) node;
-
-		mark = pleaf->firstmarksurface;
-		c = pleaf->nummarksurfaces;
-
-		if (c) {
-			do {
-				(*mark)->visframe = r_visframecount;
-				mark++;
-			} while (--c);
-		}
 		// deal with model fragments in this leaf
 		if (pleaf->efrags) {
 			R_StoreEfrags (&pleaf->efrags);
