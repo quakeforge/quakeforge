@@ -185,6 +185,13 @@ integer (string text, integer key) control_options_f =
 		case "freelook":
 			Cbuf_AddText ("toggle freelook\n");
 			break;
+		case "m_pitch":
+			if(cvar("m_pitch") < 0) {
+				Cbuf_AddText ("set m_pitch 0.022\n");
+			} else {
+				Cbuf_AddText ("set m_pitch -0.022\n");
+			}
+			break;
 	}
 	if(!(key == QFK_RIGHT || key == QFK_LEFT)) {
 		return 0;
@@ -223,6 +230,14 @@ integer () options_controls_draw =
 	Draw_String (70, bar_pad + 10, "Mouse amp:");
 	draw_perc_bar  (150,  bar_pad + 10, 12, to_percentage (MIN_MOUSE_AMP, MAX_MOUSE_AMP, cvar("in_mouse_amp")));
 	Draw_String (150 + (12 + 4)*8 , bar_pad + 10, ftos(cvar("in_mouse_amp")));
+	
+	tmp = "Off";
+	if(cvar("m_pitch") < 0)
+	{
+		tmp = "On";
+	}
+	
+	draw_val_item (70, 110, spacing, "Mouse Invert", tmp);
 
 	opt_cursor  (62, (Menu_GetIndex() * 10) + 60 + cursor_pad);
 	return 1;
@@ -239,6 +254,7 @@ void () options_controls_menu =
 	Menu_Item (54, 80, "autorun", control_options_f, 0);
 	Menu_Item (54, 90, "freelook", control_options_f, 0);
 	Menu_Item (54, 100, "mouseamp", control_options_f, 1);
+	Menu_Item (54, 110, "m_pitch", control_options_f, 0);
 	Menu_End ();
 };
 
