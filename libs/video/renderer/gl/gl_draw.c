@@ -276,6 +276,8 @@ Draw_Init (void)
 	glrsurf_init ();
 }
 
+#define CELL_SIZE 0.0625
+
 /*
 	Draw_Character
 
@@ -286,7 +288,7 @@ Draw_Init (void)
 void
 Draw_Character (int x, int y, int num)
 {
-	float       frow, fcol, size;
+	float       frow, fcol;
 	int         row, col;
 
 	if (num == 32)
@@ -300,20 +302,19 @@ Draw_Character (int x, int y, int num)
 	row = num >> 4;
 	col = num & 15;
 
-	frow = row * 0.0625;
-	fcol = col * 0.0625;
-	size = 0.0625;
+	frow = row * CELL_SIZE;
+	fcol = col * CELL_SIZE;
 
 	qfglBindTexture (GL_TEXTURE_2D, char_texture);
 
 	qfglBegin (GL_QUADS);
 	qfglTexCoord2f (fcol, frow);
 	qfglVertex2f (x, y);
-	qfglTexCoord2f (fcol + size, frow);
+	qfglTexCoord2f (fcol + CELL_SIZE, frow);
 	qfglVertex2f (x + 8, y);
-	qfglTexCoord2f (fcol + size, frow + size);
+	qfglTexCoord2f (fcol + CELL_SIZE, frow + CELL_SIZE);
 	qfglVertex2f (x + 8, y + 8);
-	qfglTexCoord2f (fcol, frow + size);
+	qfglTexCoord2f (fcol, frow + CELL_SIZE);
 	qfglVertex2f (x, y + 8);
 	qfglEnd ();
 }
@@ -321,21 +322,71 @@ Draw_Character (int x, int y, int num)
 void
 Draw_String (int x, int y, const char *str)
 {
+	unsigned char	num;
+	float       	frow, fcol;
+
+	if (!str || !str[0])
+		return;
+	if (y <= -8)
+		return;							// totally off screen
+
+	qfglBindTexture (GL_TEXTURE_2D, char_texture);
+	qfglBegin (GL_QUADS);
+
 	while (*str) {
-		Draw_Character (x, y, *str);
-		str++;
+		if ((num = *str++) != 32) // Don't render spaces
+		{
+			frow = (num >> 4) * CELL_SIZE;
+			fcol = (num & 15) * CELL_SIZE;
+
+			qfglTexCoord2f (fcol, frow);
+			qfglVertex2f (x, y);
+			qfglTexCoord2f (fcol + CELL_SIZE, frow);
+			qfglVertex2f (x + 8, y);
+			qfglTexCoord2f (fcol + CELL_SIZE, frow + CELL_SIZE);
+			qfglVertex2f (x + 8, y + 8);
+			qfglTexCoord2f (fcol, frow + CELL_SIZE);
+			qfglVertex2f (x, y + 8);
+		}
 		x += 8;
 	}
+
+	qfglEnd ();
 }
 
 void
 Draw_AltString (int x, int y, const char *str)
 {
+	unsigned char	num;
+	float       	frow, fcol;
+
+	if (!str || !str[0])
+		return;
+	if (y <= -8)
+		return;							// totally off screen
+
+	qfglBindTexture (GL_TEXTURE_2D, char_texture);
+	qfglBegin (GL_QUADS);
+
 	while (*str) {
-		Draw_Character (x, y, (*str) | 0x80);
-		str++;
+		if ((num = *str++ | 0x80) != 32) // Don't render spaces
+		{
+			frow = (num >> 4) * CELL_SIZE;
+			fcol = (num & 15) * CELL_SIZE;
+
+			qfglTexCoord2f (fcol, frow);
+			qfglVertex2f (x, y);
+			qfglTexCoord2f (fcol + CELL_SIZE, frow);
+			qfglVertex2f (x + 8, y);
+			qfglTexCoord2f (fcol + CELL_SIZE, frow + CELL_SIZE);
+			qfglVertex2f (x + 8, y + 8);
+			qfglTexCoord2f (fcol, frow + CELL_SIZE);
+			qfglVertex2f (x, y + 8);
+		}
 		x += 8;
 	}
+
+	qfglEnd ();
 }
 
 void
