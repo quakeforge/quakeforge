@@ -22,11 +22,26 @@
 #ifndef __exp_h
 #define __exp_h
 
-typedef enum {TOKEN_GENERIC, TOKEN_NUM, TOKEN_OP, TOKEN_OPAREN, TOKEN_CPAREN} 
+typedef enum {TOKEN_GENERIC, TOKEN_NUM, TOKEN_OP, TOKEN_FUNC, TOKEN_OPAREN, TOKEN_CPAREN, TOKEN_COMMA}
 token_type;
 typedef enum {EXP_E_NORMAL = 0, EXP_E_PARSE, EXP_E_INVOP, EXP_E_PAREN, 
 EXP_E_INVPARAM, EXP_E_SYNTAX} exp_error_t;
-typedef float (*opfunc) (float op1, float op2);
+typedef double (*opfunc) (double op1, double op2);
+typedef double (*funcfunc) (double *oplist, unsigned int numops);
+
+typedef struct optable_s
+{
+	char *str;
+	opfunc func;
+	unsigned int operands;
+} optable_t;
+
+typedef struct functable_s
+{
+	char *str;
+	funcfunc func; // Heh
+	unsigned int operands;
+} functable_t;
 
 typedef struct token_generic_s
 {
@@ -38,37 +53,38 @@ typedef struct token_num_s
 {
 	token_type type;
 	union token_u *prev, *next;
-	float value;
+	double value;
 } token_num;
 
 typedef struct token_op_s
 {
 	token_type type;
 	union token_u *prev, *next;
-	opfunc func;
+	optable_t *op;
 } token_op;
+
+typedef struct token_func_s
+{
+	token_type type;
+	union token_u *prev, *next;
+	functable_t *func;
+} token_func;
 
 typedef union token_u
 {
 	token_generic generic;
 	token_num num;
 	token_op op;
+	token_func func;
 } token;
-
-typedef struct optable_s
-{
-	char *str;
-	opfunc func;
-	unsigned int operands;
-} optable_t;
 
 extern exp_error_t EXP_ERROR;
 
 token *EXP_ParseString (char *str);
-void EXP_SimplifyTokens (token *chain);
+exp_error_t EXP_SimplifyTokens (token *chain);
 void EXP_RemoveToken (token *tok);
 void EXP_DestroyTokens (token *chain);
-float EXP_Evaluate (char *str);
+double EXP_Evaluate (char *str);
 void EXP_InsertTokenAfter (token *spot, token *new);
 exp_error_t EXP_Validate (token *chain);
 void EXP_PrintTokens (token *chain);

@@ -21,69 +21,100 @@
 
 #include <math.h>
 
-float OP_Not (float op1, float op2)
+double OP_Not (double op1, double op2)
 {
 	return !op1;
 }
 
-float OP_Add (float op1, float op2)
+double OP_Add (double op1, double op2)
 {
 	return op1 + op2;
 }
 
-float OP_Sub (float op1, float op2)
+double OP_Sub (double op1, double op2)
 {
 	return op1 - op2;
 }
 
-float OP_Mult (float op1, float op2)
+double OP_Mult (double op1, double op2)
 {
 	return op1 * op2;
 }
 
-float OP_Div (float op1, float op2)
+double OP_Div (double op1, double op2)
 {
 	return op1 / op2;
 }
 
-float OP_Exp (float op1, float op2)
+double OP_Exp (double op1, double op2)
 {
 	return pow(op1, op2);
 }
 
-float OP_Eq (float op1, float op2)
+double OP_Eq (double op1, double op2)
 {
 	return op1 == op2;
 }
 
-float OP_Neq (float op1, float op2)
+double OP_Neq (double op1, double op2)
 {
 	return op1 != op2;
 }
 
-float OP_Or (float op1, float op2)
+double OP_Or (double op1, double op2)
 {
 	return op1 || op2;
 }
 
-float OP_And (float op1, float op2)
+double OP_And (double op1, double op2)
 {
 	return op1 && op2;
 }
-float OP_GreaterThan (float op1, float op2)
+double OP_GreaterThan (double op1, double op2)
 {
 	return op1 > op2;
 }
 
-float OP_LessThan (float op1, float op2)
+double OP_LessThan (double op1, double op2)
 {
 	return op1 < op2;
 }
-float OP_GreaterThanEqual (float op1, float op2)
+double OP_GreaterThanEqual (double op1, double op2)
 {
 	return op1 >= op2;
 }
-float OP_LessThanEqual (float op1, float op2)
+double OP_LessThanEqual (double op1, double op2)
 {
 	return op1 <= op2;
+}
+
+
+double Func_Sin (double *oplist, unsigned int numops)
+{
+	return sin (oplist[0]);
+}
+
+double Func_Cos (double *oplist, unsigned int numops)
+{
+	return cos (oplist[0]);
+}
+
+double Func_Tan (double *oplist, unsigned int numops)
+{
+	return tan (oplist[0]);
+}
+
+double Func_Asin (double *oplist, unsigned int numops)
+{
+	return asin (oplist[0]);
+}
+
+double Func_Acos (double *oplist, unsigned int numops)
+{
+	return acos (oplist[0]);
+}
+
+double Func_Atan (double *oplist, unsigned int numops)
+{
+	return atan (oplist[0]);
 }

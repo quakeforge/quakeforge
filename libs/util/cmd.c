@@ -1256,7 +1256,7 @@ Cmd_ProcessMath (dstring_t * dstr)
 {
 	dstring_t  *statement;
 	int         i, n;
-	float       value;
+	double       value;
 	char       *temp;
 	int         ret = 0;
 
@@ -1276,7 +1276,7 @@ Cmd_ProcessMath (dstring_t * dstr)
 			dstring_insert (statement, dstr->str + i + 2, n - 2, 0);
 			value = EXP_Evaluate (statement->str);
 			if (EXP_ERROR == EXP_E_NORMAL) {
-				temp = va ("%g", value);
+				temp = va ("%.10g", value);
 				dstring_snip (dstr, i, n + 1);	// Nuke the statement
 				dstring_insertstr (dstr, temp, i);	// Stick in the value
 				i += strlen (temp) - 1;
@@ -1293,7 +1293,7 @@ Cmd_ProcessMath (dstring_t * dstr)
 
 /*
 	Cmd_ProcessEscapes
-	
+
 	Looks for the escape character \ and
 	removes it.  Special cases exist for
 	\\ and \n; otherwise, it is simply
@@ -2167,6 +2167,9 @@ Cmd_Init (void)
 	cmd_maxloop = Cvar_Get ("cmd_maxloop", "0", CVAR_NONE, NULL, "Controls the "
 							"maximum number of iterations a loop in GIB can do "
 							"before being forcefully terminated.  0 is infinite.");
+	// Constants for the math interpreter
+	// We don't need to assign the return values to anything because these are never used elsewhere
+	Cvar_Get ("M_PI", "3.1415926535897932384626433832795029", CVAR_ROM, NULL, "Pi");
 }
 
 char       *com_token;

@@ -48,7 +48,18 @@ optable_t optable[] =
 	{"or", OP_Or, 2},
 	{"&&", OP_And, 2},
 	{"and", OP_And, 2},
-	{"", 0}
+	{"", 0, 0}
+};
+
+functable_t functable[] =
+{
+	{"sin", Func_Sin, 1},
+	{"cos", Func_Cos, 1},
+	{"tan", Func_Tan, 1},
+	{"asin", Func_Asin, 1},
+	{"acos", Func_Acos, 1},
+	{"atan", Func_Atan, 1},
+	{"", 0, 0}
 };
 
 token *EXP_NewToken (void)
@@ -63,6 +74,7 @@ token *EXP_NewToken (void)
 	return new;
 }
 
+/*
 int EXP_FindIndexByFunc (opfunc func)
 {
 	int i;
@@ -71,8 +83,9 @@ int EXP_FindIndexByFunc (opfunc func)
 			return i;
 	return -1;
 }
+*/
 
-int EXP_FindIndexByStr (const char *str)
+optable_t *EXP_FindOpByStr (const char *str)
 {
 	int i, len, fi;
 
@@ -81,15 +94,88 @@ int EXP_FindIndexByStr (const char *str)
 			len = strlen(optable[i].str);
 			fi = i;
 		}
-	return fi;
+	if (fi >= 0)
+		return optable+fi;
+	else
+		return 0;
 }
+
+functable_t *EXP_FindFuncByStr (const char *str)
+{
+	int i, len, fi;
+
+	for (i = 0, len = 0, fi = -1; functable[i].func; i++)
+		if (!strncmp(str, functable[i].str, strlen(functable[i].str)) && strlen(functable[i].str) > len) {
+			len = strlen(functable[i].str);
+			fi = i;
+		}
+	if (fi >= 0)
+		return functable+fi;
+	else
+		return 0;
+}
+
+int EXP_ContainsCommas (token *chain)
+{
+	token *cur;
+	int paren = 0;
+	for (cur = chain; cur; cur = cur->generic.next) {
+		if (cur->generic.type == TOKEN_OPAREN)
+			paren++;
+		if (cur->generic.type == TOKEN_CPAREN)
+			paren--;
+		if (!paren)
+			return 0;
+		if (cur->generic.type == TOKEN_COMMA)
+			return 1;
+	}
+	return -1; // We should never get here
+}
+
+int EXP_DoFunction (token *chain)
+{
+	token *cur, *temp;
+	double *oplist = 0;
+	double value;
+	unsigned int numops = 0;
+
+
+	for (cur = chain->generic.next; cur; cur = temp) {
+		if (cur->generic.type != TOKEN_CPAREN)
+			temp = cur->generic.next;
+		else
+			temp = 0;
+		if (cur->generic.type == TOKEN_NUM) {
+			numops++;
+			oplist = realloc(oplist, sizeof(double)*numops);
+			oplist[numops-1] = cur->num.value;
+		}
+		EXP_RemoveToken (cur);
+	}
+	if (numops == chain->func.func->operands) {
+		value = chain->func.func->func(oplist, numops); // Heh
+		chain->generic.type = TOKEN_NUM;
+		chain->num.value = value;
+		if (oplist)
+			free (oplist);
+		return 0;
+	} else {
+		if (oplist)
+			free (oplist);
+		return -1;
+	}
+	return -2; // We shouldn't get here
+}
+
 
 token *EXP_ParseString (char *str)
 {
 	char buf[256];
 
 	token *chain, *new, *cur;
-	int i,m,fi;
+	int i,m;
+	optable_t *op;
+	functable_t *func;
 
 	cur = chain = EXP_NewToken();
 	chain->generic.type = TOKEN_OPAREN;
@@ -105,7 +191,12 @@ token *EXP_ParseString (char *str)
 			break;
 		if (isdigit((byte)str[i]) || str[i] == '.')
 		{
-			while ((isdigit((byte)str[i]) || str[i] == '.') && i < strlen(str) && m < 256)
+			while ((isdigit((byte)str[i]) // A number
+			  || str[i] == '.' // A decimal point
+			  || str[i] == 'e' // An exponent
+			  || ((str[i] == '-' || str[i] == '+') && str[i-1] == 'e')) // A + or - after an exponent
+			  && i < strlen(str) // We are within the string
+			  && m < 256) // And there is space in the buffer
 				buf[m++] = str[i++];
 			buf[m] = 0;
 			new = EXP_NewToken();
@@ -116,6 +207,15 @@ token *EXP_ParseString (char *str)
 			cur->generic.next = new;
 			cur = new;
 			i--;
+		}
+		else if (str[i] == ',')
+		{
+			new = EXP_NewToken();
+			new->generic.type = TOKEN_COMMA;
+			new->generic.prev = cur;
+			new->generic.next = 0;
+			cur->generic.next = new;
+			cur = new;
 		}
 		else if (str[i] == '(')
 		{
@@ -137,18 +237,28 @@ token *EXP_ParseString (char *str)
 		}
 		else
 		{
-			while(!(isdigit((byte)str[i])) && !isspace((byte)str[i]) && str[i] != '.' && str[i] != '(' && str[i] != ')' && m < 256) {
+			while(!(isdigit((byte)str[i])) && !isspace((byte)str[i])
+				&& str[i] != '.' && str[i] != '(' && str[i] != ')'
+				&& str[i] != ',' && m < 256) {
 					buf[m++] = str[i++];
 			}
 			buf[m] = 0;
 			if (m)
 			{
-				fi = EXP_FindIndexByStr (buf);
-				if (fi != -1) {
-					i -= (m - strlen(optable[fi].str) + 1);
+				if ((op = EXP_FindOpByStr (buf))) {
+					i -= (m - strlen(op->str) + 1);
 					new = EXP_NewToken();
 					new->generic.type = TOKEN_OP;
-					new->op.func = optable[fi].func;
+					new->op.op = op;
+					new->generic.prev = cur;
+					new->generic.next = 0;
+					cur->generic.next = new;
+					cur = new;
+				} else if ((func = EXP_FindFuncByStr(buf))) {
+					i -= (m - strlen(func->str) + 1);
+					new = EXP_NewToken();
+					new->generic.type = TOKEN_FUNC;
+					new->func.func = func;
 					new->generic.prev = cur;
 					new->generic.next = 0;
 					cur->generic.next = new;
@@ -168,8 +278,9 @@ token *EXP_ParseString (char *str)
 	return chain;
 }
 
-void EXP_SimplifyTokens (token *chain)
+exp_error_t EXP_SimplifyTokens (token *chain)
 {
+	exp_error_t res;
 	int i;
 	token *cur;
 	token *temp;
@@ -180,11 +291,21 @@ void EXP_SimplifyTokens (token *chain)
 	{
 		if (cur->generic.type == TOKEN_OPAREN)
 		{
-			EXP_SimplifyTokens(cur); /* Call ourself to simplify parentheses content */
-			temp = cur;
-			cur = cur->generic.next;
-			EXP_RemoveToken(temp); /* Remove parentheses, leaving value behind */
-			EXP_RemoveToken(cur->generic.next);
+			res = EXP_SimplifyTokens(cur); /* Call ourself to simplify parentheses content */
+			if (res)
+				return res;
+			if (cur->generic.prev->generic.type == TOKEN_FUNC) { // These are arguments to a function
+				cur = cur->generic.prev;
+				if (EXP_DoFunction (cur))
+					return EXP_E_SYNTAX;
+			} else {
+				if (EXP_ContainsCommas (cur))
+					return EXP_E_SYNTAX;
+				temp = cur;
+				cur = cur->generic.next;
+				EXP_RemoveToken(temp); /* Remove parentheses, leaving value behind */
+				EXP_RemoveToken(cur->generic.next);
+			}
 		}
 	}
 
@@ -194,7 +315,7 @@ void EXP_SimplifyTokens (token *chain)
 	{
 		for (cur = chain->generic.next; cur->generic.type != TOKEN_CPAREN; cur = cur->generic.next)
 		{
-			if (cur->generic.type == TOKEN_OP && cur->op.func == optable[i].func && cur->generic.next) {
+			if (cur->generic.type == TOKEN_OP && cur->op.op == optable + i && cur->generic.next) {
 				if (optable[i].operands == 1 && cur->generic.next->generic.type == TOKEN_NUM) {
 					cur->generic.next->num.value = optable[i].func(cur->generic.next->num.value, 0);
 					temp = cur;
@@ -212,6 +333,7 @@ void EXP_SimplifyTokens (token *chain)
 			}
 		}
 	}
+	return EXP_E_NORMAL;
 }
 
 void EXP_RemoveToken (token *tok)
@@ -231,10 +353,10 @@ void EXP_DestroyTokens (token *chain)
 	}
 }
 
-float EXP_Evaluate (char *str)
+double EXP_Evaluate (char *str)
 {
 	token *chain;
-	float res;	
+	double res;
 
 	EXP_ERROR = EXP_E_NORMAL;
 
@@ -244,17 +366,23 @@ float EXP_Evaluate (char *str)
 		return 0;
 	}
 	res = EXP_Validate (chain);
-	
+
 	if (res)
 	{
 		EXP_DestroyTokens (chain);
 		EXP_ERROR = res;
 		return 0;
 	}
-	
-	EXP_SimplifyTokens (chain);
+
+	res = EXP_SimplifyTokens (chain);
+	if (res)
+	{
+		EXP_DestroyTokens (chain);
+		EXP_ERROR = res;
+		return 0;
+	}
 	res = chain->generic.next->num.value;
-	
+
 	EXP_DestroyTokens (chain);
 	return res;
 }
@@ -282,29 +410,34 @@ exp_error_t EXP_Validate (token *chain)
 		/* Implied multiplication */
 		if ((cur->generic.type == TOKEN_NUM && cur->generic.next->generic.type == TOKEN_OPAREN) || /* 5(1+1) */
 			(cur->generic.type == TOKEN_CPAREN && cur->generic.next->generic.type == TOKEN_NUM) || /* (1+1)5 */
-			(cur->generic.type == TOKEN_CPAREN && cur->generic.next->generic.type == TOKEN_OPAREN)) /* (1+1)(1+1) */
+			(cur->generic.type == TOKEN_CPAREN && cur->generic.next->generic.type == TOKEN_OPAREN) || /* (1+1)(1+1) */
+			(cur->generic.type == TOKEN_NUM && cur->generic.next->generic.type == TOKEN_FUNC)) /* 4sin(1) */
 		{
 			new = EXP_NewToken ();
 			new->generic.type = TOKEN_OP;
-			new->op.func = OP_Mult;
+			new->op.op = EXP_FindOpByStr ("*");
 			EXP_InsertTokenAfter (cur, new);
 		}
-
-		if ((cur->generic.type == TOKEN_OP || cur->generic.type == TOKEN_OPAREN) && cur->generic.next->generic.type == TOKEN_OP)
+		else if ((cur->generic.type == TOKEN_OP || cur->generic.type == TOKEN_OPAREN) && cur->generic.next->generic.type == TOKEN_OP)
 		{
-			if (cur->generic.next->op.func == OP_Sub) /* Stupid hack for negation */
+			if (cur->generic.next->op.op->func == OP_Sub) /* Stupid hack for negation */
 			{
 				cur = cur->generic.next;
 				cur->generic.type = TOKEN_NUM;
 				cur->num.value = -1.0;
 				new = EXP_NewToken();
 				new->generic.type = TOKEN_OP;
-				new->op.func = OP_Mult;
+				new->op.op = EXP_FindOpByStr ("*");
 				EXP_InsertTokenAfter (cur, new);
 			}
-			else if (optable[EXP_FindIndexByFunc(cur->generic.next->op.func)].operands == 2)
+			else if (cur->generic.next->op.op->operands == 2)
 				return EXP_E_SYNTAX; /* Operator misuse */
 		}
+		else if (cur->generic.type == TOKEN_FUNC && cur->generic.next->generic.type != TOKEN_OPAREN)
+			return EXP_E_SYNTAX; /* No arguments to funcion */
+		else if (cur->generic.type == TOKEN_COMMA && ((cur->generic.prev->generic.type != TOKEN_CPAREN
+			&& cur->generic.prev->generic.type != TOKEN_NUM) || paren <= 1))
+			return EXP_E_SYNTAX; /* Misused comma */
 		else if (cur->generic.type == TOKEN_OP && cur->generic.next->generic.type == TOKEN_CPAREN)
 			return EXP_E_SYNTAX; /* Missing operand */
 		else if (cur->generic.type == TOKEN_NUM && cur->generic.next->generic.type == TOKEN_NUM)
@@ -322,7 +455,6 @@ exp_error_t EXP_Validate (token *chain)
 
 void EXP_PrintTokens (token *chain)
 {
-	int m;
 	for (; chain; chain = chain->generic.next)
 		switch (chain->generic.type)
 		{
@@ -332,12 +464,18 @@ void EXP_PrintTokens (token *chain)
 			case TOKEN_CPAREN:
 				printf(")");
 				break;
+			case TOKEN_COMMA:
+				printf(",");
+				break;
 			case TOKEN_NUM:
 				printf("%f", chain->num.value);
 				break;
 			case TOKEN_OP:
-				for (m = 0; optable[m].func != chain->op.func; m++);
-				printf("%s", optable[m].str);
+				printf("%s", chain->op.op->str);
+				break;
+			case TOKEN_FUNC:
+				printf("%s", chain->func.func->str);
+				break;
 			case TOKEN_GENERIC:
 				break;
 		}
