@@ -495,6 +495,7 @@ CL_Disconnect (void)
 			Info_Destroy (cl.players[i].userinfo);
 			cl.players[i].userinfo = 0;
 		}
+	cl.worldmodel = NULL;
 }
 
 void
@@ -1065,7 +1066,8 @@ CL_ReadPackets (void)
 		}
 		if (!Netchan_Process (&cls.netchan))
 			continue;						// wasn't accepted for some reason
-		CL_ParseServerMessage ();
+		if (cls.state != ca_disconnected)
+			CL_ParseServerMessage ();
 	}
 
 	// check timeout
