@@ -469,7 +469,7 @@ I_XMMS_Info (void) // this is untested with really long tracks, prolly works
 	// tell the user.
 	Sys_Printf("XMMS:    %d/%d        %s        %d:%02d/%d:%02d\n",
 			   pos, len, title, cmin, csecs, tmin, tsecs);
-
+	free (title);
 	return;
 }
 
