@@ -66,8 +66,8 @@ static const char rcsid[] =
 
 // a hash element
 typedef struct {
-	const char *  key;
-	const char *  values[MAX_SH_VALUES];
+	char *  key;
+	char *  values[MAX_SH_VALUES];
 } str_hash_elem;	
 
 // a structure of a hash
@@ -136,7 +136,7 @@ bi_StringHash_Destroy (progs_t *pr)
 	strh_resources_t* res = PR_Resources_Find (pr, "StringHash");
 	int         hash_id = G_INT (pr, OFS_PARM0);
 	str_hash   *sh = NULL;
-	int         i;
+	int         i,d;
 
 	if(hash_id >= res->cnt_hashes || hash_id < 0) {
 		G_INT (pr, OFS_RETURN) = 0;
@@ -154,6 +154,14 @@ bi_StringHash_Destroy (progs_t *pr)
 			   buy, who knows? */
 			PR_Error(pr, "NULL hash-element found -> not supposed!");
 		} else {
+			for(d=0;d<MAX_SH_VALUES;d++) {
+				// free key
+				free(sh->elements[i]->key);
+				// free values
+				if(sh->elements[i]->values[d] != NULL) {
+					free(sh->elements[i]->values[d]);
+				}
+			}
 			free(sh->elements[i]); // free str_hash_elem structs
 		}
 		/*
@@ -202,14 +210,12 @@ bi_StringHash_Set (progs_t *pr)
 		if(strcmp(sh->elements[i]->key, key) == 0) {
 			// found already a element with that key
 			if(sh->elements[i]->values[val_id] == NULL) { // empty val
-				sh->elements[i]->values[val_id] = val;
+				// strdup() because strings can dissappear
+				sh->elements[i]->values[val_id] = strdup(val);
 			} else { 
-				/* FIXME: taniwha, do i have to free it?
-				 * this is a potential memory leak, maybe, bu
-				 * i dont know how Hunk_Alloc* stuff works 
-				 * ITS NOT DOCUMENTED! 
-				 */
-				sh->elements[i]->values[val_id] = val;
+				// when using strdup(), we have to free the stuff properly
+				free(sh->elements[i]->values[val_id]);
+				sh->elements[i]->values[val_id] = strdup(val);
 			}
 			found_fl = 1;
 		}
@@ -225,8 +231,8 @@ bi_StringHash_Set (progs_t *pr)
 		sh->elements[sh->cnt_elements] = malloc(sizeof(str_hash_elem));
 		memset(sh->elements[sh->cnt_elements],0,sizeof(str_hash_elem));
 
-		sh->elements[sh->cnt_elements]->key = key;
-		sh->elements[sh->cnt_elements]->values[val_id] = val;
+		sh->elements[sh->cnt_elements]->key = strdup(key);
+		sh->elements[sh->cnt_elements]->values[val_id] = strdup(val);
 
 		sh->cnt_elements++;
 	}
@@ -271,7 +277,11 @@ bi_StringHash_SetIdx (progs_t *pr)
 		return;
 	}
 
-	sh->elements[idx]->values[val_id] = val;
+	if(sh->elements[idx]->values[val_id] != NULL) {
+		free(sh->elements[idx]->values[val_id]);
+	}
+	sh->elements[idx]->values[val_id] = strdup(val);
+
 
 	G_INT (pr, OFS_RETURN) = 1;
 	return;
