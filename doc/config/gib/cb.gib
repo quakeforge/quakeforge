@@ -76,7 +76,7 @@ custom.load.buy_f = {
 	ifnot ${custom.item.$1}	return
 	i = ${custom.item.$1.menu}
 	n = ${custom.item.$1.number}
-	custom.menu.seek $i
+	custom::menu::seek $i
 	impulse ($n+1)
 	wait; wait; wait
 }

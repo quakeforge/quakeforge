@@ -61,7 +61,7 @@ GIB_Exec_Override_f (void) {
 	}
 	if (!Cvar_Command() && (cmd_warncmd->int_val || (developer && developer->int_val)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
-	if (!strcmp (Cmd_Argv (1) + strlen (Cmd_Argv(1)) - 4, ".gib")) {
+	if (!strcmp (Cmd_Argv (1) + strlen (Cmd_Argv(1)) - 4, ".gib") || cbuf_active->interpreter == &gib_interp) {
 		// GIB script, put it in a new buffer on the stack
 		cbuf_t *sub = Cbuf_New (&gib_interp);
 		if (cbuf_active->down)
