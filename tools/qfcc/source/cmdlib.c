@@ -50,8 +50,6 @@ static const char rcsid[] =
 
 #include "cmdlib.h"
 
-char        qfcc_com_token[1024];
-
 /*
 	Error
 
@@ -69,73 +67,6 @@ Error (char *error, ...)
 	va_end (argptr);
 	printf ("\n");
 	exit (1);
-}
-
-
-/*
-	Parse
-
-	Parse a token out of a string
-*/
-char *
-Parse (char *data)
-{
-	int         c;
-	int         len = 0;
-
-	qfcc_com_token[0] = 0;
-
-	if (!data)
-		return NULL;
-
-	// skip whitespace
-  skipwhite:
-	while ((c = *data) <= ' ') {
-		if (c == 0) {
-			return NULL;				// end of file;
-		}
-		data++;
-	}
-
-	// skip // comments
-	if (c == '/' && data[1] == '/') {
-		while (*data && *data != '\n')
-			data++;
-		goto skipwhite;
-	}
-	// handle quoted strings specially
-	if (c == '\"') {
-		data++;
-		do {
-			c = *data++;
-			if (c == '\"') {
-				qfcc_com_token[len] = 0;
-				return data;
-			}
-			qfcc_com_token[len] = c;
-			len++;
-		} while (1);
-	}
-	// parse single characters
-	if (c == '{' || c == '}' || c == ')' || c == '(' || c == '\'' || c == ':') {
-		qfcc_com_token[len] = c;
-		len++;
-		qfcc_com_token[len] = 0;
-		return data + 1;
-	}
-	// parse a regular word
-	do {
-		qfcc_com_token[len] = c;
-		data++;
-		len++;
-		c = *data;
-		if (c == '{' || c == '}' || c == ')' || c == '(' || c == '\''
-			|| c == ':')
-			break;
-	} while (c > 32);
-
-	qfcc_com_token[len] = 0;
-	return data;
 }
 
 

@@ -54,6 +54,7 @@ static const char rcsid[] =
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <QF/cbuf.h>
 #include <QF/crc.h>
 #include <QF/dstring.h>
 #include <QF/hash.h>
@@ -572,7 +573,7 @@ static int
 progs_src_compile (void)
 {
 	dstring_t  *filename = dstring_newstr ();
-	char       *src;
+	const char *src;
 	int         crc = 0;
 
 	if (options.verbosity >= 1 && strcmp (sourcedir, "")) {
@@ -588,13 +589,13 @@ progs_src_compile (void)
 		dsprintf (filename, "%s", progs_src);
 	LoadFile (filename->str, (void *) &src);
 
-	if (!(src = Parse (src))) {
+	if (!(src = COM_Parse (src))) {
 		fprintf (stderr, "No destination filename.  qfcc --help for info.\n");
 		return 1;
 	}
 
 	if (!options.output_file)
-		options.output_file = strdup (qfcc_com_token);
+		options.output_file = strdup (com_token);
 	if (options.verbosity >= 1) {
 		printf ("output file: %s\n", options.output_file);
 	}
@@ -606,7 +607,7 @@ progs_src_compile (void)
 	begin_compilation ();
 
 	// compile all the files
-	while ((src = Parse (src))) {
+	while ((src = COM_Parse (src))) {
 		int         err;
 
 		//extern int yydebug;
@@ -614,9 +615,9 @@ progs_src_compile (void)
 
 		if (*sourcedir)
 			dsprintf (filename, "%s%c%s", sourcedir, PATH_SEPARATOR,
-					  qfcc_com_token);
+					  com_token);
 		else
-			dsprintf (filename, "%s", qfcc_com_token);
+			dsprintf (filename, "%s", com_token);
 		if (options.verbosity >= 2)
 			printf ("compiling %s\n", filename->str);
 
