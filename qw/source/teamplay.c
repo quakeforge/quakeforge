@@ -71,7 +71,7 @@ cvar_t         *cl_freply;
 void
 Team_BestWeaponImpulse (void)
 {
-	int         best, i, imp, items;
+	int		best, i, imp, items;
 
 	items = cl.stats[STAT_ITEMS];
 	best = 0;
@@ -150,6 +150,7 @@ Team_ParseSay (const char *s)
 				chr = s[1];
 				s += 2;
 			}
+
 			switch (chr) {
 			case '%':
 				t2[0] = '%';
@@ -322,7 +323,8 @@ Team_Init_Cvars (void)
 	cl_nofake = Cvar_Get ("cl_nofake", "0", CVAR_NONE, NULL,
 						  "Unhide fake messages");
 	cl_freply = Cvar_Get ("cl_freply", "0", CVAR_NONE, NULL,
-						"Delay between replies to f_*. 0 disables. Minimum suggested setting is 20");
+						  "Delay between replies to f_*. 0 disables. Minimum "
+						  "suggested setting is 20");
 }
 
 /*
@@ -396,7 +398,7 @@ locs_loc (void)
 			locs_edit (cl.simorg,NULL);
 		else
 			Con_Printf ("loc move :moves the nearest location marker to your "
-					   "current location\n");
+						"current location\n");
 	}
 }
 
@@ -404,12 +406,11 @@ void
 Locs_Location_Get (void)
 {
 	location_t *location;
+
 	if (GIB_Argc() != 1)
-		Cbuf_Error (
-		  "syntax",
-		  "location.get: invalid syntax\n"
-		  "usage: location.get"
-		);
+		Cbuf_Error ("syntax",
+					"location.get: invalid syntax\n"
+					"usage: location.get");
 	else {
 		location = locs_find (cl.simorg);
 		GIB_Return (location ? location->name : "unknown");
@@ -427,28 +428,29 @@ Locs_Init (void)
 char *
 Team_F_Version (char *args)
 {
-	return va("say %s %s", PROGRAM, VERSION);
+	return va ("say %s %s", PROGRAM, VERSION);
 }
 
 char *
 Team_F_Skins (char *args)
 {
-	int totalfb, l;
+	int		totalfb, l;
 
 	while(isspace((byte) *args))
 		args++;
-	for (l = 0;args[l] && !isspace((byte) args[l]);l++);
+	for (l = 0; args[l] && !isspace ((byte) args[l]); l++);
 
 	if (l == 0) {
 		totalfb = Skin_FbPercent (0);
-		return va("say Average percent fullbright for all loaded skins is %d.%d%%", totalfb / 10, totalfb % 10);
+		return va ("say Average percent fullbright for all loaded skins is "
+				   "%d.%d%%", totalfb / 10, totalfb % 10);
 	}
 
 	totalfb = Skin_FbPercent (args);
 
 	if (totalfb >= 0)
-		return va("say \"Skin %s is %d.%d%% fullbright\"",
-			args, totalfb / 10, totalfb % 10);
+		return va ("say \"Skin %s is %d.%d%% fullbright\"", args, totalfb / 10,
+				   totalfb % 10);
 	else
 		return ("say \"Skin not currently loaded.\"");
 }
@@ -461,8 +463,8 @@ static freply_t f_replies[] = {
 void
 Team_ParseChat (const char *string)
 {
-	char *s;
-	int i;
+	char	*s;
+	int		 i;
 
 	if (!cl_freply->value)
 		return;
@@ -471,16 +473,16 @@ Team_ParseChat (const char *string)
 	if (!(s = strchr(string, ':')))
 		return;
 	s++;
-	while (isspace((byte) *s))
+	while (isspace ((byte) *s))
 		s++;
 
 	for (i = 0; sizeof (f_replies) / sizeof (f_replies[0]); i++) {
-		if (!strncmp(f_replies[i].name, s, strlen(f_replies[i].name))
+		if (!strncmp (f_replies[i].name, s, strlen (f_replies[i].name))
 			&& realtime - f_replies[i].lasttime >= cl_freply->value) {
-			while (*s && !isspace((byte) *s))
+			while (*s && !isspace ((byte) *s))
 				s++;
-			Cbuf_AddText(cl_cbuf, f_replies[i].func(s));
-			Cbuf_AddText(cl_cbuf, "\n");
+			Cbuf_AddText (cl_cbuf, f_replies[i].func (s));
+			Cbuf_AddText (cl_cbuf, "\n");
 			f_replies[i].lasttime = realtime;
 		}
 	}
@@ -489,7 +491,8 @@ Team_ParseChat (const char *string)
 void
 Team_ResetTimers (void)
 {
-	int i;
+	int		i;
+
 	for (i = 0; f_replies[i].name; i++)
 		f_replies[i].lasttime = realtime - cl_freply->value;
 	return;
