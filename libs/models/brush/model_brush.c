@@ -80,7 +80,7 @@ Mod_PointInLeaf (vec3_t p, model_t *model)
 			return (mleaf_t *) node;
 		plane = node->plane;
 		d = DotProduct (p, plane->normal) - plane->dist;
-		if (d > 0)
+		if (d >= 0)
 			node = node->children[0];
 		else
 			node = node->children[1];
@@ -537,7 +537,9 @@ Mod_LoadFaces (lump_t *l)
 
 		if (out->texinfo->texture->name[0] == '*')	// turbulent
 		{
-			out->flags |= (SURF_DRAWTURB | SURF_DRAWTILED);
+			out->flags |= (SURF_DRAWTURB
+						   | SURF_DRAWTILED
+						   | SURF_LIGHTBOTHSIDES);
 			for (i = 0; i < 2; i++) {
 				out->extents[i] = 16384;
 				out->texturemins[i] = -8192;

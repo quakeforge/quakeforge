@@ -288,23 +288,21 @@ static void
 mark_surfaces (msurface_t *surf, vec3_t lightorigin,  dlight_t *light,
 			   int bit)
 {
-	float      dist, dist2, d;
+	float      dist;
+#if 1
+	float      dist2, d;
 	float      maxdist = light->radius * light->radius;
 	vec3_t     impact;
+#endif
 
 	surf->dlightframe = r_framecount;
 	dist = PlaneDiff(lightorigin, surf->plane);
 	if (surf->flags & SURF_PLANEBACK)
 		dist = -dist;
-#if 0
-//FIXME SURF_LIGHTBOTHSIDES seems to be a darkplaces thing. need to investigate
 	if ((dist < -0.25f && !(surf->flags & SURF_LIGHTBOTHSIDES))
-		|| dist > radius)
+		|| dist > light->radius)
 		return;
-#else
-	if (dist < -0.25f || dist > light->radius)
-		return;
-#endif
+#if 1
 	dist2 = dist * dist;
 	dist = -dist;
 	VectorMA (light->origin, dist, surf->plane->normal, impact);
@@ -337,7 +335,7 @@ mark_surfaces (msurface_t *surf, vec3_t lightorigin,  dlight_t *light,
 				return;
 		}
 	}
-
+#endif
 	if (surf->dlightframe != r_framecount) {
 		surf->dlightbits = 0;
 		surf->dlightframe = r_framecount;
