@@ -53,16 +53,16 @@ static const char rcsid[] =
 	when the bob crosses a waterline.
 */
 
-byte        fatpvs[MAX_MAP_LEAFS / 8];
-int         fatbytes;
+byte		fatpvs[MAX_MAP_LEAFS / 8];
+int			fatbytes;
 
 
 void
 SV_AddToFatPVS (vec3_t org, mnode_t *node)
 {
-	byte       *pvs;
-	int         i;
-	float       d;
+	byte	   *pvs;
+	int			i;
+	float		d;
 	mplane_t   *plane;
 
 	while (1) {
@@ -95,7 +95,7 @@ SV_AddToFatPVS (vec3_t org, mnode_t *node)
 	Calculates a PVS that is the inclusive or of all leafs within 8 pixels
 	of the given point.
 */
-byte       *
+byte		*
 SV_FatPVS (vec3_t org)
 {
 	fatbytes = (sv.worldmodel->numleafs + 31) >> 3;
@@ -106,15 +106,16 @@ SV_FatPVS (vec3_t org)
 
 // nails are plentiful, so there is a special network protocol for them
 #define	MAX_NAILS	32
-edict_t    *nails[MAX_NAILS];
-int         numnails;
+edict_t	   *nails[MAX_NAILS];
+int			numnails;
 
 
 qboolean
 SV_AddNailUpdate (edict_t *ent)
 {
 	if (SVfloat (ent, modelindex) != sv_nailmodel
-		&& SVfloat (ent, modelindex) != sv_supernailmodel) return false;
+		&& SVfloat (ent, modelindex) != sv_supernailmodel)
+		return false;
 	if (numnails == MAX_NAILS)
 		return true;
 	nails[numnails] = ent;
@@ -125,9 +126,9 @@ SV_AddNailUpdate (edict_t *ent)
 void
 SV_EmitNailUpdate (sizebuf_t *msg)
 {
-	byte        bits[6];				// [48 bits] xyzpy 12 12 12 4 8 
-	int         i, n, p, x, y, z, yaw;
-	edict_t    *ent;
+	byte		bits[6];				// [48 bits] xyzpy 12 12 12 4 8 
+	int			i, n, p, x, y, z, yaw;
+	edict_t	   *ent;
 
 	if (!numnails)
 		return;
@@ -137,11 +138,11 @@ SV_EmitNailUpdate (sizebuf_t *msg)
 
 	for (n = 0; n < numnails; n++) {
 		ent = nails[n];
-		x = (int) (SVvector (ent, origin)[0] + 4096) >> 1;
-		y = (int) (SVvector (ent, origin)[1] + 4096) >> 1;
-		z = (int) (SVvector (ent, origin)[2] + 4096) >> 1;
-		p = (int) (16 * SVvector (ent, angles)[0] / 360) & 15;
-		yaw = (int) (256 * SVvector (ent, angles)[1] / 360) & 255;
+		x = ((int) (SVvector (ent, origin)[0] + 4096 + 1) >> 1) & 4095;
+		y = ((int) (SVvector (ent, origin)[1] + 4096 + 1) >> 1) & 4095;
+		z = ((int) (SVvector (ent, origin)[2] + 4096 + 1) >> 1) & 4095;
+		p = (int) (SVvector (ent, angles)[0] * (16.0 / 360.0)) & 15;
+		yaw = (int) (SVvector (ent, angles)[1] * (256.0 / 360.0)) & 255;
 
 		bits[0] = x;
 		bits[1] = (x >> 8) | (y << 4);
@@ -165,8 +166,8 @@ void
 SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 			   qboolean force, int stdver)
 {
-	int         bits, i;
-	float       miss;
+	int			bits, i;
+	float		miss;
 
 	// send an update
 	bits = 0;
@@ -313,8 +314,8 @@ SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 void
 SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 {
-	int         newindex, oldindex, newnum, oldnum, oldmax;
-	edict_t    *ent;
+	int			newindex, oldindex, newnum, oldnum, oldmax;
+	edict_t	   *ent;
 	client_frame_t *fromframe;
 	packet_entities_t *from;
 
@@ -338,8 +339,7 @@ SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 //	SV_Printf ("---%i to %i ----\n", client->delta_sequence & UPDATE_MASK,
 //			   client->netchan.outgoing_sequence & UPDATE_MASK);
 	while (newindex < to->num_entities || oldindex < oldmax) {
-		newnum =
-			newindex >= to->num_entities ? 9999 :
+		newnum = newindex >= to->num_entities ? 9999 :
 			to->entities[newindex].number;
 		oldnum = oldindex >= oldmax ? 9999 : from->entities[oldindex].number;
 
@@ -378,10 +378,10 @@ void
 SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 						 sizebuf_t *msg)
 {
-	int         i, j, msec, pflags, qf_bits;
+	int			i, j, msec, pflags, qf_bits;
 	client_t   *cl;
-	edict_t    *ent;
-	usercmd_t   cmd;
+	edict_t	   *ent;
+	usercmd_t	cmd;
 
 	for (j = 0, cl = svs.clients; j < MAX_CLIENTS; j++, cl++) {
 		if (cl->state != cs_spawned)
@@ -523,9 +523,9 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 			if (qf_bits & PF_COLORMOD) {
 				float      *colormod= SVvector (ent, colormod);
 				MSG_WriteByte (msg,
-						((int) (bound (0, colormod[0], 1) * 7.0) << 5) |
-						((int) (bound (0, colormod[1], 1) * 7.0) << 2) |
-						(int) (bound (0, colormod[2], 1) * 3.0));
+					 ((int) (bound (0, colormod[0], 1) * 7.0) << 5) |
+					 ((int) (bound (0, colormod[1], 1) * 7.0) << 2) |
+					 (int) (bound (0, colormod[2], 1) * 3.0));
 			}
 			if (qf_bits & PF_FRAME2)
 				MSG_WriteByte (msg, (int) (SVfloat (ent, frame)) >> 8);
@@ -544,11 +544,11 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 void
 SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 {
-	byte       *pvs;
-	int         e, i, num_edicts;
-	vec3_t      org;
+	byte	   *pvs;
+	int			e, i, num_edicts;
+	vec3_t		org;
 	client_frame_t *frame;
-	edict_t    *clent, *ent;
+	edict_t	   *clent, *ent;
 	entity_state_t *state;
 	packet_entities_t *pack;
 
@@ -573,8 +573,7 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 	num_edicts = min (sv.num_edicts, 512);	//FIXME stupid protocol limit
 
 	for (e = MAX_CLIENTS + 1, ent = EDICT_NUM (&sv_pr_state, e);
-		 e < num_edicts;
-		 e++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
+		 e < num_edicts; e++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
 		if (ent->free)
 			continue;
 
@@ -628,16 +627,14 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 				state->scale = bound (0, SVfloat (ent, scale), 15.9375) * 16.0;
 
 			if (sv_fields.glow_size != -1 && SVfloat (ent, glow_size))
-				state->glow_size = bound (-1024, (int) SVfloat
-										  (ent, glow_size), 1016) >> 3;
+				state->glow_size =
+					bound (-1024, (int) SVfloat (ent, glow_size), 1016) >> 3;
 
 			if (sv_fields.glow_color != -1 && SVfloat (ent, glow_color))
 				state->glow_color = (int) SVfloat (ent, glow_color);
 
-			if (sv_fields.colormod != -1
-				&& SVvector (ent, colormod)[0]
-				&& SVvector (ent, colormod)[1]
-				&& SVvector (ent, colormod)[2])
+			if (sv_fields.colormod != -1 && SVvector (ent, colormod)[0]
+				&& SVvector (ent, colormod)[1] && SVvector (ent, colormod)[2])
 				state->colormod =
 					((int) (bound (0, SVvector (ent, colormod)[0], 1) * 7.0)
 					 << 5) |
@@ -650,7 +647,6 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 
 	// encode the packet entities as a delta from the
 	// last packetentities acknowledged by the client
-
 	SV_EmitPacketEntities (client, pack, msg);
 
 	// now add the specialized nail update
