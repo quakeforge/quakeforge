@@ -1108,7 +1108,7 @@ SV_SetInfo_f (void)
 	if (UserInfoCallback) {
 		float ret;
 
-		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, host_client);
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
 		G_var (&sv_pr_state, OFS_PARM0, string) = PR_SetString (&sv_pr_state,
 																Cmd_Argv (1));
 		G_var (&sv_pr_state, OFS_PARM1, string) = PR_SetString (&sv_pr_state,
