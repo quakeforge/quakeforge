@@ -269,6 +269,60 @@ NET_SVC_Sound_Parse (net_svc_sound_t *block, msg_t *msg)
 }
 
 net_status_t
+NET_SVC_UpdatePing_Emit (net_svc_updateping_t *block, sizebuf_t *buf)
+{
+	MSG_WriteByte (buf, block->player);
+	MSG_WriteShort (buf, block->ping);
+
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_UpdatePing_Parse (net_svc_updateping_t *block, msg_t *msg)
+{
+	block->player = MSG_ReadByte (msg);
+	block->ping = MSG_ReadShort (msg);
+
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_UpdatePL_Emit (net_svc_updatepl_t *block, sizebuf_t *buf)
+{
+	MSG_WriteByte (buf, block->player);
+	MSG_WriteByte (buf, block->packetloss);
+
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_UpdatePL_Parse (net_svc_updatepl_t *block, msg_t *msg)
+{
+	block->player = MSG_ReadByte (msg);
+	block->packetloss = MSG_ReadByte (msg);
+
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_UpdateEnterTime_Emit (net_svc_updateentertime_t *block, sizebuf_t *buf)
+{
+	MSG_WriteByte (buf, block->player);
+	MSG_WriteFloat (buf, block->secondsago);
+
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_UpdateEnterTime_Parse (net_svc_updateentertime_t *block, msg_t *msg)
+{
+	block->player = MSG_ReadByte (msg);
+	block->secondsago = MSG_ReadFloat (msg);
+
+	return msg->badread;
+}
+
+net_status_t
 NET_SVC_SpawnBaseline_Emit (net_svc_spawnbaseline_t *block, sizebuf_t *buf)
 {
 	int i;
@@ -465,6 +519,116 @@ NET_SVC_SpawnStaticSound_Parse (net_svc_spawnstaticsound_t *block,
 	block->sound_num = MSG_ReadByte (msg);
 	block->volume = MSG_ReadByte (msg);
 	block->attenuation = MSG_ReadByte (msg);
+
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_UpdateStat_Emit (net_svc_updatestat_t *block, sizebuf_t *buf)
+{
+	MSG_WriteByte (buf, block->stat);
+	MSG_WriteByte (buf, block->value);
+
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_UpdateStat_Parse (net_svc_updatestat_t *block, msg_t *msg)
+{
+	block->stat = MSG_ReadByte (msg);
+	block->value = MSG_ReadByte (msg);
+
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_UpdateStatLong_Emit (net_svc_updatestatlong_t *block, sizebuf_t *buf)
+{
+	MSG_WriteByte (buf, block->stat);
+	MSG_WriteLong (buf, block->value);
+
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_UpdateStatLong_Parse (net_svc_updatestatlong_t *block, msg_t *msg)
+{
+	block->stat = MSG_ReadByte (msg);
+	block->value = MSG_ReadLong (msg);
+
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_CDTrack_Emit (net_svc_cdtrack_t *block, sizebuf_t *buf)
+{
+	MSG_WriteByte (buf, block->cdtrack);
+
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_CDTrack_Parse (net_svc_cdtrack_t *block, msg_t *msg)
+{
+	block->cdtrack = MSG_ReadByte (msg);
+
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_Intermission_Emit (net_svc_intermission_t *block, sizebuf_t *buf)
+{
+	int i;
+
+	for (i = 0; i < 3; i++)
+		MSG_WriteCoord (buf, block->origin[i]);
+	for (i = 0; i < 3; i++)
+		MSG_WriteAngle (buf, block->angles[i]);
+
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_Intermission_Parse (net_svc_intermission_t *block, msg_t *msg)
+{
+	int i;
+
+	for (i = 0; i < 3; i++)
+		block->origin[i] = MSG_ReadCoord (msg);
+	for (i = 0; i < 3; i++)
+		block->angles[i] = MSG_ReadAngle (msg);
+
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_Finale_Emit (net_svc_finale_t *block, sizebuf_t *buf)
+{
+	MSG_WriteString (buf, block->message);
+
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_Finale_Parse (net_svc_finale_t *block, msg_t *msg)
+{
+	block->message = MSG_ReadString (msg);
+
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_MuzzleFlash_Emit (net_svc_muzzleflash_t *block, sizebuf_t *buf)
+{
+	MSG_WriteShort (buf, block->player);
+
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_MuzzleFlash_Parse (net_svc_muzzleflash_t *block, msg_t *msg)
+{
+	block->player = MSG_ReadShort (msg);
 
 	return msg->badread;
 }
@@ -704,6 +868,22 @@ NET_SVC_Nails_Parse (net_svc_nails_t *block, msg_t *msg)
 		block->nails[i].angles[1] = 360 * bits[5] / 256;
 		block->nails[i].angles[2] = 0;
 	}
+
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_ChokeCount_Emit (net_svc_chokecount_t *block, sizebuf_t *buf)
+{
+	MSG_WriteByte (buf, block->count);
+
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_ChokeCount_Parse (net_svc_chokecount_t *block, msg_t *msg)
+{
+	block->count = MSG_ReadByte (msg);
 
 	return msg->badread;
 }
@@ -1013,3 +1193,52 @@ NET_SVC_DeltaPacketEntities_Parse (net_svc_deltapacketentities_t *block,
 
 	return msg->badread;
 }
+
+net_status_t
+NET_SVC_MaxSpeed_Emit (net_svc_maxspeed_t *block, sizebuf_t *buf)
+{
+	MSG_WriteFloat (buf, block->maxspeed);
+
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_MaxSpeed_Parse (net_svc_maxspeed_t *block, msg_t *msg)
+{
+	block->maxspeed = MSG_ReadFloat (msg);
+
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_EntGravity_Emit (net_svc_entgravity_t *block, sizebuf_t *buf)
+{
+	MSG_WriteFloat (buf, block->gravity);
+
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_EntGravity_Parse (net_svc_entgravity_t *block, msg_t *msg)
+{
+	block->gravity = MSG_ReadFloat (msg);
+
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_SetPause_Emit (net_svc_setpause_t *block, sizebuf_t *buf)
+{
+	MSG_WriteByte (buf, block->paused);
+
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_SetPause_Parse (net_svc_setpause_t *block, msg_t *msg)
+{
+	block->paused = MSG_ReadByte (msg);
+
+	return msg->badread;
+}
+

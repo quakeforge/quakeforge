@@ -763,7 +763,61 @@ CL_ParseModellist (void)
 }
 
 void
-CL_ParseSpawnBaseline ()
+CL_ParseUpdatePing (void)
+{
+	net_svc_updateping_t block;
+
+	if (NET_SVC_UpdatePing_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseUpdatePing: Bad Read\n");
+		return;
+	}
+
+	if (block.player >= MAX_CLIENTS) {
+		Host_NetError ("CL_ParseServerMessage: svc_updateping > "
+					   "MAX_SCOREBOARD");
+		return;
+	}
+	cl.players[block.player].ping = block.ping;
+}
+
+void
+CL_ParseUpdatePL (void)
+{
+	net_svc_updatepl_t block;
+
+	if (NET_SVC_UpdatePL_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseUpdatePL: Bad Read\n");
+		return;
+	}
+
+	if (block.player >= MAX_CLIENTS) {
+		Host_NetError ("CL_ParseServerMessage: svc_updatepl > "
+					   "MAX_SCOREBOARD");
+		return;
+	}
+	cl.players[block.player].pl = block.packetloss;
+}
+
+void
+CL_ParseUpdateEnterTime (void)
+{
+	net_svc_updateentertime_t block;
+
+	if (NET_SVC_UpdateEnterTime_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseUpdateEnterTime: Bad Read\n");
+		return;
+	}
+
+	if (block.player >= MAX_CLIENTS) {
+		Host_NetError ("CL_ParseServerMessage: svc_updateentertime "
+					   "> MAX_SCOREBOARD");
+		return;
+	}
+	cl.players[block.player].entertime = realtime - block.secondsago;
+}
+
+void
+CL_ParseSpawnBaseline (void)
 {
 	entity_state_t *es;
 	net_svc_spawnbaseline_t block;
@@ -1062,16 +1116,99 @@ CL_SetStat (int stat, int value)
 }
 
 void
-CL_MuzzleFlash (void)
+CL_ParseUpdateStat (void)
+{
+	net_svc_updatestat_t block;
+
+	if (NET_SVC_UpdateStat_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseUpdateStat: Bad Read\n");
+		return;
+	}
+
+	CL_SetStat (block.stat, block.value);
+}
+
+void
+CL_ParseUpdateStatLong (void)
+{
+	net_svc_updatestatlong_t block;
+
+	if (NET_SVC_UpdateStatLong_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseUpdateStatLong: Bad Read\n");
+		return;
+	}
+
+	CL_SetStat (block.stat, block.value);
+}
+
+void
+CL_ParseCDTrack (void)
+{
+	net_svc_cdtrack_t block;
+
+	if (NET_SVC_CDTrack_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseCDTrack: Bad Read\n");
+		return;
+	}
+
+	cl.cdtrack = block.cdtrack;
+	CDAudio_Play (cl.cdtrack, true);
+}
+
+void
+CL_ParseIntermission (void)
+{
+	net_svc_intermission_t block;
+
+	if (NET_SVC_Intermission_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseIntermission: Bad Read\n");
+		return;
+	}
+
+	cl.intermission = 1;
+	cl.completed_time = realtime;
+	vid.recalc_refdef = true;	// go to full screen
+	VectorCopy (block.origin, cl.simorg);
+	VectorCopy (block.angles, cl.simangles);
+	VectorCopy (vec3_origin, cl.simvel);
+
+	Con_DPrintf ("Intermission origin: %f %f %f\nIntermission angles: "
+				 "%f %f %f\n", cl.simorg[0], cl.simorg[1], cl.simorg[2],
+				 cl.simangles[0], cl.simangles[1], cl.simangles[2]);
+}
+
+void
+CL_ParseFinale (void)
+{
+	net_svc_finale_t block;
+
+	if (NET_SVC_Finale_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseFinale: Bad Read\n");
+		return;
+	}
+
+	cl.intermission = 2;
+	cl.completed_time = realtime;
+	vid.recalc_refdef = true;	// go to full screen
+	SCR_CenterPrint (block.message);
+}
+
+void
+CL_ParseMuzzleFlash (void)
 {
 	dlight_t   *dl;
 	int         i;
 	player_state_t *pl;
 	vec3_t      fv, rv, uv;
+	net_svc_muzzleflash_t block;
 
-	i = MSG_ReadShort (net_message);
+	if (NET_SVC_MuzzleFlash_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseMuzzleFlash: Bad Read\n");
+		return;
+	}
 
-	if ((unsigned int) (i - 1) >= MAX_CLIENTS)
+	i = block.player;
+	if (i < 1 || i > MAX_CLIENTS)
 		return;
 
 	pl = &cl.frames[parsecountmod].playerstate[i - 1];
@@ -1093,7 +1230,64 @@ CL_MuzzleFlash (void)
 	dl->color[2] = 0.05;
 }
 
-#define SHOWNET(x) if (cl_shownet->int_val == 2) Con_Printf ("%3i:%s\n", net_message->readcount-1, x);
+void
+CL_ParseChokeCount (void)
+{
+	int j;
+	net_svc_chokecount_t block;
+
+	if (NET_SVC_ChokeCount_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseChokeCount: Bad Read\n");
+		return;
+	}
+
+	for (j = 0; j < block.count; j++)
+		cl.frames[(cls.netchan.incoming_acknowledged - 1 - j) &
+				  UPDATE_MASK].receivedtime = -2;
+}
+
+void
+CL_ParseMaxSpeed (void)
+{
+	net_svc_maxspeed_t block;
+
+	if (NET_SVC_MaxSpeed_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseEntGravity: Bad Read\n");
+		return;
+	}
+
+	movevars.maxspeed = block.maxspeed;
+}
+
+void
+CL_ParseEntGravity (void)
+{
+	net_svc_entgravity_t block;
+
+	if (NET_SVC_EntGravity_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseEntGravity: Bad Read\n");
+		return;
+	}
+
+	movevars.entgravity = block.gravity;
+}
+
+void
+CL_ParseSetPause (void)
+{
+	net_svc_setpause_t block;
+
+	if (NET_SVC_SetPause_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseSetPause: Bad Read\n");
+		return;
+	}
+
+	cl.paused = block.paused;
+	if (cl.paused)
+		CDAudio_Pause ();
+	else
+		CDAudio_Resume ();
+}
 
 int         received_framecount;
 
@@ -1101,7 +1295,7 @@ void
 CL_ParseServerMessage (void)
 {
 	const char *s;
-	int         cmd, i, j;
+	int         cmd, i;
 
 	received_framecount = host_framecount;
 	cl.last_servermessage = realtime;
@@ -1218,29 +1412,15 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_updateping:
-				i = MSG_ReadByte (net_message);
-				if (i >= MAX_CLIENTS)
-					Host_NetError ("CL_ParseServerMessage: svc_updateping > "
-								   "MAX_SCOREBOARD");
-				cl.players[i].ping = MSG_ReadShort (net_message);
+				CL_ParseUpdatePing ();
 				break;
 
 			case svc_updatepl:
-				i = MSG_ReadByte (net_message);
-				if (i >= MAX_CLIENTS)
-					Host_NetError ("CL_ParseServerMessage: svc_updatepl > "
-								   "MAX_SCOREBOARD");
-				cl.players[i].pl = MSG_ReadByte (net_message);
+				CL_ParseUpdatePL ();
 				break;
 
 			case svc_updateentertime:
-				// time is sent over as seconds ago
-				i = MSG_ReadByte (net_message);
-				if (i >= MAX_CLIENTS)
-					Host_NetError ("CL_ParseServerMessage: svc_updateentertime "
-								   "> MAX_SCOREBOARD");
-				cl.players[i].entertime = realtime - MSG_ReadFloat
-					(net_message);
+				CL_ParseUpdateEnterTime ();
 				break;
 
 			case svc_spawnbaseline:
@@ -1262,14 +1442,10 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_updatestat:
-				i = MSG_ReadByte (net_message);
-				j = MSG_ReadByte (net_message);
-				CL_SetStat (i, j);
+				CL_ParseUpdateStat ();
 				break;
 			case svc_updatestatlong:
-				i = MSG_ReadByte (net_message);
-				j = MSG_ReadLong (net_message);
-				CL_SetStat (i, j);
+				CL_ParseUpdateStatLong ();
 				break;
 
 			case svc_spawnstaticsound:
@@ -1277,34 +1453,15 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_cdtrack:
-				cl.cdtrack = MSG_ReadByte (net_message);
-				CDAudio_Play ((byte) cl.cdtrack, true);
+				CL_ParseCDTrack ();
 				break;
 
 			case svc_intermission:
-				Con_DPrintf ("svc_intermission\n");
-				cl.intermission = 1;
-				cl.completed_time = realtime;
-				vid.recalc_refdef = true;	// go to full screen
-				Con_DPrintf ("intermission simorg: ");
-				for (i = 0; i < 3; i++) {
-					cl.simorg[i] = MSG_ReadCoord (net_message);
-					Con_DPrintf ("%f ", cl.simorg[i]);
-				}
-				Con_DPrintf ("\nintermission simangles: ");
-				for (i = 0; i < 3; i++) {
-					cl.simangles[i] = MSG_ReadAngle (net_message);
-					Con_DPrintf ("%f ", cl.simangles[i]);
-				}
-				Con_DPrintf ("\n");
-				VectorCopy (vec3_origin, cl.simvel);
+				CL_ParseIntermission ();
 				break;
 
 			case svc_finale:
-				cl.intermission = 2;
-				cl.completed_time = realtime;
-				vid.recalc_refdef = true;	// go to full screen
-				SCR_CenterPrint (MSG_ReadString (net_message));
+				CL_ParseFinale ();
 				break;
 
 			case svc_sellscreen:
@@ -1319,7 +1476,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_muzzleflash:
-				CL_MuzzleFlash ();
+				CL_ParseMuzzleFlash ();
 				break;
 
 			case svc_updateuserinfo:
@@ -1347,11 +1504,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_chokecount:		// some preceding packets were choked
-				i = MSG_ReadByte (net_message);
-				for (j = 0; j < i; j++)
-					cl.
-						frames[(cls.netchan.incoming_acknowledged - 1 - j) &
-							   UPDATE_MASK].receivedtime = -2;
+				CL_ParseChokeCount ();
 				break;
 
 			case svc_modellist:
@@ -1371,19 +1524,15 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_maxspeed:
-				movevars.maxspeed = MSG_ReadFloat (net_message);
+				CL_ParseMaxSpeed ();
 				break;
 
 			case svc_entgravity:
-				movevars.entgravity = MSG_ReadFloat (net_message);
+				CL_ParseEntGravity ();
 				break;
 
 			case svc_setpause:
-				cl.paused = MSG_ReadByte (net_message);
-				if (cl.paused)
-					CDAudio_Pause ();
-				else
-					CDAudio_Resume ();
+				CL_ParseSetPause ();
 				break;
 
 		}

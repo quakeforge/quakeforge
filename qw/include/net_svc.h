@@ -76,6 +76,24 @@ typedef struct net_svc_sound_s
 	int			entity;
 } net_svc_sound_t;
 
+typedef struct net_svc_updateping_s
+{
+	byte		player;
+	short		ping;
+} net_svc_updateping_t;
+
+typedef struct net_svc_updatepl_s
+{
+	byte		player;
+	byte		packetloss;
+} net_svc_updatepl_t;
+
+typedef struct net_svc_updateentertime_s
+{
+	byte		player;
+	float		secondsago;
+} net_svc_updateentertime_t;
+
 typedef struct net_svc_spawnbaseline_s
 {
 	short		num;
@@ -115,6 +133,39 @@ typedef struct net_svc_spawnstaticsound_s
 	byte		volume;
 	byte		attenuation; // FIXME: should be a float (convert usages)
 } net_svc_spawnstaticsound_t;
+
+typedef struct net_svc_updatestat_s
+{
+	byte		stat;
+	byte		value;
+} net_svc_updatestat_t;
+
+typedef struct net_svc_updatestatlong_s
+{
+	byte		stat;
+	int			value;
+} net_svc_updatestatlong_t;
+
+typedef struct net_svc_cdtrack_s
+{
+	byte		cdtrack;
+} net_svc_cdtrack_t;
+
+typedef struct net_svc_intermission_s
+{
+	vec3_t		origin;
+	vec3_t		angles;
+} net_svc_intermission_t;
+
+typedef struct net_svc_finale_s
+{
+	const char *message;
+} net_svc_finale_t;
+
+typedef struct net_svc_muzzleflash_s
+{
+	short		player;
+} net_svc_muzzleflash_t;
 
 typedef struct net_svc_updateuserinfo_s
 {
@@ -168,6 +219,11 @@ typedef struct net_svc_nails_s
 	} nails[MAX_PROJECTILES];
 } net_svc_nails_t;
 
+typedef struct net_svc_chokecount_s
+{
+	byte		count;
+} net_svc_chokecount_t;
+
 typedef struct net_svc_modellist_s
 {
 	byte        startmodel;
@@ -199,6 +255,21 @@ typedef struct net_svc_deltapacketentities_s
 	entity_state_t	deltas[MAX_PACKET_ENTITIES];
 } net_svc_deltapacketentities_t;
 
+typedef struct net_svc_maxspeed_s
+{
+	float		maxspeed;
+} net_svc_maxspeed_t;
+
+typedef struct net_svc_entgravity_s
+{
+	float		gravity;
+} net_svc_entgravity_t;
+
+typedef struct net_svc_setpause_s
+{
+	byte		paused;
+} net_svc_setpause_t;
+
 const char *NET_SVC_GetString (int type);
 net_status_t NET_SVC_Print_Emit (net_svc_print_t *block, sizebuf_t *buf);
 net_status_t NET_SVC_Print_Parse (net_svc_print_t *block, msg_t *msg);
@@ -209,6 +280,15 @@ net_status_t NET_SVC_ServerData_Emit (net_svc_serverdata_t *block,
 net_status_t NET_SVC_ServerData_Parse (net_svc_serverdata_t *block, msg_t *msg);
 net_status_t NET_SVC_Sound_Emit (net_svc_sound_t *block, sizebuf_t *buf);
 net_status_t NET_SVC_Sound_Parse (net_svc_sound_t *block, msg_t *msg);
+net_status_t NET_SVC_UpdatePing_Emit (net_svc_updateping_t *block,
+									  sizebuf_t *buf);
+net_status_t NET_SVC_UpdatePing_Parse (net_svc_updateping_t *block, msg_t *msg);
+net_status_t NET_SVC_UpdatePL_Emit (net_svc_updatepl_t *block, sizebuf_t *buf);
+net_status_t NET_SVC_UpdatePL_Parse (net_svc_updatepl_t *block, msg_t *msg);
+net_status_t NET_SVC_UpdateEnterTime_Emit (net_svc_updateentertime_t *block,
+										   sizebuf_t *buf);
+net_status_t NET_SVC_UpdateEnterTime_Parse (net_svc_updateentertime_t *block,
+											msg_t *msg);
 net_status_t NET_SVC_SpawnBaseline_Emit (net_svc_spawnbaseline_t *block,
 										 sizebuf_t *buf);
 net_status_t NET_SVC_SpawnBaseline_Parse (net_svc_spawnbaseline_t *block,
@@ -224,6 +304,25 @@ net_status_t NET_SVC_SpawnStaticSound_Emit (net_svc_spawnstaticsound_t *block,
 											sizebuf_t *buf);
 net_status_t NET_SVC_SpawnStaticSound_Parse (net_svc_spawnstaticsound_t *block,
 										 msg_t *msg);
+net_status_t NET_SVC_UpdateStat_Emit (net_svc_updatestat_t *block,
+									  sizebuf_t *buf);
+net_status_t NET_SVC_UpdateStat_Parse (net_svc_updatestat_t *block, msg_t *msg);
+net_status_t NET_SVC_UpdateStatLong_Emit (net_svc_updatestatlong_t *block,
+										  sizebuf_t *buf);
+net_status_t NET_SVC_UpdateStatLong_Parse (net_svc_updatestatlong_t *block,
+										   msg_t *msg);
+net_status_t NET_SVC_CDTrack_Emit (net_svc_cdtrack_t *block, sizebuf_t *buf);
+net_status_t NET_SVC_CDTrack_Parse (net_svc_cdtrack_t *block, msg_t *msg);
+net_status_t NET_SVC_Intermission_Emit (net_svc_intermission_t *block,
+										sizebuf_t *buf);
+net_status_t NET_SVC_Intermission_Parse (net_svc_intermission_t *block,
+										 msg_t *msg);
+net_status_t NET_SVC_Finale_Emit (net_svc_finale_t *block, sizebuf_t *buf);
+net_status_t NET_SVC_Finale_Parse (net_svc_finale_t *block, msg_t *msg);
+net_status_t NET_SVC_MuzzleFlash_Emit (net_svc_muzzleflash_t *block,
+									   sizebuf_t *buf);
+net_status_t NET_SVC_MuzzleFlash_Parse (net_svc_muzzleflash_t *block,
+										msg_t *msg);
 net_status_t NET_SVC_UpdateUserInfo_Emit (net_svc_updateuserinfo_t *block,
 										  sizebuf_t *buf);
 net_status_t NET_SVC_UpdateUserInfo_Parse (net_svc_updateuserinfo_t *block,
@@ -240,6 +339,9 @@ net_status_t NET_SVC_Playerinfo_Emit (net_svc_playerinfo_t *block,
 net_status_t NET_SVC_Playerinfo_Parse (net_svc_playerinfo_t *block, msg_t *msg);
 net_status_t NET_SVC_Nails_Emit (net_svc_nails_t *block, sizebuf_t *buf);
 net_status_t NET_SVC_Nails_Parse (net_svc_nails_t *block, msg_t *msg);
+net_status_t NET_SVC_ChokeCount_Emit (net_svc_chokecount_t *block,
+									  sizebuf_t *buf);
+net_status_t NET_SVC_ChokeCount_Parse (net_svc_chokecount_t *block, msg_t *msg);
 net_status_t NET_SVC_Modellist_Emit (net_svc_modellist_t *block,
 									 sizebuf_t *buf);
 net_status_t NET_SVC_Modellist_Parse (net_svc_modellist_t *block, msg_t *msg);
@@ -254,5 +356,12 @@ net_status_t NET_SVC_DeltaPacketEntities_Emit (net_svc_deltapacketentities_t *bl
 											   sizebuf_t *buf);
 net_status_t NET_SVC_DeltaPacketEntities_Parse (net_svc_deltapacketentities_t *block,
 												msg_t *msg);
+net_status_t NET_SVC_MaxSpeed_Emit (net_svc_maxspeed_t *block, sizebuf_t *buf);
+net_status_t NET_SVC_MaxSpeed_Parse (net_svc_maxspeed_t *block, msg_t *msg);
+net_status_t NET_SVC_EntGravity_Emit (net_svc_entgravity_t *block,
+									  sizebuf_t *buf);
+net_status_t NET_SVC_EntGravity_Parse (net_svc_entgravity_t *block, msg_t *msg);
+net_status_t NET_SVC_SetPause_Emit (net_svc_setpause_t *block, sizebuf_t *buf);
+net_status_t NET_SVC_SetPause_Parse (net_svc_setpause_t *block, msg_t *msg);
 
 #endif // NET_SVC_H
