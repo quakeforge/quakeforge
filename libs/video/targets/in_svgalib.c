@@ -35,6 +35,12 @@
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -106,6 +112,7 @@ keyhandler (int scancode, int state)
 			shifts |= ROTL(press, 3);
 			break;
 		default:
+			break;
 	}
 	Key_Event (key, ascii, press);
 }
