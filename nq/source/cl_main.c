@@ -63,6 +63,9 @@ cvar_t     *cl_writecfg;
 cvar_t     *cl_shownet;
 cvar_t     *cl_nolerp;
 
+cvar_t     *cl_particle_hack;
+cvar_t     *cl_particle_blood;
+
 cvar_t     *cl_cshift_bonus; 
 cvar_t     *cl_cshift_contents; 
 cvar_t     *cl_cshift_damage; 
@@ -125,6 +128,10 @@ CL_InitCvars (void)
 						   "show network packets. 0=off, 1=basic, 2=verbose");
 	cl_nolerp = Cvar_Get ("cl_nolerp", "0", CVAR_NONE, NULL,
 						  "linear motion interpolation");
+	cl_particle_blood = Cvar_Get ("cl_particle_blood", "3", CVAR_ARCHIVE, NULL, "Amount of blood");
+	cl_particle_hack = Cvar_Get ("cl_particle_hack", "1", CVAR_ARCHIVE, NULL, "Make netquake "
+						  "blood/explosions look better (some mods may look "
+						  "weird with this on)");
 	lookspring = Cvar_Get ("lookspring", "0", CVAR_ARCHIVE, NULL, "Snap view "
 						   "to center when moving and no mlook/klook");
 	m_pitch = Cvar_Get ("m_pitch", "0.022", CVAR_ARCHIVE, NULL,

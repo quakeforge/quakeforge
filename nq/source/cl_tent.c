@@ -46,6 +46,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/msg.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
+#include "QF/cvar.h"
 
 #include "client.h"
 #include "compat.h"
@@ -551,8 +552,12 @@ CL_ParseParticleEffect (void)
 	count = MSG_ReadByte (net_message);
 	color = MSG_ReadByte (net_message);
 
-	if (count == 255)
-		R_ParticleExplosion (org);
-	else
+	if (count == 255) { 	// have to keep this because it's id :/
+		R_ParticleExplosion(org);
+	} else if (color == 73 && cl_particle_hack->int_val) {
+		if (cl_particle_blood->value)
+			R_BloodPuffEffect (org, count * cl_particle_blood->value);
+	} else {
 		R_RunParticleEffect (org, dir, color, count);
+	}
 }

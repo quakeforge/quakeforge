@@ -258,6 +258,9 @@ extern struct cvar_s	*cl_autofire;
 extern struct cvar_s	*cl_shownet;
 extern struct cvar_s	*cl_nolerp;
 
+extern struct cvar_s	*cl_particle_hack;
+extern struct cvar_s	*cl_particle_blood;
+
 extern struct cvar_s	*hud_sbar;
 
 extern struct cvar_s	*cl_pitchdriftspeed;
