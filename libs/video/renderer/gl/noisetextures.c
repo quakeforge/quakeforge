@@ -132,11 +132,11 @@ noise_plasma (unsigned char *noise, int size)
 	else
 		d = -size / 64;
 
-	memset(noise, 128, sizeof (*noise));
+	memset (noise, 128, sizeof (*noise));
 
 	for (i = size; i > 0; i /= 2) {
-		for (j=0; j < size; j += i) {
-			for (k=0; k < size; k += i) {
+		for (j = 0; j < size; j += i) {
+			for (k = 0; k < size; k += i) {
 				if (d >= 0)
 				        c = i * d;
 				else
@@ -144,7 +144,7 @@ noise_plasma (unsigned char *noise, int size)
 
 				c = qfrandom (c * 2) - c;
 
-				for (a=j; a < j + i; a++)
+				for (a = j; a < j + i; a++)
 					for (b = k; b < k + i; b++)
 						noise[a * size + b] += c;
 			}

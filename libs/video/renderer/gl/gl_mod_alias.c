@@ -711,7 +711,6 @@ R_DrawAliasModel (entity_t *e)
 
 	// draw all the triangles
 	if (model->fullbright) {
-
 		qfglBindTexture (GL_TEXTURE_2D, texture);
 		if (vo->tex_coord)
 			GL_DrawAliasFrameTri_fb (vo);
