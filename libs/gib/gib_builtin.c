@@ -552,16 +552,16 @@ GIB_Regex_Extract_f (void)
 		GIB_USAGE ("string regex options [var1 var2 var3 ...]");
 		return;
 	}
-	match = calloc (GIB_Argc() - 3, sizeof(regmatch_t));
+	match = calloc (GIB_Argc() - 4, sizeof(regmatch_t));
 	
 	if (!(reg = GIB_Regex_Compile (GIB_Argv(2), REG_EXTENDED | GIB_Regex_Translate_Options (GIB_Argv(3)))))
 		Cbuf_Error ("regex", "%s: %s", GIB_Argv(0), GIB_Regex_Error ());
-	else if (!regexec(reg, GIB_Argv(1), GIB_Argc() - 3, match, 0) && match[0].rm_eo) {
-		for (i = 0; i < GIB_Argc() - 3; i++) {
-			if (match[i].rm_so != -1 && *GIB_Argv(i+3)) {
+	else if (!regexec(reg, GIB_Argv(1), GIB_Argc() - 4, match, 0) && match[0].rm_eo) {
+		for (i = 0; i < GIB_Argc() - 4; i++) {
+			if (match[i].rm_so != -1 && *GIB_Argv(i+4)) {
 				o = GIB_Argv(1)[match[i].rm_eo];
 				GIB_Argv(1)[match[i].rm_eo] = 0;
-				GIB_Var_Set_Local (cbuf_active, GIB_Argv(i+3), GIB_Argv(1)+match[i].rm_so);
+				GIB_Var_Set_Local (cbuf_active, GIB_Argv(i+4), GIB_Argv(1)+match[i].rm_so);
 				GIB_Argv(1)[match[i].rm_eo] = o;
 			}
 		}
