@@ -38,13 +38,13 @@
 
 #include "QF/cmd.h"
 #include "QF/console.h"
-#include "compat.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
 
 #include "client.h"
+#include "compat.h"
 #include "host.h"
 
 /*
@@ -64,7 +64,6 @@
 	state bit 2 is edge triggered on the down to up transition
 */
 
-
 kbutton_t   in_mlook, in_klook;
 kbutton_t   in_left, in_right, in_forward, in_back;
 kbutton_t   in_lookup, in_lookdown, in_moveleft, in_moveright;
@@ -77,8 +76,8 @@ int         in_impulse;
 void
 KeyDown (kbutton_t *b)
 {
-	int         k;
 	const char *c;
+	int         k;
 
 	c = Cmd_Argv (1);
 	if (c[0])
@@ -107,8 +106,8 @@ KeyDown (kbutton_t *b)
 void
 KeyUp (kbutton_t *b)
 {
-	int         k;
 	const char *c;
+	int         k;
 
 	c = Cmd_Argv (1);
 	if (c[0])
@@ -138,13 +137,11 @@ KeyUp (kbutton_t *b)
 	b->state |= 4;						// impulse up
 }
 
-
 void
 IN_KLookDown (void)
 {
 	KeyDown (&in_klook);
 }
-
 
 void
 IN_KLookUp (void)
@@ -152,13 +149,11 @@ IN_KLookUp (void)
 	KeyUp (&in_klook);
 }
 
-
 void
 IN_MLookDown (void)
 {
 	KeyDown (&in_mlook);
 }
-
 
 void
 IN_MLookUp (void)
@@ -168,13 +163,11 @@ IN_MLookUp (void)
 		V_StartPitchDrift ();
 }
 
-
 void
 IN_UpDown (void)
 {
 	KeyDown (&in_up);
 }
-
 
 void
 IN_UpUp (void)
@@ -182,13 +175,11 @@ IN_UpUp (void)
 	KeyUp (&in_up);
 }
 
-
 void
 IN_DownDown (void)
 {
 	KeyDown (&in_down);
 }
-
 
 void
 IN_DownUp (void)
@@ -196,20 +187,17 @@ IN_DownUp (void)
 	KeyUp (&in_down);
 }
 
-
 void
 IN_LeftDown (void)
 {
 	KeyDown (&in_left);
 }
 
-
 void
 IN_LeftUp (void)
 {
 	KeyUp (&in_left);
 }
-
 
 void
 IN_RightDown (void)
@@ -223,13 +211,11 @@ IN_RightUp (void)
 	KeyUp (&in_right);
 }
 
-
 void
 IN_ForwardDown (void)
 {
 	KeyDown (&in_forward);
 }
-
 
 void
 IN_ForwardUp (void)
@@ -237,13 +223,11 @@ IN_ForwardUp (void)
 	KeyUp (&in_forward);
 }
 
-
 void
 IN_BackDown (void)
 {
 	KeyDown (&in_back);
 }
-
 
 void
 IN_BackUp (void)
@@ -251,13 +235,11 @@ IN_BackUp (void)
 	KeyUp (&in_back);
 }
 
-
 void
 IN_LookupDown (void)
 {
 	KeyDown (&in_lookup);
 }
-
 
 void
 IN_LookupUp (void)
@@ -265,13 +247,11 @@ IN_LookupUp (void)
 	KeyUp (&in_lookup);
 }
 
-
 void
 IN_LookdownDown (void)
 {
 	KeyDown (&in_lookdown);
 }
-
 
 void
 IN_LookdownUp (void)
@@ -279,13 +259,11 @@ IN_LookdownUp (void)
 	KeyUp (&in_lookdown);
 }
 
-
 void
 IN_MoveleftDown (void)
 {
 	KeyDown (&in_moveleft);
 }
-
 
 void
 IN_MoveleftUp (void)
@@ -293,13 +271,11 @@ IN_MoveleftUp (void)
 	KeyUp (&in_moveleft);
 }
 
-
 void
 IN_MoverightDown (void)
 {
 	KeyDown (&in_moveright);
 }
-
 
 void
 IN_MoverightUp (void)
@@ -307,13 +283,11 @@ IN_MoverightUp (void)
 	KeyUp (&in_moveright);
 }
 
-
 void
 IN_SpeedDown (void)
 {
 	KeyDown (&in_speed);
 }
-
 
 void
 IN_SpeedUp (void)
@@ -321,13 +295,11 @@ IN_SpeedUp (void)
 	KeyUp (&in_speed);
 }
 
-
 void
 IN_StrafeDown (void)
 {
 	KeyDown (&in_strafe);
 }
-
 
 void
 IN_StrafeUp (void)
@@ -335,13 +307,11 @@ IN_StrafeUp (void)
 	KeyUp (&in_strafe);
 }
 
-
 void
 IN_AttackDown (void)
 {
 	KeyDown (&in_attack);
 }
-
 
 void
 IN_AttackUp (void)
@@ -349,13 +319,11 @@ IN_AttackUp (void)
 	KeyUp (&in_attack);
 }
 
-
 void
 IN_UseDown (void)
 {
 	KeyDown (&in_use);
 }
-
 
 void
 IN_UseUp (void)
@@ -363,13 +331,11 @@ IN_UseUp (void)
 	KeyUp (&in_use);
 }
 
-
 void
 IN_JumpDown (void)
 {
 	KeyDown (&in_jump);
 }
-
 
 void
 IN_JumpUp (void)
@@ -377,13 +343,11 @@ IN_JumpUp (void)
 	KeyUp (&in_jump);
 }
 
-
 void
 IN_Impulse (void)
 {
 	in_impulse = atoi (Cmd_Argv (1));
 }
-
 
 /*
 	CL_KeyState
@@ -434,9 +398,6 @@ CL_KeyState (kbutton_t *key)
 	return val;
 }
 
-
-//==========================================================================
-
 cvar_t     *cl_anglespeedkey;
 cvar_t     *cl_backspeed;
 cvar_t     *cl_forwardspeed;
@@ -446,7 +407,6 @@ cvar_t     *cl_sidespeed;
 cvar_t     *cl_upspeed;
 cvar_t     *cl_yawspeed;
 
-
 /*
 	CL_AdjustAngles
 
@@ -455,8 +415,7 @@ cvar_t     *cl_yawspeed;
 void
 CL_AdjustAngles (void)
 {
-	float       speed;
-	float       up, down;
+	float       speed, up, down;
 
 	if (in_speed.state & 1)
 		speed = host_frametime * cl_anglespeedkey->value;
@@ -499,7 +458,6 @@ CL_AdjustAngles (void)
 
 }
 
-
 /*
 	CL_BaseMove
 
@@ -531,8 +489,7 @@ CL_BaseMove (usercmd_t *cmd)
 		cmd->forwardmove -= cl_backspeed->value * CL_KeyState (&in_back);
 	}
 
-// adjust for speed key
-//
+	// adjust for speed key
 	if (in_speed.state & 1) {
 		cmd->forwardmove *= cl_movespeedkey->value;
 		cmd->sidemove *= cl_movespeedkey->value;
@@ -563,10 +520,9 @@ CL_BaseMove (usercmd_t *cmd)
 void
 CL_SendMove (usercmd_t *cmd)
 {
-	int         i;
-	int         bits;
-	sizebuf_t   buf;
 	byte        data[128];
+	int         bits, i;
+	sizebuf_t   buf;
 
 	buf.maxsize = 128;
 	buf.cursize = 0;
@@ -574,8 +530,7 @@ CL_SendMove (usercmd_t *cmd)
 
 	cl.cmd = *cmd;
 
-// send the movement message
-//
+	// send the movement message
 	MSG_WriteByte (&buf, clc_move);
 
 	MSG_WriteFloat (&buf, cl.mtime[0]);	// so server can get ping times
@@ -587,8 +542,7 @@ CL_SendMove (usercmd_t *cmd)
 	MSG_WriteShort (&buf, cmd->sidemove);
 	MSG_WriteShort (&buf, cmd->upmove);
 
-// send button bits
-//
+	// send button bits
 	bits = 0;
 
 	if (in_attack.state & 3)
@@ -604,13 +558,12 @@ CL_SendMove (usercmd_t *cmd)
 	MSG_WriteByte (&buf, in_impulse);
 	in_impulse = 0;
 
-// deliver the message
-//
+	// deliver the message
 	if (cls.demoplayback)
 		return;
 
-// always dump the first two message, because it may contain leftover inputs
-// from the last level
+	// always dump the first two message, because it may contain leftover
+	// inputs from the last level
 	if (++cl.movemessages <= 2)
 		return;
 
@@ -619,7 +572,6 @@ CL_SendMove (usercmd_t *cmd)
 		CL_Disconnect ();
 	}
 }
-
 
 void
 CL_InitInput (void)

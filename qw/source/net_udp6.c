@@ -29,17 +29,47 @@
 	$Id$
 */
 
+/* Sun's model_t in sys/model.h conflicts w/ Quake's model_t */
+#define model_t quakeforgemodel_t
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
+#endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+#ifdef HAVE_SYS_IOCTL_H
+# include <sys/ioctl.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
+# include <netinet/in.h>
+#endif
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
+# include <arpa/inet.h>
+#endif
+#ifdef HAVE_SYS_FILIO_H
+# include <sys/filio.h>
+#endif
+#ifdef NeXT
+# include <libc.h>
 #endif
 
 #ifdef _WIN32
 # include <windows.h>
 # undef EWOULDBLOCK
 # define EWOULDBLOCK	WSAEWOULDBLOCK
-#endif
-
-#ifdef _WIN32
 # ifdef HAVE_IPV6
 #  include <winsock2.h>
 #  define _DEF_BYTE_
@@ -65,46 +95,9 @@
 
 #include <stdio.h>
 #include <errno.h>
-
-/* Sun's model_t in sys/model.h conflicts w/ Quake's model_t */
-#define model_t quakeforgemodel_t
-
-#ifndef _WIN32
-# include <unistd.h>
-#endif
-
 #include <sys/types.h>
 
-#ifdef HAVE_STRING_H
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
-#ifdef HAVE_SYS_IOCTL_H
-# include <sys/ioctl.h>
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-# include <sys/socket.h>
-#endif
-#ifdef HAVE_NETINET_IN_H
-# include <netinet/in.h>
-#endif
-#ifdef HAVE_NETDB_H
-# include <netdb.h>
-#endif
-#ifdef HAVE_ARPA_INET_H
-# include <arpa/inet.h>
-#endif
-#ifdef HAVE_SYS_FILIO_H
-# include <sys/filio.h>
-#endif
-
 #undef model_t
-
-#ifdef NeXT
-# include <libc.h>
-#endif
 
 #include "QF/console.h"
 #include "QF/msg.h"
@@ -125,9 +118,8 @@
 # endif
 #endif
 
-netadr_t    net_local_adr;
-
 netadr_t    net_from;
+netadr_t    net_local_adr;
 int         net_socket;
 
 static sizebuf_t _net_message_message;
@@ -141,7 +133,6 @@ byte        net_message_buffer[MAX_UDP_PACKET];
  WSADATA     winsockdata;
 #endif
 
-//=============================================================================
 
 void
 NetadrToSockadr (netadr_t *a, struct sockaddr_in6 *s)
@@ -184,7 +175,6 @@ NET_CompareBaseAdr (netadr_t a, netadr_t b)
 		return true;
 	return false;
 }
-
 
 qboolean
 NET_CompareAdr (netadr_t a, netadr_t b)
@@ -256,14 +246,12 @@ NET_BaseAdrToString (netadr_t a)
 qboolean
 NET_StringToAdr (const char *s, netadr_t *a)
 {
-
+	char        copy[128];
+	char       *addrs, *space;
+	char       *ports = NULL;
+	int         err;
 	struct addrinfo hints;
 	struct addrinfo *resultp;
-	char       *space;
-	char       *ports = NULL;
-	char        copy[128];
-	char       *addrs;
-	int         err;
 	struct sockaddr_storage ss;
 	struct sockaddr_in6 *ss6;
 	struct sockaddr_in *ss4;
@@ -291,11 +279,12 @@ NET_StringToAdr (const char *s, netadr_t *a)
 		}
 	}
 
-	// Con_Printf ("NET_StringToAdr: addrs %s ports %s\n",addrs, ports);
+//	Con_Printf ("NET_StringToAdr: addrs %s ports %s\n",addrs, ports);
 
 	if ((err = getaddrinfo (addrs, ports, &hints, &resultp))) {
 		// Error
-		Con_Printf ("NET_StringToAdr: string %s:\n%s\n", s, gai_strerror (err));
+		Con_Printf ("NET_StringToAdr: string %s:\n%s\n", s, gai_strerror
+					(err));
 		return 0;
 	}
 
@@ -335,8 +324,8 @@ qboolean
 NET_IsClientLegal (netadr_t *adr)
 {
 #if 0
-	struct sockaddr_in sadr;
 	int         newsocket;
+	struct sockaddr_in sadr;
 
 	if (adr->ip[0] == 127)
 		return false;					// no local connections period
@@ -360,15 +349,12 @@ NET_IsClientLegal (netadr_t *adr)
 #endif
 }
 
-
-//=============================================================================
-
 qboolean
 NET_GetPacket (void)
 {
-	int         ret;
-	struct sockaddr_in6 from;
+	int          ret;
 	unsigned int fromlen;
+	struct sockaddr_in6 from;
 
 	fromlen = sizeof (from);
 	ret =
@@ -407,8 +393,6 @@ NET_GetPacket (void)
 	return ret;
 }
 
-//=============================================================================
-
 void
 NET_SendPacket (int length, void *data, netadr_t to)
 {
@@ -441,16 +425,13 @@ NET_SendPacket (int length, void *data, netadr_t to)
 	}
 }
 
-//=============================================================================
-
 int
 UDP_OpenSocket (int port)
 {
-	int         newsocket;
+	char        Buf[BUFSIZ], *Host, *Service;
+	int         newsocket, Error;
 	struct sockaddr_in6 address;
 	struct addrinfo hints, *res;
-	int         Error;
-	char        Buf[BUFSIZ], *Host, *Service;
 
 #ifdef IPV6_BINDV6ONLY
 	int         dummy;
@@ -469,7 +450,7 @@ UDP_OpenSocket (int port)
 		Sys_Error ("UDP_OpenSocket: ioctl FIONBIO: %s", strerror (errno));
 	memset (&address, 0, sizeof (address));
 	address.sin6_family = AF_INET6;
-//ZOID -- check for interface binding option
+// ZOID -- check for interface binding option
 
 	memset (&hints, 0, sizeof (hints));
 	hints.ai_family = PF_UNSPEC;
@@ -525,8 +506,8 @@ void
 NET_GetLocalAddress (void)
 {
 	char        buff[MAXHOSTNAMELEN];
-	struct sockaddr_in6 address;
 	unsigned int namelen;
+	struct sockaddr_in6 address;
 
 	if (gethostname (buff, MAXHOSTNAMELEN) == -1)
 		Sys_Error ("Net_GetLocalAddress: gethostname: %s", strerror (errno));
@@ -542,15 +523,12 @@ NET_GetLocalAddress (void)
 	Con_Printf ("IP address %s\n", NET_AdrToString (net_local_adr));
 }
 
-/*
-	NET_Init
-*/
 void
 NET_Init (int port)
 {
 #ifdef _WIN32
-	WORD        wVersionRequested;
 	int         r;
+	WORD        wVersionRequested;
 
 	wVersionRequested = MAKEWORD (1, 1);
 
@@ -559,28 +537,19 @@ NET_Init (int port)
 		Sys_Error ("Winsock initialization failed.");
 #endif /* _WIN32 */
 
-	// 
 	// open the single socket to be used for all communications
-	// 
 	net_socket = UDP_OpenSocket (port);
 
-	// 
 	// init the message buffer
-	// 
 	_net_message_message.maxsize = sizeof (net_message_buffer);
 	_net_message_message.data = net_message_buffer;
 
-	// 
 	// determine my name & address
-	// 
 	NET_GetLocalAddress ();
 
 	Con_Printf ("UDP Initialized\n");
 }
 
-/*
-	NET_Shutdown
-*/
 void
 NET_Shutdown (void)
 {

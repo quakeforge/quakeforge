@@ -40,10 +40,9 @@
 
 cvar_t     *registered;
 
-qboolean    com_modified;				// set true if using non-id files
-
 int         static_registered = 1;		// only for startup check, then set
 
+qboolean    com_modified;				// set true if using non-id files
 qboolean    msg_suppress_1 = 0;
 
 void        COM_Path_f (void);
@@ -60,8 +59,8 @@ void        COM_Path_f (void);
 void
 COM_CheckRegistered (void)
 {
-	VFile      *h;
 	unsigned short check[128];
+	VFile      *h;
 
 	COM_FOpenFile ("gfx/pop.lmp", &h);
 	static_registered = 0;
@@ -77,7 +76,6 @@ COM_CheckRegistered (void)
 		Con_Printf ("Playing registered version.\n");
 	}
 }
-
 
 void
 COM_Init (void)

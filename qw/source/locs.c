@@ -38,7 +38,6 @@
 
 #include <limits.h>
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/locs.h"
 #include "QF/qtypes.h"
@@ -46,25 +45,27 @@
 #include "QF/vfs.h"
 
 #include "client.h"
+#include "compat.h"
 
 #define LOCATION_BLOCK	128				// 128 locations per block.
 
 location_t **locations = NULL;
-int         locations_alloced = 0;
-int         locations_count = 0;
-int         location_blocks = 0;
+int          locations_alloced = 0;
+int          locations_count = 0;
+int          location_blocks = 0;
 
 void locs_add (vec3_t location, const char *name);
 void locs_load (const char *filename);
 void locs_free (void);
 void locs_more (void);
 
+
 int
 locs_nearest (vec3_t loc)
 {
-	location_t *cur;
 	float       best_distance = 9999999, distance;
 	int         i, j = -1;
+	location_t *cur;
 	
 	for (i = 0; i < locations_count; i++) {
 		cur = locations[i];
@@ -81,6 +82,7 @@ location_t *
 locs_find (vec3_t target)
 {
 	int i;
+
 	i = locs_nearest(target);
 	if (i == -1) 
 		return NULL;
@@ -111,13 +113,12 @@ locs_add (vec3_t location, const char *name)
 void
 locs_load (const char *filename)
 {
-	VFile      *file;
-	const char *line;
+	char        tmp[PATH_MAX], foundname[MAX_OSPATH];
 	char       *t1, *t2;
-	vec3_t      loc;
-	char	    tmp[PATH_MAX];
-	char        foundname[MAX_OSPATH];
+	const char *line;
 	int         templength = 0;
+	vec3_t      loc;
+	VFile      *file;
 	
 	snprintf(tmp,sizeof(tmp), "maps/%s",filename);
 	templength = _COM_FOpenFile (tmp, &file, foundname, 1);
@@ -190,9 +191,9 @@ locs_more (void)
 void
 locs_save (const char *filename, qboolean gz)
 {
-	VFile *locfd;
-	int i;
 	char locfile[MAX_OSPATH];
+	int i;
+	VFile *locfd;
 	
 	if (gz) {
 		if (strncmp(filename + strlen(filename) - 3,".gz",3) != 0)
@@ -224,14 +225,15 @@ locs_mark (vec3_t loc, const char *desc)
 
 /*
     locs_edit
+
     call with description to modify location description
     call with NULL description to modify location vectors
 */
-
 void
 locs_edit (vec3_t loc, const char *desc)
 {
 	int i;
+
 	if (locations_count) {
 		i = locs_nearest (loc);
 		if (!desc) {
@@ -252,6 +254,7 @@ void
 locs_del (vec3_t loc)
 {
 	int i;
+
 	if (locations_count) {
 		i = locs_nearest (loc);
 		Con_Printf ("Removing location marker for %s\n",

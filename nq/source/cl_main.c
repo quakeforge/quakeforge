@@ -97,7 +97,6 @@ CL_Sbar_f (cvar_t *var)
 	r_lineadj = var->int_val ? sb_lines : 0;
 }
 
-
 void
 CL_InitCvars (void)
 {
@@ -113,8 +112,7 @@ CL_InitCvars (void)
 						   "inform when execing a command");
 	cl_name = Cvar_Get ("_cl_name", "player", CVAR_ARCHIVE, NULL,
 						"Player name");
-	cl_color = Cvar_Get ("_cl_color", "0", CVAR_ARCHIVE, NULL,
-						 "Player color");
+	cl_color = Cvar_Get ("_cl_color", "0", CVAR_ARCHIVE, NULL, "Player color");
 	cl_anglespeedkey = Cvar_Get ("cl_anglespeedkey", "1.5", CVAR_NONE, NULL,
 								 "turn `run' speed multiplier");
 	cl_backspeed = Cvar_Get ("cl_backspeed", "200", CVAR_ARCHIVE, NULL,
@@ -157,7 +155,6 @@ CL_InitCvars (void)
 						  "display the current time");
 }
 
-
 void
 CL_ClearState (void)
 {
@@ -192,7 +189,6 @@ CL_ClearState (void)
 	}
 }
 
-
 /*
 	CL_StopCshifts
 
@@ -202,12 +198,12 @@ void
 CL_StopCshifts (void)
 {
 	int i;
+
 	for (i = 0; i < NUM_CSHIFTS; i++)
 		cl.cshifts[i].percent = 0;
 	for (i = 0; i < MAX_CL_STATS; i++)
 		cl.stats[i] = 0;
 }
-
 
 /*
 	CL_Disconnect
@@ -250,7 +246,6 @@ CL_Disconnect (void)
 	cls.signon = 0;
 }
 
-
 void
 CL_Disconnect_f (void)
 {
@@ -258,7 +253,6 @@ CL_Disconnect_f (void)
 	if (sv.active)
 		Host_ShutdownServer (false);
 }
-
 
 /*
 	CL_EstablishConnection
@@ -288,7 +282,6 @@ CL_EstablishConnection (const char *host)
 	key_dest = key_game;
 	game_target = IMT_DEFAULT;
 }
-
 
 /*
 	CL_SignonReply
@@ -332,7 +325,6 @@ CL_SignonReply (void)
 	}
 }
 
-
 /*
 	CL_NextDemo
 
@@ -360,7 +352,6 @@ CL_NextDemo (void)
 	cls.demonum++;
 }
 
-
 void
 CL_PrintEntities_f (void)
 {
@@ -380,7 +371,6 @@ CL_PrintEntities_f (void)
 	}
 }
 
-
 /*
 	SetPal
 
@@ -390,9 +380,9 @@ void
 SetPal (int i)
 {
 #if 0
-	static int  old;
 	byte        pal[768];
 	int         c;
+	static int  old;
 
 	if (i == old)
 		return;
@@ -417,7 +407,6 @@ SetPal (int i)
 	}
 #endif
 }
-
 
 void
 CL_NewDlight (int key, float x, float y, float z, float radius, float time,
@@ -455,7 +444,6 @@ CL_NewDlight (int key, float x, float y, float z, float radius, float time,
 		break;
 	}
 }
-
 
 /*
 	CL_LerpPoint
@@ -501,17 +489,15 @@ CL_LerpPoint (void)
 	return frac;
 }
 
-
 void
 CL_RelinkEntities (void)
 {
 	entity_t  **_ent;
 	entity_t   *ent;
-	int         i, j;
-	float       frac, f, d;
-	vec3_t      delta;
-	float       bobjrotate;
 	dlight_t   *dl;
+	float       bobjrotate, frac, f, d;
+	int         i, j;
+	vec3_t      delta;
 	
 	r_player_entity = &cl_entities[cl.viewentity];
 
@@ -654,7 +640,6 @@ CL_RelinkEntities (void)
 	}
 }
 
-
 /*
 	CL_ReadFromServer
 
@@ -692,7 +677,6 @@ CL_ReadFromServer (void)
 	return 0;
 }
 
-
 void
 CL_SendCmd (void)
 {
@@ -728,7 +712,6 @@ CL_SendCmd (void)
 	SZ_Clear (&cls.message);
 }
 
-
 void
 CL_SetState (cactive_t state)
 {
@@ -744,13 +727,11 @@ CL_SetState (cactive_t state)
 	}
 }
 
-
 void
 Force_CenterView_f (void)
 {
 	cl.viewangles[PITCH] = 0;
 }
-
 
 void
 CL_Init (void)
@@ -769,10 +750,8 @@ CL_Init (void)
 	Cmd_AddCommand ("playdemo", CL_PlayDemo_f, "No Description");
 	Cmd_AddCommand ("timedemo", CL_TimeDemo_f, "No Description");
 	Cmd_AddCommand ("maplist", COM_Maplist_f, "No Description");
-
-	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "force the view to "
-					"be level");
-
+	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "force the view "
+					"to be level");
 
 	for (i = 0; i < MAX_STATIC_ENTITIES; i++) {
 		cl_static_entities[i].baseline = &cl_static_entity_baselines[i];

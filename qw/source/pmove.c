@@ -51,7 +51,6 @@ int         watertype;
 float       frametime;
 
 vec3_t      forward, right, up;
-
 vec3_t      player_mins = { -16, -16, -24 };
 vec3_t      player_maxs = { 16, 16, 32 };
 
@@ -115,12 +114,11 @@ PM_ClipVelocity (vec3_t in, vec3_t normal, vec3_t out, float overbounce)
 int
 PM_FlyMove (void)
 {
-	int         blocked, bumpcount, numbumps, numplanes, i, j;
-	vec3_t      dir;
 	float       time_left, d;
+	int         blocked, bumpcount, numbumps, numplanes, i, j;
 	pmtrace_t   trace;
+	vec3_t      dir, end, primal_velocity, original_velocity;
 	vec3_t      planes[MAX_CLIP_PLANES];
-	vec3_t      end, primal_velocity, original_velocity;
 
 	numbumps = 4;
 
@@ -343,8 +341,8 @@ PM_GroundMove (void)
 void
 PM_Friction (void)
 {
-	float      *vel;
 	float       drop, friction, speed, newspeed;
+	float      *vel;
 	pmtrace_t   trace;
 	vec3_t      start, stop;
 
@@ -494,9 +492,9 @@ PM_WaterMove (void)
 void
 PM_AirMove (void)
 {
+	float       fmove, smove, wishspeed;
 	int         i;
 	vec3_t      original, wishdir, wishvel;
-	float       fmove, smove, wishspeed;
 
 	fmove = pmove.cmd.forwardmove;
 	smove = pmove.cmd.sidemove;
@@ -562,8 +560,7 @@ PM_CategorizePosition (void)
 	pmtrace_t   tr;
 	vec3_t      point;
 
-	// if the player hull point one unit down is solid, the player
-	// is on ground
+	// if the player hull point one unit down is solid, the player is on ground
 
 	// see if standing on something solid   
 	point[0] = pmove.origin[0];
@@ -615,8 +612,7 @@ void
 JumpButton (void)
 {
 	if (pmove.dead) {
-		pmove.oldbuttons |= BUTTON_JUMP;	// don't jump again until
-											// released
+		pmove.oldbuttons |= BUTTON_JUMP;	// don't jump again until released
 		return;
 	}
 
@@ -736,8 +732,7 @@ SpectatorMove (void)
 	float       control, drop, friction, fmove, smove, speed, newspeed;
 	float       currentspeed, addspeed, accelspeed, wishspeed;
 	int         i;
-	vec3_t      wishvel;
-	vec3_t      wishdir;
+	vec3_t      wishdir, wishvel;
 
 	// friction
 	speed = Length (pmove.velocity);

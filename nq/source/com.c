@@ -35,6 +35,7 @@
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/vfs.h"
+
 #include "game.h"
 
 void Cvar_Info (struct cvar_s *var);
@@ -55,8 +56,8 @@ int         static_registered = 1;
 void
 COM_CheckRegistered (void)
 {
-	VFile      *h;
 	unsigned short check[128];
+	VFile      *h;
 
 	COM_FOpenFile ("gfx/pop.lmp", &h);
 	static_registered = 0;
@@ -72,7 +73,6 @@ COM_CheckRegistered (void)
 		Con_Printf ("Playing registered version.\n");
 	}
 }
-
 
 void
 COM_Init (void)

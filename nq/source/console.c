@@ -39,7 +39,6 @@
 #include <stdarg.h>
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
@@ -51,13 +50,14 @@
 #include "QF/va.h"
 
 #include "client.h"
+#include "compat.h"
 
-int         con_ormask;
 console_t   con_main;
 console_t   con_chat;
 console_t  *con;						// point to either con_main or con_chat
 
 int         con_linewidth;				// characters across screen
+int         con_ormask;
 int         con_totallines;				// total lines in console scrollback
 
 float       con_cursorspeed = 4;
@@ -100,7 +100,6 @@ Con_ToggleConsole_f (void)
 	Con_ClearNotify ();
 }
 
-
 void
 Con_ToggleChat_f (void)
 {
@@ -115,7 +114,6 @@ Con_ToggleChat_f (void)
 	Con_ClearNotify ();
 }
 
-
 void
 Con_Clear_f (void)
 {
@@ -126,7 +124,6 @@ Con_Clear_f (void)
 	con_main.display = con_main.current;
 }
 
-
 void
 Con_ClearNotify (void)
 {
@@ -135,7 +132,6 @@ Con_ClearNotify (void)
 	for (i = 0; i < NUM_CON_TIMES; i++)
 		con_times[i] = 0;
 }
-
 
 void
 Con_MessageMode_f (void)
@@ -146,7 +142,6 @@ Con_MessageMode_f (void)
 	key_dest = key_message;
 }
 
-
 void
 Con_MessageMode2_f (void)
 {
@@ -156,12 +151,11 @@ Con_MessageMode2_f (void)
 	key_dest = key_message;
 }
 
-
 void
 Con_Resize (console_t *con)
 {
-	int         i, j, width, oldwidth, oldtotallines, numlines, numchars;
 	char        tbuf[CON_TEXTSIZE];
+	int         i, j, width, oldwidth, oldtotallines, numlines, numchars;
 
 	width = (vid.width >> 3) - 2;
 
@@ -206,7 +200,6 @@ Con_Resize (console_t *con)
 	con->display = con->current;
 }
 
-
 /*
 	Con_CheckResize
 
@@ -218,7 +211,6 @@ Con_CheckResize (void)
 	Con_Resize (&con_main);
 	Con_Resize (&con_chat);
 }
-
 
 void
 Con_Init (const char *plugin_name)
@@ -244,15 +236,13 @@ Con_Init (const char *plugin_name)
 	con_initialized = true;
 }
 
-
 void
 Con_Init_Cvars (void)
 {
-	con_notifytime =
-		Cvar_Get ("con_notifytime", "3", CVAR_NONE, NULL,
-				  "How long in seconds messages are displayed on screen");
+	con_notifytime = Cvar_Get ("con_notifytime", "3", CVAR_NONE, NULL,
+							   "How long in seconds messages are displayed "
+							   "on screen");
 }
-
 
 void
 Con_Linefeed (void)
@@ -267,7 +257,6 @@ Con_Linefeed (void)
 			' ', con_linewidth);
 }
 
-
 /*
 	Con_Print
 
@@ -278,10 +267,8 @@ Con_Linefeed (void)
 void
 Con_Print (const char *txt)
 {
-	int         y;
-	int         c, l;
+	int         mask, c, l, y;
 	static int  cr;
-	int         mask;
 
 	// echo to debugging console
 	Sys_Printf ("%s", txt);
@@ -316,7 +303,6 @@ Con_Print (const char *txt)
 			cr = false;
 		}
 
-
 		if (!con->x) {
 			Con_Linefeed ();
 			// mark time for transparent overlay
@@ -346,11 +332,7 @@ Con_Print (const char *txt)
 	}
 }
 
-
-/*
-	DRAWING
-*/
-
+/* DRAWING */
 
 /*
 	Con_DrawInput
@@ -360,10 +342,9 @@ Con_Print (const char *txt)
 void
 Con_DrawInput (void)
 {
-	int         y;
-	int         i;
-	char       *text;
 	char        temp[MAXCMDLINE];
+	char       *text;
+	int         i, y;
 
 	if (key_dest != key_console && cls.state == ca_active)
 		return;				// don't draw anything (always draw if not active)
@@ -389,7 +370,6 @@ Con_DrawInput (void)
 		Draw_Character ((i + 1) << 3, con_vislines - 22, text[i]);
 }
 
-
 /*
 	Con_DrawNotify
 
@@ -398,12 +378,9 @@ Con_DrawInput (void)
 void
 Con_DrawNotify (void)
 {
-	int         x, v;
-	char       *text;
-	int         i;
+	char       *s, *text;
+	int         skip, i, x, v;
 	float       time;
-	char       *s;
-	int         skip;
 
 	v = 0;
 	for (i = con->current - NUM_CON_TIMES + 1; i <= con->current; i++) {
@@ -455,7 +432,6 @@ Con_DrawNotify (void)
 		con_notifylines = v;
 }
 
-
 /*
 	Con_DrawConsole
 
@@ -464,10 +440,8 @@ Con_DrawNotify (void)
 void
 Con_DrawConsole (int lines)
 {
-	int         i, x, y;
-	int         rows;
 	char       *text;
-	int         row;
+	int         row, rows, i, x, y;
 
 	if (lines <= 0)
 		return;
@@ -510,13 +484,12 @@ Con_DrawConsole (int lines)
 	Con_DrawInput ();
 }
 
-
 void
 Con_DrawDownload (int lines)
 {
-	int         i, j, x, y, n;
-	const char *text;
 	char        dlbar[1024];
+	const char *text;
+	int         i, j, x, y, n;
 
 	if (!cls.download)
 		return;
@@ -569,11 +542,10 @@ Con_DrawDownload (int lines)
 void
 Con_CompleteCommandLine (void)
 {
-	const char *cmd = "";
-	char	*s;
-	int	c, v, a, i;
-	int		cmd_len;
+	char	    *s;
+	const char  *cmd = "";
 	const char **list[3] = {0, 0, 0};
+	int	         cmd_len, c, v, a, i;
 
 	s = key_lines[edit_line] + 1;
 	if (*s == '\\' || *s == '/')
@@ -656,4 +628,3 @@ Con_CompleteCommandLine (void)
 		if (list[i])
 			free (list[i]);
 }
-

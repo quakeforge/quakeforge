@@ -119,17 +119,12 @@ CL_EntityNum (int num)
 	return &cl_entities[num];
 }
 
-
 void
 CL_ParseStartSoundPacket (void)
 {
-	vec3_t      pos;
-	int         channel, ent;
-	int         sound_num;
-	int         volume;
-	int         field_mask;
 	float       attenuation;
-	int         i;
+	int         channel, ent, field_mask, sound_num, volume, i;
+	vec3_t      pos;
 
 	field_mask = MSG_ReadByte (net_message);
 
@@ -159,7 +154,6 @@ CL_ParseStartSoundPacket (void)
 				  volume / 255.0, attenuation);
 }
 
-
 /*
 	CL_KeepaliveMessage
 
@@ -169,11 +163,11 @@ CL_ParseStartSoundPacket (void)
 void
 CL_KeepaliveMessage (void)
 {
+	byte        olddata[8192];
 	float       time;
 	static float lastmsg;
 	int         ret;
 	sizebuf_t   old;
-	byte        olddata[8192];
 
 	if (sv.active)
 		return;							// no need if server is local
@@ -182,7 +176,8 @@ CL_KeepaliveMessage (void)
 
 	// read messages from server, should just be nops
 	old = *net_message->message;
-	memcpy (olddata, net_message->message->data, net_message->message->cursize);
+	memcpy (olddata, net_message->message->data,
+			net_message->message->cursize);
 
 	do {
 		ret = CL_GetMessage ();
@@ -202,7 +197,8 @@ CL_KeepaliveMessage (void)
 	} while (ret);
 
 	*net_message->message = old;
-	memcpy (net_message->message->data, olddata, net_message->message->cursize);
+	memcpy (net_message->message->data, olddata,
+			net_message->message->cursize);
 
 	// check time
 	time = Sys_DoubleTime ();
@@ -218,18 +214,15 @@ CL_KeepaliveMessage (void)
 	SZ_Clear (&cls.message);
 }
 
-
 struct model_s **snd_worldmodel = &cl.worldmodel;
-
 
 void
 CL_ParseServerInfo (void)
 {
-	char       *str;
-	int         i;
-	int         nummodels, numsounds;
 	char        model_precache[MAX_MODELS][MAX_QPATH];
 	char        sound_precache[MAX_SOUNDS][MAX_QPATH];
+	char       *str;
+	int         nummodels, numsounds, i;
 
 	Con_DPrintf ("Serverinfo packet received.\n");
 
@@ -258,12 +251,14 @@ CL_ParseServerInfo (void)
 	strncpy (cl.levelname, str, sizeof (cl.levelname) - 1);
 
 	// seperate the printfs so the server message can have a color
-	Con_Printf ("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\37\n\n");
+	Con_Printf ("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36"
+				"\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\37\n"
+				"\n");
 	Con_Printf ("%c%s\n", 2, str);
 
-// first we go through and touch all of the precache data that still
-// happens to be in the cache, so precaching something else doesn't
-// needlessly purge it
+	// first we go through and touch all of the precache data that still
+	// happens to be in the cache, so precaching something else doesn't
+	// needlessly purge it
 
 	// precache models
 	memset (cl.model_precache, 0, sizeof (cl.model_precache));
@@ -321,9 +316,7 @@ CL_ParseServerInfo (void)
 	noclip_anglehack = false;			// noclip is turned off at start    
 }
 
-
 int         bitcounts[16];
-
 
 /*
 	CL_ParseUpdate
@@ -335,13 +328,10 @@ int         bitcounts[16];
 void
 CL_ParseUpdate (int bits)
 {
-	int         i;
-	model_t    *model;
-	int         modnum;
-	qboolean    forcelink;
 	entity_t   *ent;
-	int         num;
-	int         skin;
+	int         modnum, num, skin, i;
+	model_t    *model;
+	qboolean    forcelink;
 
 	if (cls.signon == SIGNONS - 1) {
 		// first update is the final signon stage
@@ -372,7 +362,7 @@ CL_ParseUpdate (int bits)
 		forcelink = false;
 
 	if (forcelink) {
-//FIXME do this right (ie, protocol support)
+// FIXME: do this right (ie, protocol support)
 		ent->alpha = 1;
 		ent->scale = 1;
 		ent->glow_color = 254;
@@ -480,7 +470,6 @@ CL_ParseUpdate (int bits)
 	}
 }
 
-
 void
 CL_ParseBaseline (entity_t *ent)
 {
@@ -502,7 +491,6 @@ CL_ParseBaseline (entity_t *ent)
 	ent->baseline->glow_size = 0;
 	ent->baseline->colormod = 255;
 }
-
 
 /*
 	CL_ParseClientdata
@@ -608,7 +596,6 @@ CL_ParseClientdata (int bits)
 	}
 }
 
-
 void
 CL_ParseStatic (void)
 {
@@ -641,13 +628,11 @@ CL_ParseStatic (void)
 	R_AddEfrags (ent);
 }
 
-
 void
 CL_ParseStaticSound (void)
 {
+	int         sound_num, vol, atten, i;
 	vec3_t      org;
-	int         sound_num, vol, atten;
-	int         i;
 
 	for (i = 0; i < 3; i++)
 		org[i] = MSG_ReadCoord (net_message);
@@ -658,17 +643,14 @@ CL_ParseStaticSound (void)
 	S_StaticSound (cl.sound_precache[sound_num], org, vol, atten);
 }
 
-
 #define SHOWNET(x) if(cl_shownet->int_val==2)Con_Printf ("%3i:%s\n", net_message->readcount-1, x);
 
 int snd_viewentity;
 
-
 void
 CL_ParseServerMessage (void)
 {
-	int         cmd;
-	int         i;
+	int         cmd, i;
 
 	// if recording demos, copy the message out
 	if (cl_shownet->int_val == 1)
@@ -703,7 +685,8 @@ CL_ParseServerMessage (void)
 		// other commands
 		switch (cmd) {
 			default:
-				Host_Error ("CL_ParseServerMessage: Illegible server message\n");
+				Host_Error ("CL_ParseServerMessage: Illegible server "
+							"message\n");
 				break;
 
 			case svc_nop:
@@ -723,9 +706,8 @@ CL_ParseServerMessage (void)
 			case svc_version:
 				i = MSG_ReadLong (net_message);
 				if (i != PROTOCOL_VERSION)
-					Host_Error
-						("CL_ParseServerMessage: Server is protocol %i instead of %i\n",
-						 i, PROTOCOL_VERSION);
+					Host_Error ("CL_ParseServerMessage: Server is protocol %i "
+								"instead of %i\n", i, PROTOCOL_VERSION);
 				break;
 
 			case svc_disconnect:
@@ -783,8 +765,8 @@ CL_ParseServerMessage (void)
 				Sbar_Changed ();
 				i = MSG_ReadByte (net_message);
 				if (i >= cl.maxclients)
-					Host_Error
-						("CL_ParseServerMessage: svc_updatename > MAX_SCOREBOARD");
+					Host_Error ("CL_ParseServerMessage: svc_updatename > "
+								"MAX_SCOREBOARD");
 					strcpy (cl.scores[i].name, MSG_ReadString (net_message));
 				break;
 
@@ -792,8 +774,8 @@ CL_ParseServerMessage (void)
 				Sbar_Changed ();
 				i = MSG_ReadByte (net_message);
 				if (i >= cl.maxclients)
-					Host_Error
-						("CL_ParseServerMessage: svc_updatefrags > MAX_SCOREBOARD");
+					Host_Error ("CL_ParseServerMessage: svc_updatefrags > "
+								"MAX_SCOREBOARD");
 				cl.scores[i].frags = MSG_ReadShort (net_message);
 				break;
 
@@ -801,8 +783,8 @@ CL_ParseServerMessage (void)
 				Sbar_Changed ();
 				i = MSG_ReadByte (net_message);
 				if (i >= cl.maxclients)
-					Host_Error
-						("CL_ParseServerMessage: svc_updatecolors > MAX_SCOREBOARD");
+					Host_Error ("CL_ParseServerMessage: svc_updatecolors > "
+								"MAX_SCOREBOARD");
 				cl.scores[i].colors = MSG_ReadByte (net_message);
 				//XXX CL_NewTranslation (i);
 				break;
@@ -842,7 +824,8 @@ CL_ParseServerMessage (void)
 			case svc_signonnum:
 				i = MSG_ReadByte (net_message);
 				if (i <= cls.signon)
-					Host_Error ("Received signon %i when at %i", i, cls.signon);
+					Host_Error ("Received signon %i when at %i", i,
+								cls.signon);
 				cls.signon = i;
 				CL_SignonReply ();
 				break;

@@ -38,21 +38,23 @@
 #ifdef HAVE_CTYPE_H
 # include <ctype.h>
 #endif
+
+#include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <dirent.h>
 
-#include "compat.h"
+#include "QF/console.h"
+#include "QF/sys.h"
 #include "QF/cvar.h"
 #include "QF/vfs.h"
 #include "QF/zone.h"
-#include "QF/sys.h"
-#include "QF/console.h"
 
+#include "compat.h"
 #include "crudefile.h"
 
 int cf_maxsize; // max combined file size (eg quota)
 int cf_cursize; // current combined file size
+
 typedef struct cf_file_s {
 	VFile *file;
 	char *path;
@@ -61,14 +63,16 @@ typedef struct cf_file_s {
 	int writtento;
 	char mode; // 'r' for read, 'w' for write
 } cf_file_t;
-cf_file_t * cf_filep;
-int cf_filepcount; // elements in array
-int cf_openfiles; // used elements
-cvar_t *crudefile_quota;
+
+cf_file_t *cf_filep;
+cvar_t    *crudefile_quota;
+int        cf_filepcount; // elements in array
+int        cf_openfiles; // used elements
 
 #define CF_DIR "cf/"
 #define CF_MAXFILES 100
 #define CF_BUFFERSIZE 256
+
 
 /*
 	CF_ValidDesc
@@ -93,12 +97,14 @@ int
 CF_AlreadyOpen (const char * path, char mode)
 {
 	int i;
+
 	for (i = 0; i < cf_filepcount; i++) {
 		if (!cf_filep[i].file)
 			continue;
-		if (mode == 'r' && cf_filep[i].mode == 'w' && strequal(path, cf_filep[i].path))
+		if (mode == 'r' && cf_filep[i].mode == 'w' &&
+			strequal (path, cf_filep[i].path))
 			return 1;
-		if (mode == 'w' && strequal(path, cf_filep[i].path))
+		if (mode == 'w' && strequal (path, cf_filep[i].path))
 			return 1;
 	}
 	return 0;
@@ -128,12 +134,12 @@ CF_GetFileSize (const char *path)
 void
 CF_BuildQuota ()
 {
-	DIR *dir;
+	char *file, *path;
 	struct dirent *i;
-	char *path;
-	char *file;
+	DIR *dir;
 
-	path = Hunk_TempAlloc (strlen (com_gamedir) + 1 + strlen (CF_DIR) + 256 + 1);
+	path = Hunk_TempAlloc (strlen (com_gamedir) + 1 + strlen (CF_DIR) + 256 +
+						   1);
 	if (!path)
 		return;
 
@@ -164,7 +170,9 @@ void
 CF_Init ()
 {
 	CF_BuildQuota();
-	crudefile_quota = Cvar_Get ("crudefile_quota", "-1", CVAR_ROM, NULL, "Maximum space available to the Crude File system, -1 to totally disable file writing");
+	crudefile_quota = Cvar_Get ("crudefile_quota", "-1", CVAR_ROM, NULL,
+								"Maximum space available to the Crude File "
+								"system, -1 to totally disable file writing");
 	cf_maxsize = crudefile_quota->int_val;
 }
 
@@ -177,9 +185,11 @@ void
 CF_CloseAllFiles ()
 {
 	int i;
+
 	for (i = 0; i < cf_filepcount; i++)
 		if (cf_filep[i].file) {
-			Con_DPrintf ("Warning: closing Crude File %d left over from last map\n", i);
+			Con_DPrintf ("Warning: closing Crude File %d left over from last "
+						 "map\n", i);
 			CF_Close(i);
 		}
 }
@@ -194,12 +204,9 @@ CF_CloseAllFiles ()
 int
 CF_Open (const char *path, const char *mode)
 {
-	char *fullpath;
+	char *fullpath, *j;
+	int desc, oldsize, i;
 	VFile *file;
-	int desc;
-	int i;
-	char *j;
-	int oldsize;
 
 	if (cf_openfiles >= CF_MAXFILES) {
 		return -1;
@@ -222,7 +229,8 @@ CF_Open (const char *path, const char *mode)
 		return -1;
 	}
 
-	fullpath = malloc(strlen(com_gamedir) + 1 + strlen(CF_DIR) + strlen(path) + 1);
+	fullpath = malloc(strlen(com_gamedir) + 1 + strlen(CF_DIR) + strlen(path) +
+					  1);
 	if (!fullpath) {
 		return -1;
 	}
@@ -320,7 +328,8 @@ CF_Read (int desc)
 	do {
 		int foo;
 		if (cf_filep[desc].size <= len) {
-			char *t = realloc (cf_filep[desc].buf, cf_filep[desc].size + CF_BUFFERSIZE);
+			char *t = realloc (cf_filep[desc].buf, cf_filep[desc].size +
+							   CF_BUFFERSIZE);
 			if (!t) {
 				Sys_Error ("CF_Read: memory allocation error!");
 			}
@@ -350,7 +359,8 @@ CF_Write (int desc, const char *buf) // should be const char *, but Qwrite isn't
 {
 	int len;
 
-	if (!CF_ValidDesc(desc) || cf_filep[desc].mode != 'w' || cf_cursize >= cf_maxsize) {
+	if (!CF_ValidDesc(desc) || cf_filep[desc].mode != 'w' || cf_cursize >=
+		cf_maxsize) {
 		return 0;
 	}
 

@@ -32,6 +32,7 @@
 
 #include "QF/cvar.h"
 #include "QF/mathlib.h"
+
 #include "client.h"
 #include "world.h"
 
@@ -43,11 +44,10 @@ cvar_t     *chase_up;
 cvar_t     *chase_right;
 cvar_t     *chase_active;
 
-vec3_t      chase_pos;
 vec3_t      chase_angles;
-
 vec3_t      chase_dest;
 vec3_t      chase_dest_angles;
+vec3_t      chase_pos;
 
 
 void
@@ -59,14 +59,12 @@ Chase_Init_Cvars (void)
 	chase_active = Cvar_Get ("chase_active", "0", CVAR_NONE, NULL, "None");
 }
 
-
 void
 Chase_Reset (void)
 {
 	// for respawning and teleporting
 	// start position 12 units behind head
 }
-
 
 void
 TraceLine (vec3_t start, vec3_t end, vec3_t impact)
@@ -79,7 +77,6 @@ TraceLine (vec3_t start, vec3_t end, vec3_t impact)
 	VectorCopy (trace.endpos, impact);
 }
 
-
 void
 Chase_Update (void)
 {
@@ -87,7 +84,6 @@ Chase_Update (void)
 	float       dist;
 	vec3_t      forward, up, right;
 	vec3_t      dest, stop;
-
 
 	// if can't see player, reset
 	AngleVectors (cl.viewangles, forward, right, up);

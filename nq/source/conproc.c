@@ -30,11 +30,13 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
 #include <ctype.h>
 #include <windows.h>
-#include "conproc.h"
 
 #include "QF/console.h"
+
+#include "conproc.h"
 
 HANDLE      heventDone;
 HANDLE      hfileBuffer;
@@ -59,7 +61,7 @@ InitConProc (HANDLE hFile, HANDLE heventParent, HANDLE heventChild)
 {
 	DWORD       dwID;
 
-// ignore if we don't have all the events.
+	// ignore if we don't have all the events.
 	if (!hFile || !heventParent || !heventChild)
 		return;
 
@@ -67,7 +69,7 @@ InitConProc (HANDLE hFile, HANDLE heventParent, HANDLE heventChild)
 	heventParentSend = heventParent;
 	heventChildSend = heventChild;
 
-// so we'll know when to go away.
+	// so we'll know when to go away.
 	heventDone = CreateEvent (NULL, FALSE, FALSE, NULL);
 
 	if (!heventDone) {
@@ -81,14 +83,13 @@ InitConProc (HANDLE hFile, HANDLE heventParent, HANDLE heventChild)
 		Con_Printf ("Couldn't create QHOST thread\n");
 		return;
 	}
-// save off the input/output handles.
+	// save off the input/output handles.
 	hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
 	hStdin = GetStdHandle (STD_INPUT_HANDLE);
 
-// force 80 character width, at least 25 character height
+	// force 80 character width, at least 25 character height
 	SetConsoleCXCY (hStdout, 80, 25);
 }
-
 
 void
 DeinitConProc (void)
@@ -97,14 +98,13 @@ DeinitConProc (void)
 		SetEvent (heventDone);
 }
 
-
 DWORD
 RequestProc (DWORD dwNichts)
 {
+	int         iBeginLine, iEndLine;
 	int        *pBuffer;
 	DWORD       dwRet;
 	HANDLE      heventWait[2];
-	int         iBeginLine, iEndLine;
 
 	heventWait[0] = heventParentSend;
 	heventWait[1] = heventDone;
@@ -157,7 +157,6 @@ RequestProc (DWORD dwNichts)
 	return 0;
 }
 
-
 LPVOID
 GetMappedBuffer (HANDLE hfileBuffer)
 {
@@ -169,13 +168,11 @@ GetMappedBuffer (HANDLE hfileBuffer)
 	return pBuffer;
 }
 
-
 void
 ReleaseMappedBuffer (LPVOID pBuffer)
 {
 	UnmapViewOfFile (pBuffer);
 }
-
 
 BOOL
 GetScreenBufferLines (int *piLines)
@@ -191,7 +188,6 @@ GetScreenBufferLines (int *piLines)
 	return bRet;
 }
 
-
 BOOL
 SetScreenBufferLines (int iLines)
 {
@@ -199,19 +195,17 @@ SetScreenBufferLines (int iLines)
 	return SetConsoleCXCY (hStdout, 80, iLines);
 }
 
-
 BOOL
 ReadText (LPTSTR pszText, int iBeginLine, int iEndLine)
 {
+	BOOL        bRet;
 	COORD       coord;
 	DWORD       dwRead;
-	BOOL        bRet;
 
 	coord.X = 0;
 	coord.Y = iBeginLine;
 
-	bRet = ReadConsoleOutputCharacter (hStdout,
-									   pszText,
+	bRet = ReadConsoleOutputCharacter (hStdout, pszText,
 									   80 * (iEndLine - iBeginLine + 1),
 									   coord, &dwRead);
 
@@ -222,13 +216,12 @@ ReadText (LPTSTR pszText, int iBeginLine, int iEndLine)
 	return bRet;
 }
 
-
 BOOL
 WriteText (LPCTSTR szText)
 {
+	char        upper, *sz;
 	DWORD       dwWritten;
 	INPUT_RECORD rec;
-	char        upper, *sz;
 
 	sz = (LPTSTR) szText;
 
@@ -260,7 +253,6 @@ WriteText (LPCTSTR szText)
 	return TRUE;
 }
 
-
 int
 CharToCode (char c)
 {
@@ -285,7 +277,6 @@ CharToCode (char c)
 	return c;
 }
 
-
 BOOL
 SetConsoleCXCY (HANDLE hStdout, int cx, int cy)
 {
@@ -303,7 +294,7 @@ SetConsoleCXCY (HANDLE hStdout, int cx, int cy)
 	if (!GetConsoleScreenBufferInfo (hStdout, &info))
 		return FALSE;
 
-// height
+	// height
 	info.srWindow.Left = 0;
 	info.srWindow.Right = info.dwSize.X - 1;
 	info.srWindow.Top = 0;
@@ -330,7 +321,7 @@ SetConsoleCXCY (HANDLE hStdout, int cx, int cy)
 	if (!GetConsoleScreenBufferInfo (hStdout, &info))
 		return FALSE;
 
-// width
+	// width
 	info.srWindow.Left = 0;
 	info.srWindow.Right = cx - 1;
 	info.srWindow.Top = 0;

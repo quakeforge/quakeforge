@@ -71,7 +71,6 @@ typedef struct {
 
 explosion_t cl_explosions[MAX_EXPLOSIONS];
 
-
 sfx_t      *cl_sfx_wizhit;
 sfx_t      *cl_sfx_knighthit;
 sfx_t      *cl_sfx_tink1;
@@ -106,6 +105,7 @@ static const particle_effect_t prot_to_rend[]={
 	PE_UNKNOWN,				// TE_BEAM
 };
 
+
 void
 CL_TEnts_Init (void)
 {
@@ -123,7 +123,6 @@ CL_TEnts_Init (void)
 	cl_spr_explod = Mod_ForName ("progs/s_explod.spr", true);
 }
 
-
 void
 CL_Init_Entity (entity_t *ent)
 {
@@ -137,7 +136,6 @@ CL_Init_Entity (entity_t *ent)
 	ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1;
 	ent->pose1 = ent->pose2 = -1;
 }
-
 
 void
 CL_ClearTEnts (void)
@@ -157,13 +155,11 @@ CL_ClearTEnts (void)
 	}
 }
 
-
 explosion_t *
 CL_AllocExplosion (void)
 {
-	int         i;
 	float       time;
-	int         index;
+	int         index, i;
 
 	for (i = 0; i < MAX_EXPLOSIONS; i++)
 		if (!cl_explosions[i].ent.model)
@@ -180,14 +176,12 @@ CL_AllocExplosion (void)
 	return &cl_explosions[index];
 }
 
-
 void
 CL_ParseBeam (model_t *m)
 {
-	int         ent;
-	vec3_t      start, end;
 	beam_t     *b;
-	int         i;
+	int         ent, i;
+	vec3_t      start, end;
 
 	ent = MSG_ReadShort (net_message);
 
@@ -223,17 +217,15 @@ CL_ParseBeam (model_t *m)
 	Con_Printf ("beam list overflow!\n");
 }
 
-
 void
 CL_ParseTEnt (void)
 {
 	byte        type;
-	vec3_t      pos;
 	dlight_t   *dl;
-	int         rnd;
-	int         colorStart, colorLength;
-	explosion_t *ex;
+	int         colorStart, colorLength, rnd;
 	int         cnt = -1;
+	explosion_t *ex;
+	vec3_t      pos;
 
 	type = MSG_ReadByte (net_message);
 	//XXX FIXME this is to get around an nq/qw protocol colission
@@ -404,17 +396,14 @@ CL_ParseTEnt (void)
 	}
 }
 
-
 void
 CL_UpdateBeams (void)
 {
-	int         i;
 	beam_t     *b;
-	vec3_t      dist, org;
-	float       d;
 	entity_t  **ent;
-	float       yaw, pitch;
-	float       forward;
+	float       forward, pitch, yaw, d;
+	int         i;
+	vec3_t      dist, org;
 
 	// update lightning
 	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++) {
@@ -466,14 +455,12 @@ CL_UpdateBeams (void)
 	}
 }
 
-
 void
 CL_UpdateExplosions (void)
 {
-	int         i;
-	int         f;
-	explosion_t *ex;
 	entity_t   **ent;
+	explosion_t *ex;
+	int         f, i;
 
 	for (i = 0, ex = cl_explosions; i < MAX_EXPLOSIONS; i++, ex++) {
 		if (!ex->ent.model)
@@ -492,14 +479,12 @@ CL_UpdateExplosions (void)
 	}
 }
 
-
 void
 CL_UpdateTEnts (void)
 {
 	CL_UpdateBeams ();
 	CL_UpdateExplosions ();
 }
-
 
 /*
 	CL_ParseParticleEffect
@@ -509,8 +494,8 @@ CL_UpdateTEnts (void)
 void
 CL_ParseParticleEffect (void)
 {
-	vec3_t      org, dir;
 	int         i, count, msgcount, color;
+	vec3_t      org, dir;
 
 	for (i = 0; i < 3; i++)
 		org[i] = MSG_ReadCoord (net_message);

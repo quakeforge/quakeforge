@@ -30,18 +30,9 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <errno.h>
-
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
-
-#include <sys/types.h>
-
 #ifdef HAVE_SYS_PARAM_H
 # include <sys/param.h>
 #endif
@@ -63,10 +54,15 @@
 #ifdef HAVE_SYS_FILIO_H
 # include <sys/filio.h>
 #endif
-
 #ifdef NeXT
 # include <libc.h>
 #endif
+
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
 
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -95,18 +91,13 @@
 # endif
 #endif
 
-extern cvar_t     *net_packetlog;
-
-netadr_t    net_local_adr;
-
-netadr_t    net_from;
 int         net_socket;
+netadr_t    net_local_adr;
+netadr_t    net_from;
 
 static sizebuf_t _net_message_message;
 static msg_t _net_message = {0, 0, &_net_message_message};
 msg_t      *net_message = &_net_message;
-
-extern qboolean is_server;
 
 #define	MAX_UDP_PACKET	(MAX_MSGLEN*2)
 byte        net_message_buffer[MAX_UDP_PACKET];
@@ -115,7 +106,9 @@ byte        net_message_buffer[MAX_UDP_PACKET];
  WSADATA     winsockdata;
 #endif
 
-//=============================================================================
+extern cvar_t     *net_packetlog;
+extern qboolean    is_server;
+
 
 void
 NetadrToSockadr (netadr_t *a, struct sockaddr_in *s)
@@ -142,7 +135,6 @@ NET_CompareBaseAdr (netadr_t a, netadr_t b)
 		return true;
 	return false;
 }
-
 
 qboolean
 NET_CompareAdr (netadr_t a, netadr_t b)
@@ -185,11 +177,10 @@ NET_BaseAdrToString (netadr_t a)
 qboolean
 NET_StringToAdr (const char *s, netadr_t *a)
 {
+	char        copy[128];
+	char       *colon;
 	struct hostent *h;
 	struct sockaddr_in sadr;
-	char       *colon;
-	char        copy[128];
-
 
 	memset (&sadr, 0, sizeof (sadr));
 	sadr.sin_family = AF_INET;
@@ -223,8 +214,8 @@ qboolean
 NET_IsClientLegal (netadr_t *adr)
 {
 #if 0
-	struct sockaddr_in sadr;
 	int         newsocket;
+	struct sockaddr_in sadr;
 
 	if (adr->ip[0] == 127)
 		return false;					// no local connections period
@@ -248,15 +239,12 @@ NET_IsClientLegal (netadr_t *adr)
 #endif
 }
 
-
-//=============================================================================
-
 qboolean
 NET_GetPacket (void)
 {
 	int         ret;
-	struct sockaddr_in from;
 	socklen_t   fromlen;
+	struct sockaddr_in from;
 
 	fromlen = sizeof (from);
 	ret =
@@ -292,15 +280,15 @@ NET_GetPacket (void)
 		return false;
 	}
 
-// Check for malformed packets
-
+	// Check for malformed packets
 	if (is_server && ntohs(net_from.port)<1024) {
 		Con_Printf ("Warning: Packet from %s dropped: Bad port\n",
 				NET_AdrToString (net_from));
 		return false;
 	}
 
-	if (from.sin_addr.s_addr==INADDR_ANY || from.sin_addr.s_addr==INADDR_BROADCAST) {
+	if (from.sin_addr.s_addr==INADDR_ANY || from.sin_addr.s_addr == 
+		INADDR_BROADCAST) {
 		Con_Printf ("Warning: Packet dropped - bad address\n");
 		return false;
 	}
@@ -315,8 +303,6 @@ NET_GetPacket (void)
 		Log_Incoming_Packet(net_message_buffer,_net_message_message.cursize);
 	return ret;
 }
-
-//=============================================================================
 
 void
 NET_SendPacket (int length, void *data, netadr_t to)
@@ -355,12 +341,10 @@ NET_SendPacket (int length, void *data, netadr_t to)
 	}
 }
 
-//=============================================================================
-
 int
 UDP_OpenSocket (int port)
 {
-	int         newsocket;
+	int         newsocket, i;
 	struct sockaddr_in address;
 
 #ifdef _WIN32
@@ -369,7 +353,6 @@ UDP_OpenSocket (int port)
 #else
 	int         _true = 1;
 #endif
-	int         i;
 
 	memset (&address, 0, sizeof(address));
 
@@ -378,7 +361,7 @@ UDP_OpenSocket (int port)
 	if (ioctl (newsocket, FIONBIO, &_true) == -1)
 		Sys_Error ("UDP_OpenSocket: ioctl FIONBIO:%s", strerror (errno));
 	address.sin_family = AF_INET;
-//ZOID -- check for interface binding option
+// ZOID -- check for interface binding option
 	if ((i = COM_CheckParm ("-ip")) != 0 && i < com_argc) {
 		address.sin_addr.s_addr = inet_addr (com_argv[i + 1]);
 		Con_Printf ("Binding to IP Interface Address of %s\n",
@@ -399,8 +382,8 @@ void
 NET_GetLocalAddress (void)
 {
 	char        buff[MAXHOSTNAMELEN];
-	struct sockaddr_in address;
 	socklen_t   namelen;
+	struct sockaddr_in address;
 
 	gethostname (buff, MAXHOSTNAMELEN);
 	buff[MAXHOSTNAMELEN - 1] = 0;
@@ -415,15 +398,12 @@ NET_GetLocalAddress (void)
 	Con_Printf ("IP address %s\n", NET_AdrToString (net_local_adr));
 }
 
-/*
-	NET_Init
-*/
 void
 NET_Init (int port)
 {
 #ifdef _WIN32
-	WORD        wVersionRequested;
 	int         r;
+	WORD        wVersionRequested;
 
 	wVersionRequested = MAKEWORD (1, 1);
 
@@ -431,28 +411,19 @@ NET_Init (int port)
 	if (r)
 		Sys_Error ("Winsock initialization failed.");
 #endif /* _WIN32 */
-	// 
 	// open the single socket to be used for all communications
-	// 
 	net_socket = UDP_OpenSocket (port);
 
-	// 
 	// init the message buffer
-	// 
 	_net_message_message.maxsize = sizeof (net_message_buffer);
 	_net_message_message.data = net_message_buffer;
 
-	// 
 	// determine my name & address
-	// 
 	NET_GetLocalAddress ();
 
 	Con_Printf ("UDP Initialized\n");
 }
 
-/*
-	NET_Shutdown
-*/
 void
 NET_Shutdown (void)
 {

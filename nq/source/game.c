@@ -31,20 +31,21 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+
 #include "QF/qargs.h"
 #include "QF/vfs.h"
+
 #include "game.h"
 
 qboolean standard_quake = false;
 qboolean hipnotic, rogue, abyss;
 
-/*
-    Game_Init
-*/
+
 void
 Game_Init (void)
 {
 	int     i;
+
 	// FIXME: make this dependant on QF metadata in the mission packs
 	standard_quake = true;
 	if ((i = COM_CheckParm ("-hipnotic"))) {

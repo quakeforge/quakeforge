@@ -87,7 +87,6 @@ float       v_dmg_time, v_dmg_roll, v_dmg_pitch;
 float       v_blend[4];
 
 extern cvar_t  *vid_gamma;
-
 extern int  in_forward, in_forward2, in_back;
 
 cshift_t	cshift_empty = { {130, 80, 50}, 0};
@@ -100,23 +99,22 @@ cshift_t	cshift_bonus = { {215, 186, 60}, 50};
 float
 V_CalcBob (void)
 {
-	float       bob;
-	float       cycle;
+	float       bob, cycle;
 
-	cycle = cl.time - (int) (cl.time / cl_bobcycle->value) * cl_bobcycle->value;
+	cycle = cl.time - (int) (cl.time / cl_bobcycle->value) *
+		cl_bobcycle->value;
 	cycle /= cl_bobcycle->value;
 	if (cycle < cl_bobup->value)
 		cycle = M_PI * cycle / cl_bobup->value;
 	else
-		cycle =
-			M_PI + M_PI * (cycle - cl_bobup->value) / (1.0 - cl_bobup->value);
+		cycle = M_PI + M_PI * (cycle - cl_bobup->value) / (1.0 -
+														   cl_bobup->value);
 
-// bob is proportional to velocity in the xy plane
-// (don't count Z, or jumping messes it up)
+	// bob is proportional to velocity in the xy plane
+	// (don't count Z, or jumping messes it up)
 
-	bob =
-		sqrt (cl.velocity[0] * cl.velocity[0] +
-			  cl.velocity[1] * cl.velocity[1]) * cl_bob->value;
+	bob = sqrt (cl.velocity[0] * cl.velocity[0] +
+				cl.velocity[1] * cl.velocity[1]) * cl_bob->value;
 //	Con_Printf ("speed: %5.1f\n", Length(cl.velocity));
 	bob = bob * 0.3 + bob * 0.7 * sin (cycle);
 	if (bob > 4)
@@ -124,9 +122,7 @@ V_CalcBob (void)
 	else if (bob < -7)
 		bob = -7;
 	return bob;
-
 }
-
 
 void
 V_StartPitchDrift (void)
@@ -142,7 +138,6 @@ V_StartPitchDrift (void)
 	}
 }
 
-
 void
 V_StopPitchDrift (void)
 {
@@ -150,7 +145,6 @@ V_StopPitchDrift (void)
 	cl.nodrift = true;
 	cl.pitchvel = 0;
 }
-
 
 /*
 	V_DriftPitch
@@ -215,22 +209,15 @@ V_DriftPitch (void)
 	}
 }
 
-
-/*
-	PALETTE FLASHES
-*/
-
+/* PALETTE FLASHES */
 
 void
 V_ParseDamage (void)
 {
-	int         armor, blood;
-	vec3_t      from;
-	int         i;
-	vec3_t      forward, right, up;
 	entity_t   *ent;
-	float       side;
-	float       count;
+	float       count, side;
+	int         armor, blood, i;
+	vec3_t      from, forward, right, up;
 
 	armor = MSG_ReadByte (net_message);
 	blood = MSG_ReadByte (net_message);
@@ -282,7 +269,6 @@ V_ParseDamage (void)
 	v_dmg_time = v_kicktime->value;
 }
 
-
 void
 V_cshift_f (void)
 {
@@ -291,7 +277,6 @@ V_cshift_f (void)
 	cshift_empty.destcolor[2] = atoi (Cmd_Argv (3));
 	cshift_empty.percent = atoi (Cmd_Argv (4));
 }
-
 
 /*
 	V_BonusFlash_f
@@ -305,7 +290,6 @@ V_BonusFlash_f (void)
 		return;
 	cl.cshifts[CSHIFT_BONUS] = cshift_bonus;
 }
-
 
 /*
 	V_SetContentsColor
@@ -335,7 +319,6 @@ V_SetContentsColor (int contents)
 			cl.cshifts[CSHIFT_CONTENTS] = cshift_water;
 	}
 }
-
 
 void
 V_CalcPowerupCshift (void)
@@ -378,7 +361,6 @@ V_CalcPowerupCshift (void)
 	}
 }
 
-
 /*
   V_CalcBlend
 
@@ -388,8 +370,8 @@ V_CalcPowerupCshift (void)
 void
 V_CalcBlend (void)
 {
-	float       r = 0, g = 0, b = 0, a = 0;
 	float       a2, a3;
+	float       r = 0, g = 0, b = 0, a = 0;
 	int         i;
 
 	for (i = 0; i < NUM_CSHIFTS; i++) {
@@ -421,7 +403,6 @@ V_CalcBlend (void)
 	v_blend[3] = bound (0.0, a, 1.0);
 }
 
-
 void
 V_PrepBlend (void)
 { 
@@ -440,7 +421,8 @@ V_PrepBlend (void)
 			cl.prev_cshifts[i].percent = cl.cshifts[i].percent;
 		}
 		for (j = 0; j < 3; j++) {
-			if (cl.cshifts[i].destcolor[j] != cl.prev_cshifts[i].destcolor[j]) {
+			if (cl.cshifts[i].destcolor[j] != cl.prev_cshifts[i].destcolor[j])
+			{
 				vid.cshift_changed = true;
 				cl.prev_cshifts[i].destcolor[j] = cl.cshifts[i].destcolor[j];
 			}
@@ -463,11 +445,7 @@ V_PrepBlend (void)
 	V_CalcBlend();
 }
 
-
-/*
-	VIEW RENDERING
-*/
-
+/* VIEW RENDERING */
 
 float
 angledelta (float a)
@@ -478,13 +456,11 @@ angledelta (float a)
 	return a;
 }
 
-
 void
 CalcGunAngle (void)
 {
-	float       yaw, pitch, move;
-	static float oldyaw = 0;
-	static float oldpitch = 0;
+	float        yaw, pitch, move;
+	static float oldpitch = 0, oldyaw = 0;
 
 	yaw = r_refdef.viewangles[YAW];
 	pitch = -r_refdef.viewangles[PITCH];
@@ -528,7 +504,6 @@ CalcGunAngle (void)
 		v_iyaw_level->value;
 }
 
-
 void
 V_BoundOffsets (void)
 {
@@ -536,8 +511,8 @@ V_BoundOffsets (void)
 
 	ent = &cl_entities[cl.viewentity];
 
-// absolutely bound refresh reletive to entity clipping hull
-// so the view can never be inside a solid wall
+	// absolutely bound refresh reletive to entity clipping hull
+	// so the view can never be inside a solid wall
 
 	if (r_refdef.vieworg[0] < ent->origin[0] - 14)
 		r_refdef.vieworg[0] = ent->origin[0] - 14;
@@ -552,7 +527,6 @@ V_BoundOffsets (void)
 	else if (r_refdef.vieworg[2] > ent->origin[2] + 30)
 		r_refdef.vieworg[2] = ent->origin[2] + 30;
 }
-
 
 /*
 	V_AddIdle
@@ -572,7 +546,6 @@ V_AddIdle (void)
 		v_idlescale->value * sin (cl.time * v_iyaw_cycle->value) *
 		v_iyaw_level->value;
 }
-
 
 /*
 	V_CalcViewRoll
@@ -602,7 +575,6 @@ V_CalcViewRoll (void)
 
 }
 
-
 void
 V_CalcIntermissionRefdef (void)
 {
@@ -626,16 +598,14 @@ V_CalcIntermissionRefdef (void)
 	Cvar_SetValue (v_idlescale, old);
 }
 
-
 void
 V_CalcRefdef (void)
 {
 	entity_t   *ent, *view;
-	int         i;
-	vec3_t      forward, right, up;
-	vec3_t      angles;
 	float       bob;
 	static float oldz = 0;
+	int         i;
+	vec3_t      angles, forward, right, up;
 
 	V_DriftPitch ();
 
@@ -644,9 +614,8 @@ V_CalcRefdef (void)
 	// view is the weapon model (only visible from inside body)
 	view = &cl.viewent;
 
-
-// transform the view offset by the model's matrix to get the offset from
-// model origin for the view
+	// transform the view offset by the model's matrix to get the offset from
+	// model origin for the view
 	ent->angles[YAW] = cl.viewangles[YAW];	// the model should face
 	// the view dir
 	ent->angles[PITCH] = -cl.viewangles[PITCH];	// the model should face
@@ -659,9 +628,9 @@ V_CalcRefdef (void)
 	VectorCopy (ent->origin, r_refdef.vieworg);
 	r_refdef.vieworg[2] += cl.viewheight + bob;
 
-// never let it sit exactly on a node line, because a water plane can
-// dissapear when viewed with the eye exactly on it.
-// the server protocol only specifies to 1/16 pixel, so add 1/32 in each axis
+	// never let it sit exactly on a node line, because a water plane can
+	// dissapear when viewed with the eye exactly on it.
+	// server protocol only specifies to 1/16 pixel, so add 1/32 in each axis
 	r_refdef.vieworg[0] += 1.0 / 32;
 	r_refdef.vieworg[1] += 1.0 / 32;
 	r_refdef.vieworg[2] += 1.0 / 32;
@@ -696,13 +665,13 @@ V_CalcRefdef (void)
 
 	for (i = 0; i < 3; i++) {
 		view->origin[i] += forward[i] * bob * 0.4;
-//      view->origin[i] += right[i]*bob*0.4;
-//      view->origin[i] += up[i]*bob*0.8;
+//		view->origin[i] += right[i]*bob*0.4;
+//		view->origin[i] += up[i]*bob*0.8;
 	}
 	view->origin[2] += bob;
 
-// fudge position around to keep amount of weapon visible
-// roughly equal with different FOV
+	// fudge position around to keep amount of weapon visible
+	// roughly equal with different FOV
 	if (cl_sbar->int_val == 0 && scr_viewsize->int_val >= 100)
 		;
 	else if (scr_viewsize->int_val == 110)
@@ -730,7 +699,7 @@ V_CalcRefdef (void)
 
 		steptime = cl.time - cl.oldtime;
 		if (steptime < 0)
-//FIXME     I_Error ("steptime < 0");
+//FIXME		I_Error ("steptime < 0");
 			steptime = 0;
 
 		oldz += steptime * 80;
@@ -746,7 +715,6 @@ V_CalcRefdef (void)
 	if (chase_active->int_val)
 		Chase_Update ();
 }
-
 
 /*
 	V_RenderView
@@ -777,61 +745,68 @@ V_RenderView (void)
 	R_RenderView ();
 }
 
-
 void
 V_Init (void)
 {
-	Cmd_AddCommand ("v_cshift", V_cshift_f, "This adjusts all of the colors currently being displayed.\n"
-		"Used when you are underwater, hit, have the Ring of Shadows, or Quad Damage. (v_cshift r g b intensity)");
-
-	Cmd_AddCommand ("bf", V_BonusFlash_f, "Background flash, used when you pick up an item");
-	Cmd_AddCommand ("centerview", V_StartPitchDrift, "Centers the player's view ahead after +lookup or +lookdown \n"
-		"Will not work while mlook is active or freelook is 1.");
+	Cmd_AddCommand ("v_cshift", V_cshift_f, "This adjusts all of the colors "
+					"currently being displayed.\n"
+					"Used when you are underwater, hit, have the Ring of "
+					"Shadows, or Quad Damage. (v_cshift r g b intensity)");
+	Cmd_AddCommand ("bf", V_BonusFlash_f, "Background flash, used when you "
+					"pick up an item");
+	Cmd_AddCommand ("centerview", V_StartPitchDrift, "Centers the player's "
+					"view ahead after +lookup or +lookdown\n"
+					"Will not work while mlook is active or freelook is 1.");
 }
 
 void
 V_Init_Cvars (void)
 {
 	v_centermove = Cvar_Get ("v_centermove", "0.15", CVAR_NONE, NULL,
-			"How far the player must move forward before the view re-centers");
+							 "How far the player must move forward before "
+							 "the view re-centers");
 	v_centerspeed = Cvar_Get ("v_centerspeed", "500", CVAR_NONE, NULL,
-			"How quickly you return to a center view after a lookup or lookdown");
-
+							  "How quickly you return to a center view after "
+							  "a lookup or lookdown");
 	v_iyaw_cycle = Cvar_Get ("v_iyaw_cycle", "2", CVAR_NONE, NULL,
-			"How far you tilt right and left when v_idlescale is enabled");
+							 "How far you tilt right and left when "
+							 "v_idlescale is enabled");
 	v_iroll_cycle = Cvar_Get ("v_iroll_cycle", "0.5", CVAR_NONE, NULL,
-			"How quickly you tilt right and left when v_idlescale is enabled");
+							  "How quickly you tilt right and left when "
+							  "v_idlescale is enabled");
 	v_ipitch_cycle = Cvar_Get ("v_ipitch_cycle", "1", CVAR_NONE, NULL,
-			"How quickly you lean forwards and backwards when v_idlescale is enabled");
+							   "How quickly you lean forwards and backwards "
+							   "when v_idlescale is enabled");
 	v_iyaw_level = Cvar_Get ("v_iyaw_level", "0.3", CVAR_NONE, NULL,
-			"How far you tilt right and left when v_idlescale is enabled");
+							 "How far you tilt right and left when "
+							 "v_idlescale is enabled");
 	v_iroll_level = Cvar_Get ("v_iroll_level", "0.1", CVAR_NONE, NULL,
-			"How far you tilt right and left when v_idlescale is enabled");
+							  "How far you tilt right and left when "
+							  "v_idlescale is enabled");
 	v_ipitch_level = Cvar_Get ("v_ipitch_level", "0.3", CVAR_NONE, NULL,
-			"How far you lean forwards and backwards when v_idlescale is enabled");
-
+							   "How far you lean forwards and backwards when "
+							   "v_idlescale is enabled");
 	v_idlescale = Cvar_Get ("v_idlescale", "0", CVAR_NONE, NULL,
-			"Toggles whether the view remains idle");
+							"Toggles whether the view remains idle");
 
 	scr_ofsx = Cvar_Get ("scr_ofsx", "0", CVAR_NONE, NULL, "None");
 	scr_ofsy = Cvar_Get ("scr_ofsy", "0", CVAR_NONE, NULL, "None");
 	scr_ofsz = Cvar_Get ("scr_ofsz", "0", CVAR_NONE, NULL, "None");
 	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,
-			"How quickly you straighten out after strafing");
+							 "How quickly you straighten out after strafing");
 	cl_rollangle = Cvar_Get ("cl_rollangle", "2.0", CVAR_NONE, NULL,
-			"How much your screen tilts when strafing");
-
+							 "How much your screen tilts when strafing");
 	cl_bob = Cvar_Get ("cl_bob", "0.02", CVAR_NONE, NULL,
-			"How much your weapon moves up and down when walking");
+					   "How much your weapon moves up and down when walking");
 	cl_bobcycle = Cvar_Get ("cl_bobcycle", "0.6", CVAR_NONE, NULL,
-			"How quickly your weapon moves up and down when walking");
-	cl_bobup = Cvar_Get ("cl_bobup", "0.5", CVAR_NONE, NULL,
-			"How long your weapon stays up before cycling when walking");
-
+							"How quickly your weapon moves up and down when "
+							"walking");
+	cl_bobup = Cvar_Get ("cl_bobup", "0.5", CVAR_NONE, NULL, "How long your "
+						 "weapon stays up before cycling when walking");
 	v_kicktime = Cvar_Get ("v_kicktime", "0.5", CVAR_NONE, NULL,
-			"How long the kick from an attack lasts");
+						   "How long the kick from an attack lasts");
 	v_kickroll = Cvar_Get ("v_kickroll", "0.6", CVAR_NONE, NULL,
-			"How much you lean when hit");
+						   "How much you lean when hit");
 	v_kickpitch = Cvar_Get ("v_kickpitch", "0.6", CVAR_NONE, NULL,
-			"How much you look up when hit");
+							"How much you look up when hit");
 }

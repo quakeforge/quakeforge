@@ -37,21 +37,21 @@
 #endif
 
 #include "QF/msg.h"
-#include "net.h"
-#include "protocol.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
 
+#include "net.h"
+#include "protocol.h"
+
 struct usercmd_s nullcmd;
+
 
 void
 MSG_WriteDeltaUsercmd (sizebuf_t *buf, usercmd_t *from, usercmd_t *cmd)
 {
 	int         bits;
 
-//
-// send the movement message
-//
+	// send the movement message
 	bits = 0;
 	if (cmd->angles[0] != from->angles[0])
 		bits |= CM_ANGLE1;
@@ -102,7 +102,7 @@ MSG_ReadDeltaUsercmd (usercmd_t *from, usercmd_t *move)
 
 	bits = MSG_ReadByte (net_message);
 
-// read current angles
+	// read current angles
 	if (bits & CM_ANGLE1)
 		move->angles[0] = MSG_ReadAngle16 (net_message);
 	if (bits & CM_ANGLE2)
@@ -110,7 +110,7 @@ MSG_ReadDeltaUsercmd (usercmd_t *from, usercmd_t *move)
 	if (bits & CM_ANGLE3)
 		move->angles[2] = MSG_ReadAngle16 (net_message);
 
-// read movement
+	// read movement
 	if (bits & CM_FORWARD)
 		move->forwardmove = MSG_ReadShort (net_message);
 	if (bits & CM_SIDE)
@@ -118,13 +118,13 @@ MSG_ReadDeltaUsercmd (usercmd_t *from, usercmd_t *move)
 	if (bits & CM_UP)
 		move->upmove = MSG_ReadShort (net_message);
 
-// read buttons
+	// read buttons
 	if (bits & CM_BUTTONS)
 		move->buttons = MSG_ReadByte (net_message);
 
 	if (bits & CM_IMPULSE)
 		move->impulse = MSG_ReadByte (net_message);
 
-// read time to run command
+	// read time to run command
 	move->msec = MSG_ReadByte (net_message);
 }

@@ -48,6 +48,9 @@
 #include "client.h"
 #include "sbar.h"
 
+extern void V_PrepBlend (void);
+
+
 void
 SCR_DrawNet (int swap)
 {
@@ -74,8 +77,6 @@ static SCR_Func scr_funcs[] = {
 //	M_Draw,
 	0
 };
-
-extern void V_PrepBlend (void);
 
 void
 CL_UpdateScreen (double realtime)

@@ -36,11 +36,13 @@
 # include <strings.h>
 #endif
 
-#include "client.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/msg.h"
 #include "QF/sizebuf.h"
+
+#include "client.h"
+
 
 /*
 	Cmd_ForwardToServer
@@ -69,18 +71,18 @@ Cmd_ForwardToServer (void)
 		SZ_Print (&cls.message, "\n");
 }
 
-
 void
 cl_Cmd_Init (void)
 {
 	// register our commands
-	Cmd_AddCommand ("cmd", Cmd_ForwardToServer, "Send a command to the server.\n"
+	Cmd_AddCommand ("cmd", Cmd_ForwardToServer, "Send a command to the "
+					"server.\n"
 					"Commands:\n"
 					"download - Same as the command.\n"
 					"kill - Same as the command.\n"
 					"msg (value) - Same as the command.\n"
-					"prespawn (entity) (spot) - Find a spawn spot for the"
-					" player entity.\n"
+					"prespawn (entity) (spot) - Find a spawn spot for the "
+					"player entity.\n"
 					"spawn (entity) - Spawn the player entity.\n"
 					"setinfo - Same as the command.\n"
 					"serverinfo - Same as the command.");

@@ -44,17 +44,18 @@
 #include "QF/info.h"
 #include "QF/qargs.h"
 #include "QF/vfs.h"
+
 #include "game.h"
 #include "server.h"
 
 extern qboolean is_server;
+
 
 /*
 	SV_Gamedir_f
 
 	Sets the gamedir and path to a different directory.
 */
-
 void
 SV_Gamedir_f (void)
 {
@@ -86,9 +87,6 @@ SV_Gamedir_f (void)
 	}
 }
 
-/*
-    Game_Init
-*/
 void
 Game_Init (void)
 {
