@@ -229,7 +229,7 @@ Info_MakeString (info_t *info, int (*filter)(const char *))
 {
 	char       *string = Hunk_TempAlloc (info->cursize + 1);
 	const char *s;
-	char       *d = string;;
+	char       *d = string;
 	info_key_t **key_list;
 	info_key_t **key;
 
