@@ -2176,14 +2176,25 @@ assign_expr (expr_t *e1, expr_t *e2)
 	}
 	type = t1;
 	if (is_indirect (e1) && is_indirect (e2)) {
-		expr_t     *temp = new_temp_def_expr (t1);
+		if (options.code.progsversion == PROG_ID_VERSION) {
+			expr_t     *temp = new_temp_def_expr (t1);
 
-		e = new_block_expr ();
-		append_expr (e, assign_expr (temp, e2));
-		append_expr (e, assign_expr (e1, temp));
-		e->e.block.result = temp;
+			e = new_block_expr ();
+			append_expr (e, assign_expr (temp, e2));
+			append_expr (e, assign_expr (e1, temp));
+			e->e.block.result = temp;
+		} else {
+			e1 = address_expr (e1, 0, 0);
+			e2 = address_expr (e2, 0, 0);
+			e = new_binary_expr ('M', e1, e2);
+		}
 		return e;
 	} else if (is_indirect (e1)) {
+		if (extract_type (e1) == ev_struct) {
+			e1 = address_expr (e1, 0, 0);
+			e2 = address_expr (e2, 0, 0);
+			return new_binary_expr ('M', e1, e2);
+		}
 		if (e1->type == ex_expr) {
 			if (get_type (e1->e.expr.e1) == &type_entity) {
 				type = e1->e.expr.type;
@@ -2200,6 +2211,11 @@ assign_expr (expr_t *e1, expr_t *e2)
 			}
 		}
 	} else if (is_indirect (e2)) {
+		if (extract_type (e1) == ev_struct) {
+			e1 = address_expr (e1, 0, 0);
+			e2 = address_expr (e2, 0, 0);
+			return new_binary_expr ('M', e1, e2);
+		}
 		if (e2->type == ex_uexpr) {
 			e = e2->e.expr.e1;
 			if (e->type != ex_pointer
@@ -2212,6 +2228,9 @@ assign_expr (expr_t *e1, expr_t *e2)
 				}
 			}
 		}
+	}
+	if (extract_type (e1) == ev_struct) {
+		return new_binary_expr ('M', e1, e2);
 	}
 	if (!type)
 		error (e1, "internal error");

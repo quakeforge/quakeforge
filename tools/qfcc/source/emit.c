@@ -208,11 +208,18 @@ emit_function_call (expr_t *e, def_t *dest)
 	for (earg = e->e.expr.e2; earg; earg = earg->next) {
 		ind--;
 		parm = def_parms[ind];
-		parm.type = types[extract_type (earg)];
-		arg = emit_sub_expr (earg, &parm);
-		if (arg != &parm) {
-			op = opcode_find ("=", arg, &parm, &def_void);
-			emit_statement (e, op, arg, &parm, 0);
+		parm.type = get_type (earg);
+		if (parm.type->type == ev_struct) {
+			expr_t     *a = assign_expr (new_def_expr (&parm), earg);
+			a->line = e->line;
+			a->file = e->file;
+			emit_expr (a);
+		} else {
+			arg = emit_sub_expr (earg, &parm);
+			if (arg != &parm) {
+				op = opcode_find ("=", arg, &parm, &def_void);
+				emit_statement (e, op, arg, &parm, 0);
+			}
 		}
 	}
 	op = opcode_find (va ("<CALL%d>", count), &def_function, &def_void,
@@ -310,6 +317,28 @@ emit_bind_expr (expr_t *e1, expr_t *e2)
 	}
 	e2->e.temp.def = def;
 	return e2->e.temp.def;
+}
+
+def_t *
+emit_move_expr (expr_t *e)
+{
+	expr_t     *e1 = e->e.expr.e1;
+	expr_t     *e2 = e->e.expr.e2;
+	def_t      *size, *src, *dst;
+	type_t     *type;
+	opcode_t   *op;
+
+	src = emit_sub_expr (e2, 0);
+	dst = emit_sub_expr (e1, 0);
+	type = get_type (e1);
+
+	if (type->type == ev_struct) {
+		size = emit_sub_expr (new_short_expr (type_size (dst->type)), 0);
+	} else {
+		size = emit_sub_expr (new_integer_expr (type_size (type->aux_type)), 0);
+	}
+	op = opcode_find ("<MOVE>", src, size, dst);
+	return emit_statement (e, op, src, size, dst);
 }
 
 def_t *
@@ -558,6 +587,9 @@ emit_expr (expr_t *e)
 			break;
 		case ex_expr:
 			switch (e->e.expr.op) {
+				case 'M':
+					emit_move_expr (e);
+					break;
 				case PAS:
 				case '=':
 					emit_assign_expr (e->e.expr.op, e);
