@@ -235,8 +235,6 @@ array_type (type_t *aux, int size)
 void
 print_type (type_t *type)
 {
-	class_t    *class;
-
 	if (!type) {
 		printf (" (null)");
 		return;
@@ -275,11 +273,7 @@ print_type (type_t *type)
 			break;
 		case ev_object:
 		case ev_class:
-			class = type->class;
-			printf (" %s%s", 
-					class->name,
-					class->categories ? va (" (%s)", class->categories->name)
-									  : "");
+			printf (" %s", type->class->name);
 			break;
 		case ev_struct:
 			printf (" %s %s", pr_type_name[type->type], type->name);

@@ -104,16 +104,25 @@ add_method (methodlist_t *methodlist, method_t *method)
 }
 
 def_t *
-method_def (class_t *class, method_t *method)
+method_def (class_type_t *class_type, method_t *method)
 {
 	dstring_t  *str = dstring_newstr ();
 	def_t      *def;
 	char       *s;
+	const char *class_name;
+	const char *category_name = "";
+
+	if (class_type->is_class) {
+		class_name = class_type->c.class->name;
+	} else {
+		class_name = class_type->c.category->class->name;
+		category_name = class_type->c.category->name;
+	}
 
 	dsprintf (str, "_%c_%s_%s_%s",
 			  method->instance ? 'i' : 'c',
-			  class->name,
-			  class->categories ? class->categories->name : "",
+			  class_name,
+			  category_name,
 			  method->name);
 	str->str[--str->size - 1] = 0;
 	for (s = str->str; *s; s++)

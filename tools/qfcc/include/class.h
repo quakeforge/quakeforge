@@ -32,6 +32,14 @@
 #ifndef __class_h
 #define __class_h
 
+typedef struct class_type_s {
+	int is_class;
+	union {
+		struct category_s *category;
+		struct class_s    *class;
+	} c;
+} class_type_t;
+
 typedef struct class_s {
 	int         defined;
 	const char *name;
@@ -42,45 +50,53 @@ typedef struct class_s {
 	struct protocollist_s *protocols;
 	struct def_s *def;
 	struct type_s *type;
+	class_type_t class_type;
 } class_t;
 
 typedef struct category_s {
 	struct category_s *next;
 	const char *name;
 	class_t    *class;
+	int         defined;
 	struct methodlist_s *methods;
 	struct protocollist_s *protocols;
+	struct def_s *def;
+	class_type_t class_type;
 } category_t;
 
 extern class_t  class_id;
 extern class_t  class_Class;
 extern class_t  class_Protocol;
 
-extern class_t *current_class;
+extern class_type_t *current_class;
 
 struct expr_s;
 struct method_s;
 struct protocol_s;
 struct type_s;
 
-struct def_s *class_def (class_t *class, int external);
+struct def_s *class_def (class_type_t *class_type, int external);
 void class_init (void);
 class_t *get_class (const char *name, int create);
 void class_add_methods (class_t *class, struct methodlist_s *methods);
 void class_add_protocol_methods (class_t *class, struct expr_s *protocols);
-void class_add_protocol (class_t *class, struct protocol_s *protocol);
 void class_add_ivars (class_t *class, struct type_s *ivars);
 void class_check_ivars (class_t *class, struct type_s *ivars);
-void class_begin (class_t *class);
-void class_finish (class_t *class);
+void class_begin (class_type_t *class_type);
+void class_finish (class_type_t *class_type);
+int class_access (class_type_t *current_class, class_t *class);
 struct struct_field_s *class_find_ivar (class_t *class, int protected,
 										const char *name);
-struct expr_s *class_ivar_expr (class_t *class, const char *name);
-struct method_s *class_find_method (class_t *class, struct method_s *method);
+struct expr_s *class_ivar_expr (class_type_t *class_type, const char *name);
+struct method_s *class_find_method (class_type_t *class_type,
+									struct method_s *method);
 struct method_s *class_message_response (class_t *class, struct expr_s *sel);
-struct def_s *class_pointer_def (class_t *class);
-class_t *get_category (const char *class_name, const char *category_name,
-					   int create);
+struct def_s *class_pointer_def (class_t *class_type);
+category_t *get_category (const char *class_name, const char *category_name,
+						  int create);
+void category_add_methods (category_t *category, struct methodlist_s *methods);
+void category_add_protocol_methods (category_t *category,
+									struct expr_s *protocols);
 void class_finish_module (void);
 
 typedef struct protocol_s {

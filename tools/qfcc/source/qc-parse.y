@@ -107,6 +107,8 @@ expr_t *argv_expr (void);
 	struct param_s	*param;
 	struct method_s	*method;
 	struct class_s	*class;
+	struct category_s *category;
+	struct class_type_s	*class_type;
 	struct protocol_s *protocol;
 	struct keywordarg_s *keywordarg;
 	struct methodlist_s *methodlist;
@@ -159,8 +161,9 @@ expr_t *argv_expr (void);
 %type	<expr>	protocolrefs
 %type	<keywordarg> messageargs keywordarg keywordarglist selectorarg
 %type	<keywordarg> keywordnamelist keywordname
-%type	<class>	class_name new_class_name class_with_super new_class_with_super
-%type	<class> category_name new_category_name
+%type	<class> class_name new_class_name class_with_super new_class_with_super
+%type	<class> classdef
+%type	<category> category_name new_category_name
 %type	<protocol> protocol_name
 %type	<methodlist> methodprotolist methodprotolist2
 %type	<type>	ivar_decl_list
@@ -172,7 +175,7 @@ expr_t *argv_expr (void);
 function_t *current_func;
 param_t *current_params;
 expr_t	*current_init;
-class_t	*current_class;
+class_type_t *current_class;
 expr_t	*local_expr;
 expr_t	*break_label;
 expr_t	*continue_label;
@@ -938,7 +941,6 @@ new_class_name
 				error (0, "redefinition of `%s'", $1);
 				$$ = get_class (0, 1);
 			}
-			current_class = $$;
 		}
 	;
 
@@ -956,7 +958,6 @@ new_class_with_super
 		{
 			$1->super_class = $3;
 			$$ = $1;
-			current_class = $$;
 		}
 	;
 
@@ -979,7 +980,6 @@ new_category_name
 				error (0, "redefinition of category `%s (%s)'", $1, $3);
 				$$ = get_category (0, 0, 1);
 			}
-			current_class = $$;
 		}
 	;
 
@@ -999,38 +999,42 @@ protocol_name
 classdef
 	: INTERFACE new_class_name
 	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
-	  '{' ivar_decl_list '}'			{ class_add_ivars ($2, $6); }
-	  methodprotolist					{ class_add_methods ($2, $9); }
+	  '{'								{ $$ = $2; }
+	  ivar_decl_list '}'				{ class_add_ivars ($2, $7); $$ = $2; }
+	  methodprotolist					{ class_add_methods ($2, $10); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_class_name
-	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
+	  protocolrefs			{ class_add_protocol_methods ($2, $3); $$ = $2; }
 	  methodprotolist					{ class_add_methods ($2, $5); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_class_with_super
 	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
-	  '{' ivar_decl_list '}'			{ class_add_ivars ($2, $6); }
-	  methodprotolist					{ class_add_methods ($2, $9); }
+	  '{'								{ $$ = $2; }
+	  ivar_decl_list '}'				{ class_add_ivars ($2, $7); $$ = $2; }
+	  methodprotolist					{ class_add_methods ($2, $10); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_class_with_super
-	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
+	  protocolrefs			{ class_add_protocol_methods ($2, $3); $$ = $2; }
 	  methodprotolist					{ class_add_methods ($2, $5); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_category_name
-	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
-	  methodprotolist					{ class_add_methods ($2, $5); }
+	  protocolrefs	{ category_add_protocol_methods ($2, $3); $$ = $2->class;}
+	  methodprotolist					{ category_add_methods ($2, $5); }
 	  END								{ current_class = 0; }
-	| IMPLEMENTATION class_name			{ class_begin ($2); }
-	  '{' ivar_decl_list '}'			{ class_check_ivars ($2, $5); }
-	| IMPLEMENTATION class_name			{ class_begin ($2); }
-	| IMPLEMENTATION class_with_super	{ class_begin ($2); }
-	  '{' ivar_decl_list '}'			{ class_check_ivars ($2, $5); }
-	| IMPLEMENTATION class_with_super	{ class_begin ($2); }
-	| IMPLEMENTATION category_name		{ class_begin ($2); }
+	| IMPLEMENTATION class_name			{ class_begin (&$2->class_type); }
+	  '{'								{ $$ = $2; }
+	  ivar_decl_list '}'				{ class_check_ivars ($2, $6); }
+	| IMPLEMENTATION class_name			{ class_begin (&$2->class_type); }
+	| IMPLEMENTATION class_with_super	{ class_begin (&$2->class_type); }
+	  '{'								{ $$ = $2; }
+	  ivar_decl_list '}'				{ class_check_ivars ($2, $6); }
+	| IMPLEMENTATION class_with_super	{ class_begin (&$2->class_type); }
+	| IMPLEMENTATION category_name		{ class_begin (&$2->class_type); }
 	;
 
 protocoldef
 	: PROTOCOL protocol_name 
-	  protocolrefs				{ protocol_add_protocol_methods ($2, $3); }
+	  protocolrefs	{ protocol_add_protocol_methods ($2, $3); $<class>$ = 0; }
 	  methodprotolist			{ protocol_add_methods ($2, $5); }
 	  END
 	;
@@ -1045,9 +1049,9 @@ ivar_decl_list
 		{
 			current_visibility = vis_protected;
 			current_ivars = new_struct (0);
-			if (current_class->super_class)
+			if ($<class>0->super_class)
 				new_struct_field (current_ivars,
-								  current_class->super_class->ivars, 0,
+								  $<class>0->super_class->ivars, 0,
 								  vis_private);
 		}
 	  ivar_decl_list_2
@@ -1158,10 +1162,10 @@ methodprotolist
 	;
 
 methodprotolist2
-	: methodproto
+	: { } methodproto
 		{
 			$$ = new_methodlist ();
-			add_method ($$, $1);
+			add_method ($$, $2);
 		}
 	| methodprotolist2 methodproto
 		{
@@ -1180,8 +1184,8 @@ methodproto
 	| '-' methoddecl ';'
 		{
 			$2->instance = 1;
-			if (current_class)
-				$2->params->type = current_class->type;
+			if ($<class>-1)
+				$2->params->type = $<class>-1->type;
 			$$ = $2;
 		}
 	;

@@ -1181,8 +1181,11 @@ field_expr (expr_t *e1, expr_t *e2)
 				case ev_object:
 				case ev_class:
 					if (e2->type == ex_name) {
+						int         protected;
+
 						class = t1->aux_type->class;
-						field = class_find_ivar (class, current_class != class,
+						protected = class_access (current_class, class);
+						field = class_find_ivar (class, protected,
 												 e2->e.string_val);
 						if (!field)
 							return new_error_expr ();

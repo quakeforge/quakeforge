@@ -87,20 +87,18 @@ class_init (void)
 }
 
 def_t *
-class_def (class_t *class, int external)
+class_def (class_type_t *class_type, int external)
 {
 	const char *name;
 	type_t     *type;
 	storage_class_t storage = external ? st_extern : st_global;
 
-	if (!class->name)
-		return 0;
-	if (class->categories) {
-		name = va ("_OBJ_CATEGORY_%s_%s",
-				   class->name, class->categories->name);
+	if (!class_type->is_class) {
+		name = va ("_OBJ_CATEGORY_%s_%s", class_type->c.category->class->name,
+				   class_type->c.category->name);
 		type = type_category;
 	} else {
-		name = va ("_OBJ_CLASS_%s", class->name);
+		name = va ("_OBJ_CLASS_%s", class_type->c.class->name);
 		type = type_Class.aux_type;
 	}
 	return get_def (type, name, pr.scope, storage);
@@ -125,6 +123,8 @@ get_class (const char *name, int create)
 	new = *type_Class.aux_type;
 	new.class = c;
 	c->type = pointer_type (find_type (&new));
+	c->class_type.is_class = 1;
+	c->class_type.c.class = c;
 	if (name)
 		Hash_Add (class_hash, c);
 	return c;
@@ -135,18 +135,11 @@ class_add_methods (class_t *class, methodlist_t *methods)
 {
 	if (!methods)
 		return;
-	if (class->categories) {
-		category_t *category = class->categories;
-		if (!category->methods)
-			category->methods = new_methodlist ();
-		*category->methods->tail = methods->head;
-		category->methods->tail = methods->tail;
-	} else {
-		if (!class->methods)
-			class->methods = new_methodlist ();
-		*class->methods->tail = methods->head;
-		class->methods->tail = methods->tail;
-	}
+
+	if (!class->methods)
+		class->methods = new_methodlist ();
+	*class->methods->tail = methods->head;
+	class->methods->tail = methods->tail;
 	free (methods);
 }
 
@@ -158,23 +151,13 @@ class_add_protocol_methods (class_t *class, expr_t *protocols)
 
 	if (!protocol_hash)
 		protocol_hash = Hash_NewTable (1021, protocol_get_key, 0, 0);
-	if (class->categories) {
-		if (!class->categories->methods)
-			class->categories->methods = new_methodlist ();
-	} else {
-		if (!class->methods)
-			class->methods = new_methodlist ();
-	}
+
+	if (!class->methods)
+		class->methods = new_methodlist ();
 
 	for (e = protocols; e; e = e->next) {
-		methodlist_t *methods;
-		method_t   **m;
-
-		if (class->categories)
-			methods = class->categories->methods;
-		else
-			methods = class->methods;
-		m = methods->tail;
+		methodlist_t *methods = class->methods;
+		method_t   **m = methods->tail;
 
 		if (!(p = get_protocol (e->e.string_val, 0))) {
 			error (e, "undefined protocol `%s'", e->e.string_val);
@@ -189,35 +172,32 @@ class_add_protocol_methods (class_t *class, expr_t *protocols)
 }
 
 void
-class_add_protocol (class_t *class, protocol_t *protocol)
+class_begin (class_type_t *class_type)
 {
-	if (!class->protocols)
-		class->protocols = new_protocollist ();
-	add_protocol (class->protocols, protocol);
-}
+	if (!class_type->is_class) {
+		pr_category_t *pr_category;
+		category_t *category = class_type->c.category;
+		class_t    *class = category->class;
 
-void
-class_begin (class_t *class)
-{
-	current_class = class;
-	class->def = class_def (class, 0);
-	if (class->name && class->categories) {
-		pr_category_t *category;
-
-		class->def->initialized = class->def->constant = 1;
-		category = &G_STRUCT (pr_category_t, class->def->ofs);
-		EMIT_STRING (category->category_name, class->categories->name);
-		EMIT_STRING (category->class_name, class->name);
-		EMIT_DEF (category->protocols,
-				  emit_protocol_list (class->categories->protocols,
+		current_class = &category->class_type;
+		category->def = class_def (class_type, 0);
+		category->def->initialized = category->def->constant = 1;
+		pr_category = &G_STRUCT (pr_category_t, category->def->ofs);
+		EMIT_STRING (pr_category->category_name, category->name);
+		EMIT_STRING (pr_category->class_name, class->name);
+		EMIT_DEF (pr_category->protocols,
+				  emit_protocol_list (category->protocols,
 									  va ("%s_%s",
 										  class->name,
-										  class->categories->name)));
-	} else if (class->name) {
+										  category->name)));
+	} else {
 		def_t      *meta_def;
 		pr_class_t *meta;
 		pr_class_t *cls;
+		class_t    *class = class_type->c.class;
 		
+		current_class = &class->class_type;
+		class->def = class_def (class_type, 0);
 		meta_def = get_def (type_Class.aux_type,
 							  va ("_OBJ_METACLASS_%s", class->name),
 							  pr.scope, st_static);
@@ -237,8 +217,10 @@ class_begin (class_t *class)
 		cls = &G_STRUCT (pr_class_t, class->def->ofs);
 		EMIT_DEF (cls->class_pointer, meta_def);
 		if (class->super_class) {
+			class_type_t class_type = {1, {0}};
+			class_type.c.class = class->super_class;
 			EMIT_STRING (cls->super_class, class->super_class->name);
-			class_def (class->super_class, 1);
+			class_def (&class_type, 1);
 		}
 		EMIT_STRING (cls->name, class->name);
 		cls->info = _PR_CLS_CLASS;
@@ -247,13 +229,14 @@ class_begin (class_t *class)
 }
 
 void
-class_finish (class_t *class)
+class_finish (class_type_t *class_type)
 {
-	if (class->name && class->categories) {
+	if (!class_type->is_class) {
 		pr_category_t *pr_category;
-		category_t *category = class->categories;
+		category_t *category = class_type->c.category;
+		class_t    *class = category->class;
 
-		pr_category = &G_STRUCT (pr_category_t, class->def->ofs);
+		pr_category = &G_STRUCT (pr_category_t, category->def->ofs);
 		EMIT_DEF (pr_category->instance_methods,
 				  emit_methods (category->methods, va ("%s_%s",
 													   class->name,
@@ -262,9 +245,10 @@ class_finish (class_t *class)
 				  emit_methods (category->methods, va ("%s_%s",
 													   class->name,
 													   category->name), 0));
-	} else if (class->name) {
+	} else {
 		pr_class_t *meta;
 		pr_class_t *cls;
+		class_t    *class = class_type->c.class;
 		
 		cls = &G_STRUCT (pr_class_t, class->def->ofs);
 
@@ -278,6 +262,16 @@ class_finish (class_t *class)
 		EMIT_DEF (cls->methods, emit_methods (class->methods,
 											  class->name, 1));
 	}
+}
+
+int
+class_access (class_type_t *current_class, class_t *class)
+{
+	if (!current_class)
+		return 1;
+	if (current_class->is_class)
+		return current_class->c.class != class;
+	return current_class->c.category->class != class;
 }
 
 struct_field_t *
@@ -309,14 +303,19 @@ class_find_ivar (class_t *class, int protected, const char *name)
 }
 
 expr_t *
-class_ivar_expr (class_t *class, const char *name)
+class_ivar_expr (class_type_t *class_type, const char *name)
 {
 	struct_field_t *ivar;
-	class_t    *c;
+	class_t    *c, *class;
 
-	if (!class)
+	if (!class_type)
 		return 0;
 
+	if (class_type->is_class) {
+		class = class_type->c.class;
+	} else {
+		class = class_type->c.category->class;
+	}
 	ivar = struct_find_field (class->ivars, name);
 	if (!ivar) {
 		for (c = class->super_class; c; c = c->super_class) {
@@ -336,16 +335,22 @@ class_ivar_expr (class_t *class, const char *name)
 }
 
 method_t *
-class_find_method (class_t *class, method_t *method)
+class_find_method (class_type_t *class_type, method_t *method)
 {
 	methodlist_t *methods;
 	method_t   *m;
 	dstring_t  *sel;
+	const char *class_name;
+	const char *category_name = 0;
 
-	if (class->categories)
-		methods = class->categories->methods;
-	else
-		methods = class->methods;
+	if (!class_type->is_class) {
+		methods = class_type->c.category->methods;
+		category_name = class_type->c.category->name;
+		class_name = class_type->c.category->class->name;
+	} else {
+		methods = class_type->c.class->methods;
+		class_name = class_type->c.class->name;
+	}
 	for (m = methods->head; m; m = m->next)
 		if (method_compare (method, m))
 			return m;
@@ -353,8 +358,8 @@ class_find_method (class_t *class, method_t *method)
 	selector_name (sel, (keywordarg_t *)method->selector);
 	warning (0, "%s method %s not in %s%s",
 			 method->instance ? "instance" : "class",
-			 sel->str, class->name,
-			 class->categories ? va (" (%s)", class->categories->name) : "");
+			 sel->str, class_name,
+			 category_name ? va (" (%s)", category_name) : "");
 	dstring_delete (sel);
 	return method;
 }
@@ -423,10 +428,10 @@ class_check_ivars (class_t *class, struct type_s *ivars)
 	class->ivars = ivars;
 }
 
-class_t *
+category_t *
 get_category (const char *class_name, const char *category_name, int create)
 {
-	category_t *c;
+	category_t *category;
 	class_t    *class;
 
 	if (!category_hash) {
@@ -437,41 +442,76 @@ get_category (const char *class_name, const char *category_name, int create)
 	class = get_class (class_name, 0);
 	if (!class) {
 		error (0, "undefined class %s", class_name);
-		return get_class (0, 1);
+		return 0;
 	}
 	if (class_name && category_name) {
-		class_t     _c = {0, category_name, class};
+		category_t  _c = {0, category_name, class};
 
-		c = Hash_FindElement (category_hash, &_c);
-		if (c) {
-			category_t **cat = &class->categories;
-			category_t *t;
-			while (*cat != c)
-				cat = &(*cat)->next;
-			t = *cat;
-			*cat = (*cat)->next;
-			t->next = class->categories;
-			class->categories = t;
-			return class;
-		}
-		if (!create)
-			return 0;
+		category = Hash_FindElement (category_hash, &_c);
+		if (category || !create)
+			return category;
 	}
 
-	c = calloc (sizeof (category_t), 1);
-	c->next = class->categories;
-	class->categories = c;
-	c->name = category_name;
-	c->class = class;
+	category = calloc (sizeof (category_t), 1);
+	category->next = class->categories;
+	class->categories = category;
+	category->name = category_name;
+	category->class = class;
+	category->class_type.is_class = 0;
+	category->class_type.c.category = category;
 	if (class_name && category_name)
-		Hash_AddElement (category_hash, c);
-	return c->class;
+		Hash_AddElement (category_hash, category);
+	return category;
+}
+
+void
+category_add_methods (category_t *category, methodlist_t *methods)
+{
+	if (!methods)
+		return;
+	if (!category->methods)
+		category->methods = new_methodlist ();
+	*category->methods->tail = methods->head;
+	category->methods->tail = methods->tail;
+	free (methods);
+}
+
+void
+category_add_protocol_methods (category_t *category, expr_t *protocols)
+{
+	expr_t     *e;
+	protocol_t *p;
+	type_t     *type;
+
+	if (!protocol_hash)
+		protocol_hash = Hash_NewTable (1021, protocol_get_key, 0, 0);
+	if (!category->methods)
+		category->methods = new_methodlist ();
+	type = category->class->type;
+
+	for (e = protocols; e; e = e->next) {
+		methodlist_t *methods = category->methods;
+		method_t   **m = methods->tail;
+
+		if (!(p = get_protocol (e->e.string_val, 0))) {
+			error (e, "undefined protocol `%s'", e->e.string_val);
+			continue;
+		}
+		copy_methods (methods, p->methods);
+		while (*m) {
+			(*m)->params->type = type;
+			m = &(*m)->next;
+		}
+	}
 }
 
 def_t *
 class_pointer_def (class_t *class)
 {
 	def_t      *def;
+	class_type_t class_type = {1, {0}};
+
+	class_type.c.class = class;
 
 	def = get_def (class->type,
 					 va ("_OBJ_CLASS_POINTER_%s", class->name),
@@ -480,7 +520,7 @@ class_pointer_def (class_t *class)
 		return def;
 	def->initialized = def->constant = 1;
 	if (!class->def)
-		class->def = class_def (class, 1);
+		class->def = class_def (&class_type, 1);
 	if (!class->def->external)
 		G_INT (def->ofs) = class->def->ofs;
 	reloc_def_def (class->def, def->ofs);
@@ -490,9 +530,8 @@ class_pointer_def (class_t *class)
 void
 class_finish_module (void)
 {
-	class_t   **classes = 0;
-	class_t   **categories = 0;
-	class_t   **t;
+	class_t   **classes = 0, **cl;
+	category_t **categories = 0, **ca;
 	int         num_classes = 0;
 	int         num_categories = 0;
 	int         i;
@@ -509,14 +548,14 @@ class_finish_module (void)
 
 	if (class_hash) {
 		classes = (class_t **) Hash_GetList (class_hash);
-		for (t = classes; *t; t++)
-			if ((*t)->def && !(*t)->def->external)
+		for (cl = classes; *cl; cl++)
+			if ((*cl)->def && !(*cl)->def->external)
 				num_classes++;
 	}
 	if (category_hash) {
-		categories = (class_t **) Hash_GetList (category_hash);
-		for (t = categories; *t; t++)
-			if ((*t)->def && !(*t)->def->external)
+		categories = (category_t **) Hash_GetList (category_hash);
+		for (ca = categories; *ca; ca++)
+			if ((*ca)->def && !(*ca)->def->external)
 				num_categories++;
 	}
 	if (!num_classes && !num_categories)
@@ -534,18 +573,18 @@ class_finish_module (void)
 	symtab->cat_def_cnt = num_categories;
 	def_ptr = symtab->defs;
 	if (classes) {
-		for (t = classes; *t; t++) {
-			if ((*t)->def && !(*t)->def->external) {
-				reloc_def_def ((*t)->def, POINTER_OFS (def_ptr));
-				*def_ptr++ = (*t)->def->ofs;
+		for (cl = classes; *cl; cl++) {
+			if ((*cl)->def && !(*cl)->def->external) {
+				reloc_def_def ((*cl)->def, POINTER_OFS (def_ptr));
+				*def_ptr++ = (*cl)->def->ofs;
 			}
 		}
 	}
 	if (categories) {
-		for (t = categories; *t; t++) {
-			if ((*t)->def && !(*t)->def->external) {
-				reloc_def_def ((*t)->def, POINTER_OFS (def_ptr));
-				*def_ptr++ = (*t)->def->ofs;
+		for (ca = categories; *ca; ca++) {
+			if ((*ca)->def && !(*ca)->def->external) {
+				reloc_def_def ((*ca)->def, POINTER_OFS (def_ptr));
+				*def_ptr++ = (*ca)->def->ofs;
 			}
 		}
 	}
@@ -637,15 +676,6 @@ new_protocollist (void)
 	protocollist->count = 0;
 	protocollist->list = 0;
 	return protocollist;
-}
-
-void
-add_protocol (protocollist_t *protocollist, protocol_t *protocol)
-{
-	protocollist->list = realloc (protocollist->list,
-								  (protocollist->count + 1)
-								  * sizeof (protocollist_t));
-	protocollist->list[protocollist->count++] = protocol;
 }
 
 def_t *

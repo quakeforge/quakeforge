@@ -66,7 +66,7 @@ struct dstring_s;
 method_t *new_method (struct type_s *ret_type, param_t *selector,
 					  param_t *opt_parms);
 void add_method (methodlist_t *methodlist, method_t *method);
-struct def_s *method_def (struct class_s *class, method_t *method);
+struct def_s *method_def (struct class_type_s *class_type, method_t *method);
 
 methodlist_t *new_methodlist (void);
 void copy_methods (methodlist_t *dst, methodlist_t *src);
