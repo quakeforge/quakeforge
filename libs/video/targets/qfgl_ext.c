@@ -77,6 +77,9 @@ QFGL_ParseExtensionList (const GLubyte * list, const char *name)
 	const char *start;
 	char       *where, *terminator;
 
+	if (!list)
+		return 0;
+
 	// Extension names must not have spaces.
 	where = (GLubyte *) strchr (name, ' ');
 	if (where || *name == '\0')
