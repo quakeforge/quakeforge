@@ -308,19 +308,6 @@ VID_SetPalette (unsigned char *palette)
 
 /*
 ================
-VID_ShiftPalette
-================
-*/
-void
-VID_ShiftPalette (unsigned char *palette)
-{
-
-	VID_SetPalette (palette);
-}
-
-
-/*
-================
 VID_Shutdown
 ================
 */

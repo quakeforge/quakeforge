@@ -817,12 +817,6 @@ VID_Init (unsigned char *palette)
 }
 
 void
-VID_ShiftPalette (unsigned char *p)
-{
-	VID_SetPalette (p);
-}
-
-void
 VID_SetPalette (unsigned char *palette)
 {
 

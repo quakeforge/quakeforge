@@ -337,13 +337,6 @@ VID_Shutdown (void)
 
 
 void
-VID_ShiftPalette (unsigned char *p)
-{
-	VID_SetPalette (p);
-}
-
-
-void
 VID_SetPalette (byte * palette)
 {
 	static int  tmppal[256 * 3];

@@ -147,10 +147,15 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 		VID_BuildGammaTable (1.0);	// hardware gamma wants a linear palette
 		VID_SetGamma (gamma);
 	} else {	// We have to hack the palette
+		int i;
+		byte pal[768];
 		Con_DPrintf ("Setting software gamma to %g\n", gamma);
 		VID_BuildGammaTable (gamma);
-		if (vid.initialized)
-			VID_SetPalette (vid_basepal); // update with the new palette
+		if (vid.initialized) {
+			for (i = 0; i < sizeof (pal); i++)
+				pal[i] = gammatable[vid_basepal[i]];
+			VID_SetPalette (pal); // update with the new palette
+		}
 	}
 }
 

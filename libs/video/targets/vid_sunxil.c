@@ -695,12 +695,6 @@ VID_ResetFramebuffer_MT ()
 }
 
 void
-VID_ShiftPalette (unsigned char *p)
-{
-	VID_SetPalette (p);
-}
-
-void
 VID_SetPalette (unsigned char *palette)
 {
 

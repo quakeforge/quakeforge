@@ -498,11 +498,6 @@ GL_EndRendering (void)
 }
 
 void
-VID_ShiftPalette (unsigned char *palette)
-{
-}
-
-void
 VID_SetDefaultMode (void)
 {
 	IN_DeactivateMouse ();

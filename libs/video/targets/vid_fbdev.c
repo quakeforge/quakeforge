@@ -298,13 +298,6 @@ VID_Shutdown (void)
 	fbdev_inited = 0;
 }
 
-
-void
-VID_ShiftPalette (unsigned char *p)
-{
-	VID_SetPalette (p);
-}
-
 static void
 loadpalette (unsigned short *red, unsigned short *green, unsigned short *blue)
 {

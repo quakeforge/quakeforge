@@ -49,11 +49,6 @@ VID_SetPalette (unsigned char *palette)
 }
 
 void
-VID_ShiftPalette (unsigned char *palette)
-{
-}
-
-void
 VID_Init (unsigned char *palette)
 {
 	vid.maxwarpwidth = vid.width = vid.conwidth = BASEWIDTH;

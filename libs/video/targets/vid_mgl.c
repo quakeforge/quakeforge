@@ -1804,13 +1804,6 @@ VID_SetPalette (unsigned char *palette)
 }
 
 
-void
-VID_ShiftPalette (unsigned char *palette)
-{
-	VID_SetPalette (palette);
-}
-
-
 /*
 	VID_DescribeCurrentMode_f
 */
