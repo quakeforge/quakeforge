@@ -26,8 +26,9 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id$
 */
+static const char rcsid[] = 
+	"$Id$";
 
 #include "QF/cvar.h"
 #include "QF/plugin.h"

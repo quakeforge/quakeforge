@@ -23,8 +23,9 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id$
 */
+static const char rcsid[] = 
+	"$Id$";
 
 // 02/21/97 JCB Added extended DirectInput code to support external controllers.
 

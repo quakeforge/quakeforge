@@ -9,9 +9,10 @@
  * Significantly revised and rewinddir, seekdir and telldir added by Colin
  * Peters <colin@fu.is.saga-u.ac.jp>
  *
- * $Id$
  *
  */
+static const char rcsid[] = 
+	"$Id$";
 
 #include <direct.h>
 #include <dirent.h>

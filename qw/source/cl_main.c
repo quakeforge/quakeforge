@@ -23,8 +23,9 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id$
 */
+static const char rcsid[] = 
+	"$Id$";
 
 #ifdef __sun
 /* Sun's model_t in sys/model.h conflicts w/ Quake's model_t */

@@ -23,8 +23,9 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id$
 */
+static const char rcsid[] = 
+	"$Id$";
 
 /*
   ZOID - This takes over player controls for spectator automatic camera.
