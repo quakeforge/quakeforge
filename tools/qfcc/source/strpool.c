@@ -74,13 +74,15 @@ strpool_build (const char *strings, int size)
 
 	strpool_t  *strpool = malloc (sizeof (strpool_t));
 	strpool->str_tab = Hash_NewTable (16381, strpool_get_key, 0, strpool);
-	strpool->size = size;
-	strpool->max_size = (size + 16383) & ~16383;
+	strpool->size = size + (*strings != 0);
+	strpool->max_size = (strpool->size + 16383) & ~16383;
 	strpool->strings = malloc (strpool->max_size);
-	memcpy (strpool->strings, strings, size);
-	for (s = 1; s < strpool->size; s += strlen (s) + 1) {
+	memcpy (strpool->strings + (*strings != 0), strings, strpool->size);
+	strpool->strings[0] = 0;
+	for (s = 1; s < strpool->size; s += strlen (strpool->strings + s) + 1) {
 		Hash_Add (strpool->str_tab, (void *) s);
 	}
+	return strpool;
 }
 
 void
