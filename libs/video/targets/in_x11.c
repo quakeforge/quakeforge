@@ -400,8 +400,8 @@ static void
 event_motion (XEvent * event)
 {
 	if (dga_active) {
-		in_mouse_x += event->xmotion.x_root * in_dga_mouseaccel->value;
-		in_mouse_y += event->xmotion.y_root * in_dga_mouseaccel->value;
+		in_mouse_x += event->xmotion.x_root;
+		in_mouse_y += event->xmotion.y_root;
 	} else {
 		if (vid_fullscreen->int_val || _windowed_mouse->int_val) {
 			if (!event->xmotion.send_event) {

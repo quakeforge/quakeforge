@@ -57,6 +57,7 @@
 
 cvar_t     *_windowed_mouse;
 cvar_t     *m_filter;
+cvar_t     *in_pre_sensitivity;
 cvar_t     *sensitivity;
 cvar_t     *lookstrafe;
 cvar_t     *in_freelook;
@@ -93,6 +94,9 @@ IN_Move (void)
 
 	if (!in_mouse_avail)
 		return;
+
+	in_mouse_x *= in_pre_sensitivity->value;
+	in_mouse_y *= in_pre_sensitivity->value;
 
 	if (m_filter->int_val) {
 		in_mouse_x = (in_mouse_x + in_old_mouse_x) * 0.5;
@@ -152,6 +156,8 @@ IN_Init_Cvars (void)
 	
 	lookstrafe = Cvar_Get ("lookstrafe", "0", CVAR_ARCHIVE, NULL,
 						   "when mlook/klook on player will strafe");
+	in_pre_sensitivity = Cvar_Get ("in_pre_sensitivity", "3", CVAR_ARCHIVE,
+						NULL, "mouse sensitivity multiplier (pre m_filter)");
 	sensitivity = Cvar_Get ("sensitivity", "3", CVAR_ARCHIVE, NULL,
 							"mouse sensitivity multiplier");
 	IN_LL_Init_Cvars ();
