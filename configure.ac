@@ -1218,7 +1218,7 @@ if test "x$GCC" = "xyes"; then
 fi
 
 AS="$CC"
-if test "xSYSTYPE" = "xWIN32"; then
+if test "x$SYSTYPE" = "xWIN32"; then
 	ASFLAGS="\$(DEFS) \$(CFLAGS) \$(CPPFLAGS) \$(DEFAULT_INCLUDES) \$(INCLUDES) -DWIN32"
 	plugin_LDFLAGS="-no-undefined"
 	plugin_LIBADD="-luser32 -lgdi32 -lwinmm"
