@@ -1515,7 +1515,7 @@ convert_bool (expr_t *e, int block)
 	if (e->type == ex_uexpr && e->e.expr.op == '!') {
 		e = convert_bool (e->e.expr.e1, 0);
 		if (e->type == ex_error)
-			return e;
+		return e;
 		e = unary_expr ('!', e);
 	}
 	if (e->type != ex_bool) {
@@ -1523,11 +1523,11 @@ convert_bool (expr_t *e, int block)
 		if (e->type == ex_error)
 			return e;
 		if (e->type == ex_integer) {
-			e = new_unary_expr ('g', 0);
+			b = new_unary_expr ('g', 0);
 			if (e->e.integer_val)
-				e = new_bool_expr (make_list (e), 0, e);
+				e = new_bool_expr (make_list (b), 0, b);
 			else
-				e = new_bool_expr (0, make_list (e), e);
+				e = new_bool_expr (0, make_list (b), b);
 		} else {
 			b = new_block_expr ();
 			append_expr (b, new_binary_expr ('i', e, 0));
