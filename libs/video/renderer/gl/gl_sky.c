@@ -90,6 +90,7 @@ R_LoadSkys (const char *skyname)
 			continue;
 		}
 		targa = LoadTGA (f);
+		Qclose (f);
 
 		if (targa->format < 4)
 			qfglTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, targa->width,
@@ -99,8 +100,6 @@ R_LoadSkys (const char *skyname)
 			qfglTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, targa->width,
 							targa->height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
 							&targa->data);
-
-		free (targa);
 
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

@@ -44,6 +44,7 @@ static const char rcsid[] =
 #include "QF/texture.h"
 #include "QF/tga.h"
 #include "QF/vfs.h"
+#include "QF/zone.h"
 
 #include "compat.h"
 
@@ -100,133 +101,133 @@ blit_rgba (byte *buf, int count, byte red, byte green, byte blue, byte alpha)
 }
 
 static inline byte *
-read_bgr (byte *buf, int count, VFile *f)
+read_bgr (byte *buf, int count, byte **data)
 {
-	byte        blue = Qgetc (f);
-	byte        green = Qgetc (f);
-	byte        red = Qgetc (f);
+	byte        blue = (*data)[0];
+	byte        green = (*data)[1];
+	byte        red = (*data)[2];
 
+	*data += 3;
 	return blit_rgb(buf, count, red, green, blue);
 }
 
 static inline byte *
-read_rgb (byte *buf, int count, VFile *f)
+read_rgb (byte *buf, int count, byte **data)
 {
-	byte        red = Qgetc (f);
-	byte        green = Qgetc (f);
-	byte        blue = Qgetc (f);
+	byte        red = (*data)[0];
+	byte        green = (*data)[1];
+	byte        blue = (*data)[2];
 
+	*data += 3;
 	return blit_rgb(buf, count, red, green, blue);
 }
 
 static inline byte *
-read_bgra (byte *buf, int count, VFile *f)
+read_bgra (byte *buf, int count, byte **data)
 {
-	byte        blue = Qgetc (f);
-	byte        green = Qgetc (f);
-	byte        red = Qgetc (f);
-	byte        alpha = Qgetc (f);
+	byte        blue = (*data)[0];
+	byte        green = (*data)[1];
+	byte        red = (*data)[2];
+	byte        alpha = (*data)[3];
 
+	*data += 4;
 	return blit_rgba (buf, count, red, green, blue, alpha);
 }
 
 static inline byte *
-read_rgba (byte *buf, int count, VFile *f)
+read_rgba (byte *buf, int count, byte **data)
 {
-	byte        red = Qgetc (f);
-	byte        green = Qgetc (f);
-	byte        blue = Qgetc (f);
-	byte        alpha = Qgetc (f);
+	byte        red = (*data)[0];
+	byte        green = (*data)[1];
+	byte        blue = (*data)[2];
+	byte        alpha = (*data)[3];
 
+	*data += 4;
 	return blit_rgba (buf, count, red, green, blue, alpha);
 }
 
 struct tex_s *
 LoadTGA (VFile *fin)
 {
-	byte       *pixcol, *pixrow;
+	byte       *dataByte, *pixcol, *pixrow;
 	int         column, row, columns, rows, numPixels, span;
+	int         targa_mark;
+	TargaHeader *targa;
+	tex_t      *tex;
 
-	TargaHeader targa_header;
-	tex_t      *targa_data;
+	targa_mark = Hunk_LowMark ();
+	targa = Hunk_AllocName (com_filesize, "TGA");
+	Qread (fin, targa, com_filesize);
+	
+	targa->colormap_index = LittleShort (targa->colormap_index);
+	targa->colormap_length = LittleShort (targa->colormap_length);
+	targa->x_origin = LittleShort (targa->x_origin);
+	targa->y_origin = LittleShort (targa->y_origin);
+	targa->width = LittleShort (targa->width);
+	targa->height = LittleShort (targa->height);
 
-	targa_header.id_length = Qgetc (fin);
-	targa_header.colormap_type = Qgetc (fin);
-	targa_header.image_type = Qgetc (fin);
-
-	targa_header.colormap_index = fgetLittleShort (fin);
-	targa_header.colormap_length = fgetLittleShort (fin);
-	targa_header.colormap_size = Qgetc (fin);
-	targa_header.x_origin = fgetLittleShort (fin);
-	targa_header.y_origin = fgetLittleShort (fin);
-	targa_header.width = fgetLittleShort (fin);
-	targa_header.height = fgetLittleShort (fin);
-	targa_header.pixel_size = Qgetc (fin);
-	targa_header.attributes = Qgetc (fin);
-
-	if (targa_header.image_type != 2 && targa_header.image_type != 10)
+	if (targa->image_type != 2 && targa->image_type != 10)
 		Sys_Error ("LoadTGA: Only type 2 and 10 targa RGB images supported\n");
 
-	if (targa_header.colormap_type != 0
-		|| (targa_header.pixel_size != 32 && targa_header.pixel_size != 24))
+	if (targa->colormap_type != 0
+		|| (targa->pixel_size != 32 && targa->pixel_size != 24))
 		Sys_Error ("Texture_LoadTGA: Only 32 or 24 bit images supported "
 				   "(no colormaps)\n");
 
-	columns = targa_header.width;
-	rows = targa_header.height;
+	columns = targa->width;
+	rows = targa->height;
 	numPixels = columns * rows;
 
-	switch (targa_header.pixel_size) {
+	switch (targa->pixel_size) {
 		case 24:
-			targa_data = malloc
-				(field_offset (tex_t, data[numPixels * 3]));
-			if (!targa_data)
+			tex = Hunk_TempAlloc (field_offset (tex_t, data[numPixels * 3]));
+			if (!tex)
 				Sys_Error ("LoadTGA: Memory Allocation Failure\n");
-			targa_data->format = tex_rgb;
+			tex->format = tex_rgb;
 			break;
 		default:
 		case 32:
-			targa_data = malloc
-				(field_offset (tex_t, data[numPixels * 4]));
-			if (!targa_data)
+			tex = Hunk_TempAlloc (field_offset (tex_t, data[numPixels * 4]));
+			if (!tex)
 				Sys_Error ("LoadTGA: Memory Allocation Failure\n");
-			targa_data->format = tex_rgba;
+			tex->format = tex_rgba;
 			break;
 	}
 
-	targa_data->width = columns;
-	targa_data->height = rows;
-	targa_data->palette = 0;
+	tex->width = columns;
+	tex->height = rows;
+	tex->palette = 0;
 
-	if (targa_header.id_length != 0)
-		Qseek (fin, targa_header.id_length, SEEK_CUR);	// skip TARGA image
-														// comment
-	span = columns * targa_data->format;
-	pixrow = targa_data->data + (rows - 1) * span;
+	// skip TARGA image comment
+	dataByte = (byte *)(targa + 1);
+	dataByte += targa->id_length;
 
-	if (targa_header.image_type == 2) {	// Uncompressed image
-		switch (targa_header.pixel_size) {
+	span = columns * tex->format;
+	pixrow = tex->data + (rows - 1) * span;
+
+	if (targa->image_type == 2) {	// Uncompressed image
+		switch (targa->pixel_size) {
 			case 24:
 				for (row = rows - 1; row >= 0; row--, pixrow -= span) {
 					pixcol = pixrow;
 					for (column = 0; column < columns; column++)
-						pixcol = read_bgr (pixcol, 1, fin);
+						pixcol = read_bgr (pixcol, 1, &dataByte);
 				}
 				break;
 			case 32:
 				for (row = rows - 1; row >= 0; row--, pixrow -= span) {
 					pixcol = pixrow;
 					for (column = 0; column < columns; column++)
-						pixcol = read_bgra (pixcol, 1, fin);
+						pixcol = read_bgra (pixcol, 1, &dataByte);
 				}
 				break;
 		}
-	} else if (targa_header.image_type == 10) {	// RLE compressed image
+	} else if (targa->image_type == 10) {	// RLE compressed image
 		unsigned char packetHeader, packetSize;
 
-		byte *(*expand)(byte *buf, int count, VFile *f);
+		byte *(*expand)(byte *buf, int count, byte **data);
 
-		if (targa_header.pixel_size == 24)
+		if (targa->pixel_size == 24)
 			expand = read_bgr;
 		else
 			expand = read_bgra;
@@ -234,17 +235,17 @@ LoadTGA (VFile *fin)
 		for (row = rows - 1; row >= 0; row--, pixrow -= span) {
 			pixcol = pixrow;
 			for (column = 0; column < columns;) {
-				packetHeader = Qgetc (fin);
+				packetHeader = *dataByte++;
 				packetSize = 1 + (packetHeader & 0x7f);
 				while (packetSize > columns - column) {
 					int count = columns - column;
 
 					packetSize -= count;
 					if (packetHeader & 0x80) {	// run-length packet
-						expand (pixcol, count, fin);
+						expand (pixcol, count, &dataByte);
 					} else {				// non run-length packet
 						while (count--)
-							expand (pixcol, 1, fin);
+							expand (pixcol, 1, &dataByte);
 					}
 					column = 0;
 					pixcol = (pixrow -= span);
@@ -253,18 +254,18 @@ LoadTGA (VFile *fin)
 				}
 				column += packetSize;
 				if (packetHeader & 0x80) {	// run-length packet
-					pixcol = expand (pixcol, packetSize, fin);
+					pixcol = expand (pixcol, packetSize, &dataByte);
 				} else {				// non run-length packet
 					while (packetSize--)
-						pixcol = expand (pixcol, 1, fin);
+						pixcol = expand (pixcol, 1, &dataByte);
 				}
 			}
 		}
 done:
 	}
 
-	Qclose (fin);
-	return targa_data;
+	Hunk_FreeToLowMark (targa_mark);
+	return tex;
 }
 
 void
