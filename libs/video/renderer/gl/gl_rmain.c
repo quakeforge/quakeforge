@@ -118,6 +118,10 @@ void R_MarkLeaves (void);
 void
 glrmain_init (void)
 {
+	gldepthmin = 0;
+	gldepthmax = 1;
+	qfglDepthFunc (GL_LEQUAL);
+	qfglDepthRange (gldepthmin, gldepthmax);
 }
 
 inline void
@@ -975,11 +979,6 @@ R_Clear (void)
 		qfglClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	else
 		qfglClear (GL_DEPTH_BUFFER_BIT);
-	gldepthmin = 0;
-	gldepthmax = 1;
-	qfglDepthFunc (GL_LEQUAL);
-
-	qfglDepthRange (gldepthmin, gldepthmax);
 }
 
 void
@@ -1040,15 +1039,13 @@ R_Mirror (void)
 	gldepthmin = 0.5;
 	gldepthmax = 1;
 	qfglDepthRange (gldepthmin, gldepthmax);
-	qfglDepthFunc (GL_LEQUAL);
 
 	R_RenderScene ();
 	R_DrawWaterSurfaces ();
 
 	gldepthmin = 0;
-	gldepthmax = 1;								// XXX 0.5;
+	gldepthmax = 1;
 	qfglDepthRange (gldepthmin, gldepthmax);
-	qfglDepthFunc (GL_LEQUAL);
 
 	// blend on top
 	qfglMatrixMode (GL_PROJECTION);
@@ -1181,7 +1178,6 @@ R_CullBlocked (vec3_t mins, vec3_t maxs, vec3_t org)
 								   r_refdef.vieworg, point, &trace))
 			return false;
 	}
-
 
 	// Check the corners...
 	if ( Mod_PointInLeaf(maxs, cl.worldmodel)->contents != CONTENTS_SOLID)
