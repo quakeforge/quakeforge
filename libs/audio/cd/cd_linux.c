@@ -49,6 +49,7 @@
 #include <time.h>
 #include <linux/cdrom.h>
 
+#include "QF/compat.h"
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
@@ -59,8 +60,7 @@
 static qboolean cdValid = false;
 static qboolean playing = false;
 static qboolean wasPlaying = false;
-static qboolean initialized = false;
-static qboolean enabled = true;
+static qboolean mus_enabled = false;
 static qboolean playLooping = false;
 static float cdvolume;
 static byte remap[100];
@@ -68,12 +68,12 @@ static byte playTrack;
 static byte maxTrack;
 
 static int  cdfile = -1;
-static char cd_dev[64] = "/dev/cdrom";
+cvar_t *mus_cddevice;
 
 static void
 CDAudio_Eject (void)
 {
-	if (cdfile == -1 || !enabled)
+	if (cdfile == -1 || !mus_enabled)
 		return;							// no cd init'd
 
 	if (ioctl (cdfile, CDROMEJECT) == -1)
@@ -84,7 +84,7 @@ CDAudio_Eject (void)
 static void
 CDAudio_CloseDoor (void)
 {
-	if (cdfile == -1 || !enabled)
+	if (cdfile == -1 || !mus_enabled)
 		return;							// no cd init'd
 
 	if (ioctl (cdfile, CDROMCLOSETRAY) == -1)
@@ -122,7 +122,7 @@ CDAudio_Play (byte track, qboolean looping)
 	struct cdrom_tocentry entry1;
 	struct cdrom_msf msf;
 
-	if (cdfile == -1 || !enabled)
+	if (cdfile == -1 || !mus_enabled)
 		return;
 
 	if (!cdValid) {
@@ -198,7 +198,7 @@ CDAudio_Play (byte track, qboolean looping)
 void
 CDAudio_Stop (void)
 {
-	if (cdfile == -1 || !enabled)
+	if (cdfile == -1 || !mus_enabled)
 		return;
 
 	if (!playing)
@@ -214,7 +214,7 @@ CDAudio_Stop (void)
 void
 CDAudio_Pause (void)
 {
-	if (cdfile == -1 || !enabled)
+	if (cdfile == -1 || !mus_enabled)
 		return;
 
 	if (!playing)
@@ -231,7 +231,7 @@ CDAudio_Pause (void)
 void
 CDAudio_Resume (void)
 {
-	if (cdfile == -1 || !enabled)
+	if (cdfile == -1 || !mus_enabled)
 		return;
 
 	if (!cdValid)
@@ -258,19 +258,19 @@ CD_f (void)
 	command = Cmd_Argv (1);
 
 	if (strcasecmp (command, "on") == 0) {
-		enabled = true;
+		mus_enabled = true;
 		return;
 	}
 
 	if (strcasecmp (command, "off") == 0) {
 		if (playing)
 			CDAudio_Stop ();
-		enabled = false;
+		mus_enabled = false;
 		return;
 	}
 
 	if (strcasecmp (command, "reset") == 0) {
-		enabled = true;
+		mus_enabled = true;
 		if (playing)
 			CDAudio_Stop ();
 		for (n = 0; n < 100; n++)
@@ -357,7 +357,7 @@ CDAudio_Update (void)
 	struct cdrom_subchnl subchnl;
 	static time_t lastchk;
 
-	if (!enabled)
+	if (!mus_enabled)
 		return;
 
 	if (bgmvolume->value != cdvolume) {
@@ -389,40 +389,48 @@ CDAudio_Update (void)
 	}
 }
 
-int
-CDAudio_Init (void)
+void
+Mus_CDChange (cvar_t *mus_cdaudio)
 {
 	int         i;
 
+	CDAudio_Shutdown ();
+	if (strequal(mus_cdaudio->string, "none"))
+	{
+		return;
+	}
+
+	cdfile = open (mus_cdaudio->string, O_RDONLY | O_NONBLOCK);
+	if (cdfile == -1)
+	{
+		Con_DPrintf ("Mus_CDInit: open of device \"%s\" failed (error %i)\n",
+				mus_cdaudio->string, errno);
+		return;
+	}
+	
+	if (CDAudio_GetAudioDiskInfo ())
+	{
+		Con_Printf ("CDAudio_Init: No CD in player.\n");
+		cdValid = false;
+	}
+
+	for (i = 0; i < 100; i++)
+		remap[i] = i;
+
+	mus_enabled = true;
+}
+
+int
+CDAudio_Init (void)
+{
 #if 0
 	if (cls.state == ca_dedicated)
 		return -1;
 #endif
 
-	if (COM_CheckParm ("-nocdaudio"))
-		return -1;
-
-	if ((i = COM_CheckParm ("-cddev")) != 0 && i < com_argc - 1) {
-		strncpy (cd_dev, com_argv[i + 1], sizeof (cd_dev));
-		cd_dev[sizeof (cd_dev) - 1] = 0;
-	}
-
-	if ((cdfile = open (cd_dev, O_RDONLY | O_NONBLOCK)) == -1) {
-		Con_Printf ("CDAudio_Init: open of \"%s\" failed (%i)\n", cd_dev,
-					errno);
-		cdfile = -1;
-		return -1;
-	}
-
-	for (i = 0; i < 100; i++)
-		remap[i] = i;
-	initialized = true;
-	enabled = true;
-
-	if (CDAudio_GetAudioDiskInfo ()) {
-		Con_Printf ("CDAudio_Init: No CD in player.\n");
-		cdValid = false;
-	}
+	mus_cddevice = Cvar_Get("mus_cddevice", "/dev/cdrom", CVAR_NONE,
+			Mus_CDChange,
+			"device to use for CD music");
 
 	Cmd_AddCommand ("cd", CD_f, "Control the CD player.\n"
 		"Commands:\n"
@@ -447,9 +455,12 @@ CDAudio_Init (void)
 void
 CDAudio_Shutdown (void)
 {
-	if (!initialized)
-		return;
-	CDAudio_Stop ();
-	close (cdfile);
-	cdfile = -1;
+	if (cdfile != -1)
+	{
+		CDAudio_Stop ();
+		close (cdfile);
+		cdfile = -1;
+	}
+	mus_enabled = false;
 }
+
