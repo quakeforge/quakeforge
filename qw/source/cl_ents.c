@@ -260,7 +260,9 @@ CL_ParseDeltaPacketEntities ()
 		return;
 	}
 	if ((block.from & UPDATE_MASK) != (oldpacket & UPDATE_MASK)) {
-		Host_NetError ("CL_ParseDeltaPacketEntities: from mismatch\n");
+		Con_DPrintf ("CL_ParseDeltaPacketEntities: from mismatch\n");
+		cl.validsequence = 0;
+		cl.frames[newpacket].invalid = true;
 		return;
 	}
 	if (oldpacket == -1) {
