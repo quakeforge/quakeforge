@@ -30,6 +30,7 @@
 #define _PROGS_H
 
 #include "link.h"
+#include "quakeio.h"
 #include "pr_comp.h"
 
 typedef union eval_s
@@ -45,8 +46,10 @@ typedef union eval_s
 typedef union pr_type_u {
 	float	float_var;
 	int		int_var;
-	string_t string_t_var;
-	func_t	func_t_var;
+	string_t string_var;
+	func_t	func_var;
+	int		edict_var;
+	float	vector_var[1];		// really 3, but this structure must be 32 bits
 } pr_type_t;
 
 #define	MAX_ENT_LEAFS	16
@@ -135,7 +138,9 @@ typedef void (*builtin_t) (progs_t *pr);
 extern	builtin_t *pr_builtins;
 extern int pr_numbuiltins;
 
+ddef_t *PR_FindGlobal (progs_t *pr, const char *name);
 int FindFieldOffset (progs_t *pr, char *field);
+eval_t *GETEDICTFIELDVALUE (edict_t *ed, int fieldoffset);
 
 extern func_t	EndFrame;	// 2000-01-02 EndFrame function by Maddes/FrikaC
 
@@ -210,7 +215,7 @@ struct progs_s {
 
 	edict_t			**edicts;
 	int				*num_edicts;
-	int				*max_edicts;
+	int				*reserved_edicts;
 	double			*time;
 	int				null_bad;
 
@@ -218,6 +223,14 @@ struct progs_s {
 
 	void			(*unlink)(edict_t *ent);
 	void			(*flush)(void);
+
+	// required globals
+	float			*g_time;
+	int				*g_self;
+	// required fields (offsets into the edict)
+	int				f_nextthink;
+	int				f_frame;
+	int				f_think;
 };
 
 #endif // _PROGS_H

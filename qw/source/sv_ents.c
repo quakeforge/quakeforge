@@ -46,8 +46,6 @@
 extern int  eval_alpha, eval_scale, eval_glowsize, eval_glowcolor,
 
 	eval_colormod;
-// Ender Extends (QSG - End)
-extern eval_t *GETEDICTFIELDVALUE (edict_t *ed, int fieldoffset);
 
 /*
 	The PVS must include a small area around the client to allow head

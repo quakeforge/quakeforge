@@ -61,7 +61,7 @@ int         type_size[8] = {
 };
 
 ddef_t     *ED_FieldAtOfs (progs_t * pr, int ofs);
-qboolean    ED_ParseEpair (progs_t * pr, void *base, ddef_t *key, char *s);
+qboolean    ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, char *s);
 
 #define	MAX_FIELD_LEN	64
 #define GEFV_CACHESIZE	2
@@ -99,8 +99,9 @@ ED_Alloc (progs_t * pr)
 {
 	int         i;
 	edict_t    *e;
+	int         start = pr->reserved_edicts ? *pr->reserved_edicts : 0;
 
-	for (i = MAX_CLIENTS + 1; i < *(pr)->num_edicts; i++) {
+	for (i = start + 1; i < *(pr)->num_edicts; i++) {
 		e = EDICT_NUM (pr, i);
 		// the first couple seconds of server time can involve a lot of
 		// freeing and allocating, so relax the replacement policy
@@ -196,10 +197,10 @@ ED_FindField (progs_t * pr, char *name)
 
 
 /*
-	ED_FindGlobal
+	PR_FindGlobal
 */
 ddef_t     *
-ED_FindGlobal (progs_t * pr, char *name)
+PR_FindGlobal (progs_t * pr, const char *name)
 {
 	ddef_t     *def;
 	int         i;
@@ -545,26 +546,27 @@ ED_Count (progs_t * pr)
 	int         i;
 	edict_t    *ent;
 	int         active, models, solid, step;
+	ddef_t     *solid_def;
+	ddef_t     *model_def;
 
+	solid_def = ED_FindField (pr, "solid");
+	model_def = ED_FindField (pr, "model");
 	active = models = solid = step = 0;
 	for (i = 0; i < *(pr)->num_edicts; i++) {
 		ent = EDICT_NUM (pr, i);
 		if (ent->free)
 			continue;
 		active++;
-		if (ent->v.v.solid)
+		if (solid_def && ent->v[solid_def->ofs].float_var)
 			solid++;
-		if (ent->v.v.model)
+		if (model_def && ent->v[model_def->ofs].float_var)
 			models++;
-		if (ent->v.v.movetype == MOVETYPE_STEP)
-			step++;
 	}
 
 	Con_Printf ("num_edicts:%3i\n", *(pr)->num_edicts);
 	Con_Printf ("active    :%3i\n", active);
 	Con_Printf ("view      :%3i\n", models);
 	Con_Printf ("touch     :%3i\n", solid);
-	Con_Printf ("step      :%3i\n", step);
 
 }
 
@@ -632,13 +634,13 @@ ED_ParseGlobals (progs_t * pr, char *data)
 		if (com_token[0] == '}')
 			PR_Error (pr, "ED_ParseEntity: closing brace without data");
 
-		key = ED_FindGlobal (pr, keyname);
+		key = PR_FindGlobal (pr, keyname);
 		if (!key) {
 			Con_Printf ("'%s' is not a global\n", keyname);
 			continue;
 		}
 
-		if (!ED_ParseEpair (pr, (void *) pr->pr_globals, key, com_token))
+		if (!ED_ParseEpair (pr, pr->pr_globals, key, com_token))
 			PR_Error (pr, "ED_ParseGlobals: parse error");
 	}
 }
@@ -681,24 +683,24 @@ ED_NewString (progs_t * pr, char *string)
 	returns false if error
 */
 qboolean
-ED_ParseEpair (progs_t * pr, void *base, ddef_t *key, char *s)
+ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, char *s)
 {
 	int         i;
 	char        string[128];
 	ddef_t     *def;
 	char       *v, *w;
-	void       *d;
+	eval_t     *d;
 	dfunction_t *func;
 
-	d = (void *) ((int *) base + key->ofs);
+	d = (eval_t*)&base[key->ofs];
 
 	switch (key->type & ~DEF_SAVEGLOBAL) {
 		case ev_string:
-			*(string_t *) d = PR_SetString (pr, ED_NewString (pr, s));
+			d->string = PR_SetString (pr, ED_NewString (pr, s));
 			break;
 
 		case ev_float:
-			*(float *) d = atof (s);
+			d->_float = atof (s);
 			break;
 
 		case ev_vector:
@@ -709,13 +711,13 @@ ED_ParseEpair (progs_t * pr, void *base, ddef_t *key, char *s)
 				while (*v && *v != ' ')
 					v++;
 				*v = 0;
-				((float *) d)[i] = atof (w);
+				d->vector[i] = atof (w);
 				w = v = v + 1;
 			}
 			break;
 
 		case ev_entity:
-			*(int *) d = EDICT_TO_PROG (pr, EDICT_NUM (pr, atoi (s)));
+			d->edict = EDICT_TO_PROG (pr, EDICT_NUM (pr, atoi (s)));
 			break;
 
 		case ev_field:
@@ -724,7 +726,7 @@ ED_ParseEpair (progs_t * pr, void *base, ddef_t *key, char *s)
 				Con_Printf ("Can't find field %s\n", s);
 				return false;
 			}
-			*(int *) d = G_INT (pr, def->ofs);
+			d->_int = G_INT (pr, def->ofs);
 			break;
 
 		case ev_function:
@@ -733,7 +735,7 @@ ED_ParseEpair (progs_t * pr, void *base, ddef_t *key, char *s)
 				Con_Printf ("Can't find function %s\n", s);
 				return false;
 			}
-			*(func_t *) d = func - pr->pr_functions;
+			d->function = func - pr->pr_functions;
 			break;
 
 		default:
@@ -819,10 +821,9 @@ ED_ParseEdict (progs_t * pr, char *data, edict_t *ent)
 			int         ret;
 
 			if (anglehack) {
-				ret = ED_ParseEpair (pr, (void *) &ent->v, key,
-									 va ("0 %s 0", com_token));
+				ret = ED_ParseEpair (pr, ent->v, key, va ("0 %s 0", com_token));
 			} else {
-				ret = ED_ParseEpair (pr, (void *) &ent->v, key, com_token);
+				ret = ED_ParseEpair (pr, ent->v, key, com_token);
 			}
 			if (!ret)
 				PR_Error (pr, "ED_ParseEdict: parse error");
@@ -855,14 +856,16 @@ ED_LoadFromFile (progs_t * pr, char *data)
 	edict_t    *ent;
 	int         inhibit;
 	dfunction_t *func;
+	eval_t     *classname;
 
 	ent = NULL;
 	inhibit = 0;
-	pr->pr_global_struct->time = *(pr)->time;
 
-// parse ents
+	*pr->g_time = *(pr)->time;
+
+	// parse ents
 	while (1) {
-// parse the opening brace  
+		// parse the opening brace  
 		data = COM_Parse (data);
 		if (!data)
 			break;
@@ -875,23 +878,24 @@ ED_LoadFromFile (progs_t * pr, char *data)
 			ent = ED_Alloc (pr);
 		data = ED_ParseEdict (pr, data, ent);
 
-// remove things from different skill levels or deathmatch
+		// remove things from different skill levels or deathmatch
 		if (ED_Prune_Edict (pr, ent)) {
 			ED_Free (pr, ent);
 			inhibit++;
 			continue;
 		}
-//
-// immediately call spawn function
-//
-		if (!ent->v.v.classname) {
+		//
+		// immediately call spawn function
+		//
+		classname = GETEDICTFIELDVALUE (ent, FindFieldOffset (pr, "classname"));
+		if (classname) {
 			Con_Printf ("No classname for:\n");
 			ED_Print (pr, ent);
 			ED_Free (pr, ent);
 			continue;
 		}
 		// look for the spawn function
-		func = ED_FindFunction (pr, PR_GetString (pr, ent->v.v.classname));
+		func = ED_FindFunction (pr, PR_GetString (pr, classname->string));
 
 		if (!func) {
 			Con_Printf ("No spawn function for:\n");
@@ -900,7 +904,7 @@ ED_LoadFromFile (progs_t * pr, char *data)
 			continue;
 		}
 
-		pr->pr_global_struct->self = EDICT_TO_PROG (pr, ent);
+		*pr->g_self = EDICT_TO_PROG (pr, ent);
 		PR_ExecuteProgram (pr, func - pr->pr_functions);
 		if (pr->flush)
 			pr->flush ();
@@ -917,6 +921,7 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 {
 	int         i;
 	dstatement_t *st;
+	ddef_t     *def;
 
 // flush the non-C variable lookup cache
 	for (i = 0; i < GEFV_CACHESIZE; i++)
@@ -928,18 +933,16 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 
 	Con_DPrintf ("Programs occupy %iK.\n", com_filesize / 1024);
 
-// store prog crc
+	// store prog crc
 	pr->crc = CRC_Block ((byte *) pr->progs, com_filesize);
 
-// byte swap the header
+	// byte swap the header
 	for (i = 0; i < sizeof (*pr->progs) / 4; i++)
 		((int *) pr->progs)[i] = LittleLong (((int *) pr->progs)[i]);
 
 	if (pr->progs->version != PROG_VERSION)
-		PR_Error (pr, "progs.dat has wrong version number (%i should be %i)",
-				  pr->progs->version, PROG_VERSION);
-	if (pr->progs->crc != PROGHEADER_CRC)
-		PR_Error (pr, "You must have the qwprogs.dat from QuakeWorld installed");
+		PR_Error (pr, "%s has wrong version number (%i should be %i)",
+				  progsname, pr->progs->version, PROG_VERSION);
 
 	pr->pr_functions =
 		(dfunction_t *) ((byte *) pr->progs + pr->progs->ofs_functions);
@@ -998,6 +1001,21 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 
 	for (i = 0; i < pr->progs->numglobals; i++)
 		((int *) pr->pr_globals)[i] = LittleLong (((int *) pr->pr_globals)[i]);
+
+	def = PR_FindGlobal (pr, "time");
+	if (!def)
+		PR_Error (pr, "%s: undefined symbol: time", progsname);
+	pr->g_time = &pr->pr_globals[def->ofs].float_var;
+	def = PR_FindGlobal (pr, "self");
+	if (!def)
+		PR_Error (pr, "%s: undefined symbol: self", progsname);
+	pr->g_self = &pr->pr_globals[def->ofs].edict_var;
+	if (!(pr->f_nextthink = FindFieldOffset (pr, "nextthink")))
+		PR_Error (pr, "%s: undefined field: nextthink", progsname);
+	if (!(pr->f_frame = FindFieldOffset (pr, "frame")))
+		PR_Error (pr, "%s: undefined field: frame", progsname);
+	if (!(pr->f_think = FindFieldOffset (pr, "function")))
+		PR_Error (pr, "%s: undefined field: function", progsname);
 
 	// LordHavoc: Ender added this
 	FindEdictFieldOffsets (pr);

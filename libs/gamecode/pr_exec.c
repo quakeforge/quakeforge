@@ -40,9 +40,7 @@
 
 #include "console.h"
 #include "cvar.h"
-#include "host.h"
 #include "progs.h"
-#include "server.h"
 #include "sys.h"
 
 char       *pr_opnames[] = {
@@ -249,10 +247,10 @@ PR_RunError (progs_t * pr, char *error, ...)
 	PR_StackTrace (pr);
 	Con_Printf ("%s\n", string);
 
-	pr->pr_depth = 0;					// dump the stack so SV_Error can
-	// shutdown functions
+	pr->pr_depth = 0;					// dump the stack so PR_Error can
+										// shutdown functions
 
-	SV_Error ("Program error");
+	PR_Error (pr, "Program error");
 }
 
 /*
@@ -311,7 +309,7 @@ PR_LeaveFunction (progs_t * pr)
 	int         i, c;
 
 	if (pr->pr_depth <= 0)
-		SV_Error ("prog stack underflow");
+		PR_Error (pr, "prog stack underflow");
 
 // restore locals from the stack
 	c = pr->pr_xfunction->locals;
@@ -354,9 +352,9 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 	int         profile, startprofile;
 
 	if (!fnum || fnum >= pr->progs->numfunctions) {
-		if (pr->pr_global_struct->self)
-			ED_Print (pr, PROG_TO_EDICT (pr, pr->pr_global_struct->self));
-		SV_Error ("PR_ExecuteProgram: NULL function");
+		if (*pr->g_self)
+			ED_Print (pr, PROG_TO_EDICT (pr, *pr->g_self));
+		PR_Error (pr, "PR_ExecuteProgram: NULL function");
 	}
 
 	f = &pr->pr_functions[fnum];
@@ -677,10 +675,10 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					return;					// all done
 				break;
 			case OP_STATE:
-				ed = PROG_TO_EDICT (pr, pr->pr_global_struct->self);
-				ed->v.v.nextthink = pr->pr_global_struct->time + 0.1;
-				ed->v.v.frame = E_OPA->_float;
-				ed->v.v.think = E_OPB->function;
+				ed = PROG_TO_EDICT (pr, *pr->g_self);
+				ed->v[pr->f_nextthink].float_var = *pr->time + 0.1;
+				ed->v[pr->f_frame].float_var = E_OPA->_float;
+				ed->v[pr->f_think].func_var = E_OPB->function;
 				break;
 // LordHavoc: to be enabled when Progs version 7 (or whatever it will be numbered) is finalized
 /*

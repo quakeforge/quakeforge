@@ -52,6 +52,8 @@ func_t	SpectatorConnect;
 func_t	SpectatorDisconnect;
 func_t	SpectatorThink;
 
+static reserved_edicts = MAX_CLIENTS;
+
 void
 FindEdictFieldOffsets (progs_t *pr)
 {
@@ -154,6 +156,7 @@ SV_Progs_Init (void)
 	sv_pr_state.edicts = &sv.edicts;
 	sv_pr_state.num_edicts = &sv.num_edicts;
 	sv_pr_state.time = &sv.time;
+	sv_pr_state.reserved_edicts = &reserved_edicts;
 	sv_pr_state.unlink = SV_UnlinkEdict;
 	sv_pr_state.flush = SV_FlushSignon;
 
