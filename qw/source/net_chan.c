@@ -198,7 +198,7 @@ Netchan_Setup (netchan_t *chan, netadr_t adr, int qport)
 
 	chan->qport = qport;
 
-	chan->rate = 1.0 / 2500;
+	chan->rate = 1.0 / 2500.0;
 }
 
 #define	MAX_BACKUP	200

@@ -688,7 +688,7 @@ CL_ParseServerData (void)
 	movevars.waterfriction = MSG_ReadFloat (net_message);
 	movevars.entgravity = MSG_ReadFloat (net_message);
 
-	// seperate the printfs so the server message can have a color
+	// separate the printfs so the server message can have a color
 	Con_Printf ("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36"
 				"\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\37\n\n");
 	Con_Printf ("%c%s\n", 2, str);

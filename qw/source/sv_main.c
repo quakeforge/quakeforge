@@ -2049,7 +2049,7 @@ SV_InitLocal (void)
 									 NULL, "Time cheat check interval");
 	sv_minqfversion = Cvar_Get ("sv_minqfversion", "0", CVAR_SERVERINFO,
 								Cvar_Info, "Minimum QF version on client");
-	sv_maxrate = Cvar_Get ("sv_maxrate", "0", CVAR_SERVERINFO, Cvar_Info,
+	sv_maxrate = Cvar_Get ("sv_maxrate", "10000", CVAR_SERVERINFO, Cvar_Info,
 						   "Maximum allowable rate");
 	sv_allow_log = Cvar_Get ("sv_allow_log", "1", CVAR_NONE, NULL,
 							 "Allow remote logging");
@@ -2324,10 +2324,10 @@ SV_ExtractFromUserinfo (client_t *cl)
 	if (strlen (val)) {
 		i = atoi (val);
 
-		if ((sv_maxrate->int_val) && (i > sv_maxrate->int_val)) {
+		if (sv_maxrate->int_val) {
 			i = bound (500, i, sv_maxrate->int_val);
 		} else {
-			i = bound (500, i, 10000);
+			i = max (500, i);
 		}
 		cl->netchan.rate = 1.0 / i;
 	}

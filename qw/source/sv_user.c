@@ -1076,10 +1076,10 @@ SV_Rate_f (void)
 	}
 
 	rate = atoi (Cmd_Argv (1));
-	if ((sv_maxrate->int_val) && (rate > sv_maxrate->int_val)) {
+	if (sv_maxrate->int_val) {
 		rate = bound (500, rate, sv_maxrate->int_val);
 	} else {
-		rate = bound (500, rate, 10000);
+		rate = max (500, rate);
 	}
 
 	SV_ClientPrintf (host_client, PRINT_HIGH, "Net rate set to %i\n", rate);
