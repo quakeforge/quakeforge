@@ -61,6 +61,7 @@ R_MaxDlightsCheck (cvar_t *var)
 
 	if (r_dlights)
 		free (r_dlights);
+
 	r_dlights=0;
 
 	if (r_maxdlights)
