@@ -409,10 +409,14 @@ var_initializer
 				def_initialized ($<def>0);
 			} else {
 				if ($2->type >= ex_string) {
-					if ($<def>0->type->type == ev_func) {
-						PARSE_ERROR;
+					if ($<def>0->constant) {
+						error ($2, "%s re-initialized", $<def>0->name);
 					} else {
-						ReuseConstant ($2,  $<def>0);
+						if ($<def>0->type->type == ev_func) {
+							PARSE_ERROR;
+						} else {
+							ReuseConstant ($2,  $<def>0);
+						}
 					}
 				} else {
 					error ($2, "non-constant expression used for initializer");
