@@ -18,7 +18,7 @@ boolean GetToken (boolean crossline)
 {
 	char    *token_p;
 
-	if (unget)                         // is a token allready waiting?
+	if (unget)                         // is a token already waiting?
 		return true;
 
 //

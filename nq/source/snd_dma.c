@@ -394,7 +394,7 @@ channel_t *SND_PickChannel(int entnum, int entchannel)
 		if (entchannel != 0		// channel 0 never overrides
 		&& channels[ch_idx].entnum == entnum
 		&& (channels[ch_idx].entchannel == entchannel || entchannel == -1) )
-		{	// allways override sound from same entity
+		{	// always override sound from same entity
 			first_to_die = ch_idx;
 			break;
 		}

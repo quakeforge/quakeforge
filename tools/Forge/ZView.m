@@ -448,7 +448,7 @@ drawSelf
 	minheight = 999999;
 	maxheight = -999999;
 
-// allways draw the entire bar	
+// always draw the entire bar	
 	[self getVisibleRect:&visRect];
 	rects = &visRect;
 

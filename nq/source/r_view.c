@@ -601,7 +601,7 @@ void V_CalcIntermissionRefdef (void)
 	VectorCopy (ent->angles, r_refdef.viewangles);
 	view->model = NULL;
 
-// allways idle in intermission
+// always idle in intermission
 	old = v_idlescale->value;
 	Cvar_SetValue (v_idlescale, 1);
 	V_AddIdle ();

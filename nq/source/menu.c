@@ -1126,7 +1126,7 @@ void M_AdjustSliders (int dir)
 			Cvar_SetValue (volume, bound (0, volume->value + (dir * 0.1), 1));
 			break;
 
-		case 9:	// allways run
+		case 9:	// always run
 			if (cl_forwardspeed->value > 200) {
 				Cvar_SetValue (cl_forwardspeed, 200);
 				Cvar_SetValue (cl_backspeed, 200);

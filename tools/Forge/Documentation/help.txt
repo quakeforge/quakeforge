@@ -7,7 +7,7 @@ Brush
 A convex polyhedron with a textruedef for each face.
 
 Entity
-A set of brushes and key/value attributes. The world is allways entity 0.  Lights, doors, monsters, etc are all entities.  Entities can either have a fixed, non-modifiable size (monsters, lights, etc), or can be represented by an arbitrary collection of brushes (doors, plats, bridges, etc).
+A set of brushes and key/value attributes. The world is always entity 0.  Lights, doors, monsters, etc are all entities.  Entities can either have a fixed, non-modifiable size (monsters, lights, etc), or can be represented by an arbitrary collection of brushes (doors, plats, bridges, etc).
 
 An entity is created by selecting one or more brushes in the world, then selecting a class in the Entity Browser, then clicking Create Entity (or double click the class name).  If the entity class has a fixed size, the selected brushes are removed and a fixed sized brush is put in their place.  Otherwise, the selected brushes are removed from the world entity and made the contents of the newly created entity.
 
@@ -81,7 +81,7 @@ Holds the plane that faces the click point, and shears the adjacent planes.  To 
 shift-click
 Toggles the selection status of the clicked on brush as in the camera view.
 
-Entities are allways checked before the world, so you can shift-click on entities even if there is a ceiling above them.
+Entities are always checked before the world, so you can shift-click on entities even if there is a ceiling above them.
 
 cmd-shift click
 Connects two entities.  The current entity has a target key generated, and the clicked on entity has a targetname key created.
@@ -113,7 +113,7 @@ ZView
 click drag
 The camera icon can be dragged if it is clicked on, otherwise no action if there is not a selection.
 
-If multiple brushes are selected, they will allways be dragged as a unit, no matter where the click is.
+If multiple brushes are selected, they will always be dragged as a unit, no matter where the click is.
 
 If a single brush is selected, the location of the click determines if the drag will move the entire brush or just the top or bottom plane.
 

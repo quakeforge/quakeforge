@@ -553,7 +553,7 @@ static void R_DrawAliasModel (entity_t *e)
 
 	shadelight = R_LightPoint (currententity->origin);
 
-	// allways give the gun some light
+	// always give the gun some light
 	if (e == &cl.viewent && shadelight < 24)
 		shadelight = 24;
 

@@ -633,7 +633,7 @@ saveBSP
 		StripExtension (mappath);
 		strcat (mappath, ".reg");
 		[map_i writeMapFile: mappath useRegion: YES];
-		wt = YES;		// allways pop the dialog on region ops
+		wt = YES;		// always pop the dialog on region ops
 	}
 	else
 		strcpy (mappath, filename);

@@ -1349,7 +1349,7 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 	for (i = 0; i < s; i++)
 		lcrc += (ltexcrctable[data[i] & 255]++);
 	
-	// see if the texture is allready present
+	// see if the texture is already present
 	if (identifier[0])
 	{
 		for (i=0, glt=gltextures ; i<numgltextures ; i++, glt++)
