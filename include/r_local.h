@@ -238,7 +238,6 @@ void	R_ZDrawSubmodelPolys (model_t *clmodel);
 
 // Alias models ===========================================
 
-#define MAXALIASVERTS		1024
 #define ALIAS_Z_CLIP_PLANE	5
 
 extern int				numverts;

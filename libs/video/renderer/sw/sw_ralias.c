@@ -94,8 +94,7 @@ void        R_AliasTransformVector (vec3_t in, vec3_t out);
 void        R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
 									   trivertx_t *pverts, stvert_t *pstverts);
 void        R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av);
-
-
+     
 qboolean
 R_AliasCheckBBox (void)
 {
@@ -374,7 +373,8 @@ R_AliasSetUpTransform (int trivial_accept)
 // Also scale down z, so 1/z is scaled 31 bits for free, and scale down x and y
 // correspondingly so the projected x and y come out right
 // FIXME: make this work for clipped case too?
-	if (trivial_accept) {
+
+	if (trivial_accept && pmdl->ident != POLYHEADER16) {
 		for (i = 0; i < 4; i++) {
 			aliastransform[0][i] *= aliasxscale *
 				(1.0 / ((float) 0x8000 * 0x10000));
@@ -385,7 +385,6 @@ R_AliasSetUpTransform (int trivial_accept)
 	}
 }
 
-
 void
 R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
 						   trivertx_t *pverts, stvert_t *pstverts)
@@ -393,12 +392,31 @@ R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
 	int         temp;
 	float       lightcos, *plightnormal;
 
-	av->fv[0] = DotProduct (pverts->v, aliastransform[0]) +
-		aliastransform[0][3];
-	av->fv[1] = DotProduct (pverts->v, aliastransform[1]) +
-		aliastransform[1][3];
-	av->fv[2] = DotProduct (pverts->v, aliastransform[2]) +
-		aliastransform[2][3];
+	if (pmdl->ident == POLYHEADER16)
+	{
+		trivertx_t  * pextra;
+		float       vextra[3];
+
+		pextra = pverts + pmdl->numverts;
+		vextra[0] = pverts->v[0] + pextra->v[0] / (float)256;
+		vextra[1] = pverts->v[1] + pextra->v[1] / (float)256;
+		vextra[2] = pverts->v[2] + pextra->v[2] / (float)256;
+		av->fv[0] = DotProduct (vextra, aliastransform[0]) +
+			aliastransform[0][3];
+		av->fv[1] = DotProduct (vextra, aliastransform[1]) +
+			aliastransform[1][3];
+		av->fv[2] = DotProduct (vextra, aliastransform[2]) +
+			aliastransform[2][3];
+	}
+	else
+	{
+		av->fv[0] = DotProduct (pverts->v, aliastransform[0]) +
+			aliastransform[0][3];
+		av->fv[1] = DotProduct (pverts->v, aliastransform[1]) +
+			aliastransform[1][3];
+		av->fv[2] = DotProduct (pverts->v, aliastransform[2]) +
+			aliastransform[2][3];
+	}
 
 	fv->v[2] = pstverts->s;
 	fv->v[3] = pstverts->t;
@@ -421,7 +439,6 @@ R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
 
 	fv->v[4] = temp;
 }
-
 
 #ifdef PIC
 #undef USE_INTEL_ASM //XXX asm pic hack
@@ -475,7 +492,6 @@ R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts)
 }
 #endif
 
-
 void
 R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 {
@@ -489,7 +505,6 @@ R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 	fv->v[0] = (av->fv[0] * aliasxscale * zi) + aliasxcenter;
 	fv->v[1] = (av->fv[1] * aliasyscale * zi) + aliasycenter;
 }
-
 
 void
 R_AliasPrepareUnclippedPoints (void)
@@ -652,7 +667,7 @@ R_AliasSetupFrame (void)
 		((byte *) paliashdr + paliasgroup->frames[i].frame);
 }
 
-
+#define MAXALIASVERTS 1024
 void
 R_AliasDrawModel (alight_t *plighting)
 {
@@ -696,7 +711,7 @@ R_AliasDrawModel (alight_t *plighting)
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
-	if (currententity->trivial_accept)
+	if (currententity->trivial_accept && pmdl->ident != POLYHEADER16)
 		R_AliasPrepareUnclippedPoints ();
 	else
 		R_AliasPreparePoints ();

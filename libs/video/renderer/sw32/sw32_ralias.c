@@ -393,12 +393,31 @@ R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
 	int         temp;
 	float       lightcos, *plightnormal;
 
-	av->fv[0] = DotProduct (pverts->v, aliastransform[0]) +
-		aliastransform[0][3];
-	av->fv[1] = DotProduct (pverts->v, aliastransform[1]) +
-		aliastransform[1][3];
-	av->fv[2] = DotProduct (pverts->v, aliastransform[2]) +
-		aliastransform[2][3];
+	if (pmdl->ident == POLYHEADER16)
+	{
+		trivertx_t  * pextra;
+		float       vextra[3];
+
+		pextra = pverts + pmdl->numverts;
+		vextra[0] = pverts->v[0] + pextra->v[0] / (float)256;
+		vextra[1] = pverts->v[1] + pextra->v[1] / (float)256;
+		vextra[2] = pverts->v[2] + pextra->v[2] / (float)256;
+		av->fv[0] = DotProduct (vextra, aliastransform[0]) +
+			aliastransform[0][3];
+		av->fv[1] = DotProduct (vextra, aliastransform[1]) +
+			aliastransform[1][3];
+		av->fv[2] = DotProduct (vextra, aliastransform[2]) +
+			aliastransform[2][3];
+	}
+	else
+	{
+		av->fv[0] = DotProduct (pverts->v, aliastransform[0]) +
+			aliastransform[0][3];
+		av->fv[1] = DotProduct (pverts->v, aliastransform[1]) +
+			aliastransform[1][3];
+		av->fv[2] = DotProduct (pverts->v, aliastransform[2]) +
+			aliastransform[2][3];
+	}
 
 	fv->v[2] = pstverts->s;
 	fv->v[3] = pstverts->t;
@@ -640,6 +659,7 @@ R_AliasSetupFrame (void)
 }
 
 
+#define MAXALIASVERTS 1024
 void
 R_AliasDrawModel (alight_t *plighting)
 {
@@ -682,7 +702,7 @@ R_AliasDrawModel (alight_t *plighting)
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
-	if (currententity->trivial_accept)
+	if (currententity->trivial_accept && pmdl->ident != POLYHEADER16)
 		R_AliasPrepareUnclippedPoints ();
 	else
 		R_AliasPreparePoints ();

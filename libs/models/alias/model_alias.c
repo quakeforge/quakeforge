@@ -184,6 +184,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	mod->flags = LittleLong (pinmodel->flags);
 
 	// endian-adjust and copy the data, starting with the alias model header
+	pmodel->ident = LittleLong (pinmodel->ident);
 	pmodel->boundingradius = LittleFloat (pinmodel->boundingradius);
 	pmodel->numskins = LittleLong (pinmodel->numskins);
 	pmodel->skinwidth = LittleLong (pinmodel->skinwidth);
