@@ -299,6 +299,16 @@ typedef struct dfunction_s {
 	byte	parm_size[MAX_PARMS];
 } dfunction_t;
 
+typedef union pr_type_u {
+	float	float_var;
+	string_t string_var;
+	func_t	func_var;
+	int		entity_var;
+	float	vector_var[1];		// really 3, but this structure must be 32 bits
+	int		integer_var;
+	unsigned int uinteger_var;
+} pr_type_t;
+
 
 #define	PROG_ID_VERSION	6
 #define	PROG_VERSION	0x00fff002	// MMmmmRRR 0.fff.002 (hex)

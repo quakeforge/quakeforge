@@ -34,16 +34,6 @@
 #include "QF/pr_comp.h"
 #include "QF/pr_debug.h"
 
-typedef union pr_type_u {
-	float	float_var;
-	string_t string_var;
-	func_t	func_var;
-	int		entity_var;
-	float	vector_var[1];		// really 3, but this structure must be 32 bits
-	int		integer_var;
-	unsigned int uinteger_var;
-} pr_type_t;
-
 #define	MAX_ENT_LEAFS	16
 typedef struct edict_s
 {
