@@ -591,16 +591,16 @@ _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip)
 			}
 		} else {
 			// check a file in the directory tree
-			snprintf (netpath, sizeof (netpath), "%s/%s", search->filename,
-					  filename);
+			snprintf (netpath, sizeof (netpath), "%s%s%s", search->filename,
+					  search->filename[0] ? "/" : "", filename);
 
 			strncpy (foundname, filename, MAX_OSPATH);
 			findtime = Sys_FileTime (netpath);
 			if (findtime == -1) {
 #ifdef HAVE_ZLIB
 				strncpy (foundname, gzfilename, MAX_OSPATH);
-				snprintf (netpath, sizeof (netpath), "%s/%s", search->filename,
-						  gzfilename);
+				snprintf (netpath, sizeof (netpath), "%s%s%s", search->filename,
+						  search->filename[0] ? "/" : "", gzfilename);
 				findtime = Sys_FileTime (netpath);
 				if (findtime == -1)
 #endif
@@ -1007,6 +1007,19 @@ void
 COM_Filesystem_Init (void)
 {
 	int         i;
+
+	if (!fs_sharepath->string[0]
+		&& !fs_userpath->string[0]
+		&& !fs_basegame->string[0]) {
+		// a util (or a silly user:) are subverting the fs code
+		// add the directory to the search path
+		searchpath_t *search = calloc (1, sizeof (searchpath_t));
+		strcpy (search->filename, "");
+		search->next = com_searchpaths;
+		com_searchpaths = search;
+		com_base_searchpaths = com_searchpaths;
+		return;
+	}
 
 	// start up with basegame->string by default
 	COM_CreateGameDirectory (fs_basegame->string);
