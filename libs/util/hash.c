@@ -415,6 +415,12 @@ Hash_Free (hashtab_t *tab, void *ele)
 		tab->free_ele (ele, tab->user_data);
 }
 
+size_t
+Hash_NumElements (hashtab_t *tab)
+{
+	return tab->num_ele;
+}
+
 void **
 Hash_GetList (hashtab_t *tab)
 {

@@ -179,6 +179,14 @@ PL_D_AllKeys (plitem_t *dict)
 	return array;
 }
 
+int
+PL_D_NumKeys (plitem_t *dict)
+{
+	if (dict->type != QFDictionary)
+		return 0;
+	return Hash_NumElements ((hashtab_t *) dict->data);
+}
+
 plitem_t *
 PL_ObjectAtIndex (plitem_t *array, int index)
 {
@@ -258,6 +266,14 @@ qboolean
 PL_A_AddObject (plitem_t *array, plitem_t *item)
 {
 	return PL_A_InsertObjectAtIndex (array, item, -1);
+}
+
+int
+PL_A_NumObjects (plitem_t *array)
+{
+	if (array->type != QFArray)
+		return 0;
+	return ((plarray_t *) array->data)->numvals;
 }
 
 static qboolean

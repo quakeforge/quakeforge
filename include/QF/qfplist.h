@@ -158,6 +158,15 @@ plitem_t *PL_ObjectAtIndex (plitem_t *, int);
 plitem_t *PL_D_AllKeys (plitem_t *);
 
 /**
+	\brief Retrieve the number of keys in a dictionalry
+
+	\param dict The dictionary to get the number of keys of.
+
+	\return Returns the number of keys in the dictionary.
+*/
+int PL_D_NumKeys (plitem_t *);
+
+/**
 	\fn qboolean PL_D_AddObject (plitem_t *dict, plitem_t *key, plitem_t *value)
 
 	\param dict The dictionary to add the key/value pair to
@@ -181,6 +190,13 @@ qboolean PL_D_AddObject (plitem_t *, plitem_t *, plitem_t *);
 	Note: the array becomes the owner of the added item.
 */
 qboolean PL_A_AddObject (plitem_t *, plitem_t *);
+
+/**
+	\param array The array to get the number of objects in
+
+	\return number of objects in the array
+*/
+int PL_A_NumObjects (plitem_t *array);
 
 /**
 	\fn qboolean PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index)

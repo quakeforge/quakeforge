@@ -139,6 +139,10 @@ unsigned long Hash_String (const char *str);
 */
 unsigned long Hash_Buffer (const void *buf, int len);
 
+/** return the number of elements in the table.
+*/
+size_t Hash_NumElements (hashtab_t *tab);
+
 /** return a list of all elements in the table. it is the caller's
 	responsibilty to free() the array. Null terminated.
 */
