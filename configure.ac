@@ -1051,16 +1051,17 @@ AC_ARG_WITH(plugin-path,
                           \${libdir}/quakeforge],
 plugindir=$withval, plugindir="auto")
 
-PLUGINDIR="$libdir/$PACKAGE"
+PLUGINDIR="\${libdir}/$PACKAGE"
 if test "x$plugindir" = "xauto" -o "x$plugindir" = "xyes" -o "x$plugindir" = "x"; then
-	eval plugindir="$PLUGINDIR"
+	plugindir="$PLUGINDIR"
 elif test "x$plugindir" = xno; then
 	plugindir="."
 else
-	PLUGINDIR=$plugindir
-	eval plugindir="$PLUGINDIR"
+	PLUGINDIR="$plugindir"
 fi
-AC_DEFINE_UNQUOTED(FS_PLUGINPATH, "$plugindir")
+eval expanded_plugindir="$plugindir"
+eval expanded_plugindir="$expanded_plugindir"
+AC_DEFINE_UNQUOTED(FS_PLUGINPATH, "$expanded_plugindir")
 AC_SUBST(plugindir)
 AC_SUBST(PLUGINDIR)
 
@@ -1727,7 +1728,7 @@ AC_MSG_RESULT([
 
 	Shared game data directory: $sharepath
 	Per-user game data directory: $userpath
-	Plugin load directory: $plugindir
+	Plugin load directory: $expanded_plugindir
 	Global configuration file: $globalconf
 	User configuration file: $userconf
 ])
