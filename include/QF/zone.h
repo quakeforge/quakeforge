@@ -102,6 +102,7 @@ void Z_ClearZone (memzone_t *zone, int size);
 void Z_Free (memzone_t *zone, void *ptr);
 void *Z_Malloc (memzone_t *zone, int size);			// returns 0 filled memory
 void *Z_TagMalloc (memzone_t *zone, int size, int tag);
+void *Z_Realloc (memzone_t *zone, void *ptr, int size);
 void Z_CheckHeap (memzone_t *zone);
 
 void *Hunk_Alloc (int size);		// returns 0 filled memory

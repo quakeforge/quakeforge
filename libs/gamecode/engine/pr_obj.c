@@ -314,10 +314,11 @@ pr_obj_valloc (progs_t *pr)
 static void
 pr_obj_realloc (progs_t *pr)
 {
-	//void       *mem = (void*)P_POINTER (pr, 0);
-	//int         size = P_INT (pr, 1) * sizeof (pr_type_t);
-	//XXX
-	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
+	void       *mem = (void*)P_POINTER (pr, 0);
+	int         size = P_INT (pr, 1) * sizeof (pr_type_t);
+
+	mem = PR_Zone_Realloc (pr, mem, size);
+	R_INT (pr) = POINTER_TO_PROG (pr, mem);
 }
 
 static void

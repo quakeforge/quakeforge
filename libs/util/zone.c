@@ -60,6 +60,8 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/zone.h"
 
+#include "compat.h"
+
 #define	ZONEID			0x1d4a11
 #define	HUNK_SENTINAL	0x1df001ed
 
@@ -95,6 +97,7 @@ struct memzone_s
 	int         size;		// total bytes malloced, including header
 	memblock_t  blocklist;	// start / end cap for linked list
 	memblock_t  *rover;
+	int         pad;		// pad to 64 bit boundary
 };
 
 
@@ -223,6 +226,36 @@ void
 	*(int *)((byte *)base + base->size - 4) = ZONEID;
 
 	return (void *) ((byte *)base + sizeof(memblock_t));
+}
+
+void *
+Z_Realloc (memzone_t *zone, void *ptr, int size)
+{
+	memblock_t *block;
+	int         old_size;
+	void       *old_ptr;
+	
+	if (!ptr)
+		return Z_Malloc (zone, size);
+
+	block = (memblock_t *) ( (byte *)ptr - sizeof(memblock_t));
+	if (block->id != ZONEID)
+		Sys_Error ("Z_Realloc: realloced a pointer without ZONEID");
+	if (block->tag == 0)
+		Sys_Error ("Z_Realloc: realloced a freed pointer");
+
+	old_size = block->size;
+	old_ptr = ptr;
+
+	Z_Free (zone, ptr);
+	ptr = Z_TagMalloc (zone, size, 1);
+	if (!ptr)
+		Sys_Error ("Z_Realloc: failed on allocation of %i bytes", size);
+
+	if (ptr != old_ptr)
+		memmove (ptr, old_ptr, min (old_size, size));
+
+	return ptr;
 }
 
 void

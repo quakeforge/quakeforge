@@ -64,3 +64,9 @@ PR_Zone_Malloc (progs_t *pr, int size)
 {
 	return Z_Malloc (pr->zone, size);
 }
+
+void *
+PR_Zone_Realloc (progs_t *pr, void *ptr, int size)
+{
+	return Z_Realloc (pr->zone, ptr, size);
+}
