@@ -54,6 +54,7 @@
 
 #include "server.h"
 
+#ifdef HAVE_CURSES_H
 static WINDOW *output;
 static WINDOW *status;
 static WINDOW *input;
@@ -90,10 +91,12 @@ static const byte attr_map[256] = {
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 };
+#endif
 
 void
 Con_Init (const char *plugin_name)
 {
+#ifdef HAVE_CURSES_H
 	int i;
 
 	for (i = 0; i < 32; i++) {
@@ -138,20 +141,24 @@ Con_Init (const char *plugin_name)
 	wrefresh (output);
 	wrefresh (status);
 	wrefresh (input);
+#endif
 }
 
 void
 Con_Shutdown (void)
 {
+#ifdef HAVE_CURSES_H
 	endwin ();
+#endif
 }
 
 void
 Con_Print (const char *txt)
 {
-	chtype      ch;
-
+#ifdef HAVE_CURSES_H
 	if (output) {
+		chtype      ch;
+
 		while ((ch = (byte)*txt++)) {
 			ch = sys_char_map[ch] | attr_table[attr_map[ch]];
 			waddch (output, ch);
@@ -159,16 +166,21 @@ Con_Print (const char *txt)
 		touchwin (stdscr);
 		wrefresh (output);
 	} else {
+#endif
+		int ch;
 		while ((ch = (byte)*txt++)) {
 			ch = sys_char_map[ch];
 			putchar (ch);
 		}
+#ifdef HAVE_CURSES_H
 	}
+#endif
 }
 
 void
 Con_ProcessInput (inputline_t *il, int ch)
 {
+#ifdef HAVE_CURSES_H
 	int         i;
 	int         curs_x;
 	char       *text = 0;
@@ -302,8 +314,19 @@ Con_ProcessInput (inputline_t *il, int ch)
 	wmove (input, 0, curs_x);
 	touchline (stdscr, screen_y - 1, 1);
 	wrefresh (input);
+#else
+	const char *cmd;
+
+	while (1) {
+		cmd = Sys_ConsoleInput ();
+		if (!cmd)
+			break;
+		Cbuf_AddText (cmd);
+	}
+#endif
 }
 
+#ifdef HAVE_CURSES_H
 /*
 	Con_CompleteCommandLine
 
@@ -403,3 +426,4 @@ Con_CompleteCommandLine (void)
 		if (list[i])
 			free (list[i]);
 }
+#endif
