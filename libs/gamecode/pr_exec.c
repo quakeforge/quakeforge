@@ -626,34 +626,11 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_ADD_I:
 				OPC.int_var = OPA.int_var + OPB.int_var;
 				break;
-			case OP_ADD_IF:
-				OPC.int_var = OPA.int_var + (int) OPB.float_var;
-				break;
-			case OP_ADD_FI:
-				OPC.float_var = OPA.float_var + (float) OPB.int_var;
-				break;
 			case OP_SUB_I:
 				OPC.int_var = OPA.int_var - OPB.int_var;
 				break;
-			case OP_SUB_IF:
-				OPC.int_var = OPA.int_var - (int) OPB.float_var;
-				break;
-			case OP_SUB_FI:
-				OPC.float_var = OPA.float_var - (float) OPB.int_var;
-				break;
 			case OP_MUL_I:
 				OPC.int_var = OPA.int_var * OPB.int_var;
-				break;
-			case OP_MUL_IF:
-				OPC.int_var = OPA.int_var * (int) OPB.float_var;
-				break;
-			case OP_MUL_FI:
-				OPC.float_var = OPA.float_var * (float) OPB.int_var;
-				break;
-			case OP_MUL_VI:
-				OPC.vector_var[0] = (float) OPB.int_var * OPA.vector_var[0];
-				OPC.vector_var[1] = (float) OPB.int_var * OPA.vector_var[1];
-				OPC.vector_var[2] = (float) OPB.int_var * OPA.vector_var[2];
 				break;
 			case OP_DIV_VF:
 				{
@@ -667,12 +644,6 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_DIV_I:
 				OPC.int_var = OPA.int_var / OPB.int_var;
 				break;
-			case OP_DIV_IF:
-				OPC.int_var = OPA.int_var / (int) OPB.float_var;
-				break;
-			case OP_DIV_FI:
-				OPC.float_var = OPA.float_var / (float) OPB.int_var;
-				break;
 			case OP_CONV_IF:
 				OPC.float_var = OPA.int_var;
 				break;
@@ -684,18 +655,6 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 			case OP_BITOR_I:
 				OPC.int_var = OPA.int_var | OPB.int_var;
-				break;
-			case OP_BITAND_IF:
-				OPC.int_var = OPA.int_var & (int) OPB.float_var;
-				break;
-			case OP_BITOR_IF:
-				OPC.int_var = OPA.int_var | (int) OPB.float_var;
-				break;
-			case OP_BITAND_FI:
-				OPC.float_var = (int) OPA.float_var & OPB.int_var;
-				break;
-			case OP_BITOR_FI:
-				OPC.float_var = (int) OPA.float_var | OPB.int_var;
 				break;
 			case OP_GE_I:
 				OPC.float_var = OPA.int_var >= OPB.int_var;
@@ -715,62 +674,14 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_OR_I:
 				OPC.float_var = OPA.int_var || OPB.int_var;
 				break;
-			case OP_GE_IF:
-				OPC.float_var = (float) OPA.int_var >= OPB.float_var;
-				break;
-			case OP_LE_IF:
-				OPC.float_var = (float) OPA.int_var <= OPB.float_var;
-				break;
-			case OP_GT_IF:
-				OPC.float_var = (float) OPA.int_var > OPB.float_var;
-				break;
-			case OP_LT_IF:
-				OPC.float_var = (float) OPA.int_var < OPB.float_var;
-				break;
-			case OP_AND_IF:
-				OPC.float_var = (float) OPA.int_var && OPB.float_var;
-				break;
-			case OP_OR_IF:
-				OPC.float_var = (float) OPA.int_var || OPB.float_var;
-				break;
-			case OP_GE_FI:
-				OPC.float_var = OPA.float_var >= (float) OPB.int_var;
-				break;
-			case OP_LE_FI:
-				OPC.float_var = OPA.float_var <= (float) OPB.int_var;
-				break;
-			case OP_GT_FI:
-				OPC.float_var = OPA.float_var > (float) OPB.int_var;
-				break;
-			case OP_LT_FI:
-				OPC.float_var = OPA.float_var < (float) OPB.int_var;
-				break;
-			case OP_AND_FI:
-				OPC.float_var = OPA.float_var && (float) OPB.int_var;
-				break;
-			case OP_OR_FI:
-				OPC.float_var = OPA.float_var || (float) OPB.int_var;
-				break;
 			case OP_NOT_I:
 				OPC.float_var = !OPA.int_var;
 				break;
 			case OP_EQ_I:
 				OPC.float_var = OPA.int_var == OPB.int_var;
 				break;
-			case OP_EQ_IF:
-				OPC.float_var = (float) OPA.int_var == OPB.float_var;
-				break;
-			case OP_EQ_FI:
-				OPC.float_var = OPA.float_var == (float) OPB.int_var;
-				break;
 			case OP_NE_I:
 				OPC.float_var = OPA.int_var != OPB.int_var;
-				break;
-			case OP_NE_IF:
-				OPC.float_var = (float) OPA.int_var != OPB.float_var;
-				break;
-			case OP_NE_FI:
-				OPC.float_var = OPA.float_var != (float) OPB.int_var;
 				break;
 			case OP_STORE_I:
 				OPB.int_var = OPA.int_var;
