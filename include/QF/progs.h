@@ -136,6 +136,7 @@ int NUM_FOR_BAD_EDICT(progs_t *pr, edict_t *e);
 #define	G_VECTOR(p,o)	G_var (p, o, vector)
 #define	G_STRING(p,o)	PR_GetString (p, G_var (p, o, string))
 #define	G_FUNCTION(p,o)	G_var (p, o, func)
+#define	G_STRUCT(p,t,o)	(*(t *)&(p)->pr_globals[o])
 
 #define RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].integer_var = PR_SetString((p), s))
 #define RETURN_EDICT(p, e) ((p)->pr_globals[OFS_RETURN].integer_var = EDICT_TO_PROG(p, e))
@@ -180,6 +181,12 @@ void PR_AddBuiltin (progs_t *pr, const char *name, builtin_proc builtin, int num
 builtin_t *PR_FindBuiltin (progs_t *pr, const char *name);
 int PR_RelocateBuiltins (progs_t *pr);
 int PR_ResolveGlobals (progs_t *pr);
+
+//
+// PR Obj stuff
+//
+void PR_Obj_Progs_Init (progs_t *pr);
+void PR_InitRuntime (progs_t *pr);
 
 //
 // PR Strings stuff
@@ -321,6 +328,11 @@ struct progs_s {
 
 	pr_resource_t	*resources;
 	struct hashtab_s *resource_hash;
+
+	// obj info
+	struct hashtab_s *classes;
+	struct hashtab_s *categories;
+	struct hashtab_s *protocols;
 
 	// debug info
 	char			*debugfile;

@@ -271,6 +271,8 @@ PR_LoadProgs (progs_t *pr, const char *progsname, int edicts, int zone)
 	PR_LoadDebug (pr);
 
 	PR_Check_Opcodes (pr);
+
+	PR_InitRuntime (pr);
 }
 
 void

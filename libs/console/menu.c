@@ -378,6 +378,8 @@ Menu_Init (void)
 	PR_AddBuiltin (&menu_pr_state, "Menu_Quit", bi_Menu_Quit, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_GetIndex", bi_Menu_GetIndex, -1);
 
+	PR_Obj_Progs_Init (&menu_pr_state);
+
 	Cbuf_Progs_Init (&menu_pr_state);
 	Cmd_Progs_Init (&menu_pr_state);
 	Cvar_Progs_Init (&menu_pr_state);
@@ -432,6 +434,7 @@ Menu_Load (void)
 		Con_SetOrMask (0x00);
 		return;
 	}
+	PR_InitRuntime (&menu_pr_state);
 	PR_ExecuteProgram (&menu_pr_state, menu_init);
 }
 
