@@ -1,1 +1,4 @@
 #include "QF/keys.h"
+string (integer target, integer keynum, string binding) Key_SetBinding = #0;
+integer (integer target, string binding) Key_LookupBinding = #0;
+string (integer keynum) Key_KeynumToString = #0;

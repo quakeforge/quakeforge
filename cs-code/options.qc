@@ -3,6 +3,8 @@ float time;
 #define MAX_GAMMA 3
 #define GAMMA_STEP 0.1
 
+integer set_key_flag;
+
 void (integer x, integer y) opt_cursor =
 {
 	Draw_Character (x, y, 12 + (integer (time * 4) & 1));
@@ -58,6 +60,13 @@ void (string text, integer key) control_options_f =
 				Cbuf_AddText ("set cl_backspeed 200\n");
 			}
 			return;
+		case "set_key":
+			if(set_key_flag) {
+				set_key_flag = 0;
+			} else {
+				set_key_flag = 1;
+			}
+			break;
 	}
 };
 
@@ -104,7 +113,6 @@ integer () gamma_to_percentage =
 };
 
 
-
 void (integer x, integer y, integer perc_val) draw_perc_bar =
 {
 	local integer perc;
@@ -118,17 +126,58 @@ void (integer x, integer y, integer perc_val) draw_perc_bar =
     Draw_Character (x + ((perc + 1) * 8), y, '*');
 };
 
+#define NUM_BINDED_KEYS 3
+string [NUM_BINDED_KEYS] key_bindings = {
+	"+attack",
+	"impulse 10",
+	"+jump"
+};
+string [NUM_BINDED_KEYS] key_bindings_keys = {
+	"none",
+	"none",
+	"none"
+};
+
+void () load_keybindings =
+{
+	local integer i, keynum;
+	
+	for(i = 0;i < NUM_BINDED_KEYS; i++) {
+		keynum = Key_LookupBinding(IMT_0, key_bindings[i]);
+		if(keynum == -1) {
+			key_bindings_keys[i] = "<none>";
+		} else {
+			key_bindings_keys[i] = Key_KeynumToString(keynum);
+		}
+	}
+};
+
 integer (integer key, integer unicode, integer down) options_controls_keyevent =
 {
-	if (key == QFK_RETURN) {
-	} else {
+	local integer tmp;
+
+	if(set_key_flag) {
+		tmp = Menu_GetIndex () - 2;				
+		Key_SetBinding (IMT_0, key, key_bindings[tmp]);
+		set_key_flag = 0;
+
+		load_keybindings();
+		return 1;
 	}
+	if((key == QFK_BACKSPACE) && (Menu_GetIndex () > 1)) {
+		Key_SetBinding (IMT_0, Key_LookupBinding(IMT_0, key_bindings[Menu_GetIndex () - 2]), "");
+	}
+		
+	load_keybindings();
 	return 0;
 };
+
 
 integer () options_controls_draw = 
 {
 	local string tmp;
+	local integer cursor_pad = 0;
+
 
 	Draw_Pic		(16, 4, "gfx/qplaque.lmp");
 	Draw_CenterPic (160, 4, "gfx/p_option.lmp");
@@ -141,7 +190,18 @@ integer () options_controls_draw =
 		tmp = "Off";
 	}
 	Draw_String     (70,  70, "Auto run: " + tmp);
-	opt_cursor		(62, (Menu_GetIndex() * 10) + 60);
+	Draw_String		(54,  80, "Bindings");
+	Draw_String		(70,  90, "Attack: " + key_bindings_keys[0]);
+	Draw_String		(70,  100, "Next weapon: " + key_bindings_keys[1]);
+	Draw_String		(70,  110, "Jump/Swim up: " + key_bindings_keys[2]);
+	Draw_String		(70,  130, "Backspace => Del binding");
+	Draw_String     (70,  140, "Enter => New binding");
+
+	if(Menu_GetIndex() > 1) {
+		cursor_pad = 10;
+	}
+	opt_cursor  (62, (Menu_GetIndex() * 10) + 60 + cursor_pad);
+
 	return 1;
 };
 
@@ -154,6 +214,9 @@ void () options_controls_menu =
 	Menu_KeyEvent (options_controls_keyevent);
 	Menu_Item (54, 60, "in_grab", control_options_f);
 	Menu_Item (54, 70, "autorun", control_options_f);
+	Menu_Item (54, 90, "set_key", control_options_f);
+	Menu_Item (54, 100, "set_key", control_options_f);
+	Menu_Item (54, 110, "set_key", control_options_f);
 	Menu_End ();
 };
 
@@ -199,12 +262,20 @@ void () options_video_menu =
 	Menu_End ();
 };
 
+integer (integer key, integer unicode, integer down) options_keyevent =
+{
+	load_keybindings();
+	set_key_flag = 0;
+	return 0;
+};
+
 void () options_menu =
 {
 	Menu_Begin (54, 72, "");
 	Menu_FadeScreen (1);
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
+	Menu_KeyEvent (options_keyevent);
 	options_video_menu ();
 	options_controls_menu ();
 	Menu_End ();
