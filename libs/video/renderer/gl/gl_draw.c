@@ -353,9 +353,9 @@ Draw_Init (void)
 	// get the other pics we need
 	draw_backtile = Draw_PicFromWad ("backtile");
 
-	// LordHavoc: call init code for other GL renderer modules;
+	// LordHavoc: call init code for other GL renderer modules
 	glrmain_init ();
-	glrsurf_init ();
+	gl_lightmap_init ();
 }
 
 #define CELL_SIZE 0.0625

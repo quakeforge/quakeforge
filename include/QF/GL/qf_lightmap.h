@@ -1,7 +1,7 @@
 /*
-	gl_rsurf.h
+	gl_lightmap.h
 
-	GL texture stuff from the renderer.
+	GL lightmap stuff from the renderer.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -26,17 +26,25 @@
 	$Id$
 */
 
-#ifndef __QF_GL_rsurf_h
-#define __QF_GL_rsurf_h
+#ifndef __QF_GL_lightmap_h
+#define __QF_GL_lightmap_h
 
-extern int skytexturenum;		// index in cl.loadmodel, not gl texture object
-extern int mirrortexturenum;	// quake texturenum, not gltexturenum
+// LordHavoc: since lightmaps are now allocated only as needed, allow a ridiculous number :)
+#define MAX_LIGHTMAPS	1024
+#define BLOCK_WIDTH		128
+#define BLOCK_HEIGHT	128
 
+typedef struct glRect_s {
+	unsigned short l, t, w, h;
+} glRect_t;
+
+extern model_t *currentmodel;
+extern mvertex_t *r_pcurrentvertbase;
+
+void BuildSurfaceDisplayList (msurface_t *fa);
 void gl_lightmap_init (void);
 void GL_BuildLightmaps (struct model_s **models, int num_models);
+void R_BlendLightmaps (void);
+extern void (*R_BuildLightMap) (msurface_t *surf);
 
-void R_DrawBrushModel (struct entity_s *e);
-void R_DrawWorld (void);
-void R_RenderBrushPoly (msurface_t *fa);
-
-#endif // __QF_GL_rsurf_h
+#endif // __QF_GL_lightmap_h
