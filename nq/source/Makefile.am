@@ -53,12 +53,16 @@ common_sources=	game.c world.c com.c
 common_ldflags= -export-dynamic
 
 # ... Networking
-libqfnet_la_SOURCES= net_bsd.c net_dgrm.c net_loop.c net_main.c net_udp.c \
-		net_vcr.c
+if SYSTYPE_WIN32
+net_sources= net_win.c net_wins.c
+else
+net_sources= net_bsd.c net_udp.c
+endif
+libqfnet_la_SOURCES= net_dgrm.c net_loop.c net_main.c net_vcr.c $(net_sources)
 
 EXTRA_libqfnet_la_SOURCES= \
-		net_dos.c net_bw.c net_ipx.c net_mp.c net_win.c net_wins.c \
-		net_wipx.c
+		net_dos.c net_bw.c net_bsd.c net_ipx.c net_mp.c net_win.c net_wins.c \
+		net_wipx.c net_udp.c
 
 client_LIBFILES= \
 		$(top_builddir)/libs/video/targets/libQFjs.la \

@@ -26,6 +26,17 @@
 	$Id$
 */
 
+#ifndef __net_wins_h
+#define __net_wind_h
+
+#include "winquake.h"
+
+#include "QF/qtypes.h"
+
+extern int winsock_initialized;
+extern WSADATA winsockdata;
+
+struct qsockaddr;
 
 int  WINS_Init (void);
 void WINS_Shutdown (void);
@@ -40,8 +51,10 @@ int  WINS_Broadcast (int socket, byte *buf, int len);
 const char *WINS_AddrToString (struct qsockaddr *addr);
 int  WINS_StringToAddr (const char *string, struct qsockaddr *addr);
 int  WINS_GetSocketAddr (int socket, struct qsockaddr *addr);
-int  WINS_GetNameFromAddr (struct qsockaddr *addr, const char *name);
+int  WINS_GetNameFromAddr (struct qsockaddr *addr, char *name);
 int  WINS_GetAddrFromName (const char *name, struct qsockaddr *addr);
 int  WINS_AddrCompare (struct qsockaddr *addr1, struct qsockaddr *addr2);
 int  WINS_GetSocketPort (struct qsockaddr *addr);
 int  WINS_SetSocketPort (struct qsockaddr *addr, int port);
+
+#endif//__net_wins_h

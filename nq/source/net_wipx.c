@@ -33,6 +33,12 @@ static const char rcsid[] =
 
 #include "winquake.h"
 #include <wsipx.h>
+
+#include "QF/console.h"
+#include "QF/cvar.h"
+#include "QF/qargs.h"
+
+#include "net_wins.h"
 #include "net_wipx.h"
 
 #define MAXHOSTNAMELEN		256
@@ -85,7 +91,7 @@ WIPX_Init (void)
 	// determine my name & address
 	if (pgethostname (buff, MAXHOSTNAMELEN) == 0) {
 		// if the quake hostname isn't set, set it to the machine name
-		if (Q_strcmp (hostname->string, "UNNAMED") == 0) {
+		if (strcmp (hostname->string, "UNNAMED") == 0) {
 			// see if it's a text IP address (well, close enough)
 			for (p = buff; *p; p++)
 				if ((*p < '0' || *p > '9') && *p != '.')
@@ -118,8 +124,8 @@ WIPX_Init (void)
 		htons ((unsigned short) net_hostport);
 
 	WIPX_GetSocketAddr (net_controlsocket, &addr);
-	Q_strcpy (my_ipx_address, WIPX_AddrToString (&addr));
-	p = Q_strrchr (my_ipx_address, ':');
+	strcpy (my_ipx_address, WIPX_AddrToString (&addr));
+	p = strrchr (my_ipx_address, ':');
 	if (p)
 		*p = 0;
 
@@ -338,7 +344,7 @@ WIPX_StringToAddr (char *string, struct qsockaddr *addr)
 	char        buf[3];
 
 	buf[2] = 0;
-	Q_memset (addr, 0, sizeof (struct qsockaddr));
+	memset (addr, 0, sizeof (struct qsockaddr));
 
 	addr->sa_family = AF_IPX;
 
@@ -376,7 +382,7 @@ WIPX_GetSocketAddr (int handle, struct qsockaddr *addr)
 	int         addrlen = sizeof (struct qsockaddr);
 	unsigned int a;
 
-	Q_memset (addr, 0, sizeof (struct qsockaddr));
+	memset (addr, 0, sizeof (struct qsockaddr));
 
 	if (pgetsockname (socket, (struct sockaddr *) addr, &addrlen) != 0) {
 		int         errno = pWSAGetLastError ();
@@ -390,7 +396,7 @@ WIPX_GetSocketAddr (int handle, struct qsockaddr *addr)
 int
 WIPX_GetNameFromAddr (struct qsockaddr *addr, char *name)
 {
-	Q_strcpy (name, WIPX_AddrToString (addr));
+	strcpy (name, WIPX_AddrToString (addr));
 	return 0;
 }
 
@@ -402,7 +408,7 @@ WIPX_GetAddrFromName (char *name, struct qsockaddr *addr)
 	int         n;
 	char        buf[32];
 
-	n = Q_strlen (name);
+	n = strlen (name);
 
 	if (n == 12) {
 		snprintf (buf, sizeof (buf), "00000000:%s:%u", name, net_hostport);

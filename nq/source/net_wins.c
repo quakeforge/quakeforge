@@ -34,6 +34,14 @@ static const char rcsid[] =
 
 #include "winquake.h"
 
+#include "QF/console.h"
+#include "QF/cvar.h"
+#include "QF/qargs.h"
+#include "QF/sys.h"
+
+#include "compat.h"
+#include "net.h"
+
 #define MAXHOSTNAMELEN		256
 
 static int  net_acceptsocket = -1;		// socket for fielding new
@@ -149,7 +157,7 @@ WINS_Init (void)
 	hInst = LoadLibrary ("wsock32.dll");
 
 	if (hInst == NULL) {
-		Con_SafePrintf ("Failed to load winsock.dll\n");
+		Con_Printf ("Failed to load winsock.dll\n");
 		winsock_lib_initialized = false;
 		return -1;
 	}
@@ -174,7 +182,7 @@ WINS_Init (void)
 		!psocket || !pioctlsocket || !psetsockopt ||
 		!precvfrom || !psendto || !pclosesocket ||
 		!pgethostname || !pgethostbyname || !pgethostbyaddr || !pgetsockname) {
-		Con_SafePrintf ("Couldn't GetProcAddress from winsock.dll\n");
+		Con_Printf ("Couldn't GetProcAddress from winsock.dll\n");
 		return -1;
 	}
 
@@ -187,7 +195,7 @@ WINS_Init (void)
 		r = pWSAStartup (MAKEWORD (1, 1), &winsockdata);
 
 		if (r) {
-			Con_SafePrintf ("Winsock initialization failed.\n");
+			Con_Printf ("Winsock initialization failed.\n");
 			return -1;
 		}
 	}
@@ -201,7 +209,7 @@ WINS_Init (void)
 		return -1;
 	}
 	// if the quake hostname isn't set, set it to the machine name
-	if (Q_strcmp (hostname->string, "UNNAMED") == 0) {
+	if (strcmp (hostname->string, "UNNAMED") == 0) {
 		// see if it's a text IP address (well, close enough)
 		for (p = buff; *p; p++)
 			if ((*p < '0' || *p > '9') && *p != '.')
@@ -330,7 +338,7 @@ the local network components to fill in the rest
 ============
 */
 static int
-PartialIPAddress (char *in, struct qsockaddr *hostaddr)
+PartialIPAddress (const char *in, struct qsockaddr *hostaddr)
 {
 	char        buff[256];
 	char       *b;
@@ -366,7 +374,7 @@ PartialIPAddress (char *in, struct qsockaddr *hostaddr)
 	}
 
 	if (*b++ == ':')
-		port = Q_atoi (b);
+		port = atoi (b);
 	else
 		port = net_hostport;
 
@@ -413,9 +421,9 @@ WINS_Read (int socket, byte * buf, int len, struct qsockaddr *addr)
 
 	ret = precvfrom (socket, buf, len, 0, (struct sockaddr *) addr, &addrlen);
 	if (ret == -1) {
-		int         errno = pWSAGetLastError ();
+		int         err = pWSAGetLastError ();
 
-		if (errno == WSAEWOULDBLOCK || errno == WSAECONNREFUSED)
+		if (err == WSAEWOULDBLOCK || err == WSAECONNREFUSED)
 			return 0;
 
 	}
@@ -479,7 +487,7 @@ WINS_Write (int socket, byte * buf, int len, struct qsockaddr *addr)
 
 //=============================================================================
 
-char       *
+const char *
 WINS_AddrToString (struct qsockaddr *addr)
 {
 	static char buffer[22];
@@ -495,7 +503,7 @@ WINS_AddrToString (struct qsockaddr *addr)
 //=============================================================================
 
 int
-WINS_StringToAddr (char *string, struct qsockaddr *addr)
+WINS_StringToAddr (const char *string, struct qsockaddr *addr)
 {
 	int         ha1, ha2, ha3, ha4, hp;
 	int         ipaddr;
@@ -517,7 +525,7 @@ WINS_GetSocketAddr (int socket, struct qsockaddr *addr)
 	int         addrlen = sizeof (struct qsockaddr);
 	unsigned int a;
 
-	Q_memset (addr, 0, sizeof (struct qsockaddr));
+	memset (addr, 0, sizeof (struct qsockaddr));
 
 	pgetsockname (socket, (struct sockaddr *) addr, &addrlen);
 	a = ((struct sockaddr_in *) addr)->sin_addr.s_addr;
@@ -539,18 +547,18 @@ WINS_GetNameFromAddr (struct qsockaddr *addr, char *name)
 						sizeof (struct in_addr), AF_INET);
 
 	if (hostentry) {
-		Q_strncpy (name, (char *) hostentry->h_name, NET_NAMELEN - 1);
+		strncpy (name, (char *) hostentry->h_name, NET_NAMELEN - 1);
 		return 0;
 	}
 
-	Q_strcpy (name, WINS_AddrToString (addr));
+	strcpy (name, WINS_AddrToString (addr));
 	return 0;
 }
 
 //=============================================================================
 
 int
-WINS_GetAddrFromName (char *name, struct qsockaddr *addr)
+WINS_GetAddrFromName (const char *name, struct qsockaddr *addr)
 {
 	struct hostent *hostentry;
 

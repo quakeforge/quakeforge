@@ -26,6 +26,11 @@
 	$Id$
 */
 
+#ifndef __net_loop_h
+#define __net_loop_h
+
+#include "QF/qtypes.h"
+#include "net.h"
 
 int			Loop_Init (void);
 void		Loop_Listen (qboolean state);
@@ -39,3 +44,5 @@ qboolean	Loop_CanSendMessage (qsocket_t *sock);
 qboolean	Loop_CanSendUnreliableMessage (qsocket_t *sock);
 void		Loop_Close (qsocket_t *sock);
 void		Loop_Shutdown (void);
+
+#endif//__net_loop_h
