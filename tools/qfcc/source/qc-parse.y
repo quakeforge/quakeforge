@@ -1,9 +1,23 @@
 %{
+#include "qfcc.h"
+
+void
+yyerror (char *s)
+{
+	fprintf (stderr, "%s\n", s);
+}
+
+int yylex (void);
+
 %}
 
-%left	OP_OR OP_AND
+%union {
+	def_t	*def;
+}
+
+%left	OR AND
 %right	'='
-%left	OP_EQ OP_NE OP_LE OP_GE OP_LT OP_GT
+%left	EQ NE LE GE LT GT
 %left	'+' '-'
 %left	'*' '/' '&' '|'
 %left	'!' '.' '('
@@ -77,15 +91,15 @@ statement
 	;
 
 expr
-	: expr OP_AND expr
-	| expr OP_OR expr
+	: expr AND expr
+	| expr OR expr
 	| expr '=' expr
-	| expr OP_EQ expr
-	| expr OP_NE expr
-	| expr OP_LE expr
-	| expr OP_GE expr
-	| expr OP_LT expr
-	| expr OP_GT expr
+	| expr EQ expr
+	| expr NE expr
+	| expr LE expr
+	| expr GE expr
+	| expr LT expr
+	| expr GT expr
 	| expr '+' expr
 	| expr '-' expr
 	| expr '*' expr
