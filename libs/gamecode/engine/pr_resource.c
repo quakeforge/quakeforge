@@ -81,7 +81,7 @@ PR_Resources_Register (progs_t *pr, const char *name, void *data,
 	res->data = data;
 	res->clear = clear;
 	res->next = pr->resources;
-	pr->resources = res->next;
+	pr->resources = res;
 	Hash_Add (pr->resource_hash, res);
 }
 

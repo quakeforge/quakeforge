@@ -42,6 +42,7 @@ static const char rcsid[] =
 #include "QF/console.h"
 #include "QF/draw.h"
 #include "QF/progs.h"
+#include "QF/sys.h"
 #include "QF/zone.h"
 
 typedef struct {
@@ -88,11 +89,13 @@ bi_InputLine_Create (progs_t *pr)
 			break;
 		}
 	if (!line) {
+		Sys_Printf ("out of resources\n");
 		G_INT (pr, OFS_RETURN) = 0;
 		return;
 	}
 	*line = Con_CreateInputLine (lines, size, prompt);
 	if (!*line) {
+		Sys_Printf ("failed to create inputline\n");
 		G_INT (pr, OFS_RETURN) = 0;
 		return;
 	}
