@@ -11,6 +11,7 @@ yyerror (char *s)
 }
 
 int yylex (void);
+type_t *PR_FindType (type_t *new);
 
 %}
 
@@ -33,7 +34,11 @@ int yylex (void);
 
 %token	NAME INT_VAL FLOAT_VAL STRING_VAL VECTOR_VAL QUATERNION_VAL
 
-%token	LOCAL TYPE RETURN WHILE DO IF ELSE FOR ELIPSIS
+%token	LOCAL RETURN WHILE DO IF ELSE FOR ELIPSIS
+%token	<type> TYPE
+
+%type	<type>	type
+%type	<def>	param param_list def_item def def_list
 
 %expect 1
 
@@ -46,32 +51,57 @@ defs
 
 def
 	: type def_list
+		{
+			def_t *def;
+			for (def = $2; def; def = def->next)
+				def->type = $1;
+			$$ = $2;
+		}
 	;
 
 type
 	: TYPE
 	| '.' TYPE
+		{
+			type_t new;
+			memset (&new, 0, sizeof (new));
+			new.type = ev_field;
+			new.aux_type = $2;
+			$$ = PR_FindType (&new);
+		}
 	;
 
 def_list
 	: def_item ',' def_list
+		{
+			$1->next = $3;
+			$$ = $1;
+		}
 	| def_item
 	;
 
 def_item
-	: NAME opt_initializer
-	| '(' param_list ')' NAME opt_initializer
-	| '(' ')' NAME opt_initializer
-	| '(' ELIPSIS ')' NAME opt_initializer
+	: NAME opt_initializer {}
+	| '(' param_list ')' NAME opt_initializer {}
+	| '(' ')' NAME opt_initializer {}
+	| '(' ELIPSIS ')' NAME opt_initializer {}
 	;
 
 param_list
 	: param
 	| param_list ',' param
+		{
+			$1->next = $3;
+			$$ = $1;
+		}
 	;
 
 param
 	: type def_item
+		{
+			$2->type = $1;
+			$$ = $2;
+		}
 	;
 
 opt_initializer
