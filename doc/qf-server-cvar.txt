@@ -14,7 +14,6 @@ r    fs_basegame          : game to use by default
 r    fs_globalcfg         : global configuration file
 r    fs_sharepath         : location of shared (read only) game directories
 r    fs_userpath          : location of your game directories
- *   gl_subdivide_size    : Sets the division value for the sky brushes.
    s hostname             : Report or sets the server name
    s maxclients           : Sets how many clients can connect to your server, this includes spectators and players
    s maxspectators        : Sets how many spectators can connect to your server. The maxclients value takes precidence over this value so this value should always be equal-to or less-then the maxclients value
@@ -64,7 +63,5 @@ r    fs_userpath          : location of your game directories
    s teamplay             : Determines teamplay rules. 0 off, 1 You cannot hurt yourself nor your teammates, 2 You can hurt yourself, your teammates, and you will lose one frag for killing a teammate3 You can hurt yourself but you cannot hurt your teammates
    s timelimit            : Sets the amount of time in minutes that is needed before advancing to the next level
      timeout              : Sets the amount of time in seconds before a client is considered disconnected if the server does not receive a packet
-     vid_height           : User-created cvar
-     vid_width            : User-created cvar
    s watervis             : Toggle the use of r_watervis by OpenGL clients
      zombietime           : The number of seconds that the server will keep the character of a player on the map who seems to have disconnected
