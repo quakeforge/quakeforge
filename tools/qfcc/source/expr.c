@@ -40,7 +40,6 @@ static const char rcsid[] =
 #include "scope.h"
 #include "qc-parse.h"
 
-extern function_t *current_func;
 
 int lineno_base;
 
