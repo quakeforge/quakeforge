@@ -47,7 +47,7 @@ int         ramp1[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
 int         ramp2[8] = { 0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66 };
 int         ramp3[8] = { 0x6d, 0x6b, 6, 5, 4, 3 };
 
-int         r_numparticles;
+int         r_maxparticles;
 particle_t *active_particles, *free_particles, *particles;
 vec3_t      r_pright, r_pup, r_ppn;
 
@@ -62,18 +62,18 @@ void
 R_MaxParticlesCheck (cvar_t *var)
 {
 	// Do not use 0 in this! sw doesn't grok 0 and it'll segfault if we do!
-	r_numparticles = max(var->int_val, 1);
+	r_maxparticles = max(var->int_val, 1);
         
 	/*
 	Debugging code. will print what the above was set to, and is also useful
 	for checking if this is accidentally being run all the time.
-	Con_Printf ("%d", r_numparticles);
+	Con_Printf ("%d", r_maxparticles);
 	*/
 	
 	if (particles)
 		free (particles);
                 
-	particles = (particle_t *) calloc (r_numparticles, sizeof (particle_t));
+	particles = (particle_t *) calloc (r_maxparticles, sizeof (particle_t));
         
 	R_ClearParticles ();
 }
@@ -95,9 +95,9 @@ R_ClearParticles (void)
 	free_particles = &particles[0];
 	active_particles = NULL;
 
-	for (i = 0; i < r_numparticles; i++)
+	for (i = 0; i < r_maxparticles; i++)
 		particles[i].next = &particles[i + 1];
-	particles[r_numparticles - 1].next = NULL;
+	particles[r_maxparticles - 1].next = NULL;
 }
 
 void

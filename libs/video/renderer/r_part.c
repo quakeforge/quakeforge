@@ -40,7 +40,7 @@
 
 particle_t *active_particles, *free_particles, *particles;
 vec3_t      r_pright, r_pup, r_ppn;
-int         r_numparticles;
+int         r_maxparticles;
 
 
 void
