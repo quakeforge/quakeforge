@@ -1159,6 +1159,11 @@ fi
 AC_DEFINE_UNQUOTED(GL_DRIVER, "$gl_driver", [Define this to the default GL dynamic lib])
 
 dnl CFLAGS for release and devel versions
+AC_ARG_WITH(efence,
+	[  --with-efence           link with -lefence],
+	AC_CHECK_LIB(efence,malloc)
+)
+
 AC_ARG_ENABLE(debug,
 	[  --disable-debug         compile without debugging],
 	debug=$enable_debug
