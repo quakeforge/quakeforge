@@ -62,7 +62,6 @@ main (int argc, char **argv)
 	membase = malloc (memsize);
 	Memory_Init (membase, memsize);
 	Cvar_Init ();
-	Cbuf_Init ();
 	Cmd_Init ();
 
 	Cvar_Get ("fs_basegame", "", 0, 0, 0);
