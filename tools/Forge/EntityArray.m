@@ -13,11 +13,11 @@ insertEC:
 	int		i;
 	
 	name = [ec classname];
-	for (i=0 ; i<numElements ; i++)
+	for (i=0 ; i<[self count] ; i++)
 	{
-		if (strcasecmp (name, [[self objectAt: i] classname]) < 0)
+		if (strcasecmp (name, [[self objectAtIndex: i] classname]) < 0)
 		{
-			[self insertObject: ec at:i];
+			[self insertObject: ec atIndex:i];
 			return;
 		}
 	}
@@ -64,18 +64,18 @@ scanDirectory
 - (void)scanDirectory
 {
 	int		count, i;
-	struct direct **namelist, *ent;
+	struct dirent **namelist, *ent;
 	
-	[self empty];
+	[self removeAllObjects];
 	
      count = scandir(source_path, &namelist, NULL, NULL);
 	
 	for (i=0 ; i<count ; i++)
 	{
 		ent = namelist[i];
-		if (ent->d_namlen <= 3)
+		if (strlen(ent->d_name) <= 3)
 			continue;
-		if (!strcmp (ent->d_name+ent->d_namlen-3,".qc"))
+		if (!strcmp (ent->d_name+strlen(ent->d_name)-3,".qc"))
 			[self scanFile: ent->d_name];
 	}
 }
@@ -104,9 +104,9 @@ id	entity_classes_i;
 	int		i;
 	id		o;
 	
-	for (i=0 ; i<numElements ; i++)
+	for (i=0 ; i<[self count] ; i++)
 	{
-		o = [self objectAt: i];
+		o = [self objectAtIndex: i];
 		if (!strcmp (name,[o classname]) )
 			return o;
 	}

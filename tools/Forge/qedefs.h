@@ -53,3 +53,4 @@ void UngetToken ();
 #define	FN_CRASHSAVE	"/qcache/ErrorSaveMap.map"
 #define	FN_DEVLOG		"/qcache/devlog"
 
+extern char *debugname;
