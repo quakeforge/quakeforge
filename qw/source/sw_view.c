@@ -138,12 +138,9 @@ V_UpdatePalette (void)
 		basepal += 3;
 
 		for (j = 0; j < NUM_CSHIFTS; j++) {
-			r +=
-				(cl.cshifts[j].percent * (cl.cshifts[j].destcolor[0] - r)) >> 8;
-			g +=
-				(cl.cshifts[j].percent * (cl.cshifts[j].destcolor[1] - g)) >> 8;
-			b +=
-				(cl.cshifts[j].percent * (cl.cshifts[j].destcolor[2] - b)) >> 8;
+			r += (cl.cshifts[j].percent * (cl.cshifts[j].destcolor[0] - r)) >> 8;
+			g += (cl.cshifts[j].percent * (cl.cshifts[j].destcolor[1] - g)) >> 8;
+			b += (cl.cshifts[j].percent * (cl.cshifts[j].destcolor[2] - b)) >> 8;
 		}
 
 		newpal[0] = gammatable[r];
@@ -152,25 +149,4 @@ V_UpdatePalette (void)
 		newpal += 3;
 	}
 	VID_ShiftPalette (pal);
-}
-
-void
-BuildGammaTable (float b, float c)
-{
-#if 0
-	int 	i, inf;
-//	int 	p = (int) c;
-
-	if ((b == 1.0) && (c == 1.0)) {
-		for (i = 0; i < 256; i++)
-			gammatable[i] = i;
-		return;
-	}
-
-	for (i = 0; i < 256; i++) { // weighted average toward the median, 127
-		inf = (i * b);	// gamma is brightness now, and positive
-		inf = bound (0, inf, 255);
-		gammatable[i] = inf + (int) ((127 - inf) * (1 - c));
-	}
-#endif
 }

@@ -79,13 +79,22 @@ GLenum		gl_mtex_enum = GL_TEXTURE0_ARB;
 
 QF_glColorTableEXT	qglColorTableEXT = NULL;
 qboolean			is8bit = false;
-cvar_t				*vid_use8bit;
-cvar_t				*vid_gamma;
+
+cvar_t	*vid_use8bit;
+cvar_t	*brightness;
+cvar_t	*contrast;
 
 extern int		gl_filter_min, gl_filter_max;
-extern cvar_t	*vid_system_gamma;
 
 /*-----------------------------------------------------------------------*/
+
+void
+GL_Common_Init_Cvars (void)
+{
+	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,	"Use 8-bit shared palettes.");
+	brightness = Cvar_Get ("brightness", "1", CVAR_ARCHIVE, NULL, "Brightness level");
+	contrast = Cvar_Get ("contrast", "1", CVAR_ARCHIVE, NULL, "Contrast level");
+}
 
 /*
 	CheckMultiTextureExtensions
@@ -208,6 +217,8 @@ VID_SetPalette (unsigned char *palette)
 void
 GL_Init_Common (void)
 {
+	GL_Common_Init_Cvars ();
+	
 	gl_vendor = glGetString (GL_VENDOR);
 	Con_Printf ("GL_VENDOR: %s\n", gl_vendor);
 	gl_renderer = glGetString (GL_RENDERER);
@@ -349,9 +360,6 @@ Shared_Init8bitPalette (void)
 void
 VID_Init8bitPalette (void)
 {
-	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,
-							"Use 8-bit shared palettes.");
-
 	Con_Printf ("Checking for 8-bit extension: ");
 	if (vid_use8bit->int_val) {
 #ifdef GL_SHARED_TEXTURE_PALETTE_EXT

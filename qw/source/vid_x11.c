@@ -539,6 +539,7 @@ VID_Init (unsigned char *palette)
 	X11_CreateNullCursor ();
 
 	VID_InitGamma (palette);
+	VID_SetPalette (palette);
 	if (x_visinfo->depth == 8) {
 		/* Create and upload the palette */
 		if (x_visinfo->class == PseudoColor) {
@@ -641,9 +642,9 @@ VID_SetPalette (unsigned char *palette)
 		for (i = 0; i < 256; i++) {
 			colors[i].pixel = i;
 			colors[i].flags = DoRed | DoGreen | DoBlue;
-			colors[i].red = gammatable[palette[i * 3]];
-			colors[i].green = gammatable[palette[i * 3 + 1]];
-			colors[i].blue = gammatable[palette[i * 3 + 2]];
+			colors[i].red = gammatable[(byte) palette[(i * 3)]];
+			colors[i].green = gammatable[(byte) palette[(i * 3) + 1]];
+			colors[i].blue = gammatable[(byte) palette[(i * 3) + 2]];
 		}
 		XStoreColors (x_disp, x_cmap, colors, 256);
 	}

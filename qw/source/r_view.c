@@ -261,10 +261,8 @@ cshift_t	cshift_water = { {130, 80, 50}, 128 };
 cshift_t	cshift_slime = { {0, 25, 5}, 150 };
 cshift_t	cshift_lava = { {255, 80, 0}, 150 };
 
-cvar_t		*brightness;
-cvar_t		*contrast;
-
-extern byte gammatable[256];			// palette is sent through this
+extern byte 	gammatable[256];			// palette is sent through this
+extern cvar_t	*vid_gamma;
 
 /*
 	V_CheckGamma
@@ -272,23 +270,16 @@ extern byte gammatable[256];			// palette is sent through this
 qboolean
 V_CheckGamma (void)
 {
-#if 0
-	static float	oldbrightness;
-	static float	oldcontrast;
+	static float	oldgamma;
 
-	if ((brightness->value == oldbrightness) && contrast->value == oldcontrast)
+	if (oldgamma == vid_gamma->value)
 		return false;
 
-	oldbrightness = brightness->value;
-	oldcontrast = contrast->value;
+	oldgamma = vid_gamma->value;
 
-	BuildGammaTable (brightness->value, contrast->value);
 	vid.recalc_refdef = 1;	// force a surface cache flush
 
 	return true;
-#else
-	return false;
-#endif
 }
 
 /*
@@ -741,8 +732,6 @@ V_Init (void)
 	Cmd_AddCommand ("bf", V_BonusFlash_f, "Background flash, used when you pick up an item");
 	Cmd_AddCommand ("centerview", V_StartPitchDrift, "Centers the player's view ahead after +lookup or +lookdown \n"
 		"Will not work while mlook is active or freelook is 1.");
-
-	BuildGammaTable (1.0, 1.0);			// no gamma yet
 }
 
 void
@@ -787,9 +776,4 @@ V_Init_Cvars (void)
 			"How much you lean when hit");
 	v_kickpitch = Cvar_Get ("v_kickpitch", "0.6", CVAR_NONE, NULL,
 			"How much you look up when hit");
-
-	brightness = Cvar_Get ("brightness", "1", CVAR_ARCHIVE, NULL,
-			"Brightness level");
-	contrast = Cvar_Get ("contrast", "1", CVAR_ARCHIVE, NULL, "Contrast level");
 }
-

@@ -32,23 +32,30 @@
 #include <math.h>
 
 #include "QF/compat.h"
+#include "QF/console.h"
 #include "QF/cvar.h"
-#include "vid.h"
-#include "view.h"
-#include "QF/va.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
+#include "QF/va.h"
+#include "vid.h"
+#include "view.h"
 
 extern viddef_t vid;					// global video state
 
-cvar_t  *vid_system_gamma;
-qboolean vid_gamma_avail;		// hardware gamma availability
-byte     gammatable[256];
-cvar_t	*vid_gamma;
+/*
+	Software and hardware gamma support
+*/
+byte		gammatable[256];
+cvar_t		*vid_gamma;
+cvar_t		*vid_system_gamma;
+qboolean	vid_gamma_avail;		// hardware gamma availability
 
-int         scr_width, scr_height;
-cvar_t     *vid_width;
-cvar_t     *vid_height;
+/*
+	Screen size
+*/
+int 		scr_width, scr_height;
+cvar_t		*vid_width;
+cvar_t		*vid_height;
 
 void
 VID_GetWindowSize (int def_w, int def_h)
@@ -98,6 +105,30 @@ VID_GetWindowSize (int def_w, int def_h)
 	scr_height = vid.height = vid_height->int_val;
 }
 
+/****************************************************************************
+ *								GAMMA FUNCTIONS 							*
+ ****************************************************************************/
+
+void
+VID_BuildGammaTable (double gamma)
+{
+	int 	i;
+
+	if (gamma == 1.0) { // linear, don't bother with the math
+		for (i = 0; i < 256; i++) {
+			gammatable[i] = i;
+		}
+	} else {
+		double	g = 1.0 / gamma;
+		int 	v;
+
+		for (i = 0; i < 256; i++) { // Build/update gamma lookup table
+			v = (int) ((255.0 * pow ((double) i / 255.0, g)) + 0.5);
+			gammatable[i] = bound (0, v, 255);
+		}
+	}
+}
+
 /*
 	VID_UpdateGamma
 
@@ -107,33 +138,18 @@ VID_GetWindowSize (int def_w, int def_h)
 void
 VID_UpdateGamma (cvar_t *vid_gamma)
 {
-	int 	i;
+	double gamma = bound (0.1, vid_gamma->value, 9.9);
 	
 	if (vid_gamma->flags & CVAR_ROM)	// System gamma unavailable
 		return;
 
-	Cvar_SetValue (vid_gamma, bound (0.1, vid_gamma->value, 9.9));
-
-	if (vid_gamma_avail && vid_system_gamma->int_val) {	// Have sys gamma, use it
-		for (i = 0; i < 256; i++) { 	// linear, to keep things kosher
-			gammatable[i] = i;
-		}
-		VID_SetGamma (vid_gamma->value);
+	if (vid_gamma_avail && vid_system_gamma->int_val) {	// Have system, use it
+		Con_DPrintf ("Setting hardware gamma to %g\n", gamma);
+		VID_BuildGammaTable (1.0);	// hardware gamma wants a linear palette
+		VID_SetGamma (gamma);
 	} else {	// We have to hack the palette
-		if (vid_gamma->value == 1.0) {	// screw the math, 1.0 is linear
-			for (i = 0; i < 256; i++) {
-				gammatable[i] = i;
-			}
-		} else {
-			double	g = 1.0 / vid_gamma->value;
-			int 	v;
-
-			for (i = 0; i < 256; i++) {	// Update the gamma LUT
-				v = (int) ((255.0 * pow ((double) i / 255.0, g)) + 0.5);
-				gammatable[i] = bound (0, v, 255);
-			}
-		}
-		
+		Con_DPrintf ("Setting software gamma to %g\n", gamma);
+		VID_BuildGammaTable (gamma);
 		V_UpdatePalette (); // update with the new palette
 	}
 }
@@ -141,9 +157,7 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 /*
 	VID_InitGamma
 
-	Initialize the gamma lookup table
-
-	This function is less complex than the GL version.
+	Initialize the vid_gamma Cvar, and set up the palette
 */
 void
 VID_InitGamma (unsigned char *pal)
@@ -156,6 +170,8 @@ VID_InitGamma (unsigned char *pal)
 	}
 	gamma = bound (0.1, gamma, 9.9);
 
-	vid_gamma = Cvar_Get ("vid_gamma", va("%f", gamma), CVAR_ARCHIVE,
+	vid_gamma = Cvar_Get ("vid_gamma", va ("%f", gamma), CVAR_ARCHIVE,
 						  VID_UpdateGamma, "Gamma correction");
+
+	VID_BuildGammaTable (vid_gamma->value);
 }
