@@ -348,6 +348,9 @@ CL_ParseTEnt (void)
 			ex = CL_AllocExplosion ();
 			VectorCopy (pos, ex->ent.origin);
 			ex->start = cl.time;
+			//FIXME need better model management
+			if (!cl_spr_explod->cache.data)
+				cl_spr_explod = Mod_ForName ("progs/s_explod.spr", true);
 			ex->ent.model = cl_spr_explod;
 			break;
 
