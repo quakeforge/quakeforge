@@ -53,7 +53,7 @@
 	Searches the string for the given
 	key and returns the associated value, or an empty string.
 */
-const char       *
+const char *
 Info_ValueForKey (const char *s, const char *key)
 {
 	char        pkey[512];
