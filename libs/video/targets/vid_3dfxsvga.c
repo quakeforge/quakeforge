@@ -232,7 +232,7 @@ TDFX_BrightenPalette (unsigned char *palette)
 		green = (float)pal[1];
 		blue = (float)pal[2];
 		maxnum = max(red,max(green,blue));
-		somenum = (bound(0.0,(maxnum * tdfx_brighten->int_val),255.0) / maxnum);
+		somenum = (bound(0.0,(maxnum * tdfx_brighten->value),255.0) / maxnum);
 		pal[0] = (int)(somenum * red);
 		pal[1] = (int)(somenum * green);
 		pal[2] = (int)(somenum * blue);
