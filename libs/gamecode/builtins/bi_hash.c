@@ -165,7 +165,7 @@ bi_Hash_Add (progs_t *pr)
 {
 	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
 
-	R_INT (pr) = Hash_Add (ht->tab, (void *) P_INT (pr, 1));
+	R_INT (pr) = Hash_Add (ht->tab, (void *) (long) P_INT (pr, 1));
 }
 
 static void
@@ -173,7 +173,7 @@ bi_Hash_AddElement (progs_t *pr)
 {
 	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
 
-	R_INT (pr) = Hash_Add (ht->tab, (void *) P_INT (pr, 1));
+	R_INT (pr) = Hash_Add (ht->tab, (void *) (long) P_INT (pr, 1));
 }
 
 static void
@@ -189,7 +189,8 @@ bi_Hash_FindElement (progs_t *pr)
 {
 	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
 
-	R_INT (pr) = (long) Hash_FindElement (ht->tab, (void *) P_INT (pr, 1));
+	R_INT (pr) = (long) Hash_FindElement (ht->tab,
+										  (void *) (long) P_INT (pr, 1));
 }
 
 static void
@@ -218,7 +219,7 @@ bi_Hash_FindElementList (progs_t *pr)
 	pr_type_t  *pr_list;
 	int         count;
 
-	list = Hash_FindElementList (ht->tab, (void *) P_INT (pr, 1));
+	list = Hash_FindElementList (ht->tab, (void *) (long) P_INT (pr, 1));
 	for (count = 1, l = list; *l; l++)
 		count++;
 	pr_list = PR_Zone_Malloc (pr, count * sizeof (pr_type_t));
@@ -241,7 +242,8 @@ bi_Hash_DelElement (progs_t *pr)
 {
 	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
 
-	R_INT (pr) = (long) Hash_DelElement (ht->tab, (void *) P_INT (pr, 1));
+	R_INT (pr) = (long) Hash_DelElement (ht->tab,
+										 (void *) (long) P_INT (pr, 1));
 }
 
 static void
@@ -249,7 +251,7 @@ bi_Hash_Free (progs_t *pr)
 {
 	bi_hashtab_t *ht = &G_STRUCT (pr, bi_hashtab_t, 0);
 
-	Hash_Free (ht->tab, (void *) P_INT (pr, 1));
+	Hash_Free (ht->tab, (void *) (long) P_INT (pr, 1));
 }
 
 static void
