@@ -86,7 +86,8 @@ Mod_LoadExternalTextures (model_t *mod)
 
 		// FIXME: replace special flag characters with # or _?
 		if (tx->name[0] == '*') {
-			filename = va ("textures/%.*s/#%s.tga", strlen (mod->name + 5) - 4,
+			filename = va ("textures/%.*s/#%s.tga",
+						   (int) strlen (mod->name + 5) - 4,
 						   mod->name + 5, tx->name + 1);
 			QFS_FOpenFile (filename, &f);
 			if (!f) {
@@ -98,7 +99,8 @@ Mod_LoadExternalTextures (model_t *mod)
 				QFS_FOpenFile (filename, &f);
 			}
 		} else {
-			filename = va ("textures/%.*s/%s.tga", strlen (mod->name +5) -4,
+			filename = va ("textures/%.*s/%s.tga",
+						   (int) strlen (mod->name + 5) - 4,
 						   mod->name + 5, tx->name);
 			QFS_FOpenFile (filename, &f);
 			if (!f) {
