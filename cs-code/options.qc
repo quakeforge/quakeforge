@@ -193,10 +193,11 @@ integer (string text, integer key) control_options_f =
 			}
 			break;
 		case "cl_autorecord":
-			if(cvar("cl_autorecord") == 0)
-				Cbuf_AddText ("set cl_autorecord 1\n");
-			else
-				Cbuf_AddText ("set cl_autorecord 0\n");
+			Cbuf_AddText ("toggle cl_autorecord\n");
+			break;
+		case "cl_fraglog":
+			Cbuf_AddText ("toggle cl_fraglog\n");
+			break;
 	}
 	if(!(key == QFK_RIGHT || key == QFK_LEFT)) {
 		return 0;
@@ -269,6 +270,8 @@ integer () options_features_draw =
 
 	tmp = cvar("cl_autorecord") != 0 ? "On" : "Off";
 	draw_val_item (70, 60, spacing, "Auto Record", tmp);
+	tmp = cvar("cl_fraglog") != 0 ? "On" : "Off";
+	draw_val_item (70, 70, spacing, "Fraglogging", tmp);
 
 	opt_cursor  (62, (Menu_GetIndex() * 10) + 60 + cursor_pad);
 	return 1;
@@ -281,6 +284,7 @@ void () options_features_menu =
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 	Menu_Draw (options_features_draw);
 	Menu_Item (54, 70, "cl_autorecord", control_options_f, 0);
+	Menu_Item (54, 80, "cl_fraglog", control_options_f, 0);
 	Menu_End ();
 };
 

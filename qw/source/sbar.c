@@ -49,6 +49,7 @@ static const char rcsid[] =
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/vfs.h"
+#include "QF/sys.h"
 
 #include "bothdefs.h"
 #include "cl_cam.h"
@@ -92,7 +93,7 @@ static qboolean largegame = false;
 
 cvar_t     *cl_showscoresuid;
 cvar_t     *fs_fraglog;
-
+cvar_t     *cl_fraglog;
 
 /*
 	Sbar_ShowTeamScores
@@ -251,6 +252,8 @@ Sbar_Init (void)
 
 	fs_fraglog = Cvar_Get ("fs_fraglog", "qw-scores.log", CVAR_NONE, NULL,
 								 "filename of the automatic frag-log");
+	cl_fraglog = Cvar_Get ("cl_fraglog", "0", CVAR_NONE, NULL,
+								 "automatic fraglogging, non-zero value will switch it on");
 }
 
 // drawing routines are reletive to the status bar location
@@ -899,12 +902,17 @@ void
 Sbar_LogFrags (void)
 {
 	char        num[512];
-	VFile      *file;
-	int         minutes, fph, total, f, i, k, l, p;
-	player_info_t *s;
-	const char		*t = NULL;
-	time_t tt = time(NULL);
+	char        conv[512];
+	char        conv2[512];
+	char       *cp   = NULL;
+	VFile      *file = NULL;
+	int         minutes, fph, total, f, i, k, l, p, d;
+	player_info_t *s = NULL;
+	const char *t    = NULL;
+	time_t      tt   = time(NULL);
 	char        e_path[MAX_OSPATH];
+
+	if(!cl_fraglog->int_val) return;
 
 	memset(&e_path,0,MAX_OSPATH);
     Qexpand_squiggle (fs_userpath->string, e_path);
@@ -933,9 +941,9 @@ Sbar_LogFrags (void)
 
 	if (cl.teamplay) {
 		// TODO: test if the teamplay does correct output
-		Qwrite(file, "pl  fph time frags team name\n", strlen("pl  fph time frags team name\n"));
+		Qwrite(file, "pl   fph time frags team name\n", strlen("pl   fph time frags team name\n"));
 	} else {
-		Qwrite(file, "pl  fph time frags name\n", strlen("pl  fph time frags name\n"));
+		Qwrite(file, "pl   fph time frags name\n", strlen("pl   fph time frags name\n"));
 	}
 
 	for (i = 0; i < l; i++) {
@@ -966,16 +974,25 @@ Sbar_LogFrags (void)
 		}
 		if(fph >= 999) fph = 999;
 		if(fph <= -999) fph = -999;
+
+
+		memset(&conv, 0, 512);
+		for (cp = (unsigned char *) s->name, d = 0; *cp; cp++, d++)
+			conv[d] = sys_char_map[(unsigned int)*cp];
 		
 		if(s->spectator) {
-			snprintf(num, sizeof (num), "%3i (spec)", s->pl);
+			snprintf(num, sizeof (num), "%-3i%% %s (spectator)", s->pl, (char*)&conv);
 		} else {
 			if(cl.teamplay) {
-				snprintf(num, sizeof (num), "%3i %3i %4i %3i    %4s %s", s->pl, fph, 
-					minutes, f, s->team->value, s->name);
+				memset(&conv2, 0, 512);
+				for (cp = (unsigned char *) s->team->value, d = 0; *cp; cp++, d++)
+					conv2[d] = sys_char_map[(unsigned int)*cp];
+
+				snprintf(num, sizeof (num), "%-3i%% %-3i %-4i %-3i    %-4s %s", s->pl, fph, 
+					minutes, f, (char*)&conv2, (char*)&conv);
 			} else {
-				snprintf(num, sizeof (num), "%3i %3i %4i %3i   %s", s->pl, fph, 
-					minutes, f, s->name);
+				snprintf(num, sizeof (num), "%-3i%% %-3i %-4i %-3i   %s", s->pl, fph, 
+					minutes, f, (char*)&conv);
 			}
 		}
 		Qwrite(file, num, strlen(num));
