@@ -47,6 +47,13 @@ typedef struct net_svc_updateuserinfo_s
 	const char *userinfo;
 } net_svc_updateuserinfo_t;
 
+typedef struct net_svc_setinfo_s
+{
+	byte		slot;
+	const char *key;
+	const char *value;
+} net_svc_setinfo_t;
+
 typedef struct net_svc_download_s
 {
 	short		size;
@@ -72,6 +79,7 @@ typedef struct net_svc_modellist_s
 void NET_SVC_Print_Parse (net_svc_print_t *print, msg_t *message);
 void NET_SVC_UpdateUserInfo_Parse (net_svc_updateuserinfo_t *updateuserinfo,
 								   msg_t *message);
+void NET_SVC_SetInfo_Parse (net_svc_setinfo_t *setinfo, msg_t *message);
 void NET_SVC_Download_Parse (net_svc_download_t *download, msg_t *message);
 void NET_SVC_Soundlist_Parse (net_svc_soundlist_t *soundlist, msg_t *message);
 void NET_SVC_Modellist_Parse (net_svc_modellist_t *modellist, msg_t *message);

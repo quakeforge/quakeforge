@@ -66,6 +66,14 @@ NET_SVC_UpdateUserInfo_Parse (net_svc_updateuserinfo_t *updateuserinfo,
 }
 
 void
+NET_SVC_SetInfo_Parse (net_svc_setinfo_t *setinfo, msg_t *message)
+{
+	setinfo->slot = MSG_ReadByte (message);
+	setinfo->key = MSG_ReadString (message);
+	setinfo->value = MSG_ReadString (message);
+}
+
+void
 NET_SVC_Download_Parse (net_svc_download_t *download, msg_t *message)
 {
 	download->size = MSG_ReadShort (message);

@@ -1019,28 +1019,26 @@ CL_ParseUpdateUserInfo (void)
 void
 CL_SetInfo (void)
 {
-	char        key[MAX_MSGLEN], value[MAX_MSGLEN];
-	int         slot;
-	player_info_t *player;
+	int				flags;
+	player_info_t  *player;
+	net_svc_setinfo_t setinfo;
 
-	slot = MSG_ReadByte (net_message);
-	if (slot >= MAX_CLIENTS)
+	NET_SVC_SetInfo_Parse (&setinfo, net_message);
+
+	if (setinfo.slot >= MAX_CLIENTS)
 		Host_EndGame ("CL_ParseServerMessage: svc_setinfo > MAX_SCOREBOARD");
 
-	player = &cl.players[slot];
+	player = &cl.players[setinfo.slot];
 
-	strncpy (key, MSG_ReadString (net_message), sizeof (key) - 1);
-	key[sizeof (key) - 1] = 0;
-	strncpy (value, MSG_ReadString (net_message), sizeof (value) - 1);
-	key[sizeof (value) - 1] = 0;
+	Con_DPrintf ("SETINFO %s: %s=%s\n", player->name, setinfo.key,
+				 setinfo.value);
 
-	Con_DPrintf ("SETINFO %s: %s=%s\n", player->name, key, value);
+	flags = !strequal (setinfo.key, "name");
+	flags |= strequal (setinfo.key, "team") << 1;
+	Info_SetValueForKey (player->userinfo, setinfo.key, setinfo.value,
+						 MAX_INFO_STRING, flags);
 
-	Info_SetValueForKey (player->userinfo, key, value, MAX_INFO_STRING,
-						 (!strequal (key, "name"))
-						 | (strequal (key, "team") << 1));
-
-	CL_ProcessUserInfo (slot, player);
+	CL_ProcessUserInfo (setinfo.slot, player);
 }
 
 void
