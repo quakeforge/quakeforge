@@ -107,6 +107,7 @@ R_GetSpriteFrame (entity_t *currententity)
 	return pspriteframe;
 }
 
+// FIXME: add modelalpha support?
 void
 R_DrawSpriteModel (entity_t *e)
 {
@@ -118,10 +119,10 @@ R_DrawSpriteModel (entity_t *e)
 	// don't even bother culling, because it's just a single
 	// polygon without a surface cache
 	frame = R_GetSpriteFrame (e);
-	psprite = currententity->model->cache.data;
+	psprite = e->model->cache.data;
 
 	if (psprite->type == SPR_ORIENTED) {	// bullet marks on walls
-		AngleVectors (currententity->angles, v_forward, v_right, v_up);
+		AngleVectors (e->angles, v_forward, v_right, v_up);
 		up = v_up;
 		right = v_right;
 	} else {								// normal sprite

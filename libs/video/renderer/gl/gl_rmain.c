@@ -178,7 +178,6 @@ R_DrawEntitiesOnList (void)
 		if (r_visedicts[i]->model->type != mod_brush)
 			continue;
 		currententity = r_visedicts[i];
-		modelalpha = currententity->alpha;
 
 		R_DrawBrushModel (currententity);
 	}
@@ -187,7 +186,6 @@ R_DrawEntitiesOnList (void)
 		if (r_visedicts[i]->model->type != mod_alias)
 			continue;
 		currententity = r_visedicts[i];
-		modelalpha = currententity->alpha;
 
 		if (currententity == r_player_entity)
 			currententity->angles[PITCH] *= 0.3;
@@ -201,7 +199,6 @@ R_DrawEntitiesOnList (void)
 		if (r_visedicts[i]->model->type != mod_sprite)
 			continue;
 		currententity = r_visedicts[i];
-		modelalpha = currententity->alpha;
 
 		R_DrawSpriteModel (currententity);
 	}
@@ -218,9 +215,6 @@ R_DrawViewModel (void)
 		|| !r_drawentities->int_val
 		|| !currententity->model)
 		return;
-
-	// this is a HACK!  --KB
-	modelalpha = currententity->alpha;
 
 	// hack the depth range to prevent view model from poking into walls
 	qfglDepthRange (gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));

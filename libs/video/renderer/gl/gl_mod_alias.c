@@ -391,21 +391,22 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	vec3_t		  dist, mins, maxs;
 	vert_order_t *vo;
 
-	clmodel = currententity->model;
+	clmodel = e->model;
 
-	VectorAdd (currententity->origin, clmodel->mins, mins);
-	VectorAdd (currententity->origin, clmodel->maxs, maxs);
+	VectorAdd (e->origin, clmodel->mins, mins);
+	VectorAdd (e->origin, clmodel->maxs, maxs);
 
 	if (cull && R_CullBox (mins, maxs))
 			return;
 
 	// FIXME: shadecolor is supposed to be the lighting for the model, not
 	// just colormod
-	shadecolor[0] = currententity->colormod[0] * 2.0;
-	shadecolor[1] = currententity->colormod[1] * 2.0;
-	shadecolor[2] = currententity->colormod[2] * 2.0;
+	shadecolor[0] = e->colormod[0] * 2.0;
+	shadecolor[1] = e->colormod[1] * 2.0;
+	shadecolor[2] = e->colormod[2] * 2.0;
+	modelalpha = e->alpha;
 
-	VectorCopy (currententity->origin, r_entorigin);
+	VectorCopy (e->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
 
 	if (strnequal (clmodel->name, "progs/flame", 11)
@@ -414,7 +415,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		shadelight = 1.0;	// make certain models full brightness always
 	} else {
 		// get lighting information
-		shadelight = R_LightPoint (currententity->origin);
+		shadelight = R_LightPoint (e->origin);
 
 		// always give the gun some light
 		if (e == r_view_model)
@@ -422,8 +423,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 
 		for (lnum = 0; lnum < r_maxdlights; lnum++) {
 			if (r_dlights[lnum].die >= r_realtime) {
-				VectorSubtract (currententity->origin, r_dlights[lnum].origin,
-								dist);
+				VectorSubtract (e->origin, r_dlights[lnum].origin, dist);
 				add = (r_dlights[lnum].radius * r_dlights[lnum].radius * 8) /
 					(DotProduct (dist, dist));	// FIXME Deek
 
@@ -452,7 +452,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	}
 
 	// locate the proper data
-	paliashdr = Cache_Get (&currententity->model->cache);
+	paliashdr = Cache_Get (&e->model->cache);
 	c_alias_polys += paliashdr->mdl.numtris;
 
 	// draw all the triangles
@@ -461,22 +461,22 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 
 	if (strequal (clmodel->name, "progs/eyes.mdl")) {
 		qfglTranslatef (paliashdr->mdl.scale_origin[0],
-					  paliashdr->mdl.scale_origin[1],
-					  paliashdr->mdl.scale_origin[2] - (22 + 8));
+						paliashdr->mdl.scale_origin[1],
+						paliashdr->mdl.scale_origin[2] - (22 + 8));
 		// double size of eyes, since they are really hard to see in GL
 		qfglScalef (paliashdr->mdl.scale[0] * 2, paliashdr->mdl.scale[1] * 2,
 				  paliashdr->mdl.scale[2] * 2);
 	} else {
 		qfglTranslatef (paliashdr->mdl.scale_origin[0],
-					  paliashdr->mdl.scale_origin[1],
-					  paliashdr->mdl.scale_origin[2]);
+						paliashdr->mdl.scale_origin[1],
+						paliashdr->mdl.scale_origin[2]);
 		qfglScalef (paliashdr->mdl.scale[0], paliashdr->mdl.scale[1],
-				  paliashdr->mdl.scale[2]);
+					paliashdr->mdl.scale[2]);
 	}
 
 	anim = (int) (r_realtime * 10) & 3;
 
-	skinnum = currententity->skinnum;
+	skinnum = e->skinnum;
 	if ((skinnum >= paliashdr->mdl.numskins) || (skinnum < 0)) {
 		Con_DPrintf ("R_AliasSetupSkin: no such skin # %d\n", skinnum);
 		skinnum = 0;
@@ -488,8 +488,8 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 
 	// we can't dynamically colormap textures, so they are cached
 	// seperately for the players.  Heads are just uncolored.
-	if (currententity->skin && !gl_nocolors->int_val) {
-		skin_t *skin = currententity->skin;
+	if (e->skin && !gl_nocolors->int_val) {
+		skin_t *skin = e->skin;
 
 		texture = skin->texture;
 		if (gl_fb_models->int_val) {
@@ -502,8 +502,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
-	vo = GL_GetAliasFrameVerts (currententity->frame, paliashdr,
-								currententity);
+	vo = GL_GetAliasFrameVerts (e->frame, paliashdr, e);
 
 	GL_DrawAliasFrame (vo, false);
 
@@ -534,7 +533,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 
 		if (gl_lerp_anim->int_val) {
 			GL_DrawAliasBlendedShadow (paliashdr, lastposenum0, lastposenum,
-									   currententity);
+									   e);
 		} else {
 			GL_DrawAliasShadow (paliashdr, lastposenum);
 		}
@@ -543,5 +542,5 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		qfglPopMatrix ();
 	}
 
-	Cache_Release (&currententity->model->cache);
+	Cache_Release (&e->model->cache);
 }

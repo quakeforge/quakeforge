@@ -621,6 +621,7 @@ DrawTextureChains (void)
 	qfglEnable (GL_BLEND);
 }
 
+// FIXME: add modelalpha support?
 void
 R_DrawBrushModel (entity_t *e)
 {
