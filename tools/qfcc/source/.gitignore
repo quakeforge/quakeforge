@@ -1,7 +1,8 @@
+.deps
+.libs
 .vimrc
 Makefile.in
 Makefile
-.deps
 qc-lex.c
 qc-parse.c
 qc-parse.h

@@ -4,3 +4,4 @@
 *.sym
 .vimrc
 Makefile.in
+Makefile
