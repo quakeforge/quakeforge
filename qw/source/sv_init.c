@@ -51,6 +51,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "pmove.h"
 #include "server.h"
 #include "sv_progs.h"
+#include "sv_gib.h"
 #include "world.h"
 
 info_t     *localinfo;	// local game info
@@ -427,6 +428,8 @@ SV_SpawnServer (const char *server)
 
 	Info_SetValueForKey (svs.info, "map", sv.name, !sv_highchars->int_val);
 	Con_DPrintf ("Server spawned.\n");
+	if (sv_map_e->func)
+		GIB_Event_Callback (sv_map_e, 1, server);
 }
 
 void

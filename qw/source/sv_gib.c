@@ -51,6 +51,7 @@ gib_event_t *sv_chat_e;
 gib_event_t *sv_client_connect_e;
 gib_event_t *sv_client_disconnect_e;
 gib_event_t *sv_client_spawn_e;
+gib_event_t *sv_map_e;
 
 static client_t *
 SV_GIB_GetClient (int uid)
@@ -152,4 +153,5 @@ SV_GIB_Init (void)
 	sv_client_connect_e = GIB_Event_New ("client.connect");
 	sv_client_disconnect_e = GIB_Event_New ("client.disconnect");
 	sv_client_spawn_e = GIB_Event_New ("client.spawn");
+	sv_map_e = GIB_Event_New ("map");
 }
