@@ -37,79 +37,131 @@ static const char rcsid[] =
 #include <QF/progs.h>
 #include <QF/quakefs.h>
 #include <QF/sys.h>
+#include "QF/va.h"
 #include <QF/zone.h>
 
 #define MAX_EDICTS 1024
 
-progs_t progs;
-void *membase;
-int memsize = 16*1024*1024;
+static edict_t *edicts;
+static int num_edicts;
+static int reserved_edicts;
+static progs_t pr;
+static void *membase;
+static int memsize = 16*1024*1024;
 
-edict_t *edicts;
-int num_edicts;
-int reserved_edicts;
+void BI_Init (progs_t *pr);
 
-void BI_Init (progs_t *progs);
-
-extern int *read_result; //FIXME: eww
-
-int
-main ()
+static QFile *
+open_file (const char *path, int *len)
 {
-	func_t main_func;
-	QFile *f;
-	int len;
+	QFile      *file = Qopen (path, "rbz");
 
+	if (!file) {
+		perror (path);
+		return 0;
+	}
+	*len = Qfilesize (file);
+	return file;
+}
+
+static void *
+load_file (progs_t *pr, const char *name)
+{
+	QFile      *file;
+	int         size;
+	void       *sym;
+
+	file = open_file (name, &size);
+	if (!file) {
+		file = open_file (va ("%s.gz", name), &size);
+		if (!file) {
+			return 0;
+		}
+	}
+	sym = malloc (size);
+	Qread (file, sym, size);
+	return sym;
+}
+
+static void *
+allocate_progs_mem (progs_t *pr, int size)
+{
+	return malloc (size);
+}
+
+static void
+free_progs_mem (progs_t *pr, void *mem)
+{
+	free (mem);
+}
+
+static void
+init_qf (void)
+{
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
-	membase = malloc (memsize);
-	SYS_CHECKMEM (membase);
-	Memory_Init (membase, memsize);
 	Cvar_Init ();
+	Sys_Init_Cvars ();
 	Cmd_Init ();
+
+	membase = malloc (memsize);
+	Memory_Init (membase, memsize);
 
 	Cvar_Get ("pr_debug", "1", 0, 0, 0);
 	Cvar_Get ("pr_boundscheck", "0", 0, 0, 0);
-	Cvar_Get ("fs_basegame", ".", 0, 0, 0);
-	Cvar_Get ("fs_userpath", ".", 0, 0, 0);
-	Cvar_Get ("fs_sharepath", ".", 0, 0, 0);
-	developer = Cvar_Get ("developer", "1", 0, 0, 0);
+
+	pr.edicts = &edicts;
+	pr.num_edicts = &num_edicts;
+	pr.reserved_edicts = &reserved_edicts;
+	pr.load_file = load_file;
+	pr.allocate_progs_mem = allocate_progs_mem;
+	pr.free_progs_mem = free_progs_mem;
 
 	PR_Init_Cvars ();
-	COM_Filesystem_Init_Cvars ();
-	COM_Filesystem_Init ();
 	PR_Init ();
-	PR_Obj_Progs_Init (&progs);
-	BI_Init (&progs);
+	PR_Obj_Progs_Init (&pr);
+	BI_Init (&pr);
+}
 
-	progs.edicts = &edicts;
-	progs.num_edicts = &num_edicts;
-	progs.reserved_edicts = &reserved_edicts;
-	progs.no_exec_limit = 1;
-	progs.progs_name = "qwaq.dat";
+static int
+load_progs (const char *name)
+{
+	QFile      *file;
+	int         size;
 
-	f = Qopen (progs.progs_name, "rb");
-	if (f) {
-		Qseek (f, 0, SEEK_END);
-		len = Qtell (f);
-		Qseek (f, 0, SEEK_SET);
-		com_filesize = len;
-		PR_LoadProgsFile (&progs, f, len, 1, 1024 * 1024);
-		Qclose (f);
+	file = open_file (name, &size);
+	if (!file) {
+		perror (name);
+		return 0;
 	}
-	if (!progs.progs)
+	pr.progs_name = name;
+	PR_LoadProgsFile (&pr, file, size, 1, 1024 * 1024);
+	Qclose (file);
+	if (!PR_ResolveGlobals (&pr))
+		PR_Error (&pr, "unable to load %s", pr.progs_name);
+	PR_LoadStrings (&pr);
+	PR_LoadDebug (&pr);
+	PR_Check_Opcodes (&pr);
+	PR_RelocateBuiltins (&pr);
+	PR_InitRuntime (&pr);
+	return 1;
+}
+
+int
+main (int argc, char **argv)
+{
+	func_t main_func;
+	const char *name = "qwaq.dat";
+
+	init_qf ();
+
+	if (argc > 1)
+		name = argv[1];
+
+	if (!load_progs (name))
 		Sys_Error ("couldn't load %s", "qwaq.dat");
 
-	if (!PR_ResolveGlobals (&progs))
-		PR_Error (&progs, "unable to load %s", progs.progs_name);
-	PR_LoadStrings (&progs);
-	PR_LoadDebug (&progs);
-	PR_Check_Opcodes (&progs);
-	PR_RelocateBuiltins (&progs);
-	PR_InitRuntime (&progs);
-
-	read_result = (int*)PR_GetGlobalPointer (&progs, "read_result");
-	main_func = PR_GetFunctionIndex (&progs, "main");
-	PR_ExecuteProgram (&progs, main_func);
-	return G_FLOAT (&progs, OFS_RETURN);
+	main_func = PR_GetFunctionIndex (&pr, "main");
+	PR_ExecuteProgram (&pr, main_func);
+	return G_INT (&pr, OFS_RETURN);
 }

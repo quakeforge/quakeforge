@@ -40,8 +40,6 @@ static const char rcsid[] =
 #include <QF/progs.h>
 #include <QF/zone.h>
 
-int *read_result;	//FIXME: eww
-
 static void
 bi_print (progs_t *pr)
 {
@@ -91,6 +89,7 @@ bi_read (progs_t *pr)
 {
 	int handle = P_INT (pr, 0);
 	int count = P_INT (pr, 1);
+	int *read_result = (int *)P_POINTER (pr, 2);
 	int res;
 	char *buffer;
 
@@ -98,7 +97,7 @@ bi_read (progs_t *pr)
 	if (!buffer)
 		PR_Error (pr, "%s: couldn't allocate %d bytes", "bi_read", count);
 	res = read (handle, buffer, count);
-	if (res != -1)		// FIXME: this just won't work :/
+	if (res != -1)
 		RETURN_STRING (pr, buffer);
 	*read_result = res;
 }
@@ -172,18 +171,18 @@ bi_printf (progs_t *pr)
 }
 
 void
-BI_Init (progs_t *progs)
+BI_Init (progs_t *pr)
 {
-	PR_AddBuiltin (progs, "print", bi_print, 1);
-	PR_AddBuiltin (progs, "GarbageCollect", bi_GarbageCollect, 2);
-	PR_AddBuiltin (progs, "errno", bi_errno, 3);
-	PR_AddBuiltin (progs, "strerror", bi_strerror, 4);
-	PR_AddBuiltin (progs, "open", bi_open, 5);
-	PR_AddBuiltin (progs, "close", bi_close, 6);
-	PR_AddBuiltin (progs, "read", bi_read, 7);
-	PR_AddBuiltin (progs, "write", bi_write, 8);
-	PR_AddBuiltin (progs, "seek", bi_seek, 9);
-	PR_AddBuiltin (progs, "traceon", bi_traceon, 10);
-	PR_AddBuiltin (progs, "traceoff", bi_traceoff, 11);
-	PR_AddBuiltin (progs, "printf", bi_printf, 12);
+	PR_AddBuiltin (pr, "print", bi_print, 1);
+	PR_AddBuiltin (pr, "GarbageCollect", bi_GarbageCollect, 2);
+	PR_AddBuiltin (pr, "errno", bi_errno, 3);
+	PR_AddBuiltin (pr, "strerror", bi_strerror, 4);
+	PR_AddBuiltin (pr, "open", bi_open, 5);
+	PR_AddBuiltin (pr, "close", bi_close, 6);
+	PR_AddBuiltin (pr, "read", bi_read, 7);
+	PR_AddBuiltin (pr, "write", bi_write, 8);
+	PR_AddBuiltin (pr, "seek", bi_seek, 9);
+	PR_AddBuiltin (pr, "traceon", bi_traceon, 10);
+	PR_AddBuiltin (pr, "traceoff", bi_traceoff, 11);
+	PR_AddBuiltin (pr, "printf", bi_printf, 12);
 }
