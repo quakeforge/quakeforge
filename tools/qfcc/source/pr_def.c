@@ -236,7 +236,7 @@ PR_NewDef (type_t *type, const char *name, def_t *scope)
 int
 PR_NewLocation (type_t *type)
 {
-	int         size = pr_type_size[type->type];
+	int         size = type_size (type);
 	locref_t   *loc;
 
 	if (free_locs[size]) {
