@@ -153,7 +153,8 @@ COM_extract_line (cbuf_t *cbuf)
 void
 COM_parse_line (cbuf_t *cbuf)
 {
-	COM_TokenizeString (cbuf->line->str, cbuf->args);;
+	COM_TokenizeString (cbuf->line->str, cbuf->args);
+	dstring_clearstr (cbuf->line);
 }
 
 void

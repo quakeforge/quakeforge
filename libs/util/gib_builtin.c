@@ -117,8 +117,30 @@ GIB_Lset_f (void)
 }
 
 void
+GIB_Return_f (void)
+{
+	if (GIB_Argc () > 2)
+		Cbuf_Error ("numargs",
+					"return: invalid number of arguments\n"
+					"usage: return <value>");
+	else {
+		dstring_clearstr (cbuf_active->buf);
+		if (GIB_Argc () == 1)
+			return;
+		if (!cbuf_active->up || !cbuf_active->up->up)
+		 	Cbuf_Error ("return","return attempted at top of stack");
+		if (GIB_DATA(cbuf_active->up->up)->ret.waiting) {
+			dstring_clearstr (GIB_DATA(cbuf_active->up->up)->ret.retval);
+			dstring_appendstr (GIB_DATA(cbuf_active->up->up)->ret.retval, GIB_Argv(1));
+			GIB_DATA(cbuf_active->up->up)->ret.available = true;
+		}
+	}
+}
+
+void
 GIB_Builtin_Init (void)
 {
 	GIB_Builtin_Add ("function", GIB_Function_f);
 	GIB_Builtin_Add ("lset", GIB_Lset_f);
+	GIB_Builtin_Add ("return", GIB_Return_f);
 }

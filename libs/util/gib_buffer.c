@@ -92,13 +92,15 @@ void GIB_Buffer_Construct (struct cbuf_s *cbuf)
 	cbuf->data = calloc (1, sizeof (gib_buffer_data_t));
 	GIB_DATA (cbuf)->arg_composite = dstring_newstr ();
 	GIB_DATA (cbuf)->current_token = dstring_newstr ();
+	GIB_DATA (cbuf)->ret.retval = dstring_newstr ();
 }
 
 void GIB_Buffer_Destruct (struct cbuf_s *cbuf)
 {
 	dstring_delete (GIB_DATA (cbuf)->arg_composite);
 	dstring_delete (GIB_DATA (cbuf)->current_token);
-	if (GIB_DATA(cbuf)->locals)
+	dstring_delete (GIB_DATA (cbuf)->ret.retval);
+	if (GIB_DATA(cbuf)->locals && GIB_DATA(cbuf)->type == GIB_BUFFER_NORMAL)
 		Hash_DelTable (GIB_DATA(cbuf)->locals);
 	free (cbuf->data);
 }

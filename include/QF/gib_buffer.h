@@ -40,9 +40,13 @@ typedef struct gib_buffer_data_s {
 	
 	// Data for handling return values
 	struct {
-		qboolean waiting, available;
+		qboolean waiting, available; // Return value states
+		
+		// Data saved by tokenizer/processor
 		unsigned int line_pos; // Position within line
 		unsigned int token_pos; // Position within token
+		qboolean cat; // Concatenate to previous token?
+		char delim; // delimiter of token
 		struct dstring_s *retval; // Returned value
 	} ret;
 	

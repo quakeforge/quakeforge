@@ -63,7 +63,7 @@ GIB_Parse_Match_Dquote (const char *str, unsigned int *i)
 	for ((*i)++; str[*i]; (*i)++) {
 		if (str[*i] == '\n')
 			return '\"'; // Newlines should never occur inside quotes, EVER
-		if (str[*i] == '\"')
+		else if (str[*i] == '\"')
 			return 0;
 	}
 	return '\"';
@@ -77,12 +77,10 @@ GIB_Parse_Match_Brace (const char *str, unsigned int *i)
 		if (str[*i] == '\"') {
 			if ((c = GIB_Parse_Match_Dquote (str, i)))
 				return c;
-		}
-		if (str[*i] == '{') {
+		} else if (str[*i] == '{') {
 			if ((c = GIB_Parse_Match_Brace (str, i)))
 				return c;
-		}
-		if (str[*i] == '}')
+		} else if (str[*i] == '}')
 				return 0;
 	}
 	return '{';
@@ -96,8 +94,7 @@ GIB_Parse_Match_Paren (const char *str, unsigned int *i)
 		if (str[*i] == '(') {
 			if ((c = GIB_Parse_Match_Paren (str, i)))
 				return c;
-		}
-		if (str[*i] == ')')
+		} else if (str[*i] == ')')
 			return 0;
 	}
 	return '(';
@@ -264,9 +261,9 @@ GIB_Parse_Tokenize_Line (struct cbuf_s *cbuf)
 	dstring_t *arg = GIB_DATA(cbuf)->current_token;
 	const char *str = cbuf->line->str;
 	cbuf_args_t *args = cbuf->args;
-	static qboolean cat = false;
+	qboolean cat = false;
 	char delim;
-	int i = 0;
+	int i;
 	
 	// This function can be interrupted to call a GIB
 	// subroutine.  First we need to clean up anything
@@ -275,19 +272,15 @@ GIB_Parse_Tokenize_Line (struct cbuf_s *cbuf)
 	// Do we have a left-over token that needs processing?
 	
 	if (GIB_DATA(cbuf)->ret.waiting) {
-		// FIXME: Call processing function here
-		if (GIB_DATA(cbuf)->ret.waiting) // Still not done?
-			return;
-		i = GIB_DATA(cbuf)->ret.line_pos; // Start where we left off
+		if (GIB_Process_Token (arg, GIB_DATA(cbuf)->ret.delim))
+			return; // Still not done, or error
+		GIB_Parse_Add_Token (cbuf->args, GIB_DATA(cbuf)->ret.cat, arg);
+		i = GIB_DATA(cbuf)->ret.line_pos; // Start tokenizing where we left off
 	} else {
 		args->argc = 0; // Start from scratch
 		i = 0;
-		cat = false;
 	}
-	
-	// Get just the first token so we can look up any
-	// parsing options that a builtin requests
-	
+
 	while (str[i]) {
 		while (isspace(str[i])) // Eliminate whitespace
 			i++;
@@ -298,15 +291,14 @@ GIB_Parse_Tokenize_Line (struct cbuf_s *cbuf)
 			i++;
 			continue;
 		}
+		dstring_clearstr (arg);
 		delim = GIB_Parse_Get_Token (str, &i, arg);
 		if (!delim)
 			break;
 		Sys_DPrintf("Got token: %s\n", arg->str);
 		
-		// FIXME:  Command sub goes here with subroutine handling
-		
 		if (GIB_Process_Token (arg, delim))
-			goto FILTER_ERROR;
+			goto FILTER_ERROR; // Error or GIB subroutine needs to be called
 		
 		GIB_Parse_Add_Token (cbuf->args, cat, arg);
 		if (cat)
@@ -314,13 +306,14 @@ GIB_Parse_Tokenize_Line (struct cbuf_s *cbuf)
 		
 		if (delim != ' ') // Move into whitespace if we haven't already
 			i++;
-		dstring_clearstr (arg);
 	}
 	GIB_Parse_Generate_Composite (cbuf);
+	dstring_clearstr (cbuf->line);
 	return;
-FILTER_ERROR: // Error during filtering, clean up mess
-	dstring_clearstr (arg);
-	args->argc = 0;
+FILTER_ERROR:
+	GIB_DATA(cbuf)->ret.line_pos = i; // save our information in case
+	GIB_DATA(cbuf)->ret.cat = cat;    // error is not fatal
+	GIB_DATA(cbuf)->ret.delim = delim;
 	return;
 }
 

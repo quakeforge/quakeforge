@@ -146,7 +146,7 @@ Cbuf_Execute (cbuf_t *cbuf)
 {
 	cbuf_active = cbuf;
 	cbuf->state = CBUF_STATE_NORMAL;
-	while (cbuf->buf->str[0]) {
+	while (cbuf->buf->str[0] || cbuf->line->str[0]) {
 		cbuf->interpreter->extract_line (cbuf);
 		if (cbuf->state)
 			break;
@@ -185,6 +185,7 @@ Cbuf_Execute_Stack (cbuf_t *cbuf)
 		sp = sp->up;
 	}
 	dstring_clearstr (cbuf->buf);
+	dstring_clearstr (cbuf->line);
 	if (cbuf->down) {
 		Cbuf_DeleteStack (cbuf->down);
 		cbuf->down = 0;
@@ -197,7 +198,7 @@ Cbuf_Execute_Sets (cbuf_t *cbuf)
 	cbuf_args_t *args = cbuf->args;
 
 	cbuf_active = cbuf;
-	while (cbuf->buf->str[0]) {
+	while (cbuf->buf->str[0] || cbuf->line->str[0]) {
 		cbuf->interpreter->extract_line (cbuf);
 		cbuf->interpreter->parse_line (cbuf);
 		if (!args->argc)

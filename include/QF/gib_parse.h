@@ -28,6 +28,8 @@
 
 */
 
+char GIB_Parse_Match_Angle (const char *str, unsigned int *i);
+
 void GIB_Parse_Extract_Line (struct cbuf_s *cbuf);
 void GIB_Parse_Tokenize_Line (struct cbuf_s *cbuf);
 
