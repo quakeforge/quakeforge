@@ -1372,6 +1372,7 @@ AC_ARG_WITH(server,
 CL_TARGETS=""
 QW_TARGETS=""
 NQ_TARGETS=""
+VID_TARGETS=""
 if test "x$HAVE_TDFXGL" = xyes -a "x$ENABLE_3DFX" = xyes; then
 	QW_TARGETS="$QW_TARGETS qw-client-3dfx\$(EXEEXT)"
 	NQ_TARGETS="$NQ_TARGETS nq-3dfx\$(EXEEXT)"
@@ -1436,6 +1437,7 @@ if test "x$SV_TARGETS" = xyes; then
 fi
 AC_SUBST(NQ_TARGETS)
 AC_SUBST(QW_TARGETS)
+AC_SUBST(VID_TARGETS)
 
 dnl Output files
 AC_OUTPUT(
