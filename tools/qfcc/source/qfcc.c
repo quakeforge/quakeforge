@@ -904,12 +904,24 @@ Options: \n\
 
 	// compile all the files
 	while ((src = COM_Parse (src))) {
+		//extern FILE *yyin;
+		//int yyparse(void);
+		//extern int yydebug;
+		//extern int lineno;
+		//yydebug = 1;
+
 		sprintf (filename, "%s/%s", sourcedir, com_token);
 		printf ("compiling %s\n", filename);
 		LoadFile (filename, (void *) &src2);
 
 		if (!PR_CompileFile (src2, filename))
+		//yyin = fopen (filename, "rt");
+		//lineno = 1;
+		//if (yyparse ()) {
+		//	printf ("%s\n", filename);
 			return 1;
+		//}
+		//fclose (yyin);
 	}
 
 	if (!PR_FinishCompilation ())
