@@ -1,5 +1,5 @@
 /*
-	net.h
+	netmain.h
 
 	@description@
 

@@ -1,5 +1,5 @@
 /*
-	net.h
+	netchan.h
 
 	quake's interface to the networking layer
 
