@@ -335,85 +335,88 @@ PR_ParseStatement (void)
 	def_t			*e;
 	dstatement_t	*patch1, *patch2;
 
-	if (PR_Check (tt_punct, "{")) {
-		do {
-			PR_ParseStatement ();
-		} while (!PR_Check (tt_punct, "}"));
-		return;
-	}
-
-	if (PR_Check (tt_name, "return")) {
-		if (PR_Check (tt_punct, ";")) {
-			PR_Statement (op_return, 0, 0);
-			return;
+	do {
+		if (PR_Check (tt_punct, "{")) {
+			do {
+				PR_ParseStatement ();
+			} while (!PR_Check (tt_punct, "}"));
+			break;
 		}
 
-		e = PR_Expression (TOP_PRIORITY);
+		if (PR_Check (tt_name, "return")) {
+			if (PR_Check (tt_punct, ";")) {
+				PR_Statement (op_return, 0, 0);
+				break;
+			}
 
-		PR_Expect (tt_punct, ";");
-		PR_Statement (op_return, e, 0);
+			e = PR_Expression (TOP_PRIORITY);
 
-		return;
-	}
+			PR_Expect (tt_punct, ";");
+			PR_Statement (op_return, e, 0);
 
-	if (PR_Check (tt_name, "while")) {
-		PR_Expect (tt_punct, "(");
-		patch2 = &statements[numstatements];
-		e = PR_Expression (TOP_PRIORITY);
-		PR_Expect (tt_punct, ")");
-		patch1 = &statements[numstatements];
-		PR_Statement (op_ifnot, e, 0);
-		PR_ParseStatement ();
-		junkdef.ofs = patch2 - &statements[numstatements];
-		PR_Statement (op_goto, &junkdef, 0);
-		patch1->b = &statements[numstatements] - patch1;
-		return;
-	}
+			break;
+		}
 
-	if (PR_Check (tt_name, "do")) {
-		patch1 = &statements[numstatements];
-		PR_ParseStatement ();
-		PR_Expect (tt_name, "while");
-		PR_Expect (tt_punct, "(");
-		e = PR_Expression (TOP_PRIORITY);
-		PR_Expect (tt_punct, ")");
-		PR_Expect (tt_punct, ";");
-		junkdef.ofs = patch1 - &statements[numstatements];
-		PR_Statement (op_if, e, &junkdef);
-		return;
-	}
-
-	if (PR_Check (tt_name, "local")) {
-		PR_ParseDefs ();
-		locals_end = numpr_globals;
-		return;
-	}
-
-	if (PR_Check (tt_name, "if")) {
-		PR_Expect (tt_punct, "(");
-		e = PR_Expression (TOP_PRIORITY);
-		PR_Expect (tt_punct, ")");
-
-		patch1 = &statements[numstatements];
-		PR_Statement (op_ifnot, e, 0);
-
-		PR_ParseStatement ();
-
-		if (PR_Check (tt_name, "else")) {
+		if (PR_Check (tt_name, "while")) {
+			PR_Expect (tt_punct, "(");
 			patch2 = &statements[numstatements];
-			PR_Statement (op_goto, 0, 0);
-			patch1->b = &statements[numstatements] - patch1;
+			e = PR_Expression (TOP_PRIORITY);
+			PR_Expect (tt_punct, ")");
+			patch1 = &statements[numstatements];
+			PR_Statement (op_ifnot, e, 0);
 			PR_ParseStatement ();
-			patch2->a = &statements[numstatements] - patch2;
-		} else {
+			junkdef.ofs = patch2 - &statements[numstatements];
+			PR_Statement (op_goto, &junkdef, 0);
 			patch1->b = &statements[numstatements] - patch1;
+			break;
 		}
 
-		return;
-	}
+		if (PR_Check (tt_name, "do")) {
+			patch1 = &statements[numstatements];
+			PR_ParseStatement ();
+			PR_Expect (tt_name, "while");
+			PR_Expect (tt_punct, "(");
+			e = PR_Expression (TOP_PRIORITY);
+			PR_Expect (tt_punct, ")");
+			PR_Expect (tt_punct, ";");
+			junkdef.ofs = patch1 - &statements[numstatements];
+			PR_Statement (op_if, e, &junkdef);
+			break;
+		}
 
-	PR_Expression (TOP_PRIORITY);
-	PR_Expect (tt_punct, ";");
+		if (PR_Check (tt_name, "local")) {
+			PR_ParseDefs ();
+			locals_end = numpr_globals;
+			break;
+		}
+
+		if (PR_Check (tt_name, "if")) {
+			PR_Expect (tt_punct, "(");
+			e = PR_Expression (TOP_PRIORITY);
+			PR_Expect (tt_punct, ")");
+
+			patch1 = &statements[numstatements];
+			PR_Statement (op_ifnot, e, 0);
+
+			PR_ParseStatement ();
+
+			if (PR_Check (tt_name, "else")) {
+				patch2 = &statements[numstatements];
+				PR_Statement (op_goto, 0, 0);
+				patch1->b = &statements[numstatements] - patch1;
+				PR_ParseStatement ();
+				patch2->a = &statements[numstatements] - patch2;
+			} else {
+				patch1->b = &statements[numstatements] - patch1;
+			}
+
+			break;
+		}
+
+		PR_Expression (TOP_PRIORITY);
+		PR_Expect (tt_punct, ";");
+	} while (0);
+	PR_FreeTempDefs ();
 }
 
 

@@ -27,6 +27,8 @@
 
 def_t		*pr_global_defs[MAX_REGS];	// to find def for a global variable
 int 		pr_edict_size;
+static def_t *free_temps[ev_type_count];
+static def_t temp_scope;
 
 static hashtab_t  *defs_by_name;
 
@@ -141,6 +143,38 @@ PR_NewDef (type_t *type, const char *name, def_t *scope)
 	def->scope = scope;
 
 	return def;
+}
+
+def_t *
+PR_GetTempDef (type_t *type)
+{
+	int t = type->type;
+	def_t *d;
+	if (free_temps[t]) {
+		d = free_temps[t];
+		free_temps[t] = d->next;
+	} else {
+		d = PR_NewDef (type, 0, 0);
+		d->ofs = numpr_globals;
+		numpr_globals += type_size[t];
+	}
+	d->scope_next = temp_scope.scope_next;
+	temp_scope.scope_next = d;
+	return d;
+}
+
+void
+PR_FreeTempDefs (void)
+{
+	def_t *def;
+	etype_t type;
+
+	for (def = temp_scope.scope_next; def; def = def->scope_next) {
+		type = def->type->type;
+		def->next = free_temps[type];
+		free_temps[type] = def;
+	}
+	temp_scope.scope_next = 0;
 }
 
 void
