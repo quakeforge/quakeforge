@@ -6,6 +6,7 @@ void () test_str =
 	c = "strings ";
 	d = "\n";
 	print (a + b + c + d);
+	printf ("%i \"%.5s\" %3.4f %v\n", 14, "hi there", 3.1415926, '4 1 3');
 };
 
 integer (integer argc, string []argv) main =

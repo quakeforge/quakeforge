@@ -98,7 +98,7 @@ PR_AddBuiltin (progs_t *pr, const char *name, builtin_proc builtin, int num)
 	pr->builtins[i] = malloc (sizeof (builtin_t));
 	pr->builtins[i]->proc = builtin;
 	pr->builtins[i]->name = name;
-	pr->builtins[i]->first_statement = i;
+	pr->builtins[i]->binum = i;
 	Hash_Add (pr->builtin_hash, pr->builtins[i]);
 }
 
@@ -127,7 +127,7 @@ PR_RelocateBuiltins (progs_t *pr)
 						pr->progs_name, bi_name);
 			return 0;
 		}
-		func->first_statement = -bi->first_statement;
+		func->first_statement = -bi->binum;
 	}
 	return 1;
 }

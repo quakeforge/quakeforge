@@ -134,7 +134,8 @@ SV_CreateBaseline (void)
 		} else {
 			((entity_state_t*)svent->data)->colormap = 0;
 			((entity_state_t*)svent->data)->modelindex =
-				SV_ModelIndex (PR_GetString (&sv_pr_state, SVstring (svent, model)));
+				SV_ModelIndex (PR_GetString (&sv_pr_state,
+											 SVstring (svent, model)));
 		}
 		// LordHavoc: setup baseline to include new effects
 		((entity_state_t*)svent->data)->alpha = 255;

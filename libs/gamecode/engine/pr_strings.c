@@ -38,6 +38,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 # include <strings.h>
 #endif
 
+#include <ctype.h>
 #include <stdarg.h>
 #include <stdlib.h>
 
@@ -150,7 +151,7 @@ strref_free (void *_sr, void *_pr)
 int
 PR_LoadStrings (progs_t *pr)
 {
-	char   *end = pr->pr_strings + pr->pr_stringsize;
+	char   *end = pr->pr_strings + pr->progs->numstrings;
 	char   *str = pr->pr_strings;
 	int		count = 0;
 
@@ -289,6 +290,25 @@ PR_SetTempString (progs_t *pr, const char *s)
 	return string_index (pr, sr);
 }
 
+void
+PR_MakeTempString (progs_t *pr, int str)
+{
+	strref_t   *sr = get_strref (pr, str);
+
+	if (!sr)
+		PR_RunError (pr, "invalid string %d", str);
+	if (sr->dstring) {
+		if (sr->dstring->str)
+			sr->string = sr->dstring->str;
+		PR_Zone_Free (pr, sr->dstring);
+	}
+	if (!sr->string)
+		sr->string = pr_strdup (pr, "");
+	sr->count = 0;
+	sr->next = pr->pr_xtstr;
+	pr->pr_xtstr = sr;
+}
+
 int
 PR_NewString (progs_t *pr)
 {
@@ -324,4 +344,354 @@ PR_FreeTempStrings (progs_t *pr)
 		free_string_ref (pr, sr);
 	}
 	pr->pr_xtstr = 0;
+}
+
+// format adjustments
+#define FMT_ALTFORM		(1<<0)
+#define FMT_LJUSTIFY	(1<<1)
+#define FMT_ZEROPAD		(1<<2)
+#define FMT_ADDSIGN		(1<<3)
+#define FMT_ADDBLANK	(1<<4)
+#define FMT_HEX			(1<<5)
+
+typedef struct fmt_item_s {
+	byte        type;
+	unsigned    flags;
+	int         minFieldWidth;
+	int         precision;
+	union {
+		const char *string_var;
+		int         integer_var;
+		unsigned    uinteger_var;
+		float       float_var;
+	}           data;
+	struct fmt_item_s *next;
+} fmt_item_t;
+
+#define PRINT(t)													\
+	switch ((doWidth << 1) | doPrecision) {							\
+		case 3:														\
+			dasprintf (result, tmp->str, current->minFieldWidth,	\
+					   current->precision, current->data.t##_var);	\
+			break;													\
+		case 2:														\
+			dasprintf (result, tmp->str, current->minFieldWidth,	\
+					   current->precision, current->data.t##_var);	\
+			break;													\
+		case 1:														\
+			dasprintf (result, tmp->str, current->precision,		\
+					   current->data.t##_var);						\
+			break;													\
+		case 0:														\
+			dasprintf (result, tmp->str, current->data.t##_var);	\
+			break;													\
+	}
+
+/*
+	This function takes as input a linked list of fmt_item_t representing
+	EVERYTHING to be printed. This includes text that is not affected by
+	formatting. A string without any formatting would wind up with only one
+	list item.
+*/
+static void
+I_DoPrint (dstring_t *result, fmt_item_t *formatting)
+{
+	fmt_item_t		*current = formatting;
+	dstring_t		*tmp = dstring_new ();
+
+	while (current) {
+		qboolean	doPrecision, doWidth;
+
+		doPrecision = -1 != current->precision;
+		doWidth = 0 != current->minFieldWidth;
+		
+		dsprintf (tmp, "%%%s%s%s%s%s%s%s",
+			(current->flags & FMT_ALTFORM) ? "#" : "",	// hash
+			(current->flags & FMT_ZEROPAD) ? "0" : "",	// zero padding
+			(current->flags & FMT_LJUSTIFY) ? "-" : "",	// left justify
+			(current->flags & FMT_ADDBLANK) ? " " : "",	// add space for +ve
+			(current->flags & FMT_ADDSIGN) ? "+" : "",	// add sign always
+			doWidth ? "*" : "",
+			doPrecision ? ".*" : "");
+
+		switch (current->type) {
+			case 's':
+				dstring_appendstr (tmp, "s");
+				PRINT (string);
+				break;
+			case 'i':
+				dstring_appendstr (tmp, "ld");
+				PRINT (integer);
+				break;
+			case 'u':
+				if (current->flags & FMT_HEX)
+					dstring_appendstr (tmp, "lx");
+				else
+					dstring_appendstr (tmp, "lu");
+				PRINT (uinteger);
+				break;
+			case 'f':
+				dstring_appendstr (tmp, "f");
+				PRINT (float);
+				break;
+			case 'g':
+				dstring_appendstr (tmp, "g");
+				PRINT (float);
+				break;
+			default:
+				break;
+		}
+		current = current->next;
+	}
+	dstring_delete (tmp);
+}
+
+static fmt_item_t *free_fmt_items;
+
+static fmt_item_t *
+new_fmt_item (void)
+{
+	int        i;
+	fmt_item_t *fi;
+
+	if (!free_fmt_items) {
+		free_fmt_items = malloc (16 * sizeof (fmt_item_t));
+		for (i = 0; i < 15; i++)
+			free_fmt_items[i].next = free_fmt_items + i + 1;
+		free_fmt_items[i].next = 0;
+	}
+
+	fi = free_fmt_items;
+	free_fmt_items = fi->next;
+	memset (fi, 0, sizeof (*fi));
+	fi->precision = -1;
+	return fi;
+}
+
+static void
+free_fmt_item (fmt_item_t *fi)
+{
+	fi->next = free_fmt_items;
+	free_fmt_items = fi;
+}
+
+#undef P_var
+#define P_var(p,n,t) (args[n]->t##_var)
+void
+PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
+			const char *format, int count, pr_type_t **args)
+{
+	const char *c, *l;
+	const char *msg = "";
+	fmt_item_t *fmt_items = 0;
+	fmt_item_t **fi = &fmt_items;
+	int         fmt_count = 0;
+
+	if (!name)
+		name = "PF_InternalSprintf";
+
+	*fi = new_fmt_item ();
+	c = l = format;
+	while (*c) {	// count "%"s, checking our input along the way
+		if (*c++ == '%') {
+			if (c != l + 1) {
+				// have some unformatted text to print
+				(*fi)->precision = c - l - 1;
+				(*fi)->type = 's';
+				(*fi)->data.string_var = l;
+
+				(*fi)->next = new_fmt_item ();
+				fi = &(*fi)->next;
+			}
+			if (*c == '%') {
+				(*fi)->type = 's';
+				(*fi)->data.string_var = "%";
+
+				(*fi)->next = new_fmt_item ();
+				fi = &(*fi)->next;
+			} else {
+				do {
+					switch (*c) {
+						// format options
+						case '\0':
+							msg = "Unexpected end of format string";
+							goto error;
+						case '0':
+							(*fi)->flags |= FMT_ZEROPAD;
+							c++;
+							continue;
+						case '#':
+							(*fi)->flags |= FMT_ALTFORM;
+							c++;
+							continue;
+						case ' ':
+							(*fi)->flags |= FMT_ADDBLANK;
+							c++;
+							continue;
+						case '-':
+							(*fi)->flags |= FMT_LJUSTIFY;
+							c++;
+							continue;
+						case '+':
+							(*fi)->flags |= FMT_ADDSIGN;
+							c++;
+							continue;
+						case '.':
+							(*fi)->precision = 0;
+							c++;
+							while (isdigit (*c)) {
+								(*fi)->precision *= 10;
+								(*fi)->precision += *c++ - '0';
+							}
+							continue;
+						case '1': case '2': case '3': case '4': case '5':
+						case '6': case '7': case '8': case '9':
+							while (isdigit (*c)) {
+								(*fi)->minFieldWidth *= 10;
+								(*fi)->minFieldWidth += *c++ - '0';
+							}
+							continue;
+						// format types
+						case '@':
+							// object
+							fmt_count++;
+							(*fi)->next = new_fmt_item ();
+							fi = &(*fi)->next;
+							break;
+						case 'e':
+							// entity
+							(*fi)->type = 'i';
+							(*fi)->data.integer_var =
+								P_EDICTNUM (pr, fmt_count);
+
+							fmt_count++;
+							(*fi)->next = new_fmt_item ();
+							fi = &(*fi)->next;
+							break;
+						case 'i':
+							// integer
+							(*fi)->type = *c;
+							(*fi)->data.integer_var = P_INT (pr, fmt_count);
+
+							fmt_count++;
+							(*fi)->next = new_fmt_item ();
+							fi = &(*fi)->next;
+							break;
+						case 'f':
+							// float
+						case 'g':
+							// float, no trailing zeroes, trim "." if nothing
+							// after
+							(*fi)->type = *c;
+							(*fi)->data.float_var = P_FLOAT (pr, fmt_count);
+
+							fmt_count++;
+							(*fi)->next = new_fmt_item ();
+							fi = &(*fi)->next;
+							break;
+						case 'p':
+							// pointer
+							(*fi)->flags |= FMT_ALTFORM;
+							(*fi)->type = 'x';
+							(*fi)->data.uinteger_var = P_UINT (pr, fmt_count);
+
+							fmt_count++;
+							(*fi)->next = new_fmt_item ();
+							fi = &(*fi)->next;
+							break;
+						case 's':
+							// string
+							(*fi)->type = *c;
+							(*fi)->data.string_var = P_GSTRING (pr, fmt_count);
+
+							fmt_count++;
+							(*fi)->next = new_fmt_item ();
+							fi = &(*fi)->next;
+							break;
+						case 'v':
+							// vector
+							{
+								int         i;
+								int         flags = (*fi)->flags;
+								int         precision = (*fi)->precision;
+								unsigned    minWidth = (*fi)->minFieldWidth;
+
+								(*fi)->flags = 0;
+								(*fi)->precision = -1;
+								(*fi)->minFieldWidth = 0;
+
+								for (i = 0; i < 3; i++) {
+									if (i == 0) {
+										(*fi)->type = 's';
+										(*fi)->data.string_var = "'";
+									} else {
+										(*fi)->type = 's';
+										(*fi)->data.string_var = " ";
+									}
+									(*fi)->next = new_fmt_item ();
+									fi = &(*fi)->next;
+
+									(*fi)->flags = flags;
+									(*fi)->precision = precision;
+									(*fi)->minFieldWidth = minWidth;
+									(*fi)->type = 'g';
+									(*fi)->data.float_var =
+										P_VECTOR (pr, fmt_count)[i];
+
+									(*fi)->next = new_fmt_item ();
+									fi = &(*fi)->next;
+								}
+							}
+
+							(*fi)->type = 's';
+							(*fi)->data.string_var = "'";
+
+							fmt_count++;
+							(*fi)->next = new_fmt_item ();
+							fi = &(*fi)->next;
+							break;
+						case 'x':
+							// integer, hex notation
+							(*fi)->type = *c;
+							(*fi)->data.uinteger_var = P_UINT (pr, fmt_count);
+
+							fmt_count++;
+							(*fi)->next = new_fmt_item ();
+							fi = &(*fi)->next;
+							break;
+					}
+					break;
+				} while (1);
+			}
+			l = ++c;
+		}
+	}
+	if (c != l) {
+		// have some unformatted text to print
+		(*fi)->precision = c - l;
+		(*fi)->type = 's';
+		(*fi)->data.string_var = l;
+
+		(*fi)->next = new_fmt_item ();
+		fi = &(*fi)->next;
+	}
+
+	if (0 && fmt_count != count) {
+		printf ("%d %d", fmt_count, count);
+		if (fmt_count > count)
+			msg = "Not enough arguments for format string.";
+		else
+			msg = "Too many arguments for format string.";
+		goto error;
+	}
+
+	I_DoPrint (result, fmt_items);
+	while (fmt_items) {
+		fmt_item_t *t = fmt_items->next;
+		free_fmt_item (fmt_items);
+		fmt_items = t;
+	}
+	return;
+error:
+	PR_RunError (pr, "%s: %s", name, msg);
 }

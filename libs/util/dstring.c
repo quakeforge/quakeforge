@@ -297,7 +297,7 @@ _dvsprintf (dstring_t *dstr, int offs, const char *fmt, va_list args)
 		dstring_clearstr (dstr); // Make it a string
 	// Some vsnprintf implementations return -1 on truncation
 	while ((size = vsnprintf (dstr->str + offs, dstr->truesize - offs, fmt, args)) == -1) {
-		dstr->size = dstr->truesize + 1024;
+		dstr->size = (dstr->truesize & 1023) + 1024;
 		dstring_adjust (dstr);
 #ifdef VA_LIST_IS_ARRAY
 		VA_COPY (args, tmp_args);

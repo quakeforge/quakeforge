@@ -41,6 +41,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <errno.h>
 #include <string.h>
 
+#include <QF/dstring.h>
 #include <QF/progs.h>
 #include <QF/zone.h>
 
@@ -138,39 +139,14 @@ static void
 bi_printf (progs_t *pr)
 {
 	const char *fmt = P_GSTRING (pr, 0);
-	char c;
-	int count = 0;
-	float *v;
+	int         count = pr->pr_argc - 1;
+	pr_type_t **args = pr->pr_params + 1;
+	dstring_t  *dstr = dstring_new ();
 
-	while ((c = *fmt++)) {
-		if (c == '%' && count < 7) {
-			switch (c = *fmt++) {
-				case 'i':
-					fprintf (stdout, "%i",
-							 P_INT (pr, 1 + count++ * pr->pr_param_size));
-					break;
-				case 'f':
-					fprintf (stdout, "%f",
-							 P_FLOAT (pr, 1 + count++ * pr->pr_param_size));
-					break;
-				case 's':
-					fputs (P_GSTRING (pr, 1 + count++ * pr->pr_param_size),
-						   stdout);
-					break;
-				case 'v':
-					v = P_VECTOR (pr, 1 + count++ * pr->pr_param_size);
-					fprintf (stdout, "'%f %f %f'", v[0], v[1], v[2]);
-					break;
-				default:
-					fputc ('%', stdout);
-					fputc (c, stdout);
-					count = 7;
-					break;
-			}
-		} else {
-			fputc (c, stdout);
-		}
-	}
+	PR_Sprintf (pr, dstr, "bi_printf", fmt, count, args);
+	if (dstr->str)
+		fputs (dstr->str, stdout);
+	dstring_delete (dstr);
 }
 
 void

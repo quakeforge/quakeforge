@@ -127,6 +127,7 @@ qboolean PR_EdictValid (progs_t *pr, int e);
 #define G_EDICT(p,o)	((edict_t *)(PR_edicts (p) + G_INT (p, o)))
 #define G_EDICTNUM(p,o)	NUM_FOR_EDICT(p, G_EDICT (p, o))
 #define G_GSTRING(p,o)	PR_GetString (p, G_STRING (p, o))
+#define G_DSTRING(p,o)	PR_GetDString (p, G_STRING (p, o))
 #define G_GPOINTER(p,o)	PR_GetPointer (p, o)
 #define G_STRUCT(p,t,o)	(*(t *)G_GPOINTER (p, o))
 
@@ -143,6 +144,7 @@ qboolean PR_EdictValid (progs_t *pr, int e);
 #define P_EDICT(p,n)	((edict_t *)(PR_edicts (p) + P_INT (p, n)))
 #define P_EDICTNUM(p,n)	NUM_FOR_EDICT (p, P_EDICT (p, n))
 #define P_GSTRING(p,n)	PR_GetString (p, P_STRING (p, n))
+#define P_DSTRING(p,n)	PR_GetDString (p, P_STRING (p, n))
 #define P_GPOINTER(p,n)	PR_GetPointer (p, P_POINTER (p, n))
 #define P_STRUCT(p,t,n)	(*(t *)P_GPOINTER (p, n))
 
@@ -172,12 +174,13 @@ qboolean PR_EdictValid (progs_t *pr, int e);
 #define E_POINTER(p,o)	E_var (p, o, pointer)
 
 #define E_GSTRING(p,e,o) (PR_GetString (p, E_STRING (e, o)))
+#define E_DSTRING(p,e,o) (PR_GetDString (p, E_STRING (e, o)))
 
 typedef void (*builtin_proc) (progs_t *pr);
 typedef struct {
 	const char *name;
 	builtin_proc proc;
-	int first_statement;
+	int         binum;
 } builtin_t;
 
 ddef_t *PR_FindGlobal (progs_t *pr, const char *name);
@@ -224,9 +227,12 @@ const char *PR_GetString(progs_t *pr, int num);
 struct dstring_s *PR_GetDString(progs_t *pr, int num);
 int PR_SetString(progs_t *pr, const char *s);
 int PR_SetTempString(progs_t *pr, const char *s);
+void PR_MakeTempString(progs_t *pr, int str);
 int PR_NewString (progs_t *pr);
 void PR_FreeString (progs_t *pr, int str);
 void PR_FreeTempStrings (progs_t *pr);
+void PR_Sprintf (progs_t *pr, struct dstring_s *result, const char *name,
+				 const char *format, int count, pr_type_t **args);
 
 //
 // PR Resources stuff
