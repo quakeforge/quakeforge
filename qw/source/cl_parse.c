@@ -54,6 +54,7 @@ static const char rcsid[] =
 #include "QF/teamplay.h"
 #include "QF/va.h"
 #include "QF/vfile.h"
+#include "QF/dstring.h"
 
 #include "bothdefs.h"
 #include "cl_ents.h"
@@ -1128,6 +1129,7 @@ void
 CL_ParseServerMessage (void)
 {
 	const char *s;
+	static dstring_t *stuffbuf;
 	int         cmd, i, j;
 
 	received_framecount = host_framecount;
@@ -1208,9 +1210,15 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_stufftext:
+				if (!stuffbuf) stuffbuf = dstring_newstr();
 				s = MSG_ReadString (net_message);
-				Con_DPrintf ("stufftext: %s\n", s);
-				Cbuf_AddTextTo (cmd_legacybuffer, s);
+				Con_DPrintf ("partial stufftext: %s\n", s);
+				dstring_appendstr (stuffbuf, s);
+				if (stuffbuf->str[strlen(stuffbuf->str)-1] == '\n') {
+					Con_DPrintf ("stufftext: %s\n", stuffbuf->str);
+					Cbuf_AddTextTo (cmd_legacybuffer, stuffbuf->str);
+					dstring_clearstr (stuffbuf);
+				}
 				break;
 
 			case svc_damage:
