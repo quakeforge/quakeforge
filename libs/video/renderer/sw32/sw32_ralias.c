@@ -688,33 +688,28 @@ R_AliasSetupFrame (void)
 }
 
 
-finalvert_t *finalverts;
-auxvert_t   *auxverts;
-int          maxaliasverts = 0;
-
 void
 R_AliasDrawModel (alight_t *plighting)
 {
+	int         size;
+	finalvert_t *finalverts;
+
 	r_amodels_drawn++;
 
 	paliashdr = Cache_Get (&currententity->model->cache);
 	pmdl = (mdl_t *) ((byte *) paliashdr + paliashdr->model);
 
-	if (pmdl->numverts > maxaliasverts)
-	{
-		finalverts = realloc (finalverts, (CACHE_SIZE - 1) +
-			sizeof (finalvert_t) * (pmdl->numverts + 1));
-		auxverts = realloc (auxverts,
-			sizeof (auxvert_t) * pmdl->numverts);
-		if (!finalverts || !auxverts)
-			Sys_Error ("R_AliasDrawModel: out of memory");
-		maxaliasverts = pmdl->numverts;
-	}
+	size = (CACHE_SIZE - 1)
+		   + sizeof (finalvert_t) * (pmdl->numverts + 1)
+		   + sizeof (auxvert_t) * pmdl->numverts;
+	finalverts = (finalvert_t *) Hunk_TempAlloc (size);
+	if (!finalverts)
+		Sys_Error ("R_AliasDrawModel: out of memory");
 
 	// cache align
 	pfinalverts = (finalvert_t *)
 		(((long) &finalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
-	pauxverts = &auxverts[0];
+	pauxverts = (auxvert_t *) &pfinalverts[pmdl->numverts + 1];
 
 	R_AliasSetupSkin ();
 	R_AliasSetUpTransform (currententity->trivial_accept);
