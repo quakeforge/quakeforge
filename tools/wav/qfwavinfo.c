@@ -1,46 +1,85 @@
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "QF/dstring.h"
 #include "QF/riff.h"
 
+static const struct option long_options[] = {
+	{"loop", no_argument, 0, 'l'},
+	{"samples", no_argument, 0, 's'},
+	{"format", no_argument, 0, 'f'},
+	//{"path", required_argument, 0, 'P'},
+	{NULL, 0, NULL, 0},
+};
+
 int
 main (int argc, char **argv)
 {
+	int         c;
+	int         format_info = 0;
+	int         loop_info = 0;
+	int         sample_info = 0;
+	riff_d_format_t *fmt = 0;
 
-	while (*++argv) {
+	while ((c = getopt_long (argc, argv,
+							 "fls", long_options, 0)) != EOF) {
+		switch (c) {
+			case 'f':
+				format_info = 1;
+				break;
+			case 'l':
+				loop_info = 1;
+				break;
+			case 's':
+				sample_info = 1;
+				break;
+			default:
+				break;
+		}
+	}
+
+	while (optind < argc) {
 		QFile      *f;
 		riff_t     *riff = 0;
 		riff_d_chunk_t **ck;
 		int         sample_start, sample_count;
 
 		//puts (*argv);
-		f = Qopen (*argv, "rbz");
+		f = Qopen (argv[optind], "rbz");
 		if (f) {
 			riff = riff_read (f);
 			Qclose (f);
 		}
 		if (!f || !riff) {
-			fprintf (stderr, "couldn't read %s\n", *argv);
+			fprintf (stderr, "couldn't read %s\n", argv[optind]);
 			continue;
 		}
+		optind++;
 		sample_start = -1;
 		sample_count = -1;
 		for (ck = riff->chunks; *ck; ck++) {
 			RIFF_SWITCH ((*ck)->name) {
 				case RIFF_CASE ('f', 'm', 't', ' '):
-					/*{
+					{
 						riff_format_t *_fmt = (riff_format_t *) *ck;
-						riff_d_format_t *fmt = (riff_d_format_t *) _fmt->fdata;
-
-						printf ("fmt.format_tag      = %d\n", fmt->format_tag);
-						printf ("fmt.channels        = %d\n", fmt->channels);
-						printf ("fmt.samples_per_sec = %d\n", fmt->samples_per_sec);
-						printf ("fmt.bytes_per_sec   = %d\n", fmt->bytes_per_sec);
-						printf ("fmt.align           = %d\n", fmt->align);
+						fmt = (riff_d_format_t *) _fmt->fdata;
+					}
+					if (format_info) {
+						printf ("fmt.format_tag      = %d\n",
+								fmt->format_tag);
+						printf ("fmt.channels        = %d\n",
+								fmt->channels);
+						printf ("fmt.samples_per_sec = %d\n",
+								fmt->samples_per_sec);
+						printf ("fmt.bytes_per_sec   = %d\n",
+								fmt->bytes_per_sec);
+						printf ("fmt.align           = %d\n",
+								fmt->align);
 						if (fmt->format_tag == 1)
-							printf ("fmt.bits_per_sample = %d\n", fmt->bits_per_sample);
-					}*/
+							printf ("fmt.bits_per_sample = %d\n",
+									fmt->bits_per_sample);
+					}
 					break;
 				case RIFF_CASE ('c', 'u', 'e', ' '):
 					{
@@ -96,9 +135,16 @@ main (int argc, char **argv)
 					}
 					break;
 				case RIFF_CASE ('d','a','t','a'):
-#if 0
-					printf ("data: %d %d\n", *(int*)((data_t*)(*ck))->data, (*ck)->len);
-#endif
+					if (sample_info) {
+						riff_data_t *data = (riff_data_t*) *ck;
+						unsigned int samples;
+
+						samples = (*ck)->len / fmt->channels;
+						samples /= fmt->bits_per_sample;
+						samples *= 8;
+
+						printf ("data: %d %u\n", *(int *)data->data, samples);
+					}
 					sample_count = (*ck)->len;
 					break;
 			}
