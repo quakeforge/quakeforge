@@ -90,7 +90,8 @@ struct struct_field_s *class_find_ivar (class_t *class, int protected,
 struct expr_s *class_ivar_expr (class_type_t *class_type, const char *name);
 struct method_s *class_find_method (class_type_t *class_type,
 									struct method_s *method);
-struct method_s *class_message_response (class_t *class, struct expr_s *sel);
+struct method_s *class_message_response (class_t *class, int class_msg,
+										 struct expr_s *sel);
 struct def_s *class_pointer_def (class_t *class_type);
 category_t *get_category (const char *class_name, const char *category_name,
 						  int create);
