@@ -100,6 +100,12 @@ R_DrawSpriteModel (entity_t *e)
 		AngleVectors (e->angles, v_forward, v_right, v_up);
 		up = v_up;
 		right = v_right;
+	} else if (psprite->type == SPR_VP_PARALLEL_UPRIGHT) {
+		v_up[0] = 0;
+		v_up[1] = 0;
+		v_up[2] = 1;
+		up = v_up;
+		right = vright;
 	} else {								// normal sprite
 		up = vup;
 		right = vright;
