@@ -45,6 +45,7 @@ static const char rcsid[] =
 #include "QF/qendian.h"
 #include "QF/vfile.h"
 
+#include "debug.h"
 #include "def.h"
 #include "function.h"
 #include "immediate.h"
@@ -160,6 +161,7 @@ setup_data (void)
 	qfo_reloc_t *reloc = relocs;
 	dstatement_t *st;
 	pr_type_t  *var;
+	pr_lineno_t *line;
 
 	for (d = pr.scope->head; d; d = d->def_next)
 		write_def (d, def++, &reloc);
@@ -178,11 +180,11 @@ setup_data (void)
 		func->locals_size    = LittleLong (f->scope->space->size);
 		func->local_defs     = LittleLong (def - defs);
 		func->num_local_defs = LittleLong (f->scope->num_defs);
-		//func->line_info
-		//func->num_lines
-		func->num_parms       = LittleLong (f->dfunc->numparms);
+		if (f->aux)
+			func->line_info  = LittleLong (f->aux->line_info);
+		func->num_parms      = LittleLong (f->dfunc->numparms);
 		memcpy (func->parm_size, f->dfunc->parm_size, MAX_PARMS);
-		func->relocs          = LittleLong (reloc - relocs);
+		func->relocs         = LittleLong (reloc - relocs);
 		write_relocs (f->refs, &reloc);
 
 		for (d = f->scope->head; d; d = d->def_next)
@@ -201,6 +203,10 @@ setup_data (void)
 		for (var = pr.far_data->data;
 			 var - pr.far_data->data < pr.far_data->size; var++)
 			var->integer_var = LittleLong (var->integer_var);
+	for (line = linenos; line - linenos < num_linenos; line++) {
+		line->fa.addr = LittleLong (line->fa.addr);
+		line->line    = LittleLong (line->line);
+	}
 }
 
 int
@@ -229,6 +235,7 @@ write_obj_file (const char *filename)
 	hdr.num_relocs    = LittleLong (num_relocs);
 	hdr.num_defs      = LittleLong (num_defs);
 	hdr.num_functions = LittleLong (num_functions);
+	hdr.num_lines     = LittleLong (num_linenos);
 
 	Qwrite (file, &hdr, sizeof (hdr));
 	Qwrite (file, pr.statements, pr.num_statements * sizeof (dstatement_t));
@@ -241,6 +248,7 @@ write_obj_file (const char *filename)
 	Qwrite (file, relocs, num_relocs * sizeof (qfo_reloc_t));
 	Qwrite (file, defs, num_defs * sizeof (qfo_def_t));
 	Qwrite (file, defs, num_functions * sizeof (qfo_function_t));
+	Qwrite (file, linenos, num_linenos * sizeof (pr_lineno_t));
 
 	Qclose (file);
 	return 0;
@@ -252,6 +260,12 @@ read_obj_file (const char *filename)
 	VFile      *file;
 	qfo_header_t hdr;
 	qfo_t      *qfo;
+	qfo_def_t  *def;
+	qfo_function_t *func;
+	qfo_reloc_t *reloc;
+	dstatement_t *st;
+	pr_type_t  *var;
+	pr_lineno_t *line;
 
 	file = Qopen (filename, "rbz");
 
@@ -273,6 +287,7 @@ read_obj_file (const char *filename)
 	qfo->num_relocs    = LittleLong (hdr.num_relocs);
 	qfo->num_defs      = LittleLong (hdr.num_defs);
 	qfo->num_functions = LittleLong (hdr.num_functions);
+	qfo->num_lines     = LittleLong (hdr.num_lines);
 
 	if (hdr.version != QFO_VERSION) {
 		fprintf (stderr, "can't read version %x.%03x.%03x\n",
@@ -285,7 +300,8 @@ read_obj_file (const char *filename)
 
 	qfo->code = malloc (qfo->code_size * sizeof (dstatement_t));
 	qfo->data = malloc (qfo->data_size * sizeof (pr_type_t));
-	qfo->far_data = malloc (qfo->far_data_size * sizeof (pr_type_t));
+	if (qfo->far_data_size)
+		qfo->far_data = malloc (qfo->far_data_size * sizeof (pr_type_t));
 	qfo->strings = malloc (qfo->strings_size);
 	qfo->relocs = malloc (qfo->num_relocs * sizeof (qfo_reloc_t));
 	qfo->defs = malloc (qfo->num_defs * sizeof (qfo_def_t));
@@ -293,13 +309,65 @@ read_obj_file (const char *filename)
 
 	Qread (file, qfo->code, qfo->code_size * sizeof (dstatement_t));
 	Qread (file, qfo->data, qfo->data_size * sizeof (pr_type_t));
-	Qread (file, qfo->far_data, qfo->far_data_size * sizeof (pr_type_t));
+	if (qfo->far_data_size)
+		Qread (file, qfo->far_data, qfo->far_data_size * sizeof (pr_type_t));
 	Qread (file, qfo->strings, qfo->strings_size);
 	Qread (file, qfo->relocs, qfo->num_relocs * sizeof (qfo_reloc_t));
 	Qread (file, qfo->defs, qfo->num_defs * sizeof (qfo_def_t));
 	Qread (file, qfo->functions, qfo->num_functions * sizeof (qfo_function_t));
+	if (qfo->num_lines)
+		Qread (file, qfo->lines, qfo->num_lines * sizeof (pr_lineno_t));
 
 	Qclose (file);
+
+	for (st = qfo->code; st - qfo->code < qfo->code_size; st++) {
+		st->op = LittleLong (st->op);
+		st->a  = LittleLong (st->a);
+		st->b  = LittleLong (st->b);
+		st->c  = LittleLong (st->c);
+	}
+	for (var = qfo->data;
+		 var - qfo->data < qfo->data_size; var++)
+		var->integer_var = LittleLong (var->integer_var);
+	if (qfo->far_data)
+		for (var = qfo->far_data;
+			 var - qfo->far_data < qfo->far_data_size; var++)
+			var->integer_var = LittleLong (var->integer_var);
+	for (reloc = qfo->relocs; reloc - qfo->relocs < qfo->num_relocs; reloc++) {
+		reloc->ofs  = LittleLong (reloc->ofs);
+		reloc->type = LittleLong (reloc->type);
+	}
+	for (def = qfo->defs; def - qfo->defs < qfo->num_defs; def++) {
+		def->basic_type = LittleLong (def->basic_type);
+		def->full_type  = LittleLong (def->full_type);
+		def->name       = LittleLong (def->name);
+		def->ofs        = LittleLong (def->ofs);
+		def->relocs     = LittleLong (def->relocs);
+		def->num_relocs = LittleLong (def->num_relocs);
+		def->flags      = LittleLong (def->flags);
+		def->file       = LittleLong (def->file);
+		def->line       = LittleLong (def->line);
+	}
+	for (func = qfo->functions;
+		 func - qfo->functions < qfo->num_functions; func++) {
+		func->name           = LittleLong (func->name);
+		func->file           = LittleLong (func->file);
+		func->line           = LittleLong (func->line);
+		func->builtin        = LittleLong (func->builtin);
+		func->code           = LittleLong (func->code);
+		func->def            = LittleLong (func->def);
+		func->locals_size    = LittleLong (func->locals_size);
+		func->local_defs     = LittleLong (func->local_defs);
+		func->num_local_defs = LittleLong (func->num_local_defs);
+		func->line_info      = LittleLong (func->line_info);
+		func->num_parms      = LittleLong (func->num_parms);
+		func->relocs         = LittleLong (func->relocs);
+		func->num_relocs     = LittleLong (func->num_relocs);
+	}
+	for (line = qfo->lines; line - qfo->lines < qfo->num_lines; line++) {
+		line->fa.addr = LittleLong (line->fa.addr);
+		line->line    = LittleLong (line->line);
+	}
 
 	return 0;
 }

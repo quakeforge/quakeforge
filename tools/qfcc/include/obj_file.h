@@ -47,7 +47,7 @@ typedef struct qfo_header_s {
 	int         num_relocs;
 	int         num_defs;
 	int         num_functions;
-	int         somthing_or_other;
+	int         num_lines;
 } qfo_header_t;
 
 typedef struct qfo_def_s {
@@ -85,7 +85,6 @@ typedef struct qfo_function_s {
 	int         num_local_defs;
 
 	int         line_info;
-	int         nun_lines;
 
 	int         num_parms;
 	byte        parm_size[MAX_PARMS];
@@ -114,6 +113,8 @@ typedef struct qfo_s {
 	int         num_defs;
 	qfo_function_t *functions;
 	int         num_functions;
+	pr_lineno_t *lines;
+	int         num_lines;
 } qfo_t;
 
 int write_obj_file (const char *filename);
