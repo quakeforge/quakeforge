@@ -488,13 +488,14 @@ CL_ParseDownload (void)
 	}
 	// open the file if not opened yet
 	if (!cls.download) {
-		//XXX QFS
-		//if (strncmp (cls.downloadtempname, "skins/", 6))
+		if (!qfs_gamedir->skinpath
+			|| !*qfs_gamedir->skinpath
+			|| strncmp (cls.downloadtempname, "skins/", 6))
 			snprintf (name, sizeof (name), "%s/%s", com_gamedir,
 					  cls.downloadtempname);
-		//else
-		//	snprintf (name, sizeof (name), "%s/%s/%s", fs_userpath->string,
-		//			  fs_skinbase->string, cls.downloadtempname);
+		else
+			snprintf (name, sizeof (name), "%s/%s/%s", fs_userpath->string,
+					  qfs_gamedir->skinpath, cls.downloadtempname);
 
 		COM_CreatePath (name);
 
@@ -530,18 +531,19 @@ CL_ParseDownload (void)
 
 		// rename the temp file to it's final name
 		if (strcmp (cls.downloadtempname, cls.downloadname)) {
-			//XXX QFS
-			//if (strncmp (cls.downloadtempname, "skins/", 6)) {
+			if (!qfs_gamedir->skinpath
+				|| !*qfs_gamedir->skinpath
+				|| strncmp (cls.downloadtempname, "skins/", 6)) {
 				snprintf (oldn, sizeof (oldn), "%s/%s", com_gamedir,
 						  cls.downloadtempname);
 				snprintf (newn, sizeof (newn), "%s/%s", com_gamedir,
 						  cls.downloadname);
-			//} else {
-			//	snprintf (oldn, sizeof (oldn), "%s/%s/%s", fs_userpath->string,
-			//			  fs_skinbase->string, cls.downloadtempname);
-			//	snprintf (newn, sizeof (newn), "%s/%s/%s", fs_userpath->string,
-			//			  fs_skinbase->string, cls.downloadname);
-			//}
+			} else {
+				snprintf (oldn, sizeof (oldn), "%s/%s/%s", fs_userpath->string,
+						  qfs_gamedir->skinpath, cls.downloadtempname);
+				snprintf (newn, sizeof (newn), "%s/%s/%s", fs_userpath->string,
+						  qfs_gamedir->skinpath, cls.downloadname);
+			}
 			r = Qrename (oldn, newn);
 			if (r)
 				Con_Printf ("failed to rename, %s.\n", strerror (errno));

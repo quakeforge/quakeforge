@@ -164,6 +164,8 @@ qfs_get_gd_params (plitem_t *gdpl, gamedir_t *gamedir, dstring_t *path)
 	}
 	if (!gamedir->gamecode && (p = PL_ObjectForKey (gdpl, "GameCode")))
 		gamedir->gamecode = strdup (p->data);
+	if (!gamedir->skinpath && (p = PL_ObjectForKey (gdpl, "SkinPath")))
+		gamedir->skinpath = strdup (p->data);
 }
 
 static void
@@ -931,6 +933,8 @@ COM_Gamedir (const char *dir)
 			free ((char *)qfs_gamedir->path);
 		if (qfs_gamedir->gamecode)
 			free ((char *)qfs_gamedir->gamecode);
+		if (qfs_gamedir->skinpath)
+			free ((char *)qfs_gamedir->skinpath);
 		free (qfs_gamedir);
 	}
 
@@ -952,6 +956,7 @@ COM_Gamedir (const char *dir)
 		Sys_DPrintf ("%s\n", qfs_gamedir->name);
 		Sys_DPrintf ("    %s\n", qfs_gamedir->path);
 		Sys_DPrintf ("    %s\n", qfs_gamedir->gamecode);
+		Sys_DPrintf ("    %s\n", qfs_gamedir->skinpath);
 		qfs_process_path (qfs_gamedir->path, dir);
 	}
 

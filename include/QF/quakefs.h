@@ -48,6 +48,7 @@ typedef struct gamedir_s {
 	const char *name;
 	const char *path;
 	const char *gamecode;
+	const char *skinpath;
 } gamedir_t;
 
 extern searchpath_t *com_searchpaths;
