@@ -265,6 +265,7 @@ Info_MakeString (info_t *info, int (*filter)(const char *))
 		for (s = (*key)->value; *s; s++)
 			*d++ = *s;
 	}
+	*d = 0;
 	free (key_list);
 	return string;
 }
