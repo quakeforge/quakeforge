@@ -112,8 +112,8 @@ C_Init (void)
 {
 	cvar_t     *curses = Cvar_Get ("sv_use_curses", "1", CVAR_ROM, NULL,
 								   "set to 0 to disable curses server console");
-	use_curses = curses->int_val;
 #ifdef HAVE_CURSES_H
+	use_curses = curses->int_val;
 	if (use_curses) {
 		initscr ();
 		start_color ();

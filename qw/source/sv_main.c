@@ -1247,14 +1247,15 @@ SV_StringToFilter (const char *address, ipfilter_t *f)
 
 		// change trailing 0 segments to be a mask, eg 1.2.0.0 gives a /16 mask
 		if (mask == -1) {
-			mask = 0;
 			if (sv_filter_automask->int_val) {
+				mask = sizeof (b) * 8;
 				i = sizeof (b) - 1;
 				while (i >= 0 && !b[i]) {
-					mask += 8;
+					mask -= 8;
 					i--;
 				}
-			}
+			} else
+				mask = 0;
 		}
 #ifdef HAVE_IPV6
 	}
@@ -1300,7 +1301,7 @@ SV_CleanIPList (void)
 	char		*type;
 
 	for (i = 0; i < numipfilters;) {
-		if (ipfilters[i].time && (ipfilters[i].time < realtime)) {
+		if (ipfilters[i].time && (ipfilters[i].time <= realtime)) {
 			switch (ipfilters[i].type) {
 				case ft_ban: type = "Ban"; break;
 				case ft_mute: type = "Mute"; break;
@@ -1396,6 +1397,9 @@ SV_AddIP_f (void)
 				// FIXME: print on the console too
 			}
 		}
+		SV_Printf ("Added IP Filter for %s/%u\n",
+				   SV_PrintIP (ipfilters[numipfilters].ip),
+				   ipfilters[numipfilters].mask);
 		numipfilters++;
 	}
 }
@@ -1411,10 +1415,11 @@ SV_RemoveIP_f (void)
 	for (i = 0; i < numipfilters; i++)
 		if (ipfilters[i].mask == f.mask && SV_IPCompare (ipfilters[i].ip, f.ip)) {
 			SV_RemoveIPFilter (i);
-			SV_Printf ("Removed.\n");
+			SV_Printf ("Removed IP Filter for %s/%u.\n",
+					   SV_PrintIP (f.ip), f.mask);
 			return;
 		}
-	SV_Printf ("Didn't find %s.\n", Cmd_Argv (1));
+	SV_Printf ("Didn't find %s/%u.\n", SV_PrintIP (f.ip), f.mask);
 }
 
 void
@@ -1424,7 +1429,7 @@ SV_ListIP_f (void)
 	char		*type;
 	char		timestr[30];
 
-	SV_Printf ("Filter list:\n");
+	SV_Printf ("IP Filter list:\n");
 	for (i = 0; i < numipfilters; i++) {
 		switch (ipfilters[i].type) {
 			case ft_ban: type = "Ban:"; break;
@@ -1442,6 +1447,8 @@ SV_ListIP_f (void)
 		SV_Printf ("%-5s %-10s %s/%u\n", type, timestr,
 				   SV_PrintIP (ipfilters[i].ip), ipfilters[i].mask);
 	}
+	SV_Printf ("%d IP Filter%s\n", numipfilters,
+			   numipfilters == 1 ? "" : "s");
 }
 
 void
@@ -1454,7 +1461,7 @@ SV_WriteIP_f (void)
 
 	snprintf (name, sizeof (name), "%s/listip.cfg", com_gamedir);
 
-	SV_Printf ("Writing %s.\n", name);
+	SV_Printf ("Writing IP Filters to %s.\n", name);
 
 	f = Qopen (name, "wb");
 	if (!f) {
