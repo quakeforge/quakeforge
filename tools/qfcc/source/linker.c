@@ -161,6 +161,25 @@ def_error (qfo_def_t *def, const char *fmt, ...)
 	error (0, "%s", string->str);
 }
 
+static void __attribute__ ((format (printf, 2, 3)))
+def_warning (qfo_def_t *def, const char *fmt, ...)
+{
+	va_list     args;
+	static dstring_t *string;
+
+	if (!string)
+		string = dstring_new ();
+
+	va_start (args, fmt);
+	dvsprintf (string, fmt, args);
+	va_end (args);
+
+	pr.source_file = def->file;
+	pr.source_line = def->line;
+	pr.strings = strings;
+	warning (0, "%s", string->str);
+}
+
 static defref_t *
 get_defref (qfo_def_t *def, defgroup_t *defgroup)
 {
@@ -778,6 +797,12 @@ linker_finish (void)
 			const char *name = STRING (def->name);
 
 			if (strcmp (name, ".self") == 0 && !did_self) {
+				defref_t   *_d = Hash_Find (defined_defs, "self");
+				if (_d) {
+					qfo_def_t  *d = deref_def (_d, &global_defs);
+					if (d->basic_type == ev_entity)
+						def_warning (d, "@self and self used together");
+				}
 				define_def (".self", ev_entity, "E", 0);
 				did_self = 1;
 			} else if (strcmp (name, ".this") == 0 && !did_this) {
