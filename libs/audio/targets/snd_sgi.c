@@ -76,6 +76,7 @@ void I_S_EndPrecaching (void);
 void I_S_ExtraUpdate (void);
 void I_S_LocalSound (char *s);
 
+
 qboolean
 SNDDMA_Init (void)
 {
@@ -271,6 +272,7 @@ SNDDMA_Init (void)
 	return 1;
 }
 
+
 int
 SNDDMA_GetDMAPos (void)
 {
@@ -280,6 +282,7 @@ SNDDMA_GetDMAPos (void)
 					  * shm->channels) % shm->samples;
 	return shm->samplepos;
 }
+
 
 void
 SNDDMA_Shutdown (void)
@@ -292,6 +295,7 @@ SNDDMA_Shutdown (void)
 		snd_inited = 0;
 	}
 }
+
 
 /*
 	SNDDMA_Submit
@@ -335,6 +339,7 @@ SNDDMA_Submit (void)
 	framecount += bytes / bsize;
 }
 
+
 plugin_t *
 PluginInfo (void) {
     plugin_info.type = qfp_sound;
@@ -375,4 +380,3 @@ PluginInfo (void) {
 
     return &plugin_info;
 }
-/* end of file */

@@ -74,6 +74,7 @@ void I_S_EndPrecaching (void);
 void I_S_ExtraUpdate (void);
 void I_S_LocalSound (char *s);
 
+
 qboolean
 SNDDMA_Init (void)
 {
@@ -222,12 +223,8 @@ SNDDMA_Init (void)
 	memset ((dma_t *) shm, 0, sizeof (*shm));
 	shm->splitbuffer = 0;
 	shm->channels = stereo + 1;
-	shm->submission_chunk = snd_pcm_hw_params_get_period_size (hw, 0);	// don't 
-																		// mix 
-																		// less 
-																		// than 
-																		// this 
-																		// #
+	shm->submission_chunk = snd_pcm_hw_params_get_period_size (hw, 0); // don't
+										// mix less than this #
 	shm->samplepos = 0;					// in mono samples
 	shm->samplebits = bps;
 	buffer_size = snd_pcm_hw_params_get_buffer_size (hw);
@@ -251,6 +248,7 @@ SNDDMA_Init (void)
 	return 0;
 }
 
+
 int
 SNDDMA_GetDMAPos (void)
 {
@@ -269,6 +267,7 @@ SNDDMA_GetDMAPos (void)
 	return shm->samplepos;
 }
 
+
 void
 SNDDMA_Shutdown (void)
 {
@@ -277,6 +276,7 @@ SNDDMA_Shutdown (void)
 		snd_inited = 0;
 	}
 }
+
 
 /*
 	SNDDMA_Submit
@@ -310,6 +310,8 @@ SNDDMA_Submit (void)
 			break;
 	}
 }
+
+
 plugin_t *
 PluginInfo (void) {
     plugin_info.type = qfp_sound;
@@ -317,7 +319,9 @@ PluginInfo (void) {
     plugin_info.plugin_version = "0.1";
     plugin_info.description = "ALSA 0.9.x digital output";
     plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
-        "Copyright (C) 1999,2000,2001  contributors of the QuakeForge project\n"        "Please see the file \"AUTHORS\" for a list of contributors";
+        "Copyright (C) 1999,2000,2001  contributors of the QuakeForge"
+		" project\n"
+		"Please see the file \"AUTHORS\" for a list of contributors";
     plugin_info.functions = &plugin_info_funcs;
     plugin_info.data = &plugin_info_data;
 
