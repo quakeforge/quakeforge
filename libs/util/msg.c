@@ -153,33 +153,21 @@ MSG_GetReadCount (msg_t *msg)
 int
 MSG_ReadChar (msg_t *msg)
 {
-	int         c;
+	if (msg->readcount + 1 <= msg->message->cursize)
+		return (signed char) msg->message->data[msg->readcount++];
 
-	if (msg->readcount + 1 > msg->message->cursize) {
-		msg->badread = true;
-		return -1;
-	}
-
-	c = (signed char) msg->message->data[msg->readcount];
-	msg->readcount++;
-
-	return c;
+	msg->badread = true;
+	return -1;
 }
 
 int
 MSG_ReadByte (msg_t *msg)
 {
-	int         c;
+	if (msg->readcount + 1 <= msg->message->cursize)
+		return (unsigned char) msg->message->data[msg->readcount++];
 
-	if (msg->readcount + 1 > msg->message->cursize) {
-		msg->badread = true;
-		return -1;
-	}
-
-	c = (unsigned char) msg->message->data[msg->readcount];
-	msg->readcount++;
-
-	return c;
+	msg->badread = true;
+	return -1;
 }
 
 int
@@ -187,18 +175,16 @@ MSG_ReadShort (msg_t *msg)
 {
 	int         c;
 
-	if (msg->readcount + 2 > msg->message->cursize) {
-		msg->readcount = msg->message->cursize;
-		msg->badread = true;
-		return -1;
+	if (msg->readcount + 2 <= msg->message->cursize) {
+		c = (short) (msg->message->data[msg->readcount]
+					 + (msg->message->data[msg->readcount + 1] << 8));
+		msg->readcount += 2;
+		return c;
 	}
+	msg->readcount = msg->message->cursize;
+	msg->badread = true;
+	return -1;
 
-	c = (short) (msg->message->data[msg->readcount]
-				 + (msg->message->data[msg->readcount + 1] << 8));
-
-	msg->readcount += 2;
-
-	return c;
 }
 
 int
@@ -206,20 +192,17 @@ MSG_ReadLong (msg_t *msg)
 {
 	int         c;
 
-	if (msg->readcount + 4 > msg->message->cursize) {
-		msg->readcount = msg->message->cursize;
-		msg->badread = true;
-		return -1;
+	if (msg->readcount + 4 <= msg->message->cursize) {
+		c = msg->message->data[msg->readcount]
+			+ (msg->message->data[msg->readcount + 1] << 8)
+			+ (msg->message->data[msg->readcount + 2] << 16)
+			+ (msg->message->data[msg->readcount + 3] << 24);
+		msg->readcount += 4;
+		return c;
 	}
-
-	c = msg->message->data[msg->readcount]
-		+ (msg->message->data[msg->readcount + 1] << 8)
-		+ (msg->message->data[msg->readcount + 2] << 16)
-		+ (msg->message->data[msg->readcount + 3] << 24);
-
-	msg->readcount += 4;
-
-	return c;
+	msg->readcount = msg->message->cursize;
+	msg->badread = true;
+	return -1;
 }
 
 float
@@ -231,21 +214,21 @@ MSG_ReadFloat (msg_t *msg)
 		int         l;
 	} dat;
 
-	if (msg->readcount + 4 > msg->message->cursize) {
-		msg->readcount = msg->message->cursize;
-		msg->badread = true;
-		return -1;
+	if (msg->readcount + 4 <= msg->message->cursize) {
+		dat.b[0] = msg->message->data[msg->readcount];
+		dat.b[1] = msg->message->data[msg->readcount + 1];
+		dat.b[2] = msg->message->data[msg->readcount + 2];
+		dat.b[3] = msg->message->data[msg->readcount + 3];
+		msg->readcount += 4;
+
+		dat.l = LittleLong (dat.l);
+
+		return dat.f;
 	}
 
-	dat.b[0] = msg->message->data[msg->readcount];
-	dat.b[1] = msg->message->data[msg->readcount + 1];
-	dat.b[2] = msg->message->data[msg->readcount + 2];
-	dat.b[3] = msg->message->data[msg->readcount + 3];
-	msg->readcount += 4;
-
-	dat.l = LittleLong (dat.l);
-
-	return dat.f;
+	msg->readcount = msg->message->cursize;
+	msg->badread = true;
+	return -1;
 }
 
 const char *

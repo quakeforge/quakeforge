@@ -506,6 +506,9 @@ Hunk_TempAlloc (int size)
 	size = (size + 15) & ~15;
 
 	if (hunk_tempactive) {
+		if (hunk_high_used - hunk_tempmark >= size + sizeof (hunk_t)) {
+			return (hunk_t *) (hunk_base + hunk_size - hunk_high_used) + 1;
+		}
 		Hunk_FreeToHighMark (hunk_tempmark);
 		hunk_tempactive = false;
 	}

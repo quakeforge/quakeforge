@@ -94,7 +94,6 @@ vec3_t		shadevector;
 static void
 GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
 {
-	float			l;
 	float			color[4];
 	int				count;
 	int			   *order;
@@ -129,8 +128,7 @@ GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
 
 			if (!fb) {
 				// normals and vertexes come from the frame list
-				l = shadelight * verts->lightdot;
-				VectorScale (shadecolor, l, color);
+				VectorScale (shadecolor, verts->lightdot, color);
 
 				qfglColor4fv (color);
 			}
@@ -289,7 +287,8 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 	vert_order_t *vo;
 
 	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
-		Con_DPrintf ("R_AliasSetupFrame: no such frame %d\n", frame);
+		Con_Printf ("R_AliasSetupFrame: no such frame %d %s\n", frame,
+					currententity->model->name);
 		frame = 0;
 	}
 
@@ -439,13 +438,6 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	if (cull && R_CullBox (mins, maxs))
 			return;
 
-	// FIXME: shadecolor is supposed to be the lighting for the model, not
-	// just colormod
-	shadecolor[0] = e->colormod[0] * 2.0;
-	shadecolor[1] = e->colormod[1] * 2.0;
-	shadecolor[2] = e->colormod[2] * 2.0;
-	modelalpha = e->alpha;
-
 	VectorCopy (e->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
 
@@ -487,6 +479,11 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		shadevector[2] = 1;
 		VectorNormalize (shadevector);
 	}
+
+	shadecolor[0] = e->colormod[0] * 2.0 * shadelight;
+	shadecolor[1] = e->colormod[1] * 2.0 * shadelight;
+	shadecolor[2] = e->colormod[2] * 2.0 * shadelight;
+	modelalpha = e->alpha;
 
 	// locate the proper data
 	paliashdr = Cache_Get (&e->model->cache);

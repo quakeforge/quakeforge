@@ -327,7 +327,7 @@ RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 	msurface_t	*surf;
 	mtexinfo_t	*tex;
 	vec3_t		 mid;
-
+loop:
 	if (node->contents < 0)
 		return -1;						// didn't hit anything
 
@@ -338,8 +338,10 @@ RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 	back = DotProduct (end, plane->normal) - plane->dist;
 	side = front < 0;
 
-	if ((back < 0) == side)
-		return RecursiveLightPoint (node->children[side], start, end);
+	if ((back < 0) == side) {
+		node = node->children[side];
+		goto loop;
+	}
 
 	frac = front / (front - back);
 	mid[0] = start[0] + (end[0] - start[0]) * frac;
