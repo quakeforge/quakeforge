@@ -161,8 +161,6 @@ Cmd_FreeBuffer (cmd_buffer_t *del)
 				dstring_delete (del->argv[i]);
 		free (del->argv);
 	}
-	if (del->argspace)
-		free (del->argspace);
 	if (del->args)
 		free (del->args);
 	Hash_DelTable (del->locals);
@@ -1063,7 +1061,7 @@ Cmd_ProcessEscapes (dstring_t * dstr)
 void
 Cmd_TokenizeString (const char *text, qboolean filter)
 {
-	int         i = 0, n, len = 0, quotes, braces, space, res;
+	int         i = 0, len = 0, quotes, braces, space, res;
 	const char *str = text;
 	unsigned int cmd_argc = 0;
 
@@ -1076,12 +1074,14 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 	tag_special = 0;
 	if (text[0] == '|')
 		str++;
+	dstring_clearstr (cmd_activebuffer->line);
 	while (strlen (str + i)) {
 		space = 0;
 		while (isspace (str[i])) {
 			i++;
 			space++;
 		}
+		dstring_appendsubstr (cmd_activebuffer->line, str + i - space, space);
 		len = Cmd_GetToken (str + i);
 		if (len < 0) {
 			Cmd_Error ("Parse error:  Unmatched quotes, braces, or "
@@ -1098,27 +1098,23 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 
 			cmd_activebuffer->args = realloc (cmd_activebuffer->args,
 											  sizeof (int) * cmd_argc);
-
 			SYS_CHECKMEM (cmd_activebuffer->args);
-
-			cmd_activebuffer->argspace = realloc (cmd_activebuffer->argspace,
-												  sizeof (int) * cmd_argc);
-
-			SYS_CHECKMEM (cmd_activebuffer->argspace);
 
 			cmd_activebuffer->argv[cmd_argc - 1] = dstring_newstr ();
 			cmd_activebuffer->maxargc++;
 		}
 		dstring_clearstr (cmd_activebuffer->argv[cmd_argc - 1]);
-		cmd_activebuffer->argspace[cmd_argc - 1] = space;
 		/* Remove surrounding quotes or double quotes or braces */
 		quotes = 0;
 		braces = 0;
+		cmd_activebuffer->args[cmd_argc - 1] = strlen (cmd_activebuffer->line->str);
 		if ((str[i] == '\'' && str[i + len] == '\'')
 			|| (str[i] == '"' && str[i + len] == '"')) {
 			i++;
 			len -= 1;
 			quotes = 1;
+			dstring_appendsubstr (cmd_activebuffer->line, str + i, 1);
+			dstring_appendsubstr (cmd_activebuffer->line, str + i, 1);
 		}
 		if (str[i] == '{' && str[i + len] == '}') {
 			i++;
@@ -1151,18 +1147,12 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 			}
 			Cmd_ProcessEscapes (cmd_activebuffer->argv[cmd_argc - 1]);
 		}
+		dstring_insertstr (cmd_activebuffer->line,
+						   cmd_activebuffer->argv[cmd_argc - 1]->str,
+						   strlen (cmd_activebuffer->line->str) - 2 * quotes);
 
 		i += len + quotes + braces;		/* If we ended on a quote or brace,
 										   skip it */
-	}
-	/* Now we must reconstruct cmd_args */
-	dstring_clearstr (cmd_activebuffer->line);
-	for (i = 0; i < cmd_argc; i++) {
-		for (n = 0; n < cmd_activebuffer->argspace[i]; n++)
-			dstring_appendstr (cmd_activebuffer->line, " ");
-		cmd_activebuffer->args[i] = strlen (cmd_activebuffer->line->str);
-		dstring_appendstr (cmd_activebuffer->line,
-						   cmd_activebuffer->argv[i]->str);
 	}
 	cmd_activebuffer->argc = cmd_argc;
 }
