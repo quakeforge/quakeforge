@@ -131,12 +131,13 @@ SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
 {
 	byte	   *buf;				// [48 bits] xyzpy 12 12 12 4 8 
 	int			n, p, x, y, z, yaw;
+	int         bpn = recorder ? 7 : 6;	// bytes per nail
 	edict_t	   *ent;
 
 	if (!numnails)
 		return;
 
-	buf =  SZ_GetSpace (msg, numnails * 6 + 2);
+	buf =  SZ_GetSpace (msg, numnails * bpn + 2);
 	*buf++ = recorder ? svc_nails2 : svc_nails;
 	*buf++ = numnails;
 

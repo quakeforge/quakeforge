@@ -1201,7 +1201,7 @@ CL_ParseServerMessage (void)
 {
 	const char *s;
 	static dstring_t *stuffbuf;
-	int			cmd, i, j;
+	int			cmd = 0, i, j;
 
 	received_framecount = host_framecount;
 	cl.last_servermessage = realtime;
@@ -1218,7 +1218,8 @@ CL_ParseServerMessage (void)
 	// parse the message
 	while (1) {
 		if (net_message->badread) {
-			Host_Error ("CL_ParseServerMessage: Bad server message");
+			Host_Error ("CL_ParseServerMessage: Bad server message: %s\n",
+						svc_strings[cmd]);
 			break;
 		}
 
