@@ -1822,15 +1822,15 @@ static void
 PF_hullpointcontents (progs_t *pr)
 {
 	edict_t    *edict = G_EDICT (pr, OFS_PARM0);
-	float      *point = G_VECTOR (pr, OFS_PARM1);
-	float       size = G_FLOAT (pr, OFS_PARM2);
+	float      *mins = G_VECTOR (pr, OFS_PARM1);
+	float      *maxs = G_VECTOR (pr, OFS_PARM2);
+	float      *point = G_VECTOR (pr, OFS_PARM3);
 	hull_t     *hull;
 	vec3_t      offset;
-	static vec3_t mins;		// always 0;
-	vec3_t      maxs = {size, 0, 0};
 
 	hull = SV_HullForEntity (edict, mins, maxs, offset);
-	G_INT (pr, OFS_RETURN) = SV_HullPointContents (hull, 0, point);
+	VectorSubtract (point, offset, offset);
+	G_INT (pr, OFS_RETURN) = SV_HullPointContents (hull, 0, offset);
 }
 
 static void
@@ -1969,8 +1969,8 @@ PF_rotate_bbox (progs_t *pr)
 	// set up the 3 size based hulls
 	for (j = 0; j < 3; j++) {
 		hull = ch->hulls[j];
-		VectorScale (offsets[j][0], -1, hull->clip_mins);
-		VectorScale (offsets[j][1], -1, hull->clip_maxs);
+		VectorScale (offsets[j][1], -1, hull->clip_mins);
+		VectorScale (offsets[j][0], -1, hull->clip_maxs);
 		// set up the clip planes
 		for (i = 0; i < 6; i++) {
 			hull->planes[i].dist = calc_dist (verts[i], dir[i / 2], offsets[j]);
