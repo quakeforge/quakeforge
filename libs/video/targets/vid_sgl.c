@@ -77,22 +77,12 @@ extern void VID_Init8bitPalette (void);
 void
 VID_SDL_GammaCheck (void)
 {
-#if SDL_VERSIONNUM(SDL_MAJOR_VERSION,SDL_MINOR_VERSION,SDL_PATCHLEVEL) \
-	>= SDL_VERSIONNUM(1,1,5)
-#if SDL_VERSIONNUM(SDL_MAJOR_VERSION,SDL_MINOR_VERSION,SDL_PATCHLEVEL) \
-	>= SDL_VERSIONNUM(1,1,6)
 	Uint16 redtable[256], greentable[256], bluetable[256];
-#else
-	Uint8 redtable[256], greentable[256], bluetable[256];
-#endif
 
 	if (SDL_GetGammaRamp(redtable, greentable, bluetable) < 0)
 		vid_gamma_avail = false;
 	else
 		vid_gamma_avail = true;
-#else
-	vid_gamma_avail = false;
-#endif
 }
 
 void
@@ -268,8 +258,5 @@ VID_SetCaption (const char *text)
 qboolean
 VID_SetGamma (double gamma)
 {
-#if SDL_VERSIONNUM(SDL_MAJOR_VERSION,SDL_MINOR_VERSION,SDL_PATCHLEVEL) \
-	>= SDL_VERSIONNUM(1,1,5)
 	return SDL_SetGamma((float) gamma, (float) gamma, (float) gamma); 
-#endif
 }

@@ -545,11 +545,11 @@ AC_ARG_ENABLE(sdl,
 )
 
 if test "x$enable_sdl" != xno; then
-	AM_PATH_SDL(1.0.1, HAVE_SDL=yes, HAVE_SDL=no)
-
-	if test "x$HAVE_SDL" != xno; then
-		AM_CHECK_SGL(1.1.1, HAVE_SGL=yes, HAVE_SGL=no)
-	fi
+	AM_PATH_SDL(1.2.0,
+		HAVE_SDL=yes
+		HAVE_SGL=yes,
+		HAVE_SDL=no
+		HAVE_SGL=no)
 	AC_SUBST(HAVE_SDL)
 	AC_SUBST(HAVE_SGL)
 fi
