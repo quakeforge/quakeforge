@@ -47,6 +47,8 @@ typedef struct hashtab_s hashtab_t;
 	returns a pointer to the hash table (to be passed to the other functions)
 	or 0 on error.
 
+	Hash_Add, Hash_Find, Hash_FindList and Hash_Del use gk and strcmp.
+
 	multiple inserions of the same key are fine; later insertions override
 	previous ones until the later one is removed (Hash_Del).
 */
@@ -54,10 +56,14 @@ hashtab_t *Hash_NewTable (int tsize, const char *(*gk)(void*,void*),
 						  void (*f)(void*,void*), void *ud);
 
 /*
-	change the hash and compare functions used by the Has_*Element functions.
+	change the hash and compare functions used by the Hash_*Element functions.
 	the default hash function just returns the address of the element, and the
 	default compare just compares the addresses. compare is to return 0 for not
 	equal and non-0 otherwise.
+
+	With suitably crafted gh and cmp functions, Hash_*Element functions can
+	be mixed with the non-element functions, but by default the results will
+	be undefined.
 
 	gh takes the same parameters as gk above
 	cmp is element 1, element 2, userdata

@@ -1281,7 +1281,7 @@ PF_AddUserCommand (progs_t *pr)
 	ucmd_t     *cmd;
 	cmd = SV_AddUserCommand (name, call_qc_hook, 
 							 P_INT (pr, 2) ? UCMD_NO_REDIRECT : 0,
-							 P_FUNCTION (pr, 1),
+							 (void *) P_FUNCTION (pr, 1),
 							 NULL);
 	
 	if (!cmd)
