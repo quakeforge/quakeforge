@@ -248,12 +248,13 @@ Sbar_Init (void)
 	sb_scorebar = Draw_PicFromWad ("scorebar");
 
 	cl_showscoresuid = Cvar_Get ("cl_showscoresuid", "0", CVAR_NONE, NULL,
-								 "show uid instead of ping on scores");
-
+								 "Set to 1 to show uid instead of ping. Set "
+								 "to 2 to show both.");
 	fs_fraglog = Cvar_Get ("fs_fraglog", "qw-scores.log", CVAR_ARCHIVE, NULL,
-								 "filename of the automatic frag-log");
+						   "Filename of the automatic frag-log.");
 	cl_fraglog = Cvar_Get ("cl_fraglog", "0", CVAR_ARCHIVE, NULL,
-								 "automatic fraglogging, non-zero value will switch it on");
+						   "Automatic fraglogging, non-zero value will switch "
+						   "it on.");
 }
 
 // drawing routines are reletive to the status bar location
@@ -593,7 +594,6 @@ Sbar_DrawFrags (void)
 	l = scoreboardlines <= 4 ? scoreboardlines : 4;
 
 	x = 23;
-//	xofs = (vid.width - 320)>>1;
 	y = vid.height - SBAR_HEIGHT - 23;
 
 	for (i = 0; i < l; i++) {
@@ -611,8 +611,6 @@ Sbar_DrawFrags (void)
 		top = Sbar_ColorForMap (top);
 		bottom = Sbar_ColorForMap (bottom);
 
-//		Draw_Fill (xofs + x*8 + 10, y, 28, 4, top);
-//		Draw_Fill (xofs + x*8 + 10, y+4, 28, 3, bottom);
 		Draw_Fill (x * 8 + 10, y, 28, 4, top);
 		Draw_Fill (x * 8 + 10, y + 4, 28, 3, bottom);
 
@@ -834,7 +832,6 @@ Sbar_TeamOverlay (void)
 	x = 36;
 	Draw_String (x, y, "low/avg/high team total players");
 	y += 8;
-//	Draw_String (x, y, "------------ ---- ----- -------");
 	Draw_String (x, y, "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f "
 				 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
 				 "\x1d\x1e\x1e\x1e\x1e\x1e\x1f");
@@ -912,25 +909,27 @@ Sbar_LogFrags (void)
 	time_t      tt   = time(NULL);
 	char        e_path[MAX_OSPATH];
 
-	if(!cl_fraglog->int_val) return;
+	if (!cl_fraglog->int_val)
+		return;
 
-	memset(&e_path,0,MAX_OSPATH);
+	memset (&e_path, 0, MAX_OSPATH);
     Qexpand_squiggle (fs_userpath->string, e_path);
 
-	if((file = Qopen (va ("%s/%s", e_path, fs_fraglog->string), "a")) == NULL) {
+	if ((file = Qopen (va ("%s/%s", e_path, fs_fraglog->string),
+					   "a")) == NULL) {
 		return;
 	}
 
-	t = ctime(&tt);
-	if(t) 
-		Qwrite(file, t ,strlen(t));
+	t = ctime (&tt);
+	if (t)
+		Qwrite (file, t ,strlen(t));
 
-	Qwrite(file,cls.servername,strlen(cls.servername));
-	Qwrite(file,"\n",1);
-	Qwrite(file,cl.worldmodel->name,strlen(cl.worldmodel->name));
-	Qwrite(file," ", 1);
-	Qwrite(file,cl.levelname,strlen(cl.levelname));
-	Qwrite(file,"\n",1);
+	Qwrite (file, cls.servername, strlen (cls.servername));
+	Qwrite (file, "\n", 1);
+	Qwrite (file, cl.worldmodel->name, strlen (cl.worldmodel->name));
+	Qwrite (file, " ", 1);
+	Qwrite (file, cl.levelname, strlen (cl.levelname));
+	Qwrite (file, "\n", 1);
 
 	// scores   
 	Sbar_SortFrags (true);
@@ -941,9 +940,11 @@ Sbar_LogFrags (void)
 
 	if (cl.teamplay) {
 		// TODO: test if the teamplay does correct output
-		Qwrite(file, "pl   fph time frags team name\n", strlen("pl   fph time frags team name\n"));
+		Qwrite (file, "pl   fph time frags team name\n",
+				strlen ("pl   fph time frags team name\n"));
 	} else {
-		Qwrite(file, "pl   fph time frags name\n", strlen("pl   fph time frags name\n"));
+		Qwrite (file, "pl   fph time frags name\n",
+				strlen ("pl   fph time frags name\n"));
 	}
 
 	for (i = 0; i < l; i++) {
@@ -966,33 +967,38 @@ Sbar_LogFrags (void)
 		f = s->frags;
 
 		// get fph
-		if(total != 0) {
-			fph = (3600/total)*f;
+		if (total != 0) {
+			fph = (3600 / total) * f;
+
+			if (fph >= 999)
+				fph = 999;
+			else if (fph <= -999)
+				fph = -999;
 		}
 		else {
 			fph = 0;
 		}
-		if(fph >= 999) fph = 999;
-		if(fph <= -999) fph = -999;
 
-
-		memset(&conv, 0, 512);
+		memset (&conv, 0, 512);
 		for (cp = (unsigned char *) s->name, d = 0; *cp; cp++, d++)
-			conv[d] = sys_char_map[(unsigned int)*cp];
+			conv[d] = sys_char_map[(unsigned int) *cp];
 		
 		if(s->spectator) {
-			snprintf(num, sizeof (num), "%-3i%% %s (spectator)", s->pl, (char*)&conv);
+			snprintf (num, sizeof (num), "%-3i%% %s (spectator)", s->pl,
+					  (char *) &conv);
 		} else {
 			if(cl.teamplay) {
-				memset(&conv2, 0, 512);
-				for (cp = (unsigned char *) s->team->value, d = 0; *cp; cp++, d++)
-					conv2[d] = sys_char_map[(unsigned int)*cp];
+				memset (&conv2, 0, 512);
+				for (cp = (unsigned char *) s->team->value, d = 0; *cp; cp++,
+						 d++)
+					conv2[d] = sys_char_map[(unsigned int) *cp];
 
-				snprintf(num, sizeof (num), "%-3i%% %-3i %-4i %-3i    %-4s %s", s->pl, fph, 
-					minutes, f, (char*)&conv2, (char*)&conv);
+				snprintf(num, sizeof (num), "%-3i%% %-3i %-4i %-3i    "
+						 "%-4s %s", s->pl, fph, minutes, f, (char *) &conv2,
+						 (char *) &conv);
 			} else {
-				snprintf(num, sizeof (num), "%-3i%% %-3i %-4i %-3i   %s", s->pl, fph, 
-					minutes, f, (char*)&conv);
+				snprintf(num, sizeof (num), "%-3i%% %-3i %-4i %-3i   %s",
+						 s->pl, fph, minutes, f, (char *) &conv);
 			}
 		}
 		Qwrite(file, num, strlen(num));
@@ -1048,31 +1054,50 @@ Sbar_DeathmatchOverlay (int start)
 		y = start;
 	else
 		y = 24;
+
 	if (cl.teamplay) {
 		x = 4;
-//							 0    40 64   104   152  192 
-		if (cl_showscoresuid->int_val == 0)
-			Draw_String (x, y, "ping pl fph time frags team name");
-		else
+//								0    40 64  104  152   192
+		if (cl_showscoresuid->int_val > 1)
+			Draw_String (x, y, "ping pl fph time frags team  uid name");
+		else if (cl_showscoresuid->int_val > 0)
 			Draw_String (x, y, " uid pl fph time frags team name");
+		else
+			Draw_String (x, y, "ping pl fph time frags team name");
 		y += 8;
-//		Draw_String ( x , y, "---- -- ---- ----- ---- ----------------");
-		Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f \x1d\x1e\x1e\x1f "
-					 "\x1d\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1f \x1d\x1e\x1e"
-					 "\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+
+		if (cl_showscoresuid->int_val > 1)
+			Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
+						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
+						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1f "
+						 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+		else
+			Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
+						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
+						 "\x1d\x1e\x1e\x1f "
+						 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 		y += 8;
 	} else {
 		x = 16;
-//							 0    40 64   104   152
-		if (cl_showscoresuid->int_val == 0)
-			Draw_String (x, y, "ping pl fph time frags name");
-		else
+//								0    40 64  104  152
+		if (cl_showscoresuid->int_val > 1)
+			Draw_String (x, y, "ping pl fph time frags  uid name");
+		else if (cl_showscoresuid->int_val > 0)
 			Draw_String (x, y, " uid pl fph time frags name");
+		else
+			Draw_String (x, y, "ping pl fph time frags name");
 		y += 8;
-//		Draw_String ( x , y, "---- -- ---- ----- ----------------");
-		Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f \x1d\x1e\x1e\x1f "
-					 "\x1d\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1e\x1e\x1e"
-					 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+
+		if (cl_showscoresuid->int_val > 1)
+			Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
+						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
+						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1e\x1e\x1e"
+						 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+		else
+			Draw_String (x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
+						 "\x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f "
+						 "\x1d\x1e\x1e\x1e\x1e\x1e\x1e"
+						 "\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 		y += 8;
 	}
 
@@ -1083,12 +1108,12 @@ Sbar_DeathmatchOverlay (int start)
 			continue;
 
 		// draw ping
-		if (cl_showscoresuid->int_val == 0) { // hack to show userid
+		if (cl_showscoresuid->int_val == 1) { // hack to show userid
+			p = s->userid;
+		} else {
 			p = s->ping;
 			if (p < 0 || p > 999)
 				p = 999;
-		} else {
-			p = s->userid;
 		}
 		snprintf (num, sizeof (num), "%4i", p);
 		Draw_String (x, y, num);
@@ -1104,13 +1129,27 @@ Sbar_DeathmatchOverlay (int start)
 		if (s->spectator) {
 			Draw_String (x + 72, y, "(spectator)");
 			// draw name
-			if (cl.teamplay)
-				Draw_String (x + 184 + 40, y, s->name);
-			else
-				Draw_String (x + 184, y, s->name);
+			if (cl.teamplay) {
+				if (cl_showscoresuid->int_val > 1) {
+					p = s->userid;
+					snprintf (num, sizeof (num), "%4i", p);
+					Draw_String (x + 184 + 40, y, num);
+					Draw_String (x + 184 + 80, y, s->name);
+				} else
+					Draw_String (x + 184 + 40, y, s->name);
+			} else {
+				if (cl_showscoresuid->int_val > 1) {
+					p = s->userid;
+					snprintf (num, sizeof (num), "%4i", p);
+					Draw_String (x + 184, y, num);
+					Draw_String (x + 184 + 40, y, s->name);
+				} else
+					Draw_String (x + 184, y, s->name);
+			}
 			y += skip;
 			continue;
 		}
+
 		// get time
 		if (cl.intermission)
 			total = cl.completed_time - s->entertime;
@@ -1122,19 +1161,18 @@ Sbar_DeathmatchOverlay (int start)
 		f = s->frags;
 
 		// get fph
-		if(total != 0)
-		{
-			fph = (3600/total)*f;
-		}
-		else
-		{
+		if (total != 0) {
+			fph = (3600 / total) * f;
+
+			if (fph >= 999)
+				fph = 999;
+			else if (fph <= -999)
+				fph = -999;
+		} else {
 			fph = 0;
 		}
-		if(fph >= 999) fph = 999;
-		if(fph <= -999) fph = -999;
-		
 		// draw fph
-		snprintf (num, sizeof(num), "%3i", fph);
+		snprintf (num, sizeof (num), "%3i", fph);
 		Draw_String (x + 64, y, num);
 		
 		//draw time
@@ -1153,22 +1191,32 @@ Sbar_DeathmatchOverlay (int start)
 			Draw_Fill (x + 136, y, 40, 4, top);
 		Draw_Fill (x + 136, y + 4, 40, 4, bottom);
 
-		// draw number
+		// draw frags
 		if (k != cl.playernum) {
 			snprintf (num, sizeof (num), " %3i ", f);
 		} else {
 			snprintf (num, sizeof (num), "\x10%3i\x11", f);
 		}
-
 		Draw_nString (x + 136, y, num, 5);
 
-		// team
+		// draw name (and team if cl.teamplay)
 		if (cl.teamplay) {
 			Draw_nString (x + 184, y, s->team->value, 4);
-			Draw_String (x + 184 + 40, y, s->name);
+			if (cl_showscoresuid->int_val > 1) {
+				p = s->userid;
+				snprintf (num, sizeof (num), "%4i", p);
+				Draw_String (x + 184 + 40, y, num);
+				Draw_String (x + 184 + 80, y, s->name);
+			} else
+				Draw_String (x + 184 + 40, y, s->name);
 		} else
-			Draw_String (x + 184, y, s->name);
-
+			if (cl_showscoresuid->int_val > 1) {
+				p = s->userid;
+				snprintf (num, sizeof (num), "%4i", p);
+				Draw_String (x + 184, y, num);
+				Draw_String (x + 184 + 40, y, s->name);
+			} else
+				Draw_String (x + 184, y, s->name);
 		y += skip;
 	}
 
@@ -1293,7 +1341,6 @@ Sbar_MiniDeathmatchOverlay (void)
 
 		y += 8;
 	}
-
 }
 
 void
