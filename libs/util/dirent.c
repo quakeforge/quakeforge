@@ -8,178 +8,189 @@
  * Updated by Jeremy Bettis <jeremy@hksys.com>
  * Significantly revised and rewinddir, seekdir and telldir added by Colin
  * Peters <colin@fu.is.saga-u.ac.jp>
- *
+ *	
+ * $Revision$
+ * $Author$
+ * $Date$
  *
  */
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
 
-static __attribute__ ((unused)) const char rcsid[] = 
-	"$Id$";
+static __attribute__ ((unused)) const char rcsid[] =
+       "$Id$";
 
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+#include <io.h>
 #include <direct.h>
 #include <dirent.h>
-#include <errno.h>
-#include <io.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
 
-#define SUFFIX	"*"
-#define	SLASH	"\\"
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>			/* for GetFileAttributes */
 
-#ifndef S_ISDIR
-#define S_ISDIR(m)	((m & S_IFMT) == S_IFDIR)	/* is a directory */
-#endif//S_ISDIR
-
+#include <tchar.h>
+#define SUFFIX	_T("*")
+#define	SLASH	_T("\\")
 
 /*
-  opendir
-
-  Returns a pointer to a DIR structure appropriately filled in to begin
-  searching a directory.
-*/
-DIR        *
-opendir (const char *szPath)
+ * opendir
+ *
+ * Returns a pointer to a DIR structure appropriately filled in to begin
+ * searching a directory.
+ */
+_TDIR      *
+_topendir (const _TCHAR * szPath)
 {
-	DIR        *nd;
-	struct _stat statDir;
+	_TDIR      *nd;
+	unsigned int rc;
+	_TCHAR      szFullPath[MAX_PATH];
 
 	errno = 0;
 
 	if (!szPath) {
 		errno = EFAULT;
-		return (DIR *) 0;
+		return (_TDIR *) 0;
 	}
 
-	if (szPath[0] == '\0') {
+	if (szPath[0] == _T ('\0')) {
 		errno = ENOTDIR;
-		return (DIR *) 0;
+		return (_TDIR *) 0;
 	}
 
 	/* Attempt to determine if the given path really is a directory. */
-	if (_stat (szPath, &statDir)) {
-		/* Error, stat should have set an error value. */
-		return (DIR *) 0;
+	rc = GetFileAttributes (szPath);
+	if (rc == (unsigned int) -1) {
+		/* call GetLastError for more error info */
+		errno = ENOENT;
+		return (_TDIR *) 0;
 	}
-
-	if (!S_ISDIR (statDir.st_mode)) {
-		/* Error, stat reports not a directory. */
+	if (!(rc & FILE_ATTRIBUTE_DIRECTORY)) {
+		/* Error, entry exists but not a directory. */
 		errno = ENOTDIR;
-		return (DIR *) 0;
+		return (_TDIR *) 0;
 	}
 
-	/* Allocate enough space to store DIR structure and the complete *
+	/* Make an absolute pathname.  */
+	_tfullpath (szFullPath, szPath, MAX_PATH);
+
+	/* Allocate enough space to store DIR structure and the complete
 	   directory path given. */
-	nd = (DIR *) calloc (1, sizeof (DIR) + strlen (szPath) + strlen (SLASH) +
-						 strlen (SUFFIX));
+	nd = (_TDIR *) malloc (sizeof (_TDIR) +
+			       (_tcslen (szFullPath) + _tcslen (SLASH) +
+				_tcslen (SUFFIX) + 1) * sizeof (_TCHAR));
 
 	if (!nd) {
 		/* Error, out of memory. */
 		errno = ENOMEM;
-		return (DIR *) 0;
+		return (_TDIR *) 0;
 	}
 
 	/* Create the search expression. */
-	strcpy (nd->dd_name, szPath);
+	_tcscpy (nd->dd_name, szFullPath);
 
 	/* Add on a slash if the path does not end with one. */
-	if (nd->dd_name[0] != '\0' &&
-		nd->dd_name[strlen (nd->dd_name) - 1] != '/' &&
-		nd->dd_name[strlen (nd->dd_name) - 1] != '\\') {
-		strcat (nd->dd_name, SLASH);
+	if (nd->dd_name[0] != _T ('\0') &&
+	    nd->dd_name[_tcslen (nd->dd_name) - 1] != _T ('/') &&
+	    nd->dd_name[_tcslen (nd->dd_name) - 1] != _T ('\\')) {
+		_tcscat (nd->dd_name, SLASH);
 	}
 
 	/* Add on the search pattern */
-	strcat (nd->dd_name, SUFFIX);
+	_tcscat (nd->dd_name, SUFFIX);
 
-	/* Initialize handle to -1 so that a premature closedir doesn't try * to
+	/* Initialize handle to -1 so that a premature closedir doesn't try to
 	   call _findclose on it. */
 	nd->dd_handle = -1;
 
 	/* Initialize the status. */
 	nd->dd_stat = 0;
 
-	/* Initialize the dirent structure. ino and reclen are invalid under *
-	   Win32, and name simply points at the appropriate part of the *
+	/* Initialize the dirent structure. ino and reclen are invalid under
+	   Win32, and name simply points at the appropriate part of the
 	   findfirst_t structure. */
 	nd->dd_dir.d_ino = 0;
 	nd->dd_dir.d_reclen = 0;
 	nd->dd_dir.d_namlen = 0;
-	nd->dd_dir.d_name = nd->dd_dta.name;
+	memset (nd->dd_dir.d_name, 0, FILENAME_MAX);
 
 	return nd;
 }
 
-/*
-  readdir
 
-  Return a pointer to a dirent structure filled with the information on the
-  next entry in the directory.
-*/
-struct dirent *
-readdir (DIR * dirp)
+/*
+ * readdir
+ *
+ * Return a pointer to a dirent structure filled with the information on the
+ * next entry in the directory.
+ */
+struct _tdirent *
+_treaddir (_TDIR * dirp)
 {
 	errno = 0;
 
 	/* Check for valid DIR struct. */
 	if (!dirp) {
 		errno = EFAULT;
-		return (struct dirent *) 0;
-	}
-
-	if (dirp->dd_dir.d_name != dirp->dd_dta.name) {
-		/* The structure does not seem to be set up correctly. */
-		errno = EINVAL;
-		return (struct dirent *) 0;
+		return (struct _tdirent *) 0;
 	}
 
 	if (dirp->dd_stat < 0) {
-		/* We have already returned all files in the directory * (or the
+		/* We have already returned all files in the directory (or the
 		   structure has an invalid dd_stat). */
-		return (struct dirent *) 0;
+		return (struct _tdirent *) 0;
 	} else if (dirp->dd_stat == 0) {
 		/* We haven't started the search yet. */
 		/* Start the search */
-		dirp->dd_handle = _findfirst (dirp->dd_name, &(dirp->dd_dta));
+		dirp->dd_handle = _tfindfirst (dirp->dd_name, &(dirp->dd_dta));
 
 		if (dirp->dd_handle == -1) {
-			/* Whoops! Seems there are no files in that * directory. */
+			/* Whoops! Seems there are no files in that directory. */
 			dirp->dd_stat = -1;
 		} else {
 			dirp->dd_stat = 1;
 		}
 	} else {
 		/* Get the next search entry. */
-		if (_findnext (dirp->dd_handle, &(dirp->dd_dta))) {
-			/* We are off the end or otherwise error. */
+		if (_tfindnext (dirp->dd_handle, &(dirp->dd_dta))) {
+			/* We are off the end or otherwise error. _findnext
+			   sets errno to ENOENT if no more file Undo this. */
+			DWORD       winerr = GetLastError ();
+
+			if (winerr == ERROR_NO_MORE_FILES)
+				errno = 0;
 			_findclose (dirp->dd_handle);
 			dirp->dd_handle = -1;
 			dirp->dd_stat = -1;
 		} else {
-			/* Update the status to indicate the correct * number. */
+			/* Update the status to indicate the correct number. */
 			dirp->dd_stat++;
 		}
 	}
 
 	if (dirp->dd_stat > 0) {
-		/* Successfully got an entry. Everything about the file is * already
-		   appropriately filled in except the length of the * file name. */
-		dirp->dd_dir.d_namlen = strlen (dirp->dd_dir.d_name);
+		/* Successfully got an entry. Everything about the file is
+		   already appropriately filled in except the length of the
+		   file name. */
+		dirp->dd_dir.d_namlen = _tcslen (dirp->dd_dta.name);
+		_tcscpy (dirp->dd_dir.d_name, dirp->dd_dta.name);
 		return &dirp->dd_dir;
 	}
 
-	return (struct dirent *) 0;
+	return (struct _tdirent *) 0;
 }
 
-/*
-  closedir
 
-  Frees up resources allocated by opendir.
-*/
+/*
+ * closedir
+ *
+ * Frees up resources allocated by opendir.
+ */
 int
-closedir (DIR * dirp)
+_tclosedir (_TDIR * dirp)
 {
 	int         rc;
 
@@ -202,13 +213,13 @@ closedir (DIR * dirp)
 }
 
 /*
-  rewinddir
-
-  Return to the beginning of the directory "stream". We simply call findclose
-  and then reset things like an opendir.
-*/
+ * rewinddir
+ *
+ * Return to the beginning of the directory "stream". We simply call findclose
+ * and then reset things like an opendir.
+ */
 void
-rewinddir (DIR * dirp)
+_trewinddir (_TDIR * dirp)
 {
 	errno = 0;
 
@@ -226,13 +237,13 @@ rewinddir (DIR * dirp)
 }
 
 /*
-  telldir
-
-  Returns the "position" in the "directory stream" which can be used with
-  seekdir to go back to an old entry. We simply return the value in stat.
-*/
+ * telldir
+ *
+ * Returns the "position" in the "directory stream" which can be used with
+ * seekdir to go back to an old entry. We simply return the value in stat.
+ */
 long
-telldir (DIR * dirp)
+_ttelldir (_TDIR * dirp)
 {
 	errno = 0;
 
@@ -244,16 +255,16 @@ telldir (DIR * dirp)
 }
 
 /*
-  seekdir
-
-  Seek to an entry previously returned by telldir. We rewind the directory
-  and call readdir repeatedly until either dd_stat is the position number
-  or -1 (off the end). This is not perfect, in that the directory may
-  have changed while we weren't looking. But that is probably the case with
-  any such system.
-*/
+ * seekdir
+ *
+ * Seek to an entry previously returned by telldir. We rewind the directory
+ * and call readdir repeatedly until either dd_stat is the position number
+ * or -1 (off the end). This is not perfect, in that the directory may
+ * have changed while we weren't looking. But that is probably the case with
+ * any such system.
+ */
 void
-seekdir (DIR * dirp, long lPos)
+_tseekdir (_TDIR * dirp, long lPos)
 {
 	errno = 0;
 
@@ -275,8 +286,8 @@ seekdir (DIR * dirp, long lPos)
 		dirp->dd_stat = -1;
 	} else {
 		/* Rewind and read forward to the appropriate index. */
-		rewinddir (dirp);
+		_trewinddir (dirp);
 
-		while ((dirp->dd_stat < lPos) && readdir (dirp));
+		while ((dirp->dd_stat < lPos) && _treaddir (dirp));
 	}
 }

@@ -161,6 +161,9 @@ if test "x$mingw" = xyes; then
 	AC_MSG_CHECKING(for fnmatch.h)
 	AC_MSG_RESULT(yes)
 	AC_DEFINE(HAVE_FNMATCH_H, 1, [Define this if you have fnmatch.h])
+	AC_MSG_CHECKING(for tchar.h)
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(HAVE_TCHAR_H, 1, [Define this if you have tchar.h])
 else
 	AC_CHECK_HEADERS(fnmatch.h)
 fi
