@@ -57,8 +57,22 @@ bi_Cvar_GetCvarString (progs_t *pr)
 	RETURN_STRING (pr, Cvar_VariableString (varname));
 }
 
+static void
+bi_Cvar_Toggle (progs_t *pr)
+{
+	const char *varname = P_GSTRING (pr, 0);
+	cvar_t     *var;
+
+	var = Cvar_FindVar (varname);
+	if (!var)
+		var = Cvar_FindAlias (varname);
+	if (var)
+		Cvar_Set (var, var->int_val ? "0" : "1");
+}
+
 static builtin_t builtins[] = {
 	{"Cvar_GetCvarString",	bi_Cvar_GetCvarString,	-1},
+	{"Cvar_Toggle",			bi_Cvar_Toggle,			-1},
 	{0}
 };
 
