@@ -9,3 +9,17 @@ Server: bar.org:1080
 Download Progress: 0/87kB
 
 Continue?  [Cancel] [OK]
+
+
+
+Server: foo.com
+ [-] walla.pak     50kB
+Server: bar.org:1080
+ [+] zing.pak      37kB
+       zing.wav   (32kB)
+       zang.wav    (5kB)
+
+
+Download Progress: 0/87kB
+
+Continue?  [Cancel] [OK]
