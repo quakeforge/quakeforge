@@ -1,7 +1,7 @@
 /*
 	snd_oss.c
 
-	(description)
+	OSS sound plugin.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -196,7 +196,7 @@ SNDDMA_Init (void)
 	// memory map the dma buffer
 	shm->buffer = (unsigned char *) mmap (NULL, info.fragstotal
 										  * info.fragsize,
-										  PROT_READ | PROT_WRITE,
+										  PROT_WRITE, // was also | PROT_READ
 										  MAP_FILE | MAP_SHARED, audio_fd, 0);
 
 	if (shm->buffer == MAP_FAILED) {
