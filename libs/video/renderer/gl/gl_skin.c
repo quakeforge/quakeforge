@@ -32,6 +32,7 @@
 
 #include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/texture.h"

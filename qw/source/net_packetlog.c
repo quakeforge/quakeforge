@@ -40,6 +40,7 @@
 #include <stdarg.h>
 
 #include "QF/cmd.h"
+#include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/va.h"
 #include "QF/vfs.h"

@@ -76,11 +76,13 @@
 #include <libc.h>
 #endif
 
-#include "net.h"
 #include "QF/compat.h"
+#include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 #include "QF/console.h"
+
+#include "net.h"
 
 #ifdef _WIN32
 # undef EWOULDBLOCK

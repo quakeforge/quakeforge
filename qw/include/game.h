@@ -32,10 +32,9 @@
 #define __game_h
 
 #include "QF/qtypes.h"
-#include "QF/cvar.h"
 #include "QF/qdefs.h"
 
-extern cvar_t		*registered;
+extern struct cvar_s		*registered;
 
 void Game_Init (void);
 void Game_Init_Cvars (void);

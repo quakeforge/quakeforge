@@ -31,15 +31,15 @@
 #define _SERVER_H
 
 #include "QF/gcc_attr.h"
-#include "host.h"
-#include "net.h"
-#include "QF/cvar.h"
-#include "protocol.h"
 #include "QF/model.h"
 #include "QF/progs.h"
 #include "QF/sizebuf.h"
 #include "QF/info.h"
 #include "QF/vfile.h"
+
+#include "host.h"
+#include "net.h"
+#include "protocol.h"
 
 #define	QW_SERVER
 
@@ -369,16 +369,16 @@ typedef enum
 //============================================================================
 // FIXME: declare exported variables in their own relevant .h
 
-extern	cvar_t	*sv_mintic, *sv_maxtic;
-extern	cvar_t	*sv_maxspeed;
+extern	struct cvar_s	*sv_mintic, *sv_maxtic;
+extern	struct cvar_s	*sv_maxspeed;
 
 extern	netadr_t	master_adr[MAX_MASTERS];	// address of the master server
 
-extern	cvar_t	*spawn;
-extern	cvar_t	*teamplay;
-extern	cvar_t	*deathmatch;
-extern	cvar_t	*fraglimit;
-extern	cvar_t	*timelimit;
+extern	struct cvar_s	*spawn;
+extern	struct cvar_s	*teamplay;
+extern	struct cvar_s	*deathmatch;
+extern	struct cvar_s	*fraglimit;
+extern	struct cvar_s	*timelimit;
 
 extern	server_static_t	svs;				// persistant server info
 extern	char	*svs_info;					// evil memory saving hack :)

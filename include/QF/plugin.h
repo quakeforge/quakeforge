@@ -75,7 +75,7 @@ typedef plugin_t * (*P_PluginInfo) (void);
 /*
 	Plugin system variables
 */
-extern cvar_t	*fs_pluginpath;
+extern struct cvar_s	*fs_pluginpath;
 
 /*
 	Function prototypes

@@ -41,6 +41,7 @@
 #include <stdio.h>
 
 #include "QF/compat.h"
+#include "QF/cvar.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 

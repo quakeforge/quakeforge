@@ -43,6 +43,7 @@
 #endif
 
 #include "QF/cmd.h"
+#include "QF/cvar.h"
 #include "QF/console.h"
 #include "QF/model.h"
 #include "QF/qargs.h"

@@ -41,6 +41,7 @@
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/cmd.h"
+#include "QF/cvar.h"
 #include "QF/locs.h"
 #include "QF/model.h"
 #include "QF/sys.h"

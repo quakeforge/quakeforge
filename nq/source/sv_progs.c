@@ -39,11 +39,12 @@
 
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
+
 #include "host.h"
 #include "server.h"
 #include "sv_progs.h"
 #include "world.h"
-
 #include "progdefs.h"
 
 progs_t     sv_pr_state;

@@ -30,15 +30,16 @@
 # include "config.h"
 #endif
 
-#include "server.h"
+#include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/sys.h"
 #include "QF/cmd.h"
 #include "host.h"
-#include "world.h"
+#include "server.h"
 #include "sv_progs.h"
+#include "world.h"
 
 server_t    sv;
 server_static_t svs;

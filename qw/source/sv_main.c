@@ -41,6 +41,7 @@
 
 #include "QF/cmd.h"
 #include "QF/compat.h"
+#include "QF/cvar.h"
 #include "QF/model.h"
 #include "QF/msg.h"
 #include "QF/plugin.h"
@@ -50,6 +51,7 @@
 #include "QF/ver_check.h"
 #include "QF/vfs.h"
 #include "QF/zone.h"
+
 #include "bothdefs.h"
 #include "buildnum.h"
 #include "game.h"

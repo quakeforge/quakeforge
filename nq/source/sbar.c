@@ -33,6 +33,7 @@
 
 #include "QF/cmd.h"
 #include "QF/compat.h"
+#include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/screen.h"
 #include "QF/vid.h"

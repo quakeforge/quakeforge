@@ -39,6 +39,7 @@
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/sys.h"
 #include "QF/screen.h"

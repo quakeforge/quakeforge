@@ -29,10 +29,8 @@
 #ifndef __teamplay_h
 #define __teamplay_h
 
-#include "QF/cvar.h"
-
-extern cvar_t	*cl_parsesay;
-extern cvar_t	*cl_nofake;
+extern struct cvar_s	*cl_parsesay;
+extern struct cvar_s	*cl_nofake;
 
 void Team_Init_Cvars (void);
 void Team_BestWeaponImpulse (void);

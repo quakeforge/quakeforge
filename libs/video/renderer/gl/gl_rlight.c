@@ -39,6 +39,7 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "QF/cvar.h"
 #include "QF/render.h"
 
 #include "glquake.h"

@@ -30,9 +30,11 @@
 # include "config.h"
 #endif
 
+#include "QF/cvar.h"
+#include "QF/render.h"
+
 #include "d_local.h"
 #include "r_local.h"
-#include "QF/render.h"
 
 static int  miplevel;
 

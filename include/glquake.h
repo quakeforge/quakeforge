@@ -39,7 +39,6 @@
 
 #include <GL/gl.h>
 
-#include "QF/cvar.h"
 #include "QF/model.h"
 #include "QF/qfgl_ext.h"
 #include "QF/wad.h"
@@ -88,56 +87,56 @@ extern	int	netgraphtexture;	// netgraph texture
 
 extern	int	skytexturenum;		// index in cl.loadmodel, not gl texture object
 
-extern cvar_t	*r_novis;
-extern cvar_t	*r_particles;
-extern cvar_t	*r_norefresh;
-extern cvar_t	*r_drawviewmodel;
-extern cvar_t	*r_shadows;
-extern cvar_t	*r_wateralpha;
-extern cvar_t	*r_waterripple;
-extern cvar_t	*r_dynamic;
-extern cvar_t	*r_netgraph;
-extern cvar_t	*r_lightmap;
-extern cvar_t	*r_mirroralpha;
+extern struct cvar_s	*r_novis;
+extern struct cvar_s	*r_particles;
+extern struct cvar_s	*r_norefresh;
+extern struct cvar_s	*r_drawviewmodel;
+extern struct cvar_s	*r_shadows;
+extern struct cvar_s	*r_wateralpha;
+extern struct cvar_s	*r_waterripple;
+extern struct cvar_s	*r_dynamic;
+extern struct cvar_s	*r_netgraph;
+extern struct cvar_s	*r_lightmap;
+extern struct cvar_s	*r_mirroralpha;
 
-extern cvar_t	*gl_affinemodels;
-extern cvar_t	*gl_clear;
-extern cvar_t	*gl_cull;
-extern cvar_t	*gl_poly;
-extern cvar_t	*gl_texsort;
-extern cvar_t	*gl_smoothmodels;
-extern cvar_t	*gl_affinemodels;
-extern cvar_t	*gl_polyblend;
-extern cvar_t	*gl_fb_bmodels;
-extern cvar_t	*gl_fb_models;
-extern cvar_t   *gl_dlight_lightmap;
-extern cvar_t	*gl_dlight_polyblend;
-extern cvar_t	*gl_dlight_smooth;
-extern cvar_t	*gl_keeptjunctions;
-extern cvar_t	*gl_reporttjunctions;
-extern cvar_t	*gl_flashblend;
-extern cvar_t	*gl_multitexture;
-extern cvar_t	*gl_nocolors;
-extern cvar_t	*gl_doubleeyes;
+extern struct cvar_s	*gl_affinemodels;
+extern struct cvar_s	*gl_clear;
+extern struct cvar_s	*gl_cull;
+extern struct cvar_s	*gl_poly;
+extern struct cvar_s	*gl_texsort;
+extern struct cvar_s	*gl_smoothmodels;
+extern struct cvar_s	*gl_affinemodels;
+extern struct cvar_s	*gl_polyblend;
+extern struct cvar_s	*gl_fb_bmodels;
+extern struct cvar_s	*gl_fb_models;
+extern struct cvar_s   *gl_dlight_lightmap;
+extern struct cvar_s	*gl_dlight_polyblend;
+extern struct cvar_s	*gl_dlight_smooth;
+extern struct cvar_s	*gl_keeptjunctions;
+extern struct cvar_s	*gl_reporttjunctions;
+extern struct cvar_s	*gl_flashblend;
+extern struct cvar_s	*gl_multitexture;
+extern struct cvar_s	*gl_nocolors;
+extern struct cvar_s	*gl_doubleeyes;
 
-extern cvar_t	*gl_ztrick;
-extern cvar_t	*gl_finish;
-extern cvar_t	*gl_clear;
-extern cvar_t	*gl_subdivide_size;
-extern cvar_t	*gl_particles;
-extern cvar_t	*gl_fires;
-extern cvar_t	*gl_fb_models;
-extern cvar_t	*gl_fb_bmodels;
-extern cvar_t	*gl_poly;
-extern cvar_t	*gl_polyblend;
+extern struct cvar_s	*gl_ztrick;
+extern struct cvar_s	*gl_finish;
+extern struct cvar_s	*gl_clear;
+extern struct cvar_s	*gl_subdivide_size;
+extern struct cvar_s	*gl_particles;
+extern struct cvar_s	*gl_fires;
+extern struct cvar_s	*gl_fb_models;
+extern struct cvar_s	*gl_fb_bmodels;
+extern struct cvar_s	*gl_poly;
+extern struct cvar_s	*gl_polyblend;
 
-extern cvar_t	*gl_max_size;
-extern cvar_t	*gl_playermip;
+extern struct cvar_s	*gl_max_size;
+extern struct cvar_s	*gl_playermip;
 
-extern cvar_t	*r_skyname;
-extern cvar_t	*gl_skymultipass;
-extern cvar_t	*gl_sky_clip;
-extern cvar_t	*gl_sky_divide;
+extern struct cvar_s	*r_skyname;
+extern struct cvar_s	*gl_skymultipass;
+extern struct cvar_s	*gl_sky_clip;
+extern struct cvar_s	*gl_sky_divide;
 
 extern int		mirrortexturenum;	// quake texturenum, not gltexturenum
 extern qboolean	mirror;

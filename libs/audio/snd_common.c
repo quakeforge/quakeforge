@@ -28,7 +28,7 @@
 	$Id$
 */
 
-#include "QF/qtypes.h"
+#include "QF/cvar.h"
 #include "QF/sound.h"
 
 channel_t   channels[MAX_CHANNELS];

@@ -29,8 +29,6 @@
 #ifndef __QF_input_h_
 #define __QF_input_h_
 
-#include <QF/cvar.h>
-
 struct {
 	vec3_t angles;
 	vec3_t position;
@@ -57,11 +55,11 @@ void IN_ModeChanged (void);
 
 void IN_HandlePause (qboolean paused);
 
-extern cvar_t		*_windowed_mouse;
-extern cvar_t		*m_filter;
-extern cvar_t		*in_freelook;
-extern cvar_t		*sensitivity;
-extern cvar_t		*lookstrafe;
+extern struct cvar_s		*_windowed_mouse;
+extern struct cvar_s		*m_filter;
+extern struct cvar_s		*in_freelook;
+extern struct cvar_s		*sensitivity;
+extern struct cvar_s		*lookstrafe;
 
 extern qboolean 	in_mouse_avail;
 extern float		in_mouse_x, in_mouse_y;

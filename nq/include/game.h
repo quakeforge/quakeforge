@@ -32,7 +32,6 @@
 #define __game_h
 
 #include "QF/qtypes.h"
-#include "QF/cvar.h"
 #include "QF/qdefs.h"
 
 #undef MAX_DATAGRAM
@@ -165,7 +164,7 @@ extern int			current_skill;		// skill level for currently loaded level (in case
 
 extern qboolean		isDedicated;
 extern qboolean		abyss, rogue, hipnotic, standard_quake;
-extern cvar_t		*registered;
+extern struct cvar_s		*registered;
 
 void Game_Init (void);
 

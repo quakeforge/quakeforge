@@ -32,6 +32,7 @@
 #endif
 
 #include "server.h"
+#include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/console.h"
 #include "world.h"

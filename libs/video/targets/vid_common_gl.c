@@ -46,11 +46,13 @@
 
 #include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/qargs.h"
 #include "QF/qfgl_ext.h"
 #include "QF/vfs.h"
 #include "QF/vid.h"
+
 #include "glquake.h"
 #include "sbar.h"
 

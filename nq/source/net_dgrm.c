@@ -38,6 +38,7 @@
 #endif
 
 #include "QF/cmd.h"
+#include "QF/cvar.h"
 #include "QF/sys.h"
 #include "QF/keys.h"
 #include "QF/qendian.h"

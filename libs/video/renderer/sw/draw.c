@@ -37,6 +37,7 @@
 #endif
 
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/sound.h"
 #include "QF/sys.h"

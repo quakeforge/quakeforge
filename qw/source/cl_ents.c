@@ -38,6 +38,7 @@
 
 #include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/render.h"
 #include "QF/skin.h"

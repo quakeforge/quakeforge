@@ -40,6 +40,7 @@
 
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/locs.h"
 #include "QF/mathlib.h"
 #include "QF/render.h"

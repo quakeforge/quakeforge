@@ -38,6 +38,7 @@
 
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/qargs.h"
 #include "QF/sizebuf.h"

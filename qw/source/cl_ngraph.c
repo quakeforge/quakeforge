@@ -31,6 +31,7 @@
 #endif
 
 #include "QF/compat.h"
+#include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/render.h"
 

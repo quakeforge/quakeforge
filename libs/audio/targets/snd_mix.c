@@ -38,6 +38,7 @@
 
 #include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/sound.h"
 
 #ifdef _WIN32

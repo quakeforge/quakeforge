@@ -31,7 +31,6 @@
 #define _SOUND_H
 
 #include "QF/mathlib.h"
-#include "QF/cvar.h"
 #include "QF/zone.h"
 
 #define AMBIENT_WATER	0
@@ -177,16 +176,16 @@ extern volatile dma_t *shm;
 extern volatile dma_t sn;
 extern vec_t sound_nominal_clip_dist;
 
-extern	cvar_t *loadas8bit;
-extern	cvar_t *bgmvolume;
-extern	cvar_t *volume;
+extern	struct cvar_s *loadas8bit;
+extern	struct cvar_s *bgmvolume;
+extern	struct cvar_s *volume;
 
-extern	cvar_t	*snd_device;
-extern	cvar_t	*snd_rate;
-extern	cvar_t	*snd_bits;
-extern	cvar_t	*snd_stereo;
-extern	cvar_t	*snd_interp;
-extern cvar_t *snd_stereo_phase_separation;
+extern	struct cvar_s	*snd_device;
+extern	struct cvar_s	*snd_rate;
+extern	struct cvar_s	*snd_bits;
+extern	struct cvar_s	*snd_stereo;
+extern	struct cvar_s	*snd_interp;
+extern	struct cvar_s *snd_stereo_phase_separation;
 
 extern qboolean	snd_initialized;
 

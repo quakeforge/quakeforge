@@ -43,13 +43,15 @@
 
 #include "QF/compat.h"
 #include "QF/console.h"
-#include "glquake.h"
+#include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
-#include "sbar.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
+
+#include "glquake.h"
+#include "sbar.h"
 
 #ifdef WIN32
 /* FIXME: this is evil hack to get full DirectSound support with SDL */

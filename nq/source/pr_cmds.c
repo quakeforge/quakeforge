@@ -38,6 +38,7 @@
 
 #include "QF/console.h"
 #include "QF/compat.h"
+#include "QF/cvar.h"
 #include "QF/sys.h"
 #include "QF/cmd.h"
 #include "QF/va.h"

@@ -43,11 +43,13 @@
 
 #include <math.h>
 
-#include "cl_cam.h"
-#include "client.h"
 #include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/msg.h"
+
+#include "cl_cam.h"
+#include "client.h"
 #include "pmove.h"
 #include "sbar.h"
 

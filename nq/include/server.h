@@ -32,15 +32,15 @@
 #include <setjmp.h>
 
 #include "QF/gcc_attr.h"
-#include "net.h"
-#include "QF/cvar.h"
-#include "protocol.h"
 #include "QF/model.h"
-#include "sv_progs.h"
 #include "QF/sizebuf.h"
 #include "QF/info.h"
 #include "QF/vfile.h"
+
 #include "client.h"
+#include "net.h"
+#include "protocol.h"
+#include "sv_progs.h"
 
 extern progs_t sv_pr_state;
 
@@ -220,26 +220,26 @@ typedef struct client_s
 
 //============================================================================
 
-extern	cvar_t	*teamplay;
-extern	cvar_t	*skill;
-extern	cvar_t	*deathmatch;
-extern	cvar_t	*coop;
-extern	cvar_t	*fraglimit;
-extern	cvar_t	*timelimit;
+extern	struct cvar_s	*teamplay;
+extern	struct cvar_s	*skill;
+extern	struct cvar_s	*deathmatch;
+extern	struct cvar_s	*coop;
+extern	struct cvar_s	*fraglimit;
+extern	struct cvar_s	*timelimit;
 
 
-extern	cvar_t	*sv_maxvelocity;
-extern	cvar_t	*sv_gravity;
-extern	cvar_t	*sv_nostep;
-extern	cvar_t	*sv_friction;
-extern	cvar_t	*sv_edgefriction;
-extern	cvar_t	*sv_stopspeed;
-extern	cvar_t	*sv_maxspeed;
-extern	cvar_t	*sv_accelerate;
-extern	cvar_t	*sv_idealpitchscale;
-extern	cvar_t	*sv_aim;
-extern	cvar_t	*sv_friction;
-extern	cvar_t	*sv_stopspeed;
+extern	struct cvar_s	*sv_maxvelocity;
+extern	struct cvar_s	*sv_gravity;
+extern	struct cvar_s	*sv_nostep;
+extern	struct cvar_s	*sv_friction;
+extern	struct cvar_s	*sv_edgefriction;
+extern	struct cvar_s	*sv_stopspeed;
+extern	struct cvar_s	*sv_maxspeed;
+extern	struct cvar_s	*sv_accelerate;
+extern	struct cvar_s	*sv_idealpitchscale;
+extern	struct cvar_s	*sv_aim;
+extern	struct cvar_s	*sv_friction;
+extern	struct cvar_s	*sv_stopspeed;
 
 extern	server_static_t	svs;				// persistant server info
 extern	server_t		sv;					// local server

@@ -39,6 +39,7 @@
 #include <time.h>
 
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/pcx.h"
 #include "QF/screen.h"

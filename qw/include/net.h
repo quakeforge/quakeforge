@@ -30,7 +30,6 @@
 #define _NET_H
 
 #include "QF/gcc_attr.h"
-#include "QF/cvar.h"
 #include "QF/qdefs.h"
 #include "QF/sizebuf.h"
 
@@ -51,7 +50,7 @@ extern	netadr_t	net_local_adr;
 extern	netadr_t	net_from;		// address of who sent the packet
 extern	struct msg_s *net_message;
 
-extern	cvar_t	*hostname;
+extern	struct cvar_s	*hostname;
 
 extern	int		net_socket;
 

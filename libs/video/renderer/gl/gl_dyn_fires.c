@@ -40,6 +40,7 @@
 
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/render.h"
 
 #include "glquake.h"

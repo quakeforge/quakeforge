@@ -29,7 +29,6 @@
 #ifndef __render_h
 #define __render_h
 
-#include "QF/cvar.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
 #include "QF/qdefs.h" // FIXME

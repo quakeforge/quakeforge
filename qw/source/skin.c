@@ -38,6 +38,7 @@
 
 #include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/pcx.h"
 #include "QF/skin.h"

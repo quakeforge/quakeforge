@@ -29,7 +29,7 @@
 #ifndef __chase_h
 #define __chase_h
 
-extern	cvar_t	*chase_active;
+extern	struct cvar_s	*chase_active;
 
 void Chase_Init_Cvars (void);
 void Chase_Reset (void);

@@ -31,7 +31,6 @@
 #define __view_h_
 
 #include "QF/mathlib.h"
-#include "QF/cvar.h"
 
 #define INFO_CSHIFT_BONUS		(1 << 0)
 #define INFO_CSHIFT_CONTENTS	(1 << 1)

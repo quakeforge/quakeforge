@@ -30,7 +30,6 @@
 #define _R_LOCAL_H
 
 #include "QF/mathlib.h"
-#include "QF/cvar.h"
 #include "QF/vid.h"
 #include "QF/model.h"
 #include "r_shared.h"

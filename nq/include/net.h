@@ -31,7 +31,6 @@
 
 #include "QF/gcc_attr.h"
 #include "QF/sizebuf.h"
-#include "QF/cvar.h"
 
 struct qsockaddr
 {
@@ -349,14 +348,14 @@ extern	qboolean	slistLocal;
 
 void NET_Slist_f (void);
 
-extern cvar_t	*config_com_port;
-extern cvar_t	*config_com_irq;
-extern cvar_t	*config_com_baud;
-extern cvar_t	*config_com_modem;
-extern cvar_t	*config_modem_dialtype;
-extern cvar_t	*config_modem_clear;
-extern cvar_t	*config_modem_init;
-extern cvar_t	*config_modem_hangup;
-extern cvar_t	*hostname;
+extern struct cvar_s	*config_com_port;
+extern struct cvar_s	*config_com_irq;
+extern struct cvar_s	*config_com_baud;
+extern struct cvar_s	*config_com_modem;
+extern struct cvar_s	*config_modem_dialtype;
+extern struct cvar_s	*config_modem_clear;
+extern struct cvar_s	*config_modem_init;
+extern struct cvar_s	*config_modem_hangup;
+extern struct cvar_s	*hostname;
 
 #endif // __net_h

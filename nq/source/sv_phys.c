@@ -30,12 +30,14 @@
 # include "config.h"
 #endif
 
+#include "QF/console.h"
+#include "QF/cvar.h"
+#include "QF/sys.h"
+
 #include "server.h"
 #include "host.h"
 #include "world.h"
-#include "QF/console.h"
 #include "sv_progs.h"
-#include "QF/sys.h"
 
 /*
 

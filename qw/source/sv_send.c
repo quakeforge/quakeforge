@@ -37,14 +37,16 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "bothdefs.h"
 #include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/msg.h"
-#include "server.h"
-#include "sv_progs.h"
 #include "QF/sys.h"
 #include "QF/sound.h" // FIXME: DEFAULT_SOUND_PACKET_*
+
+#include "bothdefs.h"
+#include "server.h"
+#include "sv_progs.h"
 
 #define CHAN_AUTO   0
 #define CHAN_WEAPON 1

@@ -37,20 +37,22 @@
 #endif
 
 #include "QF/checksum.h"
+#include "QF/cmd.h"
+#include "QF/compat.h"
+#include "QF/console.h"
+#include "QF/cvar.h"
+#include "QF/input.h"
+#include "QF/keys.h"
+#include "QF/msg.h"
+#include "QF/teamplay.h"
+
 #include "cl_cam.h"
 #include "cl_demo.h"
 #include "cl_input.h"
 #include "cl_parse.h"
 #include "client.h"
-#include "QF/cmd.h"
-#include "QF/compat.h"
-#include "QF/console.h"
 #include "host.h"
-#include "QF/input.h"
-#include "QF/keys.h"
-#include "QF/msg.h"
 #include "msg_ucmd.h"
-#include "QF/teamplay.h"
 #include "view.h"
 
 cvar_t     *cl_nodelta;

@@ -28,7 +28,7 @@
 	$Id$
 */
 
-#include "QF/qtypes.h"
+#include "QF/cvar.h"
 #include "QF/sound.h"
 #include "QF/plugin.h"
 #include "QF/console.h"

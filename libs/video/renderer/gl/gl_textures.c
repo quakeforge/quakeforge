@@ -43,6 +43,7 @@
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/crc.h"
+#include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/sys.h"
 #include "QF/vid.h"

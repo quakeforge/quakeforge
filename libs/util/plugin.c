@@ -53,6 +53,7 @@
 # endif
 #endif
 
+#include "QF/cvar.h"
 #include <QF/plugin.h>
 #include <QF/console.h>
 

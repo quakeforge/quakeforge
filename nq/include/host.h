@@ -31,7 +31,6 @@
 
 #include "QF/gcc_attr.h"
 #include "QF/qtypes.h"
-#include "QF/cvar.h"
 
 extern qboolean noclip_anglehack;
 
@@ -47,11 +46,11 @@ typedef struct
 
 extern	quakeparms_t host_parms;
 
-extern	cvar_t	*sys_ticrate;
-extern	cvar_t	*sys_nostdout;
-extern	cvar_t	*developer;
+extern	struct cvar_s	*sys_ticrate;
+extern	struct cvar_s	*sys_nostdout;
+extern	struct cvar_s	*developer;
 
-extern	cvar_t	*pausable;
+extern	struct cvar_s	*pausable;
 
 extern	qboolean	host_initialized;		// true if into command execution
 extern	double		host_frametime;

@@ -52,15 +52,17 @@
 #endif
 #include <stdlib.h>
 
+#include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/cvar.h"
+#include "QF/sys.h"
+#include "QF/va.h"
+#include "QF/vfile.h"
+
 #include "bothdefs.h"
 #include "cl_main.h"
 #include "cl_slist.h"
 #include "client.h"
-#include "QF/cmd.h"
-#include "QF/console.h"
-#include "QF/sys.h"
-#include "QF/va.h"
-#include "QF/vfile.h"
 
 server_entry_t *slist;
 server_entry_t *all_slist;

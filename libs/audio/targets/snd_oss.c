@@ -57,6 +57,7 @@
 
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
 #include "QF/plugin.h"

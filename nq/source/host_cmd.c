@@ -30,12 +30,9 @@
 # include "config.h"
 #endif
 
-#include "client.h"
-#include "server.h"
-#include "host.h"
 #include "QF/cmd.h"
 #include "QF/compat.h"
-#include "world.h"
+#include "QF/cvar.h"
 #include "QF/va.h"
 #include "QF/screen.h"
 #include "QF/msg.h"
@@ -43,7 +40,12 @@
 #include "QF/console.h"
 #include "QF/keys.h"
 #include "QF/sys.h"
+
+#include "client.h"
+#include "host.h"
+#include "server.h"
 #include "sv_progs.h"
+#include "world.h"
 
 int         current_skill;
 

@@ -30,6 +30,7 @@
 # include "config.h"
 #endif
 
+#include "QF/cvar.h"
 #include "QF/mathlib.h"
 #include "client.h"
 #include "world.h"

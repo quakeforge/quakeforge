@@ -30,6 +30,7 @@
 # include "config.h"
 #endif
 
+#include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/render.h"
 
