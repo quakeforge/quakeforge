@@ -39,9 +39,10 @@ typedef struct gib_var_s {
 	struct hashtab_s *subvars;
 } gib_var_t;
 
-void GIB_Var_Set (cbuf_t *cbuf, const char *key, const char *value);
-const char *GIB_Var_Get (cbuf_t *cbuf, const char *key);
+void GIB_Var_Set_Local (cbuf_t *cbuf, const char *key, const char *value);
+void GIB_Var_Set_Global (const char *key, const char *value);
+const char *GIB_Var_Get_Local (cbuf_t *cbuf, const char *key);
+const char *GIB_Var_Get_Global (const char *key);
 const char *GIB_Var_Get_Key (void *ele, void *ptr);
 void GIB_Var_Free (void *ele, void *ptr);
-void GIB_Var_Set_R (hashtab_t *vars, char *name, const char *value);
-gib_var_t *GIB_Var_Get_R (hashtab_t *vars, char *name);
+

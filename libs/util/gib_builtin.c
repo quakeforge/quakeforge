@@ -212,7 +212,7 @@ GIB_Local_f (void)
 					"lset: invalid syntax\n"
 					"usage: local variable");
 	else
-		GIB_Var_Set (cbuf_active, GIB_Argv(1), "");
+		GIB_Var_Set_Local (cbuf_active, GIB_Argv(1), "");
 }
 
 void
@@ -224,9 +224,7 @@ GIB_Global_f (void)
 					"usage: global variable");
 	else {
 		char *a = strdup (GIB_Argv(1));
-		if (!gib_globals)
-			gib_globals = Hash_NewTable (256, GIB_Var_Get_Key, GIB_Var_Free, 0);
-		GIB_Var_Set_R (gib_globals, a, "");
+		GIB_Var_Set_Global (a, "");
 		free(a);
 	}
 }
@@ -358,8 +356,32 @@ GIB_Export_f (void)
 }
 
 void
+GIB_String_Length_f (void)
+{
+	if (GIB_Argc() != 2)
+		Cbuf_Error ("syntax",
+	  	"string.length: invalid syntax\n"
+		  "usage: string.length string");
+	else
+		GIB_Return (va("%i", strlen(GIB_Argv(1))));
+}
+
+void
+GIB_String_Equal_f (void)
+{
+	if (GIB_Argc() != 3)
+		Cbuf_Error ("syntax",
+	  	"string.length: invalid syntax\n"
+		  "usage: string.equal string1 string2");
+	else
+		GIB_Return (va("%i", !strcmp(GIB_Argv(1), GIB_Argv(2))));
+}
+
+void
 GIB_Builtin_Init (void)
 {
+	gib_globals = Hash_NewTable (512, GIB_Var_Get_Key, GIB_Var_Free, 0);
+
 	GIB_Builtin_Add ("function", GIB_Function_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("function.get", GIB_FunctionDotGet_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("export", GIB_Export_f, GIB_BUILTIN_NORMAL);
@@ -370,4 +392,6 @@ GIB_Builtin_Init (void)
 	GIB_Builtin_Add ("ifnot", GIB_If_f, GIB_BUILTIN_FIRSTONLY);
 	GIB_Builtin_Add ("while", GIB_While_f, GIB_BUILTIN_NOPROCESS);
 	GIB_Builtin_Add ("break", GIB_Break_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("string.length", GIB_String_Length_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("string.equal", GIB_String_Equal_f, GIB_BUILTIN_NORMAL);
 }

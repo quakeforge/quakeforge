@@ -143,6 +143,6 @@ GIB_Function_Execute (gib_function_t *func)
 		cbuf_active->state = CBUF_STATE_STACK;
 		
 		for (i = 0; i < cbuf_active->args->argc; i++)
-			GIB_Var_Set (sub, va("%i", i), cbuf_active->args->argv[i]->str);
-		GIB_Var_Set (sub, "argc", va("%i", cbuf_active->args->argc));
+			GIB_Var_Set_Local (sub, va("%i", i), cbuf_active->args->argv[i]->str);
+		GIB_Var_Set_Local (sub, "argc", va("%i", cbuf_active->args->argc));
 }

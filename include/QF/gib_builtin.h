@@ -39,6 +39,11 @@ typedef struct gib_builtin_s {
 	} type;
 } gib_builtin_t;
 
+unsigned int GIB_Argc (void);
+const char *GIB_Argv (unsigned int arg);
+const char *GIB_Args (unsigned int arg);
+void GIB_Arg_Strip_Delim (unsigned int arg);
+void GIB_Return (const char *str);
 void GIB_Builtin_Add (const char *name, void (*func) (void), enum gib_builtin_type_e type);
 gib_builtin_t *GIB_Builtin_Find (const char *name);
 void GIB_Builtin_Init (void);

@@ -116,7 +116,7 @@ GIB_Var_Set_R (hashtab_t *vars, char *name, const char *value)
 }
 	
 void
-GIB_Var_Set (cbuf_t *cbuf, const char *key, const char *value)
+GIB_Var_Set_Local (cbuf_t *cbuf, const char *key, const char *value)
 {
 	char *k = strdup (key);
 	if (!GIB_DATA(cbuf)->locals)
@@ -125,8 +125,16 @@ GIB_Var_Set (cbuf_t *cbuf, const char *key, const char *value)
 	free(k);
 }
 
+void
+GIB_Var_Set_Global (const char *key, const char *value)
+{
+	char *k = strdup (key);
+	GIB_Var_Set_R (gib_globals, k, value);
+	free (k);
+}
+
 const char *
-GIB_Var_Get (cbuf_t *cbuf, const char *key)
+GIB_Var_Get_Local (cbuf_t *cbuf, const char *key)
 {
 	gib_var_t *l;
 	char *k;
@@ -135,6 +143,19 @@ GIB_Var_Get (cbuf_t *cbuf, const char *key)
 	k = strdup(key);
 	l = GIB_Var_Get_R (GIB_DATA(cbuf)->locals, k);
 	free(k);
+	if (l)
+		return l->value->str;
+	else
+		return 0;
+}
+
+const char *
+GIB_Var_Get_Global (const char *key)
+{
+	gib_var_t *l;
+	char *k = strdup (key);
+	l = GIB_Var_Get_R (gib_globals, k);
+	free (k);
 	if (l)
 		return l->value->str;
 	else

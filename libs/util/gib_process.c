@@ -83,17 +83,16 @@ unsigned int
 GIB_Process_Variable (struct dstring_s *dstr, unsigned int pos, qboolean tolerant)
 {
 	cvar_t *cvar;
-	gib_var_t *gvar;
 	const char *str;
 	char *p, c;
 	
 	for (p = dstr->str+pos+1; tolerant ? *p : isalnum ((byte)*p) || *p == '_'; p++);
 	c = *p;
 	*p = 0;
-	if ((str = GIB_Var_Get (cbuf_active, dstr->str+pos+1)))	
+	if ((str = GIB_Var_Get_Local (cbuf_active, dstr->str+pos+1)))	
 		; // yay for us
-	else if ((gvar = GIB_Var_Get_R (gib_globals, dstr->str+pos+1)))
-		str = gvar->value->str;
+	else if ((str = GIB_Var_Get_Global (dstr->str+pos+1)))
+		; // yay again
 	else if ((cvar = Cvar_FindVar (dstr->str+pos+1)))
 		str = cvar->string;
 	else

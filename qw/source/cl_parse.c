@@ -56,6 +56,7 @@ static const char rcsid[] =
 #include "QF/va.h"
 #include "QF/vfile.h"
 #include "QF/dstring.h"
+#include "QF/gib_vars.h"
 
 #include "bothdefs.h"
 #include "cl_ents.h"
@@ -1054,6 +1055,7 @@ void
 CL_SetStat (int stat, int value)
 {
 	int			j;
+	const char *arm;
 
 	if (stat < 0 || stat >= MAX_CL_STATS)
 		Host_Error ("CL_SetStat: %i is invalid", stat);
@@ -1061,15 +1063,46 @@ CL_SetStat (int stat, int value)
 	Sbar_Changed ();
 
 	switch (stat) {
-		case STAT_ITEMS:				// set flash times
+		case STAT_ITEMS:
 			Sbar_Changed ();
+			GIB_Var_Set_Global ("player.key.1", value & IT_KEY1 ? "1" : "0");
+			GIB_Var_Set_Global ("player.key.2", value & IT_KEY2 ? "1" : "0");
+			if (value & IT_ARMOR1)
+				arm = "green";
+			else if (value & IT_ARMOR2)
+				arm = "yellow";
+			else if (value & IT_ARMOR3)
+				arm = "red";
+			else
+				arm = "blue";
+			GIB_Var_Set_Global ("player.armor.type", arm);
+			GIB_Var_Set_Global ("player.weapon.1", value & IT_AXE ? "1" : "0");
+			for (j = 0; j < 7; j++)
+				GIB_Var_Set_Global (va("player.weapon.%i", j+2),
+				  value & (1 << j) ? "1" : "0");
 			for (j = 0; j < 32; j++)
 				if ((value & (1 << j)) && !(cl.stats[stat] & (1 << j)))
 					cl.item_gettime[j] = cl.time;
 			break;
 		case STAT_HEALTH:
+			GIB_Var_Set_Global ("player.health", va("%i", value));
 			if (value <= 0)
 				Team_Dead ();
+			break;
+		case STAT_ARMOR:
+			GIB_Var_Set_Global ("player.armor", va("%i", value));
+			break;
+		case STAT_SHELLS:
+			GIB_Var_Set_Global ("player.ammo.shells", va("%i", value));
+			break;
+		case STAT_NAILS:
+			GIB_Var_Set_Global ("player.ammo.nails", va("%i", value));
+			break;
+		case STAT_ROCKETS:
+			GIB_Var_Set_Global ("player.ammo.rockets", va("%i", value));
+			break;
+		case STAT_CELLS:
+			GIB_Var_Set_Global ("player.ammo.cells", va("%i", value));
 			break;
 	}
 

@@ -51,6 +51,7 @@ static const char rcsid[] =
 #include "QF/teamplay.h"
 #include "QF/va.h"
 #include "QF/skin.h"
+#include "QF/gib_builtin.h"
 
 #include "bothdefs.h"
 #include "cl_input.h"
@@ -400,10 +401,27 @@ locs_loc (void)
 }
 
 void
+Locs_Location_Get (void)
+{
+	location_t *location;
+	if (GIB_Argc() != 1)
+		Cbuf_Error (
+		  "syntax",
+		  "location.get: invalid syntax\n"
+		  "usage: location.get"
+		);
+	else {
+		location = locs_find (cl.simorg);
+		GIB_Return (location ? location->name : "unknown");
+	}
+}
+
+void
 Locs_Init (void)
 {
 	Cmd_AddCommand ("loc", locs_loc, "Location marker editing commands: 'loc "
 					"help' for more");
+	GIB_Builtin_Add ("location.get", Locs_Location_Get, GIB_BUILTIN_NORMAL);
 }
 
 char *
