@@ -957,12 +957,13 @@ NET_SVC_Nails_Emit (net_svc_nails_t *block, sizebuf_t *buf)
 {
 	int		i, j;
 	int		x, y, z, p, yaw;
-	byte	bits[6]; // [48 bits] xyzpy 12 12 12 4 8
+	byte   *msg; // [48 bits] xyzpy 12 12 12 4 8
 
 	if (block->numnails > MAX_PROJECTILES)
 		return NET_ERROR;
 
-	MSG_WriteByte (buf, block->numnails);
+	msg = SZ_GetSpace (buf, block->numnails * 6 + 1);
+	*msg++ = block->numnails;
 
 	for (i = 0; i < block->numnails; i++) {
 		x = ((int) (block->nails[i].origin[0] + 4096 + 1) >> 1) & 4095;
@@ -971,15 +972,12 @@ NET_SVC_Nails_Emit (net_svc_nails_t *block, sizebuf_t *buf)
 		p = (int) (block->nails[i].angles[0] * (16.0 / 360.0)) & 15;
 		yaw = (int) (block->nails[i].angles[1] * (256.0 / 360.0)) & 255;
 
-		bits[0] = x;
-		bits[1] = (x >> 8) | (y << 4);
-		bits[2] = (y >> 4);
-		bits[3] = z;
-		bits[4] = (z >> 8) | (p << 4);
-		bits[5] = yaw;
-
-		for (j = 0; j < 6; j++)
-			MSG_WriteByte (buf, bits[j]);
+		*msg++ = x;
+		*msg++= (x >> 8) | (y << 4);
+		*msg++ = (y >> 4);
+		*msg++ = z;
+		*msg++ = (z >> 8) | (p << 4);
+		*msg++ = yaw;
 	}
 
 	return buf->overflowed;

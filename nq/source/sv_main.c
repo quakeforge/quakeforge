@@ -164,7 +164,7 @@ SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 		MSG_WriteByte (&sv.datagram, attenuation * 64);
 	MSG_WriteShort (&sv.datagram, channel);
 	MSG_WriteByte (&sv.datagram, sound_num);
-	for (i=0; i < 3; i++)
+	for (i=0; i < 3; i++) // FIXME: replace with MSG_WriteCoordV?
 		MSG_WriteCoord (&sv.datagram, SVvector (entity, origin)[i] + 0.5 *
 						(SVvector (entity, mins)[i] +
 						 SVvector (entity, maxs)[i]));
@@ -519,7 +519,7 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 		MSG_WriteByte (msg, svc_damage);
 		MSG_WriteByte (msg, SVfloat (ent, dmg_save));
 		MSG_WriteByte (msg, SVfloat (ent, dmg_take));
-		for (i=0; i < 3; i++)
+		for (i=0; i < 3; i++) // FIXME: replace with MSG_WriteCoordV
 			MSG_WriteCoord (msg, SVvector (other, origin)[i] + 0.5 *
 							(SVvector (other, mins)[i] +
 							 SVvector (other, maxs)[i]));

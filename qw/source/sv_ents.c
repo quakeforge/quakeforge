@@ -126,15 +126,16 @@ SV_AddNailUpdate (edict_t *ent)
 void
 SV_EmitNailUpdate (sizebuf_t *msg)
 {
-	byte		bits[6];				// [48 bits] xyzpy 12 12 12 4 8 
-	int			i, n, p, x, y, z, yaw;
+	byte	   *buf;				// [48 bits] xyzpy 12 12 12 4 8 
+	int			n, p, x, y, z, yaw;
 	edict_t	   *ent;
 
 	if (!numnails)
 		return;
 
-	MSG_WriteByte (msg, svc_nails);
-	MSG_WriteByte (msg, numnails);
+	buf =  SZ_GetSpace (msg, numnails * 6 + 2);
+	*buf++ = svc_nails;
+	*buf++ = numnails;
 
 	for (n = 0; n < numnails; n++) {
 		ent = nails[n];
@@ -144,15 +145,12 @@ SV_EmitNailUpdate (sizebuf_t *msg)
 		p = (int) (SVvector (ent, angles)[0] * (16.0 / 360.0)) & 15;
 		yaw = (int) (SVvector (ent, angles)[1] * (256.0 / 360.0)) & 255;
 
-		bits[0] = x;
-		bits[1] = (x >> 8) | (y << 4);
-		bits[2] = (y >> 4);
-		bits[3] = z;
-		bits[4] = (z >> 8) | (p << 4);
-		bits[5] = yaw;
-
-		for (i = 0; i < 6; i++)
-			MSG_WriteByte (msg, bits[i]);
+		*buf++ = x;
+		*buf++ = (x >> 8) | (y << 4);
+		*buf++ = (y >> 4);
+		*buf++ = z;
+		*buf++ = (z >> 8) | (p << 4);
+		*buf++ = yaw;
 	}
 }
 
