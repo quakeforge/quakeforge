@@ -712,10 +712,8 @@ AppActivate (BOOL fActive, BOOL minimize)
 	// enable/disable sound on focus gain/loss
 	if (!ActiveApp && sound_active) {
 		S_BlockSound ();
-		S_ClearBuffer ();
 		sound_active = false;
 	} else if (ActiveApp && !sound_active) {
-		S_ClearBuffer ();
 		S_UnblockSound ();
 		sound_active = true;
 	}

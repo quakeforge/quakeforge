@@ -42,7 +42,6 @@ typedef void (QFPLUGIN *P_S_Shutdown) (void);
 typedef void (QFPLUGIN *P_S_AmbientOff) (void);
 typedef void (QFPLUGIN *P_S_AmbientOn) (void);
 typedef void (QFPLUGIN *P_S_TouchSound) (const char *sample);
-typedef void (QFPLUGIN *P_S_ClearBuffer) (void);
 typedef void (QFPLUGIN *P_S_StartSound) (int entnum, int entchannel, struct sfx_s *sfx, const vec3_t origin, float fvol, float attenuation);
 typedef void (QFPLUGIN *P_S_StaticSound) (struct sfx_s *sfx, const vec3_t origin, float vol, float attenuation);
 typedef void (QFPLUGIN *P_S_StopSound) (int entnum, int entchannel);
@@ -61,7 +60,6 @@ typedef struct snd_render_funcs_s {
 	P_S_AmbientOff 		pS_AmbientOff;
 	P_S_AmbientOn  		pS_AmbientOn;
 	P_S_TouchSound 		pS_TouchSound;
-	P_S_ClearBuffer		pS_ClearBuffer;
 	P_S_StaticSound		pS_StaticSound;
 	P_S_StartSound		pS_StartSound;
 	P_S_StopSound		pS_StopSound;

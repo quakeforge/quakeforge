@@ -166,13 +166,6 @@ S_TouchSound (const char *sample)
 }
 
 void
-S_ClearBuffer (void)
-{
-	if (snd_render_module)
-		snd_render_module->functions->snd_render->pS_ClearBuffer ();
-}
-
-void
 S_StaticSound (sfx_t *sfx, const vec3_t origin, float vol, float attenuation)
 {
 	if (snd_render_module)

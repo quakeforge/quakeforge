@@ -816,8 +816,10 @@ SND_EndPrecaching (void)
 void
 SND_BlockSound (void)
 {
-	if (++snd_blocked == 1)
+	if (++snd_blocked == 1) {
 		plugin_info_snd_render_data.output->functions->snd_output->pS_O_BlockSound ();
+		SND_ClearBuffer ();
+	}
 }
 
 void
@@ -825,8 +827,10 @@ SND_UnblockSound (void)
 {
 	if (!snd_blocked)
 		return;
-	if (!--snd_blocked)
+	if (!--snd_blocked) {
+		SND_ClearBuffer ();
 		plugin_info_snd_render_data.output->functions->snd_output->pS_O_UnblockSound ();
+	}
 }
 
 static void
@@ -985,7 +989,6 @@ PLUGIN_INFO(snd_render, default) (void)
 	plugin_info_snd_render_funcs.pS_AmbientOff = SND_AmbientOff;
 	plugin_info_snd_render_funcs.pS_AmbientOn = SND_AmbientOn;
 	plugin_info_snd_render_funcs.pS_TouchSound = SND_TouchSound;
-	plugin_info_snd_render_funcs.pS_ClearBuffer = SND_ClearBuffer;
 	plugin_info_snd_render_funcs.pS_StaticSound = SND_StaticSound;
 	plugin_info_snd_render_funcs.pS_StartSound = SND_StartSound;
 	plugin_info_snd_render_funcs.pS_StopSound = SND_StopSound;
