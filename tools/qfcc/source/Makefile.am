@@ -36,6 +36,7 @@ INCLUDES=	-I$(top_srcdir)/include $(QFCC_INCS)
 YFLAGS = -d
 
 bin_PROGRAMS=	qfcc
+noinst_PROGRAMS= qfodump
 
 qfcc_SOURCES= \
 	class.c cmdlib.c cpp.c debug.c def.c emit.c expr.c function.c idstuff.c \
@@ -44,5 +45,9 @@ qfcc_SOURCES= \
 
 qfcc_LDADD=			$(QFCC_LIBS)
 qfcc_DEPENDENCIES=	$(QFCC_DEPS)
+
+qfodump_SOURCES=		obj_file.c qfodump.c strpool.c
+qfodump_LDADD=			$(QFCC_LIBS)
+qfodump_DEPENDENCIES=	$(QFCC_DEPS)
 
 emit.c expr.c switch.c qc-lex.l: qc-parse.h
