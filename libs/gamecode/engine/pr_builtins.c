@@ -93,6 +93,7 @@ void
 PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins)
 {
 	builtin_t  *bi;
+	int         count;
 
 	if (!pr->builtin_hash) {
 		pr->builtin_hash = Hash_NewTable (1021, builtin_get_key, 0, pr);
@@ -100,6 +101,13 @@ PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins)
 		Hash_SetHashCompare (pr->builtin_num_hash, builtin_get_hash,
 							 builtin_compare);
 	}
+
+	// count = 1 for terminator
+	for (bi = builtins, count = 1; bi->name; bi++)
+		count++;
+	bi = malloc (count * sizeof (builtin_t));
+	memcpy (bi, builtins, count * sizeof (builtin_t));
+	builtins = bi;
 
 	while (builtins->name) {
 		if (builtins->binum == 0 || builtins->binum >= PR_AUTOBUILTIN)
