@@ -45,6 +45,7 @@ static const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
+#include "QF/mathlib.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
@@ -230,6 +231,7 @@ void
 Cvar_Set (cvar_t *var, const char *value)
 {
 	int     changed;
+	int     vals;
 
 	if (!var)
 		return;
@@ -245,7 +247,11 @@ Cvar_Set (cvar_t *var, const char *value)
 	var->string = strdup (value);
 	var->value = atof (var->string);
 	var->int_val = atoi (var->string);
-	sscanf (var->string, "%f %f %f", &var->vec[0], &var->vec[1], &var->vec[2]);
+	VectorZero (var->vec);
+	vals = sscanf (var->string, "%f %f %f",
+				   &var->vec[0], &var->vec[1], &var->vec[2]);
+	if (vals == 1)
+		var->vec[2] = var->vec[1] = var->vec[0];
 
 	if (changed && var->callback)
 		var->callback (var);
