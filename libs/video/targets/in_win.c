@@ -42,12 +42,14 @@ static const char rcsid[] =
 
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
 #include "compat.h"
+#include "in_win.h"
 
 #define DINPUT_BUFFERSIZE           16
 #define iDirectInputCreate(a,b,c,d)	pDirectInputCreate(a,b,c,d)
@@ -55,6 +57,11 @@ static const char rcsid[] =
 HRESULT (WINAPI * pDirectInputCreate) (HINSTANCE hinst, DWORD dwVersion,
 									   LPDIRECTINPUT * lplpDirectInput,
 									   LPUNKNOWN punkOuter);
+
+void        VID_UpdateWindowStatus (int window_x, int window_y);
+
+extern DEVMODE win_gdevmode;
+extern qboolean win_canalttab;
 
 // mouse public variables
 unsigned int uiWheelMessage;
@@ -79,6 +86,8 @@ static LPDIRECTINPUTDEVICE g_pMouse;
 static HINSTANCE hInstDI;
 
 static qboolean dinput;
+
+static qboolean vid_wassuspended = false;
 
 typedef struct MYDATA {
 	LONG        lX;						// X axis goes here
@@ -529,4 +538,267 @@ IN_LL_SendKeyEvents (void)
 	if (mx || my) {
 		SetCursorPos (window_center_x, window_center_y);
 	}
+}
+
+//==========================================================================
+
+byte        scantokey[128] = {
+//  0       1        2       3       4       5       6       7
+//  8       9        A       B       C       D       E       F
+	0, 27, '1', '2', '3', '4', '5', '6',
+	'7', '8', '9', '0', '-', '=', K_BACKSPACE, 9,	// 0
+	'q', 'w', 'e', 'r', 't', 'y', 'u', 'i',
+	'o', 'p', '[', ']', 13, K_LCTRL, 'a', 's',	// 1
+	'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',
+	'\'', '`', K_LSHIFT, '\\', 'z', 'x', 'c', 'v',	// 2
+	'b', 'n', 'm', ',', '.', '/', K_RSHIFT, K_KP_MULTIPLY,
+	K_LALT, ' ', K_CAPSLOCK, K_F1, K_F2, K_F3, K_F4, K_F5,	// 3
+	K_F6, K_F7, K_F8, K_F9, K_F10, K_PAUSE, K_SCROLLOCK, K_KP7,
+	K_KP8, K_KP9, K_KP_MINUS, K_KP4, K_KP5, K_KP6, K_KP_PLUS, K_KP1,	// 4
+	K_KP2, K_KP3, K_KP0, K_KP_PERIOD, 0, 0, 0, K_F11,
+	K_F12, 0, 0, 0, 0, 0, 0, 0,			// 5
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0
+};
+
+byte        extscantokey[128] = {
+//  0       1        2       3       4       5       6       7
+//  8       9        A       B       C       D       E       F
+	0, 27, '1', '2', '3', '4', '5', '6',
+	'7', '8', '9', '0', '-', '=', K_BACKSPACE, 9,	// 0
+	'q', 'w', 'e', 'r', 't', 'y', 'u', 'i',
+	'o', 'p', '[', ']', K_KP_ENTER, K_RCTRL, 'a', 's',	// 1
+	'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',
+	'\'', '`', K_LSHIFT, '\\', 'z', 'x', 'c', 'v',	// 2
+	'b', 'n', 'm', ',', '.', K_KP_DIVIDE, K_RSHIFT, '*',
+	K_RALT, ' ', K_CAPSLOCK, K_F1, K_F2, K_F3, K_F4, K_F5,	// 3
+	K_F6, K_F7, K_F8, K_F9, K_F10, K_NUMLOCK, 0, K_HOME,
+	K_UP, K_PAGEUP, '-', K_LEFT, '5', K_RIGHT, '+', K_END,	// 4
+	K_DOWN, K_PAGEDOWN, K_INSERT, K_DELETE, 0, 0, 0, K_F11,
+	K_F12, 0, 0, 0, 0, 0, 0, 0,			// 5
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0
+};
+
+/*
+	MapKey
+
+	Map from windows to quake keynums
+*/
+void
+MapKey (int key, int *k, int *u)
+{
+	int         extended;
+
+	extended = (key >> 24) & 1;
+
+	key = (key >> 16) & 255;
+	if (key > 127) {
+		*u = *k = 0;
+		return;
+	}
+
+	if (extended)
+		key = extscantokey[key];
+	else
+		key = scantokey[key];
+	if (key >= 0 && key <= 255)
+		*u = key;
+	else
+		*u = 0;
+	if (key >= 'A' && key <= 'Z')
+		key += 'a' - 'A';
+	*k = key;
+}
+
+/*
+	MAIN WINDOW
+*/
+
+void
+ClearAllStates (void)
+{
+	IN_ClearStates ();
+}
+
+/*
+  AppActivate
+
+  fActive - True if app is activating
+  If the application is activating, then swap the system into SYSPAL_NOSTATIC
+  mode so that our palettes will display correctly.
+*/
+void
+AppActivate (BOOL fActive, BOOL minimize)
+{
+	static BOOL sound_active;
+
+	ActiveApp = fActive;
+	Minimized = minimize;
+
+	// enable/disable sound on focus gain/loss
+	if (!ActiveApp && sound_active) {
+		S_BlockSound ();
+		sound_active = false;
+	} else if (ActiveApp && !sound_active) {
+		S_UnblockSound ();
+		sound_active = true;
+	}
+
+	if (fActive) {
+		if (modestate == MS_FULLDIB) {
+			IN_ActivateMouse ();
+			IN_HideMouse ();
+			if (win_canalttab && vid_wassuspended) {
+				vid_wassuspended = false;
+
+				if (ChangeDisplaySettings (&win_gdevmode, CDS_FULLSCREEN) !=
+					DISP_CHANGE_SUCCESSFUL) {
+					IN_ShowMouse ();
+					Sys_Error ("Couldn't set fullscreen DIB mode\n(try "
+							   "upgrading your video drivers)\r\n (%lx)",
+							   GetLastError());
+				}
+				ShowWindow (mainwindow, SW_SHOWNORMAL);
+
+				// Fix for alt-tab bug in NVidia drivers
+				MoveWindow(mainwindow, 0, 0, win_gdevmode.dmPelsWidth,
+						   win_gdevmode.dmPelsHeight, false);
+			}
+		}
+		else if ((modestate == MS_WINDOWED) && in_grab->int_val
+			&& key_dest == key_game) {
+			IN_ActivateMouse ();
+			IN_HideMouse ();
+		}
+	} else {
+		if (modestate == MS_FULLDIB) {
+			IN_DeactivateMouse ();
+			IN_ShowMouse ();
+			if (win_canalttab) {
+				ChangeDisplaySettings (NULL, 0);
+				vid_wassuspended = true;
+			}
+		} else if ((modestate == MS_WINDOWED) && in_grab->int_val) {
+			IN_DeactivateMouse ();
+			IN_ShowMouse ();
+		}
+	}
+}
+
+/* main window procedure */
+LONG WINAPI
+MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	LONG        lRet = 1;
+	int         fActive, fMinimized, temp;
+	int         key, unicode;
+	extern unsigned int uiWheelMessage;
+
+	if (uMsg == uiWheelMessage)
+		uMsg = WM_MOUSEWHEEL;
+
+	switch (uMsg) {
+	case WM_KILLFOCUS:
+		if (modestate == MS_FULLDIB)
+			ShowWindow (mainwindow, SW_SHOWMINNOACTIVE);
+		break;
+	case WM_CREATE:
+		break;
+
+	case WM_MOVE:
+		VID_UpdateWindowStatus ((int) LOWORD (lParam), (int) HIWORD (lParam));
+		break;
+
+	case WM_KEYDOWN:
+	case WM_SYSKEYDOWN:
+		MapKey (lParam, &key, &unicode);
+		Key_Event (key, unicode, true);
+		break;
+
+	case WM_KEYUP:
+	case WM_SYSKEYUP:
+		MapKey (lParam, &key, &unicode);
+		Key_Event (key, unicode, false);
+		break;
+
+	case WM_SYSCHAR:
+		// keep Alt-Space from happening
+		break;
+
+	// this is complicated because Win32 seems to pack multiple mouse events
+	// into one update sometimes, so we always check all states and look for
+	// events
+	case WM_LBUTTONDOWN:
+	case WM_LBUTTONUP:
+	case WM_RBUTTONDOWN:
+	case WM_RBUTTONUP:
+	case WM_MBUTTONDOWN:
+	case WM_MBUTTONUP:
+	case WM_MOUSEMOVE:
+		temp = 0;
+
+		if (wParam & MK_LBUTTON)
+			temp |= 1;
+		if (wParam & MK_RBUTTON)
+			temp |= 2;
+		if (wParam & MK_MBUTTON)
+			temp |= 4;
+		IN_MouseEvent (temp);
+
+		break;
+
+	// JACK: This is the mouse wheel with the Intellimouse
+	// It's delta is either positive or neg, and we generate the proper Event.
+	case WM_MOUSEWHEEL:
+		if ((short) HIWORD (wParam) > 0) {
+			Key_Event (M_WHEEL_UP, -1, true);
+			Key_Event (M_WHEEL_UP, -1, false);
+		} else {
+			Key_Event (M_WHEEL_DOWN, -1, true);
+			Key_Event (M_WHEEL_DOWN, -1, false);
+		}
+		break;
+
+	case WM_SIZE:
+		break;
+
+	case WM_CLOSE:
+		if (MessageBox
+			(mainwindow, "Are you sure you want to quit?", "Confirm Exit",
+			 MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES) {
+			Sys_Quit ();
+		}
+		break;
+
+	case WM_ACTIVATE:
+		fActive = LOWORD (wParam);
+		fMinimized = (BOOL) HIWORD (wParam);
+		AppActivate (!(fActive == WA_INACTIVE), fMinimized);
+		// fix leftover Alt from any Alt-Tab or the like that switched us away
+		ClearAllStates ();
+		break;
+
+	case WM_DESTROY:
+		if (mainwindow)
+			DestroyWindow (mainwindow);
+		PostQuitMessage (0);
+		break;
+
+	case MM_MCINOTIFY:
+		//FIXME lRet = CDAudio_MessageHandler (hWnd, uMsg, wParam, lParam);
+		break;
+
+	default:
+		/* pass all unhandled messages to DefWindowProc */
+		lRet = DefWindowProc (hWnd, uMsg, wParam, lParam);
+		break;
+	}
+
+	/* return 1 if handled message, 0 if not */
+	return lRet;
 }
