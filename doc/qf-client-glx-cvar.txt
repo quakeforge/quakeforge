@@ -1,0 +1,178 @@
+     ambient_fade
+     ambient_level
+     baseskin
+ *   bgmvolume
+ *   brightness
+     cl_anglespeedkey
+ *   cl_backspeed
+     cl_bob
+     cl_bobcycle
+     cl_bobup
+     cl_camera_maxpitch
+     cl_camera_maxyaw
+     cl_chasecam
+     cl_chatmode
+ *   cl_crossx
+ *   cl_crossy
+ *   cl_cshift_bonus
+ *   cl_cshift_content
+ *   cl_cshift_damage
+ *   cl_cshift_powerup
+     cl_deadbodyfilter
+ *   cl_forwardspeed
+     cl_gibfilter
+     cl_hightrack
+ *   cl_hudswap
+ *   cl_maxfps
+     cl_movespeedkey
+     cl_nodelta
+     cl_nofake
+     cl_nopred
+     cl_parsesay
+     cl_pitchspeed
+     cl_predict_players
+     cl_predict_players2
+     cl_rollangle
+     cl_rollspeed
+ *   cl_sbar
+ *   cl_sbar_separator
+     cl_shownet
+     cl_sidespeed
+     cl_solid_players
+ *   cl_timeout
+     cl_upspeed
+     cl_verstring
+     cl_warncmd
+     cl_yawspeed
+ *   confirm_quit
+     con_notifytime
+ *   contrast
+ *   crosshair
+ *   crosshaircolor
+     developer
+     fov
+ *   freelook
+ *   gl_affinemodels
+     gl_clear
+ *   gl_conalpha
+ *   gl_conspin
+ *   gl_constretch
+ *   gl_cull
+ *   gl_fb_bmodels
+ *   gl_fb_models
+ *   gl_fires
+ *   gl_flashblend
+ *   gl_keeptjunctions
+ *   gl_lerp_anim
+ *   gl_lightmode
+     gl_max_size
+ *   gl_multitexture
+     gl_nocolors
+ *   gl_particles
+     gl_picmip
+     gl_playermip
+ *   gl_sky_clip
+ *   gl_sky_divide
+ *   gl_skymultipass
+ *   gl_smooth
+ *   gl_smoothdlights
+ *   gl_subdivide_size
+ *   gl_triplebuffer
+     host_speeds
+ *   in_dga
+ *   in_dga_mouseaccel
+ *   joyaxis1
+ *   joyaxis2
+ *   joyaxis3
+ *   joyaxis4
+ *   joyaxis5
+ *   joyaxis6
+ *   joy_enable
+ *   joy_sensitivity
+     loadas8bit
+     localid
+ *   lookspring
+ *   lookstrafe
+ *   m_filter
+     m_forward
+ *   m_pitch
+     m_side
+     m_yaw
+     noskins
+     nosound
+     precache
+     pushlatency
+     qport
+r    brighten
+r    cl_autoexec
+     rcon_address
+     rcon_password
+     r_drawentities
+ *   r_drawviewmodel
+     r_dynamic
+     registered
+ *   r_firecolor
+r    fs_basegame
+r    fs_globalcfg
+r    fs_sharepath
+r    fs_userpath
+r    gl_colorlights
+r    joy_device
+ *   r_netgraph
+ *   r_netgraph_alpha
+ *   r_netgraph_box
+     r_norefresh
+     r_novis
+ *   r_shadows
+     r_skyname
+     r_speeds
+r    vid_fullscreen
+r    vid_height
+r    vid_use8bit
+r    vid_width
+     r_wateralpha
+     r_waterripple
+     scr_centertime
+     scr_conspeed
+     scr_printspeed
+ *   sensitivity
+     showdrop
+     show_fps
+     showpackets
+     showpause
+     showram
+     show_time
+     showturtle
+ *   snd_interp
+ *   _snd_mixahead
+     snd_noextraupdate
+ *   snd_phasesep
+     snd_show
+ *   snd_volumesep
+   s no_pogo_stick
+     sys_nostdout
+ *u  bottomcolor
+ *u  msg
+ *u  name
+ *u  noaim
+  u  password
+ *u  rate
+ *u  skin
+  u  spectator
+ *u  team
+ *u  topcolor
+     v_centermove
+     v_centerspeed
+     v_idlescale
+ *   viewsize
+     v_ipitch_cycle
+     v_ipitch_level
+     v_iroll_cycle
+     v_iroll_level
+     v_iyaw_cycle
+     v_iyaw_level
+     v_kickpitch
+     v_kickroll
+     v_kicktime
+ *   volume
+ *   _windowed_mouse
