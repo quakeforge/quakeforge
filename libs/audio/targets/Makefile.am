@@ -35,7 +35,7 @@ if SNDTYPE_WIN32
 libQFsound_la_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_win.c $(sound_ASM)
 endif
 if SNDTYPE_NULL
-libQFsound_la_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_null.c $(sound_ASM)
+libQFsound_la_SOURCES=	snd_mem.c snd_mix.c snd_null.c $(sound_ASM)
 endif
 
 LIBLIST = libQFsound.la @LIBRARY_SEARCH_PATH@

@@ -41,10 +41,11 @@ int         total_channels;
 volatile dma_t *shm = 0;
 cvar_t     *loadas8bit;
 int         paintedtime;				// sample PAIRS
-
+qboolean    snd_initialized = false;
 
 cvar_t     *bgmvolume;
 cvar_t     *volume;
+cvar_t     *snd_interp;
 
 
 void
@@ -60,6 +61,8 @@ S_Init_Cvars (void)
 	loadas8bit =
 		Cvar_Get ("loadas8bit", "0", CVAR_NONE, 0, "Load samples as 8-bit");
 	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, 0, "CD music volume");
+        snd_interp = Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE, 0,
+                                  "control sample interpolation");
 }
 
 void
