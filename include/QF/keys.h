@@ -52,6 +52,7 @@ typedef enum {
 	QFK_QUOTEDBL		= 34,
 	QFK_HASH			= 35,
 	QFK_DOLLAR		= 36,
+	QFK_PERCENT		= 37,
 	QFK_AMPERSAND		= 38,
 	QFK_QUOTE			= 39,
 	QFK_LEFTPAREN		= 40,
@@ -114,7 +115,11 @@ typedef enum {
 	QFK_x				= 120,
 	QFK_y				= 121,
 	QFK_z				= 122,
-	QFK_DELETE		= 127,
+	QFK_BRACELEFT		= 123,
+	QFK_BAR				= 124,
+	QFK_BRACERIGHT		= 125,
+	QFK_ASCIITILDE		= 126,
+	QFK_DELETE			= 127,
 	/* End of ASCII mapped keysyms */
 
 	/* International keyboard syms */
