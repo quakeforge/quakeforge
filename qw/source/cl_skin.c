@@ -37,7 +37,6 @@
 #endif
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
@@ -47,6 +46,7 @@
 #include "cl_parse.h"
 #include "cl_skin.h"
 #include "client.h"
+#include "compat.h"
 #include "host.h"
 
 cvar_t     *noskins; //XXX FIXME
@@ -60,8 +60,8 @@ char        allskins[128];
 void
 Skin_NextDownload (void)
 {
-	player_info_t *sc;
 	int         i;
+	player_info_t *sc;
 
 	if (cls.downloadnumber == 0) {
 		Con_Printf ("Checking skins...\n");
@@ -96,11 +96,11 @@ Skin_NextDownload (void)
 
 	if (cls.state != ca_active) {		// get next signon phase
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-		MSG_WriteString (&cls.netchan.message, va ("begin %i", cl.servercount));
+		MSG_WriteString (&cls.netchan.message, va ("begin %i",
+												   cl.servercount));
 		Cache_Report ();				// print remaining memory
 	}
 }
-
 
 /*
 	CL_Skins_f
@@ -116,7 +116,6 @@ CL_Skins_f (void)
 	Skin_NextDownload ();
 }
 
-
 /*
 	CL_AllSkins_f
 
@@ -129,13 +128,12 @@ CL_AllSkins_f (void)
 	CL_Skins_f ();
 }
 
-
 void
 CL_Color_f (void)
 {
 	// just for quake compatability...
-	int         top, bottom;
 	char        num[16];
+	int         top, bottom;
 
 	if (Cmd_Argc () == 1) {
 		Con_Printf ("\"color\" is \"%s %s\"\n",
@@ -165,7 +163,6 @@ CL_Color_f (void)
 	Cvar_Set (bottomcolor, num);
 }
 
-
 void
 CL_Skin_Init (void)
 {
@@ -178,7 +175,6 @@ CL_Skin_Init (void)
 					"shirt pants) Note that if only shirt color is given, "
 					"pants will match");
 }
-
 
 void
 CL_Skin_Init_Cvars (void)
@@ -194,12 +190,11 @@ CL_Skin_Init_Cvars (void)
 							Cvar_Info, "Players color on bottom");
 }
 
-
 void
 CL_NewTranslation (int slot, skin_t *skin)
 {
-	player_info_t *player;
 	char        s[512];
+	player_info_t *player;
 
 	if (slot > MAX_CLIENTS)
 		Host_EndGame ("CL_NewTranslation: slot > MAX_CLIENTS");
@@ -223,12 +218,14 @@ CL_NewTranslation (int slot, skin_t *skin)
 		if (!player->skin)
 			Skin_Find (player);
 		memcpy (skin, player->skin, sizeof (*skin));
-		skin->texture = skin_textures + slot; //FIXME
-		skin->data.texels = Skin_Cache(player->skin); //FIXME the breaks cache ownership
+		skin->texture = skin_textures + slot;		// FIXME
+		skin->data.texels = Skin_Cache(player->skin);
+				// FIXME: breaks cache ownership
 		Skin_Do_Translation (player->skin, slot, skin);
 	} else {
 		memcpy (skin, player->skin, sizeof (*skin));
-		skin->texture = skin_textures + slot; //FIXME
-		skin->data.texels = Skin_Cache(player->skin); //FIXME the breaks cache ownership
+		skin->texture = skin_textures + slot;		// FIXME
+		skin->data.texels = Skin_Cache(player->skin);
+				// FIXME: breaks cache ownership
 	}
 }

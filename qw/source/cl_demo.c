@@ -35,35 +35,37 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 
 #include <sys/time.h>
-#include <unistd.h>
 
 #include "QF/console.h"
 #include "QF/cmd.h"
+#include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/cvar.h"
 
-#include "compat.h"
 #include "cl_main.h"
 #include "client.h"
+#include "compat.h"
 #include "host.h"
 #include "pmove.h"
 
-int cl_timeframes_isactive;
-int cl_timeframes_index;
-struct timeval *cl_timeframes_array;
+int     cl_timeframes_isactive;
+int     cl_timeframes_index;
+int     demotime_cached;
+struct  timeval *cl_timeframes_array;
 #define CL_TIMEFRAMES_ARRAYBLOCK 4096
+
 extern cvar_t *cl_timeframes;
 
+void CL_FinishTimeDemo (void);
 void CL_TimeFrames_Reset (void);
 void CL_TimeFrames_DumpLog (void);
-
-void        CL_FinishTimeDemo (void);
-int demotime_cached;
 
 /*
 	DEMO CODE
@@ -97,11 +99,9 @@ CL_StopPlayback (void)
 		CL_FinishTimeDemo ();
 }
 
-
 #define dem_cmd		0
 #define dem_read	1
 #define dem_set		2
-
 
 /*
 	CL_WriteDemoCmd
@@ -111,9 +111,9 @@ CL_StopPlayback (void)
 void
 CL_WriteDemoCmd (usercmd_t *pcmd)
 {
-	int         i;
-	float       fl;
 	byte        c;
+	float       fl;
+	int         i;
 	usercmd_t   cmd;
 
 //	Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
@@ -143,7 +143,6 @@ CL_WriteDemoCmd (usercmd_t *pcmd)
 	Qflush (cls.demofile);
 }
 
-
 /*
 	CL_WriteDemoMessage
 
@@ -152,9 +151,9 @@ CL_WriteDemoCmd (usercmd_t *pcmd)
 void
 CL_WriteDemoMessage (sizebuf_t *msg)
 {
-	int         len;
-	float       fl;
 	byte        c;
+	float       fl;
+	int         len;
 
 //	Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
@@ -174,16 +173,14 @@ CL_WriteDemoMessage (sizebuf_t *msg)
 	Qflush (cls.demofile);
 }
 
-
 qboolean
 CL_GetDemoMessage (void)
 {
-	int         r, i, j;
-	float       f;
-	float       demotime;
 	byte        c;
-	usercmd_t  *pcmd;
+	float       demotime, f;
 	static float cached_demotime;
+	int         r, i, j;
+	usercmd_t  *pcmd;
 
 	// read the time from the packet
 	if (demotime_cached) {
@@ -264,11 +261,12 @@ CL_GetDemoMessage (void)
 			// get the next message
 			Qread (cls.demofile, &net_message->message->cursize, 4);
 			net_message->message->cursize = LittleLong (net_message->message->cursize);
-//				Con_Printf("read: %ld bytes\n", net_message->message->cursize);
+//			Con_Printf("read: %ld bytes\n", net_message->message->cursize);
 			if (net_message->message->cursize > MAX_MSGLEN)
 //				Sys_Error ("Demo message > MAX_MSGLEN");
 				Host_EndGame ("Demo message > MAX_MSGLEN");
-			r = Qread (cls.demofile, net_message->message->data, net_message->message->cursize);
+			r = Qread (cls.demofile, net_message->message->data,
+					   net_message->message->cursize);
 			if (r != net_message->message->cursize) {
 				CL_StopPlayback ();
 				return 0;
@@ -291,7 +289,6 @@ CL_GetDemoMessage (void)
 	return 1;
 }
 
-
 /*
 	CL_GetMessage
 
@@ -311,7 +308,6 @@ CL_GetMessage (void)
 	return true;
 }
 
-
 /*
 	CL_Stop_f
 
@@ -324,20 +320,19 @@ CL_Stop_f (void)
 		Con_Printf ("Not recording a demo.\n");
 		return;
 	}
-// write a disconnect message to the demo file
+	// write a disconnect message to the demo file
 	SZ_Clear (net_message->message);
-	MSG_WriteLong (net_message->message, -1);	// -1 sequence means out of band
+	MSG_WriteLong (net_message->message, -1);  // -1 sequence means out of band
 	MSG_WriteByte (net_message->message, svc_disconnect);
 	MSG_WriteString (net_message->message, "EndOfDemo");
 	CL_WriteDemoMessage (net_message->message);
 
-// finish up
+	// finish up
 	Qclose (cls.demofile);
 	cls.demofile = NULL;
 	cls.demorecording = false;
 	Con_Printf ("Completed demo\n");
 }
-
 
 /*
 	CL_WriteDemoMessage
@@ -347,10 +342,9 @@ CL_Stop_f (void)
 void
 CL_WriteRecordDemoMessage (sizebuf_t *msg, int seq)
 {
-	int         len;
-	int         i;
-	float       fl;
 	byte        c;
+	float       fl;
+	int         len, i;
 
 //	Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
@@ -375,15 +369,14 @@ CL_WriteRecordDemoMessage (sizebuf_t *msg, int seq)
 	Qflush (cls.demofile);
 }
 
-
 void
 CL_WriteSetDemoMessage (void)
 {
-	int         len;
-	float       fl;
 	byte        c;
+	float       fl;
+	int         len;
 
-//Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
+//	Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
 	if (!cls.demorecording)
 		return;
@@ -402,7 +395,6 @@ CL_WriteSetDemoMessage (void)
 	Qflush (cls.demofile);
 }
 
-
 /*
 	CL_Record_f
 
@@ -411,17 +403,16 @@ CL_WriteSetDemoMessage (void)
 void
 CL_Record_f (void)
 {
-	int         c;
-	char        name[MAX_OSPATH];
-	sizebuf_t   buf;
-	char        buf_data[MAX_MSGLEN];
-	int         n, i, j;
+	char        buf_data[MAX_MSGLEN], name[MAX_OSPATH];
 	char       *s;
+	int         c, n, i, j;
+	int         seq = 1;
 	entity_t   *ent;
 	entity_state_t *es, blankes;
 	player_info_t *player;
+	sizebuf_t   buf;
+
 	extern char gamedirfile[];
-	int         seq = 1;
 
 	c = Cmd_Argc ();
 	if (c != 2) {
@@ -439,8 +430,7 @@ CL_Record_f (void)
 
 	snprintf (name, sizeof (name), "%s/%s", com_gamedir, Cmd_Argv (1));
 
-// open the demo file
-//
+	// open the demo file
 	COM_DefaultExtension (name, ".qwd");
 
 	cls.demofile = Qopen (name, "wb");
@@ -454,13 +444,13 @@ CL_Record_f (void)
 
 /*-------------------------------------------------*/
 
-// serverdata
+	// serverdata
 	// send the info about the new client to all connected clients
 	memset (&buf, 0, sizeof (buf));
 	buf.data = buf_data;
 	buf.maxsize = sizeof (buf_data);
 
-// send the serverdata
+	// send the serverdata
 	MSG_WriteByte (&buf, svc_serverdata);
 	MSG_WriteLong (&buf, PROTOCOL_VERSION);
 	MSG_WriteLong (&buf, cl.servercount);
@@ -498,7 +488,7 @@ CL_Record_f (void)
 	CL_WriteRecordDemoMessage (&buf, seq++);
 	SZ_Clear (&buf);
 
-// soundlist
+	// soundlist
 	MSG_WriteByte (&buf, svc_soundlist);
 	MSG_WriteByte (&buf, 0);
 
@@ -523,7 +513,7 @@ CL_Record_f (void)
 		CL_WriteRecordDemoMessage (&buf, seq++);
 		SZ_Clear (&buf);
 	}
-// modellist
+	// modellist
 	MSG_WriteByte (&buf, svc_modellist);
 	MSG_WriteByte (&buf, 0);
 
@@ -548,8 +538,7 @@ CL_Record_f (void)
 		CL_WriteRecordDemoMessage (&buf, seq++);
 		SZ_Clear (&buf);
 	}
-// spawnstatic
-
+	// spawnstatic
 	for (i = 0; i < cl.num_statics; i++) {
 		ent = cl_static_entities + i;
 
@@ -577,11 +566,10 @@ CL_Record_f (void)
 		}
 	}
 
-// spawnstaticsound
+	// spawnstaticsound
 	// static sounds are skipped in demos, life is hard
 
-// baselines
-
+	// baselines
 	memset (&blankes, 0, sizeof (blankes));
 	for (i = 0; i < MAX_EDICTS; i++) {
 		es = cl_baselines + i;
@@ -613,7 +601,7 @@ CL_Record_f (void)
 		CL_WriteRecordDemoMessage (&buf, seq++);
 		SZ_Clear (&buf);
 	}
-// send current status of all other players
+	// send current status of all other players
 
 	for (i = 0; i < MAX_CLIENTS; i++) {
 		player = cl.players + i;
@@ -645,7 +633,7 @@ CL_Record_f (void)
 		}
 	}
 
-// send all current light styles
+	// send all current light styles
 	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
 		MSG_WriteByte (&buf, svc_lightstyle);
 		MSG_WriteByte (&buf, (char) i);
@@ -688,7 +676,6 @@ CL_Record_f (void)
 	// done
 }
 
-
 /*
 	CL_ReRecord_f
 
@@ -697,8 +684,8 @@ CL_Record_f (void)
 void
 CL_ReRecord_f (void)
 {
-	int         c;
 	char        name[MAX_OSPATH];
+	int         c;
 
 	c = Cmd_Argc ();
 	if (c != 2) {
@@ -716,8 +703,7 @@ CL_ReRecord_f (void)
 
 	snprintf (name, sizeof (name), "%s/%s", com_gamedir, Cmd_Argv (1));
 
-// open the demo file
-//
+	// open the demo file
 	COM_DefaultExtension (name, ".qwd");
 
 	cls.demofile = Qopen (name, "wb");
@@ -732,7 +718,6 @@ CL_ReRecord_f (void)
 	CL_Disconnect ();
 	CL_BeginServerConnect ();
 }
-
 
 /*
 	CL_PlayDemo_f
@@ -770,12 +755,11 @@ CL_PlayDemo_f (void)
 	realtime = 0;
 }
 
-
 void
 CL_FinishTimeDemo (void)
 {
-	int         frames;
 	float       time;
+	int         frames;
 
 	cls.timedemo = false;
 
@@ -790,7 +774,6 @@ CL_FinishTimeDemo (void)
 	CL_TimeFrames_DumpLog();
 	cl_timeframes_isactive = 0;
 }
-
 
 /*
 	CL_TimeDemo_f
@@ -845,7 +828,10 @@ CL_TimeFrames_AddTimestamp (void)
 	int retval;
 	if (cl_timeframes_isactive) {
 		if (!(cl_timeframes_index % CL_TIMEFRAMES_ARRAYBLOCK))
-			cl_timeframes_array = realloc (cl_timeframes_array, sizeof(struct timeval) * ((cl_timeframes_index / CL_TIMEFRAMES_ARRAYBLOCK) + 1) * CL_TIMEFRAMES_ARRAYBLOCK);
+			cl_timeframes_array = realloc
+				(cl_timeframes_array, sizeof(struct timeval) *
+				 ((cl_timeframes_index / CL_TIMEFRAMES_ARRAYBLOCK) + 1) *
+				 CL_TIMEFRAMES_ARRAYBLOCK);
 		if (cl_timeframes_array == NULL)
 			Sys_Error ("Unable to allocate timeframes buffer\n");
 		retval = gettimeofday(cl_timeframes_array + cl_timeframes_index, NULL);
@@ -858,11 +844,11 @@ CL_TimeFrames_AddTimestamp (void)
 
 void CL_TimeFrames_DumpLog (void)
 {
-	VFile *outputfile;
 	char e_path[MAX_OSPATH];
 	char *filename = "timeframes.txt";
-	int i;
 	long frame;
+	int i;
+	VFile *outputfile;
 
 	if (cl_timeframes_isactive == 0)
 		return;
@@ -875,10 +861,12 @@ void CL_TimeFrames_DumpLog (void)
 		return;
 	}
 	for (i = 1; i < cl_timeframes_index; i++) {
-		frame = (cl_timeframes_array[i].tv_sec - cl_timeframes_array[i - 1].tv_sec);
+		frame = (cl_timeframes_array[i].tv_sec -
+				 cl_timeframes_array[i - 1].tv_sec);
 		if (frame < 999) {
 			frame *= 1000000;
-			frame += cl_timeframes_array[i].tv_usec - cl_timeframes_array[i - 1].tv_usec;
+			frame += cl_timeframes_array[i].tv_usec -
+				cl_timeframes_array[i - 1].tv_usec;
 		} else
 			frame = 999999999;
 

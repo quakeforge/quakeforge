@@ -29,17 +29,17 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#ifdef HAVE_STRING_H
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
 #ifdef HAVE_CONIO_H
 # include <conio.h>
 #endif
 #ifdef HAVE_IO_H
 # include <io.h>
+#endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
 #endif
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>

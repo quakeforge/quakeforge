@@ -76,12 +76,12 @@ HANDLE      qwclsemaphore;
 
 static HANDLE hinput, houtput, tevent;
 
-extern cvar_t *sys_nostdout;
-
 void        MaskExceptions (void);
 void        Sys_PopFPCW (void);
 void        Sys_PushFPCW_SetHigh (void);
 void        Sys_InitFloatTime (void);
+
+extern cvar_t *sys_nostdout;
 
 
 /*
@@ -218,12 +218,12 @@ const char *
 Sys_ConsoleInput (void)
 {
 	char        *clipText, *textCopied;
-	int          ch, i;										// , count;
 	static char  text[256];
+	int          ch, i;										// , count;
 	static int   len;
-	INPUT_RECORD recs[1024];
 	DWORD        numread, numevents, dummy;
 	HANDLE       th;
+	INPUT_RECORD recs[1024];
 
 	for (;;) {
 		if (!GetNumberOfConsoleInputEvents (hinput, &numevents))
@@ -342,8 +342,8 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 {
 //	MSG               msg;
 	static char cwd[1024];
-	int         t;
 	double      time, oldtime, newtime;
+	int         t;
 	MEMORYSTATUS lpBuffer;
 #ifdef SPLASH_SCREEN
 	RECT        rect;

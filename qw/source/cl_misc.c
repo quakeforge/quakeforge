@@ -32,9 +32,10 @@
 
 #include <stdarg.h>
 
+#include "QF/sys.h"
+
 #include "host.h"
 #include "compat.h"
-#include "QF/sys.h"
 
 
 qboolean
@@ -42,7 +43,6 @@ ServerPaused (void)
 {
 	return false;
 }
-
 
 void
 SV_Error (char *error, ...)

@@ -33,9 +33,6 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#ifdef HAVE_SYS_PARAM_H
-# include <sys/param.h>
-#endif
 #ifdef HAVE_NETINET_IN_H
 # include <netinet/in.h>
 #endif
@@ -54,6 +51,10 @@
 #ifdef HAVE_WINDOWS_H
 # include <windows.h>
 #endif
+#ifdef HAVE_SYS_PARAM_H
+# include <sys/param.h>
+#endif
+
 #include <ctype.h>
 #include <stdlib.h>
 
@@ -92,6 +93,7 @@ cvar_t *sl_filter;
 cvar_t *sl_game;
 cvar_t *sl_ping;
 
+
 void
 S_Refresh (server_entry_t *slrefresh)
 {
@@ -109,7 +111,6 @@ S_Refresh (server_entry_t *slrefresh)
 	NET_SendPacket (11, data_status, addy);
 	slrefresh->waitstatus = 1;
 }
-
 
 server_entry_t *
 SL_Add (server_entry_t *start, char *ip, char *desc)
@@ -177,8 +178,7 @@ SL_Del (server_entry_t *start, server_entry_t *del)
 server_entry_t *
 SL_InsB (server_entry_t *start, server_entry_t *place, char *ip, char *desc)
 {
-	server_entry_t *new;
-	server_entry_t *other;
+	server_entry_t *new, *other;
 
 	new = calloc (1, sizeof (server_entry_t));
 
@@ -200,8 +200,8 @@ SL_InsB (server_entry_t *start, server_entry_t *place, char *ip, char *desc)
 void
 SL_Swap (server_entry_t *swap1, server_entry_t *swap2)
 {
-	server_entry_t *next1, *next2, *prev1, *prev2;
 	int i;
+	server_entry_t *next1, *next2, *prev1, *prev2;
 	
 	next1 = swap1->next;
 	next2 = swap2->next;
@@ -302,8 +302,8 @@ SL_SaveF (VFile *f, server_entry_t *start)
 void
 SL_Shutdown (void)
 {
-	VFile      *f;
 	char        e_path[MAX_OSPATH];
+	VFile      *f;
 	
 	if (fav_slist) {
 		Qexpand_squiggle (fs_userpath->string, e_path);
@@ -317,12 +317,10 @@ SL_Shutdown (void)
 		SL_Del_All (all_slist);
 }
 
-
 char       *
 gettokstart (char *str, int req, char delim)
 {
 	char       *start = str;
-
 	int         tok = 1;
 
 	while (*start == delim) {
@@ -349,7 +347,6 @@ int
 gettoklen (char *str, int req, char delim)
 {
 	char       *start = 0;
-
 	int         len = 0;
 
 	start = gettokstart (str, req, delim);
@@ -371,8 +368,8 @@ void timepassed (double time1, double *time2)
 void
 SL_SortEntry (server_entry_t *start)
 {
-	server_entry_t *q;
 	int i = 0;
+	server_entry_t *q;
 	
 	if (!start || !sl_sortby)
 		return;
@@ -381,7 +378,8 @@ SL_SortEntry (server_entry_t *start)
 	{
 		if (sl_sortby->int_val)
 		{
-			if ((q->pongback) && (start->pongback) && (start->pongback > q->pongback))
+			if ((q->pongback) && (start->pongback) && (start->pongback >
+													   q->pongback))
 			{
 				SL_Swap(start,q);
 				q = start;
@@ -389,7 +387,8 @@ SL_SortEntry (server_entry_t *start)
 		} else {
 			i = 0;
 			
-			while ((start->desc[i] != '\0') && (q->desc[i] != '\0') && (toupper(start->desc[i]) == toupper(q->desc[i])))
+			while ((start->desc[i] != '\0') && (q->desc[i] != '\0') &&
+				   (toupper(start->desc[i]) == toupper(q->desc[i])))
 				i++;
 			if (toupper(start->desc[i]) > toupper(q->desc[i]))
 			{
@@ -459,6 +458,7 @@ SL_Con_Details (server_entry_t *sldata, int slitemno)
 {
 	int i, playercount;
 	server_entry_t *cp;
+
 	playercount = 0;
 	slist_last_details = slitemno;
 	cp = SL_Get_By_Num (sldata, (slitemno - 1));
@@ -478,7 +478,8 @@ SL_Con_Details (server_entry_t *sldata, int slitemno)
 		for (i = 0; i < strlen(cp->status); i++)
 			if (cp->status[i] == '\n')
 				playercount++;
-		Con_Printf("Players: %i/%s\n", playercount, Info_ValueForKey(cp->status, "maxclients"));
+		Con_Printf("Players: %i/%s\n", playercount,
+				   Info_ValueForKey(cp->status, "maxclients"));
 
 		// For Debug of Server Info 
 		// Con_Printf("%s\n",cp->status);
@@ -489,8 +490,8 @@ SL_Con_Details (server_entry_t *sldata, int slitemno)
 void
 SL_MasterUpdate(void)
 {
-	netadr_t addy;
 	char data[] = "c\n\0";
+	netadr_t addy;
 	
 	SL_Del_All(slist);
 	slist = NULL;
@@ -555,8 +556,9 @@ SL_Command (void)
 		if (Cmd_Argc () == 2)
 		{
 			if(!which_slist)
-				Con_Printf("ERROR: This of for updating the servers from a list of masters\n");
-			else	
+				Con_Printf("ERROR: This of for updating the servers from a "
+						   "list of masters\n");
+			else
 				SL_MasterUpdate();
 		}
 		else
@@ -589,6 +591,7 @@ void
 MSL_ParseServerList(const char *msl_data)
 {
 	int msl_ptr;
+
 	for (msl_ptr = 0; msl_ptr < strlen(msl_data); msl_ptr = msl_ptr + 6)
 	{
 		slist = SL_Add(slist, va("%i.%i.%i.%i:%i",
@@ -604,12 +607,10 @@ server_entry_t *
 SL_LoadF (VFile *f, server_entry_t *start)
 {
 	//This could get messy
-	char        line[256];                 /* Long lines get truncated. */
-	int         c = ' ';                   /* int so it can be compared to EOF properly */
-	int         len;
-	int         i;
-	char       *st;
-	char       *addr;
+	char        line[256];      /* Long lines get truncated. */
+	char       *addr, *st;
+	int         len, i;
+	int         c = ' ';        /* int so it can be compared to EOF properly */
 
 	while (1) {
 	// First, get a line
@@ -641,8 +642,8 @@ SL_LoadF (VFile *f, server_entry_t *start)
 
 void SL_Init (void)
 {
-	VFile      *servlist;
 	char        e_path[MAX_OSPATH];
+	VFile      *servlist;
 
 	Qexpand_squiggle (fs_userpath->string, e_path);
 	if ((servlist = Qopen (va ("%s/servers.txt", e_path), "r"))) {
@@ -658,18 +659,23 @@ void SL_Init (void)
 	fav_slist = slist;
 	all_slist = NULL;
 	which_slist = 0;
-	Cmd_AddCommand("slist",SL_Command,"console commands to access server list\n");
-	sl_sortby = Cvar_Get ("sl_sortby", "0", CVAR_ARCHIVE, SL_Sort, "0 = sort by name, 1 = sort by ping");
-	sl_filter = Cvar_Get ("sl_filter", "0", CVAR_NONE, NULL, "enable server filter");
-	sl_game = Cvar_Get ("sl_game", "", CVAR_ARCHIVE, NULL, "sets the serverlist game filter");
-	sl_ping = Cvar_Get ("sl_ping", "", CVAR_ARCHIVE, NULL, "sets the serverlist ping filter");
+	Cmd_AddCommand("slist",SL_Command,"console commands to access server "
+				   "list\n");
+	sl_sortby = Cvar_Get ("sl_sortby", "0", CVAR_ARCHIVE, SL_Sort, "0 = sort "
+						  "by name, 1 = sort by ping");
+	sl_filter = Cvar_Get ("sl_filter", "0", CVAR_NONE, NULL, "enable server "
+						  "filter");
+	sl_game = Cvar_Get ("sl_game", "", CVAR_ARCHIVE, NULL, "sets the "
+						"serverlist game filter");
+	sl_ping = Cvar_Get ("sl_ping", "", CVAR_ARCHIVE, NULL, "sets the "
+						"serverlist ping filter");
 }
 
 int
 SL_CheckStatus (const char *cs_from, const char *cs_data)
 {
-	server_entry_t *temp;
 	const char *tmp_desc;
+	server_entry_t *temp;
 	
 	for (temp = slist; temp; temp = temp->next)
 		if (temp->waitstatus)
@@ -714,4 +720,3 @@ SL_CheckPing (const char *cp_from)
 			}
 		}
 }
-

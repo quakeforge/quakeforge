@@ -88,13 +88,12 @@ CL_ClearEnts ()
 void
 CL_NewDlight (int key, vec3_t org, int effects)
 {
+	float       radius;
+	dlight_t   *dl;
 	static vec3_t normal = {0.4, 0.2, 0.05};
 	static vec3_t red = {0.5, 0.05, 0.05};
 	static vec3_t blue = {0.05, 0.05, 0.5};
 	static vec3_t purple = {0.5, 0.05, 0.5};
-
-	dlight_t   *dl;
-	float       radius;
 
 	if (!(effects & (EF_BLUE | EF_RED | EF_BRIGHTLIGHT | EF_DIMLIGHT)))
 		return;
@@ -124,16 +123,15 @@ CL_NewDlight (int key, vec3_t org, int effects)
 	dl->radius = radius;
 }
 
-/*
-  PACKET ENTITY PARSING / LINKING
-*/
+/* PACKET ENTITY PARSING / LINKING */
+
+int         bitcounts[32];				// / just for protocol profiling
 
 /*
 	CL_ParseDelta
 
 	Can go from either a baseline or a previous packet_entity
 */
-int         bitcounts[32];				// / just for protocol profiling
 void
 CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 {
@@ -237,8 +235,8 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 void
 FlushEntityPacket (void)
 {
-	int         word;
 	entity_state_t olde, newe;
+	int         word;
 
 	Con_DPrintf ("FlushEntityPacket\n");
 
@@ -271,12 +269,10 @@ FlushEntityPacket (void)
 void
 CL_ParsePacketEntities (qboolean delta)
 {
-	int         oldpacket, newpacket;
-	packet_entities_t *oldp, *newp, dummy;
-	int         oldindex, newindex;
-	int         word, newnum, oldnum;
-	qboolean    full;
 	byte        from;
+	int         oldindex, newindex, newnum, oldnum, oldpacket, newpacket, word;
+	packet_entities_t *oldp, *newp, dummy;
+	qboolean    full;
 
 	newpacket = cls.netchan.incoming_sequence & UPDATE_MASK;
 	newp = &cl.frames[newpacket].packet_entities;
@@ -399,15 +395,14 @@ CL_ParsePacketEntities (qboolean delta)
 void
 CL_LinkPacketEntities (void)
 {
-	entity_t  **ent;
-	packet_entities_t *pack;
-	entity_state_t *s1;
-	model_t    *model;
-	int         i;
-	int         pnum;
 	dlight_t   *dl;
-	extern int  cl_playerindex;
+	entity_t  **ent;
+	entity_state_t *s1;
+	int         pnum, i;
 	extern int  cl_h_playerindex, cl_gib1index, cl_gib2index, cl_gib3index;
+	extern int  cl_playerindex;
+	model_t    *model;
+	packet_entities_t *pack;
 
 	pack = &cl.frames[cls.netchan.incoming_sequence &
 					  UPDATE_MASK].packet_entities;
@@ -546,9 +541,7 @@ CL_LinkPacketEntities (void)
 	}
 }
 
-/*
-	PROJECTILE PARSING / LINKING
-*/
+/* PROJECTILE PARSING / LINKING */
 
 typedef struct {
 	int         modelindex;
@@ -557,9 +550,8 @@ typedef struct {
 
 #define	MAX_PROJECTILES	32
 projectile_t cl_projectiles[MAX_PROJECTILES];
-int         cl_num_projectiles;
-
-extern int  cl_spikeindex;
+int          cl_num_projectiles;
+extern int   cl_spikeindex;
 
 void
 CL_ClearProjectiles (void)
@@ -602,9 +594,9 @@ CL_ParseProjectiles (void)
 void
 CL_LinkProjectiles (void)
 {
+	entity_t  **ent;
 	int         i;
 	projectile_t *pr;
-	entity_t  **ent;
 
 	for (i = 0, pr = cl_projectiles; i < cl_num_projectiles; i++, pr++) {
 		if (pr->modelindex < 1)
@@ -631,18 +623,14 @@ CL_LinkProjectiles (void)
 	}
 }
 
-extern int  cl_spikeindex, cl_playerindex, cl_flagindex;
-extern int  parsecountmod;
 extern double parsecounttime;
+extern int    cl_spikeindex, cl_playerindex, cl_flagindex, parsecountmod;
 
 void
 CL_ParsePlayerinfo (void)
 {
-	int         msec;
-	int         flags;
+	int         flags, msec, num, i;
 	player_state_t *state;
-	int         num;
-	int         i;
 
 	num = MSG_ReadByte (net_message);
 	if (num > MAX_CLIENTS)
@@ -702,7 +690,6 @@ CL_ParsePlayerinfo (void)
 	VectorCopy (state->command.angles, state->viewangles);
 }
 
-
 /*
 	CL_AddFlagModels
 
@@ -711,10 +698,10 @@ CL_ParsePlayerinfo (void)
 void
 CL_AddFlagModels (entity_t *ent, int team)
 {
-	int         i;
-	float       f;
-	vec3_t      v_forward, v_right, v_up;
 	entity_t  **newent;
+	float       f;
+	int         i;
+	vec3_t      v_forward, v_right, v_up;
 
 	if (cl_flagindex == -1)
 		return;
@@ -769,13 +756,13 @@ CL_AddFlagModels (entity_t *ent, int team)
 	AngleVectors (ent->angles, v_forward, v_right, v_up);
 	v_forward[2] = -v_forward[2];		// reverse z component
 	for (i = 0; i < 3; i++)
-		(*newent)->origin[i] = ent->origin[i] - f * v_forward[i] + 22 * v_right[i];
+		(*newent)->origin[i] = ent->origin[i] - f * v_forward[i] + 22 *
+			v_right[i];
 	(*newent)->origin[2] -= 16;
 
 	VectorCopy (ent->angles, (*newent)->angles)
 		(*newent)->angles[2] -= 45;
 }
-
 
 /*
 	CL_LinkPlayers
@@ -786,16 +773,14 @@ CL_AddFlagModels (entity_t *ent, int team)
 void
 CL_LinkPlayers (void)
 {
-	int         i, j;
-	player_info_t *info;
+	double          playertime;
+	entity_t      **ent;
+	frame_t        *frame;
+	int             msec, oldphysent, i, j;
+	player_info_t  *info;
+	player_state_t  exact;
 	player_state_t *state;
-	player_state_t exact;
-	double      playertime;
-	entity_t  **ent;
-	int         msec;
-	frame_t    *frame;
-	int         oldphysent;
-	vec3_t      org;
+	vec3_t          org;
 
 	playertime = realtime - cls.latency + 0.02;
 	if (playertime > realtime)
@@ -875,11 +860,13 @@ CL_LinkPlayers (void)
 		(*ent)->angles[PITCH] = -state->viewangles[PITCH] / 3;
 		(*ent)->angles[YAW] = state->viewangles[YAW];
 		(*ent)->angles[ROLL] = 0;
-		(*ent)->angles[ROLL] = V_CalcRoll ((*ent)->angles, state->velocity) * 4;
+		(*ent)->angles[ROLL] =
+			V_CalcRoll ((*ent)->angles, state->velocity) * 4;
 
 		// only predict half the move to minimize overruns
 		msec = 500 * (playertime - state->state_time);
-		if (msec <= 0 || (!cl_predict_players->int_val && !cl_predict_players2->int_val)) {
+		if (msec <= 0 || (!cl_predict_players->int_val &&
+						  !cl_predict_players2->int_val)) {
 			VectorCopy (state->origin, (*ent)->origin);
 		} else {	// predict players movement
 			state->command.msec = msec = min (msec, 255);
@@ -895,10 +882,8 @@ CL_LinkPlayers (void)
 			CL_AddFlagModels ((*ent), 0);
 		else if (state->effects & EF_FLAG2)
 			CL_AddFlagModels ((*ent), 1);
-
 	}
 }
-
 
 /*
 	CL_SetSolid
@@ -908,10 +893,10 @@ CL_LinkPlayers (void)
 void
 CL_SetSolidEntities (void)
 {
-	int         i;
-	frame_t    *frame;
-	packet_entities_t *pak;
 	entity_state_t *state;
+	frame_t    *frame;
+	int         i;
+	packet_entities_t *pak;
 
 	pmove.physents[0].model = cl.worldmodel;
 	VectorCopy (vec3_origin, pmove.physents[0].origin);
@@ -932,13 +917,13 @@ CL_SetSolidEntities (void)
 			|| cl.model_precache[state->modelindex]->clipbox) {
 			pmove.physents[pmove.numphysent].model =
 				cl.model_precache[state->modelindex];
-			VectorCopy (state->origin, pmove.physents[pmove.numphysent].origin);
+			VectorCopy (state->origin,
+						pmove.physents[pmove.numphysent].origin);
 			pmove.numphysent++;
 		}
 	}
 
 }
-
 
 /*
 	Calculate the new position of players, without other player clipping
@@ -951,12 +936,11 @@ CL_SetSolidEntities (void)
 void
 CL_SetUpPlayerPrediction (qboolean dopred)
 {
-	int         j;
-	player_state_t *state;
-	player_state_t exact;
-	double      playertime;
-	int         msec;
+	double          playertime;
 	frame_t    *frame;
+	int             msec, j;
+	player_state_t  exact;
+	player_state_t *state;
 	struct predicted_player *pplayer;
 
 	playertime = realtime - cls.latency + 0.02;
@@ -1004,7 +988,6 @@ CL_SetUpPlayerPrediction (qboolean dopred)
 	}
 }
 
-
 /*
 	CL_SetSolid
 
@@ -1016,11 +999,11 @@ CL_SetUpPlayerPrediction (qboolean dopred)
 void
 CL_SetSolidPlayers (int playernum)
 {
-	int         j;
-	extern vec3_t player_mins;
-	extern vec3_t player_maxs;
+	int           j;
+	physent_t    *pent;
 	struct predicted_player *pplayer;
-	physent_t  *pent;
+
+	extern vec3_t player_maxs, player_mins;
 
 	if (!cl_solid_players->int_val)
 		return;
@@ -1048,7 +1031,6 @@ CL_SetSolidPlayers (int playernum)
 	}
 }
 
-
 /*
 	CL_EmitEntities
 
@@ -1072,7 +1054,6 @@ CL_EmitEntities (void)
 	CL_LinkProjectiles ();
 	CL_UpdateTEnts ();
 }
-
 
 void
 CL_Ents_Init (void)

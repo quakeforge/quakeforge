@@ -26,10 +26,10 @@
 	$Id$
 */
 
-/* ZOID
- * This takes over player controls for spectator automatic camera.
- * Player moves as a spectator, but the camera tracks and enemy player
- */
+/*
+  ZOID - This takes over player controls for spectator automatic camera.
+  Player moves as a spectator, but the camera tracks and enemy player
+*/
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -43,13 +43,13 @@
 
 #include <math.h>
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
 
 #include "cl_cam.h"
 #include "client.h"
+#include "compat.h"
 #include "pmove.h"
 #include "sbar.h"
 
@@ -72,9 +72,9 @@ cvar_t     *cl_chasecam;
 cvar_t     *cl_camera_maxpitch;
 cvar_t     *cl_camera_maxyaw;
 
+double      cam_lastviewtime;
 qboolean    cam_forceview;
 vec3_t      cam_viewangles;
-double      cam_lastviewtime;
 
 int         spec_track = 0;				// player# of who we are tracking
 int         autocam = CAM_NONE;
@@ -83,8 +83,7 @@ int         autocam = CAM_NONE;
 static void
 vectoangles (vec3_t vec, vec3_t ang)
 {
-	float       forward;
-	float       yaw, pitch;
+	float       forward, pitch, yaw;
 
 	if (vec[1] == 0 && vec[0] == 0) {
 		yaw = 0;
@@ -115,7 +114,6 @@ vlen (vec3_t v)
 	return sqrt (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 }
 
-
 // returns true if weapon model should be drawn in camera mode
 qboolean
 Cam_DrawViewModel (void)
@@ -128,7 +126,6 @@ Cam_DrawViewModel (void)
 	return false;
 }
 
-
 // returns true if we should draw this player, we don't if we are chase camming
 qboolean
 Cam_DrawPlayer (int playernum)
@@ -138,7 +135,6 @@ Cam_DrawPlayer (int playernum)
 		return false;
 	return true;
 }
-
 
 void
 Cam_Unlock (void)
@@ -151,7 +147,6 @@ Cam_Unlock (void)
 		Sbar_Changed ();
 	}
 }
-
 
 void
 Cam_Lock (int playernum)
@@ -166,7 +161,6 @@ Cam_Lock (int playernum)
 	locked = false;
 	Sbar_Changed ();
 }
-
 
 pmtrace_t
 Cam_DoTrace (vec3_t vec1, vec3_t vec2)
@@ -183,15 +177,14 @@ Cam_DoTrace (vec3_t vec1, vec3_t vec2)
 	return PM_PlayerMove (pmove.origin, vec2);
 }
 
-
 // Returns distance or 9999 if invalid for some reason
 static float
 Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
 			  qboolean checkvis)
 {
-	vec3_t      v;
-	pmtrace_t   trace;
 	float       len;
+	pmtrace_t   trace;
+	vec3_t      v;
 
 	vectoangles (vec, v);
 //  v[0] = -v[0];
@@ -219,14 +212,13 @@ Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
 	return len;
 }
 
-
 // Is player visible?
 static qboolean
 Cam_IsVisible (player_state_t * player, vec3_t vec)
 {
+	float       d;
 	pmtrace_t   trace;
 	vec3_t      v;
-	float       d;
 
 	trace = Cam_DoTrace (player->origin, vec);
 	if (trace.fraction != 1 || /* trace.inopen || */ trace.inwater)
@@ -239,7 +231,6 @@ Cam_IsVisible (player_state_t * player, vec3_t vec)
 	return true;
 }
 
-
 static qboolean
 InitFlyby (player_state_t * self, player_state_t * player, int checkvis)
 {
@@ -250,8 +241,8 @@ InitFlyby (player_state_t * self, player_state_t * player, int checkvis)
 	VectorCopy (player->viewangles, vec);
 	vec[0] = 0;
 	AngleVectors (vec, forward, right, up);
-//  for (i = 0; i < 3; i++)
-//      forward[i] *= 3;
+//	for (i = 0; i < 3; i++)
+//		forward[i] *= 3;
 
 	max = 1000;
 	VectorAdd (forward, up, vec2);
@@ -322,14 +313,13 @@ InitFlyby (player_state_t * self, player_state_t * player, int checkvis)
 	}
 	// ack, can't find him
 	if (max >= 1000) {
-//      Cam_Unlock();
+//		Cam_Unlock();
 		return false;
 	}
 	locked = true;
 	VectorCopy (vec, desired_position);
 	return true;
 }
-
 
 static void
 Cam_CheckHighTarget (void)
@@ -352,7 +342,6 @@ Cam_CheckHighTarget (void)
 		Cam_Unlock ();
 }
 
-
 // ZOID
 //
 // Take over the user controls and track a player.
@@ -360,10 +349,10 @@ Cam_CheckHighTarget (void)
 void
 Cam_Track (usercmd_t *cmd)
 {
-	player_state_t *player, *self;
-	frame_t    *frame;
-	vec3_t      vec;
 	float       len;
+	frame_t    *frame;
+	player_state_t *player, *self;
+	vec3_t      vec;
 
 	if (!cl.spectator)
 		return;
@@ -407,7 +396,8 @@ Cam_Track (usercmd_t *cmd)
 
 		VectorCopy (player->viewangles, cl.viewangles);
 		VectorCopy (player->origin, desired_position);
-		if (memcmp (&desired_position, &self->origin, sizeof (desired_position))
+		if (memcmp (&desired_position, &self->origin,
+					sizeof (desired_position))
 			!= 0) {
 			MSG_WriteByte (&cls.netchan.message, clc_tmove);
 			MSG_WriteCoord (&cls.netchan.message, desired_position[0]);
@@ -438,7 +428,6 @@ Cam_Track (usercmd_t *cmd)
 		cl.viewangles[0] = -cl.viewangles[0];
 	}
 }
-
 
 #if 0
 static float
@@ -473,14 +462,12 @@ adjustang (float current, float ideal, float speed)
 }
 #endif
 
-
 #if 0
 void
 Cam_SetView (void)
 {
-	return;
-	player_state_t *player, *self;
 	frame_t    *frame;
+	player_state_t *player, *self;
 	vec3_t      vec, vec2;
 
 	if (cls.state != ca_active || !cl.spectator || !autocam || !locked)
@@ -503,20 +490,19 @@ Cam_SetView (void)
 			adjustang (cam_viewangles[PITCH], vec2[PITCH],
 					   cl_camera_maxpitch->value);
 		cam_viewangles[YAW] =
-			adjustang (cam_viewangles[YAW], vec2[YAW], cl_camera_maxyaw->value);
+			adjustang (cam_viewangles[YAW], vec2[YAW],
+					   cl_camera_maxyaw->value);
 	}
 	VectorCopy (cam_viewangles, cl.viewangles);
 	VectorCopy (cl.viewangles, cl.simangles);
 }
 #endif
 
-
 void
 Cam_FinishMove (usercmd_t *cmd)
 {
-	int         i;
+	int         end, i;
 	player_info_t *s;
-	int         end;
 
 	if (cls.state != ca_active)
 		return;
@@ -584,7 +570,7 @@ Cam_FinishMove (usercmd_t *cmd)
 		}
 		oldbuttons |= BUTTON_JUMP;		// don't jump again until released
 	}
-//  Con_Printf("Selecting track target...\n");
+//	Con_Printf("Selecting track target...\n");
 
 	if (locked && autocam)
 		end = (spec_track + 1) % MAX_CLIENTS;
@@ -610,14 +596,12 @@ Cam_FinishMove (usercmd_t *cmd)
 	autocam = locked = false;
 }
 
-
 void
 Cam_Reset (void)
 {
 	autocam = CAM_NONE;
 	spec_track = 0;
 }
-
 
 void
 CL_Cam_Init_Cvars (void)

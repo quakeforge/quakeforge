@@ -52,7 +52,6 @@ void
 CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 				   qboolean spectator)
 {
-
 // Dabb: if there is no movement to start with, don't predict...
 	if(cl_nostatpred->int_val && !from->velocity[0] &&
 	   !from->velocity[1] && !from->velocity[2]) {
@@ -101,14 +100,12 @@ CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 	to->weaponframe = from->weaponframe;
 }
 
-
 void
 CL_PredictMove (void)
 {
-	int         i;
 	float       f;
 	frame_t    *from, *to = NULL;
-	int         oldphysent;
+	int         oldphysent, i;
 
 	if (cl_pushlatency->value > 0)
 		Cvar_Set (cl_pushlatency, "0");
@@ -150,8 +147,7 @@ CL_PredictMove (void)
 		return;
 	}
 
-// Dabb: if there is no movement to start with, don't predict...
-
+	// Dabb: if there is no movement to start with, don't predict...
 	if(cl_nostatpred->int_val && !from->playerstate[cl.playernum].velocity[0]
 	   && !from->playerstate[cl.playernum].velocity[1]
 	   && !from->playerstate[cl.playernum].velocity[2]) {
@@ -216,12 +212,11 @@ CL_PredictMove (void)
 	}
 }
 
-
 void
 CL_Prediction_Init_Cvars (void)
 {
 	cl_pushlatency = Cvar_Get ("pushlatency", "-999", CVAR_NONE, NULL,
-			"How much prediction should the client make");
+							   "How much prediction should the client make");
 	cl_nopred = Cvar_Get ("cl_nopred", "0", CVAR_NONE, NULL,
 						  "Set to turn off client prediction");
 	cl_nostatpred = Cvar_Get ("cl_nostatpred", "0", CVAR_NONE, NULL,

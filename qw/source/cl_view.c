@@ -53,12 +53,6 @@
 	especially when crossing a water boudnary.
 */
 
-extern cvar_t *cl_cshift_bonus;
-extern cvar_t *cl_cshift_contents;
-extern cvar_t *cl_cshift_damage;
-extern cvar_t *cl_cshift_powerup;
-extern cvar_t *vid_gamma;
-
 cvar_t     *cl_rollspeed;
 cvar_t     *cl_rollangle;
 
@@ -96,14 +90,18 @@ cshift_t	cshift_slime = { {0, 25, 5}, 150};
 cshift_t	cshift_lava = { {255, 80, 0}, 150};
 cshift_t	cshift_bonus = { {215, 186, 60}, 50};
 
+extern cvar_t *cl_cshift_bonus;
+extern cvar_t *cl_cshift_contents;
+extern cvar_t *cl_cshift_damage;
+extern cvar_t *cl_cshift_powerup;
+extern cvar_t *vid_gamma;
+
 
 float
 V_CalcRoll (vec3_t angles, vec3_t velocity)
 {
+	float       side, sign, value;
 	vec3_t      forward, right, up;
-	float       sign;
-	float       side;
-	float       value;
 
 	AngleVectors (angles, forward, right, up);
 	side = DotProduct (velocity, right);
@@ -120,13 +118,12 @@ V_CalcRoll (vec3_t angles, vec3_t velocity)
 	return side * sign;
 }
 
-
 float
 V_CalcBob (void)
 {
 	static double bobtime;
-	static float bob;
-	float       cycle;
+	float         cycle;
+	static float  bob;
 
 	if (cl.spectator)
 		return 0;
@@ -135,7 +132,8 @@ V_CalcBob (void)
 		return bob;						// just use old value
 
 	bobtime += host_frametime;
-	cycle = bobtime - (int) (bobtime / cl_bobcycle->value) * cl_bobcycle->value;
+	cycle = bobtime - (int) (bobtime / cl_bobcycle->value) *
+		cl_bobcycle->value;
 	cycle /= cl_bobcycle->value;
 	if (cycle < cl_bobup->value)
 		cycle = M_PI * cycle / cl_bobup->value;
@@ -243,19 +241,14 @@ V_DriftPitch (void)
 	}
 }
 
-/*
-	PALETTE FLASHES
-*/
+/* PALETTE FLASHES */
 
 void
 V_ParseDamage (void)
 {
-	int         armor, blood;
-	vec3_t      from;
-	int         i;
-	vec3_t      forward, right, up;
-	float       side;
-	float       count;
+	float       count, side;
+	int         armor, blood, i;
+	vec3_t      forward, from, right, up;
 
 	armor = MSG_ReadByte (net_message);
 	blood = MSG_ReadByte (net_message);
@@ -415,8 +408,8 @@ V_CalcPowerupCshift (void)
 void
 V_CalcBlend (void)
 {
-	float       r = 0, g = 0, b = 0, a = 0;
 	float       a2, a3;
+	float       r = 0, g = 0, b = 0, a = 0;
 	int         i;
 
 	for (i = 0; i < NUM_CSHIFTS; i++) {
@@ -466,7 +459,8 @@ V_PrepBlend (void)
 			cl.prev_cshifts[i].percent = cl.cshifts[i].percent;
 		}
 		for (j = 0; j < 3; j++) {
-			if (cl.cshifts[i].destcolor[j] != cl.prev_cshifts[i].destcolor[j]) {
+			if (cl.cshifts[i].destcolor[j] != cl.prev_cshifts[i].destcolor[j])
+			{
 				vid.cshift_changed = true;
 				cl.prev_cshifts[i].destcolor[j] = cl.cshifts[i].destcolor[j];
 			}
@@ -489,9 +483,7 @@ V_PrepBlend (void)
 	V_CalcBlend();
 }
 
-/*
-	VIEW RENDERING
-*/
+/* VIEW RENDERING */
 
 float
 angledelta (float a)
@@ -506,8 +498,7 @@ void
 CalcGunAngle (void)
 {
 	float			yaw, pitch, move;
-	static float	oldyaw = 0;
-	static float	oldpitch = 0;
+	static float	oldpitch = 0, oldyaw = 0;
 
 	yaw = r_refdef.viewangles[YAW];
 	pitch = -r_refdef.viewangles[PITCH];
@@ -631,11 +622,11 @@ void
 V_CalcRefdef (void)
 {
 	entity_t   *view;
-	int			i;
-	vec3_t		forward, right, up;
 	float		bob;
 	static float oldz = 0;
+	int			i;
 	int			zofs = 22;
+	vec3_t		forward, right, up;
 
 	if (cl.stdver)
 		zofs = cl.stats[STAT_VIEWHEIGHT];

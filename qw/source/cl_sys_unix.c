@@ -192,10 +192,9 @@ int         skipframes;
 int
 main (int c, const char *v[])
 {
-	int         j;
-	double      time, oldtime, newtime;
-
 //	static char cwd[1024];
+	double      time, oldtime, newtime;
+	int         j;
 
 //	signal(SIGFPE, floating_point_exception_handler);
 	signal (SIGFPE, SIG_IGN);

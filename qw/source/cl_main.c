@@ -26,13 +26,13 @@
 	$Id$
 */
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
 #ifdef __sun
 /* Sun's model_t in sys/model.h conflicts w/ Quake's model_t */
 # define model_t sunmodel_t
+#endif
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
 #endif
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -40,17 +40,12 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-
-#include <errno.h>
-#include <ctype.h>
-#include <sys/types.h>
 #ifdef HAVE_NETINET_IN_H
 # include <netinet/in.h>
 #endif
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
-
 #ifdef HAVE_WINSOCK_H
 # include <winsock.h>
 #endif
@@ -58,10 +53,13 @@
 # include <rpc/types.h>
 #endif
 
+#include <ctype.h>
+#include <errno.h>
 #include <setjmp.h>
+#include <sys/types.h>
 
 #ifdef __sun
-# undef model_t
+# undef model_t			// allow qf to use it's model_t
 #endif
 
 #include "QF/cdaudio.h"
@@ -74,17 +72,16 @@
 #include "QF/model.h"
 #include "QF/msg.h"
 #include "QF/plugin.h"
-#include "QF/qendian.h"
 #include "QF/qargs.h"
+#include "QF/qendian.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/teamplay.h"
-#include "QF/vid.h"
 #include "QF/va.h"
 #include "QF/vfs.h"
+#include "QF/vid.h"
 
-#include "compat.h"
 #include "bothdefs.h"
 #include "buildnum.h"
 #include "cl_cam.h"
@@ -98,6 +95,7 @@
 #include "cl_slist.h"
 #include "cl_tent.h"
 #include "client.h"
+#include "compat.h"
 #include "game.h"
 #include "host.h"
 #include "net.h"
@@ -113,7 +111,6 @@ void        CL_RemoveQFInfoKeys ();
 // references them even when on a unix system.
 
 qboolean    noclip_anglehack;			// remnant from old quake
-
 
 cvar_t     *fs_globalcfg;
 cvar_t     *fs_usercfg;
@@ -220,6 +217,7 @@ cvar_t     *confirm_quit;
 
 void        CL_RSShot_f (void);
 
+
 void
 CL_Sbar_f (cvar_t *var)
 {
@@ -239,14 +237,12 @@ CL_Quit_f (void)
 	Sys_Quit ();
 }
 
-
 void
 CL_Version_f (void)
 {
 	Con_Printf ("%s Version %s\n", PROGRAM, VERSION);
 	Con_Printf ("Binary: " __TIME__ " " __DATE__ "\n");
 }
-
 
 /*
 	CL_SendConnectPacket
@@ -256,9 +252,9 @@ CL_Version_f (void)
 void
 CL_SendConnectPacket (void)
 {
-	netadr_t    adr;
 	char        data[2048];
 	double      t1, t2;
+	netadr_t    adr;
 
 // JACK: Fixed bug where DNS lookups would cause two connects real fast
 //       Now, adds lookup time to the connect time.
@@ -296,13 +292,12 @@ CL_SendConnectPacket (void)
 	// Info_SetValueForStarKey (cls.userinfo, "*ip", NET_AdrToString(adr),
 	// MAX_INFO_STRING);
 
-//  Con_Printf ("Connecting to %s...\n", cls.servername);
+//	Con_Printf ("Connecting to %s...\n", cls.servername);
 	snprintf (data, sizeof (data), "%c%c%c%cconnect %i %i %i \"%s\"\n",
 			  255, 255, 255, 255, PROTOCOL_VERSION, cls.qport, cls.challenge,
 			  cls.userinfo);
 	NET_SendPacket (strlen (data), data, adr);
 }
-
 
 /*
 	CL_CheckForResend
@@ -312,9 +307,9 @@ CL_SendConnectPacket (void)
 void
 CL_CheckForResend (void)
 {
-	netadr_t    adr;
 	char        data[2048];
 	double      t1, t2;
+	netadr_t    adr;
 
 	if (connect_time == -1)
 		return;
@@ -348,14 +343,12 @@ CL_CheckForResend (void)
 	NET_SendPacket (strlen (data), data, adr);
 }
 
-
 void
 CL_BeginServerConnect (void)
 {
 	connect_time = 0;
 	CL_CheckForResend ();
 }
-
 
 void
 CL_Connect_f (void)
@@ -375,7 +368,6 @@ CL_Connect_f (void)
 	CL_BeginServerConnect ();
 }
 
-
 /*
 	CL_Rcon_f
 
@@ -386,9 +378,8 @@ void
 CL_Rcon_f (void)
 {
 	char        message[1024];
-	int         i;
+	int         len, i;
 	netadr_t    to;
-	int         len;
 
 	snprintf (message, sizeof (message), "\377\377\377\377rcon %s ",
 			  rcon_password->string);
@@ -417,7 +408,6 @@ CL_Rcon_f (void)
 	NET_SendPacket (strlen (message) + 1, message, to);
 }
 
-
 void
 CL_ClearState (void)
 {
@@ -436,16 +426,15 @@ CL_ClearState (void)
 	R_ClearDlights ();
 	R_ClearFires ();
 
-// wipe the entire cl structure
+	// wipe the entire cl structure
 	memset (&cl, 0, sizeof (cl));
 
 	SZ_Clear (&cls.netchan.message);
 
-// clear other arrays   
+	// clear other arrays   
 	memset (cl_efrags, 0, sizeof (cl_efrags));
 	memset (r_lightstyle, 0, sizeof (r_lightstyle));
 }
-
 
 /*
 	CL_StopCshifts
@@ -456,12 +445,12 @@ void
 CL_StopCshifts (void)
 {
 	int i;
+
 	for (i = 0; i < NUM_CSHIFTS; i++)
 		cl.cshifts[i].percent = 0;
 	for (i = 0; i < MAX_CL_STATS; i++)
 		cl.stats[i] = 0;
 }
-
 
 /*
 	CL_Disconnect
@@ -514,13 +503,11 @@ CL_Disconnect (void)
 
 }
 
-
 void
 CL_Disconnect_f (void)
 {
 	CL_Disconnect ();
 }
-
 
 /*
 	CL_User_f
@@ -532,8 +519,7 @@ CL_Disconnect_f (void)
 void
 CL_User_f (void)
 {
-	int         uid;
-	int         i;
+	int         uid, i;
 
 	if (Cmd_Argc () != 2) {
 		Con_Printf ("Usage: user <username / userid>\n");
@@ -554,7 +540,6 @@ CL_User_f (void)
 	Con_Printf ("User not in server.\n");
 }
 
-
 /*
 	CL_Users_f
 
@@ -563,8 +548,7 @@ CL_User_f (void)
 void
 CL_Users_f (void)
 {
-	int         i;
-	int         c;
+	int         c, i;
 
 	c = 0;
 	Con_Printf ("userid frags name\n");
@@ -579,7 +563,6 @@ CL_Users_f (void)
 
 	Con_Printf ("%i total users\n", c);
 }
-
 
 /*
 	CL_FullServerinfo_f
@@ -621,14 +604,12 @@ CL_FullServerinfo_f (void)
 	}
 }
 
-
 void
 CL_AddQFInfoKeys (void)
 {
 	char        cap[100] = "";			// max of 98 or so flags
 
-	// set the capabilities info. single char flags (possibly with
-	// modifiefs)
+	// set the capabilities info. single char flags (possibly with modifiefs)
 	// defined capabilities (* = not implemented):
 	// z   client can accept gzipped files.
 	// h    * http transfers
@@ -649,7 +630,6 @@ CL_AddQFInfoKeys (void)
 	Con_Printf ("QuakeForge server detected\n");
 }
 
-
 void
 CL_RemoveQFInfoKeys (void)
 {
@@ -657,7 +637,6 @@ CL_RemoveQFInfoKeys (void)
 	Info_RemoveKey (cls.userinfo, "*qf_version");
 	Info_RemoveKey (cls.userinfo, "*qsg_version");
 }
-
 
 /*
 	CL_FullInfo_f
@@ -668,8 +647,7 @@ CL_RemoveQFInfoKeys (void)
 void
 CL_FullInfo_f (void)
 {
-	char        key[512];
-	char        value[512];
+	char        key[512], value[512];
 	char       *o;
 	const char *s;
 
@@ -710,7 +688,6 @@ CL_FullInfo_f (void)
 	}
 }
 
-
 /*
 	CL_SetInfo_f
 
@@ -739,7 +716,6 @@ CL_SetInfo_f (void)
 		Cmd_ForwardToServer ();
 }
 
-
 /*
 	CL_Packet_f
 
@@ -751,9 +727,9 @@ void
 CL_Packet_f (void)
 {
 	char        send[2048];
-	int         i, l;
-	const char *in;
 	char       *out;
+	const char *in;
+	int         i, l;
 	netadr_t    adr;
 
 	if (Cmd_Argc () != 3) {
@@ -783,7 +759,6 @@ CL_Packet_f (void)
 	NET_SendPacket (out - send, send, adr);
 }
 
-
 /*
 	CL_NextDemo
 
@@ -811,7 +786,6 @@ CL_NextDemo (void)
 	cls.demonum++;
 }
 
-
 /*
 	CL_Changing_f
 
@@ -830,7 +804,6 @@ CL_Changing_f (void)
 										// disconnected
 	Con_Printf ("\nChanging map...\n");
 }
-
 
 /*
 	CL_Reconnect_f
@@ -862,7 +835,6 @@ CL_Reconnect_f (void)
 	CL_BeginServerConnect ();
 }
 
-
 /*
 	CL_ConnectionlessPacket
 
@@ -881,7 +853,7 @@ CL_ConnectionlessPacket (void)
 	clcp_temp = 0;
 	if (!cls.demoplayback)
 		Con_Printf ("%s: ", NET_AdrToString (net_from));
-//  Con_DPrintf ("%s", net_message.data + 5);
+//	Con_DPrintf ("%s", net_message.data + 5);
 	if (c == S2C_CONNECTION) {
 		Con_Printf ("connection\n");
 		if (cls.state >= ca_connected) {
@@ -904,9 +876,10 @@ CL_ConnectionlessPacket (void)
 
 		Con_Printf ("client command\n");
 
-		if (!cl_allow_cmd_pkt->int_val
-		     || ((*(unsigned int *) net_from.ip != *(unsigned int *) net_local_adr.ip
-				 && *(unsigned int *) net_from.ip != htonl (INADDR_LOOPBACK)))) {
+		if (!cl_allow_cmd_pkt->int_val ||
+			((*(unsigned int *) net_from.ip !=
+			  *(unsigned int *) net_local_adr.ip
+			  && *(unsigned int *) net_from.ip != htonl (INADDR_LOOPBACK)))) {
 			Con_Printf ("Command packet from remote host.  Ignored.\n");
 			return;
 		}
@@ -927,8 +900,8 @@ CL_ConnectionlessPacket (void)
 			if (!*localid->string) {
 				Con_Printf ("===========================\n");
 				Con_Printf ("Command packet received from local host, but no "
-							"localid has been set.  You may need to upgrade your server "
-							"browser.\n");
+							"localid has been set.  You may need to upgrade "
+							"your server browser.\n");
 				Con_Printf ("===========================\n");
 				return;
 			}
@@ -1000,7 +973,7 @@ CL_ConnectionlessPacket (void)
 			Host_EndGame ("End of demo");
 		else
 			Con_Printf ("svc_disconnect\n");
-//      Host_EndGame ("Server disconnected");
+//		Host_EndGame ("Server disconnected");
 		return;
 	}
 
@@ -1014,7 +987,8 @@ CL_ReadPackets (void)
 	while (CL_GetMessage ()) {
 
 		if (cls.demoplayback && net_packetlog->int_val)
-			Log_Incoming_Packet(net_message->message->data,net_message->message->cursize);
+			Log_Incoming_Packet(net_message->message->data,
+								net_message->message->cursize);
 
 		// remote command packet
 		if (*(int *) net_message->message->data == -1) {
@@ -1042,13 +1016,11 @@ CL_ReadPackets (void)
 			continue;					// wasn't accepted for some reason
 		CL_ParseServerMessage ();
 
-//      if (cls.demoplayback && cls.state >= ca_active && !CL_DemoBehind())
-//          return;
+//		if (cls.demoplayback && cls.state >= ca_active && !CL_DemoBehind())
+//			return;
 	}
 
-	// 
 	// check timeout
-	// 
 	if (cls.state >= ca_connected
 		&& realtime - cls.netchan.last_received > cl_timeout->value) {
 		Con_Printf ("\nServer connection timed out.\n");
@@ -1057,7 +1029,6 @@ CL_ReadPackets (void)
 	}
 
 }
-
 
 void
 CL_Download_f (void)
@@ -1072,8 +1043,8 @@ CL_Download_f (void)
 		return;
 	}
 
-	snprintf (cls.downloadname, sizeof (cls.downloadname), "%s/%s", com_gamedir,
-			  Cmd_Argv (1));
+	snprintf (cls.downloadname, sizeof (cls.downloadname), "%s/%s",
+			  com_gamedir, Cmd_Argv (1));
 
 	COM_CreatePath (cls.downloadname);
 
@@ -1091,13 +1062,11 @@ CL_Download_f (void)
 	}
 }
 
-
 void
 Force_CenterView_f (void)
 {
 	cl.viewangles[PITCH] = 0;
 }
-
 
 void
 CL_SetState (cactive_t state)
@@ -1114,7 +1083,6 @@ CL_SetState (cactive_t state)
 	}
 }
 
-
 void
 CL_Init (void)
 {
@@ -1127,7 +1095,7 @@ CL_Init (void)
 	Info_SetValueForKey (cls.userinfo, "bottomcolor", "0", MAX_INFO_STRING, 0);
 	Info_SetValueForKey (cls.userinfo, "rate", "2500", MAX_INFO_STRING, 0);
 	Info_SetValueForKey (cls.userinfo, "msg", "1", MAX_INFO_STRING, 0);
-//  snprintf (st, sizeof(st), "%s-%04d", QW_VERSION, build_number());
+//	snprintf (st, sizeof(st), "%s-%04d", QW_VERSION, build_number());
 	snprintf (st, sizeof (st), "%s", QW_VERSION);
 	Info_SetValueForStarKey (cls.userinfo, "*ver", st, MAX_INFO_STRING, 0);
 	Info_SetValueForStarKey (cls.userinfo, "stdver", QW_QSG_VERSION,
@@ -1139,8 +1107,8 @@ CL_Init (void)
 	Pmove_Init ();
 
 	SL_Init ();
-	
-// register our commands
+
+	// register our commands
 	Cmd_AddCommand ("version", CL_Version_f, "Report version information");
 	Cmd_AddCommand ("changing", CL_Changing_f, "Used when maps are changing");
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "Disconnect from server");
@@ -1148,7 +1116,8 @@ CL_Init (void)
 					"server'");
 	Cmd_AddCommand ("rerecord", CL_ReRecord_f, "Rerecord a demo on the same "
 					"server");
-	Cmd_AddCommand ("snap", CL_RSShot_f, "Take a screenshot and upload it to the server");
+	Cmd_AddCommand ("snap", CL_RSShot_f, "Take a screenshot and upload it to "
+					"the server");
 	Cmd_AddCommand ("stop", CL_Stop_f, "Stop recording a demo");
 	Cmd_AddCommand ("playdemo", CL_PlayDemo_f, "Play a recorded demo");
 	Cmd_AddCommand ("timedemo", CL_TimeDemo_f, "Play a demo as fast as your "
@@ -1186,10 +1155,9 @@ CL_Init (void)
 	Cmd_AddCommand ("stopul", CL_StopUpload, "Tells the client to stop "
 					"uploading");
 
-	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "force the view to "
-					"be level");
-
-// forward to server commands
+	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "force the view "
+					"to be level");
+	// forward to server commands
 	Cmd_AddCommand ("kill", Cmd_ForwardToServer, "Suicide :)");
 	Cmd_AddCommand ("pause", Cmd_ForwardToServer, "Pause the game");
 	Cmd_AddCommand ("say", Cmd_ForwardToServer, "Say something to all other "
@@ -1200,14 +1168,14 @@ CL_Init (void)
 					"server info");
 }
 
-
 void
 CL_Init_Cvars (void)
 {
 	cl_model_crcs = Cvar_Get ("cl_model_crcs", "1", CVAR_ARCHIVE, NULL,
-		"Controls setting of emodel and pmodel info vars. Required by some "
-		"servers, but clearing this can make the difference between "
-		"connecting and not connecting on some others.");
+							  "Controls setting of emodel and pmodel info "
+							  "vars. Required by some servers, but clearing "
+							  "this can make the difference between "
+							  "connecting and not connecting on some others.");
 	confirm_quit = Cvar_Get ("confirm_quit", "1", CVAR_ARCHIVE, NULL,
 							 "confirm quit command");
 	cl_allow_cmd_pkt = Cvar_Get ("cl_allow_cmd_pkt", "1", CVAR_NONE, NULL,
@@ -1215,14 +1183,14 @@ CL_Init_Cvars (void)
 	cl_autoexec = Cvar_Get ("cl_autoexec", "0", CVAR_ROM, NULL,
 							"exec autoexec.cfg on gamedir change");
 	cl_cshift_bonus = Cvar_Get ("cl_cshift_bonus", "1", CVAR_ARCHIVE, NULL,
-							"Show bonus flash on item pickup");
+								"Show bonus flash on item pickup");
 	cl_cshift_contents = Cvar_Get ("cl_cshift_content", "1", CVAR_ARCHIVE,
 								   NULL, "Shift view colors for contents "
 								   "(water, slime, etc)");
 	cl_cshift_damage = Cvar_Get ("cl_cshift_damage", "1", CVAR_ARCHIVE, NULL,
-							"Shift view colors on damage");
+								 "Shift view colors on damage");
 	cl_cshift_powerup = Cvar_Get ("cl_cshift_powerup", "1", CVAR_ARCHIVE, NULL,
-							"Shift view colors for powerups");
+								  "Shift view colors for powerups");
 	cl_demospeed = Cvar_Get ("cl_demospeed", "1.0", CVAR_NONE, NULL,
 							 "adjust demo playback speed. 1.0 = normal, "
 							 "< 1 slow-mo, > 1 timelapse");
@@ -1248,7 +1216,8 @@ CL_Init_Cvars (void)
 							"write config files?");
 	cl_shownet = Cvar_Get ("cl_shownet", "0", CVAR_NONE, NULL,
 						   "show network packets. 0=off, 1=basic, 2=verbose");
-	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, CL_Sbar_f, "status bar mode");
+	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, CL_Sbar_f,
+						"status bar mode");
 	cl_sbar_separator = Cvar_Get ("cl_sbar_separator", "0", CVAR_ARCHIVE, NULL,
 								  "turns on status bar separator");
 	cl_hudswap = Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, NULL,
@@ -1295,9 +1264,7 @@ CL_Init_Cvars (void)
 						"No description");
 	cl_timeframes = Cvar_Get ("cl_timeframes", "0", CVAR_ARCHIVE, NULL,
 							  "write timestamps for every frame");
-
 	// info mirrors
-	//
 	cl_name = Cvar_Get ("name", "unnamed", CVAR_ARCHIVE | CVAR_USERINFO,
 						Cvar_Info, "Player name");
 	password = Cvar_Get ("password", "", CVAR_USERINFO, Cvar_Info,
@@ -1320,7 +1287,6 @@ CL_Init_Cvars (void)
 	R_Particles_Init_Cvars ();
 }
 
-
 /*
 	Host_EndGame
 
@@ -1329,8 +1295,8 @@ CL_Init_Cvars (void)
 void
 Host_EndGame (const char *message, ...)
 {
-	va_list     argptr;
 	char        string[1024];
+	va_list     argptr;
 
 	va_start (argptr, message);
 	vsnprintf (string, sizeof (string), message, argptr);
@@ -1344,7 +1310,6 @@ Host_EndGame (const char *message, ...)
 	longjmp (host_abort, 1);
 }
 
-
 /*
 	Host_Error
 
@@ -1353,9 +1318,9 @@ Host_EndGame (const char *message, ...)
 void
 Host_Error (const char *error, ...)
 {
-	va_list     argptr;
 	char        string[1024];
 	static qboolean inerror = false;
+	va_list     argptr;
 
 	if (inerror)
 		Sys_Error ("Host_Error: recursively entered");
@@ -1374,7 +1339,6 @@ Host_Error (const char *error, ...)
 // FIXME
 	Sys_Error ("Host_Error: %s\n", string);
 }
-
 
 /*
 	Host_WriteConfiguration
@@ -1403,7 +1367,6 @@ Host_WriteConfiguration (void)
 	}
 }
 
-
 /*
 	Host_SimulationTime
 
@@ -1413,9 +1376,8 @@ Host_WriteConfiguration (void)
 static inline float
 Host_SimulationTime (float time)
 {
-	float       fps;
+	float       fps, timedifference;
 	float		timescale = 1.0;
-	float		timedifference;
 
 	if (cls.demoplayback) {
 		timescale = max (0, cl_demospeed->value);
@@ -1438,23 +1400,24 @@ Host_SimulationTime (float time)
 	return 0;
 }
 
+int         nopacketcount;
 
 /*
 	Host_Frame
 
 	Runs all active servers
 */
-int         nopacketcount;
 void
 Host_Frame (float time)
 {
 	static double time1 = 0;
 	static double time2 = 0;
 	static double time3 = 0;
-	int         pass1, pass2, pass3;
 	float sleeptime;
+	int         pass1, pass2, pass3;
 
-	if (setjmp (host_abort))	// something bad happened, or the server disconnected
+	if (setjmp (host_abort))
+		// something bad happened, or the server disconnected
 		return;
 
 	// decide the simulation time
@@ -1550,13 +1513,12 @@ Host_Frame (float time)
 	fps_count++;
 }
 
-
 static int
 check_quakerc (void)
 {
-	VFile *f;
 	const char *l, *p;
 	int ret = 1;
+	VFile *f;
 
 	COM_FOpenFile ("quake.rc", &f);
 	if (!f)
@@ -1572,7 +1534,6 @@ check_quakerc (void)
 	Qclose (f);
 	return ret;
 }
-
 
 void
 Host_Init (void)
@@ -1667,8 +1628,9 @@ Host_Init (void)
 
 	CL_TimeFrames_Init();
 
-//  Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
-	Con_Printf ("%4.1f megs RAM used.\n", host_parms.memsize / (1024 * 1024.0));
+//	Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
+	Con_Printf ("%4.1f megs RAM used.\n", host_parms.memsize /
+				(1024 * 1024.0));
 
 	vid_basepal = (byte *) COM_LoadHunkFile ("gfx/palette.lmp");
 	if (!vid_basepal)
@@ -1712,8 +1674,8 @@ Host_Init (void)
 		Cmd_StuffCmds_f ();
 	}
 
-	Cbuf_AddText
-		("echo Type connect <internet address> or use a server browser to connect to a game.\n");
+	Cbuf_AddText ("echo Type connect <internet address> or use a server "
+				  "browser to connect to a game.\n");
 	Cbuf_AddText ("cl_warncmd 1\n");
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
@@ -1730,7 +1692,6 @@ Host_Init (void)
 
 	CL_UpdateScreen (realtime);
 }
-
 
 /*
 	Host_Shutdown

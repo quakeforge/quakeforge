@@ -36,22 +36,22 @@
 # include <strings.h>
 #endif
 
-#include "compat.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/render.h"
 
+#include "compat.h"
 #include "cl_parse.h"
 #include "client.h"
 #include "r_cvar.h" //XXX
 #include "sbar.h"
 
+
 void
 CL_NetGraph (int swap)
 {
-	int         a, l, x, y, h, i;
-	int         lost;
 	char        st[80];
+	int         lost, a, l, x, y, h, i;
 
 	if (!r_netgraph->int_val)
 		return;

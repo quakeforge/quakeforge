@@ -130,11 +130,11 @@ CL_UpdateScreen (double realtime)
 void
 CL_RSShot_f (void)
 {
-	tex_t      *tex = 0;
-	pcx_t      *pcx = 0;
 	char        st[128];
-	time_t      now;
 	int         pcx_len;
+	pcx_t      *pcx = 0;
+	tex_t      *tex = 0;
+	time_t      now;
 
 	if (CL_IsUploading ())
 		return;							// already one pending
@@ -149,17 +149,21 @@ CL_RSShot_f (void)
 		time (&now);
 		strcpy (st, ctime (&now));
 		st[strlen (st) - 1] = 0;
-		SCR_DrawStringToSnap (st, tex, tex->width - strlen (st) * 8, tex->height - 1);
+		SCR_DrawStringToSnap (st, tex, tex->width - strlen (st) * 8,
+							  tex->height - 1);
 
 		strncpy (st, cls.servername, sizeof (st));
 		st[sizeof (st) - 1] = 0;
-		SCR_DrawStringToSnap (st, tex, tex->width - strlen (st) * 8, tex->height - 11);
+		SCR_DrawStringToSnap (st, tex, tex->width - strlen (st) * 8,
+							  tex->height - 11);
 
 		strncpy (st, cl_name->string, sizeof (st));
 		st[sizeof (st) - 1] = 0;
-		SCR_DrawStringToSnap (st, tex, tex->width - strlen (st) * 8, tex->height - 21);
+		SCR_DrawStringToSnap (st, tex, tex->width - strlen (st) * 8,
+							  tex->height - 21);
 
-		pcx = EncodePCX (tex->data, tex->width, tex->height, tex->width, vid_basepal, true, &pcx_len);
+		pcx = EncodePCX (tex->data, tex->width, tex->height, tex->width,
+						 vid_basepal, true, &pcx_len);
 	}
 	if (pcx) {
 		CL_StartUpload ((void *)pcx, pcx_len);
