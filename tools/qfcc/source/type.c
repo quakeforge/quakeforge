@@ -473,7 +473,7 @@ _parse_type (const char **str)
 				return 0;
 			}
 			(*str)++;
-			new.aux_type = new_struct (name->str);
+			new.aux_type = new_struct (*name->str ? name->str : 0);
 			dstring_delete (name);
 			while (**str && **str != '}')
 				new_struct_field (new.aux_type, _parse_type (str), 0,
