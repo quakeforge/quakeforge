@@ -36,30 +36,22 @@
 #include "QF/zone.h"
 
 /*
-
-d*_t structures are on-disk representations
-m*_t structures are in-memory
-
+	d*_t structures are on-disk representations
+	m*_t structures are in-memory
 */
 
-// entity effects
+// entity effects =============================================================
 
-#define	EF_BRIGHTFIELD			1
-#define	EF_MUZZLEFLASH 			2
-#define	EF_BRIGHTLIGHT 			4
-#define	EF_DIMLIGHT 			8
-#define	EF_FLAG1	 			16
-#define	EF_FLAG2	 			32
-#define EF_BLUE					64
-#define EF_RED					128
+#define	EF_BRIGHTFIELD	1
+#define	EF_MUZZLEFLASH 	2
+#define	EF_BRIGHTLIGHT 	4
+#define	EF_DIMLIGHT 	8
+#define	EF_FLAG1	 	16
+#define	EF_FLAG2	 	32
+#define EF_BLUE			64
+#define EF_RED			128
 
-/*
-==============================================================================
-
-BRUSH MODELS
-
-==============================================================================
-*/
+// BRUSH MODELS ===============================================================
 
 typedef struct efrag_s
 {
@@ -70,9 +62,8 @@ typedef struct efrag_s
 } efrag_t;
 
 
-//
-// in memory representation
-//
+// in memory representation ===================================================
+
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct
 {
@@ -221,13 +212,7 @@ typedef struct hull_s
 	vec3_t		clip_maxs;
 } hull_t;
 
-/*
-==============================================================================
-
-SPRITE MODELS
-
-==============================================================================
-*/
+// SPRITE MODELS ==============================================================
 
 // FIXME: shorten these?
 typedef struct mspriteframe_s
@@ -264,14 +249,8 @@ typedef struct
 } msprite_t;
 
 
-/*
-==============================================================================
-
-ALIAS MODELS
-
-Alias models are position independent, so the cache manager can move them.
-==============================================================================
-*/
+// ALIAS MODELS ===============================================================
+// Alias models are position independent, so the cache manager can move them.
 
 /* NOTE: the first three lines must match maliasgroupframedesc_t */
 typedef struct
@@ -349,22 +328,19 @@ extern	trivertx_t	*poseverts[MAXALIASFRAMES];
 extern  int			 aliasbboxmins[3];
 extern  int			 aliasbboxmaxs[3];
 
-//===================================================================
-
-//
-// Whole model
-//
+// Whole model =======================================================
 
 typedef enum {mod_brush, mod_sprite, mod_alias} modtype_t;
 
-#define	EF_ROCKET	1			// leave a trail
-#define	EF_GRENADE	2			// leave a trail
-#define	EF_GIB		4			// leave a trail
-#define	EF_ROTATE	8			// rotate (bonus items)
-#define	EF_TRACER	16			// green split trail
-#define	EF_ZOMGIB	32			// small blood trail
-#define	EF_TRACER2	64			// orange split trail + rotate
-#define	EF_TRACER3	128			// purple trail
+#define	EF_ROCKET		1			// leave a trail
+#define	EF_GRENADE		2			// leave a trail
+#define	EF_GIB			4			// leave a trail
+#define	EF_ROTATE		8			// rotate (bonus items)
+#define	EF_TRACER		16			// green split trail
+#define	EF_ZOMGIB		32			// small blood trail
+#define	EF_TRACER2		64			// orange split trail + rotate
+#define	EF_TRACER3		128			// purple trail
+#define EF_GLOWTRAIL	4096		// glowcolor particle trail
 
 typedef struct model_s
 {
@@ -444,7 +420,7 @@ typedef struct model_s
 
 } model_t;
 
-//============================================================================
+// ============================================================================
 
 void	Mod_Init (void);
 void	Mod_Init_Cvars (void);
@@ -463,7 +439,6 @@ void	Mod_LoadLighting (lump_t *l);
 int     Mod_CalcFullbright (byte *in, byte *out, int pixels);
 int     Mod_Fullbright (byte * skin, int width, int height, char *name);
 
-
 void    *Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
 							 int extra);
 void    *Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
@@ -476,14 +451,12 @@ void	 Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr);
 void	 Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum);
 
 
-
 extern struct cvar_s *gl_mesh_cache;
 extern struct cvar_s *gl_subdivide_size;
 extern model_t *loadmodel;
 extern char loadname[32];
 extern byte *mod_base;
 extern byte mod_novis[MAX_MAP_LEAFS / 8];
-
 extern int mod_lightmap_bytes;
 
 #endif	// _MODEL_H

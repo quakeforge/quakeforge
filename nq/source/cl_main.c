@@ -629,6 +629,8 @@ CL_RelinkEntities (void)
 			R_FlameTrail (ent);
 		else if (ent->model->flags & EF_TRACER3)
 			R_VoorTrail (ent);
+		else if (ent->model->flags & EF_GLOWTRAIL)
+			R_GlowTrail (ent);
 
 		state->forcelink = false;
 

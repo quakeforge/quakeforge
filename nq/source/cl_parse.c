@@ -470,6 +470,48 @@ CL_ParseUpdate (int bits)
 	if (bits & U_NOLERP)
 		forcelink = true;
 
+// QSG Start
+#if 0
+	if (bits & U_ALPHA)
+		state->alpha = MSG_ReadByte (net_message);
+	else
+		state->alpha = state.baseline.alpha;
+
+	if (bits & U_SCALE)
+		state->scale = MSG_ReadByte (net_message);
+	else
+		state->scale = state.baseline.scale;
+
+	if (bits & U_EFFECTS2)
+		state->effects = (state->effects & 0xFF) |
+			(MSG_ReadByte (net_message) << 8);
+
+	if (bits & U_GLOWSIZE)
+		state->glow_size = MSG_ReadByte (net_message);
+	else
+		state->glow_size = state.baseline.glow_size;
+
+	if (bits & U_GLOWCOLOR)
+		state->glow_color = MSG_ReadByte (net_message);
+	else
+		state->glow_color = state.baseline.glow_color;
+
+	if (bits & U_COLORMOD)
+		state->colormod = MSG_ReadByte (net_message);
+	else
+		state->colormod = state.baseline.colormod;
+
+	if (!(bits & U_EXTEND2))
+		return;
+
+	if (bits & U_GLOWTRAIL)
+		state->effects |= EF_GLOWTRAIL;
+
+	if (bits & U_FRAME2)
+		to->frame = (to->frame & 0xFF) | (MSG_ReadByte (net_message) << 8);
+#endif
+// QSG End
+
 	if (forcelink) {					// didn't have an update last message
 		VectorCopy (state->msg_origins[0], state->msg_origins[1]);
 		VectorCopy (state->msg_origins[0], ent->origin);
@@ -623,8 +665,16 @@ CL_ParseStatic (void)
 	ent->frame = state.baseline.frame;
 	ent->colormap = vid.colormap8;
 	ent->skinnum = state.baseline.skin;
-// FIXME: need to get colormod from baseline
-	ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1.0;
+	if (state.baseline.colormod == 255) {
+		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1.0;
+	} else {
+		ent->colormod[0] = ((float) ((state.baseline.colormod >> 5) & 7)) *
+			(1.0 / 7.0);
+		ent->colormod[1] = ((float) ((state.baseline.colormod >> 2) & 7)) *
+			(1.0 / 7.0);
+		ent->colormod[2] = ((float) (state.baseline.colormod & 3)) *
+			(1.0 / 3.0);
+	}
 	ent->colormod[3] = state.baseline.alpha / 255.0;
 	ent->scale = state.baseline.scale / 16.0;
 

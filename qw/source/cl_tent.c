@@ -328,7 +328,7 @@ CL_ParseTEnt (void)
 			}
 			break;
 
-		case TE_SUPERSPIKE:			// super spike hitting wall
+		case TE_SUPERSPIKE:				// super spike hitting wall
 			MSG_ReadCoordV (net_message, pos);
 			R_SuperSpikeEffect (pos);
 
@@ -377,27 +377,27 @@ CL_ParseTEnt (void)
 			ex->ent.model = cl_spr_explod;
 			break;
 
-		case TE_TAREXPLOSION:		// tarbaby explosion
+		case TE_TAREXPLOSION:			// tarbaby explosion
 			MSG_ReadCoordV (net_message, pos);
 			R_BlobExplosion (pos);
 
 			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
 			break;
 
-		case TE_LIGHTNING1:			// lightning bolts
+		case TE_LIGHTNING1:				// lightning bolts
 			CL_ParseBeam (cl_mod_bolt);
 			break;
 
-		case TE_LIGHTNING2:			// lightning bolts
+		case TE_LIGHTNING2:				// lightning bolts
 			CL_ParseBeam (cl_mod_bolt2);
 			break;
 
-		case TE_LIGHTNING3:			// lightning bolts
+		case TE_LIGHTNING3:				// lightning bolts
 			CL_ParseBeam (cl_mod_bolt3);
 			break;
 
 		// PGM 01/21/97
-		case TE_BEAM:				// grappling hook beam
+		case TE_BEAM:					// grappling hook beam
 			CL_ParseBeam (Mod_ForName ("progs/beam.mdl", true));
 			break;
 		// PGM 01/21/97
@@ -412,7 +412,7 @@ CL_ParseTEnt (void)
 			R_TeleportSplash (pos);
 			break;
 
-		case TE_EXPLOSION2:			// color mapped explosion
+		case TE_EXPLOSION2:				// color mapped explosion
 			MSG_ReadCoordV (net_message, pos);
 			colorStart = MSG_ReadByte (net_message);
 			colorLength = MSG_ReadByte (net_message);
@@ -425,27 +425,25 @@ CL_ParseTEnt (void)
 			dl->radius = 350;
 			dl->die = cl.time + 0.5;
 			dl->decay = 300;
-			dl->color[0] = vid_basepal[(colorStart + (rand() % colorLength)) *
-									   3] * (1.0 / 255.0);
-			dl->color[1] = vid_basepal[(colorStart + (rand() % colorLength)) *
-									   3 + 1] * (1.0 / 255.0);
-			dl->color[2] = vid_basepal[(colorStart + (rand() % colorLength)) *
-									   3 + 2] * (1.0 / 255.0);
+			colorStart = (colorStart + (rand() % colorLength)) * 3;
+			dl->color[0] = vid_basepal[colorStart] * (1.0 / 255.0);
+			dl->color[1] = vid_basepal[colorStart + 1] * (1.0 / 255.0);
+			dl->color[2] = vid_basepal[colorStart + 2] * (1.0 / 255.0);
 			break;
 
-		case TE_GUNSHOT:			// bullet hitting wall
+		case TE_GUNSHOT:				// bullet hitting wall
 			cnt = MSG_ReadByte (net_message) * 20;
 			MSG_ReadCoordV (net_message, pos);
 			R_GunshotEffect (pos, cnt);
 			break;
 
-		case TE_BLOOD:				// bullet hitting body
+		case TE_BLOOD:					// bullet hitting body
 			cnt = MSG_ReadByte (net_message) * 20;
 			MSG_ReadCoordV (net_message, pos);
 			R_BloodPuffEffect (pos, cnt);
 			break;
 
-		case TE_LIGHTNINGBLOOD:		// lightning hitting body
+		case TE_LIGHTNINGBLOOD:			// lightning hitting body
 			MSG_ReadCoordV (net_message, pos);
 
 			// light

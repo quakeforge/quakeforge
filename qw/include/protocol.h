@@ -36,13 +36,13 @@
 
 #define QW_CHECK_HASH 0x5157
 
-//=========================================
+// =========================================
 
 #define	PORT_CLIENT	"27001"
 #define	PORT_MASTER	27000
 #define	PORT_SERVER	27500
 
-//=========================================
+// =========================================
 
 // out of band message id bytes
 
@@ -69,9 +69,8 @@
 // also related to svc_strings[] in cl_parse
 //==================
 
-//
-// server to client
-//
+// server to client ===========================================================
+
 #define	svc_bad				0
 #define	svc_nop				1
 #define	svc_disconnect		2
@@ -105,8 +104,7 @@
 #define	svc_updateentertime	37		// [byte] [float]
 #define	svc_updatestatlong	38		// [byte] [long]
 #define	svc_muzzleflash		39		// [short] entity
-#define	svc_updateuserinfo	40		// [byte] slot [long] uid
-                                                //  [string] userinfo
+#define	svc_updateuserinfo	40		// [byte] slot [long] uid [string] userinfo
 #define	svc_download		41		// [short] size [size bytes]
 #define	svc_playerinfo		42		// variable
 #define	svc_nails			43		// [byte] num [48 bits] xyzpy 12 12 12 4 8 
@@ -121,12 +119,8 @@
 #define svc_serverinfo		52		// serverinfo
 #define svc_updatepl		53		// [byte] [byte]
 
+// client to server ===========================================================
 
-//==============================================
-
-//
-// client to server
-//
 #define	clc_bad			0
 #define	clc_nop 		1
 //define	clc_doublemove	2
@@ -136,8 +130,7 @@
 #define clc_tmove		6		// teleport request, spectator only
 #define clc_upload		7		// teleport request, spectator only
 
-
-//==============================================
+// ==============================================
 
 // playerinfo flags from server
 // playerinfo always sends: playernum, flags, origin[] and framenumber
@@ -165,7 +158,7 @@
 #define PF_COLORMOD		(1<<5)
 #define PF_FRAME2		(1<<6)
 
-//==============================================
+// ==============================================
 
 // if the high bit of the client to server byte is set, the low bits are
 // client move cmd bits
@@ -179,7 +172,7 @@
 #define	CM_IMPULSE	(1<<6)
 #define	CM_ANGLE2 	(1<<7)
 
-//==============================================
+// ==============================================
 
 // the first 16 bits of a packetentities update holds 9 bits
 // of entity number and 7 bits of flags
@@ -200,8 +193,7 @@
 #define	U_EFFECTS	(1<<5)
 #define	U_SOLID		(1<<6)		// the entity should be solid for prediction
 
-///////////////////////////////////////////////////////////////////////////
-// QSG Protocol Extensions (Version 2)
+// QSG Protocol Extensions (Version 2) ========================================
 // Network definitions for the engine
 
 #define U_EXTEND1	(1<<7)
@@ -224,7 +216,7 @@
 #define U_UNUSED30	(1<<30) // future expansion
 #define U_EXTEND3	(1<<31) // another byte to follow, future expansion
 
-//==============================================
+// ============================================================================
 
 // a sound with no channel is a local only sound
 // the sound field has bits 0-2: channel, 3-12: entity
@@ -237,9 +229,9 @@
 #define	PRINT_HIGH			2
 #define	PRINT_CHAT			3	// also go to chat buffer
 
-//
-// temp entity events
-//
+
+// temp entity events =========================================================
+
 #define	TE_SPIKE			0
 #define	TE_SUPERSPIKE		1
 #define	TE_GUNSHOT			2
@@ -255,18 +247,9 @@
 #define	TE_BLOOD			12
 #define	TE_LIGHTNINGBLOOD	13
 #define TE_EXPLOSION2       16
-// PGM 01/21/97 
-#define TE_BEAM             17
-// PGM 01/21/97
+#define TE_BEAM             17			// PGM 01/21/97
 
-
-/*
-==========================================================
-
-  ELEMENTS COMMUNICATED ACROSS THE NET
-
-==========================================================
-*/
+// ELEMENTS COMMUNICATED ACROSS THE NET =======================================
 
 #define	MAX_CLIENTS		32
 

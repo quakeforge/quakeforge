@@ -545,6 +545,8 @@ CL_LinkPacketEntities (void)
 			R_FlameTrail (*ent);
 		else if (model->flags & EF_TRACER3)
 			R_VoorTrail (*ent);
+		else if (model->flags & EF_GLOWTRAIL)
+			R_GlowTrail (*ent);
 	}
 }
 

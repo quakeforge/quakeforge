@@ -449,12 +449,13 @@ R_TeleportSplash_QF (const vec3_t org)
 //		l = r_maxparticles - numparticles;
 //	}
 
-	for (i = -16; i < 16; i += 4) {
-		dir[1] = i * 8;
-		for (j = -16; j < 16; j += 4) {
-			dir[0] = j * 8;
-			for (k = -24; k < 32; k += 4) {
-				dir[2] = k * 8;
+	for (k = -24; k < 32; k += 4) {
+		dir[2] = k * 8;
+		for (i = -16; i < 16; i += 4) {
+			dir[1] = i * 8;
+			for (j = -16; j < 16; j += 4) {
+				dir[0] = j * 8;
+
 				VectorCopy (dir, pdir);
 				VectorNormalize (pdir);
 
@@ -730,6 +731,36 @@ R_VoorTrail_QF (entity_t *ent)
 }
 
 void
+R_GlowTrail_QF (entity_t *ent)
+{
+	float		maxlen;
+	float		dist = 3.0, len = 0.0;
+	int			rnd;
+	vec3_t		org, subtract, vec;
+
+	if (numparticles >= r_maxparticles)
+		return;
+
+	VectorSubtract (ent->origin, ent->old_origin, vec);
+	maxlen = VectorNormalize (vec);
+	VectorScale (vec, (maxlen - dist), subtract);
+
+	while (len < maxlen) {
+		rnd = rand ();
+		org[0] = ent->old_origin[0] + ((rnd >> 12) & 7) * (5.0/7.0) - 2.5;
+		org[1] = ent->old_origin[1] + ((rnd >> 9) & 7) * (5.0/7.0) - 2.5;
+		org[2] = ent->old_origin[2] + ((rnd >> 6) & 7) * (5.0/7.0) - 2.5;
+
+//		particle_new (pt_smoke, part_tex_dot, org, 1.0, vec3_origin,
+// FIXME: DESPAIR	  r_realtime + 2.0, ent->glowcolor, 1.0, 0.0);
+		if (numparticles >= r_maxparticles)
+			break;
+		len += dist;
+		VectorAdd (ent->old_origin, subtract, ent->old_origin);
+	}
+}
+
+void
 R_ParticleExplosion_EE (const vec3_t org)
 {
 /*
@@ -756,12 +787,12 @@ R_TeleportSplash_EE (const vec3_t org)
 //		l = r_maxparticles - numparticles;
 //	}
 
-	for (i = -16; i < 16; i += 4) {
-		dir[1] = i * 8;
-		for (j = -16; j < 16; j += 4) {
-			dir[0] = j * 8;
-			for (k = -24; k < 32; k += 4) {
-				dir[2] = k * 8;
+	for (k = -24; k < 32; k += 4) {
+		dir[2] = k * 8;
+		for (i = -16; i < 16; i += 4) {
+			dir[1] = i * 8;
+			for (j = -16; j < 16; j += 4) {
+				dir[0] = j * 8;
 				
 				rnd = rand ();
 				porg[0] = org[0] + i + (rnd & 3);
@@ -1016,12 +1047,13 @@ R_TeleportSplash_ID (const vec3_t org)
 //		l = r_maxparticles - numparticles;
 //	}
 
-	for (i = -16; i < 16; i += 4) {
-		dir[1] = i * 8;
-		for (j = -16; j < 16; j += 4) {
-			dir[0] = j * 8;
-			for (k = -24; k < 32; k += 4) {
-				dir[2] = k * 8;
+	for (k = -24; k < 32; k += 4) {
+		dir[2] = k * 8;
+		for (i = -16; i < 16; i += 4) {
+			dir[1] = i * 8;
+			for (j = -16; j < 16; j += 4) {
+				dir[0] = j * 8;
+
 				VectorCopy (dir, pdir);
 				VectorNormalize (pdir);
 				
@@ -1537,6 +1569,7 @@ r_particles_style_f (cvar_t *var)
 			R_WizTrail = R_WizTrail_QF;
 			R_FlameTrail = R_FlameTrail_QF;
 			R_VoorTrail = R_VoorTrail_QF;
+			R_GlowTrail = R_GlowTrail_QF;
 		} else {
 			R_BlobExplosion = R_BlobExplosion_ID;
 			R_ParticleExplosion = R_ParticleExplosion_ID;
@@ -1561,6 +1594,7 @@ r_particles_style_f (cvar_t *var)
 			R_WizTrail = R_WizTrail_ID;
 			R_FlameTrail = R_FlameTrail_ID;
 			R_VoorTrail = R_VoorTrail_ID;
+			R_GlowTrail = R_GlowTrail_QF;
 		}
 	}
 }
