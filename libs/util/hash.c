@@ -157,22 +157,24 @@ Hash_Find (hashtab_t *tab, const char *key)
 	return 0;
 }
 
-int
+void *
 Hash_Del (hashtab_t *tab, const char *key)
 {
 	unsigned long h = hash (key);
 	size_t ind = h % tab->tab_size;
 	struct hashlink_s *lnk = tab->tab[ind];
+	void *data;
 
 	while (lnk) {
 		if (strequal (key, tab->get_key (lnk->data, tab->user_data))) {
+			data = lnk->data;
 			if (lnk->next)
 				lnk->next->prev = lnk->prev;
 			*lnk->prev = lnk->next;
 			free (lnk);
-			return 0;
+			return data;
 		}
 		lnk = lnk->next;
 	}
-	return -1;
+	return 0;
 }

@@ -85,10 +85,11 @@ void *Hash_Find (hashtab_t *tab, const char *key);
 	delete an element from a hash table:
 		tab:	the table to remove the element from
 		key:	the key string identifying the element to be deleted
-	returns 0 on success, -1 if the element could not be found.
+	returns a pointer to the element on success, 0 if the element could not
+	be found.
 	Does /NOT/ call the free element function. That is the caller's
 	responsibility.
 */
-int Hash_Del (hashtab_t *tab, const char *key);
+void *Hash_Del (hashtab_t *tab, const char *key);
 
 #endif // __hash_h
