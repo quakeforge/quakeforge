@@ -324,19 +324,32 @@ emit_move_expr (expr_t *e)
 {
 	expr_t     *e1 = e->e.expr.e1;
 	expr_t     *e2 = e->e.expr.e2;
+	expr_t     *size_expr;
 	def_t      *size, *src, *dst;
-	type_t     *type;
+	type_t     *src_type, *dst_type;
 	opcode_t   *op;
 
+	dst_type = get_type (e1);
+	src_type = get_type (e2);
 	src = emit_sub_expr (e2, 0);
 	dst = emit_sub_expr (e1, 0);
-	type = get_type (e1);
-
-	if (type->type == ev_struct) {
-		size = emit_sub_expr (new_short_expr (type_size (dst->type)), 0);
+	
+	if (dst_type->type == ev_struct && src_type->type == ev_struct) {
+		printf("%s:%d\n", src->name, src->ofs);
+		size_expr = new_short_expr (type_size (dst->type));
+	} else if (dst_type->type == ev_struct) {
+		dst = emit_sub_expr (address_expr (new_def_expr (dst), 0, 0), 0);
+		size_expr = new_integer_expr (type_size (dst_type));
+	} else if (src_type->type == ev_struct) {
+		printf("%s:%d ", src->name, src->ofs);
+		src = emit_sub_expr (address_expr (new_def_expr (src), 0, 0), 0);
+		printf("%s:%d\n", src->name, src->ofs);
+		size_expr = new_integer_expr (type_size (dst_type->aux_type));
 	} else {
-		size = emit_sub_expr (new_integer_expr (type_size (type->aux_type)), 0);
+		size_expr = new_integer_expr (type_size (dst_type->aux_type));
 	}
+	size = emit_sub_expr (size_expr, 0);
+
 	op = opcode_find ("<MOVE>", src, size, dst);
 	return emit_statement (e, op, src, size, dst);
 }
@@ -428,6 +441,10 @@ emit_sub_expr (expr_t *e, def_t *dest)
 			error (e, "internal error");
 			abort ();
 		case ex_expr:
+			if (e->e.expr.op == 'M') {
+				d = emit_move_expr (e);
+				break;
+			}
 			if (e->e.expr.op == 'b') {
 				d = emit_bind_expr (e->e.expr.e1, e->e.expr.e2);
 				break;
