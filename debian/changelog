@@ -1,8 +1,12 @@
-quakeforge (0.5.2-0) frozen unstable; urgency=low
+quakeforge (0.5.2-1) frozen unstable; urgency=low
 
-  * New release imminent.
+  * New release.
+  * This package does not contain the menu file, because it would
+    seriously screw up future upgrades. This will be fixed in 0.5.3.
+    If you want menus, you'll have to download them from
+    www.quakeforge.net for now.
 
- -- Jeff Teunissen <deek@d2dc.net>  Fri, 30 Sep 2002 12:49:17 -0400
+ -- Jeff Teunissen <deek@d2dc.net>  Fri,  1 Oct 2002 02:54:17 -0400
 
 quakeforge (0.5.1-0cvs20020416) frozen unstable; urgency=low
 
