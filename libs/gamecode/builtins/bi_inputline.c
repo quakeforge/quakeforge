@@ -59,7 +59,7 @@ bi_InputLine_Create (progs_t *pr)
 	inputline_t **line = 0;
 	int         i;
 	int         lines = G_INT (pr, OFS_PARM0);
-	int         width = G_INT (pr, OFS_PARM1);
+	int         size = G_INT (pr, OFS_PARM1);
 	int         prompt = G_INT (pr, OFS_PARM2);
 	pr_type_t  *handle;
 
@@ -72,7 +72,7 @@ bi_InputLine_Create (progs_t *pr)
 		G_INT (pr, OFS_RETURN) = 0;
 		return;
 	}
-	*line = Con_CreateInputLine (lines, width, prompt);
+	*line = Con_CreateInputLine (lines, size, prompt);
 	if (!*line) {
 		G_INT (pr, OFS_RETURN) = 0;
 		return;
@@ -80,6 +80,16 @@ bi_InputLine_Create (progs_t *pr)
 	handle = PR_Zone_Malloc (pr, sizeof (inputline_t *));
 	*(inputline_t**)handle = *line;
 	G_INT (pr, OFS_RETURN) = handle - pr->pr_globals;
+}
+
+static void
+bi_InputLine_SetWidth (progs_t *pr)
+{
+	pr_type_t  *handle = pr->pr_globals + G_INT (pr, OFS_PARM0);
+	inputline_t *line = *(inputline_t **)handle;
+	int         width = G_INT (pr, OFS_PARM1);
+
+	line->width = width;
 }
 
 static void
@@ -162,6 +172,7 @@ InputLine_Progs_Init (progs_t *pr)
 
 	PR_Resources_Register (pr, "InputLine", res, bi_il_clear);
 	PR_AddBuiltin (pr, "InputLine_Create", bi_InputLine_Create, -1);
+	PR_AddBuiltin (pr, "InputLine_SetWidth", bi_InputLine_SetWidth, -1);
 	PR_AddBuiltin (pr, "InputLine_Destroy", bi_InputLine_Destroy, -1);
 	PR_AddBuiltin (pr, "InputLine_Clear", bi_InputLine_Clear, -1);
 	PR_AddBuiltin (pr, "InputLine_Process", bi_InputLine_Process, -1);
