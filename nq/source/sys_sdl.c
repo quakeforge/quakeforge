@@ -53,17 +53,16 @@ static const char rcsid[] =
 #include <stdlib.h>
 
 #ifndef _WIN32
+# include <sys/types.h>
+# include <sys/mman.h>
 # include <ctype.h>
 # include <signal.h>
 # include <stdarg.h>
-# include <sys/mman.h>
-# include <sys/types.h>
 #endif
 
 #include <SDL.h>
 #include <SDL_main.h>
 
-#include "QF/qargs.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
@@ -179,7 +178,7 @@ SDL_main (int c, char **v)
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 
-	host_parms.memsize = 16 * 1024 * 1024;
+	host_parms.memsize = 16 * 1024 * 1024;	// 16MB default heap
 
 	j = COM_CheckParm ("-mem");
 	if (j)
@@ -190,6 +189,7 @@ SDL_main (int c, char **v)
 		printf ("Can't allocate memory for zone.\n");
 		return 1;
 	}
+
 #ifndef WIN32
 	noconinput = COM_CheckParm ("-noconinput");
 	if (!noconinput)

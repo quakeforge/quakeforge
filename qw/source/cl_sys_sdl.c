@@ -46,24 +46,25 @@ static const char rcsid[] =
 # include <unistd.h>
 #endif
 
-#ifndef _WIN32
-# include <stdarg.h>
-# include <ctype.h>
-# include <signal.h>
-# include <sys/types.h>
-# include <sys/mman.h>
-#endif
-
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#ifndef _WIN32
+# include <sys/types.h>
+# include <sys/mman.h>
+# include <ctype.h>
+# include <signal.h>
+# include <stdarg.h>
+#endif
+
 #include <SDL.h>
 #include <SDL_main.h>
 
-#include "QF/sys.h"
 #include "QF/qargs.h"
+#include "QF/sys.h"
 
 #include "client.h"
 #include "compat.h"
@@ -80,7 +81,6 @@ int         noconinput;
 qboolean    Minimized = false;
 void        MaskExceptions (void);
 #endif
-
 
 void
 Sys_Init (void)
@@ -119,8 +119,6 @@ shutdown (void)
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
 #endif
 }
-
-
 
 void
 Sys_DebugLog (const char *file, const char *fmt, ...)
@@ -181,7 +179,7 @@ SDL_main (int c, char **v)
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 
-	host_parms.memsize = 16 * 1024 * 1024;  // 16MB default heap
+	host_parms.memsize = 16 * 1024 * 1024;	// 16MB default heap
 
 	j = COM_CheckParm ("-mem");
 	if (j)
