@@ -156,7 +156,7 @@ void ED_PrintNum (progs_t *pr, int ent);
 void ED_Count (progs_t *pr);
 void PR_Profile (progs_t *pr);
 
-char *PR_GlobalString (progs_t *pr, int ofs);
+char *PR_GlobalString (progs_t *pr, int ofs, etype_t type);
 char *PR_GlobalStringNoContents (progs_t *pr, int ofs);
 
 pr_type_t *GetEdictFieldValue(progs_t *pr, edict_t *ed, const char *field);

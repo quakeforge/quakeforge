@@ -461,7 +461,7 @@ PR_UglyValueString (progs_t * pr, etype_t type, pr_type_t *val)
 	padded to 20 field width
 */
 char       *
-PR_GlobalString (progs_t * pr, int ofs)
+PR_GlobalString (progs_t * pr, int ofs, etype_t type)
 {
 	char       *s;
 	int         i;
@@ -474,12 +474,20 @@ PR_GlobalString (progs_t * pr, int ofs)
 	val = (void *) &pr->pr_globals[ofs];
 	if (!def)
 		def = ED_GlobalAtOfs (pr, ofs);
-	if (!def)
+	if (!def && type == ev_void)
 		snprintf (line, sizeof (line), "%i(?)", ofs);
 	else {
-		s = PR_ValueString (pr, def->type, val);
-		snprintf (line, sizeof (line), "%i(%s)%s", ofs,
-				  PR_GetString (pr, def->s_name), s);
+		char *name = "?";
+		char *oi = "";
+		if (def) {
+			if (type == ev_void)
+				type = def->type;
+			name = PR_GetString (pr, def->s_name);
+			if (type != def->type)
+				oi = "!";
+		}
+		s = PR_ValueString (pr, type, val);
+		snprintf (line, sizeof (line), "%i(%s%s)%s", ofs, oi, name, s);
 	}
 
 	i = strlen (line);

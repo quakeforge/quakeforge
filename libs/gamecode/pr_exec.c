@@ -56,7 +56,6 @@ extern cvar_t *pr_deadbeef;
 void
 PR_PrintStatement (progs_t * pr, dstatement_t *s)
 {
-	int         i;
 	int         addr = s - pr->pr_statements;
 	opcode_t   *op;
 
@@ -68,29 +67,29 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s)
 	}
 	Con_Printf ("%-7d ", addr);
 	op = PR_Opcode (s->op);
-	if (op) {
-		Con_Printf ("%s ", op->opname);
-		i = strlen (op->opname);
-		for (; i < 10; i++)
-			Con_Printf (" ");
+	if (!op) {
+		Con_Printf ("unknown opcode %d\n", s->op);
+		return;
 	}
+	Con_Printf ("%-9s ", op->opname);
 
 	if (s->op == OP_IF || s->op == OP_IFNOT)
 		Con_Printf ("%sbranch %i (%i)",
-					PR_GlobalString (pr, s->a), s->b,
-					addr + s->b);
+					PR_GlobalString (pr, s->a, ev_integer), s->b, addr + s->b);
 	else if (s->op == OP_GOTO) {
 		Con_Printf ("branch %i (%i)", s->a, addr + s->a);
-	} else if ((unsigned int) (s->op - OP_STORE_F) < 6) {
-		Con_Printf ("%s", PR_GlobalString (pr, s->a));
-		Con_Printf ("%s",
-					PR_GlobalStringNoContents (pr, s->b));
+	} else if (s->op == OP_RETURN || s->op == OP_DONE) {
+		Con_Printf ("%s", PR_GlobalString (pr, s->a, ev_void));
 	} else {
-		if (s->a)
-			Con_Printf ("%s", PR_GlobalString (pr, s->a));
-		if (s->b)
-			Con_Printf ("%s", PR_GlobalString (pr, s->b));
-		if (s->c)
+		if (op->type_a != ev_void)
+			Con_Printf ("%s", PR_GlobalString (pr, s->a, op->type_a));
+		if (op->type_b != ev_void) {
+			if (op->type_c != ev_void)
+				Con_Printf ("%s", PR_GlobalString (pr, s->b, op->type_b));
+			else
+				Con_Printf ("%s", PR_GlobalStringNoContents (pr, s->b));
+		}
+		if (op->type_c != ev_void)
 			Con_Printf ("%s", PR_GlobalStringNoContents (pr, s->c));
 	}
 	Con_Printf ("\n");
