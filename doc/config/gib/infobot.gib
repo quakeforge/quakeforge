@@ -92,7 +92,7 @@ function infobot::chatEvent {
 	res = $(regex::extract $mesg "^([^[:space:]]+)[[:space:]]+(is|are)[[:space:]]+(.+)" i)
 	if #res {
 		if ($(infobot::defineFactoid $args[1] $res[2] $res[4] $res[3]) && $addr) {
-			say $from, ": You do not have the privelegdes to alter factoids."
+			say $from, ": You do not have the privileges to alter factoids."
 		} else if $addr {
 			say $from, ": Understood."
 		}
@@ -121,7 +121,7 @@ function infobot::cmdRegister {
 
 function infobot::forget {
 	ifnot (!$infobot_restrict || $(infobot::hasAccess $args[1])) {
-		say $args[2], ": You do not have the privelegdes to alter factoids."
+		say $args[2], ": You do not have the privileges to alter factoids."
 		return
 	}
 	fact = $(infobot::makeKey $args[3])

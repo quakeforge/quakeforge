@@ -700,17 +700,18 @@ GIB_File_Transform_Path_Null (dstring_t * path)
 static int
 GIB_File_Transform_Path_Secure (dstring_t * path)
 {
-	char       *s /* , e_dir[MAX_OSPATH] */ ;
+	char       *s, e_dir[MAX_OSPATH];
 
 	for (s = strchr (path->str, '\\'); s; s = strchr (s, '\\'))
 		*s = '/';
 	if (Sys_PathType (path->str) != PATHTYPE_RELATIVE_BELOW)
 		return -1;
-	/* Qexpand_squiggle (fs_userpath->string, e_dir); */
+	
 	dstring_insertstr (path, 0, "/");
-	dstring_insertstr (path, 0, /* e_dir */ qfs_gamedir->dir.def);
+	dstring_insertstr (path, 0, qfs_gamedir->dir.def);
 	dstring_insertstr (path, 0, "/");
-	dstring_insertstr (path, 0, fs_userpath->string);
+	Qexpand_squiggle (fs_userpath->string, e_dir);
+	dstring_insertstr (path, 0, e_dir);
 	return 0;
 }
 

@@ -42,15 +42,13 @@ global cvars = crosshair r_dlight_lightmap r_shadows r_wateralpha show_fps
 
 function cvar::save {
 	for i in @args[1:] {
-		dprint "Saving cvar ", $i, ".\n"
-		global hold_$i = ${$i}
+		global cvars.$i = ${$i}
 	}
 }
 
 function cvar::restore {
 	for i in @args[1:] {
-		dprint "Restoring cvar", $i, " to ", ${hold_$i}, ".\n"
-		set $i ${hold_$i}
+		set $i ${cvars.$i}
 	}
 }
 
@@ -66,6 +64,7 @@ function sshot {
 		// find next available name
 		name_s = 0
 		for name_t in `file::find qf???.tga` {
+			echo "Testing ", `slice $name_t 2 5`
 			if (`slice $name_t 2 5` > $name_s) {break}
 			name_s = ($name_s + 1)
 		}
@@ -73,7 +72,7 @@ function sshot {
 		screenshot
 		// pad & normalize source
 		name_s = "00", $name_s
-		name_s = "qf", `slice $name_s -3 0`, ".tga"
+		name_s = "qf", `slice $name_s -3`, ".tga"
 		// destination specified with extension?
 		name_d = $args[1]
 		ifnot $(equal $(slice $name_d -4 0) ".tga") {
