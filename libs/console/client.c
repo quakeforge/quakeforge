@@ -386,7 +386,7 @@ C_Print (const char *fmt, va_list args)
 
 	size = vsnprintf (buffer, buffer_size, fmt, args);
 	while (size < 0 || size + 1 > buffer_size) {
-		if (size >= 0)
+		if (size > 0)
 			buffer_size = (size + 1 + 1024) % 1024; // 1k multiples
 		else
 			buffer_size += 1024;
