@@ -51,17 +51,18 @@
 						BUILT-IN FUNCTIONS
 */
 
-char       *
+char *
 PF_VarString (progs_t *pr, int first)
 {
 	int         i;
-	static char out[256];
+	int         len;
+	char       *out;
 
-	out[0] = 0;
-	for (i = first; i < pr->pr_argc; i++) {
-		strncat (out, G_STRING (pr, (OFS_PARM0 + i * 3)),
-				 sizeof (out) - strlen (out));
-	}
+	for (len = 0, i = first; i < pr->pr_argc; i++)
+		len += strlen (G_STRING (pr, (OFS_PARM0 + i * 3)));
+	out = Hunk_TempAlloc (len + 1);
+	for (i = first; i < pr->pr_argc; i++)
+		strcat (out, G_STRING (pr, (OFS_PARM0 + i * 3)));
 	return out;
 }
 
