@@ -15,7 +15,7 @@
 
 @implementation GameEntity
 
-- (BOOL) takeDamage: weapon : inflictor : attacker : damage
+- (BOOL) takeDamage: weapon :inflictor :attacker : (float)damage
 {
 	return NO;
 }

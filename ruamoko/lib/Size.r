@@ -33,12 +33,12 @@
 	return [myCopy initWithComponents: width : height];
 }
 
-- (id) width
+- (integer) width
 {
 	return width;
 }
 
-- (id) height
+- (integer) height
 {
 	return height;
 }

@@ -64,7 +64,7 @@ integer	deathmatch;
 
 @implementation World
 
-- spawn: (entity)ent
+- (void) spawn: (entity)ent
 {
 	[self initWithEntity: ent];
 	bodyque = [[BodyQueue alloc] init];

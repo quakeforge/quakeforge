@@ -403,8 +403,11 @@ class_find_method (class_type_t *class_type, method_t *method)
 		class_name = class_type->c.class->name;
 	}
 	for (m = methods->head; m; m = m->next)
-		if (method_compare (method, m))
+		if (method_compare (method, m)) {
+			if (m->type != method->type)
+				error (0, "method type mismatch");
 			return m;
+		}
 	sel = dstring_newstr ();
 	selector_name (sel, (keywordarg_t *)method->selector);
 	warning (0, "%s method %s not in %s%s",

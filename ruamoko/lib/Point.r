@@ -33,12 +33,12 @@
 	return [myCopy initWithComponents: x : y];
 }
 
-- (id) x
+- (integer) x
 {
 	return x;
 }
 
-- (id) y
+- (integer) y
 {
 	return y;
 }

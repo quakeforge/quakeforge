@@ -49,9 +49,10 @@ string (inputline_t il) InputLine_GetText = #0;
 	InputLine_Draw (il);
 }
 
-- (void) setText: (string)text
+- (id) setText: (string)text
 {
 	InputLine_SetText (il, text);
+	return self;
 }
 
 - (string) text
