@@ -52,6 +52,7 @@ sv_funcs_t sv_funcs;
 sv_fields_t sv_fields;
 
 cvar_t     *sv_progs;
+cvar_t     *sv_progs_zone;
 cvar_t     *pr_checkextensions;
 
 cvar_t     *nomonsters;
@@ -136,7 +137,8 @@ SV_LoadProgs (void)
 	ddef_t     *def;
 	dfunction_t *f;
 
-	PR_LoadProgs (&sv_pr_state, sv_progs->string, sv.max_edicts, 0);
+	PR_LoadProgs (&sv_pr_state, sv_progs->string, sv.max_edicts,
+				  sv_progs_zone->int_val * 1024);
 	if (!sv_pr_state.progs)
 		Host_Error ("SV_LoadProgs: couldn't load %s", sv_progs->string);
 	// progs engine needs these globals anyway
@@ -349,6 +351,8 @@ SV_Progs_Init_Cvars (void)
 	sv_progs = Cvar_Get ("sv_progs", "progs.dat", CVAR_ROM, NULL,
 						 "Allows selectable game progs if you have several "
 						 "of them in the gamedir");
+	sv_progs_zone = Cvar_Get ("sv_progs_zone", "256", CVAR_NONE, NULL,
+							  "size of the zone for progs in kb");
 	pr_checkextensions = Cvar_Get ("pr_checkextensions", "1", CVAR_ROM, NULL,
 								   "indicate the presence of the "
 								   "checkextentions qc function");
