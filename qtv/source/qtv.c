@@ -50,6 +50,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/idparse.h"
+#include "QF/info.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -57,15 +58,19 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/va.h"
 #include "QF/zone.h"
 
+#include "client.h"
 #include "compat.h"
 #include "connection.h"
 #include "netchan.h"
 #include "server.h"
 
 #define PORT_QTV 27501
-#define A2A_PING	'k'
-#define A2A_ACK		'l'
-#define A2C_PRINT	'n'
+#define A2A_PING			'k'
+#define A2A_ACK				'l'
+#define A2C_PRINT			'n'
+#define S2C_CHALLENGE		'c'
+#define S2C_CONNECTION		'j'
+#define PROTOCOL_VERSION	28
 
 typedef enum {
 	RD_NONE,
@@ -77,6 +82,8 @@ SERVER_PLUGIN_PROTOS
 static plugin_list_t server_plugin_list[] = {
 	SERVER_PLUGIN_LIST
 };
+
+double realtime;
 
 cbuf_t     *qtv_cbuf;
 cbuf_args_t *qtv_args;
@@ -207,6 +214,7 @@ qtv_net_init (void)
 						 "udp port to use");
 	NET_Init (qtv_port->int_val);
 	Connection_Init ();
+	net_realtime = &realtime;
 	Netchan_Init ();
 }
 
@@ -288,6 +296,66 @@ qtv_status (void)
 	qtv_end_redirect ();
 }
 
+typedef struct {
+	int         challenge;
+	double      time;
+} challenge_t;
+
+static void
+qtv_getchallenge (void)
+{
+	challenge_t *ch;
+	connection_t *con;
+
+	if ((con = Connection_Find (&net_from))) {
+		if (con->handler)
+			return;
+		ch = con->object;
+	} else {
+		ch = malloc (sizeof (challenge_t));
+	}
+	ch->challenge = (rand () << 16) ^ rand ();
+	ch->time = Sys_DoubleTime ();
+	if (!con)
+		Connection_Add (&net_from, ch, 0);
+	Netchan_OutOfBandPrint (net_from, "%c%i QF", S2C_CHALLENGE, ch->challenge);
+}
+
+static void
+qtv_client_connect (void)
+{
+	info_t     *userinfo;
+	int         version, qport, challenge;
+	connection_t *con;
+	challenge_t *ch;
+
+	version = atoi (Cmd_Argv (1));
+	if (version != PROTOCOL_VERSION) {
+		Netchan_OutOfBandPrint (net_from, "%c\nServer is version %s.\n",
+								A2C_PRINT, QW_VERSION);
+		Con_Printf ("* rejected connect from version %i\n", version);
+		return;
+	}
+	qport = atoi (Cmd_Argv (2));
+	challenge = atoi (Cmd_Argv (3));
+	if (!(con = Connection_Find (&net_from)) || con->handler
+		|| (ch = con->object)->challenge != challenge) {
+		Netchan_OutOfBandPrint (net_from, "%c\nBad challenge.\n",
+								A2C_PRINT);
+		return;
+	}
+	free (con->object);
+	userinfo = Info_ParseString (Cmd_Argv (4), 0, 0);
+	if (!userinfo) {
+		Netchan_OutOfBandPrint (net_from, "%c\nInvalid userinfo string.\n",
+								A2C_PRINT);
+		return;
+	}
+
+	Client_Connect (con, qport, userinfo);
+	Netchan_OutOfBandPrint (net_from, "%c", S2C_CONNECTION);
+}
+
 static void
 qtv_connectionless_packet (void)
 {
@@ -306,6 +374,10 @@ qtv_connectionless_packet (void)
 		qtv_ping ();
 	} else if (!strcmp (cmd, "status")) {
 		qtv_status ();
+	} else if (!strcmp (cmd, "getchallenge")) {
+		qtv_getchallenge ();
+	} else if (!strcmp (cmd, "connect")) {
+		qtv_client_connect ();
 	} else {
 		Con_Printf ("bad connectionless packet from %s:\n%s\n",
 					NET_AdrToString (net_from), str);
@@ -341,6 +413,7 @@ main (int argc, const char *argv[])
 		Cbuf_Execute_Stack (qtv_cbuf);
 
 		Sys_CheckInput (1, net_socket);
+		realtime = Sys_DoubleTime ();
 
 		qtv_read_packets ();
 
