@@ -39,12 +39,14 @@
 #include <ctype.h>
 #include <stdarg.h>
 
+#include "QF/cmd.h"
 #include "QF/msg.h"
+#include "QF/va.h"
+#include "QF/vfs.h"
+
 #include "net.h"
 #include "protocol.h"
-#include "QF/vfs.h"
 #include "server.h"
-#include "QF/va.h"
 
 cvar_t     *net_packetlog;
 cvar_t     *net_loglevel;
@@ -967,6 +969,22 @@ Net_PacketLog_f (cvar_t *var)
 	}
 }
 
+void
+Net_PacketLog_Zap_f (void)
+{
+	if (Net_PacketLog && Net_PacketLog != &_stdout) {
+		Con_Printf ("truncating packet logfile: %s\n", "qfpacket.log");
+		Qseek (Net_PacketLog, 0, 0);
+		Qwrite (Net_PacketLog, 0, 0);
+	} else {
+		char        e_path[MAX_OSPATH];
+
+		Qexpand_squiggle (fs_userpath->string, e_path);
+		Con_Printf ("Deleting packet logfile: %s\n", "qfpacket.log");
+		unlink (va ("%s/%s", e_path, "qfpacket.log"));
+	}
+}
+
 int
 Net_Log_Init (char **sound_precache)
 {
@@ -984,5 +1002,8 @@ Net_Log_Init (char **sound_precache)
 	net_loglevel =
 		Cvar_Get ("net_loglevel", "2", CVAR_NONE, NULL,
 				"Packet logging/parsing");
+
+	Cmd_AddCommand ("net_packetlog_zap", Net_PacketLog_Zap_f,
+					"clear the packet log file");
 	return 0;
 }
