@@ -2092,7 +2092,7 @@ builtin_t   sv_builtins[] = {
 	PF_Fixme,			// 89
 	PF_Fixme,			// 90
 	PF_Fixme,			// 91
-	PF_testentitypos,	// entity (enitty ent) testentitypos = #92
+	PF_testentitypos,	// entity (entity ent) testentitypos = #92
 	PF_hullpointcontents,// integer (entity ent, vector point) hullpointcontents = #93
 	PF_getboxbounds,	// vector (integer hull, integer max) getboxbounds = #94
 	PF_getboxhull,		// integer () getboxhull = #95
