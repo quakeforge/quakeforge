@@ -108,11 +108,6 @@ qboolean	vid_fullscreen_active;
 static qboolean    vid_context_created = false;
 static int  window_x, window_y, window_saved;
 
-static int	xss_timeout;
-static int	xss_interval;
-static int	xss_blanking;
-static int	xss_exposures;
-
 
 qboolean
 X11_AddEvent (int event, void (*event_handler) (XEvent *))
@@ -366,7 +361,6 @@ X11_SetVidMode (int width, int height)
 										 vidmodes[best_mode]);
 				X11_ForceViewPort ();
 				vidmode_active = true;
-				X11_SetScreenSaver ();
 			} else {
 				Con_Printf ("VID: Mode %dx%d can't go fullscreen.\n",
 							vid.width, vid.height);
@@ -507,7 +501,6 @@ X11_RestoreVidMode (void)
 {
 #ifdef HAVE_VIDMODE
 	if (vidmode_active) {
-		X11_RestoreScreenSaver ();
 		XF86VidModeSwitchToMode (x_disp, x_screen, vidmodes[original_mode]);
 		XFree (vidmodes);
 		vidmode_active = false;
@@ -691,19 +684,4 @@ X11_RestoreGamma (void)
 	}
 # endif
 #endif
-}
-
-void
-X11_SetScreenSaver (void)
-{
-	XGetScreenSaver (x_disp, &xss_timeout, &xss_interval, &xss_blanking,
-					 &xss_exposures);
-	XSetScreenSaver (x_disp, 0, xss_interval, xss_blanking, xss_exposures);
-}
-
-void
-X11_RestoreScreenSaver (void)
-{
-	XSetScreenSaver (x_disp, xss_timeout, xss_interval, xss_blanking,
-					 xss_exposures);
 }
