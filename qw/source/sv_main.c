@@ -2163,6 +2163,7 @@ Master_Shutdown (void)
 static inline qboolean
 iswhitespace (char c)
 {
+	c &= 127;
 	return c == ' ' || c == '\r' || c == '\n' || c == '\t';
 }
 
@@ -2192,9 +2193,9 @@ SV_ExtractFromUserinfo (client_t *cl)
 	for (r = newname; *p && r != newname + sizeof (newname) - 1; p++) {
 		if (iswhitespace (*p)) {
 			if (!iswhitespace (p[1]) && p[1] != '\0')
-				*r++ = *p;
+				*r++ = ' '; // get rid of any special chars
 		} else
-			*r++ = *p;
+			*r++ = *p & 127; // get rid of bold
 	}
 	*r = '\0';
 
