@@ -1,3 +1,5 @@
+*.d
+#.dat
 *.la
 *.lo
 .deps
@@ -5,3 +7,5 @@
 .vimrc
 Makefile
 Makefile.in
+progdefs.h
+qwaq

@@ -31,19 +31,19 @@ main ()
 	PR_Init ();
 	BI_Init (&progs);
 
-	f = fopen ("qctest.dat", "rb");
+	f = fopen ("qwaq.dat", "rb");
 	if (f) {
 		fseek (f, 0, SEEK_END);
 		len = ftell (f);
 		fseek (f, 0, SEEK_SET);
-		progs.progs = Hunk_AllocName (len, "qctest.dat");
+		progs.progs = Hunk_AllocName (len, "qwaq.dat");
 		fread (progs.progs, 1, len, f);
 		fclose (f);
 		if (progs.progs)
 			PR_LoadProgs (&progs, 0);
 	}
 	if (!progs.progs)
-		Sys_Error ("couldn't load %s\n", "qctest.dat");
+		Sys_Error ("couldn't load %s\n", "qwaq.dat");
 	main_func = PR_GetFunctionIndex (&progs, "main");
 	PR_ExecuteProgram (&progs, main_func);
 	return 0;

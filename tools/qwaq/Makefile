@@ -1,4 +1,4 @@
-EXE=qctest
+EXE=qwaq
 
 MAKEDEPS=$(CC) -MM $(CPPFLAGS) $< | sed -e 's/$*\.o:*/$*\.o $@:/g' > $@
 
