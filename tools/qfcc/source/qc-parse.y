@@ -246,6 +246,12 @@ opt_initializer
 		}
 	  ']'
 		{
+			if ($3->type == ex_integer)
+				convert_int ($3);
+			if ($3->type != ex_float)
+				error ($3, "invalid type for frame number");
+			if ($6->type->type != ev_func)
+				error ($3, "invalid type for think");
 			$<expr>$ = new_expr ();
 		}
 	  begin_function statement_block end_function

@@ -188,17 +188,17 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 	switch (e.type) {
 		case ex_entity:
 			sprintf (rep, "\001entity:%08X\001", e.e.integer_val);
-			tab = float_imm_defs;
+			tab = entity_imm_defs;
 			type = &type_entity;
 			break;
 		case ex_field:
 			sprintf (rep, "\001field:%08X\001", e.e.integer_val);
-			tab = float_imm_defs;
+			tab = field_imm_defs;
 			type = &type_field;
 			break;
 		case ex_func:
 			sprintf (rep, "\001func:%08X\001", e.e.integer_val);
-			tab = float_imm_defs;
+			tab = func_imm_defs;
 			type = &type_function;
 			break;
 		case ex_pointer:
