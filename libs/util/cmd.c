@@ -993,7 +993,7 @@ Cmd_Init (void)
 	Cmd_AddCommand ("cmdlist", Cmd_CmdList_f, "List all commands");
 	Cmd_AddCommand ("help", Cmd_Help_f, "Display help for a command or "
 					"variable");
-	cmd_warncmd = Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, "Toggles the "
+	cmd_warncmd = Cvar_Get ("cmd_warncmd", "0", CVAR_NONE, NULL, "Toggles the "
 							"display of error messages for unknown commands"); 
 }
 
