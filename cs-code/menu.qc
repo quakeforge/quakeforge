@@ -33,7 +33,7 @@ void (string text, integer key) quit =
 
 void () main_menu =
 {
-	Menu_Begin (0, 0, "");
+	Menu_Begin (0, 0, "main");
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/ttl_main.lmp");
 	Menu_Pic (71,32, "gfx/mainmenu.lmp");

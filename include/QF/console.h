@@ -133,5 +133,7 @@ void Menu_Init (void);
 void Menu_Load (void);
 void Menu_Draw (void);
 void Menu_KeyEvent (knum_t key, short unicode, qboolean down);
+void Menu_Enter (void);
+void Menu_Leave (void);
 
 #endif // __console_h

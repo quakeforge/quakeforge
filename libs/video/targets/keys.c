@@ -420,7 +420,9 @@ Key_Game (knum_t key, short unicode)
 void
 Key_Console (knum_t key, short unicode)
 {
-	if (keydown[key] == 1 && Key_Game (key, unicode))
+	// escape is un-bindable
+	if (keydown[key] == 1 && key != QFK_ESCAPE && unicode != '\x1b'
+		&& Key_Game (key, unicode))
 		return;
 
 	Con_KeyEvent (key, unicode, keydown[key]);
@@ -727,19 +729,7 @@ Key_Event (knum_t key, short unicode, qboolean down)
 
 	// handle escape specially, so the user can never unbind it
 	if (unicode == '\x1b' || key == QFK_ESCAPE) {
-		if (!down || (keydown[key] > 1))
-			return;
-		switch (key_dest) {
-			case key_message:
-				Key_Console (key, unicode);
-				break;
-			case key_game:
-			case key_console:
-				Cbuf_AddText ("toggleconsole\n");
-				break;
-			default:
-				Sys_Error ("Bad key_dest");
-		}
+		Key_Console (key, unicode);
 		return;
 	}
 
@@ -748,12 +738,11 @@ Key_Event (knum_t key, short unicode, qboolean down)
 
 	// if not a consolekey, send to the interpreter no matter what mode is
 	switch (key_dest) {
-		case key_message:
-			Key_Console (key, unicode);
-			break;
 		case key_game:
 			Key_Game (key, unicode);
 			break;
+		case key_message:
+		case key_menu:
 		case key_console:
 			Key_Console (key, unicode);
 			break;

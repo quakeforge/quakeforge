@@ -34,6 +34,7 @@ static const char rcsid[] =
 #include <string.h>
 
 #include "QF/console.h"
+#include "QF/draw.h"
 #include "QF/hash.h"
 #include "QF/plugin.h"
 #include "QF/progs.h"
@@ -64,6 +65,7 @@ static hashtab_t *menu_hash;
 static func_t   menu_init;
 static func_t   menu_keyevent;
 static func_t   menu_draw;
+static const char *top_menu;
 
 static int
 menu_resolve_globals (void)
@@ -138,6 +140,8 @@ bi_Menu_Begin (progs_t *pr)
 	m->text = strdup (text);
 	if (menu)
 		menu_add_item (menu, m);
+	else
+		top_menu = m->text;
 	menu = m;
 	Hash_Add (menu_hash, m);
 }
@@ -233,6 +237,7 @@ Menu_Load (void)
 	}
 	Hash_FlushTable (menu_hash);
 	menu = 0;
+	top_menu = 0;
 
 	if ((size = COM_FOpenFile (menu_pr_state.progs_name, &file)) != -1) {
 		menu_pr_state.progs = malloc (size + 256 * 1024);
@@ -266,8 +271,31 @@ Menu_Load (void)
 void
 Menu_Draw (void)
 {
+	menu_pic_t *m_pic;
+	int         i;
+
 	if (!menu)
 		return;
+	for (m_pic = menu->pics; m_pic; m_pic = m_pic->next) {
+		qpic_t     *pic = Draw_CachePic (m_pic->name, 1);
+		if (!pic)
+			continue;
+		Draw_Pic (m_pic->x, m_pic->y, pic);
+	}
+	for (i = 0; i < menu->num_items; i++) {
+		if (menu->items[i]->text) {
+			Draw_String (menu->items[i]->x, menu->items[i]->y,
+						 menu->items[i]->text);
+		}
+	}
+	if (menu->cursor) {
+		G_INT (&menu_pr_state, OFS_PARM0) = 0;
+		G_INT (&menu_pr_state, OFS_PARM1) = 0;
+		PR_ExecuteProgram (&menu_pr_state, menu->cursor);
+	}
+	if (menu_draw) {
+		PR_ExecuteProgram (&menu_pr_state, menu_draw);
+	}
 }
 
 void
@@ -275,4 +303,29 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 {
 	if (!menu)
 		return;
+}
+
+void
+Menu_Enter ()
+{
+	if (!top_menu) {
+		key_dest = key_console;
+		game_target = IMT_CONSOLE;
+		return;
+	}
+	key_dest = key_menu;
+	game_target = IMT_CONSOLE;
+	menu = Hash_Find (menu_hash, top_menu);
+}
+
+void
+Menu_Leave ()
+{
+	if (menu) {
+		menu = menu->parent;
+		if (!menu) {
+			key_dest = key_game;
+			game_target = IMT_0;
+		}
+	}
 }

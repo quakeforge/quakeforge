@@ -469,12 +469,34 @@ C_KeyEvent (knum_t key, short unicode, qboolean down)
 	if (!down)
 		return;
 
-	if (key_dest == key_message) {
-		if (key == QFK_ESCAPE) {
-			key_dest = key_game;
-			game_target = IMT_0;
-			return;
+	if (down && (key == QFK_ESCAPE || unicode == '\x1b')) {
+		switch (key_dest) {
+			case key_menu:
+				Menu_Leave ();
+				return;
+			case key_message:
+				key_dest = key_game;
+				game_target = IMT_0;
+				return;
+			case key_console:
+				if (!con_data.force_commandline) {
+					Cbuf_AddText ("toggleconsole\n");
+					return;
+				}
+			case key_game:
+				Menu_Enter ();
+				return;
+			default:
+				Sys_Error ("Bad key_dest");
 		}
+	}
+
+	if (key_dest == key_menu) {
+		Menu_KeyEvent (key, unicode, down);
+		return;
+	}
+
+	if (key_dest == key_message) {
 		if (chat_team) {
 			il = say_team_line;
 		} else {
@@ -700,9 +722,9 @@ C_DrawConsole (int lines)
 	} else {
 		if (key_dest == key_game || key_dest == key_message)
 			DrawNotify ();				// only draw notify in game
-		else if (key_dest == key_menu)
-			Menu_Draw ();
 	}
+	if (key_dest == key_menu)
+		Menu_Draw ();
 }
 
 static void
