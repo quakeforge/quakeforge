@@ -1,0 +1,27 @@
+global ln
+
+ln.invoke_f = {
+	local cvar
+	cvar = ${ln.cvar.$0}
+	if ($argc == 1) {
+		echo "\"", $0, "\" is \"", $$cvar, "\""
+		return
+	}
+	set $cvar $1
+}
+
+function "ln" {
+	if ($argc != 3) {
+		echo "usage: ln cvar cvar_alias"
+		return
+	}
+	ln.cvar.$2 = $1
+	function $2 ${ln.invoke_f}
+	export $2
+}
+
+export ln
+
+// QuakeForge		qwcl
+ln "in_mouse_amp"	"sensitivity"
+ln "in_grab"		"_windowed_mouse"
