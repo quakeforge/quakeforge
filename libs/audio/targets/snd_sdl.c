@@ -59,7 +59,7 @@ paint_audio (void *unused, Uint8 * stream, int len)
 		samplesbytes = shm->samples * (shm->samplebits / 8);
 
 		shm->samplepos += streamsamples;
-		if (shm->samplepos >= shm->samples)
+		while (shm->samplepos >= shm->samples)
 			shm->samplepos -= shm->samples;
 		S_PaintChannels (soundtime + streamsamples);
 
@@ -97,7 +97,7 @@ SNDDMA_Init (void)
 			return 0;
 	}
 	desired.channels = 2;
-	desired.samples = 512;
+	desired.samples = 1024;
 	desired.callback = paint_audio;
 
 	/* Open the audio device */
@@ -140,7 +140,7 @@ SNDDMA_Init (void)
 	shm->samplebits = (obtained.format & 0xFF);
 	shm->speed = obtained.freq;
 	shm->channels = obtained.channels;
-	shm->samples = obtained.samples * 4;
+	shm->samples = obtained.samples * 16;
 	shm->samplepos = 0;
 	shm->submission_chunk = 1;
 	shm->buffer = calloc(shm->samples * (shm->samplebits / 8), 1);
