@@ -20,7 +20,7 @@ void PR_PrintType(type_t*);
 
 type_t *parse_params (def_t *parms);
 function_t *new_function (void);
-void build_scope (def_t *func, def_t *parms);
+void build_scope (def_t *func);
 
 typedef struct {
 	type_t	*type;
@@ -48,8 +48,9 @@ typedef struct {
 %left	EQ NE LE GE LT GT
 %left	'+' '-'
 %left	'*' '/' '&' '|'
-%left	'!' '.'
+%left	'!'
 %right	'('
+%left	'.'
 
 %token	<string_val> NAME STRING_VAL
 %token	<int_val> INT_VAL
@@ -130,7 +131,6 @@ maybe_func
 		}
 	  param_list
 		{
-			$<def>$ = param_scope.scope_next;
 			PR_FlushScope (&param_scope);
 			current_type = $<scope>2.type;
 			param_scope.scope_next = $<scope>2.pscope;
@@ -138,7 +138,7 @@ maybe_func
 		}
 	  ')'
 		{
-			$$ = parse_params ($<def>4);
+			$$ = parse_params ($3);
 		}
 	| '(' ')'
 		{
@@ -230,6 +230,7 @@ begin_function
 	: /*empty*/
 		{
 			pr_scope = current_def;
+			build_scope (current_def);
 		}
 	;
 
@@ -300,9 +301,9 @@ expr
 	| expr '/' expr	{ $$ = binary_expr ('/', $1, $3); }
 	| expr '&' expr	{ $$ = binary_expr ('&', $1, $3); }
 	| expr '|' expr	{ $$ = binary_expr ('|', $1, $3); }
-	| expr '.' expr	{ $$ = binary_expr ('.', $1, $3); }
 	| expr '(' arg_list ')'	{ $$ = function_expr ($1, $3); }
 	| expr '(' ')'			{ $$ = function_expr ($1, 0); }
+	| expr '.' expr	{ $$ = binary_expr ('.', $1, $3); }
 	| '-' expr		{ $$ = unary_expr ('-', $2); }
 	| '!' expr		{ $$ = unary_expr ('!', $2); }
 	| NAME
@@ -394,8 +395,15 @@ parse_params (def_t *parms)
 }
 
 void
-build_scope (def_t *func, def_t *parms)
+build_scope (def_t *func)
 {
+	int i;
+	def_t *def;
+	type_t *ftype = func->type;
+
+	for (i = 0; i < ftype->num_parms; i++) {
+		def = PR_GetDef (ftype->parm_types[i], pr_parm_names[i], func, &func->num_locals);
+	}
 }
 
 function_t *

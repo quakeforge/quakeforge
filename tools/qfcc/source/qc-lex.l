@@ -62,22 +62,24 @@ m		([\-+]?)
 {ID}	return type_or_name(yytext);
 
 \"(\\.|[^"])*\"		{
-						yylval.string_val = strdup (yytext);
+						int len = strlen (yytext) - 2;
+						yylval.string_val = malloc (len + 1);
+						strncpy (yylval.string_val, yytext + 1, len);
+						yylval.string_val[len] = 0;
 						return STRING_VAL;
 					}
 
 '{s}*{m}{NUM}{s}+{m}{NUM}{s}+{m}{NUM}{s}*'	{
-						sscanf (yytext, "%f %f %f", &yylval.vector_val[0],
-													&yylval.vector_val[1],
-													&yylval.vector_val[2]);
+						sscanf (yytext, "' %f %f %f '",
+								&yylval.vector_val[0], &yylval.vector_val[1],
+								&yylval.vector_val[2]);
 						return VECTOR_VAL;
 					}
 
 '{s}*{m}{NUM}{s}+{m}{NUM}{s}+{m}{NUM}{s}+{m}{NUM}{s}*'	{
-						sscanf (yytext, "%f %f %f %f", &yylval.vector_val[0],
-													   &yylval.vector_val[1],
-													   &yylval.vector_val[2],
-													   &yylval.vector_val[3]);
+						sscanf (yytext, "' %f %f %f %f '",
+								&yylval.vector_val[0], &yylval.vector_val[1],
+								&yylval.vector_val[2], &yylval.vector_val[3]);
 						return VECTOR_VAL;
 					}
 

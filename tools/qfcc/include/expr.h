@@ -34,6 +34,7 @@ typedef struct expr_s {
 } expr_t;
 
 expr_t *new_expr (void);
+void print_expr (expr_t *e);
 expr_t *binary_expr (int op, expr_t *e1, expr_t *e2);
 expr_t *unary_expr (int op, expr_t *e);
 expr_t *function_expr (expr_t *e1, expr_t *e2);

@@ -63,6 +63,68 @@ new_expr ()
 	return calloc (1, sizeof (expr_t));
 }
 
+void
+print_expr (expr_t *e)
+{
+	printf (" ");
+	switch (e->type) {
+		case ex_statement:
+			break;
+		case ex_expr:
+			print_expr (e->e.expr.e1);
+			if (e->e.expr.op == 'c') {
+				expr_t *p = e->e.expr.e2;
+				printf ("(");
+				while (p) {
+					print_expr (p);
+					if (p->next)
+						printf (",");
+					p = p->next;
+				}
+				printf (")");
+			} else {
+				print_expr (e->e.expr.e2);
+				if (isprint (e->e.expr.op)) {
+					printf (" %c", e->e.expr.op);
+				} else {
+					printf (" %d", e->e.expr.op);
+				}
+			}
+			break;
+		case ex_uexpr:
+			print_expr (e->e.expr.e1);
+			if (isprint (e->e.expr.op)) {
+				printf (" u%c", e->e.expr.op);
+			} else {
+				printf (" u%d", e->e.expr.op);
+			}
+			break;
+		case ex_def:
+			printf ("%s", e->e.def->name);
+			break;
+		case ex_int:
+			printf ("%d", e->e.int_val);
+			break;
+		case ex_float:
+			printf ("%g", e->e.float_val);
+			break;
+		case ex_string:
+			printf ("\"%s\"", strings + e->e.string_val);
+			break;
+		case ex_vector:
+			printf ("'%g", e->e.vector_val[0]);
+			printf ( " %g", e->e.vector_val[1]);
+			printf ( " %g'", e->e.vector_val[2]);
+			break;
+		case ex_quaternion:
+			printf ("'%g", e->e.quaternion_val[0]);
+			printf (" %g", e->e.quaternion_val[1]);
+			printf (" %g", e->e.quaternion_val[2]);
+			printf (" %g'", e->e.quaternion_val[3]);
+			break;
+	}
+}
+
 static expr_t *
 do_op_string (int op, expr_t *e1, expr_t *e2)
 {
@@ -70,8 +132,8 @@ do_op_string (int op, expr_t *e1, expr_t *e2)
 	char *buf;
 	char *s1, *s2;
 
-	s1 = G_STRING(e1->e.string_val);
-	s2 = G_STRING(e2->e.string_val);
+	s1 = strings + e1->e.string_val;
+	s2 = strings + e2->e.string_val;
 	
 	switch (op) {
 		case '+':
@@ -367,7 +429,7 @@ unary_expr (int op, expr_t *e)
 				case ex_def:
 					{
 						expr_t *n = new_expr ();
-						n->type = ex_expr;
+						n->type = ex_uexpr;
 						n->e.expr.op = op;
 						n->e.expr.type = (e->type == ex_def)
 										 ? e->e.def->type
@@ -405,7 +467,7 @@ unary_expr (int op, expr_t *e)
 				case ex_def:
 					{
 						expr_t *n = new_expr ();
-						n->type = ex_expr;
+						n->type = ex_uexpr;
 						n->e.expr.op = op;
 						n->e.expr.type = &type_float;
 						n->e.expr.e1 = e;
