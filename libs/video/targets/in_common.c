@@ -112,8 +112,8 @@ IN_Move (void)
 	if (!in_mouse_avail)
 		return;
 
-	in_mouse_x *= in_mouse_pre_amp->value *= in_pre_amp->value;
-	in_mouse_y *= in_mouse_pre_amp->value *= in_pre_amp->value;
+	in_mouse_x *= in_mouse_pre_amp->value * in_pre_amp->value;
+	in_mouse_y *= in_mouse_pre_amp->value * in_pre_amp->value;
 
 	if (in_mouse_filter->int_val) {
 		in_mouse_x = (in_mouse_x + in_old_mouse_x) * 0.5;
