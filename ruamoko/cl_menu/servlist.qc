@@ -47,7 +47,7 @@ integer () servlist_filter_draw =
 
 void () servlist_favorates_menu =
 {
-	Menu_Begin (54, 40, "favorates");
+	Menu_Begin (54, 40, "favorites");
 	Menu_FadeScreen (1);
 	Menu_CenterPic (160, 4, "gfx/p_multi.lmp");
 	Menu_Draw (servlist_favorates_draw);			
