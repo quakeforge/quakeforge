@@ -43,7 +43,8 @@ typedef struct cmd_buffer_s {
 	qboolean ownvars; // Buffer has its own private local variables
 	qboolean loop; // Buffer is in a loop
 	unsigned int argc, maxargc; // Number of args, number of args allocated
-	struct dstring_s **argv; // Array of arguments
+	struct dstring_s **argv; // Array of processed tokens
+	struct dstring_s **argu; // Array of unprocessed tokens
 	struct dstring_s *realline; // Actual command being processed
 	struct dstring_s *line; // Tokenized and reassembled command
 	struct dstring_s *looptext; // If a looping buffer, the text we are looping on
@@ -149,7 +150,7 @@ int Cmd_CheckParm (const char *parm);
 // Returns the position (1 to argc-1) in the command's argument list
 // where the given parameter apears, or 0 if not present
 
-void Cmd_TokenizeString (const char *text, qboolean filter);
+void Cmd_TokenizeString (const char *text, qboolean legacy);
 // Takes a null terminated string.  Does not need to be /n terminated.
 // breaks the string up into arg tokens.
 

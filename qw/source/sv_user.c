@@ -1240,7 +1240,7 @@ SV_ExecuteUserCommand (const char *s)
 	ucmd_t     *u;
 	ucmd_t		cmd;
 
-	Cmd_TokenizeString (s, false);
+	Cmd_TokenizeString (s, true);
 	sv_player = host_client->edict;
 	cmd.name = Cmd_Argv(0);
 

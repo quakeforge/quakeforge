@@ -31,8 +31,8 @@ exp_error_t EXP_ERROR;
 optable_t optable[] = 
 {
 	{"**", OP_Exp},
-	{"*", OP_Mult},
 	{"/", OP_Div},
+	{"*", OP_Mult},
 	{"+", OP_Add},
 	{"-", OP_Sub},
 	{"==", OP_Eq},
@@ -274,6 +274,8 @@ exp_error_t EXP_Validate (token *chain)
 			else
 				return EXP_E_SYNTAX; /* Operator misuse */
 		}
+		else if (cur->generic.type == TOKEN_OP && cur->generic.next->generic.type == TOKEN_CPAREN)
+			return EXP_E_SYNTAX; /* Missing operand */
 		else if (cur->generic.type == TOKEN_NUM && cur->generic.next->generic.type == TOKEN_NUM)
 			return EXP_E_SYNTAX; /* Double number error */
 		else if (cur->generic.type == TOKEN_OPAREN && cur->generic.next->generic.type == TOKEN_CPAREN)

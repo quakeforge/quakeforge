@@ -72,12 +72,14 @@ cmd_buffer_t *cmd_legacybuffer;			// Server stuffcmd buffer with
 										// absolute backwards-compatibility
 cmd_buffer_t *cmd_activebuffer;			// Buffer currently being executed
 
+cmd_buffer_t *cmd_recycled;	// Recycled buffers
+
 dstring_t  *cmd_backtrace;
 
 qboolean    cmd_error;
 
 cvar_t     *cmd_warncmd;
-cvar_t     *cmd_highchars;
+cvar_t     *cmd_maxloop;
 
 hashtab_t  *cmd_alias_hash;
 hashtab_t  *cmd_hash;
@@ -138,19 +140,46 @@ Cmd_NewBuffer (qboolean ownvars)
 {
 	cmd_buffer_t *new;
 
-	new = calloc (1, sizeof (cmd_buffer_t));
-
-	new->buffer = dstring_newstr ();
-	new->line = dstring_newstr ();
-	new->realline = dstring_newstr ();
-	new->looptext = dstring_newstr ();
+	if (cmd_recycled) { // If we have old buffers lying around
+		new = cmd_recycled;
+		cmd_recycled = new->next;
+	}
+	else {
+		new = calloc (1, sizeof (cmd_buffer_t));
+		new->buffer = dstring_newstr ();
+		new->line = dstring_newstr ();
+		new->realline = dstring_newstr ();
+		new->looptext = dstring_newstr ();
+	}
 	if (ownvars)
-		new->locals = Hash_NewTable (1021, Cmd_LocalGetKey, Cmd_LocalFree, 0);
+		new->locals = Hash_NewTable (512, Cmd_LocalGetKey, Cmd_LocalFree, 0);
 	new->ownvars = ownvars;
+	new->prev = new->next = 0;
 	return new;
 }
 
+/*
+	Cmd_FreeBuffer
+	
+	Actually just "recycles" buffer for
+	later use
+*/
+
 void
+Cmd_FreeBuffer (cmd_buffer_t *free) {
+	if (free->ownvars)
+		Hash_DelTable(free->locals); // Local variables are dead, period
+	free->wait = free->loop = free->ownvars = free->legacy = false;
+	dstring_clearstr (free->buffer);
+	dstring_clearstr (free->line);
+	dstring_clearstr (free->realline);
+	dstring_clearstr (free->looptext);	
+	free->locals = 0;
+	free->next = cmd_recycled;
+	cmd_recycled = free;
+}
+
+/*void
 Cmd_FreeBuffer (cmd_buffer_t *del)
 {
 	int         i;
@@ -158,18 +187,23 @@ Cmd_FreeBuffer (cmd_buffer_t *del)
 	dstring_delete (del->buffer);
 	dstring_delete (del->line);
 	dstring_delete (del->realline);
+	dstring_delete (del->looptext);
 	if (del->maxargc) {
-		for (i = 0; i < del->maxargc; i++)
+		for (i = 0; i < del->maxargc; i++) {
 			if (del->argv[i])
 				dstring_delete (del->argv[i]);
+			if (del->argu[i])
+				dstring_delete (del->argu[i]);
+		}
 		free (del->argv);
+		free (del->argu);
 	}
 	if (del->args)
 		free(del->args);
 	if (del->ownvars)
 		Hash_DelTable(del->locals);
 	free(del);
-}
+}*/
 
 /* Quick function to determine if a character is escaped */
 qboolean
@@ -194,6 +228,7 @@ escape (dstring_t * dstr)
 		switch (dstr->str[i]) {
 			case '\\':
 			case '$':
+			case '#':
 			case '{':
 			case '}':
 			case '\"':
@@ -236,8 +271,11 @@ Cmd_Error (const char *message)
 	dstring_clearstr (cmd_backtrace);
 	dstring_appendstr (cmd_backtrace, message);
 	dstring_appendstr (cmd_backtrace, "Path of execution:\n");
-	for (cur = cmd_activebuffer; cur; cur = cur->prev)
+	for (cur = cmd_activebuffer; cur; cur = cur->prev) {
+		if (cmd_activebuffer->loop) // Skip loop buffers, they are not 'real'
+			continue;
 		dstring_appendstr (cmd_backtrace, va ("--> %s\n", cur->realline->str));
+	}
 }
 
 
@@ -254,6 +292,8 @@ Cbuf_Init (void)
 	cmd_legacybuffer->legacy = true;
 
 	cmd_activebuffer = cmd_consolebuffer;
+
+	cmd_recycled = 0;
 
 	cmd_backtrace = dstring_newstr ();
 }
@@ -306,25 +346,25 @@ Cbuf_InsertText (const char *text)
 */
 
 void
-extract_line (dstring_t * buffer, dstring_t * line)
+extract_line (dstring_t * buffer, dstring_t * line, qboolean legacy)
 {
 	int         i, squotes = 0, dquotes = 0, braces = 0, n;
 	char		*tmp;
 
 	for (i = 0; buffer->str[i]; i++) {
-		if (buffer->str[i] == '\'' && !escaped (buffer->str, i)
-			&& !dquotes && !braces)
+		if (!legacy && buffer->str[i] == '\'' && !escaped (buffer->str, i)
+			&& !dquotes)
 			squotes ^= 1;
 		if (buffer->str[i] == '"' && !escaped (buffer->str, i)
-			&& !squotes && !braces)
+			&& !squotes)
 			dquotes ^= 1;
 		if (buffer->str[i] == ';' && !escaped (buffer->str, i)
 			&& !squotes && !dquotes && !braces)
 			break;
-		if (buffer->str[i] == '{' && !escaped (buffer->str, i)
+		if (!legacy && buffer->str[i] == '{' && !escaped (buffer->str, i)
 			&& !squotes && !dquotes)
 			braces++;
-		if (buffer->str[i] == '}' && !escaped (buffer->str, i)
+		if (!legacy && buffer->str[i] == '}' && !escaped (buffer->str, i)
 			&& !squotes && !dquotes)
 			braces--;
 		if (buffer->str[i] == '/' && buffer->str[i + 1] == '/'
@@ -372,15 +412,21 @@ Cbuf_ExecuteBuffer (cmd_buffer_t *buffer)
 
 	cmd_activebuffer = buffer;
 	buffer->wait = false;
-	cmd_error = false;
 	while (1) {
 		if (!strlen(buffer->buffer->str)) {
-			if (buffer->loop)
+			if (buffer->loop) {
+				if (cmd_maxloop->value && buffer->loop > cmd_maxloop->value) {
+					Cmd_Error(va("GIB: Loop lasted longer than %i iterations, forcefully terminating.\n",
+								(int)cmd_maxloop->value));
+					break;
+				}
 				Cbuf_InsertTextTo(buffer, buffer->looptext->str);
+				buffer->loop++;
+			}
 			else
 				break;
 		}
-		extract_line (buffer->buffer, buf);
+		extract_line (buffer->buffer, buf, buffer->legacy);
 		Cmd_ExecuteString (buf->str, src_command);
 		if (buffer->wait)
 			break;
@@ -397,6 +443,8 @@ Cbuf_ExecuteStack (cmd_buffer_t *buffer)
 {
 	qboolean    wait = false;
 	cmd_buffer_t *cur;
+	
+	cmd_error = false;
 
 	for (cur = buffer; cur->next; cur = cur->next);
 	for (; cur != buffer; cur = cur->prev) {
@@ -465,7 +513,7 @@ Cbuf_Execute_Sets (void)
 	dstring_t  *buf = dstring_newstr ();
 
 	while (strlen (cmd_consolebuffer->buffer->str)) {
-		extract_line (cmd_consolebuffer->buffer, buf);
+		extract_line (cmd_consolebuffer->buffer, buf, cmd_consolebuffer->legacy);
 		if (!strncmp (buf->str, "set", 3) && isspace ((int) buf->str[3])) {
 			Cmd_ExecuteString (buf->str, src_command);
 		} else if (!strncmp (buf->str, "setrom", 6)
@@ -710,6 +758,14 @@ Cmd_Argv (int arg)
 	return cmd_activebuffer->argv[arg]->str;
 }
 
+const char *
+Cmd_Argu (int arg)
+{
+	if (arg >= cmd_activebuffer->argc)
+		return "";
+	return cmd_activebuffer->argu[arg]->str;
+}
+
 /*
 	Cmd_Args
 
@@ -779,26 +835,24 @@ Cmd_EndBrace (const char *str)
 }
 
 int
-Cmd_GetToken (const char *str)
+Cmd_GetToken (const char *str, qboolean legacy)
 {
 	int         i;
 
-	switch (*str) {
-		case '\'':
+	if (!legacy) {
+		if (*str == '\'')
 			return Cmd_EndSingleQuote (str);
-		case '\"':
-			return Cmd_EndDoubleQuote (str);
-		case '{':
+		if (*str == '{')
 			return Cmd_EndBrace (str);
-		case '}':
+		if (*str == '}')
 			return -1;
-		default:
-			for (i = 0; i < strlen (str); i++)
-				if (isspace (str[i]))
-					break;
-			return i;
 	}
-	return -1;							// We should never get here  
+	if (*str == '\"')
+		return Cmd_EndDoubleQuote (str);
+	for (i = 0; i < strlen (str); i++)
+		if (isspace (str[i]))
+			break;
+	return i;
 }
 
 int         tag_shift = 0;
@@ -921,13 +975,14 @@ Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
 	dstring_t  *varname;
 	cmd_localvar_t *lvar;
 	cvar_t     *cvar;
-	int         i, n;
+	int         i, n, braces = 0;
 
 	varname = dstring_newstr ();
 
-	for (i = start + 2;; i++) {
-		if (dstr->str[i] == '$' && dstr->str[i + 1] == '{'
-			&& !escaped (dstr->str, i)) {
+	if (dstr->str[start+1] == '{')
+		braces = 1;
+	for (i = start + 1 + braces;; i++) {
+		if (dstr->str[i] == '$' && (braces || dstr->str[i+1] == '{') && !escaped (dstr->str, i)) {
 			n = Cmd_ProcessVariablesRecursive (dstr, i);
 			if (n < 0) {
 				break;
@@ -935,7 +990,7 @@ Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
 				i += n - 1;
 				continue;
 			}
-		} else if (dstr->str[i] == '}' && !escaped (dstr->str, i)) {
+		} else if (braces && dstr->str[i] == '}' && !escaped (dstr->str, i)) {
 			dstring_clearstr (varname);
 			dstring_insert (varname, dstr->str + start + 2, i - start - 2, 0);
 			// Nuke it, even if no match is found
@@ -954,8 +1009,27 @@ Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
 			} else
 				n = 0;
 			break;
-		} else if (!dstr->str[i]) {		// No closing brace
+		} else if (!dstr->str[i] && braces) {		// No closing brace
 			n = -1;
+			break;
+		} else if (!braces && !isalnum(dstr->str[i]) && dstr->str[i] != '_') {
+			dstring_clearstr (varname);
+			dstring_insert (varname, dstr->str + start + 1, i - start - 1, 0);
+			// Nuke it, even if no match is found
+			dstring_snip (dstr, start, i - start);
+			lvar = (cmd_localvar_t *) Hash_Find (cmd_activebuffer->locals,
+												 varname->str);
+			if (lvar) {
+				// Local variables get precedence
+				dstring_insertstr (dstr, lvar->value->str, start);
+				n = strlen (lvar->value->str);
+			} else if ((cvar = Cvar_FindVar (varname->str))) {
+				// Then cvars
+				// Stick in the value of variable
+				dstring_insertstr (dstr, cvar->string, start);
+				n = strlen (cvar->string);
+			} else
+				n = 0;
 			break;
 		}
 	}
@@ -969,8 +1043,7 @@ Cmd_ProcessVariables (dstring_t * dstr)
 	int         i, n;
 
 	for (i = 0; i < strlen (dstr->str); i++) {
-		if (dstr->str[i] == '$' && dstr->str[i + 1] == '{'
-			&& !escaped (dstr->str, i)) {
+		if (dstr->str[i] == '$' && !escaped (dstr->str, i)) {
 			n = Cmd_ProcessVariablesRecursive (dstr, i);
 			if (n < 0)
 				return n;
@@ -993,7 +1066,7 @@ Cmd_ProcessMath (dstring_t * dstr)
 	statement = dstring_newstr ();
 
 	for (i = 0; i < strlen (dstr->str); i++) {
-		if (dstr->str[i] == '$' && dstr->str[i + 1] == '('
+		if (dstr->str[i] == '#' && dstr->str[i + 1] == '('
 			&& !escaped (dstr->str, i)) {
 			paren = 1;
 			for (n = 2;; n++) {
@@ -1076,7 +1149,7 @@ Cmd_ProcessEscapes (dstring_t * dstr)
 */
 
 void
-Cmd_TokenizeString (const char *text, qboolean filter)
+Cmd_TokenizeString (const char *text, qboolean legacy)
 {
 	int         i = 0, len = 0, quotes, braces, space, res;
 	const char *str = text;
@@ -1099,7 +1172,7 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 			space++;
 		}
 		dstring_appendsubstr (cmd_activebuffer->line, str + i - space, space);
-		len = Cmd_GetToken (str + i);
+		len = Cmd_GetToken (str + i, legacy);
 		if (len < 0) {
 			Cmd_Error ("Parse error:  Unmatched quotes, braces, or "
 					   "double quotes\n");
@@ -1112,15 +1185,21 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 			cmd_activebuffer->argv = realloc (cmd_activebuffer->argv,
 											  sizeof (dstring_t *) * cmd_argc);
 			SYS_CHECKMEM (cmd_activebuffer->argv);
-
+			
+			cmd_activebuffer->argu = realloc (cmd_activebuffer->argu,
+											  sizeof (dstring_t *) * cmd_argc);
+			SYS_CHECKMEM (cmd_activebuffer->argu);
+			
 			cmd_activebuffer->args = realloc (cmd_activebuffer->args,
 											  sizeof (int) * cmd_argc);
 			SYS_CHECKMEM (cmd_activebuffer->args);
 
 			cmd_activebuffer->argv[cmd_argc - 1] = dstring_newstr ();
+			cmd_activebuffer->argu[cmd_argc - 1] = dstring_newstr ();
 			cmd_activebuffer->maxargc++;
 		}
 		dstring_clearstr (cmd_activebuffer->argv[cmd_argc - 1]);
+		dstring_clearstr (cmd_activebuffer->argu[cmd_argc - 1]);
 		/* Remove surrounding quotes or double quotes or braces */
 		quotes = 0;
 		braces = 0;
@@ -1139,27 +1218,26 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 			braces = 1;
 		}
 		dstring_insert (cmd_activebuffer->argv[cmd_argc - 1], str + i, len, 0);
-		if (filter && text[0] != '|') {
-			if (!braces) {
-				Cmd_ProcessTags (cmd_activebuffer->argv[cmd_argc - 1]);
-				res =
-					Cmd_ProcessVariables (cmd_activebuffer->argv[cmd_argc - 1]);
-				if (res < 0) {
-					Cmd_Error ("Parse error: Unmatched braces in "
-							   "variable substitution expression.\n");
-					cmd_activebuffer->argc = 0;
-					return;
-				}
-				res = Cmd_ProcessMath (cmd_activebuffer->argv[cmd_argc - 1]);
-				if (res == -1) {
-					Cmd_Error ("Parse error:  Unmatched parenthesis\n");
-					cmd_activebuffer->argc = 0;
-					return;
-				}
-				if (res == -2) {
-					cmd_activebuffer->argc = 0;
-					return;
-				}
+		dstring_insert (cmd_activebuffer->argu[cmd_argc - 1], str + i, len, 0);
+		if (!legacy && text[0] != '|' && !braces) {
+			Cmd_ProcessTags (cmd_activebuffer->argv[cmd_argc - 1]);
+			res =
+				Cmd_ProcessVariables (cmd_activebuffer->argv[cmd_argc - 1]);
+			if (res < 0) {
+				Cmd_Error ("Parse error: Unmatched braces in "
+						   "variable substitution expression.\n");
+				cmd_activebuffer->argc = 0;
+				return;
+			}
+			res = Cmd_ProcessMath (cmd_activebuffer->argv[cmd_argc - 1]);
+			if (res == -1) {
+				Cmd_Error ("Parse error:  Unmatched parenthesis\n");
+				cmd_activebuffer->argc = 0;
+				return;
+			}
+			if (res == -2) {
+				cmd_activebuffer->argc = 0;
+				return;
 			}
 			Cmd_ProcessEscapes (cmd_activebuffer->argv[cmd_argc - 1]);
 		}
@@ -1412,7 +1490,7 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 
 	cmd_source = src;
 
-	Cmd_TokenizeString (text, !cmd_activebuffer->legacy);
+	Cmd_TokenizeString (text, cmd_activebuffer->legacy);
 
 	// execute the command line
 	if (!Cmd_Argc ())
@@ -1438,7 +1516,7 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 		Cbuf_InsertTextTo (sub, a->value);
 		for (i = 0; i < Cmd_Argc (); i++)
 			Cmd_SetLocal (sub, va ("%i", i), Cmd_Argv (i));
-		Cmd_SetLocal (sub, "#", va ("%i", Cmd_Argc ()));
+		Cmd_SetLocal (sub, "argn", va ("%i", Cmd_Argc ()));
 		// This will handle freeing the buffer for us, leave it alone
 		Cmd_ExecuteSubroutine (sub);
 		return;
@@ -1561,7 +1639,7 @@ Cmd_While_f (void) {
 	sub = Cmd_NewBuffer (false);
 	sub->locals = cmd_activebuffer->locals; // Use current local variables
 	sub->loop = true;
-	dstring_appendstr (sub->looptext, va("ifnot '%s' {break;};\n", Cmd_Argv(1)));
+	dstring_appendstr (sub->looptext, va("ifnot '%s' break\n", Cmd_Argu(1)));
 	dstring_appendstr (sub->looptext, Cmd_Argv(2));
 	Cmd_ExecuteSubroutine (sub);
 	return;
@@ -1663,6 +1741,7 @@ Cmd_Init (void)
 	Cmd_AddCommand ("cmdlist", Cmd_CmdList_f, "List all commands");
 	Cmd_AddCommand ("help", Cmd_Help_f, "Display help for a command or "
 					"variable");
+
 	Cmd_AddCommand ("if", Cmd_If_f, "Conditionally execute a set of commands.");
 	Cmd_AddCommand ("ifnot", Cmd_If_f, "Conditionally execute a set of commands if the condition is false.");
 	Cmd_AddCommand ("while", Cmd_While_f, "Execute a set of commands while a condition is true.");
@@ -1673,6 +1752,9 @@ Cmd_Init (void)
 	//				"alias and command hash tables");
 	cmd_warncmd = Cvar_Get ("cmd_warncmd", "0", CVAR_NONE, NULL, "Toggles the "
 							"display of error messages for unknown commands");
+	cmd_maxloop = Cvar_Get ("cmd_maxloop", "0", CVAR_NONE, NULL, "Controls the "
+							"maximum number of iterations a loop in GIB can do "
+							"before being forcefully terminated.  0 is infinite.");
 }
 
 char       *com_token;
