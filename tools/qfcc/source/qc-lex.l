@@ -97,7 +97,6 @@ m		([\-+]?)
 
 [+\-*/&|^%]=		{
 						yylval.op = yytext[0];
-						printf ("%s\n", yytext);
 						return ASX;
 					}
 
