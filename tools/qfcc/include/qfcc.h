@@ -246,6 +246,18 @@ typedef struct {
 } options_t;
 
 extern options_t options;
+int DecodeArgs (int argc, char **argv);
+
+extern const char *this_program;
+extern const char *sourcedir;
+
+void parse_cpp_name ();
+void add_cpp_def (const char *arg);
+FILE * preprocess_file (const char *filename);
+extern const char *cpp_name;
+extern struct dstring_s *tempname;
+
+extern const char *progs_src;
 
 //XXX eww :/
 void PrecacheSound (def_t *e, int ch);
