@@ -136,7 +136,7 @@ byte        net_message_buffer[MAX_UDP_PACKET];
 #endif
 
 
-void
+static void
 NetadrToSockadr (netadr_t *a, struct sockaddr_in6 *s)
 {
 	memset (s, 0, sizeof (*s));
@@ -149,7 +149,7 @@ NetadrToSockadr (netadr_t *a, struct sockaddr_in6 *s)
 #endif
 }
 
-void
+static void
 SockadrToNetadr (struct sockaddr_in6 *s, netadr_t *a)
 {
 	memcpy (a->ip, &s->sin6_addr, sizeof (s->sin6_addr));
@@ -157,7 +157,7 @@ SockadrToNetadr (struct sockaddr_in6 *s, netadr_t *a)
 	a->family = s->sin6_family;
 }
 
-qboolean
+static qboolean
 NET_AdrIsLoopback (netadr_t a)
 {
 	if (IN6_IS_ADDR_LOOPBACK ((struct in6_addr *) &a.ip))
@@ -423,10 +423,11 @@ NET_SendPacket (int length, void *data, netadr_t to)
 	}
 }
 
-int
+static int
 UDP_OpenSocket (int port)
 {
-	char        Buf[BUFSIZ], *Host, *Service;
+	char        Buf[BUFSIZ];
+	const char *Host, *Service;
 	int         newsocket, Error;
 	struct sockaddr_in6 address;
 	struct addrinfo hints, *res;
@@ -500,7 +501,7 @@ UDP_OpenSocket (int port)
 	return newsocket;
 }
 
-void
+static void
 NET_GetLocalAddress (void)
 {
 	char        buff[MAXHOSTNAMELEN];
