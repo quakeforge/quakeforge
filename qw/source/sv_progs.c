@@ -210,6 +210,7 @@ static sv_def_t qw_defs[] = {
 	{ev_float,	77,	"trace_inopen",			&sv_globals.trace_inopen},
 	{ev_float,	78,	"trace_inwater",		&sv_globals.trace_inwater},
 	{ev_entity,	79,	"msg_entity",			&sv_globals.msg_entity},
+	{ev_void,	0,	0},
 };
 
 static sv_def_t qw_funcs[] = {
@@ -222,6 +223,7 @@ static sv_def_t qw_funcs[] = {
 	{ev_func,	87,	"ClientDisconnect",		&sv_funcs.ClientDisconnect},
 	{ev_func,	88,	"SetNewParms",			&sv_funcs.SetNewParms},
 	{ev_func,	89,	"SetChangeParms",		&sv_funcs.SetChangeParms},
+	{ev_void,	0,	0},
 };
 
 static sv_def_t qw_fields[] = {
