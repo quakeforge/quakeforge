@@ -253,6 +253,7 @@ CL_Disconnect (void)
 	}
 
 	cls.signon = 0;
+	cl.worldmodel = NULL;
 }
 
 void
