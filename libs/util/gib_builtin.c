@@ -115,46 +115,6 @@ GIB_Builtin_Find (const char *name)
 }
 
 /*
-	GIB_Argc
-	
-	Returns the number of arguments available
-	in the current buffer.
-*/
-unsigned int
-GIB_Argc (void)
-{
-	return cbuf_active->args->argc;
-}
-
-/*
-	Returns a specific argument in the current
-	buffer.
-*/
-const char *
-GIB_Argv (unsigned int arg)
-{
-	if (arg < cbuf_active->args->argc)
-		return cbuf_active->args->argv[arg]->str;
-	else
-		return "";
-}
-
-/*
-	GIB_Args
-	
-	Returns a pointer to the composite command
-	line starting at token arg.
-*/
-const char *
-GIB_Args (unsigned int arg)
-{
-	if (arg < cbuf_active->args->argc)
-		return cbuf_active->args->args[arg];
-	else
-		return "";
-}
-
-/*
 	GIB_Arg_Strip_Delim
 	
 	Strips any wrapping characters off of the
@@ -554,7 +514,7 @@ GIB_File_Read_f (void)
 		  "usage: file.read path_and_filename");
 		return;
 	}
-	path = cbuf_active->args->argv[1]->str;
+	path = GIB_Argv (1);
 	if (!GIB_CollapsePath (path)) {
 		Cbuf_Error ("access",
 		  "file.read: access to %s denied", path);
@@ -564,7 +524,7 @@ GIB_File_Read_f (void)
 	contents = (char *) COM_LoadHunkFile (path);
 	if (!contents) {
 		Cbuf_Error ("file",
-		  "file.read: could not open %s for reading: %s", path, strerror (errno));
+		  "file.read: could not open %s/%s for reading: %s", com_gamedir, path, strerror (errno));
 		return;
 	}
 	GIB_Return (contents);
@@ -583,7 +543,7 @@ GIB_File_Write_f (void)
 		  "usage: file.write path_and_filename data");
 		return;
 	}
-	path = cbuf_active->args->argv[1]->str;
+	path = GIB_Argv (1);
 	if (!GIB_CollapsePath (path)) {
 		Cbuf_Error ("access",
 		  "file.write: access to %s denied", path);
@@ -591,7 +551,7 @@ GIB_File_Write_f (void)
 	}
 	if (!(file = Qopen (va ("%s/%s", com_gamedir, path), "w"))) {
 		Cbuf_Error ("file",
-		  "file.write: could not open %s for writing: %s", path, strerror (errno));
+		  "file.write: could not open %s/%s for writing: %s", com_gamedir, path, strerror (errno));
 		return;
 	}
 	Qprintf (file, "%s", GIB_Argv (2));
@@ -613,19 +573,18 @@ GIB_File_Find_f (void)
 		  "usage: file.find glob [path]");
 		return;
 	}
-
+	path = GIB_Argv (2);
 	if (GIB_Argc () == 3) {
-		path = cbuf_active->args->argv[2]->str;
 		if (!GIB_CollapsePath (path)) {
 			Cbuf_Error ("access", 
 			  "file.find: access to %s denied", path);
 			return;
 		}
 	}
-	directory = opendir (va ("%s/%s", com_gamedir, GIB_Argv (2)));
+	directory = opendir (va ("%s/%s", com_gamedir, path));
 	if (!directory) {
 		Cbuf_Error ("file",
-		  "file.find: could not open directory %s: %s", GIB_Argv (2), strerror (errno));
+		  "file.find: could not open directory %s/%s: %s", com_gamedir, path, strerror (errno));
 		return;
 	}
 	list = dstring_newstr ();
@@ -645,7 +604,66 @@ GIB_File_Find_f (void)
 		GIB_Return ("");
 	dstring_delete (list);
 }
-	
+
+void
+GIB_File_Move_f (void)
+{
+	char *path1, *path2;
+	dstring_t *from, *to;
+
+	if (GIB_Argc () != 3) {
+		Cbuf_Error ("syntax",
+		  "file.move: invalid syntax\n"
+		  "usage: file.move from_file to_file");
+		return;
+	}
+	path1 = GIB_Argv (1);
+	path2 = GIB_Argv (2);
+	if (!GIB_CollapsePath (path1)) {
+		Cbuf_Error ("access",
+		  "file.move: access to %s denied", path1);
+		return;
+	}
+	if (!GIB_CollapsePath (path2)) {
+		Cbuf_Error ("access",
+		  "file.move: access to %s denied", path2);
+		return;
+	}
+	from = dstring_newstr ();
+	to = dstring_newstr ();
+	dsprintf (from, "%s/%s", com_gamedir, path1);
+	dsprintf (to, "%s/%s", com_gamedir, path2);
+	if (Qrename (from->str, to->str))
+		Cbuf_Error ("file",
+		  "file.move: could not move %s to %s: %s",
+	      from->str, to->str, strerror(errno));
+	dstring_delete (from);
+	dstring_delete (to);
+}
+
+void
+GIB_File_Delete_f (void)
+{
+	char *path;
+
+	if (GIB_Argc () != 2) {
+		Cbuf_Error ("syntax",
+		  "file.delete: invalid syntax\n"
+		  "usage: file.delete file");
+		return;
+	}
+	path = GIB_Argv (1);
+	if (!GIB_CollapsePath (path)) {
+		Cbuf_Error ("access",
+		  "file.delete: access to %s denied", path);
+		return;
+	}
+	if (Qremove(va("%s/%s", com_gamedir, path)))
+		Cbuf_Error ("file",
+		  "file.delete: could not delete %s/%s: %s",
+	      com_gamedir, path, strerror(errno));
+}
+
 void
 GIB_Range_f (void)
 {
@@ -714,6 +732,8 @@ GIB_Builtin_Init (void)
 	GIB_Builtin_Add ("file.read", GIB_File_Read_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("file.write", GIB_File_Write_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("file.find", GIB_File_Find_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("file.move", GIB_File_Move_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("file.delete", GIB_File_Delete_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("range", GIB_Range_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("print", GIB_Print_f, GIB_BUILTIN_NORMAL);
 }

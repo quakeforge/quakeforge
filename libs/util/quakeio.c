@@ -130,6 +130,14 @@ Qrename (const char *old, const char *new)
 }
 
 int
+Qremove (const char *path)
+{
+	char e_path[PATH_MAX];
+	Qexpand_squiggle (path, e_path);
+	return remove (e_path);
+}
+
+int
 Qfilesize (QFile *file)
 {
 	return file->size;

@@ -63,6 +63,13 @@ cbuf_interpreter_t gib_interp = {
 	GIB_Buffer_Destruct,
 };
 
+/* 
+	GIB_Escaped
+
+	Returns true if character i in str is
+	escaped with a backslash (and the backslash
+	is not itself escaped).
+*/
 inline qboolean
 GIB_Escaped (const char *str, int i)
 {
@@ -181,6 +188,16 @@ GIB_Parse_Match_Backtick (const char *str, unsigned int *i)
 	return '`';
 }
 
+/*
+	GIB_Parse_Match_Index
+
+	Progresses an index variable through a string
+	until a normal brace (]) is reached.  Calls
+	other matching functions to skip areas of a
+	string it does not want to handle.  Returns
+	0 on success, or the character it could not
+	match otherwise.
+*/
 char
 GIB_Parse_Match_Index (const char *str, unsigned int *i)
 {
@@ -193,6 +210,14 @@ GIB_Parse_Match_Index (const char *str, unsigned int *i)
 	return '[';
 }
 
+/*
+	GIB_Parse_Strip_Comments
+
+	Finds instances of // comments in a cbuf
+	outside of double quotes and snips between
+	the // and the next newline or the end of
+	the string.
+*/
 void
 GIB_Parse_Strip_Comments (struct cbuf_s *cbuf)
 {
@@ -252,11 +277,9 @@ GIB_Parse_Extract_Line (struct cbuf_s *cbuf)
 	}
 	
 	if (dstr->str[0]) { // If something is left in the buffer
-		if (i) { // If we used any of it
+		if (i)// If we used any of it
 			dstring_insert (cbuf->line, 0, dstr->str, i);
-			Sys_DPrintf ("extracted line: %s\n", cbuf->line->str);
-		}
-		// Clip out what  we used or any leftover newlines or ;s
+		// Clip out what we used or any leftover newlines or ;s
 		dstring_snip (dstr, 0, i + (dstr->str[i] == '\n' || dstr->str[i] == ';'));
 	}
 
@@ -348,7 +371,7 @@ GIB_Parse_Get_Token (const char *str, unsigned int *i, dstring_t *dstr, qboolean
 	of pointers to the beginnings of tokens
 	within it.
 */
-void
+inline static void
 GIB_Parse_Generate_Composite (struct cbuf_s *cbuf)
 {
 	cbuf_args_t *args = cbuf->args;
@@ -379,7 +402,7 @@ GIB_Parse_Generate_Composite (struct cbuf_s *cbuf)
 	or concatenates it to the end of the last
 	according to cat.
 */
-inline void
+inline static void
 GIB_Parse_Add_Token (struct cbuf_args_s *args, qboolean cat, dstring_t *token)
 {
 	if (cat) {

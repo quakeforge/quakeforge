@@ -29,6 +29,8 @@
 	$Id$
 */
 
+#include "QF/cbuf.h" // For cbuf_active
+
 typedef struct gib_builtin_s {
 	struct dstring_s *name;
 	void (*func) (void);
@@ -39,9 +41,11 @@ typedef struct gib_builtin_s {
 	} type;
 } gib_builtin_t;
 
-unsigned int GIB_Argc (void);
-const char *GIB_Argv (unsigned int arg);
-const char *GIB_Args (unsigned int arg);
+#define GIB_Argc() (cbuf_active->args->argc)
+#define GIB_Argv(x) ((x) < cbuf_active->args->argc ? cbuf_active->args->argv[(x)]->str : "")
+#define GIB_Args(x) ((x) < cbuf_active->args->argc ? cbuf_active->args->args[(x)] : "")
+#define GIB_Argd(x) ((x) < cbuf_active->args->argc ? cbuf_active->args->argv[(x)] : NULL)
+
 void GIB_Arg_Strip_Delim (unsigned int arg);
 void GIB_Return (const char *str);
 void GIB_Builtin_Add (const char *name, void (*func) (void), enum gib_builtin_type_e type);
