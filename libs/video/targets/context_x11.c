@@ -5,8 +5,7 @@
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 	Copyright (C) 2000       Zephaniah E. Hull <warp@whitestar.soark.net>
-	Copyright (C) 1999,2000  contributors of the QuakeForge project
-	Please see the file "AUTHORS" for a list of contributors
+	Copyright (C) 2000, 2001 Jeff Teunissen <deek@quakeforge.net>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -319,23 +318,24 @@ X11_SetVidMode (int width, int height)
 #endif
 }
 
-void X11_UpdateFullscreen (cvar_t *v_fs)
+void X11_UpdateFullscreen (cvar_t *fullscreen)
 {
 	if (!vid_context_created) {
 		return;
 	}
-	if (v_fs->int_val==0) {
+	
+	if (!fullscreen->int_val) {
 		if (_windowed_mouse) {
 			_windowed_mouse->flags &= ~CVAR_ROM;
 		}
-		X11_RestoreVidMode();
+		X11_RestoreVidMode ();
 	} else {
 		if (_windowed_mouse) {
 			_windowed_mouse->flags &= ~CVAR_ROM;
 			Cvar_Set (_windowed_mouse, "1");
 			_windowed_mouse->flags |= CVAR_ROM;
 		}
-		X11_SetVidMode(scr_width,scr_height);
+		X11_SetVidMode (scr_width, scr_height);
 	}
 }
 
@@ -428,7 +428,7 @@ X11_RestoreVidMode (void)
 #ifdef HAVE_VIDMODE
 	if (vidmode_active) {
 		X11_RestoreScreenSaver ();
-		X11_SetGamma (x_gamma);
+		X11_RestoreGamma ();
 		XF86VidModeSwitchToMode (x_disp, x_screen, vidmodes[original_mode]);
 		XFree (vidmodes);
 		vidmode_active=false;
@@ -517,6 +517,21 @@ X11_SetGamma (double gamma)
 # endif
 #endif
 	return false;
+}
+
+void
+X11_RestoreGamma (void)
+{
+#ifdef HAVE_VIDMODE
+# ifdef X_XF86VidModeSetGamma
+	XF86VidModeGamma	xgamma;
+
+	if (vid_gamma_avail) {
+		xgamma.red = xgamma.green = xgamma.blue = (float) x_gamma;
+		XF86VidModeSetGamma (x_disp, x_screen, &xgamma);
+	}
+# endif
+#endif
 }
 
 void

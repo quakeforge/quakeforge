@@ -34,7 +34,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
-#include "QF/qtypes.h"
+#include <QF/qtypes.h>
 
 extern Display	*x_disp;
 extern Visual	*x_vis;
@@ -63,10 +63,11 @@ void X11_Init_Cvars (void);
 void X11_OpenDisplay (void);
 void X11_ProcessEvent (void);
 void X11_ProcessEvents (void);
+void X11_RestoreGamma (void);
+void X11_RestoreScreenSaver (void);
 void X11_RestoreVidMode (void);
 void X11_SetCaption (char *);
-void X11_SetVidMode (int, int);
 void X11_SetScreenSaver (void);
-void X11_RestoreScreenSaver (void);
+void X11_SetVidMode (int, int);
 
 #endif	// __context_x11_h_
