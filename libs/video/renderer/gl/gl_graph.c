@@ -39,12 +39,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "QF/GL/qf_textures.h"
-#include "QF/GL/defines.h"
-#include "QF/GL/funcs.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/sys.h"
+#include "QF/GL/qf_textures.h"
+#include "QF/GL/defines.h"
+#include "QF/GL/funcs.h"
 
 #include "r_cvar.h"
 
@@ -61,6 +61,7 @@ static int graph_size[NUM_GRAPH_TEXTURES];
 static int graph_width[NUM_GRAPH_TEXTURES];
 static byte *graph_texels[NUM_GRAPH_TEXTURES];
 int 	graph_texture[NUM_GRAPH_TEXTURES];
+
 
 int
 R_InitGraphTextures (int base)

@@ -114,7 +114,6 @@ Draw_PicFromWad (const char *name)
 	return p;
 }
 
-
 void
 Draw_ClearCache (void)
 {
@@ -124,7 +123,6 @@ Draw_ClearCache (void)
 	for (pic = cachepics, i = 0; i < numcachepics; pic++, i++)
 		pic->dirty = true;
 }
-
 
 qpic_t *
 Draw_CachePic (const char *path, qboolean alpha)
@@ -162,24 +160,21 @@ Draw_CachePic (const char *path, qboolean alpha)
 
 	// Now feed it to the GL stuff and get a texture number..
 	gl = (glpic_t *) pic->pic.data;
-	gl->texnum = GL_LoadTexture ("", dat->width, dat->height, dat->data, false, alpha, 1);
+	gl->texnum = GL_LoadTexture ("", dat->width, dat->height, dat->data,
+								 false, alpha, 1);
 
 	// Now lets mark this cache entry as used..
 	pic->dirty = false;
 	numcachepics++;
 
-	// FIXME:
-	// A really ugly kluge, keep a specific image in memory
-	//  for the menu system.
-	// Some days I really dislike legacy support..
-
+	// FIXME: A really ugly kluge, keep a specific image in memory
+	//  for the menu system. Some days I really dislike legacy support..
 	if (!strcmp (path, "gfx/menuplyr.lmp"))
 		memcpy (menuplyr_pixels, dat->data, dat->width * dat->height);
 
 	// And now we are done, return what was asked for..
 	return &pic->pic;
 }
-
 
 void
 Draw_TextBox (int x, int y, int width, int lines)
@@ -233,11 +228,9 @@ Draw_TextBox (int x, int y, int width, int lines)
 	Draw_Pic (cx, cy + 8, p);
 }
 
-
 extern void glrmain_init (void);
 extern void glrsurf_init (void);
 extern void GL_TextureMode_f (void);
-
 
 void
 Draw_Init (void)
@@ -249,19 +242,20 @@ Draw_Init (void)
 	qfglGetIntegerv(GL_MAX_TEXTURE_SIZE, &texSize);
 	Cvar_Set (gl_max_size, va("%d", texSize));
 
-	Cmd_AddCommand ("gl_texturemode", &GL_TextureMode_f, "Texture mipmap quality.");
+	Cmd_AddCommand ("gl_texturemode", &GL_TextureMode_f,
+					"Texture mipmap quality.");
 
-	// load the console background and the charset
-	// by hand, because we need to write the version
-	// string into the background before turning
-	// it into a texture
+	// load the console background and the charset by hand, because we need to
+	// write the version string into the background before turning it into a
+	// texture
 	draw_chars = W_GetLumpName ("conchars");
 	for (i = 0; i < 256 * 64; i++)
 		if (draw_chars[i] == 0)
 			draw_chars[i] = 255;		// proper transparent color
 
 	// now turn them into textures
-	char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, false, true, 1);	// 1999-12-27 Conwidth/height charset fix by TcT
+	char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, false,
+								   true, 1);
 	cs_texture = GL_LoadTexture ("crosshair", 8, 8, cs_data, false, true, 1);
 
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -277,7 +271,6 @@ Draw_Init (void)
 	glrmain_init ();
 	glrsurf_init ();
 }
-
 
 /*
 	Draw_Character8
@@ -321,7 +314,6 @@ Draw_Character8 (int x, int y, int num)
 	qfglEnd ();
 }
 
-
 void
 Draw_String8 (int x, int y, const char *str)
 {
@@ -332,7 +324,6 @@ Draw_String8 (int x, int y, const char *str)
 	}
 }
 
-
 void
 Draw_AltString8 (int x, int y, const char *str)
 {
@@ -342,7 +333,6 @@ Draw_AltString8 (int x, int y, const char *str)
 		x += 8;
 	}
 }
-
 
 void
 Draw_Crosshair (int swap)
@@ -384,7 +374,6 @@ Draw_Crosshair (int swap)
 	}
 }
 
-
 void
 Draw_Pic (int x, int y, qpic_t *pic)
 {
@@ -404,7 +393,6 @@ Draw_Pic (int x, int y, qpic_t *pic)
 	qfglVertex2f (x, y + pic->height);
 	qfglEnd ();
 }
-
 
 void
 Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
@@ -435,7 +423,6 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	qfglEnd ();
 	qfglColor3ubv (lighthalf_v);
 }
-
 
 /*
 	Draw_TransPicTranslate
@@ -485,7 +472,6 @@ Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 	qfglEnd ();
 	qfglColor3ubv (lighthalf_v);
 }
-
 
 /*
 	Draw_ConsoleBackground
@@ -568,7 +554,6 @@ Draw_ConsoleBackground (int lines)
 	qfglColor3ubv (lighthalf_v);
 }
 
-
 /*
 	Draw_TileClear
 
@@ -592,7 +577,6 @@ Draw_TileClear (int x, int y, int w, int h)
 	qfglEnd ();
 	qfglColor3ubv (lighthalf_v);
 }
-
 
 /*
 	Draw_Fill
@@ -618,10 +602,6 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	qfglEnable (GL_TEXTURE_2D);
 }
 
-
-//=============================================================================
-
-
 void
 Draw_FadeScreen (void)
 {
@@ -641,10 +621,6 @@ Draw_FadeScreen (void)
 	Sbar_Changed ();
 }
 
-
-//=============================================================================
-
-
 /*
 	Draw_BeginDisc
 
@@ -656,7 +632,6 @@ Draw_BeginDisc (void)
 {
 }
 
-
 /*
 	Draw_EndDisc
 
@@ -667,7 +642,6 @@ void
 Draw_EndDisc (void)
 {
 }
-
 
 /*
 	GL_Set2D

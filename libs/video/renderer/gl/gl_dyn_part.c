@@ -95,7 +95,6 @@ particle_new (ptype_t type, int texnum, vec3_t org, float scale, vec3_t vel,
 	return part;
 }
 
-
 inline particle_t *
 particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 					 float scale, int vel_fuzz, float die, byte color,
@@ -113,7 +112,6 @@ particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 	return particle_new (type, texnum, porg, scale, pvel, die, color, alpha,
 						 vec3_origin, vec3_origin);
 }
-
 
 /*
 	R_MaxParticlesCheck
@@ -152,7 +150,6 @@ R_MaxParticlesCheck (cvar_t *var)
 	R_ClearParticles();
 }
 
-
 void
 R_Particles_Init_Cvars (void)
 {
@@ -166,13 +163,11 @@ R_Particles_Init_Cvars (void)
 			  "is 0, although it's best to use r_particles 0 instead.");
 }
 
-
 void
 R_ClearParticles (void)
 {
 	numparticles = 0;
 }
-
 
 void
 R_ReadPointFile_f (void)
@@ -222,7 +217,6 @@ R_ReadPointFile_f (void)
 	Con_Printf ("%i points read\n", c);
 }
 
-
 void
 R_ParticleExplosion (vec3_t org)
 {
@@ -233,7 +227,6 @@ R_ParticleExplosion (vec3_t org)
 						 30, 8, r_realtime + 5, (rand () & 7) + 8,
 						 128 + (rand () & 63));
 }
-
 
 void
 R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
@@ -251,7 +244,6 @@ R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
 		colorMod++;
 	}
 }
-
 
 void
 R_BlobExplosion (vec3_t org)
@@ -273,7 +265,6 @@ R_BlobExplosion (vec3_t org)
 	}
 }
 
-
 static void
 R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 {
@@ -288,7 +279,6 @@ R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 							 1, 96, r_realtime + 5, ramp[rand () % 6], 
 							 lhrandom (0, 255));
 }
-
 
 static void
 R_RunGunshotEffect (vec3_t org, int count)
@@ -307,7 +297,6 @@ R_RunGunshotEffect (vec3_t org, int count)
 	return;
 }
 
-
 static void
 R_BloodPuff (vec3_t org, int count)
 {
@@ -318,7 +307,6 @@ R_BloodPuff (vec3_t org, int count)
 				  vec3_origin, r_realtime + 99, 68 + (rand () & 3), 128,
 				  vec3_origin, vec3_origin);
 }
-
 
 void
 R_RunPuffEffect (vec3_t org, particle_effect_t type, byte count)
@@ -340,7 +328,6 @@ R_RunPuffEffect (vec3_t org, particle_effect_t type, byte count)
 			break;
 	}
 }
-
 
 void
 R_RunParticleEffect (vec3_t org, int color, int count)
@@ -369,7 +356,6 @@ R_RunParticleEffect (vec3_t org, int color, int count)
 	}
 }
 
-
 void
 R_RunSpikeEffect (vec3_t org, particle_effect_t type)
 {
@@ -390,7 +376,6 @@ R_RunSpikeEffect (vec3_t org, particle_effect_t type)
 			break;
 	}
 }
-
 
 void
 R_LavaSplash (vec3_t org)
@@ -423,7 +408,6 @@ R_LavaSplash (vec3_t org)
 	}
 }
 
-
 void
 R_TeleportSplash (vec3_t org)
 {
@@ -454,7 +438,6 @@ R_TeleportSplash (vec3_t org)
 							  vec3_origin);
 			}
 }
-
 
 void
 R_RocketTrail (int type, entity_t *ent)
@@ -569,7 +552,6 @@ R_RocketTrail (int type, entity_t *ent)
 					  up, right);
 	}
 }
-
 
 void
 R_DrawParticles (void)

@@ -36,17 +36,17 @@
 # include <strings.h>
 #endif
 
-#include "compat.h"
-#include "r_cvar.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/texture.h"
-
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_textures.h"
+
+#include "compat.h"
+#include "r_cvar.h"
 
 static byte translate[256];
 static unsigned int translate32[256];
@@ -105,7 +105,8 @@ build_skin_8 (byte * original, int tinwidth, int tinheight,
 		}
 	}
 
-	GL_Upload8_EXT ((byte *) pixels, scaled_width, scaled_height, false, alpha);
+	GL_Upload8_EXT ((byte *) pixels, scaled_width, scaled_height, false,
+					alpha);
 }
 
 static void
@@ -244,5 +245,5 @@ Skin_Process (skin_t *skin, tex_t *tex)
 		skin->fb_texture = skin_fb_textures + (skin - skin_cache);
 		build_skin (skin->fb_texture, ptexels, tex->width, tex->height,
 					296, 194, true);
-		}
 	}
+}

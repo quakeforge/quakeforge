@@ -50,6 +50,7 @@
 #include "r_dynamic.h"
 #include "r_shared.h"
 
+
 /*
 	R_DrawFire
 
@@ -99,7 +100,6 @@ R_DrawFire (fire_t *f)
 	qfglEnd ();
 	qfglColor3ubv (lighthalf_v);
 }
-
 
 /*
 	R_UpdateFires

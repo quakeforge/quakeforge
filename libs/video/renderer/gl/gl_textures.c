@@ -40,21 +40,20 @@
 #include <stdio.h>
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/crc.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
-
-#include "sbar.h"
-#include "r_cvar.h"
-
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
+
+#include "compat.h"
+#include "sbar.h"
+#include "r_cvar.h"
 
 extern int      gl_filter_min, gl_filter_max;
 extern unsigned char d_15to8table[65536];
@@ -181,6 +180,7 @@ static glformat_t formats[] = {
 
 int gl_alpha_format = 4, gl_lightmap_format = 4, gl_solid_format = 3;
 
+
 void
 GL_TextureMode_f (void)
 {
@@ -222,7 +222,6 @@ GL_TextureMode_f (void)
 	}
 }
 
-
 int
 GL_TextureDepth_f (int format)
 {
@@ -250,7 +249,6 @@ GL_TextureDepth_f (int format)
 	return formats[i].format;
 }
 
-
 static void
 GL_ResampleTexture (unsigned int *in, int inwidth, int inheight,
 		    unsigned int *out, int outwidth, int outheight)
@@ -271,7 +269,6 @@ GL_ResampleTexture (unsigned int *in, int inwidth, int inheight,
 		} 
 	} 
 } 
-
 
 #if defined(GL_SHARED_TEXTURE_PALETTE_EXT) && defined(HAVE_GL_COLOR_INDEX8_EXT)
 static void
@@ -295,7 +292,6 @@ GL_Resample8BitTexture (unsigned char *in, int inwidth, int inheight,
 	}
 }
 #endif
-
 
 /*
 	GL_MipMap
@@ -321,7 +317,6 @@ GL_MipMap (byte * in, int width, int height)
 		}
 	}
 }
-
 
 /*
 	GL_MipMap8Bit
@@ -359,7 +354,6 @@ GL_MipMap8Bit (byte * in, int width, int height)
 }
 #endif
 
-
 static void
 GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
 	     qboolean alpha)
@@ -385,9 +379,8 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
 
 	intformat = alpha ? gl_alpha_format : gl_solid_format;
 
-	// If the real width/height and the 'scaled' width/height then we
-	// rescale it.
-
+	// If the real width/height and the 'scaled' width/height aren't
+	// identical, then we rescale it.
 	if (scaled_width == width && scaled_height == height) {
 		memcpy (scaled, data, width * height * sizeof (GLuint));
 	} else {
@@ -395,8 +388,8 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
 				    scaled_height);
 	}
 
-	qfglTexImage2D (GL_TEXTURE_2D, 0, intformat, scaled_width, scaled_height, 0,
-		      GL_RGBA, GL_UNSIGNED_BYTE, scaled);
+	qfglTexImage2D (GL_TEXTURE_2D, 0, intformat, scaled_width, scaled_height,
+					0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
 
 	if (mipmap) {
 		int         miplevel = 0;
@@ -414,19 +407,23 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
 	}
 
 	if (mipmap) {
-		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
-		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+						   gl_filter_min);
+		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+						   gl_filter_max);
 	} else {
-		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_max);
+		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+						   gl_filter_max);
 		if (gl_picmip->int_val)
-			qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+							   GL_NEAREST);
 		else
-			qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+			qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+							   gl_filter_max);
 	}
 
 	free (scaled);
 }
-
 
 /* 
         GL_Upload8_EXT 
@@ -455,8 +452,8 @@ GL_Upload8_EXT (byte * data, int width, int height, qboolean mipmap,
 	if (!(scaled = malloc (scaled_width * scaled_height)))
 		Sys_Error ("GL_LoadTexture: too big");
 
-	// If the real width/height and the 'scaled' width/height then we
-	// rescale it.
+	// If the real width/height and the 'scaled' width/height aren't
+	// identical then we rescale it.
 	if (scaled_width == width && scaled_height == height) {
 		memcpy (scaled, data, width * height);
 	} else {
@@ -484,20 +481,24 @@ GL_Upload8_EXT (byte * data, int width, int height, qboolean mipmap,
 	}
  
 	if (mipmap) {
-		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
-		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+						   gl_filter_min);
+		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+						   gl_filter_max);
 	} else {
-		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_max);
+		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+						   gl_filter_max);
 		if (gl_picmip->int_val)
-			qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+							   GL_NEAREST);
 		else
-			qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+			qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+							   gl_filter_max);
 	}
 
 	free (scaled);
 #endif
 }
-
 
 extern qboolean VID_Is8bit (void);
 
@@ -543,7 +544,6 @@ GL_Upload8 (byte * data, int width, int height, qboolean mipmap, qboolean alpha)
 
 	free (trans);
 }
-
 
 int
 GL_LoadTexture (const char *identifier, int width, int height, byte * data,

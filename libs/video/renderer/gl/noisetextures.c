@@ -43,6 +43,7 @@
 
 #include "QF/mathlib.h"
 
+
 void
 noise_diamondsquare (unsigned char *noise, int size)
 {
@@ -97,7 +98,6 @@ noise_diamondsquare (unsigned char *noise, int size)
 	free (noisebuf);
 	#undef n
 }
-
 
 void
 noise_plasma (unsigned char *noise, int size)

@@ -71,11 +71,9 @@ R_AnimateLight (void)
 	}
 }
 
-
 /*
 	DYNAMIC LIGHTS BLEND RENDERING
 */
-
 
 void
 AddLightBlend (float r, float g, float b, float a2)
@@ -89,9 +87,7 @@ AddLightBlend (float r, float g, float b, float a2)
 	v_blend[0] = v_blend[0] * (1 - a2) + r * a2;
 	v_blend[1] = v_blend[1] * (1 - a2) + g * a2;
 	v_blend[2] = v_blend[2] * (1 - a2) + b * a2;
-//Con_Printf("AddLightBlend(): %4.2f %4.2f %4.2f %4.6f\n", v_blend[0], v_blend[1], v_blend[2], v_blend[3]);
 }
-
 
 float       bubble_sintable[33], bubble_costable[33];
 
@@ -111,7 +107,6 @@ R_InitBubble ()
 		*bub_cos++ = cos (a);
 	}
 }
-
 
 void
 R_RenderDlight (dlight_t *light)
@@ -155,7 +150,6 @@ R_RenderDlight (dlight_t *light)
 	qfglEnd ();
 }
 
-
 void
 R_RenderDlights (void)
 {
@@ -185,11 +179,9 @@ R_RenderDlights (void)
 	qfglDepthMask (GL_TRUE);
 }
 
-
 /*
 	DYNAMIC LIGHTS
 */
-
 
 // LordHavoc: heavily modified, to eliminate unnecessary texture uploads,
 //            and support bmodel lighting better
@@ -395,7 +387,6 @@ R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, model_t *model)
 	}
 }
 
-
 void
 R_PushDlights (vec3_t entorigin)
 {
@@ -415,7 +406,6 @@ R_PushDlights (vec3_t entorigin)
 		R_MarkLights (lightorigin, l, 1 << i, r_worldentity.model);
 	}
 }
-
 
 /*
 	LIGHT SAMPLING
@@ -519,7 +509,6 @@ RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 // go down back side
 	return RecursiveLightPoint (node->children[!side], mid, end);
 }
-
 
 int
 R_LightPoint (vec3_t p)

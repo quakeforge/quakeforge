@@ -64,7 +64,6 @@ BoundPoly (int numverts, float *verts, vec3_t mins, vec3_t maxs)
 		}
 }
 
-
 void
 SubdividePolygon (int numverts, float *verts)
 {
@@ -132,10 +131,8 @@ SubdividePolygon (int numverts, float *verts)
 		return;
 	}
 
-	poly =
-
-		Hunk_Alloc (sizeof (glpoly_t) +
-					(numverts - 4) * VERTEXSIZE * sizeof (float));
+	poly = Hunk_Alloc (sizeof (glpoly_t) + (numverts - 4) * VERTEXSIZE *
+					   sizeof (float));
 	poly->next = warpface->polys;
 	warpface->polys = poly;
 	poly->numverts = numverts;
@@ -147,7 +144,6 @@ SubdividePolygon (int numverts, float *verts)
 		poly->verts[i][4] = t;
 	}
 }
-
 
 /*
 	GL_SubdivideSurface
@@ -167,9 +163,7 @@ GL_SubdivideSurface (msurface_t *fa)
 
 	warpface = fa;
 
-	// 
 	// convert edges back to a normal polygon
-	// 
 	numverts = 0;
 	for (i = 0; i < fa->numedges; i++) {
 		lindex = loadmodel->surfedges[fa->firstedge + i];
@@ -184,7 +178,6 @@ GL_SubdivideSurface (msurface_t *fa)
 
 	SubdividePolygon (numverts, verts[0]);
 }
-
 
 // speed up sin calculations - Ed
 float       turbsin[] = {
@@ -213,18 +206,22 @@ EmitWaterPolys (msurface_t *fa)
 			os = v[3];
 			ot = v[4];
 
-			s = os + turbsin[(int) ((ot * 0.125 + r_realtime) * TURBSCALE) & 255];
+			s = os + turbsin[(int) ((ot * 0.125 + r_realtime) * TURBSCALE) &
+							 255];
 			s *= (1.0 / 64);
 
-			t = ot + turbsin[(int) ((os * 0.125 + r_realtime) * TURBSCALE) & 255];
+			t = ot + turbsin[(int) ((os * 0.125 + r_realtime) * TURBSCALE) &
+							 255];
 			t *= (1.0 / 64);
 
 			qfglTexCoord2f (s, t);
 
 			VectorCopy (v, nv);
 			nv[2] += r_waterripple->value
-				* turbsin[(int) ((v[3] * 0.125 + r_realtime) * TURBSCALE) & 255]
-				* turbsin[(int) ((v[4] * 0.125 + r_realtime) * TURBSCALE) & 255]
+				* turbsin[(int) ((v[3] * 0.125 + r_realtime) * TURBSCALE) &
+						  255]
+				* turbsin[(int) ((v[4] * 0.125 + r_realtime) * TURBSCALE) &
+						  255]
 				* (1.0 / 64.0);
 
 			qfglVertex3fv (nv);

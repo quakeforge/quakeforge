@@ -45,18 +45,17 @@
 #include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
-#include "varrays.h"
 #include "QF/vfs.h"
-
-#include "r_dynamic.h"
-#include "r_local.h"
-
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_vid.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_rsurf.h"
 #include "QF/GL/qf_screen.h"
+
+#include "r_dynamic.h"
+#include "r_local.h"
+#include "varrays.h"
 
 varray_t2f_c4f_v3f_t varray[MAX_VARRAY_VERTS];
 
@@ -135,7 +134,6 @@ R_Envmap_f (void)
 	GL_EndRendering ();
 }
 
-
 void
 R_LoadSky_f (void)
 {
@@ -146,7 +144,6 @@ R_LoadSky_f (void)
 
 	R_LoadSkys (Cmd_Argv (1));
 }
-
 
 void
 R_Init (void)
@@ -175,7 +172,6 @@ R_Init (void)
 	qfglColorPointer (4, GL_FLOAT, sizeof(varray[0]), varray[0].color);
 	qfglVertexPointer (3, GL_FLOAT, sizeof(varray[0]), varray[0].vertex);
 }
-
 
 void
 R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
@@ -217,7 +213,6 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 		R_LoadSkys ("none");
 }
 
-
 /*
 	R_TimeRefresh_f
 
@@ -248,7 +243,6 @@ R_TimeRefresh_f (void)
 
 	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 }
-
 
 void
 D_FlushCaches (void)

@@ -50,6 +50,10 @@
 #include "QF/texture.h"
 #include "QF/tga.h"
 #include "QF/vfs.h"     // MAX_OSPATH
+#include "QF/GL/defines.h"
+#include "QF/GL/funcs.h"
+#include "QF/GL/qf_rmain.h"
+#include "QF/GL/qf_vid.h"
 
 #include "compat.h"
 #include "r_cvar.h"
@@ -57,16 +61,10 @@
 #include "sbar.h"
 #include "view.h"
 
-#include "QF/GL/defines.h"
-#include "QF/GL/funcs.h"
-#include "QF/GL/qf_rmain.h"
-#include "QF/GL/qf_vid.h"
-
 extern float v_blend[4];
 extern void GL_Set2D (void);
 
 /*
-
 background clear
 rendering
 turtle/net/ram icons
@@ -108,10 +106,7 @@ console is:
 	notify lines
 	half
 	full
-	
-
 */
-
 
 int         glx, gly, glwidth, glheight;
 
@@ -183,7 +178,6 @@ SCR_CenterPrint (const char *str)
 	}
 }
 
-
 void
 SCR_DrawCenterString (void)
 {
@@ -195,7 +189,8 @@ SCR_DrawCenterString (void)
 
 	// the finale prints the characters one at a time
 	if (r_force_fullscreen /*FIXME better test*/)
-		remaining = scr_printspeed->value * (r_realtime - scr_centertime_start);
+		remaining = scr_printspeed->value * (r_realtime -
+											 scr_centertime_start);
 	else
 		remaining = 9999;
 
@@ -230,7 +225,6 @@ SCR_DrawCenterString (void)
 	} while (1);
 }
 
-
 void
 SCR_CheckDrawCenterString (int swap)
 {
@@ -240,14 +234,13 @@ SCR_CheckDrawCenterString (int swap)
 
 	scr_centertime_off -= r_frametime;
 
-	if (scr_centertime_off <= 0 && !r_force_fullscreen /*FIXME better test*/)
+	if (scr_centertime_off <= 0 && !r_force_fullscreen /*FIXME: better test*/)
 		return;
 	if (key_dest != key_game)
 		return;
 
 	SCR_DrawCenterString ();
 }
-
 
 float
 CalcFov (float fov_x, float width, float height)
@@ -266,7 +259,6 @@ CalcFov (float fov_x, float width, float height)
 
 	return a;
 }
-
 
 /*
 	SCR_CalcRefdef
@@ -338,7 +330,6 @@ SCR_CalcRefdef (void)
 	scr_vrect = r_refdef.vrect;
 }
 
-
 /*
 	SCR_SizeUp_f
 
@@ -353,7 +344,6 @@ SCR_SizeUp_f (void)
 	}
 }
 
-
 /*
 	SCR_SizeDown_f
 
@@ -366,14 +356,12 @@ SCR_SizeDown_f (void)
 	vid.recalc_refdef = 1;
 }
 
-
 void
 SCR_Init (void)
 {
-	//
 	// register our commands
-	//
-	Cmd_AddCommand ("screenshot", SCR_ScreenShot_f, "Take a screenshot, saves as qfxxx.tga in the current directory");
+	Cmd_AddCommand ("screenshot", SCR_ScreenShot_f, "Take a screenshot, "
+					"saves as qfxxx.tga in the current directory");
 	Cmd_AddCommand ("sizeup", SCR_SizeUp_f, "Increases the screen size");
 	Cmd_AddCommand ("sizedown", SCR_SizeDown_f, "Decreases the screen size");
 
@@ -383,7 +371,6 @@ SCR_Init (void)
 
 	scr_initialized = true;
 }
-
 
 void
 SCR_DrawRam (int swap)
@@ -396,7 +383,6 @@ SCR_DrawRam (int swap)
 
 	Draw_Pic (scr_vrect.x + 32, scr_vrect.y, scr_ram);
 }
-
 
 void
 SCR_DrawTurtle (int swap)
@@ -417,7 +403,6 @@ SCR_DrawTurtle (int swap)
 
 	Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
 }
-
 
 extern cvar_t *show_time;
 extern cvar_t *show_fps;
@@ -458,7 +443,6 @@ SCR_DrawFPS (int swap)
 	Draw_String8 (x, y, st);
 }
 
-
 /*
 	SCR_DrawTime
 
@@ -496,7 +480,6 @@ SCR_DrawTime (int swap)
 	Draw_String8 (x, y, st);
 }
 
-
 void
 SCR_DrawPause (int swap)
 {
@@ -512,7 +495,6 @@ SCR_DrawPause (int swap)
 	Draw_Pic ((vid.width - pic->width) / 2,
 			  (vid.height - 48 - pic->height) / 2, pic);
 }
-
 
 void
 SCR_SetUpToDrawConsole (void)
@@ -546,7 +528,6 @@ SCR_SetUpToDrawConsole (void)
 		con_notifylines = 0;
 }
 
-
 void
 SCR_DrawConsole (int swap)
 {
@@ -560,7 +541,6 @@ SCR_DrawConsole (int swap)
 			Con_DrawNotify ();			// only draw notify in game
 	}
 }
-
 
 /*
    SCREEN SHOTS
@@ -578,7 +558,8 @@ SCR_ScreenShot (int width, int height)
 	float       fracw, frach;
 	tex_t      *tex;
 
-	tex = Hunk_TempAlloc (field_offset (tex_t, data[vid.width * vid.height * 3]));
+	tex = Hunk_TempAlloc (field_offset (tex_t, data[vid.width *
+													vid.height * 3]));
 	if (!tex)
 		return 0;
 
@@ -645,9 +626,7 @@ SCR_ScreenShot_f (void)
 	byte       *buffer;
 	char        pcxname[MAX_OSPATH];
 
-	// 
 	// find a file name to save it to 
-	// 
 	if (!COM_NextFilename (pcxname, "qf", ".tga")) {
 		Con_Printf ("SCR_ScreenShot_f: Couldn't create a TGA file\n");
 		return;
@@ -659,7 +638,6 @@ SCR_ScreenShot_f (void)
 	free (buffer);
 	Con_Printf ("Wrote %s\n", pcxname);
 }
-
 
 /*
   Find closest color in the palette for named color
@@ -697,7 +675,6 @@ MipColor (int r, int g, int b)
 	return best;
 }
 
-
 // in gl_draw.c
 extern byte *draw_chars;				// 8*8 graphic characters
 
@@ -727,7 +704,6 @@ SCR_DrawCharToSnap (int num, byte * dest, int width)
 
 }
 
-
 void
 SCR_DrawStringToSnap (const char *s, tex_t *tex, int x, int y)
 {
@@ -744,7 +720,6 @@ SCR_DrawStringToSnap (const char *s, tex_t *tex, int x, int y)
 		dest += 8;
 	}
 }
-
 
 char       *scr_notifystring;
 
@@ -780,7 +755,6 @@ SCR_DrawNotifyString (void)
 	} while (1);
 }
 
-
 void
 SCR_TileClear (void)
 {
@@ -805,7 +779,6 @@ SCR_TileClear (void)
 						(r_refdef.vrect.height + r_refdef.vrect.y));
 	}
 }
-
 
 extern void R_ForceLightUpdate (void);
 
@@ -879,9 +852,11 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 	// draw any areas not covered by the refresh
 	SCR_TileClear ();
 
-	if (r_force_fullscreen /*FIXME better test*/ == 1 && key_dest == key_game) {
+	if (r_force_fullscreen /*FIXME better test*/ == 1 && key_dest ==
+		key_game) {
 		Sbar_IntermissionOverlay ();
-	} else if (r_force_fullscreen /*FIXME better test*/ == 2 && key_dest == key_game) {
+	} else if (r_force_fullscreen /*FIXME better test*/ == 2 &&
+			   key_dest == key_game) {
 		Sbar_FinaleOverlay ();
 		SCR_CheckDrawCenterString (swap);
 	} else {

@@ -39,14 +39,13 @@
 
 #include <stdarg.h>
 
+#include "QF/cvar.h"
+#include "QF/render.h"
+#include "QF/sys.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_sky.h"
 #include "QF/GL/qf_vid.h"
-
-#include "QF/cvar.h"
-#include "QF/render.h"
-#include "QF/sys.h"
 
 #include "view.h"
 #include "r_cvar.h"
@@ -147,7 +146,6 @@ determine_face (vec3_t v)
 	return i;
 }
 
-
 /*
 	find_intersect (for want of a better name)
 
@@ -207,7 +205,6 @@ find_intersect (int face1, vec3_t x1, int face2, vec3_t x2, vec3_t y)
 	return axis;
 }
 
-
 /*
 	find_cube_vertex
 
@@ -224,7 +221,6 @@ find_cube_vertex (int face1, int face2, int face3, vec3_t v)
 	v[face_axis[face2]] = face_offset[face2];
 	v[face_axis[face3]] = face_offset[face3];
 }
-
 
 /*
 	set_vertex
@@ -267,7 +263,6 @@ set_vertex (struct box_def *box, int face, int ind, vec3_t v)
 	}
 }
 
-
 /*
  	add_vertex
 
@@ -278,7 +273,6 @@ add_vertex (struct box_def *box, int face, vec3_t v)
 {
 	set_vertex (box, face, box->face[face].poly.numverts++, v);
 }
-
 
 /*
 	insert_cube_vertices
@@ -332,7 +326,6 @@ insert_cube_vertices (struct box_def *box, struct visit_def visit, int count,
 	}
 }
 
-
 /*
 	cross_cube_edge
 
@@ -373,7 +366,6 @@ cross_cube_edge (struct box_def *box, int face1, vec3_t v1, int face2,
 		add_vertex (box, face2, l);
 	}
 }
-
 
 /*
 	process_corners
@@ -579,7 +571,6 @@ process_corners (struct box_def *box)
 	}
 }
 
-
 /*
 	render_box
 
@@ -602,7 +593,6 @@ render_box (struct box_def *box)
 		qfglEnd ();
 	}
 }
-
 
 void
 R_DrawSkyBoxPoly (glpoly_t *poly)
@@ -661,7 +651,6 @@ R_DrawSkyBoxPoly (glpoly_t *poly)
 
 	render_box (&box);
 }
-
 
 void
 R_DrawSkyDomePoly (glpoly_t *poly)

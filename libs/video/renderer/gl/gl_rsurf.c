@@ -105,7 +105,6 @@ glrsurf_init (void)
 			dlightdivtable[s] = 1048576 / (s << 7);
 }
 
-
 static void
 R_RecursiveLightUpdate (mnode_t *node)
 {
@@ -121,7 +120,6 @@ R_RecursiveLightUpdate (mnode_t *node)
 			 c--, surf++) surf->cached_dlight = true;
 }
 
-
 // LordHavoc: function to force all lightmaps to be updated
 void
 R_ForceLightUpdate (void)
@@ -131,7 +129,6 @@ R_ForceLightUpdate (void)
 		R_RecursiveLightUpdate (r_worldentity.model->nodes);
 }
 
-
 /*
 	R_AddDynamicLights
 
@@ -140,11 +137,11 @@ R_ForceLightUpdate (void)
 void
 R_AddDynamicLights (msurface_t *surf)
 {
-	int         sdtable[18], lnum, td, maxdist, maxdist2, maxdist3, i, s, t,
-		smax, tmax, red, green, blue, j;
+	int			sdtable[18], lnum, td, maxdist, maxdist2, maxdist3, i, j, s, t,
+				smax, tmax, red, green, blue;
 	unsigned int *bl;
-	float       dist, f;
-	vec3_t      impact, local;
+	float		dist, f;
+	vec3_t		impact, local;
 
 	// use 64bit integer...  shame it's not very standardized...
 #if _MSC_VER || __BORLANDC__
@@ -178,12 +175,13 @@ R_AddDynamicLights (msurface_t *surf)
 			surf->texinfo->vecs[1][3] - surf->texturemins[1];
 
 		// for comparisons to minimum acceptable light
-		maxdist = (int) ((r_dlights[lnum].radius * r_dlights[lnum].radius) * 0.75);
+		maxdist = (int) ((r_dlights[lnum].radius * r_dlights[lnum].radius) *
+						 0.75);
 
 		// clamp radius to avoid exceeding 8192 entry division table
 		if (maxdist > 1048576)
 			maxdist = 1048576;
-		maxdist3 = maxdist - (int) (dist * dist);
+		maxdist3 = maxdist - t;
 
 		// convert to 8.8 blocklights format
 		red = f = r_dlights[lnum].color[0] * maxdist;
@@ -192,7 +190,7 @@ R_AddDynamicLights (msurface_t *surf)
 		bl = blocklights;
 		for (t = 0; t < tmax; t++, i -= 16) {
 			td = i * i;
-			if (td < maxdist3) {	// make sure some part of it is visible on this line
+			if (td < maxdist3) {	// ensure part is visible on this line
 				maxdist2 = maxdist - td;
 				for (s = 0; s < smax; s++) {
 					if (sdtable[s] < maxdist2) {
@@ -208,7 +206,6 @@ R_AddDynamicLights (msurface_t *surf)
 		}
 	}
 }
-
 
 /*
 	R_BuildLightMap
@@ -247,7 +244,8 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 
 	// add all the lightmaps
 	if (lightmap) {
-		for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255; maps++) {
+		for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255;
+			 maps++) {
 			scale = d_lightstylevalue[surf->styles[maps]];
 			surf->cached_light[maps] = scale;	// 8.8 fraction
 			bl = blocklights;
@@ -312,7 +310,6 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 	}
 }
 
-
 /*
 	R_TextureAnimation
 
@@ -346,16 +343,13 @@ R_TextureAnimation (texture_t *base)
 	return base;
 }
 
-
 /*
 	BRUSH MODELS
 */
 
-
 extern int  solidskytexture;
 extern int  alphaskytexture;
 extern float speedscale;				// for top sky and bottom sky
-
 
 void
 GL_UploadLightmap (int i, int x, int y, int w, int h)
@@ -384,13 +378,6 @@ GL_UploadLightmap (int i, int x, int y, int w, int h)
 	}
 }
 
-
-/*
-	R_DrawSequentialPoly
-
-	Systems that have fast state and texture changes can
-	just do everything as it passes with no need to sort
-*/
 void
 R_DrawMultitexturePoly (msurface_t *s)
 {
@@ -454,7 +441,6 @@ R_DrawMultitexturePoly (msurface_t *s)
 	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }
 
-
 void
 R_BlendLightmaps (void)
 {
@@ -498,7 +484,6 @@ R_BlendLightmaps (void)
 	qfglDepthMask (GL_TRUE);					// back to normal Z buffering
 }
 
-
 void
 R_RenderFullbrights (void)
 {
@@ -522,7 +507,6 @@ R_RenderFullbrights (void)
 	}
 	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
-
 
 void
 R_RenderBrushPoly (msurface_t *fa)
@@ -592,7 +576,6 @@ R_RenderBrushPoly (msurface_t *fa)
 	qfglColor3ubv (lighthalf_v);
 }
 
-
 void
 GL_WaterSurface (msurface_t *s)
 {
@@ -609,7 +592,6 @@ GL_WaterSurface (msurface_t *s)
 	} else
 		EmitWaterPolys (s);
 }
-
 
 void
 R_DrawWaterSurfaces (void)
@@ -645,7 +627,6 @@ R_DrawWaterSurfaces (void)
 	}
 }
 
-
 void
 DrawTextureChains (void)
 {
@@ -665,7 +646,6 @@ DrawTextureChains (void)
 
 	qfglEnable (GL_BLEND);
 }
-
 
 void
 R_DrawBrushModel (entity_t *e)
@@ -778,11 +758,9 @@ R_DrawBrushModel (entity_t *e)
 	qfglPopMatrix ();
 }
 
-
 /*
 	WORLD MODEL
 */
-
 
 void
 R_RecursiveWorldNode (mnode_t *node)
@@ -880,7 +858,6 @@ R_RecursiveWorldNode (mnode_t *node)
 		R_RecursiveWorldNode (node->children[side]);
 }
 
-
 void
 R_DrawWorld (void)
 {
@@ -915,7 +892,6 @@ R_DrawWorld (void)
 	if (gl_sky_clip->int_val)
 		R_DrawSkyChain (sky_chain);
 }
-
 
 void
 R_MarkLeaves (void)
@@ -961,11 +937,9 @@ R_MarkLeaves (void)
 	}
 }
 
-
 /*
   LIGHTMAP ALLOCATION
 */
-
 
 // returns a texture number and the position inside it
 int
@@ -1011,11 +985,9 @@ AllocBlock (int w, int h, int *x, int *y)
 	return 0;
 }
 
-
 mvertex_t  *r_pcurrentvertbase;
 model_t    *currentmodel;
 int         nColinElim;
-
 
 void
 BuildSurfaceDisplayList (msurface_t *fa)
@@ -1115,7 +1087,6 @@ BuildSurfaceDisplayList (msurface_t *fa)
 	poly->numverts = lnumverts;
 }
 
-
 void
 GL_CreateSurfaceLightmap (msurface_t *surf)
 {
@@ -1134,7 +1105,6 @@ GL_CreateSurfaceLightmap (msurface_t *surf)
 		(surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
 	R_BuildLightMap (surf, base, BLOCK_WIDTH * lightmap_bytes);
 }
-
 
 /*
 	GL_BuildLightmaps

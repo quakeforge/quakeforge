@@ -36,24 +36,23 @@
 # include <strings.h>
 #endif
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/render.h"
 #include "QF/tga.h"
 #include "QF/vfs.h"
 #include "QF/vid.h"
-
-#include "r_shared.h"
-#include "view.h"
-#include "r_cvar.h"
-
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_sky.h"
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_rlight.h"
 #include "QF/GL/qf_vid.h"
+
+#include "compat.h"
+#include "r_shared.h"
+#include "view.h"
+#include "r_cvar.h"
 
 extern model_t *loadmodel;
 
@@ -94,8 +93,8 @@ R_LoadSkys (const char *skyname)
 		}
 		targa_rgba = LoadTGA (f);
 
-		qfglTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, 256, 256, 0, GL_RGBA,
-					  GL_UNSIGNED_BYTE, targa_rgba);
+		qfglTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, 256, 256, 0,
+						GL_RGBA, GL_UNSIGNED_BYTE, targa_rgba);
 
 		free (targa_rgba);
 
@@ -106,66 +105,63 @@ R_LoadSkys (const char *skyname)
 		Con_Printf ("Unable to load skybox %s, using normal sky\n", skyname);
 }
 
-
 void
 R_SkyBoxPolyVec (vec5_t v)
 {
 	// avoid interpolation seams
-//  s = s * (254.0/256.0) + (1.0/256.0);
-//  t = t * (254.0/256.0) + (1.0/256.0);
+//	s = s * (254.0/256.0) + (1.0/256.0);
+//	t = t * (254.0/256.0) + (1.0/256.0);
 	qfglTexCoord2fv (v);
 	qfglVertex3f (r_refdef.vieworg[0] + v[2],
 				r_refdef.vieworg[1] + v[3], r_refdef.vieworg[2] + v[4]);
 }
 
-
 #define ftc(x) (x * (254.0/256.0) + (1.0/256.0))
 vec5_t      skyvec[6][4] = {
 	{
-	 // right +y
-	 {ftc (1), ftc (0), 1024, 1024, 1024},
-	 {ftc (1), ftc (1), 1024, 1024, -1024},
-	 {ftc (0), ftc (1), -1024, 1024, -1024},
-	 {ftc (0), ftc (0), -1024, 1024, 1024}
-	 },
+		// right +y
+		{ftc (1), ftc (0), 1024, 1024, 1024},
+		{ftc (1), ftc (1), 1024, 1024, -1024},
+		{ftc (0), ftc (1), -1024, 1024, -1024},
+		{ftc (0), ftc (0), -1024, 1024, 1024}
+	},
 	{
-	 // back -x
-	 {ftc (1), ftc (0), -1024, 1024, 1024},
-	 {ftc (1), ftc (1), -1024, 1024, -1024},
-	 {ftc (0), ftc (1), -1024, -1024, -1024},
-	 {ftc (0), ftc (0), -1024, -1024, 1024}
-	 },
+		// back -x
+		{ftc (1), ftc (0), -1024, 1024, 1024},
+		{ftc (1), ftc (1), -1024, 1024, -1024},
+		{ftc (0), ftc (1), -1024, -1024, -1024},
+		{ftc (0), ftc (0), -1024, -1024, 1024}
+	},
 	{
-	 // left -y
-	 {ftc (1), ftc (0), -1024, -1024, 1024},
-	 {ftc (1), ftc (1), -1024, -1024, -1024},
-	 {ftc (0), ftc (1), 1024, -1024, -1024},
-	 {ftc (0), ftc (0), 1024, -1024, 1024}
-	 },
+		// left -y
+		{ftc (1), ftc (0), -1024, -1024, 1024},
+		{ftc (1), ftc (1), -1024, -1024, -1024},
+		{ftc (0), ftc (1), 1024, -1024, -1024},
+		{ftc (0), ftc (0), 1024, -1024, 1024}
+	},
 	{
-	 // front +x
-	 {ftc (1), ftc (0), 1024, -1024, 1024},
-	 {ftc (1), ftc (1), 1024, -1024, -1024},
-	 {ftc (0), ftc (1), 1024, 1024, -1024},
-	 {ftc (0), ftc (0), 1024, 1024, 1024}
-	 },
+		// front +x
+		{ftc (1), ftc (0), 1024, -1024, 1024},
+		{ftc (1), ftc (1), 1024, -1024, -1024},
+		{ftc (0), ftc (1), 1024, 1024, -1024},
+		{ftc (0), ftc (0), 1024, 1024, 1024}
+	},
 	{
-	 // up +z
-	 {ftc (1), ftc (0), 1024, -1024, 1024},
-	 {ftc (1), ftc (1), 1024, 1024, 1024},
-	 {ftc (0), ftc (1), -1024, 1024, 1024},
-	 {ftc (0), ftc (0), -1024, -1024, 1024}
-	 },
+		// up +z
+		{ftc (1), ftc (0), 1024, -1024, 1024},
+		{ftc (1), ftc (1), 1024, 1024, 1024},
+		{ftc (0), ftc (1), -1024, 1024, 1024},
+		{ftc (0), ftc (0), -1024, -1024, 1024}
+	},
 	{
-	 // down -z
-	 {ftc (1), ftc (0), 1024, 1024, -1024},
-	 {ftc (1), ftc (1), 1024, -1024, -1024},
-	 {ftc (0), ftc (1), -1024, -1024, -1024},
-	 {ftc (0), ftc (0), -1024, 1024, -1024}
-	 }
+		// down -z
+		{ftc (1), ftc (0), 1024, 1024, -1024},
+		{ftc (1), ftc (1), 1024, -1024, -1024},
+		{ftc (0), ftc (1), -1024, -1024, -1024},
+		{ftc (0), ftc (0), -1024, 1024, -1024}
+	}
 };
 #undef ftc
-
 
 void
 R_DrawSkyBox (void)
@@ -185,7 +181,6 @@ R_DrawSkyBox (void)
 	qfglEnable (GL_DEPTH_TEST);
 	qfglDepthRange (gldepthmin, gldepthmax);
 }
-
 
 vec3_t      domescale;
 
@@ -215,16 +210,16 @@ R_DrawSkyLayer (float s)
 			v[2] = y * domescale[2];
 			qfglTexCoord2f ((v[0] + s) * (1.0 / 128.0),
 						  (v[1] + s) * (1.0 / 128.0));
-			qfglVertex3f (v[0] + r_refdef.vieworg[0],
-						v[1] + r_refdef.vieworg[1], v[2] + r_refdef.vieworg[2]);
+			qfglVertex3f (v[0] + r_refdef.vieworg[0], v[1] +
+						  r_refdef.vieworg[1], v[2] + r_refdef.vieworg[2]);
 
 			v[0] = a2x * x;
 			v[1] = a2y * x;
 			v[2] = y * domescale[2];
 			qfglTexCoord2f ((v[0] + s) * (1.0 / 128.0),
 						  (v[1] + s) * (1.0 / 128.0));
-			qfglVertex3f (v[0] + r_refdef.vieworg[0],
-						v[1] + r_refdef.vieworg[1], v[2] + r_refdef.vieworg[2]);
+			qfglVertex3f (v[0] + r_refdef.vieworg[0], v[1] +
+						  r_refdef.vieworg[1], v[2] + r_refdef.vieworg[2]);
 		}
 		qfglTexCoord2f (0.5 + s * (1.0 / 128.0), 0.5 + s * (1.0 / 128.0));
 		qfglVertex3f (r_refdef.vieworg[0],
@@ -232,7 +227,6 @@ R_DrawSkyLayer (float s)
 		qfglEnd ();
 	}
 }
-
 
 void
 R_DrawSkyDome (void)
@@ -267,7 +261,6 @@ R_DrawSkyDome (void)
 	qfglDepthRange (gldepthmin, gldepthmax);
 }
 
-
 void
 R_DrawSky (void)
 {
@@ -276,7 +269,6 @@ R_DrawSky (void)
 	else
 		R_DrawSkyDome ();
 }
-
 
 /*
 	R_InitSky
@@ -314,7 +306,6 @@ R_InitSky (texture_t *mt)
 	((byte *) & transpix)[2] = b / (128 * 128);
 	((byte *) & transpix)[3] = 0;
 
-
 	if (!solidskytexture)
 		solidskytexture = texture_extension_number++;
 	qfglBindTexture (GL_TEXTURE_2D, solidskytexture);
@@ -322,7 +313,6 @@ R_InitSky (texture_t *mt)
 				  GL_UNSIGNED_BYTE, trans);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
 
 	for (i = 0; i < 128; i++)
 		for (j = 0; j < 128; j++) {

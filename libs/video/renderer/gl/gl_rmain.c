@@ -115,12 +115,12 @@ void        R_MarkLeaves (void);
 
 //qboolean R_CullBlocked (vec3_t mins, vec3_t maxs, vec3_t org);
 
+
 // LordHavoc: place for gl_rmain setup code
 void
 glrmain_init (void)
 {
 }
-
 
 void
 R_RotateForEntity (entity_t *e)
@@ -132,7 +132,6 @@ R_RotateForEntity (entity_t *e)
 	// ZOID: fixed z angle
 	qfglRotatef (e->angles[2], 1, 0, 0);
 }
-
 
 static mspriteframe_t *
 R_GetSpriteFrame (entity_t *currententity)
@@ -176,7 +175,6 @@ R_GetSpriteFrame (entity_t *currententity)
 
 	return pspriteframe;
 }
-
 
 static void
 R_DrawSpriteModel (entity_t *e)
@@ -231,7 +229,6 @@ R_DrawSpriteModel (entity_t *e)
 	qfglDisable (GL_ALPHA_TEST);
 }
 
-
 /*
 	ALIAS MODELS
 */
@@ -254,7 +251,6 @@ float   r_avertexnormal_dots[SHADEDOT_QUANT][256] =
 float      *shadedots = r_avertexnormal_dots[0];
 
 int         lastposenum, lastposenum0;
-
 
 static void
 GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
@@ -309,7 +305,6 @@ GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
 
 	qfglColor3ubv (lighthalf_v);
 }
-
 
 extern vec3_t lightspot;
 
@@ -374,7 +369,6 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 	}
 }
 
-
 /*
 	GL_DrawAliasBlendedShadow
          
@@ -416,16 +410,22 @@ GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2, entity_t
 		do {
 			order += 2;
 
-			point1[0] =	verts1->v[0] * paliashdr->mdl.scale[0] + paliashdr->mdl.scale_origin[0];
-			point1[1] =	verts1->v[1] * paliashdr->mdl.scale[1] + paliashdr->mdl.scale_origin[1];
-			point1[2] =	verts1->v[2] * paliashdr->mdl.scale[2] + paliashdr->mdl.scale_origin[2];
+			point1[0] =	verts1->v[0] * paliashdr->mdl.scale[0] +
+				paliashdr->mdl.scale_origin[0];
+			point1[1] =	verts1->v[1] * paliashdr->mdl.scale[1] +
+				paliashdr->mdl.scale_origin[1];
+			point1[2] =	verts1->v[2] * paliashdr->mdl.scale[2] +
+				paliashdr->mdl.scale_origin[2];
 
 			point1[0] -= shadevector[0] * (point1[2] + lheight);
 			point1[1] -= shadevector[1] * (point1[2] + lheight);
 
-			point2[0] =	verts2->v[0] * paliashdr->mdl.scale[0] + paliashdr->mdl.scale_origin[0];
-			point2[1] =	verts2->v[1] * paliashdr->mdl.scale[1] + paliashdr->mdl.scale_origin[1];
-			point2[2] =	verts2->v[2] * paliashdr->mdl.scale[2] + paliashdr->mdl.scale_origin[2];
+			point2[0] =	verts2->v[0] * paliashdr->mdl.scale[0] +
+				paliashdr->mdl.scale_origin[0];
+			point2[1] =	verts2->v[1] * paliashdr->mdl.scale[1] +
+				paliashdr->mdl.scale_origin[1];
+			point2[2] =	verts2->v[2] * paliashdr->mdl.scale[2] +
+				paliashdr->mdl.scale_origin[2];
 
 			point2[0] -= shadevector[0] * (point2[2] + lheight);
 			point2[1] -= shadevector[1] * (point2[2] + lheight);
@@ -440,7 +440,6 @@ GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2, entity_t
 		qfglEnd ();
 	}
 }
-
 
 vert_order_t *
 GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
@@ -542,7 +541,6 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 	return vo;
 }
 
-
 static void
 R_DrawAliasModel (entity_t *e, qboolean cull)
 {
@@ -615,7 +613,9 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		shadelight = 255;	// make certain models full brightness always
 	}
 
-	shadedots = r_avertexnormal_dots[((int) (e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
+	shadedots = r_avertexnormal_dots[(int) (e->angles[1] *
+											(SHADEDOT_QUANT / 360.0)) &
+									 (SHADEDOT_QUANT - 1)];
 	shadelight /= 200.0;
 
 	an = e->angles[1] / 180 * M_PI;
@@ -675,7 +675,8 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
-	vo = GL_GetAliasFrameVerts (currententity->frame, paliashdr, currententity);
+	vo = GL_GetAliasFrameVerts (currententity->frame, paliashdr,
+								currententity);
 
 	GL_DrawAliasFrame (vo, false);
 
@@ -704,7 +705,8 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		qfglColor4f (0, 0, 0, 0.5);
 
 		if (gl_lerp_anim->int_val) {
-			GL_DrawAliasBlendedShadow (paliashdr, lastposenum0, lastposenum, currententity);
+			GL_DrawAliasBlendedShadow (paliashdr, lastposenum0, lastposenum,
+									   currententity);
 		} else {
 			GL_DrawAliasShadow (paliashdr, lastposenum);
 		}
@@ -714,7 +716,6 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		qfglPopMatrix ();
 	}
 }
-
 
 /*
 	R_ShowNearestLoc
@@ -746,7 +747,6 @@ R_ShowNearestLoc (void)
 		R_RunSpikeEffect (trueloc, 7);
 	}
 }
-
 
 /*
 	R_DrawEntitiesOnList
@@ -795,7 +795,6 @@ R_DrawEntitiesOnList (void)
 	}
 }
 
-
 static void
 R_DrawViewModel (void)
 {
@@ -816,7 +815,6 @@ R_DrawViewModel (void)
 	qfglDepthRange (gldepthmin, gldepthmax);
 }
 
-
 static int
 SignbitsForPlane (mplane_t *out)
 {
@@ -831,7 +829,6 @@ SignbitsForPlane (mplane_t *out)
 	}
 	return bits;
 }
-
 
 static void
 R_SetFrustum (void)
@@ -869,7 +866,6 @@ R_SetFrustum (void)
 	}
 }
 
-
 void
 R_SetupFrame (void)
 {
@@ -887,7 +883,6 @@ R_SetupFrame (void)
 	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.model);
 
 	V_SetContentsColor (r_viewleaf->contents);
-//	V_CalcBlend ();
 
 	r_cache_thrash = false;
 
@@ -895,7 +890,6 @@ R_SetupFrame (void)
 	c_alias_polys = 0;
 
 }
-
 
 static void
 MYgluPerspective (GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar)
@@ -910,7 +904,6 @@ MYgluPerspective (GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar)
 
 	qfglFrustum (xmin, xmax, ymin, ymax, zNear, zFar);
 }
-
 
 static void
 R_SetupGL (void)
@@ -983,7 +976,6 @@ R_SetupGL (void)
 		qfglShadeModel (GL_FLAT);
 }
 
-
 static void
 R_Clear (void)
 {
@@ -997,7 +989,6 @@ R_Clear (void)
 
 	qfglDepthRange (gldepthmin, gldepthmax);
 }
-
 
 void
 R_RenderScene (void)
@@ -1030,9 +1021,7 @@ R_RenderScene (void)
 		R_ZGraph ();
 }
 
-
 void R_RenderBrushPoly (msurface_t *fa);
-
 
 void
 R_Mirror (void)
@@ -1048,7 +1037,8 @@ R_Mirror (void)
 
 	d = DotProduct (r_refdef.vieworg, mirror_plane->normal) -
 		mirror_plane->dist;
-	VectorMA (r_refdef.vieworg, -2 * d, mirror_plane->normal, r_refdef.vieworg);
+	VectorMA (r_refdef.vieworg, -2 * d, mirror_plane->normal,
+			  r_refdef.vieworg);
 
 	d = DotProduct (vpn, mirror_plane->normal);
 	VectorMA (vpn, -2 * d, mirror_plane->normal, vpn);
@@ -1092,7 +1082,6 @@ R_Mirror (void)
 	r_worldentity.model->textures[mirrortexturenum]->texturechain = NULL;
 	qfglColor4f (1, 1, 1, 1);
 }
-
 
 /*
 	R_RenderView
@@ -1142,7 +1131,8 @@ qboolean R_CullBlocked (vec3_t mins, vec3_t maxs, vec3_t org)
 	// Check the origin first
 	if ( Mod_PointInLeaf(org, cl.worldmodel)->contents != CONTENTS_SOLID)
 	{
-		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, org, &trace))
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1,
+								   r_refdef.vieworg, org, &trace))
 			return false;
 	}
 
@@ -1155,39 +1145,46 @@ qboolean R_CullBlocked (vec3_t mins, vec3_t maxs, vec3_t org)
 	point[0] = org[0]; point[1] = org[1]+rad; point[2] = org[2]+4;
 	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
 	{
-		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1,
+								   r_refdef.vieworg, point, &trace))
 			return false;
 	}
 	point[0] = org[0]+rad; point[1] = org[1]; point[2] = org[2]+4;
 	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
 	{
-		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1,
+								   r_refdef.vieworg, point, &trace))
 			return false;
 	}
 	point[0] = org[0]; point[1] = org[1]-rad; point[2] = org[2]+4;
 	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
 	{
-		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1,
+								   r_refdef.vieworg, point, &trace))
 			return false;
 	}
 	point[0] = org[0]-rad; point[1] = org[1]; point[2] = org[2]+4;
 	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
 	{
-		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1,
+								   r_refdef.vieworg, point, &trace))
 			return false;
 	}
 
-	// Check the poles of the sphere (can catch ents on ledges that would otherwise be missed)
+	// Check the poles of the sphere (can catch ents on ledges that would
+	// otherwise be missed)
 	point[0] = org[0]; point[1] = org[1]; point[2] = org[2]+rad;
 	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
 	{
-		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1,
+								   r_refdef.vieworg, point, &trace))
 			return false;
 	}
 	point[0] = org[0]; point[1] = org[1]; point[2] = org[2]-rad;
 	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
 	{
-		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1,
+								   r_refdef.vieworg, point, &trace))
 			return false;
 	}
 
@@ -1195,48 +1192,56 @@ qboolean R_CullBlocked (vec3_t mins, vec3_t maxs, vec3_t org)
 	// Check the corners...
 	if ( Mod_PointInLeaf(maxs, cl.worldmodel)->contents != CONTENTS_SOLID)
 	{
-		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, maxs, &trace))
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1,
+								   r_refdef.vieworg, maxs, &trace))
 			return false;
 	}
 	point[0] = mins[0]; point[1] = maxs[1]; point[2] = maxs[2];
 	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
 	{
-		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1,
+								   r_refdef.vieworg, point, &trace))
 			return false;
 	}
 	point[0] = mins[0]; point[1] = mins[1]; point[2] = maxs[2];
 	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
 	{
-		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1,
+								   r_refdef.vieworg, point, &trace))
 			return false;
 	}
 	point[0] = maxs[0]; point[1] = mins[1]; point[2] = maxs[2];
 	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
 	{
-		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1,
+								   r_refdef.vieworg, point, &trace))
 			return false;
 	}
 	if ( Mod_PointInLeaf(mins, cl.worldmodel)->contents != CONTENTS_SOLID)
 	{
-		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, mins, &trace))
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1,
+								   r_refdef.vieworg, mins, &trace))
 			return false;
 	}
 	point[0] = mins[0]; point[1] = maxs[1]; point[2] = mins[2]+4;
 	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
 	{
-		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1,
+								   r_refdef.vieworg, point, &trace))
 			return false;
 	}
 	point[0] = maxs[0]; point[1] = mins[1]; point[2] = mins[2]+4;
 	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
 	{
-		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1,
+								   r_refdef.vieworg, point, &trace))
 			return false;
 	}
 	point[0] = maxs[0]; point[1] = maxs[1]; point[2] = mins[2]+4;
 	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
 	{
-		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1,
+								   r_refdef.vieworg, point, &trace))
 			return false;
 	}
 

@@ -32,10 +32,10 @@
 
 #include <stdlib.h>
 
+#include "QF/qtypes.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/qf_vid.h"
 #include "QF/GL/funcs.h"
-#include "QF/qtypes.h"
 
 extern void noise_diamondsquare(unsigned char *noise, int size);
 extern void noise_plasma(unsigned char *noise, int size);
@@ -59,7 +59,6 @@ GDT_Init (void)
 	GDT_InitSmokeParticleTexture ();
 	GDT_InitSmokeRingParticleTexture ();
 }
-
 
 static void
 GDT_InitDotParticleTexture (void)
@@ -89,7 +88,6 @@ GDT_InitDotParticleTexture (void)
 	qfglTexImage2D (GL_TEXTURE_2D, 0, 2, 16, 16, 0, GL_LUMINANCE_ALPHA,
 		      GL_UNSIGNED_BYTE, data);
 }
-
 
 static void
 GDT_InitSparkParticleTexture (void)
@@ -121,7 +119,6 @@ GDT_InitSparkParticleTexture (void)
 	qfglTexImage2D (GL_TEXTURE_2D, 0, 2, 16, 16, 0, GL_LUMINANCE_ALPHA,
 		      GL_UNSIGNED_BYTE, data);
 }
-
 
 static void
 GDT_InitSmokeParticleTexture (void)
@@ -160,7 +157,6 @@ GDT_InitSmokeParticleTexture (void)
 			      GL_UNSIGNED_BYTE, data);
 	}
 }
-
 
 static void
 GDT_InitSmokeRingParticleTexture (void)

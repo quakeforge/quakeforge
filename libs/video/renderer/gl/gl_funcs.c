@@ -41,12 +41,13 @@
 #endif
 #include <stdio.h>
 
-#include <QF/GL/types.h>
-#include <QF/GL/funcs.h>
-#include <QF/GL/extensions.h>
 #include <QF/cvar.h>
 #include <QF/console.h>
 #include <QF/sys.h>
+#include <QF/GL/types.h>
+#include <QF/GL/funcs.h>
+#include <QF/GL/extensions.h>
+
 #include "r_cvar.h"
 
 // First we need to get all the function pointers declared.
@@ -63,7 +64,8 @@ GLF_Init (void)
 
 #if defined(HAVE_DLOPEN)
 	if (!(handle = dlopen (gl_libgl->string, RTLD_NOW))) {
-		Sys_Error ("Couldn't load OpenGL library %s: %s\n", gl_libgl->string, dlerror ());
+		Sys_Error ("Couldn't load OpenGL library %s: %s\n", gl_libgl->string,
+				   dlerror ());
 		return false;
 	}
 #elif defined(_WIN32)
@@ -80,10 +82,12 @@ GLF_Init (void)
 
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
-	QFGL_ProcAddress (NULL, NULL, false); // tell ProcAddress to clear its cache
+	// tell ProcAddress to clear its cache
+	QFGL_ProcAddress (NULL, NULL, false);
 
 	return true;
 }
+
 
 void *
 QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
@@ -109,7 +113,8 @@ QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 #if defined(HAVE_DLOPEN)
 		glGetProcAddress = dlsym (handle, "glXGetProcAddressARB");
 #elif defined(_WIN32)
-		(FARPROC)glGetProcAddress = GetProcAddress (handle, "wglGetProcAddress");
+		(FARPROC)glGetProcAddress = GetProcAddress (handle,
+													"wglGetProcAddress");
 #endif
 	}
 
@@ -135,7 +140,8 @@ QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 	Con_DPrintf ("not found\n");
 
 	if (crit)
-		Sys_Error ("Couldn't load critical OpenGL function %s, exiting...\n", name);
+		Sys_Error ("Couldn't load critical OpenGL function %s, exiting...\n",
+				   name);
 
 	return NULL;
 }
