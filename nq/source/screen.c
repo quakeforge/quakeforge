@@ -563,7 +563,6 @@ SCR_SetUpToDrawConsole (void)
 	if (cls.state != ca_active) {
 		scr_conlines = vid.height;		// full screen
 		scr_con_current = scr_conlines;
-		key_dest = key_console;
 	} else if (key_dest == key_console)
 		scr_conlines = vid.height * bound (0.2, scr_consize->value, 1);
 	else
