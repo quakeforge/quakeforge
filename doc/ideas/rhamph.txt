@@ -18,8 +18,9 @@ generated maps.  You'd have a base map which would have one of each
 room you wanted available, then you'd pick between them, connecting
 portals and duplicating rooms as necesary.  You also could (would have
 to) modify the multiple-texture mechanism currently used for button
-animations to allow different bases in TF have different coloured
-walls.
+animations to allow each instance of the room to have a different
+texture chosen, which would allow each base in TF have different
+coloured walls.
 
 - Variable-detail models.  Have 3 or 4 different versions of the same
 model, each with a different amount of detail/polygons.  You could
