@@ -77,7 +77,7 @@ client_LIBS=	$(top_builddir)/libs/gamecode/libQFgamecode.la \
 		$(top_builddir)/libs/audio/targets/libQFsound.la \
 		$(top_builddir)/libs/video/targets/libQFjs.la \
 		-L. -lqfnet $(SOUND_LIBS) $(NET_LIBS)
-client_LIB_DEPS= libqfsys.a libqfnet.a
+client_LIB_DEPS= libqfnet.a
 
 client_SOURCES= cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
 		cl_tent.c console.c keys.c sbar.c r_part.c r_view.c \
@@ -199,8 +199,8 @@ nq_sgl_DEPENDENCIES=$(client_LIB_DEPS)
 #
 wgl_SOURCES=	vid_wgl.c
 
-nq_wgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) $(wgl_SOURCES)
-nq_wgl_LDADD=	$(client_LIBS)
+nq_wgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) $(wgl_SOURCES) in_win.c
+nq_wgl_LDADD=	$(client_LIBS) $(GLX_LIBS) -lgdi32
 nq_wgl_DEPENDENCIES=$(client_LIB_DEPS)
 
 #
