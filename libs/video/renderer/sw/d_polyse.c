@@ -173,7 +173,7 @@ D_PolysetSetEdgeTable (void)
 
 #ifndef USE_INTEL_ASM
 
-void
+static void
 D_PolysetRecursiveTriangle (int *lp1, int *lp2, int *lp3)
 {
 	int        *temp;
@@ -250,7 +250,7 @@ D_PolysetRecursiveTriangle (int *lp1, int *lp2, int *lp3)
 }
 
 
-void
+static void
 D_DrawSubdiv (void)
 {
 	mtriangle_t *ptri;
@@ -302,7 +302,7 @@ D_DrawSubdiv (void)
 }
 
 
-void
+static void
 D_DrawNonSubdiv (void)
 {
 	mtriangle_t *ptri;
