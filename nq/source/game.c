@@ -39,7 +39,7 @@ qboolean standard_quake = false;
 qboolean hipnotic, rogue, abyss;
 
 
-void
+const char *
 Game_Init (void)
 {
 	int     i;
@@ -48,15 +48,17 @@ Game_Init (void)
 	standard_quake = true;
 
 	if ((i = COM_CheckParm ("-hipnotic"))) {
-		QFS_Gamedir ("hipnotic");
 		standard_quake = false;
 		hipnotic = true;
+		return "hipnotic";
 	} else if ((i = COM_CheckParm ("-rogue"))) {
-		QFS_Gamedir ("rogue");
 		standard_quake = false;
 		rogue = true;
+		return "rogue";
 	} else if ((i = COM_CheckParm ("-abyss"))) {
-		QFS_Gamedir ("abyss");
 		abyss = true;
+		return "abyss";
 	}
+
+	return "nq";
 }

@@ -93,7 +93,8 @@ void PR_ExecuteProgram (progs_t *pr, func_t fnum);
 	to PR_ExecuteProgram().
 	\param pr pointer to progs_t VM struct
 	\param fnum number of the function to call
-	\return true if \c fnum was a progs function, false if fnum was a builtin
+	\return true if \c fnum was a progs function, false if \c fnum was a
+	builtin
 */
 int PR_CallFunction (progs_t *pr, func_t fnum);
 

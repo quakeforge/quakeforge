@@ -868,6 +868,8 @@ CL_Init_Memory (void)
 void
 Host_Init (void)
 {
+	const char *mp;
+
 	Con_Printf ("Host_Init\n");
 
 	host_cbuf = Cbuf_New (&id_interp);
@@ -913,7 +915,8 @@ Host_Init (void)
 
 	pr_gametype = "netquake";
 
-	QFS_Init ("nq");
+	mp = Game_Init ();
+	QFS_Init (mp);
 	PI_Init ();
 
 	Chase_Init_Cvars ();
@@ -934,7 +937,6 @@ Host_Init (void)
 	PR_Init ();
 
 	V_Init ();
-	Game_Init ();
 	COM_Init ();
 
 	if (isDedicated) {
