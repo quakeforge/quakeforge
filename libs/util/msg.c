@@ -49,16 +49,7 @@ static const char rcsid[] =
 	Handles byte ordering and avoids alignment errors
 */
 
-// writing functions
-
-void
-MSG_WriteChar (sizebuf_t *sb, unsigned int c)
-{
-	byte	   *buf;
-
-	buf = SZ_GetSpace (sb, 1);
-	*buf = c;
-}
+// writing functions ==========================================================
 
 void
 MSG_WriteByte (sizebuf_t *sb, unsigned int c)
@@ -173,8 +164,7 @@ MSG_WriteAngle16 (sizebuf_t *sb, float angle16)
 	MSG_WriteShort (sb, (unsigned int) (angle16 * (65536.0 / 360.0)) & 65535);
 }
 
-
-// reading functions
+// reading functions ==========================================================
 
 void
 MSG_BeginReading (msg_t *msg)

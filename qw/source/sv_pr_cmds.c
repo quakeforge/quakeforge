@@ -1070,7 +1070,7 @@ PF_WriteChar (progs_t *pr)
 		ClientReliableCheckBlock (cl, 1);
 		ClientReliableWrite_Char (cl, G_FLOAT (pr, OFS_PARM1));
 	} else
-		MSG_WriteChar (WriteDest (pr), G_FLOAT (pr, OFS_PARM1));
+		MSG_WriteByte (WriteDest (pr), G_FLOAT (pr, OFS_PARM1));
 }
 
 void

@@ -98,7 +98,7 @@ SV_StartParticle (const vec3_t org, const vec3_t dir, int color, int count)
 			v = 127;
 		else if (v < -128)
 			v = -128;
-		MSG_WriteChar (&sv.datagram, v);
+		MSG_WriteByte (&sv.datagram, v);
 	}
 	MSG_WriteByte (&sv.datagram, count);
 	MSG_WriteByte (&sv.datagram, color);
@@ -584,16 +584,16 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	MSG_WriteShort (msg, bits);
 
 	if (bits & SU_VIEWHEIGHT)
-		MSG_WriteChar (msg, SVvector (ent, view_ofs)[2]);
+		MSG_WriteByte (msg, SVvector (ent, view_ofs)[2]);
 
 	if (bits & SU_IDEALPITCH)
-		MSG_WriteChar (msg, SVfloat (ent, idealpitch));
+		MSG_WriteByte (msg, SVfloat (ent, idealpitch));
 
 	for (i = 0; i < 3; i++) {
 		if (bits & (SU_PUNCH1 << i))
-			MSG_WriteChar (msg, SVvector (ent, punchangle)[i]);
+			MSG_WriteByte (msg, SVvector (ent, punchangle)[i]);
 		if (bits & (SU_VELOCITY1 << i))
-			MSG_WriteChar (msg, SVvector (ent, velocity)[i] / 16);
+			MSG_WriteByte (msg, SVvector (ent, velocity)[i] / 16);
 	}
 
 	// [always sent]    if (bits & SU_ITEMS)
@@ -708,7 +708,7 @@ SV_SendNop (client_t *client)
 	msg.maxsize = sizeof (buf);
 	msg.cursize = 0;
 
-	MSG_WriteChar (&msg, svc_nop);
+	MSG_WriteByte (&msg, svc_nop);
 
 	if (NET_SendUnreliableMessage (client->netconnection, &msg) == -1)
 		SV_DropClient (true);		// if the message couldn't send, kick off
@@ -859,7 +859,7 @@ SV_SendReconnect (void)
 	msg.cursize = 0;
 	msg.maxsize = sizeof (data);
 
-	MSG_WriteChar (&msg, svc_stufftext);
+	MSG_WriteByte (&msg, svc_stufftext);
 	MSG_WriteString (&msg, "reconnect\n");
 	NET_SendToAll (&msg, 5);
 

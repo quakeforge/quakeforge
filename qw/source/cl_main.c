@@ -862,7 +862,7 @@ CL_Reconnect_f (void)
 	if (cls.state == ca_connected) {
 		Con_Printf ("reconnecting...\n");
 		VID_SetCaption ("Reconnecting");
-		MSG_WriteChar (&cls.netchan.message, clc_stringcmd);
+		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message, "new");
 		return;
 	}
@@ -905,7 +905,7 @@ CL_ConnectionlessPacket (void)
 			return;
 		}
 		Netchan_Setup (&cls.netchan, net_from, cls.qport);
-		MSG_WriteChar (&cls.netchan.message, clc_stringcmd);
+		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message, "new");
 		CL_SetState (ca_connected);
 		Con_Printf ("Connected.\n");

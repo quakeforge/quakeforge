@@ -137,10 +137,10 @@ void
 ClientReliableWrite_Char (client_t *cl, int c)
 {
 	if (cl->num_backbuf) {
-		MSG_WriteChar (&cl->backbuf, c);
+		MSG_WriteByte (&cl->backbuf, c);
 		ClientReliable_FinishWrite (cl);
 	} else
-		MSG_WriteChar (&cl->netchan.message, c);
+		MSG_WriteByte (&cl->netchan.message, c);
 }
 
 void

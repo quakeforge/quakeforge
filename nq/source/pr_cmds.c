@@ -305,7 +305,7 @@ PF_sprint (progs_t *pr)
 
 	client = &svs.clients[entnum - 1];
 
-	MSG_WriteChar (&client->message, svc_print);
+	MSG_WriteByte (&client->message, svc_print);
 	MSG_WriteString (&client->message, s);
 }
 
@@ -334,7 +334,7 @@ PF_centerprint (progs_t *pr)
 
 	client = &svs.clients[entnum - 1];
 
-	MSG_WriteChar (&client->message, svc_centerprint);
+	MSG_WriteByte (&client->message, svc_centerprint);
 	MSG_WriteString (&client->message, s);
 }
 
@@ -861,8 +861,8 @@ PF_lightstyle (progs_t *pr)
 
 	for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++)
 		if (client->active || client->spawned) {
-			MSG_WriteChar (&client->message, svc_lightstyle);
-			MSG_WriteChar (&client->message, style);
+			MSG_WriteByte (&client->message, svc_lightstyle);
+			MSG_WriteByte (&client->message, style);
 			MSG_WriteString (&client->message, val);
 		}
 }
@@ -1060,7 +1060,7 @@ PF_WriteByte (progs_t *pr)
 void
 PF_WriteChar (progs_t *pr)
 {
-	MSG_WriteChar (WriteDest (pr), G_FLOAT (pr, OFS_PARM1));
+	MSG_WriteByte (WriteDest (pr), G_FLOAT (pr, OFS_PARM1));
 }
 
 void
