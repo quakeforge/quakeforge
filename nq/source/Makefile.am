@@ -38,7 +38,7 @@ bin_PROGRAMS =	@NQ_TARGETS@
 EXTRA_PROGRAMS= nq-3dfx nq-fbdev nq-glx nq-mgl nq-sdl \
 		nq-sgl nq-svga nq-wgl nq-x11 nq-server
 
-noinst_LIBRARIES= libqfsys.a libqfnet.a
+noinst_LIBRARIES= libqfnet.a
 
 #if ASM_ARCH
 math_ASM= 	cl_math.S

@@ -58,6 +58,8 @@
 
 void        VGA_UpdatePlanarScreen (void *srcbuffer);
 
+cvar_t      *vid_system_gamma;
+qboolean    vid_gamma_avail;
 
 unsigned short d_8to16table[256];
 
@@ -615,6 +617,8 @@ VID_Init_Cvars ()
 			"Redraw entire screen each frame instead of just dirty areas");
 	vid_waitforrefresh = Cvar_Get ("vid_waitforrefresh", "0", CVAR_ARCHIVE,
 			NULL, "Wait for vertical retrace before drawing next frame");
+	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
+								 "Use system gamma control if available");
 }
 
 
@@ -760,4 +764,10 @@ VID_UnlockBuffer (void)
 void
 VID_SetCaption (char *text)
 {
+}
+
+qboolean
+VID_SetGamma (double gamma)
+{
+	return false; //FIXME
 }

@@ -58,6 +58,8 @@ HWND 		mainwindow;
 // static float oldin_grab = 0;
 
 cvar_t     *vid_fullscreen;
+cvar_t      *vid_system_gamma;
+qboolean    vid_gamma_avail;
 extern viddef_t vid;					// global video state
 unsigned short d_8to16table[256];
 
@@ -197,6 +199,8 @@ VID_Init_Cvars ()
 	vid_fullscreen =
 		Cvar_Get ("vid_fullscreen", "0", CVAR_ROM, NULL,
 				  "Toggles fullscreen game mode");
+	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
+								 "Use system gamma control if available");
 }
 
 void
@@ -288,4 +292,10 @@ VID_SetCaption (char *text)
 	} else {
 		SDL_WM_SetCaption (va ("%s %s", PROGRAM, VERSION), NULL);
 	}
+}
+
+qboolean
+VID_SetGamma (double gamma)
+{
+	return false; //FIXME
 }

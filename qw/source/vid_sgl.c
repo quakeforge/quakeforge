@@ -64,6 +64,8 @@ HWND 		mainwindow;
 static qboolean vid_initialized = false;
 
 cvar_t     *vid_fullscreen;
+cvar_t      *vid_system_gamma;
+qboolean    vid_gamma_avail;
 
 int         VID_options_items = 1;
 int         modestate;
@@ -230,6 +232,8 @@ VID_Init_Cvars ()
 {
 	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ROM, NULL,
 			"Toggles fullscreen mode");
+	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
+								 "Use system gamma control if available");
 }
 
 void
@@ -243,4 +247,21 @@ VID_SetCaption (char *text)
 	} else {
 		SDL_WM_SetCaption (va ("%s %s", PROGRAM, VERSION), NULL);
 	}
+}
+
+qboolean
+VID_SetGamma (double gamma)
+{
+	return false; //FIXME
+}
+
+void
+VID_UpdateGamma (cvar_t *vid_gamma)
+{
+	if (vid_gamma->flags & CVAR_ROM)    // System gamma unavailable
+		return;
+
+	Cvar_SetValue (vid_gamma, bound (0.1, vid_gamma->value, 9.9));
+
+	VID_SetGamma (vid_gamma->value);
 }
