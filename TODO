@@ -54,6 +54,8 @@ o  gui for serverlist
 o  add favorates serverlist manipulation
 o  redo serverlist filtering for better flexability and/or easier use
 o  add individual server ping/info request from console
+?  bring software-mode skybox code in from Quake 2
+?  bring some assembly code for the software renderer in from Quake 2.
 
 These are explained better in doc/ideas/rhamph.txt:
 ?  portal vis system
