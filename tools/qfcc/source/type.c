@@ -282,7 +282,7 @@ print_type (type_t *type)
 			printf (" %s", type->s.class->name);
 			break;
 		case ev_struct:
-			printf (" %s %s", pr_type_name[type->type], type->name);
+			printf (" %s %s", pr_type_name[type->type], type->s.strct->name);
 			break;
 		default:
 			printf(" %s", pr_type_name[type->type]);
@@ -295,6 +295,7 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 {
 	struct_field_t *field;
 	int         i, count;
+	struct_t   *strct;
 
 	switch (type->type) {
 		case ev_void:
@@ -365,9 +366,14 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 		case ev_struct:
 		case ev_object:
 		case ev_class:
+			if (type->type == ev_struct) {
+				strct = type->s.strct;
+			} else {
+				strct = type->s.class->ivars;
+			}
 			dstring_appendstr (encoding, "{");
-			if (type->name) {
-				dstring_appendstr (encoding, type->name);
+			if (strct->name) {
+				dstring_appendstr (encoding, strct->name);
 			} else if (type->type == ev_object || type->type == ev_class) {
 				dstring_appendstr (encoding, type->s.class->name);
 			}
@@ -474,7 +480,7 @@ _parse_type (const char **str)
 			strct = 0;
 			if (name->str[0])
 				strct = get_struct (name->str, 0);
-			if (strct) {
+			if (strct && strct->struct_head) {
 				dstring_delete (name);
 				if (**str == '=' || **str == '-') {
 					(*str)++;
@@ -486,16 +492,25 @@ _parse_type (const char **str)
 				(*str)++;
 				return strct->type;
 			}
-			if (**str != '=' && **str != '-') {
+			if (**str != '=' && **str != '-' && **str != '}') {
+				if (( s = strchr (*str, '}')))
+					*str = s + 1;
 				dstring_delete (name);
 				return 0;
 			}
-			strct = get_struct (*name->str ? name->str : 0, 1);
-			if (**str == '-')
-				init_struct (strct, new_type (), str_union, 0);
-			else
-				init_struct (strct, new_type (), str_struct, 0);
+			if (!strct) {
+				strct = get_struct (*name->str ? name->str : 0, 1);
+				init_struct (strct, new_type (), str_none, 0);
+			}
 			dstring_delete (name);
+			if (**str == '}') {
+				(*str)++;
+				return strct->type;
+			}
+			if (**str == '-')
+				strct->stype = str_union;
+			else
+				strct->stype = str_struct;
 			(*str)++;
 			while (**str && **str != '}')
 				new_struct_field (strct, _parse_type (str), 0, vis_public);
