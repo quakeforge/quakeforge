@@ -88,7 +88,7 @@ Sys_DebugLog (const char *file, const char *fmt, ...)
 static void
 shutdown (void)
 {
-	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~FNDELAY);
+	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
 	fflush (stdout);
 }
 
@@ -164,7 +164,7 @@ main (int argc, const char **argv)
 		host_parms.argv = com_argv;
 	}
 
-	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
+	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
 
 	Sys_RegisterShutdown (Host_Shutdown);
 	Sys_RegisterShutdown (shutdown);
