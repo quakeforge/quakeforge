@@ -29,6 +29,7 @@
 #ifndef __host_h
 #define __host_h
 
+#include "QF/gcc_attr.h"
 #include "QF/qtypes.h"
 #include "QF/cvar.h"
 
@@ -63,11 +64,11 @@ void Host_ServerFrame (void);
 void Host_InitCommands (void);
 void Host_Init (quakeparms_t *parms);
 void Host_Shutdown(void);
-void Host_Error (char *error, ...);
-void Host_EndGame (char *message, ...);
+void Host_Error (char *error, ...) __attribute__((format(printf,1,2)));
+void Host_EndGame (char *message, ...) __attribute__((format(printf,1,2)));
 void Host_Frame (float time);
 void Host_Quit_f (void);
-void Host_ClientCommands (char *fmt, ...);
+void Host_ClientCommands (char *fmt, ...) __attribute__((format(printf,1,2)));
 void Host_ShutdownServer (qboolean crash);
 
 #endif // __host_h
