@@ -201,6 +201,7 @@ MSG_ReadShort (msg_t *msg)
 	int         c;
 
 	if (msg->readcount + 2 > msg->message->cursize) {
+		msg->readcount = msg->message->cursize;
 		msg->badread = true;
 		return -1;
 	}
@@ -219,6 +220,7 @@ MSG_ReadLong (msg_t *msg)
 	int         c;
 
 	if (msg->readcount + 4 > msg->message->cursize) {
+		msg->readcount = msg->message->cursize;
 		msg->badread = true;
 		return -1;
 	}
@@ -241,6 +243,12 @@ MSG_ReadFloat (msg_t *msg)
 		float       f;
 		int         l;
 	} dat;
+
+	if (msg->readcount + 4 > msg->message->cursize) {
+		msg->readcount = msg->message->cursize;
+		msg->badread = true;
+		return -1;
+	}
 
 	dat.b[0] = msg->message->data[msg->readcount];
 	dat.b[1] = msg->message->data[msg->readcount + 1];
