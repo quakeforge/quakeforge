@@ -290,7 +290,6 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 			build_switch (sw, tree->right, op, sw_val, temp, default_label);
 		}
 	} else {
-		expr_t     *utemp = new_temp_def_expr (&type_uinteger);
 		int         low = tree->low->e.integer_val;
 		int         high = tree->high->e.integer_val;
 		def_t      *def;
@@ -309,8 +308,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 			branch = new_binary_expr (IFB, temp, low_label);
 			append_expr (sw, branch);
 		}
-		append_expr (sw, new_bind_expr (temp, utemp));
-		test = binary_expr (GT, utemp, range);
+		test = binary_expr (GT, cast_expr (&type_uinteger, temp), range);
 		branch = new_binary_expr ('i', test, high_label);
 		append_expr (sw, branch);
 		branch = new_binary_expr ('g', table, temp);
