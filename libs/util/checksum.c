@@ -1,7 +1,12 @@
 /*
 	checksum.c
 
-	(description)
+	CRC and MD4-based checksum utility functions
+
+	Copyright (C) 2000       Jeff Teunissen <d2deek@pmail.net>
+
+	Author: Jeff Teunissen	<d2deek@pmail.net>
+	Date: 01 Jan 2000
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -38,6 +43,7 @@
 
 #include "checksum.h"
 #include "crc.h"
+#include "mdfour.h"
 
 static byte chktbl[1024 + 4] = {
 	0x78, 0xd2, 0x94, 0xe3, 0x41, 0xec, 0xd6, 0xd5, 0xcb, 0xfc, 0xdb, 0x8a,
@@ -109,52 +115,6 @@ static byte chktbl[1024 + 4] = {
 	0x00, 0x00, 0x00, 0x00
 };
 
-#if 0
-/*
-	COM_BlockSequenceCheckByte
-
-	For proxy protecting
-*/
-byte
-COM_BlockSequenceCheckByte (byte * base, int length, int sequence,
-							unsigned mapchecksum)
-{
-	int         checksum;
-	byte       *p;
-
-	if (last_mapchecksum != mapchecksum) {
-		last_mapchecksum = mapchecksum;
-		chktbl[1024] = (mapchecksum & 0xff000000) >> 24;
-		chktbl[1025] = (mapchecksum & 0x00ff0000) >> 16;
-		chktbl[1026] = (mapchecksum & 0x0000ff00) >> 8;
-		chktbl[1027] = (mapchecksum & 0x000000ff);
-
-		Com_BlockFullChecksum (chktbl, sizeof (chktbl), chkbuf);
-	}
-
-	p = chktbl + (sequence % (sizeof (chktbl) - 8));
-
-	if (length > 60)
-		length = 60;
-	memcpy (chkbuf + 16, base, length);
-
-	length += 16;
-
-	chkbuf[length] = (sequence & 0xff) ^ p[0];
-	chkbuf[length + 1] = p[1];
-	chkbuf[length + 2] = ((sequence >> 8) & 0xff) ^ p[2];
-	chkbuf[length + 3] = p[3];
-
-	length += 4;
-
-	checksum = LittleLong (Com_BlockChecksum (chkbuf, length));
-
-	checksum &= 0xff;
-
-	return checksum;
-}
-#endif
-
 /*
 	COM_BlockSequenceCRCByte
 
@@ -185,4 +145,23 @@ COM_BlockSequenceCRCByte (byte * base, int length, int sequence)
 	crc &= 0xff;
 
 	return (byte) crc;
+}
+
+unsigned int
+Com_BlockChecksum (void *buffer, int length)
+{
+	int         digest[4];
+	unsigned int val;
+
+	mdfour ((unsigned char *) digest, (unsigned char *) buffer, length);
+
+	val = digest[0] ^ digest[1] ^ digest[2] ^ digest[3];
+
+	return val;
+}
+
+void
+Com_BlockFullChecksum (void *buffer, int len, unsigned char *outbuf)
+{
+	mdfour (outbuf, (unsigned char *) buffer, len);
 }

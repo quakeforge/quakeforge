@@ -1,7 +1,7 @@
 /*
 	checksum.h
 
-	@description@
+	Checksum (MD4) calculation prototypes
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -29,6 +29,10 @@
 #ifndef __checksum_h
 #define __checksum_h
 
-unsigned Com_BlockChecksum (void *buffer, int length);
+#include "qtypes.h"
+
+unsigned int Com_BlockChecksum (void *buffer, int length);
+void Com_BlockFullChecksum (void *buffer, int len, unsigned char *outbuf);
+byte	COM_BlockSequenceCRCByte (byte *base, int length, int sequence);
 
 #endif // __checksum_h

@@ -49,7 +49,7 @@ sound_ASM=	snd_mixa.S
 common_ASM=	sys_ia32.S worlda.S $(math_ASM)
 #endif
 
-common_SOURCES= crc.c mathlib.c wad.c world.c \
+common_SOURCES= mathlib.c wad.c world.c \
 		model.c model_alias.c model_brush.c model_sprite.c \
 		msg.c qendian.c qargs.c quakefs.c \
 		quakeio.c link.c com.c \
@@ -122,7 +122,7 @@ EXTRA_libqfjs_a_SOURCES= joy_linux.c joy_null.c
 #
 # ... Networking
 #
-libqfnet_a_SOURCES=	net_bsd.c checksum.c net_dgrm.c net_loop.c \
+libqfnet_a_SOURCES=	net_bsd.c net_dgrm.c net_loop.c \
 			net_main.c net_udp.c net_vcr.c
 
 EXTRA_libqfcd_a_SOURCES=net_dos.c net_bw.c net_ipx.c net_mp.c net_ser.c \

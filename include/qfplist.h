@@ -89,7 +89,7 @@ typedef struct pldata_s {	// Unparsed property list string
 	char			*error;
 } pldata_t;
 
-static plitem_t *PL_GetPropertyList (const char *);
+plitem_t *PL_GetPropertyList (const char *);
 
 /*
 	Internal prototypes

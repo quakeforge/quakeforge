@@ -421,7 +421,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 	} // switch
 }
 
-static plitem_t *
+plitem_t *
 PL_GetPropertyList (const char *string)
 {
 	pldata_t	*pl = calloc (1, sizeof (pldata_t));
@@ -434,12 +434,3 @@ PL_GetPropertyList (const char *string)
 
 	return PL_ParsePropertyListItem (pl);
 }
-
-
-
-
-
-
-
-
-

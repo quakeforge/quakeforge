@@ -49,7 +49,7 @@ endif
 if ASM_ARCH
 math_ASM = math.S sys_x86.S
 endif
-common_SOURCES= buildnum.c checksum.c com.c crc.c \
+common_SOURCES= buildnum.c com.c \
 	info.c link.c mathlib.c model.c model_brush.c \
 	msg.c pmove.c pmovetst.c qargs.c qendian.c quakefs.c quakeio.c \
 	$(math_ASM) $(packetlogger)
@@ -58,11 +58,11 @@ common_SOURCES= buildnum.c checksum.c com.c crc.c \
 # ... Network type
 #
 if NETTYPE_IPV6
-libqfnet_a_SOURCES=	net_chan.c net_com.c net_udp6.c
+libqfnet_a_SOURCES=	net_chan.c net_udp6.c
 else
-libqfnet_a_SOURCES=	net_chan.c net_com.c net_udp.c
+libqfnet_a_SOURCES=	net_chan.c net_udp.c
 endif
-EXTRA_libqfnet_a_SOURCES= net_chan.c net_com.c net_udp.c net_udp6.c
+EXTRA_libqfnet_a_SOURCES= net_chan.c net_udp.c net_udp6.c
 
 #
 # Server builds

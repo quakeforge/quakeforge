@@ -1,12 +1,9 @@
 /*
-	net_com.c
-	
-	MD4-based checksum utility functions
+	crc.h
 
-	Copyright (C) 2000       Jeff Teunissen <d2deek@pmail.net>
+	CRC (MD4) prototypes
 
-	Author: Jeff Teunissen	<d2deek@pmail.net>
-	Date: 01 Jan 2000
+	Copyright (C) 1996-1997  Id Software, Inc.
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -29,26 +26,14 @@
 	$Id$
 */
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+#ifndef __crc_h
+#define __crc_h
 
-#include <mdfour.h>
+#include "qtypes.h"
 
-unsigned Com_BlockChecksum (void *buffer, int length)
-{
-	int				digest[4];
-	unsigned 		val;
+void CRC_Init(unsigned short *crcvalue);
+void CRC_ProcessByte(unsigned short *crcvalue, byte data);
+unsigned short CRC_Value(unsigned short crcvalue);
+unsigned short CRC_Block (byte *start, int count);
 
-	mdfour ( (unsigned char *) digest, (unsigned char *) buffer, length );
-
-	val = digest[0] ^ digest[1] ^ digest[2] ^ digest[3];
-
-	return val;
-}
-
-void Com_BlockFullChecksum (void *buffer, int len, unsigned char *outbuf)
-{
-	mdfour ( outbuf, (unsigned char *) buffer, len );
-}
-
+#endif // __crc_h
