@@ -51,6 +51,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 #include "QF/zone.h"
 
 #include "compat.h"
@@ -479,6 +480,7 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s)
 				dstring_appendsubstr (line, fmt + 1, 1);
 				fmt += 2;
 			} else {
+				const char *str;
 				char        mode = fmt[1];
 				char        opchar = fmt[2];
 				long        opval;
@@ -502,30 +504,24 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s)
 				}
 				switch (mode) {
 					case 'V':
-						dstring_appendstr (line,
-										   PR_GlobalString (pr, opval,
-											   				ev_void));
+						str = PR_GlobalString (pr, opval, ev_void);
 						break;
 					case 'G':
-						dstring_appendstr (line,
-										   PR_GlobalString (pr, opval,
-											   				optype));
+						str = PR_GlobalString (pr, opval, optype);
 						break;
 					case 'g':
-						dstring_appendstr (line,
-										   PR_GlobalStringNoContents (pr,
-											   						  opval,
-																	  optype));
+						str = PR_GlobalStringNoContents (pr, opval, optype);
 						break;
 					case 's':
-						dasprintf (line, "%d", (short) opval);
+						str = va ("%d", (short) opval);
 						break;
 					case 'O':
-						dasprintf (line, "%04x", addr + (short) opval);
+						str = va ("%04x", addr + (short) opval);
 						break;
 					default:
 						goto err;
 				}
+				dstring_appendstr (line, str);
 				fmt += 3;
 				continue;
 			err:
