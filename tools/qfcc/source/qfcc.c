@@ -1221,8 +1221,8 @@ main (int argc, char **argv)
 		int         yyparse (void);
 		extern void clear_frame_macros (void);
 
-		// extern int yydebug;
-		// yydebug = 1;
+		//extern int yydebug;
+		//yydebug = 1;
 
 		if (*sourcedir)
 			snprintf (filename, sizeof (filename), "%s%c%s", sourcedir,

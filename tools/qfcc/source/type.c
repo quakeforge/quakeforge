@@ -107,7 +107,7 @@ print_type (type_t *type)
 			break;
 		case ev_func:
 			print_type (type->aux_type);
-			if (type->num_parms < 0) {
+			if (type->num_parms == -1) {
 				printf ("(...)");
 			} else {
 				int         c, i;

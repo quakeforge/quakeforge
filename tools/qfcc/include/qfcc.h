@@ -369,6 +369,7 @@ extern	type_t	type_integer;
 extern	type_t	type_uinteger;
 extern	type_t	type_short;
 extern	type_t	type_struct;
+extern	type_t	type_id;
 
 extern	def_t	def_void;
 extern	def_t	def_string;
@@ -383,6 +384,7 @@ extern	def_t	def_integer;
 extern	def_t	def_uinteger;
 extern	def_t	def_short;
 extern	def_t	def_struct;
+extern	def_t	def_id;
 
 struct function_s
 {

@@ -31,11 +31,13 @@
 static const char rcsid[] = 
 	"$Id$";
 
-#include "qfcc.h"
 #include <QF/hash.h>
 #include <QF/sys.h>
 
+#include "qfcc.h"
 #include "function.h"
+#include "method.h"
+#include "class.h"
 #include "struct.h"
 #include "switch.h"
 #include "type.h"
@@ -85,6 +87,10 @@ typedef struct {
 	function_t *function;
 	struct switch_block_s	*switch_block;
 	struct param_s	*param;
+	struct method_s	*method;
+	struct class_s	*klass;
+	struct protocol_s *protocol;
+	struct category_s *category;
 }
 
 %right	<op> '=' ASX PAS /* pointer assign */
@@ -128,9 +134,11 @@ typedef struct {
 %type	<scope>	param_scope
 
 %type	<string_val> selector
-%type	<param>	keyworddecl keywordselector
+%type	<param>	optparmlist unaryselector keyworddecl keywordselector
+%type	<method> methodproto methoddecl
+%type	<expr>	identifier_list
 
-%expect 1
+%expect 2	// statement : if | if else, defs : defs def ';' | defs obj_def
 
 %{
 
@@ -138,12 +146,14 @@ type_t	*current_type;
 def_t	*current_def;
 function_t *current_func;
 param_t *current_params;
+expr_t	*current_init;
+class_t	*current_class;
+methodlist_t *current_methodlist;
 expr_t	*local_expr;
 expr_t	*break_label;
 expr_t	*continue_label;
 switch_block_t *switch_block;
 type_t	*struct_type;
-expr_t	*current_init;
 
 def_t		*pr_scope;					// the function being parsed, or NULL
 string_t	s_file;						// filename for function definition
@@ -157,6 +167,7 @@ int      element_flag;
 defs
 	: /* empty */
 	| defs def ';'
+	| defs obj_def
 	;
 
 def
@@ -172,7 +183,6 @@ def
 			process_enum ($4);
 			new_typedef ($7, &type_integer);
 		}
-	| obj_def
 	;
 
 struct_defs
@@ -854,7 +864,7 @@ string_val
 		}
 	;
 
-obj_def /* XXX */
+obj_def
 	: classdef
 	| classdecl
 	| protocoldef
@@ -862,50 +872,116 @@ obj_def /* XXX */
 	| END
 	;
 
-identifier_list /* XXX */
-	: NAME {}
+identifier_list
+	: NAME
+		{
+			$$ = new_block_expr ();
+			append_expr ($$, new_name_expr ($1));
+		}
 	| identifier_list ',' NAME
+		{
+			append_expr ($1, new_name_expr ($3));
+			$$ = $1;
+		}
 	;
 
 classdecl /* XXX */
 	: CLASS identifier_list
+		{
+			expr_t     *e;
+			for (e = $2->e.block.head; e; e = e->next)
+				new_class (e->e.string_val, 0);
+		}
 	;
 
 classdef /* XXX */
-	: INTERFACE NAME protocolrefs '{'
-	  ivar_decl_list '}'
+	: INTERFACE NAME
+	  protocolrefs
+		{
+			$<klass>$ = new_class ($2, 0);
+			current_methodlist = &$<klass>$->methods;
+		}
+	  '{' ivar_decl_list '}'
 	  methodprotolist
 	  END
-	| INTERFACE NAME protocolrefs
+	| INTERFACE NAME
+	  protocolrefs
+		{
+			$<klass>$ = new_class ($2, 0);
+			current_methodlist = &$<klass>$->methods;
+		}
 	  methodprotolist
 	  END
-	| INTERFACE NAME ':' NAME protocolrefs '{'
-	  ivar_decl_list '}'
+	| INTERFACE NAME ':' NAME
+	  protocolrefs
+		{
+			class_t    *base = find_class ($4);
+			$<klass>$ = new_class ($2, base);
+			current_methodlist = &$<klass>$->methods;
+		}
+	  '{' ivar_decl_list '}'
 	  methodprotolist
 	  END
-	| INTERFACE NAME ':' NAME protocolrefs
+	| INTERFACE NAME ':' NAME
+	  protocolrefs
+		{
+			class_t    *base = find_class ($4);
+			$<klass>$ = new_class ($2, base);
+			current_methodlist = &$<klass>$->methods;
+		}
 	  methodprotolist
 	  END
-	| INTERFACE NAME '(' NAME ')' protocolrefs
+	| INTERFACE NAME '(' NAME ')'
+		{
+			class_t    *klass = find_class ($4);
+			$<category>$ = new_category ($2, klass);
+			current_methodlist = &$<category>$->methods;
+		}
+	  protocolrefs
 	  methodprotolist
 	  END
-	| IMPLEMENTATION NAME '{'
-	  ivar_decl_list '}'
 	| IMPLEMENTATION NAME
-	| IMPLEMENTATION NAME ':' NAME '{'
-	  ivar_decl_list '}'
+		{
+			current_class = new_class ($2, 0);
+		}
+	  '{' ivar_decl_list '}'
+	| IMPLEMENTATION NAME
+		{
+			current_class = new_class ($2, 0);
+		}
 	| IMPLEMENTATION NAME ':' NAME
+		{
+			class_t    *base = find_class ($4);
+			current_class = new_class ($2, base);
+		}
+	  '{' ivar_decl_list '}'
+	| IMPLEMENTATION NAME ':' NAME
+		{
+			class_t    *base = find_class ($4);
+			current_class = new_class ($2, base);
+		}
 	| IMPLEMENTATION NAME '(' NAME ')'
 	;
 
 protocoldef /* XXX */
-	: PROTOCOL NAME protocolrefs
+	: PROTOCOL NAME 
+		{
+			$<protocol>$ = new_protocol ($2);
+			current_methodlist = &$<protocol>$->methods;
+		}
+	  protocolrefs
 	  methodprotolist END
 	;
 
 protocolrefs /* XXX */
 	: /* emtpy */
-	| '<' identifier_list '>'
+	| LT identifier_list GT
+		{
+			expr_t     *e;
+			for (e = $2->e.block.head; e; e = e->next) {
+				//puts (e->e.string_val);
+			}
+		}
 	;
 
 ivar_decl_list /* XXX */
@@ -937,44 +1013,88 @@ ivar_declarator /* XXX */
 	: NAME {}
 	;
 
-methoddef /* XXX */
+methoddef
 	: '+'
 	  methoddecl opt_state_expr
+		{
+			$2->instance = 0;
+			current_def = $2->def = method_def (current_class, $2);
+			current_params = $2->params;
+		}
 	  begin_function statement_block end_function
+		{
+			build_function ($5);
+			if ($3) {
+				$3->next = $6;
+				emit_function ($5, $3);
+			} else {
+				emit_function ($5, $6);
+			}
+			finish_function ($5);
+		}
 	| '-'
 	  methoddecl opt_state_expr
+		{
+			$2->instance = 1;
+			current_def = $2->def = method_def (current_class, $2);
+			current_params = $2->params;
+		}
 	  begin_function statement_block end_function
+		{
+			build_function ($5);
+			if ($3) {
+				$3->next = $6;
+				emit_function ($5, $3);
+			} else {
+				emit_function ($5, $6);
+			}
+			finish_function ($5);
+		}
 	;
 
-methodprotolist /* XXX */
+methodprotolist
 	: /* emtpy */
 	| methodprotolist2
 	;
 
-methodprotolist2 /* XXX */
-	: methodproto
-	| methodprotolist2 methodproto
+methodprotolist2
+	: methodproto { add_method (current_methodlist, $1); }
+	| methodprotolist2 methodproto { add_method (current_methodlist, $2); }
 	;
 
-methodproto /* XXX */
+methodproto
 	: '+' methoddecl ';'
+		{
+			$2->instance = 0;
+			$$ = $2;
+		}
 	| '-' methoddecl ';'
+		{
+			$2->instance = 1;
+			$$ = $2;
+		}
 	;
 
-methoddecl /* XXX */
+methoddecl
 	: '(' type ')' unaryselector
+		{ $$ = new_method ($2, $4, 0); }
 	| unaryselector
-	| '(' type ')' keywordselector optparmlist {}
-	| keywordselector optparmlist {}
+		{ $$ = new_method (&type_id, $1, 0); }
+	| '(' type ')' keywordselector optparmlist
+		{ $$ = new_method ($2, $4, $5); }
+	| keywordselector optparmlist
+		{ $$ = new_method (&type_id, $1, $2); }
 	;
 
-optparmlist /* XXX */
+optparmlist
 	: /* empty */
+		{ $$ = 0; }
 	| ',' ELLIPSIS
+		{ $$ = new_param (0, 0, 0); }
 	;
 
-unaryselector /* XXX */
-	: selector {}
+unaryselector
+	: selector { $$ = new_param ($1, 0, 0); }
 	;
 
 keywordselector
@@ -990,11 +1110,11 @@ keyworddecl
 	: selector ':' '(' type ')' NAME
 		{ $$ = new_param ($1, $4, $6); }
 	| selector ':' NAME
-		{ $$ = new_param ($1, 0/*&type_id*/, $3); }
+		{ $$ = new_param ($1, &type_id, $3); }
 	| ':' '(' type ')' NAME
-		{ $$ = new_param (0, $3, $5); }
+		{ $$ = new_param ("", $3, $5); }
 	| ':' NAME
-		{ $$ = new_param (0, 0/*&type_id*/, $2); }
+		{ $$ = new_param ("", &type_id, $2); }
 	;
 
 messageargs /* XXX */

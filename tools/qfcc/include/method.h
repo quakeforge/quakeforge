@@ -29,24 +29,29 @@
 	$Id$
 */
 
-#ifndef __function_h
-#define __function_h
+#ifndef __method_h
+#define __method_h
 
-typedef struct param_s {
-	struct param_s *next;
-	const char *selector;
+#include "function.h"
+
+typedef struct method_s {
+	struct method_s *next;
+	int         instance;
+	param_t    *selector;
+	param_t    *params;
 	type_t     *type;
-	const char *name;
-} param_t;
+	def_t      *def;
+} method_t;
 
-param_t *new_param (const char *selector, type_t *type, const char *name);
-param_t *_reverse_params (param_t *params, param_t *next);
-param_t *reverse_params (param_t *params);
-type_t *parse_params (type_t *type, param_t *params);
-void build_scope (function_t *f, def_t *func, param_t *params);
-function_t *new_function (void);
-void build_function (function_t *f);
-void finish_function (function_t *f);
-void emit_function (function_t *f, expr_t *e);
+typedef struct {
+	method_t   *head;
+	method_t  **tail;
+} methodlist_t;
 
-#endif//__function_h
+struct class_s;
+
+method_t *new_method (type_t *ret_type, param_t *selector, param_t *opt_parms);
+void add_method (methodlist_t *methodlist, method_t *method);
+def_t *method_def (struct class_s *klass, method_t *method);
+
+#endif//__method_h

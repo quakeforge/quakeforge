@@ -68,6 +68,7 @@ type_t      type_integer = { ev_integer, &def_integer };
 type_t      type_uinteger = { ev_uinteger, &def_uinteger };
 type_t      type_short = { ev_short, &def_short };
 type_t      type_struct = { ev_struct, &def_struct };
+type_t      type_id = {ev_pointer, &def_id };
 
 type_t      type_floatfield = { ev_field, &def_field, NULL, &type_float };
 
@@ -84,6 +85,7 @@ def_t       def_integer = { &type_integer, "temp" };
 def_t       def_uinteger = { &type_uinteger, "temp" };
 def_t       def_short = { &type_short, "temp" };
 def_t       def_struct = { &type_struct, "temp" };
+def_t       def_id = { &type_id, "temp" };
 
 def_t       def_ret, def_parms[MAX_PARMS];
 

@@ -30,6 +30,8 @@
 static const char rcsid[] =
 	"$Id$";
 
+#include "QF/dstring.h"
+
 #include "qfcc.h"
 
 #include "function.h"
@@ -48,7 +50,7 @@ new_param (const char *selector, type_t *type, const char *name)
 	return param;
 }
 
-static param_t *
+param_t *
 _reverse_params (param_t *params, param_t *next)
 {
 	param_t    *p = params;

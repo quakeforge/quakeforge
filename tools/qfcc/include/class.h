@@ -29,24 +29,32 @@
 	$Id$
 */
 
-#ifndef __function_h
-#define __function_h
+#ifndef __class_h
+#define __class_h
 
-typedef struct param_s {
-	struct param_s *next;
-	const char *selector;
-	type_t     *type;
+#include "method.h"
+
+typedef struct class_s {
 	const char *name;
-} param_t;
+	struct class_s *base;
+	methodlist_t methods;
+} class_t;
 
-param_t *new_param (const char *selector, type_t *type, const char *name);
-param_t *_reverse_params (param_t *params, param_t *next);
-param_t *reverse_params (param_t *params);
-type_t *parse_params (type_t *type, param_t *params);
-void build_scope (function_t *f, def_t *func, param_t *params);
-function_t *new_function (void);
-void build_function (function_t *f);
-void finish_function (function_t *f);
-void emit_function (function_t *f, expr_t *e);
+typedef struct protocol_s {
+	const char *name;
+	methodlist_t methods;
+} protocol_t;
 
-#endif//__function_h
+typedef struct category_s {
+	const char *name;
+	class_t    *klass;
+	methodlist_t methods;
+} category_t;
+
+class_t *new_class (const char *name, class_t *base);
+protocol_t *new_protocol (const char *name);
+category_t *new_category (const char *name, class_t *klass);
+class_t *find_class (const char *name);
+protocol_t *find_protocol (const char *name);
+
+#endif//__class_h
