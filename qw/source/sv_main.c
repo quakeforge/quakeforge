@@ -1199,19 +1199,11 @@ SV_StringToFilter (const char *address, ipfilter_t *f)
 		char *endptr;
 		*slash = '\0';
 		slash++;
-		if (*slash <= '0' || *slash >= '9') {
-			Con_Printf ("a\n");
+		if (*slash <= '0' || *slash >= '9' || strchr (slash, '/'))
 			goto bad_address;
-		}
-		if (strchr (slash, '/')) {
-			Con_Printf ("b\n");
-			goto bad_address;
-		}
 		mask = strtol (slash, &endptr, 10);
-		if (!*slash || *endptr) {
-			Con_Printf ("c '%s' %c %c\n", slash, *slash, *endptr);
+		if (!*slash || *endptr)
 			goto bad_address;
-		}
 	} else
 		mask = -1;
 
@@ -1241,6 +1233,7 @@ SV_StringToFilter (const char *address, ipfilter_t *f)
 		// change trailing 0 segments to be a mask, eg 1.2.0.0 gives a /16 mask
 		// FIXME: should check a cvar
 		if (mask == -1) {
+			mask = 0;
 			i = sizeof (b) - 1;
 			while (i >= 0 && !b[i]) {
 				mask += 8;
@@ -1361,6 +1354,10 @@ SV_AddIP_f (void)
 			char text[1024];
 			char *typestr;
 			char timestr[1024];
+
+			if (cl->state == cs_free)
+				continue;
+
 			if (SV_MaskIPCompare (cl->netchan.remote_address.ip,
 								  ipfilters[numipfilters].ip,
 								  ipfilters[numipfilters].mask)) {
