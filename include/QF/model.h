@@ -190,9 +190,6 @@ typedef struct mleaf_s
 	struct mnode_s	*parent;
 
 // leaf specific
-	int			dlightbits;
-	int			dlightframe;
-
 	byte		*compressed_vis;
 	efrag_t		*efrags;
 

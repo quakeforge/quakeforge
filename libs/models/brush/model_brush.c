@@ -81,7 +81,7 @@ Mod_PointInLeaf (const vec3_t p, model_t *model)
 	return NULL;						// never reached
 }
 
-static byte *
+static inline byte *
 Mod_DecompressVis (byte * in, model_t *model)
 {
 	static byte decompressed[MAX_MAP_LEAFS / 8];
@@ -116,7 +116,7 @@ Mod_DecompressVis (byte * in, model_t *model)
 	return decompressed;
 }
 
-byte       *
+byte *
 Mod_LeafPVS (mleaf_t *leaf, model_t *model)
 {
 	if (leaf == model->leafs)

@@ -236,15 +236,16 @@ R_MarkLights (const vec3_t lightorigin, dlight_t *light, int bit,
 		maxs[1] = lightorigin[1] + radius;
 		maxs[2] = lightorigin[2] + radius;
 		while (leafnum < model->numleafs) {
-			int         i;
+			int         b;
 			if (!(vis_bits = *in++)) {
 				leafnum += (*in++) * 8;
 				continue;
 			}
-			for (i = 0; i < 8 && leafnum < model->numleafs; i++, leafnum++) {
+			for (b = 1; b < 256 && leafnum < model->numleafs;
+				 b <<= 1, leafnum++) {
 				int      m;
 				mleaf_t *leaf  = &model->leafs[leafnum + 1];
-				if (!(vis_bits & (1 << i)))
+				if (!(vis_bits & b))
 					continue;
 				if (leaf->visframe != r_visframecount)
 					continue;
@@ -254,11 +255,6 @@ R_MarkLights (const vec3_t lightorigin, dlight_t *light, int bit,
 					continue;
 				if (R_CullBox (leaf->mins, leaf->maxs))
 					continue;
-				if (leaf->dlightframe != r_framecount) {
-					leaf->dlightbits = 0;
-					leaf->dlightframe = r_framecount;
-				}
-				leaf->dlightbits |= bit;
 				for (m = 0; m < leaf->nummarksurfaces; m++) {
 					msurface_t *surf = leaf->firstmarksurface[m];
 					if (surf->visframe != r_visframecount)
