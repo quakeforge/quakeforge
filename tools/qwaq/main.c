@@ -152,6 +152,8 @@ main (int argc, char **argv)
 {
 	func_t main_func;
 	const char *name = "qwaq.dat";
+	string_t   *pr_argv;
+	int         pr_argc = 1, i;
 
 	init_qf ();
 
@@ -161,7 +163,17 @@ main (int argc, char **argv)
 	if (!load_progs (name))
 		Sys_Error ("couldn't load %s", "qwaq.dat");
 
+	if (argc > 2)
+		pr_argc = argc - 1;
+	pr_argv = PR_Zone_Malloc (&pr, (pr_argc + 1) * 4);
+	pr_argv[0] = PR_SetString (&pr, name);
+	for (i = 1; i < pr_argc; i++)
+		pr_argv[i] = PR_SetString (&pr, argv[1 + i]);
+	pr_argv[i] = 0;
+
 	main_func = PR_GetFunctionIndex (&pr, "main");
+	P_INT (&pr, 0) = pr_argc;
+	P_INT (&pr, 1) = POINTER_TO_PROG (&pr, pr_argv);
 	PR_ExecuteProgram (&pr, main_func);
 	return G_INT (&pr, OFS_RETURN);
 }
