@@ -67,6 +67,26 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "obj_file.h"
 #include "qfprogs.h"
+#include "reloc.h"
+
+const char *reloc_names[] = {
+	"none",
+	"op_a_def",
+	"op_b_def",
+	"op_c_def",
+	"op_a_op",
+	"op_b_op",
+	"op_c_op",
+	"def_op",
+	"def_def",
+	"def_func",
+	"def_string",
+	"def_field",
+	"op_a_def_ofs",
+	"op_b_def_ofs",
+	"op_c_def_ofs",
+	"def_def_ofs",
+};
 
 int         sorted = 0;
 int         verbosity = 0;
@@ -259,63 +279,46 @@ convert_def (const qfo_def_t *def, ddef_t *ddef)
 static void
 convert_qfo (void)
 {
-	int         i, j;
+	int         i, j, num_locals = 0, num_externs = 0;
+	qfo_def_t  *defs;
 	ddef_t     *ld;
+
+	defs = malloc (qfo->num_defs * sizeof (qfo_def_t));
+	memcpy (defs, qfo->defs, qfo->num_defs * sizeof (qfo_def_t));
 
 	pr.progs = &progs;
 	progs.version = PROG_VERSION;
 
-	pr.pr_statements = qfo->code;
+	pr.pr_statements = malloc (qfo->code_size * sizeof (dstatement_t));
+	memcpy (pr.pr_statements, qfo->code,
+			qfo->code_size * sizeof (dstatement_t));
 	progs.numstatements = qfo->code_size;
 
 	pr.pr_strings = qfo->strings;
 	progs.numstrings = qfo->strings_size;
 	pr.pr_stringsize = qfo->strings_size;
 
-	pr.pr_globals = qfo->data;
-	progs.numglobals = qfo->data_size;
-
-	progs.numglobaldefs = 0;
-	progs.numfielddefs = 0;
-	progs.entityfields = 0;
-	pr.pr_globaldefs = calloc (qfo->num_defs, sizeof (ddef_t));
-	pr.pr_fielddefs = calloc (qfo->num_defs, sizeof (ddef_t));
-	ld = pr.local_defs = calloc (qfo->num_defs, sizeof (ddef_t));
-	for (i = 0; i < qfo->num_defs; i++) {
-		qfo_def_t  *def = qfo->defs + i;
-		ddef_t      ddef;
-
-		if ((def->flags & QFOD_LOCAL) || !def->name)
-			continue;
-
-		convert_def (def, &ddef);
-		pr.pr_globaldefs[progs.numglobaldefs++] = ddef;
-		if (ddef.type == ev_field) {
-			ddef.type = get_auxtype (qfo->types + def->full_type);
-			progs.entityfields += pr_type_size[ddef.type];
-			ddef.ofs = G_INT (&pr, ddef.ofs);
-			pr.pr_fielddefs[progs.numfielddefs++] = ddef;
-		}
-	}
-	pr.pr_edict_size = progs.entityfields * 4;
-
 	progs.numfunctions = qfo->num_funcs;
 	pr.pr_functions = calloc (qfo->num_funcs, sizeof (dfunction_t));
 	pr.pr_functions = calloc (qfo->num_funcs, sizeof (dfunction_t));
 	pr.auxfunctions = calloc (qfo->num_funcs, sizeof (pr_auxfunction_t));
 	pr.auxfunction_map = calloc (qfo->num_funcs, sizeof (pr_auxfunction_t *));
+	ld = pr.local_defs = calloc (qfo->num_defs, sizeof (ddef_t));
 	for (i = 0; i < qfo->num_funcs; i++) {
 		qfo_func_t *func = qfo->funcs + i;
 		dfunction_t df;
 
 		df.first_statement = func->builtin ? -func->builtin : func->code;
-		df.parm_start = 0;
+		df.parm_start = qfo->data_size;
 		df.locals = func->locals_size;
 		df.profile = 0;
 		df.s_name = func->name;
 		df.s_file = func->file;
 		df.numparms = func->num_parms;
 		memcpy (df.parm_size, func->parm_size, sizeof (df.parm_size));
+
+		if (df.locals > num_locals)
+			num_locals = df.locals;
 
 		pr.pr_functions[i] = df;
 
@@ -326,9 +329,90 @@ convert_qfo (void)
 		pr.auxfunctions[i].local_defs = ld - pr.local_defs;
 		pr.auxfunctions[i].num_locals = func->num_local_defs;
 
-		for (j = 0; j < func->num_local_defs; j++)
-			convert_def (qfo->defs + func->local_defs, ld++);
+		for (j = 0; j < func->num_local_defs; j++) {
+			qfo_def_t  *d = defs + func->local_defs + j;
+			convert_def (d, ld++);
+			d->ofs += qfo->data_size;
+		}
 	}
+
+	progs.numglobaldefs = 0;
+	progs.numfielddefs = 0;
+	progs.entityfields = 0;
+	pr.pr_globaldefs = calloc (qfo->num_defs, sizeof (ddef_t));
+	pr.pr_fielddefs = calloc (qfo->num_defs, sizeof (ddef_t));
+	for (i = 0; i < qfo->num_defs; i++) {
+		qfo_def_t  *def = defs + i;
+		ddef_t      ddef;
+
+		if (!(def->flags & QFOD_LOCAL) && def->name) {
+			if (def->flags & QFOD_EXTERNAL) {
+				int         size = pr_type_size[def->basic_type]; //FIXME struct etc
+				if (!size)
+					size = 1;
+				def->ofs += qfo->data_size + num_locals + num_externs;
+				num_externs += size;
+			}
+
+			convert_def (def, &ddef);
+			pr.pr_globaldefs[progs.numglobaldefs++] = ddef;
+			if (ddef.type == ev_field) {
+				ddef.type = get_auxtype (qfo->types + def->full_type);
+				progs.entityfields += pr_type_size[ddef.type];
+				ddef.ofs = qfo->data[ddef.ofs].integer_var;
+				pr.pr_fielddefs[progs.numfielddefs++] = ddef;
+			}
+		}
+		for (j = 0; j < def->num_relocs; j++) {
+			qfo_reloc_t *reloc = qfo->relocs + def->relocs + j;
+			printf ("%12s %04x %04x %s\n", reloc_names[reloc->type], reloc->ofs, def->ofs, qfo->strings + def->name);
+			switch ((reloc_type)reloc->type) {
+				case rel_none:
+					break;
+				case rel_op_a_def:
+					pr.pr_statements[reloc->ofs].a = def->ofs;
+					break;
+				case rel_op_b_def:
+					pr.pr_statements[reloc->ofs].b = def->ofs;
+					break;
+				case rel_op_c_def:
+					pr.pr_statements[reloc->ofs].c = def->ofs;
+					break;
+				case rel_op_a_def_ofs:
+					pr.pr_statements[reloc->ofs].a += def->ofs;
+					break;
+				case rel_op_b_def_ofs:
+					pr.pr_statements[reloc->ofs].b += def->ofs;
+					break;
+				case rel_op_c_def_ofs:
+					pr.pr_statements[reloc->ofs].c += def->ofs;
+					break;
+				case rel_def_def:
+					pr.pr_globals[reloc->ofs].integer_var = def->ofs;
+					break;
+				case rel_def_def_ofs:
+					pr.pr_globals[reloc->ofs].integer_var += def->ofs;
+					break;
+				// these are relative and fixed up before the .qfo is written
+				case rel_op_a_op:
+				case rel_op_b_op:
+				case rel_op_c_op:
+				// these aren't relevant here
+				case rel_def_func:
+				case rel_def_op:
+				case rel_def_string:
+				case rel_def_field:
+					break;
+			}
+		}
+	}
+
+	progs.numglobals = qfo->data_size;
+	pr.globals_size = progs.numglobals + num_locals + num_externs;
+	pr.pr_globals = calloc (pr.globals_size, sizeof (pr_type_t));
+	memcpy (pr.pr_globals, qfo->data, qfo->data_size * sizeof (pr_type_t));
+
+	pr.pr_edict_size = progs.entityfields * 4;
 
 	pr.linenos = qfo->lines;
 	debug.num_auxfunctions = qfo->num_funcs;
@@ -385,35 +469,50 @@ load_progs (const char *name)
 	return 1;
 }
 
+typedef struct {
+	void      (*progs) (progs_t *pr);
+	void      (*qfo) (qfo_t *qfo);
+} operation_t;
+
+operation_t operations[] = {
+	{disassemble_progs, 0},		// disassemble
+	{dump_globals,		0},		// globals
+	{dump_strings,		0},		// strings
+	{dump_fields,		0},		// fields
+	{dump_functions,	0},		// functions
+	{dump_lines,		0},		// lines
+	{dump_modules,		0},		// modules
+};
+
 int
 main (int argc, char **argv)
 {
 	int         c;
-	void      (*func)(progs_t *pr) = dump_globals;
+	operation_t *func = &operations[0];
 
 	while ((c = getopt_long (argc, argv,
 							 "dgsfFlMP:vn", long_options, 0)) != EOF) {
 		switch (c) {
 			case 'd':
-				func = disassemble_progs;
+				func = &operations[0];
 				break;
 			case 'g':
-				func = dump_globals;
+				func = &operations[1];
 				break;
 			case 's':
-				func = dump_strings;
+				func = &operations[2];
 				break;
 			case 'f':
-				func = dump_fields;
+				func = &operations[3];
 				break;
 			case 'F':
-				func = dump_functions;
+				func = &operations[4];
 				break;
 			case 'l':
-				func = dump_lines;
+				func = &operations[5];
 				break;
 			case 'M':
-				func = dump_modules;
+				func = &operations[6];
 				break;
 			case 'P':
 				source_path = strdup (optarg);
@@ -432,7 +531,10 @@ main (int argc, char **argv)
 	while (optind < argc) {
 		if (!load_progs (argv[optind++]))
 			return 1;
-		func (&pr);
+		if (qfo && func->qfo)
+			func->qfo (qfo);
+		else
+			func->progs (&pr);
 	}
 	return 0;
 }
