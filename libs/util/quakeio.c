@@ -29,14 +29,17 @@
 */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+# include "config.h"
 #endif
 #ifdef HAVE_MALLOC_H
 # include <malloc.h>
 #endif
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 #ifdef WIN32
 # include <io.h>
 # include <fcntl.h>
@@ -46,13 +49,23 @@
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
-
-#include "QF/quakeio.h"
-
 #ifdef _MSC_VER
 # define _POSIX_
 #endif
+
+#include <stdarg.h>
+#include <stdlib.h>
 #include <limits.h>
+
+#include "QF/quakefs.h"
+#include "QF/quakeio.h"
+
+#ifdef WIN32
+# ifndef __BORLANDC__
+#  define setmode _setmode
+#  define O_BINARY _O_BINARY
+# endif
+#endif
 
 void
 Qexpand_squiggle (const char *path, char *dest)
@@ -67,16 +80,25 @@ Qexpand_squiggle (const char *path, char *dest)
 		strcpy (dest, path);
 		return;
 	}
-#ifndef _WIN32
+
+#ifdef _WIN32
+	// LordHavoc: first check HOME to duplicate previous version behavior
+	// (also handy if someone wants it somewhere other than their
+	//  windows directory)
+	home = getenv ("HOME");
+	if (!home || !home[0])
+		home = getenv ("WINDIR");
+#else
 	if ((pwd_ent = getpwuid (getuid ()))) {
 		home = pwd_ent->pw_dir;
 	} else
-#endif
 		home = getenv ("HOME");
+#endif
 
 	if (home) {
 		strcpy (dest, home);
-		strcat (dest, path + 1);		// skip leading ~
+		strncat (dest, path + 1, MAX_OSPATH - strlen (dest));	// skip
+																// leading ~
 	} else
 		strcpy (dest, path);
 }
@@ -92,7 +114,7 @@ Qrename (const char *old, const char *new)
 	return rename (e_old, e_new);
 }
 
-QFile      *
+QFile *
 Qopen (const char *path, const char *mode)
 {
 	QFile      *file;
@@ -108,6 +130,11 @@ Qopen (const char *path, const char *mode)
 			zip = 1;
 			continue;
 		}
+#ifndef HAVE_ZLIB
+		if (strchr ("0123456789fh", *mode)) {
+			continue;
+		}
+#endif
 		*p++ = *mode;
 	}
 	*p = 0;
@@ -134,7 +161,7 @@ Qopen (const char *path, const char *mode)
 	return file;
 }
 
-QFile      *
+QFile *
 Qdopen (int fd, const char *mode)
 {
 	QFile      *file;
@@ -171,11 +198,8 @@ Qdopen (int fd, const char *mode)
 		}
 	}
 #ifdef WIN32
-#ifdef __BORLANDC__
-	setmode (_fileno (file->file), O_BINARY);
-#else
-	_setmode (_fileno (file->file), _O_BINARY);
-#endif
+	if (file->file)
+		setmode (_fileno (file->file), O_BINARY);
 #endif
 	return file;
 }
@@ -238,17 +262,17 @@ Qprintf (QFile *file, const char *fmt, ...)
 		(void) vsprintf (buf, fmt, args);
 #endif
 		va_end (args);
-		ret = strlen (buf);				/* some *sprintf don't return the nb
+		ret = strlen (buf);				/* some *snprintf don't return the nb 
 										   of bytes written */
 		if (ret > 0)
-			ret = gzwrite (file, buf, (unsigned) ret);
+			ret = gzwrite (file->gzfile, buf, (unsigned) ret);
 	}
 #endif
 	va_end (args);
 	return ret;
 }
 
-char       *
+char *
 Qgets (QFile *file, char *buf, int count)
 {
 	if (file->file)
@@ -337,6 +361,41 @@ Qeof (QFile *file)
 #else
 	return -1;
 #endif
+}
+
+/*
+
+	Qgetline
+
+	Dynamic length version of Qgets. DO NOT free the buffer.
+
+*/
+char *
+Qgetline (QFile *file)
+{
+	static int  size = 256;
+	static char *buf = 0;
+	int         len;
+
+	if (!buf)
+		buf = malloc (size);
+
+	if (!Qgets (file, buf, size))
+		return 0;
+
+	len = strlen (buf);
+	while (buf[len - 1] != '\n') {
+		char       *t = realloc (buf, size + 256);
+
+		if (!t)
+			return 0;
+		buf = t;
+		size += 256;
+		if (!Qgets (file, buf + len, size - len))
+			break;
+		len = strlen (buf);
+	}
+	return buf;
 }
 
 int
