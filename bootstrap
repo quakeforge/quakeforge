@@ -33,12 +33,12 @@ if test -n "$ac" ; then
 		fi
 
 		if test "$AC_VER_MINOR" -lt "50" ; then
-			if test ! -e configure.in ; then
+			if test ! -f configure.in ; then
 				ln -s configure.ac configure.in
 			fi
 			echo "If you see some warnings about cross-compiling, don't worry; this is normal."
 		elif test "$WOODY_FIX" = "yes" ; then
-			if test ! -e configure.in ; then
+			if test ! -f configure.in ; then
 				ln -s configure.ac configure.in
 			fi
 		else
