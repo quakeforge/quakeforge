@@ -1543,14 +1543,29 @@ convert_bool (expr_t *e, int block)
 static expr_t *
 convert_from_bool (expr_t *e, type_t *type)
 {
-	if (type == &type_float)
-		e = conditional_expr (e, new_float_expr (1), new_float_expr (0));
-	else if (type == &type_integer)
-		e = conditional_expr (e, new_integer_expr (1), new_integer_expr (0));
-	else if (type == &type_uinteger)
-		e = conditional_expr (e, new_uinteger_expr (1), new_uinteger_expr (0));
-	else
-		e = error (e, "can't convert from bool value");
+	expr_t     *zero;
+	expr_t     *one;
+	expr_t     *cond;
+
+	if (type == &type_float) {
+		one = new_float_expr (1);
+		zero = new_float_expr (0);
+	} else if (type == &type_integer) {
+		one = new_integer_expr (1);
+		zero = new_integer_expr (0);
+	} else if (type == &type_uinteger) {
+		one = new_uinteger_expr (1);
+		zero = new_uinteger_expr (0);
+	} else {
+		return error (e, "can't convert from bool value");
+	}
+	cond = new_expr ();
+	*cond = *e;
+	cond->next = 0;
+
+	cond = conditional_expr (cond, one, zero);
+	e->type = cond->type;
+	e->e = cond->e;
 	return e;
 }
 
@@ -2123,6 +2138,8 @@ static int
 has_function_call (expr_t *e)
 {
 	switch (e->type) {
+		case ex_bool:
+			return has_function_call (e->e.bool.e);
 		case ex_block:
 			if (e->e.block.is_call)
 				return 1;
@@ -2229,6 +2246,10 @@ function_expr (expr_t *e1, expr_t *e2)
 		if (i < parm_count) {
 			if (e->type == ex_nil)
 				convert_nil (e, t = ftype->parm_types[i]);
+			if (e->type == ex_bool)
+				convert_from_bool (e, ftype->parm_types[i]);
+			if (e->type == ex_error)
+				return e1;
 			if (!type_assignable (ftype->parm_types[i], t)) {
 				//print_type (ftype->parm_types[i]); puts ("");
 				//print_type (t); puts ("");
@@ -2238,6 +2259,8 @@ function_expr (expr_t *e1, expr_t *e2)
 		} else {
 			if (e->type == ex_nil)
 				convert_nil (e, t = &type_vector);	//XXX largest param size
+			if (e->type == ex_bool)
+				convert_from_bool (e, get_type (e));
 			if (e->type == ex_integer && options.warnings.vararg_integer)
 				warning (e, "passing integer consant into ... function");
 		}
