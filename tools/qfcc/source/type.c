@@ -478,7 +478,7 @@ _parse_type (const char **str)
 			while (**str && **str != '}')
 				new_struct_field (new.aux_type, _parse_type (str), 0,
 								  vis_public);
-			if (**str != ')')
+			if (**str != '}')
 				return 0;
 			return new.aux_type;
 		case '[':
