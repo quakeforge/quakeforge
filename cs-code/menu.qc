@@ -14,12 +14,12 @@ entity self;
 .void () think;
 
 string [6] dot = {
-	"gfx/menudot0.lpm",
-	"gfx/menudot1.lpm",
-	"gfx/menudot2.lpm",
-	"gfx/menudot3.lpm",
-	"gfx/menudot4.lpm",
-	"gfx/menudot5.lpm",
+	"gfx/menudot1.lmp",
+	"gfx/menudot2.lmp",
+	"gfx/menudot3.lmp",
+	"gfx/menudot4.lmp",
+	"gfx/menudot5.lmp",
+	"gfx/menudot6.lmp",
 };
 
 void (integer x, integer y) spinner =

@@ -197,7 +197,8 @@ bi_Menu_Item (progs_t *pr)
 static void
 bi_Menu_Cursor (progs_t *pr)
 {
-	func_t      func = G_FUNCTION (pr, OFS_PARM3);
+	func_t      func = G_FUNCTION (pr, OFS_PARM0);
+
 	menu->cursor = func;
 }
 
@@ -289,6 +290,7 @@ Menu_Draw (void)
 
 	if (!menu)
 		return;
+	*menu_pr_state.globals.time = *menu_pr_state.time;
 	for (m_pic = menu->pics; m_pic; m_pic = m_pic->next) {
 		qpic_t     *pic = Draw_CachePic (m_pic->name, 1);
 		if (!pic)
@@ -302,8 +304,8 @@ Menu_Draw (void)
 		}
 	}
 	if (menu->cursor) {
-		G_INT (&menu_pr_state, OFS_PARM0) = 320;
-		G_INT (&menu_pr_state, OFS_PARM1) = 240;
+		G_INT (&menu_pr_state, OFS_PARM0) = 0;
+		G_INT (&menu_pr_state, OFS_PARM1) = 0;
 		PR_ExecuteProgram (&menu_pr_state, menu->cursor);
 	}
 	if (menu_draw) {
