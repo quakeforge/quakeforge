@@ -1,4 +1,6 @@
 *.dat
 *.h
+*.src
 *.sym
 .vimrc
+Makefile.in

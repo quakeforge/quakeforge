@@ -1716,6 +1716,18 @@ AC_SUBST(VID_REND_TARGETS)
 AC_SUBST(VID_REND_NOINST_TARGETS)
 AC_SUBST(VID_TARGETS)
 
+QFCC_LIBS='$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la'
+QFCC_DEPS="${QFCC_LIBS}"
+QFCC_INCS='-I$(top_srcdir)/tools/qfcc/include'
+AC_SUBST(QFCC_LIBS)
+AC_SUBST(QFCC_DEPS)
+AC_SUBST(QFCC_INCS)
+
+AC_DEFINE_UNQUOTED(PATH_SEPARATOR, '/')
+CPP_NAME=$ac_cv_prog_CPP
+AC_DEFINE_UNQUOTED(CPP_NAME, "$CPP_NAME")
+AC_DEFINE(USE_CPP)
+
 AM_CONDITIONAL(BUILD_GL, test "$BUILD_GL" = "yes")
 AM_CONDITIONAL(BUILD_SW, test "$BUILD_SW" = "yes")
 AM_CONDITIONAL(BUILD_SW_ASM, test "$BUILD_SW" = "yes" -a "$ASM_ARCH" = "yes")
@@ -1772,6 +1784,16 @@ AC_OUTPUT(
 	nq/Makefile
 	nq/include/Makefile
 	nq/source/Makefile
+
+	tools/Makefile
+	tools/qfcc/Makefile
+	tools/qfcc/doc/Makefile
+	tools/qfcc/doc/man/Makefile
+	tools/qfcc/include/Makefile
+	tools/qfcc/source/Makefile
+
+	cs-code/Makefile
+	cs-code/menu.src
 
 	doc/Makefile
 	doc/man/Makefile

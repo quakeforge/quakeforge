@@ -153,6 +153,15 @@
 #undef SND_RENDER_LIST
 #undef SND_RENDER_PROTOS
 
+/* Define this to your operating system's path separator character */
+#undef PATH_SEPARATOR
+
+/* Define this if you want to use the C preprocessor */
+#undef USE_CPP
+
+/* Define this to the command line for the C preprocessor */
+#undef CPP_NAME
+
 #if defined (WIN32) && !defined(_WIN32)
 # define _WIN32
 #endif
