@@ -106,7 +106,7 @@ SV_DemoPings (void)
 }
 
 static void
-DemoBuffer_Init (dbuffer_t * dbuffer, byte * buf, size_t size)
+DemoBuffer_Init (dbuffer_t *dbuffer, byte *buf, size_t size)
 {
 	demobuffer = dbuffer;
 
@@ -124,7 +124,7 @@ DemoBuffer_Init (dbuffer_t * dbuffer, byte * buf, size_t size)
 */
 
 void
-DemoSetMsgBuf (demobuf_t * prev, demobuf_t * cur)
+DemoSetMsgBuf (demobuf_t *prev, demobuf_t *cur)
 {
 	// fix the maxsize of previous msg buffer,
 	// we won't be able to write there anymore
@@ -222,7 +222,7 @@ DemoSetBuf (byte type, int to)
 
 		(byte *) p = p->data + p->size;
 	}
-	// type&&to not exist in the buf, so add it
+	// type && to not exist in the buf, so add it
 
 	p->type = type;
 	p->to = to;
@@ -763,12 +763,10 @@ SV_PrintTeams (void)
 
 	// create output
 
-	if (numcl == 2)						// duel
-	{
+	if (numcl == 2) {					// duel
 		dsprintf (buffer, "team1 %s\nteam2 %s\n", clients[0]->name,
 				  clients[1]->name);
-	} else if (!teamplay->int_val)		// ffa
-	{
+	} else if (!teamplay->int_val) {	// ffa
 		dsprintf (buffer, "players:\n");
 		for (i = 0; i < numcl; i++)
 			dasprintf (buffer, "  %s\n", clients[i]->name);

@@ -125,7 +125,7 @@ void DemoWrite_Begin (byte type, int to, int size);
 void SV_DemoWritePackets (int num);
 void SV_Stop_f (void);
 void SV_Stop (int reason);
-void DemoSetMsgBuf (demobuf_t * prev, demobuf_t * cur);
+void DemoSetMsgBuf (demobuf_t *prev, demobuf_t *cur);
 void Demo_Init (void);
 void SV_DemoPings (void);
 void SV_WriteDemoMessage (sizebuf_t *msg, int type, int to, float time);
