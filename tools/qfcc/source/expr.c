@@ -1572,6 +1572,7 @@ asx_expr (int op, expr_t *e1, expr_t *e2)
 		expr_t     *e = new_expr ();
 
 		*e = *e1;
+		e2->paren = 1;
 		return assign_expr (e, binary_expr (op, e1, e2));
 	}
 }
