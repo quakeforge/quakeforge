@@ -248,8 +248,8 @@ simple_defs
 
 simple_def
 	: non_func_type def_list ';' { }
-	| func_type func_defs { }
-	| cfunction { }
+	| func_type func_defs		{ }
+	| cfunction	{ }
 	;
 
 cfunction
@@ -289,9 +289,9 @@ cfunction
 	;
 
 storage_class
-	: EXTERN		{ current_storage = st_extern; }
-	| STATIC		{ current_storage = st_static; }
-	| SYSTEM		{ current_storage = st_system; }
+	: EXTERN					{ current_storage = st_extern; }
+	| STATIC					{ current_storage = st_static; }
+	| SYSTEM					{ current_storage = st_system; }
 	;
 
 struct_defs
@@ -389,21 +389,21 @@ type_name
 	;
 
 function_decl
-	: '(' param_list ')'	{ $$ = reverse_params ($2); }
+	: '(' param_list ')'		{ $$ = reverse_params ($2); }
 	| '(' param_list ',' ELLIPSIS ')'
 		{
 			$$ = new_param (0, 0, 0);
 			$$->next = $2;
 			$$ = reverse_params ($$);
 		}
-	| '(' ELLIPSIS ')'		{ $$ = new_param (0, 0, 0); }
+	| '(' ELLIPSIS ')'			{ $$ = new_param (0, 0, 0); }
 	| '(' TYPE ')'
 		{
 			if ($2 != &type_void)
 				PARSE_ERROR;
 			$$ = 0;
 		}
-	| '(' ')'				{ $$ = 0; }
+	| '(' ')'					{ $$ = 0; }
 	;
 
 param_list
@@ -429,7 +429,7 @@ array_decl
 				$$ = $2;
 			}
 		}
-	| '[' ']' { $$ = 0; }
+	| '[' ']'					{ $$ = 0; }
 	;
 
 struct_def_list
@@ -464,8 +464,8 @@ func_defs
 	;
 
 func_term
-	: non_code_func ';' {}
-	| code_func opt_semi {}
+	: non_code_func ';'			{}
+	| code_func opt_semi		{}
 	;
 
 func_def_list
