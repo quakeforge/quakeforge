@@ -222,10 +222,12 @@ preprocess_file (const char *filename)
 		}
 		if (!pid) {
 			// we're a child, check for abuse
-			//const char **a;
-			//for (a = cpp_argv; *a; a++)
-			//	printf ("%s ", *a);
-			//puts("");
+			if (options.verbosity > 1) {
+				const char **a;
+				for (a = cpp_argv; *a; a++)
+					printf ("%s ", *a);
+				puts("");
+			}
 			execvp (cpp_argv[0], (char **)cpp_argv);
 			perror (cpp_argv[0]);
 			exit (1);

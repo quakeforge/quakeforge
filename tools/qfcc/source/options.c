@@ -100,6 +100,7 @@ static const char *short_options =
 	"I:"	// set includes
 	"U:"	// undefine
 	"N:"	// notice options
+	"M::"
 	;
 
 static void
@@ -341,6 +342,11 @@ DecodeArgs (int argc, char **argv)
 					}
 					free (opts);
 				}
+				break;
+			case 'M':
+				add_cpp_def (nva ("-M%s", optarg));
+				if (strchr ("FQT", optarg[0]))
+					add_cpp_def (argv[optind++]);
 				break;
 			default:
 				usage (1);
