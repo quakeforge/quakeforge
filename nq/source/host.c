@@ -510,7 +510,6 @@ Host_ClearMemory (void)
 qboolean
 Host_FilterTime (float time)
 {
-	float       timedifference;
 	float       timescale = 1.0;
 
 	if (cls.demoplayback) {
@@ -520,23 +519,13 @@ Host_FilterTime (float time)
 
 	realtime += time;
 
-	timedifference = (timescale / 72.0) - (realtime - oldrealtime);
-
-	if (!cls.timedemo && (timedifference > 0))
-		return false;					// framerate is too high
-
 	host_frametime = realtime - oldrealtime;
 	oldrealtime = realtime;
 
 	if (host_framerate->value > 0)
 		host_frametime = host_framerate->value;
-	else {								// don't allow really long or short
-		// frames
-		if (host_frametime > 0.1)
-			host_frametime = 0.1;
-		if (host_frametime < 0.001)
-			host_frametime = 0.001;
-	}
+	else	// don't allow really long or short frames
+		host_frametime = bound (0.001, host_frametime, 0.1);
 
 	return true;
 }

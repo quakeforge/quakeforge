@@ -1458,9 +1458,9 @@ Host_SimulationTime (float time)
 		oldrealtime = 0;
 
 	if (cl_maxfps->int_val)
-		fps = bound (1, cl_maxfps->value, 72);
+		fps = max (1, cl_maxfps->value);
 	else
-		fps = bound (30, rate->value / 80.0, 72);
+		return 0;
 
 	timedifference = (timescale / fps) - (realtime - oldrealtime);
 

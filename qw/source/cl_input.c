@@ -704,30 +704,27 @@ CL_SendCmd (void)
 	if (cls.demorecording)
 		CL_WriteDemoCmd (cmd);
 
-	if (cl_maxnetfps->int_val) {
-		pps_balance += host_frametime;
-		// never drop more than 2 messages in a row -- that'll cause PL
-		// and don't drop if one of the last two movemessages have an impulse
-		if (pps_balance > 0.0 || dropcount >= 2 || dontdrop) {
-			float   pps;
+	pps_balance += host_frametime;
+	// never drop more than 2 messages in a row -- that'll cause PL
+	// and don't drop if one of the last two movemessages have an impulse
+	if (pps_balance > 0.0 || dropcount >= 2 || dontdrop) {
+		float   pps;
 
-			pps = cl_maxnetfps->int_val;
-			if (pps < 10) pps = 10;
-			if (pps > 72) pps = 72;
-			pps_balance -= 1.0 / pps;
-			pps_balance = bound (-0.1, pps_balance, 0.1);
-			dropcount = 0;
-		} else {
-			// don't count this message when calculating PL
-			cl.frames[i].receivedtime = -3;
-			// drop this message
-			cls.netchan.outgoing_sequence++;
-			dropcount++;
-			return;
-		}
-	} else {
-		pps_balance = 0;
+		if (!(pps = cl_maxnetfps->int_val))
+			pps = rate->value / 80.0;
+		
+		pps = bound (1, pps, 72);
+		
+		pps_balance -= 1.0 / pps;
+		pps_balance = bound (-0.1, pps_balance, 0.1);
 		dropcount = 0;
+	} else {
+		// don't count this message when calculating PL
+		cl.frames[i].receivedtime = -3;
+		// drop this message
+		cls.netchan.outgoing_sequence++;
+		dropcount++;
+		return;
 	}
 
 	// deliver the message
