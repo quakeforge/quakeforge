@@ -51,6 +51,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sound.h"
 #include "QF/plugin.h"
 #include "QF/va.h"
+#include "QF/quakefs.h"
 
 #include "snd_render.h"
 
@@ -885,6 +886,12 @@ s_unblock_sound (void)
 }
 
 static void
+s_gamedir (void)
+{
+	num_sfx = 0;
+}
+
+static void
 s_init (void)
 {
 	int         i;
@@ -990,6 +997,8 @@ s_init (void)
 	ambient_sfx[AMBIENT_SKY] = s_precache_sound ("ambience/wind2.wav");
 
 	s_stop_all_sounds (true);
+
+	QFS_GamedirCallback (s_gamedir);
 }
 
 // Shutdown sound engine ======================================================

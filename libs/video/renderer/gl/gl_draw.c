@@ -324,11 +324,13 @@ Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 void
 Draw_Init (void)
 {
-	int	i;
+	int	     i;
 	tex_t	*image;
 
 	Cmd_AddCommand ("gl_texturemode", &GL_TextureMode_f,
 					"Texture mipmap quality.");
+
+	QFS_GamedirCallback (Draw_ClearCache);
 
 	// load the console background and the charset by hand, because we need to
 	// write the version string into the background before turning it into a

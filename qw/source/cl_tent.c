@@ -92,8 +92,8 @@ model_t    *cl_mod_bolt2;
 model_t    *cl_mod_bolt3;
 model_t    *cl_spr_explod;
 
-void
-CL_TEnts_Init (void)
+static void
+CL_TEnts_Precache (void)
 {
 	cl_sfx_wizhit = S_PrecacheSound ("wizard/hit.wav");
 	cl_sfx_knighthit = S_PrecacheSound ("hknight/hit.wav");
@@ -110,6 +110,13 @@ CL_TEnts_Init (void)
 	cl_mod_beam = Mod_ForName ("progs/beam.mdl", false);
 	if (!cl_mod_beam)
 		cl_mod_beam = cl_mod_bolt;
+}
+
+void
+CL_TEnts_Init (void)
+{
+	QFS_GamedirCallback (CL_TEnts_Precache);
+	CL_TEnts_Precache ();
 }
 
 void

@@ -171,6 +171,10 @@ static const char *qfs_default_dirconf =
 	"	};"
 	"}";
 
+
+static gamedir_callback_t *gamedir_callbacks[MAX_GAMEDIR_CALLBACKS];
+static int num_gamedir_callbacks;
+
 static const char *
 qfs_var_get_key (void *_v, void *unused)
 {
@@ -1126,11 +1130,38 @@ QFS_AddGameDirectory (const char *dir)
 void
 QFS_Gamedir (const char *dir)
 {
+	int         i;
 	const char *list[2] = {dir, 0};
 
 	qfs_build_gamedir (list);
-	// flush all data, so it will be forced to reload
+
+	// Make sure everyone else knows we've changed gamedirs
+	for (i = 0; i < num_gamedir_callbacks; i++) {
+		gamedir_callbacks[i] ();
+	}
+
+	// Flush cache last, so other things get a chance to deal with it
 	Cache_Flush ();
+}
+
+/*
+	QFS_GamedirCallback
+
+	Kludge to fix all the stuff that changing gamedirs breaks
+*/
+void
+QFS_GamedirCallback (gamedir_callback_t *func)
+{
+	if (num_gamedir_callbacks == MAX_GAMEDIR_CALLBACKS) {
+		Sys_Error ("Too many gamedir callbacks!\n");
+	}
+
+	if (!func) {
+		Sys_Error ("null gamedir callback\n");
+	}
+
+	gamedir_callbacks[num_gamedir_callbacks] = func;
+	num_gamedir_callbacks++;
 }
 
 char *

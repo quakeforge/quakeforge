@@ -178,6 +178,11 @@ I_OGGMus_Stop (void)
 
 	wasPlaying = false;
 	playing = false;
+
+	if (cd_sfx) {
+		cd_sfx->close (cd_sfx);
+		cd_channel->sfx = cd_sfx = NULL;
+	}
 }
 
 /* start playing, if we've got a trackmap.
@@ -460,6 +465,12 @@ Mus_VolChange (cvar_t *bgmvolume)
 }
 
 static void
+Mus_gamedir (void)
+{
+	Mus_OggChange (mus_ogglist);
+}
+
+static void
 I_OGGMus_Init (void)
 {
 	Sys_DPrintf ("Entering I_OGGMus_Init\n");
@@ -476,6 +487,8 @@ I_OGGMus_Init (void)
 							"filename of track to music file map");
 	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, Mus_VolChange,
 							"Volume of CD music");
+
+	QFS_GamedirCallback (Mus_gamedir);
 }
 
 static general_funcs_t plugin_info_general_funcs = {

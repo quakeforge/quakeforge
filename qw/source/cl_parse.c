@@ -667,7 +667,6 @@ CL_ClearBaselines (void)
 static void
 CL_ParseServerData (void)
 {
-	char		fn[MAX_OSPATH];
 	const char *str;
 	int			protover;
 	qboolean	cflag = false;
@@ -695,23 +694,8 @@ CL_ParseServerData (void)
 		// save current config
 		Host_WriteConfiguration ();
 		cflag = true;
-		Draw_ClearCache ();
 
 		QFS_Gamedir (str);
-	}
-
-	// ZOID--run the autoexec.cfg in the gamedir if it exists
-	if (cflag) {
-		int         cmd_warncmd_val = cmd_warncmd->int_val;
-
-		Cbuf_AddText (cl_cbuf, "cmd_warncmd 0\n");
-		Cbuf_AddText (cl_cbuf, "exec config.cfg\n");
-		Cbuf_AddText (cl_cbuf, "exec frontend.cfg\n");
-		if (cl_autoexec->int_val) {
-			Cbuf_AddText (cl_cbuf, "exec autoexec.cfg\n");
-		}
-		snprintf (fn, sizeof (fn), "cmd_warncmd %d\n", cmd_warncmd_val);
-		Cbuf_AddText (cl_cbuf, fn);
 	}
 
 	if (cls.demoplayback2) {

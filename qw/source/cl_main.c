@@ -1611,6 +1611,22 @@ CL_Init_Memory (void)
 	Memory_Init (mem_base, mem_size);
 }
 
+static void
+CL_Autoexec (void)
+{
+	int         cmd_warncmd_val = cmd_warncmd->int_val;
+
+	Cbuf_AddText (cl_cbuf, "cmd_warncmd 0\n");
+	Cbuf_AddText (cl_cbuf, "exec config.cfg\n");
+	Cbuf_AddText (cl_cbuf, "exec frontend.cfg\n");
+
+	if (cl_autoexec->int_val) {
+		Cbuf_AddText (cl_cbuf, "exec autoexec.cfg\n");
+	}
+
+	Cbuf_AddText (cl_cbuf, va ("cmd_warncmd %d\n", cmd_warncmd_val));
+}
+
 void
 Host_Init (void)
 {
@@ -1661,6 +1677,7 @@ Host_Init (void)
 	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 
 	QFS_Init ("qw");
+	QFS_GamedirCallback (CL_Autoexec);
 	PI_Init ();
 
 	CL_Cam_Init_Cvars ();
