@@ -102,7 +102,7 @@ void
 VID_Init (unsigned char *palette)
 {
 	Uint32      flags = SDL_OPENGL;
-	int         i;
+	int         i, j;
 
 	// Initialize the SDL library 
 	if (SDL_Init (SDL_INIT_VIDEO) < 0)
@@ -139,11 +139,10 @@ VID_Init (unsigned char *palette)
 	// Check if we want fullscreen
 	if (vid_fullscreen->int_val) {
 		flags |= SDL_FULLSCREEN;
-
 #ifndef WIN32		// Don't annoy Mesa/3dfx folks
 		// FIXME: Maybe this could be put in a different spot, but I don't
 		// know where. Anyway, it's to work around a 3Dfx Glide bug.
-		SDL_WM_GrabInput (SDL_GRAB_ON);
+//		Cvar_SetValue (in_grab, 1); // Needs #include "QF/input.h"
 		putenv ((char *)"MESA_GLX_FX=fullscreen");
 	} else {
 		putenv ((char *)"MESA_GLX_FX=window");
@@ -151,17 +150,33 @@ VID_Init (unsigned char *palette)
 	}
 
 	// Setup GL Attributes
-	SDL_GL_SetAttribute (SDL_GL_RED_SIZE, 4);
-	SDL_GL_SetAttribute (SDL_GL_GREEN_SIZE, 4);
-	SDL_GL_SetAttribute (SDL_GL_BLUE_SIZE, 4);
 	SDL_GL_SetAttribute (SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute (SDL_GL_DEPTH_SIZE, 1);
+//	SDL_GL_SetAttribute (SDL_GL_STENCIL_SIZE, 0);	// Try for 0, 8
+//	SDL_GL_SetAttribute (SDL_GL_STEREO, 1);			// Someday...
 
-	if (!(screen = SDL_SetVideoMode (scr_width, scr_height, 0, flags))) {
-		Sys_Error ("Couldn't set video mode: %s", SDL_GetError ());
-		SDL_Quit ();
+	for (j = 0; j < 5; j++) {
+		int rgba[5][4] = {
+			8, 8, 8, 0,
+			8, 8, 8, 8,
+			5, 6, 5, 0,
+			5, 5, 5, 0,
+			5, 5, 5, 1
+		}
+
+		SDL_GL_SetAttribute (SDL_GL_RED_SIZE, rgba[j][0]);
+		SDL_GL_SetAttribute (SDL_GL_GREEN_SIZE, rgba[j][1]);
+		SDL_GL_SetAttribute (SDL_GL_BLUE_SIZE, rgba[j][2]);
+		SDL_GL_SetAttribute (SDL_GL_ALPHA_SIZE, rgba[j][3]);
+
+		for (i = 32; i >= 16; i -= 8) {
+			SDL_GL_SetAttribute (SDL_GL_DEPTH_SIZE, i);
+			if (screen = SDL_SetVideoMode (scr_width, scr_height, 0, flags))
+				goto success;
+		}
 	}
-
+	Sys_Error ("Couldn't set video mode: %s", SDL_GetError ());
+	SDL_Quit ();
+success:
 	vid.height = vid.conheight = min (vid.conheight, scr_height);
 	vid.width = vid.conwidth = min (vid.conwidth, scr_width);
 	Con_CheckResize (); // Now that we have a window size, fix console
