@@ -241,13 +241,13 @@ Qread (VFile *file, void *buf, int count)
 }
 
 int
-Qwrite (VFile *file, void *buf, int count)
+Qwrite (VFile *file, const void *buf, int count)
 {
 	if (file->file)
 		return fwrite (buf, 1, count, file->file);
 #ifdef HAVE_ZLIB
 	else
-		return gzwrite (file->gzfile, buf, count);
+		return gzwrite (file->gzfile, (const voidp)buf, count);
 #else
 	return -1;
 #endif

@@ -42,7 +42,7 @@ VFile *Qopen(const char *path, const char *mode);
 VFile *Qdopen(int fd, const char *mode);
 void Qclose(VFile *file);
 int Qread(VFile *file, void *buf, int count);
-int Qwrite(VFile *file, void *buf, int count);
+int Qwrite(VFile *file, const void *buf, int count);
 int Qprintf(VFile *file, const char *fmt, ...) __attribute__((format(printf,2,3)));
 char *Qgets(VFile *file, char *buf, int count);
 int Qgetc(VFile *file);
