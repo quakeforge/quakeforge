@@ -110,6 +110,38 @@ C_ExecLine (const char *line)
 }
 
 static void
+C_DrawInputLine (inputline_t *il)
+{
+	WINDOW     *win = (WINDOW *) il->user_data;
+	int         i;
+	const char *text;
+
+	text = il->lines[il->edit_line] + il->scroll;
+	wmove (win, 0, 0);
+	if (il->scroll) {
+		waddch (win, '<' | COLOR_PAIR (5));
+		text++;
+	} else {
+		waddch (win, *text++);
+	}
+	for (i = 0; i < il->width - 2 && *text; i++) {
+		chtype      ch = (byte)*text++;
+		ch = sys_char_map[ch] | attr_table[attr_map[ch]];
+		waddch (win, ch);
+	}
+	while (i++ < il->width - 2) {
+		waddch (win, ' ');
+	}
+	if (*text) {
+		waddch (win, '>' | COLOR_PAIR (5));
+	} else {
+		waddch (win, ' ');
+	}
+	wmove (win, 0, il->linepos - il->scroll);
+	wrefresh (win);
+}
+
+static void
 sigwinch (int sig)
 {
 	interrupted = 1;
@@ -145,6 +177,7 @@ C_Init (void)
 		init_pair (2, COLOR_GREEN, COLOR_BLACK);
 		init_pair (3, COLOR_RED, COLOR_BLACK);
 		init_pair (4, COLOR_YELLOW, COLOR_BLUE);
+		init_pair (5, COLOR_CYAN, COLOR_BLACK);
 
 		scrollok (output, TRUE);
 		leaveok (output, TRUE);
@@ -169,8 +202,13 @@ C_Init (void)
 		input_line = Con_CreateInputLine (16, MAXCMDLINE, ']');
 		input_line->complete = Con_BasicCompleteCommandLine;
 		input_line->enter = C_ExecLine;
+		input_line->width = screen_x;
+		input_line->user_data = input;
+		input_line->draw = C_DrawInputLine;
 
 		con_linewidth = screen_x;
+
+		C_DrawInputLine (input_line);
 	} else
 #endif
 		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
@@ -232,8 +270,6 @@ C_ProcessInput (void)
 #ifdef HAVE_CURSES_H
 	if (use_curses) {
 		int         ch;
-		int         i;
-		const char *text;
 
 		if (interrupted) {
 			struct winsize size;
@@ -243,9 +279,9 @@ C_ProcessInput (void)
 				resizeterm (size.ws_row, size.ws_col);
 				getmaxyx (stdscr, screen_y, screen_x);
 				con_linewidth = screen_x;
+				input_line->width = screen_x;
 				wrefresh (curscr);
 			}
-			return;
 		}
 
 		ch = wgetch (input);
@@ -294,36 +330,6 @@ C_ProcessInput (void)
 					return;
 		}
 		Con_ProcessInputLine (input_line, ch);
-		i = input_line->linepos - 1;
-		if (input_line->scroll > i)
-			input_line->scroll = i;
-		if (input_line->scroll < i - (screen_x - 2) + 1)
-			input_line->scroll = i - (screen_x - 2) + 1;
-		text = input_line->lines[input_line->edit_line] + input_line->scroll;
-		if ((int)strlen (text + 1) < screen_x - 2) {
-			text = input_line->lines[input_line->edit_line];
-			input_line->scroll = strlen (text + 1) - (screen_x - 2);
-			input_line->scroll = max (input_line->scroll, 0);
-			text += input_line->scroll;
-		}
-		wmove (input, 0, 0);
-		if (input_line->scroll) {
-			waddch (input, '<');
-		} else {
-			waddch (input, *text++);
-		}
-		for (i = 0; i < screen_x - 2 && *text; i++)
-			waddch (input, *text++);
-		while (i++ < screen_x - 2)
-			waddch (input, ' ');
-		if (*text) {
-			waddch (input, '>');
-		} else {
-			waddch (input, ' ');
-		}
-		wmove (input, 0, input_line->linepos - input_line->scroll);
-		touchline (stdscr, screen_y - 1, 1);
-		wrefresh (input);
 	} else
 #endif
 		while (1) {

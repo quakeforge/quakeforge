@@ -44,6 +44,8 @@
 #include "QF/console.h"
 #include "QF/keys.h"
 
+#include "compat.h"
+
 struct inputline_s *
 Con_CreateInputLine (int lines, int width, char prompt)
 {
@@ -62,7 +64,7 @@ Con_CreateInputLine (int lines, int width, char prompt)
 
 	inputline->lines = p;
 	inputline->num_lines = lines;
-	inputline->line_width = width;
+	inputline->line_size = width;
 	while (lines--) {
 		*p++ = l;
 		l += width;
@@ -85,6 +87,7 @@ void
 Con_ProcessInputLine (inputline_t *il, int ch)
 {
 	int			i;
+	char       *text;
 
 	switch (ch) {
 		case K_RETURN:
@@ -152,7 +155,7 @@ Con_ProcessInputLine (inputline_t *il, int ch)
 		default:
 			if (ch >= ' ' && ch < 256 && ch != 127) {
 				i = strlen (il->lines[il->edit_line]);
-				if (i >= il->line_width - 1)
+				if (i >= il->line_size - 1)
 					break;
 				// This also moves the ending \0
 				memmove (il->lines[il->edit_line] + il->linepos + 1,
@@ -163,4 +166,17 @@ Con_ProcessInputLine (inputline_t *il, int ch)
 			}
 			break;
 	}
+	i = il->linepos - 1;
+	if (il->scroll > i)
+		il->scroll = i;
+	if (il->scroll < i - (il->width - 2) + 1)
+		il->scroll = i - (il->width - 2) + 1;
+	text = il->lines[il->edit_line] + il->scroll;
+	if ((int)strlen (text + 1) < il->width - 2) {
+		text = il->lines[il->edit_line];
+		il->scroll = strlen (text + 1) - (il->width - 2);
+		il->scroll = max (il->scroll, 0);
+	}
+	if (il->draw)
+		il->draw (il);
 }
