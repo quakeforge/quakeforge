@@ -963,3 +963,10 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 		VID_Update (&vrect);
 	}
 }
+
+void
+VID_ShiftPalette (unsigned char *p)
+{
+	VID_SetPalette (p);
+}
+

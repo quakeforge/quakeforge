@@ -281,3 +281,9 @@ VID_SetCaption (const char *text)
 	} else
 		SDL_WM_SetCaption (va ("%s %s", PROGRAM, VERSION), NULL);
 }
+
+qboolean
+VID_SetGamma (double gamma)
+{
+	return false; //FIXME
+}

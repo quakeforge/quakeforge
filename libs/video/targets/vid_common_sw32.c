@@ -36,6 +36,8 @@
 #include "QF/va.h"
 #include "QF/vid.h"
 
+#include "compat.h"
+
 extern viddef_t vid;					// global video state
 
 int         scr_width, scr_height;
@@ -198,4 +200,63 @@ VID_MakeColormaps (int fullbrights, byte *pal)
 	VID_MakeColormap8(vid.colormap8, pal);
 	VID_MakeColormap16(vid.colormap16, pal);
 	VID_MakeColormap32(vid.colormap32, pal);
+}
+
+
+void
+VID_InitBuffers (void)
+{
+	int         buffersize, zbuffersize, cachesize = 1;
+	void       *vid_surfcache;
+
+	// Calculate the sizes we want first
+	buffersize = vid.rowbytes * vid.height;
+	zbuffersize = vid.width * vid.height * sizeof (*vid.zbuffer);
+	if (vid.surf_cache_size)
+		cachesize = vid.surf_cache_size (vid.width, vid.height);
+
+	// Free the old z-buffer
+	if (vid.zbuffer) {
+		free (vid.zbuffer);
+		vid.zbuffer = NULL;
+	}
+	// Free the old surface cache
+	if (vid.surfcache) {
+		if (vid.flush_caches)
+			vid.flush_caches ();
+		free (vid.surfcache);
+		vid.surfcache = NULL;
+	}
+	if (vid.do_screen_buffer) {
+		vid.do_screen_buffer ();
+	} else {
+		// Free the old screen buffer
+		if (vid.buffer) {
+			free (vid.buffer);
+			vid.conbuffer = vid.buffer = NULL;
+		}
+		// Allocate the new screen buffer
+		vid.conbuffer = vid.buffer = calloc (buffersize, 1);
+		if (!vid.conbuffer) {
+			Sys_Error ("Not enough memory for video mode\n");
+		}
+	}
+	// Allocate the new z-buffer
+	vid.zbuffer = calloc (zbuffersize, 1);
+	if (!vid.zbuffer) {
+		free (vid.buffer);
+		vid.conbuffer = vid.buffer = NULL;
+		Sys_Error ("Not enough memory for video mode\n");
+	}
+	// Allocate the new surface cache; free the z-buffer if we fail
+	vid_surfcache = calloc (cachesize, 1);
+	if (!vid_surfcache) {
+		free (vid.buffer);
+		free (vid.zbuffer);
+		vid.zbuffer = NULL;
+		Sys_Error ("Not enough memory for video mode\n");
+	}
+
+	if (vid.init_caches)
+		vid.init_caches (vid.surfcache, cachesize);
 }

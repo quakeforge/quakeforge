@@ -366,9 +366,6 @@ R_TrailingEdge (surf_t *surf, edge_t *edge)
 	// don't generate a span if this is an inverted span, with the end edge
 	// preceding the start edge (that is, we haven't seen the start edge yet)
 	if (--surf->spanstate == 0) {
-		if (surf->insubmodel)
-			r_bmodelactive--;
-
 		if (surf == surfaces[1].next) {
 			// emit a span (current top going away)
 			iu = edge->u >> 20;
@@ -404,9 +401,6 @@ R_LeadingEdge (edge_t *edge)
 		// don't start a span if this is an inverted span, with the end edge
 		// preceding the start edge (that is, we've already seen the end edge)
 		if (++surf->spanstate == 1) {
-			if (surf->insubmodel)
-				r_bmodelactive++;
-
 			surf2 = surfaces[1].next;
 
 			if (surf->key < surf2->key)
@@ -504,8 +498,6 @@ R_GenerateSpans (void)
 	edge_t     *edge;
 	surf_t     *surf;
 
-	r_bmodelactive = 0;
-
 	// clear active surfaces to just the background surface
 	surfaces[1].next = surfaces[1].prev = &surfaces[1];
 	surfaces[1].last_u = edge_head_u_shift20;
@@ -532,8 +524,6 @@ void
 R_GenerateSpansBackward (void)
 {
 	edge_t     *edge;
-
-	r_bmodelactive = 0;
 
 	// clear active surfaces to just the background surface
 	surfaces[1].next = surfaces[1].prev = &surfaces[1];
