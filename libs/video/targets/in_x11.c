@@ -538,6 +538,11 @@ static void
 event_motion (XEvent *event)
 {
 	x_time = event->xmotion.time;
+	if (x_time <= x_mouse_time) {
+		p_mouse_x = event->xmotion.x;
+		p_mouse_y = event->xmotion.y;
+		return;
+	}
 
 	if (dga_active) {
 		in_mouse_x += event->xmotion.x_root;

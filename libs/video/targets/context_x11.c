@@ -89,6 +89,7 @@ XVisualInfo *x_visinfo;
 Visual		*x_vis;
 Window		x_win;
 Time 		x_time;
+Time		x_mouse_time;
 
 qboolean    x_have_focus = false;
 
@@ -308,6 +309,29 @@ X11_ForceMove (int x, int y)
 	X11_WaitForEvent (ConfigureNotify);
 }
 
+static Bool
+check_mouse_event (Display *disp, XEvent *ev, XPointer arg)
+{
+	XMotionEvent *me = &ev->xmotion;
+	if (ev->type != MotionNotify)
+		return False;
+	if (me->x != scr_width / 2 || me->y != scr_height / 2)
+		return False;
+	return True;
+}
+
+static void
+X11_SetMouse (void)
+{
+	XEvent	ev;
+
+	XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, 0, 0);
+	XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, scr_width / 2,
+				  scr_height / 2);
+	XPeekIfEvent (x_disp, &ev, check_mouse_event, 0);
+	x_mouse_time = ev.xmotion.time;
+}
+
 static vec3_t *
 X11_GetGamma (void)
 {
@@ -444,8 +468,7 @@ X11_UpdateFullscreen (cvar_t *fullscreen)
 		}
 
 		X11_ForceMove (0, 0);
-		XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, scr_width / 2,
-					  scr_height / 2);
+		X11_SetMouse ();
 		IN_UpdateGrab (in_grab);
 		// Done in X11_SetVidMode but moved the window since then
 		X11_ForceViewPort (); 
