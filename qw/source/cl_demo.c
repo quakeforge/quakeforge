@@ -56,13 +56,22 @@ static const char rcsid[] =
 #include "host.h"
 #include "pmove.h"
 
+typedef struct {
+	int         frames;
+	double      time;
+	double      fps;
+} td_stats_t;
+
 int     cl_timeframes_isactive;
 int     cl_timeframes_index;
 int     demotime_cached;
 char    demoname[1024];
-int     timedemo_count;
 double *cl_timeframes_array;
 #define CL_TIMEFRAMES_ARRAYBLOCK 4096
+
+int     timedemo_count;
+int     timedemo_runs;
+td_stats_t *timedemo_data;
 
 
 void CL_FinishTimeDemo (void);
@@ -785,6 +794,12 @@ CL_StartTimeDemo (void)
 		cl_timeframes_isactive = 1;
 }
 
+static inline double
+sqr (double x)
+{
+	return x * x;
+}
+
 void
 CL_FinishTimeDemo (void)
 {
@@ -803,8 +818,37 @@ CL_FinishTimeDemo (void)
 
 	CL_TimeFrames_DumpLog();
 	cl_timeframes_isactive = 0;
-	if (--timedemo_count > 0)
+
+	timedemo_count--;
+	timedemo_data[timedemo_count].frames = time;
+	timedemo_data[timedemo_count].time = time;
+	timedemo_data[timedemo_count].fps = frames / time;
+	if (timedemo_count > 0) {
 		CL_StartTimeDemo ();
+	} else {
+		if (--timedemo_runs) {
+			double      average = 0;
+			double      variance = 0;
+			double      min, max;
+			int         i;
+
+			min = max = timedemo_data[0].fps;
+			for (i = 0; i < timedemo_runs; i++) {
+				average += timedemo_data[i].fps;
+				min = min (min, timedemo_data[i].fps);
+				max = max (max, timedemo_data[i].fps);
+			}
+			average /= timedemo_runs;
+			for (i = 0; i < timedemo_runs; i++)
+				variance += sqr (timedemo_data[i].fps - average);
+			variance /= timedemo_runs;
+			Con_Printf ("timedemo stats for %d runs:\n", timedemo_runs);
+			Con_Printf ("  average fps: %.3f\n", average);
+			Con_Printf ("  min/max fps: %.3f/%.3f\n", min, max);
+			Con_Printf ("std deviation: %.3f\n", sqrt (variance));
+		}
+		free (timedemo_data);
+	}
 }
 
 /*
@@ -824,6 +868,8 @@ CL_TimeDemo_f (void)
 	} else {
 		timedemo_count = 1;
 	}
+	timedemo_runs = timedemo_count;
+	timedemo_data = calloc (timedemo_runs, sizeof (td_stats_t));
 	strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
 	CL_StartTimeDemo ();
 }
