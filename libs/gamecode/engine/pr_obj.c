@@ -554,8 +554,9 @@ pr_class_get_class_method (progs_t *pr)
 {
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	pr_sel_t   *aSel = &P_STRUCT (pr, pr_sel_t, 1);
+	pr_method_t *method;
 	class = &G_STRUCT (pr, pr_class_t, class->class_pointer);
-	pr_method_t *method = obj_find_message (pr, class, aSel);
+	method = obj_find_message (pr, class, aSel);
 	RETURN_POINTER (pr, method);
 }
 
