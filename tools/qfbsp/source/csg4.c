@@ -287,7 +287,7 @@ CopyFacesToOutside (brush_t *b)
 /*
 	CSGFaces
 
-	Returns a list of surfaces containing aall of the faces
+	Returns a list of surfaces containing all of the faces
 */
 surface_t  *
 CSGFaces (brushset_t *bs)
