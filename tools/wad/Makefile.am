@@ -19,7 +19,7 @@ EXTRA_PROGRAMS= wad
 
 man_MANS=	$(mans)
 
-wad_SOURCES=	wad.c
+wad_SOURCES=	grab.c script.c wad.c
 wad_LDADD=	$(WAD_LIBS)
 wad_DEPENDENCIES= $(WAD_DEPS)
 

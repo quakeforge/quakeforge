@@ -52,4 +52,19 @@ typedef struct {
 	char		*wadfile;		// wad file to read/write/test
 } options_t;
 
+extern struct tex_s *image;
+extern byte default_palette[];
+extern byte *lumpbuffer, *lump_p;
+extern struct dstring_s *lumpname;
+
+struct script_s;
+void GrabPalette (struct script_s *script);
+void GrabColormap (struct script_s *script);
+void GrabPic (struct script_s *script);
+void GrabMip (struct script_s *script);
+void GrabRaw (struct script_s *script);
+void GrabColormap2 (struct script_s *script);
+
+void process_wad_script (const char *name);
+
 #endif	// __wad_h
