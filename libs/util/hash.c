@@ -72,7 +72,7 @@ hashtab_t *
 Hash_NewTable (int tsize, const char *(*gk)(void*,void*), void (*f)(void*,void*),
 			   void *ud)
 {
-	hashtab_t *tab = calloc (1, (size_t)&((hashtab_t*)0)->tab[tsize]);
+	hashtab_t *tab = calloc (1, field_offset (hashtab_t, tab[tsize]));
 	if (!tab)
 		return 0;
 	tab->tab_size = tsize;
