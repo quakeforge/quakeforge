@@ -64,7 +64,7 @@ float () baz =
 
 void (float x) test =
 {
-	local string str;
+	//local string str;
 	local integer urk = 0;
 
 	if (urk) {
