@@ -805,7 +805,7 @@ CL_LinkPlayers (void)
 		// things (due to lack of lights?), so I'm leaving this as is for now.
 
 		// the player object never gets added
-		if (j == cl.playernum && Cam_DrawPlayer (j)) {
+		if (j == cl.playernum && !Cam_DrawPlayer (j)) {
 			r_player_entity = &cl_player_ents[state - frame->playerstate];
 			continue;
 		}
@@ -819,8 +819,8 @@ CL_LinkPlayers (void)
 				|| i == 93 || i == 102))
 			continue;
 
-		if (!Cam_DrawPlayer (j))
-			continue;
+		//if (Cam_DrawPlayer (j))
+		//	continue;
 
 		// grab an entity to fill in
 		ent = R_NewEntity ();
