@@ -63,8 +63,6 @@ static audio_info_t info;
 #define BUFFER_SIZE		8192
 
 static unsigned char dma_buffer[BUFFER_SIZE];
-static unsigned char pend_buffer[BUFFER_SIZE];
-static int         pending;
 static volatile dma_t sn;
 
 static plugin_t           plugin_info;
@@ -72,8 +70,8 @@ static plugin_data_t      plugin_info_data;
 static plugin_funcs_t     plugin_info_funcs;
 static general_data_t     plugin_info_general_data;
 static general_funcs_t    plugin_info_general_funcs;
-static sound_data_t       plugin_info_sound_data;
-static sound_funcs_t      plugin_info_sound_funcs;
+static snd_output_data_t  plugin_info_sound_data;
+static snd_output_funcs_t plugin_info_sound_funcs;
 
 
 static qboolean
@@ -205,16 +203,16 @@ SNDDMA_Submit (void)
 	unsigned char *p;
 	static unsigned char writebuf[1024];
 	int			bsize, bytes, idx, b;
-	int			stop = *plugin_info_snd_output_data.paintedtime;
+	int			stop = *plugin_info_sound_data.paintedtime;
 
 	if (snd_blocked)
 		return;
 
-	if (*plugin_info_snd_output_data.paintedtime < wbufp)
+	if (*plugin_info_sound_data.paintedtime < wbufp)
 		wbufp = 0;						// reset
 
 	bsize = shm->channels * (shm->samplebits / 8);
-	bytes = (*plugin_info_snd_output_data.paintedtime - wbufp) * bsize;
+	bytes = (*plugin_info_sound_data.paintedtime - wbufp) * bsize;
 
 	if (!bytes)
 		return;
@@ -274,26 +272,15 @@ snd_output_sun_PluginInfo (void) {
 	plugin_info_funcs.input = NULL;
 	plugin_info_funcs.sound = &plugin_info_sound_funcs;
 
-	plugin_info_general_funcs.p_Init = SND_Init;
-	plugin_info_general_funcs.p_Shutdown = SND_Shutdown;
+	plugin_info_general_funcs.p_Init = NULL; //SNDDMA_Init_Cvars;
+	plugin_info_general_funcs.p_Shutdown = NULL;
 
-	plugin_info_sound_funcs.pS_AmbientOff = SND_AmbientOff;
-	plugin_info_sound_funcs.pS_AmbientOn = SND_AmbientOn;
-	plugin_info_sound_funcs.pS_TouchSound = SND_TouchSound;
-	plugin_info_sound_funcs.pS_ClearBuffer = SND_ClearBuffer;
-	plugin_info_sound_funcs.pS_StaticSound = SND_StaticSound;
-	plugin_info_sound_funcs.pS_StartSound = SND_StartSound;
-	plugin_info_sound_funcs.pS_StopSound = SND_StopSound;
-	plugin_info_sound_funcs.pS_PrecacheSound = SND_PrecacheSound;
-	plugin_info_sound_funcs.pS_ClearPrecache = SND_ClearPrecache;
-	plugin_info_sound_funcs.pS_Update = SND_Update;
-	plugin_info_sound_funcs.pS_StopAllSounds = SND_StopAllSounds;
-	plugin_info_sound_funcs.pS_BeginPrecaching = SND_BeginPrecaching;
-	plugin_info_sound_funcs.pS_EndPrecaching = SND_EndPrecaching;
-	plugin_info_sound_funcs.pS_ExtraUpdate = SND_ExtraUpdate;
-	plugin_info_sound_funcs.pS_LocalSound = SND_LocalSound;
-	plugin_info_sound_funcs.pS_BlockSound = SND_BlockSound;
-	plugin_info_sound_funcs.pS_UnblockSound = SND_UnblockSound;
+	plugin_info_sound_funcs.pS_O_Init = SNDDMA_Init;
+	plugin_info_sound_funcs.pS_O_Shutdown = SNDDMA_Shutdown;
+	plugin_info_sound_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
+	plugin_info_sound_funcs.pS_O_Submit = SNDDMA_Submit;
+	plugin_info_sound_funcs.pS_O_BlockSound = SNDDMA_BlockSound;
+	plugin_info_sound_funcs.pS_O_UnblockSound = SNDDMA_UnblockSound;
 
 	return &plugin_info;
 }
