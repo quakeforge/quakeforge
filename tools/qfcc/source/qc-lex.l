@@ -151,6 +151,7 @@ static keyword_t keywords[] = {
 	{"entity",		TYPE,	&type_entity	},
 	{"quaternion",	TYPE,	&type_quaternion},
 	{"integer",		TYPE,	&type_integer	},
+	{"function",	TYPE,	&type_function	},
 	{"local",		LOCAL,	0				},
 	{"return",		RETURN,	0				},
 	{"while",		WHILE,	0				},

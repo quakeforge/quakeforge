@@ -549,6 +549,7 @@ typedef struct {
 	int		warn_error;	// treat warnings as errors
 	int		quiet;		// not so much chatter
 	int		debug;		// produce debug info
+	int		undefined_function_warning;	// print a warning when a function isn't defined
 } options_t;
 
 extern options_t options;

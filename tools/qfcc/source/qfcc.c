@@ -706,16 +706,16 @@ PR_FinishCompilation (void)
 	expr_t       e;
 
 	// check to make sure all functions prototyped have code
-	for (d = pr.def_head.def_next; d; d = d->def_next) {
-		if (d->type->type == ev_func && !d->scope) {	// function args ok
-//			f = G_FUNCTION(d->ofs);
-//			if (!f || (!f->code && !f->builtin))
-			if (!d->initialized) {
-				printf ("function %s was not defined\n", d->name);
-				errors = true;
+	if (options.undefined_function_warning)
+		for (d = pr.def_head.def_next; d; d = d->def_next) {
+			if (d->type->type == ev_func && !d->scope) {	// function args ok
+//				f = G_FUNCTION(d->ofs);
+//				if (!f || (!f->code && !f->builtin))
+				if (!d->initialized) {
+					warning (0, "function %s was not defined\n", d->name);
+				}
 			}
 		}
-	}
 
 	if (errors)
 		return !errors;
@@ -920,15 +920,16 @@ main (int argc, char **argv)
 	if (CheckParm ("-h") || CheckParm ("--help")) {
 		printf ("%s - A compiler for the QuakeC language\n", argv[0]);
 		printf ("Usage: %s [options]\n", argv[0]);
-		printf ("\
-Options: \n\
-	-s, --source <dir>	look for progs.src in directory <dir>\n\
-	-h, --help		display this help and exit\n\
-	-V, --version		output version information and exit\n\
-	--cow			allow assignment to initialized globals\n\
-	--id			only support id (progs version 6) features\n\
-	--warn=error	treat warnings as errors\n\
-");
+		printf (
+"Options: \n"
+"	-s, --source <dir>	look for progs.src in directory <dir>\n"
+"	-h, --help		display this help and exit\n"
+"	-V, --version		output version information and exit\n"
+"	--cow			allow assignment to initialized globals\n"
+"	--id			only support id (progs version 6) features\n"
+"	--warn=error	treat warnings as errors\n"
+"	--undefined-function-warning	warn when a function isn't defined\n"
+);
 		return 1;
 	}
 
@@ -974,6 +975,10 @@ Options: \n\
 	// FIXME eww, really must go to getopt
 	if (CheckParm ("--warn=error")) {
 		options.warn_error = 1;
+	}
+
+	if (CheckParm ("--undefined-function-warning")) {
+		options.undefined_function_warning = 1;
 	}
 
 	if (strcmp (sourcedir, ".")) {

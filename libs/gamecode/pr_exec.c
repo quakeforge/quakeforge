@@ -595,6 +595,13 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				pr->pr_argc = st->op - OP_CALL0;
 				if (!OPA.func_var)
 					PR_RunError (pr, "NULL function");
+				if (OPA.func_var < 0) { // dynamic builtin
+					int i = -OPA.func_var;
+					if (i >= pr->numbuiltins || !pr->builtins[i].proc)
+						PR_RunError (pr, "Bad builtin call number");
+					pr->builtins[i].proc (pr);
+					break;
+				}
 				newf = &pr->pr_functions[OPA.func_var];
 				if (newf->first_statement < 0) {
 					// negative statements are built in functions

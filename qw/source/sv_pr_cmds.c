@@ -2006,7 +2006,7 @@ PF_checkfunction (progs_t *pr)
 
 	for (i = 0; i < pr->numbuiltins; i++) {
 		if (pr->builtins[i].name && strequal (pr->builtins[i].name, name)) {
-			G_FUNCTION (pr, OFS_RETURN) = i;
+			G_FUNCTION (pr, OFS_RETURN) = -i;
 			return;
 		}
 	}
