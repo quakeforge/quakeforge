@@ -45,10 +45,6 @@ static const char rcsid[] =
 # include <unistd.h>
 #endif
 
-// FIXME: we did support Quake1 protocol too...
-
-#define QUAKEWORLD
-
 #include <ctype.h>
 #include <stdarg.h>
 
@@ -470,16 +466,10 @@ Parse_Server_Packet ()
 								   (&packet));
 					break;
 				case svc_version:
-#ifdef QUAKEWORLD
 					Net_LogPrintf ("**QW OBSOLETE**");
-#endif
 					break;
 				case svc_setview:
-#ifdef QUAKEWORLD
 					Net_LogPrintf ("**QW OBSOLETE**");
-#else
-					MSG_ReadShort (&packet);
-#endif
 					break;
 				case svc_sound:
 					i = MSG_ReadShort (&packet);
@@ -499,11 +489,7 @@ Parse_Server_Packet ()
 					Net_LogPrintf ("Channel %d ", i & 7);
 					break;
 				case svc_time:
-#ifdef QUAKEWORLD
 					Net_LogPrintf ("**QW OBSOLETE**\n");
-#else
-					MSG_ReadFloat (&packet);
-#endif
 					break;
 				case svc_print:
 					// FIXME: i==PRINT_CHAT
@@ -517,7 +503,6 @@ Parse_Server_Packet ()
 					for (i = 0; i < 3; i++)
 						Net_LogPrintf ("%f ", MSG_ReadAngle (&packet));
 					break;
-#ifdef QUAKEWORLD
 				case svc_serverdata:
 					Net_LogPrintf ("Ver: %ld", MSG_ReadLong (&packet));
 					Net_LogPrintf (" Client ID: %ld", MSG_ReadLong (&packet));
@@ -527,7 +512,6 @@ Parse_Server_Packet ()
 					for (i = 0; i < 10; i++)
 						MSG_ReadFloat (&packet);
 					break;
-#endif
 
 				case svc_lightstyle:
 					i = MSG_ReadByte (&packet);
@@ -536,45 +520,24 @@ Parse_Server_Packet ()
 					Net_LogPrintf ("%d %s", i, MSG_ReadString (&packet));
 					break;
 				case svc_updatename:
-#ifdef QUAKEWORLD
 					Net_LogPrintf ("**QW OBSOLETE**");
-#else
-					Net_LogPrintf ("%d ", MSG_ReadByte (&packet));
-					Net_LogPrintf ("%s", MSG_ReadString ());
-#endif
 					break;
 				case svc_updatefrags:
 					Net_LogPrintf ("player: %d ", MSG_ReadByte (&packet));
 					Net_LogPrintf ("frags: %d", MSG_ReadShort (&packet));
 					break;
 				case svc_clientdata:
-#ifdef QUAKEWORLD
 					Net_LogPrintf ("**QW OBSOLETE**");
-#endif
 					break;
 				case svc_stopsound:
 					Net_LogPrintf ("%d", MSG_ReadShort (&packet));
 					break;
 
 				case svc_updatecolors:
-#ifdef QUAKEWORLD
 					Net_LogPrintf ("**QW OBSOLETE**");
-#else
-					Net_LogPrintf ("%d ", MSG_ReadByte (&packet));
-					Net_LogPrintf ("%d", MSG_ReadByte ());
-#endif
 					break;
 				case svc_particle:
-#ifdef QUAKEWORLD
 					Net_LogPrintf ("**QW OBSOLETE**");
-#else
-					for (i = 0; i < 3; i++)
-						Net_LogPrintf (" %f", MSG_ReadCoord (&packet));
-					for (i = 0; i < 3; i++)
-						Net_LogPrintf (" %d", MSG_ReadChar (&packet));
-					Net_LogPrintf (" Count: %d", MSG_ReadByte (&packet));
-					Net_LogPrintf (" Color: %d", MSG_ReadByte (&packet));
-#endif
 					break;
 
 				case svc_damage:
@@ -660,11 +623,7 @@ Parse_Server_Packet ()
 					Net_LogPrintf (" %d", MSG_ReadByte (&packet));
 					break;
 				case svc_signonnum:
-#ifdef QUAKEWORLD
 					Net_LogPrintf ("**QW OBSOLETE**");
-#else
-					Net_LogPrintf ("%d", MSG_ReadByte (&packet));
-#endif
 					break;
 				case svc_centerprint:
 					Net_LogPrintf (MSG_ReadString (&packet));
