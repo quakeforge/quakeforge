@@ -39,9 +39,6 @@
 #include "gui/Rect.h"
 #include "gui/Slider.h"
 
-void () traceon = #29;
-void () traceoff = #30;
-
 Slider gamma_slider;
 Slider viewsize_slider;
 CvarRange mouse_amp_range;
@@ -390,9 +387,7 @@ DRAW_control_options =
 				   cvar ("m_pitch") < 0 ?  "On" : "Off");
 	bar_pad = y + 90;
 
-	traceon ();
 	[mouse_amp_range setBasePos:x y:y];
-	traceoff ();
 	[mouse_amp_range draw];
 
 	draw_val_item (x + 70, y + 110, spacing, "Freelook",
@@ -420,9 +415,7 @@ MENU_control_options =
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 
 	Menu_Draw (DRAW_control_options);
-	traceon ();
-	mouse_amp_range = [[CvarRange alloc] initWithBounds:[[Rect alloc] initWithComponents:70 :100 :232 :8] title:"Mouse amp:" cvar:"in_mouse_amp" min:MIN_MOUSE_AMP max:MAX_MOUSE_AMP step:MOUSE_AMP_STEP];
-	traceoff ();
+	mouse_amp_range = [[CvarRange alloc] initWithBounds:[[Rect alloc] initWithComponents:70 :100 :240 :8] title:"Mouse amp:" cvar:"in_mouse_amp" min:MIN_MOUSE_AMP max:MAX_MOUSE_AMP step:MOUSE_AMP_STEP];
 
 	MENU_control_binding ();
 

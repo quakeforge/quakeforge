@@ -48,7 +48,7 @@
 
 	self = [super initWithBounds:aRect];
 	
-	rect = [[Rect alloc] initWithComponents:0 :0 :(integer)strlen (_title) * 8 :8];
+	rect = [[Rect alloc] initWithComponents:0 :0 :strlen (_title) * 8 :8];
 	title = [[Text alloc] initWithBounds:rect text:_title];
 
 	rect.origin.x += rect.size.width + 8;

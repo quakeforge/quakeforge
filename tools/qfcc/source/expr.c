@@ -1766,13 +1766,11 @@ bitnot_expr:
 	abort ();
 }
 
-expr_t *
-function_expr (expr_t *e1, expr_t *e2)
+static expr_t *
+build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 {
-	etype_t     t1;
 	expr_t     *e;
 	int         arg_count = 0, parm_count = 0;
-	type_t     *ftype;
 	int         i;
 	expr_t     *args = 0, **a = &args;
 	type_t     *arg_types[MAX_PARMS];
@@ -1781,66 +1779,33 @@ function_expr (expr_t *e1, expr_t *e2)
 	expr_t     *call;
 	expr_t     *err = 0;
 
-	if (e1->type == ex_error)
-		return e1;
-	for (e = e2; e; e = e->next)
-		convert_name (e);
-	for (e = e2; e; e = e->next) {
+	for (e = params; e; e = e->next) {
 		if (e->type == ex_error)
 			return e;
 		arg_count++;
 	}
 
-	t1 = extract_type (e1);
-
-	if (e1->type == ex_error)
-		return e1;
-
-	if (t1 != ev_func) {
-		if (e1->type == ex_def)
-			return error (e1, "Called object \"%s\" is not a function",
-						  e1->e.def->name);
-		else
-			return error (e1, "Called object is not a function");
-	}
-
-	if (e1->type == ex_def && e2 && e2->type == ex_string) {
-		// FIXME eww, I hate this, but it's needed :(
-		// FIXME make a qc hook? :)
-		def_t      *func = e1->e.def;
-		def_t      *e = ReuseConstant (e2, 0);
-
-		if (strncmp (func->name, "precache_sound", 14) == 0)
-			PrecacheSound (e, func->name[14]);
-		else if (strncmp (func->name, "precache_model", 14) == 0)
-			PrecacheModel (e, func->name[14]);
-		else if (strncmp (func->name, "precache_file", 13) == 0)
-			PrecacheFile (e, func->name[13]);
-	}
-
-	ftype = e1->type == ex_def ? e1->e.def->type : e1->e.expr.type;
-
 	if (arg_count > MAX_PARMS) {
-		return error (e1, "more than %d parameters", MAX_PARMS);
+		return error (fexpr, "more than %d parameters", MAX_PARMS);
 	}
 	if (ftype->num_parms < -1) {
 		if (-arg_count > ftype->num_parms + 1) {
 			if (!options.traditional)
-				return error (e1, "too few arguments");
-			warning (e1, "too few arguments");
+				return error (fexpr, "too few arguments");
+			warning (fexpr, "too few arguments");
 		}
 		parm_count = -ftype->num_parms - 1;
 	} else if (ftype->num_parms >= 0) {
 		if (arg_count > ftype->num_parms) {
-			return error (e1, "too many arguments");
+			return error (fexpr, "too many arguments");
 		} else if (arg_count < ftype->num_parms) {
 			if (!options.traditional)
-				return error (e1, "too few arguments");
-			warning (e1, "too few arguments");
+				return error (fexpr, "too few arguments");
+			warning (fexpr, "too few arguments");
 		}
 		parm_count = ftype->num_parms;
 	}
-	for (i = arg_count - 1, e = e2; i >= 0; i--, e = e->next) {
+	for (i = arg_count - 1, e = params; i >= 0; i--, e = e->next) {
 		type_t     *t = get_type (e);
  
 		check_initialized (e);
@@ -1854,18 +1819,22 @@ function_expr (expr_t *e1, expr_t *e2)
 			if (e->type == ex_bool)
 				convert_from_bool (e, ftype->parm_types[i]);
 			if (e->type == ex_error)
-				return e1;
+				return e;
 			if (!type_assignable (ftype->parm_types[i], t)) {
 				//print_type (ftype->parm_types[i]); puts ("");
 				//print_type (t); puts ("");
 				err = error (e, "type mismatch for parameter %d of %s",
-							 i + 1, e1->e.def->name);
+							 i + 1, fexpr->e.def->name);
 			}
+			t = ftype->parm_types[i];
 		} else {
 			if (e->type == ex_nil)
 				convert_nil (e, t = &type_vector);	//XXX largest param size
 			if (e->type == ex_bool)
 				convert_from_bool (e, get_type (e));
+			if (e->type == ex_integer
+				&& options.code.progsversion == PROG_ID_VERSION)
+				convert_int (e);
 			if (e->type == ex_integer && options.warnings.vararg_integer)
 				warning (e, "passing integer consant into ... function");
 		}
@@ -1876,14 +1845,14 @@ function_expr (expr_t *e1, expr_t *e2)
 
 	call = new_block_expr ();
 	call->e.block.is_call = 1;
-	for (e = e2, i = 0; e; e = e->next, i++) {
+	for (e = params, i = 0; e; e = e->next, i++) {
 		if (has_function_call (e)) {
 			*a = new_temp_def_expr (arg_types[i]);
-			arg_exprs[arg_expr_count][0] = e;
+			arg_exprs[arg_expr_count][0] = cast_expr (arg_types[i], e);
 			arg_exprs[arg_expr_count][1] = *a;
 			arg_expr_count++;
 		} else {
-			*a = e;
+			*a = cast_expr (arg_types[i], e);
 		}
 		// new_binary_expr calls inc_users for both args, but in_users doesn't
 		// walk expression chains so only the first arg expression in the chain
@@ -1903,7 +1872,7 @@ function_expr (expr_t *e1, expr_t *e2)
 		inc_users (arg_exprs[arg_expr_count - 1][1]);
 		append_expr (call, e);
 	}
-	e = new_binary_expr ('c', e1, args);
+	e = new_binary_expr ('c', fexpr, args);
 	e->e.expr.type = ftype->aux_type;
 	append_expr (call, e);
 	if (ftype->aux_type != &type_void) {
@@ -1912,6 +1881,40 @@ function_expr (expr_t *e1, expr_t *e2)
 		call->e.block.result = new_ret_expr (&type_float);
 	}
 	return call;
+}
+
+expr_t *
+function_expr (expr_t *fexpr, expr_t *params)
+{
+	type_t     *ftype;
+
+	ftype = get_type (fexpr);
+
+	if (fexpr->type == ex_error)
+		return fexpr;
+	if (ftype->type != ev_func) {
+		if (fexpr->type == ex_def)
+			return error (fexpr, "Called object \"%s\" is not a function",
+						  fexpr->e.def->name);
+		else
+			return error (fexpr, "Called object is not a function");
+	}
+
+	if (fexpr->type == ex_def && params && params->type == ex_string) {
+		// FIXME eww, I hate this, but it's needed :(
+		// FIXME make a qc hook? :)
+		def_t      *func = fexpr->e.def;
+		def_t      *e = ReuseConstant (params, 0);
+
+		if (strncmp (func->name, "precache_sound", 14) == 0)
+			PrecacheSound (e, func->name[14]);
+		else if (strncmp (func->name, "precache_model", 14) == 0)
+			PrecacheModel (e, func->name[14]);
+		else if (strncmp (func->name, "precache_file", 13) == 0)
+			PrecacheFile (e, func->name[13]);
+	}
+
+	return build_function_call (fexpr, ftype, params);
 }
 
 expr_t *
@@ -2527,7 +2530,7 @@ super_expr (class_type_t *class_type)
 					 binary_expr ('.', e, new_name_expr ("super_class")));
 	append_expr (super_block, e);
 
-	e = address_expr (super, 0, 0);
+	e = address_expr (super, 0, &type_void);
 	super_block->e.block.result = e;
 	return super_block;
 }
@@ -2590,7 +2593,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 		if ((err = method_check_params (method, args)))
 			return err;
 	}
-	call = function_expr (send_message (super), args);
+	call = build_function_call (send_message (super), method->type, args);
 
 	if (call->type == ex_error)
 		return receiver;
