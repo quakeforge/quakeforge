@@ -82,6 +82,17 @@ struct hashtab_s;
 
 plitem_t *PL_GetPropertyList (const char *);
 plitem_t *PL_ObjectForKey (plitem_t *, const char *);
+plitem_t *PL_ObjectAtIndex (plitem_t *, int);
+
+plitem_t *PL_D_AddObject (plitem_t *, plitem_t *, plitem_t *);
+plitem_t *PL_A_AddObject (plitem_t *, plitem_t *);
+plitem_t *PL_A_InsertObjectAtIndex (plitem_t *, plitem_t *, int ind);
+
+plitem_t *PL_NewDictionary (void);
+plitem_t *PL_NewArray (void);
+plitem_t *PL_NewData (void *, int);
+plitem_t *PL_NewString (char *);
+
 void PL_FreeItem (struct plitem_s *);
 
 typedef struct pldata_s {	// Unparsed property list string
