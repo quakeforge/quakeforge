@@ -74,7 +74,7 @@ argument:
 .TP
 .B cow
 Allow assignment to initialized globals. In QuakeC, a global that has been
-initialized to a value is supposed to be treated like a named constant. However,
+initialized to a value is not a variable, but a named constant. However,
 .B qcc
 never really enforced this. The
 .B cow
@@ -106,6 +106,21 @@ Emit a warning when a function is called, but has not yet been defined.
 .B vararg-integer
 Emit a warning when a function that takes a variable number of arguments is
 passed a constant of an integer type.
+.SH "FAQ"
+.B qfcc is singing a bad 80s rap song to me. What's going on?
+
+"ice ice baby" is QuakeForge-speak for "Internal Compiler Error". It usually
+means there's a bug in qfcc, so please report it to the team.
+
+.B qfcc is mooing at me. What's wrong with you people?
+
+The compiler doesn't like being treated like a slab of beef. Seriously, the code
+you are trying to compile is using constants as if they weren't. Normally, qfcc
+would just stop and tell the code to sit in the corner for a while, but you told
+it not to do that by passing the
+.B cow
+option to \fB--code\fP, so it has its revenge by mooing out a warning. Or
+something like that.
 .SH "FILES"
 progs.src
 .SH "SEE ALSO"
