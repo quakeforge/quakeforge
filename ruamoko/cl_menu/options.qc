@@ -505,7 +505,7 @@ MENU_feature_options =
 	Menu_Draw (DRAW_feature_options);
 
 	rect = [[Rect alloc] initWithComponents:70 :60 :224 :8];
-	autorecord_view = [[CvarToggleView alloc] initWithBounds:rect title:"Autoreocrd" :[[CvarToggle alloc] initWithCvar:"cl_autorecord"]];
+	autorecord_view = [[CvarToggleView alloc] initWithBounds:rect title:"Autorecord" :[[CvarToggle alloc] initWithCvar:"cl_autorecord"]];
 
 	rect.origin.y += 10;
 	fraglog_view = [[CvarToggleView alloc] initWithBounds:rect title:"Frag Logging" :[[CvarToggle alloc] initWithCvar:"cl_fraglog"]];
