@@ -14,6 +14,7 @@ main (int argc, char **argv)
 		riff_d_chunk_t **ck;
 		int         sample_start, sample_count;
 
+		//puts (*argv);
 		f = Qopen (*argv, "rbz");
 		if (f) {
 			riff = riff_read (f);
@@ -31,11 +32,14 @@ main (int argc, char **argv)
 					/*{
 						riff_format_t *_fmt = (riff_format_t *) *ck;
 						riff_d_format_t *fmt = (riff_d_format_t *) _fmt->fdata;
+
 						printf ("fmt.format_tag      = %d\n", fmt->format_tag);
 						printf ("fmt.channels        = %d\n", fmt->channels);
 						printf ("fmt.samples_per_sec = %d\n", fmt->samples_per_sec);
-						printf ("fmt.bytes_per_sec    = %d\n", fmt->bytes_per_sec);
+						printf ("fmt.bytes_per_sec   = %d\n", fmt->bytes_per_sec);
 						printf ("fmt.align           = %d\n", fmt->align);
+						if (fmt->format_tag == 1)
+							printf ("fmt.bits_per_sample = %d\n", fmt->bits_per_sample);
 					}*/
 					break;
 				case RIFF_CASE ('c', 'u', 'e', ' '):

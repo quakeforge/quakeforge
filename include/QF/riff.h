@@ -59,6 +59,7 @@ typedef struct riff_d_format_s {
 	unsigned    samples_per_sec;
 	unsigned    bytes_per_sec;
 	unsigned short align;
+	unsigned short bits_per_sample;	// only if format_tag == 1
 } riff_d_format_t;
 
 typedef struct riff_d_ltxt_s {

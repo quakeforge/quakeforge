@@ -48,6 +48,7 @@ void *alloca(size_t size);
 #endif
 
 #include "QF/dstring.h"
+#include "QF/qendian.h"
 #include "QF/riff.h"
 
 static inline int
@@ -120,27 +121,34 @@ read_data (QFile *f, int len)
 static int
 read_ltxt (QFile *f, int len, riff_d_ltxt_t *ltxt)
 {
-	return Qread (f, ltxt, len) == len;
+	if (!Rread (f, ltxt, len))
+		return 0;
+	ltxt->name = LittleLong (ltxt->name);
+	ltxt->len = LittleLong (ltxt->len);
+	ltxt->country = LittleLong (ltxt->country);
+	ltxt->language = LittleLong (ltxt->language);
+	ltxt->dialect = LittleLong (ltxt->dialect);
+	ltxt->codepage = LittleLong (ltxt->codepage);
+	return 1;
 }
 
 static void
 read_adtl (dstring_t *list_buf, QFile *f, int len)
 {
-	riff_d_chunk_t   ck, *chunk = 0;
-	riff_ltxt_t     *ltxt;
-	riff_label_t    *label;
-	riff_data_t     *data;
-	riff_list_t     *list;
-	int         r;
+	riff_d_chunk_t ck, *chunk = 0;
+	riff_ltxt_t *ltxt;
+	riff_label_t *label;
+	riff_data_t *data;
+	riff_list_t *list;
 
 	list = (riff_list_t *) list_buf->str;
 	while (len) {
-		r = Rread (f, &ck, sizeof (ck));
-		if (!r) {
+		if (!Rread (f, &ck, sizeof (ck))) {
 			len = 0;
 			break;
 		}
-		len -= r;
+		len -= sizeof (ck);
+		ck.len = LittleLong (ck.len);
 		RIFF_SWITCH (ck.name) {
 			case RIFF_CASE ('l','t','x','t'):
 				ltxt = calloc (1, sizeof (riff_ltxt_t));
@@ -203,6 +211,7 @@ read_list (riff_d_chunk_t *ck, QFile *f, int len)
 						break;
 					}
 					chunk = &data->ck;
+					data->ck.len = LittleLong (data->ck.len);
 					//printf ("%.4s %d\n", data->ck.name, data->ck.len);
 					len -= sizeof (data->ck);
 					RIFF_SWITCH (data->ck.name) {
@@ -227,6 +236,7 @@ read_list (riff_d_chunk_t *ck, QFile *f, int len)
 					if (!Rread (f, &data->ck, sizeof (data->ck))) {
 						free (data);
 					} else {
+						data->ck.len = LittleLong (data->ck.len);
 						data->data = read_data (f, data->ck.len);
 						len -= data->ck.len + sizeof (data->ck);
 						chunk = &data->ck;
@@ -250,11 +260,21 @@ read_list (riff_d_chunk_t *ck, QFile *f, int len)
 static riff_d_cue_t *
 read_cue (QFile *f, int len)
 {
-	riff_d_cue_t    *cue = malloc (len);
+	riff_d_cue_t *cue = malloc (len);
+	int         i;
 
 	if (!Rread (f, cue, len)) {
 		free (cue);
 		cue = 0;
+	} else {
+		cue->count = LittleLong (cue->count);
+		for (i = 0; i < cue->count; i++) {
+			cue->cue_points[i].name = LittleLong (cue->cue_points[i].name);
+			cue->cue_points[i].position = LittleLong (cue->cue_points[i].position);
+			cue->cue_points[i].chunk_start = LittleLong (cue->cue_points[i].chunk_start);
+			cue->cue_points[i].block_start = LittleLong (cue->cue_points[i].block_start);
+			cue->cue_points[i].sample_offset = LittleLong (cue->cue_points[i].sample_offset);
+		}
 	}
 
 	return cue;
@@ -289,6 +309,7 @@ riff_read (QFile *f)
 		return 0;
 	}
 	while (Rread (f, &ck, sizeof (ck))) {
+		ck.len = LittleLong (ck.len);
 		//printf ("%.4s %d\n", ck.name, ck.len);
 		if (ck.len < 0x80000000)
 			len = ck.len;
@@ -320,7 +341,17 @@ riff_read (QFile *f)
 					if (!Rread (f, fmt->fdata, ck.len)) {
 						free (fmt);
 					} else {
+						riff_d_format_t *fd = (riff_d_format_t *) fmt->fdata;
+
 						chunk = &fmt->ck;
+						fd->format_tag = LittleShort (fd->format_tag);
+						fd->channels = LittleShort (fd->channels);
+						fd->samples_per_sec = LittleLong (fd->samples_per_sec);
+						fd->bytes_per_sec = LittleLong (fd->bytes_per_sec);
+						fd->align = LittleShort (fd->align);
+						if (fd->format_tag == 1)
+							fd->bits_per_sample =
+								LittleShort (fd->bits_per_sample);
 					}
 				}
 				break;
