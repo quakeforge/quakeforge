@@ -869,7 +869,6 @@ emit_expr (expr_t *e)
 			label = &e->e.label;
 			label->statement = &statements[numstatements];
 			for (ref = label->refs; ref; ref = ref->next) {
-				printf ("%d\n", ref->statement->op);
 				switch (ref->field) {
 					case 0:
 						ref->statement->a = label->statement - ref->statement;
