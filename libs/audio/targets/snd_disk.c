@@ -57,13 +57,13 @@ static VFile      *snd_file;
 static int snd_blocked = 0;
 //FIXME static volatile dma_t sn;
 
-static plugin_t           plugin_info;
-static plugin_data_t      plugin_info_data;
-static plugin_funcs_t     plugin_info_funcs;
-static general_data_t     plugin_info_general_data;
-static general_funcs_t    plugin_info_general_funcs;
-static snd_output_data_t       plugin_info_snd_output_data;
-static snd_output_funcs_t      plugin_info_snd_output_funcs;
+static plugin_t				plugin_info;
+static plugin_data_t		plugin_info_data;
+static plugin_funcs_t		plugin_info_funcs;
+static general_data_t		plugin_info_general_data;
+static general_funcs_t		plugin_info_general_funcs;
+static snd_output_data_t	plugin_info_snd_output_data;
+static snd_output_funcs_t	plugin_info_snd_output_funcs;
 
 
 /* FIXME
