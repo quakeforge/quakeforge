@@ -568,17 +568,16 @@ SV_CheckLog (void)
 	// bump sequence if almost full, or ten minutes have passed and
 	// there is something still sitting there
 	if (sz->cursize > LOG_HIGHWATER
-		|| (Sys_DoubleTime () - svs.logtime > LOG_FLUSH && sz->cursize)) {
+		|| ((realtime - svs.logtime) > (LOG_FLUSH && sz->cursize))
+		|| (realtime - svs.logtime) < 0) {
 		// swap buffers and bump sequence
-		svs.logtime = Sys_DoubleTime ();
+		svs.logtime = realtime;
 		svs.logsequence++;
 		sz = &svs.log[svs.logsequence & 1];
 		sz->cursize = 0;
 		SV_Printf ("beginning fraglog sequence %i\n", svs.logsequence);
 	}
-
 }
-
 /*
 	SVC_Log
 
@@ -2142,7 +2141,7 @@ SV_InitLocal (void)
 
 	// init fraglog stuff
 	svs.logsequence = 1;
-	svs.logtime = Sys_DoubleTime ();
+	svs.logtime = realtime;
 	svs.log[0].data = svs.log_buf[0];
 	svs.log[0].maxsize = sizeof (svs.log_buf[0]);
 	svs.log[0].cursize = 0;
@@ -2166,10 +2165,9 @@ Master_Heartbeat (void)
 	char        string[2048];
 	int         active, i;
 
-	if (Sys_DoubleTime () - svs.last_heartbeat < HEARTBEAT_SECONDS)
+	if ((realtime - svs.last_heartbeat) < HEARTBEAT_SECONDS)
 		return;							// not time to send yet
-
-	svs.last_heartbeat = Sys_DoubleTime ();
+	svs.last_heartbeat = realtime;
 
 	// count active users
 	active = 0;
