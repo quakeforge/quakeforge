@@ -556,7 +556,6 @@ CL_RelinkEntities (void)
 	float       frac, f, d;
 	vec3_t      delta;
 	float       bobjrotate;
-	vec3_t      oldorg;
 	dlight_t   *dl;
 
 	// determine partial update time    
@@ -594,7 +593,7 @@ CL_RelinkEntities (void)
 			continue;
 		}
 
-		VectorCopy (ent->origin, oldorg);
+		VectorCopy (ent->origin, ent->old_origin);
 
 		if (ent->forcelink) {		// the entity was not updated in the
 									// last message so move to the final spot

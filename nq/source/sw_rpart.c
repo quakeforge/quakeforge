@@ -40,6 +40,7 @@
 #include "client.h"
 #include "host.h"
 #include "r_cvar.h"
+#include "r_dynamic.h"
 #include "r_local.h"
 
 int         ramp1[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
@@ -425,7 +426,7 @@ R_RocketTrail (int type, entity_t *ent)
 	if (!r_particles->int_val)
 		return;
 
-	VectorSubtract (ent->origin, ent->msg_origins[1], vec);
+	VectorSubtract (ent->origin, ent->old_origin, vec);
 	len = VectorNormalize (vec);
 	while (len > 0) {
 		len -= 3;
@@ -444,31 +445,31 @@ R_RocketTrail (int type, entity_t *ent)
 			p->type = pt_slowgrav;
 			p->color = 67 + (rand () & 3);
 			for (j = 0; j < 3; j++)
-				p->org[j] = ent->msg_origins[1][j] + ((rand () % 6) - 3);
+				p->org[j] = ent->old_origin[j] + ((rand () % 6) - 3);
 			len -= 3;
 		} else if (type == 2) {			// blood
 			p->type = pt_slowgrav;
 			p->color = 67 + (rand () & 3);
 			for (j = 0; j < 3; j++)
-				p->org[j] = ent->msg_origins[1][j] + ((rand () % 6) - 3);
+				p->org[j] = ent->old_origin[j] + ((rand () % 6) - 3);
 		} else if (type == 6) {			// voor trail
 			p->color = 9 * 16 + 8 + (rand () & 3);
 			p->type = pt_static;
 			p->die = cl.time + 0.3;
 			for (j = 0; j < 3; j++)
-				p->org[j] = ent->msg_origins[1][j] + ((rand () & 15) - 8);
+				p->org[j] = ent->old_origin[j] + ((rand () & 15) - 8);
 		} else if (type == 1) {			// smoke smoke
 			p->ramp = (rand () & 3) + 2;
 			p->color = ramp3[(int) p->ramp];
 			p->type = pt_fire;
 			for (j = 0; j < 3; j++)
-				p->org[j] = ent->msg_origins[1][j] + ((rand () % 6) - 3);
+				p->org[j] = ent->old_origin[j] + ((rand () % 6) - 3);
 		} else if (type == 0) {			// rocket trail
 			p->ramp = (rand () & 3);
 			p->color = ramp3[(int) p->ramp];
 			p->type = pt_fire;
 			for (j = 0; j < 3; j++)
-				p->org[j] = ent->msg_origins[1][j] + ((rand () % 6) - 3);
+				p->org[j] = ent->old_origin[j] + ((rand () % 6) - 3);
 		} else if (type == 3 || type == 5) {	// tracer
 			static int  tracercount;
 
@@ -481,7 +482,7 @@ R_RocketTrail (int type, entity_t *ent)
 
 			tracercount++;
 
-			VectorCopy (ent->msg_origins[1], p->org);
+			VectorCopy (ent->old_origin, p->org);
 			if (tracercount & 1) {
 				p->vel[0] = 30 * vec[1];
 				p->vel[1] = 30 * -vec[0];
@@ -492,7 +493,7 @@ R_RocketTrail (int type, entity_t *ent)
 
 		}
 
-		VectorAdd (ent->msg_origins[1], vec, ent->msg_origins[1]);
+		VectorAdd (ent->old_origin, vec, ent->old_origin);
 	}
 }
 

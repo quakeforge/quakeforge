@@ -53,6 +53,7 @@ typedef struct entity_s
 	double					msgtime;		// time of last update
 	vec3_t					msg_origins[2];	// last two updates (0 is newest)
 	vec3_t					origin;
+	vec3_t					old_origin;
 	vec3_t					msg_angles[2];	// last two updates (0 is newest)
 	vec3_t					angles;
 	struct model_s			*model;			// NULL = no model
