@@ -295,7 +295,7 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 				bl++;
 				*dest++ = min (*bl >> shift, 255);
 				bl++;
-				*dest++ = 255;        // set to 255 if RGBA internal format is wanted
+				dest++;			// `*dest++ = 255;` for RGBA internal format
 								// instead of RGB
 			}
 		}
