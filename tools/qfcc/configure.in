@@ -67,14 +67,25 @@ fi
 
 dnl Checks for library functions.
 
-AC_CHECK_HEADER(QF/qtypes.h, HAVE_QF=yes, HAVE_QF=no)
-if test "$HAVE_QF" = yes; then
+AC_ARG_WITH(qf,
+[  --with-qf=DIR         location of QF libs and headers (prefix)],
+	if test "x$withval" != xyes ; then
+		LIBS="$LIBS -L${withval}/lib"
+		INCLUDES="$INCLUDES -I${withval}/include"
+	fi
+	,
+	HAVE_QF=auto
+)
+AC_CHECK_HEADER(QF/qtypes.h, :, HAVE_QF=no)
+if test "x$HAVE_QF" != xno; then
 	AC_CHECK_LIB(QFutil, Qopen,
-	    HAVE_QF=yes, HAVE_QF=no,
-	    []
+	:, HAVE_QF=no,
+		[]
 	)
 fi
-if test "$HAVE_QF" != yes; then
+
+
+if test "x$HAVE_QF" = xno; then
 	echo '***'
 	echo '*** You seem to not have the QuakeForge libs & headers installed'
 	echo '***'
