@@ -29,3 +29,74 @@ o  scripted hud
 ?  wad loader should load wad3 and fall back to wad2 if necessary
 ?  better control over client console logging
 ?  ban reasons and expire times
+
+Future directory tree:
+
+quakeforge
+ +--- tools		useful/needed tools
+ |	+--- Forge	Forge.app map/model/everything editor
+ |	+--- cvs2cl
+ |	+--- gas2masm
+ |	+--- pak	massively enhanced pak tool
+ |	\--- qfgc	QuakeForge Gamecode Compiler
+ +--- include		API definitions for all subsystems
+ +--- nq		Non-common NQ code
+ +--- qw		Non-common QW code
+ \--- libs		common code libs
+ 	+--- audio
+	|	+--- cd
+	|	+--- recording
+	|	+--- renderer		3D audio rendering
+	|	|	+--- soft	Software 3D spatialization
+	|	|	\--- openal	Passing the buck to OpenAL
+	|	\--- targets		Raw sound I/O
+	|		+--- null	No raw output (none or OpenAL)
+	|		+--- alsa0.5	ALSA 0.5
+	|		+--- alsa0.9	ALSA 0.9
+	|		+--- oss	OSS or kernel sound
+	|		+--- dsound	MS DirectSound
+	|		\--- sdl	SDL (gack) output
+	+--- filesystem		Filesystem code
+	|	|		(the code for normal fs is also here)
+	|	+--- pakfile	Quake Pakfiles
+	|	+--- qfp	QuakeForge Package
+	+--- formats
+	|	+--- bsp29	Quake BSP read/write
+	|	+--- bsp66	QuakeForge native BSP read/write
+	|	+--- mdl	Quake model read/write
+	|	+--- md2	Quake2 model read/write [would be nice]
+	|	+--- qfm	QuakeForge native model format
+	|	\--- textures	PCX, QFS (multi-skins), TGA
+	+--- gamecode		Progs interpreter (core)
+	|	+--- client	Client bindings
+	|	\--- server	Server bindings
+	+--- network		Network code (like netchan, but sane)
+	|	+--- transport	Low-level protocols (UDP, TCP+UDP, etc.)
+	|	+--- netquake	Quake's wire protocol
+	|	+--- null	Null protocol, for single-player
+	|	\--- quakeworld	QuakeWorld's wire protocol
+	+--- system		Platform-dependant system lib
+	|	|		(raw IO/filesystem/dlopen code)
+	|	+--- null	Portability aid, a skeleton system lib
+	|	+--- unix	POSIX stuff
+	|	\--- win32	Win32 system lib
+	+--- util		Utility library
+	|	contents: Commands, Cvars, Quake-format scripts,
+	|	property lists, console parsing/formatting/output, the
+	|	heap and zones.
+	+--- video		Video input and output
+	|	+--- renderer		3D video rendering
+	|	|	+--- soft	Software 3D rendering
+	|	|	\--- opengl	Passing the buck to OpenGL
+	|	\--- targets
+	|		+--- null	Portability aid, skeleton
+	|		+--- console	Non-graphical, "readline" input
+	|		|		(also needs old-style stuff for
+	|		|		dumb-ass systems/terminals)
+	|		+--- sdl
+	|		+--- svgalib
+	|		+--- win32
+	|		\--- x11
+	\--- world		3D layout engine (includes objects)
+				Talks to the sound and video renderers
+				to output frames
