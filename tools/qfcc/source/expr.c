@@ -245,9 +245,8 @@ error (expr_t *e, const char *fmt, ...)
 }
 
 void
-warning (expr_t *e, const char *fmt, ...)
+_warning (expr_t *e, const char *fmt, va_list args)
 {
-	va_list     args;
 	string_t    file = s_file;
 	int         line = pr_source_line;
 
@@ -257,7 +256,6 @@ warning (expr_t *e, const char *fmt, ...)
 		pr_error_count++;
 	}
 
-	va_start (args, fmt);
 	if (e) {
 		file = e->file;
 		line = e->line;
@@ -265,6 +263,41 @@ warning (expr_t *e, const char *fmt, ...)
 	fprintf (stderr, "%s:%d: warning: ", pr.strings + file, line);
 	vfprintf (stderr, fmt, args);
 	fputs ("\n", stderr);
+}
+
+void
+warning (expr_t *e, const char *fmt, ...)
+{
+	va_list     args;
+
+	va_start (args, fmt);
+	_warning (e, fmt, args);
+	va_end (args);
+}
+
+void
+notice (expr_t *e, const char *fmt, ...)
+{
+	va_list     args;
+
+	if (options.notices.silent)
+		return;
+
+	va_start (args, fmt);
+	if (options.notices.promote) {
+		_warning (e, fmt, args);
+	} else {
+		string_t    file = s_file;
+		int         line = pr_source_line;
+
+		if (e) {
+			file = e->file;
+			line = e->line;
+		}
+		fprintf (stderr, "%s:%d: notice: ", pr.strings + file, line);
+		vfprintf (stderr, fmt, args);
+		fputs ("\n", stderr);
+	}
 	va_end (args);
 }
 
@@ -1227,6 +1260,8 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if ((op == '&' || op == '|')
 		&& e1->type == ex_uexpr && e1->e.expr.op == '!' && !e1->paren) {
 		if (options.traditional) {
+			notice (e1, "precedence of `!' and `%c' inverted for traditional "
+					    "code", op);
 			e1->e.expr.e1->paren = 1;
 			return unary_expr ('!', binary_expr (op, e1->e.expr.e1, e2));
 		} else {

@@ -50,8 +50,14 @@ typedef struct {
 } warn_options_t;
 
 typedef struct {
+	qboolean	promote;			// Promote notices to warnings
+	qboolean	silent;				// don't even bother (overrides promote)
+} notice_options_t;
+
+typedef struct {
 	code_options_t	code;			// Code generation options
 	warn_options_t	warnings;		// Warning options
+	notice_options_t notices;		// Notice options
 
 	int				verbosity;		// 0=silent, goes up to 2 currently
 	qboolean		save_temps;		// save temporary files

@@ -70,6 +70,7 @@ static struct option const long_options[] = {
 	{"include", required_argument, 0, 'I'},
 	{"undefine", required_argument, 0, 'U'},
 	{"cpp", required_argument, 0, 256},
+	{"notice", required_argument, 0, 'N'},
 	{NULL, 0, NULL, 0}
 };
 
@@ -89,6 +90,7 @@ static const char *short_options =
 	 "D:"	// define
 	 "I:"	// set includes
 	 "U:"	// undefine
+	 "N:"	// notice options
 	 ;
 
 static void
@@ -104,6 +106,7 @@ usage (int status)
 "    -g,                       Generate debuggin info\n"
 "    -C, --code OPTION,...     Set code generation options\n"
 "    -W, --warn OPTION,...     Set warning options\n"
+"    -N, --notice OPTION,...   Set notice options\n"
 "    -h, --help                Display this help and exit\n"
 "    -V, --version             Output version information and exit\n\n"
 "    -S, --save-temps          Do not delete temporary files\n"
@@ -238,6 +241,21 @@ DecodeArgs (int argc, char **argv)
 							options.warnings.integer_divide = true;
 						} else if (!(strcasecmp (temp, "no-integer-divide"))) {
 							options.warnings.integer_divide = false;
+						}
+						temp = strtok (NULL, ",");
+					}
+					free (opts);
+				}
+				break;
+			case 'N':{					// notice options
+					char       *opts = strdup (optarg);
+					char       *temp = strtok (opts, ",");
+
+					while (temp) {
+						if (!(strcasecmp (temp, "none"))) {
+							options.notices.silent = true;
+						} else if (!(strcasecmp (temp, "warn"))) {
+							options.notices.promote = true;
 						}
 						temp = strtok (NULL, ",");
 					}

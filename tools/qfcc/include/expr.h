@@ -168,6 +168,7 @@ void emit_expr (expr_t *e);
 
 expr_t *error (expr_t *e, const char *fmt, ...) __attribute__((format(printf, 2,3)));
 void warning (expr_t *e, const char *fmt, ...) __attribute__((format(printf, 2,3)));
+void notice (expr_t *e, const char *fmt, ...) __attribute__((format(printf, 2,3)));
 
 const char *get_op_string (int op);
 
