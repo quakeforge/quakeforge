@@ -537,8 +537,6 @@ gl_overbright_f (cvar_t *var)
 
 	if (!var)
 		return;
-	if (!R_BuildLightMap)
-		return;
 
 	if (var->int_val) {
 		if (!gl_combine_capable && gl_mtex_capable) {
@@ -577,6 +575,9 @@ gl_overbright_f (cvar_t *var)
 
 	if (gl_multitexture)
 		gl_multitexture_f (gl_multitexture);
+
+	if (!R_BuildLightMap)
+		return;
 
 	for (i = 0; i < r_numvisedicts; i++) {
 		m = r_visedicts[i]->model;
