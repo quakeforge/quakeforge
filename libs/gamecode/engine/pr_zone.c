@@ -59,8 +59,8 @@ PR_Zone_Free (progs_t *pr, void *ptr)
 	Z_Free (pr->zone, ptr);
 }
 
-void
+void *
 PR_Zone_Malloc (progs_t *pr, int size)
 {
-	Z_Malloc (pr->zone, size);
+	return Z_Malloc (pr->zone, size);
 }

@@ -205,7 +205,7 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 
 void PR_Zone_Init (progs_t *pr);
 void PR_Zone_Free (progs_t *pr, void *ptr);
-void PR_Zone_Malloc (progs_t *pr, int size);
+void *PR_Zone_Malloc (progs_t *pr, int size);
 
 //
 // PR Debug stuff
