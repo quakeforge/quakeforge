@@ -196,8 +196,8 @@ QW_SendHearts (int sock, struct sockaddr_in *addr, server_t *servers,
 	}
 	cpos = 1;
 	out[0] = out[1] = out[2] = out[3] = 0xff;
-	out[4] = 0x64;
-	out[5] = 0x0a;
+	out[4] = M2C_MASTER_REPLY;
+	out[5] = '\n';
 
 	for (i = 0; i < serverlen; i++) {
 		if (servers[i].updated != 0) {
