@@ -62,7 +62,7 @@ int 	netgraphtexture;		// netgraph texture
 static byte ngraph_texels[NET_GRAPHHEIGHT][NET_TIMINGS];
 
 
-static void
+void
 R_LineGraph (int x, int h)
 {
 	int         i;
