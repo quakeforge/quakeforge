@@ -671,46 +671,6 @@ PF_localcmd (progs_t *pr)
 }
 
 /*
-	PF_cvar
-
-	float cvar (string)
-*/
-void
-PF_cvar (progs_t *pr)
-{
-	const char       *str;
-
-	str = G_STRING (pr, OFS_PARM0);
-
-	G_FLOAT (pr, OFS_RETURN) = Cvar_VariableValue (str);
-}
-
-/*
-	PF_cvar_set
-
-	float cvar (string)
-*/
-void
-PF_cvar_set (progs_t *pr)
-{
-	const char       *var_name, *val;
-	cvar_t     *var;
-
-	var_name = G_STRING (pr, OFS_PARM0);
-	val = G_STRING (pr, OFS_PARM1);
-	var = Cvar_FindVar (var_name);
-	if (!var)
-		var = Cvar_FindAlias (var_name);
-	if (!var) {
-		// FIXME: make Con_DPrint?
-		Con_Printf ("PF_cvar_set: variable %s not found\n", var_name);
-		return;
-	}
-
-	Cvar_Set (var, val);
-}
-
-/*
 	PF_findradius
 
 	Returns a chain of entities that have origins within a spherical area
@@ -849,30 +809,6 @@ PF_precache_model (progs_t *pr)
 }
 
 
-void
-PF_coredump (progs_t *pr)
-{
-	ED_PrintEdicts (pr, "");
-}
-
-void
-PF_traceon (progs_t *pr)
-{
-	pr->pr_trace = true;
-}
-
-void
-PF_traceoff (progs_t *pr)
-{
-	pr->pr_trace = false;
-}
-
-void
-PF_eprint (progs_t *pr)
-{
-	ED_PrintNum (pr, G_EDICTNUM (pr, OFS_PARM0));
-}
-
 /*
 	PF_walkmove
 
@@ -977,31 +913,6 @@ PF_lightstyle (progs_t *pr)
 		}
 }
 
-void
-PF_rint (progs_t *pr)
-{
-	float       f;
-
-	f = G_FLOAT (pr, OFS_PARM0);
-	if (f > 0)
-		G_FLOAT (pr, OFS_RETURN) = (int) (f + 0.5);
-	else
-		G_FLOAT (pr, OFS_RETURN) = (int) (f - 0.5);
-}
-
-void
-PF_floor (progs_t *pr)
-{
-	G_FLOAT (pr, OFS_RETURN) = floor (G_FLOAT (pr, OFS_PARM0));
-}
-
-void
-PF_ceil (progs_t *pr)
-{
-	G_FLOAT (pr, OFS_RETURN) = ceil (G_FLOAT (pr, OFS_PARM0));
-}
-
-
 /*
 	PF_checkbottom
 */
@@ -1026,32 +937,6 @@ PF_pointcontents (progs_t *pr)
 	v = G_VECTOR (pr, OFS_PARM0);
 
 	G_FLOAT (pr, OFS_RETURN) = SV_PointContents (v);
-}
-
-/*
-	PF_nextent
-
-	entity nextent(entity)
-*/
-void
-PF_nextent (progs_t *pr)
-{
-	int         i;
-	edict_t    *ent;
-
-	i = G_EDICTNUM (pr, OFS_PARM0);
-	while (1) {
-		i++;
-		if (i == sv.num_edicts) {
-			RETURN_EDICT (pr, sv.edicts);
-			return;
-		}
-		ent = EDICT_NUM (pr, i);
-		if (!ent->free) {
-			RETURN_EDICT (pr, ent);
-			return;
-		}
-	}
 }
 
 /*

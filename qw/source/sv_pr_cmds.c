@@ -607,46 +607,6 @@ PF_localcmd (progs_t *pr)
 }
 
 /*
-	PF_cvar
-
-	float cvar (string)
-*/
-void
-PF_cvar (progs_t *pr)
-{
-	const char       *str;
-
-	str = G_STRING (pr, OFS_PARM0);
-
-	G_FLOAT (pr, OFS_RETURN) = Cvar_VariableValue (str);
-}
-
-/*
-	PF_cvar_set
-
-	float cvar (string)
-*/
-void
-PF_cvar_set (progs_t *pr)
-{
-	const char       *var_name, *val;
-	cvar_t     *var;
-
-	var_name = G_STRING (pr, OFS_PARM0);
-	val = G_STRING (pr, OFS_PARM1);
-	var = Cvar_FindVar (var_name);
-	if (!var)
-		var = Cvar_FindAlias (var_name);
-	if (!var) {
-		// FIXME: make Con_DPrint?
-		SV_Printf ("PF_cvar_set: variable %s not found\n", var_name);
-		return;
-	}
-
-	Cvar_Set (var, val);
-}
-
-/*
 	PF_findradius
 
 	Returns a chain of entities that have origins within a spherical area
@@ -1662,7 +1622,6 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "checkbottom", PF_checkbottom, 40);	// float(entity e) checkbottom = #40
 	PR_AddBuiltin (&sv_pr_state, "pointcontents", PF_pointcontents, 41);	// float(vector v) pointcontents = #41
 	// no 42
-	PR_AddBuiltin (&sv_pr_state, "cvar", PF_cvar, 45);	// float(string s) cvar = #45
 	PR_AddBuiltin (&sv_pr_state, "localcmd", PF_localcmd, 46);	// void(string s) localcmd = #46
 	// no 48
 	PR_AddBuiltin (&sv_pr_state, "changeyaw", PF_changeyaw, 49);	// void() ChangeYaw = #49
@@ -1692,7 +1651,6 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "changelevel", PF_changelevel, 70);	// void(string s) changelevel = #70
 	// 71
 
-	PR_AddBuiltin (&sv_pr_state, "cvar_set", PF_cvar_set, 72);	// void(string var, string val) cvar_set = #72
 	PR_AddBuiltin (&sv_pr_state, "centerprint", PF_centerprint, 73);	// void(...) centerprint = #73
 
 	PR_AddBuiltin (&sv_pr_state, "ambientsound", PF_ambientsound, 74);	// void(vector pos, string samp, float vol, float atten) ambientsound = #74
