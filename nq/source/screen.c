@@ -35,7 +35,7 @@
 #include "QF/cmd.h"
 #include "screen.h"
 #include "sbar.h"
-#include "input.h"
+#include "QF/input.h"
 #include "view.h"
 #include "host.h"
 #include "QF/sys.h"

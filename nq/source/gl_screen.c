@@ -37,7 +37,7 @@
 #include <time.h>
 
 #include "QF/compat.h"
-#include "input.h"
+#include "QF/input.h"
 #include "QF/qendian.h"
 #include "vid.h"
 #include "QF/sys.h"
@@ -52,7 +52,7 @@
 #include "QF/keys.h"
 #include "QF/cmd.h"
 #include "sbar.h"
-#include "sound.h"
+#include "QF/sound.h"
 #include "screen.h"
 #include "render.h"						// needed by: client.h, gl_model.h,
 										// glquake.h

@@ -48,7 +48,7 @@
 #include "context_x11.h"
 #include "glquake.h"
 #include "host.h"
-#include "input.h"
+#include "QF/input.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"

@@ -59,12 +59,11 @@
 #include "QF/cvar.h"
 #include "QF/sys.h"
 #include "QF/cmd.h"
-#include "input.h"
+#include "QF/input.h"
 #include "draw.h"
 #include "QF/console.h"
 #include "QF/va.h"
 #include "client.h"
-#include "input.h"
 #include "context_x11.h"
 #include "host.h"
 

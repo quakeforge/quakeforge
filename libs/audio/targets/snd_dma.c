@@ -49,12 +49,7 @@ void IN_Accumulate (void);//XXX FIXME
 #include "QF/model.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
-#include "sound.h"
-
-#ifdef _WIN32
-#include "winquake.h"
-#include "in_win.h"
-#endif
+#include "QF/sound.h"
 
 void        S_Play (void);
 void        S_PlayVol (void);

@@ -65,7 +65,7 @@
 #include "QF/sys.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
-#include "input.h"
+#include "QF/input.h"
 
 static void (*event_handlers[LASTEvent]) (XEvent *);
 qboolean    oktodraw = false;

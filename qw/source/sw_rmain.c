@@ -48,7 +48,7 @@
 #include "r_dynamic.h"
 #include "r_local.h"
 #include "screen.h"
-#include "sound.h"
+#include "QF/sound.h"
 #include "QF/sys.h"
 #include "view.h"
 

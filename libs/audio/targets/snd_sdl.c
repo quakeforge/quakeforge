@@ -36,7 +36,7 @@
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/qargs.h"
-#include "sound.h"
+#include "QF/sound.h"
 
 static dma_t the_shm;
 static int  snd_inited;

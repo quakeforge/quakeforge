@@ -43,7 +43,7 @@
 #include "QF/console.h"
 #include "draw.h"
 #include "host.h"
-#include "input.h"
+#include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/qargs.h"
 #include "screen.h"

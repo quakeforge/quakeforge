@@ -45,7 +45,7 @@
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "host.h"
-#include "input.h"
+#include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
 #include "msg_ucmd.h"

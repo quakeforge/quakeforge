@@ -30,7 +30,7 @@
 */
 
 #include "QF/qtypes.h"
-#include "sound.h"
+#include "QF/sound.h"
 
 // =======================================================================
 // Various variables also defined in snd_dma.c

@@ -41,7 +41,7 @@
 #include "d_iface.h"
 #include "draw.h"
 #include "QF/quakefs.h"
-#include "sound.h"
+#include "QF/sound.h"
 #include "QF/sys.h"
 
 typedef struct {

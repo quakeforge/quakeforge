@@ -64,7 +64,7 @@
 #include "context_x11.h"
 #include "QF/cvar.h"
 #include "dga_check.h"
-#include "input.h"
+#include "QF/input.h"
 #include "QF/qargs.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"

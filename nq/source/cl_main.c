@@ -35,7 +35,7 @@
 #include "QF/cvar.h"
 #include "client.h"
 #include "chase.h"
-#include "input.h"
+#include "QF/input.h"
 #include "host.h"
 #include "QF/va.h"
 #include "host.h"

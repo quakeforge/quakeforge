@@ -36,7 +36,7 @@
 #include "protocol.h"
 #include "net.h"
 #include "QF/model.h"
-#include "sound.h"
+#include "QF/sound.h"
 #include "render.h"
 #include "QF/cvar.h"
 #include "QF/quakefs.h"

@@ -63,7 +63,7 @@
 #include "QF/cvar.h"
 #include "d_local.h"
 #include "host.h"
-#include "input.h"
+#include "QF/input.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"

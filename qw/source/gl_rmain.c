@@ -52,7 +52,7 @@
 #include "QF/qargs.h"
 #include "r_dynamic.h"
 #include "skin.h"
-#include "sound.h"
+#include "QF/sound.h"
 #include "QF/sys.h"
 #include "view.h"
 

@@ -32,7 +32,7 @@
 
 #include "d_ifacea.h"
 #include "r_local.h"
-#include "sound.h"
+#include "QF/sound.h"
 
 #if 0
 // FIXME

@@ -36,7 +36,7 @@
 #include "QF/sys.h"
 #include "QF/quakefs.h"
 #include "d_iface.h"
-#include "sound.h"
+#include "QF/sound.h"
 
 typedef struct {
 	vrect_t     rect;

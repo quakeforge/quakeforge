@@ -42,7 +42,7 @@
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "draw.h"
-#include "input.h"
+#include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/qargs.h"
 #include "screen.h"

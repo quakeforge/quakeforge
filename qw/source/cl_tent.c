@@ -48,7 +48,7 @@
 #include "QF/model.h"
 #include "QF/msg.h"
 #include "r_dynamic.h"
-#include "sound.h"
+#include "QF/sound.h"
 
 #define	MAX_BEAMS	8
 #define MAX_BEAM_ENTS 20
