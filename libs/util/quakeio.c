@@ -514,7 +514,7 @@ Qgetline (QFile *file)
 		return 0;
 
 	len = strlen (buf);
-	while (buf[len - 1] != '\n') {
+	while (len && buf[len - 1] != '\n') {
 		char       *t = realloc (buf, size + 256);
 
 		if (!t)

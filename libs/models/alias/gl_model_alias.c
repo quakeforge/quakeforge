@@ -185,7 +185,7 @@ Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
 
 	pdaliasframe = (daliasframe_t *) pin;
 
-	strcpy (frame->name, pdaliasframe->name);
+	strncpy (frame->name, pdaliasframe->name, sizeof (frame->name));
 	frame->firstpose = (*posenum);
 	frame->numposes = 1;
 
