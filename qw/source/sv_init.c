@@ -181,6 +181,13 @@ SV_SaveSpawnparms (void)
 
 	for (i = 0, host_client = svs.clients; i < MAX_CLIENTS; i++, host_client++)
 	{
+		if (host_client->state == cs_server) {
+			// drop server allocated clients (FIXME for now)
+			if (host_client->userinfo)
+				Info_Destroy (host_client->userinfo);
+			memset (host_client, 0, sizeof (*host_client));
+			continue;
+		}
 		if (host_client->state != cs_spawned)
 			continue;
 
