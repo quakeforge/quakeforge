@@ -121,9 +121,9 @@ string (inputline_t il) InputLine_GetText = #0;
 	return [input_line text];
 }
 
-- (void) setBasePos:(integer)x y:(integer)y
+- (void) setBasePos:(Point)pos
 {
-	[super setBasePos:x y:y];
+	[super setBasePos:pos];
 	[input_line setBasePos:xabs y:yabs];
 }
 

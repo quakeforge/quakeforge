@@ -64,6 +64,12 @@ Group audio_options;
 CvarRangeView volume_view;
 CvarRangeView bgmvolume_view;
 
+Group network_options;
+// input for playername
+InputLine network_config_rate_il;
+// this holds active inputline pointer
+InputLine network_config_iactive;
+
 /*
 	some definitions of border values for different things
 */
@@ -744,11 +750,6 @@ MENU_player_options =
  * Options, which have to do with network stuff (rate, noskins, netgraph, ...)
  *****************************************************************************/
 
-// input for playername
-InputLine network_config_rate_il;
-// this holds active inputline pointer
-InputLine network_config_iactive;
-
 integer network_config_cursor;
 
 // Y padding for the player config
@@ -823,16 +824,9 @@ DRAW_network_options =
 {
 	local integer	cursor_pad = 0, spacing = 120;
 
-	Draw_Pic (x + 16, y + 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
-	Draw_CenterPic (x + 160, y + 4, Draw_CachePic ("gfx/p_option.lmp", 1));
-	Draw_String (x + 54, y + 40, "Network");
-	Draw_String (x + 54, y + 50, "--------");
-
-
-	Draw_String (x + 70, y + NETWORK_CONF_Y_PAD + 8, "Rate..:");
-	[network_config_rate_il setBasePos:x y:y];
-	[network_config_rate_il cursor: network_config_iactive == network_config_rate_il];
-	[network_config_rate_il draw];
+	[network_config_rate_il cursor:network_config_iactive == network_config_rate_il];
+	[network_options setBasePos:x y:y];
+	[network_options draw];
 
 	opt_cursor  (x + 62, y + network_config_cursor_tbl[network_config_cursor]);
 	return 1;
@@ -857,8 +851,33 @@ CB_ME_network_options =
 void () 
 MENU_network_options =
 {
+	local id view;
+
+	network_options = [[Group alloc] initWithComponents:0 :0 :320 :200];
+
+	view = [[Pic alloc] initWithComponents:16 :4 :0 :0];
+	[view setPic:"gfx/qplaque.lmp"];
+	[network_options addView:view];
+
+	view = [[CenterPic alloc] initWithComponents:160 :4 :0 :0];
+	[view setPic:"gfx/p_option.lmp"];
+	[network_options addView:view];
+
+	view = [[Text alloc] initWithComponents:54 :40 :56 :8];
+	[view setText:"Network"];
+	[network_options addView:view];
+
+	view = [[Text alloc] initWithComponents:54 :50 :56 :8];
+	[view setText:"-------"];
+	[network_options addView:view];
+
+	view = [[Text alloc] initWithComponents:70 :NETWORK_CONF_Y_PAD + 8 :56 :8];
+	[view setText:"Rate..:"];
+	[network_options addView:view];
+
 	network_config_rate_il = [[InputLineBox alloc] initWithBounds:[[Rect alloc] initWithComponents: 120 :NETWORK_CONF_Y_PAD :9 :4] promptCharacter:' '];
 	[network_config_rate_il setWidth:9];
+	[network_options addView:network_config_rate_il];
 
 	Menu_Begin (54, 90, "Network");
 	Menu_FadeScreen (1);
