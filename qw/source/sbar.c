@@ -650,10 +650,10 @@ draw_weapons_hud (view_t *view)
 	if (view->parent->gravity == grav_southeast)
 		x = view->xlen - 24;
 
-	for (i = 0; i < 7; i++) {
+	for (i = vid.conheight < 204; i < 7; i++) {
 		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
 			flashon = calc_flashon (i);
-			draw_pic (view, x, i * 16, sb_weapons[flashon][i]);
+			draw_subpic (view, x, i * 16, sb_weapons[flashon][i], 0, 0, 24, 16);
 			if (flashon > 1)
 				sb_updates = 0;			// force update to remove flash
 		}

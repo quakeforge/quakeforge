@@ -520,7 +520,7 @@ draw_weapons_hud (view_t *view)
 {
 	int         flashon, i;
 
-	for (i = 0; i < 7; i++) {
+	for (i = vid.conheight < 204; i < 7; i++) {
 		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
 			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
 			draw_subpic (view, 0, i * 16, sb_weapons[flashon][i], 0, 0, 24, 16);
@@ -746,7 +746,7 @@ draw_rogue_weapons_hud (view_t *view)
 	int         flashon, i, j;
 	qpic_t     *pic;
 
-	for (i = 0; i < 7; i++) {
+	for (i = vid.conheight < 204; i < 7; i++) {
 		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
 			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
 			if (i >= 2) {
@@ -968,7 +968,7 @@ draw_hipnotic_weapons_hud (view_t *view)
 			}
 
 			if (pic)
-				draw_pic (view, 0, y[i], pic);
+				draw_subpic (view, 0, y[i], pic, 0, 0, 24, 16);
 
 			if (flashon > 1)
 				sb_updates = 0;		// force update to remove flash
