@@ -53,7 +53,7 @@ typedef struct
 } pmtrace_t;
 
 
-#define	MAX_PHYSENTS	(32 + MAX_PACKET_ENTITIES)
+#define	MAX_PHYSENTS	(MAX_CLIENTS + MAX_PACKET_ENTITIES)
 typedef struct
 {
 	vec3_t	origin;
