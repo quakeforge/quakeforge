@@ -385,10 +385,12 @@ ParseBrush (void)
 			vecs[0][2] = atof (token);
 			GetToken (false);
 			vecs[0][3] = atof (token);
-			// ]
 			GetToken (false);
-			// [
+			if (strcmp (token, "]"))
+				map_error ("missing ]");
 			GetToken (false);
+			if (strcmp (token, "["))
+				map_error ("missing [");
 			// T vector
 			GetToken (false);
 			vecs[1][0] = atof (token);
@@ -398,8 +400,9 @@ ParseBrush (void)
 			vecs[1][2] = atof (token);
 			GetToken (false);
 			vecs[1][3] = atof (token);
-			// ]
 			GetToken (false);
+			if (strcmp (token, "]"))
+				map_error ("missing ]");
 		} else {
 			vecs[0][3] = atof (token);
 			GetToken (false);

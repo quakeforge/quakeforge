@@ -411,7 +411,8 @@ AddAnimatingTextures (void)
 		}
 	}
 
-	printf ("added %i texture frames\n", nummiptex - base);
+	if (nummiptex - base)
+		printf ("added %i texture frames\n", nummiptex - base);
 }
 
 static void
