@@ -37,6 +37,7 @@ static const char rcsid[] =
 #include <stdlib.h>
 
 #include "QF/progs.h"
+#include "QF/va.h"
 
 #include "qfprogs.h"
 #include "globals.h"
@@ -45,14 +46,34 @@ void
 dump_globals (progs_t *pr)
 {
 	int i;
+	const char *name;
+	const char *type;
+	int         saveglobal;
+	int         offset;
+	char       *comment;
 
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
 		ddef_t *def = &pr->pr_globaldefs[i];
 
-		printf ("%s %d %d %s\n",
-				pr_type_name[def->type & ~DEF_SAVEGLOBAL],
-				(def->type & DEF_SAVEGLOBAL) != 0,
-				def->ofs,
-				PR_GetString (pr, def->s_name));
+		name = PR_GetString (pr, def->s_name);
+		type = pr_type_name[def->type & ~DEF_SAVEGLOBAL];
+		saveglobal = (def->type & DEF_SAVEGLOBAL) != 0;
+		offset = def->ofs;
+
+		if (!offset)
+			continue;
+
+		comment = " ";
+
+		if (def->type == ev_func) {
+			func_t      func = G_FUNCTION (pr, offset);
+			int         start = pr->pr_functions[func].first_statement;
+			if (start > 0)
+				comment = va (" @ %d", start);
+			else
+				comment = va (" = #%d", -start);
+		}
+
+		printf ("%s %d %d %s%s\n", type, saveglobal, offset, name, comment);
 	}
 }
