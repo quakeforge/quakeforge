@@ -68,12 +68,12 @@ typedef struct {
 	double      fps;
 } td_stats_t;
 
-int     cl_timeframes_isactive;
-int     cl_timeframes_index;
+int     demo_timeframes_isactive;
+int     demo_timeframes_index;
 int     demotime_cached;
 float   nextdemotime;
 char    demoname[1024];
-double *cl_timeframes_array;
+double *demo_timeframes_array;
 #define CL_TIMEFRAMES_ARRAYBLOCK 4096
 
 int     timedemo_count;
@@ -83,10 +83,13 @@ td_stats_t *timedemo_data;
 
 static void CL_FinishTimeDemo (void);
 static void CL_TimeFrames_DumpLog (void);
+static void CL_TimeFrames_AddTimestamp (void);
+static void CL_TimeFrames_Reset (void);
 
 cvar_t     *demo_speed;
 cvar_t     *demo_gzip;
 cvar_t     *demo_quit;
+cvar_t     *demo_timeframes;
 
 /*
 	DEMO CODE
@@ -401,8 +404,14 @@ readit:
 qboolean
 CL_GetMessage (void)
 {
-	if (cls.demoplayback)
-		return CL_GetDemoMessage ();
+	if (cls.demoplayback) {
+		qboolean    ret = CL_GetDemoMessage ();
+
+		if (!ret && demo_timeframes_isactive) {
+			CL_TimeFrames_AddTimestamp ();
+		}
+		return ret;
+	}
 
 	if (!NET_GetPacket ())
 		return false;
@@ -943,8 +952,8 @@ CL_StartTimeDemo (void)
 	cls.td_lastframe = -1;				// get a new message this frame
 
 	CL_TimeFrames_Reset ();
-	if (cl_timeframes->int_val)
-		cl_timeframes_isactive = 1;
+	if (demo_timeframes->int_val)
+		demo_timeframes_isactive = 1;
 }
 
 static inline double
@@ -970,7 +979,7 @@ CL_FinishTimeDemo (void)
 				frames / time);
 
 	CL_TimeFrames_DumpLog ();
-	cl_timeframes_isactive = 0;
+	demo_timeframes_isactive = 0;
 
 	timedemo_count--;
 	timedemo_data[timedemo_count].frames = time;
@@ -1039,9 +1048,9 @@ CL_TimeDemo_f (void)
 void
 CL_Demo_Init (void)
 {
-	cl_timeframes_isactive = 0;
-	cl_timeframes_index = 0;
-	cl_timeframes_array = NULL;
+	demo_timeframes_isactive = 0;
+	demo_timeframes_index = 0;
+	demo_timeframes_array = NULL;
 
 	demo_gzip = Cvar_Get ("demo_gzip", "0", CVAR_ARCHIVE, NULL,
 						  "Compress demos using gzip. 0 = none, 1 = least "
@@ -1052,31 +1061,30 @@ CL_Demo_Init (void)
 						   "< 1 slow-mo, > 1 timelapse");
 	demo_quit = Cvar_Get ("demo_quit", "0", CVAR_NONE, NULL,
 						  "automaticly quit after a timedemo has finished");
+	demo_timeframes = Cvar_Get ("demo_timeframes", "0", CVAR_NONE, NULL,
+								"write timestamps for every frame");
 }
 
-void
+static void
 CL_TimeFrames_Reset (void)
 {
-	cl_timeframes_index = 0;
-	free (cl_timeframes_array);
-	cl_timeframes_array = NULL;
+	demo_timeframes_index = 0;
+	free (demo_timeframes_array);
+	demo_timeframes_array = NULL;
 }
 
-void
+static void
 CL_TimeFrames_AddTimestamp (void)
 {
-	if (cl_timeframes_isactive) {
-		if (!(cl_timeframes_index % CL_TIMEFRAMES_ARRAYBLOCK))
-			cl_timeframes_array = realloc
-				(cl_timeframes_array, sizeof (cl_timeframes_array[0]) *
-				 ((cl_timeframes_index / CL_TIMEFRAMES_ARRAYBLOCK) + 1) *
-				 CL_TIMEFRAMES_ARRAYBLOCK);
-		if (cl_timeframes_array == NULL)
-			Sys_Error ("Unable to allocate timeframes buffer");
-		cl_timeframes_array[cl_timeframes_index] = Sys_DoubleTime ();
-		cl_timeframes_index++;
-	}
-	return;
+	if (!(demo_timeframes_index % CL_TIMEFRAMES_ARRAYBLOCK))
+		demo_timeframes_array = realloc
+			(demo_timeframes_array, sizeof (demo_timeframes_array[0]) *
+			 ((demo_timeframes_index / CL_TIMEFRAMES_ARRAYBLOCK) + 1) *
+			 CL_TIMEFRAMES_ARRAYBLOCK);
+	if (demo_timeframes_array == NULL)
+		Sys_Error ("Unable to allocate timeframes buffer");
+	demo_timeframes_array[demo_timeframes_index] = Sys_DoubleTime ();
+	demo_timeframes_index++;
 }
 
 static void
@@ -1087,7 +1095,7 @@ CL_TimeFrames_DumpLog (void)
 	long		frame;
 	QFile	   *outputfile;
 
-	if (cl_timeframes_isactive == 0)
+	if (demo_timeframes_isactive == 0)
 		return;
 
 	Con_Printf ("Dumping Timed Frames log: %s\n", filename);
@@ -1096,8 +1104,8 @@ CL_TimeFrames_DumpLog (void)
 		Con_Printf ("Could not open: %s\n", filename);
 		return;
 	}
-	for (i = 1; i < cl_timeframes_index; i++) {
-		frame = (cl_timeframes_array[i] - cl_timeframes_array[i - 1]) * 1e6;
+	for (i = 1; i < demo_timeframes_index; i++) {
+		frame = (demo_timeframes_array[i] - demo_timeframes_array[i - 1]) * 1e6;
 		Qprintf (outputfile, "%09ld\n", frame);
 	}
 	Qclose (outputfile);

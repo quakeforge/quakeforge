@@ -43,9 +43,6 @@ void CL_ReRecord_f (void);
 void CL_PlayDemo_f (void);
 void CL_TimeDemo_f (void);
 
-void CL_TimeFrames_Reset (void);
-void CL_TimeFrames_AddTimestamp (void);
-
 void CL_Demo_Init (void);
 
 extern struct cvar_s *demo_speed;

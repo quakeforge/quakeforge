@@ -135,8 +135,6 @@ cvar_t     *cl_writecfg;
 cvar_t     *cl_allow_cmd_pkt;
 cvar_t     *cl_paranoid;
 
-cvar_t     *cl_timeframes;
-
 cvar_t     *cl_timeout;
 
 cvar_t     *cl_shownet;
@@ -1277,8 +1275,6 @@ CL_Init_Cvars (void)
 	localid = Cvar_Get ("localid", "", CVAR_NONE, NULL, "Used by "
 								 "gamespy+others to authenticate when sending " 
 								 "commands to the client");
-	cl_timeframes = Cvar_Get ("cl_timeframes", "0", CVAR_ARCHIVE, NULL,
-							  "write timestamps for every frame");
 	// info mirrors
 	cl_name = Cvar_Get ("name", "unnamed", CVAR_ARCHIVE | CVAR_USERINFO,
 						Cvar_Info, "Player name");
@@ -1555,8 +1551,6 @@ Host_Frame (float time)
 		Con_Printf ("%3i tot %3i server %3i gfx %3i snd\n",
 					pass1 + pass2 + pass3, pass1, pass2, pass3);
 	}
-
-//	CL_TimeFrames_AddTimestamp ();
 
 	host_framecount++;
 	fps_count++;
