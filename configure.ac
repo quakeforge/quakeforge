@@ -1325,9 +1325,9 @@ if test "x$optimize" = xyes; then
 		)
 		case "$arch" in
 			auto)
-				case "${host_cpu}" in
+				case "${target_cpu}" in
 					i?86)
-						MORE_CFLAGS="-march=${host_cpu}"
+						MORE_CFLAGS="-march=${target_cpu}"
 						;;
 					*)
 						MORE_CFLAGS=""
