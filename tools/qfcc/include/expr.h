@@ -119,8 +119,8 @@ extern etype_t qc_types[];
 extern struct type_s *types[];
 extern expr_type expr_types[];
 
-type_t *get_type (expr_t *e) __attribute__ ((const));
-etype_t extract_type (expr_t *e) __attribute__ ((const));
+type_t *get_type (expr_t *e);
+etype_t extract_type (expr_t *e);
 
 expr_t *new_expr (void);
 const char *new_label_name (void);

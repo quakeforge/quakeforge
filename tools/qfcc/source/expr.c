@@ -936,11 +936,6 @@ field_expr (expr_t *e1, expr_t *e2)
 	expr_t     *e;
 	struct_field_t *field;
 
-	if (e1->type == ex_error)
-		return e1;
-	if (e2->type == ex_error)
-		return e2;
-
 	t1 = get_type (e1);
 	switch (t1->type) {
 		case ev_struct:
@@ -1444,8 +1439,11 @@ function_expr (expr_t *e1, expr_t *e2)
 
 	if (e1->type == ex_error)
 		return e1;
-	if (e2->type == ex_error)
-		return e2;
+	for (e = e2; e; e = e->next) {
+		if (e->type == ex_error)
+			return e;
+		parm_count++;
+	}
 
 	t1 = extract_type (e1);
 
@@ -1473,8 +1471,6 @@ function_expr (expr_t *e1, expr_t *e2)
 
 	ftype = e1->type == ex_def ? e1->e.def->type : e1->e.expr.type;
 
-	for (e = e2; e; e = e->next)
-		parm_count++;
 	if (parm_count > MAX_PARMS) {
 		return error (e1, "more than %d parameters", MAX_PARMS);
 	}
@@ -1558,8 +1554,6 @@ function_expr (expr_t *e1, expr_t *e2)
 expr_t *
 return_expr (function_t *f, expr_t *e)
 {
-	if (e->type == ex_error)
-		return e;
 	if (!e) {
 		if (f->def->type->aux_type != &type_void) {
 			if (options.traditional) {
@@ -1575,6 +1569,8 @@ return_expr (function_t *f, expr_t *e)
 	if (e) {
 		type_t     *t = get_type (e);
 
+		if (e->type == ex_error)
+			return e;
 		if (f->def->type->aux_type == &type_void)
 			return error (e, "returning a value for a void function");
 		if (f->def->type->aux_type == &type_float && e->type == ex_integer) {
@@ -1699,8 +1695,6 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 
 	if (e1->type == ex_error)
 		return e1;
-	if (e2->type == ex_error)
-		return e2;
 
 	if (!t)
 		t = get_type (e1);
@@ -1745,6 +1739,8 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 			return error (e1, "invalid type for unary &");
 	}
 	if (e2) {
+		if (e2->type == ex_error)
+			return e2;
 		if (e->type == ex_pointer && e2->type == ex_short) {
 			e->e.pointer.val += e2->e.short_val;
 		} else {
