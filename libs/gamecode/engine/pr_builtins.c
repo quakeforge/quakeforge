@@ -108,6 +108,19 @@ PR_FindBuiltin (progs_t *pr, const char *name)
 	return (builtin_t *) Hash_Find (pr->builtin_hash, name);
 }
 
+static void
+bi_no_function (progs_t *pr)
+{
+	// no need for checking: the /only/ way to get here is via a function
+	// descriptor with a bad builtin number
+	dstatement_t *st = pr->pr_statements + pr->pr_xstatement;
+	dfunction_t *func = pr->pr_functions + G_FUNCTION (pr, st->a);
+	const char *bi_name = PR_GetString (pr, func->s_name);
+	int         ind = -func->first_statement;
+
+	PR_RunError (pr, "Bad builtin called: %s = #%d", bi_name, ind);
+}
+
 int
 PR_RelocateBuiltins (progs_t *pr)
 {
@@ -115,6 +128,7 @@ PR_RelocateBuiltins (progs_t *pr)
 	int         bad = 0;
 	dfunction_t *func;
 	builtin_t  *bi;
+	builtin_proc proc;
 	const char *bi_name;
 
 	for (i = 1; i < pr->progs->numfunctions; i++) {
@@ -137,12 +151,13 @@ PR_RelocateBuiltins (progs_t *pr)
 		}
 
 		ind = -func->first_statement;
-		if (ind >= pr->numbuiltins || !(bi = pr->builtins[ind]) || !bi->proc) {
-			Sys_Printf ("Bad builtin call number: %s = #%d\n", bi_name, ind);
-			bad = 1;
-			continue;
+		if (ind >= pr->numbuiltins || !(bi = pr->builtins[ind])
+			|| !(proc = bi->proc)) {
+			Sys_DPrintf ("WARNING: Bad builtin call number: %s = #%d\n",
+						 bi_name, ind);
+			proc = bi_no_function;
 		}
-		((bfunction_t *) func)->func = bi->proc;
+		((bfunction_t *) func)->func = proc;
 	}
 	return !bad;
 }
