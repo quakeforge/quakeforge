@@ -236,6 +236,7 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	// also makes polyblend apply to whole screen
 	if (v_blend[3]) {
 		qfglDisable (GL_TEXTURE_2D);
+
 		qfglBegin (GL_QUADS);
 
 		qfglColor4fv (v_blend);
@@ -245,6 +246,7 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 		qfglVertex2f (0, vid.height);
 
 		qfglEnd ();
+
 		qfglColor3ubv (color_white);
 		qfglEnable (GL_TEXTURE_2D);
 	}

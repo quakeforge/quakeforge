@@ -114,6 +114,9 @@ static unsigned int
 R_TestErrors (unsigned int numerous)
 {
 	switch (qfglGetError ()) {
+	case GL_NO_ERROR:
+		return numerous;
+		break;
 	case GL_INVALID_ENUM:
 		InvalidEnum++;
 		R_TestErrors (numerous++);
@@ -137,9 +140,6 @@ R_TestErrors (unsigned int numerous)
 	case GL_OUT_OF_MEMORY:
 		OutOfMemory++;
 		R_TestErrors (numerous++);
-		break;
-	case GL_NO_ERROR:
-		return numerous;
 		break;
 	default:
 		Unknown++;
