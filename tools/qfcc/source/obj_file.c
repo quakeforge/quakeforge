@@ -156,8 +156,10 @@ setup_data (void)
 	qfo_def_t  *def = defs;
 	def_t      *d;
 	qfo_function_t *func = functions;
-	function_t   *f;
-	qfo_reloc_t  *reloc = relocs;
+	function_t *f;
+	qfo_reloc_t *reloc = relocs;
+	dstatement_t *st;
+	pr_type_t  *var;
 
 	for (d = pr.scope->head; d; d = d->def_next)
 		write_def (d, def++, &reloc);
@@ -186,6 +188,19 @@ setup_data (void)
 		for (d = f->scope->head; d; d = d->def_next)
 			write_def (d, def++, &reloc);
 	}
+	for (st = pr.statements; st - pr.statements < pr.num_statements; st++) {
+		st->op = LittleLong (st->op);
+		st->a  = LittleLong (st->a);
+		st->b  = LittleLong (st->b);
+		st->c  = LittleLong (st->c);
+	}
+	for (var = pr.near_data->data;
+		 var - pr.near_data->data < pr.near_data->size; var++)
+		var->integer_var = LittleLong (var->integer_var);
+	if (pr.far_data)
+		for (var = pr.far_data->data;
+			 var - pr.far_data->data < pr.far_data->size; var++)
+			var->integer_var = LittleLong (var->integer_var);
 }
 
 int
