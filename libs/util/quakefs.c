@@ -1324,10 +1324,16 @@ QFS_Open (const char *path, const char *mode)
 {
 	dstring_t  *full_path = dstring_new ();
 	QFile      *file;
+	const char *m;
+	int         write = 0;
 
 	dsprintf (full_path, "%s/%s", qfs_userpath, path);
 	Sys_DPrintf ("QFS_Open: %s %s\n", full_path->str, mode);
-	QFS_CreatePath (full_path->str);
+	for (m = mode; *m; m++)
+		if (*m == 'w' || *m == '+' || *m == 'a')
+			write = 1;
+	if (write)
+		QFS_CreatePath (full_path->str);
 	file = Qopen (full_path->str, mode);
 	dstring_delete (full_path);
 	return file;
