@@ -119,6 +119,7 @@ typedef struct {
 %type	<def>	var_def_item var_def_list
 %type	<def>	func_def_item func_def_list
 %type	<expr>	const opt_expr expr arg_list element_list element_list1 element
+%type	<expr>	string_val
 %type	<expr>	statement statements statement_block
 %type	<expr>	break_label continue_label enum_list enum
 %type	<function> begin_function
@@ -832,11 +833,10 @@ const
 			$$->type = ex_float;
 			$$->e.float_val = $1;
 		}
-	| STRING_VAL
+	| string_val
 		{
-			$$ = new_expr ();
-			$$->type = ex_string;
-			$$->e.string_val = $1;
+			printf ("'%s'\n", $$->e.string_val);
+			$$ = $1;
 		}
 	| VECTOR_VAL
 		{
@@ -860,6 +860,22 @@ const
 		{
 			$$ = new_expr ();
 			$$->type = ex_nil;
+		}
+	;
+
+string_val
+	: STRING_VAL
+		{
+			$$ = new_expr ();
+			$$->type = ex_string;
+			$$->e.string_val = $1;
+		}
+	| string_val STRING_VAL
+		{
+			expr_t     *e = new_expr ();
+			e->type = ex_string;
+			e->e.string_val = $2;
+			$$ = binary_expr ('+', $1, e);
 		}
 	;
 
