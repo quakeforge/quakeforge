@@ -207,13 +207,9 @@ PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 		num = node->children[1];
 		goto loc0;
 	}
-	// put the crosspoint DIST_EPSILON pixels on the near side so that both
-	// p1 and mid are on the same side of the plane
 	side = (t1 < 0);
-	if (side)
-		frac = bound (0, (t1 + DIST_EPSILON) / (t1 - t2), 1);
-	else
-		frac = bound (0, (t1 - DIST_EPSILON) / (t1 - t2), 1);
+	//frac = bound (0, t1 / (t1 - t2), 1);	// use this if below causes probs
+	frac = t1 / (t1 - t2);
 
 	midf = p1f + (p2f - p1f) * frac;
 	for (i = 0; i < 3; i++)
@@ -256,6 +252,7 @@ PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 		trace->plane.dist = -plane->dist;
 	}
 
+#if 0	//XXX I don't think this is needed any more, but leave it in for now
 	while (PM_HullPointContents (hull, hull->firstclipnode,
 								 mid) == CONTENTS_SOLID) {
 		// shouldn't really happen, but does occasionally
@@ -270,6 +267,17 @@ PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 		for (i = 0; i < 3; i++)
 			mid[i] = p1[i] + frac * (p2[i] - p1[i]);
 	}
+#endif
+	// put the crosspoint DIST_EPSILON pixels on the near side to guarantee
+	// mid is on the correct side of the plane
+	if (side)
+		frac = bound (0, (t1 + DIST_EPSILON) / (t1 - t2), 1);
+	else
+		frac = bound (0, (t1 - DIST_EPSILON) / (t1 - t2), 1);
+
+	midf = p1f + (p2f - p1f) * frac;
+	for (i = 0; i < 3; i++)
+		mid[i] = p1[i] + frac * (p2[i] - p1[i]);
 
 	trace->fraction = midf;
 	VectorCopy (mid, trace->endpos);
