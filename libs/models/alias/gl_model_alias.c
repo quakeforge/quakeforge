@@ -45,6 +45,9 @@ static const char rcsid[] =
 #include "QF/qendian.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
+#include "QF/texture.h"
+#include "QF/tga.h"
+#include "QF/vfs.h"
 #include "QF/vid.h"
 #include "QF/GL/qf_textures.h"
 
@@ -261,5 +264,52 @@ Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
 	if (strequal (m->name, "progs/eyes.mdl")) {
 		hdr->mdl.scale_origin[2] -= (22 + 8);
 		VectorScale (hdr->mdl.scale, 2, hdr->mdl.scale);
+	}
+}
+
+void
+Mod_LoadExternalSkin (maliasskindesc_t *pskindesc, char *filename)
+{
+	VFile		*f;
+	tex_t		*targa;
+
+	COM_FOpenFile (filename, &f);
+	if (f)
+	{
+		targa = LoadTGA (f);
+		Qclose (f);
+		if (targa->format < 4)
+			pskindesc->texnum = GL_LoadTexture ("", targa->width,
+				targa->height, targa->data, true, false, 3);
+		else
+			pskindesc->texnum = GL_LoadTexture ("", targa->width,
+				targa->height, targa->data, true, true, 4);
+	}
+}
+
+void
+Mod_LoadExternalSkins (model_t *mod)
+{
+	char filename[MAX_QPATH + 4];
+	aliashdr_t *paliashdr;
+	maliasskindesc_t *pskindesc;
+	maliasskingroup_t *pskingroup;
+	int i, j;
+
+	paliashdr = Cache_Get (&mod->cache);
+	for (i = 0; i < paliashdr->mdl.numskins; i++) {
+		pskindesc = ((maliasskindesc_t *)
+			((byte *) paliashdr + paliashdr->skindesc)) + i;
+		if (pskindesc->type == ALIAS_SKIN_SINGLE) {
+			snprintf (filename, sizeof (filename), "%s_%i.tga", mod->name, i);
+			Mod_LoadExternalSkin (pskindesc, filename);
+		} else {
+			pskingroup = (maliasskingroup_t *)
+				((byte *) paliashdr + pskindesc->skin);
+			for (j = 0; j < pskingroup->numskins; j++) {
+				snprintf (filename, sizeof (filename), "%s_%i_%i.tga", mod->name, i, j);
+				Mod_LoadExternalSkin (pskingroup->skindescs + j, filename);
+			}
+		}
 	}
 }

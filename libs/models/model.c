@@ -217,6 +217,7 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 		case IDPOLYHEADER:
 		case POLYHEADER16:
 			Mod_LoadAliasModel (mod, buf, allocator);
+			Mod_LoadExternalSkins (mod);
 			break;
 
 		case IDSPRITEHEADER:

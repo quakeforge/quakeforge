@@ -218,3 +218,9 @@ void
 Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
 {
 }
+
+void
+Mod_LoadExternalSkins (model_t *mod)
+{
+}
+
