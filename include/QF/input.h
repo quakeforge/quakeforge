@@ -41,19 +41,16 @@ extern viewdelta_t viewdelta;
 #define freelook (in_mlook.state & 1 || in_freelook->int_val)
 
 
-void IN_UpdateGrab (struct cvar_s *);
 void IN_Init (void);
 void IN_Init_Cvars (void);
 
 void IN_Shutdown (void);
 
-void IN_Commands (void);
-// oportunity for devices to stick commands on the script buffer
+void IN_ProcessEvents (void);
+
+void IN_UpdateGrab (struct cvar_s *);
 
 void IN_ClearStates (void);
-
-void IN_SendKeyEvents (void);
-// Perform Key_Event () callbacks until the input que is empty
 
 void IN_Move (void); // FIXME: was cmduser_t?
 // add additional movement on top of the keyboard move cmd
@@ -72,7 +69,7 @@ extern float		in_mouse_x, in_mouse_y;
 void IN_LL_Init_Cvars (void);
 void IN_LL_Init (void);
 void IN_LL_Shutdown (void);
-void IN_LL_SendKeyEvents (void);
+void IN_LL_ProcessEvents (void);
 void IN_LL_ClearStates (void);
 void IN_LL_Grab_Input (int grab);
 

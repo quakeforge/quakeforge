@@ -201,11 +201,6 @@ Host_Skin_Init_Cvars (void)
 }
 
 void
-IN_Commands (void)
-{
-}
-
-void
 IN_Init (void)
 {
 }
@@ -216,7 +211,7 @@ IN_Init_Cvars (void)
 }
 
 void
-IN_SendKeyEvents (void)
+IN_ProcessEvents (void)
 {
 }
 

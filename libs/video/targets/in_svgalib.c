@@ -418,7 +418,7 @@ IN_LL_Shutdown (void)
 
 
 void
-IN_LL_SendKeyEvents (void)
+IN_LL_ProcessEvents (void)
 {
 	if (!in_svgalib_inited)
 		return;

@@ -87,16 +87,11 @@ IN_UpdateGrab (cvar_t *var)		// called from context_*.c
 }
 
 void
-IN_Commands (void)
-{
-	JOY_Command ();
-}
-
-void
-IN_SendKeyEvents (void)
+IN_ProcessEvents (void)
 {
 	/* Get events from environment. */
-	IN_LL_SendKeyEvents ();
+	JOY_Command ();
+	IN_LL_ProcessEvents ();
 }
 
 void

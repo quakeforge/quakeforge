@@ -621,7 +621,7 @@ IN_LL_Grab_Input (int grab)
 }
 
 void
-IN_LL_SendKeyEvents (void)
+IN_LL_ProcessEvents (void)
 {
 	X11_ProcessEvents ();	// Get events from X server.
 }

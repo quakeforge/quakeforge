@@ -423,7 +423,7 @@ IN_LL_ClearStates (void)
 }
 
 void
-IN_LL_SendKeyEvents (void)
+IN_LL_ProcessEvents (void)
 {
 	MSG         msg;
 	int         mx, my;

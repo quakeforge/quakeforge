@@ -96,7 +96,7 @@ IN_LL_Shutdown (void)
 }
 
 void
-IN_LL_SendKeyEvents (void)
+IN_LL_ProcessEvents (void)
 {
 	int k, down;
 	char buf[4];

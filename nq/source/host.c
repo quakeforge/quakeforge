@@ -598,13 +598,8 @@ _Host_Frame (float time)
 		return;							// don't run too fast, or packets
 										// will flood out
 
-	if (cls.state != ca_dedicated) {
-	// get new key events
-		IN_SendKeyEvents ();
-
-	// allow mice or other external controllers to add commands
-		IN_Commands ();
-	}
+	if (cls.state != ca_dedicated)
+		IN_ProcessEvents ();
 
 	// process gib threads
 	

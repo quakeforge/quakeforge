@@ -1495,11 +1495,7 @@ Host_Frame (float time)
 	oldrealtime = realtime;
 	host_frametime = min (host_frametime, 0.2);
 
-	// get new key events
-	IN_SendKeyEvents ();
-
-	// allow mouses or other external controllers to add commands
-	IN_Commands ();
+	IN_ProcessEvents ();
 
 	// process gib threads
 	

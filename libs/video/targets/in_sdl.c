@@ -71,7 +71,7 @@ event_focusin (void)
 }
 
 void
-IN_LL_SendKeyEvents (void)
+IN_LL_ProcessEvents (void)
 {
 	SDL_Event   event;
 	int         sym, state, but;
