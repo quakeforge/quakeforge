@@ -15,7 +15,12 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
     See file, 'COPYING', for details.
+
+	$Id$
 */
+
+#ifndef __qfcc_h
+#define __qfcc_h
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -612,3 +617,5 @@ extern options_t options;
 void PrecacheSound (def_t *e, int ch);
 void PrecacheModel (def_t *e, int ch);
 void PrecacheFile (def_t *e, int ch);
+
+#endif//__qfcc_h
