@@ -1321,9 +1321,6 @@ Cmd_ProcessToken (cmd_token_t *token)
 {
 	int res;
 	
-	dstring_clearstr (token->processed);
-	dstring_appendstr (token->processed, token->original->str);
-	
 	Cmd_ProcessTags (token->processed);
 	res = Cmd_ProcessEmbedded (token, token->processed);
 	if (res < 0)
@@ -1434,6 +1431,7 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 			cmd_activebuffer->maxargc++;
 		}
 		dstring_clearstr (cmd_activebuffer->argv[cmd_argc-1]->original);
+		dstring_clearstr (cmd_activebuffer->argv[cmd_argc-1]->processed);
 		/* Remove surrounding quotes or double quotes or braces */
 		quotes = 0;
 		braces = 0;
@@ -1454,6 +1452,7 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 			cmd_activebuffer->argv[cmd_argc-1]->delim = '{';
 		}
 		dstring_insert (cmd_activebuffer->argv[cmd_argc-1]->original, str + i, len, 0);
+		dstring_insert (cmd_activebuffer->argv[cmd_argc-1]->processed, str + i, len, 0);
 		if (!legacy && !braces && process && text[0] != '|')
 			cmd_activebuffer->argv[cmd_argc-1]->state = cmd_process;
 		else
