@@ -321,7 +321,7 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 			key = QFK_LCTRL;
 			break;
 		case XK_Control_R:
-			key = QFK_LCTRL;
+			key = QFK_RCTRL;
 			break;
 
 		case XK_Mode_switch:
@@ -349,6 +349,7 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 		case XK_Caps_Lock:
 			key = QFK_CAPSLOCK;
 			break;
+
 		case XK_KP_Begin:
 			key = QFK_KP5;
 			break;
