@@ -37,7 +37,6 @@ static const char rcsid[] =
 #include "QF/csqc.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
-#include "QF/gib.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
@@ -933,8 +932,6 @@ Host_Init (void)
 		con_module->data->console->realtime = &realtime;
 		con_module->data->console->quit = Host_Quit_f;
 	}
-
-	GIB_Init ();
 
 	Host_InitVCR (&host_parms);
 	Host_InitLocal ();

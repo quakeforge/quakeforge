@@ -84,7 +84,6 @@ common_LIBFILES= \
 		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
 		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
-		$(top_builddir)/libs/gib/libQFgib.la \
 		$(top_builddir)/libs/util/libQFutil.la
 
 client_LIBS=	$(client_LIBFILES) $(common_LIBFILES)
