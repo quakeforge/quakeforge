@@ -125,7 +125,7 @@ PR_ParseImmediate (def_t *def)
 	if (def) {
 		cn = def;
 	} else {
-		cn = PR_NewDef (pr_immediate_type, "IMMEDIATE", 0);
+		cn = PR_NewDef (pr_immediate_type, ".imm", 0);
 		cn->ofs = PR_NewLocation (pr_immediate_type);
 		pr_global_defs[cn->ofs] = cn;
 	}
@@ -209,14 +209,14 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 	if (def) {
 		cn = def;
 	} else {
-		cn = PR_NewDef (type, "IMMEDIATE", 0);
+		cn = PR_NewDef (type, ".imm", 0);
 		cn->ofs = PR_NewLocation (type);
 		pr_global_defs[cn->ofs] = cn;
 		if (type == &type_vector || type == &type_quaternion) {
 			int i;
 
 			for (i = 0; i< 3 + (type == &type_quaternion); i++)
-				PR_NewDef (&type_float, "IMMEDIATE", 0);
+				PR_NewDef (&type_float, ".imm", 0);
 		}
 	}
 	cn->initialized = 1;
