@@ -479,7 +479,6 @@ extern struct cvar_s *gl_mesh_cache;
 extern struct cvar_s *gl_subdivide_size;
 extern model_t *loadmodel;
 extern char loadname[32];
-extern const int mod_lightmap_bytes;
 extern byte *mod_base;
 extern byte mod_novis[MAX_MAP_LEAFS / 8];
 

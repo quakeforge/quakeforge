@@ -43,7 +43,7 @@ static const char rcsid[] =
 #include "QF/model.h"
 
 
-const int   mod_lightmap_bytes = 1;
+int   mod_lightmap_bytes = 1;
 
 
 void

@@ -51,14 +51,12 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-void R_InitSky (struct texture_s *mt);
-
-
-
+extern int	mod_lightmap_bytes;
 byte        mod_novis[MAX_MAP_LEAFS / 8];
+cvar_t		*gl_sky_divide;
 
 void        GL_SubdivideSurface (msurface_t *fa);
-cvar_t		*gl_sky_divide;
+void		R_InitSky (struct texture_s *mt);
 
 
 mleaf_t    *

@@ -50,7 +50,8 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-const int   mod_lightmap_bytes = 3;
+int   mod_lightmap_bytes = 3;
+
 
 void
 Mod_ProcessTexture (miptex_t *mt, texture_t *tx)
@@ -117,34 +118,46 @@ Mod_LoadLighting (lump_t *l)
 	char        litfilename[1024];
 
 	loadmodel->lightdata = NULL;
-	// LordHavoc: check for a .lit file to load
-	strcpy (litfilename, loadmodel->name);
-	COM_StripExtension (litfilename, litfilename);
-	strncat (litfilename, ".lit", sizeof (litfilename) - strlen (litfilename));
-	data = (byte *) COM_LoadHunkFile (litfilename);
-	if (data) {
-		if (data[0] == 'Q' && data[1] == 'L' && data[2] == 'I'
-			&& data[3] == 'T') {
-			i = LittleLong (((int *) data)[1]);
-			if (i == 1) {
-				Sys_DPrintf ("%s loaded", litfilename);
-				loadmodel->lightdata = data + 8;
-				return;
+	if (mod_lightmap_bytes > 1) {
+		// LordHavoc: check for a .lit file to load
+		strcpy (litfilename, loadmodel->name);
+		COM_StripExtension (litfilename, litfilename);
+		strncat (litfilename, ".lit", sizeof (litfilename) -
+				 strlen (litfilename));
+		data = (byte *) COM_LoadHunkFile (litfilename);
+		if (data) {
+			if (data[0] == 'Q' && data[1] == 'L' && data[2] == 'I'
+				&& data[3] == 'T') {
+				i = LittleLong (((int *) data)[1]);
+				if (i == 1) {
+					Sys_DPrintf ("%s loaded", litfilename);
+					loadmodel->lightdata = data + 8;
+					return;
+				} else
+					Sys_Printf ("Unknown .lit file version (%d)\n", i);
 			} else
-				Sys_Printf ("Unknown .lit file version (%d)\n", i);
-		} else
-			Sys_Printf ("Corrupt .lit file (old version?), ignoring\n");
+				Sys_Printf ("Corrupt .lit file (old version?), ignoring\n");
+		}
 	}
 	// LordHavoc: oh well, expand the white lighting data
 	if (!l->filelen)
 		return;
-	loadmodel->lightdata = Hunk_AllocName (l->filelen * 3, litfilename);
+	loadmodel->lightdata = Hunk_AllocName (l->filelen * mod_lightmap_bytes,
+										   litfilename);
 	in = mod_base + l->fileofs;
 	out = loadmodel->lightdata;
-	for (i = 0; i < l->filelen; i++) {
-		d = *in++;
-		*out++ = d;
-		*out++ = d;
-		*out++ = d;
+
+	if (mod_lightmap_bytes > 1) {
+		for (i = 0; i < l->filelen ; i++) {
+			d = *in++;
+			*out++ = d;
+			*out++ = d;
+			*out++ = d;
+		}
+	} else {
+		for (i = 0; i < l->filelen ; i++) {
+			d = *in++;
+			*out++ = d;
+		}
 	}
 }
