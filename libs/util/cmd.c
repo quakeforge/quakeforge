@@ -1344,6 +1344,8 @@ Cmd_Process (void)
 
 	if (cmd_activebuffer->legacy) // Legacy buffers will never require processing, ever
 		return 0;
+	if (!Cmd_Argc()) // No tokens, don't bother
+		return 0;
 	cmd = (cmd_function_t *) Hash_Find (cmd_hash, cmd_activebuffer->argv[0]->original->str);
 	if (cmd && cmd->pure) // If the function is pure, don't bother processing
 		return 0;
