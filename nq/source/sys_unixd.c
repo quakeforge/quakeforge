@@ -47,6 +47,7 @@
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <errno.h>
+#include <time.h>
 
 #include "client.h"
 #include "sys.h"

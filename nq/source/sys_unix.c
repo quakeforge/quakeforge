@@ -449,7 +449,7 @@ int main (int c, char **v)
 		nostdout = 1;
 	else {
 		fcntl(0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
-		printf ("Quake -- Version %s\n", QUAKE_VERSION);
+		printf ("Quake -- Version %s\n", NQ_VERSION);
 	}
 
     oldtime = Sys_DoubleTime () - 0.1;

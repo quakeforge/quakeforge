@@ -198,7 +198,7 @@ void SV_SendServerinfo (client_t *client)
 	char			message[2048];
 
 	MSG_WriteByte (&client->message, svc_print);
-	snprintf (message, sizeof(message), "%c\nVersion %s server (%i CRC)", 2, QUAKE_VERSION, pr_crc);
+	snprintf (message, sizeof(message), "%c\nVersion %s server (%i CRC)", 2, NQ_VERSION, pr_crc);
 	MSG_WriteString (&client->message,message);
 
 	MSG_WriteByte (&client->message, svc_serverinfo);
