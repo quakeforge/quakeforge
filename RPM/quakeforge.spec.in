@@ -281,6 +281,7 @@ mkdir -p $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/etc
 make install DESTDIR=$RPM_BUILD_ROOT
 cp RPM/quakeforge.conf $RPM_BUILD_ROOT/etc
+mkdir -p $RPM_BUILD_ROOT/%{fs_sharepath}/id1
 
 %clean
 rm -rf $RPM_BUILD_ROOT
