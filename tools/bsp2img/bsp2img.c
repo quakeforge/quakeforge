@@ -18,7 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 */
-
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,6 +36,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "QF/sys.h"
 #include "QF/zone.h"
 
+#include "compat.h"
+
 #define PROGNAME  "bsp2img"
 #define V_MAJOR   0
 #define V_MINOR   0
@@ -49,6 +51,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define X point[0]
 #define Y point[1]
 #define Z point[2]
+
+#define SUB(a,b,c) ((c).X = (a).X - (b).X, \
+					(c).Y = (a).Y - (b).Y, \
+					(c).Z = (a).Z - (b).Z)
+#define DOT(a,b) ((a).X * (b).X + (a).Y * (b).Y + (a).Z * (b).Z)
+#define CROSS(a,b,c) ((c).X = (a).Y * (b).Z - (a).Z * (b).Y, \
+					  (c).Y = (a).Z * (b).X - (a).X * (b).Z, \
+					  (c).Z = (a).X * (b).Y - (a).Y * (b).X)
 
 /*
 Thanks fly to Id for a hackable game! :)
@@ -95,6 +105,8 @@ typedef struct {
 	long        height;
 } image_t;
 
+struct options_t options;
+
 static void
 show_help (void)
 {
@@ -126,7 +138,7 @@ show_help (void)
 }
 
 static void
-plotpoint (image_t * image, long xco, long yco, unsigned int color)
+plotpoint (image_t *image, long xco, long yco, unsigned int color)
 {
 	unsigned int bigcol = 0;
 
@@ -135,12 +147,9 @@ plotpoint (image_t * image, long xco, long yco, unsigned int color)
 
 	bigcol = (unsigned int) image->image[yco * image->width + xco];
 
-	bigcol = bigcol + color;
+	bigcol += color;
 
-	if (bigcol < 0)
-		bigcol = 0;
-	if (bigcol > 255)
-		bigcol = 255;
+	bigcol = bound (0, bigcol, 255);
 
 	image->image[yco * image->width + xco] = (eightbit) bigcol;
 
@@ -478,14 +487,32 @@ show_options (struct options_t *opt)
 	return;
 }
 
-int
-main (int argc, char *argv[])
+static image_t *
+create_image (long width, long height)
 {
-	QFile      *bspfile = NULL;
-	QFile      *outfile = NULL;
+	long        size;
+	image_t    *image;
+
+	image = malloc (sizeof (image_t));
+	image->width = width;
+	image->height = height;
+	size = sizeof (eightbit) * width * height;
+	if (!(image->image = malloc (size))) {
+		fprintf (stderr, "Error allocating image buffer %ldx%ld.\n",
+				 width, height);
+		exit (2);
+	}
+	printf ("Allocated buffer %ldx%ld for image.\n", width, height);
+	memset (image->image, 0, size);
+	return image;
+}
+
+static image_t *
+render_map (bsp_t *bsp)
+{
 	long        i = 0, j = 0, k = 0, x = 0;
 
-	dvertex_t  *vertexlist;
+	dvertex_t  *vertexlist, *vert1, *vert2;
 	dedge_t    *edgelist;
 	dface_t    *facelist;
 	int        *ledges;
@@ -501,30 +528,7 @@ main (int argc, char *argv[])
 	long        Z_Xdir = 1, Z_Ydir = -1;
 
 	image_t    *image;
-	struct options_t options;
 	int         drawcol;
-
-	bsp_t      *bsp;
-
-
-	/* Enough args? */
-	if (argc < 3) {
-		show_help ();
-		return 1;
-	}
-
-	/* Setup options */
-	def_options (&options);
-	get_options (&options, argc, argv);
-	show_options (&options);
-
-	bspfile = Qopen (options.bspf_name, "rbz");
-	if (bspfile == NULL) {
-		fprintf (stderr, "Error opening bsp file %s.\n", options.bspf_name);
-		return 1;
-	}
-	bsp = LoadBSPFile (bspfile, Qfilesize (bspfile));
-	Qclose (bspfile);
 
 	vertexlist = bsp->vertexes;
 	edgelist = bsp->edges;
@@ -539,7 +543,7 @@ main (int argc, char *argv[])
 		if (edge_extra == NULL) {
 			fprintf (stderr, "Error allocating %ld bytes for extra edge info.",
 					 (long) sizeof (struct edge_extra_t) * bsp->numedges);
-			return 2;
+			exit (2);
 		}
 		/* initialize the array */
 		for (i = 0; i < bsp->numedges; i++) {
@@ -562,74 +566,46 @@ main (int argc, char *argv[])
 			vect.Z = 0.0;
 			while (vect.X == 0.0 && vect.Y == 0.0 && vect.Z == 0.0
 				   && k < (facelist[i].numedges + j)) {
+				dedge_t    *e1, *e2;
 				/* If the first 2 are parallel edges, go with the next one */
 				k++;
 
+				e1 = &edgelist[abs (ledges[j])];
+				e2 = &edgelist[abs (ledges[k])];
 				if (ledges[j] > 0) {
-					v0.X =
-						vertexlist[edgelist[abs ((int) ledges[j])].v[0]].X -
-						vertexlist[edgelist[abs ((int) ledges[j])].v[1]].X;
-					v0.Y =
-						vertexlist[edgelist[abs ((int) ledges[j])].v[0]].Y -
-						vertexlist[edgelist[abs ((int) ledges[j])].v[1]].Y;
-					v0.Z =
-						vertexlist[edgelist[abs ((int) ledges[j])].v[0]].Z -
-						vertexlist[edgelist[abs ((int) ledges[j])].v[1]].Z;
+					v0.X = vertexlist[e1->v[0]].X - vertexlist[e1->v[1]].X;
+					v0.Y = vertexlist[e1->v[0]].Y - vertexlist[e1->v[1]].Y;
+					v0.Z = vertexlist[e1->v[0]].Z - vertexlist[e1->v[1]].Z;
 
-					v1.X =
-						vertexlist[edgelist[abs ((int) ledges[k])].v[0]].X -
-						vertexlist[edgelist[abs ((int) ledges[k])].v[1]].X;
-					v1.Y =
-						vertexlist[edgelist[abs ((int) ledges[k])].v[0]].Y -
-						vertexlist[edgelist[abs ((int) ledges[k])].v[1]].Y;
-					v1.Z =
-						vertexlist[edgelist[abs ((int) ledges[k])].v[0]].Z -
-						vertexlist[edgelist[abs ((int) ledges[k])].v[1]].Z;
+					v1.X = vertexlist[e2->v[0]].X - vertexlist[e2->v[1]].X;
+					v1.Y = vertexlist[e2->v[0]].Y - vertexlist[e2->v[1]].Y;
+					v1.Z = vertexlist[e2->v[0]].Z - vertexlist[e2->v[1]].Z;
 				} else {
 					/* negative index, therefore walk in reverse order */
-					v0.X =
-						vertexlist[edgelist[abs ((int) ledges[j])].v[1]].X -
-						vertexlist[edgelist[abs ((int) ledges[j])].v[0]].X;
-					v0.Y =
-						vertexlist[edgelist[abs ((int) ledges[j])].v[1]].Y -
-						vertexlist[edgelist[abs ((int) ledges[j])].v[0]].Y;
-					v0.Z =
-						vertexlist[edgelist[abs ((int) ledges[j])].v[1]].Z -
-						vertexlist[edgelist[abs ((int) ledges[j])].v[0]].Z;
+					v0.X = vertexlist[e1->v[1]].X - vertexlist[e1->v[0]].X;
+					v0.Y = vertexlist[e1->v[1]].Y - vertexlist[e1->v[0]].Y;
+					v0.Z = vertexlist[e1->v[1]].Z - vertexlist[e1->v[0]].Z;
 
-					v1.X =
-						vertexlist[edgelist[abs ((int) ledges[k])].v[1]].X -
-						vertexlist[edgelist[abs ((int) ledges[k])].v[0]].X;
-					v1.Y =
-						vertexlist[edgelist[abs ((int) ledges[k])].v[1]].Y -
-						vertexlist[edgelist[abs ((int) ledges[k])].v[0]].Y;
-					v1.Z =
-						vertexlist[edgelist[abs ((int) ledges[k])].v[1]].Z -
-						vertexlist[edgelist[abs ((int) ledges[k])].v[0]].Z;
+					v1.X = vertexlist[e2->v[1]].X - vertexlist[e2->v[0]].X;
+					v1.Y = vertexlist[e2->v[1]].Y - vertexlist[e2->v[0]].Y;
+					v1.Z = vertexlist[e2->v[1]].Z - vertexlist[e2->v[0]].Z;
 				}
 
 				/* cross product */
-				vect.X = (v0.Y * v1.Z) - (v0.Z * v1.Y);
-				vect.Y = (v0.Z * v1.X) - (v0.X * v1.Z);
-				vect.Z = (v0.X * v1.Y) - (v0.Y * v1.X);
+				CROSS (v0, v1, vect);
 
 				/* Okay, it's not the REAL area, but i'm lazy, and since a lot
 				   of mapmakers use rectangles anyways... */
-				area = (int) (sqrt (v0.X * v0.X + v0.Y * v0.Y + v0.Z * v0.Z) *
-							  sqrt (v1.X * v1.X + v1.Y * v1.Y + v1.Z * v1.Z));
+				area = sqrt (DOT (v0, v0)) * sqrt (DOT (v1, v1));
 			}							/* while */
 
 			/* reduce cross product to a unit vector */
-			tempf =
-				(float)
-				sqrt ((double)
-					  (vect.X * vect.X + vect.Y * vect.Y + vect.Z * vect.Z));
+			tempf = sqrt (DOT (vect, vect));
 			if (tempf > 0.0) {
 				vect.X = vect.X / tempf;
 				vect.Y = vect.Y / tempf;
 				vect.Z = vect.Z / tempf;
-			} /* if tempf */
-			else {
+			} else {
 				vect.X = 0.0;
 				vect.Y = 0.0;
 				vect.Z = 0.0;
@@ -637,24 +613,18 @@ main (int argc, char *argv[])
 
 			/* Now go put ref in all edges... */
 			for (j = 0; j < facelist[i].numedges; j++) {
+				edge_extra_t *e;
 				k = j + facelist[i].firstedge;
-				x = edge_extra[abs ((int) ledges[k])].num_face_ref;
-				if (edge_extra[abs ((int) ledges[k])].num_face_ref <
-					MAX_REF_FACES) {
+				e = &edge_extra[abs (ledges[k])];
+				x = e->num_face_ref;
+				if (e->num_face_ref < MAX_REF_FACES) {
 					x++;
-					edge_extra[abs ((int) ledges[k])].num_face_ref = x;
-					edge_extra[abs ((int) ledges[k])].ref_faces[x - 1] = i;
-					edge_extra[abs ((int) ledges[k])].ref_faces_normal[x -
-																	   1].X =
-						vect.X;
-					edge_extra[abs ((int) ledges[k])].ref_faces_normal[x -
-																	   1].Y =
-						vect.Y;
-					edge_extra[abs ((int) ledges[k])].ref_faces_normal[x -
-																	   1].Z =
-						vect.Z;
-					edge_extra[abs ((int) ledges[k])].ref_faces_area[x - 1] =
-						area;
+					e->num_face_ref = x;
+					e->ref_faces[x - 1] = i;
+					e->ref_faces_normal[x - 1].X = vect.X;
+					e->ref_faces_normal[x - 1].Y = vect.Y;
+					e->ref_faces_normal[x - 1].Z = vect.Z;
+					e->ref_faces_area[x - 1] = area;
 				}
 
 			}							/* for */
@@ -725,20 +695,14 @@ main (int argc, char *argv[])
 			minZ = vertexlist[i].Z;
 			maxZ = vertexlist[i].Z;
 		} else {
-			if (vertexlist[i].X < minX)
-				minX = vertexlist[i].X;
-			if (vertexlist[i].X > maxX)
-				maxX = vertexlist[i].X;
+			minX = min (vertexlist[i].X, minX);
+			maxX = max (vertexlist[i].X, maxX);
 
-			if (vertexlist[i].Y < minY)
-				minY = vertexlist[i].Y;
-			if (vertexlist[i].Y > maxY)
-				maxY = vertexlist[i].Y;
+			minY = min (vertexlist[i].Y, minY);
+			maxY = max (vertexlist[i].Y, maxY);
 
-			if (vertexlist[i].Z < minZ)
-				minZ = vertexlist[i].Z;
-			if (vertexlist[i].Z > maxZ)
-				maxZ = vertexlist[i].Z;
+			minZ = min (vertexlist[i].Z, minZ);
+			maxZ = max (vertexlist[i].Z, maxZ);
 		}
 	}
 	if (options.z_pad == -1)
@@ -752,24 +716,16 @@ main (int argc, char *argv[])
 			(maxZ - minZ), midZ);
 
 	/* image array */
-	image = malloc (sizeof (image_t));
-	image->width =
-		(long) ((maxX - minX) / options.scaledown) + (options.image_pad * 2) +
-		(options.z_pad * 2);
-	image->height =
-		(long) ((maxY - minY) / options.scaledown) + (options.image_pad * 2) +
-		(options.z_pad * 2);
-	if (!
-		(image->image =
-		 malloc (sizeof (eightbit) * image->width * image->height))) {
-		fprintf (stderr, "Error allocating image buffer %ldx%ld.\n",
-				 image->width, image->height);
-		return 0;
-	} else {
-		printf ("Allocated buffer %ldx%ld for image.\n", image->width,
-				image->height);
-		memset (image->image, 0,
-				sizeof (eightbit) * image->width * image->height);
+	{
+		long        width, height;
+
+		width = (maxX - minX) / options.scaledown;
+		width += (options.image_pad + options.z_pad) * 2;
+
+		height = (maxY - minY) / options.scaledown;
+		height += (options.image_pad + options.z_pad) * 2;
+
+		image = create_image (width, height);
 	}
 
 	/* Zoffset calculations */
@@ -779,43 +735,39 @@ main (int argc, char *argv[])
 			Z_Ydir = 1;
 			break;
 
-		case 1:
-			Z_Xdir = 1;					/* up & right */
+		default:						/* unknown */
+		case 1:							/* up & right */
+			Z_Xdir = 1;
 			Z_Ydir = -1;
 			break;
 
-		case 2:
-			Z_Xdir = 1;					/* right */
+		case 2:							/* right */
+			Z_Xdir = 1;
 			Z_Ydir = 0;
 			break;
 
-		case 3:
-			Z_Xdir = 1;					/* down & right */
+		case 3:							/* down & right */
+			Z_Xdir = 1;
 			Z_Ydir = 1;
 			break;
 
-		case 4:
-			Z_Xdir = 0;					/* down */
+		case 4:							/* down */
+			Z_Xdir = 0;
 			Z_Ydir = 1;
 			break;
 
-		case 5:
-			Z_Xdir = -1;				/* down & left */
+		case 5:							/* down & left */
+			Z_Xdir = -1;
 			Z_Ydir = 1;
 			break;
 
-		case 6:
-			Z_Xdir = -1;				/* left */
+		case 6:							/* left */
+			Z_Xdir = -1;
 			Z_Ydir = 0;
 			break;
 
-		case 7:
-			Z_Xdir = -1;				/* up & left */
-			Z_Ydir = -1;
-			break;
-
-		default:
-			Z_Xdir = 1;					/* unknown - go with case 1 */
+		case 7:							/* up & left */
+			Z_Xdir = -1;
 			Z_Ydir = -1;
 			break;
 	}
@@ -836,15 +788,9 @@ main (int argc, char *argv[])
 				tempf = 1.0;
 				/* dot products of all referenced faces */
 				for (j = 0; j < edge_extra[i].num_face_ref - 1; j = j + 2) {
-					/* dot product */
-
 					tempf =
-						tempf * (edge_extra[i].ref_faces_normal[j].X *
-								 edge_extra[i].ref_faces_normal[j + 1].X +
-								 edge_extra[i].ref_faces_normal[j].Y *
-								 edge_extra[i].ref_faces_normal[j + 1].Y +
-								 edge_extra[i].ref_faces_normal[j].Z *
-								 edge_extra[i].ref_faces_normal[j + 1].Z);
+						tempf * (DOT (edge_extra[i].ref_faces_normal[j],
+									  edge_extra[i].ref_faces_normal[j + 1]));
 
 					/* What is the smallest area this edge references? */
 					if (usearea > edge_extra[i].ref_faces_area[j])
@@ -859,44 +805,23 @@ main (int argc, char *argv[])
 			tempf = 0.0;
 		}
 
-		if ((abs (tempf) < options.flat_threshold) &&
-			(usearea > options.area_threshold) &&
-			(sqrt
-			 ((vertexlist[edgelist[i].v[0]].X -
-			   vertexlist[edgelist[i].v[1]].X) *
-			  (vertexlist[edgelist[i].v[0]].X -
-			   vertexlist[edgelist[i].v[1]].X) +
-			  (vertexlist[edgelist[i].v[0]].Y -
-			   vertexlist[edgelist[i].v[1]].Y) *
-			  (vertexlist[edgelist[i].v[0]].Y -
-			   vertexlist[edgelist[i].v[1]].Y) +
-			  (vertexlist[edgelist[i].v[0]].Z -
-			   vertexlist[edgelist[i].v[1]].Z) *
-			  (vertexlist[edgelist[i].v[0]].Z -
-			   vertexlist[edgelist[i].v[1]].Z)) >
-			 options.linelen_threshold)) {
-			Zoffset0 =
-				(long) (options.z_pad *
-						(vertexlist[edgelist[i].v[0]].Z - midZ) / (maxZ -
-																	  minZ));
-			Zoffset1 =
-				(long) (options.z_pad *
-						(vertexlist[edgelist[i].v[1]].Z - midZ) / (maxZ -
-																	  minZ));
+		vert1 = &vertexlist[edgelist[i].v[0]];
+		vert2 = &vertexlist[edgelist[i].v[1]];
+		SUB (*vert1, *vert2, vect);
+		if (abs (tempf) < options.flat_threshold
+			&& usearea > options.area_threshold
+			&& sqrt (DOT (vect, vect)) > options.linelen_threshold) {
+			float       offs0, offs1;
+			Zoffset0 = (options.z_pad * (vert1->Z - midZ) / (maxZ - minZ));
+			Zoffset1 = (options.z_pad * (vert2->Z - midZ) / (maxZ - minZ));
 
-			bresline (image,
-					  (long) ((vertexlist[edgelist[i].v[0]].X -
-							   minX) / options.scaledown + options.image_pad +
-							  options.z_pad + (float) (Zoffset0 * Z_Xdir)),
-					  (long) ((vertexlist[edgelist[i].v[0]].Y -
-							   minY) / options.scaledown + options.image_pad +
-							  options.z_pad + (float) (Zoffset0 * Z_Ydir)),
-					  (long) ((vertexlist[edgelist[i].v[1]].X -
-							   minX) / options.scaledown + options.image_pad +
-							  options.z_pad + (float) (Zoffset1 * Z_Xdir)),
-					  (long) ((vertexlist[edgelist[i].v[1]].Y -
-							   minY) / options.scaledown + options.image_pad +
-							  options.z_pad + (float) (Zoffset1 * Z_Ydir)),
+			offs0 = options.image_pad + options.z_pad + (Zoffset0 * Z_Xdir);
+			offs1 = options.image_pad + options.z_pad + (Zoffset1 * Z_Xdir);
+
+			bresline (image, (vert1->X - minX) / options.scaledown + offs0,
+							 (vert1->Y - minY) / options.scaledown + offs0,
+							 (vert2->X - minX) / options.scaledown + offs1,
+							 (vert2->Y - minY) / options.scaledown + offs1,
 					  drawcol);
 		} else {
 			k++;
@@ -942,6 +867,40 @@ main (int argc, char *argv[])
 			}
 		}
 	}
+	if (options.edgeremove) {
+		free (edge_extra);
+	}
+	return image;
+}
+
+int
+main (int argc, char *argv[])
+{
+	QFile      *bspfile;
+	QFile      *outfile;
+	bsp_t      *bsp;
+	image_t    *image;
+
+	/* Enough args? */
+	if (argc < 3) {
+		show_help ();
+		return 1;
+	}
+
+	/* Setup options */
+	def_options (&options);
+	get_options (&options, argc, argv);
+	show_options (&options);
+
+	bspfile = Qopen (options.bspf_name, "rbz");
+	if (bspfile == NULL) {
+		fprintf (stderr, "Error opening bsp file %s.\n", options.bspf_name);
+		return 1;
+	}
+	bsp = LoadBSPFile (bspfile, Qfilesize (bspfile));
+	Qclose (bspfile);
+
+	image = render_map (bsp);
 
 	/* Write image */
 
@@ -984,21 +943,6 @@ main (int argc, char *argv[])
 
 	free (image->image);
 	free (image);
-	if (options.edgeremove) {
-		free (edge_extra);
-	}
-
-	if (options.write_raw) {
-		printf ("\nIf you want to:\n"
-				"  convert -verbose -colors 256 -size %ldx%ld gray:%s map.jpg\n"
-				"(this is using ImageMagick's convert)\n",
-				image->width, image->height, options.outf_name);
-	} else {
-		printf ("\nIf you want to:\n"
-				"  convert -verbose -colors 256 pcx:%s map.jpg\n"
-				"(this is using ImageMagick's convert)\n",
-				options.outf_name);
-	}
 
 	return 0;
 }
