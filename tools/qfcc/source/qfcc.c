@@ -653,6 +653,7 @@ PR_FinishCompilation (void)
 						abort();
 				}
 			}
+			def->ofs += numpr_globals;
 		}
 	}
 	numpr_globals += num_locals;
