@@ -44,6 +44,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <sys/time.h>
 #include <time.h>
 	
+#include "QF/cbuf.h"
 #include "QF/console.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -85,6 +86,7 @@ static void CL_TimeFrames_DumpLog (void);
 
 cvar_t     *demo_speed;
 cvar_t     *demo_gzip;
+cvar_t     *demo_quit;
 
 /*
 	DEMO CODE
@@ -1000,6 +1002,8 @@ CL_FinishTimeDemo (void)
 		}
 		free (timedemo_data);
 		timedemo_data = 0;
+		if (demo_quit->int_val)
+			Cbuf_InsertText (cl_cbuf, "quit\n");
 	}
 }
 
@@ -1046,6 +1050,8 @@ CL_Demo_Init (void)
 	demo_speed = Cvar_Get ("demo_speed", "1.0", CVAR_NONE, NULL,
 						   "adjust demo playback speed. 1.0 = normal, "
 						   "< 1 slow-mo, > 1 timelapse");
+	demo_quit = Cvar_Get ("demo_quit", "0", CVAR_NONE, NULL,
+						  "automaticly quit after a timedemo has finished");
 }
 
 void
