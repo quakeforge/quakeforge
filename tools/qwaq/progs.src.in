@@ -1,0 +1,7 @@
+qwaq.dat
+
+@srcdir@/defs.qc
+
+@top_srcdir@/cs-code/object.r
+@srcdir@/test.r
+@srcdir@/main.qc

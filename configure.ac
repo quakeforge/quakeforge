@@ -1950,6 +1950,8 @@ AC_OUTPUT(
 	tools/qfprogs/Makefile
 	tools/qfprogs/include/Makefile
 	tools/qfprogs/source/Makefile
+	tools/qwaq/Makefile
+	tools/qwaq/progs.src
 
 	cs-code/Makefile
 	cs-code/menu.src
