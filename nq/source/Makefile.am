@@ -66,7 +66,7 @@ client_LIBFILES= \
 		$(top_builddir)/libs/gib/libQFgib.la \
 		$(top_builddir)/libs/video/targets/libQFjs.la
 
-client_LIBS=	$(client_LIBFILES) libasm.la libqfnet.la $(NET_LIBS)
+client_LIBS=	$(client_LIBFILES) $(top_builddir)/nq/source/.libs/libasm.al libqfnet.la $(NET_LIBS)
 client_LIB_DEPS=$(client_LIBFILES) libasm.la libqfnet.la
 
 client_SOURCES=	cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_screen.c \
@@ -210,7 +210,7 @@ nq_wgl_DEPENDENCIES=	$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
 ded_SOURCES=	sys_unixd.c sv_ded.c
 
 nq_server_SOURCES=	$(common_SOURCES) $(server_SOURCES) $(ded_SOURCES)
-nq_server_LDADD=	libqfnet.la libasm.la
+nq_server_LDADD=	libqfnet.la $(top_builddir)/nq/source/.libs/libasm.al
 nq_server_DEPENDENCIES=	libqfnet.la libasm.la
 
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,
