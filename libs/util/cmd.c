@@ -867,8 +867,8 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 	// check alias
 	a = (cmdalias_t*)Hash_Find (cmd_alias_hash, cmd_argv[0]);
 	if (a) {
-		Cbuf_InsertText (a->value);
 		Cbuf_InsertText ("\n");
+		Cbuf_InsertText (a->value);
 		return;
 	}
 
