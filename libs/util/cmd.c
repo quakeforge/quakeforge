@@ -792,7 +792,6 @@ typedef struct cmd_function_s {
 	const char *name;
 	xcommand_t  function;
 	const char *description;
-	void *data;
 	qboolean pure;
 } cmd_function_t;
 
