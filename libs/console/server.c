@@ -55,6 +55,7 @@ static const char rcsid[] =
 #include <signal.h>
 #include <stdlib.h>
 
+#include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -66,6 +67,7 @@ static const char rcsid[] =
 
 #include "compat.h"
 
+static console_data_t con_data;
 
 #ifdef HAVE_CURSES_H
 static int use_curses = 1;
@@ -115,7 +117,7 @@ C_ExecLine (const char *line)
 {
 	if (line[0] == '/')
 		line++;
-	Cbuf_AddText (line);
+	Cbuf_AddText (con_data.cbuf, line);
 }
 
 static inline void
@@ -410,7 +412,7 @@ C_ProcessInput (void)
 			const char *cmd = Sys_ConsoleInput ();
 			if (!cmd)
 				break;
-			Cbuf_AddText (cmd);
+			Cbuf_AddText (con_data.cbuf, cmd);
 		}
 }
 
@@ -448,7 +450,6 @@ static console_funcs_t plugin_info_console_funcs = {
 	C_CheckResize,
 	C_NewMap,
 };
-static console_data_t plugin_info_console_data;
 
 static plugin_funcs_t plugin_info_funcs = {
 	&plugin_info_general_funcs,
@@ -461,7 +462,7 @@ static plugin_data_t plugin_info_data = {
 	&plugin_info_general_data,
 	0,
 	0,
-	&plugin_info_console_data,
+	&con_data,
 };
 
 static plugin_t plugin_info = {

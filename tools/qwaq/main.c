@@ -66,7 +66,6 @@ main ()
 	SYS_CHECKMEM (membase);
 	Memory_Init (membase, memsize);
 	Cvar_Init ();
-	Cbuf_Init ();
 	Cmd_Init ();
 
 	Cvar_Get ("pr_debug", "1", 0, 0, 0);

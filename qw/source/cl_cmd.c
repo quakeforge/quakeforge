@@ -37,8 +37,9 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "QF/console.h"
+#include "QF/cbuf.h"
 #include "QF/cmd.h"
+#include "QF/console.h"
 #include "QF/msg.h"
 #include "QF/teamplay.h"
 
@@ -46,14 +47,14 @@ static const char rcsid[] =
 
 
 /*
-	Cmd_ForwardToServer
+	CL_Cmd_ForwardToServer
 
 	adds the current command line as a clc_stringcmd to the client message.
 	things like godmode, noclip, etc, are commands directed to the server,
 	so when they are typed in at the console, they will need to be forwarded.
 */
 void
-Cmd_ForwardToServer (void)
+CL_Cmd_ForwardToServer (void)
 {
 	if (cls.state == ca_disconnected) {
 		Con_Printf ("Can't \"%s\", not connected\n", Cmd_Argv (0));
@@ -91,7 +92,7 @@ Cmd_ForwardToServer (void)
 
 // don't forward the first argument
 void
-Cmd_ForwardToServer_f (void)
+CL_Cmd_ForwardToServer_f (void)
 {
 	if (cls.state == ca_disconnected) {
 		Con_Printf ("Can't \"%s\", not connected\n", Cmd_Argv (0));
@@ -99,7 +100,7 @@ Cmd_ForwardToServer_f (void)
 	}
 
 	if (strcasecmp (Cmd_Argv (1), "snap") == 0) {
-		Cbuf_InsertText ("snap\n");
+		Cbuf_InsertText (cl_cbuf, "snap\n");
 		return;
 	}
 
@@ -113,10 +114,10 @@ Cmd_ForwardToServer_f (void)
 }
 
 void
-cl_Cmd_Init (void)
+CL_Cmd_Init (void)
 {
 	// register our commands
-	Cmd_AddCommand ("cmd", Cmd_ForwardToServer_f, "Send a command to the "
+	Cmd_AddCommand ("cmd", CL_Cmd_ForwardToServer_f, "Send a command to the "
 					"server.\n"
 					"Commands:\n"
 					"download - Same as the command.\n"

@@ -80,7 +80,7 @@ CL_UpdateScreen (double realtime)
 }
 
 void
-Cmd_ForwardToServer (void)
+CL_Cmd_ForwardToServer (void)
 {
 }
 

@@ -165,7 +165,6 @@ init_qf (void)
 	Cmd_Init_Hash ();
 	Cvar_Init ();
 	Sys_Init_Cvars ();
-	Cbuf_Init ();
 	Cmd_Init ();
 
 	membase = malloc (memsize);

@@ -37,6 +37,7 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
+#include "QF/cbuf.h"
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
@@ -773,7 +774,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_stufftext:
-				Cbuf_AddTextTo (cmd_legacybuffer, MSG_ReadString (net_message));
+				Cbuf_AddText (host_cbuf, MSG_ReadString (net_message));
 				break;
 
 			case svc_damage:

@@ -37,6 +37,7 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
+#include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -45,6 +46,8 @@ static const char rcsid[] =
 #include "QF/sizebuf.h"
 #include "QF/sys.h"
 #include "QF/vfile.h"
+
+#include "host.h"
 #include "net.h"
 #include "net_vcr.h"
 #include "server.h"
@@ -246,10 +249,10 @@ MaxPlayers_f (void)
 	}
 
 	if ((n == 1) && listening)
-		Cbuf_AddText ("listen 0\n");
+		Cbuf_AddText (host_cbuf, "listen 0\n");
 
 	if ((n > 1) && (!listening))
-		Cbuf_AddText ("listen 1\n");
+		Cbuf_AddText (host_cbuf, "listen 1\n");
 
 	svs.maxclients = n;
 	if (n == 1)
@@ -280,8 +283,8 @@ NET_Port_f (void)
 
 	if (listening) {
 		// force a change to the new port
-		Cbuf_AddText ("listen 0\n");
-		Cbuf_AddText ("listen 1\n");
+		Cbuf_AddText (host_cbuf, "listen 0\n");
+		Cbuf_AddText (host_cbuf, "listen 1\n");
 	}
 }
 

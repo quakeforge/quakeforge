@@ -31,6 +31,7 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 
+#include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -356,7 +357,7 @@ CL_NextDemo (void)
 	}
 
 	snprintf (str, sizeof (str), "playdemo %s\n", cls.demos[cls.demonum]);
-	Cbuf_InsertText (str);
+	Cbuf_InsertText (host_cbuf, str);
 	cls.demonum++;
 }
 

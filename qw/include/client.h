@@ -338,6 +338,8 @@ extern char	*server_version;	// version of server we connected to
 
 extern	double		realtime;
 
+extern struct cbuf_s *cl_cbuf;
+
 
 void Cvar_Info (struct cvar_s *var);
 
@@ -349,6 +351,9 @@ void CL_SetState (cactive_t state);
 void V_ParseDamage (void);
 
 void V_PrepBlend (void);
+
+void CL_Cmd_ForwardToServer (void);
+void CL_Cmd_Init (void);
 
 #define RSSHOT_WIDTH 320
 #define RSSHOT_HEIGHT 200

@@ -37,6 +37,7 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
+#include "QF/cbuf.h"
 #include "QF/clip_hull.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -631,7 +632,7 @@ PF_localcmd (progs_t *pr)
 	const char       *str;
 
 	str = P_STRING (pr, 0);
-	Cbuf_AddText (str);
+	Cbuf_AddText (host_cbuf, str);
 }
 
 /*
@@ -1167,7 +1168,7 @@ PF_changelevel (progs_t *pr)
 	svs.changelevel_issued = true;
 
 	s = P_STRING (pr, 0);
-	Cbuf_AddText (va ("changelevel %s\n", s));
+	Cbuf_AddText (host_cbuf, va ("changelevel %s\n", s));
 }
 
 

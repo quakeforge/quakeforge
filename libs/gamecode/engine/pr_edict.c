@@ -39,7 +39,7 @@ static const char rcsid[] =
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "QF/cmd.h"
+#include "QF/cbuf.h"
 #include "QF/crc.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
@@ -785,6 +785,7 @@ ED_ParseEdict (progs_t * pr, const char *data, edict_t *ent)
 	qboolean    anglehack;
 	qboolean    init;
 	char        keyname[256];
+	const char *token;
 	int         n;
 
 	init = false;
@@ -802,19 +803,19 @@ ED_ParseEdict (progs_t * pr, const char *data, edict_t *ent)
 		if (!data)
 			PR_Error (pr, "ED_ParseEntity: EOF without closing brace");
 
+		token = com_token;
 		// anglehack is to allow QuakeEd to write single scalar angles
 		// and allow them to be turned into vectors. (FIXME...)
-		if (!strcmp (com_token, "angle")) {
-			strcpy (com_token, "angles");
+		if (!strcmp (token, "angle")) {
+			token = "angles";
 			anglehack = true;
 		} else
 			anglehack = false;
 
-		// FIXME: change light to _light to get rid of this hack
-		if (!strcmp (com_token, "light"))
-			strcpy (com_token, "light_lev");	// hack for single light def
+		if (!strcmp (token, "light"))
+			token = "light_lev";	// hack for single light def
 
-		strcpy (keyname, com_token);
+		strcpy (keyname, token);
 
 		// another hack to fix heynames with trailing spaces
 		n = strlen (keyname);

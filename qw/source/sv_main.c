@@ -66,6 +66,7 @@ static const char rcsid[] =
 # undef model_t         // allow qf to use it's model_t
 #endif
 
+#include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -95,6 +96,9 @@ SERVER_PLUGIN_PROTOS
 static plugin_list_t server_plugin_list[] = {
 		SERVER_PLUGIN_LIST
 };
+
+cbuf_t     *sv_cbuf;
+cbuf_args_t *sv_args;
 
 client_t   *host_client;				// current client
 client_static_t cls;					//FIXME needed by netchan :/
@@ -531,7 +535,6 @@ SVC_Status (void)
 		return;
 
 	con_printf_no_log = 1;
-	Cmd_TokenizeString ("status", true);
 	SV_BeginRedirect (RD_PACKET);
 	SV_Printf ("%s\n", Info_MakeString (svs.info, 0));
 	for (i = 0; i < MAX_CLIENTS; i++) {
@@ -1044,9 +1047,10 @@ SV_ConnectionlessPacket (void)
 
 	s = MSG_ReadString (net_message);
 
-	Cmd_TokenizeString (s, true);
+	COM_TokenizeString (s, sv_args);
+	cmd_args = sv_args;
 
-	c = Cmd_Argv (0);
+	c = sv_args->argv[0]->str;
 
 	if (!strcmp (c, "ping")
 		|| (c[0] == A2A_PING && (c[1] == 0 || c[1] == '\n'))) {
@@ -1908,7 +1912,7 @@ SV_Frame (float time)
 	SV_GetConsoleCommands ();
 
 	// process console commands
-	Cbuf_Execute ();
+	Cbuf_Execute (sv_cbuf);
 
 	SV_CheckVars ();
 
@@ -2401,6 +2405,9 @@ SV_Init (void)
 //	COM_AddParm ("-game");
 //	COM_AddParm ("qw");
 
+	sv_cbuf = Cbuf_New ();
+	sv_args = Cbuf_ArgsNew ();
+
 	Sys_RegisterShutdown (SV_Shutdown);
 
 	Cvar_Init_Hash ();
@@ -2410,12 +2417,11 @@ SV_Init (void)
 
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
 
-	Cbuf_Init ();
 	Cmd_Init ();
 
 	// execute +set as early as possible
-	Cmd_StuffCmds_f ();
-	Cbuf_Execute_Sets ();
+	Cmd_StuffCmds (sv_cbuf);
+	Cbuf_Execute_Sets (sv_cbuf);
 
 	// execute the global configuration file if it exists
 	// would have been nice if Cmd_Exec_f could have been used, but it
@@ -2424,20 +2430,20 @@ SV_Init (void)
 	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG,
 							 CVAR_ROM, 0, "global configuration file");
 	Cmd_Exec_File (fs_globalcfg->string);
-	Cbuf_Execute_Sets ();
+	Cbuf_Execute_Sets (sv_cbuf);
 
 	// execute +set again to override the config file
-	Cmd_StuffCmds_f ();
-	Cbuf_Execute_Sets ();
+	Cmd_StuffCmds (sv_cbuf);
+	Cbuf_Execute_Sets (sv_cbuf);
 
 	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG,
 						   CVAR_ROM, 0, "user configuration file");
 	Cmd_Exec_File (fs_usercfg->string);
-	Cbuf_Execute_Sets ();
+	Cbuf_Execute_Sets (sv_cbuf);
 
 	// execute +set again to override the config file
-	Cmd_StuffCmds_f ();
-	Cbuf_Execute_Sets ();
+	Cmd_StuffCmds (sv_cbuf);
+	Cbuf_Execute_Sets (sv_cbuf);
 
 	SV_Init_Memory ();
 
@@ -2452,6 +2458,8 @@ SV_Init (void)
 								  CVAR_ROM, 0, "Plugin used for the console");
 	PI_RegisterPlugins (server_plugin_list);
 	Con_Init (sv_console_plugin->string);
+	if (con_module)
+		con_module->data->console->cbuf = sv_cbuf;
 	Sys_SetStdPrintf (SV_Print);
 	Sys_SetErrPrintf (SV_Error);
 
@@ -2465,8 +2473,8 @@ SV_Init (void)
 	PR_Init_Cvars ();
 
 	// and now reprocess the cmdline's sets for overrides
-	Cmd_StuffCmds_f ();
-	Cbuf_Execute_Sets ();
+	Cmd_StuffCmds (sv_cbuf);
+	Cbuf_Execute_Sets (sv_cbuf);
 
 	COM_Filesystem_Init ();
 	Game_Init ();
@@ -2484,7 +2492,7 @@ SV_Init (void)
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();
 
-	Cbuf_InsertText ("exec server.cfg\n");
+	Cbuf_InsertText (sv_cbuf, "exec server.cfg\n");
 
 	host_initialized = true;
 
@@ -2500,8 +2508,8 @@ SV_Init (void)
 
 	// process command line arguments
 	Cmd_Exec_File (fs_usercfg->string);
-	Cmd_StuffCmds_f ();
-	Cbuf_Execute ();
+	Cmd_StuffCmds (sv_cbuf);
+	Cbuf_Execute (sv_cbuf);
 
 	// if a map wasn't specified on the command line, spawn start.map
 	if (sv.state == ss_dead)

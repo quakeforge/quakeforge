@@ -58,6 +58,7 @@ typedef struct console_data_s {
 	int					force_commandline;
 	int					ormask;
 	void				(*quit)(void);
+	struct cbuf_s		*cbuf;
 } console_data_t;
 
 #endif // __QF_plugin_console_h_

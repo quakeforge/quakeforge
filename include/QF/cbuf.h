@@ -32,6 +32,8 @@
 #ifndef __QF_cbuf_h
 #define __QF_cbuf_h
 
+#include "QF/qtypes.h"
+
 typedef struct cbuf_args_s {
 	int         argc;
 	struct dstring_s **argv;
@@ -45,7 +47,18 @@ typedef struct cbuf_s {
 	cbuf_args_t *args;
 	void        (*extract_line) (struct cbuf_s *cbuf);
 	void        (*parse_line) (struct cbuf_s *cbuf);
+	qboolean    wait;
 } cbuf_t;
+
+extern cbuf_t *cbuf_active;
+
+extern const char *com_token;
+const char *COM_Parse (const char *data);
+void COM_TokenizeString (const char *str, cbuf_args_t *args);
+
+cbuf_args_t *Cbuf_ArgsNew (void);
+void Cbuf_ArgsDelete (cbuf_args_t *);
+void Cbuf_ArgsAdd (cbuf_args_t *args, const char *arg);
 
 cbuf_t *Cbuf_New (void);
 void CBuf_Delete (cbuf_t *cbuf);

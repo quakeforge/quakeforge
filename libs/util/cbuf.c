@@ -43,6 +43,7 @@ static const char rcsid[] =
 #include <stdlib.h>
 
 #include "QF/cbuf.h"
+#include "QF/cmd.h"
 #include "QF/dstring.h"
 #include "QF/qtypes.h"
 
@@ -50,6 +51,7 @@ static const char rcsid[] =
 
 static dstring_t *_com_token;
 const char *com_token;
+cbuf_t     *cbuf_active;
 
 cbuf_args_t *
 Cbuf_ArgsNew (void)
@@ -184,7 +186,7 @@ extract_line (cbuf_t *cbuf)
 			if (text[i] == '/' && text[i + 1] == '/') {
 				int         j = i;
 				while (j < len && text[j] != '\n' && text[j] != '\r')
-					i++;
+					j++;
 				dstring_snip (cbuf->buf, i, j - i);
 				len -= j - i;
 			}
@@ -248,25 +250,33 @@ Cbuf_InsertText (cbuf_t *cbuf, const char *text)
 void
 Cbuf_Execute (cbuf_t *cbuf)
 {
+	cbuf_args_t *args = cbuf->args;
+
+	cbuf_active = cbuf;
 	while (cbuf->buf->str[0]) {
 		cbuf->extract_line (cbuf);
 		cbuf->parse_line (cbuf);
-		if (!cbuf->args->argc)
+		if (!args->argc)
 			continue;
-		Cmd_ExecCmd (cbuf->args);
+		Cmd_Command (args);
+		if (cbuf->wait)
+			break;
 	}
 }
 
 void
 Cbuf_Execute_Sets (cbuf_t *cbuf)
 {
+	cbuf_args_t *args = cbuf->args;
+
+	cbuf_active = cbuf;
 	while (cbuf->buf->str[0]) {
 		cbuf->extract_line (cbuf);
 		cbuf->parse_line (cbuf);
-		if (!cbuf->args->argc)
+		if (!args->argc)
 			continue;
-		if (strequal (cbuf->args->argv[0]->str, "set")
-			|| strequal (cbuf->args->argv[0]->str, "setrom"))
-			Cmd_ExecCmd (cbuf);
+		if (strequal (args->argv[0]->str, "set")
+			|| strequal (args->argv[0]->str, "setrom"))
+			Cmd_Command (args);
 	}
 }

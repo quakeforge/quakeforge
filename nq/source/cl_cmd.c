@@ -46,12 +46,12 @@ static const char rcsid[] =
 
 
 /*
-	Cmd_ForwardToServer
+	CL_Cmd_ForwardToServer
 
 	Sends the entire command line over to the server
 */
 void
-Cmd_ForwardToServer (void)
+CL_Cmd_ForwardToServer (void)
 {
 	if (cls.state != ca_connected) {
 		Con_Printf ("Can't \"%s\", not connected\n", Cmd_Argv (0));
@@ -76,7 +76,7 @@ void
 cl_Cmd_Init (void)
 {
 	// register our commands
-	Cmd_AddCommand ("cmd", Cmd_ForwardToServer, "Send a command to the "
+	Cmd_AddCommand ("cmd", CL_Cmd_ForwardToServer, "Send a command to the "
 					"server.\n"
 					"Commands:\n"
 					"download - Same as the command.\n"

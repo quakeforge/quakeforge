@@ -31,6 +31,7 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 
+#include "QF/cbuf.h"
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
@@ -77,6 +78,8 @@ qboolean	msg_suppress_1 = 0;
 qboolean	host_initialized;			// true if into command execution
 
 quakeparms_t host_parms;
+
+cbuf_t     *host_cbuf;
 
 double		host_frametime;
 double		host_time;
@@ -599,7 +602,8 @@ _Host_Frame (float time)
 	}
 
 	// process console commands
-	Cbuf_Execute ();
+	cmd_source = src_command;
+	Cbuf_Execute (host_cbuf);
 
 	NET_Poll ();
 
@@ -843,17 +847,19 @@ Host_Init (void)
 {
 	Con_Printf ("Host_Init\n");
 
+	host_cbuf = Cbuf_New ();
+	cmd_source = src_command;
+
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
 	Cvar_Init ();
 	Sys_Init_Cvars ();
 
-	Cbuf_Init ();
 	Cmd_Init ();
 
 	// execute +set as early as possible
-	Cmd_StuffCmds_f ();
-	Cbuf_Execute_Sets ();
+	Cmd_StuffCmds (host_cbuf);
+	Cbuf_Execute_Sets (host_cbuf);
 
 	// execute the global configuration file if it exists
 	// would have been nice if Cmd_Exec_f could have been used, but it
@@ -862,20 +868,20 @@ Host_Init (void)
 	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG,
 							 CVAR_ROM, NULL, "global configuration file");
 	Cmd_Exec_File (fs_globalcfg->string);
-	Cbuf_Execute_Sets ();
+	Cbuf_Execute_Sets (host_cbuf);
 
 	// execute +set again to override the config file
-	Cmd_StuffCmds_f ();
-	Cbuf_Execute_Sets ();
+	Cmd_StuffCmds (host_cbuf);
+	Cbuf_Execute_Sets (host_cbuf);
 
 	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG, CVAR_ROM, NULL,
 						   "user configuration file");
 	Cmd_Exec_File (fs_usercfg->string);
-	Cbuf_Execute_Sets ();
+	Cbuf_Execute_Sets (host_cbuf);
 
 	// execute +set again to override the config file
-	Cmd_StuffCmds_f ();
-	Cbuf_Execute_Sets ();
+	Cmd_StuffCmds (host_cbuf);
+	Cbuf_Execute_Sets (host_cbuf);
 
 	CL_Init_Memory ();
 
@@ -915,6 +921,7 @@ Host_Init (void)
 	if (con_module) {
 		con_module->data->console->realtime = &realtime;
 		con_module->data->console->quit = Host_Quit_f;
+		con_module->data->console->cbuf = host_cbuf;
 	}
 
 	Host_InitVCR (&host_parms);
@@ -958,12 +965,12 @@ Host_Init (void)
 	Host_Skin_Init ();
 
 	if (!isDedicated && cl_quakerc->int_val)
-		Cbuf_InsertText ("exec quake.rc\n");
+		Cbuf_InsertText (host_cbuf, "exec quake.rc\n");
 	Cmd_Exec_File (fs_usercfg->string);
 	// reparse the command line for + commands other than set
 	// (sets still done, but it doesn't matter)
 	if (isDedicated || (cl_quakerc->int_val && check_quakerc ()))
-		Cmd_StuffCmds_f ();
+		Cmd_StuffCmds (host_cbuf);
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();

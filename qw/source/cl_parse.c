@@ -43,6 +43,7 @@ static const char rcsid[] =
 # include <unistd.h>
 #endif
 
+#include "QF/cbuf.h"
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
@@ -629,14 +630,14 @@ CL_ParseServerData (void)
 	if (cflag) {
 		int         cmd_warncmd_val = cmd_warncmd->int_val;
 
-		Cbuf_AddText ("cmd_warncmd 0\n");
-		Cbuf_AddText ("exec config.cfg\n");
-		Cbuf_AddText ("exec frontend.cfg\n");
+		Cbuf_AddText (cl_cbuf, "cmd_warncmd 0\n");
+		Cbuf_AddText (cl_cbuf, "exec config.cfg\n");
+		Cbuf_AddText (cl_cbuf, "exec frontend.cfg\n");
 		if (cl_autoexec->int_val) {
-			Cbuf_AddText ("exec autoexec.cfg\n");
+			Cbuf_AddText (cl_cbuf, "exec autoexec.cfg\n");
 		}
 		snprintf (fn, sizeof (fn), "cmd_warncmd %d\n", cmd_warncmd_val);
-		Cbuf_AddText (fn);
+		Cbuf_AddText (cl_cbuf, fn);
 	}
 	// parse player slot, high bit means spectator
 	cl.playernum = MSG_ReadByte (net_message);
@@ -1187,12 +1188,12 @@ CL_ParseServerMessage (void)
 				if (s[strlen (s) - 1] == '\n') {
 					if (stuffbuf && stuffbuf->str[0]) {
 						Con_DPrintf ("stufftext: %s%s\n", stuffbuf->str, s);
-						Cbuf_AddTextTo (cmd_legacybuffer, stuffbuf->str);
+						Cbuf_AddText (cl_cbuf, stuffbuf->str);
 						dstring_clearstr (stuffbuf);
 					} else {
 						Con_DPrintf ("stufftext: %s\n", s);
 					}
-					Cbuf_AddTextTo (cmd_legacybuffer, s);
+					Cbuf_AddText (cl_cbuf, s);
 				} else {
 					Con_DPrintf ("partial stufftext: %s\n", s);
 					if (!stuffbuf)
@@ -1206,7 +1207,8 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_serverdata:
-				Cbuf_Execute ();	// make sure any stuffed commands are done
+				// make sure any stuffed commands are done
+				Cbuf_Execute (cl_cbuf);
 				CL_ParseServerData ();
 				vid.recalc_refdef = true;	// leave full screen intermission
 				break;

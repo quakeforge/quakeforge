@@ -31,8 +31,8 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 
+#include "QF/cbuf.h"
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/cvar.h"
 #include "QF/va.h"
 #include "QF/screen.h"
@@ -43,6 +43,7 @@ static const char rcsid[] =
 #include "QF/sys.h"
 
 #include "client.h"
+#include "compat.h"
 #include "host.h"
 #include "server.h"
 #include "sv_progs.h"
@@ -80,7 +81,7 @@ Host_Status_f (void)
 
 	if (cmd_source == src_command) {
 		if (!sv.active) {
-			Cmd_ForwardToServer ();
+			CL_Cmd_ForwardToServer ();
 			return;
 		}
 		print = Con_Printf;
@@ -124,7 +125,7 @@ void
 Host_God_f (void)
 {
 	if (cmd_source == src_command) {
-		Cmd_ForwardToServer ();
+		CL_Cmd_ForwardToServer ();
 		return;
 	}
 
@@ -142,7 +143,7 @@ void
 Host_Notarget_f (void)
 {
 	if (cmd_source == src_command) {
-		Cmd_ForwardToServer ();
+		CL_Cmd_ForwardToServer ();
 		return;
 	}
 
@@ -163,7 +164,7 @@ void
 Host_Noclip_f (void)
 {
 	if (cmd_source == src_command) {
-		Cmd_ForwardToServer ();
+		CL_Cmd_ForwardToServer ();
 		return;
 	}
 
@@ -190,7 +191,7 @@ void
 Host_Fly_f (void)
 {
 	if (cmd_source == src_command) {
-		Cmd_ForwardToServer ();
+		CL_Cmd_ForwardToServer ();
 		return;
 	}
 
@@ -214,7 +215,7 @@ Host_Ping_f (void)
 	client_t   *client;
 
 	if (cmd_source == src_command) {
-		Cmd_ForwardToServer ();
+		CL_Cmd_ForwardToServer ();
 		return;
 	}
 
@@ -631,7 +632,7 @@ Host_Name_f (void)
 			return;
 		Cvar_Set (cl_name, va ("%.15s", newName));
 		if (cls.state == ca_connected)
-			Cmd_ForwardToServer ();
+			CL_Cmd_ForwardToServer ();
 		return;
 	}
 
@@ -670,7 +671,7 @@ Host_Say (qboolean teamonly)
 			fromServer = true;
 			teamonly = false;
 		} else {
-			Cmd_ForwardToServer ();
+			CL_Cmd_ForwardToServer ();
 			return;
 		}
 	}
@@ -736,7 +737,7 @@ Host_Tell_f (void)
 	char        text[64];
 
 	if (cmd_source == src_command) {
-		Cmd_ForwardToServer ();
+		CL_Cmd_ForwardToServer ();
 		return;
 	}
 
@@ -779,7 +780,7 @@ void
 Host_Kill_f (void)
 {
 	if (cmd_source == src_command) {
-		Cmd_ForwardToServer ();
+		CL_Cmd_ForwardToServer ();
 		return;
 	}
 
@@ -798,7 +799,7 @@ Host_Pause_f (void)
 {
 
 	if (cmd_source == src_command) {
-		Cmd_ForwardToServer ();
+		CL_Cmd_ForwardToServer ();
 		return;
 	}
 	if (!pausable->int_val)
@@ -979,7 +980,7 @@ Host_Kick_f (void)
 
 	if (cmd_source == src_command) {
 		if (!sv.active) {
-			Cmd_ForwardToServer ();
+			CL_Cmd_ForwardToServer ();
 			return;
 		}
 	}
@@ -1051,7 +1052,7 @@ Host_Give_f (void)
 	int         v;
 
 	if (cmd_source == src_command) {
-		Cmd_ForwardToServer ();
+		CL_Cmd_ForwardToServer ();
 		return;
 	}
 
@@ -1274,7 +1275,7 @@ Host_Startdemos_f (void)
 
 	if (cls.state == ca_dedicated) {
 		if (!sv.active)
-			Cbuf_AddText ("map start\n");
+			Cbuf_AddText (host_cbuf, "map start\n");
 		return;
 	}
 

@@ -380,7 +380,7 @@ extern imt_t		game_target;
 
 extern struct keybind_s {
 	char *str;
-	qboolean restricted;
+	struct cbuf_s *cbuf;
 } keybindings[IMT_LAST][QFK_LAST];
 extern int		keydown[QFK_LAST];
 
@@ -390,7 +390,7 @@ void Key_Init_Cvars (void);
 void Key_WriteBindings (VFile *f);
 void Key_ClearStates (void);
 const char *Key_GetBinding (imt_t imt, knum_t key);
-void Key_SetBinding (imt_t target, knum_t keynum, const char *binding, qboolean restricted);
+void Key_SetBinding (imt_t target, knum_t keynum, const char *binding);
 
 
 const char *Key_KeynumToString (knum_t keynum);

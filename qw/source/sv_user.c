@@ -42,10 +42,12 @@ static const char rcsid[] =
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "QF/cbuf.h"
 #include "QF/checksum.h"
 #include "QF/clip_hull.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/msg.h"
 #include "QF/sys.h"
@@ -1291,14 +1293,15 @@ SV_ExecuteUserCommand (const char *s)
 {
 	ucmd_t     *u;
 
-	Cmd_TokenizeString (s, true);
+	COM_TokenizeString (s, sv_args);
+	cmd_args = sv_args;
 	sv_player = host_client->edict;
 
-	u = (ucmd_t*) Hash_Find (ucmd_table, Cmd_Argv(0));
+	u = (ucmd_t*) Hash_Find (ucmd_table, sv_args->argv[0]->str);
 
 	if (!u) {
 		SV_BeginRedirect (RD_CLIENT);
-		SV_Printf ("Bad user command: %s\n", Cmd_Argv (0));
+		SV_Printf ("Bad user command: %s\n", sv_args->argv[0]->str);
 		SV_EndRedirect ();
 	} else {
 		if (!u->no_redirect)

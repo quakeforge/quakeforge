@@ -148,7 +148,7 @@ NET_Ban_f (void)
 
 	if (cmd_source == src_command) {
 		if (!sv.active) {
-			Cmd_ForwardToServer ();
+			CL_Cmd_ForwardToServer ();
 			return;
 		}
 		print = Con_Printf;

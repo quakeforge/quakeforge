@@ -388,4 +388,6 @@ void CL_UpdateScreen (double realtime);
 
 void CL_SetState (cactive_t state);
 
+void CL_Cmd_ForwardToServer (void);
+
 #endif // __client_h

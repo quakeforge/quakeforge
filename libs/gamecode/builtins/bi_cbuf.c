@@ -30,15 +30,25 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#include "QF/cmd.h"
+#include "QF/cbuf.h"
 #include "QF/progs.h"
+
+static cbuf_t *cbuf; //FIXME use a properly allocated cbuf rather than this hack
+
+static inline void
+check_cbuf (void)
+{
+	if (!cbuf)
+		cbuf = Cbuf_New ();
+}
 
 static void
 bi_Cbuf_AddText (progs_t *pr)
 {
 	const char *text = P_STRING (pr, 0);
 
-	Cbuf_AddText (text);
+	check_cbuf ();
+	Cbuf_AddText (cbuf, text);
 }
 
 static void
@@ -46,19 +56,22 @@ bi_Cbuf_InsertText (progs_t *pr)
 {
 	const char *text = P_STRING (pr, 0);
 
-	Cbuf_InsertText (text);
+	check_cbuf ();
+	Cbuf_InsertText (cbuf, text);
 }
 
 static void
 bi_Cbuf_Execute (progs_t *pr)
 {
-	Cbuf_Execute ();
+	check_cbuf ();
+	Cbuf_Execute (cbuf);
 }
 
 static void
 bi_Cbuf_Execute_Sets (progs_t *pr)
 {
-	Cbuf_Execute_Sets ();
+	check_cbuf ();
+	Cbuf_Execute_Sets (cbuf);
 }
 
 void

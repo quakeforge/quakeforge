@@ -63,6 +63,7 @@ static const char rcsid[] =
 # undef model_t			// allow qf to use it's model_t
 #endif
 
+#include "QF/cbuf.h"
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
@@ -119,6 +120,8 @@ void        CL_RemoveQFInfoKeys ();
 // references them even when on a unix system.
 
 qboolean    noclip_anglehack;			// remnant from old quake
+
+cbuf_t     *cl_cbuf;
 
 cvar_t     *fs_globalcfg;
 cvar_t     *fs_usercfg;
@@ -730,7 +733,7 @@ CL_SetInfo_f (void)
 						 (!strequal (Cmd_Argv (1), "name")) |
 						 (strequal (Cmd_Argv (2), "team") << 1));
 	if (cls.state >= ca_connected)
-		Cmd_ForwardToServer ();
+		CL_Cmd_ForwardToServer ();
 }
 
 void
@@ -813,7 +816,7 @@ CL_NextDemo (void)
 	}
 
 	snprintf (str, sizeof (str), "playdemo %s\n", cls.demos[cls.demonum]);
-	Cbuf_InsertText (str);
+	Cbuf_InsertText (cl_cbuf, str);
 	cls.demonum++;
 }
 
@@ -952,7 +955,7 @@ CL_ConnectionlessPacket (void)
 		}
 
 		Con_Printf ("%s\n", cmdtext);
-		Cbuf_AddText (cmdtext);
+		Cbuf_AddText (cl_cbuf, cmdtext);
 		allowremotecmd = false;
 		return;
 	}
@@ -1236,13 +1239,13 @@ CL_Init (void)
 	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "force the view "
 					"to be level");
 	// forward to server commands
-	Cmd_AddCommand ("kill", Cmd_ForwardToServer, "Suicide :)");
-	Cmd_AddCommand ("pause", Cmd_ForwardToServer, "Pause the game");
-	Cmd_AddCommand ("say", Cmd_ForwardToServer, "Say something to all other "
+	Cmd_AddCommand ("kill", CL_Cmd_ForwardToServer, "Suicide :)");
+	Cmd_AddCommand ("pause", CL_Cmd_ForwardToServer, "Pause the game");
+	Cmd_AddCommand ("say", CL_Cmd_ForwardToServer, "Say something to all other "
 					"players");
-	Cmd_AddCommand ("say_team", Cmd_ForwardToServer, "Say something only to "
+	Cmd_AddCommand ("say_team", CL_Cmd_ForwardToServer, "Say something only to "
 					"people on your team");
-	Cmd_AddCommand ("serverinfo", Cmd_ForwardToServer, "Report the current "
+	Cmd_AddCommand ("serverinfo", CL_Cmd_ForwardToServer, "Report the current "
 					"server info");
 }
 
@@ -1531,7 +1534,7 @@ Host_Frame (float time)
 	IN_Commands ();
 
 	// process console commands
-	Cbuf_Execute ();
+	Cbuf_Execute (cl_cbuf);
 
 	// fetch results from server
 	CL_ReadPackets ();
@@ -1659,17 +1662,18 @@ CL_Init_Memory (void)
 void
 Host_Init (void)
 {
+	cl_cbuf = Cbuf_New ();
+
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
 	Cvar_Init ();
 	Sys_Init_Cvars ();
 
-	Cbuf_Init ();
 	Cmd_Init ();
 
 	// execute +set as early as possible
-	Cmd_StuffCmds_f ();
-	Cbuf_Execute_Sets ();
+	Cmd_StuffCmds (cl_cbuf);
+	Cbuf_Execute_Sets (cl_cbuf);
 
 	// execute the global configuration file if it exists
 	// would have been nice if Cmd_Exec_f could have been used, but it
@@ -1678,20 +1682,20 @@ Host_Init (void)
 	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG, CVAR_ROM, NULL,
 			"global configuration file");
 	Cmd_Exec_File (fs_globalcfg->string);
-	Cbuf_Execute_Sets ();
+	Cbuf_Execute_Sets (cl_cbuf);
 
 	// execute +set again to override the config file
-	Cmd_StuffCmds_f ();
-	Cbuf_Execute_Sets ();
+	Cmd_StuffCmds (cl_cbuf);
+	Cbuf_Execute_Sets (cl_cbuf);
 
 	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG, CVAR_ROM, NULL,
 						   "user configuration file");
 	Cmd_Exec_File (fs_usercfg->string);
-	Cbuf_Execute_Sets ();
+	Cbuf_Execute_Sets (cl_cbuf);
 
 	// execute +set again to override the config file
-	Cmd_StuffCmds_f ();
-	Cbuf_Execute_Sets ();
+	Cmd_StuffCmds (cl_cbuf);
+	Cbuf_Execute_Sets (cl_cbuf);
 
 	CL_Init_Memory ();
 
@@ -1727,7 +1731,7 @@ Host_Init (void)
 	PR_Init ();
 	BI_Init ();
 
-	cl_Cmd_Init ();
+	CL_Cmd_Init ();
 	V_Init ();
 	COM_Filesystem_Init ();
 	Game_Init ();
@@ -1740,6 +1744,7 @@ Host_Init (void)
 		con_module->data->console->dl_percent = &cls.downloadpercent;
 		con_module->data->console->realtime = &realtime;
 		con_module->data->console->quit = CL_Quit_f;
+		con_module->data->console->cbuf = cl_cbuf;
 	}
 
 	NET_Init (cl_port->int_val);
@@ -1785,12 +1790,12 @@ Host_Init (void)
 	Locs_Init ();
 
 	if (cl_quakerc->int_val)
-		Cbuf_InsertText ("exec quake.rc\n");
+		Cbuf_InsertText (cl_cbuf, "exec quake.rc\n");
 	Cmd_Exec_File (fs_usercfg->string);
 	// Reparse the command line for + commands.
 	// (Note, no non-base commands exist yet)
 	if (!cl_quakerc->int_val || check_quakerc ())
-		Cmd_StuffCmds_f ();
+		Cmd_StuffCmds (cl_cbuf);
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();
@@ -1805,9 +1810,10 @@ Host_Init (void)
 
 	CL_UpdateScreen (realtime);
 
-	Cbuf_AddText ("echo Type connect <internet address> or use a server "
+	Cbuf_AddText (cl_cbuf,
+				  "echo Type connect <internet address> or use a server "
 				  "browser to connect to a game.\n");
-	Cbuf_AddText ("cmd_warncmd 1\n");
+	Cbuf_AddText (cl_cbuf, "cmd_warncmd 1\n");
 }
 
 void

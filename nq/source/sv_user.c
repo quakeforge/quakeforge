@@ -31,6 +31,7 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 
+#include "QF/cbuf.h"
 #include "QF/console.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -529,7 +530,7 @@ SV_ReadClientMessage (void)
 				else if (strncasecmp (s, "ban", 3) == 0)
 					ret = 1;
 				if (ret == 2)
-					Cbuf_InsertText (s);
+					Cbuf_InsertText (host_cbuf, s);
 				else if (ret == 1)
 					Cmd_ExecuteString (s, src_client);
 				else

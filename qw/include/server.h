@@ -420,6 +420,9 @@ extern	struct progs_s		sv_pr_state;
 
 extern	const char *client_info_filters[];
 
+extern struct cbuf_s *sv_cbuf;
+extern struct cbuf_args_s *sv_args;
+
 //===========================================================
 // FIXME: declare exported functions in their own relevant .h
 

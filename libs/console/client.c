@@ -40,6 +40,7 @@ static const char rcsid[] =
 #include <stdarg.h>
 #include <errno.h>
 
+#include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -290,17 +291,17 @@ C_ExecLine (const char *line)
 	if (line[0] == '/' && line [1] == '/')
 		goto no_lf;
 	else if (line[0] == '|')
-		Cbuf_AddText (line);
+		Cbuf_AddText (con_data.cbuf, line);
 	else if (line[0] == '\\' || line[0] == '/')
-		Cbuf_AddText (line + 1);
+		Cbuf_AddText (con_data.cbuf, line + 1);
 	else if (cl_chatmode->int_val != 1 && CheckForCommand (line))
-		Cbuf_AddText (line);
+		Cbuf_AddText (con_data.cbuf, line);
 	else if (cl_chatmode->int_val) {
-		Cbuf_AddText ("say ");
-		Cbuf_AddText (line);
+		Cbuf_AddText (con_data.cbuf, "say ");
+		Cbuf_AddText (con_data.cbuf, line);
 	} else
-		Cbuf_AddText (line);
-	Cbuf_AddText ("\n");
+		Cbuf_AddText (con_data.cbuf, line);
+	Cbuf_AddText (con_data.cbuf, "\n");
   no_lf:
 	Con_Printf ("%s\n", line);
 }
@@ -310,10 +311,9 @@ C_Say (const char *line)
 {
 	dstring_t *dstr = dstring_newstr ();
 	dstring_appendstr (dstr, line);
-	escape (dstr, "\"$#~\\");
-	Cbuf_AddTextTo (cmd_keybindbuffer, "say \"");
-	Cbuf_AddTextTo (cmd_keybindbuffer, dstr->str);
-	Cbuf_AddTextTo (cmd_keybindbuffer, "\"\n");
+	Cbuf_AddText (con_data.cbuf, "say \"");
+	Cbuf_AddText (con_data.cbuf, dstr->str);
+	Cbuf_AddText (con_data.cbuf, "\"\n");
 	dstring_delete (dstr);
 	key_dest = key_game;
 	game_target = IMT_0;
@@ -324,10 +324,9 @@ C_SayTeam (const char *line)
 {
 	dstring_t *dstr = dstring_newstr ();
 	dstring_appendstr (dstr, line);
-	escape (dstr, "\"");
-	Cbuf_AddTextTo (cmd_keybindbuffer, "say_team \"");
-	Cbuf_AddTextTo (cmd_keybindbuffer, dstr->str);
-	Cbuf_AddTextTo (cmd_keybindbuffer, "\"\n");
+	Cbuf_AddText (con_data.cbuf, "say_team \"");
+	Cbuf_AddText (con_data.cbuf, dstr->str);
+	Cbuf_AddText (con_data.cbuf, "\"\n");
 	dstring_delete (dstr);
 	key_dest = key_game;
 	game_target = IMT_0;
@@ -515,7 +514,7 @@ C_KeyEvent (knum_t key, short unicode, qboolean down)
 				return;
 			case key_console:
 				if (!con_data.force_commandline) {
-					Cbuf_AddTextTo (cmd_keybindbuffer, "toggleconsole\n");
+					Cbuf_AddText (con_data.cbuf, "toggleconsole\n");
 					return;
 				}
 			case key_game:

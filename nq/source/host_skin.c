@@ -88,7 +88,7 @@ Host_Color_f (void)
 	if (cmd_source == src_command) {
 		Cvar_SetValue (cl_color, playercolor);
 		if (cls.state == ca_connected)
-			Cmd_ForwardToServer ();
+			CL_Cmd_ForwardToServer ();
 		return;
 	}
 

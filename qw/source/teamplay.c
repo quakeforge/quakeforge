@@ -41,6 +41,7 @@ static const char rcsid[] =
 
 #include <ctype.h>
 
+#include "QF/cbuf.h"
 #include "QF/console.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -460,7 +461,7 @@ Team_ParseChat (const char *string)
 		if (!strncmp(f_replies[i].name, s, strlen(f_replies[i].name)) && cl_freply->value) {
 			while (*s && !isspace((byte) *s))
 				s++;
-			Cbuf_AddText(f_replies[i].func(s));
+			Cbuf_AddText(cl_cbuf, f_replies[i].func(s));
 			f_replies[i].lasttime = realtime;
 		}
 	}
