@@ -224,11 +224,15 @@ Con_Condump_f (void)
 	char        name[MAX_OSPATH];
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("usage: condump <filename>");
+		Con_Printf ("usage: condump <filename>\n");
 		return;
 	}
 
-	snprintf (name, sizeof (name), "%s/%s", com_gamedir, Cmd_Argv (1));
+	if (strchr (Cmd_Argv (1), '/') || strchr (Cmd_Argv (1), '\\')) {
+		Con_Printf ("invalid character in filename\n");
+		return;
+	}
+	snprintf (name, sizeof (name), "%s/%s.txt", com_gamedir, Cmd_Argv (1));
 
 	if (!(file = Qopen (name, "wt"))) {
 		Con_Printf ("could not open %s for writing: %s\n", name,
