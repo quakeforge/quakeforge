@@ -72,7 +72,6 @@ extern qboolean		scr_disabled_for_loading;
 extern qboolean		scr_skipupdate;
 extern qboolean		hudswap;
 
-extern struct cvar_s		*scr_viewsize;
 extern struct cvar_s		*scr_fov;
 extern struct cvar_s		*scr_viewsize;
 
@@ -86,6 +85,6 @@ extern struct qpic_s *scr_ram;
 extern struct qpic_s *scr_net;
 extern struct qpic_s *scr_turtle;
 
-extern struct cvar_s *show_fps, *show_time;
+extern struct cvar_s *hud_fps, *hud_time;
 
 #endif // __screen_h
