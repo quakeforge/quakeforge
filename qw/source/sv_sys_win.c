@@ -35,6 +35,7 @@
 #include <winsock.h>
 #include <conio.h>
 
+#include "QF/compat.h"
 #include "QF/qargs.h"
 #include "QF/cvar.h"
 #include "server.h"
@@ -49,29 +50,12 @@ char       *svs_info = svs.info;
 extern cvar_t *sys_nostdout;
 cvar_t     *sys_sleep;
 
-/*
-	Sys_FileTime
-*/
-int
-Sys_FileTime (char *path)
-{
-	QFile      *f;
-
-	f = Qopen (path, "rb");
-	if (f) {
-		Qclose (f);
-		return 1;
-	}
-
-	return -1;
-}
-
 
 /*
 	Sys_Error
 */
 void
-Sys_Error (char *error, ...)
+Sys_Error (const char *error, ...)
 {
 	va_list     argptr;
 	char        text[1024];

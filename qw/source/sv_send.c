@@ -38,6 +38,7 @@
 #include <time.h>
 
 #include "bothdefs.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/msg.h"
 #include "server.h"

@@ -38,17 +38,18 @@
 
 #include <stdlib.h>
 
+#ifdef _WIN32
+#include "winquake.h"
+//#include "in_win.h"
+void IN_Accumulate (void);//XXX FIXME
+#endif
+
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/model.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 #include "QF/sound.h"
-
-#ifdef _WIN32
-#include "winquake.h"
-#include "in_win.h"
-#endif
 
 void        S_Play (void);
 void        S_PlayVol (void);

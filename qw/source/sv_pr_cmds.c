@@ -34,6 +34,7 @@
 #endif
 
 #include "QF/cmd.h"
+#include "QF/compat.h"
 #include "QF/msg.h"
 #include "server.h"
 #include "sv_pr_cmds.h"

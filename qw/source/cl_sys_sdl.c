@@ -91,29 +91,6 @@ Sys_DebugLog (char *file, char *fmt, ...)
 };
 
 /*
-	FILE IO
-*/
-
-int
-Sys_FileTime (char *path)
-{
-	QFile      *f;
-	int         t, retval;
-
-	f = Qopen (path, "rb");
-
-	if (f) {
-		Qclose (f);
-		retval = 1;
-	} else {
-		retval = -1;
-	}
-
-	return retval;
-}
-
-
-/*
 	SYSTEM IO
 */
 

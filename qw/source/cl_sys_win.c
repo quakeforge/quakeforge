@@ -39,6 +39,7 @@
 #include <windows.h>
 
 #include "client.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "host.h"
 #include "QF/qargs.h"
@@ -112,28 +113,6 @@ wfilelength (QFile *f)
 	Qseek (f, pos, SEEK_SET);
 
 	return end;
-}
-
-
-int
-Sys_FileTime (char *path)
-{
-	QFile      *f;
-	int         t, retval;
-
-	t = VID_ForceUnlockedAndReturnState ();
-
-	f = Qopen (path, "rb");
-
-	if (f) {
-		Qclose (f);
-		retval = 1;
-	} else {
-		retval = -1;
-	}
-
-	VID_ForceLockState (t);
-	return retval;
 }
 
 
@@ -215,7 +194,7 @@ Sys_Init (void)
 
 
 void
-Sys_Error (char *error, ...)
+Sys_Error (const char *error, ...)
 {
 	va_list     argptr;
 	char        text[1024];				// , text2[1024];

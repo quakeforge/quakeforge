@@ -36,8 +36,10 @@
 # include <strings.h>
 #endif
 #include <stdarg.h>
+#include <stdio.h>
 
 #include "QF/cmd.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/crc.h"
 #include "QF/cvar.h"

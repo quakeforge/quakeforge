@@ -45,7 +45,7 @@
 #include <stdarg.h>
 
 #include "client.h"
-//#include "commdef.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"

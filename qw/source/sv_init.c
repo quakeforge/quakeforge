@@ -37,6 +37,7 @@
 #endif
 
 #include "QF/crc.h"
+#include "QF/compat.h"
 #include "QF/msg.h"
 #include "QF/quakefs.h"
 #include "server.h"
