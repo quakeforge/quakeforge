@@ -3,25 +3,14 @@
 version=@VERSION@
 temp_dir=/var/tmp
 srcdir=@srcdir@
-if [ "$srcdir" = "." ]; then
-    srcdir=..
-fi
+top_srcdir=@top_srcdir@
+top_builddir=..
 
 rm -rf BUILD SPECS RPMS SOURCES SRPMS
 mkdir -p BUILD SPECS RPMS/{noarch,i386,i686} SOURCES SRPMS
-rm -rf ${temp_dir}/quakeforge-${version}
-cp -a $srcdir ${temp_dir}/quakeforge-${version}
-dest_dir=$PWD
-cd ${temp_dir}/quakeforge-${version}
-# this is needed to ensure there is a makefile
-./bootstrap
-./configure
-make distclean
-cd ${temp_dir}
-tar zcf ${dest_dir}/SOURCES/quakeforge-${version}.tar.gz quakeforge-${version}
-cd ${dest_dir}
-rm -rf ${temp_dir}/quakeforge-${version}
+make -C $top_builddir dist
+mv $top_builddir/quakeforge-${version}.tar.gz SOURCES
 cat > rpmmacros <<EOF
 %_topdir $PWD
 EOF
-rpm -ba quakeforge.spec --rcfile rpmrc
+rpm -ba quakeforge.spec --rcfile $srcdir/rpmrc

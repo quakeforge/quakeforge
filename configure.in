@@ -1426,7 +1426,8 @@ AC_OUTPUT(
 
 	debian/Makefile
 
-	RPM/build_rpm,
+	RPM/build_rpm
+	RPM/quakeforge.spec,
 
 	chmod +x quakeforge-config RPM/build_rpm
 )
