@@ -195,8 +195,12 @@ PR_LoadDebug (progs_t *pr)
 	ddef_t	   *def;
 	pr_type_t  *str = 0;
 
+	if (pr->debug)
+		pr->free_progs_mem (pr, pr->debug);
 	pr->debug = 0;
 	pr->auxfunctions = 0;
+	if (pr->auxfunction_map)
+		pr->free_progs_mem (pr, pr->auxfunction_map);
 	pr->auxfunction_map = 0;
 	pr->linenos = 0;
 	pr->local_defs = 0;
@@ -260,8 +264,8 @@ PR_LoadDebug (progs_t *pr)
 	pr->linenos = (pr_lineno_t*)((char*)pr->debug + pr->debug->linenos);
 	pr->local_defs = (ddef_t*)((char*)pr->debug + pr->debug->locals);
 
-	pr->auxfunction_map = Hunk_Alloc (pr->progs->numfunctions *
-									  sizeof (pr_auxfunction_t*));
+	i = pr->progs->numfunctions * sizeof (pr_auxfunction_t *);
+	pr->auxfunction_map = pr->allocate_progs_mem (pr, i);
 
 	for (i = 0; i < pr->debug->num_auxfunctions; i++) {
 		pr->auxfunctions[i].function = LittleLong
