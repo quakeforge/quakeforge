@@ -76,7 +76,6 @@ static const char rcsid[] =
 #include "crudefile.h"
 #include "game.h"
 #include "net.h"
-#include "net_svc.h"
 #include "pmove.h"
 #include "server.h"
 #include "sv_progs.h"
@@ -261,14 +260,11 @@ SV_FinalMessage (const char *message)
 {
 	client_t   *cl;
 	int         i;
-	net_svc_print_t block;
-
-	block.level = PRINT_HIGH;
-	block.message = message;
 
 	SZ_Clear (net_message->message);
 	MSG_WriteByte (net_message->message, svc_print);
-	NET_SVC_Print_Emit (&block, net_message->message);
+	MSG_WriteByte (net_message->message, PRINT_HIGH);
+	MSG_WriteString (net_message->message, message);
 	MSG_WriteByte (net_message->message, svc_disconnect);
 
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
@@ -373,7 +369,6 @@ SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 {
 	char       *info;
 	int         i;
-	net_svc_updateuserinfo_t block;
 
 	i = client - svs.clients;
 
@@ -398,11 +393,10 @@ SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 	info = client->userinfo ? Info_MakeString (client->userinfo,
 											   make_info_string_filter) : "";
 
-	block.slot = i;
-	block.userid = client->userid;
-	block.userinfo = info;
 	MSG_WriteByte (buf, svc_updateuserinfo);
-	NET_SVC_UpdateUserInfo_Emit (&block, buf);
+	MSG_WriteByte (buf, i);
+	MSG_WriteLong (buf, client->userid);
+	MSG_WriteString (buf, info);
 }
 
 /*
@@ -2177,7 +2171,6 @@ Master_Shutdown (void)
 static inline qboolean
 iswhitespace (char c)
 {
-	c &= 127;
 	return c == ' ' || c == '\r' || c == '\n' || c == '\t';
 }
 
@@ -2207,22 +2200,14 @@ SV_ExtractFromUserinfo (client_t *cl)
 	for (r = newname; *p && r != newname + sizeof (newname) - 1; p++) {
 		if (iswhitespace (*p)) {
 			if (!iswhitespace (p[1]) && p[1] != '\0')
-				*r++ = ' '; // get rid of any special chars
+				*r++ = *p;
 		} else
-			*r++ = *p & 127; // get rid of bold
+			*r++ = *p;
 	}
 	*r = '\0';
 
 	// empty (or whitespace only) name
 	if (!*newname)
-		badname = true;
-
-	// ':' is used in chat messages
-	if (strchr (newname, ':'))
-		badname = true;
-
-	// I dunno if this is possible, but better safe than sorry
-	if (strchr (newname, '"'))
 		badname = true;
 
 	// impersonating an user-xxx name.  if they're using it
@@ -2283,10 +2268,9 @@ SV_ExtractFromUserinfo (client_t *cl)
 			}
 		}
 
-		// finally, report it to all our friends, but only if more
-		// than whitespace changed
+		// finally, report it to all our friends
 //		if (cl->state >= cs_spawned && !cl->spectator)
-		if (*cl->name && strcmp (cl->name, newname))
+		if (*cl->name)
 			SV_BroadcastPrintf (PRINT_HIGH, "%s changed name to %s\n",
 								cl->name, newname);
 		strcpy (cl->name, newname);

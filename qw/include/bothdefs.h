@@ -62,9 +62,10 @@
 #define	MAX_LIGHTSTYLES	64
 #define	MAX_MODELS		256			// these are sent over the net as bytes
 #define	MAX_SOUNDS		256			// so they cannot be blindly increased
-#define MAX_PROJECTILES	32
 
 #define	SAVEGAME_COMMENT_LENGTH	39
+
+#define	MAX_STYLESTRING	64
 
 //
 // stats are integers communicated to the client by the server

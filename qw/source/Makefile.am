@@ -52,7 +52,7 @@ libasm_la_SOURCES= $(asm_src)
 noinst_LTLIBRARIES= libqfnet.la $(asm)
 
 common_sources= buildnum.c com.c game.c msg_ucmd.c pmove.c pmovetst.c \
-		net_packetlog.c net_svc.c
+		net_packetlog.c
 
 common_ldflags= -export-dynamic
 

@@ -54,7 +54,6 @@ static const char rcsid[] =
 #include "compat.h"
 #include "bothdefs.h"
 #include "msg_ucmd.h"
-#include "net_svc.h"
 #include "pmove.h"
 #include "server.h"
 #include "sv_progs.h"
@@ -97,7 +96,7 @@ void
 SV_New_f (void)
 {
 	const char *gamedir;
-	net_svc_serverdata_t block;
+	int         playernum;
 
 	if (host_client->state == cs_spawned)
 		return;
@@ -116,23 +115,37 @@ SV_New_f (void)
 //NOTE:  This doesn't go through ClientReliableWrite since it's before the user
 //spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
-		SV_Printf ("WARNING %s: [SV_New] Back buffered (%d), clearing\n",
+		SV_Printf ("WARNING %s: [SV_New] Back buffered (%d0, clearing\n",
 					host_client->name, host_client->netchan.message.cursize);
 		host_client->num_backbuf = 0;
 		SZ_Clear (&host_client->netchan.message);
 	}
-
 	// send the serverdata
-	block.protocolversion = PROTOCOL_VERSION;
-	block.servercount = svs.spawncount;
-	block.gamedir = gamedir;
-	block.playernum = NUM_FOR_EDICT (&sv_pr_state, host_client->edict) - 1;
-	block.spectator = host_client->spectator;
-	block.levelname = PR_GetString (&sv_pr_state,
-									SVstring (sv.edicts, message));
-	block.movevars = movevars;
 	MSG_WriteByte (&host_client->netchan.message, svc_serverdata);
-	NET_SVC_ServerData_Emit (&block, &host_client->netchan.message);
+	MSG_WriteLong (&host_client->netchan.message, PROTOCOL_VERSION);
+	MSG_WriteLong (&host_client->netchan.message, svs.spawncount);
+	MSG_WriteString (&host_client->netchan.message, gamedir);
+
+	playernum = NUM_FOR_EDICT (&sv_pr_state, host_client->edict) - 1;
+	if (host_client->spectator)
+		playernum |= 128;
+	MSG_WriteByte (&host_client->netchan.message, playernum);
+
+	// send full levelname
+	MSG_WriteString (&host_client->netchan.message,
+					 PR_GetString (&sv_pr_state, SVstring (sv.edicts, message)));
+
+	// send the movevars
+	MSG_WriteFloat (&host_client->netchan.message, movevars.gravity);
+	MSG_WriteFloat (&host_client->netchan.message, movevars.stopspeed);
+	MSG_WriteFloat (&host_client->netchan.message, movevars.maxspeed);
+	MSG_WriteFloat (&host_client->netchan.message, movevars.spectatormaxspeed);
+	MSG_WriteFloat (&host_client->netchan.message, movevars.accelerate);
+	MSG_WriteFloat (&host_client->netchan.message, movevars.airaccelerate);
+	MSG_WriteFloat (&host_client->netchan.message, movevars.wateraccelerate);
+	MSG_WriteFloat (&host_client->netchan.message, movevars.friction);
+	MSG_WriteFloat (&host_client->netchan.message, movevars.waterfriction);
+	MSG_WriteFloat (&host_client->netchan.message, movevars.entgravity);
 
 	// send music
 	MSG_WriteByte (&host_client->netchan.message, svc_cdtrack);
@@ -152,14 +165,12 @@ void
 SV_Soundlist_f (void)
 {
 	const char **s;
-	int			i, size;
-	net_svc_soundlist_t block;
+	unsigned    n;
 
 	if (host_client->state != cs_connected) {
 		SV_Printf ("soundlist not valid -- already spawned\n");
 		return;
 	}
-
 	// handle the case of a level changing while a client was connecting
 	if (atoi (Cmd_Argv (1)) != svs.spawncount) {
 		SV_Printf ("SV_Soundlist_f from different level\n");
@@ -167,40 +178,34 @@ SV_Soundlist_f (void)
 		return;
 	}
 
-	block.startsound = atoi (Cmd_Argv (2));
-	if (block.startsound >= MAX_SOUNDS) {
+	n = atoi (Cmd_Argv (2));
+	if (n >= MAX_SOUNDS) {
 		SV_Printf ("SV_Soundlist_f: Invalid soundlist index\n");
 		SV_New_f ();
 		return;
 	}
-
-	// NOTE:  This doesn't go through ClientReliableWrite since it's
-	// before the user spawns.  These functions are written to not
-	// overflow
+//NOTE:  This doesn't go through ClientReliableWrite since it's before the user
+//spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
-		SV_Printf ("WARNING %s: [SV_Soundlist] Back buffered (%d), clearing",
+		SV_Printf ("WARNING %s: [SV_Soundlist] Back buffered (%d0, clearing",
 					host_client->name, host_client->netchan.message.cursize);
 		host_client->num_backbuf = 0;
 		SZ_Clear (&host_client->netchan.message);
 	}
 
-	for (s = sv.sound_precache + 1 + block.startsound, i = 0, size = 0;
-		 *s; i++, s++) {
-		if (host_client->netchan.message.cursize + size >= (MAX_MSGLEN / 2))
-			break;
-		size += strlen (*s) + 1;
-		block.sounds[i] = *s;
-	}
-	block.sounds[i] = "";
+	MSG_WriteByte (&host_client->netchan.message, svc_soundlist);
+	MSG_WriteByte (&host_client->netchan.message, n);
+	for (s = sv.sound_precache + 1 + n;
+		 *s && host_client->netchan.message.cursize < (MAX_MSGLEN / 2);
+		 s++, n++) MSG_WriteString (&host_client->netchan.message, *s);
+
+	MSG_WriteByte (&host_client->netchan.message, 0);
 
 	// next msg
 	if (*s)
-		block.nextsound = block.startsound + i;
+		MSG_WriteByte (&host_client->netchan.message, n);
 	else
-		block.nextsound = 0;
-
-	MSG_WriteByte (&host_client->netchan.message, svc_soundlist);
-	NET_SVC_Soundlist_Emit (&block, &host_client->netchan.message);
+		MSG_WriteByte (&host_client->netchan.message, 0);
 }
 
 /*
@@ -210,14 +215,12 @@ void
 SV_Modellist_f (void)
 {
 	const char **s;
-	int			i, size;
-	net_svc_modellist_t block;
+	unsigned    n;
 
 	if (host_client->state != cs_connected) {
 		SV_Printf ("modellist not valid -- already spawned\n");
 		return;
 	}
-
 	// handle the case of a level changing while a client was connecting
 	if (atoi (Cmd_Argv (1)) != svs.spawncount) {
 		SV_Printf ("SV_Modellist_f from different level\n");
@@ -225,40 +228,33 @@ SV_Modellist_f (void)
 		return;
 	}
 
-	block.startmodel = atoi (Cmd_Argv (2));
-	if (block.startmodel >= MAX_MODELS) {
+	n = atoi (Cmd_Argv (2));
+	if (n >= MAX_MODELS) {
 		SV_Printf ("SV_Modellist_f: Invalid modellist index\n");
 		SV_New_f ();
 		return;
 	}
-
-	// NOTE:  This doesn't go through ClientReliableWrite since it's
-	// before the user spawns.  These functions are written to not
-	// overflow
+//NOTE:  This doesn't go through ClientReliableWrite since it's before the user
+//spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
-		SV_Printf ("WARNING %s: [SV_Modellist] Back buffered (%d), clearing",
+		SV_Printf ("WARNING %s: [SV_Modellist] Back buffered (%d0, clearing",
 					host_client->name, host_client->netchan.message.cursize);
 		host_client->num_backbuf = 0;
 		SZ_Clear (&host_client->netchan.message);
 	}
 
-	for (s = sv.model_precache + 1 + block.startmodel, i = 0, size = 0;
-		 *s; i++, s++) {
-		if (host_client->netchan.message.cursize + size >= (MAX_MSGLEN / 2))
-			break;
-		size += strlen (*s) + 1;
-		block.models[i] = *s;
-	}
-	block.models[i] = "";
+	MSG_WriteByte (&host_client->netchan.message, svc_modellist);
+	MSG_WriteByte (&host_client->netchan.message, n);
+	for (s = sv.model_precache + 1 + n;
+		 *s && host_client->netchan.message.cursize < (MAX_MSGLEN / 2);
+		 s++, n++) MSG_WriteString (&host_client->netchan.message, *s);
+	MSG_WriteByte (&host_client->netchan.message, 0);
 
 	// next msg
 	if (*s)
-		block.nextmodel = block.startmodel + i;
+		MSG_WriteByte (&host_client->netchan.message, n);
 	else
-		block.nextmodel = 0;
-
-	MSG_WriteByte (&host_client->netchan.message, svc_modellist);
-	NET_SVC_Modellist_Emit (&block, &host_client->netchan.message);
+		MSG_WriteByte (&host_client->netchan.message, 0);
 }
 
 /*
@@ -566,27 +562,27 @@ void
 SV_NextDownload_f (void)
 {
 	byte        buffer[1024];
-	net_svc_download_t block;
+	int         r;
+	int         percent;
+	int         size;
 
 	if (!host_client->download)
 		return;
 
-	block.size = host_client->downloadsize - host_client->downloadcount;
-	if (block.size > 768)
-		block.size = 768;
-	block.size = Qread (host_client->download, buffer, block.size);
+	r = host_client->downloadsize - host_client->downloadcount;
+	if (r > 768)
+		r = 768;
+	r = Qread (host_client->download, buffer, r);
+	ClientReliableWrite_Begin (host_client, svc_download, 6 + r);
+	ClientReliableWrite_Short (host_client, r);
 
-	host_client->downloadcount += block.size;
-	block.percent = host_client->downloadcount * 100 /
-				  (host_client->downloadsize ?: 1);
-
-	block.data = buffer;
-	ClientReliableWrite_Begin (host_client, svc_download, 6 + block.size);
-	if (host_client->num_backbuf) {
-		NET_SVC_Download_Emit (&block, &host_client->backbuf);
-		ClientReliable_FinishWrite (host_client);
-	} else
-		NET_SVC_Download_Emit (&block, &host_client->netchan.message);
+	host_client->downloadcount += r;
+	size = host_client->downloadsize;
+	if (!size)
+		size = 1;
+	percent = host_client->downloadcount * 100 / size;
+	ClientReliableWrite_Byte (host_client, percent);
+	ClientReliableWrite_SZ (host_client, buffer, r);
 
 	if (host_client->downloadcount != host_client->downloadsize)
 		return;
@@ -695,7 +691,6 @@ SV_BeginDownload_f (void)
 	int         size;
 	char        realname[MAX_OSPATH];
 	int         zip;
-	net_svc_download_t block;
 
 	name = Cmd_Argv (1);
 // hacked by zoid to allow more conrol over download
@@ -713,14 +708,9 @@ SV_BeginDownload_f (void)
 		|| (strncmp (name, "maps/", 5) == 0 && !allow_download_maps->int_val)
 		// MUST be in a subdirectory    
 		|| !strstr (name, "/")) {		// don't allow anything with .. path
-		block.size = -1;
-		block.percent = 0;
 		ClientReliableWrite_Begin (host_client, svc_download, 4);
-		if (host_client->num_backbuf) {
-			NET_SVC_Download_Emit (&block, &host_client->backbuf);
-			ClientReliable_FinishWrite (host_client);
-		} else
-			NET_SVC_Download_Emit (&block, &host_client->netchan.message);
+		ClientReliableWrite_Short (host_client, -1);
+		ClientReliableWrite_Byte (host_client, 0);
 		return;
 	}
 
@@ -756,30 +746,19 @@ SV_BeginDownload_f (void)
 		}
 
 		SV_Printf ("Couldn't download %s to %s\n", name, host_client->name);
-
-		block.size = -1;
-		block.percent = 0;
 		ClientReliableWrite_Begin (host_client, svc_download, 4);
-		if (host_client->num_backbuf) {
-			NET_SVC_Download_Emit (&block, &host_client->backbuf);
-			ClientReliable_FinishWrite (host_client);
-		} else
-			NET_SVC_Download_Emit (&block, &host_client->netchan.message);
+		ClientReliableWrite_Short (host_client, -1);
+		ClientReliableWrite_Byte (host_client, 0);
 		return;
 	}
 
 	if (zip && strcmp (realname, name)) {
 		SV_Printf ("download renamed to %s\n", realname);
-
-		block.size = -2;
-		block.percent = 0;
-		block.name = realname;
 		ClientReliableWrite_Begin (host_client, svc_download,
 								   strlen (realname) + 5);
-		if (host_client->num_backbuf)
-			NET_SVC_Download_Emit (&block, &host_client->backbuf);
-		else
-			NET_SVC_Download_Emit (&block, &host_client->netchan.message);
+		ClientReliableWrite_Short (host_client, -2);
+		ClientReliableWrite_Byte (host_client, 0);
+		ClientReliableWrite_String (host_client, realname);
 		ClientReliable_FinishWrite (host_client);
 	}
 
@@ -1136,8 +1115,6 @@ SV_Msg_f (void)
 void
 SV_SetInfo_f (void)
 {
-	net_svc_setinfo_t block;
-
 	if (Cmd_Argc () == 1) {
 		SV_Printf ("User info settings:\n");
 		Info_Print (host_client->userinfo);
@@ -1176,11 +1153,12 @@ SV_SetInfo_f (void)
 	SV_ExtractFromUserinfo (host_client);
 
 	if (Info_FilterForKey (Cmd_Argv (1), client_info_filters)) {
-		block.slot = host_client - svs.clients;
-		block.key = Cmd_Argv (1);
-		block.value = Info_ValueForKey (host_client->userinfo, Cmd_Argv (1));
 		MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
-		NET_SVC_SetInfo_Emit (&block, &sv.reliable_datagram);
+		MSG_WriteByte (&sv.reliable_datagram, host_client - svs.clients);
+		MSG_WriteString (&sv.reliable_datagram, Cmd_Argv (1));
+		MSG_WriteString (&sv.reliable_datagram,
+						 Info_ValueForKey (host_client->userinfo,
+							 			   Cmd_Argv (1)));
 	}
 }
 
@@ -1839,7 +1817,7 @@ SV_UserInit (void)
 			"Toggles the ability of spectators to talk to players");
 	sv_mapcheck = Cvar_Get ("sv_mapcheck", "1", CVAR_NONE, NULL, 
 		"Toggle the use of map checksumming to check for players who edit maps to cheat");
-	sv_kickfake = Cvar_Get ("sv_kickfake", "0", CVAR_NONE, NULL,
+	sv_kickfake = Cvar_Get ("sv_kickfake", "1", CVAR_NONE, NULL,
 			"Kick users sending to send fake talk messages");
 }
 

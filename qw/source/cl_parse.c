@@ -51,7 +51,6 @@ static const char rcsid[] =
 #include "QF/msg.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
-#include "QF/sys.h"
 #include "QF/teamplay.h"
 #include "QF/va.h"
 #include "QF/vfile.h"
@@ -66,11 +65,89 @@ static const char rcsid[] =
 #include "client.h"
 #include "compat.h"
 #include "host.h"
-#include "net_svc.h"
 #include "pmove.h"
 #include "protocol.h"
 #include "sbar.h"
 #include "view.h"
+
+char       *svc_strings[] = {
+	"svc_bad",
+	"svc_nop",
+	"svc_disconnect",
+	"svc_updatestat",
+	"svc_version",				// [long] server version
+	"svc_setview",				// [short] entity number
+	"svc_sound",				// <see code>
+	"svc_time",					// [float] server time
+	"svc_print",				// [string] null terminated string
+	"svc_stufftext",			// [string] stuffed into client's console
+								// buffer the string should be \n terminated
+	"svc_setangle",				// [vec3] set view angle to this absolute value
+
+	"svc_serverdata",			// [long] version ...
+	"svc_lightstyle",			// [byte] [string]
+	"svc_updatename",			// [byte] [string]
+	"svc_updatefrags",			// [byte] [short]
+	"svc_clientdata",			// <shortbits + data>
+	"svc_stopsound",			// <see code>
+	"svc_updatecolors",			// [byte] [byte]
+	"svc_particle",				// [vec3] <variable>
+	"svc_damage",				// [byte] impact [byte] blood [vec3] from
+
+	"svc_spawnstatic",
+	"OBSOLETE svc_spawnbinary",
+	"svc_spawnbaseline",
+
+	"svc_temp_entity",			// <variable>
+	"svc_setpause",
+	"svc_signonnum",
+	"svc_centerprint",
+	"svc_killedmonster",
+	"svc_foundsecret",
+	"svc_spawnstaticsound",
+	"svc_intermission",
+	"svc_finale",
+
+	"svc_cdtrack",
+	"svc_sellscreen",
+
+	"svc_smallkick",
+	"svc_bigkick",
+
+	"svc_updateping",
+	"svc_updateentertime",
+
+	"svc_updatestatlong",
+	"svc_muzzleflash",
+	"svc_updateuserinfo",
+	"svc_download",
+	"svc_playerinfo",
+	"svc_nails",
+	"svc_choke",
+	"svc_modellist",
+	"svc_soundlist",
+	"svc_packetentities",
+	"svc_deltapacketentities",
+	"svc_maxspeed",
+	"svc_entgravity",
+
+	"svc_setinfo",
+	"svc_serverinfo",
+	"svc_updatepl",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL"
+};
 
 int         oldparsecountmod;
 int         parsecountmod;
@@ -324,18 +401,19 @@ void
 CL_ParseDownload (void)
 {
 	byte        name[1024];
-	int         r;
-	net_svc_download_t download;
+	int         size, percent, r;
 
-	if (NET_SVC_Download_Parse (&download, net_message)) {
-		Host_NetError ("CL_ParseDownload: Bad Read\n");
-		return;
+	// read the data
+	size = MSG_ReadShort (net_message);
+	percent = MSG_ReadByte (net_message);
+
+	if (cls.demoplayback) {
+		if (size > 0)
+			net_message->readcount += size;
+		return;							// not in demo playback
 	}
 
-	if (cls.demoplayback)
-		return;							// not in demo playback
-
-	if (download.size == -1) {
+	if (size == -1) {
 		Con_Printf ("File not found.\n");
 		if (cls.download) {
 			Con_Printf ("cls.download shouldn't have been set\n");
@@ -346,12 +424,14 @@ CL_ParseDownload (void)
 		return;
 	}
 
-	if (download.size == -2) {
-		// don't compare past the end of cls.downloadname due to gz support
-		if (strncmp (download.name, cls.downloadname, strlen (cls.downloadname))
-			|| strstr (download.name + strlen (cls.downloadname), "/")) {
-			Con_Printf ("WARNING: server tried to give a strange new "
-						"name: %s\n", download.name);
+	if (size == -2) {
+		const char *newname = MSG_ReadString (net_message);
+
+		if (strncmp (newname, cls.downloadname, strlen (cls.downloadname))
+			|| strstr (newname + strlen (cls.downloadname), "/")) {
+			Con_Printf
+				("WARNING: server tried to give a strange new name: %s\n",
+				 newname);
 			CL_RequestNextDownload ();
 			return;
 		}
@@ -359,17 +439,10 @@ CL_ParseDownload (void)
 			Qclose (cls.download);
 			unlink (cls.downloadname);
 		}
-		strncpy (cls.downloadname, download.name,
-				 sizeof (cls.downloadname) - 1);
+		strncpy (cls.downloadname, newname, sizeof (cls.downloadname));
 		Con_Printf ("downloading to %s\n", cls.downloadname);
 		return;
 	}
-
-	if (download.size <= 0) {
-		Host_NetError ("Bad download block, size %d", download.size);
-		return;
-	}
-
 	// open the file if not opened yet
 	if (!cls.download) {
 		if (strncmp (cls.downloadtempname, "skins/", 6))
@@ -383,28 +456,31 @@ CL_ParseDownload (void)
 
 		cls.download = Qopen (name, "wb");
 		if (!cls.download) {
+			net_message->readcount += size;
 			Con_Printf ("Failed to open %s\n", cls.downloadtempname);
 			CL_RequestNextDownload ();
 			return;
 		}
 	}
 
-	Qwrite (cls.download, download.data, download.size);
+	Qwrite (cls.download, net_message->message->data + net_message->readcount,
+			size);
+	net_message->readcount += size;
 
-	if (download.percent != 100) {
+	if (percent != 100) {
 		// change display routines by zoid
 		// request next block
 #if 0
 		Con_Printf (".");
-		if (10 * (download.percent / 10) != cls.downloadpercent) {
-			cls.downloadpercent = 10 * (download.percent / 10);
+		if (10 * (percent / 10) != cls.downloadpercent) {
+			cls.downloadpercent = 10 * (percent / 10);
 			Con_Printf ("%i%%", cls.downloadpercent);
 		}
 #endif
-		if (download.percent != cls.downloadpercent)
+		if (percent != cls.downloadpercent)
 			VID_SetCaption (va ("Downloading %s %d%%", cls.downloadname,
-								download.percent));
-		cls.downloadpercent = download.percent;
+								percent));
+		cls.downloadpercent = percent;
 
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		SZ_Print (&cls.netchan.message, "nextdl");
@@ -498,8 +574,6 @@ CL_StartUpload (byte * data, int size)
 	Con_DPrintf ("Upload starting of %d...\n", size);
 
 	upload_data = malloc (size);
-	if (!upload_data)
-		Sys_Error ("CL_StartUpload: Memory Allocation Failure\n");
 	memcpy (upload_data, data, size);
 	upload_size = size;
 	upload_pos = 0;
@@ -523,40 +597,6 @@ CL_StopUpload (void)
 	upload_data = NULL;
 }
 
-void
-CL_ParsePrint (void)
-{
-	const char     *string;
-	char			tmpstring[2048];
-	net_svc_print_t	print;
-
-	if (NET_SVC_Print_Parse (&print, net_message)) {
-		Host_NetError ("CL_ParsePrint: Bad Read\n");
-		return;
-	}
-	string = print.message;
-
-	if (print.level == PRINT_CHAT) {
-		// TODO: cl_nofake 2 -- accept fake messages from
-		// teammates
-
-		if (cl_nofake->int_val) {
-			char		*c;
-			strncpy (tmpstring, string, sizeof (tmpstring));
-			tmpstring[sizeof (tmpstring) - 1] = 0;
-			for (c = tmpstring; *c; c++)
-				if (*c == '\r')
-					*c = '#';
-			string = tmpstring;
-		}
-		con_ormask = 128;
-		S_LocalSound ("misc/talk.wav");
-		Team_ParseChat(string);
-	}
-	Con_Printf ("%s", string);
-	con_ormask = 0;
-}
-
 /* SERVER CONNECTING MESSAGES */
 
 void Draw_ClearCache (void);
@@ -566,44 +606,40 @@ void
 CL_ParseServerData (void)
 {
 	char        fn[MAX_OSPATH];
+	const char *str;
 	int         protover;
 	qboolean    cflag = false;
-	net_svc_serverdata_t serverdata;
+
+	extern char gamedirfile[MAX_OSPATH];
 
 	Con_DPrintf ("Serverdata packet received.\n");
-
-	if (NET_SVC_ServerData_Parse (&serverdata, net_message)) {
-		Host_NetError ("CL_ParseServerData: Bad Read\n");
-		return;
-	}
-
-	// make sure any stuffed commands are done
-	Cbuf_Execute ();
 
 	// wipe the client_state_t struct
 	CL_ClearState ();
 
 	// parse protocol version number
 	// allow 2.2 and 2.29 demos to play
-	protover = serverdata.protocolversion;
+	protover = MSG_ReadLong (net_message);
 	if (protover != PROTOCOL_VERSION &&
 		!(cls.demoplayback
 		  && (protover <= 26 && protover >= 28)))
-			Host_NetError ("Server returned version %i, not %i\nYou probably "
-						   "need to upgrade.\nCheck http://www.quakeworld.net/",
-						   protover, PROTOCOL_VERSION);
+			Host_EndGame ("Server returned version %i, not %i\nYou probably "
+						  "need to upgrade.\nCheck http://www.quakeworld.net/",
+						  protover, PROTOCOL_VERSION);
 
-	cl.servercount = serverdata.servercount;
+	cl.servercount = MSG_ReadLong (net_message);
 
 	// game directory
-	if (!strequal (gamedirfile, serverdata.gamedir)) {
+	str = MSG_ReadString (net_message);
+
+	if (!strequal (gamedirfile, str)) {
 		// save current config
 		Host_WriteConfiguration ();
 		cflag = true;
 		Draw_ClearCache ();
 	}
 
-	COM_Gamedir (serverdata.gamedir);
+	COM_Gamedir (str);
 
 	// ZOID--run the autoexec.cfg in the gamedir
 	// if it exists
@@ -619,14 +655,11 @@ CL_ParseServerData (void)
 		snprintf (fn, sizeof (fn), "cmd_warncmd %d\n", cmd_warncmd_val);
 		Cbuf_AddText (fn);
 	}
-
-	// parse player slot
-	cl.playernum = serverdata.playernum;
-	cl.spectator = serverdata.spectator;
-	if (cl.playernum >= MAX_CLIENTS) {
-		Host_NetError ("CL_ParseServerData: playernum %d >= MAX_CLIENTS",
-					   cl.playernum);
-		return;
+	// parse player slot, high bit means spectator
+	cl.playernum = MSG_ReadByte (net_message);
+	if (cl.playernum & 128) {
+		cl.spectator = true;
+		cl.playernum &= ~128;
 	}
 
 // FIXME: evil hack so NQ and QW can share sound code
@@ -634,15 +667,25 @@ CL_ParseServerData (void)
 	viewentity = cl.playernum + 1;
 
 	// get the full level name
-	strncpy (cl.levelname, serverdata.levelname, sizeof (cl.levelname) - 1);
+	str = MSG_ReadString (net_message);
+	strncpy (cl.levelname, str, sizeof (cl.levelname) - 1);
 
 	// get the movevars
-	memcpy (&movevars, &serverdata.movevars, sizeof (movevars));
+	movevars.gravity = MSG_ReadFloat (net_message);
+	movevars.stopspeed = MSG_ReadFloat (net_message);
+	movevars.maxspeed = MSG_ReadFloat (net_message);
+	movevars.spectatormaxspeed = MSG_ReadFloat (net_message);
+	movevars.accelerate = MSG_ReadFloat (net_message);
+	movevars.airaccelerate = MSG_ReadFloat (net_message);
+	movevars.wateraccelerate = MSG_ReadFloat (net_message);
+	movevars.friction = MSG_ReadFloat (net_message);
+	movevars.waterfriction = MSG_ReadFloat (net_message);
+	movevars.entgravity = MSG_ReadFloat (net_message);
 
 	// seperate the printfs so the server message can have a color
 	Con_Printf ("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36"
 				"\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\37\n\n");
-	Con_Printf ("%c%s\n", 2, serverdata.levelname);
+	Con_Printf ("%c%s\n", 2, str);
 
 	// ask for the sound list next
 	memset (cl.sound_name, 0, sizeof (cl.sound_name));
@@ -654,9 +697,6 @@ CL_ParseServerData (void)
 	CL_SetState (ca_onserver);
 
 	CL_ClearBaselines ();
-
-	// leave full screen intermission
-	vid.recalc_refdef = true;
 }
 
 // LordHavoc: BIG BUG-FIX!  Clear baselines each time it connects...
@@ -679,32 +719,29 @@ void
 CL_ParseSoundlist (void)
 {
 	const char *str;
-	int         numsounds, i;
-	net_svc_soundlist_t soundlist;
+	int         numsounds, n;
 
 	// precache sounds
-	if (NET_SVC_Soundlist_Parse (&soundlist, net_message)) {
-		Host_NetError ("CL_ParseSoundlist: Bad Read\n");
-		return;
-	}
+//	memset (cl.sound_precache, 0, sizeof(cl.sound_precache));
 
-	for (i = 0, numsounds = soundlist.startsound;; i++) {
-		str = soundlist.sounds[i];
+	numsounds = MSG_ReadByte (net_message);
+
+	for (;;) {
+		str = MSG_ReadString (net_message);
 		if (!str[0])
 			break;
 		numsounds++;
-		if (numsounds >= MAX_SOUNDS) {
-			Host_NetError ("CL_ParseSoundlist: too many sounds");
-			return;
-		}
+		if (numsounds == MAX_SOUNDS)
+			Host_EndGame ("Server sent too many sound_precache");
 		strcpy (cl.sound_name[numsounds], str);
 	}
 
-	if (soundlist.nextsound) {
+	n = MSG_ReadByte (net_message);
+
+	if (n) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (soundlist_name, cl.servercount,
-							 soundlist.nextsound));
+						 va (soundlist_name, cl.servercount, n));
 		return;
 	}
 
@@ -716,50 +753,44 @@ CL_ParseSoundlist (void)
 void
 CL_ParseModellist (void)
 {
-	int         nummodels, i;
+	int         nummodels, n;
 	const char *str;
-	net_svc_modellist_t modellist;
 
 	// precache models and note certain default indexes
-	if (NET_SVC_Modellist_Parse (&modellist, net_message)) {
-		Host_NetError ("CL_ParseModellist: Bad Read\n");
-		return;
-	}
+	nummodels = MSG_ReadByte (net_message);
 
-	for (i = 0, nummodels = modellist.startmodel;; i++) {
-		str = modellist.models[i];
+	for (;;) {
+		str = MSG_ReadString (net_message);
 		if (!str[0])
 			break;
 		nummodels++;
-		if (nummodels >= MAX_MODELS) {
-			Host_NetError ("CL_ParseModellist: too many models");
-			return;
-		}
-		strncpy (cl.model_name[nummodels], str, MAX_QPATH - 1);
-		cl.model_name[nummodels][MAX_QPATH - 1] = '\0';
+		if (nummodels == MAX_MODELS)
+			Host_EndGame ("Server sent too many model_precache");
+		strcpy (cl.model_name[nummodels], str);
 
-		if (!strcmp (str, "progs/spike.mdl"))
+		if (!strcmp (cl.model_name[nummodels], "progs/spike.mdl"))
 			cl_spikeindex = nummodels;
-		else if (!strcmp (str, "progs/player.mdl"))
+		else if (!strcmp (cl.model_name[nummodels], "progs/player.mdl"))
 			cl_playerindex = nummodels;
-		else if (!strcmp (str, "progs/flag.mdl"))
+		else if (!strcmp (cl.model_name[nummodels], "progs/flag.mdl"))
 			cl_flagindex = nummodels;
 		// for deadbodyfilter & gibfilter
-		else if (!strcmp (str, "progs/h_player.mdl"))
+		else if (!strcmp (cl.model_name[nummodels], "progs/h_player.mdl"))
 			cl_h_playerindex = nummodels;
-		else if (!strcmp (str, "progs/gib1.mdl"))
+		else if (!strcmp (cl.model_name[nummodels], "progs/gib1.mdl"))
 			cl_gib1index = nummodels;
-		else if (!strcmp (str, "progs/gib2.mdl"))
+		else if (!strcmp (cl.model_name[nummodels], "progs/gib2.mdl"))
 			cl_gib2index = nummodels;
-		else if (!strcmp (str, "progs/gib3.mdl"))
+		else if (!strcmp (cl.model_name[nummodels], "progs/gib3.mdl"))
 			cl_gib3index = nummodels;
 	}
 
-	if (modellist.nextmodel) {
+	n = MSG_ReadByte (net_message);
+
+	if (n) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (modellist_name, cl.servercount,
-							 modellist.nextmodel));
+						 va (modellist_name, cl.servercount, n));
 		return;
 	}
 
@@ -769,212 +800,18 @@ CL_ParseModellist (void)
 }
 
 void
-CL_ParseNOP (void)
+CL_ParseBaseline (entity_state_t *es)
 {
-	net_svc_nop_t block;
+	int         i;
 
-	if (NET_SVC_NOP_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseNOP: Bad Read\n");
-		return;
+	es->modelindex = MSG_ReadByte (net_message);
+	es->frame = MSG_ReadByte (net_message);
+	es->colormap = MSG_ReadByte (net_message);
+	es->skinnum = MSG_ReadByte (net_message);
+	for (i = 0; i < 3; i++) {
+		es->origin[i] = MSG_ReadCoord (net_message);
+		es->angles[i] = MSG_ReadAngle (net_message);
 	}
-}
-
-void
-CL_ParseDisconnect (void)
-{
-	net_svc_disconnect_t block;
-
-	if (NET_SVC_Disconnect_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseDisconnect: Bad Read\n");
-		return;
-	}
-
-	if (cls.state == ca_connected)
-		Host_EndGame ("Server disconnected\n"
-					  "Server version may not be compatible");
-	else
-		Host_EndGame ("Server disconnected");
-}
-
-void
-CL_ParseCenterprint (void)
-{
-	net_svc_centerprint_t block;
-
-	if (NET_SVC_Centerprint_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseCenterprint: Bad Read\n");
-		return;
-	}
-
-	SCR_CenterPrint (block.message);
-}
-
-void
-CL_ParseStufftext (void)
-{
-	net_svc_stufftext_t block;
-
-	if (NET_SVC_Stufftext_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseStufftext: Bad Read\n");
-		return;
-	}
-
-	Con_DPrintf ("stufftext: %s\n", block.commands);
-	Cbuf_AddText (block.commands);
-}
-
-void
-CL_ParseSetAngle (void)
-{
-	net_svc_setangle_t block;
-
-	if (NET_SVC_SetAngle_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseSetAngle: Bad Read\n");
-		return;
-	}
-
-	VectorCopy (block.angles, cl.viewangles);
-}
-
-void
-CL_ParseLightStyle (void)
-{
-	lightstyle_t *style;
-	net_svc_lightstyle_t block;
-
-	if (NET_SVC_LightStyle_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseLightStyle: Bad Read\n");
-		return;
-	}
-
-	if (block.stylenum >= MAX_LIGHTSTYLES) {
-		Host_NetError ("svc_lightstyle > MAX_LIGHTSTYLES");
-		return;
-	}
-	style = &r_lightstyle[block.stylenum];
-
-	strncpy (style->map, block.map, sizeof (style->map) - 1);
-	style->map[sizeof (style->map) - 1] = 0;
-	style->length = strlen (style->map);
-}
-
-void
-CL_ParseStopSound (void)
-{
-	net_svc_stopsound_t block;
-
-	if (NET_SVC_StopSound_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseStopSound: Bad Read\n");
-		return;
-	}
-
-	S_StopSound (block.entity, block.channel);
-}
-
-void
-CL_ParseUpdateFrags (void)
-{
-	net_svc_updatefrags_t block;
-
-	if (NET_SVC_UpdateFrags_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseUpdateFrags: Bad Read\n");
-		return;
-	}
-
-	Sbar_Changed ();
-	if (block.player >= MAX_CLIENTS) {
-		Host_NetError ("CL_ParseServerMessage: svc_updatefrags > "
-					   "MAX_SCOREBOARD");
-		return;
-	}
-	cl.players[block.player].frags = block.frags;
-}
-
-void
-CL_ParseUpdatePing (void)
-{
-	net_svc_updateping_t block;
-
-	if (NET_SVC_UpdatePing_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseUpdatePing: Bad Read\n");
-		return;
-	}
-
-	if (block.player >= MAX_CLIENTS) {
-		Host_NetError ("CL_ParseServerMessage: svc_updateping > "
-					   "MAX_SCOREBOARD");
-		return;
-	}
-	cl.players[block.player].ping = block.ping;
-}
-
-void
-CL_ParseUpdatePL (void)
-{
-	net_svc_updatepl_t block;
-
-	if (NET_SVC_UpdatePL_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseUpdatePL: Bad Read\n");
-		return;
-	}
-
-	if (block.player >= MAX_CLIENTS) {
-		Host_NetError ("CL_ParseServerMessage: svc_updatepl > "
-					   "MAX_SCOREBOARD");
-		return;
-	}
-	cl.players[block.player].pl = block.packetloss;
-}
-
-void
-CL_ParseUpdateEnterTime (void)
-{
-	net_svc_updateentertime_t block;
-
-	if (NET_SVC_UpdateEnterTime_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseUpdateEnterTime: Bad Read\n");
-		return;
-	}
-
-	if (block.player >= MAX_CLIENTS) {
-		Host_NetError ("CL_ParseServerMessage: svc_updateentertime "
-					   "> MAX_SCOREBOARD");
-		return;
-	}
-	cl.players[block.player].entertime = realtime - block.secondsago;
-}
-
-void
-CL_ParseSpawnBaseline (void)
-{
-	entity_state_t *es;
-	net_svc_spawnbaseline_t block;
-
-	if (NET_SVC_SpawnBaseline_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseSpawnBaseline: Bad Read\n");
-		return;
-	}
-
-	if (block.num >= MAX_EDICTS) {
-		Host_NetError ("CL_ParseSpawnBaseline: num %i >= MAX_EDICTS",
-					   block.num);
-		return;
-	}
-	if (block.modelindex >= MAX_MODELS) {
-		Host_NetError ("CL_ParseSpawnBaseline: modelindex %i >= MAX_MODELS",
-					   block.modelindex);
-		return;
-	}
-
-	es = &cl_baselines[block.num];
-
-	es->modelindex = block.modelindex;
-	es->frame = block.frame;
-	es->colormap = block.colormap;
-	es->skinnum = block.skinnum;
-	VectorCopy (block.origin, es->origin);
-	VectorCopy (block.angles, es->angles);
-
 	// LordHavoc: set up the baseline to account for new effects (alpha,
 	// colormod, etc)
 	es->alpha = 255;
@@ -994,33 +831,22 @@ void
 CL_ParseStatic (void)
 {
 	entity_t   *ent;
-	net_svc_spawnstatic_t block;
+	entity_state_t es;
 
-	if (NET_SVC_SpawnStatic_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseStatic: Bad Read\n");
-		return;
-	}
+	CL_ParseBaseline (&es);
 
-	if (block.modelindex >= MAX_MODELS) {
-		Host_NetError ("CL_ParseStatic: modelindex %i >= MAX_MODELS",
-					   block.modelindex);
-		return;
-	}
-
-	if (cl.num_statics >= MAX_STATIC_ENTITIES) {
-		Host_NetError ("Too many static entities");
-		return;
-	}
+	if (cl.num_statics >= MAX_STATIC_ENTITIES)
+		Host_EndGame ("Too many static entities");
 	ent = &cl_static_entities[cl.num_statics++];
 	CL_Init_Entity (ent);
 
 	// copy it to the current state
-	ent->model = cl.model_precache[block.modelindex];
-	ent->frame = block.frame;
-	ent->skinnum = block.skinnum;
+	ent->model = cl.model_precache[es.modelindex];
+	ent->frame = es.frame;
+	ent->skinnum = es.skinnum;
 
-	VectorCopy (block.origin, ent->origin);
-	VectorCopy (block.angles, ent->angles);
+	VectorCopy (es.origin, ent->origin);
+	VectorCopy (es.angles, ent->angles);
 
 	R_AddEfrags (ent);
 }
@@ -1028,42 +854,52 @@ CL_ParseStatic (void)
 void
 CL_ParseStaticSound (void)
 {
-	net_svc_spawnstaticsound_t block;
+	int         sound_num, vol, atten, i;
+	vec3_t      org;
 
-	if (NET_SVC_SpawnStaticSound_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseStaticSound: Bad Read\n");
-		return;
-	}
+	for (i = 0; i < 3; i++)
+		org[i] = MSG_ReadCoord (net_message);
+	sound_num = MSG_ReadByte (net_message);
+	vol = MSG_ReadByte (net_message);
+	atten = MSG_ReadByte (net_message);
 
-	S_StaticSound (cl.sound_precache[block.sound_num], block.position,
-				   block.volume, block.attenuation);
+	S_StaticSound (cl.sound_precache[sound_num], org, vol, atten);
 }
 
 /* ACTION MESSAGES */
 
 void
-CL_ParseSound (void)
+CL_ParseStartSoundPacket (void)
 {
-	net_svc_sound_t sound;
+	float       attenuation;
+	int         channel, ent, sound_num, volume, i;
+	vec3_t      pos;
 
-	if (NET_SVC_Sound_Parse (&sound, net_message)) {
-		Host_NetError ("CL_ParseSound: Bad Read\n");
-		return;
-	}
+	channel = MSG_ReadShort (net_message);
 
-	if (sound.entity >= MAX_EDICTS) {
-		Host_NetError ("CL_ParseSound: ent = %i", sound.entity);
-		return;
-	}
-	if (sound.sound_num >= MAX_SOUNDS) {
-		Host_NetError ("CL_ParseSound: sound_num = %i",
-					   sound.sound_num);
-		return;
-	}
+	if (channel & SND_VOLUME)
+		volume = MSG_ReadByte (net_message);
+	else
+		volume = DEFAULT_SOUND_PACKET_VOLUME;
 
-	S_StartSound (sound.entity, sound.channel,
-				  cl.sound_precache[sound.sound_num], sound.position,
-				  sound.volume, sound.attenuation);
+	if (channel & SND_ATTENUATION)
+		attenuation = MSG_ReadByte (net_message) / 64.0;
+	else
+		attenuation = DEFAULT_SOUND_PACKET_ATTENUATION;
+
+	sound_num = MSG_ReadByte (net_message);
+
+	for (i = 0; i < 3; i++)
+		pos[i] = MSG_ReadCoord (net_message);
+
+	ent = (channel >> 3) & 1023;
+	channel &= 7;
+
+	if (ent > MAX_EDICTS)
+		Host_EndGame ("CL_ParseStartSoundPacket: ent = %i", ent);
+
+	S_StartSound (ent, channel, cl.sound_precache[sound_num], pos,
+				  volume / 255.0, attenuation);
 }
 
 /*
@@ -1139,80 +975,74 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 }
 
 void
-CL_ParseUpdateUserInfo (void)
+CL_UpdateUserinfo (void)
 {
+	int            slot;
 	player_info_t *player;
-	net_svc_updateuserinfo_t updateuserinfo;
 
-	if (NET_SVC_UpdateUserInfo_Parse (&updateuserinfo, net_message)) {
-		Host_NetError ("CL_ParseUpdateUserInfo: Bad Read\n");
-		return;
-	}
+	slot = MSG_ReadByte (net_message);
+	if (slot >= MAX_CLIENTS)
+		Host_EndGame
+			("CL_ParseServerMessage: svc_updateuserinfo > MAX_SCOREBOARD");
 
-	if (updateuserinfo.slot >= MAX_CLIENTS) {
-		Host_NetError ("CL_ParseUpdateUserInfo: slot %i >= MAX_CLIENTS",
-					   updateuserinfo.slot);
-		return;
-	}
-
-	player = &cl.players[updateuserinfo.slot];
-	player->userid = updateuserinfo.userid;
+	player = &cl.players[slot];
+	player->userid = MSG_ReadLong (net_message);
 	if (player->userinfo)
 		Info_Destroy (player->userinfo);
-	player->userinfo = Info_ParseString (updateuserinfo.userinfo,
+	player->userinfo = Info_ParseString (MSG_ReadString (net_message),
 										 MAX_INFO_STRING);
 
-	CL_ProcessUserInfo (updateuserinfo.slot, player);
+	CL_ProcessUserInfo (slot, player);
 }
 
 void
-CL_ParseSetInfo (void)
+CL_SetInfo (void)
 {
-	int				flags;
-	player_info_t  *player;
-	net_svc_setinfo_t setinfo;
+	char        key[MAX_MSGLEN], value[MAX_MSGLEN];
+	int         slot;
+	int         flags;
+	player_info_t *player;
 
-	if (NET_SVC_SetInfo_Parse (&setinfo, net_message)) {
-		Host_NetError ("CL_ParseSetInfo: Bad Read\n");
-		return;
-	}
+	slot = MSG_ReadByte (net_message);
+	if (slot >= MAX_CLIENTS)
+		Host_EndGame ("CL_ParseServerMessage: svc_setinfo > MAX_SCOREBOARD");
 
-	if (setinfo.slot >= MAX_CLIENTS) {
-		Host_NetError ("CL_ParseSetInfo: slot %i >= MAX_CLIENTS", setinfo.slot);
-		return;
-	}
+	player = &cl.players[slot];
 
-	player = &cl.players[setinfo.slot];
+	strncpy (key, MSG_ReadString (net_message), sizeof (key) - 1);
+	key[sizeof (key) - 1] = 0;
+	strncpy (value, MSG_ReadString (net_message), sizeof (value) - 1);
+	key[sizeof (value) - 1] = 0;
+
+	Con_DPrintf ("SETINFO %s: %s=%s\n", player->name, key, value);
+
 	if (!player->userinfo)
 		player->userinfo = Info_ParseString ("", MAX_INFO_STRING);
 
-	Con_DPrintf ("SETINFO %s: %s=%s\n", player->name, setinfo.key,
-				 setinfo.value);
+	flags = !strequal (key, "name");
+	flags |= strequal (key, "team") << 1;
+	Info_SetValueForKey (player->userinfo, key, value, flags);
 
-	flags = !strequal (setinfo.key, "name");
-	flags |= strequal (setinfo.key, "team") << 1;
-	Info_SetValueForKey (player->userinfo, setinfo.key, setinfo.value, flags);
-
-	CL_ProcessUserInfo (setinfo.slot, player);
+	CL_ProcessUserInfo (slot, player);
 }
 
 void
-CL_ParseServerInfo (void)
+CL_ServerInfo (void)
 {
-	net_svc_serverinfo_t block;
+	char        key[MAX_MSGLEN], value[MAX_MSGLEN];
 
-	if (NET_SVC_ServerInfo_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseServerInfo: Bad Read\n");
-		return;
-	}
+	strncpy (key, MSG_ReadString (net_message), sizeof (key) - 1);
+	key[sizeof (key) - 1] = 0;
+	strncpy (value, MSG_ReadString (net_message), sizeof (value) - 1);
+	key[sizeof (value) - 1] = 0;
 
-	Con_DPrintf ("SERVERINFO: %s=%s\n", block.key, block.value);
+	Con_DPrintf ("SERVERINFO: %s=%s\n", key, value);
 
-	Info_SetValueForKey (cl.serverinfo, block.key, block.value, 0);
-	if (strequal (block.key, "chase")) {
-		cl.chase = atoi (block.value);
-	} else if (strequal (block.key, "watervis")) {
-		cl.watervis = atoi (block.value);
+	Info_SetValueForKey (cl.serverinfo, key, value, 0);
+	if (strequal (key, "chase")) {
+		cl.chase = atoi (value);
+	} else if (strequal (key, "watervis")) {
+		cl.watervis = atoi (value);
 	}
 }
 
@@ -1223,7 +1053,7 @@ CL_SetStat (int stat, int value)
 
 	if (stat < 0 || stat >= MAX_CL_STATS)
 //		Sys_Error ("CL_SetStat: %i is invalid", stat);
-		Host_NetError ("CL_SetStat: %i is invalid", stat);
+		Host_EndGame ("CL_SetStat: %i is invalid", stat);
 
 	Sbar_Changed ();
 
@@ -1244,164 +1074,16 @@ CL_SetStat (int stat, int value)
 }
 
 void
-CL_ParseKilledMonster (void)
-{
-	net_svc_killedmonster_t block;
-
-	if (NET_SVC_KilledMonster_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseKilledMonster: Bad Read\n");
-		return;
-	}
-
-	cl.stats[STAT_MONSTERS]++;
-}
-
-void
-CL_ParseFoundSecret (void)
-{
-	net_svc_foundsecret_t block;
-
-	if (NET_SVC_FoundSecret_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseFoundSecret: Bad Read\n");
-		return;
-	}
-
-	cl.stats[STAT_SECRETS]++;
-}
-
-void
-CL_ParseUpdateStat (void)
-{
-	net_svc_updatestat_t block;
-
-	if (NET_SVC_UpdateStat_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseUpdateStat: Bad Read\n");
-		return;
-	}
-
-	CL_SetStat (block.stat, block.value);
-}
-
-void
-CL_ParseUpdateStatLong (void)
-{
-	net_svc_updatestatlong_t block;
-
-	if (NET_SVC_UpdateStatLong_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseUpdateStatLong: Bad Read\n");
-		return;
-	}
-
-	CL_SetStat (block.stat, block.value);
-}
-
-void
-CL_ParseCDTrack (void)
-{
-	net_svc_cdtrack_t block;
-
-	if (NET_SVC_CDTrack_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseCDTrack: Bad Read\n");
-		return;
-	}
-
-	cl.cdtrack = block.cdtrack;
-	CDAudio_Play (cl.cdtrack, true);
-}
-
-void
-CL_ParseIntermission (void)
-{
-	net_svc_intermission_t block;
-
-	if (NET_SVC_Intermission_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseIntermission: Bad Read\n");
-		return;
-	}
-
-	cl.intermission = 1;
-	cl.completed_time = realtime;
-	vid.recalc_refdef = true;	// go to full screen
-	VectorCopy (block.origin, cl.simorg);
-	VectorCopy (block.angles, cl.simangles);
-	VectorCopy (vec3_origin, cl.simvel);
-
-	Con_DPrintf ("Intermission origin: %f %f %f\nIntermission angles: "
-				 "%f %f %f\n", cl.simorg[0], cl.simorg[1], cl.simorg[2],
-				 cl.simangles[0], cl.simangles[1], cl.simangles[2]);
-}
-
-void
-CL_ParseFinale (void)
-{
-	net_svc_finale_t block;
-
-	if (NET_SVC_Finale_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseFinale: Bad Read\n");
-		return;
-	}
-
-	cl.intermission = 2;
-	cl.completed_time = realtime;
-	vid.recalc_refdef = true;	// go to full screen
-	SCR_CenterPrint (block.message);
-}
-
-void
-CL_ParseSellScreen (void)
-{
-	net_svc_sellscreen_t block;
-
-	if (NET_SVC_SellScreen_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseSellScreen: Bad Read\n");
-		return;
-	}
-
-	Cmd_ExecuteString ("help", src_command);
-}
-
-void
-CL_ParseSmallKick (void)
-{
-	net_svc_smallkick_t block;
-
-	if (NET_SVC_SmallKick_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseSmallKick: Bad Read\n");
-		return;
-	}
-
-	cl.punchangle = -2;
-}
-
-void
-CL_ParseBigKick (void)
-{
-	net_svc_bigkick_t block;
-
-	if (NET_SVC_BigKick_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseBigKick: Bad Read\n");
-		return;
-	}
-
-	cl.punchangle = -4;
-}
-
-void
-CL_ParseMuzzleFlash (void)
+CL_MuzzleFlash (void)
 {
 	dlight_t   *dl;
 	int         i;
 	player_state_t *pl;
 	vec3_t      fv, rv, uv;
-	net_svc_muzzleflash_t block;
 
-	if (NET_SVC_MuzzleFlash_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseMuzzleFlash: Bad Read\n");
-		return;
-	}
+	i = MSG_ReadShort (net_message);
 
-	i = block.player;
-	if (i < 1 || i > MAX_CLIENTS)
+	if ((unsigned int) (i - 1) >= MAX_CLIENTS)
 		return;
 
 	pl = &cl.frames[parsecountmod].playerstate[i - 1];
@@ -1423,71 +1105,15 @@ CL_ParseMuzzleFlash (void)
 	dl->color[2] = 0.05;
 }
 
-void
-CL_ParseChokeCount (void)
-{
-	int j;
-	net_svc_chokecount_t block;
-
-	if (NET_SVC_ChokeCount_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseChokeCount: Bad Read\n");
-		return;
-	}
-
-	for (j = 0; j < block.count; j++)
-		cl.frames[(cls.netchan.incoming_acknowledged - 1 - j) &
-				  UPDATE_MASK].receivedtime = -2;
-}
-
-void
-CL_ParseMaxSpeed (void)
-{
-	net_svc_maxspeed_t block;
-
-	if (NET_SVC_MaxSpeed_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseEntGravity: Bad Read\n");
-		return;
-	}
-
-	movevars.maxspeed = block.maxspeed;
-}
-
-void
-CL_ParseEntGravity (void)
-{
-	net_svc_entgravity_t block;
-
-	if (NET_SVC_EntGravity_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseEntGravity: Bad Read\n");
-		return;
-	}
-
-	movevars.entgravity = block.gravity;
-}
-
-void
-CL_ParseSetPause (void)
-{
-	net_svc_setpause_t block;
-
-	if (NET_SVC_SetPause_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseSetPause: Bad Read\n");
-		return;
-	}
-
-	cl.paused = block.paused;
-	if (cl.paused)
-		CDAudio_Pause ();
-	else
-		CDAudio_Resume ();
-}
+#define SHOWNET(x) if (cl_shownet->int_val == 2) Con_Printf ("%3i:%s\n", net_message->readcount-1, x);
 
 int         received_framecount;
 
 void
 CL_ParseServerMessage (void)
 {
-	int         cmd;
+	const char *s;
+	int         cmd, i, j;
 
 	received_framecount = host_framecount;
 	cl.last_servermessage = realtime;
@@ -1503,78 +1129,290 @@ CL_ParseServerMessage (void)
 
 	// parse the message
 	while (1) {
-		if (cls.state == ca_disconnected)
-			break; // something called Host_NetError
-
 		if (net_message->badread) {
-			Host_NetError ("CL_ParseServerMessage: Bad server message");
+			Host_EndGame ("CL_ParseServerMessage: Bad server message");
 			break;
 		}
 
 		cmd = MSG_ReadByte (net_message);
 
 		if (cmd == -1) {
-			if (cl_shownet->int_val == 2)
-				Con_Printf ("%3i:%s\n", net_message->readcount,
-							"END OF MESSAGE");
+			net_message->readcount++;	// so the EOM showner has the right
+										// value
+			SHOWNET ("END OF MESSAGE");
 			break;
 		}
 
-		if (cl_shownet->int_val == 2)
-			Con_Printf ("%3i:%s\n", net_message->readcount - 1,
-						NET_SVC_GetString (cmd));
+		SHOWNET (svc_strings[cmd]);
 
 		// other commands
 		switch (cmd) {
 			default:
-				Host_NetError ("CL_ParseServerMessage: Illegible "
-							   "server message");
+				Host_EndGame
+					("CL_ParseServerMessage: Illegible server message");
 				break;
 
-			case svc_nop:				CL_ParseNOP (); break;
-			case svc_disconnect:		CL_ParseDisconnect (); break;
-			case svc_print:				CL_ParsePrint (); break;
-			case svc_centerprint:		CL_ParseCenterprint (); break;
-			case svc_stufftext:			CL_ParseStufftext (); break;
-			case svc_damage:			CL_ParseDamage (); break;
-			case svc_serverdata:		CL_ParseServerData (); break;
-			case svc_setangle:			CL_ParseSetAngle (); break;
-			case svc_lightstyle:		CL_ParseLightStyle (); break;
-			case svc_sound:				CL_ParseSound (); break;
-			case svc_stopsound:			CL_ParseStopSound (); break;
-			case svc_updatefrags:		CL_ParseUpdateFrags (); break;
-			case svc_updateping:		CL_ParseUpdatePing (); break;
-			case svc_updatepl:			CL_ParseUpdatePL (); break;
-			case svc_updateentertime:	CL_ParseUpdateEnterTime (); break;
-			case svc_spawnbaseline:		CL_ParseSpawnBaseline (); break;
-			case svc_spawnstatic:		CL_ParseStatic (); break;
-			case svc_temp_entity:		CL_ParseTEnt (); break;
-			case svc_killedmonster:		CL_ParseKilledMonster (); break;
-			case svc_foundsecret:		CL_ParseFoundSecret (); break;
-			case svc_updatestat:		CL_ParseUpdateStat (); break;
-			case svc_updatestatlong:	CL_ParseUpdateStatLong (); break;
-			case svc_spawnstaticsound:	CL_ParseStaticSound (); break;
-			case svc_cdtrack:			CL_ParseCDTrack (); break;
-			case svc_intermission:		CL_ParseIntermission (); break;
-			case svc_finale:			CL_ParseFinale (); break;
-			case svc_sellscreen:		CL_ParseSellScreen (); break;
-			case svc_smallkick:			CL_ParseSmallKick (); break;
-			case svc_bigkick:			CL_ParseBigKick (); break;
-			case svc_muzzleflash:		CL_ParseMuzzleFlash (); break;
-			case svc_updateuserinfo:	CL_ParseUpdateUserInfo (); break;
-			case svc_setinfo:			CL_ParseSetInfo (); break;
-			case svc_serverinfo:		CL_ParseServerInfo (); break;
-			case svc_download:			CL_ParseDownload (); break;
-			case svc_playerinfo:		CL_ParsePlayerinfo (); break;
-			case svc_nails:				CL_ParseProjectiles (); break;
-			case svc_chokecount:		CL_ParseChokeCount (); break;
-			case svc_modellist:			CL_ParseModellist (); break;
-			case svc_soundlist:			CL_ParseSoundlist (); break;
-			case svc_packetentities:	CL_ParsePacketEntities (); break;
-			case svc_deltapacketentities: CL_ParseDeltaPacketEntities (); break;
-			case svc_maxspeed:			CL_ParseMaxSpeed (); break;
-			case svc_entgravity:		CL_ParseEntGravity (); break;
-			case svc_setpause:			CL_ParseSetPause (); break;
+			case svc_nop:
+//				Con_Printf ("svc_nop\n");
+				break;
+
+			case svc_disconnect:
+				if (cls.state == ca_connected)
+					Host_EndGame ("Server disconnected\n"
+								  "Server version may not be compatible");
+				else
+					Host_EndGame ("Server disconnected");
+				break;
+
+			case svc_print: {
+ 				char p[2048];
+				i = MSG_ReadByte (net_message);
+				s = MSG_ReadString (net_message);
+				if (i == PRINT_CHAT) {
+					// TODO: cl_nofake 2 -- accept fake messages from teammates
+
+					if (cl_nofake->int_val) {
+						char *c;
+						strncpy (p, s, sizeof (p));
+						p[sizeof (p) - 1] = 0;
+						for (c = p; *c; c++) {
+							if (*c == '\r')
+								*c = '#';
+						}
+						s = p;
+					}
+					con_ormask = 128;
+					S_LocalSound ("misc/talk.wav");
+					Team_ParseChat(s);
+				}
+				Con_Printf ("%s", s);
+				con_ormask = 0;
+				break;
+			}
+			case svc_centerprint:
+				SCR_CenterPrint (MSG_ReadString (net_message));
+				break;
+
+			case svc_stufftext:
+				s = MSG_ReadString (net_message);
+				Con_DPrintf ("stufftext: %s\n", s);
+				Cbuf_AddText (s);
+				break;
+
+			case svc_damage:
+				V_ParseDamage ();
+				break;
+
+			case svc_serverdata:
+				Cbuf_Execute ();		// make sure any stuffed commands are 
+										// done
+				CL_ParseServerData ();
+				vid.recalc_refdef = true;	// leave full screen intermission
+				break;
+
+			case svc_setangle:
+				for (i = 0; i < 3; i++)
+					cl.viewangles[i] = MSG_ReadAngle (net_message);
+//				cl.viewangles[PITCH] = cl.viewangles[ROLL] = 0;
+				break;
+
+			case svc_lightstyle:
+				i = MSG_ReadByte (net_message);
+				if (i >= MAX_LIGHTSTYLES)
+//					Sys_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
+					Host_EndGame ("svc_lightstyle > MAX_LIGHTSTYLES");
+				strcpy (r_lightstyle[i].map, MSG_ReadString (net_message));
+				r_lightstyle[i].length = strlen (r_lightstyle[i].map);
+				break;
+
+			case svc_sound:
+				CL_ParseStartSoundPacket ();
+				break;
+
+			case svc_stopsound:
+				i = MSG_ReadShort (net_message);
+				S_StopSound (i >> 3, i & 7);
+				break;
+
+			case svc_updatefrags:
+				Sbar_Changed ();
+				i = MSG_ReadByte (net_message);
+				if (i >= MAX_CLIENTS)
+					Host_EndGame ("CL_ParseServerMessage: svc_updatefrags > "
+								  "MAX_SCOREBOARD");
+				cl.players[i].frags = MSG_ReadShort (net_message);
+				break;
+
+			case svc_updateping:
+				i = MSG_ReadByte (net_message);
+				if (i >= MAX_CLIENTS)
+					Host_EndGame ("CL_ParseServerMessage: svc_updateping > "
+						 "MAX_SCOREBOARD");
+				cl.players[i].ping = MSG_ReadShort (net_message);
+				break;
+
+			case svc_updatepl:
+				i = MSG_ReadByte (net_message);
+				if (i >= MAX_CLIENTS)
+					Host_EndGame ("CL_ParseServerMessage: svc_updatepl > "
+								  "MAX_SCOREBOARD");
+				cl.players[i].pl = MSG_ReadByte (net_message);
+				break;
+
+			case svc_updateentertime:
+				// time is sent over as seconds ago
+				i = MSG_ReadByte (net_message);
+				if (i >= MAX_CLIENTS)
+					Host_EndGame ("CL_ParseServerMessage: svc_updateentertime "
+								  "> MAX_SCOREBOARD");
+				cl.players[i].entertime = realtime - MSG_ReadFloat
+					(net_message);
+				break;
+
+			case svc_spawnbaseline:
+				i = MSG_ReadShort (net_message);
+				CL_ParseBaseline (&cl_baselines[i]);
+				break;
+			case svc_spawnstatic:
+				CL_ParseStatic ();
+				break;
+			case svc_temp_entity:
+				CL_ParseTEnt ();
+				break;
+
+			case svc_killedmonster:
+				cl.stats[STAT_MONSTERS]++;
+				break;
+
+			case svc_foundsecret:
+				cl.stats[STAT_SECRETS]++;
+				break;
+
+			case svc_updatestat:
+				i = MSG_ReadByte (net_message);
+				j = MSG_ReadByte (net_message);
+				CL_SetStat (i, j);
+				break;
+			case svc_updatestatlong:
+				i = MSG_ReadByte (net_message);
+				j = MSG_ReadLong (net_message);
+				CL_SetStat (i, j);
+				break;
+
+			case svc_spawnstaticsound:
+				CL_ParseStaticSound ();
+				break;
+
+			case svc_cdtrack:
+				cl.cdtrack = MSG_ReadByte (net_message);
+				CDAudio_Play ((byte) cl.cdtrack, true);
+				break;
+
+			case svc_intermission:
+				Con_DPrintf ("svc_intermission\n");
+				cl.intermission = 1;
+				cl.completed_time = realtime;
+				vid.recalc_refdef = true;	// go to full screen
+				Con_DPrintf ("intermission simorg: ");
+				for (i = 0; i < 3; i++) {
+					cl.simorg[i] = MSG_ReadCoord (net_message);
+					Con_DPrintf ("%f ", cl.simorg[i]);
+				}
+				Con_DPrintf ("\nintermission simangles: ");
+				for (i = 0; i < 3; i++) {
+					cl.simangles[i] = MSG_ReadAngle (net_message);
+					Con_DPrintf ("%f ", cl.simangles[i]);
+				}
+				Con_DPrintf ("\n");
+				VectorCopy (vec3_origin, cl.simvel);
+				break;
+
+			case svc_finale:
+				cl.intermission = 2;
+				cl.completed_time = realtime;
+				vid.recalc_refdef = true;	// go to full screen
+				SCR_CenterPrint (MSG_ReadString (net_message));
+				break;
+
+			case svc_sellscreen:
+				Cmd_ExecuteString ("help", src_command);
+				break;
+
+			case svc_smallkick:
+				cl.punchangle = -2;
+				break;
+			case svc_bigkick:
+				cl.punchangle = -4;
+				break;
+
+			case svc_muzzleflash:
+				CL_MuzzleFlash ();
+				break;
+
+			case svc_updateuserinfo:
+				CL_UpdateUserinfo ();
+				break;
+
+			case svc_setinfo:
+				CL_SetInfo ();
+				break;
+
+			case svc_serverinfo:
+				CL_ServerInfo ();
+				break;
+
+			case svc_download:
+				CL_ParseDownload ();
+				break;
+
+			case svc_playerinfo:
+				CL_ParsePlayerinfo ();
+				break;
+
+			case svc_nails:
+				CL_ParseProjectiles ();
+				break;
+
+			case svc_chokecount:		// some preceding packets were choked
+				i = MSG_ReadByte (net_message);
+				for (j = 0; j < i; j++)
+					cl.
+						frames[(cls.netchan.incoming_acknowledged - 1 - j) &
+							   UPDATE_MASK].receivedtime = -2;
+				break;
+
+			case svc_modellist:
+				CL_ParseModellist ();
+				break;
+
+			case svc_soundlist:
+				CL_ParseSoundlist ();
+				break;
+
+			case svc_packetentities:
+				CL_ParsePacketEntities (false);
+				break;
+
+			case svc_deltapacketentities:
+				CL_ParsePacketEntities (true);
+				break;
+
+			case svc_maxspeed:
+				movevars.maxspeed = MSG_ReadFloat (net_message);
+				break;
+
+			case svc_entgravity:
+				movevars.entgravity = MSG_ReadFloat (net_message);
+				break;
+
+			case svc_setpause:
+				cl.paused = MSG_ReadByte (net_message);
+				if (cl.paused)
+					CDAudio_Pause ();
+				else
+					CDAudio_Resume ();
+				break;
+
 		}
 	}
 

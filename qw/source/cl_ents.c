@@ -43,7 +43,6 @@ static const char rcsid[] =
 #include "QF/render.h"
 #include "QF/skin.h"
 
-#include "bothdefs.h"
 #include "cl_cam.h"
 #include "cl_ents.h"
 #include "cl_main.h"
@@ -54,7 +53,6 @@ static const char rcsid[] =
 #include "d_iface.h"
 #include "host.h"
 #include "msg_ucmd.h"
-#include "net_svc.h"
 #include "pmove.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
@@ -69,7 +67,6 @@ static struct predicted_player {
 entity_t    cl_packet_ents[512];	// FIXME: magic number
 entity_t    cl_flag_ents[MAX_CLIENTS];
 entity_t    cl_player_ents[MAX_CLIENTS];
-
 
 
 void
@@ -127,168 +124,221 @@ CL_NewDlight (int key, vec3_t org, int effects)
 
 int         bitcounts[32];				// / just for protocol profiling
 
+/*
+	CL_ParseDelta
+
+	Can go from either a baseline or a previous packet_entity
+*/
 void
-CL_EntityState_Copy (entity_state_t *src, entity_state_t *dest, int bits)
+CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 {
+	int		i;
+
+	// set everything to the state we are delta'ing from
+	*to = *from;
+
+	to->number = bits & 511;
+	bits &= ~511;
+
+	if (bits & U_MOREBITS) {			// read in the low order bits
+		i = MSG_ReadByte (net_message);
+		bits |= i;
+	}
+	// count the bits for net profiling
+//	for (i=0 ; i<16 ; i++)
+//		if (bits&(1<<i))
+//			bitcounts[i]++;
+
+	// LordHavoc: Endy neglected to mark this as being part of the QSG
+	// version 2 stuff...
+	if (bits & U_EXTEND1) {
+		bits |= MSG_ReadByte (net_message) << 16;
+		if (bits & U_EXTEND2)
+			bits |= MSG_ReadByte (net_message) << 24;
+	}
+
+	to->flags = bits;
+
 	if (bits & U_MODEL)
-		dest->modelindex = src->modelindex;
+		to->modelindex = MSG_ReadByte (net_message);
+
 	if (bits & U_FRAME)
-		dest->frame = (dest->frame & 0xFF00) | (src->frame & 0xFF);
+		to->frame = MSG_ReadByte (net_message);
+
 	if (bits & U_COLORMAP)
-		dest->colormap = src->colormap;
+		to->colormap = MSG_ReadByte (net_message);
+
 	if (bits & U_SKIN)
-		dest->skinnum = src->skinnum;
+		to->skinnum = MSG_ReadByte (net_message);
+
 	if (bits & U_EFFECTS)
-		dest->effects = (dest->effects & 0xFF00) | (src->effects & 0xFF);
+		to->effects = MSG_ReadByte (net_message);
 
 	if (bits & U_ORIGIN1)
-		dest->origin[0] = src->origin[0];
-	if (bits & U_ANGLE1)
-		dest->angles[0] = src->angles[0];
-	if (bits & U_ORIGIN2)
-		dest->origin[1] = src->origin[1];
-	if (bits & U_ANGLE2)
-		dest->angles[1] = src->angles[1];
-	if (bits & U_ORIGIN3)
-		dest->origin[2] = src->origin[2];
-	if (bits & U_ANGLE3)
-		dest->angles[2] = src->angles[2];
+		to->origin[0] = MSG_ReadCoord (net_message);
 
+	if (bits & U_ANGLE1)
+		to->angles[0] = MSG_ReadAngle (net_message);
+
+	if (bits & U_ORIGIN2)
+		to->origin[1] = MSG_ReadCoord (net_message);
+
+	if (bits & U_ANGLE2)
+		to->angles[1] = MSG_ReadAngle (net_message);
+
+	if (bits & U_ORIGIN3)
+		to->origin[2] = MSG_ReadCoord (net_message);
+
+	if (bits & U_ANGLE3)
+		to->angles[2] = MSG_ReadAngle (net_message);
+
+	// LordHavoc: Endy neglected to mark this as being part of the QSG
+	// version 2 stuff... rearranged it and implemented missing effects
+// Ender (QSG - Begin)
 	if (bits & U_ALPHA)
-		dest->alpha = src->alpha;
+		to->alpha = MSG_ReadByte (net_message);
 	if (bits & U_SCALE)
-		dest->scale = src->scale;
+		to->scale = MSG_ReadByte (net_message);
 	if (bits & U_EFFECTS2)
-		dest->effects = (dest->effects & 0xFF) | (src->effects & 0xFF00);
+		to->effects = (to->effects & 0xFF) | (MSG_ReadByte (net_message) << 8);
 	if (bits & U_GLOWSIZE)
-		dest->glow_size = src->glow_size;
+		to->glow_size = MSG_ReadByte (net_message);
 	if (bits & U_GLOWCOLOR)
-		dest->glow_color = src->glow_color;
+		to->glow_color = MSG_ReadByte (net_message);
 	if (bits & U_COLORMOD)
-		dest->colormod = src->colormod;
+		to->colormod = MSG_ReadByte (net_message);
 	if (bits & U_FRAME2)
-		dest->frame = (dest->frame & 0xFF) | (src->frame & 0xFF00);
+		to->frame = (to->frame & 0xFF) | (MSG_ReadByte (net_message) << 8);
+// Ender (QSG - End)
 
 	if (bits & U_SOLID) {
 		// FIXME
 	}
+/*
+	if ((!to->alpha) || (!to->colormod))
+		Con_Printf("fa: %d, fc: %d, ta: %d, tc: %d\n",
+				   from->alpha, from->colormod, to->alpha, to->colormod);
+*/
+/*
+	if ((!ent->alpha) || (!ent->colormod[0]) || (!ent->colormod[1]) ||
+		(!ent->colormod[2])) {
+		Con_Printf ("ea: %f, ec0: %f, ec1: %f ec2: %f, sa: %d, sc: %d\n",
+					ent->alpha, ent->colormod[0], ent->colormod[1],
+					ent->colormod[2], s1->alpha, s1->colormod);
+	}
+*/
 }
 
 void
-CL_ParsePacketEntities (void)
+FlushEntityPacket (void)
 {
-	int			index, packetnum;
-	packet_entities_t *newp;
-	net_svc_packetentities_t block;
+	entity_state_t	olde, newe;
+	int				word;
 
-	packetnum = cls.netchan.incoming_sequence & UPDATE_MASK;
-	newp = &cl.frames[packetnum].packet_entities;
-	cl.frames[packetnum].invalid = false;
+	Con_DPrintf ("FlushEntityPacket\n");
 
-	cl.validsequence = cls.netchan.incoming_sequence;
+	memset (&olde, 0, sizeof (olde));
 
-	newp->num_entities = 0;
+	cl.validsequence = 0;				// can't render a frame
+	cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK].invalid = true;
 
-	if (NET_SVC_PacketEntities_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParsePacketEntities: Bad Read");
-		return;
+	// read it all, but ignore it
+	while (1) {
+		word = (unsigned short) MSG_ReadShort (net_message);
+		if (net_message->badread) {			// something didn't parse right...
+			Host_EndGame ("msg_badread in packetentities");
+			return;
+		}
+
+		if (!word)
+			break;						// done
+
+		CL_ParseDelta (&olde, &newe, word);
 	}
-
-	for (index = 0; block.words[index]; index++) {
-		if (block.words[index] & U_REMOVE) {
-			Host_NetError ("CL_ParsePacketEntities: U_REMOVE on full "
-						   "update\n");
-			cl.validsequence = 0; // XXX
-			cl.frames[packetnum].invalid = true;
-			return;
-		}
-
-		if (index >= MAX_PACKET_ENTITIES) {
-			Host_NetError ("CL_ParsePacketEntities: index %i >= "
-						   "MAX_PACKET_ENTITIES", index);
-			return;
-		}
-
-		newp->entities[index] = cl_baselines[block.words[index] & 511];
-		CL_EntityState_Copy (&block.deltas[index],
-							 &newp->entities[index],
-							 block.deltas[index].flags);
-		newp->entities[index].number = block.deltas[index].number;
-		if (newp->entities[index].modelindex >= MAX_MODELS) {
-			Host_NetError ("CL_ParsePacketEntities: modelindex %i >= "
-						   "MAX_MODELS", newp->entities[index].modelindex);
-			return;
-		}
-		continue;
-	}
-
-	newp->num_entities = index;
 }
 
 /*
-	CL_ParseDeltaPacketEntities
+	CL_ParsePacketEntities
 
 	An svc_packetentities has just been parsed, deal with the
 	rest of the data stream.
 */
 void
-CL_ParseDeltaPacketEntities ()
+CL_ParsePacketEntities (qboolean delta)
 {
-	int			oldindex = 0, newindex = 0;
-	int			wordindex = 0, deltaindex = 0;
-	int			oldnum, newnum;
-	int			oldpacket, newpacket;
-	packet_entities_t *oldp, *newp;
-	net_svc_deltapacketentities_t block;
-
-	if (NET_SVC_DeltaPacketEntities_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseDeltaPacketEntities: Bad Read");
-		return;
-	}
+	byte		from;
+	int			oldindex, newindex, newnum, oldnum, oldpacket, newpacket, word;
+	packet_entities_t *oldp, *newp, dummy;
+	qboolean	full;
 
 	newpacket = cls.netchan.incoming_sequence & UPDATE_MASK;
 	newp = &cl.frames[newpacket].packet_entities;
 	cl.frames[newpacket].invalid = false;
 
-	oldpacket = cl.frames[newpacket].delta_sequence;
+	if (delta) {
+		from = MSG_ReadByte (net_message);
 
-	if (cls.netchan.outgoing_sequence - oldpacket >= UPDATE_BACKUP - 1) {
-		// we can't use this, it is too old
-		Con_DPrintf ("CL_ParseDeltaPacketEntities: old packet\n");
-		cl.validsequence = 0;				// can't render a frame
-		cl.frames[newpacket].invalid = true;
-		return;
-	}
-	if ((block.from & UPDATE_MASK) != (oldpacket & UPDATE_MASK)) {
-		Con_DPrintf ("CL_ParseDeltaPacketEntities: from mismatch\n");
-		cl.validsequence = 0;
-		cl.frames[newpacket].invalid = true;
-		return;
-	}
-	if (oldpacket == -1) {
-        Host_NetError ("Cl_ParseDeltaPacketEntities: invalid "
-					   "delta_sequence\n");
-		return;
+		oldpacket = cl.frames[newpacket].delta_sequence;
+
+		if ((from & UPDATE_MASK) != (oldpacket & UPDATE_MASK))
+			Con_DPrintf ("WARNING: from mismatch\n");
+	} else
+		oldpacket = -1;
+
+	full = false;
+	if (oldpacket != -1) {
+		if (cls.netchan.outgoing_sequence - oldpacket >= UPDATE_BACKUP - 1) {
+			// we can't use this, it is too old
+			FlushEntityPacket ();
+			return;
+		}
+		cl.validsequence = cls.netchan.incoming_sequence;
+		oldp = &cl.frames[oldpacket & UPDATE_MASK].packet_entities;
+	} else {	// a full update that we can start delta compressing from now
+		oldp = &dummy;
+		dummy.num_entities = 0;
+		cl.validsequence = cls.netchan.incoming_sequence;
+		full = true;
 	}
 
-	cl.validsequence = cls.netchan.incoming_sequence;
-	oldp = &cl.frames[oldpacket & UPDATE_MASK].packet_entities;
-
+	oldindex = 0;
+	newindex = 0;
 	newp->num_entities = 0;
 
-	for (; block.words[wordindex];) {
-		newnum = block.words[wordindex] & 511;
+	while (1) {
+		word = (unsigned short) MSG_ReadShort (net_message);
+		if (net_message->badread) {			// something didn't parse right...
+			Host_EndGame ("msg_badread in packetentities");
+			return;
+		}
+
+		if (!word) {	// copy rest of ents from old packet
+			while (oldindex < oldp->num_entities) {	
+//				Con_Printf ("copy %i\n", oldp->entities[oldindex].number);
+				if (newindex >= MAX_PACKET_ENTITIES)
+					Host_EndGame ("CL_ParsePacketEntities: newindex == "
+								  "MAX_PACKET_ENTITIES");
+				newp->entities[newindex] = oldp->entities[oldindex];
+				newindex++;
+				oldindex++;
+			}
+			break;
+		}
+		newnum = word & 511;
 		oldnum = oldindex >= oldp->num_entities ? 9999 :
 			oldp->entities[oldindex].number;
 
-		while (newnum > oldnum) {	// copy one of the old entities 
-									// over to the new packet unchanged
-//			Con_Printf ("copy %i\n", oldnum);
-			if (newindex >= MAX_PACKET_ENTITIES) {
-				Host_NetError ("CL_ParseDeltaPacketEntities: newindex >= "
-							   "MAX_PACKET_ENTITIES (1st)");
+		while (newnum > oldnum) {
+			if (full) {
+				Con_Printf ("WARNING: oldcopy on full update");
+				FlushEntityPacket ();
 				return;
 			}
+//			Con_Printf ("copy %i\n", oldnum);
+			// copy one of the old entities over to the new packet unchanged
+			if (newindex >= MAX_PACKET_ENTITIES)
+				Host_EndGame ("CL_ParsePacketEntities: newindex == "
+							  "MAX_PACKET_ENTITIES");
 			newp->entities[newindex] = oldp->entities[oldindex];
 			newindex++;
 			oldindex++;
@@ -298,72 +348,42 @@ CL_ParseDeltaPacketEntities ()
 
 		if (newnum < oldnum) {			// new from baseline
 //			Con_Printf ("baseline %i\n", newnum);
-			if (block.words[wordindex] & U_REMOVE) {
-				wordindex++;
+			if (word & U_REMOVE) {
+				if (full) {
+					cl.validsequence = 0;
+					Con_Printf ("WARNING: U_REMOVE on full update\n");
+					FlushEntityPacket ();
+					return;
+				}
 				continue;
 			}
 
-			if (newindex >= MAX_PACKET_ENTITIES) {
-				Host_NetError ("CL_ParseDeltaPacketEntities: newindex >= "
-							   "MAX_PACKET_ENTITIES (2nd)");
-				return;
-			}
-			newp->entities[newindex] = cl_baselines[newnum];
-			CL_EntityState_Copy (&block.deltas[deltaindex],
-								 &newp->entities[newindex],
-								 block.deltas[deltaindex].flags);
-			newp->entities[newindex].number
-				= block.deltas[deltaindex].number;
-			if (newp->entities[newindex].modelindex >= MAX_MODELS) {
-				Host_NetError ("CL_ParsePacketEntities: modelindex %i >= "
-							   "MAX_MODELS",
-							   newp->entities[newindex].modelindex);
-				return;
-			}
-			wordindex++;
-			deltaindex++;
+			if (newindex >= MAX_PACKET_ENTITIES)
+				Host_EndGame ("CL_ParsePacketEntities: newindex == "
+							  "MAX_PACKET_ENTITIES");
+			CL_ParseDelta (&cl_baselines[newnum], &newp->entities[newindex],
+						   word);
 			newindex++;
 			continue;
 		}
 
 		if (newnum == oldnum) {			// delta from previous
-//			Con_Printf ("delta %i\n", newnum);
-			if (block.words[wordindex] & U_REMOVE) {	// Clear the entity
-				memset (&cl_packet_ents[newnum], 0, sizeof (entity_t));
-				wordindex++;
+			if (full) {
+				cl.validsequence = 0;
+				Con_Printf ("WARNING: delta on full update");
+			}
+			if (word & U_REMOVE) {	// Clear the entity
+				entity_t	*ent = &cl_packet_ents[newnum];
+				memset (ent, 0, sizeof (entity_t));
 				oldindex++;
 				continue;
 			}
-			newp->entities[newindex] = oldp->entities[oldindex];
-			CL_EntityState_Copy (&block.deltas[deltaindex],
-								 &newp->entities[newindex],
-								 block.deltas[deltaindex].flags);
-			newp->entities[newindex].number
-				= block.deltas[deltaindex].number;
-			if (newp->entities[newindex].modelindex >= MAX_MODELS) {
-				Host_NetError ("CL_ParsePacketEntities: modelindex %i >= "
-							   "MAX_MODELS",
-							   newp->entities[newindex].modelindex);
-				return;
-			}
-
-			wordindex++;
-			deltaindex++;
+//			Con_Printf ("delta %i\n", newnum);
+			CL_ParseDelta (&oldp->entities[oldindex],
+						   &newp->entities[newindex], word);
 			newindex++;
 			oldindex++;
 		}
-	}
-
-	while (oldindex < oldp->num_entities) {	// copy rest of ents from old packet
-//		Con_Printf ("copy %i\n", oldp->entities[oldindex].number);
-		if (newindex >= MAX_PACKET_ENTITIES) {
-			Host_NetError ("CL_ParseDeltaPacketEntities: newindex >= "
-						   "MAX_PACKET_ENTITIES (3rd)");
-			return;
-		}
-		newp->entities[newindex] = oldp->entities[oldindex];
-		newindex++;
-		oldindex++;
 	}
 
 	newp->num_entities = newindex;
@@ -523,6 +543,7 @@ typedef struct {
 	entity_t	ent;
 } projectile_t;
 
+#define	MAX_PROJECTILES	32
 projectile_t cl_projectiles[MAX_PROJECTILES];
 int          cl_num_projectiles;
 
@@ -540,25 +561,27 @@ CL_ClearProjectiles (void)
 void
 CL_ParseProjectiles (void)
 {
-	int			i;
+	byte		bits[6];
+	int			i, c, j;
 	projectile_t *pr;
-	net_svc_nails_t block;
 
-	if (NET_SVC_Nails_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParseProjectiles: Bad Read\n");
-		return;
-	}
+	c = MSG_ReadByte (net_message);
+	for (i = 0; i < c; i++) {
+		for (j = 0; j < 6; j++)
+			bits[j] = MSG_ReadByte (net_message);
 
-	for (i = 0; i < block.numnails; i++) {
 		if (cl_num_projectiles == MAX_PROJECTILES)
-			break;
+			continue;
 
 		pr = &cl_projectiles[cl_num_projectiles];
 		cl_num_projectiles++;
 
 		pr->modelindex = cl_spikeindex;
-		VectorCopy (block.nails[i].origin, pr->ent.origin);
-		VectorCopy (block.nails[i].angles, pr->ent.angles);
+		pr->ent.origin[0] = ((bits[0] + ((bits[1] & 15) << 8)) << 1) - 4096;
+		pr->ent.origin[1] = (((bits[1] >> 4) + (bits[2] << 4)) << 1) - 4096;
+		pr->ent.origin[2] = ((bits[3] + ((bits[4] & 15) << 8)) << 1) - 4096;
+		pr->ent.angles[0] = 360 * (bits[4] >> 4) / 16;
+		pr->ent.angles[1] = 360 * bits[5] / 256;
 	}
 }
 
@@ -594,57 +617,66 @@ CL_LinkProjectiles (void)
 	}
 }
 
-
 void
 CL_ParsePlayerinfo (void)
 {
+	int				flags, msec, num, i;
 	player_state_t *state;
-	net_svc_playerinfo_t block;
 
-	if (NET_SVC_Playerinfo_Parse (&block, net_message)) {
-		Host_NetError ("CL_ParsePlayerinfo: Bad Read\n");
-		return;
-	}
+	num = MSG_ReadByte (net_message);
+	if (num > MAX_CLIENTS)
+//		Sys_Error ("CL_ParsePlayerinfo: bad num");
+		Host_EndGame ("CL_ParsePlayerinfo: bad num");
 
-	if (block.playernum >= MAX_CLIENTS) {
-		Host_NetError ("CL_ParsePlayerinfo: playernum %i >= MAX_CLIENTS",
-					   block.playernum);
-		return;
-	}
-	if (block.modelindex >= MAX_MODELS) {
-		Host_NetError ("CL_ParsePlayerinfo: modelindex %i >= MAX_MODELS",
-					   block.modelindex);
-		return;
-	}
+	state = &cl.frames[parsecountmod].playerstate[num];
 
-	state = &cl.frames[parsecountmod].playerstate[block.playernum];
-
-	state->number = block.playernum;
-	state->flags = block.flags;
+	state->number = num;
+	flags = state->flags = MSG_ReadShort (net_message);
 
 	state->messagenum = cl.parsecount;
-	VectorCopy (block.origin, state->origin);
+	state->origin[0] = MSG_ReadCoord (net_message);
+	state->origin[1] = MSG_ReadCoord (net_message);
+	state->origin[2] = MSG_ReadCoord (net_message);
 
-	state->frame = block.frame;
+	state->frame = MSG_ReadByte (net_message);
 
 	// the other player's last move was likely some time
 	// before the packet was sent out, so accurately track
 	// the exact time it was valid at
-	state->state_time = parsecounttime - block.msec * 0.001;
+	if (flags & PF_MSEC) {
+		msec = MSG_ReadByte (net_message);
+		state->state_time = parsecounttime - msec * 0.001;
+	} else
+		state->state_time = parsecounttime;
 
-	if (block.flags & PF_COMMAND)
-		memcpy (&state->command, &block.usercmd, sizeof (state->command));
+	if (flags & PF_COMMAND)
+		MSG_ReadDeltaUsercmd (&nullcmd, &state->command);
 
-	VectorCopy (block.velocity, state->velocity);
-
-	if (block.flags & PF_MODEL)
-		state->modelindex = block.modelindex;
+	for (i = 0; i < 3; i++) {
+		if (flags & (PF_VELOCITY1 << i))
+			state->velocity[i] = MSG_ReadShort (net_message);
+		else
+			state->velocity[i] = 0;
+	}
+	if (flags & PF_MODEL)
+		state->modelindex = MSG_ReadByte (net_message);
 	else
 		state->modelindex = cl_playerindex;
 
-	state->skinnum = block.skinnum;
-	state->effects = block.effects;
-	state->weaponframe = block.weaponframe;
+	if (flags & PF_SKINNUM)
+		state->skinnum = MSG_ReadByte (net_message);
+	else
+		state->skinnum = 0;
+
+	if (flags & PF_EFFECTS)
+		state->effects = MSG_ReadByte (net_message);
+	else
+		state->effects = 0;
+
+	if (flags & PF_WEAPONFRAME)
+		state->weaponframe = MSG_ReadByte (net_message);
+	else
+		state->weaponframe = 0;
 
 	VectorCopy (state->command.angles, state->viewangles);
 }

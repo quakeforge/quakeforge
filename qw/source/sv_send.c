@@ -49,7 +49,6 @@ static const char rcsid[] =
 
 #include "bothdefs.h"
 #include "compat.h"
-#include "net_svc.h"
 #include "server.h"
 #include "sv_progs.h"
 
@@ -70,7 +69,6 @@ void
 SV_FlushRedirect (void)
 {
 	char        send[8000 + 6];
-	net_svc_print_t block;
 
 	if (sv_redirected == RD_PACKET) {
 		send[0] = 0xff;
@@ -82,15 +80,10 @@ SV_FlushRedirect (void)
 
 		NET_SendPacket (strlen (send) + 1, send, net_from);
 	} else if (sv_redirected == RD_CLIENT) {
-		block.level = PRINT_HIGH;
-		block.message = outputbuf;
 		ClientReliableWrite_Begin (host_client, svc_print,
 								   strlen (outputbuf) + 3);
-		if (host_client->num_backbuf) {
-			NET_SVC_Print_Emit (&block, &host_client->backbuf);
-			ClientReliable_FinishWrite (host_client);
-		} else
-			NET_SVC_Print_Emit (&block, &host_client->netchan.message);
+		ClientReliableWrite_Byte (host_client, PRINT_HIGH);
+		ClientReliableWrite_String (host_client, outputbuf);
 	}
 	// clear it
 	outputbuf[0] = 0;
@@ -227,7 +220,6 @@ SV_PrintToClient (client_t *cl, int level, const char *string)
 	unsigned char *b;
 	int size;
 	static int buffer_size;
-	net_svc_print_t block;
 
 	size = strlen (string) + 1;
 	if (size > buffer_size) {
@@ -247,14 +239,9 @@ SV_PrintToClient (client_t *cl, int level, const char *string)
 		if (*b != 0xFF)
 			b++;
 
-	block.level = level;
-	block.message = buffer;
 	ClientReliableWrite_Begin (cl, svc_print, strlen (buffer) + 3);
-	if (cl->num_backbuf) {
-		NET_SVC_Print_Emit (&block, &cl->backbuf);
-		ClientReliable_FinishWrite (cl);
-	} else
-		NET_SVC_Print_Emit (&block, &cl->netchan.message);
+	ClientReliableWrite_Byte (cl, level);
+	ClientReliableWrite_String (cl, buffer);
 }
 
 /*
@@ -429,16 +416,16 @@ SV_Multicast (vec3_t origin, int to)
 	Larger attenuations will drop off.  (max 4 attenuation)
 */
 void
-SV_StartSound (edict_t *entity, int channel, const char *sample,
-			   float volume, float attenuation)
+SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
+			   float attenuation)
 {
-	int         i, sound_num;
+	int         ent, field_mask, sound_num, i;
 	qboolean    use_phs;
 	qboolean    reliable = false;
-	net_svc_sound_t block;
+	vec3_t      origin;
 
-	if (volume < 0 || volume > 1)
-		SV_Error ("SV_StartSound: volume = %f", volume);
+	if (volume < 0 || volume > 255)
+		SV_Error ("SV_StartSound: volume = %i", volume);
 
 	if (attenuation < 0 || attenuation > 4)
 		SV_Error ("SV_StartSound: attenuation = %f", attenuation);
@@ -457,9 +444,7 @@ SV_StartSound (edict_t *entity, int channel, const char *sample,
 		return;
 	}
 
-	block.sound_num = sound_num;
-
-	block.entity = NUM_FOR_EDICT (&sv_pr_state, entity);
+	ent = NUM_FOR_EDICT (&sv_pr_state, entity);
 
 	if ((channel & 8) || !sv_phs->int_val)	// no PHS flag
 	{
@@ -474,34 +459,37 @@ SV_StartSound (edict_t *entity, int channel, const char *sample,
 //	if (channel == CHAN_BODY || channel == CHAN_VOICE)
 //		reliable = true;
 
-	block.channel = channel;
+	channel = (ent << 3) | channel;
 
-	block.volume = volume;
-	// 4 * 64 == 256, which overflows a byte.  4 is the stated max for
-	// it, and I don't want to break any progs, so I just nudge it
-	// down instead
-	if (attenuation == 4)
-		attenuation = 3.999;
-	block.attenuation = attenuation;
+	field_mask = 0;
+	if (volume != DEFAULT_SOUND_PACKET_VOLUME)
+		channel |= SND_VOLUME;
+	if (attenuation != DEFAULT_SOUND_PACKET_ATTENUATION)
+		channel |= SND_ATTENUATION;
 
 	// use the entity origin unless it is a bmodel
 	if (SVfloat (entity, solid) == SOLID_BSP) {
 		for (i = 0; i < 3; i++)
-			block.position[i] = SVvector (entity, origin)[i] + 0.5 *
+			origin[i] = SVvector (entity, origin)[i] + 0.5 *
 				(SVvector (entity, mins)[i] + SVvector (entity, maxs)[i]);
 	} else {
-		VectorCopy (SVvector (entity, origin), block.position);
+		VectorCopy (SVvector (entity, origin), origin);
 	}
 
 	MSG_WriteByte (&sv.multicast, svc_sound);
-	NET_SVC_Sound_Emit (&block, &sv.multicast);
+	MSG_WriteShort (&sv.multicast, channel);
+	if (channel & SND_VOLUME)
+		MSG_WriteByte (&sv.multicast, volume);
+	if (channel & SND_ATTENUATION)
+		MSG_WriteByte (&sv.multicast, attenuation * 64);
+	MSG_WriteByte (&sv.multicast, sound_num);
+	for (i = 0; i < 3; i++)
+		MSG_WriteCoord (&sv.multicast, origin[i]);
 
 	if (use_phs)
-		SV_Multicast (block.position,
-					  reliable ? MULTICAST_PHS_R : MULTICAST_PHS);
+		SV_Multicast (origin, reliable ? MULTICAST_PHS_R : MULTICAST_PHS);
 	else
-		SV_Multicast (block.position,
-					  reliable ? MULTICAST_ALL_R : MULTICAST_ALL);
+		SV_Multicast (origin, reliable ? MULTICAST_ALL_R : MULTICAST_ALL);
 }
 
 /* FRAME UPDATES */
@@ -534,7 +522,6 @@ SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 {
 	edict_t    *ent, *other;
 	int         i;
-	net_svc_damage_t block;
 
 	ent = client->edict;
 
@@ -547,14 +534,13 @@ SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 	// send a damage message if the player got hit this frame
 	if (SVfloat (ent, dmg_take) || SVfloat (ent, dmg_save)) {
 		other = PROG_TO_EDICT (&sv_pr_state, SVentity (ent, dmg_inflictor));
-		block.armor = SVfloat (ent, dmg_save);
-		block.blood = SVfloat (ent, dmg_take);
-		for (i = 0; i < 3; i++)
-			block.from[i] = SVvector (other, origin)[i] + 0.5 *
-							(SVvector (other, mins)[i] +
-							 SVvector (other, maxs)[i]);
 		MSG_WriteByte (msg, svc_damage);
-		NET_SVC_Damage_Emit (&block, msg);
+		MSG_WriteByte (msg, SVfloat (ent, dmg_save));
+		MSG_WriteByte (msg, SVfloat (ent, dmg_take));
+		for (i = 0; i < 3; i++)
+			MSG_WriteCoord (msg, SVvector (other, origin)[i] + 0.5 *
+							(SVvector (other, mins)[i] +
+							 SVvector (other, maxs)[i]));
 
 		SVfloat (ent, dmg_take) = 0;
 		SVfloat (ent, dmg_save) = 0;
@@ -794,6 +780,7 @@ SV_SendClientMessages (void)
 		// if the reliable message overflowed, drop the client
 		if (c->netchan.message.overflowed) {
 			int i;
+			extern void Analyze_Server_Packet (byte *data, int len);
 			byte *data = Hunk_TempAlloc (MAX_MSGLEN + 8);
 
 			memset (data, 0, 8);

@@ -607,14 +607,14 @@ SV_CheckWaterTransition (edict_t *ent)
 	if (cont <= CONTENTS_WATER) {
 		if (SVfloat (ent, watertype) == CONTENTS_EMPTY) {
 			// just crossed into water
-			SV_StartSound (ent, 0, "misc/h2ohit1.wav", 1, 1);
+			SV_StartSound (ent, 0, "misc/h2ohit1.wav", 255, 1);
 		}
 		SVfloat (ent, watertype) = cont;
 		SVfloat (ent, waterlevel) = 1;
 	} else {
 		if (SVfloat (ent, watertype) != CONTENTS_EMPTY) {
 			// just crossed into water
-			SV_StartSound (ent, 0, "misc/h2ohit1.wav", 1, 1);
+			SV_StartSound (ent, 0, "misc/h2ohit1.wav", 255, 1);
 		}
 		SVfloat (ent, watertype) = CONTENTS_EMPTY;
 		SVfloat (ent, waterlevel) = cont;
@@ -717,7 +717,7 @@ SV_Physics_Step (edict_t *ent)
 		if ((int) SVfloat (ent, flags) & FL_ONGROUND)	// just hit ground
 		{
 			if (hitsound)
-				SV_StartSound (ent, 0, "demon/dland2.wav", 1, 1);
+				SV_StartSound (ent, 0, "demon/dland2.wav", 255, 1);
 		}
 	}
 	// regular thinking

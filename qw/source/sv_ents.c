@@ -42,7 +42,6 @@ static const char rcsid[] =
 
 #include "compat.h"
 #include "msg_ucmd.h"
-#include "net_svc.h"
 #include "server.h"
 #include "sv_progs.h"
 
@@ -126,29 +125,51 @@ SV_AddNailUpdate (edict_t *ent)
 void
 SV_EmitNailUpdate (sizebuf_t *msg)
 {
-	int         i;
-	net_svc_nails_t block;
+	byte        bits[6];				// [48 bits] xyzpy 12 12 12 4 8 
+	int         i, n, p, x, y, z, yaw;
+	edict_t    *ent;
 
 	if (!numnails)
 		return;
 
-	block.numnails = numnails;
-
-	for (i = 0; i < numnails; i++) {
-		VectorCopy (SVvector (nails[i], origin), block.nails[i].origin);
-		VectorCopy (SVvector (nails[i], angles), block.nails[i].angles);
-	}
-
 	MSG_WriteByte (msg, svc_nails);
-	NET_SVC_Nails_Emit (&block, msg);
+	MSG_WriteByte (msg, numnails);
+
+	for (n = 0; n < numnails; n++) {
+		ent = nails[n];
+		x = (int) (SVvector (ent, origin)[0] + 4096) >> 1;
+		y = (int) (SVvector (ent, origin)[1] + 4096) >> 1;
+		z = (int) (SVvector (ent, origin)[2] + 4096) >> 1;
+		p = (int) (16 * SVvector (ent, angles)[0] / 360) & 15;
+		yaw = (int) (256 * SVvector (ent, angles)[1] / 360) & 255;
+
+		bits[0] = x;
+		bits[1] = (x >> 8) | (y << 4);
+		bits[2] = (y >> 4);
+		bits[3] = z;
+		bits[4] = (z >> 8) | (p << 4);
+		bits[5] = yaw;
+
+		for (i = 0; i < 6; i++)
+			MSG_WriteByte (msg, bits[i]);
+	}
 }
 
-unsigned int
-SV_EntityState_Diff (entity_state_t *from, entity_state_t *to)
+/*
+	SV_WriteDelta
+
+	Writes part of a packetentities message.
+	Can delta from either a baseline or a previous packet_entity
+*/
+void
+SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
+			   qboolean force, int stdver)
 {
-	int				i;
-	float			miss;
-	unsigned int	bits = 0;
+	int         bits, i;
+	float       miss;
+
+	// send an update
+	bits = 0;
 
 	for (i = 0; i < 3; i++) {
 		miss = to->origin[i] - from->origin[i];
@@ -182,7 +203,7 @@ SV_EntityState_Diff (entity_state_t *from, entity_state_t *to)
 
 	// LordHavoc: cleaned up Endy's coding style, and added missing effects
 // Ender (QSG - Begin)
-//	if (stdver > 1) {
+	if (stdver > 1) {
 		if (to->alpha != from->alpha)
 			bits |= U_ALPHA;
 
@@ -197,43 +218,19 @@ SV_EntityState_Diff (entity_state_t *from, entity_state_t *to)
 
 		if (to->colormod != from->colormod)
 			bits |= U_COLORMOD;
-//	}
+	}
 
-//	if (bits >= 16777216)
-	if (bits & U_GROUP_EXTEND2)
+	if (bits >= 16777216)
 		bits |= U_EXTEND2;
 
-//	if (bits >= 65536)
-	if (bits & U_GROUP_EXTEND1)
+	if (bits >= 65536)
 		bits |= U_EXTEND1;
 // Ender (QSG - End)
-
-//	if (bits & 511)
-	if (bits & U_GROUP_MOREBITS)
+	if (bits & 511)
 		bits |= U_MOREBITS;
 
 	if (to->flags & U_SOLID)
 		bits |= U_SOLID;
-
-	return bits;
-}
-
-/*
-	SV_WriteDelta
-
-	Writes part of a packetentities message.
-	Can delta from either a baseline or a previous packet_entity
-*/
-void
-SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
-			   qboolean force, int stdver)
-{
-	unsigned int	bits;
-
-	// send an update
-	bits = SV_EntityState_Diff (from, to);
-	if (stdver <= 1)
-		bits &= U_VERSION_ID; // use old the original fields, no extensions
 
 	// write the message
 	if (!to->number)
@@ -243,7 +240,10 @@ SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 
 	if (!bits && !force)
 		return;							// nothing to send!
-	MSG_WriteShort (msg, to->number | (bits & ~511));
+	i = to->number | (bits & ~511);
+	if (i & U_REMOVE)
+		Sys_Error ("U_REMOVE");
+	MSG_WriteShort (msg, i);
 
 	if (bits & U_MOREBITS)
 		MSG_WriteByte (msg, bits & 255);
@@ -302,118 +302,80 @@ SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 /*
 	SV_EmitPacketEntities
 
-	Writes an update of a packet_entities_t to the message.
+	Writes a delta update of a packet_entities_t to the message.
 */
 void
 SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 {
-	int         index;
-	entity_state_t *baseline;
-	net_svc_packetentities_t block;
-
-	block.numwords = block.numdeltas = to->num_entities;
-
-	for (index = 0; index < to->num_entities; index++) {
-		baseline = EDICT_NUM (&sv_pr_state,
-							  to->entities[index].number)->data;
-		block.deltas[index] = to->entities[index];
-		block.deltas[index].flags =
-			SV_EntityState_Diff (baseline, &to->entities[index]);
-
-		// check if it's a client that doesn't support QSG2
-		if (client->stdver <= 1)
-			block.deltas[index].flags &= U_VERSION_ID;
-
-		block.words[index] = to->entities[index].number |
-							 (block.deltas[index].flags & ~511);
-	}
-
-	block.words[index] = 0;
-	MSG_WriteByte (msg, svc_packetentities);
-	NET_SVC_PacketEntities_Emit (&block, msg);
-}
-
-/*
-	SV_EmitDeltaPacketEntities
-
-	Writes a delta update of a packet_entities_t to the message.
-*/
-void
-SV_EmitDeltaPacketEntities (client_t *client, packet_entities_t *to,
-							sizebuf_t *msg)
-{
-	int         newindex, oldindex, newnum, oldnum;
-	int			word;
-	entity_state_t *baseline;
+	int         newindex, oldindex, newnum, oldnum, oldmax;
+	edict_t    *ent;
+	client_frame_t *fromframe;
 	packet_entities_t *from;
-	net_svc_deltapacketentities_t block;
 
 	// this is the frame that we are going to delta update from
-	from = &client->frames[client->delta_sequence & UPDATE_MASK].entities;
+	if (client->delta_sequence != -1) {
+		fromframe = &client->frames[client->delta_sequence & UPDATE_MASK];
+		from = &fromframe->entities;
+		oldmax = from->num_entities;
 
-	block.from = client->delta_sequence;
+		MSG_WriteByte (msg, svc_deltapacketentities);
+		MSG_WriteByte (msg, client->delta_sequence);
+	} else {
+		oldmax = 0;						// no delta update
+		from = NULL;
 
+		MSG_WriteByte (msg, svc_packetentities);
+	}
+
+	newindex = 0;
+	oldindex = 0;
 //	SV_Printf ("---%i to %i ----\n", client->delta_sequence & UPDATE_MASK,
 //			   client->netchan.outgoing_sequence & UPDATE_MASK);
-	for (newindex = 0, oldindex = 0, word = 0;
-		 newindex < to->num_entities || oldindex < from->num_entities;
-		 word++) {
-		newnum = newindex >= to->num_entities ?
-				 9999 : to->entities[newindex].number;
-		oldnum = oldindex >= from->num_entities ?
-				 9999 : from->entities[oldindex].number;
+	while (newindex < to->num_entities || oldindex < oldmax) {
+		newnum =
+			newindex >= to->num_entities ? 9999 :
+			to->entities[newindex].number;
+		oldnum = oldindex >= oldmax ? 9999 : from->entities[oldindex].number;
 
-		if (newnum == oldnum) {		// delta update from old position
+		if (newnum == oldnum) {			// delta update from old position
 //			SV_Printf ("delta %i\n", newnum);
-			block.deltas[newindex] = to->entities[newindex];
-			block.deltas[newindex].flags =
-				SV_EntityState_Diff (&from->entities[oldindex],
-									 &to->entities[newindex]);
-
-			// check if it's a client that doesn't support QSG2
-			if (client->stdver <= 1)
-				block.deltas[newindex].flags &= U_VERSION_ID;
-
-			block.words[word] = newnum | (block.deltas[newindex].flags & ~511);
-
+			SV_WriteDelta (&from->entities[oldindex], &to->entities[newindex],
+						   msg, false, client->stdver);
 			oldindex++;
 			newindex++;
-		} else if (newnum < oldnum) {	// this is a new entity, send
-										// it from the baseline
-			baseline = EDICT_NUM (&sv_pr_state, newnum)->data;
+			continue;
+		}
+
+		if (newnum < oldnum) {			// this is a new entity, send it from 
+										// the baseline
+			ent = EDICT_NUM (&sv_pr_state, newnum);
 //			SV_Printf ("baseline %i\n", newnum);
-			block.deltas[newindex] = to->entities[newindex];
-			block.deltas[newindex].flags =
-				SV_EntityState_Diff (baseline, &to->entities[newindex]);
-
-			// check if it's a client that doesn't support QSG2
-			if (client->stdver <= 1)
-				block.deltas[newindex].flags &= U_VERSION_ID;
-
-			block.words[word] = newnum | (block.deltas[newindex].flags & ~511);
-
+			SV_WriteDelta (ent->data, &to->entities[newindex], msg, true,
+						   client->stdver);
 			newindex++;
-		} else if (newnum > oldnum) {	// the old entity isn't
-										// present in the new message
+			continue;
+		}
+
+		if (newnum > oldnum) {			// the old entity isn't present in
+										// the new message
 //			SV_Printf ("remove %i\n", oldnum);
-			block.words[word] = oldnum | U_REMOVE;
+			MSG_WriteShort (msg, oldnum | U_REMOVE);
 			oldindex++;
+			continue;
 		}
 	}
 
-	block.words[word] = 0;
-	MSG_WriteByte (msg, svc_deltapacketentities);
-	NET_SVC_DeltaPacketEntities_Emit (&block, msg);
+	MSG_WriteShort (msg, 0);			// end of packetentities
 }
 
 void
 SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 						 sizebuf_t *msg)
 {
-	int         i, j;
+	int         i, j, msec, pflags;
 	client_t   *cl;
 	edict_t    *ent;
-	net_svc_playerinfo_t block;
+	usercmd_t   cmd;
 
 	for (j = 0, cl = svs.clients; j < MAX_CLIENTS; j++, cl++) {
 		if (cl->state != cs_spawned)
@@ -435,63 +397,82 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 				continue;				// not visible
 		}
 
-		block.flags = PF_MSEC | PF_COMMAND;
+		pflags = PF_MSEC | PF_COMMAND;
 
 		if (SVfloat (ent, modelindex) != sv_playermodel)
-			block.flags |= PF_MODEL;
+			pflags |= PF_MODEL;
 		for (i = 0; i < 3; i++)
 			if (SVvector (ent, velocity)[i])
-				block.flags |= PF_VELOCITY1 << i;
+				pflags |= PF_VELOCITY1 << i;
 		if (SVfloat (ent, effects))
-			block.flags |= PF_EFFECTS;
+			pflags |= PF_EFFECTS;
 		if (SVfloat (ent, skin))
-			block.flags |= PF_SKINNUM;
+			pflags |= PF_SKINNUM;
 		if (SVfloat (ent, health) <= 0)
-			block.flags |= PF_DEAD;
+			pflags |= PF_DEAD;
 		if (SVvector (ent, mins)[2] != -24)
-			block.flags |= PF_GIB;
+			pflags |= PF_GIB;
 
 		if (cl->spectator) {			// only sent origin and velocity to
 										// spectators
-			block.flags &= PF_VELOCITY1 | PF_VELOCITY2 | PF_VELOCITY3;
+			pflags &= PF_VELOCITY1 | PF_VELOCITY2 | PF_VELOCITY3;
 		} else if (ent == clent) {		// don't send a lot of data on
 										// personal entity
-			block.flags &= ~(PF_MSEC | PF_COMMAND);
+			pflags &= ~(PF_MSEC | PF_COMMAND);
 			if (SVfloat (ent, weaponframe))
-				block.flags |= PF_WEAPONFRAME;
+				pflags |= PF_WEAPONFRAME;
 		}
 
 		if (client->spec_track && client->spec_track - 1 == j &&
-			SVfloat (ent, weaponframe))
-			block.flags |= PF_WEAPONFRAME;
-
-		block.playernum = j;
-
-		VectorCopy (SVvector (ent, origin), block.origin);
-		block.frame = SVfloat (ent, frame);
-
-		block.msec = 1000 * (sv.time - cl->localtime);
-		if (block.msec > 255)
-			block.msec = 255;
-
-		block.usercmd = cl->lastcmd;
-		if (SVfloat (ent, health) <= 0) {	// don't show the corpse
-											// looking around...
-			block.usercmd.angles[0] = 0;
-			block.usercmd.angles[1] = SVvector (ent, angles)[1];
-			block.usercmd.angles[0] = 0;
-		}
-		block.usercmd.buttons = 0;			// never send buttons
-		block.usercmd.impulse = 0;			// never send impulses
-
-		VectorCopy (SVvector (ent, velocity), block.velocity);
-		block.modelindex = SVfloat (ent, modelindex);
-		block.skinnum = SVfloat (ent, skin);
-		block.effects = SVfloat (ent, effects);
-		block.weaponframe = SVfloat (ent, weaponframe);
+			SVfloat (ent, weaponframe)) pflags |= PF_WEAPONFRAME;
 
 		MSG_WriteByte (msg, svc_playerinfo);
-		NET_SVC_Playerinfo_Emit (&block, msg);
+		MSG_WriteByte (msg, j);
+		MSG_WriteShort (msg, pflags);
+
+		for (i = 0; i < 3; i++)
+			MSG_WriteCoord (msg, SVvector (ent, origin)[i]);
+
+		MSG_WriteByte (msg, SVfloat (ent, frame));
+
+		if (pflags & PF_MSEC) {
+			msec = 1000 * (sv.time - cl->localtime);
+			if (msec > 255)
+				msec = 255;
+			MSG_WriteByte (msg, msec);
+		}
+
+		if (pflags & PF_COMMAND) {
+			cmd = cl->lastcmd;
+
+			if (SVfloat (ent, health) <= 0) {	// don't show the corpse
+												// looking around...
+				cmd.angles[0] = 0;
+				cmd.angles[1] = SVvector (ent, angles)[1];
+				cmd.angles[0] = 0;
+			}
+
+			cmd.buttons = 0;			// never send buttons
+			cmd.impulse = 0;			// never send impulses
+
+			MSG_WriteDeltaUsercmd (msg, &nullcmd, &cmd);
+		}
+
+		for (i = 0; i < 3; i++)
+			if (pflags & (PF_VELOCITY1 << i))
+				MSG_WriteShort (msg, SVvector (ent, velocity)[i]);
+
+		if (pflags & PF_MODEL)
+			MSG_WriteByte (msg, SVfloat (ent, modelindex));
+
+		if (pflags & PF_SKINNUM)
+			MSG_WriteByte (msg, SVfloat (ent, skin));
+
+		if (pflags & PF_EFFECTS)
+			MSG_WriteByte (msg, SVfloat (ent, effects));
+
+		if (pflags & PF_WEAPONFRAME)
+			MSG_WriteByte (msg, SVfloat (ent, weaponframe));
 	}
 }
 
@@ -610,10 +591,8 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 
 	// encode the packet entities as a delta from the
 	// last packetentities acknowledged by the client
-	if (client->delta_sequence != -1)
-		SV_EmitDeltaPacketEntities (client, pack, msg);
-	else
-		SV_EmitPacketEntities (client, pack, msg);
+
+	SV_EmitPacketEntities (client, pack, msg);
 
 	// now add the specialized nail update
 	SV_EmitNailUpdate (msg);

@@ -50,8 +50,6 @@ static const char rcsid[] =
 #include "cl_main.h"
 #include "cl_tent.h"
 #include "client.h"
-#include "host.h"
-#include "net_svc.h"
 #include "r_dynamic.h"
 
 #define	MAX_BEAMS	8
@@ -184,37 +182,42 @@ CL_AllocExplosion (void)
 }
 
 void
-CL_ParseBeam (net_svc_tempentity_t *tempentity, model_t *m)
+CL_ParseBeam (model_t *m)
 {
 	beam_t     *b;
-	int         i;
+	int         ent, i;
+	vec3_t      start, end;
 
-	if (tempentity->beamentity >= MAX_EDICTS) {
-		Host_NetError ("CL_ParseBeam: beamentity %i >= MAX_EDICTS",
-					   tempentity->beamentity);
-		return;
-	}
+	ent = MSG_ReadShort (net_message);
+
+	start[0] = MSG_ReadCoord (net_message);
+	start[1] = MSG_ReadCoord (net_message);
+	start[2] = MSG_ReadCoord (net_message);
+
+	end[0] = MSG_ReadCoord (net_message);
+	end[1] = MSG_ReadCoord (net_message);
+	end[2] = MSG_ReadCoord (net_message);
 
 	// override any beam with the same entity
 	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++)
-		if (b->entity == tempentity->beamentity) {
-			b->entity = tempentity->beamentity;
+		if (b->entity == ent) {
+			b->entity = ent;
 			b->model = m;
 			b->endtime = cl.time + 0.2;
 			b->seed = rand();
-			VectorCopy (tempentity->position, b->start);
-			VectorCopy (tempentity->beamend, b->end);
+			VectorCopy (start, b->start);
+			VectorCopy (end, b->end);
 			return;
 		}
 	// find a free beam
 	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++) {
 		if (!b->model || b->endtime < cl.time) {
-			b->entity = tempentity->beamentity;
+			b->entity = ent;
 			b->model = m;
 			b->endtime = cl.time + 0.2;
 			b->seed = rand();
-			VectorCopy (tempentity->position, b->start);
-			VectorCopy (tempentity->beamend, b->end);
+			VectorCopy (start, b->start);
+			VectorCopy (end, b->end);
 			return;
 		}
 	}
@@ -224,66 +227,79 @@ CL_ParseBeam (net_svc_tempentity_t *tempentity, model_t *m)
 void
 CL_ParseTEnt (void)
 {
+	byte         type;
 	dlight_t    *dl;
 	explosion_t *ex;
-	int          rnd;
-	net_svc_tempentity_t tempentity;
+	int          colorStart, colorLength, rnd;
+	int          cnt = -1;
+	vec3_t       pos;
 
-	if (NET_SVC_TempEntity_Parse (&tempentity, net_message)) {
-		Host_NetError ("CL_ParseTEnt: Bad Read\n");
-		return;
-	}
-
-	switch (tempentity.type) {
+	type = MSG_ReadByte (net_message);
+	switch (type) {
 		case TE_WIZSPIKE:				// spike hitting wall
-			R_RunSpikeEffect (tempentity.position, prot_to_rend[tempentity.type]);
-			S_StartSound (-1, 0, cl_sfx_wizhit, tempentity.position, 1, 1);
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
+			R_RunSpikeEffect (pos, prot_to_rend[type]);
+			S_StartSound (-1, 0, cl_sfx_wizhit, pos, 1, 1);
 			break;
 
 		case TE_KNIGHTSPIKE:			// spike hitting wall
-			R_RunSpikeEffect (tempentity.position, prot_to_rend[tempentity.type]);
-			S_StartSound (-1, 0, cl_sfx_knighthit, tempentity.position, 1, 1);
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
+			R_RunSpikeEffect (pos, prot_to_rend[type]);
+			S_StartSound (-1, 0, cl_sfx_knighthit, pos, 1, 1);
 			break;
 
 		case TE_SPIKE:					// spike hitting wall
-			R_RunSpikeEffect (tempentity.position, prot_to_rend[tempentity.type]);
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
+			R_RunSpikeEffect (pos, prot_to_rend[type]);
 
 			if (rand () % 5)
-				S_StartSound (-1, 0, cl_sfx_tink1, tempentity.position, 1, 1);
+				S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
 			else {
 				rnd = rand () & 3;
 				if (rnd == 1)
-					S_StartSound (-1, 0, cl_sfx_ric1, tempentity.position, 1, 1);
+					S_StartSound (-1, 0, cl_sfx_ric1, pos, 1, 1);
 				else if (rnd == 2)
-					S_StartSound (-1, 0, cl_sfx_ric2, tempentity.position, 1, 1);
+					S_StartSound (-1, 0, cl_sfx_ric2, pos, 1, 1);
 				else
-					S_StartSound (-1, 0, cl_sfx_ric3, tempentity.position, 1, 1);
+					S_StartSound (-1, 0, cl_sfx_ric3, pos, 1, 1);
 			}
 			break;
 
 		case TE_SUPERSPIKE:			// super spike hitting wall
-			R_RunSpikeEffect (tempentity.position, prot_to_rend[tempentity.type]);
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
+			R_RunSpikeEffect (pos, prot_to_rend[type]);
 
 			if (rand () % 5)
-				S_StartSound (-1, 0, cl_sfx_tink1, tempentity.position, 1, 1);
+				S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
 			else {
 				rnd = rand () & 3;
 				if (rnd == 1)
-					S_StartSound (-1, 0, cl_sfx_ric1, tempentity.position, 1, 1);
+					S_StartSound (-1, 0, cl_sfx_ric1, pos, 1, 1);
 				else if (rnd == 2)
-					S_StartSound (-1, 0, cl_sfx_ric2, tempentity.position, 1, 1);
+					S_StartSound (-1, 0, cl_sfx_ric2, pos, 1, 1);
 				else
-					S_StartSound (-1, 0, cl_sfx_ric3, tempentity.position, 1, 1);
+					S_StartSound (-1, 0, cl_sfx_ric3, pos, 1, 1);
 			}
 			break;
 
 		case TE_EXPLOSION:				// rocket explosion
 			// particles
-			R_ParticleExplosion (tempentity.position);
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
+			R_ParticleExplosion (pos);
 
 			// light
 			dl = R_AllocDlight (0);
-			VectorCopy (tempentity.position, dl->origin);
+			VectorCopy (pos, dl->origin);
 			dl->radius = 350;
 			dl->die = cl.time + 0.5;
 			dl->decay = 300;
@@ -292,78 +308,94 @@ CL_ParseTEnt (void)
 			dl->color[2] = 0.24;
 
 			// sound
-			S_StartSound (-1, 0, cl_sfx_r_exp3, tempentity.position, 1, 1);
+			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
 
 			// sprite
 			ex = CL_AllocExplosion ();
-			VectorCopy (tempentity.position, ex->ent.origin);
+			VectorCopy (pos, ex->ent.origin);
 			ex->start = cl.time;
 			ex->ent.model = cl_spr_explod;
 			break;
 
 		case TE_TAREXPLOSION:			// tarbaby explosion
-			R_BlobExplosion (tempentity.position);
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
+			R_BlobExplosion (pos);
 
-			S_StartSound (-1, 0, cl_sfx_r_exp3, tempentity.position, 1, 1);
+			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
 			break;
 
 		case TE_LIGHTNING1:			// lightning bolts
-			CL_ParseBeam (&tempentity, cl_mod_bolt);
+			CL_ParseBeam (cl_mod_bolt);
 			break;
 
 		case TE_LIGHTNING2:			// lightning bolts
-			CL_ParseBeam (&tempentity, cl_mod_bolt2);
+			CL_ParseBeam (cl_mod_bolt2);
 			break;
 
 		case TE_LIGHTNING3:			// lightning bolts
-			CL_ParseBeam (&tempentity, cl_mod_bolt3);
+			CL_ParseBeam (cl_mod_bolt3);
 			break;
 
 		// PGM 01/21/97
 		case TE_BEAM:				// grappling hook beam
-			CL_ParseBeam (&tempentity, Mod_ForName ("progs/beam.mdl", true));
+			CL_ParseBeam (Mod_ForName ("progs/beam.mdl", true));
 			break;
 		// PGM 01/21/97
 
 		case TE_LAVASPLASH:
-			R_LavaSplash (tempentity.position);
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
+			R_LavaSplash (pos);
 			break;
 
 		case TE_TELEPORT:
-			R_TeleportSplash (tempentity.position);
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
+			R_TeleportSplash (pos);
 			break;
 
 		case TE_EXPLOSION2:			// color mapped explosion
-			R_ParticleExplosion2 (tempentity.position,
-								  tempentity.colorstart,
-								  tempentity.colorlength);
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
+			colorStart = MSG_ReadByte (net_message);
+			colorLength = MSG_ReadByte (net_message);
+			R_ParticleExplosion2 (pos, colorStart, colorLength);
 			dl = R_AllocDlight (0);
-			VectorCopy (tempentity.position, dl->origin);
+			VectorCopy (pos, dl->origin);
 			dl->radius = 350;
 			dl->die = cl.time + 0.5;
 			dl->decay = 300;
-			dl->color[0] = vid_basepal[(tempentity.colorstart
-										+ (rand() % tempentity.colorlength))
-									   * 3] * (1.0 / 255.0);
-			dl->color[1] = vid_basepal[(tempentity.colorstart
-										+ (rand() % tempentity.colorlength))
-									   * 3 + 1] * (1.0 / 255.0);
-			dl->color[2] = vid_basepal[(tempentity.colorstart
-										+ (rand() % tempentity.colorlength))
-									   * 3 + 2] * (1.0 / 255.0);
-			S_StartSound (-1, 0, cl_sfx_r_exp3, tempentity.position, 1, 1);
+			dl->color[0] = vid_basepal[(colorStart + (rand() % colorLength)) *
+									   3] * (1.0 / 255.0);
+			dl->color[1] = vid_basepal[(colorStart + (rand() % colorLength)) *
+									   3 + 1] * (1.0 / 255.0);
+			dl->color[2] = vid_basepal[(colorStart + (rand() % colorLength)) *
+									   3 + 2] * (1.0 / 255.0);
+			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
 			break;
 
 		case TE_GUNSHOT:				// bullet hitting wall
 		case TE_BLOOD:					// bullets hitting body
-			R_RunPuffEffect (tempentity.position, prot_to_rend[tempentity.type],
-							 tempentity.gunshotcount * 20);
+			cnt = MSG_ReadByte (net_message) * 20;
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
+			R_RunPuffEffect (pos, prot_to_rend[type], cnt);
 			break;
 
 		case TE_LIGHTNINGBLOOD:		// lightning hitting body
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
+
 			// light
 			dl = R_AllocDlight (0);
-			VectorCopy (tempentity.position, dl->origin);
+			VectorCopy (pos, dl->origin);
 			dl->radius = 150;
 			dl->die = cl.time + 0.1;
 			dl->decay = 200;
@@ -371,11 +403,11 @@ CL_ParseTEnt (void)
 			dl->color[1] = 0.40;
 			dl->color[2] = 0.65;
 
-			R_RunPuffEffect (tempentity.position, prot_to_rend[tempentity.type], 0);
+			R_RunPuffEffect (pos, prot_to_rend[type], cnt);
 			break;
 
 		default:
-			Sys_Error ("CL_ParseTEnt: bad tempentity.type %i", tempentity.type);
+			Sys_Error ("CL_ParseTEnt: bad type");
 	}
 }
 

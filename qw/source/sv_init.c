@@ -46,7 +46,6 @@ static const char rcsid[] =
 
 #include "compat.h"
 #include "crudefile.h"
-#include "net_svc.h"
 #include "server.h"
 #include "sv_progs.h"
 #include "world.h"
@@ -105,9 +104,8 @@ SV_FlushSignon (void)
 void
 SV_CreateBaseline (void)
 {
-	int			entnum;
+	int         i, entnum;
 	edict_t    *svent;
-	net_svc_spawnbaseline_t block;
 
 	for (entnum = 0; entnum < sv.num_edicts; entnum++) {
 		svent = EDICT_NUM (&sv_pr_state, entnum);
@@ -145,15 +143,19 @@ SV_CreateBaseline (void)
 		SV_FlushSignon ();
 
 		// add to the message
-		block.num = entnum;
-		block.modelindex = ((entity_state_t*)svent->data)->modelindex;
-		block.frame = ((entity_state_t*)svent->data)->frame;
-		block.colormap = ((entity_state_t*)svent->data)->colormap;
-		block.skinnum = ((entity_state_t*)svent->data)->skinnum;
-		VectorCopy (((entity_state_t*)svent->data)->origin, block.origin);
-		VectorCopy (((entity_state_t*)svent->data)->angles, block.angles);
 		MSG_WriteByte (&sv.signon, svc_spawnbaseline);
-		NET_SVC_SpawnBaseline_Emit (&block, &sv.signon);
+		MSG_WriteShort (&sv.signon, entnum);
+
+		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->modelindex);
+		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->frame);
+		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->colormap);
+		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->skinnum);
+		for (i = 0; i < 3; i++) {
+			MSG_WriteCoord (&sv.signon,
+							((entity_state_t*)svent->data)->origin[i]);
+			MSG_WriteAngle (&sv.signon,
+							((entity_state_t*)svent->data)->angles[i]);
+		}
 	}
 }
 

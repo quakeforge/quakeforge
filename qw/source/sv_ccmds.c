@@ -52,7 +52,6 @@ static const char rcsid[] =
 
 #include "bothdefs.h"
 #include "compat.h"
-#include "net_svc.h"
 #include "server.h"
 #include "sv_progs.h"
 
@@ -830,15 +829,12 @@ SV_Heartbeat_f (void)
 void
 SV_SendServerInfoChange (const char *key, const char *value)
 {
-	net_svc_serverinfo_t block;
-
 	if (!sv.state)
 		return;
 
-	block.key = key;
-	block.value = value;
 	MSG_WriteByte (&sv.reliable_datagram, svc_serverinfo);
-	NET_SVC_ServerInfo_Emit (&block, &sv.reliable_datagram);
+	MSG_WriteString (&sv.reliable_datagram, key);
+	MSG_WriteString (&sv.reliable_datagram, value);
 }
 
 /*

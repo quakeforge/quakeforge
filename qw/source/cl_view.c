@@ -45,7 +45,6 @@ static const char rcsid[] =
 #include "client.h"
 #include "compat.h"
 #include "host.h"
-#include "net_svc.h"
 #include "pmove.h"
 #include "view.h"
 
@@ -241,18 +240,18 @@ V_DriftPitch (void)
 /* PALETTE FLASHES */
 
 void
-CL_ParseDamage (void)
+V_ParseDamage (void)
 {
 	float		count, side;
-	vec3_t		forward, right, up;
-	net_svc_damage_t damage;
+	int			armor, blood, i;
+	vec3_t		forward, from, right, up;
 
-	if (NET_SVC_Damage_Parse (&damage, net_message)) {
-		Host_NetError ("CL_ParseDamage: Bad Read\n");
-		return;
-	}
+	armor = MSG_ReadByte (net_message);
+	blood = MSG_ReadByte (net_message);
+	for (i = 0; i < 3; i++)
+		from[i] = MSG_ReadCoord (net_message);
 
-	count = damage.blood * 0.5 + damage.armor * 0.5;
+	count = blood * 0.5 + armor * 0.5;
 	if (count < 10)
 		count = 10;
 
@@ -266,11 +265,11 @@ CL_ParseDamage (void)
 		cl.cshifts[CSHIFT_DAMAGE].percent =
 			bound (0, cl.cshifts[CSHIFT_DAMAGE].percent, 150);
 
-		if (damage.armor > damage.blood) {
+		if (armor > blood) {
 			cl.cshifts[CSHIFT_DAMAGE].destcolor[0] = 200;
 			cl.cshifts[CSHIFT_DAMAGE].destcolor[1] = 100;
 			cl.cshifts[CSHIFT_DAMAGE].destcolor[2] = 100;
-		} else if (damage.armor) {
+		} else if (armor) {
 			cl.cshifts[CSHIFT_DAMAGE].destcolor[0] = 220;
 			cl.cshifts[CSHIFT_DAMAGE].destcolor[1] = 50;
 			cl.cshifts[CSHIFT_DAMAGE].destcolor[2] = 50;
@@ -282,15 +281,15 @@ CL_ParseDamage (void)
 	}
 
 	// calculate view angle kicks
-	VectorSubtract (damage.from, cl.simorg, damage.from);
-	VectorNormalize (damage.from);
+	VectorSubtract (from, cl.simorg, from);
+	VectorNormalize (from);
 
 	AngleVectors (cl.simangles, forward, right, up);
 
-	side = DotProduct (damage.from, right);
+	side = DotProduct (from, right);
 	v_dmg_roll = count * side * v_kickroll->value;
 
-	side = DotProduct (damage.from, forward);
+	side = DotProduct (from, forward);
 	v_dmg_pitch = count * side * v_kickpitch->value;
 
 	v_dmg_time = v_kicktime->value;

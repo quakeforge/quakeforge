@@ -1,11 +1,11 @@
 /*
-	net_packetlog.c
+        net_packetlog.c
 
-	packet logging/parsing - for debugging and educational purposes
+        packet logging/parsing - for debugging and educational purposes
 
-	**EXPERIMENTAL**
+        **EXPERIMENTAL**
 
-	Copyright (C) 2000 Jukka Sorjonen <jukka.sorjonen@asikkala.fi>
+        Copyright (C) 2000 Jukka Sorjonen <jukka.sorjonen@asikkala.fi>
        
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -56,7 +56,6 @@ static const char rcsid[] =
 
 #include "compat.h"
 #include "net.h"
-#include "net_svc.h"
 #include "protocol.h"
 #include "server.h"
 
@@ -65,11 +64,86 @@ cvar_t     *net_loglevel;
 
 int         Net_LogStart (const char *fname);
 
-void Analyze_Server_Packet (const byte *data, int len);
-void Analyze_Client_Packet (const byte *data, int len);
+void Analyze_Server_Packet (const byte * data, int len);
+void Analyze_Client_Packet (const byte * data, int len);
 void Parse_Server_Packet (void);
 void Parse_Client_Packet (void);
 void Net_LogStop (void);
+
+// note: this is SUPPOSED to be duplicate, like many others
+const char *svc_string[] = {
+	"svc_bad",
+	"svc_nop",
+	"svc_disconnect",
+	"svc_updatestat",
+	"svc_version",						// [long] server version
+	"svc_setview",						// [short] entity number
+	"svc_sound",						// <see code>
+	"svc_time",							// [float] server time
+	"svc_print",						// [string] null terminated string
+	"svc_stufftext",					// [string] stuffed into client's
+										// console buffer the string
+										// should be \n terminated
+	"svc_setangle",						// [vec3] set the view angle to this
+										// absolute value
+	"svc_serverdata",					// [long] version ...
+	"svc_lightstyle",					// [byte] [string]
+	"svc_updatename",					// [byte] [string]
+	"svc_updatefrags",					// [byte] [short]
+	"svc_clientdata",					// <shortbits + data>
+	"svc_stopsound",					// <see code>
+	"svc_updatecolors",					// [byte] [byte]
+	"svc_particle",						// [vec3] <variable>
+	"svc_damage",						// [byte] impact [byte] blood [vec3]
+										// from
+	"svc_spawnstatic",
+	"svc_spawnbinary",
+	"svc_spawnbaseline",
+	"svc_temp_entity",					// <variable>
+	"svc_setpause",
+	"svc_signonnum",
+	"svc_centerprint",
+	"svc_killedmonster",
+	"svc_foundsecret",
+	"svc_spawnstaticsound",
+	"svc_intermission",
+	"svc_finale",						// [string] music [string] text
+	"svc_cdtrack",						// [byte] track [byte] looptrack
+	"svc_sellscreen",
+	"svc_smallkick",					// Quake svc_cutscene
+	"svc_bigkick",
+	"svc_updateping",
+	"svc_updateentertime",
+	"svc_updatestatlong",
+	"svc_muzzleflash",
+	"svc_updateuserinfo",
+	"svc_download",
+	"svc_playerinfo",
+	"svc_nails",
+	"svc_chokecount",
+	"svc_modellist",
+	"svc_soundlist",
+	"svc_packetentities",
+	"svc_deltapacketentities",
+	"svc_maxspeed",
+	"svc_entgravity",
+	"svc_setinfo",
+	"svc_serverinfo",
+	"svc_updatepl",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL",
+	"NEW PROTOCOL"
+};
 
 const char *clc_string[] = {
 	"clc_bad",
@@ -95,6 +169,7 @@ const char *clc_string[] = {
 #define svc_particle            18		// [vec3] <variable>
 #define svc_signonnum           25		// [byte]  used for the signon
 										// sequence
+static VFile      *_stdout;
 static VFile      *Net_PacketLog;
 static const char **Net_sound_precache;
 static sizebuf_t   _packet;
@@ -115,12 +190,11 @@ Net_LogPrintf (char *fmt, ...)
 	va_start (argptr, fmt);
 	vsnprintf (text, sizeof (text), fmt, argptr);
 	va_end (argptr);
+	if (!Net_PacketLog)
+		return;
 
-	if (Net_PacketLog) {
-		Qprintf (Net_PacketLog, "%s", text);
-		Qflush (Net_PacketLog);
-	} else
-		Con_Printf ("%s", text);
+	Qprintf (Net_PacketLog, "%s", text);
+	Qflush (Net_PacketLog);
 }
 
 int
@@ -230,113 +304,104 @@ Log_Outgoing_Packet (const char *p, int len)
 	return;
 }
 
-qboolean
+void
 Log_Delta(int bits)
 {
 	entity_state_t to;
 	int i;
 
-	Net_LogPrintf ("\n\t<%06x> ", MSG_GetReadCount (&packet) - 2);
-	if (!bits) {
-		Net_LogPrintf ("End");
-		return 1;
-	}
+	Net_LogPrintf ("\n\t");
 
 	// set everything to the state we are delta'ing from
 
 	to.number = bits & 511;
 	bits &= ~511;
 
-	Net_LogPrintf ("Ent: %d", to.number);
-
-	if (bits & U_REMOVE)
-		Net_LogPrintf (" U_REMOVE");
-
 	if (bits & U_MOREBITS) {			// read in the low order bits
 		i = MSG_ReadByte (&packet);
 		bits |= i;
-		Net_LogPrintf (" U_MOREBITS");
 	}
 
 	// LordHavoc: Endy neglected to mark this as being part of the QSG
 	// version 2 stuff...
 	if (bits & U_EXTEND1) {
 		bits |= MSG_ReadByte (&packet) << 16;
-		Net_LogPrintf (" U_EXTEND1");
-		if (bits & U_EXTEND2) {
+		if (bits & U_EXTEND2)
 			bits |= MSG_ReadByte (&packet) << 24;
-			Net_LogPrintf (" U_EXTEND2");
-		}
 	}
 
 	to.flags = bits;
 
 	if (bits & U_MODEL)
-		Net_LogPrintf (" MdlIdx: %d", MSG_ReadByte (&packet));
+                Net_LogPrintf (" MdlIdx: %d", MSG_ReadByte (&packet));
 
-	if (bits & U_FRAME) {
-		to.frame = MSG_ReadByte (&packet);
-		Net_LogPrintf (" Frame: %d", to.frame);
-	}
+        if (bits & U_FRAME) {
+                to.frame = MSG_ReadByte (&packet);
+                Net_LogPrintf (" Frame: %d", to.frame);
+        }
 
 	if (bits & U_COLORMAP)
-		Net_LogPrintf (" Colormap: %d", MSG_ReadByte (&packet));
+                Net_LogPrintf (" Colormap: %d", MSG_ReadByte (&packet));
 
 	if (bits & U_SKIN)
-		Net_LogPrintf (" Skinnum: %d", MSG_ReadByte (&packet));
+                Net_LogPrintf (" Skinnum: %d", MSG_ReadByte (&packet));
 
-	if (bits & U_EFFECTS) {
-		to.effects = MSG_ReadByte (&packet);
-		Net_LogPrintf (" Effects: %d", to.effects);
-	}
+        if (bits & U_EFFECTS) {
+                to.effects = MSG_ReadByte (&packet);
+                Net_LogPrintf (" Effects: %d", to.effects);
+        }
 
 	if (bits & U_ORIGIN1)
-		Net_LogPrintf (" X: %f", MSG_ReadCoord (&packet));
+                Net_LogPrintf (" X: %f", MSG_ReadCoord (&packet));
 
 	if (bits & U_ANGLE1)
-		Net_LogPrintf (" Pitch: %d", MSG_ReadAngle (&packet));
+                Net_LogPrintf (" Pitch: %d", MSG_ReadAngle (&packet));
 
 	if (bits & U_ORIGIN2)
-		Net_LogPrintf (" Y: %f", MSG_ReadCoord (&packet));
+                Net_LogPrintf (" Y: %f", MSG_ReadCoord (&packet));
 
 	if (bits & U_ANGLE2)
-		Net_LogPrintf (" Yaw: %d", MSG_ReadAngle (&packet));
+                Net_LogPrintf (" Yaw: %d", MSG_ReadAngle (&packet));
 
 	if (bits & U_ORIGIN3)
-		Net_LogPrintf (" Z: %f", MSG_ReadCoord (&packet));
+                Net_LogPrintf (" Z: %f", MSG_ReadCoord (&packet));
 
 	if (bits & U_ANGLE3)
-		Net_LogPrintf (" Roll: %d", MSG_ReadAngle (&packet));
+                Net_LogPrintf (" Roll: %d", MSG_ReadAngle (&packet));
 
 // Ender (QSG - Begin)
 	if (bits & U_ALPHA)
-		Net_LogPrintf(" Alpha: %d", MSG_ReadByte (&packet));
+                Net_LogPrintf(" Alpha: %d", MSG_ReadByte (&packet));
 	if (bits & U_SCALE)
-		Net_LogPrintf(" Scale: %d", MSG_ReadByte (&packet));
+                Net_LogPrintf(" Scale: %d", MSG_ReadByte (&packet));
 	if (bits & U_EFFECTS2)
-		Net_LogPrintf(" U_EFFECTS2: %d", (to.effects & 0xFF) | (MSG_ReadByte (&packet) << 8));
+                Net_LogPrintf(" U_EFFECTS2: %d", (to.effects & 0xFF) | (MSG_ReadByte (&packet) << 8));
 	if (bits & U_GLOWSIZE)
-		Net_LogPrintf(" GlowSize: %d", MSG_ReadByte (&packet));
+                Net_LogPrintf(" GlowSize: %d", MSG_ReadByte (&packet));
 	if (bits & U_GLOWCOLOR)
-		Net_LogPrintf(" ColorGlow: %d", MSG_ReadByte (&packet));
+                Net_LogPrintf(" ColorGlow: %d", MSG_ReadByte (&packet));
 	if (bits & U_COLORMOD)
-		Net_LogPrintf(" Colormod: %d", MSG_ReadByte (&packet));
+                Net_LogPrintf(" Colormod: %d", MSG_ReadByte (&packet));
 	if (bits & U_FRAME2)
-		Net_LogPrintf(" Uframe2: %d", ((to.frame & 0xFF) | (MSG_ReadByte (&packet) << 8)));
+                Net_LogPrintf(" Uframe2: %d", ((to.frame & 0xFF) | (MSG_ReadByte (&packet) << 8)));
 // Ender (QSG - End)
 
-	return 0;
+        return;
 }
 
 
 
 void
-Analyze_Server_Packet (const byte *data, int len)
+Analyze_Server_Packet (const byte * data, int len)
 {
+	if (!Net_PacketLog)
+		Net_PacketLog = _stdout;
 	packet.message->data = (byte*)data;
 	packet.message->cursize = len;
 	MSG_BeginReading (&packet);
 	Parse_Server_Packet ();
+	if (Net_PacketLog == _stdout)
+		Net_PacketLog = NULL;
 }
 
 
@@ -373,11 +438,10 @@ Parse_Server_Packet ()
 			if (c == -1)
 				break;
 //			Net_LogPrintf("\n<%ld,%ld> ",seq1 & 0x7FFFFFFF,seq2 & 0x7FFFFFFF);
-			Net_LogPrintf ("<%06x> [0x%02x] ",
-						   MSG_GetReadCount (&packet) - 1, c);
+			Net_LogPrintf ("<%06x> [0x%02x] ", MSG_GetReadCount (&packet), c);
 
 			if (c < 53)
-				Net_LogPrintf ("%s: ", NET_SVC_GetString (c));
+				Net_LogPrintf ("%s: ", svc_string[c]);
 //			else Net_LogPrintf("(UNK: %d): ",c);
 
 			if (MSG_GetReadCount (&packet) > packet.message->cursize)
@@ -559,7 +623,7 @@ Parse_Server_Packet ()
 					Net_LogPrintf ("**QW OBSOLETE**");
 					break;
 				case svc_centerprint:
-					Net_LogPrintf ("%s", MSG_ReadString (&packet));
+					Net_LogPrintf ("%s\n", MSG_ReadString (&packet));
 					break;
 				case svc_killedmonster:
 					break;
@@ -730,19 +794,21 @@ Parse_Server_Packet ()
 					else
 						Net_LogPrintf ("\n\t*End of sound list*");
 					break;
-				case svc_deltapacketentities:
-					Net_LogPrintf ("from: %d", MSG_ReadByte (&packet));
-					// intentional fallthrough
 				case svc_packetentities:
 					while (1) {
 						mask1 = (unsigned short) MSG_ReadShort(&packet);
 						if (packet.badread) {
-							Net_LogPrintf (" Badread\n");
+							Net_LogPrintf ("Badread\n");
 							return;
 						}
-						if (Log_Delta(mask1))
-							break;
+						if (!mask1) break;
+						if (mask1 & U_REMOVE) Net_LogPrintf("UREMOVE ");
+						Log_Delta(mask1);
 					}
+					break;
+				case svc_deltapacketentities:
+					Net_LogPrintf ("idx: %d", MSG_ReadByte (&packet));
+					return;
 					break;
 				case svc_maxspeed:
 					Net_LogPrintf ("%f", MSG_ReadFloat (&packet));
@@ -773,12 +839,16 @@ Parse_Server_Packet ()
 }
 
 void
-Analyze_Client_Packet (const byte *data, int len)
+Analyze_Client_Packet (const byte * data, int len)
 {
+	if (!Net_PacketLog)
+		Net_PacketLog = _stdout;
 	packet.message->data = (byte*)data;
 	packet.message->cursize = len;
 	MSG_BeginReading (&packet);
 	Parse_Client_Packet ();
+	if (Net_PacketLog == _stdout)
+		Net_PacketLog = NULL;
 }
 
 void
@@ -892,7 +962,7 @@ Net_PacketLog_f (cvar_t *var)
 void
 Net_PacketLog_Zap_f (void)
 {
-	if (Net_PacketLog) {
+	if (Net_PacketLog && Net_PacketLog != _stdout) {
 		Con_Printf ("truncating packet logfile: %s\n", "qfpacket.log");
 		Qseek (Net_PacketLog, 0, 0);
 		Qwrite (Net_PacketLog, 0, 0);
@@ -909,6 +979,8 @@ int
 Net_Log_Init (const char **sound_precache)
 {
 	Net_sound_precache = sound_precache;
+
+	_stdout = Qdopen (1, "wt");	// create a QFile of stdout
 
 	net_packetlog = Cvar_Get ("net_packetlog", "0", CVAR_NONE, Net_PacketLog_f,
 							 "enable/disable packet logging");
