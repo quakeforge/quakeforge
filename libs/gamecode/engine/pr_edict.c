@@ -678,17 +678,20 @@ ED_Count (progs_t * pr)
 {
 	int         i;
 	edict_t    *ent;
-	int         active, models, solid, step;
+	int         active, models, solid, step, zombie;
 	ddef_t     *solid_def;
 	ddef_t     *model_def;
 
 	solid_def = ED_FindField (pr, "solid");
 	model_def = ED_FindField (pr, "model");
-	active = models = solid = step = 0;
+	active = models = solid = step = zombie = 0;
 	for (i = 0; i < *(pr)->num_edicts; i++) {
 		ent = EDICT_NUM (pr, i);
-		if (ent->free)
+		if (ent->free) {
+			if (*(pr)->time - ent->freetime <= 0.5)
+				zombie++;
 			continue;
+		}
 		active++;
 		if (solid_def && ent->v[solid_def->ofs].float_var)
 			solid++;
@@ -700,7 +703,7 @@ ED_Count (progs_t * pr)
 	Con_Printf ("active    :%3i\n", active);
 	Con_Printf ("view      :%3i\n", models);
 	Con_Printf ("touch     :%3i\n", solid);
-
+	Con_Printf ("zombie    :%3i\n", zombie);
 }
 
 /*
