@@ -26,13 +26,13 @@ dist-zip: distdir
 
 dist-bz2: distdir
 	-chmod -R a+r $(distdir)
-	$(TAR) -cho $(distdir) | bzip2 -9 > $(distdir).tar.bz2
+	$(AMTAR) -cho $(distdir) | bzip2 -9 > $(distdir).tar.bz2
 	-rm -rf $(distdir)
 
 dist-all-local: distdir
 	-chmod -R a+r $(distdir)
-	GZIP=$(GZIP_ENV) $(TAR) chozf $(distdir).tar.gz $(distdir)
-	$(TAR) -cho $(distdir) | bzip2 -9 > $(distdir).tar.bz2
+	GZIP=$(GZIP_ENV) $(AMTAR) chozf $(distdir).tar.gz $(distdir)
+	$(AMTAR) -cho $(distdir) | bzip2 -9 > $(distdir).tar.bz2
 	ZIP="-r9q" zip $(distdir).zip $(NOCONV_DIST)
 	ZIP="-r9ql" zip $(distdir).zip $(distdir) -x $(NOCONV_DIST)
 	-rm -rf $(distdir)
