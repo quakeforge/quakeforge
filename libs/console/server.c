@@ -64,10 +64,16 @@ static const char rcsid[] =
 #include "QF/plugin.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
+#include "QF/va.h"
+#include "QF/vfile.h"
+#include "QF/vfs.h"
 
 #include "compat.h"
 
 static console_data_t con_data;
+
+static VFile  *log_file;
+static cvar_t *sv_logfile;
 
 #ifdef HAVE_CURSES_H
 static int use_curses = 1;
@@ -221,6 +227,27 @@ sigwinch (int sig)
 }
 #endif
 
+static void
+sv_logfile_f (cvar_t *var)
+{
+	if (strequal (var->string, "none")) {
+		if (log_file)
+			Qclose (log_file);
+		log_file = 0;
+	} else {
+		char       *fname = strdup (var->string);
+		char       *flags = strrchr (fname, ':');
+
+		if (flags)
+			*flags++ = 0;
+		else
+			flags = "";
+		flags = nva ("a%s", flags);
+		log_file = Qopen (va ("%s/%s", fs_userpath->string, fname), flags);
+		free (flags);
+		free (fname);
+	}
+}
 
 static void
 C_Init (void)
@@ -288,11 +315,18 @@ C_Init (void)
 	} else
 #endif
 		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
+	sv_logfile = Cvar_Get ("sv_logfile", "none", CVAR_NONE, sv_logfile_f,
+						   "Control server console logging. \"none\" for off, "
+						   "or \"filename:gzflags\"");
 }
 
 static void
 C_Shutdown (void)
 {
+	if (log_file) {
+		Qclose (log_file);
+		log_file = 0;
+	}
 #ifdef HAVE_CURSES_H
 	if (use_curses)
 		endwin ();
@@ -311,6 +345,9 @@ C_Print (const char *fmt, va_list args)
 	dvsprintf (buffer, fmt, args);
 
 	txt = buffer->str;
+
+	if (log_file)
+		Qputs (log_file, buffer->str);
 #ifdef HAVE_CURSES_H
 	if (use_curses) {
 		Con_BufferAddText (output_buffer, buffer->str);

@@ -188,25 +188,6 @@ SV_Quit_f (void)
 }
 
 void
-SV_Logfile_f (void)
-{
-	char        name[MAX_OSPATH];
-
-	if (sv_logfile) {
-		SV_Printf ("File logging off.\n");
-		Qclose (sv_logfile);
-		sv_logfile = NULL;
-		return;
-	}
-
-	snprintf (name, sizeof (name), "%s/qconsole.log", com_gamedir);
-	SV_Printf ("Logging text to %s.\n", name);
-	sv_logfile = Qopen (name, "w");
-	if (!sv_logfile)
-		SV_Printf ("failed.\n");
-}
-
-void
 SV_Fraglogfile_f (void)
 {
 	char        name[MAX_OSPATH];
@@ -1107,8 +1088,6 @@ SV_InitOperatorCommands (void)
 		Info_SetValueForStarKey (svs.info, "*cheats", "ON", 0);
 	}
 
-	Cmd_AddCommand ("logfile", SV_Logfile_f, "Toggles logging of console text "
-					"to qconsole.log");
 	Cmd_AddCommand ("fraglogfile", SV_Fraglogfile_f, "Enables logging of kills "
 					"to frag_##.log");
 

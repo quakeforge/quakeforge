@@ -195,8 +195,6 @@ SV_Print (const char *fmt, va_list args)
 		}
 
 		Con_Printf ("%s", msg2);		// also echo to debugging console
-		if (sv_logfile)
-			Qprintf (sv_logfile, "%s", msg2);
 	}
 }
 

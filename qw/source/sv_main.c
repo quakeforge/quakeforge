@@ -187,7 +187,6 @@ cvar_t     *watervis;
 
 cvar_t     *hostname;
 
-VFile      *sv_logfile;
 VFile      *sv_fraglogfile;
 
 cvar_t     *pr_gc;
@@ -231,13 +230,9 @@ void
 SV_Shutdown (void)
 {
 	Master_Shutdown ();
-	if (sv_logfile) {
-		Qclose (sv_logfile);
-		sv_logfile = NULL;
-	}
 	if (sv_fraglogfile) {
 		Qclose (sv_fraglogfile);
-		sv_logfile = NULL;
+		sv_fraglogfile = NULL;
 	}
 	NET_Shutdown ();
 	Con_Shutdown ();
