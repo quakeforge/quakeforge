@@ -849,6 +849,7 @@ function_expr (expr_t *e1, expr_t *e2)
 	expr_t *e;
 	int parm_count = 0;
 	type_t *ftype;
+	int i;
 
 	t1 = get_type (e1);
 
@@ -884,11 +885,32 @@ function_expr (expr_t *e1, expr_t *e2)
 		return error (e1, "more than 8 parameters");
 	}
 	if (ftype->num_parms != -1) {
+		expr_t *err = 0;
 		if (parm_count > ftype->num_parms) {
 			return error (e1, "too many arguments");
 		} else if (parm_count < ftype->num_parms) {
 			return error (e1, "too few arguments");
 		}
+		for (i = 0, e = e2; i < parm_count; i++, e = e->next) {
+			type_t *t;
+			if (e->type == ex_expr) {
+				t = e->e.expr.type;
+			} else if (e->type == ex_def) {
+				t = e->e.def->type;
+			} else {
+				if (ftype->parm_types[i] == &type_float
+					&& e->type == ex_integer) {
+					e->type = ex_float;
+					e->e.float_val = e->e.integer_val;
+				}
+				t = types[get_type (e)];
+			}
+			if (t != ftype->parm_types[i])
+				err = error (e, "type mismatch for parameter %d of %s",
+							 i + 1, e1->e.def->name);
+		}
+		if (err)
+			return err;
 	}
 	e = new_binary_expr ('c', e1, e2);
 	e->e.expr.type = ftype->aux_type;
