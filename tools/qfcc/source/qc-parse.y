@@ -566,22 +566,26 @@ end_function
 statement_block
 	: '{' 
 		{
-			scope_t    *scope = new_scope (sc_local, current_scope->space,
-										   current_scope);
-			current_scope = scope;
+			if (!options.traditional) {
+				scope_t    *scope = new_scope (sc_local, current_scope->space,
+											   current_scope);
+				current_scope = scope;
+			}
 		}
 	  statements '}'
 		{
-			def_t      *defs = current_scope->head;
-			int         num_defs = current_scope->num_defs;
+			if (!options.traditional) {
+				def_t      *defs = current_scope->head;
+				int         num_defs = current_scope->num_defs;
 
-			flush_scope (current_scope, 1);
+				flush_scope (current_scope, 1);
 
-			current_scope = current_scope->parent;
-			current_scope->num_defs += num_defs;
-			*current_scope->tail = defs;
-			while (*current_scope->tail) {
-				current_scope->tail = &(*current_scope->tail)->def_next;
+				current_scope = current_scope->parent;
+				current_scope->num_defs += num_defs;
+				*current_scope->tail = defs;
+				while (*current_scope->tail) {
+					current_scope->tail = &(*current_scope->tail)->def_next;
+				}
 			}
 			$$ = $3;
 		}
