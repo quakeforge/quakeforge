@@ -99,15 +99,13 @@ free_progs_mem (progs_t *pr, void *mem)
 void
 PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 {
-	unsigned int i;
+	unsigned    i;
+	int         mem_size;
 	dprograms_t progs;
 
 	pr->progs = 0;
 	if (Qread (file, &progs, sizeof (progs)) != sizeof (progs))
 		PR_Error (pr, "error reading header");
-
-	pr->progs_size = size;
-	Sys_DPrintf ("Programs occupy %iK.\n", size / 1024);
 
 	// store prog crc
 	pr->crc = CRC_Block ((byte*)&progs, sizeof (progs));
@@ -137,6 +135,7 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 
 	// size of progs themselves
 	pr->progs_size = size;
+	Sys_DPrintf ("Programs occupy %iK.\n", size / 1024);
 	// round off to next highest whole word address (esp for Alpha)
 	// this ensures that pointers in the engine data area are always
 	// properly aligned
@@ -174,10 +173,11 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 	PR_Resources_Clear (pr);
 	if (pr->progs)
 		pr->free_progs_mem (pr, pr->progs);
-	pr->progs = pr->allocate_progs_mem (pr, pr->progs_size + pr->zone_size
-										+ pr->pr_edictareasize);
+	mem_size = pr->progs_size + pr->zone_size + pr->pr_edictareasize;
+	pr->progs = pr->allocate_progs_mem (pr, mem_size + 1);
 	if (!pr->progs)
 		return;
+	((byte *) pr->progs)[mem_size] = 0;
 
 	memcpy (pr->progs, &progs, sizeof (progs));
 	Qread (file, pr->progs + 1, size - sizeof (progs));
@@ -194,7 +194,7 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 	pr->pr_functions =
 		(dfunction_t *) ((byte *) pr->progs + pr->progs->ofs_functions);
 	pr->pr_strings = (char *) pr->progs + pr->progs->ofs_strings;
-	pr->pr_stringsize = pr->progs->numstrings;
+	pr->pr_stringsize = (char *) pr->zone + pr->zone_size - (char *) pr->progs;
 	pr->pr_globaldefs =
 		(ddef_t *) ((byte *) pr->progs + pr->progs->ofs_globaldefs);
 	pr->pr_fielddefs =

@@ -137,6 +137,7 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 
 	pr->pr_xfunction = f;
 	pr->pr_xstatement = f->first_statement - 1;      		// offset the st++
+	pr->pr_xtstr = 0;
 	return;
 }
 
@@ -158,10 +159,14 @@ PR_LeaveFunction (progs_t * pr)
 			&pr->localstack[pr->localstack_used],
 			sizeof (pr_type_t) * c);
 
+	if (pr->pr_xtstr)
+		PR_FreeTempStrings (pr);
+
 	// up stack
 	pr->pr_depth--;
 	pr->pr_xfunction = pr->pr_stack[pr->pr_depth].f;
 	pr->pr_xstatement = pr->pr_stack[pr->pr_depth].s;
+	pr->pr_xtstr = pr->pr_stack[pr->pr_depth].tstr;
 }
 
 #define OPA (*op_a)
@@ -280,7 +285,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					char *c = Hunk_TempAlloc (size);
 					strcpy (c, a);
 					strcpy (c + lena, b);
-					OPC.string_var = PR_SetString (pr, c);
+					OPC.string_var = PR_SetTempString (pr, c);
 				}
 				break;
 			case OP_SUB_F:

@@ -41,9 +41,37 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <stdarg.h>
 #include <stdlib.h>
 
+#include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/progs.h"
 
+typedef struct strref_s {
+	struct strref_s *next;
+	char       *string;
+	dstring_t  *dstring;
+	int         count;
+} strref_t;
+
+static void *
+pr_strings_alloc (void *_pr, size_t size)
+{
+	progs_t    *pr = (progs_t *) _pr;
+	return PR_Zone_Malloc (pr, size);
+}
+
+static void
+pr_strings_free (void *_pr, void *ptr)
+{
+	progs_t    *pr = (progs_t *) _pr;
+	PR_Zone_Free (pr, ptr);
+}
+
+static void *
+pr_strings_realloc (void *_pr, void *ptr, size_t size)
+{
+	progs_t    *pr = (progs_t *) _pr;
+	return PR_Zone_Realloc (pr, ptr, size);
+}
 
 static strref_t *
 new_string_ref (progs_t *pr)
@@ -74,6 +102,7 @@ static void
 free_string_ref (progs_t *pr, strref_t *sr)
 {
 	sr->string = 0;
+	sr->dstring = 0;
 	sr->next = pr->free_string_refs;
 	pr->free_string_refs = sr;
 }
@@ -110,7 +139,7 @@ strref_free (void *_sr, void *_pr)
 
 	// free the string and ref only if it's not a static string
 	if (sr < pr->static_strings || sr >= pr->static_strings + pr->num_strings) {
-		free (sr->string);
+		PR_Zone_Free (pr, sr->string);
 		free_string_ref (pr, sr);
 	}
 }
@@ -126,6 +155,14 @@ PR_LoadStrings (progs_t *pr)
 		count++;
 		str += strlen (str) + 1;
 	}
+
+	if (!pr->ds_mem) {
+		pr->ds_mem = malloc (sizeof (dstring_mem_t));
+		pr->ds_mem->alloc = pr_strings_alloc;
+		pr->ds_mem->free = pr_strings_free;
+		pr->ds_mem->realloc = pr_strings_realloc;
+		pr->ds_mem->data = pr;
+	}
 	if (pr->strref_hash) {
 		Hash_FlushTable (pr->strref_hash);
 	} else {
@@ -138,7 +175,7 @@ PR_LoadStrings (progs_t *pr)
 
 	if (pr->static_strings)
 		free (pr->static_strings);
-	pr->static_strings = calloc (count, sizeof (strref_t));
+	pr->static_strings = malloc (count * sizeof (strref_t));
 	count = 0;
 	str = pr->pr_strings;
 	while (str < end) {
@@ -198,8 +235,8 @@ PR_GarbageCollect (progs_t *pr)
 	}
 }
 
-static inline char *
-get_string (progs_t *pr, int num)
+static inline strref_t *
+get_strref (progs_t *pr, int num)
 {
 	if (num < 0) {
 		unsigned int row = ~num / 1024;
@@ -208,7 +245,22 @@ get_string (progs_t *pr, int num)
 
 		if (row >= pr->dyn_str_size)
 			return 0;
-		return pr->dynamic_strings[row][num].string;
+		return &pr->dynamic_strings[row][num];
+	} else {
+		return 0;
+	}
+}
+
+static inline const char *
+get_string (progs_t *pr, int num)
+{
+	if (num < 0) {
+		strref_t   *ref = get_strref (pr, num);
+		if (!ref)
+			return 0;
+		if (ref->dstring)
+			return ref->dstring->str;
+		return ref->string;
 	} else {
 		if (num >= pr->pr_stringsize)
 			return 0;
@@ -225,24 +277,95 @@ PR_StringValid (progs_t *pr, int num)
 const char *
 PR_GetString (progs_t *pr, int num)
 {
-	char       *str;
+	const char *str;
 
 	str = get_string (pr, num);
 	if (str)
 		return str;
-	PR_RunError (pr, "Invalid string offset %u", num);
+	PR_RunError (pr, "Invalid string offset %d", num);
+}
+
+dstring_t *
+PR_GetDString (progs_t *pr, int num)
+{
+	strref_t   *ref = get_strref (pr, num);
+	if (ref) {
+		if (ref->dstring)
+			return ref->dstring;
+		PR_RunError (pr, "not a dstring: %d", num);
+	}
+	PR_RunError (pr, "Invalid string offset: %d", num);
+}
+
+static inline char *
+pr_strdup (progs_t *pr, const char *s)
+{
+	size_t      len = strlen (s) + 1;
+	char       *new = PR_Zone_Malloc (pr, len);
+	strcpy (new, s);
+	return new;
 }
 
 int
 PR_SetString (progs_t *pr, const char *s)
 {
-	strref_t *sr = Hash_Find (pr->strref_hash, s);
+	strref_t   *sr = Hash_Find (pr->strref_hash, s);
 
 	if (!sr) {
 		sr = new_string_ref (pr);
-		sr->string = strdup(s);
+		sr->string = pr_strdup(pr, s);
 		sr->count = 0;
 		Hash_Add (pr->strref_hash, sr);
 	}
 	return string_index (pr, sr);
+}
+
+int
+PR_SetTempString (progs_t *pr, const char *s)
+{
+	strref_t   *sr;
+
+	sr = new_string_ref (pr);
+	sr->string = pr_strdup(pr, s);
+	sr->count = 0;
+	sr->next = pr->pr_xtstr;
+	pr->pr_xtstr = sr;
+	return string_index (pr, sr);
+}
+
+int
+PR_NewString (progs_t *pr)
+{
+	strref_t   *sr = new_string_ref (pr);
+	sr->dstring = _dstring_newstr (pr->ds_mem);
+	return string_index (pr, sr);
+}
+
+void
+PR_FreeString (progs_t *pr, int str)
+{
+	strref_t   *sr = get_strref (pr, str);
+
+	if (sr) {
+		if (sr->dstring)
+			dstring_delete (sr->dstring);
+		else
+			PR_Zone_Free (pr, sr->string);
+		free_string_ref (pr, sr);
+		return;
+	}
+	PR_RunError (pr, "attempt to free invalid string %d", str);
+}
+
+void
+PR_FreeTempStrings (progs_t *pr)
+{
+	strref_t   *sr, *t;
+
+	for (sr = pr->pr_xtstr; sr; sr = t) {
+		t = sr->next;
+		PR_Zone_Free (pr, sr->string);
+		free_string_ref (pr, sr);
+	}
+	pr->pr_xtstr = 0;
 }

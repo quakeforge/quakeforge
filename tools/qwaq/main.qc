@@ -1,3 +1,13 @@
+void () test_str =
+{
+	local string a,b,c,d;
+	a = "testing ";
+	b = "temp ";
+	c = "strings ";
+	d = "\n";
+	print (a + b + c + d);
+};
+
 integer (integer argc, string []argv) main =
 {
 	local integer i;
@@ -35,5 +45,6 @@ integer (integer argc, string []argv) main =
 			print ("Object instances do not repond to `run:with:me:'\n");
 	} else
 		print ("did not find selector for `run:with:me:'\n");
+	test_str ();
 	return 0;
 };
