@@ -357,11 +357,11 @@ PM_PlayerMove (vec3_t start, vec3_t end)
 	for (i = 0; i < pmove.numphysent; i++) {
 		pe = &pmove.physents[i];
 		// get the clipping hull
-		if (pe->model)
-			hull = &pmove.physents[i].model->hulls[1];
-		else {
-			if (pe->hull) {
-				hull = pe->hull;
+		if (pe->hull) {
+			hull = pe->hull;
+		} else {
+			if (pe->model) {
+				hull = &pmove.physents[i].model->hulls[1];
 			} else {
 				VectorSubtract (pe->mins, player_maxs, mins);
 				VectorSubtract (pe->maxs, player_mins, maxs);

@@ -154,6 +154,13 @@ SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset)
 	vec3_t		hullmins, hullmaxs;
 	hull_t     *hull;
 
+	if (sv_fields.rotated_bbox != -1
+		&& SVFIELD (ent, rotated_bbox, integer)) {
+		extern hull_t pf_hull_list[];
+		hull = &pf_hull_list[SVFIELD (ent, rotated_bbox, integer) - 1];
+		VectorCopy (SVFIELD (ent, origin, vector), offset);
+		return hull;
+	}
 	// decide which clipping hull to use, based on the size
 	if (SVFIELD (ent, solid, float) == SOLID_BSP) {
 		// explicit hulls in the BSP model
@@ -632,16 +639,8 @@ SV_ClipMoveToEntity (edict_t *touched, edict_t *mover, vec3_t start,
 	trace.allsolid = true;
 	VectorCopy (end, trace.endpos);
 
-	if (sv_fields.rotated_bbox != -1
-		&& SVFIELD (touched, rotated_bbox, integer)) {
-		// keep things simple for now, only test against touched
-		extern hull_t pf_hull_list[];
-		hull = &pf_hull_list[SVFIELD (touched, rotated_bbox, integer) - 1];
-		VectorCopy (SVFIELD (touched, origin, vector), offset);
-	} else {
-		// get the clipping hull
-		hull = SV_HullForEntity (touched, mins, maxs, offset);
-	}
+	// get the clipping hull
+	hull = SV_HullForEntity (touched, mins, maxs, offset);
 
 	VectorSubtract (start, offset, start_l);
 	VectorSubtract (end, offset, end_l);
@@ -828,6 +827,9 @@ SV_TestPlayerPosition (edict_t *ent, vec3_t origin)
 	for (e = 1; e < sv.num_edicts; e++, check = NEXT_EDICT (&sv_pr_state, check)) {
 		if (check->free)
 			continue;
+		if (check == ent)
+			continue;
+
 		if (SVFIELD (check, solid, float) != SOLID_BSP
 			&& SVFIELD (check, solid, float) != SOLID_BBOX
 			&& SVFIELD (check, solid, float) != SOLID_SLIDEBOX)
@@ -841,19 +843,9 @@ SV_TestPlayerPosition (edict_t *ent, vec3_t origin)
 			|| boxmaxs[2] < SVFIELD (check, absmin, vector)[2])
 			continue;
 
-		if (check == ent)
-			continue;
-
 		// get the clipping hull
-		if (sv_fields.rotated_bbox != -1
-			&& SVFIELD (check, rotated_bbox, integer)) {
-			extern hull_t pf_hull_list[];
-			hull = &pf_hull_list[SVFIELD (check, rotated_bbox, integer) - 1];
-			VectorCopy (SVFIELD (check, origin, vector), offset);
-		} else {
-			hull = SV_HullForEntity (check, SVFIELD (ent, mins, vector),
-									 SVFIELD (ent, maxs, vector), offset);
-		}
+		hull = SV_HullForEntity (check, SVFIELD (ent, mins, vector),
+								 SVFIELD (ent, maxs, vector), offset);
 
 		VectorSubtract (origin, offset, offset);
 
