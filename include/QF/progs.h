@@ -78,6 +78,7 @@ edict_t *PR_InitEdicts (progs_t *pr, int num_edicts);
 
 void PR_Profile_f (void);
 
+void ED_ClearEdict (progs_t * pr, edict_t *e, int val);
 edict_t *ED_Alloc (progs_t *pr);
 void ED_Free (progs_t *pr, edict_t *ed);
 
@@ -256,6 +257,7 @@ struct progs_s {
 
 	int				(*parse_field)(progs_t *pr, const char *key, const char *value);
 	int				(*prune_edict)(progs_t *pr, edict_t *ent);
+	void			(*free_edict)(progs_t *pr, edict_t *ent);
 
 	builtin_t		*builtins;
 	int				numbuiltins;

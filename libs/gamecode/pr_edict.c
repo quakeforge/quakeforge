@@ -196,7 +196,10 @@ ED_Free (progs_t * pr, edict_t *ed)
 	if (pr_deadbeef->int_val) {
 		ED_ClearEdict (pr, ed, 0xdeadbeef);
 	} else {
-		ED_ClearEdict (pr, ed, 0);
+		if (pr->free_edict)
+			pr->free_edict (pr, ed);
+		else
+			ED_ClearEdict (pr, ed, 0);
 	}
 	ed->free = true;
 	ed->freetime = *(pr)->time;

@@ -54,6 +54,7 @@ progs_t	    sv_pr_state;
 cvar_t     *r_skyname;
 cvar_t     *sv_progs;
 cvar_t     *pr_checkextentions;
+cvar_t     *sv_old_entity_free;
 
 func_t	EndFrame;
 func_t	SpectatorConnect;
@@ -62,6 +63,25 @@ func_t	SpectatorThink;
 func_t	UserInfoCallback;
 
 static int reserved_edicts = MAX_CLIENTS;
+
+static void
+free_edict (progs_t *pr, edict_t *ent)
+{
+	if (sv_old_entity_free->int_val) {
+		ent->v[sv_fields.model].entity_var = 0;
+		ent->v[sv_fields.takedamage].float_var = 0;
+		ent->v[sv_fields.modelindex].float_var = 0;
+		ent->v[sv_fields.colormap].float_var = 0;
+		ent->v[sv_fields.skin].float_var = 0;
+		ent->v[sv_fields.frame].float_var = 0;
+		ent->v[sv_fields.nextthink].float_var = -1;
+		ent->v[sv_fields.solid].float_var = 0;
+		memset (ent->v[sv_fields.origin].vector_var, 0, 3*sizeof (float));
+		memset (ent->v[sv_fields.angles].vector_var, 0, 3*sizeof (float));
+	} else {
+		ED_ClearEdict (pr, ent, 0);
+	}
+}
 
 static int
 prune_edict (progs_t *pr, edict_t *ent)
@@ -300,6 +320,7 @@ SV_Progs_Init (void)
 	sv_pr_state.numbuiltins = 0;
 	sv_pr_state.parse_field = parse_field;
 	sv_pr_state.prune_edict = prune_edict;
+	sv_pr_state.free_edict = free_edict; // eww, I hate the need for this :(
 
 	SV_PR_Cmds_Init ();
 
@@ -324,4 +345,8 @@ SV_Progs_Init_Cvars (void)
 	pr_checkextentions = Cvar_Get ("sv_progs", "1", CVAR_ROM, NULL,
 								   "indicate the presence of the "
 								   "checkextentions qc function");
+	sv_old_entity_free = Cvar_Get ("sv_old_entity_free", "0", CVAR_NONE, NULL,
+								   "set this for buggy mods that rely on the"
+								   " old behaviour of entity freeing (eg,"
+								   " *TF)");
 }
