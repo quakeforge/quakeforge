@@ -379,11 +379,52 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 	return vo;
 }
 
+maliasskindesc_t *
+R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
+{
+	maliasskindesc_t *pskindesc;
+	maliasskingroup_t *paliasskingroup;
+
+	if ((skinnum >= ahdr->mdl.numskins) || (skinnum < 0)) {
+		Con_DPrintf ("R_AliasSetupSkin: no such skin # %d\n", skinnum);
+		skinnum = 0;
+	}
+
+	pskindesc = ((maliasskindesc_t *)
+				 ((byte *) ahdr + ahdr->skindesc)) + skinnum;
+
+	if (pskindesc->type == ALIAS_SKIN_GROUP) {
+		float       fullskininterval;
+		int         i;
+		float       skintargettime, skintime;
+		float      *pskinintervals;
+
+		paliasskingroup = (maliasskingroup_t *) ((byte *) ahdr +
+												 pskindesc->skin);
+		pskinintervals = (float *)
+			((byte *) ahdr + paliasskingroup->intervals);
+		numskins = paliasskingroup->numskins;
+		fullskininterval = pskinintervals[numskins - 1];
+
+		skintime = r_realtime + currententity->syncbase;
+
+		skintargettime = skintime -
+			((int) (skintime / fullskininterval)) * fullskininterval;
+		for (i = 0; i < (numskins - 1); i++) {
+			if (pskinintervals[i] > skintargettime)
+				break;
+		}
+		pskindesc = &paliasskingroup->skindescs[i];
+	}
+
+	return pskindesc;
+}
+
 void
 R_DrawAliasModel (entity_t *e, qboolean cull)
 {
 	float		  add, an;
-	int			  anim, lnum, skinnum, texture;
+	int			  lnum, texture;
 	int			  fb_texture = 0;
 	aliashdr_t	 *paliashdr;
 	model_t		 *clmodel;
@@ -461,18 +502,6 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	qfglScalef (paliashdr->mdl.scale[0], paliashdr->mdl.scale[1],
 				paliashdr->mdl.scale[2]);
 
-	anim = (int) (r_realtime * 10) & 3;
-
-	skinnum = e->skinnum;
-	if ((skinnum >= paliashdr->mdl.numskins) || (skinnum < 0)) {
-		Con_DPrintf ("R_AliasSetupSkin: no such skin # %d\n", skinnum);
-		skinnum = 0;
-	}
-
-	texture = paliashdr->gl_texturenum[skinnum][anim];
-	if (gl_fb_models->int_val && !clmodel->fullbright)
-		fb_texture = paliashdr->gl_fb_texturenum[skinnum][anim];
-
 	// we can't dynamically colormap textures, so they are cached
 	// seperately for the players.  Heads are just uncolored.
 	if (e->skin && !gl_nocolors->int_val) {
@@ -482,6 +511,13 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		if (gl_fb_models->int_val) {
 			fb_texture = skin->fb_texture;
 		}
+	} else {
+		maliasskindesc_t *skindesc;
+
+		skindesc = R_AliasGetSkindesc (e->skinnum, paliashdr);
+		texture = skindesc->texnum;
+		if (gl_fb_models->int_val && !clmodel->fullbright)
+			fb_texture = skindesc->fb_texnum;
 	}
 
 	qfglBindTexture (GL_TEXTURE_2D, texture);

@@ -136,43 +136,47 @@ Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight)
 }
 
 void       *
-Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group)
+Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
+			  maliasskindesc_t *skindesc)
 {
 	char        name[32];
-	int         fbtexnum = 0;
+	int         fb_texnum = 0;
+	int         texnum = 0;
+	byte       *pskin;
 
-	Mod_FloodFillSkin (skin, pheader->mdl.skinwidth, pheader->mdl.skinheight);
+	pskin = Hunk_AllocName (skinsize, loadname);
+	skindesc->skin = (byte *) pskin - (byte *) pheader;
+
+	memcpy (pskin, skin, skinsize);
+
+	Mod_FloodFillSkin (pskin, pheader->mdl.skinwidth, pheader->mdl.skinheight);
 	// save 8 bit texels for the player model to remap
-	if (!strcmp (loadmodel->name, "progs/player.mdl")) {
-		byte       *texels;
+	if (strequal (loadmodel->name, "progs/player.mdl")) {
 		if (skinsize > sizeof (player_8bit_texels))
 			Sys_Error ("Player skin too large");
-		texels = Hunk_AllocName (skinsize, loadname);
-		pheader->texels[snum] = texels - (byte *) pheader;
-		memcpy (texels, skin, skinsize);
-		memcpy (player_8bit_texels, skin, skinsize);
+		memcpy (player_8bit_texels, pskin, skinsize);
 	}
 
-	if (group) {
-		snprintf (name, sizeof (name), "fb_%s_%i_%i", loadmodel->name, snum,
-				  gnum);
-	} else {
-		snprintf (name, sizeof (name), "fb_%s_%i", loadmodel->name, snum);
-	}
-	if (!loadmodel->fullbright)
-		fbtexnum = Mod_Fullbright (skin + 1, pheader->mdl.skinwidth,
-								   pheader->mdl.skinheight, name);
-	if ((loadmodel->hasfullbrights = (fbtexnum))) {
-		pheader->gl_fb_texturenum[snum][gnum] = fbtexnum;
+	if (!loadmodel->fullbright) {
+		if (group) {
+			snprintf (name, sizeof (name), "fb_%s_%i_%i", loadmodel->name,
+					  snum, gnum);
+		} else {
+			snprintf (name, sizeof (name), "fb_%s_%i", loadmodel->name, snum);
+		}
+		fb_texnum = Mod_Fullbright (pskin, pheader->mdl.skinwidth,
+									pheader->mdl.skinheight, name);
 	}
 	if (group) {
 		snprintf (name, sizeof (name), "%s_%i_%i", loadmodel->name, snum, gnum);
 	} else {
 		snprintf (name, sizeof (name), "%s_%i", loadmodel->name, snum);
 	}
-	pheader->gl_texturenum[snum][gnum] =
-		GL_LoadTexture (name, pheader->mdl.skinwidth,
-						pheader->mdl.skinheight, skin, true, false, 1);
+	texnum = GL_LoadTexture (name, pheader->mdl.skinwidth,
+							 pheader->mdl.skinheight, pskin, true, false, 1);
+	skindesc->texnum = texnum;
+	skindesc->fb_texnum = fb_texnum;
+	loadmodel->hasfullbrights = fb_texnum;
 	// alpha param was true for non group skins
 	return skin + skinsize;
 }
@@ -180,48 +184,63 @@ Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group)
 void       *
 Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 {
-	int         i, j, k;
+	int         snum, gnum, t;
 	int         skinsize;
 	byte       *skin;
-	daliasskingroup_t *pinskingroup;
 	int         groupskins;
+	daliasskingroup_t *pinskingroup;
 	daliasskininterval_t *pinskinintervals;
+	maliasskindesc_t *pskindesc;
+	maliasskingroup_t *paliasskingroup;
+	float      *poutskinintervals;
 
 	if (numskins < 1 || numskins > MAX_SKINS)
 		Sys_Error ("Mod_LoadAliasModel: Invalid # of skins: %d\n", numskins);
 
 	skinsize = pheader->mdl.skinwidth * pheader->mdl.skinheight;
+	pskindesc = Hunk_AllocName (numskins * sizeof (maliasskindesc_t),
+								loadname);
 
-	for (i = 0; i < numskins; i++) {
+	*pskinindex = (byte *) pskindesc - (byte *) pheader;
+
+	for (snum = 0; snum < numskins; snum++) {
+		pskindesc[snum].type = pskintype->type;
 		if (pskintype->type == ALIAS_SKIN_SINGLE) {
 			skin = (byte *) (pskintype + 1);
-			skin = Mod_LoadSkin (skin, skinsize, i, 0, false);
-
-			for (j = 1; j < 4; j++) {
-				pheader->gl_texturenum[i][j] = pheader->gl_texturenum[i][j - 1];
-				pheader->gl_fb_texturenum[i][j] =
-					pheader->gl_fb_texturenum[i][j - 1];
-			}
+			skin = Mod_LoadSkin (skin, skinsize, snum, 0, false,
+								 &pskindesc[snum]);
 		} else {
-			// animating skin group.  yuck.
-			// Sys_Printf("Animating Skin Group, if you get this message
-			// please notify warp@debian.org\n");
 			pskintype++;
 			pinskingroup = (daliasskingroup_t *) pskintype;
 			groupskins = LittleLong (pinskingroup->numskins);
-			pinskinintervals = (daliasskininterval_t *) (pinskingroup + 1);
 
-			pskintype = (void *) (pinskinintervals + groupskins);
+			t = field_offset (maliasskingroup_t, skindescs[groupskins]);
+			paliasskingroup = Hunk_AllocName (t, loadname);
+			paliasskingroup->numskins = groupskins;
+
+			pskindesc[snum].skin = (byte *) paliasskingroup - (byte *) pheader;
+			
+			pinskinintervals = (daliasskininterval_t *) (pinskingroup + 1);
+			poutskinintervals = Hunk_AllocName (groupskins * sizeof (float),
+												loadname);
+			paliasskingroup->intervals =
+				(byte *) poutskinintervals - (byte *) pheader;
+			for (gnum = 0; gnum < groupskins; gnum++) {
+				*poutskinintervals = LittleFloat (pinskinintervals->interval);
+				if (*poutskinintervals <= 0)
+					Sys_Error ("Mod_LoadAliasSkinGroup: interval<=0");
+
+				poutskinintervals++;
+				pinskinintervals++;
+			}
+
+			pskintype = (void *) pinskinintervals;
 			skin = (byte *) pskintype;
 
-			for (j = 0; j < groupskins; j++) {
-				skin = Mod_LoadSkin (skin, skinsize, i, j & 3, true);
-			}
-			k = j;
-			for ( /* */ ; j < 4; j++) {
-				pheader->gl_texturenum[i][j] = pheader->gl_texturenum[i][j - k];
-				pheader->gl_fb_texturenum[i][j] =
-					pheader->gl_fb_texturenum[i][j - k];
+			for (gnum = 0; gnum < groupskins; gnum++) {
+				paliasskingroup->skindescs[gnum].type = ALIAS_SKIN_SINGLE;
+				skin = Mod_LoadSkin (skin, skinsize, snum, gnum, true,
+									 &paliasskingroup->skindescs[gnum]);
 			}
 		}
 		pskintype = (daliasskintype_t *) skin;

@@ -198,6 +198,7 @@ Skin_Do_Translation_Model (model_t *model, int skinnum, int slot, skin_t *skin)
 	int         inwidth, inheight;
 	int         texnum = skin->texture;
 	aliashdr_t *paliashdr;
+	maliasskindesc_t *pskindesc;
 	
 	if (!model)							// player doesn't have a model yet
 		return;
@@ -209,11 +210,12 @@ Skin_Do_Translation_Model (model_t *model, int skinnum, int slot, skin_t *skin)
 		|| skinnum >= paliashdr->mdl.numskins) {
 		Con_Printf ("(%d): Invalid player skin #%d\n", slot,
 					skinnum);
-		original = (byte *) paliashdr + paliashdr->texels[0];
-	} else {
-		original =
-			(byte *) paliashdr + paliashdr->texels[skinnum];
+		skinnum = 0;
 	}
+	pskindesc = ((maliasskindesc_t *)
+				 ((byte *) paliashdr + paliashdr->skindesc)) + skinnum;
+	//FIXME: broken for skin groups
+	original = (byte *) paliashdr + pskindesc->skin;
 
 	inwidth = paliashdr->mdl.skinwidth;
 	inheight = paliashdr->mdl.skinheight;

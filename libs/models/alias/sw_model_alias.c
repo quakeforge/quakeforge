@@ -60,14 +60,14 @@ static const char rcsid[] =
 
 
 void *
-Mod_LoadSkin (byte * skin, int skinsize, int *pskinindex, int snum, int gnum)
+Mod_LoadSkin (byte * skin, int skinsize, maliasskindesc_t *skindesc)
 {
 	byte       *pskin;
 	unsigned short *pusskin;
 	int         i;
 
 	pskin = Hunk_AllocName (skinsize * r_pixbytes, loadname);
-	*pskinindex = (byte *) pskin - (byte *) pheader;
+	skindesc->skin = (byte *) pskin - (byte *) pheader;
 
 	switch (r_pixbytes) {
 		case 1:
@@ -106,13 +106,13 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 	pskindesc = Hunk_AllocName (numskins * sizeof (maliasskindesc_t),
 								loadname);
 
-	pheader->skindesc = (byte *) pskindesc - (byte *) pheader;
+	*pskinindex = (byte *) pskindesc - (byte *) pheader;
 
 	for (snum = 0; snum < numskins; snum++) {
+		pskindesc[snum].type = pskintype->type;
 		if (pskintype->type == ALIAS_SKIN_SINGLE) {
 			skin = (byte *) (pskintype + 1);
-			skin =
-				Mod_LoadSkin (skin, skinsize, &pskindesc[snum].skin, snum, 0);
+			skin = Mod_LoadSkin (skin, skinsize, &pskindesc[snum]);
 		} else {
 			pskintype++;
 			pinskingroup = (daliasskingroup_t *) pskintype;
@@ -122,7 +122,7 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 			paliasskingroup = Hunk_AllocName (t, loadname);
 			paliasskingroup->numskins = groupskins;
 
-			*pskinindex = (byte *) paliasskingroup - (byte *) pheader;
+			pskindesc[snum].skin = (byte *) paliasskingroup - (byte *) pheader;
 
 			pinskinintervals = (daliasskininterval_t *) (pinskingroup + 1);
 			poutskinintervals = Hunk_AllocName (groupskins * sizeof (float),
@@ -142,10 +142,9 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 			skin = (byte *) pskintype;
 
 			for (gnum = 0; gnum < groupskins; gnum++) {
-				skin =
-					Mod_LoadSkin (skin, skinsize,
-								  &paliasskingroup->skindescs[snum].skin, snum,
-								  gnum);
+				paliasskingroup->skindescs[gnum].type = ALIAS_SKIN_SINGLE;
+				skin = Mod_LoadSkin (skin, skinsize,
+									 &paliasskingroup->skindescs[gnum]);
 			}
 		}
 		pskintype = (daliasskintype_t *) skin;

@@ -290,6 +290,8 @@ typedef struct
 {
 	aliasskintype_t		type;
 	int					skin;
+	int					texnum;
+	int					fb_texnum;
 } maliasskindesc_t;
 
 typedef struct
@@ -336,9 +338,6 @@ typedef struct {
 
 	unsigned short crc;
 
-	int			gl_texturenum[MAX_SKINS][4];
-	int			gl_fb_texturenum[MAX_SKINS][4];
-	int			texels[MAX_SKINS];  // only for player skins
 	maliasframedesc_t	frames[1];
 } aliashdr_t;
 

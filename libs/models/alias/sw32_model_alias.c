@@ -44,6 +44,7 @@ static const char rcsid[] =
 #include "QF/qendian.h"
 #include "QF/sys.h"
 
+#include "compat.h"
 #include "d_iface.h"
 
 
@@ -58,34 +59,16 @@ static const char rcsid[] =
 
 
 void *
-Mod_LoadSkin (byte * skin, int skinsize, int *pskinindex, int snum, int gnum)
+Mod_LoadSkin (byte * skin, int skinsize, maliasskindesc_t *skindesc)
 {
 	byte       *pskin;
-//	unsigned short *pusskin;
-//	int         i;
 
 	// LordHavoc: model rendering expects skin in 8bit always
 	pskin = Hunk_AllocName (skinsize, loadname);
-	memcpy (pskin, skin, skinsize);
-	/*
-	pskin = Hunk_AllocName (skinsize * r_pixbytes, loadname);
+	skindesc->skin = (byte *) pskin - (byte *) pheader;
 
-	switch (r_pixbytes) {
-		case 1:
-			memcpy (pskin, skin, skinsize);
-			break;
-		case 2:
-			pusskin = (unsigned short *) skin;
-			for (i = 0; i < skinsize; i++)
-				pusskin[i] = d_8to16table[skin[i]];
-			break;
-		default:
-			Sys_Error ("Mod_LoadAliasSkin: driver set invalid r_pixbytes: "
-			"%d\n", r_pixbytes);
-			break;
-	}
-	*/
-	*pskinindex = (byte *) pskin - (byte *) pheader;
+	memcpy (pskin, skin, skinsize);
+
 	return skin + skinsize;
 }
 
@@ -109,28 +92,27 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 	pskindesc = Hunk_AllocName (numskins * sizeof (maliasskindesc_t),
 								loadname);
 
-	pheader->skindesc = (byte *) pskindesc - (byte *) pheader;
+	*pskinindex = (byte *) pskindesc - (byte *) pheader;
 
 	for (snum = 0; snum < numskins; snum++) {
+		pskindesc[snum].type = pskintype->type;
 		if (pskintype->type == ALIAS_SKIN_SINGLE) {
 			skin = (byte *) (pskintype + 1);
-			skin =
-				Mod_LoadSkin (skin, skinsize, &pskindesc[snum].skin, snum, 0);
+			skin = Mod_LoadSkin (skin, skinsize, &pskindesc[snum]);
 		} else {
 			pskintype++;
 			pinskingroup = (daliasskingroup_t *) pskintype;
 			groupskins = LittleLong (pinskingroup->numskins);
 
-			t = (int) &((maliasskingroup_t *) 0)->skindescs[groupskins];
+			t = field_offset (maliasskingroup_t, skindescs[groupskins]);
 			paliasskingroup = Hunk_AllocName (t, loadname);
 			paliasskingroup->numskins = groupskins;
 
-			*pskinindex = (byte *) paliasskingroup - (byte *) pheader;
+			pskindesc[snum].skin = (byte *) paliasskingroup - (byte *) pheader;
 
 			pinskinintervals = (daliasskininterval_t *) (pinskingroup + 1);
-			poutskinintervals =
-
-				Hunk_AllocName (groupskins * sizeof (float), loadname);
+			poutskinintervals = Hunk_AllocName (groupskins * sizeof (float),
+												loadname);
 			paliasskingroup->intervals =
 				(byte *) poutskinintervals - (byte *) pheader;
 			for (gnum = 0; gnum < groupskins; gnum++) {
@@ -146,10 +128,9 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 			skin = (byte *) pskintype;
 
 			for (gnum = 0; gnum < groupskins; gnum++) {
-				skin =
-					Mod_LoadSkin (skin, skinsize,
-								  &paliasskingroup->skindescs[snum].skin, snum,
-								  gnum);
+				paliasskingroup->skindescs[gnum].type = ALIAS_SKIN_SINGLE;
+				skin = Mod_LoadSkin (skin, skinsize,
+									 &paliasskingroup->skindescs[gnum]);
 			}
 		}
 		pskintype = (daliasskintype_t *) skin;
