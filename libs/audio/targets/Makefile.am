@@ -22,11 +22,11 @@ libsound_sdl.la: $(libsound_sdl_la_OBJECTS) $(libsound_sdl_la_DEPENDENCIES)
 
 libsound_alsa0_5_la_SOURCES= $(common_sound_files) snd_alsa_0_5.c
 libsound_alsa0_5.la: $(libsound_alsa0_5_la_OBJECTS) $(libsound_alsa0_5_la_DEPENDENCIES)
-	$(LINK) -rpath $(pluginpath) $(libsound_alsa0_5_la_LDFLAGS) $(libsound_ALSA_0_5_la_OBJECTS) $(libsound_alsa0_5_la_LIBADD) $(LIBS)
+	$(LINK) -rpath $(pluginpath) $(libsound_alsa0_5_la_LDFLAGS) $(libsound_alsa0_5_la_OBJECTS) $(libsound_alsa0_5_la_LIBADD) $(LIBS)
 
 libsound_alsa0_9_la_SOURCES= $(common_sound_files) snd_alsa_0_9.c
 libsound_alsa0_9.la: $(libsound_alsa0_9_la_OBJECTS) $(libsound_alsa0_9_la_DEPENDENCIES)
-	$(LINK) -rpath $(pluginpath) $(libsound_alsa0_9_la_LDFLAGS) $(libsound_ALSA_0_5_la_OBJECTS) $(libsound_alsa0_9_la_LIBADD) $(LIBS)
+	$(LINK) -rpath $(pluginpath) $(libsound_alsa0_9_la_LDFLAGS) $(libsound_alsa0_9_la_OBJECTS) $(libsound_alsa0_9_la_LIBADD) $(LIBS)
 
 libsound_mme_la_SOURCES= $(common_sound_files) snd_mme.c
 libsound_mme.la: $(libsound_mme_la_OBJECTS) $(libsound_mme_la_DEPENDENCIES)
