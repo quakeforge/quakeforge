@@ -111,10 +111,5 @@ Con_ProcessInput (void)
 	if (con_module)
 		con_module->functions->console->pC_ProcessInput ();
 	else
-		while (1) {
-			const char *cmd = Sys_ConsoleInput ();
-			if (!cmd)
-				break;
-			Cbuf_AddText (cmd);
-		}
+		Con_Printf ("no input for you\n");
 }

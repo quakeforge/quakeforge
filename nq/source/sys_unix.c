@@ -126,7 +126,7 @@ Sys_ConsoleInput (void)
 		len = read (0, text, sizeof (text));
 		if (len < 1)
 			return NULL;
-		text[len - 1] = 0;				// rip off the /n and terminate
+		text[len - 1] = 0;				// rip off the \n and terminate
 
 		return text;
 	}

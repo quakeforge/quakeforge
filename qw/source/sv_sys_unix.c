@@ -97,7 +97,7 @@ Sys_ConsoleInput (void)
 	}
 	if (len < 1)
 		return NULL;
-	text[len - 1] = 0;					// rip off the /n and terminate
+	text[len - 1] = 0;					// rip off the \n and terminate
 
 	return text;
 }

@@ -113,31 +113,6 @@ floating_point_exception_handler (int whatever)
 	signal (SIGFPE, floating_point_exception_handler);
 }
 
-/*
-	Sys_ConsoleInput
-
-	Checks for a complete line of text typed in at the console, then forwards
-	it to the host command processor
-*/
-const char *
-Sys_ConsoleInput (void)
-{
-#if 0
-	static char text[256];
-	int         len;
-
-	if (cls.state == ca_dedicated) {
-		len = read (0, text, sizeof (text));
-		if (len < 1)
-			return NULL;
-		text[len - 1] = 0;				// rip off the /n and terminate
-
-		return text;
-	}
-#endif
-	return NULL;
-}
-
 #ifndef USE_INTEL_ASM
 void
 Sys_HighFPPrecision (void)

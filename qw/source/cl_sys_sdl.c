@@ -130,18 +130,6 @@ Sys_DebugLog (const char *file, const char *fmt, ...)
 	close (fd);
 };
 
-/*
-	Sys_ConsoleInput
-
-	Checks for a complete line of text typed in at the console, then forwards
-	it to the host command processor
-*/
-const char *
-Sys_ConsoleInput (void)
-{
-	return NULL;
-}
-
 #ifndef USE_INTEL_ASM
 void
 Sys_HighFPPrecision (void)
