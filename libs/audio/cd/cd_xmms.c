@@ -77,12 +77,7 @@ static general_funcs_t plugin_info_general_funcs;
 static cd_funcs_t plugin_info_cd_funcs;
 
 static char *xmms_cmd = "xmms";
-static char *xmms_arg = " ";			// Please tell me if i am being dumb
-static char *xmms_args[1];
-
-// this appears to be the only way to get this thingy _not_ to segfault on
-// execvp, :/ xmms_args[0] = xmms_arg; is further down
-
+static char *xmms_args[] = {"xmms", 0};
 
 // don't need either of these now
 // static int xmmsPid = '0';
@@ -284,7 +279,6 @@ I_XMMS_Update (void)
 static void
 I_XMMS_Init (void)
 {
-	xmms_args[0] = xmms_arg;
 	I_XMMS_Running ();
 	Cmd_AddCommand ("xmms", I_XMMS_f, "Control the XMMS player.\n"
 					"Commands:\n"
