@@ -51,6 +51,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "def.h"
 #include "expr.h"
 #include "immediate.h"
+#include "options.h"
 #include "reloc.h"
 #include "strpool.h"
 #include "struct.h"
@@ -486,7 +487,8 @@ flush_scope (scope_t *scope, int force_used)
 
 				e.line = def->line;
 				e.file = def->file;
-				warning (&e, "unused variable `%s'", def->name);
+				if (options.warnings.unused)
+					warning (&e, "unused variable `%s'", def->name);
 			}
 			if (!def->removed) {
 				Hash_Del (defs_by_name, def->name);

@@ -175,6 +175,12 @@ DecodeArgs (int argc, char **argv)
 	options.code.progsversion = PROG_VERSION;
 	options.code.short_circuit = -1;
 	options.warnings.uninited_variable = true;
+	options.warnings.unused = true;
+	options.warnings.executable = true;
+	options.warnings.traditional = true;
+	options.warnings.precedence = true;
+	options.warnings.initializer = true;
+	options.warnings.unimplemented = true;
 
 	options.save_temps = false;
 	options.verbosity = 0;
@@ -256,24 +262,25 @@ DecodeArgs (int argc, char **argv)
 					char       *temp = strtok (opts, ",");
 
 					while (temp) {
-						if (!(strcasecmp (temp, "cow"))) {
-							options.code.cow = true;
-						} else if (!(strcasecmp (temp, "no-cow"))) {
-							options.code.cow = false;
-						} else if (!(strcasecmp (temp, "no-cpp"))) {
-							cpp_name = 0;
+						qboolean    flag = true;
+
+						if (!strncasecmp (temp, "no-", 3)) {
+							flag = false;
+							temp += 3;
+						}
+						if (!strcasecmp (temp, "cow")) {
+							options.code.cow = flag;
+						} else if (!(strcasecmp (temp, "cpp"))) {
+							cpp_name = flag ? CPP_NAME : 0;
 						} else if (!(strcasecmp (temp, "debug"))) {
-							options.code.debug = true;
-						} else if (!(strcasecmp (temp, "no-debug"))) {
-							options.code.debug = false;
+							options.code.debug = flag;
 						} else if (!(strcasecmp (temp, "short-circuit"))) {
-							options.code.short_circuit = true;
-						} else if (!(strcasecmp (temp, "no-short-circuit"))) {
-							options.code.short_circuit = false;
+							options.code.short_circuit = flag;
 						} else if (!(strcasecmp (temp, "v6only"))) {
-							options.code.progsversion = PROG_ID_VERSION;
-						} else if (!(strcasecmp (temp, "no-v6only"))) {
-							options.code.progsversion = PROG_VERSION;
+							if (flag)
+								options.code.progsversion = PROG_ID_VERSION;
+							else
+								options.code.progsversion = PROG_VERSION;
 						}
 						temp = strtok (NULL, ",");
 					}
@@ -291,40 +298,60 @@ DecodeArgs (int argc, char **argv)
 							options.warnings.uninited_variable = true;
 							options.warnings.vararg_integer = true;
 							options.warnings.integer_divide = true;
+							options.warnings.interface_check = true;
+							options.warnings.unused = true;
+							options.warnings.executable = true;
+							options.warnings.traditional = true;
+							options.warnings.precedence = true;
+							options.warnings.initializer = true;
+							options.warnings.unimplemented = true;
 						} else if (!(strcasecmp (temp, "none"))) {
 							options.warnings.cow = false;
 							options.warnings.undefined_function = false;
 							options.warnings.uninited_variable = false;
 							options.warnings.vararg_integer = false;
 							options.warnings.integer_divide = false;
-						} else if (!(strcasecmp (temp, "cow"))) {
-							options.warnings.cow = true;
-						} else if (!(strcasecmp (temp, "no-cow"))) {
-							options.warnings.cow = false;
-						} else if (!(strcasecmp (temp, "error"))) {
-							options.warnings.promote = true;
-						} else if (!(strcasecmp (temp, "no-error"))) {
-							options.warnings.promote = false;
-						} else if (!(strcasecmp (temp, "undef-function"))) {
-							options.warnings.undefined_function = true;
-						} else if (!(strcasecmp (temp, "no-undef-function"))) {
-							options.warnings.undefined_function = false;
-						} else if (!(strcasecmp (temp, "uninited-var"))) {
-							options.warnings.uninited_variable = true;
-						} else if (!(strcasecmp (temp, "no-uninited-var"))) {
-							options.warnings.uninited_variable = false;
-						} else if (!(strcasecmp (temp, "vararg-integer"))) {
-							options.warnings.vararg_integer = true;
-						} else if (!(strcasecmp (temp, "no-vararg-integer"))) {
-							options.warnings.vararg_integer = false;
-						} else if (!(strcasecmp (temp, "integer-divide"))) {
-							options.warnings.integer_divide = true;
-						} else if (!(strcasecmp (temp, "no-integer-divide"))) {
-							options.warnings.integer_divide = false;
-						} else if (!(strcasecmp (temp, "interface-check"))) {
-							options.warnings.interface_check = true;
-						} else if (!(strcasecmp (temp, "no-interface-check"))) {
 							options.warnings.interface_check = false;
+							options.warnings.unused = false;
+							options.warnings.executable = false;
+							options.warnings.traditional = false;
+							options.warnings.precedence = false;
+							options.warnings.initializer = false;
+							options.warnings.unimplemented = false;
+						} else {
+							qboolean    flag = true;
+
+							if (!strncasecmp (temp, "no-", 3)) {
+								flag = false;
+								temp += 3;
+							}
+							if (!strcasecmp (temp, "error")) {
+								options.warnings.promote = flag;
+							} else if (!(strcasecmp (temp, "cow"))) {
+								options.warnings.cow = flag;
+							} else if (!strcasecmp (temp, "undef-function")) {
+								options.warnings.undefined_function = flag;
+							} else if (!strcasecmp (temp, "uninited-var")) {
+								options.warnings.uninited_variable = flag;
+							} else if (!strcasecmp (temp, "vararg-integer")) {
+								options.warnings.vararg_integer = flag;
+							} else if (!strcasecmp (temp, "integer-divide")) {
+								options.warnings.integer_divide = flag;
+							} else if (!strcasecmp (temp, "interface-check")) {
+								options.warnings.interface_check = flag;
+							} else if (!strcasecmp (temp, "unused")) {
+								options.warnings.unused = flag;
+							} else if (!strcasecmp (temp, "executable")) {
+								options.warnings.executable = flag;
+							} else if (!strcasecmp (temp, "traditional")) {
+								options.warnings.traditional = flag;
+							} else if (!strcasecmp (temp, "precedence")) {
+								options.warnings.precedence = flag;
+							} else if (!strcasecmp (temp, "initializer")) {
+								options.warnings.initializer = flag;
+							} else if (!strcasecmp (temp, "unimplemented")) {
+								options.warnings.unimplemented = flag;
+							}
 						}
 						temp = strtok (NULL, ",");
 					}

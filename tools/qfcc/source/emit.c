@@ -271,9 +271,11 @@ emit_assign_expr (int oper, expr_t *e)
 					warning (e1, "assignment to constant %s (Moooooooo!)",
 							 def_a->name);
 			} else {
-				if (options.traditional)
-					warning (e1, "assignment to constant %s", def_a->name);
-				else
+				if (options.traditional) {
+					//FIXME correct option?
+					if (options.warnings.cow)
+						warning (e1, "assignment to constant %s", def_a->name);
+				} else
 					error (e1, "assignment to constant %s", def_a->name);
 			}
 		}
@@ -838,8 +840,9 @@ emit_expr (expr_t *e)
 					emit_statement (e, op_jumpb, def_a, def_b, 0);
 					break;
 				default:
-					warning (e, "Non-executable statement; "
-							 "executing programmer instead.");
+					if (options.warnings.executable)
+						warning (e, "Non-executable statement; "
+								 "executing programmer instead.");
 					break;
 			}
 			break;
@@ -855,8 +858,9 @@ emit_expr (expr_t *e)
 					emit_branch (e, op_goto, 0, e->e.expr.e1);
 					break;
 				default:
-					warning (e, "Non-executable statement; "
-							 "executing programmer instead.");
+					if (options.warnings.executable)
+						warning (e, "Non-executable statement; "
+								 "executing programmer instead.");
 					emit_expr (e->e.expr.e1);
 					break;
 			}
@@ -876,8 +880,9 @@ emit_expr (expr_t *e)
 		case ex_short:
 		case ex_name:
 		case ex_nil:
-			warning (e, "Non-executable statement; "
-					 "executing programmer instead.");
+			if (options.warnings.executable)
+				warning (e, "Non-executable statement; "
+						 "executing programmer instead.");
 			break;
 	}
 	free_tempdefs ();

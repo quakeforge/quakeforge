@@ -467,8 +467,10 @@ class_message_response (class_t *class, int class_msg, expr_t *sel)
 		m = find_method (selector->name);
 		if (m)
 			return m;
-		warning (sel, "could not find method for %c%s", class_msg ? '+' : '-',
-				 selector->name);
+		//FIXME right option?
+		if (options.warnings.interface_check)
+			warning (sel, "could not find method for %c%s",
+					 class_msg ? '+' : '-', selector->name);
 		return 0;
 	} else {
 		while (c) {
@@ -486,8 +488,10 @@ class_message_response (class_t *class, int class_msg, expr_t *sel)
 			}
 			c = c->super_class;
 		}
-		warning (sel, "%s does not respond to %c%s", class->name,
-				 class_msg ? '+' : '-', selector->name);
+		//FIXME right option?
+		if (options.warnings.interface_check)
+			warning (sel, "%s does not respond to %c%s", class->name,
+					 class_msg ? '+' : '-', selector->name);
 	}
 	return 0;
 }
@@ -534,8 +538,11 @@ class_add_ivars (class_t *class, struct_t *ivars)
 void
 class_check_ivars (class_t *class, struct_t *ivars)
 {
-	if (!struct_compare_fields (class->ivars, ivars))
-		warning (0, "instance variable missmatch for %s", class->name);
+	if (!struct_compare_fields (class->ivars, ivars)) {
+		//FIXME right option?
+		if (options.warnings.interface_check)
+			warning (0, "instance variable missmatch for %s", class->name);
+	}
 	class->ivars = ivars;
 }
 

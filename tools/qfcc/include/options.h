@@ -49,6 +49,12 @@ typedef struct {
 	qboolean	vararg_integer;		// Warn on passing an integer to vararg func
 	qboolean	integer_divide;		// Warn on integer constant division
 	qboolean	interface_check;	// Warn for methods not in interface
+	qboolean	unused;				// Warn on unused local variables
+	qboolean	executable;			// Warn on expressions with no effect
+	qboolean	traditional;		// Warn on bogus constructs allowed by qcc
+	qboolean	precedence;			// Warn on precedence issues
+	qboolean	initializer;		// Warn on excessive initializer elements
+	qboolean	unimplemented;		// Warn on unimplemented class methods
 } warn_options_t;
 
 typedef struct {

@@ -1011,7 +1011,8 @@ test_expr (expr_t *e, int test)
 			abort ();
 		case ev_void:
 			if (options.traditional) {
-				warning (e, "void has no value");
+				if (options.warnings.traditional)
+					warning (e, "void has no value");
 				return e;
 			}
 			return error (e, "void has no value");
@@ -1120,9 +1121,11 @@ convert_bool (expr_t *e, int block)
 	expr_t     *b;
 
 	if (e->type == ex_expr && (e->e.expr.op == '=' || e->e.expr.op == PAS)
-		&& !e->paren)
-		warning (e,
-				 "suggest parentheses around assignment used as truth value");
+		&& !e->paren) {
+		if (options.warnings.precedence)
+			warning (e, "suggest parentheses around assignment "
+					 "used as truth value");
+	}
 
 	if (e->type == ex_uexpr && e->e.expr.op == '!') {
 		e = convert_bool (e->e.expr.e1, 0);
@@ -1310,8 +1313,10 @@ check_precedence (int op, expr_t *e1, expr_t *e2)
 				return unary_expr ('!', binary_expr (op, e1->e.expr.e1, e2));
 			}
 		} else if (op == '&' || op == '|') {
-			warning (e1, "ambiguous logic. Suggest explicit parentheses with "
-					 "expressions involving ! and %s", get_op_string (op));
+			if (options.warnings.precedence)
+				warning (e1, "ambiguous logic. Suggest explicit parentheses "
+						 "with expressions involving ! and %s",
+						 get_op_string (op));
 		}
 	}
 	if (options.traditional) {
@@ -1344,8 +1349,9 @@ check_precedence (int op, expr_t *e1, expr_t *e2)
 		if (e2->type == ex_expr && !e2->paren) {
 			if ((op == '&' || op == '|' || op == '^')
 				&& is_compare (e2->e.expr.op)) {
-				warning (e2, "suggest parentheses around comparison in "
-						 "operand of %c", op);
+				if (options.warnings.precedence)
+					warning (e2, "suggest parentheses around comparison in "
+							 "operand of %c", op);
 			}
 		}
 	}
@@ -1827,7 +1833,8 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 		if (-arg_count > ftype->num_parms + 1) {
 			if (!options.traditional)
 				return error (fexpr, "too few arguments");
-			warning (fexpr, "too few arguments");
+			if (options.warnings.traditional)
+				warning (fexpr, "too few arguments");
 		}
 		parm_count = -ftype->num_parms - 1;
 	} else if (ftype->num_parms >= 0) {
@@ -1836,7 +1843,8 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 		} else if (arg_count < ftype->num_parms) {
 			if (!options.traditional)
 				return error (fexpr, "too few arguments");
-			warning (fexpr, "too few arguments");
+			if (options.warnings.traditional)
+				warning (fexpr, "too few arguments");
 		}
 		parm_count = ftype->num_parms;
 	}
@@ -1960,7 +1968,9 @@ return_expr (function_t *f, expr_t *e)
 	if (!e) {
 		if (f->def->type->aux_type != &type_void) {
 			if (options.traditional) {
-				warning (e, "return from non-void function without a value");
+				if (options.warnings.traditional)
+					warning (e,
+							 "return from non-void function without a value");
 				e = new_nil_expr ();
 			} else {
 				e = error (e, "return from non-void function without a value");
@@ -1977,7 +1987,8 @@ return_expr (function_t *f, expr_t *e)
 	if (f->def->type->aux_type == &type_void) {
 		if (!options.traditional)
 			return error (e, "returning a value for a void function");
-		warning (e, "returning a value for a void function");
+		if (options.warnings.traditional)
+			warning (e, "returning a value for a void function");
 	}
 	if (e->type == ex_bool)
 		e = convert_from_bool (e, f->def->type->aux_type);
@@ -1993,7 +2004,8 @@ return_expr (function_t *f, expr_t *e)
 		} else {
 			if (!options.traditional)
 				return error (e, "void value not ignored as it ought to be");
-			warning (e, "void value not ignored as it ought to be");
+			if (options.warnings.traditional)
+				warning (e, "void value not ignored as it ought to be");
 			//FIXME does anything need to be done here?
 		}
 	}
@@ -2001,8 +2013,9 @@ return_expr (function_t *f, expr_t *e)
 		if (!options.traditional)
 			return error (e, "type mismatch for return value of %s",
 						  f->def->name);
-		warning (e, "type mismatch for return value of %s",
-				 f->def->name);
+		if (options.warnings.traditional)
+			warning (e, "type mismatch for return value of %s",
+					 f->def->name);
 	} else {
 		if (f->def->type->aux_type != t)
 			e = cast_expr (f->def->type->aux_type, e);
@@ -2295,7 +2308,8 @@ assign_expr (expr_t *e1, expr_t *e2)
 	if (!type_assignable (t1, t2)) {
 		if (!options.traditional || t1->type != ev_func || t2->type != ev_func)
 			return type_mismatch (e1, e2, op);
-		warning (e1, "assignment between disparate function types");
+		if (options.warnings.traditional)
+			warning (e1, "assignment between disparate function types");
 	}
 	type = t1;
 	if (is_indirect (e1) && is_indirect (e2)) {
@@ -2445,7 +2459,8 @@ init_elements (def_t *def, expr_t *eles)
 			return;
 		}
 	if (count > num_params) {
-		warning (eles, "excessive elements in initializer");
+		if (options.warnings.initializer)
+			warning (eles, "excessive elements in initializer");
 		count = num_params;
 	}
 	for (i = 0, e = eles->e.block.head; i < count; i++, e = e->next) {
