@@ -52,7 +52,7 @@ static const char rcsid[] =
 
 
 void
-SCR_DrawNet (int swap)
+SCR_DrawNet (void)
 {
 	if (realtime - cl.last_received_message < 0.3)
 		return;
@@ -82,5 +82,5 @@ void
 CL_UpdateScreen (double realtime)
 {
 	V_PrepBlend ();
-	SCR_UpdateScreen (realtime, scr_funcs, cl_hudswap->int_val);
+	SCR_UpdateScreen (realtime, scr_funcs);
 }
