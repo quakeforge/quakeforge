@@ -108,6 +108,58 @@ extern void (*R_DrawSpriteModel) (struct entity_s *ent);
 
 
 void
+R_TestErrors (int numerous)
+{
+	switch (qfglGetError ()) {
+	case GL_INVALID_ENUM:
+		if (numerous)
+			printf (" and ");
+		printf ("OpenGL error: Invalid Enum!");
+		R_TestErrors (1);
+		break;
+	case GL_INVALID_VALUE:
+		if (numerous)
+			printf (" and ");
+		printf ("OpenGL error: Invalid Value!");
+		R_TestErrors (1);
+		break;
+	case GL_INVALID_OPERATION:
+		if (numerous)
+			printf (" and ");
+		printf ("OpenGL error: Invalid Operation!");
+		R_TestErrors (1);
+		break;
+	case GL_STACK_OVERFLOW:
+		if (numerous)
+			printf (" and ");
+		printf ("OpenGL error: Stack Overflow!");
+		R_TestErrors (1);
+		break;
+	case GL_STACK_UNDERFLOW:
+		if (numerous)
+			printf (" and ");
+		printf ("OpenGL error: Stack Underflow!");
+		R_TestErrors (1);
+		break;
+	case GL_OUT_OF_MEMORY:
+		if (numerous)
+			printf (" and ");
+		printf ("OpenGL error: Out Of Memory!");
+		R_TestErrors (1);
+		break;
+	case GL_NO_ERROR:
+		return;
+	default:
+		if (numerous)
+			printf (" and ");
+		printf ("Unknown OpenGL error!");
+		R_TestErrors (1);
+		break;
+	}
+	printf ("\n");
+}
+
+void
 glrmain_init (void)
 {
 	gldepthmin = 0;
@@ -347,7 +399,7 @@ R_SetupGL_Viewport_and_Perspective (void)
 		w = x2 - x;
 		h = y - y2;
 	}
-//	printf("glViewport(%d, %d, %d, %d)\n", glx + x, gly + y2, w, h);
+//	printf ("glViewport(%d, %d, %d, %d)\n", glx + x, gly + y2, w, h);
 	qfglViewport (glx + x, gly + y2, w, h);
 	screenaspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;
 	MYgluPerspective (r_refdef.fov_y, screenaspect, r_nearclip->value,
@@ -417,6 +469,7 @@ R_RenderScene (void)
 	S_ExtraUpdate ();			// don't let sound get messed up if going slow
 	R_DrawEntitiesOnList ();
 	R_RenderDlights ();
+	R_TestErrors (0);
 }
 
 static void
