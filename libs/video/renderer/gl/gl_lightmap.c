@@ -470,7 +470,7 @@ R_BuildLightMap_4 (msurface_t *surf)
 				bl++;
 				*dest++ = min (*bl >> 9, 255);
 				bl++;
-				*dest++ = 0;
+				*dest++ = 255;
 			}
 		}
 		break;
@@ -483,7 +483,7 @@ R_BuildLightMap_4 (msurface_t *surf)
 				bl++;
 				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
 				bl++;
-				*dest++ = 0;
+				*dest++ = 255;
 			}
 		}
 		break;
@@ -496,7 +496,7 @@ R_BuildLightMap_4 (msurface_t *surf)
 				bl++;
 				*dest++ = min (*bl >> 8, 255);
 				bl++;
-				*dest++ = 0;
+				*dest++ = 255;
 			}
 		}
 		break;
@@ -762,14 +762,20 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		break;
 	case 3:
 		gl_internalformat = 3;
-		gl_lightmap_format = GL_RGB;
+		if (use_bgra)
+			gl_lightmap_format = GL_BGR;
+		else
+			gl_lightmap_format = GL_RGB;
 		lightmap_bytes = 3;
 		R_BuildLightMap = R_BuildLightMap_3;
 		break;
 	case 4:
 	default:
 		gl_internalformat = 3;
-		gl_lightmap_format = GL_RGBA;
+		if (use_bgra)
+			gl_lightmap_format = GL_BGRA;
+		else
+			gl_lightmap_format = GL_RGBA;
 		lightmap_bytes = 4;
 		R_BuildLightMap = R_BuildLightMap_4;
 		break;

@@ -64,9 +64,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 unsigned char	d_15to8table[65536];
 
-QF_glActiveTextureARB		qglActiveTexture = NULL;
-QF_glMultiTexCoord2fARB		qglMultiTexCoord2f = NULL;
-QF_glMultiTexCoord2fvARB	qglMultiTexCoord2fv = NULL;
+QF_glActiveTexture			qglActiveTexture = NULL;
+QF_glMultiTexCoord2f		qglMultiTexCoord2f = NULL;
+QF_glMultiTexCoord2fv		qglMultiTexCoord2fv = NULL;
 
 const char		   *gl_extensions;
 const char		   *gl_renderer;
@@ -77,6 +77,7 @@ int					gl_major;
 int					gl_minor;
 int					gl_release_number;
 
+int					gl_bgra_capable, use_bgra;
 int					gl_va_capable;
 int					vaelements;
 int         		texture_extension_number = 1;
@@ -84,14 +85,14 @@ int					gl_filter_min = GL_LINEAR_MIPMAP_NEAREST;
 int					gl_filter_max = GL_LINEAR;
 float       		gldepthmin, gldepthmax;
 
-// ARB Multitexture
+// Multitexture
 qboolean			gl_mtex_capable = false;
-qboolean			gl_mtex_active = false;
 qboolean			gl_mtex_fullbright = false;
+int					gl_mtex_active_tmus = 0;
 
-GLenum				gl_mtex_enum = GL_TEXTURE0_ARB;
+GLenum				gl_mtex_enum;
 
-// ARB Combine
+// Combine
 qboolean			gl_combine_capable = false;
 
 QF_glColorTableEXT	qglColorTableEXT = NULL;
@@ -104,9 +105,11 @@ qboolean			TruForm;
 GLint				tess, tess_max;
 
 cvar_t		*gl_doublebright;
+cvar_t      *gl_fb_bmodels;
 cvar_t      *gl_max_size;
 cvar_t      *gl_multitexture;
 cvar_t		*gl_tessellate;
+cvar_t		*gl_textures_bgra;
 cvar_t      *gl_vaelements_max;
 cvar_t      *gl_screenshot_byte_swap;
 cvar_t      *vid_mode;
@@ -132,10 +135,43 @@ gl_max_size_f (cvar_t *var)
 static void
 gl_doublebright_f (cvar_t *var)
 {
-	if (!gl_combine_capable && gl_mtex_capable)
-		Con_Printf ("Warning: gl_doublebright has no effect with "
-					"gl_multitexture enabled if you don't have GL_COMBINE_ARB "
-					"support in your driver.\n");
+	if (!var)
+		return;
+
+	if (var->int_val) {
+		if (!gl_combine_capable && gl_mtex_capable)
+			Con_Printf ("Warning: gl_doublebright has no effect with "
+						"gl_multitexture enabled if you don't have "
+						"GL_COMBINE_ARB support in your driver.\n");
+	}
+}
+
+static void
+gl_textures_bgra_f (cvar_t *var)
+{
+	if (!var)
+		return;
+
+	if (var->int_val) {
+		if (gl_bgra_capable)
+			use_bgra = 1;
+		else
+			use_bgra = 0;
+	} else {
+		use_bgra = 0;
+	}
+}
+
+static void
+gl_fb_bmodels_f (cvar_t *var)
+{
+	if (!var)
+		return;
+	if (var->int_val && gl_mtex_tmus >= 3) {
+		gl_mtex_fullbright = true;
+	} else {
+		gl_mtex_fullbright = false;
+	}
 }
 
 static void
@@ -145,16 +181,22 @@ gl_multitexture_f (cvar_t *var)
 		return;
 
 	if (var->int_val && gl_mtex_capable) {
-		gl_mtex_active = true;
+		gl_mtex_active_tmus = gl_mtex_tmus;
 
-		if (gl_mtex_tmus >= 3) {
-			gl_mtex_fullbright = true;
+		if (gl_fb_bmodels) {
+			if (gl_fb_bmodels->int_val) {
+				if (gl_mtex_tmus >= 3) {
+					gl_mtex_fullbright = true;
+				} else {
+					gl_mtex_fullbright = false;
+					Con_Printf ("Not enough TMUs for BSP fullbrights.\n");	
+				}
+			}
 		} else {
 			gl_mtex_fullbright = false;
-			Con_Printf ("Not enough TMUs for BSP fullbrights.\n");	
 		}
 	} else {
-		gl_mtex_active = false;
+		gl_mtex_active_tmus = 0;
 		gl_mtex_fullbright = false;
 	}
 }
@@ -173,6 +215,8 @@ gl_tessellate_f (cvar_t * var)
 	if (TruForm) {
 		if (var)
 			tess = (bound (0, var->int_val, tess_max));
+		else
+			tess = 0;
 		qfglPNTrianglesiATI (GL_PN_TRIANGLES_TESSELATION_LEVEL_ATI, tess);
 	} else {
 		tess = 0;
@@ -187,10 +231,16 @@ GL_Common_Init_Cvars (void)
 {
 	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,	"Use 8-bit "
 							"shared palettes.");
+	gl_textures_bgra = Cvar_Get ("gl_textures_bgra", "0", CVAR_ROM,
+								 gl_textures_bgra_f, "If set to 1, try to use "
+								 "BGR & BGRA textures instead of RGB & RGBA.");
 	gl_doublebright = Cvar_Get ("gl_doublebright", "1", CVAR_ARCHIVE,
 								gl_doublebright_f, "Use different lighting "
 								"algorithm to increase brightness of map "
 								"surfaces.");
+	gl_fb_bmodels = Cvar_Get ("gl_fb_bmodels", "1", CVAR_ARCHIVE,
+							  gl_fb_bmodels_f, "Toggles fullbright color "
+							  "support for bmodels");
 	gl_max_size = Cvar_Get ("gl_max_size", "0", CVAR_NONE, gl_max_size_f,
 							"Texture dimension");
 	gl_multitexture = Cvar_Get ("gl_multitexture", "0", CVAR_ARCHIVE,
@@ -220,16 +270,18 @@ CheckGLVersionString (void)
 		if (gl_major >= 1) {
 			if (gl_minor >= 1) {
 				gl_va_capable = true;
-			} else
+			} else {
 				gl_va_capable = false;
+			}
 		}
 	} else if (sscanf (gl_version, "%d.%d.%d", &gl_major, &gl_minor,
 					   &gl_release_number) == 3) {
 		if (gl_major >= 1) {
 			if (gl_minor >= 1) {
 				gl_va_capable = true;
-			} else
+			} else {
 				gl_va_capable = false;
+			}
 		}
 	} else {
 		Sys_Error ("Malformed OpenGL version string!");
@@ -248,13 +300,29 @@ CheckGLVersionString (void)
 }
 
 static void
+CheckBGRAExtensions (void)
+{
+	if (gl_major >= 1 && gl_minor >= 3) {
+		gl_bgra_capable = true;
+	} else if (QFGL_ExtensionPresent ("GL_EXT_bgra")) {
+		gl_bgra_capable = true;
+	} else {
+		gl_bgra_capable = false;
+	}
+}
+
+static void
 CheckCombineExtensions (void)
 {
-	if (QFGL_ExtensionPresent ("GL_ARB_texture_env_combine")) {
+	if (gl_major >= 1 && gl_minor >= 3) {
+		gl_combine_capable = true;
+		Con_Printf ("COMBINE active, multitextured doublebright enabled.\n");
+	} else if (QFGL_ExtensionPresent ("GL_ARB_texture_env_combine")) {
 		gl_combine_capable = true;
 		Con_Printf ("COMBINE_ARB active, multitextured doublebright "
 					"enabled.\n");
 	} else {
+		gl_combine_capable = false;
 		Con_Printf ("GL_ARB_texture_env_combine not found. gl_doublebright "
 					"will have no effect with gl_multitexture on.\n");
 	}
@@ -273,8 +341,25 @@ CheckMultiTextureExtensions (void)
 		Con_Printf ("disabled.\n");
 		return;
 	}
-
-	if (QFGL_ExtensionPresent ("GL_ARB_multitexture")) {
+	if (gl_major >= 1 && gl_minor >= 3) {
+		qfglGetIntegerv (GL_MAX_TEXTURE_UNITS, &gl_mtex_tmus);
+		if (gl_mtex_tmus >= 2) {
+			Con_Printf ("enabled, %d TMUs.\n", gl_mtex_tmus);
+			qglMultiTexCoord2f =
+				QFGL_ExtensionAddress ("glMultiTexCoord2f");
+			qglMultiTexCoord2fv =
+				QFGL_ExtensionAddress ("glMultiTexCoord2fv");
+			qglActiveTexture = QFGL_ExtensionAddress ("glActiveTexture");
+			gl_mtex_enum = GL_TEXTURE0;
+			if (qglMultiTexCoord2f && gl_mtex_enum)
+				gl_mtex_capable = true;
+			else
+				Con_Printf ("Multitexture disabled, could not find required "
+							"functions\n");
+		} else {
+			Con_Printf ("Multitexture disabled, not enough TMUs.\n");
+		}
+	} else if (QFGL_ExtensionPresent ("GL_ARB_multitexture")) {
 		qfglGetIntegerv (GL_MAX_TEXTURE_UNITS_ARB, &gl_mtex_tmus);
 		if (gl_mtex_tmus >= 2) {
 			Con_Printf ("enabled, %d TMUs.\n", gl_mtex_tmus);
@@ -426,6 +511,7 @@ GL_Init_Common (void)
 
 	CheckMultiTextureExtensions ();
 	CheckCombineExtensions ();
+	CheckBGRAExtensions ();
 	CheckTruFormExtensions ();
 	GL_Common_Init_Cvars ();
 	CheckVertexArraySize ();

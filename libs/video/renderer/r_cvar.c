@@ -63,7 +63,6 @@ cvar_t     *gl_constretch;
 cvar_t     *gl_dlight_polyblend;
 cvar_t     *gl_dlight_smooth;
 cvar_t     *gl_driver;
-cvar_t     *gl_fb_bmodels;
 cvar_t     *gl_fb_models;
 cvar_t     *gl_keeptjunctions;
 cvar_t     *gl_lerp_anim;
@@ -262,8 +261,6 @@ R_Init_Cvars (void)
 									"effect faster on GL");
 	gl_dlight_smooth = Cvar_Get ("gl_dlight_smooth", "1", CVAR_ARCHIVE, NULL,
 								 "Smooth dynamic vertex lighting");
-	gl_fb_bmodels = Cvar_Get ("gl_fb_bmodels", "1", CVAR_ARCHIVE, NULL,
-							  "Toggles fullbright color support for bmodels");
 	gl_fb_models = Cvar_Get ("gl_fb_models", "1", CVAR_ARCHIVE, NULL,
 							 "Toggles fullbright color support for models");
 	gl_keeptjunctions = Cvar_Get ("gl_keeptjunctions", "1", CVAR_ARCHIVE, NULL,

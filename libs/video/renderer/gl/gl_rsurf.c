@@ -280,14 +280,14 @@ R_DrawWaterSurfaces (void)
 	}
 }
 
-static void
+static inline void
 DrawTextureChains (void)
 {
 	int			i;
 	msurface_t *s;
 	texture_t  *tex;
 
-	if (gl_mtex_active) {
+	if (gl_mtex_active_tmus >= 2) {
 		// Lightmaps
 		qglActiveTexture (gl_mtex_enum + 1);
 		qfglEnable (GL_TEXTURE_2D);
@@ -302,8 +302,7 @@ DrawTextureChains (void)
 				continue;
 			qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 
-			if (tex->gl_fb_texturenum && gl_mtex_fullbright
-				&& gl_fb_bmodels->int_val) {
+			if (tex->gl_fb_texturenum && gl_mtex_fullbright) {
 				qglActiveTexture (gl_mtex_enum + 2);
 				qfglEnable (GL_TEXTURE_2D);
 				qfglBindTexture (GL_TEXTURE_2D, tex->gl_fb_texturenum);
@@ -450,7 +449,7 @@ R_DrawBrushModel (entity_t *e)
 		R_AddToLightmapChain (psurf);
 	}
 
-	if (gl_mtex_active)
+	if (gl_mtex_active_tmus >= 2)
 		R_CalcLightmaps ();
 
 	psurf = &model->surfaces[model->firstmodelsurface];
@@ -491,9 +490,8 @@ R_DrawBrushModel (entity_t *e)
 				else
 					tex = R_TextureAnimation (psurf);
 
-				if (gl_mtex_active) {
-					if (tex->gl_fb_texturenum && gl_fb_bmodels->int_val
-						&& gl_mtex_fullbright) {
+				if (gl_mtex_active_tmus >= 2) {
+					if (tex->gl_fb_texturenum && gl_mtex_fullbright) {
 						qglActiveTexture (gl_mtex_enum + 2);
 						qfglEnable (GL_TEXTURE_2D);
 						qfglBindTexture (GL_TEXTURE_2D, tex->gl_fb_texturenum);
@@ -533,7 +531,7 @@ R_DrawBrushModel (entity_t *e)
 					qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 					R_RenderBrushPoly_1 (psurf);
 
-					if (tex->gl_fb_texturenum && gl_fb_bmodels->int_val) {
+					if (tex->gl_fb_texturenum && gl_mtex_fullbright) {
 						psurf->polys->fb_chain =
 							fullbright_polys[tex->gl_fb_texturenum];
 						fullbright_polys[tex->gl_fb_texturenum] = psurf->polys;
@@ -543,7 +541,7 @@ R_DrawBrushModel (entity_t *e)
 		}
 	}
 
-	if (gl_mtex_active) {
+	if (gl_mtex_active_tmus >= 2) {
 		qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	} else {
 		R_CalcAndBlendLightmaps ();
@@ -713,7 +711,7 @@ R_DrawWorld (void)
 
 	DrawTextureChains ();
 
-	if (!gl_mtex_active)
+	if (gl_mtex_active_tmus <= 1)
 		R_BlendLightmaps ();
 
 	if (gl_fb_bmodels->int_val && !gl_mtex_fullbright)

@@ -34,18 +34,20 @@
 #include "QF/GL/extensions.h"
 
 // Multitexturing
-extern QF_glActiveTextureARB	qglActiveTexture;
-extern QF_glMultiTexCoord2fARB	qglMultiTexCoord2f;
-extern QF_glMultiTexCoord2fvARB	qglMultiTexCoord2fv;
-extern qboolean					gl_mtex_active;
+extern QF_glActiveTexture		qglActiveTexture;
+extern QF_glMultiTexCoord2f		qglMultiTexCoord2f;
+extern QF_glMultiTexCoord2fv	qglMultiTexCoord2fv;
+extern int						gl_mtex_active_tmus;
 extern qboolean					gl_mtex_capable;
 extern qboolean					gl_mtex_fullbright;
 extern GLenum					gl_mtex_enum;
+extern int						use_bgra;
+//extern int						use_tmus;
+extern qboolean					gl_combine_capable;
 extern float					gldepthmin, gldepthmax;
 extern int						texture_extension_number;
 extern int						tess;
 extern qboolean					gl_feature_mach64;
-extern qboolean					gl_combine_capable;
 
 void GL_EndRendering (void);
 void GL_BeginRendering (int *x, int *y, int *width, int *height);

@@ -42,6 +42,7 @@ extern struct cvar_s     *gl_sky_divide;
 extern struct cvar_s     *gl_sky_multipass;
 extern struct cvar_s	 *gl_tessellate;
 extern struct cvar_s     *gl_texsort;
+extern struct cvar_s	 *gl_textures_bgra;
 extern struct cvar_s     *gl_triplebuffer;
 
 extern struct cvar_s     *r_aliasstats;

@@ -51,6 +51,11 @@
 #include "QF/GL/ati.h"		// Uses defines, types, APIENTRY
 
 // OpenGL numbers for extensions we use or want to use
+#ifndef GL_EXT_abgr
+# define GL_EXT_abgr
+# define GL_ABGR_EXT 						0x8000
+#endif
+
 #ifndef GL_EXT_bgra
 # define GL_EXT_bgra
 # define GL_BGR_EXT 						0x80E0
@@ -151,6 +156,12 @@
 # define GL_COMBINE_RGB_ARB					0x8571
 # define GL_COMBINE_ALPHA_ARB				0x8572
 # define GL_RGB_SCALE_ARB					0x8573
+# define GL_ADD_SIGNED_ARB					0x8574
+# define GL_INTERPOLATE_ARB					0x8575
+# define GL_SUBTRACT_ARB					0x84E7
+# define GL_CONSTANT_ARB					0x8576
+# define GL_PRIMARY_COLOR_ARB				0x8577
+# define GL_PREVIOUS_ARB					0x8578
 # define GL_SOURCE0_RGB_ARB					0x8580
 # define GL_SOURCE1_RGB_ARB					0x8581
 # define GL_SOURCE2_RGB_ARB					0x8582
@@ -163,13 +174,6 @@
 # define GL_OPERAND0_ALPHA_ARB				0x8598
 # define GL_OPERAND1_ALPHA_ARB				0x8599
 # define GL_OPERAND2_ALPHA_ARB				0x859A
-# define GL_RGB_SCALE_ARB					0x8573
-# define GL_ADD_SIGNED_ARB					0x8574
-# define GL_INTERPOLATE_ARB					0x8575
-# define GL_SUBTRACT_ARB					0x84E7
-# define GL_CONSTANT_ARB					0x8576
-# define GL_PRIMARY_COLOR_ARB				0x8577
-# define GL_PREVIOUS_ARB					0x8578
 #endif
 
 #ifndef GL_ARB_texture_env_dot3
@@ -226,40 +230,40 @@ typedef void (GLAPIENTRY *QF_glTexSubImage3D) (GLenum target, GLint level, GLint
 typedef void (GLAPIENTRY *QF_glCopyTexSubImage3D) (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height);
 
 // GL_ARB_multitexture
-typedef void (GLAPIENTRY *QF_glActiveTextureARB) (GLenum texture);
-typedef void (GLAPIENTRY *QF_glClientActiveTextureARB) (GLenum texture);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord1dARB) (GLenum target, GLdouble s);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord2dARB) (GLenum target, GLdouble s, GLdouble t);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord3dARB) (GLenum target, GLdouble s, GLdouble t, GLdouble r);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord4dARB) (GLenum target, GLdouble s, GLdouble t, GLdouble r, GLdouble q);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord1dvARB) (GLenum target, const GLdouble *v);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord2dvARB) (GLenum target, const GLdouble *v);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord3dvARB) (GLenum target, const GLdouble *v);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord4dvARB) (GLenum target, const GLdouble *v);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord1fARB) (GLenum target, GLfloat s);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord3fARB) (GLenum target, GLfloat s, GLfloat t, GLfloat r);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord4fARB) (GLenum target, GLfloat s, GLfloat t, GLfloat r, GLfloat q);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord1fvARB) (GLenum target, const GLfloat *v);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord2fvARB) (GLenum target, const GLfloat *v);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord3fvARB) (GLenum target, const GLfloat *v);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord4fvARB) (GLenum target, const GLfloat *v);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord1iARB) (GLenum target, GLint s);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord2iARB) (GLenum target, GLint s, GLint t);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord3iARB) (GLenum target, GLint s, GLint t, GLint r);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord4iARB) (GLenum target, GLint s, GLint t, GLint r, GLint q);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord1ivARB) (GLenum target, const GLint *v);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord2ivARB) (GLenum target, const GLint *v);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord3ivARB) (GLenum target, const GLint *v);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord4ivARB) (GLenum target, const GLint *v);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord1sARB) (GLenum target, GLshort s);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord2sARB) (GLenum target, GLshort s, GLshort t);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord3sARB) (GLenum target, GLshort s, GLshort t, GLshort r);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord4sARB) (GLenum target, GLshort s, GLshort t, GLshort r, GLshort q);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord1svARB) (GLenum target, const GLshort *v);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord2svARB) (GLenum target, const GLshort *v);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord3svARB) (GLenum target, const GLshort *v);
-typedef void (GLAPIENTRY *QF_glMultiTexCoord4svARB) (GLenum target, const GLshort *v);
+typedef void (GLAPIENTRY *QF_glActiveTexture) (GLenum texture);
+typedef void (GLAPIENTRY *QF_glClientActiveTexture) (GLenum texture);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord1d) (GLenum target, GLdouble s);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord2d) (GLenum target, GLdouble s, GLdouble t);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord3d) (GLenum target, GLdouble s, GLdouble t, GLdouble r);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord4d) (GLenum target, GLdouble s, GLdouble t, GLdouble r, GLdouble q);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord1dv) (GLenum target, const GLdouble *v);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord2dv) (GLenum target, const GLdouble *v);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord3dv) (GLenum target, const GLdouble *v);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord4dv) (GLenum target, const GLdouble *v);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord1f) (GLenum target, GLfloat s);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord2f) (GLenum target, GLfloat s, GLfloat t);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord3f) (GLenum target, GLfloat s, GLfloat t, GLfloat r);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord4f) (GLenum target, GLfloat s, GLfloat t, GLfloat r, GLfloat q);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord1fv) (GLenum target, const GLfloat *v);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord2fv) (GLenum target, const GLfloat *v);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord3fv) (GLenum target, const GLfloat *v);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord4fv) (GLenum target, const GLfloat *v);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord1i) (GLenum target, GLint s);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord2i) (GLenum target, GLint s, GLint t);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord3i) (GLenum target, GLint s, GLint t, GLint r);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord4i) (GLenum target, GLint s, GLint t, GLint r, GLint q);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord1iv) (GLenum target, const GLint *v);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord2iv) (GLenum target, const GLint *v);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord3iv) (GLenum target, const GLint *v);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord4iv) (GLenum target, const GLint *v);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord1s) (GLenum target, GLshort s);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord2s) (GLenum target, GLshort s, GLshort t);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord3s) (GLenum target, GLshort s, GLshort t, GLshort r);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord4s) (GLenum target, GLshort s, GLshort t, GLshort r, GLshort q);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord1sv) (GLenum target, const GLshort *v);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord2sv) (GLenum target, const GLshort *v);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord3sv) (GLenum target, const GLshort *v);
+typedef void (GLAPIENTRY *QF_glMultiTexCoord4sv) (GLenum target, const GLshort *v);
 
 // GL_EXT_paletted_texture
 typedef void (GLAPIENTRY *QF_glColorTableEXT) (GLenum target, GLenum internalFormat, GLsizei width, GLenum format, GLenum type, const GLvoid *table);

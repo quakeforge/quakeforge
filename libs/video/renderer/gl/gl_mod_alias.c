@@ -724,7 +724,7 @@ R_DrawAliasModel (entity_t *e)
 		else
 			GL_DrawAliasFrame (vo);
 	} else {	// try multitexture
-		if (gl_mtex_active) {	// set up the textures
+		if (gl_mtex_active_tmus >= 2) {	// set up the textures
 			qglActiveTexture (gl_mtex_enum + 0);
 			qfglBindTexture (GL_TEXTURE_2D, texture);
 
