@@ -117,7 +117,7 @@ static void
 load_faces (void)
 {
 	dface_t    *f;
-	int         i, j;
+	int         i, j, k, l;
 	winding_t  *points;
 
 	mfaces = calloc (bsp->numfaces, sizeof (face_t));
@@ -141,7 +141,23 @@ load_faces (void)
 				v = edges[e].v[0];
 			}
 			VectorCopy (vertices[v].point, points->points[j]);
-			printf ("%g %g %g\n", points->points[j][0], points->points[j][1], points->points[j][2]);
+		}
+		for (j = 0; j < points->numpoints - 2; j++) {
+			vec3_t      v1, v2, v3;
+			VectorSubtract (points->points[j + 1], points->points[j], v1);
+			l = -1;
+			for (k = j + 2; k < points->numpoints; k++) {
+				VectorSubtract (points->points[k], points->points[j], v2);
+				CrossProduct (v1, v2, v3);
+				if (VectorLength (v3) > 0.0001)
+					break;
+				l = k;
+			}
+			if (l - j > 1) {
+				memmove (points->points[j + 1], points->points[l],
+						 (points->numpoints - j) * sizeof (vec3_t));
+				points->numpoints -= l - j - 1;
+			}
 		}
 	}
 }
@@ -186,8 +202,7 @@ load_nodes (void)
 		n = bsp->nodes + i;
 		VectorCopy (n->mins, nodes[i].mins);
 		VectorCopy (n->maxs, nodes[i].maxs);
-		nodes[i].outputplanenum = n->planenum;
-		nodes[i].planenum = nodes[i].outputplanenum;
+		nodes[i].planenum = n->planenum;
 		nodes[i].firstface = n->firstface;
 		nodes[i].numfaces = n->numfaces;
 		for (j = 0; j < 2; j++) {
@@ -220,6 +235,7 @@ void
 LoadBSP (void)
 {
 	QFile      *f;
+	vec3_t      ooo = {1, 1, 1};
 
 	f = Qopen (options.bspfile, "rb");
 	if (!f)
@@ -242,9 +258,10 @@ LoadBSP (void)
 	load_textures ();
 
 		memcpy (planes, mplanes, bsp->numplanes * sizeof (plane_t));
-		VectorCopy (bsp->models[0].mins, bs.mins)
-		VectorCopy (bsp->models[0].maxs, bs.maxs)
+		numbrushplanes = bsp->numplanes;
+		VectorSubtract (bsp->models[0].mins, ooo, bs.mins);
+		VectorAdd (bsp->models[0].maxs, ooo, bs.maxs);
 		brushset = &bs;
-		PortalizeWorldDetail (nodes);
+		PortalizeWorld (nodes);
 		WritePortalfile (nodes);
 }
