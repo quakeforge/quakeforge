@@ -95,7 +95,6 @@ typedef struct {
 extern fire_t r_fires[];
 
 void R_AddFire (vec3_t start, vec3_t end, struct entity_s *ent);
-void R_DrawFire (fire_t *f);
 void R_UpdateFires (void);
 fire_t *R_AllocFire (int key);
 void R_ClearFires (void);

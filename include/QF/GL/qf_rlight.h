@@ -30,7 +30,6 @@
 #define __QF_GL_rlight_h
 
 extern float bubble_sintable[], bubble_costable[];
-void AddLightBlend (float, float, float, float);
 void R_RenderDlights (void);
 
 #endif // __QF_GL_rlight_h
