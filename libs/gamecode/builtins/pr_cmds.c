@@ -216,24 +216,6 @@ PF_break (progs_t *pr)
 //  PR_RunError (pr, "break statement");
 }
 
-#if 0
-/*
-	PF_localcmd
-
-	Sends text to the host's execution buffer
-
-	localcmd (string)
-*/
-void
-PF_localcmd (progs_t *pr)
-{
-	const char		*str;
-
-	str = P_GSTRING (pr, 0);
-	Cbuf_AddText (str);
-}
-#endif
-
 /*
 	PF_cvar
 
@@ -850,6 +832,8 @@ PR_Cmds_Init (progs_t *pr)
 	PR_AddBuiltin (pr, "vectoyaw", PF_vectoyaw, 13);	// float (vector v) vectoyaw
 	PR_AddBuiltin (pr, "find", PF_Find, 18);	// entity (entity start, .(...) fld, ... match) find
 	PR_AddBuiltin (pr, "dprint", PF_dprint, 25);  // void (string s) dprint
+	PR_AddBuiltin (pr, "ftos", PF_ftos, 26);	// string (float f) ftos
+	PR_AddBuiltin (pr, "vtos", PF_vtos, 27);	// string (vector v) vtos
 	PR_AddBuiltin (pr, "coredump", PF_coredump, 28);	// void () coredump
 	PR_AddBuiltin (pr, "traceon", PF_traceon, 29);	// void () traceon
 	PR_AddBuiltin (pr, "traceoff", PF_traceoff, 30);	// void () traceoff
@@ -859,24 +843,19 @@ PR_Cmds_Init (progs_t *pr)
 	PR_AddBuiltin (pr, "ceil", PF_ceil, 38);	// float (float v) ceil
 	PR_AddBuiltin (pr, "fabs", PF_fabs, 43);	// float (float f) fabs
 	PR_AddBuiltin (pr, "cvar", PF_cvar, 45);	// float (string s) cvar
-#if 0
-	PR_AddBuiltin (pr, "localcmd", PF_localcmd, 46);	// void (string s) localcmd
-#endif
 	PR_AddBuiltin (pr, "nextent", PF_nextent, 47);	// entity (entity e) nextent
 	PR_AddBuiltin (pr, "vectoangles", PF_vectoangles, 51); // vector (vector v) vectoangles
 	PR_AddBuiltin (pr, "cvar_set", PF_cvar_set, 72);	// void (string var, string val) cvar_set
+	PR_AddBuiltin (pr, "stof", PF_stof, 81);	// float (string s) stof
+
 
 	PR_AddBuiltin (pr, "strlen", PF_strlen, 100);	// float (string s) strlen
 	PR_AddBuiltin (pr, "charcount", PF_charcount, 101);	// float (string goal, string s) charcount
 	PR_AddBuiltin (pr, "sprintf", PF_sprintf, 109); // string (...) sprintf
-
-	PR_AddBuiltin (pr, "ftos", PF_ftos, 26);	// string (float f) ftos
 	PR_AddBuiltin (pr, "ftoi", PF_ftoi, 110);	// integer (float f) ftoi
 	PR_AddBuiltin (pr, "itof", PF_itof, 111);	// float (integer i) itof
 	PR_AddBuiltin (pr, "itos", PF_itos, 112);	// string (integer i) itos
-	PR_AddBuiltin (pr, "stof", PF_stof, 81);	// float (string s) stof
 	PR_AddBuiltin (pr, "stoi", PF_stoi, 113);	// integer (string s) stoi
 	PR_AddBuiltin (pr, "stov", PF_stov, 114);	// vector (string s) stov
-	PR_AddBuiltin (pr, "vtos", PF_vtos, 27);	// string (vector v) vtos
 	PR_AddBuiltin (pr, "gametype", PR_gametype, 115);	// string () gametype
 };
