@@ -267,10 +267,12 @@ R_RunSparkEffect_QF (const vec3_t org, int count, int ofuzz)
 
 	if (numparticles + count >= r_maxparticles)
 		count = r_maxparticles - numparticles;
-	while (count--)
+	while (count--) {
+		int		color = rand () & 7;
 		particle_new_random (pt_fallfadespark, part_tex_dot, org,
 							 ofuzz * 0.75, 0.7, 96, r_realtime + 5.0,
-							 ramp1[rand () & 7], 1.0, 0.0);
+							 ramp1[color], 1.0, color);
+	}
 }
 
 static inline void
@@ -315,7 +317,7 @@ R_LightningBloodEffect_QF (const vec3_t org)
 	if (numparticles + count >= r_maxparticles)
 		count = r_maxparticles - numparticles;
 	while (count--)
-		particle_new_random (pt_fallfadespark, part_tex_spark, org, 12, 2.0,
+		particle_new_random (pt_fallfade, part_tex_spark, org, 12, 2.0,
 							 128, r_realtime + 5.0, 244 + (rand () % 3), 1.0,
 							 0.0);
 }
@@ -372,7 +374,7 @@ R_KnightSpikeEffect_QF (const vec3_t org)
 	if (numparticles + count >= r_maxparticles)
 		count = r_maxparticles - numparticles;
 	while (count--)
-		particle_new_random (pt_fallfadespark, part_tex_dot, org, 6, 0.7, 96,
+		particle_new_random (pt_fallfade, part_tex_dot, org, 6, 0.7, 96,
 							 r_realtime + 5.0, 234, 1.0, 0.0);
 }
 
@@ -389,7 +391,7 @@ R_WizSpikeEffect_QF (const vec3_t org)
 	if (numparticles + count >= r_maxparticles)
 		count = r_maxparticles - numparticles;
 	while (count--)
-		particle_new_random (pt_fallfadespark, part_tex_dot, org, 12, 0.7, 96,
+		particle_new_random (pt_fallfade, part_tex_dot, org, 12, 0.7, 96,
 							 r_realtime + 5.0, 63, 1.0, 0.0);
 }
 
@@ -1474,7 +1476,18 @@ R_DrawParticles (void)
 				part->scale += time4;
 				part->vel[2] -= grav;
 				break;
+			case pt_fallfade:
+				if ((part->alpha -= r_frametime) <= 0.0)
+					part->die = -1;
+				part->vel[2] -= fast_grav;
+				break;
 			case pt_fallfadespark:
+				part->ramp += time10;
+				if (part->ramp >= 8) {
+					part->die = -1;
+					break;
+				}
+				part->color = ramp1[(int) part->ramp];
 				if ((part->alpha -= r_frametime) <= 0.0)
 					part->die = -1;
 				part->vel[2] -= fast_grav;

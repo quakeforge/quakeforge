@@ -59,6 +59,7 @@ typedef enum {
 	pt_bloodcloud,
 	pt_fadespark,
 	pt_fadespark2,
+	pt_fallfade,
 	pt_fallfadespark,
 	pt_flame
 } ptype_t;
