@@ -198,7 +198,7 @@ SCR_ScreenShot_f (void)
 
 		if (pcx) {
 			QFS_WriteFile (pcxname->str, pcx, pcx_len);
-			Con_Printf ("Wrote %s\n", pcxname->str);
+			Con_Printf ("Wrote %s/%s\n", qfs_userpath, pcxname->str);
 		}
 	}
 	dstring_delete (pcxname);

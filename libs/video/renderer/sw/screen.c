@@ -178,7 +178,7 @@ SCR_ScreenShot_f (void)
 		// time
 		D_DisableBackBufferAccess ();
 
-		Con_Printf ("Wrote %s\n", pcxname->str);
+		Con_Printf ("Wrote %s/%s\n", qfs_userpath, pcxname->str);
 	}
 	dstring_delete (pcxname);
 }
