@@ -155,7 +155,8 @@ add_defs (qfo_t *qfo)
 	memcpy (defs.defs + def_base, qfo->defs,
 			qfo->num_defs * sizeof (qfo_def_t));
 	for (i = def_base; i < defs.num_defs; i++) {
-		qfo_def_t *def = defs.defs + i;
+		qfo_def_t  *def = defs.defs + i;
+		qfo_def_t  *d;
 
 		def->full_type = strpool_addstr (type_strings,
 										 qfo->types + def->full_type);
@@ -167,9 +168,12 @@ add_defs (qfo_t *qfo)
 		def->file = strpool_addstr (strings, qfo->strings + def->file);
 
 		if (def->flags & QFOD_EXTERNAL) {
-			Hash_Add (extern_defs, def);
+			if ((d = Hash_Find (defined_defs, strings->strings + def->name))) {
+				def->ofs = d->ofs;
+			} else {
+				Hash_Add (extern_defs, def);
+			}
 		} else {
-			qfo_def_t  *d;
 
 			if (def->flags & QFOD_GLOBAL) {
 				if ((d = Hash_Find (defined_defs,
@@ -191,7 +195,9 @@ add_defs (qfo_t *qfo)
 						error (0, "type mismatch `%s' `%s'",
 							   type_strings->strings + def->full_type,
 							   type_strings->strings + d->full_type);
+						continue;
 					}
+					d->ofs = def->ofs;
 				}
 				Hash_Add (defined_defs, def);
 			}
@@ -303,6 +309,8 @@ linker_begin (void)
 	far_data = new_defspace ();
 	strings = strpool_new ();
 	type_strings = strpool_new ();
+
+	pr.strings = strings;
 }
 
 void
@@ -349,8 +357,9 @@ linker_finish (void)
 		pr.source_file = (*def)->file;
 		pr.source_line = (*def)->line;
 		error (0, "undefined symbol %s", strings->strings + (*def)->name);
-		return 0;
 	}
+	if (pr.error_count)
+		return 0;
 
 	qfo = qfo_new ();
 	qfo_add_code (qfo, code->code, code->size);
