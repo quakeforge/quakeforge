@@ -333,7 +333,7 @@ SingleLightFace (entity_t *light, lightinfo_t *l)
 			continue;
 
 		// spotlight cutoff
-		if (spotcone > 0 && DotProduct (spotvec, incoming) > spotcone)
+		if (spotcone && DotProduct (spotvec, incoming) > spotcone)
 			continue;
 
 		angle = DotProduct (incoming, l->facenormal);

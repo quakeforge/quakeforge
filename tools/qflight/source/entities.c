@@ -132,7 +132,7 @@ MatchTargets (void)
 			SetKeyValue (&entities[i], "style", s);
 		}
 
-		if (entities[i].spotcone <= 0) {
+		if (entities[i].spotcone >= 0) {
 			VectorZero (entities[i].spotdir);
 			entities[i].spotcone = 0;
 		}
