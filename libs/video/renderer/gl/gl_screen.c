@@ -828,6 +828,22 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 
 	GL_Set2D ();
 
+	// also makes polyblend apply to whole screen
+	qfglDisable (GL_TEXTURE_2D);
+	if (v_blend[3]) {
+		qfglBegin (GL_QUADS);
+
+		qfglColor4fv (v_blend);
+		qfglVertex2f (0, 0);
+		qfglVertex2f (vid.width, 0);
+		qfglVertex2f (vid.width, vid.height);
+		qfglVertex2f (0, vid.height);
+
+		qfglEnd ();
+		qfglColor3ubv (color_white);
+	}
+	qfglEnable (GL_TEXTURE_2D);
+
 	// draw any areas not covered by the refresh
 	SCR_TileClear ();
 
@@ -844,24 +860,6 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 			scr_funcs++;
 		}
 	}
-
-	// also makes polyblend apply to whole screen
-	qfglDisable (GL_TEXTURE_2D);
-
-	if (v_blend[3]) {
-		qfglBegin (GL_QUADS);
-
-		qfglColor4fv (v_blend);
-		qfglVertex2f (0, 0);
-		qfglVertex2f (vid.width, 0);
-		qfglVertex2f (vid.width, vid.height);
-		qfglVertex2f (0, vid.height);
-
-		qfglEnd ();
-		qfglColor3ubv (color_white);
-	}
-
-	qfglEnable (GL_TEXTURE_2D);
 
 	if (r_speeds->int_val) {
 //      qfglFinish ();
