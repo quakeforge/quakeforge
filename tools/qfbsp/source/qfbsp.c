@@ -23,6 +23,13 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#include <sys/types.h>
+#ifdef HAVE_SYS_WAIT_H
+# include <sys/wait.h>
+#endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -139,7 +146,7 @@ CopyWinding (winding_t *w)
 	int         size;
 	winding_t  *c;
 
-	size = (int) ((winding_t *) 0)->points[w->numpoints];
+	size = (long) ((winding_t *) 0)->points[w->numpoints];
 	c = malloc (size);
 	memcpy (c, w, size);
 	return c;
@@ -375,7 +382,7 @@ NewWinding (int points)
 	if (c_activewindings > c_peakwindings)
 		c_peakwindings = c_activewindings;
 
-	size = (int) ((winding_t *) 0)->points[points];
+	size = (long) ((winding_t *) 0)->points[points];
 	w = malloc (size);
 	memset (w, 0, size);
 
