@@ -251,6 +251,7 @@ void
 PR_ExecuteProgram (progs_t * pr, func_t fnum)
 {
 	int				exitdepth, profile, startprofile;
+	int             pointer;
 	dfunction_t	   *f, *newf;
 	dstatement_t   *st;
 	edict_t		   *ed;
@@ -289,9 +290,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				OPC.float_var = OPA.float_var + OPB.float_var;
 				break;
 			case OP_ADD_V:
-				OPC.vector_var[0] = OPA.vector_var[0] + OPB.vector_var[0];
-				OPC.vector_var[1] = OPA.vector_var[1] + OPB.vector_var[1];
-				OPC.vector_var[2] = OPA.vector_var[2] + OPB.vector_var[2];
+				VectorAdd (OPA.vector_var, OPB.vector_var, OPC.vector_var);
 				break;
 			case OP_ADD_S:
 				{
@@ -309,28 +308,19 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				OPC.float_var = OPA.float_var - OPB.float_var;
 				break;
 			case OP_SUB_V:
-				OPC.vector_var[0] = OPA.vector_var[0] - OPB.vector_var[0];
-				OPC.vector_var[1] = OPA.vector_var[1] - OPB.vector_var[1];
-				OPC.vector_var[2] = OPA.vector_var[2] - OPB.vector_var[2];
+				VectorSubtract (OPA.vector_var, OPB.vector_var, OPC.vector_var);
 				break;
 			case OP_MUL_F:
 				OPC.float_var = OPA.float_var * OPB.float_var;
 				break;
 			case OP_MUL_V:
-				OPC.float_var =
-					OPA.vector_var[0] * OPB.vector_var[0] +
-					OPA.vector_var[1] * OPB.vector_var[1] +
-					OPA.vector_var[2] * OPB.vector_var[2];
+				OPC.float_var = DotProduct (OPA.vector_var, OPB.vector_var);
 				break;
 			case OP_MUL_FV:
-				OPC.vector_var[0] = OPA.float_var * OPB.vector_var[0];
-				OPC.vector_var[1] = OPA.float_var * OPB.vector_var[1];
-				OPC.vector_var[2] = OPA.float_var * OPB.vector_var[2];
+				VectorScale (OPB.vector_var, OPA.float_var, OPC.vector_var);
 				break;
 			case OP_MUL_VF:
-				OPC.vector_var[0] = OPB.float_var * OPA.vector_var[0];
-				OPC.vector_var[1] = OPB.float_var * OPA.vector_var[1];
-				OPC.vector_var[2] = OPB.float_var * OPA.vector_var[2];
+				VectorScale (OPA.vector_var, OPB.float_var, OPC.vector_var);
 				break;
 			case OP_DIV_F:
 				OPC.float_var = OPA.float_var / OPB.float_var;
@@ -452,9 +442,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				OPB.integer_var = OPA.integer_var;
 				break;
 			case OP_STORE_V:
-				OPB.vector_var[0] = OPA.vector_var[0];
-				OPB.vector_var[1] = OPA.vector_var[1];
-				OPB.vector_var[2] = OPA.vector_var[2];
+				VectorCopy (OPA.vector_var, OPB.vector_var);
 				break;
 
 			case OP_STOREP_F:
@@ -463,40 +451,16 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_STOREP_S:
 			case OP_STOREP_FNC:		// pointers
 			case OP_STOREP_I:
-				if (pr_boundscheck->int_val
-					&& (OPB.integer_var < 0 || OPB.integer_var + 4 >
-						pr->pr_edictareasize)) {
-					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError (pr, "Progs attempted to write to an out of "
-								 "bounds edict\n");
-					return;
-				}
-				if (pr_boundscheck->int_val && (OPB.integer_var %
-												pr->pr_edict_size <
-												((byte *) & (*pr->edicts)->v -
-												 (byte *) * pr->edicts))) {
-					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError (pr, "Progs attempted to write to an engine "
-								 "edict field\n");
-					return;
-				}
-				ptr = (pr_type_t*)((int)*pr->edicts + OPB.integer_var);
+				//FIXME put bounds checking back
+				ptr = pr->pr_globals + OPB.integer_var;
 				ptr->integer_var = OPA.integer_var;
 				break;
 			case OP_STOREP_V:
-				if (pr_boundscheck->int_val
-					&& (OPB.integer_var < 0 || OPB.integer_var + 12 >
-						pr->pr_edictareasize)) {
-					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError (pr, "Progs attempted to write to an out of "
-								 "bounds edict\n");
-					return;
-				}
-				ptr = (pr_type_t*)((int)*pr->edicts + OPB.integer_var);
-				ptr->vector_var[0] = OPA.vector_var[0];
-				ptr->vector_var[1] = OPA.vector_var[1];
-				ptr->vector_var[2] = OPA.vector_var[2];
+				//FIXME put bounds checking back
+				ptr = pr->pr_globals + OPB.integer_var;
+				VectorCopy (OPA.vector_var, ptr->vector_var);
 				break;
+
 			case OP_ADDRESS:
 				if (pr_boundscheck->int_val
 					&& (OPA.entity_var < 0 || OPA.entity_var >=
@@ -521,9 +485,19 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					return;
 				}
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
-				OPC.integer_var = (int) &ed->v[OPB.integer_var] -
-					(int) *pr->edicts;
+				OPC.integer_var = &ed->v[OPB.integer_var] - pr->pr_globals;
 				break;
+			case OP_ADDRESS_F:
+			case OP_ADDRESS_V:
+			case OP_ADDRESS_S:
+			case OP_ADDRESS_ENT:
+			case OP_ADDRESS_FLD:
+			case OP_ADDRESS_FNC:
+			case OP_ADDRESS_I:
+			case OP_ADDRESS_P:
+				OPC.integer_var = st->a;
+				break;
+
 			case OP_LOAD_F:
 			case OP_LOAD_FLD:
 			case OP_LOAD_ENT:
@@ -569,6 +543,50 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
 				memcpy (&OPC, &ed->v[OPB.integer_var], 3 * sizeof (OPC));
 				break;
+
+			case OP_LOADB_F:
+			case OP_LOADB_S:
+			case OP_LOADB_ENT:
+			case OP_LOADB_FLD:
+			case OP_LOADB_FNC:
+			case OP_LOADB_I:
+			case OP_LOADB_P:
+				//FIXME put bounds checking in
+				pointer = OPA.integer_var + OPB.integer_var;
+				ptr = pr->pr_globals + pointer;
+				OPC.integer_var = ptr->integer_var;
+				break;
+			case OP_LOADB_V:
+				//FIXME put bounds checking in
+				pointer = OPA.integer_var + OPB.integer_var;
+				ptr = pr->pr_globals + pointer;
+				VectorCopy (ptr->vector_var, OPC.vector_var);
+				break;
+
+			case OP_LEA:
+				pointer = OPA.integer_var + OPB.integer_var;
+				OPC.integer_var = pointer;
+				break;
+
+			case OP_STOREB_F:
+			case OP_STOREB_S:
+			case OP_STOREB_ENT:
+			case OP_STOREB_FLD:
+			case OP_STOREB_FNC:
+			case OP_STOREB_I:
+			case OP_STOREB_P:
+				//FIXME put bounds checking in
+				pointer = OPB.integer_var + OPC.integer_var;
+				ptr = pr->pr_globals + pointer;
+				ptr->integer_var = OPA.integer_var;
+				break;
+			case OP_STOREB_V:
+				//FIXME put bounds checking in
+				pointer = OPB.integer_var + OPC.integer_var;
+				ptr = pr->pr_globals + pointer;
+				VectorCopy (OPA.vector_var, ptr->vector_var);
+				break;
+
 			// ==================
 			case OP_IFNOT:
 				if (!OPA.integer_var)
@@ -643,10 +661,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_DIV_VF:
 				{
 					float       temp = 1.0f / OPB.float_var;
-
-					OPC.vector_var[0] = temp * OPA.vector_var[0];
-					OPC.vector_var[1] = temp * OPA.vector_var[1];
-					OPC.vector_var[2] = temp * OPA.vector_var[2];
+					VectorScale (OPA.vector_var, temp, OPC.vector_var);
 				}
 				break;
 */
@@ -707,78 +722,6 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 
 // LordHavoc: to be enabled when Progs version 7 (or whatever it will be numbered) is finalized
 /*
-			case OP_GSTOREP_I:
-			case OP_GSTOREP_F:
-			case OP_GSTOREP_ENT:
-			case OP_GSTOREP_FLD:	// integers
-			case OP_GSTOREP_S:
-			case OP_GSTOREP_FNC:	// pointers
-				if (pr_boundscheck->int_val && (OPB.integer_var < 0 ||
-				OPB.integer_var >= pr->pr_globaldefs)) {
-					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError (pr, "Progs attempted to write to an invalid "
-					"indexed global\n");
-					return;
-				}
-				pr->pr_globals[OPB.integer_var] = OPA.float_var;
-				break;
-			case OP_GSTOREP_V:
-				if (pr_boundscheck->int_val
-					&& (OPB.integer_var < 0 || OPB.integer_var + 2 >=
-					pr->pr_globaldefs)) {
-					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError (pr, "Progs attempted to write to an invalid "
-					"indexed global\n");
-					return;
-				}
-				pr->pr_globals[OPB.integer_var] = OPA.vector_var[0];
-				pr->pr_globals[OPB.integer_var + 1] = OPA.vector_var[1];
-				pr->pr_globals[OPB.integer_var + 2] = OPA.vector_var[2];
-				break;
-
-			case OP_GADDRESS:
-				i = OPA.integer_var + (int) OPB.float_var;
-				if (pr_boundscheck->int_val
-					&& (i < 0 || i >= pr->pr_globaldefs)) {
-					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError (pr, "Progs attempted to address an out of "
-					"bounds global\n");
-					return;
-				}
-				OPC.float_var = pr->pr_globals[i];
-				break;
-
-			case OP_GLOAD_I:
-			case OP_GLOAD_F:
-			case OP_GLOAD_FLD:
-			case OP_GLOAD_ENT:
-			case OP_GLOAD_S:
-			case OP_GLOAD_FNC:
-				if (pr_boundscheck->int_val
-					&& (OPA.integer_var < 0 || OPA.integer_var >=
-					pr->pr_globaldefs)) {
-					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError (pr, "Progs attempted to read an invalid "
-					"indexed global\n");
-					return;
-				}
-				OPC.float_var = pr->pr_globals[OPA.integer_var];
-				break;
-
-			case OP_GLOAD_V:
-				if (pr_boundscheck->int_val
-					&& (OPA.integer_var < 0 || OPA.integer_var + 2 >=
-					pr->pr_globaldefs)) {
-					pr->pr_xstatement = st - pr->pr_statements;
-					PR_RunError (pr, "Progs attempted to read an invalid "
-					"indexed global\n");
-					return;
-				}
-				OPC.vector_var[0] = pr->pr_globals[OPA.integer_var];
-				OPC.vector_var[1] = pr->pr_globals[OPA.integer_var + 1];
-				OPC.vector_var[2] = pr->pr_globals[OPA.integer_var + 2];
-				break;
-
 			case OP_BOUNDCHECK:
 				if (OPA.integer_var < 0 || OPA.integer_var >= st->b) {
 					pr->pr_xstatement = st - pr->pr_statements;

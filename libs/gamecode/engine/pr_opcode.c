@@ -42,6 +42,7 @@ static const char rcsid[] =
 
 #include "QF/hash.h"
 #include "QF/pr_comp.h"
+#include "QF/progs.h"
 
 hashtab_t *opcode_table;
 
@@ -90,7 +91,27 @@ opcode_t    pr_opcodes[] = {
 	{".", "load.fld", OP_LOAD_FLD, false, ev_entity, ev_field, ev_field, PROG_ID_VERSION},
 	{".", "load.fnc", OP_LOAD_FNC, false, ev_entity, ev_field, ev_func, PROG_ID_VERSION},
 
+	{".", "loadb.f", OP_LOADB_F, false, ev_pointer, ev_integer, ev_float, PROG_VERSION},
+	{".", "loadb.v", OP_LOADB_V, false, ev_pointer, ev_integer, ev_vector, PROG_VERSION},
+	{".", "loadb.s", OP_LOADB_S, false, ev_pointer, ev_integer, ev_string, PROG_VERSION},
+	{".", "loadb.ent", OP_LOADB_ENT, false, ev_pointer, ev_integer, ev_entity, PROG_VERSION},
+	{".", "loadb.fld", OP_LOADB_FLD, false, ev_pointer, ev_integer, ev_field, PROG_VERSION},
+	{".", "loadb.fnc", OP_LOADB_FNC, false, ev_pointer, ev_integer, ev_func, PROG_VERSION},
+	{".", "loadb.i", OP_LOADB_I, false, ev_pointer, ev_integer, ev_integer, PROG_VERSION},
+	{".", "loadb.p", OP_LOADB_P, false, ev_pointer, ev_integer, ev_pointer, PROG_VERSION},
+
 	{".", "address", OP_ADDRESS, false, ev_entity, ev_field, ev_pointer, PROG_ID_VERSION},
+
+	{"&", "address.f", OP_ADDRESS_F, false, ev_float, ev_void, ev_pointer, PROG_VERSION},
+	{"&", "address.v", OP_ADDRESS_V, false, ev_vector, ev_void, ev_pointer, PROG_VERSION},
+	{"&", "address.s", OP_ADDRESS_S, false, ev_string, ev_void, ev_pointer, PROG_VERSION},
+	{"&", "address.ent", OP_ADDRESS_ENT, false, ev_entity, ev_void, ev_pointer, PROG_VERSION},
+	{"&", "address.fld", OP_ADDRESS_FLD, false, ev_field, ev_void, ev_pointer, PROG_VERSION},
+	{"&", "address.fnc", OP_ADDRESS_FNC, false, ev_func, ev_void, ev_pointer, PROG_VERSION},
+	{"&", "address.i", OP_ADDRESS_I, false, ev_integer, ev_void, ev_pointer, PROG_VERSION},
+	{"&", "address.p", OP_ADDRESS_P, false, ev_pointer, ev_void, ev_pointer, PROG_VERSION},
+
+	{"&", "lea", OP_LEA, false, ev_pointer, ev_integer, ev_pointer, PROG_VERSION},
 
 	{"=", "store.f", OP_STORE_F, true, ev_float, ev_float, ev_void, PROG_ID_VERSION},
 	{"=", "store.v", OP_STORE_V, true, ev_vector, ev_vector, ev_void, PROG_ID_VERSION},
@@ -105,6 +126,15 @@ opcode_t    pr_opcodes[] = {
 	{"=", "storep.ent", OP_STOREP_ENT, true, ev_entity, ev_pointer, ev_void, PROG_ID_VERSION},
 	{"=", "storep.fld", OP_STOREP_FLD, true, ev_field, ev_pointer, ev_void, PROG_ID_VERSION},
 	{"=", "storep.fnc", OP_STOREP_FNC, true, ev_func, ev_pointer, ev_void, PROG_ID_VERSION},
+
+	{"=", "storeb.f", OP_STOREB_F, true, ev_float, ev_pointer, ev_integer, PROG_VERSION},
+	{"=", "storeb.v", OP_STOREB_V, true, ev_vector, ev_pointer, ev_integer, PROG_VERSION},
+	{"=", "storeb.s", OP_STOREB_S, true, ev_string, ev_pointer, ev_integer, PROG_VERSION},
+	{"=", "storeb.ent", OP_STOREB_ENT, true, ev_entity, ev_pointer, ev_integer, PROG_VERSION},
+	{"=", "storeb.fld", OP_STOREB_FLD, true, ev_field, ev_pointer, ev_integer, PROG_VERSION},
+	{"=", "storeb.fnc", OP_STOREB_FNC, true, ev_func, ev_pointer, ev_integer, PROG_VERSION},
+	{"=", "storeb.i", OP_STOREB_I, true, ev_integer, ev_pointer, ev_integer, PROG_VERSION},
+	{"=", "storeb.p", OP_STOREB_P, true, ev_pointer, ev_pointer, ev_integer, PROG_VERSION},
 
 	{"<RETURN>", "return", OP_RETURN, false, ev_void, ev_void, ev_void, PROG_ID_VERSION},
 
@@ -206,5 +236,61 @@ PR_Opcode_Init (void)
 
 	for (op = pr_opcodes; op->name; op++) {
 		Hash_Add (opcode_table, op);
+	}
+}
+
+static inline void
+check_branch (progs_t *pr, dstatement_t *st, opcode_t *op, short offset)
+{
+	int         address = st - pr->pr_statements;
+	
+	address += offset - 1;
+	if (address < 0 || address >= pr->progs->numstatements)
+		PR_Error (pr, "PR_Check_Opcodes: invalid branch (statement %d: %s)\n",
+				  st - pr->pr_statements, op->opname);
+}
+
+static inline void
+check_global (progs_t *pr, dstatement_t *st, opcode_t *op, etype_t type,
+			  unsigned short operand)
+{
+	if (type == ev_void && operand) {
+		if (st->op != OP_RETURN && st->op != OP_DONE)	//FIXME need better "not used flags"
+			PR_Error (pr, "PR_Check_Opcodes: non-zero global index in void operand (statement %d: %s)\n", st - pr->pr_statements, op->opname);
+	} else if (operand >= pr->progs->numglobals) {
+		PR_Error (pr, "PR_Check_Opcodes: out of bounds global index (statement %d: %s)\n", st - pr->pr_statements, op->opname);
+	}
+}
+
+void
+PR_Check_Opcodes (progs_t *pr)
+{
+	opcode_t   *op;
+	dstatement_t *st;
+
+	for (st = pr->pr_statements;
+		 st - pr->pr_statements < pr->progs->numstatements;
+		 st++) {
+		op = PR_Opcode (st->op);
+		if (!op) {
+			PR_Error (pr,
+					  "PR_Check_Opcodes: unknown opcode %d at statement %d\n",
+					  st->op, st - pr->pr_statements);
+		}
+		switch (st->op) {
+			case OP_IF:
+			case OP_IFNOT:
+				check_global (pr, st, op, op->type_a, st->a);
+				check_branch (pr, st, op, st->b);
+				break;
+			case OP_GOTO:
+				check_branch (pr, st, op, st->a);
+				break;
+			default:
+				check_global (pr, st, op, op->type_a, st->a);
+				check_global (pr, st, op, op->type_b, st->b);
+				check_global (pr, st, op, op->type_c, st->c);
+				break;
+		}
 	}
 }

@@ -75,6 +75,7 @@ void PR_LoadProgs (progs_t *pr, const char *progsname);
 void PR_LoadStrings (progs_t *pr);
 void PR_LoadDebug (progs_t *pr);
 edict_t *PR_InitEdicts (progs_t *pr, int num_edicts);
+void PR_Check_Opcodes (progs_t *pr);
 
 void PR_Profile_f (void);
 
