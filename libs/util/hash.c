@@ -46,11 +46,11 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 
-struct hashlink_s {
+typedef struct hashlink_s {
 	struct hashlink_s *next;
 	struct hashlink_s **prev;
 	void *data;
-};
+} hashlink_t;
 
 struct hashtab_s {
 	size_t tab_size;
@@ -61,9 +61,37 @@ struct hashtab_s {
 	unsigned long (*get_hash)(void*,void*);
 	const char *(*get_key)(void*,void*);
 	void (*free_ele)(void*,void*);
-	struct hashlink_s *tab[1];             // variable size
+	hashlink_t *tab[1];             // variable size
 };
 
+static hashlink_t *free_hashlinks;
+
+static hashlink_t *
+new_hashlink (void)
+{
+	hashlink_t *link;
+
+	if (!free_hashlinks) {
+		int		i;
+
+		if (!(free_hashlinks = calloc (1024, sizeof (hashlink_t))))
+			return 0;
+		for (i = 0, link = free_hashlinks; i < 1023; i++, link++)
+			link->next = link + 1;
+		link->next = 0;
+	}
+	link = free_hashlinks;
+	free_hashlinks = link->next;
+	link->next = 0;
+	return link;
+}
+
+static void
+free_hashlink (hashlink_t *link)
+{
+	link->next = free_hashlinks;
+	free_hashlinks = link;
+}
 
 unsigned long
 Hash_String (const char *str)
@@ -198,10 +226,10 @@ Hash_FlushTable (hashtab_t *tab)
 
 	for (i = 0; i < tab->tab_size; i++) {
 		while (tab->tab[i]) {
-			struct hashlink_s *t = tab->tab[i]->next;
+			hashlink_t *t = tab->tab[i]->next;
 			void *data = tab->tab[i]->data;
 
-			free (tab->tab[i]);
+			free_hashlink (tab->tab[i]);
 			tab->tab[i] = t;
 			if (tab->free_ele)
 				tab->free_ele (data, tab->user_data);
@@ -215,7 +243,7 @@ Hash_Add (hashtab_t *tab, void *ele)
 {
 	unsigned long h = Hash_String (tab->get_key(ele, tab->user_data));
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
-	struct hashlink_s *lnk = malloc (sizeof (struct hashlink_s));
+	hashlink_t *lnk = new_hashlink ();
 
 	if (!lnk)
 		return -1;
@@ -234,7 +262,7 @@ Hash_AddElement (hashtab_t *tab, void *ele)
 {
 	unsigned long h = tab->get_hash (ele, tab->user_data);
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
-	struct hashlink_s *lnk = malloc (sizeof (struct hashlink_s));
+	hashlink_t *lnk = new_hashlink ();
 
 	if (!lnk)
 		return -1;
@@ -253,7 +281,7 @@ Hash_Find (hashtab_t *tab, const char *key)
 {
 	unsigned long h = Hash_String (key);
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
-	struct hashlink_s *lnk = tab->tab[ind];
+	hashlink_t *lnk = tab->tab[ind];
 
 	while (lnk) {
 		if (strequal (key, tab->get_key (lnk->data, tab->user_data)))
@@ -268,7 +296,7 @@ Hash_FindElement (hashtab_t *tab, void *ele)
 {
 	unsigned long h = tab->get_hash (ele, tab->user_data);
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
-	struct hashlink_s *lnk = tab->tab[ind];
+	hashlink_t *lnk = tab->tab[ind];
 
 	while (lnk) {
 		if (tab->compare (lnk->data, ele, tab->user_data))
@@ -283,7 +311,7 @@ Hash_FindList (hashtab_t *tab, const char *key)
 {
 	unsigned long h = Hash_String (key);
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
-	struct hashlink_s *lnk = tab->tab[ind], *start = 0;
+	hashlink_t *lnk = tab->tab[ind], *start = 0;
 	int         count = 0;
 	void      **list;
 
@@ -311,7 +339,7 @@ Hash_FindElementList (hashtab_t *tab, void *ele)
 {
 	unsigned long h = tab->get_hash (ele, tab->user_data);
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
-	struct hashlink_s *lnk = tab->tab[ind], *start = 0;
+	hashlink_t *lnk = tab->tab[ind], *start = 0;
 	int         count = 0;
 	void      **list;
 
@@ -339,7 +367,7 @@ Hash_Del (hashtab_t *tab, const char *key)
 {
 	unsigned long h = Hash_String (key);
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
-	struct hashlink_s *lnk = tab->tab[ind];
+	hashlink_t *lnk = tab->tab[ind];
 	void *data;
 
 	while (lnk) {
@@ -348,7 +376,7 @@ Hash_Del (hashtab_t *tab, const char *key)
 			if (lnk->next)
 				lnk->next->prev = lnk->prev;
 			*lnk->prev = lnk->next;
-			free (lnk);
+			free_hashlink (lnk);
 			tab->num_ele--;
 			return data;
 		}
@@ -362,7 +390,7 @@ Hash_DelElement (hashtab_t *tab, void *ele)
 {
 	unsigned long h = tab->get_hash (ele, tab->user_data);
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
-	struct hashlink_s *lnk = tab->tab[ind];
+	hashlink_t *lnk = tab->tab[ind];
 	void *data;
 
 	while (lnk) {
@@ -371,7 +399,7 @@ Hash_DelElement (hashtab_t *tab, void *ele)
 			if (lnk->next)
 				lnk->next->prev = lnk->prev;
 			*lnk->prev = lnk->next;
-			free (lnk);
+			free_hashlink (lnk);
 			tab->num_ele--;
 			return data;
 		}
@@ -398,7 +426,7 @@ Hash_GetList (hashtab_t *tab)
 	if (!list)
 		return 0;
 	for (ind = 0; ind < tab->tab_size; ind++) {
-		struct hashlink_s *lnk;
+		hashlink_t *lnk;
 
 		for (lnk = tab->tab[ind]; lnk; lnk = lnk->next) {
 			*l++ = lnk->data;
@@ -429,7 +457,7 @@ Hash_Stats (hashtab_t *tab)
 	}
 
 	for (i = 0; i < tab->tab_size; i++) {
-		struct hashlink_s *lnk = tab->tab[i];
+		hashlink_t *lnk = tab->tab[i];
 
 		while (lnk) {
 			lengths[i]++;
