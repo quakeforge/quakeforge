@@ -35,15 +35,41 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <stdlib.h>
 #include <string.h>
 
+#include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/qfplist.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
+//	Ugly defines for fast checking and conversion from char to number
+#define inrange(ch,min,max) ((ch) >= (min) && (ch) <= (max))
+#define char2num(ch) \
+inrange((ch), '0', '9') ? ((ch) - 0x30) \
+: (inrange((ch), 'a', 'f') ? ((ch) - 0x57) : ((ch) - 0x37))
+
+static byte quotable_bitmap[32];
+static inline int
+is_quotable (byte x)
+{
+	return quotable_bitmap[x / 8] & (1 << (x % 8));
+}
+
+static void
+init_quotables (void)
+{
+	const char *unquotables = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+							  "abcdefghijklmnopqrstuvwxyz!#$%&*+-./:?@|~_^";
+	const byte *c;
+	memset (quotable_bitmap, ~0, sizeof (quotable_bitmap));
+	for (c = unquotables; *c; c++)
+		quotable_bitmap[*c / 8] &= ~(1 << (*c % 8));
+}
+
 static plitem_t *PL_ParsePropertyListItem (pldata_t *);
 static qboolean PL_SkipSpace (pldata_t *);
 static char *PL_ParseQuotedString (pldata_t *);
 static char *PL_ParseUnquotedString (pldata_t *);
+static char *PL_ParseData (pldata_t *, int *);
 
 static const char *
 dict_get_key (void *i, void *unused)
@@ -143,6 +169,14 @@ PL_Free (plitem_t *item)
 	free (item);
 }
 
+const char *
+PL_String (plitem_t *string)
+{
+	if (string->type != QFString)
+		return NULL;
+	return string->data;
+}
+
 plitem_t *
 PL_ObjectForKey (plitem_t *dict, const char *key)
 {
@@ -159,22 +193,23 @@ PL_ObjectForKey (plitem_t *dict, const char *key)
 plitem_t *
 PL_D_AllKeys (plitem_t *dict)
 {
-	void		**list;
+	void		**list, **l;
 	dictkey_t	*current;
 	plitem_t	*array;
 
 	if (dict->type != QFDictionary)
 		return NULL;
 
-	if (!(list = Hash_GetList ((hashtab_t *) dict->data)))
+	if (!(l = list = Hash_GetList ((hashtab_t *) dict->data)))
 		return NULL;
 
 	if (!(array = PL_NewArray ()))
 		return NULL;
 
-	while ((current = (dictkey_t *) *list++)) {
+	while ((current = (dictkey_t *) *l++)) {
 		PL_A_AddObject (array, PL_NewString (current->key));
 	}
+	free (list);
 
 	return array;
 }
@@ -333,6 +368,53 @@ PL_SkipSpace (pldata_t *pl)
 	return false;
 }
 
+static inline byte
+to_hex (byte a)
+{
+	if (a >= '0' && a <= '9')
+		return a - '0';
+	if (a >= 'A' && a <= 'F')
+		return a - 'A' + 10;
+	return a - 'a' + 10;
+}
+
+static inline byte
+make_byte (byte h, byte l)
+{
+	return (to_hex (h) << 4) | to_hex (l);
+}
+
+static char *
+PL_ParseData (pldata_t *pl, int *len)
+{
+	unsigned int	start = ++pl->pos;
+	int				nibbles = 0, i;
+	char			*str;
+
+	while (pl->pos < pl->end) {
+		if (isxdigit (pl->ptr[pl->pos])) {
+			nibbles++;
+			continue;
+		}
+		if (pl->ptr[pl->pos] == '>') {
+			if (nibbles & 1) {
+				pl->error = "invalid data, missing nibble";
+				return NULL;
+			}
+			*len = nibbles / 2;
+			str = malloc (*len);
+			for (i = 0; i < *len; i++)
+				str[i] = make_byte (pl->ptr[start + i * 2],
+									pl->ptr[start + i * 2 + 1]);
+			return str;
+		}
+		pl->error = "invalid character in data";
+		return NULL;
+	}
+	pl->error = "Reached end of string while parsing data";
+	return NULL;
+}
+
 static char *
 PL_ParseQuotedString (pldata_t *pl)
 {
@@ -478,7 +560,7 @@ PL_ParseUnquotedString (pldata_t *pl)
 	char			*str;
 
 	while (pl->pos < pl->end) {
-		if (!isalnum ((byte) pl->ptr[pl->pos]) && pl->ptr[pl->pos] != '_')
+		if (is_quotable (pl->ptr[pl->pos]))
 			break;
 		pl->pos++;
 	}
@@ -622,9 +704,16 @@ PL_ParsePropertyListItem (pldata_t *pl)
 		return item;
 	}
 
-	case '<':
-		pl->error = "Unexpected character in string (binary data unsupported)";
-		return NULL;
+	case '<': {
+		int len;
+		char *str = PL_ParseData (pl, &len);
+
+		if (!str) {
+			return NULL;
+		} else {
+			return PL_NewData (str, len);
+		}
+	}
 
 	case '"': {
 		char *str = PL_ParseQuotedString (pl);
@@ -654,6 +743,9 @@ PL_GetPropertyList (const char *string)
 	pldata_t	*pl = calloc (1, sizeof (pldata_t));
 	plitem_t	*newpl = NULL;
 
+	if (!quotable_bitmap[0])
+		init_quotables ();
+
 	pl->ptr = string;
 	pl->pos = 0;
 	pl->end = strlen (string);
@@ -669,4 +761,144 @@ PL_GetPropertyList (const char *string)
 		free (pl);
 		return NULL;
 	}
+}
+
+static void
+write_tabs (dstring_t *dstr, int num)
+{
+	int			len = strlen (dstr->str);
+
+	dstr->size = len + num + 1;
+	dstring_adjust (dstr);
+	memset (dstr->str + len, '\t', num);
+	dstr->str[len + num] = 0;
+}
+
+static void
+write_string (dstring_t *dstr, const char *str)
+{
+	const char *s;
+	char        c;
+
+	for (s = str; *s && !is_quotable (*s); s++)
+		;
+	if (!*s) {
+		dstring_appendstr (dstr, str);
+		return;
+	}
+	dstring_appendstr (dstr, "\"");
+	while (*str) {
+		for (s = str; (*s && isascii ((byte) *s) && isprint ((byte) *s)
+					   && *s != '\\' && *s != '\"'); s++)
+			;
+		dstring_appendsubstr (dstr, str, s - str);
+		if (*s) {
+			switch (*s) {
+				case '\"':
+				case '\\':
+					c = *s;
+					break;
+				case '\n':
+					c = 'n';
+					break;
+				case '\a':
+					c = 'a';
+					break;
+				case '\b':
+					c = 'b';
+					break;
+				case '\f':
+					c = 'f';
+					break;
+				case '\r':
+					c = 'r';
+					break;
+				case '\t':
+					c = 't';
+					break;
+				case '\v':
+					c = 'v';
+					break;
+				default:
+					c = 0;
+					dasprintf (dstr, "\\%03o", (byte) *s);
+					break;
+			}
+			if (c)
+				dasprintf (dstr, "\\%c", c);
+			s++;
+		}
+		str = s;
+	}
+	dstring_appendstr (dstr, "\"");
+}
+
+static void
+write_item (dstring_t *dstr, plitem_t *item, int level)
+{
+	void		**list, **l;
+	dictkey_t	*current;
+	plarray_t	*array;
+	plbinary_t	*binary;
+	int			i;
+
+	switch (item->type) {
+		case QFDictionary:
+			dstring_appendstr (dstr, "{\n");
+			l = list = Hash_GetList ((hashtab_t *) item->data);
+			while ((current = (dictkey_t *) *l++)) {
+				write_tabs (dstr, level + 1);
+				write_string (dstr, current->key);
+				dstring_appendstr (dstr, " = ");
+				write_item (dstr, current->value, level + 1);
+				dstring_appendstr (dstr, ";\n");
+			}
+			free (list);
+			write_tabs (dstr, level);
+			dstring_appendstr (dstr, "}");
+			break;
+		case QFArray:
+			dstring_appendstr (dstr, "(\n");
+			array = (plarray_t *) item->data;
+			for (i = 0; i < array->numvals; i++) {
+				write_tabs (dstr, level + 1);
+				write_item (dstr, array->values[i], level + 1);
+				if (i < array->numvals - 1)
+					dstring_appendstr (dstr, ",\n");
+			}
+			dstring_appendstr (dstr, "\n");
+			write_tabs (dstr, level);
+			dstring_appendstr (dstr, ")");
+			break;
+		case QFBinary:
+			dstring_appendstr (dstr, "<");
+			binary = (plbinary_t *) item->data;
+			for (i = 0; i < (int) binary->size; i++)
+				dasprintf (dstr, "%02X", ((char *) binary->data)[i]);
+			dstring_appendstr (dstr, ">");
+			break;
+		case QFString:
+			write_string (dstr, item->data);
+			break;
+		default:
+			break;
+	}
+}
+
+char *
+PL_WritePropertyList (plitem_t *pl)
+{
+	dstring_t  *dstr = dstring_newstr ();
+
+	if (!quotable_bitmap[0])
+		init_quotables ();
+	write_item (dstr, pl, 0);
+	dstring_appendstr (dstr, "\n");
+	return dstring_freeze (dstr);
+}
+
+pltype_t
+PL_Type (plitem_t *item)
+{
+	return item->type;
 }

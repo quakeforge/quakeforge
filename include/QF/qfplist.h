@@ -29,18 +29,20 @@
 #ifndef __QF_qfplist_h_
 #define __QF_qfplist_h_
 
-#include "QF/qtypes.h"
+/** \addtogroup utils */
+//@{
 
-//	Ugly defines for fast checking and conversion from char to number
-#define inrange(ch,min,max) ((ch) >= (min) && (ch) <= (max))
-#define char2num(ch) \
-inrange((ch), '0', '9') ? ((ch) - 0x30) \
-: (inrange((ch), 'a', 'f') ? ((ch) - 0x57) : ((ch) - 0x37))
+/** \defgroup qfplist Property lists
+*/
+//@{
+
+#include "QF/qtypes.h"
 
 /**
 	There are four types of data that can be stored in a property list:
 
-		QFDictionary	A list of values, each associated with a key (a C string).
+		QFDictionary	A list of values, each associated with a key (a C
+						string).
 		QFArray			A list of indexed values
 		QFString		A string.
 		QFBinary		Random binary data. The parser doesn't load these yet.
@@ -64,9 +66,9 @@ inrange((ch), '0', '9') ? ((ch) - 0x30) \
 
 	<!-- in the following paragram, the \< and \> are just < and >. the \ is
 		 for doxygen -->
-	QFBinary data (though not loaded currently) is hex-encoded and contained
-	within angle brackets, \< \>. The length of the encoded data must be an even
-	number, so while \<FF00\> is valid, \<F00\> isn't.
+	QFBinary data is hex-encoded and contained within angle brackets, \< \>.
+	The length of the encoded data must be an even number, so while \<FF00\>
+	is valid, \<F00\> isn't.
 
 	Property lists may contain C-style or BCPL-style comments.
 */
@@ -111,63 +113,79 @@ typedef struct plbinary_s	plbinary_t;
 
 struct hashtab_s;
 
-/**
-	\fn plitem_t *PL_GetPropertyList (const char *string)
-	\brief Create an in-memory representation of the contents of a property list
+/** Create an in-memory representation of the contents of a property list.
 	
 	\param string	the saved plist, as read from a file.
 
 	\return Returns an object equivalent to the passed-in string.
-	You are responsible for freeing the object returned.
+	\note You are responsible for freeing the object returned.
 */
-plitem_t *PL_GetPropertyList (const char *);
+plitem_t *PL_GetPropertyList (const char *string);
 
-/**
-	\fn plitem_t *PL_ObjectForKey (plitem_t *dict, const char *key)
-	\brief Retrieve a value from a dictionary object.
+/** Create a property list string from the in-memory representation.
+
+	\param pl the in-memory representation
+	\return the text representation of the property list
+	\note You are responsible for freeing the string returned.
+*/
+char *PL_WritePropertyList (plitem_t *pl);
+
+/** Retrieve the type of an object.
+
+	\param item The object
+	\return the type of the object
+*/
+pltype_t PL_Type (plitem_t *item);
+
+/** Retrieve a string from a string object.
+
+	\param string The string object
+	\return pointer to the actual string value or NULL if string isn't a
+	string.
+	\note	You are NOT responsible for freeing the returned object. It will
+	be destroyed when its container is.
+*/
+const char *PL_String (plitem_t *string);
+
+/** Retrieve a value from a dictionary object.
 
 	\param dict	The dictionary to retrieve a value from
 	\param key	The unique key associated with the value
-
-	\return	You are NOT responsible for freeing the returned object. It will
+	\return the value associated with the key, or NULL if not found or dict
+	isn't a dictionary.
+	\note	You are NOT responsible for freeing the returned object. It will
 	be destroyed when its container is.
 */
-plitem_t *PL_ObjectForKey (plitem_t *, const char *);
+plitem_t *PL_ObjectForKey (plitem_t *dict, const char *key);
 
-/**
-	\fn plitem_t *PL_ObjectAtIndex (plitem_t *array, int index)
-	\brief Retrieve a value from an array object.
+/** Retrieve a value from an array object.
 
 	\param array	The array to get the value from
 	\param index	The index within the array to retrieve
-
-	\return	You are NOT responsible for freeing the returned object. It will
+	\return the value associated with the key, or NULL if not found or array
+	isn't an array.
+	\note	You are NOT responsible for freeing the returned object. It will
 	be destroyed when its container is.
 */
-plitem_t *PL_ObjectAtIndex (plitem_t *, int);
+plitem_t *PL_ObjectAtIndex (plitem_t *array, int index);
 
-/**
-	\fn plitem_t *PL_D_AllKeys (plitem_t *dict)
-	\brief Retrieve a list of all keys in a dictionary.
+/** Retrieve a list of all keys in a dictionary.
 
 	\param dict The dictionary to list
-
-	\return Returns an Array containing Strings. You are responsible for
-	freeing this array.
+	\return an Array containing Strings or NULL if dict isn't a dictionary
+	\note You are responsible for freeing this array.
 */
-plitem_t *PL_D_AllKeys (plitem_t *);
+plitem_t *PL_D_AllKeys (plitem_t *dict);
 
-/**
-	\brief Retrieve the number of keys in a dictionalry
+/** Retrieve the number of keys in a dictionary.
 
 	\param dict The dictionary to get the number of keys of.
 
 	\return Returns the number of keys in the dictionary.
 */
-int PL_D_NumKeys (plitem_t *);
+int PL_D_NumKeys (plitem_t *dict);
 
-/**
-	\fn qboolean PL_D_AddObject (plitem_t *dict, plitem_t *key, plitem_t *value)
+/** Add a key/value pair to a dictionary.
 
 	\param dict The dictionary to add the key/value pair to
 	\param key The key of the key/value pair to be added to the dictionary
@@ -175,54 +193,54 @@ int PL_D_NumKeys (plitem_t *);
 
 	\return true on success, false on failure
 
-	Note: the dictionary becomes the owner of both the key and
-	the value.
+	\note the dictionary becomes the owner of both the key and the value.
 */
-qboolean PL_D_AddObject (plitem_t *, plitem_t *, plitem_t *);
+qboolean PL_D_AddObject (plitem_t *dict, plitem_t *key, plitem_t *value);
 
-/**
-	\fn qboolean PL_A_AddObject (plitem_t *array, plitem_t *item)
+/** Add an item to an array.
+
 	\param array The array to add the item to
 	\param item The item to be added to the array
 
 	\return true on success, false on failure
 
-	Note: the array becomes the owner of the added item.
+	\note the array becomes the owner of the added item.
 */
-qboolean PL_A_AddObject (plitem_t *, plitem_t *);
+qboolean PL_A_AddObject (plitem_t *array, plitem_t *item);
 
-/**
+/** Retrieve the number of items in an array.
+
 	\param array The array to get the number of objects in
 
 	\return number of objects in the array
 */
 int PL_A_NumObjects (plitem_t *array);
 
-/**
-	\fn qboolean PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index)
+/** Insert an item into an array before the specified location.
+
 	\param array The array to add the item to
 	\param item The item to be added to the array
 	\param index The location at which to insert the item into the array
 
 	\return true on success, false on failure
 
-	Note: the array becomes the owner of the added item.
+	\note the array becomes the owner of the added item.
 */
-qboolean PL_A_InsertObjectAtIndex (plitem_t *, plitem_t *, int);
+qboolean PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index);
 
 plitem_t *PL_NewDictionary (void);
 plitem_t *PL_NewArray (void);
 plitem_t *PL_NewData (void *, int);
 plitem_t *PL_NewString (const char *);
 
-/**
-	\fn void PL_Free (plitem_t *object)
-	\brief Free a property list object
+/** Free a property list object.
 
 	This function takes care of freeing any referenced property list data, so
 	only call it on top-level objects.
+
+	\param item the property list object to be freed
 */
-void PL_Free (plitem_t *);
+void PL_Free (plitem_t *item);
 
 typedef struct pldata_s {	// Unparsed property list string
 	const char		*ptr;
@@ -232,12 +250,7 @@ typedef struct pldata_s {	// Unparsed property list string
 	const char		*error;
 } pldata_t;
 
-/*
-	Internal prototypes
+//@}
+//@}
 
-	static plist_t *PL_ParsePropertyList (pldata_t *);
-	static qboolean PL_SkipSpace (pldata_t *);
-	static char *PL_ParseQuotedString (pldata_t *);
-	static char *PL_ParseUnquotedString (pldata_t *);
-*/
 #endif	// __QF_qfplist_h_
