@@ -129,6 +129,8 @@ D_SetupFrame (void)
 	for (i = 0; i < (NUM_MIPS - 1); i++)
 		d_scalemip[i] = basemip[i] * d_mipscale->value;
 
+#undef USE_INTEL_ASM //XXX asm pic hack
+
 #ifdef USE_INTEL_ASM
 	if (d_subdiv16->int_val)
 		d_drawspans = D_DrawSpans16;

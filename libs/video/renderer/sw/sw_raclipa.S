@@ -35,27 +35,40 @@
 #include "asm_draw.h"
 #include "d_ifacea.h"
 
+#undef USE_INTEL_ASM //XXX asm pic hack
+
 #ifdef USE_INTEL_ASM
 
-	.data
-Ltemp0:	.long	0
-Ltemp1:	.long	0
-
 	.text
-
-#define pfv0		8+4
-#define pfv1		8+8
-#define out			8+12
+#define temp0		0
+#define temp1		4
+#define point5		8
+#define pfv0		12+8+4
+#define pfv1		12+8+8
+#define out			12+8+12
 
 .globl C(R_Alias_clip_bottom)
 C(R_Alias_clip_bottom):
 	pushl	%esi
 	pushl	%edi
 
+	subl	$12,%esp
+
 	movl	pfv0(%esp),%esi
 	movl	pfv1(%esp),%edi
 
-	movl	C(r_refdef)+rd_aliasvrectbottom,%eax
+#ifdef PIC
+	call	.Lpic1
+.Lpic1: popl	%eax
+	addl	$_GLOBAL_OFFSET_TABLE_+[.-.Lpic1],%eax
+	movl	float_point5@GOTOFF(%eax),%edx
+	leal	C(r_refdef)@GOTOFF(%eax),%eax
+#else
+	leal	C(r_refdef),%eax
+	movl	float_point5,%edx
+#endif
+	movl	rd_aliasvrectbottom(%eax),%eax
+	movl	%edx,point5(%esp)
 
 LDoForwardOrBackward:
 
@@ -74,10 +87,10 @@ LDoForward:
 
 	subl	%edx,%ecx
 	subl	%edx,%eax
-	movl	%ecx,Ltemp1
-	movl	%eax,Ltemp0
-	fildl	Ltemp1
-	fildl	Ltemp0
+	movl	%ecx,temp1(%esp)
+	movl	%eax,temp0(%esp)
+	fildl	temp1(%esp)
+	fildl	temp0(%esp)
 	movl	out(%esp),%edx
 	movl	$2,%eax
 
@@ -132,15 +145,15 @@ LDo3Forward:
 	fxch	%st(1)			// fv0v0+(fv1v0-fv0v0)*scale | scale | 
 							//  fv0v2+(fv1v2-fv0v2)*scale |
 							//  fv0v1+(fv1v1-fv0v1)*scale
-	fadds	float_point5
+	fadds	point5(%esp)
 	fxch	%st(3)			// fv0v1+(fv1v1-fv0v1)*scale | scale | 
 							//  fv0v2+(fv1v2-fv0v2)*scale |
 							//  fv0v0+(fv1v0-fv0v0)*scale
-	fadds	float_point5
+	fadds	point5(%esp)
 	fxch	%st(2)			// fv0v2+(fv1v2-fv0v2)*scale | scale | 
 							//  fv0v1+(fv1v1-fv0v1)*scale |
 							//  fv0v0+(fv1v0-fv0v0)*scale
-	fadds	float_point5
+	fadds	point5(%esp)
 	fxch	%st(3)			// fv0v0+(fv1v0-fv0v0)*scale | scale | 
 							//  fv0v1+(fv1v1-fv0v1)*scale |
 							//  fv0v2+(fv1v2-fv0v2)*scale
@@ -157,6 +170,8 @@ LDo3Forward:
 
 	fstp	%st(0)
 
+	addl	$12,%esp
+
 	popl	%edi
 	popl	%esi
 
@@ -168,10 +183,23 @@ C(R_Alias_clip_top):
 	pushl	%esi
 	pushl	%edi
 
+	subl	$12,%esp
+
 	movl	pfv0(%esp),%esi
 	movl	pfv1(%esp),%edi
 
-	movl	C(r_refdef)+rd_aliasvrect+4,%eax
+#ifdef PIC
+	call	.Lpic2
+.Lpic2: popl	%eax
+	addl	$_GLOBAL_OFFSET_TABLE_+[.-.Lpic2],%eax
+	movl	float_point5@GOTOFF(%eax),%edx
+	leal	C(r_refdef)@GOTOFF(%eax),%eax
+#else
+	leal	C(r_refdef),%eax
+	movl	float_point5,%edx
+#endif
+	movl	rd_aliasvrect+4(%eax),%eax
+	movl	%edx,point5(%esp)
 	jmp		LDoForwardOrBackward
 
 
@@ -181,10 +209,23 @@ C(R_Alias_clip_right):
 	pushl	%esi
 	pushl	%edi
 
+	subl	$12,%esp
+
 	movl	pfv0(%esp),%esi
 	movl	pfv1(%esp),%edi
 
-	movl	C(r_refdef)+rd_aliasvrectright,%eax
+#ifdef PIC
+	call	.Lpic3
+.Lpic3: popl	%eax
+	addl	$_GLOBAL_OFFSET_TABLE_+[.-.Lpic3],%eax
+	movl	float_point5@GOTOFF(%eax),%edx
+	leal	C(r_refdef)@GOTOFF(%eax),%eax
+#else
+	leal	C(r_refdef),%eax
+	movl	float_point5,%edx
+#endif
+	movl	rd_aliasvrectright(%eax),%eax
+	movl	%edx,point5(%esp)
 
 LRightLeftEntry:
 
@@ -213,10 +254,23 @@ C(R_Alias_clip_left):
 	pushl	%esi
 	pushl	%edi
 
+	subl	$12,%esp
+
 	movl	pfv0(%esp),%esi
 	movl	pfv1(%esp),%edi
 
-	movl	C(r_refdef)+rd_aliasvrect+0,%eax
+#ifdef PIC
+	call	.Lpic4
+.Lpic4: popl	%eax
+	addl	$_GLOBAL_OFFSET_TABLE_+[.-.Lpic4],%eax
+	movl	float_point5@GOTOFF(%eax),%edx
+	leal	C(r_refdef)@GOTOFF(%eax),%eax
+#else
+	leal	C(r_refdef),%eax
+	movl	float_point5,%edx
+#endif
+	movl	rd_aliasvrect+0(%eax),%eax
+	movl	%edx,point5(%esp)
 	jmp		LRightLeftEntry
 
 

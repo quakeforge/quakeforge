@@ -34,6 +34,8 @@
 #include "asm_draw.h"
 #include "d_ifacea.h"
 
+#undef USE_INTEL_ASM //XXX asm pic hack
+
 #ifdef USE_INTEL_ASM
 
 // !!! if this is changed, it must be changed in d_polyse.c too !!!

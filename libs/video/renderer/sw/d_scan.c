@@ -94,6 +94,8 @@ D_WarpScreen (void)
 }
 
 
+#undef USE_INTEL_ASM //XXX asm pic hack
+
 #ifndef USE_INTEL_ASM
 void
 D_DrawTurbulent8Span (void)

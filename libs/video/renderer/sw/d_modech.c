@@ -46,6 +46,8 @@ short      *zspantable[MAXHEIGHT];
 void
 D_Patch (void)
 {
+#undef USE_INTEL_ASM //XXX asm pic hack
+
 #ifdef USE_INTEL_ASM
 
 	static qboolean protectset8 = false;

@@ -30,20 +30,22 @@
 # include "config.h"
 #endif
 
-#ifndef	USE_INTEL_ASM
+#undef USE_INTEL_ASM //XXX asm pic hack
+
+#ifndef USE_INTEL_ASM
 
 int         r_bmodelactive; 
 
 
 void
-R_Surf8Patch ()
+R_Surf8Patch (void)
 {
 	// we only patch code on Intel
 }
 
 
 void
-R_Surf16Patch ()
+R_Surf16Patch (void)
 {
 	// we only patch code on Intel
 }
@@ -55,4 +57,4 @@ R_SurfacePatch (void)
 	// we only patch code on Intel
 }
 
-#endif // USE_INTEL_ASM
+#endif // !USE_INTEL_ASM

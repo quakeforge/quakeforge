@@ -205,6 +205,7 @@ R_TransformFrustum (void)
 	}
 }
 
+#undef USE_INTEL_ASM //XXX asm pic hack
 
 #ifndef USE_INTEL_ASM
 void

@@ -38,6 +38,8 @@ static int  minindex, maxindex;
 static sspan_t *sprite_spans;
 
 
+#undef USE_INTEL_ASM //XXX asm pic hack
+
 #ifndef USE_INTEL_ASM
 
 void

@@ -127,6 +127,8 @@ void        D_PolysetSetEdgeTable (void);
 void        D_RasterizeAliasPolySmooth (void);
 void        D_PolysetScanLeftEdge (int height);
 
+#undef USE_INTEL_ASM //XXX asm pic hack
+
 #ifndef USE_INTEL_ASM
 
 void

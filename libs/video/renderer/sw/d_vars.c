@@ -26,13 +26,15 @@
 	$Id$
 */
 
-#ifndef USE_INTEL_ASM
-
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
 
 #include "QF/qtypes.h"
+
+#undef USE_INTEL_ASM //XXX asm pic hack
+
+#ifndef USE_INTEL_ASM
 
 // all global and static refresh variables are collected in a contiguous block
 // to avoid cache conflicts.
