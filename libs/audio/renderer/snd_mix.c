@@ -372,3 +372,44 @@ SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
 		paintbuffer[i + right_phase].right += (sfx[i] * rightvol) >> 8;
 	}
 }
+
+void
+SND_PaintChannelStereo8 (channel_t *ch, sfxcache_t *sc, int count)
+{
+	byte       *samp;
+	portable_samplepair_t *pair;
+	int		   *lscale, *rscale;
+
+	if (ch->leftvol > 255)
+		ch->leftvol = 255;
+	if (ch->rightvol > 255)
+		ch->rightvol = 255;
+
+	lscale = snd_scaletable[ch->leftvol >> 3];
+	rscale = snd_scaletable[ch->rightvol >> 3];
+
+	samp = sc->data + ch->pos;
+	pair = paintbuffer;
+	while (count-- > 0) {
+		pair->left += lscale[*samp++];
+		pair->right += rscale[*samp++];
+		pair++;
+	}
+}
+
+void
+SND_PaintChannelStereo16 (channel_t *ch, sfxcache_t *sc, int count)
+{
+	short      *samp;
+	portable_samplepair_t *pair;
+	int         leftvol = ch->leftvol;
+	int         rightvol = ch->rightvol;
+
+	samp = (short *) sc->data + ch->pos * 2;
+	pair = paintbuffer;
+	while (count-- > 0) {
+		pair->left += *samp++ * leftvol;
+		pair->right += *samp++ * rightvol;
+		pair++;
+	}
+}

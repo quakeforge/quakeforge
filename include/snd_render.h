@@ -33,15 +33,13 @@
 #define __snd_render_h
 
 // !!! if this is changed, it must be changed in asm_i386.h too !!!
-typedef struct
-{
+typedef struct portable_samplepair_s {
 	int left;
 	int right;
 } portable_samplepair_t;
 
 // !!! if this is changed, it much be changed in asm_i386.h too !!!
-typedef struct
-{
+typedef struct sfxcache_s {
 	int 	length;
 	int 	loopstart;
 	int 	speed;
@@ -52,8 +50,7 @@ typedef struct
 } sfxcache_t;
 
 // !!! if this is changed, it much be changed in asm_i386.h too !!!
-typedef struct
-{
+typedef struct channel_s {
 	sfx_t	*sfx;			// sfx number
 	int		leftvol;		// 0-255 volume
 	int		rightvol;		// 0-255 volume
@@ -69,8 +66,7 @@ typedef struct
 	int	oldphase;	// phase shift between l-r in samples
 } channel_t;
 
-typedef struct
-{
+typedef struct wavinfo_s {
 	int		rate;
 	int		width;
 	int		channels;
@@ -120,6 +116,8 @@ wavinfo_t SND_GetWavinfo (const char *name, byte * wav, int wavlength);
 void SND_WriteLinearBlastStereo16 (void);
 void SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count);
 void SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count);
+void SND_PaintChannelStereo8 (channel_t *ch, sfxcache_t *sc, int count);
+void SND_PaintChannelStereo16 (channel_t *ch, sfxcache_t *sc, int count);
 
 wavinfo_t GetWavinfo (const char *name, byte *wav, int wavlength);
 
