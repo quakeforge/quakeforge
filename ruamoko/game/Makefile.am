@@ -5,18 +5,25 @@ AUTOMAKE_OPTIONS= foreign
 #searched after everything else?
 pkgdatadir=@sharepath@/id1
 
-QFCC=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
+QFCC_DEP=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
+QFCC=$(QFCC_DEP)
 QCFLAGS=-qq -g -Werror
 QCPPFLAGS=-I. -I$(srcdir) -I$(top_builddir)/ruamoko/include -I$(top_srcdir)/ruamoko/include
+GZIP=if echo $@ | grep -q .gz; then gzip -f `basename $@ .gz`; if test -f `basename $@ .dat.gz`.sym; then gzip -f `basename $@ .dat.gz`.sym; fi; fi
+if HAVE_ZLIB
+GZ=.gz
+else
+GZ=
+endif
 STRIP=$(shell echo `echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`)
 
 if BUILD_RUAMOKO
-data=game.dat
+data=game.dat$(GZ)
 else
 data=
 endif
 
-pkgdata_DATA= $(data)
+noinst_DATA= $(data)
 EXTRA_DATA= game.dat
 
 game_src= Axe.r GameEntity.r World.r tempent.r
@@ -29,8 +36,9 @@ game_src= Axe.r GameEntity.r World.r tempent.r
 
 game_obj=$(addsuffix .qfo,$(basename $(game_src)))
 
-game.dat: $(game_obj) ../lib/libr.a
+game.dat$(GZ): $(game_obj) ../lib/libr.a
 	$(QFCC) $(QCFLAGS) -p $(STRIP) -o game.dat $(game_obj) ../lib/libr.a
+	$(GZIP)
 
 EXTRA_DIST= $(game_src) Axe.h GameEntity.h tempent.h Weapon.h World.h
 CLEANFILES= *.dat *.sym *.gz *.qfo
