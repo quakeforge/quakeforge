@@ -1749,10 +1749,10 @@ PF_SV_FreeClient (progs_t *pr)
 		PR_RunError (pr, "not a server client");
 	if (cl->userinfo)
 		Info_Destroy (cl->userinfo);
-	SV_FullClientUpdate (cl, &sv.reliable_datagram);
-	if (sv_client_disconnect_e->func)
-		GIB_Event_Callback (sv_client_disconnect_e, 2, va("%u", cl->userid),
-							"server");
+	//SV_FullClientUpdate (cl, &sv.reliable_datagram);
+	//if (sv_client_disconnect_e->func)
+	//	GIB_Event_Callback (sv_client_disconnect_e, 2, va("%u", cl->userid),
+	//						"server");
 }
 
 void
