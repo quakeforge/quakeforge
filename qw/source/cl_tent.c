@@ -50,6 +50,7 @@ static const char rcsid[] =
 #include "cl_main.h"
 #include "cl_tent.h"
 #include "client.h"
+#include "compat.h"
 #include "r_dynamic.h"
 
 #define	MAX_BEAMS	8
@@ -420,7 +421,7 @@ CL_UpdateBeams (void)
 	beam_t     *b;
 	entity_t  **ent;
 	float       forward, pitch, yaw, d;
-	int         i;
+	int         i, ent_count;
 	vec3_t      dist, org;
 	unsigned    seed;
 
@@ -459,21 +460,22 @@ CL_UpdateBeams (void)
 		// add new entities for the lightning
 		VectorCopy (b->start, org);
 		d = VectorNormalize (dist);
-		b->ent_count = 0;
-		while (d > 0 && b->ent_count < MAX_BEAM_ENTS) {
+		VectorScale (dist, 30, dist);
+		ent_count = ceil (d / 30);
+		ent_count = min (ent_count, MAX_BEAM_ENTS);
+		b->ent_count = ent_count;
+		d = 0;
+		while (ent_count--) {
 			ent = R_NewEntity ();
 			if (!ent)
 				return;
-			*ent = &b->ent_list[b->ent_count++];
-			VectorCopy (org, (*ent)->origin);
+			*ent = &b->ent_list[ent_count];
+			VectorMA (org, d, dist, (*ent)->origin);
+			d += 1;
 			(*ent)->model = b->model;
 			(*ent)->angles[0] = pitch;
 			(*ent)->angles[1] = yaw;
-//			(*ent)->angles[2] = rand () % 360;
 			(*ent)->angles[2] = (seed = seed * BEAM_SEED_PRIME) % 360;
-
-			VectorMA(org, 30, dist, org);
-			d -= 30;
 		}
 	}
 }
