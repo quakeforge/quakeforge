@@ -325,8 +325,16 @@ void X11_UpdateFullscreen (cvar_t *v_fs)
 		return;
 	}
 	if (v_fs->int_val==0) {
+		if (_windowed_mouse) {
+			_windowed_mouse->flags &= ~CVAR_ROM;
+		}
 		X11_RestoreVidMode();
 	} else {
+		if (_windowed_mouse) {
+			_windowed_mouse->flags &= ~CVAR_ROM;
+			Cvar_Set (_windowed_mouse, "1");
+			_windowed_mouse->flags |= CVAR_ROM;
+		}
 		X11_SetVidMode(scr_width,scr_height);
 	}
 }
