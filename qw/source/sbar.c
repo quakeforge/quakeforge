@@ -1011,14 +1011,14 @@ Sbar_DeathmatchOverlay (int start)
 
 		// draw number
 		f = s->frags;
-		snprintf (num, sizeof (num), "%3i", f);
-
-		Draw_nString (x + 112, y, num, 3);
-
-		if (k == cl.playernum) {
-			Draw_Character (x + 104, y, 16);
-			Draw_Character (x + 136, y, 17);
+		if (k != cl.playernum) {
+			snprintf (num, sizeof (num), " %3i ", f);
+		} else {
+			snprintf (num, sizeof (num), "\x10%3i\x11", f);
 		}
+
+		Draw_nString (x + 104, y, num, 5);
+
 		// team
 		if (cl.teamplay) {
 			Draw_nString (x + 152, y, s->team->value, 4);
@@ -1103,14 +1103,14 @@ Sbar_MiniDeathmatchOverlay (void)
 
 		// draw number
 		f = s->frags;
-		snprintf (num, sizeof (num), "%3i", f);
-
-		Draw_nString (x + 8, y, num, 3);
-
-		if (k == cl.playernum) {
-			Draw_Character (x, y, 16);
-			Draw_Character (x + 32, y, 17);
+		if (k != cl.playernum) {
+			snprintf (num, sizeof (num), " %3i ", f);
+		} else {
+			snprintf (num, sizeof (num), "\x10%3i\x11", f);
 		}
+
+		Draw_nString (x, y, num, 5);
+
 		// team
 		if (cl.teamplay) {
 			Draw_nString (x + 48, y, s->team->value, 4);

@@ -1024,14 +1024,14 @@ Sbar_MiniDeathmatchOverlay (void)
 
 		// draw number
 		f = s->frags;
-		snprintf (num, sizeof (num), "%3i", f);
-
-		Draw_nString (x + 8, y, num, 3);
-		
-		if (k == cl.viewentity - 1) {
-			Draw_Character (x, y, 16);
-			Draw_Character (x + 32, y, 17);
+		if (k != cl.viewentity - 1) {
+			snprintf (num, sizeof (num), " %3i ", f);
+		} else {
+			snprintf (num, sizeof (num), "\x10%3i\x11", f);
 		}
+
+		Draw_nString (x, y, num, 3);
+		
 		// draw name
 		Draw_String (x + 48, y, s->name);
 
