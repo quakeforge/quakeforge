@@ -789,7 +789,7 @@ PF_findradius (progs_t *pr)
 		if (Length (eorg) > rad)
 			continue;
 
-		SVFIELD (ent, chain, int) = EDICT_TO_PROG (pr, chain);
+		SVFIELD (ent, chain, entity) = EDICT_TO_PROG (pr, chain);
 		chain = ent;
 	}
 
@@ -1055,7 +1055,7 @@ PF_droptofloor (progs_t *pr)
 		VectorCopy (trace.endpos, SVFIELD (ent, origin, vector));
 		SV_LinkEdict (ent, false);
 		SVFIELD (ent, flags, float) = (int) SVFIELD (ent, flags, float) | FL_ONGROUND;
-		SVFIELD (ent, groundentity, int) = EDICT_TO_PROG (pr, trace.ent);
+		SVFIELD (ent, groundentity, entity) = EDICT_TO_PROG (pr, trace.ent);
 		G_FLOAT (pr, OFS_RETURN) = 1;
 	}
 }
@@ -1461,12 +1461,15 @@ PF_makestatic (progs_t *pr)
 {
 	edict_t    *ent;
 	int         i;
+	char       *model;
 
 	ent = G_EDICT (pr, OFS_PARM0);
 
 	MSG_WriteByte (&sv.signon, svc_spawnstatic);
 
-	MSG_WriteByte (&sv.signon, SV_ModelIndex (PR_GetString (pr, SVFIELD (ent, model, float))));
+	model = PR_GetString (pr, SVFIELD (ent, model, string));
+//Con_Printf ("Model: %d %s\n", SVFIELD (ent, model, string), model);
+	MSG_WriteByte (&sv.signon, SV_ModelIndex (model));
 
 	MSG_WriteByte (&sv.signon, SVFIELD (ent, frame, float));
 	MSG_WriteByte (&sv.signon, SVFIELD (ent, colormap, float));

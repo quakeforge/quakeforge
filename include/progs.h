@@ -48,7 +48,7 @@ typedef union pr_type_u {
 	int		int_var;
 	string_t string_var;
 	func_t	func_var;
-	int		edict_var;
+	int		entity_var;
 	float	vector_var[1];		// really 3, but this structure must be 32 bits
 } pr_type_t;
 

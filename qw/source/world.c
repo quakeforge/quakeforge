@@ -724,9 +724,9 @@ SV_ClipToLinks (areanode_t *node, moveclip_t * clip)
 		if (clip->trace.allsolid)
 			return;
 		if (clip->passedict) {
-			if (PROG_TO_EDICT (&sv_pr_state, SVFIELD (touch, owner, int)) == clip->passedict)
+			if (PROG_TO_EDICT (&sv_pr_state, SVFIELD (touch, owner, entity)) == clip->passedict)
 				continue;				// don't clip against own missiles
-			if (PROG_TO_EDICT (&sv_pr_state, SVFIELD (clip->passedict, owner, int)) == touch)
+			if (PROG_TO_EDICT (&sv_pr_state, SVFIELD (clip->passedict, owner, entity)) == touch)
 				continue;				// don't clip against owner
 		}
 

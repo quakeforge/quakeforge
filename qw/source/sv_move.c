@@ -138,11 +138,11 @@ SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
 		// try one move with vertical motion, then one without
 		for (i = 0; i < 2; i++) {
 			VectorAdd (SVFIELD (ent, origin, vector), move, neworg);
-			enemy = PROG_TO_EDICT (&sv_pr_state, SVFIELD (ent, enemy, int));
+			enemy = PROG_TO_EDICT (&sv_pr_state, SVFIELD (ent, enemy, entity));
 			if (i == 0 && enemy != sv.edicts) {
 				dz =
 					SVFIELD (ent, origin, vector)[2] -
-					SVFIELD (PROG_TO_EDICT (&sv_pr_state, SVFIELD (ent, enemy, int)), origin, vector)[2];
+					SVFIELD (PROG_TO_EDICT (&sv_pr_state, SVFIELD (ent, enemy, entity)), origin, vector)[2];
 				if (dz > 40)
 					neworg[2] -= 8;
 				if (dz < 30)
@@ -218,7 +218,7 @@ SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
 //      Con_Printf ("back on ground\n"); 
 		SVFIELD (ent, flags, float) = (int) SVFIELD (ent, flags, float) & ~FL_PARTIALGROUND;
 	}
-	SVFIELD (ent, groundentity, int) = EDICT_TO_PROG (&sv_pr_state, trace.ent);
+	SVFIELD (ent, groundentity, entity) = EDICT_TO_PROG (&sv_pr_state, trace.ent);
 
 // the move is ok
 	if (relink)
@@ -385,7 +385,7 @@ SV_MoveToGoal (progs_t *pr)
 	float       dist;
 
 	ent = PROG_TO_EDICT (&sv_pr_state, *sv_globals.self);
-	goal = PROG_TO_EDICT (&sv_pr_state, SVFIELD (ent, goalentity, int));
+	goal = PROG_TO_EDICT (&sv_pr_state, SVFIELD (ent, goalentity, entity));
 	dist = G_FLOAT (&sv_pr_state, OFS_PARM0);
 
 	if (!((int) SVFIELD (ent, flags, float) & (FL_ONGROUND | FL_FLY | FL_SWIM))) {
@@ -393,7 +393,7 @@ SV_MoveToGoal (progs_t *pr)
 		return;
 	}
 // if the next step hits the enemy, return immediately
-	if (PROG_TO_EDICT (&sv_pr_state, SVFIELD (ent, enemy, int)) != sv.edicts
+	if (PROG_TO_EDICT (&sv_pr_state, SVFIELD (ent, enemy, entity)) != sv.edicts
 		&& SV_CloseEnough (ent, goal, dist)) return;
 
 // bump around...

@@ -504,7 +504,7 @@ SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 	}
 	// send a damage message if the player got hit this frame
 	if (SVFIELD (ent, dmg_take, float) || SVFIELD (ent, dmg_save, float)) {
-		other = PROG_TO_EDICT (&sv_pr_state, SVFIELD (ent, dmg_inflictor, int));
+		other = PROG_TO_EDICT (&sv_pr_state, SVFIELD (ent, dmg_inflictor, entity));
 		MSG_WriteByte (msg, svc_damage);
 		MSG_WriteByte (msg, SVFIELD (ent, dmg_save, float));
 		MSG_WriteByte (msg, SVFIELD (ent, dmg_take, float));

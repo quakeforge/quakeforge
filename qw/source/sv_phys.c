@@ -294,7 +294,7 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 			if ((SVFIELD (trace.ent, solid, float) == SOLID_BSP)
 				|| (SVFIELD (trace.ent, movetype, float) == MOVETYPE_PPUSH)) {
 				SVFIELD (ent, flags, float) = (int) SVFIELD (ent, flags, float) | FL_ONGROUND;
-				SVFIELD (ent, groundentity, int) = EDICT_TO_PROG (&sv_pr_state, trace.ent);
+				SVFIELD (ent, groundentity, entity) = EDICT_TO_PROG (&sv_pr_state, trace.ent);
 			}
 		}
 		if (!trace.plane.normal[2]) {
@@ -464,7 +464,7 @@ SV_Push (edict_t *pusher, vec3_t move)
 		// if the entity is standing on the pusher, it will definately be
 		// moved
 		if (!(((int) SVFIELD (check, flags, float) & FL_ONGROUND)
-			  && PROG_TO_EDICT (&sv_pr_state, SVFIELD (check, groundentity, int)) == pusher)) {
+			  && PROG_TO_EDICT (&sv_pr_state, SVFIELD (check, groundentity, entity)) == pusher)) {
 			if (SVFIELD (check, absmin, vector)[0] >= maxs[0]
 				|| SVFIELD (check, absmin, vector)[1] >= maxs[1]
 				|| SVFIELD (check, absmin, vector)[2] >= maxs[2]
@@ -719,7 +719,7 @@ SV_Physics_Toss (edict_t *ent)
 	if (trace.plane.normal[2] > 0.7) {
 		if (SVFIELD (ent, velocity, vector)[2] < 60 || SVFIELD (ent, movetype, float) != MOVETYPE_BOUNCE) {
 			SVFIELD (ent, flags, float) = (int) SVFIELD (ent, flags, float) | FL_ONGROUND;
-			SVFIELD (ent, groundentity, int) = EDICT_TO_PROG (&sv_pr_state, trace.ent);
+			SVFIELD (ent, groundentity, entity) = EDICT_TO_PROG (&sv_pr_state, trace.ent);
 			VectorCopy (vec3_origin, SVFIELD (ent, velocity, vector));
 			VectorCopy (vec3_origin, SVFIELD (ent, avelocity, vector));
 		}

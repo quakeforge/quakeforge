@@ -1008,7 +1008,7 @@ SV_PTrack_f (void)
 		host_client->spec_track = 0;
 		ent = EDICT_NUM (&sv_pr_state, host_client - svs.clients + 1);
 		tent = EDICT_NUM (&sv_pr_state, 0);
-		SVFIELD (ent, goalentity, int) = EDICT_TO_PROG (&sv_pr_state, tent);
+		SVFIELD (ent, goalentity, entity) = EDICT_TO_PROG (&sv_pr_state, tent);
 		return;
 	}
 
@@ -1019,14 +1019,14 @@ SV_PTrack_f (void)
 		host_client->spec_track = 0;
 		ent = EDICT_NUM (&sv_pr_state, host_client - svs.clients + 1);
 		tent = EDICT_NUM (&sv_pr_state, 0);
-		SVFIELD (ent, goalentity, int) = EDICT_TO_PROG (&sv_pr_state, tent);
+		SVFIELD (ent, goalentity, entity) = EDICT_TO_PROG (&sv_pr_state, tent);
 		return;
 	}
 	host_client->spec_track = i + 1;	// now tracking
 
 	ent = EDICT_NUM (&sv_pr_state, host_client - svs.clients + 1);
 	tent = EDICT_NUM (&sv_pr_state, i + 1);
-	SVFIELD (ent, goalentity, int) = EDICT_TO_PROG (&sv_pr_state, tent);
+	SVFIELD (ent, goalentity, entity) = EDICT_TO_PROG (&sv_pr_state, tent);
 }
 
 
@@ -1287,7 +1287,7 @@ AddLinksToPmove (areanode_t *node)
 		next = l->next;
 		check = EDICT_FROM_AREA (l);
 
-		if (SVFIELD (check, owner, int) == pl)
+		if (SVFIELD (check, owner, entity) == pl)
 			continue;					// player's own missile
 		if (SVFIELD (check, solid, float) == SOLID_BSP
 			|| SVFIELD (check, solid, float) == SOLID_BBOX || SVFIELD (check, solid, float) == SOLID_SLIDEBOX) {
@@ -1350,7 +1350,7 @@ AddAllEntsToPmove (void)
 								   check = NEXT_EDICT (&sv_pr_state, check)) {
 		if (check->free)
 			continue;
-		if (SVFIELD (check, owner, int) == pl)
+		if (SVFIELD (check, owner, entity) == pl)
 			continue;
 		if (SVFIELD (check, solid, float) == SOLID_BSP
 			|| SVFIELD (check, solid, float) == SOLID_BBOX
@@ -1547,7 +1547,7 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 	SVFIELD (sv_player, watertype, float) = watertype;
 	if (onground != -1) {
 		SVFIELD (sv_player, flags, float) = (int) SVFIELD (sv_player, flags, float) | FL_ONGROUND;
-		SVFIELD (sv_player, groundentity, int) =
+		SVFIELD (sv_player, groundentity, entity) =
 			EDICT_TO_PROG (&sv_pr_state, EDICT_NUM (&sv_pr_state, pmove.physents[onground].info));
 	} else {
 		SVFIELD (sv_player, flags, float) = (int) SVFIELD (sv_player, flags, float) & ~FL_ONGROUND;
