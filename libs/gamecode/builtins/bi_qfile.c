@@ -154,7 +154,10 @@ bi_Qgetline (progs_t *pr)
 	const char *s;
 
 	s = Qgetline (*h);
-	RETURN_STRING (pr, s);
+	if (s)
+		RETURN_STRING (pr, s);
+	else
+		R_STRING (pr) = 0;
 }
 
 static void
