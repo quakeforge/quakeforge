@@ -1115,17 +1115,19 @@ draw_time (view_t *view)
 static void
 draw_fps (view_t *view)
 {
+	static char   st[80];		//FIXME: overflow
 	double        t;
 	static double lastframetime;
-	static int    lastfps;
+	static double lastfps;
 
 	t = Sys_DoubleTime ();
-	if ((t - lastframetime) >= 1.0) {
-		lastfps = fps_count;
+	if ((t - lastframetime) >= 0.2) {
+		lastfps = fps_count / (t - lastframetime);
 		fps_count = 0;
 		lastframetime = t;
+		snprintf (st, sizeof (st), "%5.1f FPS", lastfps);
 	}
-	draw_smallnum (view, 8, 8, lastfps, 0, 0);
+	draw_string (view, 80, 8, st);
 }
 
 static void
@@ -1517,7 +1519,7 @@ init_views (void)
 	overlay_view->draw = draw_overlay;
 	overlay_view->visible = 0;
 
-	stuff_view = view_new (0, 48, 80, 16, grav_southwest);
+	stuff_view = view_new (0, 48, 144, 16, grav_southwest);
 	stuff_view->draw = draw_stuff;
 
 	if (con_module) {

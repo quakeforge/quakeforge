@@ -1609,18 +1609,18 @@ draw_time (view_t *view)
 static void
 draw_fps (view_t *view)
 {
-	char          st[80];		//FIXME: overflow
+	static char   st[80];		//FIXME: overflow
 	double        t;
 	static double lastframetime;
-	static int    lastfps;
+	static double lastfps;
 
 	t = Sys_DoubleTime ();
-	if ((t - lastframetime) >= 1.0) {
-		lastfps = fps_count;
+	if ((t - lastframetime) >= 0.2) {
+		lastfps = fps_count / (t - lastframetime);
 		fps_count = 0;
 		lastframetime = t;
+		snprintf (st, sizeof (st), "%5.1f FPS", lastfps);
 	}
-	snprintf (st, sizeof (st), "%3d FPS", lastfps);
 	draw_string (view, 80, 8, st);
 }
 
