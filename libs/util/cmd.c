@@ -37,8 +37,21 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
+#ifdef HAVE_FNMATCH_H
+# define model_t sunmodel_t
+# include <fnmatch.h>
+# undef model_t
+#else
+# ifdef WIN32
+# include "fnmatch.h"
+# endif
+#endif
+
 #include <ctype.h>
 #include <errno.h>
+
+#include <sys/types.h>
+#include <dirent.h>
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -55,6 +68,10 @@ static const char rcsid[] =
 
 #include "compat.h"
 #include "exp.h"
+
+#ifndef HAVE_FNMATCH_PROTO
+int         fnmatch (const char *__pattern, const char *__string, int __flags);
+#endif
 
 typedef struct cmdalias_s {
 	struct cmdalias_s *next;
@@ -1928,6 +1945,8 @@ Cmd_UnAlias_f (void)
 	if (alias) {
 		cmdalias_t **a;
 
+		Cmd_RemoveCommand (alias->name);
+		
 		for (a = &cmd_alias; *a != alias; a = &(*a)->next)
 			;
 		*a = alias->next;
@@ -1935,7 +1954,6 @@ Cmd_UnAlias_f (void)
 		free ((char *) alias->name);
 		free ((char *) alias->value);
 		free (alias);
-		Cmd_RemoveCommand (Cmd_Argv(1));
 	} else {
 		Sys_Printf ("Unknown alias \"%s\"\n", s);
 	}
@@ -2321,7 +2339,7 @@ Cmd_CollapsePath (char *str)
 	return 1;
 }
 void
-Cmd_Writefile_f (void)
+Cmd_File_write_f (void)
 {
 	VFile *file;
 	char *path;
@@ -2351,6 +2369,52 @@ Cmd_Writefile_f (void)
 	Qclose (file);
 }
 
+void
+Cmd_File_find_f (void)
+{
+	DIR *directory;
+	struct dirent *entry;
+	char *path;
+	dstring_t *list;
+	
+	if (Cmd_Restricted ()) {
+		Cmd_Error ("file_find: access to restricted command denied.\n");
+		return;
+	}
+	if (Cmd_Argc() < 2 || Cmd_Argc() > 3) {
+		Cmd_Error ("file_find: invalid number of arguments.\n");
+		return;
+	}
+
+	if (Cmd_Argc() == 3) {
+		path = strdup (Cmd_Argv(2));
+		if (!Cmd_CollapsePath (path)) {
+			free (path);
+			Cmd_Error ("file_find: access to restricted directory/file denied.\n");
+			return;
+		}
+		free (path);
+	}
+	directory = opendir (va ("%s/%s", com_gamedir, Cmd_Argv(2)));
+	if (!directory) {
+			Cmd_Error (va ("file_find: could not open directory: %s\n", strerror (errno)));
+			return;
+	}
+	list = dstring_newstr ();
+	while ((entry = readdir (directory))) {
+		if (!fnmatch (Cmd_Argv(1), entry->d_name, 0)) {
+			dstring_appendstr (list, "\n");
+			dstring_appendstr (list, entry->d_name);
+		}
+	}
+	if (list->str[0])
+		Cmd_Return (list->str+1);
+	else
+		Cmd_Return ("");
+	dstring_delete (list);
+}
+			
+	
 void
 Cmd_Eval_f (void)
 {
@@ -2450,7 +2514,8 @@ Cmd_Init (void)
 	Cmd_AddCommand ("randint", Cmd_Randint_f, "Returns a random integer between $1 and $2");
 	Cmd_AddCommand ("streq", Cmd_Streq_f, "Returns 1 if $1 and $2 are the same string, 0 otherwise");
 	Cmd_AddCommand ("strlen", Cmd_Strlen_f, "Returns the length of $1");
-	Cmd_AddCommand ("writefile", Cmd_Writefile_f, "Write $2 to the file $1 in the current gamedir");
+	Cmd_AddCommand ("file_write", Cmd_File_write_f, "Write $2 to the file $1 in the current gamedir");
+	Cmd_AddCommand ("file_find", Cmd_File_find_f, "Finds a file matching pattern $1 in subdirectory $2 of the gamedir.");
 	Cmd_AddCommand ("eval", Cmd_Eval_f, "Evaluates a command.  Useful for callbacks or dynamically generated commands.");
 	Cmd_AddCommand ("legacy", Cmd_Legacy_f, "Adds a command to the legacy buffer");
 	Cmd_SetPure ("legacy");
