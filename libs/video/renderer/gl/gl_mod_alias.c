@@ -225,7 +225,7 @@ vert_order_t *
 GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 {
 	float		  interval;
-	int			  count, numposes, pose, i;
+	int			  count, numposes, pose, i, j;
 	trivertx_t	 *verts;
 	vert_order_t *vo;
 	blended_vert_t *vo_v;
@@ -266,6 +266,7 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 	if (gl_lerp_anim->int_val) {
 		trivertx_t *verts1, *verts2;
 		float       blend;
+		float       v1[3], v2[3];
 
 		e->frame_interval = interval;
 
@@ -286,8 +287,16 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 		if (r_paused || blend > 1)
 			blend = 1;
 
-		verts1 = verts + e->pose1 * count;
-		verts2 = verts + e->pose2 * count;
+		if (paliashdr->mdl.ident == POLYHEADER16)
+		{
+			verts1 = verts + e->pose1 * count * 2;
+			verts2 = verts + e->pose2 * count * 2;
+		}
+		else
+		{
+			verts1 = verts + e->pose1 * count;
+			verts2 = verts + e->pose2 * count;
+		}
 
 		if (!blend) {
 			verts = verts1;
@@ -296,7 +305,21 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 		} else {
 			for (i = 0, vo_v = vo->verts; i < count;
 				 i++, vo_v++, verts1++, verts2++) {
-				VectorBlend (verts1->v, verts2->v, blend, vo_v->vert);
+				if (paliashdr->mdl.ident == POLYHEADER16)
+				{
+					for (j = 0; j < 3; j++)
+					{
+						v1[j] = verts1->v[j] + (verts1
+							+ count)->v[j] /
+							(float)256;
+						v2[j] = verts2->v[j] + (verts2
+							+ count)->v[j] /
+							(float)256;
+					}
+					VectorBlend (v1, v2, blend, vo_v->vert);
+				}
+				else
+					VectorBlend (verts1->v, verts2->v, blend, vo_v->vert);
 				vo_v->lightdot =
 					shadedots[verts1->lightnormalindex] * (1 - blend)
 					+ shadedots[verts2->lightnormalindex] * blend;
@@ -306,10 +329,20 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 			return vo;
 		}
 	} else {
-		verts += pose * count;
+		if (paliashdr->mdl.ident == POLYHEADER16)
+			verts += pose * count * 2;
+		else
+			verts += pose * count;
 	}
 	for (i = 0, vo_v = vo->verts; i < count; i++, vo_v++, verts++) {
-		VectorCopy (verts->v, vo_v->vert);
+		if (paliashdr->mdl.ident == POLYHEADER16)
+		{
+			for (j = 0; j < 3; j++)
+				vo_v->vert[j] = verts->v[j] + (verts +
+					count)->v[j] / (float)256;
+		}
+		else
+			VectorCopy (verts->v, vo_v->vert);
 		vo_v->lightdot = shadedots[verts->lightnormalindex];
 	}
 	lastposenum = pose;
