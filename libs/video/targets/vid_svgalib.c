@@ -64,6 +64,8 @@
 
 void        VGA_UpdatePlanarScreen (void *srcbuffer);
 
+cvar_t      *vid_fullscreen;
+
 cvar_t      *vid_system_gamma;
 
 static int  num_modes, current_mode;
