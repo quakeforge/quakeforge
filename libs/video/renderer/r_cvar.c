@@ -60,7 +60,6 @@ cvar_t     *gl_dlight_smooth;
 cvar_t     *gl_driver;
 cvar_t     *gl_fb_bmodels;
 cvar_t     *gl_fb_models;
-cvar_t     *gl_fires;
 cvar_t     *gl_keeptjunctions;
 cvar_t     *gl_lerp_anim;
 cvar_t     *gl_lightmap_align;
@@ -179,8 +178,6 @@ R_Init_Cvars (void)
 							  "Toggles fullbright color support for bmodels");
 	gl_fb_models = Cvar_Get ("gl_fb_models", "1", CVAR_ARCHIVE, NULL,
 							 "Toggles fullbright color support for models");
-	gl_fires = Cvar_Get ("gl_fires", "0", CVAR_ARCHIVE, NULL,
-						 "Toggles lavaball and rocket fireballs");
 	gl_keeptjunctions = Cvar_Get ("gl_keeptjunctions", "1", CVAR_ARCHIVE, NULL,
 								  "Set to 0 to turn off colinear vertexes "
 								  "upon level load.");
