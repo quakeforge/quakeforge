@@ -97,9 +97,12 @@ allocate_stuff (void)
 		}
 	}
 	num_relocs += count_relocs (pr.relocs);
-	defs = calloc (num_defs, sizeof (qfo_def_t));
-	funcs = calloc (num_funcs, sizeof (qfo_func_t));
-	relocs = calloc (num_relocs, sizeof (qfo_reloc_t));
+	if (num_defs)
+		defs = calloc (num_defs, sizeof (qfo_def_t));
+	if (num_funcs)
+		funcs = calloc (num_funcs, sizeof (qfo_func_t));
+	if (num_relocs)
+		relocs = calloc (num_relocs, sizeof (qfo_reloc_t));
 }
 
 static string_t
@@ -364,29 +367,43 @@ qfo_read (VFile *file)
 		return 0;
 	}
 
-	qfo->code = malloc (qfo->code_size * sizeof (dstatement_t));
-	qfo->data = malloc (qfo->data_size * sizeof (pr_type_t));
+	if (qfo->code_size)
+		qfo->code = malloc (qfo->code_size * sizeof (dstatement_t));
+	if (qfo->data_size)
+		qfo->data = malloc (qfo->data_size * sizeof (pr_type_t));
 	if (qfo->far_data_size)
 		qfo->far_data = malloc (qfo->far_data_size * sizeof (pr_type_t));
-	qfo->strings = malloc (qfo->strings_size);
-	qfo->relocs = malloc (qfo->num_relocs * sizeof (qfo_reloc_t));
-	qfo->defs = malloc (qfo->num_defs * sizeof (qfo_def_t));
-	qfo->funcs = malloc (qfo->num_funcs * sizeof (qfo_func_t));
+	if (qfo->strings_size)
+		qfo->strings = malloc (qfo->strings_size);
+	if (qfo->num_relocs)
+		qfo->relocs = malloc (qfo->num_relocs * sizeof (qfo_reloc_t));
+	if (qfo->num_defs)
+		qfo->defs = malloc (qfo->num_defs * sizeof (qfo_def_t));
+	if (qfo->num_funcs)
+		qfo->funcs = malloc (qfo->num_funcs * sizeof (qfo_func_t));
 	if (qfo->num_lines)
 		qfo->lines = malloc (qfo->num_lines * sizeof (pr_lineno_t));
-	qfo->types = malloc (qfo->types_size);
+	if (qfo->types_size)
+		qfo->types = malloc (qfo->types_size);
 
-	Qread (file, qfo->code, qfo->code_size * sizeof (dstatement_t));
-	Qread (file, qfo->data, qfo->data_size * sizeof (pr_type_t));
+	if (qfo->code_size)
+		Qread (file, qfo->code, qfo->code_size * sizeof (dstatement_t));
+	if (qfo->data_size)
+		Qread (file, qfo->data, qfo->data_size * sizeof (pr_type_t));
 	if (qfo->far_data_size)
 		Qread (file, qfo->far_data, qfo->far_data_size * sizeof (pr_type_t));
-	Qread (file, qfo->strings, qfo->strings_size);
-	Qread (file, qfo->relocs, qfo->num_relocs * sizeof (qfo_reloc_t));
-	Qread (file, qfo->defs, qfo->num_defs * sizeof (qfo_def_t));
-	Qread (file, qfo->funcs, qfo->num_funcs * sizeof (qfo_func_t));
+	if (qfo->strings_size)
+		Qread (file, qfo->strings, qfo->strings_size);
+	if (qfo->num_relocs)
+		Qread (file, qfo->relocs, qfo->num_relocs * sizeof (qfo_reloc_t));
+	if (qfo->num_defs)
+		Qread (file, qfo->defs, qfo->num_defs * sizeof (qfo_def_t));
+	if (qfo->num_funcs)
+		Qread (file, qfo->funcs, qfo->num_funcs * sizeof (qfo_func_t));
 	if (qfo->num_lines)
 		Qread (file, qfo->lines, qfo->num_lines * sizeof (pr_lineno_t));
-	Qread (file, qfo->types, qfo->types_size);
+	if (qfo->types_size)
+		Qread (file, qfo->types, qfo->types_size);
 
 	for (st = qfo->code; st - qfo->code < qfo->code_size; st++) {
 		st->op = LittleLong (st->op);
