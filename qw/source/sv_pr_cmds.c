@@ -1634,6 +1634,46 @@ PF_multicast (progs_t *pr)
 	SV_Multicast (o, to);
 }
 
+/*
+	PF_strlen
+
+	float(string s) strlen
+*/
+void
+PF_strlen (progs_t *pr)
+{
+	char *s;
+
+	s = G_STRING (pr, OFS_PARM0);
+	G_FLOAT (pr, OFS_RETURN) = strlen(s);
+}
+
+/*
+	PF_charcount
+
+	float(string char, string s) charcount
+*/
+void
+PF_charcount (progs_t *pr)
+{
+	char *s;
+	char goal;
+	int count;
+
+	goal = (G_STRING (pr, OFS_PARM0))[0];
+	if (goal == '\0')
+		G_FLOAT (pr, OFS_RETURN) = 0;
+
+	count = 0;
+	s = G_STRING (pr, OFS_PARM1);
+	while (*s) {
+		if (*s == goal)
+			count++;
+		s++;
+	}
+	G_FLOAT (pr, OFS_RETURN) = count;
+}
+
 
 void
 PF_Fixme (progs_t *pr)
@@ -1790,6 +1830,8 @@ builtin_t   sv_builtins[] = {
 	PF_Fixme,
 	PF_Fixme,
 	PF_Checkextension,
+	PF_strlen,
+	PF_charcount,
 };
 
 int         sv_numbuiltins = sizeof (sv_builtins) / sizeof (sv_builtins[0]);
