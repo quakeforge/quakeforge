@@ -1581,7 +1581,7 @@ Host_Init (void)
 	Cbuf_Execute_Sets ();
 
 	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG, CVAR_ROM, NULL,
-			"user configuration file");
+						   "user configuration file");
 	Cmd_Exec_File (fs_usercfg->string);
 	Cbuf_Execute_Sets ();
 
