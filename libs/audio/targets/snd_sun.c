@@ -253,7 +253,7 @@ SNDDMA_UnblockSound (void)
 
 QFPLUGIN plugin_t *
 snd_output_sun_PluginInfo (void) {
-	plugin_info.type = qfp_sound;
+	plugin_info.type = qfp_snd_output;
 	plugin_info.api_version = QFPLUGIN_VERSION;
 	plugin_info.plugin_version = "0.1";
 	plugin_info.description = "SUN digital output";
@@ -266,11 +266,11 @@ snd_output_sun_PluginInfo (void) {
 
 	plugin_info_data.general = &plugin_info_general_data;
 	plugin_info_data.input = NULL;
-	plugin_info_data.sound = &plugin_info_sound_data;
+	plugin_info_data.snd_output = &plugin_info_sound_data;
 
 	plugin_info_funcs.general = &plugin_info_general_funcs;
 	plugin_info_funcs.input = NULL;
-	plugin_info_funcs.sound = &plugin_info_sound_funcs;
+	plugin_info_funcs.snd_output = &plugin_info_sound_funcs;
 
 	plugin_info_general_funcs.p_Init = NULL; //SNDDMA_Init_Cvars;
 	plugin_info_general_funcs.p_Shutdown = NULL;
