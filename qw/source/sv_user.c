@@ -349,8 +349,8 @@ SV_Spawn_f (void)
 // make sure they're not trying to cheat by spawning without prespawning
 	if (host_client->prespawned == false) {
 		SV_BroadcastPrintf (PRINT_HIGH,
-							va ("%s has been kicked for trying to spawn before prespawning!\n",
-								host_client->name));
+							"%s has been kicked for trying to spawn before prespawning!\n",
+							host_client->name);
 		SV_DropClient (host_client);
 		return;
 	}
@@ -480,9 +480,9 @@ SV_Begin_f (void)
 	// make sure they're not trying to cheat by beginning without spawning
 	if (host_client->spawned == false) {
 		SV_BroadcastPrintf (PRINT_HIGH,
-							va ("%s has been kicked for trying to begin before spawning!\n"
+							"%s has been kicked for trying to begin before spawning!\n"
 									"Have a nice day!\n", // 1 string!
-								host_client->name));
+								host_client->name);
 		SV_DropClient (host_client);
 		return;
 	}
@@ -1451,7 +1451,7 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 	if (!inside) {						// prevent infinite loop
 		host_client->msecs += ucmd->msec;
 
-		if ((sv_timekick->int_val)
+		if (!host_client->spectator && sv_timekick->int_val
 			&& ((tmp_time = realtime - host_client->last_check) >=
 				sv_timekick_interval->value)) {
 
@@ -1461,17 +1461,15 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 				&& (host_client->msecs > tmp_time1)) {
 				host_client->msec_cheating++;
 				SV_BroadcastPrintf (PRINT_HIGH,
-									va
-									("%s thinks there are %d ms in %d seconds (Strike %d/%d)\n",
-									 host_client->name, host_client->msecs,
-									 (int) tmp_time, host_client->msec_cheating,
-									 sv_timekick->int_val));
+									"%s thinks there are %d ms in %d seconds (Strike %d/%d)\n",
+									host_client->name, host_client->msecs,
+									(int) tmp_time, host_client->msec_cheating,
+									sv_timekick->int_val);
 
 				if (host_client->msec_cheating >= sv_timekick->int_val) {
-					SV_BroadcastPrintf (PRINT_HIGH, va ("Strike %d for %s!!\n",
-														host_client->
-														msec_cheating,
-														host_client->name));
+					SV_BroadcastPrintf (PRINT_HIGH, "Strike %d for %s!!\n",
+													host_client->msec_cheating,
+													host_client->name);
 					SV_BroadcastPrintf (PRINT_HIGH,
 										"Please see http://www.quakeforge.net/speed_cheat.php for information on QuakeForge's time cheat protection. That page explains how some may be cheating without knowing it.\n");
 					SV_DropClient (host_client);
