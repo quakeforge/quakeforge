@@ -34,14 +34,14 @@
 static __attribute__ ((unused)) const char rcsid[] =
 	"$Id$";
 
+#ifdef HAVE_VORBIS
+
 #ifdef HAVE_STRING_H
 # include "string.h"
 #endif
 #ifdef HAVE_STRINGS_H
 # include "strings.h"
 #endif
-
-#ifdef HAVE_VORBIS
 
 #include <stdlib.h>
 #include <vorbis/vorbisfile.h>
@@ -279,20 +279,4 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 	}
 }
 
-#else//HAVE_VORBIS
-
-#include "QF/sound.h"
-#include "QF/sys.h"
-#include "QF/quakeio.h"
-
-#include "snd_render.h"
-
-void
-SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
-{
-	Sys_Printf ("Ogg/Vorbis support not available, sorry.\n");
-	Qclose (file);
-	free (realname);
-	return;
-}
 #endif//HAVE_VORBIS

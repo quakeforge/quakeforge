@@ -113,11 +113,13 @@ SND_Load (sfx_t *sfx)
 	}
 	Qread (file, buf, 4);
 	Qseek (file, 0, SEEK_SET);
+#ifdef HAVE_VORBIS
 	if (strnequal ("OggS", buf, 4)) {
 		Sys_DPrintf ("SND_Load: ogg file\n");
 		SND_LoadOgg (file, sfx, realname);
 		return;
 	}
+#endif
 	if (strnequal ("RIFF", buf, 4)) {
 		Sys_DPrintf ("SND_Load: wav file\n");
 		SND_LoadWav (file, sfx, realname);
