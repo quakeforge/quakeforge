@@ -82,7 +82,7 @@ GIB_Thread_Remove (gib_thread_t * thread)
 	if (thread->next)
 		thread->next->prev = thread->prev;
 	else
-		gib_thread_last = thread->next;
+		gib_thread_last = thread->prev;
 }
 
 gib_thread_t *
