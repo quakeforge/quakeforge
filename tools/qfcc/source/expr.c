@@ -1941,9 +1941,13 @@ return_expr (function_t *f, expr_t *e)
 			t = f->def->type->aux_type;
 			e->type = expr_types[t->type];
 		}
-		if (!type_assignable (f->def->type->aux_type, t))
-			return error (e, "type mismatch for return value of %s",
-						  f->def->name);
+		if (!type_assignable (f->def->type->aux_type, t)) {
+			if (!options.traditional)
+				return error (e, "type mismatch for return value of %s",
+							  f->def->name);
+			warning (e, "type mismatch for return value of %s",
+					 f->def->name);
+		}
 	}
 	return new_unary_expr ('r', e);
 }
