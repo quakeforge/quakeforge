@@ -237,7 +237,7 @@ SND_PaintChannels (int endtime)
 				continue;
 			if (!ch->leftvol && !ch->rightvol)
 				continue;
-			sc = Cache_Get (&ch->sfx->cache);
+			sc = Cache_TryGet (&ch->sfx->cache);
 			if (!sc)
 				continue;
 

@@ -146,6 +146,7 @@ void Cache_Report (void);
 void Cache_Add (cache_user_t *c, const char *filename, cache_loader_t loader);
 void Cache_Remove (cache_user_t *c);
 void *Cache_Get (cache_user_t *c);
+void *Cache_TryGet (cache_user_t *c);
 void Cache_Release (cache_user_t *c);
 
 /* Modes, pick one */

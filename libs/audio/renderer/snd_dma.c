@@ -360,10 +360,9 @@ SND_PrecacheSound (const char *name)
 	sfx = SND_FindName (name);
 
 	// cache it in
-	if (precache->int_val) {
-		Cache_Get (&sfx->cache);
-		Cache_Release (&sfx->cache);
-	}
+	if (precache->int_val)
+		if (Cache_TryGet (&sfx->cache))
+			Cache_Release (&sfx->cache);
 
 	return sfx;
 }
@@ -499,7 +498,7 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin,
 		return;							// not audible at all
 
 	// new channel
-	sc = Cache_Get (&sfx->cache);
+	sc = Cache_TryGet (&sfx->cache);
 	if (!sc) {
 		target_chan->sfx = NULL;
 		return;							// couldn't load the sound's data
@@ -617,7 +616,7 @@ SND_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
 	ss = &channels[total_channels];
 	total_channels++;
 
-	sc = Cache_Get (&sfx->cache);
+	sc = Cache_TryGet (&sfx->cache);
 	if (!sc)
 		return;
 
@@ -899,7 +898,7 @@ SND_SoundList (void)
 	int			size, total;
 	int			load;
 
-	if (Cmd_Argc() >= 2 && !strcmp (Cmd_Argv (1), "known"))
+	if (Cmd_Argc() >= 2 && Cmd_Argv (1)[0])
 		load = 1;
 	else
 		load = 0;
@@ -907,7 +906,7 @@ SND_SoundList (void)
 	total = 0;
 	for (sfx = known_sfx, i = 0; i < num_sfx; i++, sfx++) {
 		if (load)
-			sc = Cache_Get (&sfx->cache);
+			sc = Cache_TryGet (&sfx->cache);
 		else
 			sc = Cache_Check (&sfx->cache);
 

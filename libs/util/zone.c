@@ -999,7 +999,7 @@ Cache_Remove (cache_user_t *c)
 }
 
 void *
-Cache_Get (cache_user_t *c)
+Cache_TryGet (cache_user_t *c)
 {
 	void *mem;
 	CACHE_WRITE_LOCK;
@@ -1009,13 +1009,19 @@ Cache_Get (cache_user_t *c)
 		c->loader (c, Cache_RealAlloc);
 		mem = Cache_RealCheck (c);
 	}
-
-	if (!mem)
-		Sys_Error ("Cache_Get: couldn't get cache!\n");
-
-	(((cache_system_t *)c->data) - 1)->readlock++;
+	if (mem)
+		(((cache_system_t *)c->data) - 1)->readlock++;
 
 	CACHE_WRITE_UNLOCK;
+	return mem;
+}
+
+void *
+Cache_Get (cache_user_t *c)
+{
+	void *mem = Cache_TryGet (c);
+	if (!mem)
+		Sys_Error ("Cache_Get: couldn't get cache!\n");
 	return mem;
 }
 
