@@ -58,6 +58,16 @@
 HWND 		mainwindow;
 #endif
 
+#ifndef SDL_COMPILEDVERSION
+#define SDL_COMPILEDVERSION \
+	SDL_VERSIONNUM(SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL)
+#endif
+
+#ifndef SDL_VERSION_ATLEAST
+#define SDL_VERSION_ATLEAST(X, Y, Z) \
+	(SDL_COMPILEDVERSION >= SDL_VERSIONNUM(X, Y, Z))
+#endif
+
 #define	WARP_WIDTH	320
 #define	WARP_HEIGHT	200
 
@@ -78,7 +88,7 @@ extern void VID_Init8bitPalette (void);
 void
 VID_SDL_GammaCheck (void)
 {
-#if SDL_VERSION_ATLEAST(1, 1, 0)
+#if SDL_VERSION_ATLEAST(1, 2, 0)
 	Uint16 redtable[256], greentable[256], bluetable[256];
 #else
 	Uint8 redtable[256], greentable[256], bluetable[256];
