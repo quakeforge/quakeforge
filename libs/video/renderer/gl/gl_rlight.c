@@ -44,9 +44,9 @@
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 
+#include "r_cvar.h"
 #include "r_local.h"
 #include "r_shared.h"
-#include "r_cvar.h"
 
 extern float v_blend[4];
 
