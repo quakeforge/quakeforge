@@ -678,3 +678,8 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	/* return success of application */
 	return TRUE;
 }
+
+void
+Sys_DebugLog (char *file, char *fmt, ...)
+{
+}

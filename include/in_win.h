@@ -28,7 +28,7 @@
 #ifndef _IN_WIN_H
 #define _IN_WIN_H
 
-#include "protocol.h" // FIXME: Do away with this.
+#include "QF/qtypes.h"
 
 extern qboolean      mouseactive;
 extern float         mouse_x, mouse_y;
@@ -44,7 +44,7 @@ extern void IN_RestoreOriginalMouseState (void);
 extern void IN_Init (void);
 extern void IN_Shutdown (void);
 extern void IN_MouseEvent (int mstate);
-extern void IN_MouseMove (usercmd_t *cmd);
+//extern void IN_MouseMove (usercmd_t *cmd);
 extern void IN_Move (void);
 extern void IN_Accumulate (void);
 extern void IN_ClearStates (void);

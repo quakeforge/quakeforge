@@ -30,9 +30,11 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
+#include <ctype.h>
 #include <windows.h>
 #include "conproc.h"
+
+#include "QF/console.h"
 
 HANDLE      heventDone;
 HANDLE      hfileBuffer;
@@ -56,8 +58,6 @@ void
 InitConProc (HANDLE hFile, HANDLE heventParent, HANDLE heventChild)
 {
 	DWORD       dwID;
-	CONSOLE_SCREEN_BUFFER_INFO info;
-	int         wheight, wwidth;
 
 // ignore if we don't have all the events.
 	if (!hFile || !heventParent || !heventChild)
@@ -71,14 +71,14 @@ InitConProc (HANDLE hFile, HANDLE heventParent, HANDLE heventChild)
 	heventDone = CreateEvent (NULL, FALSE, FALSE, NULL);
 
 	if (!heventDone) {
-		Con_SafePrintf ("Couldn't create heventDone\n");
+		Con_Printf ("Couldn't create heventDone\n");
 		return;
 	}
 
 	if (!CreateThread (NULL,
 					   0, (LPTHREAD_START_ROUTINE) RequestProc, 0, 0, &dwID)) {
 		CloseHandle (heventDone);
-		Con_SafePrintf ("Couldn't create QHOST thread\n");
+		Con_Printf ("Couldn't create QHOST thread\n");
 		return;
 	}
 // save off the input/output handles.
@@ -120,7 +120,7 @@ RequestProc (DWORD dwNichts)
 
 		// hfileBuffer is invalid.  Just leave.
 		if (!pBuffer) {
-			Con_SafePrintf ("Invalid hfileBuffer\n");
+			Con_Printf ("Invalid hfileBuffer\n");
 			break;
 		}
 

@@ -197,10 +197,10 @@ nq_sgl_DEPENDENCIES=$(client_LIB_DEPS)
 #
 # SGI/Microsoft WGL (Windows OpenGL)
 #
-wgl_SOURCES=	vid_wgl.c
+wgl_SOURCES=	vid_wgl.c conproc.c
 
 nq_wgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) $(wgl_SOURCES) in_win.c
-nq_wgl_LDADD=	$(client_LIBS) $(GLX_LIBS) -lgdi32
+nq_wgl_LDADD=	$(client_LIBS) $(GLX_LIBS) -lgdi32 -lcomctl32
 nq_wgl_DEPENDENCIES=$(client_LIB_DEPS)
 
 #
