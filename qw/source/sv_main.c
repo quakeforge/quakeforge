@@ -149,6 +149,9 @@ cvar_t     *hostname;
 VFile      *sv_logfile;
 VFile      *sv_fraglogfile;
 
+cvar_t     *sv_gc;
+int         sv_gc_count = 0;
+
 void        SV_AcceptClient (netadr_t adr, int userid, char *userinfo);
 void        Master_Shutdown (void);
 
@@ -1421,6 +1424,25 @@ SV_CheckVars (void)
 }
 
 /*
+	SV_GarbageCollect
+
+	Run string GC on progs every sv_gc frames
+*/
+void
+SV_GarbageCollect ()
+{
+	if (sv_gc->int_val > 0)	{
+		sv_gc_count++;
+		if (sv_gc_count >= sv_gc->int_val) {
+			sv_gc_count = 0;
+			PR_GarbageCollect (&sv_pr_state);
+		}
+	} else { // Make sure the count gets reset if the gc is disabled.  I could use a callback, but I'm lazy
+		sv_gc_count = 0;
+	}
+}
+
+/*
 	SV_Frame
 */
 void
@@ -1465,6 +1487,8 @@ SV_Frame (float time)
 
 	// send a heartbeat to the master if needed
 	Master_Heartbeat ();
+
+	SV_GarbageCollect ();
 
 	// collect timing statistics
 	end = Sys_DoubleTime ();
@@ -1633,6 +1657,8 @@ SV_InitLocal (void)
 	 
 	pausable = Cvar_Get ("pausable", "1", CVAR_NONE, NULL,
 			"Toggle if server can be paused 1 is on, 0 is off");
+
+	sv_gc = Cvar_Get ("sv_gc", "0", CVAR_NONE, NULL, "Number of frames to wait before running string GC.  0 disables.");
 
 	// DoS protection
 	Cmd_AddCommand ("netdosexpire", SV_netDoSexpire_f, "FIXME: part of DoS protection obviously, but I don't know what it does. No Description");
