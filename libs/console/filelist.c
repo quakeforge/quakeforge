@@ -120,7 +120,7 @@ Con_Maplist_f (void)
 {
 	filelist_t *maplist = QFS_FilelistNew ();
 	
-	QFS_FilelistFill (maplist, "maps/", "bsp");
+	QFS_FilelistFill (maplist, "maps/", "bsp", 1);
 	
 	filelist_print (maplist);
 	QFS_FilelistFree (maplist);
@@ -131,7 +131,7 @@ Con_Skinlist_f (void)
 {
 	filelist_t *skinlist = QFS_FilelistNew ();
 	
-	QFS_FilelistFill (skinlist, "skins/", "pcx");
+	QFS_FilelistFill (skinlist, "skins/", "pcx", 1);
 
 	filelist_print (skinlist);
 	QFS_FilelistFree (skinlist);
@@ -156,8 +156,8 @@ Con_Skyboxlist_f (void)
 	filelist_t *skyboxlist = QFS_FilelistNew ();
 	filelist_t *cutlist = QFS_FilelistNew ();
 
-	QFS_FilelistFill (skyboxlist, "env/", "tga");
-	QFS_FilelistFill (skyboxlist, "env/", "pcx");
+	QFS_FilelistFill (skyboxlist, "env/", "tga", 1);
+	QFS_FilelistFill (skyboxlist, "env/", "pcx", 1);
 
 	for (i = 0; i < skyboxlist->count; i++) {
 		if (strlen(skyboxlist->list[i]) > strlen(sb_endings[0]) && strcmp(skyboxlist->list[i] + strlen(skyboxlist->list[i]) - strlen(sb_endings[0]), sb_endings[0]) == 0) {
@@ -176,7 +176,7 @@ Con_Skyboxlist_f (void)
 				
 			}
 			if (c == 5)
-				QFS_FilelistFill (cutlist, basename, 0);
+				QFS_FilelistFill (cutlist, basename, 0, 0);
 		}
 	}
 	filelist_print (cutlist);
@@ -189,7 +189,7 @@ Con_Demolist_QWD_f (void)
 {
 	filelist_t *demolist = QFS_FilelistNew ();
 	
-	QFS_FilelistFill (demolist, "", "qwd");
+	QFS_FilelistFill (demolist, "", "qwd", 1);
 	
 	filelist_print (demolist);
 	QFS_FilelistFree (demolist);
@@ -202,7 +202,7 @@ Con_Demolist_DEM_f (void)
 {
 	filelist_t *demolist = QFS_FilelistNew ();
 	
-	QFS_FilelistFill (demolist, "", "dem");
+	QFS_FilelistFill (demolist, "", "dem", 1);
 
 	filelist_print (demolist);
 	QFS_FilelistFree (demolist);

@@ -1,5 +1,5 @@
 /*
-	bi_file.c
+	rua_qfs.c
 
 	CSQC file builtins
 
@@ -45,6 +45,11 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/zone.h"
 
 #include "rua_internal.h"
+
+typedef struct {
+	int         count;
+	pointer_t   list;
+} qfslist_t;
 
 static void
 check_buffer (progs_t *pr, pr_type_t *buf, int count, const char *name)
@@ -117,11 +122,39 @@ bi_QFS_WriteFile (progs_t *pr)
 	QFS_WriteFile (va ("%s/%s", qfs_gamedir->dir.def, filename), buf, count);
 }
 
+static void
+bi_QFS_Filelist (progs_t *pr)
+{
+	filelist_t *filelist = QFS_FilelistNew ();
+	qfslist_t  *list;
+	string_t   *strings;
+	int         i;
+
+	QFS_FilelistFill (filelist, P_GSTRING (pr, 0), P_GSTRING (pr, 1),
+					  P_INT (pr, 2));
+
+	list = PR_Zone_Malloc (pr, sizeof (list) + filelist->count * 4);
+	list->count = filelist->count;
+	strings = (string_t *) list + 1;
+	list->list = POINTER_TO_PROG (pr, strings);
+	for (i = 0; i < filelist->count; i++)
+		strings[i] = PR_SetString (pr, filelist->list[i]);
+	RETURN_POINTER (pr, list);
+}
+
+static void
+bi_QFS_FilelistFree (progs_t *pr)
+{
+	PR_Zone_Free (pr, P_GPOINTER (pr, 0));
+}
+
 static builtin_t builtins[] = {
-	{"QFS_Rename",		bi_QFS_Rename,		-1},
-	{"QFS_LoadFile",	bi_QFS_LoadFile,	-1},
-	{"QFS_OpenFile",	bi_QFS_OpenFile,	-1},
-	{"QFS_WriteFile",	bi_QFS_WriteFile,	-1},
+	{"QFS_Rename",			bi_QFS_Rename,			-1},
+	{"QFS_LoadFile",		bi_QFS_LoadFile,		-1},
+	{"QFS_OpenFile",		bi_QFS_OpenFile,		-1},
+	{"QFS_WriteFile",		bi_QFS_WriteFile,		-1},
+	{"QFS_Filelist",		bi_QFS_Filelist,		-1},
+	{"QFS_FilelistFree",	bi_QFS_FilelistFree,	-1},
 	{0}
 };
 
