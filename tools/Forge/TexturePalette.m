@@ -99,16 +99,16 @@ void TEX_ImageFromMiptex (miptex_t *qtex)
 	width = LittleLong(qtex->width);
 	height = LittleLong(qtex->height);
 
-	bm = [[NSBitmapImageRep alloc]	
-			initWithBitmapDataPlanes:	NULL 
-			pixelsWide:		width 
+	bm = [[NSBitmapImageRep alloc]
+			initWithBitmapDataPlanes: NULL
+			pixelsWide:		width
 			pixelsHigh:		height 
 			bitsPerSample:	8 
 			samplesPerPixel:3 
 			hasAlpha:		NO
 			isPlanar:		NO 
-			colorSpaceName:		NSCalibratedRGBColorSpace 
-			bytesPerRow:	width*4 
+			colorSpaceName:	NSCalibratedRGBColorSpace 
+			bytesPerRow:	width*4
 			bitsPerPixel:	32];
 	
 	dest = (unsigned *)[bm bitmapData];
