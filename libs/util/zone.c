@@ -40,11 +40,13 @@
 
 #undef MMAPPED_CACHE
 #ifdef MMAPPED_CACHE
-# include <unistd.h>
+# ifdef HAVE_UNISTD_H
+#  include <unistd.h>
+# endif
+# include <fcntl.h>
 # include <sys/mman.h>
 # include <sys/types.h>
 # include <sys/stat.h>
-# include <fcntl.h>
 # ifndef _POSIX_MAPPED_FILES
 #  error No _POSIX_MAPPED_FILES?  erk!
 # endif
@@ -95,7 +97,9 @@ struct memzone_s
 	memblock_t  *rover;
 };
 
-void Z_ClearZone (memzone_t *zone, int size)
+
+void
+Z_ClearZone (memzone_t *zone, int size)
 {
 	memblock_t	*block;
 	
@@ -114,8 +118,8 @@ void Z_ClearZone (memzone_t *zone, int size)
 	block->size = size - sizeof(memzone_t);
 }
 
-
-void Z_Free (memzone_t *zone, void *ptr)
+void
+Z_Free (memzone_t *zone, void *ptr)
 {
 	memblock_t	*block, *other;
 	
@@ -152,8 +156,8 @@ void Z_Free (memzone_t *zone, void *ptr)
 	}
 }
 
-
-void *Z_Malloc (memzone_t *zone, int size)
+void
+*Z_Malloc (memzone_t *zone, int size)
 {
 	void	*buf;
 
@@ -167,9 +171,10 @@ void *Z_Malloc (memzone_t *zone, int size)
 	return buf;
 }
 
-void *Z_TagMalloc (memzone_t *zone, int size, int tag)
+void
+*Z_TagMalloc (memzone_t *zone, int size, int tag)
 {
-	int		extra;
+	int			 extra;
 	memblock_t	*start, *rover, *new, *base;
 
 	if (!tag)
@@ -220,8 +225,8 @@ void *Z_TagMalloc (memzone_t *zone, int size, int tag)
 	return (void *) ((byte *)base + sizeof(memblock_t));
 }
 
-
-void Z_Print (memzone_t *zone)
+void
+Z_Print (memzone_t *zone)
 {
 	memblock_t	*block;
 	
@@ -243,8 +248,8 @@ void Z_Print (memzone_t *zone)
 	}
 }
 
-
-void Z_CheckHeap (memzone_t *zone)
+void
+Z_CheckHeap (memzone_t *zone)
 {
 	memblock_t	*block;
 	
@@ -253,9 +258,11 @@ void Z_CheckHeap (memzone_t *zone)
 		if (block->next == &zone->blocklist)
 			break;			// all blocks have been hit	
 		if ( (byte *)block + block->size != (byte *)block->next)
-			Sys_Error ("Z_CheckHeap: block size does not touch the next block\n");
+			Sys_Error ("Z_CheckHeap: block size does not touch the next "
+					   "block\n");
 		if ( block->next->prev != block)
-			Sys_Error ("Z_CheckHeap: next block doesn't have proper back link\n");
+			Sys_Error ("Z_CheckHeap: next block doesn't have proper back "
+					   "link\n");
 		if (!block->tag && !block->next->tag)
 			Sys_Error ("Z_CheckHeap: two consecutive free blocks\n");
 	}
@@ -272,12 +279,11 @@ typedef struct {
 
 byte       *hunk_base;
 int         hunk_size;
-
 int         hunk_low_used;
 int         hunk_high_used;
+int         hunk_tempmark;
 
 qboolean    hunk_tempactive;
-int         hunk_tempmark;
 
 void        R_FreeTextures (void);
 
@@ -311,10 +317,9 @@ Hunk_Check (void)
 void
 Hunk_Print (qboolean all)
 {
-	hunk_t     *h, *next, *endlow, *starthigh, *endhigh;
-	int         count, sum;
-	int         totalblocks;
 	char        name[9];
+	hunk_t     *h, *next, *endlow, *starthigh, *endhigh;
+	int         count, sum, totalblocks;
 
 	name[8] = 0;
 	count = 0;
@@ -372,7 +377,6 @@ Hunk_Print (qboolean all)
 
 	Con_Printf ("-------------------------\n");
 	Con_Printf ("%8i total blocks\n", totalblocks);
-
 }
 
 void       *
@@ -523,22 +527,20 @@ Hunk_TempAlloc (int size)
 	return buf;
 }
 
-/*
-	CACHE MEMORY
-*/
+/* CACHE MEMORY */
 
 typedef struct cache_system_s {
-	int         size;					// including this header
 	cache_user_t *user;
 	char        name[16];
+	int         size;					// including this header
 	struct cache_system_s *prev, *next;
 	struct cache_system_s *lru_prev, *lru_next;	// for LRU flushing 
 } cache_system_t;
 
 cache_system_t *Cache_TryAlloc (int size, qboolean nobottom);
-void Cache_Profile (void);
-
 cache_system_t cache_head;
+
+void Cache_Profile (void);
 
 #ifndef MMAPPED_CACHE
 void
@@ -779,7 +781,8 @@ Cache_Init (void)
 	cache_head.lru_next = cache_head.lru_prev = &cache_head;
 
 	Cmd_AddCommand ("flush", Cache_Flush, "Clears the current game cache");
-	Cmd_AddCommand ("cache_profile", Cache_Profile, "Prints a profile of the current cache");
+	Cmd_AddCommand ("cache_profile", Cache_Profile, "Prints a profile of "
+					"the current cache");
 }
 
 /*
@@ -863,14 +866,12 @@ Cache_Alloc (cache_user_t *c, int size, const char *name)
 }
 
 void
-Cache_Profile ()
+Cache_Profile (void)
 {
 	cache_system_t *cs;
 	unsigned int i;
-	unsigned int items[31] = {};
-	unsigned int sizes[31] = {};
-	int count = 0;
-	int total = 0;
+	unsigned int items[31] = {}, sizes[31] = {};
+	int count = 0, total = 0;
 
 	cs = cache_head.next;
 	while (cs != &cache_head) {
