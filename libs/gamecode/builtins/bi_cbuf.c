@@ -30,25 +30,46 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#include <stdlib.h>
+
 #include "QF/cbuf.h"
 #include "QF/idparse.h" // For now, use the id console parser
 #include "QF/progs.h"
 
-static cbuf_t *cbuf; //FIXME use a properly allocated cbuf rather than this hack
 
-static inline void
-check_cbuf (void)
+typedef struct {
+	cbuf_t     *cbuf;
+} cbuf_resources_t;
+
+static cbuf_t *
+get_cbuf (progs_t *pr, int arg, const char *func)
 {
+	pr_type_t  *handle;
+	cbuf_t     *cbuf;
+
+	if (arg == 0) {
+		cbuf_resources_t *res = PR_Resources_Find (pr, "Cbuf");
+		cbuf = res->cbuf;
+	} else {
+		if (arg <= ((pr_type_t *) pr->zone - pr->pr_globals)
+			|| arg >= (pr->zone_size / sizeof (pr_type_t)))
+			PR_RunError (pr, "%s: Invalid cbuf_t", func);
+
+		handle = pr->pr_globals + arg;
+
+		cbuf = *(cbuf_t **)handle;
+	}
 	if (!cbuf)
-		cbuf = Cbuf_New (&id_interp);
+		PR_RunError (pr, "Invalid cbuf_t");
+
+	return cbuf;
 }
 
 static void
 bi_Cbuf_AddText (progs_t *pr)
 {
 	const char *text = P_STRING (pr, 0);
-
-	check_cbuf ();
+	cbuf_t     *cbuf = get_cbuf (pr, 0, __FUNCTION__);
 	Cbuf_AddText (cbuf, text);
 }
 
@@ -56,30 +77,44 @@ static void
 bi_Cbuf_InsertText (progs_t *pr)
 {
 	const char *text = P_STRING (pr, 0);
-
-	check_cbuf ();
+	cbuf_t     *cbuf = get_cbuf (pr, 0, __FUNCTION__);
 	Cbuf_InsertText (cbuf, text);
 }
 
 static void
 bi_Cbuf_Execute (progs_t *pr)
 {
-	check_cbuf ();
+	cbuf_t     *cbuf = get_cbuf (pr, 0, __FUNCTION__);
 	Cbuf_Execute (cbuf);
 }
 
 static void
 bi_Cbuf_Execute_Sets (progs_t *pr)
 {
-	check_cbuf ();
+	cbuf_t     *cbuf = get_cbuf (pr, 0, __FUNCTION__);
 	Cbuf_Execute_Sets (cbuf);
+}
+
+static void
+bi_cbuf_clear (progs_t *pr, void *data)
+{
 }
 
 void
 Cbuf_Progs_Init (progs_t *pr)
 {
+	cbuf_resources_t *res = calloc (sizeof (cbuf_resources_t), 0);
+	PR_Resources_Register (pr, "Cbuf", res, bi_cbuf_clear);
+
 	PR_AddBuiltin (pr, "Cbuf_AddText", bi_Cbuf_AddText, -1);
 	PR_AddBuiltin (pr, "Cbuf_InsertText", bi_Cbuf_InsertText, -1);
 	PR_AddBuiltin (pr, "Cbuf_Execute", bi_Cbuf_Execute, -1);
 	PR_AddBuiltin (pr, "Cbuf_Execute_Sets", bi_Cbuf_Execute_Sets, -1);
+}
+
+void
+Cbuf_Progs_SetCbuf (progs_t *pr, cbuf_t *cbuf)
+{
+	cbuf_resources_t *res = PR_Resources_Find (pr, "Cbuf");
+	res->cbuf = cbuf;
 }

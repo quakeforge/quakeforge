@@ -476,6 +476,7 @@ Menu_Load (void)
 		return;
 	}
 	PR_InitRuntime (&menu_pr_state);
+	Cbuf_Progs_SetCbuf (&menu_pr_state, con_data.cbuf);
 	PR_ExecuteProgram (&menu_pr_state, menu_init);
 }
 
