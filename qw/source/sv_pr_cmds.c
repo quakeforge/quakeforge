@@ -1819,156 +1819,125 @@ PF_Checkextension (progs_t *pr)
 
 builtin_t   sv_builtins[] = {
 	PF_Fixme,
-	PF_makevectors,						// void(entity e)   makevectors
-										// = #1;
-	PF_setorigin,						// void(entity e, vector o) setorigin
-										// = #2;
-	PF_setmodel,						// void(entity e, string m) setmodel
-										// = #3;
-	PF_setsize,							// void(entity e, vector min, vector
-										// max) setsize = #4;
-	PF_Fixme,							// void(entity e, vector min, vector
-										// max) setabssize = #5;
-	PF_break,							// void() break                     = 
-										// #6;
-	PF_random,							// float() random
-										// = #7;
-	PF_sound,							// void(entity e, float chan, string
-										// samp) sound = #8;
-	PF_normalize,						// vector(vector v) normalize
-										// = #9;
-	PF_error,							// void(string e) error             = 
-										// #10;
-	PF_objerror,						// void(string e) objerror
-										// = #11;
-	PF_vlen,							// float(vector v) vlen             = 
-										// #12;
-	PF_vectoyaw,						// float(vector v) vectoyaw     =
-										// #13;
-	PF_Spawn,							// entity() spawn
-										// = #14;
-	PF_Remove,							// void(entity e) remove
-										// = #15;
-	PF_traceline,						// float(vector v1, vector v2, float
-										// tryents) traceline = #16;
-	PF_checkclient,						// entity() clientlist
-										// = #17;
-	PF_Find,							// entity(entity start, .string fld,
-										// string match) find = #18;
-	PF_precache_sound,					// void(string s) precache_sound
-										// = #19;
-	PF_precache_model,					// void(string s) precache_model
-										// = #20;
-	PF_stuffcmd,						// void(entity client, string
-										// s)stuffcmd = #21;
-	PF_findradius,						// entity(vector org, float rad)
-										// findradius = #22;
-	PF_bprint,							// void(string s) bprint
-										// = #23;
-	PF_sprint,							// void(entity client, string s)
-										// sprint = #24;
-	PF_dprint,							// void(string s) dprint
-										// = #25;
-	PF_ftos,							// void(string s) ftos              = 
-										// #26;
-	PF_vtos,							// void(string s) vtos              = 
-										// #27;
-	PF_coredump,
-	PF_traceon,
-	PF_traceoff,
-	PF_eprint,							// void(entity e) debug print an
-										// entire entity
-	PF_walkmove,						// float(float yaw, float dist)
-										// walkmove
-	PF_Fixme,							// float(float yaw, float dist)
-										// walkmove
-	PF_droptofloor,
-	PF_lightstyle,
-	PF_rint,
-	PF_floor,
-	PF_ceil,
-	PF_Fixme,
-	PF_checkbottom,
-	PF_pointcontents,
-	PF_Fixme,
-	PF_fabs,
-	PF_aim,
-	PF_cvar,
-	PF_localcmd,
-	PF_nextent,
-	PF_Fixme,
-	PF_changeyaw,
-	PF_Fixme,
-	PF_vectoangles,
+	PF_makevectors,		// void(entity e) makevectors = #1;
+	PF_setorigin,		// void(entity e, vector o) setorigin = #2;
+	PF_setmodel,		// void(entity e, string m) setmodel = #3;
+	PF_setsize,			// void(entity e, vector min, vector max) setsize = #4;
+	PF_Fixme,			// void(entity e, vector min, vector max) setabssize = #5;
+	PF_break,			// void() break = #6;
+	PF_random,			// float() random = #7;
+	PF_sound,			// void(entity e, float chan, string samp) sound = #8;
+	PF_normalize,		// vector(vector v) normalize = #9;
+	PF_error,			// void(string e) error = #10;
+	PF_objerror,		// void(string e) objerror = #11;
+	PF_vlen,			// float(vector v) vlen = #12;
+	PF_vectoyaw,		// float(vector v) vectoyaw = #13;
+	PF_Spawn,			// entity() spawn = #14;
+	PF_Remove,			// void(entity e) remove = #15;
+	PF_traceline,		// float(vector v1, vector v2, float tryents) traceline = #16;
+	PF_checkclient,		// entity() clientlist = #17;
+	PF_Find,			// entity(entity start, .string fld, string match) find = #18;
+	PF_precache_sound,	// void(string s) precache_sound = #19;
+	PF_precache_model,	// void(string s) precache_model = #20;
+	PF_stuffcmd,		// void(entity client, string s)stuffcmd = #21;
+	PF_findradius,		// entity(vector org, float rad) findradius = #22;
+	PF_bprint,			// void(string s) bprint = #23;
+	PF_sprint,			// void(entity client, string s) sprint = #24;
+	PF_dprint,			// void(string s) dprint = #25;
+	PF_ftos,			// void(string s) ftos = #26;
+	PF_vtos,			// void(string s) vtos = #27;
+	PF_coredump,		// void() coredump = #28
+	PF_traceon,			// void() traceon = #29
+	PF_traceoff,		// void() traceoff = #30
+	PF_eprint,			// void(entity e) = #31 debug print an entire entity
+	PF_walkmove,		// float(float yaw, float dist) walkmove = #32
+	PF_Fixme,			// 33
+	PF_droptofloor,		// float() droptofloor= #34
+	PF_lightstyle,		// void(float style, string value) lightstyle = #35
+	PF_rint,			// float(float v) rint = #36
+	PF_floor,			// float(float v) floor = #37
+	PF_ceil,			// float(float v) ceil = #38
+	PF_Fixme,			// 39
+	PF_checkbottom,		// float(entity e) checkbottom = #40
+	PF_pointcontents,	// float(vector v) pointcontents = #41
+	PF_Fixme,			// 42
+	PF_fabs,			// float(float f) fabs = #43
+	PF_aim,				// vector(entity e, float speed) aim = #44
+	PF_cvar,			// float(string s) cvar = #45
+	PF_localcmd,		// void(string s) localcmd = #46
+	PF_nextent,			// entity(entity e) nextent = #47
+	PF_Fixme,			// 48
+	PF_changeyaw,		// void() ChangeYaw = #49
+	PF_Fixme,			// 50
+	PF_vectoangles,		// vector(vector v) vectoangles = #51
 
-	PF_WriteByte,
-	PF_WriteChar,
-	PF_WriteShort,
-	PF_WriteLong,
-	PF_WriteCoord,
-	PF_WriteAngle,
-	PF_WriteString,
-	PF_WriteEntity,
+	PF_WriteByte,		// void(float to, float f) WriteByte = #52
+	PF_WriteChar,		// void(float to, float f) WriteChar = #53
+	PF_WriteShort,		// void(float to, float f) WriteShort = #54
+	PF_WriteLong,		// void(float to, float f) WriteLong = #55
+	PF_WriteCoord,		// void(float to, float f) WriteCoord = #56
+	PF_WriteAngle,		// void(float to, float f) WriteAngle = #57
+	PF_WriteString,		// void(float to, string s) WriteString = #58
+	PF_WriteEntity,		// void(float to, entity s) WriteEntity = #59
 
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
+	PF_Fixme,			// 60
+	PF_Fixme,			// 61
+	PF_Fixme,			// 62
+	PF_Fixme,			// 63
+	PF_Fixme,			// 64
+	PF_Fixme,			// 65
+	PF_Fixme,			// 66
 
-	SV_MoveToGoal,
-	PF_precache_file,
-	PF_makestatic,
+	SV_MoveToGoal,		// void(float step) movetogoal = #67
+	PF_precache_file,	// string(string s) precache_file = #68
+	PF_makestatic,		// void(entity e) makestatic = #69
 
-	PF_changelevel,
-	PF_Fixme,
+	PF_changelevel,		// void(string s) changelevel = #70
+	PF_Fixme,			// 71
 
-	PF_cvar_set,
-	PF_centerprint,
+	PF_cvar_set,		// void(string var, string val) cvar_set = #72
+	PF_centerprint,		// void(...) centerprint = #73
 
-	PF_ambientsound,
+	PF_ambientsound,	// void(vector pos, string samp, float vol, float atten) ambientsound = #74
 
-	PF_precache_model,
-	PF_precache_sound,					// precache_sound2 is different only
-										// for qcc
-	PF_precache_file,
+	PF_precache_model,	// string(string s) precache_model2 = #75
+	PF_precache_sound,	// string(string s) precache_sound2 = #76 precache_sound2 is different only for qcc
+	PF_precache_file,	// string(string s) precache_file2 = #77
 
-	PF_setspawnparms,
+	PF_setspawnparms,	// void(entity e) setspawnparms = #78
 
-	PF_logfrag,
+	PF_logfrag,			// void(entity killer, entity killee) logfrag = #79
 
-	PF_infokey,
-	PF_stof,
-	PF_multicast,
+	PF_infokey,			// string(entity e, string key) infokey = #80
+	PF_stof,			// float(string s) stof = #81
+	PF_multicast,		// void(vector where, float set) multicast = #82
 
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_Fixme,
-	PF_checkmove,		// 98
-	PF_Checkextension,	// 99
-	PF_strlen,
-	PF_charcount,
-	PF_setinfokey,
-	PF_cfopen,
-	PF_cfclose,
-	PF_cfread,
-	PF_cfwrite,
-	PF_cfeof,
-	PF_cfquota,
+	PF_Fixme,			// 83
+	PF_Fixme,			// 84
+	PF_Fixme,			// 85
+	PF_Fixme,			// 86
+	PF_Fixme,			// 87
+	PF_Fixme,			// 88
+	PF_Fixme,			// 89
+	PF_Fixme,			// 90
+	PF_Fixme,			// 91
+	PF_Fixme,			// 92
+	PF_Fixme,			// 93
+	PF_Fixme,			// 94
+	PF_Fixme,			// 95
+	PF_Fixme,			// 96
+	PF_Fixme,			// 97
+	PF_checkmove,		// void (vector start, vector mins, vector maxs, vector end, float type, entity passent) checkmove = #98
+	PF_Checkextension,	// = #99
+	PF_strlen,			// = #100
+	PF_charcount,		// = #101
+	PF_setinfokey,		// void (entity ent, string key, string value) setinfokey = #102
+	PF_cfopen,			// float (string path, string mode) cfopen = #103
+	PF_cfclose,			// void (float desc) cfclose = #104
+	PF_cfread,			// string (float desc) cfread = #105
+	PF_cfwrite,			// float (float desc, string buf) cfwrite = #106
+	PF_cfeof,			// float (float desc) cfeof = #107
+	PF_cfquota,			// float () cfquota = #108
 };
 
 int         sv_numbuiltins = sizeof (sv_builtins) / sizeof (sv_builtins[0]);
