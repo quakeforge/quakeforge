@@ -143,7 +143,7 @@ maybe_func
 		}
 	  param_list
 		{
-			PR_FlushScope (&param_scope);
+			PR_FlushScope (&param_scope, 1);
 			current_type = $<scope>2.type;
 			param_scope.scope_next = $<scope>2.pscope;
 			pr_scope = $<scope>2.scope;
@@ -580,6 +580,7 @@ build_scope (function_t *f, def_t *func)
 		f->parm_ofs[i] = def->ofs;
 		if (i > 0 && f->parm_ofs[i] < f->parm_ofs[i - 1])
 			Error ("bad parm order");
+		def->used = 1;	// don't warn for unused params
 	}
 }
 
@@ -660,7 +661,7 @@ emit_function (function_t *f, expr_t *e)
 		e = e->next;
 	}
 	emit_statement (pr_source_line, op_done, 0, 0, 0);
-	PR_FlushScope (pr_scope);
+	PR_FlushScope (pr_scope, 0);
 	pr_scope = 0;
 	PR_ResetTempDefs ();
 

@@ -290,6 +290,10 @@ typedef struct def_s {
 	int				initialized;// 1 when a declaration included "= immediate"
 	statref_t		*refs;		// for relocations
 
+	int				used;			// unused local detection
+	string_t		file;			// source file
+	int				line;			// source line
+
 	int				users;			// ref counted temps
 	struct expr_s	*expr;			// temp expr using this def
 
@@ -464,7 +468,7 @@ void PR_FreeLocation (def_t *def);
 def_t *PR_GetTempDef (type_t *type, def_t *scope);
 void PR_FreeTempDefs ();
 void PR_ResetTempDefs ();
-void PR_FlushScope (def_t *scope);
+void PR_FlushScope (def_t *scope, int force_used);
 
 void PR_PrintDefs (void);
 void PR_PrintFunction (def_t *def);

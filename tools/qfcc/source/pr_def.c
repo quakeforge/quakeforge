@@ -91,14 +91,19 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 		.origin can be accessed as .origin_x, .origin_y, and .origin_z
 	*/
 	if (type->type == ev_vector) {
+		def_t      *d;
+
 		sprintf (element, "%s_x", name);
-		PR_GetDef (&type_float, element, scope, allocate);
+		d = PR_GetDef (&type_float, element, scope, allocate);
+		d->used = 1;
 
 		sprintf (element, "%s_y", name);
-		PR_GetDef (&type_float, element, scope, allocate);
+		d = PR_GetDef (&type_float, element, scope, allocate);
+		d->used = 1;
 
 		sprintf (element, "%s_z", name);
-		PR_GetDef (&type_float, element, scope, allocate);
+		d = PR_GetDef (&type_float, element, scope, allocate);
+		d->used = 1;
 	} else {
 		*allocate += type_size[type->type];
 	}
@@ -107,14 +112,19 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 		*(int *) &pr_globals[def->ofs] = pr.size_fields;
 
 		if (type->aux_type->type == ev_vector) {
+			def_t      *d;
+
 			sprintf (element, "%s_x", name);
-			PR_GetDef (&type_floatfield, element, scope, allocate);
+			d = PR_GetDef (&type_floatfield, element, scope, allocate);
+			d->used = 1;	// always `used'
 
 			sprintf (element, "%s_y", name);
-			PR_GetDef (&type_floatfield, element, scope, allocate);
+			d = PR_GetDef (&type_floatfield, element, scope, allocate);
+			d->used = 1;	// always `used'
 
 			sprintf (element, "%s_z", name);
-			PR_GetDef (&type_floatfield, element, scope, allocate);
+			d = PR_GetDef (&type_floatfield, element, scope, allocate);
+			d->used = 1;	// always `used'
 		} else {
 			pr.size_fields += type_size[type->aux_type->type];
 		}
@@ -144,6 +154,9 @@ PR_NewDef (type_t *type, const char *name, def_t *scope)
 	def->type = type;
 
 	def->scope = scope;
+
+	def->file = s_file;
+	def->line = pr_source_line;
 
 	return def;
 }
@@ -246,12 +259,19 @@ PR_ResetTempDefs (void)
 }
 
 void
-PR_FlushScope (def_t *scope)
+PR_FlushScope (def_t *scope, int force_used)
 {
 	def_t *def;
 
 	for (def = scope->scope_next; def; def = def->scope_next) {
-		if (def->name)
+		if (def->name) {
+			if (!force_used && !def->used) {
+				expr_t     e;
+				e.line = def->line;
+				e.file = def->file;
+				warning (&e, "variable %s unused", def->name);
+			}
 			Hash_Del (defs_by_name, def->name);
+		}
 	}
 }
