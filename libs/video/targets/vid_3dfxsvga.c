@@ -63,6 +63,7 @@
 typedef void (GLAPIENTRY * QF_3DfxSetDitherModeEXT) (GrDitherMode_t mode);
 
 cvar_t      *vid_system_gamma;
+cvar_t      *tdfx_brighten;
 
 static fxMesaContext fc = NULL;
 
@@ -219,6 +220,27 @@ findres (int *width, int *height)
 }
 
 void
+TDFX_BrightenPalette (unsigned char *palette)
+{
+	byte      *pal;
+	int        i;
+	float red, green, blue, maxnum, somenum;
+	pal = palette;
+	for (i = 0; i < 255; i++)
+	{
+		red = (float)pal[0];
+		green = (float)pal[1];
+		blue = (float)pal[2];
+		maxnum = max(red,max(green,blue));
+		somenum = (bound(0.0,(maxnum * tdfx_brighten->int_val),255.0) / maxnum);
+		pal[0] = (int)(somenum * red);
+		pal[1] = (int)(somenum * green);
+		pal[2] = (int)(somenum * blue);
+		pal += 3;
+	}
+}
+
+void
 VID_Init (unsigned char *palette)
 {
 	int         i;
@@ -278,6 +300,9 @@ VID_Init (unsigned char *palette)
 	
 	GL_Init ();
 
+	if (tdfx_brighten->int_val)
+		TDFX_BrightenPalette(palette);
+
 	VID_InitGamma (palette);
 	VID_SetPalette (palette);
 
@@ -295,6 +320,7 @@ void
 VID_Init_Cvars (void)
 {
 	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL, "Use system gamma control if available");
+	tdfx_brighten = Cvar_Get ("tdfx_brighten", "0", CVAR_ROM, NULL, "Brighten 3DFX palette");
 }
 
 void
