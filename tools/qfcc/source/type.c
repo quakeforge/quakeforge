@@ -40,6 +40,7 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 #include <stdlib.h>
+#include <ctype.h>
 
 #include "QF/dstring.h"
 #include "QF/hash.h"
@@ -302,13 +303,14 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 			dstring_appendstr (encoding, "f");
 			break;
 		case ev_vector:
-			dstring_appendstr (encoding, "?");
+			dstring_appendstr (encoding, "V");
 			break;
 		case ev_entity:
-			dstring_appendstr (encoding, "?");
+			dstring_appendstr (encoding, "E");
 			break;
 		case ev_field:
 			dstring_appendstr (encoding, "F");
+			_encode_type (encoding, type->aux_type, level + 1);
 			break;
 		case ev_func:
 			dstring_appendstr (encoding, "(");
@@ -345,7 +347,7 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 			}
 			break;
 		case ev_quaternion:
-			dstring_appendstr (encoding, "?");
+			dstring_appendstr (encoding, "Q");
 			break;
 		case ev_integer:
 			dstring_appendstr (encoding, "i");
@@ -391,6 +393,113 @@ void
 encode_type (dstring_t *encoding, type_t *type)
 {
 	_encode_type (encoding, type, 0);
+}
+
+static type_t *
+_parse_type (const char **str)
+{
+	type_t      new;
+	dstring_t  *name;
+	const char *s;
+
+	memset (&new, 0, sizeof (new));
+	switch (*(*str)++) {
+		case 'v':
+			return &type_void;
+		case '*':
+			return &type_string;
+		case 'f':
+			return &type_float;
+		case 'V':
+			return &type_vector;
+		case 'E':
+			return &type_entity;
+		case 'F':
+			return field_type (_parse_type (str));
+		case '(':
+			new.type = ev_func;
+			new.aux_type = _parse_type (str);
+			while (**str && **str != ')' && **str != '.')
+				new.parm_types[new.num_parms++] = _parse_type (str);
+			if (!**str)
+				return 0;
+			if (**str == '.') {
+				(*str)++;
+				new.num_parms = -new.num_parms - 1;
+			}
+			if (**str != ')')
+				return 0;
+			(*str)++;
+			return find_type (&new);
+		case '@':
+			return &type_id;
+		case '#':
+			return &type_Class;
+		case ':':
+			return &type_SEL;
+		case '^':
+			return pointer_type (_parse_type (str));
+		case 'Q':
+			return &type_quaternion;
+		case 'i':
+			return &type_integer;
+		case 'I':
+			return &type_uinteger;
+		case 's':
+			return &type_short;
+		case '{':
+			name = dstring_newstr ();
+			for (s = *str; *s && *s != '=' && *s !='}'; s++)
+				;
+			if (!*s)
+				return 0;
+			dstring_appendsubstr (name, *str, s - *str);
+			*str = s;
+			if (name->str[0])
+				new.aux_type = find_struct (name->str);
+			if (new.aux_type) {
+				dstring_delete (name);
+				if (**str == '=') {
+					(*str)++;
+					while (**str && **str != '}')
+						_parse_type (str);
+					if (**str != ')')
+						return 0;
+				}
+				return new.aux_type;
+			}
+			if (**str != '=') {
+				dstring_delete (name);
+				return 0;
+			}
+			(*str)++;
+			new.aux_type = new_struct (name->str);
+			dstring_delete (name);
+			while (**str && **str != '}')
+				new_struct_field (new.aux_type, _parse_type (str), 0,
+								  vis_public);
+			if (**str != ')')
+				return 0;
+			return new.aux_type;
+		case '[':
+			while (isdigit (**str)) {
+				new.num_parms *= 10;
+				new.num_parms += *(*str)++ - '0';
+			}
+			new.aux_type = _parse_type (str);
+			if (**str != ']')
+				return 0;
+			(*str)++;
+			return find_type (&new);
+		default:
+			return 0;
+	}
+}
+
+type_t *
+parse_type (const char *str)
+{
+	return _parse_type (&str);
 }
 
 int

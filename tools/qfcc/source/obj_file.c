@@ -443,7 +443,7 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		 i < pr->scope->num_defs; i++) {
 		*pr->scope->tail = pd;
 		pr->scope->tail = &pd->def_next;
-		pd->type = 0; //XXX
+		pd->type = parse_type (qfo->strings + qd->full_type);
 		pd->name = qfo->strings + qd->name;
 		pd->ofs = qd->ofs;
 		if (qd->num_relocs) {
