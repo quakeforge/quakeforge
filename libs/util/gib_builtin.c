@@ -651,6 +651,7 @@ GIB_Range_f (void)
 {
 	double i, inc, start, limit;
 	dstring_t *dstr;
+	const char *ifs;
 	if (GIB_Argc () < 3 || GIB_Argc () > 4) {
 		Cbuf_Error ("syntax",
 		  "range: invalid syntax\n"
@@ -668,9 +669,11 @@ GIB_Range_f (void)
 		GIB_Return ("");
 		return;
 	}
+	if (!(ifs = GIB_Var_Get_Local (cbuf_active, "ifs")))
+			ifs = " ";
 	dstr = dstring_newstr ();
 	for (i = atof(GIB_Argv(1)); inc < 0 ? i >= limit : i <= limit; i += inc)
-		dstring_appendstr (dstr, va(" %.10g", i));
+		dstring_appendstr (dstr, va("%s%.10g", ifs, i));
 	GIB_Return (dstr->str[0] ? dstr->str+1 : "");
 	dstring_delete (dstr);
 }

@@ -166,6 +166,12 @@ Cbuf_Execute_Stack (cbuf_t *cbuf)
 {
 	cbuf_t		*sp;
 	
+	if (cbuf->resumetime) {
+		if (cbuf->resumetime < Sys_DoubleTime())
+				cbuf->resumetime = 0;
+		else
+				return;
+	}
 	for (sp = cbuf; sp->down; sp = sp->down);
 	while (sp) {
 		if (sp->down) {

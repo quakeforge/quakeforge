@@ -520,6 +520,19 @@ Cmd_Wait_f (void)
 	cbuf_active->state = CBUF_STATE_WAIT;
 }
 
+/* Pauses execution for a specified number
+of seconds */
+void
+Cmd_Sleep_f (void)
+{
+	double waittime;
+	cbuf_t *p;
+	cbuf_active->state = CBUF_STATE_WAIT;
+	waittime = atof (Cmd_Argv (1));
+	for (p = cbuf_active; p->up; p = p->up); // Get to top of stack
+	p->resumetime = Sys_DoubleTime() + waittime;
+}
+
 void
 Cmd_StuffCmds (cbuf_t *cbuf)
 {
@@ -592,6 +605,7 @@ Cmd_Init (void)
 	Cmd_AddCommand ("exec", Cmd_Exec_f, "Execute a script file");
 	Cmd_AddCommand ("echo", Cmd_Echo_f, "Print text to console");
 	Cmd_AddCommand ("wait", Cmd_Wait_f, "Wait a game tic");
+	Cmd_AddCommand ("sleep", Cmd_Sleep_f, "Wait for a certain number of seconds.");
 	cmd_warncmd = Cvar_Get ("cmd_warncmd", "0", CVAR_NONE, NULL, "Toggles the "
 							"display of error messages for unknown commands");
 	cmd_cbuf = Cbuf_New (&id_interp);
