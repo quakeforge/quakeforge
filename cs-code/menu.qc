@@ -1,4 +1,5 @@
 float () random = #0;
+float () traceon = #0;
 string () gametype = #0;
 string (...) sprintf = #0;
 
@@ -316,6 +317,7 @@ string lanConfig_joinname;
 integer [NUM_LANCONFIG_CMDS] lanConfig_cursor_table = { 72, 92, 124 };
 inputline_t lanConfig_port_il;
 inputline_t lanConfig_join_il;
+inputline_t input_active;
 
 integer () join_draw =
 {
@@ -340,35 +342,57 @@ integer () lanconfig_draw =
 	Draw_String (basex + 9 * 8, 52, "127.0.0.1");
 	Draw_String (basex, lanConfig_cursor_table[0], "Port");
 	text_box (basex + 8 * 8, lanConfig_cursor_table[0] - 8, 6, 1);
+	InputLine_Draw (lanConfig_port_il, basex + 8 * 8, lanConfig_cursor_table[0], lanConfig_cursor == 0 && input_active);
 	Draw_String (basex + 9 * 8, lanConfig_cursor_table[0], lanConfig_portname);
 
 	if (JoiningGame) {
 		Draw_String (basex, lanConfig_cursor_table[1], "Search for local games...");
 		Draw_String (basex, 108, "Join game at:");
 		text_box (basex + 8, lanConfig_cursor_table[2] - 8, 22, 1);
+		InputLine_Draw (lanConfig_join_il, basex + 8, lanConfig_cursor_table[2], lanConfig_cursor == 2 && input_active);
 		Draw_String (basex + 16, lanConfig_cursor_table[2], lanConfig_joinname);
 	} else {
 		text_box (basex, lanConfig_cursor_table[1] - 8, 2, 1);
 		Draw_String (basex + 8, lanConfig_cursor_table[1], "OK");
 	}
-	Draw_Character (basex - 8, lanConfig_cursor_table[lanConfig_cursor],
-					12 + (integer (time * 4) & 1));
+	if (!input_active)
+		Draw_Character (basex - 8, lanConfig_cursor_table[lanConfig_cursor],
+						12 + (integer (time * 4) & 1));
 
 	return 0;
 };
 
 integer (integer key, integer unicode, integer down) lanconfig_keyevent =
 {
+	if (input_active)
+		InputLine_Process (input_active, key >= 256 ? key : unicode);
 	switch (key) {
 		case QFK_DOWN:
 		case QFM_WHEEL_DOWN:
-			lanConfig_cursor ++;
-			lanConfig_cursor %= NUM_LANCONFIG_CMDS;
+			if (!input_active) {
+				lanConfig_cursor ++;
+				lanConfig_cursor %= NUM_LANCONFIG_CMDS;
+			}
 			break;
 		case QFK_UP:
 		case QFM_WHEEL_UP:
-			lanConfig_cursor += NUM_LANCONFIG_CMDS - 1;
-			lanConfig_cursor %= NUM_LANCONFIG_CMDS;
+			if (!input_active) {
+				lanConfig_cursor += NUM_LANCONFIG_CMDS - 1;
+				lanConfig_cursor %= NUM_LANCONFIG_CMDS;
+			}
+			break;
+		case QFK_RETURN:
+			if (input_active) {
+				input_active = NIL;
+			} else {
+				if (lanConfig_cursor == 0) {
+					input_active = lanConfig_port_il;
+				} else if (JoiningGame) {
+					if (lanConfig_cursor == 2) {
+						input_active = lanConfig_join_il;
+					}
+				}
+			}
 			break;
 	}
 	return 1;
@@ -452,7 +476,10 @@ void () main_menu =
 void () menu_init =
 {
 	lanConfig_port_il = InputLine_Create (4, 8, ' ');
+	InputLine_SetWidth (lanConfig_port_il, 10);
 	lanConfig_join_il = InputLine_Create (4, 24, ' ');
+	InputLine_SetWidth (lanConfig_join_il, 26);
+	input_active = NIL; //FIXME def alloc bug in qfcc
 	switch (gametype ()) {
 	case "netquake":
 		do_single_player = 1;
