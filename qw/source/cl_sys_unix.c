@@ -52,6 +52,7 @@ static const char rcsid[] =
 #include <sys/mman.h>
 #include <sys/types.h>
 
+#include "QF/console.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 

@@ -63,6 +63,7 @@ static const char rcsid[] =
 #include <SDL.h>
 #include <SDL_main.h>
 
+#include "QF/console.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
