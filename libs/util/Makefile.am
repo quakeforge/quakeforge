@@ -2,7 +2,7 @@ INCLUDES= -I$(top_srcdir)/include
 
 lib_LTLIBRARIES = libQFutil.la
 
-libQFutil_la_LDFLAGS = -version-info 1:0:0 $(Z_LIBS)
+libQFutil_la_LDFLAGS = -version-info 1:0:0 $(Z_LIBS) $(DL_LIBS)
 libQFutil_la_SOURCES = \
 	checksum.c cmd.c console.c con_print.c crc.c cvar.c hash.c \
 	info.c link.c math.S \
