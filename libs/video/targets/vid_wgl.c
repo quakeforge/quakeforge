@@ -1129,9 +1129,43 @@ VID_SetCaption (const char *text)
 	}
 }
 
+static WORD systemgammaramps[3][256];
+static WORD currentgammaramps[3][256];
+
 qboolean
 VID_SetGamma (double gamma)
 {
-	// FIXME: Need function for HW gamma correction
-	return false;
+	int         i;
+	HDC         hdc = GetDC (NULL);
+
+	for (i = 0; i < 256; i++) {
+		currentgammaramps[2][i] =
+			currentgammaramps[1][i] =
+			currentgammaramps[0][i] = gammatable[i] * 256;
+	}
+
+	i = SetDeviceGammaRamp (hdc, &currentgammaramps[0][0]);
+
+	ReleaseDC (NULL, hdc);
+	return i;
+}
+
+void
+VID_SaveGamma (void)
+{
+	HDC hdc = GetDC (NULL);
+
+	GetDeviceGammaRamp (hdc, &systemgammaramps[0][0]);
+
+	ReleaseDC (NULL, hdc);
+}
+
+void
+VID_RestoreGamma (void)
+{
+	HDC hdc = GetDC (NULL);
+
+	SetDeviceGammaRamp (hdc, &systemgammaramps[0][0]);
+
+	ReleaseDC (NULL, hdc);
 }
