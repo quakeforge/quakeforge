@@ -29,6 +29,10 @@
 #ifndef _WINQUAKE_H
 #define _WINQUAKE_H
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #ifdef _WIN32 
 
 #ifndef __GNUC__
@@ -41,19 +45,24 @@
 #define LPCWAVEFORMATEX __hide_LPCWAVEFORMATEX
 #include <windows.h>
 #undef LPCWAVEFORMATEX
+
 #ifdef WINNT
-#undef WINNT
-#if 0
-#include <dsound.h>
-#include <ddraw.h>
-#endif
-#define WINNT
+# undef WINNT
+# ifdef HAVE_DSOUND_H
+#  include <dsound.h>
+# endif
+# ifdef HAVE_DDRAW_H
+#  include <ddraw.h>
+# endif
+# define WINNT
 #else
-#include <windows.h>
-#if 0
-#include <dsound.h>
-#include <ddraw.h>
-#endif
+# include <windows.h>
+# ifdef HAVE_DSOUND_H
+#  include <dsound.h>
+# endif
+# ifdef HAVE_DDRAW_H
+#  include <ddraw.h>
+# endif
 #endif
 
 #ifdef HAVE_MGRAPH_H
@@ -71,13 +80,15 @@
 
 extern	HINSTANCE	global_hInstance;
 extern	int			global_nCmdShow;
-#if 0
+#ifdef HAVE_DDRAW_H
 extern LPDIRECTDRAW		lpDD;
 extern qboolean			DDActive;
 extern LPDIRECTDRAWSURFACE	lpPrimary;
 extern LPDIRECTDRAWSURFACE	lpFrontBuffer;
 extern LPDIRECTDRAWSURFACE	lpBackBuffer;
 extern LPDIRECTDRAWPALETTE	lpDDPal;
+#endif
+#ifdef HAVE_DSOUND_H
 extern LPDIRECTSOUND pDS;
 extern LPDIRECTSOUNDBUFFER pDSBuf;
 #endif
@@ -96,15 +107,6 @@ extern qboolean	WinNT;
 
 int VID_ForceUnlockedAndReturnState (void);
 void VID_ForceLockState (int lk);
-/*
-void IN_ShowMouse (void);
-void IN_DeactivateMouse (void);
-void IN_HideMouse (void);
-void IN_ActivateMouse (void);
-void IN_RestoreOriginalMouseState (void);
-void IN_SetQuakeMouseState (void);
-void IN_MouseEvent (int mstate);
-*/
 extern qboolean	winsock_lib_initialized;
 
 extern int		window_center_x, window_center_y;
