@@ -117,6 +117,18 @@ new_defspace (void)
 	return space;
 }
 
+void
+defspace_adddata (defspace_t *space, pr_type_t *data, int size)
+{
+	if (space->size + size > space->max_size) {
+		space->max_size = (space->size + size + 1023) & ~1023;
+		space->data = realloc (space->data,
+							   space->max_size * sizeof (pr_type_t));
+	}
+	if (data)
+		memcpy (space->data, data, space->max_size * sizeof (pr_type_t));
+}
+
 scope_t *
 new_scope (scope_type type, defspace_t *space, scope_t *parent)
 {

@@ -108,6 +108,7 @@ extern	def_t	def_function;
 
 scope_t *new_scope (scope_type type, defspace_t *space, scope_t *parent);
 defspace_t *new_defspace (void);
+void defspace_adddata (defspace_t *space, pr_type_t *data, int size);
 
 def_t *get_def (struct type_s *type, const char *name, scope_t *scope,
 				storage_class_t storage);

@@ -53,8 +53,15 @@ static const char rcsid[] =
 
 static hashtab_t *extern_defs;
 static hashtab_t *defined_defs;
+
+static codespace_t *code;
+static defspace_t *data;
+static defspace_t *far_data;
 static strpool_t *strings;
 static strpool_t *type_strings;
+static int      code_base;
+static int      data_base;
+static int      far_data_base;
 
 static const char *
 defs_get_key (void *_def, void *unused)
@@ -62,11 +69,6 @@ defs_get_key (void *_def, void *unused)
 	qfo_def_t  *def = (qfo_def_t *) _def;
 
 	return G_GETSTR (def->name);
-}
-
-void
-add_code (qfo_t *qfo)
-{
 }
 
 void
@@ -97,7 +99,7 @@ add_defs (qfo_t *qfo)
 				QFO_var (qfo, string, def->ofs) = s;
 			}
 			if (def->ofs)
-				def->ofs += pr.near_data->size;
+				def->ofs += data_base;
 			if (def->flags & QFOD_GLOBAL) {
 				while ((d = Hash_Find (extern_defs, G_GETSTR (def->name)))) {
 					Hash_Del (extern_defs, G_GETSTR (d->name));
@@ -134,6 +136,9 @@ linker_begin (void)
 {
 	extern_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
 	defined_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
+	code = codespace_new ();
+	data = new_defspace ();
+	far_data = new_defspace ();
 	strings = strpool_new ();
 	type_strings = strpool_new ();
 }
@@ -146,10 +151,16 @@ linker_add_object_file (const char *filename)
 	qfo = read_obj_file (filename);
 	if (!qfo)
 		return;  
+
 	puts(filename);
+
+	code_base = code->size;
+	data_base = data->size;
+	far_data_base = far_data->size;
+
 	add_defs (qfo);
 	add_functions (qfo);
-	add_code (qfo);
+	codespace_addcode (code, qfo->code, qfo->code_size);
 	//add_data (qfo);
 	//add_far_data (qfo);
 	//add_strings (qfo);
