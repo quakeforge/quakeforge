@@ -2333,7 +2333,8 @@ Cmd_CollapsePath (char *str)
 	}
 	if ( (!path[0])
 	  || (path[0] == '.' && path[1] == '.' && (path[2] == '/' || path [2] == 0))
-	  || (path[strlen (path) - 1] =='/') ) {
+	  || (path[strlen (path) - 1] =='/') 
+	  || path[0] == '~') {
 		return 0;
 	}
 	return 1;
@@ -2345,24 +2346,24 @@ Cmd_File_write_f (void)
 	char *path;
 
 	if (Cmd_Restricted ()) {
-		Cmd_Error ("writefile: access to restricted command denied.\n");
+		Cmd_Error ("file_write: access to restricted command denied.\n");
 		return;
 	}
 	if (Cmd_Argc() != 3) {
-		Cmd_Error ("writefile: invalid number of arguments.\n");
+		Cmd_Error ("file_write: invalid number of arguments.\n");
 		return;
 	}
 	path = strdup (Cmd_Argv(1));
 	SYS_CHECKMEM (path);
 	if (!Cmd_CollapsePath (path)) {
 			free (path);
-			Cmd_Error ("writefile: access to restricted directory/file denied.\n");
+			Cmd_Error ("file_write: access to restricted directory/file denied.\n");
 			return;
 	}
 	free(path);
-	Sys_DPrintf ("writefile: opening %s/%s\n", com_gamedir, path);
+	Sys_DPrintf ("file_write: opening %s/%s\n", com_gamedir, path);
 	if (!(file = Qopen (va("%s/%s", com_gamedir, Cmd_Argv(1)), "w"))) {
-		Cmd_Error (va ("writefile: could not open file for writing: %s\n", strerror (errno)));
+		Cmd_Error (va ("file_write: could not open file for writing: %s\n", strerror (errno)));
 		return;
 	}
 	Qprintf (file, "%s", Cmd_Argv(2));

@@ -100,7 +100,7 @@ alias list_find { // Returns the index of a string in a list
 		return 0;
 	}
 	// This is an evil for statement.  You have been warned.
-	for {if #{$argn > 2} {i = $2} else {i = 1}; #{$i<=~{list_get $1 size}}; i = #{$i+1}} {
+	for {if #{$argn > 3} {i = $2} else {i = 1}; #{$i<=~{list_get $1 size}}; i = #{$i+1}} {
 		if ~{streq $2 ~{list_get $1 $i}} {
 			return $i;
 		};
