@@ -53,6 +53,9 @@ PR_AddStatementRef (def_t *def, dstatement_t *st, int field)
 		statref_t *ref = PR_NewStatref (st, field);
 		ref->next = def->refs;
 		def->refs = ref;
+
+		def->users--;
+		def->used = 1;
 	}
 }
 

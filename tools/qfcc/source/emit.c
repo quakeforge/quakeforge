@@ -82,18 +82,7 @@ emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_
 		statement->c = var_c->ofs;
 		ret = var_c;
 	}
-	if (var_a) {
-		var_a->users--;
-		var_a->used = 1;
-	}
-	if (var_b) {
-		var_b->users--;
-		var_b->used = 1;
-	}
-	if (var_c) {
-		var_c->users--;
-		var_c->used = 1;
-	}
+
 	PR_AddStatementRef (var_a, statement, 0);
 	PR_AddStatementRef (var_b, statement, 1);
 	PR_AddStatementRef (var_c, statement, 2);
