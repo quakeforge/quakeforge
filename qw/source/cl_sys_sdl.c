@@ -53,11 +53,7 @@ static const char rcsid[] =
 #include <stdlib.h>
 
 #ifndef _WIN32
-# include <sys/types.h>
-# include <sys/mman.h>
-# include <ctype.h>
 # include <signal.h>
-# include <stdarg.h>
 #endif
 
 #include <SDL.h>

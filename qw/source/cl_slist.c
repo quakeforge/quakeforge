@@ -34,6 +34,12 @@ static const char rcsid[] =
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
+#ifdef __sun
+/* Sun's model_t in sys/model.h conflicts w/ Quake's model_t */
+# define model_t sunmodel_t
+#endif
+
 #include <sys/types.h>
 #ifdef HAVE_NETINET_IN_H
 # include <netinet/in.h>
@@ -59,6 +65,11 @@ static const char rcsid[] =
 
 #include <ctype.h>
 #include <stdlib.h>
+
+#ifdef __sun
+# undef model_t			// allow qf to use it's model_t
+#endif
+
 
 #include "QF/cmd.h"
 #include "QF/console.h"

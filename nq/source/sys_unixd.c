@@ -54,7 +54,6 @@ static const char rcsid[] =
 #include <sys/shm.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 
 #include "QF/cvar.h"
