@@ -62,20 +62,6 @@ extern	int			pr_source_line;
 extern	struct def_s *pr_scope;
 extern	int		pr_error_count;
 
-struct def_s *PR_GetArray (struct type_s *etype, const char *name, int size,
-					struct def_s *scope, int *allocate);
-
-struct def_s *PR_GetDef (struct type_s *type, const char *name, struct def_s *scope,
-				  int *allocate);
-struct def_s *PR_NewDef (struct type_s *type, const char *name, struct def_s *scope);
-int PR_NewLocation (struct type_s *type);
-void PR_FreeLocation (struct def_s *def);
-struct def_s *PR_GetTempDef (struct type_s *type, struct def_s *scope);
-void PR_FreeTempDefs ();
-void PR_ResetTempDefs ();
-void PR_FlushScope (struct def_s *scope, int force_used);
-void PR_DefInitialized (struct def_s *d);
-
 #define	G_FLOAT(o)		(pr_globals[o])
 #define	G_INT(o)		(*(int *)&pr_globals[o])
 #define	G_VECTOR(o)		(&pr_globals[o])

@@ -67,4 +67,20 @@ extern	def_t	def_ret, def_parms[MAX_PARMS];
 extern	def_t	def_void;
 extern	def_t	def_function;
 
+struct def_s *PR_GetArray (struct type_s *etype, const char *name, int size,
+		                   struct def_s *scope, int *allocate);
+
+struct def_s *PR_GetDef (struct type_s *type, const char *name,
+						 struct def_s *scope, int *allocate);
+struct def_s *PR_NewDef (struct type_s *type, const char *name,
+						 struct def_s *scope);
+int PR_NewLocation (struct type_s *type);
+void PR_FreeLocation (struct def_s *def);
+struct def_s *PR_GetTempDef (struct type_s *type, struct def_s *scope);
+void PR_FreeTempDefs ();
+void PR_ResetTempDefs ();
+void PR_FlushScope (struct def_s *scope, int force_used);
+void PR_DefInitialized (struct def_s *d);
+
+
 #endif//__def_h
