@@ -219,7 +219,7 @@ CF_Open (const char *path, const char *mode)
 		return -1;
 	}
 
-	if (!(strequal(mode, "w") || strequal(mode, "r"))) {
+	if (!(strequal(mode, "w") || strequal(mode, "r") || strequal(mode, "a"))) {
 		return -1;
 	}
 
