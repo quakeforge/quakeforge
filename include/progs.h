@@ -160,7 +160,6 @@ eval_t *GetEdictFieldValue(progs_t *pr, edict_t *ed, char *field);
 //
 // PR STrings stuff
 //
-#define MAX_PRSTR 1024
 
 char *PR_GetString(progs_t *pr, int num);
 int PR_SetString(progs_t *pr, char *s);
@@ -216,9 +215,6 @@ struct progs_s {
 	qboolean		pr_trace;
 	dfunction_t		*pr_xfunction;
 	int				pr_xstatement;
-
-	char			*pr_strtbl[MAX_PRSTR];
-	int				num_prstr;
 
 	prstack_t		pr_stack[MAX_STACK_DEPTH];
 	int				pr_depth;

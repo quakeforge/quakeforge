@@ -974,8 +974,6 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 	pr->pr_statements =
 		(dstatement_t *) ((byte *) pr->progs + pr->progs->ofs_statements);
 
-	pr->num_prstr = 0;
-
 	pr->pr_globals =
 		(pr_type_t *) ((byte *) pr->progs + pr->progs->ofs_globals);
 
