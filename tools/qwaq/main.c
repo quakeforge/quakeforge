@@ -145,7 +145,8 @@ load_progs (const char *name)
 int
 main (int argc, char **argv)
 {
-	func_t main_func;
+	dfunction_t *dfunc;
+	func_t      main_func = 0;
 	const char *name = "qwaq.dat";
 	string_t   *pr_argv;
 	int         pr_argc = 1, i;
