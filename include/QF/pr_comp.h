@@ -220,10 +220,10 @@ typedef enum {
 	OP_JUMP,
 	OP_JUMPB,
 
-	OP_LT_UI,
-	OP_GT_UI,
-	OP_LE_UI,
-	OP_GE_UI,
+	OP_LT_U,
+	OP_GT_U,
+	OP_LE_U,
+	OP_GE_U,
 
 	OP_LOADBI_F,
 	OP_LOADBI_V,
@@ -258,6 +258,35 @@ typedef enum {
 
 	OP_MOVE,
 	OP_MOVEP,
+
+	OP_ADD_U,
+	OP_SUB_U,
+	OP_MUL_U,
+	OP_DIV_U,
+	OP_BITAND_U,
+	OP_BITOR_U,
+	OP_BITXOR_U,
+	OP_BITNOT_U,
+	OP_AND_U,
+	OP_OR_U,
+	OP_NOT_U,
+	OP_EQ_U,
+	OP_NE_U,
+	OP_MOD_U,
+	OP_SHL_U,
+	OP_SHR_U,
+	OP_STORE_U,
+	OP_STOREB_U,
+	OP_STOREBI_U,
+	OP_STOREP_U,
+	OP_LOAD_U,
+	OP_LOADB_U,
+	OP_LOADBI_U,
+	OP_ADDRESS_U,
+
+	OP_CONV_IU,
+	OP_CONV_UI,
+
 } pr_opcode_e;
 
 typedef struct opcode_s {

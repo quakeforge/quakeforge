@@ -77,14 +77,14 @@ opcode_t    pr_opcodes[] = {
 	{"!=", "ne.e",   OP_NE_E,   false, ev_entity, ev_entity, ev_integer, PROG_ID_VERSION},
 	{"!=", "ne.fnc", OP_NE_FNC, false, ev_func, ev_func, ev_integer, PROG_ID_VERSION},
 
-	{"<=", "le.f", OP_LE_F,   false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
-	{">=", "ge.f", OP_GE_F,   false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
-	{"<=", "le.s", OP_LE_S, false, ev_string, ev_string, ev_integer, PROG_VERSION},
-	{">=", "ge.s", OP_GE_S, false, ev_string, ev_string, ev_integer, PROG_VERSION},
-	{"<",  "lt.f", OP_LT_F, false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
-	{">",  "gt.f", OP_GT_F, false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
-	{"<",  "lt.s", OP_LT_S, false, ev_string, ev_string, ev_integer, PROG_VERSION},
-	{">",  "gt.s", OP_GT_S, false, ev_string, ev_string, ev_integer, PROG_VERSION},
+	{"<=", "le.f", OP_LE_F,	false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
+	{">=", "ge.f", OP_GE_F,	false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
+	{"<=", "le.s", OP_LE_S,	false, ev_string, ev_string, ev_integer, PROG_VERSION},
+	{">=", "ge.s", OP_GE_S,	false, ev_string, ev_string, ev_integer, PROG_VERSION},
+	{"<",  "lt.f", OP_LT_F,	false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
+	{">",  "gt.f", OP_GT_F,	false, ev_float, ev_float, ev_integer, PROG_ID_VERSION},
+	{"<",  "lt.s", OP_LT_S,	false, ev_string, ev_string, ev_integer, PROG_VERSION},
+	{">",  "gt.s", OP_GT_S,	false, ev_string, ev_string, ev_integer, PROG_VERSION},
 
 	{".", "load.f",   OP_LOAD_F,   false, ev_entity, ev_field, ev_float, PROG_ID_VERSION},
 	{".", "load.v",   OP_LOAD_V,   false, ev_entity, ev_field, ev_vector, PROG_ID_VERSION},
@@ -93,6 +93,7 @@ opcode_t    pr_opcodes[] = {
 	{".", "load.fld", OP_LOAD_FLD, false, ev_entity, ev_field, ev_field, PROG_ID_VERSION},
 	{".", "load.fnc", OP_LOAD_FNC, false, ev_entity, ev_field, ev_func, PROG_ID_VERSION},
 	{".", "load.i",   OP_LOAD_I,   false, ev_entity, ev_field, ev_integer, PROG_VERSION},
+	{".", "load.u",   OP_LOAD_U,   false, ev_entity, ev_field, ev_uinteger, PROG_VERSION},
 	{".", "load.p",   OP_LOAD_P,   false, ev_entity, ev_field, ev_pointer, PROG_VERSION},
 
 	{".", "loadb.f",   OP_LOADB_F,   false, ev_pointer, ev_integer, ev_float, PROG_VERSION},
@@ -102,6 +103,7 @@ opcode_t    pr_opcodes[] = {
 	{".", "loadb.fld", OP_LOADB_FLD, false, ev_pointer, ev_integer, ev_field, PROG_VERSION},
 	{".", "loadb.fnc", OP_LOADB_FNC, false, ev_pointer, ev_integer, ev_func, PROG_VERSION},
 	{".", "loadb.i",   OP_LOADB_I,   false, ev_pointer, ev_integer, ev_integer, PROG_VERSION},
+	{".", "loadb.u",   OP_LOADB_U,   false, ev_pointer, ev_integer, ev_uinteger, PROG_VERSION},
 	{".", "loadb.p",   OP_LOADB_P,   false, ev_pointer, ev_integer, ev_pointer, PROG_VERSION},
 
 	{".", "loadbi.f",   OP_LOADBI_F,   false, ev_pointer, ev_short, ev_float, PROG_VERSION},
@@ -111,6 +113,7 @@ opcode_t    pr_opcodes[] = {
 	{".", "loadbi.fld", OP_LOADBI_FLD, false, ev_pointer, ev_short, ev_field, PROG_VERSION},
 	{".", "loadbi.fnc", OP_LOADBI_FNC, false, ev_pointer, ev_short, ev_func, PROG_VERSION},
 	{".", "loadbi.i",   OP_LOADBI_I,   false, ev_pointer, ev_short, ev_integer, PROG_VERSION},
+	{".", "loadbi.u",   OP_LOADBI_U,   false, ev_pointer, ev_short, ev_uinteger, PROG_VERSION},
 	{".", "loadbi.p",   OP_LOADBI_P,   false, ev_pointer, ev_short, ev_pointer, PROG_VERSION},
 
 	{"&", "address", OP_ADDRESS, false, ev_entity, ev_field, ev_pointer, PROG_ID_VERSION},
@@ -122,6 +125,7 @@ opcode_t    pr_opcodes[] = {
 	{"&", "address.fld", OP_ADDRESS_FLD, false, ev_field, ev_void, ev_pointer, PROG_VERSION},
 	{"&", "address.fnc", OP_ADDRESS_FNC, false, ev_func, ev_void, ev_pointer, PROG_VERSION},
 	{"&", "address.i",   OP_ADDRESS_I,   false, ev_integer, ev_void, ev_pointer, PROG_VERSION},
+	{"&", "address.u",   OP_ADDRESS_U,   false, ev_uinteger, ev_void, ev_pointer, PROG_VERSION},
 	{"&", "address.p",   OP_ADDRESS_P,   false, ev_pointer, ev_void, ev_pointer, PROG_VERSION},
 
 	{"&", "lea",  OP_LEA,  false, ev_pointer, ev_integer, ev_pointer, PROG_VERSION},
@@ -130,6 +134,8 @@ opcode_t    pr_opcodes[] = {
 	{"=", "conv.if",   OP_CONV_IF,   false, ev_integer, ev_void, ev_float, PROG_VERSION},
 	{"=", "conv.fi",   OP_CONV_FI,   false, ev_float, ev_void, ev_integer, PROG_VERSION},
 
+	{"=", "conv.iu",   OP_CONV_IU,   false, ev_integer, ev_void, ev_uinteger, PROG_VERSION},
+	{"=", "conv.ui",   OP_CONV_UI,   false, ev_uinteger, ev_void, ev_integer, PROG_VERSION},
 
 	{"=", "store.f",   OP_STORE_F,   true, ev_float, ev_float, ev_void, PROG_ID_VERSION},
 	{"=", "store.v",   OP_STORE_V,   true, ev_vector, ev_vector, ev_void, PROG_ID_VERSION},
@@ -138,6 +144,7 @@ opcode_t    pr_opcodes[] = {
 	{"=", "store.fld", OP_STORE_FLD, true, ev_field, ev_field, ev_void, PROG_ID_VERSION},
 	{"=", "store.fnc", OP_STORE_FNC, true, ev_func, ev_func, ev_void, PROG_ID_VERSION},
 	{"=", "store.i",   OP_STORE_I,   true, ev_integer, ev_integer, ev_void, PROG_VERSION},
+	{"=", "store.u",   OP_STORE_U,   true, ev_uinteger, ev_uinteger, ev_void, PROG_VERSION},
 	{"=", "store.p",   OP_STORE_P,   true, ev_pointer, ev_pointer, ev_void, PROG_VERSION},
 
 	{".=", "storep.f",   OP_STOREP_F,   true, ev_float, ev_pointer, ev_void, PROG_ID_VERSION},
@@ -147,6 +154,7 @@ opcode_t    pr_opcodes[] = {
 	{".=", "storep.fld", OP_STOREP_FLD, true, ev_field, ev_pointer, ev_void, PROG_ID_VERSION},
 	{".=", "storep.fnc", OP_STOREP_FNC, true, ev_func, ev_pointer, ev_void, PROG_ID_VERSION},
 	{".=", "storep.i",   OP_STOREP_I,   true, ev_integer, ev_pointer, ev_void, PROG_VERSION},
+	{".=", "storep.u",   OP_STOREP_U,   true, ev_uinteger, ev_pointer, ev_void, PROG_VERSION},
 	{".=", "storep.p",   OP_STOREP_P,   true, ev_pointer, ev_pointer, ev_void, PROG_VERSION},
 
 	{".=", "storeb.f",   OP_STOREB_F,   true, ev_float, ev_pointer, ev_integer, PROG_VERSION},
@@ -156,6 +164,7 @@ opcode_t    pr_opcodes[] = {
 	{".=", "storeb.fld", OP_STOREB_FLD, true, ev_field, ev_pointer, ev_integer, PROG_VERSION},
 	{".=", "storeb.fnc", OP_STOREB_FNC, true, ev_func, ev_pointer, ev_integer, PROG_VERSION},
 	{".=", "storeb.i",   OP_STOREB_I,   true, ev_integer, ev_pointer, ev_integer, PROG_VERSION},
+	{".=", "storeb.u",   OP_STOREB_U,   true, ev_uinteger, ev_pointer, ev_integer, PROG_VERSION},
 	{".=", "storeb.p",   OP_STOREB_P,   true, ev_pointer, ev_pointer, ev_integer, PROG_VERSION},
 
 	{".=", "storebi.f",   OP_STOREBI_F,   true, ev_float, ev_pointer, ev_short, PROG_VERSION},
@@ -165,6 +174,7 @@ opcode_t    pr_opcodes[] = {
 	{".=", "storebi.fld", OP_STOREBI_FLD, true, ev_field, ev_pointer, ev_short, PROG_VERSION},
 	{".=", "storebi.fnc", OP_STOREBI_FNC, true, ev_func, ev_pointer, ev_short, PROG_VERSION},
 	{".=", "storebi.i",   OP_STOREBI_I,   true, ev_integer, ev_pointer, ev_short, PROG_VERSION},
+	{".=", "storebi.u",   OP_STOREBI_U,   true, ev_uinteger, ev_pointer, ev_short, PROG_VERSION},
 	{".=", "storebi.p",   OP_STOREBI_P,   true, ev_pointer, ev_pointer, ev_short, PROG_VERSION},
 
 	{"<RETURN>", "return", OP_RETURN, false, ev_void, ev_void, ev_void, PROG_ID_VERSION},
@@ -207,6 +217,8 @@ opcode_t    pr_opcodes[] = {
 	{">>", "shr.f", OP_SHR_F, false, ev_float, ev_float, ev_float, PROG_VERSION},
 	{"<<", "shl.i", OP_SHL_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{">>", "shr.i", OP_SHR_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
+	{"<<", "shl.u", OP_SHL_U, false, ev_uinteger, ev_uinteger, ev_uinteger, PROG_VERSION},
+	{">>", "shr.u", OP_SHR_U, false, ev_uinteger, ev_uinteger, ev_uinteger, PROG_VERSION},
 
 	{"&", "bitand", OP_BITAND, false, ev_float, ev_float, ev_float, PROG_ID_VERSION},
 	{"|", "bitor",  OP_BITOR,  false, ev_float, ev_float, ev_float, PROG_ID_VERSION},
@@ -216,25 +228,26 @@ opcode_t    pr_opcodes[] = {
 	{"*", "mul.i", OP_MUL_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"/", "div.i", OP_DIV_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"%", "mod_i", OP_MOD_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
-	{"%", "mod.f", OP_MOD_F, false, ev_float, ev_float, ev_float, PROG_VERSION},
 	{"&", "bitand.i", OP_BITAND_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"|", "bitor.i",  OP_BITOR_I,  false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
+
+	{"%", "mod.f", OP_MOD_F, false, ev_float, ev_float, ev_float, PROG_VERSION},
 
 	{">=", "ge.i", OP_GE_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"<=", "le.i", OP_LE_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{">",  "gt.i", OP_GT_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"<",  "lt.i", OP_LT_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 
-	{">=", "ge.ui", OP_GE_UI, false, ev_uinteger, ev_uinteger, ev_integer, PROG_VERSION},
-	{"<=", "le.ui", OP_LE_UI, false, ev_uinteger, ev_uinteger, ev_integer, PROG_VERSION},
-	{">",  "gt.ui", OP_GT_UI, false, ev_uinteger, ev_uinteger, ev_integer, PROG_VERSION},
-	{"<",  "lt.ui", OP_LT_UI, false, ev_uinteger, ev_uinteger, ev_integer, PROG_VERSION},
-
 	{"&&", "and.i", OP_AND_I, false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"||", "or.i",  OP_OR_I,  false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"!",  "not.i", OP_NOT_I, false, ev_integer, ev_void, ev_integer, PROG_VERSION},
 	{"==", "eq.i",  OP_EQ_I,  false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
 	{"!=", "ne.i",  OP_NE_I,  false, ev_integer, ev_integer, ev_integer, PROG_VERSION},
+
+	{">=", "ge.u", OP_GE_U, false, ev_uinteger, ev_uinteger, ev_integer, PROG_VERSION},
+	{"<=", "le.u", OP_LE_U, false, ev_uinteger, ev_uinteger, ev_integer, PROG_VERSION},
+	{">",  "gt.u", OP_GT_U, false, ev_uinteger, ev_uinteger, ev_integer, PROG_VERSION},
+	{"<",  "lt.u", OP_LT_U, false, ev_uinteger, ev_uinteger, ev_integer, PROG_VERSION},
 
 	{"^", "bitxor.f", OP_BITXOR_F, false, ev_float, ev_float, ev_float, PROG_VERSION},
 	{"~", "bitnot.f", OP_BITNOT_F, false, ev_float, ev_void, ev_float, PROG_VERSION},

@@ -323,9 +323,11 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				OPC.float_var = (int) OPA.float_var >> (int) OPB.float_var;
 				break;
 			case OP_SHL_I:
+			case OP_SHL_U:
 				OPC.integer_var = OPA.integer_var << OPB.integer_var;
 				break;
 			case OP_SHR_I:
+			case OP_SHR_U:
 				OPC.integer_var = OPA.integer_var >> OPB.integer_var;
 				break;
 			case OP_GE_F:
@@ -417,6 +419,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_STORE_S:
 			case OP_STORE_FNC:			// pointers
 			case OP_STORE_I:
+			case OP_STORE_U:
 			case OP_STORE_P:
 				OPB.integer_var = OPA.integer_var;
 				break;
@@ -430,6 +433,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_STOREP_S:
 			case OP_STOREP_FNC:		// pointers
 			case OP_STOREP_I:
+			case OP_STOREP_U:
 			case OP_STOREP_P:
 				//FIXME put bounds checking back
 				ptr = pr->pr_globals + OPB.integer_var;
@@ -463,6 +467,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_ADDRESS_FLD:
 			case OP_ADDRESS_FNC:
 			case OP_ADDRESS_I:
+			case OP_ADDRESS_U:
 			case OP_ADDRESS_P:
 				OPC.integer_var = st->a;
 				break;
@@ -473,6 +478,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_LOAD_S:
 			case OP_LOAD_FNC:
 			case OP_LOAD_I:
+			case OP_LOAD_U:
 			case OP_LOAD_P:
 				if (pr_boundscheck->int_val) {
 					if (OPA.entity_var < 0
@@ -506,6 +512,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_LOADB_FLD:
 			case OP_LOADB_FNC:
 			case OP_LOADB_I:
+			case OP_LOADB_U:
 			case OP_LOADB_P:
 				//FIXME put bounds checking in
 				pointer = OPA.integer_var + OPB.integer_var;
@@ -525,6 +532,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_LOADBI_FLD:
 			case OP_LOADBI_FNC:
 			case OP_LOADBI_I:
+			case OP_LOADBI_U:
 			case OP_LOADBI_P:
 				//FIXME put bounds checking in
 				pointer = OPA.integer_var + (short) st->b;
@@ -554,6 +562,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_STOREB_FLD:
 			case OP_STOREB_FNC:
 			case OP_STOREB_I:
+			case OP_STOREB_U:
 			case OP_STOREB_P:
 				//FIXME put bounds checking in
 				pointer = OPB.integer_var + OPC.integer_var;
@@ -573,6 +582,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_STOREBI_FLD:
 			case OP_STOREBI_FNC:
 			case OP_STOREBI_I:
+			case OP_STOREBI_U:
 			case OP_STOREBI_P:
 				//FIXME put bounds checking in
 				pointer = OPB.integer_var + (short) st->c;
@@ -726,62 +736,85 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				OPC.integer_var = OPA.float_var;
 				break;
 			case OP_BITAND_I:
+			case OP_BITAND_U:
 				OPC.integer_var = OPA.integer_var & OPB.integer_var;
 				break;
 			case OP_BITOR_I:
+			case OP_BITOR_U:
 				OPC.integer_var = OPA.integer_var | OPB.integer_var;
 				break;
 			case OP_BITXOR_I:
+			case OP_BITXOR_U:
 				OPC.integer_var = OPA.integer_var ^ OPB.integer_var;
 				break;
 			case OP_BITNOT_I:
+			case OP_BITNOT_U:
 				OPC.integer_var = ~OPA.integer_var;
 				break;
 
+			case OP_ADD_U:
+				OPC.uinteger_var = OPA.uinteger_var + OPB.uinteger_var;
+				break;
+			case OP_SUB_U:
+				OPC.uinteger_var = OPA.uinteger_var - OPB.uinteger_var;
+				break;
+			case OP_MUL_U:
+				OPC.uinteger_var = OPA.uinteger_var * OPB.uinteger_var;
+				break;
+			case OP_DIV_U:
+				OPC.uinteger_var = OPA.uinteger_var / OPB.uinteger_var;
+				break;
+			case OP_MOD_U:
+				OPC.uinteger_var = OPA.uinteger_var % OPB.uinteger_var;
+				break;
+			case OP_CONV_IU:
+				OPC.uinteger_var = OPA.integer_var;
+				break;
+			case OP_CONV_UI:
+				OPC.integer_var = OPA.uinteger_var;
+				break;
+
 			case OP_GE_I:
+			case OP_GE_U:
 			case OP_GE_P:
 				OPC.integer_var = OPA.integer_var >= OPB.integer_var;
 				break;
 			case OP_LE_I:
+			case OP_LE_U:
 			case OP_LE_P:
 				OPC.integer_var = OPA.integer_var <= OPB.integer_var;
 				break;
 			case OP_GT_I:
+			case OP_GT_U:
 			case OP_GT_P:
 				OPC.integer_var = OPA.integer_var > OPB.integer_var;
 				break;
 			case OP_LT_I:
+			case OP_LT_U:
 			case OP_LT_P:
 				OPC.integer_var = OPA.uinteger_var < OPB.uinteger_var;
 				break;
-			case OP_GE_UI:
-				OPC.integer_var = OPA.uinteger_var >= OPB.uinteger_var;
-				break;
-			case OP_LE_UI:
-				OPC.integer_var = OPA.uinteger_var <= OPB.uinteger_var;
-				break;
-			case OP_GT_UI:
-				OPC.integer_var = OPA.uinteger_var > OPB.uinteger_var;
-				break;
-			case OP_LT_UI:
-				OPC.integer_var = OPA.integer_var < OPB.integer_var;
-				break;
 
 			case OP_AND_I:
+			case OP_AND_U:
 				OPC.integer_var = OPA.integer_var && OPB.integer_var;
 				break;
 			case OP_OR_I:
+			case OP_OR_U:
 				OPC.integer_var = OPA.integer_var || OPB.integer_var;
 				break;
 			case OP_NOT_I:
+			case OP_NOT_U:
 			case OP_NOT_P:
 				OPC.integer_var = !OPA.integer_var;
 				break;
 			case OP_EQ_I:
+			case OP_EQ_U:
 			case OP_EQ_P:
 				OPC.integer_var = OPA.integer_var == OPB.integer_var;
 				break;
 			case OP_NE_I:
+			case OP_NE_U:
 			case OP_NE_P:
 				OPC.integer_var = OPA.integer_var != OPB.integer_var;
 				break;
