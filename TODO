@@ -7,6 +7,7 @@ W = waiting on other work
 
 M  it seems possible to crash a QF server still - need to fix this!
 M  Scitech MGL used in win32 is screwed - dump it and use SDL
+M  merge nq and qw code bases
 I  GL is still way too slow
 I  Client side QuakeC.
 I  mingw cross compiling
@@ -49,7 +50,7 @@ These are explained better in doc/ideas/rhamph.txt:
 ?  room duplication
 ?  randomly generated maps
 ?  variable detail models
-?  skeltal model animations
+?  skeletal model animations
 ?  Inverse kinematics
 ?  variable detail walls
 
@@ -64,14 +65,14 @@ X  |      +--- cvs2cl
 X  |      +--- gas2masm
 X  |      +--- pak        massively enhanced pak tool
 X  |      \--- qfcc       QuakeForge Gamecode Compiler
-o  +--- include           API definitions for all subsystems
+X  +--- include           API definitions for all subsystems
 o  +--- nq                Non-common NQ code
 o  +--- qw                Non-common QW code
 o  \--- libs              common code libs
 o         +--- audio
 o         |       +--- cd
 o         |       +--- recording
-o         |       +--- renderer           3D audio rendering
+o         |       +--- renderer           Audio rendering
 o         |       |       +--- soft       Software 3D spatialization
 o         |       |       \--- openal     Passing the buck to OpenAL
 o         |       \--- targets            Raw sound I/O
@@ -79,7 +80,7 @@ o         |               +--- null       No raw output (none or OpenAL)
 o         |               +--- alsa       ALSA
 o         |               +--- oss        OSS or kernel sound
 o         |               +--- dsound     MS DirectSound
-o         |               \--- sdl        SDL (gack) output
+o         |               \--- sdl        SDL output
 o         +--- filesystem         Filesystem code
           |       |               (the code for normal fs is also here)
 o         |       +--- pakfile    Quake Pakfiles
