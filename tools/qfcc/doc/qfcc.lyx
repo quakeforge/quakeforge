@@ -1,16 +1,19 @@
-#LyX 1.1 created this file. For more info see http://www.lyx.org/
-\lyxformat 218
+#LyX 1.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 220
 \textclass scrbook
 \language american
 \inputencoding latin1
 \fontscheme pslatex
-\graphics default
+\graphics dvips
+\float_placement htb
 \paperfontsize 12
 \spacing single 
-\papersize Default
+\papersize letterpaper
 \paperpackage a4
-\use_geometry 1
+\use_geometry 0
 \use_amsmath 0
+\use_natbib 0
+\use_numerical_citations 0
 \paperorientation portrait
 \secnumdepth 2
 \tocdepth 2
@@ -28,15 +31,13 @@ The Ruamoko Programming Language
 \layout Author
 
 Bill Currie 
-\begin_inset Formula \( \bullet  \)
+\begin_inset Formula $\bullet $
 \end_inset 
 
  Jeff Teunissen
 \layout Publishers
 
 QuakeForge Press
-\newline 
-;-)
 \layout Uppertitleback
 
 This manual is free; you can redistribute it and/or modify it under the
@@ -67,7 +68,7 @@ Boston MA 02111-1307
 USA
 \layout Lowertitleback
 
-Copyright © 2002 Bill Currie and Jeff Teunissen
+Copyright © 2002-2003 Bill Currie and Jeff Teunissen
 \layout Standard
 
 
@@ -113,7 +114,7 @@ QuakeC
  a revolutionary development.
 \layout Standard
 
-Now, let's fast-forward to another December -- this time, December 1999.
+Now, let's fast-forward to another December -- this time, three years later.
  In another revolutionary move, Id Software released the source code to
  the complete Quake engine.
  This gave many people the opportunity to do a lot more than just make 
@@ -140,14 +141,19 @@ QuakeForge has developed a number of interesting things involving the Quake
  This manual documents the 
 \emph on 
 Ruamoko
-\begin_float footnote 
+\begin_inset Foot
+collapsed true
+
 \layout Standard
 
 The name Ruamoko comes from the Maori name for their god of volcanoes and
  earthquakes.
  According to myth, Ruamoko is not yet born, and when he shakes inside the
- Earth-mother, the world shakes.
-\end_float 
+ Earth-mother, the world trembles.
+\end_inset 
+
+
+\emph default 
  language, a language based on Id Software's QuakeC, but which has been
  expanded in ways far beyond the original language.
 \layout Standard
@@ -156,9 +162,25 @@ The idea behind this book is to give new programmers a solid foundation
  in both of the programming models (procedural and object-oriented) supported
  by the Ruamoko language, while giving experienced Ruamoko programmers a
  complete reference for development of game code.
+\layout Standard
+
+
+\begin_inset FloatList figure
+
+\end_inset 
+
+
+\layout Part
+
+Classical Programming in Ruamoko
 \layout Chapter
 
-A Tutorial Introduction
+
+\begin_inset LatexCommand \label{cha:A-Tutorial-Introduction}
+
+\end_inset 
+
+Introduction: Foot, Meet Mister Rocket Launcher
 \layout Standard
 
 Let us begin with a quick introduction to Ruamoko.
@@ -225,116 +247,123 @@ This is the big hurdle.
  With these mechanical details mastered, everything else is relatively easy.
 \layout Standard
 
-In Ruamoko, the program to print 
+
+\begin_inset Float figure
+wide false
+collapsed true
+
+\layout LyX-Code
+\line_top \line_bottom 
+
+\begin_inset Include \verbatiminput{hello.r}
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{cap:Hello-World}
+
+\end_inset 
+
+
 \begin_inset Quotes eld
 \end_inset 
 
-Hello, world!
+Hello World
 \begin_inset Quotes erd
 \end_inset 
 
- is:
-\layout LyX-Code
 
-#include <qwaq/globals.rh>
-\newline 
-#include <qwaq/fields.rh>
-\newline 
-#include <qwaq/builtins.rh>
-\newline 
+\end_inset 
 
-\newline 
-void () main =
-\newline 
-{
-\newline 
-    printf ("Hello, world!
-\backslash 
-n");
-\newline 
-};
-\layout Standard
+A Ruamoko program that does this simple task is found in Figure 
+\begin_inset LatexCommand \vref{cap:Hello-World}
 
-To run this program, you first have to compile it.
+\end_inset 
+
+.
+ To run this program, you first have to compile it.
  To compile it, you need to save the source code into a file (for example,
  
 \family typewriter 
 hello.r
 \family default 
-), and create a 
+), then compile it with the command 
 \family typewriter 
-progs.src
+\series bold 
+qfcc -o qwaq.dat hello.r
 \family default 
- file to tell the compiler how to compile it.
- Here is an example 
-\family typewriter 
-progs.src
-\family default 
- file:
-\layout LyX-Code
-
-qwaq.dat
-\newline 
-hello.r
-\layout Standard
-
-The first line of 
-\family typewriter 
-progs.src
-\family default 
- tells the compiler the name of the compiled object file that it is supposed
- to save to disk after compilation.
- Following lines tell it the names of files that are to be used to compile
- that object file.
- To compile the source, issue the command
-\layout LyX-Code
-
-qfcc
+\series default 
+.
 \layout Standard
 
 If you haven't screwed anything up, such as omitting a character or misspelling
- something, the compilation will proceed silently.
- You should be rewarded with something that looks something like the following:
+ something, the compilation will proceed.
+ You should be rewarded with something that looks something like Figure
+ 
+\begin_inset LatexCommand \vref{cap:qfcc-output}
+
+\end_inset 
+
+.
+\begin_inset Float figure
+wide false
+collapsed true
+
 \layout LyX-Code
 
-   208 strofs
-\newline 
-     4 statements
-\newline 
-    14 functions
-\newline 
-    30 globaldefs
-\newline 
-     0 locals size ((null))
-\newline 
-     8 fielddefs
-\newline 
-    52 pr_globals
-\newline 
-     6 entityfields
-\newline 
-  1316 TOTAL SIZE
-\newline 
-Compilation time: 0.0365 seconds.
+  
+\begin_inset Include \verbatiminput{qfcc-output.txt}
+
+\end_inset 
+
+
+\layout Caption
+
+
+\family typewriter 
+
+\begin_inset LatexCommand \label{cap:qfcc-output}
+
+\end_inset 
+
+
+\series bold 
+qfcc
+\family default 
+\series default 
+ output
+\end_inset 
+
+
 \layout Standard
 
 You run 
 \family typewriter 
 qwaq.dat
 \family default 
- by issuing the command
-\layout LyX-Code
-
+ by issuing the command 
+\family typewriter 
+\series bold 
 qwaq
-\layout Standard
+\family default 
+\series default 
+.
+ The program should print 
+\begin_inset Quotes eld
+\end_inset 
 
-the program should print
-\layout LyX-Code
 
+\family typewriter 
 Hello, world!
-\layout Standard
+\family default 
 
-to your screen.
+\begin_inset Quotes erd
+\end_inset 
+
+ to your screen.
 \layout Standard
 
 Now, for some explanations regarding the program itself.
@@ -370,13 +399,16 @@ main
 \end_inset 
 
  is special -- program execution begins there
-\begin_float footnote 
+\begin_inset Foot
+collapsed true
+
 \layout Standard
 
 This is not precisely true.
  When used in a game engine, there are certain other functions that are
  called by the engine during the course of a game.
-\end_float 
+\end_inset 
+
 .
  This means that every program must have a 
 \family typewriter 
@@ -385,44 +417,86 @@ main
  function somewhere.
 \layout Standard
 
-Main will usually call other functions to do its job -- some of them you
- write, and some of them are provided by the virtual machine your program
- runs inside.
- The first lines of the program,
-\layout LyX-Code
+The main function will usually call other functions to do its job -- some
+ of them you write, and some of them are provided by the virtual machine
+ your program runs inside.
+ The first lines of the program (the ones beginning with 
+\begin_inset Quotes eld
+\end_inset 
 
-#include <qwaq/globals.rh>
-\newline 
-#include <qwaq/fields.rh>
-\newline 
-#include <qwaq/builtins.rh>
-\layout Standard
 
-tell the compiler to include information about the standard variables, constants
-, 
+\family typewriter 
+#include
+\family default 
+
+\begin_inset Quotes erd
+\end_inset 
+
+) tell the compiler to include information about the standard variables,
+ constants, 
 \emph on 
 fields
 \emph default 
+
+\begin_inset LatexCommand \index{fields}
+
+\end_inset 
+
 , and 
+\emph on 
+engine functions
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+also known as 
 \emph on 
 builtins
 \emph default 
- (also known as 
-\emph on 
-engine functions
+.
+\end_inset 
+
+
 \emph default 
-) provided by the environment
-\begin_float footnote 
+
+\begin_inset LatexCommand \index{functions, engine}
+
+\end_inset 
+
+ provided by the environment
+\begin_inset Foot
+collapsed true
+
 \layout Standard
 
 The environment will be described later.
-\end_float 
+\end_inset 
+
 .
 \layout Standard
 
 One way of communicating data between functions is for the calling function
- to provide a list of values, called arguments, to the function it calls.
- The parentheses after the function's name surround the argument list.
+ to provide a list of values, called 
+\emph on 
+arguments
+\emph default 
+
+\begin_inset LatexCommand \index{arguments}
+
+\end_inset 
+
+, to the function it calls.
+ The parentheses after the function's name surround the 
+\emph on 
+argument list
+\emph default 
+
+\begin_inset LatexCommand \index{argument list}
+
+\end_inset 
+
+.
  In this example, main is defined to be a function that expects no arguments,
  which is indicated by an empty list:\SpecialChar ~
 
@@ -443,14 +517,18 @@ The statements of a function are enclosed in curly braces,\SpecialChar ~
 main
 \family default 
  contains only one statement,
-\layout LyX-Code
-
-printf ("Hello, world!
+\family typewriter 
+ printf ("Hello, world!
 \backslash 
-n");
-\layout Standard
-
-A function is called by giving its name, followed by a list of arguments
+n")
+\family default 
+.
+ This is a 
+\emph on 
+function call
+\emph default 
+, which transfers control from one function to another.
+ A function is called by giving its name, followed by a list of arguments
  enclosed by parentheses, so this calls the function 
 \family typewriter 
 printf
@@ -466,7 +544,7 @@ n"
 \family typewriter 
 printf
 \family default 
- is a builtin function that prints output, in this case the string of characters
+ is an engine function that prints output, in this case the string of characters
  between the quotes.
 \layout Standard
 
@@ -517,77 +595,1087 @@ n
 \backslash 
 n
 \family default 
- to include a newline character in the printf argument; if you try something
- like
+ to include a newline character in the printf argument; if you try to insert
+ a newline yourself into the string, the Ruamoko compiler will give you
+ an error message when you compile the program.
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed true
+
 \layout LyX-Code
+\line_top \line_bottom 
 
-printf ("Hello, world!
-\newline 
-");
-\layout Standard
+\begin_inset Include \verbatiminput{hello2.r}
 
-the Ruamoko compiler will give you an error message.
-\layout Standard
+\end_inset 
 
 
+\layout Caption
+
+
+\begin_inset LatexCommand \label{cap:A-different-Hello}
+
+\end_inset 
+
+A different 
+\begin_inset Quotes eld
+\end_inset 
+
+Hello World
+\begin_inset Quotes erd
+\end_inset 
+
+
+\end_inset 
+
+The 
 \family typewriter 
-printf
+printf()
 \family default 
- never supplies a newline automatically, so several calls may be used to
- build up an output line in stages.
- Our first program could just as easily been written as
-\layout LyX-Code
+ function never supplies a newline automatically, so several calls may be
+ used to build up an output line in stages.
+ Our first program could just as easily been written as it is in figure
+ 
+\begin_inset LatexCommand \vref{cap:A-different-Hello}
 
-#include <qwaq/globals.rh>
-\newline 
-#include <qwaq/fields.rh>
-\newline 
-#include <qwaq/builtins.rh>
-\newline 
+\end_inset 
 
-\newline 
-void () main =
-\newline 
-{
-\newline 
-    printf ("Hello, ");
-\newline 
-    printf ("world!");
-\newline 
-    printf ("
-\backslash 
-n");
-\newline 
-};
-\layout Standard
-
-and it would have produced identical output.
+, and it would have produced identical output.
 \layout Standard
 
 Note that 
+\family typewriter 
+
 \backslash 
-n represents only a single character.
- An escape character like 
+n
+\family default 
+ represents only a single character.
+ An 
+\emph on 
+escape character
+\emph default 
+ like 
+\family typewriter 
+
 \backslash 
-n gives you a general way to express hard-to-type or invisible characters.
+n
+\family default 
+ gives you a general way to express hard-to-type or invisible characters.
  Among the others are 
+\family typewriter 
+
 \backslash 
-t for a tab, 
+t
+\family default 
+ for a tab, 
+\family typewriter 
+
 \backslash 
-b for a backspace, 
+b
+\family default 
+ for a backspace, 
+\family typewriter 
+
 \backslash 
-" for a double-quote, and 
+"
+\family default 
+ for a double-quote, and 
+\family typewriter 
+
 \backslash 
 
 \backslash 
+
+\family default 
  for the backslash character itself.
  There is a complete list in [section]
 \layout Section
 
 Variables and Mathematical Expressions
+\layout Standard
+
+
+\begin_inset Float figure
+wide false
+collapsed true
+
+\layout LyX-Code
+\line_top \line_bottom 
+
+\begin_inset Include \verbatiminput{radians.r}
+
+\end_inset 
+
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{cap:Degrees-to-radians}
+
+\end_inset 
+
+Degrees to radians
+\end_inset 
+
+In figure 
+\begin_inset LatexCommand \vref{cap:Degrees-to-radians}
+
+\end_inset 
+
+, we find a simple program uses the formula 
+\begin_inset Formula $R=D\, \times \, (\frac{\pi }{180})$
+\end_inset 
+
+ to print a table of various angles in both their degrees and radian equivalents.
+\layout Standard
+
+The line 
+\begin_inset Quotes eld
+\end_inset 
+
+
+\family typewriter 
+/* Print a silly conversion table between degrees and radians */
+\family default 
+
+\begin_inset Quotes erd
+\end_inset 
+
+ and the three parts that say things like 
+\begin_inset Quotes eld
+\end_inset 
+
+
+\family typewriter 
+// lower limit
+\family default 
+
+\begin_inset Quotes erd
+\end_inset 
+
+ are 
+\emph on 
+comments
+\emph default 
+
+\begin_inset LatexCommand \index{comments}
+
+\end_inset 
+
+.
+ Characters between 
+\family typewriter 
+/*
+\family default 
+ and 
+\family typewriter 
+*/
+\family default 
+, and anything between 
+\family typewriter 
+//
+\family default 
+ and the next line, are ignored by the compiler; they may be used freely
+ to make a program easier for humans to understand.
+ Comments may appear anywhere a blank space, or a tab, or a newline can.
+\layout Standard
+
+In Ruamoko, all variables must be declared before they are used., usually
+ at the beginning of the function before any statements.
+ A declaration
+\begin_inset LatexCommand \index{declaration, variable}
+
+\end_inset 
+
+ announces the properties of variables to the compiler; it consists of a
+ type name and a list of one or more variables, such as
+\layout LyX-Code
+
+float   degrees, radians;
+\newline 
+integer lower, upper, step;
+\layout Standard
+
+The type 
+\family typewriter 
+float
+\family default 
+ means that the 
+\family typewriter 
+degrees
+\family default 
+ and 
+\family typewriter 
+radians
+\family default 
+ variables are floating-point numbers (numbers that can have a fractional
+ part), and the type 
+\family typewriter 
+integer
+\family default 
+ means that the 
+\family typewriter 
+lower
+\family default 
+, 
+\family typewriter 
+upper
+\family default 
+, and 
+\family typewriter 
+step
+\family default 
+ variables are integers -- that is, they are whole numbers.
+\layout Standard
+
+Unlike C, in which 
+\family typewriter 
+int
+\family default 
+ and 
+\family typewriter 
+float
+\family default 
+ can have different sizes depending on the machine, Ruamoko variables always
+ have a size that is a multiple of 4 bytes (32 bits).
+\layout Standard
+
+Ruamoko provides four basic data types
+\begin_inset LatexCommand \index{types, basic}
+
+\end_inset 
+
+:
+\layout Standard
+
+
+\begin_inset  Tabular
+<lyxtabular version="3" rows="4" columns="2">
+<features>
+<column alignment="left" valignment="top" width="0pt">
+<column alignment="left" valignment="top" width="0pt">
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family typewriter 
+float
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+floating-point numbers
+\end_inset 
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family typewriter 
+integer
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+whole numbers, with a range between -2147483648 and 2147483647.
+\end_inset 
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family typewriter 
+string
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+text strings
+\end_inset 
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family typewriter 
+vector
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\family roman 
+\series medium 
+\shape up 
+\size normal 
+\emph off 
+\bar no 
+\noun off 
+\color none
+three-dimensional floating-point vectors
+\end_inset 
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset 
+
+
+\layout Standard
+
+There are more types than just these four, but this is the list of 
+\emph on 
+basic types
+\emph default 
+.
+ There are also 
+\emph on 
+arrays
+\emph default 
+, 
+\emph on 
+structures
+\emph default 
+, and 
+\emph on 
+unions
+\emph default 
+ of these basic types, 
+\emph on 
+pointers
+\emph default 
+ to them, and functions that return them, all of which we'll meet later.
+\layout Standard
+
+The computation in the conversion program begins with the assignment statements
+\layout LyX-Code
+
+lower = 0;
+\newline 
+upper = 360;
+\newline 
+step = 45;
+\layout Standard
+
+which set the variables to their initial values.
+ In Ruamoko, as in C, a statement is terminated by the semicolon character.
+\layout Standard
+
+Each line of the table is computed in the same manner, so we use a loop
+ that repeats once per output line; this is the purpose of the 
+\family typewriter 
+while
+\family default 
+ loop
+\layout LyX-Code
+
+while (degrees <= upper) {
+\newline 
+    
+\begin_inset Formula $\vdots $
+\end_inset 
+
+
+\newline 
+}
+\layout Standard
+
+The 
+\family typewriter 
+while
+\family default 
+ loop works like this: The condition in parentheses is tested.
+ If it is true (if 
+\family typewriter 
+degrees
+\family default 
+ is less than or equal to 
+\family typewriter 
+upper
+\family default 
+), the body of the loop (the three statements enclosed in the block delimited
+ by the curly braces) is executed.
+ Then the condition is tested again, and if it's true again, the body is
+ executed again.
+ If and when the condition becomes false (
+\family typewriter 
+degrees
+\family default 
+ exceeds 
+\family typewriter 
+upper
+\family default 
+), the loop ends and execution continues at the statement following the
+ loop's end.
+ Since there are no more statements in the program, the end of the loop
+ terminates the program.
+\layout Standard
+
+The body of a while loop can be one or more statements enclosed in braces
+ (called a block, or compound statement), or a single statement without
+ braces, as in
+\layout LyX-Code
+
+while (i < n)
+\newline 
+    i = i * 2;
+\layout Standard
+
+In either case, we will always indent the statements controlled by the while
+ by one tab stop (which we will show as four spaces), so you can see at
+ a glance which statements are inside the loop.
+ The indentation emphasizes the logical structure of the program.
+ The compiler does not care how your program looks, but proper indentation
+ and spacing are critical in making programs easy for people (including
+ you) to read.
+ We recommend writing only one statement per line, and using blanks around
+ operators to make groupings clear.
+ The positions of braces is less important, though you should be warned
+ that many programmers have passionate beliefs about how braces should be
+ used.
+ We have chosen the so-called 
+\begin_inset Quotes eld
+\end_inset 
+
+One True Brace Style
+\begin_inset Quotes erd
+\end_inset 
+
+, which is the style that Brian Kernighan and Dennis Ritchie used in their
+ book 
+\bar under 
+The C Programming Language
+\bar default 
+, for consistency.
+ Pick a style that suits you, and use it consistently in your own work,
+ but be prepared to adapt to the styles of other programmers when writing
+ as a group.
+\layout Standard
+
+Most of the work gets done inside the loop.
+ The radians for the angle are computed and assigned to the 
+\family typewriter 
+radians
+\family default 
+ variable using the statement
+\layout LyX-Code
+
+radians = degrees * (PI / 180);
+\layout Standard
+
+This example also shows a bit more of how 
+\family typewriter 
+printf()
+\family default 
+ works.
+ 
+\family typewriter 
+printf()
+\family default 
+ is a general-purpose output formatting function, which we will describe
+ in detail in [chapter].
+ Its first argument is a string to be printed, with each 
+\family typewriter 
+%
+\family default 
+ indicating where one of the other (second, third, and so on) arguments
+ is to be substituted, and in what form it is to be output.
+ For instance, 
+\family typewriter 
+%f
+\family default 
+ specifies a 
+\family typewriter 
+float
+\family default 
+ argument, so the statement
+\layout LyX-Code
+
+printf("%f
+\backslash 
+t%f
+\backslash 
+n", degrees, radians);
+\layout Standard
+
+causes the values of the two 
+\family typewriter 
+float
+\family default 
+ variables 
+\family typewriter 
+degrees
+\family default 
+ and 
+\family typewriter 
+radians
+\family default 
+ to be printed, with a tab (
+\family typewriter 
+
+\backslash 
+t
+\family default 
+) between them.
 \layout Chapter
 
+Types, Operators, and Expressions
+\layout Standard
+
+Variables and constants are the basic data units manipulated in a program.
+ Declarations list the variables to be used, and state what type they have
+ and perhaps what the initial values for them are.
+ Operators specify what is to be done to them.
+ Expressions combine variables and constants to produce new values.
+ The type of a unit determines the set of values it can have and what operations
+ are permissible for it.
+ These building blocks are the subject of this chapter.
+\layout Section
+
+Variable Names
+\layout Standard
+
+Though we didn't say it in Chapter 
+\begin_inset LatexCommand \ref{cha:A-Tutorial-Introduction}
+
+\end_inset 
+
+, there are some restrictions on variable names and symbolic constants.
+ Names are composed of letters and digits; the first character must be a
+ letter (the underscore, 
+\begin_inset Quotes eld
+\end_inset 
+
+_
+\begin_inset Quotes erd
+\end_inset 
+
+, counts as a letter -- it's often useful for improving the readability
+ of long names).
+ Don't begin variable names with an underscore, however, since functions
+ beginning with _ are reserved for library and engine functions.
+ Upper-case and lower-case are distinct, so x and X are two different names.
+ Traditional practice is to use lower-case or mixed case for variable names,
+ and all upper-case for 
+\emph on 
+symbolic constants
+\emph default 
+, also known as 
+\emph on 
+defines
+\emph default 
+.
+ Keywords like if, else, integer, float, etc.
+ are reserved -- you can't use them as variable names.
+\layout Section
+
+Constants
+\layout Standard
+
+An integer constant like 
+\family typewriter 
+5678
+\family default 
+ is an integer.
+ Floating-point constants contain a decimal point (
+\family typewriter 
+123.4
+\family default 
+) or an exponent (
+\family typewriter 
+1e-2
+\family default 
+) or both (
+\family typewriter 
+1.2e3
+\family default 
+).
+\layout Standard
+
+The value of an integer can be specified in octal (base 8, 0
+\begin_inset Formula $\ldots $
+\end_inset 
+
+7) or hexadecimal (base 16, 0
+\begin_inset Formula $\ldots $
+\end_inset 
+
+F, hereafter called 
+\begin_inset Quotes eld
+\end_inset 
+
+hex
+\begin_inset Quotes erd
+\end_inset 
+
+) instead of decimal.
+ A leading 
+\family typewriter 
+0
+\family default 
+ (zero) on an integer constant means octal; a leading 
+\family typewriter 
+0x
+\family default 
+ or 
+\family typewriter 
+0X
+\family default 
+ means hex.
+ For example, decimal 31 can be written as 
+\family typewriter 
+037
+\family default 
+ in octal, or 
+\family typewriter 
+0x1f
+\family default 
+ or 
+\family typewriter 
+0X1F
+\family default 
+ in hex.
+\layout Standard
+
+Certain characters can be represented in string constants by escape sequences
+ like 
+\family typewriter 
+
+\backslash 
+n
+\family default 
+ (newline); these sequences look like two characters, but represent only
+ one.
+ In addition, an arbitrary byte value can be represented by
+\layout LyX-Code
+
+
+\backslash 
+o
+\layout Standard
+
+where 
+\family typewriter 
+o
+\family default 
+ is one to three octal digits or by
+\layout LyX-Code
+
+
+\backslash 
+xh
+\layout Standard
+
+where 
+\family typewriter 
+h
+\family default 
+ is one or more hex digits.
+ So we might write
+\layout LyX-Code
+
+"vtab = 
+\backslash 
+013"
+\layout Standard
+
+or, in hex, 
+\layout LyX-Code
+
+"vtab = 
+\backslash 
+x0b"
+\layout Standard
+
+The complete set of escape sequences is found in Table 
+\begin_inset LatexCommand \ref{cap:Escape-sequences}
+
+\end_inset 
+
+.
+\layout Standard
+
+
+\begin_inset Float table
+wide false
+collapsed true
+
+\layout Standard
+
+
+\hfill 
+
+\begin_inset  Tabular
+<lyxtabular version="3" rows="14" columns="2">
+<features>
+<column alignment="left" valignment="top" leftline="true" width="0pt">
+<column alignment="left" valignment="top" leftline="true" rightline="true" width="0pt">
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Sequence
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Description
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\backslash 
+a
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Alert (bell) character
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\backslash 
+b
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+backspace
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\backslash 
+f
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+form feed
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\backslash 
+n
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+newline
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\backslash 
+r
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+carriage return
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\backslash 
+t
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+tab character
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\backslash 
+
+\backslash 
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+backslash
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\backslash 
+?
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+question mark
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\backslash 
+'
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+single quote
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\backslash 
+"
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+double quote
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\backslash 
+ooo
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+octal number
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\backslash 
+xhh
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+hex number
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+
+\backslash 
+^
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+alternate character set (toggles)
+\end_inset 
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset 
+
+
+\hfill 
+
+\layout Caption
+
+
+\begin_inset LatexCommand \label{cap:Escape-sequences}
+
+\end_inset 
+
+Escape sequences
+\end_inset 
+
+
+\layout Chapter
+
+Control Constructs: Kneel Before Zod
+\layout Chapter
+
+Arrays and Pointers: Pull Pin, Then Throw 
+\bar under 
+GRENADE
+\layout Chapter
+
+Breaking Up The Program: Now Where Did I Put That?
+\layout Part
+
+Object-Oriented Programming in Ruamoko
+\layout Part
+
 Language Reference
+\layout Chapter
+
+Types
 \layout Standard
 
 This is currently just new stuff in 
@@ -603,7 +1691,7 @@ New Type Features
 \layout Subsection
 
 New Types
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -611,7 +1699,7 @@ New Types
 integer
 \family default 
  32 bit signed integer
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -619,7 +1707,7 @@ integer
 id
 \family default 
  generic object pointer
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -627,7 +1715,7 @@ id
 Class
 \family default 
  class object pointer
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -635,7 +1723,7 @@ Class
 Protocol
 \family default 
  protocol object pointer
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -643,7 +1731,7 @@ Protocol
 Method
 \family default 
  method pointer
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -651,7 +1739,7 @@ Method
 SEL
 \family default 
  selector
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -899,14 +1987,14 @@ element-list
 \layout Subsection
 
 Magic variables
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
 \family typewriter 
 @self
 \family default 
- Automagically declared entity variable the engine will use for 
+ Automagically-declared entity variable the engine will use for 
 \family typewriter 
 touch
 \family default 
@@ -920,14 +2008,14 @@ think
 self
 \family default 
  to be used as the object hidden parameter in methods.
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
 \family typewriter 
 @this
 \family default 
- Automagically declared 
+ Automagically-declared 
 \family typewriter 
 id
 \family default 
@@ -947,7 +2035,7 @@ think
 \family default 
  methods (the engine assumes it's calling a method rather than a function
  if the @this field is used.
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -961,7 +2049,7 @@ think
 \family default 
  in vararg functions.
  Not valid elsewhere.
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -1234,7 +2322,7 @@ Expressions
 \layout Subsection
 
 Binary
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -1243,7 +2331,7 @@ Binary
 >>
 \family default 
  bit shift left and right
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -1251,7 +2339,7 @@ Binary
 ^
 \family default 
  bitwise exclusive or
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -1262,7 +2350,7 @@ Binary
 \layout Subsubsection
 
 Assignment
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -1284,7 +2372,7 @@ b
 \layout Subsection
 
 Unary
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -1292,7 +2380,7 @@ Unary
 ~
 \family default 
  bitwise not
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -1300,7 +2388,7 @@ Unary
 &
 \family default 
  address
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -1316,7 +2404,7 @@ e
 \family default 
 \emph default 
  pre-increment and decrement
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -1335,7 +2423,7 @@ e
 \layout Subsection
 
 Other
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -1353,7 +2441,7 @@ expr
  cast expression.
  Only works for converting between integer and float types and between pointer
  types.
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -1368,7 +2456,7 @@ expr
 ] 
 \family default 
 array indexing.
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -1386,7 +2474,7 @@ expr
 \family default 
 \emph default 
 C's trinary expression
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -1403,7 +2491,7 @@ exprs
 ]
 \family default 
  Objective-QC message
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -1415,7 +2503,7 @@ exprs
 )
 \family default 
  Objective-QC selector expression
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -1427,7 +2515,7 @@ name
 )
 \family default 
  Objective-QC protocol expression
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -1439,7 +2527,7 @@ type
 )
 \family default 
  Objective-QC type encoding expression
-\layout List
+\layout Labeling
 \labelwidthstring 00.00.0000
 
 
@@ -1451,4 +2539,12 @@ string
 \emph default 
  Objective-QC string object.
  Currently identical to a normal QC string.
+\layout Standard
+
+
+\begin_inset LatexCommand \printindex{}
+
+\end_inset 
+
+
 \the_end
