@@ -33,6 +33,8 @@
 #include "QF/qdefs.h"
 #include "QF/sizebuf.h"
 
+#include "bothdefs.h"
+
 #define	PORT_ANY	-1
 
 typedef struct

@@ -41,9 +41,6 @@
 #define MAX_STYLESTRING	64
 #define MAX_EDICTS		768
 #define MAX_LIGHTSTYLES	64
-#define MAX_DATAGRAM	1450
-
-#define MAX_MSGLEN		1450
 
 #define clc_stringcmd	4
 
