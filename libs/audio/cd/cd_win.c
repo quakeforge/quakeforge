@@ -65,6 +65,8 @@ static byte maxTrack;
 
 UINT        wDeviceID;
 
+void I_CDAudio_Play (byte track, qboolean looping);
+void I_CDAudio_Stop (void);
 
 static void
 I_CDAudio_CloseDoor (void)
