@@ -857,7 +857,7 @@ pr__i_Object__hash (progs_t *pr)
 }
 
 static void
-pr__i_Object__compare (progs_t *pr)
+pr__i_Object__compare_ (progs_t *pr)
 {
 	int          ret;
 	ret = P_INT (pr, 0) != P_INT (pr, 2);
@@ -870,7 +870,7 @@ pr__i_Object__compare (progs_t *pr)
 }
 
 static void
-pr__c_Object__conformsTo (progs_t *pr)
+pr__c_Object__conformsTo_ (progs_t *pr)
 {
 	//pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
 	//pr_protocol_t *protocol = &P_STRUCT (pr, pr_protocol_t, 2);
@@ -879,7 +879,7 @@ pr__c_Object__conformsTo (progs_t *pr)
 }
 
 static void
-pr__i_Object__error (progs_t *pr)
+pr__i_Object__error_ (progs_t *pr)
 {
 	//pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	//const char *fmt = P_GSTRING (pr, 2);
@@ -955,9 +955,9 @@ static struct {
 	{"object_is_meta_class",	pr_object_is_meta_class},
 
 	{"_i_Object__hash",			pr__i_Object__hash},
-	{"_i_Object__compare",		pr__i_Object__compare},
-	{"_c_Object__conformsTo",	pr__c_Object__conformsTo},
-	{"_i_Object__error",		pr__i_Object__error},
+	{"_i_Object__compare_",		pr__i_Object__compare_},
+	{"_c_Object__conformsTo_",	pr__c_Object__conformsTo_},
+	{"_i_Object__error_",		pr__i_Object__error_},
 };
 
 void
