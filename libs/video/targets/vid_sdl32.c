@@ -55,8 +55,6 @@ static const char rcsid[] =
 HWND 		mainwindow;
 #endif
 
-cvar_t     *vid_bitdepth;
-
 // The original defaults
 #define BASEWIDTH 320
 #define BASEHEIGHT 200

@@ -43,6 +43,7 @@ extern struct cvar_s *vid_fullscreen;
 extern struct cvar_s *vid_system_gamma;
 extern struct cvar_s *vid_width;
 extern struct cvar_s *vid_height;
+extern struct cvar_s *vid_bitdepth;
 
 typedef struct vrect_s {
 	int				 x,y,width,height;

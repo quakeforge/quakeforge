@@ -19,6 +19,8 @@ static const char rcsid[] =
 #include "QF/va.h"
 #include "QF/vid.h"
 
+cvar_t     *vid_bitdepth;
+
 extern SDL_Surface *screen;
 
 
@@ -77,4 +79,6 @@ VID_Init_Cvars ()
 							   "Toggles fullscreen mode");
 	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
 								 "Use system gamma control if available");
+	vid_bitdepth = Cvar_Get ("vid_bitdepth", "8", CVAR_ROM, NULL, "Sets "
+							 "display bitdepth (supported modes: 8 16 32)");
 }
