@@ -417,6 +417,9 @@ method_check_params (method_t *method, expr_t *args)
 	for (i = 2; i < count; i++) {
 		expr_t     *e = arg_list[i];
 		type_t     *t = get_type (e);
+
+		if (!t)
+			return e;
  
 		if (mtype->parm_types[i] == &type_float && e->type == ex_integer) {
 			convert_int (e);
