@@ -1270,6 +1270,7 @@ CD_TARGETS=""
 SND_TARGETS=""
 SND_PLUGIN_TARGETS="libsound_null.la libsound_disk.la"
 VID_TARGETS=""
+BUILD_SND_RENDERER=no
 BUILD_GL=no
 BUILD_SW=no
 CAN_BUILD_GL=no
@@ -1390,27 +1391,35 @@ if test -n "$CL_TARGETS"; then
 	SND_TARGETS="libQFsound.la"
 	if test "`echo $SOUND_TYPES | grep ALSA0.5`"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_alsa0_5.la"
+		BUILD_SND_RENDERER=yes
 	fi
 	if test "`echo $SOUND_TYPES | grep ALSA0.9`"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_alsa0_9.la"
+		BUILD_SND_RENDERER=yes
 	fi
 	if test "`echo $SOUND_TYPES | grep MME`"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_mme.la"
+		BUILD_SND_RENDERER=yes
 	fi
 	if test "`echo $SOUND_TYPES | grep OSS`"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_oss.la"
+		BUILD_SND_RENDERER=yes
 	fi
 	if test "`echo $SOUND_TYPES | grep SDL`"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_sdl.la"
+		BUILD_SND_RENDERER=yes
 	fi
 	if test "`echo $SOUND_TYPES | grep SGI`"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_sgi.la"
+		BUILD_SND_RENDERER=yes
 	fi
 	if test "`echo $SOUND_TYPES | grep SUN`"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_sun.la"
+		BUILD_SND_RENDERER=yes
 	fi
 	if test "`echo $SOUND_TYPES | grep Win32`"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_win.la"
+		BUILD_SND_RENDERER=yes
 	fi
 	VID_TARGETS="libQFjs.la $VID_TARGETS"
 else
@@ -1429,6 +1438,7 @@ AC_SUBST(SND_TARGETS)
 AC_SUBST(SND_PLUGIN_TARGETS)
 AC_SUBST(VID_TARGETS)
 
+AM_CONDITIONAL(BUILD_SND_RENDERER, test "$BUILD_SND_RENDERER" = "yes")
 AM_CONDITIONAL(BUILD_GL, test "$BUILD_GL" = "yes")
 AM_CONDITIONAL(BUILD_SW, test "$BUILD_SW" = "yes")
 

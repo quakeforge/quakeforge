@@ -2,7 +2,15 @@ INCLUDES= -I$(top_srcdir)/include $(ALSA_CFLAGS) $(MME_CFLAGS) $(OSS_CFLAGS) $(S
 
 libdir = @PLUGINDIR@
 
-lib_LTLIBRARIES = @SND_PLUGIN_TARGETS@
+if BUILD_SND_RENDERER
+SND_RENDERER = libQFsoundrenderer.la
+else
+SND_RENDERER =
+endif
+
+SND_RENDERER_LIB = $(top_builddir)/libs/audio/targets/libQFsoundrenderer.la
+
+lib_LTLIBRARIES = $(SND_RENDERER) @SND_PLUGIN_TARGETS@
 EXTRA_LTLIBRARIES = libsound_sdl.la libsound_alsa0_5.la libsound_alsa0_9.la libsound_oss.la libsound_sgi.la libsound_sun.la libsound_win.la libsound_null.la libsound_disk.la
 
 if ASM_ARCH
@@ -15,53 +23,66 @@ noinst_LTLIBRARIES = $(ASM)
 
 libasm_la_SOURCES = snd_mixa.S
 
-common_sound_files= snd_dma.c snd_mem.c snd_mix.c
+libQFsoundrenderer_la_LDFLAGS= -version-info 1:0:0
+libQFsoundrenderer_la_LIBADD = $(ASM)
+libQFsoundrenderer_la_SOURCES= snd_dma.c snd_mem.c snd_mix.c
+libQFsoundrenderer.la: $(libQFsoundrenderer_la_OBJECTS) $(libQFsoundrenderer_la_DEPENDENCIES)
+	$(LINK) -rpath $(pluginpath) $(libQFsoundrenderer_la_LDFLAGS) $(libQFsoundrenderer_la_OBJECTS) $(libQFsoundrenderer_la_LIBADD) $(LIBS)
 
-libsound_sdl_la_LDFLAGS= -version-info 1:0:0 $(SDL_LIBS)
-libsound_sdl_la_LIBADD = $(ASM)
-libsound_sdl_la_SOURCES= $(common_sound_files) snd_sdl.c
+
+libsound_sdl_la_LDFLAGS= -version-info 1:0:0 $(SDL_LIBS) -lQFsoundrenderer
+libsound_sdl_la_LIBS   = $(SND_RENDERER_LIB)
+libsound_sdl_la_LIB_DEPS= $(SND_RENDERER_LIB)
+libsound_sdl_la_SOURCES= snd_sdl.c
 libsound_sdl.la: $(libsound_sdl_la_OBJECTS) $(libsound_sdl_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsound_sdl_la_LDFLAGS) $(libsound_sdl_la_OBJECTS) $(libsound_sdl_la_LIBADD) $(LIBS)
 
-libsound_alsa0_5_la_LDFLAGS= -version-info 1:0:0 $(ALSA_LIBS)
-libsound_alsa0_5_la_LIBADD = $(ASM)
-libsound_alsa0_5_la_SOURCES= $(common_sound_files) snd_alsa_0_5.c
+libsound_alsa0_5_la_LDFLAGS= -version-info 1:0:0 $(ALSA_LIBS) -lQFsoundrenderer
+libsound_alsa0_5_la_LIBS   = $(SND_RENDERER_LIB)
+libsound_alsa0_5_la_LIB_DEPS= $(SND_RENDERER_LIB)
+libsound_alsa0_5_la_SOURCES= snd_alsa_0_5.c
 libsound_alsa0_5.la: $(libsound_alsa0_5_la_OBJECTS) $(libsound_alsa0_5_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsound_alsa0_5_la_LDFLAGS) $(libsound_alsa0_5_la_OBJECTS) $(libsound_alsa0_5_la_LIBADD) $(LIBS)
 
-libsound_alsa0_9_la_LDFLAGS= -version-info 1:0:0 $(ALSA_LIBS)
-libsound_alsa0_9_la_LIBADD = $(ASM)
-libsound_alsa0_9_la_SOURCES= $(common_sound_files) snd_alsa_0_9.c
+libsound_alsa0_9_la_LDFLAGS= -version-info 1:0:0 $(ALSA_LIBS) -lQFsoundrenderer
+libsound_alsa0_9_la_LIBS   = $(SND_RENDERER_LIB)
+libsound_alsa0_9_la_LIB_DEPS= $(SND_RENDERER_LIB)
+libsound_alsa0_9_la_SOURCES= snd_alsa_0_9.c
 libsound_alsa0_9.la: $(libsound_alsa0_9_la_OBJECTS) $(libsound_alsa0_9_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsound_alsa0_9_la_LDFLAGS) $(libsound_alsa0_9_la_OBJECTS) $(libsound_alsa0_9_la_LIBADD) $(LIBS)
 
-libsound_oss_la_LDFLAGS= -version-info 1:0:0 $(OSS_LIBS) $(OSS_LIBS)
-libsound_oss_la_LIBADD = $(ASM)
-libsound_oss_la_SOURCES= $(common_sound_files) snd_oss.c
+libsound_oss_la_LDFLAGS= -version-info 1:0:0 $(OSS_LIBS) -lQFsoundrenderer
+libsound_oss_la_LIBS   = $(SND_RENDERER_LIB)
+libsound_oss_la_LIB_DEPS= $(SND_RENDERER_LIB)
+libsound_oss_la_SOURCES= snd_oss.c
 libsound_oss.la: $(libsound_oss_la_OBJECTS) $(libsound_oss_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsound_oss_la_LDFLAGS) $(libsound_oss_la_OBJECTS) $(libsound_oss_la_LIBADD) $(LIBS)
 
-libsound_sgi_la_LDFLAGS= -version-info 1:0:0 $(SGISND_LIBS)
-libsound_sgi_la_LIBADD = $(ASM)
-libsound_sgi_la_SOURCES= $(common_sound_files) snd_sgi.c
+libsound_sgi_la_LDFLAGS= -version-info 1:0:0 $(SGISND_LIBS) -lQFsoundrenderer
+libsound_sgi_la_LIBS   = $(SND_RENDERER_LIB)
+libsound_sgi_la_LIB_DEPS= $(SND_RENDERER_LIB)
+libsound_sgi_la_SOURCES= snd_sgi.c
 libsound_sgi.la: $(libsound_sgi_la_OBJECTS) $(libsound_sgi_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsound_sgi_la_LDFLAGS) $(libsound_sgi_la_OBJECTS) $(libsound_sgi_la_LIBADD) $(LIBS)
 
-libsound_sun_la_LDFLAGS= -version-info 1:0:0 $(SUN_LIBS)
-libsound_sun_la_LIBADD = $(ASM)
-libsound_sun_la_SOURCES= $(common_sound_files) snd_sun.c
+libsound_sun_la_LDFLAGS= -version-info 1:0:0 $(SUN_LIBS) -lQFsoundrenderer
+libsound_sun_la_LIBS   = $(SND_RENDERER_LIB)
+libsound_sun_la_LIB_DEPS= $(SND_RENDERER_LIB)
+libsound_sun_la_SOURCES= snd_sun.c
 libsound_sun.la: $(libsound_sun_la_OBJECTS) $(libsound_sun_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsound_sun_la_LDFLAGS) $(libsound_sun_la_OBJECTS) $(libsound_sun_la_LIBADD) $(LIBS)
 
-libsound_win_la_LDFLAGS= -version-info 1:0:0 $(WIN_LIBS)
-libsound_win_la_LIBADD = $(ASM)
-libsound_win_la_SOURCES= $(common_sound_files) snd_win.c
+libsound_win_la_LDFLAGS= -version-info 1:0:0 $(WIN_LIBS) -lQFsoundrenderer
+libsound_win_la_LIBS   = $(SND_RENDERER_LIB)
+libsound_win_la_LIB_DEPS= $(SND_RENDERER_LIB)
+libsound_win_la_SOURCES= snd_win.c
 libsound_win.la: $(libsound_win_la_OBJECTS) $(libsound_win_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsound_win_la_LDFLAGS) $(libsound_win_la_OBJECTS) $(libsound_win_la_LIBADD) $(LIBS)
 
-libsound_disk_la_LDFLAGS= -version-info 1:0:0
-libsound_disk_la_LIBADD = $(ASM)
-libsound_disk_la_SOURCES= $(common_sound_files) snd_disk.c
+libsound_disk_la_LDFLAGS= -version-info 1:0:0 -lQFsoundrenderer
+libsound_disk_la_LIBS   = $(SND_RENDERER_LIB)
+libsound_disk_la_LIB_DEPS= $(SND_RENDERER_LIB)
+libsound_disk_la_SOURCES= snd_disk.c
 libsound_disk.la: $(libsound_disk_la_OBJECTS) $(libsound_disk_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsound_disk_la_LDFLAGS) $(libsound_disk_la_OBJECTS) $(libsound_disk_la_LIBADD) $(LIBS)
 
@@ -70,4 +91,4 @@ libsound_null_la_SOURCES= snd_null.c
 libsound_null.la: $(libsound_null_la_OBJECTS) $(libsound_null_la_DEPENDENCIES)
 	$(LINK) -rpath $(pluginpath) $(libsound_null_la_LDFLAGS) $(libsound_null_la_OBJECTS) $(libsound_null_la_LIBADD) $(LIBS)
 
-LIBLIST = $(pkglib_LTLIBRARIES) @LIBRARY_SEARCH_PATH@
+LIBLIST = $(pkglib_LTLIBRARIES) libQFsoundrenderer.la @LIBRARY_SEARCH_PATH@
