@@ -363,7 +363,7 @@ PM_PlayerMove (vec3_t start, vec3_t end)
 //		trace.startsolid = true;
 		VectorCopy (end, trace.endpos);
 
-		// trace a line through the apropriate clipping hull
+		// trace a line through the appropriate clipping hull
 		PM_RecursiveHullCheck (hull, hull->firstclipnode, 0, 1, start_l, end_l,
 							   &trace);
 
