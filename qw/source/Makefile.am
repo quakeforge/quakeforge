@@ -58,7 +58,7 @@ EXTRA_libqfnet_a_SOURCES= net_chan.c net_udp.c net_udp6.c
 #
 # ... System type
 if SYSTYPE_WIN32
-syssv_SRC=	fnmatch.c dirent.c sv_sys_win.c
+syssv_SRC=	sv_sys_win.c
 else
 syssv_SRC=	sv_sys_unix.c
 endif
@@ -78,7 +78,7 @@ qw_server_DEPENDENCIES= libqfnet.a
 #
 # ... System type
 if SYSTYPE_WIN32
-syscl_SRC=	cl_sys_win.c fnmatch.c dirent.c
+syscl_SRC=	cl_sys_win.c
 else
 syscl_SRC=	cl_sys_unix.c
 endif

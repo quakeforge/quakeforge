@@ -158,6 +158,17 @@ else
 	AC_C_BIGENDIAN
 fi
 
+AC_MSG_CHECKING(for fnmatch)
+AC_TRY_LINK(
+	[],
+	[fnmatch();],
+	BUILD_FNMATCH=no
+	AC_MSG_RESULT(yes),
+	BUILD_FNMATCH=yes
+	AC_MSG_RESULT(no)
+)
+AM_CONDITIONAL(BUILD_FNMATCH, test "$BUILD_FNMATCH" = "yes")
+
 AC_MSG_CHECKING(for fnmatch in fnmatch.h)
 AC_TRY_COMPILE(
 	[#include "fnmatch.h"],
