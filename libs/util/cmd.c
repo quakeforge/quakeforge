@@ -68,10 +68,11 @@ each part of QF (console, stufftext, config files and scripts)
 that needs one should allocate and maintain its own.
 */
 cmd_buffer_t *cmd_consolebuffer;		// Console buffer
-cmd_buffer_t *cmd_legacybuffer;			// Server stuffcmd buffer with
+cmd_buffer_t *cmd_legacybuffer;         // Server stuffcmd buffer with
 										// absolute backwards-compatibility
 cmd_buffer_t *cmd_privatebuffer;		// Buffer for internal command execution
-cmd_buffer_t *cmd_activebuffer;			// Buffer currently being executed
+cmd_buffer_t *cmd_keybindbuffer;        // Buffer for commands from bound keys
+cmd_buffer_t *cmd_activebuffer;         // Buffer currently being executed
 
 cmd_buffer_t *cmd_recycled;	// Recycled buffers
 
@@ -328,11 +329,10 @@ void
 Cbuf_Init (void)
 {
 	cmd_consolebuffer = Cmd_NewBuffer (true);
-	
 	cmd_legacybuffer = Cmd_NewBuffer (true);
 	cmd_legacybuffer->legacy = true;
-	
 	cmd_privatebuffer = Cmd_NewBuffer (true);
+	cmd_keybindbuffer = Cmd_NewBuffer (true);
 
 	cmd_activebuffer = cmd_consolebuffer;
 
@@ -539,6 +539,7 @@ Cbuf_ExecuteStack (cmd_buffer_t *buffer)
 void
 Cbuf_Execute (void)
 {
+	Cbuf_ExecuteStack (cmd_keybindbuffer);
 	Cbuf_ExecuteStack (cmd_consolebuffer);
 	Cbuf_ExecuteStack (cmd_legacybuffer);
 }
@@ -1243,7 +1244,7 @@ int
 Cmd_ProcessMath (dstring_t * dstr)
 {
 	dstring_t  *statement;
-	int         i, n, paren;
+	int         i, n;
 	float       value;
 	char       *temp;
 	int         ret = 0;
@@ -1251,21 +1252,12 @@ Cmd_ProcessMath (dstring_t * dstr)
 	statement = dstring_newstr ();
 
 	for (i = 0; i < strlen (dstr->str); i++) {
-		if (dstr->str[i] == '#' && dstr->str[i + 1] == '('
+		if (dstr->str[i] == '#' && dstr->str[i + 1] == '{'
 			&& !escaped (dstr->str, i)) {
-			paren = 1;
-			for (n = 2;dstr->str[i+n]; n++) {
-				if (dstr->str[i + n] == '(')
-					paren++;
-				else if (dstr->str[i + n] == ')') {
-					paren--;
-					if (!paren)
-						break;
-				}
-			}
-			if (paren) {
+			n = Cmd_EndBrace (dstr->str+i+1)+1;
+			if (n < 0) {
+				Cmd_Error ("Unmatched brace in math expression.\n");
 				ret = -1;
-				Cmd_Error ("Unmatched parenthesis in math expression.\n");
 				break;
 			}
 			/* Copy text between parentheses into a buffer */
@@ -1929,20 +1921,33 @@ Cmd_While_f (void) {
 void
 Cmd_For_f (void) {
 	cmd_buffer_t *sub;
+	dstring_t *arg1, *init, *cond, *inc;
 	
-	if (Cmd_Argc() < 4) {
-		Sys_Printf("Usage: for {initializer} [condition] {commands}\n");
+	if (Cmd_Argc() < 2 || Cmd_Argc() > 3) {
+		Cmd_Error("Malformed for statement.\n");
 		return;
 	}
 	
-	sub = Cmd_NewBuffer (false);
-	sub->locals = cmd_activebuffer->locals; // Use current local variables
-	sub->loop = true;
-	dstring_appendstr (sub->looptext, va("ifnot '%s' break\n", Cmd_Argv(2)));
-	dstring_appendstr (sub->looptext, va("%s\n", Cmd_Argv(4)));
-	dstring_appendstr (sub->looptext, va("%s", Cmd_Argv(3)));
-	Cbuf_InsertTextTo (sub, Cmd_Argv(1));
-	Cmd_ExecuteSubroutine (sub);
+	arg1 = dstring_newstr ();
+	init = dstring_newstr ();
+	cond = dstring_newstr ();
+	inc = dstring_newstr ();
+
+	dstring_appendstr (arg1, Cmd_Argv(1));
+	Cbuf_ExtractLine (arg1, init, true);
+	Cbuf_ExtractLine (arg1, cond, true);
+	Cbuf_ExtractLine (arg1, inc, true);
+	if (!strlen(arg1->str)) {
+		sub = Cmd_NewBuffer (false);
+		sub->locals = cmd_activebuffer->locals; // Use current local variables
+		sub->loop = true;
+		dstring_appendstr (sub->looptext, va("ifnot '%s' break\n", cond->str));
+		dstring_appendstr (sub->looptext, va("%s\n", Cmd_Argv(2)));
+		dstring_appendstr (sub->looptext, va("%s", inc->str));
+		Cbuf_InsertTextTo (sub, init->str);
+		Cmd_ExecuteSubroutine (sub);
+	} else
+		Cmd_Error("Malformed for statement.\n");
 	return;
 }
 

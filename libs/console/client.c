@@ -507,7 +507,7 @@ C_KeyEvent (knum_t key, short unicode, qboolean down)
 				return;
 			case key_console:
 				if (!con_data.force_commandline) {
-					Cbuf_AddText ("toggleconsole\n");
+					Cbuf_AddTextTo (cmd_keybindbuffer, "toggleconsole\n");
 					return;
 				}
 			case key_game:

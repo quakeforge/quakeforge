@@ -400,15 +400,15 @@ Key_Game (knum_t key, short unicode)
 	if (!keydown[key]) {
 		if (kb[0] == '+') {
 			snprintf (cmd, sizeof (cmd), "-%s %d\n", kb + 1, key);
-			Cbuf_AddText (cmd);
+			Cbuf_AddTextTo (cmd_keybindbuffer, cmd);
 		}
 	} else if (keydown[key] == 1) {
 		if (kb[0] == '+') {
 			snprintf (cmd, sizeof (cmd), "%s %d\n", kb, key);
-			Cbuf_AddText (cmd);
+			Cbuf_AddTextTo (cmd_keybindbuffer, cmd);
 		} else {
 			snprintf (cmd, sizeof (cmd), "%s\n", kb);
-			Cbuf_AddText (cmd);
+			Cbuf_AddTextTo (cmd_keybindbuffer, cmd);
 		}
 	}
 	return true;
