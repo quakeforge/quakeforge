@@ -63,13 +63,18 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #define YYDEBUG 1
 #define YYERROR_VERBOSE 1
+#undef YYERROR_VERBOSE
 
 extern char *yytext;
 
 static void
 yyerror (const char *s)
 {
+#ifdef YYERROR_VERBOSE
 	error (0, "%s %s\n", yytext, s);
+#else
+	error (0, "%s before %s", s, yytext);
+#endif
 }
 
 static void
