@@ -390,16 +390,10 @@ x11_init_buffers (void)
 
 	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
 }
-#if 0
+
 static void
-event_shm (XEvent * event)
+VID_Center_f (void)
 {
-	if (doShm)
-		oktodraw = true;
-}
-#endif
-static void
-VID_Center_f (void) {
 	X11_ForceViewPort ();
 }
 
@@ -598,10 +592,7 @@ void
 VID_Shutdown (void)
 {
 	Sys_Printf ("VID_Shutdown\n");
-	if (x_disp) {
-		X11_RestoreVidMode ();
-		X11_CloseDisplay ();
-	}
+	X11_CloseDisplay ();
 }
 
 static int  config_notify = 0;

@@ -650,7 +650,7 @@ IN_LL_Shutdown (void)
 		dga_off ();
 	}
 	if (in_mouse_accel && !in_mouse_accel->int_val)
-		X11_RestoreMouseAcceleration();
+		X11_RestoreMouseAcceleration ();
 	X11_CloseDisplay ();
 }
 

@@ -49,8 +49,6 @@ extern qboolean doShm;
 extern qboolean oktodraw;
 extern qboolean x_have_focus;
 
-void GetEvent (void);
-
 qboolean X11_AddEvent (int event, void (*event_handler)(XEvent *));
 qboolean X11_RemoveEvent (int event, void (*event_handler)(XEvent *));
 qboolean X11_SetGamma (double);
@@ -63,14 +61,11 @@ void X11_OpenDisplay (void);
 void X11_ProcessEvent (void);
 void X11_ProcessEvents (void);
 void X11_RestoreGamma (void);
-void X11_RestoreScreenSaver (void);
 void X11_RestoreVidMode (void);
 void X11_SetCaption (const char *);
-void X11_SetScreenSaver (void);
 void X11_SetVidMode (int, int);
 void X11_SaveMouseAcceleration (void);
 void X11_RemoveMouseAcceleration (void);
 void X11_RestoreMouseAcceleration (void);
-qboolean X11_GetWindowCoords (int *ax, int *ay);
 
 #endif	// __context_x11_h_

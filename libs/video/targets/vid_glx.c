@@ -149,10 +149,7 @@ void
 VID_Shutdown (void)
 {
 	Con_Printf ("VID_Shutdown\n");
-	if (x_disp) {
-		X11_RestoreVidMode ();
-		X11_CloseDisplay ();
-	}
+	X11_CloseDisplay ();
 }
 
 static void
@@ -170,7 +167,8 @@ GL_EndRendering (void)
 }
 
 static void
-VID_Center_f (void) {
+VID_Center_f (void)
+{
 	X11_ForceViewPort ();
 }
 

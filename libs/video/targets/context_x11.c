@@ -80,6 +80,7 @@ qboolean	oktodraw = false;
 int 		x_shmeventtype;
 
 static int	x_disp_ref_count = 0;
+static Cursor   nullcursor = None;
 
 Display 	*x_disp = NULL;
 int 		x_screen;
@@ -87,7 +88,6 @@ Window		x_root = None;
 XVisualInfo *x_visinfo;
 Visual		*x_vis;
 Window		x_win;
-Cursor		nullcursor = None;
 Time 		x_time;
 
 qboolean    x_have_focus = false;
@@ -106,6 +106,7 @@ static qboolean	vidmode_active = false;
 
 static qboolean    vid_context_created = false;
 static int  window_x, window_y, window_saved;
+static int      pos_x, pos_y;
 
 static int	xss_timeout;
 static int	xss_interval;
@@ -116,6 +117,18 @@ static qboolean	accel_saved = false;
 static int	accel_numerator;
 static int	accel_denominator;
 static int	accel_threshold;
+
+static void
+configure_notify (XEvent *event)
+{
+	XConfigureEvent *c = &event->xconfigure;
+	pos_x = c->x;
+	pos_y = c->y;
+	Con_DPrintf ("ConfigureNotify: %ld %d %ld %ld %d,%d (%d,%d) %d %ld %d\n",
+				 c->serial, c->send_event, c->event, c->window, c->x, c->y,
+				 c->width, c->height, c->border_width, c->above,
+				 c->override_redirect);
+}
 
 
 qboolean
@@ -165,7 +178,8 @@ X11_WaitForEvent (int event)
 	int     type;
 
 	while (1) {
-		XMaskEvent (x_disp, StructureNotifyMask, &ev);
+		//XMaskEvent (x_disp, StructureNotifyMask, &ev);
+		XNextEvent (x_disp, &ev);
 		type = ev.type;
 		X11_ProcessEventProxy (&ev);
 		if (type == event) 
@@ -187,6 +201,21 @@ X11_ProcessEvents (void)
 {
 	while (XPending (x_disp))
 		X11_ProcessEvent ();
+}
+
+static void
+X11_SetScreenSaver (void)
+{
+	XGetScreenSaver (x_disp, &xss_timeout, &xss_interval, &xss_blanking,
+					 &xss_exposures);
+	XSetScreenSaver (x_disp, 0, xss_interval, xss_blanking, xss_exposures);
+}
+
+static void
+X11_RestoreScreenSaver (void)
+{
+	XSetScreenSaver (x_disp, xss_timeout, xss_interval, xss_blanking,
+					 xss_exposures);
 }
 
 void
@@ -213,14 +242,16 @@ X11_OpenDisplay (void)
 void
 X11_CloseDisplay (void)
 {
-	X11_RestoreGamma ();
-
-	if (nullcursor != None) {
-		XFreeCursor (x_disp, nullcursor);
-		nullcursor = None;
-	}
-
 	if (!--x_disp_ref_count) {
+		X11_RestoreVidMode ();
+
+		X11_RestoreGamma ();
+
+		if (nullcursor != None) {
+			XFreeCursor (x_disp, nullcursor);
+			nullcursor = None;
+		}
+
 		XCloseDisplay (x_disp);
 		x_disp = 0;
 	}
@@ -268,26 +299,18 @@ X11_ForceMove (int x, int y)
 		return;
 
 	XMoveWindow (x_disp, x_win, x, y);
-	XFlush(x_disp);
+//	XFlush(x_disp);
 	X11_WaitForEvent (ConfigureNotify);
-	X11_GetWindowCoords (&nx, &ny);
-	nx -= x;
-	ny -= y;
+	nx = pos_x - x;
+	ny = pos_y - y;
 	if (nx == 0 || ny == 0) {
 		return;
 	}
 	x -= nx;
 	y -= ny;
 
-#if 0 // hopefully this isn't needed!  enable if it is.
-	if (x < 1 - scr_width)
-		x = 0;
-	if (y < 1 - scr_height)
-		y = 0;
-#endif
-
 	XMoveWindow (x_disp, x_win, x, y);
-	XSync (x_disp, false);
+//	XSync (x_disp, false);
 	// this is the best we can do.
 	X11_WaitForEvent (ConfigureNotify);
 }
@@ -416,8 +439,9 @@ X11_UpdateFullscreen (cvar_t *fullscreen)
 		return;
 	} else {
 
-		if (X11_GetWindowCoords (&window_x, &window_y))
-			window_saved = 1;
+		window_x = pos_x;
+		window_y = pos_y;
+		window_saved = 1;
 
 		X11_SetVidMode (scr_width, scr_height);
 
@@ -453,6 +477,8 @@ X11_CreateWindow (int width, int height)
 	XSetWindowAttributes	attr;
 	XClassHint	   *ClassHint;
 	XSizeHints	   *SizeHints;
+
+	X11_AddEvent (ConfigureNotify, configure_notify);
 
 	// window attributes
 	attr.background_pixel = 0;
@@ -495,7 +521,7 @@ X11_CreateWindow (int width, int height)
 
 	XMapWindow (x_disp, x_win);
 
-	X11_WaitForEvent (MapNotify);
+	X11_WaitForEvent (ConfigureNotify);
 
 	vid_context_created = true;
 	if (vid_fullscreen->int_val) {
@@ -524,46 +550,14 @@ X11_SetCaption (const char *text)
 		XStoreName (x_disp, x_win, text);
 }
 
-qboolean
-X11_GetWindowCoords (int *ax, int *ay)
-{
-#ifdef HAVE_VIDMODE
-	Window      	theroot, scrap;
-	int         	x, y;
-	unsigned int	width, height, bdwidth, depth;
-
-	XSync (x_disp, false);
-	if ((XGetGeometry (x_disp, x_win, &theroot, &x, &y, &width, &height,
-					   &bdwidth, &depth) == False)) {
-		Con_Printf ("XGetWindowAttributes failed in X11_GetWindowCoords.\n");
-		return false;
-	} else {
-		XTranslateCoordinates (x_disp,x_win,theroot, -bdwidth, -bdwidth,
-							   ax, ay, &scrap);
-		Con_DPrintf ("Window coords =  %dx%d (%d,%d)\n", *ax, *ay,
-					 width, height);
-		return true;
-	}
-#endif
-	return false;
-}
-
 void
 X11_ForceViewPort (void)
 {
 #ifdef HAVE_VIDMODE
-	int         ax, ay;
-
 	if (!vidmode_avail  || !vid_context_created)
 		return;
 
-	if (!X11_GetWindowCoords (&ax, &ay)) {
-		// "icky kludge code"
-		Con_Printf ("VID: Falling back on warp kludge to set viewport.\n");
-		XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, scr_width, scr_height);
-		XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, 0, 0);
-	}
-	XF86VidModeSetViewPort (x_disp, x_screen, ax, ay);
+	XF86VidModeSetViewPort (x_disp, x_screen, pos_x, pos_y);
 #endif
 }
 
@@ -599,21 +593,6 @@ X11_RestoreGamma (void)
 	}
 # endif
 #endif
-}
-
-void
-X11_SetScreenSaver (void)
-{
-	XGetScreenSaver (x_disp, &xss_timeout, &xss_interval, &xss_blanking,
-					 &xss_exposures);
-	XSetScreenSaver (x_disp, 0, xss_interval, xss_blanking, xss_exposures);
-}
-
-void
-X11_RestoreScreenSaver (void)
-{
-	XSetScreenSaver (x_disp, xss_timeout, xss_interval, xss_blanking,
-					 xss_exposures);
 }
 
 
