@@ -121,14 +121,6 @@ vrect_t     scr_vrect;
 
 qboolean    scr_skipupdate;
 
-/* CENTER PRINTING */
-char        scr_centerstring[1024];
-float       scr_centertime_start;		// for slow victory printing
-float       scr_centertime_off;
-int         scr_center_lines;
-int         scr_erase_lines;
-int         scr_erase_center;
-
 void
 R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 {
@@ -191,65 +183,6 @@ SCR_CalcRefdef (void)
 
 	// notify the refresh of the change
 	R_ViewChanged (vid.aspect);
-}
-
-/*
-	SCR_CenterPrint
-
-	Called for important messages that should stay in the center of the screen
-	for a few moments
-*/
-void
-SCR_CenterPrint (const char *str)
-{
-	strncpy (scr_centerstring, str, sizeof (scr_centerstring) - 1);
-	scr_centertime_off = scr_centertime->value;
-	scr_centertime_start = r_realtime;
-
-	// count the number of lines for centering
-	scr_center_lines = 1;
-	while (*str) {
-		if (*str == '\n')
-			scr_center_lines++;
-		str++;
-	}
-}
-
-void
-SCR_DrawCenterString (view_t *view, int remaining)
-{
-	char       *start;
-	int         j, l, x, y;
-
-	scr_erase_center = 0;
-	start = scr_centerstring;
-
-	if (scr_center_lines <= 4)
-		y = view->yabs + view->ylen * 0.35;
-	else
-		y = view->yabs + 48;
-
-	do {
-		// scan the width of the line
-		for (l = 0; l < 40; l++)
-			if (start[l] == '\n' || !start[l])
-				break;
-		x = view->xabs + (view->xlen - l * 8) / 2;
-		for (j = 0; j < l; j++, x += 8) {
-			Draw_Character (x, y, start[j]);
-			if (!remaining--)
-				return;
-		}
-
-		y += 8;
-
-		while (*start && *start != '\n')
-			start++;
-
-		if (!*start)
-			break;
-		start++;						// skip the \n
-	} while (1);
 }
 
 float

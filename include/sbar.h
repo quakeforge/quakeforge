@@ -52,6 +52,7 @@ void Sbar_IntermissionOverlay (void);
 
 void Sbar_FinaleOverlay (void);
 void Sbar_DrawCenterPrint (void);
+void Sbar_CenterPrint (const char *str);
 
 void Sbar_LogFrags (void);
 

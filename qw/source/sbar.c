@@ -46,6 +46,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/dstring.h"
+#include "QF/gib.h"
 #include "QF/msg.h"
 #include "QF/plugin.h"
 #include "QF/quakefs.h"
@@ -1675,6 +1677,74 @@ Sbar_IntermissionOverlay (void)
 		Sbar_DeathmatchOverlay (overlay_view, 0);
 }
 
+/* CENTER PRINTING */
+static dstring_t center_string = {&dstring_default_mem};
+static float centertime_start;				// for slow victory printing
+static float centertime_off;
+static int   center_lines;
+
+/*
+	Called for important messages that should stay in the center of the screen
+	for a few moments
+*/
+void
+Sbar_CenterPrint (const char *str)
+{
+	if (!str) {
+		centertime_off = 0;
+		dstring_clearstr (&center_string);
+		return;
+	}
+
+	dstring_copystr (&center_string, str);
+
+	centertime_off = scr_centertime->value;
+	centertime_start = realtime;
+
+	// count the number of lines for centering
+	center_lines = 1;
+	while (*str) {
+		if (*str == '\n')
+			center_lines++;
+		str++;
+	}
+}
+
+static void
+Sbar_DrawCenterString (view_t *view, int remaining)
+{
+	const char *start;
+	int         j, l, x, y;
+
+	start = center_string.str;
+
+	if (center_lines <= 4)
+		y = view->yabs + view->ylen * 0.35;
+	else
+		y = view->yabs + 48;
+
+	do {
+		// scan the width of the line
+		for (l = 0; l < 40; l++)
+			if (start[l] == '\n' || !start[l])
+				break;
+		x = view->xabs + (view->xlen - l * 8) / 2;
+		for (j = 0; j < l; j++, x += 8) {
+			Draw_Character (x, y, start[j]);
+			if (!remaining--)
+				return;
+		}
+
+		y += 8;
+
+		while (*start && *start != '\n')
+			start++;
+		if (!*start)
+			break;
+		start++;						// skip the \n
+	} while (1);
+}
+
 void
 Sbar_FinaleOverlay (void)
 {
@@ -1687,25 +1757,23 @@ Sbar_FinaleOverlay (void)
 
 	draw_cachepic (overlay_view, 0, 16, "gfx/finale.lmp");
 	// the finale prints the characters one at a time
-	remaining = scr_printspeed->value * (realtime - scr_centertime_start);
-	SCR_DrawCenterString (overlay_view, remaining);
+	remaining = scr_printspeed->value * (realtime - centertime_start);
+	Sbar_DrawCenterString (overlay_view, remaining);
 }
 
 void
 Sbar_DrawCenterPrint (void)
 {
 	scr_copytop = 1;
-	if (scr_center_lines > scr_erase_lines)
-		scr_erase_lines = scr_center_lines;
 
-	scr_centertime_off -= r_frametime;
-	if (scr_centertime_off <= 0)
+	centertime_off -= r_frametime;
+	if (centertime_off <= 0)
 		return;
 
 	if (key_dest != key_game)
 		return;
 
-	SCR_DrawCenterString (overlay_view, -1);
+	Sbar_DrawCenterString (overlay_view, -1);
 }
 
 static void
@@ -1896,6 +1964,15 @@ init_views (void)
 	init_hud_views ();
 }
 
+static void
+Sbar_GIB_Print_Center_f (void)
+{
+	if (GIB_Argc () != 2) {
+		GIB_USAGE ("text");
+	} else
+		Sbar_CenterPrint (GIB_Argv(1));
+}
+
 void
 Sbar_Init (void)
 {
@@ -2012,4 +2089,7 @@ Sbar_Init (void)
 									   "overlay: center, northwest, north, "
 									   "northeast, west, east, southwest, "
 									   "south, southeast");
+
+	// register GIB builtins
+	GIB_Builtin_Add ("print::center", Sbar_GIB_Print_Center_f);
 }

@@ -62,15 +62,6 @@ extern vrect_t     scr_vrect;
 
 extern qboolean    scr_skipupdate;
 
-/* CENTER PRINTING */
-
-extern char        scr_centerstring[1024];
-extern float       scr_centertime_start;		// for slow victory printing
-extern float       scr_centertime_off;
-extern int         scr_center_lines;
-extern int         scr_erase_lines;
-extern int         scr_erase_center;
-
 float CalcFov (float fov_x, float width, float height);
 void SCR_SetUpToDrawConsole (void);
 void SCR_ScreenShot_f (void);

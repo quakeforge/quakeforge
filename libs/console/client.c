@@ -354,16 +354,6 @@ C_SayTeam (const char *line)
 	game_target = IMT_0;
 }
 
-
-static void
-C_GIB_Print_Center_f (void)
-{
-	if (GIB_Argc () != 2) {
-		GIB_USAGE ("text");
-	} else
-		SCR_CenterPrint (GIB_Argv(1));
-}
-
 static void
 Linefeed (void)
 {
@@ -924,7 +914,6 @@ C_Init (void)
 					"file");
 					
 	// register GIB builtins
-	GIB_Builtin_Add ("print::center", C_GIB_Print_Center_f);
 	GIB_Builtin_Add ("HUD::enable", C_GIB_HUD_Enable_f);
 	GIB_Builtin_Add ("HUD::disable", C_GIB_HUD_Disable_f);
 

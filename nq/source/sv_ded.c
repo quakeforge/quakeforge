@@ -55,8 +55,6 @@ client_static_t cls;
 
 keydest_t   key_dest = key_game;
 
-float       scr_centertime_off;
-
 cvar_t     *cl_name;
 cvar_t     *cl_writecfg;
 cvar_t     *demo_speed;

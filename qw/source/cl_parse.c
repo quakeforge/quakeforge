@@ -287,6 +287,7 @@ CL_NewMap (const char *mapname)
 	Team_NewMap ();
 	Con_NewMap ();
 	Hunk_Check ();								// make sure nothing is hurt
+	Sbar_CenterPrint (0);
 
 	map_cfg (mapname, 1);
 }
@@ -1264,7 +1265,7 @@ CL_ParseServerMessage (void)
 				break;
 			}
 			case svc_centerprint:
-				SCR_CenterPrint (MSG_ReadString (net_message));
+				Sbar_CenterPrint (MSG_ReadString (net_message));
 				break;
 
 			case svc_stufftext:
@@ -1436,7 +1437,7 @@ CL_ParseServerMessage (void)
 				cl.intermission = 2;
 				cl.completed_time = realtime;
 				vid.recalc_refdef = true;				// go to full screen
-				SCR_CenterPrint (MSG_ReadString (net_message));
+				Sbar_CenterPrint (MSG_ReadString (net_message));
 				break;
 
 			case svc_sellscreen:

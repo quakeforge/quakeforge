@@ -252,6 +252,7 @@ CL_NewMap (const char *mapname)
 {
 	R_NewMap (cl.worldmodel, cl.model_precache, MAX_MODELS);
 	Con_NewMap ();
+	Sbar_CenterPrint (0);
 
 	map_cfg (mapname, 1);
 }
@@ -812,7 +813,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_centerprint:
-				SCR_CenterPrint (MSG_ReadString (net_message));
+				Sbar_CenterPrint (MSG_ReadString (net_message));
 				break;
 
 			case svc_stufftext:
@@ -964,14 +965,14 @@ CL_ParseServerMessage (void)
 				cl.intermission = 2;
 				cl.completed_time = cl.time;
 				vid.recalc_refdef = true;	// go to full screen
-				SCR_CenterPrint (MSG_ReadString (net_message));
+				Sbar_CenterPrint (MSG_ReadString (net_message));
 				break;
 
 			case svc_cutscene:
 				cl.intermission = 3;
 				cl.completed_time = cl.time;
 				vid.recalc_refdef = true;	// go to full screen
-				SCR_CenterPrint (MSG_ReadString (net_message));
+				Sbar_CenterPrint (MSG_ReadString (net_message));
 				break;
 
 			case svc_sellscreen:
