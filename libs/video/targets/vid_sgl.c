@@ -78,7 +78,9 @@ void
 VID_SDL_GammaCheck (void)
 {
 #if SDL_VERSIONNUM(SDL_MAJOR_VERSION,SDL_MINOR_VERSION,SDL_PATCHLEVEL) \
-	> SDL_VERSIONNUM(1,1,5)
+	>= SDL_VERSIONNUM(1,1,5)
+#if SDL_VERSIONNUM(SDL_MAJOR_VERSION,SDL_MINOR_VERSION,SDL_PATCHLEVEL) \
+	>= SDL_VERSIONNUM(1,1,6)
 	Uint16 redtable[256], greentable[256], bluetable[256];
 #else
 	Uint8 redtable[256], greentable[256], bluetable[256];
@@ -88,6 +90,9 @@ VID_SDL_GammaCheck (void)
 		vid_gamma_avail = false;
 	else
 		vid_gamma_avail = true;
+#else
+	vid_gamma_avail = false;
+#endif
 }
 
 void
