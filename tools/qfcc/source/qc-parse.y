@@ -164,7 +164,7 @@ expr_t *argv_expr (void);
 %type	<param>	optparmlist unaryselector keyworddecl keywordselector
 %type	<method> methodproto methoddecl
 %type	<expr>	obj_expr identifier_list obj_messageexpr obj_string receiver
-%type	<expr>	protocolrefs
+%type	<expr>	protocolrefs protocol_list
 %type	<keywordarg> messageargs keywordarg keywordarglist selectorarg
 %type	<keywordarg> keywordnamelist keywordname
 %type	<class> class_name new_class_name class_with_super new_class_with_super
@@ -1058,7 +1058,20 @@ protocoldef
 
 protocolrefs
 	: /* emtpy */				{ $$ = 0; }
-	| LT identifier_list GT		{ $$ = $2->e.block.head; }
+	| LT protocol_list GT		{ $$ = $2->e.block.head; }
+	;
+
+protocol_list
+	: maybe_class
+		{
+			$$ = new_block_expr ();
+			append_expr ($$, new_name_expr ($1));
+		}
+	| protocol_list ',' maybe_class
+		{
+			append_expr ($1, new_name_expr ($3));
+			$$ = $1;
+		}
 	;
 
 ivar_decl_list
