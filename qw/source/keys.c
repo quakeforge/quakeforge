@@ -71,13 +71,10 @@ keydest_t   key_dest;
 
 char       *keybindings[256];
 qboolean    consolekeys[256];			// if true, can't be rebound while in 
-
 										// console
 qboolean    menubound[256];				// if true, can't be rebound while in 
-
 										// menu
 int         keyshift[256];				// key to map to if shift held down
-
 										// in console
 int         key_repeats[256];			// if > 1, it is autorepeating
 qboolean    keydown[256];
@@ -204,7 +201,7 @@ keyname_t   keynames[] = {
 	{"MWHEELDOWN", K_MWHEELDOWN},
 
 	{"SEMICOLON", ';'},					// because a raw semicolon seperates
-										// commands
+	// commands
 
 	{NULL, 0}
 };
@@ -279,7 +276,8 @@ Key_Console (int key)
 		case K_ENTER:
 			// backslash text are commands
 			if (key_lines[edit_line][1] == '/'
-				&& key_lines[edit_line][2] == '/') goto no_lf;
+				&& key_lines[edit_line][2] == '/')
+				goto no_lf;
 			else if (key_lines[edit_line][1] == '\\'
 					 || key_lines[edit_line][1] == '/')
 				Cbuf_AddText (key_lines[edit_line] + 2);	// skip the ]/
@@ -288,7 +286,7 @@ Key_Console (int key)
 			else if ((cls.state >= ca_connected && cl_chatmode->int_val == 2)
 					 || cl_chatmode->int_val == 1) {
 				if (cls.state < ca_connected)	// can happen if cl_chatmode
-												// is 1
+					// is 1
 					goto no_lf;			// the text goes to /dev/null :)
 
 				// convert to a chat message
@@ -307,7 +305,7 @@ Key_Console (int key)
 			key_linepos = 1;
 			if (cls.state == ca_disconnected)
 				SCR_UpdateScreen ();	// force an update, because the
-										// command
+			// command
 			// may take some time
 			return;
 
@@ -657,8 +655,8 @@ Key_WriteBindings (QFile *f)
 	for (i = 0; i < 256; i++)
 		if (keybindings[i])
 			Qprintf (f, "bind \"%s\" \"%s\"\n", Key_KeynumToString (i),
-					 keybindings[i]);	// 1999-12-26 bound keys not saved in 
-										// quotes fix by Maddes
+					keybindings[i]);
+			// 1999-12-26 bound keys not saved in quotes fix by Maddes
 }
 
 
@@ -732,16 +730,19 @@ Key_Init (void)
 //
 // register our functions
 //
-	Cmd_AddCommand ("bind", Key_Bind_f, "Assign a command or a set of commands to a key.\n"
-		"Note: To bind multiple commands to a key, enclose the commands in quotes and separate with semi-colons. \n"
-		"To bind to non-printable keys, use the key name.\n"
-		"Key Name List: Escape, F1-F12, pause, backspace, tab, semicolon, enter, shift, ctrl, alt, space, ins,\n"
-		"home, pgup, del, end, pgdn, uparrow, downarrow, leftarrow, rightarrow, mouse1-mouse3, aux1-aux9, joy1-joy4,\n"
-		"mwheelup, mwheeldown\n"
-		"Special: The escape, and ~ (tilde) keys can only be bound from an external configuration file.");
+	Cmd_AddCommand ("bind", Key_Bind_f,
+					"Assign a command or a set of commands to a key.\n"
+					"Note: To bind multiple commands to a key, enclose the commands in quotes and separate with semi-colons. \n"
+					"To bind to non-printable keys, use the key name.\n"
+					"Key Name List: Escape, F1-F12, pause, backspace, tab, semicolon, enter, shift, ctrl, alt, space, ins,\n"
+					"home, pgup, del, end, pgdn, uparrow, downarrow, leftarrow, rightarrow, mouse1-mouse3, aux1-aux9, joy1-joy4,\n"
+					"mwheelup, mwheeldown\n"
+					"Special: The escape, and ~ (tilde) keys can only be bound from an external configuration file.");
 
-	Cmd_AddCommand ("unbind", Key_Unbind_f, "Remove the bind from the the selected key");
-	Cmd_AddCommand ("unbindall", Key_Unbindall_f, "Remove all binds (USE CAUTIOUSLY!!!)");
+	Cmd_AddCommand ("unbind", Key_Unbind_f,
+					"Remove the bind from the the selected key");
+	Cmd_AddCommand ("unbindall", Key_Unbindall_f,
+					"Remove all binds (USE CAUTIOUSLY!!!)");
 }
 
 void
@@ -861,7 +862,7 @@ Key_Event (int key, int alt_key, qboolean down)
 		kb = keybindings[key];
 		if (kb) {
 			if (kb[0] == '+') {			// button commands add keynum as a
-										// parm
+				// parm
 				snprintf (cmd, sizeof (cmd), "%s %i\n", kb, key);
 				Cbuf_AddText (cmd);
 			} else {
@@ -875,7 +876,7 @@ Key_Event (int key, int alt_key, qboolean down)
 
 	if (!down)
 		return;							// other systems only care about key
-										// down events
+	// down events
 
 	if (alt_key > 0)
 		key = alt_key;
@@ -910,3 +911,4 @@ Key_ClearStates (void)
 		key_repeats[i] = false;
 	}
 }
+
