@@ -1697,6 +1697,7 @@ Host_Init (void)
 	CL_Init ();
 	IN_Init ();
 #endif
+	CL_SetState (ca_disconnected);
 
 	Cbuf_InsertText ("exec quake.rc\n");
 	Cmd_Exec_File (fs_usercfg->string);
