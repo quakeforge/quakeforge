@@ -37,15 +37,24 @@
 #import "BundleController.h"
 #import "PrefsView.h"
 
-#define ProjectPath	@"projectPath"
-
 @interface MainPrefs: NSObject <PrefsViewController, ForgeBundle>
 {
+	IBOutlet id		bundlesFromLocalButton;
+	IBOutlet id		bundlesFromNetworkButton;
+	IBOutlet id		bundlesFromSystemButton;
+	IBOutlet id		bundlesFromUserButton;
 	IBOutlet id		projectPathField;
 	IBOutlet id		projectPathFindButton;
 
 	IBOutlet id		window;
 	IBOutlet id		view;
 }
+
+- (IBAction) bundlesFromLocalButtonChanged: (id) sender;
+- (IBAction) bundlesFromNetworkButtonChanged: (id) sender;
+- (IBAction) bundlesFromSystemButtonChanged: (id) sender;
+- (IBAction) bundlesFromUserButtonChanged: (id) sender;
+- (IBAction) projectPathChanged: (id) sender;
+- (IBAction) projectPathFindButtonClicked: (id) sender;
 
 @end

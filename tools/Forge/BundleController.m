@@ -141,10 +141,32 @@ static BundleController *	sharedInstance = nil;
 	NSArray				*temp;
 	NSMutableArray		*modified = [[NSMutableArray alloc] initWithCapacity: 10];
 	NSEnumerator		*counter;
+	unsigned int		domainMask = 0;
+	NSUserDefaults		*defaults = [NSUserDefaults standardUserDefaults];
 	id					obj;
 
-	// Start out with our own resource dir
-	[dirList addObject: [[NSBundle mainBundle] resourcePath]];
+	/*
+		First, load and init all bundles in the app resource path
+	*/
+	NSDebugLog (@"Loading local bundles...");
+	counter = [[self bundlesWithExtension: @"forgeb" inPath: [[NSBundle mainBundle] resourcePath]] objectEnumerator];
+	while ((obj = [counter nextObject])) {
+		[self loadBundleInPath: obj];
+	}
+
+	/*
+		Then do the same for external bundles
+	*/
+	NSDebugLog (@"Loading foreign bundles...");
+	// build domain mask, to find out where user wants to load bundles from
+	if ([defaults boolForKey: @"BundlesFromUser"])
+		domainMask |= NSUserDomainMask;
+	if ([defaults boolForKey: @"BundlesFromLocal"])
+		domainMask |= NSLocalDomainMask;
+	if ([defaults boolForKey: @"BundlesFromNetwork"])
+		domainMask |= NSNetworkDomainMask;
+	if ([defaults boolForKey: @"BundlesFromSystem"])
+		domainMask |= NSSystemDomainMask;
 
 	// Get the library dirs and add our path to all of its entries
 	temp = NSSearchPathForDirectoriesInDomains (NSLibraryDirectory, NSAllDomainsMask, YES);

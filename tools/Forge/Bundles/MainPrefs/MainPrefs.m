@@ -35,10 +35,7 @@ static const char rcsid[] =
 #endif
 
 #import <AppKit/NSButton.h>
-#ifdef USING_NIBS
-# import <AppKit/NSNibLoading.h>
-#endif
-
+#import <AppKit/NSNibLoading.h>
 #import <AppKit/NSOpenPanel.h>
 
 #import "PrefsPanel.h"
@@ -69,10 +66,29 @@ defaultValues (void) {
 
     if (!dict) {
         dict = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
-				@"/Local/Forge/Projects", ProjectPath,
+				@"/Local/Forge/Projects", @"ProjectPath",
+				[NSNumber numberWithBool: YES], @"BundlesFromUser",
+				[NSNumber numberWithBool: YES], @"BundlesFromLocal",
+				[NSNumber numberWithBool: YES], @"BundlesFromNetwork",
+				[NSNumber numberWithBool: YES], @"BundlesFromSystem",
 				nil];
     }
     return dict;
+}
+
+static BOOL
+getBoolDefault (NSMutableDictionary *dict, NSString *name)
+{
+	NSString	*str = [[NSUserDefaults standardUserDefaults] stringForKey: name];
+	NSNumber	*num;
+
+	if (!str)
+		str = [[defaultValues() objectForKey: name] stringValue];
+
+	num = [NSNumber numberWithBool: [str hasPrefix: @"Y"]];
+	[dict setObject: num forKey: name];
+
+	return [num boolValue];
 }
 
 static NSString *
@@ -92,7 +108,11 @@ getStringDefault (NSMutableDictionary *dict, NSString *name)
 {
 	NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity: 5];
 
-	getStringDefault (dict, ProjectPath);
+	getStringDefault (dict, @"ProjectPath");
+	getBoolDefault (dict, @"BundlesFromLocal");
+	getBoolDefault (dict, @"BundlesFromNetwork");
+	getBoolDefault (dict, @"BundlesFromSystem");
+	getBoolDefault (dict, @"BundlesFromUser");
 	return dict;
 }
 
@@ -102,9 +122,15 @@ getStringDefault (NSMutableDictionary *dict, NSString *name)
 
 #define setStringDefault(name) \
 	[defaults setObject: [dict objectForKey: (name)] forKey: (name)]
+#define setBoolDefault(name) \
+	[defaults setBool: [[dict objectForKey: (name)] boolValue] forKey: (name)]
 
 	NSDebugLog (@"Updating Main Preferences...");
-	setStringDefault (ProjectPath);
+	setStringDefault (@"ProjectPath");
+	setBoolDefault (@"BundlesFromLocal");
+	setBoolDefault (@"BundlesFromNetwork");
+	setBoolDefault (@"BundlesFromSystem");
+	setBoolDefault (@"BundlesFromUser");
 	[defaults synchronize];
 }
 
@@ -125,8 +151,12 @@ getStringDefault (NSMutableDictionary *dict, NSString *name)
 
 - (void) updateUI
 {
-	[projectPathField setStringValue: [displayedValues objectForKey: ProjectPath]];
-	[projectPathField setNeedsDisplay: YES];
+	[projectPathField setStringValue: [displayedValues objectForKey: @"ProjectPath"]];
+	[bundlesFromLocalButton setIntValue: [[displayedValues objectForKey: @"BundlesFromLocal"] intValue]];
+	[bundlesFromNetworkButton setIntValue: [[displayedValues objectForKey: @"BundlesFromNetwork"] intValue]];
+	[bundlesFromSystemButton setIntValue: [[displayedValues objectForKey: @"BundlesFromSystem"] intValue]];
+	[bundlesFromUserButton setIntValue: [[displayedValues objectForKey: @"BundlesFromUser"] intValue]];
+	[view setNeedsDisplay: YES];
 }
 
 @end	// MainPrefs (Private)
@@ -145,12 +175,17 @@ static id <BundleDelegate>	owner = nil;
 		owner = anOwner;
 		[owner registerPrefsController: self];
 		if (![NSBundle loadNibNamed: @"MainPrefs" owner: self]) {
-			NSLog (@"MainPrefs: Could not load nib \"MainPrefs\", using compiled version");
+			NSLog (@"MainPrefs: Could not load nib \"MainPrefs\", using compiled-in version");
 			view = [[MainPrefsView alloc] initWithOwner: self andFrame: PrefsRect];
 
 			// hook up to our outlet(s)
-			projectPathField = [view directoryField];
+			projectPathField = [view projectPathField];
+			bundlesFromUserButton = [view bundlesFromUserButton];
+			bundlesFromLocalButton = [view bundlesFromLocalButton];
+			bundlesFromNetworkButton = [view bundlesFromNetworkButton];
+			bundlesFromSystemButton = [view bundlesFromSystemButton];
 		} else {
+			// window can be any size, as long as it's 486x228 :)
 			view = [window contentView];
 		}
 		[view retain];
@@ -214,10 +249,13 @@ static id <BundleDelegate>	owner = nil;
 
 - (id) projectPath
 {
-	return [displayedValues objectForKey: ProjectPath];
+	return [displayedValues objectForKey: @"ProjectPath"];
 }
 
-- (id) projectPathFindButtonClicked: (id) sender
+/*
+	Action methods
+*/
+- (IBAction) projectPathFindButtonClicked: (id) sender
 {
 	int			result;
 	NSOpenPanel	*oPanel = [NSOpenPanel openPanel];
@@ -230,15 +268,39 @@ static id <BundleDelegate>	owner = nil;
 	if (result == NSOKButton) {		// got a new dir
 		NSArray		*pathArray = [oPanel filenames];
 
-		[displayedValues setObject: [pathArray objectAtIndex: 0] forKey: ProjectPath];
+		[displayedValues setObject: [pathArray objectAtIndex: 0] forKey: @"ProjectPath"];
 		[self updateUI];
 	}
 }
 
-- (void) projectPathChanged: (id) sender
+- (IBAction) bundlesFromLocalButtonChanged: (id) sender
 {
-	[displayedValues setObject: [sender stringValue] forKey: ProjectPath];
+	[displayedValues setObject: [NSNumber numberWithBool: [sender intValue]] forKey: @"BundlesFromLocal"];
 	[self updateUI];
 }
 
-@end
+- (IBAction) bundlesFromNetworkButtonChanged: (id) sender
+{
+	[displayedValues setObject: [NSNumber numberWithBool: [sender intValue]] forKey: @"BundlesFromNetwork"];
+	[self updateUI];
+}
+
+- (IBAction) bundlesFromSystemButtonChanged: (id) sender
+{
+	[displayedValues setObject: [NSNumber numberWithBool: [sender intValue]] forKey: @"BundlesFromSystem"];
+	[self updateUI];
+}
+
+- (IBAction) bundlesFromUserButtonChanged: (id) sender
+{
+	[displayedValues setObject: [NSNumber numberWithBool: [sender intValue]] forKey: @"BundlesFromUser"];
+	[self updateUI];
+}
+
+- (IBAction) projectPathChanged: (id) sender
+{
+	[displayedValues setObject: [sender stringValue] forKey: @"ProjectPath"];
+	[self updateUI];
+}
+
+@end	// MainPrefs

@@ -42,7 +42,9 @@ static const char rcsid[] =
 #import "MainPrefs.h"
 
 @implementation MainPrefsView
-
+/*
+	This class sucks, and shouldn't be necessary. With working "nibs", it isn't.
+*/
 - (id) initWithOwner: (id) anOwner andFrame: (NSRect) frameRect
 {
 	id		label = nil;
@@ -62,30 +64,95 @@ static const char rcsid[] =
 		[label setStringValue: @"Project load path"];
 		[self addSubview: [label autorelease]];
 
-		directoryField = [[NSTextField alloc] initWithFrame: NSMakeRect (3, 174, 410, 24)];
-		[directoryField setEditable: YES];
-		[directoryField setSelectable: YES];
-		[directoryField setAllowsEditingTextAttributes: NO];
-		[directoryField setImportsGraphics: NO];
-		[directoryField setTextColor: [NSColor blackColor]];
-		[directoryField setBackgroundColor: [NSColor whiteColor]];
-		[directoryField setBezeled: YES];
-		[directoryField setTarget: owner];
-		[directoryField setAction: @selector(projectPathChanged:)];
-		[self addSubview: [directoryField autorelease]];
+		projectPathField = [[NSTextField alloc] initWithFrame: NSMakeRect (3, 174, 409, 24)];
+		[projectPathField setEditable: YES];
+		[projectPathField setSelectable: YES];
+		[projectPathField setAllowsEditingTextAttributes: NO];
+		[projectPathField setImportsGraphics: NO];
+		[projectPathField setTextColor: [NSColor blackColor]];
+		[projectPathField setBackgroundColor: [NSColor whiteColor]];
+		[projectPathField setBezeled: YES];
+		[projectPathField setTarget: owner];
+		[projectPathField setAction: @selector(projectPathChanged:)];
+		[self addSubview: [projectPathField autorelease]];
 
-		findButton = [[NSButton alloc] initWithFrame: NSMakeRect (419, 174, 64, 24)];
-		[findButton setTitle: @"Find..."];
-		[findButton setTarget: owner];
-		[findButton setAction: @selector(projectPathFindButtonClicked:)];
-		[self addSubview: [findButton autorelease]];
+		projectPathFindButton = [[NSButton alloc] initWithFrame: NSMakeRect (419, 174, 64, 24)];
+		[projectPathFindButton setTitle: @"Find..."];
+		[projectPathFindButton setButtonType: NSMomentaryPushButton];
+		[projectPathFindButton setTarget: owner];
+		[projectPathFindButton setAction: @selector(projectPathFindButtonClicked:)];
+		[self addSubview: [projectPathFindButton autorelease]];
+
+		label = [[NSTextField alloc] initWithFrame: NSMakeRect (3, 85, 130, 20)];
+		[label setEditable: NO];
+		[label setSelectable: NO];
+		[label setAllowsEditingTextAttributes: NO];
+		[label setImportsGraphics: NO];
+		[label setTextColor: [NSColor blackColor]];
+		[label setBackgroundColor: [NSColor controlColor]];
+		[label setBezeled: NO];
+		[label setStringValue: @"Load bundles from:"];
+		[self addSubview: [label autorelease]];
+
+		bundlesFromUserButton = [[NSButton alloc] initWithFrame: NSMakeRect (160, 116, 150, 20)];
+		[bundlesFromUserButton setTitle: @"Personal Library path"];
+		[bundlesFromUserButton setButtonType: NSSwitchButton];
+		[bundlesFromUserButton setImagePosition: NSImageRight];
+		[bundlesFromUserButton setTarget: owner];
+		[bundlesFromUserButton setAction: @selector(bundlesFromUserButtonChanged:)];
+		[self addSubview: [bundlesFromUserButton autorelease]];
+
+		bundlesFromLocalButton = [[NSButton alloc] initWithFrame: NSMakeRect (160, 93, 150, 20)];
+		[bundlesFromLocalButton setTitle: @"Local Library path"];
+		[bundlesFromLocalButton setButtonType: NSSwitchButton];
+		[bundlesFromLocalButton setImagePosition: NSImageRight];
+		[bundlesFromLocalButton setTarget: owner];
+		[bundlesFromLocalButton setAction: @selector(bundlesFromLocalButtonChanged:)];
+		[self addSubview: [bundlesFromLocalButton autorelease]];
+
+		bundlesFromNetworkButton = [[NSButton alloc] initWithFrame: NSMakeRect (160, 70, 150, 20)];
+		[bundlesFromNetworkButton setTitle: @"Networked Library path"];
+		[bundlesFromNetworkButton setButtonType: NSSwitchButton];
+		[bundlesFromNetworkButton setImagePosition: NSImageRight];
+		[bundlesFromNetworkButton setTarget: owner];
+		[bundlesFromNetworkButton setAction: @selector(bundlesFromNetworkButtonChanged:)];
+		[self addSubview: [bundlesFromNetworkButton autorelease]];
+
+		bundlesFromSystemButton = [[NSButton alloc] initWithFrame: NSMakeRect (160, 47, 150, 20)];
+		[bundlesFromSystemButton setTitle: @"System Library path"];
+		[bundlesFromSystemButton setButtonType: NSSwitchButton];
+		[bundlesFromSystemButton setImagePosition: NSImageRight];
+		[bundlesFromSystemButton setTarget: owner];
+		[bundlesFromSystemButton setAction: @selector(bundlesFromSystemButtonChanged:)];
+		[self addSubview: [bundlesFromSystemButton autorelease]];
+
 	}
 	return self;
 }
 
-- (id) directoryField
+- (id) projectPathField
 {
-	return directoryField;
+	return projectPathField;
+}
+
+- (id) bundlesFromUserButton
+{
+	return bundlesFromUserButton;
+}
+
+- (id) bundlesFromLocalButton
+{
+	return bundlesFromLocalButton;
+}
+
+- (id) bundlesFromNetworkButton
+{
+	return bundlesFromNetworkButton;
+}
+
+- (id) bundlesFromSystemButton
+{
+	return bundlesFromSystemButton;
 }
 
 @end

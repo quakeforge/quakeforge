@@ -35,13 +35,23 @@
 
 @interface MainPrefsView: NSView
 {
-	id		directoryField;
-	id 		findButton;
+	// for controllers to connect to
+	id		projectPathField;
+	id 		projectPathFindButton;
+	id		bundlesFromUserButton;
+	id		bundlesFromLocalButton;
+	id		bundlesFromNetworkButton;
+	id		bundlesFromSystemButton;
+
 	id		owner;
 }
 
 - (id) initWithOwner: (id) anOwner andFrame: (NSRect) frameRect;
 
-- (id) directoryField;
+- (id) projectPathField;
+- (id) bundlesFromUserButton;
+- (id) bundlesFromLocalButton;
+- (id) bundlesFromNetworkButton;
+- (id) bundlesFromSystemButton;
 
 @end

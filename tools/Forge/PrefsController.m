@@ -62,7 +62,7 @@ static NSMutableArray	*prefsViews = nil;
 		prefsViews = [[[NSMutableArray alloc] initWithCapacity: 5] retain];
 
 		prefsPanel = [[PrefsPanel alloc]
-						initWithContentRect: NSMakeRect (250, 250, 516, 386)
+						initWithContentRect: NSMakeRect (250, 250, 516, 385)
 						styleMask: NSTitledWindowMask
 								 | NSMiniaturizableWindowMask
 								 | NSClosableWindowMask

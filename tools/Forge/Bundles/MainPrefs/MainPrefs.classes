@@ -12,6 +12,10 @@
     };
     MainPrefs = {
 	Actions = (
+	    bundlesFromLocalButtonChanged:,
+	    bundlesFromNetworkButtonChanged:,
+	    bundlesFromSystemButtonChanged:,
+	    bundlesFromUserButtonChanged:,
 	    loadPrefs:,
 	    projectPathChanged:,
 	    projectPathFindButtonClicked:,
@@ -19,6 +23,10 @@
 	    savePrefs:
 	);
 	Outlets = (
+	    bundlesFromLocalButton,
+	    bundlesFromNetworkButton,
+	    bundlesFromSystemButton,
+	    bundlesFromUserButton,
 	    projectPathField,
 	    projectPathFindButton,
 	    view,
