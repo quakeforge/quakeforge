@@ -112,6 +112,8 @@ cvar_t     *pausable;
 
 cvar_t     *temp1;
 
+cvar_t     *cl_demospeed;
+
 extern cvar_t *cl_writecfg;
 extern int  fps_count;
 
@@ -248,6 +250,10 @@ Host_InitLocal (void)
 	coop = Cvar_Get ("coop", "0", CVAR_NONE, NULL, "0 or 1");
 	pausable = Cvar_Get ("pausable", "1", CVAR_NONE, NULL, "None");
 	temp1 = Cvar_Get ("temp1", "0", CVAR_NONE, NULL, "None");
+
+	cl_demospeed = Cvar_Get ("cl_demospeed", "1.0", CVAR_NONE, NULL,
+							 "adjust demo playback speed. 1.0 = normal, "
+							 "< 1 slow-mo, > 1 timelapse");
 
 	Host_FindMaxClients ();
 
@@ -495,9 +501,19 @@ Host_ClearMemory (void)
 qboolean
 Host_FilterTime (float time)
 {
+	float       timedifference;
+	float       timescale = 1.0;
+
+	if (cls.demoplayback) {
+		timescale = max (0, cl_demospeed->value);
+		time *= timescale;
+	}
+
 	realtime += time;
 
-	if (!cls.timedemo && realtime - oldrealtime < 1.0 / 72.0)
+	timedifference = (timescale / 72.0) - (realtime - oldrealtime);
+
+	if (!cls.timedemo && (timedifference > 0))
 		return false;					// framerate is too high
 
 	host_frametime = realtime - oldrealtime;
