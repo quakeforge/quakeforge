@@ -1410,8 +1410,6 @@ AC_SUBST(AS)
 AC_SUBST(ASFLAGS)
 AC_SUBST(CCAS)
 AC_SUBST(CCASFLAGS)
-AC_SUBST(plugin_ldflags)
-AC_SUBST(plugin_libadd)
 
 dnl ==================================================================
 dnl Make sure we link against a working zlib
@@ -1744,7 +1742,6 @@ else
 	unset SOUND_TYPES
 fi
 
-PLUGIN_RPATH='-rpath $(plugindir)'
 SERVER_PLUGIN_TARGETS="libconsole_server.la"
 SERVER_PLUGIN_STATIC=""
 CLIENT_PLUGIN_TARGETS="libconsole_client.la"
@@ -1761,7 +1758,6 @@ if test "x$static_plugins" = xauto -a "x$SYSTYPE" = xWIN32; then
 fi
 if test "x$static_plugins" = xyes; then
 	AC_DEFINE(STATIC_PLUGINS, 1, [Define this if you are building static plugins])
-	PLUGIN_RPATH=''
 	SERVER_PLUGIN_STATIC="$SERVER_PLUGIN_TARGETS"
 	SERVER_PLUGIN_TARGETS=""
 	CLIENT_PLUGIN_STATIC="$CLIENT_PLUGIN_TARGETS"
@@ -1776,6 +1772,8 @@ if test "x$static_plugins" = xyes; then
 		SOUND_TYPES="$SOUND_TYPES (static)"
 		CDTYPE="$CDTYPE (static)"
 	fi
+else
+	plugin_ldflags="$plugin_ldflags"' -version-info $(plugin_version) -rpath $(plugindir)'
 fi
 SERVER_PLUGIN_STATIC_LIBS=""
 CLIENT_PLUGIN_STATIC_LIBS=""
@@ -1835,7 +1833,6 @@ AC_DEFINE_UNQUOTED(SND_RENDER_PROTOS, $SND_RENDER_PROTOS, [list of sound render 
 
 AC_SUBST(NQ_TARGETS)
 AC_SUBST(QW_TARGETS)
-AC_SUBST(PLUGIN_RPATH)
 AC_SUBST(SERVER_PLUGIN_STATIC)
 AC_SUBST(SERVER_PLUGIN_STATIC_LIBS)
 AC_SUBST(SERVER_PLUGIN_TARGETS)
@@ -1858,6 +1855,8 @@ AC_SUBST(VID_MODEL_TARGETS)
 AC_SUBST(VID_REND_TARGETS)
 AC_SUBST(VID_REND_NOINST_TARGETS)
 AC_SUBST(VID_TARGETS)
+AC_SUBST(plugin_ldflags)
+AC_SUBST(plugin_libadd)
 
 QFCC_DEPS='$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la'
 QFCC_LIBS="${QFCC_DEPS} ${WINMM}"
