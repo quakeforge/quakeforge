@@ -45,11 +45,11 @@
 
 - (void) dealloc
 {
-	local integer	i;
+	local unsigned	i;
 	local id		tmp;
 
 	for (i = 0; i < count; i++)
-		[array[i] release];
+		[array[(integer)i] release]; //FIXME no unsigned addressing
 
 	obj_free (array);
 

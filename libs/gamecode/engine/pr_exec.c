@@ -327,8 +327,10 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				OPC.integer_var = OPA.integer_var << OPB.integer_var;
 				break;
 			case OP_SHR_I:
-			case OP_SHR_U:
 				OPC.integer_var = OPA.integer_var >> OPB.integer_var;
+				break;
+			case OP_SHR_U:
+				OPC.uinteger_var = OPA.uinteger_var >> OPB.uinteger_var;
 				break;
 			case OP_GE_F:
 				OPC.float_var = OPA.float_var >= OPB.float_var;

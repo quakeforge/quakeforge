@@ -169,6 +169,9 @@ expr_t *append_expr (expr_t *block, expr_t *e);
 void print_expr (expr_t *e);
 
 void convert_int (expr_t *e);
+void convert_uint (expr_t *e);
+void convert_uint_int (expr_t *e);
+void convert_int_uint (expr_t *e);
 
 expr_t *test_expr (expr_t *e, int test);
 expr_t *binary_expr (int op, expr_t *e1, expr_t *e2);

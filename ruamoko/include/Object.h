@@ -101,7 +101,7 @@ typedef enum {
 @interface Object <Object>
 {
 	Class		isa;
-	integer	retainCount;
+	unsigned	retainCount;
 }
 
 + (id) alloc;

@@ -1369,6 +1369,27 @@ convert_int (expr_t *e)
 	e->e.float_val = e->e.integer_val;
 }
 
+void
+convert_uint (expr_t *e)
+{
+	e->type = ex_float;
+	e->e.float_val = e->e.uinteger_val;
+}
+
+void
+convert_uint_int (expr_t *e)
+{
+	e->type = ex_integer;
+	e->e.integer_val = e->e.uinteger_val;
+}
+
+void
+convert_int_uint (expr_t *e)
+{
+	e->type = ex_uinteger;
+	e->e.uinteger_val = e->e.integer_val;
+}
+
 static void
 convert_nil (expr_t *e, type_t *t)
 {
@@ -1439,18 +1460,46 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		}
 	}
 
-	if (e1->type == ex_integer
-		&& (t2 == &type_float
+	if (e1->type == ex_integer) {
+		if (t2 == &type_float
 			|| t2 == &type_vector
-			|| t2 == &type_quaternion)) {
-		convert_int (e1);
-		t1 = &type_float;
-	} else if (e2->type == ex_integer
-			   && (t1 == &type_float
-				   || t1 == &type_vector
-				   || t1 == &type_quaternion)) {
-		convert_int (e2);
-		t2 = &type_float;
+			|| t2 == &type_quaternion) {
+			convert_int (e1);
+			t1 = &type_float;
+		} else if (t2 == &type_uinteger) {
+			convert_int_uint (e1);
+			t1 = &type_uinteger;
+		}
+	} else if (e1->type == ex_uinteger) {
+		if (t2 == &type_float
+			|| t2 == &type_vector
+			|| t2 == &type_quaternion) {
+			convert_uint (e1);
+			t1 = &type_float;
+		} else if (t2 == &type_integer) {
+			convert_uint_int (e1);
+			t1 = &type_integer;
+		}
+	} else if (e2->type == ex_integer) {
+		if (t1 == &type_float
+			|| t1 == &type_vector
+			|| t1 == &type_quaternion) {
+			convert_int (e2);
+			t2 = &type_float;
+		} else if (t1 == &type_uinteger) {
+			convert_int_uint (e2);
+			t2 = &type_uinteger;
+		}
+	} else if (e2->type == ex_uinteger) {
+		if (t1 == &type_float
+			|| t1 == &type_vector
+			|| t1 == &type_quaternion) {
+			convert_uint (e2);
+			t2 = &type_float;
+		} else if (t1 == &type_integer) {
+			convert_uint_int (e2);
+			t2 = &type_integer;
+		}
 	}
 
 	if (e1->type >= ex_string && e2->type >= ex_string)
@@ -2191,12 +2240,26 @@ assign_expr (expr_t *e1, expr_t *e2)
 		error (e1, "internal error");
 		abort ();
 	}
-	if (e2->type == ex_integer
-		&& (t1 == &type_float
+	if (e2->type == ex_integer) {
+		if (t1 == &type_float
 			|| t1 == &type_vector
-			|| t1 == &type_quaternion)) {
-		convert_int (e2);
-		t2 = &type_float;
+			|| t1 == &type_quaternion) {
+			convert_int (e2);
+			t2 = &type_float;
+		} else if (t1 == &type_uinteger) {
+			convert_int_uint (e2);
+			t2 = &type_uinteger;
+		}
+	} else if (e2->type == ex_uinteger) {
+		if (t1 == &type_float
+			|| t1 == &type_vector
+			|| t1 == &type_quaternion) {
+			convert_uint (e2);
+			t2 = &type_float;
+		} else if (t1 == &type_integer) {
+			convert_uint_int (e2);
+			t2 = &type_integer;
+		}
 	}
 
 	if (t1->type != ev_void && e2->type == ex_nil) {
@@ -2290,10 +2353,14 @@ cast_expr (type_t *type, expr_t *e)
 
 	e_type = get_type (e);
 
+	if (type == e_type)
+		return e;
+
 	if (!(type->type == ev_pointer && e_type->type == ev_pointer)
 		&& !(type->type == ev_func && e_type->type == ev_func)
 		&& !(((type == &type_integer || type == &type_uinteger)
-			  && e_type == &type_float)
+			  && (e_type == &type_float || e_type == &type_integer
+				  || e_type == &type_uinteger))
 			 || (type == &type_float
 				 && (e_type == &type_integer || e_type == &type_uinteger)))) {
 		c = error (e, "can not cast from %s to %s",
@@ -2366,6 +2433,15 @@ init_elements (def_t *def, expr_t *eles)
 			if (e->type == ex_integer
 				&& elements[i].type->type == ev_float)
 				convert_int (e);
+			else if (e->type == ex_integer
+					 && elements[i].type->type == ev_uinteger)
+				convert_int_uint (e);
+			else if (e->type == ex_uinteger
+					 && elements[i].type->type == ev_float)
+				convert_uint (e);
+			else if (e->type == ex_uinteger
+					 && elements[i].type->type == ev_integer)
+				convert_uint_int (e);
 			if (get_type (e) != elements[i].type) {
 				error (e, "type mismatch in initializer");
 				continue;

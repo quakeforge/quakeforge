@@ -294,7 +294,7 @@ BOOL (id object) object_is_meta_class = #0;
 	
 }
 
-- (integer) retainCount
+- (unsigned) retainCount
 {
 	return retainCount;
 }

@@ -472,6 +472,8 @@ opt_state_expr
 		{
 			if ($2->type == ex_integer)
 				convert_int ($2);
+			else if ($2->type == ex_uinteger)
+				convert_uint ($2);
 			if ($2->type != ex_float)
 				error ($2, "invalid type for frame number");
 			if ($5->type->type != ev_func)
