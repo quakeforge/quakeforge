@@ -272,6 +272,10 @@ ReuseConstant (expr_t *expr, def_t *def)
 			if (e.e.func_val)
 				reloc = new_reloc (cn->ofs, rel_def_func);
 			break;
+		case ex_field:
+			if (e.e.pointer.def)
+				reloc_def_field_ofs (e.e.pointer.def, cn->ofs);
+			break;
 		case ex_pointer:
 			if (e.e.pointer.def)
 				EMIT_DEF_OFS (G_INT (cn->ofs), e.e.pointer.def);

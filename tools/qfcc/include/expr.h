@@ -131,7 +131,6 @@ typedef struct expr_s {
 		float	float_val;
 		float	vector_val[3];
 		int		entity_val;
-		int		field_val;
 		int		func_val;
 		ex_pointer_t	pointer;
 		float	quaternion_val[4];
@@ -171,7 +170,7 @@ expr_t *new_string_expr (const char *string_val);
 expr_t *new_float_expr (float float_val);
 expr_t *new_vector_expr (float *vector_val);
 expr_t *new_entity_expr (int entity_val);
-expr_t *new_field_expr (int field_val);
+expr_t *new_field_expr (int field_val, struct type_s *type, struct def_s *def);
 expr_t *new_func_expr (int func_val);
 expr_t *new_pointer_expr (int val, struct type_s *type, struct def_s *def);
 expr_t *new_quaternion_expr (float *quaternion_val);

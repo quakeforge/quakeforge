@@ -520,11 +520,13 @@ new_entity_expr (int entity_val)
 }
 
 expr_t *
-new_field_expr (int field_val)
+new_field_expr (int field_val, type_t *type, def_t *def)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_field;
-	e->e.field_val = field_val;
+	e->e.pointer.val = field_val;
+	e->e.pointer.type = type;
+	e->e.pointer.def = def;
 	return e;
 }
 
@@ -606,7 +608,8 @@ constant_expr (expr_t *var)
 		case ev_vector:
 			return new_vector_expr (G_VECTOR (var->e.def->ofs));
 		case ev_field:
-			return new_field_expr (G_INT (var->e.def->ofs));
+			return new_field_expr (G_INT (var->e.def->ofs), var->e.def->type,
+								   var->e.def);
 		case ev_integer:
 			return new_integer_expr (G_INT (var->e.def->ofs));
 		case ev_uinteger:
@@ -820,8 +823,10 @@ print_expr (expr_t *e)
 			printf ("(%s)[%d]", pr_type_name[e->e.pointer.type->type],
 					e->e.pointer.val);
 			break;
-		case ex_entity:
 		case ex_field:
+			printf ("%d", e->e.pointer.val);
+			break;
+		case ex_entity:
 		case ex_func:
 		case ex_integer:
 			printf ("%d", e->e.integer_val);
@@ -967,15 +972,22 @@ field_expr (expr_t *e1, expr_t *e2)
 						if (e1->e.expr.op == '.'
 							&& extract_type (e1->e.expr.e1) == ev_entity) {
 							int         ofs;
+							def_t      *def;
+							type_t     *type;
 
-							if (e1->e.expr.e2->type == ex_def)
-								ofs = G_INT (e1->e.expr.e2->e.def->ofs);
-							else if (e1->e.expr.e2->type == ex_field)
-								ofs = e1->e.expr.e2->e.field_val;
-							else
+							if (e1->e.expr.e2->type == ex_def) {
+								ofs = 0;
+								def = e1->e.expr.e2->e.def;
+								type = def->type;
+							} else if (e1->e.expr.e2->type == ex_field) {
+								ofs = e1->e.expr.e2->e.pointer.val;
+								def = e1->e.expr.e2->e.pointer.def;
+								type = e1->e.expr.e2->e.pointer.type;
+							} else
 								break;
 							if (field->offset) {
-								e = new_field_expr (ofs + field->offset);
+								e = new_field_expr (ofs + field->offset,
+													type, def);
 								e = new_binary_expr ('.', e1->e.expr.e1, e);
 							} else {
 								e = e1;
@@ -1094,7 +1106,7 @@ test_expr (expr_t *e, int test)
 			new = new_entity_expr (0);
 			break;
 		case ev_field:
-			new = new_field_expr (0);
+			new = new_field_expr (0, 0, 0);
 			break;
 		case ev_func:
 			new = new_func_expr (0);

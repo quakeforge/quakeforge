@@ -184,7 +184,8 @@ WriteData (int crc)
 			&& strcmp (def->name, ".debug_file") != 0)
 			continue;
 		if (def->type->type == ev_func) {
-		} else if (def->type->type == ev_field) {
+		} else if (def->type->type == ev_field
+				   && strcmp (def->name, ".imm") != 0) {
 			dd = &fields[numfielddefs++];
 			def_to_ddef (def, dd, 1);
 			dd->ofs = G_INT (def->ofs);

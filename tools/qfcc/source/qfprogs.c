@@ -407,6 +407,7 @@ convert_qfo (void)
 				case rel_def_op:
 				case rel_def_string:
 				case rel_def_field:
+				case rel_def_field_ofs:
 					break;
 			}
 		}
