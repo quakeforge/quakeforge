@@ -191,8 +191,8 @@ int         host_hunklevel;
 byte       *vid_basepal;
 byte       *vid_colormap;
 
-cvar_t     *host_speeds;				// set for running times
-cvar_t     *show_fps;					// set for running times
+cvar_t     *host_speeds;
+cvar_t     *show_fps;
 cvar_t     *show_time;
 cvar_t     *cl_demospeed;
 
