@@ -253,6 +253,10 @@ static void
 GL_ResampleTexture (unsigned int *in, int inwidth, int inheight,
 		    unsigned int *out, int outwidth, int outheight)
 {
+	/*
+		any improvements in here should be mirrored in build_skin_32 in
+		gl_skin.c
+	*/
 	int           i, j; 
 	unsigned int  frac, fracstep; 
 	unsigned int *inrow; 
@@ -275,6 +279,10 @@ static void
 GL_Resample8BitTexture (unsigned char *in, int inwidth, int inheight,
 			unsigned char *out, int outwidth, int outheight) 
 {
+	/*
+		any improvements in here should be mirrored in build_skin_8 in
+		gl_skin.c
+	*/
 	unsigned char *inrow;
 	int            i, j;
 	unsigned int   frac, fracstep;

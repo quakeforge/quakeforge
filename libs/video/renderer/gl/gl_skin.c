@@ -82,6 +82,10 @@ build_skin_8 (byte * original, int tinwidth, int tinheight,
 			  unsigned int scaled_width, unsigned int scaled_height,
 			  int inwidth, qboolean alpha)
 {
+	/*
+		any improvements in here should be mirrored in
+		GL_Resample8BitTexture in gl_textures.c
+	*/
 	byte        *inrow;
 	byte         pixels[512 * 256], *out;
 	int          i, j;
@@ -108,6 +112,10 @@ build_skin_32 (byte * original, int tinwidth, int tinheight,
 			   unsigned int scaled_width, unsigned int scaled_height,
 			   int inwidth, qboolean alpha)
 {
+	/*
+		any improvements in here should be mirrored in
+		GL_ResampleTexture in gl_textures.c
+	*/
 	byte        *inrow;
 	int          i, j;
 	int          samples = alpha ? gl_alpha_format : gl_solid_format;
