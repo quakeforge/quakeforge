@@ -2130,7 +2130,7 @@ QF_DEPS(PAK,
 )
 QF_DEPS(WAD,
 	[],
-	[$(top_builddir)/libs/util/libQFutil.la],
+	[$(top_builddir)/libs/image/libQFimage.la $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
 QF_DEPS(WAV,
