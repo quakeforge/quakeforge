@@ -523,6 +523,10 @@ SND_UpdateAmbientSounds (void)
 	for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
 		 ambient_channel++) {
 		chan = &channels[ambient_channel];
+		if (!ambient_sfx[ambient_channel]) {
+			chan->sfx = 0;
+			continue;
+		}
 		chan->sfx = ambient_sfx[ambient_channel]->open (ambient_sfx[ambient_channel]);
 
 		vol = ambient_level->value * l->ambient_sound_level[ambient_channel];
