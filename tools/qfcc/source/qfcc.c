@@ -686,6 +686,11 @@ progs_src_compile (void)
 		dsprintf (filename, "%s", progs_src);
 
 	src = load_file (filename->str);
+	if (!src) {
+		fprintf (stderr, "couldn't open %s: %s\n", filename->str,
+				 strerror (errno));
+		return 1;
+	}
 
 	if (!(src = COM_Parse (src))) {
 		fprintf (stderr, "No destination filename.  qfcc --help for info.\n");
