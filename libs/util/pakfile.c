@@ -70,11 +70,11 @@ pack_open (const char *name)
 	}
 	if (Qread (pack->handle, &pack->header, sizeof (pack->header))
 		!= sizeof (pack->header)) {
-		fprintf (stderr, "%s: not a pack file", name);
+		fprintf (stderr, "%s: not a pack file\n", name);
 		goto error;
 	}
 	if (strncmp (pack->header.id, "PACK", 4)) {
-		fprintf (stderr, "%s: not a pack file", name);
+		fprintf (stderr, "%s: not a pack file\n", name);
 		goto error;
 	}
 
