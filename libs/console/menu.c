@@ -57,6 +57,7 @@ typedef struct menu_item_s {
 	int         x, y;
 	func_t      func;
 	func_t      cursor;
+	func_t      keyevent;
 	const char *text;
 	menu_pic_t *pics;
 } menu_item_t;
@@ -210,6 +211,14 @@ bi_Menu_Cursor (progs_t *pr)
 }
 
 static void
+bi_Menu_KeyEvent (progs_t *pr)
+{
+	func_t      func = G_FUNCTION (pr, OFS_PARM0);
+
+	menu->keyevent = func;
+}
+
+static void
 bi_Menu_End (progs_t *pr)
 {
 	menu = menu->parent;
@@ -236,6 +245,7 @@ Menu_Init (void)
 	PR_AddBuiltin (&menu_pr_state, "Menu_CenterPic", bi_Menu_CenterPic, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_Item", bi_Menu_Item, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_Cursor", bi_Menu_Cursor, -1);
+	PR_AddBuiltin (&menu_pr_state, "Menu_KeyEvent", bi_Menu_KeyEvent, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_End", bi_Menu_End, -1);
 
 	R_Progs_Init (&menu_pr_state);
@@ -333,6 +343,14 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 {
 	if (!menu)
 		return;
+	if (menu->keyevent) {
+		G_INT (&menu_pr_state, OFS_PARM0) = key;
+		G_INT (&menu_pr_state, OFS_PARM1) = unicode;
+		G_INT (&menu_pr_state, OFS_PARM2) = down;
+		PR_ExecuteProgram (&menu_pr_state, menu->keyevent);
+		if (G_INT (&menu_pr_state, OFS_RETURN))
+			return;
+	}
 	switch (key) {
 		case QFK_DOWN:
 		case QFM_WHEEL_DOWN:

@@ -32,6 +32,7 @@ static const char rcsid[] =
 #endif
 
 #include <string.h>
+#include <stdio.h>
 
 #include "compat.h"
 
@@ -67,8 +68,8 @@ Q_strnlen (const char *s, size_t maxlen)
 }
 
 #ifdef HAVE__VSNPRINTF
-void
-Q_snprintfz (char *dest, size_t size, char *fmt, ...)
+size_t
+Q_snprintfz (char *dest, size_t size, const char *fmt, ...)
 {
 	int   len;
 	va_list  argptr;
@@ -78,10 +79,11 @@ Q_snprintfz (char *dest, size_t size, char *fmt, ...)
 	va_end (argptr);
 	if (len < 0) // the string didn't fit into the buffer
 		dest[size - 1] = 0;
+	return len;
 }
 
-void
-Q_vsnprintfz (char *dest, size_t size, va_list argptr)
+size_t
+Q_vsnprintfz (char *dest, size_t size, const char *fmt, va_list argptr)
 {
 	int   len;
 
@@ -89,5 +91,6 @@ Q_vsnprintfz (char *dest, size_t size, va_list argptr)
 
 	if (len < 0) // the string didn't fit into the buffer
 		dest[size - 1] = 0;
+	return len;
 }
 #endif

@@ -136,7 +136,7 @@ WINS_GetLocalAddress ()
 	myAddr = *(int *) local->h_addr_list[0];
 
 	addr = ntohl (myAddr);
-	snprintf (my_tcpip_address, sizeof (my_tcpip_address), "%d.%d.%d.%d",
+	snprintf (my_tcpip_address, sizeof (my_tcpip_address), "%ld.%ld.%ld.%ld",
 			  (addr >> 24) & 0xff, (addr >> 16) & 0xff, (addr >> 8) & 0xff,
 			  addr & 0xff);
 }

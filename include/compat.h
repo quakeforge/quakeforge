@@ -59,10 +59,12 @@
 #if defined(HAVE__SNPRINTF)
 # undef snprintf
 # define snprintf Q_snprintfz
+# define need_qstring_h
 #endif
 #if defined(HAVE__VSNPRINTF)
 # undef vsnprintf
 # define vsnprintf Q_vsnprintfz
+# define need_qstring_h
 #endif
 #if defined(_WIN32) && !defined(__BORLANDC__)
 # define kbhit _kbhit

@@ -60,6 +60,7 @@ static const char rcsid[] =
 #include "QF/GL/qf_vid.h"
 #include "QF/GL/types.h"
 
+#include "compat.h"
 #include "r_cvar.h"
 #include "r_shared.h"
 #include "sbar.h"

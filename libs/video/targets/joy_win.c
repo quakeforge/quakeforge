@@ -58,7 +58,6 @@ cvar_t     *joy_sensitivity;			// Joystick sensitivity
 #define JOY_ABSOLUTE_AXIS	0x00000000	// control like a joystick
 #define JOY_RELATIVE_AXIS	0x00000010	// control like a mouse, spinner,
 										// trackball
-#define JOY_MAX_AXES		6			// X, Y, Z, R, U, V
 #define JOY_AXIS_X			0
 #define JOY_AXIS_Y			1
 #define JOY_AXIS_Z			2

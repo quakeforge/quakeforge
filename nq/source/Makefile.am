@@ -179,8 +179,7 @@ nq_x11_DEPENDENCIES=	$(nq_x11_libs)
 
 opengl_QFLIBS= \
 			$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
-			$(top_builddir)/libs/models/libQFmodels_gl.la \
-			$(top_builddir)/libs/video/targets/libQFglx.la
+			$(top_builddir)/libs/models/libQFmodels_gl.la
 
 # ... Linux 3DFX
 nq_3dfx_libs=  \

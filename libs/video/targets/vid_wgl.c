@@ -752,7 +752,7 @@ VID_InitFullDIB (HINSTANCE hInstance)
 				modelist[nummodes].fullscreen = 1;
 				modelist[nummodes].bpp = devmode.dmBitsPerPel;
 				snprintf (modelist[nummodes].modedesc,
-						  sizeof (modelist[nummodes].modedesc), "%dx%dx%d",
+						  sizeof (modelist[nummodes].modedesc), "%ldx%ldx%ld",
 						  devmode.dmPelsWidth, devmode.dmPelsHeight,
 						  devmode.dmBitsPerPel);
 
@@ -813,7 +813,7 @@ VID_InitFullDIB (HINSTANCE hInstance)
 				modelist[nummodes].fullscreen = 1;
 				modelist[nummodes].bpp = devmode.dmBitsPerPel;
 				snprintf (modelist[nummodes].modedesc,
-						  sizeof (modelist[nummodes].modedesc), "%dx%dx%d",
+						  sizeof (modelist[nummodes].modedesc), "%ldx%ldx%ld",
 						  devmode.dmPelsWidth, devmode.dmPelsHeight,
 						  devmode.dmBitsPerPel);
 
@@ -953,7 +953,8 @@ VID_Init (unsigned char *palette)
 					modelist[nummodes].fullscreen = 1;
 					modelist[nummodes].bpp = bpp;
 					snprintf (modelist[nummodes].modedesc,
-							  sizeof (modelist[nummodes].modedesc), "%dx%dx%d",
+							  sizeof (modelist[nummodes].modedesc),
+							  "%ldx%ldx%ld",
 							  devmode.dmPelsWidth, devmode.dmPelsHeight,
 							  devmode.dmBitsPerPel);
 
