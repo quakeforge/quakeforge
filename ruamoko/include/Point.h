@@ -21,7 +21,6 @@
 - (integer) y;
 
 - (void) setPoint: (Point)aPoint;
-
 @end
 
 #endif //__ruamoko_Point_h

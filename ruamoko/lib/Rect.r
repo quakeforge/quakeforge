@@ -7,28 +7,28 @@
 
 - (id) initWithComponents: (integer)x : (integer)y : (integer)w : (integer)h
 {
-	id (self) = [super init];
-	id (origin) = [[Size alloc] initWithComponents: x : y];
-	id (size) = [[Size alloc] initWithComponents: w : h];
+	self = [super init];
+	origin = [[Size alloc] initWithComponents: x : y];
+	size = [[Size alloc] initWithComponents: w : h];
 	return self;
 }
 
 - (id) initWithOrigin: (Point)anOrigin size: (Size)aSize
 {
-	id (self) = [super init];
+	self = [super init];
 
 	if (!self || !anOrigin || !aSize)
 		return NIL;
 
-	id (origin) = [anOrigin copy];
-	id (size) = [aSize copy];
+	origin = [anOrigin copy];
+	size = [aSize copy];
 
 	return self;
 }
 
 - (id) initWithRect: (Rect)aRect
 {
-	id (self) = [super init];
+	self = [super init];
 
 	if (!self || !aRect)
 		return NIL;
@@ -66,7 +66,7 @@
 	if (origin)
 		[origin free];
 
-	id (origin) = [aPoint copy];
+	origin = [aPoint copy];
 }
 
 - (void) setSize: (Size)aSize
@@ -77,7 +77,7 @@
 	if (size)
 		[size free];
 
-	id (size) = [aSize copy];
+	size = [aSize copy];
 }
 
 - (void) setRect: (Rect)aRect

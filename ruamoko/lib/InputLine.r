@@ -16,7 +16,7 @@ string (inputline_t il) InputLine_GetText = #0;
 
 - (id) initWithBounds: (Rect)aRect promptCharacter: (integer)char
 {
-	id (self) = [super init];
+	self = [super init];
 	control.x = aRect.origin.x;
 	control.y = aRect.origin.y;
 	control.cursor = NO;
