@@ -75,24 +75,24 @@ typedef struct pr_category_s {
 	pointer_t   protocols;			// pr_protocol_list_t
 } pr_category_t;
 
-typedef pr_protocol_list_s {
+typedef struct pr_protocol_list_s {
 	pointer_t   next;
 	int         count;
 	pointer_t   list[1];
 } pr_protocol_list_t;
 
-typedef pr_method_list_s {
+typedef struct pr_method_list_s {
 	pointer_t   method_next;
 	int         method_count;
 	struct pr_method_s {
-		SEL         method_name;
+		pr_sel_t    method_name;
 		string_t    method_types;
 		func_t      method_imp;		// typedef id (id, SEL, ...) IMP
 	} method_list[1];
 } pr_method_list_t;
-typedef pr_method_s pr_method_t;
+typedef struct pr_method_s pr_method_t;
 
-typedef pr_ivar_list_s {
+typedef struct pr_ivar_list_s {
 	int         ivar_count;
 	struct pr_ivar_s {
 		string_t    ivar_name;
@@ -100,6 +100,6 @@ typedef pr_ivar_list_s {
 		int         ivar_offset;
 	} ivar_list[1];
 } pr_ivar_list_t;
-typedef pr_ivar_s pr_ivar_t;
+typedef struct pr_ivar_s pr_ivar_t;
 
 #endif//__pr_obj_h
