@@ -2,6 +2,7 @@
 *.dat
 *.la
 *.lo
+*.sym
 .deps
 .libs
 .vimrc
