@@ -59,8 +59,7 @@ struct sfx_s
 	void        (*release) (sfx_t *sfx);
 };
 
-typedef struct
-{
+typedef struct dma_s {
 	qboolean		gamealive;
 	qboolean		soundalive;
 	qboolean		splitbuffer;
@@ -119,8 +118,6 @@ extern vec3_t listener_origin;
 extern vec3_t listener_forward;
 extern vec3_t listener_right;
 extern vec3_t listener_up;
-extern volatile dma_t *shm;
-extern volatile dma_t sn;
 extern vec_t sound_nominal_clip_dist;
 
 extern	struct cvar_s *snd_loadas8bit;

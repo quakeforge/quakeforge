@@ -56,7 +56,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 static int  snd_inited;
 static QFile      *snd_file;
 static int snd_blocked = 0;
-//FIXME static volatile dma_t sn;
+static volatile dma_t sn;
 
 static plugin_t				plugin_info;
 static plugin_data_t		plugin_info_data;
@@ -68,45 +68,44 @@ static snd_output_funcs_t	plugin_info_snd_output_funcs;
 
 
 /* FIXME
-static qboolean
+static volatile dma_t *
 SNDDMA_Init (void)
 {
-	shm = &sn;
-	memset ((dma_t *) shm, 0, sizeof (*shm));
-	shm->splitbuffer = 0;
-	shm->channels = 2;
-	shm->submission_chunk = 1;			// don't mix less than this #
-	shm->samplepos = 0;					// in mono samples
-	shm->samplebits = 16;
-	shm->samples = 16384;				// mono samples in buffer
-	shm->speed = 44100;
-	shm->buffer = malloc (shm->samples * shm->channels * shm->samplebits / 8);
-	if (!shm->buffer) {
+	memset ((dma_t *) sn, 0, sizeof (sn));
+	sn.splitbuffer = 0;
+	sn.channels = 2;
+	sn.submission_chunk = 1;			// don't mix less than this #
+	sn.samplepos = 0;					// in mono samples
+	sn.samplebits = 16;
+	sn.samples = 16384;				// mono samples in buffer
+	sn.speed = 44100;
+	sn.buffer = malloc (sn.samples * sn.channels * sn.samplebits / 8);
+	if (!sn.buffer) {
 		Sys_Printf ("SNDDMA_Init: memory allocation failure\n");
 		return 0;
 	}
 
-	Sys_Printf ("%5d stereo\n", shm->channels - 1);
-	Sys_Printf ("%5d samples\n", shm->samples);
-	Sys_Printf ("%5d samplepos\n", shm->samplepos);
-	Sys_Printf ("%5d samplebits\n", shm->samplebits);
-	Sys_Printf ("%5d submission_chunk\n", shm->submission_chunk);
-	Sys_Printf ("%5d speed\n", shm->speed);
-	Sys_Printf ("0x%x dma buffer\n", (int) shm->buffer);
+	Sys_Printf ("%5d stereo\n", sn.channels - 1);
+	Sys_Printf ("%5d samples\n", sn.samples);
+	Sys_Printf ("%5d samplepos\n", sn.samplepos);
+	Sys_Printf ("%5d samplebits\n", sn.samplebits);
+	Sys_Printf ("%5d submission_chunk\n", sn.submission_chunk);
+	Sys_Printf ("%5d speed\n", sn.speed);
+	Sys_Printf ("0x%x dma buffer\n", (int) sn.buffer);
 
 	if (!(snd_file = Qopen ("qf.raw", "wb")))
 		return 0;
 
 	snd_inited = 1;
-	return 1;
+	return &sn;
 }
 */
 
 static int
 SNDDMA_GetDMAPos (void)
 {
-	shm->samplepos = 0;
-	return shm->samplepos;
+	sn.samplepos = 0;
+	return sn.samplepos;
 }
 
 static void
@@ -115,7 +114,7 @@ SNDDMA_Shutdown (void)
 	if (snd_inited) {
 		Qclose (snd_file);
 		snd_file = 0;
-		free (shm->buffer);
+		free (sn.buffer);
 		snd_inited = 0;
 	}
 }
@@ -130,12 +129,12 @@ SNDDMA_Submit (void)
 {
 	int		count = ((*plugin_info_snd_output_data.paintedtime -
 					  *plugin_info_snd_output_data.soundtime) *
-					 shm->samplebits / 8);
+					 sn.samplebits / 8);
 
 	if (snd_blocked)
 		return;
 
-	Qwrite (snd_file, shm->buffer, count);
+	Qwrite (snd_file, sn.buffer, count);
 }
 
 static void

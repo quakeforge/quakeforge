@@ -107,7 +107,7 @@ SNDDMA_Init_Cvars (void)
 
 static int SNDDMA_GetDMAPos (void);
 
-static qboolean
+static volatile dma_t *
 SNDDMA_Init (void)
 {
 	int					 err;
@@ -259,29 +259,28 @@ SNDDMA_Init (void)
 		goto error;
 	}
 
-	shm = &sn;
-	memset ((dma_t *) shm, 0, sizeof (*shm));
-	shm->splitbuffer = 0;
-	shm->channels = stereo + 1;
+	memset ((dma_t *) &sn, 0, sizeof (sn));
+	sn.splitbuffer = 0;
+	sn.channels = stereo + 1;
 	qfsnd_pcm_hw_params_get_period_size (hw, (snd_pcm_uframes_t *)
-										 &shm->submission_chunk, 0);
+										 &sn.submission_chunk, 0);
 										// don't mix less than this
-	shm->samplepos = 0;					// in mono samples
-	shm->samplebits = bps;
+	sn.samplepos = 0;					// in mono samples
+	sn.samplebits = bps;
 	qfsnd_pcm_hw_params_get_buffer_size (hw, &buffer_size); // FIXME: check error return value
-	shm->samples = buffer_size * shm->channels;		// mono samples in buffer
-	shm->speed = rate;
-	SNDDMA_GetDMAPos ();		//XXX sets shm->buffer
-	Sys_Printf ("%5d stereo\n", shm->channels - 1);
-	Sys_Printf ("%5d samples\n", shm->samples);
-	Sys_Printf ("%5d samplepos\n", shm->samplepos);
-	Sys_Printf ("%5d samplebits\n", shm->samplebits);
-	Sys_Printf ("%5d submission_chunk\n", shm->submission_chunk);
-	Sys_Printf ("%5d speed\n", shm->speed);
-	Sys_Printf ("0x%x dma buffer\n", (int) shm->buffer);
+	sn.samples = buffer_size * sn.channels;		// mono samples in buffer
+	sn.speed = rate;
+	SNDDMA_GetDMAPos ();		//XXX sets sn.buffer
+	Sys_Printf ("%5d stereo\n", sn.channels - 1);
+	Sys_Printf ("%5d samples\n", sn.samples);
+	Sys_Printf ("%5d samplepos\n", sn.samplepos);
+	Sys_Printf ("%5d samplebits\n", sn.samplebits);
+	Sys_Printf ("%5d submission_chunk\n", sn.submission_chunk);
+	Sys_Printf ("%5d speed\n", sn.speed);
+	Sys_Printf ("0x%x dma buffer\n", (int) sn.buffer);
 
 	snd_inited = 1;
-	return 1;
+	return &sn;
 error:
 	qfsnd_pcm_close (pcm);
 	return 0;
@@ -292,18 +291,18 @@ SNDDMA_GetDMAPos (void)
 {
 	const snd_pcm_channel_area_t *areas;
 	snd_pcm_uframes_t offset;
-	snd_pcm_uframes_t nframes = shm->samples/shm->channels;
+	snd_pcm_uframes_t nframes = sn.samples/sn.channels;
 
 	if (!snd_inited)
 		return 0;
 
 	qfsnd_pcm_avail_update (pcm);
 	qfsnd_pcm_mmap_begin (pcm, &areas, &offset, &nframes);
-	offset *= shm->channels;
-	nframes *= shm->channels;
-	shm->samplepos = offset;
-	shm->buffer = areas->addr;	//XXX FIXME there's an area per channel
-	return shm->samplepos;
+	offset *= sn.channels;
+	nframes *= sn.channels;
+	sn.samplepos = offset;
+	sn.buffer = areas->addr;	//XXX FIXME there's an area per channel
+	return sn.samplepos;
 }
 
 static void
@@ -333,7 +332,7 @@ SNDDMA_Submit (void)
 	if (snd_blocked)
 		return;
 
-	nframes = count / shm->channels;
+	nframes = count / sn.channels;
 
 	qfsnd_pcm_avail_update (pcm);
 	qfsnd_pcm_mmap_begin (pcm, &areas, &offset, &nframes);

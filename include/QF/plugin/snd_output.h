@@ -34,7 +34,7 @@
 /*
 	All sound plugins must export these functions
 */
-typedef qboolean (QFPLUGIN *P_S_O_Init) (void);
+typedef volatile struct dma_s *(QFPLUGIN *P_S_O_Init) (void);
 typedef void (QFPLUGIN *P_S_O_Shutdown) (void);
 typedef int (QFPLUGIN *P_S_O_GetDMAPos) (void);
 typedef void (QFPLUGIN *P_S_O_Submit) (void);

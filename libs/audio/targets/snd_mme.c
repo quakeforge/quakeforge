@@ -131,17 +131,15 @@ SNDDMA_InitWav ( void )
 	snd_sent = 0;
 	snd_completed = 0;
 
-	shm = &sn;
-
-	shm->channels = 2;
-	shm->samplebits = 16;
-	shm->speed = 11025;
+	sn.channels = 2;
+	sn.samplebits = 16;
+	sn.speed = 11025;
 
 	memset(format, 0, sizeof(*format));
 	format->wf.wFormatTag = WAVE_FORMAT_PCM;
-	format->wf.nChannels = shm->channels;
-	format->wBitsPerSample = shm->samplebits;
-	format->wf.nSamplesPerSec = shm->speed;
+	format->wf.nChannels = sn.channels;
+	format->wBitsPerSample = sn.samplebits;
+	format->wf.nSamplesPerSec = sn.speed;
 	format->wf.nBlockAlign = format->wf.nChannels
 		*format->wBitsPerSample / 8;
 	format->wf.nAvgBytesPerSec = format->wf.nSamplesPerSec
@@ -200,13 +198,13 @@ SNDDMA_InitWav ( void )
 		lpWaveHdr[i].lpData = lpData + i*WAV_BUFFER_SIZE;
 	}
 
-	shm->soundalive = true;
-	shm->splitbuffer = false;
-	shm->samples = gSndBufSize/(shm->samplebits/8);
-	shm->samplepos = 0;
-	shm->submission_chunk = 1;
-	shm->buffer = (unsigned char *) lpData;
-	sample16 = (shm->samplebits/8) - 1;
+	sn.soundalive = true;
+	sn.splitbuffer = false;
+	sn.samples = gSndBufSize/(sn.samplebits/8);
+	sn.samplepos = 0;
+	sn.submission_chunk = 1;
+	sn.buffer = (unsigned char *) lpData;
+	sample16 = (sn.samplebits/8) - 1;
 
 	wav_init = true;
 
@@ -219,7 +217,7 @@ SNDDMA_InitWav ( void )
   Try to find a sound device to mix for.
   Returns false if nothing is found.
 */
-static qboolean
+static volatile dma_t *
 SNDDMA_Init ( void )
 {
 	wav_init = 0;
@@ -245,7 +243,7 @@ SNDDMA_Init ( void )
 		return 0;
 	}
 
-	return 1;
+	return &sn;
 }
 
 /*
@@ -266,7 +264,7 @@ SNDDMA_GetDMAPos ( void )
 
 	s >>= sample16;
 
-	s &= (shm->samples-1);
+	s &= (sn.samples-1);
 
 	return s;
 }

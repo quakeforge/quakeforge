@@ -49,7 +49,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sound.h"
 #include "QF/sys.h"
 
-static dma_t the_shm;
+static dma_t sn;
 static int  snd_inited;
 static int snd_blocked = 0;
 
@@ -70,26 +70,24 @@ paint_audio (void *unused, Uint8 * stream, int len)
 {
 	int sampleposbytes, samplesbytes, streamsamples;
 
-	if (shm) {
-		streamsamples = len / (shm->samplebits / 8);
-		sampleposbytes = shm->samplepos * (shm->samplebits / 8);
-		samplesbytes = shm->samples * (shm->samplebits / 8);
+	streamsamples = len / (sn.samplebits / 8);
+	sampleposbytes = sn.samplepos * (sn.samplebits / 8);
+	samplesbytes = sn.samples * (sn.samplebits / 8);
 
-		shm->samplepos += streamsamples;
-		while (shm->samplepos >= shm->samples)
-			shm->samplepos -= shm->samples;
-//		SND_PaintChannels (*plugin_info_snd_output_data.soundtime + streamsamples);
+	sn.samplepos += streamsamples;
+	while (sn.samplepos >= sn.samples)
+		sn.samplepos -= sn.samples;
+//	SND_PaintChannels (*plugin_info_snd_output_data.soundtime + streamsamples);
 
-		if (shm->samplepos + streamsamples <= shm->samples)
-			memcpy (stream, shm->buffer + sampleposbytes, len);
-		else {
-			memcpy (stream, shm->buffer + sampleposbytes, samplesbytes -
-					sampleposbytes);
-			memcpy (stream + samplesbytes - sampleposbytes, shm->buffer, len -
-					(samplesbytes - sampleposbytes));
-		}
-		*plugin_info_snd_output_data.soundtime += streamsamples;
+	if (sn.samplepos + streamsamples <= sn.samples)
+		memcpy (stream, sn.buffer + sampleposbytes, len);
+	else {
+		memcpy (stream, sn.buffer + sampleposbytes, samplesbytes -
+				sampleposbytes);
+		memcpy (stream + samplesbytes - sampleposbytes, sn.buffer, len -
+				(samplesbytes - sampleposbytes));
 	}
+	*plugin_info_snd_output_data.soundtime += streamsamples;
 }
 
 static void
@@ -97,7 +95,7 @@ SNDDMA_Init_Cvars (void)
 {
 }
 
-static qboolean
+static volatile dma_t *
 SNDDMA_Init (void)
 {
 	SDL_AudioSpec desired, obtained;
@@ -164,28 +162,27 @@ SNDDMA_Init (void)
 	SDL_PauseAudio (0);
 
 	/* Fill the audio DMA information block */
-	shm = &the_shm;
-	shm->splitbuffer = 0;
-	shm->samplebits = (obtained.format & 0xFF);
-	shm->speed = obtained.freq;
-	shm->channels = obtained.channels;
-	shm->samples = obtained.samples * 16;
-	shm->samplepos = 0;
-	shm->submission_chunk = 1;
-	shm->buffer = calloc(shm->samples * (shm->samplebits / 8), 1);
-	if (!shm->buffer)
+	sn.splitbuffer = 0;
+	sn.samplebits = (obtained.format & 0xFF);
+	sn.speed = obtained.freq;
+	sn.channels = obtained.channels;
+	sn.samples = obtained.samples * 16;
+	sn.samplepos = 0;
+	sn.submission_chunk = 1;
+	sn.buffer = calloc(sn.samples * (sn.samplebits / 8), 1);
+	if (!sn.buffer)
 	{
 		Sys_Error ("Failed to allocate buffer for sound!");
 	}
 
 	snd_inited = 1;
-	return 1;
+	return &sn;
 }
 
 static int
 SNDDMA_GetDMAPos (void)
 {
-	return shm->samplepos;
+	return sn.samplepos;
 }
 
 static void
@@ -196,7 +193,6 @@ SNDDMA_Shutdown (void)
 		SDL_UnlockAudio ();
 		SDL_CloseAudio ();
 		snd_inited = 0;
-		shm = NULL;
 	}
 }
 

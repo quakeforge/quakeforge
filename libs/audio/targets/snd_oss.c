@@ -115,7 +115,7 @@ SNDDMA_Init_Cvars (void)
 							   "mmaped io");
 }
 
-static int
+static volatile dma_t *
 try_open (int rw)
 {
 	int         caps, fmt, rc, tmp, i;
@@ -176,67 +176,66 @@ try_open (int rw)
 		return 0;
 	}
 
-	shm = &sn;
-	shm->splitbuffer = 0;
+	sn.splitbuffer = 0;
 
 	// set sample bits & speed
-	shm->samplebits = snd_bits->int_val;
+	sn.samplebits = snd_bits->int_val;
 
-	if (shm->samplebits != 16 && shm->samplebits != 8) {
+	if (sn.samplebits != 16 && sn.samplebits != 8) {
 		ioctl (audio_fd, SNDCTL_DSP_GETFMTS, &fmt);
 
 		if (fmt & AFMT_S16_LE) {		// little-endian 16-bit signed
-			shm->samplebits = 16;
+			sn.samplebits = 16;
 		} else {
 			if (fmt & AFMT_U8) {		// unsigned 8-bit ulaw
-				shm->samplebits = 8;
+				sn.samplebits = 8;
 			}
 		}
 	}
 
 	if (snd_rate->int_val) {
-		shm->speed = snd_rate->int_val;
+		sn.speed = snd_rate->int_val;
 	} else {
 		for (i = 0; i < ((int) sizeof (tryrates) / 4); i++)
 			if (!ioctl (audio_fd, SNDCTL_DSP_SPEED, &tryrates[i]))
 				break;
-		shm->speed = tryrates[i];
+		sn.speed = tryrates[i];
 	}
 
 	if (!snd_stereo->int_val) {
-		shm->channels = 1;
+		sn.channels = 1;
 	} else {
-		shm->channels = 2;
+		sn.channels = 2;
 	}
 
-	shm->samples = info.fragstotal * info.fragsize / (shm->samplebits / 8);
-	shm->submission_chunk = 1;
+	sn.samples = info.fragstotal * info.fragsize / (sn.samplebits / 8);
+	sn.submission_chunk = 1;
 
 	tmp = 0;
-	if (shm->channels == 2)
+	if (sn.channels == 2)
 		tmp = 1;
 	rc = ioctl (audio_fd, SNDCTL_DSP_STEREO, &tmp);
 	if (rc < 0) {
 		Sys_Printf ("Could not set %s to stereo=%d: %s\n", snd_dev,
-					shm->channels, strerror (errno));
+					sn.channels, strerror (errno));
 		close (audio_fd);
 		return 0;
 	}
 
 	if (tmp)
-		shm->channels = 2;
+		sn.channels = 2;
 	else
-		shm->channels = 1;
+		sn.channels = 1;
 
-	rc = ioctl (audio_fd, SNDCTL_DSP_SPEED, &shm->speed);
+	rc = ioctl (audio_fd, SNDCTL_DSP_SPEED, &sn.speed);
 	if (rc < 0) {
-		Sys_Printf ("Could not set %s speed to %d: %s\n", snd_dev, shm->speed,
+		Sys_Printf ("Could not set %s speed to %d: %s\n", snd_dev, sn.speed,
 					strerror (errno));
 		close (audio_fd);
 		return 0;
 	}
 
-	if (shm->samplebits == 16) {
+	if (sn.samplebits == 16) {
 		rc = AFMT_S16_LE;
 		rc = ioctl (audio_fd, SNDCTL_DSP_SETFMT, &rc);
 		if (rc < 0) {
@@ -245,7 +244,7 @@ try_open (int rw)
 			close (audio_fd);
 			return 0;
 		}
-	} else if (shm->samplebits == 8) {
+	} else if (sn.samplebits == 8) {
 		rc = AFMT_U8;
 		rc = ioctl (audio_fd, SNDCTL_DSP_SETFMT, &rc);
 		if (rc < 0) {
@@ -255,7 +254,7 @@ try_open (int rw)
 			return 0;
 		}
 	} else {
-		Sys_Printf ("%d-bit sound not supported. %s", shm->samplebits,
+		Sys_Printf ("%d-bit sound not supported. %s", sn.samplebits,
 					strerror (errno));
 		close (audio_fd);
 		return 0;
@@ -266,15 +265,15 @@ try_open (int rw)
 		unsigned long len = info.fragstotal * info.fragsize;
 
 		len = (len + sz - 1) & ~(sz - 1);
-		shm->buffer = (byte *) mmap (NULL, len, mmmode, mmflags, audio_fd, 0);
-		if (shm->buffer == MAP_FAILED) {
+		sn.buffer = (byte *) mmap (NULL, len, mmmode, mmflags, audio_fd, 0);
+		if (sn.buffer == MAP_FAILED) {
 			Sys_Printf ("Could not mmap %s: %s\n", snd_dev, strerror (errno));
 			close (audio_fd);
 			return 0;
 		}
 	} else {
-		shm->buffer = malloc (shm->samples * (shm->samplebits / 8) * 2);
-		if (!shm->buffer) {
+		sn.buffer = malloc (sn.samples * (sn.samplebits / 8) * 2);
+		if (!sn.buffer) {
 			Sys_Printf ("SNDDMA_Init: memory allocation failure\n");
 			close (audio_fd);
 			return 0;
@@ -287,7 +286,7 @@ try_open (int rw)
 	if (rc < 0) {
 		Sys_Printf ("Could not toggle.: %s\n", strerror (errno));
 		if (mmaped_io)
-			munmap (shm->buffer, shm->samples * shm->samplebits / 8);
+			munmap (sn.buffer, sn.samples * sn.samplebits / 8);
 		close (audio_fd);
 		return 0;
 	}
@@ -296,22 +295,23 @@ try_open (int rw)
 	if (rc < 0) {
 		Sys_Printf ("Could not toggle.: %s\n", strerror (errno));
 		if (mmaped_io)
-			munmap (shm->buffer, shm->samples * shm->samplebits / 8);
+			munmap (sn.buffer, sn.samples * sn.samplebits / 8);
 		close (audio_fd);
 		return 0;
 	}
 
-	shm->samplepos = 0;
+	sn.samplepos = 0;
 
 	snd_inited = 1;
-	return 1;
+	return &sn;
 }
 
-static qboolean
+static volatile dma_t *
 SNDDMA_Init (void)
 {
-	if (try_open (0))
-		return 1;
+	volatile dma_t *shm;
+	if ((shm = try_open (0)))
+		return shm;
 	return try_open (1);
 }
 
@@ -326,16 +326,16 @@ SNDDMA_GetDMAPos (void)
 	if (ioctl (audio_fd, SNDCTL_DSP_GETOPTR, &count) == -1) {
 		Sys_Printf ("Uh, %s dead: %s\n", snd_dev, strerror (errno));
 		if (mmaped_io)
-			munmap (shm->buffer, shm->samples * shm->samplebits / 8);
+			munmap (sn.buffer, sn.samples * sn.samplebits / 8);
 		close (audio_fd);
 		snd_inited = 0;
 		return 0;
 	}
-//	shm->samplepos = (count.bytes / (shm->samplebits / 8)) & (shm->samples-1);
+//	sn.samplepos = (count.bytes / (sn.samplebits / 8)) & (sn.samples-1);
 //	fprintf(stderr, "%d \r", count.ptr);
-	shm->samplepos = count.ptr / (shm->samplebits / 8);
+	sn.samplepos = count.ptr / (sn.samplebits / 8);
 
-	return shm->samplepos;
+	return sn.samplepos;
 
 }
 
@@ -344,13 +344,13 @@ SNDDMA_Shutdown (void)
 {
 	if (snd_inited) {
 		if (mmaped_io)
-			munmap (shm->buffer, shm->samples * shm->samplebits / 8);
+			munmap (sn.buffer, sn.samples * sn.samplebits / 8);
 		close (audio_fd);
 		snd_inited = 0;
 	}
 }
 
-#define BITSIZE (shm->samplebits / 8)
+#define BITSIZE (sn.samplebits / 8)
 #define BYTES (samples / BITSIZE)
 
 /*
@@ -367,13 +367,13 @@ SNDDMA_Submit (void)
 		samples = *plugin_info_snd_output_data.paintedtime
 			- *plugin_info_snd_output_data.soundtime;
 
-		if (shm->samplepos + BYTES <= shm->samples)
-			write (audio_fd, shm->buffer + BYTES, samples);
+		if (sn.samplepos + BYTES <= sn.samples)
+			write (audio_fd, sn.buffer + BYTES, samples);
 		else {
-			write (audio_fd, shm->buffer + BYTES, shm->samples -
-				   shm->samplepos);
-			write (audio_fd, shm->buffer, BYTES - (shm->samples -
-												   shm->samplepos));
+			write (audio_fd, sn.buffer + BYTES, sn.samples -
+				   sn.samplepos);
+			write (audio_fd, sn.buffer, BYTES - (sn.samples -
+												   sn.samplepos));
 		}
 		*plugin_info_snd_output_data.soundtime += samples;
 	}

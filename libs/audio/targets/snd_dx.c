@@ -156,17 +156,15 @@ SNDDMA_InitDirect (void)
 
 	memset ((void *) &sn, 0, sizeof (sn));
 
-	shm = &sn;
-
-	shm->channels = 2;
-	shm->samplebits = 16;
-	shm->speed = 11025;
+	sn.channels = 2;
+	sn.samplebits = 16;
+	sn.speed = 11025;
 
 	memset (&format, 0, sizeof (format));
 	format.wFormatTag = WAVE_FORMAT_PCM;
-	format.nChannels = shm->channels;
-	format.wBitsPerSample = shm->samplebits;
-	format.nSamplesPerSec = shm->speed;
+	format.nChannels = sn.channels;
+	format.wBitsPerSample = sn.samplebits;
+	format.nSamplesPerSec = sn.speed;
 	format.nBlockAlign = format.nChannels * format.wBitsPerSample / 8;
 	format.cbSize = 0;
 	format.nAvgBytesPerSec = format.nSamplesPerSec * format.nBlockAlign;
@@ -256,9 +254,9 @@ SNDDMA_InitDirect (void)
 			return SIS_FAILURE;
 		}
 
-		shm->channels = format.nChannels;
-		shm->samplebits = format.wBitsPerSample;
-		shm->speed = format.nSamplesPerSec;
+		sn.channels = format.nChannels;
+		sn.samplebits = format.wBitsPerSample;
+		sn.speed = format.nSamplesPerSec;
 
 		if (DS_OK != IDirectSound_GetCaps (pDSBuf, &dsbcaps)) {
 			Sys_Printf ("DS:GetCaps failed\n");
@@ -321,13 +319,13 @@ SNDDMA_InitDirect (void)
 										   &dwWrite);
 	IDirectSoundBuffer_Play (pDSBuf, 0, 0, DSBPLAY_LOOPING);
 
-	shm->soundalive = true;
-	shm->splitbuffer = false;
-	shm->samples = gSndBufSize / (shm->samplebits / 8);
-	shm->samplepos = 0;
-	shm->submission_chunk = 1;
-	shm->buffer = lpData;
-	sample16 = (shm->samplebits / 8) - 1;
+	sn.soundalive = true;
+	sn.splitbuffer = false;
+	sn.samples = gSndBufSize / (sn.samplebits / 8);
+	sn.samplepos = 0;
+	sn.submission_chunk = 1;
+	sn.buffer = lpData;
+	sample16 = (sn.samplebits / 8) - 1;
 
 	dsound_init = true;
 
@@ -341,7 +339,7 @@ SNDDMA_InitDirect (void)
 	Try to find a sound device to mix for.
 	Returns false if nothing is found.
 */
-static qboolean
+static volatile dma_t *
 SNDDMA_Init (void)
 {
 	sndinitstat stat;
@@ -362,7 +360,7 @@ SNDDMA_Init (void)
 		}
 	}
 
-	return 1;
+	return &sn;
 }
 
 /*
@@ -385,7 +383,7 @@ SNDDMA_GetDMAPos (void)
 		Sys_Printf ("DSOUND_LockBuffer fails!\n");
 		return -1;
 	}
-	shm->buffer = (unsigned char *) pbuf;
+	sn.buffer = (unsigned char *) pbuf;
 	mmtime.wType = TIME_SAMPLES;
 	IDirectSoundBuffer_GetCurrentPosition (pDSBuf, &mmtime.u.sample,
 											   &dwWrite);
@@ -393,7 +391,7 @@ SNDDMA_GetDMAPos (void)
 
 	s >>= sample16;
 
-	s &= (shm->samples - 1);
+	s &= (sn.samples - 1);
 
 	return s;
 }
@@ -472,7 +470,7 @@ DSOUND_ClearBuffer (int clear)
 
 // FIXME: this should be called with 2nd pbuf2 = NULL, dwsize =0
 	pData = DSOUND_LockBuffer (true);
-	memset (pData, clear, shm->samples * shm->samplebits / 8);
+	memset (pData, clear, sn.samples * sn.samplebits / 8);
 	DSOUND_LockBuffer (false);
 }
 

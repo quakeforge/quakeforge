@@ -75,7 +75,7 @@ static snd_output_data_t  plugin_info_sound_data;
 static snd_output_funcs_t plugin_info_sound_funcs;
 
 
-static qboolean
+static volatile dma_t *
 SNDDMA_Init (void)
 {
 	if (snd_inited) {
@@ -83,8 +83,7 @@ SNDDMA_Init (void)
 		return 0;
 	}
 
-	shm = &sn;
-	shm->splitbuffer = 0;
+	sn.splitbuffer = 0;
 
 	audio_fd = open ("/dev/audio", O_WRONLY | O_NDELAY);
 
@@ -112,7 +111,7 @@ SNDDMA_Init (void)
 
 	AUDIO_INITINFO (&info);
 
-	shm->speed = 11025;
+	sn.speed = 11025;
 
 	// try 16 bit stereo
 	info.play.encoding = AUDIO_ENCODING_LINEAR;
@@ -131,23 +130,23 @@ SNDDMA_Init (void)
 			return 0;
 		}
 		Sys_Printf ("16 bit mono sound initialized\n");
-		shm->samplebits = 16;
-		shm->channels = 1;
+		sn.samplebits = 16;
+		sn.channels = 1;
 	} else {							// 16 bit stereo
 		Sys_Printf ("16 bit stereo sound initialized\n");
-		shm->samplebits = 16;
-		shm->channels = 2;
+		sn.samplebits = 16;
+		sn.channels = 2;
 	}
 
-	shm->soundalive = true;
-	shm->samples = sizeof (dma_buffer) / (shm->samplebits / 8);
-	shm->samplepos = 0;
-	shm->submission_chunk = 1;
-	shm->buffer = (unsigned char *) dma_buffer;
+	sn.soundalive = true;
+	sn.samples = sizeof (dma_buffer) / (sn.samplebits / 8);
+	sn.samplepos = 0;
+	sn.submission_chunk = 1;
+	sn.buffer = (unsigned char *) dma_buffer;
 
 	snd_inited = 1;
 
-	return 1;
+	return &sn;
 }
 
 static int
@@ -164,7 +163,7 @@ SNDDMA_GetDMAPos (void)
 		return (0);
 	}
 
-	return ((info.play.samples * shm->channels) % shm->samples);
+	return ((info.play.samples * sn.channels) % sn.samples);
 }
 
 static int
@@ -212,7 +211,7 @@ SNDDMA_Submit (void)
 	if (*plugin_info_sound_data.paintedtime < wbufp)
 		wbufp = 0;						// reset
 
-	bsize = shm->channels * (shm->samplebits / 8);
+	bsize = sn.channels * (sn.samplebits / 8);
 	bytes = (*plugin_info_sound_data.paintedtime - wbufp) * bsize;
 
 	if (!bytes)

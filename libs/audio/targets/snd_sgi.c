@@ -64,7 +64,7 @@ static snd_output_data_t       plugin_info_snd_output_data;
 static snd_output_funcs_t      plugin_info_snd_output_funcs;
 
 
-static qboolean
+static volatile dma_t *
 SNDDMA_Init (void)
 {
 	char	   *s;
@@ -79,8 +79,7 @@ SNDDMA_Init (void)
 		return 0;
 	}
 
-	shm = &sn;
-	shm->splitbuffer = 0;
+	sn.splitbuffer = 0;
 
 	/* get & probe settings */
 	/* sample format */
@@ -94,11 +93,11 @@ SNDDMA_Init (void)
 	/* sample bits */
 	s = getenv ("QUAKE_SOUND_SAMPLEBITS");
 	if (s)
-		shm->samplebits = atoi (s);
+		sn.samplebits = atoi (s);
 	else if ((i = COM_CheckParm ("-sndbits")) != 0)
-		shm->samplebits = atoi (com_argv[i + 1]);
+		sn.samplebits = atoi (com_argv[i + 1]);
 
-	if (shm->samplebits != 16 && shm->samplebits != 8) {
+	if (sn.samplebits != 16 && sn.samplebits != 8) {
 		alpv.param = AL_WORDSIZE;
 
 		if (alGetParams (AL_DEFAULT_OUTPUT, &alpv, 1) < 0) {
@@ -108,10 +107,10 @@ SNDDMA_Init (void)
 		}
 
 		if (alpv.value.i >= 16) {
-			shm->samplebits = 16;
+			sn.samplebits = 16;
 		} else {
 			if (alpv.value.i >= 8)
-				shm->samplebits = 8;
+				sn.samplebits = 8;
 			else {
 				Sys_Printf ("Sound disabled since interface "
 							"doesn't even support 8 bit.");
@@ -124,9 +123,9 @@ SNDDMA_Init (void)
 	/* sample rate */
 	s = getenv ("QUAKE_SOUND_SPEED");
 	if (s)
-		shm->speed = atoi (s);
+		sn.speed = atoi (s);
 	else if ((i = COM_CheckParm ("-sndspeed")) != 0)
-		shm->speed = atoi (com_argv[i + 1]);
+		sn.speed = atoi (com_argv[i + 1]);
 	else {
 		alpv.param = AL_RATE;
 
@@ -144,33 +143,33 @@ SNDDMA_Init (void)
 			return 0;
 		}
 
-		shm->speed = tryrates[i];
+		sn.speed = tryrates[i];
 	}
 
 	/* channels */
 	s = getenv ("QUAKE_SOUND_CHANNELS");
 	if (s)
-		shm->channels = atoi (s);
+		sn.channels = atoi (s);
 	else if ((i = COM_CheckParm ("-sndmono")) != 0)
-		shm->channels = 1;
+		sn.channels = 1;
 	else if ((i = COM_CheckParm ("-sndstereo")) != 0)
-		shm->channels = 2;
+		sn.channels = 2;
 	else
-		shm->channels = 2;
+		sn.channels = 2;
 
 	/* set 'em */
 
 	/* channels */
-	while (shm->channels > 0) {
-		if (alSetChannels (alc, shm->channels) < 0) {
+	while (sn.channels > 0) {
+		if (alSetChannels (alc, sn.channels) < 0) {
 			Sys_Printf ("Unable to set number of channels to %d, "
-						"trying half\n", shm->channels);
-			shm->channels /= 2;
+						"trying half\n", sn.channels);
+			sn.channels /= 2;
 		} else
 			break;
 	}
 
-	if (shm->channels <= 0) {
+	if (sn.channels <= 0) {
 		Sys_Printf ("Sound disabled since interface doesn't even support 1 "
 					"channel\n");
 		alFreeConfig (alc);
@@ -179,11 +178,11 @@ SNDDMA_Init (void)
 
 	/* sample rate */
 	alpv.param = AL_RATE;
-	alpv.value.ll = alDoubleToFixed (shm->speed);
+	alpv.value.ll = alDoubleToFixed (sn.speed);
 
 	if (alSetParams (AL_DEFAULT_OUTPUT, &alpv, 1) < 0) {
 		Sys_Printf ("Could not set samplerate of default output to %d: %s\n",
-					shm->speed, alGetErrorString (oserror ()));
+					sn.speed, alGetErrorString (oserror ()));
 		alFreeConfig (alc);
 		return 0;
 	}
@@ -192,7 +191,7 @@ SNDDMA_Init (void)
 	   frequency of 11025 use *huge* buffers since at least my indigo2
 	   has enough to do to get sound on the way anyway
 	*/
-	bufsize = 32768 * (int) ((double) shm->speed / 11025.0);
+	bufsize = 32768 * (int) ((double) sn.speed / 11025.0);
 
 	dma_buffer = malloc (bufsize);
 
@@ -214,7 +213,7 @@ SNDDMA_Init (void)
 	}
 
 	/* sample bits */
-	switch (shm->samplebits) {
+	switch (sn.samplebits) {
 		case 24:
 			i = AL_SAMPLE_24;
 			break;
@@ -230,7 +229,7 @@ SNDDMA_Init (void)
 
 	if (alSetWidth (alc, i) < 0) {
 		Sys_Printf ("Could not set wordsize of default output to %d: %s\n",
-					shm->samplebits, alGetErrorString (oserror ()));
+					sn.samplebits, alGetErrorString (oserror ()));
 		free (write_buffer);
 		free (dma_buffer);
 		alFreeConfig (alc);
@@ -248,16 +247,16 @@ SNDDMA_Init (void)
 		return 0;
 	}
 
-	shm->soundalive = true;
-	shm->samples = bufsize / (shm->samplebits / 8);
-	shm->samplepos = 0;
-	shm->submission_chunk = 1;
-	shm->buffer = dma_buffer;
+	sn.soundalive = true;
+	sn.samples = bufsize / (sn.samplebits / 8);
+	sn.samplepos = 0;
+	sn.submission_chunk = 1;
+	sn.buffer = dma_buffer;
 
 	framecount = 0;
 
 	snd_inited = 1;
-	return 1;
+	return &sn;
 }
 
 static void
@@ -268,11 +267,11 @@ SNDDMA_Init_Cvars (void)
 static int
 SNDDMA_GetDMAPos (void)
 {
-	/* Sys_Printf("framecount: %d %d\n", (framecount * shm->channels) %
-	   shm->samples, alGetFilled(alp)); */
-	shm->samplepos = ((framecount - alGetFilled (alp))
-					  * shm->channels) % shm->samples;
-	return shm->samplepos;
+	/* Sys_Printf("framecount: %d %d\n", (framecount * sn.channels) %
+	   sn.samples, alGetFilled(alp)); */
+	sn.samplepos = ((framecount - alGetFilled (alp))
+					  * sn.channels) % sn.samples;
+	return sn.samplepos;
 }
 
 static void
@@ -305,7 +304,7 @@ SNDDMA_Submit (void)
 	if (*plugin_info_snd_output_data.paintedtime < wbufp)
 		wbufp = 0;						// reset
 
-	bsize = shm->channels * (shm->samplebits / 8);
+	bsize = sn.channels * (sn.samplebits / 8);
 	bytes = (*plugin_info_snd_output_data.paintedtime - wbufp) * bsize;
 
 	if (!bytes)

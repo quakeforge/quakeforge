@@ -152,15 +152,13 @@ SND_SoundInfo_f (void)
 static void
 SND_Startup (void)
 {
-	int			rc;
-
 	if (!snd_initialized)
 		return;
 
 	if (!fakedma) {
-		rc = snd_output_funcs->pS_O_Init ();
+		shm = snd_output_funcs->pS_O_Init ();
 
-		if (!rc) {
+		if (!shm) {
 			Sys_Printf ("S_Startup: S_O_Init failed.\n");
 			sound_started = 0;
 			return;
