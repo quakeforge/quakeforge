@@ -273,8 +273,14 @@ R_DrawEntitiesOnList (void)
 	if (tess)
 		qfglEnable (GL_PN_TRIANGLES_ATI);
 	qfglEnable (GL_CULL_FACE);
-	qfglEnable (GL_LIGHTING);
-	qfglEnable (GL_NORMALIZE);
+	
+	if (gl_vector_light->int_val) {
+		qfglEnable (GL_LIGHTING);
+		qfglEnable (GL_NORMALIZE);
+	} else if (tess) {
+		qfglEnable (GL_NORMALIZE);
+	}
+	
 	for (i = 0; i < r_numvisedicts; i++) {
 		if (r_visedicts[i]->model->type != mod_alias)
 			continue;
@@ -286,8 +292,10 @@ R_DrawEntitiesOnList (void)
 		R_DrawAliasModel (currententity);
 	}
 	qfglColor3ubv (color_white);
+	
 	qfglDisable (GL_NORMALIZE);
 	qfglDisable (GL_LIGHTING);
+
 	qfglDisable (GL_CULL_FACE);
 	if (tess)
 		qfglDisable (GL_PN_TRIANGLES_ATI);
@@ -336,8 +344,14 @@ R_DrawViewModel (void)
 	// hack the depth range to prevent view model from poking into walls
 	qfglDepthRange (gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));
 	qfglEnable (GL_CULL_FACE);
-	qfglEnable (GL_LIGHTING);
-	qfglEnable (GL_NORMALIZE);
+
+	if (gl_vector_light->int_val) {
+		qfglEnable (GL_LIGHTING);
+		qfglEnable (GL_NORMALIZE);
+	} else if (tess) {
+		qfglEnable (GL_NORMALIZE);
+	}
+
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 	if (gl_mtex_active_tmus >= 2) {
@@ -368,8 +382,11 @@ R_DrawViewModel (void)
 	}
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
+	
 	qfglDisable (GL_NORMALIZE);
 	qfglDisable (GL_LIGHTING);
+
+	
 	qfglDisable (GL_CULL_FACE);
 	qfglDepthRange (gldepthmin, gldepthmax);
 }

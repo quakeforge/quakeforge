@@ -43,6 +43,7 @@ extern struct cvar_s	 *gl_tessellate;
 extern struct cvar_s     *gl_texsort;
 extern struct cvar_s	 *gl_textures_bgra;
 extern struct cvar_s     *gl_triplebuffer;
+extern struct cvar_s     *gl_vector_light;
 
 extern struct cvar_s     *r_aliasstats;
 extern struct cvar_s     *r_aliastransadj;

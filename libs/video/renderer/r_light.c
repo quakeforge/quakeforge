@@ -424,8 +424,9 @@ R_LightPoint (const vec3_t p)
 	int         r;
 
 	if (!r_worldentity.model->lightdata) {
-		ambientcolor[2] = ambientcolor[1] = ambientcolor[0] = 255;
-		return 255;
+		// allow dlights to have some effect, so do go /quite/ fullbright
+		ambientcolor[2] = ambientcolor[1] = ambientcolor[0] = 200;
+		return 200;
 	}
 
 	end[0] = p[0];

@@ -85,6 +85,9 @@ typedef struct entity_s
 	float					colormod[4];	// color tint and alpha for model
 	float					scale;			// size scaler of the model
 
+	int						fullbright;
+	float					min_light;
+	
 	// FIXME: could turn these into a union
 	int						trivial_accept;
 	struct mnode_s			*topnode; // for bmodels, first world node that
