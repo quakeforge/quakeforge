@@ -60,7 +60,7 @@ Purpose and Applications
 
 GIB
 \begin_inset Foot
-collapsed true
+collapsed false
 
 \layout Standard
 
@@ -1059,7 +1059,7 @@ To understand why you add one to the second number, envision each element
  the last element that you want.
 \layout Standard
 
-Negative numbers count backwards from the end of the array.
+Negative numbers count backward from the end of the array.
  For instance, using -1 for the second number will include everything except
  the very last element of the array.
  To specify the very end of the array, omit the second number.
@@ -1412,7 +1412,7 @@ false
 \begin_inset Quotes erd
 \end_inset 
 
- and all other numbers will be deemd 
+ and all other numbers will be deemed 
 \begin_inset Quotes eld
 \end_inset 
 
@@ -1603,8 +1603,8 @@ if
 if
 \family default 
  structures to be chained together.
- The first stucture that is true will be the one executed, as shown by Figure
- 
+ The first structure that is true will be the one executed, as shown by
+ Figure 
 \begin_inset LatexCommand \ref{cap:if-chain}
 
 \end_inset 
@@ -1688,7 +1688,7 @@ while
 \family typewriter 
 if
 \family default 
- structure, except that the program block is continuosly executed as long
+ structure, except that the program block is continuously executed as long
  as the condition argument is 
 \begin_inset Quotes eld
 \end_inset 
@@ -1764,7 +1764,7 @@ while
 
 \begin_inset Float figure
 wide false
-collapsed true
+collapsed false
 
 \layout LyX-Code
 \line_top \line_bottom 
