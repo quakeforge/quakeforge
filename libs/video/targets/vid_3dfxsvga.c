@@ -155,7 +155,7 @@ GL_Init (void)
 void
 GL_EndRendering (void)
 {
-	qfglFlush ();
+	qfglFinish ();
 	qf_fxMesaSwapBuffers ();
 	Sbar_Changed ();
 }

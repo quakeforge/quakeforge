@@ -766,6 +766,8 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	if (block_drawing)
 		return;
 
+	GL_EndRendering ();
+
 	r_realtime = realtime;
 
 	vid.numpages = 2 + gl_triplebuffer->int_val;
@@ -855,6 +857,5 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 					c_alias_polys);
 	}
 
-	qfglFinish ();
-	GL_EndRendering ();
+	qfglFlush ();
 }

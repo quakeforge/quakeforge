@@ -445,8 +445,10 @@ GL_Init (void)
 void
 GL_EndRendering (void)
 {
-	if (!scr_skipupdate || block_drawing)
+	if (!scr_skipupdate || block_drawing) {
+		qfglFinish ();
 		SwapBuffers (maindc);
+	}
 
 	// handle the mouse state when windowed if that's changed
 	if (modestate == MS_WINDOWED) {

@@ -221,7 +221,6 @@ R_TimeRefresh_f (void)
 	double      start, stop, time;
 	int         i;
 
-	qfglFinish ();
 	GL_EndRendering ();
 
 	start = Sys_DoubleTime ();
@@ -229,7 +228,6 @@ R_TimeRefresh_f (void)
 		GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 		r_refdef.viewangles[1] = i * (360.0 / 128.0);
 		R_RenderView ();
-		qfglFinish ();
 		GL_EndRendering ();
 	}
 
