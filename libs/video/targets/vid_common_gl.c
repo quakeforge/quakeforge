@@ -144,6 +144,9 @@ gl_tessellate_f (cvar_t * var)
 		qfglPNTrianglesiATI (GL_PN_TRIANGLES_TESSELATION_LEVEL_ATI, tess);
 	} else {
 		tess = 0;
+		if (var)
+			Con_Printf ("TruForm (GL_ATI_pn_triangles) is not supported by "
+						"your hardware and/or drivers.");
 	}
 }
 
@@ -219,7 +222,7 @@ CheckTruFormExtensions (void)
 		qfglGetIntegerv (GL_MAX_PN_TRIANGLES_TESSELATION_LEVEL_ATI,
 						 &tess_max);
 		qfglPNTrianglesiATI (GL_PN_TRIANGLES_NORMAL_MODE_ATI,
-							 GL_PN_TRIANGLES_NORMAL_MODE_LINEAR_ATI);
+							 GL_PN_TRIANGLES_NORMAL_MODE_QUADRATIC_ATI);
 		qfglPNTrianglesiATI (GL_PN_TRIANGLES_POINT_MODE_ATI,
 							 GL_PN_TRIANGLES_POINT_MODE_CUBIC_ATI);
 	} else {
