@@ -492,11 +492,11 @@ CL_Disconnect (void)
 	Team_ResetTimers ();
 
 	// remove player info strings
-	for (i = 0; i < MAX_CLIENTS; i++)
-		if (cl.players[i].userinfo) {
+	for (i = 0; i < MAX_CLIENTS; i++) {
+		if (cl.players[i].userinfo)
 			Info_Destroy (cl.players[i].userinfo);
-			cl.players[i].userinfo = 0;
-		}
+		memset (&cl.players[i], 0, sizeof (cl.players[i]));
+	}
 	cl.worldmodel = NULL;
 	cl.validsequence = 0;
 }
