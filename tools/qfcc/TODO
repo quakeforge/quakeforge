@@ -10,3 +10,4 @@ o	native integer type
 o	quaternion type
 o	?: operator
 o	<op>= operator ( var += expr, etc. )
+o	CSE optimisations
