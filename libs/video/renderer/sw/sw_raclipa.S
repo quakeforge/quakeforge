@@ -35,8 +35,6 @@
 #include "asm_draw.h"
 #include "d_ifacea.h"
 
-#undef USE_INTEL_ASM //XXX asm pic hack
-
 #ifdef USE_INTEL_ASM
 
 	.text
@@ -48,6 +46,7 @@
 #define out			12+8+12
 
 .globl C(R_Alias_clip_bottom)
+	.type	R_Alias_clip_bottom,@function
 C(R_Alias_clip_bottom):
 	pushl	%esi
 	pushl	%edi
@@ -59,10 +58,12 @@ C(R_Alias_clip_bottom):
 
 #ifdef PIC
 	call	.Lpic1
-.Lpic1: popl	%eax
-	addl	$_GLOBAL_OFFSET_TABLE_+[.-.Lpic1],%eax
+.Lpic1:
+	popl	%eax
+	addl	$_GLOBAL_OFFSET_TABLE_-1+[.-.Lpic1],%eax
+
 	movl	float_point5@GOTOFF(%eax),%edx
-	leal	C(r_refdef)@GOTOFF(%eax),%eax
+	movl	C(r_refdef)@GOT(%eax),%eax
 #else
 	leal	C(r_refdef),%eax
 	movl	float_point5,%edx
@@ -176,9 +177,13 @@ LDo3Forward:
 	popl	%esi
 
 	ret
+.Lsize1:
+	.size	R_Alias_clip_bottom,.Lsize1-R_Alias_clip_bottom
+	.align 4
 
 
 .globl C(R_Alias_clip_top)
+	.type	R_Alias_clip_top,@function
 C(R_Alias_clip_top):
 	pushl	%esi
 	pushl	%edi
@@ -190,10 +195,12 @@ C(R_Alias_clip_top):
 
 #ifdef PIC
 	call	.Lpic2
-.Lpic2: popl	%eax
-	addl	$_GLOBAL_OFFSET_TABLE_+[.-.Lpic2],%eax
+.Lpic2:
+	popl	%eax
+	addl	$_GLOBAL_OFFSET_TABLE_-1+[.-.Lpic2],%eax
+
 	movl	float_point5@GOTOFF(%eax),%edx
-	leal	C(r_refdef)@GOTOFF(%eax),%eax
+	movl	C(r_refdef)@GOT(%eax),%eax
 #else
 	leal	C(r_refdef),%eax
 	movl	float_point5,%edx
@@ -201,10 +208,14 @@ C(R_Alias_clip_top):
 	movl	rd_aliasvrect+4(%eax),%eax
 	movl	%edx,point5(%esp)
 	jmp		LDoForwardOrBackward
+.Lsize2:
+	.size	R_Alias_clip_top,.Lsize2-R_Alias_clip_top
+	.align 4
 
 
 
 .globl C(R_Alias_clip_right)
+	.type	R_Alias_clip_right,@function
 C(R_Alias_clip_right):
 	pushl	%esi
 	pushl	%edi
@@ -216,10 +227,12 @@ C(R_Alias_clip_right):
 
 #ifdef PIC
 	call	.Lpic3
-.Lpic3: popl	%eax
-	addl	$_GLOBAL_OFFSET_TABLE_+[.-.Lpic3],%eax
+.Lpic3:
+	popl	%eax
+	addl	$_GLOBAL_OFFSET_TABLE_-1+[.-.Lpic3],%eax
+
 	movl	float_point5@GOTOFF(%eax),%edx
-	leal	C(r_refdef)@GOTOFF(%eax),%eax
+	movl	C(r_refdef)@GOT(%eax),%eax
 #else
 	leal	C(r_refdef),%eax
 	movl	float_point5,%edx
@@ -247,9 +260,13 @@ LRightLeftEntry:
 LDoForward2:
 
 	jmp		LDoForward
+.Lsize3:
+	.size	R_Alias_clip_right,.Lsize3-R_Alias_clip_right
+	.align 4
 
 
 .globl C(R_Alias_clip_left)
+	.type	R_Alias_clip_left,@function
 C(R_Alias_clip_left):
 	pushl	%esi
 	pushl	%edi
@@ -261,10 +278,12 @@ C(R_Alias_clip_left):
 
 #ifdef PIC
 	call	.Lpic4
-.Lpic4: popl	%eax
-	addl	$_GLOBAL_OFFSET_TABLE_+[.-.Lpic4],%eax
+.Lpic4:
+	popl	%eax
+	addl	$_GLOBAL_OFFSET_TABLE_-1+[.-.Lpic4],%eax
+
 	movl	float_point5@GOTOFF(%eax),%edx
-	leal	C(r_refdef)@GOTOFF(%eax),%eax
+	movl	C(r_refdef)@GOT(%eax),%eax
 #else
 	leal	C(r_refdef),%eax
 	movl	float_point5,%edx
@@ -272,6 +291,9 @@ C(R_Alias_clip_left):
 	movl	rd_aliasvrect+0(%eax),%eax
 	movl	%edx,point5(%esp)
 	jmp		LRightLeftEntry
+.Lsize4:
+	.size	R_Alias_clip_left,.Lsize4-R_Alias_clip_left
+	.align 4
 
 
 #endif	// USE_INTEL_ASM

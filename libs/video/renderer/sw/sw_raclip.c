@@ -98,8 +98,6 @@ R_Alias_clip_z (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out)
 		out->flags |= ALIAS_BOTTOM_CLIP;
 }
 
-#undef USE_INTEL_ASM //XXX asm pic hack
-
 #ifndef USE_INTEL_ASM
 
 void
