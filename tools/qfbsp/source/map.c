@@ -449,7 +449,7 @@ ParseBrush (void)
 
 		if (!hltexdef) {
 			// fake proper texture vectors from QuakeEd style
-			TextureAxisFromPlane (&f->plane, vecs[0], vecs[1]);
+			TextureAxisFromPlane (&plane, vecs[0], vecs[1]);
 		}
 
 		if (!scale[0])
