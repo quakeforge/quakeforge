@@ -485,8 +485,8 @@ Cmd_TokenizeString (const char *text)
 		argv_buf_size = 1024;	//FIXME dynamic
 		argv_buf = malloc (argv_buf_size);
 		if (!argv_buf)
-			Sys_Error ("Cmd_TokenizeString: could not allocate %d bytes",
-					   argv_buf_size);
+			Sys_Error ("Cmd_TokenizeString: could not allocate %ld bytes",
+					   (long)argv_buf_size);
 	}
 
 	argv_idx = 0;
@@ -1049,8 +1049,8 @@ write:
 	com_token_size = (pos + 1024) & ~1023;
 	com_token = realloc (com_token, com_token_size);
 	if (!com_token)
-		Sys_Error ("COM_Parse: could not allocate %d bytes",
-				   com_token_size);
+		Sys_Error ("COM_Parse: could not allocate %ld bytes",
+				   (long)com_token_size);
 	goto write;
 }
 
