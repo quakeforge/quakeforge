@@ -135,15 +135,15 @@ GIB_Buffer_Add (cbuf_t * cbuf, const char *str)
 	} else
 		save = &g->program;
 	if (!(*save = GIB_Parse_Lines (str, 0, TREE_NORMAL)))
-		Sys_Printf ("-----------------\n"
-					"|GIB Parse Error|\n"
-					"-----------------\n"
-					"Parse error while adding text to GIB buffer.\n"
-					"Line %u: %s\n", GIB_Buffer_Get_Line_Num (str,
-															  GIB_Parse_ErrorPos
-															  ()),
-					GIB_Parse_ErrorMsg ()
-			);
+		Sys_Printf (
+			"-----------------\n"
+			"|GIB Parse Error|\n"
+			"-----------------\n"
+			"Parse error while adding text to GIB buffer.\n"
+			"Line %u: %s\n", 
+			GIB_Buffer_Get_Line_Num (str, GIB_Parse_ErrorPos ()),
+			GIB_Parse_ErrorMsg ()
+		);
 }
 
 void
@@ -160,15 +160,15 @@ GIB_Buffer_Insert (cbuf_t * cbuf, const char *str)
 		cur->next = g->program;
 		g->program = lines;
 	} else
-		Sys_Printf ("-----------------\n"
-					"|GIB Parse Error|\n"
-					"-----------------\n"
-					"Parse error while inserting text into GIB buffer.\n"
-					"Line %u: %s\n", GIB_Buffer_Get_Line_Num (str,
-															  GIB_Parse_ErrorPos
-															  ()),
-					GIB_Parse_ErrorMsg ()
-			);
+		Sys_Printf (
+			"-----------------\n"
+			"|GIB Parse Error|\n"
+			"-----------------\n"
+			"Parse error while inserting text into GIB buffer.\n"
+			"Line %u: %s\n",
+			GIB_Buffer_Get_Line_Num (str, GIB_Parse_ErrorPos ()),
+			GIB_Parse_ErrorMsg ()
+		);
 }
 
 void
@@ -246,15 +246,26 @@ GIB_Buffer_Error (cbuf_t * cbuf, const char *type, const char *fmt,
 
 	dvsprintf (message, fmt, args);
 	va_end (args);
-	Sys_Printf ("---------------------\n"
-				"|GIB Execution Error|\n"
-				"---------------------\n" "Type: %s\n", type);
+	Sys_Printf (
+			"---------------------\n"
+			"|GIB Execution Error|\n"
+			"---------------------\n"
+			"Type: %s\n",
+			type
+		);
 	if ((linenum = GIB_Buffer_Get_Line_Info (cbuf, &line)) != -1)
-		Sys_Printf ("%s:%i: %s\n"
-					"-->%s\n",
-					GIB_DATA (cbuf)->script->file, linenum, message->str, line);
+		Sys_Printf (
+			"%s:%i: %s\n"
+			"-->%s\n",
+			GIB_DATA (cbuf)->script->file, linenum, message->str, line
+		);
 	else
-		Sys_Printf ("%s\n" "-->%s\n", message->str, line);
+		Sys_Printf (
+			"%s\n"
+			"-->%s\n",
+			message->str,
+			line
+		);
 	cbuf->state = CBUF_STATE_ERROR;
 	dstring_delete (message);
 	free (line);
