@@ -364,6 +364,7 @@ SV_Progs_Init (void)
 	PR_Resources_Init (&sv_pr_state);
 	SV_PR_Cmds_Init ();
 	Cmd_Progs_Init (&sv_pr_state);
+	Hash_Progs_Init (&sv_pr_state);
 
 	Cmd_AddCommand ("edict", ED_PrintEdict_f, "Report information on a given "
 					"edict in the game. (edict (edict number))");
