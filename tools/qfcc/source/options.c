@@ -87,6 +87,7 @@ static const char *short_options =
 	"r"		// partial linking
 	"s:"	// source dir
 	"P:"	// progs.src name
+	"t"		// traditional
 	"F"		// generate files.dat
 	"q"		// quiet
 	"v"		// verbose
