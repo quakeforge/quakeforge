@@ -1297,7 +1297,7 @@ fi
 AC_SUBST(Z_LIBS)
 
 dnl ==================================================================
-dnl Find out what to build and finish
+dnl Find out what to build
 dnl ==================================================================
 
 AC_ARG_WITH(clients,
@@ -1474,6 +1474,11 @@ if test -n "$VID_TARGETS"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsound_win.la"
 	fi
 	VID_TARGETS="libQFjs.la $VID_TARGETS"
+else
+	CD_TARGETS=""
+	SND_TARGETS=""
+	SOUND_TYPES=""
+	CDTYPE=""
 fi
 AC_SUBST(NQ_TARGETS)
 AC_SUBST(QW_TARGETS)
