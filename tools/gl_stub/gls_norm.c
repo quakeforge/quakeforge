@@ -800,6 +800,8 @@ norm_glGetSeparableFilter (GLenum target, GLenum format, GLenum type, GLvoid * r
 const GLubyte *
 norm_glGetString (GLenum name)
 {
+	if (name == GL_VERSION)
+		return "1.4";
 	return "";
 }
 
