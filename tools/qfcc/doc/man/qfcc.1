@@ -6,15 +6,16 @@
 .\"
 .\" This program is distributed in the hope that it will be useful,
 .\" but WITHOUT ANY WARRANTY; without even the implied warranty of
-.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-.\" GNU General Public License for more details.
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\" See the GNU General Public License for more details.
 .\"
 .\" You should have received a copy of the GNU General Public License
-.\" along with this program; see the file COPYING.  If not, write to
-.\" the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+.\" along with this program; see the file COPYING.  If not, write to:
 .\"
-.TH QFCC 1 "October 26, 2001" QuakeForge "QuakeForge Developer's Manual"
-.\" Please update the above date whenever this man page is modified.
+.\"		Free Software Foundation, Inc.
+.\"		59 Temple Place, Suite 330
+.\"		Boston, MA 02111-1307, USA
 .\"
 .\" Some roff macros, for reference:
 .\" .nh        disable hyphenation
@@ -26,6 +27,9 @@
 .\" .br        insert line break
 .\" .sp <n>    insert n+1 empty lines
 .\" for manpage-specific macros, see man(7)
+.\"
+.TH QFCC 1 "14 December, 2001" QuakeForge "QuakeForge Developer's Manual"
+.\" Please update the above date whenever this man page is modified.
 .SH NAME
 qfcc \- The QuakeForge Code Compiler
 .SH SYNOPSIS
@@ -76,8 +80,8 @@ command line. Unsupported options are ignored. The following options are
 supported by \fBqfcc\fP's \fB\-\-code\fP argument:
 .TP
 .B cow
-Allow assignment to initialized globals. In Quake-C and Ruamoko, a global that
-has been initialized to a value is not a variable, but a named constant.
+Allow assignment to initialized globals. In Quake-C and Ruamoko, a global
+that has been initialized to a value is not a variable, but a named constant.
 However, \fBqcc\fP never really enforced this. The \fBcow\fP option allows
 \fBqfcc\fP to gracefully cope with QuakeC source that assigns values to
 initialized globals in this manner. (also known as "copy on write" \(em never
@@ -92,8 +96,8 @@ if your output file is "progs.dat", the symbol file will be "progs.sym".
 .TP
 .B v6only
 Restrict the compiler to only version 6 progs (original Quake/QuakeWorld)
-features. This means that the compiled data file should be able to run on older
-servers, as long as you have not used any QuakeForge-specific built-in
+features. This means that the compiled data file should be able to run on
+older servers, as long as you have not used any QuakeForge-specific built-in
 functions. Also disables some of the compiler's features (like integers and
 string manipulation support).
 .SH "WARNING OPTIONS"
@@ -103,24 +107,25 @@ line. Unsupported options are ignored. The following options are supported by
 .TP
 .B cow
 Emit a warning when the source assigns a value to a named constant. See the
-description of the \fBcow\fP code option above for a description of what this means.
+description of the \fBcow\fP code option above for a description of what this
+means. 
 .TP
-.B undef-function
+.B undef\-function
 Emit a warning when a function is called, but has not yet been defined.
 .TP
-.B uninited-var
+.B uninited\-var
 Emit a warning when a variable is read from that has not been initalized to a
 value.
 .TP
-.B vararg-integer
+.B vararg\-integer
 Emit a warning when a function that takes a variable number of arguments is
 passed a constant of an integer type.
 .TP
 .B error
 Promote warnings to errors.
 .PP
-Any of the above can be prefixed with \fBno-\fP to negate its meaning. There are
-also two special options:
+Any of the above can be prefixed with \fBno\-\fP to negate its meaning. There
+are also two special options:
 .TP
 .B all
 Turns on all warning options except \fBerror\fP.
@@ -130,22 +135,22 @@ Turns off all warning options except \fBerror\fP.
 .SH "FAQ"
 .TP
 .B Where did the name Ruamoko come from?
-In Maori mythology, Ruamoko is the youngest child of Ranginui, the Sky-father,
-and Papatuanuku, the Earth-mother. Ruamoko is the god of volcanoes and
-earthquakes \fB(Quake, get it?)\fP. For more information, see the Web site
-\fBhttp://maori.com/kmst1.htm\fP.
+In Maori mythology, Ruamoko is the youngest child of Ranginui, the
+Sky\-father, and Papatuanuku, the Earth\-mother. Ruamoko is the god of
+volcanoes and earthquakes \fB(Quake, get it?)\fP. For more information, see
+the Web site at <\fBhttp://maori.com/kmst1.htm\fP>.
 .TP
 .B qfcc is singing a bad 80s rap song to me. What's going on?
 "ice ice baby" is QuakeForge-speak for "Internal Compiler Error". It usually
 means there's a bug in qfcc, so please report it to the team.
 .TP
 .B qfcc is mooing at me. What's wrong with you people?
-The compiler doesn't like being treated like a slab of beef. Seriously, the code
-you are trying to compile is using constants as if they weren't. Normally, qfcc
-would just stop and tell the code to sit in the corner for a while, but you told
-it not to do that by passing the \fBcow\fP option to \fB\-\-code\fP, so it has
-its revenge by mooing out a warning. Or something like that. To disable the
-warning, pass \fBno-cow\fP to \fB\-\-warn\fP.
+The compiler doesn't like being treated like a slab of beef. Seriously, the
+code you are trying to compile is using constants as if they weren't.
+Normally, qfcc would just stop and tell the code to sit in the corner for a
+while, but you told it not to do that by passing the \fBcow\fP option to
+\fB\-\-code\fP, so it has its revenge by mooing out a warning. Or something
+like that. To disable the warning, pass \fBno-cow\fP to \fB\-\-warn\fP.
 .SH "FILES"
 progs.src
 .SH "SEE ALSO"
