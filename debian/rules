@@ -60,7 +60,7 @@ changelog-stamp:
 clean:
 	dh_testdir
 	dh_testroot
-	rm -f build-stamp configure-stamp changelog-stamp
+	rm -f build-stamp configure-stamp changelog-stamp debian/quakeforge-common.conffiles
 
 	# Add here commands to clean up after the build process.
 	-$(MAKE) distclean
@@ -90,9 +90,9 @@ install: build
 		usr/lib/libQFmodels.so.* \
 		usr/lib/libQFsound.so.* \
 		usr/lib/libQFutil.so.* \
-		usr/lib/quakeforge/libcd_null.so.* \
-		usr/lib/quakeforge/libsnd_output_disk.so.* \
-		usr/lib/quakeforge/libsnd_render_default.so.*
+		usr/lib/quakeforge/libcd_null.so* \
+		usr/lib/quakeforge/libsnd_output_disk.so* \
+		usr/lib/quakeforge/libsnd_render_default.so*
 	dh_installdocs -p$(common) NEWS TODO
 	dh_installchangelogs -p$(common) ChangeLog
 
@@ -140,7 +140,7 @@ install: build
 		usr/games/qw-master \
 		usr/games/qw-server \
 		usr/games/nq-server \
-		usr/lib/quakeforge/libconsole_server.so.*
+		usr/lib/quakeforge/libconsole_server.so*
 	install -d -m755 debian/$(servers)/usr/share/doc
 	ln -s $(common) debian/$(servers)/usr/share/doc/$(servers)
 
@@ -181,13 +181,13 @@ install: build
 
 	# quakeforge-alsa
 	dh_movefiles -p$(alsa) --sourcedir=$(tmp) \
-		usr/lib/quakeforge/libsnd_output_alsa0_9.so.*
+		usr/lib/quakeforge/libsnd_output_alsa0_9.so*
 	install -d -m755 debian/$(alsa)/usr/share/doc
 	ln -s $(common) debian/$(alsa)/usr/share/doc/$(alsa)
 
 	# quakeforge-oss
 	dh_movefiles -p$(oss) --sourcedir=$(tmp) \
-		usr/lib/quakeforge/libsnd_output_oss.so.*
+		usr/lib/quakeforge/libsnd_output_oss.so*
 	install -d -m755 debian/$(oss)/usr/share/doc
 	ln -s $(common) debian/$(oss)/usr/share/doc/$(oss)
 

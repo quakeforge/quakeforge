@@ -1,3 +1,9 @@
+quakeforge (0.5.1-0cvs20011015) frozen unstable; urgency=low
+
+  * New snapshot
+
+ -- Jeff Teunissen <deek@d2dc.net>  Mon, 15 Oct 2001 18:54:39 -0400
+
 quakeforge (0.5.1-0cvs20010912) frozen unstable; urgency=low
 
   * Change version number to be closer to CVS
