@@ -533,11 +533,10 @@ Con_DrawNotify (void)
 void
 Con_DrawConsole (int lines)
 {
-	int         i, j, x, y, n;
+	int         i, x, y;
 	int         rows;
 	char       *text;
 	int         row;
-	char        dlbar[1024];
 
 	if (lines <= 0)
 		return;
@@ -575,6 +574,17 @@ Con_DrawConsole (int lines)
 		for (x = 0; x < con_linewidth; x++)
 			Draw_Character8 ((x + 1) << 3, y, text[x]);
 	}
+
+// draw the input prompt, user text, and cursor if desired
+	Con_DrawInput ();
+}
+
+void
+Con_DrawDownload (int lines)
+{
+	int         i, j, x, y, n;
+	char       *text;
+	char        dlbar[1024];
 
 	// draw the download bar
 	// figure out width
@@ -615,10 +625,9 @@ Con_DrawConsole (int lines)
 				  " %02d%%", cls.downloadpercent);
 
 		// draw it
-		y = con_vislines - 22 + 8;
+		y = lines - 22 + 8;
 		for (i = 0; i < strlen (dlbar); i++)
 			Draw_Character8 ((i + 1) << 3, y, dlbar[i]);
 	}
-// draw the input prompt, user text, and cursor if desired
-	Con_DrawInput ();
 }
+

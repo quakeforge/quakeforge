@@ -62,6 +62,7 @@ void Con_CheckResize (void);
 void Con_Init (void);
 void Con_Init_Cvars (void);
 void Con_DrawConsole (int lines);
+void Con_DrawDownload (int lines);
 void Con_Print (char *txt);
 void Con_Printf (char *fmt, ...) __attribute__((format(printf,1,2)));
 void Con_DPrintf (char *fmt, ...) __attribute__((format(printf,1,2)));

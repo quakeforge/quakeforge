@@ -579,3 +579,8 @@ Con_DrawConsole (int lines)
 	Con_DrawInput ();
 }
 
+void
+Con_DrawDownload (int lines)
+{
+}
+

@@ -616,6 +616,7 @@ SCR_DrawConsole (void)
 	if (scr_con_current) {
 		scr_copyeverything = 1;
 		Con_DrawConsole (scr_con_current);
+		Con_DrawDownload (scr_con_current);
 		clearconsole = 0;
 	} else {
 		if (key_dest == key_game || key_dest == key_message)
