@@ -79,9 +79,6 @@ COM_CheckRegistered (void)
 }
 
 
-/*
-	COM_Init
-*/
 void
 COM_Init (void)
 {

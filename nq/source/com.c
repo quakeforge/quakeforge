@@ -43,15 +43,14 @@ cvar_t     *registered;
 cvar_t     *cmdline;
 int         static_registered = 1;
 
-/*
-================
-COM_CheckRegistered
 
-Looks for the pop.txt file and verifies it.
-Sets the "registered" cvar.
-Immediately exits out if an alternate game was attempted to be started without
-being registered.
-================
+/*
+	COM_CheckRegistered
+
+	Looks for the pop.txt file and verifies it.
+	Sets the "registered" cvar.
+	Immediately exits out if an alternate game was attempted to be started
+	without being registered.
 */
 void
 COM_CheckRegistered (void)
@@ -74,11 +73,7 @@ COM_CheckRegistered (void)
 	}
 }
 
-/*
-================
-COM_Init
-================
-*/
+
 void
 COM_Init ()
 {
@@ -90,4 +85,3 @@ COM_Init ()
 	COM_Filesystem_Init ();
 	COM_CheckRegistered ();
 }
-
