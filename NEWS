@@ -4,125 +4,125 @@ NEWS for the QuakeForge project
 Changes from 0.3.0
 
     o Progs engine enhancements.
-	* Fully modular. Mod/Server-independant, allowing for
-	  stand-alone QuakeC interpreter and client-side code.
-	* The engine is no longer dependent on progdefs.h. This makes
-	  QuakeForge have trouble with QuakeC compilers that strip
-	  symbol names -- but those can be repaired using the new
-	  "qfdefs" tool.
-	* New basic types, and instructions for using them, for version
-	  0.fff.002 progs (Quake's Version 6 is still supported).
-	* Better dynamic string handling. Dynamic strings are
-	  garbage-collected.
-	* Object-oriented runtime system, in the style of Objective-C.
-	* Runtime fixups of built-in functions whose builtin number is
-	  zero. If a built-in function is available to the engine, with
-	  the same name given in the source code (e.g.
-	  "void (void) coredump = #0;"), the engine will set the value
-	  to the actual number used by the engine.
-	* Debugging support (needs compiler support, which qfcc
-	  provides), including line-number information. Can display the
-	  line of text in the source on which an error occurred, if the
-	  new Cvar "pr_source_path" is set correctly.
-	* Instruction-level code dumps are now formatted in an
-	  easier-to-read "assembly-code" format.
+        * Fully modular. Mod/Server-independant, allowing for
+          stand-alone QuakeC interpreter and client-side code.
+        * The engine is no longer dependent on progdefs.h. This makes
+          QuakeForge have trouble with QuakeC compilers that strip
+          symbol names -- but those can be repaired using the new
+          "qfdefs" tool.
+        * New basic types, and instructions for using them, for version
+          0.fff.002 progs (Quake's Version 6 is still supported).
+        * Better dynamic string handling. Dynamic strings are
+          garbage-collected.
+        * Object-oriented runtime system, in the style of Objective-C.
+        * Runtime fixups of built-in functions whose builtin number is
+          zero. If a built-in function is available to the engine, with
+          the same name given in the source code (e.g.
+          "void (void) coredump = #0;"), the engine will set the value
+          to the actual number used by the engine.
+        * Debugging support (needs compiler support, which qfcc
+          provides), including line-number information. Can display the
+          line of text in the source on which an error occurred, if the
+          new Cvar "pr_source_path" is set correctly.
+        * Instruction-level code dumps are now formatted in an
+          easier-to-read "assembly-code" format.
 
     o QuakeForge Code Compiler, qfcc -- a replacement for qcc.
-	* Uses libQFutil for general utility functions such as hash
-	  tables, file access (incomplete), and pak files.
-	* Uses libQFgamecode for progs information, such as opcode
-	  tables, enums, types, etc.)
-	* Uses a lex/yacc (actually, Flex and Bison) scanner/parser
-	  architecture, like a "real" compiler does.
-	* Drastically reduces the number of global defs needed for
-	  a given progs, by reusing temporary globals when possible.
-	* All functions use the same block of defs for their local
-	  variables (compatible with all known servers), which further
-	  reduces the number of global defs needed.
-	* Nested/chained function calls work properly.
-	* Simple expressions, such as "a = b + c", compile to a single
-	  instruction instead of two, and do not use a temporary
-	  variable.
-	* Local variables can be initialized to known values, as in
-	  "local float foo = 0.1;".
-	* Uses the C preprocessor, so header files are now possible and
-	  useful.
-	* The compiler checks for uninitialized and unused variables in
-	  functions, to help in finding errors.
-	* The compiler can generate and use object files, for separate
-	  compilation (you don't have to compile all of your source all
-	  the time, only the parts that have changed). Normally, object
-	  files have a .qfo extension.
-	* The compiler can link libraries, which are implemented as .qfo
-	  files inside pak archives.
-	* The compiler implements stricter type checking, to assist in
-	  finding and fixing code errors.
-	* The C language's "for", "do...while", and "switch" control
-	  structures have been adopted to provide a richer set of
-	  structures for programmers to use.
-	* Additional functionality is given for progs that are to be
-	  used with QuakeForge's more advanced progs engine:
+        * Uses libQFutil for general utility functions such as hash
+          tables, file access (incomplete), and pak files.
+        * Uses libQFgamecode for progs information, such as opcode
+          tables, enums, types, etc.)
+        * Uses a lex/yacc (actually, Flex and Bison) scanner/parser
+          architecture, like a "real" compiler does.
+        * Drastically reduces the number of global defs needed for
+          a given progs, by reusing temporary globals when possible.
+        * All functions use the same block of defs for their local
+          variables (compatible with all known servers), which further
+          reduces the number of global defs needed.
+        * Nested/chained function calls work properly.
+        * Simple expressions, such as "a = b + c", compile to a single
+          instruction instead of two, and do not use a temporary
+          variable.
+        * Local variables can be initialized to known values, as in
+          "local float foo = 0.1;".
+        * Uses the C preprocessor, so header files are now possible and
+          useful.
+        * The compiler checks for uninitialized and unused variables in
+          functions, to help in finding errors.
+        * The compiler can generate and use object files, for separate
+          compilation (you don't have to compile all of your source all
+          the time, only the parts that have changed). Normally, object
+          files have a .qfo extension.
+        * The compiler can link libraries, which are implemented as .qfo
+          files inside pak archives.
+        * The compiler implements stricter type checking, to assist in
+          finding and fixing code errors.
+        * The C language's "for", "do...while", and "switch" control
+          structures have been adopted to provide a richer set of
+          structures for programmers to use.
+        * Additional functionality is given for progs that are to be
+          used with QuakeForge's more advanced progs engine:
 
-	    x IMPORTANT:
-	      The order of operations is slightly different in "native"
-	      mode. The evaluation of "!foo & bar" is no longer
-	      "!(foo & bar)", but rather "(!foo) & bar". The new order of
-	      operations rules is more correct, but is different from how
-	      QCC evaluated. If you give the --traditional switch to
-	      qfcc's command-line, the old behavior is used.
-	    x The compiler now allows you to create your own functions
-	      that can accept a variable number of arguments, using the
-	      special "..." notation. The special constants "@argc" and
-	      "@argv" help with this. @argc contains the number of
-	      arguments, and @argv contains a list of those arguments. The
-	      handling of this is an improvement on C's vararg function
-	      handling, in our opinion, made possible by how the Quake
-	      system works.
-	    x New basic types: integer, pointer, enum, and id.
-	    x You can create new complex types, like arrays, structures,
-	      and unions, and allocate them at runtime.
-	    x String operators. You can add strings together to
-	      concatenate them, and you can compare their contents using
-	      the <=, <, >, >= operators.
-	    x The integer type has the full array of C operations
-	      available to it.
-	    x QFCC and QuakeForge now contain an object-oriented
-	      programming system, in the style of Objective-C and
-	      Smalltalk. It's *very* powerful, and can be used to create
-	      lots of interesting new things with rather little effort. If
-	      you don't wish to use the new system, you can safely ignore
-	      it with no danger to your code. :)
-	    x Special support for using the "self" special variable inside
-	      OO methods as well as the entity of the same name. If you
-	      use OO support for entities and want to assign a method as a
-	      touch/think/etc. function, "self" always refers to the
-	      object that "owns" the method being executed. The special
-	      variable "@self" was created to refer to the self entity.
-	      "@this" refers to the object.
+            x IMPORTANT:
+              The order of operations is slightly different in "native"
+              mode. The evaluation of "!foo & bar" is no longer
+              "!(foo & bar)", but rather "(!foo) & bar". The new order of
+              operations rules is more correct, but is different from how
+              QCC evaluated. If you give the --traditional switch to
+              qfcc's command-line, the old behavior is used.
+            x The compiler now allows you to create your own functions
+              that can accept a variable number of arguments, using the
+              special "..." notation. The special constants "@argc" and
+              "@argv" help with this. @argc contains the number of
+              arguments, and @argv contains a list of those arguments. The
+              handling of this is an improvement on C's vararg function
+              handling, in our opinion, made possible by how the Quake
+              system works.
+            x New basic types: integer, pointer, enum, and id.
+            x You can create new complex types, like arrays, structures,
+              and unions, and allocate them at runtime.
+            x String operators. You can add strings together to
+              concatenate them, and you can compare their contents using
+              the <=, <, >, >= operators.
+            x The integer type has the full array of C operations
+              available to it.
+            x QFCC and QuakeForge now contain an object-oriented
+              programming system, in the style of Objective-C and
+              Smalltalk. It's *very* powerful, and can be used to create
+              lots of interesting new things with rather little effort. If
+              you don't wish to use the new system, you can safely ignore
+              it with no danger to your code. :)
+            x Special support for using the "self" special variable inside
+              OO methods as well as the entity of the same name. If you
+              use OO support for entities and want to assign a method as a
+              touch/think/etc. function, "self" always refers to the
+              object that "owns" the method being executed. The special
+              variable "@self" was created to refer to the self entity.
+              "@this" refers to the object.
 
     o Enhanced console scripting - GIB (GIB Isn't Bash)
-	* New language derived from the quake console.
-	* Functions with arguments and return values.
-	* Looping (while, for) and branching (if) commands.
-	* Local and global variables as well as access to cvars.
-	  Supports Python-like slicing of variables.
-	* A basic math interpreter that respects order of operations
-	  and provides most arithmetic and logic operators.
-	* Non-preemptive threading and callbacks to GIB functions in
-	  response to game events (limited but functional at the moment)
-	* File reading, writing, and searching.
-	* Integrates with console -- GIB functions can be exported as
-	  console commands to be used at the console or in binds.
-	* See gib.html in doc for more information.
+        * New language derived from the quake console.
+        * Functions with arguments and return values.
+        * Looping (while, for) and branching (if) commands.
+        * Local and global variables as well as access to cvars.
+          Supports Python-like slicing of variables.
+        * A basic math interpreter that respects order of operations
+          and provides most arithmetic and logic operators.
+        * Non-preemptive threading and callbacks to GIB functions in
+          response to game events (limited but functional at the moment)
+        * File reading, writing, and searching.
+        * Integrates with console -- GIB functions can be exported as
+          console commands to be used at the console or in binds.
+        * See gib.html in doc for more information.
 
     o Enhanced time cheat ("speed cheat") protection
-	* Time cheats only work for a split-second before protection
-	  kicks in.
-	* Players moving with wrong timings are sped up/slowed down to
-	  the correct speed.
-	* Delay before protection activates means that lag and normal
-	  network latency won't affect protection.
-	* People who aren't really trying to cheat won't be kicked :)
+        * Time cheats only work for a split-second before protection
+          kicks in.
+        * Players moving with wrong timings are sped up/slowed down to
+          the correct speed.
+        * Delay before protection activates means that lag and normal
+          network latency won't affect protection.
+        * People who aren't really trying to cheat won't be kicked :)
 
     o Rendering enhancements
-    	* TBD
+        * TBD
