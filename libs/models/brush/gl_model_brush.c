@@ -69,15 +69,29 @@ void
 Mod_LoadExternalTextures (model_t *mod)
 {
 	texture_t	*tx;
-	char		filename[MAX_QPATH + 4];
+	char		filename[MAX_QPATH + 8];
 	VFile		*f;
 	tex_t		*targa;
-	int i;
+	int			i, length;
 
 	for (i = 0; i < mod->numtextures; i++)
 	{
 		tx = mod->textures[i];
-	 	snprintf (filename, sizeof (filename), "maps/%s.tga", tx->name);
+		length = strlen (tx->name) - 1;
+
+		// backslash at the end of texture name indicates external texture
+		if (tx->name[length] != '\\')
+			continue;
+
+		// replace special flag characters with underscores
+		if (tx->name[0] == '+' || tx->name[0] == '*')
+		 	snprintf (filename, sizeof (filename), "maps/_%s", tx->name + 1);
+		else
+		 	snprintf (filename, sizeof (filename), "maps/%s", tx->name);
+
+		length += 5; // add "maps/" to the string length calculation
+		snprintf (filename + length, sizeof (filename) - length, ".tga");
+
 		COM_FOpenFile (filename, &f);
 		if (f) {
 			targa = LoadTGA (f);
