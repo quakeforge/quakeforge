@@ -1232,8 +1232,23 @@ field_expr (expr_t *e1, expr_t *e2)
 							e->e.expr.type = field->type;
 							return e;
 						}
-					case ex_block:
+						break;
 					case ex_uexpr:
+						if (e1->e.expr.op == '.') {
+							if (e1->e.expr.e1->type == ex_pointer) {
+								e = new_expr ();
+								e->type = ex_pointer;
+								e1 = e1->e.expr.e1;
+								i = e1->e.pointer.val;
+								e->e.pointer.val = i + field->offset;
+								e->e.pointer.type = field->type;
+								e->e.pointer.abs = e1->e.pointer.abs;
+								return unary_expr ('.', e);
+							}
+						}
+						break;
+					case ex_block:
+						print_expr (e1); puts ("");
 #if 0
 						e1 = new_bind_expr (e1, new_temp_def_expr (t1));
 						e2 = new_short_expr (field->offset);
