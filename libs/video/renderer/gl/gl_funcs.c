@@ -46,13 +46,12 @@
 #include <QF/GL/extensions.h>
 #include <QF/cvar.h>
 #include <QF/console.h>
+#include <QF/sys.h>
 #include "r_cvar.h"
 
 // First we need to get all the function pointers declared.
 #define QFGL_NEED(ret, name, args) \
-typedef ret (* QF_##name) args; \
-QF_##name		name = NULL;
-
+ret (* name) args = NULL;
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
 
@@ -64,23 +63,27 @@ GLF_Init (void)
 
 #ifdef HAVE_DLOPEN
 	if (!(handle = dlopen (gl_libgl->string, RTLD_NOW))) {
-		Con_Printf ("Couldn't load OpenGL library %s: %s\n", gl_libgl->string, dlerror ());
+		Sys_Error ("Couldn't load OpenGL library %s: %s\n", gl_libgl->string, dlerror ());
+		return false;
+	}
 #else
 # if _WIN32
 	if (!(handle = LoadLibrary (gl_libgl->string))) {
-		Con_Printf ("Couldn't load OpenGL library %s!\n", gl_libgl->string);
-# else
-	{
-		Con_Printf ("Cannot load libraries: %s was built without DSO support", PROGRAM);
-# endif
-#endif
+		Sys_Error ("Couldn't load OpenGL library %s!\n", gl_libgl->string);
 		return false;
 	}
+# else
+	Sys_Error ("Cannot load libraries: %s was built without DSO support", PROGRAM);
+	return false;
+# endif
+#endif
 
 #define QFGL_NEED(ret, name, args)	\
-	name = QFGL_ProcAddress (handle, (#name));
+	name = QFGL_ProcAddress (handle, #name);
+
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
+	QFGL_ProcAddress (NULL, NULL); // tell ProcAddress to clear its cache
 
 	return true;
 }
@@ -88,46 +91,50 @@ GLF_Init (void)
 void *
 QFGL_ProcAddress (void *handle, const char *name)
 {
-#if defined(HAVE_GLX) && defined(HAVE_DLOPEN)
-	static QF_glXGetProcAddressARB	glXGetProcAddress = NULL;
-	static qboolean 				inited = false;
+	static qboolean inited = false;
+	void			*glfunc = NULL;
+
+	if (!handle || !name)
+		return NULL;
+
+#ifdef HAVE_DLOPEN
+	static QF_glXGetProcAddressARB	glGetProcAddress = NULL;
+#else
+# ifdef _WIN32
+	static void * (* wglGetProcAddress)	(char *)	glGetProcAddress = NULL;
+# endif
+#endif
 
 	if (!inited) {
 		inited = true;
-		glXGetProcAddress = dlsym (handle, "glXGetProcAddressARB");
-	}
-#endif
-
-	if (name) {
-#if defined(HAVE_GLX) && defined(HAVE_DLOPEN)
-		if (glXGetProcAddress) {
-			return glXGetProcAddress ((const GLubyte *) name);
-		} else {
-			void	*glfunction;
-
-			if (!(glfunction = dlsym (handle, name))) {
-				Con_Printf ("Cannot find symbol %s: %s\n", name, dlerror ());
-				return NULL;
-			}
-
-			return glfunction;
-		}
-	}
+#ifdef HAVE_DLOPEN
+		glGetProcAddress = dlsym (handle, "glXGetProcAddressARB");
 #else
 # ifdef _WIN32
-	void	*glfunction;
-	char	filename[4096];
-
-	if (!(glfunction = GetProcAddress (handle, name))) {
-		if (GetModuleFileName (handle, &filename, sizeof (filename)))
-			Con_Printf ("Cannot find symbol %s in library %s", name, filename);
-		else
-			Con_Printf ("Cannot find symbol %s in library %s", name, gl_libgl->string);
-		return NULL;
-	}
-	
-	return glfunction;
+		glGetProcAddress = GetProcAddress (handle, "wglGetProcAddress");
 # endif
 #endif
-	return NULL;
+	}
+
+	Sys_Printf ("DEBUG: Finding symbol %s ... ", name);
+#ifdef HAVE_DLOPEN
+	if (glGetProcAddress)
+		glfunc = glGetProcAddress (name);
+	else
+		glfunc = dlsym (handle, name);
+#else
+# ifdef _WIN32
+	if (glGetProcAddress)
+		glfunc = glGetProcAddress (name);
+	else
+		glfunc = GetProcAddress (handle, name);
+# endif
+#endif
+	if (glfunc) {
+		Sys_Printf ("found [0x%x]\n", (unsigned int) glfunc);
+		return glfunc;
+	} else {
+		Sys_Printf ("not found\n");
+		return NULL;
+	}
 }

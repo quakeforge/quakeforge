@@ -81,12 +81,10 @@ typedef struct __GLXcontextRec *GLXContext;
 static GLXContext ctx = NULL;
 typedef XID GLXDrawable;
 
-void (* QFGLX_glXSwapBuffers) (Display *dpy, GLXDrawable drawable);
-XVisualInfo* (* QFGLX_glXChooseVisual) (Display *dpy, int screen, int *attribList);
-GLXContext (* QFGLX_glXCreateContext) (Display *dpy, XVisualInfo *vis, GLXContext shareList, Bool direct);
-Bool (* QFGLX_glXMakeCurrent) (Display *dpy, GLXDrawable drawable, GLXContext ctx);
-
-
+void (* glXSwapBuffers) (Display *dpy, GLXDrawable drawable);
+XVisualInfo* (* glXChooseVisual) (Display *dpy, int screen, int *attribList);
+GLXContext (* glXCreateContext) (Display *dpy, XVisualInfo *vis, GLXContext shareList, Bool direct);
+Bool (* glXMakeCurrent) (Display *dpy, GLXDrawable drawable, GLXContext ctx);
 
 extern void GL_Init_Common (void);
 extern void VID_Init8bitPalette (void);
@@ -149,7 +147,7 @@ void
 GL_EndRendering (void)
 {
 	glFlush ();
-	QFGLX_glXSwapBuffers (x_disp, x_win);
+	glXSwapBuffers (x_disp, x_win);
 	Sbar_Changed ();
 }
 
@@ -178,26 +176,26 @@ VID_Init (unsigned char *palette)
 		return;
 	}
 
-	QFGLX_glXSwapBuffers = dlsym(libgl_handle, "glXSwapBuffers");
-	if (!QFGLX_glXSwapBuffers) {
+	glXSwapBuffers = QFGL_ProcAddress (libgl_handle, "glXSwapBuffers");
+	if (!glXSwapBuffers) {
 		Sys_Error(va("Can't load symbol glXSwapBuffers: %s\n", dlerror()));
 		return;
 	}
 
-	QFGLX_glXChooseVisual = dlsym(libgl_handle, "glXChooseVisual");
-	if (!QFGLX_glXChooseVisual) {
+	glXChooseVisual = QFGL_ProcAddress (libgl_handle, "glXChooseVisual");
+	if (!glXChooseVisual) {
 		Sys_Error(va("Can't load symbol glXChooseVisual: %s\n", dlerror()));
 		return;
 	}
 
-	QFGLX_glXCreateContext = dlsym(libgl_handle, "glXCreateContext");
-	if (!QFGLX_glXCreateContext) {
+	glXCreateContext = QFGL_ProcAddress (libgl_handle, "glXCreateContext");
+	if (!glXCreateContext) {
 		Sys_Error(va("Can't load symbol glXCreateContext: %s\n", dlerror()));
 		return;
 	}
 
-	QFGLX_glXMakeCurrent = dlsym(libgl_handle, "glXMakeCurrent");
-	if (!QFGLX_glXMakeCurrent) {
+	glXMakeCurrent = QFGL_ProcAddress (libgl_handle, "glXMakeCurrent");
+	if (!glXMakeCurrent) {
 		Sys_Error(va("Can't load symbol glXMakeCurrent: %s\n", dlerror()));
 		return;
 	}
@@ -234,7 +232,7 @@ VID_Init (unsigned char *palette)
 
 	X11_OpenDisplay ();
 
-	x_visinfo = QFGLX_glXChooseVisual (x_disp, x_screen, attrib);
+	x_visinfo = glXChooseVisual (x_disp, x_screen, attrib);
 	if (!x_visinfo) {
 		fprintf (stderr,
 				 "Error couldn't get an RGB, Double-buffered, Depth visual\n");
@@ -251,9 +249,9 @@ VID_Init (unsigned char *palette)
 
 	XSync (x_disp, 0);
 
-	ctx = QFGLX_glXCreateContext (x_disp, x_visinfo, NULL, True);
+	ctx = glXCreateContext (x_disp, x_visinfo, NULL, True);
 
-	QFGLX_glXMakeCurrent (x_disp, x_win, ctx);
+	glXMakeCurrent (x_disp, x_win, ctx);
 
 	vid.height = vid.conheight = min (vid.conheight, scr_height);
 	vid.width = vid.conwidth = min (vid.conwidth, scr_width);
