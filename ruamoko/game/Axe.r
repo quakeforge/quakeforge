@@ -37,7 +37,7 @@
 
 	org = trace_endpos - v_forward * 4;
 
-	if ([trace_ent.@this takeDamage:self :s :s :damage])
+	if ([trace_ent.@this takeDamage:self :owner :owner :damage])
 		SpawnBlood (org, 20);
 	else {
 		sound (s, CHAN_WEAPON, "player/axhit2.wav", 1, ATTN_NORM);

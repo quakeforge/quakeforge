@@ -108,13 +108,13 @@ init_binding_hash =
 
 	movement_bindings = [[Array alloc] init];
 	for (i = 0; i < @sizeof (movement_binding_list) / @sizeof (movement_binding_list[0]); i++)
-		[movement_bindings addItem: new_binding (movement_binding_list[i])];
+		[movement_bindings addItem: (id)new_binding (movement_binding_list[i])];
 	misc_bindings = [[Array alloc] init];
 	for (i = 0; i < @sizeof (misc_binding_list) / @sizeof (misc_binding_list[0]); i++)
-		[misc_bindings addItem: new_binding (misc_binding_list[i])];
+		[misc_bindings addItem: (id)new_binding (misc_binding_list[i])];
 	weapon_bindings = [[Array alloc] init];
 	for (i = 0; i < @sizeof (weapon_binding_list) / @sizeof (weapon_binding_list[0]); i++)
-		[weapon_bindings addItem: new_binding (weapon_binding_list[i])];
+		[weapon_bindings addItem: (id)new_binding (weapon_binding_list[i])];
 
 };
 
