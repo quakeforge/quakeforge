@@ -74,8 +74,8 @@ else
 syssv_SRC=	sv_sys_unix.c
 endif
 
-server_SOURCES=	sv_ccmds.c sv_console.c sv_cvar.c sv_ents.c sv_init.c \
-		sv_main.c sv_misc.c \
+server_SOURCES= crudefile.c sv_ccmds.c sv_console.c sv_cvar.c \
+		sv_ents.c sv_init.c sv_main.c sv_misc.c \
 		sv_model.c sv_move.c sv_nchan.c sv_phys.c sv_pr_cmds.c \
 		sv_progs.c sv_send.c sv_user.c world.c $(syssv_SRC)
 

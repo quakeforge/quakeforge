@@ -44,6 +44,7 @@
 #include "server.h"
 #include "sv_progs.h"
 #include "world.h"
+#include "crudefile.h"
 
 server_t    sv;							// local server
 
@@ -405,6 +406,9 @@ SV_SpawnServer (const char *server)
 	*sv_globals.mapname = PR_SetString (&sv_pr_state, sv.name);
 	// serverflags are for cross level information (sigils)
 	*sv_globals.serverflags = svs.serverflags;
+
+	// close all CF files that progs didn't close from the last map
+	CF_CloseAllFiles ();
 
 	// run the frame start qc function to let progs check cvars
 	SV_ProgStartFrame ();

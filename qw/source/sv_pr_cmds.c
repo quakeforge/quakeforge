@@ -43,6 +43,7 @@
 #include "sv_pr_cmds.h"
 #include "sv_progs.h"
 #include "world.h"
+#include "crudefile.h"
 
 #define	RETURN_EDICT(p, e) ((p)->pr_globals[OFS_RETURN].int_var = EDICT_TO_PROG(p, e))
 #define	RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].int_var = PR_SetString((p), s))
@@ -1675,6 +1676,73 @@ PF_charcount (progs_t *pr)
 }
 
 
+/*
+	PF_cfopen
+
+	float(string path, string mode) cfopen
+*/
+void
+PF_cfopen (progs_t *pr)
+{
+	G_FLOAT (pr, OFS_RETURN) = CF_Open (G_STRING (pr, OFS_PARM0), G_STRING (pr, OFS_PARM1));
+}
+
+/*
+	PF_cfclose
+
+	void (float desc) cfclose
+*/
+void
+PF_cfclose (progs_t *pr)
+{
+	CF_Close ((int) G_FLOAT (pr, OFS_PARM0));
+}
+
+/*
+	PF_cfread
+
+	string (float desc) cfread
+*/
+void
+PF_cfread (progs_t *pr)
+{
+	RETURN_STRING (pr, CF_Read((int) G_FLOAT (pr, OFS_PARM0)));
+}
+
+/*
+	PF_cfwrite
+
+	float (float desc, string buf) cfwrite
+*/
+void
+PF_cfwrite (progs_t *pr)
+{
+	G_FLOAT (pr, OFS_RETURN) = CF_Write((int) G_FLOAT(pr, OFS_PARM0), G_STRING (pr, OFS_PARM1));
+}
+
+/*
+	PF_cfeof
+
+	float () cfeof
+*/
+void
+PF_cfeof (progs_t *pr)
+{
+	G_FLOAT (pr, OFS_RETURN) = CF_EOF ((int) G_FLOAT(pr, OFS_PARM0));
+}
+
+/*
+	PF_cfquota
+
+	float () cfquota
+*/
+void
+PF_cfquota (progs_t *pr)
+{
+	G_FLOAT (pr, OFS_RETURN) = CF_Quota();
+}
+
+
 void
 PF_setinfokey (progs_t *pr)
 {
@@ -1855,6 +1923,12 @@ builtin_t   sv_builtins[] = {
 	PF_strlen,
 	PF_charcount,
 	PF_setinfokey,
+	PF_cfopen,
+	PF_cfclose,
+	PF_cfread,
+	PF_cfwrite,
+	PF_cfeof,
+	PF_cfquota,
 };
 
 int         sv_numbuiltins = sizeof (sv_builtins) / sizeof (sv_builtins[0]);

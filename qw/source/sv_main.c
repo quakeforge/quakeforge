@@ -60,6 +60,7 @@
 #include "pmove.h"
 #include "server.h"
 #include "sv_progs.h"
+#include "crudefile.h"
 
 quakeparms_t host_parms;
 qboolean    host_initialized;			// true if into command execution
@@ -1733,6 +1734,8 @@ SV_InitLocal (void)
 							 MAX_SERVERINFO_STRING);
 	Info_SetValueForStarKey (svs.info, "*qsg_version", QW_QSG_VERSION,
 							 MAX_SERVERINFO_STRING);
+
+	CF_Init ();
 
 	// init fraglog stuff
 	svs.logsequence = 1;
