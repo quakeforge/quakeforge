@@ -55,7 +55,6 @@ extern byte *vid_basepal;
 extern cvar_t *crosshair, *cl_crossx, *cl_crossy, *crosshaircolor,
 	*gl_lightmap_components;
 
-
 byte *draw_chars;						// 8*8 graphic characters
 qpic_t     *draw_disc;
 qpic_t     *draw_backtile;
@@ -244,6 +243,7 @@ Draw_TextBox (int x, int y, int width, int lines)
 extern void glrmain_init (void);
 extern void glrsurf_init (void);
 extern void GL_TextureMode_f (void);
+
 
 void
 Draw_Init (void)

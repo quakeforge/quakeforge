@@ -291,6 +291,7 @@ Draw_Init (void)
 	glrsurf_init ();
 }
 
+
 /*
 	Draw_Character8
 
