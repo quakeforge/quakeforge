@@ -353,7 +353,7 @@ Cmd_Alias_f (void)
 	if (Cmd_Argc () == 1) {
 		Sys_Printf ("Current alias commands:\n");
 		for (alias = cmd_alias; alias; alias = alias->next)
-			Sys_Printf ("%s : %s\n", alias->name, alias->value);
+			Sys_Printf ("alias %s \"%s\"\n", alias->name, alias->value);
 		return;
 	}
 
@@ -386,7 +386,6 @@ Cmd_Alias_f (void)
 		if (i != c - 1)
 			strcat (cmd, " ");
 	}
-	strncat (cmd, "\n", sizeof (cmd) - strlen (cmd));
 
 	alias->value = cmd;
 }
@@ -868,6 +867,7 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 	a = (cmdalias_t*)Hash_Find (cmd_alias_hash, cmd_argv[0]);
 	if (a) {
 		Cbuf_InsertText (a->value);
+		Cbuf_InsertText ("\n");
 		return;
 	}
 
