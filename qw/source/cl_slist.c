@@ -435,7 +435,7 @@ SL_MasterUpdate(void)
 	char data[] = "c\n";
 	
 	SL_Del_All(slist);
-	
+	slist = NULL;
 	NET_StringToAdr ("qwmaster.ocrana.de:27000", &addy);
 	NET_SendPacket (3, data, addy);
 	NET_StringToAdr ("qwmaster.barrysworld.com:27000", &addy);
