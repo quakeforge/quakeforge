@@ -183,6 +183,7 @@ cvar_t     *maxclients;
 cvar_t     *maxspectators;
 cvar_t     *deathmatch;					// 0, 1, or 2
 cvar_t     *coop;
+cvar_t     *skill;
 cvar_t     *spawn;
 cvar_t     *watervis;
 
@@ -2054,6 +2055,8 @@ SV_InitLocal (void)
 						   "a weapon once. Picked up items will respawn.");
 	coop = Cvar_Get ("coop", "0", CVAR_NONE, NULL, "co-op mode for progs that "
 					 "support it");
+	skill = Cvar_Get ("skill", "0", CVAR_NONE, NULL, "skill setting for progs "
+					  "that support it");
 	spawn = Cvar_Get ("spawn", "0", CVAR_SERVERINFO, Cvar_Info,
 					  "Spawn the player entity");
 	watervis = Cvar_Get ("watervis", "0", CVAR_SERVERINFO, Cvar_Info,
