@@ -27,7 +27,7 @@ typedef struct {
 %}
 
 %union {
-	scope_t	*scope;
+	scope_t	scope;
 	def_t	*def;
 	type_t	*type;
 	expr_t	*expr;
@@ -108,17 +108,18 @@ def_item
 	: def_name opt_initializer
 	| '('
 		{
-			$<scope>$->scope = pr_scope;
-			$<scope>$->type = current_type;
-			$<scope>$->pscope = param_scope.scope_next;
+			$<scope>$.scope = pr_scope;
+			$<scope>$.type = current_type;
+			$<scope>$.pscope = param_scope.scope_next;
+			param_scope.scope_next = 0;
 			pr_scope = &param_scope;
 		}
 	  param_list
 		{
 			$$ = param_scope.scope_next;
-			current_type = $<scope>2->type;
-			param_scope.scope_next = $<scope>2->pscope;
-			pr_scope = $<scope>2->scope;
+			current_type = $<scope>2.type;
+			param_scope.scope_next = $<scope>2.pscope;
+			pr_scope = $<scope>2.scope;
 		}
 	  ')' { current_type = parse_params ($<def>4); } def_name opt_definition
 	  	{
@@ -312,8 +313,8 @@ parse_params (def_t *parms)
 		i = 1;
 		do {
 			//puts (parms->name);
-			strcpy (pr_parm_names[new.num_parms - 1], parms->name);
-			new.parm_types[new.num_parms - 1] = parms->type;
+			strcpy (pr_parm_names[new.num_parms - i], parms->name);
+			new.parm_types[new.num_parms - i] = parms->type;
 			i++;
 			parms = parms->next;
 		} while (parms);

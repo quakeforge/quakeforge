@@ -720,6 +720,56 @@ PR_ParseName (void)
 	return ident;
 }
 
+void
+PR_PrintType (type_t *type)
+{
+	int i;
+	if (!type) {
+		printf("(null)");
+		return;
+	}
+	switch (type->type) {
+		case ev_void:
+			printf ("void");
+			break;
+		case ev_string:
+			printf ("string");
+			break;
+		case ev_float:
+			printf ("float");
+			break;
+		case ev_vector:
+			printf ("vector");
+			break;
+		case ev_entity:
+			printf ("entity");
+			break;
+		case ev_field:
+			printf (".");
+			PR_PrintType (type->aux_type);
+			break;
+		case ev_func:
+			PR_PrintType (type->aux_type);
+			printf ("(");
+			for (i = 0; i < type->num_parms; i++) {
+				PR_PrintType (type->parm_types[i]);
+				if (i < type->num_parms - 1)
+					printf (",");
+			}
+			if (type->num_parms == -1)
+				printf ("...");
+			printf (")");
+			break;
+		case ev_pointer:
+			printf ("pointer to ");
+			PR_PrintType (type->aux_type);
+			break;
+		default:
+			printf ("unknown type %d", type->type);
+			break;
+	}
+}
+
 /*
 	PR_FindType
 
@@ -732,12 +782,26 @@ PR_FindType (type_t *type)
 	def_t		*def;
 	type_t		*check;
 	int 		i;
-
+extern int lineno;
+	printf("%-5d ", lineno);
+	PR_PrintType (type);
+	puts("");
+	for (check = pr.types; check; check = check->next) {
+		PR_PrintType (check);
+		puts("");
+	}
+	puts("");
 	for (check = pr.types; check; check = check->next) {
 		if (check->type != type->type
 			|| check->aux_type != type->aux_type
 			|| check->num_parms != type->num_parms)
 			continue;
+
+		if (check->type != ev_func)
+			return check;
+
+		if (check->num_parms == -1)
+			return check;
 
 		for (i = 0; i < type->num_parms; i++)
 			if (check->parm_types[i] != type->parm_types[i])
