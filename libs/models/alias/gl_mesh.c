@@ -39,6 +39,7 @@
 #include <stdio.h>
 
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/mdfour.h"
 #include "QF/model.h"
 #include "QF/sys.h"
@@ -49,6 +50,8 @@
 /*
 	ALIAS MODEL DISPLAY LIST GENERATION
 */
+
+extern cvar_t *gl_mesh_cache;
 
 model_t    *aliasmodel;
 aliashdr_t *paliashdr;
@@ -350,81 +353,87 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 	unsigned char model_digest[MDFOUR_DIGEST_BYTES];
 	unsigned char mesh_digest[MDFOUR_DIGEST_BYTES];
 	qboolean    remesh = true;
+	qboolean    do_cache = false;
 
 	aliasmodel = m;
 	paliashdr = hdr;					// (aliashdr_t *)Mod_Extradata (m);
 
-	mdfour (model_digest, (unsigned char *) _m, _s);
+	if (gl_mesh_cache->int_val
+		&& gl_mesh_cache->int_val <= paliashdr->mdl.numtris) {
+		do_cache = true;
 
-	// look for a cached version
-	strcpy (cache, "glquake/");
-	COM_StripExtension (m->name + strlen ("progs/"),
-						cache + strlen ("glquake/"));
-	strncat (cache, ".qfms", sizeof (cache) - strlen (cache));
+		mdfour (model_digest, (unsigned char *) _m, _s);
 
-	COM_FOpenFile (cache, &f);
-	if (f) {
-		unsigned char d1[MDFOUR_DIGEST_BYTES];
-		unsigned char d2[MDFOUR_DIGEST_BYTES];
-		struct mdfour md;
-		int        *c = 0;
-		int         nc = 0;
-		int        *vo = 0;
-		int         no = 0;
-		int			len;
-		int			vers;
+		// look for a cached version
+		strcpy (cache, "glquake/");
+		COM_StripExtension (m->name + strlen ("progs/"),
+							cache + strlen ("glquake/"));
+		strncat (cache, ".qfms", sizeof (cache) - strlen (cache));
 
-		memset (d1, 0, sizeof (d1));
-		memset (d2, 0, sizeof (d2));
+		COM_FOpenFile (cache, &f);
+		if (f) {
+			unsigned char d1[MDFOUR_DIGEST_BYTES];
+			unsigned char d2[MDFOUR_DIGEST_BYTES];
+			struct mdfour md;
+			int        *c = 0;
+			int         nc = 0;
+			int        *vo = 0;
+			int         no = 0;
+			int			len;
+			int			vers;
 
-		Qread (f, &vers, sizeof (int));
-		Qread (f, &len, sizeof (int));
-		Qread (f, &nc, sizeof (int));
-		Qread (f, &no, sizeof (int));
+			memset (d1, 0, sizeof (d1));
+			memset (d2, 0, sizeof (d2));
 
-		if (vers == 1 && (nc + no) == len) {
-			c = malloc (((nc + 1023) & ~1023) * sizeof (c[0]));
-			vo = malloc (((no + 1023) & ~1023) * sizeof (vo[0]));
-			if (!c || !vo)
-				Sys_Error ("gl_mesh.c: out of memory");
-			Qread (f, c, nc * sizeof (c[0]));
-			Qread (f, vo, no * sizeof (vo[0]));
-			Qread (f, d1, MDFOUR_DIGEST_BYTES);
-			Qread (f, d2, MDFOUR_DIGEST_BYTES);
-			Qclose (f);
+			Qread (f, &vers, sizeof (int));
+			Qread (f, &len, sizeof (int));
+			Qread (f, &nc, sizeof (int));
+			Qread (f, &no, sizeof (int));
 
-			mdfour_begin (&md);
-			mdfour_update (&md, (unsigned char *) &vers, sizeof(int));
-			mdfour_update (&md, (unsigned char *) &len, sizeof(int));
-			mdfour_update (&md, (unsigned char *) &nc, sizeof(int));
-			mdfour_update (&md, (unsigned char *) &no, sizeof(int));
-			mdfour_update (&md, (unsigned char *) c, nc * sizeof (c[0]));
-			mdfour_update (&md, (unsigned char *) vo, no * sizeof (vo[0]));
-			mdfour_update (&md, d1, MDFOUR_DIGEST_BYTES);
-			mdfour_result (&md, mesh_digest);
+			if (vers == 1 && (nc + no) == len) {
+				c = malloc (((nc + 1023) & ~1023) * sizeof (c[0]));
+				vo = malloc (((no + 1023) & ~1023) * sizeof (vo[0]));
+				if (!c || !vo)
+					Sys_Error ("gl_mesh.c: out of memory");
+				Qread (f, c, nc * sizeof (c[0]));
+				Qread (f, vo, no * sizeof (vo[0]));
+				Qread (f, d1, MDFOUR_DIGEST_BYTES);
+				Qread (f, d2, MDFOUR_DIGEST_BYTES);
+				Qclose (f);
 
-			if (memcmp (d2, mesh_digest, MDFOUR_DIGEST_BYTES) == 0
-				&& memcmp (d1, model_digest, MDFOUR_DIGEST_BYTES) == 0) {
-				remesh = false;
-				numcommands = nc;
-				numorder = no;
-				if (numcommands > commands_size) {
-					if (commands)
-						free (commands);
-					commands_size = (numcommands + 1023) & ~1023;
-					commands = c;
-				} else {
-					memcpy (commands, c, numcommands * sizeof (c[0]));
-					free(c);
-				}
-				if (numorder > vertexorder_size) {
-					if (vertexorder)
-						free (vertexorder);
-					vertexorder_size = (numorder + 1023) & ~1023;
-					vertexorder = vo;
-				} else {
-					memcpy (vertexorder, vo, numorder * sizeof (vo[0]));
-					free (vo);
+				mdfour_begin (&md);
+				mdfour_update (&md, (unsigned char *) &vers, sizeof(int));
+				mdfour_update (&md, (unsigned char *) &len, sizeof(int));
+				mdfour_update (&md, (unsigned char *) &nc, sizeof(int));
+				mdfour_update (&md, (unsigned char *) &no, sizeof(int));
+				mdfour_update (&md, (unsigned char *) c, nc * sizeof (c[0]));
+				mdfour_update (&md, (unsigned char *) vo, no * sizeof (vo[0]));
+				mdfour_update (&md, d1, MDFOUR_DIGEST_BYTES);
+				mdfour_result (&md, mesh_digest);
+
+				if (memcmp (d2, mesh_digest, MDFOUR_DIGEST_BYTES) == 0
+					&& memcmp (d1, model_digest, MDFOUR_DIGEST_BYTES) == 0) {
+					remesh = false;
+					numcommands = nc;
+					numorder = no;
+					if (numcommands > commands_size) {
+						if (commands)
+							free (commands);
+						commands_size = (numcommands + 1023) & ~1023;
+						commands = c;
+					} else {
+						memcpy (commands, c, numcommands * sizeof (c[0]));
+						free(c);
+					}
+					if (numorder > vertexorder_size) {
+						if (vertexorder)
+							free (vertexorder);
+						vertexorder_size = (numorder + 1023) & ~1023;
+						vertexorder = vo;
+					} else {
+						memcpy (vertexorder, vo, numorder * sizeof (vo[0]));
+						free (vo);
+					}
 				}
 			}
 		}
@@ -435,40 +444,42 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 
 		BuildTris ();					// trifans or lists
 
-		// save out the cached version
-		snprintf (fullpath, sizeof (fullpath), "%s/%s", com_gamedir, cache);
-		f = Qopen (fullpath, "wbz9");
-		if (!f) {
-			COM_CreatePath (fullpath);
-			f = Qopen (fullpath, "wb");
-		}
+		if (do_cache) {
+			// save out the cached version
+			snprintf (fullpath, sizeof (fullpath), "%s/%s", com_gamedir, cache);
+			f = Qopen (fullpath, "wbz9");
+			if (!f) {
+				COM_CreatePath (fullpath);
+				f = Qopen (fullpath, "wb");
+			}
 
-		if (f) {
-			struct mdfour md;
-			int         vers = 1;
-			int         len = numcommands + numorder;
+			if (f) {
+				struct mdfour md;
+				int         vers = 1;
+				int         len = numcommands + numorder;
 
-			mdfour_begin (&md);
-			mdfour_update (&md, (unsigned char *) &vers, sizeof (int));
-			mdfour_update (&md, (unsigned char *) &len, sizeof (int));
-			mdfour_update (&md, (unsigned char *) &numcommands, sizeof (int));
-			mdfour_update (&md, (unsigned char *) &numorder, sizeof (int));
-			mdfour_update (&md, (unsigned char *) commands,
-						   numcommands * sizeof (commands[0]));
-			mdfour_update (&md, (unsigned char *) vertexorder,
-						   numorder * sizeof (vertexorder[0]));
-			mdfour_update (&md, model_digest, MDFOUR_DIGEST_BYTES);
-			mdfour_result (&md, mesh_digest);
+				mdfour_begin (&md);
+				mdfour_update (&md, (unsigned char *) &vers, sizeof (int));
+				mdfour_update (&md, (unsigned char *) &len, sizeof (int));
+				mdfour_update (&md, (unsigned char *) &numcommands, sizeof (int));
+				mdfour_update (&md, (unsigned char *) &numorder, sizeof (int));
+				mdfour_update (&md, (unsigned char *) commands,
+							   numcommands * sizeof (commands[0]));
+				mdfour_update (&md, (unsigned char *) vertexorder,
+							   numorder * sizeof (vertexorder[0]));
+				mdfour_update (&md, model_digest, MDFOUR_DIGEST_BYTES);
+				mdfour_result (&md, mesh_digest);
 
-			Qwrite (f, &vers, sizeof (int));
-			Qwrite (f, &len, sizeof (int));
-			Qwrite (f, &numcommands, sizeof (int));
-			Qwrite (f, &numorder, sizeof (int));
-			Qwrite (f, commands, numcommands * sizeof (commands[0]));
-			Qwrite (f, vertexorder, numorder * sizeof (vertexorder[0]));
-			Qwrite (f, model_digest, MDFOUR_DIGEST_BYTES);
-			Qwrite (f, mesh_digest, MDFOUR_DIGEST_BYTES);
-			Qclose (f);
+				Qwrite (f, &vers, sizeof (int));
+				Qwrite (f, &len, sizeof (int));
+				Qwrite (f, &numcommands, sizeof (int));
+				Qwrite (f, &numorder, sizeof (int));
+				Qwrite (f, commands, numcommands * sizeof (commands[0]));
+				Qwrite (f, vertexorder, numorder * sizeof (vertexorder[0]));
+				Qwrite (f, model_digest, MDFOUR_DIGEST_BYTES);
+				Qwrite (f, mesh_digest, MDFOUR_DIGEST_BYTES);
+				Qclose (f);
+			}
 		}
 	}
 

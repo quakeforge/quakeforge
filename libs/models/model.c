@@ -60,6 +60,7 @@ model_t     mod_known[MAX_MOD_KNOWN];
 int         mod_numknown;
 
 cvar_t     *gl_subdivide_size;
+cvar_t     *gl_mesh_cache;
 
 extern byte mod_novis[MAX_MAP_LEAFS / 8];
 
@@ -106,6 +107,9 @@ Mod_Init_Cvars (void)
 	gl_subdivide_size =
 		Cvar_Get ("gl_subdivide_size", "128", CVAR_ARCHIVE, NULL,
 				  "Sets the division value for the sky brushes.");
+	gl_mesh_cache = Cvar_Get ("gl_mesh_cache", "256", CVAR_ARCHIVE, NULL,
+							  "minimum triangle count in a model for its mesh"
+							  " to be cached. 0 to disable caching");
 }
 
 void
