@@ -134,12 +134,14 @@ bi_acosh (progs_t *pr)
 {
 	double      y = P_FLOAT (pr, 0);
 	R_FLOAT (pr) = log (y + sqrt (y * y - 1));
+}
 
 static void
 bi_atanh (progs_t *pr)
 {
 	double      y = P_FLOAT (pr, 0);
 	R_FLOAT (pr) = log ((1 + y) / (1 - y)) / 2;
+}
 
 static builtin_t builtins[] = {
 	{"sin",		bi_sin,		-1},
