@@ -87,21 +87,33 @@ match_char (char a, char b)
     FIXME: this function and it's callers are getting progressively
     uglier as more features are added :)
 */
-qboolean
-SV_Match_User (const char *substr, int *uidp)
+client_t *
+SV_Match_User (const char *substr)
 {
-	int         i, j;
+	int         i, j, uid;
 	int         count = 0;
 	char       *str;
 	client_t   *cl;
+	client_t   *match = 0;
 
-	if (!substr[0]) {
-		if (uidp) {
-			*uidp = 0;
-			SV_Printf ("Too many matches, ignoring command!\n");
+	if (!substr || !*substr)
+		return 0;
+	uid = strtol (substr, &str, 10);
+
+	if (!*str) {
+		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+			if (!cl->state)
+				continue;
+			if (cl->userid == uid) {
+				SV_Printf ("User %04d matches with name: %s\n",
+							cl->userid, cl->name);
+				return cl;
+			}
 		}
-		return true;
+		SV_Printf ("No such uid: %d\n", uid);
+		return 0;
 	}
+
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
 		if (!cl->state)
 			continue;
@@ -112,8 +124,7 @@ SV_Match_User (const char *substr, int *uidp)
 				if (!match_char (substr[j], str[j]))
 					break;
 			if (!substr[j]) {		// found a match;
-				if (uidp)
-					*uidp = cl->userid;
+				match = cl;
 				count++;
 				SV_Printf ("User %04d matches with name: %s\n",
 							cl->userid, cl->name);
@@ -122,15 +133,11 @@ SV_Match_User (const char *substr, int *uidp)
 			str++;
 		}
 	}
-	if (count > 1) {
-		if (uidp) {
-			*uidp = 0;
-			SV_Printf ("Too many matches, ignoring command!\n");
-		}
+	if (count != 1) {
+		SV_Printf ("No unique matches, ignoring command!\n");
+		return 0;
 	}
-	if (count)
-		return true;
-	return false;
+	return match;
 }
 
 /*
@@ -433,36 +440,20 @@ SV_Map_f (void)
 void
 SV_Kick_f (void)
 {
-	int         i;
 	client_t   *cl;
-	int         uid;
 
 	if (Cmd_Argc () != 2) {
 		SV_Printf ("usage: kick <name/userid>\n");
 		return;
 	}
-	if (SV_Match_User (Cmd_Argv(1), &uid)) {
-		if (!uid)
-			return;
-	} else {
-		uid = atoi (Cmd_Argv (1));
-	}
+	if (!(cl = SV_Match_User (Cmd_Argv(1))))
+		return;
 
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-		if (!cl->state)
-			continue;
-		if (cl->userid == uid) {
-			SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked\n", cl->name);
-			// print directly, because the dropped client won't get the
-			// SV_BroadcastPrintf message
-			SV_ClientPrintf (1, cl, PRINT_HIGH,
-							 "You were kicked from the game\n");
-			SV_DropClient (cl);
-			return;
-		}
-	}
-
-	SV_Printf ("Couldn't find user number %i\n", uid);
+	SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked\n", cl->name);
+	// print directly, because the dropped client won't get the
+	// SV_BroadcastPrintf message
+	SV_ClientPrintf (1, cl, PRINT_HIGH, "You were kicked from the game\n");
+	SV_DropClient (cl);
 }
 
 void
@@ -566,10 +557,10 @@ SV_Status_f (void)
 void
 SV_Cuff_f (void)
 {
-	int         i, uid;
+	int         i;
 	double      mins = 0.5;
 	qboolean    all = false, done = false;
-	client_t    *cl;
+	client_t    *cl = 0;
 	char        text[1024];
 
 	if (Cmd_Argc() != 2 && Cmd_Argc() != 3) {
@@ -581,22 +572,29 @@ SV_Cuff_f (void)
 	if (strequal (Cmd_Argv(1), "ALL")) {
 		all = true;
 	} else {
-		if (SV_Match_User (Cmd_Argv(1), &uid)) {
-			if (!uid)
-				return;
-		} else {
-			uid = atoi(Cmd_Argv(1));	// assume userid
-		}
+		cl = SV_Match_User (Cmd_Argv(1));
 	}
+	if (!all && !cl)
+		return;
 	if (Cmd_Argc() == 3) {
 		mins = atof(Cmd_Argv(2));
 		if (mins < 0.0 || mins > MAXPENALTY)
 			mins = MAXPENALTY;
 	}
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-		if (!cl->state)
-			continue;
-		if (all || (cl->userid == uid)) {
+	if (cl) {
+		cl->cuff_time = realtime + mins*60.0;
+		if (mins) {
+			sprintf(text,
+					"You are cuffed for %.1f minutes\n\n"
+					"reconnecting won't help...\n", mins);
+			ClientReliableWrite_Begin(cl,svc_centerprint, 2+strlen(text));
+			ClientReliableWrite_String (cl, text);
+		}
+	}
+	if (all) {
+		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+			if (!cl->state)
+				continue;
 			cl->cuff_time = realtime + mins*60.0;
 			done = true;
 			if (mins) {
@@ -606,8 +604,6 @@ SV_Cuff_f (void)
 				ClientReliableWrite_Begin(cl,svc_centerprint, 2+strlen(text));
 				ClientReliableWrite_String (cl, text);
 			}
-			if (!all)
-				break;
 		}
 	}
 	if (done) {
@@ -617,8 +613,6 @@ SV_Cuff_f (void)
 		else
 			SV_BroadcastPrintf (PRINT_HIGH, "%s un-cuffed.\n",
 								all? "All Users" : cl->name);
-	} else {
-		SV_Printf (all? "No users\n" : "Couldn't find user %s\n", Cmd_Argv(1));
 	}
 }
 
@@ -626,7 +620,7 @@ SV_Cuff_f (void)
 void
 SV_Mute_f (void)
 {
-	int         i, uid;
+	int         i;
 	double      mins = 0.5;
 	qboolean    all = false, done = false;
 	client_t    *cl;
@@ -640,22 +634,29 @@ SV_Mute_f (void)
 	if (strequal(Cmd_Argv(1),"ALL")) {
 		all = true;
 	} else {
-		if (SV_Match_User (Cmd_Argv(1), &uid)) {
-			if (!uid)
-				return;
-		} else {
-			uid = atoi(Cmd_Argv(1));
-		}
+		cl = SV_Match_User (Cmd_Argv(1));
 	}
+	if (!all && !cl)
+		return;
 	if (Cmd_Argc() == 3) {
 		mins = atof(Cmd_Argv(2));
 		if (mins < 0.0 || mins > MAXPENALTY)
 			mins = MAXPENALTY;
 	}
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-		if (!cl->state)
-			continue;
-		if (all || (cl->userid == uid)) {
+	if (cl) {
+		cl->lockedtill = realtime + mins*60.0;
+		done = true;
+		if (mins) {
+			sprintf(text, "You are muted for %.1f minutes\n\n"
+					"reconnecting won't help...\n", mins);
+			ClientReliableWrite_Begin(cl,svc_centerprint, 2+strlen(text));
+			ClientReliableWrite_String (cl, text);
+		}
+	}
+	if (all) {
+		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+			if (!cl->state)
+				continue;
 			cl->lockedtill = realtime + mins*60.0;
 			done = true;
 			if (mins) {
@@ -664,8 +665,6 @@ SV_Mute_f (void)
 				ClientReliableWrite_Begin(cl,svc_centerprint, 2+strlen(text));
 				ClientReliableWrite_String (cl, text);
 			}
-			if (!all)
-				break;
 		}
 	}
 	if (done) {
@@ -675,9 +674,6 @@ SV_Mute_f (void)
 		else
 			SV_BroadcastPrintf (PRINT_HIGH, "%s allowed to speak.\n",
 								all? "All Users" : cl->name);
-	} else {
-		SV_Printf (all? "No users\n" : "Couldn't find user %s\n",
-				   Cmd_Argv(1));
 	}
 }
 
@@ -687,18 +683,14 @@ SV_Tell (const char *prefix)
 	char       *p;
 	char        text[512];
 	client_t   *cl;
-	int         i, uid;
+	int         i;
 
 	if (Cmd_Argc () < 3) {
 		SV_Printf ("usage: tell <name/userid> <text...>\n");
 		return;
 	}
-	if (SV_Match_User (Cmd_Argv(1), &uid)) {
-		if (!uid)
-			return;
-	} else {
-		uid = atoi (Cmd_Argv(1));
-	}
+	if (!(cl = SV_Match_User (Cmd_Argv(1))))
+		return;
 
 	p = Hunk_TempAlloc (strlen(Cmd_Args (2)) + 1);
 	strcpy (p, Cmd_Args (2));
@@ -713,23 +705,14 @@ SV_Tell (const char *prefix)
 	text[sizeof (text) - 1] = 0;
 	for (; text[i];)
 		text[i++] |= 0x80; // non-bold text
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-		if (!cl->state)
-			continue;
-		if (cl->userid == uid) {
-			SV_ClientPrintf (1, cl, PRINT_CHAT, "\n"); // bell
-			SV_ClientPrintf (1, cl, PRINT_HIGH, "%s\n", text);
-			SV_ClientPrintf (1, cl, PRINT_CHAT, "%s", ""); // bell
-			return;
-		}
-	}
-	SV_Printf ("Couldn't find user %s\n", Cmd_Argv(1));
+	SV_ClientPrintf (1, cl, PRINT_CHAT, "\n"); // bell
+	SV_ClientPrintf (1, cl, PRINT_HIGH, "%s\n", text);
+	SV_ClientPrintf (1, cl, PRINT_CHAT, "%s", ""); // bell
 }
 
 void
 SV_Ban_f (void)
 {
-	int         i, uid;
 	double      mins = 30.0;
 	client_t    *cl;
 
@@ -738,33 +721,20 @@ SV_Ban_f (void)
 				   "       (default = 30, 0 = permanent).\n");
 		return;
 	}
-	if (SV_Match_User(Cmd_Argv(1), &uid)) {
-		if (!uid)
-			return;
-	} else {
-		uid = atoi(Cmd_Argv(1));
-	}
+	if (!(cl = SV_Match_User(Cmd_Argv(1))))
+		return;
 	if (Cmd_Argc() == 3) {
 		mins = atof(Cmd_Argv(2));
 		if (mins<0.0 || mins > 1000000.0)				// bout 2 yrs
 			mins = 0.0;
 	}
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-		if (!cl->state)
-			continue;
-		if (cl->userid == uid) {
-			SV_BroadcastPrintf (PRINT_HIGH, "Admin Banned user %s %s\n",
-								cl->name, mins ? va("for %.1f minutes", mins)
-											   : "permanently");
-			SV_DropClient (cl);
-			Cmd_ExecuteString (
-					va ("addip %s %f",
-					    NET_BaseAdrToString(cl->netchan.remote_address), mins),
-					src_command);
-			return;
-		}
-	}
-	SV_Printf ("Couldn't find user %s\n", Cmd_Argv(1));
+	SV_BroadcastPrintf (PRINT_HIGH, "Admin Banned user %s %s\n",
+						cl->name, mins ? va("for %.1f minutes", mins)
+									   : "permanently");
+	SV_DropClient (cl);
+	Cmd_ExecuteString (va ("addip %s %f",
+						   NET_BaseAdrToString(cl->netchan.remote_address),
+						   mins), src_command);
 }
 
 void
@@ -775,8 +745,8 @@ SV_Match_f (void)
 		return;
 	}
 
-	if (!SV_Match_User (Cmd_Argv(1), NULL))
-		SV_Printf ("No usernames matched, would treat as number\n");
+	if (!SV_Match_User (Cmd_Argv(1)))
+		SV_Printf ("No unique uid/name matched\n");
 }
 
 
