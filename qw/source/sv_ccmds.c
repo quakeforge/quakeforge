@@ -639,7 +639,7 @@ SV_Mute_f (void)
 		if (!cl->state)
 			continue;
 		if (all || (cl->userid == uid)) {
-			cl->lockedtill = realtime + mins*60.0;
+			cl->lockedtill = (Sys_DoubleTime () + mins*60.0);
 			done = true;
 			if (mins) {
 				sprintf(text, "You are muted for %.1f minutes\n\n"
