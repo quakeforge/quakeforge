@@ -38,12 +38,21 @@
 
 #include "QF/qtypes.h"
 
-#define classDecl(name,extends,def) typedef struct name##_s {struct extends##_s base; def} name; extern Class * name##_class
+#ifdef __GNUC__
+#define superInit(cl, obj, args...) (cl##_class->parent->init ((obj), ##args))
+#define new(cl, args...) ((void *) (cl##_class->abstract ? NULL : retain(cl##_class->init (Object_Create(cl##_class), ##args))))
+#define newFloat(cl, args...) ((void *) (cl##_class->abstract ? NULL : cl##_class->init (Object_Create(cl##_class), ##args)))
+#define methodCall(obj, m, args...) ((obj)->m(obj, ##args))
+#define methodDecl(type, name, args...) (* name) (struct type##_s *self, ##args)
+#else
 #define superInit(cl, obj, ...) (cl##_class->parent->init ((obj), ##__VA_ARGS__))
 #define new(cl, ...) ((void *) (cl##_class->abstract ? NULL : retain(cl##_class->init (Object_Create(cl##_class), ##__VA_ARGS__))))
 #define newFloat(cl, ...) ((void *) (cl##_class->abstract ? NULL : cl##_class->init (Object_Create(cl##_class), ##__VA_ARGS__)))
 #define methodCall(obj, m, ...) ((obj)->m(obj, ##__VA_ARGS__))
 #define methodDecl(type, name, ...) (* name) (struct type##_s *self, ##__VA_ARGS__)
+#endif
+
+#define classDecl(name,extends,def) typedef struct name##_s {struct extends##_s base; def} name; extern Class * name##_class
 #define retain(obj) (Object_Retain((Object *)obj))
 #define release(obj) (Object_Release((Object *)obj))
 
