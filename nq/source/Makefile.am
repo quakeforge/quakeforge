@@ -40,8 +40,7 @@ EXTRA_PROGRAMS= nq-3dfx nq-fbdev nq-glx nq-mgl nq-sdl \
 
 noinst_LIBRARIES= libqfnet.a
 
-math_ASM= 	cl_math.S
-common_ASM=	sys_ia32.S worlda.S $(math_ASM)
+common_ASM=	sys_ia32.S worlda.S
 
 common_SOURCES=	game.c host_skin.c skin.c wad.c world.c com.c $(common_ASM)
 

@@ -107,5 +107,4 @@ C(TransformVector):
 
 	ret
 
-
 #endif	// USE_INTEL_ASM

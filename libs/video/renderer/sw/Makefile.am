@@ -17,4 +17,5 @@ libsw_la_SOURCES = d_edge.c d_fill.c d_init.c d_modech.c d_part.c d_polyse.c \
     sw_skin.c \
     d_draw.S d_draw16.S d_parta.S d_polysa.S d_scana.S d_spr8.S \
     d_varsa.S surf16.S surf8.S sw_raclipa.S sw_raliasa.S sw_rdrawa.S \
-    sw_redgea.S sw_rvarsa.S
+    sw_redgea.S sw_rvarsa.S \
+	transform.S

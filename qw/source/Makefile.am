@@ -99,7 +99,7 @@ client_SOURCES= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
 		cl_skin.c cl_slist.c cl_tent.c \
 		console.c keys.c locs.c pcx.c \
 		r_view.c sbar.c skin.c teamplay.c tga.c \
-		wad.c cl_math.S $(syscl_SRC)
+		wad.c $(syscl_SRC)
 
 # Software-rendering clients
 #
