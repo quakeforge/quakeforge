@@ -33,9 +33,3 @@ static const char rcsid[] =
 
 #include "QF/qtypes.h"
 
-
-qboolean
-ServerPaused (void)
-{
-	return false;
-}

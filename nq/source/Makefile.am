@@ -39,18 +39,18 @@ EXTRA_PROGRAMS= nq-fbdev nq-glx nq-mgl nq-sdl nq-sdl32 nq-sgl nq-svga nq-3dfx \
 		nq-wgl nq-x11 nq-server
 
 if ASM_ARCH
-asm= libasm.la
+asm= libasm.a
 else
 asm= 
 endif
 
 asm_src= worlda.S
 
-libasm_la_SOURCES= $(asm_src)
+libasm_a_SOURCES= $(asm_src)
 
-noinst_LTLIBRARIES= libqfnet.la $(asm)
+noinst_LIBRARIES= libcommon.a libclient.a libserver.a libqfnet.a $(asm)
 
-common_sources=	game.c world.c com.c
+libcommon_a_SOURCES=	game.c locs.c world.c com.c
 
 common_ldflags= -export-dynamic
 
@@ -60,9 +60,9 @@ net_sources= net_win.c net_wins.c
 else
 net_sources= net_bsd.c net_udp.c
 endif
-libqfnet_la_SOURCES= net_dgrm.c net_loop.c net_main.c net_vcr.c $(net_sources)
+libqfnet_a_SOURCES= net_dgrm.c net_loop.c net_main.c net_vcr.c $(net_sources)
 
-EXTRA_libqfnet_la_SOURCES= \
+EXTRA_libqfnet_a_SOURCES= \
 		net_dos.c net_bw.c net_bsd.c net_ipx.c net_mp.c net_win.c net_wins.c \
 		net_wipx.c net_udp.c
 
@@ -81,8 +81,8 @@ server_LIBFILES= \
 		$(top_builddir)/libs/console/libQFconsole.la
 
 common_LIBFILES= \
-		libasm.la \
-		libqfnet.la \
+		libasm.a \
+		libqfnet.a \
 		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
 		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
@@ -93,15 +93,17 @@ client_LIBS=	$(client_LIBFILES) $(common_LIBFILES)
 server_LIBS=	$(server_LIBFILES) $(common_LIBFILES) $(NET_LIBS)
 server_LIB_DEPS=$(server_LIBFILES) $(common_LIBFILES)
 
-client_sources=	cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_screen.c \
+libclient_a_SOURCES= \
+		cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_screen.c \
 		cl_parse.c cl_tent.c cl_view.c host_skin.c skin.c \
-		locs.c sbar.c
+		sbar.c
 
-server_sources= host.c host_cmd.c pr_cmds.c sv_cvar.c sv_main.c \
+libserver_a_SOURCES= \
+		host.c host_cmd.c pr_cmds.c sv_cvar.c sv_main.c \
 		sv_move.c sv_cl_phys.c sv_phys.c sv_progs.c sv_user.c
 
-combined_sources= \
-		$(common_sources) $(client_sources) $(server_sources)
+client_libs= libserver.a libclient.a libcommon.a
+server_libs = libserver.a libcommon.a
 
 # Software-rendering targets
 
@@ -111,6 +113,7 @@ soft_QFLIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer_sw.la \
 
 # ... Linux FBDev
 nq_fbdev_libs=  \
+			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(soft_QFLIBS) \
 			$(top_builddir)/libs/video/targets/libQFfbdev.la \
@@ -122,6 +125,7 @@ nq_fbdev_DEPENDENCIES=	$(nq_fbdev_libs)
 
 # ... SciTech MGL
 nq_mgl_libs=  \
+			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(soft_QFLIBS) \
 			$(top_builddir)/libs/video/targets/libQFmgl.la \
@@ -133,6 +137,7 @@ nq_mgl_DEPENDENCIES=	$(nq_mgl_libs)
 
 # ... SDL, version 1.2 and higher
 nq_sdl_libs=  \
+			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(soft_QFLIBS) \
 			$(top_builddir)/libs/video/targets/libQFsdl.la \
@@ -140,10 +145,12 @@ nq_sdl_libs=  \
 nq_sdl_SOURCES= 	$(combined_sources) sys_sdl.c
 nq_sdl_LDADD=		$(nq_sdl_libs) $(SDL_LIBS) $(NET_LIBS)
 nq_sdl_LDFLAGS= 	$(common_ldflags)
+nq_sdl_CFLAGS=	 	$(SDL_CFLAGS)
 nq_sdl_DEPENDENCIES=	$(nq_sdl_libs)
 
 # ... 32-bit software, SDL
 nq_sdl32_libs=  \
+			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(top_builddir)/libs/video/renderer/libQFrenderer_sw32.la \
 			$(top_builddir)/libs/models/libQFmodels_sw.la \
@@ -152,10 +159,12 @@ nq_sdl32_libs=  \
 nq_sdl32_SOURCES=	$(combined_sources) sys_sdl.c
 nq_sdl32_LDADD= 	$(nq_sdl32_libs) $(SDL_LIBS) $(NET_LIBS)
 nq_sdl32_LDFLAGS=	$(common_ldflags)
+nq_sdl32_CFLAGS= 	$(SDL_CFLAGS)
 nq_sdl32_DEPENDENCIES=	$(nq_sdl32_libs)
 
 # ... Linux SVGAlib
 nq_svga_libs=  \
+			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(soft_QFLIBS) \
 			$(top_builddir)/libs/video/targets/libQFsvga.la \
@@ -167,6 +176,7 @@ nq_svga_DEPENDENCIES=	$(nq_svga_libs)
 
 # ... X11
 nq_x11_libs=  \
+			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(soft_QFLIBS) \
 			$(top_builddir)/libs/video/targets/libQFx11.la \
@@ -186,6 +196,7 @@ opengl_QFLIBS= \
 
 # ... Linux 3DFX
 nq_3dfx_libs=  \
+			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(opengl_QFLIBS) \
 			$(top_builddir)/libs/video/targets/libQFtdfx.la \
@@ -197,6 +208,7 @@ nq_3dfx_DEPENDENCIES= 	$(nq_3dfx_libs)
 							
 # ... OpenGL in X Window
 nq_glx_libs=  \
+			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(opengl_QFLIBS) \
 			$(top_builddir)/libs/video/targets/libQFglx.la \
@@ -210,6 +222,7 @@ nq_glx_DEPENDENCIES=	$(nq_glx_libs)
 
 # ... Simple Directmedia Layer, version 1.2 and higher, in GL mode
 nq_sgl_libs=  \
+			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(opengl_QFLIBS) \
 			$(top_builddir)/libs/video/targets/libQFsgl.la \
@@ -217,10 +230,12 @@ nq_sgl_libs=  \
 nq_sgl_SOURCES= 	$(combined_sources) sys_sdl.c
 nq_sgl_LDADD=		$(nq_sgl_libs) $(SDL_LIBS) $(DL_LIBS) $(NET_LIBS)
 nq_sgl_LDFLAGS= 	$(common_ldflags)
+nq_sgl_CFLAGS=	 	$(SDL_CFLAGS)
 nq_sgl_DEPENDENCIES=	$(nq_sgl_libs)
 
 # ... SGI/Microsoft WGL (Windows OpenGL)
 nq_wgl_libs=  \
+			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(opengl_QFLIBS) \
 			$(top_builddir)/libs/video/targets/libQFwgl.la \
@@ -237,9 +252,9 @@ else
 ded_sources=	sys_unixd.c sv_ded.c sv_model.c
 endif
 nq_server_LDFLAGS=	$(common_ldflags)
-nq_server_SOURCES=	$(common_sources) $(server_sources) $(ded_sources)
-nq_server_LDADD=	$(server_LIBS)
-nq_server_DEPENDENCIES=	$(server_LIB_DEPS)
+nq_server_SOURCES=	$(ded_sources)
+nq_server_LDADD=	$(server_libs) $(server_LIBS)
+nq_server_DEPENDENCIES=	$(server_libs) $(server_LIB_DEPS)
 
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,
 # or it won't be distributed with 'make dist'
@@ -247,17 +262,3 @@ EXTRA_DIST=	$(asm_src)
 
 # Kill the temp files, hopefully.
 CLEANFILES  = *.i *.s $(YACCLEX_CLEANFILES)
-
-sys_sdl.o: sys_sdl.c
-	@echo '$(COMPILE) $(SDL_CFLAGS) -c $<'; \
-	if test -d .deps; then \
-		$(COMPILE) $(SDL_CFLAGS) -Wp,-MD,.deps/$(*F).pp -c $<; \
-	else \
-		$(COMPILE) $(SDL_CFLAGS) -c $<; \
-	fi
-	@-if test -d .deps; then cp .deps/$(*F).pp .deps/$(*F).P; \
-	tr ' ' '\012' < .deps/$(*F).pp \
-	  | sed -e 's/^\\$$//' -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/ :/' \
-	    >> .deps/$(*F).P; \
-	rm .deps/$(*F).pp; \
-	fi

@@ -926,7 +926,7 @@ dnl Checks for CD-ROM
 dnl ==================================================================
 
 CD_CFLAGS=""
-CD_PLUGIN_TARGETS="libcd_null.la"
+CD_PLUGIN_TARGETS="cd_null.la"
 unset CDTYPE
 
 AC_MSG_CHECKING(for CD audio support)
@@ -940,20 +940,20 @@ QF_maGiC_VALUE
 #endif
 	],
 	CDTYPE="$CDTYPE Linux"
-	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS libcd_linux.la"
+	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS cd_linux.la"
 )
 
 dnl XMMS audio
 if test "x$HAVE_XMMS" = "xyes"; then
 	CDTYPE="$CDTYPE XMMS"
-	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS libcd_xmms.la"
+	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS cd_xmms.la"
 	AC_DEFINE(HAVE_XMMS, [1], [Define if you have XMMS])
 fi
 
 dnl SDL CD audio
 if test "x$HAVE_SDL" = "xyes"; then
 	CDTYPE="$CDTYPE SDL"
-	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS libcd_sdl.la"
+	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS cd_sdl.la"
 fi
 
 dnl SGI
@@ -965,7 +965,7 @@ QF_maGiC_VALUE
 #endif
 	],
 	CDTYPE="$CDTYPE SGI"
-	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS libcd_sgi.la"
+	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS cd_sgi.la"
 	SGI_CD_LIBS="-lcdaudio -lmediad -lds"
 )
 AC_SUBST(SGI_CD_LIBS)
@@ -979,7 +979,7 @@ QF_maGiC_VALUE
 #endif
 	],
 	CDTYPE="$CDTYPE WIN32"
-	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS libcd_win.la"
+	CD_PLUGIN_TARGETS="$CD_PLUGIN_TARGETS cd_win.la"
 )
 if test "$CDTYPE"; then
 	AC_MSG_RESULT([$CDTYPE])
@@ -1128,10 +1128,10 @@ AC_DEFINE_UNQUOTED(FS_USERPATH, "$userpath", [Define this to the unshared game d
 
 AC_ARG_WITH(plugin-path,
 [  --with-plugin-path=DIR  Use DIR for loading plugins, defaults to
-                          \${libdir}/quakeforge],
+                          \${sharepath}/QFplugins],
 plugindir=$withval, plugindir="auto")
 
-PLUGINDIR="\${libdir}/$PACKAGE"
+PLUGINDIR="\${sharepath}/QFplugins"
 if test "x$plugindir" = "xauto" -o "x$plugindir" = "xyes" -o "x$plugindir" = "x"; then
 	plugindir="$PLUGINDIR"
 elif test "x$plugindir" = xno; then
@@ -1545,13 +1545,22 @@ CAN_BUILD_SW32=no
 CAN_BUILD_SW=no
 
 CD_TARGETS=""
-SND_PLUGIN_TARGETS="libsnd_output_disk.la"
+SND_PLUGIN_TARGETS="snd_output_disk.la"
 SND_REND_TARGETS=""
 SND_TARGETS=""
 VID_MODEL_TARGETS=""
 VID_REND_TARGETS=""
 VID_REND_NOINST_TARGETS=""
 VID_TARGETS=""
+
+vid_need_asm=no
+vid_need_common=no
+vid_need_gl=no
+vid_need_sdl=no
+vid_need_sw=no
+vid_need_sw32=no
+vid_need_svgas=no
+vid_need_x11=no
 
 if test "x$HAVE_FBDEV" = xyes; then
 	if test "x$ENABLE_FBDEV" = xyes; then
@@ -1560,6 +1569,8 @@ if test "x$HAVE_FBDEV" = xyes; then
 		CL_TARGETS="$CL_TARGETS FBDEV"
 		VID_TARGETS="$VID_TARGETS libQFfbdev.la"
 		BUILD_SW=yes
+		vid_need_common=yes
+		vid_need_sw=yes
 	fi
 	CAN_BUILD_SW=yes
 fi
@@ -1572,6 +1583,9 @@ if test "x$HAVE_X" = xyes; then
 		CL_TARGETS="$CL_TARGETS GLX"
 		VID_TARGETS="$VID_TARGETS libQFglx.la"
 		BUILD_GL=yes
+		vid_need_common=yes
+		vid_need_gl=yes
+		vid_need_x11=yes
 	fi
 	if test "x$ENABLE_X11" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-x11\$(EXEEXT)"
@@ -1579,6 +1593,9 @@ if test "x$HAVE_X" = xyes; then
 		CL_TARGETS="$CL_TARGETS X11"
 		VID_TARGETS="$VID_TARGETS libQFx11.la"
 		BUILD_SW=yes
+		vid_need_common=yes
+		vid_need_sw=yes
+		vid_need_x11=yes
 	fi
 fi
 if test "x$HAVE_MGL" = xyes; then
@@ -1588,6 +1605,8 @@ if test "x$HAVE_MGL" = xyes; then
 		CL_TARGETS="$CL_TARGETS MGL"
 		VID_TARGETS="$VID_TARGETS libQFwgl.la"
 		BUILD_SW=yes
+		vid_need_common=yes
+		vid_need_sw=yes
 	fi
 	CAN_BUILD_SW=yes
 fi
@@ -1598,6 +1617,9 @@ if test "x$HAVE_SDL" = xyes; then
 		CL_TARGETS="$CL_TARGETS SDL"
 		VID_TARGETS="$VID_TARGETS libQFsdl.la"
 		BUILD_SW=yes
+		vid_need_common=yes
+		vid_need_sdl=yes
+		vid_need_sw=yes
 	fi
 	CAN_BUILD_SW=yes
 	if test "x$ENABLE_SDL32" = xyes; then
@@ -1606,6 +1628,9 @@ if test "x$HAVE_SDL" = xyes; then
 		CL_TARGETS="$CL_TARGETS SDL32"
 		VID_TARGETS="$VID_TARGETS libQFsdl32.la"
 		BUILD_SW32=yes
+		vid_need_common=yes
+		vid_need_sdl=yes
+		vid_need_sw32=yes
 	fi
 	CAN_BUILD_SW32=yes
 	if test "x$ENABLE_SGL" = xyes; then
@@ -1614,6 +1639,9 @@ if test "x$HAVE_SDL" = xyes; then
 		CL_TARGETS="$CL_TARGETS SDL-GL"
 		VID_TARGETS="$VID_TARGETS libQFsgl.la"
 		BUILD_GL=yes
+		vid_need_common=yes
+		vid_need_gl=yes
+		vid_need_sdl=yes
 		CAN_BUILD_GL=yes
 	fi
 fi
@@ -1624,6 +1652,10 @@ if test "x$HAVE_SVGA" = xyes; then
 		CL_TARGETS="$CL_TARGETS SVGAlib"
 		VID_TARGETS="$VID_TARGETS libQFsvga.la"
 		BUILD_SW=yes
+		vid_need_asm=yes
+		vid_need_common=yes
+		vid_need_sw=yes
+		vid_need_svga=yes
 	fi
 	CAN_BUILD_SW=yes
 	if test "x$ENABLE_3DFX" = xyes; then
@@ -1632,6 +1664,10 @@ if test "x$HAVE_SVGA" = xyes; then
 		CL_TARGETS="$CL_TARGETS 3dfx"
 		VID_TARGETS="$VID_TARGETS libQFtdfx.la"
 		BUILD_GL=yes
+		vid_need_asm=yes
+		vid_need_common=yes
+		vid_need_gl=yes
+		vid_need_svga=yes
 	fi
 	CAN_BUILD_GL=yes
 fi
@@ -1642,8 +1678,42 @@ if test "x$mingw" = xyes; then
 		CL_TARGETS="$CL_TARGETS WGL"
 		VID_TARGETS="$VID_TARGETS libQFwgl.la"
 		BUILD_GL=yes
+		vid_need_common=yes
+		vid_need_gl=yes
 	fi
 	CAN_BUILD_GL=yes
+fi
+
+if test "$vid_need_x11" = yes; then
+	VID_TARGETS="$VID_TARGETS libx11.la"
+fi
+
+if test "$vid_need_svga" = yes; then
+	VID_TARGETS="$VID_TARGETS libsvga.la"
+fi
+
+if test "$vid_need_sw32" = yes; then
+	VID_TARGETS="$VID_TARGETS libsw32.la"
+fi
+
+if test "$vid_need_sw" = yes; then
+	VID_TARGETS="$VID_TARGETS libsw.la"
+fi
+
+if test "$vid_need_sdl" = yes; then
+	VID_TARGETS="$VID_TARGETS libsdl.la"
+fi
+
+if test "$vid_need_gl" = yes; then
+	VID_TARGETS="$VID_TARGETS libgl.la"
+fi
+
+if test "$vid_need_common" = yes; then
+	VID_TARGETS="$VID_TARGETS libcommon.la"
+fi
+
+if test "$vid_need_asm" = yes; then
+	VID_TARGETS="$VID_TARGETS libasm.la"
 fi
 
 unset SV_TARGETS
@@ -1689,31 +1759,31 @@ if test -n "$CL_TARGETS"; then
 	SND_TARGETS="libQFsound.la"
 	JOY_TARGETS="libQFjs.la"
 	if test "`echo $SOUND_TYPES | grep ALSA0.5`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsnd_output_alsa0_5.la"
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_alsa0_5.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep ALSA0.9`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsnd_output_alsa0_9.la"
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_alsa0_9.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep MME`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsnd_output_mme.la"
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_mme.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep OSS`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsnd_output_oss.la"
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_oss.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep SDL`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsnd_output_sdl.la"
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_sdl.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep SGI`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsnd_output_sgi.la"
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_sgi.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep SUN`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsnd_output_sun.la"
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_sun.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep Win32`"; then
-		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsnd_output_win.la"
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_win.la"
 	fi
 	if test "$SOUND_TYPES"; then
-		SND_REND_TARGETS="$SND_REND_TARGETS libsnd_render_default.la"
+		SND_REND_TARGETS="$SND_REND_TARGETS snd_render_default.la"
 	fi
 else
 	unset CDTYPE
@@ -1726,19 +1796,31 @@ else
 	unset SOUND_TYPES
 fi
 
-SERVER_PLUGIN_TARGETS="libconsole_server.la"
+SERVER_PLUGIN_TARGETS="console_server.la"
 SERVER_PLUGIN_STATIC=""
-CLIENT_PLUGIN_TARGETS="libconsole_client.la"
+CLIENT_PLUGIN_TARGETS="console_client.la"
 CLIENT_PLUGIN_STATIC=""
 CD_PLUGIN_STATIC=""
 SND_PLUGIN_STATIC=""
 SND_REND_STATIC=""
 
+if test "$enable_shared" = no; then
+	PREFER_PIC=
+	PREFER_NON_PIC=
+else
+	PREFER_PIC=-prefer-pic
+	PREFER_NON_PIC=-prefer-non-pic
+fi
+AC_SUBST(PREFER_PIC)
+AC_SUBST(PREFER_NON_PIC)
+
 AC_ARG_WITH(static-plugins,
 [  --with-static-plugins   build plugins into executable rather than separate],
 	static_plugins="$withval", static_plugins=auto)
-if test "x$static_plugins" = xauto -a "x$SYSTYPE" = xWIN32; then
-	static_plugins=yes
+if test "x$static_plugins" = xauto; then
+	if test "$enable_shared" = no -o "x$SYSTYPE" = xWIN32; then
+		static_plugins=yes
+	fi
 fi
 if test "x$static_plugins" = xyes; then
 	AC_DEFINE(STATIC_PLUGINS, 1, [Define this if you are building static plugins])
@@ -1756,9 +1838,11 @@ if test "x$static_plugins" = xyes; then
 		SOUND_TYPES="$SOUND_TYPES (static)"
 		CDTYPE="$CDTYPE (static)"
 	fi
+	plugin_ldflags="$plugin_ldflags"
 else
 	plugin_ldflags="$plugin_ldflags"' -version-info $(plugin_version) -rpath $(plugindir)'
 fi
+plugin_ldflags="$plugin_ldflags -module -avoid-version"
 SERVER_PLUGIN_STATIC_LIBS=""
 CLIENT_PLUGIN_STATIC_LIBS=""
 CD_PLUGIN_STATIC_LIBS=""
@@ -1776,31 +1860,31 @@ SND_OUTPUT_PROTOS=""
 SND_RENDER_PROTOS=""
 for l in $SERVER_PLUGIN_STATIC; do
 	SERVER_PLUGIN_STATIC_LIBS="$SERVER_PLUGIN_STATIC_LIBS "'$(top_builddir)'"/libs/console/$l"
-	n="`echo $l | sed -e 's/.*lib\(.*\)\.la/\1/'`"
+	n="`echo $l | sed -e 's/\(.*\)\.la/\1/'`"
 	SERVER_PLUGIN_LIST='{"'"$n"'"'", ${n}_PluginInfo},$SERVER_PLUGIN_LIST"
 	SERVER_PLUGIN_PROTOS="$SERVER_PLUGIN_PROTOS extern QFPLUGIN plugin_t *${n}_PluginInfo (void);"
 done
 for l in $CLIENT_PLUGIN_STATIC; do
 	CLIENT_PLUGIN_STATIC_LIBS="$CLIENT_PLUGIN_STATIC_LIBS "'$(top_builddir)'"/libs/console/$l"
-	n="`echo $l | sed -e 's/.*lib\(.*\)\.la/\1/'`"
+	n="`echo $l | sed -e 's/\(.*\)\.la/\1/'`"
 	CLIENT_PLUGIN_LIST='{"'"$n"'"'", ${n}_PluginInfo},$CLIENT_PLUGIN_LIST"
 	CLIENT_PLUGIN_PROTOS="$CLIENT_PLUGIN_PROTOS extern QFPLUGIN plugin_t *${n}_PluginInfo (void);"
 done
 for l in $CD_PLUGIN_STATIC; do
 	CD_PLUGIN_STATIC_LIBS="$CD_PLUGIN_STATIC_LIBS cd/$l"
-	n="`echo $l | sed -e 's/lib\(.*\)\.la/\1/'`"
+	n="`echo $l | sed -e 's/\(.*\)\.la/\1/'`"
 	CD_PLUGIN_LIST='{"'"$n"'"'", ${n}_PluginInfo},$CD_PLUGIN_LIST"
 	CD_PLUGIN_PROTOS="$CD_PLUGIN_PROTOS extern QFPLUGIN plugin_t *${n}_PluginInfo (void);"
 done
 for l in $SND_PLUGIN_STATIC; do
 	SND_PLUGIN_STATIC_LIBS="$SND_PLUGIN_STATIC_LIBS targets/$l"
-	n="`echo $l | sed -e 's/lib\(.*\)\.la/\1/'`"
+	n="`echo $l | sed -e 's/\(.*\)\.la/\1/'`"
 	SND_OUTPUT_LIST='{"'"$n"'"'", ${n}_PluginInfo},$SND_OUTPUT_LIST"
 	SND_OUTPUT_PROTOS="$SND_OUTPUT_PROTOS extern QFPLUGIN plugin_t *${n}_PluginInfo (void);"
 done
 for l in $SND_REND_STATIC; do
 	SND_REND_STATIC_LIBS="$SND_REND_STATIC_LIBS renderer/$l"
-	n="`echo $l | sed -e 's/lib\(.*\)\.la/\1/'`"
+	n="`echo $l | sed -e 's/\(.*\)\.la/\1/'`"
 	SND_RENDER_LIST='{"'"$n"'"'", ${n}_PluginInfo},$SND_RENDER_LIST"
 	SND_RENDER_PROTOS="$SND_RENDER_PROTOS extern QFPLUGIN plugin_t *${n}_PluginInfo (void);"
 done

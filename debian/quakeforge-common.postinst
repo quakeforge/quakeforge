@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
-update-alternatives --install /usr/lib/quakeforge/libsnd_output_default.so quakeforge-audio-default /usr/lib/quakeforge/libsnd_output_disk.so 10
-update-alternatives --install /usr/lib/quakeforge/libsnd_output_default.so quakeforge-audio-default /usr/lib/quakeforge/libsnd_output_null.so 20
+update-alternatives --install /usr/share/games/quake/QFplugins/snd_output_default.so quakeforge-audio-default /usr/share/games/quake/QFplugins/snd_output_disk.so 10
+update-alternatives --install /usr/share/games/quake/QFplugins/snd_output_default.so quakeforge-audio-default /usr/share/games/quake/QFplugins/snd_output_null.so 20
 
 if [ "$1" = "configure" ]; then
   ldconfig

@@ -1,49 +1,60 @@
 AUTOMAKE_OPTIONS= foreign
 
-INCLUDES= -I$(top_srcdir)/include $(ALSA_CFLAGS) $(MME_CFLAGS) $(OSS_CFLAGS) $(SGISND_CFLAGS) $(SUNSND_CFLAGS) $(WIN32SND_CFLAGS) $(SDL_CFLAGS)
+AM_CFLAGS= @PREFER_PIC@
+INCLUDES= -I$(top_srcdir)/include
 SDL_LIBS = @SDL_LIBS@
 plugin_version= 1:0:0
 plugin_ldflags= @plugin_ldflags@
 plugin_libadd= @plugin_libadd@
+EXEEXT=
 
-plugin_LTLIBRARIES=	@SND_PLUGIN_TARGETS@
-noinst_LTLIBRARIES=	@SND_PLUGIN_STATIC@
-EXTRA_LTLIBRARIES= \
-	libsnd_output_sdl.la libsnd_output_alsa0_5.la libsnd_output_alsa0_9.la \
-	libsnd_output_oss.la libsnd_output_sgi.la libsnd_output_sun.la \
-	libsnd_output_win.la libsnd_output_null.la libsnd_output_disk.la
+plugin_PROGRAMS=	@SND_PLUGIN_TARGETS@
+noinst_PROGRAMS=	@SND_PLUGIN_STATIC@
+EXTRA_PROGRAMS= \
+	snd_output_sdl.la snd_output_alsa0_5.la snd_output_alsa0_9.la \
+	snd_output_oss.la snd_output_sgi.la snd_output_sun.la \
+	snd_output_win.la snd_output_null.la snd_output_disk.la
 
-libsnd_output_sdl_la_LDFLAGS=	$(plugin_ldflags)
-libsnd_output_sdl_la_LIBADD=	$(SDL_LIBS) $(plugin_libadd)
-libsnd_output_sdl_la_SOURCES=	snd_sdl.c
+snd_output_sdl_la_LDFLAGS=	$(plugin_ldflags)
+snd_output_sdl_la_LDADD=	$(SDL_LIBS) $(plugin_libadd)
+snd_output_sdl_la_CFLAGS=	$(SDL_CFLAGS)
+snd_output_sdl_la_SOURCES=	snd_sdl.c
 
-libsnd_output_alsa0_5_la_LDFLAGS=	$(plugin_ldflags)
-libsnd_output_alsa0_5_la_LIBADD=	$(ALSA_LIBS)
-libsnd_output_alsa0_5_la_SOURCES=	snd_alsa_0_5.c
+snd_output_alsa0_5_la_LDFLAGS=	$(plugin_ldflags)
+snd_output_alsa0_5_la_LDADD=	$(ALSA_LIBS)
+snd_output_alsa0_5_la_CFLAGS=	$(ALSA_CFLAGS)
+snd_output_alsa0_5_la_SOURCES=	snd_alsa_0_5.c
 
-libsnd_output_alsa0_9_la_LDFLAGS=	$(plugin_ldflags)
-libsnd_output_alsa0_9_la_LIBADD=
-libsnd_output_alsa0_9_la_SOURCES=	snd_alsa_0_9.c
+snd_output_alsa0_9_la_LDFLAGS=	$(plugin_ldflags)
+snd_output_alsa0_9_la_LDADD=
+snd_output_alsa0_9_la_CFLAGS=	$(ALSA_CFLAGS)
+snd_output_alsa0_9_la_SOURCES=	snd_alsa_0_9.c
 
-libsnd_output_oss_la_LDFLAGS=	$(plugin_ldflags)
-libsnd_output_oss_la_LIBADD=	$(OSS_LIBS)
-libsnd_output_oss_la_SOURCES=	snd_oss.c
+snd_output_oss_la_LDFLAGS=	$(plugin_ldflags)
+snd_output_oss_la_LDADD=	$(OSS_LIBS)
+snd_output_oss_la_CFLAGS=	$(OSS_CFLAGS)
+snd_output_oss_la_SOURCES=	snd_oss.c
 
-libsnd_output_sgi_la_LDFLAGS=	$(plugin_ldflags)
-libsnd_output_sgi_la_LIBADD=	$(SGISND_LIBS)
-libsnd_output_sgi_la_SOURCES=	snd_sgi.c
+snd_output_sgi_la_LDFLAGS=	$(plugin_ldflags)
+snd_output_sgi_la_LDADD=	$(SGISND_LIBS)
+snd_output_sgi_la_CFLAGS=	$(SGISND_CFLAGS)
+snd_output_sgi_la_SOURCES=	snd_sgi.c
 
-libsnd_output_sun_la_LDFLAGS=	$(plugin_ldflags)
-libsnd_output_sun_la_SOURCES=	snd_sun.c
+snd_output_sun_la_LDFLAGS=	$(plugin_ldflags)
+snd_output_sun_la_CFLAGS=	$(SUNSND_CFLAGS)
+snd_output_sun_la_SOURCES=	snd_sun.c
 
-libsnd_output_win_la_LDFLAGS=	$(plugin_ldflags)
-libsnd_output_win_la_LIBADD=	$(WINSND_LIBS) $(plugin_libadd)
-libsnd_output_win_la_SOURCES=	snd_win.c
+snd_output_win_la_LDFLAGS=	$(plugin_ldflags)
+snd_output_win_la_LDADD=	$(WINSND_LIBS) $(plugin_libadd)
+snd_output_win_la_CFLAGS=	$(WIN32SND_CFLAGS)
+snd_output_win_la_SOURCES=	snd_win.c
 
-libsnd_output_disk_la_LDFLAGS=	$(plugin_ldflags)
-libsnd_output_disk_la_LIBADD=	$(plugin_libadd)
-libsnd_output_disk_la_SOURCES=	snd_disk.c
+snd_output_disk_la_LDFLAGS=	$(plugin_ldflags)
+snd_output_disk_la_LDADD=	$(plugin_libadd)
+snd_output_disk_la_CFLAGS=
+snd_output_disk_la_SOURCES=	snd_disk.c
 
-libsnd_output_null_la_LDFLAGS=	$(plugin_ldflags)
-libsnd_output_null_la_LIBADD=	$(plugin_libadd)
-libsnd_output_null_la_SOURCES=	snd_null.c
+snd_output_null_la_LDFLAGS=	$(plugin_ldflags)
+snd_output_null_la_LDADD=	$(plugin_libadd)
+snd_output_null_la_CFLAGS=
+snd_output_null_la_SOURCES=	snd_null.c

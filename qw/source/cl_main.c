@@ -1839,3 +1839,9 @@ Host_Shutdown (void)
 	if (vid_basepal)
 		VID_Shutdown ();
 }
+
+qboolean
+ServerPaused (void)
+{
+	return false;
+}

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-update-alternatives --remove quakeforge-audio-default /usr/lib/quakeforge/libsnd_output_oss.so
+update-alternatives --remove quakeforge-audio-default /usr/share/games/quake/QFplugins/snd_output_oss.so
 
 #DEBHELPER#
 

@@ -1,5 +1,6 @@
 AUTOMAKE_OPTIONS= foreign
 
+AM_CFLAGS= @PREFER_NON_PIC@
 INCLUDES= -I$(top_srcdir)/include
 
 if ASM_ARCH
