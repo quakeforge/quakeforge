@@ -10,6 +10,7 @@ export DH_COMPAT=2
 PACKAGE 	:= quakeforge
 QFCC		:= qfcc
 common		:= $(PACKAGE)-common
+stub		:= $(PACKAGE)-stub
 maptools	:= $(PACKAGE)-maptools
 dev		:= $(PACKAGE)-dev
 
@@ -81,6 +82,7 @@ install: build
 	# Add here commands to install the package into debian/tmp.
 	$(MAKE) DESTDIR=$(build) install
 	install -m644 -D debian/quakeforge.conf $(build)/etc/quakeforge.conf
+	mkdir $(build)/usr/share/games/quakeforge/id1
 
 	# quakeforge-common
 	find $(tmp)/etc ! -type d | sed -e "s:^$(tmp)::" > debian/$(common).conffiles
@@ -105,6 +107,9 @@ install: build
 		usr/share/games/quakeforge/QF/menu.dat*
 	dh_installdocs -p$(common) NEWS TODO
 	dh_installchangelogs -p$(common) ChangeLog
+
+	# quakeforge-stub
+	install -d -m755 debian/$(stub)/usr/share/games/quakeforge/id1
 
 	# quakeforge-dev
 	dh_movefiles -p$(dev) --sourcedir=$(tmp) \

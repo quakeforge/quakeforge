@@ -1,0 +1,11 @@
+#!/bin/sh -e
+
+if test ! -f /usr/share/games/quakeforge/id1/pak0.pak; then
+	echo Warning: /usr/share/games/quakeforge/id1/pak0.pak not found
+	echo Install either the shareware or registered quake data in
+	echo /usr/share/games/quakeforge
+fi
+
+#DEBHELPER#
+
+exit 0

@@ -29,6 +29,17 @@ Description: QuakeForge 3D game engine - common files
  This package contains files and shared libraries common to all QuakeForge
  packages.
 
+Package: quakeforge-stub
+Provides: quake-game
+Architecture: any
+Description: QuakeForge 3D game engine - common files
+ QuakeForge is a source port of Quake and QuakeWorld, the successors to id
+ Software's very popular DOOM series. Its primary development goal is to
+ remain compatible with the original games released by id Software while
+ adding portability and optional extensions to enhance gameplay.
+ .
+ This sub-package provides the quake-game pseudo package.
+
 Package: quakeforge-dev
 Architecture: any
 Depends: quakeforge-common
