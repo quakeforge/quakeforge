@@ -91,6 +91,7 @@ typedef struct {
 	struct class_s	*klass;
 	struct protocol_s *protocol;
 	struct category_s *category;
+	struct keywordarg_s *keywordarg;
 }
 
 %right	<op> '=' ASX PAS /* pointer assign */
@@ -125,7 +126,7 @@ typedef struct {
 %type	<def>	def_name
 %type	<def>	def_item def_list
 %type	<expr>	const opt_expr expr arg_list element_list element_list1 element
-%type	<expr>	string_val opt_state_expr obj_expr
+%type	<expr>	string_val opt_state_expr
 %type	<expr>	statement statements statement_block
 %type	<expr>	break_label continue_label enum_list enum
 %type	<function> begin_function
@@ -133,10 +134,12 @@ typedef struct {
 %type	<switch_block> switch_block
 %type	<scope>	param_scope
 
-%type	<string_val> selector
+%type	<string_val> selector reserved_word
 %type	<param>	optparmlist unaryselector keyworddecl keywordselector
 %type	<method> methodproto methoddecl
-%type	<expr>	identifier_list
+%type	<expr>	obj_expr identifier_list obj_messageexpr obj_string receiver
+%type	<keywordarg> messageargs keywordarg keywordarglist selectorarg
+%type	<keywordarg> keywordnamelist keywordname
 
 %expect 2	// statement : if | if else, defs : defs def ';' | defs obj_def
 
@@ -1091,6 +1094,13 @@ optparmlist
 		{ $$ = 0; }
 	| ',' ELLIPSIS
 		{ $$ = new_param (0, 0, 0); }
+	| ',' param_list
+		{ $$ = $2; }
+	| ',' param_list ',' ELLIPSIS
+		{
+			$$ = new_param (0, 0, 0);
+			$$->next = $2;
+		}
 	;
 
 unaryselector
@@ -1104,6 +1114,27 @@ keywordselector
 
 selector
 	: NAME
+	| TYPE		{ $$ = strdup (yytext); }
+	| reserved_word
+	;
+
+reserved_word
+	: LOCAL		{ $$ = strdup (yytext); }
+	| RETURN	{ $$ = strdup (yytext); }
+	| WHILE		{ $$ = strdup (yytext); }
+	| DO		{ $$ = strdup (yytext); }
+	| IF		{ $$ = strdup (yytext); }
+	| ELSE		{ $$ = strdup (yytext); }
+	| FOR		{ $$ = strdup (yytext); }
+	| BREAK		{ $$ = strdup (yytext); }
+	| CONTINUE	{ $$ = strdup (yytext); }
+	| SWITCH	{ $$ = strdup (yytext); }
+	| CASE		{ $$ = strdup (yytext); }
+	| DEFAULT	{ $$ = strdup (yytext); }
+	| NIL		{ $$ = strdup (yytext); }
+	| STRUCT	{ $$ = strdup (yytext); }
+	| ENUM		{ $$ = strdup (yytext); }
+	| TYPEDEF	{ $$ = strdup (yytext); }
 	;
 
 keyworddecl
@@ -1117,55 +1148,74 @@ keyworddecl
 		{ $$ = new_param ("", &type_id, $2); }
 	;
 
-messageargs /* XXX */
-	: selector {}
+obj_expr
+	: obj_messageexpr
+	| SELECTOR '(' selectorarg ')'	{ $$ = selector_expr ($3); }
+	| PROTOCOL '(' NAME ')'			{ $$ = protocol_expr ($3); }
+	| ENCODE '(' type ')'			{ $$ = encode_expr ($3); }
+	| obj_string /* FIXME string object? */
+	;
+
+obj_messageexpr
+	: '[' receiver messageargs ']'	{ $$ = message_expr ($2, $3); }
+	;
+
+receiver
+	: expr
+	;
+
+messageargs
+	: selector			{ $$ = new_keywordarg ($1, 0); }
 	| keywordarglist
 	;
 
-keywordarglist /* XXX */
+keywordarglist
 	: keywordarg
 	| keywordarglist keywordarg
+		{
+			$2->next = $1;
+			$$ = $2;
+		}
 	;
 
-keywordarg /* XXX */
-	: selector ':' expr {}
-	| ':' expr
+keywordarg
+	: selector ':' expr	{ $$ = new_keywordarg ($1, $3); }
+	| ':' expr			{ $$ = new_keywordarg ("", $2); }
 	;
 
-receiver /* XXX */
-	: expr {}
-	;
-
-obj_expr /* XXX */
-	: obj_messageexpr {}
-	| SELECTOR '(' selectorarg ')' {}
-	| PROTOCOL '(' NAME ')' {}
-	| ENCODE '(' type ')' {}
-	| obj_string {}
-	;
-
-obj_messageexpr /* XXX */
-	: '[' receiver messageargs ']'
-	;
-
-selectorarg /* XXX */
-	: selector {}
+selectorarg
+	: selector			{ $$ = new_keywordarg ($1, 0); }
 	| keywordnamelist
 	;
 
-keywordnamelist /* XXX */
+keywordnamelist
 	: keywordname
 	| keywordnamelist keywordname
+		{
+			$2->next = $1;
+			$$ = $2;
+		}
 	;
 
-keywordname /* XXX */
-	: selector ':' {}
-	| ':'
+keywordname
+	: selector ':'		{ $$ = new_keywordarg ($1, 0); }
+	| ':'				{ $$ = new_keywordarg ("", 0); }
 	;
 
-obj_string /* XXX */
+obj_string
 	: '@' STRING_VAL
+		{
+			$$ = new_expr ();
+			$$->type = ex_string;
+			$$->e.string_val = $2;
+		}
 	| obj_string '@' STRING_VAL
+		{
+			expr_t     *e = new_expr ();
+			e->type = ex_string;
+			e->e.string_val = $3;
+			$$ = binary_expr ('+', $1, e);
+		}
 	;
 
 %%

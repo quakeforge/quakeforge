@@ -38,6 +38,7 @@ static const char rcsid[] =
 
 #include "qfcc.h"
 #include "function.h"
+#include "method.h"
 #include "struct.h"
 #include "type.h"
 #include "qc-parse.h"
@@ -1921,4 +1922,40 @@ init_elements (def_t *def, expr_t *eles)
 			error (e, "non-constant initializer");
 		}
 	}
+}
+
+expr_t *
+selector_expr (keywordarg_t *selector)
+{
+	return error (0, "not implemented");
+}
+
+expr_t *
+protocol_expr (const char *protocol)
+{
+	return error (0, "not implemented");
+}
+
+expr_t *
+encode_expr (type_t *type)
+{
+	return error (0, "not implemented");
+}
+
+expr_t *
+message_expr (expr_t *receiver, keywordarg_t *message)
+{
+	expr_t     *args = 0, **a = &args;
+	expr_t     *selector = selector_expr (message);
+	keywordarg_t *m;
+
+	for (m = message; m; m = m->next) {
+		*a = m->expr;
+		while ((*a)->next)
+			a = &(*a)->next;
+	}
+	*a = selector;
+	a = &(*a)->next;
+	*a = receiver;
+	return function_expr (send_message (), args);
 }

@@ -166,4 +166,10 @@ const char *get_op_string (int op);
 
 extern int lineno_base;
 
+struct keywordarg_s;
+expr_t *selector_expr (struct keywordarg_s *selector);
+expr_t *protocol_expr (const char *protocol);
+expr_t *encode_expr (type_t *type);
+expr_t *message_expr (expr_t *receiver, struct keywordarg_s *message);
+
 #endif//__expr_h

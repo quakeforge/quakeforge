@@ -38,6 +38,9 @@ static const char rcsid[] =
 #include "method.h"
 #include "type.h"
 
+static def_t   *send_message_def;
+static expr_t  *send_message_expr;
+
 method_t *
 new_method (type_t *ret_type, param_t *selector, param_t *opt_parms)
 {
@@ -88,4 +91,26 @@ method_def (class_t *klass, method_t *method)
 	//printf ("%s\n", str->str);
 	// FIXME need a file scope
 	return PR_GetDef (method->type, str->str, 0, &numpr_globals);
+}
+
+keywordarg_t *
+new_keywordarg (const char *selector, struct expr_s *expr)
+{
+	keywordarg_t *k = malloc (sizeof (keywordarg_t));
+
+	k->next = 0;
+	k->selector = selector;
+	k->expr = expr;
+	return k;
+}
+
+expr_t *
+send_message (void)
+{
+	if (!send_message_def) {
+		send_message_expr = new_expr ();
+		send_message_expr->type = ex_def;
+		send_message_expr->e.def = send_message_def;
+	}
+	return send_message_expr;
 }
