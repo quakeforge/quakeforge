@@ -380,7 +380,7 @@ NET_GetPacket (void)
 #endif /* _WIN32 */
 		if (err == EWOULDBLOCK)
 			return false;
-		Sys_Printf ("NET_GetPacket: %s\n", strerror (err));
+		Con_Printf ("NET_GetPacket: %s\n", strerror (err));
 		return false;
 	}
 
@@ -421,7 +421,7 @@ NET_SendPacket (int length, void *data, netadr_t to)
 		if (err == EWOULDBLOCK)
 			return;
 
-		Sys_Printf ("NET_SendPacket: %s\n", strerror (err));
+		Con_Printf ("NET_SendPacket: %s\n", strerror (err));
 	}
 }
 

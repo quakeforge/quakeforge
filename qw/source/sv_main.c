@@ -1643,7 +1643,7 @@ SV_RestorePenaltyFilter (client_t *cl, filtertype_t type)
 	// search for existing penalty filter of same type
 	for (i = 0; i < numipfilters; i++) {
 		if (type == ipfilters[i].type && SV_IPCompare (ip, ipfilters[i].ip)) {
-			Sys_Printf ("Penalty restored for user %d\n", cl->userid);
+			Con_Printf ("Penalty restored for user %d\n", cl->userid);
 			return ipfilters[i].time;
 		}
 	}

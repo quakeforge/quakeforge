@@ -270,9 +270,11 @@ Con_Print (const char *txt)
 {
 	int         mask, c, l, y;
 	static int  cr;
+	const char *s;
 
 	// echo to debugging console
-	Sys_Printf ("%s", txt);
+	for (s = txt; *s; s++)
+		fputc (sys_char_map[(byte)*s], stdout);
 
 	// log all messages to file
 	if (con_debuglog)

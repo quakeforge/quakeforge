@@ -501,7 +501,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 // because sound is off until we become active
 	//XXX S_BlockSound ();
 
-	Sys_Printf ("Host_Init\n");
+	Con_Printf ("Host_Init\n");
 	Host_Init (&parms);
 
 	Sys_Init_Cvars ();

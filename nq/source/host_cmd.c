@@ -774,7 +774,7 @@ Host_Say (qboolean teamonly)
 	}
 	host_client = save;
 
-	Sys_Printf ("%s", &text[1]);
+	Con_Printf ("%s", &text[1]);
 }
 
 
@@ -974,7 +974,7 @@ Host_Spawn_f (void)
 						   sv_funcs.ClientConnect);
 
 		if ((Sys_DoubleTime () - host_client->netconnection->connecttime) <=
-			sv.time) Sys_Printf ("%s entered the game\n", host_client->name);
+			sv.time) Con_Printf ("%s entered the game\n", host_client->name);
 
 		PR_ExecuteProgram (&sv_pr_state,
 						   sv_funcs.PutClientInServer);
