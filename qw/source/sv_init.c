@@ -111,23 +111,23 @@ SV_CreateBaseline (void)
 			continue;
 		// create baselines for all player slots,
 		// and any other edict that has a visible model
-		if (entnum > MAX_CLIENTS && !((entvars_t*)&svent->v)->modelindex)
+		if (entnum > MAX_CLIENTS && !SVFIELD (svent, modelindex, float))
 			continue;
 
 		// 
 		// create entity baseline
 		// 
-		VectorCopy (((entvars_t*)&svent->v)->origin, ((entity_state_t*)svent->data)->origin);
-		VectorCopy (((entvars_t*)&svent->v)->angles, ((entity_state_t*)svent->data)->angles);
-		((entity_state_t*)svent->data)->frame = ((entvars_t*)&svent->v)->frame;
-		((entity_state_t*)svent->data)->skinnum = ((entvars_t*)&svent->v)->skin;
+		VectorCopy (SVFIELD (svent, origin, vector), ((entity_state_t*)svent->data)->origin);
+		VectorCopy (SVFIELD (svent, angles, vector), ((entity_state_t*)svent->data)->angles);
+		((entity_state_t*)svent->data)->frame = SVFIELD (svent, frame, float);
+		((entity_state_t*)svent->data)->skinnum = SVFIELD (svent, skin, float);
 		if (entnum > 0 && entnum <= MAX_CLIENTS) {
 			((entity_state_t*)svent->data)->colormap = entnum;
 			((entity_state_t*)svent->data)->modelindex = SV_ModelIndex ("progs/player.mdl");
 		} else {
 			((entity_state_t*)svent->data)->colormap = 0;
 			((entity_state_t*)svent->data)->modelindex =
-				SV_ModelIndex (PR_GetString (&sv_pr_state, ((entvars_t*)&svent->v)->model));
+				SV_ModelIndex (PR_GetString (&sv_pr_state, SVFIELD (svent, model, string)));
 		}
 		// LordHavoc: setup baseline to include new effects
 		((entity_state_t*)svent->data)->alpha = 255;
@@ -397,10 +397,10 @@ SV_SpawnServer (char *server)
 
 	ent = EDICT_NUM (&sv_pr_state, 0);
 	ent->free = false;
-	((entvars_t*)&ent->v)->model = PR_SetString (&sv_pr_state, sv.worldmodel->name);
-	((entvars_t*)&ent->v)->modelindex = 1;				// world model
-	((entvars_t*)&ent->v)->solid = SOLID_BSP;
-	((entvars_t*)&ent->v)->movetype = MOVETYPE_PUSH;
+	SVFIELD (ent, model, string) = PR_SetString (&sv_pr_state, sv.worldmodel->name);
+	SVFIELD (ent, modelindex, float) = 1;				// world model
+	SVFIELD (ent, solid, float) = SOLID_BSP;
+	SVFIELD (ent, movetype, float) = MOVETYPE_PUSH;
 
 	*sv_globals.mapname = PR_SetString (&sv_pr_state, sv.name);
 	// serverflags are for cross level information (sigils)

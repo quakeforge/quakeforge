@@ -87,9 +87,9 @@ SV_CheckAllEnts (void)
 	for (e = 1; e < sv.num_edicts; e++, check = NEXT_EDICT (&sv_pr_state, check)) {
 		if (check->free)
 			continue;
-		if (((entvars_t*)&check->v)->movetype == MOVETYPE_PUSH
-			|| ((entvars_t*)&check->v)->movetype == MOVETYPE_NONE
-			|| ((entvars_t*)&check->v)->movetype == MOVETYPE_NOCLIP) continue;
+		if (SVFIELD (check, movetype, float) == MOVETYPE_PUSH
+			|| SVFIELD (check, movetype, float) == MOVETYPE_NONE
+			|| SVFIELD (check, movetype, float) == MOVETYPE_NOCLIP) continue;
 
 		if (SV_TestEntityPosition (check))
 			Con_Printf ("entity in invalid position\n");
@@ -109,23 +109,23 @@ SV_CheckVelocity (edict_t *ent)
 // bound velocity
 //
 	for (i = 0; i < 3; i++) {
-		if (IS_NAN (((entvars_t*)&ent->v)->velocity[i])) {
+		if (IS_NAN (SVFIELD (ent, velocity, vector)[i])) {
 			Con_Printf ("Got a NaN velocity on %s\n",
-						PR_GetString (&sv_pr_state, ((entvars_t*)&ent->v)->classname));
-			((entvars_t*)&ent->v)->velocity[i] = 0;
+						PR_GetString (&sv_pr_state, SVFIELD (ent, classname, string)));
+			SVFIELD (ent, velocity, vector)[i] = 0;
 		}
-		if (IS_NAN (((entvars_t*)&ent->v)->origin[i])) {
+		if (IS_NAN (SVFIELD (ent, origin, vector)[i])) {
 			Con_Printf ("Got a NaN origin on %s\n",
-						PR_GetString (&sv_pr_state, ((entvars_t*)&ent->v)->classname));
-			((entvars_t*)&ent->v)->origin[i] = 0;
+						PR_GetString (&sv_pr_state, SVFIELD (ent, classname, string)));
+			SVFIELD (ent, origin, vector)[i] = 0;
 		}
 	}
 
 // 1999-10-18 SV_MAXVELOCITY fix by Maddes  start
-	wishspeed = Length (((entvars_t*)&ent->v)->velocity);
+	wishspeed = Length (SVFIELD (ent, velocity, vector));
 	if (wishspeed > sv_maxvelocity->value) {
-		VectorScale (((entvars_t*)&ent->v)->velocity, sv_maxvelocity->value / wishspeed,
-					 ((entvars_t*)&ent->v)->velocity);
+		VectorScale (SVFIELD (ent, velocity, vector), sv_maxvelocity->value / wishspeed,
+					 SVFIELD (ent, velocity, vector));
 	}
 // 1999-10-18 SV_MAXVELOCITY fix by Maddes  end
 }
@@ -144,7 +144,7 @@ SV_RunThink (edict_t *ent)
 	float       thinktime;
 
 	do {
-		thinktime = ((entvars_t*)&ent->v)->nextthink;
+		thinktime = SVFIELD (ent, nextthink, float);
 		if (thinktime <= 0)
 			return true;
 		if (thinktime > sv.time + sv_frametime)
@@ -154,11 +154,11 @@ SV_RunThink (edict_t *ent)
 			thinktime = sv.time;		// don't let things stay in the past.
 		// it is possible to start that way
 		// by a trigger with a local time.
-		((entvars_t*)&ent->v)->nextthink = 0;
+		SVFIELD (ent, nextthink, float) = 0;
 		*sv_globals.time = thinktime;
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
 		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
-		PR_ExecuteProgram (&sv_pr_state, ((entvars_t*)&ent->v)->think);
+		PR_ExecuteProgram (&sv_pr_state, SVFIELD (ent, think, func));
 
 		if (ent->free)
 			return false;
@@ -181,16 +181,16 @@ SV_Impact (edict_t *e1, edict_t *e2)
 	old_other = *sv_globals.other;
 
 	*sv_globals.time = sv.time;
-	if (((entvars_t*)&e1->v)->touch && ((entvars_t*)&e1->v)->solid != SOLID_NOT) {
+	if (SVFIELD (e1, touch, func) && SVFIELD (e1, solid, float) != SOLID_NOT) {
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, e1);
 		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, e2);
-		PR_ExecuteProgram (&sv_pr_state, ((entvars_t*)&e1->v)->touch);
+		PR_ExecuteProgram (&sv_pr_state, SVFIELD (e1, touch, func));
 	}
 
-	if (((entvars_t*)&e2->v)->touch && ((entvars_t*)&e2->v)->solid != SOLID_NOT) {
+	if (SVFIELD (e2, touch, func) && SVFIELD (e2, solid, float) != SOLID_NOT) {
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, e2);
 		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, e1);
-		PR_ExecuteProgram (&sv_pr_state, ((entvars_t*)&e2->v)->touch);
+		PR_ExecuteProgram (&sv_pr_state, SVFIELD (e2, touch, func));
 	}
 
 	*sv_globals.self = old_self;
@@ -259,27 +259,27 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 	numbumps = 4;
 
 	blocked = 0;
-	VectorCopy (((entvars_t*)&ent->v)->velocity, original_velocity);
-	VectorCopy (((entvars_t*)&ent->v)->velocity, primal_velocity);
+	VectorCopy (SVFIELD (ent, velocity, vector), original_velocity);
+	VectorCopy (SVFIELD (ent, velocity, vector), primal_velocity);
 	numplanes = 0;
 
 	time_left = time;
 
 	for (bumpcount = 0; bumpcount < numbumps; bumpcount++) {
 		for (i = 0; i < 3; i++)
-			end[i] = ((entvars_t*)&ent->v)->origin[i] + time_left * ((entvars_t*)&ent->v)->velocity[i];
+			end[i] = SVFIELD (ent, origin, vector)[i] + time_left * SVFIELD (ent, velocity, vector)[i];
 
 		trace =
-			SV_Move (((entvars_t*)&ent->v)->origin, ((entvars_t*)&ent->v)->mins, ((entvars_t*)&ent->v)->maxs, end, false, ent);
+			SV_Move (SVFIELD (ent, origin, vector), SVFIELD (ent, mins, vector), SVFIELD (ent, maxs, vector), end, false, ent);
 
 		if (trace.allsolid) {			// entity is trapped in another solid
-			VectorCopy (vec3_origin, ((entvars_t*)&ent->v)->velocity);
+			VectorCopy (vec3_origin, SVFIELD (ent, velocity, vector));
 			return 3;
 		}
 
 		if (trace.fraction > 0) {		// actually covered some distance
-			VectorCopy (trace.endpos, ((entvars_t*)&ent->v)->origin);
-			VectorCopy (((entvars_t*)&ent->v)->velocity, original_velocity);
+			VectorCopy (trace.endpos, SVFIELD (ent, origin, vector));
+			VectorCopy (SVFIELD (ent, velocity, vector), original_velocity);
 			numplanes = 0;
 		}
 
@@ -291,10 +291,10 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 
 		if (trace.plane.normal[2] > 0.7) {
 			blocked |= 1;				// floor
-			if ((((entvars_t*)&trace.ent->v)->solid == SOLID_BSP)
-				|| (((entvars_t*)&trace.ent->v)->movetype == MOVETYPE_PPUSH)) {
-				((entvars_t*)&ent->v)->flags = (int) ((entvars_t*)&ent->v)->flags | FL_ONGROUND;
-				((entvars_t*)&ent->v)->groundentity = EDICT_TO_PROG (&sv_pr_state, trace.ent);
+			if ((SVFIELD (trace.ent, solid, float) == SOLID_BSP)
+				|| (SVFIELD (trace.ent, movetype, float) == MOVETYPE_PPUSH)) {
+				SVFIELD (ent, flags, float) = (int) SVFIELD (ent, flags, float) | FL_ONGROUND;
+				SVFIELD (ent, groundentity, int) = EDICT_TO_PROG (&sv_pr_state, trace.ent);
 			}
 		}
 		if (!trace.plane.normal[2]) {
@@ -314,7 +314,7 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 
 		// cliped to another plane
 		if (numplanes >= MAX_CLIP_PLANES) {	// this shouldn't really happen
-			VectorCopy (vec3_origin, ((entvars_t*)&ent->v)->velocity);
+			VectorCopy (vec3_origin, SVFIELD (ent, velocity, vector));
 			return 3;
 		}
 
@@ -336,24 +336,24 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 		}
 
 		if (i != numplanes) {			// go along this plane
-			VectorCopy (new_velocity, ((entvars_t*)&ent->v)->velocity);
+			VectorCopy (new_velocity, SVFIELD (ent, velocity, vector));
 		} else {						// go along the crease
 			if (numplanes != 2) {
 //              Con_Printf ("clip velocity, numplanes == %i\n",numplanes);
-				VectorCopy (vec3_origin, ((entvars_t*)&ent->v)->velocity);
+				VectorCopy (vec3_origin, SVFIELD (ent, velocity, vector));
 				return 7;
 			}
 			CrossProduct (planes[0], planes[1], dir);
-			d = DotProduct (dir, ((entvars_t*)&ent->v)->velocity);
-			VectorScale (dir, d, ((entvars_t*)&ent->v)->velocity);
+			d = DotProduct (dir, SVFIELD (ent, velocity, vector));
+			VectorScale (dir, d, SVFIELD (ent, velocity, vector));
 		}
 
 //
 // if original velocity is against the original velocity, stop dead
 // to avoid tiny occilations in sloping corners
 //
-		if (DotProduct (((entvars_t*)&ent->v)->velocity, primal_velocity) <= 0) {
-			VectorCopy (vec3_origin, ((entvars_t*)&ent->v)->velocity);
+		if (DotProduct (SVFIELD (ent, velocity, vector), primal_velocity) <= 0) {
+			VectorCopy (vec3_origin, SVFIELD (ent, velocity, vector));
 			return blocked;
 		}
 	}
@@ -368,7 +368,7 @@ SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 void
 SV_AddGravity (edict_t *ent, float scale)
 {
-	((entvars_t*)&ent->v)->velocity[2] -= scale * movevars.gravity * sv_frametime;
+	SVFIELD (ent, velocity, vector)[2] -= scale * movevars.gravity * sv_frametime;
 }
 
 /*
@@ -386,23 +386,23 @@ SV_PushEntity (edict_t *ent, vec3_t push)
 	trace_t     trace;
 	vec3_t      end;
 
-	VectorAdd (((entvars_t*)&ent->v)->origin, push, end);
+	VectorAdd (SVFIELD (ent, origin, vector), push, end);
 
-	if (((entvars_t*)&ent->v)->movetype == MOVETYPE_FLYMISSILE)
+	if (SVFIELD (ent, movetype, float) == MOVETYPE_FLYMISSILE)
 		trace =
-			SV_Move (((entvars_t*)&ent->v)->origin, ((entvars_t*)&ent->v)->mins, ((entvars_t*)&ent->v)->maxs, end, MOVE_MISSILE,
+			SV_Move (SVFIELD (ent, origin, vector), SVFIELD (ent, mins, vector), SVFIELD (ent, maxs, vector), end, MOVE_MISSILE,
 					 ent);
-	else if (((entvars_t*)&ent->v)->solid == SOLID_TRIGGER || ((entvars_t*)&ent->v)->solid == SOLID_NOT)
+	else if (SVFIELD (ent, solid, float) == SOLID_TRIGGER || SVFIELD (ent, solid, float) == SOLID_NOT)
 		// only clip against bmodels
 		trace =
-			SV_Move (((entvars_t*)&ent->v)->origin, ((entvars_t*)&ent->v)->mins, ((entvars_t*)&ent->v)->maxs, end,
+			SV_Move (SVFIELD (ent, origin, vector), SVFIELD (ent, mins, vector), SVFIELD (ent, maxs, vector), end,
 					 MOVE_NOMONSTERS, ent);
 	else
 		trace =
-			SV_Move (((entvars_t*)&ent->v)->origin, ((entvars_t*)&ent->v)->mins, ((entvars_t*)&ent->v)->maxs, end, MOVE_NORMAL,
+			SV_Move (SVFIELD (ent, origin, vector), SVFIELD (ent, mins, vector), SVFIELD (ent, maxs, vector), end, MOVE_NORMAL,
 					 ent);
 
-	VectorCopy (trace.endpos, ((entvars_t*)&ent->v)->origin);
+	VectorCopy (trace.endpos, SVFIELD (ent, origin, vector));
 	SV_LinkEdict (ent, true);
 
 	if (trace.ent)
@@ -430,15 +430,15 @@ SV_Push (edict_t *pusher, vec3_t move)
 										// --KB
 
 	for (i = 0; i < 3; i++) {
-		mins[i] = ((entvars_t*)&pusher->v)->absmin[i] + move[i];
-		maxs[i] = ((entvars_t*)&pusher->v)->absmax[i] + move[i];
+		mins[i] = SVFIELD (pusher, absmin, vector)[i] + move[i];
+		maxs[i] = SVFIELD (pusher, absmax, vector)[i] + move[i];
 	}
 
-	VectorCopy (((entvars_t*)&pusher->v)->origin, pushorig);
+	VectorCopy (SVFIELD (pusher, origin, vector), pushorig);
 
 // move the pusher to it's final position
 
-	VectorAdd (((entvars_t*)&pusher->v)->origin, move, ((entvars_t*)&pusher->v)->origin);
+	VectorAdd (SVFIELD (pusher, origin, vector), move, SVFIELD (pusher, origin, vector));
 	SV_LinkEdict (pusher, false);
 
 // see if any solid entities are inside the final position
@@ -447,30 +447,30 @@ SV_Push (edict_t *pusher, vec3_t move)
 	for (e = 1; e < sv.num_edicts; e++, check = NEXT_EDICT (&sv_pr_state, check)) {
 		if (check->free)
 			continue;
-		if (((entvars_t*)&check->v)->movetype == MOVETYPE_PUSH
-			|| ((entvars_t*)&check->v)->movetype == MOVETYPE_NONE
-			|| ((entvars_t*)&check->v)->movetype == MOVETYPE_PPUSH
-			|| ((entvars_t*)&check->v)->movetype == MOVETYPE_NOCLIP) continue;
+		if (SVFIELD (check, movetype, float) == MOVETYPE_PUSH
+			|| SVFIELD (check, movetype, float) == MOVETYPE_NONE
+			|| SVFIELD (check, movetype, float) == MOVETYPE_PPUSH
+			|| SVFIELD (check, movetype, float) == MOVETYPE_NOCLIP) continue;
 
 		// Don't assume SOLID_BSP !  --KB
-		solid_save = ((entvars_t*)&pusher->v)->solid;
-		((entvars_t*)&pusher->v)->solid = SOLID_NOT;
+		solid_save = SVFIELD (pusher, solid, float);
+		SVFIELD (pusher, solid, float) = SOLID_NOT;
 		block = SV_TestEntityPosition (check);
-		// ((entvars_t*)&pusher->v)->solid = SOLID_BSP;
-		((entvars_t*)&pusher->v)->solid = solid_save;
+		// SVFIELD (pusher, solid, float) = SOLID_BSP;
+		SVFIELD (pusher, solid, float) = solid_save;
 		if (block)
 			continue;
 
 		// if the entity is standing on the pusher, it will definately be
 		// moved
-		if (!(((int) ((entvars_t*)&check->v)->flags & FL_ONGROUND)
-			  && PROG_TO_EDICT (&sv_pr_state, ((entvars_t*)&check->v)->groundentity) == pusher)) {
-			if (((entvars_t*)&check->v)->absmin[0] >= maxs[0]
-				|| ((entvars_t*)&check->v)->absmin[1] >= maxs[1]
-				|| ((entvars_t*)&check->v)->absmin[2] >= maxs[2]
-				|| ((entvars_t*)&check->v)->absmax[0] <= mins[0]
-				|| ((entvars_t*)&check->v)->absmax[1] <= mins[1]
-				|| ((entvars_t*)&check->v)->absmax[2] <= mins[2])
+		if (!(((int) SVFIELD (check, flags, float) & FL_ONGROUND)
+			  && PROG_TO_EDICT (&sv_pr_state, SVFIELD (check, groundentity, int)) == pusher)) {
+			if (SVFIELD (check, absmin, vector)[0] >= maxs[0]
+				|| SVFIELD (check, absmin, vector)[1] >= maxs[1]
+				|| SVFIELD (check, absmin, vector)[2] >= maxs[2]
+				|| SVFIELD (check, absmax, vector)[0] <= mins[0]
+				|| SVFIELD (check, absmax, vector)[1] <= mins[1]
+				|| SVFIELD (check, absmax, vector)[2] <= mins[2])
 				continue;
 
 			// see if the ent's bbox is inside the pusher's final position
@@ -478,49 +478,49 @@ SV_Push (edict_t *pusher, vec3_t move)
 				continue;
 		}
 
-		VectorCopy (((entvars_t*)&check->v)->origin, moved_from[num_moved]);
+		VectorCopy (SVFIELD (check, origin, vector), moved_from[num_moved]);
 		moved_edict[num_moved] = check;
 		num_moved++;
 
 		// try moving the contacted entity
-		VectorAdd (((entvars_t*)&check->v)->origin, move, ((entvars_t*)&check->v)->origin);
+		VectorAdd (SVFIELD (check, origin, vector), move, SVFIELD (check, origin, vector));
 		block = SV_TestEntityPosition (check);
 		if (!block) {					// pushed ok
 			SV_LinkEdict (check, false);
 			continue;
 		}
 		// if it is ok to leave in the old position, do it
-		VectorSubtract (((entvars_t*)&check->v)->origin, move, ((entvars_t*)&check->v)->origin);
+		VectorSubtract (SVFIELD (check, origin, vector), move, SVFIELD (check, origin, vector));
 		block = SV_TestEntityPosition (check);
 		if (!block) {
 			num_moved--;
 			continue;
 		}
 		// if it is still inside the pusher, block
-		if (((entvars_t*)&check->v)->mins[0] == ((entvars_t*)&check->v)->maxs[0]) {
+		if (SVFIELD (check, mins, vector)[0] == SVFIELD (check, maxs, vector)[0]) {
 			SV_LinkEdict (check, false);
 			continue;
 		}
-		if (((entvars_t*)&check->v)->solid == SOLID_NOT || ((entvars_t*)&check->v)->solid == SOLID_TRIGGER) {	// corpse
-			((entvars_t*)&check->v)->mins[0] = ((entvars_t*)&check->v)->mins[1] = 0;
-			VectorCopy (((entvars_t*)&check->v)->mins, ((entvars_t*)&check->v)->maxs);
+		if (SVFIELD (check, solid, float) == SOLID_NOT || SVFIELD (check, solid, float) == SOLID_TRIGGER) {	// corpse
+			SVFIELD (check, mins, vector)[0] = SVFIELD (check, mins, vector)[1] = 0;
+			VectorCopy (SVFIELD (check, mins, vector), SVFIELD (check, maxs, vector));
 			SV_LinkEdict (check, false);
 			continue;
 		}
 
-		VectorCopy (pushorig, ((entvars_t*)&pusher->v)->origin);
+		VectorCopy (pushorig, SVFIELD (pusher, origin, vector));
 		SV_LinkEdict (pusher, false);
 
 		// if the pusher has a "blocked" function, call it
 		// otherwise, just stay in place until the obstacle is gone
-		if (((entvars_t*)&pusher->v)->blocked) {
+		if (SVFIELD (pusher, blocked, func)) {
 			*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, pusher);
 			*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, check);
-			PR_ExecuteProgram (&sv_pr_state, ((entvars_t*)&pusher->v)->blocked);
+			PR_ExecuteProgram (&sv_pr_state, SVFIELD (pusher, blocked, func));
 		}
 		// move back any entities we already moved
 		for (i = 0; i < num_moved; i++) {
-			VectorCopy (moved_from[i], ((entvars_t*)&moved_edict[i]->v)->origin);
+			VectorCopy (moved_from[i], SVFIELD (moved_edict[i], origin, vector));
 			SV_LinkEdict (moved_edict[i], false);
 		}
 		return false;
@@ -538,17 +538,17 @@ SV_PushMove (edict_t *pusher, float movetime)
 	int         i;
 	vec3_t      move;
 
-	if (!((entvars_t*)&pusher->v)->velocity[0] && !((entvars_t*)&pusher->v)->velocity[1]
-		&& !((entvars_t*)&pusher->v)->velocity[2]) {
-		((entvars_t*)&pusher->v)->ltime += movetime;
+	if (!SVFIELD (pusher, velocity, vector)[0] && !SVFIELD (pusher, velocity, vector)[1]
+		&& !SVFIELD (pusher, velocity, vector)[2]) {
+		SVFIELD (pusher, ltime, float) += movetime;
 		return;
 	}
 
 	for (i = 0; i < 3; i++)
-		move[i] = ((entvars_t*)&pusher->v)->velocity[i] * movetime;
+		move[i] = SVFIELD (pusher, velocity, vector)[i] * movetime;
 
 	if (SV_Push (pusher, move))
-		((entvars_t*)&pusher->v)->ltime += movetime;
+		SVFIELD (pusher, ltime, float) += movetime;
 }
 
 
@@ -564,36 +564,36 @@ SV_Physics_Pusher (edict_t *ent)
 	vec3_t      oldorg, move;
 	float       l;
 
-	oldltime = ((entvars_t*)&ent->v)->ltime;
+	oldltime = SVFIELD (ent, ltime, float);
 
-	thinktime = ((entvars_t*)&ent->v)->nextthink;
-	if (thinktime < ((entvars_t*)&ent->v)->ltime + sv_frametime) {
-		movetime = thinktime - ((entvars_t*)&ent->v)->ltime;
+	thinktime = SVFIELD (ent, nextthink, float);
+	if (thinktime < SVFIELD (ent, ltime, float) + sv_frametime) {
+		movetime = thinktime - SVFIELD (ent, ltime, float);
 		if (movetime < 0)
 			movetime = 0;
 	} else
 		movetime = sv_frametime;
 
 	if (movetime) {
-		SV_PushMove (ent, movetime);	// advances ((entvars_t*)&ent->v)->ltime if not
+		SV_PushMove (ent, movetime);	// advances SVFIELD (ent, ltime, float) if not
 										// blocked
 	}
 
-	if (thinktime > oldltime && thinktime <= ((entvars_t*)&ent->v)->ltime) {
-		VectorCopy (((entvars_t*)&ent->v)->origin, oldorg);
-		((entvars_t*)&ent->v)->nextthink = 0;
+	if (thinktime > oldltime && thinktime <= SVFIELD (ent, ltime, float)) {
+		VectorCopy (SVFIELD (ent, origin, vector), oldorg);
+		SVFIELD (ent, nextthink, float) = 0;
 		*sv_globals.time = sv.time;
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
 		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
-		PR_ExecuteProgram (&sv_pr_state, ((entvars_t*)&ent->v)->think);
+		PR_ExecuteProgram (&sv_pr_state, SVFIELD (ent, think, func));
 		if (ent->free)
 			return;
-		VectorSubtract (((entvars_t*)&ent->v)->origin, oldorg, move);
+		VectorSubtract (SVFIELD (ent, origin, vector), oldorg, move);
 
 		l = Length (move);
 		if (l > 1.0 / 64) {
 //          Con_Printf ("**** snap: %f\n", Length (l));
-			VectorCopy (oldorg, ((entvars_t*)&ent->v)->origin);
+			VectorCopy (oldorg, SVFIELD (ent, origin, vector));
 			SV_Push (ent, move);
 		}
 	}
@@ -625,8 +625,8 @@ SV_Physics_Noclip (edict_t *ent)
 	if (!SV_RunThink (ent))
 		return;
 
-	VectorMA (((entvars_t*)&ent->v)->angles, sv_frametime, ((entvars_t*)&ent->v)->avelocity, ((entvars_t*)&ent->v)->angles);
-	VectorMA (((entvars_t*)&ent->v)->origin, sv_frametime, ((entvars_t*)&ent->v)->velocity, ((entvars_t*)&ent->v)->origin);
+	VectorMA (SVFIELD (ent, angles, vector), sv_frametime, SVFIELD (ent, avelocity, vector), SVFIELD (ent, angles, vector));
+	VectorMA (SVFIELD (ent, origin, vector), sv_frametime, SVFIELD (ent, velocity, vector), SVFIELD (ent, origin, vector));
 
 	SV_LinkEdict (ent, false);
 }
@@ -643,27 +643,27 @@ SV_CheckWaterTransition (edict_t *ent)
 {
 	int         cont;
 
-	cont = SV_PointContents (((entvars_t*)&ent->v)->origin);
-	if (!((entvars_t*)&ent->v)->watertype) {			// just spawned here
-		((entvars_t*)&ent->v)->watertype = cont;
-		((entvars_t*)&ent->v)->waterlevel = 1;
+	cont = SV_PointContents (SVFIELD (ent, origin, vector));
+	if (!SVFIELD (ent, watertype, float)) {			// just spawned here
+		SVFIELD (ent, watertype, float) = cont;
+		SVFIELD (ent, waterlevel, float) = 1;
 		return;
 	}
 
 	if (cont <= CONTENTS_WATER) {
-		if (((entvars_t*)&ent->v)->watertype == CONTENTS_EMPTY) {	// just crossed into
+		if (SVFIELD (ent, watertype, float) == CONTENTS_EMPTY) {	// just crossed into
 													// water
 			SV_StartSound (ent, 0, "misc/h2ohit1.wav", 255, 1);
 		}
-		((entvars_t*)&ent->v)->watertype = cont;
-		((entvars_t*)&ent->v)->waterlevel = 1;
+		SVFIELD (ent, watertype, float) = cont;
+		SVFIELD (ent, waterlevel, float) = 1;
 	} else {
-		if (((entvars_t*)&ent->v)->watertype != CONTENTS_EMPTY) {	// just crossed into
+		if (SVFIELD (ent, watertype, float) != CONTENTS_EMPTY) {	// just crossed into
 													// water
 			SV_StartSound (ent, 0, "misc/h2ohit1.wav", 255, 1);
 		}
-		((entvars_t*)&ent->v)->watertype = CONTENTS_EMPTY;
-		((entvars_t*)&ent->v)->waterlevel = cont;
+		SVFIELD (ent, watertype, float) = CONTENTS_EMPTY;
+		SVFIELD (ent, waterlevel, float) = cont;
 	}
 }
 
@@ -683,45 +683,45 @@ SV_Physics_Toss (edict_t *ent)
 	if (!SV_RunThink (ent))
 		return;
 
-	if (((entvars_t*)&ent->v)->velocity[2] > 0)
-		((entvars_t*)&ent->v)->flags = (int) ((entvars_t*)&ent->v)->flags & ~FL_ONGROUND;
+	if (SVFIELD (ent, velocity, vector)[2] > 0)
+		SVFIELD (ent, flags, float) = (int) SVFIELD (ent, flags, float) & ~FL_ONGROUND;
 
 // if onground, return without moving
-	if (((int) ((entvars_t*)&ent->v)->flags & FL_ONGROUND))
+	if (((int) SVFIELD (ent, flags, float) & FL_ONGROUND))
 		return;
 
 	SV_CheckVelocity (ent);
 
 // add gravity
-	if (((entvars_t*)&ent->v)->movetype != MOVETYPE_FLY
-		&& ((entvars_t*)&ent->v)->movetype != MOVETYPE_FLYMISSILE) SV_AddGravity (ent, 1.0);
+	if (SVFIELD (ent, movetype, float) != MOVETYPE_FLY
+		&& SVFIELD (ent, movetype, float) != MOVETYPE_FLYMISSILE) SV_AddGravity (ent, 1.0);
 
 // move angles
-	VectorMA (((entvars_t*)&ent->v)->angles, sv_frametime, ((entvars_t*)&ent->v)->avelocity, ((entvars_t*)&ent->v)->angles);
+	VectorMA (SVFIELD (ent, angles, vector), sv_frametime, SVFIELD (ent, avelocity, vector), SVFIELD (ent, angles, vector));
 
 // move origin
-	VectorScale (((entvars_t*)&ent->v)->velocity, sv_frametime, move);
+	VectorScale (SVFIELD (ent, velocity, vector), sv_frametime, move);
 	trace = SV_PushEntity (ent, move);
 	if (trace.fraction == 1)
 		return;
 	if (ent->free)
 		return;
 
-	if (((entvars_t*)&ent->v)->movetype == MOVETYPE_BOUNCE)
+	if (SVFIELD (ent, movetype, float) == MOVETYPE_BOUNCE)
 		backoff = 1.5;
 	else
 		backoff = 1;
 
-	ClipVelocity (((entvars_t*)&ent->v)->velocity, trace.plane.normal, ((entvars_t*)&ent->v)->velocity,
+	ClipVelocity (SVFIELD (ent, velocity, vector), trace.plane.normal, SVFIELD (ent, velocity, vector),
 				  backoff);
 
 // stop if on ground
 	if (trace.plane.normal[2] > 0.7) {
-		if (((entvars_t*)&ent->v)->velocity[2] < 60 || ((entvars_t*)&ent->v)->movetype != MOVETYPE_BOUNCE) {
-			((entvars_t*)&ent->v)->flags = (int) ((entvars_t*)&ent->v)->flags | FL_ONGROUND;
-			((entvars_t*)&ent->v)->groundentity = EDICT_TO_PROG (&sv_pr_state, trace.ent);
-			VectorCopy (vec3_origin, ((entvars_t*)&ent->v)->velocity);
-			VectorCopy (vec3_origin, ((entvars_t*)&ent->v)->avelocity);
+		if (SVFIELD (ent, velocity, vector)[2] < 60 || SVFIELD (ent, movetype, float) != MOVETYPE_BOUNCE) {
+			SVFIELD (ent, flags, float) = (int) SVFIELD (ent, flags, float) | FL_ONGROUND;
+			SVFIELD (ent, groundentity, int) = EDICT_TO_PROG (&sv_pr_state, trace.ent);
+			VectorCopy (vec3_origin, SVFIELD (ent, velocity, vector));
+			VectorCopy (vec3_origin, SVFIELD (ent, avelocity, vector));
 		}
 	}
 // check for in water
@@ -748,8 +748,8 @@ SV_Physics_Step (edict_t *ent)
 	qboolean    hitsound;
 
 // freefall if not on ground
-	if (!((int) ((entvars_t*)&ent->v)->flags & (FL_ONGROUND | FL_FLY | FL_SWIM))) {
-		if (((entvars_t*)&ent->v)->velocity[2] < movevars.gravity * -0.1)
+	if (!((int) SVFIELD (ent, flags, float) & (FL_ONGROUND | FL_FLY | FL_SWIM))) {
+		if (SVFIELD (ent, velocity, vector)[2] < movevars.gravity * -0.1)
 			hitsound = true;
 		else
 			hitsound = false;
@@ -759,7 +759,7 @@ SV_Physics_Step (edict_t *ent)
 		SV_FlyMove (ent, sv_frametime, NULL);
 		SV_LinkEdict (ent, true);
 
-		if ((int) ((entvars_t*)&ent->v)->flags & FL_ONGROUND)	// just hit ground
+		if ((int) SVFIELD (ent, flags, float) & FL_ONGROUND)	// just hit ground
 		{
 			if (hitsound)
 				SV_StartSound (ent, 0, "demon/dland2.wav", 255, 1);
@@ -782,27 +782,27 @@ SV_PPushMove (edict_t *pusher, float movetime)	// player push
 
 	SV_CheckVelocity (pusher);
 	for (i = 0; i < 3; i++) {
-		move[i] = ((entvars_t*)&pusher->v)->velocity[i] * movetime;
-		mins[i] = ((entvars_t*)&pusher->v)->absmin[i] + move[i];
-		maxs[i] = ((entvars_t*)&pusher->v)->absmax[i] + move[i];
+		move[i] = SVFIELD (pusher, velocity, vector)[i] * movetime;
+		mins[i] = SVFIELD (pusher, absmin, vector)[i] + move[i];
+		maxs[i] = SVFIELD (pusher, absmax, vector)[i] + move[i];
 	}
 
-	VectorCopy (((entvars_t*)&pusher->v)->origin, ((entvars_t*)&pusher->v)->oldorigin);	// Backup origin
+	VectorCopy (SVFIELD (pusher, origin, vector), SVFIELD (pusher, oldorigin, vector));	// Backup origin
 	trace =
-		SV_Move (((entvars_t*)&pusher->v)->origin, ((entvars_t*)&pusher->v)->mins, ((entvars_t*)&pusher->v)->maxs, move,
+		SV_Move (SVFIELD (pusher, origin, vector), SVFIELD (pusher, mins, vector), SVFIELD (pusher, maxs, vector), move,
 				 MOVE_NOMONSTERS, pusher);
 
 	if (trace.fraction == 1) {
-		VectorCopy (((entvars_t*)&pusher->v)->origin, ((entvars_t*)&pusher->v)->oldorigin);	// Revert
+		VectorCopy (SVFIELD (pusher, origin, vector), SVFIELD (pusher, oldorigin, vector));	// Revert
 		return;
 	}
 
 
-	VectorAdd (((entvars_t*)&pusher->v)->origin, move, ((entvars_t*)&pusher->v)->origin);	// Move
+	VectorAdd (SVFIELD (pusher, origin, vector), move, SVFIELD (pusher, origin, vector));	// Move
 	SV_LinkEdict (pusher, false);
-	((entvars_t*)&pusher->v)->ltime += movetime;
+	SVFIELD (pusher, ltime, float) += movetime;
 
-	oldsolid = ((entvars_t*)&pusher->v)->solid;
+	oldsolid = SVFIELD (pusher, solid, float);
 
 	check = NEXT_EDICT (&sv_pr_state, sv.edicts);
 	for (e = 1; e < sv.num_edicts; e++, check = NEXT_EDICT (&sv_pr_state, check)) {
@@ -814,25 +814,25 @@ SV_PPushMove (edict_t *pusher, float movetime)	// player push
 			continue;
 
 		// Stage 2: Is it a player we can push?
-		if (((entvars_t*)&check->v)->movetype == MOVETYPE_WALK) {
+		if (SVFIELD (check, movetype, float) == MOVETYPE_WALK) {
 			Con_Printf ("Pusher encountered a player\n");	// Yes!@#!@
-			((entvars_t*)&pusher->v)->solid = SOLID_NOT;
+			SVFIELD (pusher, solid, float) = SOLID_NOT;
 			SV_PushEntity (check, move);
-			((entvars_t*)&pusher->v)->solid = oldsolid;
+			SVFIELD (pusher, solid, float) = oldsolid;
 			continue;
 		}
 		// Stage 3: No.. Is it something that blocks us?
-		if (((entvars_t*)&check->v)->mins[0] == ((entvars_t*)&check->v)->maxs[0])
+		if (SVFIELD (check, mins, vector)[0] == SVFIELD (check, maxs, vector)[0])
 			continue;
-		if (((entvars_t*)&check->v)->solid == SOLID_NOT || ((entvars_t*)&check->v)->solid == SOLID_TRIGGER)
+		if (SVFIELD (check, solid, float) == SOLID_NOT || SVFIELD (check, solid, float) == SOLID_TRIGGER)
 			continue;
 
 		// Stage 4: Yes, it must be. Fail the move.
-		VectorCopy (((entvars_t*)&pusher->v)->origin, ((entvars_t*)&pusher->v)->oldorigin);	// Revert
-		if (((entvars_t*)&pusher->v)->blocked) {		// Blocked func?
+		VectorCopy (SVFIELD (pusher, origin, vector), SVFIELD (pusher, oldorigin, vector));	// Revert
+		if (SVFIELD (pusher, blocked, func)) {		// Blocked func?
 			*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, pusher);
 			*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, check);
-			PR_ExecuteProgram (&sv_pr_state, ((entvars_t*)&pusher->v)->blocked);
+			PR_ExecuteProgram (&sv_pr_state, SVFIELD (pusher, blocked, func));
 		}
 
 		return;
@@ -848,11 +848,11 @@ SV_Physics_PPusher (edict_t *ent)
 
 //  float   l;
 
-	oldltime = ((entvars_t*)&ent->v)->ltime;
+	oldltime = SVFIELD (ent, ltime, float);
 
-	thinktime = ((entvars_t*)&ent->v)->nextthink;
-	if (thinktime < ((entvars_t*)&ent->v)->ltime + sv_frametime) {
-		movetime = thinktime - ((entvars_t*)&ent->v)->ltime;
+	thinktime = SVFIELD (ent, nextthink, float);
+	if (thinktime < SVFIELD (ent, ltime, float) + sv_frametime) {
+		movetime = thinktime - SVFIELD (ent, ltime, float);
 		if (movetime < 0)
 			movetime = 0;
 	} else
@@ -860,16 +860,16 @@ SV_Physics_PPusher (edict_t *ent)
 
 //  if (movetime)
 //  {
-	SV_PPushMove (ent, 0.0009);			// advances ((entvars_t*)&ent->v)->ltime if not
+	SV_PPushMove (ent, 0.0009);			// advances SVFIELD (ent, ltime, float) if not
 										// blocked
 //  }
 
-	if (thinktime > oldltime && thinktime <= ((entvars_t*)&ent->v)->ltime) {
-		((entvars_t*)&ent->v)->nextthink = 0;
+	if (thinktime > oldltime && thinktime <= SVFIELD (ent, ltime, float)) {
+		SVFIELD (ent, nextthink, float) = 0;
 		*sv_globals.time = sv.time;
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
 		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
-		PR_ExecuteProgram (&sv_pr_state, ((entvars_t*)&ent->v)->think);
+		PR_ExecuteProgram (&sv_pr_state, SVFIELD (ent, think, func));
 		if (ent->free)
 			return;
 	}
@@ -893,11 +893,11 @@ SV_ProgStartFrame (void)
 void
 SV_RunEntity (edict_t *ent)
 {
-	if (((entvars_t*)&ent->v)->lastruntime == (float) realtime)
+	if (SVFIELD (ent, lastruntime, float) == (float) realtime)
 		return;
-	((entvars_t*)&ent->v)->lastruntime = (float) realtime;
+	SVFIELD (ent, lastruntime, float) = (float) realtime;
 
-	switch ((int) ((entvars_t*)&ent->v)->movetype) {
+	switch ((int) SVFIELD (ent, movetype, float)) {
 		case MOVETYPE_PUSH:
 			SV_Physics_Pusher (ent);
 			break;
@@ -920,7 +920,7 @@ SV_RunEntity (edict_t *ent)
 			SV_Physics_Toss (ent);
 			break;
 		default:
-			SV_Error ("SV_Physics: bad movetype %i", (int) ((entvars_t*)&ent->v)->movetype);
+			SV_Error ("SV_Physics: bad movetype %i", (int) SVFIELD (ent, movetype, float));
 	}
 }
 

@@ -39,11 +39,13 @@
 
 #include "cmd.h"
 #include "server.h"
+#include "progdefs.h"
 #include "sv_progs.h"
 #include "world.h"
 
 sv_globals_t sv_globals;
 sv_funcs_t sv_funcs;
+sv_fields_t sv_fields;
 
 int eval_alpha;
 int eval_scale;
@@ -94,7 +96,7 @@ FindEdictFieldOffsets (progs_t *pr)
 int
 ED_Prune_Edict (progs_t *pr, edict_t *ent)
 {
-	if (((int) ((entvars_t*)&ent->v)->spawnflags & SPAWNFLAG_NOT_DEATHMATCH))
+	if (((int) SVFIELD (ent, spawnflags, float) & SPAWNFLAG_NOT_DEATHMATCH))
 		return 1;
 	return 0;
 }
@@ -233,6 +235,71 @@ SV_LoadProgs (void)
 		ED_FindFunction (&sv_pr_state, "SetNewParms") - sv_pr_state.pr_functions;
 	sv_funcs.SetChangeParms =
 		ED_FindFunction (&sv_pr_state, "SetChangeParms") - sv_pr_state.pr_functions;
+
+	sv_fields.modelindex = ED_FindField (&sv_pr_state, "modelindex")->ofs;
+	sv_fields.absmin = ED_FindField (&sv_pr_state, "absmin")->ofs;
+	sv_fields.absmax = ED_FindField (&sv_pr_state, "absmax")->ofs;
+	sv_fields.ltime = ED_FindField (&sv_pr_state, "ltime")->ofs;
+	sv_fields.lastruntime = ED_FindField (&sv_pr_state, "lastruntime")->ofs;
+	sv_fields.movetype = ED_FindField (&sv_pr_state, "movetype")->ofs;
+	sv_fields.solid = ED_FindField (&sv_pr_state, "solid")->ofs;
+	sv_fields.origin = ED_FindField (&sv_pr_state, "origin")->ofs;
+	sv_fields.oldorigin = ED_FindField (&sv_pr_state, "oldorigin")->ofs;
+	sv_fields.velocity = ED_FindField (&sv_pr_state, "velocity")->ofs;
+	sv_fields.angles = ED_FindField (&sv_pr_state, "angles")->ofs;
+	sv_fields.avelocity = ED_FindField (&sv_pr_state, "avelocity")->ofs;
+	sv_fields.classname = ED_FindField (&sv_pr_state, "classname")->ofs;
+	sv_fields.model = ED_FindField (&sv_pr_state, "model")->ofs;
+	sv_fields.frame = ED_FindField (&sv_pr_state, "frame")->ofs;
+	sv_fields.skin = ED_FindField (&sv_pr_state, "skin")->ofs;
+	sv_fields.effects = ED_FindField (&sv_pr_state, "effects")->ofs;
+	sv_fields.mins = ED_FindField (&sv_pr_state, "mins")->ofs;
+	sv_fields.maxs = ED_FindField (&sv_pr_state, "maxs")->ofs;
+	sv_fields.size = ED_FindField (&sv_pr_state, "size")->ofs;
+	sv_fields.touch = ED_FindField (&sv_pr_state, "touch")->ofs;
+	sv_fields.think = ED_FindField (&sv_pr_state, "think")->ofs;
+	sv_fields.blocked = ED_FindField (&sv_pr_state, "blocked")->ofs;
+	sv_fields.nextthink = ED_FindField (&sv_pr_state, "nextthink")->ofs;
+	sv_fields.groundentity = ED_FindField (&sv_pr_state, "groundentity")->ofs;
+	sv_fields.health = ED_FindField (&sv_pr_state, "health")->ofs;
+	sv_fields.frags = ED_FindField (&sv_pr_state, "frags")->ofs;
+	sv_fields.weapon = ED_FindField (&sv_pr_state, "weapon")->ofs;
+	sv_fields.weaponmodel = ED_FindField (&sv_pr_state, "weaponmodel")->ofs;
+	sv_fields.weaponframe = ED_FindField (&sv_pr_state, "weaponframe")->ofs;
+	sv_fields.currentammo = ED_FindField (&sv_pr_state, "currentammo")->ofs;
+	sv_fields.ammo_shells = ED_FindField (&sv_pr_state, "ammo_shells")->ofs;
+	sv_fields.ammo_nails = ED_FindField (&sv_pr_state, "ammo_nails")->ofs;
+	sv_fields.ammo_rockets = ED_FindField (&sv_pr_state, "ammo_rockets")->ofs;
+	sv_fields.ammo_cells = ED_FindField (&sv_pr_state, "ammo_cells")->ofs;
+	sv_fields.items = ED_FindField (&sv_pr_state, "items")->ofs;
+	sv_fields.takedamage = ED_FindField (&sv_pr_state, "takedamage")->ofs;
+	sv_fields.chain = ED_FindField (&sv_pr_state, "chain")->ofs;
+	sv_fields.view_ofs = ED_FindField (&sv_pr_state, "view_ofs")->ofs;
+	sv_fields.button0 = ED_FindField (&sv_pr_state, "button0")->ofs;
+	sv_fields.button1 = ED_FindField (&sv_pr_state, "button1")->ofs;
+	sv_fields.button2 = ED_FindField (&sv_pr_state, "button2")->ofs;
+	sv_fields.impulse = ED_FindField (&sv_pr_state, "impulse")->ofs;
+	sv_fields.fixangle = ED_FindField (&sv_pr_state, "fixangle")->ofs;
+	sv_fields.v_angle = ED_FindField (&sv_pr_state, "v_angle")->ofs;
+	sv_fields.netname = ED_FindField (&sv_pr_state, "netname")->ofs;
+	sv_fields.enemy = ED_FindField (&sv_pr_state, "enemy")->ofs;
+	sv_fields.flags = ED_FindField (&sv_pr_state, "flags")->ofs;
+	sv_fields.colormap = ED_FindField (&sv_pr_state, "colormap")->ofs;
+	sv_fields.team = ED_FindField (&sv_pr_state, "team")->ofs;
+	sv_fields.teleport_time = ED_FindField (&sv_pr_state, "teleport_time")->ofs;
+	sv_fields.armorvalue = ED_FindField (&sv_pr_state, "armorvalue")->ofs;
+	sv_fields.waterlevel = ED_FindField (&sv_pr_state, "waterlevel")->ofs;
+	sv_fields.watertype = ED_FindField (&sv_pr_state, "watertype")->ofs;
+	sv_fields.ideal_yaw = ED_FindField (&sv_pr_state, "ideal_yaw")->ofs;
+	sv_fields.yaw_speed = ED_FindField (&sv_pr_state, "yaw_speed")->ofs;
+	sv_fields.goalentity = ED_FindField (&sv_pr_state, "goalentity")->ofs;
+	sv_fields.spawnflags = ED_FindField (&sv_pr_state, "spawnflags")->ofs;
+	sv_fields.dmg_take = ED_FindField (&sv_pr_state, "dmg_take")->ofs;
+	sv_fields.dmg_save = ED_FindField (&sv_pr_state, "dmg_save")->ofs;
+	sv_fields.dmg_inflictor = ED_FindField (&sv_pr_state, "dmg_inflictor")->ofs;
+	sv_fields.owner = ED_FindField (&sv_pr_state, "owner")->ofs;
+	sv_fields.message = ED_FindField (&sv_pr_state, "message")->ofs;
+	sv_fields.sounds = ED_FindField (&sv_pr_state, "sounds")->ofs;
 }
 
 void

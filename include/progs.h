@@ -130,7 +130,7 @@ int NUM_FOR_EDICT(progs_t *pr, edict_t *e);
 
 #define	E_FLOAT(e,o)	E_var (e, o, float)
 #define	E_INT(e,o)		E_var (e, o, int)
-#define	E_VECTOR(e,o)	(&E_FLOAT (e, o))
+#define	E_VECTOR(e,o)	E_var (e, o, vector)
 #define	E_STRING(p,e,o)	(PR_GetString (p, E_var (e, o, string)))
 
 extern	int		type_size[8];

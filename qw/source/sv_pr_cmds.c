@@ -80,7 +80,7 @@ PF_error (progs_t *pr)
 	s = PF_VarString (pr, 0);
 	Con_Printf ("======SERVER ERROR in %s:\n%s\n",
 				PR_GetString (pr, pr->pr_xfunction->s_name), s);
-	ed = PROG_TO_EDICT (pr, ((globalvars_t*)pr->pr_globals)->self);
+	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed);
 
 	SV_Error ("Program error");
@@ -103,7 +103,7 @@ PF_objerror (progs_t *pr)
 	s = PF_VarString (pr, 0);
 	Con_Printf ("======OBJECT ERROR in %s:\n%s\n",
 				PR_GetString (pr, pr->pr_xfunction->s_name), s);
-	ed = PROG_TO_EDICT (pr, ((globalvars_t*)pr->pr_globals)->self);
+	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed);
 	ED_Free (pr, ed);
 
@@ -121,8 +121,8 @@ PF_objerror (progs_t *pr)
 void
 PF_makevectors (progs_t *pr)
 {
-	AngleVectors (G_VECTOR (pr, OFS_PARM0), ((globalvars_t*)pr->pr_globals)->v_forward,
-				  ((globalvars_t*)pr->pr_globals)->v_right, ((globalvars_t*)pr->pr_globals)->v_up);
+	AngleVectors (G_VECTOR (pr, OFS_PARM0), *sv_globals.v_forward,
+				  *sv_globals.v_right, *sv_globals.v_up);
 }
 
 /*
@@ -140,7 +140,7 @@ PF_setorigin (progs_t *pr)
 
 	e = G_EDICT (pr, OFS_PARM0);
 	org = G_VECTOR (pr, OFS_PARM1);
-	VectorCopy (org, ((entvars_t*)&e->v)->origin);
+	VectorCopy (org, SVFIELD (e, origin, vector));
 	SV_LinkEdict (e, false);
 }
 
@@ -161,9 +161,9 @@ PF_setsize (progs_t *pr)
 	e = G_EDICT (pr, OFS_PARM0);
 	min = G_VECTOR (pr, OFS_PARM1);
 	max = G_VECTOR (pr, OFS_PARM2);
-	VectorCopy (min, ((entvars_t*)&e->v)->mins);
-	VectorCopy (max, ((entvars_t*)&e->v)->maxs);
-	VectorSubtract (max, min, ((entvars_t*)&e->v)->size);
+	VectorCopy (min, SVFIELD (e, mins, vector));
+	VectorCopy (max, SVFIELD (e, maxs, vector));
+	VectorSubtract (max, min, SVFIELD (e, size, vector));
 	SV_LinkEdict (e, false);
 }
 
@@ -193,15 +193,15 @@ PF_setmodel (progs_t *pr)
 	if (!*check)
 		PR_RunError (pr, "no precache: %s\n", m);
 
-	((entvars_t*)&e->v)->model = PR_SetString (pr, m);
-	((entvars_t*)&e->v)->modelindex = i;
+	SVFIELD (e, model, string) = PR_SetString (pr, m);
+	SVFIELD (e, modelindex, float) = i;
 
 // if it is an inline model, get the size information for it
 	if (m[0] == '*') {
 		mod = Mod_ForName (m, true);
-		VectorCopy (mod->mins, ((entvars_t*)&e->v)->mins);
-		VectorCopy (mod->maxs, ((entvars_t*)&e->v)->maxs);
-		VectorSubtract (mod->maxs, mod->mins, ((entvars_t*)&e->v)->size);
+		VectorCopy (mod->mins, SVFIELD (e, mins, vector));
+		VectorCopy (mod->maxs, SVFIELD (e, maxs, vector));
+		VectorSubtract (mod->maxs, mod->mins, SVFIELD (e, size, vector));
 		SV_LinkEdict (e, false);
 	}
 
@@ -519,18 +519,18 @@ PF_traceline (progs_t *pr)
 
 	trace = SV_Move (v1, vec3_origin, vec3_origin, v2, nomonsters, ent);
 
-	((globalvars_t*)pr->pr_globals)->trace_allsolid = trace.allsolid;
-	((globalvars_t*)pr->pr_globals)->trace_startsolid = trace.startsolid;
-	((globalvars_t*)pr->pr_globals)->trace_fraction = trace.fraction;
-	((globalvars_t*)pr->pr_globals)->trace_inwater = trace.inwater;
-	((globalvars_t*)pr->pr_globals)->trace_inopen = trace.inopen;
-	VectorCopy (trace.endpos, ((globalvars_t*)pr->pr_globals)->trace_endpos);
-	VectorCopy (trace.plane.normal, ((globalvars_t*)pr->pr_globals)->trace_plane_normal);
-	((globalvars_t*)pr->pr_globals)->trace_plane_dist = trace.plane.dist;
+	*sv_globals.trace_allsolid = trace.allsolid;
+	*sv_globals.trace_startsolid = trace.startsolid;
+	*sv_globals.trace_fraction = trace.fraction;
+	*sv_globals.trace_inwater = trace.inwater;
+	*sv_globals.trace_inopen = trace.inopen;
+	VectorCopy (trace.endpos, *sv_globals.trace_endpos);
+	VectorCopy (trace.plane.normal, *sv_globals.trace_plane_normal);
+	*sv_globals.trace_plane_dist = trace.plane.dist;
 	if (trace.ent)
-		((globalvars_t*)pr->pr_globals)->trace_ent = EDICT_TO_PROG (pr, trace.ent);
+		*sv_globals.trace_ent = EDICT_TO_PROG (pr, trace.ent);
 	else
-		((globalvars_t*)pr->pr_globals)->trace_ent = EDICT_TO_PROG (pr, sv.edicts);
+		*sv_globals.trace_ent = EDICT_TO_PROG (pr, sv.edicts);
 }
 
 /*
@@ -582,9 +582,9 @@ PF_newcheckclient (progs_t *pr, int check)
 
 		if (ent->free)
 			continue;
-		if (((entvars_t*)&ent->v)->health <= 0)
+		if (SVFIELD (ent, health, float) <= 0)
 			continue;
-		if ((int) ((entvars_t*)&ent->v)->flags & FL_NOTARGET)
+		if ((int) SVFIELD (ent, flags, float) & FL_NOTARGET)
 			continue;
 
 		// anything that is a client, or has a client as an enemy
@@ -592,7 +592,7 @@ PF_newcheckclient (progs_t *pr, int check)
 	}
 
 // get the PVS for the entity
-	VectorAdd (((entvars_t*)&ent->v)->origin, ((entvars_t*)&ent->v)->view_ofs, org);
+	VectorAdd (SVFIELD (ent, origin, vector), SVFIELD (ent, view_ofs, vector), org);
 	leaf = Mod_PointInLeaf (org, sv.worldmodel);
 	pvs = Mod_LeafPVS (leaf, sv.worldmodel);
 	memcpy (checkpvs, pvs, (sv.worldmodel->numleafs + 7) >> 3);
@@ -630,13 +630,13 @@ PF_checkclient (progs_t *pr)
 	}
 // return check if it might be visible  
 	ent = EDICT_NUM (pr, sv.lastcheck);
-	if (ent->free || ((entvars_t*)&ent->v)->health <= 0) {
+	if (ent->free || SVFIELD (ent, health, float) <= 0) {
 		RETURN_EDICT (pr, sv.edicts);
 		return;
 	}
 // if current entity can't possibly see the check entity, return 0
-	self = PROG_TO_EDICT (pr, ((globalvars_t*)pr->pr_globals)->self);
-	VectorAdd (((entvars_t*)&self->v)->origin, ((entvars_t*)&self->v)->view_ofs, view);
+	self = PROG_TO_EDICT (pr, *sv_globals.self);
+	VectorAdd (SVFIELD (self, origin, vector), SVFIELD (self, view_ofs, vector), view);
 	leaf = Mod_PointInLeaf (view, sv.worldmodel);
 	l = (leaf - sv.worldmodel->leafs) - 1;
 	if ((l < 0) || !(checkpvs[l >> 3] & (1 << (l & 7)))) {
@@ -780,16 +780,16 @@ PF_findradius (progs_t *pr)
 	for (i = 1; i < sv.num_edicts; i++, ent = NEXT_EDICT (pr, ent)) {
 		if (ent->free)
 			continue;
-		if (((entvars_t*)&ent->v)->solid == SOLID_NOT)
+		if (SVFIELD (ent, solid, float) == SOLID_NOT)
 			continue;
 		for (j = 0; j < 3; j++)
 			eorg[j] =
-				org[j] - (((entvars_t*)&ent->v)->origin[j] +
-						  (((entvars_t*)&ent->v)->mins[j] + ((entvars_t*)&ent->v)->maxs[j]) * 0.5);
+				org[j] - (SVFIELD (ent, origin, vector)[j] +
+						  (SVFIELD (ent, mins, vector)[j] + SVFIELD (ent, maxs, vector)[j]) * 0.5);
 		if (Length (eorg) > rad)
 			continue;
 
-		((entvars_t*)&ent->v)->chain = EDICT_TO_PROG (pr, chain);
+		SVFIELD (ent, chain, int) = EDICT_TO_PROG (pr, chain);
 		chain = ent;
 	}
 
@@ -1003,11 +1003,11 @@ PF_walkmove (progs_t *pr)
 	dfunction_t *oldf;
 	int         oldself;
 
-	ent = PROG_TO_EDICT (pr, ((globalvars_t*)pr->pr_globals)->self);
+	ent = PROG_TO_EDICT (pr, *sv_globals.self);
 	yaw = G_FLOAT (pr, OFS_PARM0);
 	dist = G_FLOAT (pr, OFS_PARM1);
 
-	if (!((int) ((entvars_t*)&ent->v)->flags & (FL_ONGROUND | FL_FLY | FL_SWIM))) {
+	if (!((int) SVFIELD (ent, flags, float) & (FL_ONGROUND | FL_FLY | FL_SWIM))) {
 		G_FLOAT (pr, OFS_RETURN) = 0;
 		return;
 	}
@@ -1020,14 +1020,14 @@ PF_walkmove (progs_t *pr)
 
 // save program state, because SV_movestep may call other progs
 	oldf = pr->pr_xfunction;
-	oldself = ((globalvars_t*)pr->pr_globals)->self;
+	oldself = *sv_globals.self;
 
 	G_FLOAT (pr, OFS_RETURN) = SV_movestep (ent, move, true);
 
 
 // restore program state
 	pr->pr_xfunction = oldf;
-	((globalvars_t*)pr->pr_globals)->self = oldself;
+	*sv_globals.self = oldself;
 }
 
 /*
@@ -1042,20 +1042,20 @@ PF_droptofloor (progs_t *pr)
 	vec3_t      end;
 	trace_t     trace;
 
-	ent = PROG_TO_EDICT (pr, ((globalvars_t*)pr->pr_globals)->self);
+	ent = PROG_TO_EDICT (pr, *sv_globals.self);
 
-	VectorCopy (((entvars_t*)&ent->v)->origin, end);
+	VectorCopy (SVFIELD (ent, origin, vector), end);
 	end[2] -= 256;
 
-	trace = SV_Move (((entvars_t*)&ent->v)->origin, ((entvars_t*)&ent->v)->mins, ((entvars_t*)&ent->v)->maxs, end, false, ent);
+	trace = SV_Move (SVFIELD (ent, origin, vector), SVFIELD (ent, mins, vector), SVFIELD (ent, maxs, vector), end, false, ent);
 
 	if (trace.fraction == 1 || trace.allsolid)
 		G_FLOAT (pr, OFS_RETURN) = 0;
 	else {
-		VectorCopy (trace.endpos, ((entvars_t*)&ent->v)->origin);
+		VectorCopy (trace.endpos, SVFIELD (ent, origin, vector));
 		SV_LinkEdict (ent, false);
-		((entvars_t*)&ent->v)->flags = (int) ((entvars_t*)&ent->v)->flags | FL_ONGROUND;
-		((entvars_t*)&ent->v)->groundentity = EDICT_TO_PROG (pr, trace.ent);
+		SVFIELD (ent, flags, float) = (int) SVFIELD (ent, flags, float) | FL_ONGROUND;
+		SVFIELD (ent, groundentity, int) = EDICT_TO_PROG (pr, trace.ent);
 		G_FLOAT (pr, OFS_RETURN) = 1;
 	}
 }
@@ -1190,7 +1190,7 @@ PF_aim (progs_t *pr)
 	ent = G_EDICT (pr, OFS_PARM0);
 	speed = G_FLOAT (pr, OFS_PARM1);
 
-	VectorCopy (((entvars_t*)&ent->v)->origin, start);
+	VectorCopy (SVFIELD (ent, origin, vector), start);
 	start[2] += 20;
 
 // noaim option
@@ -1198,18 +1198,18 @@ PF_aim (progs_t *pr)
 	if (i > 0 && i < MAX_CLIENTS) {
 		noaim = Info_ValueForKey (svs.clients[i - 1].userinfo, "noaim");
 		if (atoi (noaim) > 0) {
-			VectorCopy (((globalvars_t*)pr->pr_globals)->v_forward, G_VECTOR (pr, OFS_RETURN));
+			VectorCopy (*sv_globals.v_forward, G_VECTOR (pr, OFS_RETURN));
 			return;
 		}
 	}
 // try sending a trace straight
-	VectorCopy (((globalvars_t*)pr->pr_globals)->v_forward, dir);
+	VectorCopy (*sv_globals.v_forward, dir);
 	VectorMA (start, 2048, dir, end);
 	tr = SV_Move (start, vec3_origin, vec3_origin, end, false, ent);
-	if (tr.ent && ((entvars_t*)&tr.ent->v)->takedamage == DAMAGE_AIM
-		&& (!teamplay->int_val || ((entvars_t*)&ent->v)->team <= 0
-			|| ((entvars_t*)&ent->v)->team != ((entvars_t*)&tr.ent->v)->team)) {
-		VectorCopy (((globalvars_t*)pr->pr_globals)->v_forward, G_VECTOR (pr, OFS_RETURN));
+	if (tr.ent && SVFIELD (tr.ent, takedamage, float) == DAMAGE_AIM
+		&& (!teamplay->int_val || SVFIELD (ent, team, float) <= 0
+			|| SVFIELD (ent, team, float) != SVFIELD (tr.ent, team, float))) {
+		VectorCopy (*sv_globals.v_forward, G_VECTOR (pr, OFS_RETURN));
 		return;
 	}
 
@@ -1220,19 +1220,19 @@ PF_aim (progs_t *pr)
 
 	check = NEXT_EDICT (pr, sv.edicts);
 	for (i = 1; i < sv.num_edicts; i++, check = NEXT_EDICT (pr, check)) {
-		if (((entvars_t*)&check->v)->takedamage != DAMAGE_AIM)
+		if (SVFIELD (check, takedamage, float) != DAMAGE_AIM)
 			continue;
 		if (check == ent)
 			continue;
-		if (teamplay->int_val && ((entvars_t*)&ent->v)->team > 0
-			&& ((entvars_t*)&ent->v)->team == ((entvars_t*)&check->v)->team) continue;	// don't aim at
+		if (teamplay->int_val && SVFIELD (ent, team, float) > 0
+			&& SVFIELD (ent, team, float) == SVFIELD (check, team, float)) continue;	// don't aim at
 														// teammate
 		for (j = 0; j < 3; j++)
-			end[j] = ((entvars_t*)&check->v)->origin[j]
-				+ 0.5 * (((entvars_t*)&check->v)->mins[j] + ((entvars_t*)&check->v)->maxs[j]);
+			end[j] = SVFIELD (check, origin, vector)[j]
+				+ 0.5 * (SVFIELD (check, mins, vector)[j] + SVFIELD (check, maxs, vector)[j]);
 		VectorSubtract (end, start, dir);
 		VectorNormalize (dir);
-		dist = DotProduct (dir, ((globalvars_t*)pr->pr_globals)->v_forward);
+		dist = DotProduct (dir, *sv_globals.v_forward);
 		if (dist < bestdist)
 			continue;					// to far to turn
 		tr = SV_Move (start, vec3_origin, vec3_origin, end, false, ent);
@@ -1243,9 +1243,9 @@ PF_aim (progs_t *pr)
 	}
 
 	if (bestent) {
-		VectorSubtract (((entvars_t*)&bestent->v)->origin, ((entvars_t*)&ent->v)->origin, dir);
-		dist = DotProduct (dir, ((globalvars_t*)pr->pr_globals)->v_forward);
-		VectorScale (((globalvars_t*)pr->pr_globals)->v_forward, dist, end);
+		VectorSubtract (SVFIELD (bestent, origin, vector), SVFIELD (ent, origin, vector), dir);
+		dist = DotProduct (dir, *sv_globals.v_forward);
+		VectorScale (*sv_globals.v_forward, dist, end);
 		end[2] = dir[2];
 		VectorNormalize (end);
 		VectorCopy (end, G_VECTOR (pr, OFS_RETURN));
@@ -1265,10 +1265,10 @@ PF_changeyaw (progs_t *pr)
 	edict_t    *ent;
 	float       ideal, current, move, speed;
 
-	ent = PROG_TO_EDICT (pr, ((globalvars_t*)pr->pr_globals)->self);
-	current = anglemod (((entvars_t*)&ent->v)->angles[1]);
-	ideal = ((entvars_t*)&ent->v)->ideal_yaw;
-	speed = ((entvars_t*)&ent->v)->yaw_speed;
+	ent = PROG_TO_EDICT (pr, *sv_globals.self);
+	current = anglemod (SVFIELD (ent, angles, vector)[1]);
+	ideal = SVFIELD (ent, ideal_yaw, float);
+	speed = SVFIELD (ent, yaw_speed, float);
 
 	if (current == ideal)
 		return;
@@ -1288,7 +1288,7 @@ PF_changeyaw (progs_t *pr)
 			move = -speed;
 	}
 
-	((entvars_t*)&ent->v)->angles[1] = anglemod (current + move);
+	SVFIELD (ent, angles, vector)[1] = anglemod (current + move);
 }
 
 /*
@@ -1314,7 +1314,7 @@ WriteDest (progs_t *pr)
 		case MSG_ONE:
 			SV_Error ("Shouldn't be at MSG_ONE");
 #if 0
-			ent = PROG_TO_EDICT (pr, ((globalvars_t*)pr->pr_globals)->msg_entity);
+			ent = PROG_TO_EDICT (pr, *sv_globals.msg_entity);
 			entnum = NUM_FOR_EDICT (pr, ent);
 			if (entnum < 1 || entnum > MAX_CLIENTS)
 				PR_RunError (pr, "WriteDest: not a client");
@@ -1347,7 +1347,7 @@ Write_GetClient (progs_t *pr)
 	int         entnum;
 	edict_t    *ent;
 
-	ent = PROG_TO_EDICT (pr, ((globalvars_t*)pr->pr_globals)->msg_entity);
+	ent = PROG_TO_EDICT (pr, *sv_globals.msg_entity);
 	entnum = NUM_FOR_EDICT (pr, ent);
 	if (entnum < 1 || entnum > MAX_CLIENTS)
 		PR_RunError (pr, "Write_GetClient: not a client");
@@ -1466,14 +1466,14 @@ PF_makestatic (progs_t *pr)
 
 	MSG_WriteByte (&sv.signon, svc_spawnstatic);
 
-	MSG_WriteByte (&sv.signon, SV_ModelIndex (PR_GetString (pr, ((entvars_t*)&ent->v)->model)));
+	MSG_WriteByte (&sv.signon, SV_ModelIndex (PR_GetString (pr, SVFIELD (ent, model, float))));
 
-	MSG_WriteByte (&sv.signon, ((entvars_t*)&ent->v)->frame);
-	MSG_WriteByte (&sv.signon, ((entvars_t*)&ent->v)->colormap);
-	MSG_WriteByte (&sv.signon, ((entvars_t*)&ent->v)->skin);
+	MSG_WriteByte (&sv.signon, SVFIELD (ent, frame, float));
+	MSG_WriteByte (&sv.signon, SVFIELD (ent, colormap, float));
+	MSG_WriteByte (&sv.signon, SVFIELD (ent, skin, float));
 	for (i = 0; i < 3; i++) {
-		MSG_WriteCoord (&sv.signon, ((entvars_t*)&ent->v)->origin[i]);
-		MSG_WriteAngle (&sv.signon, ((entvars_t*)&ent->v)->angles[i]);
+		MSG_WriteCoord (&sv.signon, SVFIELD (ent, origin, vector)[i]);
+		MSG_WriteAngle (&sv.signon, SVFIELD (ent, angles, vector)[i]);
 	}
 
 // throw the entity away now
@@ -1501,7 +1501,7 @@ PF_setspawnparms (progs_t *pr)
 	client = svs.clients + (i - 1);
 
 	for (i = 0; i < NUM_SPAWN_PARMS; i++)
-		(&((globalvars_t*)pr->pr_globals)->parm1)[i] = client->spawn_parms[i];
+		sv_globals.parms[i] = client->spawn_parms[i];
 }
 
 /*
