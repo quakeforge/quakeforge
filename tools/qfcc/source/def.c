@@ -105,8 +105,6 @@ check_for_name (type_t *type, const char *name, scope_t *scope,
 	if (def) {
 		if (storage != st_none && scope == def->scope)
 			if (type && def->type != type) {
-				print_type (type);
-				print_type (def->type);
 				error (0, "Type mismatch on redeclaration of %s", name);
 			}
 		if (storage == st_none || def->scope == scope)

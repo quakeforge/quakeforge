@@ -1881,7 +1881,7 @@ bitnot_expr:
 	abort ();
 }
 
-static expr_t *
+expr_t *
 build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 {
 	expr_t     *e;
@@ -1938,8 +1938,8 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 			if (e->type == ex_error)
 				return e;
 			if (!type_assignable (ftype->parm_types[i], t)) {
-				//print_type (ftype->parm_types[i]); puts ("");
-				//print_type (t); puts ("");
+				print_type (ftype->parm_types[i]); puts ("");
+				print_type (t); puts ("");
 				err = error (e, "type mismatch for parameter %d of %s",
 							 i + 1, fexpr->e.def->name);
 			}
@@ -2005,6 +2005,7 @@ function_expr (expr_t *fexpr, expr_t *params)
 {
 	type_t     *ftype;
 
+	find_function (fexpr, params);
 	ftype = get_type (fexpr);
 
 	if (fexpr->type == ex_error)

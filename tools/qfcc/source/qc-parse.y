@@ -148,7 +148,7 @@ expr_t *argv_expr (void);
 %token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS NIL
 %token	IFBE IFB IFAE IFA
 %token	SWITCH CASE DEFAULT STRUCT UNION ENUM TYPEDEF SUPER SELF THIS
-%token	ARGS ARGC ARGV EXTERN STATIC SYSTEM SIZEOF
+%token	ARGS ARGC ARGV EXTERN STATIC SYSTEM SIZEOF OVERLOAD
 %token	<type> TYPE
 %token	<typename> TYPE_NAME
 %token	CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE PROTECTED
@@ -157,8 +157,8 @@ expr_t *argv_expr (void);
 %type	<type>	type non_field_type type_name def simple_def struct_def
 %type	<type>	struct_def_item ivar_decl ivar_declarator def_item def_list
 %type	<type>	struct_def_list ivars func_type non_func_type
-%type	<type>	non_code_func code_func func_def func_defs func_def_list
-%type	<def>	fdef_name
+%type	<type>	non_code_func code_func func_init func_defs func_def_list
+%type	<def>	fdef_name cfunction_def func_def
 %type	<param> function_decl
 %type	<param>	param param_list
 %type	<def>	def_name opt_initializer methoddef var_initializer
@@ -237,6 +237,11 @@ def
 		}
 	;
 
+opt_eq
+	: /* empty */
+	| '='
+	;
+
 opt_semi
 	: /* empty */
 	| ';'
@@ -254,38 +259,35 @@ simple_def
 	;
 
 cfunction
-	: non_func_type NAME function_decl ';'
+	: cfunction_def ';'
 		{
-			type_t     *type;
-			def_t      *def;
-			
-			type = parse_params ($1, $3);
-			def = get_def (type, $2, current_scope, current_storage);
 		}
-	| non_func_type NAME function_decl '=' '#' fexpr ';'
+	| cfunction_def '=' '#' fexpr ';'
 		{
-			type_t     *type;
-			def_t      *def;
-			
-			type = parse_params ($1, $3);
-			def = get_def (type, $2, current_scope, current_storage);
-			$6 = constant_expr ($6);
-			build_builtin_function (def, $6);
+			build_builtin_function ($1, $4);
 		}
-	| non_func_type NAME function_decl
-	  opt_state_expr
+	| cfunction_def opt_state_expr
 		{ $<op>$ = current_storage; }
-		{
-			type_t     *type;
-			
-			current_params = $3;
-			type = parse_params ($1, $3);
-			$<def>$ = get_def (type, $2, current_scope, current_storage);
-		}
-	  begin_function statement_block { $<op>$ = $<op>5; } end_function
+		{ $<def>$ = $1; }
+	  begin_function statement_block { $<op>$ = $<op>3; } end_function
 	    {
-			build_code_function ($7, $4, $8);
+			build_code_function ($5, $2, $6);
 			current_func = 0;
+		}
+	;
+
+cfunction_def
+	: OVERLOAD non_func_type identifier function_decl 
+		{
+			type_t     *type = parse_params ($2, current_params = $4);
+			$$ = get_function_def ($3, type, current_scope,
+								   current_storage, 1, 1);
+		}
+	| non_func_type identifier function_decl 
+		{
+			type_t     *type = parse_params ($1, current_params = $3);
+			$$ = get_function_def ($2, type, current_scope,
+								   current_storage, 0, 1);
 		}
 	;
 
@@ -461,7 +463,7 @@ def_item
 
 func_defs
 	: func_def_list ',' fdef_name func_term
-	| def_name func_term {}
+	| func_def func_term		{}
 	;
 
 func_term
@@ -470,15 +472,28 @@ func_term
 	;
 
 func_def_list
-	: func_def_list ',' fdef_name func_def
-	| def_name func_def { $$ = $<type>0; }
+	: func_def_list ',' fdef_name func_init
+	| func_def func_init		{ $$ = $<type>0; }
 	;
 
 fdef_name
-	: { $<type>$ = $<type>-1; } def_name { $$ = $2; }
+	: { $<type>$ = $<type>-1; } func_def { $$ = $2; }
 	;
 
 func_def
+	: identifier
+		{
+			$$ = get_function_def ($1, $<type>0, current_scope,
+								   current_storage, 0, 1);
+		}
+	| OVERLOAD identifier
+		{
+			$$ = get_function_def ($2, $<type>0, current_scope,
+								   current_storage, 1, 1);
+		}
+	;
+
+func_init
 	: non_code_func
 	| code_func
 	;
