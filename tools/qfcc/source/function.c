@@ -213,7 +213,6 @@ finish_function (function_t *f)
 	int i, count;
 
 	df = calloc (1, sizeof (dfunction_t));
-	pr.num_functions++;
 	f->dfunc = df;
 
 	if (f->builtin)
@@ -234,7 +233,7 @@ finish_function (function_t *f)
 
 	if (f->aux) {
 		def_t *def;
-		f->aux->function = df - pr.functions;
+		f->aux->function = pr.num_functions;
 		for (def = f->scope->head; def; def = def->def_next) {
 			if (def->name) {
 				ddef_t *d = new_local ();
@@ -246,6 +245,7 @@ finish_function (function_t *f)
 			}
 		}
 	}
+	pr.num_functions++;
 }
 
 void
