@@ -387,7 +387,8 @@ tjunc_find_r (node_t *node)
 		return;
 
 	for (f = node->faces; f; f = f->next)
-		AddFaceEdges (f);
+		if (f->texturenum >= 0)
+			AddFaceEdges (f);
 
 	tjunc_find_r (node->children[0]);
 	tjunc_find_r (node->children[1]);
@@ -405,6 +406,8 @@ tjunc_fix_r (node_t *node)
 
 	for (f = node->faces; f; f = next) {
 		next = f->next;
+		if (f->texturenum < 0)
+			continue;
 		FixFaceEdges (f);
 	}
 

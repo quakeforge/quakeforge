@@ -106,16 +106,16 @@ CalcAmbientSounds (void)
 	texinfo_t	*info;
 	miptex_t	*miptex;
 
-	for (i = 0; i < portalleafs; i++) {
+	for (i = 0; i < numrealleafs - 1; i++) {
 		leaf = &bsp->leafs[i + 1];
 
 		// clear ambients
 		for (j = 0; j < NUM_AMBIENTS; j++)
 			dists[j] = 1020;
 
-		vis = &uncompressed[i * bitbytes];
+		vis = &uncompressed[leafcluster[i] * bitbytes_l];
 
-		for (j = 0; j < portalleafs; j++) {
+		for (j = 0; j < numrealleafs - 1; j++) {
 			if (!(vis[j >> 3] & (1 << (j & 7))))
 				continue;
 
@@ -149,7 +149,7 @@ CalcAmbientSounds (void)
 						d = mins[l] - leaf->maxs[l];
 					else if (maxs[l] < leaf->mins[l])
 						d = leaf->mins[l] - mins[l];
-				   else
+					else
 						d = 0;
 					if (d > maxd)
 						maxd = d;

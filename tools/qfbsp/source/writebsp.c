@@ -173,6 +173,8 @@ WriteLeaf (node_t *node)
 		if (bsp->nummarksurfaces == MAX_MAP_MARKSURFACES)
 			Sys_Error ("nummarksurfaces == MAX_MAP_MARKSURFACES");
 		f = *fp;
+		if (f->texturenum < 0)
+			continue;
 		do {
 			BSP_AddMarkSurface (bsp, f->outputnumber);
 			f = f->original;			// grab tjunction split faces

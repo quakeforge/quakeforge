@@ -47,6 +47,32 @@ PointInLeaf (node_t *node, vec3_t point)
 	return PointInLeaf (node->children[1], point);
 }
 
+static void
+FloodEntDist_r (node_t *n, int dist)
+{
+	portal_t   *p;
+	int         s;
+
+	n->o_dist = dist;
+
+	for (p = n->portals; p; p = p->next[s]) {
+		s = (p->nodes[1] == n);
+
+		if (p->nodes[!s]->o_dist)
+			continue;
+
+		if ((p->nodes[0]->contents == CONTENTS_SOLID) ||
+			(p->nodes[1]->contents == CONTENTS_SOLID))
+			continue;
+
+		if ((p->nodes[0]->contents == CONTENTS_SKY) ||
+			(p->nodes[1]->contents == CONTENTS_SKY))
+			continue;
+
+		FloodEntDist_r (p->nodes[!s], dist + 1);
+	}
+}
+
 static qboolean
 PlaceOccupant (int num, vec3_t point, node_t *headnode)
 {
@@ -56,6 +82,9 @@ PlaceOccupant (int num, vec3_t point, node_t *headnode)
 	if (n->contents == CONTENTS_SOLID)
 		return false;
 	n->occupied = num;
+
+	FloodEntDist_r (n, 1);
+
 	return true;
 }
 
@@ -230,6 +259,49 @@ FillOutside (node_t *node)
 			fclose (leakfile);
 		qprintf ("leak file written to %s\n", options.pointfile);
 		qprintf ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+
+		if (!options.hullnum) {
+			node_t     *n, *nextnode;;
+			portal_t   *p, *p2;
+			int         i, j, next, side;
+			vec3_t      wc;
+
+			n = &outside_node;
+			next = -1;
+
+			while ((n->o_dist > 1) || (next == -1)) {
+				nextnode = NULL;
+				p2 = NULL;
+				for (p = n->portals; p; p = p->next[side]) {
+					side = (p->nodes[1] == n);
+					if ((next == -1)
+						|| ((p->nodes[!side]->o_dist < next)
+							&& (p->nodes[!side]->o_dist))
+					   )
+					{
+						next = p->nodes[!side]->o_dist;
+						nextnode = p->nodes[!side];
+						p2 = p;
+					}
+				}
+				if (nextnode) {
+					n = nextnode;
+
+					wc[0] = wc[1] = wc[2] = 0;
+					for (i = 0; i < p2->winding->numpoints; i++) {
+						for (j = 0; j < 3; j++)
+							wc[j] += p2->winding->points[i][j];
+					}
+					for (j = 0; j < 3; j++)
+						wc[j] /= p2->winding->numpoints;
+					fprintf (leakfile, "%g %g %g\n", wc[0], wc[1], wc[2]);
+				} else
+					break;
+			}
+			v = entities[n->occupied].origin;
+			fprintf (leakfile, "%g %g %g\n", v[0], v[1], v[2]);
+			fclose (leakfile);
+		}
 		return false;
 	}
 	if (!options.hullnum)

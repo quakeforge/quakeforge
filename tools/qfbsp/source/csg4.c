@@ -65,6 +65,7 @@ NewFaceFromFace (face_t *in)
 	newf->original = in->original;
 	newf->contents[0] = in->contents[0];
 	newf->contents[1] = in->contents[1];
+	newf->detail = in->detail;
 
 	return newf;
 }
@@ -306,8 +307,13 @@ BuildSurfaces (void)
 		s->next = surfhead;
 		surfhead = s;
 		s->faces = *f;
-		for (count = s->faces; count; count = count->next)
+		for (count = s->faces; count; count = count->next) {
 			csgmergefaces++;
+			if (count->detail)
+				s->has_detail = 1;
+			else
+				s->has_struct = 1;
+		}
 		CalcSurfaceInfo (s);			// bounding box and flags
 	}
 
@@ -322,6 +328,9 @@ CopyFacesToOutside (brush_t *b)
 	outside = NULL;
 
 	for (f = b->faces; f; f = f->next) {
+		if (f->texturenum == TEX_SKIP)
+			continue;
+
 		brushfaces++;
 		newf = AllocFace ();
 		*newf = *f;
@@ -359,9 +368,17 @@ CSGFaces (brushset_t *bs)
 		// set outside to a copy of the brush's faces
 		CopyFacesToOutside (b1);
 
+		if (b1->faces->texturenum < 0) {
+			// Don't split HINT and SKIP brushes.
+			SaveOutside (false);
+			continue;
+		}
+
 		overwrite = false;
 
 		for (b2 = bs->brushes; b2; b2 = b2->next) {
+			if (b2->faces->texturenum < 0)
+				continue;
 			// see if b2 needs to clip a chunk out of b1
 
 			if (b1 == b2) {

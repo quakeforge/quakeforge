@@ -60,7 +60,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "vis.h"
 #include "options.h"
 
-static int  leafsee;
+static int  clustersee;
 static byte portalsee[MAX_PORTALS];
 
 /*
@@ -68,24 +68,24 @@ static byte portalsee[MAX_PORTALS];
 	some of the final calculations.
 */
 static void
-SimpleFlood (portal_t *srcportal, int leafnum)
+SimpleFlood (portal_t *srcportal, int clusternum)
 {
     int			i;
-    leaf_t		*leaf;
+    cluster_t	*cluster;
     portal_t	*portal;
 
-    if (srcportal->mightsee[leafnum >> 3] & (1 << (leafnum & 7)))
+    if (srcportal->mightsee[clusternum >> 3] & (1 << (clusternum & 7)))
 		return;
-    srcportal->mightsee[leafnum >> 3] |= (1 << (leafnum & 7));
-    leafsee++;
+    srcportal->mightsee[clusternum >> 3] |= (1 << (clusternum & 7));
+    clustersee++;
 
-    leaf = &leafs[leafnum];
+    cluster = &clusters[clusternum];
 
-    for (i = 0; i < leaf->numportals; i++) {
-		portal = leaf->portals[i];
+    for (i = 0; i < cluster->numportals; i++) {
+		portal = cluster->portals[i];
 		if (!portalsee[portal - portals])
 			continue;
-		SimpleFlood (srcportal, portal->leaf);
+		SimpleFlood (srcportal, portal->cluster);
     }
 }
 
@@ -129,8 +129,8 @@ BasePortalVis (void)
 			portalsee[j] = 1;
 		}
 
-		leafsee = 0;
-		SimpleFlood (portal, portal->leaf);
-		portal->nummightsee = leafsee;
+		clustersee = 0;
+		SimpleFlood (portal, portal->cluster);
+		portal->nummightsee = clustersee;
     }
 }

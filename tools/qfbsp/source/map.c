@@ -47,12 +47,18 @@ entity_t    entities[MAX_MAP_ENTITIES];
 int         nummiptex;
 char        miptex[MAX_MAP_TEXINFO][16];
 
+int         numdetailbrushes;
+
 
 int
 FindMiptex (const char *name)
 {
 	int         i;
 
+	if (strcmp (name, "hint") == 0)
+		return TEX_HINT;
+	if (strcmp (name, "skip") == 0)
+		return TEX_SKIP;
 	for (i = 0; i < nummiptex; i++) {
 		if (!strcmp (name, miptex[i]))
 			return i;
@@ -74,6 +80,9 @@ FindTexinfo (texinfo_t *t)
 {
 	int         i, j;
 	texinfo_t  *tex;
+
+	if (t->miptex < 0)
+		return t->miptex;		// it's HINT or SKIP
 
 	// set the special flag
 	if (miptex[t->miptex][0] == '*'
@@ -345,11 +354,10 @@ ParseBrush (void)
 
 		while (TokenAvailable (false)) {
 			GetToken (false);
-			//XXX
-			//if (!strcmp (token, "detail"))
-			//	b->detail = 1;
-			//else
-			//	Sys_Error ("Parse error on line %i", scriptline);
+			if (!strcmp (token, "detail"))
+				b->detail = 1;
+			else
+				Sys_Error ("Parse error on line %i", scriptline);
 		}
 
 		// if the three points are all on a previous plane, it is a duplicate
@@ -484,6 +492,26 @@ ParseEntity (void)
 			ParseEpair ();
 	} while (1);
 
+	if (!strcmp ("am_detail", ValueForKey (mapent, "classname"))) {
+		mbrush_t   *b, *lb;
+		// set detail flag
+		for (lb = b = mapent->brushes; b; lb = b, b = b->next) {
+			b->detail = 1;
+			numdetailbrushes++;
+		}
+		// add to worldspawn
+		lb->next = entities->brushes;
+		entities->brushes = mapent->brushes;
+		num_entities--;
+		memset (mapent, 0, sizeof (entity_t));
+		return true;
+	} else {
+		mbrush_t   *b;
+		for (b = mapent->brushes; b; b = b->next)
+			if (b->detail)
+				numdetailbrushes++;
+	}
+
 	GetVectorForKey (mapent, "origin", mapent->origin);
 	return true;
 }
@@ -511,7 +539,7 @@ LoadMapFile (const char *filename)
 
 	qprintf ("--- LoadMapFile ---\n");
 	qprintf ("%s\n", filename);
-	qprintf ("%5i brushes\n", nummapbrushes);
+	qprintf ("%5i brushes (%i detail)\n", nummapbrushes, numdetailbrushes);
 	qprintf ("%5i entities\n", num_entities);
 	qprintf ("%5i miptex\n", nummiptex);
 	qprintf ("%5i texinfo\n", bsp->numtexinfo);

@@ -159,6 +159,8 @@ PlaneFromWinding (winding_t *w, plane_t *plane)
 	plane->dist = DotProduct (w->points[0], plane->normal);
 }
 
+static int cutnode_detail;
+
 static void
 CutNodePortals_r (node_t *node)
 {
@@ -173,6 +175,9 @@ CutNodePortals_r (node_t *node)
 	// seperate the portals on node into it's children  
 	if (node->contents)
 		return;							// at a leaf, no more dividing
+
+	if (node->detail && cutnode_detail)
+		return;
 
 	plane = &planes[node->planenum];
 
@@ -275,6 +280,22 @@ PortalizeWorld (node_t *headnode)
 	qprintf ("----- portalize ----\n");
 
 	MakeHeadnodePortals (headnode);
+	cutnode_detail = 0;
+	CutNodePortals_r (headnode);
+}
+
+/*
+	PortalizeWorldDetail
+
+	Like PortalizeWorld, but stop at detail nodes - Alexander Malmberg.
+*/
+void
+PortalizeWorldDetail (node_t *headnode)
+{
+	qprintf ("----- portalize ----\n");
+
+	MakeHeadnodePortals (headnode);
+	cutnode_detail = 1;
 	CutNodePortals_r (headnode);
 }
 
@@ -302,11 +323,12 @@ FreeAllPortals (node_t *node)
 
 // PORTAL FILE GENERATION
 
-#define	PORTALFILE	"PRT1"
+#define	PORTALFILE	"PRT1-AM"
 
 FILE       *pf;
 int         num_visleafs;				// leafs the player can be in
 int         num_visportals;
+int         num_realleafs;
 
 static void
 WriteFloat (FILE *f, vec_t v)
@@ -317,6 +339,47 @@ WriteFloat (FILE *f, vec_t v)
 		fprintf (f, "%f ", v);
 }
 
+static int
+HasContents (node_t *n, int cont)
+{
+	if (n->contents == cont)
+		return 1;
+	if (n->contents)
+		return 0;
+	if (HasContents (n->children[0], cont))
+		return 1;
+	return HasContents (n->children[1], cont);
+}
+
+static int
+ShareContents (node_t *n1, node_t *n2)
+{
+	if (n1->contents) {
+		if (n1->contents == CONTENTS_SOLID)
+			return 0;
+		else
+			return HasContents (n2, n1->contents);
+	}
+
+	if (ShareContents (n1->children[0], n2))
+		return 1;
+	return ShareContents (n1->children[1], n2);
+}
+
+static int
+SameContents (node_t *n1, node_t *n2)
+{
+	if (n1->contents == CONTENTS_SOLID || n2->contents == CONTENTS_SOLID)
+		return 0;
+	if (n1->detail && n2->detail)
+		ShareContents (n1, n2);
+	if (n1->detail)
+		return HasContents (n1, n2->contents);
+	if (n2->detail)
+		return HasContents (n2, n1->contents);
+	return n1->contents == n2->contents;
+}
+
 static void
 WritePortalFile_r (node_t *node)
 {
@@ -325,7 +388,7 @@ WritePortalFile_r (node_t *node)
 	portal_t   *p;
 	winding_t  *w;
 
-	if (!node->contents) {
+	if (!node->contents && !node->detail) {
 		WritePortalFile_r (node->children[0]);
 		WritePortalFile_r (node->children[1]);
 		return;
@@ -337,7 +400,7 @@ WritePortalFile_r (node_t *node)
 	for (p = node->portals; p;) {
 		w = p->winding;
 		if (w && p->nodes[0] == node
-			&& p->nodes[0]->contents == p->nodes[1]->contents) {
+			&& SameContents (p->nodes[0], p->nodes[1])) {
 			// write out to the file
 
 			// sometimes planes get turned around when they are very near the
@@ -370,11 +433,40 @@ WritePortalFile_r (node_t *node)
 }
 
 static void
+WritePortalLeafs_r (node_t *n)
+{
+	if (!n->contents) {
+		WritePortalLeafs_r (n->children[0]);
+		WritePortalLeafs_r (n->children[1]);
+	} else {
+		if (n->visleafnum != -1)
+			fprintf (pf, "%i\n", n->visleafnum);
+	}
+}
+
+static void
+SetCluster_r (node_t *n, int num)
+{
+	if (n->contents == CONTENTS_SOLID) {
+		// solid block, viewpoint never inside
+		n->visleafnum = -1;
+		return;
+	}
+
+	n->visleafnum = num;
+	if (!n->contents) {
+		SetCluster_r (n->children[0], num);
+		SetCluster_r (n->children[1], num);
+	} else
+		num_realleafs++;
+}
+
+static void
 NumberLeafs_r (node_t *node)
 {
 	portal_t   *p;
 
-	if (!node->contents) {
+	if (!node->contents && !node->detail) {
 		// decision node
 		node->visleafnum = -99;
 		NumberLeafs_r (node->children[0]);
@@ -396,11 +488,18 @@ NumberLeafs_r (node_t *node)
 	for (p = node->portals; p;) {
 		if (p->nodes[0] == node) {
 			// only write out from first leaf
-			if (p->nodes[0]->contents == p->nodes[1]->contents)
+			if (SameContents(p->nodes[0], p->nodes[1]))
 				num_visportals++;
 			p = p->next[0];
 		} else
 			p = p->next[1];
+	}
+
+	if (node->detail) {
+		SetCluster_r (node->children[0], node->visleafnum);
+		SetCluster_r (node->children[1], node->visleafnum);
+	} else {
+		num_realleafs++;
 	}
 }
 
@@ -411,6 +510,7 @@ WritePortalfile (node_t *headnode)
 	// portals
 	num_visleafs = 0;
 	num_visportals = 0;
+	num_realleafs = 0;
 	NumberLeafs_r (headnode);
 
 	// write the file
@@ -422,8 +522,11 @@ WritePortalfile (node_t *headnode)
 	fprintf (pf, "%s\n", PORTALFILE);
 	fprintf (pf, "%i\n", num_visleafs);
 	fprintf (pf, "%i\n", num_visportals);
+	fprintf (pf, "%i\n", num_realleafs);
 
 	WritePortalFile_r (headnode);
+
+	WritePortalLeafs_r (headnode);
 
 	fclose (pf);
 }

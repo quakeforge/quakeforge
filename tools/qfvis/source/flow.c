@@ -61,13 +61,13 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "options.h"
 
 static void
-CheckStack (leaf_t *leaf, threaddata_t *thread)
+CheckStack (cluster_t *cluster, threaddata_t *thread)
 {
     pstack_t	*portal;
 	
     for (portal = thread->pstack_head.next; portal; portal = portal->next)
-		if (portal->leaf == leaf)
-			Sys_Error ("CheckStack: leaf recursion");
+		if (portal->cluster == cluster)
+			Sys_Error ("CheckStack: cluster recursion");
 }
 
 /*
@@ -188,16 +188,16 @@ ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target,
 }
 
 /*
-	RecursiveLeafFlow
+	RecursiveClusterFlow
 
-	Flood fill through the leafs
-	If src_portal is NULL, this is the originating leaf
+	Flood fill through the clusters
+	If src_portal is NULL, this is the originating cluster
 */
 static void
-RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
+RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 {
 	int			i, j;
-    leaf_t		*leaf;
+    cluster_t	*cluster;
     long		*test, *might, *vis;
     qboolean	more;
     pstack_t	stack;
@@ -207,29 +207,29 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 
     c_chains++;
 
-    leaf = &leafs[leafnum];
-    CheckStack(leaf, thread);
+    cluster = &clusters[clusternum];
+    CheckStack(cluster, thread);
 
-	// mark the leaf as visible
-    if (!(thread->leafvis[leafnum >> 3] & (1 << (leafnum & 7)))) {
-		thread->leafvis[leafnum >> 3] |= 1 << (leafnum & 7);
+	// mark the cluster as visible
+    if (!(thread->clustervis[clusternum >> 3] & (1 << (clusternum & 7)))) {
+		thread->clustervis[clusternum >> 3] |= 1 << (clusternum & 7);
 		thread->base->numcansee++;
     }
 
     prevstack->next = &stack;
     stack.next = NULL;
-    stack.leaf = leaf;
+    stack.cluster = cluster;
     stack.portal = NULL;
     stack.mightsee = malloc(bitbytes);
     might = (long *) stack.mightsee;
-    vis = (long *) thread->leafvis;
+    vis = (long *) thread->clustervis;
 
-	// check all portals for flowing into other leafs       
-    for (i = 0; i < leaf->numportals; i++) {
-		portal = leaf->portals[i];
+	// check all portals for flowing into other clusters       
+    for (i = 0; i < cluster->numportals; i++) {
+		portal = cluster->portals[i];
 
-		if (!(prevstack->mightsee[portal->leaf >> 3]
-			  & (1 << (portal->leaf & 7))))
+		if (!(prevstack->mightsee[portal->cluster >> 3]
+			  & (1 << (portal->cluster & 7))))
 			continue;		// can't possibly see it
 		// if the portal can't see anything we haven't already seen, skip it
 		if (portal->status == stat_done) {
@@ -249,7 +249,7 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 		if (!more)			// can't see anything new
 			continue;
 
-		// get plane of portal, point normal into the neighbor leaf
+		// get plane of portal, point normal into the neighbor cluster
 		stack.portalplane = portal->plane;
 		VectorSubtract (vec3_origin, portal->plane.normal, backplane.normal);
 		backplane.dist = -portal->plane.dist;
@@ -268,11 +268,11 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 			continue;
 
 		if (!prevstack->pass) {
-			// the second leaf can only be blocked if coplanar
+			// the second cluster can only be blocked if coplanar
 
 			stack.source = prevstack->source;
 			stack.pass = target;
-			RecursiveLeafFlow (portal->leaf, thread, &stack);
+			RecursiveClusterFlow (portal->cluster, thread, &stack);
 			FreeWinding (target);
 			continue;
 		}
@@ -340,7 +340,7 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 		c_portalpass++;
 
 		// flow through it for real
-		RecursiveLeafFlow (portal->leaf, thread, &stack);
+		RecursiveClusterFlow (portal->cluster, thread, &stack);
 
 		FreeWinding (source);
 		FreeWinding (target);
@@ -363,7 +363,7 @@ PortalFlow (portal_t *portal)
     portal->visbits = calloc (1, bitbytes);
 
     memset (&data, 0, sizeof (data));
-    data.leafvis = portal->visbits;
+    data.clustervis = portal->visbits;
     data.base = portal;
 
     data.pstack_head.portal = portal;
@@ -371,7 +371,7 @@ PortalFlow (portal_t *portal)
     data.pstack_head.portalplane = portal->plane;
     data.pstack_head.mightsee = portal->mightsee;
 
-    RecursiveLeafFlow (portal->leaf, &data, &data.pstack_head);
+    RecursiveClusterFlow (portal->cluster, &data, &data.pstack_head);
 
     portal->status = stat_done;
 }

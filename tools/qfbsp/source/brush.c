@@ -610,6 +610,10 @@ LoadBrush (mbrush_t *mb, int hullnum)
 	if (hullnum) {
 		ExpandBrush (hullnum);
 		CreateBrushFaces ();
+	} else if (mb->detail) {
+		face_t     *f;
+		for (f = brush_faces; f; f = f->next);
+			f->detail = 1;
 	}
 
 	// create the brush

@@ -24,6 +24,9 @@
 static __attribute__ ((unused)) const char rcsid[] =
 	"$Id$";
 
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
 #include <stdlib.h>
 
 #include "QF/sys.h"
@@ -155,21 +158,31 @@ ChooseMidPlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs)
 */
 static surface_t  *
 ChoosePlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs,
-					 qboolean usefloors)
+					 qboolean usefloors, qboolean usedetail)
 {
 	face_t     *f;
-	int         j, k, l;
+	int         j, k, l, ishint;
 	plane_t    *plane;
 	surface_t  *p, *p2, *bestsurface;
 	vec_t       bestvalue, bestdistribution, value, dist;
 
 	// pick the plane that splits the least
-	bestvalue = 99999;
+	bestvalue = 999999;
 	bestsurface = NULL;
 	bestdistribution = 9e30;
 
 	for (p = surfaces; p; p = p->next) {
 		if (p->onnode)
+			continue;
+
+		for (f = p->faces; f; f = f->next)
+			if (f->texturenum == TEX_HINT)
+				break;
+		ishint = f != 0;
+
+		if (p->has_struct && usedetail)
+			continue;
+		if (!p->has_struct && !usedetail)
 			continue;
 
 		plane = &planes[p->planenum];
@@ -186,7 +199,10 @@ ChoosePlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs,
 
 			for (f = p2->faces; f; f = f->next) {
 				if (FaceSide (f, plane) == SIDE_ON) {
-					k++;
+					if (!ishint && f->texturenum == TEX_HINT)
+						k += 9999;
+					else
+						k++;
 					if (k >= bestvalue)
 						break;
 				}
@@ -239,11 +255,13 @@ ChoosePlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs,
 	returns NULL if the surface list can not be divided any more (a leaf)
 */
 static surface_t  *
-SelectPartition (surface_t *surfaces)
+SelectPartition (surface_t *surfaces, int *detail)
 {
 	int         i, j;
 	surface_t  *p, *bestsurface;
 	vec3_t      mins, maxs;
+
+	*detail = 0;
 
 	// count onnode surfaces
 	i = 0;
@@ -257,8 +275,11 @@ SelectPartition (surface_t *surfaces)
 	if (i == 0)
 		return NULL;
 
-	if (i == 1)
+	if (i == 1) {
+		if (!bestsurface->has_struct && !usemidsplit)
+			*detail = 1;
 		return bestsurface;				// this is a final split
+	}
 
 	// calculate a bounding box of the entire surfaceset
 	for (i = 0; i < 3; i++) {
@@ -283,7 +304,11 @@ SelectPartition (surface_t *surfaces)
 	if (bestsurface)
 		return bestsurface;
 #endif
-	return ChoosePlaneFromList (surfaces, mins, maxs, true);
+	bestsurface = ChoosePlaneFromList (surfaces, mins, maxs, true, false);
+	if (bestsurface)
+		return bestsurface;
+	*detail = 1;
+	return ChoosePlaneFromList (surfaces, mins, maxs, true, true);
 }
 
 //============================================================================
@@ -331,6 +356,8 @@ DividePlane (surface_t *in, plane_t *split, surface_t **front,
 	plane_t    *inplane;
 	surface_t  *news;
 
+	int         have[2][2];	// [front|back][detail|struct]
+
 	inplane = &planes[in->planenum];
 
 	// parallel case is easy
@@ -345,15 +372,26 @@ DividePlane (surface_t *in, plane_t *split, surface_t **front,
 			in->faces = NULL;
 			news->faces = NULL;
 			in->onnode = news->onnode = true;
+			in->has_detail = in->has_struct = false;
 
 			for (; facet; facet = next) {
 				next = facet->next;
 				if (facet->planeside == 1) {
 					facet->next = news->faces;
 					news->faces = facet;
+
+					if (facet->detail)
+						news->has_detail = true;
+					else
+						news->has_struct = true;
 				} else {
 					facet->next = in->faces;
 					in->faces = facet;
+
+					if (facet->detail)
+						in->has_detail = true;
+					else
+						in->has_struct = true;
 				}
 			}
 
@@ -382,16 +420,19 @@ DividePlane (surface_t *in, plane_t *split, surface_t **front,
 	frontlist = NULL;
 	backlist = NULL;
 
+	memset (have, 0, sizeof (have));
 	for (facet = in->faces; facet; facet = next) {
 		next = facet->next;
 		SplitFace (facet, split, &frontfrag, &backfrag);
 		if (frontfrag) {
 			frontfrag->next = frontlist;
 			frontlist = frontfrag;
+			have[0][frontfrag->detail] = 1;
 		}
 		if (backfrag) {
 			backfrag->next = backlist;
 			backlist = backfrag;
+			have[1][backfrag->detail] = 1;
 		}
 	}
 
@@ -417,6 +458,12 @@ DividePlane (surface_t *in, plane_t *split, surface_t **front,
 
 	in->faces = frontlist;
 	*front = in;
+
+	in->has_struct = have[0][0];
+	in->has_detail = have[0][1];
+
+	news->has_struct = have[1][0];
+	news->has_detail = have[1][1];
 
 	// recalc bboxes and flags
 	CalcSurfaceInfo (news);
@@ -459,6 +506,8 @@ LinkConvexFaces (surface_t *planelist, node_t *leafnode)
 	count = 0;
 	for (surf = planelist; surf; surf = surf->next) {
 		for (f = surf->faces; f; f = f->next) {
+			if (f->texturenum < 0)
+				continue;
 			count++;
 			if (!leafnode->contents)
 				leafnode->contents = f->contents[0];
@@ -495,8 +544,10 @@ LinkConvexFaces (surface_t *planelist, node_t *leafnode)
 		pnext = surf->next;
 		for (f = surf->faces; f; f = next) {
 			next = f->next;
-			leafnode->markfaces[i] = f->original;
-			i++;
+			if (f->texturenum >= 0) {
+				leafnode->markfaces[i] = f->original;
+				i++;
+			}
 			FreeFace (f);
 		}
 		FreeSurface (surf);
@@ -548,8 +599,9 @@ PartitionSurfaces (surface_t *surfaces, node_t *node)
 	surface_t  *frontfrag, *backfrag;
 	plane_t    *splitplane;
 
-	split = SelectPartition (surfaces);
+	split = SelectPartition (surfaces, &node->detail);
 	if (!split) {						// this is a leaf node
+		node->detail = 0;
 		node->planenum = PLANENUM_LEAF;
 		LinkConvexFaces (surfaces, node);
 		return;

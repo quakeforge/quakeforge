@@ -45,10 +45,10 @@ extern pthread_mutex_t *my_mutex;
 #endif
 
 #define	MAX_PORTALS				32768
-#define	PORTALFILE				"PRT1"
+#define	PORTALFILE				"PRT1-AM"
 #define	ON_EPSILON				0.1
 #define MAX_POINTS_ON_WINDING	64
-#define	MAX_PORTALS_ON_LEAF		128
+#define	MAX_PORTALS_ON_CLUSTER	128
 
 typedef struct {
 	vec3_t      normal;
@@ -70,7 +70,7 @@ typedef enum {
 
 typedef struct {
 	plane_t     plane;		// normal pointing into neighbor
-	int         leaf;		// neighbor
+	int         cluster;	// neighbor
 	winding_t  *winding;
 	vstatus_t   status;
 	byte       *visbits;
@@ -86,19 +86,20 @@ typedef struct seperating_plane_s {
 
 typedef struct passage_s {
 	struct passage_s *next;
-	int         from, to;	// leaf numbers
+	int         from, to;	// cluster numbers
 	sep_t      *planes;
 } passage_t;
 
-typedef struct leaf_s {
+typedef struct cluster_s {
 	int         numportals;
 	passage_t  *passages;
-	portal_t   *portals[MAX_PORTALS_ON_LEAF];
-} leaf_t;
+	portal_t   *portals[MAX_PORTALS_ON_CLUSTER];
+	int         visofs;
+} cluster_t;
 
 typedef struct pstack_s {
 	struct pstack_s *next;
-	leaf_t     *leaf;
+	cluster_t  *cluster;
 	portal_t   *portal;		// portal exiting
 	winding_t  *source, *pass;
 	plane_t     portalplane;
@@ -106,22 +107,25 @@ typedef struct pstack_s {
 } pstack_t;
 
 typedef struct {
-	byte       *leafvis;	// bit string
+	byte       *clustervis;	// bit string
 	portal_t   *base;
 	pstack_t    pstack_head;
 } threaddata_t;
 
 extern int numportals;
-extern int portalleafs;
+extern int portalclusters;
+extern int numrealleafs;
 extern int c_portaltest;
 extern int c_portalpass;
 extern int c_portalcheck;
 extern int bitbytes;
+extern int bitbytes_l;
 extern int bitlongs;
 extern struct bsp_s *bsp;
 
 extern portal_t *portals;
-extern leaf_t *leafs;
+extern cluster_t *clusters;
+extern int *leafcluster;
 extern byte *uncompressed;
 
 extern int c_chains;
@@ -133,7 +137,7 @@ winding_t *NewWinding (int points);
 winding_t *ClipWinding (winding_t *in, plane_t *split, qboolean keepon);
 winding_t *CopyWinding (winding_t *winding);
 
-void LeafFlow (int leafnum);
+void ClusterFlow (int clusternum);
 void BasePortalVis (void);
 void PortalFlow (portal_t *portal);
 void CalcAmbientSounds (void);

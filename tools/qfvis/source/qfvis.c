@@ -80,17 +80,20 @@ int         c_portalcheck;
 int         c_vistest;
 
 int         numportals;
-int         portalleafs;
+int         portalclusters;
+int         numrealleafs;
 int         originalvismapsize;
 int         totalvis;
 int         count_sep;
 int         bitbytes;	// (portalleafs + 63)>>3
 int         bitlongs;
+int         bitbytes_l;	// (numrealleafs + 63)>>3
 
 portal_t   *portals;
-leaf_t     *leafs;
+cluster_t  *clusters;
 dstring_t  *visdata;
 byte       *uncompressed;		// [bitbytes * portalleafs]
+int        *leafcluster;	// leaf to cluster mappings as read from .prt file
 
 
 static void
@@ -305,7 +308,7 @@ CompressRow (byte *vis, byte *dest)
 	byte       *dest_p;
 
 	dest_p = dest;
-	visrow = (portalleafs + 7) >> 3;
+	visrow = (numrealleafs + 7) >> 3;
 
 	for (j = 0; j < visrow; j++) {
 		*dest_p++ = vis[j];
@@ -325,49 +328,70 @@ CompressRow (byte *vis, byte *dest)
 	return dest_p - dest;
 }
 
-/*
-	LeafFlow
+static void
+ClusterFlowExpand (byte *src, byte *dest)
+{
+	int         i, j;
 
-	Builds the entire visibility list for a leaf
+	for (j = 1, i = 0; i < numrealleafs; i++) {
+		if (src[leafcluster[i] >> 3] & (1 << (leafcluster[i] & 7)))
+			*dest |= j;
+		j <<= 1;
+		if (j == 256) {
+			j = 1;
+			dest++;
+		}
+	}
+}
+
+/*
+	ClusterFlow
+
+	Builds the entire visibility list for a cluster
 */
 void
-LeafFlow (int leafnum)
+ClusterFlow (int clusternum)
 {
 	byte       *outbuffer;
 	byte        compressed[MAX_MAP_LEAFS / 8];
 	int         numvis, i, j;
-	leaf_t     *leaf;
+	cluster_t  *cluster;
 	portal_t   *portal;
 
+	outbuffer = uncompressed + clusternum * bitbytes_l;
+	cluster = &clusters[clusternum];
+
 	// flow through all portals, collecting visible bits
-	outbuffer = uncompressed + leafnum * bitbytes;
-	leaf = &leafs[leafnum];
-	for (i = 0; i < leaf->numportals; i++) {
-		portal = leaf->portals[i];
+
+	memset (compressed, 0, sizeof (compressed));
+	for (i = 0; i < cluster->numportals; i++) {
+		portal = cluster->portals[i];
 		if (portal->status != stat_done)
 			Sys_Error ("portal not done");
 		for (j = 0; j < bitbytes; j++)
-			outbuffer[j] |= portal->visbits[j];
+			compressed[j] |= portal->visbits[j];
 	}
 
-	if (outbuffer[leafnum >> 3] & (1 << (leafnum & 7)))
-		Sys_Error ("Leaf portals saw into leaf");
+	if (compressed[clusternum >> 3] & (1 << (clusternum & 7)))
+		Sys_Error ("Cluster portals saw into cluster");
 
-	outbuffer[leafnum >> 3] |= (1 << (leafnum & 7));
+	compressed[clusternum >> 3] |= (1 << (clusternum & 7));
 
 	numvis = 0;
-	for (i = 0; i < portalleafs; i++)
-		if (outbuffer[i >> 3] & (1 << (i & 3)))
+	for (i = 0; i < portalclusters; i++)
+		if (compressed[i >> 3] & (1 << (i & 3)))
 			numvis++;
+
+	// expand to cluster->leaf PVS
+	ClusterFlowExpand (compressed, outbuffer);
 
 	// compress the bit string
 	if (options.verbosity > 0)
-		printf ("leaf %4i : %4i visible\n", leafnum, numvis);
+		printf ("cluster %4i : %4i visible\n", clusternum, numvis);
 	totalvis += numvis;
 
 	i = CompressRow (outbuffer, compressed);
-
-	bsp->leafs[leafnum + 1].visofs = visdata->size;
+ 	cluster->visofs = visdata->size;
 	dstring_append (visdata, compressed, i);
 }
 
@@ -436,11 +460,14 @@ CalcVis (void)
 	CalcPortalVis ();
 
 	// assemble the leaf vis lists by oring and compressing the portal lists
-	for (i = 0; i < portalleafs; i++)
-		LeafFlow (i);
+	for (i = 0; i < portalclusters; i++)
+		ClusterFlow (i);
 
+	for (i = 0; i < numrealleafs; i++) {
+		bsp->leafs[i].visofs = clusters[leafcluster[i]].visofs;
+	}
 	if (options.verbosity >= 0)
-		printf ("average leafs visible: %i\n", totalvis / portalleafs);
+		printf ("average clusters visible: %i\n", totalvis / portalclusters);
 }
 #if 0
 static qboolean
@@ -622,9 +649,9 @@ LoadPortals (char *name)
 {
 	char        magic[80];
 	FILE       *f;
-	int         leafnums[2];
+	int         clusternums[2];
 	int         numpoints, i, j;
-	leaf_t     *leaf;
+	cluster_t  *cluster;
 	plane_t     plane;
 	portal_t   *portal;
 	winding_t  *winding;
@@ -640,35 +667,39 @@ LoadPortals (char *name)
 		}
 	}
 
-	if (fscanf (f, "%79s\n%i\n%i\n", magic, &portalleafs, &numportals) != 3)
+	if (fscanf (f, "%79s\n%i\n%i\n%i\n", magic, &portalclusters, &numportals,
+				&numrealleafs) != 4)
 		Sys_Error ("LoadPortals: failed to read header");
 	if (strcmp (magic, PORTALFILE))
 		Sys_Error ("LoadPortals: not a portal file");
 
 	if (options.verbosity >= 0) {
-		printf ("%4i portalleafs\n", portalleafs);
+		printf ("%4i portalclusters\n", portalclusters);
 		printf ("%4i numportals\n", numportals);
+		printf ("%4i numrealleafs\n", numrealleafs);
 	}
 	
-	bitbytes = ((portalleafs + 63) & ~63) >> 3;
+	bitbytes = ((portalclusters + 63) & ~63) >> 3;
 	bitlongs = bitbytes / sizeof (long);
+
+	bitbytes_l = ((numrealleafs + 63) & ~63) >> 3;
 
 	// each file portal is split into two memory portals, one for each
 	// direction
 	portals = calloc (2 * numportals, sizeof (portal_t));
 
-	leafs = calloc (portalleafs, sizeof (leaf_t));
+	clusters = calloc (portalclusters, sizeof (cluster_t));
 
-	originalvismapsize = portalleafs * ((portalleafs + 7) / 8);
+	originalvismapsize = numrealleafs * ((numrealleafs + 7) / 8);
 
 	for (i = 0, portal = portals; i < numportals; i++) {
-		if (fscanf (f, "%i %i %i ", &numpoints, &leafnums[0],
-					&leafnums[1]) != 3)
+		if (fscanf (f, "%i %i %i ", &numpoints, &clusternums[0],
+					&clusternums[1]) != 3)
 			Sys_Error ("LoadPortals: reading portal %i", i);
 		if (numpoints > MAX_POINTS_ON_WINDING)
 			Sys_Error ("LoadPortals: portal %i has too many points", i);
-		if ((unsigned) leafnums[0] > portalleafs
-			|| (unsigned) leafnums[1] > portalleafs)
+		if ((unsigned) clusternums[0] > portalclusters
+			|| (unsigned) clusternums[1] > portalclusters)
 			Sys_Error ("LoadPortals: reading portal %i", i);
 
 		winding = portal->winding = NewWinding (numpoints);
@@ -693,30 +724,35 @@ LoadPortals (char *name)
 		PlaneFromWinding (winding, &plane);
 
 		// create forward portal
-		leaf = &leafs[leafnums[0]];
-		if (leaf->numportals == MAX_PORTALS_ON_LEAF)
-			Sys_Error ("Leaf with too many portals");
-		leaf->portals[leaf->numportals] = portal;
-		leaf->numportals++;
+		cluster = &clusters[clusternums[0]];
+		if (cluster->numportals == MAX_PORTALS_ON_CLUSTER)
+			Sys_Error ("Cluster with too many portals");
+		cluster->portals[cluster->numportals] = portal;
+		cluster->numportals++;
 
 		portal->winding = winding;
 		VectorSubtract (vec3_origin, plane.normal, portal->plane.normal);
 		portal->plane.dist = -plane.dist;
-		portal->leaf = leafnums[1];
+		portal->cluster = clusternums[1];
 		portal++;
 
 		// create backwards portal
-		leaf = &leafs[leafnums[1]];
-		if (leaf->numportals == MAX_PORTALS_ON_LEAF)
-			Sys_Error ("Leaf with too many portals");
-		leaf->portals[leaf->numportals] = portal;
-		leaf->numportals++;
+		cluster = &clusters[clusternums[1]];
+		if (cluster->numportals == MAX_PORTALS_ON_CLUSTER)
+			Sys_Error ("Cluster with too many portals");
+		cluster->portals[cluster->numportals] = portal;
+		cluster->numportals++;
 
 		portal->winding = winding;
 		portal->plane = plane;
-		portal->leaf = leafnums[0];
+		portal->cluster = clusternums[0];
 		portal++;
 	}
+
+	leafcluster = calloc (numrealleafs, sizeof (int));
+	for (i = 0; i < numrealleafs; i++)
+		if (fscanf (f, "%i\n", &leafcluster[i]) != 1)
+			Sys_Error ("LoadPortals: parse error in leaf->cluster mappings");
 	fclose (f);
 }
 
@@ -753,7 +789,7 @@ main (int argc, char **argv)
 	dstring_appendstr (portalfile, ".prt");
 	LoadPortals (portalfile->str);
 
-	uncompressed = calloc (bitbytes, portalleafs);
+	uncompressed = calloc (bitbytes_l, portalclusters);
 
 	CalcVis ();
 

@@ -199,6 +199,9 @@ GrowNodeRegion_r (node_t * node)
 	node->firstface = bsp->numfaces;
 
 	for (f = node->faces; f; f = f->next) {
+		if (f->texturenum < 0)
+			continue;
+
 //		if (f->outputnumber != -1)
 //			continue;		// allready grown into an earlier region
 

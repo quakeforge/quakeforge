@@ -43,6 +43,9 @@ typedef struct
 // volume.  is this still needed?
 #define	SIDESPACE	24
 
+#define TEX_SKIP -1
+#define TEX_HINT -2
+
 //============================================================================
 
 typedef struct
@@ -79,6 +82,8 @@ typedef struct visfacet_s
 	struct visfacet_s	*original;		// face on node
 	int				outputnumber;		// only valid for original faces after
 										// write surfaces
+	qboolean        detail;				// is a detail face
+
 	int				numpoints;
 	vec3_t			pts[MAXEDGES];		// FIXME: change to use winding_t
 	int				edges[MAXEDGES];
@@ -93,6 +98,8 @@ typedef struct surface_s
 	vec3_t		mins, maxs;
 	qboolean		onnode;			// true if surface has already been used
 									// as a splitting node
+	qboolean     has_detail;	// true if the surface has detail brushes
+	qboolean     has_struct;	// true if the surface has non-detail brushes
 	face_t		*faces;	// links to all the faces on either side of the surf
 } surface_t;
 
@@ -118,6 +125,8 @@ typedef struct node_s
 	int				visleafnum;		// -1 = solid
 	int				valid;			// for flood filling
 	int				occupied;		// light number in leaf for outside filling
+	int             o_dist;			// distance to nearest entity
+	int             detail;			// 1 if created by detail split
 } node_t;
 
 // brush.c ====================================================================
@@ -199,6 +208,7 @@ typedef struct portal_s
 extern	node_t	outside_node;		// portals outside the world face this
 
 void PortalizeWorld (node_t *headnode);
+void PortalizeWorldDetail (node_t *headnode);	// stop at detail nodes
 void WritePortalfile (node_t *headnode);
 void FreeAllPortals (node_t *node);
 

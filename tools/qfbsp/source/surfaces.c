@@ -365,7 +365,8 @@ MakeFaceEdges_r (node_t *node)
 		return;
 
 	for (f = node->faces; f; f = f->next)
-		FindFaceEdges (f);
+		if (f->texturenum >= 0)
+			FindFaceEdges (f);
 
 	MakeFaceEdges_r (node->children[0]);
 	MakeFaceEdges_r (node->children[1]);
