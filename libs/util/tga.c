@@ -591,6 +591,8 @@ decode_greyscale_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
 	int         column, columns, rows, span;
 	cmap_t     *cmap = 0;		// not really used but needed for rle_expand
 
+	dataByte = skip_colormap (targa, dataByte);
+
 	if (targa->pixel_size != 8)
 		Sys_Error ("LoadTGA: unsupported truecolor pixel size");
 	tex->format = tex_la;
