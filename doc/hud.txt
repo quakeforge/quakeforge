@@ -1,0 +1,49 @@
+{
+    common = {
+	textureHighlightColor = "0.7 0.7 0.1";	// pickup color flash
+	themeName = "Scout";
+    };
+    ammo = {
+    	gravity = southeast;
+	texSize = (24, 12);
+	textGrav = east;
+	items = ({
+	    name = shells;
+	    texture = sb_shells;
+	    location = (-24, 12);
+	},
+	{
+	    name = nails;
+	    texture = sb_nails;
+	    location = (-24, 24);
+	});
+    };
+    crosshair = {
+    	gravity = center;
+	texSize = (12, 12);
+	texture = crosshair;
+    };
+    items = {
+    	gravity = west;
+	texSize = (12, 12);
+	items = ({
+	    name = quad;
+	    texture = sb_quad;
+	    location = (0, 0);
+	});
+    };
+    weapons = {
+    	gravity = northeast;
+	texSize = (24, 8);
+	items = ({
+	    name = shotgun;
+	    texture = sb_shot;
+	    location = (-24, 0);
+	},
+	{
+	    name = sshotgun;
+	    texture = sb_sshot;
+	    location = (-24, 8);
+	});
+    };
+}

@@ -13,7 +13,7 @@ noinst_PROGRAMS= @SERVER_PLUGIN_STATIC@ @CLIENT_PLUGIN_STATIC@
 EXTRA_PROGRAMS=  console_server.la console_client.la
 
 common_sources= buffer.c complete.c console.c inputline.c list.c filelist.c
-client_sources= client.c menu.c
+client_sources= client.c menu.c view.c
 server_sources= server.c
 
 libQFconsole_la_LDFLAGS=	-version-info 1:0:0 -rpath $(libdir)
