@@ -131,6 +131,7 @@ QFGL_LoadLibrary (void)
 	glGetProcAddress = dlsym (handle, "glXGetProcAddressARB");
 	return handle;
 }
+
 #else
 
 # error "Cannot load libraries: %s was not configured with DSO support"
