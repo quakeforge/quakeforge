@@ -16,53 +16,53 @@ id		inspcontrol_i;
 		
 	currentInspectorType = -1;
 
-	contentList = [[List alloc] init];
-	windowList = [[List alloc] init];
-	itemList = [[List alloc] init];
+	contentList = [[NSMutableArray alloc] init];
+	windowList = [[NSMutableArray alloc] init];
+	itemList = [[NSMutableArray alloc] init];
 
 	// ADD NEW INSPECTORS HERE...
 
-	[windowList addObject:win_project_i];
-	[contentList addObject:[win_project_i contentView]];
-	[itemProject_i setKeyEquivalent:'1'];
-	[itemList addObject:itemProject_i];
+	[windowList addObject: win_project_i];
+	[contentList addObject: [win_project_i contentView]];
+	[itemProject_i setKeyEquivalent: @"1"];
+	[itemList addObject: itemProject_i];
 
-	[windowList addObject:win_textures_i];
-	[contentList addObject:[win_textures_i contentView]];
-	[itemTextures_i setKeyEquivalent:'2'];
-	[itemList addObject:itemTextures_i];
+	[windowList addObject: win_textures_i];
+	[contentList addObject: [win_textures_i contentView]];
+	[itemTextures_i setKeyEquivalent: @"2"];
+	[itemList addObject: itemTextures_i];
 
-	[windowList addObject:win_things_i];
-	[contentList addObject:[win_things_i contentView]];
-	[itemThings_i setKeyEquivalent:'3'];
-	[itemList addObject:itemThings_i];
+	[windowList addObject: win_things_i];
+	[contentList addObject: [win_things_i contentView]];
+	[itemThings_i setKeyEquivalent: @"3"];
+	[itemList addObject: itemThings_i];
 	
-	[windowList addObject:win_prefs_i];
-	[contentList addObject:[win_prefs_i contentView]];
-	[itemPrefs_i setKeyEquivalent:'4'];
-	[itemList addObject:itemPrefs_i];
+	[windowList addObject: win_prefs_i];
+	[contentList addObject: [win_prefs_i contentView]];
+	[itemPrefs_i setKeyEquivalent: @"4"];
+	[itemList addObject: itemPrefs_i];
 
-	[windowList addObject:win_settings_i];
-	[contentList addObject:[win_settings_i contentView]];
-	[itemSettings_i setKeyEquivalent:'5'];
-	[itemList addObject:itemSettings_i];
+	[windowList addObject: win_settings_i];
+	[contentList addObject: [win_settings_i contentView]];
+	[itemSettings_i setKeyEquivalent: @"5"];
+	[itemList addObject: itemSettings_i];
 
-	[windowList addObject:win_output_i];
-	[contentList addObject:[win_output_i contentView]];
-	[itemOutput_i setKeyEquivalent:'6'];
-	[itemList addObject:itemOutput_i];
+	[windowList addObject: win_output_i];
+	[contentList addObject: [win_output_i contentView]];
+	[itemOutput_i setKeyEquivalent: @"6"];
+	[itemList addObject: itemOutput_i];
 
-	[windowList addObject:win_help_i];
-	[contentList addObject:[win_help_i contentView]];
-	[itemHelp_i setKeyEquivalent:'7'];
-	[itemList addObject:itemHelp_i];
+	[windowList addObject: win_help_i];
+	[contentList addObject: [win_help_i contentView]];
+	[itemHelp_i setKeyEquivalent: @"7"];
+	[itemList addObject: itemHelp_i];
 
 	// Setup inspector window with project subview first
 
-	[inspectorView_i setAutoresizeSubviews:YES];
+	[inspectorView_i setAutoresizesSubviews: YES];
 
-	inspectorSubview_i = [contentList objectAt:i_project];
-	[inspectorView_i addSubview:inspectorSubview_i];
+	inspectorSubview_i = [contentList objectAtIndex: i_project];
+	[inspectorView_i addSubview: inspectorSubview_i];
 
 	currentInspectorType = -1;
 	[self changeInspectorTo:i_project];
@@ -90,29 +90,31 @@ id		inspcontrol_i;
 - changeInspectorTo:(insp_e)which
 {
 	id		newView;
-	NXRect	r;
+	NSRect	r;
 	id		cell;
-	NXRect	f;
+	NSRect	f;
 	
 	if (which == currentInspectorType)
 		return self;
 	
 	currentInspectorType = which;
-	newView = [contentList objectAt:which];
+	newView = [contentList objectAtIndex: which];
 	
-	cell = [itemList objectAt:which];	// set PopUpButton title
+	cell = [itemList objectAtIndex: which];	// set PopUpButton title
 	[popUpButton_i setTitle:[cell title]];
 	
 	[inspectorView_i replaceSubview:inspectorSubview_i with:newView];
-	[inspectorView_i getFrame:&r];
+	r = [inspectorView_i frame];
 	inspectorSubview_i = newView;
-	[inspectorSubview_i setAutosizing:NX_WIDTHSIZABLE | NX_HEIGHTSIZABLE];
-	[inspectorSubview_i sizeTo:r.size.width - 4 :r.size.height - 4];
+	[inspectorSubview_i setAutoresizingMask: NSViewHeightSizable | NSViewWidthSizable];
+	[inspectorSubview_i resizeWithOldSuperviewSize: r.size];
 	
 	[inspectorSubview_i lockFocus];
-	[inspectorSubview_i getBounds:&f];
-	PSsetgray(NX_LTGRAY);
-	NXRectFill(&f);
+	r = [inspectorSubview_i bounds];
+
+	PSsetgray (NSLightGray);
+	NSRectFill (f);
+
 	[inspectorSubview_i unlockFocus];
 	[inspectorView_i display];
 	
