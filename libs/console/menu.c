@@ -87,20 +87,20 @@ static func_t   menu_draw_hud;
 static const char *top_menu;
 
 static int
-menu_resolve_globals (void)
+menu_resolve_globals (progs_t *pr)
 {
 	const char *sym;
 	dfunction_t *f;
 
-	if (!(f = ED_FindFunction (&menu_pr_state, sym = "menu_init")))
+	if (!(f = ED_FindFunction (pr, sym = "menu_init")))
 		goto error;
 	menu_init = (func_t)(f - menu_pr_state.pr_functions);
-	if (!(f = ED_FindFunction (&menu_pr_state, sym = "menu_draw_hud")))
+	if (!(f = ED_FindFunction (pr, sym = "menu_draw_hud")))
 		goto error;
-	menu_draw_hud = (func_t)(f - menu_pr_state.pr_functions);
+	menu_draw_hud = (func_t)(f - pr->pr_functions);
 	return 1;
 error:
-	Con_Printf ("%s: undefined function %s\n", menu_pr_state.progs_name, sym);
+	Con_Printf ("%s: undefined function %s\n", pr->progs_name, sym);
 	return 0;
 }
 
@@ -459,6 +459,8 @@ Menu_Init (void)
 	PR_Cmds_Init (&menu_pr_state);
 	R_Progs_Init (&menu_pr_state);
 
+	PR_AddLoadFunc (&menu_pr_state, menu_resolve_globals);
+
 	confirm_quit = Cvar_Get ("confirm_quit", "1", CVAR_ARCHIVE, NULL,
 							 "confirm quit command");
 
@@ -480,19 +482,14 @@ Menu_Load (void)
 	menu = 0;
 	top_menu = 0;
 
+	menu_pr_state.progs = 0;
 	if ((size = QFS_FOpenFile (menu_pr_state.progs_name, &file)) != -1) {
 		PR_LoadProgsFile (&menu_pr_state, file, size, 0, 256 * 1024);
 		Qclose (file);
 
-		if (!PR_RelocateBuiltins (&menu_pr_state)
-			|| !PR_ResolveGlobals (&menu_pr_state)
-			|| !menu_resolve_globals ()) {
+		if (!PR_RunLoadFuncs (&menu_pr_state)) {
 			free (menu_pr_state.progs);
 			menu_pr_state.progs = 0;
-		} else {
-			PR_LoadStrings (&menu_pr_state);
-			PR_LoadDebug (&menu_pr_state);
-			PR_Check_Opcodes (&menu_pr_state);
 		}
 	}
 	if (!menu_pr_state.progs) {
@@ -503,7 +500,6 @@ Menu_Load (void)
 		Con_SetOrMask (0x00);
 		return;
 	}
-	PR_InitRuntime (&menu_pr_state);
 	Cbuf_Progs_SetCbuf (&menu_pr_state, con_data.cbuf);
 	InputLine_Progs_SetDraw (&menu_pr_state, C_DrawInputLine);
 	PR_ExecuteProgram (&menu_pr_state, menu_init);
