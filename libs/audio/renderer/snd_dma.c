@@ -277,7 +277,7 @@ SND_Spatialize (channel_t *ch)
 	vec3_t		source_vec;
 
 	// anything coming from the view entity will always be full volume
-	if (ch->entnum == *render_data.viewentity) {
+	if (ch->entnum == *render_data.viewentity || ch->entnum == -1) {
 		ch->leftvol = ch->master_vol;
 		ch->rightvol = ch->master_vol;
 		ch->phase = 0;
@@ -722,6 +722,27 @@ SND_Play (void)
 }
 
 static void
+SND_PlayCenter (void)
+{
+	dstring_t  *name = dstring_new ();
+	int			i;
+	sfx_t	   *sfx;
+
+	i = 1;
+	while (i < Cmd_Argc ()) {
+		if (!strrchr (Cmd_Argv (i), '.')) {
+			dsprintf (name, "%s.wav", Cmd_Argv (i));
+		} else {
+			dsprintf (name, "%s", Cmd_Argv (i));
+		}
+		sfx = SND_PrecacheSound (name->str);
+		SND_StartSound (-1, 0, sfx, listener_origin, 1.0, 1.0);
+		i++;
+	}
+	dstring_delete (name);
+}
+
+static void
 SND_PlayVol (void)
 {
 	dstring_t  *name = dstring_new ();
@@ -867,6 +888,8 @@ SND_Init (void)
 
 	Cmd_AddCommand ("play", SND_Play,
 					"Play selected sound effect (play pathto/sound.wav)");
+	Cmd_AddCommand ("playcenter", SND_PlayCenter,
+					"Play selected sound effect without 3D spatialization.");
 	Cmd_AddCommand ("playvol", SND_PlayVol, "Play selected sound effect at "
 					"selected volume (playvol pathto/sound.wav num");
 	Cmd_AddCommand ("stopsound", SND_StopAllSoundsC,
