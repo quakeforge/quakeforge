@@ -36,10 +36,11 @@
 #include <dinput.h>
 #include "client.h"
 #include "QF/keys.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/qargs.h"
 #include "QF/cmd.h"
-#include "input.h"
+#include "QF/input.h"
 #include "cl_input.h"
 #include "view.h"
 #include "host.h"

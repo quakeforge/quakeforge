@@ -251,8 +251,8 @@ qw_client_sgl_DEPENDENCIES= $(CLIENT_LIB_DEPS)
 #
 wgl_SOURCES=	vid_wgl.c
 
-qw_client_wgl_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(ogl_SOURCES) $(wgl_SOURCES)
-qw_client_wgl_LDADD=	$(CLIENT_LIBS)
+qw_client_wgl_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(ogl_SOURCES) $(wgl_SOURCES) in_win.c
+qw_client_wgl_LDADD=	$(CLIENT_LIBS) $(GLX_LIBS) -lgdi32
 qw_client_wgl_DEPENDENCIES= $(CLIENT_LIB_DEPS)
 
 #

@@ -851,12 +851,12 @@ fi
 
 dnl Win32
 if test -z "$SNDTYPE" -a "x$ac_cv_header_windows_h" = "xyes" -a \
-	"x$ac_cv_header_mmsystem_h" = "xyes"; then
+	"x$ac_cv_header_dsound_h" = "xyes"; then
   AC_EGREP_CPP([QF_maGiC_VALUE],[
 #include <windows.h>
-#include <mmsystem.h>
+#include <dsound.h>
 #ifdef GMEM_MOVEABLE
-#ifdef WAVE_FORMAT_PCM
+#ifdef DirectSoundEnumerate
 QF_maGiC_VALUE
 #endif
 #endif
@@ -962,15 +962,17 @@ QF_maGiC_VALUE
 fi
 
 if test -z "$CDTYPE"; then
-	AC_EGREP_CPP([QF_maGIC_VALUE],
+	AC_EGREP_CPP([QF_maGiC_VALUE],
 		[
 #include <windows.h>
+#include <mmsystem.h>
 #if defined(MCI_SET_DOOR_OPEN)
 QF_maGiC_VALUE
 #endif
 		],
 		AC_MSG_RESULT([yes (Win32)])
 	    CDTYPE=WIN32
+		CD_LIBS=""
 	)
 fi
 
@@ -1467,6 +1469,7 @@ AC_MSG_RESULT([
 	Server support: $SV_TARGETS
 	Client support:$CL_TARGETS
 	Sound system: $SNDTYPE
+	CD Audio system: $CDTYPE
 	IPv6 networking: $NETTYPE_IPV6
 	Compression support: $HAVE_ZLIB
 
