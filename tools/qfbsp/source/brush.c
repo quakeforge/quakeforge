@@ -31,6 +31,7 @@
 
 #include "compat.h"
 #include "bsp5.h"
+#include "options.h"
 
 int         numbrushplanes;
 plane_t     planes[MAX_MAP_PLANES];
@@ -73,10 +74,11 @@ CheckFace (face_t *f)
 		d = DotProduct (p1, planes[f->planenum].normal)
 			- planes[f->planenum].dist;
 
-		//XXX point off plane autofix
+		// point off plane autofix
 		if (d < -ON_EPSILON || d > ON_EPSILON)
-			printf ("CheckFace: point off plane: %g @ (%g %g %g)\n", d,
-					p1[0], p1[1], p1[2]);
+			if (options.verbosity > 1)
+				printf ("CheckFace: point off plane: %g @ (%g %g %g)\n", d,
+						p1[0], p1[1], p1[2]);
 		VectorMultSub (p1, d, planes[f->planenum].normal, p1);
 
 		// check the edge isn't degenerate

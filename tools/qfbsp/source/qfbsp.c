@@ -216,27 +216,37 @@ ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 	}
 	if (!counts[1])
 		return in;
-
+#if 0
 	maxpts = in->numpoints + 4;			// can't use counts[0]+2 because of fp
 										// grouping errors
+#else
+	maxpts = counts[0] + 2;
+#endif
 	neww = NewWinding (maxpts);
 
 	for (i = 0; i < in->numpoints; i++) {
 		p1 = in->points[i];
 
 		if (sides[i] == SIDE_ON) {
+			if (neww->numpoints == maxpts)
+				Sys_Error ("ClipWinding: points exceeded estimate");
 			VectorCopy (p1, neww->points[neww->numpoints]);
 			neww->numpoints++;
 			continue;
 		}
 
 		if (sides[i] == SIDE_FRONT) {
+			if (neww->numpoints == maxpts)
+				Sys_Error ("ClipWinding: points exceeded estimate");
 			VectorCopy (p1, neww->points[neww->numpoints]);
 			neww->numpoints++;
 		}
 
 		if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i])
 			continue;
+
+		if (neww->numpoints == maxpts)
+			Sys_Error ("ClipWinding: points exceeded estimate");
 
 		// generate a split point
 		p2 = in->points[(i + 1) % in->numpoints];
@@ -254,9 +264,6 @@ ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 		VectorCopy (mid, neww->points[neww->numpoints]);
 		neww->numpoints++;
 	}
-
-	if (neww->numpoints > maxpts)
-		Sys_Error ("ClipWinding: points exceeded estimate");
 
 	// free the original winding
 	FreeWinding (in);
