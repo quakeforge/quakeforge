@@ -284,4 +284,124 @@ Function parameters and return types are are fully checked, including the
  Functions with different return types and/or different parameter types
  or counts are distinct types and mixing them up will cause a type missmatch
  error.
+ Similar for pointers to various types.
+\layout Section
+
+Variables
+\layout Subsection
+
+Local variables
+\layout Subsubsection
+
+Initialization
+\layout Standard
+
+Local variables of basic types can now be initialized when declared.
+ eg
+\layout Standard
+
+
+\family typewriter 
+local integer elite = 31337;
+\layout Subsubsection
+
+Unused variables
+\layout Standard
+
+Local variables that are declared but not used produce a warning.
+\layout Subsubsection
+
+Uninitialized variables
+\layout Standard
+
+Checks are done to ensure that local variables have been initialized before
+ being used.
+ However, these checks are not perfect and false positives are very likely
+ in complex code.
+ Occurances of false negatives are not known, but the possibility of their
+ existance remains and any examples of false negatives should be reported
+ as bugs.
+\layout Subsection
+
+Complex global variables
+\layout Standard
+
+Global array variables can be initialized using 
+\family typewriter 
+= { 
+\emph on 
+elementlist
+\emph default 
+ };
+\family default 
+.
+ Element lists may be nested using 
+\family typewriter 
+{}
+\family default 
+.
+ Structures cannot currently be initialized, but this is a FIXME :)
+\layout Subsection
+
+Magic variables
+\layout List
+\labelwidthstring 00.00.0000
+
+@self Automagicly declared entity variable the engine will use for 
+\family typewriter 
+touch
+\family default 
+ and 
+\family typewriter 
+think
+\family default 
+ functions.
+ This allows 
+\family typewriter 
+self
+\family default 
+ to be used as the object hidden parameter in methods.
+\layout List
+\labelwidthstring 00.00.0000
+
+@this Automagicly declared 
+\family typewriter 
+id
+\family default 
+ field that the engine expects to point to the object associated with the
+ entity.
+ The engine will use this field, if it exists, to set the 
+\family typewriter 
+self
+\family default 
+ parameter to 
+\family typewriter 
+touch
+\family default 
+ and 
+\family typewriter 
+think
+\family default 
+ methods (the engine assumes it's calling a method rather than a function
+ if the @this field is used.
+\layout List
+\labelwidthstring 00.00.0000
+
+@argc Number of parameters passed through 
+\family typewriter 
+...
+
+\family default 
+ in vararg functions.
+ Not valid elsewhere.
+\layout List
+\labelwidthstring 00.00.0000
+
+@argv Array of vectors representing the parameters passed through 
+\family typewriter 
+...
+
+\family default 
+ in vararg functions.
+ Not valid elsewhere.
 \the_end
