@@ -384,7 +384,7 @@ add_sel_name (progs_t *pr, const char *name)
 	int         ind = ++pr->selector_index;
 	int         size, i;
 
-	if (pr->selector_index > pr->selector_index_max) {
+	if (pr->selector_index >= pr->selector_index_max) {
 		size = pr->selector_index_max + 128;
 		pr->selector_sels = realloc (pr->selector_sels,
 									 size * sizeof (obj_list *));
