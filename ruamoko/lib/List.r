@@ -63,6 +63,7 @@ typedef struct list_bucket_s list_bucket_t;
 	if (head)
 		head.prev = &e.next;
 	head = e;
+	count++;
 }
 
 -(void) addItemAtTail: (id) item
@@ -73,6 +74,7 @@ typedef struct list_bucket_s list_bucket_t;
 	e.prev = tail;
 	tail[0] = e;
 	tail = &e.next;
+	count++;
 }
 
 - (id) removeItem: (id) item
@@ -85,6 +87,7 @@ typedef struct list_bucket_s list_bucket_t;
 			if (e.next)
 				e.next.prev = e.prev;
 			obj_free (e);
+			count--;
 			return item;
 		}
 	}
@@ -103,7 +106,10 @@ typedef struct list_bucket_s list_bucket_t;
 	e.prev[0] = e.next;
 	if (e.next)
 		e.next.prev = e.prev;
+	if (tail == &e.next)
+		tail = e.prev;
 	obj_free (e);
+	count--;
 	return obj;
 }
 
@@ -120,6 +126,7 @@ typedef struct list_bucket_s list_bucket_t;
 	if (e.next)
 		e.next.prev = e.prev;
 	obj_free (e);
+	count--;
 	return obj;
 }
 
