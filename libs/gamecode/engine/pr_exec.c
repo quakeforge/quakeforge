@@ -88,8 +88,12 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s)
 			else
 				Sys_Printf ("%s", PR_GlobalStringNoContents (pr, s->b));
 		}
-		if (op->type_c != ev_void)
-			Sys_Printf ("%s", PR_GlobalStringNoContents (pr, s->c));
+		if (op->type_c != ev_void) {
+			if (op->type_b == ev_pointer && op->type_c == ev_integer)
+				Sys_Printf ("%s", PR_GlobalString (pr, s->c, op->type_c));
+			else
+				Sys_Printf ("%s", PR_GlobalStringNoContents (pr, s->c));
+		}
 	}
 	Sys_Printf ("\n");
 }
