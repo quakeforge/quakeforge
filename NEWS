@@ -55,3 +55,18 @@ changes from 0.3.0
      o  can generate/link object files (.qfo files)
      o  library file support (.qfo files in a .pak file)
      o  strict type checking
+
+ o      Enhanced console scripting - GIB
+     o  New language derived from the quake console.
+     o  Functions with arguments and return values.
+     o  Looping (while, for) and branching (if) commands.
+     o  Local and global variables as well as access to cvars.
+        Supports Python-like slicing of variables.
+     o  A basic math interpreter that respects order of operations
+        and provides most arithmetic and logic operators.
+     o  Non-preemptive threading and callbacks to GIB functions in
+	response to game events (limited but functional at the moment)
+     o  File reading, writing, and searching.
+     o  Integrates with console -- GIB functions can be exported as
+        console commands to be used at the console or in binds.
+     o  See gib.html in doc for more information.
