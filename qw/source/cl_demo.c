@@ -885,7 +885,7 @@ CL_FinishTimeDemo (void)
 			Con_Printf ("timedemo stats for %d runs:\n", timedemo_runs);
 			Con_Printf ("  average fps: %.3f\n", average);
 			Con_Printf ("  min/max fps: %.3f/%.3f\n", min, max);
-			Con_Printf ("std deviation: %.3f\n", sqrt (variance));
+			Con_Printf ("std deviation: %.3f fps\n", sqrt (variance));
 		}
 		free (timedemo_data);
 		timedemo_data = 0;
