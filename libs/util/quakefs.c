@@ -1168,7 +1168,7 @@ QFS_Init (const char *game)
 			if (gamedirs[j] == ',')
 				count++;
 
-		list = malloc (count * sizeof (char *));
+		list = calloc (count + 1, sizeof (char *));
 
 		j = 0;
 		where = strtok (gamedirs, ",");
