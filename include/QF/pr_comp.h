@@ -313,6 +313,10 @@ typedef union pr_type_u {
 	unsigned int uinteger_var;
 } pr_type_t;
 
+typedef struct pr_va_list_s {
+	int     count;
+	pointer_t list;				// pr_type_t
+} pr_va_list_t;
 
 #define	PROG_ID_VERSION	6
 #define	PROG_VERSION	0x00fff002	// MMmmmRRR 0.fff.002 (hex)

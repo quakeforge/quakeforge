@@ -289,11 +289,20 @@ pr_obj_msg_lookup_super (progs_t *pr)
 static void
 pr_obj_msg_sendv (progs_t *pr)
 {
-	//pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
-	//pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
-	//arglist
-	//XXX
-	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
+	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
+	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
+	pr_va_list_t args = G_STRUCT (pr, pr_va_list_t, OFS_PARM2);
+	func_t      imp = obj_msg_lookup (pr, receiver, op);
+
+	if (!imp)
+		PR_RunError (pr, "%s does not respond to %s",
+					 PR_GetString (pr, object_get_class_name (pr, receiver)),
+					 PR_GetString (pr, op->sel_id));
+	if (args.count > 6)
+		args.count = 6;
+	memcpy (G_POINTER (pr, OFS_PARM2), G_POINTER (pr, args.list),
+			args.count * 4);
+	call_function (pr, imp);
 }
 
 static void
