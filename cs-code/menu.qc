@@ -31,6 +31,26 @@ void (string text, integer key) quit =
 {
 };
 
+void () single_player_menu =
+{
+	Menu_Item (54, 32, "", NIL);
+};
+
+void () multi_player_menu =
+{
+	Menu_Item (54, 52, "", NIL);
+};
+
+void () options_menu =
+{
+	Menu_Item (54, 72, "", NIL);
+};
+
+void () help_menu =
+{
+	Menu_Item (54, 92, "", NIL);
+};
+
 void () main_menu =
 {
 	Menu_Begin (0, 0, "main");
@@ -40,10 +60,10 @@ void () main_menu =
 	Menu_Cursor (spinner);
 	//if (do_single_player)
 	//	single_player_menu ();
-	//multi_player_menu ();
-	//options_menu ();
-	//help_menu ();
-	Menu_Item (54, 132, "", quit);
+	multi_player_menu ();
+	options_menu ();
+	help_menu ();
+	Menu_Item (54, 112, "", quit);
 	Menu_End ();
 };
 

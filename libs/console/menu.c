@@ -53,6 +53,7 @@ typedef struct menu_item_s {
 	struct menu_item_s **items;
 	int         num_items;
 	int         max_items;
+	int         cur_item;
 	int         x, y;
 	func_t      func;
 	func_t      cursor;
@@ -293,10 +294,15 @@ Menu_Draw (void)
 {
 	menu_pic_t *m_pic;
 	int         i;
+	menu_item_t *item;
 
 	if (!menu)
 		return;
+
 	*menu_pr_state.globals.time = *menu_pr_state.time;
+
+	item = menu->items[menu->cur_item];
+
 	for (m_pic = menu->pics; m_pic; m_pic = m_pic->next) {
 		qpic_t     *pic = Draw_CachePic (m_pic->name, 1);
 		if (!pic)
@@ -310,9 +316,12 @@ Menu_Draw (void)
 		}
 	}
 	if (menu->cursor) {
-		G_INT (&menu_pr_state, OFS_PARM0) = 0;
-		G_INT (&menu_pr_state, OFS_PARM1) = 0;
+		G_INT (&menu_pr_state, OFS_PARM0) = item->x;
+		G_INT (&menu_pr_state, OFS_PARM1) = item->y;
 		PR_ExecuteProgram (&menu_pr_state, menu->cursor);
+	} else {
+		Draw_Character (item->x, item->y,
+						12 + ((int) (*con_data.realtime * 4) & 1));
 	}
 	if (menu_draw) {
 		PR_ExecuteProgram (&menu_pr_state, menu_draw);
@@ -324,6 +333,20 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 {
 	if (!menu)
 		return;
+	switch (key) {
+		case QFK_DOWN:
+		case QFM_WHEEL_DOWN:
+			menu->cur_item++;
+			menu->cur_item %= menu->num_items;
+			break;
+		case QFK_UP:
+		case QFM_WHEEL_UP:
+			menu->cur_item += menu->num_items - 1;
+			menu->cur_item %= menu->num_items;
+			break;
+		default:
+			break;
+	}
 }
 
 void
