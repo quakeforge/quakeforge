@@ -91,6 +91,7 @@ static int
 menu_resolve_globals (progs_t *pr)
 {
 	const char *sym;
+	ddef_t     *def;
 	dfunction_t *f;
 
 	if (!(f = PR_FindFunction (pr, sym = "menu_init")))
@@ -99,6 +100,9 @@ menu_resolve_globals (progs_t *pr)
 	if (!(f = PR_FindFunction (pr, sym = "menu_draw_hud")))
 		goto error;
 	menu_draw_hud = (func_t)(f - pr->pr_functions);
+	if (!(def = PR_FindGlobal (pr, sym = "time")))
+		goto error;
+	menu_pr_state.globals.time = &G_FLOAT (pr, def->ofs);
 	return 1;
 error:
 	Con_Printf ("%s: undefined symbol %s\n", pr->progs_name, sym);
@@ -474,8 +478,6 @@ Menu_Load (void)
 	int         size;
 	QFile      *file;
 
-	menu_pr_state.time = con_data.realtime;
-
 	Hash_FlushTable (menu_hash);
 	menu = 0;
 	top_menu = 0;
@@ -519,7 +521,7 @@ Menu_Draw (view_t *view)
 	if (menu->fadescreen)
 		Draw_FadeScreen ();
 
-	*menu_pr_state.globals.time = *menu_pr_state.time;
+	*menu_pr_state.globals.time = *con_data.realtime;
 
 	if (menu->draw) {
 		P_INT (&menu_pr_state, 0) = x;
@@ -563,7 +565,7 @@ Menu_Draw (view_t *view)
 void
 Menu_Draw_Hud (view_t *view)
 {
-	*menu_pr_state.globals.time = *menu_pr_state.time;
+	*menu_pr_state.globals.time = *con_data.realtime;
 
 	PR_ExecuteProgram (&menu_pr_state, menu_draw_hud);
 }
