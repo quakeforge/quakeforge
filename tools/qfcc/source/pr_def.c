@@ -55,7 +55,7 @@ PR_GetDef (type_t *type, char *name, def_t *scope, qboolean allocate)
 	char	element[MAX_NAME];
 
 	if (!defs_by_name) {
-		defs_by_name = Hash_NewTable (1021, defs_get_key, 0, &defs_by_name);
+		defs_by_name = Hash_NewTable (16381, defs_get_key, 0, &defs_by_name);
 	}
 
 	// see if the name is already in use

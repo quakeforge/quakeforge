@@ -31,6 +31,7 @@
 # include "config.h"
 #endif
 #include <QF/crc.h>
+#include <QF/hash.h>
 #include <QF/qendian.h>
 #include <QF/sys.h>
 
@@ -109,15 +110,40 @@ WriteFiles (void)
 
 	Return an offset from the string heap
 */
+static hashtab_t *strings_tab;
+
+static char *
+stings_get_key (void *_str, void *unsued)
+{
+	return (char*)_str;
+}
+
 int
 CopyString (char *str)
 {
 	int 	old;
 
+	if (!strings_tab) {
+		strings_tab = Hash_NewTable (16381, stings_get_key, 0, 0);
+	}
 	old = strofs;
 	strcpy (strings + strofs, str);
 	strofs += strlen (str) + 1;
+	Hash_Add (strings_tab, strings + old);
 	return old;
+}
+
+int
+ReuseString (char *str)
+{
+	char *s;
+
+	if (!strings_tab)
+		return CopyString (str);
+	s = Hash_Find (strings_tab, str);
+	if (s)
+		return s - strings;
+	return CopyString (str);
 }
 
 void
@@ -215,7 +241,7 @@ WriteData (int crc)
 			dd = &fields[numfielddefs];
 			numfielddefs++;
 			dd->type = def->type->aux_type->type;
-			dd->s_name = CopyString (def->name);
+			dd->s_name = ReuseString (def->name);
 			dd->ofs = G_INT (def->ofs);
 		}
 
@@ -227,7 +253,7 @@ WriteData (int crc)
 			&& def->type->type != ev_func
 			&& def->type->type != ev_field && def->scope == NULL)
 			dd->type |= DEF_SAVEGLOBAL;
-		dd->s_name = CopyString (def->name);
+		dd->s_name = ReuseString (def->name);
 		dd->ofs = def->ofs;
 	}
 

@@ -454,5 +454,6 @@ extern	int			precache_files_block[MAX_SOUNDS];
 extern	int			numfiles;
 
 int	CopyString (char *str);
+int	ReuseString (char *str);
 
 

@@ -714,7 +714,7 @@ PR_ParseDefs (void)
 				else
 					df->first_statement = f->code;
 
-				df->s_name = CopyString (f->def->name);
+				df->s_name = ReuseString (f->def->name);
 				df->s_file = s_file;
 				df->numparms = f->def->type->num_parms;
 				df->locals = locals_end - locals_start;
@@ -752,7 +752,7 @@ PR_CompileFile (char *string, char *filename)
 	PR_ClearGrabMacros ();				// clear the frame macros
 
 	pr_file_p = string;
-	s_file = CopyString (filename);
+	s_file = ReuseString (filename);
 
 	pr_source_line = 0;
 

@@ -67,9 +67,9 @@ PR_ParseImmediate (void)
 	hashtab_t *tab = 0;
 
 	if (!string_imm_defs) {
-		string_imm_defs = Hash_NewTable (1021, string_imm_get_key, 0, 0);
-		float_imm_defs = Hash_NewTable (1021, float_imm_get_key, 0, 0);
-		vector_imm_defs = Hash_NewTable (1021, vector_imm_get_key, 0, 0);
+		string_imm_defs = Hash_NewTable (16381, string_imm_get_key, 0, 0);
+		float_imm_defs = Hash_NewTable (16381, float_imm_get_key, 0, 0);
+		vector_imm_defs = Hash_NewTable (16381, vector_imm_get_key, 0, 0);
 	}
 	if (pr_immediate_type == &type_string) {
 		cn = (def_t*) Hash_Find (string_imm_defs, pr_immediate_string);
