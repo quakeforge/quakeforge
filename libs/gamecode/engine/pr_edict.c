@@ -160,7 +160,7 @@ ED_PrintEdicts (progs_t *pr, const char *fieldval)
 	int		count;
 	ddef_t	*def;
 
-	def = ED_FindField(pr, "classname");
+	def = PR_FindField(pr, "classname");
 
 	if (fieldval && fieldval[0] && def) {
 		count = 0;
@@ -192,8 +192,8 @@ ED_Count (progs_t *pr)
 	ddef_t		*model_def;
 	edict_t		*ent;
 
-	solid_def = ED_FindField (pr, "solid");
-	model_def = ED_FindField (pr, "model");
+	solid_def = PR_FindField (pr, "solid");
+	model_def = PR_FindField (pr, "model");
 	active = models = solid = step = zombie = 0;
 	for (i = 0; i < *(pr)->num_edicts; i++) {
 		ent = EDICT_NUM (pr, i);
@@ -217,7 +217,7 @@ ED_Count (progs_t *pr)
 }
 
 edict_t *
-EDICT_NUM (progs_t *pr, int n)
+ED_EdictNum (progs_t *pr, int n)
 {
 	int offs = n * pr->pr_edict_size;
 	if (offs < 0 || n >= pr->pr_edictareasize)
@@ -227,20 +227,7 @@ EDICT_NUM (progs_t *pr, int n)
 }
 
 int
-NUM_FOR_BAD_EDICT (progs_t *pr, edict_t *e)
-{
-	int		b;
-
-	b = (byte *) e - (byte *) * (pr)->edicts;
-
-	if (pr->pr_edict_size)
-		b /= pr->pr_edict_size;
-
-	return b;
-}
-
-int
-NUM_FOR_EDICT (progs_t *pr, edict_t *e)
+ED_NumForEdict (progs_t *pr, edict_t *e)
 {
 	int		b;
 

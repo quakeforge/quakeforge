@@ -266,7 +266,7 @@ PF_Find (progs_t *pr)
 
 	e = P_EDICTNUM (pr, 0);
 	f = P_INT (pr, 1);
-	field_def = ED_FieldAtOfs (pr, f);
+	field_def = PR_FieldAtOfs (pr, f);
 	if (!field_def)
 		PR_RunError (pr, "PF_Find: bad search field: %d", f);
 	type = field_def->type & ~DEF_SAVEGLOBAL;

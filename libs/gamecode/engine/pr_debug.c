@@ -486,7 +486,7 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 			}
 			break;
 		case ev_field:
-			def = ED_FieldAtOfs (pr, val->integer_var);
+			def = PR_FieldAtOfs (pr, val->integer_var);
 			if (def)
 				dsprintf (line, ".%s", PR_GetString (pr, def->s_name));
 			else
@@ -508,7 +508,7 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 			if (pr_debug->int_val && pr->debug)
 				def = PR_Get_Local_Def (pr, ofs);
 			if (!def)
-				def = ED_GlobalAtOfs (pr, ofs);
+				def = PR_GlobalAtOfs (pr, ofs);
 			if (def && def->s_name)
 				dsprintf (line, "&%s", PR_GetString (pr, def->s_name));
 			else
@@ -545,7 +545,7 @@ def_string (progs_t *pr, int ofs, dstring_t *dstr)
 	if (pr_debug->int_val && pr->debug)
 		def = PR_Get_Local_Def (pr, ofs);
 	if (!def)
-		def = ED_GlobalAtOfs (pr, ofs);
+		def = PR_GlobalAtOfs (pr, ofs);
 	if (!def || !*(name = PR_GetString (pr, def->s_name)))
 		dsprintf (dstr, "[$%x]", ofs);
 	else

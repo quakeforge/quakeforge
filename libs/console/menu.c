@@ -93,15 +93,15 @@ menu_resolve_globals (progs_t *pr)
 	const char *sym;
 	dfunction_t *f;
 
-	if (!(f = ED_FindFunction (pr, sym = "menu_init")))
+	if (!(f = PR_FindFunction (pr, sym = "menu_init")))
 		goto error;
 	menu_init = (func_t)(f - menu_pr_state.pr_functions);
-	if (!(f = ED_FindFunction (pr, sym = "menu_draw_hud")))
+	if (!(f = PR_FindFunction (pr, sym = "menu_draw_hud")))
 		goto error;
 	menu_draw_hud = (func_t)(f - pr->pr_functions);
 	return 1;
 error:
-	Con_Printf ("%s: undefined function %s\n", pr->progs_name, sym);
+	Con_Printf ("%s: undefined symbol %s\n", pr->progs_name, sym);
 	return 0;
 }
 

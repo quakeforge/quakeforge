@@ -169,7 +169,7 @@ finish_class (progs_t *pr, pr_class_t *class, pointer_t object_ptr)
 			PR_Error (pr, "broken class %s: super class %s not found",
 					  class_name, super_class);
 		meta->super_class = val->class_pointer;
-		class->super_class = POINTER_TO_PROG (pr, val);
+		class->super_class = PR_SetPointer (pr, val);
 	} else {
 		pointer_t  *ml = &meta->methods;
 		while (*ml)
@@ -456,7 +456,7 @@ rua_obj_malloc (progs_t *pr)
 	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
-	R_INT (pr) = POINTER_TO_PROG (pr, mem);
+	RETURN_POINTER (pr, mem);
 }
 
 static void
@@ -465,7 +465,7 @@ rua_obj_atomic_malloc (progs_t *pr)
 	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
-	R_INT (pr) = POINTER_TO_PROG (pr, mem);
+	RETURN_POINTER (pr, mem);
 }
 
 static void
@@ -474,7 +474,7 @@ rua_obj_valloc (progs_t *pr)
 	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
-	R_INT (pr) = POINTER_TO_PROG (pr, mem);
+	RETURN_POINTER (pr, mem);
 }
 
 static void
@@ -484,7 +484,7 @@ rua_obj_realloc (progs_t *pr)
 	int         size = P_INT (pr, 1) * sizeof (pr_type_t);
 
 	mem = PR_Zone_Realloc (pr, mem, size);
-	R_INT (pr) = POINTER_TO_PROG (pr, mem);
+	RETURN_POINTER (pr, mem);
 }
 
 static void
@@ -494,7 +494,7 @@ rua_obj_calloc (progs_t *pr)
 	void       *mem = PR_Zone_Malloc (pr, size);
 
 	memset (mem, 0, size);
-	R_INT (pr) = POINTER_TO_PROG (pr, mem);
+	RETURN_POINTER (pr, mem);
 }
 
 static void
@@ -561,7 +561,7 @@ rua_obj_get_class (progs_t *pr)
 	class = Hash_Find (pr->classes, name);
 	if (!class)
 		PR_RunError (pr, "could not find class %s", name);
-	R_INT (pr) = POINTER_TO_PROG (pr, class);
+	RETURN_POINTER (pr, class);
 }
 
 static void
@@ -571,7 +571,7 @@ rua_obj_lookup_class (progs_t *pr)
 	pr_class_t *class;
 
 	class = Hash_Find (pr->classes, name);
-	R_INT (pr) = POINTER_TO_PROG (pr, class);
+	RETURN_POINTER (pr, class);
 }
 
 static void
@@ -686,7 +686,7 @@ class_create_instance (progs_t *pr, pr_class_t *class)
 
 	id = PR_Zone_Malloc (pr, size);
 	memset (id, 0, size);
-	id->class_pointer = POINTER_TO_PROG (pr, class);
+	id->class_pointer = PR_SetPointer (pr, class);
 	return id;
 }
 
@@ -696,7 +696,7 @@ rua_class_create_instance (progs_t *pr)
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	pr_id_t    *id = class_create_instance (pr, class);
 	
-	R_INT (pr) = POINTER_TO_PROG (pr, id);
+	RETURN_POINTER (pr, id);
 }
 
 static void
@@ -811,7 +811,7 @@ rua_object_copy (progs_t *pr)
 
 	id = class_create_instance (pr, class);
 	memcpy (id, object, sizeof (pr_type_t) * class->instance_size);
-	R_INT (pr) = POINTER_TO_PROG (pr, id);
+	RETURN_POINTER (pr, id);
 }
 
 static void
@@ -823,7 +823,7 @@ rua_object_get_class (progs_t *pr)
 	if (object) {
 		class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
 		if (PR_CLS_ISCLASS (class)) {
-			R_INT (pr) = POINTER_TO_PROG (pr, class);
+			RETURN_POINTER (pr, class);
 			return;
 		}
 		if (PR_CLS_ISMETA (class)) {

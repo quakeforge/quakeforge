@@ -48,15 +48,8 @@ typedef struct edict_s {
 } edict_t;
 #define EDICT_FROM_AREA(l) STRUCT_FROM_LINK(l,edict_t,area)
 
-#ifndef PROGS_T
 typedef struct progs_s progs_t;
-#define PROGS_T
-#endif
-
-#ifndef PR_RESOURCE_T
 typedef struct pr_resource_s pr_resource_t;
-#define PR_RESOURCE_T
-#endif
 
 //============================================================================
 
@@ -91,21 +84,12 @@ void ED_ParseGlobals (progs_t *pr, const char *data);
 
 void ED_LoadFromFile (progs_t *pr, const char *data);
 
-ddef_t *ED_FieldAtOfs (progs_t *pr, int ofs);
-ddef_t *ED_FindField (progs_t *pr, const char *name);
-int ED_GetFieldIndex (progs_t *pr, const char *name);
-dfunction_t *ED_FindFunction (progs_t *pr, const char *name);
+ddef_t *PR_FieldAtOfs (progs_t *pr, int ofs);
+ddef_t *PR_GlobalAtOfs (progs_t *pr, int ofs);
 
-int PR_AccessField (progs_t *pr, const char *name, etype_t type,
-					const char *file, int line);
-
-//define EDICT_NUM(p,n) ((edict_t *)(*(p)->edicts+ (n)*(p)->pr_edict_size))
-//define NUM_FOR_EDICT(p,e) (((byte *)(e) - *(p)->edicts)/(p)->pr_edict_size)
-
-edict_t *EDICT_NUM(progs_t *pr, int n);
-int NUM_FOR_EDICT(progs_t *pr, edict_t *e);
-int NUM_FOR_BAD_EDICT(progs_t *pr, edict_t *e);
-qboolean PR_EdictValid (progs_t *pr, int e);
+ddef_t *PR_FindField (progs_t *pr, const char *name);
+ddef_t *PR_FindGlobal (progs_t *pr, const char *name);
+dfunction_t *PR_FindFunction (progs_t *pr, const char *name);
 
 #define NEXT_EDICT(p,e)		((edict_t *)( (byte *)e + (p)->pr_edict_size))
 
@@ -207,8 +191,6 @@ typedef struct {
 	builtin_proc func;
 } bfunction_t;
 
-ddef_t *PR_FindGlobal (progs_t *pr, const char *name);
-ddef_t *ED_GlobalAtOfs (progs_t *pr, int ofs);
 
 pr_type_t *PR_GetGlobalPointer (progs_t *pr, const char *name);
 func_t PR_GetFunctionIndex (progs_t *pr, const char *name);
@@ -443,7 +425,7 @@ PR_GetPointer (progs_t *pr, int o)
 }
 
 static inline pointer_t
-POINTER_TO_PROG (progs_t *pr, void *p)
+PR_SetPointer (progs_t *pr, void *p)
 {
 	return p ? (pr_type_t *) p - pr->pr_globals : 0;
 }

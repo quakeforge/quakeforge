@@ -335,7 +335,7 @@ PF_calltimeofday (progs_t * pr)
 	date_t      date;
 	dfunction_t *f;
 
-	if ((f = ED_FindFunction (pr, "timeofday")) != NULL) {
+	if ((f = PR_FindFunction (pr, "timeofday")) != NULL) {
 
 		Sys_TimeOfDay (&date);
 
@@ -547,7 +547,7 @@ qwe_load (progs_t * pr)
 	size_t      i;
 
 	for (i = 0; i < sizeof (qwe_func_list) / sizeof (qwe_func_list[0]); i++) {
-		dfunction_t *f = ED_FindFunction (pr, qwe_func_list[i].name);
+		dfunction_t *f = PR_FindFunction (pr, qwe_func_list[i].name);
 
 		*qwe_func_list[i].field = 0;
 		if (f)

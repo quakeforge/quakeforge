@@ -167,9 +167,12 @@ main (int argc, char **argv)
 		pr_argv[i] = PR_SetTempString (&pr, argv[1 + i]);
 	pr_argv[i] = 0;
 
-	main_func = PR_GetFunctionIndex (&pr, "main");
-	P_POINTER (&pr, 0) = pr_argc;
-	P_POINTER (&pr, 1) = POINTER_TO_PROG (&pr, pr_argv);
+	if ((dfunc = PR_FindFunction (&pr, "main")))
+		main_func = dfunc - pr.pr_functions;
+	else
+		PR_Undefined (&pr, "function", "main");
+	P_INT (&pr, 0) = pr_argc;
+	P_POINTER (&pr, 1) = PR_SetPointer (&pr, pr_argv);
 	PR_ExecuteProgram (&pr, main_func);
 	PR_PopFrame (&pr);
 	return R_INT (&pr);

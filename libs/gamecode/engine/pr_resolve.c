@@ -55,11 +55,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "compat.h"
 
 
-/*
-	ED_GlobalAtOfs
-*/
-ddef_t     *
-ED_GlobalAtOfs (progs_t * pr, int ofs)
+ddef_t *
+PR_GlobalAtOfs (progs_t * pr, int ofs)
 {
 	ddef_t     *def;
 	unsigned int i;
@@ -72,11 +69,8 @@ ED_GlobalAtOfs (progs_t * pr, int ofs)
 	return NULL;
 }
 
-/*
-	ED_FieldAtOfs
-*/
-ddef_t     *
-ED_FieldAtOfs (progs_t * pr, int ofs)
+ddef_t *
+PR_FieldAtOfs (progs_t * pr, int ofs)
 {
 	ddef_t     *def;
 	unsigned int i;
@@ -89,74 +83,28 @@ ED_FieldAtOfs (progs_t * pr, int ofs)
 	return NULL;
 }
 
-/*
-	ED_FindField
-*/
-ddef_t     *
-ED_FindField (progs_t * pr, const char *name)
+ddef_t *
+PR_FindField (progs_t * pr, const char *name)
 {
 	return  Hash_Find (pr->field_hash, name);
 }
 
-int
-ED_GetFieldIndex (progs_t *pr, const char *name)
-{
-	ddef_t     *def;
-
-	def = ED_FindField (pr, name);
-	if (def)
-		return def->ofs;
-	return -1;
-}
-
-/*
-	PR_FindGlobal
-*/
-ddef_t     *
+ddef_t *
 PR_FindGlobal (progs_t * pr, const char *name)
 {
 	return  Hash_Find (pr->global_hash, name);
 }
 
-pr_type_t *
-PR_GetGlobalPointer (progs_t *pr, const char *name)
-{
-	ddef_t     *def;
-
-	def = PR_FindGlobal (pr, name);
-	if (def)
-		return &pr->pr_globals[def->ofs];
-	PR_Error (pr, "undefined global %s", name);
-	return 0;
-}
-
-func_t
-PR_GetFunctionIndex (progs_t *pr, const char *name)
-{
-	dfunction_t *func = ED_FindFunction (pr, name);
-	if (func)
-		return func - pr->pr_functions;
-	PR_Error (pr, "undefined function %s", name);
-	return -1;
-}
-
-int
-PR_GetFieldOffset (progs_t *pr, const char *name)
-{
-	ddef_t *def = ED_FindField (pr, name);
-	if (def)
-		return def->ofs;
-	PR_Error (pr, "undefined field %s", name);
-	return -1;
-}
-
-/*
-	ED_FindFunction
-*/
 dfunction_t *
-ED_FindFunction (progs_t * pr, const char *name)
+PR_FindFunction (progs_t * pr, const char *name)
 {
 	return  Hash_Find (pr->function_hash, name);
+}
+
+void
+PR_Undefined (progs_t *pr, const char *type, const char *name)
+{
+	PR_Error (pr, "undefined %s %s", type, name);
 }
 
 int
@@ -200,11 +148,14 @@ PR_ResolveGlobals (progs_t *pr)
 			pr->globals.self = &G_INT (pr, def->ofs);
 	}
 	if (pr->fields.nextthink == -1)
-		pr->fields.nextthink = ED_GetFieldIndex (pr, sym = "nextthink");
+		if ((def = PR_FindField (pr, "nextthink")))
+			pr->fields.nextthink = def->ofs;
 	if (pr->fields.frame == -1)
-		pr->fields.frame = ED_GetFieldIndex (pr, sym = "frame");
+		if ((def = PR_FindField (pr, "frame")))
+			pr->fields.frame = def->ofs;
 	if (pr->fields.think == -1)
-		pr->fields.think = ED_GetFieldIndex (pr, sym = "think");
+		if ((def = PR_FindField (pr, "think")))
+			pr->fields.think = def->ofs;
 	return 1;
 error:
 	Sys_Printf ("%s: undefined symbol: %s\n", pr->progs_name, sym);
@@ -215,7 +166,7 @@ int
 PR_AccessField (progs_t *pr, const char *name, etype_t type,
 				const char *file, int line)
 {
-	ddef_t *def = ED_FindField (pr, name);
+	ddef_t *def = PR_FindField (pr, name);
 
 	if (!def)
 		PR_Error (pr, "undefined field %s accessed at %s:%d", name, file, line);

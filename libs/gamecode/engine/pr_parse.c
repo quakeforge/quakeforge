@@ -86,7 +86,7 @@ PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val)
 			snprintf (line, sizeof (line), "%s", PR_GetString (pr, f->s_name));
 			break;
 		case ev_field:
-			def = ED_FieldAtOfs (pr, val->integer_var);
+			def = PR_FieldAtOfs (pr, val->integer_var);
 			snprintf (line, sizeof (line), "%s",
 					  PR_GetString (pr, def->s_name));
 			break;
@@ -258,7 +258,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s)
 			break;
 
 		case ev_field:
-			def = ED_FindField (pr, s);
+			def = PR_FindField (pr, s);
 			if (!def) {
 				Sys_Printf ("Can't find field %s\n", s);
 				return false;
@@ -267,7 +267,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s)
 			break;
 
 		case ev_func:
-			func = ED_FindFunction (pr, s);
+			func = PR_FindFunction (pr, s);
 			if (!func) {
 				Sys_Printf ("Can't find function %s\n", s);
 				return false;
@@ -346,7 +346,7 @@ ED_ParseEdict (progs_t *pr, const char *data, edict_t *ent)
 		if (keyname->str[0] == '_')
 			continue;
 
-		key = ED_FindField (pr, keyname->str);
+		key = PR_FindField (pr, keyname->str);
 		if (!key) {
 			if (!pr->parse_field
 				|| !pr->parse_field (pr, keyname->str, com_token)) {
@@ -357,9 +357,9 @@ ED_ParseEdict (progs_t *pr, const char *data, edict_t *ent)
 			int         ret;
 
 			if (anglehack) {
-				ret = ED_ParseEpair (pr, ent->v, key, va ("0 %s 0", com_token));
+				ret = ED_ParseEpair (pr, ent->v, key, va ("0 %s 0", token));
 			} else {
-				ret = ED_ParseEpair (pr, ent->v, key, com_token);
+				ret = ED_ParseEpair (pr, ent->v, key, token);
 			}
 			if (!ret)
 				PR_Error (pr, "ED_ParseEdict: parse error");
@@ -374,7 +374,7 @@ ED_ParseEdict (progs_t *pr, const char *data, edict_t *ent)
 }
 
 void
-ED_ParseGlobals (progs_t *pr, const char *data)
+ED_ParseGlobals (progs_t *pr, script_t *script)
 {
 	dstring_t   *keyname = dstring_new ();
 	ddef_t		*key;
@@ -454,10 +454,8 @@ ED_ParseOld (progs_t *pr, const char *data)
 			continue;
 		}
 
-		//
 		// immediately call spawn function
-		//
-		def = ED_FindField (pr, "classname");
+		def = PR_FindField (pr, "classname");
 		if (!def) {
 			Sys_Printf ("No classname for:\n");
 			ED_Print (pr, ent);
@@ -467,7 +465,7 @@ ED_ParseOld (progs_t *pr, const char *data)
 		classname = &ent->v[def->ofs];
 
 		// look for the spawn function
-		func = ED_FindFunction (pr, PR_GetString (pr, classname->string_var));
+		func = PR_FindFunction (pr, PR_GetString (pr, classname->string_var));
 		if (!func) {
 			Sys_Printf ("No spawn function for:\n");
 			ED_Print (pr, ent);
