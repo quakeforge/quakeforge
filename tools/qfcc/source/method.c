@@ -77,7 +77,7 @@ add_method (methodlist_t *methodlist, method_t *method)
 }
 
 def_t *
-method_def (class_t *class, class_t *category, method_t *method)
+method_def (class_t *class, method_t *method)
 {
 	dstring_t  *str = dstring_newstr ();
 	dstring_t  *sel = dstring_newstr ();
@@ -87,8 +87,8 @@ method_def (class_t *class, class_t *category, method_t *method)
 	selector_name (sel, (keywordarg_t *)method->selector);
 	dsprintf (str, "_%c_%s_%s_%s",
 			  method->instance ? 'i' : 'c',
-			  class->name,
-			  category ? category->name : "",
+			  class->class_name,
+			  class->category_name ? class->category_name : "",
 			  sel->str);
 	for (s = str->str; *s; s++)
 		if (*s == ':')

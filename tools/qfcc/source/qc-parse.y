@@ -54,6 +54,14 @@ yyerror (const char *s)
 	error (0, "%s %s\n", yytext, s);
 }
 
+void
+parse_error (void)
+{
+	error (0, "parse error before %s", yytext);
+}
+
+#define PARSE_ERROR do { parse_error (); YYERROR; } while (0)
+
 int yylex (void);
 
 type_t *build_type (int is_field, type_t *type);
@@ -133,9 +141,11 @@ void free_local_inits (hashtab_t *def_list);
 %type	<expr>	protocolrefs
 %type	<keywordarg> messageargs keywordarg keywordarglist selectorarg
 %type	<keywordarg> keywordnamelist keywordname
-%type	<class>	class_name new_class_name
+%type	<class>	class_name new_class_name class_with_super new_class_with_super
+%type	<class> category_name new_category_name
 %type	<protocol> protocol_name
 %type	<methodlist> methodprotolist methodprotolist2
+%type	<type>	ivar_decl_list
 
 %expect 2	// statement : if | if else, defs : defs def ';' | defs obj_def
 
@@ -153,6 +163,7 @@ expr_t	*continue_label;
 switch_block_t *switch_block;
 type_t	*struct_type;
 visibility_t current_visibility;
+type_t	*current_ivars;
 
 def_t		*pr_scope;					// the function being parsed, or NULL
 string_t	s_file;						// filename for function definition
@@ -165,7 +176,7 @@ int      element_flag;
 
 defs
 	: /* empty */
-	| defs def ';'
+	| defs {if (current_class) PARSE_ERROR;} def ';'
 	| defs obj_def
 	;
 
@@ -853,8 +864,13 @@ obj_def
 	: classdef
 	| classdecl
 	| protocoldef
-	| methoddef
+	| { if (!current_class) PARSE_ERROR; } methoddef
 	| END
+		{
+			if (!current_class)
+				PARSE_ERROR;
+			current_class = 0;
+		}
 	;
 
 identifier_list
@@ -888,6 +904,7 @@ class_name
 				error (0, "undefined symbol `%s'", $1);
 				$$ = get_class (0, 1);
 			}
+			current_class = $$;
 		}
 	;
 
@@ -902,70 +919,91 @@ new_class_name
 			current_class = $$;
 		}
 
+class_with_super
+	: class_name ':' class_name
+		{
+			if ($1->super_class != $3)
+				error (0, "%s is not a super class of %s",
+					   $3->class_name, $1->class_name);
+			$$ = $1;
+			current_class = $$;
+		}
+	;
+
+new_class_with_super
+	: new_class_name ':' class_name
+		{
+			$1->super_class = $3;
+			$$ = $1;
+		}
+	;
+
+category_name
+	: NAME '(' NAME ')'
+		{
+			$$ = get_category ($1, $3, 0);
+			if (!$$) {
+				error (0, "undefined category `%s (%s)'", $1, $3);
+				$$ = get_category (0, 0, 1);
+			}
+			current_class = $$;
+		}
+	;
+
+new_category_name
+	: NAME '(' NAME ')'
+		{
+			$$ = get_category ($1, $3, 1);
+			if ($$->defined) {
+				error (0, "redefinition of category `%s (%s)'", $1, $3);
+				$$ = get_category (0, 0, 1);
+			}
+			current_class = $$;
+		}
+	;
+
 protocol_name
 	: NAME
 		{
-			$$ = get_protocol ($1, 1);
-			if ($$->methods) {
+			$$ = get_protocol ($1, 0);
+			if ($$) {
 				error (0, "redefinition of %s", $1);
 				$$ = get_protocol (0, 1);
+			} else {
+				$$ = get_protocol ($1, 1);
 			}
 		}
 
-classdef /* XXX */
+classdef
 	: INTERFACE new_class_name
 	  protocolrefs				{ class_add_protocol_methods ($2, $3); }
-	  '{'						{ $2->ivars = new_struct (0); }
-	  ivar_decl_list '}'
+	  '{' ivar_decl_list '}'	{ $2->ivars = $6; }
 	  methodprotolist			{ class_add_methods ($2, $9); }
-	  END
+	  END						{ current_class = 0; }
 	| INTERFACE new_class_name
 	  protocolrefs				{ class_add_protocol_methods ($2, $3); }
 	  methodprotolist			{ class_add_methods ($2, $5); }
-	  END
-	| INTERFACE new_class_name ':' class_name
-	  protocolrefs				{ class_add_protocol_methods ($2, $5); }
-	  '{'
-		{
-			$2->ivars = new_struct (0);
-			copy_struct_fields ($2->ivars, $4->ivars);
-		}
-	  ivar_decl_list '}'
-	  methodprotolist			{ class_add_methods ($2, $11); }
-	  END
-	| INTERFACE new_class_name ':' class_name
-	  protocolrefs				{ class_add_protocol_methods ($2, $5); }
-	  methodprotolist			{ class_add_methods ($2, $7); }
-	  END
-	| INTERFACE new_class_name '(' class_name ')'
-	  protocolrefs				{ class_add_protocol_methods ($2, $6); }
-	  methodprotolist			{ class_add_methods ($2, $8); }
-	  END
-	| IMPLEMENTATION class_name '{'
-		{
-			$2->ivars = new_struct (0);
-			current_class = $2;
-		}
-	  ivar_decl_list '}'
-	| IMPLEMENTATION class_name	{ current_class = $2; }
-	| IMPLEMENTATION class_name ':' class_name '{'
-		{
-			if ($4 != $2->base)
-				warning (0, "%s is not a super class of %s",
-						 $4->name, $2->name);
-			$2->ivars = new_struct (0);
-			copy_struct_fields ($2->ivars, $4->ivars);
-			current_class = $2;
-		}
-	  ivar_decl_list '}'
-	| IMPLEMENTATION class_name ':' class_name
-		{
-			if ($4 != $2->base)
-				warning (0, "%s is not a super class of %s",
-						 $4->name, $2->name);
-			current_class = $2;
-		}
-	| IMPLEMENTATION class_name '(' class_name ')' { current_class = $2; }
+	  END						{ current_class = 0; }
+	| INTERFACE new_class_with_super
+	  protocolrefs				{ class_add_protocol_methods ($2, $3); }
+	  '{' ivar_decl_list '}'	{ $2->ivars = $6; }
+	  methodprotolist			{ class_add_methods ($2, $9); }
+	  END						{ current_class = 0; }
+	| INTERFACE new_class_with_super
+	  protocolrefs				{ class_add_protocol_methods ($2, $3); }
+	  methodprotolist			{ class_add_methods ($2, $5); }
+	  END						{ current_class = 0; }
+	| INTERFACE new_category_name
+	  protocolrefs				{ class_add_protocol_methods ($2, $3); }
+	  methodprotolist			{ class_add_methods ($2, $5); }
+	  END						{ current_class = 0; }
+	| IMPLEMENTATION class_name
+	  '{' ivar_decl_list '}'	{ class_check_ivars ($2, $4); }
+	| IMPLEMENTATION class_name
+	| IMPLEMENTATION class_with_super
+	  '{' ivar_decl_list '}'	{ class_check_ivars ($2, $4); }
+	| IMPLEMENTATION class_with_super
+	| IMPLEMENTATION category_name
 	;
 
 protocoldef
@@ -981,7 +1019,15 @@ protocolrefs
 	;
 
 ivar_decl_list
-	: ivar_decl_list visibility_spec ivar_decls
+	: { current_ivars = new_struct (0); } ivar_decl_list_2
+		{
+			$$ = current_ivars;
+			current_ivars = 0;
+		}
+	;
+
+ivar_decl_list_2
+	: ivar_decl_list_2 visibility_spec ivar_decls
 	| ivar_decls
 	;
 
@@ -997,7 +1043,7 @@ ivar_decls
 	;
 
 ivar_decl
-	: type ivars				{ current_type = $1; }
+	: type { current_type = $1; } ivars
 	;
 
 ivars
@@ -1008,7 +1054,7 @@ ivars
 ivar_declarator
 	: NAME
 		{
-			new_struct_field (current_class->ivars, current_type,
+			new_struct_field (current_ivars, current_type,
 							  $1, current_visibility);
 		}
 	;
@@ -1018,7 +1064,7 @@ methoddef
 	  methoddecl opt_state_expr
 		{
 			$2->instance = 0;
-			current_def = $2->def = method_def (current_class, 0, $2);
+			current_def = $2->def = method_def (current_class, $2);
 			current_params = $2->params;
 		}
 	  begin_function statement_block end_function
@@ -1036,7 +1082,7 @@ methoddef
 	  methoddecl opt_state_expr
 		{
 			$2->instance = 1;
-			current_def = $2->def = method_def (current_class, 0, $2);
+			current_def = $2->def = method_def (current_class, $2);
 			current_params = $2->params;
 		}
 	  begin_function statement_block end_function

@@ -37,15 +37,17 @@ static const char rcsid[] =
 
 #include "class.h"
 #include "method.h"
+#include "struct.h"
 #include "type.h"
 
 static hashtab_t *class_hash;
+static hashtab_t *category_hash;
 static hashtab_t *protocol_hash;
 
 static const char *
 class_get_key (void *class, void *unused)
 {
-	return ((class_t *) class)->name;
+	return ((class_t *) class)->class_name;
 }
 
 static const char *
@@ -68,8 +70,9 @@ get_class (const char *name, int create)
 	}
 
 	c = calloc (sizeof (class_t), 1);
-	c->name = name;
-	Hash_Add (class_hash, c);
+	c->class_name = name;
+	if (name)
+		Hash_Add (class_hash, c);
 	return c;
 }
 
@@ -105,10 +108,68 @@ class_add_protocol_methods (class_t *class, expr_t *protocols)
 	}
 }
 
+void
+class_add_protocol (class_t *class, protocol_t *protocol)
+{
+	if (!class->protocols)
+		class->protocols = new_protocollist ();
+	add_protocol (class->protocols, protocol);
+}
+
+static unsigned long
+category_get_hash (void *_c, void *unused)
+{
+	class_t    *c = (class_t *) _c;
+	return Hash_String (c->class_name) ^ Hash_String (c->category_name);
+}
+
+static int
+category_compare (void *_c1, void *_c2, void *unused)
+{
+	class_t    *c1 = (class_t *) _c1;
+	class_t    *c2 = (class_t *) _c2;
+	return strcmp (c1->class_name, c2->class_name) == 0
+		   && strcmp (c1->category_name, c2->category_name) == 0;
+}
+
+void
+class_check_ivars (class_t *class, struct type_s *ivars)
+{
+	if (!struct_compare_fields (class->ivars, ivars))
+		warning (0, "instance variable missmatch for %s", class->class_name);
+	class->ivars = ivars;
+}
+
+class_t *
+get_category (const char *class_name, const char *category_name, int create)
+{
+	class_t    *c;
+
+	if (!category_hash) {
+		category_hash = Hash_NewTable (1021, 0, 0, 0);
+		Hash_SetHashCompare (category_hash,
+							 category_get_hash, category_compare);
+	}
+	if (class_name && category_name) {
+		class_t     _c = {0, class_name, category_name};
+
+		c = Hash_FindElement (category_hash, &_c);
+		if (c || !create)
+			return c;
+	}
+
+	c = calloc (sizeof (class_t), 1);
+	c->class_name = class_name;
+	c->class_name = category_name;
+	if (class_name && category_name)
+		Hash_AddElement (category_hash, c);
+	return c;
+}
+
 def_t *
 class_def (class_t *class)
 {
-	return PR_GetDef (&type_Class, class->name, 0, &numpr_globals);
+	return PR_GetDef (&type_Class, class->class_name, 0, &numpr_globals);
 }
 
 protocol_t *
@@ -124,7 +185,8 @@ get_protocol (const char *name, int create)
 
 	p = calloc (sizeof (protocol_t), 1);
 	p->name = name;
-	Hash_Add (protocol_hash, p);
+	if (name)
+		Hash_Add (protocol_hash, p);
 	return p;
 }
 
@@ -162,4 +224,23 @@ def_t *
 protocol_def (protocol_t *protocol)
 {
 	return PR_GetDef (&type_Protocol, protocol->name, 0, &numpr_globals);
+}
+
+protocollist_t *
+new_protocollist (void)
+{
+	protocollist_t *protocollist = malloc (sizeof (protocollist_t));
+
+	protocollist->count = 0;
+	protocollist->list = 0;
+	return protocollist;
+}
+
+void
+add_protocol (protocollist_t *protocollist, protocol_t *protocol)
+{
+	protocollist->list = realloc (protocollist->list,
+								  (protocollist->count + 1)
+								  * sizeof (protocollist_t));
+	protocollist->list[protocollist->count++] = protocol;
 }

@@ -34,25 +34,41 @@
 
 typedef struct class_s {
 	int         defined;
-	const char *name;
-	struct class_s *base;
-	struct methodlist_s *methods;
+	const char *class_name;
+	const char *category_name;
+	struct class_s *super_class;
 	struct type_s *ivars;
+	struct methodlist_s *methods;
+	struct protocollist_s *protocols;
 } class_t;
+
+struct protocol_s;
+struct type_s;
+
+class_t *get_class (const char *name, int create);
+void class_add_methods (class_t *class, struct methodlist_s *methods);
+void class_add_protocol_methods (class_t *class, expr_t *protocols);
+void class_add_protocol (class_t *class, struct protocol_s *protocol);
+void class_check_ivars (class_t *class, struct type_s *ivars);
+struct def_s *class_def (class_t *class);
+class_t *get_category (const char *class_name, const char *category_name,
+					   int create);
 
 typedef struct protocol_s {
 	const char *name;
 	struct methodlist_s *methods;
 } protocol_t;
 
-class_t *get_class (const char *name, int create);
-void class_add_methods (class_t *class, struct methodlist_s *methods);
-void class_add_protocol_methods (class_t *class, expr_t *protocols);
-struct def_s *class_def (class_t *class);
+typedef struct protocollist_s {
+	int         count;
+	protocol_t **list;
+} protocollist_t;
 
 protocol_t *get_protocol (const char *name, int create);
 void protocol_add_methods (protocol_t *protocol, struct methodlist_s *methods);
 void protocol_add_protocol_methods (protocol_t *protocol, expr_t *protocols);
 struct def_s *protocol_def (protocol_t *protocol);
+protocollist_t *new_protocollist (void);
+void add_protocol (protocollist_t *protocollist, protocol_t *protocol);
 
 #endif//__class_h

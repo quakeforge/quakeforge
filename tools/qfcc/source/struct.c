@@ -117,7 +117,8 @@ new_struct (const char *name)
 	strct->type->type = ev_struct;
 	strct->type->struct_tail = &strct->type->struct_head;
 	strct->type->struct_fields = Hash_NewTable (61, struct_field_get_key, 0, 0);
-	Hash_Add (structs, strct);
+	if (name)
+		Hash_Add (structs, strct);
 	return strct->type;
 }
 
@@ -143,6 +144,22 @@ copy_struct_fields (type_t *dst, type_t *src)
 		return;
 	for (s = src->struct_head; s; s = s->next)
 		new_struct_field (dst, s->type, s->name, s->visibility);
+}
+
+int
+struct_compare_fields (struct type_s *s1, struct type_s *s2)
+{
+	struct_field_t *f1 = s1->struct_head;
+	struct_field_t *f2 = s2->struct_head;
+
+	while (f1 && f2) {
+		if (strcmp (f1->name, f2->name)
+			|| f1->type != f2->type)
+			return 0;
+		f1 = f1->next;
+		f2 = f2->next;
+	}
+	return !((!f1) ^ !(f2));
 }
 
 void
