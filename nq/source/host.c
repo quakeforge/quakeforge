@@ -878,7 +878,6 @@ Host_Init (quakeparms_t *parms)
 
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
-	Memory_Init (parms->membase, parms->memsize);
 	Cvar_Init ();
 	Sys_Init_Cvars ();
 	Sys_Init ();
@@ -911,6 +910,8 @@ Host_Init (quakeparms_t *parms)
 	// execute +set again to override the config file
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute_Sets ();
+
+	Memory_Init (parms->membase, parms->memsize);
 
 	PI_Init ();
 
