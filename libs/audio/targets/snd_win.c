@@ -34,6 +34,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #define CINTERFACE
 
 #include "winquake.h"
+#include "QF/cvar.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
@@ -73,6 +74,10 @@ static DWORD       gSndBufSize;
 
 static qboolean    SNDDMA_InitWav (void);
 
+static cvar_t	   *snd_stereo;
+static cvar_t	   *snd_rate;
+static cvar_t	   *snd_bits;
+
 static plugin_t				plugin_info;
 static plugin_data_t		plugin_info_data;
 static plugin_funcs_t		plugin_info_funcs;
@@ -82,10 +87,15 @@ static snd_output_data_t	plugin_info_snd_output_data;
 static snd_output_funcs_t	plugin_info_snd_output_funcs;
 
 
-
 static void
 SNDDMA_Init_Cvars (void)
 {
+	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM, NULL,
+						   "sound stereo output");
+	snd_rate = Cvar_Get ("snd_rate", "11025", CVAR_ROM, NULL,
+						 "sound playback rate. 0 is system default");
+	snd_bits = Cvar_Get ("snd_bits", "16", CVAR_ROM, NULL,
+						 "sound sample depth. 0 is system default");
 }
 
 static void
@@ -152,9 +162,14 @@ SNDDMA_InitWav (void)
 	snd_sent = 0;
 	snd_completed = 0;
 
-	sn.channels = 2;
-	sn.samplebits = 16;
-	sn.speed = 11025;
+	if (!snd_stereo->int_val) {
+		sn.channels = 1;
+	} else {
+		sn.channels = 2;
+	}
+
+	sn.samplebits = snd_bits->int_val;
+	sn.speed = snd_rate->int_val;
 
 	memset (&format, 0, sizeof (format));
 	format.wFormatTag = WAVE_FORMAT_PCM;
