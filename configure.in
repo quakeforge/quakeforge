@@ -1378,6 +1378,7 @@ AC_OUTPUT(
 	doc/texinfo/Makefile
 	doc/man/Makefile
 	include/Makefile
+	include/QF/Makefile
 	include/win32/version.h
 	libs/Makefile
 	libs/gamecode/Makefile
