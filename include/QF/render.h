@@ -70,11 +70,9 @@ extern  lightstyle_t    r_lightstyle[MAX_LIGHTSTYLES];
 typedef struct entity_s
 {
 	qboolean				forcelink;		// model changed
-	int						update_type;
 	struct entity_state_s	*baseline;		// to fill in defaults in updates
 	double					msgtime;		// time of last update
 
-	int						keynum; // for matching entities in different frames
 	vec3_t					origin;
 	vec3_t					old_origin;
 	vec3_t					angles;
@@ -103,7 +101,7 @@ typedef struct entity_s
 	float					glow_size;		// how big the glow is (can be negative)
 	byte					glow_color;		// color of glow (paletted)
 
-// FIXME: could turn these into a union
+	// FIXME: could turn these into a union
 	int						trivial_accept;
 	struct mnode_s			*topnode; // for bmodels, first world node that
 									  // splits bmodel, or NULL if not split

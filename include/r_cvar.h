@@ -16,7 +16,6 @@ extern struct cvar_s     *gl_dlight_polyblend;
 extern struct cvar_s     *gl_dlight_smooth;
 extern struct cvar_s     *gl_fb_bmodels;
 extern struct cvar_s     *gl_fb_models;
-extern struct cvar_s     *gl_fires;
 extern struct cvar_s     *gl_keeptjunctions;
 extern struct cvar_s     *gl_lerp_anim;
 extern struct cvar_s     *gl_driver;

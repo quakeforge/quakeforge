@@ -486,7 +486,6 @@ R_RenderView (void)
 	R_RenderScene ();
 	R_DrawViewModel ();
 	R_DrawWaterSurfaces ();
-	R_UpdateFires ();
 	R_DrawParticles ();
 
 	// render mirror view

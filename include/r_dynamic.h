@@ -81,22 +81,4 @@ extern struct particle_s *free_particles;
 extern struct particle_s *particles;
 extern struct particle_s **freeparticles;
 
-#define MAX_FIRES				128		// rocket flames
-
-typedef struct {
-	int		key;			// allows reusability
-	vec3_t	origin, owner;
-	float	size;
-	float	die, decay;		// duration settings
-	float	minlight;		// lighting threshold
-	float	color[3];		// RGB
-} fire_t;
-
-extern fire_t r_fires[];
-
-void R_AddFire (vec3_t start, vec3_t end, struct entity_s *ent);
-void R_UpdateFires (void);
-fire_t *R_AllocFire (int key);
-void R_ClearFires (void);
-
 #endif // _R_DYNAMIC_H

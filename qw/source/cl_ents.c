@@ -425,7 +425,6 @@ CL_LinkPacketEntities (void)
 
 		*ent = &cl_packet_ents[s1->number];
 
-		(*ent)->keynum = s1->number;
 		(*ent)->model = model = cl.model_precache[s1->modelindex];
 
 		// set colormap
@@ -499,7 +498,7 @@ CL_LinkPacketEntities (void)
 			continue;
 
 		if (model->flags & EF_ROCKET) {
-			dl = R_AllocDlight (-(*ent)->keynum);
+			dl = R_AllocDlight (-s1->number);
 			VectorCopy ((*ent)->origin, dl->origin);
 			VectorCopy (r_firecolor->vec, dl->color);
 			dl->radius = 200;
@@ -681,7 +680,7 @@ CL_ParsePlayerinfo (void)
 	Called when the CTF flags are set
 */
 void
-CL_AddFlagModels (entity_t *ent, int team)
+CL_AddFlagModels (entity_t *ent, int team, int key)
 {
 	float		f;
 	int			i;
@@ -734,7 +733,7 @@ CL_AddFlagModels (entity_t *ent, int team)
 	newent = R_NewEntity ();
 	if (!newent)
 		return;
-	*newent = &cl_flag_ents[ent->keynum];
+	*newent = &cl_flag_ents[key];
 	(*newent)->model = cl.model_precache[cl_flagindex];
 	(*newent)->skinnum = team;
 
@@ -815,7 +814,6 @@ CL_LinkPlayers (void)
 		ent = *_ent = &cl_player_ents[j];
 
 		ent->frame = state->frame;
-		ent->keynum = j;
 		ent->model = cl.model_precache[state->modelindex];
 		ent->skinnum = state->skinnum;
 		ent->colormap = info->translations;
@@ -872,9 +870,9 @@ CL_LinkPlayers (void)
 		}
 
 		if (state->effects & EF_FLAG1)
-			CL_AddFlagModels (ent, 0);
+			CL_AddFlagModels (ent, 0, j);
 		else if (state->effects & EF_FLAG2)
-			CL_AddFlagModels (ent, 1);
+			CL_AddFlagModels (ent, 1, j);
 	}
 }
 

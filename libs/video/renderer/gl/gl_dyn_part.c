@@ -111,12 +111,6 @@ inline void
 R_ClearParticles (void)
 {
 	numparticles = 0;
-
-	/*
-	  FIXME: this is better than doing it in the client, and having gl-only
-	  code in the renderer common area, but this is still the wrong place.
-	*/
-	R_ClearFires ();
 }
 
 void
@@ -419,8 +413,6 @@ R_RocketTrail (entity_t *ent)
 
 	if (numparticles >= r_maxparticles)
 		return;
-
-	R_AddFire (ent->old_origin, ent->origin, ent);
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	maxlen = VectorNormalize (vec);
