@@ -107,7 +107,6 @@ Con_Init (void)
 
 	nonl ();
 	intrflush (stdscr, FALSE);
-	keypad (stdscr, TRUE);
 
 	getmaxyx (stdscr, screen_y, screen_x);
 	output = subwin (stdscr, screen_y - 2, screen_x, 0, 0);
@@ -123,6 +122,7 @@ Con_Init (void)
 	scrollok (status, FALSE);
 	scrollok (input, FALSE);
 	nodelay  (input, TRUE);
+	keypad (input, TRUE);
 
 	wclear (output);
 	wbkgdset (status, COLOR_PAIR(4));
@@ -185,7 +185,6 @@ Con_ProcessInput (void)
 			Con_CompleteCommandLine();
 			break;
 		case KEY_BACKSPACE:
-		case '\x7f':
 			if (key_linepos > 1) {
 				strcpy (key_lines[edit_line] + key_linepos - 1,
 						key_lines[edit_line] + key_linepos);
