@@ -179,7 +179,6 @@ static NSMutableArray	*prefsViews = nil;
 
 	if (! [prefsViews containsObject: aController]) {
 		[prefsViews addObject: aController];
-		[aController autorelease];
 	}
 
 	[button setTitle: [aController buttonCaption]];
@@ -191,6 +190,8 @@ static NSMutableArray	*prefsViews = nil;
 
 	[iconList addColumnWithCells: [NSArray arrayWithObject: button]];
 	[iconList sizeToCells];
+
+	[aController autorelease];
 }
 
 - (NSBox *) prefsViewBox

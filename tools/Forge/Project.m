@@ -35,7 +35,10 @@ static const char rcsid[] =
 
 #import <Foundation/NSFileManager.h>
 #import <Foundation/NSString.h>
+#import <Foundation/NSUserDefaults.h>
 
+#import <AppKit/NSBrowser.h>
+#import <AppKit/NSBrowserCell.h>
 #import <AppKit/NSOpenPanel.h>
 #import <AppKit/NSSavePanel.h>
 
@@ -51,17 +54,32 @@ static const char rcsid[] =
 
 - (void) dealloc
 {
+	[rFiles release];
+	[imgFiles release];
+	[otherFiles release];
+	[suppFiles release];
 	NSLog (@"Project deallocating");
 	[super dealloc];
 }
 
 - (void) awakeFromNib
 {
-	int		result;
+	int				result;
+	NSUserDefaults	*defaults = [NSUserDefaults standardUserDefaults];
+
+	imgFiles = [NSMutableArray new];
+	rFiles = [NSMutableArray new];
+	suppFiles = [NSMutableArray new];
+	otherFiles = [NSMutableArray new];
 
 	if (![owner fileMode]) {
 		NSLog (@"Project -awakeFromNib: Uhh, file mode isn't set. WTF?");
 		[self dealloc];
+		return;
+	}
+
+	if ([owner fileName]) {
+		[self openProjectAtPath: [owner fileName]];
 		return;
 	}
 
@@ -74,7 +92,9 @@ static const char rcsid[] =
 			[oPanel setCanChooseFiles: YES];
 			[oPanel setCanChooseDirectories: NO];
 
-			result = [oPanel runModalForTypes: fileTypes];
+			result = [oPanel runModalForDirectory: [defaults objectForKey: @"ProjectPath"]
+											 file: nil
+											types: fileTypes];
 
 			if (result == NSOKButton) {		// got a path
 				NSArray		*pathArray = [oPanel filenames];
@@ -93,7 +113,8 @@ static const char rcsid[] =
 			[sPanel setRequiredFileType: @"forge"];
 			[sPanel setTreatsFilePackagesAsDirectories: NO];
 
-			result = [sPanel runModal];
+			result = [sPanel runModalForDirectory: [defaults objectForKey: @"ProjectPath"]
+											 file: @"ProjectName.forge"];
 
 			if (result == NSOKButton) {		// got a path
 				[self createProjectAtPath: [sPanel filename]];
@@ -110,7 +131,13 @@ static const char rcsid[] =
 - (void) createProjectAtPath: (NSString *) aPath
 {
 	NSFileManager		*filer = [NSFileManager defaultManager];
-	NSMutableDictionary	*dict = [[NSMutableDictionary alloc] init];
+	// create dictionary with dictionaries in it, each containing nothing
+	NSMutableDictionary	*dict = [NSMutableDictionary dictionaryWithObjectsAndKeys:
+								imgFiles, @"Image Files",
+								rFiles, @"Ruamoko Source",
+								suppFiles, @"Supporting Files",
+								otherFiles, @"Unmanaged Files",
+								nil];
 
 	if (!aPath) {
 		NSLog (@"No path given!");
@@ -120,14 +147,15 @@ static const char rcsid[] =
 		NSLog (@"Could not create directory %@", aPath);
 	}
 
-	// create dictionary with dictionaries in it, each containing nothing
+	// write the dictionary
 	[dict writeToFile: [aPath stringByAppendingPathComponent: @"Forge.project"]
 		   atomically: YES];
+	[window makeKeyAndOrderFront: self];
 }
 
 - (void) openProjectAtPath: (NSString *) aPath
 {
-	NSLog (@"No code to load project %@", aPath);
+	NSLog (@"No code to load project %@.", aPath);
 	[self dealloc];
 }
 
@@ -135,4 +163,18 @@ static const char rcsid[] =
 {
 }
 
+- (int) browser: (NSBrowser *) sender numberOfRowsInColumn: (int) column
+{
+	return 1;
+}
+
+- (void) browser: (NSBrowser *) sender
+ willDisplayCell: (id) cell
+ 		   atRow: (int) row
+		  column: (int) column
+{
+	[cell setStringValue: @"hi"];
+	[cell setLoaded: YES];
+	[cell setLeaf: YES];
+}
 @end

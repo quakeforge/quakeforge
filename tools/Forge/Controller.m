@@ -1,5 +1,5 @@
 /*
-	Controller.h
+	Controller.m
 
 	Application controller class
 
@@ -47,22 +47,24 @@ static const char rcsid[] =
 
 - (BOOL) application: (NSApplication *) app openFile: (NSString *) filename;
 {
-	return NO;
-}
+	if (![[filename pathExtension] isEqualToString: @"forge"]) {
+		NSLog (@"File \"%@\" is not a project file!", filename);
+		return NO;
+	}
 
-- (BOOL) application: (NSApplication *) app openTempFile: (NSString *) filename;
-{
-	return NO;
-}
+	fileMode = COpenMode;
+	fileName = filename;
 
-- (BOOL) applicationOpenUntitledFile: (NSApplication *) app;
-{
-	return NO;
-}
+	if (![NSBundle loadNibNamed: @"Project" owner: self]) {
+		NSLog (@"Could not load project manager for file \"%@\"", filename);
+		fileMode = CNoMode;
+		fileName = nil;
+		return NO;
+	}
 
-- (BOOL) applicationShouldOpenUntitledFile: (NSApplication *) app;
-{
-	return NO;
+	fileMode = CNoMode;
+	fileName = nil;
+	return YES;
 }
 
 - (BOOL) applicationShouldTerminate: (NSApplication *) app;
@@ -110,34 +112,6 @@ static const char rcsid[] =
 	return;
 }
 
-- (void) saveProject: (id) sender;
-{
-	NSLog (@"This _will_ save the project, but it doesn't yet.");
-}
-
-- (void) closeProject: (id) sender;
-{
-	NSLog (@"This _will_ close the project, but it doesn't yet.");
-}
-
-/*
-	File-level stuff.
-*/
-- (void) addFileToProject: (id) sender;
-{
-	NSLog (@"This _will_ copy/move a file into the project, but it doesn't yet.");
-}
-
-- (void) addNewFileToProject: (id) sender;
-{
-	NSLog (@"This _will_ create a new file, but it doesn't yet.");
-}
-
-- (void) open: (id) sender;
-{
-	NSLog (@"This _will_ open a file, but it doesn't yet.");
-}
-
 /******
 	Notifications
 ******/
@@ -149,7 +123,6 @@ static const char rcsid[] =
 */
 - (void) applicationDidFinishLaunching: (NSNotification *) not;
 {
-	[bundleController loadBundles];
 }
 
 /*
@@ -172,6 +145,8 @@ static const char rcsid[] =
 	*/
 	NSDebugLog (@"Services");
 	[NSApp setServicesMenu: [[menu itemWithTitle: _(@"Services")] submenu]];
+
+	[bundleController loadBundles];
 }
 
 /*
@@ -189,8 +164,8 @@ static const char rcsid[] =
 - (void) awakeFromNib
 {
 	fileMode = CNoMode;
-	[window setFrameAutosaveName: @"Project View"];
-	[window setFrameUsingName: @"Project View"];
+//	[window setFrameAutosaveName: @"Project View"];
+//	[window setFrameUsingName: @"Project View"];
 }
 
 /******
@@ -249,6 +224,11 @@ static const char rcsid[] =
 - (CMode) fileMode
 {
 	return fileMode;
+}
+
+- (NSString *) fileName
+{
+	return fileName;
 }
 
 @end

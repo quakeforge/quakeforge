@@ -18,8 +18,7 @@
 	);
 	Outlets = (
 	    bundleController,
-	    prefsController,
-	    window
+	    prefsController
 	);
 	Super = NSObject;
     };

@@ -37,7 +37,12 @@
 
 @interface Project: NSObject
 {
-	IBOutlet id		owner;
+	IBOutlet id			owner;
+	IBOutlet NSWindow	*window;
+	NSMutableArray		*rFiles;
+	NSMutableArray		*imgFiles;
+	NSMutableArray		*suppFiles;
+	NSMutableArray		*otherFiles;
 }
 
 - (void) createProjectAtPath: (NSString *) aPath;

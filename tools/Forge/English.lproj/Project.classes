@@ -613,7 +613,8 @@
 	    closeProject:
 	);
 	Outlets = (
-	    owner
+	    owner,
+	    window
 	);
 	Super = NSObject;
     };

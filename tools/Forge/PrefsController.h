@@ -45,9 +45,9 @@
 	IBOutlet NSBox			*box;
 	IBOutlet NSMatrix		*iconList;
 	IBOutlet NSScrollView	*scrollView;
+	IBOutlet NSWindow		*window;
 	IBOutlet id				owner;
 
-	IBOutlet NSWindow		*window;
 }
 
 + (PrefsController *) sharedPrefsController;

@@ -46,15 +46,12 @@ typedef enum {CNoMode = 0, COpenMode, CCreateMode} CMode;
 {
 	IBOutlet BundleController	*bundleController;
 	IBOutlet PrefsController	*prefsController;
-	IBOutlet id					window;
 	IBOutlet CMode				fileMode;
+	IBOutlet NSString			*fileName;
 }
 
 // App delegate methods
 - (BOOL) application: (NSApplication *) app openFile: (NSString *) filename;
-- (BOOL) application: (NSApplication *) app openTempFile: (NSString *) filename;
-- (BOOL) applicationOpenUntitledFile: (NSApplication *) app;
-- (BOOL) applicationShouldOpenUntitledFile: (NSApplication *) app;
 - (BOOL) applicationShouldTerminate: (NSApplication *) app;
 - (BOOL) applicationShouldTerminateAfterLastWindowClosed: (NSApplication *) app;
 
@@ -66,17 +63,11 @@ typedef enum {CNoMode = 0, COpenMode, CCreateMode} CMode;
 // Action methods
 - (IBAction) showPreferencesPanel: (id) sender;
 
-// Projects
+// Open/Create Project
 - (IBAction) newProject: (id) sender;
 - (IBAction) openProject: (id) sender;
-- (IBAction) saveProject: (id) sender;
-- (IBAction) closeProject: (id) sender;
-
-// Files
-- (IBAction) addFileToProject: (id) sender;
-- (IBAction) addNewFileToProject: (id) sender;
-- (IBAction) open: (id) sender;
 
 // Private (for Project)
 - (CMode) fileMode;
+- (NSString *) fileName;
 @end
