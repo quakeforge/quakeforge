@@ -345,17 +345,17 @@ mark_surfaces (msurface_t *surf, vec3_t lightorigin,  dlight_t *light,
 void
 R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, model_t *model)
 {
-	mleaf_t   *pvsleaf = Mod_PointInLeaf (lightorigin, model);
+	mleaf_t    *pvsleaf = Mod_PointInLeaf (lightorigin, model);
 
 	if (!pvsleaf->compressed_vis) {
 		mnode_t *node = model->nodes + model->hulls[0].firstclipnode;
 		R_RecursiveMarkLights (lightorigin, light, bit, node);
 	} else {
-		float   radius = light->radius;
-		vec3_t  mins, maxs;
-		int     leafnum = 0;
-		byte   *in = pvsleaf->compressed_vis;
-		byte    vis_bits;
+		float       radius = light->radius;
+		vec3_t      mins, maxs;
+		int         leafnum = 0;
+		byte       *in = pvsleaf->compressed_vis;
+		byte        vis_bits;
 
 		mins[0] = lightorigin[0] - radius;
 		mins[1] = lightorigin[1] - radius;
@@ -364,14 +364,14 @@ R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, model_t *model)
 		maxs[1] = lightorigin[1] + radius;
 		maxs[2] = lightorigin[2] + radius;
 		while (leafnum < model->numleafs) {
-			int i;
+			int         i;
 			if (!(vis_bits = *in++)) {
 				leafnum += (*in++) * 8;
 				continue;
 			}
 			for (i = 0; i < 8 && leafnum < model->numleafs; i++, leafnum++) {
 				int      m;
-				mleaf_t *leaf  = &model->leafs[leafnum];
+				mleaf_t *leaf  = &model->leafs[leafnum + 1];
 				if (!(vis_bits & (1 << i)))
 					continue;
 				if (leaf->visframe != r_visframecount)
