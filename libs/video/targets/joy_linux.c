@@ -66,7 +66,7 @@ JOY_Read (void)
 			} else {
 				if (joy_buttons[event.number].current <
 					joy_buttons[event.number].old) {
-					Key_Event (J_BUTTON2 + event.number, 0, false);
+					Key_Event (J_BUTTON1 + event.number, 0, false);
 				}
 			}
 			joy_buttons[event.number].old = joy_buttons[event.number].current;
