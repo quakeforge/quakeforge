@@ -40,7 +40,7 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 #ifdef HAVE_WINDOWS_H
-# include <windows.h>
+# include "winquake.h"
 #endif
 
 #ifdef HAVE_DLFCN_H

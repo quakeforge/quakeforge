@@ -35,9 +35,7 @@ static const char rcsid[] =
 #endif
 #include <math.h>
 
-#define byte __byte
-#include <dinput.h>
-#undef byte
+#include "winquake.h"
 
 #include "QF/cmd.h"
 #include "QF/console.h"

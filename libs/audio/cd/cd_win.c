@@ -31,7 +31,7 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 
-#include <windows.h>
+#include "winquake.h"
 
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"

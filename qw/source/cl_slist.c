@@ -54,7 +54,7 @@ static const char rcsid[] =
 # include <unistd.h>
 #endif
 #ifdef HAVE_WINDOWS_H
-# include <windows.h>
+# include "winquake.h"
 #endif
 #ifdef HAVE_SYS_PARAM_H
 # include <sys/param.h>
