@@ -369,10 +369,12 @@ CL_ParseTEnt (void)
 
 		case TE_GUNSHOT:				// bullet hitting wall
 		case TE_BLOOD:					// bullets hitting body
-			if (type == TE_GUNSHOT)
+			if (type == TE_GUNSHOT) {
 				cnt = 20;
-			else
+				type = 0;
+			} else {
 				cnt = MSG_ReadByte (net_message);
+			}
 			/* FALLTHROUGH */
 		case TE_LIGHTNINGBLOOD:		// lightning hitting body
 			pos[0] = MSG_ReadCoord (net_message);
