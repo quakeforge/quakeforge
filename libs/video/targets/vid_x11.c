@@ -344,7 +344,8 @@ ResetSharedFrameBuffers (void)
 		key = random ();
 		x_shminfo[frm].shmid = shmget ((key_t) key, size, IPC_CREAT | 0777);
 		if (x_shminfo[frm].shmid == -1)
-			Sys_Error ("VID: Could not get any shared memory\n");
+			Sys_Error ("VID: Could not get any shared memory (%s)\n",
+					   strerror (errno));
 
 		// attach to the shared memory segment
 		x_shminfo[frm].shmaddr = (void *) shmat (x_shminfo[frm].shmid, 0, 0);
