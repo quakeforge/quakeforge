@@ -190,7 +190,7 @@ void
 CL_Skin_Init_Cvars (void)
 {
 	Skin_Init_Cvars ();
-	noskins = Cvar_Get ("noskins", "0", CVAR_NONE, NULL, //XXX FIXME
+	noskins = Cvar_Get ("noskins", "0", CVAR_ARCHIVE, NULL, //XXX FIXME
 						"set to 1 to not download new skins");
 	skin = Cvar_Get ("skin", "", CVAR_ARCHIVE | CVAR_USERINFO, skin_f,
 					 "Players skin");

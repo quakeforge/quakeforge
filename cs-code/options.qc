@@ -438,21 +438,32 @@ MENU_feature_options =
  ***************************************************/
 
 string playername_cvar; // name of the cvar holding playername (gametype dependend)
+string teamname_cvar; // name of the cvar holding teamname (MAY ? gametype dependend)
 
-// input for playername
-string player_config_playername;
+// input for playername and teamname
 inputline_t player_config_plname_il;
+inputline_t player_config_tname_il;
 
 // this holds active inputline pointer
 inputline_t player_config_iactive;
 
+// Y padding for the player config
+#define PLAYER_CONF_Y_PAD 60
+
 // table for cursor-positions
-#define NUM_PLAYERCONFIG_CMDS 3
-integer [NUM_PLAYERCONFIG_CMDS] player_config_cursor_tbl = { 68, 90, 105 };
+#define NUM_PLAYERCONFIG_CMDS 4
+integer [NUM_PLAYERCONFIG_CMDS] player_config_cursor_tbl = { 
+	PLAYER_CONF_Y_PAD + 8, 
+	PLAYER_CONF_Y_PAD + 20 + 8, 
+	PLAYER_CONF_Y_PAD + 45, 
+	PLAYER_CONF_Y_PAD + 60 
+};
+
 integer player_config_cursor;
 
 // array, which holds commands for this menu
 string [NUM_PLAYERCONFIG_CMDS] player_config_vals = {
+	"",
 	"",
 	"topcolor",
 	"bottomcolor"
@@ -483,11 +494,15 @@ KEYEV_player_options =
 			if (player_config_iactive) {
 				if(player_config_iactive == player_config_plname_il) {
 					cvar_set(playername_cvar,InputLine_GetText(player_config_plname_il));
+				} else if(player_config_iactive == player_config_tname_il) {
+					cvar_set(teamname_cvar,InputLine_GetText(player_config_tname_il));
 				}
 				player_config_iactive = NIL;
 			} else {
 				if (player_config_cursor == 0) {
 					player_config_iactive = player_config_plname_il;
+				} else if(player_config_cursor == 1) {
+					player_config_iactive = player_config_tname_il;
 				}
 			}
 			break;
@@ -529,7 +544,6 @@ integer ()
 DRAW_player_options = 
 {
 	local integer cursor_pad = 0, spacing = 120;
-#define PLAYER_CONF_Y_PAD 60
 
 	Draw_Pic		(16, 4, "gfx/qplaque.lmp");
 	Draw_CenterPic  (160,4, "gfx/p_option.lmp");
@@ -537,23 +551,29 @@ DRAW_player_options =
 	Draw_String		(54,  50, "--------");
 
 
-	text_box(70, PLAYER_CONF_Y_PAD, 17, 1);
-	InputLine_Draw (player_config_plname_il, 70, PLAYER_CONF_Y_PAD + 8, 
-		player_config_iactive != NIL);
+	Draw_String(70, PLAYER_CONF_Y_PAD + 8, "Name..:");
+	text_box(120, PLAYER_CONF_Y_PAD, 17, 1);
+	InputLine_Draw (player_config_plname_il, 120, PLAYER_CONF_Y_PAD + 8, 
+		player_config_iactive == player_config_plname_il);
+
+	Draw_String(70, PLAYER_CONF_Y_PAD + 20 + 8, "Team..:");
+	text_box(120, PLAYER_CONF_Y_PAD + 20, 5, 1);
+	InputLine_Draw (player_config_tname_il, 120, PLAYER_CONF_Y_PAD + 8 + 20, 
+		player_config_iactive == player_config_tname_il);
 	
 
-	draw_val_item (70, PLAYER_CONF_Y_PAD + 30, spacing, "Top color", 
+	draw_val_item (70, PLAYER_CONF_Y_PAD + 45, spacing, "Top color", 
 		"   " + ftos(cvar("topcolor"))); 
-	draw_val_item (70, PLAYER_CONF_Y_PAD + 45, spacing, "Bottom color", 
+	draw_val_item (70, PLAYER_CONF_Y_PAD + 60, spacing, "Bottom color", 
 		"   " + ftos(cvar("bottomcolor"))); 
 
 	// Draw nice color boxes
-	text_box(192, PLAYER_CONF_Y_PAD + 30 - 8, 1, 1);
-	Draw_Fill (200, PLAYER_CONF_Y_PAD + 30, 16, 8,
-		ftoi(cvar("topcolor"))*16+8);
-
 	text_box(192, PLAYER_CONF_Y_PAD + 45 - 8, 1, 1);
 	Draw_Fill (200, PLAYER_CONF_Y_PAD + 45, 16, 8,
+		ftoi(cvar("topcolor"))*16+8);
+
+	text_box(192, PLAYER_CONF_Y_PAD + 60 - 8, 1, 1);
+	Draw_Fill (200, PLAYER_CONF_Y_PAD + 60, 16, 8,
 		ftoi(cvar("bottomcolor"))*16+8);
 
 	opt_cursor  (62, player_config_cursor_tbl[player_config_cursor]);
@@ -574,7 +594,11 @@ CB_ME_player_options =
 	} else {
 		playername_cvar = "_cl_name";
 	}
+
+	teamname_cvar = "team"; // FIXME: is this maybe something other in netquake?
+
 	InputLine_SetText (player_config_plname_il, Cvar_GetCvarString(playername_cvar)); 
+	InputLine_SetText (player_config_tname_il, Cvar_GetCvarString(teamname_cvar)); 
 };
 
 /*
@@ -587,6 +611,8 @@ MENU_player_options =
 {
 	player_config_plname_il = InputLine_Create (4, 18, ' ');
 	InputLine_SetWidth (player_config_plname_il, 18);
+	player_config_tname_il = InputLine_Create (4, 7, ' ');
+	InputLine_SetWidth (player_config_tname_il, 7);
 	player_config_iactive = NIL;
 
 	Menu_Begin (54, 80, "Player");
@@ -597,6 +623,141 @@ MENU_player_options =
 	Menu_End ();
 };
 
+/******************************************************************************
+ * NETWORK OPTIONS
+ * Options, which have to do with network stuff (rate, noskins, netgraph, ...)
+ ******************************************************************************/
+
+// input for playername
+inputline_t network_config_rate_il;
+// this holds active inputline pointer
+inputline_t network_config_iactive;
+
+
+integer network_config_cursor;
+
+// Y padding for the player config
+#define NETWORK_CONF_Y_PAD 60
+
+// table for cursor-positions
+#define NUM_NETWORKCONFIG_CMDS 1
+integer [NUM_NETWORKCONFIG_CMDS] network_config_cursor_tbl = { 
+	PLAYER_CONF_Y_PAD + 8, 
+};
+
+integer network_config_cursor;
+
+// array, which holds commands for this menu
+string [NUM_NETWORKCONFIG_CMDS] network_config_vals = {
+	"",
+};
+
+
+integer (integer key, integer unicode, integer down) 
+KEYEV_network_options =
+{
+	switch (key) {
+		case QFK_DOWN:
+		case QFM_WHEEL_DOWN:
+			if (!network_config_iactive) {
+				network_config_cursor ++;
+				network_config_cursor %= NUM_PLAYERCONFIG_CMDS;
+			}
+			break;
+		case QFK_UP:
+		case QFM_WHEEL_UP:
+			if (!network_config_iactive) {
+				network_config_cursor += NUM_PLAYERCONFIG_CMDS - 1;
+				network_config_cursor %= NUM_PLAYERCONFIG_CMDS;
+			}
+			break;
+		case QFK_RETURN:
+			if (network_config_iactive) {
+				if(network_config_iactive == network_config_rate_il) {
+					cvar_set("rate",InputLine_GetText(network_config_rate_il));
+				}
+				network_config_iactive = NIL;
+			} else {
+				if (network_config_cursor == 0) {
+					network_config_iactive = network_config_rate_il;
+				}
+			}
+			break;
+	}
+	if(key != QFK_RETURN && network_config_iactive) {
+		InputLine_Process (network_config_iactive, key >= 256 ? key : unicode);
+	}
+
+	if(!(key == QFK_RIGHT || key == QFK_LEFT )) {
+		return 1;
+	}
+
+//	switch (network_config_vals[network_config_cursor]) {
+//	} // none yet
+
+	
+	return 1;
+};
+
+
+/*
+	DRAW_network_options
+
+	Draws the network option menu
+*/
+integer () 
+DRAW_network_options = 
+{
+	local integer cursor_pad = 0, spacing = 120;
+
+	Draw_Pic		(16, 4, "gfx/qplaque.lmp");
+	Draw_CenterPic  (160,4, "gfx/p_option.lmp");
+	Draw_String		(54,  40, "Network");
+	Draw_String		(54,  50, "--------");
+
+
+	Draw_String(70, NETWORK_CONF_Y_PAD + 8, "Rate..:");
+	text_box(120, NETWORK_CONF_Y_PAD, 9, 1);
+	InputLine_Draw (network_config_rate_il, 120, NETWORK_CONF_Y_PAD + 8, 
+		network_config_iactive == network_config_rate_il);
+
+	opt_cursor  (62, player_config_cursor_tbl[player_config_cursor]);
+	return 1;
+};
+
+
+
+/*
+	CB_ME_network_options
+
+	Entercallback for the networkmenu.
+*/
+integer () 
+CB_ME_network_options =
+{
+	InputLine_SetText (network_config_rate_il, Cvar_GetCvarString("rate")); 
+};
+
+
+
+/*
+	MENU_network_options
+
+	Makes the network option menu
+*/
+void () 
+MENU_network_options =
+{
+	network_config_rate_il = InputLine_Create (4, 9, ' ');
+	InputLine_SetWidth (network_config_rate_il, 9);
+
+	Menu_Begin (54, 90, "Network");
+	Menu_FadeScreen (1);
+	Menu_KeyEvent (KEYEV_network_options);
+	Menu_EnterHook (CB_ME_network_options);
+	Menu_Draw (DRAW_network_options);
+	Menu_End ();
+};
 
 /*************************
  * MAIN OPTIONS 
@@ -623,6 +784,7 @@ MENU_options =
 	MENU_audio_options   ();
 	MENU_feature_options ();
 	MENU_player_options  ();
+	MENU_network_options ();
 
 	Menu_End ();
 };
