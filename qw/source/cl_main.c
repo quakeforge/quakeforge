@@ -1482,7 +1482,7 @@ Host_SimulationTime (float time)
 	if (!cl_maxfps->int_val)
 		return 0;
 
-	fps = max (1, cl_maxfps->value);
+	fps = bound (1, cl_maxfps->value, 72);
 
 	timedifference = (timescale / fps) - (realtime - oldrealtime);
 
