@@ -285,6 +285,9 @@ void (string text, integer key) sp_start =
 	Cbuf_AddText ("coop 0\n");
 	Cbuf_AddText ("deathmatch 0\n");
 	Cbuf_AddText ("teamplay 0\n");
+	Cbuf_AddText ("listen 0\n");
+	Cbuf_AddText ("noexit 0\n");
+	Cbuf_AddText ("samelevel 0\n");
 	Cbuf_AddText ("map start\n");
 };
 
