@@ -365,7 +365,6 @@ convert_qfo (void)
 		}
 		for (j = 0; j < def->num_relocs; j++) {
 			qfo_reloc_t *reloc = qfo->relocs + def->relocs + j;
-			printf ("%12s %04x %04x %s\n", reloc_names[reloc->type], reloc->ofs, def->ofs, qfo->strings + def->name);
 			switch ((reloc_type)reloc->type) {
 				case rel_none:
 					break;
