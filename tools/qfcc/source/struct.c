@@ -163,9 +163,11 @@ struct_compare_fields (struct_t *s1, struct_t *s2)
 	struct_field_t *f2 = s2->struct_head;
 
 	while (f1 && f2) {
-		if (strcmp (f1->name, f2->name)
-			|| f1->type != f2->type)
-			return 0;
+		if (f1->name != f2->name)
+			if (!f1->name || !f2->name
+				|| strcmp (f1->name, f2->name)
+				|| f1->type != f2->type)
+				return 0;
 		f1 = f1->next;
 		f2 = f2->next;
 	}
