@@ -15,10 +15,13 @@ SRC=main.c builtins.c
 OBJ=$(patsubst %,%.o,$(basename $(SRC)))
 DEP=$(patsubst %.o,%.d,$(OBJ))
 
-all: $(EXE)
+all: $(EXE) $(EXE).dat
 
 $(EXE): $(OBJ) $(LIBS)
 	$(CC) $(LDFLAGS) -o $@ $^ -lQFgamecode -lQFutil
+
+$(EXE).dat: progs.src *.qc
+	qfcc
 
 clean:
 	rm -f $(EXE) *.o *.d core *.dat progdefs.h
