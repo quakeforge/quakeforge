@@ -1170,7 +1170,8 @@ methodproto
 	| '-' methoddecl ';'
 		{
 			$2->instance = 1;
-			$2->params->type = current_class->type;
+			if (current_class)
+				$2->params->type = current_class->type;
 			$$ = $2;
 		}
 	;

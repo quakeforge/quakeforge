@@ -154,11 +154,17 @@ class_add_protocol_methods (class_t *class, expr_t *protocols)
 		class->methods = new_methodlist ();
 
 	for (e = protocols; e; e = e->next) {
+		method_t   **m = class->methods->tail;
 		if (!(p = get_protocol (e->e.string_val, 0))) {
 			error (e, "undefined protocol `%s'", e->e.string_val);
 			continue;
 		}
 		copy_methods (class->methods, p->methods);
+		while (*m) {
+			(*m)->params->type = class->type;
+			printf("%s\n", (*m)->name);
+			m = &(*m)->next;
+		}
 	}
 }
 
