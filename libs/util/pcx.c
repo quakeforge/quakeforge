@@ -115,14 +115,14 @@ LoadPCX (VFile *f, int convert, byte *pal)
 		count -= runLength;
 
 		if (convert) {
-			while (runLength-- > 0) {
+			for (; runLength > 0; runLength--) {
 				*pix++ = palette[*dataByte * 3];
 				*pix++ = palette[*dataByte * 3 + 1];
 				*pix++ = palette[*dataByte * 3 + 2];
 				*pix++ = 255;
 			}
 		} else {
-			while (runLength-- > 0) {
+			for (; runLength > 0; runLength--) {
 				*pix++ = *dataByte;
 			}
 		}
