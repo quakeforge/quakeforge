@@ -106,8 +106,8 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 	if (Qread (file, &progs, sizeof (progs)) != sizeof (progs))
 		PR_Error (pr, "error reading header");
 
-	pr->progs_size = qfs_filesize;
-	Sys_DPrintf ("Programs occupy %iK.\n", qfs_filesize / 1024);
+	pr->progs_size = size;
+	Sys_DPrintf ("Programs occupy %iK.\n", size / 1024);
 
 	// store prog crc
 	pr->crc = CRC_Block ((byte*)&progs, sizeof (progs));
@@ -151,7 +151,7 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 	pr->zone_size += sizeof (void*) - 1;
 	pr->zone_size &= ~(sizeof (void*) - 1);
 
-	// size of edict ascked for by progs
+	// size of edict asked for by progs
 	pr->pr_edict_size = progs.entityfields * 4;
 	// size of engine data
 	pr->pr_edict_size += sizeof (edict_t) - sizeof (pr_type_t);
@@ -181,7 +181,7 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 
 	memcpy (pr->progs, &progs, sizeof (progs));
 	Qread (file, pr->progs + 1, size - sizeof (progs));
-	CRC_ProcessBlock ((byte *)(pr->progs + 1), & pr->crc,
+	CRC_ProcessBlock ((byte *)(pr->progs + 1), &pr->crc,
 					  size - sizeof (progs));
 
 	if (pr->edicts)
