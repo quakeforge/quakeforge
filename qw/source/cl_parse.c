@@ -489,8 +489,7 @@ CL_ParseDownload (void)
 	// open the file if not opened yet
 	if (!cls.download) {
 		dstring_t  *name = dstring_newstr();
-		const char *path;
-		const char *fname;
+		const char *fname, *path;
 
 		if (strncmp (cls.downloadtempname, "skins/", 6) == 0) {
 			path = qfs_gamedir->dir.skins;
