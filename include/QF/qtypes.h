@@ -60,6 +60,19 @@ typedef	int	fixed4_t;
 typedef	int	fixed8_t;
 typedef	int	fixed16_t;
 
+#define SIDE_FRONT  0
+#define SIDE_BACK   1
+#define SIDE_ON     2
+
+// plane_t structure
+// !!! if this is changed, it must be changed in asm_i386.h too !!!
+typedef struct mplane_s {
+	vec3_t  normal;
+	float   dist;
+	byte    type;			// for texture axis selection and fast side tests
+	byte    signbits;		// signx + signy<<1 + signz<<1
+	byte    pad[2];
+} mplane_t;
 
 typedef	byte	pixel_t;
 
