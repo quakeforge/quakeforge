@@ -42,6 +42,7 @@ static const char rcsid[] =
 #ifdef HAVE_IO_H
 # include <io.h>
 #endif
+#include <getopt.h>
 #include <sys/types.h>
 #include <sys/fcntl.h>
 
@@ -57,6 +58,15 @@ static const char rcsid[] =
 #include "QF/vfile.h"
 
 #include "disassemble.h"
+#include "globals.h"
+#include "strings.h"
+
+static const struct option long_options[] = {
+	{"disassemble", no_argument, 0, 'd'},
+	{"globals", no_argument, 0, 'g'},
+	{"strings", no_argument, 0, 's'},
+	{NULL, 0, NULL, 0},
+};
 
 static edict_t *edicts;
 static int      num_edicts;
@@ -185,10 +195,28 @@ load_progs (const char *name)
 int
 main (int argc, char **argv)
 {
+	int         c;
+	void      (*func)(progs_t *pr) = dump_globals;
+
 	init_qf ();
-	while (*++argv) {
-		load_progs (*argv);
-		disassemble_progs (&pr);
+	while ((c = getopt_long (argc, argv, "dgs", long_options, 0)) != EOF) {
+		switch (c) {
+			case 'd':
+				func = disassemble_progs;
+				break;
+			case 'g':
+				func = dump_globals;
+				break;
+			case 's':
+				func = dump_strings;
+				break;
+			default:
+				return 1;
+		}
+	}
+	while (optind < argc) {
+		load_progs (argv[optind++]);
+		func (&pr);
 	}
 	return 0;
 }
