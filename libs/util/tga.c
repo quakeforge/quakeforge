@@ -141,6 +141,155 @@ reverse_read_bgra (byte *buf, int count, byte **data)
 	return reverse_blit_rgba (buf, count, red, green, blue, alpha);
 }
 
+static inline void
+setup_pixrow_span (TargaHeader *targa, tex_t *tex, byte **_pixrow, int *_span)
+{
+	byte       *pixrow;
+	int         span;
+
+	span = targa->width * 4;
+	pixrow = tex->data;
+	if (targa->attributes & 0x10) {
+		// right to left
+		pixrow += span - 4;
+	}
+	if (!(targa->attributes & 0x20)) {
+		// bottom to top
+		pixrow += (targa->height - 1) * span;
+		span = -span;
+	}
+
+	*_pixrow = pixrow;
+	*_span = span;
+}
+
+static void
+decode_truecolor_24 (TargaHeader *targa, tex_t *tex, byte *dataByte)
+{
+	byte       *pixcol, *pixrow;
+	int         column, columns, rows, span;
+
+	columns = targa->width;
+	rows = targa->height;
+
+	setup_pixrow_span (targa, tex, &pixrow, &span);
+
+	if (targa->attributes & 0x10) {
+		while (rows-- > 0) {
+			pixcol = pixrow;
+			for (column = columns; column > 0; column--)
+				pixcol = reverse_read_bgr (pixcol, 1, &dataByte);
+			pixrow += span;
+		}
+	} else {
+		while (rows-- > 0) {
+			pixcol = pixrow;
+			for (column = columns; column > 0; column--)
+				pixcol = read_bgr (pixcol, 1, &dataByte);
+			pixrow += span;
+		}
+	}
+}
+
+static void
+decode_truecolor_32 (TargaHeader *targa, tex_t *tex, byte *dataByte)
+{
+	byte       *pixcol, *pixrow;
+	int         column, columns, rows, span;
+
+	columns = targa->width;
+	rows = targa->height;
+
+	setup_pixrow_span (targa, tex, &pixrow, &span);
+
+	if (targa->attributes & 0x10) {
+		while (rows-- > 0) {
+			pixcol = pixrow;
+			for (column = columns; column > 0; column--)
+				pixcol = reverse_read_bgra (pixcol, 1, &dataByte);
+			pixrow += span;
+		}
+	} else {
+		while (rows-- > 0) {
+			pixcol = pixrow;
+			for (column = 0; column < columns; column++)
+				pixcol = read_bgra (pixcol, 1, &dataByte);
+			pixrow += span;
+		}
+	}
+}
+
+#define rle_expand(expand)                                                    \
+do {                                                                          \
+	unsigned char packetHeader, packetSize;                                   \
+	while (rows-- > 0) {                                                      \
+		pixcol = pixrow;                                                      \
+		pixrow += span;                                                       \
+		for (column = columns; column > 0; ) {                                \
+			packetHeader = *dataByte++;                                       \
+			packetSize = 1 + (packetHeader & 0x7f);                           \
+			while (packetSize > column) {                                     \
+				int count = column;                                           \
+                                                                              \
+				packetSize -= count;                                          \
+				if (packetHeader & 0x80) {		/* run-length packet */       \
+					expand (pixcol, count, &dataByte);                        \
+				} else {						/* non run-length packet */   \
+					while (count--)                                           \
+						expand (pixcol, 1, &dataByte);                        \
+				}                                                             \
+				column = columns;                                             \
+				pixcol = pixrow;                                              \
+				pixrow += span;                                               \
+				if (rows-- <= 0)                                              \
+					goto done_##expand;                                        \
+			}                                                                 \
+			column -= packetSize;                                             \
+			if (packetHeader & 0x80) {			/* run-length packet */       \
+				pixcol = expand (pixcol, packetSize, &dataByte);              \
+			} else {							/* non run-length packet */   \
+				while (packetSize--)                                          \
+					pixcol = expand (pixcol, 1, &dataByte);                   \
+			}                                                                 \
+		}                                                                     \
+	}                                                                         \
+	done_##expand:;                                                            \
+} while (0)
+
+static void
+decode_truecolor_24_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
+{
+	byte       *pixcol, *pixrow;
+	int         column, columns, rows, span;
+
+	columns = targa->width;
+	rows = targa->height;
+
+	setup_pixrow_span (targa, tex, &pixrow, &span);
+
+	if (targa->attributes & 0x10)
+		rle_expand (reverse_read_bgr);
+	else
+		rle_expand (read_bgr);
+}
+
+static void
+decode_truecolor_32_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
+{
+	byte       *pixcol, *pixrow;
+	int         column, columns, rows, span;
+
+	columns = targa->width;
+	rows = targa->height;
+
+	setup_pixrow_span (targa, tex, &pixrow, &span);
+
+	if (targa->attributes & 0x10)
+		rle_expand (reverse_read_bgr);
+	else
+		rle_expand (read_bgr);
+}
+
 struct tex_s *
 LoadTGA (QFile *fin)
 {
@@ -195,126 +344,23 @@ LoadTGA (QFile *fin)
 	span = columns * 4; // tex->format
 
 	if (targa->image_type == 2) {	// Uncompressed image
-		switch (targa->attributes & 48) {
-		case 0:						// Origin at bottom left
-			pixrow = tex->data + (rows - 1) * span;
-			switch (targa->pixel_size) {
-			case 24:
-				for (row = rows - 1; row >= 0; row--, pixrow -= span) {
-					pixcol = pixrow;
-					for (column = 0; column < columns; column++)
-						pixcol = read_bgr (pixcol, 1, &dataByte);
-				}
-				break;
-			case 32:
-				for (row = rows - 1; row >= 0; row--, pixrow -= span) {
-					pixcol = pixrow;
-					for (column = 0; column < columns; column++)
-						pixcol = read_bgra (pixcol, 1, &dataByte);
-				}
-				break;
-			}
+		switch (targa->pixel_size) {
+		case 24:
+			decode_truecolor_24 (targa, tex, dataByte);
 			break;
-		case 16:						// Origin at bottom right
-			pixrow = tex->data + rows * span - 4;
-			switch (targa->pixel_size) {
-			case 24:
-				for (row = rows - 1; row >= 0; row--, pixrow -= span) {
-					pixcol = pixrow;
-					for (column = columns - 1; column >= 0; column--)
-						pixcol = reverse_read_bgr (pixcol, 1, &dataByte);
-				}
-				break;
-			case 32:
-				for (row = rows - 1; row >= 0; row--, pixrow -= span) {
-					pixcol = pixrow;
-					for (column = columns - 1; column >= 0; column--)
-						pixcol = reverse_read_bgra (pixcol, 1, &dataByte);
-				}
-				break;
-			}
-			break;
-		case 32:						// Origin at top left
-			pixrow = tex->data;
-			switch (targa->pixel_size) {
-			case 24:
-				for (row = 0; row < rows; row++, pixrow += span) {
-					pixcol = pixrow;
-					for (column = 0; column < columns; column++)
-						pixcol = read_bgr (pixcol, 1, &dataByte);
-				}
-				break;
-			case 32:
-				for (row = 0; row < rows; row++, pixrow += span) {
-					pixcol = pixrow;
-					for (column = 0; column < columns; column++)
-						pixcol = read_bgra (pixcol, 1, &dataByte);
-				}
-				break;
-			}
-			break;
-		case 48:						// Origin at top right
-			pixrow = tex->data + span - 4;
-			switch (targa->pixel_size) {
-			case 24:
-				for (row = 0; row < rows; row++, pixrow += span) {
-					pixcol = pixrow;
-					for (column = columns - 1; column >= 0; column--)
-						pixcol = reverse_read_bgr (pixcol, 1, &dataByte);
-				}
-				break;
-			case 32:
-				for (row = 0; row < rows; row++, pixrow += span) {
-					pixcol = pixrow;
-					for (column = columns - 1; column >= 0; column--)
-						pixcol = reverse_read_bgra (pixcol, 1, &dataByte);
-				}
-				break;
-			}
+		case 32:
+			decode_truecolor_32 (targa, tex, dataByte);
 			break;
 		}
 	} else if (targa->image_type == 10) {	// RLE compressed image
-		unsigned char packetHeader, packetSize;
-
-		byte *(*expand) (byte *buf, int count, byte **data);
-
-		pixrow = tex->data + (rows - 1) * span;
-
-		if (targa->pixel_size == 24)
-			expand = read_bgr;
-		else
-			expand = read_bgra;
-
-		for (row = rows - 1; row >= 0; row--, pixrow -= span) {
-			pixcol = pixrow;
-			for (column = 0; column < columns;) {
-				packetHeader = *dataByte++;
-				packetSize = 1 + (packetHeader & 0x7f);
-				while (packetSize > columns - column) {
-					int count = columns - column;
-
-					packetSize -= count;
-					if (packetHeader & 0x80) {		// run-length packet
-						expand (pixcol, count, &dataByte);
-					} else {						// non run-length packet
-						while (count--)
-							expand (pixcol, 1, &dataByte);
-					}
-					column = 0;
-					pixcol = (pixrow -= span);
-					if (--row < 0)
-						goto done;
-				}
-				column += packetSize;
-				if (packetHeader & 0x80) {			// run-length packet
-					pixcol = expand (pixcol, packetSize, &dataByte);
-				} else {							// non run-length packet
-					while (packetSize--)
-						pixcol = expand (pixcol, 1, &dataByte);
-				}
-			}
+		switch (targa->pixel_size) {
+		case 24:
+			decode_truecolor_24_rle (targa, tex, dataByte);
+			break;
+		case 32:
+			decode_truecolor_32_rle (targa, tex, dataByte);
+			break;
 		}
-	done:;
 	}
 
 	Hunk_FreeToLowMark (targa_mark);
