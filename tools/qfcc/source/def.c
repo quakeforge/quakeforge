@@ -168,7 +168,7 @@ get_def (type_t *type, const char *name, scope_t *scope, int allocate)
 		d = new_def (&type_float, va ("%s_y", name), scope);
 		d->used = 1;
 		d->parent = def;
-		d->ofs = def->ofs + 3;
+		d->ofs = def->ofs + 1;
 		Hash_Add (defs_by_name, d);
 
 		d = new_def (&type_float, va ("%s_z", name), scope);
