@@ -185,15 +185,17 @@ typedef struct net_svc_delta_s
 
 typedef struct net_svc_packetentities_s
 {
-	int			num;
-	net_svc_delta_t	vars[MAX_PACKET_ENTITIES + 1];
+	int				numwords, numdeltas;
+	unsigned short	words[MAX_EDICTS];
+	entity_state_t	deltas[MAX_PACKET_ENTITIES];
 } net_svc_packetentities_t;
 
 typedef struct net_svc_deltapacketentities_s
 {
-	int			num;
-	byte		from;
-	net_svc_delta_t	vars[MAX_PACKET_ENTITIES + 1];
+	int				numwords, numdeltas;
+	byte			from;
+	unsigned short	words[MAX_EDICTS];
+	entity_state_t	deltas[MAX_PACKET_ENTITIES];
 } net_svc_deltapacketentities_t;
 
 qboolean NET_SVC_Print_Parse (net_svc_print_t *block, msg_t *msg);

@@ -194,11 +194,11 @@ CL_ParsePacketEntities (void)
 		return;
 	}
 
-	for (index = 0; block.vars[index].word; index++) {
-		if (block.vars[index].word & U_REMOVE) {
+	for (index = 0; block.words[index]; index++) {
+		if (block.words[index] & U_REMOVE) {
 			cl.validsequence = 0;
-			Host_NetError ("CL_ParsePacketEntities: WARNING: U_REMOVE "
-						   "on full update\n");
+			Host_NetError ("CL_ParsePacketEntities: U_REMOVE on full "
+						   "update\n");
 			return;
 		}
 
@@ -208,11 +208,11 @@ CL_ParsePacketEntities (void)
 			return;
 		}
 
-		newp->entities[index] = cl_baselines[block.vars[index].word & 511];
-		CL_EntityState_Copy (&block.vars[index].state,
+		newp->entities[index] = cl_baselines[block.words[index] & 511];
+		CL_EntityState_Copy (&block.deltas[index],
 							 &newp->entities[index],
-							 block.vars[index].state.flags);
-		newp->entities[index].number = block.vars[index].state.number;
+							 block.deltas[index].flags);
+		newp->entities[index].number = block.deltas[index].number;
 		if (newp->entities[index].modelindex >= MAX_MODELS) {
 			Host_NetError ("CL_ParsePacketEntities: modelindex %i >= "
 						   "MAX_MODELS", newp->entities[index].modelindex);
@@ -233,11 +233,11 @@ CL_ParsePacketEntities (void)
 void
 CL_ParseDeltaPacketEntities ()
 {
-	int			i;
-	byte		from;
-	int			oldindex, newindex, newnum, oldnum, oldpacket, newpacket;
-	packet_entities_t *oldp, *newp, dummy;
-	qboolean	full = false;
+	int			oldindex = 0, newindex = 0;
+	int			wordindex = 0, deltaindex = 0;
+	int			oldnum, newnum;
+	int			oldpacket, newpacket;
+	packet_entities_t *oldp, *newp;
 	net_svc_deltapacketentities_t block;
 
 	if (NET_SVC_DeltaPacketEntities_Parse (&block, net_message)) {
@@ -249,52 +249,38 @@ CL_ParseDeltaPacketEntities ()
 	newp = &cl.frames[newpacket].packet_entities;
 	cl.frames[newpacket].invalid = false;
 
-	from = block.from;
-
 	oldpacket = cl.frames[newpacket].delta_sequence;
-
-	if ((from & UPDATE_MASK) != (oldpacket & UPDATE_MASK))
-		Con_DPrintf ("CL_ParseDeltaPacketEntities: WARNING: from mismatch\n");
-
-	if (oldpacket != -1) {
-		if (cls.netchan.outgoing_sequence - oldpacket >= UPDATE_BACKUP - 1) {
-			// we can't use this, it is too old
-			Con_DPrintf ("FlushEntityPacket\n");
-			cl.validsequence = 0;				// can't render a frame
-			return;
-		}
-		cl.validsequence = cls.netchan.incoming_sequence;
-		oldp = &cl.frames[oldpacket & UPDATE_MASK].packet_entities;
-	} else {	// a full update that we can start delta compressing from now
-		oldp = &dummy;
-		dummy.num_entities = 0;
-		cl.validsequence = cls.netchan.incoming_sequence;
-		full = true;
-		Host_NetError ("Full update in CL_ParseDeltaPacketEntities\n");
+	if (oldpacket == -1) {
+		Host_NetError ("Cl_ParseDeltaPacketEntities: invalid "
+					   "delta_sequence\n");
 		return;
 	}
 
-	oldindex = 0;
-	newindex = 0;
+	if ((block.from & UPDATE_MASK) != (oldpacket & UPDATE_MASK))
+		Con_DPrintf ("CL_ParseDeltaPacketEntities: WARNING: from mismatch\n");
+
+	if (cls.netchan.outgoing_sequence - oldpacket >= UPDATE_BACKUP - 1) {
+		// we can't use this, it is too old
+		Con_DPrintf ("FlushEntityPacket\n");
+		cl.validsequence = 0;				// can't render a frame
+		return;
+	}
+	cl.validsequence = cls.netchan.incoming_sequence;
+	oldp = &cl.frames[oldpacket & UPDATE_MASK].packet_entities;
+
 	newp->num_entities = 0;
 
-	for (i = 0; block.vars[i].word; i++) {
-		newnum = block.vars[i].word & 511;
+	for (; block.words[wordindex];) {
+		newnum = block.words[wordindex] & 511;
 		oldnum = oldindex >= oldp->num_entities ? 9999 :
 			oldp->entities[oldindex].number;
 
-		while (newnum > oldnum) {
-//		if (newnum > oldnum) {
-			if (full) {
-				Con_Printf ("CL_ParseDeltaPacketEntities: WARNING: "
-							"oldcopy on full update");
-				return;
-			}
+		while (newnum > oldnum) {	// copy one of the old entities 
+									// over to the new packet unchanged
 //			Con_Printf ("copy %i\n", oldnum);
-			// copy one of the old entities over to the new packet unchanged
 			if (newindex >= MAX_PACKET_ENTITIES) {
 				Host_NetError ("CL_ParseDeltaPacketEntities: newindex >= "
-							   "MAX_PACKET_ENTITIES (2nd)");
+							   "MAX_PACKET_ENTITIES (1st)");
 				return;
 			}
 			newp->entities[newindex] = oldp->entities[oldindex];
@@ -306,53 +292,48 @@ CL_ParseDeltaPacketEntities ()
 
 		if (newnum < oldnum) {			// new from baseline
 //			Con_Printf ("baseline %i\n", newnum);
-			if (block.vars[i].word & U_REMOVE) {
-				if (full) {
-					cl.validsequence = 0;
-					Host_NetError ("CL_ParseDeltaPacketEntities: "
-								   "U_REMOVE on full update\n");
-					return;
-				}
+			if (block.words[wordindex] & U_REMOVE) {
+				wordindex++;
 				continue;
 			}
 
 			if (newindex >= MAX_PACKET_ENTITIES) {
 				Host_NetError ("CL_ParseDeltaPacketEntities: newindex >= "
-							   "MAX_PACKET_ENTITIES (3rd)");
+							   "MAX_PACKET_ENTITIES (2nd)");
 				return;
 			}
 			newp->entities[newindex] = cl_baselines[newnum];
-			CL_EntityState_Copy (&block.vars[i].state,
+			CL_EntityState_Copy (&block.deltas[deltaindex],
 								 &newp->entities[newindex],
-								 block.vars[i].state.flags);
-			newp->entities[newindex].number = block.vars[i].state.number;
+								 block.deltas[deltaindex].flags);
+			newp->entities[newindex].number
+				= block.deltas[deltaindex].number;
 			if (newp->entities[newindex].modelindex >= MAX_MODELS) {
 				Host_NetError ("CL_ParsePacketEntities: modelindex %i >= "
 							   "MAX_MODELS",
 							   newp->entities[newindex].modelindex);
 				return;
 			}
+			wordindex++;
+			deltaindex++;
 			newindex++;
 			continue;
 		}
 
 		if (newnum == oldnum) {			// delta from previous
-			if (full) {
-				cl.validsequence = 0;
-				Con_Printf ("WARNING: delta on full update");
-			}
-			if (block.vars[i].word & U_REMOVE) {	// Clear the entity
-				entity_t	*ent = &cl_packet_ents[newnum];
-				memset (ent, 0, sizeof (entity_t));
+//			Con_Printf ("delta %i\n", newnum);
+			if (block.words[wordindex] & U_REMOVE) {	// Clear the entity
+				memset (&cl_packet_ents[newnum], 0, sizeof (entity_t));
+				wordindex++;
 				oldindex++;
 				continue;
 			}
-//			Con_Printf ("delta %i\n", newnum);
 			newp->entities[newindex] = oldp->entities[oldindex];
-			CL_EntityState_Copy (&block.vars[i].state,
+			CL_EntityState_Copy (&block.deltas[deltaindex],
 								 &newp->entities[newindex],
-								 block.vars[i].state.flags);
-			newp->entities[newindex].number = block.vars[i].state.number;
+								 block.deltas[deltaindex].flags);
+			newp->entities[newindex].number
+				= block.deltas[deltaindex].number;
 			if (newp->entities[newindex].modelindex >= MAX_MODELS) {
 				Host_NetError ("CL_ParsePacketEntities: modelindex %i >= "
 							   "MAX_MODELS",
@@ -360,6 +341,8 @@ CL_ParseDeltaPacketEntities ()
 				return;
 			}
 
+			wordindex++;
+			deltaindex++;
 			newindex++;
 			oldindex++;
 		}

@@ -405,21 +405,12 @@ NET_SVC_Soundlist_Parse (net_svc_soundlist_t *block, msg_t *msg)
 }
 
 // this is a sub-block, not a real block
-qboolean
-NET_SVC_Delta_Parse (net_svc_delta_t *subblock, msg_t *msg)
+void
+NET_SVC_Delta_Parse (entity_state_t *es, unsigned int bits, msg_t *msg)
 {
-	unsigned int	bits; // bytes of bits: [EXT2][EXT1][ORIG][MORE]
-	entity_state_t *es;
-
-	subblock->word = bits = (unsigned short) MSG_ReadShort (msg);
-	if (!bits || msg->badread)
-		return true;
-	es = &subblock->state;
+	// bytes of bits: [EXT2][EXT1][ORIG][MORE]
 	es->number = bits & 511;
 	bits &= ~511;
-
-//	if (bits & U_REMOVE)
-//		return false;
 
 	es->frame = 0;
 	es->effects = 0;
@@ -484,22 +475,32 @@ NET_SVC_Delta_Parse (net_svc_delta_t *subblock, msg_t *msg)
 	if (bits & U_SOLID) {
 		// FIXME
 	}
-
-	return false;
 }
 
 
 qboolean
 NET_SVC_PacketEntities_Parse (net_svc_packetentities_t *block, msg_t *msg)
 {
-	int				i;
+	int				word, delta;
+	unsigned short	bits;
 
-	for (i = 0; i < MAX_PACKET_ENTITIES; i++)
-		if (NET_SVC_Delta_Parse (&block->vars[i], msg))
+	for (word = 0, delta = 0; !msg->badread; word++) {
+		if (word >= MAX_EDICTS)
+			return 1; // FIXME: differentiate from short packet
+		bits = (unsigned short) MSG_ReadShort (msg);
+		block->words[word] = bits;
+		if (!bits)
 			break;
+		if (!(bits & U_REMOVE)) {
+			if (delta >= MAX_PACKET_ENTITIES)
+				return 1;
+			NET_SVC_Delta_Parse (&block->deltas[delta], bits, msg);
+			delta++;
+		}
+	}
 
-	block->vars[i].word = 0;
-	block->num = i;
+	block->numwords = word;
+	block->numdeltas = delta;
 
 	return msg->badread;
 }
@@ -508,15 +509,27 @@ qboolean
 NET_SVC_DeltaPacketEntities_Parse (net_svc_deltapacketentities_t *block,
 								   msg_t *msg)
 {
-	int				i;
+	int				word, delta;
+	unsigned short	bits;
 
 	block->from = MSG_ReadByte (msg);
-	for (i = 0; i < MAX_PACKET_ENTITIES; i++)
-		if (NET_SVC_Delta_Parse (&block->vars[i], msg))
+	for (word = 0, delta = 0; !msg->badread; word++) {
+		if (word >= MAX_EDICTS)
+			return 1; // FIXME: differentiate from short packet
+		bits = (unsigned short) MSG_ReadShort (msg);
+		block->words[word] = bits;
+		if (!bits)
 			break;
+		if (!(bits & U_REMOVE)) {
+			if (delta >= MAX_PACKET_ENTITIES)
+				return 1;
+			NET_SVC_Delta_Parse (&block->deltas[delta], bits, msg);
+			delta++;
+		}
+	}
 
-	block->vars[i].word = 0;
-	block->num = i;
+	block->numwords = word;
+	block->numdeltas = delta;
 
 	return msg->badread;
 }
