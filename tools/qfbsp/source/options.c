@@ -101,7 +101,7 @@ usage (int status)
 		"    -u, --usehulls            Use the existing hull files\n"
 		"    -H, --hullnum [num]\n"
 		"    -s, --subdivide [size]\n"
-		"    -w, --wadpath [path]      semicolon sparated set of dirs to\n"
+		"    -w, --wadpath [path]      semicolon delimited set of dirs to\n"
 		"                              search for texture wads\n"
 		"    -W, --watervis            allow transparent liquid surfaces\n"
 	);
