@@ -389,7 +389,7 @@ SV_Progs_Init_Cvars (void)
 	pr_checkextensions = Cvar_Get ("pr_checkextensions", "1", CVAR_ROM, NULL,
 								   "indicate the presence of the "
 								   "checkextentions qc function");
-	sv_old_entity_free = Cvar_Get ("sv_old_entity_free", "0", CVAR_NONE, NULL,
+	sv_old_entity_free = Cvar_Get ("sv_old_entity_free", "1", CVAR_NONE, NULL,
 								   "set this for buggy mods that rely on the"
 								   " old behaviour of entity freeing (eg,"
 								   " *TF)");
