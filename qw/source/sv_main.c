@@ -2362,9 +2362,7 @@ SV_InitNet (void)
 
 	Net_Log_Init(sv.sound_precache);
 
-	// heartbeats will always be sent to the id master
 	svs.last_heartbeat = -99999;		// send immediately
-//  NET_StringToAdr ("192.246.40.70:27000", &idmaster_adr);
 	sv_net_initialized = 1;
 }
 
