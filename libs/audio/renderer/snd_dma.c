@@ -60,8 +60,6 @@ int             total_channels;
 int			snd_blocked = 0;
 static qboolean snd_ambient = 1;
 
-// pointer should go away
-
 vec3_t		listener_origin;
 vec3_t		listener_forward;
 vec3_t		listener_right;
@@ -89,13 +87,15 @@ cvar_t	   *snd_phasesep;
 cvar_t	   *snd_show;
 cvar_t	   *snd_volumesep;
 
-static plugin_t					plugin_info;
-static plugin_data_t			plugin_info_data;
-static plugin_funcs_t			plugin_info_funcs;
 static general_data_t			plugin_info_general_data;
-static general_funcs_t			plugin_info_general_funcs;
-static snd_render_data_t		plugin_info_snd_render_data;
-static snd_render_funcs_t		plugin_info_snd_render_funcs;
+static snd_render_data_t		render_data = {
+	0,
+	0,
+	0,
+	&soundtime,
+	&paintedtime,
+	0,
+};
 
 static snd_output_funcs_t      *snd_output_funcs;
 
@@ -246,8 +246,8 @@ SND_PickChannel (int entnum, int entchannel)
 			break;
 		}
 		// don't let monster sounds override player sounds
-		if (channels[ch_idx].entnum == *plugin_info_snd_render_data.viewentity
-			&& entnum != *plugin_info_snd_render_data.viewentity
+		if (channels[ch_idx].entnum == *render_data.viewentity
+			&& entnum != *render_data.viewentity
 			&& channels[ch_idx].sfx)
 			continue;
 
@@ -274,7 +274,7 @@ SND_Spatialize (channel_t *ch)
 	vec3_t		source_vec;
 
 	// anything coming from the view entity will always be full volume
-	if (ch->entnum == *plugin_info_snd_render_data.viewentity) {
+	if (ch->entnum == *render_data.viewentity) {
 		ch->leftvol = ch->master_vol;
 		ch->rightvol = ch->master_vol;
 		ch->phase = 0;
@@ -492,11 +492,10 @@ SND_UpdateAmbientSounds (void)
 		return;
 
 	// calc ambient sound levels
-	if (!*plugin_info_snd_render_data.worldmodel)
+	if (!*render_data.worldmodel)
 		return;
 
-	l = Mod_PointInLeaf (listener_origin,
-						 *plugin_info_snd_render_data.worldmodel);
+	l = Mod_PointInLeaf (listener_origin, *render_data.worldmodel);
 	if (!l || !ambient_level->value) {
 		for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
 			 ambient_channel++)
@@ -515,12 +514,12 @@ SND_UpdateAmbientSounds (void)
 
 		// don't adjust volume too fast
 		if (chan->master_vol < vol) {
-			chan->master_vol += *plugin_info_snd_render_data.host_frametime
+			chan->master_vol += *render_data.host_frametime
 				* ambient_fade->value;
 			if (chan->master_vol > vol)
 				chan->master_vol = vol;
 		} else if (chan->master_vol > vol) {
-			chan->master_vol -= *plugin_info_snd_render_data.host_frametime
+			chan->master_vol -= *render_data.host_frametime
 				* ambient_fade->value;
 			if (chan->master_vol < vol)
 				chan->master_vol = vol;
@@ -776,8 +775,7 @@ SND_LocalSound (const char *sound)
 		Sys_Printf ("S_LocalSound: can't cache %s\n", sound);
 		return;
 	}
-	SND_StartSound (*plugin_info_snd_render_data.viewentity, -1, sfx,
-					vec3_origin, 1, 1);
+	SND_StartSound (*render_data.viewentity, -1, sfx, vec3_origin, 1, 1);
 }
 
 void
@@ -850,7 +848,7 @@ SND_Init_Cvars (void)
 void
 SND_Init (void)
 {
-	snd_output_funcs = plugin_info_snd_render_data.output->functions->snd_output;
+	snd_output_funcs = render_data.output->functions->snd_output;
 	Sys_Printf ("\nSound Initialization\n");
 
 	Cmd_AddCommand ("play", SND_Play,
@@ -938,51 +936,65 @@ SND_Shutdown (void)
 	shm = 0;
 }
 
+static general_funcs_t plugin_info_general_funcs = {
+	SND_Init,
+	SND_Shutdown,
+};
+
+static snd_render_funcs_t plugin_info_render_funcs = {
+	SND_AmbientOff,
+	SND_AmbientOn,
+	SND_TouchSound,
+	SND_StaticSound,
+	SND_StartSound,
+	SND_StopSound,
+	SND_PrecacheSound,
+	SND_ClearPrecache,
+	SND_Update,
+	SND_StopAllSounds,
+	SND_BeginPrecaching,
+	SND_EndPrecaching,
+	SND_ExtraUpdate,
+	SND_LocalSound,
+	SND_BlockSound,
+	SND_UnblockSound,
+};
+
+static plugin_funcs_t plugin_info_funcs = {
+	&plugin_info_general_funcs,
+	0,
+	0,
+	0,
+	0,
+	&plugin_info_render_funcs,
+};
+
+static plugin_data_t plugin_info_data = {
+	&plugin_info_general_data,
+	0,
+	0,
+	0,
+	0,
+	&render_data,
+};
+
+static plugin_t plugin_info = {
+	qfp_snd_render,
+	0,
+	QFPLUGIN_VERSION,
+	"0.1",
+	"Sound Renderer",
+	"Copyright (C) 1996-1997 id Software, Inc.\n"
+		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge "
+		"project\n"
+		"Please see the file \"AUTHORS\" for a list of contributors",
+	&plugin_info_funcs,
+	&plugin_info_data,
+};
+
 QFPLUGIN plugin_t *PLUGIN_INFO(snd_render, default) (void);
 QFPLUGIN plugin_t *
 PLUGIN_INFO(snd_render, default) (void)
 {
-	plugin_info.type = qfp_snd_render;
-	plugin_info.api_version = QFPLUGIN_VERSION;
-	plugin_info.plugin_version = "0.1";
-	plugin_info.description = "Sound Renderer";
-	plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
-		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge "
-		"project\n"
-		"Please see the file \"AUTHORS\" for a list of contributors";
-	plugin_info.functions = &plugin_info_funcs;
-	plugin_info.data = &plugin_info_data;
-
-	plugin_info_data.general = &plugin_info_general_data;
-	plugin_info_data.input = NULL;
-	plugin_info_data.snd_render = &plugin_info_snd_render_data;
-
-	plugin_info_snd_render_data.soundtime = &soundtime;
-	plugin_info_snd_render_data.paintedtime = &paintedtime;
-
-	plugin_info_funcs.general = &plugin_info_general_funcs;
-	plugin_info_funcs.input = NULL;
-	plugin_info_funcs.snd_render = &plugin_info_snd_render_funcs;
-
-	plugin_info_general_funcs.p_Init = SND_Init;
-	plugin_info_general_funcs.p_Shutdown = SND_Shutdown;
-
-	plugin_info_snd_render_funcs.pS_AmbientOff = SND_AmbientOff;
-	plugin_info_snd_render_funcs.pS_AmbientOn = SND_AmbientOn;
-	plugin_info_snd_render_funcs.pS_TouchSound = SND_TouchSound;
-	plugin_info_snd_render_funcs.pS_StaticSound = SND_StaticSound;
-	plugin_info_snd_render_funcs.pS_StartSound = SND_StartSound;
-	plugin_info_snd_render_funcs.pS_StopSound = SND_StopSound;
-	plugin_info_snd_render_funcs.pS_PrecacheSound = SND_PrecacheSound;
-	plugin_info_snd_render_funcs.pS_ClearPrecache = SND_ClearPrecache;
-	plugin_info_snd_render_funcs.pS_Update = SND_Update;
-	plugin_info_snd_render_funcs.pS_StopAllSounds = SND_StopAllSounds;
-	plugin_info_snd_render_funcs.pS_BeginPrecaching = SND_BeginPrecaching;
-	plugin_info_snd_render_funcs.pS_EndPrecaching = SND_EndPrecaching;
-	plugin_info_snd_render_funcs.pS_ExtraUpdate = SND_ExtraUpdate;
-	plugin_info_snd_render_funcs.pS_LocalSound = SND_LocalSound;
-	plugin_info_snd_render_funcs.pS_BlockSound = SND_BlockSound;
-	plugin_info_snd_render_funcs.pS_UnblockSound = SND_UnblockSound;
-
 	return &plugin_info;
 }
