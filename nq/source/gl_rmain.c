@@ -364,8 +364,10 @@ GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, float ble
 			if (!fb) {
 				// normals and vertexes come from the frame list
 				// blend the light intensity from the two frames together
-				light = shadelight * ((shadedots[verts1->lightnormalindex] * lerp)
-									+ (shadedots[verts2->lightnormalindex] * blend));
+				light = shadelight * ((shadedots[verts1->lightnormalindex] *
+									   lerp)
+									+ (shadedots[verts2->lightnormalindex] *
+									   blend));
 				glColor4f (shadecolor[0] * light, shadecolor[1] * light,
 							shadecolor[2] * light, modelalpha);
 			}
@@ -384,7 +386,6 @@ GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, float ble
 	if (modelalpha != 1.0)
 		glDepthMask (GL_TRUE);
 	glColor3ubv (lighthalf_v);
-
 }
 
 
@@ -642,8 +643,7 @@ R_DrawAliasModel (entity_t *e)
 		if (cl_dlights[lnum].die >= cl.time) {
 			VectorSubtract (currententity->origin, cl_dlights[lnum].origin,
 							dist);
-			add =
-				(cl_dlights[lnum].radius * cl_dlights[lnum].radius * 8) /
+			add = (cl_dlights[lnum].radius * cl_dlights[lnum].radius * 8) /
 				(DotProduct (dist, dist));	// FIXME Deek
 
 			if (add > 0)
@@ -662,7 +662,7 @@ R_DrawAliasModel (entity_t *e)
 	if (strnequal (clmodel->name, "progs/flame", 11)
 			|| strnequal (clmodel->name, "progs/bolt", 10)) {
 		modelIsFullbright = true;
-		shadelight = 200;	// make certain models full brightness always
+		shadelight = 255;	// make certain models full brightness always
 	}
 
 	shadedots = r_avertexnormal_dots[((int) (e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
