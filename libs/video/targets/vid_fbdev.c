@@ -241,7 +241,7 @@ VID_InitModes (void)
 	num_modes = VID_NumModes();
 }
 
-static char *
+static const char *
 get_mode (char *name, int width, int height, int depth)
 {
 	struct VideoMode *vmode;

@@ -41,7 +41,7 @@ static void ClearVideoMode(void)
 
 %union {
 	int		int_val;
-	char	*string;
+	const char	*string;
 }
 
 %token MODE GEOMETRY TIMINGS HSYNC VSYNC CSYNC GSYNC EXTSYNC BCAST LACED DOUBLE

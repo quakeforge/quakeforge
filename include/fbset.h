@@ -38,7 +38,7 @@ struct color {
 
 struct VideoMode {
     struct VideoMode *next;
-    char *name;
+    const char *name;
     /* geometry */
     __u32 xres;
     __u32 yres;

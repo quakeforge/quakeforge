@@ -50,11 +50,6 @@ libQFfbdev_la_SOURCES=	fbset.c fbset_modes_y.y fbset_modes_l.l \
 			in_fbdev.c vid.c vid_common_sw.c vid_fbdev.c \
 			$(in_common_SOURCE)
 
-fbset_modes_y.lo: $(srcdir)/fbset_modes_y.c
-	$(LTCOMPILE) -Wno-error -c $<
-fbset_modes_l.lo: $(srcdir)/fbset_modes_l.c
-	$(LTCOMPILE) -Wno-error -c $<
-
 #
 # OpenGL in X Window
 #
