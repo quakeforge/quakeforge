@@ -1,5 +1,6 @@
 *.d
 *.dat
+*.dat.gz
 *.qfo
 *.sym
 .deps
