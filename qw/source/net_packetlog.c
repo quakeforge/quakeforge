@@ -48,8 +48,7 @@
 #include "server.h"
 #include "QF/va.h"
 
-cvar_t     *netlogger;
-cvar_t     *netloglevel;
+cvar_t     *net_loglevel;
 
 //extern server_t sv;
 extern qboolean is_server;
@@ -259,24 +258,24 @@ ascii_dump_buf (unsigned char *buf, int len)
 void
 Log_Incoming_Packet (char *p, int len)
 {
-	if (!netloglevel->int_val)
+	if (!net_loglevel->int_val)
 		return;
 
 	if (is_server) {
 		Net_LogPrintf
 			("\n<<<<<<<<<<<<<<<<<<<<< client to server %d bytes: <<<<<<<<<<<<<<<<<<<<<<<<\n",
 			 len);
-		if (netloglevel->int_val != 3)
+		if (net_loglevel->int_val != 3)
 			hex_dump_buf ((unsigned char *) p, len);
-		if (netloglevel->int_val > 1)
+		if (net_loglevel->int_val > 1)
 			Analyze_Client_Packet (p, len);
 	} else {
 		Net_LogPrintf
 			("\n>>>>>>>>>>>>>>>>>>>>> server to client %d bytes: >>>>>>>>>>>>>>>>>>>>>>>>\n",
 			 len);
-		if (netloglevel->int_val != 3)
+		if (net_loglevel->int_val != 3)
 			hex_dump_buf ((unsigned char *) p, len);;
-		if (netloglevel->int_val > 1)
+		if (net_loglevel->int_val > 1)
 			Analyze_Server_Packet (p, len);
 	}
 	return;
@@ -285,24 +284,24 @@ Log_Incoming_Packet (char *p, int len)
 void
 Log_Outgoing_Packet (char *p, int len)
 {
-	if (!netloglevel->int_val)
+	if (!net_loglevel->int_val)
 		return;
 
 	if (is_server) {
 		Net_LogPrintf
 			("\n>>>>>>>>>>>>>>>>>>>>> server to client %d bytes: >>>>>>>>>>>>>>>>>>>>>>>>\n",
 			 len);
-		if (netloglevel->int_val != 3)
+		if (net_loglevel->int_val != 3)
 			hex_dump_buf ((unsigned char *) p, len);;
-		if (netloglevel->int_val > 1)
+		if (net_loglevel->int_val > 1)
 			Analyze_Server_Packet (p, len);
 	} else {
 		Net_LogPrintf
 			("\n<<<<<<<<<<<<<<<<<<<<< client to server %d bytes: <<<<<<<<<<<<<<<<<<<<<<<<\n",
 			 len);
-		if (netloglevel->int_val != 3)
+		if (net_loglevel->int_val != 3)
 			hex_dump_buf ((unsigned char *) p, len);;
-		if (netloglevel->int_val > 1)
+		if (net_loglevel->int_val > 1)
 			Analyze_Client_Packet (p, len);
 	}
 	return;
@@ -953,16 +952,13 @@ Net_Log_Init (char **sound_precache)
 {
 	Net_sound_precache = sound_precache;
 
-	netlogger =
-		Cvar_Get ("net_logger", "1", CVAR_NONE, NULL, "Packet logging/parsing");
-
 // 0 = no logging
 // 1 = hex dump only
 // 2 = parse/hexdump
 // 3 = just parse
 // 4 = parse/hexdump, skip movement/empty messages
 
-	netloglevel =
+	net_loglevel =
 		Cvar_Get ("net_loglevel", "2", CVAR_NONE, NULL,
 				"Packet logging/parsing");
 
