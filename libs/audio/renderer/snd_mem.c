@@ -160,7 +160,7 @@ sfxbuffer_t *
 SND_GetCache (long samples, int rate, int inwidth, int channels,
 			  sfxblock_t *block, cache_allocator_t allocator)
 {
-	int         size;
+	int         len, size;
 	int         width;
 	float		stepscale;
 	sfxbuffer_t *sc;
@@ -168,12 +168,13 @@ SND_GetCache (long samples, int rate, int inwidth, int channels,
 
 	width = snd_loadas8bit->int_val ? 1 : 2;
 	stepscale = (float) rate / shm->speed;	// usually 0.5, 1, or 2
-	size = samples / stepscale;
+	len = size = samples / stepscale;
 //printf ("%ld %d\n", samples, size);
 	size *= width * channels;
 	sc = allocator (&block->cache, sizeof (sfxbuffer_t) + size, sfx->name);
 	if (!sc)
 		return 0;
+	sc->length = len;
 	memcpy (sc->data + size, "\xde\xad\xbe\xef", 4);
 	return sc;
 }

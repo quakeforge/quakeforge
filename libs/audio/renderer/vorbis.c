@@ -182,7 +182,7 @@ load_ogg (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 	if (read_ogg (vf, data, info->datalen) < 0)
 		goto bail;
 	resample (sc, data, info->samples);
-	sc->length = sc->head = sfx->length;
+	sc->head = sc->length;
   bail:
 	if (data)
 		free (data);
