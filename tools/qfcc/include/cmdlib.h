@@ -47,7 +47,7 @@ typedef enum    {false, true} qboolean;
 extern int myargc;
 extern char **myargv;
 
-int filelength (FILE *f);
+int FileLength (FILE *f);
 
 void	Error (char *error, ...);
 int		CheckParm (char *check);

@@ -180,10 +180,10 @@ CheckParm (char *check)
 
 
 /*
-	filelength
+	FileLength
 */
 int
-filelength (FILE *f)
+FileLength (FILE *f)
 {
 	int 	pos;
 	int 	end;
@@ -251,7 +251,7 @@ LoadFile (char *filename, void **bufferptr)
 	void	*buffer;
 
 	f = SafeOpenRead (filename);
-	length = filelength (f);
+	length = FileLength (f);
 	buffer = malloc (length + 1);
 	((char *) buffer)[length] = 0;
 	SafeRead (f, buffer, length);
