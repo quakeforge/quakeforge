@@ -193,7 +193,7 @@ R_AddToLightmapChain (msurface_t *fa)
 
 	if ((fa->dlightframe == r_framecount) || fa->cached_dlight) {
 	  dynamic:
-		if (r_dynamic->int_val && fa->dlightbits) {
+		if (r_dynamic->int_val) {
 			lightmap_modified[fa->lightmaptexturenum] = true;
 			theRect = &lightmap_rectchange[fa->lightmaptexturenum];
 			if (fa->light_t < theRect->t) {
