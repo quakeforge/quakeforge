@@ -201,11 +201,11 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	}
 
 	if (strequal (mod->name, "progs/player.mdl")) {
-		mod->min_light = 8;
+		mod->min_light = 0.04;
 	} else if (strnequal (mod->name, "progs/v_", 8)) {
-		mod->min_light = 24;
+		mod->min_light = 0.12;
 	} else {
-		mod->min_light = 0;
+		mod->min_light = 0.0;
 	}
 
 	// call the apropriate loader

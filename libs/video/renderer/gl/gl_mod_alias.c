@@ -522,7 +522,6 @@ R_DrawAliasModel (entity_t *e)
 	radius = model->radius;
 	if (e->scale != 1.0)
 		radius *= e->scale;
-
 	if (R_CullSphere (e->origin, radius))
 		return;
 
@@ -561,8 +560,8 @@ R_DrawAliasModel (entity_t *e)
 		}
 		// always give the gun some light
 		shade = max (shadecolor[0], max (shadecolor[1], shadecolor[2]));
-		minshade = model->min_light / 200.0;
-		if (e == r_view_model && shade < minshade) {
+		minshade = model->min_light;
+		if (shade < minshade) {
 			shadecolor[0] += minshade - shade;
 			shadecolor[1] += minshade - shade;
 			shadecolor[2] += minshade - shade;
