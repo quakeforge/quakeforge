@@ -251,6 +251,10 @@ PR_ValueString (progs_t *pr, etype_t type, pr_type_t *val)
 		case ev_uinteger:
 			snprintf (line, sizeof (line), "$%08x", val->uinteger_var);
 			break;
+		case ev_sel:
+			snprintf (line, sizeof (line), "(SEL) %s",
+					  PR_GetString (pr, val->string_var));
+			break;
 		default:
 			snprintf (line, sizeof (line), "bad type %i", type);
 			break;
@@ -383,9 +387,16 @@ ED_Print (progs_t *pr, edict_t *ed)
 		switch (type) {
 			case ev_entity:
 			case ev_integer:
+			case ev_uinteger:
+			case ev_pointer:
 			case ev_func:
 			case ev_field:
 				if (!v->integer_var)
+					continue;
+				break;
+			case ev_sel:
+				if (!v[0].integer_var
+					&& !PR_GetString (pr, v[1].string_var)[0])
 					continue;
 				break;
 			case ev_string:
