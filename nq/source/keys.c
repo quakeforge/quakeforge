@@ -42,14 +42,15 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "client.h"
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/keys.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
+
+#include "client.h"
+#include "compat.h"
 
 /*
   key up events are sent even if in console mode

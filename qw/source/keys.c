@@ -42,15 +42,15 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "client.h"
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/keys.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
-#include "QF/vfs.h"
+
+#include "client.h"
+#include "compat.h"
 
 /*
   key up events are sent even if in console mode
@@ -218,7 +218,7 @@ qboolean
 CheckForCommand (void)
 {
 	char        command[128];
-	const char       *cmd, *s;
+	const char *cmd, *s;
 	int         i;
 
 	s = key_lines[edit_line] + 1;
