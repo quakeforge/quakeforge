@@ -102,9 +102,9 @@ void
 Sys_mkdir (const char *path)
 {
 #ifdef HAVE_mkdir
+# ifdef _WIN32
 	if (mkdir (path) == 0)
 		return;
-# ifdef _WIN32
 # else
 	if (mkdir (path, 0777) == 0)
 		return;
