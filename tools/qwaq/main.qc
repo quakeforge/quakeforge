@@ -40,3 +40,14 @@ void (float x) test =
 		print ("owie");
 	}
 };
+
+void () blarg =
+{
+	local float foo = -1;
+	local float bar;
+	do {
+		foo = 1;
+	} while (foo);
+	if (bar = foo);
+	foo = 2;
+};
