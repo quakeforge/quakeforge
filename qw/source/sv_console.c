@@ -119,9 +119,13 @@ Con_Init (void)
 	init_pair (4, COLOR_YELLOW, COLOR_BLUE);
 
 	scrollok (output, TRUE);
+	leaveok (output, TRUE);
+
 	scrollok (status, FALSE);
+	leaveok (status, TRUE);
+
 	scrollok (input, FALSE);
-	nodelay  (input, TRUE);
+	nodelay (input, TRUE);
 	keypad (input, TRUE);
 
 	wclear (output);
@@ -158,7 +162,10 @@ Con_ProcessInput (void)
 {
 	int         ch = wgetch (input);
 	int         i;
+	int         curs_x;
 	char       *text = 0;
+
+	static int  scroll;
 
 	switch (ch) {
 		case KEY_ENTER:
@@ -252,13 +259,37 @@ Con_ProcessInput (void)
 			}
 			break;
 	}
+	curs_x = key_linepos - scroll;
+	if (curs_x < 1) {
+		scroll += curs_x - 1;
+		curs_x = 1;
+	} else if (curs_x > screen_x - 2) {
+		scroll += curs_x - (screen_x - 2);
+		curs_x = screen_x - 2;
+	}
+	text = key_lines[edit_line] + scroll;
+	if (scroll && strlen (text) < screen_x - 2) {
+		scroll = strlen (key_lines[edit_line]) - (screen_x - 2);
+		text = key_lines[edit_line] + scroll;
+		curs_x = key_linepos - scroll;
+	}
+
 	werase (input);
-	text = key_lines[edit_line];
-	if (screen_x < strlen (text) - 1)
-		text += screen_x - (strlen (text) - 1); 
 	wmove (input, 0, 0);
-	while (*text)
+	i = 0;
+#if 0
+	if (scroll) {
+		waddch (input, '<');
+		text++;
+		i++;
+	}
+#endif
+	for (; i < screen_x - 2 && *text; i++)
 		waddch (input, *text++);
+	if (*text) {
+		waddch (input, '>');
+	}
+	wmove (input, 0, curs_x);
 	touchline (stdscr, screen_y - 1, 1);
 	wrefresh (input);
 }
