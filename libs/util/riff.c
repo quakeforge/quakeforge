@@ -312,6 +312,20 @@ riff_read (QFile *f)
 					chunk = &list->ck;
 				}
 				break;
+			case CASE ('d','a','t','a'):
+				{
+					data_t     *data = malloc (sizeof (data_t));
+					int         c;
+
+					data->ck = ck;
+					data->data = malloc (sizeof (int));
+					*((int *)data->data) = Qtell (f);
+					Qseek (f, ck.len, SEEK_CUR);
+					if ((c = Qgetc (f)) && c != -1)
+						Qungetc (f, c);
+					chunk = &data->ck;
+				}
+				break;
 			default:
 				{
 					data_t     *data = malloc (sizeof (data_t));
