@@ -96,7 +96,7 @@ new_struct_field (type_t *strct, type_t *type, const char *name,
 struct_field_t *
 struct_find_field (type_t *strct, const char *name)
 {
-	if (!structs)
+	if (!structs || !strct)
 		return 0;
 	return Hash_Find (strct->struct_fields, name);
 }
