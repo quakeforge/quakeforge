@@ -4,7 +4,7 @@ typedef enum {
 } BOOL;
 
 void (id object, integer code, string fmt, ...) obj_error = #0;
-void (id object, integer code, string fmt, ...) obj_verror = #0;
+void (id object, integer code, string fmt, ...) obj_verror = #0;//FIXME not ...
 //obj_error_handler (objc_error_handler func) obj_set_error_handler = #0;
 IMP (id receiver, SEL op) obj_msg_lookup = #0;
 IMP (id receiver, SEL op) obj_msg_lookup_super = #0;
@@ -26,7 +26,7 @@ string (SEL selector) sel_get_type = #0;
 SEL (string name) sel_get_uid = #0;
 SEL (string name) sel_get_any_uid = #0;
 SEL (string name) sel_get_any_typed_uid = #0;
-SEL (string name) sel_get_typed_uid = #0;
+SEL (string name, string type) sel_get_typed_uid = #0;
 SEL (string name) sel_register_name = #0;
 SEL (string name, string type) sel_register_typed_name = #0;
 BOOL (SEL aSel) sel_is_mapped = #0;

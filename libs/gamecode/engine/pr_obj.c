@@ -54,6 +54,9 @@ POINTER_TO_PROG (progs_t *pr, void *p)
 	return p ? (pr_type_t *) p - pr->pr_globals : 0;
 }
 
+#define P_POINTER(p,t,n) (G_INT (p, OFS_PARM##n) \
+							? &G_STRUCT (p, t, G_INT (p, OFS_PARM##n)) : 0)
+
 
 static const char *
 class_get_key (void *c, void *pr)
@@ -76,6 +79,25 @@ dump_ivars (progs_t *pr, pointer_t _ivars)
 					PR_GetString (pr, ivars->ivar_list[i].ivar_type),
 					ivars->ivar_list[i].ivar_offset);
 	}
+}
+
+string_t
+object_get_class_name (progs_t *pr, pr_id_t *object)
+{
+	pr_class_t *class;
+
+	if (object) {
+		class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
+		if (PR_CLS_ISCLASS (class)) {
+			G_INT (pr, OFS_RETURN) = class->name;
+			return class->name;
+		}
+		if (PR_CLS_ISMETA (class)) {
+			G_INT (pr, OFS_RETURN) = ((pr_class_t *)object)->name;
+			return ((pr_class_t *)object)->name;
+		}
+	}
+	return PR_SetString (pr, "Nil");
 }
 
 //====================================================================
@@ -191,105 +213,166 @@ obj_find_message (progs_t *pr, pr_class_t *class, pr_sel_t *selector)
 	return 0;
 }
 
+static func_t
+obj_msg_lookup (progs_t *pr, pr_id_t *receiver, pr_sel_t *op)
+{
+	pr_class_t *class;
+	if (!receiver)
+		return 0;
+	class = &G_STRUCT (pr, pr_class_t, receiver->class_pointer);
+	return obj_find_message (pr, class, op);
+}
+
+static func_t
+obj_msg_lookup_super (progs_t *pr, pr_id_t *receiver, pr_sel_t *op)
+{
+	pr_class_t *class;
+	pr_class_t *super = 0;
+	if (!receiver)
+		return 0;
+	class = &G_STRUCT (pr, pr_class_t, receiver->class_pointer);
+	if (class->super_class)
+		super = &G_STRUCT (pr, pr_class_t, class->super_class);
+	if (!super)
+		PR_RunError (pr, "%s has no super class",
+					 PR_GetString (pr, class->name));
+	return obj_find_message (pr, class, op);
+}
+
 static void
 pr_obj_error (progs_t *pr)
 {
+	//pr_id_t    *object = P_POINTER (pr, pr_id_t, 0);
+	//int         code = G_INT (pr, OFS_PARM1);
+	//const char *fmt = G_STRING (pr, OFS_PARM2);
+	//...
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 static void
 pr_obj_verror (progs_t *pr)
 {
+	//pr_id_t    *object = P_POINTER (pr, pr_id_t, 0);
+	//int         code = G_INT (pr, OFS_PARM1);
+	//const char *fmt = G_STRING (pr, OFS_PARM2);
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 static void
 pr_obj_set_error_handler (progs_t *pr)
 {
+	//func_t      func = G_INT (pr, OFS_PARM0);
+	//arglist
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 static void
 pr_obj_msg_lookup (progs_t *pr)
 {
-	//XXX
+	pr_id_t    *receiver = P_POINTER (pr, pr_id_t, 0);
+	pr_sel_t   *op = P_POINTER (pr, pr_sel_t, 1);
+	G_INT (pr, OFS_RETURN) = obj_msg_lookup (pr, receiver, op);
 }
 
 static void
 pr_obj_msg_lookup_super (progs_t *pr)
 {
-	//XXX
+	pr_id_t    *receiver = P_POINTER (pr, pr_id_t, 0);
+	pr_sel_t   *op = P_POINTER (pr, pr_sel_t, 1);
+	G_INT (pr, OFS_RETURN) = obj_msg_lookup_super (pr, receiver, op);
 }
 
 static void
 pr_obj_msg_sendv (progs_t *pr)
 {
+	//pr_id_t    *receiver = P_POINTER (pr, pr_id_t, 0);
+	//pr_sel_t   *op = P_POINTER (pr, pr_sel_t, 1);
+	//arglist
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 static void
 pr_obj_malloc (progs_t *pr)
 {
-	//XXX
+	int         size = G_INT (pr, OFS_PARM0) * sizeof (pr_type_t);
+	void       *mem = PR_Zone_Malloc (pr, size);
+
+	G_INT (pr, OFS_RETURN) = POINTER_TO_PROG (pr, mem);
 }
 
 static void
 pr_obj_atomic_malloc (progs_t *pr)
 {
-	//XXX
+	int         size = G_INT (pr, OFS_PARM0) * sizeof (pr_type_t);
+	void       *mem = PR_Zone_Malloc (pr, size);
+
+	G_INT (pr, OFS_RETURN) = POINTER_TO_PROG (pr, mem);
 }
 
 static void
 pr_obj_valloc (progs_t *pr)
 {
-	//XXX
+	int         size = G_INT (pr, OFS_PARM0) * sizeof (pr_type_t);
+	void       *mem = PR_Zone_Malloc (pr, size);
+
+	G_INT (pr, OFS_RETURN) = POINTER_TO_PROG (pr, mem);
 }
 
 static void
 pr_obj_realloc (progs_t *pr)
 {
+	//void       *mem = (void*)P_POINTER (pr, void*, 0);
+	//int         size = G_INT (pr, OFS_PARM1) * sizeof (pr_type_t);
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 static void
 pr_obj_calloc (progs_t *pr)
 {
-	//XXX
+	int         size = G_INT (pr, OFS_PARM0) * sizeof (pr_type_t);
+	void       *mem = PR_Zone_Malloc (pr, size);
+
+	memset (mem, 0, size);
+	G_INT (pr, OFS_RETURN) = POINTER_TO_PROG (pr, mem);
 }
 
 static void
 pr_obj_free (progs_t *pr)
 {
-	//XXX
+	void       *mem = (void*)P_POINTER (pr, void*, 0);
+
+	PR_Zone_Free (pr, mem);
 }
 
 static void
 pr_obj_get_uninstalled_dtable (progs_t *pr)
 {
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 static void
 pr_obj_msgSend (progs_t *pr)
 {
-	pointer_t   _self = G_INT (pr, OFS_PARM0);
-	pointer_t   __cmd = G_INT (pr, OFS_PARM1);
-	pr_class_t *self;
+	pr_id_t    *self;
 	pr_sel_t   *_cmd;
 	func_t      imp;
 
-	if (!_self) {
-		G_INT (pr, OFS_RETURN) = _self;
+	if (!self) {
+		G_INT (pr, OFS_RETURN) = G_INT (pr, OFS_RETURN);
 		return;
 	}
-	if (!__cmd)
+	if (!_cmd)
 		PR_RunError (pr, "null selector");
-	self = &G_STRUCT (pr, pr_class_t, _self);
-	_cmd = &G_STRUCT (pr, pr_sel_t, __cmd);
-	imp = obj_find_message (pr, self, _cmd);
+	imp = obj_msg_lookup (pr, self, _cmd);
 	if (!imp)
 		PR_RunError (pr, "%s does not respond to %s",
-					 PR_GetString (pr, self->name),
+					 PR_GetString (pr, object_get_class_name (pr, self)),
 					 PR_GetString (pr, _cmd->sel_id));
 	PR_ExecuteProgram (pr, imp);
 }
@@ -297,29 +380,20 @@ pr_obj_msgSend (progs_t *pr)
 static void
 pr_obj_msgSend_super (progs_t *pr)
 {
-	pointer_t   _self = G_INT (pr, OFS_PARM0);
-	pointer_t   __cmd = G_INT (pr, OFS_PARM1);
-	pr_class_t *self;
-	pr_class_t *super;
+	pr_id_t    *self;
 	pr_sel_t   *_cmd;
 	func_t      imp;
 
-	if (!_self) {
-		G_INT (pr, OFS_RETURN) = _self;
+	if (!self) {
+		G_INT (pr, OFS_RETURN) = G_INT (pr, OFS_RETURN);
 		return;
 	}
-	if (!__cmd)
+	if (!_cmd)
 		PR_RunError (pr, "null selector");
-	self = &G_STRUCT (pr, pr_class_t, _self);
-	_cmd = &G_STRUCT (pr, pr_sel_t, __cmd);
-	if (!self->super_class)
-		PR_RunError (pr, "%s has no super class",
-					 PR_GetString (pr, self->name));
-	super = &G_STRUCT (pr, pr_class_t, self->super_class);
-	imp = obj_find_message (pr, super, _cmd);
+	imp = obj_msg_lookup_super (pr, self, _cmd);
 	if (!imp)
 		PR_RunError (pr, "%s does not respond to %s",
-					 PR_GetString (pr, super->name),
+					 PR_GetString (pr, object_get_class_name (pr, self)),
 					 PR_GetString (pr, _cmd->sel_id));
 	PR_ExecuteProgram (pr, imp);
 }
@@ -327,19 +401,30 @@ pr_obj_msgSend_super (progs_t *pr)
 static void
 pr_obj_get_class (progs_t *pr)
 {
-	//XXX
+	const char *name = G_STRING (pr, OFS_PARM0);
+	pr_class_t *class;
+
+	class = Hash_Find (pr->classes, name);
+	if (!class)
+		PR_RunError (pr, "could not find class %s", name);
+	G_INT (pr, OFS_RETURN) = POINTER_TO_PROG (pr, class);
 }
 
 static void
 pr_obj_lookup_class (progs_t *pr)
 {
-	//XXX
+	const char *name = G_STRING (pr, OFS_PARM0);
+	pr_class_t *class;
+
+	class = Hash_Find (pr->classes, name);
+	G_INT (pr, OFS_RETURN) = POINTER_TO_PROG (pr, class);
 }
 
 static void
 pr_obj_next_class (progs_t *pr)
 {
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 //====================================================================
@@ -347,55 +432,73 @@ pr_obj_next_class (progs_t *pr)
 static void
 pr_sel_get_name (progs_t *pr)
 {
-	//XXX
+	pr_sel_t   *sel = P_POINTER (pr, pr_sel_t, 0);
+	G_INT (pr, OFS_RETURN) = sel->sel_id;
 }
 
 static void
 pr_sel_get_type (progs_t *pr)
 {
-	//XXX
+	pr_sel_t   *sel = P_POINTER (pr, pr_sel_t, 0);
+	G_INT (pr, OFS_RETURN) = sel->sel_types;
 }
 
 static void
 pr_sel_get_uid (progs_t *pr)
 {
+	//const char *name = G_STRING (pr, OFS_PARM0);
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 static void
 pr_sel_get_any_uid (progs_t *pr)
 {
+	//const char *name = G_STRING (pr, OFS_PARM0);
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 static void
 pr_sel_get_any_typed_uid (progs_t *pr)
 {
+	//const char *name = G_STRING (pr, OFS_PARM0);
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 static void
 pr_sel_get_typed_uid (progs_t *pr)
 {
+	//const char *name = G_STRING (pr, OFS_PARM0);
+	//const char *type = G_STRING (pr, OFS_PARM1);
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 static void
 pr_sel_register_name (progs_t *pr)
 {
+	//const char *name = G_STRING (pr, OFS_PARM0);
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 static void
 pr_sel_register_typed_name (progs_t *pr)
 {
+	//const char *name = G_STRING (pr, OFS_PARM0);
+	//const char *type = G_STRING (pr, OFS_PARM1);
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 static void
 pr_sel_is_mapped (progs_t *pr)
 {
+	//pr_sel_t   *sel = P_POINTER (pr, pr_sel_t, 0);
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 //====================================================================
@@ -403,19 +506,28 @@ pr_sel_is_mapped (progs_t *pr)
 static void
 pr_class_get_class_method (progs_t *pr)
 {
+	//pr_class_t *class = P_POINTER (pr, pr_class_t, 0);
+	//pr_sel_t   *aSel = P_POINTER (pr, pr_sel_t, 1);
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 static void
 pr_class_get_instance_method (progs_t *pr)
 {
+	//pr_class_t *class = P_POINTER (pr, pr_class_t, 0);
+	//pr_sel_t   *aSel = P_POINTER (pr, pr_sel_t, 1);
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 static void
 pr_class_pose_as (progs_t *pr)
 {
+	//pr_class_t *imposter = P_POINTER (pr, pr_class_t, 0);
+	//pr_class_t *superclass = P_POINTER (pr, pr_class_t, 1);
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 static inline pr_id_t    *
@@ -507,7 +619,11 @@ pr_class_get_gc_object_type (progs_t *pr)
 static void
 pr_class_ivar_set_gcinvisible (progs_t *pr)
 {
+	//pr_class_t *imposter = P_POINTER (pr, pr_class_t, 0);
+	//const char *ivarname = G_STRING (pr, OFS_PARM1);
+	//int         gcInvisible = G_INT (pr, OFS_PARM2);
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 //====================================================================
@@ -515,13 +631,18 @@ pr_class_ivar_set_gcinvisible (progs_t *pr)
 static void
 pr_method_get_imp (progs_t *pr)
 {
-	//XXX
+	pr_method_t *method = P_POINTER (pr, pr_method_t, 0);
+
+	G_INT (pr, OFS_RETURN) = method->method_imp;
 }
 
 static void
 pr_get_imp (progs_t *pr)
 {
+	//pr_class_t *class = P_POINTER (pr, pr_class_t, 0);
+	//pr_sel_t   *sel = P_POINTER (pr, pr_sel_t, 1);
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 //====================================================================
@@ -694,13 +815,20 @@ pr__i_Object__compare (progs_t *pr)
 static void
 pr__c_Object__conformsTo (progs_t *pr)
 {
+	//pr_id_t    *self = P_POINTER (pr, pr_id_t, 0);
+	//pr_protocol_t *protocol = P_POINTER (pr, pr_protocol_t, 2);
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 static void
 pr__i_Object__error (progs_t *pr)
 {
+	//pr_id_t    *object = P_POINTER (pr, pr_id_t, 0);
+	//const char *fmt = G_STRING (pr, OFS_PARM2);
+	//...
 	//XXX
+	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 //====================================================================
