@@ -123,8 +123,6 @@ cvar_t     *scr_showram;
 cvar_t     *scr_showturtle;
 cvar_t     *scr_viewsize;
 
-unsigned char lighthalf_v[3] = {255, 255, 255};
-
 
 void
 R_Init_Cvars (void)

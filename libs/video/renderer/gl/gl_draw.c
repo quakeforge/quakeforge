@@ -56,6 +56,7 @@
 #include "QF/GL/qf_vid.h"
 
 #include "r_cvar.h"
+#include "r_shared.h"
 #include "sbar.h"
 
 extern byte *vid_basepal;
@@ -70,6 +71,8 @@ qpic_t     *draw_backtile;
 static int  translate_texture;
 static int  char_texture;
 static int  cs_texture;					// crosshair texturea
+
+static byte color_0_8[4] = { 204, 204, 204, 255 };
 
 static byte cs_data[64] = {
 	0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff,
@@ -372,7 +375,7 @@ Draw_Crosshair (int swap)
 			qfglTexCoord2f (0, 1);
 			qfglVertex2f (x - 4, y + 12);
 			qfglEnd ();
-			qfglColor3ubv (lighthalf_v);
+			qfglColor3ubv (color_white);
 			break;
 	}
 }
@@ -412,7 +415,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	newtl = (float) srcy / (float) pic->height;
 	newth = newtl + (float) height / (float) pic->height;
 
-	qfglColor3f (0.8, 0.8, 0.8);
+	qfglColor3ubv (color_0_8);
 	qfglBindTexture (GL_TEXTURE_2D, gl->texnum);
 	qfglBegin (GL_QUADS);
 	qfglTexCoord2f (newsl, newtl);
@@ -424,7 +427,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	qfglTexCoord2f (newsl, newth);
 	qfglVertex2f (x, y + height);
 	qfglEnd ();
-	qfglColor3ubv (lighthalf_v);
+	qfglColor3ubv (color_white);
 }
 
 /*
@@ -462,7 +465,7 @@ Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 
-	qfglColor3f (0.8, 0.8, 0.8);
+	qfglColor3ubv (color_0_8);
 	qfglBegin (GL_QUADS);
 	qfglTexCoord2f (0, 0);
 	qfglVertex2f (x, y);
@@ -473,7 +476,7 @@ Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 	qfglTexCoord2f (0, 1);
 	qfglVertex2f (x, y + pic->height);
 	qfglEnd ();
-	qfglColor3ubv (lighthalf_v);
+	qfglColor3ubv (color_white);
 }
 
 /*
@@ -489,7 +492,7 @@ Draw_ConsoleBackground (int lines)
 	qpic_t     *conback;
 	glpic_t    *gl;
 	float       ofs;
-	float       alpha;
+	byte        alpha;
 
 	// This can be a CachePic now, just like in software
 	conback = Draw_CachePic ("gfx/conback.lmp", false);
@@ -520,13 +523,14 @@ Draw_ConsoleBackground (int lines)
 
 	y = vid.height * scr_consize->value;
 	if (!r_active || lines > y) {
-		alpha = 1.0;
+		alpha = 255;
 	} else {
 		// set up to draw alpha console
-		alpha = (float) (gl_conalpha->value * lines) / y;
+		alpha = 255 * (gl_conalpha->value * lines) / y;
 	}
 
-	qfglColor4f (0.8, 0.8, 0.8, alpha);
+	color_0_8[3] = alpha;
+	qfglColor4ubv (color_0_8);
 
 	// draw the console texture
 	qfglBindTexture (GL_TEXTURE_2D, gl->texnum);
@@ -542,8 +546,8 @@ Draw_ConsoleBackground (int lines)
 	qfglEnd ();
 
 	// turn off alpha blending
-	if (alpha < 1.0) {
-		qfglColor3f (0.8, 0.8, 0.8);
+	if (alpha < 255) {
+		qfglColor3ubv (color_0_8);
 	}
 
 	if (gl_conspin->value) {
@@ -554,7 +558,7 @@ Draw_ConsoleBackground (int lines)
 
 	Draw_AltString (vid.conwidth - strlen (cl_verstring->string) * 8 - 11,
 					lines - 14, cl_verstring->string);
-	qfglColor3ubv (lighthalf_v);
+	qfglColor3ubv (color_white);
 }
 
 /*
@@ -566,7 +570,7 @@ Draw_ConsoleBackground (int lines)
 void
 Draw_TileClear (int x, int y, int w, int h)
 {
-	qfglColor3f (0.8, 0.8, 0.8);
+	qfglColor3ubv (color_0_8);
 	qfglBindTexture (GL_TEXTURE_2D, *(int *) draw_backtile->data);
 	qfglBegin (GL_QUADS);
 	qfglTexCoord2f (x / 64.0, y / 64.0);
@@ -578,7 +582,7 @@ Draw_TileClear (int x, int y, int w, int h)
 	qfglTexCoord2f (x / 64.0, (y + h) / 64.0);
 	qfglVertex2f (x, y + h);
 	qfglEnd ();
-	qfglColor3ubv (lighthalf_v);
+	qfglColor3ubv (color_white);
 }
 
 /*
@@ -590,8 +594,7 @@ void
 Draw_Fill (int x, int y, int w, int h, int c)
 {
 	qfglDisable (GL_TEXTURE_2D);
-	qfglColor3f (vid_basepal[c * 3] / 255.0, vid_basepal[c * 3 + 1] / 255.0,
-			   vid_basepal[c * 3 + 2] / 255.0);
+	qfglColor3ubv (vid_basepal + c * 3);
 
 	qfglBegin (GL_QUADS);
 
@@ -601,7 +604,7 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	qfglVertex2f (x, y + h);
 
 	qfglEnd ();
-	qfglColor3ubv (lighthalf_v);
+	qfglColor3ubv (color_white);
 	qfglEnable (GL_TEXTURE_2D);
 }
 
@@ -618,7 +621,7 @@ Draw_FadeScreen (void)
 	qfglVertex2f (0, vid.height);
 
 	qfglEnd ();
-	qfglColor3ubv (lighthalf_v);
+	qfglColor3ubv (color_white);
 	qfglEnable (GL_TEXTURE_2D);
 
 	Sbar_Changed ();
@@ -666,5 +669,5 @@ GL_Set2D (void)
 	qfglDisable (GL_DEPTH_TEST);
 	qfglDisable (GL_CULL_FACE);
 
-	qfglColor3ubv (lighthalf_v);
+	qfglColor3ubv (color_white);
 }

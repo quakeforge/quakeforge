@@ -381,7 +381,6 @@ R_DrawMultitexturePoly (msurface_t *s)
 
 	i = s->lightmaptexturenum;
 
-	qfglColor3f (1, 1, 1);
 	// Binds world to texture env 0
 	qglActiveTexture (gl_mtex_enum + 0);
 	qfglBindTexture (GL_TEXTURE_2D, texture->gl_texturenum);
@@ -428,7 +427,6 @@ R_DrawMultitexturePoly (msurface_t *s)
 		s->polys->fb_chain = fullbright_polys[texture->gl_fb_texturenum];
 		fullbright_polys[texture->gl_fb_texturenum] = s->polys;
 	}
-	qfglColor3ubv (lighthalf_v);
 	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }
 
@@ -442,8 +440,6 @@ R_BlendLightmaps (void)
 	qfglDepthMask (GL_FALSE);					// don't bother writing Z
 
 	qfglBlendFunc (GL_DST_COLOR, GL_SRC_COLOR);
-
-	qfglColor3f (1, 1, 1);
 
 	for (i = 0; i < MAX_LIGHTMAPS; i++) {
 		p = lightmap_polys[i];
@@ -469,7 +465,6 @@ R_BlendLightmaps (void)
 	}
 
 	// Return to normal blending  --KB
-	qfglColor3ubv (lighthalf_v);
 	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	qfglDepthMask (GL_TRUE);					// back to normal Z buffering
@@ -512,7 +507,6 @@ R_RenderBrushPoly (msurface_t *fa)
 
 	c_brush_polys++;
 
-	qfglColor3f (1, 1, 1);
 	qfglBindTexture (GL_TEXTURE_2D, texture->gl_texturenum);
 
 	qfglBegin (GL_POLYGON);
@@ -564,7 +558,6 @@ R_RenderBrushPoly (msurface_t *fa)
 			R_BuildLightMap (fa, base, BLOCK_WIDTH * lightmap_bytes);
 		}
 	}
-	qfglColor3ubv (lighthalf_v);
 }
 
 void
@@ -576,9 +569,10 @@ GL_WaterSurface (msurface_t *s)
 	qfglBindTexture (GL_TEXTURE_2D, i);
 	if (r_wateralpha->value < 1.0) {
 		qfglDepthMask (GL_FALSE);
-		qfglColor4f (1, 1, 1, r_wateralpha->value);
+		color_white[3] = r_wateralpha->value * 255;
+		qfglColor4ubv (color_white);
 		EmitWaterPolys (s);
-		qfglColor3ubv (lighthalf_v);
+		qfglColor3ubv (color_white);
 		qfglDepthMask (GL_TRUE);
 	} else
 		EmitWaterPolys (s);
@@ -598,7 +592,8 @@ R_DrawWaterSurfaces (void)
 
 	if (r_wateralpha->value < 1.0) {
 		qfglDepthMask (GL_FALSE);
-		qfglColor4f (1, 1, 1, r_wateralpha->value);
+		color_white[3] = r_wateralpha->value * 255;
+		qfglColor4ubv (color_white);
 	}
 
 	i = -1;
@@ -614,7 +609,7 @@ R_DrawWaterSurfaces (void)
 
 	if (r_wateralpha->value < 1.0) {
 		qfglDepthMask (GL_TRUE);
-		qfglColor3ubv (lighthalf_v);
+		qfglColor3ubv (color_white);
 	}
 }
 
@@ -710,11 +705,6 @@ R_DrawBrushModel (entity_t *e)
 
 	// draw texture
 	for (i = 0; i < clmodel->nummodelsurfaces; i++, psurf++) {
-/* FIXME: Not in qw?
-		if (psurf->flags & SURF_DRAWSKY)
-			return;
-*/
-
 		// find which side of the node we are on
 		pplane = psurf->plane;
 

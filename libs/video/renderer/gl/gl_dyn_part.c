@@ -724,6 +724,6 @@ R_DrawParticles (void)
 	}
 	numparticles = activeparticles;
 
-	qfglColor3ubv (lighthalf_v);
+	qfglColor3ubv (color_white);
 	qfglDepthMask (GL_TRUE);
 }

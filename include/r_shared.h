@@ -66,6 +66,9 @@ extern struct cvar_s	*r_clearcolor;
 extern int	sintable[SIN_BUFFER_SIZE];
 extern int	intsintable[SIN_BUFFER_SIZE];
 
+extern byte color_white[4];
+extern byte color_black[4];
+
 extern	vec3_t	vup, base_vup;
 extern	vec3_t	vpn, base_vpn;
 extern	vec3_t	vright, base_vright;

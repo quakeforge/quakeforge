@@ -1,5 +1,3 @@
-extern unsigned char lighthalf_v[3];
-
 extern struct cvar_s     *cl_crossx;
 extern struct cvar_s     *cl_crossy;
 extern struct cvar_s     *cl_verstring;

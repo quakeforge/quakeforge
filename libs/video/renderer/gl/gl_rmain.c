@@ -266,7 +266,8 @@ GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
 		qfglDepthMask (GL_FALSE);
 
 	if (fb) {
-		qfglColor4f (1, 1, 1, modelalpha);
+		color_white[3] = modelalpha * 255;
+		qfglColor4ubv (color_white);
 	}
 
 	while ((count = *order++)) {
@@ -302,7 +303,6 @@ GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
 	if (modelalpha != 1.0)
 		qfglDepthMask (GL_TRUE);
 
-	qfglColor3ubv (lighthalf_v);
 }
 
 extern vec3_t lightspot;
@@ -701,7 +701,8 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		R_RotateForEntity (e);
 
 		qfglDisable (GL_TEXTURE_2D);
-		qfglColor4f (0, 0, 0, 0.5);
+		color_black[3] = 128;
+		qfglColor4ubv (color_black);
 
 		if (gl_lerp_anim->int_val) {
 			GL_DrawAliasBlendedShadow (paliashdr, lastposenum0, lastposenum,
@@ -711,7 +712,6 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		}
 
 		qfglEnable (GL_TEXTURE_2D);
-		qfglColor3ubv (lighthalf_v);
 		qfglPopMatrix ();
 	}
 }
@@ -783,6 +783,7 @@ R_DrawEntitiesOnList (void)
 
 		R_DrawAliasModel (currententity, true);
 	}
+	qfglColor3ubv (color_white);
 
 	for (i = 0; i < r_numvisedicts; i++) {
 		if (r_visedicts[i]->model->type != mod_sprite)
@@ -812,6 +813,7 @@ R_DrawViewModel (void)
 	qfglDepthRange (gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));
 	R_DrawAliasModel (currententity, false);
 	qfglDepthRange (gldepthmin, gldepthmax);
+	qfglColor3ubv (color_white);
 }
 
 static int
@@ -1012,12 +1014,6 @@ R_RenderScene (void)
 	R_DrawEntitiesOnList ();
 
 	R_RenderDlights ();
-
-	if (r_timegraph->int_val)
-		R_TimeGraph ();
-
-	if (r_zgraph->int_val)
-		R_ZGraph ();
 }
 
 void R_RenderBrushPoly (msurface_t *fa);
@@ -1074,12 +1070,13 @@ R_Mirror (void)
 
 	qfglLoadMatrixf (r_base_world_matrix);
 
-	qfglColor4f (1, 1, 1, r_mirroralpha->value);
+	color_white[2] = r_mirroralpha->value * 255;
+	qfglColor4ubv (color_white);
 	s = r_worldentity.model->textures[mirrortexturenum]->texturechain;
 	for (; s; s = s->texturechain)
 		R_RenderBrushPoly (s);
 	r_worldentity.model->textures[mirrortexturenum]->texturechain = NULL;
-	qfglColor4f (1, 1, 1, 1);
+	qfglColor3ubv (color_white);
 }
 
 /*
@@ -1115,6 +1112,12 @@ R_RenderView (void)
 
 	// render mirror view
 	R_Mirror ();
+
+	if (r_timegraph->int_val)
+		R_TimeGraph ();
+
+	if (r_zgraph->int_val)
+		R_ZGraph ();
 }
 
 #if 0

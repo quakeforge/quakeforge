@@ -138,7 +138,5 @@ R_LineGraph (int x, int y, int *h_vals, int count)
 	qfglVertex2f (x, y - s);
 	qfglEnd ();
 
-	qfglColor3ubv (lighthalf_v);
-
 	graph_index = (graph_index + 1) % NUM_GRAPH_TEXTURES;
 }

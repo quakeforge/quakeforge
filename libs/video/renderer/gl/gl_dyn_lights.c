@@ -112,7 +112,7 @@ R_RenderDlight (dlight_t *light)
 		v[i] = light->origin[i] + v[i] * rad;
 
 	qfglVertex3fv (v);
-	qfglColor3f (0, 0, 0);
+	qfglColor3ubv (color_black);
 
 	for (i = 16; i >= 0; i--) {
 		for (j = 0; j < 3; j++)
@@ -149,7 +149,7 @@ R_RenderDlights (void)
 
 	if (!gl_dlight_smooth->int_val)
 		qfglShadeModel (GL_FLAT);
-	qfglColor3ubv (lighthalf_v);
+	qfglColor3ubv (color_white);
 	qfglEnable (GL_TEXTURE_2D);
 	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	qfglDepthMask (GL_TRUE);

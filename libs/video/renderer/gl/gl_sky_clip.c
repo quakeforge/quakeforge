@@ -47,8 +47,9 @@
 #include "QF/GL/qf_sky.h"
 #include "QF/GL/qf_vid.h"
 
-#include "view.h"
 #include "r_cvar.h"
+#include "r_shared.h"
+#include "view.h"
 
 extern qboolean skyloaded;
 extern vec5_t skyvec[6][4];
@@ -672,7 +673,7 @@ R_DrawSkyChain (msurface_t *sky_chain)
 	if (gl_sky_clip->int_val > 2) {
 		qfglDisable (GL_BLEND);
 		qfglDisable (GL_TEXTURE_2D);
-		qfglColor3f (0, 0, 0);
+		qfglColor3ubv (color_black);
 		while (sc) {
 			glpoly_t   *p = sc->polys;
 
@@ -684,6 +685,7 @@ R_DrawSkyChain (msurface_t *sky_chain)
 		}
 		qfglEnable (GL_TEXTURE_2D);
 		qfglEnable (GL_BLEND);
+		qfglColor3ubv (color_white);
 		return;
 	}
 
@@ -704,7 +706,7 @@ R_DrawSkyChain (msurface_t *sky_chain)
 		// clipped
 		qfglDisable (GL_BLEND);
 		qfglDisable (GL_TEXTURE_2D);
-		qfglColor3f (0, 0, 0);
+		qfglColor3ubv (color_black);
 		while (sc) {
 			glpoly_t   *p = sc->polys;
 
@@ -716,10 +718,12 @@ R_DrawSkyChain (msurface_t *sky_chain)
 		}
 		qfglEnable (GL_TEXTURE_2D);
 		qfglEnable (GL_BLEND);
+		qfglColor3ubv (color_white);
 	}
 #if 0
 	// seems to work, but this is the wrong place to do it.
-	qfglColor4f (1,1,1,0);
+	color_white[3] = 0;
+	qfglColor4ubv (color_white);
 	sc = sky_chain;
 	while (sc) {
 		glpoly_t   *p = sc->polys;
@@ -735,66 +739,5 @@ R_DrawSkyChain (msurface_t *sky_chain)
 		}
 		sc = sc->texturechain;
 	}
-#endif
-	qfglColor3ubv (lighthalf_v);
-#if 0
-	qfglDisable (GL_TEXTURE_2D);
-	sc = sky_chain;
-	qfglColor3f (1, 1, 1);
-	while (sc) {
-		glpoly_t   *p = sc->polys;
-
-		while (p) {
-			int         i;
-
-			qfglBegin (GL_LINE_LOOP);
-			for (i = 0; i < p->numverts; i++) {
-				qfglVertex3fv (p->verts[i]);
-			}
-			qfglEnd ();
-			p = p->next;
-		}
-		sc = sc->texturechain;
-	}
-	sc = sky_chain;
-	qfglColor3f (0, 1, 0);
-	qfglBegin (GL_POINTS);
-	while (sc) {
-		glpoly_t   *p = sc->polys;
-
-		while (p) {
-			int         i;
-			vec3_t      x, c = { 0, 0, 0 };
-
-			for (i = 0; i < p->numverts; i++) {
-				VectorSubtract (p->verts[i], r_refdef.vieworg, x);
-				VectorAdd (x, c, c);
-			}
-			VectorScale (c, 1.0 / p->numverts, c);
-			VectorAdd (c, r_refdef.vieworg, c);
-			qfglVertex3fv (c);
-			p = p->next;
-		}
-		sc = sc->texturechain;
-	}
-	qfglEnd ();
-	if (skyloaded) {
-		int         i, j;
-
-		qfglColor3f (1, 0, 0);
-		for (i = 0; i < 6; i++) {
-			vec3_t      v;
-
-			qfglBegin (GL_LINE_LOOP);
-			for (j = 0; j < 4; j++) {
-				memcpy (v, &skyvec[i][j][2], sizeof (v));
-				VectorAdd (v, r_refdef.vieworg, v);
-				qfglVertex3fv (v);
-			}
-			qfglEnd ();
-		}
-	}
-	qfglColor3ubv (lighthalf_v);
-	qfglEnable (GL_TEXTURE_2D);
 #endif
 }

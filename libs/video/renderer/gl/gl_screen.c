@@ -877,7 +877,7 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 		qfglVertex2f (0, vid.height);
 
 		qfglEnd ();
-		qfglColor3ubv (lighthalf_v);
+		qfglColor3ubv (color_white);
 	}
 
 	qfglEnable (GL_TEXTURE_2D);

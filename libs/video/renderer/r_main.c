@@ -29,6 +29,9 @@ int         r_lineadj;
 qboolean    r_active;
 float       r_time1;
 
+byte        color_white[4] = { 255, 255, 255, 0 };	// alpha will be explicitly set
+byte        color_black[4] = { 0, 0, 0, 0 };		// alpha will be explicitly set
+
 fire_t r_fires[MAX_FIRES];
 
 

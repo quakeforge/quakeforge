@@ -81,7 +81,7 @@ R_DrawFire (fire_t *f)
 	for (i = 0; i < 3; i++)
 		vec[i] = f->origin[i] - vpn[i] * radius;
 	qfglVertex3fv (vec);
-	qfglColor3f (0.0, 0.0, 0.0);
+	qfglColor3ubv (color_black);
 
 	// don't panic, this just draws a bubble...
 	for (i = 16; i >= 0; i--) {
@@ -98,7 +98,6 @@ R_DrawFire (fire_t *f)
 		b_cos += 2;
 	}
 	qfglEnd ();
-	qfglColor3ubv (lighthalf_v);
 }
 
 /*
@@ -127,6 +126,7 @@ R_UpdateFires (void)
 		R_DrawFire (f);
 	}
 
+	qfglColor3ubv (color_white);
 	qfglEnable (GL_TEXTURE_2D);
 	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	qfglDepthMask (GL_TRUE);
