@@ -227,12 +227,13 @@ Info_Destroy (info_t *info)
 char *
 Info_MakeString (info_t *info, int (*filter)(const char *))
 {
-	char       *string = Hunk_TempAlloc (info->cursize + 1);
+	char       *string;
 	const char *s;
-	char       *d = string;
+	char       *d;
 	info_key_t **key_list;
 	info_key_t **key;
 
+	d = string = Hunk_TempAlloc (info->cursize + 1);
 	key_list = (info_key_t **)Hash_GetList (info->tab);
 
 	for (key = key_list; *key; key++) {
