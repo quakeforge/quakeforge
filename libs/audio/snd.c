@@ -206,3 +206,17 @@ S_LocalSound (char *s)
 	if (sndmodule)
 		sndmodule->functions->sound->pS_LocalSound (s);
 }
+
+void
+S_BlockSound (void)
+{
+	if (sndmodule)
+		sndmodule->functions->sound->pS_BlockSound ();
+}
+
+void
+S_UnblockSound (void)
+{
+	if (sndmodule)
+		sndmodule->functions->sound->pS_UnblockSound ();
+}

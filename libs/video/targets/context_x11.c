@@ -53,7 +53,6 @@
 #include <X11/extensions/XShm.h>
 #include <errno.h>
 #include <limits.h>
-#include <sys/poll.h>
 
 #ifdef HAVE_VIDMODE
 # include <X11/extensions/xf86vmode.h>

@@ -80,24 +80,6 @@ general_funcs_t    plugin_info_general_funcs;
 sound_data_t       plugin_info_sound_data;
 sound_funcs_t      plugin_info_sound_funcs;
 
-void SND_Init (void);
-void SND_Shutdown (void);
-void SND_AmbientOff (void);
-void SND_AmbientOn (void);
-void SND_TouchSound (char *sample);
-void SND_ClearBuffer (void);
-void SND_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation);
-void SND_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol,  float attenuation);
-void SND_StopSound (int entnum, int entchannel);
-sfx_t *SND_PrecacheSound (char *sample);
-void SND_ClearPrecache (void);
-void SND_Update (vec3_t origin, vec3_t v_forward, vec3_t v_right, vec3_t v_up);
-void SND_StopAllSounds (qboolean clear);
-void SND_BeginPrecaching (void);
-void SND_EndPrecaching (void);
-void SND_ExtraUpdate (void);
-void SND_LocalSound (char *s);
-
 qboolean
 SNDDMA_Init (void)
 {
@@ -360,6 +342,18 @@ PluginInfo (void) {
     plugin_info_sound_funcs.pS_EndPrecaching = SND_EndPrecaching;
     plugin_info_sound_funcs.pS_ExtraUpdate = SND_ExtraUpdate;
     plugin_info_sound_funcs.pS_LocalSound = SND_LocalSound;
+	plugin_info_sound_funcs.pS_BlockSound = SND_BlockSound;
+	plugin_info_sound_funcs.pS_UnblockSound = SND_UnblockSound;
 
     return &plugin_info;
+}
+
+void
+SNDDMA_BlockSound (void)
+{
+}
+
+void
+SNDDMA_UnblockSound (void)
+{
 }

@@ -55,7 +55,6 @@
 # include <X11/extensions/xf86dga.h>
 #endif
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -64,9 +63,11 @@
 #include "QF/keys.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
+#include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
 
+#include "compat.h"
 #include "context_x11.h"
 #include "dga_check.h"
 
@@ -82,7 +83,8 @@ static int  p_mouse_x, p_mouse_y;
 
 #define KEY_MASK (KeyPressMask | KeyReleaseMask)
 #define MOUSE_MASK (ButtonPressMask | ButtonReleaseMask | PointerMotionMask)
-#define INPUT_MASK (KEY_MASK | MOUSE_MASK)
+#define FOCUS_MASK (FocusChangeMask)
+#define INPUT_MASK (KEY_MASK | MOUSE_MASK | FOCUS_MASK)
 
 static int
 XLateKey (XKeyEvent * ev, qboolean modified)
@@ -337,6 +339,19 @@ event_button (XEvent * event)
 	}
 }
 
+static void
+event_focusout (XEvent * event)
+{
+	XAutoRepeatOn (x_disp);
+	S_BlockSound ();
+}
+
+static void
+event_focusin (XEvent * event)
+{
+	XAutoRepeatOff (x_disp);
+	S_UnblockSound ();
+}
 
 static void
 center_pointer (void)
@@ -464,22 +479,22 @@ IN_LL_Init (void)
 		XChangeWindowAttributes (x_disp, x_win, attribmask, &attribs_2);
 	}
 
-	if (COM_CheckParm ("-nomouse"))
-		return;
-
-	dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
-	if (vid_fullscreen->int_val) {
-		Cvar_Set (_windowed_mouse, "1");
-		_windowed_mouse->flags |= CVAR_ROM;
-	}
-
-	in_mouse_avail = 1;
-
 	X11_AddEvent (KeyPress, &event_key);
 	X11_AddEvent (KeyRelease, &event_key);
-	X11_AddEvent (ButtonPress, &event_button);
-	X11_AddEvent (ButtonRelease, &event_button);
-	X11_AddEvent (MotionNotify, &event_motion);
+	X11_AddEvent (FocusIn, &event_focusin);
+	X11_AddEvent (FocusOut, &event_focusout);
+
+	if (!COM_CheckParm ("-nomouse")) {
+		dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
+		if (vid_fullscreen->int_val) {
+			Cvar_Set (_windowed_mouse, "1");
+			_windowed_mouse->flags |= CVAR_ROM;
+		}
+
+		X11_AddEvent (ButtonPress, &event_button);
+		X11_AddEvent (ButtonRelease, &event_button);
+		X11_AddEvent (MotionNotify, &event_motion);
+	}
 }
 
 void

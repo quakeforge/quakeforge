@@ -120,18 +120,38 @@ void S_ClearBuffer (void);
 void S_Update (vec3_t origin, vec3_t v_forward, vec3_t v_right, vec3_t v_up);
 void S_ExtraUpdate (void);
 void S_BlockSound (void);
+void S_UnblockSound (void);
 
 sfx_t *S_PrecacheSound (char *sample);
 void S_TouchSound (char *sample);
 void S_ClearPrecache (void);
 void S_BeginPrecaching (void);
 void S_EndPrecaching (void);
-void S_PaintChannels(int endtime);
-void S_InitPaintChannels (void);
+void SND_PaintChannels(int endtime);
 
+void SND_Init (void);
+void SND_Shutdown (void);
+void SND_AmbientOff (void);
+void SND_AmbientOn (void);
+void SND_TouchSound (char *sample);
+void SND_ClearBuffer (void);
+void SND_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation);
+void SND_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol,  float attenuation);
+void SND_StopSound (int entnum, int entchannel);
+sfx_t *SND_PrecacheSound (char *sample);
+void SND_ClearPrecache (void);
+void SND_Update (vec3_t origin, vec3_t v_forward, vec3_t v_right, vec3_t v_up);
+void SND_StopAllSounds (qboolean clear);
+void SND_BeginPrecaching (void);
+void SND_EndPrecaching (void);
+void SND_ExtraUpdate (void);
+void SND_LocalSound (char *s);
+void SND_BlockSound (void);
+void SND_UnblockSound (void);
+
+void SND_InitScaletable (void);
 // picks a channel based on priorities, empty slots, number of channels
 channel_t *SND_PickChannel(int entnum, int entchannel);
-
 // spatializes a channel
 void SND_Spatialize(channel_t *ch);
 
@@ -196,8 +216,9 @@ sfxcache_t *S_LoadSound (sfx_t *s);
 
 wavinfo_t GetWavinfo (char *name, byte *wav, int wavlength);
 
-void SND_InitScaletable (void);
 void SNDDMA_Submit(void);
+void SNDDMA_BlockSound (void);
+void SNDDMA_UnblockSound (void);
 
 void S_AmbientOff (void);
 void S_AmbientOn (void);

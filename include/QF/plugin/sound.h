@@ -52,6 +52,8 @@ typedef void (QFPLUGIN *P_S_BeginPrecaching) (void);
 typedef void (QFPLUGIN *P_S_EndPrecaching) (void);
 typedef void (QFPLUGIN *P_S_ExtraUpdate) (void);
 typedef void (QFPLUGIN *P_S_LocalSound) (char *s);
+typedef void (QFPLUGIN *P_S_BlockSound) (void);
+typedef void (QFPLUGIN *P_S_UnblockSound) (void);
 
 typedef struct sound_funcs_s {
 	P_S_AmbientOff 		pS_AmbientOff;
@@ -69,6 +71,8 @@ typedef struct sound_funcs_s {
 	P_S_EndPrecaching	pS_EndPrecaching;
 	P_S_ExtraUpdate 	pS_ExtraUpdate;
 	P_S_LocalSound		pS_LocalSound;
+	P_S_BlockSound		pS_BlockSound;
+	P_S_UnblockSound	pS_UnblockSound;
 } sound_funcs_t;
 
 typedef struct sound_data_s {

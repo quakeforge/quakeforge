@@ -988,3 +988,19 @@ void
 SND_EndPrecaching (void)
 {
 }
+
+void
+SND_BlockSound (void)
+{
+	if (++snd_blocked == 1)
+		SNDDMA_BlockSound ();
+}
+
+void
+SND_UnblockSound (void)
+{
+	if (!snd_blocked)
+		return;
+	if (!--snd_blocked)
+		SNDDMA_UnblockSound ();
+}
