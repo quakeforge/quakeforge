@@ -88,6 +88,7 @@ qw_server_LDFLAGS=	$(common_ldflags)
 qw_server_DEPENDENCIES=	libqfnet.la $(ASM) $(qf_server_LIBS)
 
 qw_master_SOURCES=	master.c
+qw_master_LDADD=	$(NET_LIBS)
 qw_master_LDFLAGS=	$(common_ldflags)
 
 qf_client_LIBS=	$(top_builddir)/libs/video/targets/libQFjs.la \

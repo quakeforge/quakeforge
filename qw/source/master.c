@@ -41,6 +41,9 @@
 #ifdef HAVE_ARPA_INET_H
 # include <arpa/inet.h>
 #endif
+#ifdef HAVE_WINSOCK_H
+# include <winsock.h>
+#endif
 
 #include <sys/types.h>
 #include <time.h>
@@ -302,18 +305,20 @@ QW_Master (struct sockaddr_in *addr)
 int
 main (int argc, char **argv)
 {
-	int c;
 	struct sockaddr_in addr;
-
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = INADDR_ANY;
-	addr.sin_port = htons (27000);
+	short port = htons (27000);
+#ifndef WIN32 //FIXME
+	int c;
 
 	while ((c = getopt (argc, argv, "p:")) != -1) {
 		if (c == 'p') {
-			addr.sin_port = htons (atoi (optarg));
+			port = htons (atoi (optarg));
 		}
 	}
+#endif
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = INADDR_ANY;
+	addr.sin_port = port;
 	QW_Master (&addr);
 	return 0;
 }

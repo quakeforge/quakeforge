@@ -37,6 +37,10 @@
 
 #ifdef USE_INTEL_ASM
 
+#ifdef WIN32
+# undef PIC
+#endif
+
 	.text
 #define temp0		0
 #define temp1		4

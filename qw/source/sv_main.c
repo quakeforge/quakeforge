@@ -38,6 +38,9 @@
 #ifdef HAVE_ARPA_INET_H
 # include <arpa/inet.h>
 #endif
+#ifdef HAVE_WINSOCK_H
+# include <winsock.h>
+#endif
 
 #include <stdarg.h>
 #include <stdlib.h>
@@ -1108,8 +1111,14 @@ SV_PrintIP (byte *ip)
 	static char buf[INET6_ADDRSTRLEN];
 	if (!inet_ntop (AF_INET6, ip, buf, INET6_ADDRSTRLEN))
 #else
+# ifdef WIN32
+	static char buf[16];
+	strcpy (buf, inet_ntoa (*(struct in_addr*)ip));
+	if (0)
+# else
 	static char buf[INET_ADDRSTRLEN];
 	if (!inet_ntop (AF_INET, ip, buf, INET_ADDRSTRLEN))
+# endif
 #endif
         Sys_Error ("SV_CleanIPList: inet_ntop_failed.  wtf?\n");
 	return buf;
