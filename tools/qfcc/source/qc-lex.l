@@ -242,6 +242,7 @@ static keyword_t keywords[] = {
 	{"quaternion",	TYPE,	&type_quaternion,	0, PROG_VERSION},
 	{"integer",		TYPE,	&type_integer,		0, PROG_VERSION},
 	{"function",	TYPE,	&type_function,		0, PROG_VERSION},
+	{"id",			TYPE,	&type_id,			0, PROG_VERSION},
 	{"local",		LOCAL,	0,					1, PROG_ID_VERSION},
 	{"return",		RETURN,	0,					1, PROG_ID_VERSION},
 	{"while",		WHILE,	0,					1, PROG_ID_VERSION},
