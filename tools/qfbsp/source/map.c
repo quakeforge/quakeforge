@@ -17,8 +17,8 @@
 
 	See file, 'COPYING', for details.
 */
-
-// map.c
+static const char rcsid[] =
+	"$Id$";
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -64,11 +64,9 @@ FindMiptex (char *name)
 }
 
 /*
-===============
-FindTexinfo
+	FindTexinfo
 
-Returns a global texinfo number
-===============
+	Returns a global texinfo number
 */
 int
 FindTexinfo (texinfo_t *t)
@@ -76,7 +74,7 @@ FindTexinfo (texinfo_t *t)
 	int         i, j;
 	texinfo_t  *tex;
 
-// set the special flag
+	// set the special flag
 	if (miptex[t->miptex][0] == '*'
 		|| !strncasecmp (miptex[t->miptex], "sky", 3))
 		t->flags |= TEX_SPECIAL;
@@ -97,13 +95,11 @@ FindTexinfo (texinfo_t *t)
 		return i;
 	}
 
-// allocate a new texture
+	// allocate a new texture
 	BSP_AddTexinfo (bsp, t);
 
 	return i;
 }
-
-//============================================================================
 
 #define	MAXTOKEN	128
 
@@ -128,7 +124,7 @@ GetToken (qboolean crossline)
 	if (unget)							// is a token allready waiting?
 		return true;
 
-// skip space
+	// skip space
   skipspace:
 	while (*script_p <= 32) {
 		if (!*script_p) {
@@ -155,7 +151,7 @@ GetToken (qboolean crossline)
 		goto skipspace;
 	}
 
-// copy token
+	// copy token
 	token_p = token;
 
 	if (*script_p == '"') {
@@ -186,8 +182,6 @@ UngetToken ()
 	unget = true;
 }
 
-//============================================================================
-
 entity_t   *mapent;
 
 void
@@ -208,8 +202,6 @@ ParseEpair (void)
 		Sys_Error ("ParseEpar: token too long");
 	e->value = strdup (token);
 }
-
-//============================================================================
 
 vec3_t      baseaxis[18] = {
 	{0, 0, 1}, {1, 0, 0}, {0, -1, 0},	// floor
@@ -240,8 +232,6 @@ TextureAxisFromPlane (plane_t *pln, vec3_t xv, vec3_t yv)
 	VectorCopy (baseaxis[bestaxis * 3 + 1], xv);
 	VectorCopy (baseaxis[bestaxis * 3 + 2], yv);
 }
-
-//=============================================================================
 
 void
 ParseBrush (void)
@@ -517,7 +507,7 @@ GetVectorForKey (entity_t *ent, char *key, vec3_t vec)
 
 	k = ValueForKey (ent, key);
 	v1 = v2 = v3 = 0;
-// scanf into doubles, then assign, so it is vec_t size independent
+	// scanf into doubles, then assign, so it is vec_t size independent
 	sscanf (k, "%lf %lf %lf", &v1, &v2, &v3);
 	vec[0] = v1;
 	vec[1] = v2;

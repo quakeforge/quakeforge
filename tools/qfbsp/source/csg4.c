@@ -17,8 +17,8 @@
 
 	See file, 'COPYING', for details.
 */
-
-// csg4.c
+static const char rcsid[] =
+	"$Id$";
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -32,9 +32,10 @@
 #include "bsp5.h"
 
 /*
-NOTES
+	NOTES
 
-Brushes that touch still need to be split at the cut point to make a tjunction
+	Brushes that touch still need to be split at the cut point to make a
+	tjunction
 */
 
 face_t     *validfaces[MAX_MAP_PLANES];
@@ -52,12 +53,10 @@ DrawList (face_t *list)
 }
 
 /*
-==================
-NewFaceFromFace
+	NewFaceFromFace
 
-Duplicates the non point information of a face, used by SplitFace and
-MergeFace.
-==================
+	Duplicates the non point information of a face, used by SplitFace and
+	MergeFace.
 */
 face_t     *
 NewFaceFromFace (face_t *in)
@@ -92,7 +91,7 @@ SplitFace (face_t *in, plane_t *split, face_t **front, face_t **back)
 		Sys_Error ("SplitFace: freed face");
 	counts[0] = counts[1] = counts[2] = 0;
 
-// determine sides for each point
+	// determine sides for each point
 	for (i = 0; i < in->numpoints; i++) {
 		dot = DotProduct (in->pts[i], split->normal);
 		dot -= split->dist;
@@ -122,7 +121,7 @@ SplitFace (face_t *in, plane_t *split, face_t **front, face_t **back)
 	*back = newf = NewFaceFromFace (in);
 	*front = new2 = NewFaceFromFace (in);
 
-// distribute the points and generate splits
+	// distribute the points and generate splits
 	for (i = 0; i < in->numpoints; i++) {
 		if (newf->numpoints > MAXEDGES || new2->numpoints > MAXEDGES)
 			Sys_Error ("SplitFace: numpoints > MAXEDGES");
@@ -170,26 +169,19 @@ SplitFace (face_t *in, plane_t *split, face_t **front, face_t **back)
 	if (newf->numpoints > MAXEDGES || new2->numpoints > MAXEDGES)
 		Sys_Error ("SplitFace: numpoints > MAXEDGES");
 
-#if 0
-	CheckFace (newf);
-	CheckFace (new2);
-#endif
-
-// free the original face now that is is represented by the fragments
+	// free the original face now that is is represented by the fragments
 	FreeFace (in);
 }
 
 /*
-=================
-ClipInside
+	ClipInside
 
-Clips all of the faces in the inside list, possibly moving them to the
-outside list or spliting it into a piece in each list.
+	Clips all of the faces in the inside list, possibly moving them to the
+	outside list or spliting it into a piece in each list.
 
-Faces exactly on the plane will stay inside unless overdrawn by later brush
+	Faces exactly on the plane will stay inside unless overdrawn by later brush
 
-frontside is the side of the plane that holds the outside list
-=================
+	frontside is the side of the plane that holds the outside list
 */
 void
 ClipInside (int splitplane, int frontside, qboolean precedence)
@@ -231,11 +223,9 @@ ClipInside (int splitplane, int frontside, qboolean precedence)
 }
 
 /*
-==================
-SaveOutside
+	SaveOutside
 
-Saves all of the faces in the outside list to the bsp plane list
-==================
+	Saves all of the faces in the outside list to the bsp plane list
 */
 void
 SaveOutside (qboolean mirror)
@@ -274,11 +264,9 @@ SaveOutside (qboolean mirror)
 }
 
 /*
-==================
-FreeInside
+	FreeInside
 
-Free all the faces that got clipped out
-==================
+	Free all the faces that got clipped out
 */
 void
 FreeInside (int contents)
@@ -297,15 +285,11 @@ FreeInside (int contents)
 	}
 }
 
-//==========================================================================
-
 /*
-==================
-BuildSurfaces
+	BuildSurfaces
 
-Returns a chain of all the external surfaces with one or more visible
-faces.
-==================
+	Returns a chain of all the external surfaces with one or more visible
+	faces.
 */
 surface_t  *
 BuildSurfaces (void)
@@ -322,7 +306,7 @@ BuildSurfaces (void)
 		if (!*f)
 			continue;					// nothing left on this plane
 
-// create a new surface to hold the faces on this plane
+		// create a new surface to hold the faces on this plane
 		s = AllocSurface ();
 		s->planenum = i;
 		s->next = surfhead;
@@ -336,8 +320,6 @@ BuildSurfaces (void)
 	return surfhead;
 }
 
-//==========================================================================
-
 void
 CopyFacesToOutside (brush_t *b)
 {
@@ -347,16 +329,6 @@ CopyFacesToOutside (brush_t *b)
 
 	for (f = b->faces; f; f = f->next) {
 		brushfaces++;
-#if 0
-		{
-			int         i;
-
-			for (i = 0; i < f->numpoints; i++)
-				printf ("(%f,%f,%f) ", f->pts[i][0], f->pts[i][1],
-						f->pts[i][2]);
-			printf ("\n");
-		}
-#endif
 		newf = AllocFace ();
 		*newf = *f;
 		newf->next = outside;
@@ -367,11 +339,9 @@ CopyFacesToOutside (brush_t *b)
 }
 
 /*
-==================
-CSGFaces
+	CSGFaces
 
-Returns a list of surfaces containing aall of the faces
-==================
+	Returns a list of surfaces containing aall of the faces
 */
 surface_t  *
 CSGFaces (brushset_t *bs)
@@ -390,7 +360,7 @@ CSGFaces (brushset_t *bs)
 
 	Draw_ClearWindow ();
 
-// do the solid faces
+	// do the solid faces
 	for (b1 = bs->brushes; b1; b1 = b1->next) {
 		// set outside to a copy of the brush's faces
 		CopyFacesToOutside (b1);

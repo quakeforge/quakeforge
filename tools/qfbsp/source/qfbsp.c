@@ -17,8 +17,8 @@
 
 	See file, 'COPYING', for details.
 */
-
-// bsp5.c
+static const char rcsid[] =
+	"$Id$";
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -43,6 +43,10 @@ bsp_t      *bsp;
 
 brushset_t *brushset;
 
+int         c_activefaces, c_peakfaces;
+int         c_activesurfaces, c_peaksurfaces;
+int         c_activewindings, c_peakwindings;
+int         c_activeportals, c_peakportals;
 int         valid;
 
 char       *argv0;						// changed after fork();
@@ -65,7 +69,7 @@ qprintf (char *fmt, ...)
 	va_end (argptr);
 }
 
-winding_t  *
+winding_t *
 BaseWindingForPlane (plane_t *p)
 {
 	int         i, x;
@@ -73,7 +77,7 @@ BaseWindingForPlane (plane_t *p)
 	vec3_t      org, vright, vup;
 	winding_t  *w;
 
-// find the major axis
+	// find the major axis
 
 	max = -BOGUS_RANGE;
 	x = -1;
@@ -109,7 +113,7 @@ BaseWindingForPlane (plane_t *p)
 	VectorScale (vup, 8192, vup);
 	VectorScale (vright, 8192, vright);
 
-// project a really big axis aligned box onto the plane
+	// project a really big axis aligned box onto the plane
 	w = NewWinding (4);
 
 	VectorSubtract (org, vright, w->points[0]);
@@ -129,7 +133,7 @@ BaseWindingForPlane (plane_t *p)
 	return w;
 }
 
-winding_t  *
+winding_t *
 CopyWinding (winding_t *w)
 {
 	int         size;
@@ -141,29 +145,23 @@ CopyWinding (winding_t *w)
 	return c;
 }
 
-/*
-==================
-CheckWinding
-
-Check for possible errors
-==================
-*/
 void
 CheckWinding (winding_t * w)
 {
 }
 
 /*
-==================
-ClipWinding
+	ClipWinding
 
-Clips the winding to the plane, returning the new winding on the positive side
-Frees the input winding.
-If keepon is true, an exactly on-plane winding will be saved, otherwise
-it will be clipped away.
-==================
+	Clips the winding to the plane, returning the new winding on the positive
+	side.
+
+	Frees the input winding.
+
+	If keepon is true, an exactly on-plane winding will be saved, otherwise
+	it will be clipped away.
 */
-winding_t  *
+winding_t *
 ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 {
 	int         maxpts, i, j;
@@ -177,7 +175,7 @@ ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 
 	counts[0] = counts[1] = counts[2] = 0;
 
-// determine sides for each point
+	// determine sides for each point
 	for (i = 0; i < in->numpoints; i++) {
 		dot = DotProduct (in->points[i], split->normal);
 		dot -= split->dist;
@@ -245,21 +243,19 @@ ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 	if (neww->numpoints > maxpts)
 		Sys_Error ("ClipWinding: points exceeded estimate");
 
-// free the original winding
+	// free the original winding
 	FreeWinding (in);
 
 	return neww;
 }
 
 /*
-==================
-DivideWinding
+	DivideWinding
 
-Divides a winding by a plane, producing one or two windings.  The
-original winding is not damaged or freed.  If only on one side, the
-returned winding will be the input winding.  If on both sides, two
-new windings will be created.
-==================
+	Divides a winding by a plane, producing one or two windings.  The
+	original winding is not damaged or freed.  If only on one side, the
+	returned winding will be the input winding.  If on both sides, two
+	new windings will be created.
 */
 void
 DivideWinding (winding_t *in, plane_t *split, winding_t **front,
@@ -276,7 +272,7 @@ DivideWinding (winding_t *in, plane_t *split, winding_t **front,
 
 	counts[0] = counts[1] = counts[2] = 0;
 
-// determine sides for each point
+	// determine sides for each point
 	for (i = 0; i < in->numpoints; i++) {
 		dot = DotProduct (in->points[i], split->normal);
 		dot -= split->dist;
@@ -305,7 +301,7 @@ DivideWinding (winding_t *in, plane_t *split, winding_t **front,
 	}
 
 	maxpts = in->numpoints + 4;			// can't use counts[0]+2 because
-	// of fp grouping errors
+										// of fp grouping errors
 
 	*front = f = NewWinding (maxpts);
 	*back = b = NewWinding (maxpts);
@@ -357,14 +353,6 @@ DivideWinding (winding_t *in, plane_t *split, winding_t **front,
 		Sys_Error ("ClipWinding: points exceeded estimate");
 }
 
-
-//===========================================================================
-
-int         c_activefaces, c_peakfaces;
-int         c_activesurfaces, c_peaksurfaces;
-int         c_activewindings, c_peakwindings;
-int         c_activeportals, c_peakportals;
-
 void
 PrintMemory (void)
 {
@@ -374,7 +362,7 @@ PrintMemory (void)
 	printf ("portals : %6i (%6i)\n", c_activeportals, c_peakportals);
 }
 
-winding_t  *
+winding_t *
 NewWinding (int points)
 {
 	int         size;
@@ -401,7 +389,7 @@ FreeWinding (winding_t *w)
 	free (w);
 }
 
-face_t     *
+face_t *
 AllocFace (void)
 {
 	face_t     *f;
@@ -421,11 +409,10 @@ void
 FreeFace (face_t *f)
 {
 	c_activefaces--;
-//	memset (f, 0xff, sizeof (face_t));
 	free (f);
 }
 
-surface_t  *
+surface_t *
 AllocSurface (void)
 {
 	surface_t  *s;
@@ -447,7 +434,7 @@ FreeSurface (surface_t *s)
 	free (s);
 }
 
-portal_t   *
+portal_t *
 AllocPortal (void)
 {
 	portal_t   *p;
@@ -469,7 +456,7 @@ FreePortal (portal_t *p)
 	free (p);
 }
 
-node_t     *
+node_t *
 AllocNode (void)
 {
 	node_t     *n;
@@ -480,7 +467,7 @@ AllocNode (void)
 	return n;
 }
 
-brush_t    *
+brush_t *
 AllocBrush (void)
 {
 	brush_t    *b;
@@ -490,8 +477,6 @@ AllocBrush (void)
 
 	return b;
 }
-
-//===========================================================================
 
 void
 ProcessEntity (int entnum)
@@ -520,8 +505,8 @@ ProcessEntity (int entnum)
 	} else
 		worldmodel = true;
 
-// take the brush_ts and clip off all overlapping and contained faces,
-// leaving a perfect skin of the model with no hidden faces
+	// take the brush_ts and clip off all overlapping and contained faces,
+	// leaving a perfect skin of the model with no hidden faces
 	bs = Brush_LoadEntity (ent, hullnum);
 
 	if (!bs->brushes) {
@@ -617,11 +602,9 @@ UpdateEntLump (void)
 }
 
 /*
-=================
-WriteClipHull
+	WriteClipHull
 
-Write the clipping hull out to a text file so the parent process can get it
-=================
+	Write the clipping hull out to a text file so the parent process can get it
 */
 void
 WriteClipHull (void)
@@ -660,11 +643,9 @@ WriteClipHull (void)
 }
 
 /*
-=================
-ReadClipHull
+	ReadClipHull
 
-Read the files written out by the child processes
-=================
+	Read the files written out by the child processes
 */
 void
 ReadClipHull (int hullnum)
@@ -728,7 +709,7 @@ CreateSingleHull (void)
 {
 	int         entnum;
 
-// for each entity in the map file that has geometry
+	// for each entity in the map file that has geometry
 	for (entnum = 0; entnum < num_entities; entnum++) {
 		ProcessEntity (entnum);
 		if (options.verbosity < 2)
@@ -742,27 +723,27 @@ CreateSingleHull (void)
 void
 CreateHulls (void)
 {
-// commanded to create a single hull only
+	// commanded to create a single hull only
 	if (hullnum) {
 		CreateSingleHull ();
 		exit (0);
 	}
-// commanded to use the allready existing hulls 1 and 2
+	// commanded to use the allready existing hulls 1 and 2
 	if (options.usehulls) {
 		CreateSingleHull ();
 		return;
 	}
-// commanded to ignore the hulls altogether
+	// commanded to ignore the hulls altogether
 	if (options.noclip) {
 		CreateSingleHull ();
 		return;
 	}
 
-// create all the hulls
+	// create all the hulls
 
 #ifdef __alpha
 	printf ("forking hull processes...\n");
-// fork a process for each clipping hull
+	// fork a process for each clipping hull
 	fflush (stdout);
 	if (!fork ()) {
 		hullnum = 1;
@@ -784,7 +765,7 @@ CreateHulls (void)
 	wait (NULL);						// wait for clip hull process to finish
 
 #else
-// create the hulls sequentially
+	// create the hulls sequentially
 	printf ("building hulls sequentially...\n");
 
 	hullnum = 1;
@@ -808,8 +789,7 @@ CreateHulls (void)
 void
 ProcessFile ()
 {
-// create filenames
-
+	// create filenames
 	COM_StripExtension (options.bspfile, options.hullfile);
 	strcat (options.hullfile, ".h0");
 
@@ -831,16 +811,16 @@ ProcessFile ()
 		remove (options.pointfile);
 	}
 	bsp = BSP_New ();
-// load brushes and entities
+	// load brushes and entities
 	LoadMapFile (options.mapfile);
 	if (options.onlyents) {
 		UpdateEntLump ();
 		return;
 	}
-// init the tables to be shared by all models
+	// init the tables to be shared by all models
 	BeginBSPFile ();
 
-// the clipping hulls will be written out to text files by forked processes
+	// the clipping hulls will be written out to text files by forked processes
 	CreateHulls ();
 
 	ReadClipHull (1);
@@ -857,17 +837,15 @@ main (int argc, char **argv)
 	char        destname[1024];
 	double      start, end;
 
-//	malloc_debug (15);
-
-// check command line flags
+	// check command line flags
 	DecodeArgs (argc, argv);
 
 // XXX	SetQdirFromPath (argv[i]);
 
-// let forked processes change name for ps status
+	// let forked processes change name for ps status
 	argv0 = argv[0];
 
-// do it!
+	// do it!
 	start = Sys_DoubleTime ();
 	ProcessFile (sourcename, destname);
 	end = Sys_DoubleTime ();

@@ -17,6 +17,8 @@
 
 	See file, 'COPYING', for details.
 */
+static const char rcsid[] =
+	"$Id$";
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -53,7 +55,7 @@ RemovePortalFromNode (portal_t *portal, node_t *l)
 {
 	portal_t  **pp, *t;
 
-// remove reference to the current portal
+	// remove reference to the current portal
 	pp = &l->portals;
 	while (1) {
 		t = *pp;
@@ -80,8 +82,6 @@ RemovePortalFromNode (portal_t *portal, node_t *l)
 	}
 }
 
-//============================================================================
-
 void
 PrintPortal (portal_t *p)
 {
@@ -95,11 +95,9 @@ PrintPortal (portal_t *p)
 }
 
 /*
-================
-MakeHeadnodePortals
+	MakeHeadnodePortals
 
-The created portals will face the global outside_node
-================
+	The created portals will face the global outside_node
 */
 void
 MakeHeadnodePortals (node_t *node)
@@ -111,7 +109,7 @@ MakeHeadnodePortals (node_t *node)
 
 	Draw_ClearWindow ();
 
-// pad with some space so there will never be null volume leafs
+	// pad with some space so there will never be null volume leafs
 	for (i = 0; i < 3; i++) {
 		bounds[0][i] = brushset->mins[i] - SIDESPACE;
 		bounds[1][i] = brushset->maxs[i] + SIDESPACE;
@@ -145,7 +143,7 @@ MakeHeadnodePortals (node_t *node)
 				AddPortalToNodes (p, node, &outside_node);
 		}
 
-// clip the basewindings by all the other planes
+	// clip the basewindings by all the other planes
 	for (i = 0; i < 6; i++) {
 		for (j = 0; j < 6; j++) {
 			if (j == i)
@@ -198,7 +196,7 @@ PlaneFromWinding (winding_t *w, plane_t *plane)
 {
 	vec3_t      v1, v2;
 
-// calc plane
+	// calc plane
 	VectorSubtract (w->points[2], w->points[1], v1);
 	VectorSubtract (w->points[0], w->points[1], v2);
 	CrossProduct (v2, v1, plane->normal);
@@ -261,7 +259,7 @@ CutNodePortals_r (node_t *node)
 
 //  CheckLeafPortalConsistancy (node);
 
-// seperate the portals on node into it's children  
+	// seperate the portals on node into it's children  
 	if (node->contents)
 		return;							// at a leaf, no more dividing
 
@@ -270,13 +268,13 @@ CutNodePortals_r (node_t *node)
 	f = node->children[0];
 	b = node->children[1];
 
-// create the new portal by taking the full plane winding for the cutting plane
-// and clipping it by all of the planes from the other portals
+	// create the new portal by taking the full plane winding for the cutting
+	// plane and clipping it by all of the planes from the other portals
 	new_portal = AllocPortal ();
 	new_portal->planenum = node->planenum;
 
 	w = BaseWindingForPlane (&planes[node->planenum]);
-	side = 0;							// shut up compiler warning
+	side = 0;
 	for (p = node->portals; p; p = p->next[side]) {
 		clipplane = planes[p->planenum];
 		if (p->nodes[0] == node)
@@ -301,7 +299,7 @@ CutNodePortals_r (node_t *node)
 		AddPortalToNodes (new_portal, f, b);
 	}
 
-// partition the portals
+	// partition the portals
 	for (p = node->portals; p; p = next_portal) {
 		if (p->nodes[0] == node)
 			side = 0;
@@ -315,7 +313,7 @@ CutNodePortals_r (node_t *node)
 		RemovePortalFromNode (p, p->nodes[0]);
 		RemovePortalFromNode (p, p->nodes[1]);
 
-// cut the portal into two portals, one on each side of the cut plane
+		// cut the portal into two portals, one on each side of the cut plane
 		DivideWinding (p->winding, plane, &frontwinding, &backwinding);
 
 		if (!frontwinding) {
@@ -356,11 +354,9 @@ CutNodePortals_r (node_t *node)
 }
 
 /*
-==================
-PortalizeWorld
+	PortalizeWorld
 
-Builds the exact polyhedrons for the nodes and leafs
-==================
+	Builds the exact polyhedrons for the nodes and leafs
 */
 void
 PortalizeWorld (node_t *headnode)
@@ -393,7 +389,7 @@ FreeAllPortals (node_t *node)
 	}
 }
 
-// PORTAL FILE GENERATION =====================================================
+// PORTAL FILE GENERATION
 
 #define	PORTALFILE	"PRT1"
 
@@ -467,7 +463,8 @@ NumberLeafs_r (node_t *node)
 {
 	portal_t   *p;
 
-	if (!node->contents) {				// decision node
+	if (!node->contents) {
+		// decision node
 		node->visleafnum = -99;
 		NumberLeafs_r (node->children[0]);
 		NumberLeafs_r (node->children[1]);
@@ -477,8 +474,8 @@ NumberLeafs_r (node_t *node)
 	Draw_ClearWindow ();
 	DrawLeaf (node, 1);
 
-	if (node->contents == CONTENTS_SOLID) {	// solid block, viewpoint never
-											// inside
+	if (node->contents == CONTENTS_SOLID) {
+		// solid block, viewpoint never inside
 		node->visleafnum = -1;
 		return;
 	}
@@ -486,8 +483,8 @@ NumberLeafs_r (node_t *node)
 	node->visleafnum = num_visleafs++;
 
 	for (p = node->portals; p;) {
-		if (p->nodes[0] == node)		// only write out from first leaf
-		{
+		if (p->nodes[0] == node) {
+			// only write out from first leaf
 			if (p->nodes[0]->contents == p->nodes[1]->contents)
 				num_visportals++;
 			p = p->next[0];
@@ -499,12 +496,13 @@ NumberLeafs_r (node_t *node)
 void
 WritePortalfile (node_t *headnode)
 {
-// set the visleafnum field in every leaf and count the total number of portals
+	// set the visleafnum field in every leaf and count the total number of
+	// portals
 	num_visleafs = 0;
 	num_visportals = 0;
 	NumberLeafs_r (headnode);
 
-// write the file
+	// write the file
 	printf ("writing %s\n", options.portfile);
 	pf = fopen (options.portfile, "w");
 	if (!pf)

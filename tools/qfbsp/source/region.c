@@ -17,8 +17,8 @@
 
 	See file, 'COPYING', for details.
 */
-
-// region.h
+static const char rcsid[] =
+	"$Id$";
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -99,7 +99,7 @@ CanJoinFaces (face_t *f, face_t *f2)
 		printf ("CanJoinFaces: edge with different contents");
 		return false;
 	}
-// check size constraints
+	// check size constraints
 	if (!(bsp->texinfo[f->texturenum].flags & TEX_SPECIAL)) {
 		VectorCopy (region_mins, oldmins);
 		VectorCopy (region_maxs, oldmaxs);
@@ -117,7 +117,7 @@ CanJoinFaces (face_t *f, face_t *f2)
 			return false;				// a huge water or sky polygon
 	}
 
-// check edge count constraints
+	// check edge count constraints
 	return true;
 }
 
@@ -134,7 +134,7 @@ RecursiveGrowRegion (dface_t *r, face_t *f)
 		Sys_Error ("RecursiveGrowRegion: region collision");
 	f->outputnumber = bsp->numfaces;
 
-// add edges    
+	// add edges    
 	for (i = 0; i < f->numpoints; i++) {
 		e = f->edges[i];
 		if (!edgefaces[abs (e)][0])
@@ -222,12 +222,10 @@ FindEdgeUse (int v)
 int         edgemapping[MAX_MAP_EDGES];
 
 /*
-================
-HealEdges
+	HealEdges
 
-Extends e1 so that it goes all the way to e2, and removes all references
-to e2
-================
+	Extends e1 so that it goes all the way to e2, and removes all references
+	to e2
 */
 void
 HealEdges (int e1, int e2)
@@ -243,7 +241,7 @@ HealEdges (int e1, int e2)
 	e1 = edgemapping[e1];
 	e2 = edgemapping[e2];
 
-// extend e1 to e2
+	// extend e1 to e2
 	ed = &bsp->edges[e1];
 	ed2 = &bsp->edges[e2];
 	VectorSubtract (bsp->vertexes[ed->v[1]].point,
@@ -271,7 +269,7 @@ HealEdges (int e1, int e2)
 	edgemapping[e2] = e1;
 	saved = 0;
 
-// remove all uses of e2
+	// remove all uses of e2
 	for (i = firstmodelface; i < bsp->numfaces; i++) {
 		df = &bsp->faces[i];
 		for (j = 0; j < df->numedges; j++) {
@@ -316,11 +314,11 @@ RemoveColinearEdges (void)
 	checkpoint_t *cp;
 	int           c0, c1, c2, c3, i, j, v;
 
-// no edges remapped yet
+	// no edges remapped yet
 	for (i = 0; i < bsp->numedges; i++)
 		edgemapping[i] = i;
 
-// find vertexes that only have two edges
+	// find vertexes that only have two edges
 	memset (checkpoints, 0, sizeof (checkpoints));
 
 	for (i = firstmodeledge; i < bsp->numedges; i++) {
@@ -335,7 +333,7 @@ RemoveColinearEdges (void)
 		}
 	}
 
-// if a vertex only has two edges and they are colinear, it can be removed
+	// if a vertex only has two edges and they are colinear, it can be removed
 	c0 = c1 = c2 = c3 = 0;
 
 	for (i = 0; i < bsp->numvertexes; i++) {
@@ -383,8 +381,6 @@ CountRealNumbers (void)
 
 	qprintf ("%5i real edges\n", c);
 }
-
-//=============================================================================
 
 void
 GrowNodeRegion_r (node_t * node)
@@ -450,20 +446,19 @@ GrowNodeRegions (node_t *headnode)
 }
 
 /*
-===============================================================================
-Turn the faces on a plane into optimal non-convex regions
-The edges may still be split later as a result of tjunctions
+	Turn the faces on a plane into optimal non-convex regions
+	The edges may still be split later as a result of tjunctions
 
-typedef struct
-{
-	vec3_t	dir;
-	vec3_t	origin;
-	vec3_t	p[2];
-} 
+	typedef struct
+	{
+		vec3_t	dir;
+		vec3_t	origin;
+		vec3_t	p[2];
+	} 
 
-for all faces
-	for all edges
-		for all edges so far
-			if overlap
-				split
+	for all faces
+		for all edges
+			for all edges so far
+				if overlap
+					split
 */

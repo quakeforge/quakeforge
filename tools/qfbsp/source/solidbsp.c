@@ -17,8 +17,8 @@
 
 	See file, 'COPYING', for details.
 */
-
-// solidbsp.c
+static const char rcsid[] =
+	"$Id$";
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -39,11 +39,9 @@ qboolean    usemidsplit;
 
 
 /*
-==================
-FaceSide
+	FaceSide
 
-For BSP hueristic
-==================
+	For BSP hueristic
 */
 int
 FaceSide (face_t *in, plane_t *split)
@@ -54,7 +52,7 @@ FaceSide (face_t *in, plane_t *split)
 
 	frontcount = backcount = 0;
 
-// axial planes are fast
+	// axial planes are fast
 	if (split->type < 3)
 		for (i = 0, p = in->pts[0] + split->type; i < in->numpoints;
 			 i++, p += 3) {
@@ -68,7 +66,7 @@ FaceSide (face_t *in, plane_t *split)
 				backcount = 1;
 			}
 	} else
-// sloping planes take longer
+		// sloping planes take longer
 		for (i = 0, p = in->pts[0]; i < in->numpoints; i++, p += 3) {
 			dot = DotProduct (p, split->normal);
 			dot -= split->dist;
@@ -92,11 +90,9 @@ FaceSide (face_t *in, plane_t *split)
 }
 
 /*
-==================
-ChooseMidPlaneFromList
+	ChooseMidPlaneFromList
 
-The clipping hull BSP doesn't worry about avoiding splits
-==================
+	The clipping hull BSP doesn't worry about avoiding splits
 */
 surface_t  *
 ChooseMidPlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs)
@@ -106,7 +102,7 @@ ChooseMidPlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs)
 	surface_t  *p, *bestsurface;
 	vec_t       bestvalue, value, dist;
 
-// pick the plane that splits the least
+	// pick the plane that splits the least
 	bestvalue = 6 * 8192 * 8192;
 	bestsurface = NULL;
 
@@ -152,11 +148,9 @@ ChooseMidPlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs)
 }
 
 /*
-==================
-ChoosePlaneFromList
+	ChoosePlaneFromList
 
-The real BSP hueristic
-==================
+	The real BSP hueristic
 */
 surface_t  *
 ChoosePlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs,
@@ -168,7 +162,7 @@ ChoosePlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs,
 	surface_t  *p, *p2, *bestsurface;
 	vec_t       bestvalue, bestdistribution, value, dist;
 
-// pick the plane that splits the least
+	// pick the plane that splits the least
 	bestvalue = 99999;
 	bestsurface = NULL;
 	bestdistribution = 9e30;
@@ -238,12 +232,10 @@ ChoosePlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs,
 }
 
 /*
-==================
-SelectPartition
+	SelectPartition
 
-Selects a surface from a linked list of surfaces to split the group on
-returns NULL if the surface list can not be divided any more (a leaf)
-==================
+	Selects a surface from a linked list of surfaces to split the group on
+	returns NULL if the surface list can not be divided any more (a leaf)
 */
 surface_t  *
 SelectPartition (surface_t *surfaces)
@@ -252,7 +244,7 @@ SelectPartition (surface_t *surfaces)
 	surface_t  *p, *bestsurface;
 	vec3_t      mins, maxs;
 
-// count onnode surfaces
+	// count onnode surfaces
 	i = 0;
 	bestsurface = NULL;
 	for (p = surfaces; p; p = p->next)
@@ -267,7 +259,7 @@ SelectPartition (surface_t *surfaces)
 	if (i == 1)
 		return bestsurface;				// this is a final split
 
-// calculate a bounding box of the entire surfaceset
+	// calculate a bounding box of the entire surfaceset
 	for (i = 0; i < 3; i++) {
 		mins[i] = 99999;
 		maxs[i] = -99999;
@@ -284,7 +276,7 @@ SelectPartition (surface_t *surfaces)
 	if (usemidsplit)					// do fast way for clipping hull
 		return ChooseMidPlaneFromList (surfaces, mins, maxs);
 
-// do slow way to save poly splits for drawing hull
+	// do slow way to save poly splits for drawing hull
 #if 0
 	bestsurface = ChoosePlaneFromList (surfaces, mins, maxs, false);
 	if (bestsurface)
@@ -296,11 +288,9 @@ SelectPartition (surface_t *surfaces)
 //============================================================================
 
 /*
-=================
-CalcSurfaceInfo
+	CalcSurfaceInfo
 
-Calculates the bounding box
-=================
+	Calculates the bounding box
 */
 void
 CalcSurfaceInfo (surface_t * surf)
@@ -311,7 +301,7 @@ CalcSurfaceInfo (surface_t * surf)
 	if (!surf->faces)
 		Sys_Error ("CalcSurfaceInfo: surface without a face");
 
-// calculate a bounding box
+	// calculate a bounding box
 	for (i = 0; i < 3; i++) {
 		surf->mins[i] = 99999;
 		surf->maxs[i] = -99999;
@@ -342,11 +332,11 @@ DividePlane (surface_t *in, plane_t *split, surface_t **front,
 
 	inplane = &planes[in->planenum];
 
-// parallel case is easy
+	// parallel case is easy
 	if (_VectorCompare (inplane->normal, split->normal)) {
-// check for exactly on node
-		if (inplane->dist == split->dist) {	// divide the facets to the front 
-											// and back sides
+		// check for exactly on node
+		if (inplane->dist == split->dist) {
+			// divide the facets to the front and back sides
 			news = AllocSurface ();
 			*news = *in;
 
@@ -386,8 +376,8 @@ DividePlane (surface_t *in, plane_t *split, surface_t **front,
 		}
 		return;
 	}
-// do a real split.  may still end up entirely on one side
-// OPTIMIZE: use bounding box for fast test
+	// do a real split.  may still end up entirely on one side
+	// OPTIMIZE: use bounding box for fast test
 	frontlist = NULL;
 	backlist = NULL;
 
@@ -404,7 +394,7 @@ DividePlane (surface_t *in, plane_t *split, surface_t **front,
 		}
 	}
 
-// if nothing actually got split, just move the in plane
+	// if nothing actually got split, just move the in plane
 	if (frontlist == NULL) {
 		*front = NULL;
 		*back = in;
@@ -418,7 +408,7 @@ DividePlane (surface_t *in, plane_t *split, surface_t **front,
 		return;
 	}
 
-// stuff got split, so allocate one new plane and reuse in
+	// stuff got split, so allocate one new plane and reuse in
 	news = AllocSurface ();
 	*news = *in;
 	news->faces = backlist;
@@ -427,7 +417,7 @@ DividePlane (surface_t *in, plane_t *split, surface_t **front,
 	in->faces = frontlist;
 	*front = in;
 
-// recalc bboxes and flags
+	// recalc bboxes and flags
 	CalcSurfaceInfo (news);
 	CalcSurfaceInfo (in);
 }
@@ -440,7 +430,7 @@ DivideNodeBounds (node_t *node, plane_t *split)
 	VectorCopy (node->maxs, node->children[0]->maxs);
 	VectorCopy (node->maxs, node->children[1]->maxs);
 
-// OPTIMIZE: sloping cuts can give a better bbox than this...
+	// OPTIMIZE: sloping cuts can give a better bbox than this...
 	if (split->type > 2)
 		return;
 
@@ -449,12 +439,10 @@ DivideNodeBounds (node_t *node, plane_t *split)
 }
 
 /*
-==================
-LinkConvexFaces
+	LinkConvexFaces
 
-Determines the contents of the leaf and creates the final list of
-original faces that have some fragment inside this leaf
-==================
+	Determines the contents of the leaf and creates the final list of
+	original faces that have some fragment inside this leaf
 */
 void
 LinkConvexFaces (surface_t *planelist, node_t *leafnode)
@@ -498,7 +486,7 @@ LinkConvexFaces (surface_t *planelist, node_t *leafnode)
 			Sys_Error ("LinkConvexFaces: bad contents number");
 	}
 
-// write the list of faces, and free the originals
+	// write the list of faces, and free the originals
 	leaffaces += count;
 	leafnode->markfaces = malloc (sizeof (face_t *) * (count + 1));
 	i = 0;
@@ -516,11 +504,9 @@ LinkConvexFaces (surface_t *planelist, node_t *leafnode)
 }
 
 /*
-==================
-LinkNodeFaces
+	LinkNodeFaces
 
-Returns a duplicated list of all faces on surface
-==================
+	Returns a duplicated list of all faces on surface
 */
 face_t     *
 LinkNodeFaces (surface_t *surface)
@@ -529,7 +515,7 @@ LinkNodeFaces (surface_t *surface)
 
 	list = NULL;
 
-// subdivide
+	// subdivide
 	prevptr = &surface->faces;
 	while (1) {
 		f = *prevptr;
@@ -540,7 +526,7 @@ LinkNodeFaces (surface_t *surface)
 		prevptr = &f->next;
 	}
 
-// copy
+	// copy
 	for (f = surface->faces; f; f = f->next) {
 		nodefaces++;
 		new = AllocFace ();
@@ -578,7 +564,8 @@ PartitionSurfaces (surface_t *surfaces, node_t *node)
 
 	DivideNodeBounds (node, splitplane);
 
-// multiple surfaces, so split all the polysurfaces into front and back lists
+	// multiple surfaces, so split all the polysurfaces into front and back
+	// lists
 	frontlist = NULL;
 	backlist = NULL;
 
@@ -640,13 +627,13 @@ SolidBSP (surface_t *surfhead, qboolean midsplit)
 	headnode = AllocNode ();
 	usemidsplit = midsplit;
 
-// calculate a bounding box for the entire model
+	// calculate a bounding box for the entire model
 	for (i = 0; i < 3; i++) {
 		headnode->mins[i] = brushset->mins[i] - SIDESPACE;
 		headnode->maxs[i] = brushset->maxs[i] + SIDESPACE;
 	}
 
-// recursively partition everything
+	// recursively partition everything
 	Draw_ClearWindow ();
 	splitnodes = 0;
 	leaffaces = 0;

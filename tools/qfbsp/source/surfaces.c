@@ -17,8 +17,8 @@
 
 	See file, 'COPYING', for details.
 */
-
-// divide.h
+static const char rcsid[] =
+	"$Id$";
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -34,22 +34,20 @@
 #include "options.h"
 
 /*
-a surface has all of the faces that could be drawn on a given plane
+	a surface has all of the faces that could be drawn on a given plane
 
-the outside filling stage can remove some of them so a better bsp can be
-generated
+	the outside filling stage can remove some of them so a better bsp can be
+	generated
 */
 surface_t   newcopy_t;
 int         subdivides;
 
 
 /*
-===============
-SubdivideFace
+	SubdivideFace
 
-If the face is >256 in either texture direction, carve a valid sized
-piece off and insert the remainder in the next link
-===============
+	If the face is >256 in either texture direction, carve a valid sized
+	piece off and insert the remainder in the next link
 */
 void
 SubdivideFace (face_t *f, face_t **prevptr)
@@ -61,7 +59,7 @@ SubdivideFace (face_t *f, face_t **prevptr)
 	texinfo_t  *tex;
 	vec_t       v;
 
-// special (non-surface cached) faces don't need subdivision
+	// special (non-surface cached) faces don't need subdivision
 	tex = &bsp->texinfo[f->texturenum];
 
 	if (tex->flags & TEX_SPECIAL)
@@ -130,12 +128,10 @@ SubdivideFaces (surface_t *surfhead)
 }
 
 /*
-=============================================================================
-GatherNodeFaces
+	GatherNodeFaces
 
-Frees the current node tree and returns a new chain of the surfaces that
-have inside faces.
-=============================================================================
+	Frees the current node tree and returns a new chain of the surfaces that
+	have inside faces.
 */
 void
 GatherNodeFaces_r (node_t *node)
@@ -143,7 +139,7 @@ GatherNodeFaces_r (node_t *node)
 	face_t     *next, *f;
 
 	if (node->planenum != PLANENUM_LEAF) {
-// decision node
+		// decision node
 		for (f = node->faces; f; f = next) {
 			next = f->next;
 			if (!f->numpoints) {		// face was removed outside
@@ -159,7 +155,7 @@ GatherNodeFaces_r (node_t *node)
 
 		free (node);
 	} else {
-// leaf node
+		// leaf node
 		free (node);
 	}
 }
@@ -291,7 +287,7 @@ GetVertex (vec3_t in, int planenum)
 		Sys_Error ("GetVertex: MAX_MAP_VERTS");
 	hvert_p++;
 
-// emit a vertex
+	// emit a vertex
 	if (bsp->numvertexes == MAX_MAP_VERTS)
 		Sys_Error ("numvertexes == MAX_MAP_VERTS");
 
@@ -309,11 +305,9 @@ GetVertex (vec3_t in, int planenum)
 int         c_tryedges;
 
 /*
-==================
-GetEdge
+	GetEdge
 
-Don't allow four way edges
-==================
+	Don't allow four way edges
 */
 int
 GetEdge (vec3_t p1, vec3_t p2, face_t *f)
@@ -336,7 +330,7 @@ GetEdge (vec3_t p1, vec3_t p2, face_t *f)
 		}
 	}
 
-// emit an edge
+	// emit an edge
 	if (bsp->numedges == MAX_MAP_EDGES)
 		Sys_Error ("numedges == MAX_MAP_EDGES");
 	edge.v[0] = v1;
@@ -361,12 +355,6 @@ FindFaceEdges (face_t *face)
 			(face->pts[i], face->pts[(i + 1) % face->numpoints], face);
 }
 
-/*
-=============
-CheckVertexes
-// debugging
-=============
-*/
 void
 CheckVertexes (void)
 {
@@ -394,12 +382,6 @@ CheckVertexes (void)
 	qprintf ("%5i 6+ edge points\n", c3);
 }
 
-/*
-=============
-CheckEdges
-// debugging
-=============
-*/
 void
 CheckEdges (void)
 {

@@ -17,8 +17,8 @@
 
 	See file, 'COPYING', for details.
 */
-
-// merge.c
+static const char rcsid[] =
+	"$Id$";
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -38,8 +38,8 @@ CheckColinear (face_t *f)
 	vec3_t      v1, v2;
 
 	for (i = 0; i < f->numpoints; i++) {
-// skip the point if the vector from the previous point is the same as the
-// vector to the next point
+		// skip the point if the vector from the previous point is the same as
+		// the vector to the next point
 		j = (i - 1 < 0) ? f->numpoints - 1 : i - 1;
 		VectorSubtract (f->pts[i], f->pts[j], v1);
 		VectorNormalize (v1);
@@ -55,15 +55,13 @@ CheckColinear (face_t *f)
 }
 
 /*
-=============
-TryMerge
+	TryMerge
 
-If two polygons share a common edge and the edges that meet at the common
-points are both inside the other polygons, merge them
+	If two polygons share a common edge and the edges that meet at the common
+	points are both inside the other polygons, merge them
 
-Returns NULL if the faces couldn't be merged, or the new face.
-The originals will NOT be freed.
-=============
+	Returns NULL if the faces couldn't be merged, or the new face.
+	The originals will NOT be freed.
 */
 face_t     *
 TryMerge (face_t *f1, face_t *f2)
@@ -87,7 +85,7 @@ TryMerge (face_t *f1, face_t *f2)
 	if (f1->contents[1] != f2->contents[1])
 		return NULL;
 
-// find a common edge
+	// find a common edge
 	p1 = p2 = NULL;						// stop compiler warning
 	j = 0;
 
@@ -113,8 +111,8 @@ TryMerge (face_t *f1, face_t *f2)
 	if (i == f1->numpoints)
 		return NULL;					// no matching edges
 
-// check slope of connected lines
-// if the slopes are colinear, the point can be removed
+	// check slope of connected lines
+	// if the slopes are colinear, the point can be removed
 	plane = &planes[f1->planenum];
 	VectorCopy (plane->normal, planenormal);
 	if (f1->planeside)
@@ -144,7 +142,7 @@ TryMerge (face_t *f1, face_t *f2)
 		return NULL;					// not a convex polygon
 	keep2 = dot < -CONTINUOUS_EPSILON;
 
-// build the new polygon
+	// build the new polygon
 	if (f1->numpoints + f2->numpoints > MAXEDGES) {
 //		Sys_Error ("TryMerge: too many edges!");
 		return NULL;
@@ -152,7 +150,7 @@ TryMerge (face_t *f1, face_t *f2)
 
 	newf = NewFaceFromFace (f1);
 
-// copy first polygon
+	// copy first polygon
 	for (k = (i + 1) % f1->numpoints; k != i; k = (k + 1) % f1->numpoints) {
 		if (k == (i + 1) % f1->numpoints && !keep2)
 			continue;
@@ -161,7 +159,7 @@ TryMerge (face_t *f1, face_t *f2)
 		newf->numpoints++;
 	}
 
-// copy second polygon
+	// copy second polygon
 	for (l = (j + 1) % f2->numpoints; l != j; l = (l + 1) % f2->numpoints) {
 		if (l == (j + 1) % f2->numpoints && !keep1)
 			continue;
@@ -194,7 +192,7 @@ MergeFaceToList (face_t *face, face_t *list)
 		return MergeFaceToList (newf, list);
 	}
 
-// didn't merge, so add at start
+	// didn't merge, so add at start
 	face->next = list;
 	return face;
 }
@@ -230,7 +228,7 @@ MergePlaneFaces (surface_t *plane)
 		merged = MergeFaceToList (f1, merged);
 	}
 
-// chain all of the non-empty faces to the plane
+	// chain all of the non-empty faces to the plane
 	plane->faces = FreeMergeListScraps (merged);
 }
 

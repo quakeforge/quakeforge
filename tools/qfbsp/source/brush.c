@@ -17,8 +17,8 @@
 
 	See file, 'COPYING', for details.
 */
-
-// brush.c
+static const char rcsid[] =
+	"$Id$";
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -43,11 +43,9 @@ mface_t     faces[128];		// beveled clipping hull can generate many extra
 
 
 /*
-=================
-CheckFace
+	CheckFace
 
-Note: this will not catch 0 area polygons
-=================
+	Note: this will not catch 0 area polygons
 */
 void
 CheckFace (face_t *f)
@@ -103,8 +101,6 @@ CheckFace (face_t *f)
 	}
 }
 
-//===========================================================================
-
 void
 ClearBounds (brushset_t *bs)
 {
@@ -130,14 +126,12 @@ AddToBounds (brushset_t *bs, vec3_t v)
 	}
 }
 
-//===========================================================================
-
 int
 PlaneTypeForNormal (vec3_t normal)
 {
 	float	ax, ay, az;
 
-// NOTE: should these have an epsilon around 1.0?
+	// NOTE: should these have an epsilon around 1.0?
 	if (normal[0] == 1.0)
 		return PLANE_X;
 	if (normal[1] == 1.0)
@@ -209,11 +203,9 @@ NormalizePlane (plane_t *dp)
 }
 
 /*
-===============
-FindPlane
+	FindPlane
 
-Returns a global plane number and the side that will be the front
-===============
+	Returns a global plane number and the side that will be the front
 */
 int
 FindPlane (plane_t *dplane, int *side)
@@ -253,11 +245,9 @@ FindPlane (plane_t *dplane, int *side)
 }
 
 /*
-===============
-FindPlane_old
+	FindPlane_old
 
-Returns a global plane number and the side that will be the front
-===============
+	Returns a global plane number and the side that will be the front
 */
 int
 FindPlane_old (plane_t *dplane, int *side)
@@ -286,7 +276,8 @@ FindPlane_old (plane_t *dplane, int *side)
 		}
 	}
 
-// allocate a new plane, flipping normal to a consistant direction if needed
+	// allocate a new plane, flipping normal to a consistant direction if
+	// needed
 	*dp = *dplane;
 
 	if (numbrushplanes == MAX_MAP_PLANES)
@@ -295,7 +286,7 @@ FindPlane_old (plane_t *dplane, int *side)
 
 	*side = 0;
 
-// NOTE: should these have an epsilon around 1.0?       
+	// NOTE: should these have an epsilon around 1.0?       
 	if (dplane->normal[0] == 1.0)
 		dp->type = PLANE_X;
 	else if (dplane->normal[1] == 1.0)
@@ -339,11 +330,7 @@ FindPlane_old (plane_t *dplane, int *side)
 }
 
 /*
-=============================================================================
-
-			TURN BRUSHES INTO GROUPS OF FACES
-
-=============================================================================
+	Turn brushes into groups of faces.
 */
 
 vec3_t      brush_mins, brush_maxs;
@@ -414,12 +401,10 @@ CreateBrushFaces (void)
 }
 
 /*
-==============================================================================
+	BEVELED CLIPPING HULL GENERATION
 
-BEVELED CLIPPING HULL GENERATION
-
-This is done by brute force, and could easily get a lot faster if anyone cares.
-==============================================================================
+	This is done by brute force, and could easily get a lot faster if anyone
+	cares.
 */
 
 vec3_t      hull_size[3][2] = {
@@ -463,12 +448,10 @@ AddBrushPlane (plane_t *plane)
 }
 
 /*
-============
-TestAddPlane
+	TestAddPlane
 
-Adds the given plane to the brush description if all of the original brush
-vertexes can be put on the front side
-=============
+	Adds the given plane to the brush description if all of the original brush
+	vertexes can be put on the front side
 */
 void
 TestAddPlane (plane_t *plane)
@@ -481,7 +464,7 @@ TestAddPlane (plane_t *plane)
 	vec_t      *corner;
 	vec3_t      inv;
 
-// see if the plane has allready been added
+	// see if the plane has allready been added
 	for (i = 0; i < numbrushfaces; i++) {
 		pl = &faces[i].plane;
 		if (_VectorCompare (plane->normal, pl->normal)
@@ -492,7 +475,7 @@ TestAddPlane (plane_t *plane)
 			&& fabs (plane->dist + pl->dist) < ON_EPSILON) return;
 	}
 
-// check all the corner points
+	// check all the corner points
 	counts[0] = counts[1] = counts[2] = 0;
 	c = num_hull_points * 8;
 
@@ -511,8 +494,7 @@ TestAddPlane (plane_t *plane)
 			counts[2]++;
 	}
 
-// the plane is a seperator
-
+	// the plane is a seperator
 	if (counts[0]) {
 		VectorSubtract (vec3_origin, plane->normal, flip.normal);
 		flip.dist = -plane->dist;
@@ -523,11 +505,9 @@ TestAddPlane (plane_t *plane)
 }
 
 /*
-============
-AddHullPoint
+	AddHullPoint
 
-Doesn't add if duplicated
-=============
+	Doesn't add if duplicated
 */
 int
 AddHullPoint (vec3_t p, int hullnum)
@@ -561,11 +541,9 @@ AddHullPoint (vec3_t p, int hullnum)
 }
 
 /*
-============
-AddHullEdge
+	AddHullEdge
 
-Creates all of the hull planes around the given edge, if not done already
-=============
+	Creates all of the hull planes around the given edge, if not done already
 */
 void
 AddHullEdge (vec3_t p1, vec3_t p2, int hullnum)
@@ -626,12 +604,12 @@ ExpandBrush (int hullnum)
 	num_hull_points = 0;
 	num_hull_edges = 0;
 
-// create all the hull points
+	// create all the hull points
 	for (f = brush_faces; f; f = f->next)
 		for (i = 0; i < f->numpoints; i++)
 			AddHullPoint (f->pts[i], hullnum);
 
-// expand all of the planes
+	// expand all of the planes
 	for (i = 0; i < numbrushfaces; i++) {
 		p = &faces[i].plane;
 		VectorCopy (vec3_origin, corner);
@@ -644,7 +622,7 @@ ExpandBrush (int hullnum)
 		p->dist += DotProduct (corner, p->normal);
 	}
 
-// add any axis planes not contained in the brush to bevel off corners
+	// add any axis planes not contained in the brush to bevel off corners
 	for (x = 0; x < 3; x++)
 		for (s = -1; s <= 1; s += 2) {
 			// add the plane
@@ -657,20 +635,16 @@ ExpandBrush (int hullnum)
 			AddBrushPlane (&plane);
 		}
 
-// add all of the edge bevels
+	// add all of the edge bevels
 	for (f = brush_faces; f; f = f->next)
 		for (i = 0; i < f->numpoints; i++)
 			AddHullEdge (f->pts[i], f->pts[(i + 1) % f->numpoints], hullnum);
 }
 
-//============================================================================
-
 /*
-===============
-LoadBrush
+	LoadBrush
 
-Converts a mapbrush to a bsp brush
-===============
+	Converts a mapbrush to a bsp brush
 */
 brush_t    *
 LoadBrush (mbrush_t *mb, int hullnum)
@@ -680,12 +654,11 @@ LoadBrush (mbrush_t *mb, int hullnum)
 	int         contents;
 	mface_t    *f;
 
-// check texture name for attributes
+	// check texture name for attributes
 	name = miptex[bsp->texinfo[mb->faces->texinfo].miptex];
 
 	if (!strcasecmp (name, "clip") && hullnum == 0)
-		return NULL;					// "clip" brushes don't show up in
-										// the draw hull
+		return NULL;		// "clip" brushes don't show up in the draw hull
 
 	if (name[0] == '*' && worldmodel) {	// entities never use water merging
 		if (!strncasecmp (name + 1, "lava", 4))
@@ -700,12 +673,11 @@ LoadBrush (mbrush_t *mb, int hullnum)
 		contents = CONTENTS_SOLID;
 
 	if (hullnum && contents != CONTENTS_SOLID && contents != CONTENTS_SKY)
-		return NULL;					// water brushes don't show up in
-										// clipping hulls
+		return NULL;		// water brushes don't show up in clipping hulls
 
-// no seperate textures on clip hull
+	// no seperate textures on clip hull
 
-// create the faces
+	// create the faces
 	brush_faces = NULL;
 
 	numbrushfaces = 0;
@@ -728,7 +700,7 @@ LoadBrush (mbrush_t *mb, int hullnum)
 		CreateBrushFaces ();
 	}
 
-// create the brush
+	// create the brush
 	b = AllocBrush ();
 
 	b->contents = contents;
@@ -738,8 +710,6 @@ LoadBrush (mbrush_t *mb, int hullnum)
 
 	return b;
 }
-
-//=============================================================================
 
 void
 Brush_DrawAll (brushset_t *bs)
@@ -788,7 +758,7 @@ Brush_LoadEntity (entity_t *ent, int hullnum)
 		AddToBounds (bset, b->maxs);
 	}
 
-// add all of the water textures at the start
+	// add all of the water textures at the start
 	for (b = water; b; b = next) {
 		next = b->next;
 		b->next = other;

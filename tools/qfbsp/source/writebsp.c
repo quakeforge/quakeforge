@@ -17,6 +17,8 @@
 
 	See file, 'COPYING', for details.
 */
+static const char rcsid[] =
+	"$Id$";
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -43,11 +45,9 @@ int         firstface;
 
 
 /*
-==================
-FindFinalPlane
+	FindFinalPlane
 
-Used to find plane index numbers for clip nodes read from child processes
-==================
+	Used to find plane index numbers for clip nodes read from child processes
 */
 int
 FindFinalPlane (dplane_t *p)
@@ -69,7 +69,7 @@ FindFinalPlane (dplane_t *p)
 		return i;
 	}
 
-// new plane
+	// new plane
 	if (bsp->numplanes == MAX_MAP_PLANES)
 		Sys_Error ("numplanes == MAX_MAP_PLANES");
 	BSP_AddPlane (bsp, p);
@@ -113,21 +113,19 @@ WriteNodePlanes (node_t *nodes)
 	WriteNodePlanes_r (nodes);
 }
 
-//===========================================================================
-
 int
 WriteClipNodes_r (node_t *node)
 {
 	dclipnode_t cn;
 	int         num, c, i;
 
-// FIXME: free more stuff?  
+	// FIXME: free more stuff?  
 	if (node->planenum == -1) {
 		num = node->contents;
 		free (node);
 		return num;
 	}
-// emit a clipnode
+	// emit a clipnode
 	c = bsp->numclipnodes;
 	cn.planenum = node->outputplanenum;
 	for (i = 0; i < 2; i++)
@@ -139,12 +137,10 @@ WriteClipNodes_r (node_t *node)
 }
 
 /*
-==================
-WriteClipNodes
+	WriteClipNodes
 
-Called after the clipping hull is completed.  Generates a disk format
-representation and frees the original memory.
-==================
+	Called after the clipping hull is completed.  Generates a disk format
+	representation and frees the original memory.
 */
 void
 WriteClipNodes (node_t *nodes)
@@ -153,24 +149,22 @@ WriteClipNodes (node_t *nodes)
 	WriteClipNodes_r (nodes);
 }
 
-//===========================================================================
-
 void
 WriteLeaf (node_t *node)
 {
 	dleaf_t     leaf_p;
 	face_t    **fp, *f;
 
-// emit a leaf
+	// emit a leaf
 	leaf_p.contents = node->contents;
 
-// write bounding box info
+	// write bounding box info
 	VectorCopy (node->mins, leaf_p.mins);
 	VectorCopy (node->maxs, leaf_p.maxs);
 
 	leaf_p.visofs = -1;					// no vis info yet
 
-// write the marksurfaces
+	// write the marksurfaces
 	leaf_p.firstmarksurface = bsp->nummarksurfaces;
 
 	for (fp = node->markfaces; *fp; fp++) {
@@ -196,7 +190,7 @@ WriteDrawNodes_r (node_t *node)
 	int         i;
 	int         nodenum = bsp->numnodes;
 
-// emit a node  
+	// emit a node  
 	if (bsp->numnodes == MAX_MAP_NODES)
 		Sys_Error ("numnodes == MAX_MAP_NODES");
 	BSP_AddNode (bsp, &dummy);
@@ -209,7 +203,7 @@ WriteDrawNodes_r (node_t *node)
 	n->firstface = node->firstface;
 	n->numfaces = node->numfaces;
 
-// recursively output the other nodes
+	// recursively output the other nodes
 	for (i = 0; i < 2; i++) {
 		n = &bsp->nodes[nodenum];
 		if (node->children[i]->planenum == -1) {
@@ -237,7 +231,7 @@ WriteDrawNodes (node_t *headnode)
 		Sys_Error ("FinishBSPModel: empty model");
 #endif
 
-// emit a model
+	// emit a model
 	if (bsp->nummodels == MAX_MAP_MODELS)
 		Sys_Error ("nummodels == MAX_MAP_MODELS");
 
@@ -259,27 +253,23 @@ WriteDrawNodes (node_t *headnode)
 		bm.maxs[i] = headnode->maxs[i] - SIDESPACE - 1;
 	}
 	BSP_AddModel (bsp, &bm);
-// FIXME: are all the children decendant of padded nodes?
+	// FIXME: are all the children decendant of padded nodes?
 }
 
 /*
-==================
-BumpModel
+	BumpModel
 
-Used by the clipping hull processes that only need to store headclipnode
-==================
+	Used by the clipping hull processes that only need to store headclipnode
 */
 void
 BumpModel (int hullnum)
 {
 	static dmodel_t bm;
 
-// emit a model
+	// emit a model
 	bm.headnode[hullnum] = headclipnode;
 	BSP_AddModel (bsp, &bm);
 }
-
-//=============================================================================
 
 typedef struct {
 	char        identification[4];		// should be WAD2
@@ -496,17 +486,15 @@ WriteMiptex (void)
 	BSP_AddTextures (bsp, data->str, data->size);
 }
 
-//===========================================================================
-
 void
 BeginBSPFile (void)
 {
 	static dedge_t edge;
 	static dleaf_t leaf;
-// edge 0 is not used, because 0 can't be negated
+	// edge 0 is not used, because 0 can't be negated
 	BSP_AddEdge (bsp, &edge);
 
-// leaf 0 is common solid with no faces
+	// leaf 0 is common solid with no faces
 	leaf.contents = CONTENTS_SOLID;
 	BSP_AddLeaf (bsp, &leaf);
 

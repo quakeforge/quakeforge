@@ -17,6 +17,8 @@
 
 	See file, 'COPYING', for details.
 */
+static const char rcsid[] =
+	"$Id$";
 
 #include "bsp5.h"
 

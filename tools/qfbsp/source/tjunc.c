@@ -17,8 +17,8 @@
 
 	See file, 'COPYING', for details.
 */
-
-// tjunc.c
+static const char rcsid[] =
+	"$Id$";
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -65,8 +65,6 @@ PrintFace (face_t *f)
 				f->pts[i][2]);
 }
 
-//============================================================================
-
 #define	NUM_HASH	1024
 
 wedge_t    *wedge_hash[NUM_HASH];
@@ -108,8 +106,6 @@ HashVec (vec3_t vec)
 		return NUM_HASH - 1;
 	return h;
 }
-
-//============================================================================
 
 void
 CanonicalVector (vec3_t vec)
@@ -220,7 +216,7 @@ AddVert (wedge_t *w, vec_t t)
 		v = v->next;
 	} while (1);
 
-// insert a new wvert before v
+	// insert a new wvert before v
 	if (numwverts == MAXWVERTS)
 		Sys_Error ("AddVert: numwverts == MAXWVERTS");
 
@@ -256,8 +252,6 @@ AddFaceEdges (face_t *f)
 	}
 }
 
-//============================================================================
-
 // a specially allocated face that can hold hundreds of edges if needed
 byte        superfacebuf[8192];
 face_t     *superface = (face_t *) superfacebuf;
@@ -276,9 +270,9 @@ SplitFaceForTjunc (face_t *f, face_t *original)
 
 	chain = NULL;
 	do {
-		if (f->numpoints <= MAXPOINTS) {	// the face is now small enough
-											// without more cutting
-			// so copy it back to the original
+		if (f->numpoints <= MAXPOINTS) {
+			// the face is now small enough without more cutting so copy it
+			// back to the original
 			*original = *f;
 			original->original = chain;
 			original->next = newlist;
@@ -387,7 +381,7 @@ FixFaceEdges (face_t *f)
 		newlist = f;
 		return;
 	}
-// the face needs to be split into multiple faces because of too many edges
+	// the face needs to be split into multiple faces because of too many edges
 
 	SplitFaceForTjunc (superface, f);
 }
@@ -441,9 +435,9 @@ tjunc (node_t *headnode)
 	if (options.notjunc)
 		return;
 
-// identify all points on common edges
+	// identify all points on common edges
 
-// origin points won't allways be inside the map, so extend the hash area 
+	// origin points won't allways be inside the map, so extend the hash area 
 	for (i = 0; i < 3; i++) {
 		if (fabs (brushset->maxs[i]) > fabs (brushset->mins[i]))
 			maxs[i] = fabs (brushset->maxs[i]);
@@ -460,7 +454,7 @@ tjunc (node_t *headnode)
 
 	qprintf ("%i world edges  %i edge points\n", numwedges, numwverts);
 
-// add extra vertexes on edges where needed
+	// add extra vertexes on edges where needed
 	tjuncs = tjuncfaces = 0;
 
 	tjunc_fix_r (headnode);

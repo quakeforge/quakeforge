@@ -16,6 +16,8 @@
 
     See file, 'COPYING', for details.
 */
+static const char rcsid[] =
+	"$Id$";
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -105,12 +107,10 @@ int         hit_occupied;
 int         backdraw;
 
 /*
-==================
-RecursiveFillOutside
+	RecursiveFillOutside
 
-If fill is false, just check, don't fill
-Returns true if an occupied leaf is reached
-==================
+	If fill is false, just check, don't fill
+	Returns true if an occupied leaf is reached
 */
 qboolean
 RecursiveFillOutside (node_t *l, qboolean fill)
@@ -136,7 +136,7 @@ RecursiveFillOutside (node_t *l, qboolean fill)
 
 	l->valid = valid;
 
-// fill it and it's neighbors
+	// fill it and it's neighbors
 	if (fill)
 		l->contents = CONTENTS_SOLID;
 	outleafs++;
@@ -144,8 +144,8 @@ RecursiveFillOutside (node_t *l, qboolean fill)
 	for (p = l->portals; p;) {
 		s = (p->nodes[0] == l);
 
-		if (RecursiveFillOutside (p->nodes[s], fill)) {	// leaked, so stop
-														// filling
+		if (RecursiveFillOutside (p->nodes[s], fill)) {
+			// leaked, so stop filling
 			if (backdraw-- > 0) {
 				MarkLeakTrail (p);
 				DrawLeaf (l, 2);
@@ -178,8 +178,6 @@ ClearOutFaces (node_t *node)
 	node->faces = NULL;
 }
 
-//=============================================================================
-
 qboolean
 FillOutside (node_t *node)
 {
@@ -210,7 +208,7 @@ FillOutside (node_t *node)
 
 	s = !(outside_node.portals->nodes[1] == &outside_node);
 
-// first check to see if an occupied leaf is hit
+	// first check to see if an occupied leaf is hit
 	outleafs = 0;
 	valid++;
 
@@ -237,11 +235,11 @@ FillOutside (node_t *node)
 	if (!options.hullnum)
 		fclose (leakfile);
 
-// now go back and fill things in
+	// now go back and fill things in
 	valid++;
 	RecursiveFillOutside (outside_node.portals->nodes[s], true);
 
-// remove faces from filled in leafs    
+	// remove faces from filled in leafs    
 	ClearOutFaces (node);
 
 	qprintf ("%4i outleafs\n", outleafs);
