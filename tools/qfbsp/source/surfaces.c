@@ -60,6 +60,9 @@ SubdivideFace (face_t *f, face_t **prevptr)
 	texinfo_t  *tex;
 	vec_t       v;
 
+	if (f->texturenum < 0)	// don't subdivide HINT or SKIP
+		return;
+
 	// special (non-surface cached) faces don't need subdivision
 	tex = &bsp->texinfo[f->texturenum];
 
