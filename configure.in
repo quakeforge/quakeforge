@@ -1433,6 +1433,7 @@ AC_OUTPUT(
 	doc/Makefile
 	doc/texinfo/Makefile
 	doc/man/Makefile
+	include/Makefile
 	qw/include/Makefile
 	qw/include/win32/version.h
 	qw/source/Makefile
