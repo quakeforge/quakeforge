@@ -387,9 +387,7 @@ PM_Friction (void)
 		newspeed = 0;
 	newspeed /= speed;
 
-	vel[0] = vel[0] * newspeed;
-	vel[1] = vel[1] * newspeed;
-	vel[2] = vel[2] * newspeed;
+	VectorScale (vel, newspeed, vel);
 }
 
 void
