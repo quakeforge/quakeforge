@@ -649,7 +649,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 			case OP_JUMPB:
 				//FIXME put bounds checking in
-				pointer = OPA.integer_var + OPB.integer_var;
+				pointer = st->a + OPB.integer_var;
 				ptr = pr->pr_globals + pointer;
 				pointer = ptr->integer_var;
 				if (pr_boundscheck->int_val
