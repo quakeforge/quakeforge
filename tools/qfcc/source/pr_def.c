@@ -30,7 +30,6 @@ typedef struct locref_s {
 } locref_t;
 
 def_t		*pr_global_defs[MAX_REGS];	// to find def for a global variable
-int 		pr_edict_size;
 static def_t *free_temps[4];	// indexted by type size
 static def_t temp_scope;
 static locref_t *free_locs[4];	// indexted by type size
@@ -120,9 +119,6 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 			pr.size_fields += type_size[type->aux_type->type];
 		}
 	}
-
-//	if (pr_dumpasm)
-//		PR_PrintOfs (def->ofs);
 
 	return def;
 }

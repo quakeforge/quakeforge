@@ -28,30 +28,10 @@
 
 pr_info_t	pr;
 def_t		*pr_global_defs[MAX_REGS];	// to find def for a global variable
-int 		pr_edict_size;
 
-//========================================
 
-def_t		*pr_scope;					// the function being parsed, or NULL
-qboolean	pr_dumpasm;
-string_t	s_file;						// filename for function definition
 
-int 		locals_end;					// for tracking local variables vs temps
 
-jmp_buf     pr_parse_abort;				// longjump with this on parse error
-
-void PR_ParseDefs (void);
-
-//========================================
-
-#define	TOP_PRIORITY	6
-#define	NOT_PRIORITY	4
-
-def_t	junkdef;
-
-def_t *PR_Expression (int priority);
-
-//===========================================================================
 
 
 void

@@ -1020,8 +1020,6 @@ main (int argc, char **argv)
 			printf ("debug file: %s\n", debugfile);
 	}
 
-	pr_dumpasm = false;
-
 	PR_BeginCompilation (malloc (0x100000), 0x100000);
 
 	// compile all the files

@@ -83,6 +83,9 @@ def_t	param_scope;
 function_t *current_func;
 expr_t	*local_expr;
 
+def_t		*pr_scope;					// the function being parsed, or NULL
+string_t	s_file;						// filename for function definition
+
 %}
 
 %%
