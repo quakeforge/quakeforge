@@ -24,8 +24,8 @@
 		Boston, MA  02111-1307, USA
 
 */
-static const char rcsid[] = "$Id$";
-
+static const char rcsid[] =
+	"$Id$";
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

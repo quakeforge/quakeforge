@@ -24,8 +24,8 @@
 		Boston, MA  02111-1307, USA
 
 */
-static const char rcsid[] = "$Id$";
-
+static const char rcsid[] =
+	"$Id$";
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -43,7 +43,6 @@ static const char rcsid[] = "$Id$";
 # include <strings.h>
 #endif
 #include <stdlib.h>
-
 
 #include "QF/qtypes.h"
 #include "QF/sys.h"
