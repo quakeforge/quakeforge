@@ -34,9 +34,6 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 #include <math.h>
-//#ifdef __MINGW32__
-//# define INITGUID
-//#endif
 
 #define byte __byte
 #include <dinput.h>

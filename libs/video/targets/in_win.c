@@ -33,6 +33,10 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 
+#ifdef __MINGW32__
+# define INITGUID
+#endif
+
 #include "winquake.h"	// must come first due to nasties in windows headers
 #include <dinput.h>
 
