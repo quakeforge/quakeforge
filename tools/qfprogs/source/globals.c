@@ -69,9 +69,9 @@ dump_globals (progs_t *pr)
 			func_t      func = G_FUNCTION (pr, offset);
 			int         start = pr->pr_functions[func].first_statement;
 			if (start > 0)
-				comment = va (" @ %d", start);
+				comment = va (" %d @ %d", func, start);
 			else
-				comment = va (" = #%d", -start);
+				comment = va (" %d = #%d", func, -start);
 		}
 
 		printf ("%s %d %d %s%s\n", type, saveglobal, offset, name, comment);
