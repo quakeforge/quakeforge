@@ -93,6 +93,14 @@ IE_Remove_Handler (int handle)
 void
 IE_Set_Focus (int handle)
 {
-	if (handle >= 0 && handle < eh_list_size && event_handler_list[handle])
-		focus = eh_list_size;
+	if (handle >= 0 && handle < eh_list_size
+		&& event_handler_list[handle]
+		&& focus != handle) {
+		IE_event_t event;
+		event.type = ie_lose_focus;
+		IE_Send_Event (&event);
+		focus = handle;
+		event.type = ie_gain_focus;
+		IE_Send_Event (&event);
+	}
 }

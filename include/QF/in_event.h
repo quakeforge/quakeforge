@@ -52,6 +52,8 @@ typedef struct {
 
 typedef enum {
 	ie_none,
+	ie_gain_focus,
+	ie_lose_focus,
 	ie_mouse,
 	ie_key,
 	ie_joystick,
