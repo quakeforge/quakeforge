@@ -697,26 +697,26 @@ SL_CheckStatus (const char *cs_from, const char *cs_data)
 		{
 			if (strcmp (cs_from, temp->server) == 0)
 			{
-				//int i;
+				int i;
+				char *data = Hunk_TempAlloc (strlen (cs_data) + 1);
+				strcpy (data, cs_data);
+				for (i = 0; i < strlen(data); i++)
+					if (data[i] == '\n') {
+						data[i] = '\\';
+						break;
+					}
 				if (temp->status)
 					Info_Destroy (temp->status);
-				temp->status = Info_ParseString (cs_data, strlen (cs_data));
+				temp->status = Info_ParseString (cs_data, strlen (data));
 				temp->waitstatus = 0;
 				tmp_desc = Info_ValueForKey (temp->status, "hostname");
-				/*FIXME update for new info api
 				if (tmp_desc[0] != '\0') {
 					temp->desc = realloc(temp->desc, strlen(tmp_desc) + 1);
 					strcpy(temp->desc, tmp_desc);
 				} else {
-					temp->desc = realloc(temp->desc, strlen(temp->status) + 1);
-					strcpy(temp->desc, temp->server);
+					temp->desc = realloc(temp->desc, strlen(data) + 1);
+					strcpy(temp->desc, data);
 				}
-				for (i = 0; i < strlen(temp->status); i++)
-					if (temp->status[i] == '\n') {
-						temp->status[i] = '\\';
-						break;
-					}
-				*/
 				return (1);
 			}
 		}		
