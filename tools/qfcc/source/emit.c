@@ -140,7 +140,8 @@ emit_function_call (expr_t *e, def_t *dest)
 			emit_statement (e->line, op, arg, &parm, 0);
 		}
 	}
-	op = PR_Opcode_Find (va ("<CALL%d>", count), &def_function,  &def_void, &def_void);
+	op = PR_Opcode_Find (va ("<CALL%d>", count), &def_function, &def_void,
+						 &def_void);
 	emit_statement (e->line, op, func, 0, 0);
 
 	def_ret.type = func->type->aux_type;
