@@ -378,7 +378,7 @@ COM_Maplist_f (void)
 	The filename will be prefixed by the current game directory
 */
 void
-COM_WriteFile (char *filename, void *data, int len)
+COM_WriteFile (const char *filename, void *data, int len)
 {
 	VFile      *f;
 	char        name[MAX_OSPATH];
@@ -440,9 +440,9 @@ COM_WriteBuffers (const char *filename, int count, ...)
 	Only used for CopyFile and download
 */
 void
-COM_CreatePath (char *path)
+COM_CreatePath (const char *path)
 {
-	char       *ofs;
+	const char *ofs;
 	char        e_path[MAX_OSPATH];
 
 	Qexpand_squiggle (path, e_path);
@@ -450,9 +450,7 @@ COM_CreatePath (char *path)
 
 	for (ofs = path + 1; *ofs; ofs++) {
 		if (*ofs == '/') {				// create the directory
-			*ofs = 0;
-			Sys_mkdir (path);
-			*ofs = '/';
+			Sys_mkdir (va ("%.*s", ofs - path, path));
 		}
 	}
 }
@@ -823,7 +821,7 @@ qstrcmp (char **os1, char **os2)
 }
 
 void
-COM_LoadGameDirectory (char *dir)
+COM_LoadGameDirectory (const char *dir)
 {
 	searchpath_t *search;
 	pack_t     *pak;
@@ -900,7 +898,7 @@ COM_LoadGameDirectory (char *dir)
 	then loads and adds pak1.pak pak2.pak ...
 */
 void
-COM_AddDirectory (char *dir)
+COM_AddDirectory (const char *dir)
 {
 	searchpath_t *search;
 	char       *p;
@@ -936,7 +934,7 @@ COM_AddDirectory (char *dir)
 	merge with COM_AddGameDirectory.
 */
 void
-COM_AddGameDirectory (char *dir)
+COM_AddGameDirectory (const char *dir)
 {
 	Con_DPrintf ("COM_AddGameDirectory (\"%s/%s\")\n",
 				 fs_sharepath->string, dir);
@@ -952,7 +950,7 @@ COM_AddGameDirectory (char *dir)
 	Sets the gamedir and path to a different directory.
 */
 void
-COM_Gamedir (char *dir)
+COM_Gamedir (const char *dir)
 {
 	searchpath_t *next;
 
@@ -995,7 +993,7 @@ COM_Gamedir (char *dir)
 	COM_CreateGameDirectory
 */
 void
-COM_CreateGameDirectory (char *gamename)
+COM_CreateGameDirectory (const char *gamename)
 {
 	if (strcmp (fs_userpath->string, FS_USERPATH))
 		COM_CreatePath (va ("%s/%s/dummy", fs_userpath->string, gamename));
@@ -1048,10 +1046,10 @@ COM_Filesystem_Init_Cvars (void)
 /*
 	COM_SkipPath
 */
-char *
-COM_SkipPath (char *pathname)
+const char *
+COM_SkipPath (const char *pathname)
 {
-	char       *last;
+	const char *last;
 
 	// char after last / on the line
 	if ((last = strrchr (pathname, '/')))
@@ -1066,7 +1064,7 @@ COM_SkipPath (char *pathname)
 	COM_StripExtension
 */
 void
-COM_StripExtension (char *in, char *out)
+COM_StripExtension (const char *in, char *out)
 {
 	while (*in && *in != '.')
 		*out++ = *in++;

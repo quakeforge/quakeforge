@@ -106,7 +106,7 @@ static int  do_stdin = 1;
 	Checks for a complete line of text typed in at the console, then forwards
 	it to the host command processor
 */
-char       *
+const char       *
 Sys_ConsoleInput (void)
 {
 	static char text[256];
@@ -160,7 +160,7 @@ Sys_Init (void)
 	main
 */
 int
-main (int argc, char *argv[])
+main (int argc, const char *argv[])
 {
 	double      time, oldtime, newtime;
 	fd_set      fdset;

@@ -272,7 +272,7 @@ Con_Linefeed (void)
 	If no console is visible, the notify window will pop up.
 */
 void
-Con_Print (char *txt)
+Con_Print (const char *txt)
 {
 	int         y;
 	int         c, l;
@@ -511,7 +511,7 @@ void
 Con_DrawDownload (int lines)
 {
 	int         i, j, x, y, n;
-	char       *text;
+	const char *text;
 	char        dlbar[1024];
 
 	if (!cls.download)
@@ -565,11 +565,11 @@ Con_DrawDownload (int lines)
 void
 Con_CompleteCommandLine (void)
 {
-	char	*cmd = "";
+	const char *cmd = "";
 	char	*s;
 	int	c, v, a, i;
 	int		cmd_len;
-	char	**list[3] = {0, 0, 0};
+	const char **list[3] = {0, 0, 0};
 
 	s = key_lines[edit_line] + 1;
 	if (*s == '\\' || *s == '/')
@@ -604,7 +604,7 @@ Con_CompleteCommandLine (void)
 		do {
 			for (i = 0; i < 3; i++) {
 				char ch = cmd[cmd_len];
-				char **l = list[i];
+				const char **l = list[i];
 				if (l) {
 					while (*l && (*l)[cmd_len] == ch)
 						l++;

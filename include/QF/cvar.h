@@ -34,11 +34,11 @@
 
 typedef struct cvar_s
 {
-	char    *name;
-	char    *string;
+	const char    *name;
+	const char    *string;
 	int	flags;
 	void	(*callback)(struct cvar_s *var);
-	char 	*description;	// for "help" command
+	const char 	*description;	// for "help" command
 	float	value;
 	int		int_val;
 	vec3_t	vec;
@@ -74,32 +74,32 @@ typedef struct cvar_alias_s
 
 // Returns the Cvar if found, creates it with value if not.  Description and
 // flags are always updated.
-cvar_t	*Cvar_Get (char *name, char *value, int cvarflags,
-				   void (*callback)(cvar_t*), char *description);
+cvar_t	*Cvar_Get (const char *name, const char *value, int cvarflags,
+				   void (*callback)(cvar_t*), const char *description);
 
-cvar_t	*Cvar_FindAlias (char *alias_name);
+cvar_t	*Cvar_FindAlias (const char *alias_name);
 
-void	Cvar_Alias_Get (char *name, cvar_t *cvar);
+void	Cvar_Alias_Get (const char *name, cvar_t *cvar);
 
 // equivelants to "<name> <variable>" typed at the console
-void 	Cvar_Set (cvar_t *var, char *value);
+void 	Cvar_Set (cvar_t *var, const char *value);
 void	Cvar_SetValue (cvar_t *var, float value);
 
 // sets a CVAR_ROM variable from within the engine
-void	Cvar_SetROM (cvar_t *var, char *value);
+void	Cvar_SetROM (cvar_t *var, const char *value);
 
 // allows you to change a Cvar's flags without a full Cvar_Get
 void	Cvar_SetFlags (cvar_t *var, int cvarflags);
 
 // returns 0 if not defined or non numeric
-float	Cvar_VariableValue (char *var_name);
+float	Cvar_VariableValue (const char *var_name);
 
 // returns an empty string if not defined
-char	*Cvar_VariableString (char *var_name);
+const char	*Cvar_VariableString (const char *var_name);
 
 // attempts to match a partial variable name for command line completion
 // returns NULL if nothing fits
-char 	*Cvar_CompleteVariable (char *partial);
+const char 	*Cvar_CompleteVariable (const char *partial);
 
 // called by Cmd_ExecuteString when Cmd_Argv(0) doesn't match a known
 // command.  Returns true if the command was a variable reference that
@@ -113,11 +113,11 @@ void 	Cvar_WriteVariables (VFile *f);
 // Added by EvilTypeGuy - functions for tab completion system
 // Thanks to Fett erich@heintz.com
 // Thanks to taniwha
-int		Cvar_CompleteCountPossible (char *partial);
-char	**Cvar_CompleteBuildList (char *partial);
+int		Cvar_CompleteCountPossible (const char *partial);
+const char	**Cvar_CompleteBuildList (const char *partial);
 
 // Returns a pointer to the Cvar, NULL if not found
-cvar_t *Cvar_FindVar (char *var_name);
+cvar_t *Cvar_FindVar (const char *var_name);
 
 void Cvar_Init_Hash (void);
 void Cvar_Init (void);

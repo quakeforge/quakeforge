@@ -51,7 +51,7 @@
 						BUILT-IN FUNCTIONS
 */
 
-char *
+const char *
 PF_VarString (progs_t *pr, int first)
 {
 	int         i;
@@ -78,7 +78,7 @@ PF_VarString (progs_t *pr, int first)
 void
 PF_error (progs_t *pr)
 {
-	char       *s;
+	const char *s;
 	edict_t    *ed;
 
 	s = PF_VarString (pr, 0);
@@ -101,7 +101,7 @@ PF_error (progs_t *pr)
 void
 PF_objerror (progs_t *pr)
 {
-	char       *s;
+	const char *s;
 	edict_t    *ed;
 
 	s = PF_VarString (pr, 0);
@@ -182,7 +182,7 @@ void
 PF_setmodel (progs_t *pr)
 {
 	edict_t    *e;
-	char       *m, **check;
+	const char *m, **check;
 	int         i;
 	model_t    *mod;
 
@@ -221,7 +221,7 @@ PF_setmodel (progs_t *pr)
 void
 PF_bprint (progs_t *pr)
 {
-	char       *s;
+	const char       *s;
 	int         level;
 
 	level = G_FLOAT (pr, OFS_PARM0);
@@ -240,7 +240,7 @@ PF_bprint (progs_t *pr)
 void
 PF_sprint (progs_t *pr)
 {
-	char       *s;
+	const char       *s;
 	client_t   *client;
 	int         entnum;
 	int         level;
@@ -271,7 +271,7 @@ PF_sprint (progs_t *pr)
 void
 PF_centerprint (progs_t *pr)
 {
-	char       *s;
+	const char       *s;
 	int         entnum;
 	client_t   *cl;
 
@@ -423,8 +423,8 @@ PF_random (progs_t *pr)
 void
 PF_ambientsound (progs_t *pr)
 {
-	char      **check;
-	char       *samp;
+	const char      **check;
+	const char       *samp;
 	float      *pos;
 	float       vol, attenuation;
 	int         i, soundnum;
@@ -471,7 +471,7 @@ PF_ambientsound (progs_t *pr)
 void
 PF_sound (progs_t *pr)
 {
-	char       *sample;
+	const char       *sample;
 	int         channel;
 	edict_t    *entity;
 	int         volume;
@@ -667,7 +667,7 @@ void
 PF_stuffcmd (progs_t *pr)
 {
 	int         entnum;
-	char       *str;
+	const char       *str;
 	client_t   *cl;
 	char       *buf;
 	char       *p;
@@ -713,7 +713,7 @@ PF_stuffcmd (progs_t *pr)
 void
 PF_localcmd (progs_t *pr)
 {
-	char       *str;
+	const char       *str;
 
 	str = G_STRING (pr, OFS_PARM0);
 	Cbuf_AddText (str);
@@ -727,7 +727,7 @@ PF_localcmd (progs_t *pr)
 void
 PF_cvar (progs_t *pr)
 {
-	char       *str;
+	const char       *str;
 
 	str = G_STRING (pr, OFS_PARM0);
 
@@ -742,7 +742,7 @@ PF_cvar (progs_t *pr)
 void
 PF_cvar_set (progs_t *pr)
 {
-	char       *var_name, *val;
+	const char       *var_name, *val;
 	cvar_t     *var;
 
 	var_name = G_STRING (pr, OFS_PARM0);
@@ -879,7 +879,7 @@ PF_Find (progs_t *pr)
 {
 	int         e;
 	int         f;
-	char       *s, *t;
+	const char       *s, *t;
 	edict_t    *ed;
 
 	e = G_EDICTNUM (pr, OFS_PARM0);
@@ -905,7 +905,7 @@ PF_Find (progs_t *pr)
 }
 
 void
-PR_CheckEmptyString (progs_t *pr, char *s)
+PR_CheckEmptyString (progs_t *pr, const char *s)
 {
 	if (s[0] <= ' ')
 		PR_RunError (pr, "Bad string");
@@ -921,7 +921,7 @@ PF_precache_file (progs_t *pr)
 void
 PF_precache_sound (progs_t *pr)
 {
-	char       *s;
+	const char       *s;
 	int         i;
 
 	if (sv.state != ss_loading)
@@ -946,7 +946,7 @@ PF_precache_sound (progs_t *pr)
 void
 PF_precache_model (progs_t *pr)
 {
-	char       *s;
+	const char       *s;
 	int         i;
 
 	if (sv.state != ss_loading)
@@ -1073,7 +1073,7 @@ void
 PF_lightstyle (progs_t *pr)
 {
 	int         style;
-	char       *val;
+	const char       *val;
 	client_t   *client;
 	int         j;
 
@@ -1189,7 +1189,7 @@ PF_aim (progs_t *pr)
 	trace_t     tr;
 	float       dist, bestdist;
 	float       speed;
-	char       *noaim;
+	const char       *noaim;
 
 	ent = G_EDICT (pr, OFS_PARM0);
 	speed = G_FLOAT (pr, OFS_PARM1);
@@ -1458,14 +1458,14 @@ PF_WriteEntity (progs_t *pr)
 
 //=============================================================================
 
-int         SV_ModelIndex (char *name);
+int         SV_ModelIndex (const char *name);
 
 void
 PF_makestatic (progs_t *pr)
 {
 	edict_t    *ent;
 	int         i;
-	char       *model;
+	const char       *model;
 
 	ent = G_EDICT (pr, OFS_PARM0);
 
@@ -1517,7 +1517,7 @@ PF_setspawnparms (progs_t *pr)
 void
 PF_changelevel (progs_t *pr)
 {
-	char       *s;
+	const char       *s;
 	static int  last_spawncount;
 
 // make sure we don't issue two changelevels
@@ -1540,7 +1540,7 @@ PF_logfrag (progs_t *pr)
 {
 	edict_t    *ent1, *ent2;
 	int         e1, e2;
-	char       *s;
+	const char       *s;
 
 	ent1 = G_EDICT (pr, OFS_PARM0);
 	ent2 = G_EDICT (pr, OFS_PARM1);
@@ -1571,8 +1571,8 @@ PF_infokey (progs_t *pr)
 {
 	edict_t    *e;
 	int         e1;
-	char       *value;
-	char       *key;
+	const char       *value;
+	const char       *key;
 	static char ov[256];
 
 	e = G_EDICT (pr, OFS_PARM0);
@@ -1609,7 +1609,7 @@ PF_infokey (progs_t *pr)
 void
 PF_stof (progs_t *pr)
 {
-	char       *s;
+	const char       *s;
 
 	s = G_STRING (pr, OFS_PARM0);
 
@@ -1642,7 +1642,7 @@ PF_multicast (progs_t *pr)
 void
 PF_strlen (progs_t *pr)
 {
-	char *s;
+	const char *s;
 
 	s = G_STRING (pr, OFS_PARM0);
 	G_FLOAT (pr, OFS_RETURN) = strlen(s);
@@ -1656,7 +1656,7 @@ PF_strlen (progs_t *pr)
 void
 PF_charcount (progs_t *pr)
 {
-	char *s;
+	const char *s;
 	char goal;
 	int count;
 

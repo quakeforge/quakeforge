@@ -53,8 +53,8 @@
 	Searches the string for the given
 	key and returns the associated value, or an empty string.
 */
-char       *
-Info_ValueForKey (char *s, char *key)
+const char       *
+Info_ValueForKey (const char *s, const char *key)
 {
 	char        pkey[512];
 	static char value[4][512];			// use two buffers so compares
@@ -95,7 +95,7 @@ Info_ValueForKey (char *s, char *key)
 }
 
 void
-Info_RemoveKey (char *s, char *key)
+Info_RemoveKey (char *s, const char *key)
 {
 	char       *start;
 	char        pkey[512];
@@ -182,9 +182,10 @@ Info_RemovePrefixedKeys (char *start, char prefix)
 
 
 void
-Info_SetValueForStarKey (char *s, char *key, char *value, size_t maxsize)
+Info_SetValueForStarKey (char *s, const char *key, const char *value, size_t maxsize)
 {
-	char        newstr[1024], *v;
+	char        newstr[1024];
+	const char *v;
 	int         c, is_name, is_team;
 
 	if (strstr (key, "\\") || strstr (value, "\\")) {
@@ -244,7 +245,7 @@ Info_SetValueForStarKey (char *s, char *key, char *value, size_t maxsize)
 }
 
 void
-Info_SetValueForKey (char *s, char *key, char *value, size_t maxsize)
+Info_SetValueForKey (char *s, const char *key, const char *value, size_t maxsize)
 {
 	if (key[0] == '*') {
 		Con_Printf ("Can't set * keys\n");
@@ -255,7 +256,7 @@ Info_SetValueForKey (char *s, char *key, char *value, size_t maxsize)
 }
 
 void
-Info_Print (char *s)
+Info_Print (const char *s)
 {
 	char        key[512];
 	char        value[512];
@@ -295,10 +296,10 @@ Info_Print (char *s)
 }
 
 qboolean
-Info_Validate (char *s)
+Info_Validate (const char *s)
 {
 	int count;
-	char *p;
+	const char *p;
 
 	if (!s || *s == '\0')
 		return false;

@@ -124,7 +124,7 @@ SV_EndRedirect (void)
 #define	MAXPRINTMSG	4096
 
 void
-SV_Printf (char *fmt, ...)
+SV_Printf (const char *fmt, ...)
 {
 	static int  pending = 0;			// partial line being printed
 	va_list     argptr;
@@ -177,7 +177,7 @@ SV_Printf (char *fmt, ...)
 */
 
 static void
-SV_PrintToClient (client_t *cl, int level, char *string)
+SV_PrintToClient (client_t *cl, int level, const char *string)
 {
 	ClientReliableWrite_Begin (cl, svc_print, strlen (string) + 3);
 	ClientReliableWrite_Byte (cl, level);
@@ -191,7 +191,7 @@ SV_PrintToClient (client_t *cl, int level, char *string)
 	Sends text across to be displayed if the level passes
 */
 void
-SV_ClientPrintf (client_t *cl, int level, char *fmt, ...)
+SV_ClientPrintf (client_t *cl, int level, const char *fmt, ...)
 {
 	va_list     argptr;
 	char        string[1024];
@@ -212,7 +212,7 @@ SV_ClientPrintf (client_t *cl, int level, char *fmt, ...)
 	Sends text to all active clients
 */
 void
-SV_BroadcastPrintf (int level, char *fmt, ...)
+SV_BroadcastPrintf (int level, const char *fmt, ...)
 {
 	va_list     argptr;
 	char        string[1024];
@@ -241,7 +241,7 @@ SV_BroadcastPrintf (int level, char *fmt, ...)
 	Sends text to all active clients
 */
 void
-SV_BroadcastCommand (char *fmt, ...)
+SV_BroadcastCommand (const char *fmt, ...)
 {
 	va_list     argptr;
 	char        string[1024];
@@ -359,7 +359,7 @@ SV_Multicast (vec3_t origin, int to)
 	Larger attenuations will drop off.  (max 4 attenuation)
 */
 void
-SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
+SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 			   float attenuation)
 {
 	int         sound_num;

@@ -58,7 +58,7 @@ void        SND_Update_ (void);
 void        SND_StopAllSounds (qboolean clear);
 void        SND_StopAllSoundsC (void);
 
-sfx_t		*SND_PrecacheSound (char *name);
+sfx_t		*SND_PrecacheSound (const char *name);
 sfxcache_t	*SND_LoadSound (sfx_t *s);
 void		SND_ClearBuffer (void);
 void		SND_PaintChannels (int endtime);
@@ -331,7 +331,7 @@ SND_Shutdown (void)
 
 // Load a sound ===============================================================
 sfx_t *
-SND_FindName (char *name)
+SND_FindName (const char *name)
 {
 	int         i;
 	sfx_t      *sfx;
@@ -361,7 +361,7 @@ SND_FindName (char *name)
 
 
 void
-SND_TouchSound (char *name)
+SND_TouchSound (const char *name)
 {
 	sfx_t      *sfx;
 
@@ -374,7 +374,7 @@ SND_TouchSound (char *name)
 
 
 sfx_t *
-SND_PrecacheSound (char *name)
+SND_PrecacheSound (const char *name)
 {
 	sfx_t      *sfx;
 
@@ -954,7 +954,7 @@ SND_SoundList (void)
 
 
 void
-SND_LocalSound (char *sound)
+SND_LocalSound (const char *sound)
 {
 	sfx_t      *sfx;
 

@@ -33,7 +33,7 @@
 #include "QF/cvar.h"
 #include "server.h"
 
-void        SV_SendServerInfoChange (char *key, char *value);
+void        SV_SendServerInfoChange (const char *key, const char *value);
 
 extern cvar_t *sv_highchars;
 
@@ -50,14 +50,14 @@ void
 Cvar_Info (cvar_t *var)
 {
 	if (var->flags & CVAR_SERVERINFO) {
-		unsigned char info[1024], *p, *c;
+		unsigned char info[1024], *p;
+		const unsigned char *c;
 
 		if (!sv_highchars || !sv_highchars->int_val) {
 			for (p = info, c = var->string;
 				 *c && (p - info < sizeof (info) - 1);) {
-				*c &= 0x7f;
-				if (*c >= 32)
-					*p++ = *c;
+				if ((*c & 0x7f) >= 32)
+					*p++ = *c & 0x7f;
 				c++;
 			}
 			*p = 0;

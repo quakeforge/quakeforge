@@ -125,7 +125,7 @@ PR_Profile_f (void)
 }
 
 static int
-parse_field (progs_t *pr, char *key, char *value)
+parse_field (progs_t *pr, const char *key, const char *value)
 {
 	return 0;
 }

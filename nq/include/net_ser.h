@@ -30,7 +30,7 @@
 int			Serial_Init (void);
 void		Serial_Listen (qboolean state);
 void		Serial_SearchForHosts (qboolean xmit);
-qsocket_t	*Serial_Connect (char *host);
+qsocket_t	*Serial_Connect (const char *host);
 qsocket_t 	*Serial_CheckNewConnections (void);
 int			Serial_GetMessage (qsocket_t *sock);
 int			Serial_SendMessage (qsocket_t *sock, sizebuf_t *data);

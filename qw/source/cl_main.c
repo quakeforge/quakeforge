@@ -356,7 +356,7 @@ CL_BeginServerConnect (void)
 void
 CL_Connect_f (void)
 {
-	char       *server;
+	const char *server;
 
 	if (Cmd_Argc () != 2) {
 		Con_Printf ("usage: connect <server>\n");
@@ -585,7 +585,7 @@ CL_Users_f (void)
 void
 CL_FullServerinfo_f (void)
 {
-	char       *p;
+	const char *p;
 
 	if (Cmd_Argc () != 2) {
 		Con_Printf ("usage: fullserverinfo <complete info string>\n");
@@ -667,7 +667,7 @@ CL_FullInfo_f (void)
 	char        key[512];
 	char        value[512];
 	char       *o;
-	char       *s;
+	const char *s;
 
 	if (Cmd_Argc () != 2) {
 		Con_Printf ("fullinfo <complete info string>\n");
@@ -744,7 +744,8 @@ CL_Packet_f (void)
 {
 	char        send[2048];
 	int         i, l;
-	char       *in, *out;
+	const char *in;
+	char       *out;
 	netadr_t    adr;
 
 	if (Cmd_Argc () != 3) {
@@ -1296,7 +1297,7 @@ CL_Init_Cvars (void)
 	Call this to drop to a console without exiting the qwcl
 */
 void
-Host_EndGame (char *message, ...)
+Host_EndGame (const char *message, ...)
 {
 	va_list     argptr;
 	char        string[1024];
@@ -1320,7 +1321,7 @@ Host_EndGame (char *message, ...)
 	This shuts down the client and exits qwcl
 */
 void
-Host_Error (char *error, ...)
+Host_Error (const char *error, ...)
 {
 	va_list     argptr;
 	char        string[1024];
@@ -1522,7 +1523,7 @@ static int
 check_quakerc (void)
 {
 	VFile *f;
-	char *l, *p;
+	const char *l, *p;
 	int ret = 1;
 
 	COM_FOpenFile ("quake.rc", &f);
@@ -1619,7 +1620,7 @@ Host_Init (void)
 	NET_Init (cl_port->int_val);
 	Netchan_Init ();
 	{
-		static char *sound_precache[MAX_MODELS];
+		static const char *sound_precache[MAX_MODELS];
 		int i;
 
 		for (i = 0; i < MAX_MODELS; i++)

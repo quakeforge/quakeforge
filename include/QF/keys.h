@@ -183,12 +183,12 @@ void Key_Event (int key, int alt, qboolean down);
 void Key_Init (void);
 void Key_Init_Cvars (void);
 void Key_WriteBindings (VFile *f);
-void Key_SetBinding (int keynum, char *binding);
+void Key_SetBinding (int keynum, const char *binding);
 void Key_ClearStates (void);
 
 void Key_ClearTyping (void);
 
 float Key_KeyState (kbutton_t *key);
-char *Key_KeynumToString (int keynum);
+const char *Key_KeynumToString (int keynum);
 
 #endif // _KEYS_H

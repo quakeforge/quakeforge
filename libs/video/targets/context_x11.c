@@ -474,7 +474,7 @@ X11_GrabKeyboard (void)
 }
 
 void
-X11_SetCaption (char *text)
+X11_SetCaption (const char *text)
 {
 	if (x_disp && x_win && text)
 		XStoreName (x_disp, x_win, text);

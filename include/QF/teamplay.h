@@ -36,7 +36,7 @@ void Team_Init_Cvars (void);
 void Team_BestWeaponImpulse (void);
 void Team_Dead (void);
 void Team_NewMap (void);
-char *Team_ParseSay (char *);
+const char *Team_ParseSay (const char *);
 void Locs_Init (void);
 
 #endif // __teamplay_h

@@ -54,8 +54,8 @@ int         locations_alloced = 0;
 int         locations_count = 0;
 int         location_blocks = 0;
 
-void locs_add (vec3_t location, char *name);
-void locs_load (char *filename);
+void locs_add (vec3_t location, const char *name);
+void locs_load (const char *filename);
 void locs_free (void);
 void locs_more (void);
 
@@ -88,7 +88,7 @@ locs_find (vec3_t target)
 }
 
 void
-locs_add (vec3_t location, char *name)
+locs_add (vec3_t location, const char *name)
 {
 	int         num;
 
@@ -109,10 +109,11 @@ locs_add (vec3_t location, char *name)
 }
 
 void
-locs_load (char *filename)
+locs_load (const char *filename)
 {
 	VFile      *file;
-	char       *line, *t1, *t2;
+	const char *line;
+	char       *t1, *t2;
 	vec3_t      loc;
 	char	    tmp[PATH_MAX];
 	char        foundname[MAX_OSPATH];
@@ -187,7 +188,7 @@ locs_more (void)
 }
 
 void
-locs_save (char *filename, qboolean gz)
+locs_save (const char *filename, qboolean gz)
 {
 	VFile *locfd;
 	int i;
@@ -215,7 +216,7 @@ locs_save (char *filename, qboolean gz)
 }
 
 void
-locs_mark (vec3_t loc, char *desc)
+locs_mark (vec3_t loc, const char *desc)
 {
 	locs_add (loc,desc);
 	Con_Printf ("Marked current location: %s\n",desc);
@@ -228,7 +229,7 @@ locs_mark (vec3_t loc, char *desc)
 */
 
 void
-locs_edit (vec3_t loc, char *desc)
+locs_edit (vec3_t loc, const char *desc)
 {
 	int i;
 	if (locations_count) {
@@ -266,7 +267,7 @@ locs_del (vec3_t loc)
 }
 
 void
-map_to_loc (char *mapname, char *filename)
+map_to_loc (const char *mapname, char *filename)
 {
 	char *t1;
 	

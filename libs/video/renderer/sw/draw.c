@@ -74,7 +74,7 @@ int         numcachepics;
 
 
 qpic_t *
-Draw_PicFromWad (char *name)
+Draw_PicFromWad (const char *name)
 {
 	return W_GetLumpName (name);
 }
@@ -92,7 +92,7 @@ Draw_ClearCache (void)
 
 
 qpic_t *
-Draw_CachePic (char *path, qboolean alpha)
+Draw_CachePic (const char *path, qboolean alpha)
 {
 	cachepic_t *pic;
 	int         i;
@@ -287,7 +287,7 @@ Draw_Character8 (int x, int y, int num)
 
 
 void
-Draw_String8 (int x, int y, char *str)
+Draw_String8 (int x, int y, const char *str)
 {
 	while (*str) {
 		Draw_Character8 (x, y, *str);
@@ -298,7 +298,7 @@ Draw_String8 (int x, int y, char *str)
 
 
 void
-Draw_AltString8 (int x, int y, char *str)
+Draw_AltString8 (int x, int y, const char *str)
 {
 	while (*str) {
 		Draw_Character8 (x, y, (*str) | 0x80);

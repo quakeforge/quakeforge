@@ -50,6 +50,6 @@ void Cam_Reset(void);
 void CL_Cam_Init(void);
 void CL_Cam_Init_Cvars(void);
 
-void CL_ParseEntityLump(char *entdata);
+void CL_ParseEntityLump(const char *entdata);
 
 #endif // _CL_CAM_H

@@ -85,7 +85,7 @@ Loop_SearchForHosts (qboolean xmit)
 
 
 qsocket_t  *
-Loop_Connect (char *host)
+Loop_Connect (const char *host)
 {
 	if (strcmp (host, "local") != 0)
 		return NULL;

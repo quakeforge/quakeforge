@@ -84,7 +84,7 @@ Host_Status_f (void)
 	int         minutes;
 	int         hours = 0;
 	int         j;
-	void        (*print) (char *fmt, ...);
+	void        (*print) (const char *fmt, ...);
 
 	if (cmd_source == src_command) {
 		if (!sv.active) {
@@ -574,7 +574,8 @@ Host_Loadgame_f (void)
 	VFile      *f;
 	char        mapname[MAX_QPATH];
 	float       time, tfloat;
-	char        str[32768], *start;
+	char        str[32768];
+	const char *start;
 	int         i, r;
 	edict_t    *ent;
 	int         entnum;
@@ -917,7 +918,7 @@ Host_Name_f
 void
 Host_Name_f (void)
 {
-	char       *newName;
+	const char *newName;
 
 	if (Cmd_Argc () == 1) {
 		Con_Printf ("\"name\" is \"%s\"\n", cl_name->string);
@@ -927,12 +928,11 @@ Host_Name_f (void)
 		newName = Cmd_Argv (1);
 	else
 		newName = Cmd_Args (1);
-	newName[15] = 0;
 
 	if (cmd_source == src_command) {
 		if (strcmp (cl_name->string, newName) == 0)
 			return;
-		Cvar_Set (cl_name, newName);
+		Cvar_Set (cl_name, va ("%.15s", newName));
 		if (cls.state == ca_connected)
 			Cmd_ForwardToServer ();
 		return;
@@ -985,7 +985,8 @@ Host_Say (qboolean teamonly)
 
 	save = host_client;
 
-	p = Cmd_Args (1);
+	p = Hunk_TempAlloc (strlen(Cmd_Args (1)) + 1);
+	strcpy (p, Cmd_Args (1));
 // remove quotes if present
 	if (*p == '"') {
 		p++;
@@ -1052,7 +1053,8 @@ Host_Tell_f (void)
 	strcpy (text, host_client->name);
 	strcat (text, ": ");
 
-	p = Cmd_Args (1);
+	p = Hunk_TempAlloc (strlen(Cmd_Args (1)) + 1);
+	strcpy (p, Cmd_Args (1));
 
 // remove quotes if present
 	if (*p == '"') {
@@ -1318,8 +1320,8 @@ Kicks a user off of the server
 void
 Host_Kick_f (void)
 {
-	char       *who;
-	char       *message = NULL;
+	const char *who;
+	const char *message = NULL;
 	client_t   *save;
 	int         i;
 	qboolean    byNumber = false;

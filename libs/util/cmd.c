@@ -52,8 +52,8 @@
 
 typedef struct cmdalias_s {
 	struct cmdalias_s *next;
-	char       *name;
-	char       *value;
+	const char       *name;
+	const char       *value;
 } cmdalias_t;
 
 cmdalias_t *cmd_alias;
@@ -103,7 +103,7 @@ Cbuf_Init (void)
 	Adds command text at the end of the buffer
 */
 void
-Cbuf_AddText (char *text)
+Cbuf_AddText (const char *text)
 {
 	int         l;
 
@@ -125,7 +125,7 @@ Cbuf_AddText (char *text)
 	TODO: Can we just read the buffer in the reverse order?
 */
 void
-Cbuf_InsertText (char *text)
+Cbuf_InsertText (const char *text)
 {
 	int         textlen;
 
@@ -295,7 +295,7 @@ Cmd_StuffCmds_f (void)
 
 */
 void
-Cmd_Exec_File (char *path)
+Cmd_Exec_File (const char *path)
 {
 	char       *f;
 	int         len;
@@ -381,7 +381,7 @@ Cmd_Alias_f (void)
 	cmdalias_t *alias;
 	char       *cmd;
 	int         i, c;
-	char       *s;
+	const char       *s;
 
 	if (Cmd_Argc () == 1) {
 		Con_Printf ("Current alias commands:\n");
@@ -394,7 +394,7 @@ Cmd_Alias_f (void)
 	// if the alias already exists, reuse it
 	alias = (cmdalias_t*)Hash_Find (cmd_alias_hash, s);
 	if (alias) {
-		free (alias->value);
+		free ((char*)alias->value);
 	} else {
 		cmdalias_t **a;
 
@@ -426,7 +426,7 @@ void
 Cmd_UnAlias_f (void)
 {
 	cmdalias_t *alias;
-	char       *s;
+	const char       *s;
 
 	if (Cmd_Argc () != 2) {
 		Con_Printf ("unalias <alias>: erase an existing alias\n");
@@ -443,8 +443,8 @@ Cmd_UnAlias_f (void)
 			;
 		*a = alias->next;
 
-		free (alias->name);
-		free (alias->value);
+		free ((char*)alias->name);
+		free ((char*)alias->value);
 		free (alias);
 	} else {
 		Con_Printf ("Unknown alias \"%s\"\n", s);
@@ -457,9 +457,9 @@ Cmd_UnAlias_f (void)
 
 typedef struct cmd_function_s {
 	struct cmd_function_s *next;
-	char       *name;
+	const char       *name;
 	xcommand_t  function;
-	char       *description;
+	const char       *description;
 } cmd_function_t;
 
 
@@ -467,8 +467,8 @@ typedef struct cmd_function_s {
 
 static int  cmd_argc;
 static char *cmd_argv[MAX_ARGS];
-static char *cmd_null_string = "";
-static char *cmd_args[MAX_ARGS];
+static const char *cmd_null_string = "";
+static const char *cmd_args[MAX_ARGS];
 
 
 
@@ -486,7 +486,7 @@ Cmd_Argc (void)
 /*
 	Cmd_Argv
 */
-char       *
+const char       *
 Cmd_Argv (int arg)
 {
 	if (arg >= cmd_argc)
@@ -499,10 +499,10 @@ Cmd_Argv (int arg)
 
 	Returns a single string containing argv(1) to argv(argc()-1)
 */
-char       *
+const char       *
 Cmd_Args (int start)
 {
-    	if (start >= cmd_argc || !cmd_args[start])
+	if (start >= cmd_argc || !cmd_args[start])
 		return "";
 	return cmd_args[start];
 }
@@ -514,7 +514,7 @@ Cmd_Args (int start)
 	Parses the given string into command line tokens.
 */
 void
-Cmd_TokenizeString (char *text)
+Cmd_TokenizeString (const char *text)
 {
 	static char argv_buf[1024];
 	int         argv_idx;
@@ -566,7 +566,7 @@ Cmd_TokenizeString (char *text)
 	Cmd_AddCommand
 */
 void
-Cmd_AddCommand (char *cmd_name, xcommand_t function, char *description)
+Cmd_AddCommand (const char *cmd_name, xcommand_t function, const char *description)
 {
 	cmd_function_t *cmd;
 	cmd_function_t **c;
@@ -599,7 +599,7 @@ Cmd_AddCommand (char *cmd_name, xcommand_t function, char *description)
 	Cmd_Exists
 */
 qboolean
-Cmd_Exists (char *cmd_name)
+Cmd_Exists (const char *cmd_name)
 {
 	cmd_function_t *cmd;
 
@@ -616,8 +616,8 @@ Cmd_Exists (char *cmd_name)
 /*
 	Cmd_CompleteCommand
 */
-char       *
-Cmd_CompleteCommand (char *partial)
+const char       *
+Cmd_CompleteCommand (const char *partial)
 {
 	cmd_function_t	*cmd;
 	int				len;
@@ -657,7 +657,7 @@ Cmd_CompleteCommand (char *partial)
 
 */
 int
-Cmd_CompleteCountPossible (char *partial)
+Cmd_CompleteCountPossible (const char *partial)
 {
 	cmd_function_t	*cmd;
 	int				len;
@@ -686,14 +686,14 @@ Cmd_CompleteCountPossible (char *partial)
 	Thanks to taniwha
 
 */
-char	**
-Cmd_CompleteBuildList (char *partial)
+const char	**
+Cmd_CompleteBuildList (const char *partial)
 {
 	cmd_function_t	*cmd;
 	int				len = 0;
 	int				bpos = 0;
 	int				sizeofbuf = (Cmd_CompleteCountPossible (partial) + 1) * sizeof (char *);
-	char			**buf;
+	const char			**buf;
 
 	len = strlen(partial);
 	buf = malloc(sizeofbuf + sizeof (char *));
@@ -715,8 +715,8 @@ Cmd_CompleteBuildList (char *partial)
 	Thanks to taniwha
 
 */
-char *
-Cmd_CompleteAlias (char * partial)
+const char *
+Cmd_CompleteAlias (const char * partial)
 {
 	cmdalias_t	*alias;
 	int			len;
@@ -744,7 +744,7 @@ Cmd_CompleteAlias (char * partial)
 
 */
 int
-Cmd_CompleteAliasCountPossible (char *partial)
+Cmd_CompleteAliasCountPossible (const char *partial)
 {
 	cmdalias_t	*alias;
 	int			len;
@@ -774,14 +774,14 @@ Cmd_CompleteAliasCountPossible (char *partial)
 	Thanks to taniwha
 
 */
-char	**
-Cmd_CompleteAliasBuildList (char *partial)
+const char	**
+Cmd_CompleteAliasBuildList (const char *partial)
 {
 	cmdalias_t	*alias;
 	int			len = 0;
 	int			bpos = 0;
 	int			sizeofbuf = (Cmd_CompleteAliasCountPossible (partial) + 1) * sizeof (char *);
-	char		**buf;
+	const char		**buf;
 
 	len = strlen(partial);
 	buf = malloc(sizeofbuf + sizeof (char *));
@@ -802,7 +802,7 @@ Cmd_CompleteAliasBuildList (char *partial)
 */
 // dest must point to a 1024-byte buffer
 void
-Cmd_ExpandVariables (char *data, char *dest)
+Cmd_ExpandVariables (const char *data, char *dest)
 {
 	unsigned int c;
 	char        buf[1024];
@@ -872,7 +872,7 @@ Cmd_ExpandVariables (char *data, char *dest)
 	FIXME: lookupnoadd the token to speed search?
 */
 void
-Cmd_ExecuteString (char *text, cmd_source_t src)
+Cmd_ExecuteString (const char *text, cmd_source_t src)
 {
 	cmd_function_t *cmd;
 	cmdalias_t *a;
@@ -923,7 +923,7 @@ Cmd_ExecuteString (char *text, cmd_source_t src)
 	where the given parameter apears, or 0 if not present
 */
 int
-Cmd_CheckParm (char *parm)
+Cmd_CheckParm (const char *parm)
 {
 	int         i;
 
@@ -961,8 +961,8 @@ static void
 cmd_alias_free (void *_a, void *unused)
 {
 	cmdalias_t *a = (cmdalias_t*)_a;
-	free (a->name);
-	free (a->value);
+	free ((char*)a->name);
+	free ((char*)a->value);
 	free (a);
 }
 
@@ -1021,8 +1021,8 @@ char        com_token[MAX_COM_TOKEN];
 
 	Parse a token out of a string
 */
-char       *
-COM_Parse (char *data)
+const char       *
+COM_Parse (const char *data)
 {
 	unsigned int c;
 	int         len;

@@ -68,7 +68,7 @@
 
 static int         audio_fd;
 static int         snd_inited;
-static char       *snd_dev = "/dev/dsp";
+static const char *snd_dev = "/dev/dsp";
 
 static int  tryrates[] = { 11025, 22050, 22051, 44100, 8000 };
 

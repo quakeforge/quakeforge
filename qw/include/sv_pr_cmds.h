@@ -35,7 +35,7 @@ typedef struct progs_s progs_t;
 # define PROGS_T
 #endif
 
-char *PF_VarString (progs_t *pr, int first);
+const char *PF_VarString (progs_t *pr, int first);
 void PF_error (progs_t *pr);
 void PF_objerror (progs_t *pr);
 void PF_makevectors (progs_t *pr);
@@ -69,7 +69,7 @@ void PF_vtos (progs_t *pr);
 void PF_Spawn (progs_t *pr);
 void PF_Remove (progs_t *pr);
 void PF_Find (progs_t *pr);
-void PR_CheckEmptyString (progs_t *pr, char *s);
+void PR_CheckEmptyString (progs_t *pr, const char *s);
 void PF_precache_file (progs_t *pr);
 void PF_precache_sound (progs_t *pr);
 void PF_precache_model (progs_t *pr);

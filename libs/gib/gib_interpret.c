@@ -52,10 +52,10 @@
 #include "gib_stack.h"
 #include "gib_vars.h"
 
-char       *gib_subargv[256];
+const char *gib_subargv[256];
 int         gib_subargc;
 
-char       *
+const char       *
 GIB_Argv (int i)
 {
 	return gib_instack[gib_insp - 1].argv[i];
@@ -77,7 +77,7 @@ GIB_Strip_Arg (char *arg)
 }
 
 int
-GIB_Execute_Block (char *block, int retflag)
+GIB_Execute_Block (const char *block, int retflag)
 {
 	int         len, i, ret;
 	char       *code;
@@ -117,7 +117,7 @@ GIB_Execute_Inst (void)
 }
 
 int
-GIB_Interpret_Inst (char *inst)
+GIB_Interpret_Inst (const char *inst)
 {
 	char       *buffer;
 	char       *buffer2;
@@ -221,7 +221,7 @@ GIB_Execute_Sub (void)
 }
 
 int
-GIB_Run_Inst (char *inst)
+GIB_Run_Inst (const char *inst)
 {
 	int         ret;
 

@@ -144,7 +144,7 @@ NET_Ban_f (void)
 {
 	char        addrStr[32];
 	char        maskStr[32];
-	void        (*print) (char *fmt, ...);
+	void        (*print) (const char *fmt, ...);
 
 	if (cmd_source == src_command) {
 		if (!sv.active) {
@@ -602,7 +602,7 @@ Test_Poll (void)
 static void
 Test_f (void)
 {
-	char       *host;
+	const char *host;
 	int         n;
 	int         max = MAX_SCOREBOARD;
 	struct qsockaddr sendaddr;
@@ -740,7 +740,7 @@ Test2_Poll (void)
 static void
 Test2_f (void)
 {
-	char       *host;
+	const char *host;
 	int         n;
 	struct qsockaddr sendaddr;
 
@@ -1266,7 +1266,7 @@ Datagram_SearchForHosts (qboolean xmit)
 
 
 static qsocket_t *
-_Datagram_Connect (char *host)
+_Datagram_Connect (const char *host)
 {
 	struct qsockaddr sendaddr;
 	struct qsockaddr readaddr;
@@ -1429,7 +1429,7 @@ _Datagram_Connect (char *host)
 }
 
 qsocket_t  *
-Datagram_Connect (char *host)
+Datagram_Connect (const char *host)
 {
 	qsocket_t  *ret = NULL;
 

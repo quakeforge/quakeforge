@@ -146,7 +146,7 @@ PR_GetString (progs_t *pr, int num)
 }
 
 int
-PR_SetString (progs_t *pr, char *s)
+PR_SetString (progs_t *pr, const char *s)
 {
 	strref_t *sr = Hash_Find (pr->strref_hash, s);
 

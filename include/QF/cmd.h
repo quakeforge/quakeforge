@@ -49,11 +49,11 @@ The game starts with a Cbuf_AddText ("exec quake.rc\n"); Cbuf_Execute ();
 void Cbuf_Init (void);
 // allocates an initial text buffer that will grow as needed
 
-void Cbuf_AddText (char *text);
+void Cbuf_AddText (const char *text);
 // as new commands are generated from the console or keybindings,
 // the text is added to the end of the command buffer.
 
-void Cbuf_InsertText (char *text);
+void Cbuf_InsertText (const char *text);
 // when a command wants to issue other commands immediately, the text is
 // inserted at the beginning of the buffer, before any remaining unexecuted
 // commands.
@@ -91,45 +91,45 @@ void	Cmd_Init_Hash (void);
 void	Cmd_Init (void);
 void	cl_Cmd_Init (void);
 
-void	Cmd_AddCommand (char *cmd_name, xcommand_t function, char *description);
+void	Cmd_AddCommand (const char *cmd_name, xcommand_t function, const char *description);
 // called by the init functions of other parts of the program to
 // register commands and functions to call for them.
 // The cmd_name is referenced later, so it should not be in temp memory
 // if function is NULL, the command will be forwarded to the server
 // as a clc_stringcmd instead of executed locally
 
-qboolean Cmd_Exists (char *cmd_name);
+qboolean Cmd_Exists (const char *cmd_name);
 // used by the cvar code to check for cvar / command name overlap
 
-char 	*Cmd_CompleteCommand (char *partial);
+const char 	*Cmd_CompleteCommand (const char *partial);
 // attempts to match a partial command for automatic command line completion
 // returns NULL if nothing fits
 
-int		Cmd_CompleteAliasCountPossible (char *partial);
-char	**Cmd_CompleteAliasBuildList (char *partial);
-int		Cmd_CompleteCountPossible (char *partial);
-char	**Cmd_CompleteBuildList (char *partial);
-char	*Cmd_CompleteAlias (char *partial);
+int		Cmd_CompleteAliasCountPossible (const char *partial);
+const char	**Cmd_CompleteAliasBuildList (const char *partial);
+int		Cmd_CompleteCountPossible (const char *partial);
+const char	**Cmd_CompleteBuildList (const char *partial);
+const char	*Cmd_CompleteAlias (const char *partial);
 // Enhanced console completion by Fett erich@heintz.com
 // Added by EvilTypeGuy eviltypeguy@qeradiant.com
 
 
 int		Cmd_Argc (void);
-char	*Cmd_Argv (int arg);
-char	*Cmd_Args (int start);
+const char	*Cmd_Argv (int arg);
+const char	*Cmd_Args (int start);
 // The functions that execute commands get their parameters with these
 // functions. Cmd_Argv () will return an empty string, not a NULL
 // if arg > argc, so string operations are always safe.
 
-int Cmd_CheckParm (char *parm);
+int Cmd_CheckParm (const char *parm);
 // Returns the position (1 to argc-1) in the command's argument list
 // where the given parameter apears, or 0 if not present
 
-void Cmd_TokenizeString (char *text);
+void Cmd_TokenizeString (const char *text);
 // Takes a null terminated string.  Does not need to be /n terminated.
 // breaks the string up into arg tokens.
 
-void   Cmd_ExecuteString (char *text, cmd_source_t src);
+void   Cmd_ExecuteString (const char *text, cmd_source_t src);
 // Parses a single line of text into arguments and tries to execute it.
 // The text can come from the command buffer, a remote client, or stdin.
 
@@ -142,11 +142,11 @@ void	Cmd_ForwardToServer (void);
 void Cmd_StuffCmds_f (void);
 
 void Cbuf_Execute_Sets (void);
-void Cmd_Exec_File (char *path);
+void Cmd_Exec_File (const char *path);
 
 #define		MAX_COM_TOKEN	1024
 extern char		com_token[MAX_COM_TOKEN];
-char *COM_Parse (char *data);
+const char *COM_Parse (const char *data);
 
 extern struct cvar_s *cl_warncmd;
 

@@ -197,7 +197,7 @@ CL_CalcNet (void)
 	to start a download from the server.
 */
 qboolean
-CL_CheckOrDownloadFile (char *filename)
+CL_CheckOrDownloadFile (const char *filename)
 {
 	VFile      *f;
 

@@ -45,7 +45,7 @@ static int  snd_inited;
 
 static snd_pcm_t *pcm;
 //static const snd_pcm_channel_area_t *mmap_areas;
-static char *pcmname = NULL;
+static const char *pcmname = NULL;
 size_t      buffer_size;
 
 plugin_t           plugin_info;

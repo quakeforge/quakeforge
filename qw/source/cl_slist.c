@@ -583,7 +583,7 @@ SL_Command (void)
 }
 
 void
-MSL_ParseServerList(char *msl_data)
+MSL_ParseServerList(const char *msl_data)
 {
 	int msl_ptr;
 	for (msl_ptr = 0; msl_ptr < strlen(msl_data); msl_ptr = msl_ptr + 6)
@@ -663,10 +663,10 @@ void SL_Init (void)
 }
 
 int
-SL_CheckStatus (char *cs_from, char *cs_data)
+SL_CheckStatus (const char *cs_from, const char *cs_data)
 {
 	server_entry_t *temp;
-	char *tmp_desc;
+	const char *tmp_desc;
 	
 	for (temp = slist; temp; temp = temp->next)
 		if (temp->waitstatus)
@@ -699,7 +699,7 @@ SL_CheckStatus (char *cs_from, char *cs_data)
 }
 
 void 
-SL_CheckPing (char *cp_from)
+SL_CheckPing (const char *cp_from)
 {
 	server_entry_t *temp;
 

@@ -114,7 +114,7 @@ S_Shutdown (void)
 }
 
 void
-S_TouchSound (char *sample)
+S_TouchSound (const char *sample)
 {
 	if (sndmodule)
 		sndmodule->functions->sound->pS_TouchSound (sample);
@@ -150,7 +150,7 @@ S_StopSound (int entnum, int entchannel)
 }
 
 sfx_t      *
-S_PrecacheSound (char *sample)
+S_PrecacheSound (const char *sample)
 {
 	if (sndmodule)
 		return sndmodule->functions->sound->pS_PrecacheSound (sample);
@@ -201,7 +201,7 @@ S_ExtraUpdate (void)
 }
 
 void
-S_LocalSound (char *s)
+S_LocalSound (const char *s)
 {
 	if (sndmodule)
 		sndmodule->functions->sound->pS_LocalSound (s);

@@ -53,7 +53,7 @@
 static gib_module_t *gibmodules;
 
 void
-GIB_Module_Load (char *name, VFile *f)
+GIB_Module_Load (const char *name, VFile *f)
 {
 	char        line[1024];
 	gib_module_t *newmod;
@@ -80,7 +80,7 @@ GIB_Module_Load (char *name, VFile *f)
 }
 
 gib_module_t *
-GIB_Create_Module (char *name)
+GIB_Create_Module (const char *name)
 {
 	gib_module_t *new;
 
@@ -95,7 +95,7 @@ GIB_Create_Module (char *name)
 }
 
 gib_sub_t  *
-GIB_Create_Sub (gib_module_t * mod, char *name)
+GIB_Create_Sub (gib_module_t * mod, const char *name)
 {
 	gib_sub_t  *new;
 
@@ -139,7 +139,7 @@ GIB_Read_Sub (gib_sub_t * sub, VFile *f)
 }
 
 gib_module_t *
-GIB_Find_Module (char *name)
+GIB_Find_Module (const char *name)
 {
 	gib_module_t *mod;
 
@@ -152,7 +152,7 @@ GIB_Find_Module (char *name)
 }
 
 gib_sub_t  *
-GIB_Find_Sub (gib_module_t * mod, char *name)
+GIB_Find_Sub (gib_module_t * mod, const char *name)
 {
 	gib_sub_t  *sub;
 

@@ -209,7 +209,7 @@ qboolean
 CheckForCommand (void)
 {
 	char        command[128];
-	char       *cmd, *s;
+	const char *cmd, *s;
 	int         i;
 
 	s = key_lines[edit_line] + 1;
@@ -468,7 +468,7 @@ Key_Message (int key)
 	the K_* names are matched up.
 */
 int
-Key_StringToKeynum (char *str)
+Key_StringToKeynum (const char *str)
 {
 	keyname_t  *kn;
 
@@ -492,7 +492,7 @@ Key_StringToKeynum (char *str)
 	given keynum.
 	FIXME: handle quote special (general escape sequence?)
 */
-char *
+const char *
 Key_KeynumToString (int keynum)
 {
 	keyname_t  *kn;
@@ -515,7 +515,7 @@ Key_KeynumToString (int keynum)
 
 
 void
-Key_SetBinding (int keynum, char *binding)
+Key_SetBinding (int keynum, const char *binding)
 {
 	char       *new;
 	int         l;

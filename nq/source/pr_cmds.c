@@ -58,7 +58,7 @@
 ===============================================================================
 */
 
-char       *
+const char       *
 PF_VarString (progs_t * pr, int first)
 {
 	int         i;
@@ -85,7 +85,7 @@ error(value)
 void
 PF_error (progs_t * pr)
 {
-	char       *s;
+	const char *s;
 	edict_t    *ed;
 
 	s = PF_VarString (pr, 0);
@@ -110,7 +110,7 @@ objerror(value)
 void
 PF_objerror (progs_t * pr)
 {
-	char       *s;
+	const char       *s;
 	edict_t    *ed;
 
 	s = PF_VarString (pr, 0);
@@ -269,7 +269,7 @@ void
 PF_setmodel (progs_t * pr)
 {
 	edict_t    *e;
-	char       *m, **check;
+	const char       *m, **check;
 	model_t    *mod;
 	int         i;
 
@@ -308,7 +308,7 @@ bprint(value)
 void
 PF_bprint (progs_t * pr)
 {
-	char       *s;
+	const char       *s;
 
 	s = PF_VarString (pr, 0);
 	SV_BroadcastPrintf ("%s", s);
@@ -326,7 +326,7 @@ sprint(clientent, value)
 void
 PF_sprint (progs_t * pr)
 {
-	char       *s;
+	const char       *s;
 	client_t   *client;
 	int         entnum;
 
@@ -357,7 +357,7 @@ centerprint(clientent, value)
 void
 PF_centerprint (progs_t * pr)
 {
-	char       *s;
+	const char       *s;
 	client_t   *client;
 	int         entnum;
 
@@ -543,8 +543,8 @@ PF_ambientsound
 void
 PF_ambientsound (progs_t * pr)
 {
-	char      **check;
-	char       *samp;
+	const char      **check;
+	const char       *samp;
 	float      *pos;
 	float       vol, attenuation;
 	int         i, soundnum;
@@ -594,7 +594,7 @@ Larger attenuations will drop off.
 void
 PF_sound (progs_t * pr)
 {
-	char       *sample;
+	const char       *sample;
 	int         channel;
 	edict_t    *entity;
 	int         volume;
@@ -841,7 +841,7 @@ void
 PF_stuffcmd (progs_t * pr)
 {
 	int         entnum;
-	char       *str;
+	const char       *str;
 	client_t   *old;
 
 	entnum = G_EDICTNUM (pr, OFS_PARM0);
@@ -867,7 +867,7 @@ localcmd (string)
 void
 PF_localcmd (progs_t * pr)
 {
-	char       *str;
+	const char       *str;
 
 	str = G_STRING (pr, OFS_PARM0);
 	Cbuf_AddText (str);
@@ -883,7 +883,7 @@ float cvar (string)
 void
 PF_cvar (progs_t * pr)
 {
-	char       *str;
+	const char       *str;
 
 	str = G_STRING (pr, OFS_PARM0);
 
@@ -900,7 +900,7 @@ float cvar (string)
 void
 PF_cvar_set (progs_t * pr)
 {
-	char       *var_name, *val;
+	const char       *var_name, *val;
 	cvar_t     *var;
 
 	var_name = G_STRING (pr, OFS_PARM0);
@@ -1043,7 +1043,7 @@ PF_Find (progs_t * pr)
 {
 	int         e;
 	int         f;
-	char       *s, *t;
+	const char       *s, *t;
 	edict_t    *ed;
 	edict_t    *first;
 	edict_t    *second;
@@ -1088,7 +1088,7 @@ PF_Find (progs_t * pr)
 {
 	int         e;
 	int         f;
-	char       *s, *t;
+	const char       *s, *t;
 	edict_t    *ed;
 
 	e = G_EDICTNUM (pr, OFS_PARM0);
@@ -1115,7 +1115,7 @@ PF_Find (progs_t * pr)
 #endif
 
 void
-PR_CheckEmptyString (progs_t * pr, char *s)
+PR_CheckEmptyString (progs_t * pr, const char *s)
 {
 	if (s[0] <= ' ')
 		PR_RunError (pr, "Bad string");
@@ -1133,7 +1133,7 @@ PF_precache_file (progs_t * pr)
 void
 PF_precache_sound (progs_t * pr)
 {
-	char       *s;
+	const char       *s;
 	int         i;
 
 	if (sv.state != ss_loading)
@@ -1158,7 +1158,7 @@ PF_precache_sound (progs_t * pr)
 void
 PF_precache_model (progs_t * pr)
 {
-	char       *s;
+	const char       *s;
 	int         i;
 
 	if (sv.state != ss_loading)
@@ -1649,8 +1649,6 @@ PF_WriteEntity (progs_t * pr)
 }
 
 //=============================================================================
-
-int         SV_ModelIndex (char *name);
 
 void
 PF_makestatic (progs_t * pr)

@@ -93,7 +93,7 @@ SND_Shutdown (void)
 }
 
 void
-SND_TouchSound (char *sample)
+SND_TouchSound (const char *sample)
 {
 }
 
@@ -119,7 +119,7 @@ SND_StopSound (int entnum, int entchannel)
 }
 
 sfx_t      *
-SND_PrecacheSound (char *sample)
+SND_PrecacheSound (const char *sample)
 {
 	return NULL;
 }
@@ -155,7 +155,7 @@ SND_ExtraUpdate (void)
 }
 
 void
-SND_LocalSound (char *s)
+SND_LocalSound (const char *s)
 {
 }
 

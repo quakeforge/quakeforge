@@ -546,7 +546,7 @@ GL_Upload8 (byte * data, int width, int height, qboolean mipmap, qboolean alpha)
 
 
 int
-GL_LoadTexture (char *identifier, int width, int height, byte * data,
+GL_LoadTexture (const char *identifier, int width, int height, byte * data,
 		qboolean mipmap, qboolean alpha, int bytesperpixel)
 {
 	gltexture_t *glt;

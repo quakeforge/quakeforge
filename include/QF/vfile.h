@@ -51,7 +51,7 @@ int Qseek(VFile *file, long offset, int whence);
 long Qtell(VFile *file);
 int Qflush(VFile *file);
 int Qeof(VFile *file);
-char *Qgetline(VFile *file);
+const char *Qgetline(VFile *file);
 int Qgetpos(VFile *file, fpos_t *pos);
 int Qsetpos(VFile *file, fpos_t *pos);
 

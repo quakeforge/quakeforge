@@ -118,8 +118,8 @@ PR_LoadDebug (progs_t *pr)
 	pr_type_t  *str = 0;
 	int         start = Hunk_LowMark ();
 	int         i;
-	char       *path_end;
-	char       *sym_file;
+	const char *path_end;
+	const char *sym_file;
 	char       *sym_path;
 	ddef_t     *def;
 

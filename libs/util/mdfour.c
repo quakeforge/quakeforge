@@ -155,7 +155,7 @@ mdfour64 (uint32 * M)
 }
 
 static void
-copy64 (uint32 * M, unsigned char *in)
+copy64 (uint32 * M, const unsigned char *in)
 {
 	int         i;
 
@@ -185,7 +185,7 @@ mdfour_begin (struct mdfour *md)
 
 
 static void
-mdfour_tail (unsigned char *in, int n)
+mdfour_tail (const unsigned char *in, int n)
 {
 	unsigned char buf[128];
 	uint32      M[16];
@@ -214,7 +214,7 @@ mdfour_tail (unsigned char *in, int n)
 }
 
 void
-mdfour_update (struct mdfour *md, unsigned char *in, int n)
+mdfour_update (struct mdfour *md, const unsigned char *in, int n)
 {
 	uint32      M[16];
 
@@ -248,7 +248,7 @@ mdfour_result (struct mdfour *md, unsigned char *out)
 
 
 void
-mdfour (unsigned char *out, unsigned char *in, int n)
+mdfour (unsigned char *out, const unsigned char *in, int n)
 {
 	struct mdfour md;
 

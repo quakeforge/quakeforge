@@ -66,7 +66,7 @@ cvar_t     *timestamps;
 cvar_t     *timeformat;
 
 void
-Sys_DebugLog (char *file, char *fmt, ...)
+Sys_DebugLog (const char *file, const char *fmt, ...)
 {
 	va_list     argptr;
 	static char data[1024];
@@ -131,7 +131,7 @@ floating_point_exception_handler (int whatever)
 	signal (SIGFPE, floating_point_exception_handler);
 }
 
-char *
+const char *
 Sys_ConsoleInput (void)
 {
 	static char text[256];
@@ -171,7 +171,7 @@ Sys_LowFPPrecision (void)
 #endif
 
 int
-main (int c, char *v[])
+main (int c, const char *v[])
 {
 
 	double      time, oldtime, newtime;

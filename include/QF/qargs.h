@@ -37,11 +37,11 @@ extern	int		com_argc;
 extern	char	**com_argv;
 extern	char	*com_cmdline;
 
-int COM_CheckParm (char *parm);
-void COM_AddParm (char *parm);
+int COM_CheckParm (const char *parm);
+void COM_AddParm (const char *parm);
 
 void COM_Init (void);
 void COM_Init_Cvars (void);
-void COM_InitArgv (int argc, char **argv);
+void COM_InitArgv (int argc, const char **argv);
 
 #endif // __qargs_h

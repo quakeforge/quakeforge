@@ -121,7 +121,7 @@ PR_Profile_f (void)
 }
 
 static int
-parse_field (progs_t *pr, char *key, char *value)
+parse_field (progs_t *pr, const char *key, const char *value)
 {
 	/*
 		If skyname is set, we want to allow skyboxes and set what the skybox

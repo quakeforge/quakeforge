@@ -43,7 +43,7 @@ void SCR_UpdateWholeScreen (void);
 void SCR_SizeUp (void);
 void SCR_SizeDown (void);
 void SCR_BringDownConsole (void);
-void SCR_CenterPrint (char *str);
+void SCR_CenterPrint (const char *str);
 
 void SCR_BeginLoadingPlaque (void);
 void SCR_EndLoadingPlaque (void);
@@ -59,7 +59,7 @@ void SCR_DrawConsole (int swap);
 struct tex_s *SCR_ScreenShot (int width, int height);
 void SCR_DrawStringToSnap (const char *s, struct tex_s *tex, int x, int y);
 int MipColor (int r, int g, int b);
-int SCR_ModalMessage (char *text);
+int SCR_ModalMessage (const char *text);
 
 extern	float		scr_con_current;
 extern	float		scr_conlines;		// lines of console to display

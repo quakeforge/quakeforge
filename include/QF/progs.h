@@ -70,7 +70,8 @@ void PR_Init_Cvars (void);
 
 void PR_PrintStatement (progs_t * pr, dstatement_t *s);
 void PR_ExecuteProgram (progs_t *pr, func_t fnum);
-void PR_LoadProgs (progs_t *pr, char *progsname);
+progs_t *PR_LoadProgsFile (const char *progsname);
+void PR_LoadProgs (progs_t *pr, const char *progsname);
 void PR_LoadStrings (progs_t *pr);
 void PR_LoadDebug (progs_t *pr);
 edict_t *PR_InitEdicts (progs_t *pr, int num_edicts);
@@ -80,20 +81,20 @@ void PR_Profile_f (void);
 edict_t *ED_Alloc (progs_t *pr);
 void ED_Free (progs_t *pr, edict_t *ed);
 
-char	*ED_NewString (progs_t *pr, char *string);
+char	*ED_NewString (progs_t *pr, const char *string);
 // returns a copy of the string allocated from the server's string heap
 
 void ED_Print (progs_t *pr, edict_t *ed);
 void ED_Write (progs_t *pr, VFile *f, edict_t *ed);
-char *ED_ParseEdict (progs_t *pr, char *data, edict_t *ent);
+const char *ED_ParseEdict (progs_t *pr, const char *data, edict_t *ent);
 
 void ED_WriteGlobals (progs_t *pr, VFile *f);
-void ED_ParseGlobals (progs_t *pr, char *data);
+void ED_ParseGlobals (progs_t *pr, const char *data);
 
-void ED_LoadFromFile (progs_t *pr, char *data);
+void ED_LoadFromFile (progs_t *pr, const char *data);
 
 ddef_t *ED_FindField (progs_t *pr, const char *name);
-int ED_GetFieldIndex (progs_t *pr, char *name);
+int ED_GetFieldIndex (progs_t *pr, const char *name);
 dfunction_t *ED_FindFunction (progs_t *pr, const char *name);
 
 int PR_AccessField (progs_t *pr, const char *name, etype_t type,
@@ -142,7 +143,7 @@ func_t PR_GetFunctionIndex (progs_t *pr, const char *name);
 int PR_GetFieldOffset (progs_t *pr, const char *name);
 
 void PR_Error (progs_t *pr, const char *error, ...) __attribute__((format(printf,2,3)));
-void PR_RunError (progs_t *pr, char *error, ...) __attribute__((format(printf,2,3)));
+void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(printf,2,3)));
 
 void ED_PrintEdicts (progs_t *pr);
 void ED_PrintNum (progs_t *pr, int ent);
@@ -152,14 +153,14 @@ void PR_Profile (progs_t *pr);
 char *PR_GlobalString (progs_t *pr, int ofs);
 char *PR_GlobalStringNoContents (progs_t *pr, int ofs);
 
-pr_type_t *GetEdictFieldValue(progs_t *pr, edict_t *ed, char *field);
+pr_type_t *GetEdictFieldValue(progs_t *pr, edict_t *ed, const char *field);
 
 //
 // PR Strings stuff
 //
 
 char *PR_GetString(progs_t *pr, int num);
-int PR_SetString(progs_t *pr, char *s);
+int PR_SetString(progs_t *pr, const char *s);
 void PR_GarbageCollect (progs_t *pr);
 
 //
@@ -195,7 +196,7 @@ typedef struct strref_s {
 } strref_t;
 
 struct progs_s {
-	char			*progs_name;
+	const char		*progs_name;
 	dprograms_t		*progs;
 
 	struct hashtab_s *function_hash;
@@ -243,7 +244,7 @@ struct progs_s {
 	void			(*unlink)(edict_t *ent);
 	void			(*flush)(void);
 
-	int				(*parse_field)(progs_t *pr, char *key, char *value);
+	int				(*parse_field)(progs_t *pr, const char *key, const char *value);
 	int				(*prune_edict)(progs_t *pr, edict_t *ent);
 
 	builtin_t		*builtins;

@@ -381,7 +381,7 @@ Qeof (VFile *file)
 	Dynamic length version of Qgets. DO NOT free the buffer.
 
 */
-char *
+const char *
 Qgetline (VFile *file)
 {
 	static int  size = 256;

@@ -36,7 +36,7 @@
 void CL_Init (void);
 void Host_WriteConfiguration (void);
 
-void CL_EstablishConnection (char *host);
+void CL_EstablishConnection (const char *host);
 
 void CL_Disconnect (void);
 void CL_Disconnect_f (void);

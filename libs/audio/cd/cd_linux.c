@@ -274,7 +274,7 @@ I_CDAudio_Shutdown (void)
 void // FIXME: was static
 I_CD_f (void)
 {
-	char       *command;
+	const char *command;
 	int         ret;
 	int         n;
 

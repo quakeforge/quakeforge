@@ -56,7 +56,7 @@ static gib_inst_t *gibinstructions;
 char       *gib_subret;
 
 void
-GIB_AddInstruction (char *name, gib_func_t func)
+GIB_AddInstruction (const char *name, gib_func_t func)
 {
 	gib_inst_t *new;
 
@@ -69,7 +69,7 @@ GIB_AddInstruction (char *name, gib_func_t func)
 }
 
 gib_inst_t *
-GIB_Find_Instruction (char *name)
+GIB_Find_Instruction (const char *name)
 {
 	gib_inst_t *inst;
 
@@ -194,7 +194,7 @@ GIB_Con_f (void)
 }
 
 int
-GIB_ExpandVars (char *source, char *buffer, int buffersize)
+GIB_ExpandVars (const char *source, char *buffer, int buffersize)
 {
 	int         i, n, m;
 
@@ -226,7 +226,7 @@ GIB_ExpandVars (char *source, char *buffer, int buffersize)
 }
 
 int
-GIB_ExpandBackticks (char *source, char *buffer, int buffersize)
+GIB_ExpandBackticks (const char *source, char *buffer, int buffersize)
 {
 	int         i, n, m, ret;
 

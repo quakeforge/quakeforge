@@ -97,6 +97,6 @@ D_EndDirectRect (int x, int y, int width, int height)
 }
 
 void
-VID_SetCaption (char *text)
+VID_SetCaption (const char *text)
 {
 }

@@ -147,7 +147,7 @@ Con_Shutdown (void)
 }
 
 void
-Con_Print (char *txt)
+Con_Print (const char *txt)
 {
 	chtype      ch;
 
@@ -309,11 +309,11 @@ Con_ProcessInput (void)
 void
 Con_CompleteCommandLine (void)
 {
-	char	*cmd = "";
+	const char	*cmd = "";
 	char	*s;
 	int	c, v, a, i;
 	int		cmd_len;
-	char	**list[3] = {0, 0, 0};
+	const char	**list[3] = {0, 0, 0};
 
 	s = key_lines[edit_line] + 1;
 	if (*s == '\\' || *s == '/')
@@ -348,7 +348,7 @@ Con_CompleteCommandLine (void)
 		do {
 			for (i = 0; i < 3; i++) {
 				char ch = cmd[cmd_len];
-				char **l = list[i];
+				const char **l = list[i];
 				if (l) {
 					while (*l && (*l)[cmd_len] == ch)
 						l++;

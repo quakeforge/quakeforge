@@ -77,10 +77,10 @@ extern	int			wad_numlumps;
 extern	lumpinfo_t	*wad_lumps;
 extern	byte		*wad_base;
 
-void	W_LoadWadFile (char *filename);
-void	W_CleanupName (char *in, char *out);
-lumpinfo_t	*W_GetLumpinfo (char *name);
-void	*W_GetLumpName (char *name);
+void	W_LoadWadFile (const char *filename);
+void	W_CleanupName (const char *in, char *out);
+lumpinfo_t	*W_GetLumpinfo (const char *name);
+void	*W_GetLumpName (const char *name);
 void	*W_GetLumpNum (int num);
 
 void SwapPic (qpic_t *pic);

@@ -122,7 +122,7 @@ cvar_t     *temp1;
 
 
 void
-Host_EndGame (char *message, ...)
+Host_EndGame (const char *message, ...)
 {
 	va_list     argptr;
 	char        string[1024];
@@ -152,7 +152,7 @@ Host_EndGame (char *message, ...)
 	This shuts down both the client and server
 */
 void
-Host_Error (char *error, ...)
+Host_Error (const char *error, ...)
 {
 	va_list     argptr;
 	char        string[1024];
@@ -297,7 +297,7 @@ Host_WriteConfiguration (void)
 	FIXME: make this just a stuffed echo
 */
 void
-SV_ClientPrintf (char *fmt, ...)
+SV_ClientPrintf (const char *fmt, ...)
 {
 	va_list     argptr;
 	char        string[1024];
@@ -317,7 +317,7 @@ SV_ClientPrintf (char *fmt, ...)
 	Sends text to all active clients
 */
 void
-SV_BroadcastPrintf (char *fmt, ...)
+SV_BroadcastPrintf (const char *fmt, ...)
 {
 	va_list     argptr;
 	char        string[1024];
@@ -341,7 +341,7 @@ SV_BroadcastPrintf (char *fmt, ...)
 	Send text over to the client to be executed
 */
 void
-Host_ClientCommands (char *fmt, ...)
+Host_ClientCommands (const char *fmt, ...)
 {
 	va_list     argptr;
 	char        string[1024];
@@ -546,7 +546,7 @@ Host_FilterTime (float time)
 void
 Host_GetConsoleCommands (void)
 {
-	char       *cmd;
+	const char *cmd;
 
 	while (1) {
 		cmd = Sys_ConsoleInput ();
@@ -853,7 +853,7 @@ static int
 check_quakerc (void)
 {
 	VFile *f;
-	char *l, *p;
+	const char *l, *p;
 	int ret = 1;
 
 	COM_FOpenFile ("quake.rc", &f);

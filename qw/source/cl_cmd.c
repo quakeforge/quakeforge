@@ -69,7 +69,7 @@ Cmd_ForwardToServer (void)
 
 		if (!strcasecmp (Cmd_Argv (0), "say") ||
 			!strcasecmp (Cmd_Argv (0), "say_team")) {
-			char       *s;
+			const char *s;
 
 			s = Team_ParseSay (Cmd_Args (1));
 			if (*s && *s < 32 && *s != 10) {

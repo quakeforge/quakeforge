@@ -296,7 +296,7 @@ SV_Noclip_f (void)
 void
 SV_Give_f (void)
 {
-	char       *t;
+	const char *t;
 	int         v;
 
 	if (!sv_allow_cheats) {
@@ -444,7 +444,7 @@ SV_Status_f (void)
 	int         i;
 	client_t   *cl;
 	float       cpu, avg, pak;
-	char       *s;
+	const char *s;
 
 
 	cpu = (svs.stats.latched_active + svs.stats.latched_idle);
@@ -553,7 +553,8 @@ SV_Tell (const char *prefix)
 		uid = atoi (Cmd_Argv(1));
 	}
 
-	p = Cmd_Args (2);
+	p = Hunk_TempAlloc (strlen(Cmd_Args (2)) + 1);
+	strcpy (p, Cmd_Args (2));
 	if (*p == '"') {
 		p++;
 		p[strlen (p) - 1] = 0;
@@ -589,7 +590,8 @@ SV_ConSay (const char *prefix)
 	if (Cmd_Argc () < 2)
 		return;
 
-	p = Cmd_Args (1);
+	p = Hunk_TempAlloc (strlen(Cmd_Args (1)) + 1);
+	strcpy (p, Cmd_Args (1));
 	if (*p == '"') {
 		p++;
 		p[strlen (p) - 1] = 0;
@@ -651,7 +653,7 @@ SV_Heartbeat_f (void)
 }
 
 void
-SV_SendServerInfoChange (char *key, char *value)
+SV_SendServerInfoChange (const char *key, const char *value)
 {
 	if (!sv.state)
 		return;
@@ -757,7 +759,7 @@ SV_User_f (void)
 void
 SV_Gamedir (void)
 {
-	char       *dir;
+	const char *dir;
 
 	if (Cmd_Argc () == 1) {
 		SV_Printf ("Current *gamedir: %s\n",

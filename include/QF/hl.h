@@ -32,10 +32,10 @@
 
 #include "QF/qtypes.h"
 
-extern void CL_ParseEntityLump(char *entdata);
+extern void CL_ParseEntityLump(const char *entdata);
 extern void HL_Mod_LoadLighting (lump_t *l);
 extern void HL_Mod_LoadTextures (lump_t *l);
-extern byte *W_GetTexture(char *name, int matchwidth, int matchheight);
-extern void W_LoadTextureWadFile (char *filename, int complain);
+extern byte *W_GetTexture(const char *name, int matchwidth, int matchheight);
+extern void W_LoadTextureWadFile (const char *filename, int complain);
 
 #endif	// _HL_BSP_H

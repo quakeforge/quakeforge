@@ -47,4 +47,4 @@ QFutil_Con_Print (char *txt)
 	Sys_Printf ("%s", txt);
 }
 
-void Con_Print (char *) __attribute ((weak, alias ("QFutil_Con_Print")));
+void Con_Print (const char *) __attribute ((weak, alias ("QFutil_Con_Print")));

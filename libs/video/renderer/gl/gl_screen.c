@@ -168,7 +168,7 @@ int         scr_erase_center;
 	for a few moments
 */
 void
-SCR_CenterPrint (char *str)
+SCR_CenterPrint (const char *str)
 {
 	strncpy (scr_centerstring, str, sizeof (scr_centerstring) - 1);
 	scr_centertime_off = scr_centertime->value;

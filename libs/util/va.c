@@ -45,7 +45,7 @@
 	FIXME: make this buffer size safe someday
 */
 char       *
-va (char *format, ...)
+va (const char *format, ...)
 {
 	va_list     argptr;
 	static char string[1024];

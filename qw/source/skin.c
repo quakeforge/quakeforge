@@ -88,7 +88,7 @@ Skin_Find (player_info_t *sc)
 {
 	skin_t     *skin;
 	char        name[128];
-	char       *s = NULL;
+	const char *s = NULL;
 
 	if (allskins[0])
 		strncpy (name, allskins, sizeof (name));

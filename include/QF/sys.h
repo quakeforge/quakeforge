@@ -49,7 +49,7 @@ void Sys_Error (const char *error, ...) __attribute__((format(printf,1,2)));
 void Sys_Quit (void);
 double Sys_DoubleTime (void);
 
-char *Sys_ConsoleInput (void);
+const char *Sys_ConsoleInput (void);
 
 void Sys_Sleep (void);
 // called to yield for a little bit so as
@@ -72,6 +72,6 @@ void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length);
 //
 // system IO
 //
-void Sys_DebugLog(char *file, char *fmt, ...) __attribute__((format(printf,2,3)));
+void Sys_DebugLog(const char *file, const char *fmt, ...) __attribute__((format(printf,2,3)));
 
 #endif // __sys_h

@@ -266,7 +266,7 @@ CL_Disconnect_f (void)
 	Host should be either "local" or a net address to be passed on
 */
 void
-CL_EstablishConnection (char *host)
+CL_EstablishConnection (const char *host)
 {
 	if (cls.state == ca_dedicated)
 		return;

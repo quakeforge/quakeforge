@@ -32,7 +32,7 @@
 #ifndef __sv_pr_cmds_h
 #define __sv_pr_cmds_h
 
-char * PF_VarString (progs_t * pr, int first);
+const char * PF_VarString (progs_t * pr, int first);
 void PF_error (progs_t * pr);
 void PF_objerror (progs_t * pr);
 void PF_makevectors (progs_t * pr);

@@ -65,9 +65,9 @@ void Con_Init_Cvars (void);
 void Con_ProcessInput (void);
 void Con_DrawConsole (int lines);
 void Con_DrawDownload (int lines);
-void Con_Print (char *txt);
-void Con_Printf (char *fmt, ...) __attribute__((format(printf,1,2)));
-void Con_DPrintf (char *fmt, ...) __attribute__((format(printf,1,2)));
+void Con_Print (const char *txt);
+void Con_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
+void Con_DPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void Con_Clear_f (void);
 void Con_DrawNotify (void);
 void Con_ClearNotify (void);
@@ -81,7 +81,7 @@ void Con_CompleteCommandLine(void);
 
 // Generic libs/util/console.c function to display a list
 // formatted in columns on the console
-void Con_DisplayList(char **list, int con_linewidth);
+void Con_DisplayList(const char **list, int con_linewidth);
 
 extern struct cvar_s *developer;
 

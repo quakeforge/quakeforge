@@ -38,14 +38,14 @@ typedef struct
 } location_t;
 
 location_t *locs_find(vec3_t target);
-void locs_add (vec3_t location, char *name);
+void locs_add (vec3_t location, const char *name);
 void locs_del (vec3_t loc);
-void locs_edit (vec3_t loc, char *desc);
-void locs_load(char *filename);
-void locs_mark (vec3_t loc, char *desc);
+void locs_edit (vec3_t loc, const char *desc);
+void locs_load(const char *filename);
+void locs_mark (vec3_t loc, const char *desc);
 int  locs_nearest (vec3_t loc);
 void locs_reset ();
-void locs_save (char *filename, qboolean gz);
-void map_to_loc (char *mapname, char *filename);
+void locs_save (const char *filename, qboolean gz);
+void map_to_loc (const char *mapname, char *filename);
 
 #endif // __locs_h

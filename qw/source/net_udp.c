@@ -153,7 +153,7 @@ NET_CompareAdr (netadr_t a, netadr_t b)
 	return false;
 }
 
-char       *
+const char       *
 NET_AdrToString (netadr_t a)
 {
 	static char s[64];
@@ -164,7 +164,7 @@ NET_AdrToString (netadr_t a)
 	return s;
 }
 
-char       *
+const char       *
 NET_BaseAdrToString (netadr_t a)
 {
 	static char s[64];
@@ -183,7 +183,7 @@ NET_BaseAdrToString (netadr_t a)
 	192.246.40.70:28000
 */
 qboolean
-NET_StringToAdr (char *s, netadr_t *a)
+NET_StringToAdr (const char *s, netadr_t *a)
 {
 	struct hostent *h;
 	struct sockaddr_in sadr;

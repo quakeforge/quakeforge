@@ -68,8 +68,8 @@ void        (*SetComPortConfig) (int portNumber, int port, int irq, int baud,
 								 qboolean useModem);
 void        (*GetModemConfig) (int portNumber, char *dialType, char *clear,
 							   char *init, char *hangup);
-void        (*SetModemConfig) (int portNumber, char *dialType, char *clear,
-							   char *init, char *hangup);
+void        (*SetModemConfig) (int portNumber, const char *dialType, const char *clear,
+							   const char *init, const char *hangup);
 
 static qboolean listening = false;
 
@@ -398,7 +398,7 @@ int         hostCacheCount = 0;
 hostcache_t hostcache[HOSTCACHESIZE];
 
 qsocket_t  *
-NET_Connect (char *host)
+NET_Connect (const char *host)
 {
 	qsocket_t  *ret;
 	int         n;

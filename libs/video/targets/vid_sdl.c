@@ -234,7 +234,7 @@ VID_UnlockBuffer (void)
 }
 
 void
-VID_SetCaption (char *text)
+VID_SetCaption (const char *text)
 {
 	if (text && *text) {
 		char       *temp = strdup (text);

@@ -49,7 +49,7 @@ struct cache_user_s;
 extern char	com_gamedir[MAX_OSPATH];
 extern char	gamedirfile[MAX_OSPATH];
 
-void COM_WriteFile (char *filename, void *data, int len);
+void COM_WriteFile (const char *filename, void *data, int len);
 void COM_WriteBuffers (const char *filename, int count, ...);
 
 int _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip);
@@ -58,8 +58,8 @@ void COM_CloseFile (VFile *h);
 int COM_filelength (VFile *f);
 void COM_FileBase (const char *in, char *out);
 void COM_DefaultExtension (char *path, char *extension);
-char *COM_SkipPath (char *pathname);
-void COM_StripExtension (char *in, char *out);
+const char *COM_SkipPath (const char *pathname);
+void COM_StripExtension (const char *in, char *out);
 int COM_NextFilename (char *filename, const char *prefix, const char *ext);
 
 
@@ -68,12 +68,12 @@ byte *COM_LoadStackFile (const char *path, void *buffer, int bufsize);
 byte *COM_LoadTempFile (const char *path);
 byte *COM_LoadHunkFile (const char *path);
 void COM_LoadCacheFile (const char *path, struct cache_user_s *cu);
-void COM_CreatePath (char *path);
-void COM_Gamedir (char *dir);
+void COM_CreatePath (const char *path);
+void COM_Gamedir (const char *dir);
 void COM_Filesystem_Init (void);
 void COM_Filesystem_Init_Cvars (void);
 void COM_Path_f (void);
 void COM_Maplist_f (void);
-void COM_CreateGameDirectory (char *gamename);
+void COM_CreateGameDirectory (const char *gamename);
 
 #endif // __quakefs_h

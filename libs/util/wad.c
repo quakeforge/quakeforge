@@ -58,7 +58,7 @@ void        SwapPic (qpic_t *pic);
 	nicely in tables. Can safely be performed in place.
 */
 void
-W_CleanupName (char *in, char *out)
+W_CleanupName (const char *in, char *out)
 {
 	int			i;
 	int			c;
@@ -79,7 +79,7 @@ W_CleanupName (char *in, char *out)
 
 
 void
-W_LoadWadFile (char *filename)
+W_LoadWadFile (const char *filename)
 {
 	lumpinfo_t *lump_p;
 	wadinfo_t  *header;
@@ -123,7 +123,7 @@ W_LoadWadFile (char *filename)
 
 
 lumpinfo_t *
-W_GetLumpinfo (char *name)
+W_GetLumpinfo (const char *name)
 {
 	int         i;
 	lumpinfo_t *lump_p;
@@ -142,7 +142,7 @@ W_GetLumpinfo (char *name)
 
 
 void *
-W_GetLumpName (char *name)
+W_GetLumpName (const char *name)
 {
 	lumpinfo_t *lump;
 

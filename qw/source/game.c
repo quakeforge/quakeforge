@@ -58,7 +58,7 @@ extern qboolean is_server;
 void
 SV_Gamedir_f (void)
 {
-	char       *dir;
+	const char *dir;
 
 	if (Cmd_Argc () == 1) {
 		Con_Printf ("Current gamedir: %s\n", gamedirfile);

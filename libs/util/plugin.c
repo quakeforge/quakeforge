@@ -90,7 +90,7 @@ PI_Shutdown (void)
 }
 
 plugin_t *
-PI_LoadPlugin (char *type, char *name)
+PI_LoadPlugin (const char *type, const char *name)
 {
 	char			realname[4096];
 	char			*tmpname;

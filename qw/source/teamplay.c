@@ -113,12 +113,13 @@ Team_BestWeaponImpulse (void)
 }
 
 
-char       *
-Team_ParseSay (char *s)
+const char       *
+Team_ParseSay (const char *s)
 {
 	static char buf[1024];
 	int         i, bracket;
-	char        c, chr, *t1, t2[128], t3[128];
+	char        c, chr, t2[128], t3[128];
+	const char *t1;
 	static location_t *location = NULL;
 
 	if (!cl_parsesay->int_val)
@@ -352,7 +353,7 @@ void
 locs_loc (void)
 {
 	char           *mapname; 
-	char           *desc = NULL;
+	const char     *desc = NULL;
 	char            locfile[MAX_OSPATH];
 	
 	//FIXME checking needed to make sure you are actually in the game and a live.

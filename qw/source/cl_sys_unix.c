@@ -123,7 +123,7 @@ Sys_Warn (char *warning, ...)
 
 
 void
-Sys_DebugLog (char *file, char *fmt, ...)
+Sys_DebugLog (const char *file, const char *fmt, ...)
 {
 	va_list     argptr;
 	static char data[1024];				// why static ?
@@ -147,7 +147,7 @@ floating_point_exception_handler (int whatever)
 }
 
 
-char *
+const char *
 Sys_ConsoleInput (void)
 {
 #if 0
@@ -183,7 +183,7 @@ Sys_LowFPPrecision (void)
 int         skipframes;
 
 int
-main (int c, char *v[])
+main (int c, const char *v[])
 {
 	double      time, oldtime, newtime;
 	int         j;

@@ -47,7 +47,7 @@ extern int gl_lightmap_format;
 
 void GL_Upload8 (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
 void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
-int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel);
-int GL_FindTexture (char *identifier);
+int GL_LoadTexture (const char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel);
+int GL_FindTexture (const char *identifier);
 
 #endif // __gl_textures_h

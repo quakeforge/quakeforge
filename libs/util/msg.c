@@ -121,7 +121,7 @@ MSG_WriteFloat (sizebuf_t *sb, float f)
 }
 
 void
-MSG_WriteString (sizebuf_t *sb, char *s)
+MSG_WriteString (sizebuf_t *sb, const char *s)
 {
 	if (!s)
 		SZ_Write (sb, "", 1);

@@ -74,9 +74,9 @@ typedef struct
 	char		name[64];			// map name
 	char		modelname[MAX_QPATH];		// maps/<name>.bsp, for model_precache[0]
 	struct model_s 	*worldmodel;
-	char		*model_precache[MAX_MODELS];	// NULL terminated
-	char		*sound_precache[MAX_SOUNDS];	// NULL terminated
-	char		*lightstyles[MAX_LIGHTSTYLES];
+	const char	*model_precache[MAX_MODELS];	// NULL terminated
+	const char	*sound_precache[MAX_SOUNDS];	// NULL terminated
+	const char	*lightstyles[MAX_LIGHTSTYLES];
 	struct model_s		*models[MAX_MODELS];
 
 	int			num_edicts;			// increases towards MAX_EDICTS
@@ -406,26 +406,26 @@ extern	progs_t		sv_pr_state;
 //===========================================================
 // FIXME: declare exported functions in their own relevant .h
 
-void SV_Error (char *error, ...) __attribute__((format(printf,1,2)));
+void SV_Error (const char *error, ...) __attribute__((format(printf,1,2)));
 void SV_Init (void);
 void SV_Progs_Init (void);
 void SV_Progs_Init_Cvars (void);
 void SV_LoadProgs (void);
 
-void Con_Printf (char *fmt, ...) __attribute__((format(printf,1,2)));
-void Con_DPrintf (char *fmt, ...) __attribute__((format(printf,1,2)));
+void Con_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
+void Con_DPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 
 //
 // sv_main.c
 //
 void SV_Shutdown (void);
 void SV_Frame (float time);
-void SV_FinalMessage (char *message);
+void SV_FinalMessage (const char *message);
 void SV_DropClient (client_t *drop);
 int SV_CalcPing (client_t *cl);
 void SV_FullClientUpdate (client_t *client, sizebuf_t *buf);
 
-int SV_ModelIndex (char *name);
+int SV_ModelIndex (const char *name);
 
 qboolean SV_CheckBottom (edict_t *ent);
 qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink);
@@ -439,7 +439,7 @@ void SV_SaveSpawnparms (void);
 
 void SV_Physics_Client (edict_t	*ent);
 
-void SV_ExecuteUserCommand (char *s);
+void SV_ExecuteUserCommand (const char *s);
 void SV_InitOperatorCommands (void);
 
 void SV_SendServerinfo (client_t *client);
@@ -452,7 +452,7 @@ void Master_Packet (void);
 //
 // sv_init.c
 //
-void SV_SpawnServer (char *server);
+void SV_SpawnServer (const char *server);
 void SV_FlushSignon (void);
 
 
@@ -472,15 +472,15 @@ void SV_SetMoveVars(void);
 //
 // sv_send.c
 //
-void SV_Printf (char *fmt, ...) __attribute__((format(printf,1,2)));
+void SV_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void SV_SendClientMessages (void);
 
 void SV_Multicast (vec3_t origin, int to);
-void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
+void SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
     float attenuation);
-void SV_ClientPrintf (client_t *cl, int level, char *fmt, ...) __attribute__((format(printf,3,4)));
-void SV_BroadcastPrintf (int level, char *fmt, ...) __attribute__((format(printf,2,3)));
-void SV_BroadcastCommand (char *fmt, ...) __attribute__((format(printf,1,2)));
+void SV_ClientPrintf (client_t *cl, int level, const char *fmt, ...) __attribute__((format(printf,3,4)));
+void SV_BroadcastPrintf (int level, const char *fmt, ...) __attribute__((format(printf,2,3)));
+void SV_BroadcastCommand (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void SV_SendMessagesToAll (void);
 void SV_FindModelNumbers (void);
 
@@ -522,7 +522,7 @@ void ClientReliableWrite_Float(client_t *cl, float f);
 void ClientReliableWrite_Coord(client_t *cl, float f);
 void ClientReliableWrite_Long(client_t *cl, int c);
 void ClientReliableWrite_Short(client_t *cl, int c);
-void ClientReliableWrite_String(client_t *cl, char *s);
+void ClientReliableWrite_String(client_t *cl, const char *s);
 void ClientReliableWrite_SZ(client_t *cl, void *data, int len);
 
 void Cvar_Info (struct cvar_s *var);

@@ -379,7 +379,7 @@ VID_ExtraOptionCmd (int option_cursor)
 }
 
 void
-VID_SetCaption (char *text)
+VID_SetCaption (const char *text)
 {
 }
 

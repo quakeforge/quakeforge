@@ -121,7 +121,7 @@ static byte chktbl[1024 + 4] = {
 	For proxy protecting
 */
 byte
-COM_BlockSequenceCRCByte (byte * base, int length, int sequence)
+COM_BlockSequenceCRCByte (const byte * base, int length, int sequence)
 {
 	unsigned short crc;
 	byte       *p;
@@ -148,7 +148,7 @@ COM_BlockSequenceCRCByte (byte * base, int length, int sequence)
 }
 
 unsigned int
-Com_BlockChecksum (void *buffer, int length)
+Com_BlockChecksum (const void *buffer, int length)
 {
 	int         digest[4];
 	unsigned int val;
@@ -161,7 +161,7 @@ Com_BlockChecksum (void *buffer, int length)
 }
 
 void
-Com_BlockFullChecksum (void *buffer, int len, unsigned char *outbuf)
+Com_BlockFullChecksum (const void *buffer, int len, unsigned char *outbuf)
 {
 	mdfour (outbuf, (unsigned char *) buffer, len);
 }

@@ -261,7 +261,7 @@ VID_Init_Cvars ()
 }
 
 void
-VID_SetCaption (char *text)
+VID_SetCaption (const char *text)
 {
 	if (text && *text) {
 		char       *temp = strdup (text);

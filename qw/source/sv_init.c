@@ -57,7 +57,7 @@ entity_state_t baselines[MAX_EDICTS];
 	SV_ModelIndex
 */
 int
-SV_ModelIndex (char *name)
+SV_ModelIndex (const char *name)
 {
 	int         i;
 
@@ -268,7 +268,7 @@ SV_CalcPHS (void)
 }
 
 unsigned int
-SV_CheckModel (char *mdl)
+SV_CheckModel (const char *mdl)
 {
 	byte        stackbuf[1024];			// avoid dirtying the cache heap
 	byte       *buf;
@@ -295,7 +295,7 @@ SV_CheckModel (char *mdl)
 	This is only called from the SV_Map_f() function.
 */
 void
-SV_SpawnServer (char *server)
+SV_SpawnServer (const char *server)
 {
 	edict_t    *ent;
 	int         i;

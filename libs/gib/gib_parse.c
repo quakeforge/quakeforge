@@ -46,7 +46,7 @@
 #include "gib_parse.h"
 
 int
-GIB_Get_Inst (char *start)
+GIB_Get_Inst (const char *start)
 {
 	int         i;
 	int         len = 0;
@@ -76,7 +76,7 @@ GIB_Get_Inst (char *start)
 	return i;
 }
 int
-GIB_Get_Arg (char *start)
+GIB_Get_Arg (const char *start)
 {
 	int         i;
 	int         ret = -2;
@@ -102,7 +102,7 @@ GIB_Get_Arg (char *start)
 	return i;
 }
 int
-GIB_End_Quote (char *start)
+GIB_End_Quote (const char *start)
 {
 	int         i;
 	int         len = 0;
@@ -129,7 +129,7 @@ GIB_End_Quote (char *start)
 	return i;
 }
 int
-GIB_End_DQuote (char *start)
+GIB_End_DQuote (const char *start)
 {
 	int         i, ret;
 
@@ -156,7 +156,7 @@ GIB_End_DQuote (char *start)
 }
 
 int
-GIB_End_Bracket (char *start)
+GIB_End_Bracket (const char *start)
 {
 	int         i, ret;
 
@@ -191,7 +191,7 @@ GIB_End_Bracket (char *start)
 }
 
 gib_sub_t  *
-GIB_Get_ModSub_Sub (char *modsub)
+GIB_Get_ModSub_Sub (const char *modsub)
 {
 	gib_module_t *mod;
 	gib_sub_t  *sub;
@@ -208,7 +208,7 @@ GIB_Get_ModSub_Sub (char *modsub)
 	return sub;
 }
 gib_module_t *
-GIB_Get_ModSub_Mod (char *modsub)
+GIB_Get_ModSub_Mod (const char *modsub)
 {
 	gib_module_t *mod;
 	char       *divider;

@@ -40,7 +40,7 @@ extern int	packet_latency[NET_TIMINGS];
 int CL_CalcNet (void);
 void CL_ParseServerMessage (void);
 void CL_NewTranslation (int slot, struct skin_s *skin);
-qboolean	CL_CheckOrDownloadFile (char *filename);
+qboolean	CL_CheckOrDownloadFile (const char *filename);
 qboolean CL_IsUploading(void);
 void CL_NextUpload(void);
 void CL_StartUpload (byte *data, int size);

@@ -195,7 +195,7 @@ SV_Shutdown (void)
 	then exits
 */
 void
-SV_Error (char *error, ...)
+SV_Error (const char *error, ...)
 {
 	va_list     argptr;
 	static char string[1024];
@@ -228,7 +228,7 @@ SV_Error (char *error, ...)
 	to totally exit after returning from this function.
 */
 void
-SV_FinalMessage (char *message)
+SV_FinalMessage (const char *message)
 {
 	int         i;
 	client_t   *cl;
@@ -658,7 +658,7 @@ SVC_DirectConnect (void)
 	client_t    temp;
 	edict_t    *ent;
 	int         edictnum;
-	char       *s;
+	const char *s;
 	int         clients, spectators;
 	qboolean    spectator;
 	int         qport;
@@ -1000,8 +1000,8 @@ SVC_RemoteCommand (void)
 void
 SV_ConnectionlessPacket (void)
 {
-	char       *s;
-	char       *c;
+	const char *s;
+	const char *c;
 
 	MSG_BeginReading (net_message);
 	MSG_ReadLong (net_message);					// skip the -1 marker
@@ -1090,7 +1090,7 @@ cvar_t     *filterban;
 	StringToFilter
 */
 qboolean
-StringToFilter (char *s, ipfilter_t * f)
+StringToFilter (const char *s, ipfilter_t * f)
 {
 	char        num[128];
 	int         i, j;
@@ -1451,7 +1451,7 @@ SV_GetConsoleCommands (void)
 void
 SV_CheckVars (void)
 {
-	static char *pw, *spw;
+	static char const *pw, *spw;
 	int         v;
 
 	if (password->string == pw && spectator_password->string == spw)
@@ -1822,7 +1822,8 @@ Master_Shutdown (void)
 void
 SV_ExtractFromUserinfo (client_t *cl)
 {
-	char       *val, *p, *q;
+	const char *val;
+	char       *q, *p;
 	int         i;
 	client_t   *client;
 	int         dupc = 1;
@@ -1870,18 +1871,14 @@ SV_ExtractFromUserinfo (client_t *cl)
 				break;
 		}
 		if (i != MAX_CLIENTS) {			// dup name
-			if (strlen (val) > sizeof (cl->name) - 1)
-				val[sizeof (cl->name) - 4] = 0;
-			p = val;
-
 			if (val[0] == '(') {
 				if (val[2] == ')')
-					p = val + 3;
+					val += 3;
 				else if (val[3] == ')')
-					p = val + 4;
+					val += 4;
 			}
 
-			snprintf (newname, sizeof (newname), "(%d)%-.40s", dupc++, p);
+			snprintf (newname, sizeof (newname), "(%d)%-.40s", dupc++, val);
 			Info_SetValueForKey (cl->userinfo, "name", newname,
 								 MAX_INFO_STRING);
 			val = Info_ValueForKey (cl->userinfo, "name");
@@ -1983,7 +1980,7 @@ SV_InitNet (void)
 void
 SV_Init (void)
 {
-	COM_InitArgv (host_parms.argc, host_parms.argv);
+	COM_InitArgv (host_parms.argc, (const char**)host_parms.argv);
 	// COM_AddParm ("-game");
 	// COM_AddParm ("qw");
 

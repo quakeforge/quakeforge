@@ -160,7 +160,7 @@ PR_Profile (progs_t * pr)
 	Aborts the currently executing function
 */
 void
-PR_RunError (progs_t * pr, char *error, ...)
+PR_RunError (progs_t * pr, const char *error, ...)
 {
 	va_list     argptr;
 	char        string[1024];

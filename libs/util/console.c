@@ -51,7 +51,7 @@
 #define	MAXPRINTMSG	4096
 
 void
-Con_Printf (char *fmt, ...)
+Con_Printf (const char *fmt, ...)
 {
 	va_list     argptr;
 	char        msg[MAXPRINTMSG];
@@ -70,7 +70,7 @@ Con_Printf (char *fmt, ...)
 	A Con_Printf that only shows up if the "developer" cvar is set
 */
 void
-Con_DPrintf (char *fmt, ...)
+Con_DPrintf (const char *fmt, ...)
 {
 	va_list     argptr;
 	char        msg[MAXPRINTMSG];
@@ -95,14 +95,14 @@ Con_DPrintf (char *fmt, ...)
 
 */
 void
-Con_DisplayList(char **list, int con_linewidth)
+Con_DisplayList(const char **list, int con_linewidth)
 {
 	int	i = 0;
 	int	pos = 0;
 	int	len = 0;
 	int	maxlen = 0;
 	int	width = (con_linewidth - 4);
-	char	**walk = list;
+	const char	**walk = list;
 
 	while (*walk) {
 		len = strlen(*walk);

@@ -78,7 +78,7 @@ char       *type_name[8] = {
 };
 
 ddef_t     *ED_FieldAtOfs (progs_t * pr, int ofs);
-qboolean    ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, char *s);
+qboolean    ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, const char *s);
 
 #define	MAX_FIELD_LEN	64
 #define GEFV_CACHESIZE	2
@@ -246,7 +246,7 @@ ED_FindField (progs_t * pr, const char *name)
 }
 
 int
-ED_GetFieldIndex (progs_t *pr, char *name)
+ED_GetFieldIndex (progs_t *pr, const char *name)
 {
 	ddef_t     *def;
 
@@ -307,7 +307,7 @@ ED_FindFunction (progs_t * pr, const char *name)
 }
 
 pr_type_t     *
-GetEdictFieldValue (progs_t * pr, edict_t *ed, char *field)
+GetEdictFieldValue (progs_t * pr, edict_t *ed, const char *field)
 {
 	ddef_t     *def = NULL;
 	int         i;
@@ -685,7 +685,7 @@ ED_WriteGlobals (progs_t * pr, VFile *f)
 	ED_ParseGlobals
 */
 void
-ED_ParseGlobals (progs_t * pr, char *data)
+ED_ParseGlobals (progs_t * pr, const char *data)
 {
 	char        keyname[64];
 	ddef_t     *key;
@@ -726,7 +726,7 @@ ED_ParseGlobals (progs_t * pr, char *data)
 	ED_NewString
 */
 char       *
-ED_NewString (progs_t * pr, char *string)
+ED_NewString (progs_t * pr, const char *string)
 {
 	char       *new, *new_p;
 	int         i, l;
@@ -757,7 +757,7 @@ ED_NewString (progs_t * pr, char *string)
 	returns false if error
 */
 qboolean
-ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, char *s)
+ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, const char *s)
 {
 	int         i;
 	char        string[128];
@@ -825,8 +825,8 @@ ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, char *s)
 	ed should be a properly initialized empty edict.
 	Used for initial level load and for savegames.
 */
-char       *
-ED_ParseEdict (progs_t * pr, char *data, edict_t *ent)
+const char       *
+ED_ParseEdict (progs_t * pr, const char *data, edict_t *ent)
 {
 	ddef_t     *key;
 	qboolean    anglehack;
@@ -925,7 +925,7 @@ ED_ParseEdict (progs_t * pr, char *data, edict_t *ent)
 	to call ED_CallSpawnFunctions () to let the objects initialize themselves.
 */
 void
-ED_LoadFromFile (progs_t * pr, char *data)
+ED_LoadFromFile (progs_t * pr, const char *data)
 {
 	edict_t    *ent;
 	int         inhibit;
@@ -1009,7 +1009,7 @@ var_get_key (void *d, void *_pr)
 	PR_LoadProgs
 */
 void
-PR_LoadProgs (progs_t * pr, char *progsname)
+PR_LoadProgs (progs_t * pr, const char *progsname)
 {
 	int         i;
 	dstatement_t *st;

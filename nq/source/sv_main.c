@@ -134,7 +134,7 @@ Larger attenuations will drop off.  (max 4 attenuation)
 ==================
 */
 void
-SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
+SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 			   float attenuation)
 {
 	int         sound_num;
@@ -209,7 +209,7 @@ This will be sent on the initial connection and upon each server load.
 void
 SV_SendServerinfo (client_t *client)
 {
-	char      **s;
+	const char **s;
 	char        message[2048];
 
 	MSG_WriteByte (&client->message, svc_print);
@@ -916,7 +916,7 @@ SV_ModelIndex
 ================
 */
 int
-SV_ModelIndex (char *name)
+SV_ModelIndex (const char *name)
 {
 	int         i;
 
@@ -1059,10 +1059,10 @@ extern float scr_centertime_off;
 
 #ifdef QUAKE2
 void
-SV_SpawnServer (char *server, char *startspot)
+SV_SpawnServer (const char *server, const char *startspot)
 #else
 void
-SV_SpawnServer (char *server)
+SV_SpawnServer (const char *server)
 #endif
 {
 	edict_t    *ent;

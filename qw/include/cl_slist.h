@@ -33,11 +33,11 @@
 
 void SL_Init (void);
 
-void MSL_ParseServerList(char *msl_data);
+void MSL_ParseServerList(const char *msl_data);
 
-int SL_CheckStatus (char *cs_from, char *cs_data);
+int SL_CheckStatus (const char *cs_from, const char *cs_data);
 
-void SL_CheckPing (char *cp_from);
+void SL_CheckPing (const char *cp_from);
 
 void SL_Shutdown (void);
 

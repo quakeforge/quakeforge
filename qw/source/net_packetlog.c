@@ -68,17 +68,17 @@ cvar_t     *net_loglevel;
 //extern server_t sv;
 extern qboolean is_server;
 
-void        Analyze_Server_Packet (byte * data, int len);
-void        Analyze_Client_Packet (byte * data, int len);
+void        Analyze_Server_Packet (const byte * data, int len);
+void        Analyze_Client_Packet (const byte * data, int len);
 
 void        Parse_Server_Packet (void);
 void        Parse_Client_Packet (void);
 
-int         Net_LogStart (char *fname);
+int         Net_LogStart (const char *fname);
 void        Net_LogStop (void);
 
 // note: this is SUPPOSED to be duplicate, like many others
-char       *svc_string[] = {
+const char *svc_string[] = {
 	"svc_bad",
 	"svc_nop",
 	"svc_disconnect",
@@ -159,7 +159,7 @@ char       *svc_string[] = {
 	"NEW PROTOCOL"
 };
 
-char       *clc_string[] = {
+const char *clc_string[] = {
 	"clc_bad",
 	"clc_nop",
 	"clc_disconnect",
@@ -185,7 +185,7 @@ char       *clc_string[] = {
 										// sequence
 static VFile      *_stdout;
 static VFile      *Net_PacketLog;
-static char      **Net_sound_precache;
+static const char **Net_sound_precache;
 static sizebuf_t   _packet;
 static msg_t       packet = {0, 0, &_packet};
 
@@ -212,7 +212,7 @@ Net_LogPrintf (char *fmt, ...)
 }
 
 int
-Net_LogStart (char *fname)
+Net_LogStart (const char *fname)
 {
 	char        e_path[MAX_OSPATH];
 
@@ -271,7 +271,7 @@ ascii_dump_buf (unsigned char *buf, int len)
 }
 
 void
-Log_Incoming_Packet (char *p, int len)
+Log_Incoming_Packet (const char *p, int len)
 {
 	if (!net_loglevel->int_val)
 		return;
@@ -297,7 +297,7 @@ Log_Incoming_Packet (char *p, int len)
 }
 
 void
-Log_Outgoing_Packet (char *p, int len)
+Log_Outgoing_Packet (const char *p, int len)
 {
 	if (!net_loglevel->int_val)
 		return;
@@ -410,11 +410,11 @@ Log_Delta(int bits)
 
 
 void
-Analyze_Server_Packet (byte * data, int len)
+Analyze_Server_Packet (const byte * data, int len)
 {
 	if (!Net_PacketLog)
 		Net_PacketLog = _stdout;
-	packet.message->data = data;
+	packet.message->data = (byte*)data;
 	packet.message->cursize = len;
 	MSG_BeginReading (&packet);
 	Parse_Server_Packet ();
@@ -867,11 +867,11 @@ Parse_Server_Packet ()
 }
 
 void
-Analyze_Client_Packet (byte * data, int len)
+Analyze_Client_Packet (const byte * data, int len)
 {
 	if (!Net_PacketLog)
 		Net_PacketLog = _stdout;
-	packet.message->data = data;
+	packet.message->data = (byte*)data;
 	packet.message->cursize = len;
 	MSG_BeginReading (&packet);
 	Parse_Client_Packet ();
@@ -996,7 +996,7 @@ Net_PacketLog_Zap_f (void)
 }
 
 int
-Net_Log_Init (char **sound_precache)
+Net_Log_Init (const char **sound_precache)
 {
 	Net_sound_precache = sound_precache;
 

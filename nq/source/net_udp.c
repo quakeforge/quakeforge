@@ -243,7 +243,7 @@ the local network components to fill in the rest
 ============
 */
 static int
-PartialIPAddress (char *in, struct qsockaddr *hostaddr)
+PartialIPAddress (const char *in, struct qsockaddr *hostaddr)
 {
 	char        buff[256];
 	char       *b;
@@ -388,7 +388,7 @@ UDP_Write (int socket, byte * buf, int len, struct qsockaddr *addr)
 
 //=============================================================================
 
-char       *
+const char       *
 UDP_AddrToString (struct qsockaddr *addr)
 {
 	static char buffer[22];
@@ -404,7 +404,7 @@ UDP_AddrToString (struct qsockaddr *addr)
 //=============================================================================
 
 int
-UDP_StringToAddr (char *string, struct qsockaddr *addr)
+UDP_StringToAddr (const char *string, struct qsockaddr *addr)
 {
 	int         ha1, ha2, ha3, ha4, hp;
 	int         ipaddr;
@@ -459,7 +459,7 @@ UDP_GetNameFromAddr (struct qsockaddr *addr, char *name)
 //=============================================================================
 
 int
-UDP_GetAddrFromName (char *name, struct qsockaddr *addr)
+UDP_GetAddrFromName (const char *name, struct qsockaddr *addr)
 {
 	struct hostent *hostentry;
 

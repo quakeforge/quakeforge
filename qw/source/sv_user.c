@@ -95,7 +95,7 @@ void        SV_FullClientUpdateToClient (client_t *client, client_t *cl);
 void
 SV_New_f (void)
 {
-	char       *gamedir;
+	const char *gamedir;
 	int         playernum;
 
 	if (host_client->state == cs_spawned)
@@ -163,7 +163,7 @@ SV_New_f (void)
 void
 SV_Soundlist_f (void)
 {
-	char      **s;
+	const char **s;
 	unsigned    n;
 
 	if (host_client->state != cs_connected) {
@@ -213,7 +213,7 @@ SV_Soundlist_f (void)
 void
 SV_Modellist_f (void)
 {
-	char      **s;
+	const char **s;
 	unsigned    n;
 
 	if (host_client->state != cs_connected) {
@@ -664,7 +664,7 @@ SV_NextUpload (void)
 void
 SV_BeginDownload_f (void)
 {
-	char       *name;
+	const char *name;
 	VFile      *file;
 	int         size;
 	char        realname[MAX_OSPATH];
@@ -707,10 +707,12 @@ SV_BeginDownload_f (void)
 	}
 	// lowercase name (needed for casesen file systems)
 	{
-		char       *p;
+		char *p = Hunk_TempAlloc (strlen (name) + 1);
+		char *n = p;
 
-		for (p = name; *p; p++)
-			*p = tolower ((int) *p);
+		while (*name)
+			*p++ = tolower ((int) *name++);
+		name = n;
 	}
 
 	zip = strchr (Info_ValueForKey (host_client->userinfo, "*cap"), 'z') != 0;
@@ -763,7 +765,8 @@ SV_Say (qboolean team)
 	int         j, tmp;
 	char       *p;
 	char        text[2048];
-	char        t1[32], *t2;
+	char        t1[32];
+	const char *t2;
 
 	if (Cmd_Argc () < 2)
 		return;
@@ -810,7 +813,8 @@ SV_Say (qboolean team)
 		host_client->whensaid[host_client->whensaidhead] = realtime;
 	}
 
-	p = Cmd_Args (1);
+	p = Hunk_TempAlloc (strlen(Cmd_Args (1)) + 1);
+	strcpy (p, Cmd_Args (1));
 
 	if (*p == '"') {
 		p++;
@@ -1151,7 +1155,7 @@ SV_NoSnap_f (void)
 }
 
 typedef struct {
-	char       *name;
+	const char *name;
 	void        (*func) (void);
 	int         no_redirect;
 } ucmd_t;
@@ -1203,7 +1207,7 @@ ucmds_compare (const void *_a, const void *_b)
 	Uhh...execute user command. :)
 */
 void
-SV_ExecuteUserCommand (char *s)
+SV_ExecuteUserCommand (const char *s)
 {
 	ucmd_t     *u;
 	ucmd_t		cmd;

@@ -66,7 +66,7 @@ void X11_ProcessEvents (void);
 void X11_RestoreGamma (void);
 void X11_RestoreScreenSaver (void);
 void X11_RestoreVidMode (void);
-void X11_SetCaption (char *);
+void X11_SetCaption (const char *);
 void X11_SetScreenSaver (void);
 void X11_SetVidMode (int, int);
 

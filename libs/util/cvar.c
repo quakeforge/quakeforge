@@ -64,13 +64,13 @@ hashtab_t		*calias_hash;
 	Cvar_FindVar
 */
 cvar_t *
-Cvar_FindVar (char *var_name)
+Cvar_FindVar (const char *var_name)
 {
 	return (cvar_t*) Hash_Find (cvar_hash, var_name);
 }
 
 cvar_t *
-Cvar_FindAlias (char *alias_name)
+Cvar_FindAlias (const char *alias_name)
 {
 	cvar_alias_t *alias;
 
@@ -81,7 +81,7 @@ Cvar_FindAlias (char *alias_name)
 }
 
 void
-Cvar_Alias_Get (char *name, cvar_t *cvar)
+Cvar_Alias_Get (const char *name, cvar_t *cvar)
 {
 	cvar_alias_t	*alias;
 	cvar_t			*var;
@@ -110,7 +110,7 @@ Cvar_Alias_Get (char *name, cvar_t *cvar)
 	Cvar_VariableValue
 */
 float
-Cvar_VariableValue (char *var_name)
+Cvar_VariableValue (const char *var_name)
 {
 	cvar_t     *var;
 
@@ -126,8 +126,8 @@ Cvar_VariableValue (char *var_name)
 /*
 	Cvar_VariableString
 */
-char *
-Cvar_VariableString (char *var_name)
+const char *
+Cvar_VariableString (const char *var_name)
 {
 	cvar_t     *var;
 
@@ -143,8 +143,8 @@ Cvar_VariableString (char *var_name)
 /*
 	Cvar_CompleteVariable
 */
-char *
-Cvar_CompleteVariable (char *partial)
+const char *
+Cvar_CompleteVariable (const char *partial)
 {
 	cvar_t     *cvar;
 	cvar_alias_t *alias;
@@ -187,7 +187,7 @@ Cvar_CompleteVariable (char *partial)
 
 */
 int
-Cvar_CompleteCountPossible (char *partial)
+Cvar_CompleteCountPossible (const char *partial)
 {
 	cvar_t	*cvar;
 	int		len;
@@ -216,14 +216,14 @@ Cvar_CompleteCountPossible (char *partial)
 	Thanks to taniwha
 
 */
-char	**
-Cvar_CompleteBuildList (char *partial)
+const char	**
+Cvar_CompleteBuildList (const char *partial)
 {
 	cvar_t	*cvar;
 	int		len = 0;
 	int		bpos = 0;
 	int		sizeofbuf = (Cvar_CompleteCountPossible (partial) + 1) * sizeof (char *);
-	char	**buf;
+	const char	**buf;
 
 	len = strlen(partial);
 	buf = malloc(sizeofbuf + sizeof (char *));
@@ -240,7 +240,7 @@ Cvar_CompleteBuildList (char *partial)
 	Cvar_Set
 */
 void
-Cvar_Set (cvar_t *var, char *value)
+Cvar_Set (cvar_t *var, const char *value)
 {
 	int     changed;
 
@@ -253,7 +253,7 @@ Cvar_Set (cvar_t *var, char *value)
 	}
 
 	changed = !strequal (var->string, value);
-	free (var->string);					// free the old value string
+	free ((char*)var->string);					// free the old value string
 
 	var->string = strdup (value);
 	var->value = atof (var->string);
@@ -271,7 +271,7 @@ Cvar_Set (cvar_t *var, char *value)
 	doesn't check for CVAR_ROM flag
 */
 void
-Cvar_SetROM (cvar_t *var, char *value)
+Cvar_SetROM (cvar_t *var, const char *value)
 {
 	int     changed;
 
@@ -279,7 +279,7 @@ Cvar_SetROM (cvar_t *var, char *value)
 		return;
 
 	changed = !strequal (var->string, value);
-	free (var->string);					// free the old value string
+	free ((char*)var->string);					// free the old value string
 
 	var->string = strdup (value);
 	var->value = atof (var->string);
@@ -355,8 +355,8 @@ void
 Cvar_Set_f (void)
 {
 	cvar_t     *var;
-	char       *value;
-	char       *var_name;
+	const char *value;
+	const char *var_name;
 
 	if (Cmd_Argc () != 3) {
 		Con_Printf ("usage: set <cvar> <value>\n");
@@ -385,8 +385,8 @@ void
 Cvar_Setrom_f (void)
 {
 	cvar_t     *var;
-	char       *value;
-	char       *var_name;
+	const char *value;
+	const char *var_name;
 
 	if (Cmd_Argc () != 3) {
 		Con_Printf ("usage: setrom <cvar> <value>\n");
@@ -436,7 +436,7 @@ Cvar_Toggle_f (void)
 void
 Cvar_Help_f (void)
 {
-	char       *var_name;
+	const char *var_name;
 	cvar_t     *var;
 
 	if (Cmd_Argc () != 2) {
@@ -483,8 +483,8 @@ static void
 cvar_free (void *c, void *unused)
 {
 	cvar_t *cvar = (cvar_t*)c;
-	free (cvar->name);
-	free (cvar->string);
+	free ((char*)cvar->name);
+	free ((char*)cvar->string);
 	free (cvar);
 }
 
@@ -541,8 +541,8 @@ Cvar_Shutdown (void)
 	var = cvar_vars;
 	while (var) {
 		next = var->next;
-		free (var->string);
-		free (var->name);
+		free ((char*)var->string);
+		free ((char*)var->name);
 		free (var);
 		var = next;
 	}
@@ -550,7 +550,7 @@ Cvar_Shutdown (void)
 	alias = calias_vars;
 	while (alias) {
 		nextalias = alias->next;
-		free (alias->name);
+		free ((char*)alias->name);
 		free (alias);
 		alias = nextalias;
 	}
@@ -558,8 +558,8 @@ Cvar_Shutdown (void)
 
 
 cvar_t *
-Cvar_Get (char *name, char *string, int cvarflags, void (*callback)(cvar_t*),
-		  char *description)
+Cvar_Get (const char *name, const char *string, int cvarflags,
+		  void (*callback)(cvar_t*), const char *description)
 {
 
 	cvar_t     *var;

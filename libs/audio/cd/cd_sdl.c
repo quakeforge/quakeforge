@@ -195,7 +195,7 @@ I_CDAudio_Update (void)
 void // FIXME: was static void
 I_CD_f (void)
 {
-	char       *command;
+	const char *command;
 	int			cdstate;
 
 	if (Cmd_Argc () < 2)
