@@ -1131,7 +1131,9 @@ function_expr (expr_t *e1, expr_t *e2)
 			}
 		} else {
 			*a = e;
-		} a = &(*a)->next; }
+		}
+		a = &(*a)->next;
+	}
 	e = new_binary_expr ('c', e1, args);
 	e->e.expr.type = ftype->aux_type;
 	append_expr (call, e);
