@@ -172,7 +172,7 @@ r_farclip_f (cvar_t *var)
 	Cvar_SetValue (r_farclip, bound (8.0, var->value, Q_MAXFLOAT));
 	if (r_particles_nearclip && r_nearclip)
 		Cvar_SetValue (r_particles_nearclip,
-					   bound (r_nearclip->value, var->value,
+					   bound (r_nearclip->value, r_particles_nearclip->value,
 							  r_farclip->value));
 }
 
@@ -182,7 +182,7 @@ r_nearclip_f (cvar_t *var)
 	Cvar_SetValue (r_nearclip, bound (0.01, var->value, 4.0));
 	if (r_particles_nearclip && r_farclip)
 		Cvar_SetValue (r_particles_nearclip,
-					   bound (r_nearclip->value, var->value,
+					   bound (r_nearclip->value, r_particles_nearclip->value,
 							  r_farclip->value));
 }
 
