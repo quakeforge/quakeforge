@@ -335,7 +335,7 @@ void R_cshift_f (void);
 void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1);
 void R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip);
 void R_SplitEntityOnNode2 (mnode_t *node);
-void R_MarkLights (vec3_t lightorigin, struct dlight_s *light, int bit, mnode_t *node);
+void R_MarkLights (vec3_t lightorigin, struct dlight_s *light, int bit, model_t *model);
 
 void R_LoadSkys (const char *);
 

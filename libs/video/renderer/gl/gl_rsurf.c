@@ -727,8 +727,7 @@ R_DrawBrushModel (entity_t *e)
 				continue;
 
 			VectorSubtract (r_dlights[k].origin, e->origin, lightorigin);
-			R_MarkLights (lightorigin, &r_dlights[k], 1 << k,
-						  clmodel->nodes + clmodel->hulls[0].firstclipnode);
+			R_MarkLights (lightorigin, &r_dlights[k], 1 << k, clmodel);
 		}
 	}
 
@@ -807,7 +806,7 @@ R_RecursiveWorldNode (mnode_t *node)
 		if ((c = pleaf->nummarksurfaces)) {
 			mark = pleaf->firstmarksurface;
 			do {
-				(*mark)->visframe = r_framecount;
+				(*mark)->visframe = r_visframecount;
 				mark++;
 			} while (--c);
 		}
@@ -857,7 +856,7 @@ R_RecursiveWorldNode (mnode_t *node)
 			side = 0;
 
 		for (; c; c--, surf++) {
-			if (surf->visframe != r_framecount)
+			if (surf->visframe != r_visframecount)
 				continue;
 
 			if ((dot < 0) ^ !!(surf->flags & SURF_PLANEBACK))

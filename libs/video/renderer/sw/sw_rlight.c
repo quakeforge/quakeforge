@@ -64,8 +64,9 @@ R_AnimateLight (void)
 
 
 void
-R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, mnode_t *node)
+R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, model_t *model)
 {
+	mnode_t *node = (mnode_t *)model;//FIXME evilness
 	mplane_t   *splitplane;
 	float       dist;
 	msurface_t *surf;
@@ -78,11 +79,11 @@ R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, mnode_t *node)
 	dist = DotProduct (lightorigin, splitplane->normal) - splitplane->dist;
 
 	if (dist > light->radius) {
-		R_MarkLights (lightorigin, light, bit, node->children[0]);
+		R_MarkLights (lightorigin, light, bit, (model_t*)node->children[0]);
 		return;
 	}
 	if (dist < -light->radius) {
-		R_MarkLights (lightorigin, light, bit, node->children[1]);
+		R_MarkLights (lightorigin, light, bit, (model_t*)node->children[1]);
 		return;
 	}
 	// mark the polygons
@@ -95,8 +96,8 @@ R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, mnode_t *node)
 		surf->dlightbits |= bit;
 	}
 
-	R_MarkLights (lightorigin, light, bit, node->children[0]);
-	R_MarkLights (lightorigin, light, bit, node->children[1]);
+	R_MarkLights (lightorigin, light, bit, (model_t*)node->children[0]);
+	R_MarkLights (lightorigin, light, bit, (model_t*)node->children[1]);
 }
 
 
@@ -115,7 +116,7 @@ R_PushDlights (vec3_t entorigin)
 		if (l->die < r_realtime || !l->radius)
 			continue;
 		VectorSubtract (l->origin, entorigin, lightorigin);
-		R_MarkLights (lightorigin, l, 1 << i, r_worldentity.model->nodes);
+		R_MarkLights (lightorigin, l, 1 << i, (model_t*)r_worldentity.model->nodes);
 	}
 }
 

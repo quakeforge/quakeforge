@@ -44,6 +44,7 @@
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 
+#include "r_local.h"
 #include "r_shared.h"
 #include "r_cvar.h"
 
@@ -193,7 +194,8 @@ R_RenderDlights (void)
 // LordHavoc: heavily modified, to eliminate unnecessary texture uploads,
 //            and support bmodel lighting better
 void
-R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, mnode_t *node)
+R_RecursiveMarkLights (vec3_t lightorigin, dlight_t *light, int bit,
+					   mnode_t *node)
 {
 	mplane_t   *splitplane;
 	float       ndist, maxdist;
@@ -272,7 +274,7 @@ loc0:
 
 	if (node->children[0]->contents >= 0) {
 		if (node->children[1]->contents >= 0)
-			R_MarkLights (lightorigin, light, bit, node->children[1]);
+			R_RecursiveMarkLights (lightorigin, light, bit, node->children[1]);
 
 		node = node->children[0];
 		goto loc0;
@@ -282,13 +284,127 @@ loc0:
 	}
 }
 
+static void
+mark_surfaces (msurface_t *surf, vec3_t lightorigin,  dlight_t *light,
+			   int bit)
+{
+	float      dist, dist2, d;
+	float      maxdist = light->radius * light->radius;
+	vec3_t     impact;
+
+	surf->dlightframe = r_framecount;
+	dist = PlaneDiff(lightorigin, surf->plane);
+	if (surf->flags & SURF_PLANEBACK)
+		dist = -dist;
+#if 0
+//FIXME SURF_LIGHTBOTHSIDES seems to be a darkplaces thing. need to investigate
+	if ((dist < -0.25f && !(surf->flags & SURF_LIGHTBOTHSIDES))
+		|| dist > radius)
+		return;
+#else
+	if (dist < -0.25f || dist > light->radius)
+		return;
+#endif
+	dist2 = dist * dist;
+	dist = -dist;
+	VectorMA (light->origin, dist, surf->plane->normal, impact);
+
+	d = DotProduct (impact, surf->texinfo->vecs[0])
+		+ surf->texinfo->vecs[0][3] - surf->texturemins[0];
+	if (d < 0) {
+		dist2 += d * d;
+		if (dist2 >= maxdist)
+			return;
+	} else {
+		d -= surf->extents[0] + 16;
+		if (d > 0) {
+			dist2 += d * d;
+			if (dist2 >= maxdist)
+				return;
+		}
+	}
+	d = DotProduct (impact, surf->texinfo->vecs[1])
+		+ surf->texinfo->vecs[1][3] - surf->texturemins[1];
+	if (d < 0) {
+		dist2 += d * d;
+		if (dist2 >= maxdist)
+			return;
+	} else {
+		d -= surf->extents[1] + 16;
+		if (d > 0) {
+			dist2 += d * d;
+			if (dist2 >= maxdist)
+				return;
+		}
+	}
+
+	if (surf->dlightframe != r_framecount) {
+		surf->dlightbits = 0;
+		surf->dlightframe = r_framecount;
+	}
+	surf->dlightbits |= bit;
+}
+
+void
+R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, model_t *model)
+{
+	mleaf_t   *pvsleaf = Mod_PointInLeaf (lightorigin, model);
+
+	if (!pvsleaf->compressed_vis) {
+		R_RecursiveMarkLights (lightorigin, light, bit, model->nodes);
+	} else {
+		float   radius = light->radius;
+		vec3_t  mins, maxs;
+		int     leafnum = 0;
+		byte   *in = pvsleaf->compressed_vis;
+		byte    vis_bits;
+
+		mins[0] = lightorigin[0] - radius;
+		mins[1] = lightorigin[1] - radius;
+		mins[2] = lightorigin[2] - radius;
+		maxs[0] = lightorigin[0] + radius;
+		maxs[1] = lightorigin[1] + radius;
+		maxs[2] = lightorigin[2] + radius;
+		while (leafnum < model->numleafs) {
+			int i;
+			if (!(vis_bits = *in++)) {
+				leafnum += (*in++) * 8;
+				continue;
+			}
+			for (i = 0; i < 8 && leafnum < model->numleafs; i++, leafnum++) {
+				int      m;
+				mleaf_t *leaf  = &model->leafs[leafnum];
+				if (!(vis_bits & (1 << i)))
+					continue;
+				if (leaf->visframe != r_visframecount)
+					continue;
+				if (leaf->mins[0] > maxs[0] || leaf->maxs[0] < mins[0]
+					|| leaf->mins[1] > maxs[1] || leaf->maxs[1] < mins[1]
+					|| leaf->mins[2] > maxs[2] || leaf->maxs[2] < mins[2])
+					continue;
+				if (leaf->dlightframe != r_framecount) {
+					leaf->dlightbits = 0;
+					leaf->dlightframe = r_framecount;
+				}
+				leaf->dlightbits |= bit;
+				for (m = 0; m < leaf->nummarksurfaces; m++) {
+					msurface_t *surf = leaf->firstmarksurface[m];
+					if (surf->visframe != r_visframecount
+						|| surf->dlightframe == r_framecount)
+						continue;
+					mark_surfaces (surf, lightorigin, light, bit);
+				}
+			}
+		}
+	}
+}
+
 
 void
 R_PushDlights (vec3_t entorigin)
 {
 	int         i;
 	dlight_t   *l;
-	vec3_t      lightorigin;
 
 	if (!gl_dlight_lightmap->int_val)
 		return;
@@ -298,8 +414,7 @@ R_PushDlights (vec3_t entorigin)
 	for (i = 0; i < MAX_DLIGHTS; i++, l++) {
 		if (l->die < r_realtime || !l->radius)
 			continue;
-		VectorSubtract (l->origin, entorigin, lightorigin);
-		R_MarkLights (lightorigin, l, 1 << i, r_worldentity.model->nodes);
+		R_MarkLights (l->origin, l, 1 << i, r_worldentity.model);
 	}
 }
 

@@ -714,8 +714,9 @@ R_DrawBEntitiesOnList (void)
 							VectorSubtract (r_dlights[k].origin,
 											currententity->origin, lightorigin);
 							R_MarkLights (lightorigin, &r_dlights[k], 1 << k,
+											(model_t*)(//FIXME this is so evil
 										  clmodel->nodes +
-										  clmodel->hulls[0].firstclipnode);
+										  clmodel->hulls[0].firstclipnode));
 						}
 					}
 					// if the driver wants polygons, deliver those.
