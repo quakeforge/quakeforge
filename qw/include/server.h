@@ -551,6 +551,8 @@ extern redirect_t sv_redirected;
 // sv_ccmds.c
 //
 void SV_Status_f (void);
+const char *SV_Current_Map (void);
+
 
 //
 // sv_ents.c

@@ -339,6 +339,12 @@ SV_Give_f (void)
 // Use this to keep track of current level  --KB
 static char curlevel[MAX_QPATH] = "";
 
+const char *
+SV_Current_Map (void)
+{
+	return curlevel;
+}
+
 static const char *
 nice_time (float time)
 {

@@ -141,6 +141,19 @@ SV_GIB_Client_Print_All_f (void)
 			SV_ClientPrintf (0, cl, level, "%s", GIB_Argv (1));
 }
 
+static void
+SV_GIB_Map_Get_Current_f (void)
+{
+	GIB_Return (SV_Current_Map());
+}
+
+static void
+SV_GIB_Map_Time_Elapsed_f (void)
+{
+	if (GIB_CanReturn ())
+		dsprintf (GIB_Return(0), "%f", sv.time);
+} 
+
 void	
 SV_GIB_Init (void)
 {
@@ -153,6 +166,9 @@ SV_GIB_Init (void)
 	GIB_Builtin_Add ("client::printAll", SV_GIB_Client_Print_All_f);
 	GIB_Builtin_Add ("client::printAllChat", SV_GIB_Client_Print_All_f);
 	
+	GIB_Builtin_Add ("map::getCurrent", SV_GIB_Map_Get_Current_f);
+	GIB_Builtin_Add ("map::timeElapsed", SV_GIB_Map_Time_Elapsed_f);
+
 	// Events
 	sv_chat_e = GIB_Event_New ("chat");
 	sv_client_connect_e = GIB_Event_New ("client.connect");
