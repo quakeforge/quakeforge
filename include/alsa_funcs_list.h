@@ -37,7 +37,7 @@
 QF_ALSA_NEED (int, snd_pcm_close, (snd_pcm_t *pcm))
 QF_ALSA_NEED (int, snd_pcm_hw_params, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params))
 QF_ALSA_NEED (int, snd_pcm_hw_params_any, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params))
-#if SND_LIB_MAJOR < 1
+#if SND_LIB_MAJOR < 1 && SND_LIB_MINOR >=9 && SND_LIB_SUBMINOR < 8
 QF_ALSA_NEED (snd_pcm_sframes_t, snd_pcm_hw_params_get_buffer_size, (const snd_pcm_hw_params_t *params))
 QF_ALSA_NEED (snd_pcm_sframes_t, snd_pcm_hw_params_get_period_size, (const snd_pcm_hw_params_t *params, int *dir))
 QF_ALSA_NEED (int, snd_pcm_hw_params_set_access, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, snd_pcm_access_t val))

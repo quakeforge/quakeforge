@@ -261,18 +261,12 @@ SNDDMA_Init (void)
 	memset ((dma_t *) &sn, 0, sizeof (sn));
 	sn.splitbuffer = 0;
 	sn.channels = stereo + 1;
-	qfsnd_pcm_hw_params_get_period_size (hw, (snd_pcm_uframes_t *)
-										 &sn.submission_chunk, 0);
+	sn.submission_chunk = qfsnd_pcm_hw_params_get_period_size (hw, 0);
 										// don't mix less than this
 	sn.samplepos = 0;					// in mono samples
 	sn.samplebits = bps;
 
-	err = qfsnd_pcm_hw_params_get_buffer_size (hw, &buffer_size);
-	if (0 > err) {
-		Sys_Printf ("ALSA: Unable to get buffer size for playback: %s\n",
-					qfsnd_strerror (err));
-		goto error;
-	}
+	buffer_size = qfsnd_pcm_hw_params_get_buffer_size (hw);
 
 	sn.samples = buffer_size * sn.channels;		// mono samples in buffer
 	sn.speed = rate;
