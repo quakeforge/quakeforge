@@ -62,6 +62,7 @@ typedef struct {
 } file_t;
 
 cvar_t      *pr_debug;
+cvar_t      *pr_source_path;
 static hashtab_t  *file_hash;
 
 file_t *
@@ -69,13 +70,16 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 {
 	file_t *f = Hash_Find (file_hash, fname);
 	char *l;
+	char *path;
 
 	if (f)
 		return f;
 	f = malloc (sizeof (file_t));
 	if (!f)
 		return 0;
-	f->text = COM_LoadFile (fname, 0);
+	path = Hunk_TempAlloc (strlen (pr_source_path->string) + strlen (fname) + 2);
+	sprintf (path, "%s/%s", pr_source_path->string, fname);
+	f->text = COM_LoadFile (path, 0);
 	if (!f->text) {
 		free (f);
 		return 0;
@@ -274,10 +278,11 @@ PR_Get_Source_Line (progs_t *pr, unsigned long addr)
 	line = PR_Get_Lineno_Line (pr, lineno);
 	line += func->source_line;
 
+	file = PR_Load_Source_File (pr, fname);
+
 	str = Hunk_TempAlloc (strlen (fname) + 12);
 	sprintf (str, "%s:%ld", fname, line);
 
-	file = PR_Load_Source_File (pr, fname);
 	if (!file || line > file->num_lines)
 		return str;
 
@@ -314,4 +319,7 @@ PR_Debug_Init_Cvars (void)
 {
 	pr_debug = Cvar_Get ("pr_debug", "0", CVAR_NONE, NULL,
 						 "enable progs debugging");
+	pr_source_path = Cvar_Get ("pr_source_path", ".", CVAR_NONE, NULL,
+							   "where to look (within gamedir) for source "
+							   "files");
 }
