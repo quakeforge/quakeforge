@@ -104,30 +104,30 @@ CL_NewDlight (int key, vec3_t org, int effects)
 	if (!dl)
 		return;
 	VectorCopy (org, dl->origin);
-	dl->die = cl.time + 0.1;
-	switch (effects & (EF_BLUE | EF_RED)) {
-		case EF_BLUE | EF_RED:
-			VectorCopy (purple, dl->color);
-			break;
-		case EF_BLUE:
-			VectorCopy (blue, dl->color);
-			break;
-		case EF_RED:
-			VectorCopy (red, dl->color);
-			break;
-		default:
-			VectorCopy (normal, dl->color);
-			break;
-	}
-	if (effects & EF_DIMLIGHT) {
-		VectorScale (dl->color, 0.5, dl->color);
-	}
 	radius = 200 + (rand () & 31);
 	if (effects & EF_BRIGHTLIGHT) {
 		radius += 200;
 		dl->origin[2] += 16;
 	}
+	if (effects & EF_DIMLIGHT)
+		if (effects & ~EF_DIMLIGHT)
+			radius -= 100;
 	dl->radius = radius;
+	dl->die = cl.time + 0.1;
+	switch (effects & (EF_RED | EF_BLUE)) {
+		case EF_RED | EF_BLUE:
+			VectorCopy (purple, dl->color);
+			break;
+		case EF_RED:
+			VectorCopy (red, dl->color);
+			break;
+		case EF_BLUE:
+			VectorCopy (blue, dl->color);
+			break;
+		default:
+			VectorCopy (normal, dl->color);
+			break;
+	}
 }
 
 /* PACKET ENTITY PARSING / LINKING */
@@ -517,9 +517,9 @@ CL_LinkPacketEntities (void)
 			dl = R_AllocDlight (-s1->number);
 			if (dl) {
 				VectorCopy ((*ent)->origin, dl->origin);
-				VectorCopy (r_firecolor->vec, dl->color);
 				dl->radius = 200;
 				dl->die = cl.time + 0.1;
+				VectorCopy (r_firecolor->vec, dl->color);
 			}
 		}
 

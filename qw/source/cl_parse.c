@@ -1106,16 +1106,15 @@ CL_MuzzleFlash (void)
 	if (!dl)
 		return;
 
-	VectorCopy (pl->origin, dl->origin);
 	if (i - 1 == cl.playernum)
 		AngleVectors (cl.viewangles, fv, rv, uv);
 	else
 		AngleVectors (pl->viewangles, fv, rv, uv);
 
-	VectorMA (dl->origin, 18, fv, dl->origin);
+	VectorMA (pl->origin, 18, fv, dl->origin);
 	dl->radius = 200 + (rand () & 31);
-	dl->minlight = 32;
 	dl->die = cl.time + 0.1;
+	dl->minlight = 32;
 	dl->color[0] = 0.2;
 	dl->color[1] = 0.1;
 	dl->color[2] = 0.05;

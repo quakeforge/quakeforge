@@ -437,31 +437,31 @@ CL_NewDlight (int key, vec3_t org, int effects)
 	if (!dl)
 		return;
 	VectorCopy (org, dl->origin);
-
-	switch (effects & (EF_BLUE | EF_RED)) {
-		case EF_BLUE | EF_RED:
-			VectorCopy (purple, dl->color);
-			break;
-		case EF_BLUE:
-			VectorCopy (blue, dl->color);
-			break;
-		case EF_RED:
-			VectorCopy (red, dl->color);
-			break;
-		default:
-			VectorCopy (normal, dl->color);
-			break;
-	}
-	if (effects & EF_DIMLIGHT) {
-		VectorScale (dl->color, 0.5, dl->color);
-	}
 	radius = 200 + (rand () & 31);
 	if (effects & EF_BRIGHTLIGHT) {
 		radius += 200;
 		dl->origin[2] += 16;
 	}
+	if (effects & EF_DIMLIGHT)
+		if (effects & ~EF_DIMLIGHT)
+			radius -= 100;
 	dl->radius = radius;
 	dl->die = cl.time + time;
+
+	switch (effects & (EF_BLUE | EF_RED)) {
+		case EF_RED | EF_BLUE:
+			VectorCopy (purple, dl->color);
+			break;
+		case EF_RED:
+			VectorCopy (red, dl->color);
+			break;
+		case EF_BLUE:
+			VectorCopy (blue, dl->color);
+			break;
+		default:
+			VectorCopy (normal, dl->color);
+			break;
+	}
 }
 
 /*
@@ -598,14 +598,13 @@ CL_RelinkEntities (void)
 
 			dl = R_AllocDlight (i);
 			if (dl) {
-				VectorCopy (ent->origin, dl->origin);
-				dl->origin[2] += 16;
 				AngleVectors (ent->angles, fv, rv, uv);
 
-				VectorMA (dl->origin, 18, fv, dl->origin);
+				VectorMA (ent->origin, 18, fv, dl->origin);
+				dl->origin[2] += 16;
 				dl->radius = 200 + (rand () & 31);
-				dl->minlight = 32;
 				dl->die = cl.time + 0.1;
+				dl->minlight = 32;
 				dl->color[0] = 0.2;
 				dl->color[1] = 0.1;
 				dl->color[2] = 0.05;
@@ -618,9 +617,9 @@ CL_RelinkEntities (void)
 			dl = R_AllocDlight (i);
 			if (dl) {
 				VectorCopy (ent->origin, dl->origin);
-				VectorCopy (r_firecolor->vec, dl->color);
 				dl->radius = 200;
 				dl->die = cl.time + 0.1;
+				VectorCopy (r_firecolor->vec, dl->color);
 			}
 			R_RocketTrail (ent);
 		} else if (ent->model->flags & EF_GRENADE)
