@@ -51,7 +51,7 @@ configure-stamp:
 build: configure-stamp changelog-stamp build-stamp
 build-stamp:
 	dh_testdir
-	$(MAKE)
+	$(MAKE) $(QFSMP)
 	touch $@
 
 changelog-stamp:
