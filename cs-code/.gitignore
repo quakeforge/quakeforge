@@ -1,3 +1,4 @@
 *.dat
 *.h
 *.sym
+.vimrc
