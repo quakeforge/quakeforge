@@ -47,7 +47,6 @@
 #include "console.h"
 #include "cvar.h"
 #include "keys.h"
-#include "menu.h"
 #include "screen.h"
 #include "sys.h"
 
@@ -810,11 +809,12 @@ Key_Event (int key, int alt_key, qboolean down)
 				Key_Message (key);
 				break;
 			case key_menu:
-				M_Keydown (key);
+//				M_Keydown (key);
 				break;
 			case key_game:
 			case key_console:
-				M_ToggleMenu_f ();
+//				M_ToggleMenu_f ();
+				Con_ToggleConsole_f ();
 				break;
 			default:
 				Sys_Error ("Bad key_dest");
@@ -849,7 +849,8 @@ Key_Event (int key, int alt_key, qboolean down)
 	if (cls.demoplayback && down && consolekeys[key] && key_dest == key_game
 		&& key != K_CTRL && key != K_DEL && key != K_HOME && key != K_END
 		&& key != K_TAB) {
-		M_ToggleMenu_f ();
+//		M_ToggleMenu_f ();
+		Con_ToggleConsole_f ();
 		return;
 	}
 //
@@ -886,7 +887,7 @@ Key_Event (int key, int alt_key, qboolean down)
 			Key_Message (key);
 			break;
 		case key_menu:
-			M_Keydown (key);
+//			M_Keydown (key);
 			break;
 
 		case key_game:

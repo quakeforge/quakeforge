@@ -37,7 +37,6 @@
 #include "sbar.h"
 #include "input.h"
 #include "view.h"
-#include "menu.h"
 #include "host.h"
 #include "sys.h"
 #include "console.h"
@@ -1010,7 +1009,8 @@ SCR_UpdateScreen (void)
 		SCR_CheckDrawCenterString ();
 		Sbar_Draw ();
 		SCR_DrawConsole ();
-		M_Draw ();
+		// FIXME: MENUCODE
+//		M_Draw ();
 	}
 
 	D_DisableBackBufferAccess ();		// for adapters that can't stay

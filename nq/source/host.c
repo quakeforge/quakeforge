@@ -41,7 +41,6 @@
 #include "cdaudio.h"
 #include "va.h"
 #include "sbar.h"
-#include "menu.h"
 #include "msg.h"
 #include "vid.h"
 #include "draw.h"
@@ -945,7 +944,8 @@ Host_Init (quakeparms_t *parms)
 	Con_Init_Cvars ();
 	Key_Init ();
 	Con_Init ();
-	M_Init ();
+	// FIXME: MENUCODE
+//	M_Init ();
 	PR_Init_Cvars ();
 	PR_Init ();
 	SV_Progs_Init_Cvars ();

@@ -51,7 +51,6 @@
 #include "net.h"						// needed by: client.h
 #include "protocol.h"					// needed by: client.h
 #include "keys.h"
-#include "menu.h"
 #include "cmd.h"
 #include "sbar.h"
 #include "sound.h"
@@ -1032,7 +1031,8 @@ SCR_UpdateScreen (void)
 					SCR_CheckDrawCenterString ();
 					Sbar_Draw ();
 					SCR_DrawConsole ();
-					M_Draw ();
+					// FIXME: MENUCODE
+//					M_Draw ();
 				}
 			}
 		}

@@ -57,7 +57,6 @@
 #include "d_local.h"
 #include "keys.h"
 #include "cvar.h"
-#include "menu.h"
 #include "sys.h"
 #include "cmd.h"
 #include "input.h"

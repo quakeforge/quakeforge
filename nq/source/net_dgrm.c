@@ -107,10 +107,11 @@ struct {
 	byte        data[MAX_DATAGRAM];
 } packetBuffer;
 
-extern int  m_return_state;
-extern int  m_state;
-extern qboolean m_return_onerror;
-extern char m_return_reason[32];
+// FIXME: MENUCODE
+//extern int  m_return_state;
+//extern int  m_state;
+//extern qboolean m_return_onerror;
+//extern char m_return_reason[32];
 
 
 #ifdef DEBUG
@@ -1360,14 +1361,14 @@ _Datagram_Connect (char *host)
 	if (ret == 0) {
 		reason = "No Response";
 		Con_Printf ("%s\n", reason);
-		strcpy (m_return_reason, reason);
+//		strcpy (m_return_reason, reason);
 		goto ErrorReturn;
 	}
 
 	if (ret == -1) {
 		reason = "Network Error";
 		Con_Printf ("%s\n", reason);
-		strcpy (m_return_reason, reason);
+//		strcpy (m_return_reason, reason);
 		goto ErrorReturn;
 	}
 
@@ -1375,7 +1376,7 @@ _Datagram_Connect (char *host)
 	if (ret == CCREP_REJECT) {
 		reason = MSG_ReadString (net_message);
 		Con_Printf (reason);
-		strncpy (m_return_reason, reason, 31);
+//		strncpy (m_return_reason, reason, 31);
 		goto ErrorReturn;
 	}
 
@@ -1386,7 +1387,7 @@ _Datagram_Connect (char *host)
 	} else {
 		reason = "Bad Response";
 		Con_Printf ("%s\n", reason);
-		strcpy (m_return_reason, reason);
+//		strcpy (m_return_reason, reason);
 		goto ErrorReturn;
 	}
 
@@ -1399,22 +1400,25 @@ _Datagram_Connect (char *host)
 	if (dfunc.Connect (newsock, &sock->addr) == -1) {
 		reason = "Connect to Game failed";
 		Con_Printf ("%s\n", reason);
-		strcpy (m_return_reason, reason);
+//		strcpy (m_return_reason, reason);
 		goto ErrorReturn;
 	}
 
-	m_return_onerror = false;
+	// FIXME: MENUCODE
+//	m_return_onerror = false;
 	return sock;
 
   ErrorReturn:
+	// FIXME: MENUCODE - do something with reason
 	NET_FreeQSocket (sock);
   ErrorReturn2:
 	dfunc.CloseSocket (newsock);
-	if (m_return_onerror) {
-		key_dest = key_menu;
-		m_state = m_return_state;
-		m_return_onerror = false;
-	}
+	// FIXME: MENUCODE
+//	if (m_return_onerror) {
+//		key_dest = key_menu;
+//		m_state = m_return_state;
+//		m_return_onerror = false;
+//	}
 	return NULL;
 }
 

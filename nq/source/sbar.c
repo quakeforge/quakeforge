@@ -100,7 +100,6 @@ qboolean    sbar_centered;
 
 void        Sbar_MiniDeathmatchOverlay (void);
 void        Sbar_DeathmatchOverlay (void);
-void        M_DrawPic (int, int, qpic_t *);
 
 /*
  *
@@ -996,7 +995,7 @@ Sbar_DeathmatchOverlay (void)
 	scr_fullupdate = 0;
 
 	pic = Draw_CachePic ("gfx/ranking.lmp");
-	M_DrawPic ((320 - pic->width) / 2, 8, pic);
+	Draw_Pic (160 - pic->width / 2, 0, pic);
 
 	// scores
 	Sbar_SortFrags ();
@@ -1004,7 +1003,7 @@ Sbar_DeathmatchOverlay (void)
 	// draw the text
 	l = scoreboardlines;
 
-	x = 80 + ((vid.width - 320) >> 1);
+	x = 80;
 	y = 40;
 	for (i = 0; i < l; i++) {
 		k = fragsort[i];
