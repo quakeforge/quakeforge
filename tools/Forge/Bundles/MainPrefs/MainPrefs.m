@@ -40,6 +40,7 @@ static const char rcsid[] =
 #import <Foundation/NSValue.h>
 
 #import <AppKit/NSButton.h>
+#import <AppKit/NSImage.h>
 #import <AppKit/NSNibLoading.h>
 #import <AppKit/NSOpenPanel.h>
 
