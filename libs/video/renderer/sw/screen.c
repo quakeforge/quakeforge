@@ -371,9 +371,9 @@ SCR_ApplyBlend (void)		// Used to be V_UpdatePalette
 		b = basepal[2];
 		basepal += 3;
 
-		r += ((int) (v_blend[3] * (v_blend[0] - r))) >> 8;
-		g += ((int) (v_blend[3] * (v_blend[1] - g))) >> 8;
-		b += ((int) (v_blend[3] * (v_blend[2] - b))) >> 8;
+		r += ((int) (v_blend[3] * (v_blend[0] * 256 - r)));
+		g += ((int) (v_blend[3] * (v_blend[1] * 256 - g)));
+		b += ((int) (v_blend[3] * (v_blend[2] * 256 - b)));
 
 		newpal[0] = gammatable[r];
 		newpal[1] = gammatable[g];
