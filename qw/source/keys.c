@@ -230,31 +230,6 @@ CheckForCommand (void)
 	return true;
 }
 
-
-void
-CompleteCommand (void)
-{
-	char       *cmd, *s;
-
-	s = key_lines[edit_line] + 1;
-	if (*s == '\\' || *s == '/')
-		s++;
-
-	cmd = Cmd_CompleteCommand (s);
-	if (!cmd)
-		cmd = Cvar_CompleteVariable (s);
-	if (cmd) {
-		key_lines[edit_line][1] = '/';
-		strcpy (key_lines[edit_line] + 2, cmd);
-		key_linepos = strlen (cmd) + 2;
-		key_lines[edit_line][key_linepos] = ' ';
-		key_linepos++;
-		key_lines[edit_line][key_linepos] = 0;
-		return;
-	}
-}
-
-
 /*
 	Key_Console
 
@@ -307,7 +282,7 @@ Key_Console (int key)
 
 		case K_TAB:
 			// command completion
-			CompleteCommand ();
+			Con_CompleteCommandLine(); // New tab command completion
 			return;
 
 		case K_BACKSPACE:

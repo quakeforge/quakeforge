@@ -625,9 +625,9 @@ Cmd_Exists (char *cmd_name)
 char       *
 Cmd_CompleteCommand (char *partial)
 {
-	cmd_function_t *cmd;
-	int         len;
-	cmdalias_t *a;
+	cmd_function_t	*cmd;
+	int				len;
+	cmdalias_t		*a;
 
 	len = strlen (partial);
 
@@ -651,6 +651,153 @@ Cmd_CompleteCommand (char *partial)
 			return a->name;
 
 	return NULL;
+}
+
+/*
+	Cmd_CompleteCountPossible
+
+	New function for tab-completion system
+	Added by EvilTypeGuy
+	Thanks to Fett erich@heintz.com
+	Thanks to taniwha
+
+*/
+int
+Cmd_CompleteCountPossible (char *partial)
+{
+	cmd_function_t	*cmd;
+	int				len;
+	int				h;
+	
+	h = 0;
+	len = strlen(partial);
+	
+	if (!len)
+		return 0;
+	
+	// Loop through the command list and count all partial matches
+	for (cmd = cmd_functions; cmd; cmd = cmd->next)
+		if (!strncasecmp(partial, cmd->name, len))
+			h++;
+
+	return h;
+}
+
+/*
+	Cmd_CompleteBuildList
+
+	New function for tab-completion system
+	Added by EvilTypeGuy
+	Thanks to Fett erich@heintz.com
+	Thanks to taniwha
+
+*/
+char	**
+Cmd_CompleteBuildList (char *partial)
+{
+	cmd_function_t	*cmd;
+	int				len = 0;
+	int				bpos = 0;
+	int				sizeofbuf = (Cmd_CompleteCountPossible (partial) + 1) * sizeof (char *);
+	char			**buf;
+
+	len = strlen(partial);
+	buf = malloc(sizeofbuf + sizeof (char *));
+	// Loop through the alias list and print all matches
+	for (cmd = cmd_functions; cmd; cmd = cmd->next)
+		if (!strncasecmp(partial, cmd->name, len))
+			buf[bpos++] = cmd->name;
+
+	buf[bpos] = NULL;
+	return buf;
+}
+
+/*
+	Cmd_CompleteAlias
+
+	New function for tab-completion system
+	Added by EvilTypeGuy
+	Thanks to Fett erich@heintz.com
+	Thanks to taniwha
+
+*/
+char
+*Cmd_CompleteAlias (char * partial)
+{
+	cmdalias_t	*alias;
+	int			len;
+
+	len = strlen(partial);
+
+	if (!len)
+		return NULL;
+
+	// Check functions
+	for (alias = cmd_alias; alias; alias = alias->next)
+		if (!strncasecmp(partial, alias->name, len))
+			return alias->name;
+
+	return NULL;
+}
+
+/*
+	Cmd_CompleteAliasCountPossible
+
+	New function for tab-completion system
+	Added by EvilTypeGuy
+	Thanks to Fett erich@heintz.com
+	Thanks to taniwha
+
+*/
+int
+Cmd_CompleteAliasCountPossible (char *partial)
+{
+	cmdalias_t	*alias;
+	int			len;
+	int			h;
+
+	h = 0;
+
+	len = strlen(partial);
+
+	if (!len)
+		return 0;
+
+	// Loop through the command list and count all partial matches
+	for (alias = cmd_alias; alias; alias = alias->next)
+		if (!strncasecmp(partial, alias->name, len))
+			h++;
+
+	return h;
+}
+
+/*
+	Cmd_CompleteAliasBuildList
+
+	New function for tab-completion system
+	Added by EvilTypeGuy
+	Thanks to Fett erich@heintz.com
+	Thanks to taniwha
+
+*/
+char	**
+Cmd_CompleteAliasBuildList (char *partial)
+{
+	cmdalias_t	*alias;
+	int			len = 0;
+	int			bpos = 0;
+	int			sizeofbuf = (Cmd_CompleteAliasCountPossible (partial) + 1) * sizeof (char *);
+	char		**buf;
+
+	len = strlen(partial);
+	buf = malloc(sizeofbuf + sizeof (char *));
+	// Loop through the alias list and print all matches
+	for (alias = cmd_alias; alias; alias = alias->next)
+		if (!strncasecmp(partial, alias->name, len))
+			buf[bpos++] = alias->name;
+
+	buf[bpos] = NULL;
+	return buf;
 }
 
 /*

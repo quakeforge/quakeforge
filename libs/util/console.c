@@ -85,3 +85,49 @@ Con_DPrintf (char *fmt, ...)
 
 	Con_Print (msg);
 }
+
+/*
+	Con_DisplayList
+
+	New function for tab-completion system
+	Added by EvilTypeGuy
+	MEGA Thanks to Taniwha
+
+*/
+void
+Con_DisplayList(char **list, int con_linewidth)
+{
+	int	i = 0;
+	int	pos = 0;
+	int	len = 0;
+	int	maxlen = 0;
+	int	width = (con_linewidth - 4);
+	char	**walk = list;
+
+	while (*walk) {
+		len = strlen(*walk);
+		if (len > maxlen)
+			maxlen = len;
+		walk++;
+	}
+	maxlen += 1;
+
+	while (*list) {
+		len = strlen(*list);
+		if (pos + maxlen >= width) {
+			Con_Printf("\n");
+			pos = 0;
+		}
+
+		Con_Printf("%s", *list);
+		for (i = 0; i < (maxlen - len); i++)
+			Con_Printf(" ");
+
+		pos += maxlen;
+		list++;
+	}
+
+	if (pos)
+		Con_Printf("\n\n");
+}
+

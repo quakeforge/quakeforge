@@ -110,6 +110,12 @@ qboolean Cvar_Command (void);
 // with the archive flag set to true.
 void 	Cvar_WriteVariables (VFile *f);
 
+// Added by EvilTypeGuy - functions for tab completion system
+// Thanks to Fett erich@heintz.com
+// Thanks to taniwha
+int		Cvar_CompleteCountPossible (char *partial);
+char	**Cvar_CompleteBuildList (char *partial);
+
 // Returns a pointer to the Cvar, NULL if not found
 cvar_t *Cvar_FindVar (char *var_name);
 

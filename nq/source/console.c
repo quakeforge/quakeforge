@@ -560,3 +560,86 @@ Con_DrawDownload (int lines)
 	for (i = 0; i < strlen (dlbar); i++)
 		Draw_Character8 ((i + 1) << 3, y, dlbar[i]);
 }
+
+/*
+	Con_CompleteCommandLine
+
+	New function for tab-completion system
+	Added by EvilTypeGuy
+	Thanks to Fett erich@heintz.com
+	Thanks to taniwha
+
+*/void
+Con_CompleteCommandLine (void)
+{
+	char	*cmd = "";
+	char	*s;
+	char	**list;
+	int	c, v, a, i;
+
+	s = key_lines[edit_line] + 1;
+	if (*s == '\\' || *s == '/')
+		s++;
+
+	// Count number of possible matches
+	c = Cmd_CompleteCountPossible(s);
+	v = Cvar_CompleteCountPossible(s);
+	a = Cmd_CompleteAliasCountPossible(s);
+	
+	if (!(c + v + a))	// No possible matches
+		return;
+	
+	if (c + v + a > 1) {
+		// 'quakebar'
+		Con_Printf("\n\35");
+		for (i = 0; i < con_linewidth - 4; i++)
+			Con_Printf("\36");
+		Con_Printf("\37\n");
+
+		// Print Possible Commands
+		if (c) {
+			Con_Printf("%i possible command%s\n", c, (c > 1) ? "s: " : ":");
+			list = Cmd_CompleteBuildList(s);
+			Con_DisplayList(list, con_linewidth);
+			free(list);
+		}
+		
+		if (v) {
+			Con_Printf("%i possible variable%s\n", v, (v > 1) ? "s: " : ":");
+			list = Cvar_CompleteBuildList(s);
+			Con_DisplayList(list, con_linewidth);
+			free(list);
+		}
+		
+		if (a) {
+			Con_Printf("%i possible aliases%s\n", a, (a > 1) ? "s: " : ":");
+			list = Cmd_CompleteAliasBuildList(s);
+			Con_DisplayList(list, con_linewidth);
+			free(list);
+		}
+		return;
+	}
+
+	// The number of possible matches has been narrowed down to 1
+	// So just use the original QF functions
+
+	if (c)
+		cmd = Cmd_CompleteCommand(s);
+
+	if (v)
+		cmd = Cvar_CompleteVariable(s);
+
+	if (a)
+		cmd = Cmd_CompleteAlias(s);
+	
+	if (cmd) {
+		key_lines[edit_line][1] = '/';
+		strcpy(key_lines[edit_line] + 2, cmd);
+		key_linepos = strlen (cmd) + 2;
+		key_lines[edit_line][key_linepos] = ' ';
+		key_linepos++;
+		key_lines[edit_line][key_linepos] = 0;
+		return;
+	}
+}
+
