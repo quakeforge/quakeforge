@@ -49,6 +49,12 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "compat.h"
 
+typedef struct {
+	byte        red;
+	byte        green;
+	byte        blue;
+	byte        alpha;
+} cmap_t;
 
 static inline byte *
 blit_rgb (byte *buf, int count, byte red, byte green, byte blue)
@@ -100,7 +106,7 @@ reverse_blit_rgba (byte *buf, int count, byte red, byte green, byte blue,
 }
 
 static inline byte *
-read_bgr (byte *buf, int count, byte **data)
+read_bgr (byte *buf, int count, byte **data, cmap_t *cmap)
 {
 	byte		blue = *(*data)++;
 	byte		green = *(*data)++;
@@ -110,7 +116,7 @@ read_bgr (byte *buf, int count, byte **data)
 }
 
 static inline byte *
-read_bgra (byte *buf, int count, byte **data)
+read_bgra (byte *buf, int count, byte **data, cmap_t *cmap)
 {
 	byte		blue = *(*data)++;
 	byte		green = *(*data)++;
@@ -121,7 +127,7 @@ read_bgra (byte *buf, int count, byte **data)
 }
 
 static inline byte *
-reverse_read_bgr (byte *buf, int count, byte **data)
+reverse_read_bgr (byte *buf, int count, byte **data, cmap_t *cmap)
 {
 	byte		blue = *(*data)++;
 	byte		green = *(*data)++;
@@ -131,12 +137,36 @@ reverse_read_bgr (byte *buf, int count, byte **data)
 }
 
 static inline byte *
-reverse_read_bgra (byte *buf, int count, byte **data)
+reverse_read_bgra (byte *buf, int count, byte **data, cmap_t *cmap)
 {
 	byte		blue = *(*data)++;
 	byte		green = *(*data)++;
 	byte		red = *(*data)++;
 	byte		alpha = *(*data)++;
+
+	return reverse_blit_rgba (buf, count, red, green, blue, alpha);
+}
+
+static inline byte *
+read_cmap (byte *buf, int count, byte **data, cmap_t *cmap)
+{
+	byte        ind = *(*data)++;
+	byte		red = cmap[ind].red;
+	byte		green = cmap[ind].green;
+	byte		blue = cmap[ind].blue;
+	byte		alpha = cmap[ind].alpha;
+
+	return blit_rgba (buf, count, red, green, blue, alpha);
+}
+
+static inline byte *
+reverse_read_cmap (byte *buf, int count, byte **data, cmap_t *cmap)
+{
+	byte        ind = *(*data)++;
+	byte		red = cmap[ind].red;
+	byte		green = cmap[ind].green;
+	byte		blue = cmap[ind].blue;
+	byte		alpha = cmap[ind].alpha;
 
 	return reverse_blit_rgba (buf, count, red, green, blue, alpha);
 }
@@ -163,6 +193,119 @@ setup_pixrow_span (TargaHeader *targa, tex_t *tex, byte **_pixrow, int *_span)
 	*_span = span;
 }
 
+static cmap_t *
+parse_colormap (TargaHeader *targa, byte **dataByte)
+{
+	byte       *data;
+	cmap_t     *cm, *cmap;
+	int         i;
+	unsigned short word;
+
+	if (!targa->colormap_type)
+		Sys_Error ("LoadTGA: colormap missing");
+	if (targa->colormap_type != 1)
+		Sys_Error ("LoadTGA: unkown colormap type");
+	if (targa->colormap_index + targa->colormap_length > 256)
+		Sys_Error ("LoadTGA: unsupported color map size");
+	if (targa->pixel_size != 8)
+		Sys_Error ("LoadTGA: unsupported color map index bits");
+
+	switch (targa->colormap_size) {
+		case 32:
+			if (!targa->colormap_index && targa->colormap_length == 256) {
+				cmap = (cmap_t *) *dataByte;
+				*dataByte += 256 * sizeof (cmap_t);
+				return cmap;
+			}
+		case 24:
+		case 16:
+		case 15:
+			cmap = Hunk_AllocName (256 * sizeof (cmap_t), "TGA cmap");
+			break;
+		default:
+			Sys_Error ("LoadTGA: unsupported color map size");
+			break;
+	}
+
+	data = *dataByte;
+	cm = cmap + targa->colormap_index;
+
+	switch (targa->colormap_size) {
+		case 15:
+			for (i = 0; i < targa->colormap_length; i++, cm++) {
+				word = *data++;
+				word |= (*data++) << 8;
+				cm->red = word & 0x1f;
+				cm->green = (word >> 5) & 0x1f;
+				cm->blue = (word >> 10) & 0x1f;
+				cm->alpha = 255;
+			}
+			break;
+		case 16:
+			for (i = 0; i < targa->colormap_length; i++, cm++) {
+				word = *data++;
+				word |= (*data++) << 8;
+				cm->red = word & 0x1f;
+				cm->green = (word >> 5) & 0x1f;
+				cm->blue = (word >> 10) & 0x1f;
+				cm->alpha = (word & 0x8000) ? 255 : 0;
+			}
+			break;
+		case 24:
+			for (i = 0; i < targa->colormap_length; i++, cm++) {
+				cm->red = *data++;
+				cm->green = *data++;
+				cm->blue = *data++;
+				cm->alpha = 255;
+			}
+			break;
+		case 32:
+			for (i = 0; i < targa->colormap_length; i++, cm++) {
+				cm->red = *data++;
+				cm->green = *data++;
+				cm->blue = *data++;
+				cm->alpha = *data++;
+			}
+			break;
+	}
+	return cmap;
+}
+
+static void
+decode_colormap (TargaHeader *targa, tex_t *tex, byte *dataByte)
+{
+	byte       *pixcol, *pixrow;
+	cmap_t     *cmap;
+	int         column, columns, rows, span;
+
+	cmap = parse_colormap (targa, &dataByte);
+
+	tex->format = tex_rgba;
+
+	columns = targa->width;
+	rows = targa->height;
+
+	setup_pixrow_span (targa, tex, &pixrow, &span);
+
+	if (targa->attributes & 0x10) {
+		// right to left
+		while (rows-- > 0) {
+			pixcol = pixrow;
+			for (column = columns; column > 0; column--)
+				pixcol = reverse_read_cmap (pixcol, 1, &dataByte, cmap);
+			pixrow += span;
+		}
+	} else {
+		// left to right
+		while (rows-- > 0) {
+			pixcol = pixrow;
+			for (column = columns; column > 0; column--)
+				pixcol = read_cmap (pixcol, 1, &dataByte, cmap);
+			pixrow += span;
+		}
+	}
+}
+
 static void
 decode_truecolor_24 (TargaHeader *targa, tex_t *tex, byte *dataByte)
 {
@@ -175,17 +318,19 @@ decode_truecolor_24 (TargaHeader *targa, tex_t *tex, byte *dataByte)
 	setup_pixrow_span (targa, tex, &pixrow, &span);
 
 	if (targa->attributes & 0x10) {
+		// right to left
 		while (rows-- > 0) {
 			pixcol = pixrow;
 			for (column = columns; column > 0; column--)
-				pixcol = reverse_read_bgr (pixcol, 1, &dataByte);
+				pixcol = reverse_read_bgr (pixcol, 1, &dataByte, 0);
 			pixrow += span;
 		}
 	} else {
+		// left to right
 		while (rows-- > 0) {
 			pixcol = pixrow;
 			for (column = columns; column > 0; column--)
-				pixcol = read_bgr (pixcol, 1, &dataByte);
+				pixcol = read_bgr (pixcol, 1, &dataByte, 0);
 			pixrow += span;
 		}
 	}
@@ -203,17 +348,19 @@ decode_truecolor_32 (TargaHeader *targa, tex_t *tex, byte *dataByte)
 	setup_pixrow_span (targa, tex, &pixrow, &span);
 
 	if (targa->attributes & 0x10) {
+		// right to left
 		while (rows-- > 0) {
 			pixcol = pixrow;
 			for (column = columns; column > 0; column--)
-				pixcol = reverse_read_bgra (pixcol, 1, &dataByte);
+				pixcol = reverse_read_bgra (pixcol, 1, &dataByte, 0);
 			pixrow += span;
 		}
 	} else {
+		// left to right
 		while (rows-- > 0) {
 			pixcol = pixrow;
-			for (column = 0; column < columns; column++)
-				pixcol = read_bgra (pixcol, 1, &dataByte);
+			for (column = columns; column > 0; column--)
+				pixcol = read_bgra (pixcol, 1, &dataByte, 0);
 			pixrow += span;
 		}
 	}
@@ -233,10 +380,10 @@ do {                                                                          \
                                                                               \
 				packetSize -= count;                                          \
 				if (packetHeader & 0x80) {		/* run-length packet */       \
-					expand (pixcol, count, &dataByte);                        \
+					expand (pixcol, count, &dataByte, cmap);                  \
 				} else {						/* non run-length packet */   \
 					while (count--)                                           \
-						expand (pixcol, 1, &dataByte);                        \
+						expand (pixcol, 1, &dataByte, cmap);                  \
 				}                                                             \
 				column = columns;                                             \
 				pixcol = pixrow;                                              \
@@ -246,10 +393,10 @@ do {                                                                          \
 			}                                                                 \
 			column -= packetSize;                                             \
 			if (packetHeader & 0x80) {			/* run-length packet */       \
-				pixcol = expand (pixcol, packetSize, &dataByte);              \
+				pixcol = expand (pixcol, packetSize, &dataByte, cmap);        \
 			} else {							/* non run-length packet */   \
 				while (packetSize--)                                          \
-					pixcol = expand (pixcol, 1, &dataByte);                   \
+					pixcol = expand (pixcol, 1, &dataByte, cmap);             \
 			}                                                                 \
 		}                                                                     \
 	}                                                                         \
@@ -257,19 +404,42 @@ do {                                                                          \
 } while (0)
 
 static void
-decode_truecolor_24_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
+decode_colormap_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
 {
 	byte       *pixcol, *pixrow;
+	cmap_t     *cmap;
 	int         column, columns, rows, span;
+
+	cmap = parse_colormap (targa, &dataByte);
+
+	tex->format = tex_rgba;
 
 	columns = targa->width;
 	rows = targa->height;
 
 	setup_pixrow_span (targa, tex, &pixrow, &span);
 
-	if (targa->attributes & 0x10)
+	if (targa->attributes & 0x10)	// right to left
+		rle_expand (reverse_read_cmap);
+	else							// left to right
+		rle_expand (read_cmap);
+}
+
+static void
+decode_truecolor_24_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
+{
+	byte       *pixcol, *pixrow;
+	int         column, columns, rows, span;
+	cmap_t     *cmap = 0;		// not really used but needed for rle_expand
+
+	columns = targa->width;
+	rows = targa->height;
+
+	setup_pixrow_span (targa, tex, &pixrow, &span);
+
+	if (targa->attributes & 0x10)	// right to left
 		rle_expand (reverse_read_bgr);
-	else
+	else							// left to right
 		rle_expand (read_bgr);
 }
 
@@ -278,22 +448,72 @@ decode_truecolor_32_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
 {
 	byte       *pixcol, *pixrow;
 	int         column, columns, rows, span;
+	cmap_t     *cmap = 0;		// not really used but needed for rle_expand
 
 	columns = targa->width;
 	rows = targa->height;
 
 	setup_pixrow_span (targa, tex, &pixrow, &span);
 
-	if (targa->attributes & 0x10)
+	if (targa->attributes & 0x10)	// right to left
 		rle_expand (reverse_read_bgra);
-	else
+	else							// left to right
 		rle_expand (read_bgra);
 }
+
+static void
+decode_truecolor (TargaHeader *targa, tex_t *tex, byte *dataByte)
+{
+	switch (targa->pixel_size) {
+		case 24:
+			tex->format = tex_rgb;
+			decode_truecolor_24 (targa, tex, dataByte);
+			break;
+		default:
+		case 32:
+			tex->format = tex_rgba;
+			decode_truecolor_32 (targa, tex, dataByte);
+			break;
+	}
+}
+
+static void
+decode_truecolor_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
+{
+	switch (targa->pixel_size) {
+		case 24:
+			tex->format = tex_rgb;
+			decode_truecolor_24_rle (targa, tex, dataByte);
+			break;
+		default:
+		case 32:
+			tex->format = tex_rgba;
+			decode_truecolor_32_rle (targa, tex, dataByte);
+			break;
+	}
+}
+
+typedef void (*decoder_t) (TargaHeader *, tex_t *, byte *);
+static decoder_t decoder_functions[] = {
+	0,					// 0 invalid
+	decode_colormap,
+	decode_truecolor,
+	0,					// decode_greyscal
+	0, 0, 0, 0,			// 5-7 invalid
+	0,					// 8 invalid
+	decode_colormap_rle,
+	decode_truecolor_rle,
+	0,					// decode_greyscal
+	0, 0, 0, 0,			// 12-15 invalid
+};
+#define NUM_DECODERS (sizeof (decoder_functions) \
+					  / sizeof (decoder_functions[0]))
 
 struct tex_s *
 LoadTGA (QFile *fin)
 {
 	byte       *dataByte;
+	decoder_t   decode;
 	int         numPixels, targa_mark;
 	TargaHeader *targa;
 	tex_t      *tex;
@@ -309,54 +529,21 @@ LoadTGA (QFile *fin)
 	targa->width = LittleShort (targa->width);
 	targa->height = LittleShort (targa->height);
 
-	if (targa->image_type != 2 && targa->image_type != 10)
-		Sys_Error ("LoadTGA: Only type 2 and 10 targa RGB images supported");
-
-	if (targa->colormap_type != 0
-		|| (targa->pixel_size != 32 && targa->pixel_size != 24))
-		Sys_Error ("Texture_LoadTGA: Only 32 or 24 bit images supported "
-				   "(no colormaps)");
+	if (targa->image_type >= NUM_DECODERS
+		|| !(decode = decoder_functions[targa->image_type]))
+		Sys_Error ("LoadTGA: Unsupported targa type");
 
 	numPixels = targa->width * targa->height;
-
 	tex = Hunk_TempAlloc (field_offset (tex_t, data[numPixels * 4]));
 	tex->width = targa->width;
 	tex->height = targa->height;
 	tex->palette = 0;
 
-	switch (targa->pixel_size) {
-		case 24:
-			tex->format = tex_rgb;
-			break;
-		default:
-		case 32:
-			tex->format = tex_rgba;
-			break;
-	}
-
 	// skip TARGA image comment
 	dataByte = (byte *) (targa + 1);
 	dataByte += targa->id_length;
 
-	if (targa->image_type == 2) {	// Uncompressed image
-		switch (targa->pixel_size) {
-		case 24:
-			decode_truecolor_24 (targa, tex, dataByte);
-			break;
-		case 32:
-			decode_truecolor_32 (targa, tex, dataByte);
-			break;
-		}
-	} else if (targa->image_type == 10) {	// RLE compressed image
-		switch (targa->pixel_size) {
-		case 24:
-			decode_truecolor_24_rle (targa, tex, dataByte);
-			break;
-		case 32:
-			decode_truecolor_32_rle (targa, tex, dataByte);
-			break;
-		}
-	}
+	decode (targa, tex, dataByte);
 
 	Hunk_FreeToLowMark (targa_mark);
 	return tex;
