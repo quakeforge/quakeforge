@@ -252,13 +252,13 @@ PR_GetTempDef (type_t *type, def_t *scope)
 	if (free_temps[size]) {
 		def = free_temps[size];
 		free_temps[size] = def->next;
+		memset (def, 0, sizeof (def_t));
 		def->type = type;
 	} else {
 		def = PR_NewDef (type, 0, scope);
 		def->ofs = *scope->alloc;
 		*scope->alloc += pr_type_size[size];
 	}
-	def->users = 0;
 	def->next = temp_scope.next;
 	temp_scope.next = def;
 	return def;

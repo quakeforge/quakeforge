@@ -888,11 +888,13 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if (op == '=' && e1->type == ex_def)
 		PR_DefInitialized (e1->e.def);
 
+	if (op == '=')
+		inc_users (e1);
+
 	if (e1->type == ex_block && e1->e.block.is_call
 		&& e2->type == ex_block && e2->e.block.is_call
 		&& e1->e.block.result) {
 		e = new_temp_def_expr (e1->e.block.result->e.def->type);
-		inc_users (e);
 		e1 = binary_expr ('=', e, e1);
 	}
 
