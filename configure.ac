@@ -1921,7 +1921,11 @@ QF_DEPS(WAV,
 	[$(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
-WAV_INCS=""
+QF_DEPS(QFDEFS,
+	[-I$(top_srcdir)/tools/qfdefs/include],
+	[$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la],
+	[$(WIN32_LIBS)],
+)
 
 AC_DEFINE_UNQUOTED(PATH_SEPARATOR, '/', [Define this to your operating system's path separator character])
 AC_DEFINE_UNQUOTED(CPP_NAME, "$CPP_NAME", [Define this to the command line for the C preprocessor])
@@ -1989,6 +1993,9 @@ AC_OUTPUT(
 	tools/qfcc/doc/man/Makefile
 	tools/qfcc/include/Makefile
 	tools/qfcc/source/Makefile
+	tools/qfdefs/Makefile
+	tools/qfdefs/include/Makefile
+	tools/qfdefs/source/Makefile
 	tools/qfprogs/Makefile
 	tools/qfprogs/include/Makefile
 	tools/qfprogs/source/Makefile
