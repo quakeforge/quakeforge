@@ -491,8 +491,8 @@ R_RocketTrail (int type, entity_t *ent)
 
 		switch (type) {
 			case 0:					// rocket trail
-				dist = 20;
-				pdie = cl.time + 1;
+				dist = 40;
+				pdie = cl.time + 60;
 				ptype = pt_smokering;
 				pscale = lhrandom (10, 15);
 				pcolor = (rand () & 3) + 12;
@@ -748,7 +748,7 @@ R_DrawParticles (void)
 				part->org[2] += host_frametime * 30;
 				break;
 			case pt_smokering:
-				if ((part->alpha -= host_frametime * 90) < 1)
+				if ((part->alpha -= host_frametime * 130) < 1)
 					part->die = -1;
 				part->scale += host_frametime * 10;
 				part->org[2] += host_frametime * 30;
