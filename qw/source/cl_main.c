@@ -386,7 +386,7 @@ CL_Rcon_f (void)
 	if (cls.state >= ca_connected)
 		to = cls.netchan.remote_address;
 	else {
-		if (!strlen (rcon_address->string)) {
+		if (!rcon_address->string[0]) {
 			Con_Printf ("You must either be connected,\n"
 						"or set the 'rcon_address' cvar\n"
 						"to issue rcon commands\n");
