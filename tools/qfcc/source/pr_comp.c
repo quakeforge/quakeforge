@@ -602,7 +602,13 @@ PR_ParseDefs (void)
 				PR_ParseError ("wrong immediate type for %s", name);
 			}
 
-			def = PR_ParseImmediate (def);
+			if (pr_scope) {
+				def_t *imm = PR_ParseImmediate (0);
+				opcode_t *op = PR_Opcode_Find ("=", 5, imm, imm, def);
+				PR_Statement (op, imm, def);
+			} else {
+				def = PR_ParseImmediate (def);
+			}
 		}
 
 	} while (PR_Check (tt_punct, ","));
