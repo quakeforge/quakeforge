@@ -11,9 +11,9 @@ ID		[a-zA-Z_][a-zA-Z_0-9]*
 
 %%
 
-{DIGIT}+"."{DIGIT}* return VALUE;
+{DIGIT}+"."{DIGIT}* return IMMEDIATE;
 
-{ID}	return NAME
+{ID}	return NAME;
 
 \"(\.|[^"])*\"
 
