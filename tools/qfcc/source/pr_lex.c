@@ -158,6 +158,7 @@ PR_LexString (void)
 {
 	int         c;
 	int         len;
+	int			i;
 
 	len = 0;
 	pr_file_p++;
@@ -171,12 +172,69 @@ PR_LexString (void)
 			c = *pr_file_p++;
 			if (!c)
 				PR_ParseError ("EOF inside quote");
-			if (c == 'n')
-				c = '\n';
-			else if (c == '"')
-				c = '"';
-			else
-				PR_ParseError ("Unknown escape char");
+			switch (c) {
+				case 'n':
+					c = '\n';
+					break;
+				case '"':
+					c = '\"';
+					break;
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+					for (i = c = 0; i < 3
+									&& *pr_file_p >= '0'
+									&& *pr_file_p <='7'; i++, pr_file_p++) {
+						c *= 8;
+						c += *pr_file_p - '0';
+					}
+					if (!*pr_file_p)
+						PR_ParseError ("EOF inside quote");
+					break;
+				case 'x':
+					c = 0;
+					while (*pr_file_p && isxdigit (*pr_file_p)) {
+						c *= 16;
+						if (*pr_file_p <= 9)
+							c += *pr_file_p - '0';
+						else if (*pr_file_p <= 'F')
+							c += *pr_file_p - 'A';
+						else
+							c += *pr_file_p - 'a';
+					}
+					if (!*pr_file_p)
+						PR_ParseError ("EOF inside quote");
+					break;
+				case 'a':
+					c = '\a';
+					break;
+				case 'b':
+					c = '\b';
+					break;
+				case 'e':
+					c = '\033';
+					break;
+				case 'f':
+					c = '\f';
+					break;
+				case 'r':
+					c = '\r';
+					break;
+				case 't':
+					c = '\t';
+					break;
+				case 'v':
+					c = '\v';
+					break;
+				default:
+					PR_ParseError ("Unknown escape char");
+					break;
+			}
 		} else if (c == '\"') {
 			pr_token[len] = 0;
 			pr_token_type = tt_immediate;
