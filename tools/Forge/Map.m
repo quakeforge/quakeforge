@@ -13,7 +13,7 @@ FILE METHODS
 ===============================================================================
 */
 
-- init
+- (id) init
 {
 	[super init];
 	map_i = self;
@@ -25,7 +25,7 @@ FILE METHODS
 	return self;
 }
 
-- saveSelected
+- (void) saveSelected
 {
 	int		i, c;
 	id		o, w;
@@ -34,31 +34,28 @@ FILE METHODS
 	w = [self objectAtIndex: 0];
 	c = [w count];
 	sb_newowner = oldselection;
-	for (i=0 ; i<c ; i++)
-	{
+	for (i = 0; i < c; i++) {
 		o = [w objectAtIndex: 0];
-		if ([o selected])
+		if ([o selected]) {
 			[o moveToEntity];
-		else
-		{
+		} else {
 			[w removeObjectAtIndex: 0];
-			[o free];
+			[o release];
 		}
 	}
 	
 	c = [self count];
-	for (i=0 ; i<c ; i++)
-	{
+	for (i = 0; i < c; i++) {
 		o = [self objectAtIndex: 0];
 		[self removeObjectAtIndex: 0];
-		[o freeObjects];
-		[o free];
+		[o removeAllObjects];
+		[o release];
 	}
 
-	return self;
+	return;
 }
 
-- addSelected
+- (void) addSelected
 {
 	int		i, c;
 	id		n, w;
@@ -67,20 +64,17 @@ FILE METHODS
 	w = [self objectAtIndex: 0];	// world object
 
 	sb_newowner = w;
-	for (i=0 ; i<c ; i++)
-	{
-		n = [oldselection objectAtIndex:i];
+	for (i = 0; i < c; i++) {
+		n = [oldselection objectAtIndex: i--];
 		[n moveToEntity];
-		i--;
 		c--;
 	}
 	[oldselection removeAllObjects];
 	
-	return self;
+	return;
 }
 
-
-- newMap
+- (void) newMap
 {
 	id	ent;
 	
@@ -91,30 +85,29 @@ FILE METHODS
 	[self setCurrentEntity: ent];
 	[self addSelected];
 
-	return self;
+	return;
 }
 
-- currentEntity
+- (id) currentEntity
 {
 	return currentEntity;
 }
 
-- setCurrentEntity: ent
+- (void) setCurrentEntity: ent
 {
 	id	old;
 	
 	old = currentEntity;
 	currentEntity = ent;
-	if (old != ent)
-	{
+	if (old != ent) {
 		[things_i newCurrentEntity];	// update inspector
 		[inspcontrol_i changeInspectorTo:i_things];
 	}
 	
-	return self;
+	return;
 }
 
-- (float)currentMinZ
+- (float) currentMinZ
 {
 	float	grid;
 	
@@ -123,14 +116,14 @@ FILE METHODS
 	return minz;
 }
 
-- setCurrentMinZ: (float)m
+- (void) setCurrentMinZ: (float) m
 {
 	if (m > -2048)
 		minz = m;
-	return self;
+	return;
 }
 
-- (float)currentMaxZ
+- (float) currentMaxZ
 {
 	float	grid;
 	
@@ -144,58 +137,54 @@ FILE METHODS
 	return maxz;
 }
 
-- setCurrentMaxZ: (float)m
+- (void) setCurrentMaxZ: (float) m
 {
 	if (m < 2048)
 		maxz = m;
-	return self;
+	return;
 }
 
-- (void) removeObject: o
+- (void) removeObject: (id) o
 {
 	[super removeObject: o];
 	
-	if (o == currentEntity)
-	{	// select the world
+	if (o == currentEntity) {	// select the world
 		[self setCurrentEntity: [self objectAtIndex: 0]];
 	}
 }
 
-- writeStats
+- (void) writeStats
 {
-	FILE	*f;
-	extern	int	c_updateall;
-	struct timeval tp;
+	FILE			*f;
+	extern int		c_updateall;
+	struct timeval	tp;
 	struct timezone tzp;
 
-	gettimeofday(&tp, &tzp);
+	gettimeofday (&tp, &tzp);
 	
-	f = fopen (FN_DEVLOG, "a");
-	fprintf (f,"%i %i\n", (int)tp.tv_sec, c_updateall);
+	f = fopen ([developerLogFile cString], "a");
+	fprintf (f,"%i %i\n", (int) tp.tv_sec, c_updateall);
 	c_updateall = 0;
 	fclose (f);
-	return self;
+	return;
 }
 
-- (int)numSelected
+- (int) numSelected
 {
 	int		i, c;
-	int		num;
+	int		num = 0;
 	
-	num = 0;
 	c = [currentEntity count];
-	for (i=0 ; i<c ; i++)
-		if ( [[currentEntity objectAtIndex: i] selected] )
+	for (i = 0; i < c; i++)
+		if ([[currentEntity objectAtIndex: i] selected])
 			num++;
 	return num;
 }
 
-- selectedBrush
+- (id) selectedBrush
 {
 	int		i, c;
-	int		num;
 	
-	num = 0;
 	c = [currentEntity count];
 	for (i=0 ; i<c ; i++)
 		if ( [[currentEntity objectAtIndex: i] selected] )
@@ -209,7 +198,7 @@ FILE METHODS
 readMapFile
 =================
 */
-- readMapFile: (char *)fname
+- (void) readMapFile: (NSString *) fname
 {
 	char	*dat, *cl;
 	id		new;
@@ -220,13 +209,12 @@ readMapFile
 	
 	[self saveSelected];
 	
-	qprintf ("loading %s\n", fname);
+	NSLog (@"loading %s\n", fname);
 
-	LoadFile (fname, (void **)&dat);
+	LoadFile ((char *) [fname cString], (void **) &dat);
 	StartTokenParsing (dat);
 
-	do
-	{
+	do {
 		new = [[Entity alloc] initFromTokens];
 		if (!new)
 			break;
@@ -239,27 +227,23 @@ readMapFile
 
 	[self addSelected];
 		
-// load the apropriate texture wad
+	// load the apropriate texture wad
 	dat = [currentEntity valueForQKey: "wad"];
-	if (dat && dat[0])
-	{
-		if (dat[0] == '/')	// remove old style fullpaths
+	if (dat && dat[0]) {
+		if (dat[0] == '/') {	// remove old style fullpaths
 			[currentEntity removeKeyPair: "wad"];
-		else
-		{
+		} else {
 			if (strcmp ([texturepalette_i currentWad], dat) )
 				[project_i 	setTextureWad: dat];
 		}
 	}
 
-// center the camera and XY view on the playerstart
+	// center the camera and XY view on the playerstart
 	c = [self count];
-	for (i=1 ; i<c ; i++)
-	{
+	for (i=1 ; i<c ; i++) {
 		ent = [self objectAtIndex: i];
 		cl = [ent valueForQKey: "classname"];
-		if (cl && !strcasecmp (cl,"info_player_start"))
-		{
+		if (cl && !strcasecmp (cl,"info_player_start")) {
 			angle = atof( [ent valueForQKey: "angle"] );
 			angle = angle/180*M_PI;
 			[ent getVector: org forKey: "origin"];
@@ -269,7 +253,7 @@ readMapFile
 		}
 	}
 	
-	return self;
+	return;
 }
 
 /*
@@ -277,23 +261,22 @@ readMapFile
 writeMapFile
 =================
 */
-- writeMapFile: (char *)fname useRegion: (BOOL)reg
+- (void) writeMapFile: (NSString *) fname useRegion: (BOOL) reg
 {
 	FILE	*f;
 	int		i;
 	
-	qprintf ("writeMapFile: %s", fname);
+	NSLog (@"writeMapFile: %s", fname);
 	
-	f = fopen (fname,"w");
-	if (!f)
-		Error ("couldn't write %s", fname);
-	
-	for (i=0 ; i<[self count] ; i++)
+	if (!(f = fopen ([fname cString], "w")))
+		NSLog (@"couldn't write %s", fname);
+
+	for (i = 0; i < [self count]; i++)
 		[[self objectAtIndex: i] writeToFILE: f region: reg];
 			
 	fclose (f);
 	
-	return self;
+	return;
 }
 
 /*
@@ -395,12 +378,10 @@ to intervening world brushes
 	besttime = 99999;
 	
 	c = [self count];
-	for (i=c-1 ; i>=0 ; i--)
-	{
+	for (i = c - 1; i >= 0; i--) {
 		ent = [self objectAtIndex: i];
 		c2 = [ent count];
-		for (j=0 ; j<c2 ; j++)
-		{
+		for (j = 0; j < c2; j++) {
 			brush = [ent objectAtIndex: j];
 			[brush hitByRay: p1 : p2 : &time : &face];
 			if (time < 0 || time >besttime)
@@ -414,43 +395,36 @@ to intervening world brushes
 			break;		// found an entity, so don't check the world
 	}
 	
-	if (besttime == 99999)
-	{
+	if (besttime == 99999) {
 		qprintf ("trace missed");
 		return self;
 	}
 
-	if ( [bestbrush regioned] )
-	{
+	if ( [bestbrush regioned] ) {
 		qprintf ("WANRING: clicked on regioned brush");
 		return self;
 	}
 	
-	if (bestent != currentEntity)
-	{
+	if (bestent != currentEntity) {
 		[self makeSelectedPerform: @selector(deselect)];
 		[self setCurrentEntity: bestent];
 	}
 	
 	[quakeed_i disableFlushWindow];
-	if ( ![bestbrush selected] )
-	{
-		if ( [map_i numSelected] == 0)
-		{	// don't grab texture if others are selected
+	if (![bestbrush selected]) {
+		if ([map_i numSelected] == 0) {	// don't grab texture if others are selected
 			td = [bestbrush texturedefForFace: bestface];
 			[texturepalette_i setTextureDef: td];
 		}
 
 		[bestbrush setSelected: YES];
 		qprintf ("selected entity %i brush %i face %i", [self indexOfObject:bestent], [bestent indexOfObject: bestbrush], bestface);
-	}
-	else 
-	{
+	} else {
 		[bestbrush setSelected: NO];
 		qprintf ("deselected entity %i brush %i face %i", [self indexOfObject:bestent], [bestent indexOfObject: bestbrush], bestface);
 	}
 
-	[quakeed_i reenableFlushWindow];
+	[quakeed_i enableFlushWindow];
 	[quakeed_i updateAll];
 	
 	return self;
@@ -627,7 +601,7 @@ setTextureRay
 		[bestbrush setTexturedef: &td forFace: bestface];
 		qprintf ("deselected entity %i brush %i face %i", [self indexOfObject:bestent], [bestent indexOfObject: bestbrush], bestface);
 	}
-	[quakeed_i reenableFlushWindow];
+	[quakeed_i enableFlushWindow];
 		
 	[quakeed_i updateAll];
 	
@@ -925,14 +899,14 @@ UI operations
 	if (currentEntity != [self objectAtIndex: 0])
 	{
 		qprintf ("ERROR: can't makeEntity inside an entity");
-		NXBeep ();
+		NSBeep ();
 		return self;
 	}
 	
 	if ( [self numSelected] == 0)
 	{
 		qprintf ("ERROR: must have a seed brush to make an entity");
-		NXBeep ();
+		NSBeep ();
 		return self;
 	}
 	
@@ -1084,7 +1058,7 @@ subtractSelection
 		{
 			o2 = [sourcelist objectAtIndex: j];
 			[o2 carve];
-			[carve_in freeObjects];
+			[carve_in removeAllObjects];
 		}
 
 		[sourcelist free];	// the individual have been moved/freed
@@ -1094,8 +1068,8 @@ subtractSelection
 
 // add the selection back to the remnants
 	[currentEntity removeAllObjects];
-	[currentEntity appendList: sourcelist];
-	[currentEntity appendList: sellist];
+	[currentEntity addObjectsFromArray: sourcelist];
+	[currentEntity addObjectsFromArray: sellist];
 
 	[sourcelist free];
 	[sellist free];

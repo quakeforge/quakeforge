@@ -1,7 +1,7 @@
 
-// Map is a list of Entity objects
+// Map is a collection of Entity objects
 
-extern	id	map_i;
+extern id	map_i;
 
 @interface Map: NSMutableArray
 {
@@ -10,12 +10,12 @@ extern	id	map_i;
 	float	minz, maxz;
 }
 
-- newMap;
+- (void) newMap;
 
-- writeStats;
+- (void) writeStats;
 
-- readMapFile: (NSString *) fname;
-- writeMapFile: (NSString *) fname useRegion: (BOOL) reg;
+- (void) readMapFile: (NSString *) fname;
+- (void) writeMapFile: (NSString *) fname useRegion: (BOOL) reg;
 
 - entityConnect: (vec3_t) p1 : (vec3_t) p2;
 
@@ -24,16 +24,16 @@ extern	id	map_i;
 - setTextureRay: (vec3_t) p1 : (vec3_t) p2 : (BOOL) allsides;
 - getTextureRay: (vec3_t) p1 : (vec3_t) p2;
 
-- currentEntity;
-- setCurrentEntity: ent;
+- (id) currentEntity;
+- (void) setCurrentEntity: (id) ent;
 
-- (float) currentMinZ;
-- setCurrentMinZ: (float) m;
 - (float) currentMaxZ;
-- setCurrentMaxZ: (float) m;
+- (float) currentMinZ;
+- (void) setCurrentMaxZ: (float) m;
+- (void) setCurrentMinZ: (float) m;
 
 - (int) numSelected;
-- selectedBrush;			// returns the first selected brush
+- (id) selectedBrush;			// returns the first selected brush
 
 //
 // operations on current selection

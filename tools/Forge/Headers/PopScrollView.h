@@ -2,10 +2,11 @@
 
 @interface PopScrollView: NSScrollView
 {
-	id	button1, button2;
+	NSButton	*button1;
+	NSButton	*button2;
 }
 
-- initFrame:(const NSRect *)frameRect button1: b1 button2: b2;
-- tile;
+- (id) initWithFrame: (NSRect) frameRect button1: (NSButton *) b1 button2: (NSButton *) b2;
+- (void) tile;
 
 @end

@@ -11,9 +11,9 @@ Initizes a scroll view with a button at it's lower right corner
 ====================
 */
 
-- initFrame:(const NXRect *)frameRect button1:b1 button2:b2
+- (id) initWithFrame: (NSRect) frameRect button1: (NSButton *) b1 button2: (NSButton *) b2
 {
-	[super  initFrame: frameRect];	
+	[super initWithFrame: frameRect];	
 
 	[self addSubview: b1];
 	[self addSubview: b2];
@@ -21,11 +21,11 @@ Initizes a scroll view with a button at it's lower right corner
 	button1 = b1;
 	button2 = b2;
 
-	[self setHorizScrollerRequired: YES];
-	[self setVertScrollerRequired: YES];
+	[self setHasHorizontalScroller: YES];
+	[self setHasVerticalScroller: YES];
 
-	[self setBorderType: NX_BEZEL];
-		
+	[self setBorderType: NSBezelBorder];
+
 	return self;
 }
 
@@ -38,50 +38,48 @@ Adjust the size for the pop up scale menu
 =================
 */
 
-- tile
+- (void) tile
 {
-	NXRect	scrollerframe;
-	NXRect	buttonframe, buttonframe2;
-	NXRect	newframe;
-	
+	NSRect	scrollerframe;
+	NSRect	buttonframe, buttonframe2;
+	NSRect	newframe;
+
 	[super tile];
-	[button1 getFrame: &buttonframe];
-	[button2 getFrame: &buttonframe2];
-	[hScroller getFrame: &scrollerframe];
+	[button1 setFrame: buttonframe];
+	[button2 setFrame: buttonframe2];
+	[[self horizontalScroller] setFrame: scrollerframe];
 
 	newframe.origin.y = scrollerframe.origin.y;
-	newframe.origin.x = frame.size.width - buttonframe.size.width;
+	newframe.origin.x = [self frame].size.width - buttonframe.size.width;
 	newframe.size.width = buttonframe.size.width;
 	newframe.size.height = scrollerframe.size.height;
 	scrollerframe.size.width -= newframe.size.width;
-	[button1 setFrame: &newframe];
+	[button1 setFrame: newframe];
 	newframe.size.width = buttonframe2.size.width;
 	newframe.origin.x -= newframe.size.width;
-	[button2 setFrame: &newframe];
+	[button2 setFrame: newframe];
 	scrollerframe.size.width -= newframe.size.width;
 
-	[hScroller setFrame: &scrollerframe];
+	[[self horizontalScroller] setFrame: scrollerframe];
 
-	return self;
+	return;
 }
 
 
-- superviewSizeChanged:(const NXSize *)oldSize
+- (void) resizeWithOldSuperviewSize: (NSSize) oldFrameSize
 {
-	[super superviewSizeChanged: oldSize];
+	[super resizeWithOldSuperviewSize: oldFrameSize];
 	
-	[[self docView] newSuperBounds];
+	[[self documentView] newSuperBounds];
 	
-	return self;
+	return;
 }
 
 
--(BOOL) acceptsFirstResponder
+- (BOOL) acceptsFirstResponder
 {
     return YES;
 }
-
-
 
 @end
 
