@@ -238,12 +238,6 @@ VID_SetCaption (const char *text)
 	}
 }
 
-double
-VID_GetGamma (void)
-{
-	return (double) X11_GetGamma ();
-}
-
 void
 VID_ForceViewPort(void)
 {
