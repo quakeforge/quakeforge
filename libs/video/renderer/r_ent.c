@@ -42,15 +42,16 @@
 #include "QF/console.h"
 #include "QF/model.h"
 #include "QF/msg.h"
+#include "QF/render.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
 
 #include "r_dynamic.h"
-#include "QF/render.h"
 
 #define     MAX_VISEDICTS   256
 int         r_numvisedicts;
 entity_t   *r_visedicts[MAX_VISEDICTS];
+
 
 void
 R_Ents_Init (void)

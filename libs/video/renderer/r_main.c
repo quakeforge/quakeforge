@@ -31,6 +31,7 @@ float       r_time1;
 
 fire_t r_fires[MAX_FIRES];
 
+
 dlight_t *
 R_AllocDlight (int key)
 {
@@ -66,7 +67,6 @@ R_AllocDlight (int key)
 	return dl;
 }
 
-
 void
 R_DecayLights (double frametime)
 {
@@ -83,7 +83,6 @@ R_DecayLights (double frametime)
 			dl->radius = 0;
 	}
 }
-
 
 void
 R_ClearDlights (void)
@@ -128,7 +127,6 @@ R_AddFire (vec3_t start, vec3_t end, entity_t *ent)
 		VectorCopy (r_firecolor->vec, f->color);
 	}
 }
-
 
 /*
 	R_AllocFire

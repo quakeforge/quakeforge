@@ -32,10 +32,10 @@
 #endif
 
 #include "QF/qargs.h"
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/render.h"
 
+#include "compat.h"
 #include "r_local.h"
 
 particle_t *active_particles, *free_particles;
@@ -88,7 +88,6 @@ R_DarkFieldParticles (entity_t *ent)
 }
 #endif
 
-
 #define NUMVERTEXNORMALS	162
 extern float r_avertexnormals[NUMVERTEXNORMALS][3];
 static vec3_t      avelocities[NUMVERTEXNORMALS];
@@ -112,7 +111,6 @@ R_EntityParticles (entity_t *ent)
 		for (i = 0; i < NUMVERTEXNORMALS * 3; i++)
 			avelocities[0][i] = (rand () & 255) * 0.01;
 	}
-
 
 	for (i = 0; i < NUMVERTEXNORMALS; i++) {
 		angle = r_realtime * avelocities[i][0];

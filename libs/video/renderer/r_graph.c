@@ -42,6 +42,7 @@
 extern float mouse_x, mouse_y;
 int          graphval;
 
+
 /*
 	R_TimeGraph
 
@@ -59,11 +60,9 @@ R_TimeGraph (void)
 
 	r_time2 = Sys_DoubleTime ();
 
-//	a = (r_time2 - r_time1) / 0.01;
 	a = graphval;
 
 	r_timings[timex] = a;
-//	a = timex;
 
 	l = MAX_TIMINGS;
 	if (l > r_refdef.vrect.width)
