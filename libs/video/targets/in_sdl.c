@@ -57,8 +57,6 @@ int         modestate;					// FIXME: just to avoid cross-comp.
 
 										// errors - remove later
 
-static int  mouse_oldbuttonstate = 0;
-
 /*
 	IN_SendKeyEvents
 */
@@ -168,64 +166,67 @@ IN_LL_SendKeyEvents (void)
 						break;
 					case SDLK_KP0:
 						if (modstate & KMOD_NUM)
-							sym = K_INS;
+							sym = KP_INS;
 						else
 							sym = SDLK_0;
 						break;
 					case SDLK_KP1:
 						if (modstate & KMOD_NUM)
-							sym = K_END;
+							sym = KP_END;
 						else
 							sym = SDLK_1;
 						break;
 					case SDLK_KP2:
 						if (modstate & KMOD_NUM)
-							sym = K_DOWNARROW;
+							sym = KP_DOWNARROW;
 						else
 							sym = SDLK_2;
 						break;
 					case SDLK_KP3:
 						if (modstate & KMOD_NUM)
-							sym = K_PGDN;
+							sym = KP_PGDN;
 						else
 							sym = SDLK_3;
 						break;
 					case SDLK_KP4:
 						if (modstate & KMOD_NUM)
-							sym = K_LEFTARROW;
+							sym = KP_LEFTARROW;
 						else
 							sym = SDLK_4;
 						break;
 					case SDLK_KP5:
-						sym = SDLK_5;
+						if (modstate & KMOD_NUM)
+							sym = KP_5;
+						else
+							sym = SDLK_5;
 						break;
 					case SDLK_KP6:
 						if (modstate & KMOD_NUM)
-							sym = K_RIGHTARROW;
+							sym = KP_RIGHTARROW;
 						else
 							sym = SDLK_6;
 						break;
 					case SDLK_KP7:
 						if (modstate & KMOD_NUM)
-							sym = K_HOME;
+							sym = KP_HOME;
 						else
 							sym = SDLK_7;
 						break;
 					case SDLK_KP8:
 						if (modstate & KMOD_NUM)
-							sym = K_UPARROW;
+							sym = KP_UPARROW;
 						else
 							sym = SDLK_8;
 						break;
 					case SDLK_KP9:
 						if (modstate & KMOD_NUM)
-							sym = K_PGUP;
+							sym = KP_PGUP;
 						else
 							sym = SDLK_9;
 						break;
 					case SDLK_KP_PERIOD:
 						if (modstate & KMOD_NUM)
-							sym = K_DEL;
+							sym = KP_DEL;
 						else
 							sym = SDLK_PERIOD;
 						break;
@@ -271,39 +272,19 @@ IN_LL_SendKeyEvents (void)
 								   == SDL_MOUSEBUTTONDOWN);
 						break;
 					case 4:
-						Key_Event (K_MWHEELUP, 0,
-								   event.type == SDL_MOUSEBUTTONDOWN);
+						Key_Event (K_MWHEELUP, 0, true);
+						Key_Event (K_MWHEELUP, 0, false);
 						break;
 					case 5:
-						Key_Event (K_MWHEELDOWN, 0,
-								   event.type == SDL_MOUSEBUTTONDOWN);
+						Key_Event (K_MWHEELDOWN, 0, true);
+						Key_Event (K_MWHEELDOWN, 0, false);
 						break;
 				}
 				break;
 
 			case SDL_MOUSEMOTION:
-				if (_windowed_mouse->value) {
-					if ((event.motion.x != (vid.width / 2))
-						|| (event.motion.y != (vid.height / 2))) {
-						// *2 for vid_sdl.c, *10 for vid_sgl.c.
-						in_mouse_x = event.motion.xrel * 5;
-						in_mouse_y = event.motion.yrel * 5;
-						if (
-							(event.motion.x <
-							 ((vid.width / 2) - (vid.width / 4)))
-							|| (event.motion.x >
-								((vid.width / 2) + (vid.width / 4)))
-							|| (event.motion.y <
-								((vid.height / 2) - (vid.height / 4)))
-							|| (event.motion.y >
-								((vid.height / 2) + (vid.height / 4))))
-							SDL_WarpMouse (vid.width / 2, vid.height / 2);
-					}
-				} else {
-					// following are *2 in vid_sdl.c, vid_sgl.c is *10
-					in_mouse_x = event.motion.xrel * 5;
-					in_mouse_y = event.motion.yrel * 5;
-				}
+				in_mouse_x += event.motion.xrel;
+				in_mouse_y += event.motion.yrel;
 				break;
 
 			case SDL_QUIT:
@@ -325,11 +306,11 @@ IN_LL_Commands (void)
 	if (old_windowed_mouse != _windowed_mouse->value) {
 		old_windowed_mouse = _windowed_mouse->value;
 		if (!_windowed_mouse->value) {
-//          SDL_ShowCursor (0);
+			SDL_ShowCursor (1);
 			SDL_WM_GrabInput (SDL_GRAB_OFF);
 		} else {
 			SDL_WM_GrabInput (SDL_GRAB_ON);
-//          SDL_ShowCursor (1);
+			SDL_ShowCursor (0);
 		}
 	}
 }
@@ -344,9 +325,6 @@ IN_LL_Init (void)
 
 	in_mouse_x = in_mouse_y = 0.0;
 	in_mouse_avail = 1;
-//  SDL_ShowCursor (0); 
-//  SDL_WM_GrabInput (SDL_GRAB_ON);
-//  FIXME: disable DGA if in_dgamouse says to.
 }
 
 void
@@ -358,30 +336,6 @@ void
 IN_LL_Shutdown (void)
 {
 	in_mouse_avail = 0;
-}
-
-void
-IN_LL_Frame (void)
-{
-	int         i;
-	int         mouse_buttonstate;
-
-	if (!in_mouse_avail)
-		return;
-
-	i = SDL_GetMouseState (NULL, NULL);
-	/* Quake swaps the second and third buttons */
-	mouse_buttonstate = (i & ~0x06) | ((i & 0x02) << 1) | ((i & 0x04) >> 1);
-	for (i = 0; i < 3; i++) {
-		if ((mouse_buttonstate & (1 << i))
-			&& !(mouse_oldbuttonstate & (1 << i))) Key_Event (K_MOUSE1 + i, 0,
-															  true);
-
-		if (!(mouse_buttonstate & (1 << i))
-			&& (mouse_oldbuttonstate & (1 << i))) Key_Event (K_MOUSE1 + i, 0,
-															 false);
-	}
-	mouse_oldbuttonstate = mouse_buttonstate;
 }
 
 void

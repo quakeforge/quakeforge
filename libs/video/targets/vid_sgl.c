@@ -60,16 +60,6 @@
 HWND 		mainwindow;
 #endif
 
-#ifndef SDL_COMPILEDVERSION
-#define SDL_COMPILEDVERSION \
-	SDL_VERSIONNUM(SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL)
-#endif
-
-#ifndef SDL_VERSION_ATLEAST
-#define SDL_VERSION_ATLEAST(X, Y, Z) \
-	(SDL_COMPILEDVERSION >= SDL_VERSIONNUM(X, Y, Z))
-#endif
-
 #define	WARP_WIDTH	320
 #define	WARP_HEIGHT	200
 
@@ -87,11 +77,7 @@ extern void VID_Init8bitPalette (void);
 void
 VID_SDL_GammaCheck (void)
 {
-#if SDL_VERSION_ATLEAST(1, 2, 0)
 	Uint16 redtable[256], greentable[256], bluetable[256];
-#else
-	Uint8 redtable[256], greentable[256], bluetable[256];
-#endif
 
 	if (SDL_GetGammaRamp(redtable, greentable, bluetable) < 0)
 		vid_gamma_avail = false;
@@ -102,9 +88,6 @@ VID_SDL_GammaCheck (void)
 void
 VID_Shutdown (void)
 {
-//	if (!vid.initialized)
-//		return;
-//	Con_Printf ("VID_Shutdown\n");
 	SDL_Quit ();
 }
 
@@ -202,9 +185,9 @@ VID_Init (unsigned char *palette)
 	}
 
 	// Setup GL Attributes
-	SDL_GL_SetAttribute (SDL_GL_RED_SIZE, 1);
-	SDL_GL_SetAttribute (SDL_GL_GREEN_SIZE, 1);
-	SDL_GL_SetAttribute (SDL_GL_BLUE_SIZE, 1);
+	SDL_GL_SetAttribute (SDL_GL_RED_SIZE, 4);
+	SDL_GL_SetAttribute (SDL_GL_GREEN_SIZE, 4);
+	SDL_GL_SetAttribute (SDL_GL_BLUE_SIZE, 4);
 	SDL_GL_SetAttribute (SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute (SDL_GL_DEPTH_SIZE, 1);
 
@@ -217,7 +200,7 @@ VID_Init (unsigned char *palette)
 	vid.width = vid.conwidth = min (vid.conwidth, scr_width);
 	Con_CheckResize (); // Now that we have a window size, fix console
 
-	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
+	vid.aspect = ((float) vid.height / (float) vid.width) * (4.0 / 3.0);
 	vid.numpages = 2;
 
 #ifndef WIN32
