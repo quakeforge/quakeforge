@@ -108,7 +108,7 @@ ClearNotify (void)
 static void
 ToggleConsole_f (void)
 {
-	Con_ClearTyping (input_line);
+	Con_ClearTyping (input_line, 0);
 
 	if (key_dest == key_console && !con_data.force_commandline) {
 		key_dest = key_game;
@@ -124,7 +124,7 @@ ToggleConsole_f (void)
 static void
 ToggleChat_f (void)
 {
-	Con_ClearTyping (input_line);
+	Con_ClearTyping (input_line, 0);
 
 	if (key_dest == key_console && !con_data.force_commandline) {
 		key_dest = key_game;
@@ -315,6 +315,8 @@ C_ExecLine (const char *line)
 static void
 C_Say (const char *line)
 {
+	if (!*line)
+		return;
 	dstring_t *dstr = dstring_newstr ();
 	dstring_appendstr (dstr, line);
 	Cbuf_AddText (con_data.cbuf, "say \"");
@@ -328,6 +330,8 @@ C_Say (const char *line)
 static void
 C_SayTeam (const char *line)
 {
+	if (!*line)
+		return;
 	dstring_t *dstr = dstring_newstr ();
 	dstring_appendstr (dstr, line);
 	Cbuf_AddText (con_data.cbuf, "say_team \"");
@@ -515,6 +519,11 @@ C_KeyEvent (knum_t key, short unicode, qboolean down)
 				Menu_Leave ();
 				return;
 			case key_message:
+				if (chat_team) {
+					Con_ClearTyping (say_team_line, 1);
+				} else {
+					Con_ClearTyping (say_line, 1);
+				}
 				key_dest = key_game;
 				game_target = IMT_0;
 				return;

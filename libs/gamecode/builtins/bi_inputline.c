@@ -157,8 +157,9 @@ static void
 bi_InputLine_Clear (progs_t *pr)
 {
 	inputline_t *line = get_inputline (pr, P_INT (pr, 0), "InputLine_Clear");
+	int         save = P_INT (pr, 1);
 
-	Con_ClearTyping (line);
+	Con_ClearTyping (line, save);
 }
 
 static void

@@ -104,7 +104,7 @@ void Con_DisplayList(const char **list, int con_linewidth);
 
 inputline_t *Con_CreateInputLine (int lines, int lsize, char prompt);
 void Con_DestroyInputLine (inputline_t *inputline);
-void Con_ClearTyping (inputline_t *il);
+void Con_ClearTyping (inputline_t *il, int save);
 void Con_ProcessInputLine (inputline_t *il, int ch);
 
 con_buffer_t *Con_CreateBuffer (size_t buffer_size, int max_lines);

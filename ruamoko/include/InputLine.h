@@ -10,7 +10,7 @@ typedef _inputline_t [] inputline_t;
 @extern void (inputline_t il, void [] data) InputLine_SetUserData;
 @extern void (inputline_t il, integer width) InputLine_SetWidth;
 @extern void (inputline_t il) InputLine_Destroy;
-@extern void (inputline_t il) InputLine_Clear;
+@extern void (inputline_t il, integer save) InputLine_Clear;
 @extern void (inputline_t il, integer ch) InputLine_Process;
 @extern void (inputline_t il) InputLine_Draw;
 @extern void (inputline_t il, string str) InputLine_SetText;

@@ -85,8 +85,13 @@ Con_DestroyInputLine (inputline_t *inputline)
 }
 
 void
-Con_ClearTyping (inputline_t *il)
+Con_ClearTyping (inputline_t *il, int save)
 {
+	if (save && il->lines[il->edit_line][1]) {
+		il->edit_line = (il->edit_line + 1) % il->num_lines;
+		il->history_line = il->edit_line;
+	}
+	il->lines[il->edit_line][0] = il->prompt_char;
 	il->lines[il->edit_line][1] = 0;
 	il->linepos = 1;
 }
@@ -101,11 +106,7 @@ Con_ProcessInputLine (inputline_t *il, int ch)
 		case QFK_RETURN:
 			if (il->enter)
 				il->enter (il->lines[il->edit_line] + 1);
-			il->edit_line = (il->edit_line + 1) % il->num_lines;
-			il->history_line = il->edit_line;
-			il->lines[il->edit_line][0] = il->prompt_char;
-			il->lines[il->edit_line][1] = 0;
-			il->linepos = 1;
+			Con_ClearTyping (il, 1);
 			break;
 		case QFK_TAB:
 			if (il->complete)
