@@ -84,7 +84,7 @@ PF_error (progs_t * pr)
 
 	s = PF_VarString (pr, 0);
 	Con_Printf ("======SERVER ERROR in %s:\n%s\n",
-				pr->pr_strings + pr->pr_xfunction->s_name, s);
+				PR_GetString (&sv_pr_state, pr->pr_xfunction->s_name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed);
 
@@ -109,7 +109,7 @@ PF_objerror (progs_t * pr)
 
 	s = PF_VarString (pr, 0);
 	Con_Printf ("======OBJECT ERROR in %s:\n%s\n",
-				pr->pr_strings + pr->pr_xfunction->s_name, s);
+				PR_GetString (&sv_pr_state, pr->pr_xfunction->s_name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed);
 	ED_Free (pr, ed);
@@ -279,7 +279,7 @@ PF_setmodel (progs_t * pr)
 		PR_RunError (pr, "no precache: %s\n", m);
 
 
-	SVFIELD (e, model, float) = m - pr->pr_strings;
+	SVFIELD (e, model, string) = PR_SetString (pr, m);
 	SVFIELD (e, modelindex, float) = i;				// SV_ModelIndex (m);
 
 	mod = sv.models[(int) SVFIELD (e, modelindex, float)];	// Mod_ForName (m, true);
@@ -947,7 +947,7 @@ PF_findradius (progs_t * pr)
 		if (Length (eorg) > rad)
 			continue;
 
-		SVFIELD (ent, chain, float) = EDICT_TO_PROG (pr, chain);
+		SVFIELD (ent, chain, entity) = EDICT_TO_PROG (pr, chain);
 		chain = ent;
 	}
 
@@ -979,7 +979,7 @@ PF_ftos (progs_t * pr)
 		snprintf (pr_string_temp, sizeof (pr_string_temp), "%d", (int) v);
 	else
 		snprintf (pr_string_temp, sizeof (pr_string_temp), "%5.1f", v);
-	G_INT (pr, OFS_RETURN) = pr_string_temp - pr->pr_strings;
+	G_INT (pr, OFS_RETURN) = PR_SetString (pr, pr_string_temp);
 }
 
 void
@@ -998,7 +998,7 @@ PF_vtos (progs_t * pr)
 			  "'%5.1f %5.1f %5.1f'", G_VECTOR (pr, OFS_PARM0)[0], G_VECTOR (pr,
 																			OFS_PARM0)
 			  [1], G_VECTOR (pr, OFS_PARM0)[2]);
-	G_INT (pr, OFS_RETURN) = pr_string_temp - pr->pr_strings;
+	G_INT (pr, OFS_RETURN) = PR_SetString (pr, pr_string_temp);
 }
 
 #ifdef QUAKE2
@@ -1007,7 +1007,7 @@ PF_etos (progs_t * pr)
 {
 	snprintf (pr_string_temp, sizeof (pr_string_temp), "entity %i",
 			  G_EDICTNUM (pr, OFS_PARM0));
-	G_INT (pr, OFS_RETURN) = pr_string_temp - pr->pr_strings;
+	G_INT (pr, OFS_RETURN) = PR_SetString (pr, pr_string_temp);
 }
 #endif
 
@@ -1062,19 +1062,19 @@ PF_Find (progs_t * pr)
 				first = ed;
 			else if (second == (edict_t *) sv.edicts)
 				second = ed;
-			SVFIELD (ed, chain, float) = EDICT_TO_PROG (pr, last);
+			SVFIELD (ed, chain, entity) = EDICT_TO_PROG (pr, last);
 			last = ed;
 		}
 	}
 
 	if (first != last) {
 		if (last != second)
-			SVFIELD (first, chain, float) = SVFIELD (last, chain, float);
+			SVFIELD (first, chain, entity) = SVFIELD (last, chain, entity);
 		else
-			SVFIELD (first, chain, float) = EDICT_TO_PROG (pr, last);
-		SVFIELD (last, chain, float) = EDICT_TO_PROG (pr, (edict_t *) sv.edicts);
+			SVFIELD (first, chain, entity) = EDICT_TO_PROG (pr, last);
+		SVFIELD (last, chain, entity) = EDICT_TO_PROG (pr, (edict_t *) sv.edicts);
 		if (second && second != last)
-			SVFIELD (second, chain, float) = EDICT_TO_PROG (pr, last);
+			SVFIELD (second, chain, entity) = EDICT_TO_PROG (pr, last);
 	}
 	RETURN_EDICT (pr, first);
 }
@@ -1272,7 +1272,7 @@ PF_droptofloor (progs_t * pr)
 		VectorCopy (trace.endpos, SVFIELD (ent, origin, vector));
 		SV_LinkEdict (ent, false);
 		SVFIELD (ent, flags, float) = (int) SVFIELD (ent, flags, float) | FL_ONGROUND;
-		SVFIELD (ent, groundentity, float) = EDICT_TO_PROG (pr, trace.ent);
+		SVFIELD (ent, groundentity, entity) = EDICT_TO_PROG (pr, trace.ent);
 		G_FLOAT (pr, OFS_RETURN) = 1;
 	}
 }
@@ -1521,7 +1521,7 @@ PF_changepitch (progs_t * pr)
 	float       ideal, current, move, speed;
 
 	ent = G_EDICT (pr, OFS_PARM0);
-	current = anglemod (SVFIELD (ent, angles, float)[0]);
+	current = anglemod (SVFIELD (ent, angles, vector)[0]);
 	ideal = SVFIELD (ent, idealpitch, float);
 	speed = SVFIELD (ent, pitch_speed, float);
 
@@ -1543,7 +1543,7 @@ PF_changepitch (progs_t * pr)
 			move = -speed;
 	}
 
-	SVFIELD (ent, angles, float)[0] = anglemod (current + move);
+	SVFIELD (ent, angles, vector)[0] = anglemod (current + move);
 }
 #endif
 
@@ -1656,7 +1656,7 @@ PF_makestatic (progs_t * pr)
 
 	MSG_WriteByte (&sv.signon, svc_spawnstatic);
 
-	MSG_WriteByte (&sv.signon, SV_ModelIndex (pr->pr_strings + SVFIELD (ent, model, string)));
+	MSG_WriteByte (&sv.signon, SV_ModelIndex (PR_GetString (pr, SVFIELD (ent, model, string))));
 
 	MSG_WriteByte (&sv.signon, SVFIELD (ent, frame, float));
 	MSG_WriteByte (&sv.signon, SVFIELD (ent, colormap, float));
@@ -1859,9 +1859,9 @@ PF_WaterMove (progs_t * pr)
 
 	if (!(flags & FL_WATERJUMP)) {
 //      self.velocity = self.velocity - 0.8*self.waterlevel*frametime*self.velocity;
-		VectorMA (SVFIELD (self, velocity, float),
+		VectorMA (SVFIELD (self, velocity, vector),
 				  -0.8 * SVFIELD (self, waterlevel, float) * host_frametime,
-				  SVFIELD (self, velocity, float), SVFIELD (self, velocity, float));
+				  SVFIELD (self, velocity, vector), SVFIELD (self, velocity, vector));
 	}
 
 	G_FLOAT (pr, OFS_RETURN) = damage;

@@ -306,7 +306,7 @@ SV_TouchLinks (edict_t *ent, areanode_t *node)
 		touch = EDICT_FROM_AREA (l);
 		if (touch == ent)
 			continue;
-		if (!SVFIELD (touch, touch, float) || SVFIELD (touch, solid, float) != SOLID_TRIGGER)
+		if (!SVFIELD (touch, touch, func) || SVFIELD (touch, solid, float) != SOLID_TRIGGER)
 			continue;
 		if (SVFIELD (ent, absmin, vector)[0] > SVFIELD (touch, absmax, vector)[0]
 			|| SVFIELD (ent, absmin, vector)[1] > SVFIELD (touch, absmax, vector)[1]
@@ -322,7 +322,7 @@ SV_TouchLinks (edict_t *ent, areanode_t *node)
 			EDICT_TO_PROG (&sv_pr_state, touch);
 		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, ent);
 		*sv_globals.time = sv.time;
-		PR_ExecuteProgram (&sv_pr_state, SVFIELD (touch, touch, float));
+		PR_ExecuteProgram (&sv_pr_state, SVFIELD (touch, touch, func));
 
 		*sv_globals.self = old_self;
 		*sv_globals.other = old_other;

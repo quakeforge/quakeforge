@@ -216,7 +216,7 @@ SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
 //      Con_Printf ("back on ground\n"); 
 		SVFIELD (ent, flags, float) = (int) SVFIELD (ent, flags, float) & ~FL_PARTIALGROUND;
 	}
-	SVFIELD (ent, groundentity, float) = EDICT_TO_PROG (&sv_pr_state, trace.ent);
+	SVFIELD (ent, groundentity, entity) = EDICT_TO_PROG (&sv_pr_state, trace.ent);
 
 // the move is ok
 	if (relink)
@@ -236,7 +236,6 @@ facing it.
 
 ======================
 */
-void        PF_changeyaw (void);
 qboolean
 SV_StepDirection (edict_t *ent, float yaw, float dist)
 {
@@ -244,7 +243,7 @@ SV_StepDirection (edict_t *ent, float yaw, float dist)
 	float       delta;
 
 	SVFIELD (ent, ideal_yaw, float) = yaw;
-	PF_changeyaw ();
+	PF_changeyaw (&sv_pr_state);
 
 	yaw = yaw * M_PI * 2 / 360;
 	move[0] = cos (yaw) * dist;

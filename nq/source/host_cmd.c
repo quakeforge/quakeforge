@@ -936,8 +936,8 @@ Host_Name_f (void)
 		if (strcmp (host_client->name, newName) != 0)
 			Con_Printf ("%s renamed to %s\n", host_client->name, newName);
 	strcpy (host_client->name, newName);
-	SVFIELD (host_client->edict, netname, float) =
-		host_client->name - sv_pr_state.pr_strings;
+	SVFIELD (host_client->edict, netname, string) =
+		PR_SetString (&sv_pr_state, host_client->name);
 
 // send notification to all clients
 
@@ -1170,12 +1170,10 @@ Host_Pause_f (void)
 
 		if (sv.paused) {
 			SV_BroadcastPrintf ("%s paused the game\n",
-								sv_pr_state.pr_strings +
-								SVFIELD (sv_player, netname, string));
+								PR_GetString (&sv_pr_state, SVFIELD (sv_player, netname, string)));
 		} else {
 			SV_BroadcastPrintf ("%s unpaused the game\n",
-								sv_pr_state.pr_strings +
-								SVFIELD (sv_player, netname, string));
+								PR_GetString (&sv_pr_state, SVFIELD (sv_player, netname, string)));
 		}
 
 		// send notification to all clients
@@ -1244,7 +1242,7 @@ Host_Spawn_f (void)
 		memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
 		SVFIELD (ent, colormap, float) = NUM_FOR_EDICT (&sv_pr_state, ent);
 		SVFIELD (ent, team, float) = (host_client->colors & 15) + 1;
-		SVFIELD (ent, netname, float) = host_client->name - sv_pr_state.pr_strings;
+		SVFIELD (ent, netname, string) = PR_SetString (&sv_pr_state, host_client->name);
 
 		// copy spawn parms out of the client_t
 
@@ -1592,7 +1590,7 @@ FindViewthing (void)
 
 	for (i = 0; i < sv.num_edicts; i++) {
 		e = EDICT_NUM (&sv_pr_state, i);
-		if (!strcmp (sv_pr_state.pr_strings + SVFIELD (e, classname, string), "viewthing"))
+		if (!strcmp (PR_GetString (&sv_pr_state, SVFIELD (e, classname, string)), "viewthing"))
 			return e;
 	}
 	Con_Printf ("No viewthing on map\n");

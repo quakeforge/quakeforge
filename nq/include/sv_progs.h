@@ -33,6 +33,7 @@
 #define __sv_progs_h
 
 #include "progs.h"
+#include "sv_pr_cmds.h"
 
 typedef struct {
 	int			*self;
@@ -182,7 +183,13 @@ typedef struct
 extern sv_fields_t sv_fields;
 
 #if 1
-#define SVFIELD(e,f,t) ((ED_FindField (&sv_pr_state, #f)->type == ev_##t) ? E_var (e, sv_fields.f, t) : PR_Error (&sv_pr_state, "bad type access %s:%d", __FILE__, __LINE__), E_var (e, sv_fields.f, t))
+#define SVFIELD(e,f,t) \
+	((ED_FindField (&sv_pr_state, #f)->type == ev_##t) \
+	  ? E_var (e, sv_fields.f, t) \
+	  : PR_Error (&sv_pr_state, \
+		  		  "bad type access to %s as %s at %s:%d", \
+				  #f, #t, __FILE__, __LINE__), \
+	    E_var (e, sv_fields.f, t))
 #else
 #define SVFIELD(e,f,t) E_var (e, sv_fields.f, t)
 #endif

@@ -115,12 +115,12 @@ SV_CheckVelocity (edict_t *ent)
 	for (i = 0; i < 3; i++) {
 		if (IS_NAN (SVFIELD (ent, velocity, vector)[i])) {
 			Con_Printf ("Got a NaN velocity on %s\n",
-						sv_pr_state.pr_strings + SVFIELD (ent, classname, string));
+						PR_GetString (&sv_pr_state, SVFIELD (ent, classname, string)));
 			SVFIELD (ent, velocity, vector)[i] = 0;
 		}
 		if (IS_NAN (SVFIELD (ent, origin, vector)[i])) {
 			Con_Printf ("Got a NaN origin on %s\n",
-						sv_pr_state.pr_strings + SVFIELD (ent, classname, string));
+						PR_GetString (&sv_pr_state, SVFIELD (ent, classname, string)));
 			SVFIELD (ent, origin, vector)[i] = 0;
 		}
 		if (SVFIELD (ent, velocity, vector)[i] > sv_maxvelocity->value)
@@ -158,7 +158,7 @@ SV_RunThink (edict_t *ent)
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
 	*sv_globals.other =
 		EDICT_TO_PROG (&sv_pr_state, sv.edicts);
-	PR_ExecuteProgram (&sv_pr_state, SVFIELD (ent, think, float));
+	PR_ExecuteProgram (&sv_pr_state, SVFIELD (ent, think, func));
 	return !ent->free;
 }
 
@@ -178,16 +178,16 @@ SV_Impact (edict_t *e1, edict_t *e2)
 	old_other = *sv_globals.other;
 
 	*sv_globals.time = sv.time;
-	if (SVFIELD (e1, touch, float) && SVFIELD (e1, solid, float) != SOLID_NOT) {
+	if (SVFIELD (e1, touch, func) && SVFIELD (e1, solid, float) != SOLID_NOT) {
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, e1);
 		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, e2);
-		PR_ExecuteProgram (&sv_pr_state, SVFIELD (e1, touch, float));
+		PR_ExecuteProgram (&sv_pr_state, SVFIELD (e1, touch, func));
 	}
 
-	if (SVFIELD (e2, touch, float) && SVFIELD (e2, solid, float) != SOLID_NOT) {
+	if (SVFIELD (e2, touch, func) && SVFIELD (e2, solid, float) != SOLID_NOT) {
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, e2);
 		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, e1);
-		PR_ExecuteProgram (&sv_pr_state, SVFIELD (e2, touch, float));
+		PR_ExecuteProgram (&sv_pr_state, SVFIELD (e2, touch, func));
 	}
 
 	*sv_globals.self = old_self;
@@ -744,7 +744,7 @@ SV_Physics_Pusher (edict_t *ent)
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
 		*sv_globals.other =
 			EDICT_TO_PROG (&sv_pr_state, sv.edicts);
-		PR_ExecuteProgram (&sv_pr_state, SVFIELD (ent, think, float));
+		PR_ExecuteProgram (&sv_pr_state, SVFIELD (ent, think, func));
 		if (ent->free)
 			return;
 	}
@@ -1423,7 +1423,7 @@ SV_Physics_Step (edict_t *ent)
 //@@
 	*sv_globals.time = sv.time;
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
-	PF_WaterMove ();
+	PF_WaterMove (&sv_pr_state);
 
 	SV_CheckVelocity (ent);
 

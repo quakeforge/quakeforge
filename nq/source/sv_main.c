@@ -45,6 +45,8 @@ server_static_t svs;
 
 char        localmodels[MAX_MODELS][5];	// inline model names for precache
 
+entity_state_t baselines[MAX_EDICTS];
+
 //============================================================================
 
 /*
@@ -220,7 +222,7 @@ SV_SendServerinfo (client_t *client)
 		MSG_WriteByte (&client->message, GAME_COOP);
 
 	snprintf (message, sizeof (message),
-			  sv_pr_state.pr_strings + SVFIELD (sv.edicts, message, string));
+			  PR_GetString (&sv_pr_state, SVFIELD (sv.edicts, message, string)));
 
 	MSG_WriteString (&client->message, message);
 
@@ -464,7 +466,7 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 		if (ent != clent)				// clent is ALLWAYS sent
 		{
 // ignore ents without visible models
-			if (!SVFIELD (ent, modelindex, float) || !sv_pr_state.pr_strings[SVFIELD (ent, model, string)])
+			if (!SVFIELD (ent, modelindex, float) || !*PR_GetString (&sv_pr_state, SVFIELD (ent, model, string)))
 				continue;
 
 			for (i = 0; i < ent->num_leafs; i++)
@@ -697,8 +699,8 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 		MSG_WriteByte (msg, SVFIELD (ent, armorvalue, float));
 	if (bits & SU_WEAPON)
 		MSG_WriteByte (msg,
-					   SV_ModelIndex (sv_pr_state.pr_strings +
-									  SVFIELD (ent, weaponmodel, string)));
+					   SV_ModelIndex (PR_GetString (&sv_pr_state,
+									  SVFIELD (ent, weaponmodel, string))));
 
 	MSG_WriteShort (msg, SVFIELD (ent, health, float));
 	MSG_WriteByte (msg, SVFIELD (ent, currentammo, float));
@@ -958,7 +960,7 @@ SV_CreateBaseline (void)
 		} else {
 			((entity_state_t*)svent->data)->colormap = 0;
 			((entity_state_t*)svent->data)->modelindex =
-				SV_ModelIndex (sv_pr_state.pr_strings + SVFIELD (svent, model, string));
+				SV_ModelIndex (PR_GetString (&sv_pr_state,SVFIELD (svent, model, string)));
 		}
 
 		// 
@@ -1106,9 +1108,14 @@ SV_SpawnServer (char *server)
 
 // allocate server memory
 	sv.max_edicts = MAX_EDICTS;
+	sv_pr_state.pr_edictareasize = sv_pr_state.pr_edict_size * MAX_EDICTS;
+	sv.edicts = Hunk_AllocName (sv_pr_state.pr_edictareasize, "edicts");
 
-	sv.edicts =
-		Hunk_AllocName (sv.max_edicts * sv_pr_state.pr_edict_size, "edicts");
+	// init the data field of the edicts
+	for (i = 0; i < MAX_EDICTS; i++) {
+		ent = EDICT_NUM (&sv_pr_state, i);
+		ent->data = &baselines[i];
+	}
 
 	sv.datagram.maxsize = sizeof (sv.datagram_buf);
 	sv.datagram.cursize = 0;
@@ -1164,7 +1171,7 @@ SV_SpawnServer (char *server)
 	ent = EDICT_NUM (&sv_pr_state, 0);
 	memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
 	ent->free = false;
-	SVFIELD (ent, model, string) = sv.worldmodel->name - sv_pr_state.pr_strings;
+	SVFIELD (ent, model, string) = PR_SetString (&sv_pr_state, sv.worldmodel->name);
 	SVFIELD (ent, modelindex, float) = 1;			// world model
 	SVFIELD (ent, solid, float) = SOLID_BSP;
 	SVFIELD (ent, movetype, float) = MOVETYPE_PUSH;
@@ -1174,10 +1181,10 @@ SV_SpawnServer (char *server)
 	else
 		*sv_globals.deathmatch = deathmatch->int_val;
 
-	*sv_globals.mapname = sv.name - sv_pr_state.pr_strings;
+	*sv_globals.mapname = PR_SetString (&sv_pr_state, sv.name);
 #ifdef QUAKE2
 	*sv_globals.startspot =
-		sv.startspot - sv_pr_state.pr_strings;
+		PR_SetString (&sv_pr_state, sv.startspot);
 #endif
 
 // serverflags are for cross level information (sigils)
