@@ -225,7 +225,7 @@ SV_PrintToClient (client_t *cl, int level, const char *string)
 	static int buffer_size;
 
 	size = strlen (string) + 1;
-	if (strlen (string) > buffer_size) {
+	if (size > buffer_size) {
 		buffer_size = (size + 1023) & ~1023; // 1k multiples
 		if (buffer)
 			free (buffer);

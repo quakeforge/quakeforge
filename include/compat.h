@@ -87,6 +87,10 @@ extern int vsnprintf(char *s, size_t maxlen, const char *format, va_list arg);
 #if !defined(strncaseequal)
 # define strncaseequal(a,b,c) (strncasecmp (a, b, c) == 0)
 #endif
+// FIXME: glibc has strcasestr, but only declares it if __USE_GNU is defined
+#if !defined(strcasestr)
+# define strcasestr Q_strcasestr
+#endif
 
 #undef field_offset
 #define field_offset(type,field) ((int)&(((type *)0)->field))

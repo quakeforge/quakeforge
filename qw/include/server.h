@@ -136,6 +136,7 @@ typedef struct
 
 #define MAX_BACK_BUFFERS	8
 #define MAX_STUFFTEXT		512
+#define MAX_NAME			32
 
 typedef enum {
 	ft_ban,
@@ -170,7 +171,7 @@ typedef struct client_s
 	float			entgravity;			// localized ent gravity
 
 	struct edict_s			*edict;				// EDICT_NUM(clientnum+1)
-	char			name[32];			// for printing to other people
+	char			name[MAX_NAME];			// for printing to other people
 										// extracted from userinfo
 	int				messagelevel;		// for filtering printed messages
 

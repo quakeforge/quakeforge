@@ -53,6 +53,7 @@ static const char rcsid[] =
 #include "QF/msg.h"
 #include "QF/plugin.h"
 #include "QF/qargs.h"
+#include "QF/string.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/ver_check.h"
@@ -2159,116 +2160,113 @@ Master_Shutdown (void)
 		}
 }
 
+static inline qboolean
+iswhitespace (char c)
+{
+	return c == ' ' || c == '\r' || c == '\n' || c == '\t';
+}
+
 /*
 	SV_ExtractFromUserinfo
 
 	Pull specific info from a newly changed userinfo string
-	into a more C freindly form.
+	into a more C friendly form.
 */
 void
 SV_ExtractFromUserinfo (client_t *cl)
 {
 	const char *val;
-	char       *q, *p;
-	char        newname[80];
+	const char *p;
+	char       *r;
+	char        newname[MAX_NAME];
 	client_t   *client;
 	int         i;
-	int         dupc = 1;
+	qboolean	badname = false;
 
-
-	// name for C code
+	// name from the info string
 	val = Info_ValueForKey (cl->userinfo, "name");
 
-	// trim user name
-	strncpy (newname, val, sizeof (newname) - 1);
-	newname[sizeof (newname) - 1] = 0;
+	// copy it, while converting \r, \n, and \t to space, trimming any
+	// leading/trailing whitespace, and merging consecutive spaces
+	for (p = val; iswhitespace (*p); p++);
+	for (r = newname; *p && r != newname + sizeof (newname) - 1; p++) {
+		if (iswhitespace (*p)) {
+			if (!iswhitespace (p[1]) && p[1] != '\0')
+				*r++ = *p;
+		} else
+			*r++ = *p;
+	}
+	*r = '\0';
 
-	for (p = newname; (*p == ' ' || *p == '\r' || *p == '\n') && *p; p++);
+	// empty (or whitespace only) name
+	if (!*newname)
+		badname = true;
 
-	if (p != newname && !*p) {
-		// white space only
-		strcpy (newname, "unnamed");
-		p = newname;
+	// impersonating an user-xxx name.  if they're using it
+	// legitimately it'll be a no-op later on
+	if (!strncasecmp (newname, "user-", 5))
+		badname = true;
+
+	// impersonating the admin
+	if (strcasestr (newname, "console") || strcasestr (newname, "admin"))
+		badname = true;
+
+	// check for duplicate names
+	for (i = 0, client = svs.clients; i < MAX_CLIENTS; i++, client++) {
+		if (client->state != cs_spawned || client == cl)
+			continue;
+		if (!strcasecmp (client->name, val)) {
+			badname = true;
+			break;
+		}
 	}
 
-	if (p != newname && *p) {
-		for (q = newname; *p; *q++ = *p++);
-		*q = 0;
-	}
-	for (p = newname + strlen (newname) - 1;
-		 p != newname && (*p == ' ' || *p == '\r' || *p == '\n'); p--);
-	p[1] = 0;
+	// give them a name we like
+	if (badname)
+		snprintf (newname, sizeof (newname), "user-%d", cl->userid);
 
-	if (strcmp (val, newname)) {
+	// set the name
+	if (strcmp (cl->name, newname)) {
 		Info_SetValueForKey (cl->userinfo, "name", newname, MAX_INFO_STRING,
 							 !sv_highchars->int_val);
 		val = Info_ValueForKey (cl->userinfo, "name");
-	}
+		SVstring (cl->edict, netname) = PR_SetString (&sv_pr_state, newname);
 
-	if (!val[0] || strcaseequal (val, "console")) {
-		Info_SetValueForKey (cl->userinfo, "name", "unnamed", MAX_INFO_STRING,
-							 !sv_highchars->int_val);
-		val = Info_ValueForKey (cl->userinfo, "name");
-	}
-	// check to see if another user by the same name exists
-	while (1) {
-		for (i = 0, client = svs.clients; i < MAX_CLIENTS; i++, client++) {
-			if (client->state != cs_spawned || client == cl)
-				continue;
-			if (strcaseequal (client->name, val))
-				break;
+		// If the new name was not set (due to the info string being too
+		// long), drop the client.
+		if (strcmp (val, newname)) {
+			Netchan_OutOfBandPrint (net_from, "%c\nPlease choose a "
+									"different name.\n", A2C_PRINT);
+			SV_ClientPrintf (cl, PRINT_HIGH, "Please choose a "
+							 "different name.\n");
+			SV_Printf("Client %d kicked for having a invalid name\n",
+					  cl->userid);
+			SV_DropClient (cl);
+			return;
 		}
-		if (i != MAX_CLIENTS) {			// dup name
-			if (val[0] == '(') {
-				if (val[2] == ')')
-					val += 3;
-				else if (val[3] == ')')
-					val += 4;
-			}
 
-			snprintf (newname, sizeof (newname), "(%d)%-.40s", dupc++, val);
-			Info_SetValueForKey (cl->userinfo, "name", newname,
-								 MAX_INFO_STRING, !sv_highchars->int_val);
-			val = Info_ValueForKey (cl->userinfo, "name");
-
-			// If the new name was not set (due to the info string being too
-			// long), drop the client to prevent an infinite loop.
-			if(strcmp(val, newname)) {
-				Netchan_OutOfBandPrint (net_from, "%c\nPlease choose a "
-										"different name.\n", A2C_PRINT);
-				SV_ClientPrintf (cl, PRINT_HIGH, "Please choose a different "
-								 "name.\n");
-				SV_Printf("Client %d kicked for invalid name\n", cl->userid);
-				SV_DropClient (cl);
-				return;
-			}
-
-		} else
-			break;
-	}
-
-	if (strncmp (val, cl->name, strlen (cl->name))) {
+		// check for spamming
 		if (!sv.paused) {
 			if (!cl->lastnametime || realtime - cl->lastnametime > 5) {
 				cl->lastnamecount = 0;
 				cl->lastnametime = realtime;
 			} else if (cl->lastnamecount++ > 4) {
-				SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked for name "
-									"spam\n", cl->name);
-				SV_ClientPrintf (cl, PRINT_HIGH, "You were kicked from the "
-								 "game for name spamming\n");
+				SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked for "
+									"name spam\n", cl->name);
+				SV_ClientPrintf (cl, PRINT_HIGH, "You were kicked "
+								 "from the game for name spamming\n");
 				SV_DropClient (cl);
 				return;
 			}
 		}
 
-		if (cl->state >= cs_spawned && !cl->spectator)
+		// finally, report it to all our friends
+//		if (cl->state >= cs_spawned && !cl->spectator)
+		if (*cl->name)
 			SV_BroadcastPrintf (PRINT_HIGH, "%s changed name to %s\n",
-								cl->name, val);
+								cl->name, newname);
+		strcpy (cl->name, newname);
 	}
-
-
-	strncpy (cl->name, val, sizeof (cl->name) - 1);
 
 	// rate command
 	val = Info_ValueForKey (cl->userinfo, "rate");
@@ -2282,6 +2280,7 @@ SV_ExtractFromUserinfo (client_t *cl)
 		}
 		cl->netchan.rate = 1.0 / i;
 	}
+
 	// msg command
 	val = Info_ValueForKey (cl->userinfo, "msg");
 	if (strlen (val)) {
