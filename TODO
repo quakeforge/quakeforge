@@ -14,7 +14,7 @@ X  server-side demos
 M  it seems possible to crash a QF server still - need to fix this!
 M  merge nq and qw code bases
 M  mingw cross compiling
-M  Scitech MGL used in win32 is screwed - dump it and use SDL
+X  Scitech MGL used in win32 is screwed - dump it and use SDL
 M  software targets should mix color at 16/16 or 24/32 color
 I  GL is still way too slow
 I  Client side QuakeC.
