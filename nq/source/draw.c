@@ -30,13 +30,14 @@
 # include "config.h"
 #endif
 
-#include "draw.h"
+#include "QF/draw.h"
+#include "QF/quakefs.h"
+#include "QF/sound.h"
+#include "QF/sys.h"
 #include "QF/vid.h"
 #include "QF/zone.h"
-#include "QF/sys.h"
-#include "QF/quakefs.h"
+
 #include "d_iface.h"
-#include "QF/sound.h"
 
 typedef struct {
 	vrect_t     rect;

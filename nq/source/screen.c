@@ -35,13 +35,13 @@
 #include "QF/cmd.h"
 #include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/draw.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/qendian.h"
 
-#include "draw.h"
 #include "host.h"
 #include "r_local.h"
 #include "sbar.h"
@@ -99,11 +99,7 @@ SCR_Init_Cvars (void)
 }
 
 /*
-===============================================================================
-
-CENTER PRINTING
-
-===============================================================================
+  CENTER PRINTING
 */
 
 char        scr_centerstring[1024];
@@ -115,12 +111,10 @@ int         scr_erase_center;
 
 
 /*
-==============
-SCR_CenterPrint
+	SCR_CenterPrint
 
-Called for important messages that should stay in the center of the screen
-for a few moments
-==============
+	Called for important messages that should stay in the center
+	of the screen for a few moments
 */
 void
 SCR_CenterPrint (char *str)
@@ -223,14 +217,10 @@ SCR_CheckDrawCenterString (void)
 	SCR_DrawCenterString ();
 }
 
+
 //=============================================================================
 
 
-/*
-====================
-CalcFov
-====================
-*/
 float
 CalcFov (float fov_x, float width, float height)
 {
@@ -251,12 +241,10 @@ CalcFov (float fov_x, float width, float height)
 
 
 /*
-=================
-SCR_CalcRefdef
+	SCR_CalcRefdef
 
-Must be called whenever vid changes
-Internal use only
-=================
+	Must be called whenever vid changes
+	Internal use only
 */
 static void
 SCR_CalcRefdef (void)
@@ -321,11 +309,9 @@ SCR_CalcRefdef (void)
 
 
 /*
-=================
-SCR_SizeUp_f
+	SCR_SizeUp_f
 
-Keybinding command
-=================
+	Keybinding command
 */
 void
 SCR_SizeUp_f (void)
@@ -336,11 +322,9 @@ SCR_SizeUp_f (void)
 
 
 /*
-=================
-SCR_SizeDown_f
+	SCR_SizeDown_f
 
-Keybinding command
-=================
+	Keybinding command
 */
 void
 SCR_SizeDown_f (void)
@@ -349,14 +333,10 @@ SCR_SizeDown_f (void)
 	vid.recalc_refdef = 1;
 }
 
+
 //============================================================================
 
 
-/*
-==================
-SCR_Init
-==================
-*/
 void
 SCR_Init (void)
 {
@@ -384,11 +364,6 @@ SCR_Init (void)
 }
 
 
-/*
-==============
-SCR_DrawRam
-==============
-*/
 void
 SCR_DrawRam (void)
 {
@@ -402,11 +377,6 @@ SCR_DrawRam (void)
 }
 
 
-/*
-==============
-SCR_DrawTurtle
-==============
-*/
 void
 SCR_DrawTurtle (void)
 {
@@ -428,11 +398,6 @@ SCR_DrawTurtle (void)
 }
 
 
-/*
-==============
-SCR_DrawNet
-==============
-*/
 void
 SCR_DrawNet (void)
 {
@@ -511,11 +476,6 @@ SCR_DrawTime (void)
 }
 
 
-/*
-==============
-DrawPause
-==============
-*/
 void
 SCR_DrawPause (void)
 {
@@ -533,11 +493,6 @@ SCR_DrawPause (void)
 }
 
 
-/*
-==============
-SCR_DrawLoading
-==============
-*/
 void
 SCR_DrawLoading (void)
 {
@@ -609,12 +564,9 @@ SCR_DrawConsole (void)
 	}
 }
 
-/* 
-============================================================================== 
- 
-						SCREEN SHOTS 
- 
-============================================================================== 
+
+/*
+   SCREEN SHOTS
 */
 
 
@@ -733,6 +685,7 @@ SCR_ScreenShot_f (void)
 	Con_Printf ("Wrote %s\n", pcxname);
 }
 
+
 //=============================================================================
 
 
@@ -770,6 +723,7 @@ SCR_EndLoadingPlaque (void)
 	scr_fullupdate = 0;
 	Con_ClearNotify ();
 }
+
 
 //=============================================================================
 
@@ -811,12 +765,10 @@ SCR_DrawNotifyString (void)
 
 
 /*
-==================
-SCR_ModalMessage
+	SCR_ModalMessage
 
-Displays a text string in the center of the screen and waits for a Y or N
-keypress.  
-==================
+	Displays a text string in the center of the screen and waits
+	for a Y or N keypress.
 */
 int
 SCR_ModalMessage (char *text)
@@ -846,15 +798,14 @@ SCR_ModalMessage (char *text)
 	return key_lastpress == 'y';
 }
 
+
 //=============================================================================
 
 
 /*
-===============
-SCR_BringDownConsole
+	SCR_BringDownConsole
 
-Brings the console down and fades the palettes back to normal
-================
+	Brings the console down and fades the palettes back to normal
 */
 void
 SCR_BringDownConsole (void)
@@ -873,15 +824,12 @@ SCR_BringDownConsole (void)
 
 
 /*
-==================
-SCR_UpdateScreen
+	SCR_UpdateScreen
+	This is called every frame, and can also be called explicitly to flush
+	text to the screen.
 
-This is called every frame, and can also be called explicitly to flush
-text to the screen.
-
-WARNING: be very careful calling this from elsewhere, because the refresh
-needs almost the entire 256k of stack space!
-==================
+	WARNING: be very careful calling this from elsewhere, because
+	the refresh needs almost the entire 256k of stack space!
 */
 void
 SCR_UpdateScreen (void)

@@ -33,6 +33,7 @@
 
 #include "QF/cmd.h"
 #include "QF/compat.h"
+#include "QF/draw.h"
 #include "QF/screen.h"
 #include "QF/vid.h"
 #include "QF/va.h"
@@ -40,7 +41,6 @@
 
 #include "sbar.h"
 #include "game.h"
-#include "draw.h"
 #include "client.h"
 #include "server.h"
 
@@ -165,10 +165,10 @@ Sbar_Changed (void)
 
 
 /*
- *	Drawing Routines
- *
- *	Sbar_Draw* routines are relative to the location of the status bar.
- */
+	Drawing Routines
+
+	Sbar_Draw* routines are relative to the location of the status bar.
+*/
 
 
 /*
@@ -186,12 +186,12 @@ Sbar_DrawPic (int x, int y, qpic_t *pic)
 		Draw_Pic (x, y + (vid.height - SBAR_HEIGHT), pic);
 }
 
+
 /*
 	Sbar_DrawSubPic
 
 	Draw a _portion_ of a texture.
 */
-
 void
 Sbar_DrawSubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 				 int height)
@@ -220,6 +220,7 @@ Sbar_DrawTransPic (int x, int y, qpic_t *pic)
 		Draw_Pic (x, y + (vid.height - SBAR_HEIGHT), pic);
 }
 
+
 /*
 	Sbar_DrawCharacter
 
@@ -235,6 +236,7 @@ Sbar_DrawCharacter (int x, int y, int num)
 		Draw_Character8 (x + 4, y + vid.height - SBAR_HEIGHT, num);
 }
 
+
 /*
 	Sbar_DrawString
 
@@ -249,6 +251,7 @@ Sbar_DrawString (int x, int y, char *str)
 	else
 		Draw_String8 (x, y + vid.height - SBAR_HEIGHT, str);
 }
+
 
 /*
 	Sbar_itoa
@@ -284,11 +287,6 @@ Sbar_itoa (int num, char *buf)
 }
 
 
-/*
-=============
-Sbar_DrawNum
-=============
-*/
 void
 Sbar_DrawNum (int x, int y, int num, int digits, int color)
 {
@@ -325,11 +323,7 @@ int         scoreboardbottom[MAX_SCOREBOARD];
 int         scoreboardcount[MAX_SCOREBOARD];
 int         scoreboardlines;
 
-/*
-===============
-Sbar_SortFrags
-===============
-*/
+
 void
 Sbar_SortFrags (void)
 {
@@ -355,11 +349,7 @@ Sbar_SortFrags (void)
 	}
 }
 
-/*
-===============
-Sbar_UpdateScoreboard
-===============
-*/
+
 void
 Sbar_UpdateScoreboard (void)
 {
@@ -386,11 +376,6 @@ Sbar_UpdateScoreboard (void)
 }
 
 
-/*
-===============
-Sbar_SoloScoreboard
-===============
-*/
 void
 Sbar_SoloScoreboard (void)
 {
@@ -422,11 +407,7 @@ Sbar_SoloScoreboard (void)
 	Sbar_DrawString (232 - l * 4, 12, cl.levelname);
 }
 
-/*
-===============
-Sbar_DrawScoreboard
-===============
-*/
+
 void
 Sbar_DrawScoreboard (void)
 {
@@ -435,13 +416,10 @@ Sbar_DrawScoreboard (void)
 		Sbar_DeathmatchOverlay ();
 }
 
+
 //=============================================================================
 
-/*
-===============
-Sbar_DrawInventory
-===============
-*/
+
 void
 Sbar_DrawInventory (void)
 {
@@ -657,13 +635,10 @@ Sbar_DrawInventory (void)
 //	}
 }
 
+
 //=============================================================================
 
-/*
-===============
-Sbar_DrawFrags
-===============
-*/
+
 void
 Sbar_DrawFrags (void)
 {
@@ -719,14 +694,10 @@ Sbar_DrawFrags (void)
 	}
 }
 
+
 //=============================================================================
 
 
-/*
-===============
-Sbar_DrawFace
-===============
-*/
 void
 Sbar_DrawFace (void)
 {
@@ -816,11 +787,7 @@ Sbar_DrawFace (void)
 	Sbar_DrawPic (112, 0, sb_faces[f][anim]);
 }
 
-/*
-=============
-Sbar_DrawNormal
-=============
-*/
+
 void
 Sbar_DrawNormal (void)
 {
@@ -898,11 +865,7 @@ Sbar_DrawNormal (void)
 	Sbar_DrawNum (248, 0, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
 }
 
-/*
-===============
-Sbar_Draw
-===============
-*/
+
 void
 Sbar_Draw (void)
 {
@@ -954,14 +917,10 @@ Sbar_Draw (void)
 	}
 }
 
+
 //=============================================================================
 
-/*
-==================
-Sbar_IntermissionNumber
 
-==================
-*/
 void
 Sbar_IntermissionNumber (int x, int y, int num, int digits, int color)
 {
@@ -988,12 +947,7 @@ Sbar_IntermissionNumber (int x, int y, int num, int digits, int color)
 	}
 }
 
-/*
-==================
-Sbar_DeathmatchOverlay
 
-==================
-*/
 void
 Sbar_DeathmatchOverlay (void)
 {
@@ -1051,12 +1005,7 @@ Sbar_DeathmatchOverlay (void)
 	}
 }
 
-/*
-==================
-Sbar_DeathmatchOverlay
 
-==================
-*/
 void
 Sbar_MiniDeathmatchOverlay (void)
 {
@@ -1132,12 +1081,7 @@ Sbar_MiniDeathmatchOverlay (void)
 	}
 }
 
-/*
-==================
-Sbar_IntermissionOverlay
 
-==================
-*/
 void
 Sbar_IntermissionOverlay (void)
 {
@@ -1177,12 +1121,6 @@ Sbar_IntermissionOverlay (void)
 }
 
 
-/*
-==================
-Sbar_FinaleOverlay
-
-==================
-*/
 void
 Sbar_FinaleOverlay (void)
 {
@@ -1193,6 +1131,7 @@ Sbar_FinaleOverlay (void)
 	pic = Draw_CachePic ("gfx/finale.lmp", true);
 	Draw_Pic ((vid.width - pic->width) / 2, 16, pic);
 }
+
 
 /*
 	Sbar_Init

@@ -40,23 +40,24 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "QF/compat.h"
-#include "r_local.h"
-#include "QF/qargs.h"
-#include "QF/vid.h"
-#include "QF/sys.h"
-#include "QF/mathlib.h"
-#include "QF/wad.h"
-#include "draw.h"
-#include "QF/cvar.h"
-#include "protocol.h"
 #include "QF/cmd.h"
-#include "sbar.h"
-#include "render.h"
-#include "client.h"
-#include "QF/model.h"
+#include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
+#include "QF/draw.h"
+#include "QF/mathlib.h"
+#include "QF/model.h"
+#include "QF/qargs.h"
+#include "QF/sys.h"
+#include "QF/vid.h"
+#include "QF/wad.h"
+
+#include "protocol.h"
+#include "client.h"
 #include "glquake.h"
+#include "r_local.h"
+#include "render.h"
+#include "sbar.h"
 
 extern double realtime;
 int         skytexturenum;
@@ -138,6 +139,7 @@ R_ForceLightUpdate ()
 
 	LordHavoc: completely rewrote this, relies on 64bit integer math...
 */
+
 int         dlightdivtable[8192];
 int         dlightdivtableinitialized = 0;
 
@@ -366,11 +368,9 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 
 
 /*
-===============
-R_TextureAnimation
+	R_TextureAnimation
 
-Returns the proper texture for a given time and base texture
-===============
+	Returns the proper texture for a given time and base texture
 */
 texture_t  *
 R_TextureAnimation (texture_t *base)
@@ -402,11 +402,7 @@ R_TextureAnimation (texture_t *base)
 
 
 /*
-=============================================================
-
 	BRUSH MODELS
-
-=============================================================
 */
 
 
@@ -427,12 +423,10 @@ GL_UploadLightmap (int i, int x, int y, int w, int h)
 
 
 /*
-================
-R_DrawSequentialPoly
+	R_DrawSequentialPoly
 
-Systems that have fast state and texture changes can
-just do everything as it passes with no need to sort
-================
+	Systems that have fast state and texture changes can
+	just do everything as it passes with no need to sort
 */
 void
 R_DrawMultitexturePoly (msurface_t *s)
@@ -828,12 +822,9 @@ R_DrawBrushModel (entity_t *e)
 	glPopMatrix ();
 }
 
+
 /*
-=============================================================
-
 	WORLD MODEL
-
-=============================================================
 */
 
 
@@ -1016,12 +1007,9 @@ R_MarkLeaves (void)
 
 
 /*
-=============================================================================
-
   LIGHTMAP ALLOCATION
-
-=============================================================================
 */
+
 
 // returns a texture number and the position inside it
 int
@@ -1203,12 +1191,10 @@ GL_CreateSurfaceLightmap (msurface_t *surf)
 
 
 /*
-==================
-GL_BuildLightmaps
+	GL_BuildLightmaps
 
-Builds the lightmap texture
-with all the surfaces from all brush models
-==================
+	Builds the lightmap texture
+	with all the surfaces from all brush models
 */
 void
 GL_BuildLightmaps (void)

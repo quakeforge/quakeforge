@@ -43,11 +43,12 @@
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/crc.h"
-#include "draw.h"
-#include "glquake.h"
-#include "sbar.h"
+#include "QF/draw.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
+
+#include "glquake.h"
+#include "sbar.h"
 
 extern int      gl_filter_min, gl_filter_max;
 extern unsigned char d_15to8table[65536];
@@ -173,6 +174,7 @@ static glformat_t formats[] = {
 };
 
 int gl_alpha_format = 4, gl_lightmap_format = 4, gl_solid_format = 3;
+
 
 void
 GL_TextureMode_f (void)
@@ -419,7 +421,6 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
 
 	free (scaled);
 }
-
 
 
 /* 

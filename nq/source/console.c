@@ -38,17 +38,18 @@
 
 #include <stdarg.h>
 
-#include "client.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
-#include "draw.h"
-#include "host.h"
+#include "QF/draw.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/qargs.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+
+#include "client.h"
+#include "host.h"
 
 int         con_ormask;
 console_t   con_main;

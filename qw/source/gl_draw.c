@@ -38,17 +38,17 @@
 
 #include <stdio.h>
 
-#include "client.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
-#include "draw.h"
-#include "glquake.h"
-#include "sbar.h"
+#include "QF/draw.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
 #include "QF/va.h"
 
+#include "client.h"
+#include "glquake.h"
+#include "sbar.h"
 
 extern byte *vid_basepal;
 extern cvar_t *crosshair, *cl_crossx, *cl_crossy, *crosshaircolor,
@@ -267,6 +267,7 @@ gl_lightmode_callback (cvar_t *cvar)
 	R_ForceLightUpdate ();
 }
 
+
 void
 Draw_Init (void)
 {
@@ -314,6 +315,7 @@ Draw_Init (void)
 	glrmain_init ();
 	glrsurf_init ();
 }
+
 
 void
 Draw_Init_Cvars (void)
@@ -704,11 +706,10 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	glEnable (GL_TEXTURE_2D);
 }
 
+
 //=============================================================================
 
-/*
-	Draw_FadeScreen
-*/
+
 void
 Draw_FadeScreen (void)
 {
@@ -728,7 +729,9 @@ Draw_FadeScreen (void)
 	Sbar_Changed ();
 }
 
+
 //=============================================================================
+
 
 /*
 	Draw_BeginDisc

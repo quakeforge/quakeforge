@@ -41,6 +41,7 @@
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/draw.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
 #include "QF/sys.h"
@@ -49,7 +50,6 @@
 #include "QF/wad.h"
 
 #include "client.h"
-#include "draw.h"
 #include "glquake.h"
 #include "net.h"
 #include "protocol.h"

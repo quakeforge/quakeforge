@@ -40,11 +40,11 @@
 
 #include "QF/compat.h"
 #include "QF/cvar.h"
+#include "QF/draw.h"
 #include "QF/vid.h"
 
 #include "cl_parse.h"
 #include "client.h"
-#include "draw.h"
 #include "glquake.h"
 #include "sbar.h"
 
@@ -60,6 +60,7 @@ int 	netgraphtexture;		// netgraph texture
 #define NET_GRAPHHEIGHT 32
 
 static byte ngraph_texels[NET_GRAPHHEIGHT][NET_TIMINGS];
+
 
 static void
 R_LineGraph (int x, int h)
@@ -92,6 +93,7 @@ R_LineGraph (int x, int h)
 		ngraph_texels[NET_GRAPHHEIGHT - i - 1][x] = (byte) 0xff;
 }
 
+
 void
 Draw_CharToNetGraph (int x, int y, int num)
 {
@@ -113,9 +115,6 @@ Draw_CharToNetGraph (int x, int y, int num)
 }
 
 
-/*
-	R_NetGraph
-*/
 void
 R_NetGraph (void)
 {

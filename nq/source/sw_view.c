@@ -1,4 +1,3 @@
-
 /*
 	view.c
 
@@ -31,13 +30,14 @@
 # include "config.h"
 #endif
 
-#include "client.h"
 #include "QF/compat.h"
 #include "QF/console.h"
-#include "draw.h"
+#include "QF/draw.h"
+#include "QF/vid.h"
+
+#include "client.h"
 #include "host.h"
 #include "view.h"
-#include "QF/vid.h"
 
 extern byte        gammatable[256];
 
@@ -52,9 +52,7 @@ extern cvar_t     *scr_ofsx;
 extern cvar_t     *scr_ofsy;
 extern cvar_t     *scr_ofsz;
 
-/*
-	V_UpdatePalette
-*/
+
 void
 V_UpdatePalette (void)
 {
@@ -122,13 +120,12 @@ V_UpdatePalette (void)
 	VID_ShiftPalette (pal);
 }
 
-/*
-==================
-V_RenderView
 
-The player's clipping box goes from (-16 -16 -24) to (16 16 32) from
-the entity origin, so any view position inside that will be valid
-==================
+/*
+	V_RenderView
+
+	The player's clipping box goes from (-16 -16 -24) to (16 16 32) from
+	the entity origin, so any view position inside that will be valid
 */
 extern vrect_t scr_vrect;
 
@@ -160,6 +157,7 @@ V_RenderView (void)
 	if (crosshair->int_val)
 		Draw_Crosshair ();
 }
+
 
 void
 BuildGammaTable (float b, float c)

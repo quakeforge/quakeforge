@@ -36,12 +36,13 @@ extern qpic_t *draw_disc; // also used on sbar
 void Draw_Init (void);
 void Draw_Init_Cvars (void);
 void Draw_Character8 (int x, int y, int num);
-void Draw_SubPic(int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
 void Draw_Pic (int x, int y, qpic_t *pic);
+void Draw_SubPic(int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
 void Draw_TextBox (int x, int y, int width, int lines);
 void Draw_TransPic (int x, int y, qpic_t *pic);
 void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation);
 void Draw_ConsoleBackground (int lines);
+void Draw_Crosshair(void);
 void Draw_BeginDisc (void);
 void Draw_EndDisc (void);
 void Draw_TileClear (int x, int y, int w, int h);
@@ -51,6 +52,5 @@ void Draw_String8 (int x, int y, char *str);
 void Draw_AltString8 (int x, int y, char *str);
 qpic_t *Draw_PicFromWad (char *name);
 qpic_t *Draw_CachePic (char *path, qboolean alpha);
-void Draw_Crosshair(void);
 
 #endif // _DRAW_H

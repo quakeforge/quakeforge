@@ -38,17 +38,17 @@
 
 #include <stdio.h>
 
-#include "client.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
-#include "draw.h"
-#include "glquake.h"
-#include "sbar.h"
+#include "QF/draw.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
 #include "QF/va.h"
 
+#include "client.h"
+#include "glquake.h"
+#include "sbar.h"
 
 extern byte *vid_basepal;
 extern cvar_t *crosshair, *cl_crossx, *cl_crossy, *crosshaircolor,

@@ -30,15 +30,17 @@
 # include "config.h"
 #endif
 
-#include "view.h"
-#include "r_local.h"
-#include "host.h"
 #include "QF/cmd.h"
-#include "chase.h"
-#include "draw.h"
-#include "QF/screen.h"
 #include "QF/console.h"
+#include "QF/draw.h"
 #include "QF/msg.h"
+#include "QF/screen.h"
+
+#include "chase.h"
+#include "host.h"
+#include "r_local.h"
+#include "view.h"
+
 
 /*
 
@@ -89,12 +91,7 @@ extern int  in_forward, in_forward2, in_back;
 
 void        BuildGammaTable (float, float);
 
-/*
-===============
-V_CalcBob
 
-===============
-*/
 float
 V_CalcBob (void)
 {
@@ -157,8 +154,8 @@ V_StopPitchDrift (void)
 	cl.pitchvel = 0;
 }
 
+
 /*
-===============
 V_DriftPitch
 
 Moves the client pitch angle towards cl.idealpitch sent by the server.
@@ -168,7 +165,6 @@ mlook and mouse, or klook and keyboard, pitch drifting is constantly stopped.
 
 Drifting is enabled when the center view key is hit, mlook is released and
 lookspring is non 0, or when 
-===============
 */
 void
 V_DriftPitch (void)
@@ -225,11 +221,7 @@ V_DriftPitch (void)
 
 
 /*
-============================================================================== 
- 
-						PALETTE FLASHES 
- 
-============================================================================== 
+  PALETTE FLASHES 
 */
 
 
@@ -250,11 +242,7 @@ cvar_t     *v_gamma;
 
 byte        gammatable[256];			// palette is sent through this
 
-/*
-=================
-V_CheckGamma
-=================
-*/
+
 qboolean
 V_CheckGamma (void)
 {
@@ -273,11 +261,6 @@ V_CheckGamma (void)
 }
 
 
-/*
-===============
-V_ParseDamage
-===============
-*/
 void
 V_ParseDamage (void)
 {
@@ -340,11 +323,6 @@ V_ParseDamage (void)
 }
 
 
-/*
-==================
-V_cshift_f
-==================
-*/
 void
 V_cshift_f (void)
 {
@@ -356,11 +334,9 @@ V_cshift_f (void)
 
 
 /*
-==================
-V_BonusFlash_f
+	V_BonusFlash_f
 
-When you run over an item, the server sends this command
-==================
+	When you run over an item, the server sends this command
 */
 void
 V_BonusFlash_f (void)
@@ -371,12 +347,11 @@ V_BonusFlash_f (void)
 	cl.cshifts[CSHIFT_BONUS].percent = 50;
 }
 
-/*
-=============
-V_SetContentsColor
 
-Underwater, lava, etc each has a color shift
-=============
+/*
+	V_SetContentsColor
+
+	Underwater, lava, etc each has a color shift
 */
 void
 V_SetContentsColor (int contents)
@@ -397,11 +372,7 @@ V_SetContentsColor (int contents)
 	}
 }
 
-/*
-=============
-V_CalcPowerupCshift
-=============
-*/
+
 void
 V_CalcPowerupCshift (void)
 {
@@ -431,11 +402,7 @@ V_CalcPowerupCshift (void)
 
 
 /* 
-============================================================================== 
- 
-						VIEW RENDERING 
- 
-============================================================================== 
+   VIEW RENDERING 
 */
 
 float
@@ -447,11 +414,7 @@ angledelta (float a)
 	return a;
 }
 
-/*
-==================
-CalcGunAngle
-==================
-*/
+
 void
 CalcGunAngle (void)
 {
@@ -506,11 +469,7 @@ CalcGunAngle (void)
 		v_iyaw_level->value;
 }
 
-/*
-==============
-V_BoundOffsets
-==============
-*/
+
 void
 V_BoundOffsets (void)
 {
@@ -536,11 +495,9 @@ V_BoundOffsets (void)
 }
 
 /*
-==============
-V_AddIdle
+	V_AddIdle
 
-Idle swaying
-==============
+	Idle swaying
 */
 void
 V_AddIdle (void)
@@ -558,11 +515,9 @@ V_AddIdle (void)
 
 
 /*
-==============
-V_CalcViewRoll
+	V_CalcViewRoll
 
-Roll is induced by movement and damage
-==============
+	Roll is induced by movement and damage
 */
 void
 V_CalcViewRoll (void)
@@ -588,12 +543,6 @@ V_CalcViewRoll (void)
 }
 
 
-/*
-==================
-V_CalcIntermissionRefdef
-
-==================
-*/
 void
 V_CalcIntermissionRefdef (void)
 {
@@ -616,12 +565,7 @@ V_CalcIntermissionRefdef (void)
 	Cvar_SetValue (v_idlescale, old);
 }
 
-/*
-==================
-V_CalcRefdef
 
-==================
-*/
 void
 V_CalcRefdef (void)
 {
@@ -744,23 +688,16 @@ V_CalcRefdef (void)
 		Chase_Update ();
 }
 
-/*
-==================
-V_RenderView
 
-The player's clipping box goes from (-16 -16 -24) to (16 16 32) from
-the entity origin, so any view position inside that will be valid
-==================
+/*
+	V_RenderView
+
+	The player's clipping box goes from (-16 -16 -24) to (16 16 32) from
+	the entity origin, so any view position inside that will be valid
 */
 extern vrect_t scr_vrect;
 
-//============================================================================
 
-/*
-=============
-V_Init
-=============
-*/
 void
 V_Init (void)
 {

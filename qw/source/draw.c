@@ -36,13 +36,14 @@
 # include <strings.h>
 #endif
 
-#include "client.h"
 #include "QF/console.h"
-#include "d_iface.h"
-#include "draw.h"
+#include "QF/draw.h"
 #include "QF/quakefs.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
+
+#include "client.h"
+#include "d_iface.h"
 
 typedef struct {
 	vrect_t     rect;
@@ -73,11 +74,12 @@ cachepic_t  menu_cachepics[MAX_CACHED_PICS];
 int         menu_numcachepics;
 
 
-qpic_t     *
+qpic_t *
 Draw_PicFromWad (char *name)
 {
 	return W_GetLumpName (name);
 }
+
 
 /*
 	Draw_ClearCache
@@ -89,10 +91,8 @@ Draw_ClearCache (void)
 {
 }
 
-/*
-	Draw_CachePic
-*/
-qpic_t     *
+
+qpic_t *
 Draw_CachePic (char *path, qboolean alpha)
 {
 	cachepic_t *pic;
@@ -129,6 +129,7 @@ Draw_CachePic (char *path, qboolean alpha)
 
 	return dat;
 }
+
 
 void
 Draw_TextBox (int x, int y, int width, int lines)
@@ -182,9 +183,7 @@ Draw_TextBox (int x, int y, int width, int lines)
 	Draw_Pic (cx, cy + 8, p);
 }
 
-/*
-	Draw_Init
-*/
+
 void
 Draw_Init (void)
 {
@@ -201,6 +200,7 @@ Draw_Init (void)
 		Cvar_Get ("cl_verstring", PROGRAM " " VERSION, CVAR_NONE, NULL,
 				"Client version string");
 }
+
 
 void
 Draw_Init_Cvars (void)
@@ -298,9 +298,7 @@ Draw_Character8 (int x, int y, int num)
 	}
 }
 
-/*
-	Draw_String8
-*/
+
 void
 Draw_String8 (int x, int y, char *str)
 {
@@ -311,9 +309,7 @@ Draw_String8 (int x, int y, char *str)
 	}
 }
 
-/*
-	Draw_AltString8
-*/
+
 void
 Draw_AltString8 (int x, int y, char *str)
 {
@@ -323,6 +319,7 @@ Draw_AltString8 (int x, int y, char *str)
 		x += 8;
 	}
 }
+
 
 void
 Draw_Pixel (int x, int y, byte color)
@@ -340,6 +337,7 @@ Draw_Pixel (int x, int y, byte color)
 		*pusdest = d_8to16table[color];
 	}
 }
+
 
 void
 Draw_Crosshair (void)
@@ -367,9 +365,7 @@ Draw_Crosshair (void)
 						 cl_crossy->int_val, '+');
 }
 
-/*
-	Draw_Pic
-*/
+
 void
 Draw_Pic (int x, int y, qpic_t *pic)
 {
@@ -440,9 +436,6 @@ Draw_Pic (int x, int y, qpic_t *pic)
 }
 
 
-/*
-	Draw_SubPic
-*/
 void
 Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 			 int height)
@@ -481,9 +474,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	}
 }
 
-/*
-	Draw_TransPicTranslate
-*/
+
 void
 Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 {
@@ -554,9 +545,6 @@ Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 }
 
 
-/*
-	Draw_ConsoleBackground
-*/
 void
 Draw_ConsoleBackground (int lines)
 {
@@ -622,9 +610,6 @@ Draw_ConsoleBackground (int lines)
 }
 
 
-/*
-	R_DrawRect8
-*/
 void
 R_DrawRect8 (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 {
@@ -662,9 +647,6 @@ R_DrawRect8 (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 }
 
 
-/*
-	R_DrawRect16
-*/
 void
 R_DrawRect16 (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 {
@@ -812,11 +794,10 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	}
 }
 
+
 //=============================================================================
 
-/*
-	Draw_FadeScreen
-*/
+
 void
 Draw_FadeScreen (void)
 {
@@ -844,7 +825,9 @@ Draw_FadeScreen (void)
 	VID_LockBuffer ();
 }
 
+
 //=============================================================================
+
 
 /*
 	Draw_BeginDisc

@@ -41,6 +41,7 @@
 #include "QF/cmd.h"
 #include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/draw.h"
 #include "QF/keys.h"
 #include "QF/pcx.h"
 #include "QF/skin.h"
@@ -50,10 +51,10 @@
 #include "cl_parse.h"
 #include "client.h"
 #include "d_iface.h"
-#include "draw.h"
 #include "host.h"
 #include "sbar.h"
 #include "view.h"
+
 
 /*
 
@@ -98,9 +99,8 @@ console is:
 	notify lines
 	half
 	full
-	
-
 */
+
 
 // only the refresh window will be updated unless these variables are flagged 
 int         scr_copytop;
@@ -185,6 +185,7 @@ SCR_CenterPrint (char *str)
 		str++;
 	}
 }
+
 
 void
 SCR_DrawCenterString (void)
@@ -632,8 +633,8 @@ SCR_DrawConsole (void)
 }
 
 
-/* 
-						SCREEN SHOTS 
+/*
+   SCREEN SHOTS
 */
 
 

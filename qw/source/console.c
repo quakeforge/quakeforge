@@ -38,17 +38,18 @@
 
 #include <stdarg.h>
 
-#include "client.h"
 #include "QF/cmd.h"
 #include "QF/compat.h"
 #include "QF/console.h"
-#include "draw.h"
+#include "QF/draw.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/qargs.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+
+#include "client.h"
 
 int         con_ormask;
 console_t   con_main;
@@ -80,6 +81,7 @@ extern int  key_linepos;
 
 qboolean    con_initialized;
 
+
 void
 Key_ClearTyping (void)
 {
@@ -87,9 +89,7 @@ Key_ClearTyping (void)
 	key_linepos = 1;
 }
 
-/*
-	Con_ToggleConsole_f
-*/
+
 void
 Con_ToggleConsole_f (void)
 {
@@ -104,9 +104,7 @@ Con_ToggleConsole_f (void)
 	Con_ClearNotify ();
 }
 
-/*
-	Con_ToggleChat_f
-*/
+
 void
 Con_ToggleChat_f (void)
 {
@@ -121,9 +119,7 @@ Con_ToggleChat_f (void)
 	Con_ClearNotify ();
 }
 
-/*
-	Con_Clear_f
-*/
+
 void
 Con_Clear_f (void)
 {
@@ -135,9 +131,6 @@ Con_Clear_f (void)
 }
 
 
-/*
-	Con_ClearNotify
-*/
 void
 Con_ClearNotify (void)
 {
@@ -148,9 +141,6 @@ Con_ClearNotify (void)
 }
 
 
-/*
-	Con_MessageMode_f
-*/
 void
 Con_MessageMode_f (void)
 {
@@ -160,9 +150,7 @@ Con_MessageMode_f (void)
 	key_dest = key_message;
 }
 
-/*
-	Con_MessageMode2_f
-*/
+
 void
 Con_MessageMode2_f (void)
 {
@@ -172,9 +160,7 @@ Con_MessageMode2_f (void)
 	key_dest = key_message;
 }
 
-/*
-	Con_Resize
-*/
+
 void
 Con_Resize (console_t *con)
 {
@@ -238,9 +224,6 @@ Con_CheckResize (void)
 }
 
 
-/*
-	Con_Init
-*/
 void
 Con_Init (void)
 {
@@ -267,6 +250,7 @@ Con_Init (void)
 	con_initialized = true;
 }
 
+
 void
 Con_Init_Cvars (void)
 {
@@ -276,9 +260,6 @@ Con_Init_Cvars (void)
 }
 
 
-/*
-	Con_Linefeed
-*/
 void
 Con_Linefeed (void)
 {
@@ -291,6 +272,7 @@ Con_Linefeed (void)
 	memset (&con->text[(con->current % con_totallines) * con_linewidth],
 			' ', con_linewidth);
 }
+
 
 /*
 	Con_Print
@@ -482,6 +464,7 @@ Con_DrawNotify (void)
 		con_notifylines = v;
 }
 
+
 /*
 	Con_DrawConsole
 
@@ -535,6 +518,7 @@ Con_DrawConsole (int lines)
 // draw the input prompt, user text, and cursor if desired
 	Con_DrawInput ();
 }
+
 
 void
 Con_DrawDownload (int lines)

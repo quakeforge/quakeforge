@@ -35,6 +35,8 @@
 #include "QF/compat.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
+#include "QF/draw.h"
+#include "QF/gib.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
@@ -46,8 +48,6 @@
 #include "QF/vid.h"
 
 #include "chase.h"
-#include "draw.h"
-#include "QF/gib.h"
 #include "host.h"
 #include "r_local.h"
 #include "sbar.h"

@@ -63,6 +63,7 @@
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/draw.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/model.h"
@@ -91,7 +92,6 @@
 #include "cl_slist.h"
 #include "cl_tent.h"
 #include "client.h"
-#include "draw.h"
 #include "game.h"
 #include "host.h"
 #include "net.h"
@@ -212,9 +212,7 @@ char        soundlist_name[] = "soundlist %i %i";
 
 cvar_t     *confirm_quit;
 
-/*
-	CL_Quit_f
-*/
+
 void
 CL_Quit_f (void)
 {
@@ -227,9 +225,7 @@ CL_Quit_f (void)
 	Sys_Quit ();
 }
 
-/*
-	CL_Version_f
-*/
+
 void
 CL_Version_f (void)
 {
@@ -293,6 +289,7 @@ CL_SendConnectPacket (void)
 	NET_SendPacket (strlen (data), data, adr);
 }
 
+
 /*
 	CL_CheckForResend
 
@@ -337,6 +334,7 @@ CL_CheckForResend (void)
 	NET_SendPacket (strlen (data), data, adr);
 }
 
+
 void
 CL_BeginServerConnect (void)
 {
@@ -344,9 +342,7 @@ CL_BeginServerConnect (void)
 	CL_CheckForResend ();
 }
 
-/*
-	CL_Connect_f
-*/
+
 void
 CL_Connect_f (void)
 {
@@ -408,9 +404,6 @@ CL_Rcon_f (void)
 }
 
 
-/*
-	CL_ClearState
-*/
 void
 CL_ClearState (void)
 {
@@ -446,6 +439,7 @@ CL_ClearState (void)
 	cl.free_efrags[i].entnext = NULL;
 }
 
+
 /*
 	CL_StopCshifts
 
@@ -460,6 +454,7 @@ CL_StopCshifts (void)
 	for (i = 0; i < MAX_CL_STATS; i++)
 		cl.stats[i] = 0;
 }
+
 
 /*
 	CL_Disconnect
@@ -512,11 +507,13 @@ CL_Disconnect (void)
 
 }
 
+
 void
 CL_Disconnect_f (void)
 {
 	CL_Disconnect ();
 }
+
 
 /*
 	CL_User_f
@@ -550,6 +547,7 @@ CL_User_f (void)
 	Con_Printf ("User not in server.\n");
 }
 
+
 /*
 	CL_Users_f
 
@@ -574,6 +572,7 @@ CL_Users_f (void)
 
 	Con_Printf ("%i total users\n", c);
 }
+
 
 /*
 	CL_FullServerinfo_f
@@ -621,11 +620,6 @@ CL_FullServerinfo_f (void)
 	}
 }
 
-/*
-
-	CL_AddQFInfoKeys
-
-*/
 
 void
 CL_AddQFInfoKeys (void)
@@ -654,11 +648,7 @@ CL_AddQFInfoKeys (void)
 	Con_Printf ("QuakeForge server detected\n");
 }
 
-/*
 
-	CL_RemoveQFInfoKeys
-
-*/
 void
 CL_RemoveQFInfoKeys (void)
 {
@@ -666,6 +656,7 @@ CL_RemoveQFInfoKeys (void)
 	Info_RemoveKey (cls.userinfo, "*qf_version");
 	Info_RemoveKey (cls.userinfo, "*qsg_version");
 }
+
 
 /*
 	CL_FullInfo_f
@@ -716,6 +707,7 @@ CL_FullInfo_f (void)
 	}
 }
 
+
 /*
 	CL_SetInfo_f
 
@@ -741,6 +733,7 @@ CL_SetInfo_f (void)
 	if (cls.state >= ca_connected)
 		Cmd_ForwardToServer ();
 }
+
 
 /*
 	CL_Packet_f
@@ -862,6 +855,7 @@ CL_Reconnect_f (void)
 	CL_Disconnect ();
 	CL_BeginServerConnect ();
 }
+
 
 /*
 	CL_ConnectionlessPacket
@@ -1024,6 +1018,7 @@ CL_ConnectionlessPacket (void)
 	Con_Printf ("unknown:  %c\n", c);
 }
 
+
 void
 CL_PingPacket (void)
 {
@@ -1040,9 +1035,7 @@ CL_PingPacket (void)
 		} 
 }		
 
-/*
-	CL_ReadPackets
-*/
+
 void
 CL_ReadPackets (void)
 {
@@ -1097,11 +1090,10 @@ CL_ReadPackets (void)
 
 }
 
+
 //=============================================================================
 
-/*
-	CL_Download_f
-*/
+
 void
 CL_Download_f (void)
 {
@@ -1134,9 +1126,7 @@ CL_Download_f (void)
 	}
 }
 
-/*
-	CL_Init
-*/
+
 void
 CL_Init (void)
 {
@@ -1215,7 +1205,6 @@ CL_Init (void)
 	Cmd_AddCommand ("serverinfo", Cmd_ForwardToServer, "Report the current server info");
 
 }
-
 
 
 void
@@ -1325,6 +1314,7 @@ CL_Init_Cvars (void)
 	R_Particles_Init_Cvars ();
 }
 
+
 /*
 	Host_EndGame
 
@@ -1347,6 +1337,7 @@ Host_EndGame (char *message, ...)
 
 	longjmp (host_abort, 1);
 }
+
 
 /*
 	Host_Error
@@ -1409,6 +1400,7 @@ Host_WriteConfiguration (void)
 
 //============================================================================
 
+
 /*
 	Host_SimulationTime
 
@@ -1438,6 +1430,7 @@ Host_SimulationTime (float time)
 		return false;					// framerate is too high
 	return true;
 }
+
 
 /*
 	Host_Frame
@@ -1529,7 +1522,9 @@ Host_Frame (float time)
 	fps_count++;
 }
 
+
 //============================================================================
+
 
 static int
 check_quakerc (void)
@@ -1553,9 +1548,7 @@ check_quakerc (void)
 	return ret;
 }
 
-/*
-	Host_Init
-*/
+
 void
 Host_Init (void)
 {

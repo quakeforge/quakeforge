@@ -33,20 +33,19 @@
 #include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/cmd.h"
+#include "QF/draw.h"
+#include "QF/sys.h"
+
 #include "cl_parse.h"
-#include "draw.h"
 #include "host.h"
 #include "r_local.h"
 #include "sbar.h"
-#include "QF/sys.h"
 
 qboolean    allowskybox;				// whether or not to allow skyboxes
 
 										// --KB
 
-/*
-	R_CheckVariables
-*/
+
 void
 R_CheckVariables (void)
 {
@@ -69,6 +68,7 @@ Show (void)
 	vr.pnext = NULL;
 	VID_Update (&vr);
 }
+
 
 /*
 	R_TimeRefresh_f
@@ -110,9 +110,6 @@ R_TimeRefresh_f (void)
 }
 
 
-/*
-   R_LoadSky_f
-*/
 void
 R_LoadSky_f (void)
 {
@@ -171,6 +168,7 @@ R_LineGraph (int x, int y, int h)
 #endif
 }
 
+
 /*
 	R_TimeGraph
 
@@ -221,9 +219,7 @@ R_TimeGraph (void)
 	timex = (timex + 1) % MAX_TIMINGS;
 }
 
-/*
-	R_NetGraph
-*/
+
 void
 R_NetGraph (void)
 {
@@ -257,9 +253,7 @@ R_NetGraph (void)
 	}
 }
 
-/*
-	R_ZGraph
-*/
+
 void
 R_ZGraph (void)
 {
@@ -280,9 +274,7 @@ R_ZGraph (void)
 	}
 }
 
-/*
-	R_PrintTimes
-*/
+
 void
 R_PrintTimes (void)
 {
@@ -299,9 +291,6 @@ R_PrintTimes (void)
 }
 
 
-/*
-	R_PrintDSpeeds
-*/
 void
 R_PrintDSpeeds (void)
 {
@@ -325,9 +314,6 @@ R_PrintDSpeeds (void)
 }
 
 
-/*
-	R_PrintAliasStats
-*/
 void
 R_PrintAliasStats (void)
 {
@@ -358,9 +344,6 @@ WarpPalette (void)
 }
 
 
-/*
-	R_TransformFrustum
-*/
 void
 R_TransformFrustum (void)
 {
@@ -385,9 +368,6 @@ R_TransformFrustum (void)
 
 #ifndef USE_INTEL_ASM
 
-/*
-	TransformVector
-*/
 void
 TransformVector (vec3_t in, vec3_t out)
 {
@@ -399,9 +379,6 @@ TransformVector (vec3_t in, vec3_t out)
 #endif
 
 
-/*
-	R_TransformPlane
-*/
 void
 R_TransformPlane (mplane_t *p, float *normal, float *dist)
 {
@@ -414,9 +391,6 @@ R_TransformPlane (mplane_t *p, float *normal, float *dist)
 }
 
 
-/*
-	R_SetUpFrustumIndexes
-*/
 void
 R_SetUpFrustumIndexes (void)
 {
@@ -442,9 +416,6 @@ R_SetUpFrustumIndexes (void)
 }
 
 
-/*
-	R_SetupFrame
-*/
 void
 R_SetupFrame (void)
 {

@@ -38,17 +38,18 @@
 
 #include <stdlib.h>
 
-#include "bothdefs.h"
-#include "cl_cam.h"
-#include "client.h"
 #include "QF/cmd.h"
 #include "QF/compat.h"
-#include "draw.h"
+#include "QF/draw.h"
 #include "QF/msg.h"
-#include "sbar.h"
 #include "QF/screen.h"
 #include "QF/va.h"
 #include "QF/vid.h"
+
+#include "bothdefs.h"
+#include "cl_cam.h"
+#include "client.h"
+#include "sbar.h"
 
 int         sb_updates;					// if >= vid.numpages, no update
 
@@ -89,6 +90,7 @@ void        Sbar_MiniDeathmatchOverlay (void);
 
 static qboolean largegame = false;
 
+
 /*
 	Sbar_ShowTeamScores
 
@@ -104,6 +106,7 @@ Sbar_ShowTeamScores (void)
 	sb_updates = 0;
 }
 
+
 /*
 	Sbar_DontShowTeamScores
 
@@ -115,6 +118,7 @@ Sbar_DontShowTeamScores (void)
 	sb_showteamscores = false;
 	sb_updates = 0;
 }
+
 
 /*
 	Sbar_ShowScores
@@ -131,6 +135,7 @@ Sbar_ShowScores (void)
 	sb_updates = 0;
 }
 
+
 /*
 	Sbar_DontShowScores
 
@@ -143,18 +148,14 @@ Sbar_DontShowScores (void)
 	sb_updates = 0;
 }
 
-/*
-	Sbar_Changed
-*/
+
 void
 Sbar_Changed (void)
 {
 	sb_updates = 0;						// update next frame
 }
 
-/*
-	Sbar_Init
-*/
+
 void
 Sbar_Init (void)
 {
@@ -248,11 +249,9 @@ Sbar_Init (void)
 
 //=============================================================================
 
+
 // drawing routines are reletive to the status bar location
 
-/*
-	Sbar_DrawPic
-*/
 void
 Sbar_DrawPic (int x, int y, qpic_t *pic)
 {
@@ -260,12 +259,12 @@ Sbar_DrawPic (int x, int y, qpic_t *pic)
 			  pic);
 }
 
+
 /*
 	Sbar_DrawSubPic
 
 	JACK: Draws a portion of the picture in the status bar.
 */
-
 void
 Sbar_DrawSubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 				 int height)
@@ -275,15 +274,13 @@ Sbar_DrawSubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 }
 
 
-/*
-	Sbar_DrawTransPic
-*/
 void
 Sbar_DrawTransPic (int x, int y, qpic_t *pic)
 {
 	Draw_Pic (x /* + ((vid.width - 320)>>1) */ , y + (vid.height - SBAR_HEIGHT),
 			  pic);
 }
+
 
 /*
 	Sbar_DrawCharacter
@@ -297,9 +294,7 @@ Sbar_DrawCharacter (int x, int y, int num)
 					 y + vid.height - SBAR_HEIGHT, num);
 }
 
-/*
-	Sbar_DrawString
-*/
+
 void
 Sbar_DrawString (int x, int y, char *str)
 {
@@ -307,9 +302,7 @@ Sbar_DrawString (int x, int y, char *str)
 				  y + vid.height - SBAR_HEIGHT, str);
 }
 
-/*
-	Sbar_itoa
-*/
+
 int
 Sbar_itoa (int num, char *buf)
 {
@@ -339,9 +332,6 @@ Sbar_itoa (int num, char *buf)
 }
 
 
-/*
-	Sbar_DrawNum
-*/
 void
 Sbar_DrawNum (int x, int y, int num, int digits, int color)
 {
@@ -368,6 +358,7 @@ Sbar_DrawNum (int x, int y, int num, int digits, int color)
 	}
 }
 
+
 //=============================================================================
 
 //ZOID: this should be MAX_CLIENTS, not MAX_SCOREBOARD!!
@@ -384,9 +375,7 @@ team_t      teams[MAX_CLIENTS];
 int         teamsort[MAX_CLIENTS];
 int         scoreboardteams;
 
-/*
-	Sbar_SortFrags
-*/
+
 void
 Sbar_SortFrags (qboolean includespec)
 {
@@ -412,6 +401,7 @@ Sbar_SortFrags (qboolean includespec)
 				fragsort[j + 1] = k;
 			}
 }
+
 
 void
 Sbar_SortTeams (void)
@@ -479,6 +469,7 @@ Sbar_SortTeams (void)
 			}
 }
 
+
 int
 Sbar_ColorForMap (int m)
 {
@@ -486,9 +477,6 @@ Sbar_ColorForMap (int m)
 }
 
 
-/*
-	Sbar_SoloScoreboard
-*/
 void
 Sbar_SoloScoreboard (void)
 {
@@ -506,11 +494,10 @@ Sbar_SoloScoreboard (void)
 	Sbar_DrawString (184, 4, str);
 }
 
+
 //=============================================================================
 
-/*
-	Sbar_DrawInventory
-*/
+
 void
 Sbar_DrawInventory (void)
 {
@@ -611,11 +598,10 @@ Sbar_DrawInventory (void)
 		}
 }
 
+
 //=============================================================================
 
-/*
-	Sbar_DrawFrags
-*/
+
 void
 Sbar_DrawFrags (void)
 {
@@ -672,12 +658,10 @@ Sbar_DrawFrags (void)
 	}
 }
 
+
 //=============================================================================
 
 
-/*
-	Sbar_DrawFace
-*/
 void
 Sbar_DrawFace (void)
 {
@@ -714,9 +698,7 @@ Sbar_DrawFace (void)
 	Sbar_DrawPic (112, 0, sb_faces[f][anim]);
 }
 
-/*
-	Sbar_DrawNormal
-*/
+
 void
 Sbar_DrawNormal (void)
 {
@@ -758,9 +740,7 @@ Sbar_DrawNormal (void)
 	Sbar_DrawNum (248, 0, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
 }
 
-/*
-	Sbar_Draw
-*/
+
 void
 Sbar_Draw (void)
 {
@@ -831,11 +811,10 @@ Sbar_Draw (void)
 		Sbar_MiniDeathmatchOverlay ();
 }
 
+
 //=============================================================================
 
-/*
-	Sbar_IntermissionNumber
-*/
+
 void
 Sbar_IntermissionNumber (int x, int y, int num, int digits, int color)
 {
@@ -861,6 +840,7 @@ Sbar_IntermissionNumber (int x, int y, int num, int digits, int color)
 		ptr++;
 	}
 }
+
 
 /*
 	Sbar_TeamOverlay
@@ -954,6 +934,7 @@ Sbar_TeamOverlay (void)
 	y += 8;
 	Sbar_DeathmatchOverlay (y);
 }
+
 
 /*
 	Sbar_DeathmatchOverlay
@@ -1110,6 +1091,7 @@ Sbar_DeathmatchOverlay (int start)
 		largegame = true;
 }
 
+
 /*
 	Sbar_MiniDeathmatchOverlay
 
@@ -1252,9 +1234,6 @@ Sbar_MiniDeathmatchOverlay (void)
 }
 
 
-/*
-	Sbar_IntermissionOverlay
-*/
 void
 Sbar_IntermissionOverlay (void)
 {
@@ -1268,9 +1247,6 @@ Sbar_IntermissionOverlay (void)
 }
 
 
-/*
-	Sbar_FinaleOverlay
-*/
 void
 Sbar_FinaleOverlay (void)
 {

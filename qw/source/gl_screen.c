@@ -41,6 +41,7 @@
 #include "QF/cmd.h"
 #include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/draw.h"
 #include "QF/keys.h"
 #include "QF/pcx.h"
 #include "QF/skin.h"
@@ -48,12 +49,12 @@
 #include "QF/tga.h"
 
 #include "cl_parse.h"
-#include "draw.h"
 #include "glquake.h"
 #include "host.h"
 #include "r_local.h"
 #include "sbar.h"
 #include "view.h"
+
 
 /*
 
@@ -101,6 +102,7 @@ console is:
 	
 
 */
+
 
 int         glx, gly, glwidth, glheight;
 
@@ -618,8 +620,8 @@ SCR_DrawConsole (void)
 }
 
 
-/* 
-						SCREEN SHOTS 
+/*
+   SCREEN SHOTS
 */
 
 
@@ -646,7 +648,7 @@ SCR_ScreenShot_f (void)
 
 
 /*
-Find closest color in the palette for named color
+  Find closest color in the palette for named color
 */
 int
 MipColor (int r, int g, int b)
