@@ -106,12 +106,13 @@ PR_LexString (void)
 	int         i;
 	int         mask;
 	int         boldnext;
+	int         quote;
 
 	pr_token_len = 0;
 	mask = 0x00;
 	boldnext = 0;
 
-	pr_file_p++;
+	quote = *pr_file_p++;
 	do {
 		c = *pr_file_p++;
 		if (!c)
@@ -123,11 +124,17 @@ PR_LexString (void)
 			if (!c)
 				error (0, "EOF inside quote");
 			switch (c) {
+				case '\\':
+					c = '\\';
+					break;
 				case 'n':
 					c = '\n';
 					break;
 				case '"':
 					c = '\"';
+					break;
+				case '\'':
+					c = '\'';
 					break;
 				case '0':
 				case '1':
@@ -197,7 +204,7 @@ PR_LexString (void)
 					error (0, "Unknown escape char");
 					break;
 			}
-		} else if (c == '\"') {
+		} else if (c == quote) {
 			pr_token[pr_token_len] = 0;
 			pr_token_type = tt_immediate;
 			pr_immediate_type = &type_string;

@@ -108,7 +108,17 @@ m		([\-+]?)
 						sscanf (yytext, "' %f %f %f %f '",
 								&yylval.vector_val[0], &yylval.vector_val[1],
 								&yylval.vector_val[2], &yylval.vector_val[3]);
-						return VECTOR_VAL;
+						return QUATERNION_VAL;
+					}
+
+'(\\[^xX0-7\n]|[^'\n]|\\[xX][0-9A-Fa-f]+|\\[0-7]+)*'	{
+						char *str = make_string (yytext);
+
+						if (str[1])
+							warning (0, "multibyte char constant");
+						yylval.integer_val = *str;
+						free (str);
+						return INT_VAL;
 					}
 
 ^#{s}+{DIGIT}+{s}+\"(\.|[^"])*\".*$ {
