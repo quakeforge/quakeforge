@@ -636,7 +636,7 @@ R_DrawViewModel (void)
 	if (chase_active->int_val)
 		return;
 
-	if (cl.items & IT_INVISIBILITY)
+	if (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
 		return;
 
 	if (cl.stats[STAT_HEALTH] <= 0)

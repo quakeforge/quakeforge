@@ -527,12 +527,12 @@ CL_ParseClientdata (int bits)
 // [always sent]    if (bits & SU_ITEMS)
 	i = MSG_ReadLong (net_message);
 
-	if (cl.items != i) {				// set flash times
+	if (cl.stats[STAT_ITEMS] != i) {				// set flash times
 		Sbar_Changed ();
 		for (j = 0; j < 32; j++)
-			if ((i & (1 << j)) && !(cl.items & (1 << j)))
+			if ((i & (1 << j)) && !(cl.stats[STAT_ITEMS] & (1 << j)))
 				cl.item_gettime[j] = cl.time;
-		cl.items = i;
+		cl.stats[STAT_ITEMS] = i;
 	}
 
 	cl.onground = (bits & SU_ONGROUND) != 0;

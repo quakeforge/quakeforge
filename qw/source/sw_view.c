@@ -52,7 +52,7 @@ V_CalcPowerupCshift (void)
 		return;
 
 	if (cl.stats[STAT_ITEMS] & IT_QUAD
-	    && cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
+		&& cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;

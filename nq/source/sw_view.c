@@ -49,28 +49,28 @@ V_CalcPowerupCshift (void)
 	if (!cl_cshift_powerup->int_val)
 		return;
 
-	if (cl.items & IT_QUAD
-		&& cl.items & IT_INVULNERABILITY) {
+	if (cl.stats[STAT_ITEMS] & IT_QUAD
+		&& cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
 		cl.cshifts[CSHIFT_POWERUP].percent = 30;
-	} else if (cl.items & IT_QUAD) {
+	} else if (cl.stats[STAT_ITEMS] & IT_QUAD) {
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
 		cl.cshifts[CSHIFT_POWERUP].percent = 30;
-	} else if (cl.items & IT_SUIT) {
+	} else if (cl.stats[STAT_ITEMS] & IT_SUIT) {
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
 		cl.cshifts[CSHIFT_POWERUP].percent = 20;
-	} else if (cl.items & IT_INVISIBILITY) {
+	} else if (cl.stats[STAT_ITEMS] & IT_INVISIBILITY) {
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 100;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 100;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 100;
 		cl.cshifts[CSHIFT_POWERUP].percent = 100;
-	} else if (cl.items & IT_INVULNERABILITY) {
+	} else if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;

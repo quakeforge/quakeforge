@@ -857,7 +857,7 @@ R_DrawViewModel (void)
 	if (!r_drawviewmodel->int_val || chase_active->int_val
 		|| envmap
 		|| !r_drawentities->int_val
-		|| (cl.items & IT_INVISIBILITY)
+		|| (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
 		|| cl.stats[STAT_HEALTH] <= 0 || !currententity->model)
 		return;
 
