@@ -1248,10 +1248,17 @@ PF_infokey (progs_t *pr)
 	e1 = NUM_FOR_EDICT (pr, e);
 	key = G_STRING (pr, OFS_PARM1);
 
+	if (sv_hide_version_info->int_val
+		&& (strequal (key, "*qf_version")
+			|| strequal (key, "*qsg_version")
+			|| strequal (key, "no_pogo_stick"))) {
+		e1 = -1;
+	}
+
 	if (e1 == 0) {
 		if ((value = Info_ValueForKey (svs.info, key)) == NULL || !*value)
 			value = Info_ValueForKey (localinfo, key);
-	} else if (e1 <= MAX_CLIENTS) {
+	} else if (e1 > 0 && e1 <= MAX_CLIENTS) {
 		if (!strcmp (key, "ip"))
 			value =
 				strcpy (ov,
@@ -1572,10 +1579,29 @@ PF_Checkextension (progs_t *pr)
 	G_FLOAT(pr, OFS_RETURN) = 0; //FIXME make this function actually useful :P
 }
 
+static void
+PF_sv_cvar (progs_t *pr)
+{
+	const char      *str;
+
+	str = G_STRING (pr, OFS_PARM0);
+
+	if (sv_hide_version_info->int_val
+		&& strequal (str, "sv_hide_version_info")) {
+		G_FLOAT (pr, OFS_RETURN) = 0;
+	} else {
+		G_FLOAT (pr, OFS_RETURN) = Cvar_VariableValue (str);
+	}
+}
+
 void
 SV_PR_Cmds_Init ()
 {
 	PR_Cmds_Init (&sv_pr_state);
+
+	sv_pr_state.builtins[45].proc = 0;	// (override standard builtin)
+	PR_AddBuiltin (&sv_pr_state, "cvar", PF_sv_cvar, 45);
+		// float (string s) cvar
 
 	PR_AddBuiltin (&sv_pr_state, "makevectors", PF_makevectors, 1);
 		// void (entity e) makevectors = #1

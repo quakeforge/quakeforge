@@ -382,6 +382,7 @@ typedef enum
 //============================================================================
 // FIXME: declare exported variables in their own relevant .h
 
+extern	struct cvar_s	*sv_hide_version_info;
 extern	struct cvar_s	*sv_highchars;
 
 extern	struct cvar_s	*sv_mintic, *sv_maxtic;

@@ -55,6 +55,7 @@ cvar_t     *r_skyname;
 cvar_t     *sv_progs;
 cvar_t     *pr_checkextensions;
 cvar_t     *sv_old_entity_free;
+cvar_t     *sv_hide_version_info;
 
 func_t	EndFrame;
 func_t	SpectatorConnect;
@@ -389,4 +390,9 @@ SV_Progs_Init_Cvars (void)
 								   "set this for buggy mods that rely on the"
 								   " old behaviour of entity freeing (eg,"
 								   " *TF)");
+	sv_hide_version_info = Cvar_Get ("sv_hide_version_info", "0", CVAR_ROM,
+									 NULL, "hide QuakeForge specific "
+									 "serverinfo strings from terminally "
+									 "stupid progs (eg, braindead TF "
+									 "variants)");
 }
