@@ -19,6 +19,7 @@ string (inputline_t il) InputLine_GetText = #0;
 	self = [super init];
 	control.x = aRect.origin.x;
 	control.y = aRect.origin.y;
+	control.xbase = control.ybase = 0;
 	control.cursor = NO;
 
 	il = InputLine_Create (aRect.size.height, aRect.size.width, char);
@@ -31,6 +32,12 @@ string (inputline_t il) InputLine_GetText = #0;
 {
 	InputLine_Destroy (il);
 	[super free];
+}
+
+- (void) setBasePos: (integer) x y: (integer) y
+{
+	control.xbase = x;
+	control.ybase = y;
 }
 
 - (void) setWidth: (integer)visibleWidth

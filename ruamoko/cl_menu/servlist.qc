@@ -6,19 +6,19 @@
 #include "controls_o.h"
 #include "client_menu.h"
 
-integer () servlist_favorates_draw =
+integer (integer x, integer y) servlist_favorates_draw =
 {
-	Draw_Pic (16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
-	Draw_CenterPic (160, 4, Draw_CachePic ("gfx/p_multi.lmp", 1));
-	Draw_String (54, 40, "Under Construction");
+	Draw_Pic (x + 16, y + 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
+	Draw_CenterPic (x + 160, y + 4, Draw_CachePic ("gfx/p_multi.lmp", 1));
+	Draw_String (x + 54, y + 40, "Under Construction");
 	return 1;
 };
 
-integer () servlist_all_draw =
+integer (integer x, integer y) servlist_all_draw =
 {
-	Draw_Pic (16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
-	Draw_CenterPic (160, 4, Draw_CachePic ("gfx/p_multi.lmp", 1));
-	Draw_String (54, 40, "Under Construction");
+	Draw_Pic (x + 16, y + 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
+	Draw_CenterPic (x + 160, y + 4, Draw_CachePic ("gfx/p_multi.lmp", 1));
+	Draw_String (x + 54, y + 40, "Under Construction");
 	return 1;
 };
 
@@ -27,21 +27,22 @@ integer serv_nempty;
 InputLine serv_maxping;
 InputLine serv_game;
 
-integer () servlist_filter_draw =
+integer (integer x, integer y) servlist_filter_draw =
 {
-    Draw_Pic (16, 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
-	Draw_CenterPic (160, 4, Draw_CachePic ("gfx/p_multi.lmp", 1));
-	Draw_String	(62, 40, "Max Ping........:");
-	text_box (206, 32, 4, 1);
+    Draw_Pic (x + 16, y + 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
+	Draw_CenterPic (x + 160, y + 4, Draw_CachePic ("gfx/p_multi.lmp", 1));
+	Draw_String	(x + 62, y + 40, "Max Ping........:");
+	text_box (x + 206, y + 32, 4, 1);
+	[serv_maxping setBasePos:x y:y];
 	[serv_maxping draw:1];
-	Draw_String (62, 56, "Game Contains...:");
-	text_box (206, 48, 8, 1);
-	Draw_String (62, 72, "Server Not Full.:");
-	Draw_String (206, 72, ((serv_nfull == 0) ? "No" : "Yes"));
-	Draw_String (62, 88, "Server Not Empty:");
-	Draw_String (206, 88, ((serv_nempty == 0) ? "No" : "Yes"));
-	Draw_String (62, 96, "Under Construction");
-	opt_cursor (54, (Menu_GetIndex () * 16) + 40);
+	Draw_String (x + 62, y + 56, "Game Contains...:");
+	text_box (x + 206, y + 48, 8, 1);
+	Draw_String (x + 62, y + 72, "Server Not Full.:");
+	Draw_String (x + 206, y + 72, ((serv_nfull == 0) ? "No" : "Yes"));
+	Draw_String (x + 62, y + 88, "Server Not Empty:");
+	Draw_String (x + 206, y + 88, ((serv_nempty == 0) ? "No" : "Yes"));
+	Draw_String (x + 62, y + 96, "Under Construction");
+	opt_cursor (x + 54, y + (Menu_GetIndex () * 16) + 40);
 	return 1;
 };
 

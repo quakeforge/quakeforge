@@ -132,9 +132,10 @@ void Con_Demolist_DEM_f (void);
 // in general :P)
 void C_DrawInputLine (inputline_t *il);
 
+struct view_s;
 void Menu_Init (void);
 void Menu_Load (void);
-void Menu_Draw (void);
+void Menu_Draw (struct view_s *view);
 void Menu_KeyEvent (knum_t key, short unicode, qboolean down);
 void Menu_Enter (void);
 void Menu_Leave (void);

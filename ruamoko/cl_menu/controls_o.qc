@@ -267,25 +267,25 @@ CB_ME_basic_control_binding =
 
 	Draws the menu for the basic control bindins
 */
-integer () 
+integer (integer x, integer y) 
 DRAW_basic_control_binding = 
 {
 	local integer	cursor_pad = 40, bind_desc_pad, hl, i;
 
 	bind_desc_pad = 120;
 
-	Draw_String (20, 10, "Backspace/Delete: Del binding");
-	Draw_String (20, 20, "Enter:            New binding");
+	Draw_String (x + 20, y + 10, "Backspace/Delete: Del binding");
+	Draw_String (x + 20, y + 20, "Enter:            New binding");
 
 
 	hl = [movement_bindings count];	
 	for(i = 0; i < hl; i++) {
 		local binding_t [] binding = [movement_bindings getItemAt: i];
-		draw_val_item   (20, 40 + ( i * 10), bind_desc_pad, 
+		draw_val_item   (x + 20, y + 40 + ( i * 10), bind_desc_pad, 
 			binding.text, binding.keys);
 	}
 
-	opt_cursor  (12, (Menu_GetIndex () * 10) + cursor_pad);
+	opt_cursor  (x + 12, y + (Menu_GetIndex () * 10) + cursor_pad);
 
 	return 1;
 };
@@ -344,7 +344,7 @@ CB_ME_misc_control_binding =
 
 	Draw the bindings for the misc controls
 */
-integer () 
+integer (integer x, integer y) 
 DRAW_misc_control_binding =
 {
 	local integer cursor_pad = 40, bind_desc_pad;
@@ -352,17 +352,17 @@ DRAW_misc_control_binding =
 
 	bind_desc_pad = 120;
 
-	Draw_String		(20, 10, "Backspace/Delete: Del binding");
-	Draw_String     (20, 20, "Enter:            New binding");
+	Draw_String		(x + 20, y + 10, "Backspace/Delete: Del binding");
+	Draw_String     (x + 20, y + 20, "Enter:            New binding");
 
 	hl = [misc_bindings count];	
 	for(i=0;i < hl; i++) {
 		local binding_t [] binding = [misc_bindings getItemAt: i];
-		draw_val_item   (20, 40+(i*10), bind_desc_pad, 
+		draw_val_item   (x + 20, y + 40+(i*10), bind_desc_pad, 
 			binding.text, binding.keys);
 	}
 
-	opt_cursor  (12, (Menu_GetIndex() * 10) + cursor_pad);
+	opt_cursor  (x + 12, y + (Menu_GetIndex() * 10) + cursor_pad);
 	return 1;
 };
 
@@ -421,24 +421,24 @@ CB_ME_weapon_control_binding =
 
 	Draw the weapon binding menu
 */
-integer () 
+integer (integer x, integer y) 
 DRAW_weapon_control_binding =
 {
 	local integer	cursor_pad = 40, bind_desc_pad, hl, i;
 
 	bind_desc_pad = 120;
 
-	Draw_String	(20, 10, "Backspace/Delete: Del binding");
-	Draw_String (20, 20, "Enter:            New binding");
+	Draw_String	(x + 20, y + 10, "Backspace/Delete: Del binding");
+	Draw_String (x + 20, y + 20, "Enter:            New binding");
 
 	hl = [weapon_bindings count];	
 	for(i = 0; i < hl; i++) {
 		local binding_t [] binding = [weapon_bindings getItemAt: i];
-		draw_val_item (20, 40 + (i * 10), bind_desc_pad, 
+		draw_val_item (x + 20, y + 40 + (i * 10), bind_desc_pad, 
 			binding.text, binding.keys);
 	}
 
-	opt_cursor  (12, (Menu_GetIndex () * 10) + cursor_pad);
+	opt_cursor  (x + 12, y + (Menu_GetIndex () * 10) + cursor_pad);
 
 	return 1;
 };

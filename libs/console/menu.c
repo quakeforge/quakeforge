@@ -48,6 +48,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+#include "QF/view.h"
 
 typedef struct menu_pic_s {
 	struct menu_pic_s *next;
@@ -504,14 +505,17 @@ Menu_Load (void)
 }
 
 void
-Menu_Draw (void)
+Menu_Draw (view_t *view)
 {
 	menu_pic_t *m_pic;
-	int         i;
+	int         i, x, y;
 	menu_item_t *item;
 
 	if (!menu)
 		return;
+
+	x = view->xabs;
+	y = view->yabs;
 
 	if (menu->fadescreen)
 		Draw_FadeScreen ();
@@ -519,6 +523,8 @@ Menu_Draw (void)
 	*menu_pr_state.globals.time = *menu_pr_state.time;
 
 	if (menu->draw) {
+		P_INT (&menu_pr_state, 0) = x;
+		P_INT (&menu_pr_state, 1) = y;
 		PR_ExecuteProgram (&menu_pr_state, menu->draw);
 		if (R_INT (&menu_pr_state))
 			return;
@@ -530,14 +536,15 @@ Menu_Draw (void)
 		if (!pic)
 			continue;
 		if (m_pic->width > 0 && m_pic->height > 0)
-			Draw_SubPic (m_pic->x, m_pic->y, pic, m_pic->srcx, m_pic->srcy,
+			Draw_SubPic (x + m_pic->x, y + m_pic->y, pic,
+						 m_pic->srcx, m_pic->srcy,
 						 m_pic->width, m_pic->height);
 		else
-			Draw_Pic (m_pic->x, m_pic->y, pic);
+			Draw_Pic (x + m_pic->x, y + m_pic->y, pic);
 	}
 	for (i = 0; i < menu->num_items; i++) {
 		if (menu->items[i]->text) {
-			Draw_String (menu->items[i]->x + 8, menu->items[i]->y,
+			Draw_String (x + menu->items[i]->x + 8, y + menu->items[i]->y,
 						 menu->items[i]->text);
 		}
 	}
@@ -545,11 +552,11 @@ Menu_Draw (void)
 		return;
 	item = menu->items[menu->cur_item];
 	if (menu->cursor) {
-		P_INT (&menu_pr_state, 0) = item->x;
-		P_INT (&menu_pr_state, 1) = item->y;
+		P_INT (&menu_pr_state, 0) = x + item->x;
+		P_INT (&menu_pr_state, 1) = y + item->y;
 		PR_ExecuteProgram (&menu_pr_state, menu->cursor);
 	} else {
-		Draw_Character (item->x, item->y,
+		Draw_Character (x + item->x, y + item->y,
 						12 + ((int) (*con_data.realtime * 4) & 1));
 	}
 }

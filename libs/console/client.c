@@ -47,6 +47,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/dstring.h"
+#include "QF/gib.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/plugin.h"
@@ -56,13 +57,14 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
-#include "QF/gib.h"
+#include "QF/view.h"
 
 #include "compat.h"
 
 // XXX check InputLine.h in ruamoko/include
 typedef struct {
 	int         x, y;
+	int         xbase, ybase;
 	int         cursor;
 } il_data_t;
 
@@ -83,8 +85,6 @@ static float con_times[NUM_CON_TIMES];	// realtime time the line was generated
 										// for transparent notify lines
 
 static int  con_totallines;				// total lines in console scrollback
-static int  con_vislines;
-static int  con_notifylines;			// scan lines to clear for notify lines
 
 static qboolean con_debuglog;
 static qboolean chat_team;
@@ -93,6 +93,11 @@ static qboolean chat_team;
 static inputline_t *input_line;
 static inputline_t *say_line;
 static inputline_t *say_team_line;
+
+static view_t *console_view;
+static view_t *say_view;
+static view_t *notify_view;
+static view_t *menu_view;
 
 static qboolean con_initialized;
 
@@ -219,6 +224,8 @@ Resize (old_console_t *con)
 							
 	con->current = con_totallines - 1;
 	con->display = con->current;
+
+	view_resize (con_data.view, vid.width, vid.height);
 }
 
 /*
@@ -349,73 +356,6 @@ C_GIB_Print_Center_f (void)
 		GIB_USAGE ("text");
 	} else
 		SCR_CenterPrint (GIB_Argv(1));
-}
-
-
-static void
-C_Init (void)
-{
-	Menu_Init ();
-
-	con_notifytime = Cvar_Get ("con_notifytime", "3", CVAR_NONE, NULL,
-							   "How long in seconds messages are displayed "
-							   "on screen");
-	cl_chatmode = Cvar_Get ("cl_chatmode", "2", CVAR_NONE, NULL,
-							"Controls when console text will be treated as a "
-							"chat message: 0 - never, 1 - always, 2 - smart");
-
-	con_debuglog = COM_CheckParm ("-condebug");
-
-	con = &con_main;
-	con_linewidth = -1;
-
-	input_line = Con_CreateInputLine (32, MAXCMDLINE, ']');
-	input_line->complete = Con_BasicCompleteCommandLine;
-	input_line->enter = C_ExecLine;
-	input_line->width = con_linewidth;
-	input_line->user_data = 0;
-	input_line->draw = 0;
-
-	say_line = Con_CreateInputLine (32, MAXCMDLINE, ' ');
-	say_line->complete = 0;
-	say_line->enter = C_Say;
-	say_line->width = con_linewidth - 5;
-	say_line->user_data = 0;
-	say_line->draw = 0;
-
-	say_team_line = Con_CreateInputLine (32, MAXCMDLINE, ' ');
-	say_team_line->complete = 0;
-	say_team_line->enter = C_SayTeam;
-	say_team_line->width = con_linewidth - 10;
-	say_team_line->user_data = 0;
-	say_team_line->draw = 0;
-
-	C_CheckResize ();
-
-	Con_Printf ("Console initialized.\n");
-
-	// register our commands
-	Cmd_AddCommand ("toggleconsole", ToggleConsole_f,
-					"Toggle the console up and down");
-	Cmd_AddCommand ("togglechat", ToggleChat_f,
-					"Toggle the console up and down");
-	Cmd_AddCommand ("messagemode", MessageMode_f,
-					"Prompt to send a message to everyone");
-	Cmd_AddCommand ("messagemode2", MessageMode2_f,
-					"Prompt to send a message to only people on your team");
-	Cmd_AddCommand ("clear", Clear_f, "Clear the console");
-	Cmd_AddCommand ("condump", Condump_f, "dump the console text to a "
-					"file");
-					
-	// register GIB builtins
-	GIB_Builtin_Add ("print::center", C_GIB_Print_Center_f);
-	
-	con_initialized = true;
-}
-
-static void
-C_Shutdown (void)
-{
 }
 
 static void
@@ -627,120 +567,21 @@ void
 C_DrawInputLine (inputline_t *il)
 {
 	il_data_t   *data = il->user_data;
-	DrawInputLine (data->x, data->y, data->cursor, il);
+	DrawInputLine (data->xbase + data->x, data->xbase + data->y, data->cursor,
+				   il);
 }
 
 static void
-DrawInput (void)
+draw_input (view_t *view)
 {
 	if (key_dest != key_console)// && !con_data.force_commandline)
 		return;				// don't draw anything (always draw if not active)
 
-	DrawInputLine (8, con_vislines - 22, 1, input_line);
-}
-
-/*
-	DrawNotify
-
-	Draws the last few lines of output transparently over the game top
-*/
-static void
-DrawNotify (void)
-{
-	int			i, v;
-	char	   *text;
-	float		time;
-
-	v = 0;
-	for (i = con->current - NUM_CON_TIMES + 1; i <= con->current; i++) {
-		if (i < 0)
-			continue;
-		time = con_times[i % NUM_CON_TIMES];
-		if (time == 0)
-			continue;
-		time = *con_data.realtime - time;
-		if (time > con_notifytime->value)
-			continue;
-		text = con->text + (i % con_totallines) * con_linewidth;
-
-		clearnotify = 0;
-		scr_copytop = 1;
-
-		Draw_nString (8, v, text, con_linewidth);
-		v += 8;
-	}
-
-	if (key_dest == key_message) {
-		clearnotify = 0;
-		scr_copytop = 1;
-
-		if (chat_team) {
-			Draw_String (8, v, "say_team:");
-			DrawInputLine (80, v, 1, say_team_line);
-		} else {
-			Draw_String (8, v, "say:");
-			DrawInputLine (40, v, 1, say_line);
-		}
-		v += 8;
-	}
-
-	if (v > con_notifylines)
-		con_notifylines = v;
-}
-
-/*
-	DrawConsole
-
-	Draws the console with the solid background
-*/
-static void
-DrawConsole (int lines)
-{
-	char	   *text;
-	int			row, rows, i, x, y;
-
-	if (lines <= 0)
-		return;
-
-	// draw the background
-	Draw_ConsoleBackground (lines);
-
-	// draw the text
-	con_vislines = lines;
-
-	// changed to line things up better
-	rows = (lines - 22) >> 3;			// rows of text to draw
-
-	y = lines - 30;
-
-	// draw from the bottom up
-	if (con->display != con->current) {
-		// draw arrows to show the buffer is backscrolled
-		for (x = 0; x < con_linewidth; x += 4)
-			Draw_Character ((x + 1) << 3, y, '^');
-
-		y -= 8;
-		rows--;
-	}
-	
-	row = con->display;
-	for (i = 0; i < rows; i++, y -= 8, row--) {
-		if (row < 0)
-			break;
-		if (con->current - row >= con_totallines)
-			break;						// past scrollback wrap point
-
-		text = con->text + (row % con_totallines) * con_linewidth;
-
-		Draw_nString(8, y, text, con_linewidth);
-	}
-
-	// draw the input prompt, user text, and cursor if desired
-	DrawInput ();
+	DrawInputLine (view->xabs + 8, view->yabs, 1, input_line);
 }
 
 static void
-DrawDownload (int lines)
+draw_download (view_t *view)
 {
 	char		dlbar[1024];
 	const char *text;
@@ -781,23 +622,107 @@ DrawDownload (int lines)
 			  " %02d%%", *con_data.dl_percent);
 
 	// draw it
-	y = lines - 22 + 8;
-	for (i = 0; i < strlen (dlbar); i++)
-		Draw_Character ((i + 1) << 3, y, dlbar[i]);
+	Draw_String (view->xabs, view->yabs, dlbar);
+}
+
+static void
+draw_console_text (view_t *view)
+{
+	char	   *text;
+	int			row, rows, i, x, y;
+
+	rows = view->ylen >> 3;			// rows of text to draw
+
+	x = view->xabs + 8;
+	y = view->yabs + view->ylen - 8;
+
+	// draw from the bottom up
+	if (con->display != con->current) {
+		// draw arrows to show the buffer is backscrolled
+		for (i = 0; i < con_linewidth; i += 4)
+			Draw_Character (x + (i << 3), y, '^');
+
+		y -= 8;
+		rows--;
+	}
+	
+	row = con->display;
+	for (i = 0; i < rows; i++, y -= 8, row--) {
+		if (row < 0)
+			break;
+		if (con->current - row >= con_totallines)
+			break;						// past scrollback wrap point
+
+		text = con->text + (row % con_totallines) * con_linewidth;
+
+		Draw_nString(x, y, text, con_linewidth);
+	}
+}
+
+static void
+draw_console (view_t *view)
+{
+	// draw the background
+	Draw_ConsoleBackground (view->ylen);
+
+	// draw everything else
+	view_draw (view);
+}
+
+static void
+draw_say (view_t *view)
+{
+	if (key_dest == key_message) {
+		clearnotify = 0;
+		scr_copytop = 1;
+
+		if (chat_team) {
+			Draw_String (view->xabs + 8, view->yabs, "say_team:");
+			DrawInputLine (view->xabs + 80, view->yabs, 1, say_team_line);
+		} else {
+			Draw_String (view->xabs + 8, view->yabs, "say:");
+			DrawInputLine (view->xabs + 40, view->yabs, 1, say_line);
+		}
+	}
+}
+
+static void
+draw_notify (view_t *view)
+{
+	int			i, x, y;
+	char	   *text;
+	float		time;
+
+	x = view->xabs + 8;
+	y = view->yabs;
+	for (i = con->current - NUM_CON_TIMES + 1; i <= con->current; i++) {
+		if (i < 0)
+			continue;
+		time = con_times[i % NUM_CON_TIMES];
+		if (time == 0)
+			continue;
+		time = *con_data.realtime - time;
+		if (time > con_notifytime->value)
+			continue;
+		text = con->text + (i % con_totallines) * con_linewidth;
+
+		clearnotify = 0;
+		scr_copytop = 1;
+
+		Draw_nString (x, y, text, con_linewidth);
+		y += 8;
+	}
 }
 
 static void
 C_DrawConsole (int lines)
 {
-	if (lines) {
-		DrawConsole (lines);
-		DrawDownload (lines);
-	} else {
-		if (key_dest == key_game || key_dest == key_message)
-			DrawNotify ();				// only draw notify in game
-	}
-	if (key_dest == key_menu)
-		Menu_Draw ();
+	if (console_view->ylen != lines)
+		view_resize (console_view, console_view->xlen, lines);
+	console_view->enabled = lines != 0;
+	menu_view->enabled = key_dest == key_menu;
+
+	view_draw (con_data.view);
 }
 
 static void
@@ -816,6 +741,116 @@ C_NewMap (void)
 		Menu_Load ();
 	}
 	strcpy (old_gamedir, qfs_gamedir->gamedir);
+}
+
+static void
+C_Init (void)
+{
+	view_t     *view;
+
+	Menu_Init ();
+
+	con_notifytime = Cvar_Get ("con_notifytime", "3", CVAR_NONE, NULL,
+							   "How long in seconds messages are displayed "
+							   "on screen");
+	cl_chatmode = Cvar_Get ("cl_chatmode", "2", CVAR_NONE, NULL,
+							"Controls when console text will be treated as a "
+							"chat message: 0 - never, 1 - always, 2 - smart");
+
+	con_debuglog = COM_CheckParm ("-condebug");
+
+	con_data.view = view_new (0, 0, 320, 200, grav_northeast);
+	con_data.view->draw = view_draw;
+
+	console_view = view_new (0, 0, 320, 200, grav_northwest);
+	say_view     = view_new (0, 0, 320, 32, grav_northwest);
+	notify_view  = view_new (0, 8, 320, 32, grav_northwest);
+	menu_view    = view_new (0, 0, 320, 200, grav_center);
+
+	view_add (con_data.view, say_view);
+	view_add (con_data.view, notify_view);
+	view_add (con_data.view, console_view);
+	view_add (con_data.view, menu_view);
+
+	console_view->draw = draw_console;
+	console_view->enabled = 0;
+	console_view->resize_x = console_view->resize_y = 1;
+
+	say_view->draw = draw_say;
+	say_view->enabled = 0;
+	say_view->resize_x = 1;
+
+	notify_view->draw = draw_notify;
+	notify_view->resize_x = 1;
+
+	menu_view->draw = Menu_Draw;
+	menu_view->enabled = 0;
+
+	view = view_new (0, 0, 320, 170, grav_northwest);
+	view->draw = draw_console_text;
+	view->resize_x = view->resize_y = 1;
+	view_add (console_view, view);
+
+	view = view_new (0, 12, 320, 10, grav_southwest);
+	view->draw = draw_input;
+	view->resize_x = 1;
+	view_add (console_view, view);
+
+	view = view_new (0, 2, 320, 11, grav_southwest);
+	view->draw = draw_download;
+	view->resize_x = 1;
+	view_add (console_view, view);
+
+	con = &con_main;
+	con_linewidth = -1;
+
+	input_line = Con_CreateInputLine (32, MAXCMDLINE, ']');
+	input_line->complete = Con_BasicCompleteCommandLine;
+	input_line->enter = C_ExecLine;
+	input_line->width = con_linewidth;
+	input_line->user_data = 0;
+	input_line->draw = 0;
+
+	say_line = Con_CreateInputLine (32, MAXCMDLINE, ' ');
+	say_line->complete = 0;
+	say_line->enter = C_Say;
+	say_line->width = con_linewidth - 5;
+	say_line->user_data = 0;
+	say_line->draw = 0;
+
+	say_team_line = Con_CreateInputLine (32, MAXCMDLINE, ' ');
+	say_team_line->complete = 0;
+	say_team_line->enter = C_SayTeam;
+	say_team_line->width = con_linewidth - 10;
+	say_team_line->user_data = 0;
+	say_team_line->draw = 0;
+
+	C_CheckResize ();
+
+	Con_Printf ("Console initialized.\n");
+
+	// register our commands
+	Cmd_AddCommand ("toggleconsole", ToggleConsole_f,
+					"Toggle the console up and down");
+	Cmd_AddCommand ("togglechat", ToggleChat_f,
+					"Toggle the console up and down");
+	Cmd_AddCommand ("messagemode", MessageMode_f,
+					"Prompt to send a message to everyone");
+	Cmd_AddCommand ("messagemode2", MessageMode2_f,
+					"Prompt to send a message to only people on your team");
+	Cmd_AddCommand ("clear", Clear_f, "Clear the console");
+	Cmd_AddCommand ("condump", Condump_f, "dump the console text to a "
+					"file");
+					
+	// register GIB builtins
+	GIB_Builtin_Add ("print::center", C_GIB_Print_Center_f);
+	
+	con_initialized = true;
+}
+
+static void
+C_Shutdown (void)
+{
 }
 
 static general_funcs_t plugin_info_general_funcs = {

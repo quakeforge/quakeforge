@@ -57,6 +57,8 @@ struct view_s {
 	int     max_children;
 	void    (*draw)(view_t *view);
 	unsigned enabled:1;
+	unsigned resize_x:1;
+	unsigned resize_y:1;
 };
 
 
@@ -65,5 +67,7 @@ void view_add (view_t *par, view_t *view);
 void view_remove (view_t *par, view_t *view);
 void view_delete (view_t *view);
 void view_draw (view_t *view);
+void view_resize (view_t *view, int xl, int yl);
+void view_move (view_t *view, int xp, int yp);
 
 #endif//__qf_view_h

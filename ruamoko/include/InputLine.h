@@ -18,6 +18,7 @@ typedef _inputline_t [] inputline_t;
 
 struct il_data_t = {
 	integer		x, y;
+	integer		xbase, ybase;
 	BOOL		cursor;
 };
 
@@ -33,6 +34,7 @@ struct il_data_t = {
 //-initAt:(Point)p HistoryLines:(integer)l LineSize:(integer)s PromptChar:(integer)prompt;
 - (void) free;
 
+- (void) setBasePos: (integer) x y: (integer) y;
 - (void) setWidth: (integer)width;
 - (void) draw: (BOOL)cursor;
 

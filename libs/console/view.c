@@ -53,12 +53,24 @@ view_new (int xp, int yp, int xl, int yl, grav_t grav)
 	view->xlen = xl;
 	view->ylen = yl;
 	view->gravity = grav;
+	view->enabled = 1;
 	return view;
 }
 
-void
-view_add (view_t *par, view_t *view)
+static void
+setgeometry (view_t *view)
 {
+	int         i;
+	view_t     *par = view->parent;
+
+	if (!par) {
+		view->xabs = view->xrel = view->xpos;
+		view->yabs = view->yrel = view->ypos;
+		for (i = 0; i < view->num_children; i++)
+			setgeometry (view->children[i]);
+		return;
+	}
+
 	switch (view->gravity) {
 		case grav_center:
 			view->xrel = view->xpos + (par->xlen - view->xlen) / 2;
@@ -99,6 +111,13 @@ view_add (view_t *par, view_t *view)
 	}
 	view->xabs = par->xabs + view->xrel;
 	view->yabs = par->yabs + view->yrel;
+	for (i = 0; i < view->num_children; i++)
+		setgeometry (view->children[i]);
+}
+
+void
+view_add (view_t *par, view_t *view)
+{
 	view->parent = par;
 	if (par->num_children == par->max_children) {
 		par->max_children += 8;
@@ -107,7 +126,8 @@ view_add (view_t *par, view_t *view)
 		memset (par->children + par->num_children, 0,
 				(par->max_children - par->num_children) * sizeof (view_t *));
 	}
-	par->children[par->max_children++] = view;
+	par->children[par->num_children++] = view;
+	setgeometry (view);
 }
 
 void
@@ -145,4 +165,41 @@ view_draw (view_t *view)
 		if (v->enabled && v->draw)
 			v->draw (v);
 	}
+}
+
+void
+view_resize (view_t *view, int xl, int yl)
+{
+	int         i, xd, yd;
+
+	xd = xl - view->xlen;
+	yd = yl - view->ylen;
+	view->xlen = xl;
+	view->ylen = yl;
+	setgeometry (view);
+	for (i = 0; i < view->num_children; i++) {
+		view_t     *v = view->children[i];
+
+		if (v->resize_x && v->resize_y) {
+			view_resize (v, v->xlen + xd, v->ylen + yd);
+		} else if (v->resize_x) {
+			view_resize (v, v->xlen + xd, v->ylen);
+		} else if (v->resize_y) {
+			view_resize (v, v->xlen, v->ylen + yd);
+		} else {
+			setgeometry (v);
+		}
+	}
+}
+
+void
+view_move (view_t *view, int xp, int yp)
+{
+	int         i;
+
+	view->xpos = xp;
+	view->ypos = yp;
+	setgeometry (view);
+	for (i = 0; i < view->num_children; i++)
+		setgeometry (view->children[i]);
 }

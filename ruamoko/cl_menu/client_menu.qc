@@ -132,25 +132,27 @@ void () load_save_f =
 		Menu_SelectMenu ("save");
 };
 
-integer () load_draw =
+integer (integer x, integer y) load_draw =
 {
 	local integer i;
 
-	Draw_CenterPic (160, 4, Draw_CachePic ("gfx/p_load.lmp", 1));
+	Draw_CenterPic (x + 160, y + 4, Draw_CachePic ("gfx/p_load.lmp", 1));
 	for (i=0 ; i< MAX_SAVEGAMES; i++)
-		Draw_String (16, 32 + 8 * i, filenames[i]);
-	Draw_Character (8, 32 + load_cursor * 8, 12 + (integer) (time * 4) & 1);
+		Draw_String (x + 16, y + 32 + 8 * i, filenames[i]);
+	Draw_Character (x + 8, y + 32 + load_cursor * 8,
+					12 + (integer) (time * 4) & 1);
 	return 1;
 };
 
-integer () save_draw =
+integer (integer x, integer y) save_draw =
 {
 	local integer i;
 
-	Draw_CenterPic (160, 4, Draw_CachePic ("gfx/p_save.lmp", 1));
+	Draw_CenterPic (x + 160, y + 4, Draw_CachePic ("gfx/p_save.lmp", 1));
 	for (i=0 ; i< MAX_SAVEGAMES; i++)
-		Draw_String (16, 32 + 8 * i, filenames[i]);
-	Draw_Character (8, 32 + save_cursor * 8, 12 + (integer) (time * 4) & 1);
+		Draw_String (x + 16, y + 32 + 8 * i, filenames[i]);
+	Draw_Character (x + 8, y + 32 + save_cursor * 8,
+					12 + (integer) (time * 4) & 1);
 	return 1;
 };
 
@@ -249,13 +251,13 @@ integer (integer key, integer unicode, integer down) quit_keyevent =
 	return 0;
 };
 
-integer () quit_draw =
+integer (integer x, integer y) quit_draw =
 {
-	text_box (56, 76, 24, 4);
-	Draw_String (64, 84, quitMessage[quit_index * 4 + 0]);
-	Draw_String (64, 92, quitMessage[quit_index * 4 + 1]);
-	Draw_String (64, 100, quitMessage[quit_index * 4 + 2]);
-	Draw_String (64, 108, quitMessage[quit_index * 4 + 3]);
+	text_box (x + 56, y + 76, 24, 4);
+	Draw_String (x + 64, y + 84, quitMessage[quit_index * 4 + 0]);
+	Draw_String (x + 64, y + 92, quitMessage[quit_index * 4 + 1]);
+	Draw_String (x + 64, y + 100, quitMessage[quit_index * 4 + 2]);
+	Draw_String (x + 64, y + 108, quitMessage[quit_index * 4 + 3]);
 	return 1;
 };
 
@@ -310,37 +312,40 @@ InputLine lanConfig_port_il;
 InputLine lanConfig_join_il;
 InputLine input_active;
 
-integer () join_draw =
+integer (integer x, integer y) join_draw =
 {
-	local integer f = (320 - 26 * 8) / 2;
-	text_box (f, 134, 24, 4);
-	Draw_String (f, 142, " Commonly used to play  ");
-	Draw_String (f, 150, " over the Internet, but ");
-	Draw_String (f, 158, " also used on a Local   ");
-	Draw_String (f, 166, " Area Network.          ");
+	local integer f = x + (320 - 26 * 8) / 2;
+	text_box (f, y + 134, 24, 4);
+	Draw_String (f, y + 142, " Commonly used to play  ");
+	Draw_String (f, y + 150, " over the Internet, but ");
+	Draw_String (f, y + 158, " also used on a Local   ");
+	Draw_String (f, y + 166, " Area Network.          ");
 	return 0;
 };
 
-integer () lanconfig_draw =
+integer (integer x, integer y) lanconfig_draw =
 {
-	local integer basex = 54;
+	local integer basex = 54 + x;
 	local string startJoin = JoiningGame ? "Join Game" : "New Game";
 	local string protocol = "UDP";
 
-	Draw_String (basex, 32, sprintf ("%s - %s", startJoin, protocol));
+	Draw_String (basex, y + 32, sprintf ("%s - %s", startJoin, protocol));
 	basex += 8;
-	Draw_String (basex, 52, "Address:");
-	Draw_String (basex + 9 * 8, 52, "127.0.0.1");
-	Draw_String (basex, lanConfig_cursor_table[0], "Port");
-	text_box (basex + 8 * 8, lanConfig_cursor_table[0] - 8, 6, 1);
+	Draw_String (basex, y + 52, "Address:");
+	Draw_String (basex + 9 * 8, y + 52, "127.0.0.1");
+	Draw_String (basex, y + lanConfig_cursor_table[0], "Port");
+	text_box (basex + 8 * 8, y + lanConfig_cursor_table[0] - 8, 6, 1);
+	[lanConfig_port_il setBasePos:x y:y];
 	[lanConfig_port_il draw:lanConfig_cursor == 0 && input_active];
-	Draw_String (basex + 9 * 8, lanConfig_cursor_table[0], lanConfig_portname);
+	Draw_String (basex + 9 * 8, y + lanConfig_cursor_table[0],
+				 lanConfig_portname);
 
 	if (JoiningGame) {
 		Draw_String (basex, lanConfig_cursor_table[1], "Search for local "
 					 "games...");
 		Draw_String (basex, 108, "Join game at:");
 		text_box (basex + 8, lanConfig_cursor_table[2] - 8, 22, 1);
+		[lanConfig_join_il setBasePos:x y:y];
 		[lanConfig_join_il draw:lanConfig_cursor == 2 && input_active];
 		Draw_String (basex + 16, lanConfig_cursor_table[2],
 					 lanConfig_joinname);
