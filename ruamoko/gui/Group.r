@@ -14,6 +14,7 @@
 - (void) dealloc
 {
 	[views dealloc];
+	[super dealloc];
 }
 
 - (View) addView: (View)aView

@@ -35,7 +35,8 @@ integer (integer x, integer y) servlist_filter_draw =
 	Draw_String	(x + 62, y + 40, "Max Ping........:");
 	text_box (x + 206, y + 32, 4, 1);
 	[serv_maxping setBasePos:x y:y];
-	[serv_maxping draw:1];
+	[serv_maxping cursor:1];
+	[serv_maxping draw];
 	Draw_String (x + 62, y + 56, "Game Contains...:");
 	text_box (x + 206, y + 48, 8, 1);
 	Draw_String (x + 62, y + 72, "Server Not Full.:");

@@ -12,6 +12,7 @@
 -(void)dealloc
 {
 	str_free (pic_name);
+	[super dealloc];
 }
 
 -(void)setPic:(string)pic

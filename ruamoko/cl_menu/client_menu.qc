@@ -339,9 +339,9 @@ integer (integer x, integer y) lanconfig_draw =
 	Draw_String (basex, y + 52, "Address:");
 	Draw_String (basex + 9 * 8, y + 52, "127.0.0.1");
 	Draw_String (basex, y + lanConfig_cursor_table[0], "Port");
-	text_box (basex + 8 * 8, y + lanConfig_cursor_table[0] - 8, 6, 1);
 	[lanConfig_port_il setBasePos:x y:y];
-	[lanConfig_port_il draw:lanConfig_cursor == 0 && input_active];
+	[lanConfig_port_il cursor:lanConfig_cursor == 0 && input_active];
+	[lanConfig_port_il draw];
 	Draw_String (basex + 9 * 8, y + lanConfig_cursor_table[0],
 				 lanConfig_portname);
 
@@ -349,9 +349,9 @@ integer (integer x, integer y) lanconfig_draw =
 		Draw_String (basex, y + lanConfig_cursor_table[1], "Search for local "
 					 "games...");
 		Draw_String (basex, y + 108, "Join game at:");
-		text_box (basex + 8, y + lanConfig_cursor_table[2] - 8, 22, 1);
 		[lanConfig_join_il setBasePos:x y:y];
-		[lanConfig_join_il draw:lanConfig_cursor == 2 && input_active];
+		[lanConfig_join_il cursor:lanConfig_cursor == 2 && input_active];
+		[lanConfig_join_il draw];
 		Draw_String (basex + 16, y + lanConfig_cursor_table[2],
 					 lanConfig_joinname);
 	} else {
@@ -490,9 +490,9 @@ void () main_menu =
 
 void () menu_init =
 {
-	lanConfig_port_il = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:126 :lanConfig_cursor_table[0] :8 :4] promptCharacter:' '];
+	lanConfig_port_il = [[InputLineBox alloc] initWithBounds:[[Rect alloc] initWithComponents:126 :lanConfig_cursor_table[0] - 8 :8 :4] promptCharacter:' '];
 	[lanConfig_port_il setWidth:10];
-	lanConfig_join_il = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:70 :lanConfig_cursor_table[2] :24 :4] promptCharacter:' '];
+	lanConfig_join_il = [[InputLineBox alloc] initWithBounds:[[Rect alloc] initWithComponents:70 :lanConfig_cursor_table[2] - 8 :24 :4] promptCharacter:' '];
 	[lanConfig_join_il setWidth:26];
 	switch (gametype ()) {
 	case "netquake":

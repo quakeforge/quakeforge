@@ -668,14 +668,14 @@ DRAW_player_options =
 
 
 	Draw_String (x + 70, y + PLAYER_CONF_Y_PAD + 8, "Name..:");
-	text_box (x + 120, y + PLAYER_CONF_Y_PAD, 17, 1);
 	[player_config_plname_il setBasePos:x y:y];
-	[player_config_plname_il draw: player_config_iactive == player_config_plname_il];
+	[player_config_plname_il cursor: player_config_iactive == player_config_plname_il];
+	[player_config_plname_il draw];
 
 	Draw_String (x + 70, y + PLAYER_CONF_Y_PAD + 20 + 8, "Team..:");
-	text_box (x + 120, y + PLAYER_CONF_Y_PAD + 20, 5, 1);
 	[player_config_tname_il setBasePos:x y:y];
-	[player_config_tname_il draw:player_config_iactive == player_config_tname_il];
+	[player_config_tname_il cursor: player_config_iactive == player_config_tname_il];
+	[player_config_tname_il draw];
 	
 
 	draw_val_item (x + 70, y + PLAYER_CONF_Y_PAD + 45, spacing, "Top color", 
@@ -725,9 +725,9 @@ CB_ME_player_options =
 void () 
 MENU_player_options =
 {
-	player_config_plname_il = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:120 :PLAYER_CONF_Y_PAD + 8 :18 :4] promptCharacter:' '];
+	player_config_plname_il = [[InputLineBox alloc] initWithBounds:[[Rect alloc] initWithComponents:120 :PLAYER_CONF_Y_PAD :18 :4] promptCharacter:' '];
 	[player_config_plname_il setWidth:18];
-	player_config_tname_il = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:120 :PLAYER_CONF_Y_PAD + 8 + 20 :7 :4] promptCharacter:' '];
+	player_config_tname_il = [[InputLineBox alloc] initWithBounds:[[Rect alloc] initWithComponents:120 :PLAYER_CONF_Y_PAD + 20 :7 :4] promptCharacter:' '];
 	[player_config_tname_il setWidth:7];
 	player_config_iactive = NIL;
 
@@ -830,11 +830,11 @@ DRAW_network_options =
 
 
 	Draw_String (x + 70, y + NETWORK_CONF_Y_PAD + 8, "Rate..:");
-	text_box (x + 120, y + NETWORK_CONF_Y_PAD, 9, 1);
 	[network_config_rate_il setBasePos:x y:y];
-	[network_config_rate_il draw: network_config_iactive == network_config_rate_il];
+	[network_config_rate_il cursor: network_config_iactive == network_config_rate_il];
+	[network_config_rate_il draw];
 
-	opt_cursor  (x + 62, y + player_config_cursor_tbl[player_config_cursor]);
+	opt_cursor  (x + 62, y + network_config_cursor_tbl[network_config_cursor]);
 	return 1;
 };
 
@@ -857,7 +857,7 @@ CB_ME_network_options =
 void () 
 MENU_network_options =
 {
-	network_config_rate_il = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents: 120 :NETWORK_CONF_Y_PAD + 8 :9 :4] promptCharacter:' '];
+	network_config_rate_il = [[InputLineBox alloc] initWithBounds:[[Rect alloc] initWithComponents: 120 :NETWORK_CONF_Y_PAD :9 :4] promptCharacter:' '];
 	[network_config_rate_il setWidth:9];
 
 	Menu_Begin (54, 90, "Network");

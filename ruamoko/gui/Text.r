@@ -12,6 +12,7 @@
 - (void) dealloc
 {
 	str_free (text);
+	[super dealloc];
 }
 
 - (id) initWithBounds: (Rect)aRect

@@ -11,7 +11,7 @@
 	xpos = xabs = x;
 	ypos = yabs = y;
 	xlen = w;
-	ylen = y;
+	ylen = h;
 	parent = NIL;
 	return self;
 }

@@ -1,3 +1,4 @@
+#include "draw.h"
 #include "gui/InputLine.h"
 #include "gui/Rect.h"
 
@@ -15,9 +16,9 @@ string (inputline_t il) InputLine_GetText = #0;
 
 - (id) initWithBounds: (Rect)aRect promptCharacter: (integer)char
 {
-	self = [super init];
-	control.x = aRect.origin.x;
-	control.y = aRect.origin.y;
+	self = [super initWithComponents:aRect.origin.x :aRect.origin.y :aRect.size.width * 8 :8];
+	control.x = xpos;
+	control.y = ypos;
 	control.xbase = control.ybase = 0;
 	control.cursor = NO;
 
@@ -27,10 +28,10 @@ string (inputline_t il) InputLine_GetText = #0;
 	return self;
 }
 
-- (void) free
+- (void) dealloc
 {
 	InputLine_Destroy (il);
-	[super free];
+	[super dealloc];
 }
 
 - (void) setBasePos: (Point)pos
@@ -50,9 +51,13 @@ string (inputline_t il) InputLine_GetText = #0;
 	InputLine_Process (il, key);
 }
 
-- (void) draw: (BOOL)cursor
+- (void) cursor: (BOOL)cursor
 {
 	control.cursor = cursor;
+}
+
+- (void) draw
+{
 	InputLine_Draw (il);
 }
 
@@ -67,4 +72,65 @@ string (inputline_t il) InputLine_GetText = #0;
 	return InputLine_GetText (il);
 }
 
+@end
+
+@implementation InputLineBox
+- (id) initWithBounds: (Rect)aRect promptCharacter: (integer)char
+{
+	local integer xp, yp, xl, yl;
+	local Rect r;
+
+	xp = aRect.origin.x;
+	yp = aRect.origin.y;
+	xl = (aRect.size.width - 2) * 8;
+	yl = 24;
+	self = [self initWithComponents:xp :yp :xl :yl];
+
+	xp = 0;
+	yp = 8;
+	xl = aRect.size.width;
+	yl = aRect.size.height;
+	r = [[Rect alloc] initWithComponents:xp :yp :xl :yl];
+	input_line = [[InputLine alloc] initWithBounds:r promptCharacter:char];
+	[r dealloc];
+	return self;
+}
+
+- (void) setWidth: (integer)width
+{
+	[input_line setWidth:width];
+}
+
+- (void) cursor: (BOOL)cursor
+{
+	[input_line cursor:cursor];
+}
+
+- (void) processInput: (integer)key
+{
+	[input_line processInput:key];
+}
+
+- (id) setText: (string)text
+{
+	return [input_line setText:text];
+}
+
+- (string) text
+{
+	return [input_line text];
+}
+
+- (void) setBasePos:(integer)x y:(integer)y
+{
+	[super setBasePos:x y:y];
+	[input_line setBasePos:xabs y:yabs];
+}
+
+- (void) draw
+{
+	[super draw];
+	text_box (xabs, yabs, xlen / 8, ylen / 24);
+	[input_line draw];
+}
 @end

@@ -32,18 +32,32 @@ struct il_data_t = {
 }
 
 - (id) initWithBounds: (Rect)aRect promptCharacter: (integer)char;
-//-initAt:(Point)p HistoryLines:(integer)l LineSize:(integer)s PromptChar:(integer)prompt;
-- (void) free;
 
 - (void) setBasePos: (Point)pos;
 - (void) setWidth: (integer)width;
-- (void) draw: (BOOL)cursor;
+- (void) cursor: (BOOL)cursor;
+- (void) draw;
 
 - (void) processInput: (integer)key;
 
 - (id) setText: (string)text;
 - (string) text;
 
+@end
+
+@interface InputLineBox: View
+{
+	InputLine input_line;
+}
+- (id) initWithBounds: (Rect)aRect promptCharacter: (integer)char;
+
+- (void) setWidth: (integer)width;
+- (void) cursor: (BOOL)cursor;
+
+- (void) processInput: (integer)key;
+
+- (id) setText: (string)text;
+- (string) text;
 @end
 
 #endif //__ruamoko_gui_InputLine_h
