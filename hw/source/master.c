@@ -21,9 +21,12 @@
 #include "QF/sizebuf.h"
 #include "QF/sys.h"
 
+#include "compat.h"
 #include "netchan.h"
 
 #define MAX_SERVERINFO_STRING   512
+#define SV_TIMEOUT 450
+
 #define PORT_MASTER 26900
 #define PORT_SERVER 26950
 
@@ -64,7 +67,6 @@ qboolean is_server = true;
 
 static cbuf_t *mst_cbuf;
 
-#define SV_TIMEOUT 450
 server_t   *sv_list = NULL;
 filter_t   *filter_list = NULL;
 
@@ -256,37 +258,25 @@ SV_InitNet (void)
 static void
 AnalysePacket (void)
 {
-	byte        c;
-	byte       *p;
-	int         i;
+	byte        buf[16];
+	byte       *p, *data;
+	int         i, size, rsize;
 
-	Con_Printf ("%s sending packet:\n", NET_AdrToString (net_from));
-	p = net_message->message->data;
-	for (i = 0; i < net_message->message->cursize; i++, p++) {
-		c = p[0];
-		Con_Printf (" %3i ", c);
-		if (i % 8 == 7)
-			Con_Printf ("\n");
-	}
-	Con_Printf ("\n\n");
-	p = net_message->message->data;
-	for (i = 0; i < net_message->message->cursize; i++, p++) {
-		c = p[0];
-		if (c == '\n')
-			Con_Printf ("  \\n ");
-		else if (c >= 32 && c <= 127)
-			Con_Printf ("   %c ", c);
-		else if (c < 10)
-			Con_Printf ("  \\%1i ", c);
-		else if (c < 100)
-			Con_Printf (" \\%2i ", c);
-		else
-			Con_Printf ("\\%3i ", c);
+	Con_Printf ("%s >> unknown packet:\n", NET_AdrToString (net_from));
 
-		if (i % 8 == 7)
-			Con_Printf ("\n");
+	data = net_message->message->data;
+	size = net_message->message->cursize;
+
+	for (p = data; (rsize = min (size - (p - data), 16)); p += rsize) {
+		Con_Printf ("%04X:", p - data);
+		memcpy (buf, p, rsize);
+		for (i = 0; i < rsize; i++) {
+			Con_Printf (" %02X", buf[i]);
+			if (buf[i] < ' ' || buf [i] > '~')
+				buf[i] = '.';
+		}
+		Con_Printf ("%*.*s\n", 1 + (16 - rsize) * 3 + rsize, rsize, buf);
 	}
-	Con_Printf ("\n");
 }
 
 static void
@@ -363,13 +353,11 @@ Mst_Packet (void)
 		byte       *p;
 
 		p = net_message->message->data;
-		Con_Printf ("%s >> ", NET_AdrToString (net_from));
-		Con_Printf ("Pingtool server list request\n");
 		if (p[0] == 0 && p[1] == 'y') {
+			Con_Printf ("%s >> ", NET_AdrToString (net_from));
+			Con_Printf ("Pingtool server list request\n");
 			Mst_SendList ();
 		} else {
-			Con_Printf ("%s >> ", NET_AdrToString (net_from));
-			Con_Printf ("%c\n", net_message->message->data[1]);
 			AnalysePacket ();
 		}
 	}
