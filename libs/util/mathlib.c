@@ -445,8 +445,7 @@ VectorNormalize (vec3_t v)
 	float length;
 
 	length = DotProduct (v, v);
-	if (length)
-	{
+	if (length) {
 		float ilength;
 
 		length = sqrt (length);
@@ -466,13 +465,13 @@ _VectorNormalize (vec3_t v)
 	double      length;
 
 	length = 0;
-	for (i=0 ; i < 3; i++)
+	for (i = 0; i < 3; i++)
 		length += v[i] * v[i];
 	length = sqrt (length);
 	if (length == 0)
 		return 0;
 
-	for (i=0 ; i <3; i++)
+	for (i = 0; i < 3; i++)
 		v[i] /= length;
 
 	return length;
@@ -579,7 +578,6 @@ FloorDivMod (double numer, double denom, int *quotient, int *rem)
 #endif
 
 	if (numer >= 0.0) {
-
 		x = floor (numer / denom);
 		q = (int) x;
 		r = (int) floor (numer - (x * denom));
