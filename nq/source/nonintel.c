@@ -1,7 +1,7 @@
 /*
 	nonintel.c
 
-	@description@
+	code for non-Intel processors only
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -30,16 +30,9 @@
 # include "config.h"
 #endif
 
-#include "r_local.h"
-#include "d_local.h"
 
 #ifndef	USE_INTEL_ASM
 
-/*
-================
-R_Surf8Patch
-================
-*/
 void
 R_Surf8Patch ()
 {
@@ -47,11 +40,6 @@ R_Surf8Patch ()
 }
 
 
-/*
-================
-R_Surf16Patch
-================
-*/
 void
 R_Surf16Patch ()
 {
@@ -59,16 +47,10 @@ R_Surf16Patch ()
 }
 
 
-/*
-================
-R_SurfacePatch
-================
-*/
 void
 R_SurfacePatch (void)
 {
 	// we only patch code on Intel
 }
-
 
 #endif // USE_INTEL_ASM

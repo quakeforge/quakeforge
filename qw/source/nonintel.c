@@ -30,11 +30,9 @@
 # include "config.h"
 #endif
 
+
 #ifndef USE_INTEL_ASM
 
-/*
-	R_Surf8Patch
-*/
 void
 R_Surf8Patch (void)
 {
@@ -42,9 +40,6 @@ R_Surf8Patch (void)
 }
 
 
-/*
-	R_Surf16Patch
-*/
 void
 R_Surf16Patch (void)
 {
@@ -52,14 +47,10 @@ R_Surf16Patch (void)
 }
 
 
-/*
-	R_SurfacePatch
-*/
 void
 R_SurfacePatch (void)
 {
 	// we only patch code on Intel
 }
-
 
 #endif // !USE_INTEL_ASM
