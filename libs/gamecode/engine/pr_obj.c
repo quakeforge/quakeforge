@@ -99,13 +99,13 @@ pr___obj_exec_class (progs_t *pr)
 	pr_symtab_t *symtab;
 	pointer_t   *ptr;
 	int          i;
-	int          d = developer->int_val;
+	//int          d = developer->int_val;
 	pr_class_t  *object_class;
 	pointer_t    object_ptr;
 
 	if (!module)
 		return;
-	developer->int_val = 1;
+	//developer->int_val = 1;
 	symtab = &G_STRUCT (pr, pr_symtab_t, module->symtab);
 	if (!symtab)
 		return;
@@ -182,7 +182,7 @@ pr___obj_exec_class (progs_t *pr)
 		ptr++;
 	}
 
-	developer->int_val = d;
+	//developer->int_val = d;
 }
 
 //====================================================================
