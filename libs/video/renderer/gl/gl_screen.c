@@ -522,7 +522,7 @@ SCR_ScreenShot (int width, int height)
 		return 0;
 
 	qfglReadPixels (glx, gly, vid.width, vid.height, GL_RGB, GL_UNSIGNED_BYTE,
-				  tex->data + vid.width * vid.height);
+				    tex->data);
 
 	w = (vid.width < width) ? vid.width : width;
 	h = (vid.height < height) ? vid.height : height;
