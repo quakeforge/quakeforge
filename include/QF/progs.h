@@ -80,6 +80,7 @@ void PR_Init_Cvars (void);
 void PR_ExecuteProgram (progs_t *pr, func_t fnum);
 void PR_LoadProgs (progs_t *pr, char *progsname);
 void PR_LoadStrings (progs_t *pr);
+edict_t *PR_InitEdicts (progs_t *pr, int num_edicts);
 
 void PR_Profile_f (void);
 

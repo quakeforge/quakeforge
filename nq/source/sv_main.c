@@ -1112,8 +1112,7 @@ SV_SpawnServer (char *server)
 
 // allocate server memory
 	sv.max_edicts = MAX_EDICTS;
-	sv_pr_state.pr_edictareasize = sv_pr_state.pr_edict_size * MAX_EDICTS;
-	sv.edicts = Hunk_AllocName (sv_pr_state.pr_edictareasize, "edicts");
+	sv.edicts = PR_InitEdicts (&sv_pr_state, sv.max_edicts);
 
 	// init the data field of the edicts
 	for (i = 0; i < MAX_EDICTS; i++) {

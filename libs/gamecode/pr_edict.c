@@ -1207,6 +1207,24 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 	}
 }
 
+edict_t *
+PR_InitEdicts (progs_t *pr, int num_edicts)
+{   
+	edict_t *edicts;
+	edict_t *e;
+	int     i, j;
+	pr->pr_edictareasize = pr->pr_edict_size * num_edicts;
+	edicts = Hunk_AllocName (pr->pr_edictareasize, "edicts");
+	memset (edicts, 0, *pr->reserved_edicts * pr->pr_edict_size);
+	(*pr->edicts) = edicts;
+	for (j =  *pr->reserved_edicts; j < num_edicts; j++) {
+		e = EDICT_NUM (pr, j);
+		for (i=0; i < pr->progs->entityfields; i++)
+			e->v[i].int_var = 0xdeadbeef;
+	}
+	return edicts;
+}
+
 void
 PR_Init_Cvars (void)
 {
