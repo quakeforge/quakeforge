@@ -217,12 +217,12 @@ CL_CheckOrDownloadFile (const char *filename)
 		Con_Printf ("Refusing to download a path with ..\n");
 		return true;
 	}
-
+/*
 	if (!snd_initialized && strnequal ("sound/", filename, 6)) {
 		// don't bother downloading sounds if we can't play them
 		return true;
 	}
-
+*/
 	QFS_FOpenFile (filename, &f);
 	if (f) {							// it exists, no need to download
 		Qclose (f);
