@@ -650,15 +650,15 @@ CL_ParseServerData (void)
 	// ZOID--run the autoexec.cfg in the gamedir
 	// if it exists
 	if (cflag) {
-		int         cl_warncmd_val = cl_warncmd->int_val;
+		int         cmd_warncmd_val = cmd_warncmd->int_val;
 
-		Cbuf_AddText ("cl_warncmd 0\n");
+		Cbuf_AddText ("cmd_warncmd 0\n");
 		Cbuf_AddText ("exec config.cfg\n");
 		Cbuf_AddText ("exec frontend.cfg\n");
 		if (cl_autoexec->int_val) {
 			Cbuf_AddText ("exec autoexec.cfg\n");
 		}
-		snprintf (fn, sizeof (fn), "cl_warncmd %d\n", cl_warncmd_val);
+		snprintf (fn, sizeof (fn), "cmd_warncmd %d\n", cmd_warncmd_val);
 		Cbuf_AddText (fn);
 	}
 	// parse player slot, high bit means spectator

@@ -58,7 +58,6 @@ qboolean    sv_allow_cheats;
 
 int         fp_messages = 4, fp_persecond = 4, fp_secondsdead = 10;
 char        fp_msg[255] = { 0 };
-extern cvar_t *cl_warncmd;
 cvar_t     *sv_leetnickmatch;
 extern redirect_t sv_redirected;
 
@@ -1217,8 +1216,6 @@ SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("match", SV_Match_f, "matches nicks as ban/cuff/mute "
 					"commands do, so you can check safely");
 
-	cl_warncmd = Cvar_Get ("cl_warncmd", "1", CVAR_NONE, NULL, "Toggles the "
-						   "display of error messages for unknown commands"); 
 	// poor description
 	sv_leetnickmatch = Cvar_Get ("sv_3133735_7h4n_7h0u", "1", CVAR_NONE, NULL,
 								 "Match '1' as 'i' and such in nicks");

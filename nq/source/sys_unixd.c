@@ -65,7 +65,7 @@ static const char rcsid[] =
 #include "client.h"
 #include "host.h"
 
-qboolean    isDedicated;
+qboolean    isDedicated = true;
 
 int         nostdout = 0;
 
@@ -198,7 +198,7 @@ Sys_LowFPPrecision (void)
 int
 main (int argc, const char **argv)
 {
-	double      time, oldtime;
+	double      time, oldtime, newtime;
 	quakeparms_t parms;
 	const char *newargv[256];
 	int         j;
@@ -224,9 +224,8 @@ main (int argc, const char **argv)
 	parms.memsize = 16 * 1024 * 1024;
 
 	j = COM_CheckParm ("-mem");
-	if (j) {
+	if (j)
 		parms.memsize = (int) (atof (com_argv[j + 1]) * 1024 * 1024);
-	}
 	if ((parms.membase = malloc (parms.memsize)) == NULL)
 		Sys_Error ("Can't allocate %d\n", parms.memsize);
 
@@ -235,21 +234,29 @@ main (int argc, const char **argv)
 	Sys_RegisterShutdown (Host_Shutdown);
 	Sys_RegisterShutdown (shutdown);
 
-	printf ("Host_Init\n");
+	Sys_Printf ("Host_Init\n");
 	Host_Init (&parms);
 
 	Sys_Init_Cvars ();
 	Sys_Init ();
 
 	oldtime = Sys_DoubleTime () - 0.1;
-
 	while (1) {							// Main message loop
-		time = Sys_DoubleTime ();
-		if ((time - oldtime) < sys_ticrate->value) {
+		// find time spent rendering last frame
+		newtime = Sys_DoubleTime ();
+		time = newtime - oldtime;
+		if (time < sys_ticrate->value) {
 			usleep (1);
 			continue;
 		}
-		Host_Frame (time - oldtime);
+		time = sys_ticrate->value;
+
+		if (time > sys_ticrate->value * 2)
+			oldtime = newtime;
+		else
+			oldtime += time;
+
+		Host_Frame (time);
 		oldtime = time;
 	}
 	return true;						// return success

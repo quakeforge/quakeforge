@@ -210,6 +210,7 @@ nq_wgl_DEPENDENCIES=	$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
 # Dedicated Server
 ded_sources=	sys_unixd.c sv_ded.c sv_model.c
 
+nq_server_LDFLAGS=	$(common_ldflags)
 nq_server_SOURCES=	$(common_sources) $(server_sources) $(ded_sources)
 nq_server_LDADD=	$(server_LIBS)
 nq_server_DEPENDENCIES=	$(server_LIB_DEPSS)

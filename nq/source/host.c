@@ -546,14 +546,7 @@ Host_FilterTime (float time)
 void
 Host_GetConsoleCommands (void)
 {
-	const char *cmd;
-
-	while (1) {
-		cmd = Sys_ConsoleInput ();
-		if (!cmd)
-			break;
-		Cbuf_AddText (cmd);
-	}
+	Con_ProcessInput ();
 }
 
 #ifdef FPS_20
@@ -936,6 +929,11 @@ Host_Init (quakeparms_t *parms)
 
 	PI_Init ();
 
+	if (isDedicated)
+		Con_Init ("server");
+	else
+		Con_Init ("client");
+
 	V_Init ();
 	COM_Init ();
 
@@ -947,7 +945,6 @@ Host_Init (quakeparms_t *parms)
 	Host_InitLocal ();
 	W_LoadWadFile ("gfx.wad");
 	Key_Init ();
-	Con_Init ("client");
 	// FIXME: MENUCODE
 //	M_Init ();
 	PR_Init ();
@@ -986,7 +983,7 @@ Host_Init (quakeparms_t *parms)
 		CL_SetState (ca_disconnected);
 	}
 
-	if (cl_quakerc->int_val)
+	if (!isDedicated && cl_quakerc->int_val)
 		Cbuf_InsertText ("exec quake.rc\n");
 	Cmd_Exec_File (fs_usercfg->string);
 	// reparse the command line for + commands other than set

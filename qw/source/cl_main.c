@@ -1194,8 +1194,6 @@ CL_Init_Cvars (void)
 	cl_demospeed = Cvar_Get ("cl_demospeed", "1.0", CVAR_NONE, NULL,
 							 "adjust demo playback speed. 1.0 = normal, "
 							 "< 1 slow-mo, > 1 timelapse");
-	cl_warncmd = Cvar_Get ("cl_warncmd", "0", CVAR_NONE, NULL,
-						   "inform when execing a command");
 	cl_anglespeedkey = Cvar_Get ("cl_anglespeedkey", "1.5", CVAR_NONE, NULL,
 								 "turn `run' speed multiplier");
 	cl_backspeed = Cvar_Get ("cl_backspeed", "200", CVAR_ARCHIVE, NULL,
@@ -1674,7 +1672,7 @@ Host_Init (void)
 
 	Cbuf_AddText ("echo Type connect <internet address> or use a server "
 				  "browser to connect to a game.\n");
-	Cbuf_AddText ("cl_warncmd 1\n");
+	Cbuf_AddText ("cmd_warncmd 1\n");
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();

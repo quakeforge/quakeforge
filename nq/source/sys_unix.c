@@ -160,20 +160,22 @@ main (int c, const char *v[])
 	parms.argc = com_argc;
 	parms.argv = com_argv;
 
-	parms.memsize = 16 * 1024 * 1024;
-
 	isDedicated = (COM_CheckParm ("-dedicated") != 0);
+
+	parms.memsize = 16 * 1024 * 1024;
 
 	j = COM_CheckParm ("-mem");
 	if (j)
 		parms.memsize = (int) (atof (com_argv[j + 1]) * 1024 * 1024);
-	parms.membase = malloc (parms.memsize);
+	if ((parms.membase = malloc (parms.memsize)) == NULL)
+		Sys_Error ("Can't allocate %d\n", parms.memsize);
 
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
 
 	Sys_RegisterShutdown (Host_Shutdown);
 	Sys_RegisterShutdown (shutdown);
 
+	Sys_Printf ("Host_Init\n");
 	Host_Init (&parms);
 
 	Sys_Init_Cvars ();

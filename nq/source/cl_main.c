@@ -109,8 +109,6 @@ CL_InitCvars (void)
 	cl_cshift_damage = Cvar_Get ("cl_cshift_damage", "1", CVAR_ARCHIVE, NULL, 
 								 "Shift view colors on damage");
 	cl_cshift_powerup = Cvar_Get ("cl_cshift_powerup", "1", CVAR_ARCHIVE, NULL,                             "Shift view colors for powerups");
-	cl_warncmd = Cvar_Get ("cl_warncmd", "0", CVAR_NONE, NULL,
-						   "inform when execing a command");
 	cl_name = Cvar_Get ("_cl_name", "player", CVAR_ARCHIVE, NULL,
 						"Player name");
 	cl_color = Cvar_Get ("_cl_color", "0", CVAR_ARCHIVE, NULL, "Player color");

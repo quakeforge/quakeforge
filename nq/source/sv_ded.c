@@ -116,6 +116,8 @@ CL_Init (void)
 void
 CL_InitCvars (void)
 {
+	cl_name = Cvar_Get ("_cl_name", "player", CVAR_ARCHIVE, NULL, "");
+	cl_writecfg = Cvar_Get ("cl_writecfg", "1", CVAR_NONE, NULL, "");
 }
 
 void
@@ -147,6 +149,7 @@ CL_StopPlayback (void)
 void
 Chase_Init_Cvars (void)
 {
+	chase_active = Cvar_Get ("chase_active", "0", CVAR_NONE, NULL, "None");
 }
 
 void

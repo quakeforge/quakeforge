@@ -638,3 +638,8 @@ Con_CompleteCommandLine (void)
 		if (list[i])
 			free (list[i]);
 }
+
+void
+Con_ProcessInput (void)
+{
+}

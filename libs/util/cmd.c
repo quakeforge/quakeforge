@@ -61,7 +61,7 @@ cmdalias_t *cmd_alias;
 cmd_source_t cmd_source;
 qboolean    cmd_wait;
 
-cvar_t     *cl_warncmd;
+cvar_t     *cmd_warncmd;
 
 hashtab_t  *cmd_alias_hash;
 hashtab_t  *cmd_hash;
@@ -311,7 +311,7 @@ Cmd_Exec_f (void)
 		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
 		return;
 	}
-	if (!Cvar_Command () && ((cl_warncmd && cl_warncmd->int_val)
+	if (!Cvar_Command () && (cmd_warncmd->int_val
 							 || (developer && developer->int_val)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
 
@@ -859,7 +859,7 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 		return;
 	}
 
-	if (cl_warncmd->int_val || developer->int_val)
+	if (cmd_warncmd->int_val || developer->int_val)
 		Sys_Printf ("Unknown command \"%s\"\n", Cmd_Argv (0));
 }
 
@@ -993,6 +993,8 @@ Cmd_Init (void)
 	Cmd_AddCommand ("cmdlist", Cmd_CmdList_f, "List all commands");
 	Cmd_AddCommand ("help", Cmd_Help_f, "Display help for a command or "
 					"variable");
+	cmd_warncmd = Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, "Toggles the "
+							"display of error messages for unknown commands"); 
 }
 
 char        com_token[MAX_COM_TOKEN];
