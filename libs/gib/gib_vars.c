@@ -161,7 +161,7 @@ GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *ke
 {
 	static hashtab_t *zero = 0;
 	hashtab_t *one = *first, *two = *second;
-	unsigned int i, index = 0, index2 = 0, n, protect;
+	unsigned int i, index = 0, index2 = 0, n, protect, varstartskip;
 	gib_var_t  *var = 0;
 	cvar_t *cvar;
 	char c, *str;
@@ -207,20 +207,29 @@ GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *ke
 			if (GIB_Parse_Match_Var (key->str, &i))
 				return 0;
 			c = key->str[i];
-			key->str[i+(c != '}')] = 0;
-			if ((var = GIB_Var_Get_Very_Complex (&one, &two, key, n+1+(c == '}'), &index2, create))) {
+			varstartskip = (c == '}');
+			key->str[i] = 0;
+			if ((var = GIB_Var_Get_Very_Complex (&one, &two, key, n+1+varstartskip, &index2, create))) {
 				if (key->str[n] == '#')
 					str = va("%u", var->size);
 				else
 					str = var->array[index2].value->str;
-				dstring_replace (key, n, i-n+(c == '}'), str, strlen (str));
-			} else if (key->str[n] == '#')
-				dstring_replace (key, n, i-n+(c == '}'), "0", 1);
-			else if ((cvar = Cvar_FindVar (key->str+n+1+(c == '}'))))
-				dstring_replace (key, n, i-n+(c == '}'), cvar->string, strlen (cvar->string));
-			else
-				dstring_snip (key, n, n-i+(c == '}'));
-			protect = i+1;
+				key->str[i] = c;
+				dstring_replace (key, n, i-n+varstartskip, str, strlen (str));
+				protect = n+strlen(str);
+			} else if (key->str[n] == '#') {
+				key->str[i] = c;
+				dstring_replace (key, n, i-n+varstartskip, "0", 1);
+				protect = n+1;
+			} else if ((cvar = Cvar_FindVar (key->str+n+1+varstartskip))) {
+				key->str[i] = c;
+				dstring_replace (key, n, i-n+varstartskip, cvar->string, strlen (cvar->string));
+				protect = n+strlen(cvar->string);
+			} else  {
+				key->str[i] = c;
+				dstring_snip (key, n, n-i+varstartskip);
+				protect = 0;
+			}
 			i = n;
 		}
 			
