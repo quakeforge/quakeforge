@@ -131,8 +131,9 @@ C_Init (void)
 		wrefresh (output);
 		wrefresh (status);
 		wrefresh (input);
-	}
+	} else
 #endif
+		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
 }
 
 static void
