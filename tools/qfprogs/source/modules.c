@@ -34,6 +34,13 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
 #include <stdlib.h>
 
 #include "QF/pr_obj.h"
