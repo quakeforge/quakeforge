@@ -147,24 +147,21 @@ install: build
 	# quakeforge-glx
 	dh_movefiles -p$(glx) --sourcedir=$(tmp) \
 		usr/games/nq-glx \
-		usr/games/qw-client-glx \
-		usr/lib/libQFglx.so.*
+		usr/games/qw-client-glx
 	install -d -m755 debian/$(glx)/usr/share/doc
 	ln -s $(common) debian/$(glx)/usr/share/doc/$(glx)
 
 	# quakeforge-sdl
 	dh_movefiles -p$(sdl) --sourcedir=$(tmp) \
 		usr/games/nq-sdl \
-		usr/games/qw-client-sdl \
-		usr/lib/libQFsdl.so.*
+		usr/games/qw-client-sdl
 	install -d -m755 debian/$(sdl)/usr/share/doc
 	ln -s $(common) debian/$(sdl)/usr/share/doc/$(sdl)
 
 	# quakeforge-sgl
 	dh_movefiles -p$(sgl) --sourcedir=$(tmp) \
 		usr/games/nq-sgl \
-		usr/games/qw-client-sgl \
-		usr/lib/libQFsgl.so.*
+		usr/games/qw-client-sgl
 	install -d -m755 debian/$(sgl)/usr/share/doc
 	ln -s $(common) debian/$(sgl)/usr/share/doc/$(sgl)
 
@@ -178,8 +175,7 @@ install: build
 	# quakeforge-x11
 	dh_movefiles -p$(x11) --sourcedir=$(tmp) \
 		usr/games/nq-x11 \
-		usr/games/qw-client-x11 \
-		usr/lib/libQFx11.so.*
+		usr/games/qw-client-x11
 	install -d -m755 debian/$(x11)/usr/share/doc
 	ln -s $(common) debian/$(x11)/usr/share/doc/$(x11)
 
