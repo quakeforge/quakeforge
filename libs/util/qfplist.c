@@ -120,6 +120,7 @@ PL_FreeItem (plitem_t *item)
 				while (i-- > 0) {
 					PL_FreeItem (((plarray_t *) item->data)->values[i]);
 				}
+				free (((plarray_t *) item->data)->values);
 				free (item->data);
 			}
 			break;
@@ -193,8 +194,15 @@ PL_A_InsertObjectAtIndex (plitem_t *array_item, plitem_t *item, int index)
 
 	array = (plarray_t *)array_item->data;
 
-	if (array->numvals == MAX_ARRAY_INDEX)
-		return NULL;
+	if (array->numvals == array->maxvals) {
+		plitem_t  **tmp = realloc (array->values, array->maxvals + 128);
+		if (!tmp)
+			return NULL;
+		array->maxvals += 128;
+		array->values = tmp;
+		memset (array->values + array->numvals, 0,
+				(array->maxvals - array->numvals) * sizeof (plitem_t *));
+	}
 
 	if (index == -1)
 		index = array->numvals;

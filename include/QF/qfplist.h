@@ -37,9 +37,6 @@
 inrange((ch), '0', '9') ? ((ch) - 0x30) \
 : (inrange((ch), 'a', 'f') ? ((ch) - 0x57) : ((ch) - 0x37))
 
-// Maximum number of items in an array
-#define MAX_ARRAY_INDEX 128
-
 typedef enum {QFDictionary, QFArray, QFBinary, QFString} pltype_t;	// possible types
 
 /*
@@ -65,7 +62,8 @@ typedef struct dictkey_s	dictkey_t;
 */
 struct plarray_s {
 	int				numvals;		// Number of items in array
-	struct plitem_s *values[MAX_ARRAY_INDEX+1]; 	// Array data
+	int				maxvals;
+	struct plitem_s **values;	 	// Array data
 };
 typedef struct plarray_s	plarray_t;
 
