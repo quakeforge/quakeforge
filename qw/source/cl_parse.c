@@ -986,11 +986,12 @@ CL_ParseClientdata (void)
 static void
 CL_ProcessUserInfo (int slot, player_info_t *player)
 {
-	char		skin[512];
+	char       *skin;
 	const char *s;
 
 	s = Info_ValueForKey (player->userinfo, "skin");
-	QFS_StripExtension (s, skin);   // FIXME: buffer overflow
+	skin = alloca (strlen (s) + 1);
+	QFS_StripExtension (s, skin);
 	if (!strequal (s, skin))
 		Info_SetValueForKey (player->userinfo, "skin", skin, 1);
 	strncpy (player->name, Info_ValueForKey (player->userinfo, "name"),
