@@ -670,7 +670,7 @@ CL_SendCmd (void)
 	sizebuf_t		buf;
 	usercmd_t	   *cmd, *oldcmd;
 
-	if (cls.demoplayback)
+	if (cls.demoplayback && !cls.demoplayback2)
 		return;							// sendcmds come from the demo
 
 	// save this command off for prediction
@@ -683,6 +683,11 @@ CL_SendCmd (void)
 	seq_hash = cls.netchan.outgoing_sequence;
 
 	build_cmd (cmd);
+
+	if (cls.demoplayback2) {
+		cls.netchan.outgoing_sequence++;
+		return;
+	}
 
 	// send this and the previous cmds in the message, so
 	// if the last packet was dropped, it can be recovered

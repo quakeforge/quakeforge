@@ -118,6 +118,7 @@
 #define svc_setinfo			51		// setinfo on a client
 #define svc_serverinfo		52		// serverinfo
 #define svc_updatepl		53		// [byte] [byte]
+#define svc_nails2          54      // FIXME: from qwex. for interpolation, stores edict num
 
 // client to server ===========================================================
 
@@ -129,6 +130,17 @@
 #define	clc_delta		5		// [byte] sequence number, requests delta compression of message
 #define clc_tmove		6		// teleport request, spectator only
 #define clc_upload		7		// teleport request, spectator only
+
+// demo recording
+
+#define dem_cmd         0
+#define dem_read        1
+#define dem_set         2
+#define dem_multiple    3
+#define dem_single      4
+#define dem_stats       5
+#define dem_all         6
+
 
 // ==============================================
 

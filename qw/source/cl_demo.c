@@ -51,6 +51,8 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "cl_cam.h"
+#include "cl_ents.h"
 #include "cl_main.h"
 #include "client.h"
 #include "compat.h"
@@ -66,6 +68,7 @@ typedef struct {
 int     cl_timeframes_isactive;
 int     cl_timeframes_index;
 int     demotime_cached;
+float   nextdemotime;
 char    demoname[1024];
 double *cl_timeframes_array;
 #define CL_TIMEFRAMES_ARRAYBLOCK 4096
@@ -108,15 +111,12 @@ CL_StopPlayback (void)
 	cls.demofile = NULL;
 	CL_SetState (ca_disconnected);
 	cls.demoplayback = 0;
+	cls.demoplayback2 = 0;
 	demotime_cached = 0;
 
 	if (cls.timedemo)
 		CL_FinishTimeDemo ();
 }
-
-#define dem_cmd		0
-#define dem_read	1
-#define dem_set		2
 
 /*
 	CL_WriteDemoCmd
@@ -184,22 +184,51 @@ CL_WriteDemoMessage (sizebuf_t *msg)
 	Qflush (cls.demofile);
 }
 
+#if 0
+static const char *dem_names[] = {
+	"dem_cmd",
+	"dem_read",
+	"dem_set",
+	"dem_multiple",
+	"dem_single",
+	"dem_stats",
+	"dem_all",
+	"dem_invalid",
+};
+#endif
+
 qboolean
 CL_GetDemoMessage (void)
 {
-	byte		c;
+	byte		c, newtime;
 	float		demotime, f;
 	static float cached_demotime;
-	int			r, i, j;
+	static byte cached_newtime;
+	int			r, i, j, tracknum;
 	usercmd_t  *pcmd;
 
+	if (!cls.demoplayback2)
+		nextdemotime = realtime;
+	if (realtime + 1.0 < nextdemotime)
+		realtime = nextdemotime - 1.0;
+
+nextdemomessage:
 	// read the time from the packet
+	newtime = 0;
 	if (demotime_cached) {
 		demotime = cached_demotime;
+		newtime = cached_newtime;
 		demotime_cached = 0;
 	} else {
-		Qread (cls.demofile, &demotime, sizeof (demotime));
-		demotime = LittleFloat (demotime);
+		if (cls.demoplayback2) {
+			Qread (cls.demofile, &newtime, sizeof (newtime));
+			demotime = cls.basetime + (cls.prevtime + newtime) * 0.001;
+		} else {
+			Qread (cls.demofile, &demotime, sizeof (demotime));
+			demotime = LittleFloat (demotime);
+			if (!nextdemotime)
+				realtime = nextdemotime = demotime;
+		}
 	}
 
 	// decide if it is time to grab the next message        
@@ -211,6 +240,7 @@ CL_GetDemoMessage (void)
 			// rewind back to time
 			demotime_cached = 1;
 			cached_demotime = demotime;
+			cached_newtime = newtime;
 			return 0;					// already read this frame's message
 		}
 		if (!cls.td_starttime && cls.state == ca_active) {
@@ -220,21 +250,36 @@ CL_GetDemoMessage (void)
 		realtime = demotime;			// warp
 	} else if (!cl.paused && cls.state >= ca_onserver) {
 		// always grab until fully connected
-		if (realtime + 1.0 < demotime) {
+		if (!cls.demoplayback2 && realtime + 1.0 < demotime) {
 			// too far back
 			realtime = demotime - 1.0;
 			// rewind back to time
 			demotime_cached = 1;
 			cached_demotime = demotime;
+			cached_newtime = newtime;
 			return 0;
 		} else if (realtime < demotime) {
 			// rewind back to time
 			demotime_cached = 1;
 			cached_demotime = demotime;
+			cached_newtime = newtime;
 			return 0;					// don't need another message yet
 		}
 	} else
 		realtime = demotime;			// we're warping
+
+	if (realtime - nextdemotime > 0.0001) {
+		if (nextdemotime != demotime) {
+			if (cls.demoplayback2) {
+				cls.netchan.incoming_sequence++;
+				cls.netchan.incoming_acknowledged++;
+				cls.netchan.frame_latency = 0;
+			}
+		}
+	}
+	nextdemotime = demotime;
+
+	cls.prevtime += newtime;
 
 	if (cls.state < ca_demostart)
 		Host_Error ("CL_GetDemoMessage: cls.state != ca_active");
@@ -242,7 +287,7 @@ CL_GetDemoMessage (void)
 	// get the msg type
 	Qread (cls.demofile, &c, sizeof (c));
 
-	switch (c) {
+	switch (c & 7) {
 		case dem_cmd:
 			// user sent input
 			net_message->message->cursize = -1;
@@ -269,6 +314,7 @@ CL_GetDemoMessage (void)
 			break;
 
 		case dem_read:
+readit:
 			// get the next message
 			Qread (cls.demofile, &net_message->message->cursize, 4);
 			net_message->message->cursize = LittleLong
@@ -282,6 +328,20 @@ CL_GetDemoMessage (void)
 				CL_StopPlayback ();
 				return 0;
 			}
+
+			if (cls.demoplayback2) {
+				tracknum = Cam_TrackNum ();
+
+				if (cls.lasttype == dem_multiple) {
+					if (tracknum == -1)
+						goto nextdemomessage;
+					if (!(cls.lastto & (1 << tracknum)))
+						goto nextdemomessage;
+				} else if (cls.lasttype == dem_single) {
+					if (tracknum == -1 || cls.lastto != spec_track)
+						goto nextdemomessage;
+				}
+			}
 			break;
 
 		case dem_set:
@@ -289,7 +349,37 @@ CL_GetDemoMessage (void)
 			cls.netchan.outgoing_sequence = LittleLong (i);
 			Qread (cls.demofile, &i, 4);
 			cls.netchan.incoming_sequence = LittleLong (i);
+			if (cls.demoplayback2) {
+				cls.netchan.incoming_acknowledged =
+					cls.netchan.incoming_sequence;
+				goto nextdemomessage;
+			}
 			break;
+
+		case dem_multiple:
+			r = Qread (cls.demofile, &i, 4);
+			if (r != 4) {
+				CL_StopPlayback ();
+				return 0;
+			}
+			cls.lastto = LittleLong (i);
+			cls.lasttype = dem_multiple;
+			goto readit;
+
+		case dem_single:
+			cls.lastto = c >> 3;
+			cls.lasttype = dem_single;
+			goto readit;
+
+		case dem_stats:
+			cls.lastto = c >> 3;
+			cls.lasttype = dem_stats;
+			goto readit;
+
+		case dem_all:
+			cls.lastto = 0;
+			cls.lasttype = dem_all;
+			goto readit;
 
 		default:
 			Con_Printf ("Corrupted demo.\n");
@@ -789,10 +879,23 @@ CL_StartDemo (void)
 	}
 
 	cls.demoplayback = true;
+	if (strequal (COM_FileExtension (name), ".mvd")) {
+		cls.demoplayback2 = true;
+		Con_Printf ("mvd\n");
+	} else {
+		Con_Printf ("qwd\n");
+	}
 	CL_SetState (ca_demostart);
 	Netchan_Setup (&cls.netchan, net_from, 0);
 	realtime = 0;
+	cls.findtrack = true;
+	cls.lasttype = 0;
+	cls.lastto = 0;
+	cls.prevtime = 0;
+	cls.basetime = 0;
 	demotime_cached = 0;
+	nextdemotime = 0;
+	CL_ClearPredict ();
 }
 
 /*

@@ -301,7 +301,8 @@ CL_ParsePacketEntities (qboolean delta)
 		from = MSG_ReadByte (net_message);
 
 		oldpacket = cl.frames[newpacket].delta_sequence;
-
+		if (cls.demoplayback2)
+			from = oldpacket = (cls.netchan.incoming_sequence - 1);
 		if ((from & UPDATE_MASK) != (oldpacket & UPDATE_MASK))
 			Con_DPrintf ("WARNING: from mismatch\n");
 	} else
@@ -564,10 +565,10 @@ CL_ClearProjectiles (void)
 	Nails are passed as efficient temporary entities
 */
 void
-CL_ParseProjectiles (void)
+CL_ParseProjectiles (qboolean nail2)
 {
 	byte		bits[6];
-	int			i, c, d, j;
+	int			i, c, d, j, num;
 	entity_t   *pr;
 
 	c = MSG_ReadByte (net_message);
@@ -578,6 +579,11 @@ CL_ParseProjectiles (void)
 		d = c;
 
 	for (i = 0; i < d; i++) {
+		if (nail2)
+			num = MSG_ReadByte (net_message);
+		else
+			num = 0;
+
 		for (j = 0; j < 6; j++)
 			bits[j] = MSG_ReadByte (net_message);
 
@@ -595,8 +601,11 @@ CL_ParseProjectiles (void)
 
 	if (d < c) {
 		c = (c - d) * 6;
-		for (i = 0; i < c; i++)
+		for (i = 0; i < c; i++) {
+			if (nail2)
+				MSG_ReadByte (net_message);
 			MSG_ReadByte (net_message);
+		}
 	}
 }
 
@@ -618,19 +627,98 @@ CL_LinkProjectiles (void)
 	}
 }
 
+#define DF_ORIGIN   1
+#define DF_ANGLES   (1<<3)
+#define DF_EFFECTS  (1<<6)
+#define DF_SKINNUM  (1<<7)
+#define DF_DEAD     (1<<8)
+#define DF_GIB      (1<<9)
+#define DF_WEAPONFRAME (1<<10)
+#define DF_MODEL    (1<<11)
+
+int
+TranslateFlags (int src)
+{
+	int         dst = 0;
+
+	if (src & DF_EFFECTS)
+		dst |= PF_EFFECTS;
+	if (src & DF_SKINNUM)
+		dst |= PF_SKINNUM;
+	if (src & DF_DEAD)
+		dst |= PF_DEAD;
+	if (src & DF_GIB)
+		dst |= PF_GIB;
+	if (src & DF_WEAPONFRAME)
+		dst |= PF_WEAPONFRAME;
+	if (src & DF_MODEL)
+		dst |= PF_MODEL;
+
+	return dst;
+}
+
 void
 CL_ParsePlayerinfo (void)
 {
-	int				flags, msec, num, i;
-	player_state_t *state;
+	int            flags, msec, num, i;
+	player_info_t *info;
+	player_state_t *state, *prevstate;
+	static player_state_t dummy;
 
 	num = MSG_ReadByte (net_message);
 	if (num > MAX_CLIENTS)
 		Host_Error ("CL_ParsePlayerinfo: bad num");
 
+	info = &cl.players[num];
 	state = &cl.frames[parsecountmod].playerstate[num];
 
 	state->number = num;
+
+	if (cls.demoplayback2) {
+		if (info->prevcount > cl.parsecount || !cl.parsecount) {
+			prevstate = &dummy;
+		} else {
+			if (cl.parsecount - info->prevcount >= UPDATE_BACKUP-1)
+				prevstate = &dummy;
+			else
+				prevstate = &cl.frames[info->prevcount
+									   & UPDATE_MASK].playerstate[num];
+		}
+		info->prevcount = cl.parsecount;
+
+		if (cls.findtrack && info->stats[STAT_HEALTH] != 0) {
+			autocam = CAM_TRACK;
+			Cam_Lock (num);
+			ideal_track = num;
+			cls.findtrack = false;
+		}
+
+		memcpy(state, prevstate, sizeof(player_state_t));
+
+		flags = MSG_ReadShort (net_message);
+		state->flags = TranslateFlags(flags);
+		state->messagenum = cl.parsecount;
+		state->command.msec = 0;
+		state->frame = MSG_ReadByte (net_message);
+		state->state_time = parsecounttime;
+		for (i=0; i <3; i++)
+			if (flags & (DF_ORIGIN << i))
+				state->origin[i] = MSG_ReadCoord (net_message);
+		for (i=0; i <3; i++)
+			if (flags & (DF_ANGLES << i))
+				state->command.angles[i] = MSG_ReadAngle16 (net_message);
+		if (flags & DF_MODEL)
+			state->modelindex = MSG_ReadByte (net_message);
+		if (flags & DF_SKINNUM)
+			state->skinnum = MSG_ReadByte (net_message);
+		if (flags & DF_EFFECTS)
+			state->effects = MSG_ReadByte (net_message);
+		if (flags & DF_WEAPONFRAME)
+			state->weaponframe = MSG_ReadByte (net_message);
+		VectorCopy (state->command.angles, state->viewangles);
+		return;
+	}
+
 	flags = state->flags = MSG_ReadShort (net_message);
 
 	state->messagenum = cl.parsecount;
@@ -830,7 +918,7 @@ CL_LinkPlayers (void)
 
 		// only predict half the move to minimize overruns
 		msec = 500 * (playertime - state->state_time);
-		if (msec <= 0 || (!cl_predict_players->int_val)) {
+		if (msec <= 0 || (!cl_predict_players->int_val) || cls.demoplayback2) {
 			VectorCopy (state->origin, ent->origin);
 		} else {									// predict players movement
 			state->command.msec = msec = min (msec, 255);
@@ -925,6 +1013,13 @@ CL_SetSolidEntities (void)
 			pmove.numphysent++;
 		}
 	}
+}
+
+void
+CL_ClearPredict (void)
+{
+	memset (predicted_players, 0, sizeof (predicted_players));
+	//fixangle = 0;
 }
 
 /*

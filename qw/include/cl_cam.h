@@ -41,8 +41,11 @@
 
 extern	int	autocam;
 extern	int	spec_track; // player# of who we are tracking
+extern	int ideal_track;
 extern	struct cvar_s	*chase_active;
 
+void Cam_Lock (int playernum);
+int Cam_TrackNum (void);
 qboolean Cam_DrawViewModel(void);
 qboolean Cam_DrawPlayer(int playernum);
 void Cam_Track(usercmd_t *cmd);

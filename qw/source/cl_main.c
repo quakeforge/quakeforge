@@ -471,6 +471,7 @@ CL_Disconnect (void)
 		CL_SetState (ca_disconnected);
 
 		cls.demoplayback = cls.demorecording = cls.timedemo = false;
+		cls.demoplayback2 = false;
 
 		CL_RemoveQFInfoKeys ();
 	}
@@ -1049,7 +1050,7 @@ CL_ReadPackets (void)
 			SL_CheckPing (NET_AdrToString (net_from));
 			continue;
 		}
-		if (net_message->message->cursize < 8) {
+		if (net_message->message->cursize < 8 && !cls.demoplayback2) {
 			Con_Printf ("%s: Runt packet\n", NET_AdrToString (net_from));
 			continue;
 		}
@@ -1061,14 +1062,18 @@ CL_ReadPackets (void)
 						 NET_AdrToString (net_from));
 			continue;
 		}
-		if (!Netchan_Process (&cls.netchan))
-			continue;						// wasn't accepted for some reason
+		if (!cls.demoplayback2) {
+			if (!Netchan_Process (&cls.netchan))
+				continue;					// wasn't accepted for some reason
+		} else {
+			MSG_BeginReading (net_message);
+		}
 		if (cls.state != ca_disconnected)
 			CL_ParseServerMessage ();
 	}
 
 	// check timeout
-	if (cls.state >= ca_connected
+	if (!cls.demoplayback && cls.state >= ca_connected
 		&& realtime - cls.netchan.last_received > cl_timeout->value) {
 		Con_Printf ("\nServer connection timed out.\n");
 		CL_Disconnect ();
@@ -1542,6 +1547,23 @@ Host_Frame (float time)
 
 	// fetch results from server
 	CL_ReadPackets ();
+
+	if (cls.demoplayback2) {
+		player_state_t *self, *oldself;
+
+		self = &cl.frames[cl.parsecount
+						  & UPDATE_MASK].playerstate[cl.playernum];
+		oldself = &cl.frames[(cls.netchan.outgoing_sequence - 1)
+							 & UPDATE_MASK].playerstate[cl.playernum];
+		self->messagenum = cl.parsecount;
+		VectorCopy (oldself->origin, self->origin);
+		VectorCopy (oldself->velocity, self->velocity);
+		VectorCopy (oldself->viewangles, self->viewangles);
+
+		CL_ParseClientdata ();
+
+		cls.netchan.outgoing_sequence = cl.parsecount + 1;
+	}
 
 	// send intentions now
 	// resend a connection request if necessary

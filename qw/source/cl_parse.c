@@ -60,6 +60,7 @@ static const char rcsid[] =
 #include "QF/gib_thread.h"
 
 #include "bothdefs.h"
+#include "cl_cam.h"
 #include "cl_ents.h"
 #include "cl_input.h"
 #include "cl_main.h"
@@ -138,7 +139,7 @@ char       *svc_strings[] = {
 	"svc_setinfo",
 	"svc_serverinfo",
 	"svc_updatepl",
-	"NEW PROTOCOL",
+	"svc_nails2",						// FIXME from qwex
 	"NEW PROTOCOL",
 	"NEW PROTOCOL",
 	"NEW PROTOCOL",
@@ -658,11 +659,18 @@ CL_ParseServerData (void)
 		snprintf (fn, sizeof (fn), "cmd_warncmd %d\n", cmd_warncmd_val);
 		Cbuf_AddText (cl_cbuf, fn);
 	}
-	// parse player slot, high bit means spectator
-	cl.playernum = MSG_ReadByte (net_message);
-	if (cl.playernum & 128) {
+
+	if (cls.demoplayback2) {
+		realtime = cls.basetime = MSG_ReadFloat (net_message);
+		cl.playernum = 31;
 		cl.spectator = true;
-		cl.playernum &= ~128;
+	} else {
+		// parse player slot, high bit means spectator
+		cl.playernum = MSG_ReadByte (net_message);
+		if (cl.playernum & 128) {
+			cl.spectator = true;
+			cl.playernum &= ~128;
+		}
 	}
 
 // FIXME: evil hack so NQ and QW can share sound code
@@ -915,10 +923,13 @@ CL_ParseClientdata (void)
 	oldparsecountmod = parsecountmod;
 
 	i = cls.netchan.incoming_acknowledged;
+
 	cl.parsecount = i;
 	i &= UPDATE_MASK;
 	parsecountmod = i;
 	frame = &cl.frames[i];
+	if (cls.demoplayback2)
+		frame->senttime = realtime - host_frametime;//realtime;
 	parsecounttime = cl.frames[i].senttime;
 
 	frame->receivedtime = realtime;
@@ -1063,6 +1074,12 @@ CL_SetStat (int stat, int value)
 
 	if (stat < 0 || stat >= MAX_CL_STATS)
 		Host_Error ("CL_SetStat: %i is invalid", stat);
+
+	if (cls.demoplayback2) {
+		cl.players[cls.lastto].stats[stat] = value;
+		if (Cam_TrackNum () != cls.lastto)
+			return;
+	}
 
 	Sbar_Changed ();
 
@@ -1211,7 +1228,8 @@ CL_ParseServerMessage (void)
 		// other commands
 		switch (cmd) {
 			default:
-				Host_Error ("CL_ParseServerMessage: Illegible server message");
+				Host_Error ("CL_ParseServerMessage: Illegible server "
+							"message: %d\n", cmd);
 				break;
 
 			case svc_nop:
@@ -1287,7 +1305,19 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_setangle:
-				MSG_ReadAngleV (net_message, cl.viewangles);
+				if (!cls.demoplayback2) {
+					MSG_ReadAngleV (net_message, cl.viewangles);
+				} else {
+					j = MSG_ReadByte(net_message);
+					//fixangle |= 1 << j;
+					if (j != Cam_TrackNum()) {
+						MSG_ReadAngle (net_message);
+						MSG_ReadAngle (net_message);
+						MSG_ReadAngle (net_message);
+					} else {
+						MSG_ReadAngleV (net_message, cl.viewangles);
+					}
+				}
 // FIXME		cl.viewangles[PITCH] = cl.viewangles[ROLL] = 0;
 				break;
 
@@ -1453,7 +1483,11 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_nails:
-				CL_ParseProjectiles ();
+				CL_ParseProjectiles (false);
+				break;
+
+			case svc_nails2:			// FIXME from qwex
+				CL_ParseProjectiles (true);
 				break;
 
 			case svc_chokecount:		// some preceding packets were choked

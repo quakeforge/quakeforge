@@ -93,6 +93,8 @@ qboolean    cam_forceview;
 vec3_t      cam_viewangles;
 
 int         spec_track = 0;				// player# of who we are tracking
+int         ideal_track = 0;
+float       last_lock = 0;
 int         autocam = CAM_NONE;
 
 
@@ -158,6 +160,14 @@ Cam_DrawPlayer (int playernum)
 	return false;
 }
 
+int
+Cam_TrackNum (void)
+{
+	if (!autocam)
+		return -1;
+	return spec_track;
+}
+
 void
 Cam_Unlock (void)
 {
@@ -174,11 +184,16 @@ void
 Cam_Lock (int playernum)
 {
 	char		st[40];
-
+printf ("Cam_Lock: %d\n", playernum);
 	snprintf (st, sizeof (st), "ptrack %i", playernum);
+	if (cls.demoplayback2) {
+		memcpy(cl.stats, cl.players[playernum].stats, sizeof (cl.stats));
+	}
+
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 	MSG_WriteString (&cls.netchan.message, st);
 	spec_track = playernum;
+	last_lock = realtime;
 	cam_forceview = true;
 	locked = false;
 	Sbar_Changed ();
@@ -355,8 +370,10 @@ Cam_CheckHighTarget (void)
 		}
 	}
 	if (j >= 0) {
-		if (!locked || cl.players[j].frags > cl.players[spec_track].frags)
+		if (!locked || cl.players[j].frags > cl.players[spec_track].frags) {
 			Cam_Lock (j);
+			ideal_track = spec_track;
+		}
 	} else
 		Cam_Unlock ();
 }
@@ -394,6 +411,23 @@ Cam_Track (usercmd_t *cmd)
 	}
 
 	frame = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];
+	if (autocam && cls.demoplayback2 && 0) {
+		if (ideal_track != spec_track && realtime - last_lock > 1
+			&& frame->playerstate[ideal_track].messagenum == cl.parsecount)
+			Cam_Lock (ideal_track);
+
+		if (frame->playerstate[spec_track].messagenum != cl.parsecount) {
+			int         i;
+
+			for (i = 0; i < MAX_CLIENTS; i++) {
+				if (frame->playerstate[i].messagenum == cl.parsecount)
+					break;
+			}
+			if (i < MAX_CLIENTS)
+				Cam_Lock (i);
+		}
+	}
+
 	player = frame->playerstate + spec_track;
 	self = frame->playerstate + cl.playernum;
 
@@ -594,6 +628,8 @@ Cam_FinishMove (usercmd_t *cmd)
 		s = &cl.players[i];
 		if (s->name[0] && !s->spectator) {
 			Cam_Lock (i);
+			Con_Printf("tracking %s\n", s->name);
+			ideal_track = i;
 			return;
 		}
 		i = (i + 1) % MAX_CLIENTS;
@@ -603,6 +639,7 @@ Cam_FinishMove (usercmd_t *cmd)
 	s = &cl.players[i];
 	if (s->name[0] && !s->spectator) {
 		Cam_Lock (i);
+		ideal_track = i;
 		return;
 	}
 	Con_Printf ("No target found ...\n");
@@ -614,6 +651,7 @@ Cam_Reset (void)
 {
 	autocam = CAM_NONE;
 	spec_track = 0;
+	ideal_track = 0;
 }
 
 void

@@ -50,6 +50,7 @@ extern int	cl_gib3index;
 
 int CL_CalcNet (void);
 void CL_ParseServerMessage (void);
+void CL_ParseClientdata (void);
 void CL_NewTranslation (int slot, struct skin_s *skin);
 qboolean	CL_CheckOrDownloadFile (const char *filename);
 qboolean CL_IsUploading(void);

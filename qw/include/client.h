@@ -102,6 +102,8 @@ typedef struct player_info_s
 	byte	translations[4*VID_GRADES*256];	// space for colormap32
 	int		translationcolor[256];
 	struct skin_s	*skin;
+	int		stats[MAX_CL_STATS];	// health, etc
+	int     prevcount;
 } player_info_t;
 
 
@@ -178,6 +180,12 @@ typedef struct
 // entering a map (and clearing client_state_t)
 	qboolean	demorecording;
 	qboolean	demoplayback;
+	qboolean	demoplayback2;
+	qboolean	findtrack;
+	int			lastto;
+	int			lasttype;
+	int			prevtime;
+	double		basetime;
 	qboolean	timedemo;
 	QFile		*demofile;
 	float		td_lastframe;		// to meter out one message a frame
