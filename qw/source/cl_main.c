@@ -45,9 +45,6 @@ static const char rcsid[] =
 #ifdef HAVE_NETINET_IN_H
 # include <netinet/in.h>
 #endif
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif
 #ifdef HAVE_WINSOCK_H
 # include <winsock.h>
 #endif
@@ -1462,10 +1459,6 @@ Host_Frame (float time)
 
 	// decide the simulation time
 	if ((sleeptime = Host_SimulationTime (time)) != 0) {
-#ifdef HAVE_USLEEP
-		if (sleeptime > 0.002) // minimum sleep time
-			usleep ((unsigned long)(sleeptime * 1000000 / 2));
-#endif
 		return;					// framerate is too high
 	}
 
