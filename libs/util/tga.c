@@ -46,6 +46,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/texture.h"
 #include "QF/tga.h"
 #include "QF/zone.h"
+#include "QF/GL/defines.h"
 
 #include "compat.h"
 
@@ -106,20 +107,18 @@ reverse_blit_rgba (byte *buf, int count, byte red, byte green, byte blue,
 }
 
 static inline byte *
-blit_la (byte *buf, int count, byte lum, byte alpha)
+blit_l (byte *buf, int count, byte lum)
 {
 	while (count--) {
 		*buf++ = lum;
-		*buf++ = alpha;
 	}
 	return buf;
 }
 
 static inline byte *
-reverse_blit_la (byte *buf, int count, byte lum, byte alpha)
+reverse_blit_l (byte *buf, int count, byte lum)
 {
 	while (count--) {
-		*buf-- = alpha;
 		*buf-- = lum;
 	}
 	return buf;
@@ -195,18 +194,16 @@ static inline byte *
 read_l (byte *buf, int count, byte **data, cmap_t *cmap)
 {
 	byte        lum = *(*data)++;
-	byte        alpha = 255;
 
-	return blit_la (buf, count, lum, alpha);
+	return blit_l (buf, count, lum);
 }
 
 static inline byte *
 reverse_read_l (byte *buf, int count, byte **data, cmap_t *cmap)
 {
 	byte        lum = *(*data)++;
-	byte        alpha = 255;
 
-	return reverse_blit_la (buf, count, lum, alpha);
+	return reverse_blit_l (buf, count, lum);
 }
 
 static inline void
@@ -558,7 +555,7 @@ decode_greyscale (TargaHeader *targa, tex_t *tex, byte *dataByte)
 
 	if (targa->pixel_size != 8)
 		Sys_Error ("LoadTGA: unsupported truecolor pixel size");
-	tex->format = tex_la;
+	tex->format = tex_l;
 
 	columns = targa->width;
 	rows = targa->height;
@@ -595,7 +592,7 @@ decode_greyscale_rle (TargaHeader *targa, tex_t *tex, byte *dataByte)
 
 	if (targa->pixel_size != 8)
 		Sys_Error ("LoadTGA: unsupported truecolor pixel size");
-	tex->format = tex_la;
+	tex->format = tex_l;
 
 	columns = targa->width;
 	rows = targa->height;
