@@ -405,7 +405,8 @@ R_TeleportSplash (vec3_t org)
 void
 R_RocketTrail (entity_t *ent)
 {
-	float		dist, len, origlen, percent, pscale, pscalenext;
+	float		dist, maxlen, origlen, percent, pscale, pscalenext;
+	float		len = 0;
 	vec3_t		subtract, vec;
 
 	if (numparticles >= r_maxparticles)
@@ -414,15 +415,12 @@ R_RocketTrail (entity_t *ent)
 	R_AddFire (ent->old_origin, ent->origin, ent);
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
-	len = VectorNormalize (vec);
-	origlen = r_frametime / len;
+	maxlen = VectorNormalize (vec);
+	origlen = r_frametime / maxlen;
 
 	pscale = 1.5 + qfrandom (1.5);
 
-	while (len > 0) {
-		if (numparticles >= r_maxparticles)
-			break;
-
+	while (len < maxlen) {
 		pscalenext = 1.5 + qfrandom (1.5);
 		dist = (pscale + pscalenext) * 3.0;
 
@@ -432,10 +430,12 @@ R_RocketTrail (entity_t *ent)
 
 		// Misty-chan's Easter Egg: change color to (rand () & 255) 
 		particle_new (pt_smoke, part_tex_smoke, ent->old_origin,
-					  pscale + percent * 4, vec3_origin,
-					  r_realtime +2.0 - percent, 12 + (rand () & 3),
-					  128 + (rand () & 31) - percent * 100);
-		len -= dist;
+					  pscale + percent * 4.0, vec3_origin,
+					  r_realtime + 2.0 - percent * 2.0, 12 + (rand () & 3),
+					  128 + (rand () & 31) - percent * 100.0);
+		if (numparticles >= r_maxparticles)
+			break;
+		len += dist;
 		pscale = pscalenext;
 	}
 }
@@ -443,21 +443,19 @@ R_RocketTrail (entity_t *ent)
 void
 R_GrenadeTrail (entity_t *ent)
 {
-	float		dist, len, origlen, percent, pscale, pscalenext;
+	float		dist, maxlen, origlen, percent, pscale, pscalenext;
+	float		len = 0;
 	vec3_t		subtract, vec;
 
 	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
-	len = VectorNormalize (vec);
-	origlen = r_frametime / len;
+	maxlen = VectorNormalize (vec);
+	origlen = r_frametime / maxlen;
 	pscale = 6.0 + qfrandom (7.0);
 
-	while (len > 0) {
-		if (numparticles >= r_maxparticles)
-			break;
-
+	while (len < maxlen) {
 		pscalenext = 6.0 + qfrandom (7.0);
 		dist = (pscale + pscalenext) * 2.0;
 
@@ -467,10 +465,12 @@ R_GrenadeTrail (entity_t *ent)
 
 		// Misty-chan's Easter Egg: change color to (rand () & 255)
 		particle_new (pt_smoke, part_tex_smoke, ent->old_origin,
-					  pscale + percent * 4, vec3_origin,
-					  r_realtime + 2.0 - percent, (rand () & 3),
-					  160 + (rand () & 31) - percent * 100);
-		len -= dist;
+					  pscale + percent * 4.0, vec3_origin,
+					  r_realtime + 2.0 - percent * 2.0, (rand () & 3),
+					  160 + (rand () & 31) - percent * 100.0);
+		if (numparticles >= r_maxparticles)
+			break;
+		len += dist;
 		pscale = pscalenext;
 	}
 }
@@ -478,7 +478,8 @@ R_GrenadeTrail (entity_t *ent)
 void
 R_BloodTrail (entity_t *ent)
 {
-	float		dist, len, origlen, percent, pscale, pscalenext;
+	float		dist, maxlen, origlen, percent, pscale, pscalenext;
+	float		len = 0;
 	int			j;
 	vec3_t		subtract, vec, porg, pvel;
 
@@ -486,14 +487,11 @@ R_BloodTrail (entity_t *ent)
 		return;
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
-	len = VectorNormalize (vec);
-	origlen = r_frametime / len;
+	maxlen = VectorNormalize (vec);
+	origlen = r_frametime / maxlen;
 	pscale = 5.0 + qfrandom (10.0);
 
-	while (len > 0) {
-		if (numparticles >= r_maxparticles)
-			break;
-
+	while (len < maxlen) {
 		VectorCopy (vec3_origin, pvel);
 		VectorCopy (ent->old_origin, porg);
 
@@ -511,8 +509,11 @@ R_BloodTrail (entity_t *ent)
 		pvel[2] -= percent * 40;
 
 		particle_new (pt_grav, part_tex_smoke, porg, pscale, pvel,
-					  r_realtime + 2.0 - percent, 68 + (rand () & 3), 255);
-		len -= dist;
+					  r_realtime + 2.0 - percent * 2.0, 68 + (rand () & 3),
+					  255);
+		if (numparticles >= r_maxparticles)
+			break;
+		len += dist;
 		pscale = pscalenext;
 	}
 }
@@ -520,7 +521,8 @@ R_BloodTrail (entity_t *ent)
 void
 R_SlightBloodTrail (entity_t *ent)
 {
-	float		dist, len, origlen, percent, pscale, pscalenext;
+	float		dist, maxlen, origlen, percent, pscale, pscalenext;
+	float		len = 0;
 	int			j;
 	vec3_t      subtract, vec, porg, pvel;
 
@@ -528,14 +530,11 @@ R_SlightBloodTrail (entity_t *ent)
 		return;
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
-	len = VectorNormalize (vec);
-	origlen = r_frametime / len;
+	maxlen = VectorNormalize (vec);
+	origlen = r_frametime / maxlen;
 	pscale = 1.5 + qfrandom (7.5);
 
-	while (len > 0) {
-		if (numparticles >= r_maxparticles)
-			break;
-
+	while (len < maxlen) {
 		VectorCopy (vec3_origin, pvel);
 		VectorCopy (ent->old_origin, porg);
 
@@ -553,8 +552,11 @@ R_SlightBloodTrail (entity_t *ent)
 		pvel[2] -= percent * 40;
 
 		particle_new (pt_grav, part_tex_smoke, porg, pscale, pvel,
-					  r_realtime + 1.5 - percent, 68 + (rand () & 3), 192);
-		len -= dist;
+					  r_realtime + 1.5 - percent * 1.5, 68 + (rand () & 3),
+					  192);
+		if (numparticles >= r_maxparticles)
+			break;
+		len += dist;
 		pscale = pscalenext;
 	}
 }
@@ -562,7 +564,8 @@ R_SlightBloodTrail (entity_t *ent)
 void
 R_GreenTrail (entity_t *ent)
 {
-	float		dist, len, origlen, percent;
+	float		dist, maxlen, origlen, percent;
+	float		len = 0;
 	static int	tracercount;
 	vec3_t		subtract, vec, pvel;
 
@@ -570,14 +573,11 @@ R_GreenTrail (entity_t *ent)
 		return;
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
-	len = VectorNormalize (vec);
-	origlen = r_frametime / len;
+	maxlen = VectorNormalize (vec);
+	origlen = r_frametime / maxlen;
 	dist = 3.0;
 
-	while (len > 0) {
-		if (numparticles >= r_maxparticles)
-			break;
-
+	while (len < maxlen) {
 		VectorCopy (vec3_origin, pvel);
 		tracercount++;
 		if (tracercount & 1) {
@@ -593,17 +593,20 @@ R_GreenTrail (entity_t *ent)
 		percent = len * origlen;
 
 		particle_new (pt_fire, part_tex_smoke, ent->old_origin,
-					  2.0 + qfrandom (1.0) - percent * 2, pvel,
-					  r_realtime + 0.5 - percent, 52 + (rand () & 4),
-					  255 - percent * 32);
-		len -= dist;
+					  2.0 + qfrandom (1.0) - percent * 2.0, pvel,
+					  r_realtime + 0.5 - percent * 0.5, 52 + (rand () & 4),
+					  255 - percent * 32.0);
+		if (numparticles >= r_maxparticles)
+			break;
+		len += dist;
 	}
 }
 
 void
 R_FlameTrail (entity_t *ent)
 {
-	float		dist, len, origlen, percent;
+	float		dist, maxlen, origlen, percent;
+	float		len = 0;
 	static int	tracercount;
 	vec3_t		subtract, vec, pvel;
 
@@ -611,14 +614,11 @@ R_FlameTrail (entity_t *ent)
 		return;
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
-	len = VectorNormalize (vec);
-	origlen = r_frametime / len;
+	maxlen = VectorNormalize (vec);
+	origlen = r_frametime / maxlen;
 	dist = 3.0;
 
-	while (len > 0) {
-		if (numparticles >= r_maxparticles)
-			break;
-
+	while (len < maxlen) {
 		VectorCopy (vec3_origin, pvel);
 		tracercount++;
 		if (tracercount & 1) {
@@ -634,16 +634,20 @@ R_FlameTrail (entity_t *ent)
 		percent = len * origlen;
 
 		particle_new (pt_fire, part_tex_smoke, ent->old_origin,
-					  2.0 + qfrandom (1.0) - percent * 2, pvel,
-					  r_realtime + 0.5 - percent, 234, 255 - percent * 32);
-		len -= dist;
+					  2.0 + qfrandom (1.0) - percent * 2.0, pvel,
+					  r_realtime + 0.5 - percent * 0.5, 234,
+					  255 - percent * 32.0);
+		if (numparticles >= r_maxparticles)
+			break;
+		len += dist;
 	}
 }
 
 void
 R_VoorTrail (entity_t *ent)
 {
-	float		dist, len, origlen, percent;
+	float		dist, maxlen, origlen, percent;
+	float		len = 0;
 	int			j;
 	vec3_t		subtract, vec, porg;
 
@@ -651,14 +655,11 @@ R_VoorTrail (entity_t *ent)
 		return;
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
-	len = VectorNormalize (vec);
-	origlen = r_frametime / len;
+	maxlen = VectorNormalize (vec);
+	origlen = r_frametime / maxlen;
 	dist = 3.0;
 
-	while (len > 0) {
-		if (numparticles >= r_maxparticles)
-			break;
-
+	while (len < maxlen) {
 		for (j = 0; j < 3; j++)
 			porg[j] = ent->old_origin[j] + qfrandom (16.0) - 8.0;
 
@@ -667,9 +668,11 @@ R_VoorTrail (entity_t *ent)
 		percent = len * origlen;
 
 		particle_new (pt_static, part_tex_dot, porg, 1.0 + qfrandom (1.0),
-					  vec3_origin, r_realtime + 0.3 - percent,
+					  vec3_origin, r_realtime + 0.3 - percent * 0.3,
 					  9 * 16 + 8 + (rand () & 3), 255);
-		len -= dist;
+		if (numparticles >= r_maxparticles)
+			break;
+		len += dist;
 	}
 }
 
@@ -720,16 +723,6 @@ R_DrawParticles (void)
 	j = 0;
 
 	for (k = 0, part = particles; k < numparticles; k++, part++) {
-		// LordHavoc: this is probably no longer necessary, as it is
-		// checked at the end, but could still happen on weird particle
-		// effects, left for safety...
-		if (part->die <= r_realtime) {
-			freeparticles[j++] = part;
-			continue;
-		}
-		maxparticle = k;
-		activeparticles++;
-
 		// Don't render particles too close to us.
 		// Note, we must still do physics and such on them.
 		if (!(DotProduct (part->org, vpn) < minparticledist)) {
@@ -814,6 +807,15 @@ R_DrawParticles (void)
 			default:
 				Con_DPrintf ("unhandled particle type %d\n", part->type);
 				break;
+		}
+		// LordHavoc: immediate removal of unnecessary particles (must be done
+		// to ensure compactor below operates properly in all cases)
+		if (part->die < r_realtime)
+			freeparticles[j++] = part;
+		else
+		{
+			maxparticle = k;
+			activeparticles++;
 		}
 	}
 	k = 0;
