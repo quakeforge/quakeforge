@@ -46,6 +46,9 @@ static const char rcsid[] =
 #include <getopt.h>
 #include <errno.h>
 #include <stdlib.h>
+#ifdef HAVE_PTHREAD_H
+# include <pthread.h>
+#endif
 
 #include "QF/cmd.h"
 #include "QF/bspfile.h"
@@ -60,11 +63,8 @@ static const char rcsid[] =
 
 #define	MAX_THREADS		4
 
-#ifdef __alpha
+#ifdef HAVE_PTHREAD_H
 pthread_mutex_t *my_mutex;
-int			numthreads = 4;
-#else
-int			numthreads = 1;
 #endif
 
 options_t	options;
@@ -358,11 +358,7 @@ GetNextPortal (void)
     return p;
 }
 
-#ifdef __alpha
-pthread_addr_t LeafThread (pthread_addr_t thread)
-#else
-void *LeafThread (int thread)
-#endif
+void *LeafThread (void *thread)
 {
     portal_t	*portal;
 	
@@ -491,33 +487,32 @@ CalcPortalVis (void)
     }
 
     leafon = 0;
-
-#ifdef __alpha
+#ifdef HAVE_PTHREAD_H
     {
 	pthread_t	work_threads[MAX_THREADS];
-	pthread_addr_t status;
+	void *status;
 	pthread_attr_t attrib;
 	pthread_mutexattr_t mattrib;
 		
 
 	my_mutex = malloc (sizeof (*my_mutex));
-	if (pthread_mutexattr_create (&mattrib) == -1)
+	if (pthread_mutexattr_init (&mattrib) == -1)
 		fprintf (stderr, "pthread_mutex_attr_create failed");
-	if (pthread_mutexattr_setkind_np (&mattrib, MUTEX_FAST_NP) == -1)
-		fprintf (stderr, "pthread_mutexattr_setkind_np failed");	
-	if (pthread_mutex_init (my_mutex, mattrib) == -1)
+	//if (pthread_mutexattr_settype (&mattrib, PTHREAD_MUTEX_ADAPTIVE_NP) == -1)
+	//	fprintf (stderr, "pthread_mutexattr_setkind_np failed");	
+	if (pthread_mutex_init (my_mutex, &mattrib) == -1)
 		fprintf (stderr, "pthread_mutex_init failed");
-	if (pthread_attr_create (&attrib) == -1)
+	if (pthread_attr_init (&attrib) == -1)
 		fprintf (stderr, "pthread_attr_create failed");
 	if (pthread_attr_setstacksize (&attrib, 0x100000) == -1)
 		fprintf (stderr, "pthread_attr_setstacksize failed");
-	for (i = 0; i < numthreads; i++) {
-	    if (pthread_create (&work_threads[i], attrib, LeafThread,
-							(pthread_addr_t) i) == -1)
+	for (i = 0; i < options.threads; i++) {
+	    if (pthread_create (&work_threads[i], &attrib, LeafThread,
+							(void *) i) == -1)
 			fprintf (stderr, "pthread_create failed");
 	}
 
-	for (i = 0; i < numthreads; i++) {
+	for (i = 0; i < options.threads; i++) {
 	    if (pthread_join (work_threads[i], &status) == -1)
 			fprintf (stderr, "pthread_join failed");
 	}
@@ -526,7 +521,7 @@ CalcPortalVis (void)
 	    fprintf (stderr, "pthread_mutex_destroy failed");
     }
 #else
-    LeafThread (0);
+	LeafThread (0);
 #endif
 
     if (options.verbosity >= 0) {
@@ -847,6 +842,7 @@ int
 main (int argc, char **argv)
 {
 	double      start, stop;
+	dstring_t  *portalfile = dstring_new ();
 	
 	start = Sys_DoubleTime ();
 	
@@ -865,7 +861,11 @@ main (int argc, char **argv)
 	
     LoadBSPFile (options.bspfile);
 
-//	LoadPortals (portalfile);
+	portalfile->size = strlen (options.bspfile) + 1;
+	dstring_adjust (portalfile);
+	COM_StripExtension (options.bspfile, portalfile->str);
+	dstring_appendstr (portalfile, ".prt");
+	LoadPortals (portalfile->str);
 
 //	uncompressed = malloc (bitbytes * portalleafs);
 //	memset (uncompressed, 0, bitbytes * portalleafs);
