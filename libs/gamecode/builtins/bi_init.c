@@ -35,8 +35,10 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/progs.h"
 
 static void (*const cbuf_progs_init)(progs_t *) = Cbuf_Progs_Init;
-static void (*const cvar_progs_init)(progs_t *) = Cvar_Progs_Init;
 static void (*const cmd_progs_init)(progs_t *) = Cmd_Progs_Init;
+static void (*const cvar_progs_init)(progs_t *) = Cvar_Progs_Init;
+static void (*const file_progs_init)(progs_t *) = File_Progs_Init;
+static void (*const hash_progs_init)(progs_t *) = Hash_Progs_Init;
 static void (*const inputline_progs_init)(progs_t *) = InputLine_Progs_Init;
 static void (*const qfile_progs_init)(progs_t *, int) = QFile_Progs_Init;
 static void (*const qfs_progs_init)(progs_t *) = QFS_Progs_Init;
