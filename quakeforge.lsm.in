@@ -4,8 +4,8 @@ Version:	@VERSION@
 Entered-date:	@ISODATE@
 Description:	3D game engine based on id Software's Quake engine
 Keywords:	3D, game, engine, quake
-Author: 	quake-devel@lists.sourceforge.net (The QuakeForge Project)
-Maintained-by:	quake-devel@lists.sourceforge.net (The QuakeForge Project)
+Author: 	quakeforge-devel@lists.quakeforge.net (The QuakeForge Project)
+Maintained-by:	quakeforge-devel@lists.quakeforge.net (The QuakeForge Project)
 Primary-site:	http://www.quakeforge.net/
 		604k @PACKAGE@-@VERSION@.tar.bz2
 		730k @PACKAGE@-@VERSION@.tar.gz
