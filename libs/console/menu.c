@@ -392,7 +392,6 @@ Menu_Draw (void)
 		return;
 	}
 
-	item = menu->items[menu->cur_item];
 
 	for (m_pic = menu->pics; m_pic; m_pic = m_pic->next) {
 		qpic_t     *pic = Draw_CachePic (m_pic->name, 1);
@@ -406,6 +405,9 @@ Menu_Draw (void)
 						 menu->items[i]->text);
 		}
 	}
+	if (!menu->items)
+		return;
+	item = menu->items[menu->cur_item];
 	if (menu->cursor) {
 		G_INT (&menu_pr_state, OFS_PARM0) = item->x;
 		G_INT (&menu_pr_state, OFS_PARM1) = item->y;
