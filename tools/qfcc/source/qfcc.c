@@ -110,7 +110,7 @@ InitData (void)
 
 	pr.globals = new_defspace ();
 	pr.globals->data = calloc (65536, sizeof (pr_type_t));
-	pr.scope = new_scope (pr.globals, 0);
+	pr.scope = new_scope (sc_static, pr.globals, 0);
 	current_scope = pr.scope;
 
 	numglobaldefs = 1;
@@ -136,7 +136,7 @@ WriteData (int crc)
 	fields = calloc (pr.scope->num_defs, sizeof (ddef_t));
 
 	for (def = pr.scope->head; def; def = def->def_next) {
-		if (def->scope->parent)
+		if (def->scope->type != sc_static || !def->name)
 			continue;
 		if (def->type->type == ev_func) {
 		} else if (def->type->type == ev_field) {
@@ -165,7 +165,7 @@ WriteData (int crc)
 		printf ("%6i strofs\n", pr.strofs);
 		printf ("%6i statements\n", pr.num_statements);
 		printf ("%6i functions\n", pr.num_functions);
-		printf ("%6i global defs\n", pr.scope->num_defs);
+		printf ("%6i global defs\n", numglobaldefs);
 		printf ("%6i locals size (%s)\n", num_localdefs, big_function);
 		printf ("%6i fielddefs\n", numfielddefs);
 		printf ("%6i globals\n", pr.globals->size);

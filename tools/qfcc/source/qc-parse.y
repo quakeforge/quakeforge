@@ -340,7 +340,8 @@ def_item
 	: def_name opt_initializer
 		{
 			$$ = $1;
-			if ($$ && !$$->scope->parent && $$->type->type != ev_func)
+			if ($$ && $$->scope->type == sc_static
+				&& $$->type->type != ev_func)
 				def_initialized ($$);
 		}
 	;
@@ -348,17 +349,14 @@ def_item
 def_name
 	: NAME
 		{
-			if (current_scope->parent) {
-				scope_t *scope = current_scope->parent;
-				if (!scope->parent && scope->parent->parent) {
-					def_t      *def = get_def (0, $1, scope, 0);
-					if (def) {
-						scope = def->scope;
-						if (scope->parent && !scope->parent->parent) {
-							warning (0, "local %s shadows param %s", $1,
-									 def->name);
-						}
-					}
+			if (current_scope->type == sc_local
+				&& current_scope->parent->type == sc_params) {
+				scope_t *scope;
+				def_t      *def = get_def (0, $1, scope, 0);
+				if (def) {
+					scope = def->scope;
+					if (scope->type == sc_params)
+						warning (0, "local %s shadows param %s", $1, def->name);
 				}
 			}
 			$$ = get_def (current_type, $1, current_scope, 1);
@@ -375,7 +373,7 @@ opt_initializer
 var_initializer
 	: '=' expr
 		{
-			if (current_scope->parent) {
+			if (current_scope->type == sc_local) {
 				append_expr (local_expr,
 							 assign_expr (new_def_expr (current_def), $2));
 				def_initialized (current_def);
@@ -505,7 +503,8 @@ end_function
 statement_block
 	: '{' 
 		{
-			scope_t    *scope = new_scope (current_scope->space, current_scope);
+			scope_t    *scope = new_scope (sc_local, current_scope->space,
+										   current_scope);
 			current_scope = scope;
 		}
 	  statements '}'
@@ -1332,7 +1331,7 @@ static void
 scan_scope (hashtab_t *tab, scope_t *scope)
 {
 	def_t      *def;
-	if (scope->parent && scope->parent->parent)
+	if (scope->type == sc_local)
 		scan_scope (tab, scope->parent);
 	for (def = scope->head; def; def = def->def_next) {
 		if  (def->name && !def->removed) {

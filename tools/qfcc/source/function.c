@@ -123,7 +123,7 @@ build_scope (function_t *f, def_t *func, param_t *params)
 	param_t    *p;
 	def_t      *argv = 0;
 
-	f->scope = new_scope (new_defspace (), pr.scope);
+	f->scope = new_scope (sc_params, new_defspace (), pr.scope);
 
 	if (func->type->num_parms < 0) {
 		def = get_def (&type_integer, ".argc", f->scope, 1);

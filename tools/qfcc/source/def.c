@@ -116,11 +116,12 @@ new_defspace (void)
 }
 
 scope_t *
-new_scope (defspace_t *space, scope_t *parent)
+new_scope (scope_type type, defspace_t *space, scope_t *parent)
 {
 	scope_t    *scope;
 
 	ALLOC (1024, scope_t, scopes, scope);
+	scope->type = type;
 	scope->space = space;
 	scope->parent = parent;
 	scope->tail = &scope->head;

@@ -72,8 +72,15 @@ typedef struct defspace_s {
 	int       (*grow) (struct defspace_s *space);
 } defspace_t;
 
+typedef enum {
+	sc_static,
+	sc_params,
+	sc_local,
+} scope_type;
+
 typedef struct scope_s {
 	struct scope_s *next;
+	scope_type  type;
 	defspace_t *space;
 	def_t      *head;
 	def_t     **tail;
@@ -85,7 +92,7 @@ extern	def_t	def_ret, def_parms[MAX_PARMS];
 extern	def_t	def_void;
 extern	def_t	def_function;
 
-scope_t *new_scope (defspace_t *space, scope_t *parent);
+scope_t *new_scope (scope_type type, defspace_t *space, scope_t *parent);
 defspace_t *new_defspace (void);
 
 def_t *get_def (struct type_s *type, const char *name, scope_t *scope,

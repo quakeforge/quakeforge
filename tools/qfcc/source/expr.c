@@ -326,7 +326,8 @@ check_initialized (expr_t *e)
 {
 	if (options.warnings.uninited_variable) {
 		if (e->type == ex_def
-			&& !(e->e.def->type->type == ev_func && !e->e.def->scope->parent)
+			&& !(e->e.def->type->type == ev_func
+				 && e->e.def->scope->type == sc_static)
 			&& !e->e.def->initialized) {
 			warning (e, "%s may be used uninitialized", e->e.def->name);
 			e->e.def->initialized = 1;	// only warn once
