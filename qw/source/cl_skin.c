@@ -63,6 +63,9 @@ Skin_NextDownload (void)
 	int         i;
 	player_info_t *sc;
 
+	if (cls.state == ca_disconnected)
+		return;
+
 	if (cls.downloadnumber == 0) {
 		Con_Printf ("Checking skins...\n");
 		CL_UpdateScreen (realtime);
@@ -109,6 +112,10 @@ void
 CL_Skins_f (void)
 {
 	Skin_Flush ();
+
+	if (cls.state == ca_disconnected)
+		return;
+
 	cls.downloadnumber = 0;
 	cls.downloadtype = dl_skin;
 	Skin_NextDownload ();
@@ -122,7 +129,15 @@ CL_Skins_f (void)
 void
 CL_AllSkins_f (void)
 {
-	strcpy (allskins, Cmd_Argv (1));
+	if (Cmd_Argc () == 2) {
+		strcpy (allskins, Cmd_Argv (1));
+	} else if (Cmd_Argc () == 1) {
+		Con_Printf ("clearing allskins\n");
+		allskins[0] = 0;
+	} else {
+		Con_Printf ("Usage: allskins [name]\n");
+		return;
+	}
 	CL_Skins_f ();
 }
 
