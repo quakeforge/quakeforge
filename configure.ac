@@ -1107,7 +1107,7 @@ dnl Checks for CD-ROM
 dnl ==================================================================
 
 CD_CFLAGS=""
-CD_PLUGIN_TARGETS=""
+CD_PLUGIN_TARGETS="cd_file.la"
 unset CDTYPE
 
 AC_MSG_CHECKING(for CD audio support)
