@@ -221,18 +221,10 @@ PR_ParseImmediate (void)
 	}
 
 	// allocate a new one
-	cn = malloc (sizeof (def_t));
-	cn->next = NULL;
-	pr.def_tail->next = cn;
-	pr.def_tail = cn;
-
-	cn->search_next = pr.search;
-	pr.search = cn;
-
-	cn->type = pr_immediate_type;
-	cn->name = "IMMEDIATE";
+	// always share immediates
+	cn = PR_NewDef (pr_immediate_type, "IMMEDIATE", 0);
 	cn->initialized = 1;
-	cn->scope = NULL;					// always share immediates
+	cn->scope = NULL;
 
 	// copy the immediate to the global area
 	cn->ofs = numpr_globals;
@@ -729,99 +721,6 @@ PR_ParseImmediateStatements (type_t *type)
 }
 
 /*
-	PR_GetDef
-
-	If type is NULL, it will match any type
-	If allocate is true, a new def will be allocated if it can't be found
-*/
-def_t *
-PR_GetDef (type_t *type, char *name, def_t *scope, qboolean allocate)
-{
-	def_t	*def, **old;
-	char	element[MAX_NAME];
-
-	// see if the name is already in use
-	old = &pr.search;
-	for (def = *old; def; old = &def->search_next, def = *old)
-		if (!strcmp (def->name, name)) {
-			if (def->scope && def->scope != scope)	// in a different function
-				continue;
-
-			if (type && def->type != type)
-				PR_ParseError ("Type mismatch on redeclaration of %s", name);
-
-			// move to head of list to find fast next time
-			*old = def->search_next;
-			def->search_next = pr.search;
-			pr.search = def;
-
-			return def;
-		}
-
-	if (!allocate)
-		return NULL;
-
-	// allocate a new def
-	def = malloc (sizeof (def_t));
-	memset (def, 0, sizeof (*def));
-	def->next = NULL;
-	pr.def_tail->next = def;
-	pr.def_tail = def;
-
-
-	def->search_next = pr.search;
-	pr.search = def;
-
-	def->name = malloc (strlen (name) + 1);
-	strcpy (def->name, name);
-	def->type = type;
-
-	def->scope = scope;
-
-	def->ofs = numpr_globals;
-	pr_global_defs[numpr_globals] = def;
-
-	/*
-		make automatic defs for the vectors elements
-		.origin can be accessed as .origin_x, .origin_y, and .origin_z
-	*/
-	if (type->type == ev_vector) {
-		sprintf (element, "%s_x", name);
-		PR_GetDef (&type_float, element, scope, true);
-
-		sprintf (element, "%s_y", name);
-		PR_GetDef (&type_float, element, scope, true);
-
-		sprintf (element, "%s_z", name);
-		PR_GetDef (&type_float, element, scope, true);
-	} else {
-		numpr_globals += type_size[type->type];
-	}
-
-	if (type->type == ev_field) {
-		*(int *) &pr_globals[def->ofs] = pr.size_fields;
-
-		if (type->aux_type->type == ev_vector) {
-			sprintf (element, "%s_x", name);
-			PR_GetDef (&type_floatfield, element, scope, true);
-
-			sprintf (element, "%s_y", name);
-			PR_GetDef (&type_floatfield, element, scope, true);
-
-			sprintf (element, "%s_z", name);
-			PR_GetDef (&type_floatfield, element, scope, true);
-		} else {
-			pr.size_fields += type_size[type->aux_type->type];
-		}
-	}
-
-//	if (pr_dumpasm)
-//		PR_PrintOfs (def->ofs);
-
-	return def;
-}
-
-/*
 	PR_ParseDefs
 
 	Called at the outer layer and when a local statement is hit
@@ -856,6 +755,7 @@ PR_ParseDefs (void)
 				locals_start = locals_end = numpr_globals;
 				pr_scope = def;
 				f = PR_ParseImmediateStatements (type);
+				PR_FlushScope (pr_scope);
 				pr_scope = NULL;
 				def->initialized = 1;
 				G_FUNCTION (def->ofs) = numfunctions;

@@ -254,7 +254,7 @@ typedef struct def_s
 	type_t		*type;
 	char		*name;
 	struct def_s	*next;
-	struct def_s	*search_next;	// for finding faster
+	struct def_s	*scope_next;	// to facilitate hash table removal
 	gofs_t		ofs;
 	struct def_s	*scope;		// function the var was defined in, or NULL
 	int			initialized;	// 1 when a declaration included "= immediate"
@@ -384,6 +384,8 @@ extern	int		pr_error_count;
 
 void PR_NewLine (void);
 def_t *PR_GetDef (type_t *type, char *name, def_t *scope, qboolean allocate);
+def_t *PR_NewDef (type_t *type, const char *name, def_t *scope);
+void PR_FlushScope (def_t *scope);
 
 void PR_PrintDefs (void);
 

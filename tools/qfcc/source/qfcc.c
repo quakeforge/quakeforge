@@ -30,8 +30,8 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#include "QF/crc.h"
-#include "QF/qendian.h"
+#include <QF/crc.h>
+#include <QF/qendian.h>
 
 #include "qfcc.h"
 
