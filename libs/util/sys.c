@@ -491,7 +491,6 @@ Sys_DebugLog (const char *file, const char *fmt, ...)
 	va_list     args;
 	static dstring_t *data;
 	int         fd;
-	char        path[PATH_MAX];
 
 	if (!data)
 		data = dstring_newstr ();
@@ -499,7 +498,7 @@ Sys_DebugLog (const char *file, const char *fmt, ...)
 	va_start (args, fmt);
 	dvsprintf (data, fmt, args);
 	va_end (args);
-	fd = open (path, O_WRONLY | O_CREAT | O_APPEND, 0644);
+	fd = open (file, O_WRONLY | O_CREAT | O_APPEND, 0644);
 	write (fd, data->str, data->size - 1);
 	close (fd);
 }
