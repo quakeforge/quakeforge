@@ -549,6 +549,8 @@ separate_compile (void)
 		}
 		qfo = linker_finish ();
 		if (qfo) {
+			if (!options.output_file)
+				options.output_file = "progs.dat";
 			if (options.partial_link) {
 				qfo_write (qfo, options.output_file);
 			} else {
