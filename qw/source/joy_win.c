@@ -27,7 +27,7 @@
 	$Id$
 */
 
-// fixme: THIS IS NOT FINISHED YET
+// FIXME: THIS IS NOT FINISHED YET
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -521,7 +521,7 @@ JOY_StartupJoystick (void)
 
 	joy_advancedinit = false;
         joy_found = true;
-        // fixme: do this right
+        // FIXME: do this right
         joy_active = true;
 	Con_Printf ("\njoystick detected\n\n");
 }

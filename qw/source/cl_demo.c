@@ -187,14 +187,14 @@ CL_GetDemoMessage (void)
 			// rewind back to time
 			demotime_cached = 1;
 			cached_demotime = demotime;
-			return 0;					// allready read this frame's message
+			return 0;					// already read this frame's message
 		}
 		if (!cls.td_starttime && cls.state == ca_active) {
 			cls.td_starttime = Sys_DoubleTime ();
 			cls.td_startframe = host_framecount;
 		}
 		realtime = demotime;			// warp
-	} else if (!cl.paused && cls.state >= ca_onserver) {	// allways grab
+	} else if (!cl.paused && cls.state >= ca_onserver) {	// always grab
 															// until fully
 															// connected
 		if (realtime + 1.0 < demotime) {

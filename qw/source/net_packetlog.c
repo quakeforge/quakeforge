@@ -28,7 +28,7 @@
 	$Id$
 */
 
-// fixme: we did support Quake1 protocol too...
+// FIXME: we did support Quake1 protocol too...
 #define QUAKEWORLD
 
 #ifdef HAVE_CONFIG_H
@@ -397,7 +397,7 @@ Analyze_Server_Packet (byte * data, int len)
 {
         byte *safe;
         int slen;
-	// Fixme: quick-hack
+	// FIXME: quick-hack
         safe=net_message.data;
         slen=net_message.cursize;
 
@@ -427,7 +427,7 @@ Parse_Server_Packet ()
 
 	} else {
 		seq2 = MSG_ReadLong ();
-		// fixme display seqs right when reliable
+		// FIXME: display seqs right when reliable
 		Net_LogPrintf ("\nSeq: %ld Ack: %ld ", seq1 & 0x7FFFFFFF,
 					   seq2 & 0x7FFFFFFF);
 
@@ -488,7 +488,7 @@ Parse_Server_Packet ()
 									   (float) MSG_ReadByte () / 64.0);
 					ii = MSG_ReadByte ();
 
-					// fixme: well, cl. for client :-)
+					// FIXME: well, cl. for client :-)
 //                                        Net_LogPrintf ("%d (%s) ", ii, sv.sound_precache[ii]);
                                         Net_LogPrintf ("%d (%s) ", ii);
 					Net_LogPrintf ("Pos: ");
@@ -505,7 +505,7 @@ Parse_Server_Packet ()
 #endif
 					break;
 				case svc_print:
-					// fixme i==PRINT_CHAT
+					// FIXME: i==PRINT_CHAT
 					Net_LogPrintf (" [%d]", MSG_ReadByte ());
 					Net_LogPrintf (" %s", MSG_ReadString ());
 					break;
@@ -575,7 +575,7 @@ Parse_Server_Packet ()
 					break;
 
 				case svc_damage:
-					// fixme parse damage
+					// FIXME: parse damage
 					Net_LogPrintf ("armor: %d health: %d", MSG_ReadByte (),
 								   MSG_ReadByte ());
 					Net_LogPrintf (" from %f,%f,%f", MSG_ReadCoord (),
@@ -859,7 +859,7 @@ Parse_Server_Packet ()
 void
 Analyze_Client_Packet (byte * data, int len)
 {
-	// fixme quick-hack
+	// FIXME: quick-hack
 	net_message.data = data;
 	net_message.cursize = len;
 	MSG_BeginReading ();
@@ -879,7 +879,7 @@ Parse_Client_Packet (void)
 		Net_LogPrintf ("Special: %s\n", MSG_ReadString ());
 		return;
 	} else {
-		// fixme display seqs right when reliable
+		// FIXME: display seqs right when reliable
 		seq2 = MSG_ReadLong ();
 
 		Net_LogPrintf ("\nSeq: %ld Ack: %ld ", seq1 & 0x7FFFFFFF,

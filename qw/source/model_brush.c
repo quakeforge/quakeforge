@@ -1,5 +1,5 @@
 /*
-	model_bursh.c
+	model_brush.c
 
 	model loading and caching
 
@@ -212,7 +212,7 @@ Mod_LoadTextures (lump_t *l)
 		if (!tx || tx->name[0] != '+')
 			continue;
 		if (tx->anim_next)
-			continue;					// allready sequenced
+			continue;					// already sequenced
 
 		// find the number of frames in the animation
 		memset (anims, 0, sizeof (anims));
@@ -553,7 +553,7 @@ Mod_LoadFaces (lump_t *l)
 			out->samples = loadmodel->lightdata + (i * mod_lightmap_bytes);
 
 		// set the drawing flags flag
-		// fixme: do this right?-)
+		// FIXME: do this right?-)
 		if (!out->texinfo->texture)
 			continue;
 		if (!out->texinfo->texture->name)

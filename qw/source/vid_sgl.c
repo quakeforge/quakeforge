@@ -50,7 +50,7 @@
 #include "va.h"
 
 #ifdef WIN32
-/* fixme: this is evil hack to get full DirectSound support with SDL */
+/* FIXME: this is evil hack to get full DirectSound support with SDL */
 # include <windows.h>
 # include <SDL_syswm.h>
 HWND 		mainwindow;
@@ -211,7 +211,7 @@ VID_Init (unsigned char *palette)
 	vid_initialized = true;
 
 #ifdef WIN32
-        // fixme: EVIL thing - but needed for win32 until
+        // FIXME: EVIL thing - but needed for win32 until
         // SDL_sound works better - without this DirectSound fails.
 
 //        SDL_GetWMInfo(&info);

@@ -691,7 +691,7 @@ void DSOUND_ClearBuffer(int clear)
 {
 	DWORD *pData;
 
-// fixme: this should be called with 2nd pbuf2 = NULL, dwsize =0
+// FIXME: this should be called with 2nd pbuf2 = NULL, dwsize =0
 	pData=DSOUND_LockBuffer(true);
 	memset (pData, clear, shm->samples * shm->samplebits / 8);
 	DSOUND_LockBuffer(false);

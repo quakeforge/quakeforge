@@ -538,7 +538,7 @@ CL_FinishMove (usercmd_t *cmd)
 	int         ms;
 
 //
-// allways dump the first two message, because it may contain leftover inputs
+// always dump the first two message, because it may contain leftover inputs
 // from the last level
 //
 	if (++cl.movemessages <= 2)

@@ -102,7 +102,7 @@ QF_glColorTableEXT	qglColorTableEXT = NULL;
 qboolean			is8bit = false;
 qboolean			isPermedia = false;
 
-// fixme: Only used by MGL ..
+// FIXME: Only used by MGL ..
 qboolean    DDActive;
 
 // If you ever merge screen/gl_screen, don't forget this one
@@ -329,7 +329,7 @@ VID_SetFullDIBMode (int modenum)
 	window_width = modelist[modenum].width;
 	window_height = modelist[modenum].height;
 
-// fixme: some drivers have broken FS popup window handling
+// FIXME: some drivers have broken FS popup window handling
 // until I find way around it, or find some other cause for it
 // this is way to avoid it
 
@@ -1443,7 +1443,7 @@ VID_Init (unsigned char *palette)
 
 	hIcon = LoadIcon (global_hInstance, MAKEINTRESOURCE (IDI_ICON1));
 
-// fixme: If you put these back, remember commctrl.h
+// FIXME: If you put these back, remember commctrl.h
 //        InitCommonControls ();
 
 	VID_InitDIB (global_hInstance);

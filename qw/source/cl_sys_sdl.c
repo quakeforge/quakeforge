@@ -69,7 +69,7 @@ int         starttime;
 
 #ifdef _WIN32
 # include "winquake.h"
-						// fixme: minimized is not currently supported under
+						// FIXME: minimized is not currently supported under
 						// SDL
 qboolean    Minimized = false;
 void        MaskExceptions (void);
@@ -286,7 +286,7 @@ SDL_main (int c, char **v)
 
 }
 
-/* fixme: evil stub for directsound crap */
+/* FIXME: evil stub for directsound crap */
 IN_Accumulate (void)
 {
 }

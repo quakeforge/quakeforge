@@ -400,7 +400,7 @@ Cmd_Alias_f (void)
 		Con_Printf ("Alias name is too long\n");
 		return;
 	}
-	// if the alias allready exists, reuse it
+	// if the alias already exists, reuse it
 	a = (cmdalias_t*)Hash_Find (cmd_alias_hash, s);
 	if (a) {
 		free (a->value);

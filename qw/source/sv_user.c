@@ -164,7 +164,7 @@ SV_Soundlist_f (void)
 	unsigned    n;
 
 	if (host_client->state != cs_connected) {
-		Con_Printf ("soundlist not valid -- allready spawned\n");
+		Con_Printf ("soundlist not valid -- already spawned\n");
 		return;
 	}
 	// handle the case of a level changing while a client was connecting
@@ -214,7 +214,7 @@ SV_Modellist_f (void)
 	unsigned    n;
 
 	if (host_client->state != cs_connected) {
-		Con_Printf ("modellist not valid -- allready spawned\n");
+		Con_Printf ("modellist not valid -- already spawned\n");
 		return;
 	}
 	// handle the case of a level changing while a client was connecting
@@ -263,7 +263,7 @@ SV_PreSpawn_f (void)
 	unsigned int check;
 
 	if (host_client->state != cs_connected) {
-		Con_Printf ("prespawn not valid -- allready spawned\n");
+		Con_Printf ("prespawn not valid -- already spawned\n");
 		return;
 	}
 	// handle the case of a level changing while a client was connecting
@@ -333,7 +333,7 @@ SV_Spawn_f (void)
 	int         n;
 
 	if (host_client->state != cs_connected) {
-		Con_Printf ("Spawn not valid -- allready spawned\n");
+		Con_Printf ("Spawn not valid -- already spawned\n");
 		return;
 	}
 // handle the case of a level changing while a client was connecting
@@ -900,7 +900,7 @@ SV_Kill_f (void)
 	if (sv_player->v.v.health <= 0) {
 		SV_BeginRedirect (RD_CLIENT);
 		SV_ClientPrintf (host_client, PRINT_HIGH,
-						 "Can't suicide -- allready dead!\n");
+						 "Can't suicide -- already dead!\n");
 		SV_EndRedirect ();
 		return;
 	}

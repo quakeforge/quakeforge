@@ -49,7 +49,7 @@
 #include "view.h"
 
 #ifdef WIN32
-// fixme: this is evil...
+// FIXME: this is evil...
 # include <windows.h>
 HWND        mainwindow;
 #endif
@@ -57,7 +57,7 @@ HWND        mainwindow;
 cvar_t     *_windowed_mouse;
 int         old_windowed_mouse;
 
-int         modestate;					// fixme: just to avoid cross-comp.
+int         modestate;					// FIXME: just to avoid cross-comp.
 
 										// errors - remove later
 

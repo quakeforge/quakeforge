@@ -68,7 +68,7 @@ client_t   *host_client;				// current client
 
 // DoS protection
 // FLOOD_PING, FLOOD_LOG, FLOOD_CONNECT, FLOOD_STATUS, FLOOD_RCON, FLOOD_BAN
-// fixme: these default values need to be tweaked after more testing
+// FIXME: these default values need to be tweaked after more testing
 
 double      netdosexpire[DOSFLOODCMDS] = { 1, 1, 2, 0.9, 1, 5 };
 double      netdosvalues[DOSFLOODCMDS] = { 12, 1, 3, 1, 1, 1 };
@@ -546,7 +546,7 @@ SVC_Log (void)
 	else
 		seq = -1;
 
-	if (seq == svs.logsequence - 1 || !sv_fraglogfile) {	// they allready
+	if (seq == svs.logsequence - 1 || !sv_fraglogfile) {	// they already
 		// have this
 		// data, or we
 		// aren't logging 
@@ -1851,7 +1851,7 @@ SV_InitNet (void)
         Net_Log_Init();
 #endif
 
-	// heartbeats will allways be sent to the id master
+	// heartbeats will always be sent to the id master
 	svs.last_heartbeat = -99999;		// send immediately
 //  NET_StringToAdr ("192.246.40.70:27000", &idmaster_adr);
 }
