@@ -12,10 +12,12 @@ quakeforge-dev
 quakeforge-glx
 quakeforge-libs-gl
 quakeforge-libs-sw
+quakeforge-maptools
 quakeforge-oss
 quakeforge-sdl
 quakeforge-servers
 quakeforge-sgl
 quakeforge-svga
+quakeforge-utils
 quakeforge-x11
 tmp

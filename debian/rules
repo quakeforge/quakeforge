@@ -7,21 +7,23 @@
 # This is the debhelper compatibility version to use.
 export DH_COMPAT=2
 
-PACKAGE := quakeforge
-common	:= $(PACKAGE)-common
-dev	:= $(PACKAGE)-dev
-gllib	:= $(PACKAGE)-libs-gl
-swlib	:= $(PACKAGE)-libs-sw
-glx	:= $(PACKAGE)-glx
-sdl	:= $(PACKAGE)-sdl
-servers	:= $(PACKAGE)-servers
-sgl	:= $(PACKAGE)-sgl
-svga	:= $(PACKAGE)-svga
-x11	:= $(PACKAGE)-x11
+PACKAGE 	:= quakeforge
+QFCC		:= qfcc
+common		:= $(PACKAGE)-common
+maptools	:= $(PACKAGE)-maptools
+dev		:= $(PACKAGE)-dev
 
-alsa	:= $(PACKAGE)-alsa
-oss	:= $(PACKAGE)-oss
-QFCC	:= qfcc
+alsa		:= $(PACKAGE)-alsa
+gllib		:= $(PACKAGE)-libs-gl
+glx		:= $(PACKAGE)-glx
+oss		:= $(PACKAGE)-oss
+sdl		:= $(PACKAGE)-sdl
+servers		:= $(PACKAGE)-servers
+sgl		:= $(PACKAGE)-sgl
+svga		:= $(PACKAGE)-svga
+swlib		:= $(PACKAGE)-libs-sw
+utils		:= $(PACKAGE)-utils
+x11		:= $(PACKAGE)-x11
 
 build	:= $(shell pwd)/debian/tmp
 tmp	:= debian/tmp
@@ -113,6 +115,8 @@ install: build
 		usr/lib/libQFcsqc.so \
 		usr/lib/libQFgamecode.*a \
 		usr/lib/libQFgamecode.so \
+		usr/lib/libQFgamecode_builtins.*a \
+		usr/lib/libQFgamecode_builtins.so \
 		usr/lib/libQFjs.*a \
 		usr/lib/libQFjs.so \
 		usr/lib/libQFmodels.*a \
@@ -205,12 +209,47 @@ install: build
 	rm -f $(tmp)/usr/games/qfcc
 	dh_movefiles -p$(QFCC) --sourcedir=$(tmp) \
 		usr/bin/qfcc \
-		usr/share/man/man1/qfcc.1
+		usr/share/man/man1/qfcc.1 \
+		usr/include/QF/ruamoko/*
 	install -d -m755 debian/$(QFCC)/usr/share/doc
 	ln -s $(common) debian/$(QFCC)/usr/share/doc/$(QFCC)
 
+	# quakeforge-utils
+	install -D -m755 $(tmp)/usr/games/pak $(tmp)/usr/bin/pak
+	install -D -m755 $(tmp)/usr/games/zpak $(tmp)/usr/bin/zpak
+	install -D -m755 $(tmp)/usr/games/qfdefs $(tmp)/usr/bin/qfdefs
+	install -D -m755 $(tmp)/usr/games/qfprogs $(tmp)/usr/bin/qfprogs
+	install -D -m755 $(tmp)/usr/games/qfwavinfo $(tmp)/usr/bin/qfwavinfo
+	rm -f $(tmp)/usr/games/pak \
+		$(tmp)/usr/games/zpak \
+		$(tmp)/usr/games/qfdefs \
+		$(tmp)/usr/games/qfprogs \
+		$(tmp)/usr/games/qfwavinfo
+	dh_movefiles -p$(utils) --sourcedir=$(tmp) \
+		usr/bin/pak \
+		usr/bin/zpak \
+		usr/bin/qfdefs \
+		usr/bin/qfprogs \
+		usr/bin/qfwavinfo \
+		usr/share/man/man1/pak.1
+	install -d -m755 debian/$(utils)/usr/share/doc
+	ln -s $(common) debian/$(utils)/usr/share/doc/$(utils)
+
+	# quakeforge-maptools
+	install -D -m755 $(tmp)/usr/games/qfbsp $(tmp)/usr/bin/qfbsp
+	install -D -m755 $(tmp)/usr/games/qflight $(tmp)/usr/bin/qflight
+	install -D -m755 $(tmp)/usr/games/qfvis $(tmp)/usr/bin/qfvis
+	dh_movefiles -p$(maptools) --sourcedir=$(tmp) \
+		usr/bin/qfbsp \
+		usr/bin/qflight \
+		usr/bin/qfvis \
+		usr/share/man/man1/qflight.1 \
+		usr/share/man/man1/qfvis.1
+	install -d -m755 debian/$(maptools)/usr/share/doc
+	ln -s $(common) debian/$(maptools)/usr/share/doc/$(maptools)
+	
 	# quakeforge
-	find $(tmp) -type d -empty | xargs -r rmdir -p --ignore-fail-on-non-empty
+	find $(tmp) -type d -empty -print | xargs -r rmdir -p --ignore-fail-on-non-empty
 	dh_movefiles -p$(PACKAGE) --sourcedir=$(tmp)
 	install -d -m755 debian/$(PACKAGE)/usr/share/doc
 	ln -s $(common) debian/$(PACKAGE)/usr/share/doc/$(PACKAGE)
@@ -225,12 +264,13 @@ binary-indep: build install
 # Pass -a to all debhelper commands in this target to reduce clutter.
 binary-arch: DH_OPTIONS=-a
 binary-arch: build install
-	dh_testversion 2
 	dh_testdir
 	dh_testroot
 	dh_installexamples
 	dh_installmenu
 	dh_installman -p$(QFCC)
+	dh_installman -p$(maptools)
+	dh_installman -p$(utils)
 	dh_undocumented
 	dh_strip
 	dh_link
