@@ -125,7 +125,7 @@ Draw_CachePic (const char *path, qboolean alpha)
 
 
 void
-Draw_TextBox (int x, int y, int width, int lines)
+Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 {
 	qpic_t     *p;
 	int         cx, cy;

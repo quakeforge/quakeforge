@@ -178,12 +178,14 @@ Draw_CachePic (const char *path, qboolean alpha)
 }
 
 void
-Draw_TextBox (int x, int y, int width, int lines)
+Draw_TextBox (int x, int y, int width, int lines, byte alpha)
 {
 	int         cx, cy, n;
 	qpic_t     *p;
 
 	// draw left side
+	color_white[3] = alpha;
+	qfglColor4ubv (color_white);
 	cx = x;
 	cy = y;
 	p = Draw_CachePic ("gfx/box_tl.lmp", true);
@@ -226,6 +228,7 @@ Draw_TextBox (int x, int y, int width, int lines)
 	}
 	p = Draw_CachePic ("gfx/box_br.lmp", true);
 	Draw_Pic (cx, cy + 8, p);
+	qfglColor3ubv (color_white);
 }
 
 

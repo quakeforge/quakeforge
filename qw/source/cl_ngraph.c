@@ -64,7 +64,8 @@ CL_NetGraph (int swap)
 
 	h = r_graphheight->int_val % 8;
 
-	Draw_TextBox (x, y, NET_TIMINGS / 8, r_graphheight->int_val / 8 + 1);
+	Draw_TextBox (x, y, NET_TIMINGS / 8, r_graphheight->int_val / 8 + 1,
+				  r_netgraph_alpha->value * 255);
 
 	lost = CL_CalcNet ();
 	x = swap ? vid.width - (NET_TIMINGS + 8) : 8;
