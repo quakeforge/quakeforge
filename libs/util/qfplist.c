@@ -93,7 +93,8 @@ dict_free (void *i, void *unused)
 plitem_t *
 PL_ObjectForKey (hashtab_t *table, const char *key)
 {
-	return (plitem_t *) Hash_Find (table, key);
+	dictkey_t *k = (dictkey_t *) Hash_Find (table, key);
+	return k ? k->value : NULL;
 }
 
 static qboolean
@@ -298,7 +299,7 @@ PL_ParseUnquotedString (pldata_t *pl)
 	char			*str;
 
 	while (pl->pos < pl->end) {
-		if (!isalnum (pl->ptr[pl->pos]))
+		if (!isalnum (pl->ptr[pl->pos]) && pl->ptr[pl->pos] != '_')
 			break;
 		pl->pos++;
 	}
