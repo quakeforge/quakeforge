@@ -130,7 +130,7 @@ m		([\-+]?)
 						p = yytext + 1;
 						line = strtol (p, &s, 10);
 						p = s;
-						while (isspace (*p))
+						while (isspace ((unsigned char)*p))
 							p++;
 						if (!*p)
 							error (0, "Unexpected end of file");
@@ -326,7 +326,8 @@ do_grab (char *token)
 		for (i = 0; i < sizeof (grab_list) / sizeof (grab_list[0]); i++)
 			Hash_Add (grab_tab, &grab_list[i]);
 	}
-	while (isspace (*++token)) // advance over $ and leading space
+	while (isspace ((unsigned char)*++token))
+		// advance over $ and leading space
 		;
 	if (!strcmp (token, "frame"))
 		return -grab_frame;
@@ -422,7 +423,7 @@ make_string (char *token)
 					break;
 				case 'x':
 					c = 0;
-					while (*token && isxdigit (*token)) {
+					while (*token && isxdigit ((unsigned char)*token)) {
 						c *= 16;
 						if (*token <= '9')
 							c += *token - '0';
