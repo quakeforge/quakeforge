@@ -610,6 +610,18 @@ GIB_Thread_Kill_f (void)
 	}
 }
 
+void
+GIB_Event_Register_f (void)
+{
+	gib_function_t *func;
+	if (GIB_Argc() != 3)
+		GIB_USAGE ("event function");
+	else if (!(func = GIB_Function_Find (GIB_Argv(2))) && GIB_Argv(2)[0])
+		Cbuf_Error ("function", "Function %s not found.", GIB_Argv(2));
+	else if (GIB_Event_Register (GIB_Argv(1), func))
+		Cbuf_Error ("event", "Event %s not found.", GIB_Argv(1));
+}
+
 /* File access */
 
 int (*GIB_File_Transform_Path) (dstring_t *path) = NULL;
@@ -819,24 +831,19 @@ GIB_Range_f (void)
 		GIB_USAGE ("lower upper [step]");
 		return;
 	}
-
+	if (!(dstr = GIB_Return (0)))
+		return; // Why bother?
 	limit = atof(GIB_Argv(2));
 	start = atof(GIB_Argv(1));
-	if (GIB_Argc () == 4)
-		inc = atof(GIB_Argv(3));
+	if (GIB_Argc () == 4 && (inc = atof(GIB_Argv(3))) == 0.0)
+		return;
 	else
 		inc = limit < start ? -1.0 : 1.0;
-	if (inc == 0.0) {
-		GIB_Return ("");
-		return;
-	}
 	if (!(ifs = GIB_Var_Get_Local (cbuf_active, "ifs")))
 			ifs = " ";
-	dstr = dstring_newstr ();
 	for (i = atof(GIB_Argv(1)); inc < 0 ? i >= limit : i <= limit; i += inc)
-		dasprintf(dstr, "%.1s%.10g", ifs, i);
-	GIB_Return (dstr->str[0] ? dstr->str+1 : "");
-	dstring_delete (dstr);
+		dasprintf(dstr, "%.10g%.1s", i, ifs);
+	dstr->str[dstr->size-2] = 0;
 }
 
 void
@@ -882,6 +889,7 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("regex::extract", GIB_Regex_Extract_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("thread::create", GIB_Thread_Create_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("thread::kill", GIB_Thread_Kill_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("event::register", GIB_Event_Register_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("file::read", GIB_File_Read_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("file::write", GIB_File_Write_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("file::find", GIB_File_Find_f, GIB_BUILTIN_NORMAL);

@@ -56,4 +56,6 @@ extern struct cvar_s *cl_cshift_contents;
 extern struct cvar_s *cl_cshift_damage;
 extern struct cvar_s *cl_cshift_powerup;
 
+extern struct gib_event_s *cl_player_health_e, *cl_chat_e;
+
 #endif // _CL_MAIN_H

@@ -29,15 +29,30 @@
 	$Id$
 */
 
+#ifndef __gib_thread_h
+#define __gib_thread_h
+
+#include "QF/gib_function.h"
+
 typedef struct gib_thread_s {
 	unsigned long int id;
 	struct cbuf_s *cbuf;
 	struct gib_thread_s *next,*prev;
 } gib_thread_t;
 
+typedef struct gib_event_s {
+	const char *name;
+	struct gib_function_s *func;
+} gib_event_t;
+	
 void GIB_Thread_Add (gib_thread_t *thread);
 void GIB_Thread_Remove (gib_thread_t *thread);
 gib_thread_t *GIB_Thread_Find (unsigned long int id);
 gib_thread_t *GIB_Thread_New (void);
 void GIB_Thread_Execute (void);
-void GIB_Thread_Callback (const char *func, unsigned int argc, ...);
+gib_event_t *GIB_Event_New (const char *name);
+int GIB_Event_Register (const char *name, gib_function_t *func);
+void GIB_Event_Callback (gib_event_t *event, unsigned int argc, ...);
+void GIB_Event_Init (void);
+
+#endif

@@ -33,6 +33,7 @@ static const char rcsid[] =
 
 #include <stdlib.h> 
 #include <stdarg.h>
+#include <string.h>
 
 #include "QF/sys.h"       
 #include "QF/cbuf.h"
@@ -40,8 +41,10 @@ static const char rcsid[] =
 #include "QF/gib_thread.h"
 #include "QF/gib_function.h"
 #include "QF/dstring.h"
+#include "QF/hash.h"
 
 gib_thread_t *gib_threads;
+hashtab_t *gib_events;
 static unsigned long int nextid = 0;
 
 void
@@ -114,10 +117,45 @@ GIB_Thread_Execute (void)
 	}
 }
 
-void
-GIB_Thread_Callback (const char *func, unsigned int argc, ...)
+const char *
+GIB_Event_Get_Key (void *ele, void *ptr)
 {
-	gib_function_t *f = GIB_Function_Find (func);
+	return ((gib_event_t *)ele)->name;
+}
+void
+GIB_Event_Free (void *ele, void *ptr)
+{
+	gib_event_t *ev = (gib_event_t *)ele;
+	free ((void *)ev->name);
+	free (ev);
+}
+
+gib_event_t *
+GIB_Event_New (const char *name)
+{
+	gib_event_t *new;
+	
+	new = calloc (1, sizeof (gib_event_t));
+	new->name = strdup (name);
+	Hash_Add (gib_events, new);
+	return new;
+}
+
+int
+GIB_Event_Register (const char *name, gib_function_t *func)
+{
+	gib_event_t *ev;
+	
+	if (!(ev = Hash_Find (gib_events, name)))
+		return -1;
+	ev->func = func;
+	return 0;
+}
+
+void
+GIB_Event_Callback (gib_event_t *event, unsigned int argc, ...)
+{
+	gib_function_t *f = event->func;
 	gib_thread_t *thread;
 	cbuf_args_t *args;
 	va_list ap;
@@ -131,7 +169,7 @@ GIB_Thread_Callback (const char *func, unsigned int argc, ...)
 	
 	va_start (ap, argc);
 	
-	Cbuf_ArgsAdd (args, func);
+	Cbuf_ArgsAdd (args, f->name->str);
 	for (i = 0; i < argc; i++)
 			Cbuf_ArgsAdd (args, va_arg (ap, const char *));
 			
@@ -140,4 +178,10 @@ GIB_Thread_Callback (const char *func, unsigned int argc, ...)
 	GIB_Function_Execute (thread->cbuf, f, args);
 	GIB_Thread_Add (thread);
 	Cbuf_ArgsDelete (args);
+}
+
+void
+GIB_Event_Init (void)
+{
+	gib_events = Hash_NewTable (1024, GIB_Event_Get_Key, GIB_Event_Free, 0);
 }

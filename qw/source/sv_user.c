@@ -54,6 +54,7 @@ static const char rcsid[] =
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/gib_thread.h"
 
 #include "bothdefs.h"
 #include "compat.h"
@@ -91,6 +92,8 @@ cvar_t     *sv_timekick_fuzz;
 cvar_t     *sv_timekick_interval;
 cvar_t     *sv_timecheck_fuzz;
 cvar_t     *sv_timecheck_decay;
+
+gib_event_t	*sv_chat_e;
 
 //	USER STRINGCMD EXECUTION host_client and sv_player will be valid.
 
@@ -822,6 +825,9 @@ SV_Say (qboolean team)
 	strncat (text, "\n", sizeof (text) - strlen (text));
 
 	SV_Printf ("%s", text);
+
+	if (sv_chat_e->func)
+		GIB_Event_Callback (sv_chat_e, 1, text);
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
 		if (client->state < cs_connected)	// Clients connecting can hear.
@@ -1847,4 +1853,5 @@ SV_UserInit (void)
 								   "\"forgiven\".");
 	sv_kickfake = Cvar_Get ("sv_kickfake", "1", CVAR_NONE, NULL,
 							"Kick users sending to send fake talk messages");
+	sv_chat_e = GIB_Event_New ("chat");
 }

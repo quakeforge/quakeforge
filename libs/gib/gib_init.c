@@ -38,6 +38,7 @@ static const char rcsid[] =
 #include "QF/gib_parse.h"
 #include "QF/gib_builtin.h"
 #include "QF/gib_regex.h"
+#include "QF/gib_thread.h"
 #include "QF/cmd.h"
 #include "QF/sys.h"
 #include "QF/zone.h"
@@ -88,4 +89,6 @@ GIB_Init (qboolean sandbox)
 	GIB_Regex_Init ();
 	// Initialize builtins
 	GIB_Builtin_Init (sandbox);
+	// Initialize event system
+	GIB_Event_Init ();
 }

@@ -180,6 +180,9 @@ cvar_t     *rate;
 cvar_t     *noaim;
 cvar_t     *msg;
 
+/* GIB events */
+gib_event_t *cl_player_health_e, *cl_chat_e;
+
 static int  cl_usleep_cache;
 
 client_static_t cls;
@@ -1224,6 +1227,8 @@ CL_Init (void)
 					"to people on your team");
 	Cmd_AddCommand ("serverinfo", CL_Cmd_ForwardToServer, "Report the current "
 					"server info");
+	cl_player_health_e = GIB_Event_New ("player.health");
+	cl_chat_e = GIB_Event_New ("chat");
 }
 
 static void

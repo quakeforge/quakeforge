@@ -1095,10 +1095,6 @@ CL_ServerInfo (void)
 void
 CL_SetStat (int stat, int value)
 {
-	int			j;
-	unsigned int changed;
-	const char *arm, *cb;
-
 	if (stat < 0 || stat >= MAX_CL_STATS)
 		Host_Error ("CL_SetStat: %i is invalid", stat);
 
@@ -1112,67 +1108,15 @@ CL_SetStat (int stat, int value)
 
 	switch (stat) {
 		case STAT_ITEMS:
-			changed = cl.stats[STAT_ITEMS] ^ value;
 			Sbar_Changed ();
-			if ((changed & IT_KEY1 || changed & IT_KEY2) &&
-			   (cb = GIB_Var_Get_Global ("player.key.callback")))
-					GIB_Thread_Callback (cb, 0);
-			GIB_Var_Set_Global ("player.key.1", value & IT_KEY1 ? "1" : "0");
-			GIB_Var_Set_Global ("player.key.2", value & IT_KEY2 ? "1" : "0");
-			if (value & IT_ARMOR1)
-				arm = "green";
-			else if (value & IT_ARMOR2)
-				arm = "yellow";
-			else if (value & IT_ARMOR3)
-				arm = "red";
-			else
-				arm = "none";
-			GIB_Var_Set_Global ("player.armor.type", arm);
-			if ((changed & 127 || changed & IT_AXE) &&
-			   (cb = GIB_Var_Get_Global ("player.weapon.callback")))
-				GIB_Thread_Callback (cb, 0);
-			GIB_Var_Set_Global ("player.weapon.1", value & IT_AXE ? "1" : "0");
-			for (j = 0; j < 7; j++)
-				GIB_Var_Set_Global (va("player.weapon.%i", j+2),
-				  value & (1 << j) ? "1" : "0");
-			for (j = 0; j < 32; j++)
-				if ((value & (1 << j)) && !(cl.stats[stat] & (1 << j)))
-					cl.item_gettime[j] = cl.time;
 			break;
 		case STAT_HEALTH:
-			if ((cb = GIB_Var_Get_Global ("player.health.callback")))
-				GIB_Thread_Callback (cb, 1, va("%i", value));
-			GIB_Var_Set_Global ("player.health", va("%i", value));
+			if (cl_player_health_e->func)
+				GIB_Event_Callback (cl_player_health_e, 1, va("%i", value));
 			if (value <= 0)
 				Team_Dead ();
 			break;
-		case STAT_ARMOR:
-			if ((cb = GIB_Var_Get_Global ("player.armor.callback")))
-				GIB_Thread_Callback (cb, 1, va("%i", value));
-			GIB_Var_Set_Global ("player.armor", va("%i", value));
-			break;
-		case STAT_SHELLS:
-			if ((cb = GIB_Var_Get_Global ("player.ammo.shells.callback")))
-				GIB_Thread_Callback (cb, 1, va("%i", value));
-			GIB_Var_Set_Global ("player.ammo.shells", va("%i", value));
-			break;
-		case STAT_NAILS:
-			if ((cb = GIB_Var_Get_Global ("player.ammo.nails.callback")))
-				GIB_Thread_Callback (cb, 1, va("%i", value));
-			GIB_Var_Set_Global ("player.ammo.nails", va("%i", value));
-			break;
-		case STAT_ROCKETS:
-			if ((cb = GIB_Var_Get_Global ("player.ammo.rockets.callback")))
-				GIB_Thread_Callback (cb, 1, va("%i", value));
-			GIB_Var_Set_Global ("player.ammo.rockets", va("%i", value));
-			break;
-		case STAT_CELLS:
-			if ((cb = GIB_Var_Get_Global ("player.ammo.cells.callback")))
-				GIB_Thread_Callback (cb, 1, va("%i", value));
-			GIB_Var_Set_Global ("player.ammo.cells", va("%i", value));
-			break;
 	}
-
 	cl.stats[stat] = value;
 }
 
@@ -1290,6 +1234,8 @@ CL_ParseServerMessage (void)
 					}
 					Con_SetOrMask (128);
 					S_LocalSound ("misc/talk.wav");
+					if (cl_chat_e->func)
+						GIB_Event_Callback (cl_chat_e, 1, s);
 					Team_ParseChat(s);
 				}
 				Con_Printf ("%s", s);
