@@ -144,14 +144,16 @@ pcx_t *
 EncodePCX (byte * data, int width, int height,
 		   int rowbytes, byte * palette, qboolean flip, int *length)
 {
-	int 	i, j;
+	int 	i, j, size;
 	pcx_t	*pcx;
 	byte	*pack;
 
-	if (!(pcx = Hunk_TempAlloc (width * height * 2 + 1000))) {
+	size = width * height * 2 + 1000;
+	if (!(pcx = Hunk_TempAlloc (size))) {
 		Sys_Printf ("EncodePCX: not enough memory\n");
 		return 0;
 	}
+	memset (pcx, 0, size);
 
 	pcx->manufacturer = 0x0a;			// PCX id
 	pcx->version = 5;					// 256 color
@@ -163,11 +165,9 @@ EncodePCX (byte * data, int width, int height,
 	pcx->ymax = LittleShort ((short) (height - 1));
 	pcx->hres = LittleShort ((short) width);
 	pcx->vres = LittleShort ((short) height);
-	memset (pcx->palette, 0, sizeof (pcx->palette));
 	pcx->color_planes = 1;				// chunky image
 	pcx->bytes_per_line = LittleShort ((short) width);
 	pcx->palette_type = LittleShort (2);	// not a grey scale
-	memset (pcx->filler, 0, sizeof (pcx->filler));
 
 	// pack the image
 	pack = (byte *) &pcx[1];
