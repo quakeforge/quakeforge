@@ -85,8 +85,14 @@ R_LoadSkys (const char *skyname)
 		COM_FOpenFile (name, &f);
 		if (!f) {
 			Con_DPrintf ("Couldn't load %s\n", name);
-			skyloaded = false;
-			continue;
+			// also look in gfx/env, where Darkplaces looks for skies
+			snprintf (name, sizeof (name), "gfx/env/%s%s.tga", skyname, suf[i]);
+			COM_FOpenFile (name, &f);
+			if (!f) {
+				Con_DPrintf ("Couldn't load %s\n", name);
+				skyloaded = false;
+				continue;
+			}
 		}
 		targa = LoadTGA (f);
 		Qclose (f);
