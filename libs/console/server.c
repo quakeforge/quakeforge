@@ -115,7 +115,20 @@ C_ExecLine (const char *line)
 }
 
 static void
-C_DrawInputLine (inputline_t *il)
+C_DrawOutput (void)
+{
+}
+
+static void
+C_DrawStatus (void)
+{
+	wbkgdset (status, COLOR_PAIR(4));
+	wclear (status);
+	wrefresh (status);
+}
+
+static void
+C_DrawInput (inputline_t *il)
 {
 	WINDOW     *win = (WINDOW *) il->user_data;
 	int         i;
@@ -209,11 +222,13 @@ C_Init (void)
 		input_line->enter = C_ExecLine;
 		input_line->width = screen_x;
 		input_line->user_data = input;
-		input_line->draw = C_DrawInputLine;
+		input_line->draw = C_DrawInput;
 
 		con_linewidth = screen_x;
 
-		C_DrawInputLine (input_line);
+		C_DrawOutput ();
+		C_DrawStatus ();
+		C_DrawInput (input_line);
 	} else
 #endif
 		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
@@ -293,8 +308,12 @@ C_ProcessInput (void)
 				wresize (status, 1, screen_x);
 				mvwin (status, screen_y - 2, 0);
 				wresize (output, screen_y - 2, screen_x);
-				mvwin (status, 0, 0);
+				mvwin (output, 0, 0);
 				wrefresh (curscr);
+
+				C_DrawOutput ();
+				C_DrawStatus ();
+				// input gets drawn below in Con_ProcessInputLine
 			}
 		}
 
