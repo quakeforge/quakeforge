@@ -47,26 +47,6 @@ dnl Checks for typedefs, structures, and compiler characteristics.
 
 dnl Checks for library functions.
 
-AC_ARG_WITH(qf-headers,
-[  --with-qf-headers=DIR   use the QuakeForge headers found in DRI],
-QF_HEADERS=$withval, QF_HEADERS=auto)
-AC_ARG_WITH(qf-libs,
-[  --with-qf-libs=DIR      use the QuakeForge libs found in DRI],
-QF_LIBS=$withval, QF_LIBS=auto)
-
-AC_MSG_CHECKING(for QF headers location)
-if test "x$QF_HEADERS" = xauto; then
-	if test -r ../../include/qtypes.h; then
-	fi
-fi
-AC_MSG_RESULT($QF_HEADERS)
-
-AC_MSG_CHECKING(for QF libs location)
-if test "x$QF_LIBS" = xauto; then
-	true
-fi
-AC_MSG_RESULT($QF_LIBS)
-
 AC_OUTPUT(
 	include/Makefile
 	source/Makefile
