@@ -117,7 +117,7 @@ Class_Deinit_f (Object *self) {
 Object *
 Object_Create (Class *cl, qboolean floating)
 {
-	Object *new = malloc (cl->size);
+	Object *new = calloc (1, cl->size);
 	new->cl = cl;
 	if (floating) {
 		new->refs = 0;
@@ -211,8 +211,8 @@ Object_Init (void)
 	/* There is somewhat of a chicken and egg problem
 	   here.
 	*/
-	Object_class = malloc (sizeof (struct Class_s));
-	Class_class = malloc (sizeof (struct Class_s));
+	Object_class = calloc (1, sizeof (struct Class_s));
+	Class_class = calloc (1, sizeof (struct Class_s));
 	OBJECT(Object_class)->cl = Class_class;
 	OBJECT(Class_class)->cl = Class_class;
 	Class_class->parent = Object_class;
