@@ -57,7 +57,6 @@ static const char rcsid[] =
 cvar_t          *developer;
 cvar_t			*cvar_vars;
 char			*cvar_null_string = "";
-extern cvar_t	*developer;
 cvar_alias_t	*calias_vars;
 hashtab_t		*cvar_hash;
 hashtab_t		*calias_hash;
