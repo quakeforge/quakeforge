@@ -1,7 +1,7 @@
 /*
 	info.c
 
-	(description)
+	Info strings.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -39,13 +39,11 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/info.h"
 
-/*
-	INFO STRINGS
-*/
+#include "compat.h"
+
 
 /*
 	Info_ValueForKey
@@ -180,7 +178,6 @@ Info_RemovePrefixedKeys (char *start, char prefix)
 
 }
 
-
 void
 Info_SetValueForStarKey (char *s, const char *key, const char *value, size_t maxsize, int flags)
 {
@@ -243,7 +240,8 @@ Info_SetValueForStarKey (char *s, const char *key, const char *value, size_t max
 }
 
 void
-Info_SetValueForKey (char *s, const char *key, const char *value, size_t maxsize, int flags)
+Info_SetValueForKey (char *s, const char *key, const char *value,
+					 size_t maxsize, int flags)
 {
 	if (key[0] == '*') {
 		Con_Printf ("Can't set * keys\n");

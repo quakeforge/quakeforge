@@ -55,7 +55,6 @@ fgetLittleShort (VFile *f)
 	return (short) (b1 + b2 * 256);
 }
 
-
 /*
 static int
 fgetLittleLong (VFile *f)
@@ -70,7 +69,6 @@ fgetLittleLong (VFile *f)
 	return b1 + (b2<<8) + (b3<<16) + (b4<<24);
 }
 */
-
 
 byte *
 LoadTGA (VFile *fin)
@@ -102,8 +100,8 @@ LoadTGA (VFile *fin)
 
 	if (targa_header.colormap_type != 0
 		|| (targa_header.pixel_size != 32 && targa_header.pixel_size != 24))
-		Sys_Error
-			("Texture_LoadTGA: Only 32 or 24 bit images supported (no colormaps)\n");
+		Sys_Error ("Texture_LoadTGA: Only 32 or 24 bit images supported "
+				   "(no colormaps)\n");
 
 	columns = targa_header.width;
 	rows = targa_header.height;
@@ -226,7 +224,6 @@ LoadTGA (VFile *fin)
 	Qclose (fin);
 	return targa_rgba;
 }
-
 
 void
 WriteTGAfile (const char *tganame, byte *data, int width, int height)

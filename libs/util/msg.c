@@ -40,15 +40,14 @@
 #include "QF/qendian.h"
 #include "QF/sys.h"
 
+
 /*
 	MESSAGE IO FUNCTIONS
 
 	Handles byte ordering and avoids alignment errors
 */
 
-//
 // writing functions
-//
 
 void
 MSG_WriteChar (sizebuf_t *sb, int c)
@@ -113,7 +112,6 @@ MSG_WriteFloat (sizebuf_t *sb, float f)
 		int         l;
 	} dat;
 
-
 	dat.f = f;
 	dat.l = LittleLong (dat.l);
 
@@ -148,9 +146,7 @@ MSG_WriteAngle16 (sizebuf_t *sb, float f)
 }
 
 
-//
 // reading functions
-//
 
 void
 MSG_BeginReading (msg_t *msg)

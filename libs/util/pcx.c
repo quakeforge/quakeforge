@@ -46,6 +46,7 @@
 
 #include "compat.h"
 
+
 tex_t *
 LoadPCX (VFile *f, int convert, byte *pal)
 {
@@ -59,9 +60,7 @@ LoadPCX (VFile *f, int convert, byte *pal)
 	int         count;
 	tex_t      *tex;
 
-	// 
 	// parse the PCX file
-	// 
 	pcx_mark = Hunk_LowMark ();
 	pcx = Hunk_AllocName (com_filesize, "PCX");
 	Qread (f, pcx, com_filesize);
@@ -144,7 +143,6 @@ LoadPCX (VFile *f, int convert, byte *pal)
 	}
 	return tex;
 }
-
 
 pcx_t *
 EncodePCX (byte * data, int width, int height,

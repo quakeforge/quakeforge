@@ -38,10 +38,9 @@
 
 #include <ctype.h>
 
-#include "QF/cvar.h"
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
@@ -49,6 +48,8 @@
 #include "QF/sys.h"
 #include "QF/vfs.h"
 #include "QF/zone.h"
+
+#include "compat.h"
 
 typedef struct cmdalias_s {
 	struct cmdalias_s *next;
@@ -87,9 +88,6 @@ Cmd_Wait_f (void)
 sizebuf_t   cmd_text;
 byte        cmd_text_buf[8192];
 
-/*
-	Cbuf_Init
-*/
 void
 Cbuf_Init (void)
 {
@@ -115,7 +113,6 @@ Cbuf_AddText (const char *text)
 	}
 	SZ_Write (&cmd_text, text, strlen (text));
 }
-
 
 /*
 	Cbuf_InsertText
@@ -148,7 +145,6 @@ Cbuf_InsertText (const char *text)
 	memcpy (cmd_text.data, text, textlen);
 	cmd_text.data[textlen] = '\n';
 }
-
 
 static void
 extract_line (char *line)
@@ -185,11 +181,6 @@ extract_line (char *line)
 	}
 }
 
-/*
-
-	Cbuf_Execute
-
-*/
 void
 Cbuf_Execute (void)
 {
@@ -210,11 +201,6 @@ Cbuf_Execute (void)
 	}
 }
 
-/*
-
-	Cbuf_Execute
-
-*/
 void
 Cbuf_Execute_Sets (void)
 {
@@ -256,7 +242,7 @@ Cmd_StuffCmds_f (void)
 	if (!s)
 		return;
 
-// pull out the commands
+	// pull out the commands
 	build = malloc (s + 1);
 	build[0] = 0;
 
@@ -287,11 +273,6 @@ Cmd_StuffCmds_f (void)
 	free (build);
 }
 
-/*
-
-  Cmd_Exec_File
-
-*/
 void
 Cmd_Exec_File (const char *path)
 {
@@ -313,9 +294,6 @@ Cmd_Exec_File (const char *path)
 	}
 }
 
-/*
-	Cmd_Exec_f
-*/
 void
 Cmd_Exec_f (void)
 {
@@ -341,7 +319,6 @@ Cmd_Exec_f (void)
 	Hunk_FreeToLowMark (mark);
 }
 
-
 /*
 	Cmd_Echo_f
 
@@ -362,7 +339,6 @@ Cmd_Echo_f (void)
 
 	Creates a new command that executes a command string (possibly ; seperated)
 */
-
 char       *
 CopyString (char *in)
 {
@@ -406,7 +382,7 @@ Cmd_Alias_f (void)
 		*a = alias;
 	}
 
-// copy the rest of the command line
+	// copy the rest of the command line
 	cmd = malloc (strlen (Cmd_Args (1)) + 2);// can never be longer
 	cmd[0] = 0;							// start out with a null string
 	c = Cmd_Argc ();
@@ -469,22 +445,14 @@ static char *cmd_argv[MAX_ARGS];
 static const char *cmd_null_string = "";
 static const char *cmd_args[MAX_ARGS];
 
-
-
 static cmd_function_t *cmd_functions;	// possible commands to execute
 
-/*
-	Cmd_Argc
-*/
 int
 Cmd_Argc (void)
 {
 	return cmd_argc;
 }
 
-/*
-	Cmd_Argv
-*/
 const char       *
 Cmd_Argv (int arg)
 {
@@ -506,7 +474,6 @@ Cmd_Args (int start)
 	return cmd_args[start];
 }
 
-
 /*
 	Cmd_TokenizeString
 
@@ -524,7 +491,7 @@ Cmd_TokenizeString (const char *text)
 	memset (cmd_args, 0, sizeof (cmd_args));
 
 	while (1) {
-// skip whitespace up to a \n
+		// skip whitespace up to a \n
 		while (*text && *(unsigned char *) text <= ' ' && *text != '\n') {
 			text++;
 		}
@@ -557,13 +524,8 @@ Cmd_TokenizeString (const char *text)
 			cmd_argc++;
 		}
 	}
-
 }
 
-
-/*
-	Cmd_AddCommand
-*/
 void
 Cmd_AddCommand (const char *cmd_name, xcommand_t function, const char *description)
 {
@@ -594,9 +556,6 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function, const char *descripti
 	*c = cmd;
 }
 
-/*
-	Cmd_Exists
-*/
 qboolean
 Cmd_Exists (const char *cmd_name)
 {
@@ -610,11 +569,6 @@ Cmd_Exists (const char *cmd_name)
 	return false;
 }
 
-
-
-/*
-	Cmd_CompleteCommand
-*/
 const char       *
 Cmd_CompleteCommand (const char *partial)
 {
@@ -627,7 +581,7 @@ Cmd_CompleteCommand (const char *partial)
 	if (!len)
 		return NULL;
 
-// check for exact match
+	// check for exact match
 	for (cmd = cmd_functions; cmd; cmd = cmd->next)
 		if (!strcasecmp (partial, cmd->name))
 			return cmd->name;
@@ -635,7 +589,7 @@ Cmd_CompleteCommand (const char *partial)
 		if (!strcasecmp (partial, a->name))
 			return a->name;
 
-// check for partial match
+	// check for partial match
 	for (cmd = cmd_functions; cmd; cmd = cmd->next)
 		if (!strncasecmp (partial, cmd->name, len))
 			return cmd->name;
@@ -653,7 +607,6 @@ Cmd_CompleteCommand (const char *partial)
 	Added by EvilTypeGuy
 	Thanks to Fett erich@heintz.com
 	Thanks to taniwha
-
 */
 int
 Cmd_CompleteCountPossible (const char *partial)
@@ -683,7 +636,6 @@ Cmd_CompleteCountPossible (const char *partial)
 	Added by EvilTypeGuy
 	Thanks to Fett erich@heintz.com
 	Thanks to taniwha
-
 */
 const char	**
 Cmd_CompleteBuildList (const char *partial)
@@ -712,7 +664,6 @@ Cmd_CompleteBuildList (const char *partial)
 	Added by EvilTypeGuy
 	Thanks to Fett erich@heintz.com
 	Thanks to taniwha
-
 */
 const char *
 Cmd_CompleteAlias (const char * partial)
@@ -740,7 +691,6 @@ Cmd_CompleteAlias (const char * partial)
 	Added by EvilTypeGuy
 	Thanks to Fett erich@heintz.com
 	Thanks to taniwha
-
 */
 int
 Cmd_CompleteAliasCountPossible (const char *partial)
@@ -771,7 +721,6 @@ Cmd_CompleteAliasCountPossible (const char *partial)
 	Added by EvilTypeGuy
 	Thanks to Fett erich@heintz.com
 	Thanks to taniwha
-
 */
 const char	**
 Cmd_CompleteAliasBuildList (const char *partial)
@@ -779,7 +728,8 @@ Cmd_CompleteAliasBuildList (const char *partial)
 	cmdalias_t	*alias;
 	int			len = 0;
 	int			bpos = 0;
-	int			sizeofbuf = (Cmd_CompleteAliasCountPossible (partial) + 1) * sizeof (char *);
+	int			sizeofbuf = (Cmd_CompleteAliasCountPossible (partial) + 1) *
+							 sizeof (char *);
 	const char		**buf;
 
 	len = strlen(partial);
@@ -811,7 +761,7 @@ Cmd_ExpandVariables (const char *data, char *dest)
 
 	len = 0;
 
-// parse a regular word
+	// parse a regular word
 	while ((c = *data) != 0) {
 		if (c == '"')
 			quotes++;
@@ -886,11 +836,11 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 	Cmd_TokenizeString (buf);
 #endif
 
-// execute the command line
+	// execute the command line
 	if (!Cmd_Argc ())
 		return;							// no tokens
 
-// check functions
+	// check functions
 	cmd = (cmd_function_t*)Hash_Find (cmd_hash, cmd_argv[0]);
 	if (cmd) {
 		if (cmd->function)
@@ -898,11 +848,11 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 		return;
 	}
 
-// Tonik: check cvars
+	// Tonik: check cvars
 	if (Cvar_Command ())
 		return;
 
-// check alias
+	// check alias
 	a = (cmdalias_t*)Hash_Find (cmd_alias_hash, cmd_argv[0]);
 	if (a) {
 		Cbuf_InsertText (a->value);
@@ -912,8 +862,6 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 	if (cl_warncmd->int_val || developer->int_val)
 		Con_Printf ("Unknown command \"%s\"\n", Cmd_Argv (0));
 }
-
-
 
 /*
 	Cmd_CheckParm
@@ -970,7 +918,8 @@ Cmd_Help_f (void)
 
 	name = Cmd_Argv (1);
 
-	for (cmd = cmd_functions; cmd && strcasecmp (name, cmd->name); cmd = cmd->next)
+	for (cmd = cmd_functions; cmd && strcasecmp (name, cmd->name);
+		 cmd = cmd->next)
 		;
 	if (cmd) {
 		Con_Printf ("%s\n", cmd->description);
@@ -1021,30 +970,30 @@ void
 Cmd_Init_Hash (void)
 {
 	cmd_hash = Hash_NewTable (1021, cmd_get_key, 0, 0);
-	cmd_alias_hash = Hash_NewTable (1021, cmd_alias_get_key, cmd_alias_free, 0);
+	cmd_alias_hash = Hash_NewTable (1021, cmd_alias_get_key, cmd_alias_free,
+									0);
 }
 
-/*
-	Cmd_Init
-*/
 void
 Cmd_Init (void)
 {
-//
-// register our commands
-//
-	Cmd_AddCommand ("stuffcmds", Cmd_StuffCmds_f, "Execute the commands given at startup again");
+	// register our commands
+	Cmd_AddCommand ("stuffcmds", Cmd_StuffCmds_f, "Execute the commands given "
+					"at startup again");
 	Cmd_AddCommand ("exec", Cmd_Exec_f, "Execute a script file");
 	Cmd_AddCommand ("echo", Cmd_Echo_f, "Print text to console");
-	Cmd_AddCommand ("alias", Cmd_Alias_f, "Used to create a reference to a command or list of commands.\n"
-		"When used without parameters, displays all current aliases.\n"
-		"Note: Enclose multiple commands within quotes and seperate each command with a semi-colon.");
+	Cmd_AddCommand ("alias", Cmd_Alias_f, "Used to create a reference to a "
+					"command or list of commands.\n"
+					"When used without parameters, displays all current "
+					"aliases.\n"
+					"Note: Enclose multiple commands within quotes and "
+					"seperate each command with a semi-colon.");
 	Cmd_AddCommand ("unalias", Cmd_UnAlias_f, "Remove the selected alias");
 	Cmd_AddCommand ("wait", Cmd_Wait_f, "Wait a game tic");
 	Cmd_AddCommand ("cmdlist", Cmd_CmdList_f, "List all commands");
-	Cmd_AddCommand ("help", Cmd_Help_f, "Display help for a command or variable");
+	Cmd_AddCommand ("help", Cmd_Help_f, "Display help for a command or "
+					"variable");
 }
-
 
 char        com_token[MAX_COM_TOKEN];
 
@@ -1065,22 +1014,22 @@ COM_Parse (const char *data)
 	if (!data)
 		return NULL;
 
-// skip whitespace
-  skipwhite:
+	// skip whitespace
+skipwhite:
 	while ((c = *data) <= ' ') {
 		if (c == 0)
 			return NULL;				// end of file;
 		data++;
 	}
 
-// skip // comments
+	// skip // comments
 	if (c == '/' && data[1] == '/') {
 		while (*data && *data != '\n')
 			data++;
 		goto skipwhite;
 	}
 
-// handle quoted strings specially
+	// handle quoted strings specially
 	if (c == '\"') {
 		data++;
 		while (1) {
@@ -1093,7 +1042,7 @@ COM_Parse (const char *data)
 			len++;
 		}
 	}
-// parse a regular word
+	// parse a regular word
 	do {
 		com_token[len] = c;
 		data++;

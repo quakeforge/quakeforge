@@ -41,7 +41,6 @@
 #include "QF/uint32.h"
 
 /* NOTE: This code makes no attempt to be fast!
-
    It assumes that a int is at least 32 bits long
 */
 
@@ -60,6 +59,7 @@ static struct mdfour *m;
 #define ROUND1(a,b,c,d,k,s) a = lshift(a + F(b,c,d) + X[k], s)
 #define ROUND2(a,b,c,d,k,s) a = lshift(a + G(b,c,d) + X[k] + 0x5A827999,s)
 #define ROUND3(a,b,c,d,k,s) a = lshift(a + H(b,c,d) + X[k] + 0x6ED9EBA1,s)
+
 
 /* this applies md4 to 64 byte chunks */
 static void
@@ -183,7 +183,6 @@ mdfour_begin (struct mdfour *md)
 	md->totalN = 0;
 }
 
-
 static void
 mdfour_tail (const unsigned char *in, int n)
 {
@@ -234,7 +233,6 @@ mdfour_update (struct mdfour *md, const unsigned char *in, int n)
 	mdfour_tail (in, n);
 }
 
-
 void
 mdfour_result (struct mdfour *md, unsigned char *out)
 {
@@ -245,7 +243,6 @@ mdfour_result (struct mdfour *md, unsigned char *out)
 	copy4 (out + 8, m->C);
 	copy4 (out + 12, m->D);
 }
-
 
 void
 mdfour (unsigned char *out, const unsigned char *in, int n)

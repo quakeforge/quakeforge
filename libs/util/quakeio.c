@@ -53,12 +53,12 @@
 # define _POSIX_
 #endif
 
+#include <limits.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include <limits.h>
 
-#include "QF/vfs.h"
 #include "QF/vfile.h"
+#include "QF/vfs.h"
 
 #ifdef WIN32
 # ifndef __BORLANDC__
@@ -91,8 +91,7 @@ Qexpand_squiggle (const char *path, char *dest)
 
 #ifdef _WIN32
 	// LordHavoc: first check HOME to duplicate previous version behavior
-	// (also handy if someone wants it somewhere other than their
-	//  windows directory)
+	// (also handy if someone wants it elsewhere than their windows directory)
 	home = getenv ("HOME");
 	if (!home || !home[0])
 		home = getenv ("WINDIR");
@@ -105,8 +104,8 @@ Qexpand_squiggle (const char *path, char *dest)
 
 	if (home) {
 		strcpy (dest, home);
-		strncat (dest, path + 1, MAX_OSPATH - strlen (dest));	// skip
-																// leading ~
+		strncat (dest, path + 1, MAX_OSPATH - strlen (dest));
+		// skip leading ~
 	} else
 		strcpy (dest, path);
 }
@@ -372,11 +371,9 @@ Qeof (VFile *file)
 }
 
 /*
-
 	Qgetline
 
 	Dynamic length version of Qgets. DO NOT free the buffer.
-
 */
 const char *
 Qgetline (VFile *file)

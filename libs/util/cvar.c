@@ -41,13 +41,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "compat.h"
-#include "QF/console.h"
 #include "QF/cmd.h"
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/qargs.h"
 #include "QF/vfs.h"
+
+#include "compat.h"
 
 #define USER_RO_CVAR "User-created READ-ONLY Cvar"
 #define USER_CVAR "User-created cvar"
@@ -60,9 +61,7 @@ cvar_alias_t	*calias_vars;
 hashtab_t		*cvar_hash;
 hashtab_t		*calias_hash;
 
-/*
-	Cvar_FindVar
-*/
+
 cvar_t *
 Cvar_FindVar (const char *var_name)
 {
@@ -106,9 +105,6 @@ Cvar_Alias_Get (const char *name, cvar_t *cvar)
 	}
 }
 
-/*
-	Cvar_VariableValue
-*/
 float
 Cvar_VariableValue (const char *var_name)
 {
@@ -122,10 +118,6 @@ Cvar_VariableValue (const char *var_name)
 	return atof (var->string);
 }
 
-
-/*
-	Cvar_VariableString
-*/
 const char *
 Cvar_VariableString (const char *var_name)
 {
@@ -139,10 +131,6 @@ Cvar_VariableString (const char *var_name)
 	return var->string;
 }
 
-
-/*
-	Cvar_CompleteVariable
-*/
 const char *
 Cvar_CompleteVariable (const char *partial)
 {
@@ -184,7 +172,6 @@ Cvar_CompleteVariable (const char *partial)
 	New function for tab-completion system
 	Added by EvilTypeGuy
 	Thanks to Fett erich@heintz.com
-
 */
 int
 Cvar_CompleteCountPossible (const char *partial)
@@ -214,7 +201,6 @@ Cvar_CompleteCountPossible (const char *partial)
 	Added by EvilTypeGuy
 	Thanks to Fett erich@heintz.com
 	Thanks to taniwha
-
 */
 const char	**
 Cvar_CompleteBuildList (const char *partial)
@@ -222,7 +208,8 @@ Cvar_CompleteBuildList (const char *partial)
 	cvar_t	*cvar;
 	int		len = 0;
 	int		bpos = 0;
-	int		sizeofbuf = (Cvar_CompleteCountPossible (partial) + 1) * sizeof (char *);
+	int		sizeofbuf = (Cvar_CompleteCountPossible (partial) + 1) *
+						 sizeof (char *);
 	const char	**buf;
 
 	len = strlen(partial);
@@ -236,9 +223,6 @@ Cvar_CompleteBuildList (const char *partial)
 	return buf;
 }	
 
-/*
-	Cvar_Set
-*/
 void
 Cvar_Set (cvar_t *var, const char *value)
 {
@@ -263,7 +247,6 @@ Cvar_Set (cvar_t *var, const char *value)
 	if (changed && var->callback)
 		var->callback (var);
 }
-
 
 /*
 	Cvar_SetROM
@@ -290,9 +273,6 @@ Cvar_SetROM (cvar_t *var, const char *value)
 		var->callback (var);
 }
 
-/*
-	Cvar_SetValue
-*/
 // 1999-09-07 weird cvar zeros fix by Maddes
 void
 Cvar_SetValue (cvar_t *var, float value)
@@ -301,7 +281,8 @@ Cvar_SetValue (cvar_t *var, float value)
 	int         i;
 
 	snprintf (val, sizeof (val), "%f", value);
-	for (i = strlen (val) - 1; i > 0 && val[i] == '0' && val[i - 1] != '.'; i--) {
+	for (i = strlen (val) - 1; i > 0 && val[i] == '0' && val[i - 1] != '.';
+		 i--) {
 		val[i] = 0;
 	}
 	Cvar_Set (var, val);
@@ -324,7 +305,7 @@ Cvar_Command (void)
 	if (!v)
 		return false;
 
-// perform a variable print or set
+	// perform a variable print or set
 	if (Cmd_Argc () == 1) {
 		Con_Printf ("\"%s\" is \"%s\"\n", v->name, v->string);
 		return true;
@@ -333,7 +314,6 @@ Cvar_Command (void)
 	Cvar_Set (v, Cmd_Argv (1));
 	return true;
 }
-
 
 /*
 	Cvar_WriteVariables
@@ -371,7 +351,8 @@ Cvar_Set_f (void)
 
 	if (var) {
 		if (var->flags & CVAR_ROM) {
-			Con_DPrintf ("Cvar \"%s\" is read-only, cannot modify\n", var_name);
+			Con_DPrintf ("Cvar \"%s\" is read-only, cannot modify\n",
+						 var_name);
 		} else {
 			Cvar_Set (var, value);
 		}
@@ -401,7 +382,8 @@ Cvar_Setrom_f (void)
 
 	if (var) {
 		if (var->flags & CVAR_ROM) {
-			Con_DPrintf ("Cvar \"%s\" is read-only, cannot modify\n", var_name);
+			Con_DPrintf ("Cvar \"%s\" is read-only, cannot modify\n",
+						 var_name);
 		} else {
 			Cvar_Set (var, value);
 			Cvar_SetFlags (var, var->flags | CVAR_ROM);
@@ -501,9 +483,11 @@ Cvar_Init (void)
 	developer = Cvar_Get ("developer", "0", CVAR_NONE, NULL,
 			"set to enable extra debugging information");
 
-	Cmd_AddCommand ("set", Cvar_Set_f, "Set the selected variable, useful on the command line (+set variablename setting)");
-	Cmd_AddCommand ("setrom", Cvar_Setrom_f, "Set the selected variable and make it read only, useful on the command line.\n"
-		"(+setrom variablename setting)");
+	Cmd_AddCommand ("set", Cvar_Set_f, "Set the selected variable, useful on "
+					"the command line (+set variablename setting)");
+	Cmd_AddCommand ("setrom", Cvar_Setrom_f, "Set the selected variable and "
+					"make it read only, useful on the command line.\n"
+					"(+setrom variablename setting)");
 	Cmd_AddCommand ("toggle", Cvar_Toggle_f, "Toggle a cvar on or off");
 	Cmd_AddCommand ("cvarlist", Cvar_CvarList_f, "List all cvars");
 }
@@ -532,7 +516,6 @@ Cvar_Shutdown (void)
 		alias = nextalias;
 	}
 }
-
 
 cvar_t *
 Cvar_Get (const char *name, const char *string, int cvarflags,

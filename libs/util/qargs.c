@@ -63,6 +63,7 @@ char       *com_cmdline;
 
 qboolean    nouse = false;				// 1999-10-29 +USE fix by Maddes
 
+
 /*
 	COM_CheckParm
 
@@ -85,9 +86,6 @@ COM_CheckParm (char *parm)
 	return 0;
 }
 
-/*
-	COM_InitArgv
-*/
 void
 COM_InitArgv (int argc, char **argv)
 {
@@ -96,9 +94,8 @@ COM_InitArgv (int argc, char **argv)
 
 	safe = false;
 
-	largv =
-
-		(char **) calloc (1, (argc + NUM_SAFE_ARGVS + 1) * sizeof (char **));
+	largv = (char **) calloc (1, (argc + NUM_SAFE_ARGVS + 1) *
+							  sizeof (char **));
 
 	for (com_argc = 0, len = 0; com_argc < argc; com_argc++) {
 		largv[com_argc] = argv[com_argc];
@@ -120,9 +117,8 @@ COM_InitArgv (int argc, char **argv)
 	}
 
 	if (safe) {
-		// force all the safe-mode switches. Note that we reserved extra
-		// space in
-		// case we need to add these, so we don't need an overflow check
+		// force all the safe-mode switches. Note that we reserved extra space
+		// in case we need to add these, so we don't need an overflow check
 		for (i = 0; i < NUM_SAFE_ARGVS; i++) {
 			largv[com_argc] = safeargvs[i];
 			com_argc++;
@@ -132,11 +128,9 @@ COM_InitArgv (int argc, char **argv)
 	largv[com_argc] = argvdummy;
 	com_argv = largv;
 
-// 1999-10-29 +USE fix by Maddes  start
 	if (COM_CheckParm ("-nouse")) {
 		nouse = true;
 	}
-// 1999-10-29 +USE fix by Maddes  end
 }
 
 /*

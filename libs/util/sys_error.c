@@ -28,11 +28,14 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#include <stdio.h>
+
 #include <stdarg.h>
+#include <stdio.h>
+
+#include "QF/sys.h"
 
 #include "compat.h"
-#include "QF/sys.h"
+
 
 void
 QFutil_Sys_Error (const char *error, ...)

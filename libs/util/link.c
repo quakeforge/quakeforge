@@ -32,6 +32,7 @@
 
 #include "QF/link.h"
 
+
 // ClearLink is used for new headnodes
 void
 ClearLink (link_t *l)

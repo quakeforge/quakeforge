@@ -13,14 +13,13 @@
  *
  */
 
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
-#include <io.h>
 #include <direct.h>
-#include <sys/stat.h>
-
 #include <dirent.h>
+#include <errno.h>
+#include <io.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
 
 #define SUFFIX	"*"
 #define	SLASH	"\\"
@@ -29,12 +28,13 @@
 #define S_ISDIR(m)	((m & S_IFMT) == S_IFDIR)	/* is a directory */
 #endif S_ISDIR
 
+
 /*
- * opendir
- *
- * Returns a pointer to a DIR structure appropriately filled in to begin
- * searching a directory.
- */
+  opendir
+
+  Returns a pointer to a DIR structure appropriately filled in to begin
+  searching a directory.
+*/
 DIR        *
 opendir (const char *szPath)
 {
@@ -107,13 +107,12 @@ opendir (const char *szPath)
 	return nd;
 }
 
-
 /*
- * readdir
- *
- * Return a pointer to a dirent structure filled with the information on the
- * next entry in the directory.
- */
+  readdir
+
+  Return a pointer to a dirent structure filled with the information on the
+  next entry in the directory.
+*/
 struct dirent *
 readdir (DIR * dirp)
 {
@@ -169,12 +168,11 @@ readdir (DIR * dirp)
 	return (struct dirent *) 0;
 }
 
-
 /*
- * closedir
- *
- * Frees up resources allocated by opendir.
- */
+  closedir
+
+  Frees up resources allocated by opendir.
+*/
 int
 closedir (DIR * dirp)
 {
@@ -199,11 +197,11 @@ closedir (DIR * dirp)
 }
 
 /*
- * rewinddir
- *
- * Return to the beginning of the directory "stream". We simply call findclose
- * and then reset things like an opendir.
- */
+  rewinddir
+
+  Return to the beginning of the directory "stream". We simply call findclose
+  and then reset things like an opendir.
+*/
 void
 rewinddir (DIR * dirp)
 {
@@ -223,11 +221,11 @@ rewinddir (DIR * dirp)
 }
 
 /*
- * telldir
- *
- * Returns the "position" in the "directory stream" which can be used with
- * seekdir to go back to an old entry. We simply return the value in stat.
- */
+  telldir
+
+  Returns the "position" in the "directory stream" which can be used with
+  seekdir to go back to an old entry. We simply return the value in stat.
+*/
 long
 telldir (DIR * dirp)
 {
@@ -241,14 +239,14 @@ telldir (DIR * dirp)
 }
 
 /*
- * seekdir
- *
- * Seek to an entry previously returned by telldir. We rewind the directory
- * and call readdir repeatedly until either dd_stat is the position number
- * or -1 (off the end). This is not perfect, in that the directory may
- * have changed while we weren't looking. But that is probably the case with
- * any such system.
- */
+  seekdir
+
+  Seek to an entry previously returned by telldir. We rewind the directory
+  and call readdir repeatedly until either dd_stat is the position number
+  or -1 (off the end). This is not perfect, in that the directory may
+  have changed while we weren't looking. But that is probably the case with
+  any such system.
+*/
 void
 seekdir (DIR * dirp, long lPos)
 {

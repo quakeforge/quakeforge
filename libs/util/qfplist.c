@@ -44,6 +44,7 @@ static qboolean PL_SkipSpace (pldata_t *);
 static char *PL_ParseQuotedString (pldata_t *);
 static char *PL_ParseUnquotedString (pldata_t *);
 
+
 void
 PL_FreeItem (plitem_t *item)
 {
@@ -213,7 +214,6 @@ PL_ParseQuotedString (pldata_t *pl)
 	if (pl->pos - start - shrink == 0) {
 		str = "";
 	} else {
-
 		char			chars[pl->pos - start - shrink];
 		unsigned int	j;
 		unsigned int	k;
@@ -286,7 +286,8 @@ PL_ParseQuotedString (pldata_t *pl)
 				}
 			}
 		}
-		str = strncat (calloc ((pl->pos - start - shrink) + 1, 1), chars, pl->pos - start - shrink);
+		str = strncat (calloc ((pl->pos - start - shrink) + 1, 1), chars,
+					   pl->pos - start - shrink);
 	}
 	pl->pos++;
 	return str;
@@ -303,7 +304,8 @@ PL_ParseUnquotedString (pldata_t *pl)
 			break;
 		pl->pos++;
 	}
-	str = strncat (calloc ((pl->pos - start) + 1, 1), &pl->ptr[start], pl->pos - start);
+	str = strncat (calloc ((pl->pos - start) + 1, 1), &pl->ptr[start],
+				   pl->pos - start);
 	return str;
 }
 
@@ -316,154 +318,155 @@ PL_ParsePropertyListItem (pldata_t *pl)
 		return NULL;
 
 	switch (pl->ptr[pl->pos]) {
-		case '{': {
-			hashtab_t *dict = Hash_NewTable (1021, dict_get_key, dict_free, NULL);
+	case '{':
+	{
+		hashtab_t *dict = Hash_NewTable (1021, dict_get_key, dict_free, NULL);
 
+		pl->pos++;
+
+		while (PL_SkipSpace (pl) && pl->ptr[pl->pos] != '}') {
+			plitem_t	*key;
+			plitem_t	*value;
+
+			if (!(key = PL_ParsePropertyListItem (pl)))
+				return NULL;
+
+			if (!(PL_SkipSpace (pl))) {
+				PL_FreeItem (key);
+				return NULL;
+			}
+
+			if (key->type != QFString) {
+				pl->error = "Key is not a string";
+				PL_FreeItem (key);
+				return NULL;
+			}
+
+			if (pl->ptr[pl->pos] != '=') {
+				pl->error = "Unexpected character (expected '=')";
+				PL_FreeItem (key);
+				return NULL;
+			}
 			pl->pos++;
 
-			while (PL_SkipSpace (pl) && pl->ptr[pl->pos] != '}') {
-				plitem_t	*key;
-				plitem_t	*value;
+			// If there is no value, lose the key				
+			if (!(value = PL_ParsePropertyListItem (pl))) {
+				PL_FreeItem (key);
+				return NULL;
+			}
 
-				if (!(key = PL_ParsePropertyListItem (pl)))
-					return NULL;
+			if (!(PL_SkipSpace (pl))) {
+				PL_FreeItem (key);
+				PL_FreeItem (value);
+				return NULL;
+			}
 
-				if (!(PL_SkipSpace (pl))) {
-					PL_FreeItem (key);
-					return NULL;
-				}
-
-				if (key->type != QFString) {
-					pl->error = "Key is not a string";
-					PL_FreeItem (key);
-					return NULL;
-				}
-
-				if (pl->ptr[pl->pos] != '=') {
-					pl->error = "Unexpected character (expected '=')";
-					PL_FreeItem (key);
-					return NULL;
-				}
+			if (pl->ptr[pl->pos] == ';') {
 				pl->pos++;
-
-				// If there is no value, lose the key				
-				if (!(value = PL_ParsePropertyListItem (pl))) {
-					PL_FreeItem (key);
-					return NULL;
-				}
-
-				if (!(PL_SkipSpace (pl))) {
-					PL_FreeItem (key);
-					PL_FreeItem (value);
-					return NULL;
-				}
-
-				if (pl->ptr[pl->pos] == ';') {
-					pl->pos++;
-				} else if (pl->ptr[pl->pos] != '}') {
-					pl->error = "Unexpected character (wanted ';' or '}')";
-					PL_FreeItem (key);
-					PL_FreeItem (value);
-					return NULL;
-				}
-
-				{	// Add the key/value pair to the dictionary
-					dictkey_t	*k = calloc (1, sizeof (dictkey_t));
-
-					if (!k) {
-						PL_FreeItem (key);
-						PL_FreeItem (value);
-						return NULL;
-					}
-
-					k->key = (char *) key->data;
-					k->value = value;
-
-					Hash_Add (dict, k);
-				}
-			}
-
-			if (pl->pos >= pl->end) {	// Catch the error
-				pl->error = "Unexpected end of string when parsing dictionary";
-				Hash_DelTable (dict);
+			} else if (pl->ptr[pl->pos] != '}') {
+				pl->error = "Unexpected character (wanted ';' or '}')";
+				PL_FreeItem (key);
+				PL_FreeItem (value);
 				return NULL;
 			}
-			pl->pos++;
 
-			item = calloc (1, sizeof (plitem_t));
-			item->type = QFDictionary;
-			item->data = dict;
-			return item;
-		}
+			{	// Add the key/value pair to the dictionary
+				dictkey_t	*k = calloc (1, sizeof (dictkey_t));
 
-		case '(': {
-			plarray_t *a = calloc (1, sizeof (plarray_t));
-
-			pl->pos++;
-
-			while (PL_SkipSpace (pl) && pl->ptr[pl->pos] != ')') {
-				plitem_t	*value;
-
-				if (!(value = PL_ParsePropertyListItem (pl)))
-					return NULL;
-
-				if (!(PL_SkipSpace (pl))) {
-					free (value);
+				if (!k) {
+					PL_FreeItem (key);
+					PL_FreeItem (value);
 					return NULL;
 				}
 
-				if (pl->ptr[pl->pos] == ',') {
-					pl->pos++;
-				} else if (pl->ptr[pl->pos] != ')') {
-					pl->error = "Unexpected character (wanted ',' or ')')";
-					free (value);
-					return NULL;
-				}
+				k->key = (char *) key->data;
+				k->value = value;
 
-				if (a->numvals == MAX_ARRAY_INDEX) {
-					pl->error = "Unexpected character (too many items in array)";
-					free (value);
-					return NULL;
-				}
-				a->values[a->numvals++] = value;
+				Hash_Add (dict, k);
 			}
-			pl->pos++;
-
-			item = calloc (1, sizeof (plitem_t));
-			item->type = QFArray;
-			item->data = a;
-			return item;
 		}
 
-		case '<':
-			pl->error = "Unexpected character in string (binary data unsupported)";
+		if (pl->pos >= pl->end) {	// Catch the error
+			pl->error = "Unexpected end of string when parsing dictionary";
+			Hash_DelTable (dict);
 			return NULL;
-
-		case '"': {
-			char *str = PL_ParseQuotedString (pl);
-
-			if (!str) {
-				return NULL;
-			} else {
-				item = calloc (1, sizeof (plitem_t));
-				item->type = QFString;
-				item->data = str;
-				return item;
-			}
 		}
+		pl->pos++;
 
-		default: {
-			char *str = PL_ParseUnquotedString (pl);
+		item = calloc (1, sizeof (plitem_t));
+		item->type = QFDictionary;
+		item->data = dict;
+		return item;
+	}
 
-			if (!str) {
+	case '(': {
+		plarray_t *a = calloc (1, sizeof (plarray_t));
+
+		pl->pos++;
+
+		while (PL_SkipSpace (pl) && pl->ptr[pl->pos] != ')') {
+			plitem_t	*value;
+
+			if (!(value = PL_ParsePropertyListItem (pl)))
 				return NULL;
-			} else {
-				item = calloc (1, sizeof (plitem_t));
-				item->type = QFString;
-				item->data = str;
-				return item;
+
+			if (!(PL_SkipSpace (pl))) {
+				free (value);
+				return NULL;
 			}
+
+			if (pl->ptr[pl->pos] == ',') {
+				pl->pos++;
+			} else if (pl->ptr[pl->pos] != ')') {
+				pl->error = "Unexpected character (wanted ',' or ')')";
+				free (value);
+				return NULL;
+			}
+
+			if (a->numvals == MAX_ARRAY_INDEX) {
+				pl->error = "Unexpected character (too many items in array)";
+				free (value);
+				return NULL;
+			}
+			a->values[a->numvals++] = value;
 		}
+		pl->pos++;
+
+		item = calloc (1, sizeof (plitem_t));
+		item->type = QFArray;
+		item->data = a;
+		return item;
+	}
+
+	case '<':
+		pl->error = "Unexpected character in string (binary data unsupported)";
+		return NULL;
+
+	case '"': {
+		char *str = PL_ParseQuotedString (pl);
+
+		if (!str) {
+			return NULL;
+		} else {
+			item = calloc (1, sizeof (plitem_t));
+			item->type = QFString;
+			item->data = str;
+			return item;
+		}
+	}
+
+	default: {
+		char *str = PL_ParseUnquotedString (pl);
+
+		if (!str) {
+			return NULL;
+		} else {
+			item = calloc (1, sizeof (plitem_t));
+			item->type = QFString;
+			item->data = str;
+			return item;
+		}
+	}
 	} // switch
 }
 

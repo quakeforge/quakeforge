@@ -77,7 +77,6 @@ W_CleanupName (const char *in, char *out)
 		out[i] = 0;
 }
 
-
 void
 W_LoadWadFile (const char *filename)
 {
@@ -89,12 +88,13 @@ W_LoadWadFile (const char *filename)
 	wad_base = COM_LoadHunkFile (filename);
 	if (!wad_base)
 	{
-		Sys_Printf (
-"\n    The following error is somewhat misleading.  Most likely you don't\n"
-"    have a file by that name on your system because it's stored in a pak\n"
-"    file.  The real problem is that it's not where we expect it to be.\n\n"
-"    Game data should be installed into fs_sharepath or fs_userpath, in a\n"
-"    subdirectory named %s.\n\n", fs_basegame->string);
+		Sys_Printf ("\n    The following error is somewhat misleading. Most "
+					"likely you don't\n    have a file by that name on your "
+					"system because it's stored in a pak\n    file. The real "
+					"problem is that it's not where we expect it to be.\n\n"
+					"    Game data should be installed into fs_sharepath or "
+					"fs_userpath, in a\n    subdirectory named %s.\n\n",
+					fs_basegame->string);
 		Sys_Printf ("    fs_sharepath is %s\n", fs_sharepath->string);
 		Sys_Printf ("    fs_userpath is %s\n\n", fs_userpath->string);
 		Sys_Error ("W_LoadWadFile: unable to load %s\n\n", filename);
@@ -121,7 +121,6 @@ W_LoadWadFile (const char *filename)
 	}
 }
 
-
 lumpinfo_t *
 W_GetLumpinfo (const char *name)
 {
@@ -140,7 +139,6 @@ W_GetLumpinfo (const char *name)
 	return NULL;
 }
 
-
 void *
 W_GetLumpName (const char *name)
 {
@@ -150,7 +148,6 @@ W_GetLumpName (const char *name)
 
 	return (void *) (wad_base + lump->filepos);
 }
-
 
 void *
 W_GetLumpNum (int num)
@@ -165,11 +162,9 @@ W_GetLumpNum (int num)
 	return (void *) (wad_base + lump->filepos);
 }
 
-
 /*
   automatic byte swapping
 */
-
 
 void
 SwapPic (qpic_t *pic)

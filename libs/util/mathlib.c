@@ -72,9 +72,7 @@ ProjectPointOnPlane (vec3_t dst, const vec3_t p, const vec3_t normal)
 	dst[2] = p[2] - d * n[2];
 }
 
-/*
-** assumes "src" is normalized
-*/
+//  assumes "src" is normalized
 void
 PerpendicularVector (vec3_t dst, const vec3_t src)
 {
@@ -83,8 +81,7 @@ PerpendicularVector (vec3_t dst, const vec3_t src)
 	float       minelem = 1.0F;
 	vec3_t      tempvec;
 
-	/* 
-	   ** find the smallest magnitude axially aligned vector */
+	/* find the smallest magnitude axially aligned vector */
 	for (pos = 0, i = 0; i < 3; i++) {
 		if (fabs (src[i]) < minelem) {
 			pos = i;
@@ -94,17 +91,15 @@ PerpendicularVector (vec3_t dst, const vec3_t src)
 	tempvec[0] = tempvec[1] = tempvec[2] = 0.0F;
 	tempvec[pos] = 1.0F;
 
-	/* 
-	   ** project the point onto the plane defined by src */
+	/* project the point onto the plane defined by src */
 	ProjectPointOnPlane (dst, tempvec, src);
 
-	/* 
-	   ** normalize the result */
+	/* normalize the result */
 	VectorNormalize (dst);
 }
 
 #if defined(_WIN32) && !defined(__GNUC__)
-#pragma optimize( "", off )
+# pragma optimize( "", off )
 #endif
 
 void VectorVectors(const vec3_t forward, vec3_t right, vec3_t up)
@@ -181,7 +176,7 @@ RotatePointAroundVector (vec3_t dst, const vec3_t dir, const vec3_t point,
 }
 
 #if defined(_WIN32) && !defined(__GNUC__)
-#pragma optimize( "", on )
+# pragma optimize( "", on )
 #endif
 
 /*-----------------------------------------------------------------*/
@@ -223,10 +218,11 @@ BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, mplane_t *p)
 	float       dist1, dist2;
 	int         sides;
 
-#if 0		// this is done by the BOX_ON_PLANE_SIDE macro before
-		// calling this function
+#if 0
+	// this is done by the BOX_ON_PLANE_SIDE macro before
+	// calling this function
 
-// fast axial cases
+	// fast axial cases
 	if (p->type < 3) {
 		if (p->dist <= emins[p->type])
 			return 1;
@@ -236,7 +232,7 @@ BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, mplane_t *p)
 	}
 #endif
 
-// general case
+	// general case
 	switch (p->signbits) {
 		case 0:
 			dist1 =
@@ -328,7 +324,6 @@ BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, mplane_t *p)
 		sides = 1;
 	if (dist2 < 0)
 		sides |= 2;
-
 #endif
 
 	sides = 0;
@@ -344,9 +339,7 @@ BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, mplane_t *p)
 
 	return sides;
 }
-
 #endif
-
 
 void
 AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
@@ -394,7 +387,6 @@ _VectorMA (vec3_t veca, float scale, vec3_t vecb, vec3_t vecc)
 	vecc[1] = veca[1] + scale * vecb[1];
 	vecc[2] = veca[2] + scale * vecb[2];
 }
-
 
 vec_t
 _DotProduct (vec3_t v1, vec3_t v2)
@@ -485,7 +477,6 @@ VectorScale (vec3_t in, vec_t scale, vec3_t out)
 	out[2] = in[2] * scale;
 }
 
-
 int
 Q_log2 (int val)
 {
@@ -496,10 +487,6 @@ Q_log2 (int val)
 	return answer;
 }
 
-
-/*
-	R_ConcatRotations
-*/
 void
 R_ConcatRotations (float in1[3][3], float in2[3][3], float out[3][3])
 {
@@ -523,10 +510,6 @@ R_ConcatRotations (float in1[3][3], float in2[3][3], float out[3][3])
 		in1[2][2] * in2[2][2];
 }
 
-
-/*
-	R_ConcatTransforms
-*/
 void
 R_ConcatTransforms (float in1[3][4], float in2[3][4], float out[3][4])
 {
@@ -556,7 +539,6 @@ R_ConcatTransforms (float in1[3][4], float in2[3][4], float out[3][4])
 		in1[2][2] * in2[2][3] + in1[2][3];
 }
 
-
 /*
 	FloorDivMod
 
@@ -564,7 +546,6 @@ R_ConcatTransforms (float in1[3][4], float in2[3][4], float out[3][4])
 	numer and denom, both of which should contain no fractional part. The
 	quotient must fit in 32 bits.
 */
-
 void
 FloorDivMod (double numer, double denom, int *quotient, int *rem)
 {
@@ -575,9 +556,9 @@ FloorDivMod (double numer, double denom, int *quotient, int *rem)
 	if (denom <= 0.0)
 		Sys_Error ("FloorDivMod: bad denominator %f\n", denom);
 
-//  if ((floor(numer) != numer) || (floor(denom) != denom))
-//      Sys_Error ("FloorDivMod: non-integer numer or denom %f %f\n",
-//              numer, denom);
+//	if ((floor(numer) != numer) || (floor(denom) != denom))
+//		Sys_Error ("FloorDivMod: non-integer numer or denom %f %f\n",
+//				   numer, denom);
 #endif
 
 	if (numer >= 0.0) {
@@ -586,10 +567,8 @@ FloorDivMod (double numer, double denom, int *quotient, int *rem)
 		q = (int) x;
 		r = (int) floor (numer - (x * denom));
 	} else {
-		// 
 		// perform operations with positive values, and fix mod to make
 		// floor-based
-		// 
 		x = floor (-numer / denom);
 		q = -(int) x;
 		r = (int) floor (-numer - (x * denom));
@@ -603,10 +582,6 @@ FloorDivMod (double numer, double denom, int *quotient, int *rem)
 	*rem = r;
 }
 
-
-/*
-	GreatestCommonDivisor
-*/
 int
 GreatestCommonDivisor (int i1, int i2)
 {
@@ -621,17 +596,13 @@ GreatestCommonDivisor (int i1, int i2)
 	}
 }
 
-
 #ifndef USE_INTEL_ASM
-
-// TODO: move to nonintel.c
-
 /*
-	Invert24To16
+  Invert24To16
 
-	Inverts an 8.24 value to a 16.16 value
+  Inverts an 8.24 value to a 16.16 value
+  TODO: move to nonintel.c
 */
-
 fixed16_t
 Invert24To16 (fixed16_t val)
 {
@@ -641,5 +612,4 @@ Invert24To16 (fixed16_t val)
 	return (fixed16_t)
 		(((double) 0x10000 * (double) 0x1000000 / (double) val) + 0.5);
 }
-
 #endif

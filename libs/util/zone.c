@@ -53,7 +53,6 @@
 void        Cache_FreeLow (int new_low_hunk);
 void        Cache_FreeHigh (int new_high_hunk);
 
-
 /*
 	The zone calls are pretty much only used for small strings and structures,
 	all big things are allocated on the hunk.
@@ -78,6 +77,7 @@ qboolean    hunk_tempactive;
 int         hunk_tempmark;
 
 void        R_FreeTextures (void);
+
 
 /*
 	Hunk_Check
@@ -127,9 +127,7 @@ Hunk_Print (qboolean all)
 	Con_Printf ("-------------------------\n");
 
 	while (1) {
-		// 
 		// skip to the high hunk if done with low hunk
-		// 
 		if (h == endlow) {
 			Con_Printf ("-------------------------\n");
 			Con_Printf ("          :%8i REMAINING\n",
@@ -137,15 +135,11 @@ Hunk_Print (qboolean all)
 			Con_Printf ("-------------------------\n");
 			h = starthigh;
 		}
-		// 
 		// if totally done, break
-		// 
 		if (h == endhigh)
 			break;
 
-		// 
 		// run consistancy checks
-		// 
 		if (h->sentinal != HUNK_SENTINAL)
 			Sys_Error ("Hunk_Check: trahsed sentinal");
 		if (h->size < 16 || h->size + (byte *) h - hunk_base > hunk_size)
@@ -156,16 +150,12 @@ Hunk_Print (qboolean all)
 		totalblocks++;
 		sum += h->size;
 
-		// 
 		// print the single block
-		// 
 		memcpy (name, h->name, 8);
 		if (all)
 			Con_Printf ("%8p :%8i %8s\n", h, h->size, name);
 
-		// 
 		// print the total
-		// 
 		if (next == endlow || next == endhigh ||
 			strncmp (h->name, next->name, 8)) {
 			if (!all)
@@ -182,9 +172,6 @@ Hunk_Print (qboolean all)
 
 }
 
-/*
-	Hunk_AllocName
-*/
 void       *
 Hunk_AllocName (int size, const char *name)
 {
@@ -200,14 +187,16 @@ Hunk_AllocName (int size, const char *name)
 	size = sizeof (hunk_t) + ((size + 15) & ~15);
 
 	if (hunk_size - hunk_low_used - hunk_high_used < size)
-//      Sys_Error ("Hunk_Alloc: failed on %i bytes",size);
+//		Sys_Error ("Hunk_Alloc: failed on %i bytes",size);
 #ifdef _WIN32
 		Sys_Error
-			("Not enough RAM allocated.  Try starting using \"-heapsize 16000\" on the %s command line.",
+			("Not enough RAM allocated.  Try starting using "
+			 "\"-heapsize 16000\" on the %s command line.",
 			 PROGRAM);
 #else
 		Sys_Error
-			("Not enough RAM allocated.  Try starting using \"-mem 16\" on the %s command line.",
+			("Not enough RAM allocated.  Try starting using \"-mem 16\" on "
+			 "the %s command line.",
 			 PROGRAM);
 #endif
 
@@ -225,9 +214,6 @@ Hunk_AllocName (int size, const char *name)
 	return (void *) (h + 1);
 }
 
-/*
-	Hunk_Alloc
-*/
 void       *
 Hunk_Alloc (int size)
 {
@@ -273,10 +259,6 @@ Hunk_FreeToHighMark (int mark)
 	hunk_high_used = mark;
 }
 
-
-/*
-	Hunk_HighAllocName
-*/
 void       *
 Hunk_HighAllocName (int size, const char *name)
 {
@@ -311,7 +293,6 @@ Hunk_HighAllocName (int size, const char *name)
 
 	return (void *) (h + 1);
 }
-
 
 /*
 	Hunk_TempAlloc
@@ -355,15 +336,12 @@ cache_system_t *Cache_TryAlloc (int size, qboolean nobottom);
 
 cache_system_t cache_head;
 
-/*
-	Cache_Move
-*/
 void
 Cache_Move (cache_system_t * c)
 {
 	cache_system_t *new;
 
-// we are clearing up space at the bottom, so only allocate it late
+	// we are clearing up space at the bottom, so only allocate it late
 	new = Cache_TryAlloc (c->size, true);
 	if (new) {
 		Con_DPrintf ("cache_move ok\n");
@@ -461,7 +439,7 @@ Cache_TryAlloc (int size, qboolean nobottom)
 {
 	cache_system_t *cs, *new;
 
-// is the cache completely empty?
+	// is the cache completely empty?
 
 	if (!nobottom && cache_head.prev == &cache_head) {
 		if (hunk_size - hunk_high_used - hunk_low_used < size) {
@@ -479,7 +457,8 @@ Cache_TryAlloc (int size, qboolean nobottom)
 		Cache_MakeLRU (new);
 		return new;
 	}
-// search from the bottom up for space
+
+	// search from the bottom up for space
 
 	new = (cache_system_t *) (hunk_base + hunk_low_used);
 	cs = cache_head.next;
@@ -506,7 +485,7 @@ Cache_TryAlloc (int size, qboolean nobottom)
 
 	} while (cs != &cache_head);
 
-// try to allocate one at the very end
+	// try to allocate one at the very end
 	if (hunk_base + hunk_size - hunk_high_used - (byte *) new >= size) {
 		memset (new, 0, sizeof (*new));
 		new->size = size;
@@ -536,10 +515,6 @@ Cache_Flush (void)
 		Cache_Free (cache_head.next->user);	// reclaim the space
 }
 
-
-/*
-	Cache_Print
-*/
 void
 Cache_Print (void)
 {
@@ -550,9 +525,6 @@ Cache_Print (void)
 	}
 }
 
-/*
-	Cache_Report
-*/
 void
 Cache_Report (void)
 {
@@ -561,17 +533,11 @@ Cache_Report (void)
 				  hunk_low_used) / (float) (1024 * 1024));
 }
 
-/*
-	Cache_Compact
-*/
 void
 Cache_Compact (void)
 {
 }
 
-/*
-	Cache_Init
-*/
 void
 Cache_Init (void)
 {
@@ -605,11 +571,6 @@ Cache_Free (cache_user_t *c)
 	Cache_UnlinkLRU (cs);
 }
 
-
-
-/*
-	Cache_Check
-*/
 void       *
 Cache_Check (cache_user_t *c)
 {
@@ -620,17 +581,13 @@ Cache_Check (cache_user_t *c)
 
 	cs = ((cache_system_t *) c->data) - 1;
 
-// move to head of LRU
+	// move to head of LRU
 	Cache_UnlinkLRU (cs);
 	Cache_MakeLRU (cs);
 
 	return c->data;
 }
 
-
-/*
-	Cache_Alloc
-*/
 void       *
 Cache_Alloc (cache_user_t *c, int size, const char *name)
 {
@@ -644,7 +601,7 @@ Cache_Alloc (cache_user_t *c, int size, const char *name)
 
 	size = (size + sizeof (cache_system_t) + 15) & ~15;
 
-// find memory for it   
+	// find memory for it   
 	while (1) {
 		cs = Cache_TryAlloc (size, false);
 		if (cs) {
@@ -665,10 +622,6 @@ Cache_Alloc (cache_user_t *c, int size, const char *name)
 
 //============================================================================
 
-
-/*
-	Memory_Init
-*/
 void
 Memory_Init (void *buf, int size)
 {

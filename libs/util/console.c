@@ -38,18 +38,20 @@
 
 #include <stdarg.h>
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/sys.h"
+
+#include "compat.h"
+
+#define	MAXPRINTMSG	4096
+
 
 /*
 	Con_Printf
 
 	Handles cursor positioning, line wrapping, etc
 */
-#define	MAXPRINTMSG	4096
-
 void
 Con_Printf (const char *fmt, ...)
 {
@@ -130,4 +132,3 @@ Con_DisplayList(const char **list, int con_linewidth)
 	if (pos)
 		Con_Printf("\n\n");
 }
-

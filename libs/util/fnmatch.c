@@ -34,11 +34,10 @@
 # define _GNU_SOURCE
 #endif
 
-#include <errno.h>
 #include <ctype.h>
+#include <errno.h>
 
 #include "fnmatch.h"
-
 
 /* Comment out all this code if we are using the GNU C Library, and are not
    actually compiling the library itself.  This code is part of the GNU C
@@ -46,10 +45,10 @@
    and linking in this code is a waste when using the GNU C library
    (especially if it is a shared library).  Rather than having every GNU
    program understand `configure --with-gnu-libc' and omit the object files,
-   it is simpler to just do this in the source for each such file.  */
+   it is simpler to just do this in the source for each such file.
+*/
 
 #if defined (_LIBC) || !defined (__GNU_LIBRARY__)
-
 
 #if !defined(__GNU_LIBRARY__) && !defined(STDC_HEADERS)
 extern int  errno;

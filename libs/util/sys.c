@@ -28,12 +28,6 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#include <errno.h>
-#include <stdarg.h>
-#include <sys/time.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <fcntl.h>
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -56,9 +50,17 @@
 # include <sys/mman.h>
 #endif
 
-#include "compat.h"
+#include <errno.h>
+#include <fcntl.h>
+#include <stdarg.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
+
 #include "QF/cvar.h"
 #include "QF/sys.h"
+
+#include "compat.h"
 
 static void Sys_StdPrintf (const char *fmt, va_list args);
 
@@ -103,6 +105,7 @@ const char sys_char_map[256] = {
 };
 
 #define MAXPRINTMSG 4096
+
 
 void
 Sys_mkdir (const char *path)
@@ -156,9 +159,6 @@ Sys_SetPrintf (sys_printf_t func)
 	sys_printf_function = func;
 }
 
-/*
-	Sys_Printf
-*/
 static void
 Sys_StdPrintf (const char *fmt, va_list args)
 {
@@ -187,9 +187,6 @@ Sys_Printf (const char *fmt, ...)
 	va_end (args);
 }
 
-/*
-	Sys_DoubleTime
-*/
 double
 Sys_DoubleTime (void)
 {
@@ -248,8 +245,8 @@ Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 
 	addr = (startaddr & ~(psize - 1)) - psize;
 
-//  fprintf(stderr, "writable code %lx(%lx)-%lx, length=%lx\n", startaddr,
-//          addr, startaddr+length, length);
+//	fprintf(stderr, "writable code %lx(%lx)-%lx, length=%lx\n", startaddr,
+//			addr, startaddr+length, length);
 
 	r = mprotect ((char *) addr, length + startaddr - addr + psize, 7);
 

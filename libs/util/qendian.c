@@ -60,6 +60,7 @@ float       (*BigFloat) (float l) = FloatNoSwap;
 float       (*LittleFloat) (float l) = FloatSwap;
 #endif
 
+
 short
 ShortSwap (short l)
 {
@@ -103,7 +104,6 @@ FloatSwap (float f)
 		float       f;
 		byte        b[4];
 	} dat1     , dat2;
-
 
 	dat1.f = f;
 	dat2.b[0] = dat1.b[3];

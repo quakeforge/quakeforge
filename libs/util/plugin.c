@@ -29,19 +29,15 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
 #ifdef HAVE_STDIO_H
 # include <stdio.h>
 #endif
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
-
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-
 #ifdef HAVE_WINDOWS_H
 # include <windows.h>
 #endif
@@ -64,6 +60,7 @@
 #include "compat.h"
 
 cvar_t	*fs_pluginpath;
+
 
 void
 PI_InitCvars (void)
@@ -117,7 +114,8 @@ PI_LoadPlugin (const char *type, const char *name)
 
 #if defined(HAVE_DLOPEN)
 	if (!(dlhand = dlopen (realname, RTLD_LAZY))) {	// lib not found
-		Con_Printf ("Could not load plugin \"%s\": %s\n", realname, dlerror ());
+		Con_Printf ("Could not load plugin \"%s\": %s\n", realname,
+					dlerror ());
 		return NULL;
 	}
 #elif defined (_WIN32)
@@ -128,13 +126,16 @@ PI_LoadPlugin (const char *type, const char *name)
 #endif
 
 #if defined(HAVE_DLOPEN)
-	if (!(plugin_info = dlsym (dlhand, "PluginInfo"))) {	// info function not found
+	if (!(plugin_info = dlsym (dlhand, "PluginInfo"))) {
+		// info function not found
 		dlclose (dlhand);
 		Con_Printf ("Plugin info function not found\n");
 		return NULL;
 	}
 #elif defined (_WIN32)
-	if (!(plugin_info = (P_PluginInfo) GetProcAddress (dlhand, "PluginInfo"))) {	// info function not found
+	if (!(plugin_info = (P_PluginInfo) GetProcAddress (dlhand,
+													   "PluginInfo"))) {
+		// info function not found
 		FreeLibrary (dlhand);
 		Con_Printf ("Plugin info function not found\n");
 		return NULL;

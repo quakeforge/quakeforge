@@ -39,11 +39,11 @@
 # include <unistd.h>
 #endif
 
+#include <ctype.h>
+#include <dirent.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <ctype.h>
-#include <fcntl.h>
-#include <dirent.h>
 
 #ifdef HAVE_FNMATCH_H
 # define model_t sunmodel_t
@@ -62,7 +62,6 @@
 #include <limits.h>
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
@@ -70,15 +69,16 @@
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/qtypes.h"
-#include "QF/vfs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/vfs.h"
 #include "QF/zone.h"
+
+#include "compat.h"
 
 #ifndef HAVE_FNMATCH_PROTO
 int         fnmatch (const char *__pattern, const char *__string, int __flags);
 #endif
-
 
 /*
 	All of Quake's data access is through a hierchical file system, but the
@@ -161,9 +161,7 @@ typedef struct searchpath_s {
 searchpath_t *com_searchpaths;
 searchpath_t *com_base_searchpaths;		// without gamedirs
 
-/*
-	COM_FileBase
-*/
+
 void
 COM_FileBase (const char *in, char *out)
 {
@@ -191,9 +189,7 @@ COM_FileBase (const char *in, char *out)
 	}
 }
 
-/*
-	COM_filelength
-*/
+
 int
 COM_filelength (VFile *f)
 {
@@ -208,9 +204,7 @@ COM_filelength (VFile *f)
 	return end;
 }
 
-/*
-	COM_FileOpenRead
-*/
+
 int
 COM_FileOpenRead (char *path, VFile **hndl)
 {
@@ -226,9 +220,7 @@ COM_FileOpenRead (char *path, VFile **hndl)
 	return COM_filelength (f);
 }
 
-/*
-	COM_Path_f
-*/
+
 void
 COM_Path_f (void)
 {
@@ -245,12 +237,6 @@ COM_Path_f (void)
 			Con_Printf ("%s\n", s->filename);
 	}
 }
-
-/*
-	COM_Maplist_f
-
-	List map files in gamepaths.
-*/
 
 struct maplist {
 	char      **list;
@@ -329,6 +315,11 @@ maplist_print (struct maplist *maplist)
 	}
 }
 
+/*
+	COM_Maplist_f
+
+	List map files in gamepaths.
+*/
 void
 COM_Maplist_f (void)
 {
@@ -433,7 +424,6 @@ COM_WriteBuffers (const char *filename, int count, ...)
 	va_end (args);
 }
 
-
 /*
 	COM_CreatePath
 
@@ -455,7 +445,6 @@ COM_CreatePath (const char *path)
 		}
 	}
 }
-
 
 /*
 	COM_CopyFile
@@ -492,9 +481,6 @@ COM_CopyFile (char *netpath, char *cachepath)
 	Qclose (out);
 }
 
-/*
-	COM_OpenRead
-*/
 VFile      *
 COM_OpenRead (const char *path, int offs, int len, int zip)
 {
@@ -552,12 +538,14 @@ contains_updir (const char *filename)
 
 	// FIXME: maybe I should handle alternate seperators?
 	for (i = 0; filename[i+1]; i++) {
-		if (!(i == 0 || filename[i-1] == '/')           // beginning of string or first slash
+		if (!(i == 0 || filename[i-1] == '/')           // beginning of string
+														// or first slash
 		    || filename[i] != '.'                       // first dot
 		    || filename[i+1] != '.')                    // second dot
 			continue;
 
-		if (filename[i+2] == 0 || filename[i+2] == '/') // end of string or second slash
+		if (filename[i+2] == 0 || filename[i+2] == '/')
+			// end of string or second slash
 			return 1;
 	}
 	return 0;
@@ -589,15 +577,13 @@ _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip)
 
 	file_from_pak = 0;
 
-// make sure they're not trying to do wierd stuff with our private files
+	// make sure they're not trying to do wierd stuff with our private files
 	if (contains_updir(filename)) {
 		Con_Printf ("FindFile: %s: attempt to escape directory tree!\n", filename);
 		goto error;
 	}
 
-//
-// search through the path, one element at a time
-//
+	// search through the path, one element at a time
 	for (search = com_searchpaths; search; search = search->next) {
 		// is the element a pak file?
 		if (search->pack) {
@@ -631,7 +617,8 @@ _COM_FOpenFile (const char *filename, VFile **gzfile, char *foundname, int zip)
 			if (findtime == -1) {
 #ifdef HAVE_ZLIB
 				strncpy (foundname, gzfilename, MAX_OSPATH);
-				snprintf (netpath, sizeof (netpath), "%s%s%s", search->filename,
+				snprintf (netpath, sizeof (netpath), "%s%s%s",
+						  search->filename,
 						  search->filename[0] ? "/" : "", gzfilename);
 				findtime = Sys_FileTime (netpath);
 				if (findtime == -1)
@@ -795,7 +782,6 @@ COM_LoadPackFile (char *packfile)
 	Qseek (packhandle, header.dirofs, SEEK_SET);
 	Qread (packhandle, info, header.dirlen);
 
-
 	// parse the directory
 	for (i = 0; i < numpackfiles; i++) {
 		strcpy (newfiles[i].name, info[i].name);
@@ -819,7 +805,6 @@ COM_LoadPackFile (char *packfile)
 #define FNAME_SIZE	MAX_OSPATH
 
 // Note, this is /NOT/ a work-alike strcmp, this groups numbers sanely.
-//int qstrcmp(const char *val, const char *ref)
 int
 qstrcmp (char **os1, char **os2)
 {
@@ -996,9 +981,7 @@ COM_Gamedir (const char *dir)
 		return;							// still the same
 	strcpy (gamedirfile, dir);
 
-	// 
 	// free up any current game dir info
-	// 
 	while (com_searchpaths != com_base_searchpaths) {
 		if (com_searchpaths->pack) {
 			Qclose (com_searchpaths->pack->handle);
@@ -1010,9 +993,7 @@ COM_Gamedir (const char *dir)
 		com_searchpaths = next;
 	}
 
-	// 
 	// flush all data, so it will be forced to reload
-	// 
 	Cache_Flush ();
 
 	if (fs_skinbase && strcmp (dir, fs_skinbase->string) == 0)
@@ -1021,9 +1002,6 @@ COM_Gamedir (const char *dir)
 	COM_AddGameDirectory (dir);
 }
 
-/*
-	COM_CreateGameDirectory
-*/
 void
 COM_CreateGameDirectory (const char *gamename)
 {
@@ -1032,9 +1010,6 @@ COM_CreateGameDirectory (const char *gamename)
 	COM_AddGameDirectory (gamename);
 }
 
-/*
-	COM_InitFilesystem
-*/
 void
 COM_Filesystem_Init (void)
 {
@@ -1081,16 +1056,14 @@ void
 COM_Filesystem_Init_Cvars (void)
 {
 	fs_sharepath = Cvar_Get ("fs_sharepath", FS_SHAREPATH, CVAR_ROM, NULL,
-							 "location of shared (read only) game directories");
+							 "location of shared (read only) game "
+							 "directories");
 	fs_userpath = Cvar_Get ("fs_userpath", FS_USERPATH, CVAR_ROM, NULL,
 							"location of your game directories");
 	fs_basegame = Cvar_Get ("fs_basegame", "id1", CVAR_ROM, NULL,
 							"game to use by default");
 }
 
-/*
-	COM_SkipPath
-*/
 const char *
 COM_SkipPath (const char *pathname)
 {
@@ -1105,9 +1078,6 @@ COM_SkipPath (const char *pathname)
 	return last;
 }
 
-/*
-	COM_StripExtension
-*/
 void
 COM_StripExtension (const char *in, char *out)
 {
@@ -1116,9 +1086,6 @@ COM_StripExtension (const char *in, char *out)
 	*out = 0;
 }
 
-/*
-	COM_FileExtension
-*/
 char *
 COM_FileExtension (char *in)
 {
@@ -1136,19 +1103,13 @@ COM_FileExtension (char *in)
 	return exten;
 }
 
-
-/*
-	COM_DefaultExtension
-*/
 void
 COM_DefaultExtension (char *path, char *extension)
 {
 	char       *src;
 
-//
-// if path doesn't have a .EXT, append extension
-// (extension should include the .)
-//
+	// if path doesn't have a .EXT, append extension
+	// (extension should include the .)
 	src = path + strlen (path) - 1;
 
 	while (*src != '/' && src != path) {
@@ -1160,9 +1121,6 @@ COM_DefaultExtension (char *path, char *extension)
 	strncat (path, extension, MAX_OSPATH - strlen (path));
 }
 
-/*
-	COM_NextFileName
-*/
 int
 COM_NextFilename (char *filename, const char *prefix, const char *ext)
 {

@@ -115,6 +115,7 @@ static byte chktbl[1024 + 4] = {
 	0x00, 0x00, 0x00, 0x00
 };
 
+
 /*
 	COM_BlockSequenceCRCByte
 

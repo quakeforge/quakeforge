@@ -30,12 +30,14 @@
 # include "config.h"
 #endif
 
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 
-#include "compat.h"
 #include "QF/qtypes.h"
 #include "QF/va.h"
+
+#include "compat.h"
+
 
 /*
 	va

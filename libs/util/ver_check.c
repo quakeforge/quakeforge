@@ -31,8 +31,9 @@
 # include "config.h"
 #endif
 
-#include <stdlib.h>
 #include <ctype.h>
+#include <stdlib.h>
+
 
 /*
 	ver_compare
