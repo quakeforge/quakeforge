@@ -59,7 +59,7 @@ X  done (a parent dir is not done until its children are done:)
 
   quakeforge
 o  +--- tools             useful/needed tools
-X  |      +--- Forge      Forge.app map/model/everything editor
+I  |      +--- Forge      Forge.app map/model/everything editor
 X  |      +--- cvs2cl
 X  |      +--- gas2masm
 X  |      +--- pak        massively enhanced pak tool
