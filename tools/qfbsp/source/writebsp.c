@@ -183,6 +183,8 @@ WriteLeaf (node_t *node)
 	}
 
 	leaf_p.nummarksurfaces = bsp->nummarksurfaces - leaf_p.firstmarksurface;
+	BSP_AddLeaf (bsp, &leaf_p);
+	printf ("nummarksurfaces: %d\n", bsp->nummarksurfaces);
 }
 
 void
@@ -449,11 +451,12 @@ WriteMiptex (void)
 	l->nummiptex = nummiptex;
 	data->size = (char *) &l->dataofs[nummiptex] - data->str;
 	dstring_adjust (data);
-	l = (dmiptexlump_t *) data->str;
 
 	for (i = 0; i < nummiptex; i++) {
+		l = (dmiptexlump_t *) data->str;
 		l->dataofs[i] = data->size;
 		len = LoadLump (miptex[i], data);
+		l = (dmiptexlump_t *) data->str;
 		if (!len)
 			l->dataofs[i] = -1;			// didn't find the texture
 	}
