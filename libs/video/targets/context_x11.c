@@ -376,7 +376,6 @@ void
 X11_SetVidMode (int width, int height)
 {
 	const char *str = getenv ("MESA_GLX_FX");
-	static int  initialized = 0;
 
 	if (vidmode_active)
 		return;
@@ -386,65 +385,69 @@ X11_SetVidMode (int width, int height)
 	}
 
 #ifdef HAVE_VIDMODE
-	if (!vidmode_avail)
-		vidmode_avail = VID_CheckVMode (x_disp, NULL, NULL);
+	{
+		static int  initialized = 0;
 
-	if (!initialized && vidmode_avail) {
-		vec3_t	*temp;
+		if (!vidmode_avail)
+			vidmode_avail = VID_CheckVMode (x_disp, NULL, NULL);
 
-		initialized = 1;
+		if (!initialized && vidmode_avail) {
+			vec3_t	*temp;
 
-		vid_gamma_avail = true;
+			initialized = 1;
 
-		temp = X11_GetGamma ();
-		if (temp && temp[0] > 0) {
-			x_gamma[0] = (*temp)[0];
-			x_gamma[1] = (*temp)[1];
-			x_gamma[2] = (*temp)[2];
 			vid_gamma_avail = true;
-			free (temp);
-		}
 
-	}
-
-	if (vid_fullscreen->int_val && vidmode_avail) {
-		int 				i, dotclock;
-		int 				best_mode = 0;
-		qboolean			found_mode = false;
-		XF86VidModeModeLine orig_data;
-
-		XF86VidModeGetAllModeLines (x_disp, x_screen, &nummodes, &vidmodes);
-		XF86VidModeGetModeLine (x_disp, x_screen, &dotclock, &orig_data);
-
-		for (i = 0; i < nummodes; i++) {
-			if ((vidmodes[i]->hdisplay == orig_data.hdisplay) &&
-					(vidmodes[i]->vdisplay == orig_data.vdisplay)) {
-				original_mode = i;
-				break;
+			temp = X11_GetGamma ();
+			if (temp && temp[0] > 0) {
+				x_gamma[0] = (*temp)[0];
+				x_gamma[1] = (*temp)[1];
+				x_gamma[2] = (*temp)[2];
+				vid_gamma_avail = true;
+				free (temp);
 			}
+
 		}
 
-		for (i = 0; i < nummodes; i++) {
-			if ((vidmodes[i]->hdisplay == vid.width) &&
-					(vidmodes[i]->vdisplay == vid.height)) {
-				found_mode = true;
-				best_mode = i;
-				break;
+		if (vid_fullscreen->int_val && vidmode_avail) {
+			int 				i, dotclock;
+			int 				best_mode = 0;
+			qboolean			found_mode = false;
+			XF86VidModeModeLine orig_data;
+
+			XF86VidModeGetAllModeLines (x_disp, x_screen, &nummodes, &vidmodes);
+			XF86VidModeGetModeLine (x_disp, x_screen, &dotclock, &orig_data);
+
+			for (i = 0; i < nummodes; i++) {
+				if ((vidmodes[i]->hdisplay == orig_data.hdisplay) &&
+						(vidmodes[i]->vdisplay == orig_data.vdisplay)) {
+					original_mode = i;
+					break;
+				}
 			}
-		}
 
-		if (found_mode) {
-			Con_DPrintf ("VID: Chose video mode: %dx%d\n", vid.width,
-						 vid.height);
+			for (i = 0; i < nummodes; i++) {
+				if ((vidmodes[i]->hdisplay == vid.width) &&
+						(vidmodes[i]->vdisplay == vid.height)) {
+					found_mode = true;
+					best_mode = i;
+					break;
+				}
+			}
 
-			XF86VidModeSwitchToMode (x_disp, x_screen, vidmodes[best_mode]);
-			X11_ForceViewPort ();
-			vidmode_active = true;
-			X11_SetScreenSaver ();
-		} else {
-			Con_Printf ("VID: Mode %dx%d can't go fullscreen.\n", vid.width,
-						vid.height);
-			vidmode_avail = vidmode_active = false;
+			if (found_mode) {
+				Con_DPrintf ("VID: Chose video mode: %dx%d\n", vid.width,
+							 vid.height);
+
+				XF86VidModeSwitchToMode (x_disp, x_screen, vidmodes[best_mode]);
+				X11_ForceViewPort ();
+				vidmode_active = true;
+				X11_SetScreenSaver ();
+			} else {
+				Con_Printf ("VID: Mode %dx%d can't go fullscreen.\n", vid.width,
+							vid.height);
+				vidmode_avail = vidmode_active = false;
+			}
 		}
 	}
 #endif
