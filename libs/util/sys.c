@@ -456,8 +456,11 @@ void
 Sys_DebugLog (const char *file, const char *fmt, ...)
 {
 	va_list     args;
-	dstring_t  *data = dstring_newstr ();
+	static dstring_t *data;
 	int         fd;
+
+	if (!data)
+		data = dstring_newstr ();
 
 	va_start (args, fmt);
 	dvsprintf (data, fmt, args);
