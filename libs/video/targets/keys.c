@@ -795,10 +795,10 @@ Key_In_Bind (const char *imt, const char *key, const char *cmd)
 
 	if (!cmd) {
 		if (Key_GetBinding(t, b))
-			Con_Printf ("\"%s\"[\"%s\"] = \"%s\"\n", key, imt,
+			Con_Printf ("%s %s \"%s\"\n", imt, key,
 						Key_GetBinding(t, b));
 		else
-			Con_Printf ("\"%s\"[\"%s\"] is not bound\n", key, imt);
+			Con_Printf ("%s %s is not bound\n", imt, key);
 		return;
 	}
 	Key_SetBinding (t, b, cmd);

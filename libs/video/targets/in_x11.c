@@ -261,6 +261,14 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 			key = K_KP5;
 			break;
 
+		case XK_Scroll_Lock:
+			key = K_SCROLLOCK;
+			break;
+
+		case XK_Num_Lock:
+			key = K_NUMLOCK;
+			break;
+
 		case XK_Insert:
 			key = K_INSERT;
 			break;
