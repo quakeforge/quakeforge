@@ -251,6 +251,19 @@ Draw_TextBox (int x, int y, int width, int lines)
 extern void glrmain_init (void);
 extern void glrsurf_init (void);
 extern void GL_TextureMode_f (void);
+extern void R_ForceLightUpdate (void);
+
+void
+gl_lightmode_callback (cvar_t *cvar)
+{
+	if (cvar->int_val) {
+		lighthalf_v[0] = lighthalf_v[1] = lighthalf_v[2] = 128;
+	} else {
+		lighthalf_v[0] = lighthalf_v[1] = lighthalf_v[2] = 255;
+	}
+
+	R_ForceLightUpdate ();
+}
 
 void
 Draw_Init (void)
@@ -266,14 +279,7 @@ Draw_Init (void)
 		Cvar_Set (gl_lightmode, "0");
 	}
 
-	lighthalf = gl_lightmode->int_val != 0; // to avoid re-rendering all
-	// lightmaps on first frame
-
-	if (lighthalf) {
-		lighthalf_v[0] = lighthalf_v[1] = lighthalf_v[2] = 128;
-	} else {
-		lighthalf_v[0] = lighthalf_v[1] = lighthalf_v[2] = 255;
-	}
+	gl_lightmode_callback(gl_lightmode);
 
 	Cmd_AddCommand ("gl_texturemode", &GL_TextureMode_f, "Texture mipmap quality.");
 
@@ -305,12 +311,12 @@ Draw_Init (void)
 	glrsurf_init ();
 }
 
-
 void
 Draw_Init_Cvars (void)
 {
-	gl_lightmode = Cvar_Get ("gl_lightmode", "1", CVAR_ARCHIVE, 0,
-							 "Lighting mode (0 = GLQuake style, 1 = new style)");
+	gl_lightmode = Cvar_Get ("gl_lightmode", "1", CVAR_ARCHIVE, 
+							gl_lightmode_callback,
+							"Lighting mode (0 = GLQuake style, 1 = new style)");
 	gl_max_size = Cvar_Get ("gl_max_size", "1024", CVAR_NONE, 0, "Texture dimension"); 
 	gl_picmip = Cvar_Get ("gl_picmip", "0", CVAR_NONE, 0, "Dimensions of displayed textures. 0 is normal, 1 is half, 2 is 1/4"); 
 	gl_constretch = Cvar_Get ("gl_constretch", "0", CVAR_ARCHIVE, 0,

@@ -94,7 +94,7 @@ glrsurf_init (void)
 	memset (&lightmaps, 0, sizeof (lightmaps));
 }
 
-void
+static void
 R_RecursiveLightUpdate (mnode_t *node)
 {
 	int         c;
@@ -220,8 +220,7 @@ void
 R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 {
 	int         smax, tmax;
-	int         t;
-	int         i, j, size;
+	int         i, j, size, shift;
 	byte       *lightmap;
 	unsigned int scale;
 	int         maps;
@@ -265,85 +264,46 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 	// bound and shift
 	stride -= smax * lightmap_bytes;
 	bl = blocklights;
+
+	if (gl_mtex_active && !lighthalf) {
+		shift = 7;	// 0-1 lightmap range.
+	} else {
+		shift = 8;	// 0-2 lightmap range.
+	}
+
 	switch (lightmap_bytes) {
 	case 4:
-		if (lighthalf) {
-			for (i = 0; i < tmax; i++, dest += stride) {
-				for (j = 0; j < smax; j++) {
-					t = (int) *bl++ >> 8;
-					*dest++ = bound (0, t, 255);
-					t = (int) *bl++ >> 8;
-					*dest++ = bound (0, t, 255);
-					t = (int) *bl++ >> 8;
-					*dest++ = bound (0, t, 255);
-					*dest++ = 255;
-				}
-			}
-		} else {
-			for (i = 0; i < tmax; i++, dest += stride) {
-				for (j = 0; j < smax; j++) {
-					t = (int) *bl++ >> 7;
-					*dest++ = bound (0, t, 255);
-					t = (int) *bl++ >> 7;
-					*dest++ = bound (0, t, 255);
-					t = (int) *bl++ >> 7;
-					*dest++ = bound (0, t, 255);
-					*dest++ = 255;
-				}
+		for (i = 0; i < tmax; i++, dest += stride) {
+			for (j = 0; j < smax; j++) {
+				dest[0] = bound(0, bl[0] >> shift, 255);
+				dest[1] = bound(0, bl[1] >> shift, 255);
+				dest[2] = bound(0, bl[2] >> shift, 255);
+				dest[3] = 255;
+				dest += 4;
+				bl += 3;
 			}
 		}
 		break;
 	case 3:
-		if (lighthalf) {
-			for (i = 0; i < tmax; i++, dest += stride) {
-				for (j = 0; j < smax; j++) {
-					t = (int) *bl++ >> 8;
-					*dest++ = bound (0, t, 255);
-					t = (int) *bl++ >> 8;
-					*dest++ = bound (0, t, 255);
-					t = (int) *bl++ >> 8;
-					*dest++ = bound (0, t, 255);
-				}
-			}
-		} else {
-			for (i = 0; i < tmax; i++, dest += stride) {
-				for (j = 0; j < smax; j++) {
-					t = (int) *bl++ >> 7;
-					*dest++ = bound (0, t, 255);
-					t = (int) *bl++ >> 7;
-					*dest++ = bound (0, t, 255);
-					t = (int) *bl++ >> 7;
-					*dest++ = bound (0, t, 255);
-				}
+		for (i = 0; i < tmax; i++, dest += stride) {
+			for (j = 0; j < smax; j++) {
+				dest[0] = bound(0, bl[0] >> shift, 255);
+				dest[1] = bound(0, bl[1] >> shift, 255);
+				dest[2] = bound(0, bl[2] >> shift, 255);
+				dest += 3;
+				bl += 3;
 			}
 		}
 		break;
 	case 1:
-		if (lighthalf) {
-			for (i = 0; i < tmax; i++, dest += stride) {
-				for (j = 0; j < smax; j++) {
-					t = (int) *bl++ >> 8;
-					t2 = bound (0, t, 255);
-					t = (int) *bl++ >> 8;
-					t2 += bound (0, t, 255);
-					t = (int) *bl++ >> 8;
-					t2 += bound (0, t, 255);
-					t2 *= (1.0 / 3.0);
-					*dest++ = t2;
-				}
-			}
-		} else {
-			for (i = 0; i < tmax; i++, dest += stride) {
-				for (j = 0; j < smax; j++) {
-					t = (int) *bl++ >> 7;
-					t2 = bound (0, t, 255);
-					t = (int) *bl++ >> 7;
-					t2 += bound (0, t, 255);
-					t = (int) *bl++ >> 7;
-					t2 += bound (0, t, 255);
-					t2 *= (1.0 / 3.0);
-					*dest++ = t2;
-				}
+		for (i = 0; i < tmax; i++, dest += stride) {
+			for (j = 0; j < smax; j++) {
+				t2 = bound (0, bl[0] >> shift, 255);
+				t2 += bound (0, bl[1] >> shift, 255);
+				t2 += bound (0, bl[2] >> shift, 255);
+				t2 *= (1.0 / 3.0);
+				*dest++ = t2;
+				bl += 3;
 			}
 		}
 		break;
@@ -399,9 +359,14 @@ QF_glMultiTexCoord2fARB qglMultiTexCoord2f = NULL;
 void
 GL_UploadLightmap (int i, int x, int y, int w, int h)
 {
+	/*
 	glTexSubImage2D (GL_TEXTURE_2D, 0, 0, y, BLOCK_WIDTH, h, gl_lightmap_format,
 					 GL_UNSIGNED_BYTE,
 					 lightmaps[i] + (y * BLOCK_WIDTH) * lightmap_bytes);
+					 */
+	glTexImage2D (GL_TEXTURE_2D, 0, lightmap_bytes, BLOCK_WIDTH,
+				  BLOCK_HEIGHT, 0, gl_lightmap_format,
+				  GL_UNSIGNED_BYTE, lightmaps[i]);
 }
 
 /*
@@ -440,9 +405,7 @@ R_DrawMultitexturePoly (msurface_t *s)
 			if (d_lightstylevalue[s->styles[maps]] != s->cached_light[maps])
 				goto dynamic;
 
-		if (s->dlightframe == r_framecount	// dynamic this frame
-			|| s->cached_dlight)		// dynamic previously
-		{
+		if ((s->dlightframe = r_framecount) || s->cached_dlight) {
 		  dynamic:
 			R_BuildLightMap (s,
 							 lightmaps[s->lightmaptexturenum] +
@@ -487,7 +450,11 @@ R_BlendLightmaps (void)
 
 	glDepthMask (GL_FALSE);				// don't bother writing Z
 
-	glBlendFunc (GL_ZERO, GL_SRC_COLOR);
+	if (lighthalf)
+		glBlendFunc (GL_ZERO, GL_SRC_COLOR);
+	else
+		glBlendFunc (GL_DST_COLOR, GL_SRC_COLOR);
+
 	glColor3f (1, 1, 1);
 
 	for (i = 0; i < MAX_LIGHTMAPS; i++) {
@@ -590,9 +557,7 @@ R_RenderBrushPoly (msurface_t *fa)
 		if (d_lightstylevalue[fa->styles[maps]] != fa->cached_light[maps])
 			goto dynamic;
 
-	if (fa->dlightframe == r_framecount	// dynamic this frame
-		|| fa->cached_dlight)			// dynamic previously
-	{
+	if ((fa->dlightframe == r_framecount) || fa->cached_dlight) {
 	  dynamic:
 		if (r_dynamic->int_val) {
 			lightmap_modified[fa->lightmaptexturenum] = true;

@@ -52,7 +52,6 @@
 #include "QF/sys.h"
 #include "view.h"
 
-//define    PASSAGES
 
 void       *colormap;
 vec3_t      viewlightvec;
@@ -177,9 +176,6 @@ cvar_t     *gl_dlight_polyblend;
 cvar_t     *gl_sky_divide;
 
 extern cvar_t *scr_fov;
-
-void        CreatePassages (void);
-void        SetVisibilityByPassages (void);
 
 void        R_NetGraph (void);
 void        R_ZGraph (void);
@@ -1005,14 +1001,12 @@ R_RenderView_ (void)
 	if (r_timegraph->int_val || r_speeds->int_val || r_dspeeds->int_val)
 		r_time1 = Sys_DoubleTime ();
 
+	R_PushDlights (vec3_origin);
+
 	R_SetupFrame ();
 
-#ifdef PASSAGES
-	SetVisibilityByPassages ();
-#else
 	R_MarkLeaves ();					// done here so we know if we're in
 										// water
-#endif
 
 // make FDIV fast. This reduces timing precision after we've been running for a
 // while, so we don't do it globally.  This also sets chop mode, and we do it

@@ -41,10 +41,6 @@
 
 #include "glquake.h"
 
-int         r_dlightframecount;
-extern qboolean lighthalf;
-
-
 /*
 	R_AnimateLight
 */
@@ -168,8 +164,6 @@ R_RenderDlights (void)
 	if (!gl_dlight_polyblend->int_val)
 		return;
 
-	r_dlightframecount = r_framecount + 1;	// because the count hasn't
-	// advanced yet for this frame
 	glDepthMask (GL_FALSE);
 	glDisable (GL_TEXTURE_2D);
 	glBlendFunc (GL_ONE, GL_ONE);
@@ -264,13 +258,12 @@ R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, mnode_t *node)
 		t = l - t;
 		// compare to minimum light
 		if ((s * s + t * t + dist * dist) < maxdist) {
-			if (surf->dlightframe != r_dlightframecount)	// not dynamic
-															// until now
-			{
+			if (surf->dlightframe != r_framecount) {
+				surf->dlightframe = r_framecount;
 				surf->dlightbits = bit;
-				surf->dlightframe = r_dlightframecount;
-			} else						// already dynamic
+			} else {
 				surf->dlightbits |= bit;
+			}
 		}
 	}
 
@@ -282,10 +275,9 @@ R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, mnode_t *node)
 		R_MarkLights (lightorigin, light, bit, node->children[1]);
 }
 
-
 /*
-	R_PushDlights
-*/
+		R_PushDlights
+ */
 void
 R_PushDlights (vec3_t entorigin)
 {
@@ -296,8 +288,6 @@ R_PushDlights (vec3_t entorigin)
 	if (!gl_dlight_lightmap->int_val)
 		return;
 
-	r_dlightframecount = r_framecount + 1;	// because the count hasn't
-	// advanced yet for this frame
 	l = cl_dlights;
 
 	for (i = 0; i < MAX_DLIGHTS; i++, l++) {

@@ -68,9 +68,6 @@ typedef struct entity_s
 	struct efrag_s			*efrag; // linked list of efrags (FIXME)
 	int						visframe; // last frame this entity was found in an active leaf, only used for static objects
 
-	int						dlightframe; // dynamic lighting
-	int						dlightbits;
-
 	float					colormod[3]; // color tint for model
 	float					alpha; // opacity (alpha) of the model
 	float					scale; // size scaler of the model

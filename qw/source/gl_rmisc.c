@@ -201,6 +201,10 @@ R_Init (void)
 	texture_extension_number += MAX_CLIENTS;
 	player_fb_textures = texture_extension_number;
 	texture_extension_number += MAX_CACHED_SKINS;
+
+	glEnableClientState (GL_COLOR_ARRAY);
+	glEnableClientState (GL_VERTEX_ARRAY);
+	glEnableClientState (GL_TEXTURE_COORD_ARRAY);
 }
 
 void

@@ -1205,6 +1205,8 @@ R_RenderView (void)
 
 	R_SetupGL ();
 
+	R_PushDlights (vec3_origin);
+
 	R_MarkLeaves ();					// done here so we know if we're in
 										// water
 

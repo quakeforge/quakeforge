@@ -719,8 +719,6 @@ V_RenderView (void)
 		V_CalcRefdef ();
 	}
 
-	R_PushDlights (vec3_origin);
-
 	R_RenderView ();
 }
 

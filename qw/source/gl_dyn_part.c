@@ -66,9 +66,15 @@ typedef struct particle_s {
 	ptype_t     type;
 } particle_t;
 
+typedef struct varray_s {
+	float	texcoord[2];
+	unsigned char	color[4];
+	float	vertex[3];
+} varray_t;
 
 static particle_t *particles, **freeparticles;
 static short r_numparticles, numparticles;
+//static varray_t *vertex_array;
 
 extern qboolean lighthalf;
 
@@ -148,11 +154,13 @@ R_MaxParticlesCheck (cvar_t *var)
 	// and the compiler doesn't know when we do bad things with them.
 	free (particles);
 	free (freeparticles);
+	//free (vertex_array);
 
 	particles = (particle_t *)
 		calloc (r_numparticles, sizeof (particle_t));
 	freeparticles = (particle_t **)
 		calloc (r_numparticles, sizeof (particle_t*));			
+	//vertex_array = (float *) calloc(r_numparticles, sizeof (varray_t));
 
 	R_ClearParticles();
 }
@@ -558,10 +566,20 @@ R_DrawParticles (void)
 	vec3_t      up, right;
 	float       scale;
 	particle_t *part;
-	int         activeparticles, maxparticle, j, k;
+	int         activeparticles, maxparticle, j, k, vnum;
+	varray_t	vertex_array[4];
 	
 	// LordHavoc: particles should not affect zbuffer
 	glDepthMask (GL_FALSE);
+
+	glInterleavedArrays (GL_T2F_C4UB_V3F, 0, (void *) &(vertex_array[0]));
+
+	vertex_array[0].texcoord[0] = 0; vertex_array[0].texcoord[1] = 1;
+	vertex_array[1].texcoord[0] = 0; vertex_array[1].texcoord[1] = 0;
+	vertex_array[2].texcoord[0] = 1; vertex_array[2].texcoord[1] = 0;
+	vertex_array[3].texcoord[0] = 1; vertex_array[3].texcoord[1] = 1;
+
+	vnum = 0;
 
 	VectorScale (vup, 1.5, up);
 	VectorScale (vright, 1.5, right);
@@ -592,38 +610,51 @@ R_DrawParticles (void)
 			at = (byte *) & d_8to24table[(byte) part->color];
 			alpha = part->alpha;
 
-			if (lighthalf)
-				glColor4ub ((byte) ((int) at[0] >> 1),
-							(byte) ((int) at[1] >> 1),
-							(byte) ((int) at[2] >> 1), alpha);
-			else
-				glColor4ub (at[0], at[1], at[2], alpha);
+			if (lighthalf) {
+				vertex_array[0].color[0] = (byte) ((int) at[0] >> 1);
+				vertex_array[0].color[1] = (byte) ((int) at[1] >> 1);
+				vertex_array[0].color[2] = (byte) ((int) at[2] >> 1);
+			} else {
+				VectorCopy(at, vertex_array[0].color);
+			}
+			vertex_array[0].color[3] = alpha;
+
+			memcpy(vertex_array[1].color, vertex_array[0].color, 4);
+			memcpy(vertex_array[2].color, vertex_array[0].color, 4);
+			memcpy(vertex_array[3].color, vertex_array[0].color, 4);
 
 			scale = part->scale;
 
+			vertex_array[0].vertex[0] = 
+				(part->org[0] + ((up[0] + right[0]) * scale));
+			vertex_array[0].vertex[1] = 
+				(part->org[1] + ((up[1] + right[1]) * scale));
+			vertex_array[0].vertex[2] = 
+				(part->org[2] + ((up[2] + right[2]) * scale));
+
+			vertex_array[1].vertex[0] = 
+				(part->org[0] + (up[0] * -scale) + (right[0] * scale));
+			vertex_array[1].vertex[1] = 
+				(part->org[1] + (up[1] * -scale) + (right[1] * scale));
+			vertex_array[1].vertex[2] = 
+				(part->org[2] + (up[2] * -scale) + (right[2] * scale));
+
+			vertex_array[2].vertex[0] =
+				(part->org[0] + ((up[0] + right[0]) * -scale));
+			vertex_array[2].vertex[1] =
+				(part->org[1] + ((up[1] + right[1]) * -scale));
+			vertex_array[2].vertex[2] =
+				(part->org[2] + ((up[2] + right[2]) * -scale));
+
+			vertex_array[3].vertex[0] =
+				(part->org[0] + (up[0] * scale) + (right[0] * -scale));
+			vertex_array[3].vertex[1] =
+				(part->org[1] + (up[1] * scale) + (right[1] * -scale));
+			vertex_array[3].vertex[2] =
+				(part->org[2] + (up[2] * scale) + (right[2] * -scale));
+
 			glBindTexture (GL_TEXTURE_2D, part->tex);
-			glBegin (GL_QUADS);
-			glTexCoord2f (0, 1);
-			glVertex3f ((part->org[0] + ((up[0] + right[0]) * scale)),
-						(part->org[1] + ((up[1] + right[1]) * scale)),
-						(part->org[2] + ((up[2] + right[2]) * scale)));
-
-			glTexCoord2f (0, 0);
-			glVertex3f ((part->org[0] + (up[0] * -scale) + (right[0] * scale)),
-						(part->org[1] + (up[1] * -scale) + (right[1] * scale)),
-						(part->org[2] + (up[2] * -scale) + (right[2] * scale)));
-
-			glTexCoord2f (1, 0);
-			glVertex3f ((part->org[0] + ((up[0] + right[0]) * -scale)),
-						(part->org[1] + ((up[1] + right[1]) * -scale)),
-						(part->org[2] + ((up[2] + right[2]) * -scale)));
-
-			glTexCoord2f (1, 1);
-			glVertex3f ((part->org[0] + (up[0] * scale) + (right[0] * -scale)),
-						(part->org[1] + (up[1] * scale) + (right[1] * -scale)),
-						(part->org[2] + (up[2] * scale) + (right[2] * -scale)));
-
-			glEnd ();
+			glDrawArrays (GL_QUADS, 0, 4);
 		}
 
 		for (i = 0; i < 3; i++)
