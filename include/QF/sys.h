@@ -48,6 +48,16 @@ enum e_pathtype {
 	PATHTYPE_RELATIVE_BELOW
 };
 
+typedef struct date_s {
+	int         sec;
+	int         min;
+	int         hour;
+	int         day;
+	int         mon;
+	int         year;
+	char        str[128];
+} date_t;
+
 int	Sys_FileTime (const char *path);
 void Sys_mkdir (const char *path);
 enum e_pathtype Sys_PathType (const char *path);
@@ -65,6 +75,7 @@ void Sys_Quit (void) __attribute__((noreturn));
 void Sys_Shutdown (void);
 void Sys_RegisterShutdown (void (*func) (void));
 double Sys_DoubleTime (void);
+void Sys_TimeOfDay(date_t *date);
 
 int Sys_CheckInput (int idle, int net_socket);
 const char *Sys_ConsoleInput (void);
