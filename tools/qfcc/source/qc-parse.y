@@ -54,6 +54,7 @@ type_t *PR_FindType (type_t *new);
 
 type_t	*current_type;
 def_t	*current_def;
+def_t	param_scope;
 
 %}
 
@@ -91,7 +92,22 @@ def_list
 
 def_item
 	: def_name opt_initializer
-	| '(' param_list ')' def_name opt_definition {}
+	| '('
+		{
+			pr_scope = &param_scope;
+		}
+	  param_list
+		{
+			$$ = param_scope.scope_next;
+			param_scope.scope_next = 0;
+			pr_scope = 0;
+		}
+	  ')' def_name opt_definition
+	  	{
+			def_t scope;
+			scope.scope_next=$<def>4;
+			PR_FlushScope (&scope);
+		}
 	| '(' ')' def_name opt_definition {}
 	| '(' ELIPSIS ')' def_name opt_definition {}
 	;
@@ -99,7 +115,6 @@ def_item
 def_name
 	: NAME
 		{
-			printf ("%s\n", $1);
 			$$ = PR_GetDef (current_type, $1, pr_scope, pr_scope ? &pr_scope->num_locals : &numpr_globals);
 			current_def = $$;
 		}
@@ -109,8 +124,8 @@ param_list
 	: param
 	| param_list ',' param
 		{
-			$1->next = $3;
-			$$ = $1;
+			$3->next = $1;
+			$$ = $3;
 		}
 	;
 
@@ -118,7 +133,9 @@ param
 	: type def_item
 		{
 			$2->type = $1;
+			$2->next = 0;
 			$$ = $2;
+			printf ("%s ", $2->name);
 		}
 	;
 
