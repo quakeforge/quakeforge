@@ -36,18 +36,31 @@
 # include <strings.h>
 #endif
 
+#include <sys/time.h>
+#include <unistd.h>
+
 #include "QF/console.h"
 #include "QF/cmd.h"
 #include "QF/msg.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/cvar.h"
 
 #include "compat.h"
 #include "cl_main.h"
 #include "client.h"
 #include "host.h"
 #include "pmove.h"
+
+int cl_timeframes_isactive;
+int cl_timeframes_index;
+struct timeval *cl_timeframes_array;
+#define CL_TIMEFRAMES_ARRAYBLOCK 4096
+extern cvar_t *cl_timeframes;
+
+void CL_TimeFrames_Reset (void);
+void CL_TimeFrames_DumpLog (void);
 
 void        CL_FinishTimeDemo (void);
 int demotime_cached;
@@ -773,6 +786,9 @@ CL_FinishTimeDemo (void)
 		time = 1;
 	Con_Printf ("%i frames %5.1f seconds %5.2f fps\n", frames, time,
 				frames / time);
+
+	CL_TimeFrames_DumpLog();
+	cl_timeframes_isactive = 0;
 }
 
 
@@ -801,4 +817,72 @@ CL_TimeDemo_f (void)
 	cls.td_starttime = 0;
 	cls.td_startframe = host_framecount;
 	cls.td_lastframe = -1;				// get a new message this frame
+
+	CL_TimeFrames_Reset ();
+	if (cl_timeframes->int_val)
+		cl_timeframes_isactive = 1;
+}
+
+void
+CL_TimeFrames_Init (void)
+{
+	cl_timeframes_isactive = 0;
+	cl_timeframes_index = 0;
+	cl_timeframes_array = NULL;
+}
+
+void
+CL_TimeFrames_Reset (void)
+{
+	cl_timeframes_index = 0;
+	free(cl_timeframes_array);
+	cl_timeframes_array = NULL;
+}
+
+void
+CL_TimeFrames_AddTimestamp (void)
+{
+	int retval;
+	if (cl_timeframes_isactive) {
+		if (!(cl_timeframes_index % CL_TIMEFRAMES_ARRAYBLOCK))
+			cl_timeframes_array = realloc (cl_timeframes_array, sizeof(struct timeval) * ((cl_timeframes_index / CL_TIMEFRAMES_ARRAYBLOCK) + 1) * CL_TIMEFRAMES_ARRAYBLOCK);
+		if (cl_timeframes_array == NULL)
+			Sys_Error ("Unable to allocate timeframes buffer\n");
+		retval = gettimeofday(cl_timeframes_array + cl_timeframes_index, NULL);
+		if (retval)
+			Sys_Error ("CL_TimeFrames_Addtimestamp: gettimeofday() failed.\n");
+		cl_timeframes_index++;
+	}
+	return;
+}
+
+void CL_TimeFrames_DumpLog (void)
+{
+	VFile *outputfile;
+	char e_path[MAX_OSPATH];
+	char *filename = "timeframes.txt";
+	int i;
+	long frame;
+
+	if (cl_timeframes_isactive == 0)
+		return;
+
+	Qexpand_squiggle (fs_userpath->string, e_path);
+	Con_Printf ("Dumping Timed Frames log: %s\n", filename);
+	outputfile = Qopen (va ("%s/%s", e_path, filename), "w");
+	if (!outputfile) {
+		Con_Printf ("Could not open: %s\n", filename);
+		return;
+	}
+	for (i = 1; i < cl_timeframes_index; i++) {
+		frame = (cl_timeframes_array[i].tv_sec - cl_timeframes_array[i - 1].tv_sec);
+		if (frame < 999) {
+			frame *= 1000000;
+			frame += cl_timeframes_array[i].tv_usec - cl_timeframes_array[i - 1].tv_usec;
+		} else
+			frame = 999999999;
+
+		Qprintf (outputfile, "%09ld\n", frame);
+	}
+	Qclose (outputfile);
 }

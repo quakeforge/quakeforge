@@ -124,6 +124,8 @@ cvar_t     *rcon_address;
 cvar_t     *cl_writecfg;
 cvar_t     *cl_allow_cmd_pkt;
 
+cvar_t     *cl_timeframes;
+
 cvar_t     *cl_timeout;
 
 cvar_t     *cl_shownet;
@@ -1291,6 +1293,8 @@ CL_Init_Cvars (void)
 	localid = Cvar_Get ("localid", "", CVAR_NONE, NULL, "FIXME: This has "
 						"something to do with client authentication."
 						"No description");
+	cl_timeframes = Cvar_Get ("cl_timeframes", "0", CVAR_ARCHIVE, NULL,
+							  "write timestamps for every frame");
 
 	// info mirrors
 	//
@@ -1540,6 +1544,8 @@ Host_Frame (float time)
 					pass1 + pass2 + pass3, pass1, pass2, pass3);
 	}
 
+	CL_TimeFrames_AddTimestamp ();
+
 	host_framecount++;
 	fps_count++;
 }
@@ -1658,6 +1664,8 @@ Host_Init (void)
 	Key_Init ();
 	Con_Init ("client");
 	Mod_Init ();
+
+	CL_TimeFrames_Init();
 
 //  Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
 	Con_Printf ("%4.1f megs RAM used.\n", host_parms.memsize / (1024 * 1024.0));
