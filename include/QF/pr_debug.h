@@ -35,7 +35,7 @@
 typedef struct pr_auxfunction_s {
 	unsigned int function;		// function def this aux info is for
 	unsigned int source_line;	// first source line for this function
-	unsigned int line_info;	// index to first lineno entry
+	unsigned int line_info;		// index to first lineno entry
 	unsigned int local_defs;	// index to the first local def
 	unsigned int num_locals;	// number of local defs
 } pr_auxfunction_t;
