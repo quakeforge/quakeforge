@@ -575,8 +575,9 @@ Con_CompleteCommandLine (void)
 {
 	char	*cmd = "";
 	char	*s;
-	char	**list;
 	int	c, v, a, i;
+	int		cmd_len;
+	char	**list[3] = {0, 0, 0};
 
 	s = key_lines[edit_line] + 1;
 	if (*s == '\\' || *s == '/')
@@ -590,7 +591,40 @@ Con_CompleteCommandLine (void)
 	if (!(c + v + a))	// No possible matches
 		return;
 	
-	if (c + v + a > 1) {
+	if (c + v + a == 1) {
+		char **l;
+		if (c)
+			l = Cmd_CompleteBuildList(s);
+		else if (v)
+			l = Cvar_CompleteBuildList(s);
+		else
+			l = Cmd_CompleteAliasBuildList(s);
+		cmd = *l;
+		cmd_len = strlen (cmd);
+		free (l);
+	} else {
+		if (c)
+			cmd = *(list[0] = Cmd_CompleteBuildList(s));
+		if (v)
+			cmd = *(list[1] = Cvar_CompleteBuildList(s));
+		if (a)
+			cmd = *(list[2] = Cmd_CompleteAliasBuildList(s));
+		
+		cmd_len = strlen (s);
+		do {
+			for (i = 0; i < 3; i++) {
+				char ch = cmd[cmd_len];
+				char **l = list[i];
+				if (l) {
+					while (*l && (*l)[cmd_len] == ch)
+						l++;
+					if (*l)
+						break;
+				}
+			}
+			if (i == 3)
+				cmd_len++;
+		} while (i == 3);
 		// 'quakebar'
 		Con_Printf("\n\35");
 		for (i = 0; i < con_linewidth - 4; i++)
@@ -600,47 +634,35 @@ Con_CompleteCommandLine (void)
 		// Print Possible Commands
 		if (c) {
 			Con_Printf("%i possible command%s\n", c, (c > 1) ? "s: " : ":");
-			list = Cmd_CompleteBuildList(s);
-			Con_DisplayList(list, con_linewidth);
-			free(list);
+			Con_DisplayList(list[0], con_linewidth);
+			free(list[0]);
 		}
 		
 		if (v) {
 			Con_Printf("%i possible variable%s\n", v, (v > 1) ? "s: " : ":");
-			list = Cvar_CompleteBuildList(s);
-			Con_DisplayList(list, con_linewidth);
-			free(list);
+			Con_DisplayList(list[1], con_linewidth);
+			free(list[1]);
 		}
 		
 		if (a) {
 			Con_Printf("%i possible aliases%s\n", a, (a > 1) ? "s: " : ":");
-			list = Cmd_CompleteAliasBuildList(s);
-			Con_DisplayList(list, con_linewidth);
-			free(list);
+			Con_DisplayList(list[2], con_linewidth);
+			free(list[2]);
 		}
-		return;
 	}
-
-	// The number of possible matches has been narrowed down to 1
-	// So just use the original QF functions
-
-	if (c)
-		cmd = Cmd_CompleteCommand(s);
-
-	if (v)
-		cmd = Cvar_CompleteVariable(s);
-
-	if (a)
-		cmd = Cmd_CompleteAlias(s);
 	
 	if (cmd) {
 		key_lines[edit_line][1] = '/';
-		strcpy(key_lines[edit_line] + 2, cmd);
-		key_linepos = strlen (cmd) + 2;
-		key_lines[edit_line][key_linepos] = ' ';
-		key_linepos++;
+		strncpy(key_lines[edit_line] + 2, cmd, cmd_len);
+		key_linepos = cmd_len + 2;
+		if (!cmd[cmd_len]) {
+			key_lines[edit_line][key_linepos] = ' ';
+			key_linepos++;
+		}
 		key_lines[edit_line][key_linepos] = 0;
-		return;
 	}
+	for (i = 0; i < 3; i++)
+		if (list[i])
+			free (list[i]);
 }
 
