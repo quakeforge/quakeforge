@@ -37,7 +37,11 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
+#include "QF/console.h"
 #include "QF/model.h"
+#include "QF/texture.h"
+#include "QF/tga.h"
+#include "QF/vfs.h"
 #include "QF/GL/qf_textures.h"
 
 #include "compat.h"
@@ -46,6 +50,27 @@ void
 Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
 {
 	char        name[64];
+	qboolean    loaded = true;
+	VFile      *f;
+	tex_t      *targa;
+
+	snprintf (name, sizeof (name), "%s_%i.tga", loadmodel->name, framenum);
+	COM_FOpenFile (name, &f);
+	if (f) {
+		targa = LoadTGA (f);
+		Qclose (f);
+		if (targa->format < 4)
+			pspriteframe->gl_texturenum =
+				GL_LoadTexture (name, targa->width,
+					targa->height, targa->data, true, false, 3);
+		else
+			pspriteframe->gl_texturenum =
+				GL_LoadTexture (name, targa->width,
+					targa->height, targa->data, true, true, 4);
+		return;
+	}
+	Con_DPrintf ("Couldn't load %s\n", name);
+	loaded = false;
 
 	snprintf (name, sizeof (name), "%s_%i", loadmodel->name, framenum);
 	pspriteframe->gl_texturenum =
