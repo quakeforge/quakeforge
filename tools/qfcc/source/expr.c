@@ -1931,6 +1931,8 @@ function_expr (expr_t *e1, expr_t *e2)
 							 i + 1, e1->e.def->name);
 			}
 		} else {
+			if (e->type == ex_nil)
+				convert_nil (e, t = &type_vector);	//XXX largest param size
 			if (e->type == ex_integer && options.warnings.vararg_integer)
 				warning (e, "passing integer consant into ... function");
 		}
