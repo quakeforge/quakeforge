@@ -514,7 +514,7 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s)
 						dasprintf (line, "%d", (short) opval);
 						break;
 					case 'O':
-						dasprintf (line, "%d", addr + (short) opval);
+						dasprintf (line, "%04x", addr + (short) opval);
 						break;
 					default:
 						goto err;
