@@ -353,7 +353,7 @@ R_SetupGL (void)
 
 	qfglViewport (glx + x, gly + y2, w, h);
 	screenaspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;
-	MYgluPerspective (r_refdef.fov_y, screenaspect, 4, 4096);
+	MYgluPerspective (r_refdef.fov_y, screenaspect, 4, r_farclip->value);
 
 	if (mirror) {
 		if (mirror_plane->normal[2])
