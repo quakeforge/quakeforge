@@ -64,6 +64,7 @@ Mod_LoadExternalTextures (model_t *mod)
 void
 Mod_LoadLighting (lump_t *l)
 {
+	mod_lightmap_bytes = 1;
 	if (!l->filelen) {
 		loadmodel->lightdata = NULL;
 		return;
