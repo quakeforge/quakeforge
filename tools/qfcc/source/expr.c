@@ -405,7 +405,7 @@ new_label_name (void)
 }
 
 expr_t *
-new_error_expr ()
+new_error_expr (void)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_error;
@@ -441,6 +441,11 @@ new_binary_expr (int op, expr_t *e1, expr_t *e2)
 {
 	expr_t     *e = new_expr ();
 
+	if (e1->type == ex_error)
+		return e1;
+	if (e2 && e2->type == ex_error)
+		return e2;
+
 	inc_users (e1);
 	inc_users (e2);
 
@@ -455,6 +460,9 @@ expr_t *
 new_unary_expr (int op, expr_t *e1)
 {
 	expr_t     *e = new_expr ();
+
+	if (e1 && e1->type == ex_error)
+		return e1;
 
 	inc_users (e1);
 
@@ -534,7 +542,7 @@ append_expr (expr_t *block, expr_t *e)
 	if (block->type != ex_block)
 		abort ();
 
-	if (!e)
+	if (!e || e->type == ex_error)
 		return block;
 
 	if (e->next) {
@@ -1027,6 +1035,8 @@ field_expr (expr_t *e1, expr_t *e2)
 	struct_field_t *field;
 	class_t    *class;
 
+	if (e1->type == ex_error)
+		return e1;
 	t1 = get_type (e1);
 	switch (t1->type) {
 		case ev_struct:
@@ -1090,6 +1100,8 @@ field_expr (expr_t *e1, expr_t *e2)
 			break;
 		case ev_entity:
 			t2 = get_type (e2);
+			if (e2->type == ex_error)
+				return e2;
 			if (t2->type == ev_field) {
 				e = new_binary_expr ('.', e1, e2);
 				e->e.expr.type = t2->aux_type;
@@ -1116,7 +1128,10 @@ test_expr (expr_t *e, int test)
 	if (!test)
 		return unary_expr ('!', e);
 
-	switch (type = extract_type (e)) {
+	type = extract_type (e);
+	if (e->type == ex_error)
+		return e;
+	switch (type) {
 		case ev_type_count:
 			error (e, "internal error");
 			abort ();
@@ -1223,6 +1238,10 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		e2 = test_expr (e2, true);
 	}
 
+	if (e1->type == ex_error)
+		return e1;
+	if (e2->type == ex_error)
+		return e2;
 	t1 = get_type (e1);
 	t2 = get_type (e2);
 	if (!t1 || !t2) {
@@ -1342,10 +1361,10 @@ asx_expr (int op, expr_t *e1, expr_t *e2)
 expr_t *
 unary_expr (int op, expr_t *e)
 {
-	if (e->type == ex_error)
-		return e;
 	convert_name (e);
 	check_initialized (e);
+	if (e->type == ex_error)
+		return e;
 	switch (op) {
 		case '-':
 			switch (e->type) {

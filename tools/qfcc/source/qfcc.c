@@ -134,7 +134,11 @@ InitData (void)
 	pr_source_line = 1;
 	pr_error_count = 0;
 	pr.num_statements = 1;
-	pr.strofs = 1;
+	pr.statements_size = 16384;
+	pr.statements = calloc (pr.statements_size, sizeof (dstatement_t));
+	pr.statement_linenums = calloc (pr.statements_size, sizeof (int));
+	pr.strofs = 0;
+	CopyString ("");
 	pr.num_functions = 1;
 
 	pr.near_data = new_defspace ();
@@ -461,7 +465,6 @@ compile_to_obj (const char *file, const char *obj)
 
 	InitData ();
 	begin_compilation ();
-	s_file = ReuseString (strip_path (file));
 	clear_frame_macros ();
 	clear_classes ();
 	clear_defs ();
@@ -470,6 +473,7 @@ compile_to_obj (const char *file, const char *obj)
 	clear_structs ();
 	clear_enums ();
 	clear_typedefs ();
+	s_file = ReuseString (strip_path (file));
 	err = yyparse () || pr_error_count;
 	fclose (yyin);
 	if (cpp_name && (!options.save_temps)) {
@@ -490,6 +494,7 @@ separate_compile (void)
 	dstring_t  *output_file = dstring_newstr ();
 	dstring_t  *extension = dstring_newstr ();
 	char       *f;
+	int         err = 0;
 
 	if (options.compile && options.output_file && source_files[1]) {
 		fprintf (stderr, "%s: cannot use -c and -o together with multiple "
@@ -515,7 +520,7 @@ separate_compile (void)
 			&& (!strcmp (extension->str, ".r")
 				|| !strcmp (extension->str, ".qc"))) {
 			printf ("%s %s\n", *file, output_file->str);
-			compile_to_obj (*file, output_file->str);
+			err = compile_to_obj (*file, output_file->str) || err;
 
 			free ((char *)*file);
 			*file = strdup (output_file->str);
@@ -525,11 +530,11 @@ separate_compile (void)
 						 "not done\n", this_program, *file);
 		}
 	}
-	if (!options.compile) {
+	if (!err && !options.compile) {
 		for (file = source_files; *file; file++) {
 		}
 	}
-	return 0;
+	return err;
 }
 
 static int

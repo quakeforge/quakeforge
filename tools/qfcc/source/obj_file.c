@@ -86,9 +86,11 @@ allocate_stuff (void)
 	}
 	for (func = pr.func_head; func; func = func->next) {
 		num_relocs += count_relocs (func->refs);
-		num_defs += func->scope->num_defs;
-		for (def = func->scope->head; def; def = def->def_next) {
-			num_relocs += count_relocs (def->refs);
+		if (func->scope) {
+			num_defs += func->scope->num_defs;
+			for (def = func->scope->head; def; def = def->def_next) {
+				num_relocs += count_relocs (def->refs);
+			}
 		}
 	}
 	defs = calloc (num_defs, sizeof (qfo_def_t));
@@ -177,17 +179,20 @@ setup_data (void)
 			func->def        = LittleLong (def - defs);
 			write_def (f->def, def++, &reloc);
 		}
-		func->locals_size    = LittleLong (f->scope->space->size);
-		func->local_defs     = LittleLong (def - defs);
-		func->num_local_defs = LittleLong (f->scope->num_defs);
+		if (f->scope) {
+			func->locals_size    = LittleLong (f->scope->space->size);
+			func->local_defs     = LittleLong (def - defs);
+			func->num_local_defs = LittleLong (f->scope->num_defs);
+		}
 		if (f->aux)
 			func->line_info  = LittleLong (f->aux->line_info);
 		func->num_parms      = LittleLong (function_parms (f, func->parm_size));
 		func->relocs         = LittleLong (reloc - relocs);
 		write_relocs (f->refs, &reloc);
 
-		for (d = f->scope->head; d; d = d->def_next)
-			write_def (d, def++, &reloc);
+		if (f->scope)
+			for (d = f->scope->head; d; d = d->def_next)
+				write_def (d, def++, &reloc);
 	}
 	for (st = pr.statements; st - pr.statements < pr.num_statements; st++) {
 		st->op = LittleLong (st->op);
@@ -217,7 +222,7 @@ write_obj_file (const char *filename)
 	allocate_stuff ();
 	setup_data ();
 
-	file = Qopen (filename, "wbz9");
+	file = Qopen (filename, "wb");
 
 	pr.strofs = (pr.strofs + 3) & ~3;
 
