@@ -83,9 +83,6 @@ cvar_t     *v_kicktime;
 cvar_t     *v_kickroll;
 cvar_t     *v_kickpitch;
 
-cvar_t     *brightness;
-cvar_t     *contrast;
-
 float       v_dmg_time, v_dmg_roll, v_dmg_pitch;
 
 extern cvar_t  *vid_gamma;
@@ -757,7 +754,4 @@ V_Init_Cvars (void)
 			"How much you lean when hit");
 	v_kickpitch = Cvar_Get ("v_kickpitch", "0.6", CVAR_NONE, NULL,
 			"How much you look up when hit");
-
-	brightness = Cvar_Get ("brightness", "1", CVAR_ARCHIVE, NULL, "None");
-	contrast = Cvar_Get ("contrast", "1", CVAR_ARCHIVE, NULL, "None");
 }

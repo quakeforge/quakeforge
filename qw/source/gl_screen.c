@@ -807,7 +807,6 @@ int 			oldviewsize = 0;
 unsigned char	lighthalf_v[3];
 qboolean		lighthalf;
 extern cvar_t	*gl_lightmode;
-extern cvar_t	*brightness;
 
 /*
 	SCR_UpdateScreen
@@ -890,16 +889,13 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs, int swap)
 		}
 	}
 
-	// LordHavoc: adjustable brightness and contrast,
 	// also makes polyblend apply to whole screen
 	glDisable (GL_TEXTURE_2D);
 
-	Cvar_SetValue (brightness, bound (1, brightness->value, 5));
 	if (lighthalf) {		// LordHavoc: render was done at half brightness
-		f = brightness->value * 2;
+		f = 2;
 	} else {
-		Cvar_SetValue (brightness, bound (1, brightness->value, 5));
-		f = brightness->value;
+		f = 1;
 	}
 
 	if (f >= 1.002) {		// Make sure we don't get bit by roundoff errors

@@ -1383,7 +1383,6 @@ VID_Init (unsigned char *palette)
                 DestroyWindow (hwnd_dialog);
 #endif
 
-	GL_CheckBrightness (palette);
 	VID_InitGamma (palette);
 	VID_SetPalette (palette);
 

@@ -230,7 +230,6 @@ VID_Init (unsigned char *palette)
 
 	VID_SDL_GammaCheck ();
 
-	GL_CheckBrightness (palette);
 	VID_InitGamma (palette);
 	VID_SetPalette (palette);
 

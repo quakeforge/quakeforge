@@ -61,7 +61,6 @@ unsigned int d_8to24table[256];
 unsigned char d_15to8table[65536];
 
 cvar_t     *vid_mode;
-cvar_t     *brighten;
 cvar_t     *gl_multitexture;
 extern byte gammatable[256];
 
@@ -87,8 +86,6 @@ QF_glColorTableEXT	qglColorTableEXT = NULL;
 qboolean			is8bit = false;
 
 cvar_t	*vid_use8bit;
-cvar_t	*brightness;
-cvar_t	*contrast;
 
 /*-----------------------------------------------------------------------*/
 
@@ -96,8 +93,6 @@ void
 GL_Common_Init_Cvars (void)
 {
 	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,	"Use 8-bit shared palettes.");
-	brightness = Cvar_Get ("brightness", "1", CVAR_ARCHIVE, NULL, "Brightness level");
-	contrast = Cvar_Get ("contrast", "1", CVAR_ARCHIVE, NULL, "Contrast level");
 	gl_multitexture = Cvar_Get ("gl_multitexture", "0", CVAR_ARCHIVE, NULL, "Use multitexture when available");
 }
 
@@ -376,50 +371,6 @@ VID_Init8bitPalette (void)
 		}
 	} else {
 		Con_Printf ("disabled.\n");
-	}
-}
-
-/*
-	GL_CheckBrightness
-
-	This is something like the brightness cvar, except it hacks the palette
-	directly instead of brightening the screen afterward.
-*/
-void
-GL_CheckBrightness (unsigned char *pal)
-{
-	int         i, inf;
-	float       brightness;
-
-	brighten = Cvar_Get ("brighten", "1", CVAR_NONE, NULL,
-						 "Palette hack equivalent to brightness");
-
-	if ((i = COM_CheckParm ("-brighten"))) {
-		brightness = atof (com_argv[i + 1]);
-	} else {
-		brightness = brighten->value;
-	}
-	brightness = bound (1, brightness, 5);
-
-	Cvar_SetValue (brighten, brightness);
-	Cvar_SetFlags (brighten, brighten->flags | CVAR_ROM);
-
-	// Build gamma table
-	if (brightness == 1.0) {			// screw the math
-		for (i = 0; i < 256; i++) {
-			gammatable[i] = i;
-		}
-	} else {
-		for (i = 0; i < 256; i++) {		// brighten up the palette
-			inf = (i * brightness);
-			inf = bound (0, inf, 255);
-			gammatable[i] = inf;
-		}
-	}
-
-	// correct the palette
-	for (i = 0; i < 768; i++) {
-		pal[i] = gammatable[pal[i]];
 	}
 }
 
