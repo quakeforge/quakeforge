@@ -128,13 +128,6 @@ vectoangles (vec3_t vec, vec3_t ang)
 	ang[2] = 0;
 }
 
-
-static float
-vlen (vec3_t v)
-{
-	return sqrt (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-}
-
 // returns true if weapon model should be drawn in camera mode
 qboolean
 Cam_DrawViewModel (void)
@@ -222,7 +215,6 @@ Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
 	vec3_t      v;
 
 	vectoangles (vec, v);
-//	v[0] = -v[0];
 	VectorCopy (v, pmove.angles);
 	VectorNormalize (vec);
 	VectorMA (player->origin, 800, vec, v);
@@ -232,18 +224,18 @@ Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
 	if ( /* trace.inopen || */ trace.inwater)
 		return 9999;
 	VectorCopy (trace.endpos, vec);
-	VectorSubtract (trace.endpos, player->origin, v);
-	len = sqrt (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+	len = VectorDistance (trace.endpos, player->origin);
+
 	if (len < 32 || len > 800)
 		return 9999;
 	if (checkvis) {
-		VectorSubtract (trace.endpos, self->origin, v);
-		len = sqrt (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-
 		trace = Cam_DoTrace (self->origin, vec);
 		if (trace.fraction != 1 || trace.inwater)
 			return 9999;
+
+		len = VectorDistance (trace.endpos, self->origin);
 	}
+
 	return len;
 }
 
@@ -260,10 +252,9 @@ Cam_IsVisible (player_state_t * player, vec3_t vec)
 		return false;
 	// check distance, don't let the player get too far away or too close
 	VectorSubtract (player->origin, vec, v);
-	d = vlen (v);
-	if (d < 16)
-		return false;
-	return true;
+	d = Length (v);
+
+	return (d > 16.0);
 }
 
 static qboolean
@@ -446,7 +437,7 @@ Cam_Track (usercmd_t *cmd)
 		// Ok, move to our desired position and set our angles to view
 		// the player
 		VectorSubtract (desired_position, self->origin, vec);
-		len = vlen (vec);
+		len = Length (vec);
 		cmd->forwardmove = cmd->sidemove = cmd->upmove = 0;
 		if (len > 16) {					// close enough?
 			MSG_WriteByte (&cls.netchan.message, clc_tmove);
