@@ -61,7 +61,7 @@ texture_t  *r_notexture_mip;
 cvar_t     *gl_mesh_cache;
 cvar_t     *gl_subdivide_size;
 cvar_t     *gl_alias_render_tri;
-cvar_t     *gl_external_textures;
+cvar_t     *gl_textures_external;
 
 static void Mod_CallbackLoad (void *object, cache_allocator_t allocator);
 
@@ -105,11 +105,11 @@ Mod_Init_Cvars (void)
 							  "minimum triangle count in a model for its mesh"
 							  " to be cached. 0 to disable caching");
 	gl_alias_render_tri =
-		Cvar_Get("gl_alias_render_tri", "0", CVAR_ARCHIVE, NULL,
-				 "When loading alias models mesh for pure triangle rendering");
-	gl_external_textures =
-		Cvar_Get("gl_external_textures", "1", CVAR_ARCHIVE, NULL,
-				 "Use external .png, .tga or .pcx to replace BSP textures");
+		Cvar_Get ("gl_alias_render_tri", "0", CVAR_ARCHIVE, NULL, "When "
+				  "loading alias models mesh for pure triangle rendering");
+	gl_textures_external =
+		Cvar_Get ("gl_textures_external", "1", CVAR_ARCHIVE, NULL,
+				  "Use external textures to replace BSP textures");
 }
 
 void
@@ -210,7 +210,7 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 		default:
 			Mod_LoadBrushModel (mod, buf);
 
-			if (gl_external_textures->int_val)
+			if (gl_textures_external->int_val)
 				Mod_LoadExternalTextures (mod);
 			break;
 	}

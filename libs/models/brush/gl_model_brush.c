@@ -70,7 +70,6 @@ Mod_ProcessTexture (miptex_t *mt, texture_t *tx)
 						true, false, 1);
 }
 
-
 static tex_t *
 Mod_LoadAnExternalTexture (char * tname, char *mname)
 {
@@ -121,7 +120,6 @@ Mod_LoadExternalTextures (model_t *mod)
 												  mod->name);
 
 			tx->gl_fb_texturenum = 0;
-
 			if (luma) {
 				tx->gl_fb_texturenum =
 					GL_LoadTexture (va ("fb_%s", tx->name), luma->width,
@@ -130,7 +128,7 @@ Mod_LoadExternalTextures (model_t *mod)
 			} else if (base->format == 1) {
 				tx->gl_fb_texturenum =
 					Mod_Fullbright (luma->data, luma->width, luma->height,
-									va("fb_%s", tx->name));
+									va ("fb_%s", tx->name));
 			}
 		}
 	}

@@ -463,7 +463,7 @@ void	 Mod_Print (void);
 extern struct cvar_s *gl_mesh_cache;
 extern struct cvar_s *gl_subdivide_size;
 extern struct cvar_s *gl_alias_render_tri;
-extern struct cvar_s *gl_external_textures;
+extern struct cvar_s *gl_textures_external;
 extern model_t *loadmodel;
 extern char *loadname;
 extern byte *mod_base;
