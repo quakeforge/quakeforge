@@ -33,6 +33,8 @@
 
 #include "d_iface.h"
 
+#define MAX_EFRAGS	640
+
 #define	MAXVERTS	16					// max points in a surface polygon
 #define MAXWORKINGVERTS	(MAXVERTS+4)	// max points in an intermediate
 										//  polygon (while processing)

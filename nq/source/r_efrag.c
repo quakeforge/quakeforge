@@ -31,12 +31,16 @@
 #endif
 
 #include "QF/console.h"
+#include "QF/render.h"
 #include "QF/sys.h"
 
 #include "client.h"
 #include "r_local.h"
 
 mnode_t    *r_pefragtopnode;
+efrag_t    *r_free_efrags;
+// FIXME: put this on hunk?
+efrag_t     r_efrags[MAX_EFRAGS];
 
 
 //===========================================================================
@@ -81,8 +85,8 @@ R_RemoveEfrags (entity_t *ent)
 		ef = ef->entnext;
 
 		// put it on the free list
-		old->entnext = cl.free_efrags;
-		cl.free_efrags = old;
+		old->entnext = r_free_efrags;
+		r_free_efrags = old;
 	}
 
 	ent->efrag = NULL;
@@ -111,12 +115,12 @@ R_SplitEntityOnNode (mnode_t *node)
 		leaf = (mleaf_t *) node;
 
 // grab an efrag off the free list
-		ef = cl.free_efrags;
+		ef = r_free_efrags;
 		if (!ef) {
 			Con_Printf ("Too many efrags!\n");
 			return;						// no free fragments...
 		}
-		cl.free_efrags = cl.free_efrags->entnext;
+		r_free_efrags = r_free_efrags->entnext;
 
 		ef->entity = r_addent;
 
@@ -199,7 +203,7 @@ R_AddEfrags (entity_t *ent)
 	if (!ent->model)
 		return;
 
-	if (ent == cl_entities)
+	if (ent == &r_worldentity)
 		return;							// never add the world
 
 	r_addent = ent;
@@ -214,7 +218,7 @@ R_AddEfrags (entity_t *ent)
 		r_emaxs[i] = ent->origin[i] + entmodel->maxs[i];
 	}
 
-	R_SplitEntityOnNode (cl.worldmodel->nodes);
+	R_SplitEntityOnNode (r_worldentity.model->nodes);
 
 	ent->topnode = r_pefragtopnode;
 }
@@ -229,15 +233,15 @@ void
 R_StoreEfrags (efrag_t **ppefrag)
 {
 	entity_t   *pent;
-	model_t    *clmodel;
+	model_t    *model;
 	efrag_t    *pefrag;
 
 
 	while ((pefrag = *ppefrag) != NULL) {
 		pent = pefrag->entity;
-		clmodel = pent->model;
+		model = pent->model;
 
-		switch (clmodel->type) {
+		switch (model->type) {
 			case mod_alias:
 			case mod_brush:
 			case mod_sprite:
@@ -258,7 +262,19 @@ R_StoreEfrags (efrag_t **ppefrag)
 
 			default:
 				Sys_Error ("R_StoreEfrags: Bad entity type %d\n",
-						   clmodel->type);
+						   model->type);
 		}
 	}
+}
+
+void
+R_ClearEfrags (void)
+{
+	// allocate the efrags and chain together into a free list
+	int i;
+
+	r_free_efrags = r_efrags;
+	for (i = 0; i < MAX_EFRAGS - 1; i++)
+		r_free_efrags[i].entnext = &r_free_efrags[i + 1];
+	r_free_efrags[i].entnext = NULL;
 }

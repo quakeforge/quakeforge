@@ -405,8 +405,6 @@ CL_Rcon_f (void)
 void
 CL_ClearState (void)
 {
-	int         i;
-
 	S_StopAllSounds (true);
 
 	Con_DPrintf ("Clearing memory\n");
@@ -418,6 +416,8 @@ CL_ClearState (void)
 	CL_ClearEnts ();
 	CL_ClearTEnts ();
 
+	R_ClearEfrags ();
+
 // wipe the entire cl structure
 	memset (&cl, 0, sizeof (cl));
 
@@ -427,14 +427,6 @@ CL_ClearState (void)
 	memset (cl_efrags, 0, sizeof (cl_efrags));
 	memset (cl_dlights, 0, sizeof (cl_dlights));
 	memset (cl_lightstyle, 0, sizeof (cl_lightstyle));
-
-//
-// allocate the efrags and chain together into a free list
-//
-	cl.free_efrags = cl_efrags;
-	for (i = 0; i < MAX_EFRAGS - 1; i++)
-		cl.free_efrags[i].entnext = &cl.free_efrags[i + 1];
-	cl.free_efrags[i].entnext = NULL;
 }
 
 

@@ -84,7 +84,6 @@ client_static_t cls;
 client_state_t cl;
 
 // FIXME: put these on hunk?
-efrag_t     cl_efrags[MAX_EFRAGS];
 entity_t    cl_entities[MAX_EDICTS];
 entity_state_t    cl_baselines[MAX_EDICTS];
 entity_t    cl_static_entities[MAX_STATIC_ENTITIES];
@@ -172,7 +171,6 @@ CL_ClearState (void)
 	SZ_Clear (&cls.message);
 
 	// clear other arrays   
-	memset (cl_efrags, 0, sizeof (cl_efrags));
 	memset (cl_entities, 0, sizeof (cl_entities));
 	memset (cl_baselines, 0, sizeof (cl_baselines));
 	memset (cl_dlights, 0, sizeof (cl_dlights));
@@ -180,11 +178,8 @@ CL_ClearState (void)
 
 	CL_ClearTEnts ();
 
-	// allocate the efrags and chain together into a free list
-	cl.free_efrags = cl_efrags;
-	for (i = 0; i < MAX_EFRAGS - 1; i++)
-		cl.free_efrags[i].entnext = &cl.free_efrags[i + 1];
-	cl.free_efrags[i].entnext = NULL;
+	R_ClearEfrags ();
+
 	for (i = 0; i < MAX_EDICTS; i++) {
 		cl_entities[i].baseline = &cl_baselines[i];
 		cl_entities[i].baseline->alpha = 255;

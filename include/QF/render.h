@@ -162,4 +162,6 @@ void R_SetVrect (vrect_t *pvrect, vrect_t *pvrectin, int lineadj);
 
 void R_LoadSkys (const char *);
 
+void R_ClearEfrags (void);
+
 #endif // __render_h
