@@ -228,7 +228,7 @@ dstring_clearstr (dstring_t *dstr)
 #elif defined (HAVE__VA_COPY)
 # define VA_COPY(a,b) __va_copy (a, b)
 #else
-# define VA_COPY memcpy (a, b, sizeof (a))
+# define VA_COPY(a,b) memcpy (a, b, sizeof (a))
 #endif
 
 static int
