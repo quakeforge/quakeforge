@@ -38,6 +38,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 # include <strings.h>
 #endif
 #include <stdlib.h>
+#include <errno.h>
 
 #include "QF/quakefs.h"
 #include "QF/sys.h"
@@ -579,10 +580,14 @@ UpdateEntLump (void)
 
 	printf ("Updating entities lump...\n");
 	f = Qopen (options.bspfile, "rb");
+	if (!f)
+		Sys_Error ("couldn't open %s. %s", options.bspfile, strerror(errno));
 	bsp = LoadBSPFile (f, Qfilesize (f));
 	Qclose (f);
 	WriteEntitiesToString ();
 	f = Qopen (options.bspfile, "wb");
+	if (!f)
+		Sys_Error ("couldn't open %s. %s", options.bspfile, strerror(errno));
 	WriteBSPFile (bsp, f);
 	Qclose (f);
 }

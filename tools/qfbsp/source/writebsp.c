@@ -32,6 +32,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #endif
 #include <stdlib.h>
 #include <ctype.h>
+#include <errno.h>
 
 #include "QF/dstring.h"
 #include "QF/qendian.h"
@@ -517,6 +518,8 @@ FinishBSPFile (void)
 
 // XXX	PrintBSPFileSizes ();
 	f = Qopen (options.bspfile, "wb");
+	if (!f)
+		Sys_Error ("couldn't open %s. %s", options.bspfile, strerror(errno));
 	WriteBSPFile (bsp, f);
 	Qclose (f);
 }

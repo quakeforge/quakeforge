@@ -31,6 +31,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 # include <strings.h>
 #endif
 #include <stdlib.h>
+#include <errno.h>
 
 #include "QF/dstring.h"
 #include "QF/quakefs.h"
@@ -523,6 +524,8 @@ LoadMapFile (const char *filename)
 	QFile      *file;
 
 	file = Qopen (filename, "rt");
+	if (!file)
+		Sys_Error ("couldn't open %s. %s", filename, strerror(errno));
 	buf = malloc (Qfilesize (file) + 1);
 	buf[Qfilesize (file)] = 0;
 	Qread (file, buf, Qfilesize (file));
