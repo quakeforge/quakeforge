@@ -351,8 +351,6 @@ Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 
 	startaddr &= ~(psize - 1);
 	endaddr = (endaddr + psize - 1) & ~(psize - 1);
-#   else
-#    error Unknown page size
 #   endif
 #  endif
 
