@@ -274,7 +274,7 @@ get_op_string (int op)
 	}
 }
 
-static expr_t *
+expr_t *
 type_mismatch (expr_t *e1, expr_t *e2, int op)
 {
 	etype_t     t1, t2;
@@ -543,13 +543,20 @@ new_short_expr (short short_val)
 	return e;
 }
 
+int
+is_constant (expr_t *e)
+{
+	if (e->type >= ex_string
+		|| (e->type == ex_def && e->e.def->constant))
+		return 1;
+	return 0;
+}
+
 expr_t *
 constant_expr (expr_t *var)
 {
-	if (var->type != ex_def || !var->e.def->constant) {
-		error (var, "internal error");
-		abort ();
-	}
+	if (var->type != ex_def || !var->e.def->constant)
+		return var;
 	switch (var->e.def->type->type) {
 		case ev_string:
 			return new_string_expr (G_GETSTR (var->e.def->ofs));
@@ -563,11 +570,8 @@ constant_expr (expr_t *var)
 			return new_integer_expr (G_INT (var->e.def->ofs));
 		case ev_uinteger:
 			return new_uinteger_expr (G_INT (var->e.def->ofs));
-		case ev_func:			// can't convert
-			return var;
 		default:
-			error (var, "internal error");
-			abort ();
+			return var;
 	}
 }
 
@@ -778,436 +782,6 @@ print_expr (expr_t *e)
 		case ex_short:
 			printf ("%d", e->e.short_val);
 			break;
-	}
-}
-
-static expr_t *
-do_op_string (int op, expr_t *e1, expr_t *e2)
-{
-	const char *s1, *s2;
-	static dstring_t *temp_str;
-
-	s1 = e1->e.string_val ? e1->e.string_val : "";
-	s2 = e2->e.string_val ? e2->e.string_val : "";
-
-	switch (op) {
-		case '+':
-			if (!temp_str)
-				temp_str = dstring_newstr ();
-			dstring_clearstr (temp_str);
-			dstring_appendstr (temp_str, s1);
-			dstring_appendstr (temp_str, s2);
-			e1->e.string_val = save_string (temp_str->str);
-			break;
-		case LT:
-			e1->type = ex_integer;
-			e1->e.integer_val = strcmp (s1, s2) < 0;
-			break;
-		case GT:
-			e1->type = ex_integer;
-			e1->e.integer_val = strcmp (s1, s2) > 0;
-			break;
-		case LE:
-			e1->type = ex_integer;
-			e1->e.integer_val = strcmp (s1, s2) <= 0;
-			break;
-		case GE:
-			e1->type = ex_integer;
-			e1->e.integer_val = strcmp (s1, s2) >= 0;
-			break;
-		case EQ:
-			e1->type = ex_integer;
-			e1->e.integer_val = strcmp (s1, s2) == 0;
-			break;
-		case NE:
-			e1->type = ex_integer;
-			e1->e.integer_val = strcmp (s1, s2) != 0;
-			break;
-		default:
-			return error (e1, "invalid operand for string");
-	}
-	return e1;
-}
-
-static expr_t *
-do_op_float (int op, expr_t *e1, expr_t *e2)
-{
-	float       f1, f2;
-
-	f1 = e1->e.float_val;
-	f2 = e2->e.float_val;
-
-	switch (op) {
-		case '+':
-			e1->e.float_val += f2;
-			break;
-		case '-':
-			e1->e.float_val -= f2;
-			break;
-		case '*':
-			e1->e.float_val *= f2;
-			break;
-		case '/':
-			e1->e.float_val /= f2;
-			break;
-		case '&':
-			e1->e.float_val = (int) f1 & (int) f2;
-			break;
-		case '|':
-			e1->e.float_val = (int) f1 | (int) f2;
-			break;
-		case '^':
-			e1->e.float_val = (int) f1 ^ (int) f2;
-			break;
-		case '%':
-			e1->e.float_val = (int) f1 % (int) f2;
-			break;
-		case SHL:
-			e1->e.float_val = (int) f1 << (int) f2;
-			break;
-		case SHR:
-			e1->e.float_val = (int) f1 >> (int) f2;
-			break;
-		case AND:
-			e1->type = ex_integer;
-			e1->e.integer_val = f1 && f2;
-			break;
-		case OR:
-			e1->type = ex_integer;
-			e1->e.integer_val = f1 || f2;
-			break;
-		case LT:
-			e1->type = ex_integer;
-			e1->e.integer_val = f1 < f2;
-			break;
-		case GT:
-			e1->type = ex_integer;
-			e1->e.integer_val = f1 > f2;
-			break;
-		case LE:
-			e1->type = ex_integer;
-			e1->e.integer_val = f1 <= f2;
-			break;
-		case GE:
-			e1->type = ex_integer;
-			e1->e.integer_val = f1 >= f2;
-			break;
-		case EQ:
-			e1->type = ex_integer;
-			e1->e.integer_val = f1 == f2;
-			break;
-		case NE:
-			e1->type = ex_integer;
-			e1->e.integer_val = f1 != f2;
-			break;
-		default:
-			return error (e1, "invalid operand for float");
-	}
-	return e1;
-}
-
-static expr_t *
-do_op_vector (int op, expr_t *e1, expr_t *e2)
-{
-	float      *v1, *v2;
-
-	v1 = e1->e.vector_val;
-	v2 = e2->e.vector_val;
-
-	switch (op) {
-		case '+':
-			VectorAdd (v1, v2, v1);
-			break;
-		case '-':
-			VectorSubtract (v1, v2, v1);
-			break;
-		case '*':
-			e1->type = ex_float;
-			e1->e.float_val = DotProduct (v1, v2);
-			break;
-		case EQ:
-			e1->type = ex_integer;
-			e1->e.integer_val = (v1[0] == v2[0])
-							 && (v1[1] == v2[1])
-							 && (v1[2] == v2[2]);
-			break;
-		case NE:
-			e1->type = ex_integer;
-			e1->e.integer_val = (v1[0] == v2[0])
-							 || (v1[1] != v2[1])
-							 || (v1[2] != v2[2]);
-			break;
-		default:
-			return error (e1, "invalid operand for vector");
-	}
-	return e1;
-}
-
-static expr_t *
-do_op_integer (int op, expr_t *e1, expr_t *e2)
-{
-	int         i1, i2;
-
-	i1 = e1->e.integer_val;
-	i2 = e2->e.integer_val;
-
-	switch (op) {
-		case '+':
-			e1->e.integer_val += i2;
-			break;
-		case '-':
-			e1->e.integer_val -= i2;
-			break;
-		case '*':
-			e1->e.integer_val *= i2;
-			break;
-		case '/':
-			if (options.warnings.integer_divide)
-				warning (e2, "%d / %d == %d", i1, i2, i1 / i2);
-			e1->e.integer_val /= i2;
-			break;
-		case '&':
-			e1->e.integer_val = i1 & i2;
-			break;
-		case '|':
-			e1->e.integer_val = i1 | i2;
-			break;
-		case '^':
-			e1->e.integer_val = i1 ^ i2;
-			break;
-		case '%':
-			e1->e.integer_val = i1 % i2;
-			break;
-		case SHL:
-			e1->e.integer_val = i1 << i2;
-			break;
-		case SHR:
-			e1->e.integer_val = i1 >> i2;
-			break;
-		case AND:
-			e1->e.integer_val = i1 && i2;
-			break;
-		case OR:
-			e1->e.integer_val = i1 || i2;
-			break;
-		case LT:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 < i2;
-			break;
-		case GT:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 > i2;
-			break;
-		case LE:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 <= i2;
-			break;
-		case GE:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 >= i2;
-			break;
-		case EQ:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 == i2;
-			break;
-		case NE:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 != i2;
-			break;
-		default:
-			return error (e1, "invalid operand for integer");
-	}
-	return e1;
-}
-
-static expr_t *
-do_op_uinteger (int op, expr_t *e1, expr_t *e2)
-{
-	unsigned int i1, i2;
-
-	i1 = e1->e.uinteger_val;
-	i2 = e2->e.uinteger_val;
-
-	switch (op) {
-		case '+':
-			e1->e.uinteger_val += i2;
-			break;
-		case '-':
-			e1->e.uinteger_val -= i2;
-			break;
-		case '*':
-			e1->e.uinteger_val *= i2;
-			break;
-		case '/':
-			if (options.warnings.integer_divide)
-				warning (e2, "%d / %d == %d", i1, i2, i1 / i2);
-			e1->e.uinteger_val /= i2;
-			break;
-		case '&':
-			e1->e.uinteger_val = i1 & i2;
-			break;
-		case '|':
-			e1->e.uinteger_val = i1 | i2;
-			break;
-		case '^':
-			e1->e.uinteger_val = i1 ^ i2;
-			break;
-		case '%':
-			e1->e.uinteger_val = i1 % i2;
-			break;
-		case SHL:
-			e1->e.uinteger_val = i1 << i2;
-			break;
-		case SHR:
-			e1->e.uinteger_val = i1 >> i2;
-			break;
-		case AND:
-			e1->e.uinteger_val = i1 && i2;
-			break;
-		case OR:
-			e1->e.uinteger_val = i1 || i2;
-			break;
-		case LT:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 < i2;
-			break;
-		case GT:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 > i2;
-			break;
-		case LE:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 <= i2;
-			break;
-		case GE:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 >= i2;
-			break;
-		case EQ:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 == i2;
-			break;
-		case NE:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 != i2;
-			break;
-		default:
-			return error (e1, "invalid operand for uinteger");
-	}
-	return e1;
-}
-
-static expr_t *
-do_op_short (int op, expr_t *e1, expr_t *e2)
-{
-	int         i1, i2;
-
-	i1 = e1->e.short_val;
-	i2 = e2->e.short_val;
-
-	switch (op) {
-		case '+':
-			e1->e.short_val += i2;
-			break;
-		case '-':
-			e1->e.short_val -= i2;
-			break;
-		case '*':
-			e1->e.short_val *= i2;
-			break;
-		case '/':
-			if (options.warnings.integer_divide)
-				warning (e2, "%d / %d == %d", i1, i2, i1 / i2);
-			e1->e.short_val /= i2;
-			break;
-		case '&':
-			e1->e.short_val = i1 & i2;
-			break;
-		case '|':
-			e1->e.short_val = i1 | i2;
-			break;
-		case '^':
-			e1->e.short_val = i1 ^ i2;
-			break;
-		case '%':
-			e1->e.short_val = i1 % i2;
-			break;
-		case SHL:
-			e1->e.short_val = i1 << i2;
-			break;
-		case SHR:
-			e1->e.short_val = i1 >> i2;
-			break;
-		case AND:
-			e1->e.short_val = i1 && i2;
-			break;
-		case OR:
-			e1->e.short_val = i1 || i2;
-			break;
-		case LT:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 < i2;
-			break;
-		case GT:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 > i2;
-			break;
-		case LE:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 <= i2;
-			break;
-		case GE:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 >= i2;
-			break;
-		case EQ:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 == i2;
-			break;
-		case NE:
-			e1->type = ex_integer;
-			e1->e.integer_val = i1 != i2;
-			break;
-		default:
-			return error (e1, "invalid operand for uinteger");
-	}
-	return e1;
-}
-
-static expr_t *
-do_op_huh (int op, expr_t *e1, expr_t *e2)
-{
-	return error (e1, "funny constant");
-}
-
-static expr_t *(*do_op[]) (int op, expr_t *e1, expr_t *e2) = {
-	do_op_huh,							// ev_void
-	do_op_string,						// ev_string
-	do_op_float,						// ev_float
-	do_op_vector,						// ev_vector
-	do_op_huh,							// ev_entity
-	do_op_huh,							// ev_field
-	do_op_huh,							// ev_func
-	do_op_huh,							// ev_pointer
-	do_op_huh,							// ev_quaternion
-	do_op_integer,						// ev_integer
-	do_op_uinteger,						// ev_uinteger
-	do_op_short,						// ev_short
-	do_op_huh,							// ev_struct
-};
-
-static expr_t *
-binary_const (int op, expr_t *e1, expr_t *e2)
-{
-	etype_t     t1, t2;
-
-	t1 = extract_type (e1);
-	t2 = extract_type (e2);
-
-	if (t1 == t2) {
-		return do_op[t1] (op, e1, e2);
-	} else {
-		return type_mismatch (e1, e2, op);
 	}
 }
 
@@ -1629,6 +1203,13 @@ convert_uint (expr_t *e)
 }
 
 void
+convert_short (expr_t *e)
+{
+	e->type = ex_float;
+	e->e.float_val = e->e.short_val;
+}
+
+void
 convert_uint_int (expr_t *e)
 {
 	e->type = ex_integer;
@@ -1664,7 +1245,7 @@ convert_nil (expr_t *e, type_t *t)
 		e->e.pointer.type = &type_void;
 }
 
-static int
+int
 is_compare (int op)
 {
 	if (op == EQ || op == NE || op == LE || op == GE || op == LT || op == GT
@@ -1673,7 +1254,7 @@ is_compare (int op)
 	return 0;
 }
 
-static int
+int
 is_logic (int op)
 {
 	if (op == OR || op == AND)
@@ -1772,10 +1353,8 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		return e1;
 	if (e2->type == ex_error)
 		return e2;
-	if (e1->type == ex_def && e1->e.def->constant)
-		e1 = constant_expr (e1);
-	if (e2->type == ex_def && e2->e.def->constant)
-		e2 = constant_expr (e2);
+	e1 = constant_expr (e1);
+	e2 = constant_expr (e2);
 	t1 = get_type (e1);
 	t2 = get_type (e2);
 	if (!t1 || !t2) {
@@ -1860,26 +1439,23 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		}
 	}
 
-	if (e1->type >= ex_string && e2->type >= ex_string)
-		return binary_const (op, e1, e2);
-
 	if ((e = check_precedence (op, e1, e2)))
 		return e;
 
 	if (t1 != t2) {
 		switch (t1->type) {
 			case ev_float:
-				if (t2 == &type_vector && op == '*') {
+				if (t2 == &type_vector || t2 == &type_quaternion) {
 					type = &type_vector;
 				} else {
-					goto type_mismatch;
+					type = &type_float;
 				}
 				break;
 			case ev_vector:
-				if (t2 == &type_float && op == '*') {
-					type = &type_vector;
+				if (t2 == &type_quaternion) {
+					type = &type_quaternion;
 				} else {
-					goto type_mismatch;
+					type = &type_vector;
 				}
 				break;
 			case ev_field:
@@ -1905,7 +1481,9 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 				break;
 			default:
 			  type_mismatch:
-				return type_mismatch (e1, e2, op);
+				type = t1;
+				break;
+				//return type_mismatch (e1, e2, op);
 		}
 	} else {
 		type = t1;
@@ -2296,11 +1874,11 @@ function_expr (expr_t *e1, expr_t *e2)
 	for (e = e2, i = 0; e; e = e->next, i++) {
 		if (has_function_call (e)) {
 			*a = new_temp_def_expr (arg_types[i]);
-			arg_exprs[arg_expr_count][0] = e;
+			arg_exprs[arg_expr_count][0] = fold_constants (e);
 			arg_exprs[arg_expr_count][1] = *a;
 			arg_expr_count++;
 		} else {
-			*a = e;
+			*a = fold_constants (e);
 		}
 		// new_binary_expr calls inc_users for both args, but in_users doesn't
 		// walk expression chains so only the first arg expression in the chain
@@ -2484,8 +2062,9 @@ array_expr (expr_t *array, expr_t *index)
 		e = address_expr (array, index, array_type->aux_type);
 	} else {
 		if (index->type != ex_short || index->e.integer_val) {
-			e = new_binary_expr ('.', array, index);
-			e->e.expr.type = pointer_type (array_type->aux_type);
+			e = new_binary_expr ('&', array, index);
+			//e->e.expr.type = array_type->aux_type;
+			e->e.expr.type = array_type;
 		} else {
 			e = array;
 		}
@@ -2653,28 +2232,6 @@ assign_expr (expr_t *e1, expr_t *e2)
 	if (e2->type == ex_bool)
 		e2 = convert_from_bool (e2, t1);
 
-	if (e2->type == ex_integer) {
-		if (t1 == &type_float
-			|| t1 == &type_vector
-			|| t1 == &type_quaternion) {
-			convert_int (e2);
-			t2 = &type_float;
-		} else if (t1 == &type_uinteger) {
-			convert_int_uint (e2);
-			t2 = &type_uinteger;
-		}
-	} else if (e2->type == ex_uinteger) {
-		if (t1 == &type_float
-			|| t1 == &type_vector
-			|| t1 == &type_quaternion) {
-			convert_uint (e2);
-			t2 = &type_float;
-		} else if (t1 == &type_integer) {
-			convert_uint_int (e2);
-			t2 = &type_integer;
-		}
-	}
-
 	if (t1->type != ev_void && e2->type == ex_nil) {
 		t2 = t1;
 		convert_nil (e2, t2);
@@ -2726,6 +2283,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 	} else if (is_indirect (e2)) {
 		if (extract_type (e1) == ev_struct) {
 			e2 = address_expr (e2, 0, 0);
+			e2->rvalue = 1;
 			return new_move_expr (e1, e2, get_type (e2));
 		}
 		if (e2->type == ex_uexpr) {
@@ -2738,6 +2296,8 @@ assign_expr (expr_t *e1, expr_t *e2)
 					&& e->e.expr.e1->type < ex_string) {
 					e2 = e;
 					e2->e.expr.op = '.';
+					e2->e.expr.type = t2;
+					e2->rvalue = 1;
 				}
 			}
 		}
@@ -2764,6 +2324,8 @@ cast_expr (type_t *type, expr_t *e)
 	if (e->type == ex_error)
 		return e;
 
+	check_initialized (e);
+
 	e_type = get_type (e);
 
 	if (type == e_type)
@@ -2778,9 +2340,9 @@ cast_expr (type_t *type, expr_t *e)
 				  || e_type == &type_uinteger || e_type->type == ev_pointer))
 			 || (type == &type_float
 				 && (e_type == &type_integer || e_type == &type_uinteger)))) {
-		c = error (e, "can not cast from %s to %s",
-				   pr_type_name[extract_type (e)], pr_type_name[type->type]);
-		return c;
+		return  error (e, "can not cast from %s to %s",
+					   pr_type_name[extract_type (e)],
+					   pr_type_name[type->type]);
 	}
 	if (e->type == ex_uexpr && e->e.expr.op == '.') {
 		e->e.expr.type = type;
@@ -2795,7 +2357,7 @@ cast_expr (type_t *type, expr_t *e)
 void
 init_elements (def_t *def, expr_t *eles)
 {
-	expr_t     *e;
+	expr_t     *e, *c;
 	int         count, i, num_params;
 	pr_type_t  *g;
 	def_t      *elements;
@@ -2835,36 +2397,35 @@ init_elements (def_t *def, expr_t *eles)
 	}
 	for (i = 0, e = eles->e.block.head; i < count; i++, e = e->next) {
 		g = G_POINTER (pr_type_t, elements[i].ofs);
-		if (e->type == ex_def && e->e.def->constant)
-			e = constant_expr (e);
-		if (e->type == ex_block) {
+		c = constant_expr (fold_constants (e));
+		if (c->type == ex_block) {
 			if (elements[i].type->type != ev_array
 				&& elements[i].type->type != ev_struct) {
 				error (e, "type mismatch in initializer");
 				continue;
 			}
-			init_elements (&elements[i], e);
-		} else if (e->type >= ex_string) {
-			if (e->type == ex_integer
+			init_elements (&elements[i], c);
+		} else if (c->type >= ex_string) {
+			if (c->type == ex_integer
 				&& elements[i].type->type == ev_float)
-				convert_int (e);
-			else if (e->type == ex_integer
+				convert_int (c);
+			else if (c->type == ex_integer
 					 && elements[i].type->type == ev_uinteger)
-				convert_int_uint (e);
-			else if (e->type == ex_uinteger
+				convert_int_uint (c);
+			else if (c->type == ex_uinteger
 					 && elements[i].type->type == ev_float)
-				convert_uint (e);
-			else if (e->type == ex_uinteger
+				convert_uint (c);
+			else if (c->type == ex_uinteger
 					 && elements[i].type->type == ev_integer)
-				convert_uint_int (e);
-			if (get_type (e) != elements[i].type) {
+				convert_uint_int (c);
+			if (get_type (c) != elements[i].type) {
 				error (e, "type mismatch in initializer");
 				continue;
 			}
-			if (e->type == ex_string) {
-				EMIT_STRING (g->string_var, e->e.string_val);
+			if (c->type == ex_string) {
+				EMIT_STRING (g->string_var, c->e.string_val);
 			} else {
-				memcpy (g, &e->e, type_size (get_type (e)) * 4);
+				memcpy (g, &c->e, type_size (get_type (c)) * 4);
 			}
 		} else {
 			error (e, "non-constant initializer");

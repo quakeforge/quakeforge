@@ -542,6 +542,16 @@ parse_type (const char *str)
 	return _parse_type (&str);
 }
 
+static int
+is_scalar (type_t *type)
+{
+	etype_t     t = type->type;
+
+	if (t == ev_float || t == ev_integer || t == ev_uinteger || t == ev_short)
+		return 1;
+	return 0;
+}
+
 int
 type_assignable (type_t *dst, type_t *src)
 {
@@ -550,7 +560,7 @@ type_assignable (type_t *dst, type_t *src)
 	if (dst == src)
 		return 1;
 	if (dst->type != ev_pointer || src->type != ev_pointer)
-		return 0;
+		return is_scalar (dst) && is_scalar (src);
 	dst = dst->aux_type;
 	src = src->aux_type;
 	if (dst->type == ev_void)

@@ -100,16 +100,16 @@ expr_t *argv_expr (void);
 %union {
 	int			op;
 	struct def_s *def;
-	struct hashtab_s	*def_list;
-	type_t		*type;
-	expr_t		*expr;
+	struct hashtab_s *def_list;
+	struct type_s	*type;
+	struct expr_s	*expr;
 	int			integer_val;
 	float		float_val;
 	const char *string_val;
 	float		vector_val[3];
 	float		quaternion_val[4];
 	struct function_s *function;
-	struct switch_block_s	*switch_block;
+	struct switch_block_s *switch_block;
 	struct param_s	*param;
 	struct method_s	*method;
 	struct class_s	*class;
@@ -284,8 +284,7 @@ enum
 	| NAME '=' expr
 		{
 			$$ = 0;
-			if ($3->type == ex_def && $3->e.def->constant)
-				$3 = constant_expr ($3);
+			$3 = constant_expr ($3);
 			if ($3->type < ex_string) {
 				error ($3, "non-constant initializer");
 			} else if ($3->type != ex_integer) {
@@ -430,8 +429,7 @@ var_initializer
 							 assign_expr (new_def_expr ($<def>0), $2));
 				def_initialized ($<def>0);
 			} else {
-				if ($2->type == ex_def && $2->e.def->constant)
-					$2 = constant_expr ($2);
+				$2 = constant_expr ($2);
 				if ($2->type >= ex_string) {
 					if ($<def>0->constant) {
 						error ($2, "%s re-initialized", $<def>0->name);
@@ -454,8 +452,7 @@ var_initializer
 		}
 	| '=' '#' expr
 		{
-			if ($3->type == ex_def && $3->e.def->constant)
-				$3 = constant_expr ($3);
+			$3 = constant_expr ($3);
 			build_builtin_function ($<def>0, $3);
 		}
 	| '=' opt_state_expr { $$ = $<def>0; }

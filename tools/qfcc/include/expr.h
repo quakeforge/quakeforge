@@ -32,6 +32,8 @@
 #ifndef __expr_h
 #define __expr_h
 
+#include "QF/pr_comp.h"
+
 typedef enum {
 	ex_error,
 	ex_bool,
@@ -135,6 +137,8 @@ extern etype_t qc_types[];
 extern struct type_s *ev_types[];
 extern expr_type expr_types[];
 
+expr_t *type_mismatch (expr_t *e1, expr_t *e2, int op);
+
 extern expr_t *local_expr;
 
 struct type_s *get_type (expr_t *e);
@@ -166,6 +170,9 @@ expr_t *new_integer_expr (int integer_val);
 expr_t *new_uinteger_expr (unsigned int uinteger_val);
 expr_t *new_short_expr (short short_val);
 
+int is_constant (expr_t *e);
+int is_compare (int op);
+int is_logic (int op);
 expr_t *constant_expr (expr_t *var);
 
 expr_t *new_bind_expr (expr_t *e1, expr_t *e2);
@@ -184,6 +191,7 @@ void print_expr (expr_t *e);
 
 void convert_int (expr_t *e);
 void convert_uint (expr_t *e);
+void convert_short (expr_t *e);
 void convert_uint_int (expr_t *e);
 void convert_int_uint (expr_t *e);
 void convert_short_int (expr_t *e);
@@ -224,5 +232,7 @@ expr_t *encode_expr (struct type_s *type);
 expr_t *super_expr (struct class_type_s *class_type);
 expr_t *message_expr (expr_t *receiver, struct keywordarg_s *message);
 expr_t *sizeof_expr (expr_t *expr, struct type_s *type);
+
+expr_t *fold_constants (expr_t *e);
 
 #endif//__expr_h

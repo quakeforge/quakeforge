@@ -157,7 +157,7 @@ emit_statement (expr_t *e, opcode_t *op, def_t *var_a, def_t *var_b,
 		statement->c = var_c->ofs;
 		ret = var_c;
 	}
-#if 0
+#if 1
 	printf ("%s %s(%d) %s(%d) %s(%d)\n", op->opname,
 			var_a ? var_a->name : "", statement->a,
 			var_b ? var_b->name : "", statement->b,
@@ -413,6 +413,8 @@ emit_deref_expr (expr_t *e, def_t *dest)
 	}
 	if (!dest) {
 		dest = get_tempdef (type, current_scope);
+		dest->line = e->line;
+		dest->file = e->file;
 		dest->users += 2;
 	}
 
@@ -616,6 +618,8 @@ emit_sub_expr (expr_t *e, def_t *dest)
 			operator = get_op_string (e->e.expr.op);
 			if (!dest) {
 				dest = get_tempdef (e->e.expr.type, current_scope);
+				dest->file = e->file;
+				dest->line = e->line;
 				dest->users += 2;
 			}
 			op = opcode_find (operator, def_a->type, def_b->type,
@@ -642,6 +646,8 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					def_b = emit_sub_expr (e->e.expr.e1, 0);
 					if (!dest) {
 						dest = get_tempdef (e->e.expr.type, current_scope);
+						dest->file = e->file;
+						dest->line = e->line;
 						dest->users += 2;
 					}
 					break;
@@ -652,6 +658,8 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					if (e->e.expr.e1->type == ex_expr
 						&& e->e.expr.e1->e.expr.op == '.') {
 						tmp = get_tempdef (e->e.expr.type, current_scope);
+						tmp->file = e->file;
+						tmp->line = e->line;
 						tmp->users += 2;
 						def_b = emit_sub_expr (&zero, 0);
 					} else {
@@ -660,6 +668,8 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					def_a = emit_sub_expr (e->e.expr.e1, tmp);
 					if (!dest) {
 						dest = get_tempdef (e->e.expr.type, current_scope);
+						dest->file = e->file;
+						dest->line = e->line;
 						dest->users += 2;
 					}
 					break;
@@ -694,6 +704,8 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					def_b = &def_void;
 					if (!dest) {
 						dest = get_tempdef (e->e.expr.type, current_scope);
+						dest->file = e->file;
+						dest->line = e->line;
 						dest->users = 2;
 					}
 					operator = "=";
@@ -712,8 +724,11 @@ emit_sub_expr (expr_t *e, def_t *dest)
 			if (!e->e.temp.def) {
 				if (dest)
 					e->e.temp.def = dest;
-				else
+				else {
 					e->e.temp.def = get_tempdef (e->e.temp.type, current_scope);
+					e->e.temp.def->line = e->line;
+					e->e.temp.def->file = e->file;
+				}
 				e->e.temp.def->users = e->e.temp.users;
 				e->e.temp.def->expr = e;
 				e->e.temp.def->managed = 1;

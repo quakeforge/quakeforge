@@ -48,9 +48,9 @@ noinst_PROGRAMS= $(qfodump)
 EXTRA_PROGRAMS= qfcc qfodump
 
 qfcc_SOURCES= \
-	class.c cpp.c debug.c def.c emit.c expr.c function.c idstuff.c \
-	immediate.c linker.c method.c obj_file.c opcodes.c options.c qc-lex.l \
-	qc-parse.y qfcc.c reloc.c strpool.c struct.c switch.c type.c
+	class.c constfold.c cpp.c debug.c def.c emit.c expr.c function.c \
+	idstuff.c immediate.c linker.c method.c obj_file.c opcodes.c options.c \
+	qc-lex.l qc-parse.y qfcc.c reloc.c strpool.c struct.c switch.c type.c
 
 qfcc_LDADD=			$(QFCC_LIBS)
 qfcc_DEPENDENCIES=	$(QFCC_DEPS)
@@ -59,6 +59,6 @@ qfodump_SOURCES=		obj_file.c qfodump.c strpool.c
 qfodump_LDADD=			$(QFCC_LIBS)
 qfodump_DEPENDENCIES=	$(QFCC_DEPS)
 
-emit.c expr.c switch.c qc-lex.l: qc-parse.h
+constfold.$(OBJEXT) emit.$(OBJEXT) expr.$(OBJEXT) switch.$(OBJEXT) qc-lex.$(OBJEXT): qc-parse.h
 
 EXTRA_DIST=qc-lex.c qc-parse.c qc-parse.h
