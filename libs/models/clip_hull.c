@@ -29,9 +29,11 @@
 */
 static const char rcsid[] = 
 	"$Id$";
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
 #include <stdlib.h>
 
 #include "QF/clip_hull.h"
@@ -40,8 +42,7 @@ static const char rcsid[] =
 clip_hull_t *MOD_Alloc_Hull (int nodes, int planes)
 {
 	clip_hull_t *ch;
-	int         size;
-	int         i;
+	int         size, i;
 
 	size = sizeof (hull_t);
 	size += sizeof (dclipnode_t) * nodes + sizeof (mplane_t) * planes;
@@ -51,14 +52,15 @@ clip_hull_t *MOD_Alloc_Hull (int nodes, int planes)
 	ch = calloc (size, 1);
 	if (!ch)
 		return 0;
-	ch->hulls[0] = (hull_t*)&ch[1];
+	ch->hulls[0] = (hull_t *) &ch[1];
 	for (i = 1; i < MAX_MAP_HULLS; i++)
 		ch->hulls[i] = &ch->hulls[i - 1][1];
-	ch->hulls[0]->clipnodes = (dclipnode_t*)&ch->hulls[i - 1][1];
-	ch->hulls[0]->planes = (mplane_t*)&ch->hulls[0]->clipnodes[nodes];
+	ch->hulls[0]->clipnodes = (dclipnode_t *) &ch->hulls[i - 1][1];
+	ch->hulls[0]->planes = (mplane_t *) &ch->hulls[0]->clipnodes[nodes];
 	for (i = 1; i < MAX_MAP_HULLS; i++) {
-		ch->hulls[i]->clipnodes = (dclipnode_t*)&ch->hulls[i - 1]->planes[planes];
-		ch->hulls[i]->planes = (mplane_t*)&ch->hulls[i]->clipnodes[nodes];
+		ch->hulls[i]->clipnodes =
+			(dclipnode_t *) &ch->hulls[i - 1]->planes[planes];
+		ch->hulls[i]->planes = (mplane_t *) &ch->hulls[i]->clipnodes[nodes];
 	}
 	return ch;
 }
