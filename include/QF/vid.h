@@ -84,7 +84,6 @@ extern unsigned short	d_8to16table[256];
 extern unsigned int 	d_8to24table[256];
 
 extern int				scr_width, scr_height;
-extern qboolean 		DDActive;
 extern byte 			gammatable[256];
 extern qboolean			vid_gamma_avail;
 

@@ -51,10 +51,8 @@ static const char rcsid[] =
 #define MAXIMUM_WIN_MEMORY		0x1000000
 
 #define CONSOLE_ERROR_TIMEOUT	60.0	// # of seconds to wait on Sys_Error
-										// running
-										// dedicated before exiting
-#define PAUSE_SLEEP		50				// sleep time on pause or
-										// minimization
+										// running dedicated before exiting
+#define PAUSE_SLEEP		50				// sleep time on pause or minimization
 #define NOT_FOCUS_SLEEP	20				// sleep time when not focus
 
 qboolean    ActiveApp, Minimized;
@@ -90,7 +88,6 @@ findhandle (void)
 }
 
 // SYSTEM IO ==================================================================
-
 
 void
 startup (void)
@@ -175,7 +172,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	int         t;
 	RECT        rect;
 
-	/* previous instances do not exist in Win32 */
+	// previous instances do not exist in Win32
 	if (hPrevInstance)
 		return 0;
 
@@ -279,7 +276,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 
 	oldtime = Sys_DoubleTime ();
 
-	/* main window message loop */
+	// main window message loop
 	while (1) {
 		if (isDedicated) {
 			newtime = Sys_DoubleTime ();
@@ -293,11 +290,11 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		} else {
 			// yield the CPU for a little while when paused, minimized, or
 			// not the focus
-			if ((cl.paused && (!ActiveApp && !DDActive)) || Minimized
+			if ((cl.paused && (!ActiveApp) || Minimized
 				|| block_drawing) {
 				SleepUntilInput (PAUSE_SLEEP);
 				scr_skipupdate = 1;		// no point in bothering to draw
-			} else if (!ActiveApp && !DDActive) {
+			} else if (!ActiveApp) {
 				SleepUntilInput (NOT_FOCUS_SLEEP);
 			}
 
@@ -309,6 +306,6 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		oldtime = newtime;
 	}
 
-	/* return success of application */
+		// return success of application
 	return TRUE;
 }

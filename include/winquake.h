@@ -82,7 +82,6 @@ extern	HINSTANCE	global_hInstance;
 extern	int			global_nCmdShow;
 #ifdef HAVE_DDRAW_H
 extern LPDIRECTDRAW		lpDD;
-extern qboolean			DDActive;
 extern LPDIRECTDRAWSURFACE	lpPrimary;
 extern LPDIRECTDRAWSURFACE	lpFrontBuffer;
 extern LPDIRECTDRAWSURFACE	lpBackBuffer;

@@ -57,21 +57,21 @@ static const char rcsid[] =
 #define MAX_MODE_LIST	30
 #define VID_ROW_SIZE	3
 
-
-/* Unused */
+// Unused
 int			VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes,
 			VGA_planar;
 byte       *VGA_pagebase;
+// end Unused
 
 qboolean    dibonly;
 
-
 HWND        mainwindow;
-
 HWND WINAPI InitializeWindow (HINSTANCE hInstance, int nCmdShow);
 
 int         DIBWidth, DIBHeight;
+/* DDActive is gone, merge into ActiveApp?
 qboolean    DDActive;
+*/
 RECT        WindowRect;
 DWORD       WindowStyle, ExWindowStyle;
 
@@ -91,17 +91,14 @@ static qboolean palette_changed, syscolchg, vid_mode_set, hide_window,
 				pal_is_nostatic;
 static HICON hIcon;
 
-
 #define MODE_WINDOWED			0
 #define MODE_SETTABLE_WINDOW	2
 #define NO_MODE					(MODE_WINDOWED - 1)
 #define MODE_FULLSCREEN_DEFAULT	(MODE_WINDOWED + 3)
 
 // Note that 0 is MODE_WINDOWED
-cvar_t     *vid_mode;
-
-// Note that 0 is MODE_WINDOWED
 // Note that 3 is MODE_FULLSCREEN_DEFAULT
+cvar_t     *vid_mode;
 cvar_t     *_vid_default_mode_win;
 cvar_t     *vid_nopageflip;
 cvar_t     *vid_config_x;
@@ -111,7 +108,6 @@ cvar_t     *vid_windowed_mode;
 cvar_t     *block_switch;
 cvar_t     *vid_window_x;
 cvar_t     *vid_window_y;
-
 
 typedef struct {
 	int         width;
@@ -272,42 +268,6 @@ initFatalError (void)
 	exit (EXIT_FAILURE);
 }
 
-#if 0									// def NEW_SUSPEND
-
-int
-VID_Suspend (MGLDC * dc, int flags)
-{
-	int         i;
-
-	if (flags & MGL_DEACTIVATE) {
-		IN_RestoreOriginalMouseState ();
-		CDAudio_Pause ();
-
-		// keep WM_PAINT from trying to redraw
-		in_mode_set = true;
-		block_drawing = true;
-	} else if (flags & MGL_REACTIVATE) {
-		IN_SetQuakeMouseState ();
-		// fix leftover Alt from any Alt-Tab or the like that switched us away
-		IN_ClearStates ();
-		CDAudio_Resume ();
-		in_mode_set = false;
-
-		block_drawing = false;
-//		vid.recalc_refdef = 1;
-		force_mode_set = 1;
-		i = msg_suppress_1;
-		msg_suppress_1 = 1;
-		VID_Fullscreen_f ();
-		msg_suppress_1 = i;
-		force_mode_set = 0;
-	}
-
-	return 1;
-}
-
-#else
-
 int
 VID_Suspend (MGLDC * dc, int flags)
 {
@@ -346,8 +306,6 @@ VID_Suspend (MGLDC * dc, int flags)
 	return MGL_NO_SUSPEND_APP;
 }
 
-#endif
-
 void
 registerAllDispDrivers (void)
 {
@@ -357,7 +315,7 @@ registerAllDispDrivers (void)
 	MGL_registerDriver (MGL_VGA8NAME, VGA8_driver);
 //	MGL_registerDriver(MGL_VGAXNAME, VGAX_driver);
 
-	/* Register display drivers */
+	// Register display drivers
 	if (useWinDirect) {
 /* we don't want VESA 1.X drivers
 		MGL_registerDriver(MGL_SVGA8NAME, SVGA8_driver);
@@ -376,7 +334,7 @@ registerAllDispDrivers (void)
 void
 registerAllMemDrivers (void)
 {
-	/* Register memory context drivers */
+	// Register memory context drivers
 	MGL_registerDriver (MGL_PACKED8NAME, PACKED8_driver);
 }
 
@@ -592,7 +550,7 @@ VID_InitMGLDIB (HINSTANCE hInstance)
 
 	hIcon = LoadIcon (hInstance, MAKEINTRESOURCE (IDI_ICON1));
 
-	/* Register the frame class */
+	// Register the frame class
 	wc.style = 0;
 	wc.lpfnWndProc = (WNDPROC) MainWndProc;
 	wc.cbClsExtra = 0;
@@ -607,8 +565,8 @@ VID_InitMGLDIB (HINSTANCE hInstance)
 	if (!RegisterClass (&wc))
 		Sys_Error ("Couldn't register window class");
 
-	/* Find the size for the DIB window */
-	/* Initialise the MGL for windowed operation */
+	// Find the size for the DIB window
+	// Initialise the MGL for windowed operation
 	MGL_setAppInstance (hInstance);
 	registerAllMemDrivers ();
 	MGL_initWindowed ("");
@@ -1212,7 +1170,7 @@ VID_SetWindowedMode (int modenum)
 	PatBlt (hdc, 0, 0, WindowRect.right, WindowRect.bottom, BLACKNESS);
 	ReleaseDC (mainwindow, hdc);
 
-	/* Create the MGL window DC and the MGL memory DC */
+	// Create the MGL window DC and the MGL memory DC
 	if ((windc = MGL_createWindowedDC (mainwindow)) == NULL)
 		MGL_fatalError ("Unable to create Windowed DC!");
 
@@ -1366,7 +1324,7 @@ VID_SetFullDIBMode (int modenum)
 	PatBlt (hdc, 0, 0, WindowRect.right, WindowRect.bottom, BLACKNESS);
 	ReleaseDC (mainwindow, hdc);
 
-	/* Create the MGL window DC and the MGL memory DC */
+	// Create the MGL window DC and the MGL memory DC
 	if ((windc = MGL_createWindowedDC (mainwindow)) == NULL)
 		MGL_fatalError ("Unable to create Fullscreen DIB DC!");
 
@@ -1526,8 +1484,7 @@ VID_SetMode (int modenum, unsigned char *palette)
 	Cvar_SetValue (vid_mode, vid_modenum);
 
 	if (!VID_AllocBuffers (vid.width, vid.height)) {
-		// couldn't get memory for this mode; try to fall back to previous
-		// mode
+		// couldn't get memory for this mode; try to fall back to previous mode
 		VID_RestoreOldMode (original_mode);
 		return false;
 	}
@@ -1613,7 +1570,7 @@ VID_UnlockBuffer (void)
 
 	MGL_endDirectAccess ();
 
-// to turn up any unlocked accesses
+	// to turn up any unlocked accesses
 	vid.buffer = vid.conbuffer = vid.direct = d_viewbuffer = NULL;
 }
 
@@ -1907,6 +1864,7 @@ VID_Init (unsigned char *palette)
 		DestroyWindow (hwnd_dialog);
 #endif
 
+// FIXME: remove dead comment and S_Init
 // sound initialization has to go here, preceded by a windowed mode set,
 // so there's a window for DirectSound to work with but we're not yet
 // fullscreen so the "hardware already in use" dialog is visible if it
@@ -2002,7 +1960,7 @@ VID_Shutdown (void)
 void
 FlipScreen (vrect_t *rects)
 {
-	/* Flip the surfaces */
+	// Flip the surfaces
 	if (DDActive) {
 		if (mgldc) {
 			if (memdc) {
@@ -2128,8 +2086,7 @@ VID_Update (vrect_t *rects)
 		if (vid_mode->int_val != vid_realmode) {
 			VID_SetMode (vid_mode->int_val, vid_curpal);
 			Cvar_SetValue (vid_mode, vid_modenum);
-			// so if mode set fails, we don't keep on
-			// trying to set that mode
+			// so if mode set fails, we don't keep on trying to set that mode
 			vid_realmode = vid_modenum;
 		}
 	}
@@ -2306,7 +2263,7 @@ D_EndDirectRect (int x, int y, int width, int height)
 	}
 }
 
-//==========================================================================
+//=============================================================================
 
 /*
   AppActivate
@@ -2449,9 +2406,7 @@ VID_HandlePause (qboolean pause)
 #endif
 }
 
-/*
-  MAIN WINDOW
-*/
+// MAIN WINDOW ================================================================
 
 LONG        CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam,
 									LPARAM lParam);
@@ -2479,10 +2434,8 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case WM_MOVE:
 			VID_UpdateWindowStatus ((int) LOWORD (lParam),
 									(int) HIWORD (lParam));
-
 			if ((modestate == MS_WINDOWED) && !in_mode_set && !Minimized)
 				VID_RememberWindowPos ();
-
 			break;
 
 		case WM_KEYDOWN:
@@ -2536,8 +2489,8 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				Key_Event (QFK_MWHEELUP, -1, true);
 				Key_Event (QFK_MWHEELUP, -1, false);
 			} else {
-					Key_Event (QFK_MWHEELDOWN, -1, true);
-					Key_Event (QFK_MWHEELDOWN, -1, false);
+				Key_Event (QFK_MWHEELDOWN, -1, true);
+				Key_Event (QFK_MWHEELDOWN, -1, false);
 			}
 			break;
 
@@ -2581,11 +2534,11 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case MM_MCINOTIFY:
-			//FIXME lRet = CDAudio_MessageHandler (hWnd, uMsg, wParam, lParam);
+// FIXME	lRet = CDAudio_MessageHandler (hWnd, uMsg, wParam, lParam);
 			break;
 
 		default:
-			/* pass all unhandled messages to DefWindowProc */
+			// pass all unhandled messages to DefWindowProc
 			lRet = DefWindowProc (hWnd, uMsg, wParam, lParam);
 			break;
 
@@ -2635,11 +2588,13 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 			EndPaint (hWnd, &ps);
 			break;
+
 		// KJB: Added these new palette functions
 		case WM_PALETTECHANGED:
 			if ((HWND) wParam == hWnd)
 				break;
-		/* Fall through to WM_QUERYNEWPALETTE */
+
+		// Fall through to WM_QUERYNEWPALETTE
 		case WM_QUERYNEWPALETTE:
 			hdc = GetDC (NULL);
 
@@ -2673,8 +2628,7 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			break;
 	}
 
-	/* return 0 if handled message, 1 if not */
-	return lRet;
+	return lRet;					// return 0 if handled message, 1 if not
 }
 
 
@@ -2860,7 +2814,6 @@ VID_MenuKey (int key)
 			break;
 
 		case K_LEFTARROW:
-
 			S_LocalSound ("misc/menu1.wav");
 			vid_line = ((vid_line / VID_ROW_SIZE) * VID_ROW_SIZE) +
 				((vid_line + 2) % VID_ROW_SIZE);

@@ -1,5 +1,5 @@
 /*
-	sys_win.c
+	cl_sys_win.c
 
 	(description)
 
@@ -84,17 +84,17 @@ startup (void)
 	// allocate named semaphore on client so front end can tell if it's alive
 
 	// mutex will fail if semaphore already exists
-	qwclsemaphore = CreateMutex (NULL, /* Security attributes */
-								 0,	/* owner */
-								 "qwcl"); /* Semaphore name */
+	qwclsemaphore = CreateMutex (NULL,					// Security attributes
+								 0,						// owner
+								 "qwcl");				// Semaphore name
 	if (!qwclsemaphore)
 		Sys_Error ("QWCL is already running on this system");
 	CloseHandle (qwclsemaphore);
 
-	qwclsemaphore = CreateSemaphore (NULL, /* Security attributes */
-									 0,	/* Initial count */
-									 1,	/* Maximum count */
-									 "qwcl"); /* Semaphore name */
+	qwclsemaphore = CreateSemaphore (NULL,				// Security attributes
+									 0,					// Initial count
+									 1,					// Maximum count
+									 "qwcl");			// Semaphore name
 
 	// make sure the timer is high precision, otherwise NT gets 18ms resolution
 	timeBeginPeriod (1);
@@ -143,14 +143,14 @@ int WINAPI
 WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		 int nCmdShow)
 {
-//	MSG               msg;
+//	MSG			msg;
 	static char cwd[1024];
-	double      time, oldtime, newtime;
+	double		time, oldtime, newtime;
 #ifdef SPLASH_SCREEN
-	RECT        rect;
+	RECT		rect;
 #endif
 
-	/* previous instances do not exist in Win32 */
+	// previous instances do not exist in Win32
 	if (hPrevInstance)
 		return 0;
 
@@ -223,14 +223,13 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 
 	oldtime = Sys_DoubleTime ();
 
-	/* main window message loop */
+	// main window message loop
 	while (1) {
 		// yield CPU for a little bit when paused, minimized, or not the focus
-		if ((cl.paused && (!ActiveApp && !DDActive)) || Minimized
-			|| block_drawing) {
+		if ((cl.paused && (!ActiveApp)) || Minimized || block_drawing) {
 			SleepUntilInput (PAUSE_SLEEP);
 			scr_skipupdate = 1;			// no point in bothering to draw
-		} else if (!ActiveApp && !DDActive) {
+		} else if (!ActiveApp) {
 			SleepUntilInput (NOT_FOCUS_SLEEP);
 		}
 
@@ -240,6 +239,6 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		oldtime = newtime;
 	}
 
-	/* return success of application */
+	// return success of application
 	return TRUE;
 }
