@@ -814,7 +814,9 @@ CL_LinkPlayers (void)
 		} else
 			VectorCopy (state->origin, org);
 
-		CL_NewDlight (j, org, state->effects);
+		CL_NewDlight (j, org, state->effects); //FIXME:
+		// appearently, this should be j+1, but that seems nasty for some
+		// things (due to lack of lights?), so I'm leaving this as is for now.
 
 		// the player object never gets added
 		if (j == cl.playernum) {
