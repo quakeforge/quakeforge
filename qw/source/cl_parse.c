@@ -577,6 +577,9 @@ CL_ParseServerData (void)
 		return;
 	}
 
+	// make sure any stuffed commands are done
+	Cbuf_Execute ();
+
 	// wipe the client_state_t struct
 	CL_ClearState ();
 
@@ -651,6 +654,9 @@ CL_ParseServerData (void)
 	CL_SetState (ca_onserver);
 
 	CL_ClearBaselines ();
+
+	// leave full screen intermission
+	vid.recalc_refdef = true;
 }
 
 // LordHavoc: BIG BUG-FIX!  Clear baselines each time it connects...
@@ -760,6 +766,128 @@ CL_ParseModellist (void)
 	cls.downloadnumber = 0;
 	cls.downloadtype = dl_model;
 	Model_NextDownload ();
+}
+
+void
+CL_ParseNOP (void)
+{
+	net_svc_nop_t block;
+
+	if (NET_SVC_NOP_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseNOP: Bad Read\n");
+		return;
+	}
+}
+
+void
+CL_ParseDisconnect (void)
+{
+	net_svc_disconnect_t block;
+
+	if (NET_SVC_Disconnect_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseDisconnect: Bad Read\n");
+		return;
+	}
+
+	if (cls.state == ca_connected)
+		Host_EndGame ("Server disconnected\n"
+					  "Server version may not be compatible");
+	else
+		Host_EndGame ("Server disconnected");
+}
+
+void
+CL_ParseCenterprint (void)
+{
+	net_svc_centerprint_t block;
+
+	if (NET_SVC_Centerprint_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseCenterprint: Bad Read\n");
+		return;
+	}
+
+	SCR_CenterPrint (block.message);
+}
+
+void
+CL_ParseStufftext (void)
+{
+	net_svc_stufftext_t block;
+
+	if (NET_SVC_Stufftext_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseStufftext: Bad Read\n");
+		return;
+	}
+
+	Con_DPrintf ("stufftext: %s\n", block.commands);
+	Cbuf_AddText (block.commands);
+}
+
+void
+CL_ParseSetAngle (void)
+{
+	net_svc_setangle_t block;
+
+	if (NET_SVC_SetAngle_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseSetAngle: Bad Read\n");
+		return;
+	}
+
+	VectorCopy (block.angles, cl.viewangles);
+}
+
+void
+CL_ParseLightStyle (void)
+{
+	lightstyle_t *style;
+	net_svc_lightstyle_t block;
+
+	if (NET_SVC_LightStyle_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseLightStyle: Bad Read\n");
+		return;
+	}
+
+	if (block.stylenum >= MAX_LIGHTSTYLES) {
+		Host_NetError ("svc_lightstyle > MAX_LIGHTSTYLES");
+		return;
+	}
+	style = &r_lightstyle[block.stylenum];
+
+	strncpy (style->map, block.map, sizeof (style->map) - 1);
+	style->map[sizeof (style->map) - 1] = 0;
+	style->length = strlen (style->map);
+}
+
+void
+CL_ParseStopSound (void)
+{
+	net_svc_stopsound_t block;
+
+	if (NET_SVC_StopSound_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseStopSound: Bad Read\n");
+		return;
+	}
+
+	S_StopSound (block.entity, block.channel);
+}
+
+void
+CL_ParseUpdateFrags (void)
+{
+	net_svc_updatefrags_t block;
+
+	if (NET_SVC_UpdateFrags_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseUpdateFrags: Bad Read\n");
+		return;
+	}
+
+	Sbar_Changed ();
+	if (block.player >= MAX_CLIENTS) {
+		Host_NetError ("CL_ParseServerMessage: svc_updatefrags > "
+					   "MAX_SCOREBOARD");
+		return;
+	}
+	cl.players[block.player].frags = block.frags;
 }
 
 void
@@ -914,21 +1042,21 @@ CL_ParseStaticSound (void)
 /* ACTION MESSAGES */
 
 void
-CL_ParseStartSoundPacket (void)
+CL_ParseSound (void)
 {
 	net_svc_sound_t sound;
 
 	if (NET_SVC_Sound_Parse (&sound, net_message)) {
-		Host_NetError ("CL_ParseStartSoundPacket: Bad Read\n");
+		Host_NetError ("CL_ParseSound: Bad Read\n");
 		return;
 	}
 
 	if (sound.entity >= MAX_EDICTS) {
-		Host_NetError ("CL_ParseStartSoundPacket: ent = %i", sound.entity);
+		Host_NetError ("CL_ParseSound: ent = %i", sound.entity);
 		return;
 	}
 	if (sound.sound_num >= MAX_SOUNDS) {
-		Host_NetError ("CL_ParseStartSoundPacket: sound_num = %i",
+		Host_NetError ("CL_ParseSound: sound_num = %i",
 					   sound.sound_num);
 		return;
 	}
@@ -1038,19 +1166,19 @@ CL_ParseUpdateUserInfo (void)
 }
 
 void
-CL_SetInfo (void)
+CL_ParseSetInfo (void)
 {
 	int				flags;
 	player_info_t  *player;
 	net_svc_setinfo_t setinfo;
 
 	if (NET_SVC_SetInfo_Parse (&setinfo, net_message)) {
-		Host_NetError ("CL_SetInfo: Bad Read\n");
+		Host_NetError ("CL_ParseSetInfo: Bad Read\n");
 		return;
 	}
 
 	if (setinfo.slot >= MAX_CLIENTS) {
-		Host_NetError ("CL_SetInfo: slot %i >= MAX_CLIENTS", setinfo.slot);
+		Host_NetError ("CL_ParseSetInfo: slot %i >= MAX_CLIENTS", setinfo.slot);
 		return;
 	}
 
@@ -1069,12 +1197,12 @@ CL_SetInfo (void)
 }
 
 void
-CL_ServerInfo (void)
+CL_ParseServerInfo (void)
 {
 	net_svc_serverinfo_t block;
 
 	if (NET_SVC_ServerInfo_Parse (&block, net_message)) {
-		Host_NetError ("CL_ServerInfo: Bad Read\n");
+		Host_NetError ("CL_ParseServerInfo: Bad Read\n");
 		return;
 	}
 
@@ -1113,6 +1241,32 @@ CL_SetStat (int stat, int value)
 	}
 
 	cl.stats[stat] = value;
+}
+
+void
+CL_ParseKilledMonster (void)
+{
+	net_svc_killedmonster_t block;
+
+	if (NET_SVC_KilledMonster_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseKilledMonster: Bad Read\n");
+		return;
+	}
+
+	cl.stats[STAT_MONSTERS]++;
+}
+
+void
+CL_ParseFoundSecret (void)
+{
+	net_svc_foundsecret_t block;
+
+	if (NET_SVC_FoundSecret_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseFoundSecret: Bad Read\n");
+		return;
+	}
+
+	cl.stats[STAT_SECRETS]++;
 }
 
 void
@@ -1191,6 +1345,45 @@ CL_ParseFinale (void)
 	cl.completed_time = realtime;
 	vid.recalc_refdef = true;	// go to full screen
 	SCR_CenterPrint (block.message);
+}
+
+void
+CL_ParseSellScreen (void)
+{
+	net_svc_sellscreen_t block;
+
+	if (NET_SVC_SellScreen_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseSellScreen: Bad Read\n");
+		return;
+	}
+
+	Cmd_ExecuteString ("help", src_command);
+}
+
+void
+CL_ParseSmallKick (void)
+{
+	net_svc_smallkick_t block;
+
+	if (NET_SVC_SmallKick_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseSmallKick: Bad Read\n");
+		return;
+	}
+
+	cl.punchangle = -2;
+}
+
+void
+CL_ParseBigKick (void)
+{
+	net_svc_bigkick_t block;
+
+	if (NET_SVC_BigKick_Parse (&block, net_message)) {
+		Host_NetError ("CL_ParseBigKick: Bad Read\n");
+		return;
+	}
+
+	cl.punchangle = -4;
 }
 
 void
@@ -1294,8 +1487,7 @@ int         received_framecount;
 void
 CL_ParseServerMessage (void)
 {
-	const char *s;
-	int         cmd, i;
+	int         cmd;
 
 	received_framecount = host_framecount;
 	cl.last_servermessage = realtime;
@@ -1339,202 +1531,50 @@ CL_ParseServerMessage (void)
 							   "server message");
 				break;
 
-			case svc_nop:
-//				Con_Printf ("svc_nop\n");
-				break;
-
-			case svc_disconnect:
-				if (cls.state == ca_connected)
-					Host_EndGame ("Server disconnected\n"
-								  "Server version may not be compatible");
-				else
-					Host_EndGame ("Server disconnected");
-				break;
-
-			case svc_print:
-				CL_ParsePrint ();
-				break;
-
-			case svc_centerprint:
-				SCR_CenterPrint (MSG_ReadString (net_message));
-				break;
-
-			case svc_stufftext:
-				s = MSG_ReadString (net_message);
-				Con_DPrintf ("stufftext: %s\n", s);
-				Cbuf_AddText (s);
-				break;
-
-			case svc_damage:
-				V_ParseDamage ();
-				break;
-
-			case svc_serverdata:
-				Cbuf_Execute ();		// make sure any stuffed commands are 
-										// done
-				CL_ParseServerData ();
-				vid.recalc_refdef = true;	// leave full screen intermission
-				break;
-
-			case svc_setangle:
-				for (i = 0; i < 3; i++)
-					cl.viewangles[i] = MSG_ReadAngle (net_message);
-//				cl.viewangles[PITCH] = cl.viewangles[ROLL] = 0;
-				break;
-
-			case svc_lightstyle:
-				i = MSG_ReadByte (net_message);
-				if (i >= MAX_LIGHTSTYLES)
-//					Sys_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
-					Host_NetError ("svc_lightstyle > MAX_LIGHTSTYLES");
-				strncpy (r_lightstyle[i].map, MSG_ReadString (net_message),
-						 sizeof (r_lightstyle[i].map) - 1);
-				r_lightstyle[i].map[sizeof (r_lightstyle[i].map) - 1] = 0;
-				r_lightstyle[i].length = strlen (r_lightstyle[i].map);
-				break;
-
-			case svc_sound:
-				CL_ParseStartSoundPacket ();
-				break;
-
-			case svc_stopsound:
-				i = MSG_ReadShort (net_message);
-				S_StopSound (i >> 3, i & 7);
-				break;
-
-			case svc_updatefrags:
-				Sbar_Changed ();
-				i = MSG_ReadByte (net_message);
-				if (i >= MAX_CLIENTS)
-					Host_NetError ("CL_ParseServerMessage: svc_updatefrags > "
-								   "MAX_SCOREBOARD");
-				cl.players[i].frags = MSG_ReadShort (net_message);
-				break;
-
-			case svc_updateping:
-				CL_ParseUpdatePing ();
-				break;
-
-			case svc_updatepl:
-				CL_ParseUpdatePL ();
-				break;
-
-			case svc_updateentertime:
-				CL_ParseUpdateEnterTime ();
-				break;
-
-			case svc_spawnbaseline:
-				CL_ParseSpawnBaseline ();
-				break;
-			case svc_spawnstatic:
-				CL_ParseStatic ();
-				break;
-			case svc_temp_entity:
-				CL_ParseTEnt ();
-				break;
-
-			case svc_killedmonster:
-				cl.stats[STAT_MONSTERS]++;
-				break;
-
-			case svc_foundsecret:
-				cl.stats[STAT_SECRETS]++;
-				break;
-
-			case svc_updatestat:
-				CL_ParseUpdateStat ();
-				break;
-			case svc_updatestatlong:
-				CL_ParseUpdateStatLong ();
-				break;
-
-			case svc_spawnstaticsound:
-				CL_ParseStaticSound ();
-				break;
-
-			case svc_cdtrack:
-				CL_ParseCDTrack ();
-				break;
-
-			case svc_intermission:
-				CL_ParseIntermission ();
-				break;
-
-			case svc_finale:
-				CL_ParseFinale ();
-				break;
-
-			case svc_sellscreen:
-				Cmd_ExecuteString ("help", src_command);
-				break;
-
-			case svc_smallkick:
-				cl.punchangle = -2;
-				break;
-			case svc_bigkick:
-				cl.punchangle = -4;
-				break;
-
-			case svc_muzzleflash:
-				CL_ParseMuzzleFlash ();
-				break;
-
-			case svc_updateuserinfo:
-				CL_ParseUpdateUserInfo ();
-				break;
-
-			case svc_setinfo:
-				CL_SetInfo ();
-				break;
-
-			case svc_serverinfo:
-				CL_ServerInfo ();
-				break;
-
-			case svc_download:
-				CL_ParseDownload ();
-				break;
-
-			case svc_playerinfo:
-				CL_ParsePlayerinfo ();
-				break;
-
-			case svc_nails:
-				CL_ParseProjectiles ();
-				break;
-
-			case svc_chokecount:		// some preceding packets were choked
-				CL_ParseChokeCount ();
-				break;
-
-			case svc_modellist:
-				CL_ParseModellist ();
-				break;
-
-			case svc_soundlist:
-				CL_ParseSoundlist ();
-				break;
-
-			case svc_packetentities:
-				CL_ParsePacketEntities ();
-				break;
-
-			case svc_deltapacketentities:
-				CL_ParseDeltaPacketEntities ();
-				break;
-
-			case svc_maxspeed:
-				CL_ParseMaxSpeed ();
-				break;
-
-			case svc_entgravity:
-				CL_ParseEntGravity ();
-				break;
-
-			case svc_setpause:
-				CL_ParseSetPause ();
-				break;
-
+			case svc_nop:				CL_ParseNOP (); break;
+			case svc_disconnect:		CL_ParseDisconnect (); break;
+			case svc_print:				CL_ParsePrint (); break;
+			case svc_centerprint:		CL_ParseCenterprint (); break;
+			case svc_stufftext:			CL_ParseStufftext (); break;
+			case svc_damage:			CL_ParseDamage (); break;
+			case svc_serverdata:		CL_ParseServerData (); break;
+			case svc_setangle:			CL_ParseSetAngle (); break;
+			case svc_lightstyle:		CL_ParseLightStyle (); break;
+			case svc_sound:				CL_ParseSound (); break;
+			case svc_stopsound:			CL_ParseStopSound (); break;
+			case svc_updatefrags:		CL_ParseUpdateFrags (); break;
+			case svc_updateping:		CL_ParseUpdatePing (); break;
+			case svc_updatepl:			CL_ParseUpdatePL (); break;
+			case svc_updateentertime:	CL_ParseUpdateEnterTime (); break;
+			case svc_spawnbaseline:		CL_ParseSpawnBaseline (); break;
+			case svc_spawnstatic:		CL_ParseStatic (); break;
+			case svc_temp_entity:		CL_ParseTEnt (); break;
+			case svc_killedmonster:		CL_ParseKilledMonster (); break;
+			case svc_foundsecret:		CL_ParseFoundSecret (); break;
+			case svc_updatestat:		CL_ParseUpdateStat (); break;
+			case svc_updatestatlong:	CL_ParseUpdateStatLong (); break;
+			case svc_spawnstaticsound:	CL_ParseStaticSound (); break;
+			case svc_cdtrack:			CL_ParseCDTrack (); break;
+			case svc_intermission:		CL_ParseIntermission (); break;
+			case svc_finale:			CL_ParseFinale (); break;
+			case svc_sellscreen:		CL_ParseSellScreen (); break;
+			case svc_smallkick:			CL_ParseSmallKick (); break;
+			case svc_bigkick:			CL_ParseBigKick (); break;
+			case svc_muzzleflash:		CL_ParseMuzzleFlash (); break;
+			case svc_updateuserinfo:	CL_ParseUpdateUserInfo (); break;
+			case svc_setinfo:			CL_ParseSetInfo (); break;
+			case svc_serverinfo:		CL_ParseServerInfo (); break;
+			case svc_download:			CL_ParseDownload (); break;
+			case svc_playerinfo:		CL_ParsePlayerinfo (); break;
+			case svc_nails:				CL_ParseProjectiles (); break;
+			case svc_chokecount:		CL_ParseChokeCount (); break;
+			case svc_modellist:			CL_ParseModellist (); break;
+			case svc_soundlist:			CL_ParseSoundlist (); break;
+			case svc_packetentities:	CL_ParsePacketEntities (); break;
+			case svc_deltapacketentities: CL_ParseDeltaPacketEntities (); break;
+			case svc_maxspeed:			CL_ParseMaxSpeed (); break;
+			case svc_entgravity:		CL_ParseEntGravity (); break;
+			case svc_setpause:			CL_ParseSetPause (); break;
 		}
 	}
 

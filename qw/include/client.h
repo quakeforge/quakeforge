@@ -338,6 +338,8 @@ void CL_UpdateScreen (double realtime);
 
 void CL_SetState (cactive_t state);
 
+void CL_ParseDamage (void);
+
 void V_PrepBlend (void);
 
 #define RSSHOT_WIDTH 320

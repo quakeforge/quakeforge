@@ -241,14 +241,14 @@ V_DriftPitch (void)
 /* PALETTE FLASHES */
 
 void
-V_ParseDamage (void)
+CL_ParseDamage (void)
 {
 	float		count, side;
 	vec3_t		forward, right, up;
 	net_svc_damage_t damage;
 
 	if (NET_SVC_Damage_Parse (&damage, net_message)) {
-		Host_NetError ("V_ParseDamage: Bad Read\n");
+		Host_NetError ("CL_ParseDamage: Bad Read\n");
 		return;
 	}
 

@@ -48,7 +48,6 @@ void V_StopPitchDrift (void);
 void V_RenderView (void);
 void V_UpdatePalette (void);
 void V_Register (void);
-void V_ParseDamage (void);
 void V_SetContentsColor (int contents);
 void V_CalcBlend (void);
 

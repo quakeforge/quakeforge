@@ -42,11 +42,30 @@ typedef enum
 	NET_ERROR
 } net_status_t;
 
+
+typedef struct net_svc_nop_s
+{
+} net_svc_nop_t;
+
+typedef struct net_svc_disconnect_s
+{
+} net_svc_disconnect_t;
+
 typedef struct net_svc_print_s
 {
 	byte		level;
 	const char *message;
 } net_svc_print_t;
+
+typedef struct net_svc_centerprint_s
+{
+	const char *message;
+} net_svc_centerprint_t;
+
+typedef struct net_svc_stufftext_s
+{
+	const char *commands;
+} net_svc_stufftext_t;
 
 typedef struct net_svc_damage_s
 {
@@ -66,6 +85,17 @@ typedef struct net_svc_serverdata_s
 	movevars_t	movevars;
 } net_svc_serverdata_t;
 
+typedef struct net_svc_setangle_s
+{
+	vec3_t		angles;
+} net_svc_setangle_t;
+
+typedef struct net_svc_lightstyle_s
+{
+	byte		stylenum;
+	const char *map;
+} net_svc_lightstyle_t;
+
 typedef struct net_svc_sound_s
 {
 	short		channel;
@@ -75,6 +105,18 @@ typedef struct net_svc_sound_s
 	vec3_t		position;
 	int			entity;
 } net_svc_sound_t;
+
+typedef struct net_svc_stopsound_s
+{
+	int			entity;
+	int			channel;
+} net_svc_stopsound_t;
+
+typedef struct net_svc_updatefrags_s
+{
+	byte		player;
+	short		frags;
+} net_svc_updatefrags_t;
 
 typedef struct net_svc_updateping_s
 {
@@ -126,6 +168,14 @@ typedef struct net_svc_tempentity_s
 	short		beamentity; // beam entity
 } net_svc_tempentity_t;
 
+typedef struct net_svc_killedmonster_s
+{
+} net_svc_killedmonster_t;
+
+typedef struct net_svc_foundsecret_s
+{
+} net_svc_foundsecret_t;
+
 typedef struct net_svc_spawnstaticsound_s
 {
 	vec3_t		position;
@@ -161,6 +211,18 @@ typedef struct net_svc_finale_s
 {
 	const char *message;
 } net_svc_finale_t;
+
+typedef struct net_svc_sellscreen_s
+{
+} net_svc_sellscreen_t;
+
+typedef struct net_svc_smallkick_s
+{
+} net_svc_smallkick_t;
+
+typedef struct net_svc_bigkick_s
+{
+} net_svc_bigkick_t;
 
 typedef struct net_svc_muzzleflash_s
 {
@@ -271,15 +333,39 @@ typedef struct net_svc_setpause_s
 } net_svc_setpause_t;
 
 const char *NET_SVC_GetString (int type);
+net_status_t NET_SVC_NOP_Emit (net_svc_nop_t *block, sizebuf_t *buf);
+net_status_t NET_SVC_NOP_Parse (net_svc_nop_t *block, msg_t *msg);
+net_status_t NET_SVC_Disconnect_Emit (net_svc_disconnect_t *block,
+									  sizebuf_t *buf);
+net_status_t NET_SVC_Disconnect_Parse (net_svc_disconnect_t *block, msg_t *msg);
 net_status_t NET_SVC_Print_Emit (net_svc_print_t *block, sizebuf_t *buf);
 net_status_t NET_SVC_Print_Parse (net_svc_print_t *block, msg_t *msg);
+net_status_t NET_SVC_Centerprint_Emit (net_svc_centerprint_t *block,
+									   sizebuf_t *buf);
+net_status_t NET_SVC_Centerprint_Parse (net_svc_centerprint_t *block,
+										msg_t *msg);
+net_status_t NET_SVC_Stufftext_Emit (net_svc_stufftext_t *block,
+									 sizebuf_t *buf);
+net_status_t NET_SVC_Stufftext_Parse (net_svc_stufftext_t *block, msg_t *msg);
 net_status_t NET_SVC_Damage_Emit (net_svc_damage_t *block, sizebuf_t *buf);
 net_status_t NET_SVC_Damage_Parse (net_svc_damage_t *block, msg_t *msg);
 net_status_t NET_SVC_ServerData_Emit (net_svc_serverdata_t *block,
 									  sizebuf_t *buf);
 net_status_t NET_SVC_ServerData_Parse (net_svc_serverdata_t *block, msg_t *msg);
+net_status_t NET_SVC_SetAngle_Emit (net_svc_setangle_t *block, sizebuf_t *buf);
+net_status_t NET_SVC_SetAngle_Parse (net_svc_setangle_t *block, msg_t *msg);
+net_status_t NET_SVC_LightStyle_Emit (net_svc_lightstyle_t *block,
+									  sizebuf_t *buf);
+net_status_t NET_SVC_LightStyle_Parse (net_svc_lightstyle_t *block, msg_t *msg);
 net_status_t NET_SVC_Sound_Emit (net_svc_sound_t *block, sizebuf_t *buf);
 net_status_t NET_SVC_Sound_Parse (net_svc_sound_t *block, msg_t *msg);
+net_status_t NET_SVC_StopSound_Emit (net_svc_stopsound_t *block,
+									 sizebuf_t *buf);
+net_status_t NET_SVC_StopSound_Parse (net_svc_stopsound_t *block, msg_t *msg);
+net_status_t NET_SVC_UpdateFrags_Emit (net_svc_updatefrags_t *block,
+									   sizebuf_t *buf);
+net_status_t NET_SVC_UpdateFrags_Parse (net_svc_updatefrags_t *block,
+										msg_t *msg);
 net_status_t NET_SVC_UpdatePing_Emit (net_svc_updateping_t *block,
 									  sizebuf_t *buf);
 net_status_t NET_SVC_UpdatePing_Parse (net_svc_updateping_t *block, msg_t *msg);
@@ -300,6 +386,14 @@ net_status_t NET_SVC_SpawnStatic_Parse (net_svc_spawnstatic_t *block,
 net_status_t NET_SVC_TempEntity_Emit (net_svc_tempentity_t *block,
 									  sizebuf_t *buf);
 net_status_t NET_SVC_TempEntity_Parse (net_svc_tempentity_t *block, msg_t *msg);
+net_status_t NET_SVC_KilledMonster_Emit (net_svc_killedmonster_t *block,
+										 sizebuf_t *buf);
+net_status_t NET_SVC_KilledMonster_Parse (net_svc_killedmonster_t *block,
+										  msg_t *msg);
+net_status_t NET_SVC_FoundSecret_Emit (net_svc_foundsecret_t *block,
+									   sizebuf_t *buf);
+net_status_t NET_SVC_FoundSecret_Parse (net_svc_foundsecret_t *block,
+										msg_t *msg);
 net_status_t NET_SVC_SpawnStaticSound_Emit (net_svc_spawnstaticsound_t *block,
 											sizebuf_t *buf);
 net_status_t NET_SVC_SpawnStaticSound_Parse (net_svc_spawnstaticsound_t *block,
@@ -319,6 +413,14 @@ net_status_t NET_SVC_Intermission_Parse (net_svc_intermission_t *block,
 										 msg_t *msg);
 net_status_t NET_SVC_Finale_Emit (net_svc_finale_t *block, sizebuf_t *buf);
 net_status_t NET_SVC_Finale_Parse (net_svc_finale_t *block, msg_t *msg);
+net_status_t NET_SVC_SellScreen_Emit (net_svc_sellscreen_t *block,
+									  sizebuf_t *buf);
+net_status_t NET_SVC_SellScreen_Parse (net_svc_sellscreen_t *block, msg_t *msg);
+net_status_t NET_SVC_SmallKick_Emit (net_svc_smallkick_t *block,
+									 sizebuf_t *buf);
+net_status_t NET_SVC_SmallKick_Parse (net_svc_smallkick_t *block, msg_t *msg);
+net_status_t NET_SVC_BigKick_Emit (net_svc_bigkick_t *block, sizebuf_t *buf);
+net_status_t NET_SVC_BigKick_Parse (net_svc_bigkick_t *block, msg_t *msg);
 net_status_t NET_SVC_MuzzleFlash_Emit (net_svc_muzzleflash_t *block,
 									   sizebuf_t *buf);
 net_status_t NET_SVC_MuzzleFlash_Parse (net_svc_muzzleflash_t *block,

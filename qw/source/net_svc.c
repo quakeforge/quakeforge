@@ -123,6 +123,30 @@ NET_SVC_GetString (int type)
 
 
 net_status_t
+NET_SVC_NOP_Emit (net_svc_nop_t *block, sizebuf_t *buf)
+{
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_NOP_Parse (net_svc_nop_t *block, msg_t *msg)
+{
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_Disconnect_Emit (net_svc_disconnect_t *block, sizebuf_t *buf)
+{
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_Disconnect_Parse (net_svc_disconnect_t *block, msg_t *msg)
+{
+	return msg->badread;
+}
+
+net_status_t
 NET_SVC_Print_Emit (net_svc_print_t *block, sizebuf_t *buf)
 {
 	MSG_WriteByte (buf, block->level);
@@ -136,6 +160,38 @@ NET_SVC_Print_Parse (net_svc_print_t *block, msg_t *msg)
 {
 	block->level = MSG_ReadByte (msg);
 	block->message = MSG_ReadString (msg);
+
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_Centerprint_Emit (net_svc_centerprint_t *block, sizebuf_t *buf)
+{
+	MSG_WriteString (buf, block->message);
+
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_Centerprint_Parse (net_svc_centerprint_t *block, msg_t *msg)
+{
+	block->message = MSG_ReadString (msg);
+
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_Stufftext_Emit (net_svc_stufftext_t *block, sizebuf_t *buf)
+{
+	MSG_WriteString (buf, block->commands);
+
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_Stufftext_Parse (net_svc_stufftext_t *block, msg_t *msg)
+{
+	block->commands = MSG_ReadString (msg);
 
 	return msg->badread;
 }
@@ -218,6 +274,46 @@ NET_SVC_ServerData_Parse (net_svc_serverdata_t *block, msg_t *msg)
 }
 
 net_status_t
+NET_SVC_SetAngle_Emit (net_svc_setangle_t *block, sizebuf_t *buf)
+{
+	int i;
+
+	for (i = 0; i < 3; i++)
+		MSG_WriteAngle (buf, block->angles[i]);
+
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_SetAngle_Parse (net_svc_setangle_t *block, msg_t *msg)
+{
+	int i;
+
+	for (i = 0; i < 3; i++)
+		block->angles[i] = MSG_ReadAngle (msg);
+
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_LightStyle_Emit (net_svc_lightstyle_t *block, sizebuf_t *buf)
+{
+	MSG_WriteByte (buf, block->stylenum);
+	MSG_WriteString (buf, block->map);
+
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_LightStyle_Parse (net_svc_lightstyle_t *block, msg_t *msg)
+{
+	block->stylenum = MSG_ReadByte (msg);
+	block->map = MSG_ReadString (msg);
+
+	return msg->badread;
+}
+
+net_status_t
 NET_SVC_Sound_Emit (net_svc_sound_t *block, sizebuf_t *buf)
 {
 	int i, header;
@@ -264,6 +360,42 @@ NET_SVC_Sound_Parse (net_svc_sound_t *block, msg_t *msg)
 
 	block->entity = (header >> 3) & 1023;
 	block->channel = header & 7;
+
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_StopSound_Emit (net_svc_stopsound_t *block, sizebuf_t *buf)
+{
+	MSG_WriteShort (buf, (block->entity << 3) & (block->channel & 7));
+
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_StopSound_Parse (net_svc_stopsound_t *block, msg_t *msg)
+{
+	int i = MSG_ReadShort (msg);
+	block->entity = i >> 3;
+	block->channel = i & 7;
+
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_UpdateFrags_Emit (net_svc_updatefrags_t *block, sizebuf_t *buf)
+{
+	MSG_WriteByte (buf, block->player);
+	MSG_WriteShort (buf, block->frags);
+
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_UpdateFrags_Parse (net_svc_updatefrags_t *block, msg_t *msg)
+{
+	block->player = MSG_ReadByte (msg);
+	block->frags = MSG_ReadShort (msg);
 
 	return msg->badread;
 }
@@ -494,6 +626,30 @@ NET_SVC_TempEntity_Parse (net_svc_tempentity_t *block, msg_t *msg)
 }
 
 net_status_t
+NET_SVC_KilledMonster_Emit (net_svc_killedmonster_t *block, sizebuf_t *buf)
+{
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_KilledMonster_Parse (net_svc_killedmonster_t *block, msg_t *msg)
+{
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_FoundSecret_Emit (net_svc_foundsecret_t *block, sizebuf_t *buf)
+{
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_FoundSecret_Parse (net_svc_foundsecret_t *block, msg_t *msg)
+{
+	return msg->badread;
+}
+
+net_status_t
 NET_SVC_SpawnStaticSound_Emit (net_svc_spawnstaticsound_t *block,
 							   sizebuf_t *buf)
 {
@@ -614,6 +770,42 @@ NET_SVC_Finale_Parse (net_svc_finale_t *block, msg_t *msg)
 {
 	block->message = MSG_ReadString (msg);
 
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_SellScreen_Emit (net_svc_sellscreen_t *block, sizebuf_t *buf)
+{
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_SellScreen_Parse (net_svc_sellscreen_t *block, msg_t *msg)
+{
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_SmallKick_Emit (net_svc_smallkick_t *block, sizebuf_t *buf)
+{
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_SmallKick_Parse (net_svc_smallkick_t *block, msg_t *msg)
+{
+	return msg->badread;
+}
+
+net_status_t
+NET_SVC_BigKick_Emit (net_svc_bigkick_t *block, sizebuf_t *buf)
+{
+	return buf->overflowed;
+}
+
+net_status_t
+NET_SVC_BigKick_Parse (net_svc_bigkick_t *block, msg_t *msg)
+{
 	return msg->badread;
 }
 
@@ -1016,7 +1208,7 @@ NET_SVC_Delta_Emit (entity_state_t *es, unsigned int bits, sizebuf_t *buf)
 }
 
 // this is a sub-block, not a real block
-void
+static void
 NET_SVC_Delta_Parse (entity_state_t *es, unsigned int bits, msg_t *msg)
 {
 	// bytes of bits: [EXT2][EXT1][ORIG][MORE]
