@@ -704,12 +704,15 @@ PF_sprintf (progs_t *pr)
 											   "%d", fmt_minwidth))
 					>= sizeof (new_format))
 					PR_Error (pr, "PF_sprintf: new_format overflowed?!");
-			new_format[new_format_i++] = '.';
-			if ((new_format_i += snprintf (new_format + new_format_i,
-										   sizeof (new_format) - new_format_i,
-										   "%d", fmt_precision))
-				>= sizeof (new_format))
-				PR_Error (pr, "PF_sprintf: new_format overflowed?!");
+			if (fmt_type != 'i') {
+				new_format[new_format_i++] = '.';
+				if ((new_format_i += snprintf (new_format + new_format_i,
+											   sizeof (new_format)
+												   - new_format_i,
+											   "%d", fmt_precision))
+					>= sizeof (new_format))
+					PR_Error (pr, "PF_sprintf: new_format overflowed?!");
+			}
 			switch (fmt_type) {
 				case 'i': new_format[new_format_i++] = 'd'; break;
 				case 'f':
@@ -731,6 +734,7 @@ PF_sprintf (progs_t *pr)
 							goto mallocerror;
 						out = o;
 					}
+					printf ("%s %d %s\n", out, ret, new_format);
 					out_size += ret;
 					curarg += 3;
 					break;
