@@ -158,7 +158,7 @@ expr_t *argv_expr (void);
 %type	<param> function_decl
 %type	<param>	param param_list
 %type	<def>	def_name opt_initializer methoddef var_initializer
-%type	<expr>	const opt_expr expr element_list element_list1 element
+%type	<expr>	const opt_expr fexpr expr element_list element_list1 element
 %type	<expr>	string_val opt_state_expr array_decl
 %type	<expr>	statement statements statement_block
 %type	<expr>	label break_label continue_label enum_list enum
@@ -281,7 +281,7 @@ enum_list
 
 enum
 	: NAME { $$ = new_name_expr ($1); }
-	| NAME '=' expr
+	| NAME '=' fexpr
 		{
 			$$ = 0;
 			$3 = constant_expr ($3);
@@ -421,7 +421,7 @@ opt_initializer
 	;
 
 var_initializer
-	: '=' expr
+	: '=' fexpr
 		{
 			if (current_scope->type == sc_local
 				|| current_scope->type == sc_params) {
@@ -450,7 +450,7 @@ var_initializer
 			init_elements ($<def>0, $4);
 			current_init = 0;
 		}
-	| '=' '#' expr
+	| '=' '#' fexpr
 		{
 			$3 = constant_expr ($3);
 			build_builtin_function ($<def>0, $3);
@@ -525,7 +525,7 @@ element
 		{
 			$$ = $3;
 		}
-	| expr
+	| fexpr
 		{
 			$$ = $1;
 		}
@@ -606,7 +606,7 @@ statements
 statement
 	: ';' { $$ = 0; }
 	| statement_block { $$ = $1; }
-	| RETURN expr ';'
+	| RETURN fexpr ';'
 		{
 			$$ = return_expr (current_func, $2);
 		}
@@ -630,7 +630,7 @@ statement
 			else
 				error (0, "continue outside of loop");
 		}
-	| CASE expr ':'
+	| CASE fexpr ':'
 		{
 			$$ = case_label_expr (switch_block, $2);
 		}
@@ -638,7 +638,7 @@ statement
 		{
 			$$ = case_label_expr (switch_block, 0);
 		}
-	| SWITCH break_label switch_block '(' expr ')'
+	| SWITCH break_label switch_block '(' fexpr ')'
 		{
 			switch_block->test = $5;
 		}
@@ -650,7 +650,7 @@ statement
 			switch_block = $3;
 			break_label = $2;
 		}
-	| WHILE break_label continue_label '(' expr ')' save_inits statement
+	| WHILE break_label continue_label '(' fexpr ')' save_inits statement
 		{
 			expr_t *l1 = new_label_expr ();
 			expr_t *l2 = break_label;
@@ -684,7 +684,7 @@ statement
 			pr.source_line = line;
 			pr.source_file = file;
 		}
-	| DO break_label continue_label statement WHILE '(' expr ')' ';'
+	| DO break_label continue_label statement WHILE '(' fexpr ')' ';'
 		{
 			expr_t *l1 = new_label_expr ();
 			int         line = pr.source_line;
@@ -724,7 +724,7 @@ statement
 			$$ = local_expr;
 			local_expr = 0;
 		}
-	| IF '(' expr ')' save_inits statement
+	| IF '(' fexpr ')' save_inits statement
 		{
 			expr_t *tl = new_label_expr ();
 			expr_t *fl = new_label_expr ();
@@ -753,7 +753,7 @@ statement
 			pr.source_line = line;
 			pr.source_file = file;
 		}
-	| IF '(' expr ')' save_inits statement ELSE
+	| IF '(' fexpr ')' save_inits statement ELSE
 		{
 			$<def_list>$ = save_local_inits (current_scope);
 			restore_local_inits ($5);
@@ -849,7 +849,7 @@ statement
 			pr.source_line = line;
 			pr.source_file = file;
 		}
-	| expr ';'
+	| fexpr ';'
 		{
 			$$ = $1;
 		}
@@ -894,7 +894,7 @@ save_inits
 	;
 
 opt_expr
-	: expr
+	: fexpr
 	| /* empty */
 		{
 			$$ = 0;
@@ -959,14 +959,17 @@ expr
 	| expr '%' expr				{ $$ = binary_expr ('%', $1, $3); }
 	;
 
+fexpr
+	: expr						{ $$ = fold_constants ($1); }
+
 opt_arg_list
 	: /* emtpy */				{ $$ = 0; }
 	| arg_list					{ $$ = $1; }
 	;
 
 arg_list
-	: expr
-	| arg_list ',' expr
+	: fexpr
+	| arg_list ',' fexpr
 		{
 			$3->next = $1;
 			$$ = $3;
@@ -1393,7 +1396,7 @@ obj_messageexpr
 	;
 
 receiver
-	: expr
+	: fexpr
 	| CLASS_NAME				{ $$ = new_name_expr ($1); }
 	| SUPER						{ $$ = new_name_expr ("super"); }
 	;

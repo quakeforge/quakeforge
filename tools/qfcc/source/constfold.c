@@ -1292,19 +1292,18 @@ fold_constants (expr_t *e)
 		return e1;
 	t1 = extract_type (e1);
 
-	if (e->e.expr.e2) {
-		e->e.expr.e2 = e2 = fold_constants (e->e.expr.e2);
-		if (e2->type == ex_error)
-			return e2;
+	if (op == 'i' || op == 'n' || op == 'c')
+		return e;
 
-		if (e2->type == ex_label)
-			return e;
+	e->e.expr.e2 = e2 = fold_constants (e->e.expr.e2);
+	if (e2->type == ex_error)
+		return e2;
 
-		t2 = extract_type (e2);
-	} else {
-		t2 = ev_void;
-		e2 = 0;
-	}
+	if (e2->type == ex_label)
+		return e;
+
+	t2 = extract_type (e2);
+
 	if (op == 's')
 		return e;
 

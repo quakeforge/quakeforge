@@ -1874,11 +1874,11 @@ function_expr (expr_t *e1, expr_t *e2)
 	for (e = e2, i = 0; e; e = e->next, i++) {
 		if (has_function_call (e)) {
 			*a = new_temp_def_expr (arg_types[i]);
-			arg_exprs[arg_expr_count][0] = fold_constants (e);
+			arg_exprs[arg_expr_count][0] = e;
 			arg_exprs[arg_expr_count][1] = *a;
 			arg_expr_count++;
 		} else {
-			*a = fold_constants (e);
+			*a = e;
 		}
 		// new_binary_expr calls inc_users for both args, but in_users doesn't
 		// walk expression chains so only the first arg expression in the chain
@@ -2397,7 +2397,7 @@ init_elements (def_t *def, expr_t *eles)
 	}
 	for (i = 0, e = eles->e.block.head; i < count; i++, e = e->next) {
 		g = G_POINTER (pr_type_t, elements[i].ofs);
-		c = constant_expr (fold_constants (e));
+		c = constant_expr (e);
 		if (c->type == ex_block) {
 			if (elements[i].type->type != ev_array
 				&& elements[i].type->type != ev_struct) {

@@ -206,7 +206,6 @@ build_builtin_function (def_t *def, expr_t *bi_val)
 		return 0;
 	}
 
-	bi_val = fold_constants (bi_val);
 	if (bi_val->type != ex_integer && bi_val->type != ex_float) {
 		error (bi_val, "invalid constant for = #");
 		return 0;
@@ -263,7 +262,6 @@ emit_function (function_t *f, expr_t *e)
 		//print_expr (e);
 		//puts("");
 
-		fold_constants (e);
 		emit_expr (e);
 		e = e->next;
 	}
