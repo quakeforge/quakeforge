@@ -128,10 +128,10 @@ AC_CHECK_HEADERS(
 	direct.h dirent.h dlfcn.h dmedia/audio.h dmedia/cdaudio.h dpmi.h \
 	dsound.h errno.h execinfo.h fcntl.h io.h  libc.h limits.h linux/cdrom.h \
 	linux/joystick.h linux/soundcard.h machine/soundcard.h malloc.h math.h \
-	mgraph.h _mingw.h netdb.h  netinet/in.h pwd.h rpc/types.h setjmp.h \
-	signal.h stdarg.h stdio.h stdlib.h string.h strings.h sys/asoundlib.h \
-	sys/audioio.h sys/filio.h sys/ioctl.h sys/io.h sys/ipc.h sys/mman.h \
-	sys/param.h sys/poll.h sys/shm.h sys/signal.h sys/socket.h \
+	mgraph.h _mingw.h netdb.h  netinet/in.h process.h pwd.h rpc/types.h \
+	setjmp.h signal.h stdarg.h stdio.h stdlib.h string.h strings.h \
+	sys/asoundlib.h sys/audioio.h sys/filio.h sys/ioctl.h sys/io.h sys/ipc.h \
+	sys/mman.h sys/param.h sys/poll.h sys/shm.h sys/signal.h sys/socket.h \
 	sys/soundcard.h sys/stat.h sys/time.h sys/types.h termios.h time.h \
 	unistd.h vgakeyboard.h vgamouse.h windows.h winsock.h
 )
@@ -344,10 +344,13 @@ if test "x$ac_cv_func_vsnprintf" = "xno" -a \
 	AC_CHECK_LIB(db,vsnprintf)
 fi
 
+WINMM=""
 case "$target_os" in
 	cygwin*)
+		WINMM="-lwinmm"
 	;;
 	mingw32*)
+		WINMM="-lwinmm"
 	;;
 	*)
 		dnl Checks for working -lm
@@ -1717,8 +1720,8 @@ AC_SUBST(VID_REND_TARGETS)
 AC_SUBST(VID_REND_NOINST_TARGETS)
 AC_SUBST(VID_TARGETS)
 
-QFCC_LIBS='$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la'
-QFCC_DEPS="${QFCC_LIBS}"
+QFCC_DEPS='$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la'
+QFCC_LIBS="${QFCC_DEPS} ${WINMM}"
 QFCC_INCS='-I$(top_srcdir)/tools/qfcc/include'
 AC_SUBST(QFCC_LIBS)
 AC_SUBST(QFCC_DEPS)
