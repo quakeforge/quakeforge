@@ -65,6 +65,7 @@ extern int  part_tex_smoke_ring[8];
 
 int         ramp[8] = { 0x6d, 0x6b, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
 
+
 inline particle_t *
 particle_new (ptype_t type, int texnum, vec3_t org, float scale, vec3_t vel,
 			  float die, byte color, byte alpha, vec3_t up, vec3_t right)
@@ -93,6 +94,7 @@ particle_new (ptype_t type, int texnum, vec3_t org, float scale, vec3_t vel,
 	return part;
 }
 
+
 inline particle_t *
 particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 					 float scale, int vel_fuzz, float die, byte color,
@@ -110,6 +112,7 @@ particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 	return particle_new (type, texnum, porg, scale, pvel, die, color, alpha, vec3_origin, vec3_origin);
 }
 
+
 /*
 	R_MaxParticlesCheck
 
@@ -117,7 +120,6 @@ particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 	Thanks to a LOT of help from Taniwha, Deek, Mercury, Lordhavoc, and
 	lots of others.
 */
-
 void
 R_MaxParticlesCheck (cvar_t *var)
 {
@@ -146,9 +148,6 @@ R_MaxParticlesCheck (cvar_t *var)
 	R_ClearParticles();
 }
 
-/*
-R_Particles_Init_Cvars
-*/
 
 void
 R_Particles_Init_Cvars (void)
@@ -160,14 +159,13 @@ R_Particles_Init_Cvars (void)
 					"Maximum amount of particles to display. No maximum, minimum is 0, although it's best to use r_particles 0 instead.");
 }
 
-/*
-	R_ClearParticles
-*/
+
 void
 R_ClearParticles (void)
 {
 	numparticles = 0;
 }
+
 
 void
 R_ReadPointFile_f (void)
@@ -217,9 +215,7 @@ R_ReadPointFile_f (void)
 	Con_Printf ("%i points read\n", c);
 }
 
-/*
-	R_ParticleExplosion
-*/
+
 void
 R_ParticleExplosion (vec3_t org)
 {
@@ -231,9 +227,7 @@ R_ParticleExplosion (vec3_t org)
 						 128 + (rand () & 63));
 }
 
-/*
-	R_BlobExplosion
-*/
+
 void
 R_BlobExplosion (vec3_t org)
 {
@@ -254,6 +248,7 @@ R_BlobExplosion (vec3_t org)
 	}
 }
 
+
 static void
 R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 {
@@ -268,6 +263,7 @@ R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 							 1, 96, cl.time + 5, ramp[rand () % 6], 
 							 lhrandom (0, 255));
 }
+
 
 static void
 R_RunGunshotEffect (vec3_t org, int count)
@@ -286,6 +282,7 @@ R_RunGunshotEffect (vec3_t org, int count)
 	return;
 }
 
+
 static void
 R_BloodPuff (vec3_t org, int count)
 {
@@ -297,9 +294,7 @@ R_BloodPuff (vec3_t org, int count)
 				  vec3_origin, vec3_origin);
 }
 
-/*
-	R_RunPuffEffect
-*/
+
 void
 R_RunPuffEffect (vec3_t org, byte type, byte count)
 {
@@ -319,9 +314,7 @@ R_RunPuffEffect (vec3_t org, byte type, byte count)
 	}
 }
 
-/*
-	R_RunParticleEffect
-*/
+
 void
 R_RunParticleEffect (vec3_t org, int color, int count)
 {
@@ -348,6 +341,7 @@ R_RunParticleEffect (vec3_t org, int color, int count)
 	}
 }
 
+
 void
 R_RunSpikeEffect (vec3_t org, byte type)
 {
@@ -367,9 +361,7 @@ R_RunSpikeEffect (vec3_t org, byte type)
 	}
 }
 
-/*
-	R_LavaSplash
-*/
+
 void
 R_LavaSplash (vec3_t org)
 {
@@ -400,9 +392,7 @@ R_LavaSplash (vec3_t org)
 	}
 }
 
-/*
-	R_TeleportSplash
-*/
+
 void
 R_TeleportSplash (vec3_t org)
 {
@@ -432,6 +422,7 @@ R_TeleportSplash (vec3_t org)
 							  (7 + (rand () & 7)), 255, vec3_origin, vec3_origin);
 			}
 }
+
 
 void
 R_RocketTrail (int type, entity_t *ent)
@@ -547,9 +538,6 @@ R_RocketTrail (int type, entity_t *ent)
 }
 
 
-/*
-	R_DrawParticles
-*/
 void
 R_DrawParticles (void)
 {

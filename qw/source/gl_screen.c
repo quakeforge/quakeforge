@@ -243,9 +243,6 @@ SCR_CheckDrawCenterString (void)
 }
 
 
-//=============================================================================
-
-
 float
 CalcFov (float fov_x, float width, float height)
 {
@@ -283,8 +280,6 @@ SCR_CalcRefdef (void)
 
 	// force the status bar to redraw
 	Sbar_Changed ();
-
-//========================================
 
 	// bound viewsize
 	Cvar_SetValue (scr_viewsize, bound (30, scr_viewsize->int_val, 120));
@@ -370,9 +365,6 @@ SCR_SizeDown_f (void)
 	Cvar_SetValue (scr_viewsize, scr_viewsize->int_val - 10);
 	vid.recalc_refdef = 1;
 }
-
-
-//============================================================================
 
 
 void
@@ -534,9 +526,6 @@ SCR_DrawPause (void)
 	Draw_Pic ((vid.width - pic->width) / 2,
 			  (vid.height - 48 - pic->height) / 2, pic);
 }
-
-
-//=============================================================================
 
 
 void
@@ -806,9 +795,6 @@ SCR_RSShot_f (void)
 }
 
 
-//=============================================================================
-
-
 char       *scr_notifystring;
 
 void
@@ -842,9 +828,6 @@ SCR_DrawNotifyString (void)
 		start++;						// skip the \n
 	} while (1);
 }
-
-
-//=============================================================================
 
 
 void

@@ -45,19 +45,18 @@
 #include "glquake.h"
 #include "view.h"
 
+extern double    host_frametime;
 
-extern byte *vid_basepal;
-extern double host_frametime;
-extern int  onground;
-extern byte gammatable[256];
+extern byte      gammatable[256];
+
+extern qboolean  V_CheckGamma (void);
 
 extern cvar_t   *cl_cshift_powerup;
 extern cvar_t	*contrast;
 
-byte        ramps[3][256];
-float       v_blend[4];
+byte             ramps[3][256];
+float            v_blend[4];
 
-qboolean    V_CheckGamma (void);
 
 
 /*
@@ -69,24 +68,20 @@ qboolean    V_CheckGamma (void);
 void
 V_CalcBlend (void)
 {
-	float       r, g, b, a, a2, a3;
-	int         j;
+	float       r = 0, g = 0, b = 0, a = 0;
+	float		a2, a3;
+	int         i;
 
-	r = 0;
-	g = 0;
-	b = 0;
-	a = 0;
-
-	for (j = 0; j < NUM_CSHIFTS; j++) {
-		a2 = cl.cshifts[j].percent / 255.0;
+	for (i = 0; i < NUM_CSHIFTS; i++) {
+		a2 = cl.cshifts[i].percent / 255.0;
 
 		if (!a2)
 			continue;
 
 		a2 = min (a2, 1.0);
-		r += (cl.cshifts[j].destcolor[0] - r) * a2;
-		g += (cl.cshifts[j].destcolor[1] - g) * a2;
-		b += (cl.cshifts[j].destcolor[2] - b) * a2;
+		r += (cl.cshifts[i].destcolor[0] - r) * a2;
+		g += (cl.cshifts[i].destcolor[1] - g) * a2;
+		b += (cl.cshifts[i].destcolor[2] - b) * a2;
 
 		a3 = (1.0 - a) * (1.0 - a2);
 		a = 1.0 - a3;
@@ -186,12 +181,12 @@ V_UpdatePalette (void)
 
 	// drop the damage value
 	cl.cshifts[CSHIFT_DAMAGE].percent -= host_frametime * 150;
-	if (cl.cshifts[CSHIFT_DAMAGE].percent <= 0)
+	if (cl.cshifts[CSHIFT_DAMAGE].percent < 0)
 		cl.cshifts[CSHIFT_DAMAGE].percent = 0;
 
 	// drop the bonus value
 	cl.cshifts[CSHIFT_BONUS].percent -= host_frametime * 100;
-	if (cl.cshifts[CSHIFT_BONUS].percent <= 0)
+	if (cl.cshifts[CSHIFT_BONUS].percent < 0)
 		cl.cshifts[CSHIFT_BONUS].percent = 0;
 
 	force = V_CheckGamma ();

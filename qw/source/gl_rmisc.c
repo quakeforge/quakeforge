@@ -279,6 +279,7 @@ R_TimeRefresh_f (void)
 	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 }
 
+
 void
 D_FlushCaches (void)
 {

@@ -1,7 +1,7 @@
 /*
-	view.c
+	sw_view.c
 
-	@description@
+	player eye positioning
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -44,13 +44,50 @@ extern byte        gammatable[256];
 extern qboolean    V_CheckGamma (void);
 
 extern void        V_CalcIntermissionRefdef (void);
-extern void        V_CalcPowerupCshift (void);
 extern void        V_CalcRefdef (void);
 
+extern cvar_t     *cl_cshift_powerup;
 extern cvar_t     *crosshair;
 extern cvar_t     *scr_ofsx;
 extern cvar_t     *scr_ofsy;
 extern cvar_t     *scr_ofsz;
+
+
+void
+V_CalcPowerupCshift (void)
+{
+	if (!cl_cshift_powerup->int_val)
+		return;
+
+	if (cl.items & IT_QUAD
+		&& cl.items & IT_INVULNERABILITY) {
+		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
+		cl.cshifts[CSHIFT_POWERUP].percent = 30;
+	} else if (cl.items & IT_QUAD) {
+		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
+		cl.cshifts[CSHIFT_POWERUP].percent = 30;
+	} else if (cl.items & IT_SUIT) {
+		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
+		cl.cshifts[CSHIFT_POWERUP].percent = 20;
+	} else if (cl.items & IT_INVISIBILITY) {
+		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 100;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 100;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 100;
+		cl.cshifts[CSHIFT_POWERUP].percent = 100;
+	} else if (cl.items & IT_INVULNERABILITY) {
+		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
+		cl.cshifts[CSHIFT_POWERUP].percent = 30;
+	} else
+		cl.cshifts[CSHIFT_POWERUP].percent = 0;
+}
 
 
 void
@@ -79,14 +116,14 @@ V_UpdatePalette (void)
 			}
 	}
 
-// drop the damage value
+	// drop the damage value
 	cl.cshifts[CSHIFT_DAMAGE].percent -= host_frametime * 150;
-	if (cl.cshifts[CSHIFT_DAMAGE].percent <= 0)
+	if (cl.cshifts[CSHIFT_DAMAGE].percent < 0)
 		cl.cshifts[CSHIFT_DAMAGE].percent = 0;
 
-// drop the bonus value
+	// drop the bonus value
 	cl.cshifts[CSHIFT_BONUS].percent -= host_frametime * 100;
-	if (cl.cshifts[CSHIFT_BONUS].percent <= 0)
+	if (cl.cshifts[CSHIFT_BONUS].percent < 0)
 		cl.cshifts[CSHIFT_BONUS].percent = 0;
 
 	force = V_CheckGamma ();
@@ -118,72 +155,4 @@ V_UpdatePalette (void)
 	}
 
 	VID_ShiftPalette (pal);
-}
-
-
-/*
-	V_RenderView
-
-	The player's clipping box goes from (-16 -16 -24) to (16 16 32) from
-	the entity origin, so any view position inside that will be valid
-*/
-extern vrect_t scr_vrect;
-
-void
-V_RenderView (void)
-{
-	if (!cl.worldmodel || cls.signon != SIGNONS)
-		return;
-
-// don't allow cheats in multiplayer
-	if (cl.maxclients > 1) {
-		Cvar_Set (scr_ofsx, "0");
-		Cvar_Set (scr_ofsy, "0");
-		Cvar_Set (scr_ofsz, "0");
-	}
-
-	if (cl.intermission) {				// intermission / finale rendering
-		V_CalcIntermissionRefdef ();
-	} else {
-		if (!cl.paused					/* && (sv.maxclients > 1 || key_dest
-										   == key_game) */ )
-			V_CalcRefdef ();
-	}
-
-	R_PushDlights (vec3_origin);
-
-	R_RenderView ();
-
-	if (crosshair->int_val)
-		Draw_Crosshair ();
-}
-
-
-void
-BuildGammaTable (float b, float c)
-{
-	int         i, j;
-	int         inf = 0;
-
-	if ((b == 1.0) && (c == 1.0)) {
-		for (i = 0; i < 256; i++)
-			gammatable[i] = i;
-		return;
-	}
-
-	for (i = 0; i < 256; i++) {
-		if (!(i == 128)) {
-			if (i < 128) {
-				j = i + (int) ((128 - i) * (1 - c));
-			} else {
-				j = i + (int) ((i - 128) * (1 - c));
-			}
-		} else {
-			j = i;
-		}
-		inf = (j * b);					// gamma is brightness now, and
-		// positive
-		inf = bound (0, inf, 255);
-		gammatable[i] = inf;
-	}
 }

@@ -59,9 +59,7 @@ float       speedscale;					// for top sky and bottom sky
 // Set to true if a valid skybox is loaded --KB
 qboolean    skyloaded = false;
 
-/*
-	R_LoadSkys
-*/
+
 char       *suf[6] = { "rt", "bk", "lf", "ft", "up", "dn" };
 void
 R_LoadSkys (const char *skyname)
@@ -101,6 +99,7 @@ R_LoadSkys (const char *skyname)
 		Con_Printf ("Unable to load skybox %s, using normal sky\n", skyname);
 }
 
+
 void
 R_SkyBoxPolyVec (vec5_t v)
 {
@@ -112,8 +111,8 @@ R_SkyBoxPolyVec (vec5_t v)
 				r_refdef.vieworg[1] + v[3], r_refdef.vieworg[2] + v[4]);
 }
 
-#define ftc(x) (x * (254.0/256.0) + (1.0/256.0))
 
+#define ftc(x) (x * (254.0/256.0) + (1.0/256.0))
 vec5_t      skyvec[6][4] = {
 	{
 	 // right +y
@@ -158,8 +157,8 @@ vec5_t      skyvec[6][4] = {
 	 {ftc (0), ftc (0), -1024, 1024, -1024}
 	 }
 };
-
 #undef ftc
+
 
 void
 R_DrawSkyBox (void)
@@ -182,6 +181,7 @@ R_DrawSkyBox (void)
 
 
 vec3_t      domescale;
+
 void
 R_DrawSkyLayer (float s)
 {
@@ -260,6 +260,7 @@ R_DrawSkyDome (void)
 	glDepthRange (gldepthmin, gldepthmax);
 }
 
+
 void
 R_DrawSky (void)
 {
@@ -275,8 +276,6 @@ R_DrawSky (void)
 	glColor3ubv (lighthalf_v);
 }
 
-
-//===============================================================
 
 /*
 	R_InitSky

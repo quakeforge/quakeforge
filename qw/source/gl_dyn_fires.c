@@ -38,9 +38,10 @@
 
 #include <stdlib.h>
 
-#include "cl_main.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
+
+#include "cl_main.h"
 #include "glquake.h"
 
 #define MAX_FIRES				128		// rocket flames
@@ -49,13 +50,13 @@ static fire_t r_fires[MAX_FIRES];
 extern cvar_t *gl_fires;
 extern cvar_t *r_firecolor;
 
+
 /*
 	R_AddFire
 
 	Nifty ball of fire GL effect.  Kinda a meshing of the dlight and
 	particle engine code.
 */
-
 void
 R_AddFire (vec3_t start, vec3_t end, entity_t *ent)
 {
@@ -81,6 +82,7 @@ R_AddFire (vec3_t start, vec3_t end, entity_t *ent)
 		VectorCopy (r_firecolor->vec, f->color);
 	}
 }
+
 
 /*
 	R_AllocFire
@@ -119,6 +121,7 @@ R_AllocFire (int key)
 	f->key = key;
 	return f;
 }
+
 
 /*
 	R_DrawFire
@@ -172,6 +175,7 @@ R_DrawFire (fire_t *f)
 	glEnd ();
 	glColor3ubv (lighthalf_v);
 }
+
 
 /*
 	R_UpdateFires

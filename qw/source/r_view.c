@@ -33,16 +33,17 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "bothdefs.h"
-#include "client.h"
 #include "QF/cmd.h"
 #include "QF/compat.h"
 #include "QF/cvar.h"
-#include "host.h"
 #include "QF/msg.h"
-#include "pmove.h"
 #include "QF/screen.h"
 #include "QF/vid.h"
+
+#include "bothdefs.h"
+#include "client.h"
+#include "host.h"
+#include "pmove.h"
 #include "view.h"
 
 /*
@@ -81,11 +82,9 @@ extern int  in_forward, in_forward2, in_back;
 frame_t    *view_frame;
 player_state_t *view_message;
 
-void BuildGammaTable (float, float);
+// void BuildGammaTable (float, float);
 
-/*
-	V_CalcRoll
-*/
+
 float
 V_CalcRoll (vec3_t angles, vec3_t velocity)
 {
@@ -111,9 +110,6 @@ V_CalcRoll (vec3_t angles, vec3_t velocity)
 }
 
 
-/*
-	V_CalcBob
-*/
 float
 V_CalcBob (void)
 {
@@ -152,9 +148,6 @@ V_CalcBob (void)
 }
 
 
-//=============================================================================
-
-
 cvar_t     *v_centermove;
 cvar_t     *v_centerspeed;
 
@@ -175,6 +168,7 @@ V_StartPitchDrift (void)
 	}
 }
 
+
 void
 V_StopPitchDrift (void)
 {
@@ -182,6 +176,7 @@ V_StopPitchDrift (void)
 	cl.nodrift = true;
 	cl.pitchvel = 0;
 }
+
 
 /*
 	V_DriftPitch
@@ -205,7 +200,8 @@ V_DriftPitch (void)
 		cl.pitchvel = 0;
 		return;
 	}
-// don't count small mouse motion
+
+	// don't count small mouse motion
 	if (cl.nodrift) {
 		if (fabs
 			(cl.frames[(cls.netchan.outgoing_sequence - 1) & UPDATE_MASK].cmd.
@@ -230,7 +226,7 @@ V_DriftPitch (void)
 	move = host_frametime * cl.pitchvel;
 	cl.pitchvel += host_frametime * v_centerspeed->value;
 
-//Con_Printf ("move: %f (%f)\n", move, host_frametime);
+//	Con_Printf ("move: %f (%f)\n", move, host_frametime);
 
 	if (delta > 0) {
 		if (move > delta) {
@@ -247,6 +243,7 @@ V_DriftPitch (void)
 	}
 }
 
+
 /*
 						PALETTE FLASHES 
 */
@@ -254,7 +251,6 @@ V_DriftPitch (void)
 extern cvar_t	*cl_cshift_bonus;
 extern cvar_t	*cl_cshift_contents;
 extern cvar_t	*cl_cshift_damage;
-// extern cvar_t	*cl_cshift_powerup;
 
 cshift_t	cshift_empty = { {130, 80, 50}, 0 };
 cshift_t	cshift_water = { {130, 80, 50}, 128 };
@@ -264,9 +260,7 @@ cshift_t	cshift_lava = { {255, 80, 0}, 150 };
 extern byte 	gammatable[256];			// palette is sent through this
 extern cvar_t	*vid_gamma;
 
-/*
-	V_CheckGamma
-*/
+
 qboolean
 V_CheckGamma (void)
 {
@@ -284,9 +278,7 @@ V_CheckGamma (void)
 	return true;
 }
 
-/*
-	V_ParseDamage
-*/
+
 void
 V_ParseDamage (void)
 {
@@ -329,10 +321,9 @@ V_ParseDamage (void)
 			cl.cshifts[CSHIFT_DAMAGE].destcolor[2] = 0;
 		}
 	}
-	
-//
-// calculate view angle kicks
-//
+
+	// calculate view angle kicks
+
 	VectorSubtract (from, cl.simorg, from);
 	VectorNormalize (from);
 
@@ -348,9 +339,6 @@ V_ParseDamage (void)
 }
 
 
-/*
-	V_cshift_f
-*/
 void
 V_cshift_f (void)
 {
@@ -379,12 +367,12 @@ V_BonusFlash_f (void)
 	cl.cshifts[CSHIFT_BONUS].percent = 50;
 }
 
+
 /*
 	V_SetContentsColor
 
 	Underwater, lava, etc each has a color shift
 */
-
 void
 V_SetContentsColor (int contents)
 {
@@ -416,6 +404,7 @@ V_SetContentsColor (int contents)
 						VIEW RENDERING 
 */
 
+
 float
 angledelta (float a)
 {
@@ -425,9 +414,7 @@ angledelta (float a)
 	return a;
 }
 
-/*
-	CalcGunAngle
-*/
+
 void
 CalcGunAngle (void)
 {
@@ -467,9 +454,7 @@ CalcGunAngle (void)
 	cl.viewent.angles[PITCH] = -(r_refdef.viewangles[PITCH] + pitch);
 }
 
-/*
-	V_BoundOffsets
-*/
+
 void
 V_BoundOffsets (void)
 {
@@ -489,6 +474,7 @@ V_BoundOffsets (void)
 	else if (r_refdef.vieworg[2] > cl.simorg[2] + 30)
 		r_refdef.vieworg[2] = cl.simorg[2] + 30;
 }
+
 
 /*
 	V_AddIdle
@@ -544,32 +530,27 @@ V_CalcViewRoll (void)
 }
 
 
-/*
-	V_CalcIntermissionRefdef
-*/
 void
 V_CalcIntermissionRefdef (void)
 {
 	entity_t   *view;
 	float       old;
 
-// view is the weapon model
+	// view is the weapon model
 	view = &cl.viewent;
 
 	VectorCopy (cl.simorg, r_refdef.vieworg);
 	VectorCopy (cl.simangles, r_refdef.viewangles);
 	view->model = NULL;
 
-// always idle in intermission
+	// always idle in intermission
 	old = v_idlescale->value;
 	Cvar_SetValue (v_idlescale, 1);
 	V_AddIdle ();
 	Cvar_SetValue (v_idlescale, old);
 }
 
-/*
-	V_CalcRefdef
-*/
+
 void
 V_CalcRefdef (void)
 {
@@ -585,12 +566,12 @@ V_CalcRefdef (void)
 
 	V_DriftPitch ();
 
-// view is the weapon model (only visible from inside body)
+	// view is the weapon model (only visible from inside body)
 	view = &cl.viewent;
 
 	bob = V_CalcBob ();
 
-// refresh position from simulated origin
+	// refresh position from simulated origin
 	VectorCopy (cl.simorg, r_refdef.vieworg);
 
 	r_refdef.vieworg[2] += bob;
@@ -616,11 +597,10 @@ V_CalcRefdef (void)
 	if (view_message->flags & PF_DEAD)	// PF_GIB will also set PF_DEAD
 		r_refdef.viewangles[ROLL] = 80;	// dead view angle
 
-
-// offsets
+	// offsets
 	AngleVectors (cl.simangles, forward, right, up);
 
-// set up gun position
+	// set up gun position
 	VectorCopy (cl.simangles, view->angles);
 
 	CalcGunAngle ();
@@ -658,10 +638,10 @@ V_CalcRefdef (void)
 	view->alpha = 1;
 	view->colormod[0] = view->colormod[1] = view->colormod[2] = 1;
 
-// set up the refresh position
+	// set up the refresh position
 	r_refdef.viewangles[PITCH] += cl.punchangle;
 
-// smooth out stair step ups
+	// smooth out stair step ups
 	if ((cl.onground != -1) && (cl.simorg[2] - oldz > 0)) {
 		float       steptime;
 
@@ -678,9 +658,7 @@ V_CalcRefdef (void)
 		oldz = cl.simorg[2];
 }
 
-/*
-	DropPunchAngle
-*/
+
 void
 DropPunchAngle (void)
 {
@@ -689,20 +667,19 @@ DropPunchAngle (void)
 		cl.punchangle = 0;
 }
 
+
 /*
 	V_RenderView
 
 	The player's clipping box goes from (-16 -16 -24) to (16 16 32) from
 	the entity origin, so any view position inside that will be valid
 */
-extern vrect_t scr_vrect;
-
 void
 V_RenderView (void)
 {
-//  if (cl.simangles[ROLL])
-//      Sys_Error ("cl.simangles[ROLL]");   // DEBUG
-	cl.simangles[ROLL] = 0;				// FIXME @@@ 
+//	if (cl.simangles[ROLL])
+//		Sys_Error ("cl.simangles[ROLL]");   // DEBUG
+	cl.simangles[ROLL] = 0;				// FIXME @@@
 
 	if (cls.state != ca_active)
 		return;
@@ -720,11 +697,7 @@ V_RenderView (void)
 	R_RenderView ();
 }
 
-//============================================================================
 
-/*
-	V_Init
-*/
 void
 V_Init (void)
 {
@@ -735,6 +708,7 @@ V_Init (void)
 	Cmd_AddCommand ("centerview", V_StartPitchDrift, "Centers the player's view ahead after +lookup or +lookdown \n"
 		"Will not work while mlook is active or freelook is 1.");
 }
+
 
 void
 V_Init_Cvars (void)

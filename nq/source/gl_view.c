@@ -2,7 +2,7 @@
 /*
 	gl_view.c
 
-	OpenGL-specific view management functions
+	player eye positioning
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -37,24 +37,25 @@
 # include <strings.h> 
 #endif 
 
-#include "QF/console.h"
 #include "QF/compat.h"
 
 #include "client.h"
 #include "glquake.h"
-#include "host.h"
 #include "view.h"
+
+extern double      host_frametime; 
 
 extern byte        gammatable[256];
 
 extern qboolean    V_CheckGamma (void);
 
 extern void        V_CalcIntermissionRefdef (void);
-extern void        V_CalcPowerupCshift (void);
 extern void        V_CalcRefdef (void);
 
 extern cvar_t     *crosshair;
 extern cvar_t     *gl_cshiftpercent;
+extern cvar_t	  *cl_cshift_powerup;
+
 extern cvar_t     *scr_ofsx;
 extern cvar_t     *scr_ofsy;
 extern cvar_t     *scr_ofsz;
@@ -72,11 +73,7 @@ float       v_blend[4];					// rgba 0.0 - 1.0
 void
 V_CalcBlend (void)
 {
-	float       r = 0;
-	float       g = 0;
-	float       b = 0;
-	float       a = 0;
-
+	float       r = 0, g = 0, b = 0, a = 0;
 	float       a2, a3;
 	int         i;
 
@@ -84,8 +81,7 @@ V_CalcBlend (void)
 		if (!gl_cshiftpercent->value)
 			continue;
 
-		a2 =
-			((cl.cshifts[i].percent * gl_cshiftpercent->value) / 100.0) / 255.0;
+		a2 = ((cl.cshifts[i].percent * gl_cshiftpercent->value) / 100.0) / 255.0;
 
 		if (!a2)
 			continue;
@@ -99,19 +95,71 @@ V_CalcBlend (void)
 		a = 1.0 - a3;
 	}
 
-	// LordHavoc: saturate color
-	if (a) {
-		a2 = 1.0 / a;
-		r *= a2;
-		g *= a2;
-		b *= a2;
-		// don't clamp alpha here, we do it below
-	}
+	if ((a2 = 1 - bound (0.0, contrast->value, 1.0)) < 0.999) { // add contrast
+        r += (128 - r) * a2; 
+        g += (128 - g) * a2; 
+        b += (128 - b) * a2; 
+ 
+        a3 = (1.0 - a) * (1.0 - a2); 
+        a = 1.0 - a3; 
+    } 
+ 
+    // LordHavoc: saturate color 
+    if (a) { 
+        a2 = 1.0 / a; 
+        r *= a2; 
+        g *= a2; 
+        b *= a2; 
+    } 
 
 	v_blend[0] = min (r, 255.0) / 255.0;
 	v_blend[1] = min (g, 255.0) / 255.0;
 	v_blend[2] = min (b, 255.0) / 255.0;
 	v_blend[3] = bound (0.0, a, 1.0);
+}
+
+
+void
+V_CalcPowerupCshift (void)
+{
+	if (!cl_cshift_powerup->int_val)
+//		|| (atoi (Info_ValueForKey (cl.serverinfo, "cshifts")) & INFO_CSHIFT_POWERUP))
+		return;
+
+	if ((gl_dlight_polyblend->int_val ||
+		 !(gl_dlight_lightmap->int_val && gl_dlight_polyblend->int_val)) &&
+		(cl.items & IT_INVULNERABILITY ||
+		 cl.items & IT_QUAD))
+	{
+		if (cl.items & IT_INVULNERABILITY &&
+			cl.items & IT_QUAD) {
+			cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
+			cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
+			cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
+			cl.cshifts[CSHIFT_POWERUP].percent = 30;
+		} else if (cl.items & IT_QUAD) {
+			cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
+			cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
+			cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
+			cl.cshifts[CSHIFT_POWERUP].percent = 30;
+		} else if (cl.items & IT_INVULNERABILITY) {
+			cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
+			cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
+			cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
+			cl.cshifts[CSHIFT_POWERUP].percent = 30;
+		}
+	} else if (cl.items & IT_SUIT) {
+		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
+		cl.cshifts[CSHIFT_POWERUP].percent = 20;
+	} else if (cl.items & IT_INVISIBILITY) {
+		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 100;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 100;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 100;
+		cl.cshifts[CSHIFT_POWERUP].percent = 100;
+	} else
+		cl.cshifts[CSHIFT_POWERUP].percent = 0;
 }
 
 
@@ -147,69 +195,17 @@ V_UpdatePalette (void)
 
 	// drop the damage value
 	cl.cshifts[CSHIFT_DAMAGE].percent -= host_frametime * 150;
-	cl.cshifts[CSHIFT_DAMAGE].percent =
-		max (cl.cshifts[CSHIFT_DAMAGE].percent, 0);
+	if (cl.cshifts[CSHIFT_DAMAGE].percent < 0)
+		cl.cshifts[CSHIFT_DAMAGE].percent = 0;
 
 	// drop the bonus value
 	cl.cshifts[CSHIFT_BONUS].percent -= host_frametime * 100;
-	cl.cshifts[CSHIFT_BONUS].percent =
-		max (cl.cshifts[CSHIFT_BONUS].percent, 0);
+	if (cl.cshifts[CSHIFT_BONUS].percent < 0)
+		cl.cshifts[CSHIFT_BONUS].percent = 0;
 
 	force = V_CheckGamma ();
 	if (!new && !force)
 		return;
 
 	V_CalcBlend ();
-}
-
-
-/*
-	V_RenderView
-
-	The player's clipping box goes from (-16 -16 -24) to (16 16 32) from
-	the entity origin, so any view position inside that will be valid
-*/
-extern vrect_t scr_vrect;
-
-void
-V_RenderView (void)
-{
-	if (!cl.worldmodel || cls.signon != SIGNONS)
-		return;
-
-// don't allow cheats in multiplayer
-	if (cl.maxclients > 1) {
-		Cvar_Set (scr_ofsx, "0");
-		Cvar_Set (scr_ofsy, "0");
-		Cvar_Set (scr_ofsz, "0");
-	}
-
-	if (cl.intermission) {				// intermission / finale rendering
-		V_CalcIntermissionRefdef ();
-	} else {
-		if (!cl.paused					/* && (sv.maxclients > 1 || key_dest
-										   == key_game) */ )
-			V_CalcRefdef ();
-	}
-
-	R_PushDlights (vec3_origin);
-
-	R_RenderView ();
-}
-
-
-/*
-	BuildGammaTable
-
-	In software mode, this function gets the palette ready for changing...
-	in GL, it does very little as you can see.
-*/
-void
-BuildGammaTable (float b, float c)
-{
-	int         i;
-
-	for (i = 0; i < 256; i++)
-		gammatable[i] = i;
-	return;
 }

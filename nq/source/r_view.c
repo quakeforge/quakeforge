@@ -1,7 +1,7 @@
 /*
-	view.c
+	r_view.c
 
-	@description@
+	player eye positioning
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -42,7 +42,6 @@
 #include "r_local.h"
 #include "view.h"
 
-
 /*
 
 The view is allowed to move slightly from it's true position for bobbing,
@@ -63,9 +62,10 @@ cvar_t     *cl_bob;
 cvar_t     *cl_bobcycle;
 cvar_t     *cl_bobup;
 
-cvar_t     *v_kicktime;
-cvar_t     *v_kickroll;
-cvar_t     *v_kickpitch;
+cvar_t     *v_centermove;
+cvar_t     *v_centerspeed;
+
+cvar_t     *v_gamma;
 
 cvar_t     *v_iyaw_cycle;
 cvar_t     *v_iroll_cycle;
@@ -75,6 +75,10 @@ cvar_t     *v_iroll_level;
 cvar_t     *v_ipitch_level;
 
 cvar_t     *v_idlescale;
+
+cvar_t     *v_kicktime;
+cvar_t     *v_kickroll;
+cvar_t     *v_kickpitch;
 
 cvar_t     *crosshair;
 cvar_t     *crosshaircolor;
@@ -86,11 +90,13 @@ cvar_t     *gl_cshiftpercent;
 cvar_t     *brightness;
 cvar_t     *contrast;
 
+byte        gammatable[256];			// palette is sent through this
+
 float       v_dmg_time, v_dmg_roll, v_dmg_pitch;
 
-extern int  in_forward, in_forward2, in_back;
+extern cvar_t  *vid_gamma;
 
-void        BuildGammaTable (float, float);
+extern int  in_forward, in_forward2, in_back;
 
 
 float
@@ -113,7 +119,7 @@ V_CalcBob (void)
 	bob =
 		sqrt (cl.velocity[0] * cl.velocity[0] +
 			  cl.velocity[1] * cl.velocity[1]) * cl_bob->value;
-//Con_Printf ("speed: %5.1f\n", Length(cl.velocity));
+//	Con_Printf ("speed: %5.1f\n", Length(cl.velocity));
 	bob = bob * 0.3 + bob * 0.7 * sin (cycle);
 	if (bob > 4)
 		bob = 4;
@@ -124,28 +130,23 @@ V_CalcBob (void)
 }
 
 
-//=============================================================================
-
-
-cvar_t     *v_centermove;
-cvar_t     *v_centerspeed;
-
-
 void
 V_StartPitchDrift (void)
 {
 #if 1
 	if (cl.laststop == cl.time) {
 		return;							// something else is keeping it from
-		// drifting
+										// drifting
 	}
 #endif
+
 	if (cl.nodrift || !cl.pitchvel) {
 		cl.pitchvel = v_centerspeed->value;
 		cl.nodrift = false;
 		cl.driftmove = 0;
 	}
 }
+
 
 void
 V_StopPitchDrift (void)
@@ -177,7 +178,8 @@ V_DriftPitch (void)
 		cl.pitchvel = 0;
 		return;
 	}
-// don't count small mouse motion
+
+	// don't count small mouse motion
 	if (cl.nodrift) {
 		if (fabs (cl.cmd.forwardmove) < cl_forwardspeed->value)
 			cl.driftmove = 0;
@@ -200,7 +202,7 @@ V_DriftPitch (void)
 	move = host_frametime * cl.pitchvel;
 	cl.pitchvel += host_frametime * v_centerspeed->value;
 
-//Con_Printf ("move: %f (%f)\n", move, host_frametime);
+//	Con_Printf ("move: %f (%f)\n", move, host_frametime);
 
 	if (delta > 0) {
 		if (move > delta) {
@@ -218,45 +220,42 @@ V_DriftPitch (void)
 }
 
 
-
-
-
 /*
   PALETTE FLASHES 
 */
 
 
 cshift_t    cshift_empty = { {130, 80, 50}
-, 0
+							 , 0
 };
+
 cshift_t    cshift_water = { {130, 80, 50}
-, 128
+							 , 128
 };
+
 cshift_t    cshift_slime = { {0, 25, 5}
-, 150
+							 , 150
 };
+
 cshift_t    cshift_lava = { {255, 80, 0}
-, 150
+							, 150
 };
-
-cvar_t     *v_gamma;
-
-byte        gammatable[256];			// palette is sent through this
 
 
 qboolean
 V_CheckGamma (void)
 {
-	static float oldbrightness;
-	static float oldcontrast;
+	static float    oldgamma;
 
-	if ((brightness->value == oldbrightness) && contrast->value == oldcontrast)
-		return false;
-	oldbrightness = brightness->value;
-	oldcontrast = contrast->value;
+	if (vid_gamma) {				// might get called before vid_gamma gets set
+		if (oldgamma == vid_gamma->value)
+			return false;
 
-	BuildGammaTable (brightness->value, contrast->value);
-	vid.recalc_refdef = 1;				// force a surface cache flush
+		oldgamma = vid_gamma->value;
+	}
+
+
+	vid.recalc_refdef = 1;			// force a surface cache flush
 
 	return true;
 }
@@ -304,9 +303,8 @@ V_ParseDamage (void)
 		cl.cshifts[CSHIFT_DAMAGE].destcolor[2] = 0;
 	}
 
-//
-// calculate view angle kicks
-//
+	// calculate view angle kicks
+
 	ent = &cl_entities[cl.viewentity];
 
 	VectorSubtract (from, ent->origin, from);
@@ -374,37 +372,10 @@ V_SetContentsColor (int contents)
 }
 
 
-void
-V_CalcPowerupCshift (void)
-{
-	if (cl.items & IT_QUAD) {
-		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
-		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
-		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
-		cl.cshifts[CSHIFT_POWERUP].percent = 30;
-	} else if (cl.items & IT_SUIT) {
-		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
-		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
-		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
-		cl.cshifts[CSHIFT_POWERUP].percent = 20;
-	} else if (cl.items & IT_INVISIBILITY) {
-		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 100;
-		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 100;
-		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 100;
-		cl.cshifts[CSHIFT_POWERUP].percent = 100;
-	} else if (cl.items & IT_INVULNERABILITY) {
-		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
-		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
-		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
-		cl.cshifts[CSHIFT_POWERUP].percent = 30;
-	} else
-		cl.cshifts[CSHIFT_POWERUP].percent = 0;
-}
-
-
 /* 
    VIEW RENDERING 
 */
+
 
 float
 angledelta (float a)
@@ -495,6 +466,7 @@ V_BoundOffsets (void)
 		r_refdef.vieworg[2] = ent->origin[2] + 30;
 }
 
+
 /*
 	V_AddIdle
 
@@ -550,16 +522,17 @@ V_CalcIntermissionRefdef (void)
 	entity_t   *ent, *view;
 	float       old;
 
-// ent is the player model (visible when out of body)
+	// ent is the player model (visible when out of body)
 	ent = &cl_entities[cl.viewentity];
-// view is the weapon model (only visible from inside body)
+
+	// view is the weapon model (only visible from inside body)
 	view = &cl.viewent;
 
 	VectorCopy (ent->origin, r_refdef.vieworg);
 	VectorCopy (ent->angles, r_refdef.viewangles);
 	view->model = NULL;
 
-// always idle in intermission
+	// always idle in intermission
 	old = v_idlescale->value;
 	Cvar_SetValue (v_idlescale, 1);
 	V_AddIdle ();
@@ -579,9 +552,9 @@ V_CalcRefdef (void)
 
 	V_DriftPitch ();
 
-// ent is the player model (visible when out of body)
+	// ent is the player model (visible when out of body)
 	ent = &cl_entities[cl.viewentity];
-// view is the weapon model (only visible from inside body)
+	// view is the weapon model (only visible from inside body)
 	view = &cl.viewent;
 
 
@@ -595,7 +568,7 @@ V_CalcRefdef (void)
 
 	bob = V_CalcBob ();
 
-// refresh position
+	// refresh position
 	VectorCopy (ent->origin, r_refdef.vieworg);
 	r_refdef.vieworg[2] += cl.viewheight + bob;
 
@@ -610,23 +583,23 @@ V_CalcRefdef (void)
 	V_CalcViewRoll ();
 	V_AddIdle ();
 
-// offsets
+	// offsets
 	angles[PITCH] = -ent->angles[PITCH];	// because entity pitches are
-	// actually backward
+											// actually backward
 	angles[YAW] = ent->angles[YAW];
 	angles[ROLL] = ent->angles[ROLL];
 
 	AngleVectors (angles, forward, right, up);
 
-	for (i = 0; i < 3; i++)
-		r_refdef.vieworg[i] += scr_ofsx->value * forward[i]
-			+ scr_ofsy->value * right[i]
-			+ scr_ofsz->value * up[i];
-
+	for (i = 0; i < 3; i++) {
+		r_refdef.vieworg[i] += scr_ofsx->value * forward[i] +
+			scr_ofsy->value * right[i] +
+			scr_ofsz->value * up[i];
+	}
 
 	V_BoundOffsets ();
 
-// set up gun position
+	// set up gun position
 	VectorCopy (cl.viewangles, view->angles);
 
 	CalcGunAngle ();
@@ -645,9 +618,9 @@ V_CalcRefdef (void)
 // roughly equal with different FOV
 
 #if 0
-	if (cl.model_precache[cl.stats[STAT_WEAPON]]
-		&& strcmp (cl.model_precache[cl.stats[STAT_WEAPON]]->name,
-				   "progs/v_shot2.mdl"))
+	if (cl.model_precache[cl.stats[STAT_WEAPON]] &&
+		strcmp (cl.model_precache[cl.stats[STAT_WEAPON]]->name,
+				"progs/v_shot2.mdl"))
 #endif
 		if (cl_sbar->int_val == 0 && scr_viewsize->int_val >= 100);
 		else if (scr_viewsize->int_val == 110)
@@ -663,10 +636,10 @@ V_CalcRefdef (void)
 	view->frame = cl.stats[STAT_WEAPONFRAME];
 	view->colormap = vid.colormap;
 
-// set up the refresh position
+	// set up the refresh position
 	VectorAdd (r_refdef.viewangles, cl.punchangle, r_refdef.viewangles);
 
-// smooth out stair step ups
+	// smooth out stair step ups
 	if (cl.onground && ent->origin[2] - oldz > 0) {
 		float       steptime;
 
@@ -696,7 +669,32 @@ V_CalcRefdef (void)
 	The player's clipping box goes from (-16 -16 -24) to (16 16 32) from
 	the entity origin, so any view position inside that will be valid
 */
-extern vrect_t scr_vrect;
+void
+V_RenderView (void)
+{
+	if (!cl.worldmodel || cls.signon != SIGNONS)
+		return;
+
+	// don't allow cheats in multiplayer
+	if (cl.maxclients > 1) {
+		Cvar_Set (scr_ofsx, "0");
+		Cvar_Set (scr_ofsy, "0");
+		Cvar_Set (scr_ofsz, "0");
+	}
+
+	if (cl.intermission) {				// intermission / finale rendering
+		V_CalcIntermissionRefdef ();
+	} else {
+		if (!cl.paused					/* && (sv.maxclients > 1 || key_dest
+										   == key_game) */ )
+			V_CalcRefdef ();
+	}
+
+//	nq thinks dlights should be here
+	R_PushDlights (vec3_origin);
+
+	R_RenderView ();
+}
 
 
 void
@@ -739,8 +737,6 @@ V_Init (void)
 	v_kickroll = Cvar_Get ("v_kickroll", "0.6", CVAR_NONE, NULL, "None");
 	v_kickpitch = Cvar_Get ("v_kickpitch", "0.6", CVAR_NONE, NULL, "None");
 
-	BuildGammaTable (1.0, 1.0);			// no gamma yet
 	brightness = Cvar_Get ("brightness", "1", CVAR_ARCHIVE, NULL, "None");
 	contrast = Cvar_Get ("contrast", "1", CVAR_ARCHIVE, NULL, "None");
 }
-

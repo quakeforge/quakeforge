@@ -240,7 +240,6 @@ float	r_avertexnormal_dots[SHADEDOT_QUANT][256] =
 		;
 
 float  *shadedots = r_avertexnormal_dots[0];
-
 int 	lastposenum, lastposenum0;
 
 
@@ -303,6 +302,7 @@ GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
 
 	glColor3ubv (lighthalf_v);
 }
+
 
 /*
 	GL_DrawAliasBlendedFrame

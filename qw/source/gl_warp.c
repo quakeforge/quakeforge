@@ -184,14 +184,11 @@ GL_SubdivideSurface (msurface_t *fa)
 	SubdividePolygon (numverts, verts[0]);
 }
 
-//=========================================================
-
 
 // speed up sin calculations - Ed
 float       turbsin[] = {
 #	include "gl_warp_sin.h"
 };
-
 
 #define TURBSCALE (256.0 / (2 * M_PI))
 

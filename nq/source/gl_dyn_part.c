@@ -298,6 +298,7 @@ R_RunGunshotEffect (vec3_t org, int count)
 	return;
 }
 
+
 /*
 static void
 R_BloodPuff (vec3_t org, int count)

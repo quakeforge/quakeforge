@@ -47,6 +47,7 @@ int         part_tex_spark;
 int         part_tex_smoke[8];
 int         part_tex_smoke_ring[8];
 
+
 void
 GDT_Init (void)
 {
@@ -55,6 +56,7 @@ GDT_Init (void)
 	GDT_InitSmokeParticleTexture ();
 	GDT_InitSmokeRingParticleTexture ();
 }
+
 
 static void
 GDT_InitDotParticleTexture (void)
@@ -155,6 +157,7 @@ GDT_InitSmokeParticleTexture (void)
 			      GL_UNSIGNED_BYTE, data);
 	}
 }
+
 
 static void
 GDT_InitSmokeRingParticleTexture (void)
