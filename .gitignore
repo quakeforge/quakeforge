@@ -5,6 +5,7 @@ Makefile.in
 aclocal.m4
 autom4te.cache
 build-stamp
+changelog-stamp
 config.cache
 config.log
 config.status
