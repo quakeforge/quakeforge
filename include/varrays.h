@@ -39,8 +39,6 @@
 
 #include <GL/gl.h>
 
-#include "QF/qfgl_ext.h"
-
 typedef struct varray_t2f_c4f_v3f_s {
 	 GLfloat	texcoord[2];
 	 GLfloat	color[4];

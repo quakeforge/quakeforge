@@ -40,8 +40,9 @@
 #include <GL/gl.h>
 
 #include "QF/model.h"
-#include "QF/qfgl_ext.h"
 #include "QF/wad.h"
+
+#include "qfgl_ext.h"
 
 
 void GL_BeginRendering (int *x, int *y, int *width, int *height);
