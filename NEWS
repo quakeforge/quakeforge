@@ -14,6 +14,8 @@ Changes from 0.5.2
         * @argc and @argv deprecated in favor of @args.count and @args.list
           (@args is a struct with type @va_list)
         * structure copy
+        * -L lib search paths and -l now behaves in a more expected manner
+        * default search paths for includes and libs
 
     o Progs engine enhancements.
         * arbitrary size data copying
