@@ -69,7 +69,7 @@ main (int argc, const char **argv)
 	for (i = 1; i < argc; i++)
 		if (!strcmp (argv[i], "-dedicated"))
 			break;
-	if (i != argc) {
+	if (i == argc) {
 		const char **newargv;
 
 		newargv = malloc ((argc + 2) * sizeof (*newargv));
