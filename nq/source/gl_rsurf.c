@@ -37,8 +37,8 @@
 # include <strings.h>
 #endif
 
-#include <stdio.h>
 #include <math.h>
+#include <stdio.h>
 
 #include "QF/cmd.h"
 #include "QF/compat.h"
@@ -141,6 +141,7 @@ R_ForceLightUpdate ()
 int         dlightdivtable[8192];
 int         dlightdivtableinitialized = 0;
 
+
 void
 R_AddDynamicLights (msurface_t *surf)
 {
@@ -194,21 +195,15 @@ R_AddDynamicLights (msurface_t *surf)
 			surf->texturemins[1];
 		i = f;
 
-		maxdist = (int) (cl_dlights[lnum].radius * cl_dlights[lnum].radius);	// for 
-																				// 
-		// 
-		// comparisons 
-		// to 
-		// minimum 
-		// acceptable 
-		// light
+		maxdist = (int) (cl_dlights[lnum].radius * cl_dlights[lnum].radius);
+		// for comparisons to minimum acceptable light
 		// clamp radius to avoid exceeding 8192 entry division table
 		if (maxdist > 1048576)
 			maxdist = 1048576;
 		maxdist3 = maxdist - (int) (dist * dist);
 		// convert to 8.8 blocklights format
-//      if (!cl_dlights[lnum].dark)
-//      {
+//		if (!cl_dlights[lnum].dark)
+//		{
 		f = cl_dlights[lnum].color[0] * maxdist;
 		red = f;
 		f = cl_dlights[lnum].color[1] * maxdist;
@@ -410,6 +405,7 @@ extern float speedscale;				// for top sky and bottom sky
 
 lpMTexFUNC  qglMTexCoord2f = NULL;
 lpSelTexFUNC qglSelectTexture = NULL;
+
 
 void
 GL_UploadLightmap (int i, int x, int y, int w, int h)
@@ -867,17 +863,17 @@ R_RecursiveWorldNode (mnode_t *node)
 
 	switch (plane->type) {
 		case PLANE_X:
-		dot = modelorg[0] - plane->dist;
-		break;
+			dot = modelorg[0] - plane->dist;
+			break;
 		case PLANE_Y:
-		dot = modelorg[1] - plane->dist;
-		break;
+			dot = modelorg[1] - plane->dist;
+			break;
 		case PLANE_Z:
-		dot = modelorg[2] - plane->dist;
-		break;
+			dot = modelorg[2] - plane->dist;
+			break;
 		default:
-		dot = DotProduct (modelorg, plane->normal) - plane->dist;
-		break;
+			dot = DotProduct (modelorg, plane->normal) - plane->dist;
+			break;
 	}
 
 	side = dot < 0;
@@ -1056,8 +1052,8 @@ AllocBlock (int w, int h, int *x, int *y)
 
 mvertex_t  *r_pcurrentvertbase;
 model_t    *currentmodel;
-
 int         nColinElim;
+
 
 void
 BuildSurfaceDisplayList (msurface_t *fa)
@@ -1163,7 +1159,6 @@ BuildSurfaceDisplayList (msurface_t *fa)
 		}
 	}
 	poly->numverts = lnumverts;
-
 }
 
 

@@ -88,12 +88,14 @@ msurface_t *sky_chain;
 
 extern qboolean lighthalf;
 
+
 // LordHavoc: place for gl_rsurf setup code
 void
 glrsurf_init (void)
 {
 	memset (&lightmaps, 0, sizeof (lightmaps));
 }
+
 
 static void
 R_RecursiveLightUpdate (mnode_t *node)
@@ -110,6 +112,7 @@ R_RecursiveLightUpdate (mnode_t *node)
 			 c--, surf++) surf->cached_dlight = true;
 }
 
+
 // LordHavoc: function to force all lightmaps to be updated
 void
 R_ForceLightUpdate (void)
@@ -119,18 +122,15 @@ R_ForceLightUpdate (void)
 		R_RecursiveLightUpdate (cl.worldmodel->nodes);
 }
 
+
+int         dlightdivtable[8192];
+int         dlightdivtableinitialized = 0;
+
+
 /*
 	R_AddDynamicLights
 
 	LordHavoc: completely rewrote this, relies on 64bit integer math...
-*/
-int         dlightdivtable[8192];
-int         dlightdivtableinitialized = 0;
-
-/*
-	R_AddDynamicLights
-
-	NOTE! LordHavoc was here, and it shows... (Mercury)
 */
 void
 R_AddDynamicLights (msurface_t *surf)
@@ -208,6 +208,7 @@ R_AddDynamicLights (msurface_t *surf)
 		}
 	}
 }
+
 
 /*
 	R_BuildLightMap
@@ -311,6 +312,7 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 	}
 }
 
+
 /*
 	R_TextureAnimation
 
@@ -354,6 +356,7 @@ extern int  solidskytexture;
 extern int  alphaskytexture;
 extern float speedscale;				// for top sky and bottom sky
 
+
 void
 GL_UploadLightmap (int i, int x, int y, int w, int h)
 {
@@ -366,6 +369,7 @@ GL_UploadLightmap (int i, int x, int y, int w, int h)
 				  BLOCK_HEIGHT, 0, gl_lightmap_format,
 				  GL_UNSIGNED_BYTE, lightmaps[i]);
 }
+
 
 /*
 	R_DrawSequentialPoly
@@ -436,9 +440,7 @@ R_DrawMultitexturePoly (msurface_t *s)
 	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }
 
-/*
-	R_BlendLightmaps
-*/
+
 void
 R_BlendLightmaps (void)
 {
@@ -485,9 +487,6 @@ R_BlendLightmaps (void)
 	glDepthMask (GL_TRUE);				// back to normal Z buffering
 }
 
-/*
-	R_RenderFullbrights
-*/
 
 void
 R_RenderFullbrights (void)
@@ -514,9 +513,7 @@ R_RenderFullbrights (void)
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-/*
-	R_RenderBrushPoly
-*/
+
 void
 R_RenderBrushPoly (msurface_t *fa)
 {
@@ -586,6 +583,7 @@ R_RenderBrushPoly (msurface_t *fa)
 	glColor3ubv (lighthalf_v);
 }
 
+
 void
 GL_WaterSurface (msurface_t *s)
 {
@@ -607,9 +605,7 @@ GL_WaterSurface (msurface_t *s)
 		EmitWaterPolys (s);
 }
 
-/*
-	R_DrawWaterSurfaces
-*/
+
 void
 R_DrawWaterSurfaces (void)
 {
@@ -650,9 +646,6 @@ R_DrawWaterSurfaces (void)
 }
 
 
-/*
-	DrawTextureChains
-*/
 void
 DrawTextureChains (void)
 {
@@ -673,9 +666,7 @@ DrawTextureChains (void)
 	glEnable (GL_BLEND);
 }
 
-/*
-	R_DrawBrushModel
-*/
+
 void
 R_DrawBrushModel (entity_t *e)
 {
@@ -783,13 +774,12 @@ R_DrawBrushModel (entity_t *e)
 	glPopMatrix ();
 }
 
+
 /*
 	WORLD MODEL
 */
 
-/*
-	R_RecursiveWorldNode
-*/
+
 void
 R_RecursiveWorldNode (mnode_t *node)
 {
@@ -897,10 +887,6 @@ R_RecursiveWorldNode (mnode_t *node)
 }
 
 
-
-/*
-	R_DrawWorld
-*/
 void
 R_DrawWorld (void)
 {
@@ -937,9 +923,6 @@ R_DrawWorld (void)
 }
 
 
-/*
-	R_MarkLeaves
-*/
 void
 R_MarkLeaves (void)
 {
@@ -974,10 +957,10 @@ R_MarkLeaves (void)
 }
 
 
-
 /*
 	LIGHTMAP ALLOCATION
 */
+
 
 // returns a texture number and the position inside it
 int
@@ -1029,9 +1012,7 @@ model_t    *currentmodel;
 
 int         nColinElim;
 
-/*
-	BuildSurfaceDisplayList
-*/
+
 void
 BuildSurfaceDisplayList (msurface_t *fa)
 {
@@ -1130,9 +1111,7 @@ BuildSurfaceDisplayList (msurface_t *fa)
 
 }
 
-/*
-	GL_CreateSurfaceLightmap
-*/
+
 void
 GL_CreateSurfaceLightmap (msurface_t *surf)
 {
@@ -1154,8 +1133,7 @@ GL_CreateSurfaceLightmap (msurface_t *surf)
 /*
 	GL_BuildLightmaps
 
-	Builds the lightmap texture
-	with all the surfaces from all brush models
+	Builds the lightmap texture with all the surfaces from all brush models
 */
 void
 GL_BuildLightmaps (void)
