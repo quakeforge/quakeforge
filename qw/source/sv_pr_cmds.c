@@ -45,8 +45,8 @@
 #include "world.h"
 #include "crudefile.h"
 
-#define	RETURN_EDICT(p, e) ((p)->pr_globals[OFS_RETURN].int_var = EDICT_TO_PROG(p, e))
-#define	RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].int_var = PR_SetString((p), s))
+#define	RETURN_EDICT(p, e) ((p)->pr_globals[OFS_RETURN].integer_var = EDICT_TO_PROG(p, e))
+#define	RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].integer_var = PR_SetString((p), s))
 
 /*
 						BUILT-IN FUNCTIONS

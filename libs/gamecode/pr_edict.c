@@ -103,7 +103,7 @@ ED_ClearEdict (progs_t * pr, edict_t *e, int val)
 	if (NUM_FOR_EDICT(pr,e)<*pr->reserved_edicts)
 		printf("clearing reserved edict %d\n", NUM_FOR_EDICT(pr,e));
 	for (i=0; i < pr->progs->entityfields; i++)
-		e->v[i].int_var = val;
+		e->v[i].integer_var = val;
 	//memset (&e->v, 0, pr->progs->entityfields * 4);
 	e->free = false;
 }
@@ -364,7 +364,7 @@ PR_ValueString (progs_t * pr, etype_t type, pr_type_t *val)
 					  PR_GetString (pr, f->s_name));
 			break;
 		case ev_field:
-			def = ED_FieldAtOfs (pr, val->int_var);
+			def = ED_FieldAtOfs (pr, val->integer_var);
 			snprintf (line, sizeof (line), ".%s",
 					  PR_GetString (pr, def->s_name));
 			break;
@@ -418,7 +418,7 @@ PR_UglyValueString (progs_t * pr, etype_t type, pr_type_t *val)
 			snprintf (line, sizeof (line), "%s", PR_GetString (pr, f->s_name));
 			break;
 		case ev_field:
-			def = ED_FieldAtOfs (pr, val->int_var);
+			def = ED_FieldAtOfs (pr, val->integer_var);
 			snprintf (line, sizeof (line), "%s",
 					  PR_GetString (pr, def->s_name));
 			break;
@@ -535,7 +535,7 @@ ED_Print (progs_t * pr, edict_t *ed)
 		type = d->type & ~DEF_SAVEGLOBAL;
 
 		for (j = 0; j < type_size[type]; j++)
-			if (v[j].int_var)
+			if (v[j].integer_var)
 				break;
 		if (j == type_size[type])
 			continue;
@@ -581,7 +581,7 @@ ED_Write (progs_t * pr, VFile *f, edict_t *ed)
 		// if the value is still all 0, skip the field
 		type = d->type & ~DEF_SAVEGLOBAL;
 		for (j = 0; j < type_size[type]; j++)
-			if (v[j].int_var)
+			if (v[j].integer_var)
 				break;
 		if (j == type_size[type])
 			continue;
@@ -818,7 +818,7 @@ ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, const char *s)
 				Con_Printf ("Can't find field %s\n", s);
 				return false;
 			}
-			d->int_var = G_INT (pr, def->ofs);
+			d->integer_var = G_INT (pr, def->ofs);
 			break;
 
 		case ev_func:
@@ -1302,7 +1302,7 @@ PR_InitEdicts (progs_t *pr, int num_edicts)
 		for (j =  *pr->reserved_edicts; j < num_edicts; j++) {
 			e = EDICT_NUM (pr, j);
 			for (i=0; i < pr->progs->entityfields; i++)
-				e->v[i].int_var = 0xdeadbeef;
+				e->v[i].integer_var = 0xdeadbeef;
 		}
 	} else {
 		memset (edicts, 0, pr->pr_edictareasize);
