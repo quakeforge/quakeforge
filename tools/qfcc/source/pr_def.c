@@ -124,15 +124,18 @@ PR_NewDef (type_t *type, const char *name, def_t *scope)
 	def_t *def;
 
 	def = calloc (1, sizeof (def_t));
-	pr.def_tail->next = def;
-	pr.def_tail = def;
+
+	if (name) {
+		pr.def_tail->next = def;
+		pr.def_tail = def;
+	}
 
 	if (scope) {
 		def->scope_next = scope->scope_next;
 		scope->scope_next = def;
 	}
 
-	def->name = strdup (name);
+	def->name = name ? strdup (name) : 0;
 	def->type = type;
 
 	def->scope = scope;
