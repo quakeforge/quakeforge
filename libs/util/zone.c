@@ -265,15 +265,15 @@ void
 Z_Print (memzone_t *zone)
 {
 	memblock_t	*block;
-	
+
 	Sys_Printf ("zone size: %i  location: %p  used: %i\n",
 				zone->size, zone, zone->used);
-	
-	for (block = zone->blocklist.next ; ; block = block->next)
-	{
+
+	for (block = zone->blocklist.next ; ; block = block->next) {
 		Sys_Printf ("block:%p    size:%7i    tag:%3i ofs:%d\n",
-			block, block->size, block->tag, (byte *) block - (byte *) zone);
-		
+					block, block->size, block->tag,
+					(int) ((byte *) block - (byte *) zone));
+
 		if (block->next == &zone->blocklist)
 			break;			// all blocks have been hit	
 		if ( (byte *)block + block->size != (byte *)block->next)
@@ -293,9 +293,8 @@ void
 Z_CheckHeap (memzone_t *zone)
 {
 	memblock_t	*block;
-	
-	for (block = zone->blocklist.next ; ; block = block->next)
-	{
+
+	for (block = zone->blocklist.next ; ; block = block->next) {
 		if (block->next == &zone->blocklist)
 			break;			// all blocks have been hit	
 		if ( (byte *)block + block->size != (byte *)block->next)

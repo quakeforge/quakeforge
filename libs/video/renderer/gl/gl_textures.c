@@ -222,9 +222,12 @@ GL_TextureMode_f (void)
 		if (glt->mipmap) {
 			qfglBindTexture (GL_TEXTURE_2D, glt->texnum);
 			qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-					 gl_filter_min);
+							   gl_filter_min);
 			qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-					 gl_filter_max);
+							   gl_filter_max);
+			if (Anisotropy)
+				qfglTexParameterf (GL_TEXTURE_2D,
+								   GL_TEXTURE_MAX_ANISOTROPY_EXT, aniso);
 		}
 	}
 }
@@ -428,6 +431,9 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
 			qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
 							   gl_filter_max);
 	}
+	if (Anisotropy)
+		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
+						   aniso);
 
 	free (scaled);
 }
@@ -502,6 +508,9 @@ GL_Upload8_EXT (byte *data, int width, int height, qboolean mipmap,
 			qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
 							   gl_filter_max);
 	}
+	if (Anisotropy)
+		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
+						   aniso);
 
 	free (scaled);
 }

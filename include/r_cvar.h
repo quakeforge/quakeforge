@@ -14,6 +14,7 @@ extern struct cvar_s     *d_mipcap;
 extern struct cvar_s     *d_mipscale;
 
 extern struct cvar_s     *gl_affinemodels;
+extern struct cvar_s	 *gl_anisotropy;
 extern struct cvar_s     *gl_clear;
 extern struct cvar_s     *gl_conspin;
 extern struct cvar_s     *gl_constretch;

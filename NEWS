@@ -51,7 +51,7 @@ Changes from 0.5.4
         * treat server clients like non-client entities for GIB "frag" event
         * expand ~ for fs_dirconf
         * don't write config.cfg until /after/ it's been read :)
-        * ATI's libGL needs to be loaded with global symbols in order to work
+        * ATI's libGL needed to be loaded with global symbols in order to work
           properly
         * oss sound doesn't block if the sound device is busy (from Grievre)
         * add snd_bits/rate/stereo cvars to win and dx sound targets
@@ -62,12 +62,13 @@ Changes from 0.5.4
         * curses server console scrollback works
         * qfdefs nuked. no longer needed as "standard" progs get resolved
           staticly
-        * TruForm support. Controlled by gl_tessellate
+        * Anisotropy support, controlled by gl_anisotropy
+        * TruForm support, controlled by gl_tessellate
         * Improvements in time accounting. Accurate to +-0.5ms, instead of -1,0
           like others. Based on Grievre's and zquake's code
         * mangled sounds on gamedir change fixed thanks to Grievre
         * mtex support for world rendering.
-        * alias models us GL lighting
+        * alias models use GL lighting
         * support for 7 mouse buttons
         * all archived cvars get written to config.cfg prefixed with "seta"
           (new command that sets the archive bit)

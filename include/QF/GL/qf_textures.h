@@ -38,7 +38,8 @@ extern int gl_solid_format;
 extern int gl_lightmap_format;
 extern int gl_filter_min;
 extern int gl_filter_max;
-
+extern qboolean Anisotropy;
+extern float aniso;
 extern int part_tex;
 /*
 extern int part_tex_dot;

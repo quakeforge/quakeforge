@@ -66,7 +66,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 static char *
 PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val)
 {
-	static char	line[256];
+	static char	 line[256];
 	ddef_t		*def;
 	dfunction_t	*f;
 
@@ -78,7 +78,7 @@ PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val)
 					  PR_GetString (pr, val->string_var));
 			break;
 		case ev_entity:
-			snprintf (line, sizeof (line), "%i",
+			snprintf (line, sizeof (line), "%ld",
 					  NUM_FOR_BAD_EDICT (pr, PROG_TO_EDICT (pr, val->entity_var)));
 			break;
 		case ev_func:

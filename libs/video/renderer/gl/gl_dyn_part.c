@@ -145,7 +145,7 @@ particle_new_veryrandom (ptype_t type, int texnum, const vec3_t org,
 }
 */
 
-inline void
+void
 R_ClearParticles (void)
 {
 	numparticles = 0;

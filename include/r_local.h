@@ -255,7 +255,7 @@ qboolean R_AliasCheckBBox (void);
 
 void R_DrawParticles (void);
 void R_InitParticles (void);
-inline void R_ClearParticles (void);
+void R_ClearParticles (void);
 void R_ReadPointFile_f (void);
 void R_InitSprites (void);
 void R_SurfacePatch (void);

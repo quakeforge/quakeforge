@@ -73,6 +73,12 @@
 # define GL_TEXTURE_INDEX_SIZE_EXT			0x80ED
 #endif
 
+#ifndef GL_EXT_texture_filter_anisotropic
+# define GL_EXT_texture_filter_anisotropic
+# define GL_TEXTURE_MAX_ANISOTROPY_EXT		0x84fe
+# define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT	0x84ff
+#endif
+
 #ifndef GL_EXT_texture_object
 # define GL_EXT_texture_object
 # define GL_TEXTURE_PRIORITY_EXT 			0x8066
@@ -82,12 +88,12 @@
 # define GL_TEXTURE_3D_BINDING_EXT			0x806A
 #endif
 
-#ifndef GL_EXT_point_parameters
-# define GL_EXT_point_parameters
-# define GL_POINT_SIZE_MIN_EXT				0x8126
-# define GL_POINT_SIZE_MAX_EXT				0x8127
-# define GL_POINT_FADE_THRESHOLD_SIZE_EXT	0x8128
-# define GL_DISTANCE_ATTENUATION_EXT 		0x8129
+#ifndef GL_ARB_point_parameters
+# define GL_ARB_point_parameters
+# define GL_POINT_SIZE_MIN_ARB				0x8126
+# define GL_POINT_SIZE_MAX_ARB				0x8127
+# define GL_POINT_FADE_THRESHOLD_SIZE_ARB	0x8128
+# define GL_DISTANCE_ATTENUATION_ARB 		0x8129
 #endif
 
 #ifndef GL_EXT_shared_texture_palette
@@ -132,6 +138,12 @@
 # define GL_ACTIVE_TEXTURE_ARB 				0x84E0
 # define GL_CLIENT_ACTIVE_TEXTURE_ARB		0x84E1
 # define GL_MAX_TEXTURE_UNITS_ARB			0x84E2
+#endif
+
+#ifndef GL_ARB_point_sprite
+# define GL_ARB_point_sprite
+# define GL_POINT_SPRITE_ARB				0x8861
+# define GL_COORD_REPLACE_ARB				0x8862
 #endif
 
 #ifndef GL_ARB_texture_cube_map
@@ -265,15 +277,15 @@ typedef void (GLAPIENTRY *QF_glMultiTexCoord2sv) (GLenum target, const GLshort *
 typedef void (GLAPIENTRY *QF_glMultiTexCoord3sv) (GLenum target, const GLshort *v);
 typedef void (GLAPIENTRY *QF_glMultiTexCoord4sv) (GLenum target, const GLshort *v);
 
+// GL_ARB_point_parameters
+typedef void (GLAPIENTRY *QF_glPointParameterfARB) (GLenum pname, GLfloat param);
+typedef void (GLAPIENTRY *QF_glPointParameterfvARB) (GLenum pname, const GLfloat *params);
+
 // GL_EXT_paletted_texture
 typedef void (GLAPIENTRY *QF_glColorTableEXT) (GLenum target, GLenum internalFormat, GLsizei width, GLenum format, GLenum type, const GLvoid *table);
 typedef void (GLAPIENTRY *QF_glGetColorTableEXT) (GLenum target, GLenum format, GLenum type, GLvoid *data);
 typedef void (GLAPIENTRY *QF_glGetColorTableParameterivEXT) (GLenum target, GLenum pname, GLint *params);
 typedef void (GLAPIENTRY *QF_glGetColorTableParameterfvEXT) (GLenum target, GLenum pname, GLfloat *params);
-
-// GL_EXT_point_parameters
-typedef void (GLAPIENTRY *QF_glPointParameterfEXT) (GLenum pname, GLfloat param);
-typedef void (GLAPIENTRY *QF_glPointParameterfvEXT) (GLenum pname, const GLfloat *params);
 
 // GL_EXT_subtexture
 typedef void (GLAPIENTRY *QF_glTexSubImage1DEXT) (GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid *pixels);

@@ -66,8 +66,9 @@ ED_ClearEdict (progs_t *pr, edict_t *e, int val)
 {
 	unsigned int i;
 
-	if (NUM_FOR_EDICT(pr,e)<*pr->reserved_edicts)
-		Sys_Printf("clearing reserved edict %d\n", NUM_FOR_EDICT(pr,e));
+	if (NUM_FOR_EDICT (pr, e) < *pr->reserved_edicts)
+		Sys_Printf ("clearing reserved edict %ld\n",
+					NUM_FOR_EDICT (pr, e));
 	for (i=0; i < pr->progs->entityfields; i++)
 		e->v[i].integer_var = val;
 	e->free = false;

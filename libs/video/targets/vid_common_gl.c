@@ -83,7 +83,7 @@ int					use_bgra;
 int					gl_va_capable;
 int					vaelements;
 int         		texture_extension_number = 1;
-int					gl_filter_min = GL_LINEAR_MIPMAP_NEAREST;
+int					gl_filter_min = GL_LINEAR_MIPMAP_LINEAR;
 int					gl_filter_max = GL_LINEAR;
 float       		gldepthmin, gldepthmax;
 
@@ -104,7 +104,12 @@ qboolean			is8bit = false;
 
 qboolean			gl_feature_mach64 = false;
 
-// ATI PN_triangles
+// GL_EXT_texture_filter_anisotropic
+qboolean 			Anisotropy;
+static float		aniso_max;
+float				aniso;
+
+// GL_ATI_pn_triangles
 static qboolean		TruForm;
 static int			tess_max;
 int					tess;
@@ -112,6 +117,7 @@ int					tess;
 // GL_LIGHT
 int					gl_max_lights;
 
+cvar_t		*gl_anisotropy;
 cvar_t		*gl_doublebright;
 cvar_t      *gl_fb_bmodels;
 cvar_t      *gl_finish;
@@ -232,6 +238,22 @@ gl_screenshot_byte_swap_f (cvar_t *var)
 }
 
 static void
+gl_anisotropy_f (cvar_t * var)
+{
+	if (Anisotropy) {
+		if (var)
+			aniso = (bound (1.0, var->value, aniso_max));
+		else
+			aniso = 1.0;
+	} else {
+		aniso = 1.0;
+		if (var)
+			Con_Printf ("Anisotropy (GL_EXT_texture_filter_anisotropic) is "
+						"not supported by your hardware and/or drivers.\n");
+	}
+}
+
+static void
 gl_tessellate_f (cvar_t * var)
 {
 	if (TruForm) {
@@ -271,6 +293,11 @@ GL_Common_Init_Cvars (void)
 				  gl_screenshot_byte_swap_f, "Swap the bytes for gl "
 				  "screenshots. Needed if you get screenshots with red and "
 				  "blue swapped.");
+	gl_anisotropy =
+		Cvar_Get ("gl_anisotropy", "1.0", CVAR_NONE, gl_anisotropy_f,
+				  nva ("Specifies degree of anisotropy, from 1.0 to %f. "
+					   "Higher anisotropy means less distortion of textures "
+					   "at shallow angles to the viewer.", aniso_max));
 	gl_tessellate =
 		Cvar_Get ("gl_tessellate", "0", CVAR_NONE, gl_tessellate_f,
 				  nva ("Specifies tessellation level from 0 to %i. Higher "
@@ -319,6 +346,18 @@ CheckGLVersionString (void)
 
 	if (strstr (gl_renderer, "Mesa DRI Mach64"))
 		gl_feature_mach64 = true;
+}
+
+static void
+CheckAnisotropyExtensions (void)
+{
+	if (QFGL_ExtensionPresent ("GL_EXT_texture_filter_anisotropic")) {
+		Anisotropy = true;
+		qfglGetFloatv (GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &aniso_max);
+	} else {
+		Anisotropy = false;
+		aniso_max = 1.0;
+	}
 }
 
 static void
@@ -556,9 +595,13 @@ GL_Init_Common (void)
 	qfglEnable (GL_BLEND);
 	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	CheckAnisotropyExtensions ();
 	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+	if (Anisotropy)
+		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
+						   aniso);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 

@@ -218,7 +218,7 @@ void ED_EntityParseFunction (progs_t *pr);
 #define PR_edicts(p)		((byte *) *(p)->edicts)
 
 #define NEXT_EDICT(p,e)		((edict_t *) ((byte *) e + (p)->pr_edict_size))
-#define EDICT_TO_PROG(p,e)	((byte *) (e) - PR_edicts (p))
+#define EDICT_TO_PROG(p,e)	((long) ((byte *) (e) - PR_edicts (p)))
 #define PROG_TO_EDICT(p,e)	((edict_t *) (PR_edicts (p) + (e)))
 #define NUM_FOR_BAD_EDICT(p,e) (EDICT_TO_PROG (p, e) / (p)->pr_edict_size)
 #ifndef PR_PARANOID_PROGS

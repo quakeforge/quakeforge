@@ -793,6 +793,9 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		qfglBindTexture (GL_TEXTURE_2D, lightmap_textures + i);
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		if (Anisotropy)
+			qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
+							   aniso);
 		qfglTexImage2D (GL_TEXTURE_2D, 0, lightmap_bytes, BLOCK_WIDTH,
 						BLOCK_HEIGHT, 0, gl_lightmap_format,
 						GL_UNSIGNED_BYTE, lightmaps[i]);
