@@ -609,9 +609,14 @@ Cmd_Init (void)
 int
 Cmd_ExecuteString (const char *text, cmd_source_t src)
 {
+	cbuf_t     *old = cbuf_active;
+	cbuf_active = cmd_cbuf;
+
 	cmd_source = src;
 	COM_TokenizeString (text, cmd_cbuf->args);
 	Cmd_Command (cmd_cbuf->args);
+
+	cbuf_active = old;
 	return 0;
 }
 
