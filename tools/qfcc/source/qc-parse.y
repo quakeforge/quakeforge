@@ -427,7 +427,7 @@ arg_list
 
 signed_const
 	: const
-	| '-' const
+	| '-' signed_const
 		{
 			$$ = unary_expr ('-', $2);
 		}
