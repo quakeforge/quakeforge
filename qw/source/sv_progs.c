@@ -38,12 +38,19 @@
 #endif
 
 #include "cmd.h"
-#include "progdefs.h"
-#include "progs.h"
 #include "server.h"
+#include "sv_progs.h"
 #include "world.h"
 
-int eval_alpha, eval_scale, eval_glowsize, eval_glowcolor, eval_colormod;
+sv_globals_t sv_globals;
+sv_funcs_t sv_funcs;
+
+int eval_alpha;
+int eval_scale;
+int eval_glowsize;
+int eval_glowcolor;
+int eval_colormod;
+
 progs_t	    sv_pr_state;
 cvar_t     *r_skyname;
 cvar_t     *sv_progs;
@@ -151,6 +158,81 @@ SV_LoadProgs (void)
 		SV_Error ("SV_LoadProgs: couldn't load %s", sv_progs->string);
 	if (sv_pr_state.progs->crc != PROGHEADER_CRC)
 		SV_Error ("You must have the qwprogs.dat from QuakeWorld installed");
+	// progs engine needs these globals anyway
+	sv_globals.self = sv_pr_state.globals.self;
+	sv_globals.time = sv_pr_state.globals.time;
+
+	(void *) sv_globals.other = 
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "other")->ofs];
+	(void *) sv_globals.world =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "world")->ofs];
+	(void *) sv_globals.frametime =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "frametime")->ofs];
+	(void *) sv_globals.newmis =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "newmis")->ofs];
+	(void *) sv_globals.force_retouch =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "force_retouch")->ofs];
+	(void *) sv_globals.mapname =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "mapname")->ofs];
+	(void *) sv_globals.serverflags =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "serverflags")->ofs];
+	(void *) sv_globals.total_secrets =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "total_secrets")->ofs];
+	(void *) sv_globals.total_monsters =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "total_monsters")->ofs];
+	(void *) sv_globals.found_secrets =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "found_secrets")->ofs];
+	(void *) sv_globals.killed_monsters =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "killed_monsters")->ofs];
+	(void *) sv_globals.parms =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "parm1")->ofs];
+	(void *) sv_globals.v_forward =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "v_forward")->ofs];
+	(void *) sv_globals.v_up =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "v_up")->ofs];
+	(void *) sv_globals.v_right =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "v_right")->ofs];
+	(void *) sv_globals.trace_allsolid =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "trace_allsolid")->ofs];
+	(void *) sv_globals.trace_startsolid =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "trace_startsolid")->ofs];
+	(void *) sv_globals.trace_fraction =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "trace_fraction")->ofs];
+	(void *) sv_globals.trace_endpos =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "trace_endpos")->ofs];
+	(void *) sv_globals.trace_plane_normal =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "trace_plane_normal")->ofs];
+	(void *) sv_globals.trace_plane_dist =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "trace_plane_dist")->ofs];
+	(void *) sv_globals.trace_ent =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "trace_ent")->ofs];
+	(void *) sv_globals.trace_inopen =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "trace_inopen")->ofs];
+	(void *) sv_globals.trace_inwater =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "trace_inwater")->ofs];
+	(void *) sv_globals.msg_entity =
+		&sv_pr_state.pr_globals[PR_FindGlobal (&sv_pr_state, "msg_entity")->ofs];
+
+	sv_funcs.main =
+		ED_FindFunction (&sv_pr_state, "main") - sv_pr_state.pr_functions;
+	sv_funcs.StartFrame =
+		ED_FindFunction (&sv_pr_state, "StartFrame") - sv_pr_state.pr_functions;
+	sv_funcs.PlayerPreThink =
+		ED_FindFunction (&sv_pr_state, "PlayerPreThink") - sv_pr_state.pr_functions;
+	sv_funcs.PlayerPostThink =
+		ED_FindFunction (&sv_pr_state, "PlayerPostThink") - sv_pr_state.pr_functions;
+	sv_funcs.ClientKill =
+		ED_FindFunction (&sv_pr_state, "ClientKill") - sv_pr_state.pr_functions;
+	sv_funcs.ClientConnect =
+		ED_FindFunction (&sv_pr_state, "ClientConnect") - sv_pr_state.pr_functions;
+	sv_funcs.PutClientInServer =
+		ED_FindFunction (&sv_pr_state, "PutClientInServer") - sv_pr_state.pr_functions;
+	sv_funcs.ClientDisconnect =
+		ED_FindFunction (&sv_pr_state, "ClientDisconnect") - sv_pr_state.pr_functions;
+	sv_funcs.SetNewParms =
+		ED_FindFunction (&sv_pr_state, "SetNewParms") - sv_pr_state.pr_functions;
+	sv_funcs.SetChangeParms =
+		ED_FindFunction (&sv_pr_state, "SetChangeParms") - sv_pr_state.pr_functions;
 }
 
 void

@@ -38,8 +38,8 @@
 
 #include "msg.h"
 #include "msg_ucmd.h"
-#include "progdefs.h"
 #include "server.h"
+#include "sv_progs.h"
 #include "sys.h"
 
 // LordHavoc: added and removed certain eval_ items

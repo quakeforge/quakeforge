@@ -38,9 +38,9 @@
 
 #include "crc.h"
 #include "msg.h"
-#include "progdefs.h"
 #include "quakefs.h"
 #include "server.h"
+#include "sv_progs.h"
 #include "world.h"
 #include "va.h"
 
@@ -176,7 +176,7 @@ SV_SaveSpawnparms (void)
 		return;							// no progs loaded yet
 
 	// serverflags is the only game related thing maintained
-	svs.serverflags = ((globalvars_t*)sv_pr_state.pr_globals)->serverflags;
+	svs.serverflags = *sv_globals.serverflags;
 
 	for (i = 0, host_client = svs.clients; i < MAX_CLIENTS; i++, host_client++) {
 		if (host_client->state != cs_spawned)
@@ -186,10 +186,10 @@ SV_SaveSpawnparms (void)
 		host_client->state = cs_connected;
 
 		// call the progs to get default spawn parms for the new client
-		((globalvars_t*)sv_pr_state.pr_globals)->self = EDICT_TO_PROG (&sv_pr_state, host_client->edict);
-		PR_ExecuteProgram (&sv_pr_state, ((globalvars_t*)sv_pr_state.pr_globals)->SetChangeParms);
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, host_client->edict);
+		PR_ExecuteProgram (&sv_pr_state, sv_funcs.SetChangeParms);
 		for (j = 0; j < NUM_SPAWN_PARMS; j++)
-			host_client->spawn_parms[j] = (&((globalvars_t*)sv_pr_state.pr_globals)->parm1)[j];
+			host_client->spawn_parms[j] = sv_globals.parms[j];
 	}
 }
 
@@ -402,9 +402,9 @@ SV_SpawnServer (char *server)
 	((entvars_t*)&ent->v)->solid = SOLID_BSP;
 	((entvars_t*)&ent->v)->movetype = MOVETYPE_PUSH;
 
-	((globalvars_t*)sv_pr_state.pr_globals)->mapname = PR_SetString (&sv_pr_state, sv.name);
+	*sv_globals.mapname = PR_SetString (&sv_pr_state, sv.name);
 	// serverflags are for cross level information (sigils)
-	((globalvars_t*)sv_pr_state.pr_globals)->serverflags = svs.serverflags;
+	*sv_globals.serverflags = svs.serverflags;
 
 	// run the frame start qc function to let progs check cvars
 	SV_ProgStartFrame ();

@@ -47,10 +47,10 @@
 #include "cvar.h"
 #include "msg.h"
 #include "msg_ucmd.h"
-#include "progdefs.h"
 #include "pmove.h"
 #include "quakefs.h"
 #include "server.h"
+#include "sv_progs.h"
 #include "sys.h"
 #include "va.h"
 #include "world.h"
@@ -399,19 +399,19 @@ SV_Spawn_f (void)
 
 	ClientReliableWrite_Begin (host_client, svc_updatestatlong, 6);
 	ClientReliableWrite_Byte (host_client, STAT_TOTALSECRETS);
-	ClientReliableWrite_Long (host_client, ((globalvars_t*)sv_pr_state.pr_globals)->total_secrets);
+	ClientReliableWrite_Long (host_client, *sv_globals.total_secrets);
 
 	ClientReliableWrite_Begin (host_client, svc_updatestatlong, 6);
 	ClientReliableWrite_Byte (host_client, STAT_TOTALMONSTERS);
-	ClientReliableWrite_Long (host_client, ((globalvars_t*)sv_pr_state.pr_globals)->total_monsters);
+	ClientReliableWrite_Long (host_client, *sv_globals.total_monsters);
 
 	ClientReliableWrite_Begin (host_client, svc_updatestatlong, 6);
 	ClientReliableWrite_Byte (host_client, STAT_SECRETS);
-	ClientReliableWrite_Long (host_client, ((globalvars_t*)sv_pr_state.pr_globals)->found_secrets);
+	ClientReliableWrite_Long (host_client, *sv_globals.found_secrets);
 
 	ClientReliableWrite_Begin (host_client, svc_updatestatlong, 6);
 	ClientReliableWrite_Byte (host_client, STAT_MONSTERS);
-	ClientReliableWrite_Long (host_client, ((globalvars_t*)sv_pr_state.pr_globals)->killed_monsters);
+	ClientReliableWrite_Long (host_client, *sv_globals.killed_monsters);
 
 	// get the client to check and download skins
 	// when that is completed, a begin command will be issued
@@ -470,27 +470,27 @@ SV_Begin_f (void)
 		if (SpectatorConnect) {
 			// copy spawn parms out of the client_t
 			for (i = 0; i < NUM_SPAWN_PARMS; i++)
-				(&((globalvars_t*)sv_pr_state.pr_globals)->parm1)[i] = host_client->spawn_parms[i];
+				sv_globals.parms[i] = host_client->spawn_parms[i];
 
 			// call the spawn function
-			((globalvars_t*)sv_pr_state.pr_globals)->time = sv.time;
-			((globalvars_t*)sv_pr_state.pr_globals)->self = EDICT_TO_PROG (&sv_pr_state, sv_player);
+			*sv_globals.time = sv.time;
+			*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
 			PR_ExecuteProgram (&sv_pr_state, SpectatorConnect);
 		}
 	} else {
 		// copy spawn parms out of the client_t
 		for (i = 0; i < NUM_SPAWN_PARMS; i++)
-			(&((globalvars_t*)sv_pr_state.pr_globals)->parm1)[i] = host_client->spawn_parms[i];
+			sv_globals.parms[i] = host_client->spawn_parms[i];
 
 		// call the spawn function
-		((globalvars_t*)sv_pr_state.pr_globals)->time = sv.time;
-		((globalvars_t*)sv_pr_state.pr_globals)->self = EDICT_TO_PROG (&sv_pr_state, sv_player);
-		PR_ExecuteProgram (&sv_pr_state, ((globalvars_t*)sv_pr_state.pr_globals)->ClientConnect);
+		*sv_globals.time = sv.time;
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
+		PR_ExecuteProgram (&sv_pr_state, sv_funcs.ClientConnect);
 
 		// actually spawn the player
-		((globalvars_t*)sv_pr_state.pr_globals)->time = sv.time;
-		((globalvars_t*)sv_pr_state.pr_globals)->self = EDICT_TO_PROG (&sv_pr_state, sv_player);
-		PR_ExecuteProgram (&sv_pr_state, ((globalvars_t*)sv_pr_state.pr_globals)->PutClientInServer);
+		*sv_globals.time = sv.time;
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
+		PR_ExecuteProgram (&sv_pr_state, sv_funcs.PutClientInServer);
 	}
 
 	// clear the net statistics, because connecting gives a bogus picture
@@ -907,9 +907,9 @@ SV_Kill_f (void)
 		return;
 	}
 
-	((globalvars_t*)sv_pr_state.pr_globals)->time = sv.time;
-	((globalvars_t*)sv_pr_state.pr_globals)->self = EDICT_TO_PROG (&sv_pr_state, sv_player);
-	PR_ExecuteProgram (&sv_pr_state, ((globalvars_t*)sv_pr_state.pr_globals)->ClientKill);
+	*sv_globals.time = sv.time;
+	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
+	PR_ExecuteProgram (&sv_pr_state, sv_funcs.ClientKill);
 }
 
 /*
@@ -1484,13 +1484,13 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 	sv_frametime = min (0.1, ucmd->msec * 0.001);
 
 	if (!host_client->spectator) {
-		((globalvars_t*)sv_pr_state.pr_globals)->frametime = sv_frametime;
+		*sv_globals.frametime = sv_frametime;
 
-		((globalvars_t*)sv_pr_state.pr_globals)->time = sv.time;
-		((globalvars_t*)sv_pr_state.pr_globals)->self = EDICT_TO_PROG (&sv_pr_state,
+		*sv_globals.time = sv.time;
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state,
 															sv_player);
 		PR_ExecuteProgram (&sv_pr_state,
-						   ((globalvars_t*)sv_pr_state.pr_globals)->PlayerPreThink);
+						   sv_funcs.PlayerPreThink);
 
 		SV_RunThink (sv_player);
 	}
@@ -1576,8 +1576,8 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 			ent = EDICT_NUM (&sv_pr_state, n);
 			if (!((entvars_t*)&ent->v)->touch || (playertouch[n / 8] & (1 << (n % 8))))
 				continue;
-			((globalvars_t*)sv_pr_state.pr_globals)->self = EDICT_TO_PROG (&sv_pr_state, ent);
-			((globalvars_t*)sv_pr_state.pr_globals)->other = EDICT_TO_PROG (&sv_pr_state, sv_player);
+			*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
+			*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, sv_player);
 			PR_ExecuteProgram (&sv_pr_state, ((entvars_t*)&ent->v)->touch);
 			playertouch[n / 8] |= 1 << (n % 8);
 		}
@@ -1595,15 +1595,15 @@ SV_PostRunCmd (void)
 	// run post-think
 
 	if (!host_client->spectator) {
-		((globalvars_t*)sv_pr_state.pr_globals)->time = sv.time;
-		((globalvars_t*)sv_pr_state.pr_globals)->self = EDICT_TO_PROG (&sv_pr_state,
+		*sv_globals.time = sv.time;
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state,
 															sv_player);
 		PR_ExecuteProgram (&sv_pr_state,
-						   ((globalvars_t*)sv_pr_state.pr_globals)->PlayerPostThink);
+						   sv_funcs.PlayerPostThink);
 		SV_RunNewmis ();
 	} else if (SpectatorThink) {
-		((globalvars_t*)sv_pr_state.pr_globals)->time = sv.time;
-		((globalvars_t*)sv_pr_state.pr_globals)->self = EDICT_TO_PROG (&sv_pr_state,
+		*sv_globals.time = sv.time;
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state,
 															sv_player);
 		PR_ExecuteProgram (&sv_pr_state, SpectatorThink);
 	}

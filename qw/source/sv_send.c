@@ -39,8 +39,8 @@
 
 #include "bothdefs.h"
 #include "msg.h"
-#include "progdefs.h"
 #include "server.h"
+#include "sv_progs.h"
 #include "sys.h"
 
 #define CHAN_AUTO   0
@@ -558,7 +558,7 @@ SV_UpdateClientStats (client_t *client)
 		stats[STAT_ACTIVEWEAPON] = ((entvars_t*)&ent->v)->weapon;
 	// stuff the sigil bits into the high bits of items for sbar
 	stats[STAT_ITEMS] =
-		(int) ((entvars_t*)&ent->v)->items | ((int) ((globalvars_t*)sv_pr_state.pr_globals)->serverflags << 28);
+		(int) ((entvars_t*)&ent->v)->items | ((int) *sv_globals.serverflags << 28);
 
 	// Extensions to the QW 2.40 protocol for Mega2k  --KB
 	stats[STAT_VIEWHEIGHT] = (int) ((entvars_t*)&ent->v)->view_ofs[2];

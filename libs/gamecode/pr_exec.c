@@ -352,8 +352,8 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 	int         profile, startprofile;
 
 	if (!fnum || fnum >= pr->progs->numfunctions) {
-		if (*pr->g_self)
-			ED_Print (pr, PROG_TO_EDICT (pr, *pr->g_self));
+		if (*pr->globals.self)
+			ED_Print (pr, PROG_TO_EDICT (pr, *pr->globals.self));
 		PR_Error (pr, "PR_ExecuteProgram: NULL function");
 	}
 
@@ -675,10 +675,10 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					return;					// all done
 				break;
 			case OP_STATE:
-				ed = PROG_TO_EDICT (pr, *pr->g_self);
-				ed->v[pr->f_nextthink].float_var = *pr->time + 0.1;
-				ed->v[pr->f_frame].float_var = E_OPA->_float;
-				ed->v[pr->f_think].func_var = E_OPB->function;
+				ed = PROG_TO_EDICT (pr, *pr->globals.self);
+				ed->v[pr->fields.nextthink].float_var = *pr->time + 0.1;
+				ed->v[pr->fields.frame].float_var = E_OPA->_float;
+				ed->v[pr->fields.think].func_var = E_OPB->function;
 				break;
 // LordHavoc: to be enabled when Progs version 7 (or whatever it will be numbered) is finalized
 /*

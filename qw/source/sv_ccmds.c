@@ -41,11 +41,11 @@
 #include "bothdefs.h"
 #include "cmd.h"
 #include "msg.h"
-#include "progdefs.h"
 #include "qargs.h"
 #include "qendian.h"
 #include "quakefs.h"
 #include "server.h"
+#include "sv_progs.h"
 #include "sys.h"
 #include "va.h"
 

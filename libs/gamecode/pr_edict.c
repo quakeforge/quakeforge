@@ -863,7 +863,7 @@ ED_LoadFromFile (progs_t * pr, char *data)
 	ent = NULL;
 	inhibit = 0;
 
-	*pr->g_time = *(pr)->time;
+	*pr->globals.time = *(pr)->time;
 
 	// parse ents
 	while (1) {
@@ -907,7 +907,7 @@ ED_LoadFromFile (progs_t * pr, char *data)
 			continue;
 		}
 
-		*pr->g_self = EDICT_TO_PROG (pr, ent);
+		*pr->globals.self = EDICT_TO_PROG (pr, ent);
 		PR_ExecuteProgram (pr, func - pr->pr_functions);
 		if (pr->flush)
 			pr->flush ();
@@ -1008,16 +1008,16 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 	def = PR_FindGlobal (pr, "time");
 	if (!def)
 		PR_Error (pr, "%s: undefined symbol: time", progsname);
-	pr->g_time = &pr->pr_globals[def->ofs].float_var;
+	pr->globals.time = &pr->pr_globals[def->ofs].float_var;
 	def = PR_FindGlobal (pr, "self");
 	if (!def)
 		PR_Error (pr, "%s: undefined symbol: self", progsname);
-	pr->g_self = &pr->pr_globals[def->ofs].edict_var;
-	if (!(pr->f_nextthink = FindFieldOffset (pr, "nextthink")))
+	pr->globals.self = &pr->pr_globals[def->ofs].edict_var;
+	if (!(pr->fields.nextthink = FindFieldOffset (pr, "nextthink")))
 		PR_Error (pr, "%s: undefined field: nextthink", progsname);
-	if (!(pr->f_frame = FindFieldOffset (pr, "frame")))
+	if (!(pr->fields.frame = FindFieldOffset (pr, "frame")))
 		PR_Error (pr, "%s: undefined field: frame", progsname);
-	if (!(pr->f_think = FindFieldOffset (pr, "think")))
+	if (!(pr->fields.think = FindFieldOffset (pr, "think")))
 		PR_Error (pr, "%s: undefined field: think", progsname);
 
 	// LordHavoc: Ender added this

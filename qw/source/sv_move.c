@@ -34,10 +34,10 @@
 #include <math.h>
 
 #include "qtypes.h"
-#include "progdefs.h"
 #include "pmove.h"
 #include "server.h"
 #include "sv_pr_cmds.h"
+#include "sv_progs.h"
 #include "world.h"
 
 #define	STEPSIZE	18
@@ -384,7 +384,7 @@ SV_MoveToGoal (progs_t *pr)
 	edict_t    *ent, *goal;
 	float       dist;
 
-	ent = PROG_TO_EDICT (&sv_pr_state, ((globalvars_t*)sv_pr_state.pr_globals)->self);
+	ent = PROG_TO_EDICT (&sv_pr_state, *sv_globals.self);
 	goal = PROG_TO_EDICT (&sv_pr_state, ((entvars_t*)&ent->v)->goalentity);
 	dist = G_FLOAT (&sv_pr_state, OFS_PARM0);
 

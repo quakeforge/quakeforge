@@ -41,8 +41,8 @@
 #include "commdef.h"
 #include "console.h"
 #include "crc.h"
-#include "progdefs.h"
 #include "server.h"
+#include "sv_progs.h"
 #include "world.h"
 
 /*
@@ -289,16 +289,16 @@ SV_TouchLinks (edict_t *ent, areanode_t *node)
 			|| ((entvars_t*)&ent->v)->absmax[2] < ((entvars_t*)&touch->v)->absmin[2])
 			continue;
 
-		old_self = ((globalvars_t*)sv_pr_state.pr_globals)->self;
-		old_other = ((globalvars_t*)sv_pr_state.pr_globals)->other;
+		old_self = *sv_globals.self;
+		old_other = *sv_globals.other;
 
-		((globalvars_t*)sv_pr_state.pr_globals)->self = EDICT_TO_PROG (&sv_pr_state, touch);
-		((globalvars_t*)sv_pr_state.pr_globals)->other = EDICT_TO_PROG (&sv_pr_state, ent);
-		((globalvars_t*)sv_pr_state.pr_globals)->time = sv.time;
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, touch);
+		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, ent);
+		*sv_globals.time = sv.time;
 		PR_ExecuteProgram (&sv_pr_state, ((entvars_t*)&touch->v)->touch);
 
-		((globalvars_t*)sv_pr_state.pr_globals)->self = old_self;
-		((globalvars_t*)sv_pr_state.pr_globals)->other = old_other;
+		*sv_globals.self = old_self;
+		*sv_globals.other = old_other;
 	}
 
 // recurse down both sides

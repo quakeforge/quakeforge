@@ -226,12 +226,16 @@ struct progs_s {
 	void			(*flush)(void);
 
 	// required globals
-	float			*g_time;
-	int				*g_self;
+	struct {
+		float		*time;
+		int			*self;
+	} globals;
 	// required fields (offsets into the edict)
-	int				f_nextthink;
-	int				f_frame;
-	int				f_think;
+	struct {
+		int			nextthink;
+		int			frame;
+		int			think;
+	} fields;
 };
 
 #endif // _PROGS_H

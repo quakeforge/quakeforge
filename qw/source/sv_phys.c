@@ -31,9 +31,9 @@
 #endif
 
 #include "cvar.h"
-#include "progdefs.h"
 #include "pmove.h"
 #include "server.h"
+#include "sv_progs.h"
 #include "world.h"
 
 /*
@@ -155,9 +155,9 @@ SV_RunThink (edict_t *ent)
 		// it is possible to start that way
 		// by a trigger with a local time.
 		((entvars_t*)&ent->v)->nextthink = 0;
-		((globalvars_t*)sv_pr_state.pr_globals)->time = thinktime;
-		((globalvars_t*)sv_pr_state.pr_globals)->self = EDICT_TO_PROG (&sv_pr_state, ent);
-		((globalvars_t*)sv_pr_state.pr_globals)->other = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
+		*sv_globals.time = thinktime;
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
+		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
 		PR_ExecuteProgram (&sv_pr_state, ((entvars_t*)&ent->v)->think);
 
 		if (ent->free)
@@ -177,24 +177,24 @@ SV_Impact (edict_t *e1, edict_t *e2)
 {
 	int         old_self, old_other;
 
-	old_self = ((globalvars_t*)sv_pr_state.pr_globals)->self;
-	old_other = ((globalvars_t*)sv_pr_state.pr_globals)->other;
+	old_self = *sv_globals.self;
+	old_other = *sv_globals.other;
 
-	((globalvars_t*)sv_pr_state.pr_globals)->time = sv.time;
+	*sv_globals.time = sv.time;
 	if (((entvars_t*)&e1->v)->touch && ((entvars_t*)&e1->v)->solid != SOLID_NOT) {
-		((globalvars_t*)sv_pr_state.pr_globals)->self = EDICT_TO_PROG (&sv_pr_state, e1);
-		((globalvars_t*)sv_pr_state.pr_globals)->other = EDICT_TO_PROG (&sv_pr_state, e2);
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, e1);
+		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, e2);
 		PR_ExecuteProgram (&sv_pr_state, ((entvars_t*)&e1->v)->touch);
 	}
 
 	if (((entvars_t*)&e2->v)->touch && ((entvars_t*)&e2->v)->solid != SOLID_NOT) {
-		((globalvars_t*)sv_pr_state.pr_globals)->self = EDICT_TO_PROG (&sv_pr_state, e2);
-		((globalvars_t*)sv_pr_state.pr_globals)->other = EDICT_TO_PROG (&sv_pr_state, e1);
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, e2);
+		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, e1);
 		PR_ExecuteProgram (&sv_pr_state, ((entvars_t*)&e2->v)->touch);
 	}
 
-	((globalvars_t*)sv_pr_state.pr_globals)->self = old_self;
-	((globalvars_t*)sv_pr_state.pr_globals)->other = old_other;
+	*sv_globals.self = old_self;
+	*sv_globals.other = old_other;
 }
 
 
@@ -514,8 +514,8 @@ SV_Push (edict_t *pusher, vec3_t move)
 		// if the pusher has a "blocked" function, call it
 		// otherwise, just stay in place until the obstacle is gone
 		if (((entvars_t*)&pusher->v)->blocked) {
-			((globalvars_t*)sv_pr_state.pr_globals)->self = EDICT_TO_PROG (&sv_pr_state, pusher);
-			((globalvars_t*)sv_pr_state.pr_globals)->other = EDICT_TO_PROG (&sv_pr_state, check);
+			*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, pusher);
+			*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, check);
 			PR_ExecuteProgram (&sv_pr_state, ((entvars_t*)&pusher->v)->blocked);
 		}
 		// move back any entities we already moved
@@ -582,9 +582,9 @@ SV_Physics_Pusher (edict_t *ent)
 	if (thinktime > oldltime && thinktime <= ((entvars_t*)&ent->v)->ltime) {
 		VectorCopy (((entvars_t*)&ent->v)->origin, oldorg);
 		((entvars_t*)&ent->v)->nextthink = 0;
-		((globalvars_t*)sv_pr_state.pr_globals)->time = sv.time;
-		((globalvars_t*)sv_pr_state.pr_globals)->self = EDICT_TO_PROG (&sv_pr_state, ent);
-		((globalvars_t*)sv_pr_state.pr_globals)->other = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
+		*sv_globals.time = sv.time;
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
+		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
 		PR_ExecuteProgram (&sv_pr_state, ((entvars_t*)&ent->v)->think);
 		if (ent->free)
 			return;
@@ -830,8 +830,8 @@ SV_PPushMove (edict_t *pusher, float movetime)	// player push
 		// Stage 4: Yes, it must be. Fail the move.
 		VectorCopy (((entvars_t*)&pusher->v)->origin, ((entvars_t*)&pusher->v)->oldorigin);	// Revert
 		if (((entvars_t*)&pusher->v)->blocked) {		// Blocked func?
-			((globalvars_t*)sv_pr_state.pr_globals)->self = EDICT_TO_PROG (&sv_pr_state, pusher);
-			((globalvars_t*)sv_pr_state.pr_globals)->other = EDICT_TO_PROG (&sv_pr_state, check);
+			*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, pusher);
+			*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, check);
 			PR_ExecuteProgram (&sv_pr_state, ((entvars_t*)&pusher->v)->blocked);
 		}
 
@@ -866,9 +866,9 @@ SV_Physics_PPusher (edict_t *ent)
 
 	if (thinktime > oldltime && thinktime <= ((entvars_t*)&ent->v)->ltime) {
 		((entvars_t*)&ent->v)->nextthink = 0;
-		((globalvars_t*)sv_pr_state.pr_globals)->time = sv.time;
-		((globalvars_t*)sv_pr_state.pr_globals)->self = EDICT_TO_PROG (&sv_pr_state, ent);
-		((globalvars_t*)sv_pr_state.pr_globals)->other = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
+		*sv_globals.time = sv.time;
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, ent);
+		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
 		PR_ExecuteProgram (&sv_pr_state, ((entvars_t*)&ent->v)->think);
 		if (ent->free)
 			return;
@@ -881,10 +881,10 @@ void
 SV_ProgStartFrame (void)
 {
 // let the progs know that a new frame has started
-	((globalvars_t*)sv_pr_state.pr_globals)->self = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
-	((globalvars_t*)sv_pr_state.pr_globals)->other = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
-	((globalvars_t*)sv_pr_state.pr_globals)->time = sv.time;
-	PR_ExecuteProgram (&sv_pr_state, ((globalvars_t*)sv_pr_state.pr_globals)->StartFrame);
+	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
+	*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
+	*sv_globals.time = sv.time;
+	PR_ExecuteProgram (&sv_pr_state, sv_funcs.StartFrame);
 }
 
 /*
@@ -932,11 +932,11 @@ SV_RunNewmis (void)
 {
 	edict_t    *ent;
 
-	if (!((globalvars_t*)sv_pr_state.pr_globals)->newmis)
+	if (!*sv_globals.newmis)
 		return;
-	ent = PROG_TO_EDICT (&sv_pr_state, ((globalvars_t*)sv_pr_state.pr_globals)->newmis);
+	ent = PROG_TO_EDICT (&sv_pr_state, *sv_globals.newmis);
 	sv_frametime = 0.05;
-	((globalvars_t*)sv_pr_state.pr_globals)->newmis = 0;
+	*sv_globals.newmis = 0;
 
 	SV_RunEntity (ent);
 }
@@ -959,7 +959,7 @@ SV_Physics (void)
 		sv_frametime = sv_maxtic->value;
 	old_time = realtime;
 
-	((globalvars_t*)sv_pr_state.pr_globals)->frametime = sv_frametime;
+	*sv_globals.frametime = sv_frametime;
 
 	SV_ProgStartFrame ();
 
@@ -972,7 +972,7 @@ SV_Physics (void)
 		if (ent->free)
 			continue;
 
-		if (((globalvars_t*)sv_pr_state.pr_globals)->force_retouch)
+		if (*sv_globals.force_retouch)
 			SV_LinkEdict (ent, true);	// force retouch even for stationary
 
 		if (i > 0 && i <= MAX_CLIENTS)
@@ -983,15 +983,15 @@ SV_Physics (void)
 		SV_RunNewmis ();
 	}
 
-	if (((globalvars_t*)sv_pr_state.pr_globals)->force_retouch)
-		((globalvars_t*)sv_pr_state.pr_globals)->force_retouch--;
+	if (*sv_globals.force_retouch)
+		(*sv_globals.force_retouch)--;
 
 // 2000-01-02 EndFrame function by Maddes/FrikaC  start
 	if (EndFrame) {
 		// let the progs know that the frame has ended
-		((globalvars_t*)sv_pr_state.pr_globals)->self = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
-		((globalvars_t*)sv_pr_state.pr_globals)->other = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
-		((globalvars_t*)sv_pr_state.pr_globals)->time = sv.time;
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
+		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
+		*sv_globals.time = sv.time;
 		PR_ExecuteProgram (&sv_pr_state, EndFrame);
 	}
 // 2000-01-02 EndFrame function by Maddes/FrikaC  end
