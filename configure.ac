@@ -1477,7 +1477,7 @@ QF_WITH_TARGETS(
 QF_WITH_TARGETS(
 	tools,
 	[  --with-tools=<list>     compile qf tools:],
-	[pak,qfcc,qfdefs,qflight,qfmodelgen,qfprogs,qfvis,qwaq,wav],dummy
+	[pak,qfbsp,qfcc,qfdefs,qflight,qfmodelgen,qfprogs,qfvis,qwaq,wav],dummy
 )
 
 unset CL_TARGETS
@@ -1652,6 +1652,9 @@ unset TOOLS_TARGETS
 if test "x$ENABLE_tools_pak" = xyes; then
 	TOOLS_TARGETS="$TOOLS_TARGETS pak"
 fi
+if test "x$ENABLE_tools_qfbsp" = xyes; then
+	TOOLS_TARGETS="$TOOLS_TARGETS qfbsp"
+fi
 if test "x$ENABLE_tools_qfcc" = xyes; then
 	TOOLS_TARGETS="$TOOLS_TARGETS qfcc"
 fi
@@ -1677,6 +1680,7 @@ if test "x$ENABLE_tools_wav" = xyes; then
 	TOOLS_TARGETS="$TOOLS_TARGETS wav"
 fi
 AM_CONDITIONAL(BUILD_PAK, test "$ENABLE_tools_pak" = "yes")
+AM_CONDITIONAL(BUILD_QFBSP, test "$ENABLE_tools_qfbsp" = "yes")
 AM_CONDITIONAL(BUILD_QFCC, test "$ENABLE_tools_qfcc" = "yes")
 AM_CONDITIONAL(BUILD_QFDEFS, test "$ENABLE_tools_qfdefs" = "yes")
 AM_CONDITIONAL(BUILD_QFLIGHT, test "$ENABLE_tools_qflight" = "yes")
@@ -1888,6 +1892,11 @@ AC_SUBST(VID_TARGETS)
 AC_SUBST(plugin_ldflags)
 AC_SUBST(plugin_libadd)
 
+QF_DEPS(QFBSP,
+	[-I$(top_srcdir)/tools/qfbsp/include],
+	[$(top_builddir)/libs/util/libQFutil.la],
+	[$(WIN32_LIBS)],
+)
 QF_DEPS(QFCC,
 	[-I$(top_srcdir)/tools/qfcc/include],
 	[$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la],
@@ -1995,6 +2004,9 @@ AC_OUTPUT(
 
 	tools/Makefile
 	tools/pak/Makefile
+	tools/qfbsp/Makefile
+	tools/qfbsp/include/Makefile
+	tools/qfbsp/source/Makefile
 	tools/qfcc/Makefile
 	tools/qfcc/doc/Makefile
 	tools/qfcc/doc/man/Makefile
