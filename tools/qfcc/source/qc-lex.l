@@ -7,11 +7,13 @@
 
 int lineno;
 
-void error (char*s){}
+void error (char*s){fprintf(stderr,"%d: %s\n",lineno,s);}
 
 int type_or_name (char *token);
 
-int do_grab (void);
+int do_grab (char *token);
+
+void add_frame_macro (char *token);
 
 extern YYSTYPE yylval;
 
@@ -23,6 +25,8 @@ FLOAT	{DIGIT}+"."{DIGIT}*
 NUM		({DIGIT}+("."{DIGIT}*)?)
 s		[ \t]
 m		([\-+]?)
+
+%x		grab_frame grab_other
 
 %%
 
@@ -75,7 +79,10 @@ m		([\-+]?)
 						return VECTOR_VAL;
 					}
 
-"!"|"("|")"|"{"|"}"|"."|"*"|"/"|"&"|"|"|"+"|"-"|"="|"["|"]"|"#"|";"|","	return yytext[0];
+^#{s}+{DIGIT}+{s}+\"(\.|[^"])*\".*$ {
+					}
+
+"!"|"("|")"|"{"|"}"|"."|"*"|"/"|"&"|"|"|"+"|"-"|"="|"["|"]"|";"|","|"#"	return yytext[0];
 
 "..."	return ELIPSIS;
 
@@ -88,18 +95,26 @@ m		([\-+]?)
 "<"		return LT;
 ">"		return GT;
 
-"$"{ID}				{
-						int ret = do_grab();
-						if (ret)
+"$"{s}*{ID}			{
+						int ret = do_grab(yytext);
+						if (ret > 0)
 							return ret;
+						else
+							BEGIN (-ret);
 					}
 
-^#{s}+{DIGIT}+{s}+\"(\.|[^"])*\".$ {
+<grab_frame>{ID}	add_frame_macro (yytext);
+
+<grab_other>[^\n]*	/* skip */
+
+<*>\n				{
+						lineno++;
+						BEGIN (INITIAL);
 					}
 
-\n		lineno++;
+<*>{s}*				/* skip */
 
-.		error ("all your typo are belong to us");
+<*>.				error ("all your typo are belong to us");
 
 %%
 
@@ -158,13 +173,81 @@ type_or_name (char *token)
 	return NAME;
 }
 
+static hashtab_t *frame_tab;
+static hashtab_t *grab_tab;
+
+typedef struct {
+	const char *name;
+	int			num;
+} frame_t;
+
+static frame_t grab_list[] = {
+	{"cd",		0},
+	{"origin",	0},
+	{"base",	0},
+	{"flags",	0},
+	{"scale",	0},
+	{"skin",	0},
+};
+
+static const char *
+frame_get_key (void *f, void *unused)
+{
+	return ((frame_t*)f)->name;
+}
+
+static void
+frame_free (void *f, void *unused)
+{
+	free ((char*)((frame_t*)f)->name);
+	free (f);
+}
+
 int
-do_grab (void)
+do_grab (char *token)
 {
 	static int initialized;
+	frame_t *frame;
 
 	if (!initialized) {
+		int i;
+
 		initialized = 1;
+		frame_tab = Hash_NewTable (1021, frame_get_key, frame_free, 0);
+		grab_tab = Hash_NewTable (1021, frame_get_key, 0, 0);
+		for (i = 0; i < sizeof (grab_list) / sizeof (grab_list[0]); i++)
+			Hash_Add (grab_tab, &grab_list[i]);
+	}
+	while (isspace (*++token)) // advance over $ and leading space
+		;
+	if (!strcmp (token, "frame"))
+		return -grab_frame;
+	if (Hash_Find (grab_tab, token))
+		return -grab_other;
+	frame = Hash_Find (frame_tab, token);
+	if (frame) {
+		yylval.int_val = frame->num;
+		return INT_VAL;
 	}
 	return 0;
+}
+
+static int frame_number;
+
+void
+add_frame_macro (char *token)
+{
+	frame_t *frame = malloc (sizeof (frame_t));
+
+	frame->name = strdup (token);
+	frame->num = frame_number++;
+	Hash_Add (frame_tab, frame);
+}
+
+void
+clear_frame_macros (void)
+{
+	frame_number = 0;
+	if (frame_tab)
+		Hash_FlushTable (frame_tab);
 }

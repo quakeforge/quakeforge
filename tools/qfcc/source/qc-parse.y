@@ -6,7 +6,8 @@ void
 yyerror (char *s)
 {
 	extern int lineno;
-	fprintf (stderr, "%d, %s\n", lineno, s);
+	extern char *yytext;
+	fprintf (stderr, "%d, %s %s\n", lineno, yytext, s);
 }
 
 int yylex (void);
