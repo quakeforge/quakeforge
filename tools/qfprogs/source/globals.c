@@ -55,13 +55,13 @@ dump_globals (progs_t *pr)
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
 		ddef_t *def = &pr->pr_globaldefs[i];
 
+		if (!def->type && !def->ofs && !def->s_name)
+			continue;
+
 		name = PR_GetString (pr, def->s_name);
 		type = pr_type_name[def->type & ~DEF_SAVEGLOBAL];
 		saveglobal = (def->type & DEF_SAVEGLOBAL) != 0;
 		offset = def->ofs;
-
-		if (!offset)
-			continue;
 
 		comment = " ";
 
