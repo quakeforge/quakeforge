@@ -107,8 +107,11 @@ COM_Parse (const char *data)
 skipwhite:
 	while (isspace ((byte) *data))
 		data++;
-	if (!*data)
+	if (!*data) {
+		dstring_clearstr (_com_token);
+		com_token = _com_token->str;
 		return 0;
+	}
 	if (data[0] == '/' && data[1] == '/') {
 		while (*data && *data != '\n')
 			data++;
