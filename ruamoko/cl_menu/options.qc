@@ -36,23 +36,31 @@
 #include "options_util.h"
 
 #include "gui/InputLine.h"
+#include "gui/Pic.h"
 #include "gui/Rect.h"
 #include "gui/Slider.h"
+#include "gui/Text.h"
 
+Group video_options;
 CvarToggleView fullscreen_view;
 CvarToggleView crosshair_view;
 CvarToggleView fps_view;
 CvarToggleView time_view;
+CvarRangeView gamma_view;
+CvarRangeView viewsize_view;
+
+Group control_options;
 CvarToggleView grab_mouse_view;
 CvarToggleView freelook_view;
 CvarToggleView lookspring_view;
 CvarToggleView lookstrafe_view;
+CvarRangeView mouse_amp_view;
+
+Group feature_options;
 CvarToggleView fraglog_view;
 CvarToggleView autorecord_view;
 
-CvarRangeView gamma_view;
-CvarRangeView viewsize_view;
-CvarRangeView mouse_amp_view;
+Group audio_options;
 CvarRangeView volume_view;
 CvarRangeView bgmvolume_view;
 
@@ -248,19 +256,8 @@ CB_audio_options =
 integer (integer x, integer y) 
 DRAW_audio_options = 
 {
-	local integer bar_pad, spacing = 120;
-
-	Draw_Pic (x + 16, y + 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
-	Draw_CenterPic (x + 160, y + 4, Draw_CachePic ("gfx/p_option.lmp", 1));
-	Draw_String	(x + 54, y + 40, "Audio");
-	Draw_String	(x + 54, y + 50, "-----");
-	bar_pad = y + 50;
-
-	[volume_view setBasePos:x y:y];
-	[volume_view draw];
-
-	[bgmvolume_view setBasePos:x y:y];
-	[bgmvolume_view draw];
+	[audio_options setBasePos:x y:y];
+	[audio_options draw];
 
 	opt_cursor  (x + 62, y + (Menu_GetIndex() * 10) + 60);
 	return 1;
@@ -276,15 +273,38 @@ MENU_audio_options =
 {
 	local integer bar_pad;
 	local Rect rect;
+	local id view;
 
 	Menu_Begin (54, 60, "Audio");
 	Menu_FadeScreen (1);
 	Menu_Draw (DRAW_audio_options);
 
+	audio_options = [[Group alloc] initWithComponents:0 :0 :320 :200];
+
+	view = [[Pic alloc] initWithComponents:16 :4 :0 :0];
+	[view setPic:"gfx/qplaque.lmp"];
+	[audio_options addView:view];
+
+	view = [[CenterPic alloc] initWithComponents:160 :4 :0 :0];
+	[view setPic:"gfx/p_option.lmp"];
+	[audio_options addView:view];
+
+	view = [[Text alloc] initWithComponents:54 :40 :40 :8];
+	[view setText:"Audio"];
+	[audio_options addView:view];
+
+	view = [[Text alloc] initWithComponents:54 :50 :40 :8];
+	[view setText:"-----"];
+	[audio_options addView:view];
+
 	rect = [[Rect alloc] initWithComponents:70 :60 :17 * 8 :8];
 	volume_view = [[CvarRangeView alloc] initWithBounds:rect title:"Volume:" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"volume" min:MIN_VOLUME max:MAX_VOLUME step:VOLUME_STEP]];
+	[audio_options addView:volume_view];
+
 	rect.origin.y += 8;
 	bgmvolume_view = [[CvarRangeView alloc] initWithBounds:rect title:"Music :" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"bgmvolume" min:MIN_VOLUME max:MAX_VOLUME step:VOLUME_STEP]];
+	[audio_options addView:bgmvolume_view];
+
 	[rect dealloc];
 	
 	bar_pad = 0;
@@ -473,17 +493,8 @@ DRAW_feature_options =
 {
 	local integer cursor_pad = 0, spacing = 120;
 
-	Draw_Pic (x + 16, y + 4, Draw_CachePic ("gfx/qplaque.lmp", 1));
-	Draw_CenterPic (x + 160, y + 4, Draw_CachePic ("gfx/p_option.lmp", 1));
-	Draw_String (x + 54,  y + 40, "Features");
-	Draw_String (x + 54,  y + 50, "--------");
-
-
-	[autorecord_view setBasePos:x y:y];
-	[autorecord_view draw];
-
-	[fraglog_view setBasePos:x y:y];
-	[fraglog_view draw];
+	[feature_options setBasePos:x y:y];
+	[feature_options draw];
 
 	opt_cursor (x + 62, y + (Menu_GetIndex () * 10) + 60 + cursor_pad);
 	return 1;
@@ -498,17 +509,38 @@ void ()
 MENU_feature_options =
 {
 	local Rect rect;
+	local id view;
 
 	Menu_Begin (54, 70, "Features");
 	Menu_FadeScreen (1);
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
 	Menu_Draw (DRAW_feature_options);
 
+	feature_options = [[Group alloc] initWithComponents:0 :0 :320 :200];
+
+	view = [[Pic alloc] initWithComponents:16 :4 :0 :0];
+	[view setPic:"gfx/qplaque.lmp"];
+	[feature_options addView:view];
+
+	view = [[CenterPic alloc] initWithComponents:160 :4 :0 :0];
+	[view setPic:"gfx/p_option.lmp"];
+	[feature_options addView:view];
+
+	view = [[Text alloc] initWithComponents:54 :40 :64 :8];
+	[view setText:"Features"];
+	[feature_options addView:view];
+
+	view = [[Text alloc] initWithComponents:54 :50 :64 :8];
+	[view setText:"--------"];
+	[feature_options addView:view];
+
 	rect = [[Rect alloc] initWithComponents:70 :60 :224 :8];
 	autorecord_view = [[CvarToggleView alloc] initWithBounds:rect title:"Autorecord" :[[CvarToggle alloc] initWithCvar:"cl_autorecord"]];
+	[feature_options addView:autorecord_view];
 
 	rect.origin.y += 10;
 	fraglog_view = [[CvarToggleView alloc] initWithBounds:rect title:"Frag Logging" :[[CvarToggle alloc] initWithCvar:"cl_fraglog"]];
+	[feature_options addView:fraglog_view];
 
 	[rect dealloc];
 
