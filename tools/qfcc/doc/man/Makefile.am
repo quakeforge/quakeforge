@@ -7,4 +7,4 @@ mans=
 endif
 
 man_MANS=$(mans)
-EXTRA_MANS=qfcc.1
+EXTRA_DIST=qfcc.1

@@ -10,4 +10,4 @@ endif
 
 man_MANS=	$(mans)
 
-EXTRA_MANS=	qflight.1
+EXTRA_DIST=	qflight.1

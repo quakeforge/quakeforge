@@ -18,10 +18,9 @@ bin_PROGRAMS=	$(pak)
 EXTRA_PROGRAMS= pak
 
 man_MANS=	$(mans)
-EXTRA_MANS= pak.1
 
 pak_SOURCES=	pak.c
 pak_LDADD=	$(PAK_LIBS)
 pak_DEPENDENCIES= $(PAK_DEPS)
 
-EXTRA_DIST=		pak.h
+EXTRA_DIST=		pak.h pak.1

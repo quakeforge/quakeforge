@@ -9,4 +9,4 @@ mans=
 endif
 
 man_MANS=	$(mans)
-EXTRA_MANS=	qfvis.1
+EXTRA_DIST=	qfvis.1
