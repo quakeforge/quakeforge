@@ -2122,6 +2122,8 @@ function_expr (expr_t *e1, expr_t *e2)
 	append_expr (call, e);
 	if (ftype->aux_type != &type_void) {
 		call->e.block.result = new_ret_expr (ftype->aux_type);
+	} else if (options.traditional) {
+		call->e.block.result = new_ret_expr (&type_float);
 	}
 	return call;
 }
