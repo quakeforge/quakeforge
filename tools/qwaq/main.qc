@@ -54,6 +54,9 @@ void () blarg =
 	} while (foo);
 	if (bar = foo);
 	foo = 2;
+	while (foo) {
+		bar = foo;
+	}
 };
 
 void () eek =
