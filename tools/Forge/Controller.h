@@ -27,18 +27,21 @@
 		Boston, MA  02111-1307, USA
 */
 
+#ifndef Controller_h
+#define Controller_h
+
 #ifdef HAVE_CONFIG_H
 # include "Config.h"
 #endif
 
-#import <Foundation/NSObject.h>
-#import <Foundation/NSNotification.h>
-#import <Foundation/NSString.h>
-#import <AppKit/NSApplication.h>
-#import <AppKit/NSNibDeclarations.h>
+#include <Foundation/NSObject.h>
+#include <Foundation/NSNotification.h>
+#include <Foundation/NSString.h>
+#include <AppKit/NSApplication.h>
+#include <AppKit/NSNibDeclarations.h>
 
-#import "BundleController.h"
-#import "PrefsController.h"
+#include "BundleController.h"
+#include "PrefsController.h"
 
 typedef enum {CNoMode = 0, COpenMode, CCreateMode} CMode;
 
@@ -71,3 +74,5 @@ typedef enum {CNoMode = 0, COpenMode, CCreateMode} CMode;
 - (CMode) fileMode;
 - (NSString *) fileName;
 @end
+
+#endif//Controller_h

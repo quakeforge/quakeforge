@@ -1,5 +1,5 @@
-#import <AppKit/AppKit.h>
-#import "mathlib.h"
+#include <AppKit/AppKit.h>
+#include "mathlib.h"
 
 typedef enum {esize_model, esize_fixed} esize_t;
 

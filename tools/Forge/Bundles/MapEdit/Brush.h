@@ -1,6 +1,9 @@
-#import <AppKit/AppKit.h>
-#import "SetBrush.h"
-#import "EditWindow.h"
+#ifndef Brush_h
+#define Brush_h
+
+#include <AppKit/AppKit.h>
+#include "SetBrush.h"
+#include "EditWindow.h"
 
 extern	id	brush_i;
 
@@ -52,4 +55,4 @@ extern	BOOL	brushdraw;			// YES when drawing cutbrushes and ents
 
 @end
 
-
+#define Brush_h

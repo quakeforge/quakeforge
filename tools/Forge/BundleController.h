@@ -28,18 +28,21 @@
 		Boston, MA  02111-1307, USA
 */
 
+#ifndef BundleController_h
+#define BundleController_h
+
 #ifdef HAVE_CONFIG_H
 # include "Config.h"
 #endif
 
-#import <Foundation/NSArray.h>
-#import <Foundation/NSBundle.h>
-#import <Foundation/NSObject.h>
+#include <Foundation/NSArray.h>
+#include <Foundation/NSBundle.h>
+#include <Foundation/NSObject.h>
 
-#import <AppKit/NSNibDeclarations.h>
+#include <AppKit/NSNibDeclarations.h>
 
-#import "PrefsController.h"
-#import "PrefsView.h"
+#include "PrefsController.h"
+#include "PrefsView.h"
 
 /*
 	Bundle Delegate protocol
@@ -92,3 +95,5 @@
 - (NSArray *) loadedBundles;
 
 @end
+
+#endif//BundleController_h

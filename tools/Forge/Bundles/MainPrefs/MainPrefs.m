@@ -34,18 +34,18 @@ static const char rcsid[] =
 # include "Config.h"
 #endif
 
-#import <Foundation/NSDebug.h>
-#import <Foundation/NSPathUtilities.h>
-#import <Foundation/NSUserDefaults.h>
-#import <Foundation/NSValue.h>
+#include <Foundation/NSDebug.h>
+#include <Foundation/NSPathUtilities.h>
+#include <Foundation/NSUserDefaults.h>
+#include <Foundation/NSValue.h>
 
-#import <AppKit/NSButton.h>
-#import <AppKit/NSImage.h>
-#import <AppKit/NSNibLoading.h>
-#import <AppKit/NSOpenPanel.h>
+#include <AppKit/NSButton.h>
+#include <AppKit/NSImage.h>
+#include <AppKit/NSNibLoading.h>
+#include <AppKit/NSOpenPanel.h>
 
-#import "PrefsController.h"
-#import "MainPrefs.h"
+#include "PrefsController.h"
+#include "MainPrefs.h"
 
 @interface MainPrefs (Private)
 

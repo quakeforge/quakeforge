@@ -1,4 +1,4 @@
-#import <AppKit/NSApplication.h>
+#include <AppKit/NSApplication.h>
 
 #define APP_NAME @"Forge"
 

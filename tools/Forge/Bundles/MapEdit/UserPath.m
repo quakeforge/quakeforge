@@ -7,12 +7,12 @@
  *
  */
 
-#import "UserPath.h"
-#import <mach/mach_init.h>
-#import <appkit/graphics.h>
-#import <appkit/errors.h>
-#import <math.h>
-#import <libc.h>
+#include "UserPath.h"
+#include <mach/mach_init.h>
+#include <appkit/graphics.h>
+#include <appkit/errors.h>
+#include <math.h>
+#include <libc.h>
 
 static NSZone      *upZone = NULL;
 

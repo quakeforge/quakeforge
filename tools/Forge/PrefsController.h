@@ -27,18 +27,21 @@
 		Boston, MA  02111-1307, USA
 */
 
+#ifndef PrefsController_h
+#define PrefsController_h
+
 #ifdef HAVE_CONFIG_H
 # include "Config.h"
 #endif
 
-#import <Foundation/NSObject.h>
+#include <Foundation/NSObject.h>
 
-#import <AppKit/NSBox.h>
-#import <AppKit/NSMatrix.h>
-#import <AppKit/NSScrollView.h>
-#import <AppKit/NSNibDeclarations.h>
+#include <AppKit/NSBox.h>
+#include <AppKit/NSMatrix.h>
+#include <AppKit/NSScrollView.h>
+#include <AppKit/NSNibDeclarations.h>
 
-#import "PrefsView.h"
+#include "PrefsView.h"
 
 @interface PrefsController: NSObject
 {
@@ -68,3 +71,5 @@
 
 - (NSBox *) prefsViewBox;
 @end
+
+#endif//PrefsController_h

@@ -27,13 +27,16 @@
 		Boston, MA  02111-1307, USA
 */
 
+#ifndef Project_h
+#define Project_h
+
 #ifdef HAVE_CONFIG_H
 # include "Config.h"
 #endif
 
-#import <Foundation/NSObject.h>
+#include <Foundation/NSObject.h>
 
-#import <AppKit/NSNibDeclarations.h>
+#include <AppKit/NSNibDeclarations.h>
 
 @interface Project: NSObject
 {
@@ -50,3 +53,5 @@
 - (void) closeProject: (id) sender;
 
 @end
+
+#endif//Project_h

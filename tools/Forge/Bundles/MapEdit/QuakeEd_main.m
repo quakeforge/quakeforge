@@ -2,7 +2,7 @@
    NOTE: Do NOT change this file -- Project Builder maintains it.
 */
 
-#import <appkit/appkit.h>
+#include <appkit/appkit.h>
 
 void main(int argc, char *argv[]) {
 

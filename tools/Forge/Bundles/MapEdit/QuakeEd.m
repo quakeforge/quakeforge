@@ -1,5 +1,5 @@
 
-#import "qedefs.h"
+#include "qedefs.h"
 
 id	quakeed_i;
 id	entclasses_i;

@@ -1,6 +1,6 @@
-#import <AppKit/AppKit.h>
-#import "mathlib.h"
-#import "SetBrush.h"
+#include <AppKit/AppKit.h>
+#include "mathlib.h"
+#include "SetBrush.h"
 
 extern id cameraview_i;
 

@@ -34,14 +34,14 @@ static const char rcsid[] =
 # include "Config.h"
 #endif
 
-#import <Foundation/NSDebug.h>
-#import <Foundation/NSFileManager.h>
-#import <Foundation/NSPathUtilities.h>
-#import <Foundation/NSUserDefaults.h>
+#include <Foundation/NSDebug.h>
+#include <Foundation/NSFileManager.h>
+#include <Foundation/NSPathUtilities.h>
+#include <Foundation/NSUserDefaults.h>
 
-#import <AppKit/NSPanel.h>
+#include <AppKit/NSPanel.h>
 
-#import "BundleController.h"
+#include "BundleController.h"
 
 @interface BundleController (Private)
 

@@ -1,36 +1,36 @@
 
-#import <AppKit/AppKit.h>
-#import <ctype.h>
-#import <sys/types.h>
-#import <sys/dir.h>
-#import <math.h>
-#import <unistd.h>
-#import <sys/fcntl.h>
+#include <AppKit/AppKit.h>
+#include <ctype.h>
+#include <sys/types.h>
+#include <sys/dir.h>
+#include <math.h>
+#include <unistd.h>
+#include <sys/fcntl.h>
 
-#import "UserPath.h"
-#import "cmdlib.h"
-#import "mathlib.h"
+#include "UserPath.h"
+#include "cmdlib.h"
+#include "mathlib.h"
 
-#import "EntityClass.h"
-#import	"Project.h"
-#import "QuakeEd.h"
-#import "Map.h"
-#import "TexturePalette.h"
-#import "SetBrush.h"
-#import "render.h"
-#import "Entity.h"
+#include "EntityClass.h"
+#include	"Project.h"
+#include "QuakeEd.h"
+#include "Map.h"
+#include "TexturePalette.h"
+#include "SetBrush.h"
+#include "render.h"
+#include "Entity.h"
 
-#import "XYView.h"
-#import "CameraView.h"
-#import "ZView.h"
-#import "ZScrollView.h"
-#import	"Preferences.h"
-#import	"InspectorControl.h"
-#import "PopScrollView.h"
-#import "KeypairView.h"
-#import "Things.h"
-#import "TextureView.h"
-#import "Clipper.h"
+#include "XYView.h"
+#include "CameraView.h"
+#include "ZView.h"
+#include "ZScrollView.h"
+#include	"Preferences.h"
+#include	"InspectorControl.h"
+#include "PopScrollView.h"
+#include "KeypairView.h"
+#include "Things.h"
+#include "TextureView.h"
+#include "Clipper.h"
 
 
 void PrintRect (NSRect *r);

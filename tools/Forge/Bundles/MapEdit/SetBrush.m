@@ -1,4 +1,4 @@
-#import "qedefs.h"
+#include "qedefs.h"
 
 @implementation SetBrush
 

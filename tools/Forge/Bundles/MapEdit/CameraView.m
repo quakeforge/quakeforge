@@ -1,4 +1,4 @@
-#import "qedefs.h"
+#include "qedefs.h"
 
 id cameraview_i;
 

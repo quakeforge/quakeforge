@@ -34,4 +34,4 @@ static const char rcsid[] =
 # include "Config.h"
 #endif
 
-#import "Template.h"
+#include "Template.h"

@@ -1,8 +1,8 @@
 
 #include "qedefs.h"
 
-#import <AppKit/NSGraphics.h>
-#import <AppKit/DPSOperators.h>
+#include <AppKit/NSGraphics.h>
+#include <AppKit/DPSOperators.h>
 
 id	clipper_i;
 

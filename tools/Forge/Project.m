@@ -33,17 +33,17 @@ static const char rcsid[] =
 # include "Config.h"
 #endif
 
-#import <Foundation/NSFileManager.h>
-#import <Foundation/NSString.h>
-#import <Foundation/NSUserDefaults.h>
+#include <Foundation/NSFileManager.h>
+#include <Foundation/NSString.h>
+#include <Foundation/NSUserDefaults.h>
 
-#import <AppKit/NSBrowser.h>
-#import <AppKit/NSBrowserCell.h>
-#import <AppKit/NSOpenPanel.h>
-#import <AppKit/NSSavePanel.h>
+#include <AppKit/NSBrowser.h>
+#include <AppKit/NSBrowserCell.h>
+#include <AppKit/NSOpenPanel.h>
+#include <AppKit/NSSavePanel.h>
 
-#import "Controller.h"
-#import "Project.h"
+#include "Controller.h"
+#include "Project.h"
 
 @implementation Project
 

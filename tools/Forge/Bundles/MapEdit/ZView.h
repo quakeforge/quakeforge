@@ -1,6 +1,6 @@
 
-#import <AppKit/AppKit.h>
-#import "mathlib.h"
+#include <AppKit/AppKit.h>
+#include "mathlib.h"
 
 extern	id zview_i;
 

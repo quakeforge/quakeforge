@@ -1,5 +1,5 @@
 
-#import <AppKit/AppKit.h>
+#include <AppKit/AppKit.h>
 
 typedef struct
 {

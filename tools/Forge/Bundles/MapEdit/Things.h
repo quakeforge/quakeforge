@@ -1,5 +1,5 @@
 
-#import <AppKit/AppKit.h>
+#include <AppKit/AppKit.h>
 
 extern	id	things_i;
 

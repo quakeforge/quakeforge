@@ -1,10 +1,10 @@
 
-#import "qedefs.h"
+#include "qedefs.h"
 
 // Add .h-files here for new inspectors
-#import	"Things.h"
-#import	"TexturePalette.h"
-#import	"Preferences.h"
+#include	"Things.h"
+#include	"TexturePalette.h"
+#include	"Preferences.h"
 
 id		inspcontrol_i;
 

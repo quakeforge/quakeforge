@@ -4,7 +4,7 @@
 //
 //======================================
 
-#import "qedefs.h"
+#include "qedefs.h"
 
 
 id	project_i;

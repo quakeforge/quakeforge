@@ -28,14 +28,17 @@
 		Boston, MA  02111-1307, USA
 */
 
+#ifndef MainPrefs_h
+#define MainPrefs_h
+
 #ifdef HAVE_CONFIG_H
 # include "Config.h"
 #endif
 
-#import <AppKit/NSNibDeclarations.h>
+#include <AppKit/NSNibDeclarations.h>
 
-#import "BundleController.h"
-#import "PrefsView.h"
+#include "BundleController.h"
+#include "PrefsView.h"
 
 @interface MainPrefs: NSObject <PrefsViewController, ForgeBundle>
 {
@@ -58,3 +61,5 @@
 - (IBAction) projectPathFindButtonClicked: (id) sender;
 
 @end
+
+#endif//MainPrefs_h

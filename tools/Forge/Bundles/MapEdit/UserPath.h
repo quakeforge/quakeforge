@@ -30,8 +30,8 @@
  * which reference objective C methods. 
  */
 
-#import <objc/objc.h>
-#import <AppKit/NSGraphicsContext.h>
+#include <objc/objc.h>
+#include <AppKit/NSGraphicsContext.h>
 
 typedef struct _UP {
     float          *points;

@@ -1,5 +1,5 @@
 
-#import "qedefs.h"
+#include "qedefs.h"
 
 id	keypairview_i;
 

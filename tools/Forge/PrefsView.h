@@ -27,13 +27,16 @@
 		Boston, MA  02111-1307, USA
 */
 
+#ifndef PrefsView_h
+#define PrefsView_h
+
 #ifdef HAVE_CONFIG_H
 # include "Config.h"
 #endif
 
-#import <Foundation/NSObject.h>
-#import <AppKit/NSView.h>
-#import <AppKit/NSButtonCell.h>
+#include <Foundation/NSObject.h>
+#include <AppKit/NSView.h>
+#include <AppKit/NSButtonCell.h>
 
 // size of a PrefsView
 #define PrefsRect NSMakeRect (0, 0, 486, 228)
@@ -50,3 +53,5 @@
 - (NSView *) view;
 
 @end
+
+#endif//PrefsView_h
