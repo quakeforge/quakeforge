@@ -88,7 +88,7 @@ expr_type expr_types[] = {
 	ex_integer,		// ev_integer
 };
 
-static const char *type_names[] = {
+const char *type_names[] = {
 	"void",
 	"string",
 	"float",
@@ -101,23 +101,23 @@ static const char *type_names[] = {
 	"int",
 };
 
-etype_t
+type_t *
 get_type (expr_t *e)
 {
 	switch (e->type) {
 		case ex_label:
-			return ev_type_count;		// something went very wrong
+			return 0;		// something went very wrong
 		case ex_block:
 			if (e->e.block.result)
 				return get_type (e->e.block.result);
-			return ev_void;
+			return &type_void;
 		case ex_expr:
 		case ex_uexpr:
-			return e->e.expr.type->type;
+			return e->e.expr.type;
 		case ex_def:
-			return e->e.def->type->type;
+			return e->e.def->type;
 		case ex_temp:
-			return e->e.temp.type->type;
+			return e->e.temp.type;
 		case ex_integer:
 			if (options.version == PROG_ID_VERSION) {
 				e->type = ex_float;
@@ -132,8 +132,17 @@ get_type (expr_t *e)
 		case ex_func:
 		case ex_pointer:
 		case ex_quaternion:
-			return qc_types[e->type];
+			return types[qc_types[e->type]];
 	}
+	return 0;
+}
+
+etype_t
+extract_type (expr_t *e)
+{
+	type_t     *type = get_type (e);
+	if (type)
+		return type->type;
 	return ev_type_count;
 }
 
@@ -225,8 +234,8 @@ type_mismatch (expr_t *e1, expr_t *e2, int op)
 {
 	etype_t t1, t2;
 
-	t1 = get_type (e1);
-	t2 = get_type (e2);
+	t1 = extract_type (e1);
+	t2 = extract_type (e2);
 
 	return error (e1, "type mismatch: %s %s %s",
 				  type_names[t1], get_op_string (op), type_names[t2]);
@@ -693,8 +702,8 @@ binary_const (int op, expr_t *e1, expr_t *e2)
 	etype_t t1, t2;
 	//expr_t *e;
 
-	t1 = get_type (e1);
-	t2 = get_type (e2);
+	t1 = extract_type (e1);
+	t2 = extract_type (e2);
 
 	if (t1 == t2) {
 		return do_op[t1](op, e1, e2);
@@ -709,8 +718,8 @@ field_expr (expr_t *e1, expr_t *e2)
 	etype_t t1, t2;
 	expr_t *e;
 
-	t1 = get_type (e1);
-	t2 = get_type (e2);
+	t1 = extract_type (e1);
+	t2 = extract_type (e2);
 
 	if (t1 != ev_entity || t2 != ev_field) {
 		return error (e1, "type missmatch for .");
@@ -731,7 +740,7 @@ test_expr (expr_t *e, int test)
 	if (!test)
 		return unary_expr ('!', e);
 
-	switch (get_type (e)) {
+	switch (extract_type (e)) {
 		case ev_type_count:
 			error (e, "internal error");
 			abort ();
@@ -811,8 +820,8 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		e2 = test_expr (e2, true);
 	}
 
-	t1 = get_type (e1);
-	t2 = get_type (e2);
+	t1 = extract_type (e1);
+	t2 = extract_type (e2);
 	if (t1 == ev_type_count || t2 == ev_type_count) {
 		error (e1, "internal error");
 		abort ();
@@ -1014,8 +1023,7 @@ unary_expr (int op, expr_t *e)
 				case ex_temp:
 					{
 						expr_t *n = new_unary_expr (op, e);
-						type_t *t = e->type == ex_expr ? e->e.expr.type
-													   : e->e.def->type;
+						type_t *t = get_type (e);
 						if (t != &type_integer && t != &type_float)
 							return error (e, "invalid type for unary ~");
 						n->e.expr.type = t;
@@ -1084,7 +1092,7 @@ function_expr (expr_t *e1, expr_t *e2)
 	expr_t     *call;
 	expr_t     *err = 0;
 
-	t1 = get_type (e1);
+	t1 = extract_type (e1);
 
 	if (t1 != ev_func) {
 		if (e1->type == ex_def)
@@ -1125,18 +1133,11 @@ function_expr (expr_t *e1, expr_t *e2)
 		}
 	}
 	for (i = parm_count, e = e2; i > 0; i--, e = e->next) {
-		type_t *t;
-		if (e->type == ex_expr) {
-			t = e->e.expr.type;
-		} else if (e->type == ex_def) {
-			t = e->e.def->type;
-		} else {
-			if (ftype->parm_types[i - 1] == &type_float
-				&& e->type == ex_integer) {
-				e->type = ex_float;
-				e->e.float_val = e->e.integer_val;
-			}
-			t = types[get_type (e)];
+		type_t *t = get_type (e);
+
+		if (ftype->parm_types[i - 1] == &type_float && e->type == ex_integer) {
+			e->type = ex_float;
+			e->e.float_val = e->e.integer_val;
 		}
 		if (ftype->num_parms != -1) {
 			if (t != ftype->parm_types[i - 1])
@@ -1193,20 +1194,13 @@ return_expr (function_t *f, expr_t *e)
 		if (f->def->type->aux_type != &type_void)
 			return error (e, "return from non-void function without a value");
 	} else {
-		type_t *t;
+		type_t *t = get_type (e);
+
 		if (f->def->type->aux_type == &type_void)
 			return error (e, "returning a value for a void function");
-		if (e->type == ex_expr) {
-			t = e->e.expr.type;
-		} else if (e->type == ex_def) {
-			t = e->e.def->type;
-		} else {
-			if (f->def->type->aux_type == &type_float
-				&& e->type == ex_integer) {
-				e->type = ex_float;
-				e->e.float_val = e->e.integer_val;
-			}
-			t = types[get_type (e)];
+		if (f->def->type->aux_type == &type_float && e->type == ex_integer) {
+			e->type = ex_float;
+			e->e.float_val = e->e.integer_val;
 		}
 		if (f->def->type->aux_type != t)
 			return error (e, "type mismatch for return value of %s",
@@ -1219,8 +1213,8 @@ expr_t *
 conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2)
 {
 	expr_t    *block = new_block_expr ();
-	type_t    *type1 = types[get_type (e1)];
-	type_t    *type2 = types[get_type (e2)];
+	type_t    *type1 = types[extract_type (e1)];
+	type_t    *type2 = types[extract_type (e2)];
 	expr_t    *tlabel = new_label_expr ();
 	expr_t    *elabel = new_label_expr ();
 

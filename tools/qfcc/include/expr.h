@@ -70,8 +70,10 @@ typedef struct expr_s {
 extern etype_t qc_types[];
 extern struct type_s *types[];
 extern expr_type expr_types[];
+extern const char *type_names[];
 
-etype_t get_type (expr_t *e);
+type_t *get_type (expr_t *e);
+etype_t extract_type (expr_t *e);
 
 expr_t *new_expr (void);
 expr_t *new_label_expr (void);

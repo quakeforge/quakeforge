@@ -120,10 +120,14 @@ PR_Opcode_Find (const char *name, int priority, def_t *var_a, def_t *var_b, def_
 			tab = &opcode_priority_type_table_ab;
 		else
 			tab = &opcode_priority_type_table_abc;
-		return Hash_FindElement (*tab, &op);
+	} else if (var_a && var_b) {
+		op.type_a = var_a->type->type;
+		op.type_b = var_b->type->type;
+		tab = &opcode_priority_type_table_ab;
 	} else {
-		return Hash_FindElement (opcode_priority_table, &op);
+		tab = &opcode_priority_table;
 	}
+	return Hash_FindElement (*tab, &op);
 }
 
 void

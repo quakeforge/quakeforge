@@ -142,7 +142,7 @@ emit_function_call (expr_t *e, def_t *dest)
 	for (earg = e->e.expr.e2; earg; earg = earg->next) {
 		ind--;
 		parm = def_parms[ind];
-		parm.type = types[get_type (earg)];
+		parm.type = types[extract_type (earg)];
 		arg = emit_sub_expr (earg, &parm);
 		if (earg->type != ex_expr && earg->type != ex_uexpr) {
 			op = PR_Opcode_Find ("=", 5, arg, &parm, &def_void);
@@ -336,7 +336,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 			} else if (e->e.expr.op == '-') {
 				static expr_t zero;
 
-				zero.type = expr_types[get_type (e->e.expr.e1)];
+				zero.type = expr_types[extract_type (e->e.expr.e1)];
 
 				operator = "-";
 				priority = 3;
