@@ -973,6 +973,7 @@ function_expr (expr_t *e1, expr_t *e2)
 	expr_t     *args = 0, **a = &args;
 	type_t     *arg_types[MAX_PARMS];
 	expr_t     *call;
+	expr_t     *err = 0;
 
 	t1 = get_type (e1);
 
@@ -1008,38 +1009,38 @@ function_expr (expr_t *e1, expr_t *e2)
 		return error (e1, "more than %d parameters", MAX_PARMS);
 	}
 	if (ftype->num_parms != -1) {
-		expr_t *err = 0;
 		if (parm_count > ftype->num_parms) {
 			return error (e1, "too many arguments");
 		} else if (parm_count < ftype->num_parms) {
 			return error (e1, "too few arguments");
 		}
-		for (i = parm_count, e = e2; i > 0; i--, e = e->next) {
-			type_t *t;
-			if (e->type == ex_expr) {
-				t = e->e.expr.type;
-			} else if (e->type == ex_def) {
-				t = e->e.def->type;
-			} else {
-				if (ftype->parm_types[i - 1] == &type_float
-					&& e->type == ex_integer) {
-					e->type = ex_float;
-					e->e.float_val = e->e.integer_val;
-				}
-				t = types[get_type (e)];
+	}
+	for (i = parm_count, e = e2; i > 0; i--, e = e->next) {
+		type_t *t;
+		if (e->type == ex_expr) {
+			t = e->e.expr.type;
+		} else if (e->type == ex_def) {
+			t = e->e.def->type;
+		} else {
+			if (ftype->parm_types[i - 1] == &type_float
+				&& e->type == ex_integer) {
+				e->type = ex_float;
+				e->e.float_val = e->e.integer_val;
 			}
+			t = types[get_type (e)];
+		}
+		if (ftype->num_parms != -1) {
 			if (t != ftype->parm_types[i - 1])
 				err = error (e, "type mismatch for parameter %d of %s",
 							 i, e1->e.def->name);
-			arg_types[parm_count - i] = t;
+		} else {
+			//if (e->type == ex_integer)
+			//	warning (e, "passing integer consant into ... function");
 		}
-		if (err)
-			return err;
-	} else {
-		//for (e = e2; e; e = e->next)
-		//	if (e->type == ex_integer)
-		//		warning (e, "passing integer consant into ... function");
+		arg_types[parm_count - i] = t;
 	}
+	if (err)
+		return err;
 
 	call = new_block_expr ();
 	for (e = e2, i = 0; e; e = e->next, i++) {
