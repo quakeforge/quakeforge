@@ -223,7 +223,7 @@ R_DrawViewModel (void)
 	qfglColor3ubv (color_white);
 }
 
-inline static int
+static inline int
 SignbitsForPlane (mplane_t *out)
 {
 	int		bits, j;
@@ -389,7 +389,7 @@ R_Clear (void)
 		qfglClear (GL_DEPTH_BUFFER_BIT);
 }
 
-void
+static void
 R_RenderScene (void)
 {
 	if (r_timegraph->int_val || r_speeds->int_val || r_dspeeds->int_val)
@@ -406,7 +406,7 @@ R_RenderScene (void)
 	R_RenderDlights ();
 }
 
-void
+static void
 R_Mirror (void)
 {
 	float		d;
@@ -439,7 +439,6 @@ R_Mirror (void)
 	qfglDepthRange (gldepthmin, gldepthmax);
 
 	R_RenderScene ();
-	R_DrawWaterSurfaces ();
 
 	gldepthmin = 0;
 	gldepthmax = 1;
@@ -485,7 +484,6 @@ R_RenderView (void)
 	// render normal view
 	R_RenderScene ();
 	R_DrawViewModel ();
-	R_DrawWaterSurfaces ();
 	R_UpdateFires ();
 	R_DrawParticles ();
 

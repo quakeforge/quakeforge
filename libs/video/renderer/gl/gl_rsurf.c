@@ -139,7 +139,7 @@ R_RecursiveLightUpdate (mnode_t *node)
 			 c--, surf++) surf->cached_dlight = true;
 }
 
-void
+static void
 R_AddDynamicLights (msurface_t *surf)
 {
 	float			dist;
@@ -215,7 +215,7 @@ R_AddDynamicLights (msurface_t *surf)
   GL_RGB for colored lights and averaging them out for plain white
   lighting if needed.  Much cleaner that way.  --KB
 */
-void
+static void
 R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 {
 	byte		   *lightmap;
@@ -342,7 +342,7 @@ R_TextureAnimation (texture_t *base)
 
 /* BRUSH MODELS */
 
-void
+static void
 GL_UploadLightmap (int i, int x, int y, int w, int h)
 {
 /*	qfglTexSubImage2D (GL_TEXTURE_2D, 0, 0, y, BLOCK_WIDTH, h,
@@ -369,7 +369,7 @@ GL_UploadLightmap (int i, int x, int y, int w, int h)
 	}
 }
 
-void
+static void
 R_DrawMultitexturePoly (msurface_t *s)
 {
 	float      *v;
@@ -429,7 +429,7 @@ R_DrawMultitexturePoly (msurface_t *s)
 	qfglTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }
 
-void
+static void
 R_BlendLightmaps (void)
 {
 	float      *v;
@@ -467,7 +467,7 @@ R_BlendLightmaps (void)
 	qfglDepthMask (GL_TRUE);					// back to normal Z buffering
 }
 
-void
+static void
 R_RenderFullbrights (void)
 {
 	float      *v;
@@ -555,7 +555,7 @@ R_RenderBrushPoly (msurface_t *fa)
 	}
 }
 
-void
+static void
 GL_WaterSurface (msurface_t *s)
 {
 	qfglBindTexture (GL_TEXTURE_2D, s->texinfo->texture->gl_texturenum);
@@ -606,7 +606,7 @@ R_DrawWaterSurfaces (void)
 	}
 }
 
-void
+static void
 DrawTextureChains (void)
 {
 	int         i;
@@ -730,7 +730,7 @@ R_DrawBrushModel (entity_t *e)
 
 /* WORLD MODEL */
 
-void
+static void
 R_RecursiveWorldNode (mnode_t *node)
 {
 	double      dot;
@@ -755,7 +755,7 @@ R_RecursiveWorldNode (mnode_t *node)
 
 		return;
 	}
-	// node is just a decision point, so go down the apropriate sides
+	// node is just a decision point, so go down the appropriate sides
 
 	// find which side of the node we are on
 	plane = node->plane;
@@ -824,6 +824,9 @@ R_DrawWorld (void)
 
 	R_DrawSkyChain (sky_chain);
 
+	if (r_wateralpha->value >= 1.0)
+		R_DrawWaterSurfaces ();
+
 	DrawTextureChains ();
 
 	if (!gl_mtex_active)
@@ -831,6 +834,9 @@ R_DrawWorld (void)
 
 	if (gl_fb_bmodels->int_val)
 		R_RenderFullbrights ();
+
+	if (r_wateralpha->value < 1.0)
+		R_DrawWaterSurfaces ();
 }
 
 void
@@ -880,7 +886,7 @@ R_MarkLeaves (void)
 /* LIGHTMAP ALLOCATION */
 
 // returns a texture number and the position inside it
-int
+static int
 AllocBlock (int w, int h, int *x, int *y)
 {
 	int         best, best2, texnum, i, j;
@@ -925,7 +931,7 @@ int         nColinElim;
 model_t    *currentmodel;
 mvertex_t  *r_pcurrentvertbase;
 
-void
+static void
 BuildSurfaceDisplayList (msurface_t *fa)
 {
 	float       s, t;
@@ -1022,7 +1028,7 @@ BuildSurfaceDisplayList (msurface_t *fa)
 	poly->numverts = lnumverts;
 }
 
-void
+static void
 GL_CreateSurfaceLightmap (msurface_t *surf)
 {
 	byte       *base;
