@@ -306,16 +306,11 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				QuatAdd (OPA.quat_var, OPB.quat_var, OPC.quat_var);
 				break;
 			case OP_ADD_S:
-				{
-					const char *a = PR_GetString (pr, OPA.string_var);
-					const char *b = PR_GetString (pr, OPB.string_var);
-					int lena = strlen (a);
-					int size = lena + strlen (b) + 1;
-					char *c = Hunk_TempAlloc (size);
-					strcpy (c, a);
-					strcpy (c + lena, b);
-					OPC.string_var = PR_SetTempString (pr, c);
-				}
+				OPC.string_var = PR_CatStrings (pr,
+												PR_GetString (pr,
+															  OPA.string_var),
+												PR_GetString (pr,
+															  OPB.string_var));
 				break;
 			case OP_SUB_F:
 				OPC.float_var = OPA.float_var - OPB.float_var;

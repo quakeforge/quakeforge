@@ -107,12 +107,12 @@ new_string_ref (progs_t *pr)
 
 		pr->dyn_str_size++;
 		size = pr->dyn_str_size * sizeof (strref_t *);
-		pr->dynamic_strings = realloc (pr->dynamic_strings, size);
-		if (!pr->dynamic_strings)
+		pr->string_map = realloc (pr->string_map, size);
+		if (!pr->string_map)
 			PR_Error (pr, "out of memory");
 		if (!(pr->free_string_refs = calloc (1024, sizeof (strref_t))))
 			PR_Error (pr, "out of memory");
-		pr->dynamic_strings[pr->dyn_str_size - 1] = pr->free_string_refs;
+		pr->string_map[pr->dyn_str_size - 1] = pr->free_string_refs;
 		for (i = 0, sr = pr->free_string_refs; i < 1023; i++, sr++)
 			sr->next = sr + 1;
 		sr->next = 0;
@@ -196,7 +196,7 @@ PR_LoadStrings (progs_t *pr)
 	} else {
 		pr->strref_hash = Hash_NewTable (1021, strref_get_key, strref_free,
 										 pr);
-		pr->dynamic_strings = 0;
+		pr->string_map = 0;
 		pr->free_string_refs = 0;
 		pr->dyn_str_size = 0;
 	}
@@ -207,11 +207,16 @@ PR_LoadStrings (progs_t *pr)
 	count = 0;
 	str = pr->pr_strings;
 	while (str < end) {
-		pr->static_strings[count].string = str;
+		if (!Hash_Find (pr->strref_hash, str)) {
+			pr->static_strings[count].type = str_static;
+			pr->static_strings[count].s.string = str;
+			Hash_Add (pr->strref_hash, &pr->static_strings[count]);
+			count++;
+		}
 		str += strlen (str) + 1;
-		Hash_Add (pr->strref_hash, &pr->static_strings[count]);
-		count++;
 	}
+	pr->static_strings = realloc (pr->static_strings,
+								  count * sizeof (strref_t));
 	pr->num_strings = count;
 	return 1;
 }
@@ -226,7 +231,7 @@ get_strref (progs_t *pr, int num)
 
 		if (row >= pr->dyn_str_size)
 			return 0;
-		return &pr->dynamic_strings[row][num];
+		return &pr->string_map[row][num];
 	} else {
 		return 0;
 	}
@@ -279,6 +284,18 @@ PR_GetDString (progs_t *pr, int num)
 }
 
 static inline char *
+pr_stralloc (progs_t *pr, int len)
+{
+	return PR_Zone_Malloc (pr, len + 1);
+}
+
+static inline void
+pr_strfree (progs_t *pr, char *s)
+{
+	PR_Zone_Free (pr, s);
+}
+
+static inline char *
 pr_strdup (progs_t *pr, const char *s)
 {
 	size_t      len = strlen (s) + 1;
@@ -290,7 +307,11 @@ pr_strdup (progs_t *pr, const char *s)
 int
 PR_SetString (progs_t *pr, const char *s)
 {
-	strref_t   *sr = Hash_Find (pr->strref_hash, s);
+	strref_t   *sr;
+	
+	if (!s)
+		s = "";
+	sr = Hash_Find (pr->strref_hash, s);
 
 	if (!sr) {
 		sr = new_string_ref (pr);
@@ -336,6 +357,35 @@ PR_SetReturnString (progs_t *pr, const char *s)
 	pr->return_strings[pr->rs_slot++] = sr;
 	pr->rs_slot %= PR_RS_SLOTS;
 	return string_index (pr, sr);
+}
+
+static inline int
+pr_settempstring (progs_t *pr, char *s)
+{
+	strref_t   *sr;
+
+	sr = new_string_ref (pr);
+	sr->type = str_temp;
+	sr->s.string = s;
+	sr->next = pr->pr_xtstr;
+	pr->pr_xtstr = sr;
+	return string_index (pr, sr);
+}
+
+int
+PR_CatStrings (progs_t *pr, const char *a, const char *b)
+{
+	int         lena;
+	char       *c;
+
+	lena = strlen (a);
+
+	c = pr_stralloc (pr, lena + strlen (b));
+
+	strcpy (c, a);
+	strcpy (c + lena, b);
+
+	return pr_settempstring (pr, c);
 }
 
 int

@@ -194,7 +194,7 @@ ED_NewString (progs_t *pr, const char *string)
 	int			i, l;
 
 	l = strlen (string) + 1;
-	new = Hunk_TempAlloc (l);
+	new = alloca (l);
 	new_p = new;
 
 	for (i = 0; i < l; i++) {

@@ -346,7 +346,7 @@ struct progs_s {
 	struct dstring_mem_s *ds_mem;
 	strref_t   *free_string_refs;
 	strref_t   *static_strings;
-	strref_t  **dynamic_strings;
+	strref_t  **string_map;
 	strref_t   *return_strings[PR_RS_SLOTS];
 	int         rs_slot;
 	unsigned    dyn_str_size;
