@@ -191,8 +191,7 @@ process_def (qfo_def_t *def)
 			def->flags = d->flags;
 			Hash_Add (defined_defs, def);
 		} else {
-			if (def->num_relocs)
-				Hash_Add (extern_defs, def);
+			Hash_Add (extern_defs, def);
 		}
 	} else {
 		if (def->flags & QFOD_GLOBAL) {

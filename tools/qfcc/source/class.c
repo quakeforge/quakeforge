@@ -215,8 +215,10 @@ class_begin (class_t *class)
 		class->def->initialized = class->def->constant = 1;
 		cls = &G_STRUCT (pr_class_t, class->def->ofs);
 		EMIT_DEF (cls->class_pointer, meta_def);
-		if (class->super_class)
+		if (class->super_class) {
 			EMIT_STRING (cls->super_class, class->super_class->class_name);
+			class_def (class->super_class, 1);
+		}
 		EMIT_STRING (cls->name, class->class_name);
 		cls->info = _PR_CLS_CLASS;
 		cls->protocols = meta->protocols;
