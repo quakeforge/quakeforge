@@ -47,6 +47,7 @@ static const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/hash.h"
 #include "QF/msg.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
@@ -1002,12 +1003,25 @@ CL_ParseClientdata (void)
 void
 CL_ProcessUserInfo (int slot, player_info_t *player)
 {
+	char        skin[512];
+	const char *s;
+
+	s = Info_ValueForKey (player->userinfo, "skin");
+	COM_StripExtension (s, skin);   // FIXME buffer overflow
+	if (!strequal (s, skin))
+		Info_SetValueForKey (player->userinfo, "skin", skin, 1);
 	strncpy (player->name, Info_ValueForKey (player->userinfo, "name"),
 			 sizeof (player->name) - 1);
 	player->_topcolor = player->_bottomcolor = -1;
 	player->topcolor = atoi (Info_ValueForKey (player->userinfo, "topcolor"));
 	player->bottomcolor =
 		atoi (Info_ValueForKey (player->userinfo, "bottomcolor"));
+
+	while (!(player->team = Hash_Find (player->userinfo->tab, "team")))
+			Info_SetValueForKey (player->userinfo, "team", "", 1);
+	while (!(player->skinname = Hash_Find (player->userinfo->tab, "skin")))
+			Info_SetValueForKey (player->userinfo, "skin", "", 1);
+
 	if (Info_ValueForKey (player->userinfo, "*spectator")[0])
 		player->spectator = true;
 	else

@@ -87,6 +87,8 @@ typedef struct player_info_s
 	// skin information
 	int		topcolor;
 	int		bottomcolor;
+	struct info_key_s *skinname;
+	struct info_key_s *team;
 
 	int		_topcolor;
 	int		_bottomcolor;
@@ -258,8 +260,10 @@ typedef struct
 	float		stdver;
 
 	// serverinfo mirrors
-	int			watervis;
 	int			chase;
+	int			no_pogo_stick;
+	int			teamplay;
+	int			watervis;
 
 // refresh related state
 	struct model_s	*worldmodel;	// cl_entitites[0].model

@@ -388,14 +388,13 @@ void
 Sbar_SortTeams (void)
 {
 	char        t[16 + 1];
-	int         teamplay, i, j, k;
+	int         i, j, k;
 	player_info_t *s;
 
 	// request new ping times every two second
 	scoreboardteams = 0;
 
-	teamplay = atoi (Info_ValueForKey (cl.serverinfo, "teamplay"));
-	if (!teamplay)
+	if (!cl.teamplay)
 		return;
 
 	// sort the teams
@@ -412,7 +411,7 @@ Sbar_SortTeams (void)
 
 		// find his team in the list
 		t[16] = 0;
-		strncpy (t, Info_ValueForKey (s->userinfo, "team"), 16);
+		strncpy (t, s->team->value, 16);
 		if (!t || !t[0])
 			continue;					// not on team
 		for (j = 0; j < scoreboardteams; j++)
@@ -751,8 +750,8 @@ Sbar_Draw (int swap)
 	// main screen deathmatch rankings
 	// if we're dead show team scores in team games
 	if (cl.stats[STAT_HEALTH] <= 0 && !cl.spectator)
-		if (atoi (Info_ValueForKey (cl.serverinfo, "teamplay")) > 0 &&
-			!sb_showscores) Sbar_TeamOverlay ();
+		if (cl.teamplay > 0 && !sb_showscores)
+			Sbar_TeamOverlay ();
 		else
 			Sbar_DeathmatchOverlay (0);
 	else if (sb_showscores)
@@ -805,14 +804,12 @@ void
 Sbar_TeamOverlay (void)
 {
 	char        num[12], team[5];
-	int         pavg, plow, phigh, teamplay, i, k, l, x, y;
+	int         pavg, plow, phigh, i, k, l, x, y;
 	qpic_t     *pic;
 	team_t     *tm;
 
 	// request new ping times every two second
-	teamplay = atoi (Info_ValueForKey (cl.serverinfo, "teamplay"));
-
-	if (!teamplay) {
+	if (!cl.teamplay) {
 		Sbar_DeathmatchOverlay (0);
 		return;
 	}
@@ -873,8 +870,7 @@ Sbar_TeamOverlay (void)
 		snprintf (num, sizeof (num), "%5i", tm->players);
 		Draw_String (x + 104 + 88, y, num);
 
-		if (!strncmp (Info_ValueForKey (cl.players[cl.playernum].userinfo,
-										"team"), tm->team, 16)) {
+		if (strnequal (cl.players[cl.playernum].team->value, tm->team, 16)) {
 			Draw_Character (x + 104 - 8, y, 16);
 			Draw_Character (x + 104 + 32, y, 17);
 		}
@@ -894,7 +890,7 @@ void
 Sbar_DeathmatchOverlay (int start)
 {
 	char        num[12], team[5];
-	int         minutes, teamplay, total, top, bottom, f, i, k, l, p, x, y;
+	int         minutes, total, top, bottom, f, i, k, l, p, x, y;
 	int         skip = 10;
 	player_info_t *s;
 	qpic_t     *pic;
@@ -913,8 +909,6 @@ Sbar_DeathmatchOverlay (int start)
 		SZ_Print (&cls.netchan.message, "pings");
 	}
 
-	teamplay = atoi (Info_ValueForKey (cl.serverinfo, "teamplay"));
-
 	scr_copyeverything = 1;
 	scr_fullupdate = 0;
 
@@ -932,7 +926,7 @@ Sbar_DeathmatchOverlay (int start)
 		y = start;
 	else
 		y = 24;
-	if (teamplay) {
+	if (cl.teamplay) {
 		x = 4;
 //							 0    40 64   104   152  192 
 		if (cl_showscoresuid->int_val == 0)
@@ -988,7 +982,7 @@ Sbar_DeathmatchOverlay (int start)
 		if (s->spectator) {
 			Draw_String (x + 40, y, "(spectator)");
 			// draw name
-			if (teamplay)
+			if (cl.teamplay)
 				Draw_String (x + 152 + 40, y, s->name);
 			else
 				Draw_String (x + 152, y, s->name);
@@ -1030,13 +1024,13 @@ Sbar_DeathmatchOverlay (int start)
 			Draw_Character (x + 136, y, 17);
 		}
 		// team
-		if (teamplay) {
+		if (cl.teamplay) {
 			team[4] = 0;
-			strncpy (team, Info_ValueForKey (s->userinfo, "team"), 4);
+			strncpy (team, s->team->value, 4);
 			Draw_String (x + 152, y, team);
 		}
 		// draw name
-		if (teamplay)
+		if (cl.teamplay)
 			Draw_String (x + 152 + 40, y, s->name);
 		else
 			Draw_String (x + 152, y, s->name);
@@ -1058,15 +1052,13 @@ Sbar_DeathmatchOverlay (int start)
 void
 Sbar_MiniDeathmatchOverlay (void)
 {
-	int         numlines, teamplay, top, bottom, f, i, k, x, y;
+	int         numlines, top, bottom, f, i, k, x, y;
 	char        name[16 + 1], num[12], team[5];
 	player_info_t *s;
 	team_t     *tm;
 
 	if (vid.width < 512 || !sb_lines)
 		return;							// not enuff room
-
-	teamplay = atoi (Info_ValueForKey (cl.serverinfo, "teamplay"));
 
 	scr_copyeverything = 1;
 	scr_fullupdate = 0;
@@ -1131,15 +1123,15 @@ Sbar_MiniDeathmatchOverlay (void)
 			Draw_Character (x + 32, y, 17);
 		}
 		// team
-		if (teamplay) {
+		if (cl.teamplay) {
 			team[4] = 0;
-			strncpy (team, Info_ValueForKey (s->userinfo, "team"), 4);
-			Draw_String (x + 48, y, team);
+			strncpy (team, s->team->value, 4);
+			Draw_String (x + 48, y, s->team->value);
 		}
 		// draw name
 		name[16] = 0;
 		strncpy (name, s->name, 16);
-		if (teamplay)
+		if (cl.teamplay)
 			Draw_String (x + 48 + 40, y, name);
 		else
 			Draw_String (x + 48, y, name);
@@ -1147,7 +1139,7 @@ Sbar_MiniDeathmatchOverlay (void)
 	}
 
 	// draw teams if room
-	if (vid.width < 640 || !teamplay)
+	if (vid.width < 640 || !cl.teamplay)
 		return;
 
 	// draw separator
@@ -1172,8 +1164,7 @@ Sbar_MiniDeathmatchOverlay (void)
 		snprintf (num, sizeof (num), "%5i", tm->frags);
 		Draw_String (x + 40, y, num);
 
-		if (!strncmp (Info_ValueForKey (cl.players[cl.playernum].userinfo,
-										"team"), tm->team, 16)) {
+		if (strnequal (cl.players[cl.playernum].team->value, tm->team, 16)) {
 			Draw_Character (x - 8, y, 16);
 			Draw_Character (x + 32, y, 17);
 		}
@@ -1189,8 +1180,8 @@ Sbar_IntermissionOverlay (void)
 	scr_copyeverything = 1;
 	scr_fullupdate = 0;
 
-	if (atoi (Info_ValueForKey (cl.serverinfo, "teamplay")) > 0
-		&& !sb_showscores) Sbar_TeamOverlay ();
+	if (cl.teamplay > 0 && !sb_showscores)
+		Sbar_TeamOverlay ();
 	else
 		Sbar_DeathmatchOverlay (0);
 }

@@ -597,6 +597,12 @@ CL_FullServerinfo_f (void)
 	if ((p = Info_ValueForKey (cl.serverinfo, "chase")) && *p) {
 		cl.chase = atof (p);
 	}
+	if ((p = Info_ValueForKey (cl.serverinfo, "no_pogo_stick")) && *p) {
+		cl.no_pogo_stick = atof (p);
+	}
+	if ((p = Info_ValueForKey (cl.serverinfo, "teamplay")) && *p) {
+		cl.teamplay = atof (p);
+	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "watervis")) && *p) {
 		cl.watervis = atof (p);
 	}
@@ -1469,7 +1475,7 @@ Host_Frame (float time)
 	// fetch results from server
 	CL_ReadPackets ();
 
-	if (atoi (Info_ValueForKey (cl.serverinfo, "no_pogo_stick")))
+	if (cl.no_pogo_stick)
 		Cvar_Set (no_pogo_stick, "1");
 
 	// send intentions now

@@ -91,7 +91,7 @@ Skin_Find (player_info_t *sc)
 	if (allskins[0]) {
 		strncpy (name, allskins, sizeof (name));
 	} else {
-		if ((s = Info_ValueForKey (sc->userinfo, "skin")) && s[0])
+		if ((s = sc->skinname->value) && s[0])
 			strncpy (name, s, sizeof (name));
 		else
 			strncpy (name, baseskin->string, sizeof (name));

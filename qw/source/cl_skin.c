@@ -177,13 +177,22 @@ CL_Skin_Init (void)
 					"pants will match");
 }
 
+static void
+skin_f (cvar_t *var)
+{
+	char       *s = Hunk_TempAlloc (strlen (var->string) + 1);
+	COM_StripExtension (var->string, s);
+	Cvar_Set (var, s);
+	Cvar_Info (var);
+}
+
 void
 CL_Skin_Init_Cvars (void)
 {
 	Skin_Init_Cvars ();
 	noskins = Cvar_Get ("noskins", "0", CVAR_NONE, NULL, //XXX FIXME
 						"set to 1 to not download new skins");
-	skin = Cvar_Get ("skin", "", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
+	skin = Cvar_Get ("skin", "", CVAR_ARCHIVE | CVAR_USERINFO, skin_f,
 					 "Players skin");
 	topcolor = Cvar_Get ("topcolor", "0", CVAR_ARCHIVE | CVAR_USERINFO,
 						 Cvar_Info, "Players color on top");
@@ -194,7 +203,6 @@ CL_Skin_Init_Cvars (void)
 void
 CL_NewTranslation (int slot, skin_t *skin)
 {
-	char        s[512];
 	player_info_t *player;
 
 	if (slot > MAX_CLIENTS)
@@ -204,16 +212,13 @@ CL_NewTranslation (int slot, skin_t *skin)
 	if (!player->name[0])
 		return;
 
-	strcpy (s, Info_ValueForKey (player->userinfo, "skin"));
-	COM_StripExtension (s, s);
-	if (player->skin && !strequal (s, player->skin->name))
+	if (player->skin && !strequal (player->skinname->value, player->skin->name))
 		player->skin = NULL;
 
 	if (player->_topcolor != player->topcolor ||
 		player->_bottomcolor != player->bottomcolor || !player->skin) {
 		player->_topcolor = player->topcolor;
 		player->_bottomcolor = player->bottomcolor;
-
 		Skin_Set_Translate (player->topcolor, player->bottomcolor,
 							player->translations);
 		if (!player->skin)
