@@ -64,6 +64,10 @@ unsigned char d_15to8table[65536];
 cvar_t     *vid_mode;
 extern byte gammatable[256];
 
+QF_glActiveTextureARB   qglActiveTexture = NULL;
+QF_glMultiTexCoord2fARB qglMultiTexCoord2f = NULL;
+int gl_filter_min = GL_LINEAR_MIPMAP_NEAREST, gl_filter_max = GL_LINEAR;
+
 /*-----------------------------------------------------------------------*/
 
 int         texture_extension_number = 1;
@@ -84,8 +88,6 @@ qboolean			is8bit = false;
 cvar_t	*vid_use8bit;
 cvar_t	*brightness;
 cvar_t	*contrast;
-
-extern int		gl_filter_min, gl_filter_max;
 
 /*-----------------------------------------------------------------------*/
 

@@ -38,18 +38,20 @@
 
 #include <time.h>
 
-#include "cl_parse.h"
 #include "QF/cmd.h"
 #include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/keys.h"
+#include "QF/sys.h"
+
+#include "cl_parse.h"
 #include "draw.h"
 #include "glquake.h"
 #include "host.h"
-#include "QF/keys.h"
 #include "pcx.h"
+#include "r_local.h"
 #include "sbar.h"
 #include "skin.h"
-#include "QF/sys.h"
 #include "tga.h"
 #include "view.h"
 

@@ -37,7 +37,7 @@
 #include "QF/compat.h"
 #include "world.h"
 #include "QF/va.h"
-#include "screen.h"
+#include "QF/screen.h"
 #include "QF/msg.h"
 #include "QF/model.h"
 #include "QF/console.h"

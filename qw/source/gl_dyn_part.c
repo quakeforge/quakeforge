@@ -41,11 +41,14 @@
 #include "QF/cmd.h"
 #include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/qargs.h"
+#include "QF/sys.h"
+
+#include "client.h"
 #include "glquake.h"
 #include "host.h"
 #include "r_dynamic.h"
-#include "QF/qargs.h"
-#include "QF/sys.h"
+#include "render.h"
 
 typedef enum {
 	pt_static, pt_grav, pt_blob, pt_blob2,

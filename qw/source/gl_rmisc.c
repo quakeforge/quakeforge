@@ -41,11 +41,13 @@
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
-#include "glquake.h"
-#include "r_dynamic.h"
-#include "skin.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
+
+#include "glquake.h"
+#include "r_dynamic.h"
+#include "r_local.h"
+#include "skin.h"
 
 qboolean VID_Is8bit (void);
 void R_InitBubble (void);

@@ -38,8 +38,8 @@
 #include "QF/vid.h"
 #include "QF/va.h"
 #include "draw.h"
-#include "wad.h"
-#include "screen.h"
+#include "QF/wad.h"
+#include "QF/screen.h"
 #include "client.h"
 #include "server.h"
 

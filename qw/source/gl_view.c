@@ -38,10 +38,12 @@
 
 #include <stdio.h>
 
+#include "QF/compat.h"
+
 #include "bothdefs.h"
+#include "client.h"
 #include "glquake.h"
 #include "view.h"
-#include "QF/compat.h"
 
 
 extern byte *vid_basepal;

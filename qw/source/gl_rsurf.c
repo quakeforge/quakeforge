@@ -40,9 +40,13 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "glquake.h"
 #include "QF/compat.h"
 #include "QF/sys.h"
+
+#include "client.h"
+#include "glquake.h"
+#include "r_local.h"
+#include "r_shared.h"
 
 qboolean    r_cache_thrash;
 
@@ -352,9 +356,6 @@ R_TextureAnimation (texture_t *base)
 extern int  solidskytexture;
 extern int  alphaskytexture;
 extern float speedscale;				// for top sky and bottom sky
-
-QF_glActiveTextureARB	qglActiveTexture = NULL;
-QF_glMultiTexCoord2fARB qglMultiTexCoord2f = NULL;
 
 void
 GL_UploadLightmap (int i, int x, int y, int w, int h)

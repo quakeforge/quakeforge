@@ -31,7 +31,7 @@
 #endif
 
 #include "QF/qendian.h"
-#include "wad.h"
+#include "QF/wad.h"
 #include "QF/sys.h"
 #include "QF/quakefs.h"
 

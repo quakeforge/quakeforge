@@ -46,6 +46,8 @@
 #include "QF/qargs.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
+#include "QF/vid.h"
+
 #include "bothdefs.h"
 #include "cl_cam.h"
 #include "cl_main.h"
@@ -54,8 +56,8 @@
 #include "glquake.h"
 #include "locs.h"
 #include "r_dynamic.h"
+#include "r_local.h"
 #include "skin.h"
-#include "QF/vid.h"
 #include "view.h"
 
 entity_t	r_worldentity;
@@ -1053,7 +1055,7 @@ R_SetFrustum (void)
 /*
 	R_SetupFrame
 */
-static void
+void
 R_SetupFrame (void)
 {
 	// don't allow cheats in multiplayer

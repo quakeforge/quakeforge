@@ -49,7 +49,7 @@
 #include "QF/vid.h"
 #include "draw.h"
 #include "QF/input.h"
-#include "screen.h"
+#include "QF/screen.h"
 #include "gib.h"
 #include "sv_progs.h"
 
@@ -927,7 +927,7 @@ Host_Init (quakeparms_t *parms)
 
 	V_Init ();
 	S_Init_Cvars ();
-	SCR_InitCvars ();
+	SCR_Init_Cvars ();
 	VID_Init_Cvars ();
 	COM_Init ();
 

@@ -43,8 +43,11 @@
 #include "QF/console.h"
 #include "QF/model.h"
 #include "QF/quakefs.h"
-#include "glquake.h"
 #include "QF/sys.h"
+#include "QF/vid.h"
+
+#include "glquake.h"
+#include "render.h"
 
 extern double realtime;
 extern model_t *loadmodel;
@@ -476,7 +479,7 @@ R_LoadSkys
 */
 char       *suf[6] = { "rt", "bk", "lf", "ft", "up", "dn" };
 void
-R_LoadSkys (char *skyname)
+R_LoadSkys (const char *skyname)
 {
 	int         i;
 	QFile      *f;

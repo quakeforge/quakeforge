@@ -34,7 +34,7 @@
 #include "r_local.h"
 #include "QF/cmd.h"
 #include "QF/compat.h"
-#include "screen.h"
+#include "QF/screen.h"
 #include "sbar.h"
 #include "QF/input.h"
 #include "view.h"
@@ -91,7 +91,7 @@ qboolean    block_drawing;
 void        SCR_ScreenShot_f (void);
 
 void
-SCR_InitCvars (void)
+SCR_Init_Cvars (void)
 {
 }
 

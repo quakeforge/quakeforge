@@ -44,7 +44,7 @@
 #include "QF/mathlib.h"					// needed by: protocol.h, render.h,
 										// client.h,
 						// modelgen.h, glmodel.h
-#include "wad.h"
+#include "QF/wad.h"
 #include "draw.h"
 #include "QF/cvar.h"
 #include "net.h"						// needed by: client.h
@@ -53,7 +53,8 @@
 #include "QF/cmd.h"
 #include "sbar.h"
 #include "QF/sound.h"
-#include "screen.h"
+#include "QF/screen.h"
+#include "r_local.h"
 #include "render.h"						// needed by: client.h, gl_model.h,
 										// glquake.h
 #include "client.h"						// need cls in this file
@@ -415,7 +416,7 @@ SCR_Init
 ==================
 */
 void
-SCR_InitCvars (void)
+SCR_Init_Cvars (void)
 {
 	scr_fov = Cvar_Get ("fov", "90", CVAR_NONE, NULL, "10 - 170");
 	scr_viewsize = Cvar_Get ("viewsize", "100", CVAR_ARCHIVE, NULL, "None");

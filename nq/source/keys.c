@@ -48,7 +48,7 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/keys.h"
-#include "screen.h"
+#include "QF/screen.h"
 #include "QF/sys.h"
 
 /*

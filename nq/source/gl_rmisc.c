@@ -41,7 +41,7 @@
 #include "QF/mathlib.h"					// needed by: protocol.h, render.h,
 										// client.h,
 						// modelgen.h, glmodel.h
-#include "wad.h"
+#include "QF/wad.h"
 #include "draw.h"
 #include "QF/cvar.h"
 #include "net.h"						// needed by: client.h
@@ -55,6 +55,8 @@
 #include "QF/console.h"
 #include "glquake.h"
 #include "r_local.h"
+
+extern entity_t r_worldentity;
 
 qboolean    VID_Is8bit (void);
 void        R_InitBubble ();

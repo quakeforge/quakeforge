@@ -41,7 +41,7 @@
 #include "QF/msg.h"
 #include "QF/sys.h"
 #include "sbar.h"
-#include "screen.h"
+#include "QF/screen.h"
 #include "server.h"
 #include "QF/sound.h" // FIXME: DEFAULT_SOUND_PACKET_*
 #include "game.h"

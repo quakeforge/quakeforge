@@ -49,6 +49,7 @@
 #include "QF/sys.h"
 #include "QF/vid.h"
 
+extern int      gl_filter_min, gl_filter_max;
 extern unsigned char d_15to8table[65536];
 extern cvar_t *gl_picmip;
 
@@ -169,9 +170,7 @@ static glformat_t formats[] = {
 	{"GL_RGBA16", GL_RGBA16}
 };
 
-int gl_filter_min = GL_LINEAR_MIPMAP_NEAREST, gl_filter_max = GL_LINEAR;
 int gl_alpha_format = 4, gl_lightmap_format = 4, gl_solid_format = 3;
-
 
 void
 GL_TextureMode_f (void)

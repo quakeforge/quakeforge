@@ -153,3 +153,8 @@ IN_Init_Cvars (void)
 							"mouse sensitivity multiplier");
 	IN_LL_Init_Cvars ();
 }
+
+void
+IN_HandlePause (qboolean paused)
+{
+}

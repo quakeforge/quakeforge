@@ -32,9 +32,11 @@
 
 #include "render.h"
 #include "QF/model.h"
-#include "client.h"
 #include "QF/sys.h"
 #include "QF/console.h"
+
+#include "client.h"
+#include "d_iface.h"
 #include "glquake.h"
 
 mnode_t    *r_pefragtopnode;

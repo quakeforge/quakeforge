@@ -33,12 +33,14 @@
 #include <string.h>
 
 #include "QF/msg.h"
-#include "host.h"
-#include "client.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/compat.h"
+#include "QF/keys.h"
 #include "QF/input.h"
+
+#include "host.h"
+#include "client.h"
 
 /*
 ===============================================================================

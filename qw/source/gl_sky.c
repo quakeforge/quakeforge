@@ -38,7 +38,11 @@
 
 #include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/quakefs.h"
+#include "QF/vid.h"
+
 #include "glquake.h"
+#include "render.h"
 #include "tga.h"
 #include "view.h"
 
@@ -60,7 +64,7 @@ qboolean    skyloaded = false;
 */
 char       *suf[6] = { "rt", "bk", "lf", "ft", "up", "dn" };
 void
-R_LoadSkys (char *skyname)
+R_LoadSkys (const char *skyname)
 {
 	int         i;
 	QFile      *f;

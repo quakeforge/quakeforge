@@ -35,7 +35,7 @@
 #include "QF/console.h"
 #include "view.h"
 #include "QF/cmd.h"
-#include "screen.h"
+#include "QF/screen.h"
 #include "chase.h"
 
 //define    PASSAGES

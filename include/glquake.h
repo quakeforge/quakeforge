@@ -96,6 +96,16 @@ extern	int	player_fb_textures;
 extern	int	skytexturenum;		// index in cl.loadmodel, not gl texture object
 
 extern cvar_t	*r_novis;
+extern cvar_t	*r_particles;
+extern cvar_t	*r_norefresh;
+extern cvar_t	*r_drawviewmodel;
+extern cvar_t	*r_shadows;
+extern cvar_t	*r_wateralpha;
+extern cvar_t	*r_waterripple;
+extern cvar_t	*r_dynamic;
+extern cvar_t	*r_netgraph;
+extern cvar_t	*r_lightmap;
+extern cvar_t	*r_mirroralpha;
 
 extern cvar_t	*gl_affinemodels;
 extern cvar_t	*gl_clear;
@@ -184,5 +194,50 @@ void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboole
 void GL_Set2D (void);
 void GL_CheckGamma (unsigned char *pal);
 void GL_CheckBrightness (unsigned char *pal);
+
+typedef struct {
+	int		key;                    // allows reusability
+	vec3_t	origin, owner;
+	float	size;
+	float	die, decay;             // duration settings
+	float	minlight;               // lighting threshold
+	float	color[3];               // RGB
+} fire_t;
+
+struct entity_s;
+void R_AddFire (vec3_t, vec3_t, struct entity_s *ent);
+fire_t *R_AllocFire (int);
+void R_DrawFire (fire_t *);
+void R_UpdateFires (void);
+
+void R_DrawBrushModel (struct entity_s *e);
+void R_DrawWorld (void);
+void R_RenderDlights (void);
+void R_DrawSky (void);
+void R_DrawSkyChain (msurface_t *s);
+void EmitWaterPolys (msurface_t *fa);
+void R_RotateForEntity (struct entity_s *e);
+void EmitWaterPolys (msurface_t *fa);
+void R_NetGraph (void);
+void R_LoadSkys (const char *sky);
+
+extern float bubble_sintable[], bubble_costable[];
+extern float v_blend[4];
+
+void AddLightBlend (float, float, float, float);
+extern	int			c_brush_polys, c_alias_polys;
+extern	float		r_world_matrix[16];
+extern	mplane_t	frustum[4];
+
+extern inline qboolean R_CullBox (vec3_t mins, vec3_t maxs)
+{
+	int i;
+
+	for (i=0 ; i<4 ; i++)
+		if (BoxOnPlaneSide (mins, maxs, &frustum[i]) == 2)
+			return true;
+	return false;
+}
+
 
 #endif // __glquake_h

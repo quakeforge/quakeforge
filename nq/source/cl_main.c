@@ -42,8 +42,10 @@
 #include "host.h"
 #include "server.h"
 #include "QF/console.h"
-#include "screen.h"
+#include "QF/screen.h"
 #include "QF/cmd.h"
+
+byte       *vid_colormap;
 
 // we need to declare some mouse variables here, because the menu system
 // references them even when on a unix system.

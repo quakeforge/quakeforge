@@ -163,7 +163,7 @@ ogl_SOURCES=	noisetextures.c gl_textures.c gl_draw.c gl_dyn_fires.c	\
 		gl_rlight.c gl_rmain.c gl_rmisc.c gl_rsurf.c	\
 		gl_screen.c gl_skin.c gl_sky.c gl_sky_clip.c gl_view.c	\
 		gl_warp.c gl_model_alias.c gl_model_brush.c		\
-		gl_model_fullbright.c gl_model_sprite.c qfgl_ext.c
+		gl_model_fullbright.c gl_model_sprite.c
 
 # ... 3Dfx Voodoo 1 and 2 SVGAlib-based console GL
 qw_client_3dfx_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(ogl_SOURCES)

@@ -39,7 +39,9 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "client.h"
 #include "glquake.h"
+#include "r_shared.h"
 
 /*
 	R_AnimateLight

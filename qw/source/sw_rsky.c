@@ -278,6 +278,6 @@ R_SetSkyFrame (void)
    skyboxes in GL targets, so we just do nothing here.  --KB
 */
 void
-R_LoadSkys (char *name)
+R_LoadSkys (const char *name)
 {
 }

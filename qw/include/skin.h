@@ -29,6 +29,8 @@
 #ifndef _SKIN_H
 #define _SKIN_H
 
+#include "client.h"
+
 #define MAX_CACHED_SKINS 128
 
 #define RSSHOT_WIDTH 320

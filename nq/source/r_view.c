@@ -36,7 +36,7 @@
 #include "QF/cmd.h"
 #include "chase.h"
 #include "draw.h"
-#include "screen.h"
+#include "QF/screen.h"
 #include "QF/console.h"
 #include "QF/msg.h"
 
