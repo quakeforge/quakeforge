@@ -1,5 +1,5 @@
 /*
-	gl_ngraph.c
+	gl_graph.c
 
 	(description)
 
@@ -56,7 +56,6 @@ int 	     graph_texture[NUM_GRAPH_TEXTURES];
 static int   graph_index;
 static int   graph_size[NUM_GRAPH_TEXTURES];
 static int   graph_width[NUM_GRAPH_TEXTURES];
-
 
 
 int
