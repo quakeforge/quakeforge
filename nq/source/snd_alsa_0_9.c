@@ -93,13 +93,13 @@ qboolean SNDDMA_Init(void)
 
 	switch (rate) {
 	case -1:
-		if (snd_pcm_hw_params_set_rate(pcm, hw, 44100, 0) >= 0) {
+		if (snd_pcm_hw_params_set_rate_near(pcm, hw, 44100, 0) >= 0) {
 			frag_size = 256; /* assuming stereo 8 bit */
 			rate = 44100;
-		} else if (snd_pcm_hw_params_set_rate(pcm, hw, 22050, 0) >= 0) {
+		} else if (snd_pcm_hw_params_set_rate_near(pcm, hw, 22050, 0) >= 0) {
 			frag_size = 128; /* assuming stereo 8 bit */
 			rate = 22050;
-		} else if (snd_pcm_hw_params_set_rate(pcm, hw, 11025, 0) >= 0) {
+		} else if (snd_pcm_hw_params_set_rate_near(pcm, hw, 11025, 0) >= 0) {
 			frag_size = 64;	/* assuming stereo 8 bit */
 			rate = 11025;
 		} else {
@@ -110,7 +110,7 @@ qboolean SNDDMA_Init(void)
 	case 11025:
 	case 22050:
 	case 44100:
-		if (snd_pcm_hw_params_set_rate(pcm, hw, rate, 0) >= 0) {
+		if (snd_pcm_hw_params_set_rate_near(pcm, hw, rate, 0) >= 0) {
 			frag_size = 64 * rate / 11025; /* assuming stereo 8 bit */
 			break;
 		}
