@@ -68,8 +68,9 @@ int         lineno_base;
 
 etype_t     qc_types[] = {
 	ev_void,							// ex_error
-	ev_void,							// ex_label
+	ev_void,							// ex_state
 	ev_void,							// ex_bool
+	ev_void,							// ex_label
 	ev_void,							// ex_block
 	ev_void,							// ex_expr
 	ev_void,							// ex_uexpr
@@ -185,6 +186,7 @@ get_type (expr_t *e)
 				return &type_float;
 			return &type_integer;
 		case ex_nil:
+		case ex_state:
 			return &type_void;
 		case ex_block:
 			if (e->e.block.result)
@@ -345,16 +347,15 @@ new_error_expr (void)
 }
 
 expr_t *
-new_label_expr (void)
+new_state_expr (expr_t *frame, expr_t *think, expr_t *step)
 {
+	expr_t     *s = new_expr ();
 
-	expr_t     *l = new_expr ();
-
-	l->type = ex_label;
-	l->e.label.name = new_label_name ();
-	l->e.label.next = pr.labels;
-	pr.labels = &l->e.label;
-	return l;
+	s->type = ex_state;
+	s->e.state.frame = frame;
+	s->e.state.think = think;
+	s->e.state.step = step;
+	return s;
 }
 
 expr_t *
@@ -367,6 +368,19 @@ new_bool_expr (ex_list_t *true_list, ex_list_t *false_list, expr_t *e)
 	b->e.bool.false_list = false_list;
 	b->e.bool.e = e;
 	return b;
+}
+
+expr_t *
+new_label_expr (void)
+{
+
+	expr_t     *l = new_expr ();
+
+	l->type = ex_label;
+	l->e.label.name = new_label_name ();
+	l->e.label.next = pr.labels;
+	pr.labels = &l->e.label;
+	return l;
 }
 
 expr_t *
@@ -676,6 +690,15 @@ print_expr (expr_t *e)
 	switch (e->type) {
 		case ex_error:
 			printf ("(error)");
+			break;
+		case ex_state:
+			printf ("[");
+			print_expr (e->e.state.frame);
+			printf (",");
+			print_expr (e->e.state.think);
+			printf (",");
+			print_expr (e->e.state.step);
+			printf ("]");
 			break;
 		case ex_bool:
 			printf ("bool");	//FIXME
@@ -1598,6 +1621,7 @@ unary_expr (int op, expr_t *e)
 				case ex_error:
 				case ex_label:
 				case ex_name:
+				case ex_state:
 					error (e, "internal error");
 					abort ();
 				case ex_uexpr:
@@ -1652,6 +1676,7 @@ unary_expr (int op, expr_t *e)
 				case ex_error:
 				case ex_label:
 				case ex_name:
+				case ex_state:
 					error (e, "internal error");
 					abort ();
 				case ex_bool:
@@ -1716,6 +1741,7 @@ unary_expr (int op, expr_t *e)
 				case ex_error:
 				case ex_label:
 				case ex_name:
+				case ex_state:
 					error (e, "internal error");
 					abort ();
 				case ex_uexpr:

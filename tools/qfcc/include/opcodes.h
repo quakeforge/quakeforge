@@ -41,6 +41,7 @@ extern struct opcode_s *op_ifb;
 extern struct opcode_s *op_ifae;
 extern struct opcode_s *op_ifa;
 extern struct opcode_s *op_state;
+extern struct opcode_s *op_state_f;
 extern struct opcode_s *op_goto;
 extern struct opcode_s *op_jump;
 extern struct opcode_s *op_jumpb;

@@ -733,6 +733,13 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				ed->v[pr->fields.frame].float_var = OPA.float_var;
 				ed->v[pr->fields.think].func_var = OPB.func_var;
 				break;
+			case OP_STATE_F:
+				ed = PROG_TO_EDICT (pr, *pr->globals.self);
+				ed->v[pr->fields.nextthink].float_var = *pr->globals.time +
+					OPC.float_var;
+				ed->v[pr->fields.frame].float_var = OPA.float_var;
+				ed->v[pr->fields.think].func_var = OPB.func_var;
+				break;
 			case OP_ADD_I:
 				OPC.integer_var = OPA.integer_var + OPB.integer_var;
 				break;

@@ -62,6 +62,7 @@ opcode_t   *op_ifb;
 opcode_t   *op_ifae;
 opcode_t   *op_ifa;
 opcode_t   *op_state;
+opcode_t   *op_state_f;
 opcode_t   *op_goto;
 opcode_t   *op_jump;
 opcode_t   *op_jumpb;
@@ -164,7 +165,10 @@ opcode_init (void)
 		} else if (!strcmp (op->name, "<IFA>")) {
 			op_ifa = op;
 		} else if (!strcmp (op->name, "<STATE>")) {
-			op_state = op;
+			if (op->type_c == ev_float)
+				op_state_f = op;
+			else
+				op_state = op;
 		} else if (!strcmp (op->name, "<GOTO>")) {
 			op_goto = op;
 		} else if (!strcmp (op->name, "<JUMP>")) {

@@ -160,7 +160,7 @@ expr_t *argv_expr (void);
 %type	<param>	param param_list
 %type	<def>	def_name opt_initializer methoddef var_initializer
 %type	<expr>	const opt_expr fexpr expr element_list element_list1 element
-%type	<expr>	string_val opt_state_expr array_decl
+%type	<expr>	string_val opt_state_expr opt_step array_decl
 %type	<expr>	statement statements statement_block
 %type	<expr>	label break_label continue_label enum_list enum
 %type	<expr>	unary_expr primary cast_expr opt_arg_list arg_list
@@ -554,7 +554,7 @@ opt_state_expr
 		{
 			$$ = 0;
 		}
-	| '[' const ',' { $<type>$ = &type_function; } def_name ']'
+	| '[' const ',' { $<type>$ = &type_function; } def_name opt_step ']'
 		{
 			if ($2->type == ex_integer)
 				convert_int ($2);
@@ -565,8 +565,13 @@ opt_state_expr
 			if ($5->type->type != ev_func)
 				error ($2, "invalid type for think");
 
-			$$ = new_binary_expr ('s', $2, new_def_expr ($5));
+			$$ = new_state_expr ($2, new_def_expr ($5), $6);
 		}
+	;
+
+opt_step
+	: ',' fexpr					{ $$ = $2; }
+	| /* empty */				{ $$ = 0; }
 	;
 
 element_list

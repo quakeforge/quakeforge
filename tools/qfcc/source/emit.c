@@ -577,6 +577,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 				d = emit_sub_expr (res, dest);
 			}
 			break;
+		case ex_state:
 		case ex_bool:
 		case ex_name:
 		case ex_nil:
@@ -764,7 +765,9 @@ emit_expr (expr_t *e)
 	def_t      *def;
 	def_t      *def_a;
 	def_t      *def_b;
+	def_t      *def_c;
 	ex_label_t *label;
+	opcode_t   *op;
 
 	//printf ("%d ", e->line);
 	//print_expr (e);
@@ -772,13 +775,25 @@ emit_expr (expr_t *e)
 	switch (e->type) {
 		case ex_error:
 			break;
+		case ex_state:
+			def_a = emit_sub_expr (e->e.state.frame, 0);
+			def_b = emit_sub_expr (e->e.state.think, 0);
+			if (e->e.state.step) {
+				def_c = emit_sub_expr (e->e.state.step, 0);
+				op = op_state_f;
+			} else {
+				def_c = 0;
+				op = op_state;
+			}
+			emit_statement (e, op, def_a, def_b, def_c);
+			break;
+		case ex_bool:
+			emit_bool_expr (e);
+			break;
 		case ex_label:
 			label = &e->e.label;
 			label->ofs = pr.code->size;
 			relocate_refs (label->refs, label->ofs);
-			break;
-		case ex_bool:
-			emit_bool_expr (e);
 			break;
 		case ex_block:
 			for (e = e->e.block.head; e; e = e->next)
@@ -813,11 +828,6 @@ emit_expr (expr_t *e)
 					break;
 				case 'c':
 					emit_function_call (e, 0);
-					break;
-				case 's':
-					def_a = emit_sub_expr (e->e.expr.e1, 0);
-					def_b = emit_sub_expr (e->e.expr.e2, 0);
-					emit_statement (e, op_state, def_a, def_b, 0);
 					break;
 				case 'b':
 					emit_bind_expr (e->e.expr.e1, e->e.expr.e2);

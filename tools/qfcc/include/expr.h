@@ -36,6 +36,7 @@
 
 typedef enum {
 	ex_error,
+	ex_state,
 	ex_bool,
 	ex_label,
 	ex_block,
@@ -97,6 +98,12 @@ typedef struct {
 	struct expr_s *e;
 } ex_bool_t;
 
+typedef struct {
+	struct expr_s *frame;
+	struct expr_s *think;
+	struct expr_s *step;
+} ex_state_t;
+
 #define POINTER_VAL(p) (((p).def ? (p).def->ofs : 0) + (p).val)
 
 typedef struct expr_s {
@@ -108,6 +115,7 @@ typedef struct expr_s {
 	unsigned	rvalue:1;
 	union {
 		ex_label_t label;
+		ex_state_t state;
 		ex_bool_t  bool;
 		ex_block_t block;
 		struct {
@@ -149,6 +157,7 @@ expr_t *new_expr (void);
 const char *new_label_name (void);
 
 expr_t *new_label_expr (void);
+expr_t *new_state_expr (expr_t *frame, expr_t *think, expr_t *step);
 expr_t *new_bool_expr (ex_list_t *true_list, ex_list_t *false_list, expr_t *e);
 expr_t *new_block_expr (void);
 expr_t *new_binary_expr (int op, expr_t *e1, expr_t *e2);

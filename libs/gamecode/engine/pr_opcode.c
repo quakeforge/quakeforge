@@ -746,9 +746,15 @@ opcode_t pr_opcodes[] = {
 	},
 
 	{"<STATE>", "state", OP_STATE, false,
-	 ev_float, ev_float, ev_void,
+	 ev_float, ev_func, ev_void,
 	 PROG_ID_VERSION,
 	 "%Ga, %Gb",
+	},
+
+	{"<STATE>", "state.f", OP_STATE_F, false,
+	 ev_float, ev_func, ev_float,
+	 PROG_ID_VERSION,
+	 "%Ga, %Gb, %Gc",
 	},
 
 	{"<GOTO>", "goto", OP_GOTO, false,
@@ -1118,7 +1124,7 @@ PR_Check_Opcodes (progs_t *pr)
 						  "statement %ld", st->op,
 						  (long)(st - pr->pr_statements));
 			}
-			if (st->op == OP_STATE && !state_ok) {
+			if ((st->op == OP_STATE || st->op == OP_STATE_F) && !state_ok) {
 				PR_Error (pr, "PR_Check_Opcodes: %s used with missing fields "
 						  "or globals", op->opname);
 			}
@@ -1148,12 +1154,14 @@ PR_Check_Opcodes (progs_t *pr)
 					check_global (pr, st, op, ev_void, st->c);
 					break;
 				case OP_STATE:
+				case OP_STATE_F:
 					if (!state_ok) {
 						PR_Error (pr, "PR_Check_Opcodes: %s used with missing "
 								  "fields or globals", op->opname);
 					}
 					check_global (pr, st, op, op->type_a, st->a);
 					check_global (pr, st, op, op->type_b, st->b);
+					check_global (pr, st, op, op->type_c, st->c);
 					break;
 				default:
 					check_global (pr, st, op, op->type_a, st->a);

@@ -287,6 +287,7 @@ typedef enum {
 	OP_CONV_IU,
 	OP_CONV_UI,
 
+	OP_STATE_F,
 } pr_opcode_e;
 
 typedef struct opcode_s {
