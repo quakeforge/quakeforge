@@ -96,7 +96,26 @@ server_handler (connection_t *con, void *object)
 		return;
 	if (!Netchan_Process (&sv->netchan))
 		return;
-	Con_Printf ("hi\n");
+	while (1) {
+		int         cmd;
+		if (net_message->badread) {
+			break;
+		}
+		cmd = MSG_ReadByte (net_message);
+		if (cmd == -1) {
+			net_message->readcount++;
+			break;
+		}
+		switch (cmd) {
+			default:
+				qtv_printf ("Illegible server message: %d\n", cmd);
+				goto bail;
+			case svc_disconnect:
+				qtv_printf ("%s: disconnected\n", sv->name);
+				break;
+		}
+	}
+bail:
 	Netchan_Transmit (&sv->netchan, 1, &d);
 }
 
@@ -109,16 +128,16 @@ expect_packet (qmsg_t *msg, int type)
 	MSG_BeginReading (net_message);
 	seq = MSG_ReadLong (net_message);
 	if (seq != -1) {
-		Con_Printf ("unexpected connected packet\n");
+		qtv_printf ("unexpected connected packet\n");
 		return 0;
 	}
 	str = MSG_ReadString (net_message);
 	if (str[0] == A2C_PRINT) {
-		Con_Printf ("%s", str + 1);
+		qtv_printf ("%s", str + 1);
 		return 0;
 	}
 	if (str[0] != type) {
-		Con_Printf ("unexpected connectionless packet type: %s\n", str);
+		qtv_printf ("unexpected connectionless packet type: %s\n", str);
 		return 0;
 	}
 	return str;
@@ -134,7 +153,7 @@ server_connect (connection_t *con, void *object)
 	if (!(str = expect_packet (net_message, S2C_CONNECTION)))
 		return;
 
-	Con_Printf ("connection from %s\n", sv->name);
+	qtv_printf ("connection from %s\n", sv->name);
 	Netchan_Setup (&sv->netchan, con->address, sv->qport, NC_SEND_QPORT);
 	sv->netchan.outgoing_sequence = 1;
 	sv->connected = 1;
@@ -162,17 +181,17 @@ server_challenge (connection_t *con, void *object)
 	for (i = 1; i < Cmd_Argc (); i++) {
 		str = Cmd_Argv (i);
 		if (!strcmp ("QF", str)) {
-			Con_Printf ("QuakeForge server detected\n");
+			qtv_printf ("QuakeForge server detected\n");
 		} else if (!strcmp ("qtv", str)) {
-			Con_Printf ("QTV capable server\n");
+			qtv_printf ("QTV capable server\n");
 			qtv = str;
 		} else {
-			Con_Printf ("%s\n", str);
+			qtv_printf ("%s\n", str);
 		}
 	}
 
 	if (!qtv) {
-		Con_Printf ("%s can't handle qtv.\n", sv->name);
+		qtv_printf ("%s can't handle qtv.\n", sv->name);
 		Hash_Del (servers, sv->name);
 		Hash_Free (servers, sv);
 		return;
@@ -205,17 +224,17 @@ sv_new_f (void)
 	netadr_t    adr;
 
 	if (Cmd_Argc () != 3) {
-		Con_Printf ("Usage: sv_new <name> <address>\n");
+		qtv_printf ("Usage: sv_new <name> <address>\n");
 		return;
 	}
 	name = Cmd_Argv (1);
 	if (Hash_Find (servers, name)) {
-		Con_Printf ("sv_new: %s already exists\n", name);
+		qtv_printf ("sv_new: %s already exists\n", name);
 		return;
 	}
 	address = Cmd_Argv (2);
 	if (!NET_StringToAdr (address, &adr)) {
-		Con_Printf ("Bad server address\n");
+		qtv_printf ("Bad server address\n");
 		return;
 	}
 	if (!adr.port)
@@ -245,12 +264,12 @@ sv_del_f (void)
 	server_t   *sv;
 
 	if (Cmd_Argc () != 2) {
-		Con_Printf ("Usage: sv_del <name>\n");
+		qtv_printf ("Usage: sv_del <name>\n");
 		return;
 	}
 	name = Cmd_Argv (1);
 	if (!(sv = Hash_Del (servers, name))) {
-		Con_Printf ("sv_new: %s unkown\n", name);
+		qtv_printf ("sv_new: %s unkown\n", name);
 		return;
 	}
 	Hash_Free (servers, sv);
@@ -266,13 +285,13 @@ sv_list_f (void)
 	for (l = list, count = 0; *l; l++)
 		count++;
 	if (!count) {
-		Con_Printf ("no servers\n");
+		qtv_printf ("no servers\n");
 		return;
 	}
 	qsort (list, count, sizeof (*list), server_compare);
 	for (l = list; *l; l++) {
 		sv = *l;
-		Con_Printf ("%-20s %s(%s)\n", sv->name, sv->address,
+		qtv_printf ("%-20s %s(%s)\n", sv->name, sv->address,
 					NET_AdrToString (sv->adr));
 	}
 }

@@ -1207,7 +1207,7 @@ CL_ParseServerMessage (void)
 		cmd = MSG_ReadByte (net_message);
 
 		if (cmd == -1) {
-			net_message->readcount++;	// so the EOM showner has the right
+			net_message->readcount++;	// so the EOM SHOWNET has the right
 										// value
 			SHOWNET ("END OF MESSAGE");
 			break;

@@ -32,6 +32,9 @@
 #ifndef __sv_qtv_h
 #define __sv_qtv_h
 
-void SV_qtvConnect (void);
+struct info_s;
+void SV_qtvConnect (int qport, struct info_s *info);
+int SV_qtvPacket (int qport);
+void SV_qtvCheckTimeouts (void);
 
 #endif//__sv_qtv_h

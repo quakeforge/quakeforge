@@ -769,7 +769,7 @@ SVC_DirectConnect (void)
 	info_t     *userinfo = 0;
 	const char *s;
 	client_t   *cl, *newcl;
-	int         challenge, qport, version, i;
+	int         challenge, qport, version, i, qtv = 0;
 	netadr_t    adr;
 	qboolean    spectator;
 
@@ -778,16 +778,15 @@ SVC_DirectConnect (void)
 
 	s = Cmd_Argv (1);
 	if (!strcmp (s, "qtv")) {
-		SV_qtvConnect ();
-		return;
-	}
-
-	version = atoi (s);
-	if (version != PROTOCOL_VERSION) {
-		Netchan_OutOfBandPrint (net_from, "%c\nServer is version %s.\n",
-								A2C_PRINT, QW_VERSION);
-		SV_Printf ("* rejected connect from version %i\n", version);
-		return;
+		qtv = 1;
+	} else {
+		version = atoi (s);
+		if (version != PROTOCOL_VERSION) {
+			Netchan_OutOfBandPrint (net_from, "%c\nServer is version %s.\n",
+									A2C_PRINT, QW_VERSION);
+			SV_Printf ("* rejected connect from version %i\n", version);
+			return;
+		}
 	}
 
 	qport = atoi (Cmd_Argv (2));
@@ -818,6 +817,11 @@ SVC_DirectConnect (void)
 	if (i == MAX_CHALLENGES) {
 		Netchan_OutOfBandPrint (net_from, "%c\nNo challenge for address.\n",
 								A2C_PRINT);
+		return;
+	}
+
+	if (qtv) {
+		SV_qtvConnect (qport, userinfo);
 		return;
 	}
 
@@ -1803,6 +1807,9 @@ SV_ReadPackets (void)
 		if (i != MAX_CLIENTS)
 			continue;
 
+		if (SV_qtvPacket (qport))
+			continue;
+
 		// packet is not from a known client
 //		SV_Printf ("%s:sequenced packet without connection\n",
 //				   NET_AdrToString (net_from));
@@ -1846,6 +1853,7 @@ SV_CheckTimeouts (void)
 			svs.num_clients--;
 		}
 	}
+	SV_qtvCheckTimeouts ();
 	if (sv.paused && !nclients) {
 		// nobody left, unpause the server
 		SV_TogglePause ("Pause released since no players are left.\n");
