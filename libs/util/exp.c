@@ -36,6 +36,7 @@ optable_t optable[] =
 	{"!", OP_Not, 1},
 	{"**", OP_Exp, 2},
 	{"/", OP_Div, 2},
+	{"-", OP_Negate, 1},
 	{"*", OP_Mult, 2},
 	{"+", OP_Add, 2},
 	{"-", OP_Sub, 2},
@@ -168,6 +169,16 @@ int EXP_DoFunction (token *chain)
 	return -2; // We shouldn't get here
 }
 
+int EXP_DoUnary (token *chain)
+{
+	if (chain->generic.next->generic.type == TOKEN_OP)
+		EXP_DoUnary (chain->generic.next);
+	if (chain->generic.next->generic.type != TOKEN_NUM)
+		return -1; // In theory, this should never happen
+	chain->generic.next->num.value = chain->op.op->func(chain->generic.next->num.value, 0);
+	EXP_RemoveToken (chain);
+	return 0;
+}
 
 token *EXP_ParseString (char *str)
 {
@@ -250,6 +261,8 @@ token *EXP_ParseString (char *str)
 					i -= (m - strlen(op->str) + 1);
 					new = EXP_NewToken();
 					new->generic.type = TOKEN_OP;
+					if (*(op->str) == '-') // HACK HACK HACK
+						op = optable + 6; // Always assume subtraction for -
 					new->op.op = op;
 					new->generic.prev = cur;
 					new->generic.next = 0;
@@ -317,6 +330,10 @@ exp_error_t EXP_SimplifyTokens (token *chain)
 		for (cur = chain->generic.next; cur->generic.type != TOKEN_CPAREN; cur = cur->generic.next)
 		{
 			if (cur->generic.type == TOKEN_OP && cur->op.op == optable + i && cur->generic.next) {
+				// If a unary operator is in our way, it gets evaluated early
+				if (cur->generic.next->generic.type == TOKEN_OP)
+					if (EXP_DoUnary (cur->generic.next))
+						return EXP_E_SYNTAX;
 				if (optable[i].operands == 1 && cur->generic.next->generic.type == TOKEN_NUM) {
 					cur->generic.next->num.value = optable[i].func(cur->generic.next->num.value, 0);
 					temp = cur;
@@ -422,15 +439,7 @@ exp_error_t EXP_Validate (token *chain)
 		else if ((cur->generic.type == TOKEN_OP || cur->generic.type == TOKEN_OPAREN) && cur->generic.next->generic.type == TOKEN_OP)
 		{
 			if (cur->generic.next->op.op->func == OP_Sub) /* Stupid hack for negation */
-			{
-				cur = cur->generic.next;
-				cur->generic.type = TOKEN_NUM;
-				cur->num.value = -1.0;
-				new = EXP_NewToken();
-				new->generic.type = TOKEN_OP;
-				new->op.op = EXP_FindOpByStr ("*");
-				EXP_InsertTokenAfter (cur, new);
-			}
+				cur->generic.next->op.op = optable + 3;
 			else if (cur->generic.next->op.op->operands == 2)
 				return EXP_E_SYNTAX; /* Operator misuse */
 		}

@@ -162,6 +162,16 @@ GIB_Arg_Strip_Delim (unsigned int arg)
 	}
 }
 
+void
+GIB_Return (const char *str)
+{
+	if (GIB_DATA(cbuf_active)->type != GIB_BUFFER_PROXY)
+		return;
+	dstring_clearstr (GIB_DATA(cbuf_active->up)->ret.retval);
+	dstring_appendstr (GIB_DATA(cbuf_active->up)->ret.retval, str);
+	GIB_DATA(cbuf_active->up)->ret.available = true;
+}
+
 /*
 	GIB Builtin functions
 	
@@ -177,6 +187,22 @@ GIB_Function_f (void)
 	else
 		GIB_Function_Define (GIB_Argv(1), GIB_Argv(2));
 }			
+
+void
+GIB_FunctionDotGet_f (void)
+{
+	if (GIB_Argc () != 2)
+		Cbuf_Error ("syntax",
+					"function.get: invalid syntax\n"
+					"usage: function.get function_name");
+	else {
+		gib_function_t *f;
+		if ((f = GIB_Function_Find (GIB_Argv (1))))
+			GIB_Return (f->program->str);
+		else
+			GIB_Return ("");
+	}
+}
 
 void
 GIB_Local_f (void)
@@ -335,6 +361,7 @@ void
 GIB_Builtin_Init (void)
 {
 	GIB_Builtin_Add ("function", GIB_Function_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("function.get", GIB_FunctionDotGet_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("export", GIB_Export_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("local", GIB_Local_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("global", GIB_Global_f, GIB_BUILTIN_NORMAL);

@@ -64,7 +64,13 @@ GIB_Process_Index (dstring_t *index, unsigned int pos, int *i1, int *i2)
 		}
 	v1 = atoi (index->str+pos+1);
 	if ((p = strchr (index->str+pos, ':'))) {
-		v2 = atoi (p+1);
+		if (*(p+1) == ']')
+			v2 = -1;
+		else {
+			v2 = atoi (p+1);
+			if (v2 < 0)
+				v2--;
+		}
 	} else
 		v2 = v1;
 	dstring_snip (index, pos, i - pos + 1);
@@ -140,9 +146,14 @@ GIB_Process_Variables_All (struct dstring_s *token)
 				  token->str[i+n] == '_' ||
 				  token->str[i+n] == '[' ||
 				  token->str[i+n] == ':'; n++) {
-					if (token->str[i+n] == '[')
+					if (token->str[i+n] == '[') {
 						while (token->str[i+n] && token->str[i+n] != ']')
 							n++;
+						if (!token->str[i+n]) {
+							Cbuf_Error ("parse", "Could not find match for [");
+							goto ERROR;
+						}
+					}
 				}
 				dstring_insert (var, 0, token->str+i, n); // extract it
 			}
@@ -172,15 +183,14 @@ GIB_Process_Variables_All (struct dstring_s *token)
 						i2 = 0;
 				} else if (i2 >= strlen (var->str))
 					i2 = strlen(var->str)-1;
-				if (i2 < i1) {
-					i1 ^= i2;
-					i2 ^= i1;
-					i1 ^= i2;
+				if (i2 < i1)
+					dstring_clearstr (var);
+				else {	
+					if (i2 < strlen(var->str)-1) // Snip everthing after index 2
+						dstring_snip (var, i2+1, strlen(var->str)-i2-1);
+					if (i1 > 0) // Snip everything before index 1
+						dstring_snip (var, 0, i1);
 				}
-				if (i2 < strlen(var->str)-1) // Snip everthing after index 2
-					dstring_snip (var, i2+1, strlen(var->str)-i2-1);
-				if (i1 > 0) // Snip everything before index 1
-				dstring_snip (var, 0, i1);
 			}
 			dstring_replace (token, i, n, var->str, strlen(var->str));
 			i += strlen (var->str) - 1;

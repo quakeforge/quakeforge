@@ -213,6 +213,11 @@ GIB_Parse_Extract_Line (struct cbuf_s *cbuf)
 				Cbuf_Error ("parse", "Could not find matching %c", c);
 				return;
 			}
+		} else if (dstr->str[i] == '`') {
+			if ((c = GIB_Parse_Match_Backtick (dstr->str, &i))) {
+				Cbuf_Error ("parse", "Could not find matching %c", c);
+				return;
+			}
 		} else if (dstr->str[i] == '\n' || dstr->str[i] == ';')
 			break;
 		else if (dstr->str[i] == '/' && dstr->str[i+1] == '/') {

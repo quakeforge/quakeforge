@@ -23,6 +23,7 @@
 #define __ops_h
 
 double OP_Not (double op1, double op2);
+double OP_Negate (double op1, double op2);
 double OP_Add (double op1, double op2);
 double OP_Sub (double op1, double op2);
 double OP_Mult (double op1, double op2);

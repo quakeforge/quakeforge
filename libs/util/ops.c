@@ -26,6 +26,11 @@ double OP_Not (double op1, double op2)
 	return !op1;
 }
 
+double OP_Negate (double op1, double op2)
+{
+	return -op1;
+}
+
 double OP_Add (double op1, double op2)
 {
 	return op1 + op2;

@@ -1,4 +1,4 @@
-//      zoom.rc
+//      zoom.gib
 //
 //      zoom script for GIB in QuakeForge 0.5
 //
@@ -42,6 +42,7 @@ function "zoom.init" { // Initialize basic options
 	set in_amp ${zoom.amp}
 }
 
+// Default initial values
 zoom.init 1 90 1 90 1.15
 
 function "zoom.adjust" { // Adjust fov and sensitivity to match zoom factor
