@@ -100,6 +100,18 @@ bi_seek (progs_t *pr)	// FIXME: make INT when qc int
 	G_FLOAT (pr, OFS_RETURN) = lseek (handle, pos, whence);
 }
 
+static void
+bi_traceon (progs_t *pr)
+{
+	    pr->pr_trace = true;
+}
+
+static void
+bi_traceoff (progs_t *pr)
+{   
+	    pr->pr_trace = false;
+}
+
 builtin_t   builtins[] = {
 	bi_fixme,
 	bi_print,
@@ -111,6 +123,8 @@ builtin_t   builtins[] = {
 	bi_read,
 	bi_write,
 	bi_seek,
+	bi_traceon,
+	bi_traceoff,
 };
 
 void

@@ -8,10 +8,15 @@ string (float handle, float count) read = #7; // FIXME: cf read_result
 float (float handle, string buffer, float count) write = #8;
 float (float handle, float pos, float whence) seek = #9;
 
+void() traceon = #10;          // turns statment trace on
+void() traceoff = #11;
+
+
 float time;
 entity self;
 float read_result;		// FIXME: hacky (cf read)
 
 .float nextthink;
-.float think;
+.void() think;
 .float frame;
+.vector origin;

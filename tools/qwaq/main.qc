@@ -2,6 +2,8 @@ float foo = 1;
 float bar = 1;
 float snafu = 2;
 
+void () eek;
+
 float () main =
 {
 	local float handle;
@@ -21,6 +23,7 @@ float () main =
 		print (buffer);
 	} while (read_result == 1024);
 	close (handle);
+	eek ();
 	return 0;
 };
 
@@ -50,4 +53,12 @@ void () blarg =
 	} while (foo);
 	if (bar = foo);
 	foo = 2;
+};
+
+void () eek =
+{
+	traceon();
+	self.origin = '0 0 0';
+	self.origin = self.origin + '1 2 3';
+	traceoff();
 };
