@@ -224,6 +224,14 @@ setup_data (void)
 	}
 }
 
+static void
+round_strings (strpool_t *strings)
+{
+	memset (strings->strings + strings->size, 0,
+			strings->max_size - strings->size);
+	strings->size = RUP (strings->size, 4);
+}
+
 qfo_t *
 qfo_from_progs (pr_info_t *pr)
 {
@@ -233,8 +241,8 @@ qfo_from_progs (pr_info_t *pr)
 	allocate_stuff ();
 	setup_data ();
 
-	pr->strings->size = RUP (pr->strings->size, 4);
-	types->size = RUP (types->size, 4);
+	round_strings (pr->strings);
+	round_strings (types);
 
 	qfo = qfo_new ();
 	qfo_add_code (qfo, pr->code->code, pr->code->size);
@@ -475,7 +483,7 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		*pr->scope->tail = pd;
 		pr->scope->tail = &pd->def_next;
 		pd->type = parse_type (qfo->types + qd->full_type);
-		pd->name = qfo->strings + qd->name;
+		pd->name = qd->name ? qfo->strings + qd->name : 0;
 		pd->ofs = qd->ofs;
 		if (qd->num_relocs) {
 			pd->refs = relocs + qd->relocs;

@@ -79,7 +79,8 @@ dump_defs (qfo_t *qfo)
 	qfo_func_t *func;
 
 	for (def = qfo->defs; def - qfo->defs < qfo->num_defs; def++) {
-		printf ("%4d %4x %d %s %s %d %d %s:%d\n",
+		printf ("%5d %4d %4x %d %s %s %d %d %s:%d\n",
+				def - qfo->defs,
 				def->ofs,
 				def->flags,
 				def->basic_type,
@@ -117,7 +118,7 @@ dump_funcs (qfo_t *qfo)
 
 	for (i = 0; i < qfo->num_funcs; i++) {
 		func = qfo->funcs + i;
-		printf ("%s %s:%d  %d?%d %d %d,%d\n",
+		printf ("%5d %s %s:%d  %d?%d %d %d,%d\n", i,
 				str + func->name, str + func->file, func->line,
 				func->builtin, func->code, func->def,
 				func->relocs, func->num_relocs);
@@ -146,7 +147,7 @@ dump_relocs (qfo_t *qfo)
 
 	for (i = 0; i < qfo->num_relocs; i++) {
 		reloc = qfo->relocs + i;
-		printf ("%5d %-10s %d\n", reloc->ofs, reloc_names[reloc->type],
+		printf ("%5d %5d %-10s %d\n", i, reloc->ofs, reloc_names[reloc->type],
 				reloc->def);
 	}
 }

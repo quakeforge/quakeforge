@@ -73,7 +73,7 @@ static defspace_t *data;
 static defspace_t *far_data;
 static strpool_t *strings;
 static strpool_t *type_strings;
-static relocgroup_t relocs;
+static relocgroup_t relocs, final_relocs;
 static defgroup_t global_defs, local_defs, defs;
 static funcgroup_t funcs;
 static struct {
@@ -172,6 +172,7 @@ process_def (qfo_def_t *def)
 		if ((d = Hash_Find (defined_defs, strings->strings + def->name))) {
 			def->ofs = d->ofs;
 			def->flags = d->flags;
+			Hash_Add (defined_defs, def);
 		} else {
 			Hash_Add (extern_defs, def);
 		}
@@ -307,10 +308,11 @@ fixup_relocs ()
 {
 	qfo_reloc_t *reloc;
 	qfo_def_t  *def;
+	qfo_func_t *func;
+	int         i;
 
-	for (reloc = relocs.relocs;
-		 reloc - relocs.relocs < relocs.num_relocs;
-		 reloc++) {
+	for (i = 0; i < final_relocs.num_relocs; i++) {
+		reloc = final_relocs.relocs + i;
 		def = 0;
 		switch ((reloc_type)reloc->type) {
 			case rel_none:
@@ -362,26 +364,105 @@ fixup_relocs ()
 				break;
 		}
 	}
+	for (i = 0; i < defs.num_defs; i++) {
+		def = defs.defs + i;
+		if (def->basic_type == ev_func
+			&& (def->flags & QFOD_INITIALIZED)
+			&& !(def->flags & (QFOD_LOCAL | QFOD_EXTERNAL | QFOD_ABSOLUTE))) {
+			func = funcs.funcs + data->data[def->ofs].func_var - 1;
+			func->def = i;
+		}
+	}
 }
 
 static void
 merge_defgroups (void)
 {
 	int         local_base, i, j;
-	qfo_def_t  *def;
+	qfo_def_t  *def, *d;
 	qfo_func_t *func;
 
-	defgroup_add_defs (&defs, global_defs.defs, global_defs.num_defs);
+	for (i = 0; i < global_defs.num_defs; i++) {
+		int         def_num = defs.num_defs;
+		const char *name;
+		def = global_defs.defs + i;
+		name = strings->strings + def->name;
+		if ((d = Hash_Del (defined_defs, name))) {
+			defgroup_add_defs (&defs, d, 1);
+			def = defs.defs + def_num;
+			def->relocs = final_relocs.num_relocs;
+			relocgroup_add_relocs (&final_relocs, relocs.relocs + d->relocs,
+								   d->num_relocs);
+			for (j = 0; j < d->num_relocs; j++)
+				relocs.relocs[d->relocs + j].type = rel_none;
+			while ((d = Hash_Del (defined_defs,
+								  strings->strings + def->name))) {
+				relocgroup_add_relocs (&final_relocs, relocs.relocs + d->relocs,
+									   d->num_relocs);
+				def->num_relocs += d->num_relocs;
+				for (j = 0; j < d->num_relocs; j++)
+					relocs.relocs[d->relocs + j].type = rel_none;
+			}
+		} else if ((d = Hash_Del (extern_defs, name))) {
+			defgroup_add_defs (&defs, d, 1);
+			def = defs.defs + def_num;
+			def->relocs = final_relocs.num_relocs;
+			relocgroup_add_relocs (&final_relocs, relocs.relocs + d->relocs,
+								   d->num_relocs);
+			for (j = 0; j < d->num_relocs; j++)
+				relocs.relocs[d->relocs + j].type = rel_none;
+			while ((d = Hash_Del (extern_defs,
+								  strings->strings + def->name))) {
+				relocgroup_add_relocs (&final_relocs, relocs.relocs + d->relocs,
+									   d->num_relocs);
+				def->num_relocs += d->num_relocs;
+				for (j = 0; j < d->num_relocs; j++)
+					relocs.relocs[d->relocs + j].type = rel_none;
+			}
+		} else if (!(def->flags & (QFOD_GLOBAL | QFOD_EXTERNAL))) {
+			d = def;
+			defgroup_add_defs (&defs, d, 1);
+			def = defs.defs + def_num;
+			def->relocs = final_relocs.num_relocs;
+			relocgroup_add_relocs (&final_relocs, relocs.relocs + d->relocs,
+								   d->num_relocs);
+			for (j = 0; j < d->num_relocs; j++)
+				relocs.relocs[d->relocs + j].type = rel_none;
+		}
+		for (j = 0; j < def->num_relocs; j++)
+			final_relocs.relocs[def->relocs + j].def = def_num;
+	}
 	local_base = defs.num_defs;
-	defgroup_add_defs (&defs, local_defs.defs, local_defs.num_defs);
 	for (i = 0; i < local_defs.num_defs; i++) {
+		int         r = final_relocs.num_relocs;
 		def = local_defs.defs + i;
-		for (j = def->relocs; j < def->relocs + def->num_relocs; j++)
-			relocs.relocs[j].def += local_base;
+		defgroup_add_defs (&defs, def, 1);
+		def = defs.defs + defs.num_defs - 1;
+		relocgroup_add_relocs (&final_relocs, relocs.relocs + def->relocs,
+							   def->num_relocs);
+		for (j = 0; j < def->num_relocs; j++) {
+			relocs.relocs[def->relocs + j].type = rel_none;
+			final_relocs.relocs[r + j].def += local_base;
+		}
+		def->relocs = r;
 	}
 	for (i = 0; i < funcs.num_funcs; i++) {
+		int         r = final_relocs.num_relocs;
 		func = funcs.funcs + i;
 		func->local_defs += local_base;
+		relocgroup_add_relocs (&final_relocs, relocs.relocs + func->relocs,
+							   func->num_relocs);
+		for (j = 0; j < func->num_relocs; j++)
+			relocs.relocs[func->relocs + j].type = rel_none;
+		func->relocs = r;
+	}
+	for (i = 0; i < relocs.num_relocs; i = j) {
+		j = i;
+		while (j < relocs.num_relocs && relocs.relocs[j].type != rel_none)
+			j++;
+		relocgroup_add_relocs (&final_relocs, relocs.relocs + i, j - i);
+		while (j < relocs.num_relocs && relocs.relocs[j].type == rel_none)
+			j++;
 	}
 }
 
@@ -399,7 +480,7 @@ define_def (const char *name, etype_t basic_type, const char *full_type)
 	d.flags = QFOD_GLOBAL;
 	defspace_adddata (data, &val, 1);
 	defgroup_add_defs (&global_defs, &d, 1);
-	process_def (&d);
+	process_def (global_defs.defs + global_defs.num_defs - 1);
 }
 
 void
@@ -490,7 +571,7 @@ linker_finish (void)
 	qfo_add_data (qfo, data->data, data->size);
 	qfo_add_far_data (qfo, far_data->data, far_data->size);
 	qfo_add_strings (qfo, strings->strings, strings->size);
-	qfo_add_relocs (qfo, relocs.relocs, relocs.num_relocs);
+	qfo_add_relocs (qfo, final_relocs.relocs, final_relocs.num_relocs);
 	qfo_add_defs (qfo, defs.defs, defs.num_defs);
 	qfo_add_funcs (qfo, funcs.funcs, funcs.num_funcs);
 	qfo_add_lines (qfo, lines.lines, lines.num_lines);
