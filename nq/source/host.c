@@ -601,6 +601,9 @@ _Host_Frame (float time)
 		IN_ProcessEvents ();
 
 	// process gib threads
+
+	// check for commands typed to the host
+	Host_GetConsoleCommands ();
 	
 	GIB_Thread_Execute ();
 
@@ -619,9 +622,6 @@ _Host_Frame (float time)
 // server operations
 //
 //-------------------
-
-	// check for commands typed to the host
-	Host_GetConsoleCommands ();
 
 	if (sv.active)
 		Host_ServerFrame ();

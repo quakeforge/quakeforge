@@ -108,6 +108,9 @@ main (int argc, const char **argv)
 
 	oldtime = Sys_DoubleTime () - 0.1;
 	while (1) {							// Main message loop
+		if (!Sys_CheckInput (0, -1))
+			continue;
+
 		// find time spent rendering last frame
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;

@@ -533,12 +533,13 @@ Sys_CheckInput (int idle, int net_socket)
 	FD_ZERO (&fdset);
 	if (do_stdin)
 		FD_SET (0, &fdset);
-	FD_SET (net_socket, &fdset);
+	if (net_socket >= 0)
+		FD_SET (net_socket, &fdset);
 
 	if (!idle || !sys_dead_sleep->int_val)
 		timeout = &_timeout;
 
-	res = select (net_socket + 1, &fdset, NULL, NULL, timeout);
+	res = select (max (net_socket, 0) + 1, &fdset, NULL, NULL, timeout);
 	if (res == 0 || res == -1)
 		return 0;
 	stdin_ready = FD_ISSET (0, &fdset);
