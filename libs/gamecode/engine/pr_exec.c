@@ -268,7 +268,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 	if (!fnum || fnum >= pr->progs->numfunctions) {
 		if (*pr->globals.self)
 			ED_Print (pr, PROG_TO_EDICT (pr, *pr->globals.self));
-		PR_Error (pr, "PR_ExecuteProgram: NULL function");
+		PR_RunError (pr, "PR_ExecuteProgram: NULL function");
 	}
 
 	f = &pr->pr_functions[fnum];

@@ -107,6 +107,7 @@ int PR_AccessField (progs_t *pr, const char *name, etype_t type,
 
 edict_t *EDICT_NUM(progs_t *pr, int n);
 int NUM_FOR_EDICT(progs_t *pr, edict_t *e);
+int NUM_FOR_BAD_EDICT(progs_t *pr, edict_t *e);
 
 #define	NEXT_EDICT(p,e) ((edict_t *)( (byte *)e + (p)->pr_edict_size))
 

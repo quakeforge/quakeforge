@@ -361,7 +361,7 @@ PR_ValueString (progs_t * pr, etype_t type, pr_type_t *val)
 			break;
 		case ev_entity:
 			snprintf (line, sizeof (line), "entity %i",
-					  NUM_FOR_EDICT (pr, PROG_TO_EDICT (pr, val->entity_var)));
+					  NUM_FOR_BAD_EDICT (pr, PROG_TO_EDICT (pr, val->entity_var)));
 			break;
 		case ev_func:
 			f = pr->pr_functions + val->func_var;
@@ -425,7 +425,7 @@ PR_UglyValueString (progs_t * pr, etype_t type, pr_type_t *val)
 			break;
 		case ev_entity:
 			snprintf (line, sizeof (line), "%i",
-					  NUM_FOR_EDICT (pr, PROG_TO_EDICT (pr, val->entity_var)));
+					  NUM_FOR_BAD_EDICT (pr, PROG_TO_EDICT (pr, val->entity_var)));
 			break;
 		case ev_func:
 			f = pr->pr_functions + val->func_var;
@@ -544,7 +544,7 @@ ED_Print (progs_t * pr, edict_t *ed)
 		return;
 	}
 
-	Sys_Printf ("\nEDICT %i:\n", NUM_FOR_EDICT (pr, ed));
+	Sys_Printf ("\nEDICT %i:\n", NUM_FOR_BAD_EDICT (pr, ed));
 	for (i = 1; i < pr->progs->numfielddefs; i++) {
 		d = &pr->pr_fielddefs[i];
 		name = PR_GetString (pr, d->s_name);
@@ -1459,20 +1459,31 @@ EDICT_NUM (progs_t * pr, int n)
 {
 	int offs = n * pr->pr_edict_size;
 	if (offs < 0 || n >= pr->pr_edictareasize)
-		PR_Error (pr, "EDICT_NUM: bad number %i", n);
+		PR_RunError (pr, "EDICT_NUM: bad number %i", n);
 	return PROG_TO_EDICT (pr, offs);
 }
 
 int
-NUM_FOR_EDICT (progs_t * pr, edict_t *e)
+NUM_FOR_BAD_EDICT (progs_t *pr, edict_t *e)
 {
 	int         b;
 
 	b = (byte *) e - (byte *) * (pr)->edicts;
 	b = b / pr->pr_edict_size;
 
+	return b;
+}
+
+int
+NUM_FOR_EDICT (progs_t *pr, edict_t *e)
+{
+	int b;
+
+	b = NUM_FOR_BAD_EDICT (pr, e);
+
 	if (b && (b < 0 || b >= *(pr)->num_edicts))
-		PR_Error (pr, "NUM_FOR_EDICT: bad pointer %d %p %p", b, e, * (pr)->edicts);
+		PR_RunError (pr, "NUM_FOR_EDICT: bad pointer %d %p %p", b, e, * (pr)->edicts);
+
 	return b;
 }
 
