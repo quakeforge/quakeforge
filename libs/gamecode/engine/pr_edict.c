@@ -78,6 +78,7 @@ const char *type_name[ev_type_count] = {
 	"pointer",
 	"quaternion",
 	"integer",
+	"uinteger",
 };
 
 ddef_t     *ED_FieldAtOfs (progs_t * pr, int ofs);
