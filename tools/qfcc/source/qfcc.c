@@ -338,7 +338,7 @@ finish_compilation (void)
 	if (options.code.debug) {
 		e.type = ex_string;
 		e.e.string_val = debugfile;
-		ReuseConstant (&e, PR_GetDef (&type_string, ".debug_file", pr.scope, 1));
+		ReuseConstant (&e, get_def (&type_string, ".debug_file", pr.scope, 1));
 	}
 
 	for (def = pr.scope->head; def; def = def->def_next) {

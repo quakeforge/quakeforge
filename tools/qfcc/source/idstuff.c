@@ -184,7 +184,7 @@ WriteFiles (const char *sourcedir)
 }
 
 /*
-	PR_WriteProgdefs
+	WriteProgdefs
 
 	Writes the global and entity structures out.
 	Returns a crc of the header, to be stored in the progs file for comparison

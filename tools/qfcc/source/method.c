@@ -121,7 +121,7 @@ method_def (class_t *class, method_t *method)
 			*s = '_';
 	//printf ("%s %s %s %ld\n", method->name, method->types, str->str, str->size);
 	// FIXME need a file scope
-	def = PR_GetDef (method->type, str->str, pr.scope, 1);
+	def = get_def (method->type, str->str, pr.scope, 1);
 	dstring_delete (str);
 	return def;
 }
@@ -174,7 +174,7 @@ make_message_def (const char *name, def_t **def)
 	expr_t     *zero = new_expr ();
 
 	zero->type = ex_integer;
-	*def = PR_GetDef (&type_IMP, name, pr.scope, 1);
+	*def = get_def (&type_IMP, name, pr.scope, 1);
 	build_builtin_function (*def, zero);
 }
 
@@ -261,9 +261,9 @@ selector_def (const char *_sel_id, const char *_sel_types)
 	sel_def = malloc (sizeof (sel_def_t));
 	sel_def->sel_id = sel_id;
 	sel_def->sel_types = sel_types;
-	sel_def->def = PR_NewDef (type_SEL.aux_type, ".imm", pr.scope);
+	sel_def->def = new_def (type_SEL.aux_type, ".imm", pr.scope);
 	sel_def->def->initialized = sel_def->def->constant = 1;
-	sel_def->def->ofs = PR_NewLocation (type_SEL.aux_type, pr.globals);
+	sel_def->def->ofs = new_location (type_SEL.aux_type, pr.globals);
 	G_INT (sel_def->def->ofs) = sel_id;
 	G_INT (sel_def->def->ofs + 1) = sel_types;
 	Hash_AddElement (sel_def_hash, sel_def);
@@ -296,7 +296,7 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 	new_struct_field (method_list, &type_integer, "method_count", vis_public);
 	for (i = 0; i < count; i++)
 		new_struct_field (method_list, type_Method.aux_type, 0, vis_public);
-	methods_def = PR_GetDef (method_list, va ("_OBJ_%s_METHODS_%s", type, name),
+	methods_def = get_def (method_list, va ("_OBJ_%s_METHODS_%s", type, name),
 							 pr.scope, 1);
 	methods_def->initialized = methods_def->constant = 1;
 	methods = &G_STRUCT (pr_method_list_t, methods_def->ofs);

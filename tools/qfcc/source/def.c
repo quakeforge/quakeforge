@@ -128,13 +128,13 @@ new_scope (defspace_t *space, scope_t *parent)
 }
 
 /*
-	PR_GetDef
+	get_def
 
 	If type is NULL, it will match any type
 	If allocate is true, a new def will be allocated if it can't be found
 */
 def_t *
-PR_GetDef (type_t *type, const char *name, scope_t *scope, int allocate)
+get_def (type_t *type, const char *name, scope_t *scope, int allocate)
 {
 	def_t      *def = check_for_name (type, name, scope, allocate);
 	int         size;
@@ -143,7 +143,7 @@ PR_GetDef (type_t *type, const char *name, scope_t *scope, int allocate)
 		return def;
 
 	// allocate a new def
-	def = PR_NewDef (type, name, scope);
+	def = new_def (type, name, scope);
 	if (name)
 		Hash_Add (defs_by_name, def);
 
@@ -157,15 +157,15 @@ PR_GetDef (type_t *type, const char *name, scope_t *scope, int allocate)
 	if (type->type == ev_vector && name) {
 		def_t      *d;
 
-		d = PR_GetDef (&type_float, va ("%s_x", name), scope, allocate);
+		d = get_def (&type_float, va ("%s_x", name), scope, allocate);
 		d->used = 1;
 		d->parent = def;
 
-		d = PR_GetDef (&type_float, va ("%s_y", name), scope, allocate);
+		d = get_def (&type_float, va ("%s_y", name), scope, allocate);
 		d->used = 1;
 		d->parent = def;
 
-		d = PR_GetDef (&type_float, va ("%s_z", name), scope, allocate);
+		d = get_def (&type_float, va ("%s_z", name), scope, allocate);
 		d->used = 1;
 		d->parent = def;
 	} else {
@@ -178,17 +178,17 @@ PR_GetDef (type_t *type, const char *name, scope_t *scope, int allocate)
 		if (type->aux_type->type == ev_vector) {
 			def_t      *d;
 
-			d = PR_GetDef (&type_floatfield,
+			d = get_def (&type_floatfield,
 						   va ("%s_x", name), scope, allocate);
 			d->used = 1;				// always `used'
 			d->parent = def;
 
-			d = PR_GetDef (&type_floatfield,
+			d = get_def (&type_floatfield,
 						   va ("%s_y", name), scope, allocate);
 			d->used = 1;				// always `used'
 			d->parent = def;
 
-			d = PR_GetDef (&type_floatfield,
+			d = get_def (&type_floatfield,
 						   va ("%s_z", name), scope, allocate);
 			d->used = 1;				// always `used'
 			d->parent = def;
@@ -214,7 +214,7 @@ PR_GetDef (type_t *type, const char *name, scope_t *scope, int allocate)
 			e1->e.def = def;
 
 			e2->type = ex_def;
-			e2->e.def = PR_NewDef (type->aux_type, 0, scope);
+			e2->e.def = new_def (type->aux_type, 0, scope);
 			e2->e.def->ofs = ofs;
 
 			append_expr (local_expr,
@@ -230,7 +230,7 @@ PR_GetDef (type_t *type, const char *name, scope_t *scope, int allocate)
 }
 
 def_t *
-PR_NewDef (type_t *type, const char *name, scope_t *scope)
+new_def (type_t *type, const char *name, scope_t *scope)
 {
 	def_t      *def;
 
@@ -254,7 +254,7 @@ PR_NewDef (type_t *type, const char *name, scope_t *scope)
 }
 
 int
-PR_NewLocation (type_t *type, defspace_t *space)
+new_location (type_t *type, defspace_t *space)
 {
 	int         size = type_size (type);
 	locref_t   *loc;
@@ -273,7 +273,7 @@ PR_NewLocation (type_t *type, defspace_t *space)
 }
 
 void
-PR_FreeLocation (def_t *def)
+free_location (def_t *def)
 {
 	int         size = type_size (def->type);
 	locref_t   *loc;
@@ -285,7 +285,7 @@ PR_FreeLocation (def_t *def)
 }
 
 def_t *
-PR_GetTempDef (type_t *type, scope_t *scope)
+get_tempdef (type_t *type, scope_t *scope)
 {
 	int         size = type_size (type);
 	def_t      *def;
@@ -295,7 +295,7 @@ PR_GetTempDef (type_t *type, scope_t *scope)
 		free_temps[size] = def->next;
 		def->type = type;
 	} else {
-		def = PR_NewDef (type, 0, scope);
+		def = new_def (type, 0, scope);
 		def->ofs = scope->space->size;
 		scope->space->size += size;
 	}
@@ -306,7 +306,7 @@ PR_GetTempDef (type_t *type, scope_t *scope)
 }
 
 void
-PR_FreeTempDefs (void)
+free_tempdefs (void)
 {
 	def_t     **def, *d;
 	int         size;
@@ -337,7 +337,7 @@ PR_FreeTempDefs (void)
 }
 
 void
-PR_ResetTempDefs (void)
+reset_tempdefs (void)
 {
 	int         i;
 	def_t      *d;
@@ -353,7 +353,7 @@ PR_ResetTempDefs (void)
 }
 
 void
-PR_FlushScope (scope_t *scope, int force_used)
+flush_scope (scope_t *scope, int force_used)
 {
 	def_t      *def;
 
@@ -375,7 +375,7 @@ PR_FlushScope (scope_t *scope, int force_used)
 }
 
 void
-PR_DefInitialized (def_t *d)
+def_initialized (def_t *d)
 {
 	d->initialized = 1;
 	if (d->type == &type_vector

@@ -88,16 +88,16 @@ extern	def_t	def_function;
 scope_t *new_scope (defspace_t *space, scope_t *parent);
 defspace_t *new_defspace (void);
 
-def_t *PR_GetDef (struct type_s *type, const char *name, scope_t *scope,
-				  int allocate);
-def_t *PR_NewDef (struct type_s *type, const char *name, scope_t *scope);
-int PR_NewLocation (struct type_s *type, defspace_t *space);
-void PR_FreeLocation (def_t *def);
-def_t *PR_GetTempDef (struct type_s *type, scope_t *scope);
-void PR_FreeTempDefs ();
-void PR_ResetTempDefs ();
-void PR_FlushScope (scope_t *scope, int force_used);
-void PR_DefInitialized (def_t *d);
+def_t *get_def (struct type_s *type, const char *name, scope_t *scope,
+				int allocate);
+def_t *new_def (struct type_s *type, const char *name, scope_t *scope);
+int new_location (struct type_s *type, defspace_t *space);
+void free_location (def_t *def);
+def_t *get_tempdef (struct type_s *type, scope_t *scope);
+void free_tempdefs ();
+void reset_tempdefs ();
+void flush_scope (scope_t *scope, int force_used);
+void def_initialized (def_t *d);
 
 
 #endif//__def_h

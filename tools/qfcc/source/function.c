@@ -126,12 +126,12 @@ build_scope (function_t *f, def_t *func, param_t *params)
 	f->scope = new_scope (new_defspace (), pr.scope);
 
 	if (func->type->num_parms < 0) {
-		def = PR_GetDef (&type_integer, ".argc", f->scope, 1);
+		def = get_def (&type_integer, ".argc", f->scope, 1);
 		def->used = 1;
-		PR_DefInitialized (def);
-		argv = PR_GetDef (&type_pointer, ".argv", f->scope, 1);
+		def_initialized (def);
+		argv = get_def (&type_pointer, ".argv", f->scope, 1);
 		argv->used = 1;
-		PR_DefInitialized (argv);
+		def_initialized (argv);
 	}
 
 	for (p = params, i = 0; p; p = p->next) {
@@ -139,7 +139,7 @@ build_scope (function_t *f, def_t *func, param_t *params)
 			continue;					// ellipsis marker
 		if (!p->type)
 			continue;					// non-param selector
-		def = PR_GetDef (p->type, p->name, f->scope, 1);
+		def = get_def (p->type, p->name, f->scope, 1);
 		f->parm_ofs[i] = def->ofs;
 		if (i > 0 && f->parm_ofs[i] < f->parm_ofs[i - 1]) {
 			error (0, "bad parm order");
@@ -147,13 +147,13 @@ build_scope (function_t *f, def_t *func, param_t *params)
 		}
 		//printf ("%s%s %d\n", p == params ? "" : "    ", p->name, def->ofs);
 		def->used = 1;				// don't warn for unused params
-		PR_DefInitialized (def);	// params are assumed to be initialized
+		def_initialized (def);	// params are assumed to be initialized
 		i++;
 	}
 
 	if (argv) {
 		while (i < MAX_PARMS) {
-			def = PR_GetDef (&type_vector, 0, f->scope, 1);
+			def = get_def (&type_vector, 0, f->scope, 1);
 			def->used = 1;
 			if (argv->type == &type_pointer)
 				argv->type = array_type (&type_vector, MAX_PARMS - i);
@@ -266,9 +266,9 @@ emit_function (function_t *f, expr_t *e)
 		e = e->next;
 	}
 	emit_statement (pr_source_line, op_done, 0, 0, 0);
-	PR_FlushScope (current_scope, 0);
+	flush_scope (current_scope, 0);
 	current_scope = pr.scope;
-	PR_ResetTempDefs ();
+	reset_tempdefs ();
 
 	//puts ("");
 }

@@ -139,7 +139,7 @@ convert_name (expr_t *e)
 			e->e.def = class_def (class);
 			return;
 		}
-		d = PR_GetDef (NULL, name, current_scope, 0);
+		d = get_def (NULL, name, current_scope, 0);
 		if (d) {
 			if (!d->scope) {
 				new = class_ivar_expr (current_class, name);
@@ -476,9 +476,9 @@ new_def_expr (def_t *def)
 expr_t *
 new_self_expr (void)
 {
-	def_t      *def = PR_GetDef (&type_entity, ".self", pr.scope, 1);
+	def_t      *def = get_def (&type_entity, ".self", pr.scope, 1);
 
-	PR_DefInitialized (def);
+	def_initialized (def);
 	return new_def_expr (def);
 }
 
@@ -486,9 +486,9 @@ expr_t *
 new_this_expr (void)
 {
 	type_t     *type = field_type (&type_id);
-	def_t      *def = PR_GetDef (type, ".this", pr.scope, 1);
+	def_t      *def = get_def (type, ".this", pr.scope, 1);
 
-	PR_DefInitialized (def);
+	def_initialized (def);
 	return new_def_expr (def);
 }
 
@@ -1629,7 +1629,7 @@ function_expr (expr_t *e1, expr_t *e2)
 		expr_t     *ret = new_expr ();
 
 		ret->type = ex_def;
-		ret->e.def = PR_NewDef (ftype->aux_type, 0, pr.scope);
+		ret->e.def = new_def (ftype->aux_type, 0, pr.scope);
 		ret->e.def->ofs = def_ret.ofs;
 
 		call->e.block.result = ret;
@@ -1870,7 +1870,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 		return e2;
 
 	if (e1->type == ex_def)
-		PR_DefInitialized (e1->e.def);
+		def_initialized (e1->e.def);
 	//XXX func = func ???
 	check_initialized (e2);
 	t1 = get_type (e1);

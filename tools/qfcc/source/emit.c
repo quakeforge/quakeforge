@@ -120,7 +120,7 @@ emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b,
 		ret = var_a;
 	} else {							// allocate result space
 		if (!var_c) {
-			var_c = PR_GetTempDef (types[op->type_c], current_scope);
+			var_c = get_tempdef (types[op->type_c], current_scope);
 			var_c->users += 2;
 		}
 		statement->c = var_c->ofs;
@@ -221,7 +221,7 @@ emit_assign_expr (int oper, expr_t *e)
 		if (def_a->constant) {
 			if (options.code.cow) {
 				int         size = type_size (def_a->type);
-				int         ofs = PR_NewLocation (def_a->type, pr.globals);
+				int         ofs = new_location (def_a->type, pr.globals);
 
 				memcpy (pr.globals->data + ofs, pr.globals->data + def_a->ofs,
 						size);
@@ -274,7 +274,7 @@ emit_bind_expr (expr_t *e1, expr_t *e2)
 	}
 	def = emit_sub_expr (e1, e2->e.temp.def);
 	if (t1 != t2) {
-		def_t      *tmp = PR_NewDef (t2, 0, def->scope);
+		def_t      *tmp = new_def (t2, 0, def->scope);
 
 		tmp->ofs = def->ofs;
 		tmp->users = e2->e.temp.users;
@@ -329,7 +329,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 			}
 			operator = get_op_string (e->e.expr.op);
 			if (!dest) {
-				dest = PR_GetTempDef (e->e.expr.type, current_scope);
+				dest = get_tempdef (e->e.expr.type, current_scope);
 				dest->users += 2;
 			}
 			op = opcode_find (operator, def_a, def_b, dest);
@@ -354,7 +354,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					def_a = ReuseConstant (&zero, 0);
 					def_b = emit_sub_expr (e->e.expr.e1, 0);
 					if (!dest) {
-						dest = PR_GetTempDef (e->e.expr.type, current_scope);
+						dest = get_tempdef (e->e.expr.type, current_scope);
 						dest->users += 2;
 					}
 					break;
@@ -364,7 +364,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					operator = "&";
 					if (e->e.expr.e1->type == ex_expr
 						&& e->e.expr.e1->e.expr.op == '.') {
-						tmp = PR_GetTempDef (e->e.expr.type, current_scope);
+						tmp = get_tempdef (e->e.expr.type, current_scope);
 						tmp->users += 2;
 						def_b = emit_sub_expr (&zero, 0);
 					} else {
@@ -372,7 +372,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					}
 					def_a = emit_sub_expr (e->e.expr.e1, tmp);
 					if (!dest) {
-						dest = PR_GetTempDef (e->e.expr.type, current_scope);
+						dest = get_tempdef (e->e.expr.type, current_scope);
 						dest->users += 2;
 					}
 					break;
@@ -381,7 +381,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 						&& (e->e.expr.e1->type != ex_pointer
 							|| !(e->e.expr.e1->e.pointer.val > 0
 								 && e->e.expr.e1->e.pointer.val < 65536))) {
-						dest = PR_GetTempDef (e->e.expr.type, current_scope);
+						dest = get_tempdef (e->e.expr.type, current_scope);
 						dest->users += 2;
 					}
 					if (e->e.expr.e1->type == ex_expr
@@ -399,7 +399,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					}
 					def_b = &def_void;
 					if (!dest) {
-						dest = PR_GetTempDef (e->e.expr.type, current_scope);
+						dest = get_tempdef (e->e.expr.type, current_scope);
 						dest->users = 2;
 					}
 					operator = "=";
@@ -418,7 +418,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 				if (dest)
 					e->e.temp.def = dest;
 				else
-					e->e.temp.def = PR_GetTempDef (e->e.temp.type, current_scope);
+					e->e.temp.def = get_tempdef (e->e.temp.type, current_scope);
 				e->e.temp.def->users = e->e.temp.users;
 				e->e.temp.def->expr = e;
 				e->e.temp.def->managed = 1;
@@ -428,7 +428,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 		case ex_pointer:
 			if (e->e.pointer.val > 0 && e->e.pointer.val < 65536
 				&& e->e.pointer.type->type != ev_struct) {
-				d = PR_NewDef (e->e.pointer.type, 0, current_scope);
+				d = new_def (e->e.pointer.type, 0, current_scope);
 				d->ofs = e->e.short_val;
 				d->absolute = e->e.pointer.abs;
 				d->users = 1;
@@ -447,13 +447,13 @@ emit_sub_expr (expr_t *e, def_t *dest)
 			d = ReuseConstant (e, 0);
 			break;
 		case ex_short:
-			d = PR_NewDef (&type_short, 0, current_scope);
+			d = new_def (&type_short, 0, current_scope);
 			d->ofs = e->e.short_val;
 			d->absolute = 1;
 			d->users = 1;
 			break;
 	}
-	PR_FreeTempDefs ();
+	free_tempdefs ();
 	return d;
 }
 
@@ -559,5 +559,5 @@ emit_expr (expr_t *e)
 			warning (e, "Ignoring useless expression");
 			break;
 	}
-	PR_FreeTempDefs ();
+	free_tempdefs ();
 }

@@ -341,7 +341,7 @@ def_item
 		{
 			$$ = $1;
 			if ($$ && !$$->scope->parent && $$->type->type != ev_func)
-				PR_DefInitialized ($$);
+				def_initialized ($$);
 		}
 	;
 
@@ -351,7 +351,7 @@ def_name
 			if (current_scope->parent) {
 				scope_t *scope = current_scope->parent;
 				if (!scope->parent && scope->parent->parent) {
-					def_t      *def = PR_GetDef (0, $1, scope, 0);
+					def_t      *def = get_def (0, $1, scope, 0);
 					if (def) {
 						scope = def->scope;
 						if (scope->parent && !scope->parent->parent) {
@@ -361,7 +361,7 @@ def_name
 					}
 				}
 			}
-			$$ = PR_GetDef (current_type, $1, current_scope, 1);
+			$$ = get_def (current_type, $1, current_scope, 1);
 			current_def = $$;
 		}
 	;
@@ -378,7 +378,7 @@ var_initializer
 			if (current_scope->parent) {
 				append_expr (local_expr,
 							 assign_expr (new_def_expr (current_def), $2));
-				PR_DefInitialized (current_def);
+				def_initialized (current_def);
 			} else {
 				if ($2->type >= ex_string) {
 					current_def = ReuseConstant ($2,  current_def);
@@ -512,7 +512,7 @@ statement_block
 		{
 			def_t      *defs = current_scope->head;
 
-			PR_FlushScope (current_scope, 1);
+			flush_scope (current_scope, 1);
 
 			current_scope = current_scope->parent;
 			*current_scope->tail = defs;
