@@ -65,7 +65,7 @@ typedef struct {
 
 %type	<type>	type maybe_func
 %type	<def>	param param_list def_item def_list def_name
-%type	<expr>	const expr arg_list
+%type	<expr>	const opt_expr expr arg_list
 %type	<expr>	statement statements statement_block
 %type	<function> begin_function
 
@@ -408,7 +408,7 @@ statement
 			append_expr ($$, $7);
 			append_expr ($$, l2);
 		}
-	| FOR '(' expr ';' expr ';' expr ')' statement
+	| FOR '(' opt_expr ';' opt_expr ';' opt_expr ')' statement
 		{
 			expr_t *l1 = new_label_expr ();
 			expr_t *l2 = new_label_expr ();
@@ -416,11 +416,13 @@ statement
 			$$ = new_block_expr ();
 
 			append_expr ($$, $3);
-			append_expr ($$, new_binary_expr ('n', test_expr ($5, 1), l2));
+			if ($5)
+				append_expr ($$, new_binary_expr ('n', test_expr ($5, 1), l2));
 			append_expr ($$, l1);
 			append_expr ($$, $9);
 			append_expr ($$, $7);
-			append_expr ($$, new_binary_expr ('i', test_expr ($5, 1), l1));
+			if ($5)
+				append_expr ($$, new_binary_expr ('i', test_expr ($5, 1), l1));
 			append_expr ($$, l2);
 		}
 	| expr ';'
@@ -428,6 +430,13 @@ statement
 			$$ = $1;
 		}
 	;
+
+opt_expr
+	: expr
+	| /* empty */
+		{
+			$$ = 0;
+		}
 
 expr
 	: expr '=' expr			{ $$ = binary_expr ('=', $1, $3); }
