@@ -115,6 +115,9 @@ qboolean    noclip_anglehack;			// remnant from old quake
 
 cvar_t     *fs_globalcfg;
 cvar_t     *fs_usercfg;
+
+cvar_t     *cl_mem_size;
+
 cvar_t     *rcon_password;
 
 cvar_t     *rcon_address;
@@ -1554,28 +1557,48 @@ check_quakerc (void)
 }
 
 void
+CL_Init_Memory (void)
+{
+	int         mem_parm = COM_CheckParm ("-mem");
+	int         mem_size;
+	void       *mem_base;
+
+	cl_mem_size = Cvar_Get ("cl_mem_size", "16", CVAR_NONE, NULL,
+							"Amount of memory (in MB) to allocate for the "
+							PROGRAM " heap");
+	if (mem_parm)
+		Cvar_Set (cl_mem_size, com_argv[mem_parm + 1]);
+
+	if (COM_CheckParm ("-minmemory"))
+		Cvar_SetValue (cl_mem_size, MINIMUM_MEMORY / (1024 * 1024.0));
+
+	Cvar_SetFlags (cl_mem_size, cl_mem_size->flags | CVAR_ROM);
+
+	mem_size = (int) (cl_mem_size->value * 1024 * 1024);
+
+	if (mem_size < MINIMUM_MEMORY)
+		Sys_Error ("Only %4.1f megs of memory reported, can't execute game",
+				   mem_size / (float) 0x100000);
+
+	mem_base = malloc (mem_size);
+
+	if (!mem_base)
+		Sys_Error ("Can't allocate %d\n", mem_size);
+
+	Memory_Init (mem_base, mem_size);
+}
+
+void
 Host_Init (void)
 {
-	if (COM_CheckParm ("-minmemory"))
-		host_parms.memsize = MINIMUM_MEMORY;
-
-	if (host_parms.memsize < MINIMUM_MEMORY)
-		Sys_Error ("Only %4.1f megs of memory reported, can't execute game",
-				   host_parms.memsize / (float) 0x100000);
-
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
-	Memory_Init (host_parms.membase, host_parms.memsize);
 	Cvar_Init ();
 	Sys_Init_Cvars ();
 	Sys_Init ();
 
-	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING);
-	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING);
-
 	Cbuf_Init ();
 	Cmd_Init ();
-	Locs_Init ();
 
 	// execute +set as early as possible
 	Cmd_StuffCmds_f ();
@@ -1602,6 +1625,13 @@ Host_Init (void)
 	// execute +set again to override the config file
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute_Sets ();
+
+	CL_Init_Memory ();
+
+	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING);
+	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING);
+
+	Locs_Init ();
 
 	PI_Init ();
 
@@ -1650,8 +1680,7 @@ Host_Init (void)
 	CL_TimeFrames_Init();
 
 //	Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
-	Con_Printf ("%4.1f megs RAM used.\n", host_parms.memsize /
-				(1024 * 1024.0));
+	Con_Printf ("%4.1f megs RAM used.\n", cl_mem_size->value);
 
 	vid_basepal = (byte *) COM_LoadHunkFile ("gfx/palette.lmp");
 	if (!vid_basepal)

@@ -70,8 +70,6 @@ typedef struct
 {
 	int		argc;
 	char	**argv;
-	void	*membase;
-	int		memsize;
 } quakeparms_t;
 
 /* Host */

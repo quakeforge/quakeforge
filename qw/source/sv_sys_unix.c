@@ -107,21 +107,12 @@ main (int argc, const char *argv[])
 {
 	double      time, oldtime, newtime;
 	fd_set      fdset;
-	int         j;
 
 	memset (&host_parms, 0, sizeof (host_parms));
 
 	COM_InitArgv (argc, argv);
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
-
-	host_parms.memsize = 8 * 1024 * 1024;
-
-	j = COM_CheckParm ("-mem");
-	if (j)
-		host_parms.memsize = (int) (atof (com_argv[j + 1]) * 1024 * 1024);
-	if ((host_parms.membase = malloc (host_parms.memsize)) == NULL)
-		Sys_Error ("Can't allocate %d\n", host_parms.memsize);
 
 	SV_Init ();
 

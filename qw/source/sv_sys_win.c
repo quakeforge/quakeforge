@@ -127,23 +127,13 @@ main (int argc, const char **argv)
 {
 	double      newtime, time, oldtime;
 	fd_set      fdset;
-	int         sleep_msec, t;
+	int         sleep_msec;
 	struct timeval timeout;
 
 	COM_InitArgv (argc, argv);
 
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
-
-	host_parms.memsize = 8 * 1024 * 1024;
-
-	if ((t = COM_CheckParm ("-mem")) != 0 && t + 1 < com_argc)
-		host_parms.memsize = atoi (com_argv[t + 1]) * 1024 * 1024;
-
-	host_parms.membase = malloc (host_parms.memsize);
-
-	if (!host_parms.membase)
-		Sys_Error ("Insufficient memory.\n");
 
 	SV_Init ();
 

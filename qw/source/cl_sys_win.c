@@ -286,8 +286,6 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 //	MSG               msg;
 	static char cwd[1024];
 	double      time, oldtime, newtime;
-	int         t;
-	MEMORYSTATUS lpBuffer;
 #ifdef SPLASH_SCREEN
 	RECT        rect;
 #endif
@@ -298,9 +296,6 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 
 	global_hInstance = hInstance;
 	global_nCmdShow = nCmdShow;
-
-	lpBuffer.dwLength = sizeof (MEMORYSTATUS);
-	GlobalMemoryStatus (&lpBuffer);
 
 	if (!GetCurrentDirectory (sizeof (cwd), cwd))
 		Sys_Error ("Couldn't determine current directory");
@@ -354,32 +349,6 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		SetForegroundWindow (hwnd_dialog);
 	}
 #endif
-
-	// take the greater of all the available memory or half the total memory,
-	// but at least 8 Mb and no more than 16 Mb, unless they explicitly
-	// request otherwise
-	host_parms.memsize = lpBuffer.dwAvailPhys;
-
-	if (host_parms.memsize < MINIMUM_WIN_MEMORY)
-		host_parms.memsize = MINIMUM_WIN_MEMORY;
-
-	if (host_parms.memsize < (lpBuffer.dwTotalPhys >> 1))
-		host_parms.memsize = lpBuffer.dwTotalPhys >> 1;
-
-	if (host_parms.memsize > MAXIMUM_WIN_MEMORY)
-		host_parms.memsize = MAXIMUM_WIN_MEMORY;
-
-	if (COM_CheckParm ("-mem")) {
-		t = COM_CheckParm ("-mem") + 1;
-
-		if (t < com_argc)
-			host_parms.memsize = atoi (com_argv[t]) * 1024 * 1024;
-	}
-
-	host_parms.membase = malloc (host_parms.memsize);
-
-	if (!host_parms.membase)
-		Sys_Error ("Not enough memory free; check disk space\n");
 
 	tevent = CreateEvent (NULL, FALSE, FALSE, NULL);
 

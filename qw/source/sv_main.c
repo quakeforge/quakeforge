@@ -105,6 +105,8 @@ double      netdosvalues[DOSFLOODCMDS] = { 12, 1, 3, 1, 1, 1 };
 cvar_t     *fs_globalcfg;
 cvar_t     *fs_usercfg;
 
+cvar_t     *sv_mem_size;
+
 cvar_t     *sv_console_plugin;
 
 cvar_t     *sv_allow_status;
@@ -2324,36 +2326,56 @@ SV_InitNet (void)
 }
 
 void
+SV_Init_Memory (void)
+{
+	int         mem_parm = COM_CheckParm ("-mem");
+	int         mem_size;
+	void       *mem_base;
+
+	sv_mem_size = Cvar_Get ("sv_mem_size", "8", CVAR_NONE, NULL,
+							"Amount of memory (in MB) to allocate for the "
+							PROGRAM " heap");
+	if (mem_parm)
+		Cvar_Set (sv_mem_size, com_argv[mem_parm + 1]);
+
+	if (COM_CheckParm ("-minmemory"))
+		Cvar_SetValue (sv_mem_size, MINIMUM_MEMORY / (1024 * 1024.0));
+
+	Cvar_SetFlags (sv_mem_size, sv_mem_size->flags | CVAR_ROM);
+
+	mem_size = (int) (sv_mem_size->value * 1024 * 1024);
+
+	if (mem_size < MINIMUM_MEMORY)
+		Sys_Error ("Only %4.1f megs of memory reported, can't execute game",
+				   mem_size / (float) 0x100000);
+
+	mem_base = malloc (mem_size);
+
+	if (!mem_base)
+		Sys_Error ("Can't allocate %d\n", mem_size);
+
+	Memory_Init (mem_base, mem_size);
+}
+
+void
 SV_Init (void)
 {
 	COM_InitArgv (host_parms.argc, (const char**)host_parms.argv);
 //	COM_AddParm ("-game");
 //	COM_AddParm ("qw");
 
-	if (COM_CheckParm ("-minmemory"))
-		host_parms.memsize = MINIMUM_MEMORY;
-
-	if (host_parms.memsize < MINIMUM_MEMORY)
-		SV_Error ("Only %4.1f megs of memory reported, can't execute game",
-				  host_parms.memsize / (float) 0x100000);
-
 	Sys_RegisterShutdown (SV_Shutdown);
 
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
-	Memory_Init (host_parms.membase, host_parms.memsize);
 	Cvar_Init ();
 	Sys_Init_Cvars ();
 	Sys_Init ();
 
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
 
-	svs.info = Info_ParseString ("", MAX_SERVERINFO_STRING);
-	localinfo = Info_ParseString ("", 0);	// unlimited
-
 	Cbuf_Init ();
 	Cmd_Init ();
-	SV_InitOperatorCommands ();
 
 	// execute +set as early as possible
 	Cmd_StuffCmds_f ();
@@ -2380,6 +2402,12 @@ SV_Init (void)
 	// execute +set again to override the config file
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute_Sets ();
+
+	SV_Init_Memory ();
+
+	svs.info = Info_ParseString ("", MAX_SERVERINFO_STRING);
+	localinfo = Info_ParseString ("", 0);	// unlimited
+	SV_InitOperatorCommands ();
 
 	PI_Init ();
 
@@ -2422,7 +2450,7 @@ SV_Init (void)
 	host_initialized = true;
 
 //	SV_Printf ("Exe: "__TIME__" "__DATE__"\n");
-	SV_Printf ("%4.1f megabyte heap\n", host_parms.memsize / (1024 * 1024.0));
+	SV_Printf ("%4.1f megabyte heap\n", sv_mem_size->value);
 
 	SV_Printf ("\n");
 	SV_Printf ("%s server, Version %s (build %04d)\n", PROGRAM, VERSION,
