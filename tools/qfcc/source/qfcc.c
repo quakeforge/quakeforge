@@ -205,6 +205,8 @@ WriteData (int crc)
 		printf ("%6i statements\n", pr.code->size);
 		printf ("%6i functions\n", pr.num_functions);
 		printf ("%6i global defs\n", numglobaldefs);
+		if (!big_function)
+			big_function = "";
 		printf ("%6i locals size (%s)\n", num_localdefs, big_function);
 		printf ("%6i fielddefs\n", numfielddefs);
 		printf ("%6i globals\n", pr.near_data->size);
