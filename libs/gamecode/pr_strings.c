@@ -42,6 +42,52 @@
 #include "QF/hash.h"
 #include "QF/progs.h"
 
+static strref_t *
+new_string_ref (progs_t *pr)
+{
+	strref_t *sr;
+	if (!pr->free_string_refs) {
+		int i;
+		pr->dyn_str_size++;
+		pr->dynamic_strings = realloc (pr->dynamic_strings, pr->dyn_str_size);
+		if (!pr->dynamic_strings)
+			PR_Error (pr, "out of memory");
+		if (!(pr->free_string_refs = calloc (1024, sizeof (strref_t))))
+			PR_Error (pr, "out of memory");
+		pr->dynamic_strings[pr->dyn_str_size - 1] = pr->free_string_refs;
+		for (i = 0, sr = pr->free_string_refs; i < 1023; i++, sr++)
+			sr->next = sr + 1;
+		sr->next = 0;
+	}
+	sr = pr->free_string_refs;
+	pr->free_string_refs = sr->next;
+	sr->next = 0;
+	return sr;
+}
+
+static void
+free_string_ref (progs_t *pr, strref_t *sr)
+{
+	sr->string = 0;
+	sr->next = pr->free_string_refs;
+	pr->free_string_refs = sr;
+}
+
+static int
+string_index (progs_t *pr, strref_t *sr)
+{
+	int i = sr - pr->static_strings;
+
+	if (i >= 0 && i < pr->num_strings)
+		return sr->string - pr->pr_strings;
+	for (i = 0; i < pr->dyn_str_size; i++) {
+		int d = sr - pr->dynamic_strings[i];
+		if (d >= 0 && d < 1024)
+			return -(i * 1024 + d);
+	}
+	return 0;
+}
+
 static const char *
 strref_get_key (void *_sr, void *notused)
 {
@@ -58,12 +104,7 @@ strref_free (void *_sr, void *_pr)
 	// free the string and ref only if it's not a static string
 	if (sr < pr->static_strings || sr >= pr->static_strings + pr->num_strings) {
 		free (sr->string);
-
-		if (sr->next)
-			sr->next->prev = sr->prev;
-		sr->prev->next = sr->next;
-
-		free (sr);
+		free_string_ref (pr, sr);
 	}
 }
 
@@ -82,10 +123,10 @@ PR_LoadStrings (progs_t *pr)
 		Hash_FlushTable (pr->strref_hash);
 	} else {
 		pr->strref_hash = Hash_NewTable (1021, strref_get_key, strref_free, pr);
+		pr->dynamic_strings = 0;
+		pr->free_string_refs = 0;
+		pr->dyn_str_size = 0;
 	}
-
-	pr->dynamic_strings.next = 0;
-	pr->dynamic_strings.prev = 0;
 
 	if (pr->static_strings)
 		free (pr->static_strings);
@@ -105,12 +146,12 @@ void
 PR_GarbageCollect (progs_t *pr)
 {
 	strref_t   *sr;
-	strref_t   *next;
 	ddef_t     *def;
 	int         i, j;
 
-	for (sr = pr->dynamic_strings.next; sr; sr = sr->next)
-		sr->count = 0;
+	for (i = 0; i < pr->dyn_str_size; i++)
+		for (j = 0; j < 1024; j++)
+			pr->dynamic_strings[i][j].count = 0;
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
 		def = &pr->pr_globaldefs[i];
 		if ((def->type & ~DEF_SAVEGLOBAL) == ev_string) {
@@ -130,19 +171,28 @@ PR_GarbageCollect (progs_t *pr)
 			}
 		}
 	}
-	for (sr = pr->dynamic_strings.next; sr; sr = next) {
-		next = sr->next;
-		if (!sr->count) {
-			Hash_Del (pr->strref_hash, sr->string);
-			strref_free (sr, pr);
-		}
-	}
+	for (i = 0; i < pr->dyn_str_size; i++)
+		for (j = 0; j < 1024; j++)
+			if (pr->dynamic_strings[i][j].string
+				&& !pr->dynamic_strings[i][j].count) {
+				Hash_Del (pr->strref_hash, sr->string);
+				strref_free (sr, pr);
+			}
 }
 
 char *
 PR_GetString (progs_t *pr, int num)
 {
-	return pr->pr_strings + num;
+	if (num < 0) {
+		int row = -num / 1024;
+		num = -num % 1024;
+
+		if (row < 0 || row >= pr->dyn_str_size)
+			return 0;
+		return pr->dynamic_strings[row][num].string;
+	} else {
+		return pr->pr_strings + num;
+	}
 }
 
 int
@@ -150,25 +200,11 @@ PR_SetString (progs_t *pr, const char *s)
 {
 	strref_t *sr = Hash_Find (pr->strref_hash, s);
 
-	if (sr) {
-		s = sr->string;
-	} else {
-		sr = malloc (sizeof (strref_t));
+	if (!sr) {
+		sr = new_string_ref (pr);
 		sr->string = strdup(s);
 		sr->count = 0;
-
-		sr->next = pr->dynamic_strings.next;
-		if (pr->dynamic_strings.next) {
-			sr->prev = pr->dynamic_strings.next->prev;
-			pr->dynamic_strings.next->prev = sr;
-		} else {
-			sr->prev = &pr->dynamic_strings;
-		}
-		pr->dynamic_strings.next = sr;
-
 		Hash_Add (pr->strref_hash, sr);
-
-		s = sr->string;
 	}
-	return (int) (s - pr->pr_strings);
+	return string_index (pr, sr);
 }

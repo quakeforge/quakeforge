@@ -199,8 +199,7 @@ typedef struct {
 } prstack_t;
 
 typedef struct strref_s {
-	struct strref_s *next;
-	struct strref_s *prev;
+	struct strref_s * next;
 	char *string;
 	int count;
 } strref_t;
@@ -216,7 +215,9 @@ struct progs_s {
 
 	// garbage collected strings
 	strref_t		*static_strings;
-	strref_t		dynamic_strings; // head of linked list;
+	strref_t		**dynamic_strings;
+	strref_t		*free_string_refs;
+	int				dyn_str_size;
 	struct hashtab_s *strref_hash;
 	int				num_strings;
 
