@@ -549,7 +549,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
 						(pr,
-						 "Progs attempted to write to an out of bounds entity_var\n");
+						 "Progs attempted to write to an out of bounds edict\n");
 					return;
 				}
 				if (pr_boundscheck->int_val && (OPB.int_var % pr->pr_edict_size <
@@ -557,7 +557,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 												 (byte *) * pr->edicts))) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
-						(pr, "Progs attempted to write to an engine entity_var field\n");
+						(pr, "Progs attempted to write to an engine edict field\n");
 					return;
 				}
 				ptr = (pr_type_t*)((int)*pr->edicts + OPB.int_var);
@@ -569,7 +569,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
 						(pr,
-						 "Progs attempted to write to an out of bounds entity_var\n");
+						 "Progs attempted to write to an out of bounds edict\n");
 					return;
 				}
 				ptr = (pr_type_t*)((int)*pr->edicts + OPB.int_var);
@@ -582,7 +582,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					&& (OPA.entity_var < 0 || OPA.entity_var >= pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
-						(pr, "Progs attempted to address an out of bounds entity_var\n");
+						(pr, "Progs attempted to address an out of bounds edict\n");
 					return;
 				}
 				if (pr_boundscheck->int_val
@@ -596,7 +596,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
 						(pr,
-						 "Progs attempted to address an invalid field in an entity_var\n");
+						 "Progs attempted to address an invalid field in an edict\n");
 					return;
 				}
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
@@ -612,7 +612,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
 						(pr,
-						 "Progs attempted to read an out of bounds entity_var number\n");
+						 "Progs attempted to read an out of bounds edict number\n");
 					return;
 				}
 				if (pr_boundscheck->int_val
@@ -620,7 +620,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
 						(pr,
-						 "Progs attempted to read an invalid field in an entity_var\n");
+						 "Progs attempted to read an invalid field in an edict\n");
 					return;
 				}
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
@@ -632,7 +632,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
 						(pr,
-						 "Progs attempted to read an out of bounds entity_var number\n");
+						 "Progs attempted to read an out of bounds edict number\n");
 					return;
 				}
 				if (pr_boundscheck->int_val
@@ -641,7 +641,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
 						(pr,
-						 "Progs attempted to read an invalid field in an entity_var\n");
+						 "Progs attempted to read an invalid field in an edict\n");
 					return;
 				}
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
@@ -673,11 +673,10 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				pr->pr_xstatement = st - pr->pr_statements;
 				pr->pr_argc = st->op - OP_CALL0;
 				if (!OPA.func_var)
-					PR_RunError (pr, "NULL func_var");
+					PR_RunError (pr, "NULL function");
 				newf = &pr->pr_functions[OPA.func_var];
-				if (newf->first_statement < 0) {	// negative
-					// statements are
-					// built in functions
+				if (newf->first_statement < 0) {
+					// negative statements are built in functions
 					int         i = -newf->first_statement;
 
 					if (i >= pr->numbuiltins)
@@ -860,7 +859,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					&& (OPB.int_var < 0 || OPB.int_var + 4 > pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
-						(pr, "Progs attempted to write to an out of bounds entity_var\n");
+						(pr, "Progs attempted to write to an out of bounds edict\n");
 					return;
 				}
 				if (pr_boundscheck->int_val
@@ -868,7 +867,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 						((byte *) & (*pr->edicts)->v - (byte *) *pr->edicts))) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
-						(pr, "Progs attempted to write to an engine entity_var field\n");
+						(pr, "Progs attempted to write to an engine edict field\n");
 					return;
 				}
 				ptr = (eval_t *) ((byte *) *pr->edicts + OPB.int_var);
@@ -879,7 +878,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					&& (OPA.entity_var < 0 || OPA.entity_var >= pr->pr_edictareasize)) {
 					pr->pr_xstatement = st - pr->pr_statements;
 					PR_RunError
-						(pr, "Progs attempted to read an out of bounds entity_var number\n");
+						(pr, "Progs attempted to read an out of bounds edict number\n");
 					return;
 				}
 				if (pr_boundscheck->int_val
@@ -974,8 +973,8 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 
 */
 			default:
-			pr->pr_xstatement = st - pr->pr_statements;
-			PR_RunError (pr, "Bad opcode %i", st->op);
+				pr->pr_xstatement = st - pr->pr_statements;
+				PR_RunError (pr, "Bad opcode %i", st->op);
 		}
 	}
 }
