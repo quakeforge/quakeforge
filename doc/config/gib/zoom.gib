@@ -56,12 +56,12 @@ function "zoom.adjust" { // Adjust fov and sensitivity to match zoom factor
 	}
 }
 
-function "zoom.in" { // Replaced ID zoom function
+function "zoom.in" {
 	zoom.zoomed = 1
 	zoom.adjust
 }
 
-function "zoom.out" { // Replaced ID zoom function
+function "zoom.out" {
 	zoom.zoomed = 0
 	zoom.adjust
 }
