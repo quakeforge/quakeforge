@@ -1,0 +1,59 @@
+
+-----------------------
+Texture Paint 1.1 
+by Uwe Maurer <uwe_maurer@t-online.de>
+Jan 19 1998
+--------------------------	
+
+Texture Paint homepage:
+http://home.t-online.de/home/uwe_maurer/texpaint.htm
+
+Texture Paint is a GIMP plug-in. With Texture Paint you can paint
+on Quake I and Quake II models and the plug-in calculates the texture for you.
+You can also paint directly on the texture and view the result in
+the 3D Window. 
+
+Texture Paint uses the MD2- and PAK-file code from GiMd2Viewer 
+(http://www.mygale.org/~bbrox/GiMd2Viewer/)
+by Lionel ULMER <bbrox@mygale.org>  
+
+Autoconf files by Zach Beane <xach@mint.net>
+
+
+------------------------------------------------------------
+
+Installation:
+
+	1 . You need
+
+	- the GIMP 
+		http://www.gimp.org
+
+	- the Gtk+ library
+		http://www.gtk.org
+
+	- an implementation of OpenGL or Mesa 
+		http://www.ssec.wisc.edu/~brianp/Mesa.html
+
+	- the Gtk GLAreaWidget
+		http://www.student.oulu.fi/~jlof/gtkglarea/	
+	 
+	2. run "./configure" and "make" :
+
+		./configure
+		make
+
+	4. copy texturepaint into your gimp plug-in directory:
+
+		gimptool --install-bin texturepaint
+		
+	  or
+		cp texturepaint $HOME/.gimp/plug-ins/
+
+
+	5. Start the GIMP <Xtns/Texture Paint>
+ 	   and have fun!
+
+-------------------------------------
+Uwe Maurer - uwe_maurer@t-online.de
+--------------------------------------
