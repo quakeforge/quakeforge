@@ -49,12 +49,14 @@ void SCR_CalcRefdef (void);
 void SCR_BeginLoadingPlaque (void);
 void SCR_EndLoadingPlaque (void);
 
+struct view_s;
 void SCR_DrawRam (void);
 void SCR_DrawFPS (void);
 void SCR_DrawTime (void);
 void SCR_DrawTurtle (void);
 void SCR_DrawPause (void);
-void SCR_CheckDrawCenterString (void);
+void SCR_DrawCenterString (struct view_s *view);
+void SCR_CheckDrawCenterString (struct view_s *view);
 
 struct tex_s *SCR_ScreenShot (int width, int height);
 void SCR_DrawStringToSnap (const char *s, struct tex_s *tex, int x, int y);

@@ -239,16 +239,9 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
 										// directly
 
-	if (r_force_fullscreen /*FIXME*/ == 1 && key_dest == key_game) {
-		Sbar_IntermissionOverlay ();
-	} else if (r_force_fullscreen /*FIXME*/ == 2 && key_dest == key_game) {
-		Sbar_FinaleOverlay ();
-		SCR_CheckDrawCenterString ();
-	} else {
-		while (*scr_funcs) {
-			(*scr_funcs)();
-			scr_funcs++;
-		}
+	while (*scr_funcs) {
+		(*scr_funcs)();
+		scr_funcs++;
 	}
 
 	D_DisableBackBufferAccess ();		// for adapters that can't stay mapped

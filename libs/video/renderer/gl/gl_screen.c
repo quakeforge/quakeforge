@@ -254,18 +254,9 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 	// draw any areas not covered by the refresh
 	SCR_TileClear ();
 
-	if (r_force_fullscreen /*FIXME better test*/ == 1 && key_dest ==
-		key_game) {
-		Sbar_IntermissionOverlay ();
-	} else if (r_force_fullscreen /*FIXME better test*/ == 2 &&
-			   key_dest == key_game) {
-		Sbar_FinaleOverlay ();
-		SCR_CheckDrawCenterString ();
-	} else {
-		while (*scr_funcs) {
-			(*scr_funcs)();
-			scr_funcs++;
-		}
+	while (*scr_funcs) {
+		(*scr_funcs)();
+		scr_funcs++;
 	}
 
 	if (r_speeds->int_val) {

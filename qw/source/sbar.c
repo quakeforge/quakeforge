@@ -1680,6 +1680,13 @@ Sbar_FinaleOverlay (void)
 	scr_copyeverything = 1;
 
 	draw_cachepic (overlay_view, 0, 16, "gfx/finale.lmp");
+	SCR_CheckDrawCenterString (overlay_view);
+}
+
+void
+Sbar_DrawCenterPrint (void)
+{
+	SCR_CheckDrawCenterString (overlay_view);
 }
 
 static void

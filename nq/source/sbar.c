@@ -1185,12 +1185,16 @@ Sbar_IntermissionOverlay (void)
 void
 Sbar_FinaleOverlay (void)
 {
-	qpic_t     *pic;
-
 	scr_copyeverything = 1;
 
-	pic = Draw_CachePic ("gfx/finale.lmp", true);
-	Draw_Pic ((vid.width - pic->width) / 2, 16, pic);
+	draw_cachepic (overlay_view, 0, 16, "gfx/finale.lmp", 1);
+	SCR_CheckDrawCenterString (overlay_view);
+}
+
+void
+Sbar_DrawCenterPrint (void)
+{
+	SCR_CheckDrawCenterString (overlay_view);
 }
 
 static void

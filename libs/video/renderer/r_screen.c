@@ -47,6 +47,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
+#include "QF/view.h"
 
 #include "compat.h"
 #include "r_cvar.h"
@@ -214,8 +215,8 @@ SCR_CenterPrint (const char *str)
 	}
 }
 
-static void
-SCR_DrawCenterString (void)
+void
+SCR_DrawCenterString (view_t *view)
 {
 	char       *start;
 	int         remaining, j, l, x, y;
@@ -231,16 +232,16 @@ SCR_DrawCenterString (void)
 	start = scr_centerstring;
 
 	if (scr_center_lines <= 4)
-		y = vid.height * 0.35;
+		y = view->yabs + view->ylen * 0.35;
 	else
-		y = 48;
+		y = view->yabs + 48;
 
 	do {
 		// scan the width of the line
 		for (l = 0; l < 40; l++)
 			if (start[l] == '\n' || !start[l])
 				break;
-		x = (vid.width - l * 8) / 2;
+		x = view->xabs + (view->xlen - l * 8) / 2;
 		for (j = 0; j < l; j++, x += 8) {
 			Draw_Character (x, y, start[j]);
 			if (!remaining--)
@@ -259,7 +260,7 @@ SCR_DrawCenterString (void)
 }
 
 void
-SCR_CheckDrawCenterString (void)
+SCR_CheckDrawCenterString (view_t *view)
 {
 	scr_copytop = 1;
 	if (scr_center_lines > scr_erase_lines)
@@ -272,7 +273,7 @@ SCR_CheckDrawCenterString (void)
 	if (key_dest != key_game)
 		return;
 
-	SCR_DrawCenterString ();
+	SCR_DrawCenterString (view);
 }
 
 float

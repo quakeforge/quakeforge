@@ -64,22 +64,42 @@ SCR_DrawNet (void)
 	Draw_Pic (scr_vrect.x + 64, scr_vrect.y, scr_net);
 }
 
-static SCR_Func scr_funcs[] = {
+static SCR_Func scr_funcs_normal[] = {
 	Draw_Crosshair,
 	SCR_DrawRam,
 	SCR_DrawNet,
 	SCR_DrawTurtle,
 	SCR_DrawPause,
-	SCR_CheckDrawCenterString,
+	Sbar_DrawCenterPrint,
 	Sbar_Draw,
 	Con_DrawConsole,
 	0
 };
 
+static SCR_Func scr_funcs_intermission[] = {
+	Sbar_IntermissionOverlay,
+	0
+};
+
+static SCR_Func scr_funcs_finale[] = {
+	Sbar_FinaleOverlay,
+	0,
+};
+
 void
 CL_UpdateScreen (double realtime)
 {
+	SCR_Func   *scr_funcs = scr_funcs_normal;
+
 	cl_wateralpha = r_wateralpha->value;
+
+	if (r_force_fullscreen /*FIXME better test*/ == 1
+		&& key_dest == key_game) {
+		scr_funcs = scr_funcs_intermission;
+	} else if (r_force_fullscreen /*FIXME better test*/ == 2
+			   && key_dest == key_game) {
+		scr_funcs = scr_funcs_finale;
+	}
 
 	V_PrepBlend ();
 	SCR_UpdateScreen (realtime, scr_funcs);
