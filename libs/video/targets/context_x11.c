@@ -415,11 +415,10 @@ X11_UpdateFullscreen (cvar_t *fullscreen)
 		}
 
 		X11_ForceMove (0, 0);
-		XWarpPointer (x_disp, None, x_win,
-					  0, 0, 0, 0,
-					  vid.width / 2, vid.height / 2);
-		X11_ForceViewPort (); 
+		XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, vid.width / 2,
+					  vid.height / 2);
 		// Done in X11_SetVidMode but moved the window since then
+		X11_ForceViewPort (); 
 	}
 }
 
@@ -515,7 +514,7 @@ X11_RestoreVidMode (void)
 }
 
 static void
-X11_GrabKeyboardBool(qboolean yes)
+X11_GrabKeyboard (qboolean yes)
 {
 	static qboolean is_grabbed = false;
 
@@ -534,16 +533,8 @@ X11_GrabKeyboardBool(qboolean yes)
 	}
 }
 
-#if 0
 static void
-X11_UngrabKeyboard (void)
-{
-	XUngrabKeyboard (x_disp, CurrentTime);
-}
-#endif
-
-static void
-X11_GrabMouseBool (qboolean yes)
+X11_GrabMouse (qboolean yes)
 {
 	static qboolean is_grabbed = false;
 
@@ -564,16 +555,6 @@ X11_GrabMouseBool (qboolean yes)
 				  vid.height / 2);
 }
 
-#if 0
-static void
-X11_UngrabMouse(void)
-{
-	XUngrabPointer (x_disp, CurrentTime);
-	XWarpPointer (x_disp, x_win, x_win, 0, 0, 0, 0, vid.width / 2,
-				  vid.height / 2);
-}
-#endif
-
 void
 X11_Grabber (qboolean grab)
 {
@@ -581,8 +562,8 @@ X11_Grabber (qboolean grab)
 		Con_Printf ("No video context to grab to!\n");
 		return;
 	}
-	X11_GrabMouseBool (grab);
-	X11_GrabKeyboardBool (grab);
+	X11_GrabMouse (grab);
+	X11_GrabKeyboard (grab);
 
 	XSync (x_disp, false);
 }

@@ -78,20 +78,18 @@ qboolean    in_mouse_avail;
 float       in_mouse_x, in_mouse_y;
 static float in_old_mouse_x, in_old_mouse_y;
 
-static int  input_grabbed;
+static int  input_grabbed = 0;
 
-void // called from context_x11.c
-IN_UpdateGrab (cvar_t *var)
+void
+IN_UpdateGrab (cvar_t *var)		// called from context_*.c
 {
-	if (var->int_val || (vid_fullscreen && vid_fullscreen->int_val)) {
+	if (var->int_val) {
 		if (!input_grabbed) {
-			IN_LL_Grab_Input ();
-			input_grabbed = 1;
+			input_grabbed = IN_LL_Grab_Input ();
 		}
 	} else {
 		if (input_grabbed) {
-			IN_LL_Ungrab_Input ();
-			input_grabbed = 0;
+			input_grabbed = IN_LL_Ungrab_Input ();
 		}
 	}
 }

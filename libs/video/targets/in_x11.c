@@ -544,24 +544,26 @@ event_motion (XEvent *event)
 	}
 }
 
-void
+int
 IN_LL_Grab_Input (void)
 {
 	if (!x_disp || !x_win)
-		return;
+		return 0;
 	X11_Grabber (true);
 	if (in_dga->int_val)
 		dga_on ();
+	return 1;
 }
 
-void
+int
 IN_LL_Ungrab_Input (void)
 {
 	if (!x_disp || !x_win)
-		return;
+		return 0;
 	if (in_dga->int_val)
 		dga_off ();
 	X11_Grabber (false);
+	return 0;
 }
 
 void
@@ -634,7 +636,6 @@ IN_LL_Init_Cvars (void)
 	in_dga = Cvar_Get ("in_dga", "1", CVAR_ARCHIVE, in_dga_f,
 					   "DGA Input support");
 }
-
 
 void
 IN_LL_ClearStates (void)

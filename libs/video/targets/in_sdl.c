@@ -851,16 +851,16 @@ IN_LL_SendKeyEvents (void)
 	}
 }
 
-void
+int
 IN_LL_Grab_Input (void)
 {
-	SDL_WM_GrabInput (SDL_GRAB_ON);
+	return (SDL_GRAB_ON == SDL_WM_GrabInput (SDL_GRAB_ON));
 }
 
-void
+int
 IN_LL_Ungrab_Input (void)
 {
-	SDL_WM_GrabInput (SDL_GRAB_OFF);
+	return (SDL_GRAB_ON == SDL_WM_GrabInput (SDL_GRAB_OFF));
 }
 
 void

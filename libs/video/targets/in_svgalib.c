@@ -457,14 +457,16 @@ IN_LL_SendKeyEvents (void)
 	}
 }
 
-void
+int
 IN_LL_Grab_Input (void)
 {
+	return 0;
 }
 
-void
+int
 IN_LL_Ungrab_Input (void)
 {
+	return 0;
 }
 
 void
