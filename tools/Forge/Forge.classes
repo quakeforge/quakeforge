@@ -1,0 +1,140 @@
+{
+    CameraView = {
+	Actions = (
+	);
+	Outlets = (
+	);
+	Super = NSView;
+    };
+    Controller = {
+	Actions = (
+	    createNew:,
+	    createNewProject:,
+	    open:,
+	    openProject:,
+	    saveAll:
+	);
+	Outlets = (
+	);
+	Super = NSObject;
+    };
+    Forge = {
+	Actions = (
+	);
+	Outlets = (
+	    brushCount,
+	    cmdInput,
+	    cmdOutput,
+	    entityCount,
+	    filterClip,
+	    filterEntities,
+	    filterLights,
+	    filterPaths,
+	    filterWater,
+	    filterWorld,
+	    showCoords,
+	    showNames,
+	    xyDrawMode
+	);
+	Super = NSWindow;
+    };
+    NSApplication = {
+	Outlets = (
+	    delegate
+	);
+	Super = NSResponder;
+    };
+    NSButton = {
+	Super = NSControl;
+    };
+    NSControl = {
+	Actions = (
+	    takeDoubleValueFrom:,
+	    takeFloatValueFrom:,
+	    takeIntValueFrom:,
+	    takeObjectValueFrom:,
+	    takeStringValueFrom:
+	);
+	Outlets = (
+	    target
+	);
+	Super = NSView;
+    };
+    NSMenu = {
+	Super = NSObject;
+    };
+    NSMenuItem = {
+	Outlets = (
+	    target
+	);
+	Super = NSObject;
+    };
+    NSPanel = {
+	Super = NSWindow;
+    };
+    NSResponder = {
+	Super = NSObject;
+    };
+    NSSlider = {
+	Super = NSControl;
+    };
+    NSTextField = {
+	Outlets = (
+	    delegate
+	);
+	Super = NSControl;
+    };
+    NSView = {
+	Super = NSResponder;
+    };
+    NSWindow = {
+	Outlets = (
+	    delegate
+	);
+	Super = NSResponder;
+    };
+    Preferences = {
+	Actions = (
+	    commitDisplayedValues:,
+	    discardDisplayedValues:,
+	    loadDefaults:,
+	    objectForKey:key:,
+	    ok:sender:,
+	    preferences:,
+	    prefsChanged:sender:,
+	    revert:sender:,
+	    revertToDefault:sender:,
+	    saveDefaults:,
+	    sharedInstance:,
+	    updateUI:
+	);
+	Outlets = (
+	    bspSoundPathField,
+	    offsetBrushCopyButton,
+	    projectPathField,
+	    showBSPOutputButton,
+	    startWadField,
+	    xLightField,
+	    yLightField,
+	    zLightField
+	);
+	Super = NSObject;
+    };
+    XYView = {
+	Actions = (
+	    autoresizingMask,
+	    setAutoresizingMask:
+	);
+	Outlets = (
+	    target
+	);
+	Super = NSView;
+    };
+    ZView = {
+	Actions = (
+	);
+	Outlets = (
+	);
+	Super = NSView;
+    };
+}

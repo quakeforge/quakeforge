@@ -34,6 +34,7 @@ include $(GNUSTEP_MAKEFILES)/common.make
 #
 # Main application
 #
+PACKAGE_NAME=		Forge
 APP_NAME=		Forge
 Forge_PRINCIPAL_CLASS=	Forge
 Forge_APPLICATION_ICON=	Forge.tiff
@@ -46,90 +47,34 @@ ADDITIONAL_GUI_LIBS +=
 #
 # Resource files
 #
+Forge_RESOURCE_FILES= \
+	ForgeInfo.plist \
+	Forge.tiff 
+#	Forge.gorm \
 
 # Languages we're localized for
 Forge_LANGUAGES= \
 	English
 
-# We don't have a proper .gorm file yet, but we will
-Forge_LOCALIZED_RESOURCE_FILES=	\
-	Forge.gorm
-
-Forge_RESOURCE_FILES= \
-	ForgeInfo.plist \
-	Images/DownArrow.tiff \
-	Images/i_90d.tiff \
-	Images/i_add.tiff \
-	Images/i_brushes.tiff \
-	Images/i_fliph.tiff \
-	Images/i_flipv.tiff \
-	Images/i_sub.tiff \
-	Images/short.tiff \
-	Images/tall.tiff \
-	Images/UpArrow.tiff
-
 #
 # Header files
 #
 Forge_HEADERS= \
-	Headers/CameraView.h \
-	Headers/Clipper.h \
-	Headers/Entity.h \
-	Headers/EntityArray.h \
-	Headers/EntityClass.h \
-	Headers/Forge.h \
-	Headers/InspectorControl.h \
-	Headers/KeypairView.h \
-	Headers/Map.h \
-	Headers/PopScrollView.h \
-	Headers/Preferences.h \
-	Headers/Project.h \
-	Headers/SetBrush.h \
-	Headers/TexturePalette.h \
-	Headers/TextureView.h \
-	Headers/Things.h \
-	Headers/UserPath.h \
-	Headers/XYView.h \
-	Headers/ZScrollView.h \
-	Headers/ZView.h \
-	Headers/cmdlib.h \
-	Headers/mathlib.h \
-	Headers/qedefs.h \
-	Headers/render.h
+	Controller.h \
+	Preferences.h
 
 #
 # Class files
 #
 Forge_OBJC_FILES= \
-	Clipper.m \
-	Forge_main.m \
+	Controller.m \
 	Preferences.m \
-	Project.m \
-	Forge.m \
-	Map.m \
-	Things.m \
-	misc.m \
-	Entity.m \
-	EntityArray.m \
-	EntityClass.m \
-	CameraView.m \
-	XYView.m \
-	KeypairView.m \
-	InspectorControl.m \
-	PopScrollView.m \
-	TexturePalette.m \
-	TextureView.m \
-	ZScrollView.m \
-	ZView.m \
-	render.m
-#	SetBrush.m \
-#	UserPath.m \
+	main.m
 
 #
 # C files
 #
-Forge_C_FILES= \
-	cmdlib.c
+Forge_C_FILES=
 
 -include GNUmakefile.preamble
 -include GNUmakefile.local
