@@ -992,7 +992,7 @@ CL_SetSolidEntities (void)
 			|| cl.model_precache[state->modelindex]->clipbox) {
 			if (pmove.numphysent == MAX_PHYSENTS) {
 				Con_Printf ("WARNING: entity physent overflow, email "
-							"quakeforge-devel@lists.sourceforge.net\n");
+							"quakeforge-devel@lists.quakeforge.net\n");
 				break;
 			}
 			pmove.physents[pmove.numphysent].model =
@@ -1105,7 +1105,7 @@ CL_SetSolidPlayers (int playernum)
 
 		if (pmove.numphysent == MAX_PHYSENTS) {
 			Con_Printf ("WARNING: player physent overflow, email "
-						"quakeforge-devel@lists.sourceforge.net\n");
+						"quakeforge-devel@lists.quakeforge.net\n");
 			break;
 		}
 
