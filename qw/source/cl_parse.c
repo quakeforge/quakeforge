@@ -62,7 +62,7 @@
 #include "sbar.h"
 #include "skin.h"
 #include "QF/sound.h"
-#include "teamplay.h"
+#include "QF/teamplay.h"
 #include "QF/va.h"
 #include "view.h"
 

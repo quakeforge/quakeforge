@@ -40,7 +40,7 @@
 #include "QF/console.h"
 #include "QF/cmd.h"
 #include "QF/msg.h"
-#include "teamplay.h"
+#include "QF/teamplay.h"
 
 /*
 	Cmd_ForwardToServer

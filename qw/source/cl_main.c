@@ -93,7 +93,7 @@
 #include "skin.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
-#include "teamplay.h"
+#include "QF/teamplay.h"
 #include "QF/vid.h"
 #include "view.h"
 #include "QF/va.h"

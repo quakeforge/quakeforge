@@ -50,7 +50,7 @@
 #include "QF/keys.h"
 #include "QF/msg.h"
 #include "msg_ucmd.h"
-#include "teamplay.h"
+#include "QF/teamplay.h"
 #include "view.h"
 
 cvar_t     *cl_nodelta;

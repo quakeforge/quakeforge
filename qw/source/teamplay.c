@@ -44,10 +44,10 @@
 #include "QF/locs.h"
 #include "QF/model.h"
 #include "QF/sys.h"
+#include "QF/teamplay.h"
 
 #include "bothdefs.h"
 #include "client.h"
-#include "teamplay.h"
 
 extern cvar_t *skin;
 cvar_t     *cl_deadbodyfilter;
