@@ -111,12 +111,17 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 void
 PR_LoadDebug (progs_t *pr)
 {
-	pr_type_t  *str = PR_GetGlobalPointer (pr, ".debug_file");
+	pr_type_t  *str = 0;
 	int         start = Hunk_LowMark ();
 	int         i;
 	char       *path_end;
 	char       *sym_file;
 	char       *sym_path;
+	ddef_t     *def;
+
+	def = PR_FindGlobal (pr, ".debug_file");
+	if (def)
+		str = &pr->pr_globals[def->ofs];
 
 	Hash_FlushTable (file_hash);
 	if (!str)
