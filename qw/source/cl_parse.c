@@ -296,13 +296,14 @@ Model_NextDownload (void)
 			info_key = emodel_name;
 
 		if (info_key && cl_model_crcs->int_val) {
-			aliashdr_t *ahdr = (aliashdr_t *) Mod_Extradata
-				(cl.model_precache[i]);
+			aliashdr_t *ahdr = Cache_Get
+				(&cl.model_precache[i]->cache);
 			Info_SetValueForKey (cls.userinfo, info_key, va ("%d", ahdr->crc),
 								 MAX_INFO_STRING, 0);
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			SZ_Print (&cls.netchan.message, va ("setinfo %s %d", info_key,
 												ahdr->crc));
+			Cache_Release (&cl.model_precache[i]->cache);
 		}
 	}
 

@@ -61,7 +61,7 @@ void		SND_Update_ (void);
 sfx_t		*SND_PrecacheSound (const char *name);
 void		SND_ClearBuffer (void);
 void		SND_PaintChannels (int endtime);
-void		SND_CallbackLoad (struct cache_user_s *cache, cache_allocator_t allocator);
+void		SND_CallbackLoad (void *object, cache_allocator_t allocator);
 
 void		SND_Init_Cvars ();
 
@@ -330,7 +330,7 @@ SND_FindName (const char *name)
 
 	sfx = &known_sfx[i];
 	strcpy (sfx->name, name);
-	Cache_Add (&sfx->cache, name, SND_CallbackLoad);
+	Cache_Add (&sfx->cache, sfx, SND_CallbackLoad);
 
 	num_sfx++;
 

@@ -1373,12 +1373,13 @@ PrintFrameName (model_t *m, int frame)
 	aliashdr_t *hdr;
 	maliasframedesc_t *pframedesc;
 
-	hdr = (aliashdr_t *) Mod_Extradata (m);
+	hdr = Cache_TryGet (&m->cache);
 	if (!hdr)
 		return;
 	pframedesc = &hdr->frames[frame];
 
 	Con_Printf ("frame %i: %s\n", frame, pframedesc->name);
+	Cache_Release (&m->cache);
 }
 
 /*

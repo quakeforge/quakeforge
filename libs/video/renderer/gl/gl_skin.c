@@ -207,7 +207,7 @@ Skin_Do_Translation_Model (model_t *model, int skinnum, int slot, skin_t *skin)
 	if (model->type != mod_alias)		// only translate skins on alias models
 		return;
 
-	paliashdr = (aliashdr_t *) Mod_Extradata (model);
+	paliashdr = Cache_Get (&model->cache);
 	if (skinnum < 0
 		|| skinnum >= paliashdr->mdl.numskins) {
 		Con_Printf ("(%d): Invalid player skin #%d\n", slot,
@@ -222,6 +222,8 @@ Skin_Do_Translation_Model (model_t *model, int skinnum, int slot, skin_t *skin)
 	inheight = paliashdr->mdl.skinheight;
 
 	build_skin (texnum, original, inwidth, inheight, inwidth, inheight, false);
+
+	Cache_Release (&model->cache);
 }
 
 void

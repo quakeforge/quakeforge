@@ -48,9 +48,11 @@
 #include "QF/sys.h"
 #include "QF/vfs.h"
 
-void        Mod_LoadAliasModel (model_t *mod, void *buf);
+void        Mod_LoadAliasModel (model_t *mod, void *buf, cache_allocator_t allocator);
 void        Mod_LoadSpriteModel (model_t *mod, void *buf);
 void        Mod_LoadBrushModel (model_t *mod, void *buf);
+model_t	*Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator);
+void		Mod_CallbackLoad (void *object, cache_allocator_t allocator);
 
 model_t    *loadmodel;
 char        loadname[32];				// for hunk tags
@@ -143,6 +145,7 @@ Mod_FindName (const char *name)
 		strcpy (mod->name, name);
 		mod->needload = true;
 		mod_numknown++;
+		Cache_Add (&mod->cache, mod, Mod_CallbackLoad);
 	}
 
 	return mod;
@@ -156,19 +159,21 @@ Mod_FindName (const char *name)
 model_t    *
 Mod_LoadModel (model_t *mod, qboolean crash)
 {
-	void       *d;
-	unsigned int *buf;
-	byte        stackbuf[1024];			// avoid dirtying the cache heap
-
 	if (!mod->needload) {
 		if (mod->type == mod_alias) {
-			d = Cache_Check (&mod->cache);
-			if (d)
+			if (Cache_Check (&mod->cache))
 				return mod;
 		} else
 			return mod;					// not cached at all
 	}
+	return Mod_RealLoadModel (mod, crash, Cache_Alloc);
+}
 
+model_t *
+Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
+{
+	unsigned int *buf;
+	byte		stackbuf[1024];			// avoid dirtying the cache heap
 	// load the file
 	buf =
 		(unsigned int *) COM_LoadStackFile (mod->name, stackbuf,
@@ -192,7 +197,7 @@ Mod_LoadModel (model_t *mod, qboolean crash)
 
 	switch (LittleLong (*(unsigned int *) buf)) {
 		case IDPOLYHEADER:
-			Mod_LoadAliasModel (mod, buf);
+			Mod_LoadAliasModel (mod, buf, allocator);
 			break;
 
 		case IDSPRITEHEADER:
@@ -205,6 +210,20 @@ Mod_LoadModel (model_t *mod, qboolean crash)
 	}
 
 	return mod;
+}
+
+/*
+	Mod_CallbackLoad
+
+	Callback used to load model automatically
+*/
+void
+Mod_CallbackLoad (void *object, cache_allocator_t allocator)
+{
+	if (((model_t *)object)->type != mod_alias)
+		Sys_Error ("Mod_CallbackLoad for non-alias model?  FIXME!\n");
+	// FIXME: do we want crash set to true?
+	Mod_RealLoadModel (object, true, allocator);
 }
 
 /*
@@ -221,27 +240,6 @@ Mod_ForName (const char *name, qboolean crash)
 
 	Con_DPrintf ("Mod_ForName: %s, %p\n", name, mod);
 	return Mod_LoadModel (mod, crash);
-}
-
-/*
-	Mod_Extradata
-
-	Caches the data if needed
-*/
-void       *
-Mod_Extradata (model_t *mod)
-{
-	void       *r;
-
-	r = Cache_Check (&mod->cache);
-	if (r)
-		return r;
-
-	Mod_LoadModel (mod, true);
-
-	if (!mod->cache.data)
-		Sys_Error ("Mod_Extradata: caching failed");
-	return mod->cache.data;
 }
 
 void

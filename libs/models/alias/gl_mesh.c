@@ -356,7 +356,7 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 	qboolean    do_cache = false;
 
 	aliasmodel = m;
-	paliashdr = hdr;					// (aliashdr_t *)Mod_Extradata (m);
+	paliashdr = hdr;
 
 	if (gl_mesh_cache->int_val
 		&& gl_mesh_cache->int_val <= paliashdr->mdl.numtris) {

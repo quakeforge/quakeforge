@@ -80,7 +80,7 @@ void       *Mod_LoadAliasGroup (void *pin, maliasframedesc_t *frame);
 //=========================================================================
 
 void
-Mod_LoadAliasModel (model_t *mod, void *buffer)
+Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 {
 	int         i, j;
 	mdl_t      *pinmodel, *pmodel;
@@ -94,6 +94,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer)
 	byte       *p;
 	int         len;
 	unsigned short crc;
+	void       *mem;
 
 	CRC_Init (&crc);
 	for (len = com_filesize, p = buffer; len; len--, p++)
@@ -218,10 +219,10 @@ Mod_LoadAliasModel (model_t *mod, void *buffer)
 	end = Hunk_LowMark ();
 	total = end - start;
 
-	Cache_Alloc (&mod->cache, total, loadname);
-	if (!mod->cache.data)
-		return;
-	memcpy (mod->cache.data, pheader, total);
+	mem = allocator (&mod->cache, total, loadname);
+	if (!mem)
+		return; // FIXME: shouldn't this call Hunk_FreeToLowMark too?!?!
+	memcpy (mem, pheader, total);
 
 	Hunk_FreeToLowMark (start);
 }

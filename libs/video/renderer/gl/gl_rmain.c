@@ -624,7 +624,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	VectorNormalize (shadevector);
 
 	// locate the proper data
-	paliashdr = (aliashdr_t *) Mod_Extradata (currententity->model);
+	paliashdr = Cache_Get (&currententity->model->cache);
 	c_alias_polys += paliashdr->mdl.numtris;
 
 	// draw all the triangles
@@ -714,6 +714,8 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		qfglEnable (GL_TEXTURE_2D);
 		qfglPopMatrix ();
 	}
+
+	Cache_Release (&currententity->model->cache);
 }
 
 /*

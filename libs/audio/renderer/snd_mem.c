@@ -47,7 +47,7 @@ int         cache_full_cycle;
 
 byte       *SND_Alloc (int size);
 wavinfo_t   SND_GetWavinfo (const char *name, byte * wav, int wavlength);
-sfxcache_t *SND_LoadSound (cache_user_t *cache, const char *name, cache_allocator_t allocator);
+sfxcache_t *SND_LoadSound (sfx_t *sfx, cache_allocator_t allocator);
 
 
 void
@@ -157,7 +157,7 @@ SND_ResampleSfx (sfxcache_t *sc, int inrate, int inwidth, byte * data)
 //=============================================================================
 
 sfxcache_t *
-SND_LoadSound (cache_user_t *cache, const char *name, cache_allocator_t allocator)
+SND_LoadSound (sfx_t *sfx, cache_allocator_t allocator)
 {
 	char		namebuffer[256];
 	byte	   *data;
@@ -169,7 +169,7 @@ SND_LoadSound (cache_user_t *cache, const char *name, cache_allocator_t allocato
 
 	// load it in
 	strcpy (namebuffer, "sound/");
-	strncat (namebuffer, name, sizeof (namebuffer) - strlen (namebuffer));
+	strncat (namebuffer, sfx->name, sizeof (namebuffer) - strlen (namebuffer));
 
 	data = COM_LoadStackFile (namebuffer, stackbuf, sizeof (stackbuf));
 
@@ -178,9 +178,9 @@ SND_LoadSound (cache_user_t *cache, const char *name, cache_allocator_t allocato
 		return NULL;
 	}
 
-	info = SND_GetWavinfo (name, data, com_filesize);
+	info = SND_GetWavinfo (sfx->name, data, com_filesize);
 	if (info.channels != 1) {
-		Con_Printf ("%s is a stereo sample\n", name);
+		Con_Printf ("%s is a stereo sample\n", sfx->name);
 		return NULL;
 	}
 
@@ -193,7 +193,7 @@ SND_LoadSound (cache_user_t *cache, const char *name, cache_allocator_t allocato
 		len = len * 2 * info.channels;
 	}
 
-	sc = allocator (cache, len + sizeof (sfxcache_t), name);
+	sc = allocator (&sfx->cache, len + sizeof (sfxcache_t), sfx->name);
 
 	if (!sc)
 		return NULL;
@@ -210,9 +210,9 @@ SND_LoadSound (cache_user_t *cache, const char *name, cache_allocator_t allocato
 }
 
 void
-SND_CallbackLoad (struct cache_user_s *cache, cache_allocator_t allocator)
+SND_CallbackLoad (void *object, cache_allocator_t allocator)
 {
-	SND_LoadSound (cache, cache->filename, allocator);
+	SND_LoadSound (object, allocator);
 }
 
 /* WAV loading */

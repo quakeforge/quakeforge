@@ -963,16 +963,14 @@ Cache_Profile (void)
 }
 
 void
-Cache_Add (cache_user_t *c, const char *filename, cache_loader_t loader)
+Cache_Add (cache_user_t *c, void *object, cache_loader_t loader)
 {
 	CACHE_WRITE_LOCK;
 
-	if (c->data || c->filename || c->loader)
+	if (c->data || c->object || c->loader)
 		Sys_Error ("Cache_Add: cache item already exists!\n");
 
-	c->filename = strdup (filename);
-	if (!c->filename)
-		Sys_Error ("Cache_Add: strdup failed!\n");
+	c->object = object;
 	c->loader = loader;
 
 //	c->loader (c, Cache_RealAlloc); // for debugging
@@ -985,14 +983,13 @@ Cache_Remove (cache_user_t *c)
 {
 	CACHE_WRITE_LOCK;
 
-	if (!c->filename || !c->loader)
+	if (!c->object || !c->loader)
 		Sys_Error ("Cache_Remove: already removed!\n");
 
 	if (Cache_RealCheck (c))
 		Cache_RealFree (c);
 
-	free (c->filename);
-	c->filename = 0;
+	c->object = 0;
 	c->loader = 0;
 
 	CACHE_WRITE_UNLOCK;
@@ -1006,7 +1003,7 @@ Cache_TryGet (cache_user_t *c)
 
 	mem = Cache_RealCheck (c);
 	if (!mem) {
-		c->loader (c, Cache_RealAlloc);
+		c->loader (c->object, Cache_RealAlloc);
 		mem = Cache_RealCheck (c);
 	}
 	if (mem)

@@ -120,12 +120,12 @@ void Hunk_Check (void);
 
 struct cache_user_s;
 typedef void * (*cache_allocator_t) (struct cache_user_s *c, int size, const char *name);
-typedef void (*cache_loader_t) (struct cache_user_s *cache, cache_allocator_t allocator);
+typedef void (*cache_loader_t) (void *object, cache_allocator_t allocator);
 
 typedef struct cache_user_s
 {
 	void	*data;
-	char	*filename;
+	void	*object;
 	cache_loader_t loader;
 } cache_user_t;
 
@@ -143,7 +143,7 @@ void *Cache_Alloc (cache_user_t *c, int size, const char *name);
 
 void Cache_Report (void);
 
-void Cache_Add (cache_user_t *c, const char *filename, cache_loader_t loader);
+void Cache_Add (cache_user_t *c, void *object, cache_loader_t loader);
 void Cache_Remove (cache_user_t *c);
 void *Cache_Get (cache_user_t *c);
 void *Cache_TryGet (cache_user_t *c);
