@@ -36,6 +36,9 @@ static const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#ifdef HAVE_ERRNO_H
+# include <errno.h>
+#endif
 
 #include <stdarg.h>
 
@@ -49,6 +52,7 @@ static const char rcsid[] =
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/vfs.h"
 
 #include "client.h"
 #include "compat.h"
@@ -211,6 +215,39 @@ Con_CheckResize (void)
 	Con_Resize (&con_chat);
 }
 
+static void
+Con_Condump_f (void)
+{
+	int         line = con->current - con->numlines;
+	const char *start, *end;
+	VFile      *file;
+	char        name[MAX_OSPATH];
+
+	if (Cmd_Argc () != 2) {
+		Con_Printf ("usage: condump <filename>");
+		return;
+	}
+
+	snprintf (name, sizeof (name), "%s/%s", com_gamedir, Cmd_Argv (1));
+
+	if (!(file = Qopen (name, "wt"))) {
+		Con_Printf ("could not open %s for writing: %s\n", name,
+					strerror (errno));
+		return;
+	}
+
+	while (line < con->current) {
+		start = &con->text[(line % con_totallines) * con_linewidth];
+		end = start + con_linewidth;
+		while (end > start && end[-1] != ' ')
+			end--;
+		Qprintf (file, "%.*s\n", end - start, start);
+		line++;
+	}
+
+	Qclose (file);
+}
+
 void
 Con_Init (const char *plugin_name)
 {
@@ -234,6 +271,8 @@ Con_Init (const char *plugin_name)
 	Cmd_AddCommand ("messagemode2", Con_MessageMode2_f,
 					"Prompt to send a message to only people on your team");
 	Cmd_AddCommand ("clear", Con_Clear_f, "Clear the console");
+	Cmd_AddCommand ("condump", Con_Condump_f, "dump the console text to a "
+					"file");
 	con_initialized = true;
 }
 
