@@ -36,7 +36,7 @@ typedef enum {
 	ev_field,
 	ev_func,
 	ev_pointer,			// end of v6 types
-	ev_quaternion,
+	ev_quat,
 	ev_integer,
 	ev_uinteger,
 	ev_short,			// value is embedded in the opcode
@@ -288,6 +288,23 @@ typedef enum {
 	OP_CONV_UI,
 
 	OP_STATE_F,
+
+	OP_ADD_Q,
+	OP_SUB_Q,
+	OP_MUL_Q,
+	OP_MUL_QF,
+	OP_MUL_FQ,
+	OP_NOT_Q,
+	OP_EQ_Q,
+	OP_NE_Q,
+	OP_STORE_Q,
+	OP_STOREB_Q,
+	OP_STOREBI_Q,
+	OP_STOREP_Q,
+	OP_LOAD_Q,
+	OP_LOADB_Q,
+	OP_LOADBI_Q,
+	OP_ADDRESS_Q,
 } pr_opcode_e;
 
 typedef struct opcode_s {
@@ -340,6 +357,7 @@ typedef union pr_type_u {
 	func_t	func_var;
 	int		entity_var;
 	float	vector_var[1];		// really 3, but this structure must be 32 bits
+	float	quat_var[1];		// really 4, but this structure must be 32 bits
 	int		integer_var;
 	pointer_t pointer_var;
 	unsigned int uinteger_var;

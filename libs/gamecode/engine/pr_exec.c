@@ -302,6 +302,9 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_ADD_V:
 				VectorAdd (OPA.vector_var, OPB.vector_var, OPC.vector_var);
 				break;
+			case OP_ADD_Q:
+				QuatAdd (OPA.quat_var, OPB.quat_var, OPC.quat_var);
+				break;
 			case OP_ADD_S:
 				{
 					const char *a = PR_GetString (pr, OPA.string_var);
@@ -320,6 +323,9 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_SUB_V:
 				VectorSubtract (OPA.vector_var, OPB.vector_var, OPC.vector_var);
 				break;
+			case OP_SUB_Q:
+				QuatSubtract (OPA.quat_var, OPB.quat_var, OPC.quat_var);
+				break;
 			case OP_MUL_F:
 				OPC.float_var = OPA.float_var * OPB.float_var;
 				break;
@@ -331,6 +337,15 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 			case OP_MUL_VF:
 				VectorScale (OPA.vector_var, OPB.float_var, OPC.vector_var);
+				break;
+			case OP_MUL_Q:
+				QuatMult (OPA.quat_var, OPB.quat_var, OPC.quat_var);
+				break;
+			case OP_MUL_FQ:
+				QuatScale (OPB.quat_var, OPA.float_var, OPC.quat_var);
+				break;
+			case OP_MUL_QF:
+				QuatScale (OPA.quat_var, OPB.float_var, OPC.quat_var);
 				break;
 			case OP_DIV_F:
 				OPC.float_var = OPA.float_var / OPB.float_var;
@@ -387,6 +402,9 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_NOT_V:
 				OPC.integer_var = VectorIsZero (OPA.vector_var);
 				break;
+			case OP_NOT_Q:
+				OPC.integer_var = QuatIsZero (OPA.quat_var);
+				break;
 			case OP_NOT_S:
 				OPC.integer_var = !OPA.string_var ||
 					!*PR_GetString (pr, OPA.string_var);
@@ -404,6 +422,9 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				OPC.integer_var = VectorCompare (OPA.vector_var,
 												 OPB.vector_var);
 				break;
+			case OP_EQ_Q:
+				OPC.integer_var = QuatCompare (OPA.quat_var, OPB.quat_var);
+				break;
 			case OP_EQ_E:
 				OPC.integer_var = OPA.integer_var == OPB.integer_var;
 				break;
@@ -416,6 +437,9 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_NE_V:
 				OPC.integer_var = !VectorCompare (OPA.vector_var,
 												  OPB.vector_var);
+				break;
+			case OP_NE_Q:
+				OPC.integer_var = !QuatCompare (OPA.quat_var, OPB.quat_var);
 				break;
 			case OP_LE_S:
 			case OP_GE_S:
@@ -459,6 +483,9 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_STORE_V:
 				VectorCopy (OPA.vector_var, OPB.vector_var);
 				break;
+			case OP_STORE_Q:
+				QuatCopy (OPA.quat_var, OPB.quat_var);
+				break;
 
 			case OP_STOREP_F:
 			case OP_STOREP_ENT:
@@ -476,6 +503,11 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				//FIXME put bounds checking back
 				ptr = pr->pr_globals + OPB.integer_var;
 				VectorCopy (OPA.vector_var, ptr->vector_var);
+				break;
+			case OP_STOREP_Q:
+				//FIXME put bounds checking back
+				ptr = pr->pr_globals + OPB.integer_var;
+				QuatCopy (OPA.quat_var, ptr->quat_var);
 				break;
 
 			case OP_ADDRESS:
@@ -495,6 +527,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 			case OP_ADDRESS_F:
 			case OP_ADDRESS_V:
+			case OP_ADDRESS_Q:
 			case OP_ADDRESS_S:
 			case OP_ADDRESS_ENT:
 			case OP_ADDRESS_FLD:
@@ -529,11 +562,24 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				if (pr_boundscheck->int_val) {
 					if (OPA.entity_var < 0
 						|| OPA.entity_var >= pr->pr_edictareasize)
-					PR_RunError (pr, "Progs attempted to read an out of "
-								 "bounds edict number");
+						PR_RunError (pr, "Progs attempted to read an out of "
+									 "bounds edict number");
 					if (OPB.uinteger_var + 2 >= pr->progs->entityfields)
-					PR_RunError (pr, "Progs attempted to read an invalid "
-								 "field in an edict");
+						PR_RunError (pr, "Progs attempted to read an invalid "
+									 "field in an edict");
+				}
+				ed = PROG_TO_EDICT (pr, OPA.entity_var);
+				memcpy (&OPC, &ed->v[OPB.integer_var], 3 * sizeof (OPC));
+				break;
+			case OP_LOAD_Q:
+				if (pr_boundscheck->int_val) {
+					if (OPA.entity_var < 0
+						|| OPA.entity_var >= pr->pr_edictareasize)
+						PR_RunError (pr, "Progs attempted to read an out of "
+									 "bounds edict number");
+					if (OPB.uinteger_var + 3 >= pr->progs->entityfields)
+						PR_RunError (pr, "Progs attempted to read an invalid "
+									 "field in an edict");
 				}
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
 				memcpy (&OPC, &ed->v[OPB.integer_var], 3 * sizeof (OPC));
@@ -558,6 +604,12 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				ptr = pr->pr_globals + pointer;
 				VectorCopy (ptr->vector_var, OPC.vector_var);
 				break;
+			case OP_LOADB_Q:
+				//FIXME put bounds checking in
+				pointer = OPA.integer_var + OPB.integer_var;
+				ptr = pr->pr_globals + pointer;
+				QuatCopy (ptr->quat_var, OPC.quat_var);
+				break;
 
 			case OP_LOADBI_F:
 			case OP_LOADBI_S:
@@ -577,6 +629,12 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				pointer = OPA.integer_var + (short) st->b;
 				ptr = pr->pr_globals + pointer;
 				VectorCopy (ptr->vector_var, OPC.vector_var);
+				break;
+			case OP_LOADBI_Q:
+				//FIXME put bounds checking in
+				pointer = OPA.integer_var + (short) st->b;
+				ptr = pr->pr_globals + pointer;
+				QuatCopy (ptr->quat_var, OPC.quat_var);
 				break;
 
 			case OP_LEA:
@@ -608,6 +666,12 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				ptr = pr->pr_globals + pointer;
 				VectorCopy (OPA.vector_var, ptr->vector_var);
 				break;
+			case OP_STOREB_Q:
+				//FIXME put bounds checking in
+				pointer = OPB.integer_var + OPC.integer_var;
+				ptr = pr->pr_globals + pointer;
+				QuatCopy (OPA.quat_var, ptr->quat_var);
+				break;
 
 			case OP_STOREBI_F:
 			case OP_STOREBI_S:
@@ -627,6 +691,12 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				pointer = OPB.integer_var + (short) st->c;
 				ptr = pr->pr_globals + pointer;
 				VectorCopy (OPA.vector_var, ptr->vector_var);
+				break;
+			case OP_STOREBI_Q:
+				//FIXME put bounds checking in
+				pointer = OPB.integer_var + (short) st->c;
+				ptr = pr->pr_globals + pointer;
+				QuatCopy (OPA.quat_var, ptr->quat_var);
 				break;
 
 			// ==================
