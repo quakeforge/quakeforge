@@ -654,6 +654,11 @@ statement
 		{
 			expr_t *l1 = new_label_expr ();
 			expr_t *l2 = break_label;
+			int         line = pr.source_line;
+			string_t    file = pr.source_file;
+
+			pr.source_line = $5->line;
+			pr.source_file = $5->file;
 
 			restore_local_inits ($7);
 			free_local_inits ($7);
@@ -673,10 +678,18 @@ statement
 
 			break_label = $2;
 			continue_label = $3;
+
+			pr.source_line = line;
+			pr.source_file = file;
 		}
 	| DO break_label continue_label statement WHILE '(' expr ')' ';'
 		{
 			expr_t *l1 = new_label_expr ();
+			int         line = pr.source_line;
+			string_t    file = pr.source_file;
+
+			pr.source_line = $7->line;
+			pr.source_file = $7->file;
 
 			$$ = new_block_expr ();
 
@@ -692,6 +705,9 @@ statement
 
 			break_label = $2;
 			continue_label = $3;
+
+			pr.source_line = line;
+			pr.source_file = file;
 		}
 	| LOCAL type
 		{
@@ -708,6 +724,11 @@ statement
 		{
 			expr_t *tl = new_label_expr ();
 			expr_t *fl = new_label_expr ();
+			int         line = pr.source_line;
+			string_t    file = pr.source_file;
+
+			pr.source_line = $3->line;
+			pr.source_file = $3->file;
 
 			$$ = new_block_expr ();
 
@@ -722,6 +743,9 @@ statement
 
 			append_expr ($$, $6);
 			append_expr ($$, fl);
+
+			pr.source_line = line;
+			pr.source_file = file;
 		}
 	| IF '(' expr ')' save_inits statement ELSE
 		{
@@ -736,6 +760,11 @@ statement
 			expr_t     *e;
 			hashtab_t  *merged;
 			hashtab_t  *else_ini;
+			int         line = pr.source_line;
+			string_t    file = pr.source_file;
+
+			pr.source_line = $3->line;
+			pr.source_file = $3->file;
 
 			$$ = new_block_expr ();
 
@@ -764,6 +793,9 @@ statement
 			free_local_inits (merged);
 			free_local_inits (else_ini);
 			free_local_inits ($<def_list>8);
+
+			pr.source_line = line;
+			pr.source_file = file;
 		}
 	| FOR break_label continue_label
 			'(' opt_expr ';' opt_expr ';' opt_expr ')' save_inits statement

@@ -1467,6 +1467,9 @@ backpatch (ex_list_t *list, expr_t *label)
 	int         i;
 	expr_t     *e;
 
+	if (!list)
+		return;
+
 	for (i = 0; i < list->size; i++) {
 		e = list->e[i];
 		if (e->type == ex_uexpr && e->e.expr.op == 'g')
@@ -1534,6 +1537,20 @@ convert_bool (expr_t *e, int block)
 		append_expr (block, e->e.bool.e);
 		e->e.bool.e = block;
 	}
+	return e;
+}
+
+static expr_t *
+convert_from_bool (expr_t *e, type_t *type)
+{
+	if (type == &type_float)
+		e = conditional_expr (e, new_float_expr (1), new_float_expr (0));
+	else if (type == &type_integer)
+		e = conditional_expr (e, new_integer_expr (1), new_integer_expr (0));
+	else if (type == &type_uinteger)
+		e = conditional_expr (e, new_uinteger_expr (1), new_uinteger_expr (0));
+	else
+		e = error (e, "can't convert from bool value");
 	return e;
 }
 
@@ -1738,10 +1755,10 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	}
 
 	if (e1->type == ex_bool)
-		e1 = conditional_expr (e1, new_integer_expr (1), new_integer_expr (0));
+		e1 = convert_from_bool (e1, t2);
 
 	if (e2->type == ex_bool)
-		e2 = conditional_expr (e2, new_integer_expr (1), new_integer_expr (0));
+		e2 = convert_from_bool (e2, t1);
 
 	if (e1->type == ex_short) {
 		if (t2 == &type_integer) {
@@ -2296,16 +2313,8 @@ return_expr (function_t *f, expr_t *e)
 			return error (e, "returning a value for a void function");
 		warning (e, "returning a value for a void function");
 	}
-	if (e->type == ex_bool) {
-		if (f->def->type->aux_type == &type_float)
-			e = conditional_expr (e, new_float_expr (1), new_float_expr (0));
-		else if (f->def->type->aux_type == &type_integer)
-			e = conditional_expr (e, new_integer_expr (1),
-								  new_integer_expr (0));
-		else if (f->def->type->aux_type == &type_uinteger)
-			e = conditional_expr (e, new_uinteger_expr (1),
-								  new_uinteger_expr (0));
-	}
+	if (e->type == ex_bool)
+		e = convert_from_bool (e, f->def->type->aux_type);
 	if (f->def->type->aux_type == &type_float && e->type == ex_integer) {
 		e->type = ex_float;
 		e->e.float_val = e->e.integer_val;
@@ -2594,6 +2603,9 @@ assign_expr (expr_t *e1, expr_t *e2)
 		error (e1, "internal error");
 		abort ();
 	}
+	if (e2->type == ex_bool)
+		e2 = convert_from_bool (e2, t1);
+
 	if (e2->type == ex_integer) {
 		if (t1 == &type_float
 			|| t1 == &type_vector

@@ -440,10 +440,12 @@ build_bool_block (expr_t *block, expr_t *e)
 	switch (e->type) {
 		case ex_bool:
 			build_bool_block (block, e->e.bool.e);
+			free_tempdefs ();
 			return;
 		case ex_label:
 			e->next = 0;
 			append_expr (block, e);
+			free_tempdefs ();
 			return;
 		case ex_expr:
 			if (e->e.expr.op == OR || e->e.expr.op == AND) {
@@ -456,11 +458,13 @@ build_bool_block (expr_t *block, expr_t *e)
 				e->next = 0;
 				append_expr (block, e);
 			}
+			free_tempdefs ();
 			return;
 		case ex_uexpr:
 			if (e->e.expr.op == 'g') {
 				e->next = 0;
 				append_expr (block, e);
+				free_tempdefs ();
 				return;
 			}
 			break;
@@ -471,6 +475,7 @@ build_bool_block (expr_t *block, expr_t *e)
 					t = e->next;
 					build_bool_block (block, e);
 				}
+				free_tempdefs ();
 				return;
 			}
 			break;
