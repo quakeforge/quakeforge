@@ -153,6 +153,7 @@ qw_client_mgl_DEPENDENCIES= $(qw_client_mgl_libs)
 
 # ... Simple DirectMedia Layer, version 1.2 and higher
 qw_client_sdl_libs= \
+			libsdl.a \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(soft_LIBS) \
@@ -161,11 +162,11 @@ qw_client_sdl_libs= \
 qw_client_sdl_SOURCES=
 qw_client_sdl_LDADD= libsdl.a $(qw_client_sdl_libs) $(SDL_LIBS) $(NET_LIBS)
 qw_client_sdl_LDFLAGS=  $(common_ldflags)
-qw_client_sdl_CFLAGS=$(SDL_CFLAGS)
 qw_client_sdl_DEPENDENCIES= libsdl.a $(qw_client_sdl_libs)
 
 # ... 32-bit software, SDL
 qw_client_sdl32_libs= \
+			libsdl.a \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(top_builddir)/libs/video/renderer/libQFrenderer_sw32.la \
@@ -175,7 +176,6 @@ qw_client_sdl32_libs= \
 qw_client_sdl32_SOURCES=
 qw_client_sdl32_LDADD= libsdl.a $(qw_client_sdl32_libs) $(SDL_LIBS) $(NET_LIBS)
 qw_client_sdl32_LDFLAGS=$(common_ldflags)
-qw_client_sdl32_CFLAGS=$(SDL_CFLAGS)
 qw_client_sdl32_DEPENDENCIES= libsdl.a $(qw_client_sdl32_libs)
 
 # ... Linux SVGAlib
@@ -186,9 +186,9 @@ qw_client_svga_libs= \
 			$(top_builddir)/libs/video/targets/libQFsvga.la \
 			$(client_LIBS)
 qw_client_svga_SOURCES= cl_sys_unix.c
-qw_client_svga_LDADD= libsdl.a $(qw_client_svga_libs) $(SVGA_LIBS) $(NET_LIBS)
+qw_client_svga_LDADD= $(qw_client_svga_libs) $(SVGA_LIBS) $(NET_LIBS)
 qw_client_svga_LDFLAGS=  $(common_ldflags)
-qw_client_svga_DEPENDENCIES= libsdl.a $(qw_client_svga_libs)
+qw_client_svga_DEPENDENCIES= $(qw_client_svga_libs)
 
 # ... X11
 qw_client_x11_libs= \
@@ -238,6 +238,7 @@ qw_client_3dfx_DEPENDENCIES= $(qw_client_3dfx_libs)
 
 # ... Simple DirectMedia Layer, version 1.2 and higher, in GL mode
 qw_client_sgl_libs= \
+			libsdl.a \
 			$(client_libs) \
 			$(cl_plugin_LIBS) \
 			$(opengl_LIBS) \
@@ -246,7 +247,6 @@ qw_client_sgl_libs= \
 qw_client_sgl_SOURCES=
 qw_client_sgl_LDADD= $(qw_client_sgl_libs) $(SDL_LIBS) $(DL_LIBS) $(NET_LIBS)
 qw_client_sgl_LDFLAGS=  $(common_ldflags)
-qw_client_sgl_CFLAGS=$(SDL_CFLAGS)
 qw_client_sgl_DEPENDENCIES= $(qw_client_sgl_libs)
 
 # ... SGI/Microsoft WGL (Windows OpenGL)
