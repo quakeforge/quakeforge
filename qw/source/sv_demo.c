@@ -498,7 +498,7 @@ SV_DemoWritePackets (int num)
 			}
 
 			for (j = 0; j < 3; j++)
-				if (origin[j] != demoinfo->origin[i])
+				if (origin[j] != demoinfo->origin[j])
 					flags |= DF_ORIGIN << j;
 
 			if (cl->fixangle || demo.fixangletime[i] != cl->cmdtime) {
