@@ -8,14 +8,8 @@ EXTRA_DIST = asm_i386.h alsa_funcs_list.h adivtab.h anorm_dots.h anorms.h \
 	r_dynamic.h r_local.h r_shared.h sbar.h skin_stencil.h varrays.h \
 	vgamodes.h view.h vregset.h winquake.h world.h \
 	\
-	win32/bc/borland.c win32/bc/config.h \
-	\
 	win32/fnmatch.h \
 	\
-	win32/mingw/config.h \
-	\
 	win32/resources/icon1.ico win32/resources/quakeforge.rc \
-	win32/resources/resource.h \
-	\
-	win32/vc/config.h win32/vc/dirent.h win32/version.h win32/version.h.in
+	win32/resources/resource.h
 

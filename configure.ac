@@ -1962,7 +1962,6 @@ AC_OUTPUT(
 	include/QF/Makefile
 	include/QF/GL/Makefile
 	include/QF/plugin/Makefile
-	include/win32/version.h
 
 	libs/Makefile
 	libs/audio/Makefile
