@@ -42,6 +42,8 @@
 # include <unistd.h>
 #endif
 
+#include <stdio.h>
+
 #include <getopt.h>
 
 #include <QF/crc.h>
@@ -54,23 +56,36 @@
 options_t	options;
 
 char		*sourcedir;
+const char	*this_program;
 
-const char *this_program;
-
-static struct option const long_options[] =
-{
-  {"source", required_argument, 0, 's'},
-  {"quiet", no_argument, 0, 'q'},
-  {"verbose", no_argument, 0, 'v'},
-  {"code", required_argument, 0, 'C'},
-  {"warn", required_argument, 0, 'W'},
-  {"help", no_argument, 0, 'h'},
-  {"version", no_argument, 0, 'V'},
-  {NULL, 0, NULL, 0}
+static struct option const long_options[] = {
+	{"source",	required_argument,	0, 's'},
+	{"quiet",	no_argument,		0, 'q'},
+	{"verbose",	no_argument,		0, 'v'},
+	{"code",	required_argument,	0, 'C'},
+	{"warn",	required_argument,	0, 'W'},
+	{"help",	no_argument,		0, 'h'},
+	{"version", no_argument,		0, 'V'},
+#ifdef USE_CPP
+	{"define",	required_argument,	0, 'D'},
+	{"include",	required_argument,	0, 'I'},
+	{"undefine",required_argument,	0, 'U'},
+#endif
+	{NULL, 0, NULL, 0}
 };
 
 char        destfile[1024];
 char        debugfile[1024];
+
+#ifdef USE_CPP
+# define CPP_MAX_USER_ARGS	250
+# define CPP_MAX_ARGS		256
+/*
+	We reserve 6 args at the end.
+*/
+char		*cpp_argv[CPP_MAX_ARGS];
+static int	cpp_argc = 0;
+#endif
 
 pr_info_t	pr;
 
@@ -302,7 +317,7 @@ WriteData (int crc)
 //	PrintGlobals ();
 	strofs = (strofs + 3) & ~3;
 
-	if (options.verbosity) {
+	if (options.verbosity >= 0) {
 		printf ("%6i strofs\n", strofs);
 		printf ("%6i statements\n", numstatements);
 		printf ("%6i functions\n", numfunctions);
@@ -367,7 +382,7 @@ WriteData (int crc)
 
 	SafeWrite (h, pr_globals, numpr_globals * 4);
 
-	if (options.verbosity)
+	if (options.verbosity >= -1)
 		printf ("%6i TOTAL SIZE\n", (int) ftell (h));
 
 	progs.entityfields = pr.size_fields;
@@ -787,7 +802,7 @@ PR_WriteProgdefs (char *filename)
 	unsigned short	crc;
 	int 			c;
 
-	if (options.verbosity > 1)
+	if (options.verbosity >= 1)
 		printf ("writing %s\n", filename);
 	f = fopen (filename, "w");
 
@@ -914,31 +929,26 @@ PR_PrintFunction (def_t *def)
 	}
 }
 
-/*
-"Options: \n"
-"	-s, --source <dir>	look for progs.src in directory <dir>\n"
-"	-h, --help		display this help and exit\n"
-"	-V, --version		output version information and exit\n"
-"	--cow			allow assignment to initialized globals\n"
-"	--id			only support id (progs version 6) features\n"
-"	--warn=error	treat warnings as errors\n"
-"	--undefined-function-warning	warn when a function isn't defined\n"
-*/
-
 static void
 usage (int status)
 {
-	printf ("%s - the QuakeForge Code Compiler\n", this_program);
+	printf ("%s - QuakeForge Code Compiler\n", this_program);
 	printf ("Usage: %s [options]\n", this_program);
 	printf (
 "Options:\n"
-"	-s, --source DIR	look for progs.src in DIR instead of \".\"\n"
-"	-q, --quiet		Inhibit usual output\n"
-"	-v, --verbose		Display more output than usual\n"
-"	-C, --code OPTION,...	Set code generation options\n"
-"	-W, --warn OPTION,...	Set warning options\n"
-"	-h, --help		display this help and exit\n"
-"	-V, --version		output version information and exit\n\n"
+"    -s, --source DIR          Look for progs.src in DIR instead of \".\"\n"
+"    -q, --quiet               Inhibit usual output\n"
+"    -v, --verbose             Display more output than usual\n"
+"    -C, --code OPTION,...     Set code generation options\n"
+"    -W, --warn OPTION,...     Set warning options\n"
+"    -h, --help                Display this help and exit\n"
+"    -V, --version             Output version information and exit\n\n"
+#ifdef USE_CPP
+"    -D, --define SYMBOL[=VAL],...  Define symbols for the preprocessor\n"
+"    -I, --include DIR,...          Set directories for the preprocessor \n"
+"                                   to search for #includes\n"
+"    -U, --undefine SYMBOL,...      Undefine preprocessor symbols\n\n"
+#endif
 "For help on options for --code and --warn, see the qfcc(1) manual page\n"
 	);
 	exit (status);
@@ -949,11 +959,18 @@ DecodeArgs (int argc, char **argv)
 {
 	int		c;
 
-	options.code.cpp = 1;
+#ifdef USE_CPP
+	for (c = 0; c < CPP_MAX_ARGS; cpp_argv[c++] = NULL);	// clear the args
+	cpp_argv[cpp_argc++] = "cpp";
+	cpp_argv[cpp_argc++] = "-D__QUAKEC__=1";
+	cpp_argv[cpp_argc++] = "-D__QFCC__=1";
+#endif
+
+	options.code.cpp = true;
 	options.code.progsversion = PROG_VERSION;
-	options.warnings.uninited_variable = 1;
-	options.verbosity = 2;
-	
+	options.warnings.uninited_variable = true;
+	options.verbosity = 0;
+
 	sourcedir = ".";
 
 	while ((c = getopt_long (argc, argv,
@@ -963,8 +980,13 @@ DecodeArgs (int argc, char **argv)
 			"C:"	// code options
 			"W:"	// warning options
 			"h"		// help
-			"V",	// version
-			long_options, (int *) 0)) != EOF) {
+			"V"		// version
+#ifdef USE_CPP
+			"D:"	// define
+			"I:"	// set includes
+			"U:"	// undefine
+#endif
+			, long_options, (int *) 0)) != EOF) {
 		switch (c) {
 			case 'h':	// help
 				usage (0);
@@ -1001,6 +1023,9 @@ DecodeArgs (int argc, char **argv)
 							options.code.debug = false;
 						} else if (!(strcasecmp (temp, "v6only"))) {
 							options.code.progsversion = PROG_ID_VERSION;
+#ifdef USE_CPP
+							cpp_argv[cpp_argc++] = "-D__VERSION6__=1";
+#endif
 						} else if (!(strcasecmp (temp, "no-v6only"))) {
 							options.code.progsversion = PROG_VERSION;
 						}
@@ -1050,6 +1075,50 @@ DecodeArgs (int argc, char **argv)
 					free (opts);
 				}
 				break;
+#ifdef USE_CPP
+			case 'D': {	// defines for cpp
+					char	*opts = strdup (optarg);
+					char	*temp = strtok (opts, ",");
+
+					while (temp && (cpp_argc < CPP_MAX_USER_ARGS)) {
+						char	temp2[1024];
+
+						snprintf (temp2, sizeof (temp2), "%s%s", "-D", temp);
+						cpp_argv[cpp_argc++] = strdup (temp2);
+						temp = strtok (NULL, ",");
+ 					}
+					free (opts);
+				}
+				break;
+			case 'I': {	// includes
+					char	*opts = strdup (optarg);
+					char	*temp = strtok (opts, ",");
+
+					while (temp && (cpp_argc < CPP_MAX_USER_ARGS)) {
+						char	temp2[1024];
+
+						snprintf (temp2, sizeof (temp2), "%s%s", "-I", temp);
+						cpp_argv[cpp_argc++] = strdup (temp2);
+						temp = strtok (NULL, ",");
+ 					}
+					free (opts);
+				}
+				break;
+			case 'U': {	// undefines
+					char	*opts = strdup (optarg);
+					char	*temp = strtok (opts, ",");
+
+					while (temp && (cpp_argc < CPP_MAX_USER_ARGS)) {
+						char	temp2[1024];
+
+						snprintf (temp2, sizeof (temp2), "%s%s", "-U", temp);
+						cpp_argv[cpp_argc++] = strdup (temp2);
+						temp = strtok (NULL, ",");
+ 					}
+					free (opts);
+				}
+				break;
+#endif
 			default:
 				usage (1);
 		}
@@ -1093,7 +1162,7 @@ main (int argc, char **argv)
 		Error ("No destination filename.  qfcc --help for info.\n");
 
 	strcpy (destfile, com_token);
-	if (options.verbosity > 1) {
+	if (options.verbosity >= 1) {
 		printf ("outputfile: %s\n", destfile);
 	}
 	if (options.code.debug) {
@@ -1110,7 +1179,7 @@ main (int argc, char **argv)
 			}
 		}
 		strcpy (s, ".sym");
-		if (options.verbosity > 1)
+		if (options.verbosity >= 1)
 			printf ("debug file: %s\n", debugfile);
 	}
 
@@ -1135,7 +1204,7 @@ main (int argc, char **argv)
 		//yydebug = 1;
 
 		sprintf (filename, "%s%c%s", sourcedir, PATH_SEPARATOR, com_token);
-		if (options.verbosity > 1)
+		if (options.verbosity >= 2)
 			printf ("compiling %s\n", filename);
 
 #ifdef USE_CPP
@@ -1158,7 +1227,11 @@ main (int argc, char **argv)
 			}
 
 			if (!pid) { // we're a child, check for abuse
-				execlp ("cpp", "-D__QFCC__=1", "-o", tempname, filename, NULL);
+				cpp_argv[cpp_argc++] = "-o";
+				cpp_argv[cpp_argc++] = tempname;
+				cpp_argv[cpp_argc++] = filename;
+				
+				execvp ("cpp", cpp_argv);
 				printf ("Child shouldn't reach here\n");
 				exit (1);
 			} else { 	// give parental guidance (or bury it in the back yard)
@@ -1225,7 +1298,7 @@ main (int argc, char **argv)
 	WriteFiles ();
 
 	stop = Sys_DoubleTime ();
-	if (options.verbosity)
+	if (options.verbosity >= 0)
 		printf ("Compilation time: %0.3g seconds.\n", (stop - start));
 	return 0;
 }
