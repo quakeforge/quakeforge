@@ -328,25 +328,58 @@ PF_Find (progs_t *pr)
 {
 	int         e;
 	int         f;
-	const char       *s, *t;
 	edict_t    *ed;
+	ddef_t     *field_def;
+	int			type;
+
+	const char *s, *t; // ev_string
+	int i; // ev_vector
 
 	e = G_EDICTNUM (pr, OFS_PARM0);
 	f = G_INT (pr, OFS_PARM1);
-	s = G_STRING (pr, OFS_PARM2);
-	if (!s)
-		PR_RunError (pr, "PF_Find: bad search string");
+	field_def = ED_FieldAtOfs (pr, f);
+	if (!field_def)
+		PR_RunError (pr, "PF_Find: bad search field");
+	type = field_def->type & ~DEF_SAVEGLOBAL;
+
+	if (type == ev_string) {
+		s = G_STRING (pr, OFS_PARM2);
+		if (!s)
+			PR_RunError (pr, "PF_Find: bad search string");
+	}
 
 	for (e++; e < *pr->num_edicts; e++) {
 		ed = EDICT_NUM (pr, e);
 		if (ed->free)
 			continue;
-		t = E_STRING (pr, ed, f);
-		if (!t)
-			continue;
-		if (!strcmp (t, s)) {
-			RETURN_EDICT (pr, ed);
-			return;
+		switch (type) {
+			case ev_string:
+				t = E_STRING (pr, ed, f);
+				if (!t)
+					continue;
+				if (strcmp (t, s))
+					continue;
+				RETURN_EDICT (pr, ed);
+				return;
+			case ev_float:
+				if (G_FLOAT (pr, OFS_PARM2) != E_FLOAT (ed, f))
+					continue;
+				RETURN_EDICT (pr, ed);
+				return;
+			case ev_vector:
+				for (i = 0; i <= 2; i++)
+					if (G_FLOAT (pr, OFS_PARM2 + i) != E_FLOAT (ed, f + i))
+						continue;
+				RETURN_EDICT (pr, ed);
+				return;
+			case ev_integer:
+			case ev_entity:
+				if (G_INT (pr, OFS_PARM2) != E_INT (ed, f))
+					continue;
+				RETURN_EDICT (pr, ed);
+				return;
+			default:
+				PR_Error (pr, "PF_Find: unsupported search field");
 		}
 	}
 
@@ -518,7 +551,7 @@ PR_Cmds_Init (progs_t *pr)
 	PR_AddBuiltin (pr, "normalize", PF_normalize, 9);	// vector (vector v) normalize
 	PR_AddBuiltin (pr, "vlen", PF_vlen, 12);	// float (vector v) vlen
 	PR_AddBuiltin (pr, "vectoyaw", PF_vectoyaw, 13);	// float (vector v) vectoyaw
-	PR_AddBuiltin (pr, "find", PF_Find, 18);	// entity (entity start, .string fld, string match) find
+	PR_AddBuiltin (pr, "find", PF_Find, 18);	// entity (entity start, .(...) fld, ... match) find
 	PR_AddBuiltin (pr, "dprint", PF_dprint, 25);  // void (string s) dprint
 	PR_AddBuiltin (pr, "ftos", PF_ftos, 26);	// void (string s) ftos
 	PR_AddBuiltin (pr, "vtos", PF_vtos, 27);	// void (string s) vtos
