@@ -93,8 +93,10 @@ typedef struct shutdown_list_s {
 
 static shutdown_list_t *shutdown_list;
 
+#ifndef _WIN32 
 static int  do_stdin = 1;
 qboolean    stdin_ready;
+#endif
 
 /* The translation table between the graphical font and plain ASCII  --KB */
 const char sys_char_map[256] = {
@@ -522,11 +524,6 @@ Sys_CheckInput (int idle, int net_socket)
 
 	_timeout.tv_sec = 0;
 	_timeout.tv_usec = net_socket < 0 ? 0 : 100;
-	timeout = &_timeout;
-	if (_kbhit ()) {
-		stdin_ready = 1;
-		return 1;
-	}
 #else
 	_timeout.tv_sec = 0;
 	_timeout.tv_usec = net_socket < 0 ? 0 : 10000;
@@ -536,8 +533,10 @@ Sys_CheckInput (int idle, int net_socket)
 	// connected client times out, the message would not otherwise
 	// be printed until the next event.
 	FD_ZERO (&fdset);
+#ifndef _WIN32
 	if (do_stdin)
 		FD_SET (0, &fdset);
+#endif
 	if (net_socket >= 0)
 		FD_SET (net_socket, &fdset);
 
@@ -547,7 +546,9 @@ Sys_CheckInput (int idle, int net_socket)
 	res = select (max (net_socket, 0) + 1, &fdset, NULL, NULL, timeout);
 	if (res == 0 || res == -1)
 		return 0;
+#ifndef _WIN32
 	stdin_ready = FD_ISSET (0, &fdset);
+#endif
 	return 1;
 }
 
