@@ -1,9 +1,6 @@
-typedef enum {
-	NO,
-	YES,
-} BOOL;
+#include "object.h"
 
-void (obj_module_t [] module) __obj_exec_class = #0;
+void (obj_module_t [] msg) __obj_exec_class = #0;
 void (id object, integer code, string fmt, ...) obj_error = #0;
 void (id object, integer code, string fmt, ...) obj_verror = #0;//FIXME not ...
 //obj_error_handler (objc_error_handler func) obj_set_error_handler = #0;
@@ -34,8 +31,8 @@ SEL (string name) sel_register_name = #0;
 SEL (string name, string type) sel_register_typed_name = #0;
 BOOL (SEL aSel) sel_is_mapped = #0;
 
-Method (Class class, SEL aSel) class_get_class_method = 0;
-Method (Class class, SEL aSel) class_get_instance_method = 0;
+Method (Class class, SEL aSel) class_get_class_method = #0;
+Method (Class class, SEL aSel) class_get_instance_method = #0;
 Class (Class imposter, Class superclass) class_pose_as = #0;
 id (Class class) class_create_instance = #0;
 string (Class class) class_get_class_name = #0;
@@ -61,78 +58,6 @@ Class (id object) object_get_super_class = #0;
 BOOL (id object) object_is_class = #0;
 BOOL (id object) object_is_instance = #0;
 BOOL (id object) object_is_meta_class = #0;
-
-@interface Object
-{
-	Class	isa;
-}
-
-+initialize;
--init;
-
-+new;
-+alloc;
--free;
--copy;
--shallowCopy;
--deepen;
--deepCopy;
-
--(Class)class;
--(Class)superClass;
--(Class)metaClass;
--(string)name;
-
--self;
--(integer)hash;
--(BOOL)isEqual:anObject;
--(integer)compare:anotherObject;
-
--(BOOL)isMetaClass;
--(BOOL)isClass;
--(BOOL)isInstance;
-
--(BOOL)isKindOf:(Class)aClassObject;
--(BOOL)isMemberOf:(Class)aClassObject;
--(BOOL)isKindOfClassNamed:(string)aClassName;
--(BOOL)isMemberOfClassNamed:(string)aClassName;
-
-+(BOOL)instancesRespondTo:(SEL)aSel;
--(BOOL)respondsTo:(SEL)aSel;
-
-+(BOOL)conformsTo:(Protocol)aProtocol;
--(BOOL)conformsTo:(Protocol)aProtocol;
-
-+(IMP)instanceMethodFor:(SEL)aSel;
--(IMP)methodFor:(SEL)aSel;
-//+(struct objc_method_description *)descriptionForInstanceMethod:(SEL)aSel;
-//-(struct objc_method_description *)descriptionForMethod:(SEL)aSel;
-
--perform:(SEL)aSel;
--perform:(SEL)aSel with:anObject;
--perform:(SEL)aSel with:anObject1 with:anObject2;
-
-//-(retval_t)forward:(SEL)aSel :(arglist_t)argFrame;
-//-(retval_t)performv:(SEL)aSel :(arglist_t)argFrame;
-
-+poseAs:(Class)aClassObject;
--(Class)transmuteClassTo:(Class)aClassObject;
-
--subclassResponsibility:(SEL)aSel;
--notImplemented:(SEL)aSel;
--shouldNotImplement:(SEL)aSel;
-
--doesNotRecognize:(SEL)aSel;
--error:(string)aString, ...;
-
-//+(integer)version;
-//+setVersion:(integer)aVersion;
-//+(integer)streamVersion: (TypedStream*)aStream;
-
-//-read: (TypedStream*)aStream;
-//-write: (TypedStream*)aStream;
-//-awake;
-@end
 
 @implementation Object
 +initialize
