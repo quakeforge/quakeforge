@@ -51,11 +51,13 @@ qboolean VID_Is8bit (void);
 void R_InitBubble (void);
 
 cvar_t	*gl_fires;
+
 cvar_t	*r_netgraph_alpha;
 cvar_t	*r_netgraph_box;
 
-extern cvar_t	*r_netgraph;
 extern cvar_t	*gl_lerp_anim;
+
+extern cvar_t	*r_netgraph;
 
 qboolean	allowskybox;				// allow skyboxes?  --KB
 

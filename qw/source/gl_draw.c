@@ -52,8 +52,7 @@ static int  GL_LoadPicTexture (qpic_t *pic, qboolean alpha);
 extern byte *host_basepal;
 extern unsigned char d_15to8table[65536];
 extern cvar_t *crosshair, *cl_crossx, *cl_crossy, *crosshaircolor,
-
-	*gl_colorlights;
+	*gl_lightmap_components;
 
 cvar_t     *gl_max_size;
 cvar_t     *gl_picmip;
@@ -90,7 +89,7 @@ typedef struct {
 	float       sl, tl, sh, th;
 } glpic_t;
 
-int         gl_lightmap_format = 4;
+int         gl_lightmap_format = 4; //FIXME: use GL types? --Despair
 int         gl_solid_format = 3;
 int         gl_alpha_format = 4;
 
@@ -395,21 +394,15 @@ Draw_Init_Cvars (void)
 {
 	gl_lightmode = Cvar_Get ("gl_lightmode", "1", CVAR_ARCHIVE,
 							 "Lighting mode (0 = GLQuake style, 1 = new style)");
-
 	gl_max_size = Cvar_Get ("gl_max_size", "1024", CVAR_NONE, "Texture dimension"); 
-
 	gl_picmip = Cvar_Get ("gl_picmip", "0", CVAR_NONE, "Dimensions of displayed textures. 0 is normal, 1 is half, 2 is 1/4"); 
-
-	gl_colorlights = Cvar_Get ("gl_colorlights", "1", CVAR_ROM,
-							   "Whether to use RGB lightmaps or not");
-
 	gl_constretch = Cvar_Get ("gl_constretch", "0", CVAR_ARCHIVE,
 							  "whether slide the console or stretch it");
 	gl_conalpha = Cvar_Get ("gl_conalpha", "0.6", CVAR_ARCHIVE,
 							"alpha value for the console background");
 	gl_conspin = Cvar_Get ("gl_conspin", "0", CVAR_ARCHIVE,
 						   "speed at which the console spins");
-
+	gl_lightmap_components = Cvar_Get ("gl_lightmap_components", "4", CVAR_ROM, "Lightmap texture components. 1 is greyscale, 3 is RGB, 4 is RGBA.");
 	cl_verstring = Cvar_Get ("cl_verstring", PROGRAM " " VERSION, CVAR_NONE,
 							 "Client version string");
 }

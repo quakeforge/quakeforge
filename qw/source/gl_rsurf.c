@@ -45,17 +45,18 @@
 
 qboolean    r_cache_thrash;
 
+// extern cvar_t *gl_lightmap_align;
+cvar_t *gl_lightmap_components;
+// extern cvar_t *gl_texsubimage;
+
 extern double realtime;
 int         skytexturenum;
 
 extern vec3_t shadecolor;				// Ender (Extend) Colormod
-int         lightmap_bytes;				// 1 or 3
-
+int         lightmap_bytes;				// 1, 3, or 4
 int         lightmap_textures;
 
 unsigned int blocklights[18 * 18 * 3];
-
-cvar_t     *gl_colorlights;
 
 #define	BLOCK_WIDTH		128
 #define	BLOCK_HEIGHT	128
@@ -235,22 +236,12 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 
 	// set to full bright if no light data
 	if (!cl.worldmodel->lightdata) {
-		bl = blocklights;
-		for (i = 0; i < size; i++) {
-			*bl++ = 255 << 8;
-			*bl++ = 255 << 8;
-			*bl++ = 255 << 8;
-		}
+		memset (&blocklights[0], 65280, 3 * size * sizeof(int));
 		goto store;
 	}
+
 	// clear to no light
-	bl = blocklights;
-	for (i = 0; i < size; i++) {
-		*bl++ = 0;
-		*bl++ = 0;
-		*bl++ = 0;
-	}
-	bl = blocklights;
+	memset (&blocklights[0], 0, 3 * size * sizeof(int));
 
 	// add all the lightmaps
 	if (lightmap) {
@@ -271,9 +262,37 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 
   store:
 	// bound and shift
-	if (gl_colorlights->int_val) {
-		stride -= smax * 3;
-		bl = blocklights;
+	stride -= smax * lightmap_bytes;
+	bl = blocklights;
+	switch (lightmap_bytes) {
+	case 4:
+		if (lighthalf) {
+			for (i = 0; i < tmax; i++, dest += stride) {
+				for (j = 0; j < smax; j++) {
+					t = (int) *bl++ >> 8;
+					*dest++ = bound (0, t, 255);
+					t = (int) *bl++ >> 8;
+					*dest++ = bound (0, t, 255);
+					t = (int) *bl++ >> 8;
+					*dest++ = bound (0, t, 255);
+					*dest++ = 255;
+				}
+			}
+		} else {
+			for (i = 0; i < tmax; i++, dest += stride) {
+				for (j = 0; j < smax; j++) {
+					t = (int) *bl++ >> 7;
+					*dest++ = bound (0, t, 255);
+					t = (int) *bl++ >> 7;
+					*dest++ = bound (0, t, 255);
+					t = (int) *bl++ >> 7;
+					*dest++ = bound (0, t, 255);
+					*dest++ = 255;
+				}
+			}
+		}
+		break;
+	case 3:
 		if (lighthalf) {
 			for (i = 0; i < tmax; i++, dest += stride) {
 				for (j = 0; j < smax; j++) {
@@ -297,9 +316,8 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 				}
 			}
 		}
-	} else {
-		stride -= smax;
-		bl = blocklights;
+		break;
+	case 1:
 		if (lighthalf) {
 			for (i = 0; i < tmax; i++, dest += stride) {
 				for (j = 0; j < smax; j++) {
@@ -327,6 +345,7 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 				}
 			}
 		}
+		break;
 	}
 }
 
@@ -1028,7 +1047,7 @@ AllocBlock (int w, int h, int *x, int *y)
 
 		// LordHavoc: allocate lightmaps only as needed
 		if (!lightmaps[texnum])
-			lightmaps[texnum] = calloc (BLOCK_WIDTH * BLOCK_HEIGHT, 3);
+			lightmaps[texnum] = calloc (BLOCK_WIDTH * BLOCK_HEIGHT, lightmap_bytes); // DESPAIR: was 3, not lightmap_bytes
 
 		for (i = 0; i < w; i++)
 			allocated[texnum][*x + i] = best + h;
@@ -1189,12 +1208,20 @@ GL_BuildLightmaps (void)
 		texture_extension_number += MAX_LIGHTMAPS;
 	}
 
-	if (gl_colorlights->int_val) {
-		gl_lightmap_format = GL_RGB;
-		lightmap_bytes = 3;
-	} else {
+	switch (gl_lightmap_components->int_val) {
+	case 1:
 		gl_lightmap_format = GL_LUMINANCE;
 		lightmap_bytes = 1;
+		break;
+	case 3:
+		gl_lightmap_format = GL_RGB;
+		lightmap_bytes = 3;
+		break;
+	case 4:
+	default:
+		gl_lightmap_format = GL_RGBA;
+		lightmap_bytes = 4;
+		break;
 	}
 
 	for (j = 1; j < MAX_MODELS; j++) {
