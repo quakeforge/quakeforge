@@ -81,10 +81,10 @@ extern qboolean lighthalf;
 
 extern cvar_t *cl_max_particles;
 
-extern int  part_tex_smoke_ring[8];
-extern int  part_tex_smoke[8];
 extern int  part_tex_dot;
 extern int  part_tex_spark;
+extern int  part_tex_smoke[8];
+extern int  part_tex_smoke_ring[8];
 
 int         ramp[8] = { 0x6d, 0x6b, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
 
@@ -490,14 +490,19 @@ R_RocketTrail (int type, entity_t *ent)
 		switch (type) {
 			case 0:					// rocket trail
 				pcolor = (rand () & 3) + 12;
-				goto common_rocket_gren_trail;
-			case 1:					// grenade trail
-				pcolor = (rand () & 3) + 3;
-				goto common_rocket_gren_trail;
-
-			  common_rocket_gren_trail:
 				len -= 4;
 				ptex = part_tex_smoke_ring[rand () & 7];
+				pscale = lhrandom (10, 15);
+				palpha = 48 + (rand () & 31);
+				ptype = pt_smoke;
+				pdie = cl.time + 1;
+				VectorVectors(vec, right, up);
+				VectorCopy (ent->old_origin, porg);
+				break;
+			case 1:					// grenade trail
+				pcolor = (rand () & 3) + 3;
+				len -= 4;
+				ptex = part_tex_smoke[rand () & 7];
 				pscale = lhrandom (10, 15);
 				palpha = 48 + (rand () & 31);
 				ptype = pt_smoke;
@@ -509,9 +514,7 @@ R_RocketTrail (int type, entity_t *ent)
 				len -= 4;
 			case 2:					// blood
 				len -= 4;
-				ptex = part_tex_dot;
 				pcolor = 68 + (rand () & 3);
-				pdie = cl.time + 2;
 				for (j = 0; j < 3; j++) {
 					pvel[j] = (rand () & 15) - 8;
 					porg[j] = ent->old_origin[j] + ((rand () % 3) - 2);
