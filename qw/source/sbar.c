@@ -1022,11 +1022,8 @@ Sbar_DeathmatchOverlay (int start)
 		// team
 		if (cl.teamplay) {
 			Draw_nString (x + 152, y, s->team->value, 4);
-		}
-		// draw name
-		if (cl.teamplay)
 			Draw_String (x + 152 + 40, y, s->name);
-		else
+		} else
 			Draw_String (x + 152, y, s->name);
 
 		y += skip;
@@ -1117,12 +1114,9 @@ Sbar_MiniDeathmatchOverlay (void)
 		// team
 		if (cl.teamplay) {
 			Draw_nString (x + 48, y, s->team->value, 4);
-		}
-		// draw name
-		if (cl.teamplay)
-			Draw_String (x + 48 + 40, y, s->name);
-		else
-			Draw_String (x + 48, y, s->name);
+			Draw_nString (x + 48 + 40, y, s->name, 16);
+		} else
+			Draw_nString (x + 48, y, s->name, 16);
 		y += 8;
 	}
 
