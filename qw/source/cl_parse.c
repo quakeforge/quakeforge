@@ -1291,9 +1291,9 @@ CL_ParseServerMessage (void)
 				if (!cls.demoplayback2) {
 					MSG_ReadAngleV (net_message, cl.viewangles);
 				} else {
-					j = MSG_ReadByte(net_message);
-					//fixangle |= 1 << j;
-					if (j != Cam_TrackNum()) {
+					j = MSG_ReadByte (net_message);
+//					fixangle |= 1 << j;
+					if (j != Cam_TrackNum ()) {
 						MSG_ReadAngle (net_message);
 						MSG_ReadAngle (net_message);
 						MSG_ReadAngle (net_message);
@@ -1418,7 +1418,7 @@ CL_ParseServerMessage (void)
 				// automatic fraglogging (by elmex)
 				// XXX: Should this _really_ called here?
 				if (!cls.demoplayback)
-					Sbar_LogFrags();
+					Sbar_LogFrags ();
 				break;
 
 			case svc_finale:

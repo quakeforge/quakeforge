@@ -56,6 +56,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "r_cvar.h"
 #include "sbar.h"
 
+
 static void
 SCR_DrawNet (void)
 {
@@ -77,8 +78,10 @@ CL_NetStats (void)
 		return;
 	if (cls.state != ca_active)
 		return;
+
 	x = hudswap ? vid.width - 104 : 0;
 	y = vid.height - sb_lines - 16;
+
 	// request new ping times every two seconds
 	if (!cls.demoplayback && realtime - cl.last_ping_request > 2) {
 		cl.last_ping_request = realtime;
@@ -87,6 +90,7 @@ CL_NetStats (void)
 	}
 	if (show_ping->int_val) {
 		int ping = cl.players[cl.playernum].ping;
+
 		ping = bound (0, ping, 999);
 		Draw_String (x, y, va ("%3d ms", ping));
 		x+= 48;
@@ -94,7 +98,7 @@ CL_NetStats (void)
 		x += 56;
 	}
 	if (show_ping->int_val && show_pl->int_val) {
-		Draw_String(x, y, "/");
+		Draw_String (x, y, "/");
 		x += 8;
 	}
 	if (show_pl->int_val) {
@@ -119,7 +123,6 @@ static SCR_Func scr_funcs[] = {
 	SCR_DrawConsole,
 	0
 };
-
 
 void
 CL_UpdateScreen (double realtime)

@@ -327,7 +327,7 @@ SCR_DrawFPS (void)
 	}
 
 	x = hudswap ? vid.width - ((strlen (st) * 8) + i) : i;
-	y = vid.height - r_lineadj - 8;
+	y = vid.height - sb_lines - 8;
 	Draw_String (x, y, st);
 }
 
@@ -363,7 +363,7 @@ SCR_DrawTime (void)
 
 	// Print it at far left/right of screen
 	x = hudswap ? (vid.width - ((strlen (st) * 8) + 8)) : 8;
-	y = vid.height - (r_lineadj + 8);
+	y = vid.height - sb_lines - 8;
 	Draw_String (x, y, st);
 }
 
