@@ -1228,7 +1228,7 @@ int
 QFS_NextFilename (char *filename, const char *prefix, const char *ext)
 {
 	char       *digits;
-	char        checkname[MAX_OSPATH];
+	char        checkname[MAX_OSPATH], exp[MAX_OSPATH];
 	int         i;
 
 	strncpy (filename, prefix, MAX_OSPATH - 4);
@@ -1236,13 +1236,14 @@ QFS_NextFilename (char *filename, const char *prefix, const char *ext)
 	digits = filename + strlen (filename);
 	strcat (filename, "000");
 	strncat (filename, ext, MAX_OSPATH - strlen (filename));
-
+	Qexpand_squiggle (fs_userpath->string, exp);
+	
 	for (i = 0; i <= 999; i++) {
 		digits[0] = i / 100 + '0';
 		digits[1] = i / 10 % 10 + '0';
 		digits[2] = i % 10 + '0';
 		snprintf (checkname, sizeof (checkname),
-				  "%s/%s/%s", fs_userpath->string, qfs_gamedir->dir.def,
+				  "%s/%s/%s", exp, qfs_gamedir->dir.def,
 				  filename);
 		if (Sys_FileTime (checkname) == -1)
 			return 1;					// file doesn't exist
