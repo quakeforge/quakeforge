@@ -622,7 +622,7 @@ ReadClipHull (int hullnum)
 	if (!f)
 		Sys_Error ("Couldn't open %s", options.hullfile);
 
-	if (fscanf (f, "%i\n", &n) != 1)
+	if (fscanf (f, "%d\n", &n) != 1)
 		Sys_Error ("Error parsing %s", options.hullfile);
 
 	if (n != bsp->nummodels)
@@ -630,18 +630,18 @@ ReadClipHull (int hullnum)
 				   bsp->nummodels);
 
 	for (i = 0; i < n; i++) {
-		fscanf (f, "%i\n", &j);
+		fscanf (f, "%d\n", &j);
 		bsp->models[i].headnode[hullnum] = bsp->numclipnodes + j;
 	}
 
 
-	fscanf (f, "\n%i\n", &n);
+	fscanf (f, "\n%d\n", &n);
 	firstclipnode = bsp->numclipnodes;
 
 	for (i = 0; i < n; i++) {
 		if (bsp->numclipnodes == MAX_MAP_CLIPNODES)
 			Sys_Error ("ReadClipHull: MAX_MAP_CLIPNODES");
-		if (fscanf (f, "%i : %f %f %f %f : %i %i\n", &junk, &f1, &f2, &f3, &f4,
+		if (fscanf (f, "%d : %f %f %f %f : %d %d\n", &junk, &f1, &f2, &f3, &f4,
 					&c1, &c2) != 7)
 			Sys_Error ("Error parsing %s", options.hullfile);
 
