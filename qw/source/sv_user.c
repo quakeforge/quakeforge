@@ -1407,6 +1407,7 @@ adjust_usecs (usercmd_t *ucmd)
 		host_client->msecs = bound (-fuzz, host_client->msecs, fuzz);
 		ucmd->msec = passed;
 	}
+	host_client->last_check = realtime;
 }
 
 static void
@@ -1423,25 +1424,27 @@ check_usecs (usercmd_t *ucmd)
 	tmp_time = realtime - host_client->last_check;
 	if (tmp_time < sv_timekick_interval->value)
 		return;
+	host_client->last_check = realtime;
 	tmp_time1 = tmp_time * (1000 + sv_timekick_fuzz->value);
-	if (host_client->msecs < tmp_time1)
-		return;
-	host_client->msec_cheating++;
-	SV_BroadcastPrintf (PRINT_HIGH, "%s thinks there are %d ms "
-						"in %d seconds (Strike %d/%d)\n",
-						host_client->name, host_client->msecs,
-						(int) tmp_time, host_client->msec_cheating,
-						sv_timekick->int_val);
-	if (host_client->msec_cheating < sv_timekick->int_val)
-		return;
-	SV_BroadcastPrintf (PRINT_HIGH, "Strike %d for %s!!\n",
-						host_client->msec_cheating, host_client->name);
-	SV_BroadcastPrintf (PRINT_HIGH, "Please see "
-						"http://www.quakeforge.net/speed_cheat.php for "
-						"information on QuakeForge's time cheat protection. "
-						"That page explains how some may be cheating "
-						"without knowing it.\n");
-	SV_DropClient (host_client);
+	if (host_client->msecs >= tmp_time1) {
+		host_client->msec_cheating++;
+		SV_BroadcastPrintf (PRINT_HIGH, "%s thinks there are %d ms "
+							"in %d seconds (Strike %d/%d)\n",
+							host_client->name, host_client->msecs,
+							(int) tmp_time, host_client->msec_cheating,
+							sv_timekick->int_val);
+		if (host_client->msec_cheating >= sv_timekick->int_val) {
+			SV_BroadcastPrintf (PRINT_HIGH, "Strike %d for %s!!\n",
+								host_client->msec_cheating, host_client->name);
+			SV_BroadcastPrintf (PRINT_HIGH, "Please see "
+								"http://www.quakeforge.net/speed_cheat.php "
+								"for information on QuakeForge's time cheat "
+								"protection. That page explains how some may "
+								"be cheating without knowing it.\n");
+			SV_DropClient (host_client);
+		}
+	}
+	host_client->msecs = 0;
 }
 
 static void
@@ -1456,7 +1459,8 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 		} else {
 			check_usecs (ucmd);
 		}
-		host_client->last_check = realtime;
+		if (host_client->last_check == -1.0)
+			host_client->last_check = realtime;
 	}
 
 	cmd = *ucmd;
