@@ -205,40 +205,6 @@ R_RotateForEntity (entity_t *e)
 	qfglRotatef (e->angles[2], 1, 0, 0);
 }
 
-#if 0
-/*
-	R_ShowNearestLoc
-
-	Display the nearest symbolic location (.loc files)
-*/
-static void
-R_ShowNearestLoc (void)
-{
-	dlight_t   *dl;
-	location_t *nearloc;
-	vec3_t		trueloc;
-
-	if (r_drawentities->int_val)
-		return;
-
-	nearloc = locs_find (r_origin);
-
-	if (nearloc) {
-		dl = R_AllocDlight (4096);
-		if (dl) {
-			VectorCopy (nearloc->loc, dl->origin);
-			dl->radius = 200;
-			dl->die = r_realtime + 0.1;
-			dl->color[0] = 0;
-			dl->color[1] = 1;
-			dl->color[2] = 0;
-		}
-		VectorCopy (nearloc->loc, trueloc);
-		(*R_WizSpikeEffect) (trueloc);
-	}
-}
-#endif
-
 /*
 	R_DrawEntitiesOnList
 
