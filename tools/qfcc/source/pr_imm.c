@@ -145,12 +145,13 @@ PR_ParseImmediate (def_t *def)
 }
 
 def_t *
-PR_ReuseConstant (expr_t *e, def_t *def)
+PR_ReuseConstant (expr_t *expr, def_t *def)
 {
 	def_t	*cn = 0;
 	char rep[60];
 	hashtab_t *tab = 0;
 	type_t *type;
+	expr_t e = *expr;
 
 	if (!string_imm_defs) {
 		string_imm_defs = Hash_NewTable (16381, string_imm_get_key, 0, 0);
@@ -158,48 +159,43 @@ PR_ReuseConstant (expr_t *e, def_t *def)
 		vector_imm_defs = Hash_NewTable (16381, vector_imm_get_key, 0, 0);
 		quaternion_imm_defs = Hash_NewTable (16381, quaternion_imm_get_key, 0, 0);
 	}
-	switch (e->type) {
+	switch (e.type) {
 		case ex_int:
-			e->e.float_val = e->e.int_val; //FIXME
+			e.e.float_val = e.e.int_val; //FIXME
 		case ex_float:
-			sprintf (rep, "\001float:%08X\001", *(int*)&pr_immediate._float);
+			sprintf (rep, "\001float:%08X\001", e.e.int_val);
 			cn = (def_t*) Hash_Find (float_imm_defs, rep);
 			tab = float_imm_defs;
 			type = &type_float;
-			//printf ("%f\n",pr_immediate._float);
 			break;
 		case ex_string:
-			cn = (def_t*) Hash_Find (string_imm_defs, pr_immediate_string);
+			cn = (def_t*) Hash_Find (string_imm_defs, e.e.string_val);
 			tab = string_imm_defs;
 			type = &type_string;
-			//printf ("%s\n",pr_immediate_string);
 			break;
 		case ex_vector:
 			sprintf (rep, "\001vector:%08X\001%08X\001%08X\001",
-					 *(int*)&e->e.vector_val[0],
-					 *(int*)&e->e.vector_val[1],
-					 *(int*)&e->e.vector_val[2]);
+					 *(int*)&e.e.vector_val[0],
+					 *(int*)&e.e.vector_val[1],
+					 *(int*)&e.e.vector_val[2]);
 			cn = (def_t*) Hash_Find (vector_imm_defs, rep);
 			tab = vector_imm_defs;
 			type = &type_vector;
-			//printf ("%f %f %f\n",pr_immediate.vector[0], pr_immediate.vector[1], pr_immediate.vector[2]);
 			break;
 		case ex_quaternion:
 			sprintf (rep, "\001quaternion:%08X\001%08X\001%08X\001%08X\001",
-					 *(int*)&e->e.quaternion_val[0],
-					 *(int*)&e->e.quaternion_val[1],
-					 *(int*)&e->e.quaternion_val[2],
-					 *(int*)&e->e.quaternion_val[3]);
+					 *(int*)&e.e.quaternion_val[0],
+					 *(int*)&e.e.quaternion_val[1],
+					 *(int*)&e.e.quaternion_val[2],
+					 *(int*)&e.e.quaternion_val[3]);
 			cn = (def_t*) Hash_Find (quaternion_imm_defs, rep);
 			tab = vector_imm_defs;
 			type = &type_quaternion;
-			//printf ("%f %f %f\n",pr_immediate.vector[0], pr_immediate.vector[1], pr_immediate.vector[2]);
 			break;
 		default:
 			abort ();
 	}
 	if (cn) {
-		//printf("found\n");
 		if (def) {
 			PR_FreeLocation (def);
 			def->ofs = cn->ofs;
@@ -219,10 +215,10 @@ PR_ReuseConstant (expr_t *e, def_t *def)
 	}
 	cn->initialized = 1;
 	// copy the immediate to the global area
-	if (e->type == ex_string)
-		e->e.int_val = CopyString (e->e.string_val);
+	if (e.type == ex_string)
+		e.e.int_val = CopyString (e.e.string_val);
 
-	memcpy (pr_globals + cn->ofs, &e->e, 4 * type_size[type->type]);
+	memcpy (pr_globals + cn->ofs, &e.e, 4 * type_size[type->type]);
 
 	Hash_Add (tab, cn);
 
