@@ -50,6 +50,7 @@ sv_fields_t sv_fields;
 progs_t	    sv_pr_state;
 cvar_t     *r_skyname;
 cvar_t     *sv_progs;
+cvar_t     *pr_checkextentions;
 
 func_t	EndFrame;
 func_t	SpectatorConnect;
@@ -289,4 +290,7 @@ SV_Progs_Init_Cvars (void)
 	sv_progs = Cvar_Get ("sv_progs", "qwprogs.dat", CVAR_ROM,
 						 "Allows selectable game progs if you have several "
 						 "of them in the gamedir");
+	pr_checkextentions = Cvar_Get ("sv_progs", "1", CVAR_ROM,
+								   "indicate the presence of the "
+								   "checkextentions qc function");
 }

@@ -52,6 +52,8 @@ sv_fields_t sv_fields;
 
 cvar_t     *r_skyname;
 cvar_t     *sv_progs;
+cvar_t     *pr_checkextentions;
+
 cvar_t     *nomonsters;
 cvar_t     *gamecfg;
 cvar_t     *scratch1;
@@ -296,6 +298,10 @@ SV_Progs_Init_Cvars (void)
 	sv_progs = Cvar_Get ("sv_progs", "progs.dat", CVAR_ROM,
 						 "Allows selectable game progs if you have several "
 						 "of them in the gamedir");
+	pr_checkextentions = Cvar_Get ("sv_progs", "1", CVAR_ROM,
+								   "indicate the presence of the "
+								   "checkextentions qc function");
+
 	nomonsters = Cvar_Get ("nomonsters", "0", CVAR_NONE, "No Description");
 	gamecfg = Cvar_Get ("gamecfg", "0", CVAR_NONE, "No Description");
 	scratch1 = Cvar_Get ("scratch1", "0", CVAR_NONE, "No Description");
