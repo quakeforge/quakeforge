@@ -170,6 +170,7 @@ DecodeArgs (int argc, char **argv)
 	add_cpp_def ("-D__QUAKEC__=1");
 
 	options.code.progsversion = PROG_VERSION;
+	options.code.short_circuit = -1;
 	options.warnings.uninited_variable = true;
 
 	options.save_temps = false;
@@ -262,6 +263,10 @@ DecodeArgs (int argc, char **argv)
 							options.code.debug = true;
 						} else if (!(strcasecmp (temp, "no-debug"))) {
 							options.code.debug = false;
+						} else if (!(strcasecmp (temp, "short-circuit"))) {
+							options.code.short_circuit = true;
+						} else if (!(strcasecmp (temp, "no-short-circuit"))) {
+							options.code.short_circuit = false;
 						} else if (!(strcasecmp (temp, "v6only"))) {
 							options.code.progsversion = PROG_ID_VERSION;
 						} else if (!(strcasecmp (temp, "no-v6only"))) {
@@ -398,10 +403,15 @@ DecodeArgs (int argc, char **argv)
 		options.traditional = true;
 		options.advanced = false;
 		options.code.progsversion = PROG_ID_VERSION;
+		if (options.code.short_circuit == -1)
+			options.code.short_circuit = false;
 	}
 	if (!options.traditional) {
+		options.advanced = true;
 		add_cpp_def ("-D__RUAMOKO__=1");
 		add_cpp_def ("-D__RAUMOKO__=1");
+		if (options.code.short_circuit == -1)
+			options.code.short_circuit = true;
 	}
 	if (options.code.progsversion == PROG_ID_VERSION)
 		add_cpp_def ("-D__VERSION6__=1");

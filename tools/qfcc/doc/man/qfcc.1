@@ -148,6 +148,13 @@ diagnosing progs crashes. This option tells \fBqfcc\fP to generate this
 information. It is written to a secondary file with the extension "sym" \(em
 if your output file is "progs.dat", the symbol file will be "progs.sym".
 .TP
+.B short\-circuit
+Generate short circuit code for logical operators (\fB&&\fP and \fB||\fP). For
+\fBA && B\fP, if \fBA\fP is false, the expression is known to be false and the
+code for \fBB\fP will not be executed. Similar for \fBA || B\fP, but if \fBA\fP
+true, the expression is known to be true and the code for \fBB\fP will not be
+executed. Defaults to off for traditional and on for advanced.
+.TP
 .B v6only
 Restrict the compiler to only version 6 progs (original Quake/QuakeWorld)
 features. This means that the compiled data file should be able to run on

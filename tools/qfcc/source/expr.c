@@ -1542,6 +1542,9 @@ bool_expr (int op, expr_t *label, expr_t *e1, expr_t *e2)
 {
 	expr_t     *block;
 
+	if (!options.code.short_circuit)
+		return binary_expr (op, e1, e2);
+
 	e1 = convert_bool (e1, 0);
 	e2 = convert_bool (e2, 0);
 
