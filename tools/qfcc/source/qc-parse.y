@@ -595,7 +595,8 @@ emit_function (function_t *f, expr_t *e)
 	//PR_PrintType (f->def->type);
 	//printf (" %s =\n", f->def->name);
 
-	lineno_base = f->aux->source_line;
+	if (f->aux)
+		lineno_base = f->aux->source_line;
 
 	pr_scope = f->def;
 	while (e) {
