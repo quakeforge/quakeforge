@@ -30,13 +30,15 @@
 # include "config.h"
 #endif
 
-#include "r_local.h"
-#include "QF/sys.h"
-#include "QF/console.h"
-#include "view.h"
 #include "QF/cmd.h"
+#include "QF/console.h"
 #include "QF/screen.h"
+#include "QF/sys.h"
+
 #include "chase.h"
+#include "client.h"
+#include "r_local.h"
+#include "view.h"
 
 //define    PASSAGES
 

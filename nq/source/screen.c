@@ -42,6 +42,7 @@
 #include "QF/sys.h"
 #include "QF/qendian.h"
 
+#include "client.h"
 #include "host.h"
 #include "r_local.h"
 #include "sbar.h"

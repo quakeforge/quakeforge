@@ -34,8 +34,8 @@
 #endif
 
 #include "QF/model.h"
-#include "server.h"
 #include "QF/qendian.h"
+#include "QF/sys.h"
 
 extern model_t *loadmodel;
 extern char loadname[];
@@ -80,7 +80,7 @@ Mod_LoadSpriteGroup (void *pin, mspriteframe_t **ppframe, int framenum)
 	for (i = 0; i < numframes; i++) {
 		*poutintervals = LittleFloat (pin_intervals->interval);
 		if (*poutintervals <= 0.0)
-			SV_Error ("Mod_LoadSpriteGroup: interval<=0");
+			Sys_Error ("Mod_LoadSpriteGroup: interval<=0");
 
 		poutintervals++;
 		pin_intervals++;
@@ -115,7 +115,7 @@ Mod_LoadSpriteModel (model_t *mod, void *buffer)
 
 	version = LittleLong (pin->version);
 	if (version != SPRITE_VERSION)
-		SV_Error ("%s has wrong version number "
+		Sys_Error ("%s has wrong version number "
 				  "(%i should be %i)", mod->name, version, SPRITE_VERSION);
 
 	numframes = LittleLong (pin->numframes);
@@ -142,7 +142,7 @@ Mod_LoadSpriteModel (model_t *mod, void *buffer)
 // load the frames
 //
 	if (numframes < 1)
-		SV_Error ("Mod_LoadSpriteModel: Invalid # of frames: %d\n", numframes);
+		Sys_Error ("Mod_LoadSpriteModel: Invalid # of frames: %d\n", numframes);
 
 	mod->numframes = numframes;
 

@@ -30,9 +30,11 @@
 # include "config.h"
 #endif
 
+#include "QF/sound.h"
+
 #include "d_ifacea.h"
 #include "r_local.h"
-#include "QF/sound.h"
+#include "render.h"
 
 #if 0
 // FIXME

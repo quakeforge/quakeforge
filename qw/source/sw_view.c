@@ -31,7 +31,9 @@
 #endif
 
 #include "QF/compat.h"
+
 #include "bothdefs.h"
+#include "client.h"
 #include "host.h"
 #include "r_local.h"
 #include "view.h"

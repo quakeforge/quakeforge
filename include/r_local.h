@@ -1,7 +1,7 @@
 /*
 	r_local.h
 
-	@description@
+	private refresh defs
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -26,12 +26,13 @@
 	$Id$
 */
 
-#ifndef __r_local_h
-#define __r_local_h
+#ifndef _R_LOCAL_H
+#define _R_LOCAL_H
 
-#include "client.h"
-
-#ifndef GLQUAKE
+#include "QF/mathlib.h"
+#include "QF/cvar.h"
+#include "QF/vid.h"
+#include "QF/model.h"
 #include "r_shared.h"
 
 #define ALIAS_BASE_SIZE_RATIO		(1.0 / 11.0)
@@ -40,6 +41,38 @@
 
 #define BMODEL_FULLY_CLIPPED	0x10 // value returned by R_BmodelCheckBBox ()
 									 //  if bbox is trivially rejected
+
+//===========================================================================
+// dynamic lights
+
+#define MAX_DLIGHTS     32
+typedef struct
+{
+	int     key;                // so entities can reuse same entry
+	vec3_t  origin;
+	float   radius;
+	float   die;                // stop lighting after this time
+	float   decay;              // drop this each second
+	float   minlight;           // don't add when contributing less
+	float   color[3];           // Don't use alpha  --KB
+} dlight_t;
+
+
+//===========================================================================
+// color shifts
+
+typedef struct
+{
+	int     destcolor[3];
+	int     percent;        // 0-256
+} cshift_t;
+
+#define CSHIFT_CONTENTS 0
+#define CSHIFT_DAMAGE   1
+#define CSHIFT_BONUS    2
+#define CSHIFT_POWERUP  3
+#define NUM_CSHIFTS     4
+
 
 //===========================================================================
 // viewmodel lighting
@@ -65,24 +98,24 @@ typedef struct {
 
 //===========================================================================
 
-extern cvar_t	*r_draworder;
-extern cvar_t	*r_speeds;
-extern cvar_t	*r_timegraph;
-extern cvar_t	*r_graphheight;
-extern cvar_t	*r_clearcolor;
-extern cvar_t	*r_waterwarp;
-extern cvar_t	*r_fullbright;
-extern cvar_t	*r_drawentities;
-extern cvar_t	*r_aliasstats;
-extern cvar_t	*r_dspeeds;
-extern cvar_t	*r_drawflat;
-extern cvar_t	*r_ambient;
-extern cvar_t	*r_reportsurfout;
-extern cvar_t	*r_maxsurfs;
-extern cvar_t	*r_numsurfs;
-extern cvar_t	*r_reportedgeout;
-extern cvar_t	*r_maxedges;
-extern cvar_t	*r_numedges;
+extern struct cvar_s	*r_draworder;
+extern struct cvar_s	*r_speeds;
+extern struct cvar_s	*r_timegraph;
+extern struct cvar_s	*r_graphheight;
+extern struct cvar_s	*r_clearcolor;
+extern struct cvar_s	*r_waterwarp;
+extern struct cvar_s	*r_fullbright;
+extern struct cvar_s	*r_drawentities;
+extern struct cvar_s	*r_aliasstats;
+extern struct cvar_s	*r_dspeeds;
+extern struct cvar_s	*r_drawflat;
+extern struct cvar_s	*r_ambient;
+extern struct cvar_s	*r_reportsurfout;
+extern struct cvar_s	*r_maxsurfs;
+extern struct cvar_s	*r_numsurfs;
+extern struct cvar_s	*r_reportedgeout;
+extern struct cvar_s	*r_maxedges;
+extern struct cvar_s	*r_numedges;
 
 #define XCENTERING	(1.0 / 2.0)
 #define YCENTERING	(1.0 / 2.0)
@@ -152,7 +185,7 @@ void R_DrawSurfaceBlock16 (void);
 void R_DrawSurfaceBlock8 (void);
 texture_t *R_TextureAnimation (texture_t *base);
 
-#ifdef	USE_INTEL_ASM
+#ifdef USE_INTEL_ASM
 
 void R_DrawSurfaceBlock8_mip0 (void);
 void R_DrawSurfaceBlock8_mip1 (void);
@@ -233,7 +266,7 @@ void	R_ZDrawSubmodelPolys (model_t *clmodel);
 // Alias models
 //=========================================================
 
-#define MAXALIASVERTS		1024	// was 2000, but gl has 1024
+#define MAXALIASVERTS		1024
 #define ALIAS_Z_CLIP_PLANE	5
 
 extern int				numverts;
@@ -310,9 +343,6 @@ extern int		r_clipflags;
 extern int		r_dlightframecount;
 extern qboolean	r_fov_greater_than_90;
 
-extern particle_t *active_particles, *free_particles;
-extern int ramp1[],ramp2[],ramp3[];
-
 void R_StoreEfrags (efrag_t **ppefrag);
 void R_TimeRefresh_f (void);
 void R_TimeGraph (void);
@@ -321,12 +351,13 @@ void R_PrintTimes (void);
 void R_PrintDSpeeds (void);
 void R_AnimateLight (void);
 int R_LightPoint (vec3_t p);
+void R_SetupFrame (void);
 void R_cshift_f (void);
 void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1);
 void R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip);
 void R_SplitEntityOnNode2 (mnode_t *node);
 void R_MarkLights (vec3_t lightorigin, dlight_t *light, int bit, mnode_t *node);
 
-#endif
+void R_LoadSkys (const char *);
 
-#endif // __r_local_h
+#endif // _R_LOCAL_H

@@ -46,8 +46,7 @@ soft_ASM=	d_draw.S d_draw16.S d_parta.S d_polysa.S d_scana.S d_spr8.S \
 		surf16.S surf8.S
 common_ASM=	sys_ia32.S worlda.S $(math_ASM)
 
-common_SOURCES= game.c wad.c world.c model.c model_alias.c model_brush.c \
-		model_sprite.c com.c $(common_ASM)
+common_SOURCES= game.c wad.c world.c com.c $(common_ASM)
 
 # ... System type
 if SYSTYPE_WIN32
@@ -89,32 +88,32 @@ soft_SOURCES=	d_edge.c d_fill.c d_init.c d_modech.c d_part.c d_polyse.c \
 		d_scan.c d_sky.c d_sprite.c d_surf.c d_vars.c d_zpoint.c \
 		draw.c sw_raclip.c sw_ralias.c sw_rbsp.c sw_rdraw.c sw_redge.c sw_refrag.c \
 		sw_rlight.c sw_rmain.c sw_rmisc.c sw_rpart.c sw_rsky.c sw_rsprite.c \
-		sw_rsurf.c sw_rvars.c screen.c sw_model_alias.c sw_model_brush.c \
-		sw_model_sprite.c sw_view.c $(soft_ASM)
+		sw_rsurf.c sw_rvars.c screen.c \
+		sw_view.c $(soft_ASM)
 
 # ... Linux FBDev
 nq_fbdev_SOURCES= $(combined_SOURCES) $(soft_SOURCES)
-nq_fbdev_LDADD= $(client_LIBS) ../../libs/video/targets/libQFfbdev.la $(client_POST_LIBS)
+nq_fbdev_LDADD= $(client_LIBS) ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFfbdev.la $(client_POST_LIBS)
 nq_fbdev_DEPENDENCIES= $(client_LIB_DEPS)
 
 # ... SciTech MGL
 nq_mgl_SOURCES=	$(combined_SOURCES) $(soft_SOURCES)
-nq_mgl_LDADD=	$(client_LIBS) $(MGL_LIBS) ../../libs/video/targets/libQFmgl.la $(client_POST_LIBS)
+nq_mgl_LDADD=	$(client_LIBS) $(MGL_LIBS) ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFmgl.la $(client_POST_LIBS)
 nq_mgl_DEPENDENCIES=$(client_LIB_DEPS)
 
 # ... Sam Lantinga's Simple DirectMedia Layer, version 1.0 and higher
 nq_sdl_SOURCES=	$(combined_SOURCES) $(soft_SOURCES)
-nq_sdl_LDADD=	$(client_LIBS) $(SDL_LIBS) ../../libs/video/targets/libQFsdl.la $(client_POST_LIBS)
+nq_sdl_LDADD=	$(client_LIBS) $(SDL_LIBS) ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsdl.la $(client_POST_LIBS)
 nq_sdl_DEPENDENCIES=$(client_LIB_DEPS)
 
 # ... Linux SVGAlib
 nq_svga_SOURCES=	$(combined_SOURCES) $(soft_SOURCES)
-nq_svga_LDADD=	$(client_LIBS) $(SVGA_LIBS) ../../libs/video/targets/libQFsvga.la $(client_POST_LIBS)
+nq_svga_LDADD=	$(client_LIBS) $(SVGA_LIBS) ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsvga.la $(client_POST_LIBS)
 nq_svga_DEPENDENCIES=$(client_LIB_DEPS)
 
 # ... X11
 nq_x11_SOURCES=	$(combined_SOURCES) $(soft_SOURCES)
-nq_x11_LDADD=	$(client_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB) ../../libs/video/targets/libQFx11.la $(client_POST_LIBS)
+nq_x11_LDADD=	$(client_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB) ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFx11.la $(client_POST_LIBS)
 nq_x11_DEPENDENCIES=$(client_LIB_DEPS)
 
 
@@ -123,28 +122,27 @@ nq_x11_DEPENDENCIES=$(client_LIB_DEPS)
 ogl_SOURCES=	noisetextures.c gl_textures.c gl_draw.c gl_dyn_fires.c	\
 		gl_dyn_part.c gl_dyn_textures.c gl_mesh.c		\
 		gl_refrag.c gl_rlight.c gl_rmain.c gl_rmisc.c gl_rsurf.c \
-		gl_screen.c gl_view.c gl_warp.c gl_model_alias.c	\
-		gl_model_brush.c gl_model_fullbright.c gl_model_sprite.c
+		gl_screen.c gl_view.c gl_warp.c
 
 # ... 3Dfx Voodoo 1 and 2 SVGAlib-based console GL
 nq_3dfx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)
-nq_3dfx_LDADD=	$(client_LIBS) $(TDFXGL_LIBS) $(SVGA_LIBS) $(DL_LIBS) ../../libs/video/targets/libQFtdfx.la $(client_POST_LIBS)
+nq_3dfx_LDADD=	$(client_LIBS) $(TDFXGL_LIBS) $(SVGA_LIBS) $(DL_LIBS) ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFtdfx.la $(client_POST_LIBS)
 nq_3dfx_DEPENDENCIES=$(client_LIB_DEPS)
 
 # ... OpenGL in X Window
 nq_glx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)
-nq_glx_LDADD=	$(client_LIBS) $(GLX_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(DL_LIBS) ../../libs/video/targets/libQFglx.la $(client_POST_LIBS)
+nq_glx_LDADD=	$(client_LIBS) $(GLX_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(DL_LIBS) ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFglx.la $(client_POST_LIBS)
 nq_glx_DEPENDENCIES= $(client_LIB_DEPS)
 
 # ... Simple Directmedia Layer, version 1.1 and higher, in GL mode
 nq_sgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)
-nq_sgl_LDADD=	$(client_LIBS) $(X_LIBS) $(SDL_LIBS) $(GLX_LIBS) $(DL_LIBS) ../../libs/video/targets/libQFsgl.la $(client_POST_LIBS)
+nq_sgl_LDADD=	$(client_LIBS) $(X_LIBS) $(SDL_LIBS) $(GLX_LIBS) $(DL_LIBS) ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFsgl.la $(client_POST_LIBS)
 nq_sgl_DEPENDENCIES= $(client_LIB_DEPS)
 
 
 # ... SGI/Microsoft WGL (Windows OpenGL)
 nq_wgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) conproc.c
-nq_wgl_LDADD=	$(client_LIBS) ../../libs/video/targets/libQFwgl.la $(client_POST_LIBS) $(GLX_LIBS) -lgdi32 -lcomctl32 -lwinmm
+nq_wgl_LDADD=	$(client_LIBS) ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFwgl.la $(client_POST_LIBS) $(GLX_LIBS) -lgdi32 -lcomctl32 -lwinmm
 nq_wgl_DEPENDENCIES= $(client_LIB_DEPS)
 
 # Dedicated Server

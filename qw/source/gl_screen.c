@@ -49,6 +49,7 @@
 #include "QF/tga.h"
 
 #include "cl_parse.h"
+#include "client.h"
 #include "glquake.h"
 #include "host.h"
 #include "r_local.h"

@@ -40,6 +40,7 @@
 
 #include "protocol.h"
 #include "net.h"
+#include "r_local.h"
 #include "render.h"
 #include "game.h"
 
@@ -71,18 +72,6 @@ typedef struct
 	byte	translations[VID_GRADES*256];
 } scoreboard_t;
 
-typedef struct
-{
-	int		destcolor[3];
-	int		percent;		// 0-256
-} cshift_t;
-
-#define	CSHIFT_CONTENTS	0
-#define	CSHIFT_DAMAGE	1
-#define	CSHIFT_BONUS	2
-#define	CSHIFT_POWERUP	3
-#define	NUM_CSHIFTS		4
-
 #define	NAME_LENGTH	64
 
 
@@ -91,22 +80,6 @@ typedef struct
 //
 
 #define	SIGNONS		4			// signon messages to receive before connected
-
-#define	MAX_DLIGHTS		32
-typedef struct
-{
-	vec3_t	origin;
-	float	radius;
-	float	die;				// stop lighting after this time
-	float	decay;				// drop this each second
-	float	minlight;			// don't add when contributing less
-	int		key;
-	float	_color[3];
-	float	*color;
-#ifdef QUAKE2
-	qboolean	dark;			// subtracts light instead of adding
-#endif
-} dlight_t;
 
 
 #define	MAX_BEAMS	24

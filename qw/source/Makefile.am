@@ -42,7 +42,7 @@ EXTRA_PROGRAMS= qw-client-3dfx qw-client-fbdev \
 noinst_LIBRARIES= libqfnet.a
 
 common_SOURCES= buildnum.c com.c \
-		game.c model.c model_brush.c msg_ucmd.c \
+		game.c msg_ucmd.c \
 		pmove.c pmovetst.c \
 		sys_x86.S net_packetlog.c
 
@@ -71,6 +71,7 @@ server_SOURCES=	sv_ccmds.c sv_cvar.c \
 qw_server_SOURCES=	$(common_SOURCES) $(server_SOURCES)
 qw_server_LDADD= 	$(top_builddir)/libs/util/libQFutil.la \
 			$(top_builddir)/libs/gamecode/libQFgamecode.la \
+			$(top_builddir)/libs/models/libQFmodels.la \
 			-L. -lqfnet $(NET_LIBS) $(DL_LIBS)
 qw_server_DEPENDENCIES= libqfnet.a
 
@@ -94,7 +95,7 @@ client_POST_LIBS=	$(top_builddir)/libs/video/targets/libQFjs.la
 
 client_SOURCES= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
 	cl_main.c cl_misc.c cl_parse.c cl_pred.c cl_slist.c cl_tent.c \
-	console.c keys.c locs.c model_alias.c model_sprite.c nonintel.c \
+	console.c keys.c locs.c nonintel.c \
 	pcx.c r_efrag.c r_view.c sbar.c skin.c teamplay.c tga.c wad.c cl_math.S $(syscl_SRC)
 
 # Software-rendering clients
@@ -106,35 +107,35 @@ soft_SOURCES=	d_edge.c d_fill.c d_init.c d_modech.c \
 		d_vars.c d_zpoint.c draw.c sw_raclip.c sw_ralias.c sw_rbsp.c \
 		sw_rdraw.c sw_redge.c sw_rlight.c sw_rmain.c sw_rmisc.c \
 		sw_rpart.c sw_rsky.c sw_rsprite.c sw_rsurf.c sw_rvars.c sw_skin.c \
-		sw_view.c screen.c sw_model_alias.c sw_model_brush.c \
-		sw_model_sprite.c \
+		sw_view.c screen.c \
+		\
 		d_draw.S d_draw16.S d_parta.S d_polysa.S d_scana.S d_spr8.S \
 		d_varsa.S sw_raclipa.S sw_raliasa.S sw_rdrawa.S sw_redgea.S \
 		sw_rvarsa.S surf16.S surf8.S
 
 # ... Linux FBDev
 qw_client_fbdev_SOURCES= $(common_SOURCES) $(client_SOURCES) $(soft_SOURCES)
-qw_client_fbdev_LDADD= $(client_LIBS) ../../libs/video/targets/libQFfbdev.la $(client_POST_LIBS)
+qw_client_fbdev_LDADD= $(client_LIBS) ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFfbdev.la $(client_POST_LIBS)
 qw_client_fbdev_DEPENDENCIES= $(client_LIB_DEPS)
 
 # ... SciTech MGL
 qw_client_mgl_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(soft_SOURCES)
-qw_client_mgl_LDADD=	$(MGL_LIBS) $(client_LIBS) ../../libs/video/targets/libQFmgl.la $(client_POST_LIBS)
+qw_client_mgl_LDADD=	$(MGL_LIBS) $(client_LIBS) ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFmgl.la $(client_POST_LIBS)
 qw_client_mgl_DEPENDENCIES= $(client_LIB_DEPS)
 
 # ... Simple DirectMedia Layer, version 1.0 and higher
 qw_client_sdl_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(soft_SOURCES)
-qw_client_sdl_LDADD=	$(SDL_LIBS) $(client_LIBS) ../../libs/video/targets/libQFsdl.la $(client_POST_LIBS)
+qw_client_sdl_LDADD=	$(SDL_LIBS) $(client_LIBS) ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsdl.la $(client_POST_LIBS)
 qw_client_sdl_DEPENDENCIES= $(client_LIB_DEPS)
 
 # ... Linux SVGAlib
 qw_client_svga_SOURCES= $(common_SOURCES) $(client_SOURCES) $(soft_SOURCES)
-qw_client_svga_LDADD=	$(SVGA_LIBS) $(client_LIBS) ../../libs/video/targets/libQFsvga.la $(client_POST_LIBS)
+qw_client_svga_LDADD=	$(SVGA_LIBS) $(client_LIBS) ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsvga.la $(client_POST_LIBS)
 qw_client_svga_DEPENDENCIES= $(client_LIB_DEPS)
 
 # ... X11
 qw_client_x11_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(soft_SOURCES)
-qw_client_x11_LDADD=	$(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB) $(client_LIBS) ../../libs/video/targets/libQFx11.la $(client_POST_LIBS)
+qw_client_x11_LDADD=	$(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB) $(client_LIBS) ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFx11.la $(client_POST_LIBS)
 qw_client_x11_DEPENDENCIES= $(client_LIB_DEPS)
 
 
@@ -145,27 +146,26 @@ ogl_SOURCES=	noisetextures.c gl_textures.c gl_draw.c gl_dyn_fires.c	\
 		gl_dyn_part.c gl_dyn_textures.c gl_mesh.c gl_ngraph.c	\
 		gl_rlight.c gl_rmain.c gl_rmisc.c gl_rsurf.c	\
 		gl_screen.c gl_skin.c gl_sky.c gl_sky_clip.c gl_view.c	\
-		gl_warp.c gl_model_alias.c gl_model_brush.c		\
-		gl_model_fullbright.c gl_model_sprite.c
+		gl_warp.c
 
 # ... 3Dfx Voodoo 1 and 2 SVGAlib-based console GL
 qw_client_3dfx_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(ogl_SOURCES)
-qw_client_3dfx_LDADD=	$(TDFXGL_LIBS) $(SVGA_LIBS) $(client_LIBS) $(DL_LIBS) ../../libs/video/targets/libQFtdfx.la $(client_POST_LIBS)
+qw_client_3dfx_LDADD=	$(TDFXGL_LIBS) $(SVGA_LIBS) $(client_LIBS) $(DL_LIBS) ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFtdfx.la $(client_POST_LIBS)
 qw_client_3dfx_DEPENDENCIES= $(client_LIB_DEPS)
 
 # ... OpenGL in X Window
 qw_client_glx_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(ogl_SOURCES)
-qw_client_glx_LDADD=	$(GLX_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(client_LIBS) $(DL_LIBS) ../../libs/video/targets/libQFglx.la $(client_POST_LIBS)
+qw_client_glx_LDADD=	$(GLX_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(client_LIBS) $(DL_LIBS) ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFglx.la $(client_POST_LIBS)
 qw_client_glx_DEPENDENCIES= $(client_LIB_DEPS)
 
 # ... Simple DirectMedia Layer, version 1.1 and higher, in GL mode
 qw_client_sgl_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(ogl_SOURCES)
-qw_client_sgl_LDADD=	$(SDL_LIBS) $(X_LIBS) $(GLX_LIBS) $(client_LIBS) $(DL_LIBS) ../../libs/video/targets/libQFsgl.la $(client_POST_LIBS)
+qw_client_sgl_LDADD=	$(SDL_LIBS) $(X_LIBS) $(GLX_LIBS) $(client_LIBS) $(DL_LIBS) ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFsgl.la $(client_POST_LIBS)
 qw_client_sgl_DEPENDENCIES= $(client_LIB_DEPS)
 
 # ... SGI/Microsoft WGL (Windows OpenGL)
 qw_client_wgl_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(ogl_SOURCES)
-qw_client_wgl_LDADD=	$(client_LIBS) ../../libs/video/targets/libQFwgl.la $(client_POST_LIBS) $(GLX_LIBS) -lgdi32 -lwinmm
+qw_client_wgl_LDADD=	$(client_LIBS) ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFwgl.la $(client_POST_LIBS) $(GLX_LIBS) -lgdi32 -lwinmm
 qw_client_wgl_DEPENDENCIES= $(client_LIB_DEPS)
 
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,

@@ -46,7 +46,21 @@ typedef struct
 } emitpoint_t;
 
 typedef enum {
-	pt_static, pt_grav, pt_slowgrav, pt_fire, pt_explode, pt_explode2, pt_blob, pt_blob2
+	pt_static, 
+	pt_grav, 
+	pt_blob, 
+	pt_blob2,
+	pt_smoke, 
+	pt_smokering, 
+	pt_smokecloud, 
+	pt_bloodcloud,
+	pt_fadespark, 
+	pt_fadespark2, 
+	pt_fallfadespark,
+	pt_slowgrav,
+	pt_fire,
+	pt_explode,
+	pt_explode2,
 } ptype_t;
 
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
@@ -54,7 +68,12 @@ typedef struct particle_s
 {
 // driver-usable fields
 	vec3_t		org;
+	vec3_t		up;
+	vec3_t		right;
+	int			tex;
 	float		color;
+	float		alpha;
+	float		scale;
 // drivers never touch the following fields
 	struct particle_s	*next;
 	vec3_t		vel;

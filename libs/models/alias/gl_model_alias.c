@@ -44,9 +44,11 @@
 #include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/skin.h"
+#include "QF/sys.h"
 
 #include "glquake.h"
-#include "server.h"
+
+byte        player_8bit_texels[320 * 200];
 
 extern model_t *loadmodel;
 
@@ -154,7 +156,7 @@ Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group)
 	// save 8 bit texels for the player model to remap
 	if (!strcmp (loadmodel->name, "progs/player.mdl")) {
 		if (skinsize > sizeof (player_8bit_texels))
-			SV_Error ("Player skin too large");
+			Sys_Error ("Player skin too large");
 		memcpy (player_8bit_texels, skin, skinsize);
 	}
 
@@ -196,7 +198,7 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 	daliasskininterval_t *pinskinintervals;
 
 	if (numskins < 1 || numskins > MAX_SKINS)
-		SV_Error ("Mod_LoadAliasModel: Invalid # of skins: %d\n", numskins);
+		Sys_Error ("Mod_LoadAliasModel: Invalid # of skins: %d\n", numskins);
 
 	skinsize = pheader->mdl.skinwidth * pheader->mdl.skinheight;
 

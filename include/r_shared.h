@@ -1,7 +1,7 @@
 /*
 	r_shared.h
 
-	@description@
+	general refresh-related stuff shared between the refresh and the driver
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -26,25 +26,19 @@
 	$Id$
 */
 
-#ifndef __r_shared_h
-#define __r_shared_h
+// FIXME: clean up and move into d_iface.h
+
+#ifndef _R_SHARED_H
+#define _R_SHARED_H
 
 #include "d_iface.h"
-#include "render.h"
-
-#ifndef GLQUAKE
-
-// r_shared.h: general refresh-related stuff shared between the refresh and the
-// driver
-
-// FIXME: clean up and move into d_iface.h
 
 #define	MAXVERTS	16					// max points in a surface polygon
 #define MAXWORKINGVERTS	(MAXVERTS+4)	// max points in an intermediate
 										//  polygon (while processing)
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
-#define	MAXHEIGHT		1024
-#define	MAXWIDTH		1280
+#define	MAXHEIGHT	1024
+#define	MAXWIDTH	1280
 #define MAXDIMENSION	((MAXHEIGHT > MAXWIDTH) ? MAXHEIGHT : MAXWIDTH)
 
 #define SIN_BUFFER_SIZE	(MAXDIMENSION+CYCLE)
@@ -65,7 +59,7 @@ extern	float	pixelAspect;
 
 extern int		r_drawnpolycount;
 
-extern cvar_t	*r_clearcolor;
+extern struct cvar_s	*r_clearcolor;
 
 extern int	sintable[SIN_BUFFER_SIZE];
 extern int	intsintable[SIN_BUFFER_SIZE];
@@ -73,11 +67,11 @@ extern int	intsintable[SIN_BUFFER_SIZE];
 extern	vec3_t	vup, base_vup;
 extern	vec3_t	vpn, base_vpn;
 extern	vec3_t	vright, base_vright;
-extern	entity_t		*currententity;
+extern	struct entity_s		*currententity;
 
-#define NUMSTACKEDGES		2400
+#define NUMSTACKEDGES		2400 //2000
 #define	MINEDGES			NUMSTACKEDGES
-#define NUMSTACKSURFACES	800
+#define NUMSTACKSURFACES	1000
 #define MINSURFACES			NUMSTACKSURFACES
 #define	MAXSPANS			3000
 
@@ -103,7 +97,7 @@ typedef struct surf_s
 									//  start)
 	int			flags;				// currentface flags
 	void		*data;				// associated data like msurface_t
-	entity_t	*entity;
+	struct entity_s	*entity;
 	float		nearzi;				// nearest 1/z on surface, for mipmapping
 	qboolean	insubmodel;
 	float		d_ziorigin, d_zistepu, d_zistepv;
@@ -165,6 +159,4 @@ typedef struct edge_s
 	medge_t			*owner;
 } edge_t;
 
-#endif	// GLQUAKE
-
-#endif // __r_shared_h
+#endif	// _R_SHARED_H

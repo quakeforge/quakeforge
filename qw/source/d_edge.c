@@ -32,6 +32,7 @@
 
 #include "d_local.h"
 #include "r_local.h"
+#include "render.h"
 
 static int  miplevel;
 

@@ -33,12 +33,15 @@
 # include "config.h"
 #endif
 
+#include <stdlib.h>
+
 #include "QF/checksum.h"
 #include "QF/console.h"
-#include "glquake.h"
 #include "QF/qendian.h"
-#include "r_local.h"
 #include "QF/sys.h"
+
+#include "glquake.h"
+#include "r_local.h"
 
 int
 Mod_CalcFullbright (byte *in, byte *out, int pixels)

@@ -36,6 +36,7 @@
 
 #include "net.h"
 #include "protocol.h"
+#include "r_local.h"
 #include "render.h"
 
 // player_state_t is the information needed by a player entity
@@ -108,33 +109,9 @@ typedef struct
 } frame_t;
 
 
-typedef struct
-{
-	int		destcolor[3];
-	int		percent;		// 0-256
-} cshift_t;
-
-#define	CSHIFT_CONTENTS	0
-#define	CSHIFT_DAMAGE	1
-#define	CSHIFT_BONUS	2
-#define	CSHIFT_POWERUP	3
-#define	NUM_CSHIFTS		4
-
-
 //
 // client_state_t should hold all pieces of the client state
 //
-#define	MAX_DLIGHTS		32
-typedef struct
-{
-	int		key;				// so entities can reuse same entry
-	vec3_t	origin;
-	float	radius;
-	float	die;				// stop lighting after this time
-	float	decay;				// drop this each second
-	float	minlight;			// don't add when contributing less
-	float   color[3];			// Don't use alpha  --KB
-} dlight_t;
 
 typedef struct
 {

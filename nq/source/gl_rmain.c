@@ -749,7 +749,7 @@ R_SetFrustum (void)
 }
 
 
-static void
+void
 R_SetupFrame (void)
 {
 // don't allow cheats in multiplayer

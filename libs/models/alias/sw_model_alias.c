@@ -41,11 +41,11 @@
 #endif
 
 #include "QF/checksum.h"
-#include "d_iface.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
-#include "server.h"
 #include "QF/sys.h"
+
+#include "d_iface.h"
 
 extern char loadname[];
 extern model_t *loadmodel;
@@ -84,7 +84,7 @@ Mod_LoadSkin (byte * skin, int skinsize, int *pskinindex, int snum, int gnum)
 				pusskin[i] = d_8to16table[skin[i]];
 			break;
 		default:
-			SV_Error ("Mod_LoadAliasSkin: driver set invalid r_pixbytes: %d\n",
+			Sys_Error ("Mod_LoadAliasSkin: driver set invalid r_pixbytes: %d\n",
 					  r_pixbytes);
 			break;
 	}
@@ -269,7 +269,7 @@ Mod_LoadAliasGroup (void *pin, maliasframedesc_t *frame)
 	for (i = 0; i < numframes; i++) {
 		*poutintervals = LittleFloat (pin_intervals->interval);
 		if (*poutintervals <= 0.0)
-			SV_Error ("Mod_LoadAliasGroup: interval<=0");
+			Sys_Error ("Mod_LoadAliasGroup: interval<=0");
 
 		poutintervals++;
 		pin_intervals++;

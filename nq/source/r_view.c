@@ -37,6 +37,7 @@
 #include "QF/screen.h"
 
 #include "chase.h"
+#include "client.h"
 #include "host.h"
 #include "r_local.h"
 #include "view.h"

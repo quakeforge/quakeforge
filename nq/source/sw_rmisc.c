@@ -30,13 +30,15 @@
 # include "config.h"
 #endif
 
-#include "r_local.h"
 #include "QF/sys.h"
 #include "QF/console.h"
-#include "server.h"
+
 #include "host.h"
-#include "view.h"
+#include "r_local.h"
+#include "render.h"
 #include "sbar.h"
+#include "server.h"
+#include "view.h"
 
 /*
 ===============

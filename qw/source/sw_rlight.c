@@ -30,6 +30,7 @@
 # include "config.h"
 #endif
 
+#include "client.h"
 #include "r_local.h"
 
 int         r_dlightframecount;

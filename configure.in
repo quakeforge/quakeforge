@@ -1487,6 +1487,10 @@ AC_OUTPUT(
 	libs/audio/cd/Makefile
 	libs/audio/targets/Makefile
 	libs/gamecode/Makefile
+	libs/models/Makefile
+	libs/models/alias/Makefile
+	libs/models/brush/Makefile
+	libs/models/sprite/Makefile
 	libs/util/Makefile
 	libs/video/Makefile
 	libs/video/targets/Makefile

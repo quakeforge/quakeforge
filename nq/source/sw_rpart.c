@@ -37,6 +37,7 @@
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 
+#include "client.h"
 #include "host.h"
 #include "r_local.h"
 
@@ -577,6 +578,9 @@ R_DrawParticles (void)
 				case pt_slowgrav:
 				case pt_grav:
 					p->vel[2] -= grav;
+					break;
+				default:
+					Con_DPrintf ("unhandled particle type %d\n", p->type);
 					break;
 			}
 		}

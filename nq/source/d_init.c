@@ -30,7 +30,10 @@
 # include "config.h"
 #endif
 
+#include "QF/cvar.h"
+
 #include "d_local.h"
+#include "render.h"
 
 #define NUM_MIPS	4
 

@@ -30,8 +30,10 @@
 # include "config.h"
 #endif
 
-#include "r_local.h"
 #include "QF/sys.h"
+
+#include "client.h"
+#include "r_local.h"
 
 drawsurf_t  r_drawsurf;
 

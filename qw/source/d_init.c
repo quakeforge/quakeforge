@@ -31,10 +31,12 @@
 #endif
 
 #include "QF/compat.h"
+#include "QF/cvar.h"
 #include "QF/vid.h"
 
 #include "bothdefs.h"
 #include "d_local.h"
+#include "render.h"
 
 #define NUM_MIPS	4
 

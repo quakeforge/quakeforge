@@ -31,8 +31,7 @@
 #endif
 
 #include "r_local.h"
-#include "d_local.h"					// FIXME: shouldn't need to include
-										// this
+#include "render.h"
 
 #define MAXLEFTCLIPEDGES		100
 

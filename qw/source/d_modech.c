@@ -30,8 +30,10 @@
 # include "config.h"
 #endif
 
-#include "d_local.h"
 #include "QF/sys.h"
+
+#include "d_local.h"
+#include "render.h"
 
 int         d_vrectx, d_vrecty, d_vrectright_particle, d_vrectbottom_particle;
 

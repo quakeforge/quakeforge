@@ -39,8 +39,6 @@
 # include <strings.h>
 #endif
 
-#include "cl_main.h"
-#include "client.h"
 #include "QF/compat.h"
 #include "QF/crc.h"
 #include "QF/info.h"
@@ -48,8 +46,10 @@
 #include "QF/msg.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
+#include "QF/sys.h"
+
+#include "d_iface.h"
 #include "r_local.h"
-#include "server.h"
 
 extern char loadname[];
 extern model_t *loadmodel;
@@ -94,7 +94,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer)
 	daliasframetype_t *pframetype;
 	daliasskintype_t *pskintype;
 	int         start, end, total;
-
+#if 0 //XXX FIXME
 	if (!strcmp (loadmodel->name, "progs/player.mdl") ||
 		!strcmp (loadmodel->name, "progs/eyes.mdl")) {
 		unsigned short crc;
@@ -121,6 +121,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer)
 			SZ_Print (&cls.netchan.message, st);
 		}
 	}
+#endif
 
 	start = Hunk_LowMark ();
 
@@ -128,7 +129,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer)
 
 	version = LittleLong (pinmodel->version);
 	if (version != ALIAS_VERSION)
-		SV_Error ("%s has wrong version number (%i should be %i)",
+		Sys_Error ("%s has wrong version number (%i should be %i)",
 				  mod->name, version, ALIAS_VERSION);
 
 //
@@ -152,26 +153,26 @@ Mod_LoadAliasModel (model_t *mod, void *buffer)
 	pmodel->skinheight = LittleLong (pinmodel->skinheight);
 
 	if (pmodel->skinheight > MAX_LBM_HEIGHT)
-		SV_Error ("model %s has a skin taller than %d", mod->name,
+		Sys_Error ("model %s has a skin taller than %d", mod->name,
 				  MAX_LBM_HEIGHT);
 
 	pmodel->numverts = LittleLong (pinmodel->numverts);
 
 	if (pmodel->numverts <= 0)
-		SV_Error ("model %s has no vertices", mod->name);
+		Sys_Error ("model %s has no vertices", mod->name);
 
 	if (pmodel->numverts > MAXALIASVERTS)
-		SV_Error ("model %s has too many vertices", mod->name);
+		Sys_Error ("model %s has too many vertices", mod->name);
 
 	pmodel->numtris = LittleLong (pinmodel->numtris);
 
 	if (pmodel->numtris <= 0)
-		SV_Error ("model %s has no triangles", mod->name);
+		Sys_Error ("model %s has no triangles", mod->name);
 
 	pmodel->numframes = LittleLong (pinmodel->numframes);
 	numframes = pmodel->numframes;
 	if (numframes < 1)
-		SV_Error ("Mod_LoadAliasModel: Invalid # of frames: %d\n", numframes);
+		Sys_Error ("Mod_LoadAliasModel: Invalid # of frames: %d\n", numframes);
 
 	pmodel->size = LittleFloat (pinmodel->size) * ALIAS_BASE_SIZE_RATIO;
 	mod->synctype = LittleLong (pinmodel->synctype);

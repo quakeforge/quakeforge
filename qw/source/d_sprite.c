@@ -31,6 +31,7 @@
 #endif
 
 #include "d_local.h"
+#include "render.h"
 
 static int  sprite_height;
 static int  minindex, maxindex;

@@ -30,9 +30,12 @@
 # include "config.h"
 #endif
 
-#include "r_local.h"
 #include "QF/console.h"
 #include "QF/sys.h"
+
+#include "client.h"
+#include "r_local.h"
+#include "render.h"
 
 //
 // current entity info

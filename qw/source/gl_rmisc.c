@@ -46,9 +46,11 @@
 #include "QF/vid.h"
 #include "QF/varrays.h"
 
+#include "client.h"
 #include "glquake.h"
 #include "r_dynamic.h"
 #include "r_local.h"
+#include "render.h"
 
 varray_t2f_c4f_v3f_t varray[MAX_VARRAY_VERTS];
 

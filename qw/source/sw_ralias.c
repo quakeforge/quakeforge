@@ -35,8 +35,10 @@
 #include "QF/sys.h"
 #include "QF/texture.h"
 
+#include "client.h"
 #include "d_ifacea.h"
 #include "r_local.h"
+#include "render.h"
 
 #define LIGHT_MIN	5					// lowest light value we'll allow, to 
 										// avoid the

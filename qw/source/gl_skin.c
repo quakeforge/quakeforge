@@ -35,11 +35,11 @@
 #include "QF/sys.h"
 #include "QF/texture.h"
 
+#include "client.h"
 #include "glquake.h"
 #include "host.h"
 #include "protocol.h"
 
-byte        player_8bit_texels[320 * 200];
 static byte translate[256];
 static unsigned int translate32[256];
 

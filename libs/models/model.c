@@ -39,11 +39,12 @@
 # include <strings.h>
 #endif
 
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
-#include "server.h"
+#include "QF/sys.h"
 
 void        Mod_LoadAliasModel (model_t *mod, void *buf);
 void        Mod_LoadSpriteModel (model_t *mod, void *buf);
@@ -103,7 +104,7 @@ Mod_FindName (char *name)
 	model_t    *mod;
 
 	if (!name[0])
-		SV_Error ("Mod_ForName: NULL name");
+		Sys_Error ("Mod_ForName: NULL name");
 
 //
 // search the currently loaded models
@@ -114,7 +115,7 @@ Mod_FindName (char *name)
 
 	if (i == mod_numknown) {
 		if (mod_numknown == MAX_MOD_KNOWN)
-			SV_Error ("mod_numknown == MAX_MOD_KNOWN");
+			Sys_Error ("mod_numknown == MAX_MOD_KNOWN");
 		strcpy (mod->name, name);
 		mod->needload = true;
 		mod_numknown++;
@@ -151,7 +152,7 @@ Mod_LoadModel (model_t *mod, qboolean crash)
 											sizeof (stackbuf));
 	if (!buf) {
 		if (crash)
-			SV_Error ("Mod_NumForName: %s not found", mod->name);
+			Sys_Error ("Mod_NumForName: %s not found", mod->name);
 		return NULL;
 	}
 //
@@ -219,7 +220,7 @@ Mod_Extradata (model_t *mod)
 	Mod_LoadModel (mod, true);
 
 	if (!mod->cache.data)
-		SV_Error ("Mod_Extradata: caching failed");
+		Sys_Error ("Mod_Extradata: caching failed");
 	return mod->cache.data;
 }
 

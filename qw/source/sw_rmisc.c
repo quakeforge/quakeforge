@@ -37,8 +37,10 @@
 #include "QF/sys.h"
 
 #include "cl_parse.h"
+#include "client.h"
 #include "host.h"
 #include "r_local.h"
+#include "render.h"
 #include "sbar.h"
 
 qboolean    allowskybox;				// whether or not to allow skyboxes

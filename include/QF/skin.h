@@ -29,7 +29,8 @@
 #ifndef _SKIN_H
 #define _SKIN_H
 
-#include "client.h"
+#include "QF/qtypes.h"
+#include "QF/zone.h"
 
 #define MAX_CACHED_SKINS 128
 
@@ -58,7 +59,7 @@ void	Skin_Init (void);
 void	Skin_Init_Cvars (void);
 void	Skin_Init_Translation (void);
 void	Skin_Set_Translate (struct player_info_s *player);
-void	Skin_Do_Translation (player_info_t *player);
+void	Skin_Do_Translation (struct player_info_s *player);
 void	Skin_Process (skin_t *skin, struct tex_s *);
 
 #endif

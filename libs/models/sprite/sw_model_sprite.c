@@ -39,10 +39,11 @@
 # include <strings.h>
 #endif
 
-#include "d_iface.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
-#include "server.h"
+#include "QF/sys.h"
+
+#include "d_iface.h"
 
 extern model_t *loadmodel;
 extern char loadname[];
@@ -92,7 +93,7 @@ Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
 		for (i = 0; i < size; i++)
 			ppixout[i] = d_8to16table[ppixin[i]];
 	} else {
-		SV_Error ("Mod_LoadSpriteFrame: driver set invalid r_pixbytes: %d\n",
+		Sys_Error ("Mod_LoadSpriteFrame: driver set invalid r_pixbytes: %d\n",
 				  r_pixbytes);
 	}
 

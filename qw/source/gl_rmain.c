@@ -128,7 +128,6 @@ cvar_t	*gl_dlight_smooth;
 cvar_t	*r_skyname;
 cvar_t	*gl_skymultipass;
 cvar_t	*gl_sky_clip;
-cvar_t	*gl_sky_divide;
 
 extern cvar_t *scr_fov;
 

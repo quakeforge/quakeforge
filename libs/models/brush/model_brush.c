@@ -47,8 +47,10 @@
 #include "QF/cvar.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
-#include "render.h"
-#include "server.h"
+#include "QF/sys.h"
+
+extern struct texture_s *r_notexture_mip;
+void R_InitSky (struct texture_s *mt);
 
 extern model_t *loadmodel;
 extern char loadname[];
@@ -58,7 +60,7 @@ extern const int mod_lightmap_bytes;
 byte        mod_novis[MAX_MAP_LEAFS / 8];
 
 void        GL_SubdivideSurface (msurface_t *fa);
-extern cvar_t	*gl_sky_divide;
+cvar_t		*gl_sky_divide;
 
 /*
 	Mod_PointInLeaf
@@ -71,7 +73,7 @@ Mod_PointInLeaf (vec3_t p, model_t *model)
 	mplane_t   *plane;
 
 	if (!model || !model->nodes)
-		SV_Error ("Mod_PointInLeaf: bad model");
+		Sys_Error ("Mod_PointInLeaf: bad model");
 
 	node = model->nodes;
 	while (1) {
@@ -183,7 +185,7 @@ Mod_LoadTextures (lump_t *l)
 			mt->offsets[j] = LittleLong (mt->offsets[j]);
 
 		if ((mt->width & 15) || (mt->height & 15))
-			SV_Error ("Texture %s is not 16 aligned", mt->name);
+			Sys_Error ("Texture %s is not 16 aligned", mt->name);
 		pixels = mt->width * mt->height / 64 * 85;
 		tx = Hunk_AllocName (sizeof (texture_t) + pixels, loadname);
 
@@ -235,7 +237,7 @@ Mod_LoadTextures (lump_t *l)
 			altanims[altmax] = tx;
 			altmax++;
 		} else
-			SV_Error ("Bad animating texture %s", tx->name);
+			Sys_Error ("Bad animating texture %s", tx->name);
 
 		for (j = i + 1; j < m->nummiptex; j++) {
 			tx2 = loadmodel->textures[j];
@@ -258,7 +260,7 @@ Mod_LoadTextures (lump_t *l)
 				if (num + 1 > altmax)
 					altmax = num + 1;
 			} else
-				SV_Error ("Bad animating texture %s", tx->name);
+				Sys_Error ("Bad animating texture %s", tx->name);
 		}
 
 #define	ANIM_CYCLE	2
@@ -266,7 +268,7 @@ Mod_LoadTextures (lump_t *l)
 		for (j = 0; j < max; j++) {
 			tx2 = anims[j];
 			if (!tx2)
-				SV_Error ("Missing frame %i of %s", j, tx->name);
+				Sys_Error ("Missing frame %i of %s", j, tx->name);
 			tx2->anim_total = max * ANIM_CYCLE;
 			tx2->anim_min = j * ANIM_CYCLE;
 			tx2->anim_max = (j + 1) * ANIM_CYCLE;
@@ -277,7 +279,7 @@ Mod_LoadTextures (lump_t *l)
 		for (j = 0; j < altmax; j++) {
 			tx2 = altanims[j];
 			if (!tx2)
-				SV_Error ("Missing frame %i of %s", j, tx->name);
+				Sys_Error ("Missing frame %i of %s", j, tx->name);
 			tx2->anim_total = altmax * ANIM_CYCLE;
 			tx2->anim_min = j * ANIM_CYCLE;
 			tx2->anim_max = (j + 1) * ANIM_CYCLE;
@@ -330,7 +332,7 @@ Mod_LoadVertexes (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		SV_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
@@ -356,7 +358,7 @@ Mod_LoadSubmodels (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		SV_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
@@ -389,7 +391,7 @@ Mod_LoadEdges (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		SV_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName ((count + 1) * sizeof (*out), loadname);
 
@@ -416,7 +418,7 @@ Mod_LoadTexinfo (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		SV_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
@@ -449,7 +451,7 @@ Mod_LoadTexinfo (lump_t *l)
 			out->flags = 0;
 		} else {
 			if (miptex >= loadmodel->numtextures)
-				SV_Error ("miptex >= loadmodel->numtextures");
+				Sys_Error ("miptex >= loadmodel->numtextures");
 			out->texture = loadmodel->textures[miptex];
 			if (!out->texture) {
 				out->texture = r_notexture_mip;	// texture not found
@@ -503,7 +505,7 @@ CalcSurfaceExtents (msurface_t *s)
 		s->texturemins[i] = bmins[i] * 16;
 		s->extents[i] = (bmaxs[i] - bmins[i]) * 16;
 		if (!(tex->flags & TEX_SPECIAL) && s->extents[i] > 512 /* 256 */ )
-			SV_Error ("Bad surface extents");
+			Sys_Error ("Bad surface extents");
 	}
 }
 
@@ -521,7 +523,7 @@ Mod_LoadFaces (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		SV_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
@@ -608,7 +610,7 @@ Mod_LoadNodes (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		SV_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
@@ -654,7 +656,7 @@ Mod_LoadLeafs (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		SV_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
@@ -711,7 +713,7 @@ Mod_LoadClipnodes (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		SV_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
@@ -797,7 +799,7 @@ Mod_LoadMarksurfaces (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		SV_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
@@ -807,7 +809,7 @@ Mod_LoadMarksurfaces (lump_t *l)
 	for (i = 0; i < count; i++) {
 		j = LittleShort (in[i]);
 		if (j >= loadmodel->numsurfaces)
-			SV_Error ("Mod_ParseMarksurfaces: bad surface number");
+			Sys_Error ("Mod_ParseMarksurfaces: bad surface number");
 		out[i] = loadmodel->surfaces + j;
 	}
 }
@@ -823,7 +825,7 @@ Mod_LoadSurfedges (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		SV_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * sizeof (*out), loadname);
 
@@ -848,7 +850,7 @@ Mod_LoadPlanes (lump_t *l)
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
-		SV_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
+		Sys_Error ("MOD_LoadBmodel: funny lump size in %s", loadmodel->name);
 	count = l->filelen / sizeof (*in);
 	out = Hunk_AllocName (count * 2 * sizeof (*out), loadname);
 
@@ -902,7 +904,7 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 
 	i = LittleLong (header->version);
 	if (i != BSPVERSION)
-		SV_Error
+		Sys_Error
 			("Mod_LoadBrushModel: %s has wrong version number (%i should be %i)",
 			 mod->name, i, BSPVERSION);
 

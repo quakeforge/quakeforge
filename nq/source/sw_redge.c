@@ -30,7 +30,9 @@
 # include "config.h"
 #endif
 
+#include "client.h"
 #include "r_local.h"
+#include "render.h"
 
 #if 0
 // FIXME

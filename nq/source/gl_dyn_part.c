@@ -51,26 +51,6 @@
 #include "render.h"
 #include "r_dynamic.h"
 
-typedef enum {
-	pt_static, pt_grav, pt_blob, pt_blob2,
-	pt_smoke, pt_smokering, pt_smokecloud, pt_bloodcloud,
-	pt_fadespark, pt_fadespark2, pt_fallfadespark
-} ptype_t;
-
-typedef struct particle_s {
-	vec3_t      org;
-	vec3_t      up;
-	vec3_t      right;
-	int         tex;
-	float       color;
-	float       alpha;
-	float       scale;
-	vec3_t      vel;
-	float       ramp;
-	float       die;
-	ptype_t     type;
-} particle_t;
-
 static particle_t *particles, **freeparticles;
 static short r_numparticles, numparticles;
 
@@ -742,6 +722,9 @@ R_DrawParticles (void)
 				if ((part->alpha -= host_frametime * 256) < 1)
 					part->die = -1;
 				part->vel[2] -= fast_grav;
+				break;
+			default:
+				Con_DPrintf ("unhandled particle type %d\n", part->type);
 				break;
 		}
 		// LordHavoc: immediate removal of unnecessary particles (must

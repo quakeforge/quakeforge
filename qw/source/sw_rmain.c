@@ -172,7 +172,8 @@ cvar_t     *r_aliastransadj;
 
 cvar_t     *gl_dlight_lightmap;
 cvar_t     *gl_dlight_polyblend;
-cvar_t     *gl_sky_divide;
+
+extern cvar_t *gl_sky_divide;
 
 extern cvar_t *scr_fov;
 
