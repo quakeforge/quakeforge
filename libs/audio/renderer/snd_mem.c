@@ -328,6 +328,13 @@ SND_Load (sfx_t *sfx)
 		return;
 	}
 #endif
+#ifdef HAVE_WILDMIDI
+	if (strnequal ("MThd", buf, 4)) {
+		Sys_DPrintf ("SND_Load: midi file\n");
+		SND_LoadMidi (file, sfx, realname);
+		return;
+	}
+#endif
 	if (strnequal ("RIFF", buf, 4)) {
 		Sys_DPrintf ("SND_Load: wav file\n");
 		SND_LoadWav (file, sfx, realname);
@@ -646,6 +653,74 @@ SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev)
 					ob[i].right = sr >> 8;
 				}
 			}
+		}
+	}
+	{
+		byte       *x = sc->data + sc->length * outwidth * 2;
+		if (memcmp (x, "\xde\xad\xbe\xef", 4))
+			Sys_Error ("SND_ResampleStereo screwed the pooch %02x%02x%02x%02x",
+					   x[0], x[1], x[2], x[3]);
+	}
+}
+
+void
+SND_NoResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev)
+{
+	int outcount, i;
+	stereo8_t  *ib, *ob;
+	stereo16_t *is, *os;
+	wavinfo_t  *info = sc->sfx->wavinfo (sc->sfx);
+	int         inwidth = info->width;
+	int         outwidth;
+
+	is = (stereo16_t *) data;
+	os = (stereo16_t *) sc->data;
+	ib = (stereo8_t *) data;
+	ob = (stereo8_t *) sc->data;
+
+	os += sc->head;
+	ob += sc->head;
+
+	outcount = length;
+
+	sc->sfx->length = info->samples;
+	if (info->loopstart != (unsigned int)-1)
+		sc->sfx->loopstart = info->loopstart;
+	else
+		sc->sfx->loopstart = (unsigned int)-1;
+
+	if (snd_loadas8bit->int_val) {
+		outwidth = 1;
+		sc->paint = SND_PaintChannelStereo8;
+		sc->bps = 2;
+	} else {
+		outwidth = 2;
+		sc->paint = SND_PaintChannelStereo16;
+		sc->bps = 4;
+	}
+
+	if (!length)
+		return;
+
+	if (inwidth == 1 && outwidth == 1) {
+		for (i = 0; i < outcount; i++, ob++, ib++) {
+			ob->left = ib->left - 128;
+			ob->right = ib->right - 128;
+		}
+	} else if (inwidth == 1 && outwidth == 2) {
+		for (i = 0; i < outcount; i++, os++, ib++) {
+			os->left = (ib->left - 128) << 8;
+			os->right = (ib->right - 128) << 8;
+		}
+	} else if (inwidth == 2 && outwidth == 1) {
+		for (i = 0; i < outcount; i++, ob++, ib++) {
+			ob->left = LittleShort (is->left) >> 8;
+			ob->right = LittleShort (is->right) >> 8;
+		}
+	} else if (inwidth == 2 && outwidth == 2) {
+		for (i = 0; i < outcount; i++, os++, is++) {
+			os->left = LittleShort (is->left);
+			os->right = LittleShort (is->right);
 		}
 	}
 	{

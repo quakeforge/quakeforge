@@ -507,6 +507,24 @@ case "$target_os" in
 	;;
 esac	
 
+AC_ARG_ENABLE(wildmidi,
+[  --disable-wildmidi         disable libWildMidi support],
+)
+HAVE_WILDMIDI=no
+WM_LIBS=
+if test "x$enable_wildmidi" != "xno"; then
+  AC_CHECK_LIB(WildMidi, WildMidi_GetString, HAVE_WILDMIDI=yes, HAVE_WILDMIDI=no)
+  if test "x$HAVE_WILDMIDI" = "xyes"; then
+    AC_CHECK_HEADER(wildmidi_lib.h, HAVE_WILDMIDI=yes, HAVE_WILDMIDI=no)
+    if test "x$HAVE_WILDMIDI" = "xyes"; then
+      WM_LIBS="-lWildMidi"
+      AC_DEFINE(HAVE_WILDMIDI, 1, [Define if you have WildMidi])
+    fi
+  fi
+fi							
+
+AC_SUBST(WM_LIBS)
+
 AC_ARG_ENABLE(vorbis,
 [  --disable-vorbis         disable ogg vorbis support],
 )
@@ -2196,6 +2214,7 @@ AC_MSG_RESULT([
 	Global configuration file   : $globalconf
 	User configuration file     : $userconf
 	OpenGL dynamic lib          : $gl_driver
+	libWildMidi Support         : $HAVE_WILDMIDI
 ])
 
 if test -d $srcdir/CVS; then

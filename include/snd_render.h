@@ -126,6 +126,7 @@ void SND_UnblockSound (void);
 
 void SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length, void *prev);
 void SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev);
+void SND_NoResampleStereo (sfxbuffer_t *sc, byte *data, int length, void *prev);
 sfxbuffer_t *SND_GetCache (long samples, int rate, int inwidth, int channels,
 						   sfxblock_t *block, cache_allocator_t allocator);
 
@@ -139,6 +140,7 @@ void SND_Load (sfx_t *sfx);
 void SND_CallbackLoad (void *object, cache_allocator_t allocator);
 void SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname);
 void SND_LoadWav (QFile *file, sfx_t *sfx, char *realname);
+void SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname);
 
 wavinfo_t *SND_CacheWavinfo (sfx_t *sfx);
 wavinfo_t *SND_StreamWavinfo (sfx_t *sfx);
