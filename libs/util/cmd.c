@@ -577,9 +577,9 @@ Cmd_Exec_f (void)
 		&& (cmd_warncmd->int_val || (developer && developer->int_val)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
 	sub = Cmd_NewBuffer (true);
-	Cbuf_InsertTextTo (sub, f);
-	Cmd_ExecuteSubroutine (sub);		// Execute file in it's own buffer
+	Cbuf_AddTextTo (sub, f);
 	Hunk_FreeToLowMark (mark);
+	Cmd_ExecuteSubroutine (sub);		// Execute file in it's own buffer
 }
 
 /*
