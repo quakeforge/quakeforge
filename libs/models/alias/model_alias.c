@@ -300,9 +300,8 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	total = end - start;
 
 	mem = allocator (&mod->cache, total, loadname);
-	if (!mem)
-		return; // FIXME: shouldn't this call Hunk_FreeToLowMark too?!?!
-	memcpy (mem, pheader, total);
+	if (mem)
+		memcpy (mem, pheader, total);
 
 	Hunk_FreeToLowMark (start);
 }

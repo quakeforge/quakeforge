@@ -518,22 +518,17 @@ Mod_LoadFaces (lump_t *l)
 			out->samples = loadmodel->lightdata + (i * mod_lightmap_bytes);
 
 		// set the drawing flags flag
-		// FIXME: do this right?-)
-		if (!out->texinfo->texture)
-			continue;
-		if (!out->texinfo->texture->name)
-			continue;
+		if (!out->texinfo->texture || !out->texinfo->texture->name)
+			continue;				// avoid crashing on null textures
 
-		if (!strncmp (out->texinfo->texture->name, "sky", 3))	// sky
-		{
+		if (!strncmp (out->texinfo->texture->name, "sky", 3)) {	// sky
 			out->flags |= (SURF_DRAWSKY | SURF_DRAWTILED);
 			if (gl_sky_divide && gl_sky_divide->int_val)
 				GL_SubdivideSurface (out);
 			continue;
 		}
 
-		if (out->texinfo->texture->name[0] == '*')	// turbulent
-		{
+		if (out->texinfo->texture->name[0] == '*') {	// turbulent
 			out->flags |= (SURF_DRAWTURB
 						   | SURF_DRAWTILED
 						   | SURF_LIGHTBOTHSIDES);
@@ -918,8 +913,8 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 
 		mod->numleafs = bm->visleafs;
 
-		if (i < mod->numsubmodels - 1) {	// duplicate the basic
-											// information
+		if (i < mod->numsubmodels - 1) {
+			// duplicate the basic information
 			char        name[10];
 
 			snprintf (name, sizeof (name), "*%i", i + 1);
