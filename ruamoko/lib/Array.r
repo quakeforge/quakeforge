@@ -4,54 +4,53 @@
 
 - (id) init
 {
-	self.count = self.size = 0;
-	self.incr = 16;
-	self.array = NIL;
+	count = size = 0;
+	incr = 16;
+	array = NIL;
 	return self;
 }
 
 - (id) initWithIncrement: (integer) inc
 {
-	self.count = 0;
-	self.size = self.incr = inc;
-	self.array = (void[][]) obj_malloc (inc * @sizeof (void []));
+	count = 0;
+	size = incr = inc;
+	array = (void[][]) obj_malloc (inc * @sizeof (void []));
 	return self;
 }
 
 - (void) free
 {
 	local integer i;
-	for (i = 0; i < self.count; i++)
-		obj_free (self.array[i]);
-	obj_free (self.array);
+	for (i = 0; i < count; i++)
+		obj_free (array[i]);
+	obj_free (array);
 }
 
 - (void []) getItemAt: (integer) index
 {
 	if (index == -1)
-		index = self.count - 1;
-	if (index < 0 || index >= self.count)
+		index = count - 1;
+	if (index < 0 || index >= count)
 		return NIL;
-	return self.array[index];
+	return array[index];
 }
 
 - (void) setItemAt: (integer) index item: (void []) item
 {
 	if (index == -1)
-		index = self.count - 1;
-	if (index < 0 || index >= self.count)
+		index = count - 1;
+	if (index < 0 || index >= count)
 		return;
-	self.array[index] = item;
+	array[index] = item;
 }
 
 - (void) addItem: (void []) item
 {
-	if (self.count == self.size) {
-		self.size += self.incr;
-		self.array = (void[][])obj_realloc (self.array,
-											self.size * @sizeof (void []));
+	if (count == size) {
+		size += incr;
+		array = (void[][])obj_realloc (array, size * @sizeof (void []));
 	}
-	self.array[self.count++] = item;
+	array[count++] = item;
 }
 
 - (void []) removeItemAt: (integer) index
@@ -60,13 +59,13 @@
 	local void [] item;
 
 	if (index == -1)
-		index = self.count -1;
-	if (index < 0 || index >= self.count)
+		index = count -1;
+	if (index < 0 || index >= count)
 		return NIL;
-	item = self.array[index];
-	self.count--;
-	for (i = index; i < self.count; i++)
-		self.array[i] = self.array[i + 1];
+	item = array[index];
+	count--;
+	for (i = index; i < count; i++)
+		array[i] = array[i + 1];
 	return item;
 }
 
@@ -74,18 +73,17 @@
 {
 	local integer i;
 	if (index == -1)
-		index = self.count -1;
-	if (index < 0 || index >= self.count)
+		index = count -1;
+	if (index < 0 || index >= count)
 		return NIL;
-	if (self.count == self.size) {
-		self.size += self.incr;
-		self.array = (void[][])obj_realloc (self.array,
-											self.size * @sizeof (void []));
+	if (count == size) {
+		size += incr;
+		array = (void[][])obj_realloc (array, size * @sizeof (void []));
 	}
-	for (i = self.count; i > index; i--)
-		self.array[i] = self.array[i - 1];
-	self.array[index] = item;
-	self.count++;
+	for (i = count; i > index; i--)
+		array[i] = array[i - 1];
+	array[index] = item;
+	count++;
 	return item;
 }
 
