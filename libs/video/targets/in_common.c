@@ -123,8 +123,8 @@ IN_Move (void)
 		in_old_mouse_y = in_mouse_y;
 	}
 
-	in_mouse_x *= in_mouse_amp->value *= in_amp->value;
-	in_mouse_y *= in_mouse_amp->value *= in_amp->value;
+	in_mouse_x *= in_mouse_amp->value * in_amp->value;
+	in_mouse_y *= in_mouse_amp->value * in_amp->value;
 
 	if ((in_strafe.state & 1) || (lookstrafe->int_val && freelook))
 		viewdelta.position[0] += in_mouse_x;
