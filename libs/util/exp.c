@@ -19,12 +19,14 @@
 
 */
 
-#include "QF/exp.h"
-#include "QF/ops.h"
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
+
+#include "QF/exp.h"
+#include "QF/ops.h"
+#include "QF/qtypes.h"
 
 exp_error_t EXP_ERROR;
 
