@@ -37,7 +37,11 @@ YFLAGS = -d
 
 bin_PROGRAMS=	qfcc
 
-qfcc_SOURCES=	cmdlib.c debug.c pr_comp.c pr_def.c pr_imm.c pr_opcode.c qfcc.c qc-parse.y qc-lex.l class.c emit.c expr.c function.c method.c struct.c switch.c type.c
+qfcc_SOURCES= \
+	class.c cmdlib.c debug.c emit.c expr.c function.c method.c opcodes.c \
+	pr_def.c pr_imm.c precache.c qc-lex.l qc-parse.y qfcc.c struct.c switch.c \
+	type.c
+
 qfcc_LDADD=			$(QFCC_LIBS)
 qfcc_DEPENDENCIES=	$(QFCC_DEPS)
 EXTRA_DIST= qc-parse.h
