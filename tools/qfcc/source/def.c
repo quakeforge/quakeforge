@@ -187,7 +187,7 @@ vector_component (int is_field, def_t *vec, int comp, scope_t *scope,
 	name = save_string (va (vector_component_names[comp], vec->name));
 	d = get_def (is_field ? &type_floatfield : &type_float, name, scope,
 				 st_none);
-	if (d) {
+	if (d && d->scope == scope) {
 		if (vec->external) {
 			error (0, "internal error");
 			abort ();
