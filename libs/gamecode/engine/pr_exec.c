@@ -136,7 +136,7 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 	}
 
 	pr->pr_xfunction = f;
-	pr->pr_xstatement = f->first_statement - 1;      // offset the s++
+	pr->pr_xstatement = f->first_statement - 1;      		// offset the st++
 	return;
 }
 
@@ -601,42 +601,42 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			// ==================
 			case OP_IFNOT:
 				if (!OPA.integer_var) {
-					pr->pr_xstatement += (short)st->b - 1;	// offset the s++
+					pr->pr_xstatement += (short)st->b - 1;	// offset the st++
 					st = pr->pr_statements + pr->pr_xstatement;
 				}
 				break;
 			case OP_IF:
 				if (OPA.integer_var) {
-					pr->pr_xstatement += (short)st->b - 1;	// offset the s++
+					pr->pr_xstatement += (short)st->b - 1;	// offset the st++
 					st = pr->pr_statements + pr->pr_xstatement;
 				}
 				break;
 			case OP_IFBE:
 				if (OPA.integer_var <= 0) {
-					pr->pr_xstatement += (short)st->b - 1;	// offset the s++
+					pr->pr_xstatement += (short)st->b - 1;	// offset the st++
 					st = pr->pr_statements + pr->pr_xstatement;
 				}
 				break;
 			case OP_IFB:
 				if (OPA.integer_var < 0) {
-					pr->pr_xstatement += (short)st->b - 1;	// offset the s++
+					pr->pr_xstatement += (short)st->b - 1;	// offset the st++
 					st = pr->pr_statements + pr->pr_xstatement;
 				}
 				break;
 			case OP_IFAE:
 				if (OPA.integer_var >= 0) {
-					pr->pr_xstatement += (short)st->b - 1;	// offset the s++
+					pr->pr_xstatement += (short)st->b - 1;	// offset the st++
 					st = pr->pr_statements + pr->pr_xstatement;
 				}
 				break;
 			case OP_IFA:
 				if (OPA.integer_var > 0) {
-					pr->pr_xstatement += (short)st->b - 1;	// offset the s++
+					pr->pr_xstatement += (short)st->b - 1;	// offset the st++
 					st = pr->pr_statements + pr->pr_xstatement;
 				}
 				break;
 			case OP_GOTO:
-				pr->pr_xstatement += (short)st->a - 1;		// offset the s++
+				pr->pr_xstatement += (short)st->a - 1;		// offset the st++
 				st = pr->pr_statements + pr->pr_xstatement;
 				break;
 			case OP_JUMP:
@@ -656,7 +656,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					&& (pointer >= pr->progs->numstatements)) {
 					PR_RunError (pr, "Invalid jump destination");
 				}
-				pr->pr_xstatement = pointer;
+				pr->pr_xstatement = pointer - 1;			// offset the st++
 				st = pr->pr_statements + pr->pr_xstatement;
 				break;
 
