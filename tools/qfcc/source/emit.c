@@ -268,6 +268,8 @@ emit_sub_expr (expr_t *e, def_t *dest)
 			}
 			if (e->e.expr.op == '=' || e->e.expr.op == PAS) {
 				d = emit_assign_expr (e->e.expr.op, e);
+				if (!d->managed)
+					d->users++;
 				break;
 			}
 			if (e->e.expr.e1->type == ex_block
@@ -359,6 +361,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					e->e.temp.def = PR_GetTempDef (e->e.temp.type, pr_scope);
 				e->e.temp.def->users = e->e.temp.users;
 				e->e.temp.def->expr = e;
+				e->e.temp.def->managed = 1;
 			}
 			d = e->e.temp.def;
 			break;

@@ -317,6 +317,7 @@ typedef struct def_s {
 	unsigned		removed:1;		// already removed from the symbol table
 	unsigned		used:1;			// unused local detection
 	unsigned		absolute:1;		// don't relocate (for temps for shorts)
+	unsigned		managed:1;		// managed temp
 	string_t		file;			// source file
 	int				line;			// source line
 
