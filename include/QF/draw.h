@@ -31,9 +31,11 @@
 
 #include "QF/wad.h"
 
+extern byte *draw_chars;
 extern qpic_t *draw_disc; // also used on sbar
 
 void Draw_Init (void);
+void Draw_InitText (void);
 void Draw_Init_Cvars (void);
 void Draw_Character (int x, int y, unsigned int num);
 void Draw_Pic (int x, int y, qpic_t *pic);
@@ -54,7 +56,6 @@ qpic_t *Draw_PicFromWad (const char *name);
 qpic_t *Draw_CachePic (const char *path, qboolean alpha);
 
 void GL_Set2D (void);
-
-extern byte *draw_chars;
+void GL_FlushText (void);
 
 #endif // _DRAW_H

@@ -856,5 +856,6 @@ SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 					c_alias_polys);
 	}
 
+	GL_FlushText ();
 	qfglFlush ();
 }

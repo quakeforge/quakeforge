@@ -42,6 +42,7 @@ static const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/draw.h"
 #include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
@@ -161,10 +162,7 @@ R_Init (void)
 
 	r_init = 1;
 	R_InitParticles ();
-	
-	qfglEnableClientState (GL_COLOR_ARRAY);
-	qfglEnableClientState (GL_VERTEX_ARRAY);
-	qfglEnableClientState (GL_TEXTURE_COORD_ARRAY);
+	Draw_InitText ();
 }
 
 void

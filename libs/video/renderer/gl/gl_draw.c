@@ -64,8 +64,15 @@ static const char rcsid[] =
 #include "r_cvar.h"
 #include "r_shared.h"
 #include "sbar.h"
+#include "varrays.h"
 
-byte *draw_chars;						// 8*8 graphic characters
+byte	   *draw_chars;						// 8*8 graphic characters
+
+int 			tVAsize;
+int			   *tVAindices;
+unsigned int	tVAcount;
+float	*textVertices, *tV;
+float	*textCoords, *tC;
 
 qpic_t     *draw_backtile;
 
@@ -102,6 +109,50 @@ static cachepic_t cachepics[MAX_CACHED_PICS];
 static int     numcachepics;
 
 static byte    menuplyr_pixels[4096];
+
+
+void
+Draw_InitText (void)
+{
+	int		i;
+
+	if (r_init) {
+		if (vaelements > 3)
+			tVAsize = vaelements - (vaelements %4);
+		else
+			tVAsize = 2048;
+		Con_Printf ("Text: %i maximum vertex elements.\n", tVAsize);
+
+		if (textVertices)
+			free (textVertices);
+		textVertices = calloc (tVAsize, 2 * sizeof (float));
+
+		if (textCoords)
+			free (textCoords);
+		textCoords = calloc (tVAsize, 2 * sizeof (float));
+
+		qfglTexCoordPointer (2, GL_FLOAT, 0, textCoords);
+		qfglVertexPointer (2, GL_FLOAT, 0, textVertices);
+		if (tVAindices)
+			free (tVAindices);
+		tVAindices = (int *) calloc (tVAsize, sizeof (int));
+		for (i = 0; i < tVAsize; i++)
+			tVAindices[i] = i;
+	} else {
+		if (textVertices) {
+			free (textVertices);
+			textVertices = 0;
+		}
+		if (textCoords) {
+			free (textCoords);
+			textCoords = 0;
+		}
+		if (tVAindices) {
+			free (tVAindices);
+			tVAindices = 0;
+		}
+	}
+}
 
 qpic_t *
 Draw_PicFromWad (const char *name)
@@ -323,7 +374,6 @@ Draw_Character (int x, int y, unsigned int num)
 
 	if (num == 32)
 		return;							// space
-
 	if (y <= -8)
 		return;							// totally off screen
 
@@ -332,18 +382,30 @@ Draw_Character (int x, int y, unsigned int num)
 	frow = (num >> 4) * CELL_SIZE;
 	fcol = (num & 15) * CELL_SIZE;
 
-	qfglBindTexture (GL_TEXTURE_2D, char_texture);
-
-	qfglBegin (GL_QUADS);
-	qfglTexCoord2f (fcol, frow);
-	qfglVertex2f (x, y);
-	qfglTexCoord2f (fcol + CELL_SIZE, frow);
-	qfglVertex2f (x + 8, y);
-	qfglTexCoord2f (fcol + CELL_SIZE, frow + CELL_SIZE);
-	qfglVertex2f (x + 8, y + 8);
-	qfglTexCoord2f (fcol, frow + CELL_SIZE);
-	qfglVertex2f (x, y + 8);
-	qfglEnd ();
+	*tC++ = fcol;
+	*tC++ = frow;
+	*tC++ = fcol + CELL_SIZE;
+	*tC++ = frow;
+	*tC++ = fcol + CELL_SIZE;
+	*tC++ = frow + CELL_SIZE;
+	*tC++ = fcol;
+	*tC++ = frow + CELL_SIZE;
+	*tV++ = x;
+	*tV++ = y;
+	*tV++ = x + 8;
+	*tV++ = y;
+	*tV++ = x + 8;
+	*tV++ = y + 8;
+	*tV++ = x;
+	*tV++ = y + 8;
+	tVAcount += 4;
+	if (tVAcount + 4 > tVAsize) {
+		qfglBindTexture (GL_TEXTURE_2D, char_texture);
+		qfglDrawElements (GL_QUADS, tVAcount, GL_UNSIGNED_INT, tVAindices);
+		tVAcount = 0;
+		tV = textVertices;
+		tC = textCoords;
+	}
 }
 
 void
@@ -357,28 +419,40 @@ Draw_String (int x, int y, const char *str)
 	if (y <= -8)
 		return;							// totally off screen
 
-	qfglBindTexture (GL_TEXTURE_2D, char_texture);
-	qfglBegin (GL_QUADS);
-
 	while (*str) {
 		if ((num = *str++) != 32) // Don't render spaces
 		{
 			frow = (num >> 4) * CELL_SIZE;
 			fcol = (num & 15) * CELL_SIZE;
 
-			qfglTexCoord2f (fcol, frow);
-			qfglVertex2f (x, y);
-			qfglTexCoord2f (fcol + CELL_SIZE, frow);
-			qfglVertex2f (x + 8, y);
-			qfglTexCoord2f (fcol + CELL_SIZE, frow + CELL_SIZE);
-			qfglVertex2f (x + 8, y + 8);
-			qfglTexCoord2f (fcol, frow + CELL_SIZE);
-			qfglVertex2f (x, y + 8);
+			*tC++ = fcol;
+			*tC++ = frow;
+			*tC++ = fcol + CELL_SIZE;
+			*tC++ = frow;
+			*tC++ = fcol + CELL_SIZE;
+			*tC++ = frow + CELL_SIZE;
+			*tC++ = fcol;
+			*tC++ = frow + CELL_SIZE;
+			*tV++ = x;
+			*tV++ = y;
+			*tV++ = x + 8;
+			*tV++ = y;
+			*tV++ = x + 8;
+			*tV++ = y + 8;
+			*tV++ = x;
+			*tV++ = y + 8;
+			tVAcount += 4;
+			if (tVAcount + 4 > tVAsize) {
+				qfglBindTexture (GL_TEXTURE_2D, char_texture);
+				qfglDrawElements (GL_QUADS, tVAcount, GL_UNSIGNED_INT,
+								  tVAindices);
+				tVAcount = 0;
+				tV = textVertices;
+				tC = textCoords;
+			}
 		}
 		x += 8;
 	}
-
-	qfglEnd ();
 }
 
 void
@@ -392,26 +466,39 @@ Draw_nString (int x, int y, const char *str, int count)
 	if (y <= -8)
 		return;                         // totally off screen
 
-	qfglBindTexture (GL_TEXTURE_2D, char_texture);
-	qfglBegin (GL_QUADS);
-
 	while (count-- && *str) {
 		if ((num = *str++) != 32) {		// Don't render spaces
 			frow = (num >> 4) * CELL_SIZE;
 			fcol = (num & 15) * CELL_SIZE;
 
-			qfglTexCoord2f (fcol, frow);
-			qfglVertex2f (x, y);
-			qfglTexCoord2f (fcol + CELL_SIZE, frow);
-			qfglVertex2f (x + 8, y);
-			qfglTexCoord2f (fcol + CELL_SIZE, frow + CELL_SIZE);
-			qfglVertex2f (x + 8, y + 8);
-			qfglTexCoord2f (fcol, frow + CELL_SIZE);
-			qfglVertex2f (x, y + 8);
+			*tC++ = fcol;
+			*tC++ = frow;
+			*tC++ = fcol + CELL_SIZE;
+			*tC++ = frow;
+			*tC++ = fcol + CELL_SIZE;
+			*tC++ = frow + CELL_SIZE;
+			*tC++ = fcol;
+			*tC++ = frow + CELL_SIZE;
+			*tV++ = x;
+			*tV++ = y;
+			*tV++ = x + 8;
+			*tV++ = y;
+			*tV++ = x + 8;
+			*tV++ = y + 8;
+			*tV++ = x;
+			*tV++ = y + 8;
+			tVAcount += 4;
+			if (tVAcount + 4 > tVAsize) {
+				qfglBindTexture (GL_TEXTURE_2D, char_texture);
+				qfglDrawElements (GL_QUADS, tVAcount, GL_UNSIGNED_INT,
+								  tVAindices);
+				tVAcount = 0;
+				tV = textVertices;
+				tC = textCoords;
+			}
 		}
 		x += 8;
 	}
-    qfglEnd ();
 }
 
 void
@@ -425,28 +512,40 @@ Draw_AltString (int x, int y, const char *str)
 	if (y <= -8)
 		return;							// totally off screen
 
-	qfglBindTexture (GL_TEXTURE_2D, char_texture);
-	qfglBegin (GL_QUADS);
-
 	while (*str) {
 		if ((num = *str++ | 0x80) != (0x80 | 32)) // Don't render spaces
 		{
 			frow = (num >> 4) * CELL_SIZE;
 			fcol = (num & 15) * CELL_SIZE;
 
-			qfglTexCoord2f (fcol, frow);
-			qfglVertex2f (x, y);
-			qfglTexCoord2f (fcol + CELL_SIZE, frow);
-			qfglVertex2f (x + 8, y);
-			qfglTexCoord2f (fcol + CELL_SIZE, frow + CELL_SIZE);
-			qfglVertex2f (x + 8, y + 8);
-			qfglTexCoord2f (fcol, frow + CELL_SIZE);
-			qfglVertex2f (x, y + 8);
+			*tC++ = fcol;
+			*tC++ = frow;
+			*tC++ = fcol + CELL_SIZE;
+			*tC++ = frow;
+			*tC++ = fcol + CELL_SIZE;
+			*tC++ = frow + CELL_SIZE;
+			*tC++ = fcol;
+			*tC++ = frow + CELL_SIZE;
+			*tV++ = x;
+			*tV++ = y;
+			*tV++ = x + 8;
+			*tV++ = y;
+			*tV++ = x + 8;
+			*tV++ = y + 8;
+			*tV++ = x;
+			*tV++ = y + 8;
+			tVAcount += 4;
+			if (tVAcount + 4 > tVAsize) {
+				qfglBindTexture (GL_TEXTURE_2D, char_texture);
+				qfglDrawElements (GL_QUADS, tVAcount, GL_UNSIGNED_INT,
+								  tVAindices);
+				tVAcount = 0;
+				tV = textVertices;
+				tC = textCoords;
+			}
 		}
 		x += 8;
 	}
-
-	qfglEnd ();
 }
 
 void
@@ -600,6 +699,8 @@ Draw_ConsoleBackground (int lines)
 	int         y;
 	glpic_t    *gl;
 	qpic_t     *conback;
+
+	GL_FlushText (); // Flush text that should be rendered before the console
 
 	// This can be a CachePic now, just like in software
 	conback = Draw_CachePic ("gfx/conback.lmp", false);
@@ -777,4 +878,25 @@ GL_Set2D (void)
 	qfglDisable (GL_CULL_FACE);
 
 	qfglColor3ubv (color_white);
+
+	qfglEnableClientState (GL_VERTEX_ARRAY);
+	qfglVertexPointer (2, GL_FLOAT, 0, textVertices);
+	qfglEnableClientState (GL_TEXTURE_COORD_ARRAY);
+	qfglTexCoordPointer (2, GL_FLOAT, 0, textCoords);
+	qfglDisableClientState (GL_COLOR_ARRAY);
+	tVAcount = 0;
+	tV = textVertices;
+	tC = textCoords;
+}
+
+void
+GL_FlushText (void)
+{
+	if (tVAcount) {
+		qfglBindTexture (GL_TEXTURE_2D, char_texture);
+		qfglDrawElements (GL_QUADS, tVAcount, GL_UNSIGNED_INT, tVAindices);
+		tVAcount = 0;
+		tV = textVertices;
+		tC = textCoords;
+	}
 }

@@ -39,12 +39,6 @@
 
 #include "QF/GL/types.h"
 
-typedef struct varray_t2f_c4ub_v2f_s {
-	 GLfloat	texcoord[2];
-	 GLubyte	color[4];
-	 GLfloat	vertex[2];
-} varray_t2f_c4ub_v2f_t;
-
 typedef struct varray_t2f_c4ub_v3f_s {
 	 GLfloat	texcoord[2];
 	 GLubyte	color[4];
@@ -58,14 +52,16 @@ typedef struct varray_t2f_c4f_n3f_v3f_s {
 	 GLfloat	vertex[3];
 } varray_t2f_c4f_n3f_v3f_t;
 
-//#define MAX_VARRAY_VERTS	10000
-
 extern int vaelements;
+
+//extern varray_t2f_c4f_n3f_v3f_t *modelVertexArray
+//extern int mVAsize;
 
 extern varray_t2f_c4ub_v3f_t *particleVertexArray;
 extern int pVAsize;
 
-//extern varray_t2f_c4ub_v3f_t *modelVertexArray
-//extern varray_t2f_v2f_t *textVertexArray;
+extern float *textCoords;
+extern float *textVertices;
+extern int tVAsize;
 
 #endif // __qf_varrays_h

@@ -129,7 +129,7 @@ R_InitParticles (void)
 			pVAsize = min (vaelements - (vaelements % 4), r_maxparticles * 4);
 		else
 			pVAsize = r_maxparticles * 4;
-		Con_Printf ("%i maximum vertex elements.\n", pVAsize);
+		Con_Printf ("Particles: %i maximum vertex elements.\n", pVAsize);
 
 		if (particleVertexArray)
 			free (particleVertexArray);
@@ -1281,9 +1281,10 @@ R_DrawParticles (void)
 	if (!r_particles->int_val)
 		return;
 
+	qfglBindTexture (GL_TEXTURE_2D, part_tex);
 	// LordHavoc: particles should not affect zbuffer
 	qfglDepthMask (GL_FALSE);
-	qfglBindTexture (GL_TEXTURE_2D, part_tex);
+	qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, particleVertexArray);
 
 	grav = (fast_grav = r_frametime * 800.0) * 0.05;
 	time_125 = r_frametime * 0.125;
