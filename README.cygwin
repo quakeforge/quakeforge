@@ -17,12 +17,12 @@ You will also need 3 headers from the Microsoft Directx SDK.
 ddraw.h dinput.h dsound.h
 Put them in your /usr/include/w32api dir
  
-Obtain libtool source from www.gnu.org (good place to get to know), and when you 
-configure libtool please ensure you use --prefix=/usr otherwise you will
+Obtain libtool source from www.gnu.org (good place to get to know), and when
+you configure libtool please ensure you use --prefix=/usr otherwise you will
 have problems.
 
-Obtain SDL source from www.libsdl.org. You do not need the SDL mingw file, it is
-just a bunch of docs and test source. 
+Obtain SDL source from www.libsdl.org. You do not need the SDL mingw file, it
+is just a bunch of docs and test source. 
 
 Once both are built and installed, then you can start.
 
@@ -32,12 +32,12 @@ in quakeforge run
 make
 make install
 
-goto the /usr/local/bin directory and copy the qw-* and nq-* files 
-to your dos quake dir
+goto the /usr/local/bin directory and copy the qw-* and nq-* files to your dos
+quake dir
 
 NOTE: due to bugs in the Directx8 SDK header files you will need 
---disable-Werror on the configure command line. This may also be the 
-case with earlier Directx SDK's but it hasn't been tested. 
+--disable-Werror on the configure command line. This may also be the case with
+earlier Directx SDK's but it hasn't been tested. 
 
 Let us know how you go.
 
