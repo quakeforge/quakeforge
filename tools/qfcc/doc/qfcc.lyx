@@ -1,0 +1,287 @@
+#LyX 1.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 218
+\textclass article
+\language english
+\inputencoding auto
+\fontscheme default
+\graphics default
+\paperfontsize default
+\spacing single 
+\papersize Default
+\paperpackage a4
+\use_geometry 0
+\use_amsmath 0
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\quotes_times 2
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+
+\layout Section
+
+New Type Features
+\layout Subsection
+
+New Types
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+integer
+\family default 
+ 32 bit signed integer
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+id
+\family default 
+ generic object pointer
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+Class
+\family default 
+ class object pointer
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+Protocol
+\family default 
+ protocol object pointer
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+Method
+\family default 
+ method pointer
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+SEL
+\family default 
+ selector
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+IMP
+\family default 
+ message imlementation
+\layout Standard
+
+
+\family typewriter 
+id
+\family default 
+, 
+\family typewriter 
+Class
+\family default 
+, 
+\family typewriter 
+Protocol
+\family default 
+, 
+\family typewriter 
+Method
+\family default 
+, 
+\family typewriter 
+SEL
+\family default 
+ and 
+\family typewriter 
+IMP
+\family default 
+ are part of 
+\family typewriter 
+\series bold 
+qfcc
+\family default 
+\series default 
+'s Objective-QC extensions.
+\layout Subsection
+
+Enums
+\layout Standard
+
+as per C
+\layout Subsection
+
+Structures
+\layout Verse
+
+
+\family typewriter 
+struct foo {
+\newline 
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+integer bar;
+\newline 
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+float baz;
+\newline 
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+void () func;
+\newline 
+};
+\layout Standard
+
+Structures with no elements can be declared for making opaque types (particularl
+y useful for engine interface functions).
+\layout Subsection
+
+Arrays
+\layout Standard
+
+
+\family typewriter 
+integer [13] array;
+\layout Subsection
+
+Pointers
+\layout Standard
+
+Pointers are declared the same way as arrays, but with no number in the
+ 
+\family typewriter 
+[]
+\family default 
+s.
+ In fact, arrays are just pointers with limited bounds checking (compile
+ time constant indeces).
+\layout Subsection
+
+Complex types
+\layout Standard
+
+Complex types can be created by nesting type declarations within 
+\family typewriter 
+()
+\family default 
+s.
+ eg:
+\layout Standard
+
+
+\family typewriter 
+(.float) (string name) find_field;
+\layout Standard
+
+declares a function (
+\family typewriter 
+find_field
+\family default 
+) taking a string parameter and returning a float field `offset'.
+ Without the 
+\family typewriter 
+()
+\family default 
+s around the 
+\family typewriter 
+.float
+\family default 
+, the declaration would be a function field.
+\layout Subsection
+
+
+\family typewriter 
+typedef
+\layout Standard
+
+By using 
+\family typewriter 
+typedef
+\family default 
+ complex types can be given symbolic names.
+ eg:
+\layout Verse
+
+
+\family typewriter 
+struct foo_s {};
+\newline 
+typedef foo_s [] foo_t;
+\layout Standard
+
+creates type 
+\family typewriter 
+foo_t
+\family default 
+ which is a pointer to the structure 
+\family typewriter 
+foo_s
+\family default 
+ (which happens to be opaque).
+\layout Subsection
+
+vararg functions
+\layout Standard
+
+Typed parameters preceding the ellipsis are allowed, eg: 
+\family typewriter 
+void (string fmt, ...) printf;
+\layout Standard
+
+More importantly, it is now possible to write vararg functions in QC.
+ 
+\family typewriter 
+@argc
+\family default 
+ gives the number of parameters passed throug the ellipsis and 
+\family typewriter 
+@argv
+\family default 
+ is an array of vectors representing the parameters passed through 
+\family typewriter 
+...
+\family default 
+.
+\layout Standard
+
+
+\series bold 
+\emph on 
+Warning: attempting to pass 
+\family typewriter 
+@argv
+\family default 
+ to another non-engine function will not work due to the changes in how
+ local variables are handled by the compiler.
+\layout Subsection
+
+Improved type checking
+\layout Standard
+
+Function parameters and return types are are fully checked, including the
+ number of parameters passed to a function.
+ Functions with different return types and/or different parameter types
+ or counts are distinct types and mixing them up will cause a type missmatch
+ error.
+\the_end
