@@ -685,6 +685,33 @@ Cmd_ProcessEscapes (dstring_t *dstr) {
 }
 
 /*
+	Cmd_ProcessPercents
+	
+	Replaces %i with Cmd_Argv(i)
+*/
+
+void Cmd_ProcessPercents (dstring_t *dstr) {
+	int i, n;
+	long int num;
+	char *str = dstr->str;
+	
+	for (i = 0; i < strlen(str); i++) {
+		if (str[i] == '%') {
+			if (str[i+1] == '%') {
+				dstring_snip (dstr, i, 1);
+				continue;
+			}
+			for (n = 1; isdigit(str[i+n]); n++);
+			if (n < 2)
+				continue;
+			num = strtol(str+i+1, 0, 10);
+			dstring_snip (dstr, i, n);
+			dstring_insertstr (dstr, Cmd_Argv(num), i);
+		}
+	}
+}				
+
+/*
 	Cmd_TokenizeString
 	
 	This takes a normal string, parses it
@@ -725,7 +752,7 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 		}
 		len = Cmd_GetToken (str + i);
 		if (!len)
-			return;
+			break;
 		cmd_argc++;
 		if (cmd_argc > cmd_maxargc) {
 			cmd_argv = realloc(cmd_argv, sizeof(dstring_t *)*cmd_argc);
@@ -1023,13 +1050,18 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 	// check alias
 	a = (cmdalias_t*)Hash_Find (cmd_alias_hash, cmd_argv[0]->str);
 	if (a) {
-		Cbuf_InsertText ("\n");
-		Cbuf_InsertText (a->value);
+		dstring_t *temp = dstring_newstr ();
+		dstring_appendstr (temp, "\n");
+		dstring_appendstr (temp, a->value);
+		Cmd_ProcessPercents (temp);
+		Cbuf_InsertText (temp->str);
+		dstring_delete (temp);
 		return;
 	}
 
 	if (cmd_warncmd->int_val || developer->int_val)
 		Sys_Printf ("Unknown command \"%s\"\n", Cmd_Argv (0));
+	cmd_argc = 0;
 }
 
 /*
