@@ -209,8 +209,7 @@ R_TimeGraph (void)
 	do {
 		R_LineGraph (x, r_refdef.vrect.height - 2, r_timings[a]);
 		if (x == 0)
-			break;						// screen too small to hold entire
-										// thing
+			break;					// screen too small to hold entire thing
 		x--;
 		a--;
 		if (a == -1)
