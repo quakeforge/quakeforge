@@ -56,7 +56,7 @@ common_ldflags= -export-dynamic
 libqfnet_la_SOURCES=	net_bsd.c net_dgrm.c net_loop.c \
 			net_main.c net_udp.c net_vcr.c
 
-EXTRA_libqfnet_la_SOURCES= net_dos.c net_bw.c net_ipx.c net_mp.c net_ser.c \
+EXTRA_libqfnet_la_SOURCES= net_dos.c net_bw.c net_ipx.c net_mp.c \
 			net_win.c net_wins.c net_wipx.c
 
 qf_client_LIBS= $(top_builddir)/libs/video/targets/libQFjs.la \
