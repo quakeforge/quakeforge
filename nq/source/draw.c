@@ -734,12 +734,12 @@ Draw_TileClear (int x, int y, int w, int h)
 
 			vr.x += vr.width;
 			width -= vr.width;
-			tileoffsetx = 0;		// only the left tile can be left-clipped
+			tileoffsetx = 0;	// only the left tile can be left-clipped
 		}
 
 		vr.y += vr.height;
 		height -= vr.height;
-		tileoffsety = 0;			// only the top tile can be top-clipped
+		tileoffsety = 0;		// only the top tile can be top-clipped
 	}
 }
 
