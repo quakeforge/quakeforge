@@ -49,7 +49,7 @@ CvarToggleView time_view;
 CvarRangeView gamma_view;
 CvarRangeView viewsize_view;
 
-Group control_options;			// not done
+Group control_options;
 CvarToggleView grab_mouse_view;
 CvarToggleView invert_mouse_view;
 CvarToggleView autorun_view;
@@ -384,27 +384,8 @@ CB_control_options =
 integer (integer x, integer y) 
 DRAW_control_options = 
 {
-	Draw_Pic (x + 16, y + 4,  Draw_CachePic ("gfx/qplaque.lmp", 1));
-	Draw_CenterPic (x + 160, y + 4,  Draw_CachePic ("gfx/p_option.lmp", 1));
-	Draw_String	(x + 54, y + 40, "Controls");
-	Draw_String (x + 54, y + 50, "--------");
-	Draw_String (x + 70, y + 60, "Bindings");
-
-	[grab_mouse_view setBasePos:x y:y];
-	[mouse_amp_view setBasePos:x y:y];
-	[invert_mouse_view setBasePos:x y:y];
-	[autorun_view setBasePos:x y:y];
-	[freelook_view setBasePos:x y:y];
-	[lookspring_view setBasePos:x y:y];
-	[lookstrafe_view setBasePos:x y:y];
-
-	[grab_mouse_view draw];
-	[mouse_amp_view draw];
-	[invert_mouse_view draw];
-	[autorun_view draw];
-	[freelook_view draw];
-	[lookspring_view draw];
-	[lookstrafe_view draw];
+	[control_options setBasePos:x y:y];
+	[control_options draw];
 
 	opt_cursor (x + 62, y + (Menu_GetIndex () * 10) + 60);
 
@@ -420,6 +401,7 @@ void ()
 MENU_control_options =
 {
 	local Rect rect;
+	local id view;
 
 	Menu_Begin (54, 40, "Controls");
 	Menu_FadeScreen (1);
@@ -427,28 +409,57 @@ MENU_control_options =
 
 	Menu_Draw (DRAW_control_options);
 
+	control_options = [[Group alloc] initWithComponents:0 :0 :320 :200];
+
+	view = [[Pic alloc] initWithComponents:16 :4 :0 :0];
+	[view setPic:"gfx/qplaque.lmp"];
+	[control_options addView:view];
+
+	view = [[CenterPic alloc] initWithComponents:160 :4 :0 :0];
+	[view setPic:"gfx/p_option.lmp"];
+	[control_options addView:view];
+
+	view = [[Text alloc] initWithComponents:54 :40 :64 :8];
+	[view setText:"Controls"];
+	[control_options addView:view];
+
+	view = [[Text alloc] initWithComponents:54 :50 :64 :8];
+	[view setText:"--------"];
+	[control_options addView:view];
+
+	view = [[Text alloc] initWithComponents:70 :60 :64 :8];
+	[view setText:"Bindings"];
+	[control_options addView:view];
+
 	rect = [[Rect alloc] initWithComponents:70 :70 :224 :8];
 	grab_mouse_view = [[CvarToggleView alloc] initWithBounds:rect title:"Grab mouse" :[[CvarToggle alloc] initWithCvar:"in_grab"]];
+	[control_options addView:grab_mouse_view];
 
 	rect.origin.y += 10;
 	autorun_view = [[CvarToggleView alloc] initWithBounds:rect title:"Auto run" :[[RunToggle alloc] init]];
+	[control_options addView:autorun_view];
 
 	rect.origin.y += 10;
 	invert_mouse_view = [[CvarToggleView alloc] initWithBounds:rect title:"Mouse Invert" :[[MouseToggle alloc] init]];
+	[control_options addView:invert_mouse_view];
 
 	rect.origin.y += 10;
 	rect.size.width += 8;
 	mouse_amp_view = [[CvarRangeView alloc] initWithBounds:rect title:"Mouse amp:" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"in_mouse_amp" min:MIN_MOUSE_AMP max:MAX_MOUSE_AMP step:MOUSE_AMP_STEP]];
 	rect.size.width -= 8;
+	[control_options addView:mouse_amp_view];
 
 	rect.origin.y += 10;
 	freelook_view = [[CvarToggleView alloc] initWithBounds:rect title:"Freelook" :[[CvarToggle alloc] initWithCvar:"freelook"]];
+	[control_options addView:freelook_view];
 
 	rect.origin.y += 10;
 	lookspring_view = [[CvarToggleView alloc] initWithBounds:rect title:"Lookspring" :[[CvarToggle alloc] initWithCvar:"lookspring"]];
+	[control_options addView:lookspring_view];
 
 	rect.origin.y += 10;
 	lookstrafe_view = [[CvarToggleView alloc] initWithBounds:rect title:"Lookstrafe" :[[CvarToggle alloc] initWithCvar:"lookstrafe"]];
+	[control_options addView:lookstrafe_view];
 
 	[rect dealloc];
 
