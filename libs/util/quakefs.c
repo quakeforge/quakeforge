@@ -1271,8 +1271,7 @@ QFS_NextFilename (dstring_t *filename, const char *prefix, const char *ext)
 		digits[1] = i / 100 % 10 + '0';
 		digits[2] = i / 10 % 10 + '0';
 		digits[3] = i % 10 + '0';
-		if (Sys_FileTime (va ("%s/%s/%s", qfs_userpath, qfs_gamedir->dir.def,
-							  filename->str)) == -1)
+		if (Sys_FileTime (va ("%s/%s/%s", qfs_userpath, filename->str)) == -1)
 			return 1;					// file doesn't exist
 	}
 	return 0;
