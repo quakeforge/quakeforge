@@ -562,8 +562,8 @@ void
 SV_Physics_None (edict_t *ent)
 {
 	// regular thinking
-	SV_RunThink (ent);
-	SV_LinkEdict (ent, false);
+	if (SV_RunThink (ent))
+		SV_LinkEdict (ent, false);
 }
 
 /*
