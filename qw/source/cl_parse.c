@@ -1439,7 +1439,7 @@ CL_ParseServerMessage (void)
 				for (i = 0; i < 3; i++)
 					Con_DPrintf ("%f ", cl.simangles[i]);
 				Con_DPrintf ("\n");
-				VectorCopy (vec3_origin, cl.simvel);
+				VectorZero (cl.simvel);
 
 				// automatic fraglogging (by elmex)
 				// XXX: Should this _really_ called here?

@@ -166,7 +166,7 @@ CalcFaceVectors (lightinfo_t *l)
 		fprintf (stderr, "Texture axis perpendicular to face");
 	if (distscale < 0) {
 		distscale = -distscale;
-		VectorSubtract (vec3_origin, texnormal, texnormal);
+		VectorNegate (texnormal, texnormal);
 	}
 	
 	// distscale is the ratio of the distance along the 
@@ -481,7 +481,7 @@ LightFace (int surfnum)
 	VectorCopy (bsp->planes[f->planenum].normal, l.facenormal);
 	l.facedist = bsp->planes[f->planenum].dist;
 	if (f->side) {
-		VectorSubtract (vec3_origin, l.facenormal, l.facenormal);
+		VectorNegate (l.facenormal, l.facenormal);
 		l.facedist = -l.facedist;
 	}
 

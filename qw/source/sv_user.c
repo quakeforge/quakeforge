@@ -444,8 +444,8 @@ SV_SpawnSpectator (void)
 	int         i;
 	edict_t    *e;
 
-	VectorCopy (vec3_origin, SVvector (sv_player, origin));
-	VectorCopy (vec3_origin, SVvector (sv_player, view_ofs));
+	VectorZero (SVvector (sv_player, origin));
+	VectorZero (SVvector (sv_player, view_ofs));
 	SVvector (sv_player, view_ofs)[2] = 22;
 
 	// search for an info_playerstart to spawn the spectator at

@@ -109,7 +109,7 @@ R_ReadPointFile_f (void)
 		p->die = 99999;
 		p->color = (-c) & 15;
 		p->type = pt_static;
-		VectorCopy (vec3_origin, p->vel);
+		VectorZero (p->vel);
 		VectorCopy (org, p->org);
 	}
 
@@ -391,7 +391,7 @@ R_RocketTrail_QF (entity_t *ent)
 		p->next = active_particles;
 		active_particles = p;
 
-		VectorCopy (vec3_origin, p->vel);
+		VectorZero (p->vel);
 
 		p->die = r_realtime + 2;
 		p->ramp = (rand () & 3);
@@ -428,7 +428,7 @@ R_GrenadeTrail_QF (entity_t *ent)
 		p->next = active_particles;
 		active_particles = p;
 
-		VectorCopy (vec3_origin, p->vel);
+		VectorZero (p->vel);
 
 		p->die = r_realtime + 2;
 		p->ramp = (rand () & 3) + 2;
@@ -465,7 +465,7 @@ R_BloodTrail_QF (entity_t *ent)
 		p->next = active_particles;
 		active_particles = p;
 
-		VectorCopy (vec3_origin, p->vel);
+		VectorZero (p->vel);
 
 		p->die = r_realtime + 2;
 		p->type = pt_slowgrav;
@@ -502,7 +502,7 @@ R_SlightBloodTrail_QF (entity_t *ent)
 		p->next = active_particles;
 		active_particles = p;
 
-		VectorCopy (vec3_origin, p->vel);
+		VectorZero (p->vel);
 
 		p->die = r_realtime + 2;
 		p->type = pt_slowgrav;
@@ -628,7 +628,7 @@ R_VoorTrail_QF (entity_t *ent)
 		p->next = active_particles;
 		active_particles = p;
 
-		VectorCopy (vec3_origin, p->vel);
+		VectorZero (p->vel);
 
 		p->die = r_realtime + 0.3;
 		p->type = pt_static;

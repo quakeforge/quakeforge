@@ -146,7 +146,7 @@ ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target,
 
 			// flip the normal if the source portal is backwards
 			if (fliptest) {
-				VectorSubtract (vec3_origin, plane.normal, plane.normal);
+				VectorNegate (plane.normal, plane.normal);
 				plane.dist = -plane.dist;
 			}
 
@@ -173,7 +173,7 @@ ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target,
 
 			// flip the normal if we want the back side
 			if (flipclip) {
-				VectorSubtract (vec3_origin, plane.normal, plane.normal);
+				VectorNegate (plane.normal, plane.normal);
 				plane.dist = -plane.dist;
 			}
 
@@ -251,7 +251,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 
 		// get plane of portal, point normal into the neighbor cluster
 		stack.portalplane = portal->plane;
-		VectorSubtract (vec3_origin, portal->plane.normal, backplane.normal);
+		VectorNegate (portal->plane.normal, backplane.normal);
 		backplane.dist = -portal->plane.dist;
 
 		if (_VectorCompare (prevstack->portalplane.normal, backplane.normal))

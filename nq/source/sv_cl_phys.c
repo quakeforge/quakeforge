@@ -158,7 +158,7 @@ SV_TryUnstick (edict_t *ent, vec3_t oldvel)
 	trace_t     steptrace;
 
 	VectorCopy (SVvector (ent, origin), oldorg);
-	VectorCopy (vec3_origin, dir);
+	VectorZero (dir);
 
 	for (i = 0; i < 8; i++) {
 		// try pushing a little in an axial direction
@@ -214,7 +214,7 @@ SV_TryUnstick (edict_t *ent, vec3_t oldvel)
 		VectorCopy (oldorg, SVvector (ent, origin));
 	}
 
-	VectorCopy (vec3_origin, SVvector (ent, velocity));
+	VectorZero (SVvector (ent, velocity));
 	return 7;							// still not moving
 }
 
@@ -261,8 +261,8 @@ SV_WalkMove (edict_t *ent)
 
 	// try moving up and forward to go up a step
 	VectorCopy (oldorg, SVvector (ent, origin));	// back to start pos
-	VectorCopy (vec3_origin, upmove);
-	VectorCopy (vec3_origin, downmove);
+	VectorZero (upmove);
+	VectorZero (downmove);
 	upmove[2] = STEPSIZE;
 	downmove[2] = -STEPSIZE + oldvel[2] * sv_frametime;
 

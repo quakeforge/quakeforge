@@ -554,7 +554,7 @@ FindPassages (winding_t *source, winding_t *pass)
 
 			// flip the normal if the source portal is backwards
 			if (fliptest) {
-				VectorSubtract (vec3_origin, plane.normal, plane.normal);
+				VectorNegate (plane.normal, plane.normal);
 				plane.dist = -plane.dist;
 			}
 
@@ -731,7 +731,7 @@ LoadPortals (char *name)
 		cluster->numportals++;
 
 		portal->winding = winding;
-		VectorSubtract (vec3_origin, plane.normal, portal->plane.normal);
+		VectorNegate (plane.normal, portal->plane.normal);
 		portal->plane.dist = -plane.dist;
 		portal->cluster = clusternums[1];
 		portal++;

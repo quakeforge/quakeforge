@@ -122,11 +122,11 @@ ClearModel (void)
 	scale = 0;
 	scale_up = 1.0;
 	
-	VectorCopy (vec3_origin, adjust);
-	VectorCopy (vec3_origin, mins);
-	VectorCopy (vec3_origin, maxs);
-	VectorCopy (vec3_origin, framesmins);
-	VectorCopy (vec3_origin, framesmaxs);
+	VectorZero (adjust);
+	VectorZero (mins);
+	VectorZero (maxs);
+	VectorZero (framesmins);
+	VectorZero (framesmaxs);
 
 	degeneratetris = 0;
 	cdset = false;

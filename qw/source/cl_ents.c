@@ -974,7 +974,7 @@ CL_SetSolidEntities (void)
 	packet_entities_t  *pak;
 
 	pmove.physents[0].model = cl.worldmodel;
-	VectorCopy (vec3_origin, pmove.physents[0].origin);
+	VectorZero (pmove.physents[0].origin);
 	pmove.physents[0].info = 0;
 	pmove.numphysent = 1;
 
