@@ -68,7 +68,7 @@ HWND 		mainwindow;
 int         VID_options_items = 1;
 int         modestate;
 
-
+static SDL_Surface *screen = NULL;
 
 void
 VID_SDL_GammaCheck (void)
@@ -189,7 +189,7 @@ VID_Init (unsigned char *palette)
 	SDL_GL_SetAttribute (SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute (SDL_GL_DEPTH_SIZE, 1);
 
-	if (SDL_SetVideoMode (scr_width, scr_height, 8, flags) == NULL) {
+	if (!(screen = SDL_SetVideoMode (scr_width, scr_height, 8, flags))) {
 		Sys_Error ("Couldn't set video mode: %s\n", SDL_GetError ());
 		SDL_Quit ();
 	}
@@ -232,10 +232,21 @@ VID_Init (unsigned char *palette)
 }
 
 void
+VID_UpdateFullscreen (cvar_t *vid_fullscreen)
+{
+	if (!vid.initialized)
+		return;
+	if ((vid_fullscreen->int_val && !(screen->flags & SDL_FULLSCREEN))
+		|| (!vid_fullscreen->int_val && screen->flags & SDL_FULLSCREEN))
+		if (!SDL_WM_ToggleFullScreen (screen))
+			Con_Printf ("VID_UpdateFullscreen: error setting fullscreen\n");
+}
+
+void
 VID_Init_Cvars ()
 {
-	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ROM, NULL,
-			"Toggles fullscreen mode");
+	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ARCHIVE,
+			VID_UpdateFullscreen, "Toggles fullscreen mode");
 	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
 								 "Use system gamma control if available");
 }

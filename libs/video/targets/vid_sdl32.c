@@ -200,7 +200,7 @@ VID_UpdateFullscreen (cvar_t *vid_fullscreen)
 void
 VID_Init_Cvars ()
 {
-	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_NONE,
+	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ARCHIVE,
 							   VID_UpdateFullscreen,
 							   "Toggles fullscreen game mode");
 	vid_bitdepth = Cvar_Get ("vid_bitdepth", "8", CVAR_ROM, NULL, "Sets "
