@@ -280,6 +280,16 @@ bi_Menu_Quit (progs_t *pr)
 }
 
 static void
+bi_Menu_GetIndex (progs_t *pr)
+{
+	if (menu) {
+		G_INT (pr, OFS_RETURN) = menu->cur_item;
+	} else {
+		G_INT (pr, OFS_RETURN) = -1;
+	}
+}
+
+static void
 togglemenu_f (void)
 {
 	if (menu)
@@ -318,6 +328,7 @@ Menu_Init (void)
 	PR_AddBuiltin (&menu_pr_state, "Menu_SelectMenu", bi_Menu_SelectMenu, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_SetQuit", bi_Menu_SetQuit, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_Quit", bi_Menu_Quit, -1);
+	PR_AddBuiltin (&menu_pr_state, "Menu_GetIndex", bi_Menu_GetIndex, -1);
 
 	Cbuf_Progs_Init (&menu_pr_state);
 	File_Progs_Init (&menu_pr_state);
