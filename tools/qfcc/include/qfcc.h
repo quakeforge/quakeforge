@@ -107,6 +107,7 @@ const char *save_string (const char *str);
 void clear_frame_macros (void);
 extern FILE *yyin;
 int yyparse (void);
+extern int yydebug;
 
 #define ALLOC(s, t, n, v)							\
 	do {											\
