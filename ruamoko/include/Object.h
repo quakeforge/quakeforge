@@ -7,11 +7,11 @@ typedef enum {
 } BOOL;
 
 @extern void (id object, integer code, string fmt, ...) obj_error;
-@extern void (id object, integer code, string fmt, ...) obj_verror;//FIXME not ...
+@extern void (id object, integer code, string fmt, @va_list args) obj_verror;
 //obj_error_handler (objc_error_handler func) obj_set_error_handler = #0;
 @extern IMP (id receiver, SEL op) obj_msg_lookup;
 @extern IMP (id receiver, SEL op) obj_msg_lookup_super;
-//retval_t (id receiver, SEL op, arglist_t) obj_msg_sendv;
+//retval_t (id receiver, SEL op, @va_list args) obj_msg_sendv;
 @extern (void []) (integer size) obj_malloc;
 @extern (void []) (integer size) obj_atomic_malloc;
 @extern (void []) (integer size) obj_valloc;
