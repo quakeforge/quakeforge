@@ -266,6 +266,7 @@ wad_add (wad_t *wad, const char *filename, const char *lumpname, byte type)
 		static char buf[4];
 		Qwrite (wad->handle, buf, 4 - (pf->size & 3));
 	}
+	pf->disksize = pf->size;
 	Hash_AddElement (wad->lump_hash, pf);
 	return 0;
 }
@@ -312,6 +313,7 @@ wad_add_data (wad_t *wad, const char *lumpname, byte type, const void *data,
 		static char buf[4];
 		Qwrite (wad->handle, buf, 4 - (pf->size & 3));
 	}
+	pf->disksize = pf->size;
 	Hash_AddElement (wad->lump_hash, pf);
 	return 0;
 }
