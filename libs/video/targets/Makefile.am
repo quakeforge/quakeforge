@@ -3,7 +3,7 @@ AUTOMAKE_OPTIONS= foreign
 INCLUDES= -I$(top_srcdir)/include
 
 if ASM_ARCH
-asm= libasm.la
+asm= libvid_asm.la
 else
 asm=
 endif
