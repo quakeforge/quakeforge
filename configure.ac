@@ -161,7 +161,6 @@ else
 fi
 
 if test "x$ac_cv_header_pthread_h" = "xyes"; then
-	echo $LDFLAGS
 	save_ldflags="$LDFLAGS"
 	LDFLAGS="$LDFLAGS -pthread"
 	AC_TRY_LINK(
@@ -172,8 +171,6 @@ if test "x$ac_cv_header_pthread_h" = "xyes"; then
 		[PTHREAD_FLAGS=-lpthread]
 	)
 	LDFLAGS="$save_ldflags"
-	echo $LDFLAGS
-	echo $PTHREAD_FLAGS
 fi
 AC_SUBST(PTHREAD_FLAGS)
 
