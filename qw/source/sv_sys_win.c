@@ -31,9 +31,6 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 
-#include <conio.h>
-#include <ctype.h>
-#include <stdlib.h>
 #include <winsock.h>
 
 #include "QF/cvar.h"
@@ -83,7 +80,6 @@ int
 main (int argc, const char **argv)
 {
 	double      newtime, time, oldtime;
-	int         sleep_msec;
 
 	COM_InitArgv (argc, argv);
 

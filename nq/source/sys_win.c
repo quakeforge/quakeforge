@@ -63,7 +63,6 @@ qboolean    WinNT;
 static double pfreq;
 static int  lowshift;
 qboolean    isDedicated;
-static qboolean sc_return_on_enter = false;
 HANDLE      hinput, houtput;
 
 static const char tracking_tag[] = "Clams & Mooses";

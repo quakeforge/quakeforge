@@ -686,17 +686,21 @@ case "${host}" in
 	i?86-*-mingw32*)
 		SYSTYPE=WIN32
 		AC_MSG_RESULT([Win32 driver])
+		WIN32_LIBS=' $(NET_LIBS)'
 		;;
 	i?86-*-cygwin*)
 		SYSTYPE=WIN32
 		AC_MSG_RESULT([Win32 driver])
+		WIN32_LIBS=' $(NET_LIBS)'
 		;;
 	*)
 		SYSTYPE=POSIX
 		AC_MSG_RESULT([default POSIX driver])
+		WIN32_LIBS=''
 		;;
 esac
 AM_CONDITIONAL(SYSTYPE_WIN32, test "$SYSTYPE" = "WIN32")
+AC_SUBST(WIN32_LIBS)
 
 dnl Check for ia32
 AC_MSG_CHECKING(for an ia32 machine)
@@ -1859,28 +1863,28 @@ AC_SUBST(plugin_ldflags)
 AC_SUBST(plugin_libadd)
 
 QFCC_DEPS='$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la'
-QFCC_LIBS="${QFCC_DEPS} ${WINMM}"
+QFCC_LIBS="${QFCC_DEPS} "'$(WIN32_LIBS)'
 QFCC_INCS='-I$(top_srcdir)/tools/qfcc/include'
 AC_SUBST(QFCC_LIBS)
 AC_SUBST(QFCC_DEPS)
 AC_SUBST(QFCC_INCS)
 
 QFPROGS_DEPS='$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la'
-QFPROGS_LIBS="${QFPROGS_DEPS} ${WINMM}"
+QFPROGS_LIBS="${QFPROGS_DEPS} "'$(WIN32_LIBS)'
 QFPROGS_INCS='-I$(top_srcdir)/tools/qfprogs/include'
 AC_SUBST(QFPROGS_LIBS)
 AC_SUBST(QFPROGS_DEPS)
 AC_SUBST(QFPROGS_INCS)
 
 QWAQ_DEPS='$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la'
-QWAQ_LIBS="${QWAQ_DEPS} ${WINMM}"
+QWAQ_LIBS="${QWAQ_DEPS} "'$(WIN32_LIBS)'
 QWAQ_INCS=''
 AC_SUBST(QWAQ_LIBS)
 AC_SUBST(QWAQ_DEPS)
 AC_SUBST(QWAQ_INCS)
 
 PAK_DEPS='$(top_builddir)/libs/util/libQFutil.la'
-PAK_LIBS="${PAK_DEPS} ${WINMM}"
+PAK_LIBS="${PAK_DEPS} "'$(WIN32_LIBS)'
 PAK_INCS=""
 AC_SUBST(PAK_LIBS)
 AC_SUBST(PAK_DEPS)

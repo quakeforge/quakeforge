@@ -41,6 +41,9 @@ static const char rcsid[] =
 #ifdef HAVE_LIMITS_H
 # include <limits.h>
 #endif
+#ifdef HAVE_CONIO_H
+# include <conio.h>
+#endif
 #ifdef HAVE_IO_H
 # include <io.h>
 #endif
@@ -471,6 +474,7 @@ Sys_CheckInput (int idle, int net_socket)
 	struct timeval *timeout = 0;
 
 #ifdef _WIN32
+	int         sleep_msec;
 	// Now we want to give some processing time to other applications,
 	// such as qw_client, running on this machine.
 	sleep_msec = sys_sleep->int_val;
@@ -515,7 +519,7 @@ const char *
 Sys_ConsoleInput (void)
 {
 	static char text[256];
-	int         len;
+	int         len = 0;
 
 #ifdef _WIN32
 	int         c;
