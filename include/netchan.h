@@ -51,6 +51,7 @@ typedef struct
 } netadr_t;
 
 extern	netadr_t	net_local_adr;
+extern	netadr_t	net_loopback_adr;
 extern	netadr_t	net_from;		// address of who sent the packet
 extern	struct msg_s *net_message;
 

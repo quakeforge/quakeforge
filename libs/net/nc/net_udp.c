@@ -98,6 +98,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 int         net_socket;
 netadr_t    net_local_adr;
+netadr_t    net_loopback_adr;
 netadr_t    net_from;
 
 static sizebuf_t _net_message_message;
@@ -417,6 +418,9 @@ NET_Init (int port)
 
 	// determine my name & address
 	NET_GetLocalAddress ();
+
+	net_loopback_adr.ip[0] = 127;
+	net_loopback_adr.ip[3] = 1;
 
 	Con_Printf ("UDP (IPv4) Initialized\n");
 }

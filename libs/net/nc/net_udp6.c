@@ -550,6 +550,8 @@ NET_Init (int port)
 	// determine my name & address
 	NET_GetLocalAddress ();
 
+	net_loopback_adr.ip[15] = 1;
+
 	Con_Printf ("UDP (IPv6) Initialized\n");
 }
 
