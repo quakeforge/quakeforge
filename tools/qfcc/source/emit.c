@@ -553,7 +553,11 @@ emit_sub_expr (expr_t *e, def_t *dest)
 							 || e->e.expr.type->type == ev_uinteger))
 						|| ((def_a->type->type == ev_integer
 							 || def_a->type->type == ev_uinteger)
-							&& e->e.expr.type->type == ev_pointer)) {
+							&& e->e.expr.type->type == ev_pointer)
+						|| (def_a->type->type == ev_integer
+							&& e->e.expr.type->type == ev_uinteger)
+						|| (def_a->type->type == ev_uinteger
+							&& e->e.expr.type->type == ev_integer)) {
 						def_t      *tmp;
 						tmp = new_def (e->e.expr.type, 0, def_a->scope);
 						tmp->ofs = 0;
