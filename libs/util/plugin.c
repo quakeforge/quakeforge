@@ -319,7 +319,7 @@ PI_LoadPlugin (const char *type, const char *name)
 
 	// add the plugin to the loaded_plugins hashtable
 	lp = malloc (sizeof (loaded_plugin_t));
-	lp->name = strcpy (malloc (strlen (plugin_name)), plugin_name);
+	lp->name = strdup (plugin_name);
 	lp->plugin = plugin;
 	Hash_Add (loaded_plugins, lp);
 
