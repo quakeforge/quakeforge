@@ -8,6 +8,35 @@
 	);
 	Super = NSObject;
     };
+    GMArchiver = {
+	Actions = (
+	);
+	Outlets = (
+	    lastObjectRepresentation
+	);
+	Super = NSObject;
+    };
+    GSHelpManagerPanel = {
+	Actions = (
+	);
+	Outlets = (
+	);
+	Super = NSPanel;
+    };
+    GSInfoPanel = {
+	Actions = (
+	);
+	Outlets = (
+	);
+	Super = NSPanel;
+    };
+    GSVbox = {
+	Actions = (
+	);
+	Outlets = (
+	);
+	Super = GSTable;
+    };
     IBInspector = {
 	Actions = (
 	    ok:,
@@ -19,7 +48,70 @@
 	);
 	Super = NSObject;
     };
+    IMConnector = {
+	Actions = (
+	);
+	Outlets = (
+	    destination,
+	    source
+	);
+	Super = NSObject;
+    };
+    IMControlConnector = {
+	Actions = (
+	);
+	Outlets = (
+	);
+	Super = IMConnector;
+    };
+    IMCustomObject = {
+	Actions = (
+	);
+	Outlets = (
+	    extension,
+	    realObject
+	);
+	Super = NSObject;
+    };
+    IMCustomView = {
+	Actions = (
+	);
+	Outlets = (
+	    extension,
+	    realObject
+	);
+	Super = NSView;
+    };
+    IMOutletConnector = {
+	Actions = (
+	);
+	Outlets = (
+	);
+	Super = IMConnector;
+    };
     NSApplication = {
+	Actions = (
+	    arrangeInFront:,
+	    hide:,
+	    hideOtherApplications:,
+	    miniaturiseAll:,
+	    orderFrontDataLinkPanel:,
+	    orderFrontHelpPanel:,
+	    orderFrontStandardAboutPanel:,
+	    orderFrontStandardAboutPanelWithOptions:,
+	    orderFrontcolorPanel:,
+	    removeWindowsItem:,
+	    runPageLayout:,
+	    setAppleMenu:,
+	    setDelegate:,
+	    setMainMenu:,
+	    setServicesMenu:,
+	    setServicesProvider:,
+	    setWindowsMenu:,
+	    terminate:,
+	    unhide:,
+	    unhideAllApplications:
+	);
 	Outlets = (
 	    delegate
 	);
@@ -27,6 +119,13 @@
     };
     NSButton = {
 	Super = NSControl;
+    };
+    NSClipView = {
+	Actions = (
+	);
+	Outlets = (
+	);
+	Super = NSView;
     };
     NSControl = {
 	Actions = (
@@ -41,6 +140,80 @@
 	);
 	Super = NSView;
     };
+    NSDocument = {
+	Actions = (
+	    canCloseDocumentWithDelegate:,
+	    printDocument:,
+	    revertDocumentToSaved:,
+	    runPageLayout:,
+	    saveDocument:,
+	    saveDocumentAs:,
+	    saveDocumentTo:,
+	    saveDocumentWithDelegate:
+	);
+	Outlets = (
+	);
+	Super = NSObject;
+    };
+    NSDocumentController = {
+	Actions = (
+	    clearRecentDocuments:,
+	    closeAllDocumentsWithDelegate:,
+	    newDocument:,
+	    openDocument:,
+	    saveAllDocuments:
+	);
+	Outlets = (
+	);
+	Super = NSObject;
+    };
+    NSDrawer = {
+	Actions = (
+	    close:,
+	    open:,
+	    setDelegate:,
+	    toggle:
+	);
+	Outlets = (
+	);
+	Super = NSResponder;
+    };
+    NSFontManager = {
+	Actions = (
+	    addFontTrait:,
+	    modifyFont:,
+	    modifyFontViaPanel:,
+	    orderFrontFontPanel:,
+	    removeFontTrait:,
+	    setDelegate:
+	);
+	Outlets = (
+	);
+	Super = NSObject;
+    };
+    NSGraphicsContext = {
+	Actions = (
+	);
+	Outlets = (
+	);
+	Super = NSObject;
+    };
+    NSHelpManager = {
+	Actions = (
+	    removeContextHelpForObject:
+	);
+	Outlets = (
+	);
+	Super = NSObject;
+    };
+    NSLayoutManager = {
+	Actions = (
+	    setDelegate:
+	);
+	Outlets = (
+	);
+	Super = NSObject;
+    };
     NSMenu = {
 	Super = NSObject;
     };
@@ -50,16 +223,123 @@
 	);
 	Super = NSObject;
     };
+    NSPageLayout = {
+	Actions = (
+	    pickedButton,
+	    pickedOrientation,
+	    pickedPaperSize,
+	    pickedUnits
+	);
+	Outlets = (
+	);
+	Super = NSPanel;
+    };
     NSPanel = {
 	Super = NSWindow;
     };
-    NSResponder = {
+    NSPasteboard = {
+	Actions = (
+	);
+	Outlets = (
+	    owner,
+	    target
+	);
 	Super = NSObject;
+    };
+    NSResponder = {
+	Actions = (
+	    capitalizeWord:,
+	    centerSelectionInVisibleArea:,
+	    changeCaseOfLetter:,
+	    complete:,
+	    deleteBackward:,
+	    deleteForward:,
+	    deleteToBeginningOfLine:,
+	    deleteToBeginningOfParagraph:,
+	    deleteToEndOfLine:,
+	    deleteToEndOfParagraph:,
+	    deleteToMark:,
+	    deleteWordBackward:,
+	    deleteWordForward:,
+	    indent:,
+	    insertBacktab:,
+	    insertNewline:,
+	    insertNewlineIgnoringFieldEditor:,
+	    insertParagraphSeparator:,
+	    insertTab:,
+	    insertTabIgnoringFieldEditor:,
+	    lowercaseWord:,
+	    moveBackward:,
+	    moveBackwardAndModifySelection:,
+	    moveDown:,
+	    moveDownAndModifySelection:,
+	    moveForward:,
+	    moveForwardAndModifySelection:,
+	    moveLeft:,
+	    moveRight:,
+	    moveToBeginningOfDocument:,
+	    moveToBeginningOfLine:,
+	    moveToBeginningOfParagraph:,
+	    moveToEndOfDocument:,
+	    moveToEndOfLine:,
+	    moveToEndOfParagraph:,
+	    moveUp:,
+	    moveUpAndModifySelection:,
+	    moveWordBackward:,
+	    moveWordBackwardAndModifySelection:,
+	    moveWordForward:,
+	    moveWordForwardAndModifySelection:,
+	    pageDown:,
+	    pageUp:,
+	    scrollLineDown:,
+	    scrollLineUp:,
+	    scrollPageDown:,
+	    scrollPageUp:,
+	    selectAll:,
+	    selectLine:,
+	    selectParagraph:,
+	    selectToMark:,
+	    selectWord:,
+	    setNextResponder:,
+	    showContextHelp:,
+	    swapWithMark:,
+	    transpose:,
+	    transposeWords:,
+	    uppercaseWord:,
+	    yank:
+	);
+	Super = NSObject;
+    };
+    NSRulerView = {
+	Actions = (
+	);
+	Outlets = (
+	);
+	Super = NSView;
+    };
+    NSSecureTextField = {
+	Actions = (
+	);
+	Outlets = (
+	);
+	Super = NSTextField;
     };
     NSSlider = {
 	Super = NSControl;
     };
+    NSStepper = {
+	Actions = (
+	);
+	Outlets = (
+	);
+	Super = NSControl;
+    };
     NSTextField = {
+	Actions = (
+	    setDelegate:,
+	    setNextText:,
+	    setPreviousText:
+	);
 	Outlets = (
 	    delegate
 	);
@@ -69,6 +349,19 @@
 	Super = NSResponder;
     };
     NSWindow = {
+	Actions = (
+	    deminiaturize:,
+	    fax:,
+	    orderBack:,
+	    orderFront:,
+	    orderOut:,
+	    performClose:,
+	    performMiniaturize:,
+	    print:,
+	    runToolbarCustomizationPalette:,
+	    setDelegate:,
+	    toggleToolbarShown:
+	);
 	Outlets = (
 	    delegate
 	);
