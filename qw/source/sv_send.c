@@ -92,8 +92,7 @@ SV_FlushRedirect (void)
 		while (count) {
 			bytes = min (count, sizeof (send) - 5);
 			memcpy (send + 5, p, bytes);
-			send[5 + bytes] = 0;
-			Netchan_SendPacket (bytes + 1, send, net_from);
+			Netchan_SendPacket (bytes + 5, send, net_from);
 			p += bytes;
 			count -= bytes;
 		}
