@@ -869,12 +869,6 @@ SVC_DirectConnect (void)
 	}
 
 	// if at server limits, refuse connection
-	if (maxclients->int_val > MAX_CLIENTS)
-		Cvar_SetValue (maxclients, MAX_CLIENTS);
-	if (maxspectators->int_val > MAX_CLIENTS)
-		Cvar_SetValue (maxspectators, MAX_CLIENTS);
-	if (maxspectators->int_val + maxclients->int_val > MAX_CLIENTS)
-		Cvar_SetValue (maxspectators, MAX_CLIENTS - maxclients->int_val);
 	if ((spectator && spectators >= maxspectators->int_val)
 		|| (!spectator && clients >= maxclients->int_val)) {
 		SV_Printf ("%s:full connect\n", NET_AdrToString (adr));
@@ -2009,6 +2003,37 @@ SV_Frame (float time)
 }
 
 static void
+maxspectators_f (cvar_t *var)
+{
+	if (var->int_val > MAX_CLIENTS)
+		Cvar_SetValue (var, maxclients->int_val);
+	else if (var->int_val + maxclients->int_val > MAX_CLIENTS)
+		Cvar_SetValue (var, MAX_CLIENTS - maxclients->int_val);
+	else if (var->int_val < 0)
+		Cvar_SetValue (var, 0);
+	else if (var->int_val != var->value)
+		Cvar_SetValue (var, var->int_val);
+	else
+		Cvar_Info (var);
+}
+
+static void
+maxclients_f (cvar_t *var)
+{
+	if (var->int_val > MAX_CLIENTS)
+		Cvar_SetValue (var, MAX_CLIENTS);
+	else if (var->int_val < 1)
+		Cvar_SetValue (var, 1);
+	else if (var->int_val != var->value)
+		Cvar_SetValue (var, var->int_val);
+	else {
+		Cvar_Info (var);
+		if (maxspectators)
+			maxspectators_f (maxspectators);
+	}
+}
+
+static void
 SV_InitLocal (void)
 {
 	int         i;
@@ -2051,10 +2076,11 @@ SV_InitLocal (void)
 						  "same level will be played and the exit will kill "
 						  "anybody that tries to exit, except on the Start "
 						  "map.");
-	maxclients = Cvar_Get ("maxclients", "8", CVAR_SERVERINFO, Cvar_Info,
+	maxclients = Cvar_Get ("maxclients", "8", CVAR_SERVERINFO, maxclients_f,
 						   "Sets how many clients can connect to your "
 						   "server, this includes spectators and players");
-	maxspectators = Cvar_Get ("maxspectators", "8", CVAR_SERVERINFO, Cvar_Info,
+	maxspectators = Cvar_Get ("maxspectators", "8", CVAR_SERVERINFO,
+							  maxspectators_f,
 							  "Sets how many spectators can connect to your "
 							  "server. The maxclients value takes precedence "
 							  "over this value so this value should always be "
