@@ -28,8 +28,9 @@
 #
 AUTOMAKE_OPTIONS= foreign
 
-INCLUDES=	-I$(top_srcdir)/include
+INCLUDES=	-I$(top_srcdir)/include @QF_HEADERS@
 
 bin_PROGRAMS=	qfcc
 
 qfcc_SOURCES=	cmdlib.c pr_comp.c pr_lex.c qfcc.c
+qfcc_LDADD=	@QF_LIBS@ -lqfutils

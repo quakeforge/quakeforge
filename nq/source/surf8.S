@@ -30,7 +30,7 @@
 # include "config.h"
 #endif
 
-#include "asm_i386.h"
+#include "QF/asm_i386.h"
 #include "quakeasm.h"
 #include "asm_draw.h"
 

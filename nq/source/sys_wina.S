@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // x86 assembly-language Win-dependent routines.
 
 #define GLQUAKE	1	// don't include unneeded defs
-#include "asm_i386.h"
+#include "QF/asm_i386.h"
 #include "quakeasm.h"
 
 // LATER should be USE_INTEL_ASM-dependent, and have an equivalent C path
