@@ -40,6 +40,9 @@ typedef enum {
 	ev_uinteger,
 	ev_short,			// value is embedded in the opcode
 	ev_struct,
+	ev_object,
+	ev_class,
+	ev_sel,
 	
 	ev_type_count		// not a type, gives number of types
 } etype_t;

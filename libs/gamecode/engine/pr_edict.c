@@ -71,6 +71,9 @@ int         pr_type_size[ev_type_count] = {
 	1,
 	0,			// value in opcode
 	1,			// variable
+	1,			// variable
+	1,
+	2,
 };
 
 const char *pr_type_name[ev_type_count] = {
@@ -87,6 +90,9 @@ const char *pr_type_name[ev_type_count] = {
 	"uinteger",
 	"short",
 	"struct",
+	"object",
+	"Class",
+	"SEL",
 };
 
 ddef_t     *ED_FieldAtOfs (progs_t * pr, int ofs);

@@ -34,6 +34,7 @@ static const char rcsid[] =
 
 #include "QF/hash.h"
 #include "QF/sys.h"
+#include "QF/dstring.h"
 
 #include "qfcc.h"
 #include "function.h"
@@ -234,6 +235,85 @@ print_type (type_t *type)
 			printf(" %s", pr_type_name[type->type]);
 			break;
 	}
+}
+
+void
+_encode_type (dstring_t *encoding, type_t *type, int level)
+{
+	struct_field_t *field;
+
+	switch (type->type) {
+		case ev_void:
+			dstring_appendstr (encoding, "v");
+			break;
+		case ev_string:
+			dstring_appendstr (encoding, "*");
+			break;
+		case ev_float:
+			dstring_appendstr (encoding, "f");
+			break;
+		case ev_vector:
+			dstring_appendstr (encoding, "?");
+			break;
+		case ev_entity:
+			dstring_appendstr (encoding, "?");
+			break;
+		case ev_field:
+			dstring_appendstr (encoding, "F");
+			break;
+		case ev_func:
+			dstring_appendstr (encoding, "?");
+			break;
+		case ev_pointer:
+			type = type->aux_type;
+			switch (type->type) {
+				case ev_object:
+					dstring_appendstr (encoding, "@");
+					break;
+				case ev_class:
+					dstring_appendstr (encoding, "#");
+					break;
+				default:
+					dstring_appendstr (encoding, "^");
+					_encode_type (encoding, type, level + 1);
+					break;
+			}
+			break;
+		case ev_quaternion:
+			dstring_appendstr (encoding, "?");
+			break;
+		case ev_integer:
+			dstring_appendstr (encoding, "i");
+			break;
+		case ev_uinteger:
+			dstring_appendstr (encoding, "I");
+			break;
+		case ev_short:
+			dstring_appendstr (encoding, "s");
+			break;
+		case ev_struct:
+		case ev_object:
+		case ev_class:
+			dstring_appendstr (encoding, "{");
+			//XXX dstring_appendstr (encoding, name);
+			dstring_appendstr (encoding, "=");
+			for (field = type->struct_head; field; field = field->next)
+				_encode_type (encoding, field->type, level + 1);
+			dstring_appendstr (encoding, "}");
+			break;
+		case ev_sel:
+			dstring_appendstr (encoding, ":");
+			break;
+		case ev_type_count:
+			dstring_appendstr (encoding, "?");
+			break;
+	}
+}
+
+void
+encode_type (dstring_t *encoding, type_t *type)
+{
+	_encode_type (encoding, type, 0);
 }
 
 void

@@ -1064,6 +1064,9 @@ test_expr (expr_t *e, int test)
 			new->type = ex_quaternion;
 			break;
 		case ev_struct:
+		case ev_object:
+		case ev_class:
+		case ev_sel:
 			return error (e, "struct cannot be tested");
 	}
 	new->line = e->line;
@@ -1961,7 +1964,14 @@ protocol_expr (const char *protocol)
 expr_t *
 encode_expr (type_t *type)
 {
-	return error (0, "not implemented");
+	dstring_t  *encoding = dstring_newstr ();
+	expr_t     *e = new_expr ();
+
+	encode_type (encoding, type);
+	e->type = ex_string;
+	e->e.string_val = encoding->str;
+	free (encoding);
+	return e;
 }
 
 expr_t *

@@ -57,11 +57,14 @@ extern	type_t	*type_method;
 extern	def_t	def_void;
 extern	def_t	def_function;
 
+struct dstring_s;
+
 type_t *find_type (type_t *new);
-void new_typedef (const char *name, struct type_s *type);
-struct type_s *get_typedef (const char *name);
-struct type_s *pointer_type (struct type_s *aux);
-void print_type (struct type_s *type);
+void new_typedef (const char *name, type_t *type);
+type_t *get_typedef (const char *name);
+type_t *pointer_type (type_t *aux);
+void print_type (type_t *type);
+void encode_type (struct dstring_s *encodking, type_t *type);
 
 void init_types (void);
 
