@@ -329,6 +329,7 @@ extern	type_t	type_field;
 extern	type_t	type_function;
 extern	type_t	type_pointer;
 extern	type_t	type_floatfield;
+extern	type_t	type_quaternion;
 
 extern	def_t	def_void;
 extern	def_t	def_string;
@@ -338,6 +339,7 @@ extern	def_t	def_entity;
 extern	def_t	def_field;
 extern	def_t	def_function;
 extern	def_t	def_pointer;
+extern	def_t	def_quaternion;
 
 struct function_s
 {
@@ -390,6 +392,8 @@ extern opcode_t *op_ifnot;
 extern opcode_t *op_state;
 extern opcode_t *op_goto;
 
+statref_t *PR_NewStatref (dstatement_t *st, int field);
+void PR_AddStatementRef (def_t *def, dstatement_t *st, int field);
 def_t *PR_Statement (opcode_t *op, def_t *var_a, def_t *var_b);
 opcode_t *PR_Opcode_Find (const char *name, int priority,
 						  def_t *var_a, def_t *var_b, def_t *var_c);
@@ -397,6 +401,8 @@ opcode_t *PR_Opcode (short opcode);
 void PR_Opcode_Init (void);
 
 //============================================================================
+
+#include "expr.h"
 
 
 extern	qboolean	pr_dumpasm;
@@ -426,6 +432,7 @@ void PR_LexString (void);
 type_t *PR_ParseType (void);
 char *PR_ParseName (void);
 def_t *PR_ParseImmediate (def_t *def);
+def_t *PR_ReuseConstant (expr_t *expr, def_t *def);
 
 qboolean PR_Check (token_type_t type, const char *string);
 void PR_Expect (token_type_t type, const char *string);

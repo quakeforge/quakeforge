@@ -131,15 +131,22 @@ opcode_t    pr_opcodes[] = {
 	{"|", "BITOR", OP_BITOR, 2, false, &def_float, &def_float, &def_float, PROG_ID_VERSION},
 };
 
+statref_t *
+PR_NewStatref (dstatement_t *st, int field)
+{
+	statref_t *ref = calloc (1, sizeof (statref_t));
+	ref->statement = st;
+	ref->field = field;
+	return ref;
+}
+
 void
 PR_AddStatementRef (def_t *def, dstatement_t *st, int field)
 {
 	if (def) {
-		statref_t *ref = calloc (1, sizeof (statref_t));
+		statref_t *ref = PR_NewStatref (st, field);
 		ref->next = def->refs;
 		def->refs = ref;
-		ref->statement = st;
-		ref->field = field;
 	}
 }
 

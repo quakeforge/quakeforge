@@ -60,6 +60,7 @@ type_t	type_field = { ev_field, &def_field };
 // type_function is a void() function used for state defs
 type_t	type_function = { ev_func, &def_function, NULL, &type_void };
 type_t	type_pointer = { ev_pointer, &def_pointer };
+type_t	type_quaternion = { ev_quaternion, &def_quaternion };
 
 type_t	type_floatfield = { ev_field, &def_field, NULL, &type_float };
 
@@ -73,6 +74,7 @@ def_t	def_entity = { &type_entity, "temp" };
 def_t	def_field = { &type_field, "temp" };
 def_t	def_function = { &type_function, "temp" };
 def_t	def_pointer = { &type_pointer, "temp" };
+def_t	def_quaternion = { &type_quaternion, "temp"};
 
 def_t	def_ret, def_parms[MAX_PARMS];
 
@@ -684,7 +686,9 @@ PR_ParseError (const char *error, ...)
 
 	printf ("%s:%i:%s\n", strings + s_file, pr_source_line, string);
 
+#ifndef NEW_PARSER
 	longjmp (pr_parse_abort, 1);
+#endif
 }
 
 

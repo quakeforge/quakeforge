@@ -1,9 +1,9 @@
 #include <stdlib.h>
 
 #include <QF/mathlib.h>
+#include <QF/va.h>
 
 #include "qfcc.h"
-#include "expr.h"
 #include "scope.h"
 #include "qc-parse.h"
 
@@ -32,6 +32,17 @@ static type_t *types[] = {
 	&type_field,
 	&type_function,
 	&type_pointer,
+};
+
+static expr_type expr_types[] = {
+	ex_label,		// ev_void (ick)
+	ex_string,		// ev_string
+	ex_float,		// ev_float
+	ex_vector,		// ev_vector
+	ex_label,		// ev_entity (ick)
+	ex_label,		// ev_field (ick)
+	ex_label,		// ev_func (ick)
+	ex_label,		// ev_pointer (ick)
 };
 
 static etype_t
@@ -629,4 +640,243 @@ function_expr (expr_t *e1, expr_t *e2)
 	e->e.expr.e1 = e1;
 	e->e.expr.e2 = e2;
 	return e;
+}
+
+def_t *
+emit_statement (opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_c)
+{
+	dstatement_t    *statement;
+
+	statement = &statements[numstatements];
+	numstatements++;
+	statement_linenums[statement - statements] = pr_source_line;
+	statement->op = op->opcode;
+	statement->a = var_a ? var_a->ofs : 0;
+	statement->b = var_b ? var_b->ofs : 0;
+	if (op->type_c == &def_void || op->right_associative) {
+		// ifs, gotos, and assignments don't need vars allocated
+		var_c = NULL;
+		statement->c = 0;
+	} else {	// allocate result space
+		if (!var_c)
+			var_c = PR_GetTempDef (op->type_c->type, pr_scope);
+		statement->c = var_c->ofs;
+	}
+	PR_AddStatementRef (var_a, statement, 0);
+	PR_AddStatementRef (var_b, statement, 1);
+	PR_AddStatementRef (var_c, statement, 2);
+
+	if (op->right_associative)
+		return var_a;
+	return var_c;
+}
+
+def_t *emit_sub_expr (expr_t *e, def_t *dest);
+
+def_t *
+emit_function_call (expr_t *e, def_t *dest)
+{
+	def_t *func = emit_sub_expr (e->e.expr.e1, 0);
+	def_t *arg;
+	expr_t *earg;
+	opcode_t *op;
+	int count = 0, ind;
+
+	for (earg = e->e.expr.e2; earg; earg = earg->next)
+		count++;
+	ind = count;
+	for (earg = e->e.expr.e2; earg; earg = earg->next) {
+		ind--;
+		arg = emit_sub_expr (earg, 0);
+		def_parms[ind].type = arg->type;
+		op = PR_Opcode_Find ("=", 5, arg, &def_parms[ind], &def_parms[ind]);
+		emit_statement (op, arg, &def_parms[ind], 0);
+	}
+	op = PR_Opcode_Find (va ("<CALL%d>", count), -1, &def_function,  &def_void, &def_void);
+	emit_statement (op, func, 0, dest);
+
+	def_ret.type = func->type->aux_type;
+	return &def_ret;
+}
+
+def_t *
+emit_sub_expr (expr_t *e, def_t *dest)
+{
+	opcode_t *op;
+	char *operator;
+	def_t *def_a, *def_b;
+	int priority;
+
+	if (e->type == ex_expr && e->e.expr.op == 'c')
+		return emit_function_call (e, dest);
+
+	switch (e->type) {
+		default:
+		case ex_label:
+		case ex_block:
+			abort ();
+		case ex_expr:
+			def_a = emit_sub_expr (e->e.expr.e1, 0);
+			def_b = emit_sub_expr (e->e.expr.e2, 0);
+			switch (e->e.expr.op) {
+				case AND:
+					operator = "&&";
+					priority = 6;
+					break;
+				case OR:
+					operator = "||";
+					priority = 6;
+					break;
+				case '=':
+					operator = "=";
+					priority = 6;
+					break;
+				case EQ:
+					operator = "==";
+					priority = 4;
+					break;
+				case NE:
+					operator = "!=";
+					priority = 4;
+					break;
+				case LE:
+					operator = "<=";
+					priority = 4;
+					break;
+				case GE:
+					operator = ">=";
+					priority = 4;
+					break;
+				case LT:
+					operator = "<";
+					priority = 4;
+					break;
+				case GT:
+					operator = ">";
+					priority = 4;
+					break;
+				case '+':
+					operator = "+";
+					priority = 3;
+					break;
+				case '-':
+					operator = "-";
+					priority = 3;
+					break;
+				case '*':
+					operator = "*";
+					priority = 2;
+					break;
+				case '/':
+					operator = "/";
+					priority = 2;
+					break;
+				case '&':
+					operator = "&";
+					priority = 2;
+					break;
+				case '|':
+					operator = "|";
+					priority = 2;
+					break;
+				case '.':
+					operator = ".";
+					priority = 1;
+					break;
+				default:
+					abort ();
+			}
+			op = PR_Opcode_Find (operator, priority, def_a, def_b, dest);
+			return emit_statement (op, def_a, def_b, dest);
+		case ex_uexpr:
+			if (e->e.expr.op == '!') {
+				operator = "!";
+				priority = -1;
+				def_a = emit_sub_expr (e->e.expr.e1, 0);
+				def_b = &def_void;
+			} else if (e->e.expr.op == '-') {
+				static expr_t zero;
+
+				zero.type = expr_types[get_type (e->e.expr.e1)];
+
+				operator = "-";
+				priority = 3;
+				def_a = PR_ReuseConstant (&zero, 0);
+				def_b = emit_sub_expr (e->e.expr.e1, 0);
+			} else {
+				abort ();
+			}
+			op = PR_Opcode_Find (operator, priority, def_a, def_b, dest);
+			return emit_statement (op, def_a, def_b, dest);
+		case ex_def:
+			return e->e.def;
+		case ex_int:
+		case ex_float:
+		case ex_string:
+		case ex_vector:
+		case ex_quaternion:
+			return PR_ReuseConstant (e, 0);
+	}
+}
+
+void
+emit_expr (expr_t *e)
+{
+	def_t *def;
+	statref_t *ref;
+	dstatement_t *st;
+
+	switch (e->type) {
+		case ex_label:
+			break;
+		case ex_block:
+			for (e = e->e.block.head; e; e = e->next)
+				emit_expr (e);
+			break;
+		case ex_expr:
+			switch (e->e.expr.op) {
+				case '=':
+					break;
+				case 'n':
+					break;
+				case 'i':
+					break;
+				case 'c':
+					break;
+				default:
+					fprintf (stderr,
+							 "%s:%d: warning: unused expression ignored\n",
+							 strings + s_file, pr_source_line);
+			}
+			break;
+		case ex_uexpr:
+			switch (e->e.expr.op) {
+				case 'r':
+					def = 0;
+					if (e->e.expr.e1)
+						def = emit_sub_expr (e->e.expr.e1, 0);
+					PR_Statement (op_return, def, 0);
+					return;
+				case 'g':
+					st = &statements[numstatements];
+					PR_Statement (op_goto, 0, 0);
+					if (e->e.label.statement) {
+						st->a = e->e.label.statement - st;
+					} else {
+						ref = PR_NewStatref (st, 0);
+						ref->next = e->e.label.refs;
+						e->e.label.refs = ref;
+					}
+					return;
+			}
+		case ex_def:
+		case ex_int:
+		case ex_float:
+		case ex_string:
+		case ex_vector:
+		case ex_quaternion:
+			fprintf (stderr, "%s:%d: warning: unused expression ignored\n",
+					 strings + s_file, pr_source_line);
+			break;
+	}
 }

@@ -1,6 +1,5 @@
 %{
 #include "qfcc.h"
-#include "expr.h"
 
 #define YYDEBUG 1
 #define YYERROR_VERBOSE 1
@@ -538,6 +537,11 @@ build_function (function_t *f)
 void
 emit_function (function_t *f, expr_t *e)
 {
+	pr_scope = f->def;
+	while (e) {
+		emit_expr (e);
+		e = e->next;
+	}
 	/*PR_PrintType (f->def->type);
 	printf (" %s =\n", f->def->name);
 	while (e) {
