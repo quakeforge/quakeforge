@@ -164,10 +164,23 @@ dstring_clearstr (dstring_t *dstr)
 	dstr->str[0] = 0;
 }
 
+#if defined (HAVE_VA_COPY)
+# define VA_COPY(a,b) va_copy (a, b)
+#elif defined (HAVE__VA_COPY)
+# define VA_COPY(a,b) __va_copy (a, b)
+#else
+# define VA_COPY memcpy (a, b, sizeof (a))
+#endif
+
 int
 dvsprintf (dstring_t *dstr, const char *fmt, va_list args)
 {
 	int         size;
+
+#ifdef VA_LIST_IS_ARRAY
+	va_list     tmp_args;
+	VA_COPY (tmp_args, args);
+#endif
 
 	size = vsnprintf (dstr->str, dstr->truesize, fmt, args) + 1;  // +1 for nul
 	while (size <= 0 || size > dstr->truesize) {
@@ -176,6 +189,9 @@ dvsprintf (dstring_t *dstr, const char *fmt, va_list args)
 		else
 			dstr->size = dstr->truesize + 1024;
 		dstring_adjust (dstr);
+#ifdef VA_LIST_IS_ARRAY
+		VA_COPY (args, tmp_args);
+#endif
 		size = vsnprintf (dstr->str, dstr->truesize, fmt, args) + 1;
 	}
 	dstr->size = size;

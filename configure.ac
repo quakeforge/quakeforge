@@ -172,6 +172,8 @@ AC_STRUCT_ST_BLKSIZE
 AC_HEADER_TIME
 AC_STRUCT_TM
 
+AC_TYPE_VA_LIST
+
 if test "x$cross_compiling" = xyes; then
 	AC_MSG_CHECKING(whether byte ordering is bigendian)
 	AC_ARG_WITH(endian,
@@ -321,6 +323,8 @@ AC_FUNC_MEMCMP
 AC_FUNC_MMAP
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
+AC_FUNC_VA_COPY
+AC_FUNC__VA_COPY
 AC_CHECK_FUNCS(
 	access _access \
 	gethostname gethostbyname connect gettimeofday getwd mkdir _mkdir \
