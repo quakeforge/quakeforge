@@ -166,7 +166,7 @@ Con_Printf (char *fmt, ...)
 			pending = 0;
 		}
 
-		Sys_Printf ("%s", msg2);		// also echo to debugging console
+		Con_Print (msg2);		// also echo to debugging console
 		if (sv_logfile)
 			Qprintf (sv_logfile, "%s", msg2);
 	}

@@ -40,7 +40,7 @@
 #include <stdlib.h>
 
 #include "QF/cmd.h"
-#include "compat.h"
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/model.h"
 #include "QF/msg.h"
@@ -54,6 +54,7 @@
 
 #include "bothdefs.h"
 #include "buildnum.h"
+#include "compat.h"
 #include "game.h"
 #include "net.h"
 #include "pmove.h"
@@ -184,6 +185,7 @@ SV_Shutdown (void)
 		sv_logfile = NULL;
 	}
 	NET_Shutdown ();
+	Con_Shutdown ();
 }
 
 /*
@@ -1440,14 +1442,7 @@ SV_CheckTimeouts (void)
 void
 SV_GetConsoleCommands (void)
 {
-	char       *cmd;
-
-	while (1) {
-		cmd = Sys_ConsoleInput ();
-		if (!cmd)
-			break;
-		Cbuf_AddText (cmd);
-	}
+	Con_ProcessInput ();
 }
 
 /*
@@ -2036,6 +2031,8 @@ SV_Init (void)
 	Cbuf_Execute_Sets ();
 
 	PI_Init ();
+
+	Con_Init ();
 
 	COM_Filesystem_Init_Cvars ();
 	Game_Init_Cvars ();

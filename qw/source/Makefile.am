@@ -74,7 +74,8 @@ else
 syssv_SRC=	sv_sys_unix.c
 endif
 
-server_SOURCES=	sv_ccmds.c sv_cvar.c sv_ents.c sv_init.c sv_main.c sv_misc.c \
+server_SOURCES=	sv_ccmds.c sv_console.c sv_cvar.c sv_ents.c sv_init.c \
+		sv_main.c sv_misc.c \
 		sv_model.c sv_move.c sv_nchan.c sv_phys.c sv_pr_cmds.c \
 		sv_progs.c sv_send.c sv_user.c world.c $(syssv_SRC)
 
@@ -83,7 +84,7 @@ qf_server_LIBS= $(top_builddir)/libs/models/libQFmodels.la \
 		$(top_builddir)/libs/util/libQFutil.la
 
 qw_server_SOURCES=	$(common_SOURCES) $(server_SOURCES)
-qw_server_LDADD=	-L. libqfnet.la $(ASM) $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS)
+qw_server_LDADD=	-L. libqfnet.la $(ASM) $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
 qw_server_DEPENDENCIES=	libqfnet.la $(ASM) $(qf_server_LIBS)
 
 # Client builds

@@ -45,10 +45,12 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
-#include "server.h"
 #include "QF/sys.h"
+
+#include "server.h"
 
 #ifdef NeXT
 # include <libc.h>
@@ -184,6 +186,7 @@ main (int argc, char *argv[])
 
 	// run one frame immediately for first heartbeat
 	SV_Frame (0.1);
+	Con_ProcessInput ();	// dirty hack to get the cursor in the right place
 
 	// 
 	// main loop

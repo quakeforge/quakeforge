@@ -92,7 +92,7 @@ AC_HEADER_STDC
 AC_HEADER_MAJOR
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(
-	arpa/inet.h asm/io.h assert.h conio.h ctype.h ddraw.h dinput.h \
+	arpa/inet.h asm/io.h assert.h conio.h ctype.h curses.h ddraw.h dinput.h \
 	direct.h dirent.h dlfcn.h dmedia/audio.h dmedia/cdaudio.h dpmi.h \
 	dsound.h errno.h fcntl.h fnmatch.h glide/sst1vid.h io.h \
 	libc.h limits.h linux/cdrom.h linux/joystick.h linux/soundcard.h \
@@ -269,6 +269,15 @@ if test "x$ac_cv_func_dlopen" != "xyes"; then
 	)
 fi
 AC_SUBST(DL_LIBS)
+
+AC_CHECK_LIB(ncurses, initscr,
+	CURSES_LIBS=-lncurses,
+	AC_CHECK_LIB(curses, initscr,
+		CURSES_LIBS=-ncurses,
+		CURSES_LIBS=
+	)
+)
+AC_SUBST(CURSES_LIBS)
 
 dnl Checks for stricmp/strcasecmp
 #AC_CHECK_FUNC(strcasecmp,
