@@ -1648,7 +1648,8 @@ function_expr (expr_t *e1, expr_t *e2)
 	}
 	for (i = arg_count - 1, e = e2; i >= 0; i--, e = e->next) {
 		type_t     *t = get_type (e);
-
+ 
+		check_initialized (e);
 		if (ftype->parm_types[i] == &type_float && e->type == ex_integer) {
 			e->type = ex_float;
 			e->e.float_val = e->e.integer_val;
