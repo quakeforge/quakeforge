@@ -690,7 +690,10 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 			case OP_DONE:
 			case OP_RETURN:
-				if (&R_INT (pr) != &OPA.integer_var)
+				if (!st->a)
+					memset (&R_INT (pr), 0,
+							pr->pr_param_size * sizeof (OPA));
+				else if (&R_INT (pr) != &OPA.integer_var)
 					memcpy (&R_INT (pr), &OPA,
 							pr->pr_param_size * sizeof (OPA));
 				PR_LeaveFunction (pr);
