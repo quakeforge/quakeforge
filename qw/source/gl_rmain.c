@@ -136,6 +136,7 @@ cvar_t	*brighten;
 extern cvar_t *scr_fov;
 
 extern byte gammatable[256];
+extern qboolean lighthalf;
 
 // LordHavoc: place for gl_rmain setup code
 void
@@ -370,7 +371,7 @@ GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
 		glDepthMask (GL_FALSE);
 
 	if (fb) {	// don't do this in the loop, it doesn't change
-		if (gl_lightmode->int_val)
+		if (lighthalf)
 			glColor4f (0.5, 0.5, 0.5, modelalpha);
 		else
 			glColor4f (1, 1, 1, modelalpha);
@@ -409,7 +410,7 @@ GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
 	if (modelalpha != 1.0)
 		glDepthMask (GL_TRUE);
 
-	glColor3ubv (white_v);
+	glColor3ubv (lighthalf_v);
 }
 
 /*
@@ -442,7 +443,7 @@ GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, float ble
 		glDepthMask (GL_FALSE);
 
 	if (fb) {	// don't do this in the loop, it doesn't change
-		if (gl_lightmode->int_val)
+		if (lighthalf)
 			glColor4f (0.5, 0.5, 0.5, modelalpha);
 		else
 			glColor4f (1, 1, 1, modelalpha);
@@ -485,7 +486,7 @@ GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, float ble
 
 	if (modelalpha != 1.0)
 		glDepthMask (GL_TRUE);
-	glColor3ubv (white_v);
+	glColor3ubv (lighthalf_v);
 
 }
 
@@ -729,7 +730,7 @@ R_DrawAliasModel (entity_t *e)
 	shadecolor[0] = currententity->colormod[0];
 	shadecolor[1] = currententity->colormod[1];
 	shadecolor[2] = currententity->colormod[2];
-	if (!gl_lightmode->int_val) {
+	if (!lighthalf) {
 		shadecolor[0] *= 2.0;
 		shadecolor[1] *= 2.0;
 		shadecolor[2] *= 2.0;
@@ -889,7 +890,7 @@ R_DrawAliasModel (entity_t *e)
 		}
 
 		glEnable (GL_TEXTURE_2D);
-		glColor3ubv (white_v);
+		glColor3ubv (lighthalf_v);
 		glPopMatrix ();
 	}
 }

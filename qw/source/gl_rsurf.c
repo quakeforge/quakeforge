@@ -85,6 +85,8 @@ byte       *lightmaps[MAX_LIGHTMAPS];
 msurface_t *waterchain = NULL;
 msurface_t *sky_chain;
 
+extern qboolean lighthalf;
+
 // LordHavoc: place for gl_rsurf setup code
 void
 glrsurf_init (void)
@@ -109,16 +111,11 @@ R_RecursiveLightUpdate (mnode_t *node)
 
 // LordHavoc: function to force all lightmaps to be updated
 void
-R_ForceLightUpdate (cvar_t *gl_lightmode)
+R_ForceLightUpdate (void)
 {
 	if (cl.worldmodel && cl.worldmodel->nodes
 		&& cl.worldmodel->nodes->contents >= 0)
 		R_RecursiveLightUpdate (cl.worldmodel->nodes);
-	if (gl_lightmode->int_val) {
-		white_v[0] = white_v[1] = white_v[2] = 128;
-	} else {
-		white_v[0] = white_v[1] = white_v[2] = 255;
-	}
 }
 
 /*
@@ -270,7 +267,7 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 	bl = blocklights;
 	switch (lightmap_bytes) {
 	case 4:
-		if (gl_lightmode->int_val) {
+		if (lighthalf) {
 			for (i = 0; i < tmax; i++, dest += stride) {
 				for (j = 0; j < smax; j++) {
 					t = (int) *bl++ >> 8;
@@ -297,7 +294,7 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 		}
 		break;
 	case 3:
-		if (gl_lightmode->int_val) {
+		if (lighthalf) {
 			for (i = 0; i < tmax; i++, dest += stride) {
 				for (j = 0; j < smax; j++) {
 					t = (int) *bl++ >> 8;
@@ -322,7 +319,7 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 		}
 		break;
 	case 1:
-		if (gl_lightmode->int_val) {
+		if (lighthalf) {
 			for (i = 0; i < tmax; i++, dest += stride) {
 				for (j = 0; j < smax; j++) {
 					t = (int) *bl++ >> 8;
@@ -474,7 +471,7 @@ R_DrawMultitexturePoly (msurface_t *s)
 		s->polys->fb_chain = fullbright_polys[texture->gl_fb_texturenum];
 		fullbright_polys[texture->gl_fb_texturenum] = s->polys;
 	}
-	glColor3ubv (white_v);
+	glColor3ubv (lighthalf_v);
 	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }
 
@@ -517,7 +514,7 @@ R_BlendLightmaps (void)
 	}
 
 	// Return to normal blending  --KB
-	glColor3ubv (white_v);
+	glColor3ubv (lighthalf_v);
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glDepthMask (GL_TRUE);				// back to normal Z buffering
@@ -623,7 +620,7 @@ R_RenderBrushPoly (msurface_t *fa)
 			R_BuildLightMap (fa, base, BLOCK_WIDTH * lightmap_bytes);
 		}
 	}
-	glColor3ubv (white_v);
+	glColor3ubv (lighthalf_v);
 }
 
 void
@@ -635,13 +632,13 @@ GL_WaterSurface (msurface_t *s)
 	glBindTexture (GL_TEXTURE_2D, i);
 	if (r_wateralpha->value < 1.0) {
 		glDepthMask (GL_FALSE);
-		if (gl_lightmode->int_val) {
+		if (lighthalf) {
 			glColor4f (0.5, 0.5, 0.5, r_wateralpha->value);
 		} else {
 			glColor4f (1, 1, 1, r_wateralpha->value);
 		}
 		EmitWaterPolys (s);
-		glColor3ubv (white_v);
+		glColor3ubv (lighthalf_v);
 		glDepthMask (GL_TRUE);
 	} else
 		EmitWaterPolys (s);
@@ -665,7 +662,7 @@ R_DrawWaterSurfaces (void)
 
 	if (r_wateralpha->value < 1.0) {
 		glDepthMask (GL_FALSE);
-		if (gl_lightmode->int_val) {
+		if (lighthalf) {
 			glColor4f (0.5, 0.5, 0.5, r_wateralpha->value);
 		} else {
 			glColor4f (1, 1, 1, r_wateralpha->value);
@@ -685,7 +682,7 @@ R_DrawWaterSurfaces (void)
 
 	if (r_wateralpha->value < 1.0) {
 		glDepthMask (GL_TRUE);
-		glColor3ubv (white_v);
+		glColor3ubv (lighthalf_v);
 	}
 }
 

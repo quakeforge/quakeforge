@@ -70,6 +70,8 @@ typedef struct particle_s {
 static particle_t *particles, **freeparticles;
 static short r_numparticles, numparticles;
 
+extern qboolean lighthalf;
+
 extern cvar_t *cl_max_particles;
 
 extern int  part_tex_smoke[8];
@@ -590,7 +592,7 @@ R_DrawParticles (void)
 			at = (byte *) & d_8to24table[(byte) part->color];
 			alpha = part->alpha;
 
-			if (gl_lightmode->int_val)
+			if (lighthalf)
 				glColor4ub ((byte) ((int) at[0] >> 1),
 							(byte) ((int) at[1] >> 1),
 							(byte) ((int) at[2] >> 1), alpha);
@@ -701,6 +703,6 @@ R_DrawParticles (void)
 	}
 	numparticles = activeparticles;
 
-	glColor3ubv (white_v);
+	glColor3ubv (lighthalf_v);
 	glDepthMask (GL_TRUE);
 }

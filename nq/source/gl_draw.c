@@ -63,6 +63,7 @@ static int  GL_LoadPicTexture (qpic_t *pic);
 extern byte *host_basepal;
 extern unsigned char d_15to8table[65536];
 extern cvar_t *crosshair, *cl_crossx, *cl_crossy, *crosshaircolor;
+extern qboolean lighthalf;
 
 cvar_t     *gl_nobind;
 cvar_t     *gl_max_size;
@@ -400,7 +401,6 @@ Draw_TextureMode_f (void)
 	}
 }
 
-extern void R_ForceLightUpdate (cvar_t *gl_lightmode);
 extern void glrmain_init ();
 extern void glrsurf_init ();
 
@@ -415,9 +415,8 @@ Draw_Init (void)
 	int         i;
 
 	// LordHavoc: lighting mode
-	gl_lightmode = Cvar_Get ("gl_lightmode", "0", CVAR_ARCHIVE,
-			R_ForceLightUpdate,
-			"Lighting mode (0 = GLQuake style, 1 = new style)");
+	gl_lightmode = Cvar_Get ("gl_lightmode", "0", CVAR_ARCHIVE, 0,
+							 "Lighting mode (0 = GLQuake style, 1 = new style)");
 	gl_nobind = Cvar_Get ("gl_nobind", "0", CVAR_NONE, 0,
 						  "whether or not to inhibit texture binding");
 	gl_max_size = Cvar_Get ("gl_max_size", "1024", CVAR_NONE, 0, "None");	// CVAR_FIXME 
@@ -453,6 +452,8 @@ Draw_Init (void)
 	// lightmode 1
 	if (!strncasecmp ((char *) gl_renderer, "3dfx", 4))
 		Cvar_Set (gl_lightmode, "0");
+	lighthalf = gl_lightmode->int_val != 0;	// to avoid re-rendering all
+	// lightmaps on first frame
 
 	Cmd_AddCommand ("gl_texturemode", &Draw_TextureMode_f, "No Description");
 
@@ -535,7 +536,7 @@ Draw_Character8 (int x, int y, int num)
 
 	glBindTexture (GL_TEXTURE_2D, char_texture);
 
-	if (gl_lightmode->int_val)
+	if (lighthalf)
 		glColor3f (0.5, 0.5, 0.5);
 	else
 		glColor3f (1, 1, 1);
@@ -594,7 +595,7 @@ Draw_Crosshair (void)
 
 		pColor =
 			(unsigned char *) &d_8to24table[(byte) crosshaircolor->int_val];
-		if (gl_lightmode->int_val)
+		if (lighthalf)
 			glColor4ub ((byte) ((int) pColor[0] >> 1),
 						(byte) ((int) pColor[1] >> 1),
 						(byte) ((int) pColor[2] >> 1), pColor[3]);
@@ -634,7 +635,7 @@ Draw_Pic (int x, int y, qpic_t *pic)
 		Scrap_Upload ();
 #endif
 	gl = (glpic_t *) pic->data;
-	if (gl_lightmode->int_val)
+	if (lighthalf)
 		glColor3f (0.4, 0.4, 0.4);
 	else
 		glColor3f (0.8, 0.8, 0.8);
@@ -674,7 +675,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	newtl = gl->tl + (srcy * oldglheight) / pic->height;
 	newth = newtl + (height * oldglheight) / pic->height;
 
-	if (gl_lightmode->int_val)
+	if (lighthalf)
 		glColor3f (0.4, 0.4, 0.4);
 	else
 		glColor3f (0.8, 0.8, 0.8);
@@ -746,7 +747,7 @@ Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	if (gl_lightmode->int_val)
+	if (lighthalf)
 		glColor3f (0.4, 0.4, 0.4);
 	else
 		glColor3f (0.8, 0.8, 0.8);
@@ -813,7 +814,7 @@ Draw_ConsoleBackground (int lines)
 		alpha = (float) (gl_conalpha->value * lines) / y;
 	}
 
-	if (gl_lightmode->int_val)
+	if (lighthalf)
 		glColor4f (0.4, 0.4, 0.4, alpha);
 	else
 		glColor4f (0.8, 0.8, 0.8, alpha);
@@ -833,7 +834,7 @@ Draw_ConsoleBackground (int lines)
 
 	// turn off alpha blending
 	if (alpha < 1.0) {
-		if (gl_lightmode->int_val)
+		if (lighthalf)
 			glColor3f (0.4, 0.4, 0.4);
 		else
 			glColor3f (0.8, 0.8, 0.8);
@@ -858,7 +859,7 @@ refresh window.
 void
 Draw_TileClear (int x, int y, int w, int h)
 {
-	if (gl_lightmode->int_val)
+	if (lighthalf)
 		glColor3f (0.4, 0.4, 0.4);
 	else
 		glColor3f (0.8, 0.8, 0.8);
@@ -887,7 +888,7 @@ void
 Draw_Fill (int x, int y, int w, int h, int c)
 {
 	glDisable (GL_TEXTURE_2D);
-	if (gl_lightmode->int_val)
+	if (lighthalf)
 		glColor3f (host_basepal[c * 3] / 510.0, host_basepal[c * 3 + 1] / 510.0,
 				   host_basepal[c * 3 + 2] / 510.0);
 	else
@@ -902,7 +903,7 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	glVertex2f (x, y + h);
 
 	glEnd ();
-	if (gl_lightmode->int_val)
+	if (lighthalf)
 		glColor3f (0.5, 0.5, 0.5);
 	else
 		glColor3f (1, 1, 1);
@@ -929,7 +930,7 @@ Draw_FadeScreen (void)
 	glVertex2f (0, vid.height);
 
 	glEnd ();
-	if (gl_lightmode->int_val)
+	if (lighthalf)
 		glColor3f (0.5, 0.5, 0.5);
 	else
 		glColor3f (1, 1, 1);
@@ -993,7 +994,7 @@ GL_Set2D (void)
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-	if (gl_lightmode->int_val)
+	if (lighthalf)
 		glColor3f (0.5, 0.5, 0.5);
 	else
 		glColor3f (1, 1, 1);

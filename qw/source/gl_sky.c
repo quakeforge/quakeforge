@@ -45,6 +45,7 @@ extern double realtime;
 extern model_t *loadmodel;
 
 extern int  skytexturenum;
+extern qboolean lighthalf;
 
 int         solidskytexture;
 int         alphaskytexture;
@@ -259,14 +260,14 @@ R_DrawSky (void)
 {
 	float l = 1 / (256 * brightness->value);
 
-	glColor3f (white_v[0] * l, white_v[1] * l, white_v[2] * l);
+	glColor3f (lighthalf_v[0] * l, lighthalf_v[1] * l, lighthalf_v[2] * l);
 
 	if (skyloaded)
 		R_DrawSkyBox ();
 	else
 		R_DrawSkyDome ();
 
-	glColor3ubv (white_v);
+	glColor3ubv (lighthalf_v);
 }
 
 

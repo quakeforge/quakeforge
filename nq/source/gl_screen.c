@@ -918,6 +918,9 @@ SCR_TileClear (void)
 }
 
 float       oldsbar = 0;
+extern void R_ForceLightUpdate ();
+qboolean    lighthalf;
+extern cvar_t *gl_lightmode;
 
 /*
 ==================
@@ -983,6 +986,12 @@ SCR_UpdateScreen (void)
 // do 3D refresh drawing, and then update the screen
 //
 
+	// LordHavoc: set lighthalf based on gl_lightmode cvar
+	if (lighthalf != (gl_lightmode->int_val != 0)) {
+		lighthalf = gl_lightmode->int_val != 0;
+		R_ForceLightUpdate ();
+	}
+
 	SCR_SetUpToDrawConsole ();
 
 	V_RenderView ();
@@ -1034,8 +1043,10 @@ SCR_UpdateScreen (void)
 	glDisable (GL_TEXTURE_2D);
 	glEnable (GL_BLEND);
 	Cvar_SetValue (brightness, bound (1, brightness->value, 5));
-	if (gl_lightmode->int_val)			// LordHavoc: render was done at half 
-										// brightness
+	if (lighthalf)						// LordHavoc: render was done at half 
+										// 
+		// 
+		// brightness
 		f = brightness->value * 2;
 	else
 		f = brightness->value;

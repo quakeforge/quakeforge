@@ -248,7 +248,6 @@ Draw_TextBox (int x, int y, int width, int lines)
 }
 
 
-extern void R_ForceLightUpdate (cvar_t *gl_lightmode);
 extern void glrmain_init (void);
 extern void glrsurf_init (void);
 extern void GL_TextureMode_f (void);
@@ -267,10 +266,13 @@ Draw_Init (void)
 		Cvar_Set (gl_lightmode, "0");
 	}
 
-	if (gl_lightmode->int_val) {
-		white_v[0] = white_v[1] = white_v[2] = 128;
+	lighthalf = gl_lightmode->int_val != 0; // to avoid re-rendering all
+	// lightmaps on first frame
+
+	if (lighthalf) {
+		lighthalf_v[0] = lighthalf_v[1] = lighthalf_v[2] = 128;
 	} else {
-		white_v[0] = white_v[1] = white_v[2] = 255;
+		lighthalf_v[0] = lighthalf_v[1] = lighthalf_v[2] = 255;
 	}
 
 	Cmd_AddCommand ("gl_texturemode", &GL_TextureMode_f, "Texture mipmap quality.");
@@ -307,9 +309,8 @@ Draw_Init (void)
 void
 Draw_Init_Cvars (void)
 {
-	gl_lightmode = Cvar_Get ("gl_lightmode", "1", CVAR_ARCHIVE,
-			R_ForceLightUpdate,
-			"Lighting mode (0 = GLQuake style, 1 = new style)");
+	gl_lightmode = Cvar_Get ("gl_lightmode", "1", CVAR_ARCHIVE, 0,
+							 "Lighting mode (0 = GLQuake style, 1 = new style)");
 	gl_max_size = Cvar_Get ("gl_max_size", "1024", CVAR_NONE, 0, "Texture dimension"); 
 	gl_picmip = Cvar_Get ("gl_picmip", "0", CVAR_NONE, 0, "Dimensions of displayed textures. 0 is normal, 1 is half, 2 is 1/4"); 
 	gl_constretch = Cvar_Get ("gl_constretch", "0", CVAR_ARCHIVE, 0,
@@ -411,7 +412,7 @@ Draw_Crosshair (void)
 			y = scr_vrect.y + scr_vrect.height / 2 - 3 + cl_crossy->int_val;
 
 			pColor = (unsigned char *) &d_8to24table[crosshaircolor->int_val];
-			if (gl_lightmode->int_val)
+			if (lighthalf)
 				glColor4ub ((byte) ((int) pColor[0] >> 1),
 							(byte) ((int) pColor[1] >> 1),
 							(byte) ((int) pColor[2] >> 1), pColor[3]);
@@ -429,7 +430,7 @@ Draw_Crosshair (void)
 			glTexCoord2f (0, 1);
 			glVertex2f (x - 4, y + 12);
 			glEnd ();
-			glColor3ubv (white_v);
+			glColor3ubv (lighthalf_v);
 			break;
 	}
 }
@@ -475,7 +476,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	newtl = gl->tl + (srcy * oldglheight) / pic->height;
 	newth = newtl + (height * oldglheight) / pic->height;
 
-	if (gl_lightmode->int_val)
+	if (lighthalf)
 		glColor3f (0.4, 0.4, 0.4);
 	else
 		glColor3f (0.8, 0.8, 0.8);
@@ -490,7 +491,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	glTexCoord2f (newsl, newth);
 	glVertex2f (x, y + height);
 	glEnd ();
-	glColor3ubv (white_v);
+	glColor3ubv (lighthalf_v);
 }
 
 
@@ -531,7 +532,7 @@ Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
 	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 
-	if (gl_lightmode->int_val)
+	if (lighthalf)
 		glColor3f (0.4, 0.4, 0.4);
 	else
 		glColor3f (0.8, 0.8, 0.8);
@@ -545,7 +546,7 @@ Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte * translation)
 	glTexCoord2f (0, 1);
 	glVertex2f (x, y + pic->height);
 	glEnd ();
-	glColor3ubv (white_v);
+	glColor3ubv (lighthalf_v);
 }
 
 
@@ -599,7 +600,7 @@ Draw_ConsoleBackground (int lines)
 		alpha = (float) (gl_conalpha->value * lines) / y;
 	}
 
-	if (gl_lightmode->int_val)
+	if (lighthalf)
 		glColor4f (0.4, 0.4, 0.4, alpha);
 	else
 		glColor4f (0.8, 0.8, 0.8, alpha);
@@ -619,7 +620,7 @@ Draw_ConsoleBackground (int lines)
 
 	// turn off alpha blending
 	if (alpha < 1.0) {
-		if (gl_lightmode->int_val)
+		if (lighthalf)
 			glColor3f (0.4, 0.4, 0.4);
 		else
 			glColor3f (0.8, 0.8, 0.8);
@@ -634,7 +635,7 @@ Draw_ConsoleBackground (int lines)
 	if (!cls.download)
 		Draw_AltString8 (vid.conwidth - strlen (cl_verstring->string) * 8 - 11,
 						 lines - 14, cl_verstring->string);
-	glColor3ubv (white_v);
+	glColor3ubv (lighthalf_v);
 }
 
 
@@ -647,7 +648,7 @@ Draw_ConsoleBackground (int lines)
 void
 Draw_TileClear (int x, int y, int w, int h)
 {
-	if (gl_lightmode->int_val)
+	if (lighthalf)
 		glColor3f (0.4, 0.4, 0.4);
 	else
 		glColor3f (0.8, 0.8, 0.8);
@@ -662,7 +663,7 @@ Draw_TileClear (int x, int y, int w, int h)
 	glTexCoord2f (x / 64.0, (y + h) / 64.0);
 	glVertex2f (x, y + h);
 	glEnd ();
-	glColor3ubv (white_v);
+	glColor3ubv (lighthalf_v);
 }
 
 
@@ -675,7 +676,7 @@ void
 Draw_Fill (int x, int y, int w, int h, int c)
 {
 	glDisable (GL_TEXTURE_2D);
-	if (gl_lightmode->int_val)
+	if (lighthalf)
 		glColor3f (host_basepal[c * 3] / 510.0, host_basepal[c * 3 + 1] / 510.0,
 				   host_basepal[c * 3 + 2] / 510.0);
 	else
@@ -690,7 +691,7 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	glVertex2f (x, y + h);
 
 	glEnd ();
-	glColor3ubv (white_v);
+	glColor3ubv (lighthalf_v);
 	glEnable (GL_TEXTURE_2D);
 }
 
@@ -712,7 +713,7 @@ Draw_FadeScreen (void)
 	glVertex2f (0, vid.height);
 
 	glEnd ();
-	glColor3ubv (white_v);
+	glColor3ubv (lighthalf_v);
 	glEnable (GL_TEXTURE_2D);
 
 	Sbar_Changed ();
@@ -764,5 +765,5 @@ GL_Set2D (void)
 	glDisable (GL_DEPTH_TEST);
 	glDisable (GL_CULL_FACE);
 
-	glColor3ubv (white_v);
+	glColor3ubv (lighthalf_v);
 }

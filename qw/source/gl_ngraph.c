@@ -45,6 +45,7 @@
 #include "sbar.h"
 
 extern byte 	*draw_chars;	// 8*8 graphic characters
+extern qboolean lighthalf;
 
 extern cvar_t	*r_netgraph;
 extern cvar_t	*r_netgraph_alpha;
@@ -173,5 +174,5 @@ R_NetGraph (void)
 	glVertex2f (x, y + NET_GRAPHHEIGHT);
 	glEnd ();
 
-	glColor3ubv (white_v);
+	glColor3ubv (lighthalf_v);
 }

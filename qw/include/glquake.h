@@ -177,7 +177,6 @@ extern cvar_t	*r_skyname;
 extern cvar_t	*gl_skymultipass;
 extern cvar_t	*gl_sky_clip;
 extern cvar_t	*gl_sky_divide;
-extern cvar_t	*gl_lightmode;
 
 extern int		gl_lightmap_format;
 extern int		gl_solid_format;
@@ -278,7 +277,8 @@ void R_StoreEfrags (efrag_t **ppefrag);
 // gl_screen.c
 //
 
-extern unsigned char white_v[3];
+extern qboolean lighthalf;
+extern unsigned char lighthalf_v[3];
 
 //
 // gl_rsurf.c

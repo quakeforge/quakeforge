@@ -125,7 +125,7 @@ R_DrawParticles (void)
 			theAlpha = 255 * (6 - p->ramp) / 6;
 		else
 			theAlpha = 255;
-		if (gl_lightmode->int_val)
+		if (lighthalf)
 			glColor4ub ((byte) ((int) at[0] >> 1), (byte) ((int) at[1] >> 1),
 						(byte) ((int) at[2] >> 1), theAlpha);
 		else
@@ -319,7 +319,7 @@ R_DrawFire (fire_t *f)
 	}
 	// we're not - draw it
 	glBegin (GL_TRIANGLE_FAN);
-	if (gl_lightmode->int_val)
+	if (lighthalf)
 		glColor3f (f->color[0] * 0.5, f->color[1] * 0.5, f->color[2] * 0.5);
 	else
 		glColor3fv (f->color);

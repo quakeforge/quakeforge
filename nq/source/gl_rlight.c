@@ -129,7 +129,7 @@ R_RenderDlight (dlight_t *light)
 	glBegin (GL_TRIANGLE_FAN);
 //  glColor3f (0.2,0.1,0.0);
 //  glColor3f (0.2,0.1,0.05); // changed dimlight effect
-	if (gl_lightmode->int_val)
+	if (lighthalf)
 		glColor3f (light->color[0] * 0.5, light->color[1] * 0.5,
 				   light->color[2] * 0.5);
 	else
