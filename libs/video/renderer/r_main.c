@@ -57,5 +57,7 @@ float       r_time1;
 int         r_lineadj;
 qboolean    r_active;
 
+static void (*const r_progs_init)(struct progs_s *) = R_Progs_Init;
+
 byte        color_white[4] = { 255, 255, 255, 0 };	// alpha will be explicitly set
 byte        color_black[4] = { 0, 0, 0, 0 };		// alpha will be explicitly set
