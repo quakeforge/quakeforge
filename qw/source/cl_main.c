@@ -200,6 +200,8 @@ void        Master_Connect_f (void);
 
 char       *server_version = NULL;		// version of server we connected to
 
+char        emodel_name[] = "emodel";
+char        pmodel_name[] = "pmodel";
 char        prespawn_name[] = "prespawn %i 0 %i";
 char        modellist_name[] = "modellist %i %i";
 char        soundlist_name[] = "soundlist %i %i";
@@ -688,6 +690,9 @@ CL_FullInfo_f (void)
 		if (*s)
 			s++;
 
+		if (strcaseequal (key, pmodel_name) || strcaseequal (key, emodel_name))
+			continue;
+
 		Info_SetValueForKey (cls.userinfo, key, value, MAX_INFO_STRING);
 	}
 }
@@ -709,6 +714,10 @@ CL_SetInfo_f (void)
 		Con_Printf ("usage: setinfo [ <key> <value> ]\n");
 		return;
 	}
+	if (strcaseequal (Cmd_Argv (1), pmodel_name)
+		|| strcaseequal (Cmd_Argv (1), emodel_name))
+		return;
+
 	Info_SetValueForKey (cls.userinfo, Cmd_Argv (1), Cmd_Argv (2),
 						 MAX_INFO_STRING);
 	if (cls.state >= ca_connected)
