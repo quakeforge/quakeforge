@@ -1,3 +1,5 @@
+AUTOMAKE_OPTIONS= foreign
+
 INCLUDES= -I$(top_srcdir)/include $(GGI_CFLAGS) $(MGL_CFLAGS) $(SDL_CFLAGS) $(SVGA_CFLAGS) $(X_CFLAGS) $(GLIDE_CFLAGS)
 
 if ASM_ARCH

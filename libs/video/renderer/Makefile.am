@@ -1,3 +1,5 @@
+AUTOMAKE_OPTIONS= foreign
+
 SUBDIRS= gl sw sw32
 INCLUDES= -I$(top_srcdir)/include
 

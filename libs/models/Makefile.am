@@ -1,3 +1,5 @@
+AUTOMAKE_OPTIONS= foreign
+
 SUBDIRS= alias brush sprite
 INCLUDES= -I$(top_srcdir)/include
 

@@ -1,3 +1,5 @@
+AUTOMAKE_OPTIONS= foreign
+
 INCLUDES= -I$(top_srcdir)/include
 PLUGIN_RPATH= @PLUGIN_RPATH@
 

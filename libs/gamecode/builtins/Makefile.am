@@ -1,3 +1,5 @@
+AUTOMAKE_OPTIONS= foreign
+
 INCLUDES= -I$(top_srcdir)/include
 
 lib_LTLIBRARIES= libQFgamecode_builtins.la

@@ -1,3 +1,5 @@
+AUTOMAKE_OPTIONS= foreign
+
 SUBDIRS= man
 EXTRA_DIST= 3dfx.txt CodingStyle cvarlist.txt glqnotes.txt makefile.linuxi386 \
 	makefile.solaris net_DoS_protection.txt progdefs.q1 progdefs.q2 \

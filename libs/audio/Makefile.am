@@ -1,3 +1,5 @@
+AUTOMAKE_OPTIONS= foreign
+
 SUBDIRS=cd targets renderer 
 INCLUDES=-I$(top_srcdir)/include
 
