@@ -36,7 +36,7 @@
 #include "QF/sys.h"
 #include "server.h"
 
-extern int  vcrFile;
+extern QFile  *vcrFile;
 
 // This is the playback portion of the VCR.  It reads the file produced
 // by the recorder and plays it back to the host.  The recording contains
@@ -63,14 +63,14 @@ VCR_Init (void)
 	net_drivers[0].Close = VCR_Close;
 	net_drivers[0].Shutdown = VCR_Shutdown;
 
-	Sys_FileRead (vcrFile, &next, sizeof (next));
+	Qread (vcrFile, &next, sizeof (next));
 	return 0;
 }
 
 void
 VCR_ReadNext (void)
 {
-	if (Sys_FileRead (vcrFile, &next, sizeof (next)) == 0) {
+	if (Qread (vcrFile, &next, sizeof (next)) == 0) {
 		next.op = 255;
 		Sys_Error ("=== END OF PLAYBACK===\n");
 	}
@@ -100,16 +100,16 @@ VCR_GetMessage (qsocket_t * sock)
 		|| next.session != *(long *) (&sock->driverdata))
 		Sys_Error ("VCR missmatch");
 
-	Sys_FileRead (vcrFile, &ret, sizeof (int));
+	Qread (vcrFile, &ret, sizeof (int));
 
 	if (ret != 1) {
 		VCR_ReadNext ();
 		return ret;
 	}
 
-	Sys_FileRead (vcrFile, &net_message->message->cursize, sizeof (int));
+	Qread (vcrFile, &net_message->message->cursize, sizeof (int));
 
-	Sys_FileRead (vcrFile, net_message->message->data,
+	Qread (vcrFile, net_message->message->data,
 				  net_message->message->cursize);
 
 	VCR_ReadNext ();
@@ -127,7 +127,7 @@ VCR_SendMessage (qsocket_t * sock, sizebuf_t *data)
 		|| next.session != *(long *) (&sock->driverdata))
 		Sys_Error ("VCR missmatch");
 
-	Sys_FileRead (vcrFile, &ret, sizeof (int));
+	Qread (vcrFile, &ret, sizeof (int));
 
 	VCR_ReadNext ();
 
@@ -144,7 +144,7 @@ VCR_CanSendMessage (qsocket_t * sock)
 		|| next.session != *(long *) (&sock->driverdata))
 		Sys_Error ("VCR missmatch");
 
-	Sys_FileRead (vcrFile, &ret, sizeof (int));
+	Qread (vcrFile, &ret, sizeof (int));
 
 	VCR_ReadNext ();
 
@@ -187,7 +187,7 @@ VCR_CheckNewConnections (void)
 	sock = NET_NewQSocket ();
 	*(long *) (&sock->driverdata) = next.session;
 
-	Sys_FileRead (vcrFile, sock->address, NET_NAMELEN);
+	Qread (vcrFile, sock->address, NET_NAMELEN);
 	VCR_ReadNext ();
 
 	return sock;

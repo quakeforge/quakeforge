@@ -118,5 +118,17 @@
 /* Define strcasecmp as stricmp if you have one but not the other */
 #undef strcasecmp
 
+/* Define this if you have access */
+#undef HAVE_access
+
+/* Define this if you have _access */
+#undef HAVE__access
+
+/* Define this if you have mkdir */
+#undef HAVE_mkdir
+
+/* Define this if you have _mkdir */
+#undef HAVE__mkdir
+
 @BOTTOM@
 #endif // __config_h_

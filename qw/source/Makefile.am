@@ -72,9 +72,9 @@ EXTRA_libqfnet_a_SOURCES= net_chan.c net_udp.c net_udp6.c
 if SYSTYPE_WIN32
 libqfsys_sv_a_SOURCES=	fnmatch.c dirent.c sv_sys_win.c sys_win.c
 else
-libqfsys_sv_a_SOURCES=	sv_sys_unix.c sys_unix.c
+libqfsys_sv_a_SOURCES=	sv_sys_unix.c
 endif
-EXTRA_libqfsys_sv_a_SOURCES= fnmatch.c dirent.c sv_sys_unix.c sv_sys_win.c sys_unix.c sys_win.c
+EXTRA_libqfsys_sv_a_SOURCES= fnmatch.c dirent.c sv_sys_unix.c sv_sys_win.c
 
 if ASM_ARCH
 world_ASM=	worlda.S
@@ -97,9 +97,9 @@ qw_server_DEPENDENCIES= libqfnet.a libqfsys_sv.a
 if SYSTYPE_WIN32
 libqfsys_cl_a_SOURCES=	cl_sys_win.c fnmatch.c dirent.c sys_win.c
 else
-libqfsys_cl_a_SOURCES=	cl_sys_unix.c sys_unix.c
+libqfsys_cl_a_SOURCES=	cl_sys_unix.c
 endif
-EXTRA_libqfsys_cl_a_SOURCES= cl_sys_sdl.c cl_sys_unix.c cl_sys_win.c sys_win.c sys_unix.c fnmatch.c dirent.c
+EXTRA_libqfsys_cl_a_SOURCES= cl_sys_sdl.c cl_sys_unix.c cl_sys_win.c sys_win.c fnmatch.c dirent.c
 
 #
 # ... Digital audio

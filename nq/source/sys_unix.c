@@ -53,138 +53,12 @@
 
 qboolean    isDedicated;
 
-int         nostdout = 0;
-
 char       *basedir = ".";
 char       *cachedir = "/tmp";
 
 cvar_t     *sys_linerefresh;
 cvar_t     *timestamps;
 cvar_t     *timeformat;
-
-/* The translation table between the graphical font and plain ASCII  --KB */
-static char qfont_table[256] = {
-	'\0', '#', '#', '#', '#', '.', '#', '#',
-	'#', 9, 10, '#', ' ', 13, '.', '.',
-	'[', ']', '0', '1', '2', '3', '4', '5',
-	'6', '7', '8', '9', '.', '<', '=', '>',
-	' ', '!', '"', '#', '$', '%', '&', '\'',
-	'(', ')', '*', '+', ',', '-', '.', '/',
-	'0', '1', '2', '3', '4', '5', '6', '7',
-	'8', '9', ':', ';', '<', '=', '>', '?',
-	'@', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
-	'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-	'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
-	'X', 'Y', 'Z', '[', '\\', ']', '^', '_',
-	'`', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
-	'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
-	'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
-	'x', 'y', 'z', '{', '|', '}', '~', '<',
-
-	'<', '=', '>', '#', '#', '.', '#', '#',
-	'#', '#', ' ', '#', ' ', '>', '.', '.',
-	'[', ']', '0', '1', '2', '3', '4', '5',
-	'6', '7', '8', '9', '.', '<', '=', '>',
-	' ', '!', '"', '#', '$', '%', '&', '\'',
-	'(', ')', '*', '+', ',', '-', '.', '/',
-	'0', '1', '2', '3', '4', '5', '6', '7',
-	'8', '9', ':', ';', '<', '=', '>', '?',
-	'@', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
-	'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-	'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
-	'X', 'Y', 'Z', '[', '\\', ']', '^', '_',
-	'`', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
-	'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
-	'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
-	'x', 'y', 'z', '{', '|', '}', '~', '<'
-};
-
-/*
- *	File I/O
- */
-
-/*
-	Sys_FileTime
-
-	Returns -1 if file not present
-*/
-int
-Sys_FileTime (char *path)
-{
-	struct stat buf;
-
-	if (stat (path, &buf) == -1)
-		return -1;
-
-	return buf.st_mtime;
-}
-
-/*
-	Sys_mkdir
-
-	Creates a directory
-*/
-void
-Sys_mkdir (char *path)
-{
-	mkdir (path, 0777);
-}
-
-int
-Sys_FileOpenRead (char *path, int *handle)
-{
-	struct stat fileinfo;
-	int         h;
-
-	h = open (path, O_RDONLY, 0666);
-	*handle = h;
-	if (h == -1)
-		return -1;
-
-	if (fstat (h, &fileinfo) == -1)
-		Sys_Error ("Error fstating %s", path);
-
-	return fileinfo.st_size;
-}
-
-int
-Sys_FileOpenWrite (char *path)
-{
-	int         handle;
-
-	umask (0);
-
-	handle = open (path, O_RDWR | O_CREAT | O_TRUNC, 0666);
-
-	if (handle == -1)
-		Sys_Error ("Error opening %s: %s", path, strerror (errno));
-
-	return handle;
-}
-
-int
-Sys_FileWrite (int handle, void *src, int count)
-{
-	return write (handle, src, count);
-}
-
-void
-Sys_FileClose (int handle)
-{
-	close (handle);
-}
-
-void
-Sys_FileSeek (int handle, int position)
-{
-	lseek (handle, position, SEEK_SET);
-}
-
-int
-Sys_FileRead (int handle, void *dest, int count)
-{
-	return read (handle, dest, count);
-}
 
 void
 Sys_DebugLog (char *file, char *fmt, ...)
@@ -251,45 +125,8 @@ Sys_DebugNumber (int y, int val)
 {
 }
 
-#define MAX_PRINT_MSG	4096
 void
-Sys_Printf (char *fmt, ...)
-{
-	va_list     argptr;
-	char        start[MAX_PRINT_MSG];	// String we started with
-	char        stamp[MAX_PRINT_MSG];	// Time stamp
-	char        final[MAX_PRINT_MSG];	// String we print
-
-	time_t      mytime = 0;
-	struct tm  *local = NULL;
-
-	unsigned char *p;
-
-	va_start (argptr, fmt);
-	vsnprintf (start, sizeof (start), fmt, argptr);
-	va_end (argptr);
-
-	if (nostdout)
-		return;
-
-	if (timestamps && timeformat && timestamps->int_val && timeformat->string) {
-		mytime = time (NULL);
-		local = localtime (&mytime);
-		strftime (stamp, sizeof (stamp), timeformat->string, local);
-
-		snprintf (final, sizeof (final), "%s%s", stamp, start);
-	} else {
-		snprintf (final, sizeof (final), "%s", start);
-	}
-
-	for (p = (unsigned char *) final; *p; p++) {
-		putc (qfont_table[*p], stdout);
-	}
-	fflush (stdout);
-}
-
-void
-Sys_Error (char *error, ...)
+Sys_Error (const char *error, ...)
 {
 	va_list     argptr;
 	char        string[1024];
@@ -334,23 +171,6 @@ Sys_Warn (char *warning, ...)
 	vsnprintf (string, sizeof (string), warning, argptr);
 	va_end (argptr);
 	fprintf (stderr, "Warning: %s", string);
-}
-
-double
-Sys_DoubleTime (void)
-{
-	struct timeval tp;
-	struct timezone tzp;
-	static int  secbase;
-
-	gettimeofday (&tp, &tzp);
-
-	if (!secbase) {
-		secbase = tp.tv_sec;
-		return tp.tv_usec / 1000000.0;
-	}
-
-	return (tp.tv_sec - secbase) + tp.tv_usec / 1000000.0;
 }
 
 // =======================================================================
@@ -454,8 +274,9 @@ main (int c, char **v)
 
 	Sys_Init ();
 
+	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, "set to disable std out");
 	if (COM_CheckParm ("-nostdout"))
-		nostdout = 1;
+		Cvar_Set (sys_nostdout, "1");
 	else {
 		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
 		printf ("Quake -- Version %s\n", NQ_VERSION);

@@ -802,7 +802,7 @@ Host_Frame (float time)
 //============================================================================
 
 
-extern int  vcrFile;
+extern QFile *vcrFile;
 
 #define	VCR_SIGNATURE	0x56435231
 // "VCR1"
@@ -817,24 +817,24 @@ Host_InitVCR (quakeparms_t *parms)
 		if (com_argc != 2)
 			Sys_Error ("No other parameters allowed with -playback\n");
 
-		Sys_FileOpenRead ("quake.vcr", &vcrFile);
-		if (vcrFile == -1)
+		vcrFile = Qopen ("quake.vcr", "rbz");
+		if (!vcrFile)
 			Sys_Error ("playback file not found\n");
 
-		Sys_FileRead (vcrFile, &i, sizeof (int));
+		Qread (vcrFile, &i, sizeof (int));
 
 		if (i != VCR_SIGNATURE)
 			Sys_Error ("Invalid signature in vcr file\n");
 
-		Sys_FileRead (vcrFile, &com_argc, sizeof (int));
+		Qread (vcrFile, &com_argc, sizeof (int));
 		com_argv = malloc (com_argc * sizeof (char *));
 
 		com_argv[0] = parms->argv[0];
 		for (i = 0; i < com_argc; i++) {
-			Sys_FileRead (vcrFile, &len, sizeof (int));
+			Qread (vcrFile, &len, sizeof (int));
 
 			p = malloc (len);
-			Sys_FileRead (vcrFile, p, len);
+			Qread (vcrFile, p, len);
 			com_argv[i + 1] = p;
 		}
 		com_argc++;						/* add one for arg[0] */
@@ -843,26 +843,26 @@ Host_InitVCR (quakeparms_t *parms)
 	}
 
 	if ((n = COM_CheckParm ("-record")) != 0) {
-		vcrFile = Sys_FileOpenWrite ("quake.vcr");
+		vcrFile = Qopen ("quake.vcr", "wb");
 
 		i = VCR_SIGNATURE;
-		Sys_FileWrite (vcrFile, &i, sizeof (int));
+		Qwrite (vcrFile, &i, sizeof (int));
 
 		i = com_argc - 1;
-		Sys_FileWrite (vcrFile, &i, sizeof (int));
+		Qwrite (vcrFile, &i, sizeof (int));
 
 		for (i = 1; i < com_argc; i++) {
 			if (i == n) {
 				len = 10;
-				Sys_FileWrite (vcrFile, &len, sizeof (int));
+				Qwrite (vcrFile, &len, sizeof (int));
 
-				Sys_FileWrite (vcrFile, "-playback", len);
+				Qwrite (vcrFile, "-playback", len);
 				continue;
 			}
 			len = strlen (com_argv[i]) + 1;
-			Sys_FileWrite (vcrFile, &len, sizeof (int));
+			Qwrite (vcrFile, &len, sizeof (int));
 
-			Sys_FileWrite (vcrFile, com_argv[i], len);
+			Qwrite (vcrFile, com_argv[i], len);
 		}
 	}
 
