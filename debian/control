@@ -182,8 +182,6 @@ Description: QuakeForge utility programs
  .
  * pak, a pakfile management tool.
  * zpak, a script for compressing pakfiles.
- * qfdefs, a tool for fixing up progs data files so they can be used with
-   QuakeForge-based servers.
  * qfprogs, a "nm" tool for examining progs data files.
  * qfwavinfo, a tool to assist in converting "looped" WAV files to Ogg
    Vorbis.

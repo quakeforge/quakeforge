@@ -1621,7 +1621,7 @@ QF_WITH_TARGETS(
 QF_WITH_TARGETS(
 	tools,
 	[  --with-tools=<list>     compile qf tools:],
-	[bsp2img,carne,pak,qfbsp,qfcc,qfdefs,qflight,qfmodelgen,qfprogs,qfvis,qwaq,wad,wav],dummy
+	[bsp2img,carne,pak,qfbsp,qfcc,qflight,qfmodelgen,qfprogs,qfvis,qwaq,wad,wav],dummy
 )
 
 unset CL_TARGETS
@@ -1801,9 +1801,6 @@ fi
 if test "x$ENABLE_tools_qfcc" = xyes; then
 	TOOLS_TARGETS="$TOOLS_TARGETS qfcc"
 fi
-if test "x$ENABLE_tools_qfdefs" = xyes; then
-	TOOLS_TARGETS="$TOOLS_TARGETS qfdefs"
-fi
 if test "x$ENABLE_tools_qflight" = xyes; then
 	TOOLS_TARGETS="$TOOLS_TARGETS qflight"
 fi
@@ -1831,7 +1828,6 @@ AM_CONDITIONAL(BUILD_CARNE, test "$ENABLE_tools_carne" = "yes")
 AM_CONDITIONAL(BUILD_PAK, test "$ENABLE_tools_pak" = "yes")
 AM_CONDITIONAL(BUILD_QFBSP, test "$ENABLE_tools_qfbsp" = "yes")
 AM_CONDITIONAL(BUILD_QFCC, test "$ENABLE_tools_qfcc" = "yes")
-AM_CONDITIONAL(BUILD_QFDEFS, test "$ENABLE_tools_qfdefs" = "yes")
 AM_CONDITIONAL(BUILD_QFLIGHT, test "$ENABLE_tools_qflight" = "yes")
 AM_CONDITIONAL(BUILD_QFMODELGEN, test "$ENABLE_tools_qfmodelgen" = "yes")
 AM_CONDITIONAL(BUILD_QFPROGS, test "$ENABLE_tools_qfprogs" = "yes")
@@ -2116,11 +2112,6 @@ QF_DEPS(WAV,
 	[$(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
-QF_DEPS(QFDEFS,
-	[-I$(top_srcdir)/tools/qfdefs/include],
-	[$(top_builddir)/libs/gamecode/engine/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la],
-	[$(WIN32_LIBS)],
-)
 
 AC_DEFINE_UNQUOTED(PATH_SEPARATOR, '/', [Define this to your operating system's path separator character])
 AC_DEFINE_UNQUOTED(CPP_NAME, "$CPP_NAME", [Define this to the command line for the C preprocessor])
@@ -2205,9 +2196,6 @@ AC_OUTPUT(
 	tools/qfcc/doc/man/Makefile
 	tools/qfcc/include/Makefile
 	tools/qfcc/source/Makefile
-	tools/qfdefs/Makefile
-	tools/qfdefs/include/Makefile
-	tools/qfdefs/source/Makefile
 	tools/qflight/Makefile
 	tools/qflight/include/Makefile
 	tools/qflight/source/Makefile

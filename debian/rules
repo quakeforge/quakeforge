@@ -221,18 +221,15 @@ install: build
 	# quakeforge-utils
 	install -D -m755 $(tmp)/usr/games/pak $(tmp)/usr/bin/pak
 	install -D -m755 $(tmp)/usr/games/zpak $(tmp)/usr/bin/zpak
-	install -D -m755 $(tmp)/usr/games/qfdefs $(tmp)/usr/bin/qfdefs
 	install -D -m755 $(tmp)/usr/games/qfprogs $(tmp)/usr/bin/qfprogs
 	install -D -m755 $(tmp)/usr/games/qfwavinfo $(tmp)/usr/bin/qfwavinfo
 	rm -f $(tmp)/usr/games/pak \
 		$(tmp)/usr/games/zpak \
-		$(tmp)/usr/games/qfdefs \
 		$(tmp)/usr/games/qfprogs \
 		$(tmp)/usr/games/qfwavinfo
 	dh_movefiles -p$(utils) --sourcedir=$(tmp) \
 		usr/bin/pak \
 		usr/bin/zpak \
-		usr/bin/qfdefs \
 		usr/bin/qfprogs \
 		usr/bin/qfwavinfo \
 		usr/share/man/man1/pak.1

@@ -1,9 +1,0 @@
-.deps
-.libs
-.vimrc
-Makefile.in
-Makefile
-gendefs
-defs_nq.c
-defs_qw.c
-qfdefs
