@@ -88,7 +88,6 @@ XVisualInfo *x_visinfo;
 Visual		*x_vis;
 Window		x_win;
 Cursor		nullcursor = None;
-static Atom aWMDelete = 0;
 Time 		x_time;
 
 #define X_MASK (VisibilityChangeMask | StructureNotifyMask | ExposureMask)
@@ -472,10 +471,6 @@ X11_CreateWindow (int width, int height)
 		XSetClassHint (x_disp, x_win, ClassHint);
 		XFree (ClassHint);
 	}
-
-	// Make window respond to Delete events
-	aWMDelete = XInternAtom (x_disp, "WM_DELETE_WINDOW", False);
-	XSetWMProtocols (x_disp, x_win, &aWMDelete, 1);
 
 	XMapWindow (x_disp, x_win);
 
