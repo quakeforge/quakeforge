@@ -267,9 +267,11 @@ Condump_f (void)
 static void
 C_ExecLine (const char *line)
 {
+	Con_Printf ("%s\n", line);
 	if (line[0] == '/')
 		line++; 
 	Cbuf_AddText (line);
+	Cbuf_AddText ("\n");
 }
 
 static void
@@ -461,6 +463,8 @@ C_Print (const char *fmt, va_list args)
 static void
 C_KeyEvent (key_t key, short unicode, qboolean down)
 {
+	inputline_t *il;
+
 	if (!down)
 		return;
 
@@ -471,13 +475,42 @@ C_KeyEvent (key_t key, short unicode, qboolean down)
 			return;
 		}
 		if (chat_team) {
-			Con_ProcessInputLine (say_team_line, key);
+			il = say_team_line;
 		} else {
-			Con_ProcessInputLine (say_line, key);
+			il = say_line;
 		}
 	} else {
-		Con_ProcessInputLine (input_line, key);
+		switch (key) {
+			case QFK_PAGEUP:
+				if (keydown[QFK_RCTRL] || keydown[QFK_LCTRL])
+					con->display = 0;
+				else
+					con->display -= 10;
+				if (con->display < con->current - con->numlines)
+					con->display = con->current - con->numlines;
+				return;
+			case QFK_PAGEDOWN:
+				if (keydown[QFK_RCTRL] || keydown[QFK_LCTRL])
+					con->display = con->current;
+				else
+					con->display += 10;
+				if (con->display > con->current)
+					con->display = con->current;
+				return;
+			case QFM_WHEEL_UP:
+				con->display -= 3;
+				if (con->display < con->current - con->numlines)
+					con->display = con->current - con->numlines;
+				return;
+			case QFM_WHEEL_DOWN:
+				con->display += 3;
+				if (con->display > con->current)
+					con->display = con->current;
+				return;
+		}
+		il = input_line;
 	}
+	Con_ProcessInputLine (il, key);
 }
 
 /* DRAWING */
