@@ -60,6 +60,13 @@ user_read_data (png_structp png_ptr, png_bytep data, png_size_t length)
 	Qread ((QFile *) png_get_io_ptr (png_ptr), data, length);
 }
 
+/* Qwrite wrapper for libpng */
+static void 
+user_write_data (png_structp png_ptr, png_bytep data, png_size_t length)
+{
+	Qwrite ((QFile *) png_get_io_ptr (png_ptr), data, length);
+}
+
 /* Basicly taken from the libpng example rpng-x */
 static int
 readpng_init (QFile *infile, png_structp *png_ptr, png_infop *info_ptr)
@@ -180,6 +187,90 @@ LoadPNG (QFile *infile)
 	return (tex);
 }
 
+#define WRITEPNG_BIT_DEPTH 8
+
+void 
+WritePNG (const char *fileName, byte *data, int width, int height)
+{
+	QFile		*outfile;
+	png_uint_32	i;
+	png_structp	png_ptr;
+	png_infop	info_ptr;
+	png_bytepp	row_pointers = NULL;
+	
+	/* initialize write struct */
+	png_ptr = png_create_write_struct (PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	if (png_ptr == NULL) {
+		Sys_Printf ("png_Create_write_struct failed\n");
+		return;
+	}
+	
+	info_ptr = png_create_info_struct (png_ptr);
+	if (png_ptr == NULL) {
+		png_destroy_write_struct (&png_ptr, NULL);
+		Sys_Printf ("png_create_info_struct failed\n");
+		return;
+	}
+	
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		png_destroy_write_struct (&png_ptr, &info_ptr);
+		return;
+	}
+	
+	outfile = Qopen (fileName, "wb");
+	if (!outfile) {
+		Sys_Printf ("Couldn't open %s\n", fileName);
+		return; /* Can't open file */
+	}
+	
+	/* FIXME: NULL should be a QF equiv to fflush? */
+	png_set_write_fn (png_ptr, outfile, user_write_data, NULL);
+	
+	/* Write the header */
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		Sys_Printf ("Error writing png header\n");
+		return;
+	}
+	
+	png_set_IHDR (png_ptr, info_ptr, width, height, WRITEPNG_BIT_DEPTH,
+		PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+		
+	/* NOTE: Write gamma support? */
+	/* png_set_gAMA (png_ptr, info_ptr, gamma); */
+	
+	png_set_bgr(png_ptr);
+	
+	png_write_info (png_ptr, info_ptr);
+	
+	/* Setup row pointers */
+	if ((row_pointers = (png_bytepp)malloc(height * sizeof(png_bytep))) == NULL) {
+		png_destroy_write_struct (&png_ptr, &info_ptr);
+		return; /* Out of memory */
+	}
+	
+	for (i = 0; i < height; i++) {
+		row_pointers[height - i - 1] = data + (i * width * 3);
+	}
+	
+	
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		Sys_Printf ("Error writing PNG image data\n");
+		return;
+	}
+	
+	png_write_image (png_ptr, row_pointers);
+	
+	/* end write */
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		Sys_Printf ("Error writing end of PNG image\n");
+		return; 
+	}
+		
+	png_write_end (png_ptr, NULL);
+	
+	Qclose (outfile);
+}
+
 #else
 
 #include "QF/image.h"
@@ -189,6 +280,12 @@ tex_t *
 LoadPNG (QFile *infile)
 {
 	return 0;
+}
+
+void 
+WritePNG (const char *fileName, byte *data, int width, int height)
+{
+	return;
 }
 
 #endif
