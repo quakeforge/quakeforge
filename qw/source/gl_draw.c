@@ -261,8 +261,10 @@ gl_lightmode_callback (cvar_t *cvar)
 {
 	if (cvar->int_val) {
 		lighthalf_v[0] = lighthalf_v[1] = lighthalf_v[2] = 128;
+		lighthalf = 1;
 	} else {
 		lighthalf_v[0] = lighthalf_v[1] = lighthalf_v[2] = 255;
+		lighthalf = 0;
 	}
 
 	R_ForceLightUpdate ();

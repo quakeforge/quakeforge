@@ -43,6 +43,7 @@
 #include "QF/console.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
+#include "QF/varrays.h"
 
 #include "client.h"
 #include "glquake.h"
@@ -70,15 +71,8 @@ typedef struct particle_s {
 	ptype_t     type;
 } particle_t;
 
-typedef struct varray_s {
-	float	texcoord[2];
-	unsigned char	color[4];
-	float	vertex[3];
-} varray_t;
-
 static particle_t *particles, **freeparticles;
 static short r_numparticles, numparticles;
-//static varray_t *vertex_array;
 
 extern qboolean lighthalf;
 
@@ -140,36 +134,34 @@ particle_new_random (ptype_t type, int texnum, vec3_t org, int org_fuzz,
 	R_MaxParticlesCheck
 
 	Misty-chan: Dynamically change the maximum amount of particles on the fly.
-	Thanks to a LOT of help from Taniwha, Deek, Mercury, Lordhavoc, and lots of others.
+	Thanks to a LOT of help from Taniwha, Deek, Mercury, Lordhavoc, and
+	lots of others.
 */
 
 void
 R_MaxParticlesCheck (cvar_t *var)
 {
 	/*
-	Catchall. If the user changed the setting to a number less than zero *or* if we had a wacky cfg get past
-	the init code check, this will make sure we don't have problems. Also note that grabbing the var->int_val is IMPORTANT:
-	Prevents a segfault since if we grabbed the int_val of cl_max_particles we'd sig11 right here at startup.
+	Catchall. If the user changed the setting to a number less than zero
+	 *or* if we had a wacky cfg get past the init code check, this will
+	 make sure we don't have problems. Also note that grabbing the
+	 var->int_val is IMPORTANT:
+
+	Prevents a segfault since if we grabbed the int_val of
+	cl_max_particles we'd sig11 right here at startup.
 	*/
 	r_numparticles = max(var->int_val, 0);
 	
-	/*
-	Enable this to see how many particles are ACTUALLY allocated whenever you do a cl_max_particles change
-	Also note it's damned useful for checking for if this thing is running more than it should!
-	Con_Printf ("%d", r_numparticles);
-	*/
-	
-	// Be very careful the next time we do something like this. calloc/free are IMPORTANT
-	// and the compiler doesn't know when we do bad things with them.
+	// Be very careful the next time we do something like this.
+	// calloc/free are IMPORTANT and the compiler doesn't know when we
+	// do bad things with them.
 	free (particles);
 	free (freeparticles);
-	//free (vertex_array);
 
 	particles = (particle_t *)
 		calloc (r_numparticles, sizeof (particle_t));
 	freeparticles = (particle_t **)
 		calloc (r_numparticles, sizeof (particle_t*));			
-	//vertex_array = (float *) calloc(r_numparticles, sizeof (varray_t));
 
 	R_ClearParticles();
 }
@@ -292,7 +284,7 @@ R_RunSparkEffect (vec3_t org, int count, int ofuzz)
 				  (ofuzz / 8) * .75, vec3_origin, cl.time + 99, 
 				  12 + (rand () & 3), 96, vec3_origin, vec3_origin);
 	while (count--)
-		particle_new_random (pt_fallfadespark, part_tex_spark, org, ofuzz * .75, 
+		particle_new_random (pt_fallfadespark, part_tex_spark, org, ofuzz * .75,
 							 1, 96, cl.time + 5, ramp[rand () % 6], 
 							 lhrandom (0, 255));
 }
@@ -518,7 +510,7 @@ R_RocketTrail (int type, entity_t *ent)
 			case 2:					// blood
 				pscale = 12;
 			case 4:					// slight blood
-				pscale += lhrandom (0, 3);
+				pscale += lhrandom (0.01, 3);
 				ptex = part_tex_smoke[rand () & 7];
 				pcolor = 68 + (rand () & 3);
 				for (j = 0; j < 3; j++) {
@@ -590,8 +582,7 @@ R_DrawParticles (void)
 	particle_t *part;
 	vec3_t		up, right, o_up, o_right;
 	vec3_t		up_scale, right_scale, up_right_scale;
-	int         activeparticles, maxparticle, j, k, vnum;
-	varray_t	vertex_array[4];
+	int         activeparticles, maxparticle, j, k;
 	
 	// LordHavoc: particles should not affect zbuffer
 	glDepthMask (GL_FALSE);
@@ -599,27 +590,24 @@ R_DrawParticles (void)
 	VectorScale (vup, 1.5, o_up);
 	VectorScale (vright, 1.5, o_right);
 
-	glInterleavedArrays (GL_T2F_C4UB_V3F, 0, (void *) &(vertex_array[0]));
-
-	vertex_array[0].texcoord[0] = 0; vertex_array[0].texcoord[1] = 1;
-	vertex_array[1].texcoord[0] = 0; vertex_array[1].texcoord[1] = 0;
-	vertex_array[2].texcoord[0] = 1; vertex_array[2].texcoord[1] = 0;
-	vertex_array[3].texcoord[0] = 1; vertex_array[3].texcoord[1] = 1;
-
-	vnum = 0;
+	varray[0].texcoord[0] = 0; varray[0].texcoord[1] = 1;
+	varray[1].texcoord[0] = 0; varray[1].texcoord[1] = 0;
+	varray[2].texcoord[0] = 1; varray[2].texcoord[1] = 0;
+	varray[3].texcoord[0] = 1; varray[3].texcoord[1] = 1;
 
 	grav = (fast_grav = host_frametime * 800) * 0.05;
 	dvel = 4 * host_frametime;
 
 	minparticledist = DotProduct (r_refdef.vieworg, vpn) + 32.0f;
 
-
 	activeparticles = 0;
 	maxparticle = -1;
 	j = 0;
 
 	for (k = 0, part = particles; k < numparticles; k++, part++) {
-		// LordHavoc: this is probably no longer necessary, as it is checked at the end, but could still happen on weird particle effects, left for safety...
+		// LordHavoc: this is probably no longer necessary, as it is
+		// checked at the end, but could still happen on weird particle
+		// effects, left for safety...
 		if (part->die <= cl.time) {
 			freeparticles[j++] = part;
 			continue;
@@ -634,7 +622,8 @@ R_DrawParticles (void)
 			at = (byte *) & d_8to24table[(byte) part->color];
 			alpha = part->alpha;
 
-			if (VectorCompare(part->up, part->right)) {
+#define mVectorCompare(x, y) ((x[0] == y[0]) && (x[1] == y[1]) && (x[2] == y[2]))
+			if (mVectorCompare(part->up, part->right)) {
 				memcpy(up, o_up, sizeof(up));
 				memcpy(right, o_right, sizeof(right));
 			} else {
@@ -643,17 +632,19 @@ R_DrawParticles (void)
 			}
 
 			if (lighthalf) {
-				vertex_array[0].color[0] = (byte) ((int) at[0] >> 1);
-				vertex_array[0].color[1] = (byte) ((int) at[1] >> 1);
-				vertex_array[0].color[2] = (byte) ((int) at[2] >> 1);
+				varray[0].color[0] = (float) ((int) at[0] >> 1) / 255;
+				varray[0].color[1] = (float) ((int) at[1] >> 1) / 255;
+				varray[0].color[2] = (float) ((int) at[2] >> 1) / 255;
 			} else {
-				memcpy(vertex_array[0].color, at, 3);
+				varray[0].color[0] = (float) at[0] / 255;
+				varray[0].color[1] = (float) at[1] / 255;
+				varray[0].color[2] = (float) at[2] / 255;
 			}
-			vertex_array[0].color[3] = alpha;
+			varray[0].color[3] = (float) alpha / 255;
 
-			memcpy(vertex_array[1].color, vertex_array[0].color, 4);
-			memcpy(vertex_array[2].color, vertex_array[0].color, 4);
-			memcpy(vertex_array[3].color, vertex_array[0].color, 4);
+			memcpy(varray[1].color, varray[0].color, sizeof(varray[0].color));
+			memcpy(varray[2].color, varray[0].color, sizeof(varray[0].color));
+			memcpy(varray[3].color, varray[0].color, sizeof(varray[0].color));
 
 			scale = part->scale;
 
@@ -669,60 +660,21 @@ R_DrawParticles (void)
 			up_right_scale[1] = (up[1] + right[1]) * scale;
 			up_right_scale[2] = (up[2] + right[2]) * scale;
 
-			vertex_array[0].vertex[0] = part->org[0] + up_right_scale[0];
-			vertex_array[0].vertex[1] = part->org[1] + up_right_scale[1];
-			vertex_array[0].vertex[2] = part->org[2] + up_right_scale[2];
+			varray[0].vertex[0] = part->org[0] + up_right_scale[0];
+			varray[0].vertex[1] = part->org[1] + up_right_scale[1];
+			varray[0].vertex[2] = part->org[2] + up_right_scale[2];
 
-			vertex_array[1].vertex[0] =
-				part->org[0] + (-up_scale[0]) + right_scale[0];
-			vertex_array[1].vertex[1] =
-				part->org[1] + (-up_scale[1]) + right_scale[1];
-			vertex_array[1].vertex[2] =
-				part->org[2] + (-up_scale[2]) + right_scale[2];
+			varray[1].vertex[0] = part->org[0] - up_scale[0] + right_scale[0];
+			varray[1].vertex[1] = part->org[1] - up_scale[1] + right_scale[1];
+			varray[1].vertex[2] = part->org[2] - up_scale[2] + right_scale[2];
 
-			vertex_array[2].vertex[0] = part->org[0] + -up_right_scale[0];
-			vertex_array[2].vertex[1] = part->org[1] + -up_right_scale[1];
-			vertex_array[2].vertex[2] = part->org[2] + -up_right_scale[2];
+			varray[2].vertex[0] = part->org[0] - up_right_scale[0];
+			varray[2].vertex[1] = part->org[1] - up_right_scale[1];
+			varray[2].vertex[2] = part->org[2] - up_right_scale[2];
 
-			vertex_array[3].vertex[0] =
-				part->org[0] + up_scale[0] + (-right_scale[0]);
-			vertex_array[3].vertex[1] =
-				part->org[1] + up_scale[1] + (-right_scale[1]);
-			vertex_array[3].vertex[2] =
-				part->org[2] + up_scale[2] + (-right_scale[2]);
-			/*
-			*/
-
-			/*
-			vertex_array[0].vertex[0] =
-				(part->org[0] + ((up[0] + right[0]) * scale));
-			vertex_array[0].vertex[1] =
-				(part->org[1] + ((up[1] + right[1]) * scale));
-			vertex_array[0].vertex[2] =
-				(part->org[2] + ((up[2] + right[2]) * scale));
-
-			vertex_array[1].vertex[0] =
-				(part->org[0] + (up[0] * -scale) + (right[0] * scale));
-			vertex_array[1].vertex[1] =
-				(part->org[1] + (up[1] * -scale) + (right[1] * scale));
-			vertex_array[1].vertex[2] =
-				(part->org[2] + (up[2] * -scale) + (right[2] * scale));
-
-			vertex_array[2].vertex[0] =
-				(part->org[0] + ((up[0] + right[0]) * -scale));
-			vertex_array[2].vertex[1] =
-				(part->org[1] + ((up[1] + right[1]) * -scale));
-			vertex_array[2].vertex[2] =
-				(part->org[2] + ((up[2] + right[2]) * -scale));
-
-			vertex_array[3].vertex[0] =
-				(part->org[0] + (up[0] * scale) + (right[0] * -scale));
-			vertex_array[3].vertex[1] =
-				(part->org[1] + (up[1] * scale) + (right[1] * -scale));
-			vertex_array[3].vertex[2] =
-				(part->org[2] + (up[2] * scale) + (right[2] * -scale));
-				*/
-
+			varray[3].vertex[0] = part->org[0] + up_scale[0] - right_scale[0];
+			varray[3].vertex[1] = part->org[1] + up_scale[1] - right_scale[1];
+			varray[3].vertex[2] = part->org[2] + up_scale[2] - right_scale[2];
 
 			glBindTexture (GL_TEXTURE_2D, part->tex);
 			glDrawArrays (GL_QUADS, 0, 4);
@@ -766,13 +718,6 @@ R_DrawParticles (void)
 				part->org[2] += host_frametime * 90;
 				break;
 			case pt_bloodcloud:
-/*
-				if (Mod_PointInLeaf(part->org, cl.worldmodel)->contents != CONTENTS_EMPTY)
-				{
-					part->die = -1;
-					break;
-				}
-*/
 				if ((part->alpha -= host_frametime * 64) < 1)
 				{
 					part->die = -1;
@@ -798,15 +743,17 @@ R_DrawParticles (void)
 				part->vel[2] -= fast_grav;
 				break;
 		}
-		// LordHavoc: immediate removal of unnecessary particles (must be done to ensure compactor below operates properly in all cases)
+		// LordHavoc: immediate removal of unnecessary particles (must
+		// be done to ensure compactor below operates properly in all
+		// cases)
 		if (part->die <= cl.time)
 			freeparticles[j++] = part;
 	}
 	k = 0;
 	while (maxparticle >= activeparticles) {
 		*freeparticles[k++] = particles[maxparticle--];
-		while (maxparticle >= activeparticles
-		       && particles[maxparticle].die <= cl.time)
+		while (maxparticle >= activeparticles && 
+				particles[maxparticle].die <= cl.time)
 			maxparticle--;
 	}
 	numparticles = activeparticles;

@@ -43,11 +43,14 @@
 #include "QF/cvar.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
+#include "QF/varrays.h"
 
 #include "glquake.h"
 #include "r_dynamic.h"
 #include "r_local.h"
 #include "skin.h"
+
+varray_t2f_c4f_v3f_t varray[MAX_VARRAY_VERTS];
 
 qboolean VID_Is8bit (void);
 void R_InitBubble (void);
@@ -207,6 +210,11 @@ R_Init (void)
 	glEnableClientState (GL_COLOR_ARRAY);
 	glEnableClientState (GL_VERTEX_ARRAY);
 	glEnableClientState (GL_TEXTURE_COORD_ARRAY);
+
+//	glInterleavedArrays(GL_T2F_C4F_N3F_V3F, 0, varray);
+	glTexCoordPointer (2, GL_FLOAT, sizeof(varray[0]), varray[0].texcoord);
+	glColorPointer (4, GL_FLOAT, sizeof(varray[0]), varray[0].color);
+	glVertexPointer (3, GL_FLOAT, sizeof(varray[0]), varray[0].vertex);
 }
 
 void
