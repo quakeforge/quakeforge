@@ -100,6 +100,7 @@ Info_SetValueForStarKey (info_t *info, const char *key, const char *value, int f
 	info_key_t *k;
 	int         cursize;
 	char       *str;
+	byte       *s, *d;
 
 	if (strstr (key, "\\") || strstr (value, "\\")) {
 		Sys_Printf ("Can't use keys or values with a \\\n");
@@ -141,19 +142,16 @@ Info_SetValueForStarKey (info_t *info, const char *key, const char *value, int f
 	}
 	if (!(str = strdup (value)))
 		Sys_Error ("Info_SetValueForStarKey: out of memory");
-	if (flags & 1) {
-		byte       *s, *d;
-		for (d = s = str; *s; s++)
-			if ((*s & 127) >= 32 && (*s & 127) <=127)
-				*d++ = *s & 127;
+	for (d = s = str; *s; s++) {
+		if (flags & 1) {
+			*s &= 127;
+			if (*s < 32)
+				continue;
+		}
 		if (flags & 2)
-			for (d = s = str; *s; s++)
-					*d++ = tolower (*s);
-	} else {
-		byte       *s, *d;
-		for (d = s = str; *s; s++)
-			if (*s >= 13)
-				*d++ = *s;
+			*s = tolower (*s);
+		if (*s > 13)
+			*d++ = *s;
 	}
 	info->cursize += strlen (str) + 1;
 	k->value = str;
@@ -201,7 +199,7 @@ free_key (void *_k, void *unused)
 }
 
 info_t *
-Info_ParseString (const char *s, int maxsize)
+Info_ParseString (const char *s, int maxsize, int flags)
 {
 	info_t     *info;
 	char       *string = Hunk_TempAlloc (strlen (s) + 1);
@@ -229,7 +227,7 @@ Info_ParseString (const char *s, int maxsize)
 		} else {
 			value = end = (char *)"";
 		}
-		Info_SetValueForStarKey (info, key, value, 0);
+		Info_SetValueForStarKey (info, key, value, flags);
 		key = end;
 	}
 	return info;

@@ -55,7 +55,7 @@ void Info_SetValueForKey (info_t *info, const char *key, const char *value, int 
 void Info_SetValueForStarKey (info_t *info, const char *key, const char *value, int flags);
 const char *Info_ValueForKey (info_t *info, const char *key);
 
-info_t *Info_ParseString (const char *s, int maxsize);
+info_t *Info_ParseString (const char *s, int maxsize, int flags);
 void Info_Destroy (info_t *info);
 char *Info_MakeString (info_t *info, int (*filter)(const char *));
 

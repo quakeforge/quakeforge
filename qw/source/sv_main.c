@@ -751,7 +751,8 @@ SVC_DirectConnect (void)
 	challenge = atoi (Cmd_Argv (3));
 
 	if (strlen (Cmd_Argv (4)) < MAX_INFO_STRING)
-		userinfo = Info_ParseString (Cmd_Argv (4), 1023);
+		userinfo = Info_ParseString (Cmd_Argv (4), 1023,
+									 !sv_highchars->int_val);
 
 	// Validate the userinfo string.
 	if (!userinfo) {
@@ -830,17 +831,7 @@ SVC_DirectConnect (void)
 
 	newcl->userid = userid;
 
-	// works properly
-	if (!sv_highchars->int_val) {
-		byte       *p, *q;
-
-		for (p = (byte *) newcl->userinfo, q = (byte *) userinfo;
-			 *q && p < (byte *) newcl->userinfo + sizeof (newcl->userinfo) - 1;
-			 q++)
-			if (*q > 31 && *q <= 127)
-				*p++ = *q;
-	} else
-		newcl->userinfo = userinfo;
+	newcl->userinfo = userinfo;
 
 	// if there is already a slot for this ip, drop it
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
@@ -2501,8 +2492,8 @@ SV_Init (void)
 	SV_Init_Memory ();
 
 	svs.maxclients = MAX_CLIENTS;
-	svs.info = Info_ParseString ("", MAX_SERVERINFO_STRING);
-	localinfo = Info_ParseString ("", 0);	// unlimited
+	svs.info = Info_ParseString ("", MAX_SERVERINFO_STRING, 0);
+	localinfo = Info_ParseString ("", 0, 0);	// unlimited
 	SV_InitOperatorCommands ();
 	SV_GIB_Init ();
 	

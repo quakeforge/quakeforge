@@ -1038,7 +1038,7 @@ CL_UpdateUserinfo (void)
 	if (*info) {
 		// a totally empty userinfo string should not be possible
 		player->userid = uid;
-		player->userinfo = Info_ParseString (info, MAX_INFO_STRING);
+		player->userinfo = Info_ParseString (info, MAX_INFO_STRING, 0);
 		CL_ProcessUserInfo (slot, player);
 	} else {
 		// the server dropped the client
@@ -1067,7 +1067,7 @@ CL_SetInfo (void)
 	Con_DPrintf ("SETINFO %s: %s=%s\n", player->name, key, value);
 
 	if (!player->userinfo)
-		player->userinfo = Info_ParseString ("", MAX_INFO_STRING);
+		player->userinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 
 	flags = !strequal (key, "name");
 	flags |= strequal (key, "team") << 1;

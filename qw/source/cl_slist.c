@@ -702,7 +702,7 @@ SL_CheckStatus (const char *cs_from, const char *cs_data)
 					}
 				if (temp->status)
 					Info_Destroy (temp->status);
-				temp->status = Info_ParseString (cs_data, strlen (data));
+				temp->status = Info_ParseString (cs_data, strlen (data), 0);
 				temp->waitstatus = 0;
 				tmp_desc = Info_ValueForKey (temp->status, "hostname");
 				if (tmp_desc[0] != '\0') {

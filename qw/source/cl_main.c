@@ -393,7 +393,7 @@ CL_ClearState (void)
 	for (i = 0; i < UPDATE_BACKUP; i++)
 		cl.frames[i].packet_entities.entities = cl_entities[i];
 	memset (cl_entities, 0, sizeof (cl_entities));
-	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING);
+	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 
 	CL_Init_Entity (&cl.viewent);
 
@@ -582,7 +582,7 @@ CL_FullServerinfo_f (void)
 
 	Con_DPrintf ("Cmd_Argv(1): '%s'\n", Cmd_Argv (1));
 	Info_Destroy (cl.serverinfo);
-	cl.serverinfo = Info_ParseString (Cmd_Argv (1), MAX_SERVERINFO_STRING);
+	cl.serverinfo = Info_ParseString (Cmd_Argv (1), MAX_SERVERINFO_STRING, 0);
 	Con_DPrintf ("cl.serverinfo: '%s'\n", Info_MakeString (cl.serverinfo, 0));
 
 	if ((p = Info_ValueForKey (cl.serverinfo, "*qf_version")) && *p) {
@@ -1692,8 +1692,8 @@ Host_Init (void)
 
 	pr_gametype = "quakeworld";
 
-	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING);
-	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING);
+	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
+	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 
 	QFS_Init ("qw");
 	PI_Init ();
