@@ -54,6 +54,8 @@
 static particle_t *particles, **freeparticles;
 static short r_numparticles, numparticles;
 
+extern qboolean lighthalf;
+
 extern cvar_t *cl_max_particles;
 
 extern int  part_tex_dot;
@@ -617,9 +619,15 @@ R_DrawParticles (void)
 				memcpy(right, part->right, sizeof(right));
 			}
 
-			varray[0].color[0] = (float) at[0] / 255;
-			varray[0].color[1] = (float) at[1] / 255;
-			varray[0].color[2] = (float) at[2] / 255;
+			if (lighthalf) {
+				varray[0].color[0] = (float) ((int) at[0] >> 1) / 255;
+				varray[0].color[1] = (float) ((int) at[1] >> 1) / 255;
+				varray[0].color[2] = (float) ((int) at[2] >> 1) / 255;
+			} else {
+				varray[0].color[0] = (float) at[0] / 255;
+				varray[0].color[1] = (float) at[1] / 255;
+				varray[0].color[2] = (float) at[2] / 255;
+			}
 			varray[0].color[3] = (float) alpha / 255;
 
 			memcpy(varray[1].color, varray[0].color, sizeof(varray[0].color));

@@ -37,7 +37,7 @@
 	filelength
 */
 int
-filelength (QFile *f)
+filelength (VFile *f)
 {
 	int         pos;
 	int         end;
@@ -54,7 +54,7 @@ filelength (QFile *f)
 int
 Sys_FileTime (char *path)
 {
-	QFile      *f;
+	VFile      *f;
 
 	f = Qopen (path, "rb");
 	if (f) {

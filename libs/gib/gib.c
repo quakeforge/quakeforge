@@ -85,7 +85,7 @@ void
 GIB_Load_f (void)
 {
 	char        filename[256];
-	QFile      *f;
+	VFile      *f;
 
 	snprintf (filename, sizeof (filename), "%s/%s.gib", com_gamedir,
 			  Cmd_Argv (1));

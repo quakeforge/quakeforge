@@ -477,7 +477,7 @@ void
 Host_Savegame_f (void)
 {
 	char        name[256];
-	QFile      *f;
+	VFile      *f;
 	int         i;
 	char        comment[SAVEGAME_COMMENT_LENGTH + 1];
 
@@ -564,7 +564,7 @@ void
 Host_Loadgame_f (void)
 {
 	char        name[MAX_OSPATH];
-	QFile      *f;
+	VFile      *f;
 	char        mapname[MAX_QPATH];
 	float       time, tfloat;
 	char        str[32768], *start;
@@ -712,7 +712,7 @@ void
 SaveGamestate ()
 {
 	char        name[256];
-	QFile      *f;
+	VFile      *f;
 	int         i;
 	char        comment[SAVEGAME_COMMENT_LENGTH + 1];
 	edict_t    *ent;
@@ -761,7 +761,7 @@ int
 LoadGamestate (char *level, char *startspot)
 {
 	char        name[MAX_OSPATH];
-	QFile      *f;
+	VFile      *f;
 	char        mapname[MAX_QPATH];
 	float       time, sk;
 	char        str[32768], *start;

@@ -1361,7 +1361,7 @@ Host_Error (char *error, ...)
 void
 Host_WriteConfiguration (void)
 {
-	QFile      *f;
+	VFile      *f;
 
 	if (cl_writecfg->int_val && host_initialized) {
 		char       *path = va ("%s/config.cfg", com_gamedir);
@@ -1529,7 +1529,7 @@ Host_Frame (float time)
 static int
 check_quakerc (void)
 {
-	QFile *f;
+	VFile *f;
 	char *l, *p;
 	int ret = 1;
 

@@ -7,7 +7,7 @@
 
 -ts4
 
--T QFile
+-T VFile
 -T affinetridesc_t
 -T aliasframetype_t
 -T aliashdr_t

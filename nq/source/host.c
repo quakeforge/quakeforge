@@ -269,7 +269,7 @@ Host_InitLocal (void)
 void
 Host_WriteConfiguration (void)
 {
-	QFile      *f;
+	VFile      *f;
 
 // dedicated servers initialize the host but don't parse and set the
 // config.cfg cvars
@@ -780,7 +780,7 @@ Host_Frame (float time)
 //============================================================================
 
 
-extern QFile *vcrFile;
+extern VFile *vcrFile;
 
 #define	VCR_SIGNATURE	0x56435231
 // "VCR1"
@@ -851,7 +851,7 @@ Host_InitVCR (quakeparms_t *parms)
 static int
 check_quakerc (void)
 {
-	QFile *f;
+	VFile *f;
 	char *l, *p;
 	int ret = 1;
 

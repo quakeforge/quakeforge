@@ -91,10 +91,10 @@ char	*ED_NewString (progs_t *pr, char *string);
 // returns a copy of the string allocated from the server's string heap
 
 void ED_Print (progs_t *pr, edict_t *ed);
-void ED_Write (progs_t *pr, QFile *f, edict_t *ed);
+void ED_Write (progs_t *pr, VFile *f, edict_t *ed);
 char *ED_ParseEdict (progs_t *pr, char *data, edict_t *ent);
 
-void ED_WriteGlobals (progs_t *pr, QFile *f);
+void ED_WriteGlobals (progs_t *pr, VFile *f);
 void ED_ParseGlobals (progs_t *pr, char *data);
 
 void ED_LoadFromFile (progs_t *pr, char *data);

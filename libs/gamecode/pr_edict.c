@@ -519,7 +519,7 @@ ED_Print (progs_t * pr, edict_t *ed)
 	For savegames
 */
 void
-ED_Write (progs_t * pr, QFile *f, edict_t *ed)
+ED_Write (progs_t * pr, VFile *f, edict_t *ed)
 {
 	ddef_t     *d;
 	int        *v;
@@ -625,7 +625,7 @@ ED_Count (progs_t * pr)
 	ED_WriteGlobals
 */
 void
-ED_WriteGlobals (progs_t * pr, QFile *f)
+ED_WriteGlobals (progs_t * pr, VFile *f)
 {
 	ddef_t     *def;
 	int         i;

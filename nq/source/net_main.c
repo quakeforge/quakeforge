@@ -107,7 +107,7 @@ cvar_t     *config_modem_clear;
 cvar_t     *config_modem_init;
 cvar_t     *config_modem_hangup;
 
-QFile      *vcrFile;
+VFile      *vcrFile;
 qboolean    recording = false;
 
 // these two macros are to make the code more readable

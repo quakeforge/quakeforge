@@ -45,7 +45,7 @@ FILE IO
 */
 
 #define	MAX_HANDLES		10
-QFile      *sys_handles[MAX_HANDLES];
+VFile      *sys_handles[MAX_HANDLES];
 
 int
 findhandle (void)
@@ -65,7 +65,7 @@ filelength
 ================
 */
 int
-filelength (QFile *f)
+filelength (VFile *f)
 {
 	int         pos;
 	int         end;
@@ -81,7 +81,7 @@ filelength (QFile *f)
 int
 Sys_FileOpenRead (char *path, int *hndl)
 {
-	QFile      *f;
+	VFile      *f;
 	int         i;
 
 	i = findhandle ();
@@ -100,7 +100,7 @@ Sys_FileOpenRead (char *path, int *hndl)
 int
 Sys_FileOpenWrite (char *path)
 {
-	QFile      *f;
+	VFile      *f;
 	int         i;
 
 	i = findhandle ();
@@ -141,7 +141,7 @@ Sys_FileWrite (int handle, void *data, int count)
 int
 Sys_FileTime (char *path)
 {
-	QFile      *f;
+	VFile      *f;
 
 	f = Qopen (path, "rb");
 	if (f) {

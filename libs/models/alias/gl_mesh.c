@@ -297,7 +297,7 @@ GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s)
 	int        *cmds;
 	trivertx_t *verts;
 	char        cache[MAX_QPATH], fullpath[MAX_OSPATH];
-	QFile      *f;
+	VFile      *f;
 	unsigned char model_digest[MDFOUR_DIGEST_BYTES];
 	unsigned char mesh_digest[MDFOUR_DIGEST_BYTES];
 	qboolean    remesh = true;

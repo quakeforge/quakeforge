@@ -115,7 +115,7 @@ FILE IO
 */
 
 #define	MAX_HANDLES		10
-QFile      *sys_handles[MAX_HANDLES];
+VFile      *sys_handles[MAX_HANDLES];
 
 int
 findhandle (void)

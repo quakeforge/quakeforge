@@ -665,7 +665,7 @@ void
 SV_BeginDownload_f (void)
 {
 	char       *name;
-	QFile      *file;
+	VFile      *file;
 	int         size;
 	char        realname[MAX_OSPATH];
 	int         zip;

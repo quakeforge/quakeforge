@@ -197,7 +197,7 @@ CL_CalcNet (void)
 qboolean
 CL_CheckOrDownloadFile (char *filename)
 {
-	QFile      *f;
+	VFile      *f;
 
 	if (strstr (filename, "..")) {
 		Con_Printf ("Refusing to download a path with ..\n");

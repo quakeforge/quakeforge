@@ -36,7 +36,7 @@
 #include "QF/sys.h"
 #include "server.h"
 
-extern QFile  *vcrFile;
+extern VFile  *vcrFile;
 
 // This is the playback portion of the VCR.  It reads the file produced
 // by the recorder and plays it back to the host.  The recording contains

@@ -169,7 +169,7 @@ char       *clc_string[] = {
 #define svc_signonnum           25		// [byte]  used for the signon
 										// sequence
 
-static QFile      *Net_PacketLog;
+static VFile      *Net_PacketLog;
 static char      **Net_sound_precache;
 static sizebuf_t   _packet;
 static msg_t       packet = {0, 0, &_packet};

@@ -53,7 +53,7 @@
 static gib_module_t *gibmodules;
 
 void
-GIB_Module_Load (char *name, QFile *f)
+GIB_Module_Load (char *name, VFile *f)
 {
 	char        line[1024];
 	gib_module_t *newmod;
@@ -110,7 +110,7 @@ GIB_Create_Sub (gib_module_t * mod, char *name)
 }
 
 void
-GIB_Read_Sub (gib_sub_t * sub, QFile *f)
+GIB_Read_Sub (gib_sub_t * sub, VFile *f)
 {
 	char        line[1024];
 	fpos_t      begin;

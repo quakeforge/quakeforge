@@ -38,9 +38,9 @@
 
 #define INI_STRING_SIZE 0x100
 
-QFile      *ini_fopen (const char *filename, const char *modes);
-int         ini_fclose (QFile *f);
-void        ini_fgets (QFile *f, const char *section, const char *field,
+VFile      *ini_fopen (const char *filename, const char *modes);
+int         ini_fclose (VFile *f);
+void        ini_fgets (VFile *f, const char *section, const char *field,
 
 					   char *s);
 
@@ -66,7 +66,7 @@ struct field_buffer {
 	char        name[MAX_FIELD_WIDTH + 1];
 };
 
-static QFile *current_file = NULL;
+static VFile *current_file = NULL;
 static int  current_section;
 
 static int  current_section_buffer = 0;
@@ -87,7 +87,7 @@ toupper (char c)
 }
 
 static void
-reset_buffer (QFile *f)
+reset_buffer (VFile *f)
 {
 	int         i;
 
@@ -325,7 +325,7 @@ add_field (char *instring, int section, long offset)
 // Identical to fgets except the string is trucated at the first ';',
 // carriage return or line feed.
 static char *
-stripped_fgets (char *s, int n, QFile *f)
+stripped_fgets (char *s, int n, VFile *f)
 {
 	int         i = 0;
 
@@ -343,7 +343,7 @@ stripped_fgets (char *s, int n, QFile *f)
 // Externally accessable routines
 //***************************************************************************
 // Opens an .INI file. Works like fopen
-QFile      *
+VFile      *
 ini_fopen (const char *filename, const char *modes)
 {
 	return (Qopen (filename, modes));
@@ -351,7 +351,7 @@ ini_fopen (const char *filename, const char *modes)
 
 // Closes a .INI file. Works like fclose
 int
-ini_fclose (QFile *f)
+ini_fclose (VFile *f)
 {
 	if (f == current_file)
 		reset_buffer (NULL);
@@ -362,7 +362,7 @@ ini_fclose (QFile *f)
 // If "section" does not exist or "field" does not exist in
 // section then s="";
 void
-ini_fgets (QFile *f, const char *section, const char *field, char *s)
+ini_fgets (VFile *f, const char *section, const char *field, char *s)
 {
 	int         i;
 	long        start_pos, string_start_pos;
@@ -668,7 +668,7 @@ static qboolean
 GUS_GetIWData (void)
 {
 	char       *Interwave, s[INI_STRING_SIZE];
-	QFile      *IwFile;
+	VFile      *IwFile;
 	int         CodecBase, CodecDma, i;
 
 	Interwave = getenv ("INTERWAVE");

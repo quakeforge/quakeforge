@@ -111,7 +111,7 @@ locs_add (vec3_t location, char *name)
 void
 locs_load (char *filename)
 {
-	QFile      *file;
+	VFile      *file;
 	char       *line, *t1, *t2;
 	vec3_t      loc;
 	char	    tmp[PATH_MAX];
@@ -189,7 +189,7 @@ locs_more (void)
 void
 locs_save (char *filename, qboolean gz)
 {
-	QFile *locfd;
+	VFile *locfd;
 	int i;
 	char locfile[MAX_OSPATH];
 	

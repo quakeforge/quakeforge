@@ -56,7 +56,7 @@ FILE IO
 #define MAX_HANDLES             10
 
 typedef struct {
-	QFile      *hFile;
+	VFile      *hFile;
 	char       *pMap;
 	int         nLen;
 	int         nPos;
@@ -82,7 +82,7 @@ filelength
 ================
 */
 int
-filelength (QFile *f)
+filelength (VFile *f)
 {
 	int         pos;
 	int         end;
@@ -98,7 +98,7 @@ filelength (QFile *f)
 int
 Sys_FileOpenRead (char *path, int *hndl)
 {
-	QFile      *f;
+	VFile      *f;
 	int         i;
 
 	i = findhandle ();
@@ -127,7 +127,7 @@ Sys_FileOpenRead (char *path, int *hndl)
 int
 Sys_FileOpenWrite (char *path)
 {
-	QFile      *f;
+	VFile      *f;
 	int         i;
 
 	i = findhandle ();
@@ -191,7 +191,7 @@ Sys_FileWrite (int handle, void *data, int count)
 int
 Sys_FileTime (char *path)
 {
-	QFile      *f;
+	VFile      *f;
 
 	f = Qopen (path, "rb");
 	if (f) {

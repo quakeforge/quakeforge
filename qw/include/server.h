@@ -191,7 +191,7 @@ typedef struct client_s
 
 	client_frame_t	frames[UPDATE_BACKUP];	// updates can be deltad from here
 
-	QFile			*download;			// file being downloaded
+	VFile			*download;			// file being downloaded
 	int				downloadsize;		// total bytes
 	int				downloadcount;		// bytes sent
 
@@ -203,7 +203,7 @@ typedef struct client_s
 
 	qboolean		upgradewarn;		// did we warn him?
 
-	QFile			*upload;
+	VFile			*upload;
 	char			uploadfn[MAX_QPATH];
 	netadr_t		snap_from;
 	qboolean		remote_snap;
@@ -393,8 +393,8 @@ extern	char		localmodels[MAX_MODELS][5];	// inline model names for precache
 extern	char		localinfo[MAX_LOCALINFO_STRING+1];
 
 extern	int			host_hunklevel;
-extern	QFile		*sv_logfile;
-extern	QFile		*sv_fraglogfile;
+extern	VFile		*sv_logfile;
+extern	VFile		*sv_fraglogfile;
 
 extern	double		sv_frametime;
 extern	double		realtime;

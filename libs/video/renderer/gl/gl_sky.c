@@ -64,7 +64,7 @@ void
 R_LoadSkys (const char *skyname)
 {
 	int         i;
-	QFile      *f;
+	VFile      *f;
 	char        name[64];
 
 	if (strcasecmp (skyname, "none") == 0) {

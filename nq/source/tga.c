@@ -45,7 +45,7 @@
 
 
 static int
-fgetLittleShort (QFile *f)
+fgetLittleShort (VFile *f)
 {
 	byte        b1, b2;
 
@@ -58,7 +58,7 @@ fgetLittleShort (QFile *f)
 
 /*
 static int
-fgetLittleLong (QFile *f)
+fgetLittleLong (VFile *f)
 {
 	byte	b1, b2, b3, b4;
 
@@ -73,7 +73,7 @@ fgetLittleLong (QFile *f)
 
 
 byte *
-LoadTGA (QFile *fin)
+LoadTGA (VFile *fin)
 {
 	int         columns, rows, numPixels;
 	byte       *pixbuf;

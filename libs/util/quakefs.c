@@ -127,7 +127,7 @@ typedef struct {
 
 typedef struct pack_s {
 	char        filename[MAX_OSPATH];
-	QFile      *handle;
+	VFile      *handle;
 	int         numfiles;
 	packfile_t *files;
 	hashtab_t  *file_hash;
@@ -195,7 +195,7 @@ COM_FileBase (char *in, char *out)
 	COM_filelength
 */
 int
-COM_filelength (QFile *f)
+COM_filelength (VFile *f)
 {
 	int         pos;
 	int         end;
@@ -212,9 +212,9 @@ COM_filelength (QFile *f)
 	COM_FileOpenRead
 */
 int
-COM_FileOpenRead (char *path, QFile **hndl)
+COM_FileOpenRead (char *path, VFile **hndl)
 {
-	QFile      *f;
+	VFile      *f;
 
 	f = Qopen (path, "rbz");
 	if (!f) {
@@ -380,7 +380,7 @@ COM_Maplist_f (void)
 void
 COM_WriteFile (char *filename, void *data, int len)
 {
-	QFile      *f;
+	VFile      *f;
 	char        name[MAX_OSPATH];
 
 	snprintf (name, sizeof (name), "%s/%s", com_gamedir, filename);
@@ -406,7 +406,7 @@ COM_WriteFile (char *filename, void *data, int len)
 void
 COM_WriteBuffers (const char *filename, int count, ...)
 {
-	QFile      *f;
+	VFile      *f;
 	char        name[MAX_OSPATH];
 	va_list     args;
 
@@ -468,7 +468,7 @@ COM_CreatePath (char *path)
 void
 COM_CopyFile (char *netpath, char *cachepath)
 {
-	QFile      *in, *out;
+	VFile      *in, *out;
 	int         remaining, count;
 	char        buf[4096];
 
@@ -496,7 +496,7 @@ COM_CopyFile (char *netpath, char *cachepath)
 /*
 	COM_OpenRead
 */
-QFile      *
+VFile      *
 COM_OpenRead (const char *path, int offs, int len, int zip)
 {
 	int         fd = open (path, O_RDONLY);
@@ -548,7 +548,7 @@ int         file_from_pak;				// global indicating file came from
 	Sets com_filesize and one of handle or file
 */
 int
-_COM_FOpenFile (char *filename, QFile **gzfile, char *foundname, int zip)
+_COM_FOpenFile (char *filename, VFile **gzfile, char *foundname, int zip)
 {
 	searchpath_t *search;
 	char        netpath[MAX_OSPATH];
@@ -625,7 +625,7 @@ _COM_FOpenFile (char *filename, QFile **gzfile, char *foundname, int zip)
 }
 
 int
-COM_FOpenFile (char *filename, QFile **gzfile)
+COM_FOpenFile (char *filename, VFile **gzfile)
 {
 	char        foundname[MAX_OSPATH];
 
@@ -645,7 +645,7 @@ int         loadsize;
 byte       *
 COM_LoadFile (char *path, int usehunk)
 {
-	QFile      *h;
+	VFile      *h;
 	byte       *buf = NULL;
 	char        base[32];
 	int         len;
@@ -740,7 +740,7 @@ COM_LoadPackFile (char *packfile)
 	packfile_t *newfiles;
 	int         numpackfiles;
 	pack_t     *pack;
-	QFile      *packhandle;
+	VFile      *packhandle;
 	dpackfile_t info[MAX_FILES_IN_PACK];
 	hashtab_t  *hash;
 

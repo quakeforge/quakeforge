@@ -140,7 +140,7 @@ Skin_Cache (skin_t *skin)
 {
 	char        name[1024];
 	tex_t      *out;
-	QFile      *file;
+	VFile      *file;
 	tex_t      *tex;
 	int         pixels;
 	byte       *ipix, *opix;

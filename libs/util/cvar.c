@@ -284,7 +284,7 @@ Cvar_Command (void)
 	with the archive flag set to true.
 */
 void
-Cvar_WriteVariables (QFile *f)
+Cvar_WriteVariables (VFile *f)
 {
 	cvar_t     *var;
 

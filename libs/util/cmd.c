@@ -301,7 +301,7 @@ Cmd_Exec_File (char *path)
 {
 	char       *f;
 	int         len;
-	QFile      *file;
+	VFile      *file;
 
 	if (!path || !*path)
 		return;

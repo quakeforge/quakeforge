@@ -197,7 +197,7 @@ SL_Len (server_entry_t *start)
 }
 
 server_entry_t *
-SL_LoadF (QFile *f, server_entry_t *start)
+SL_LoadF (VFile *f, server_entry_t *start)
 {										// This could get messy
 	char        line[256];				/* Long lines get truncated. */
 	int         c = ' ';				/* int so it can be compared to EOF
@@ -237,7 +237,7 @@ SL_LoadF (QFile *f, server_entry_t *start)
 }
 
 void
-SL_SaveF (QFile *f, server_entry_t *start)
+SL_SaveF (VFile *f, server_entry_t *start)
 {
 	do {
 		Qprintf (f, "%s   %s\n", start->server, start->desc);
@@ -249,7 +249,7 @@ SL_SaveF (QFile *f, server_entry_t *start)
 void
 SL_Shutdown (server_entry_t *start)
 {
-	QFile      *f;
+	VFile      *f;
 	char        e_path[MAX_OSPATH];
 
 	if (start) {
@@ -494,7 +494,7 @@ MSL_ParseServerList(char *msl_data)
 
 void SList_Init (void)
 {
-	QFile      *servlist;
+	VFile      *servlist;
 	char        e_path[MAX_OSPATH];
 
 	Qexpand_squiggle (fs_userpath->string, e_path);

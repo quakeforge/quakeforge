@@ -315,7 +315,7 @@ SV_Map_f (void)
 {
 	char        level[MAX_QPATH];
 	char        expanded[MAX_QPATH];
-	QFile      *f;
+	VFile      *f;
 
 	if (Cmd_Argc () != 2) {
 		Con_Printf ("map <levelname> : continue game on a new level\n");

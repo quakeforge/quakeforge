@@ -46,7 +46,7 @@
 #include "QF/zone.h"
 
 tex_t *
-LoadPCX (QFile *f, int convert)
+LoadPCX (VFile *f, int convert)
 {
 	pcx_t      *pcx;
 	int         pcx_mark;

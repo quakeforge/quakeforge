@@ -102,7 +102,7 @@ Sys_DebugLog (char *file, char *fmt, ...)
 
 
 int
-wfilelength (QFile *f)
+wfilelength (VFile *f)
 {
 	int         pos;
 	int         end;

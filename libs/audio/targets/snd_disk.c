@@ -45,7 +45,7 @@
 #include "QF/plugin.h"
 
 static int  snd_inited;
-QFile      *snd_file;
+VFile      *snd_file;
 
 plugin_t           plugin_info;
 plugin_data_t      plugin_info_data;

@@ -53,8 +53,8 @@ void SL_Swap(server_entry_t *swap1, server_entry_t *swap2);
 server_entry_t *SL_Get_By_Num(server_entry_t *start, int n);
 int SL_Len(server_entry_t *start);
 
-server_entry_t *SL_LoadF(QFile *f, server_entry_t *start);
-void SL_SaveF(QFile *f, server_entry_t *start);
+server_entry_t *SL_LoadF(VFile *f, server_entry_t *start);
+void SL_SaveF(VFile *f, server_entry_t *start);
 
 void SL_Del_All(server_entry_t *start);
 void SL_Shutdown(server_entry_t *start);

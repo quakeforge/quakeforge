@@ -636,7 +636,7 @@ Key_Bind_f (void)
 	Writes lines containing "bind key value"
 */
 void
-Key_WriteBindings (QFile *f)
+Key_WriteBindings (VFile *f)
 {
 	int         i;
 

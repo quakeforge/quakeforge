@@ -55,7 +55,7 @@ int         static_registered = 1;
 void
 COM_CheckRegistered (void)
 {
-	QFile      *h;
+	VFile      *h;
 	unsigned short check[128];
 
 	COM_FOpenFile ("gfx/pop.lmp", &h);

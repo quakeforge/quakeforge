@@ -108,7 +108,7 @@ qboolean Cvar_Command (void);
 
 // Writes lines containing "set variable value" for all variables
 // with the archive flag set to true.
-void 	Cvar_WriteVariables (QFile *f);
+void 	Cvar_WriteVariables (VFile *f);
 
 // Returns a pointer to the Cvar, NULL if not found
 cvar_t *Cvar_FindVar (char *var_name);

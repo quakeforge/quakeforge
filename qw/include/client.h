@@ -154,7 +154,7 @@ typedef struct
 	int			qport;
 
 // file transfer from server
-	QFile		*download;
+	VFile		*download;
 	char		downloadtempname[MAX_OSPATH];
 	char		downloadname[MAX_OSPATH];
 	int			downloadnumber;
@@ -170,7 +170,7 @@ typedef struct
 	qboolean	demorecording;
 	qboolean	demoplayback;
 	qboolean	timedemo;
-	QFile		*demofile;
+	VFile		*demofile;
 	float		td_lastframe;		// to meter out one message a frame
 	int			td_startframe;		// host_framecount at start
 	float		td_starttime;		// realtime at second frame of timedemo
