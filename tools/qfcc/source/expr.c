@@ -138,7 +138,7 @@ convert_name (expr_t *e)
 		class = get_class (name, 0);
 		if (class) {
 			e->type = ex_def;
-			e->e.def = class_def (class);
+			e->e.def = class_pointer_def (class);
 			return;
 		}
 		d = get_def (NULL, name, current_scope, st_none);
@@ -1648,8 +1648,8 @@ function_expr (expr_t *e1, expr_t *e2)
 				e->type = expr_types[t->type];
 			}
 			if (!type_assignable (ftype->parm_types[i], t)) {
-				print_type (ftype->parm_types[i]); puts("");
-				print_type (t); puts("");
+				print_type (ftype->parm_types[i]); puts ("");
+				print_type (t); puts ("");
 				err = error (e, "type mismatch for parameter %d of %s",
 							 i + 1, e1->e.def->name);
 			}

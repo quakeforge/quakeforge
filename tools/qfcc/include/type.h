@@ -88,6 +88,7 @@ int type_assignable (type_t *dst, type_t *src);
 int type_size (type_t *type);
 
 void init_types (void);
+void chain_initial_types (void);
 
 void clear_typedefs (void);
 

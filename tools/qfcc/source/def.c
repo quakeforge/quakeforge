@@ -247,7 +247,7 @@ get_def (type_t *type, const char *name, scope_t *scope,
 		}
 	}
 	set_storage_bits (def, storage);
-	if (storage == st_extern || storage == st_static)
+	if (storage == st_extern)
 		def_initialized (def);
 
 	return def;

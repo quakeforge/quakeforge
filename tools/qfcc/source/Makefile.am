@@ -39,8 +39,8 @@ bin_PROGRAMS=	qfcc
 
 qfcc_SOURCES= \
 	class.c cmdlib.c cpp.c debug.c def.c emit.c expr.c function.c idstuff.c \
-	immediate.c method.c obj_file.c opcodes.c options.c qc-lex.l qc-parse.y \
-	qfcc.c reloc.c struct.c switch.c type.c
+	immediate.c linker.c method.c obj_file.c opcodes.c options.c qc-lex.l \
+	qc-parse.y qfcc.c reloc.c struct.c switch.c type.c
 
 qfcc_LDADD=			$(QFCC_LIBS)
 qfcc_DEPENDENCIES=	$(QFCC_DEPS)

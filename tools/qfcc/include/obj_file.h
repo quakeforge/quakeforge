@@ -33,6 +33,7 @@
 #define __obj_file_h
 
 #include "QF/pr_comp.h"
+#include "QF/pr_debug.h"
 
 #define QFO			"QFO"
 #define QFO_VERSION 0x00001001		// MMmmmRRR 0.001.001 (hex)
@@ -118,6 +119,16 @@ typedef struct qfo_s {
 	int         num_lines;
 } qfo_t;
 
+#define QFO_var(q, t, o)	((q)->data[o].t##_var)
+#define	QFO_FLOAT(q, o)		QFO_var (q, float, o)
+#define	QFO_INT(q, o)		QFO_var (q, integer, o)
+#define	QFO_VECTOR(q, o)	QFO_var (q, vector, o)
+#define	QFO_STRING(q, o)	(pr.strings + QFO_var (q, string, o))
+#define	QFO_FUNCTION(q, o)	QFO_var (q, func, o)
+#define QFO_POINTER(q, t,o)	((t *)((q)->data + o))
+#define QFO_STRUCT(q, t,o)	(*QFO_POINTER (q, t, o))
+
 int write_obj_file (const char *filename);
+qfo_t *read_obj_file (const char *filename);
 
 #endif//__obj_file_h

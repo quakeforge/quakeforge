@@ -71,6 +71,7 @@ static const char rcsid[] =
 #include "function.h"
 #include "idstuff.h"
 #include "immediate.h"
+#include "linker.h"
 #include "method.h"
 #include "obj_file.h"
 #include "opcodes.h"
@@ -131,6 +132,7 @@ InitData (void)
 		free (pr.statements);
 		memset (&pr, 0, sizeof (pr));
 	}
+	chain_initial_types ();
 	pr_source_line = 1;
 	pr_error_count = 0;
 	pr.num_statements = 1;
@@ -538,8 +540,11 @@ separate_compile (void)
 		}
 	}
 	if (!err && !options.compile) {
+		linker_begin ();
 		for (file = source_files; *file; file++) {
+			linker_add_object_file (*file);
 		}
+		linker_finish ();
 	}
 	return err;
 }

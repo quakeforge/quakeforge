@@ -276,6 +276,9 @@ print_type (type_t *type)
 					class->category_name ? va (" (%s)", class->category_name)
 										 : "");
 			break;
+		case ev_struct:
+			printf (" %s %s", pr_type_name[type->type], type->name);
+			break;
 		default:
 			printf(" %s", pr_type_name[type->type]);
 			break;
@@ -340,7 +343,11 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 		case ev_object:
 		case ev_class:
 			dstring_appendstr (encoding, "{");
-			dstring_appendstr (encoding, type->name);
+			if (type->name) {
+				dstring_appendstr (encoding, type->name);
+			} else if (type->type == ev_object || type->type == ev_class) {
+				dstring_appendstr (encoding, type->class->class_name);
+			}
 			if (level < 2) {
 				dstring_appendstr (encoding, "=");
 				for (field = type->struct_head; field; field = field->next)
@@ -441,32 +448,14 @@ init_types (void)
 {
 	type_t     *type;
 
-	chain_type (&type_void);
-	chain_type (&type_string);
-	chain_type (&type_float);
-	chain_type (&type_vector);
-	chain_type (&type_entity);
-	chain_type (&type_field);
-	chain_type (&type_function);
-	chain_type (&type_pointer);
-	chain_type (&type_floatfield);
-	chain_type (&type_quaternion);
-	chain_type (&type_integer);
-	chain_type (&type_uinteger);
-	chain_type (&type_short);
-	chain_type (&type_struct);
-	chain_type (&type_IMP);
-
 	type = type_SEL.aux_type = new_struct (0);
 	new_struct_field (type, &type_string, "sel_id", vis_public);
 	new_struct_field (type, &type_string, "sel_types", vis_public);
-	chain_type (&type_SEL);
 
 	type = type_Method.aux_type = new_struct (0);
 	new_struct_field (type, type_SEL.aux_type, "method_name", vis_public);
 	new_struct_field (type, &type_string, "method_types", vis_public);
 	new_struct_field (type, &type_IMP, "method_imp", vis_public);
-	chain_type (&type_Method);
 
 	type = type_Class.aux_type = new_struct (0);
 	type->type = ev_class;
@@ -485,7 +474,6 @@ init_types (void)
 	new_struct_field (type, &type_pointer, "sibling_class", vis_public);
 	new_struct_field (type, &type_pointer, "protocols", vis_public);
 	new_struct_field (type, &type_pointer, "gc_object_type", vis_public);
-	chain_type (&type_Class);
 
 	type = type_Protocol.aux_type = new_struct (0);
 	type->type = ev_class;
@@ -496,14 +484,12 @@ init_types (void)
 	new_struct_field (type, &type_pointer, "protocol_list", vis_public);
 	new_struct_field (type, &type_pointer, "instance_methods", vis_public);
 	new_struct_field (type, &type_pointer, "class_methods", vis_public);
-	chain_type (&type_Protocol);
 
 	type = type_id.aux_type = new_struct ("id");
 	type->type = ev_object;
 	type->class = &class_id;
 	class_id.ivars = type_id.aux_type;
 	new_struct_field (type, &type_Class, "class_pointer", vis_public);
-	chain_type (&type_id);
 
 	type = type_category = new_struct (0);
 	new_struct_field (type, &type_string, "category_name", vis_public);
@@ -511,22 +497,48 @@ init_types (void)
 	new_struct_field (type, &type_pointer, "instance_methods", vis_public);
 	new_struct_field (type, &type_pointer, "class_methods", vis_public);
 	new_struct_field (type, &type_pointer, "protocols", vis_public);
-	chain_type (type_category);
 
 	type = type_ivar = new_struct (0);
 	new_struct_field (type, &type_string, "ivar_name", vis_public);
 	new_struct_field (type, &type_string, "ivar_type", vis_public);
 	new_struct_field (type, &type_integer, "ivar_offset", vis_public);
-	chain_type (type_ivar);
 
 	type = type_module = new_struct (0);
 	new_struct_field (type, &type_integer, "version", vis_public);
 	new_struct_field (type, &type_integer, "size", vis_public);
 	new_struct_field (type, &type_string, "name", vis_public);
 	new_struct_field (type, &type_pointer, "symtab", vis_public);
-	chain_type (type_module);
 
 	type_obj_exec_class.parm_types[0] = pointer_type (type_module);
+}
+
+void
+chain_initial_types (void)
+{
+	chain_type (&type_void);
+	chain_type (&type_string);
+	chain_type (&type_float);
+	chain_type (&type_vector);
+	chain_type (&type_entity);
+	chain_type (&type_field);
+	chain_type (&type_function);
+	chain_type (&type_pointer);
+	chain_type (&type_floatfield);
+	chain_type (&type_quaternion);
+	chain_type (&type_integer);
+	chain_type (&type_uinteger);
+	chain_type (&type_short);
+	chain_type (&type_struct);
+	chain_type (&type_IMP);
+
+	chain_type (&type_SEL);
+	chain_type (&type_Method);
+	chain_type (&type_Class);
+	chain_type (&type_Protocol);
+	chain_type (&type_id);
+	chain_type (type_category);
+	chain_type (type_ivar);
+	chain_type (type_module);
 	chain_type (&type_obj_exec_class);
 }
 

@@ -287,6 +287,10 @@ read_obj_file (const char *filename)
 	pr_lineno_t *line;
 
 	file = Qopen (filename, "rbz");
+	if (!file) {
+		perror (filename);
+		return 0;
+	}
 
 	Qread (file, &hdr, sizeof (hdr));
 
@@ -325,6 +329,7 @@ read_obj_file (const char *filename)
 	qfo->relocs = malloc (qfo->num_relocs * sizeof (qfo_reloc_t));
 	qfo->defs = malloc (qfo->num_defs * sizeof (qfo_def_t));
 	qfo->functions = malloc (qfo->num_functions * sizeof (qfo_function_t));
+	qfo->lines = malloc (qfo->num_lines * sizeof (pr_lineno_t));
 
 	Qread (file, qfo->code, qfo->code_size * sizeof (dstatement_t));
 	Qread (file, qfo->data, qfo->data_size * sizeof (pr_type_t));
@@ -388,5 +393,5 @@ read_obj_file (const char *filename)
 		line->line    = LittleLong (line->line);
 	}
 
-	return 0;
+	return qfo;
 }

@@ -55,6 +55,7 @@ struct method_s;
 struct protocol_s;
 struct type_s;
 
+struct def_s *class_def (class_t *class, int external);
 void class_init (void);
 class_t *get_class (const char *name, int create);
 void class_add_methods (class_t *class, struct methodlist_s *methods);
@@ -69,7 +70,7 @@ struct struct_field_s *class_find_ivar (class_t *class, int protected,
 struct expr_s *class_ivar_expr (class_t *class, const char *name);
 struct method_s *class_find_method (class_t *class, struct method_s *method);
 struct method_s *class_message_response (class_t *class, struct expr_s *sel);
-struct def_s *class_def (class_t *class);
+struct def_s *class_pointer_def (class_t *class);
 class_t *get_category (const char *class_name, const char *category_name,
 					   int create);
 void class_finish_module (void);

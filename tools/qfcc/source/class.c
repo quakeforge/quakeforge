@@ -84,6 +84,22 @@ class_init (void)
 	class_Class.super_class = get_class ("Object", 1);
 }
 
+def_t *
+class_def (class_t *class, int external)
+{
+	const char *name;
+	storage_class_t storage = external ? st_extern : st_global;
+
+	if (!class->class_name)
+		return 0;
+	if (class->category_name)
+		name = va ("_OBJ_CATEGORY_%s_%s",
+				   class->class_name, class->category_name);
+	else
+		name = va ("_OBJ_CLASS_%s", class->class_name);
+	return get_def (type_category, name, pr.scope, storage);
+}
+
 class_t *
 get_class (const char *name, int create)
 {
@@ -152,16 +168,10 @@ void
 class_begin (class_t *class)
 {
 	current_class = class;
-	if (class->def)
-		return;
+	class->def = class_def (class, 0);
 	if (class->class_name && class->category_name) {
 		pr_category_t *category;
 
-		class->def = get_def (type_category,
-								va ("_OBJ_CATEGORY_%s_%s",
-									class->class_name,
-									class->category_name),
-								pr.scope, st_static);
 		class->def->initialized = class->def->constant = 1;
 		category = &G_STRUCT (pr_category_t, class->def->ofs);
 		category->category_name = ReuseString (class->category_name);
@@ -190,9 +200,6 @@ class_begin (class_t *class)
 		meta->protocols = emit_protocol_list (class->protocols,
 											  class->class_name);
 
-		class->def = get_def (type_Class.aux_type,
-								va ("_OBJ_CLASS_%s", class->class_name),
-								pr.scope, st_static);
 		class->def->initialized = class->def->constant = 1;
 		cls = &G_STRUCT (pr_class_t, class->def->ofs);
 		cls->class_pointer = meta_def->ofs;
@@ -394,7 +401,7 @@ get_category (const char *class_name, const char *category_name, int create)
 }
 
 def_t *
-class_def (class_t *class)
+class_pointer_def (class_t *class)
 {
 	def_t      *def;
 
@@ -403,12 +410,12 @@ class_def (class_t *class)
 					 pr.scope, st_static);
 	if (def->initialized)
 		return def;
-	if (class->def) {	//FIXME need externals?
-		G_INT (def->ofs) = class->def->ofs;
-	} else {
-		warning (0, "%s not implemented", class->class_name);
-	}
 	def->initialized = def->constant = 1;
+	if (!class->def)
+		class->def = class_def (class, 1);
+	if (!class->def->external)
+		G_INT (def->ofs) = class->def->ofs;
+	//FIXME need reloc
 	return def;
 }
 

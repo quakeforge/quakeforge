@@ -63,44 +63,36 @@ static const char *
 float_imm_get_key (void *_def, void *unused)
 {
 	def_t      *def = (def_t *) _def;
-	static char rep[20];
 
 	return va ("\001float:%08X\001", G_INT (def->ofs));
-	return rep;
 }
 
 static const char *
 vector_imm_get_key (void *_def, void *unused)
 {
 	def_t      *def = (def_t *) _def;
-	static char rep[60];
 
 	return va ("\001vector:%08X\001%08X\001%08X\001",
 			  G_INT (def->ofs), G_INT (def->ofs + 1), G_INT (def->ofs + 2));
-	return rep;
 }
 
 static const char *
 quaternion_imm_get_key (void *_def, void *unused)
 {
 	def_t      *def = (def_t *) _def;
-	static char rep[60];
 
 	return va ("\001quaternion:%08X\001%08X\001%08X\001%08X\001",
 			   G_INT (def->ofs), G_INT (def->ofs + 1),
 			   G_INT (def->ofs + 2), G_INT (def->ofs + 3));
-	return rep;
 }
 
 static const char *
 int_imm_get_key (void *_def, void *_str)
 {
 	def_t      *def = (def_t *) _def;
-	static char rep[60];
 	char       *str = (char *) _str;
 
 	return va ("\001%s:%08X\001", str, G_INT (def->ofs));
-	return rep;
 }
 
 static const char *
