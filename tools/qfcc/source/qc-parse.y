@@ -542,6 +542,8 @@ emit_function (function_t *f, expr_t *e)
 		emit_expr (e);
 		e = e->next;
 	}
+	PR_FlushScope (pr_scope);
+	pr_scope = 0;
 	/*PR_PrintType (f->def->type);
 	printf (" %s =\n", f->def->name);
 	while (e) {
