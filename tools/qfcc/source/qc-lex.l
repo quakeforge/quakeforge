@@ -137,7 +137,7 @@ m		([\-+]?)
 					}
 @					return '@';
 
-\"(\\.|[^"])*\"		{
+\"(\\.|[^"\\])*\"	{
 						yylval.string_val = make_string (yytext);
 						return STRING_VAL;
 					}
