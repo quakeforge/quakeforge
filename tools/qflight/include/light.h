@@ -55,10 +55,11 @@ void LightFace (int surfnum);
 void LightLeaf (dleaf_t *leaf);
 
 void MakeTnodes (dmodel_t *bm);
-byte *GetFileSpace (int size);
+int GetFileSpace (int size);
 void TransformSample (vec3_t in, vec3_t out);
 void RotateSample (vec3_t in, vec3_t out);
 
 extern struct bsp_s *bsp;
+extern struct dstring_s *lightdata;
 
 #endif// __light_h

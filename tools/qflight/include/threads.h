@@ -36,8 +36,8 @@
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>
 extern pthread_mutex_t *my_mutex;
-#define	LOCK	pthread_mutex_lock (my_mutex)
-#define	UNLOCK	pthread_mutex_unlock (my_mutex)
+#define	LOCK	do { if (options.threads > 1) pthread_mutex_lock (my_mutex); } while (0);
+#define	UNLOCK	do { if (options.threads > 1) pthread_mutex_unlock (my_mutex); } while (0);
 #else
 #define	LOCK
 #define	UNLOCK

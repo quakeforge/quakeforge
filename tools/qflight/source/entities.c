@@ -274,14 +274,12 @@ GetVectorForKey (entity_t *ent, char *key, vec3_t vec)
 void
 WriteEntitiesToString (void)
 {
-	char		*buf, *end;
+	dstring_t  *buf;
 	char		line[128];
 	epair_t		*ep;
 	int			i;
 
-	buf = bsp->entdata;
-	end = buf;
-	*end = 0;
+	buf = dstring_newstr ();
 
 	if (options.verbosity >= 0)
 		printf ("%i switchable light styles\n", numlighttargets);
@@ -291,19 +289,13 @@ WriteEntitiesToString (void)
 		if (!ep)
 			continue;		// ent got removed
 
-		strcat (end, "{\n");
-		end += 2;
+		dstring_appendstr (buf, "{\n");
 
 		for (ep = entities[i].epairs; ep; ep = ep->next) {
 			sprintf (line, "\"%s\" \"%s\"\n", ep->key, ep->value);
-			strcat (end, line);
-			end += strlen (line);
+			dstring_appendstr (buf, line);
 		}
-		strcat (end, "}\n");
-		end += 2;
-
-		if (end > buf + MAX_MAP_ENTSTRING)
-			fprintf (stderr, "Entity text too long");
+		dstring_appendstr (buf, "}\n");
 	}
-	bsp->entdatasize = end - buf + 1;
+	BSP_AddEntities (bsp, buf->str, buf->size);
 }

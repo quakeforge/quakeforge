@@ -65,7 +65,7 @@ char *bspfile;
 
 float scalecos = 0.5;
 
-byte *filebase, *file_p, *file_end;
+dstring_t *lightdata;
 
 dmodel_t *bspmodel;
 int bspfileface;		// next surface to dispatch
@@ -77,19 +77,18 @@ qboolean extrasamples;
 float minlights[MAX_MAP_FACES];
 
 
-byte	*
+int
 GetFileSpace (int size)
 {
-	byte *buf;
+	int ofs;
 
 	LOCK;
-	file_p = (byte *) (((long) file_p + 3) & ~3);
-	buf = file_p;
-	file_p += size;
+	lightdata->size = (lightdata->size + 3) & 3;
+	ofs = lightdata->size;
+	lightdata->size += size;
+	dstring_adjust (lightdata);
 	UNLOCK;
-	if (file_p > file_end)
-		fprintf (stderr, "GetFileSpace: overrun");
-	return buf;
+	return ofs;
 }
 
 void *
@@ -111,12 +110,11 @@ LightThread (void *junk)
 void
 LightWorld (void)
 {
-    filebase = file_p = bsp->lightdata;
-    file_end = filebase + MAX_MAP_LIGHTING;
+	lightdata = dstring_new ();
 
 	RunThreadsOn (LightThread);
 
-    bsp->lightdatasize = file_p - filebase;
+	BSP_AddLighting (bsp, lightdata->str, lightdata->size);
 
 	if (options.verbosity >= 0)
 		printf ("lightdatasize: %i\n", bsp->lightdatasize);

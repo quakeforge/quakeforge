@@ -54,6 +54,7 @@ static const char rcsid[] =
 #include "light.h"
 #include "entities.h"
 #include "options.h"
+#include "threads.h"
 
 #define	SINGLEMAP	(18*18*4)
 
@@ -451,7 +452,8 @@ FixMinlight (lightinfo_t *l)
 void
 LightFace (int surfnum)
 {
-	byte		*out;
+	int         ofs;
+	byte       *out;
 	dface_t		*f;
 	int			lightmapwidth, lightmapsize, size, c, i, j, s, t, w, h;
 	lightinfo_t	l;
@@ -513,8 +515,11 @@ LightFace (int surfnum)
 
 	lightmapsize = size * l.numlightstyles;
 
-	out = GetFileSpace (lightmapsize);
-	f->lightofs = out - filebase;
+	LOCK;
+	out = malloc (lightmapsize);
+	UNLOCK;
+	ofs = GetFileSpace (lightmapsize);
+	f->lightofs = ofs;
 
 	// extra filtering
 	h = (l.texsize[1] + 1) * 2;
@@ -544,4 +549,8 @@ LightFace (int surfnum)
 				*out++ = total;
 			}
 	}
+	LOCK;
+	memcpy (lightdata->str + ofs, out, lightmapsize);
+	free (out);
+	UNLOCK;
 }

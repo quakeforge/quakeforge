@@ -46,28 +46,29 @@ static const char rcsid[] =
 
 #include "QF/qtypes.h"
 #include "QF/qendian.h"
+
+#include "options.h"
 #include "threads.h"
 
 #ifdef HAVE_PTHREAD_H
-int numthreads = 4;
 pthread_mutex_t *my_mutex;
-#else
-int numthreads = 1;
 #endif
 
 void
 InitThreads (void)
 {
 #ifdef HAVE_PTHREAD_H
-	pthread_mutexattr_t mattrib;
+	if (options.threads > 1) {
+		pthread_mutexattr_t mattrib;
 
-	my_mutex = malloc (sizeof (*my_mutex));
-	if (pthread_mutexattr_init (&mattrib) == -1)
-		fprintf (stderr, "pthread_mutex_attr_init failed");
-//	if (pthread_mutexattr_setkind_np (&mattrib, MUTEX_FAST_NP) == -1)
-//		fprintf (stderr, "pthread_mutexattr_setkind_np failed");
-	if (pthread_mutex_init (my_mutex, &mattrib) == -1)
-		fprintf (stderr, "pthread_mutex_init failed");
+		my_mutex = malloc (sizeof (*my_mutex));
+		if (pthread_mutexattr_init (&mattrib) == -1)
+			fprintf (stderr, "pthread_mutex_attr_init failed");
+	//	if (pthread_mutexattr_setkind_np (&mattrib, MUTEX_FAST_NP) == -1)
+	//		fprintf (stderr, "pthread_mutexattr_setkind_np failed");
+		if (pthread_mutex_init (my_mutex, &mattrib) == -1)
+			fprintf (stderr, "pthread_mutex_init failed");
+	}
 #endif
 }
 
@@ -75,31 +76,28 @@ void
 RunThreadsOn (threadfunc_t *func)
 {
 #ifdef HAVE_PTHREAD_H
-	pthread_t work_threads[256];
-	void *status;
-	pthread_attr_t attrib;
-	int			i;
+	if (options.threads > 1) {
+		pthread_t work_threads[256];
+		void *status;
+		pthread_attr_t attrib;
+		int			i;
 
-	if (numthreads == 1) {
-		func (NULL);
+		if (pthread_attr_init (&attrib) == -1)
+			fprintf (stderr, "pthread_attr_init failed");
+		if (pthread_attr_setstacksize (&attrib, 0x100000) == -1)
+			fprintf (stderr, "pthread_attr_setstacksize failed");
+
+		for (i = 0; i < options.threads; i++) {
+			if (pthread_create (&work_threads[i], &attrib, func, (void *) i) == -1)
+				fprintf (stderr, "pthread_create failed");
+		}
+
+		for (i = 0; i < options.threads; i++) {
+			if (pthread_join (work_threads[i], &status) == -1)
+				fprintf (stderr, "pthread_join failed");
+		}
 		return;
 	}
-
-	if (pthread_attr_init (&attrib) == -1)
-		fprintf (stderr, "pthread_attr_init failed");
-	if (pthread_attr_setstacksize (&attrib, 0x100000) == -1)
-		fprintf (stderr, "pthread_attr_setstacksize failed");
-
-	for (i = 0; i < numthreads; i++) {
-		if (pthread_create (&work_threads[i], &attrib, func, (void *) i) == -1)
-			fprintf (stderr, "pthread_create failed");
-	}
-
-	for (i = 0; i < numthreads; i++) {
-		if (pthread_join (work_threads[i], &status) == -1)
-			fprintf (stderr, "pthread_join failed");
-	}
-#else
-	func (NULL);
 #endif
+	func (NULL);
 }
