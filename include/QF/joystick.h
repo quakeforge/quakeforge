@@ -31,7 +31,7 @@
 
 #include <QF/qtypes.h>
 
-#define JOY_MAX_AXES    6
+#define JOY_MAX_AXES    8
 #define JOY_MAX_BUTTONS 16
 
 extern struct cvar_s	*joy_device;		// Joystick device name
