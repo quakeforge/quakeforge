@@ -123,7 +123,14 @@ UDP_Init (void)
 	char        buff[MAXHOSTNAMELEN];
 	struct qsockaddr addr;
 	char       *colon;
+#ifdef _WIN32
+	WSADATA winsockdata;
+	int	r;
 
+	r = WSAStartup (MAKEWORD (1, 1), &winsockdata);
+	if (r)
+		Sys_Error ("Winsock initialization failed.");
+#endif
 	if (COM_CheckParm ("-noudp"))
 		return -1;
 
@@ -165,6 +172,7 @@ void
 UDP_Shutdown (void)
 {
 	UDP_Listen (false);
+
 	UDP_CloseSocket (net_controlsocket);
 }
 
@@ -222,7 +230,13 @@ UDP_CloseSocket (int socket)
 {
 	if (socket == net_broadcastsocket)
 		net_broadcastsocket = 0;
+#ifdef _WIN32
+	closesocket (socket);
+	WSACleanup ();
+	return 0;
+#else
 	return close (socket);
+#endif
 }
 
 /*
