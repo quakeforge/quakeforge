@@ -98,6 +98,21 @@ dump_class (progs_t *pr, pr_class_t *class)
 void
 dump_category (progs_t *pr, pr_category_t *category)
 {
+	const char *category_name = "<invalid string>";
+	const char *class_name = "<invalid string>";
+
+	if (PR_StringValid (pr, category->category_name))
+		category_name = PR_GetString (pr, category->category_name);
+	if (PR_StringValid (pr, category->class_name))
+		class_name = PR_GetString (pr, category->class_name);
+	printf ("    %s (%s) @ %d\n", class_name, category_name,
+			POINTER_TO_PROG (pr, category));
+	dump_methods (pr,
+				  &G_STRUCT (pr, pr_method_list_t, category->instance_methods),
+				  0);
+	dump_methods (pr,
+				  &G_STRUCT (pr, pr_method_list_t, category->class_methods),
+				  1);
 }
 
 void
@@ -119,7 +134,7 @@ dump_module (progs_t *pr, pr_module_t *module)
 			symtab->cat_def_cnt);
 	for (i = 0; i < symtab->cls_def_cnt; i++)
 		dump_class (pr, &G_STRUCT (pr, pr_class_t, *ptr++));
-	for (i = 0; i < symtab->cls_def_cnt; i++)
+	for (i = 0; i < symtab->cat_def_cnt; i++)
 		dump_category (pr, &G_STRUCT (pr, pr_category_t, *ptr++));
 }
 
