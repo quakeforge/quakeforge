@@ -180,6 +180,7 @@ expr_t *argv_expr (void);
 %type	<protocol> protocol_name
 %type	<methodlist> methodprotolist methodprotolist2
 %type	<strct>	ivar_decl_list
+%type	<op>	ci
 
 %{
 
@@ -1231,9 +1232,9 @@ ivar_declarator
 	;
 
 methoddef
-	: '+' methoddecl
+	: ci methoddecl
 		{
-			$2->instance = 0;
+			$2->instance = $1;
 			$2 = class_find_method (current_class, $2);
 		}
 	  opt_state_expr
@@ -1254,45 +1255,19 @@ methoddef
 			}
 			finish_function ($7);
 		}
-	| '+' methoddecl '=' '#' const ';'
+	| ci methoddecl '=' '#' const ';'
 		{
-			$2->instance = 0;
+			$2->instance = $1;
 			$2 = class_find_method (current_class, $2);
 			$2->def = method_def (current_class, $2);
 
 			$2->func = build_builtin_function ($2->def, $5);
 		}
-	| '-' methoddecl
-		{
-			$2->instance = 1;
-			$2 = class_find_method (current_class, $2);
-		}
-	  opt_state_expr
-		{ $<op>$ = current_storage; }
-		{
-			$$ = $2->def = method_def (current_class, $2);
-			current_params = $2->params;
-		}
-	  begin_function statement_block { $<op>$ = $<op>5; } end_function
-		{
-			$2->func = $7;
-			build_function ($7);
-			if ($4) {
-				$4->next = $8;
-				emit_function ($7, $4);
-			} else {
-				emit_function ($7, $8);
-			}
-			finish_function ($7);
-		}
-	| '-' methoddecl '=' '#' const ';'
-		{
-			$2->instance = 1;
-			$2 = class_find_method (current_class, $2);
-			$2->def = method_def (current_class, $2);
+	;
 
-			$2->func = build_builtin_function ($2->def, $5);
-		}
+ci
+	: '+'						{ $$ = 0; }
+	| '-'						{ $$ = 1; }
 	;
 
 methodprotolist
