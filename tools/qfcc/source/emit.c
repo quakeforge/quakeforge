@@ -89,6 +89,12 @@ emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b,
 		statement->c = var_c->ofs;
 		ret = var_c;
 	}
+#if 0
+	printf ("%s %s(%d) %s(%d) %s(%d)\n", op->opname,
+			var_a ? var_a->name : "", statement->a,
+			var_b ? var_b->name : "", statement->b,
+			var_c ? var_c->name : "", statement->c);
+#endif
 
 	PR_AddStatementRef (var_a, statement, 0);
 	PR_AddStatementRef (var_b, statement, 1);
@@ -160,7 +166,7 @@ emit_function_call (expr_t *e, def_t *dest)
 }
 
 def_t *
-emit_assign_expr (expr_t *e)
+emit_assign_expr (const char *operator, expr_t *e)
 {
 	def_t      *def_a, *def_b, *def_c;
 	opcode_t   *op;
@@ -176,14 +182,26 @@ emit_assign_expr (expr_t *e)
 		def_a = emit_sub_expr (e2, 0);
 		def_c = emit_sub_expr (e1->e.expr.e2, 0);
 		def_b = emit_sub_expr (e1->e.expr.e1, 0);
-		op = PR_Opcode_Find ("=", def_a, def_b, def_c);
+		op = PR_Opcode_Find (operator, def_a, def_b, def_c);
 		emit_statement (e->line, op, def_a, def_b, def_c);
 	} else {
 		def_a = emit_sub_expr (e1, 0);
-		if (def_a->type->type == ev_pointer) {
+		if (def_a->type->type == ev_pointer
+			&& e2->type != ex_uexpr
+			&& e2->e.expr.op != '&') {
 			def_b = emit_sub_expr (e2, 0);
-			op = PR_Opcode_Find ("=", def_b, def_a, &def_void);
-			emit_statement (e->line, op, def_b, def_a, 0);
+			if (def_b->type->type == ev_pointer) {
+				expr_t     *zero = new_expr ();
+				def_t      *z;
+
+				zero->type = ex_short;
+				z = emit_sub_expr (zero, 0);
+				op = PR_Opcode_Find (operator, def_b, def_a, z);
+				emit_statement (e->line, op, def_b, def_a, z);
+			} else {
+				op = PR_Opcode_Find (operator, def_b, def_a, &def_void);
+				emit_statement (e->line, op, def_b, def_a, 0);
+			}
 		} else {
 			if (def_a->constant) {
 				if (options.code.cow) {
@@ -200,9 +218,19 @@ emit_assign_expr (expr_t *e)
 					error (e1, "assignment to constant %s", def_a->name);
 				}
 			}
-			def_b = emit_sub_expr (e2, def_a);
+			if (e2->type == ex_expr && e2->e.expr.type->type == ev_pointer
+				&& e2->e.expr.op == '&') {
+				//def_b = emit_sub_expr (e2->e.expr.e1, 0);
+				//e2 = e2->e.expr.e2;
+				//operator = ".";
+				//def_b = emit_sub_expr (e2, def_b);
+				e2->e.expr.op = '.';
+				def_b = emit_sub_expr (e2, def_a);
+			} else {
+				def_b = emit_sub_expr (e2, def_a);
+			}
 			if (def_b != def_a) {
-				op = PR_Opcode_Find ("=", def_b, def_a, &def_void);
+				op = PR_Opcode_Find (operator, def_b, def_a, &def_void);
 				emit_statement (e->line, op, def_b, def_a, 0);
 			}
 		}
@@ -262,7 +290,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 				break;
 			}
 			if (e->e.expr.op == '=') {
-				d = emit_assign_expr (e);
+				d = emit_assign_expr ("=", e);
 				break;
 			}
 			if (e->e.expr.e1->type == ex_block
@@ -313,13 +341,27 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					&& e->e.expr.e1->e.expr.op == '.') {
 					tmp = PR_GetTempDef (e->e.expr.type, pr_scope);
 					tmp->users += 2;
+					def_b = emit_sub_expr (&zero, 0);
+				} else {
+					def_b = &def_void;
 				}
 				def_a = emit_sub_expr (e->e.expr.e1, tmp);
-				def_b = emit_sub_expr (&zero, 0);
 				if (!dest) {
 					dest = PR_GetTempDef (e->e.expr.type, pr_scope);
 					dest->users += 2;
 				}
+			} if (e->e.expr.op == '.') {
+				if (!dest
+					&& (e->e.expr.e1->type != ex_pointer
+						|| !(e->e.expr.e1->e.pointer.val > 0
+							 && e->e.expr.e1->e.pointer.val < 65536))) {
+					dest = PR_GetTempDef (e->e.expr.type, pr_scope);
+					dest->users += 2;
+				}
+				d = emit_sub_expr (e->e.expr.e1, dest);
+				if (!d->name)
+					d->type = e->e.expr.type;
+				return d;
 			} else {
 				abort ();
 			}
@@ -340,13 +382,22 @@ emit_sub_expr (expr_t *e, def_t *dest)
 			}
 			d = e->e.temp.def;
 			break;
+		case ex_pointer:
+			if (e->e.pointer.val > 0 && e->e.pointer.val < 65536
+				&& e->e.pointer.type->type != ev_struct) {
+				d = PR_NewDef (e->e.pointer.type, 0, pr_scope);
+				d->ofs = e->e.short_val;
+				d->absolute = e->e.pointer.abs;
+				d->users = 1;
+				break;
+			}
+			// fall through
 		case ex_string:
 		case ex_float:
 		case ex_vector:
 		case ex_entity:
 		case ex_field:
 		case ex_func:
-		case ex_pointer:
 		case ex_quaternion:
 		case ex_integer:
 		case ex_uinteger:
@@ -401,8 +452,9 @@ emit_expr (expr_t *e)
 			break;
 		case ex_expr:
 			switch (e->e.expr.op) {
+				case PAS:
 				case '=':
-					emit_assign_expr (e);
+					emit_assign_expr (get_op_string (e->e.expr.op), e);
 					break;
 				case 'n':
 					emit_branch (e->line, op_ifnot, e->e.expr.e1, e->e.expr.e2);

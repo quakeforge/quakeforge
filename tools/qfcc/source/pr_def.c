@@ -189,7 +189,8 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 	} else if (type->type == ev_pointer) {
 		size = PR_GetTypeSize (type->aux_type);
 		*allocate += type->num_parms * size;
-		def->initialized = def->constant = 1;
+		if (type->num_parms)
+			def->initialized = def->constant = 1;
 	}
 
 	return def;

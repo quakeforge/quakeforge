@@ -40,6 +40,7 @@ static const char rcsid[] =
 # include "strings.h"
 #endif
 
+#include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/pr_comp.h"
 #include "QF/progs.h"
@@ -134,31 +135,31 @@ opcode_t    pr_opcodes[] = {
 	{"=", "store.i",   OP_STORE_I,   true, ev_integer, ev_integer, ev_void, PROG_VERSION},
 	{"=", "store.p",   OP_STORE_P,   true, ev_pointer, ev_pointer, ev_void, PROG_VERSION},
 
-	{"=", "storep.f",   OP_STOREP_F,   true, ev_float, ev_pointer, ev_void, PROG_ID_VERSION},
-	{"=", "storep.v",   OP_STOREP_V,   true, ev_vector, ev_pointer, ev_void, PROG_ID_VERSION},
-	{"=", "storep.s",   OP_STOREP_S,   true, ev_string, ev_pointer, ev_void, PROG_ID_VERSION},
-	{"=", "storep.ent", OP_STOREP_ENT, true, ev_entity, ev_pointer, ev_void, PROG_ID_VERSION},
-	{"=", "storep.fld", OP_STOREP_FLD, true, ev_field, ev_pointer, ev_void, PROG_ID_VERSION},
-	{"=", "storep.fnc", OP_STOREP_FNC, true, ev_func, ev_pointer, ev_void, PROG_ID_VERSION},
-	{"=", "storep.i",   OP_STOREP_I,   true, ev_integer, ev_pointer, ev_void, PROG_VERSION},
+	{".=", "storep.f",   OP_STOREP_F,   true, ev_float, ev_pointer, ev_void, PROG_ID_VERSION},
+	{".=", "storep.v",   OP_STOREP_V,   true, ev_vector, ev_pointer, ev_void, PROG_ID_VERSION},
+	{".=", "storep.s",   OP_STOREP_S,   true, ev_string, ev_pointer, ev_void, PROG_ID_VERSION},
+	{".=", "storep.ent", OP_STOREP_ENT, true, ev_entity, ev_pointer, ev_void, PROG_ID_VERSION},
+	{".=", "storep.fld", OP_STOREP_FLD, true, ev_field, ev_pointer, ev_void, PROG_ID_VERSION},
+	{".=", "storep.fnc", OP_STOREP_FNC, true, ev_func, ev_pointer, ev_void, PROG_ID_VERSION},
+	{".=", "storep.i",   OP_STOREP_I,   true, ev_integer, ev_pointer, ev_void, PROG_VERSION},
 
-	{"=", "storeb.f",   OP_STOREB_F,   true, ev_float, ev_pointer, ev_integer, PROG_VERSION},
-	{"=", "storeb.v",   OP_STOREB_V,   true, ev_vector, ev_pointer, ev_integer, PROG_VERSION},
-	{"=", "storeb.s",   OP_STOREB_S,   true, ev_string, ev_pointer, ev_integer, PROG_VERSION},
-	{"=", "storeb.ent", OP_STOREB_ENT, true, ev_entity, ev_pointer, ev_integer, PROG_VERSION},
-	{"=", "storeb.fld", OP_STOREB_FLD, true, ev_field, ev_pointer, ev_integer, PROG_VERSION},
-	{"=", "storeb.fnc", OP_STOREB_FNC, true, ev_func, ev_pointer, ev_integer, PROG_VERSION},
-	{"=", "storeb.i",   OP_STOREB_I,   true, ev_integer, ev_pointer, ev_integer, PROG_VERSION},
-	{"=", "storeb.p",   OP_STOREB_P,   true, ev_pointer, ev_pointer, ev_integer, PROG_VERSION},
+	{".=", "storeb.f",   OP_STOREB_F,   true, ev_float, ev_pointer, ev_integer, PROG_VERSION},
+	{".=", "storeb.v",   OP_STOREB_V,   true, ev_vector, ev_pointer, ev_integer, PROG_VERSION},
+	{".=", "storeb.s",   OP_STOREB_S,   true, ev_string, ev_pointer, ev_integer, PROG_VERSION},
+	{".=", "storeb.ent", OP_STOREB_ENT, true, ev_entity, ev_pointer, ev_integer, PROG_VERSION},
+	{".=", "storeb.fld", OP_STOREB_FLD, true, ev_field, ev_pointer, ev_integer, PROG_VERSION},
+	{".=", "storeb.fnc", OP_STOREB_FNC, true, ev_func, ev_pointer, ev_integer, PROG_VERSION},
+	{".=", "storeb.i",   OP_STOREB_I,   true, ev_integer, ev_pointer, ev_integer, PROG_VERSION},
+	{".=", "storeb.p",   OP_STOREB_P,   true, ev_pointer, ev_pointer, ev_integer, PROG_VERSION},
 
-	{"=", "storebi.f",   OP_STOREBI_F,   true, ev_float, ev_pointer, ev_short, PROG_VERSION},
-	{"=", "storebi.v",   OP_STOREBI_V,   true, ev_vector, ev_pointer, ev_short, PROG_VERSION},
-	{"=", "storebi.s",   OP_STOREBI_S,   true, ev_string, ev_pointer, ev_short, PROG_VERSION},
-	{"=", "storebi.ent", OP_STOREBI_ENT, true, ev_entity, ev_pointer, ev_short, PROG_VERSION},
-	{"=", "storebi.fld", OP_STOREBI_FLD, true, ev_field, ev_pointer, ev_short, PROG_VERSION},
-	{"=", "storebi.fnc", OP_STOREBI_FNC, true, ev_func, ev_pointer, ev_short, PROG_VERSION},
-	{"=", "storebi.i",   OP_STOREBI_I,   true, ev_integer, ev_pointer, ev_short, PROG_VERSION},
-	{"=", "storebi.p",   OP_STOREBI_P,   true, ev_pointer, ev_pointer, ev_short, PROG_VERSION},
+	{".=", "storebi.f",   OP_STOREBI_F,   true, ev_float, ev_pointer, ev_short, PROG_VERSION},
+	{".=", "storebi.v",   OP_STOREBI_V,   true, ev_vector, ev_pointer, ev_short, PROG_VERSION},
+	{".=", "storebi.s",   OP_STOREBI_S,   true, ev_string, ev_pointer, ev_short, PROG_VERSION},
+	{".=", "storebi.ent", OP_STOREBI_ENT, true, ev_entity, ev_pointer, ev_short, PROG_VERSION},
+	{".=", "storebi.fld", OP_STOREBI_FLD, true, ev_field, ev_pointer, ev_short, PROG_VERSION},
+	{".=", "storebi.fnc", OP_STOREBI_FNC, true, ev_func, ev_pointer, ev_short, PROG_VERSION},
+	{".=", "storebi.i",   OP_STOREBI_I,   true, ev_integer, ev_pointer, ev_short, PROG_VERSION},
+	{".=", "storebi.p",   OP_STOREBI_P,   true, ev_pointer, ev_pointer, ev_short, PROG_VERSION},
 
 	{"<RETURN>", "return", OP_RETURN, false, ev_void, ev_void, ev_void, PROG_ID_VERSION},
 
@@ -313,6 +314,8 @@ PR_Check_Opcodes (progs_t *pr)
 	opcode_t   *op;
 	dstatement_t *st;
 
+	if (!pr_boundscheck->int_val)
+		return;
 	for (st = pr->pr_statements;
 		 st - pr->pr_statements < pr->progs->numstatements;
 		 st++) {

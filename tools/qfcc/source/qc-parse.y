@@ -92,7 +92,7 @@ typedef struct {
 	struct switch_block_s	*switch_block;
 }
 
-%right	<op> '=' ASX
+%right	<op> '=' ASX PAS /* pointer assign */
 %right	'?' ':'
 %left	OR AND
 %left	EQ NE LE GE LT GT
@@ -320,7 +320,7 @@ opt_var_initializer
 				expr_t *e = new_expr ();
 				e->type = ex_def;
 				e->e.def = current_def;
-				append_expr (local_expr, binary_expr ('=', e, $2));
+				append_expr (local_expr, assign_expr (e, $2));
 				PR_DefInitialized (current_def);
 			} else {
 				if ($2->type >= ex_string) {
@@ -676,7 +676,7 @@ opt_expr
 		}
 
 expr
-	: expr '=' expr				{ $$ = binary_expr ('=', $1, $3); }
+	: expr '=' expr				{ $$ = assign_expr ($1, $3); }
 	| expr ASX expr				{ $$ = asx_expr ($2, $1, $3); }
 	| expr '?' expr ':' expr 	{ $$ = conditional_expr ($1, $3, $5); }
 	| expr AND expr				{ $$ = binary_expr (AND, $1, $3); }
@@ -705,6 +705,7 @@ expr
 	| '-' expr %prec UNARY		{ $$ = unary_expr ('-', $2); }
 	| '!' expr %prec UNARY		{ $$ = unary_expr ('!', $2); }
 	| '~' expr %prec UNARY		{ $$ = unary_expr ('~', $2); }
+	| '&' expr %prec UNARY		{ $$ = address_expr ($2, 0, 0); }
 	| INCOP expr				{ $$ = incop_expr ($1, $2, 0); }
 	| expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
 	| NAME
@@ -827,14 +828,6 @@ build_type (int is_field, type_t *type)
 		memset (&new, 0, sizeof (new));
 		new.type = ev_field;
 		new.aux_type = type;
-		return PR_FindType (&new);
-	} else if (type->type == ev_struct) {
-		type_t      new;
-
-		memset (&new, 0, sizeof (new));
-		new.type = ev_pointer;
-		new.aux_type = type;
-		new.num_parms = 1;
 		return PR_FindType (&new);
 	} else {
 		return type;

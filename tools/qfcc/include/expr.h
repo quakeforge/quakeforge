@@ -75,6 +75,12 @@ typedef struct {
 	int			users;
 } temp_t;
 
+typedef struct {
+	int			val;
+	type_t		*type;
+	int			abs;
+} pointer_t;
+
 typedef struct expr_s {
 	struct expr_s *next;
 	expr_type	type;
@@ -99,7 +105,7 @@ typedef struct expr_s {
 		int		entity_val;
 		int		field_val;
 		int		func_val;
-		int		pointer_val;
+		pointer_t	pointer;
 		float	quaternion_val[4];
 		int		integer_val;
 		unsigned int	uinteger_val;
@@ -140,6 +146,8 @@ expr_t *return_expr (function_t *f, expr_t *e);
 expr_t *conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2);
 expr_t *incop_expr (int op, expr_t *e, int postop);
 expr_t *array_expr (expr_t *array, expr_t *index);
+expr_t *address_expr (expr_t *e1, expr_t *e2, type_t *t);
+expr_t *assign_expr (expr_t *e1, expr_t *e2);
 
 def_t *emit_statement (int line, opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_c);
 void emit_expr (expr_t *e);

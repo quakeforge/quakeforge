@@ -72,6 +72,7 @@ main ()
 	Cmd_Init ();
 
 	Cvar_Get ("pr_debug", "1", 0, 0, 0);
+	Cvar_Get ("pr_boundscheck", "0", 0, 0, 0);
 	Cvar_Get ("fs_basegame", ".", 0, 0, 0);
 	Cvar_Get ("fs_userpath", ".", 0, 0, 0);
 	Cvar_Get ("fs_sharepath", ".", 0, 0, 0);

@@ -136,7 +136,7 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 			break;
 		case ex_pointer:
 			snprintf (rep, sizeof (rep), "\001pointer:%08X\001",
-					  e.e.integer_val);
+					  e.e.pointer.val);
 			tab = pointer_imm_defs;
 			type = &type_pointer;
 			break;

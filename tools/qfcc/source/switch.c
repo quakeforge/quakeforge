@@ -258,7 +258,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 	test->line = sw_val->line;
 	test->file = sw_val->file;
 
-	test = binary_expr ('=', temp, test);
+	test = assign_expr (temp, test);
 	test->line = sw_val->line;
 	test->file = sw_val->file;
 	append_expr (sw, test);
