@@ -92,6 +92,7 @@ static progs_t  pr;
 static void    *membase;
 static int      memsize = 1024*1024;
 
+static pr_debug_header_t debug;
 static qfo_t   *qfo;
 static dprograms_t progs;
 
@@ -197,10 +198,69 @@ init_qf (void)
 	Hash_SetHashCompare (func_tab, func_hash, func_compare);
 }
 
+static etype_t
+get_auxtype (const char *type)
+{
+	if (type[0] != 'F') {
+		return ev_void;
+	} else {
+		switch (type[1]) {
+			default:
+			case 'v':
+				return ev_void;
+			case '*':
+				return ev_string;
+			case 'f':
+				return ev_float;
+			case 'V':
+				return ev_vector;
+			case 'E':
+				return ev_entity;
+			case 'F':
+				return ev_field;
+			case '(':
+				return ev_func;
+			case ':':
+				return ev_sel;
+			case '@':	// id
+			case '#':	// class
+			case '^':
+				return ev_pointer;
+			case 'Q':
+				return ev_quaternion;
+			case 'i':
+				return ev_integer;
+			case 'I':
+				return ev_uinteger;
+			case 's':
+				return ev_short;
+			case '{':
+				return ev_struct;
+			case '[':
+				return ev_array;
+		}
+	}
+}
+
+static void
+convert_def (const qfo_def_t *def, ddef_t *ddef)
+{
+	ddef->type = def->basic_type;
+	ddef->ofs = def->ofs;
+	ddef->s_name = def->name;
+	if (!(def->flags & QFOD_NOSAVE)
+		&& !(def->flags & QFOD_CONSTANT)
+		&& (def->flags & QFOD_GLOBAL)
+		&& def->basic_type != ev_func
+		&& def->basic_type != ev_field)
+		ddef->type |= DEF_SAVEGLOBAL;
+}
+
 static void
 convert_qfo (void)
 {
-	int         i;
+	int         i, j;
+	ddef_t     *ld;
 
 	pr.progs = &progs;
 	progs.version = PROG_VERSION;
@@ -220,6 +280,7 @@ convert_qfo (void)
 	progs.entityfields = 0;
 	pr.pr_globaldefs = calloc (qfo->num_defs, sizeof (ddef_t));
 	pr.pr_fielddefs = calloc (qfo->num_defs, sizeof (ddef_t));
+	ld = pr.local_defs = calloc (qfo->num_defs, sizeof (ddef_t));
 	for (i = 0; i < qfo->num_defs; i++) {
 		qfo_def_t  *def = qfo->defs + i;
 		ddef_t      ddef;
@@ -227,72 +288,10 @@ convert_qfo (void)
 		if ((def->flags & QFOD_LOCAL) || !def->name)
 			continue;
 
-		ddef.type = def->basic_type;
-		ddef.ofs = def->ofs;
-		ddef.s_name = def->name;
-		if (!(def->flags & QFOD_NOSAVE)
-			&& !(def->flags & QFOD_CONSTANT)
-			&& (def->flags & QFOD_GLOBAL)
-			&& def->basic_type != ev_func
-			&& def->basic_type != ev_field)
-			ddef.type |= DEF_SAVEGLOBAL;
+		convert_def (def, &ddef);
 		pr.pr_globaldefs[progs.numglobaldefs++] = ddef;
 		if (ddef.type == ev_field) {
-			const char *type = qfo->types + def->full_type;
-			if (type[0] != 'F') {
-				ddef.type = ev_void;
-			} else {
-				switch (type[1]) {
-					default:
-					case 'v':
-						ddef.type = ev_void;
-						break;
-					case '*':
-						ddef.type = ev_string;
-						break;
-					case 'f':
-						ddef.type = ev_float;
-						break;
-					case 'V':
-						ddef.type = ev_vector;
-						break;
-					case 'E':
-						ddef.type = ev_entity;
-						break;
-					case 'F':
-						ddef.type = ev_field;
-						break;
-					case '(':
-						ddef.type = ev_func;
-						break;
-					case ':':
-						ddef.type = ev_sel;
-						break;
-					case '@':	// id
-					case '#':	// class
-					case '^':
-						ddef.type = ev_pointer;
-						break;
-					case 'Q':
-						ddef.type = ev_quaternion;
-						break;
-					case 'i':
-						ddef.type = ev_integer;
-						break;
-					case 'I':
-						ddef.type = ev_uinteger;
-						break;
-					case 's':
-						ddef.type = ev_short;
-						break;
-					case '{':
-						ddef.type = ev_struct;
-						break;
-					case '[':
-						ddef.type = ev_array;
-						break;
-				}
-			}
+			ddef.type = get_auxtype (qfo->types + def->full_type);
 			progs.entityfields += pr_type_size[ddef.type];
 			ddef.ofs = G_INT (&pr, ddef.ofs);
 			pr.pr_fielddefs[progs.numfielddefs++] = ddef;
@@ -302,6 +301,9 @@ convert_qfo (void)
 
 	progs.numfunctions = qfo->num_funcs;
 	pr.pr_functions = calloc (qfo->num_funcs, sizeof (dfunction_t));
+	pr.pr_functions = calloc (qfo->num_funcs, sizeof (dfunction_t));
+	pr.auxfunctions = calloc (qfo->num_funcs, sizeof (pr_auxfunction_t));
+	pr.auxfunction_map = calloc (qfo->num_funcs, sizeof (pr_auxfunction_t *));
 	for (i = 0; i < qfo->num_funcs; i++) {
 		qfo_func_t *func = qfo->funcs + i;
 		dfunction_t df;
@@ -316,7 +318,26 @@ convert_qfo (void)
 		memcpy (df.parm_size, func->parm_size, sizeof (df.parm_size));
 
 		pr.pr_functions[i] = df;
+
+		pr.auxfunction_map[i] = pr.auxfunctions + i;
+		pr.auxfunctions[i].function = i;
+		pr.auxfunctions[i].source_line = func->line;
+		pr.auxfunctions[i].line_info = func->line_info;
+		pr.auxfunctions[i].local_defs = ld - pr.local_defs;
+		pr.auxfunctions[i].num_locals = func->num_local_defs;
+
+		for (j = 0; j < func->num_local_defs; j++)
+			convert_def (qfo->defs + func->local_defs, ld++);
 	}
+
+	pr.linenos = qfo->lines;
+	debug.num_auxfunctions = qfo->num_funcs;
+	debug.num_linenos = qfo->num_lines;
+	debug.num_locals = ld - pr.local_defs;
+
+	if (verbosity)
+		pr.debug = &debug;
+
 }
 
 static int
