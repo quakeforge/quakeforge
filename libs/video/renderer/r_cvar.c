@@ -373,7 +373,7 @@ R_Init_Cvars (void)
 								 "Net graph translucency");
 	r_netgraph_box = Cvar_Get ("r_netgraph_box", "1", CVAR_ARCHIVE, NULL,
 							   "Draw box around net graph");
-	r_norefresh = Cvar_Get ("r_norefresh", "0", CVAR_NONE, NULL,
+	r_norefresh = Cvar_Get ("r_norefresh_", "0", CVAR_NONE, NULL,
 							"Set to 1 to disable display refresh");
 	r_novis = Cvar_Get ("r_novis", "0", CVAR_NONE, NULL, "Set to 1 to enable "
 						"runtime visibility checking (SLOW)");

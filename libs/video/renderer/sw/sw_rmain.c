@@ -794,6 +794,9 @@ R_RenderView_ (void)
 {
 	byte        warpbuffer[WARP_WIDTH * WARP_HEIGHT];
 
+	if (r_norefresh->int_val)
+		return;
+
 	r_warpbuffer = warpbuffer;
 
 	if (r_timegraph->int_val || r_speeds->int_val || r_dspeeds->int_val)
