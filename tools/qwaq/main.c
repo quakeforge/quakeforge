@@ -40,6 +40,8 @@ static const char rcsid[] =
 #include "QF/va.h"
 #include <QF/zone.h>
 
+#include "qwaq.h"
+
 #define MAX_EDICTS 1024
 
 static edict_t *edicts;
@@ -48,8 +50,6 @@ static int reserved_edicts;
 static progs_t pr;
 static void *membase;
 static int memsize = 16*1024*1024;
-
-void BI_Init (progs_t *pr);
 
 static QFile *
 open_file (const char *path, int *len)

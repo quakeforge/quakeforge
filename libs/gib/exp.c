@@ -69,7 +69,7 @@ functable_t functable[] =
 };
 
 // Error handling
-exp_error_t 
+static exp_error_t 
 EXP_Error (exp_error_t err, const char *msg)
 {
 		EXP_ERROR = err;
@@ -85,7 +85,7 @@ EXP_GetErrorMsg (void)
 		return exp_error_msg;
 }
 
-token
+static token
 *EXP_NewToken (void)
 {
 	token *new;
@@ -110,7 +110,7 @@ EXP_FindIndexByFunc (opfunc func)
 }
 */
 
-optable_t *
+static optable_t *
 EXP_FindOpByStr (const char *str)
 {
 	int i, len, fi;
@@ -126,7 +126,7 @@ EXP_FindOpByStr (const char *str)
 		return 0;
 }
 
-functable_t *
+static functable_t *
 EXP_FindFuncByStr (const char *str)
 {
 	int i, len, fi;
@@ -142,7 +142,7 @@ EXP_FindFuncByStr (const char *str)
 		return 0;
 }
 
-int
+static int
 EXP_ContainsCommas (token *chain)
 {
 	token *cur;
@@ -160,7 +160,7 @@ EXP_ContainsCommas (token *chain)
 	return -1; // We should never get here
 }
 
-int
+static int
 EXP_DoFunction (token *chain)
 {
 	token *cur, *temp;
@@ -196,7 +196,7 @@ EXP_DoFunction (token *chain)
 	return -2; // We shouldn't get here
 }
 
-int
+static int
 EXP_DoUnary (token *chain)
 {
 	if (chain->generic.next->generic.type == TOKEN_OP)

@@ -59,7 +59,7 @@ byte		fatpvs[MAX_MAP_LEAFS / 8];
 int			fatbytes;
 
 
-void
+static void
 SV_AddToFatPVS (vec3_t org, mnode_t *node)
 {
 	byte	   *pvs;
@@ -97,7 +97,7 @@ SV_AddToFatPVS (vec3_t org, mnode_t *node)
 	Calculates a PVS that is the inclusive or of all leafs within 8 pixels
 	of the given point.
 */
-byte		*
+static byte		*
 SV_FatPVS (vec3_t org)
 {
 	fatbytes = (sv.worldmodel->numleafs + 31) >> 3;
@@ -113,7 +113,7 @@ int			numnails;
 int         nailcount;
 
 
-qboolean
+static qboolean
 SV_AddNailUpdate (edict_t *ent)
 {
 	if (SVfloat (ent, modelindex) != sv_nailmodel
@@ -126,7 +126,7 @@ SV_AddNailUpdate (edict_t *ent)
 	return true;
 }
 
-void
+static void
 SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
 {
 	byte	   *buf;				// [48 bits] xyzpy 12 12 12 4 8 
@@ -173,7 +173,7 @@ SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
 	Writes part of a packetentities message.
 	Can delta from either a baseline or a previous packet_entity
 */
-void
+static void
 SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 			   qboolean force, int stdver)
 {
@@ -322,7 +322,7 @@ SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
 
 	Writes a delta update of a packet_entities_t to the message.
 */
-void
+static void
 SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 {
 	int			newindex, oldindex, newnum, oldnum, oldmax;
@@ -393,7 +393,7 @@ SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 	MSG_WriteShort (msg, 0);			// end of packetentities
 }
 
-void
+static void
 SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 						 sizebuf_t *msg)
 {

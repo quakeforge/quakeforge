@@ -52,7 +52,7 @@ static const char rcsid[] =
 #include "sbar.h"
 
 
-void
+static void
 SCR_DrawNet (void)
 {
 	if (realtime - cl.last_received_message < 0.3)

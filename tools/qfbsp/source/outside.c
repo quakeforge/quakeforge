@@ -30,7 +30,7 @@ static const char rcsid[] =
 
 int         outleafs;
 
-node_t     *
+static node_t     *
 PointInLeaf (node_t *node, vec3_t point)
 {
 	vec_t       d;
@@ -47,7 +47,7 @@ PointInLeaf (node_t *node, vec3_t point)
 	return PointInLeaf (node->children[1], point);
 }
 
-qboolean
+static qboolean
 PlaceOccupant (int num, vec3_t point, node_t *headnode)
 {
 	node_t     *n;
@@ -62,7 +62,7 @@ PlaceOccupant (int num, vec3_t point, node_t *headnode)
 portal_t   *prevleaknode;
 FILE       *leakfile;
 
-void
+static void
 MarkLeakTrail (portal_t *n2)
 {
 	float       len;
@@ -112,7 +112,7 @@ int         backdraw;
 	If fill is false, just check, don't fill
 	Returns true if an occupied leaf is reached
 */
-qboolean
+static qboolean
 RecursiveFillOutside (node_t *l, qboolean fill)
 {
 	portal_t   *p;
@@ -158,7 +158,7 @@ RecursiveFillOutside (node_t *l, qboolean fill)
 	return res;
 }
 
-void
+static void
 ClearOutFaces (node_t *node)
 {
 	face_t    **fp;

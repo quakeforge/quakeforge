@@ -103,7 +103,7 @@ SV_FlushSignon (void)
 	to the clients -- only the fields that differ from the
 	baseline will be transmitted
 */
-void
+static void
 SV_CreateBaseline (void)
 {
 	int			entnum;
@@ -199,7 +199,7 @@ SV_SaveSpawnparms (void)
 	Expands the PVS and calculates the PHS
 	(Potentially Hearable Set)
 */
-void
+static void
 SV_CalcPHS (void)
 {
 	byte       *scan;
@@ -263,7 +263,7 @@ SV_CalcPHS (void)
 				vcount / num, count / num, num);
 }
 
-unsigned int
+static unsigned int
 SV_CheckModel (const char *mdl)
 {
 	byte        stackbuf[1024];			// avoid dirtying the cache heap

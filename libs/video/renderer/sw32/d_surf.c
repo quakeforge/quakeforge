@@ -34,6 +34,7 @@ static const char rcsid[] =
 #include <stdlib.h>
 
 #include "QF/qargs.h"
+#include "QF/render.h"
 #include "QF/sys.h"
 
 #include "compat.h"
@@ -78,7 +79,7 @@ D_SurfaceCacheForRes (int width, int height)
 }
 
 
-void
+static void
 D_CheckCacheGuard (void)
 {
 	byte       *s;
@@ -91,7 +92,7 @@ D_CheckCacheGuard (void)
 }
 
 
-void
+static void
 D_ClearCacheGuard (void)
 {
 	byte       *s;
@@ -142,7 +143,7 @@ D_FlushCaches (void)
 }
 
 
-surfcache_t *
+static surfcache_t *
 D_SCAlloc (int width, int size)
 {
 	surfcache_t *new;
@@ -219,49 +220,6 @@ D_SCAlloc (int width, int size)
 
 	D_CheckCacheGuard ();				// DEBUG
 	return new;
-}
-
-
-void
-D_SCDump (void)
-{
-	surfcache_t *test;
-
-	for (test = sc_base; test; test = test->next) {
-		if (test == sc_rover)
-			Sys_Printf ("ROVER:\n");
-		Sys_Printf ("%p : %i bytes     %i width\n", test, test->size,
-					test->width);
-	}
-}
-
-
-// if the num is not a power of 2, assume it will not repeat
-int
-MaskForNum (int num)
-{
-	if (num == 128)
-		return 127;
-	if (num == 64)
-		return 63;
-	if (num == 32)
-		return 31;
-	if (num == 16)
-		return 15;
-	return 255;
-}
-
-
-int
-D_log2 (int num)
-{
-	int         c;
-
-	c = 0;
-
-	while (num >>= 1)
-		c++;
-	return c;
 }
 
 

@@ -59,7 +59,7 @@ cvar_t     *cl_color;
 
 
 
-void
+static void
 Host_Color_f (void)
 {
 	// just for quake compatability...

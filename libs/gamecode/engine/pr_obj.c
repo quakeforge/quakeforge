@@ -115,7 +115,7 @@ dump_ivars (progs_t *pr, pointer_t _ivars)
 	}
 }
 
-string_t
+static string_t
 object_get_class_name (progs_t *pr, pr_id_t *object)
 {
 	pr_class_t *class;

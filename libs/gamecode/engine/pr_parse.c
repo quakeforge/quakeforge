@@ -61,7 +61,7 @@ static const char rcsid[] =
 	Returns a string describing *data in a type specific manner
 	Easier to parse than PR_ValueString
 */
-char *
+static char *
 PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val)
 {
 	static char	line[256];
@@ -221,7 +221,7 @@ ED_NewString (progs_t *pr, const char *string)
 	Can parse either fields or globals
 	returns false if error
 */
-qboolean
+static qboolean
 ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s)
 {
 	int			i;

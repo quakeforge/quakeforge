@@ -1,4 +1,3 @@
-
 /*
 	sv_pr_cmds.h
 
@@ -35,7 +34,6 @@ typedef struct progs_s progs_t;
 # define PROGS_T
 #endif
 
-const char *PF_VarString (progs_t *pr, int first);
 void PF_error (progs_t *pr);
 void PF_objerror (progs_t *pr);
 void PF_makevectors (progs_t *pr);

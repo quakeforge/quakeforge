@@ -91,7 +91,7 @@ R_RemoveEfrags (entity_t *ent)
 static mnode_t *node_stack[NODE_STACK_SIZE];
 static mnode_t **node_ptr = node_stack + NODE_STACK_SIZE;
 
-void
+static void
 R_SplitEntityOnNode (mnode_t *node)
 {
 	efrag_t    *ef;

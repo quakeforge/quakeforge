@@ -451,6 +451,7 @@ I_CDAudio_Init (void)
 			Mus_CDChange, "device to use for CD music");
 }
 
+QFPLUGIN plugin_t *PLUGIN_INFO(cd, linux) (void);
 QFPLUGIN plugin_t *
 PLUGIN_INFO(cd, linux) (void)
 {

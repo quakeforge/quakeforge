@@ -76,7 +76,7 @@ static const char rcsid[] =
 #include "sbar.h"
 #include "view.h"
 
-char       *svc_strings[] = {
+const char *svc_strings[] = {
 	"svc_bad",
 	"svc_nop",
 	"svc_disconnect",
@@ -275,7 +275,7 @@ map_cfg (const char *mapname, int all)
 	free (name);
 }
 
-void
+static void
 CL_NewMap (const char *mapname)
 {
 	R_NewMap (cl.worldmodel, cl.model_precache, MAX_MODELS);
@@ -286,7 +286,7 @@ CL_NewMap (const char *mapname)
 	map_cfg (mapname, 1);
 }
 
-void
+static void
 Model_NextDownload (void)
 {
 	char	   *s;
@@ -372,7 +372,7 @@ Model_NextDownload (void)
 	}
 }
 
-void
+static void
 Sound_NextDownload (void)
 {
 	char	   *s;
@@ -412,7 +412,7 @@ Sound_NextDownload (void)
 	}
 }
 
-void
+static void
 CL_RequestNextDownload (void)
 {
 	switch (cls.downloadtype) {
@@ -438,7 +438,7 @@ CL_RequestNextDownload (void)
 
 	A download message has been received from the server
 */
-void
+static void
 CL_ParseDownload (void)
 {
 	byte		name[1024];
@@ -632,7 +632,7 @@ CL_StopUpload (void)
 // SERVER CONNECTING MESSAGES =================================================
 
 // LordHavoc: BIG BUG-FIX!  Clear baselines each time it connects...
-void
+static void
 CL_ClearBaselines (void)
 {
 	int			i;
@@ -647,15 +647,13 @@ CL_ClearBaselines (void)
 	}
 }
 
-void
+static void
 CL_ParseServerData (void)
 {
 	char		fn[MAX_OSPATH];
 	const char *str;
 	int			protover;
 	qboolean	cflag = false;
-
-	extern char gamedirfile[MAX_OSPATH];
 
 	Con_DPrintf ("Serverdata packet received.\n");
 
@@ -751,7 +749,7 @@ CL_ParseServerData (void)
 	CL_ClearBaselines ();
 }
 
-void
+static void
 CL_ParseSoundlist (void)
 {
 	const char *str;
@@ -786,7 +784,7 @@ CL_ParseSoundlist (void)
 	Sound_NextDownload ();
 }
 
-void
+static void
 CL_ParseModellist (void)
 {
 	int			nummodels, n;
@@ -837,7 +835,7 @@ CL_ParseModellist (void)
 	Model_NextDownload ();
 }
 
-void
+static void
 CL_ParseBaseline (entity_state_t *es)
 {
 	es->modelindex = MSG_ReadByte (net_message);
@@ -861,7 +859,7 @@ CL_ParseBaseline (entity_state_t *es)
 	Static entities are non-interactive world objects
 	like torches
 */
-void
+static void
 CL_ParseStatic (void)
 {
 	entity_t	   *ent;
@@ -885,7 +883,7 @@ CL_ParseStatic (void)
 	R_AddEfrags (ent);
 }
 
-void
+static void
 CL_ParseStaticSound (void)
 {
 	int			sound_num, vol, atten;
@@ -901,7 +899,7 @@ CL_ParseStaticSound (void)
 
 // ACTION MESSAGES ============================================================
 
-void
+static void
 CL_ParseStartSoundPacket (void)
 {
 	float		attenuation;
@@ -973,7 +971,7 @@ CL_ParseClientdata (void)
 	}
 }
 
-void
+static void
 CL_ProcessUserInfo (int slot, player_info_t *player)
 {
 	char		skin[512];
@@ -1006,7 +1004,7 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 	Sbar_Changed ();
 }
 
-void
+static void
 CL_UpdateUserinfo (void)
 {
 	int				slot, uid;
@@ -1034,7 +1032,7 @@ CL_UpdateUserinfo (void)
 	}
 }
 
-void
+static void
 CL_SetInfo (void)
 {
 	char			key[MAX_MSGLEN], value[MAX_MSGLEN];
@@ -1064,7 +1062,7 @@ CL_SetInfo (void)
 	CL_ProcessUserInfo (slot, player);
 }
 
-void
+static void
 CL_ServerInfo (void)
 {
 	char		key[MAX_MSGLEN], value[MAX_MSGLEN];
@@ -1092,7 +1090,7 @@ CL_ServerInfo (void)
 	}
 }
 
-void
+static void
 CL_SetStat (int stat, int value)
 {
 	if (stat < 0 || stat >= MAX_CL_STATS)
@@ -1120,7 +1118,7 @@ CL_SetStat (int stat, int value)
 	cl.stats[stat] = value;
 }
 
-void
+static void
 CL_MuzzleFlash (void)
 {
 	dlight_t   *dl;

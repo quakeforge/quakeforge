@@ -49,7 +49,7 @@ server_static_t svs;
 info_t    **svs_info = &svs.info;
 
 
-void
+static void
 startup (void)
 {
 	OSVERSIONINFO vinfo;

@@ -100,7 +100,7 @@ static void (*Sbar_Draw_DMO_func) (int l, int y, int skip);
 
 	Tab key down
 */
-void
+static void
 Sbar_ShowTeamScores (void)
 {
 	if (sb_showteamscores)
@@ -115,7 +115,7 @@ Sbar_ShowTeamScores (void)
 
 	Tab key up
 */
-void
+static void
 Sbar_DontShowTeamScores (void)
 {
 	sb_showteamscores = false;
@@ -127,7 +127,7 @@ Sbar_DontShowTeamScores (void)
 
 	Tab key down
 */
-void
+static void
 Sbar_ShowScores (void)
 {
 	if (sb_showscores)
@@ -142,7 +142,7 @@ Sbar_ShowScores (void)
 
 	Tab key up
 */
-void
+static void
 Sbar_DontShowScores (void)
 {
 	sb_showscores = false;
@@ -296,12 +296,12 @@ Sbar_DrawCharacter (int x, int y, int num)
 }
 
 static inline void
-Sbar_DrawString (int x, int y, char *str)
+Sbar_DrawString (int x, int y, const char *str)
 {
 	Draw_String (x, y + vid.height - SBAR_HEIGHT, str);
 }
 
-int
+static int
 Sbar_itoa (int num, char *buf)
 {
 	char       *str;
@@ -328,7 +328,7 @@ Sbar_itoa (int num, char *buf)
 	return str - buf;
 }
 
-void
+static void
 Sbar_DrawNum (int x, int y, int num, int digits, int color)
 {
 	char        str[12];
@@ -366,7 +366,7 @@ int         teamsort[MAX_CLIENTS];
 int         fragsort[MAX_CLIENTS]; // ZOID changed this from [MAX_SCOREBOARD]
 int         scoreboardlines, scoreboardteams;
 
-void
+static void
 Sbar_SortFrags (qboolean includespec)
 {
 	int         i, j, k;
@@ -393,7 +393,7 @@ Sbar_SortFrags (qboolean includespec)
 			}
 }
 
-void
+static void
 Sbar_SortTeams (void)
 {
 	char        t[16 + 1];
@@ -457,13 +457,13 @@ Sbar_SortTeams (void)
 			}
 }
 
-int
+static int
 Sbar_ColorForMap (int m)
 {
 	return (bound (0, m, 13) * 16) + 8;
 }
 
-void
+static void
 Sbar_SoloScoreboard (void)
 {
 	char        str[80];
@@ -480,7 +480,7 @@ Sbar_SoloScoreboard (void)
 	Sbar_DrawString (184, 4, str);
 }
 
-void
+static void
 Sbar_DrawInventory (void)
 {
 	char        num[6];
@@ -575,7 +575,7 @@ Sbar_DrawInventory (void)
 		}
 }
 
-void
+static void
 Sbar_DrawFrags (void)
 {
 	int         i, k, l;
@@ -626,7 +626,7 @@ Sbar_DrawFrags (void)
 	}
 }
 
-void
+static void
 Sbar_DrawFace (void)
 {
 	int         f, anim;
@@ -662,7 +662,7 @@ Sbar_DrawFace (void)
 	Sbar_DrawPic (112, 0, sb_faces[f][anim]);
 }
 
-void
+static void
 Sbar_DrawNormal (void)
 {
 	if (cl_sbar->int_val || scr_viewsize->int_val < 100)
@@ -770,32 +770,6 @@ Sbar_Draw (void)
 
 	if (sb_lines > 0)
 		Sbar_MiniDeathmatchOverlay ();
-}
-
-void
-Sbar_IntermissionNumber (int x, int y, int num, int digits, int color)
-{
-	char        str[12];
-	char       *ptr;
-	int         l, frame;
-
-	l = Sbar_itoa (num, str);
-	ptr = str;
-	if (l > digits)
-		ptr += (l - digits);
-	if (l < digits)
-		x += (digits - l) * 24;
-
-	while (*ptr) {
-		if (*ptr == '-')
-			frame = STAT_MINUS;
-		else
-			frame = *ptr - '0';
-
-		Draw_Pic (x, y, sb_nums[color][frame]);
-		x += 24;
-		ptr++;
-	}
 }
 
 /*

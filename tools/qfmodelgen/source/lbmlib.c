@@ -42,7 +42,7 @@
 
 bmhd_t  bmhd;
 
-int
+static int
 Align (int l)
 {
 	if (l&1)
@@ -57,7 +57,7 @@ LBMRLEdecompress
 Source must be evenly aligned!
 ================
 */
-byte *
+static byte *
 LBMRLEDecompress (byte *source, byte *unpacked, int bpwidth)
 {
 	int     count;
@@ -102,7 +102,7 @@ MungeBitPlanes8
 Asm version destroys the bit plane data!
 =================
 */
-void
+static void
 MungeBitPlanes8 (int width, byte *dest)
 {
 	int		i, ind = 0;
@@ -155,7 +155,7 @@ done:
 #endif
 }
 
-void
+static void
 MungeBitPlanes4 (int width, byte *dest)
 {
 	int		i, ind = 0;
@@ -198,7 +198,7 @@ done:
 #endif
 }
 
-void
+static void
 MungeBitPlanes2 (int width, byte *dest)
 {
 	int		i, ind = 0;
@@ -234,7 +234,7 @@ done:
 #endif
 }
 
-void
+static void
 MungeBitPlanes1 (int width, byte *dest)
 {
 	int		i, ind = 0;

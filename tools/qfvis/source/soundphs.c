@@ -66,7 +66,7 @@ static const char rcsid[] =
 	leaf.
 */
 
-void
+static void
 SurfaceBBox (dface_t *s, vec3_t mins, vec3_t maxs)
 {
 	int vi, e, i, j;

@@ -24,6 +24,8 @@
 #include "fbset_modes_y.h"
 
 #define YY_NO_UNPUT
+#define YY_DECL int yylex YY_PROTO(( void ))
+YY_DECL;
 
 struct keyword {
 	const char *name;
@@ -58,13 +60,14 @@ static struct keyword keywords[] = {
 int line = 1;
 
 
+void yyerror(const char *s);
 void yyerror(const char *s)
 {
 	Die("%s:%d: %s", Opt_modedb, line, s);
 }
 
 
-int yywrap(void)
+static int yywrap(void)
 {
 	return 1;
 }

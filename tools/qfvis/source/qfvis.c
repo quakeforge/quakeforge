@@ -92,7 +92,7 @@ dstring_t  *visdata;
 byte       *uncompressed;		// [bitbytes * portalleafs]
 
 
-void
+static void
 PlaneFromWinding (winding_t *winding, plane_t *plane)
 {
 	vec3_t      v1, v2;
@@ -246,7 +246,7 @@ ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 	Returns the portals from the least complex, so the later ones can reuse
 	the earlier information.
 */
-portal_t *
+static portal_t *
 GetNextPortal (void)
 {
 	int         j;
@@ -273,7 +273,7 @@ GetNextPortal (void)
 	return p;
 }
 
-void *
+static void *
 LeafThread (void *thread)
 {
 	portal_t   *portal;
@@ -295,7 +295,7 @@ LeafThread (void *thread)
 	return NULL;
 }
 
-int
+static int
 CompressRow (byte *vis, byte *dest)
 {
 	int         j;
@@ -370,7 +370,7 @@ LeafFlow (int leafnum)
 	dstring_append (visdata, compressed, i);
 }
 
-void
+static void
 CalcPortalVis (void)
 {
 	long        i;
@@ -426,7 +426,7 @@ CalcPortalVis (void)
 	}
 }
 
-void
+static void
 CalcVis (void)
 {
 	int         i;
@@ -441,8 +441,8 @@ CalcVis (void)
 	if (options.verbosity >= 0)
 		printf ("average leafs visible: %i\n", totalvis / portalleafs);
 }
-
-qboolean
+#if 0
+static qboolean
 PlaneCompare (plane_t *p1, plane_t *p2)
 {
 	int         i;
@@ -457,7 +457,7 @@ PlaneCompare (plane_t *p1, plane_t *p2)
 	return true;
 }
 
-sep_t *
+static sep_t *
 FindPassages (winding_t *source, winding_t *pass)
 {
 	double      length;
@@ -562,7 +562,7 @@ FindPassages (winding_t *source, winding_t *pass)
 	return list;
 }
 
-void
+static void
 CalcPassages (void)
 {
 	int         count, count2, i, j, k;
@@ -615,8 +615,8 @@ CalcPassages (void)
 		printf ("total passages: %i\n", count_sep);
 	}
 }
-
-void
+#endif
+static void
 LoadPortals (char *name)
 {
 	char        magic[80];

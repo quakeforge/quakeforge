@@ -113,7 +113,7 @@ prune_edict (progs_t *pr, edict_t *ent)
 	return 0;
 }
 
-void
+static void
 ED_PrintEdicts_f (void)
 {
 	ED_PrintEdicts (&sv_pr_state, Cmd_Argv (1));
@@ -124,7 +124,7 @@ ED_PrintEdicts_f (void)
 
 	For debugging, prints a single edicy
 */
-void
+static void
 ED_PrintEdict_f (void)
 {
 	int         i;
@@ -134,7 +134,7 @@ ED_PrintEdict_f (void)
 	ED_PrintNum (&sv_pr_state, i);
 }
 
-void
+static void
 ED_Count_f (void)
 {
 	ED_Count (&sv_pr_state);

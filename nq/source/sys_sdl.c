@@ -75,7 +75,7 @@ int         noconinput;
 # include "winquake.h"
 #endif
 
-void
+static void
 startup (void)
 {
 #ifdef WIN32

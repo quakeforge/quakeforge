@@ -45,10 +45,6 @@ static const char rcsid[] =
 #include "QF/render.h"
 #include "QF/sys.h"
 
-//FIXME need a better way to communicate this (bah, need a better menu system
-// in general :P)
-void C_DrawInputLine (inputline_t *il);
-
 typedef struct menu_pic_s {
 	struct menu_pic_s *next;
 	int         x, y;
@@ -87,7 +83,7 @@ static const char *top_menu;
 static int
 menu_resolve_globals (void)
 {
-	char       *sym;
+	const char *sym;
 	dfunction_t *f;
 
 	if (!(f = ED_FindFunction (&menu_pr_state, sym = "menu_init")))

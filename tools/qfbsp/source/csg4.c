@@ -45,13 +45,6 @@ int         csgfaces;
 int         csgmergefaces;
 
 
-void
-DrawList (face_t *list)
-{
-	for (; list; list = list->next)
-		Draw_DrawFace (list);
-}
-
 /*
 	NewFaceFromFace
 
@@ -183,7 +176,7 @@ SplitFace (face_t *in, plane_t *split, face_t **front, face_t **back)
 
 	frontside is the side of the plane that holds the outside list
 */
-void
+static void
 ClipInside (int splitplane, int frontside, qboolean precedence)
 {
 	face_t     *insidelist, *next, *f;
@@ -227,7 +220,7 @@ ClipInside (int splitplane, int frontside, qboolean precedence)
 
 	Saves all of the faces in the outside list to the bsp plane list
 */
-void
+static void
 SaveOutside (qboolean mirror)
 {
 	face_t     *f, *next, *newf;
@@ -268,7 +261,7 @@ SaveOutside (qboolean mirror)
 
 	Free all the faces that got clipped out
 */
-void
+static void
 FreeInside (int contents)
 {
 	face_t     *next, *f;
@@ -320,7 +313,7 @@ BuildSurfaces (void)
 	return surfhead;
 }
 
-void
+static void
 CopyFacesToOutside (brush_t *b)
 {
 	face_t     *newf, *f;

@@ -57,6 +57,8 @@ static const char rcsid[] =
 #include "qc-parse.h"
 
 #define YY_NO_UNPUT
+#define YY_DECL int yylex YY_PROTO(( void ))
+YY_DECL;
 
 int type_or_name (char *token);
 

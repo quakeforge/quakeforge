@@ -48,7 +48,7 @@ char        miptex[MAX_MAP_TEXINFO][16];
 
 
 int
-FindMiptex (char *name)
+FindMiptex (const char *name)
 {
 	int         i;
 
@@ -68,7 +68,7 @@ FindMiptex (char *name)
 
 	Returns a global texinfo number
 */
-int
+static int
 FindTexinfo (texinfo_t *t)
 {
 	int         i, j;
@@ -108,7 +108,7 @@ qboolean    unget;
 char       *script_p;
 int         scriptline;
 
-void
+static void
 StartTokenParsing (char *data)
 {
 	scriptline = 1;
@@ -116,7 +116,7 @@ StartTokenParsing (char *data)
 	unget = false;
 }
 
-qboolean
+static qboolean
 GetToken (qboolean crossline)
 {
 	char       *token_p;
@@ -176,15 +176,9 @@ GetToken (qboolean crossline)
 	return true;
 }
 
-void
-UngetToken ()
-{
-	unget = true;
-}
-
 entity_t   *mapent;
 
-void
+static void
 ParseEpair (void)
 {
 	epair_t    *e;
@@ -212,7 +206,7 @@ vec3_t      baseaxis[18] = {
 	{0, -1, 0}, {1, 0, 0}, {0, 0, -1}	// north wall
 };
 
-void
+static void
 TextureAxisFromPlane (plane_t *pln, vec3_t xv, vec3_t yv)
 {
 	float       dot, best;
@@ -233,7 +227,7 @@ TextureAxisFromPlane (plane_t *pln, vec3_t xv, vec3_t yv)
 	VectorCopy (baseaxis[bestaxis * 3 + 2], yv);
 }
 
-void
+static void
 ParseBrush (void)
 {
 	float       shift[2], rotate, scale[2];
@@ -392,7 +386,7 @@ ParseBrush (void)
 	} while (1);
 }
 
-qboolean
+static qboolean
 ParseEntity (void)
 {
 	if (!GetToken (true))
@@ -423,7 +417,7 @@ ParseEntity (void)
 }
 
 void
-LoadMapFile (char *filename)
+LoadMapFile (const char *filename)
 {
 	char       *buf;
 	QFile      *file;
@@ -461,8 +455,8 @@ PrintEntity (entity_t *ent)
 }
 
 
-char       *
-ValueForKey (entity_t *ent, char *key)
+const char *
+ValueForKey (entity_t *ent, const char *key)
 {
 	epair_t    *ep;
 
@@ -473,7 +467,7 @@ ValueForKey (entity_t *ent, char *key)
 }
 
 void
-SetKeyValue (entity_t *ent, char *key, char *value)
+SetKeyValue (entity_t *ent, const char *key, const char *value)
 {
 	epair_t    *ep;
 
@@ -491,18 +485,18 @@ SetKeyValue (entity_t *ent, char *key, char *value)
 }
 
 float
-FloatForKey (entity_t *ent, char *key)
+FloatForKey (entity_t *ent, const char *key)
 {
-	char       *k;
+	const char *k;
 
 	k = ValueForKey (ent, key);
 	return atof (k);
 }
 
 void
-GetVectorForKey (entity_t *ent, char *key, vec3_t vec)
+GetVectorForKey (entity_t *ent, const char *key, vec3_t vec)
 {
-	char       *k;
+	const char *k;
 	double      v1, v2, v3;
 
 	k = ValueForKey (ent, key);

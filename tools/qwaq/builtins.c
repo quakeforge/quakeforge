@@ -40,6 +40,8 @@ static const char rcsid[] =
 #include <QF/progs.h>
 #include <QF/zone.h>
 
+#include "qwaq.h"
+
 static void
 bi_print (progs_t *pr)
 {

@@ -367,7 +367,7 @@ IN_InitMouse (void)
 {
 	int         mtype;
 	int         mouserate = MOUSE_DEFAULTSAMPLERATE;
-	char       *mousedev;
+	const char *mousedev;
 
 	mouse_buttons = 3;
 
@@ -392,7 +392,7 @@ IN_InitMouse (void)
 	//FIXME: vga_init() opens the mouse automoatically
 	//       closing it to ensure its opened how we want it
 	mouse_close();
-	if (mouse_init (mousedev, mtype, mouserate)) {
+	if (mouse_init ((char *)mousedev, mtype, mouserate)) {
 		Con_Printf ("No mouse found. Check your libvga.conf mouse settings"
 					" and that the mouse\n"
 					"device has appropriate permission settings.\n");

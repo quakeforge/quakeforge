@@ -19,6 +19,8 @@ static const char rcsid[] =
 #include "QF/va.h"
 #include "QF/vid.h"
 
+#include "context_sdl.h"
+
 cvar_t     *vid_bitdepth;
 
 extern SDL_Surface *screen;
@@ -60,7 +62,7 @@ VID_Shutdown (void)
 	SDL_Quit ();
 }
 
-void
+static void
 VID_UpdateFullscreen (cvar_t *vid_fullscreen)
 {
 	if (!vid.initialized)

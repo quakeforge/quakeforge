@@ -127,14 +127,7 @@ struct option
    `getopt'.  */
 
 #if defined __STDC__ && __STDC__
-# ifdef __GNU_LIBRARY__
-/* Many other libraries have conflicting prototypes for getopt, with
-   differences in the consts, in stdlib.h.  To avoid compilation
-   errors, only prototype getopt for the GNU C library.  */
 extern int getopt (int argc, char *const *argv, const char *__shortopts);
-# else /* not __GNU_LIBRARY__ */
-extern int getopt ();
-# endif /* __GNU_LIBRARY__ */
 
 # ifndef __need_getopt
 extern int getopt_long (int argc, char *const *argv, const char *__shortopts,

@@ -158,36 +158,6 @@ ED_Alloc (progs_t *pr)
 }
 
 /*
-	ED_FreeRefs
-
-	NULLs all references to entity
-*/
-void
-ED_FreeRefs (progs_t *pr, edict_t *ed)
-{
-	int i, j, k;
-	ddef_t *def;
-	for (i = 0; i < pr->progs->numglobaldefs; i++) {
-		def = &pr->pr_globaldefs[i];
-		if ((def->type & ~DEF_SAVEGLOBAL) == ev_entity) {
-			if (ed == G_EDICT (pr, def->ofs)) {
-				Sys_Printf ("Reference found to free'd edict: %p\n", ed);
-			}
-		}
-	}
-	for (i = 0; i < pr->progs->numfielddefs; i++) {
-		def = &pr->pr_fielddefs[i];
-		if ((def->type & ~DEF_SAVEGLOBAL) == ev_entity) {
-			for (j = 0; j < *pr->num_edicts; j++) {
-				k = E_var (EDICT_NUM (pr, j), def->ofs, entity);
-				if (ed == PROG_TO_EDICT (pr, k))
-					Sys_Printf ("Reference found to free'd edict: %p\n", ed);
-			}
-		}
-	}
-}
-
-/*
 	ED_Free
 
 	Marks the edict as free
@@ -218,7 +188,7 @@ ED_Free (progs_t *pr, edict_t *ed)
 
 	Returns a string describing *data in a type-specific manner
 */
-char *
+static const char *
 PR_ValueString (progs_t *pr, etype_t type, pr_type_t *val)
 {
 	static char	line[256];
@@ -295,7 +265,7 @@ PR_GlobalString (progs_t *pr, int ofs, etype_t type)
 {
 	ddef_t				*def = NULL;
 	static dstring_t	*line = NULL;
-	char				*s;
+	const char			*s;
 
 	if (!line)
 		line = dstring_newstr();
@@ -312,8 +282,8 @@ PR_GlobalString (progs_t *pr, int ofs, etype_t type)
 	if (!def && type == ev_void)
 		dsprintf (line, "[$%x]", ofs);
 	else {
-		char *name = "?";
-		char *oi = "";
+		const char *name = "?";
+		const char *oi = "";
 		if (def) {
 			if (type == ev_void)
 				type = def->type;

@@ -269,7 +269,7 @@ Condump_f (void)
 	Qclose (file);
 }
 
-qboolean
+static qboolean
 CheckForCommand (const char *line)
 {
 	char        command[128];
@@ -340,7 +340,7 @@ C_SayTeam (const char *line)
 }
 
 
-void
+static void
 C_GIB_Print_Center_f (void)
 {
 	if (GIB_Argc () != 2) {
@@ -439,7 +439,7 @@ Linefeed (void)
 	All console printing must go through this in order to be logged to disk
 	If no console is visible, the notify window will pop up.
 */
-void
+static void
 C_Print (const char *fmt, va_list args)
 {
 	char       *s;
@@ -857,6 +857,7 @@ static plugin_t plugin_info = {
 	&plugin_info_data,
 };
 
+QFPLUGIN plugin_t *PLUGIN_INFO(console, client) (void);
 QFPLUGIN plugin_t *
 PLUGIN_INFO(console, client) (void)
 {

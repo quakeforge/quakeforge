@@ -90,7 +90,7 @@ qpic_t     *hsb_items[2];			// MED 01/04/97 added hipnotic items array
 qboolean    headsup;
 qboolean    sbar_centered;
 
-int
+static int
 Sbar_ColorForMap (int m)
 {
 	return m + 8;						// FIXME: Might want this to be
@@ -103,7 +103,7 @@ Sbar_ColorForMap (int m)
 
 	Tab key has been pressed, inform sbar it needs to show scores
 */
-void
+static void
 Sbar_ShowScores (void)
 {
 	if (sb_showscores)
@@ -118,7 +118,7 @@ Sbar_ShowScores (void)
 
 	Tab key up, show normal sbar again
 */
-void
+static void
 Sbar_DontShowScores (void)
 {
 	if (!sb_showscores)
@@ -235,7 +235,7 @@ Sbar_DrawString (int x, int y, char *str)
 
 	Convert an int to ascii
 */
-int
+static int
 Sbar_itoa (int num, char *buf)
 {
 	char       *str;
@@ -264,7 +264,7 @@ Sbar_itoa (int num, char *buf)
 }
 
 
-void
+static void
 Sbar_DrawNum (int x, int y, int num, int digits, int color)
 {
 	char        str[12];
@@ -299,7 +299,7 @@ int         scoreboardcount[MAX_SCOREBOARD];
 int         scoreboardlines;
 
 
-void
+static void
 Sbar_SortFrags (void)
 {
 	int         i, j, k;
@@ -325,33 +325,7 @@ Sbar_SortFrags (void)
 }
 
 
-void
-Sbar_UpdateScoreboard (void)
-{
-	int         i, k;
-	int         top, bottom;
-	scoreboard_t *s;
-
-	Sbar_SortFrags ();
-
-	// draw the text
-	memset (scoreboardtext, 0, sizeof (scoreboardtext));
-
-	for (i = 0; i < scoreboardlines; i++) {
-		k = fragsort[i];
-		s = &cl.scores[k];
-		snprintf (&scoreboardtext[i][1], sizeof (&scoreboardtext[i][1]),
-				  "%3i %s", s->frags, s->name);
-
-		top = s->colors & 0xf0;
-		bottom = (s->colors & 15) << 4;
-		scoreboardtop[i] = Sbar_ColorForMap (top);
-		scoreboardbottom[i] = Sbar_ColorForMap (bottom);
-	}
-}
-
-
-void
+static void
 Sbar_SoloScoreboard (void)
 {
 	char        str[80];
@@ -383,7 +357,7 @@ Sbar_SoloScoreboard (void)
 }
 
 
-void
+static void
 Sbar_DrawScoreboard (void)
 {
 	Sbar_SoloScoreboard ();
@@ -392,7 +366,7 @@ Sbar_DrawScoreboard (void)
 }
 
 
-void
+static void
 Sbar_DrawInventory (void)
 {
 	int         i;
@@ -603,7 +577,7 @@ Sbar_DrawInventory (void)
 }
 
 
-void
+static void
 Sbar_DrawFrags (void)
 {
 	int         i, k, l;
@@ -659,7 +633,7 @@ Sbar_DrawFrags (void)
 }
 
 
-void
+static void
 Sbar_DrawFace (void)
 {
 	int         f, anim;
@@ -748,7 +722,7 @@ Sbar_DrawFace (void)
 }
 
 
-void
+static void
 Sbar_DrawNormal (void)
 {
 	if (!headsup)
@@ -873,7 +847,7 @@ Sbar_Draw (void)
 }
 
 
-void
+static void
 Sbar_IntermissionNumber (int x, int y, int num, int digits, int color)
 {
 	char        str[12];

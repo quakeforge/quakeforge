@@ -87,7 +87,7 @@ match_char (char a, char b)
     FIXME: this function and it's callers are getting progressively
     uglier as more features are added :)
 */
-client_t *
+static client_t *
 SV_Match_User (const char *substr)
 {
 	int         i, j, uid;
@@ -152,7 +152,7 @@ SV_Match_User (const char *substr)
 
 	Make a master server current
 */
-void
+static void
 SV_SetMaster_f (void)
 {
 	char        data[2];
@@ -187,7 +187,7 @@ SV_SetMaster_f (void)
 	svs.last_heartbeat = -99999;
 }
 
-void
+static void
 SV_Quit_f (void)
 {
 	SV_FinalMessage ("server shutdown\n");
@@ -195,7 +195,7 @@ SV_Quit_f (void)
 	Sys_Quit ();
 }
 
-void
+static void
 SV_Fraglogfile_f (void)
 {
 	char        name[MAX_OSPATH];
@@ -233,7 +233,7 @@ SV_Fraglogfile_f (void)
 
 	Sets host_client and sv_player to the player with idnum Cmd_Argv(1)
 */
-qboolean
+static qboolean
 SV_SetPlayer (void)
 {
 	client_t   *cl;
@@ -259,7 +259,7 @@ SV_SetPlayer (void)
 
 	Sets client to godmode
 */
-void
+static void
 SV_God_f (void)
 {
 	if (!sv_allow_cheats) {
@@ -278,7 +278,7 @@ SV_God_f (void)
 		SV_ClientPrintf (1, host_client, PRINT_HIGH, "godmode ON\n");
 }
 
-void
+static void
 SV_Noclip_f (void)
 {
 	if (!sv_allow_cheats) {
@@ -299,7 +299,7 @@ SV_Noclip_f (void)
 	}
 }
 
-void
+static void
 SV_Give_f (void)
 {
 	const char *t;
@@ -392,7 +392,7 @@ nice_time (float time)
 	map <mapname>
 	command from the console or progs.
 */
-void
+static void
 SV_Map_f (void)
 {
 	char        level[MAX_QPATH];
@@ -437,7 +437,7 @@ SV_Map_f (void)
 
 	Kick a user off of the server
 */
-void
+static void
 SV_Kick_f (void)
 {
 	client_t   *cl;
@@ -555,7 +555,7 @@ SV_Status_f (void)
 
 #define MAXPENALTY 10.0
 
-void
+static void
 SV_Cuff_f (void)
 {
 	int         i;
@@ -618,7 +618,7 @@ SV_Cuff_f (void)
 }
 
 
-void
+static void
 SV_Mute_f (void)
 {
 	int         i;
@@ -678,7 +678,7 @@ SV_Mute_f (void)
 	}
 }
 
-void
+static void
 SV_Tell (const char *prefix)
 {
 	char       *p;
@@ -712,7 +712,7 @@ SV_Tell (const char *prefix)
 	SV_ClientPrintf (1, cl, PRINT_CHAT, "%s", ""); // bell
 }
 
-void
+static void
 SV_Ban_f (void)
 {
 	double      mins = 30.0;
@@ -739,7 +739,7 @@ SV_Ban_f (void)
 						   mins), src_command);
 }
 
-void
+static void
 SV_Match_f (void)
 {
 	if (Cmd_Argc() != 2) {
@@ -752,7 +752,7 @@ SV_Match_f (void)
 }
 
 
-void
+static void
 SV_ConSay (const char *prefix)
 {
 	char       *p;
@@ -792,7 +792,7 @@ SV_ConSay (const char *prefix)
 	}
 }
 
-void
+static void
 SV_Tell_f (void)
 {
 	if (rcon_from_user)
@@ -801,7 +801,7 @@ SV_Tell_f (void)
 		SV_Tell("Console");
 }
 
-void
+static void
 SV_ConSay_f (void)
 {
 	if (rcon_from_user)
@@ -810,19 +810,19 @@ SV_ConSay_f (void)
 		SV_ConSay("Console");
 }
 
-void
+static void
 SV_ConSay_Info_f (void)
 {
 	SV_ConSay("Info");
 }
 
-void
+static void
 SV_Heartbeat_f (void)
 {
 	svs.last_heartbeat = -9999;
 }
 
-void
+static void
 SV_SendServerInfoChange (const char *key, const char *value)
 {
 	if (!sv.state)
@@ -871,7 +871,7 @@ Cvar_Info (cvar_t *var)
 
 	Examine or change the serverinfo string
 */
-void
+static void
 SV_Serverinfo_f (void)
 {
 	cvar_t     *var;
@@ -908,7 +908,7 @@ SV_Serverinfo_f (void)
 
 	Examine or change the serverinfo string
 */
-void
+static void
 SV_Localinfo_f (void)
 {
 	if (Cmd_Argc () == 1) {
@@ -938,7 +938,7 @@ SV_Localinfo_f (void)
 
 	Examine a users info strings
 */
-void
+static void
 SV_User_f (void)
 {
 	if (Cmd_Argc () != 2) {
@@ -957,7 +957,7 @@ SV_User_f (void)
 
 	Sets the fake *gamedir to a different directory.
 */
-void
+static void
 SV_Gamedir (void)
 {
 	const char *dir;
@@ -990,7 +990,7 @@ SV_Gamedir (void)
 
 	Sets the gamedir and path to a different directory.
 */
-void
+static void
 SV_Floodprot_f (void)
 {
 	int         arg1, arg2, arg3;
@@ -1035,7 +1035,7 @@ SV_Floodprot_f (void)
 	fp_secondsdead = arg3;
 }
 
-void
+static void
 SV_Floodprotmsg_f (void)
 {
 	if (Cmd_Argc () == 1) {
@@ -1048,7 +1048,7 @@ SV_Floodprotmsg_f (void)
 	snprintf (fp_msg, sizeof (fp_msg), "%s", Cmd_Argv (1));
 }
 
-void
+static void
 SV_Snap (int uid)
 {
 	char        pcxname[80];
@@ -1097,7 +1097,7 @@ SV_Snap (int uid)
 	SV_Printf ("Requesting snap from user %d...\n", uid);
 }
 
-void
+static void
 SV_Snap_f (void)
 {
 	int         uid;
@@ -1112,7 +1112,7 @@ SV_Snap_f (void)
 	SV_Snap (uid);
 }
 
-void
+static void
 SV_SnapAll_f (void)
 {
 	client_t   *cl;

@@ -65,13 +65,13 @@ static const char rcsid[] =
 
 extern char *yytext;
 
-void
+static void
 yyerror (const char *s)
 {
 	error (0, "%s %s\n", yytext, s);
 }
 
-void
+static void
 parse_error (void)
 {
 	error (0, "parse error before %s", yytext);

@@ -88,7 +88,7 @@ locs_find (const vec3_t target)
 	return locations[i];
 }
 
-void
+static void
 locs_more (void)
 {
 	size_t      size;

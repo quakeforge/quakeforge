@@ -51,7 +51,7 @@ static const char rcsid[] =
   This is a big hack to try and fix the rare case of getting stuck in the world
   clipping hull.
 */
-void
+static void
 SV_CheckStuck (edict_t *ent)
 {
 	int         i, j, z;
@@ -87,7 +87,7 @@ SV_CheckStuck (edict_t *ent)
 	Con_DPrintf ("player is stuck.\n");
 }
 
-qboolean
+static qboolean
 SV_CheckWater (edict_t *ent)
 {
 	int         cont;
@@ -118,7 +118,7 @@ SV_CheckWater (edict_t *ent)
 	return SVfloat (ent, waterlevel) > 1;
 }
 
-void
+static void
 SV_WallFriction (edict_t *ent, trace_t *trace)
 {
 	float       d, i;
@@ -150,7 +150,7 @@ SV_WallFriction (edict_t *ent, trace_t *trace)
 
   This is a hack, but in the interest of good gameplay...
 */
-int
+static int
 SV_TryUnstick (edict_t *ent, vec3_t oldvel)
 {
 	int         i, clip;
@@ -225,7 +225,7 @@ SV_TryUnstick (edict_t *ent, vec3_t oldvel)
 
   Only used by players
 */
-void
+static void
 SV_WalkMove (edict_t *ent)
 {
 	int         clip, oldonground;

@@ -91,7 +91,7 @@ cshift_t	cshift_lava = { {255, 80, 0}, 150};
 cshift_t	cshift_bonus = { {215, 186, 60}, 50};
 
 
-float
+static float
 V_CalcBob (void)
 {
 	float       bob, cycle;
@@ -152,7 +152,7 @@ V_StopPitchDrift (void)
 	Drifting is enabled when the center view key is hit, mlook is released
 	and lookspring is non 0, or when 
 */
-void
+static void
 V_DriftPitch (void)
 {
 	float       delta, move;
@@ -260,7 +260,7 @@ V_ParseDamage (void)
 	v_dmg_time = v_kicktime->value;
 }
 
-void
+static void
 V_cshift_f (void)
 {
 	cshift_empty.destcolor[0] = atoi (Cmd_Argv (1));
@@ -274,7 +274,7 @@ V_cshift_f (void)
 
 	When you run over an item, the server sends this command
 */
-void
+static void
 V_BonusFlash_f (void)
 {
 	if (!cl_cshift_bonus->int_val)
@@ -311,7 +311,7 @@ V_SetContentsColor (int contents)
 	}
 }
 
-void
+static void
 V_CalcPowerupCshift (void)
 {
 	if (!cl.stats[STAT_ITEMS] & (IT_SUIT || IT_INVISIBILITY || IT_QUAD
@@ -438,7 +438,7 @@ V_PrepBlend (void)
 
 /* VIEW RENDERING */
 
-float
+static float
 angledelta (float a)
 {
 	a = anglemod (a);
@@ -447,7 +447,7 @@ angledelta (float a)
 	return a;
 }
 
-void
+static void
 CalcGunAngle (void)
 {
 	float        yaw, pitch, move;
@@ -495,7 +495,7 @@ CalcGunAngle (void)
 		v_iyaw_level->value;
 }
 
-void
+static void
 V_BoundOffsets (void)
 {
 	entity_t   *ent;
@@ -524,7 +524,7 @@ V_BoundOffsets (void)
 
 	Idle swaying
 */
-void
+static void
 V_AddIdle (void)
 {
 	r_refdef.viewangles[ROLL] +=
@@ -543,7 +543,7 @@ V_AddIdle (void)
 
 	Roll is induced by movement and damage
 */
-void
+static void
 V_CalcViewRoll (void)
 {
 	float       side;
@@ -566,7 +566,7 @@ V_CalcViewRoll (void)
 
 }
 
-void
+static void
 V_CalcIntermissionRefdef (void)
 {
 	entity_t   *ent, *view;
@@ -589,7 +589,7 @@ V_CalcIntermissionRefdef (void)
 	Cvar_SetValue (v_idlescale, old);
 }
 
-void
+static void
 V_CalcRefdef (void)
 {
 	entity_t   *ent, *view;

@@ -36,6 +36,7 @@ static const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
@@ -53,7 +54,7 @@ qboolean    com_modified;				// set true if using non-id files
 	Immediately exits out if an alternate game was attempted to be started
 	without being registered.
 */
-void
+static void
 COM_CheckRegistered (void)
 {
 	unsigned short check[128];

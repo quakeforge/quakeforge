@@ -177,7 +177,7 @@ SND_ResampleSfx (sfxcache_t *sc, byte * data)
 				   sc->data[sc->bytes + 2], sc->data[sc->bytes + 3]);
 }
 
-sfxcache_t *
+static sfxcache_t *
 SND_LoadSound (sfx_t *sfx, cache_allocator_t allocator)
 {
 	char		namebuffer[256];
@@ -250,7 +250,7 @@ byte	   *last_chunk;
 byte	   *iff_data;
 int			iff_chunk_len;
 
-short
+static short
 SND_GetLittleShort (void)
 {
 	short		val = 0;
@@ -261,7 +261,7 @@ SND_GetLittleShort (void)
 	return val;
 }
 
-int
+static int
 SND_GetLittleLong (void)
 {
 	int			val = 0;
@@ -274,8 +274,8 @@ SND_GetLittleLong (void)
 	return val;
 }
 
-void
-SND_FindNexctChunk (char *name)
+static void
+SND_FindNexctChunk (const char *name)
 {
 	while (1) {
 		data_p = last_chunk;
@@ -299,14 +299,14 @@ SND_FindNexctChunk (char *name)
 	}
 }
 
-void
-SND_FindChunk (char *name)
+static void
+SND_FindChunk (const char *name)
 {
 	last_chunk = iff_data;
 	SND_FindNexctChunk (name);
 }
-
-void
+/*
+static void
 SND_DumpChunks (void)
 {
 	char		str[5];
@@ -322,7 +322,7 @@ SND_DumpChunks (void)
 		data_p += (iff_chunk_len + 1) & ~1;
 	} while (data_p < iff_end);
 }
-
+*/
 wavinfo_t
 SND_GetWavinfo (const char *name, byte * wav, int wavlength)
 {

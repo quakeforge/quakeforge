@@ -66,7 +66,7 @@ int _COM_FOpenFile (const char *filename, QFile **gzfile, char *foundname, int z
 int COM_FOpenFile (const char *filename, QFile **gzfile);
 void COM_CloseFile (QFile *h);
 void COM_FileBase (const char *in, char *out);
-void COM_DefaultExtension (char *path, char *extension);
+void COM_DefaultExtension (char *path, const char *extension);
 const char *COM_SkipPath (const char *pathname);
 void COM_StripExtension (const char *in, char *out);
 int COM_NextFilename (char *filename, const char *prefix, const char *ext);

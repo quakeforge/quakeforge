@@ -96,7 +96,7 @@ CL_StopPlayback (void)
 
 	Dumps the current net message, prefixed by the length and view angles
 */
-void
+static void
 CL_WriteDemoMessage (void)
 {
 	int         len;
@@ -287,7 +287,7 @@ CL_Record_f (void)
 }
 
 
-void
+static void
 CL_StartDemo (void)
 {
 	char        name[256];
@@ -347,7 +347,7 @@ CL_PlayDemo_f (void)
 	CL_StartDemo ();
 }
 
-void
+static void
 CL_StartTimeDemo (void)
 {
 	CL_StartDemo ();

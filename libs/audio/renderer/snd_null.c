@@ -162,6 +162,7 @@ SND_UnblockSound (void)
 {
 }
 
+QFPLUGIN plugin_t *PLUGIN_INFO(snd_render, null) (void);
 QFPLUGIN plugin_t *
 PLUGIN_INFO(snd_render, null) (void)
 {

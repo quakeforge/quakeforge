@@ -50,7 +50,7 @@ static const char rcsid[] =
 #include "qfprogs.h"
 #include "modules.h"
 
-void
+static void
 dump_methods (progs_t *pr, pr_method_list_t *methods, int class)
 {
 	int         i;
@@ -72,7 +72,7 @@ dump_methods (progs_t *pr, pr_method_list_t *methods, int class)
 	}
 }
 
-void
+static void
 dump_class (progs_t *pr, pr_class_t *class)
 {
 	pr_class_t *meta = &G_STRUCT (pr, pr_class_t, class->class_pointer);
@@ -95,7 +95,7 @@ dump_class (progs_t *pr, pr_class_t *class)
 	dump_methods (pr, &G_STRUCT (pr, pr_method_list_t, meta->methods), 1);
 }
 
-void
+static void
 dump_category (progs_t *pr, pr_category_t *category)
 {
 	const char *category_name = "<invalid string>";
@@ -115,7 +115,7 @@ dump_category (progs_t *pr, pr_category_t *category)
 				  1);
 }
 
-void
+static void
 dump_module (progs_t *pr, pr_module_t *module)
 {
 	pr_symtab_t *symtab = &G_STRUCT (pr, pr_symtab_t, module->symtab);

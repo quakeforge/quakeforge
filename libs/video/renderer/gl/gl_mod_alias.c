@@ -258,7 +258,7 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, vert_order_t *vo)
 	}
 }
 
-vert_order_t *
+static vert_order_t *
 GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 {
 	float		interval;
@@ -362,7 +362,7 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 	return vo;
 }
 
-vert_order_t *
+static vert_order_t *
 GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 {
 	float		  interval;
@@ -464,7 +464,7 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 	return vo;
 }
 
-maliasskindesc_t *
+static maliasskindesc_t *
 R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
 {
 	maliasskindesc_t *pskindesc;

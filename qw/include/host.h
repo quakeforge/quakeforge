@@ -65,7 +65,7 @@ void Host_ShutdownServer (qboolean crash);
 typedef struct
 {
 	int		argc;
-	char	**argv;
+	const char	**argv;
 } quakeparms_t;
 
 /* Host */

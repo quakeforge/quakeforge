@@ -163,7 +163,7 @@ Mod_LoadLighting (lump_t *l)
 msurface_t *warpface;
 
 
-void
+static void
 BoundPoly (int numverts, float *verts, vec3_t mins, vec3_t maxs)
 {
 	float      *v;
@@ -181,7 +181,7 @@ BoundPoly (int numverts, float *verts, vec3_t mins, vec3_t maxs)
 		}
 }
 
-void
+static void
 SubdividePolygon (int numverts, float *verts)
 {
 	float       frac, m, s, t;

@@ -119,8 +119,8 @@ def_t *new_def (struct type_s *type, const char *name, scope_t *scope);
 int new_location (struct type_s *type, defspace_t *space);
 void free_location (def_t *def);
 def_t *get_tempdef (struct type_s *type, scope_t *scope);
-void free_tempdefs ();
-void reset_tempdefs ();
+void free_tempdefs (void);
+void reset_tempdefs (void);
 void flush_scope (scope_t *scope, int force_used);
 void def_initialized (def_t *d);
 

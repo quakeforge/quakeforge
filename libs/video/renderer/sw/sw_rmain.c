@@ -475,7 +475,7 @@ R_ShowNearestLoc (void)
 	}
 }
 
-void
+static void
 R_DrawEntitiesOnList (void)
 {
 	int         i, j;
@@ -544,7 +544,7 @@ R_DrawEntitiesOnList (void)
 	}
 }
 
-void
+static void
 R_DrawViewModel (void)
 {
 	// FIXME: remove and do real lighting
@@ -604,7 +604,7 @@ R_DrawViewModel (void)
 	R_AliasDrawModel (&r_viewlighting);
 }
 
-int
+static int
 R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 {
 	int         i, *pindex, clipflags;
@@ -658,7 +658,7 @@ R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 	return clipflags;
 }
 
-void
+static void
 R_DrawBEntitiesOnList (void)
 {
 	int         i, j, k, clipflags;
@@ -769,7 +769,7 @@ R_DrawBEntitiesOnList (void)
 	insubmodel = false;
 }
 
-void
+static void
 R_EdgeDrawing (void)
 {
 	edge_t      ledges[NUMSTACKEDGES +
@@ -836,7 +836,7 @@ R_EdgeDrawing (void)
 
 	r_refdef must be set before the first call
 */
-void
+static void
 R_RenderView_ (void)
 {
 	byte        warpbuffer[WARP_WIDTH * WARP_HEIGHT];

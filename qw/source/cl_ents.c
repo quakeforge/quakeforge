@@ -87,7 +87,7 @@ CL_ClearEnts ()
 		CL_Init_Entity (&cl_player_ents[i]);
 }
 
-void
+static void
 CL_NewDlight (int key, vec3_t org, int effects, byte glow_size,
 			  byte glow_color)
 {
@@ -161,7 +161,7 @@ CL_NewDlight (int key, vec3_t org, int effects, byte glow_size,
 
 	Can go from either a baseline or a previous packet_entity
 */
-void
+static void
 CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 {
 	int		i;
@@ -251,7 +251,7 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 // Ender (QSG - End)
 }
 
-void
+static void
 FlushEntityPacket (void)
 {
 	entity_state_t	olde, newe;
@@ -408,7 +408,7 @@ CL_ParsePacketEntities (qboolean delta)
 	newp->num_entities = newindex;
 }
 
-void
+static void
 CL_LinkPacketEntities (void)
 {
 	int				pnum, i;
@@ -606,7 +606,7 @@ CL_ParseProjectiles (qboolean nail2)
 	}
 }
 
-void
+static void
 CL_LinkProjectiles (void)
 {
 	int			i;
@@ -624,7 +624,7 @@ CL_LinkProjectiles (void)
 	}
 }
 
-int
+static int
 TranslateFlags (int src)
 {
 	int         dst = 0;
@@ -801,7 +801,7 @@ CL_ParsePlayerinfo (void)
 
 	Called when the CTF flags are set
 */
-void
+static void
 CL_AddFlagModels (entity_t *ent, int team, int key)
 {
 	static float flag_offsets[] = {
@@ -849,7 +849,7 @@ CL_AddFlagModels (entity_t *ent, int team, int key)
 	Create visible entities in the correct position
 	for all current players
 */
-void
+static void
 CL_LinkPlayers (void)
 {
 	double			playertime;

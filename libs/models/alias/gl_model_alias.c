@@ -82,7 +82,7 @@ typedef struct {
 
 	Fill background pixels so mipmapping doesn't have halos - Ed
 */
-void
+static void
 Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight)
 {
 	byte        fillcolor = *skin;		// assume this is the pixel to fill
@@ -264,7 +264,7 @@ Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
 	}
 }
 
-void
+static void
 Mod_LoadExternalSkin (maliasskindesc_t *pskindesc, char *filename)
 {
 	tex_t		*targa;

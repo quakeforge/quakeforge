@@ -67,7 +67,7 @@ int			r_init = 0;
 
 	Grab six views for environment mapping tests
 */
-void
+static void
 R_Envmap_f (void)
 {
 	byte        buffer[256 * 256 * 4];

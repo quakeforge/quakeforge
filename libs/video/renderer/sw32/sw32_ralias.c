@@ -246,7 +246,7 @@ R_AliasTransformVector (vec3_t in, vec3_t out)
 }
 
 
-void
+static void
 R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 {
 	if (av->fv[2] < ALIAS_Z_CLIP_PLANE) {
@@ -266,7 +266,7 @@ R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 		fv->flags |= ALIAS_BOTTOM_CLIP;
 }
 
-void
+static void
 R_AliasTransformFinalVert16 (finalvert_t *fv, auxvert_t *av, trivertx_t *pverts)
 {
 	trivertx_t  * pextra;
@@ -284,7 +284,7 @@ R_AliasTransformFinalVert16 (finalvert_t *fv, auxvert_t *av, trivertx_t *pverts)
 		aliastransform[2][3];
 }
 
-void
+static void
 R_AliasTransformFinalVert8 (finalvert_t *fv, auxvert_t *av, trivertx_t *pverts)
 {
 	av->fv[0] = DotProduct (pverts->v, aliastransform[0]) +
@@ -300,7 +300,7 @@ R_AliasTransformFinalVert8 (finalvert_t *fv, auxvert_t *av, trivertx_t *pverts)
 
 	General clipped case
 */
-void
+static void
 R_AliasPreparePoints (void)
 {
 	int         i;
@@ -524,7 +524,7 @@ R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 }
 
 
-void
+static void
 R_AliasPrepareUnclippedPoints (void)
 {
 	stvert_t   *pstverts;
@@ -543,7 +543,7 @@ R_AliasPrepareUnclippedPoints (void)
 }
 
 
-void
+static void
 R_AliasSetupSkin (void)
 {
 	int         skinnum;
@@ -603,7 +603,7 @@ R_AliasSetupSkin (void)
 	}
 }
 
-void
+static void
 R_AliasSetupLighting (alight_t *plighting)
 {
 	// guarantee that no vertex will ever be lit below LIGHT_MIN, so we don't
@@ -637,7 +637,7 @@ R_AliasSetupLighting (alight_t *plighting)
 
 	set r_apverts
 */
-void
+static void
 R_AliasSetupFrame (void)
 {
 	int         frame;

@@ -271,7 +271,7 @@ void SV_MoveToGoal (progs_t *pr);
 
 void SV_CheckForNewClients (void);
 void SV_RunClients (void);
-void SV_SaveSpawnparms ();
+void SV_SaveSpawnparms (void);
 void SV_SpawnServer (const char *server);
 
 void SV_LoadProgs (void);
@@ -281,5 +281,7 @@ void SV_Progs_Init_Cvars (void);
 void Cvar_Info (struct cvar_s *var);
 
 #define		STOP_EPSILON	0.1
+
+extern struct clip_hull_s *pf_hull_list[];
 
 #endif // __server_h

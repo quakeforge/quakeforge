@@ -141,7 +141,7 @@ CL_AllSkins_f (void)
 	CL_Skins_f ();
 }
 
-void
+static void
 CL_Color_f (void)
 {
 	// just for quake compatability...

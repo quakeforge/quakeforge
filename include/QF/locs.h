@@ -44,7 +44,7 @@ void locs_edit (const vec3_t loc, const char *desc);
 void locs_load(const char *filename);
 void locs_mark (const vec3_t loc, const char *desc);
 int  locs_nearest (const vec3_t loc);
-void locs_reset ();
+void locs_reset (void);
 void locs_save (const char *filename, qboolean gz);
 void map_to_loc (const char *mapname, char *filename);
 

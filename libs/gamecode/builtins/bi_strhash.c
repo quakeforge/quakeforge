@@ -39,6 +39,7 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
+#include "QF/csqc.h"
 #include "QF/console.h"
 #include "QF/draw.h"
 #include "QF/progs.h"

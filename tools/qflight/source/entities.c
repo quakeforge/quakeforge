@@ -72,7 +72,7 @@ int numlighttargets;
 char lighttargets[32][64];
 
 
-int
+static int
 LightStyleForTargetname (char *targetname, qboolean alloc)
 {
 	int		i;
@@ -89,7 +89,7 @@ LightStyleForTargetname (char *targetname, qboolean alloc)
 	return numlighttargets - 1 + 32;
 }
 
-void
+static void
 MatchTargets (void)
 {
 	int			i, j;
@@ -226,8 +226,8 @@ LoadEntities (void)
 	MatchTargets ();
 }
 
-char	*
-ValueForKey (entity_t *ent, char *key)
+const char *
+ValueForKey (entity_t *ent, const char *key)
 {
 	epair_t		*ep;
 	
@@ -238,7 +238,7 @@ ValueForKey (entity_t *ent, char *key)
 }
 
 void
-SetKeyValue (entity_t *ent, char *key, char *value)
+SetKeyValue (entity_t *ent, const char *key, const char *value)
 {
 	epair_t		*ep;
 
@@ -255,18 +255,18 @@ SetKeyValue (entity_t *ent, char *key, char *value)
 }
 
 float
-FloatForKey (entity_t *ent, char *key)
+FloatForKey (entity_t *ent, const char *key)
 {
-	char		*k;
+	const char*k;
 
 	k = ValueForKey (ent, key);
 	return atof (k);
 }
 
 void
-GetVectorForKey (entity_t *ent, char *key, vec3_t vec)
+GetVectorForKey (entity_t *ent, const char *key, vec3_t vec)
 {
-	char		*k;
+	const char *k;
 
 	k = ValueForKey (ent, key);
 	sscanf (k, "%f %f %f", &vec[0], &vec[1], &vec[2]);

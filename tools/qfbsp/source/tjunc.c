@@ -54,17 +54,6 @@ int         tjuncfaces;
 wvert_t     wverts[MAXWVERTS];
 wedge_t     wedges[MAXWEDGES];
 
-
-void
-PrintFace (face_t *f)
-{
-	int         i;
-
-	for (i = 0; i < f->numpoints; i++)
-		printf ("(%5.2f, %5.2f, %5.2f)\n", f->pts[i][0], f->pts[i][1],
-				f->pts[i][2]);
-}
-
 #define	NUM_HASH	1024
 
 wedge_t    *wedge_hash[NUM_HASH];
@@ -107,7 +96,7 @@ HashVec (vec3_t vec)
 	return h;
 }
 
-void
+static void
 CanonicalVector (vec3_t vec)
 {
 	_VectorNormalize (vec);
@@ -137,7 +126,7 @@ CanonicalVector (vec3_t vec)
 	Sys_Error ("CanonicalVector: degenerate");
 }
 
-wedge_t    *
+static wedge_t    *
 FindEdge (vec3_t p1, vec3_t p2, vec_t *t1, vec_t *t2)
 {
 	int         h;
@@ -202,7 +191,7 @@ FindEdge (vec3_t p1, vec3_t p2, vec_t *t1, vec_t *t2)
 
 #define	T_EPSILON	0.01
 
-void
+static void
 AddVert (wedge_t *w, vec_t t)
 {
 	wvert_t    *v, *newv;
@@ -230,7 +219,7 @@ AddVert (wedge_t *w, vec_t t)
 	v->prev = newv;
 }
 
-void
+static void
 AddEdge (vec3_t p1, vec3_t p2)
 {
 	wedge_t    *w;
@@ -241,7 +230,7 @@ AddEdge (vec3_t p1, vec3_t p2)
 	AddVert (w, t2);
 }
 
-void
+static void
 AddFaceEdges (face_t *f)
 {
 	int         i, j;
@@ -260,7 +249,7 @@ void        FixFaceEdges (face_t * f);
 
 face_t     *newlist;
 
-void
+static void
 SplitFaceForTjunc (face_t *f, face_t *original)
 {
 	face_t     *new, *chain;
@@ -388,7 +377,7 @@ FixFaceEdges (face_t *f)
 
 //============================================================================
 
-void
+static void
 tjunc_find_r (node_t *node)
 {
 	face_t     *f;
@@ -403,7 +392,7 @@ tjunc_find_r (node_t *node)
 	tjunc_find_r (node->children[1]);
 }
 
-void
+static void
 tjunc_fix_r (node_t *node)
 {
 	face_t     *next, *f;

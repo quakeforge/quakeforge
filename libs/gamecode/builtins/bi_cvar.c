@@ -38,6 +38,7 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
+#include "QF/csqc.h"
 #include "QF/cvar.h"
 #include "QF/progs.h"
 #include "QF/zone.h"

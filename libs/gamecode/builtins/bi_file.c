@@ -52,6 +52,7 @@ static const char rcsid[] =
 int         fnmatch (const char *__pattern, const char *__string, int __flags);
 #endif
 
+#include "QF/csqc.h"
 #include "QF/progs.h"
 #include "QF/quakefs.h"
 #include "QF/va.h"

@@ -392,7 +392,7 @@ PF_traceline (progs_t *pr)
   Wrapper around SV_Move, this makes PF_movetoground and PF_traceline
   redundant.
 */
-void
+static void
 PF_checkmove (progs_t *pr)
 {
 	edict_t	*ent;
@@ -1015,7 +1015,7 @@ PF_changeyaw (progs_t *pr)
 #define	MSG_INIT		3				// write to the init string
 #define	MSG_MULTICAST	4				// for multicast()
 
-sizebuf_t  *
+static sizebuf_t  *
 WriteDest (progs_t *pr)
 {
 	int         dest;
@@ -1358,7 +1358,7 @@ PF_multicast (progs_t *pr)
 
 	float(string path, string mode) cfopen
 */
-void
+static void
 PF_cfopen (progs_t *pr)
 {
 	R_FLOAT (pr) = CF_Open (P_STRING (pr, 0),
@@ -1370,7 +1370,7 @@ PF_cfopen (progs_t *pr)
 
 	void (float desc) cfclose
 */
-void
+static void
 PF_cfclose (progs_t *pr)
 {
 	CF_Close ((int) P_FLOAT (pr, 0));
@@ -1381,7 +1381,7 @@ PF_cfclose (progs_t *pr)
 
 	string (float desc) cfread
 */
-void
+static void
 PF_cfread (progs_t *pr)
 {
 	RETURN_STRING (pr, CF_Read((int) P_FLOAT (pr, 0)));
@@ -1392,7 +1392,7 @@ PF_cfread (progs_t *pr)
 
 	float (float desc, string buf) cfwrite
 */
-void
+static void
 PF_cfwrite (progs_t *pr)
 {
 	R_FLOAT (pr) = CF_Write((int) P_FLOAT (pr, 0), P_STRING (pr, 1));
@@ -1403,7 +1403,7 @@ PF_cfwrite (progs_t *pr)
 
 	float () cfeof
 */
-void
+static void
 PF_cfeof (progs_t *pr)
 {
 	R_FLOAT (pr) = CF_EOF ((int) P_FLOAT (pr, 0));
@@ -1414,13 +1414,13 @@ PF_cfeof (progs_t *pr)
 
 	float () cfquota
 */
-void
+static void
 PF_cfquota (progs_t *pr)
 {
 	R_FLOAT (pr) = CF_Quota();
 }
 
-void
+static void
 PF_setinfokey (progs_t *pr)
 {
 	edict_t    *edict = P_EDICT (pr, 0);
@@ -1634,7 +1634,7 @@ PF_Fixme (progs_t *pr)
 	PR_RunError (pr, "Unimplemented builtin function called");
 }
 
-void
+static void
 PF_Checkextension (progs_t *pr)
 {
 	R_FLOAT(pr) = 0;	 //FIXME make this function actually useful :P

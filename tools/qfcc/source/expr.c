@@ -247,7 +247,7 @@ error (expr_t *e, const char *fmt, ...)
 	return e;
 }
 
-void
+static void
 _warning (expr_t *e, const char *fmt, va_list args)
 {
 	string_t    file = pr.source_file;
@@ -349,7 +349,7 @@ get_op_string (int op)
 	}
 }
 
-expr_t *
+static expr_t *
 type_mismatch (expr_t *e1, expr_t *e2, int op)
 {
 	etype_t     t1, t2;
@@ -361,7 +361,7 @@ type_mismatch (expr_t *e1, expr_t *e2, int op)
 				  pr_type_name[t1], get_op_string (op), pr_type_name[t2]);
 }
 
-void
+static void
 check_initialized (expr_t *e)
 {
 	if (options.warnings.uninited_variable) {
@@ -409,7 +409,7 @@ new_label_name (void)
 	return lname;
 }
 
-expr_t *
+static expr_t *
 new_error_expr (void)
 {
 	expr_t     *e = new_expr ();
@@ -1368,7 +1368,7 @@ convert_int (expr_t *e)
 	e->e.float_val = e->e.integer_val;
 }
 
-void
+static void
 convert_nil (expr_t *e, type_t *t)
 {
 	e->type = expr_types[t->type];
@@ -1746,7 +1746,7 @@ bitnot_expr:
 	abort ();
 }
 
-int
+static int
 has_function_call (expr_t *e)
 {
 	switch (e->type) {

@@ -140,7 +140,7 @@ Mod_FindName (const char *name)
 	return mod;
 }
 
-model_t *
+static model_t *
 Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 {
 	unsigned int *buf;
@@ -211,7 +211,7 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 
 	Loads a model into the cache
 */
-model_t *
+static model_t *
 Mod_LoadModel (model_t *mod, qboolean crash)
 {
 	if (!mod->needload) {

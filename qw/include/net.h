@@ -143,5 +143,6 @@ void Analyze_Server_Packet (const byte * data, int len);
 extern struct cvar_s *net_packetlog;
 
 extern qboolean is_server;
+qboolean ServerPaused (void);
 
 #endif // _NET_H

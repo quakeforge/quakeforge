@@ -73,6 +73,7 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/vid.h"
 
+#include "d_iface.h"
 #include "fbset.h"
 
 static struct VideoMode current_mode;
@@ -269,7 +270,7 @@ VID_SetPalette (byte * palette)
 	}
 }
 
-int
+static int
 VID_SetMode (const char *name, unsigned char *palette)
 {
 	struct VideoMode *vmode;
@@ -389,7 +390,7 @@ VID_Init (unsigned char *palette)
 {
 	struct VideoMode *vmode;
 	const char *modestr;
-	char *fbname;
+	const char *fbname;
 
 	// plugin_load("in_fbdev.so");
 

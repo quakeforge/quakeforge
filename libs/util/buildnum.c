@@ -39,10 +39,12 @@ static const char rcsid[] =
 
 #include <stdlib.h>
 
-static char *date = __DATE__;						// Was "Dec 21 1999"
-static char *mon[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
-						 "Aug", "Sep", "Oct", "Nov", "Dec" };
-static char mond[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+#include "buildnum.h"
+
+static const char *date = __DATE__;						// Was "Dec 21 1999"
+static const char *mon[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+							   "Aug", "Sep", "Oct", "Nov", "Dec" };
+static const char mond[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 
 /* returns days since Dec 21 1999 */

@@ -217,7 +217,7 @@ SCR_ScreenShot_f (void)
 	Con_Printf ("Wrote %s\n", pcxname);
 }
 
-void
+static void
 SCR_TileClear (void)
 {
 	if (r_refdef.vrect.x > 0) {

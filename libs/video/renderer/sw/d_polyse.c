@@ -485,7 +485,7 @@ D_PolysetScanLeftEdge (int height)
 #endif // !USE_INTEL_ASM
 
 
-void
+static void
 D_PolysetSetUpForLineScan (fixed8_t startvertu, fixed8_t startvertv,
 						   fixed8_t endvertu, fixed8_t endvertv)
 {
@@ -575,10 +575,10 @@ D_PolysetCalcGradients (int skinwidth)
 }
 #endif // !USE_INTEL_ASM
 
-
+#if 0 //XXX eh?
 byte        gelmap[256];
 
-void
+static void
 InitGel (byte * palette)
 {
 	int         i;
@@ -592,7 +592,7 @@ InitGel (byte * palette)
 		gelmap[i] = /* 64 */ 0 + r;
 	}
 }
-
+#endif
 
 #ifndef USE_INTEL_ASM
 void
@@ -652,37 +652,6 @@ D_PolysetDrawSpans8 (spanpackage_t * pspanpackage)
 	} while (pspanpackage->count != -999999);
 }
 #endif // !USE_INTEL_ASM
-
-
-void
-D_PolysetFillSpans8 (spanpackage_t * pspanpackage)
-{
-	int         color;
-
-// FIXME: do z buffering
-
-	color = d_aflatcolor++;
-
-	while (1) {
-		int         lcount;
-		byte       *lpdest;
-
-		lcount = pspanpackage->count;
-
-		if (lcount == -1)
-			return;
-
-		if (lcount) {
-			lpdest = pspanpackage->pdest;
-
-			do {
-				*lpdest++ = color;
-			} while (--lcount);
-		}
-
-		pspanpackage++;
-	}
-}
 
 
 void

@@ -60,7 +60,7 @@ static const char rcsid[] =
 #include "vis.h"
 #include "options.h"
 
-void
+static void
 CheckStack (leaf_t *leaf, threaddata_t *thread)
 {
     pstack_t	*portal;
@@ -84,7 +84,7 @@ CheckStack (leaf_t *leaf, threaddata_t *thread)
 	order goes source, pass, target.  If the order goes pass, source, target
 	then flipclip should be set.
 */
-winding_t	*
+static winding_t	*
 ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target, 
 				  qboolean flipclip)
 {
@@ -193,7 +193,7 @@ ClipToSeparators (winding_t *source, winding_t *pass, winding_t *target,
 	Flood fill through the leafs
 	If src_portal is NULL, this is the originating leaf
 */
-void
+static void
 RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 {
 	int			i, j;

@@ -71,7 +71,7 @@ static int  keyhelp;
 static cbuf_t *cbuf;
 
 typedef struct {
-	char	*name;
+	const char *name;
 	imt_t	imtnum;
 } imtname_t;
 
@@ -101,7 +101,7 @@ imtname_t   imtnames[] = {
 };
 
 typedef struct {
-	char	*name;
+	const char *name;
 	knum_t	keynum;
 } keyname_t;
 
@@ -391,7 +391,7 @@ keyname_t   keynames[] = {
 
   Game key handling.
 */
-qboolean
+static qboolean
 Key_Game (knum_t key, short unicode)
 {
 	const char *kb;
@@ -430,7 +430,7 @@ Key_Game (knum_t key, short unicode)
 
   Interactive line editing and console scrollback
 */
-void
+static void
 Key_Console (knum_t key, short unicode)
 {
 	// escape is un-bindable
@@ -448,7 +448,7 @@ Key_Console (knum_t key, short unicode)
   the given string.  Single ascii characters return themselves, while
   the QFK_* names are matched up.
 */
-int
+static int
 Key_StringToIMTnum (const char *str)
 {
 	imtname_t  *kn;
@@ -469,7 +469,7 @@ Key_StringToIMTnum (const char *str)
   Returns a string (a QFK_* name) for the given imtnum.
   FIXME: handle quote special (general escape sequence?)
 */
-char *
+static const char *
 Key_IMTnumToString (const int imtnum)
 {
 	imtname_t  *kn;
@@ -491,7 +491,7 @@ Key_IMTnumToString (const int imtnum)
   the given string.  Single ascii characters return themselves, while
   the QFK_* names are matched up.
 */
-int
+static int
 Key_StringToKeynum (const char *str)
 {
 	keyname_t  *kn;
@@ -527,7 +527,7 @@ Key_KeynumToString (knum_t keynum)
 	return "<UNKNOWN KEYNUM>";
 }
 
-void
+static void
 Key_In_Unbind (const char *imt, const char *key)
 {
 	int t, b;
@@ -547,7 +547,7 @@ Key_In_Unbind (const char *imt, const char *key)
 	Key_SetBinding (t, b, NULL);
 }
 
-void
+static void
 Key_In_Unbind_f (void)
 {
 	if (Cmd_Argc () != 3) {
@@ -557,7 +557,7 @@ Key_In_Unbind_f (void)
 	Key_In_Unbind (Cmd_Argv (1), Cmd_Argv (2));
 }
 
-void
+static void
 Key_Unbindall_f (void)
 {
 	int         i, j;
@@ -567,7 +567,7 @@ Key_Unbindall_f (void)
 			Key_SetBinding (j, i, NULL);
 }
 
-void
+static void
 Key_In_Bind (const char *imt, const char *key, const char *cmd)
 {
 	int t, b;
@@ -595,7 +595,7 @@ Key_In_Bind (const char *imt, const char *key, const char *cmd)
 	Key_SetBinding (t, b, cmd);
 }
 
-void
+static void
 Key_In_Bind_f (void)
 {
 	int         c, i;
@@ -628,7 +628,7 @@ Key_In_Bind_f (void)
 	Key_In_Bind (imt, key, cmd);
 }
 
-void
+static void
 Key_Unbind_f (void)
 {
 	const char *key;
@@ -641,7 +641,7 @@ Key_Unbind_f (void)
 	Key_In_Unbind (in_bind_imt->string, key);
 }
 
-void
+static void
 Key_Bind_f (void)
 {
 	int         c, i;
@@ -673,7 +673,7 @@ Key_Bind_f (void)
 	Key_In_Bind (imt, key, cmd);
 }
 
-void 
+static void 
 Key_GIB_Bind_Get_f (void)
 {
 	const char *imt, *key, *cmd;
@@ -708,7 +708,7 @@ Key_GIB_Bind_Get_f (void)
 }
 
 
-void
+static void
 in_bind_imt_f (cvar_t *var)
 {
 	if (Key_StringToIMTnum (var->string) == -1) {
@@ -718,7 +718,7 @@ in_bind_imt_f (cvar_t *var)
 	}
 }
 
-void
+static void
 Key_InputMappingTable_f (void)
 {
 	int         c, t;
@@ -765,13 +765,13 @@ Key_WriteBindings (QFile *f)
 			}
 }
 
-void
+static void
 Key_Bindlist_f (void)
 {
 	Key_WriteBindings (0);
 }
 
-void
+static void
 keyhelp_f (void)
 {
 	keyhelp = 1;

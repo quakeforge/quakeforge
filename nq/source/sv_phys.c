@@ -67,8 +67,8 @@ cvar_t     *sv_maxvelocity;
 cvar_t     *sv_nostep;
 
 #define	MOVE_EPSILON	0.01
-
-void
+#if 0
+static void
 SV_CheckAllEnts (void)
 {
 	edict_t    *check;
@@ -89,7 +89,7 @@ SV_CheckAllEnts (void)
 			Con_Printf ("entity in invalid position\n");
 	}
 }
-
+#endif
 void
 SV_CheckVelocity (edict_t *ent)
 {
@@ -166,7 +166,7 @@ SV_RunThink (edict_t *ent)
 
 	Two entities have touched, so run their touch functions
 */
-void
+static void
 SV_Impact (edict_t *e1, edict_t *e2)
 {
 	int         old_self, old_other;
@@ -193,7 +193,7 @@ SV_Impact (edict_t *e1, edict_t *e2)
   Slide off of the impacting object
   returns the blocked flags (1 = floor, 2 = step / wall)
 */
-int
+static int
 ClipVelocity (vec3_t in, vec3_t normal, vec3_t out, float overbounce)
 {
 	float       backoff, change;
@@ -389,7 +389,7 @@ SV_PushEntity (edict_t *ent, vec3_t push)
 	return trace;
 }
 
-qboolean
+static qboolean
 SV_Push (edict_t *pusher, vec3_t move)
 {
 	float       solid_save;
@@ -490,7 +490,7 @@ SV_Push (edict_t *pusher, vec3_t move)
 	return true;
 }
 
-void
+static void
 SV_PushMove (edict_t *pusher, float movetime)
 {
 	vec3_t      move;
@@ -506,7 +506,7 @@ SV_PushMove (edict_t *pusher, float movetime)
 		SVfloat (pusher, ltime) += movetime;
 }
 
-void
+static void
 SV_Physics_Pusher (edict_t *ent)
 {
 	float       movetime, oldltime, thinktime;
@@ -541,7 +541,7 @@ SV_Physics_Pusher (edict_t *ent)
 
 	Non moving objects can only think
 */
-void
+static void
 SV_Physics_None (edict_t *ent)
 {
 	// regular thinking
@@ -554,7 +554,7 @@ SV_Physics_None (edict_t *ent)
 
 	A moving object that doesn't obey physics
 */
-void
+static void
 SV_Physics_Noclip (edict_t *ent)
 {
 	// regular thinking
@@ -571,7 +571,7 @@ SV_Physics_Noclip (edict_t *ent)
 
 /* TOSS / BOUNCE */
 
-void
+static void
 SV_CheckWaterTransition (edict_t *ent)
 {
 	int         cont;
@@ -674,7 +674,7 @@ SV_Physics_Toss (edict_t *ent)
 	This is also used for objects that have become still on the ground, but
 	will fall if the floor is pulled out from under them.
 */
-void
+static void
 SV_Physics_Step (edict_t *ent)
 {
 	qboolean    hitsound;
@@ -702,7 +702,7 @@ SV_Physics_Step (edict_t *ent)
 	SV_CheckWaterTransition (ent);
 }
 
-void
+static void
 SV_ProgStartFrame (void)
 {
 	// let the progs know that a new frame has started
@@ -712,7 +712,7 @@ SV_ProgStartFrame (void)
 	PR_ExecuteProgram (&sv_pr_state, sv_funcs.StartFrame);
 }
 
-void
+static void
 SV_RunEntity (edict_t *ent)
 {
 	if (sv_fields.lastruntime != -1) {
@@ -746,7 +746,7 @@ SV_RunEntity (edict_t *ent)
 	}
 }
 
-void
+static void
 SV_RunNewmis (void)
 {
 	edict_t    *ent;

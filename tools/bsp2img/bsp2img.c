@@ -95,8 +95,8 @@ typedef struct {
 	long        height;
 } image_t;
 
-void
-show_help ()
+static void
+show_help (void)
 {
 	printf ("BSP->bitmap, version %d.%d.%d\n\n", V_MAJOR, V_MINOR, V_REV);
 	printf ("Usage:\n");
@@ -125,7 +125,7 @@ show_help ()
 	return;
 }
 
-void
+static void
 plotpoint (image_t * image, long xco, long yco, unsigned int color)
 {
 	unsigned int bigcol = 0;
@@ -147,7 +147,7 @@ plotpoint (image_t * image, long xco, long yco, unsigned int color)
 	return;
 }
 
-void
+static void
 bresline (image_t * image, long x1, long y1, long x2, long y2,
 		  unsigned int color)
 {
@@ -211,7 +211,7 @@ bresline (image_t * image, long x1, long y1, long x2, long y2,
 	}
 }
 
-void
+static void
 def_options (struct options_t *opt)
 {
 	static struct options_t locopt;
@@ -240,7 +240,7 @@ def_options (struct options_t *opt)
 	return;
 }
 
-void
+static void
 get_options (struct options_t *opt, int argc, char *argv[])
 {
 	static struct options_t locopt;
@@ -386,7 +386,7 @@ get_options (struct options_t *opt, int argc, char *argv[])
 	return;
 }
 
-void
+static void
 show_options (struct options_t *opt)
 {
 	char        dirstr[80];

@@ -95,7 +95,7 @@ codespace_newstatement (codespace_t *codespace)
 	return codespace->code + codespace->size++;
 }
 
-void
+static void
 add_statement_ref (def_t *def, dstatement_t *st, reloc_type type)
 {
 	if (def) {
@@ -167,7 +167,7 @@ emit_statement (expr_t *e, opcode_t *op, def_t *var_a, def_t *var_b,
 	return var_c;
 }
 
-void
+static void
 emit_branch (expr_t *_e, opcode_t *op, expr_t *e, expr_t *l)
 {
 	dstatement_t *st;
@@ -192,7 +192,7 @@ emit_branch (expr_t *_e, opcode_t *op, expr_t *e, expr_t *l)
 	}
 }
 
-def_t *
+static def_t *
 emit_function_call (expr_t *e, def_t *dest)
 {
 	def_t      *func = emit_sub_expr (e->e.expr.e1, 0);
@@ -236,7 +236,7 @@ emit_function_call (expr_t *e, def_t *dest)
 	}
 }
 
-def_t *
+static def_t *
 emit_assign_expr (int oper, expr_t *e)
 {
 	def_t      *def_a, *def_b, *def_c;
@@ -295,7 +295,7 @@ emit_assign_expr (int oper, expr_t *e)
 	}
 }
 
-def_t *
+static def_t *
 emit_bind_expr (expr_t *e1, expr_t *e2)
 {
 	type_t     *t1 = get_type (e1);
@@ -319,7 +319,7 @@ emit_bind_expr (expr_t *e1, expr_t *e2)
 	return e2->e.temp.def;
 }
 
-def_t *
+static def_t *
 emit_move_expr (expr_t *e)
 {
 	expr_t     *e1 = e->e.expr.e1;
@@ -351,7 +351,7 @@ emit_move_expr (expr_t *e)
 	return emit_statement (e, op, src, size, dst);
 }
 
-def_t *
+static def_t *
 emit_address_expr (expr_t *e)
 {
 	def_t      *def_a, *def_b, *d;
@@ -364,7 +364,7 @@ emit_address_expr (expr_t *e)
 	return d;
 }
 
-def_t *
+static def_t *
 emit_deref_expr (expr_t *e, def_t *dest)
 {
 	def_t      *d;

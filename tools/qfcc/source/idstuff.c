@@ -47,6 +47,7 @@ static const char rcsid[] =
 #include "def.h"
 #include "qfcc.h"
 #include "expr.h"
+#include "idstuff.h"
 #include "options.h"
 #include "strpool.h"
 #include "type.h"
@@ -206,7 +207,7 @@ WriteFiles (const char *sourcedir)
 	at load time.
 */
 int
-WriteProgdefs (char *filename)
+WriteProgdefs (const char *filename)
 {
 	def_t      *d;
 	FILE       *f;

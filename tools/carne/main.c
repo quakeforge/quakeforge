@@ -24,7 +24,7 @@ extern gib_thread_t *gib_threads;
 static qboolean carne_done = false;
 static int carne_exitcode = 0;
 
-void
+static void
 Carne_GIB_Exit_f (void)
 {
 	carne_done = true;
@@ -35,7 +35,7 @@ Carne_GIB_Exit_f (void)
 		carne_exitcode = atoi (GIB_Argv(1));
 }
 
-int
+static int
 Carne_Execute_Script (const char *path, cbuf_args_t *args)
 {
 	QFile *file;
@@ -80,8 +80,8 @@ Carne_Execute_Script (const char *path, cbuf_args_t *args)
 	return carne_exitcode;
 }
 
-int
-Carne_Execute_Stdin ()
+static int
+Carne_Execute_Stdin (void)
 {
 	char linebuf[1024];
 	cbuf_t *cbuf = Cbuf_New (&gib_interp);

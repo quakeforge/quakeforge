@@ -53,9 +53,11 @@ void *alloca(size_t size);
 #include "QF/console.h"
 #include "QF/hash.h"
 
+#include "old_keys.h"
+
 typedef struct {
-	char       *old_name;
-	char       *new_name;
+	const char *old_name;
+	const char *new_name;
 } old_keyname_t;
 
 old_keyname_t   old_keynames[] = {

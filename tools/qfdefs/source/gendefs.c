@@ -37,7 +37,7 @@ static const char rcsid[] =
 
 int offset;
 
-void
+static void
 output_def (FILE *out, const char *line)
 {
 	const char *type, *type_e;

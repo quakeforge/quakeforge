@@ -39,6 +39,7 @@ static const char rcsid[] =
 
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_rsurf.h"
 
 // speed up sin calculations - Ed
 float       turbsin[] = {

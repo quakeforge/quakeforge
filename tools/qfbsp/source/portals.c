@@ -35,7 +35,7 @@ static const char rcsid[] =
 node_t      outside_node;				// portals outside the world face this
 
 
-void
+static void
 AddPortalToNodes (portal_t *p, node_t *front, node_t *back)
 {
 	if (p->nodes[0] || p->nodes[1])
@@ -50,7 +50,7 @@ AddPortalToNodes (portal_t *p, node_t *front, node_t *back)
 	back->portals = p;
 }
 
-void
+static void
 RemovePortalFromNode (portal_t *portal, node_t *l)
 {
 	portal_t  **pp, *t;
@@ -82,24 +82,12 @@ RemovePortalFromNode (portal_t *portal, node_t *l)
 	}
 }
 
-void
-PrintPortal (portal_t *p)
-{
-	int         i;
-	winding_t  *w;
-
-	w = p->winding;
-	for (i = 0; i < w->numpoints; i++)
-		printf ("(%5.0f,%5.0f,%5.0f)\n", w->points[i][0]
-				, w->points[i][1], w->points[i][2]);
-}
-
 /*
 	MakeHeadnodePortals
 
 	The created portals will face the global outside_node
 */
-void
+static void
 MakeHeadnodePortals (node_t *node)
 {
 	int         side, i, j, n;
@@ -156,42 +144,8 @@ MakeHeadnodePortals (node_t *node)
 
 //============================================================================
 
-void
-CheckWindingInNode (winding_t *w, node_t *node)
-{
-	int         i, j;
 
-	for (i = 0; i < w->numpoints; i++) {
-		for (j = 0; j < 3; j++)
-			if (w->points[i][j] < node->mins[j] - 1
-				|| w->points[i][j] > node->maxs[j] + 1) {
-				printf ("WARNING: CheckWindingInNode: outside\n");
-				return;
-			}
-	}
-}
-
-void
-CheckWindingArea (winding_t *w)
-{
-	float       total, add;
-	int         i;
-	vec3_t      v1, v2, cross;
-
-	total = 0;
-	for (i = 1; i < w->numpoints; i++) {
-		VectorSubtract (w->points[i], w->points[0], v1);
-		VectorSubtract (w->points[i + 1], w->points[0], v2);
-		CrossProduct (v1, v2, cross);
-		add = VectorLength (cross);
-		total += add * 0.5;
-	}
-	if (total < 16)
-		printf ("WARNING: winding area %f\n", total);
-}
-
-
-void
+static void
 PlaneFromWinding (winding_t *w, plane_t *plane)
 {
 	vec3_t      v1, v2;
@@ -204,51 +158,7 @@ PlaneFromWinding (winding_t *w, plane_t *plane)
 	plane->dist = DotProduct (w->points[0], plane->normal);
 }
 
-void
-CheckLeafPortalConsistancy (node_t *node)
-{
-	float       dist;
-	int         side, side2, i;
-	plane_t     plane, plane2;
-	portal_t   *p, *p2;
-	winding_t  *w;
-
-	side = side2 = 0;					// quiet compiler warning
-
-	for (p = node->portals; p; p = p->next[side]) {
-		if (p->nodes[0] == node)
-			side = 0;
-		else if (p->nodes[1] == node)
-			side = 1;
-		else
-			Sys_Error ("CutNodePortals_r: mislinked portal");
-		CheckWindingInNode (p->winding, node);
-		CheckWindingArea (p->winding);
-
-		// check that the side orders are correct
-		plane = planes[p->planenum];
-		PlaneFromWinding (p->winding, &plane2);
-
-		for (p2 = node->portals; p2; p2 = p2->next[side2]) {
-			if (p2->nodes[0] == node)
-				side2 = 0;
-			else if (p2->nodes[1] == node)
-				side2 = 1;
-			else
-				Sys_Error ("CutNodePortals_r: mislinked portal");
-			w = p2->winding;
-			for (i = 0; i < w->numpoints; i++) {
-				dist = DotProduct (w->points[i], plane.normal) - plane.dist;
-				if ((side == 0 && dist < -1) || (side == 1 && dist > 1)) {
-					printf ("WARNING: portal siding direction is wrong\n");
-					return;
-				}
-			}
-		}
-	}
-}
-
-void
+static void
 CutNodePortals_r (node_t *node)
 {
 	int         side;
@@ -397,7 +307,7 @@ FILE       *pf;
 int         num_visleafs;				// leafs the player can be in
 int         num_visportals;
 
-void
+static void
 WriteFloat (FILE *f, vec_t v)
 {
 	if (fabs (v - RINT (v)) < 0.001)
@@ -406,7 +316,7 @@ WriteFloat (FILE *f, vec_t v)
 		fprintf (f, "%f ", v);
 }
 
-void
+static void
 WritePortalFile_r (node_t *node)
 {
 	int         i;
@@ -458,7 +368,7 @@ WritePortalFile_r (node_t *node)
 
 }
 
-void
+static void
 NumberLeafs_r (node_t *node)
 {
 	portal_t   *p;

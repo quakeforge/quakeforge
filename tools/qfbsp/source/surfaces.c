@@ -133,7 +133,7 @@ SubdivideFaces (surface_t *surfhead)
 	Frees the current node tree and returns a new chain of the surfaces that
 	have inside faces.
 */
-void
+static void
 GatherNodeFaces_r (node_t *node)
 {
 	face_t     *next, *f;
@@ -239,7 +239,7 @@ HashVec (vec3_t vec)
 	return h;
 }
 
-int
+static int
 GetVertex (vec3_t in, int planenum)
 {
 	hashvert_t *hv;
@@ -309,7 +309,7 @@ int         c_tryedges;
 
 	Don't allow four way edges
 */
-int
+static int
 GetEdge (vec3_t p1, vec3_t p2, face_t *f)
 {
 	dedge_t     edge;
@@ -341,7 +341,7 @@ GetEdge (vec3_t p1, vec3_t p2, face_t *f)
 	return i;
 }
 
-void
+static void
 FindFaceEdges (face_t *face)
 {
 	int         i;
@@ -355,79 +355,7 @@ FindFaceEdges (face_t *face)
 			(face->pts[i], face->pts[(i + 1) % face->numpoints], face);
 }
 
-void
-CheckVertexes (void)
-{
-	hashvert_t *hv;
-	int         cb, c0, c1, c2, c3;
-
-	cb = c0 = c1 = c2 = c3 = 0;
-	for (hv = hvertex; hv != hvert_p; hv++) {
-		if (hv->numedges < 0 || hv->numedges & 1)
-			cb++;
-		else if (!hv->numedges)
-			c0++;
-		else if (hv->numedges == 2)
-			c1++;
-		else if (hv->numedges == 4)
-			c2++;
-		else
-			c3++;
-	}
-
-	qprintf ("%5i bad edge points\n", cb);
-	qprintf ("%5i 0 edge points\n", c0);
-	qprintf ("%5i 2 edge points\n", c1);
-	qprintf ("%5i 4 edge points\n", c2);
-	qprintf ("%5i 6+ edge points\n", c3);
-}
-
-void
-CheckEdges (void)
-{
-	dedge_t    *edge;
-	dvertex_t  *d1, *d2;
-	face_t     *f1, *f2;
-	int			c_multitexture, c_nonconvex, i;
-
-	c_nonconvex = c_multitexture = 0;
-
-//	CheckVertexes ();
-
-	for (i = 1; i < bsp->numedges; i++) {
-		edge = &bsp->edges[i];
-		if (!edgefaces[i][1]) {
-			d1 = &bsp->vertexes[edge->v[0]];
-			d2 = &bsp->vertexes[edge->v[1]];
-			qprintf ("unshared edge at: (%8.2f, %8.2f, %8.2f) (%8.2f, %8.2f, "
-					 "%8.2f)\n", d1->point[0], d1->point[1], d1->point[2],
-					 d2->point[0], d2->point[1], d2->point[2]);
-		} else {
-			f1 = edgefaces[i][0];
-			f2 = edgefaces[i][1];
-			if (f1->planeside != f2->planeside)
-				continue;
-			if (f1->planenum != f2->planenum)
-				continue;
-
-			// on the same plane, might be discardable
-			if (f1->texturenum == f2->texturenum) {
-				hvertex[edge->v[0]].numedges -= 2;
-				hvertex[edge->v[1]].numedges -= 2;
-				c_nonconvex++;
-			} else
-				c_multitexture++;
-		}
-	}
-
-//	qprintf ("%5i edges\n", i);
-//	qprintf ("%5i c_nonconvex\n", c_nonconvex);
-//	qprintf ("%5i c_multitexture\n", c_multitexture);
-
-//	CheckVertexes ();
-}
-
-void
+static void
 MakeFaceEdges_r (node_t *node)
 {
 	face_t     *f;

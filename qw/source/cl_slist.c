@@ -99,7 +99,7 @@ cvar_t *sl_game;
 cvar_t *sl_ping;
 
 
-void
+static void
 S_Refresh (server_entry_t *slrefresh)
 {
 	netadr_t addy;
@@ -117,8 +117,8 @@ S_Refresh (server_entry_t *slrefresh)
 	slrefresh->waitstatus = 1;
 }
 
-server_entry_t *
-SL_Add (server_entry_t *start, char *ip, char *desc)
+static server_entry_t *
+SL_Add (server_entry_t *start, const char *ip, const char *desc)
 {
 	server_entry_t *p;
 
@@ -154,8 +154,8 @@ SL_Add (server_entry_t *start, char *ip, char *desc)
 	p->status = NULL;
 	return (start);
 }
-
-server_entry_t *
+/*
+static server_entry_t *
 SL_Del (server_entry_t *start, server_entry_t *del)
 {
 	server_entry_t *n;
@@ -182,7 +182,7 @@ SL_Del (server_entry_t *start, server_entry_t *del)
 	return (start);
 }
 
-server_entry_t *
+static server_entry_t *
 SL_InsB (server_entry_t *start, server_entry_t *place, char *ip, char *desc)
 {
 	server_entry_t *new, *other;
@@ -204,8 +204,8 @@ SL_InsB (server_entry_t *start, server_entry_t *place, char *ip, char *desc)
 		return new;
 	return start;
 }
-
-void
+*/
+static void
 SL_Swap (server_entry_t *swap1, server_entry_t *swap2)
 {
 	server_entry_t *next1, *next2, *prev1, *prev2;
@@ -226,7 +226,7 @@ SL_Swap (server_entry_t *swap1, server_entry_t *swap2)
 	swap2->prev = prev2;
 }
 
-int
+static int
 SL_CheckFilter (server_entry_t *sl_filteritem)
 {
 	if (!sl_filter->int_val)
@@ -249,7 +249,7 @@ SL_CheckFilter (server_entry_t *sl_filteritem)
 	return(1);
 }
 
-server_entry_t *
+static server_entry_t *
 SL_Get_By_Num (server_entry_t *start, int n)
 {
 	int         i;
@@ -268,7 +268,7 @@ SL_Get_By_Num (server_entry_t *start, int n)
 	return (start);
 }
 
-int
+static int
 SL_Len (server_entry_t *start)
 {
 	int         i;
@@ -278,7 +278,7 @@ SL_Len (server_entry_t *start)
 	return i;
 }
 
-void
+static void
 SL_Del_All (server_entry_t *start)
 {
 	server_entry_t *n;
@@ -294,7 +294,7 @@ SL_Del_All (server_entry_t *start)
 	}
 }
 
-void
+static void
 SL_SaveF (QFile *f, server_entry_t *start)
 {
 	do {
@@ -322,7 +322,7 @@ SL_Shutdown (void)
 		SL_Del_All (all_slist);
 }
 
-char       *
+static char *
 gettokstart (char *str, int req, char delim)
 {
 	char       *start = str;
@@ -348,7 +348,7 @@ gettokstart (char *str, int req, char delim)
 	return start;
 }
 
-int
+static int
 gettoklen (char *str, int req, char delim)
 {
 	char       *start = 0;
@@ -365,13 +365,13 @@ gettoklen (char *str, int req, char delim)
 	return len;
 }
 
-void
+static void
 timepassed (double time1, double *time2)
 {
 	*time2 -= time1;
 }
 
-void
+static void
 SL_SortEntry (server_entry_t *start)
 {
 	int i = 0;
@@ -405,7 +405,7 @@ SL_SortEntry (server_entry_t *start)
 	}
 }
 
-void
+static void
 SL_Sort (cvar_t *var)
 {
 	server_entry_t *p;
@@ -417,7 +417,7 @@ SL_Sort (cvar_t *var)
 		SL_SortEntry (p);
 }
 
-void
+static void
 SL_Con_List (server_entry_t *sldata)
 {
 	int serv;
@@ -434,7 +434,7 @@ SL_Con_List (server_entry_t *sldata)
 	}
 }
 
-void
+static void
 SL_Connect (server_entry_t *sldata, int slitemno)
 {
 	CL_Disconnect ();
@@ -443,7 +443,7 @@ SL_Connect (server_entry_t *sldata, int slitemno)
 	CL_BeginServerConnect ();
 }
 
-void
+static void
 SL_Update (server_entry_t *sldata)
 {
 	// FIXME - Need to change this so the info is not sent in 1 burst
@@ -459,7 +459,7 @@ SL_Update (server_entry_t *sldata)
 	}
 }
 
-void
+static void
 SL_Con_Details (server_entry_t *sldata, int slitemno)
 {
 	int i, playercount;
@@ -494,7 +494,7 @@ SL_Con_Details (server_entry_t *sldata, int slitemno)
 		Con_Printf("No Details Available\n");
 }
 
-void
+static void
 SL_MasterUpdate(void)
 {
 	char data[] = "c\n\0";
@@ -520,7 +520,7 @@ SL_MasterUpdate(void)
 	NET_SendPacket (3, data, addy);
 }
 
-int
+static int
 SL_Switch (void)
 {
 	if (!which_slist)
@@ -537,7 +537,7 @@ SL_Switch (void)
 	return (which_slist);
 }
 	
-void
+static void
 SL_Command (void)
 {
 	int sltemp = 0;
@@ -610,7 +610,7 @@ MSL_ParseServerList(const char *msl_data)
 	}
 }
 
-server_entry_t *
+static server_entry_t *
 SL_LoadF (QFile *f, server_entry_t *start)
 {
 	//This could get messy

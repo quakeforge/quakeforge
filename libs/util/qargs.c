@@ -45,21 +45,22 @@ static const char rcsid[] =
 
 #include "QF/cmd.h"
 #include "QF/crc.h"
+#include "QF/qargs.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
-static char **largv;
-static char *argvdummy = " ";
+static const char **largv;
+static const char *argvdummy = " ";
 
-static char *safeargvs[] =
+static const char *safeargvs[] =
 	{ "-stdvid", "-nolan", "-nosound", "-nocdaudio", "-nojoy", "-nomouse",
 		"-dibonly" };
 
 #define NUM_SAFE_ARGVS (sizeof(safeargvs)/sizeof(safeargvs[0]))
 
 int         com_argc;
-char      **com_argv;
-char       *com_cmdline;
+const char **com_argv;
+const char *com_cmdline;
 
 qboolean    nouse = false;				// 1999-10-29 +USE fix by Maddes
 
@@ -71,7 +72,7 @@ qboolean    nouse = false;				// 1999-10-29 +USE fix by Maddes
 	where the given parameter apears, or 0 if not present
 */
 int
-COM_CheckParm (char *parm)
+COM_CheckParm (const char *parm)
 {
 	int         i;
 
@@ -87,15 +88,16 @@ COM_CheckParm (char *parm)
 }
 
 void
-COM_InitArgv (int argc, char **argv)
+COM_InitArgv (int argc, const char **argv)
 {
 	qboolean    safe;
 	int         i, len;
+	char       *cmdline;
 
 	safe = false;
 
-	largv = (char **) calloc (1, (argc + NUM_SAFE_ARGVS + 1) *
-							  sizeof (char **));
+	largv = (const char **) calloc (1, (argc + NUM_SAFE_ARGVS + 1) *
+									sizeof (const char **));
 
 	for (com_argc = 0, len = 0; com_argc < argc; com_argc++) {
 		largv[com_argc] = argv[com_argc];
@@ -105,16 +107,17 @@ COM_InitArgv (int argc, char **argv)
 			len += strlen (argv[com_argc]) + 1;
 	}
 
-	com_cmdline = (char *) calloc (1, len + 1);	// need strlen(com_cmdline)+2
-	com_cmdline[0] = 0;
+	cmdline = (char *) calloc (1, len + 1);	// need strlen(cmdline)+2
+	cmdline[0] = 0;
 	if (len) {
 		for (i = 1; i < argc; i++) {
-			strncat (com_cmdline, argv[i], len - strlen (com_cmdline));
-			assert (len - strlen (com_cmdline) > 0);
-			strncat (com_cmdline, " ", len - strlen (com_cmdline));
+			strncat (cmdline, argv[i], len - strlen (cmdline));
+			assert (len - strlen (cmdline) > 0);
+			strncat (cmdline, " ", len - strlen (cmdline));
 		}
-		com_cmdline[len - 1] = '\0';
+		cmdline[len - 1] = '\0';
 	}
+	com_cmdline = cmdline;
 
 	if (safe) {
 		// force all the safe-mode switches. Note that we reserved extra space
@@ -139,7 +142,7 @@ COM_InitArgv (int argc, char **argv)
 	Adds the given string at the end of the current argument list
 */
 void
-COM_AddParm (char *parm)
+COM_AddParm (const char *parm)
 {
 	largv[com_argc++] = parm;
 }

@@ -89,7 +89,7 @@ int c_culldistplane, c_proper;
 
 	Returns the distance between the points, or -1 if blocked
 */
-vec_t
+static vec_t
 CastRay (vec3_t p1, vec3_t p2)
 {
 	int			i;
@@ -133,7 +133,7 @@ towards the center until it is valid.
 
 	Fills in texorg, worldtotex. and textoworld
 */
-void
+static void
 CalcFaceVectors (lightinfo_t *l)
 {
 	texinfo_t	*tex;
@@ -198,7 +198,7 @@ CalcFaceVectors (lightinfo_t *l)
 	Fills in s->texmins[] and s->texsize[]
 	also sets exactmins[] and exactmaxs[]
 */
-void
+static void
 CalcFaceExtents (lightinfo_t *l)
 {
 	dface_t		*s;
@@ -252,7 +252,7 @@ CalcFaceExtents (lightinfo_t *l)
 	For each texture aligned grid point, back project onto the plane
 	to get the world xyz value of the sample point
 */
-void
+static void
 CalcPoints (lightinfo_t *l)
 {
 	int			step, i, j , s, t, w, h;
@@ -337,7 +337,7 @@ CalcPoints (lightinfo_t *l)
 	}
 }
 
-void
+static void
 SingleLightFace (entity_t *light, lightinfo_t *l)
 {
 	int			mapnum, size, c, i;
@@ -420,7 +420,7 @@ SingleLightFace (entity_t *light, lightinfo_t *l)
 		}
 }
 
-void
+static void
 FixMinlight (lightinfo_t *l)
 {
 	float		minlight;

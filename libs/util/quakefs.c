@@ -252,7 +252,7 @@ COM_CreatePath (const char *path)
 	}
 }
 
-QFile      *
+static QFile *
 COM_OpenRead (const char *path, int offs, int len, int zip)
 {
 	QFile      *file;
@@ -328,7 +328,7 @@ COM_CompressPath (const char *pth)
 	Checks if a string contains an updir ('..'), either at the ends or
 	surrounded by slashes ('/').  Doesn't check for leading slash.
 */
-int
+static int
 contains_updir (const char *filename)
 {
 	int i;
@@ -566,7 +566,7 @@ COM_LoadStackFile (const char *path, void *buffer, int bufsize)
 	Loads the header and directory, adding the files at the beginning
 	of the list so they override previous pack files.
 */
-pack_t     *
+static pack_t     *
 COM_LoadPackFile (char *packfile)
 {
 	pack_t     *pack = pack_open (packfile);
@@ -613,7 +613,7 @@ qstrcmp (char **os1, char **os2)
 	}
 }
 
-void
+static void
 COM_LoadGameDirectory (const char *dir)
 {
 	searchpath_t *search;
@@ -692,7 +692,7 @@ COM_LoadGameDirectory (const char *dir)
 	Sets com_gamedir, adds the directory to the head of the path,
 	then loads and adds pak1.pak pak2.pak ...
 */
-void
+static void
 COM_AddDirectory (const char *dir)
 {
 	searchpath_t *search;
@@ -720,7 +720,7 @@ COM_AddDirectory (const char *dir)
 	COM_LoadGameDirectory (dir);
 }
 
-void
+static void
 COM_AddGameDirectory (const char *dir)
 {
 	Sys_DPrintf ("COM_AddGameDirectory (\"%s/%s\")\n",
@@ -852,7 +852,7 @@ COM_FileExtension (const char *in)
 }
 
 void
-COM_DefaultExtension (char *path, char *extension)
+COM_DefaultExtension (char *path, const char *extension)
 {
 	char       *src;
 

@@ -65,7 +65,7 @@ int         posenum = 0;
 int			aliasbboxmins[3], aliasbboxmaxs[3];
 
 
-void *
+static void *
 Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 {
 	byte       *skin;

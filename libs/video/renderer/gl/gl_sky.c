@@ -56,7 +56,7 @@ static const char rcsid[] =
 #include "r_shared.h"
 #include "view.h"
 
-char       *suf[6] = { "rt", "bk", "lf", "ft", "up", "dn" };
+const char *suf[6] = { "rt", "bk", "lf", "ft", "up", "dn" };
 int         solidskytexture;
 int         alphaskytexture;
 
@@ -109,7 +109,7 @@ R_LoadSkys (const char *skyname)
 		Con_Printf ("Unable to load skybox %s, using normal sky\n", skyname);
 }
 
-inline void
+static inline void
 R_SkyBoxPolyVec (vec5_t v)
 {
 	// avoid interpolation seams
@@ -165,7 +165,7 @@ vec5_t      skyvec[6][4] = {
 };
 #undef ftc
 
-void
+static void
 R_DrawSkyBox (void)
 {
 	int         i, j;
@@ -186,7 +186,7 @@ R_DrawSkyBox (void)
 
 vec3_t      domescale;
 
-void
+static void
 R_DrawSkyLayer (float s)
 {
 	float       x, y, a1x, a1y, a2x, a2y;
@@ -230,7 +230,7 @@ R_DrawSkyLayer (float s)
 	}
 }
 
-void
+static void
 R_DrawSkyDome (void)
 {
 	float       speedscale;					// for top sky and bottom sky

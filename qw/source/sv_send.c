@@ -66,7 +66,7 @@ int         con_printf_no_log;
 redirect_t  sv_redirected;
 
 
-void
+static void
 SV_FlushRedirect (void)
 {
 	char        send[8000 + 6];
@@ -627,7 +627,7 @@ get_stats (edict_t *ent, int spectator, int stats[MAX_CL_STATS])
 	Performs a delta update of the stats array.  This should only be performed
 	when a reliable message can be delivered this frame.
 */
-void
+static void
 SV_UpdateClientStats (client_t *client)
 {
 	edict_t    *ent;
@@ -658,7 +658,7 @@ SV_UpdateClientStats (client_t *client)
 		}
 }
 
-qboolean
+static qboolean
 SV_SendClientDatagram (client_t *client)
 {
 	byte        buf[MAX_DATAGRAM];
@@ -700,7 +700,7 @@ SV_SendClientDatagram (client_t *client)
 	return true;
 }
 
-void
+static void
 SV_UpdateToReliableMessages (void)
 {
 	client_t   *client;

@@ -41,7 +41,7 @@ static const char rcsid[] =
         
 hashtab_t *gib_globals = 0;
 
-gib_var_t *
+static gib_var_t *
 GIB_Var_New (void)
 {
 	gib_var_t *new = calloc (1, sizeof (gib_var_t));
@@ -67,7 +67,7 @@ GIB_Var_Free (void *ele, void *ptr)
 		Hash_DelTable (l->subvars);
 }
 
-gib_var_t *
+static gib_var_t *
 GIB_Var_Get_R (hashtab_t *vars, char *name)
 {
 	char *p;
@@ -86,7 +86,7 @@ GIB_Var_Get_R (hashtab_t *vars, char *name)
 		return Hash_Find (vars, name);
 }
 
-void
+static void
 GIB_Var_Set_R (hashtab_t *vars, char *name, const char *value)
 {
 	char *p;

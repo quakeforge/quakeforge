@@ -46,7 +46,7 @@ typedef struct {
 	char		*portfile;
 	char		*pointfile;
 	char		*hullfile;
-	char		*wadpath;
+	const char	*wadpath;
 } options_t;
 
 extern options_t options;

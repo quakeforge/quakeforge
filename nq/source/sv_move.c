@@ -224,7 +224,7 @@ SV_movestep (edict_t *ent, const vec3_t move, qboolean relink)
 	Turns to the movement direction, and walks the current distance if
 	facing it.
 */
-qboolean
+static qboolean
 SV_StepDirection (edict_t *ent, float yaw, float dist)
 {
 	float       delta;
@@ -253,7 +253,7 @@ SV_StepDirection (edict_t *ent, float yaw, float dist)
 	return false;
 }
 
-void
+static void
 SV_FixCheckBottom (edict_t *ent)
 {
 	SVfloat (ent, flags) = (int) SVfloat (ent, flags) | FL_PARTIALGROUND;
@@ -261,7 +261,7 @@ SV_FixCheckBottom (edict_t *ent)
 
 #define	DI_NODIR	-1
 
-void
+static void
 SV_NewChaseDir (edict_t *actor, edict_t *enemy, float dist)
 {
 	float       deltax, deltay, olddir, tdir, turnaround;
@@ -333,7 +333,7 @@ SV_NewChaseDir (edict_t *actor, edict_t *enemy, float dist)
 		SV_FixCheckBottom (actor);
 }
 
-qboolean
+static qboolean
 SV_CloseEnough (edict_t *ent, edict_t *goal, float dist)
 {
 	int         i;

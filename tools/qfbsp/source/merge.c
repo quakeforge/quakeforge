@@ -31,29 +31,6 @@ static const char rcsid[] =
 #define CONTINUOUS_EPSILON	0.001
 
 
-void
-CheckColinear (face_t *f)
-{
-	int         i, j;
-	vec3_t      v1, v2;
-
-	for (i = 0; i < f->numpoints; i++) {
-		// skip the point if the vector from the previous point is the same as
-		// the vector to the next point
-		j = (i - 1 < 0) ? f->numpoints - 1 : i - 1;
-		VectorSubtract (f->pts[i], f->pts[j], v1);
-		_VectorNormalize (v1);
-
-		j = (i + 1 == f->numpoints) ? 0 : i + 1;
-		VectorSubtract (f->pts[j], f->pts[i], v2);
-		_VectorNormalize (v2);
-
-		if (_VectorCompare (v1, v2))
-			Sys_Error ("Colinear edge");
-	}
-
-}
-
 /*
 	TryMerge
 
@@ -63,7 +40,7 @@ CheckColinear (face_t *f)
 	Returns NULL if the faces couldn't be merged, or the new face.
 	The originals will NOT be freed.
 */
-face_t     *
+static face_t     *
 TryMerge (face_t *f1, face_t *f2)
 {
 	face_t     *newf;

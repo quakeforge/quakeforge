@@ -166,7 +166,7 @@ Cam_TrackNum (void)
 	return spec_track;
 }
 
-void
+static void
 Cam_Unlock (void)
 {
 	if (autocam) {
@@ -201,7 +201,7 @@ Cam_Lock (int playernum)
 	Sbar_Changed ();
 }
 
-pmtrace_t
+static pmtrace_t
 Cam_DoTrace (vec3_t vec1, vec3_t vec2)
 {
 #if 0
@@ -678,7 +678,7 @@ CL_Cam_Init_Cvars (void)
 	chase_active = Cvar_Get ("chase_active", "0", CVAR_NONE, NULL, "None");
 }
 
-void
+static void
 TraceLine (vec3_t start, vec3_t end, vec3_t impact)
 {
 	pmtrace_t     trace;

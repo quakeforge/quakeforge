@@ -34,6 +34,7 @@ static const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/mathlib.h"
 
+#include "chase.h"
 #include "client.h"
 #include "world.h"
 
@@ -73,7 +74,7 @@ Chase_Reset (void)
 	// start position 12 units behind head
 }
 
-void
+static void
 TraceLine (vec3_t start, vec3_t end, vec3_t impact)
 {
 	trace_t     trace;

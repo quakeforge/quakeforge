@@ -88,7 +88,7 @@ vec_t _DotProduct (const vec3_t v1, const vec3_t v2);
 void _VectorAdd (const vec3_t veca, const vec3_t vecb, vec3_t out);
 void _VectorCopy (const vec3_t in, vec3_t out);
 int _VectorCompare (const vec3_t v1, const vec3_t v2);	// uses EQUAL_EPSILON
-//vec_t _VectorLength (vec3_t v);
+vec_t _VectorLength (const vec3_t v);
 void _VectorMA (const vec3_t veca, float scale, const vec3_t vecb,
 				vec3_t vecc);
 void _VectorScale (const vec3_t in, vec_t scale, vec3_t out);
@@ -138,7 +138,8 @@ void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 
 
 extern	mplane_t	frustum[4];
-
+extern inline qboolean R_CullBox (const vec3_t mins, const vec3_t maxs);
+extern inline qboolean R_CullSphere (const vec3_t origin, const float radius);
 #ifndef IMPLEMENT_R_Cull
 extern inline
 #endif

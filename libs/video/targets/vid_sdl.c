@@ -46,6 +46,8 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/vid.h"
 
+#include "d_iface.h"
+
 #ifdef WIN32	// FIXME: evil hack to get full DirectSound support with SDL
 #include <windows.h>
 #include <SDL_syswm.h>

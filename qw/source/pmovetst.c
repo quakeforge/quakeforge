@@ -90,7 +90,7 @@ PM_InitBoxHull (void)
 	To keep everything totally uniform, bounding boxes are turned into small
 	BSP trees instead of being compared directly.
 */
-hull_t     *
+static hull_t *
 PM_HullForBox (const vec3_t mins, const vec3_t maxs)
 {
 	box_planes[0].dist = maxs[0];

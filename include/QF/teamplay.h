@@ -33,9 +33,9 @@ extern struct cvar_s	*cl_parsesay;
 extern struct cvar_s	*cl_nofake;
 extern struct cvar_s	*cl_freply;
 
-typedef char * (*ffunc_t) (char *args);
+typedef const char *(*ffunc_t) (char *args);
 typedef struct freply_s {
-	char *name;
+	const char *name;
 	ffunc_t func;
 	float lasttime;
 } freply_t;

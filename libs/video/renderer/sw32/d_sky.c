@@ -41,7 +41,7 @@ static const char rcsid[] =
 #define SKY_SPAN_MAX	(1 << SKY_SPAN_SHIFT)
 
 
-void
+static void
 D_Sky_uv_To_st (int u, int v, fixed16_t *s, fixed16_t *t)
 {
 	float       wu, wv, temp;

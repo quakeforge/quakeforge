@@ -77,6 +77,7 @@ static const char rcsid[] =
 
 #include "compat.h"
 #include "context_x11.h"
+#include "d_iface.h"
 #include "dga_check.h"
 
 static Colormap x_cmap;
@@ -393,7 +394,7 @@ event_shm (XEvent * event)
 		oktodraw = true;
 }
 
-void
+static void
 VID_Center_f (void) {
 	X11_ForceViewPort ();
 }

@@ -45,13 +45,13 @@ static const char rcsid[] =
 hashtab_t *gib_regexs;
 static char errstr[1024];
 
-const char *
+static const char *
 GIB_Regex_Get_Key (void *ele, void *ptr)
 {
 	return ((gib_regex_t *) ele)->regex;
 }
 
-void
+static void
 GIB_Regex_Free (void *ele, void *ptr)
 {
 	regfree (&(((gib_regex_t *) ele)->comp));

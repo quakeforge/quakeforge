@@ -64,7 +64,7 @@ int         hullnum;
 
 
 void
-qprintf (char *fmt, ...)
+qprintf (const char *fmt, ...)
 {
 	va_list     argptr;
 
@@ -360,15 +360,6 @@ DivideWinding (winding_t *in, plane_t *split, winding_t **front,
 		Sys_Error ("ClipWinding: points exceeded estimate");
 }
 
-void
-PrintMemory (void)
-{
-	printf ("faces   : %6i (%6i)\n", c_activefaces, c_peakfaces);
-	printf ("surfaces: %6i (%6i)\n", c_activesurfaces, c_peaksurfaces);
-	printf ("windings: %6i (%6i)\n", c_activewindings, c_peakwindings);
-	printf ("portals : %6i (%6i)\n", c_activeportals, c_peakportals);
-}
-
 winding_t *
 NewWinding (int points)
 {
@@ -485,7 +476,7 @@ AllocBrush (void)
 	return b;
 }
 
-void
+static void
 ProcessEntity (int entnum)
 {
 	brushset_t *bs;
@@ -582,7 +573,7 @@ ProcessEntity (int entnum)
 	}
 }
 
-void
+static void
 UpdateEntLump (void)
 {
 	int         m, entnum;
@@ -613,7 +604,7 @@ UpdateEntLump (void)
 
 	Write the clipping hull out to a text file so the parent process can get it
 */
-void
+static void
 WriteClipHull (void)
 {
 	FILE        *f;
@@ -654,7 +645,7 @@ WriteClipHull (void)
 
 	Read the files written out by the child processes
 */
-void
+static void
 ReadClipHull (int hullnum)
 {
 	FILE        *f;
@@ -711,7 +702,7 @@ ReadClipHull (int hullnum)
 
 }
 
-void
+static void
 CreateSingleHull (void)
 {
 	int         entnum;
@@ -727,7 +718,7 @@ CreateSingleHull (void)
 		WriteClipHull ();
 }
 
-void
+static void
 CreateHulls (void)
 {
 	// commanded to create a single hull only
@@ -793,8 +784,8 @@ CreateHulls (void)
 
 }
 
-void
-ProcessFile ()
+static void
+ProcessFile (void)
 {
 	// create filenames
 	COM_StripExtension (options.bspfile, options.hullfile);
@@ -840,8 +831,6 @@ ProcessFile ()
 int
 main (int argc, char **argv)
 {
-	char        sourcename[1024];
-	char        destname[1024];
 	double      start, end;
 
 	// let forked processes change name for ps status
@@ -855,7 +844,7 @@ main (int argc, char **argv)
 
 	// do it!
 	start = Sys_DoubleTime ();
-	ProcessFile (sourcename, destname);
+	ProcessFile ();
 	end = Sys_DoubleTime ();
 	printf ("%5.1f seconds elapsed\n", end - start);
 

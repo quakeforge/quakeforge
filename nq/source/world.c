@@ -105,7 +105,7 @@ SV_InitHull (hull_t *hull, dclipnode_t *clipnodes, mplane_t *planes)
 	}
 }
 
-void
+static void
 SV_InitBoxHull (void)
 {
 	SV_InitHull (&box_hull, box_clipnodes, box_planes);
@@ -117,7 +117,7 @@ SV_InitBoxHull (void)
 	To keep everything totally uniform, bounding boxes are turned into small
 	BSP trees instead of being compared directly.
 */
-hull_t *
+static hull_t *
 SV_HullForBox (const vec3_t mins, const vec3_t maxs)
 {
 	box_planes[0].dist = maxs[0];
@@ -161,7 +161,6 @@ SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
 	// decide which clipping hull to use, based on the size
 	if (sv_fields.rotated_bbox != -1
 		&& SVinteger (ent, rotated_bbox)) {
-		extern clip_hull_t *pf_hull_list[];
 		int h = SVinteger (ent, rotated_bbox) - 1;
 		hull = pf_hull_list[h]->hulls[hull_index];
 	} if (SVfloat (ent, solid) == SOLID_BSP) {
@@ -197,7 +196,7 @@ SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
 areanode_t  sv_areanodes[AREA_NODES];
 int         sv_numareanodes;
 
-areanode_t *
+static areanode_t *
 SV_CreateAreaNode (int depth, const vec3_t mins, const vec3_t maxs)
 {
 	areanode_t *anode;
@@ -263,7 +262,7 @@ SV_UnlinkEdict (edict_t *ent)
 }
 
 
-void
+static void
 SV_TouchLinks (edict_t *ent, areanode_t *node)
 {
 	edict_t    *touch;
@@ -310,7 +309,7 @@ SV_TouchLinks (edict_t *ent, areanode_t *node)
 }
 
 
-void
+static void
 SV_FindTouchedLeafs (edict_t *ent, mnode_t *node)
 {
 	int			leafnum, sides;
@@ -592,7 +591,7 @@ SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
 	Handles selection or creation of a clipping hull, and offseting (and
 	eventually rotation) of the end points
 */
-trace_t
+static trace_t
 SV_ClipMoveToEntity (edict_t *touched, edict_t *mover, const vec3_t start,
 					 const vec3_t mins, const vec3_t maxs, const vec3_t end)
 {
@@ -633,7 +632,7 @@ SV_ClipMoveToEntity (edict_t *touched, edict_t *mover, const vec3_t start,
 
 	Mins and maxs enclose the entire area swept by the move
 */
-void
+static void
 SV_ClipToLinks (areanode_t *node, moveclip_t * clip)
 {
 	edict_t    *touch;
@@ -707,7 +706,7 @@ SV_ClipToLinks (areanode_t *node, moveclip_t * clip)
 		SV_ClipToLinks (node->children[1], clip);
 }
 
-void
+static void
 SV_MoveBounds (const vec3_t start, const vec3_t mins, const vec3_t maxs,
 			   const vec3_t end, vec3_t boxmins, vec3_t boxmaxs)
 {

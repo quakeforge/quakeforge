@@ -159,7 +159,7 @@ SCR_CenterPrint (const char *str)
 	}
 }
 
-void
+static void
 SCR_DrawCenterString (void)
 {
 	char       *start;
@@ -242,7 +242,7 @@ CalcFov (float fov_x, float width, float height)
 
 	Keybinding command
 */
-void
+static void
 SCR_SizeUp_f (void)
 {
 	if (scr_viewsize->int_val < 120) {
@@ -256,7 +256,7 @@ SCR_SizeUp_f (void)
 
 	Keybinding command
 */
-void
+static void
 SCR_SizeDown_f (void)
 {
 	Cvar_SetValue (scr_viewsize, scr_viewsize->int_val - 10);
@@ -295,6 +295,7 @@ SCR_DrawTurtle (void)
 	Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
 }
 
+extern int    fps_count;	//FIXME
 
 void
 SCR_DrawFPS (void)
@@ -304,8 +305,6 @@ SCR_DrawFPS (void)
 	static double lastframetime;
 	int           i, x, y;
 	static int    lastfps;
-
-	extern int    fps_count;	//FIXME
 
 	if (!show_fps->int_val)
 		return;
@@ -343,7 +342,7 @@ void
 SCR_DrawTime (void)
 {
 	char        st[80];
-	char       *timefmt = NULL;
+	const char *timefmt = NULL;
 	int         x, y;
 	struct tm  *local = NULL;
 	time_t      utc = 0;
@@ -462,7 +461,7 @@ MipColor (int r, int g, int b)
 
 // in draw.c
 
-void
+static void
 SCR_DrawCharToSnap (int num, byte * dest, int width)
 {
 	byte       *source;
@@ -502,38 +501,6 @@ SCR_DrawStringToSnap (const char *s, tex_t *tex, int x, int y)
 		dest += 8;
 	}
 }
-
-char       *scr_notifystring;
-
-void
-SCR_DrawNotifyString (void)
-{
-	char       *start;
-	int         l, x, y;
-
-	start = scr_notifystring;
-
-	y = vid.height * 0.35;
-
-	do {
-		// scan the width of the line
-		for (l = 0; l < 40; l++)
-			if (start[l] == '\n' || !start[l])
-				break;
-		x = (vid.width - l * 8) / 2;
-		Draw_nString (x, y, start, l);
-
-		y += 8;
-
-		while (*start && *start != '\n')
-			start++;
-
-		if (!*start)
-			break;
-		start++;						// skip the \n
-	} while (1);
-}
-
 
 void
 SCR_Init (void)

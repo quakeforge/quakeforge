@@ -161,8 +161,8 @@ ED_FindFunction (progs_t * pr, const char *name)
 int
 PR_ResolveGlobals (progs_t *pr)
 {
-	char *sym;
-	ddef_t *def;
+	const char *sym;
+	ddef_t     *def;
 
 	if (!(def = PR_FindGlobal (pr, sym = "time")))
 		goto error;

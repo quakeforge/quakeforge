@@ -103,7 +103,7 @@ PR_Debug_Init_Cvars (void)
 							   "to look (within gamedir) for source files");
 }
 
-file_t *
+static file_t *
 PR_Load_Source_File (progs_t *pr, const char *fname)
 {
 	char		*path, *l;

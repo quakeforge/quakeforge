@@ -21,6 +21,8 @@
 
 #include <math.h>
 
+#include "ops.h"
+
 double
 OP_Not (double op1, double op2)
 {

@@ -192,6 +192,7 @@ dlight_t *R_AllocDlight (int key);
 void R_DecayLights (double frametime);
 void R_ClearDlights (void);
 
+int R_InitGraphTextures (int base);
 void R_LineGraph (int x, int y, int *h_vals, int count);
 struct progs_s;
 void R_Progs_Init (struct progs_s *pr);

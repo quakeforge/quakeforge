@@ -52,8 +52,8 @@ qboolean    joy_found = false;
 qboolean    joy_active = false;
 
 typedef struct {
-	char       *name;
-	char       *string;
+	const char *name;
+	const char *string;
 } ocvar_t;
 
 ocvar_t joy_axes_cvar_init[JOY_MAX_AXES] = {

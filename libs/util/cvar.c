@@ -58,7 +58,7 @@ static const char rcsid[] =
 
 cvar_t          *developer;
 cvar_t			*cvar_vars;
-char			*cvar_null_string = "";
+const char      *cvar_null_string = "";
 cvar_alias_t	*calias_vars;
 hashtab_t		*cvar_hash;
 hashtab_t		*calias_hash;
@@ -339,7 +339,7 @@ Cvar_WriteVariables (QFile *f)
 			Qprintf (f, "%s \"%s\"\n", var->name, var->string);
 }
 
-void
+static void
 Cvar_Set_f (void)
 {
 	cvar_t     *var;
@@ -370,7 +370,7 @@ Cvar_Set_f (void)
 	}
 }
 
-void
+static void
 Cvar_Setrom_f (void)
 {
 	cvar_t     *var;
@@ -402,7 +402,7 @@ Cvar_Setrom_f (void)
 	}
 }
 
-void
+static void
 Cvar_Toggle_f (void)
 {
 	cvar_t     *var;
@@ -423,7 +423,7 @@ Cvar_Toggle_f (void)
 	Cvar_Set (var, var->int_val ? "0" : "1");
 }
 
-void
+static void
 Cvar_CvarList_f (void)
 {
 	cvar_t     *var;

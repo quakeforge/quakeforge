@@ -34,7 +34,7 @@ static const char rcsid[] =
 #include <string.h>
 #include <stdio.h>
 
-#include "compat.h"
+#include "qstring.h"
 
 #ifdef IRIX
 #define _vsnprintf vsnprintf

@@ -44,11 +44,12 @@ static const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/gib_buffer.h"
 #include "QF/gib_parse.h"
+#include "QF/gib_process.h"
 #include "QF/gib_vars.h"
 
 #include "exp.h"
 
-int
+static int
 GIB_Process_Index (dstring_t *index, unsigned int pos, int *i1, int *i2)
 {
 	int i, v1, v2;
@@ -77,7 +78,7 @@ GIB_Process_Index (dstring_t *index, unsigned int pos, int *i1, int *i2)
 	return 0;
 }
 
-unsigned int
+static unsigned int
 GIB_Process_Variable (struct dstring_s *dstr, unsigned int pos, qboolean tolerant)
 {
 	cvar_t *cvar;
@@ -119,7 +120,7 @@ GIB_Process_Math (struct dstring_s *token)
 	return 0;
 }
 
-int
+static int
 GIB_Process_Embedded (struct dstring_s *token)
 {
 	cbuf_t *sub;
@@ -264,7 +265,7 @@ ERROR:
 	return c ? -1 : 0;
 }
 
-void
+static void
 GIB_Process_Escapes (dstring_t *token)
 {
 	int i;

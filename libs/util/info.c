@@ -226,7 +226,7 @@ Info_ParseString (const char *s, int maxsize)
 			if (*end)
 				*end++ = 0;
 		} else {
-			value = end = "";
+			value = end = (char *)"";
 		}
 		Info_SetValueForStarKey (info, key, value, 0);
 		key = end;

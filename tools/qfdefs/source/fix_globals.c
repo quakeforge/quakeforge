@@ -40,7 +40,7 @@ static const char rcsid[] =
 #include "def.h"
 
 
-void
+static void
 update_offsets (dprograms_t *pr, int mark, int count)
 {
 	if (pr->ofs_statements > mark)

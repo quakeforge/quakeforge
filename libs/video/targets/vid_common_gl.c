@@ -51,8 +51,10 @@ static const char rcsid[] =
 #include "QF/GL/defines.h"
 #include "QF/GL/extensions.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_vid.h"
 
 #include "compat.h"
+#include "d_iface.h"
 #include "sbar.h"
 
 #define WARP_WIDTH              320
@@ -103,7 +105,7 @@ gl_screenshot_byte_swap_f (cvar_t *var)
 	qfglPixelStorei (GL_PACK_SWAP_BYTES, var->int_val ? GL_TRUE : GL_FALSE);
 }
 
-void
+static void
 GL_Common_Init_Cvars (void)
 {
 	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,	"Use 8-bit "
@@ -127,7 +129,7 @@ GL_Common_Init_Cvars (void)
 
 	Check for ARB multitexture support
 */
-void
+static void
 CheckMultiTextureExtensions (void)
 {
 	Con_Printf ("Checking for multitexture: ");
@@ -159,7 +161,7 @@ CheckMultiTextureExtensions (void)
 	}
 }
 
-void
+static void
 CheckVertexArraySize (void)
 {
 	qfglGetIntegerv (GL_MAX_ELEMENTS_VERTICES, &vaelements);
@@ -310,7 +312,7 @@ VID_Is8bit (void)
 	return is8bit;
 }
 
-void
+static void
 Tdfx_Init8bitPalette (void)
 {
 	// Check for 8bit Extensions and initialize them.
@@ -359,7 +361,7 @@ Tdfx_Init8bitPalette (void)
   the GL_EXT_shared_texture_palette spec might be a very good idea in
   general.
 */
-void
+static void
 Shared_Init8bitPalette (void)
 {
 	int 		i;

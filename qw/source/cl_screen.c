@@ -55,7 +55,7 @@ static const char rcsid[] =
 #include "r_cvar.h"
 #include "sbar.h"
 
-void
+static void
 SCR_DrawNet (void)
 {
 	if (cls.netchan.outgoing_sequence - cls.netchan.incoming_acknowledged <
@@ -67,7 +67,7 @@ SCR_DrawNet (void)
 	Draw_Pic (scr_vrect.x + 64, scr_vrect.y, scr_net);
 }
 
-void
+static void
 CL_NetStats (void)
 {
 	int		x, y;

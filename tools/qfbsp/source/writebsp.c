@@ -79,7 +79,7 @@ FindFinalPlane (dplane_t *p)
 
 int         planemapping[MAX_MAP_PLANES];
 
-void
+static void
 WriteNodePlanes_r (node_t *node)
 {
 	dplane_t    dplane;
@@ -113,7 +113,7 @@ WriteNodePlanes (node_t *nodes)
 	WriteNodePlanes_r (nodes);
 }
 
-int
+static int
 WriteClipNodes_r (node_t *node)
 {
 	dclipnode_t cn;
@@ -149,7 +149,7 @@ WriteClipNodes (node_t *nodes)
 	WriteClipNodes_r (nodes);
 }
 
-void
+static void
 WriteLeaf (node_t *node)
 {
 	dleaf_t     leaf_p;
@@ -182,7 +182,7 @@ WriteLeaf (node_t *node)
 	BSP_AddLeaf (bsp, &leaf_p);
 }
 
-void
+static void
 WriteDrawNodes_r (node_t *node)
 {
 	static dnode_t dummy;
@@ -296,7 +296,7 @@ typedef struct wadlist_s {
 QFile      *texfile;
 wadlist_t  *wadlist;
 
-void
+static void
 CleanupName (char *in, char *out)
 {
 	int         i;
@@ -312,7 +312,7 @@ CleanupName (char *in, char *out)
 		out[i] = 0;
 }
 
-int
+static int
 TEX_InitFromWad (char *path)
 {
 	int         i;
@@ -348,7 +348,7 @@ TEX_InitFromWad (char *path)
 	return 0;
 }
 
-int
+static int
 LoadLump (char *name, dstring_t *dest)
 {
 	char        cname[16];
@@ -374,7 +374,7 @@ LoadLump (char *name, dstring_t *dest)
 	return 0;
 }
 
-void
+static void
 AddAnimatingTextures (void)
 {
 	int         base, i, j, k;
@@ -409,7 +409,7 @@ AddAnimatingTextures (void)
 	printf ("added %i texture frames\n", nummiptex - base);
 }
 
-void
+static void
 WriteMiptex (void)
 {
 	dstring_t  *data;
@@ -419,9 +419,9 @@ WriteMiptex (void)
 	dmiptexlump_t *l;
 	int         i, len, res = -1;
 
-	wad_list = ValueForKey (&entities[0], "_wad");
+	(const char *)wad_list = ValueForKey (&entities[0], "_wad");
 	if (!wad_list || !wad_list[0]) {
-		wad_list = ValueForKey (&entities[0], "wad");
+		(const char *)wad_list = ValueForKey (&entities[0], "wad");
 		if (!wad_list || !wad_list[0]) {
 			printf ("WARNING: no wadfile specified\n");
 			bsp->texdatasize = 0;

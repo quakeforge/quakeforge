@@ -37,9 +37,7 @@ extern qboolean noclip_anglehack;
 typedef struct
 {
 	int		argc;
-	char	**argv;
-	void	*membase;
-	int		memsize;
+	const char	**argv;
 } quakeparms_t;
 
 extern	quakeparms_t host_parms;
@@ -63,7 +61,7 @@ extern struct cbuf_s *host_cbuf;
 void Host_ClearMemory (void);
 void Host_ServerFrame (void);
 void Host_InitCommands (void);
-void Host_Init ();
+void Host_Init (void);
 void Host_Skin_Init (void);
 void Host_Skin_Init_Cvars (void);
 void Host_Shutdown(void);

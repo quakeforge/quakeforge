@@ -43,7 +43,7 @@ qboolean    usemidsplit;
 
 	For BSP hueristic
 */
-int
+static int
 FaceSide (face_t *in, plane_t *split)
 {
 	int         frontcount, backcount, i;
@@ -94,7 +94,7 @@ FaceSide (face_t *in, plane_t *split)
 
 	The clipping hull BSP doesn't worry about avoiding splits
 */
-surface_t  *
+static surface_t  *
 ChooseMidPlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs)
 {
 	int         j, l;
@@ -152,7 +152,7 @@ ChooseMidPlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs)
 
 	The real BSP hueristic
 */
-surface_t  *
+static surface_t  *
 ChoosePlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs,
 					 qboolean usefloors)
 {
@@ -237,7 +237,7 @@ ChoosePlaneFromList (surface_t *surfaces, vec3_t mins, vec3_t maxs,
 	Selects a surface from a linked list of surfaces to split the group on
 	returns NULL if the surface list can not be divided any more (a leaf)
 */
-surface_t  *
+static surface_t  *
 SelectPartition (surface_t *surfaces)
 {
 	int         i, j;
@@ -320,7 +320,7 @@ CalcSurfaceInfo (surface_t * surf)
 	}
 }
 
-void
+static void
 DividePlane (surface_t *in, plane_t *split, surface_t **front,
 			 surface_t **back)
 {
@@ -422,7 +422,7 @@ DividePlane (surface_t *in, plane_t *split, surface_t **front,
 	CalcSurfaceInfo (in);
 }
 
-void
+static void
 DivideNodeBounds (node_t *node, plane_t *split)
 {
 	VectorCopy (node->mins, node->children[0]->mins);
@@ -444,7 +444,7 @@ DivideNodeBounds (node_t *node, plane_t *split)
 	Determines the contents of the leaf and creates the final list of
 	original faces that have some fragment inside this leaf
 */
-void
+static void
 LinkConvexFaces (surface_t *planelist, node_t *leafnode)
 {
 	face_t     *f, *next;
@@ -508,7 +508,7 @@ LinkConvexFaces (surface_t *planelist, node_t *leafnode)
 
 	Returns a duplicated list of all faces on surface
 */
-face_t     *
+static face_t     *
 LinkNodeFaces (surface_t *surface)
 {
 	face_t     *list, *new, **prevptr, *f;
@@ -539,7 +539,7 @@ LinkNodeFaces (surface_t *surface)
 	return list;
 }
 
-void
+static void
 PartitionSurfaces (surface_t *surfaces, node_t *node)
 {
 	surface_t  *split, *p, *next;
@@ -595,25 +595,6 @@ PartitionSurfaces (surface_t *surfaces, node_t *node)
 
 	PartitionSurfaces (frontlist, node->children[0]);
 	PartitionSurfaces (backlist, node->children[1]);
-}
-
-void
-DrawSurface (surface_t *surf)
-{
-	face_t     *f;
-
-	for (f = surf->faces; f; f = f->next)
-		Draw_DrawFace (f);
-}
-
-void
-DrawSurfaceList (surface_t *surf)
-{
-	Draw_ClearWindow ();
-	while (surf) {
-		DrawSurface (surf);
-		surf = surf->next;
-	}
 }
 
 node_t     *

@@ -168,7 +168,7 @@ filelist_print (struct filelist *filelist)
 
 	Fills a list with files of a specific extension.
 */
-void
+static void
 filelist_fill (struct filelist *filelist, const char *path, const char *ext)
 {
 	searchpath_t *search;
@@ -224,7 +224,7 @@ Con_Skinlist_f (void)
 	filelist_free (skinlist);
 }
 
-char *sb_endings[] = {
+const char *sb_endings[] = {
 "bk",
 "dn",
 "ft",

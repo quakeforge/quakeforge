@@ -74,7 +74,7 @@ int         stripcount;
 int         strip_size;
 
 
-void
+static void
 alloc_used (int size)
 {
 	if (size <= used_size)
@@ -86,7 +86,7 @@ alloc_used (int size)
 	used_size = size;
 }
 
-void
+static void
 add_command (int cmd)
 {
 	if (numcommands + 1 > commands_size) {
@@ -98,7 +98,7 @@ add_command (int cmd)
 	commands[numcommands++] = cmd;
 }
 
-void
+static void
 add_vertex (int vert)
 {
 	if (numorder + 1 > vertexorder_size) {
@@ -110,7 +110,7 @@ add_vertex (int vert)
 	vertexorder[numorder++] = vert;
 }
 
-void
+static void
 add_strip (int vert, int tri)
 {
 	if (stripcount + 1 > strip_size) {
@@ -125,7 +125,7 @@ add_strip (int vert, int tri)
 	stripcount++;
 }
 
-int
+static int
 StripLength (int starttri, int startv)
 {
 	int         m1, m2, j, k;
@@ -183,7 +183,7 @@ done:
 	return stripcount - 2;
 }
 
-int
+static int
 FanLength (int starttri, int startv)
 {
 	int         m1, m2, j, k;
@@ -245,7 +245,7 @@ FanLength (int starttri, int startv)
 	Generate a list of trifans or strips
 	for the model, which holds for all frames
 */
-void
+static void
 BuildTris (void)
 {
 	float		s, t;

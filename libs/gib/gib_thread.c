@@ -92,7 +92,7 @@ GIB_Thread_New (void)
 	return new;
 }
 
-void
+static void
 GIB_Thread_Delete (gib_thread_t *thread)
 {
 	Cbuf_DeleteStack (thread->cbuf);
@@ -117,12 +117,13 @@ GIB_Thread_Execute (void)
 	}
 }
 
-const char *
+static const char *
 GIB_Event_Get_Key (void *ele, void *ptr)
 {
 	return ((gib_event_t *)ele)->name;
 }
-void
+
+static void
 GIB_Event_Free (void *ele, void *ptr)
 {
 	gib_event_t *ev = (gib_event_t *)ele;

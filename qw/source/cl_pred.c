@@ -40,6 +40,7 @@ static const char rcsid[] =
 #include "bothdefs.h"
 #include "compat.h"
 #include "cl_ents.h"
+#include "cl_pred.h"
 #include "client.h"
 #include "pmove.h"
 

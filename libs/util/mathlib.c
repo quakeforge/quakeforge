@@ -52,7 +52,7 @@ const vec3_t vec3_origin = { 0, 0, 0 };
 #define DEG2RAD(a) (a * (M_PI / 180.0))
 
 
-void
+static void
 ProjectPointOnPlane (vec3_t dst, const vec3_t p, const vec3_t normal)
 {
 	float		inv_denom, d;
@@ -68,7 +68,7 @@ ProjectPointOnPlane (vec3_t dst, const vec3_t p, const vec3_t normal)
 }
 
 // assumes "src" is normalized
-void
+static void
 PerpendicularVector (vec3_t dst, const vec3_t src)
 {
 	int			pos, i;
@@ -181,6 +181,7 @@ anglemod (float a)
 
 	Split out like this for ASM to call.
 */
+void __attribute__ ((noreturn)) BOPS_Error (void);
 void __attribute__ ((noreturn))
 BOPS_Error (void)
 {

@@ -54,6 +54,7 @@ static const char rcsid[] =
 #include "compat.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
+#include "r_local.h"
 #include "r_shared.h"
 #include "varrays.h"
 
@@ -203,7 +204,7 @@ R_ReadPointFile_f (void)
 	Con_Printf ("%i points read\n", c);
 }
 
-void
+static void
 R_ParticleExplosion_QF (const vec3_t org)
 {
 //	R_NewExplosion (org);
@@ -214,7 +215,7 @@ R_ParticleExplosion_QF (const vec3_t org)
 						 0.5 + qfrandom (0.25), 0.0);
 }
 
-void
+static void
 R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
 {
 	unsigned int	i;
@@ -233,7 +234,7 @@ R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
 	}
 }
 
-void
+static void
 R_BlobExplosion_QF (const vec3_t org)
 {
 	unsigned int	i;
@@ -285,13 +286,13 @@ R_BloodPuff_QF (const vec3_t org, int count)
 				  r_realtime + 99.0, 70 + (rand () & 3), 0.5, 0.0);
 }
 
-void
+static void
 R_BloodPuffEffect_QF (const vec3_t org, int count)
 {
 	R_BloodPuff_QF (org, count);
 }
 
-void
+static void
 R_GunshotEffect_QF (const vec3_t org, int count)
 {
 	int scale = 16;
@@ -301,7 +302,7 @@ R_GunshotEffect_QF (const vec3_t org, int count)
 	R_RunSparkEffect_QF (org, count >> 1, scale);
 }
 
-void
+static void
 R_LightningBloodEffect_QF (const vec3_t org)
 {
 	int		count = 7;
@@ -322,7 +323,7 @@ R_LightningBloodEffect_QF (const vec3_t org)
 							 0.0);
 }
 
-void
+static void
 R_RunParticleEffect_QF (const vec3_t org, const vec3_t dir, int color,
 						int count)
 {
@@ -349,19 +350,19 @@ R_RunParticleEffect_QF (const vec3_t org, const vec3_t dir, int color,
 	}
 }
 
-void
+static void
 R_SpikeEffect_QF (const vec3_t org)
 {
 	R_RunSparkEffect_QF (org, 5, 8);
 }
 
-void
+static void
 R_SuperSpikeEffect_QF (const vec3_t org)
 {
 	R_RunSparkEffect_QF (org, 10, 8);
 }
 
-void
+static void
 R_KnightSpikeEffect_QF (const vec3_t org)
 {
 	unsigned int	count = 10;
@@ -378,7 +379,7 @@ R_KnightSpikeEffect_QF (const vec3_t org)
 							 r_realtime + 5.0, 234, 1.0, 0.0);
 }
 
-void
+static void
 R_WizSpikeEffect_QF (const vec3_t org)
 {
 	unsigned int	count = 15;
@@ -395,7 +396,7 @@ R_WizSpikeEffect_QF (const vec3_t org)
 							 r_realtime + 5.0, 63, 1.0, 0.0);
 }
 
-void
+static void
 R_LavaSplash_QF (const vec3_t org)
 {
 	float       vel;
@@ -431,7 +432,7 @@ R_LavaSplash_QF (const vec3_t org)
 	}
 }
 
-void
+static void
 R_TeleportSplash_QF (const vec3_t org)
 {
 	float       vel;
@@ -470,7 +471,7 @@ R_TeleportSplash_QF (const vec3_t org)
 	}
 }
 
-void
+static void
 R_RocketTrail_QF (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
@@ -503,7 +504,7 @@ R_RocketTrail_QF (entity_t *ent)
 	}
 }
 
-void
+static void
 R_GrenadeTrail_QF (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
@@ -536,7 +537,7 @@ R_GrenadeTrail_QF (entity_t *ent)
 	}
 }
 
-void
+static void
 R_BloodTrail_QF (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
@@ -575,7 +576,7 @@ R_BloodTrail_QF (entity_t *ent)
 	}
 }
 
-void
+static void
 R_SlightBloodTrail_QF (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
@@ -614,7 +615,7 @@ R_SlightBloodTrail_QF (entity_t *ent)
 	}
 }
 
-void
+static void
 R_WizTrail_QF (entity_t *ent)
 {
 	float		maxlen, origlen, percent;
@@ -654,7 +655,7 @@ R_WizTrail_QF (entity_t *ent)
 	}
 }
 
-void
+static void
 R_FlameTrail_QF (entity_t *ent)
 {
 	float		maxlen, origlen, percent;
@@ -694,7 +695,7 @@ R_FlameTrail_QF (entity_t *ent)
 	}
 }
 
-void
+static void
 R_VoorTrail_QF (entity_t *ent)
 {
 	float		maxlen, origlen, percent;
@@ -726,7 +727,7 @@ R_VoorTrail_QF (entity_t *ent)
 	}
 }
 
-void
+static void
 R_GlowTrail_QF (entity_t *ent, int glow_color)
 {
 	float		maxlen, origlen, percent;
@@ -759,7 +760,7 @@ R_GlowTrail_QF (entity_t *ent, int glow_color)
 	}
 }
 
-void
+static void
 R_ParticleExplosion_EE (const vec3_t org)
 {
 /*
@@ -772,7 +773,7 @@ R_ParticleExplosion_EE (const vec3_t org)
 						 0.5 + qfrandom (0.25), 0.0);
 }
 
-void
+static void
 R_TeleportSplash_EE (const vec3_t org)
 {
 	float       vel;
@@ -809,7 +810,7 @@ R_TeleportSplash_EE (const vec3_t org)
 	}
 }
 
-void
+static void
 R_RocketTrail_EE (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
@@ -843,7 +844,7 @@ R_RocketTrail_EE (entity_t *ent)
 	}
 }
 
-void
+static void
 R_GrenadeTrail_EE (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
@@ -877,7 +878,7 @@ R_GrenadeTrail_EE (entity_t *ent)
 	}
 }
 
-void
+static void
 R_ParticleExplosion_ID (const vec3_t org)
 {
 	unsigned int	i;
@@ -899,7 +900,7 @@ R_ParticleExplosion_ID (const vec3_t org)
 	}
 }
 
-void
+static void
 R_BlobExplosion_ID (const vec3_t org)
 {
 	unsigned int	i;
@@ -922,7 +923,7 @@ R_BlobExplosion_ID (const vec3_t org)
 	}
 }
 
-void
+static void
 R_RunParticleEffect_ID (const vec3_t org, const vec3_t dir, int color,
 						int count)
 {
@@ -954,49 +955,49 @@ R_RunParticleEffect_ID (const vec3_t org, const vec3_t dir, int color,
 	}
 }
 
-void
+static void
 R_BloodPuffEffect_ID (const vec3_t org, int count)
 {
 	R_RunParticleEffect_ID (org, vec3_origin, 73, count);
 }
 
-void
+static void
 R_GunshotEffect_ID (const vec3_t org, int count)
 {
 	R_RunParticleEffect_ID (org, vec3_origin, 0, count);
 }
 
-void
+static void
 R_LightningBloodEffect_ID (const vec3_t org)
 {
 	R_RunParticleEffect_ID (org, vec3_origin, 225, 50);
 }
 
-void
+static void
 R_SpikeEffect_ID (const vec3_t org)
 {
 	R_RunParticleEffect_ID (org, vec3_origin, 0, 10);
 }
 
-void
+static void
 R_SuperSpikeEffect_ID (const vec3_t org)
 {
 	R_RunParticleEffect_ID (org, vec3_origin, 0, 20);
 }
 
-void
+static void
 R_KnightSpikeEffect_ID (const vec3_t org)
 {
 	R_RunParticleEffect_ID (org, vec3_origin, 226, 20);
 }
 
-void
+static void
 R_WizSpikeEffect_ID (const vec3_t org)
 {
 	R_RunParticleEffect_ID (org, vec3_origin, 20, 30);
 }
 
-void
+static void
 R_LavaSplash_ID (const vec3_t org)
 {
 	float       vel;
@@ -1032,7 +1033,7 @@ R_LavaSplash_ID (const vec3_t org)
 	}
 }
 
-void
+static void
 R_TeleportSplash_ID (const vec3_t org)
 {
 	float       vel;
@@ -1071,7 +1072,7 @@ R_TeleportSplash_ID (const vec3_t org)
 	}
 }
 
-void
+static void
 R_RocketTrail_ID (entity_t *ent)
 {
 	float		maxlen;
@@ -1102,7 +1103,7 @@ R_RocketTrail_ID (entity_t *ent)
 	}
 }
 
-void
+static void
 R_GrenadeTrail_ID (entity_t *ent)
 {
 	float			maxlen;
@@ -1133,7 +1134,7 @@ R_GrenadeTrail_ID (entity_t *ent)
 	}
 }
 
-void
+static void
 R_BloodTrail_ID (entity_t *ent)
 {
 	float			maxlen;
@@ -1163,7 +1164,7 @@ R_BloodTrail_ID (entity_t *ent)
 	}
 }
 
-void
+static void
 R_SlightBloodTrail_ID (entity_t *ent)
 {
 	float			maxlen;
@@ -1193,7 +1194,7 @@ R_SlightBloodTrail_ID (entity_t *ent)
 	}
 }
 
-void
+static void
 R_WizTrail_ID (entity_t *ent)
 {
 	float		maxlen;
@@ -1229,7 +1230,7 @@ R_WizTrail_ID (entity_t *ent)
 	}
 }
 
-void
+static void
 R_FlameTrail_ID (entity_t *ent)
 {
 	float		maxlen;
@@ -1265,7 +1266,7 @@ R_FlameTrail_ID (entity_t *ent)
 	}
 }
 
-void
+static void
 R_VoorTrail_ID (entity_t *ent)
 {
 	float			maxlen;
@@ -1609,7 +1610,7 @@ r_particles_style_f (cvar_t *var)
 	}
 }
 
-void
+static void
 R_ParticleFunctionInit (void)
 {
 	r_particles_style_f (r_particles_style);

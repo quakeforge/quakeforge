@@ -156,9 +156,9 @@ typedef struct {
 	qboolean	notimeout;
 } server_t;
 
-int 
+static int 
 QW_AddHeartbeat (server_t **servers_p, int slen,
-				 struct sockaddr_in *addr, char *buf, qboolean notimeout)
+				 struct sockaddr_in *addr, const char *buf, qboolean notimeout)
 {
 	server_t *servers = *servers_p;
 	int freeslot = -1;
@@ -215,7 +215,7 @@ QW_AddHeartbeat (server_t **servers_p, int slen,
 	return slen;
 }
 
-void 
+static void 
 QW_TimeoutHearts (server_t *servers, int slen)
 {
 	time_t t;
@@ -235,7 +235,7 @@ QW_TimeoutHearts (server_t *servers, int slen)
 	}
 }
 
-void
+static void
 QW_HeartShutdown (struct sockaddr_in *addr, server_t *servers,
 				  int slen)
 {
@@ -254,7 +254,7 @@ QW_HeartShutdown (struct sockaddr_in *addr, server_t *servers,
 	}
 }
 
-void
+static void
 QW_SendHearts (int sock, msghdr_t *msghdr, server_t *servers, int serverlen) 
 {
 	unsigned char *out;
@@ -293,7 +293,7 @@ QW_SendHearts (int sock, msghdr_t *msghdr, server_t *servers, int serverlen)
 	free (out);
 }
 
-void
+static void
 QW_Pong (int sock, msghdr_t *msghdr)
 {
 	// connectionless packet
@@ -305,7 +305,7 @@ QW_Pong (int sock, msghdr_t *msghdr)
 int serverlen = SLIST_MULTIPLE;
 server_t *servers;
 
-void 
+static void 
 QW_Master (struct sockaddr_in *addr)
 {
 	int sock;
@@ -407,7 +407,7 @@ read_hosts (const char *fname)
 	FILE       *host_file;
 	int         host_port;
 	char        host_name[256];
-	static char *fake_heartbeat = "      ";
+	static const char *fake_heartbeat = "      ";
 	char       *buf;
 	struct sockaddr_in host_addr;
 

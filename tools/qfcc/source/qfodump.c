@@ -47,9 +47,11 @@ static const char rcsid[] =
 #include "QF/quakeio.h"
 
 #include "class.h"
+#include "debug.h"
 #include "def.h"
 #include "emit.h"
 #include "function.h"
+#include "immediate.h"
 #include "obj_file.h"
 #include "options.h"
 #include "qfcc.h"
@@ -74,7 +76,7 @@ static const struct option long_options[] = {
 	{NULL, 0, NULL, 0},
 };
 
-void
+static void
 dump_defs (qfo_t *qfo)
 {
 	qfo_def_t  *def;
@@ -113,7 +115,7 @@ dump_defs (qfo_t *qfo)
 	}
 }
 
-void
+static void
 dump_funcs (qfo_t *qfo)
 {
 	qfo_func_t *func;
@@ -144,7 +146,7 @@ const char *reloc_names[] = {
 	"def_field",
 };
 
-void
+static void
 dump_relocs (qfo_t *qfo)
 {
 	qfo_reloc_t *reloc;
@@ -157,7 +159,7 @@ dump_relocs (qfo_t *qfo)
 	}
 }
 
-void
+static void
 dump_lines (qfo_t *qfo)
 {
 	pr_lineno_t *line;

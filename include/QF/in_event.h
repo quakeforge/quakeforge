@@ -90,9 +90,9 @@ void IE_Multiplier_Event (ie_event_t *event, float value);
 
 void IE_CallHandler (ie_handler handler, ie_event_t *event, float value);
 
-ie_translation_table_t *IE_Translation_Table_Create ();
+ie_translation_table_t *IE_Translation_Table_Create (void);
 void IE_Translation_Table_Modify (ie_translation_table_t *table, int offset, ie_event_t *event);
-ie_translation_index_t *IE_Translation_Index_Create ();
+ie_translation_index_t *IE_Translation_Index_Create (void);
 
 /*
 typedef struct {

@@ -47,8 +47,10 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/vid.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_vid.h"
 
 #include "compat.h"
+#include "context_sdl.h"
 #include "r_cvar.h"
 #include "sbar.h"
 
@@ -64,8 +66,6 @@ HWND 		mainwindow;
 int			VID_options_items = 1;
 
 SDL_Surface *screen = NULL;
-
-extern void VID_SDL_GammaCheck (void);
 
 
 void *
@@ -83,7 +83,7 @@ QFGL_LoadLibrary (void)
 	return NULL;
 }
 
-void
+static void
 GL_Init (void)
 {
 	GL_Init_Common ();
@@ -143,9 +143,9 @@ VID_Init (unsigned char *palette)
 		// FIXME: Maybe this could be put in a different spot, but I don't
 		// know where. Anyway, it's to work around a 3Dfx Glide bug.
 		SDL_WM_GrabInput (SDL_GRAB_ON);
-		putenv ("MESA_GLX_FX=fullscreen");
+		putenv ((char *)"MESA_GLX_FX=fullscreen");
 	} else {
-		putenv ("MESA_GLX_FX=window");
+		putenv ((char *)"MESA_GLX_FX=window");
 #endif
 	}
 

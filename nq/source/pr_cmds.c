@@ -138,7 +138,7 @@ PF_setorigin (progs_t *pr)
 	SV_LinkEdict (e, false);
 }
 
-void
+static void
 SetMinMaxSize (progs_t *pr, edict_t *e, const vec3_t min, const vec3_t max,
 			   qboolean rotate)
 {
@@ -680,7 +680,7 @@ PF_Remove (progs_t *pr)
 	ED_Free (pr, ed);
 }
 
-void
+static void
 PR_CheckEmptyString (progs_t *pr, const char *s)
 {
 	if (s[0] <= ' ')
@@ -989,7 +989,7 @@ PF_changeyaw (progs_t *pr)
 #define	MSG_ALL			2				// reliable to all
 #define	MSG_INIT		3				// write to the init string
 
-sizebuf_t  *
+static sizebuf_t  *
 WriteDest (progs_t *pr)
 {
 	int         entnum;
@@ -1307,7 +1307,7 @@ PF_Fixme (progs_t *pr)
 }
 
 
-void
+static void
 PF_checkextension (progs_t *pr)
 {
 	G_FLOAT(pr, OFS_RETURN) = 0; //FIXME make this function actually useful :P

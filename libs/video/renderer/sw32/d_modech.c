@@ -43,7 +43,7 @@ int         d_scantable[MAXHEIGHT];
 short      *zspantable[MAXHEIGHT];
 
 
-void
+static void
 D_Patch (void)
 {
 }

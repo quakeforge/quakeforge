@@ -219,7 +219,7 @@ PL_ParseQuotedString (pldata_t *pl)
 	}
 
 	if (pl->pos - start - shrink == 0) {
-		str = "";
+		str = strdup ("");
 	} else {
 		char			chars[pl->pos - start - shrink];
 		unsigned int	j;

@@ -119,7 +119,7 @@ GLF_Init (void)
   It takes a bit of care to be fool-proof about parsing an OpenGL extensions
   string. Don't be fooled by sub-strings, etc.
 */
-qboolean
+static qboolean
 QFGL_ParseExtensionList (const GLubyte * list, const char *name)
 {
 	const char *start;

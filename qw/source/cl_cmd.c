@@ -91,7 +91,7 @@ CL_Cmd_ForwardToServer (void)
 }
 
 // don't forward the first argument
-void
+static void
 CL_Cmd_ForwardToServer_f (void)
 {
 	if (cls.state == ca_disconnected) {

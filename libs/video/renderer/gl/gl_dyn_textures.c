@@ -43,6 +43,7 @@ static const char rcsid[] =
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_noisetextures.h"
+#include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
 
 /*

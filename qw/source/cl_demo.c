@@ -52,6 +52,7 @@ static const char rcsid[] =
 #include "QF/va.h"
 
 #include "cl_cam.h"
+#include "cl_demo.h"
 #include "cl_ents.h"
 #include "cl_main.h"
 #include "client.h"
@@ -79,7 +80,6 @@ td_stats_t *timedemo_data;
 
 
 static void CL_FinishTimeDemo (void);
-static void CL_TimeFrames_Reset (void);
 static void CL_TimeFrames_DumpLog (void);
 
 cvar_t     *demo_speed;
@@ -161,7 +161,7 @@ CL_WriteDemoCmd (usercmd_t *pcmd)
 
 	Dumps the current net message, prefixed by the length and view angles
 */
-void
+static void
 CL_WriteDemoMessage (sizebuf_t *msg)
 {
 	byte		c;
@@ -197,7 +197,7 @@ static const char *dem_names[] = {
 };
 #endif
 
-qboolean
+static qboolean
 CL_GetDemoMessage (void)
 {
 	byte		c, newtime;
@@ -440,7 +440,7 @@ CL_Stop_f (void)
 
 	Dumps the current net message, prefixed by the length and view angles
 */
-void
+static void
 CL_WriteRecordDemoMessage (sizebuf_t *msg, int seq)
 {
 	byte		c;
@@ -468,7 +468,7 @@ CL_WriteRecordDemoMessage (sizebuf_t *msg, int seq)
 	Qflush (cls.demofile);
 }
 
-void
+static void
 CL_WriteSetDemoMessage (void)
 {
 	byte		c;
@@ -861,7 +861,7 @@ CL_ReRecord_f (void)
 	CL_BeginServerConnect ();
 }
 
-void
+static void
 CL_StartDemo (void)
 {
 	char		name[MAX_OSPATH];
@@ -918,7 +918,7 @@ CL_PlayDemo_f (void)
 	CL_StartDemo ();
 }
 
-void
+static void
 CL_StartTimeDemo (void)
 {
 	CL_StartDemo ();
@@ -1042,7 +1042,7 @@ CL_Demo_Init (void)
 						   "< 1 slow-mo, > 1 timelapse");
 }
 
-static void
+void
 CL_TimeFrames_Reset (void)
 {
 	cl_timeframes_index = 0;
@@ -1071,7 +1071,7 @@ static void
 CL_TimeFrames_DumpLog (void)
 {
 	char		e_path[MAX_OSPATH];
-	char	   *filename = "timeframes.txt";
+	const char *filename = "timeframes.txt";
 	int			i;
 	long		frame;
 	QFile	   *outputfile;

@@ -284,7 +284,7 @@ print_type (type_t *type)
 	}
 }
 
-void
+static void
 _encode_type (dstring_t *encoding, type_t *type, int level)
 {
 	struct_field_t *field;

@@ -91,7 +91,7 @@ GIB_Escaped (const char *str, int i)
 	0 on success, or the character it could not
 	match otherwise
 */
-char
+static char
 GIB_Parse_Match_Dquote (const char *str, unsigned int *i)
 {
 	unsigned int n = *i;
@@ -494,7 +494,7 @@ FILTER_ERROR:
 	return;
 }
 
-inline qboolean
+static inline qboolean
 GIB_Parse_Execute_Varexp (cbuf_t *cbuf)
 {
 	char *s;

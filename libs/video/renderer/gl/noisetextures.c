@@ -45,6 +45,7 @@ static const char rcsid[] =
 
 #include "QF/mathlib.h"
 #include "QF/sys.h"
+#include "QF/GL/qf_noisetextures.h"
 
 #include "compat.h"
 

@@ -117,7 +117,7 @@ R_ReadPointFile_f (void)
 	Con_Printf ("%i points read\n", c);
 }
 
-void
+static void
 R_ParticleExplosion_QF (const vec3_t org)
 {
 	int         i, j;
@@ -153,7 +153,7 @@ R_ParticleExplosion_QF (const vec3_t org)
 	}
 }
 
-void
+static void
 R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
 {
 	int              i, j;
@@ -182,7 +182,7 @@ R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
 	}
 }
 
-void
+static void
 R_BlobExplosion_QF (const vec3_t org)
 {
 	int         i, j;
@@ -219,7 +219,7 @@ R_BlobExplosion_QF (const vec3_t org)
 	}
 }
 
-void
+static void
 R_RunParticleEffect_QF (const vec3_t org, const vec3_t dir, int color,
 						int count)
 {
@@ -247,49 +247,49 @@ R_RunParticleEffect_QF (const vec3_t org, const vec3_t dir, int color,
 	}
 }
 
-void
+static void
 R_SpikeEffect_QF (const vec3_t org)
 {
 	R_RunParticleEffect_QF (org, vec3_origin, 0, 10);
 }
 
-void
+static void
 R_SuperSpikeEffect_QF (const vec3_t org)
 {
 	R_RunParticleEffect (org, vec3_origin, 0, 20);
 }
 
-void
+static void
 R_KnightSpikeEffect_QF (const vec3_t org)
 {
 	R_RunParticleEffect_QF (org, vec3_origin, 226, 20);
 }
 
-void
+static void
 R_WizSpikeEffect_QF (const vec3_t org)
 {
 	R_RunParticleEffect_QF (org, vec3_origin, 20, 30);
 }
 
-void
+static void
 R_BloodPuffEffect_QF (const vec3_t org, int count)
 {
 	R_RunParticleEffect_QF (org, vec3_origin, 73, count);
 }
 
-void
+static void
 R_GunshotEffect_QF (const vec3_t org, int count)
 {
 	R_RunParticleEffect_QF (org, vec3_origin, 0, count);
 }
 
-void
+static void
 R_LightningBloodEffect_QF (const vec3_t org)
 {
 	R_RunParticleEffect_QF (org, vec3_origin, 225, 50);
 }
 
-void
+static void
 R_LavaSplash_QF (const vec3_t org)
 {
 	int         i, j, k;
@@ -328,7 +328,7 @@ R_LavaSplash_QF (const vec3_t org)
 			}
 }
 
-void
+static void
 R_TeleportSplash_QF (const vec3_t org)
 {
 	int         i, j, k;
@@ -367,7 +367,7 @@ R_TeleportSplash_QF (const vec3_t org)
 			}
 }
 
-void
+static void
 R_RocketTrail_QF (entity_t *ent)
 {
 	float		len;
@@ -404,7 +404,7 @@ R_RocketTrail_QF (entity_t *ent)
 	}
 }
 
-void
+static void
 R_GrenadeTrail_QF (entity_t *ent)
 {
 	float		len;
@@ -441,7 +441,7 @@ R_GrenadeTrail_QF (entity_t *ent)
 	}
 }
 
-void
+static void
 R_BloodTrail_QF (entity_t *ent)
 {
 	float		len;
@@ -478,7 +478,7 @@ R_BloodTrail_QF (entity_t *ent)
 	}
 }
 
-void
+static void
 R_SlightBloodTrail_QF (entity_t *ent)
 {
 	float		len;
@@ -514,7 +514,7 @@ R_SlightBloodTrail_QF (entity_t *ent)
 	}
 }
 
-void
+static void
 R_WizTrail_QF (entity_t *ent)
 {
 	float		len;
@@ -559,7 +559,7 @@ R_WizTrail_QF (entity_t *ent)
 	}
 }
 
-void
+static void
 R_FlameTrail_QF (entity_t *ent)
 {
 	float		len;
@@ -604,7 +604,7 @@ R_FlameTrail_QF (entity_t *ent)
 	}
 }
 
-void
+static void
 R_VoorTrail_QF (entity_t *ent)
 {
 	float		len;
@@ -744,7 +744,7 @@ r_particles_style_f (cvar_t *var)
 {
 }
 
-void
+static void
 R_ParticleFunctionInit (void)
 {
 	R_BlobExplosion = R_BlobExplosion_QF;

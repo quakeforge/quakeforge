@@ -55,11 +55,6 @@ entity_t   *r_visedicts[MAX_VISEDICTS];
 
 
 void
-R_Ents_Init (void)
-{
-}
-
-void
 R_ClearEnts (void)
 {
 	r_numvisedicts = 0;

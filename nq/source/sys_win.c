@@ -75,7 +75,7 @@ static HANDLE heventChild;
 #define	MAX_HANDLES		10
 QFile      *sys_handles[MAX_HANDLES];
 
-int
+static int
 findhandle (void)
 {
 	int         i;
@@ -89,7 +89,7 @@ findhandle (void)
 
 // SYSTEM IO ==================================================================
 
-void
+static void
 startup (void)
 {
 	LARGE_INTEGER PerformanceFreq;
@@ -147,7 +147,7 @@ shutdown (void)
 
 // WINDOWS CRAP ===============================================================
 
-void
+static void
 SleepUntilInput (int time)
 {
 	MsgWaitForMultipleObjects (1, &tevent, FALSE, time, QS_ALLINPUT);
@@ -155,8 +155,8 @@ SleepUntilInput (int time)
 
 HINSTANCE   global_hInstance;
 int         global_nCmdShow;
-char       *argv[MAX_NUM_ARGVS];
-static char *empty_string = "";
+const char *argv[MAX_NUM_ARGVS];
+static const char *empty_string = "";
 HWND        hwnd_dialog;
 
 int         WINAPI
@@ -208,7 +208,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		}
 	}
 
-	COM_InitArgv (host_parms.argc, (const char**)argv);
+	COM_InitArgv (host_parms.argc, argv);
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 

@@ -146,7 +146,7 @@ SCR_CalcRefdef (void)
 }
 
 
-void
+static void
 SCR_ApplyBlend (void)		// Used to be V_UpdatePalette
 {
 	int         r, g, b, i;

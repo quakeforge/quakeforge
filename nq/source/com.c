@@ -53,7 +53,7 @@ int         static_registered = 1;
 	Immediately exits out if an alternate game was attempted to be started
 	without being registered.
 */
-void
+static void
 COM_CheckRegistered (void)
 {
 	unsigned short check[128];

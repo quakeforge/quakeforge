@@ -164,7 +164,7 @@ D_PolysetSetEdgeTable (void)
 	pedgetable = &edgetables[edgetableindex];
 }
 
-void
+static void
 D_DrawNonSubdiv (void)
 {
 	mtriangle_t *ptri;
@@ -293,7 +293,7 @@ D_PolysetScanLeftEdge (int height)
 	} while (--height);
 }
 
-void
+static void
 D_PolysetSetUpForLineScan (fixed8_t startvertu, fixed8_t startvertv,
 						   fixed8_t endvertu, fixed8_t endvertv)
 {
@@ -376,7 +376,7 @@ D_PolysetCalcGradients (int skinwidth)
 }
 
 
-void
+static void
 D_PolysetDrawSpans (spanpackage_t * pspanpackage)
 {
 	int i, j, texscantable[1024], *texscan;

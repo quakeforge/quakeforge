@@ -79,7 +79,7 @@ SND_WriteLinearBlastStereo16 (void)
 }
 #endif
 
-void
+static void
 SND_TransferStereo16 (int endtime)
 {
 	int			lpaintedtime, lpos;
@@ -133,7 +133,7 @@ SND_TransferStereo16 (int endtime)
 #endif
 }
 
-void
+static void
 SND_TransferPaintBuffer (int endtime)
 {
 	int			count, out_idx, out_mask, snd_vol, step, val;

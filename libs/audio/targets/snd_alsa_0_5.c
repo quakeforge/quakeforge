@@ -403,8 +403,10 @@ SNDDMA_UnblockSound (void)
 		snd_pcm_playback_pause (pcm_handle, 0);
 }
 
-plugin_t *
-PLUGIN_INFO(snd_output, alsa0_5) (void) {
+QFPLUGIN plugin_t *PLUGIN_INFO(snd_output, alsa0_5) (void);
+QFPLUGIN plugin_t *
+PLUGIN_INFO(snd_output, alsa0_5) (void)
+{
 	plugin_info.type = qfp_snd_output;
 	plugin_info.api_version = QFPLUGIN_VERSION;
 	plugin_info.plugin_version = "0.1";

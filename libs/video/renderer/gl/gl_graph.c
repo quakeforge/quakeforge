@@ -42,6 +42,7 @@ static const char rcsid[] =
 
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/render.h"
 #include "QF/sys.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"

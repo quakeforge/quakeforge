@@ -32,7 +32,7 @@
 #ifndef __QF_csqc_h
 #define __QF_csqc_h
 
-void BI_Init ();
+void BI_Init (void);
 
 struct progs_s;
 struct cbuf_s;

@@ -253,8 +253,8 @@ Z_Realloc (memzone_t *zone, void *ptr, int size)
 
 	return ptr;
 }
-
-void
+/*
+static void
 Z_Print (memzone_t *zone)
 {
 	memblock_t	*block;
@@ -276,7 +276,7 @@ Z_Print (memzone_t *zone)
 			Sys_Printf ("ERROR: two consecutive free blocks\n");
 	}
 }
-
+*/
 void
 Z_CheckHeap (memzone_t *zone)
 {
@@ -339,7 +339,8 @@ Hunk_Check (void)
 	Otherwise, allocations with the same name will be totaled up before
 	printing.
 */
-void
+/*
+static void
 Hunk_Print (qboolean all)
 {
 	char        name[9];
@@ -403,7 +404,7 @@ Hunk_Print (qboolean all)
 	Sys_Printf ("-------------------------\n");
 	Sys_Printf ("%8i total blocks\n", totalblocks);
 }
-
+*/
 void       *
 Hunk_AllocName (int size, const char *name)
 {
@@ -577,7 +578,7 @@ static void *Cache_RealAlloc (cache_user_t *c, int size, const char *name);
 								cache_writelock--; }
 
 #ifndef MMAPPED_CACHE
-void
+static void
 Cache_Move (cache_system_t * c)
 {
 	cache_system_t *new;
@@ -650,7 +651,7 @@ Cache_FreeHigh (int new_high_hunk)
 #endif
 }
 
-void
+static void
 Cache_UnlinkLRU (cache_system_t * cs)
 {
 	if (!cs->lru_next || !cs->lru_prev)
@@ -662,7 +663,7 @@ Cache_UnlinkLRU (cache_system_t * cs)
 	cs->lru_prev = cs->lru_next = NULL;
 }
 
-void
+static void
 Cache_MakeLRU (cache_system_t * cs)
 {
 	if (cs->lru_next || cs->lru_prev)
@@ -674,8 +675,8 @@ Cache_MakeLRU (cache_system_t * cs)
 	cache_head.lru_next = cs;
 }
 
-qboolean
-Cache_FreeLRU ()
+static qboolean
+Cache_FreeLRU (void)
 {
 	cache_system_t *cs;
 
@@ -805,7 +806,7 @@ Cache_Flush (void)
 	CACHE_WRITE_UNLOCK;
 }
 
-void
+static void
 Cache_Print (void)
 {
 	cache_system_t *cd;
@@ -827,12 +828,7 @@ Cache_Report (void)
 	CACHE_WRITE_UNLOCK;
 }
 
-void
-Cache_Compact (void)
-{
-}
-
-void
+static void
 Cache_Init (void)
 {
 	cache_head.next = cache_head.prev = &cache_head;

@@ -257,6 +257,7 @@ extern const char *pr_gametype;
 // PR Cmds stuff
 //
 
+const char *PF_VarString (progs_t *pr, int first);
 void PR_Cmds_Init (progs_t *pr);
 
 //============================================================================

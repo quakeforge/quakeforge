@@ -178,7 +178,7 @@ SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
   Sends the first message from the server to a connected client.
   This will be sent on the initial connection and upon each server load.
 */
-void
+static void
 SV_SendServerinfo (client_t *client)
 {
 	const char **s;
@@ -234,7 +234,7 @@ SV_SendServerinfo (client_t *client)
   Initializes a client_t for a new net connection.  This will only be called
   once for a player each game, not once for each level change.
 */
-void
+static void
 SV_ConnectClient (int clientnum)
 {
 	edict_t    *ent;
@@ -326,7 +326,7 @@ SV_ClearDatagram (void)
 int         fatbytes;
 byte        fatpvs[MAX_MAP_LEAFS / 8];
 
-void
+static void
 SV_AddToFatPVS (vec3_t org, mnode_t *node)
 {
 	int         i;
@@ -364,7 +364,7 @@ SV_AddToFatPVS (vec3_t org, mnode_t *node)
   Calculates a PVS that is the inclusive or of all leafs within 8 pixels of the
   given point.
 */
-byte       *
+static byte       *
 SV_FatPVS (vec3_t org)
 {
 	fatbytes = (sv.worldmodel->numleafs + 31) >> 3;
@@ -375,7 +375,7 @@ SV_FatPVS (vec3_t org)
 
 //=============================================================================
 
-void
+static void
 SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 {
 	int         bits, e, i;
@@ -492,7 +492,7 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 	}
 }
 
-void
+static void
 SV_CleanupEnts (void)
 {
 	int         e;
@@ -623,7 +623,7 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	}
 }
 
-qboolean
+static qboolean
 SV_SendClientDatagram (client_t *client)
 {
 	byte        buf[MAX_DATAGRAM];
@@ -654,7 +654,7 @@ SV_SendClientDatagram (client_t *client)
 	return true;
 }
 
-void
+static void
 SV_UpdateToReliableMessages (void)
 {
 	int         i, j;
@@ -695,7 +695,7 @@ SV_UpdateToReliableMessages (void)
   Send a nop message without trashing or sending the accumulated client
   message buffer
 */
-void
+static void
 SV_SendNop (client_t *client)
 {
 	sizebuf_t   msg;
@@ -792,7 +792,7 @@ SV_ModelIndex (const char *name)
 	return i;
 }
 
-void
+static void
 SV_CreateBaseline (void)
 {
 	int         entnum;
@@ -845,7 +845,7 @@ SV_CreateBaseline (void)
 
   Tell all the clients that the server is changing levels
 */
-void
+static void
 SV_SendReconnect (void)
 {
 	char        data[128];

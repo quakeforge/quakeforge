@@ -89,7 +89,7 @@ typedef struct pldata_s {	// Unparsed property list string
 	unsigned int	end;
 	unsigned int	pos;
 	unsigned int	line;
-	char			*error;
+	const char		*error;
 } pldata_t;
 
 /*

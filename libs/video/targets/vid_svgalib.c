@@ -62,6 +62,7 @@ static const char rcsid[] =
 #include "QF/vid.h"
 
 #include "compat.h"
+#include "d_iface.h"
 
 static int   num_modes, current_mode;
 static vga_modeinfo *modes;
@@ -276,7 +277,7 @@ VID_SetPalette (byte * palette)
 	}
 }
 
-int
+static int
 VID_SetMode (int modenum, unsigned char *palette)
 {
 	int         err;
@@ -461,21 +462,6 @@ VID_Update (vrect_t *rects)
 			}
 			rects = rects->pnext;
 		}
-	}
-}
-
-char       *
-VID_ModeInfo (int modenum)
-{
-	static char *badmodestr = "Bad mode number";
-	static char modestr[40];
-
-	if (modenum == 0) {
-		snprintf (modestr, sizeof (modestr), "%d x %d, %d bpp", vid.width,
-				  vid.height, modes[current_mode].bytesperpixel * 8);
-		return (modestr);
-	} else {
-		return (badmodestr);
 	}
 }
 

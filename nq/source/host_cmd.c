@@ -67,7 +67,7 @@ Host_Quit_f (void)
 	Sys_Quit ();
 }
 
-void
+static void
 Host_Status_f (void)
 {
 	client_t   *client;
@@ -119,7 +119,7 @@ Host_Status_f (void)
 
   Sets client to godmode
 */
-void
+static void
 Host_God_f (void)
 {
 	if (cmd_source == src_command) {
@@ -137,7 +137,7 @@ Host_God_f (void)
 		SV_ClientPrintf ("godmode ON\n");
 }
 
-void
+static void
 Host_Notarget_f (void)
 {
 	if (cmd_source == src_command) {
@@ -158,7 +158,7 @@ Host_Notarget_f (void)
 
 qboolean    noclip_anglehack;
 
-void
+static void
 Host_Noclip_f (void)
 {
 	if (cmd_source == src_command) {
@@ -185,7 +185,7 @@ Host_Noclip_f (void)
 
   Sets client to flymode
 */
-void
+static void
 Host_Fly_f (void)
 {
 	if (cmd_source == src_command) {
@@ -205,7 +205,7 @@ Host_Fly_f (void)
 	}
 }
 
-void
+static void
 Host_Ping_f (void)
 {
 	int         i, j;
@@ -255,7 +255,7 @@ nice_time (float time)
   map <servername>
   command from the console.  Active clients are kicked off.
 */
-void
+static void
 Host_Map_f (void)
 {
 	int         i;
@@ -321,7 +321,7 @@ Host_Map_f (void)
 
   Goes to a new map, taking all clients along
 */
-void
+static void
 Host_Changelevel_f (void)
 {
 	char        level[MAX_QPATH];
@@ -345,7 +345,7 @@ Host_Changelevel_f (void)
 
   Restarts the current server for a dead player
 */
-void
+static void
 Host_Restart_f (void)
 {
 	char        mapname[MAX_QPATH];
@@ -366,7 +366,7 @@ Host_Restart_f (void)
   This command causes the client to wait for the signon messages again.
   This is sent just before a server changes levels
 */
-void
+static void
 Host_Reconnect_f (void)
 {
 //	SCR_BeginLoadingPlaque ();
@@ -378,7 +378,7 @@ Host_Reconnect_f (void)
 
   User command to connect to server
 */
-void
+static void
 Host_Connect_f (void)
 {
 	char        name[MAX_QPATH];
@@ -402,7 +402,7 @@ Host_Connect_f (void)
 
   Writes a SAVEGAME_COMMENT_LENGTH character comment describing the current 
 */
-void
+static void
 Host_SavegameComment (char *text)
 {
 	int         i;
@@ -421,7 +421,7 @@ Host_SavegameComment (char *text)
 	text[SAVEGAME_COMMENT_LENGTH] = '\0';
 }
 
-void
+static void
 Host_Savegame_f (void)
 {
 	char        name[256];
@@ -502,7 +502,7 @@ Host_Savegame_f (void)
 	Con_Printf ("done.\n");
 }
 
-void
+static void
 Host_Loadgame_f (void)
 {
 	char        name[MAX_OSPATH];
@@ -642,7 +642,7 @@ Host_Loadgame_f (void)
 
 //============================================================================
 
-void
+static void
 Host_Name_f (void)
 {
 	const char *newName;
@@ -678,14 +678,14 @@ Host_Name_f (void)
 	MSG_WriteString (&sv.reliable_datagram, host_client->name);
 }
 
-void
+static void
 Host_Version_f (void)
 {
 	Con_Printf ("Version %s\n", VERSION);
 	Con_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
 }
 
-void
+static void
 Host_Say (qboolean teamonly)
 {
 	client_t   *client;
@@ -744,19 +744,19 @@ Host_Say (qboolean teamonly)
 	Con_Printf ("%s", &text[1]);
 }
 
-void
+static void
 Host_Say_f (void)
 {
 	Host_Say (false);
 }
 
-void
+static void
 Host_Say_Team_f (void)
 {
 	Host_Say (true);
 }
 
-void
+static void
 Host_Tell_f (void)
 {
 	client_t   *client;
@@ -805,7 +805,7 @@ Host_Tell_f (void)
 	host_client = save;
 }
 
-void
+static void
 Host_Kill_f (void)
 {
 	if (cmd_source == src_command) {
@@ -823,7 +823,7 @@ Host_Kill_f (void)
 	PR_ExecuteProgram (&sv_pr_state, sv_funcs.ClientKill);
 }
 
-void
+static void
 Host_Pause_f (void)
 {
 
@@ -854,7 +854,7 @@ Host_Pause_f (void)
 
 //===========================================================================
 
-void
+static void
 Host_PreSpawn_f (void)
 {
 	if (cmd_source == src_command) {
@@ -873,7 +873,7 @@ Host_PreSpawn_f (void)
 	host_client->sendsignon = true;
 }
 
-void
+static void
 Host_Spawn_f (void)
 {
 	int         i;
@@ -980,7 +980,7 @@ Host_Spawn_f (void)
 	host_client->sendsignon = true;
 }
 
-void
+static void
 Host_Begin_f (void)
 {
 	if (cmd_source == src_command) {
@@ -998,7 +998,7 @@ Host_Begin_f (void)
 
   Kicks a user off of the server
 */
-void
+static void
 Host_Kick_f (void)
 {
 	const char *who;
@@ -1193,7 +1193,7 @@ Host_Give_f (void)
 }
 #endif
 
-edict_t    *
+static edict_t    *
 FindViewthing (void)
 {
 	int         i;
@@ -1209,7 +1209,7 @@ FindViewthing (void)
 	return NULL;
 }
 
-void
+static void
 Host_Viewmodel_f (void)
 {
 	edict_t    *e;
@@ -1229,7 +1229,7 @@ Host_Viewmodel_f (void)
 	cl.model_precache[(int) SVfloat (e, modelindex)] = m;
 }
 
-void
+static void
 Host_Viewframe_f (void)
 {
 	edict_t    *e;
@@ -1248,7 +1248,7 @@ Host_Viewframe_f (void)
 	SVfloat (e, frame) = f;
 }
 
-void
+static void
 PrintFrameName (model_t *m, int frame)
 {
 	aliashdr_t *hdr;
@@ -1263,7 +1263,7 @@ PrintFrameName (model_t *m, int frame)
 	Cache_Release (&m->cache);
 }
 
-void
+static void
 Host_Viewnext_f (void)
 {
 	edict_t    *e;
@@ -1281,7 +1281,7 @@ Host_Viewnext_f (void)
 	PrintFrameName (m, SVfloat (e, frame));
 }
 
-void
+static void
 Host_Viewprev_f (void)
 {
 	edict_t    *e;
@@ -1302,7 +1302,7 @@ Host_Viewprev_f (void)
 
 // DEMO LOOP CONTROL ==========================================================
 
-void
+static void
 Host_Startdemos_f (void)
 {
 	int         i, c;
@@ -1335,7 +1335,7 @@ Host_Startdemos_f (void)
 
   Return to looping demos
 */
-void
+static void
 Host_Demos_f (void)
 {
 	if (cls.state == ca_dedicated)
@@ -1351,7 +1351,7 @@ Host_Demos_f (void)
 
   Return to looping demos
 */
-void
+static void
 Host_Stopdemo_f (void)
 {
 	if (cls.state == ca_dedicated)

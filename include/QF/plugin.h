@@ -85,10 +85,10 @@ typedef struct plugin_data_s {
 typedef struct plugin_s {
 	plugin_type_t	type;
 	void			*handle;
-	char			*api_version;
-	char			*plugin_version;
-	char			*description;
-	char			*copyright;
+	const char		*api_version;
+	const char		*plugin_version;
+	const char		*description;
+	const char		*copyright;
 	plugin_funcs_t	*functions;
 	plugin_data_t	*data;
 } plugin_t;

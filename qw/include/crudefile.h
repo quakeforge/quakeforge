@@ -29,13 +29,13 @@
 #ifndef _CRUDEFILE_H
 #define _CRUDEFILE_H
 
-void CF_Init ();
-void CF_CloseAllFiles ();
+void CF_Init (void);
+void CF_CloseAllFiles (void);
 int CF_Open (const char *path, const char *mode);
 void CF_Close (int desc);
 const char * CF_Read (int desc);
 int CF_Write (int desc, const char *buf);
 int CF_EOF (int desc);
-int CF_Quota ();
+int CF_Quota (void);
 
 #endif // _CRUDEFILE_H

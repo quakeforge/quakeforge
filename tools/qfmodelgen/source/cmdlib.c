@@ -56,7 +56,7 @@ For abnormal program terminations
 =================
 */
 void
-Error (char *error, ...)
+Error (const char *error, ...)
 {
 	va_list argptr;
 
@@ -115,8 +115,8 @@ SetQdirFromPath (char *path)
 	Error ("SetQdirFromPath: no 'quake' in %s", path);
 }
 
-char *
-ExpandPath (char *path)
+const char *
+ExpandPath (const char *path)
 {
 	static char full[1024];
 
@@ -128,10 +128,10 @@ ExpandPath (char *path)
 	return full;
 }
 
-char *
-ExpandPathAndArchive (char *path)
+const char *
+ExpandPathAndArchive (const char *path)
 {
-	char	*expanded;
+	const char	*expanded;
 	char	 archivename[1024];
 
 	expanded = ExpandPath (path);
@@ -144,7 +144,7 @@ ExpandPathAndArchive (char *path)
 }
 
 char *
-copystring(char *s)
+copystring(const char *s)
 {
 	char	*b;
 
@@ -222,7 +222,7 @@ FileTime (char *path)
 }
 
 int
-Q_strncasecmp (char *s1, char *s2, int n)
+Q_strncasecmp (const char *s1, const char *s2, int n)
 {
 	int		c1, c2;
 
@@ -249,7 +249,7 @@ Q_strncasecmp (char *s1, char *s2, int n)
 }
 
 int
-Q_strcasecmp (char *s1, char *s2)
+Q_strcasecmp (const char *s1, const char *s2)
 {
 	return Q_strncasecmp (s1, s2, 99999);
 }
@@ -297,7 +297,7 @@ Returns the argument number (1 to argc-1) or 0 if not present
 =================
 */
 int
-CheckParm (char *check)
+CheckParm (const char *check)
 {
 	int		i;
 
@@ -310,7 +310,7 @@ CheckParm (char *check)
 }
 
 QFile *
-SafeOpenWrite (char *filename)
+SafeOpenWrite (const char *filename)
 {
 	QFile	*f;
 
@@ -323,7 +323,7 @@ SafeOpenWrite (char *filename)
 }
 
 QFile *
-SafeOpenRead (char *filename)
+SafeOpenRead (const char *filename)
 {
 	QFile	*f;
 
@@ -350,7 +350,7 @@ SafeWrite (QFile *f, void *buffer, int count)
 }
 
 void
-SaveFile (char *filename, void *buffer, int count)
+SaveFile (const char *filename, void *buffer, int count)
 {
 	QFile	*f;
 
@@ -360,7 +360,7 @@ SaveFile (char *filename, void *buffer, int count)
 }
 
 void
-DefaultExtension (char *path, char *extension)
+DefaultExtension (char *path, const char *extension)
 {
 	char    *src;
 
@@ -472,7 +472,7 @@ ExtractFileExtension (char *path, char *dest)
 	strcpy (dest,src);
 }
 
-int
+static int
 ParseHex (char *hex)
 {
 	char	*str;
@@ -514,129 +514,6 @@ ParseNum (char *str)
 
 ============================================================================
 */
-
-#ifdef _SGI_SOURCE
-#define	__BIG_ENDIAN__
-#endif
-
-#ifdef __BIG_ENDIAN__
-
-short
-LittleShort (short l)
-{
-	byte    b1,b2;
-
-	b1 = l&255;
-	b2 = (l>>8)&255;
-
-	return (b1<<8) + b2;
-}
-
-short
-BigShort (short l)
-{
-	return l;
-}
-
-int
-LittleLong (int l)
-{
-	byte    b1,b2,b3,b4;
-
-	b1 = l&255;
-	b2 = (l>>8)&255;
-	b3 = (l>>16)&255;
-	b4 = (l>>24)&255;
-
-	return ((int)b1<<24) + ((int)b2<<16) + ((int)b3<<8) + b4;
-}
-
-int
-BigLong (int l)
-{
-	return l;
-}
-
-float
-LittleFloat (float l)
-{
-	union {byte b[4]; float f;} in, out;
-	
-	in.f = l;
-	out.b[0] = in.b[3];
-	out.b[1] = in.b[2];
-	out.b[2] = in.b[1];
-	out.b[3] = in.b[0];
-	
-	return out.f;
-}
-
-float
-BigFloat (float l)
-{
-	return l;
-}
-
-#else
-
-short
-BigShort (short l)
-{
-	byte    b1,b2;
-
-	b1 = l&255;
-	b2 = (l>>8)&255;
-
-	return (b1<<8) + b2;
-}
-
-short
-LittleShort (short l)
-{
-	return l;
-}
-
-
-int
-BigLong (int l)
-{
-	byte    b1,b2,b3,b4;
-
-	b1 = l&255;
-	b2 = (l>>8)&255;
-	b3 = (l>>16)&255;
-	b4 = (l>>24)&255;
-
-	return ((int)b1<<24) + ((int)b2<<16) + ((int)b3<<8) + b4;
-}
-
-int
-LittleLong (int l)
-{
-	return l;
-}
-
-float
-BigFloat (float l)
-{
-	union {byte b[4]; float f;} in, out;
-	
-	in.f = l;
-	out.b[0] = in.b[3];
-	out.b[1] = in.b[2];
-	out.b[2] = in.b[1];
-	out.b[3] = in.b[0];
-	
-	return out.f;
-}
-
-float
-LittleFloat (float l)
-{
-	return l;
-}
-
-#endif
 
 //=======================================================
 
@@ -707,8 +584,9 @@ CRC_Value (unsigned short crcvalue)
 //=============================================================================
 
 void
-CreatePath (char *path)
+CreatePath (const char *_path)
 {
+	char    *path = strdup (_path);
 	char	*ofs, c;
 
 	for (ofs = path+1 ; *ofs ; ofs++) {
@@ -720,10 +598,11 @@ CreatePath (char *path)
 			*ofs = c;
 		}
 	}
+	free (path);
 }
 
 int
-LoadFile (char *fname, void **buf)
+LoadFile (const char *fname, void **buf)
 {
 	QFile      *file;
 	char       *src;
@@ -750,7 +629,7 @@ CopyFile
 ============
 */
 void
-CopyFile (char *from, char *to)
+CopyFile (const char *from, const char *to)
 {
 	void	*buffer;
 	int		length;

@@ -124,7 +124,7 @@ save_string (const char *str)
 	return s;
 }
 
-void
+static void
 InitData (void)
 {
 	int         i;
@@ -157,7 +157,7 @@ InitData (void)
 }
 
 
-int
+static int
 WriteData (int crc)
 {
 	def_t      *def;
@@ -330,7 +330,7 @@ WriteData (int crc)
 }
 
 
-void
+static void
 begin_compilation (void)
 {
 	pr.near_data->size = RESERVED_OFS;
@@ -339,7 +339,7 @@ begin_compilation (void)
 	pr.error_count = 0;
 }
 
-qboolean
+static qboolean
 finish_compilation (void)
 {
 	def_t      *d;

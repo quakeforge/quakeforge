@@ -81,7 +81,7 @@ PF_VarString (progs_t *pr, int first)
 
 	vector normalize(vector)
 */
-void
+static void
 PF_normalize (progs_t *pr)
 {
 	float		new;
@@ -111,7 +111,7 @@ PF_normalize (progs_t *pr)
 
 	scalar vlen(vector)
 */
-void
+static void
 PF_vlen (progs_t *pr)
 {
 	float		new;
@@ -131,7 +131,7 @@ PF_vlen (progs_t *pr)
 
 	float vectoyaw(vector)
 */
-void
+static void
 PF_vectoyaw (progs_t *pr)
 {
 	float		yaw;
@@ -155,7 +155,7 @@ PF_vectoyaw (progs_t *pr)
 
 	vector vectoangles(vector)
 */
-void
+static void
 PF_vectoangles (progs_t *pr)
 {
 	float		forward, pitch, yaw;
@@ -192,7 +192,7 @@ PF_vectoangles (progs_t *pr)
 
 	random()
 */
-void
+static void
 PF_random (progs_t *pr)
 {
 	float		num;
@@ -207,7 +207,7 @@ PF_random (progs_t *pr)
 
 	break()
 */
-void
+static void
 PF_break (progs_t *pr)
 {
 	Sys_Printf ("break statement\n");
@@ -239,7 +239,7 @@ PF_localcmd (progs_t *pr)
 
 	float cvar (string)
 */
-void
+static void
 PF_cvar (progs_t *pr)
 {
 	const char		*str;
@@ -254,7 +254,7 @@ PF_cvar (progs_t *pr)
 
 	float cvar (string)
 */
-void
+static void
 PF_cvar_set (progs_t *pr)
 {
 	const char	*var_name, *val;
@@ -273,7 +273,7 @@ PF_cvar_set (progs_t *pr)
 	Cvar_Set (var, val);
 }
 
-void
+static void
 PF_fabs (progs_t *pr)
 {
 	float		v;
@@ -283,7 +283,7 @@ PF_fabs (progs_t *pr)
 }
 
 // entity (entity start, .string field, string match) find = #5;
-void
+static void
 PF_Find (progs_t *pr)
 {
 	const char *s = 0, *t; // ev_string
@@ -344,37 +344,37 @@ PF_Find (progs_t *pr)
 	RETURN_EDICT (pr, *pr->edicts);
 }
 
-void
+static void
 PF_coredump (progs_t *pr)
 {
 	ED_PrintEdicts (pr, "");
 }
 
-void
+static void
 PF_traceon (progs_t *pr)
 {
 	pr->pr_trace = true;
 }
 
-void
+static void
 PF_traceoff (progs_t *pr)
 {
 	pr->pr_trace = false;
 }
 
-void
+static void
 PF_eprint (progs_t *pr)
 {
 	ED_PrintNum (pr, P_EDICTNUM (pr, 0));
 }
 
-void
+static void
 PF_dprint (progs_t *pr)
 {
 	Sys_Printf ("%s", PF_VarString (pr, 0));
 }
 
-void
+static void
 PF_rint (progs_t *pr)
 {
 	float		f;
@@ -386,13 +386,13 @@ PF_rint (progs_t *pr)
 		R_FLOAT (pr) = (int) (f - 0.5);
 }
 
-void
+static void
 PF_floor (progs_t *pr)
 {
 	R_FLOAT (pr) = floor (P_FLOAT (pr, 0));
 }
 
-void
+static void
 PF_ceil (progs_t *pr)
 {
 	R_FLOAT (pr) = ceil (P_FLOAT (pr, 0));
@@ -403,7 +403,7 @@ PF_ceil (progs_t *pr)
 
 	entity nextent(entity)
 */
-void
+static void
 PF_nextent (progs_t *pr)
 {
 	int			i;
@@ -436,7 +436,7 @@ PF_nextent (progs_t *pr)
 
 	integer (float f) ftoi
 */
-void
+static void
 PF_ftoi (progs_t *pr)
 {
 	R_INT (pr) = P_FLOAT (pr, 0);
@@ -447,7 +447,7 @@ PF_ftoi (progs_t *pr)
 
 	string (float f) ftos
 */
-void
+static void
 PF_ftos (progs_t *pr)
 {
 	char	string[STRING_BUF];
@@ -473,7 +473,7 @@ PF_ftos (progs_t *pr)
 
 	float (integer i) itof
 */
-void
+static void
 PF_itof (progs_t *pr)
 {
 	R_FLOAT (pr) = P_INT (pr, 0);
@@ -484,7 +484,7 @@ PF_itof (progs_t *pr)
 
 	string (integer i) itos
 */
-void
+static void
 PF_itos (progs_t *pr)
 {
 	char string[STRING_BUF];
@@ -499,7 +499,7 @@ PF_itos (progs_t *pr)
 
 	float (string s) stof
 */
-void
+static void
 PF_stof (progs_t *pr)
 {
 	R_FLOAT (pr) = atof (P_STRING (pr, 0));
@@ -510,7 +510,7 @@ PF_stof (progs_t *pr)
 
 	integer (string s) stoi
 */
-void
+static void
 PF_stoi (progs_t *pr)
 {
 	R_INT (pr) = atoi (P_STRING (pr, 0));
@@ -521,7 +521,7 @@ PF_stoi (progs_t *pr)
 
 	vector (string s) stov
 */
-void
+static void
 PF_stov (progs_t *pr)
 {
 	float v[3] = {0, 0, 0};
@@ -536,7 +536,7 @@ PF_stov (progs_t *pr)
 
 	string (vector v) vtos
 */
-void
+static void
 PF_vtos (progs_t *pr)
 {
 	char string[STRING_BUF * 3 + 5];
@@ -554,7 +554,7 @@ PF_vtos (progs_t *pr)
 
 	float(string s) strlen
 */
-void
+static void
 PF_strlen (progs_t *pr)
 {
 	const char	*s;
@@ -568,7 +568,7 @@ PF_strlen (progs_t *pr)
 
 	float(string char, string s) charcount
 */
-void
+static void
 PF_charcount (progs_t *pr)
 {
 	char		goal;
@@ -599,7 +599,7 @@ PF_charcount (progs_t *pr)
 
 #define MAX_ARG 23
 
-void
+static void
 PF_sprintf (progs_t *pr)
 {
 	char   *format;
@@ -834,7 +834,7 @@ PF_sprintf (progs_t *pr)
 		PR_Error (pr, "PF_sprintf: argument limit exceeded\n");
 }
 
-void
+static void
 PR_gametype (progs_t *pr)
 {
 	RETURN_STRING (pr, pr_gametype);

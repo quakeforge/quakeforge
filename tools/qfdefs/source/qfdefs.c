@@ -120,7 +120,7 @@ init_qf (void)
 	pr.free_progs_mem = free_progs_mem;
 }
 
-int
+static int
 load_progs (const char *name)
 {
 	QFile      *file;

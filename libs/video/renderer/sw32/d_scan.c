@@ -198,7 +198,7 @@ D_WarpScreen (void)
 	}
 }
 
-void
+static void
 D_DrawTurbulentSpan (void)
 {
 	int         sturb, tturb;

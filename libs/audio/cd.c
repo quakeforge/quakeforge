@@ -83,7 +83,7 @@ CDAudio_Update (void)
 		cdmodule->functions->cd->pCDAudio_Update ();
 }
 
-void
+static void
 CD_f (void)
 {
 	if (cdmodule)

@@ -193,7 +193,7 @@ Host_Error (const char *error, ...)
 	longjmp (host_abortserver, 1);
 }
 
-void
+static void
 Host_FindMaxClients (void)
 {
 	int         i;
@@ -236,7 +236,7 @@ Host_FindMaxClients (void)
 		Cvar_SetValue (deathmatch, 0.0);
 }
 
-void
+static void
 Host_InitLocal (void)
 {
 	Host_InitCommands ();
@@ -277,7 +277,7 @@ Host_InitLocal (void)
 
 	Writes key bindings and archived cvars to config.cfg
 */
-void
+static void
 Host_WriteConfiguration (void)
 {
 	QFile      *f;
@@ -508,7 +508,7 @@ Host_ClearMemory (void)
 
 	Returns false if the time is too short to run a frame
 */
-qboolean
+static qboolean
 Host_FilterTime (float time)
 {
 	float       timedifference;
@@ -543,7 +543,7 @@ Host_FilterTime (float time)
 
 	Add them exactly as if they had been typed at the console
 */
-void
+static void
 Host_GetConsoleCommands (void)
 {
 	Con_ProcessInput ();
@@ -580,7 +580,7 @@ Host_ServerFrame (void)
 
 	Runs all active servers
 */
-void
+static void
 _Host_Frame (float time)
 {
 	static double time1 = 0, time2 = 0, time3 = 0;
@@ -728,7 +728,7 @@ Host_Frame (float time)
 #define	VCR_SIGNATURE	0x56435231
 // "VCR1"
 
-void
+static void
 Host_InitVCR (quakeparms_t *parms)
 {
 	char       *p;
@@ -813,7 +813,7 @@ check_quakerc (void)
 	return ret;
 }
 
-void
+static void
 CL_Init_Memory (void)
 {
 	int         mem_parm = COM_CheckParm ("-mem");

@@ -50,7 +50,7 @@ dump_globals (progs_t *pr)
 	const char *type;
 	int         saveglobal;
 	int         offset;
-	char       *comment;
+	const char *comment;
 
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
 		ddef_t *def = &pr->pr_globaldefs[i];
@@ -90,7 +90,7 @@ dump_fields (progs_t *pr)
 	const char *name;
 	const char *type;
 	int         offset;
-	char       *comment;
+	const char *comment;
 
 	for (i = 0; i < pr->progs->numfielddefs; i++) {
 		ddef_t *def = &pr->pr_fielddefs[i];
@@ -111,7 +111,7 @@ dump_functions (progs_t *pr)
 	int         i, j;
 	const char *name;
 	int         start, count;
-	char       *comment;
+	const char *comment;
 
 	for (i = 0; i < pr->progs->numfunctions; i++) {
 		dfunction_t *func = &pr->pr_functions[i];

@@ -106,7 +106,7 @@ SNDDMA_Init_Cvars (void)
 {
 }
 
-void
+static void
 SNDDMA_BlockSound (void)
 {
 	// DirectSound takes care of blocking itself
@@ -115,7 +115,7 @@ SNDDMA_BlockSound (void)
 			waveOutReset (hWaveOut);
 }
 
-void
+static void
 SNDDMA_UnblockSound (void)
 {
 	// DirectSound takes care of blocking itself
@@ -492,7 +492,7 @@ SNDDMA_InitWav (void)
 	Try to find a sound device to mix for.
 	Returns false if nothing is found.
 */
-qboolean
+static qboolean
 SNDDMA_Init (void)
 {
 	sndinitstat stat;
@@ -718,6 +718,7 @@ DSOUND_Restore (void)
 	return;
 }
 
+QFPLUGIN plugin_t *PLUGIN_INFO(snd_output, win) (void);
 QFPLUGIN plugin_t *
 PLUGIN_INFO(snd_output, win) (void) {
 	plugin_info.type = qfp_snd_output;

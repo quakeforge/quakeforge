@@ -56,7 +56,7 @@ static const char rcsid[] =
 
 	Sets the gamedir and path to a different directory.
 */
-void
+static void
 SV_Gamedir_f (void)
 {
 	const char *dir;

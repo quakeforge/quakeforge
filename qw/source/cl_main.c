@@ -231,14 +231,14 @@ char        soundlist_name[] = "soundlist %i %i";
 extern cvar_t *cl_showscoresuid;
 
 
-void
+static void
 CL_Sbar_f (cvar_t *var)
 {
 	vid.recalc_refdef = true;
 	r_lineadj = var->int_val ? sb_lines : 0;
 }
 
-void
+static void
 CL_Quit_f (void)
 {
 	if (!con_module)
@@ -247,7 +247,7 @@ CL_Quit_f (void)
 	Sys_Quit ();
 }
 
-void
+static void
 CL_Version_f (void)
 {
 	Con_Printf ("%s Version %s\n", PROGRAM, VERSION);
@@ -259,7 +259,7 @@ CL_Version_f (void)
 
 	called by CL_Connect_f and CL_CheckResend
 */
-void
+static void
 CL_SendConnectPacket (void)
 {
 	char        data[2048];
@@ -299,7 +299,7 @@ CL_SendConnectPacket (void)
 
 	Resend a connect message if the last one has timed out
 */
-void
+static void
 CL_CheckForResend (void)
 {
 	char        data[2048];
@@ -339,7 +339,7 @@ CL_BeginServerConnect (void)
 	CL_CheckForResend ();
 }
 
-void
+static void
 CL_Connect_f (void)
 {
 	const char *server;
@@ -363,7 +363,7 @@ CL_Connect_f (void)
 	Send the rest of the command line over as
 	an unconnected command.
 */
-void
+static void
 CL_Rcon_f (void)
 {
 	char        message[1024];
@@ -430,7 +430,7 @@ CL_ClearState (void)
 
 	Cleans the Cshifts, so your screen doesn't stay red after a timedemo :)
 */
-void
+static void
 CL_StopCshifts (void)
 {
 	int i;
@@ -441,7 +441,7 @@ CL_StopCshifts (void)
 		cl.stats[i] = 0;
 }
 
-void
+static void
 CL_RemoveQFInfoKeys (void)
 {
 	Info_RemoveKey (cls.userinfo, "*cap");
@@ -525,7 +525,7 @@ CL_Disconnect_f (void)
 
 	Dump userdata / masterdata for a user
 */
-void
+static void
 CL_User_f (void)
 {
 	int         uid, i;
@@ -554,7 +554,7 @@ CL_User_f (void)
 
 	Dump userids for all current players
 */
-void
+static void
 CL_Users_f (void)
 {
 	int         c, i;
@@ -578,7 +578,7 @@ CL_Users_f (void)
 
 	Sent by server when serverinfo changes
 */
-void
+static void
 CL_FullServerinfo_f (void)
 {
 	const char *p;
@@ -632,7 +632,7 @@ CL_FullServerinfo_f (void)
 	}
 }
 
-void
+static void
 CL_AddQFInfoKeys (void)
 {
 	char        cap[100] = "";			// max of 98 or so flags
@@ -661,7 +661,7 @@ CL_AddQFInfoKeys (void)
 	Allow clients to change userinfo
 	Casey was here :)
 */
-void
+static void
 CL_FullInfo_f (void)
 {
 	char        key[512], value[512];
@@ -710,7 +710,7 @@ CL_FullInfo_f (void)
 
 	Allow clients to change userinfo
 */
-void
+static void
 CL_SetInfo_f (void)
 {
 	if (Cmd_Argc () == 1) {
@@ -738,7 +738,7 @@ CL_SetInfo_f (void)
 	packet <destination> <contents>
 	Contents allows \n escape character
 */
-void
+static void
 CL_Packet_f (void)
 {
 	char        send[2048];
@@ -806,7 +806,7 @@ CL_NextDemo (void)
 	Just sent as a hint to the client that they should
 	drop to full console
 */
-void
+static void
 CL_Changing_f (void)
 {
 	if (cls.download)					// don't change when downloading
@@ -824,7 +824,7 @@ CL_Changing_f (void)
 
 	The server is changing levels
 */
-void
+static void
 CL_Reconnect_f (void)
 {
 	if (cls.download)					// don't change when downloading
@@ -856,7 +856,7 @@ CL_Reconnect_f (void)
 
 	Responses to broadcasts, etc
 */
-void
+static void
 CL_ConnectionlessPacket (void)
 {
 	const char *s;
@@ -1066,7 +1066,7 @@ CL_ReadPackets (void)
 
 }
 
-void
+static void
 CL_Download_f (void)
 {
 	if (cls.state == ca_disconnected || cls.demoplayback) {
@@ -1098,7 +1098,7 @@ CL_Download_f (void)
 	}
 }
 
-void
+static void
 cl_hudswap_f (cvar_t *var)
 {
 	if (cl_hudswap)
@@ -1107,7 +1107,7 @@ cl_hudswap_f (cvar_t *var)
 		hudswap = 0;
 }
 
-void
+static void
 Force_CenterView_f (void)
 {
 	cl.viewangles[PITCH] = 0;
@@ -1237,7 +1237,7 @@ cl_usleep_f (cvar_t *var)
 	cl_usleep_cache = var->int_val;
 }
 
-void
+static void
 CL_Init_Cvars (void)
 {
 	cl_model_crcs = Cvar_Get ("cl_model_crcs", "1", CVAR_ARCHIVE, NULL,
@@ -1628,7 +1628,7 @@ check_quakerc (void)
 	return ret;
 }
 
-void
+static void
 CL_Init_Memory (void)
 {
 	int         mem_parm = COM_CheckParm ("-mem");

@@ -445,6 +445,8 @@ void SV_LoadProgs (void);
 void Con_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void Con_DPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 
+extern struct clip_hull_s *pf_hull_list[];
+
 //
 // sv_main.c
 //

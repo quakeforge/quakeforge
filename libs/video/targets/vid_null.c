@@ -31,6 +31,7 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 
+#include "d_iface.h"
 #include "d_local.h"
 
 viddef_t    vid;						// global video state

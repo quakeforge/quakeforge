@@ -80,7 +80,7 @@ Mod_PointInLeaf (const vec3_t p, model_t *model)
 	return NULL;						// never reached
 }
 
-byte       *
+static byte *
 Mod_DecompressVis (byte * in, model_t *model)
 {
 	static byte decompressed[MAX_MAP_LEAFS / 8];
@@ -131,7 +131,7 @@ Mod_LeafPVS (mleaf_t *leaf, model_t *model)
 
 byte       *mod_base;
 
-void
+static void
 Mod_LoadTextures (lump_t *l)
 {
 	dmiptexlump_t  *m;
@@ -265,7 +265,7 @@ Mod_LoadTextures (lump_t *l)
 	}
 }
 
-void
+static void
 Mod_LoadVisibility (lump_t *l)
 {
 	if (!l->filelen) {
@@ -276,7 +276,7 @@ Mod_LoadVisibility (lump_t *l)
 	memcpy (loadmodel->visdata, mod_base + l->fileofs, l->filelen);
 }
 
-void
+static void
 Mod_LoadEntities (lump_t *l)
 {
 	if (!l->filelen) {
@@ -287,7 +287,7 @@ Mod_LoadEntities (lump_t *l)
 	memcpy (loadmodel->entities, mod_base + l->fileofs, l->filelen);
 }
 
-void
+static void
 Mod_LoadVertexes (lump_t *l)
 {
 	dvertex_t  *in;
@@ -310,7 +310,7 @@ Mod_LoadVertexes (lump_t *l)
 	}
 }
 
-void
+static void
 Mod_LoadSubmodels (lump_t *l)
 {
 	dmodel_t   *in, *out;
@@ -339,7 +339,7 @@ Mod_LoadSubmodels (lump_t *l)
 	}
 }
 
-void
+static void
 Mod_LoadEdges (lump_t *l)
 {
 	dedge_t    *in;
@@ -361,7 +361,7 @@ Mod_LoadEdges (lump_t *l)
 	}
 }
 
-void
+static void
 Mod_LoadTexinfo (lump_t *l)
 {
 	float       len1, len2;
@@ -419,7 +419,7 @@ Mod_LoadTexinfo (lump_t *l)
 
 	Fills in s->texturemins[] and s->extents[]
 */
-void
+static void
 CalcSurfaceExtents (msurface_t *s)
 {
 	float		mins[2], maxs[2], val;
@@ -464,7 +464,7 @@ CalcSurfaceExtents (msurface_t *s)
 	}
 }
 
-void
+static void
 Mod_LoadFaces (lump_t *l)
 {
 	dface_t    *in;
@@ -531,7 +531,7 @@ Mod_LoadFaces (lump_t *l)
 	}
 }
 
-void
+static void
 Mod_SetParent (mnode_t *node, mnode_t *parent)
 {
 	node->parent = parent;
@@ -541,7 +541,7 @@ Mod_SetParent (mnode_t *node, mnode_t *parent)
 	Mod_SetParent (node->children[1], node);
 }
 
-void
+static void
 Mod_LoadNodes (lump_t *l)
 {
 	dnode_t    *in;
@@ -581,7 +581,7 @@ Mod_LoadNodes (lump_t *l)
 	Mod_SetParent (loadmodel->nodes, NULL);	// sets nodes and leafs
 }
 
-void
+static void
 Mod_LoadLeafs (lump_t *l)
 {
 	dleaf_t    *in;
@@ -636,7 +636,7 @@ Mod_LoadLeafs (lump_t *l)
 	}
 }
 
-void
+static void
 Mod_LoadClipnodes (lump_t *l)
 {
 	dclipnode_t *in, *out;
@@ -695,7 +695,7 @@ Mod_LoadClipnodes (lump_t *l)
 
 	Deplicate the drawing hull structure as a clipping hull
 */
-void
+static void
 Mod_MakeHull0 (void)
 {
 	dclipnode_t *out;
@@ -726,7 +726,7 @@ Mod_MakeHull0 (void)
 	}
 }
 
-void
+static void
 Mod_LoadMarksurfaces (lump_t *l)
 {
 	int			 count, i, j;
@@ -750,7 +750,7 @@ Mod_LoadMarksurfaces (lump_t *l)
 	}
 }
 
-void
+static void
 Mod_LoadSurfedges (lump_t *l)
 {
 	int		 count, i;
@@ -769,7 +769,7 @@ Mod_LoadSurfedges (lump_t *l)
 		out[i] = LittleLong (in[i]);
 }
 
-void
+static void
 Mod_LoadPlanes (lump_t *l)
 {
 	dplane_t   *in;

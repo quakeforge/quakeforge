@@ -47,7 +47,7 @@ mface_t     faces[128];		// beveled clipping hull can generate many extra
 
 	Note: this will not catch 0 area polygons
 */
-void
+static void
 CheckFace (face_t *f)
 {
 	int		 i, j;
@@ -101,7 +101,7 @@ CheckFace (face_t *f)
 	}
 }
 
-void
+static void
 ClearBounds (brushset_t *bs)
 {
 	int		i, j;
@@ -113,7 +113,7 @@ ClearBounds (brushset_t *bs)
 		}
 }
 
-void
+static void
 AddToBounds (brushset_t *bs, vec3_t v)
 {
 	int		i;
@@ -155,7 +155,7 @@ PlaneTypeForNormal (vec3_t normal)
 #define	DISTEPSILON		0.01
 #define	ANGLEEPSILON	0.00001
 
-void
+static void
 NormalizePlane (plane_t *dp)
 {
 	vec_t	ax, ay, az;
@@ -245,91 +245,6 @@ FindPlane (plane_t *dplane, int *side)
 }
 
 /*
-	FindPlane_old
-
-	Returns a global plane number and the side that will be the front
-*/
-int
-FindPlane_old (plane_t *dplane, int *side)
-{
-	int         i;
-	plane_t    *dp;
-	vec_t       dot, ax, ay, az;
-
-	dot = VectorLength (dplane->normal);
-	if (dot < 1.0 - ANGLEEPSILON || dot > 1.0 + ANGLEEPSILON)
-		Sys_Error ("FindPlane: normalization error");
-
-	dp = planes;
-
-	for (i = 0; i < numbrushplanes; i++, dp++) {
-		dot = DotProduct (dplane->normal, dp->normal);
-		if (dot > 1.0 - ANGLEEPSILON && fabs (dplane->dist - dp->dist)
-			< DISTEPSILON) {  // regular match
-			*side = 0;
-			return i;
-		}
-		if (dot < -1.0 + ANGLEEPSILON && fabs (dplane->dist + dp->dist)
-			< DISTEPSILON) {	// inverse of vector
-			*side = 1;
-			return i;
-		}
-	}
-
-	// allocate a new plane, flipping normal to a consistant direction if
-	// needed
-	*dp = *dplane;
-
-	if (numbrushplanes == MAX_MAP_PLANES)
-		Sys_Error ("numbrushplanes == MAX_MAP_PLANES");
-	numbrushplanes++;
-
-	*side = 0;
-
-	// NOTE: should these have an epsilon around 1.0?       
-	if (dplane->normal[0] == 1.0)
-		dp->type = PLANE_X;
-	else if (dplane->normal[1] == 1.0)
-		dp->type = PLANE_Y;
-	else if (dplane->normal[2] == 1.0)
-		dp->type = PLANE_Z;
-	else if (dplane->normal[0] == -1.0) {
-		dp->type = PLANE_X;
-		dp->normal[0] = 1.0;
-		dp->dist = -dp->dist;
-		*side = 1;
-	} else if (dplane->normal[1] == -1.0) {
-		dp->type = PLANE_Y;
-		dp->normal[1] = 1.0;
-		dp->dist = -dp->dist;
-		*side = 1;
-	} else if (dplane->normal[2] == -1.0) {
-		dp->type = PLANE_Z;
-		dp->normal[2] = 1.0;
-		dp->dist = -dp->dist;
-		*side = 1;
-	} else {
-		ax = fabs (dplane->normal[0]);
-		ay = fabs (dplane->normal[1]);
-		az = fabs (dplane->normal[2]);
-
-		if (ax >= ay && ax >= az)
-			dp->type = PLANE_ANYX;
-		else if (ay >= ax && ay >= az)
-			dp->type = PLANE_ANYY;
-		else
-			dp->type = PLANE_ANYZ;
-		if (dplane->normal[dp->type - PLANE_ANYX] < 0) {
-			VectorSubtract (vec3_origin, dp->normal, dp->normal);
-			dp->dist = -dp->dist;
-			*side = 1;
-		}
-	}
-
-	return i;
-}
-
-/*
 	Turn brushes into groups of faces.
 */
 
@@ -337,7 +252,7 @@ vec3_t      brush_mins, brush_maxs;
 face_t     *brush_faces;
 
 #define	ZERO_EPSILON	0.001
-void
+static void
 CreateBrushFaces (void)
 {
 	face_t     *f;
@@ -423,7 +338,7 @@ vec3_t      hull_corners[MAX_HULL_POINTS * 8];
 int         num_hull_edges;
 int         hull_edges[MAX_HULL_EDGES][2];
 
-void
+static void
 AddBrushPlane (plane_t *plane)
 {
 	float       l;
@@ -453,7 +368,7 @@ AddBrushPlane (plane_t *plane)
 	Adds the given plane to the brush description if all of the original brush
 	vertexes can be put on the front side
 */
-void
+static void
 TestAddPlane (plane_t *plane)
 {
 	int         c, i;
@@ -509,7 +424,7 @@ TestAddPlane (plane_t *plane)
 
 	Doesn't add if duplicated
 */
-int
+static int
 AddHullPoint (vec3_t p, int hullnum)
 {
 	int			i, x, y, z;
@@ -545,7 +460,7 @@ AddHullPoint (vec3_t p, int hullnum)
 
 	Creates all of the hull planes around the given edge, if not done already
 */
-void
+static void
 AddHullEdge (vec3_t p1, vec3_t p2, int hullnum)
 {
 	int         pt1, pt2, a, b, c, d, e, i;
@@ -593,7 +508,7 @@ AddHullEdge (vec3_t p1, vec3_t p2, int hullnum)
 	}
 }
 
-void
+static void
 ExpandBrush (int hullnum)
 {
 	face_t     *f;
@@ -646,7 +561,7 @@ ExpandBrush (int hullnum)
 
 	Converts a mapbrush to a bsp brush
 */
-brush_t    *
+static brush_t    *
 LoadBrush (mbrush_t *mb, int hullnum)
 {
 	brush_t    *b;
@@ -711,7 +626,7 @@ LoadBrush (mbrush_t *mb, int hullnum)
 	return b;
 }
 
-void
+static void
 Brush_DrawAll (brushset_t *bs)
 {
 	brush_t    *b;

@@ -309,7 +309,7 @@ cmd_get_key (void *c, void *unused)
 	return cmd->name;
 }
 
-void
+static void
 Cmd_Runalias_f (void)
 {
 	cmdalias_t *a;
@@ -325,7 +325,7 @@ Cmd_Runalias_f (void)
 	}
 }
 
-void
+static void
 Cmd_Alias_f (void)
 {
 	cmdalias_t *alias;
@@ -381,7 +381,7 @@ Cmd_Alias_f (void)
 	alias->value = cmd;
 }
 
-void
+static void
 Cmd_UnAlias_f (void)
 {
 	cmdalias_t *alias;
@@ -412,7 +412,7 @@ Cmd_UnAlias_f (void)
 	}
 }
 
-void
+static void
 Cmd_CmdList_f (void)
 {
 	cmd_function_t *cmd;
@@ -432,7 +432,7 @@ Cmd_CmdList_f (void)
 	Sys_Printf ("------------\n%d commands\n", i);
 }
 
-void
+static void
 Cmd_Help_f (void)
 {
 	const char *name;
@@ -463,7 +463,7 @@ Cmd_Help_f (void)
 
 	Sys_Printf ("variable/command not found\n");
 }
-void
+static void
 Cmd_Exec_f (void)
 {
 	char       *f;
@@ -492,7 +492,7 @@ Cmd_Exec_f (void)
 
 	Just prints the rest of the line to the console
 */
-void
+static void
 Cmd_Echo_f (void)
 {
 	if (Cmd_Argc () == 2)
@@ -503,7 +503,7 @@ Cmd_Echo_f (void)
 
 /* Pauses execution of the current stack until
 next call of Cmd_Execute (usually next frame) */
-void
+static void
 Cmd_Wait_f (void)
 {
 	cbuf_active->state = CBUF_STATE_WAIT;
@@ -511,7 +511,7 @@ Cmd_Wait_f (void)
 
 /* Pauses execution for a specified number
 of seconds */
-void
+static void
 Cmd_Sleep_f (void)
 {
 	double waittime;
@@ -528,31 +528,33 @@ Cmd_StuffCmds (cbuf_t *cbuf)
 	int         i, j;
 	int         s;
 	char       *build, c;
+	char       *cmdline;
 
 	s = strlen (com_cmdline);
 	if (!s)
 		return;
 
+	cmdline = strdup (com_cmdline);
 	// pull out the commands
 	build = malloc (s + 1);
 	SYS_CHECKMEM (build);
 	build[0] = 0;
 
 	for (i = 0; i < s - 1; i++) {
-		if (com_cmdline[i] == '+') {
+		if (cmdline[i] == '+') {
 			i++;
 
-			for (j = i; !((com_cmdline[j] == '+')
-						  || (com_cmdline[j] == '-'
-							  && (j == 0 || com_cmdline[j - 1] == ' '))
-						  || (com_cmdline[j] == 0)); j++);
+			for (j = i; !((cmdline[j] == '+')
+						  || (cmdline[j] == '-'
+							  && (j == 0 || cmdline[j - 1] == ' '))
+						  || (cmdline[j] == 0)); j++);
 
-			c = com_cmdline[j];
-			com_cmdline[j] = 0;
+			c = cmdline[j];
+			cmdline[j] = 0;
 
-			strncat (build, com_cmdline + i, s - strlen (build));
+			strncat (build, cmdline + i, s - strlen (build));
 			strncat (build, "\n", s - strlen (build));
-			com_cmdline[j] = c;
+			cmdline[j] = c;
 			i = j - 1;
 		}
 	}
@@ -561,9 +563,10 @@ Cmd_StuffCmds (cbuf_t *cbuf)
 		Cbuf_InsertText (cbuf, build);
 
 	free (build);
+	free (cmdline);
 }
 
-void
+static void
 Cmd_StuffCmds_f (void)
 {
 	Cmd_StuffCmds (cbuf_active);

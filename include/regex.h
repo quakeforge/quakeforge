@@ -466,7 +466,7 @@ extern void re_set_registers
              unsigned num_regs, regoff_t *starts, regoff_t *ends));
 
 /* 4.2 bsd compatibility.  */
-extern char *re_comp _RE_ARGS ((const char *));
+extern const char *re_comp _RE_ARGS ((const char *));
 extern int re_exec _RE_ARGS ((const char *));
 
 /* POSIX compatibility.  */

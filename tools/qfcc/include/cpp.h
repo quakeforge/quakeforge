@@ -32,7 +32,7 @@
 #ifndef __cpp_h
 #define __cpp_h
 
-void parse_cpp_name ();
+void parse_cpp_name (void);
 void add_cpp_def (const char *arg);
 FILE * preprocess_file (const char *filename);
 extern const char *cpp_name;

@@ -43,7 +43,7 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-void *
+static void *
 Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
 {
 	dspriteframe_t *pinframe;
@@ -79,7 +79,7 @@ Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
 	return (void *) ((byte *) pinframe + sizeof (dspriteframe_t) + size);
 }
 
-void *
+static void *
 Mod_LoadSpriteGroup (void *pin, mspriteframe_t **ppframe, int framenum)
 {
 	dspritegroup_t		*pingroup;

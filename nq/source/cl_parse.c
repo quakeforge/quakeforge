@@ -55,7 +55,7 @@ static const char rcsid[] =
 #include "server.h"
 #include "game.h"
 
-char       *svc_strings[] = {
+const char *svc_strings[] = {
 	"svc_bad",
 	"svc_nop",
 	"svc_disconnect",
@@ -107,7 +107,7 @@ char       *svc_strings[] = {
 
 	This error checks and tracks the total number of entities
 */
-cl_entity_state_t *
+static cl_entity_state_t *
 CL_EntityNum (int num)
 {
 	if (num >= cl.num_entities) {
@@ -124,7 +124,7 @@ CL_EntityNum (int num)
 	return &cl_baselines[num];
 }
 
-void
+static void
 CL_ParseStartSoundPacket (void)
 {
 	float       attenuation;
@@ -164,7 +164,7 @@ CL_ParseStartSoundPacket (void)
 	When the client is taking a long time to load stuff, send keepalive
 	messages so the server doesn't disconnect.
 */
-void
+static void
 CL_KeepaliveMessage (void)
 {
 	byte        olddata[8192];
@@ -240,7 +240,7 @@ map_cfg (const char *mapname, int all)
 	free (name);
 }
 
-void
+static void
 CL_NewMap (const char *mapname)
 {
 	R_NewMap (cl.worldmodel, cl.model_precache, MAX_MODELS);
@@ -249,7 +249,7 @@ CL_NewMap (const char *mapname)
 	map_cfg (mapname, 1);
 }
 
-void
+static void
 CL_ParseServerInfo (void)
 {
 	char        model_precache[MAX_MODELS][MAX_QPATH];
@@ -359,7 +359,7 @@ int         bitcounts[16];
 	If an entities model or origin changes from frame to frame, it must be
 	relinked.  Other attributes can change without relinking.
 */
-void
+static void
 CL_ParseUpdate (int bits)
 {
 	entity_t   *ent;
@@ -551,7 +551,7 @@ link:
 	}
 }
 
-void
+static void
 CL_ParseBaseline (cl_entity_state_t *state)
 {
 	state->baseline.modelindex = MSG_ReadByte (net_message);
@@ -575,7 +575,7 @@ CL_ParseBaseline (cl_entity_state_t *state)
 
 	Server information pertaining to this client only
 */
-void
+static void
 CL_ParseClientdata (int bits)
 {
 	int         i, j;
@@ -675,7 +675,7 @@ CL_ParseClientdata (int bits)
 	}
 }
 
-void
+static void
 CL_ParseStatic (void)
 {
 	cl_entity_state_t state;
@@ -712,7 +712,7 @@ CL_ParseStatic (void)
 	R_AddEfrags (ent);
 }
 
-void
+static void
 CL_ParseStaticSound (void)
 {
 	int         sound_num, vol, atten;

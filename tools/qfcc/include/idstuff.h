@@ -39,6 +39,6 @@ void PrecacheSound (struct def_s *e, int ch);
 void PrecacheModel (struct def_s *e, int ch);
 void PrecacheFile (struct def_s *e, int ch);
 int  WriteFiles (const char *sourcedir);
-int  WriteProgdefs (char *filename);
+int  WriteProgdefs (const char *filename);
 
 #endif//__idstuff_h

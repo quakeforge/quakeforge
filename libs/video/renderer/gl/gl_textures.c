@@ -70,7 +70,7 @@ static gltexture_t gltextures[MAX_GLTEXTURES];
 static int  numgltextures = 0;
 
 typedef struct {
-	char       *name;
+	const char *name;
 	int         minimize, maximize;
 } glmode_t;
 
@@ -84,10 +84,10 @@ static glmode_t modes[] = {
 };
 
 typedef struct {
-	char *name;
+	const char *name;
 	int format;
 } glformat_t;
-
+#if 0
 static glformat_t formats[] = {
 /*
 	1-4 are standardly supported formats by GL, not exactly the
@@ -174,7 +174,7 @@ static glformat_t formats[] = {
 */
 	{"NULL", 0}
 };
-
+#endif
 int gl_alpha_format = 4, gl_lightmap_format = 4, gl_solid_format = 3;
 
 
@@ -218,8 +218,8 @@ GL_TextureMode_f (void)
 		}
 	}
 }
-
-int
+#if 0
+static int
 GL_TextureDepth_f (int format)
 {
 	int i;
@@ -245,7 +245,7 @@ GL_TextureDepth_f (int format)
 
 	return formats[i].format;
 }
-
+#endif
 static void
 GL_ResampleTexture (unsigned int *in, int inwidth, int inheight,
 					unsigned int *out, int outwidth, int outheight)

@@ -164,7 +164,7 @@ CL_ClearTEnts (void)
 	}
 }
 
-explosion_t *
+static explosion_t *
 CL_AllocExplosion (void)
 {
 	float       time;
@@ -263,7 +263,7 @@ beam_setup (beam_t *b)
 	}
 }
 
-void
+static void
 CL_ParseBeam (model_t *m)
 {
 	beam_t     *b;
@@ -470,7 +470,7 @@ CL_ParseTEnt (void)
 #define BEAM_SEED_INTERVAL 72
 #define BEAM_SEED_PRIME 3191
 
-void
+static void
 CL_UpdateBeams (void)
 {
 	beam_t     *b;
@@ -506,7 +506,7 @@ CL_UpdateBeams (void)
 	}
 }
 
-void
+static void
 CL_UpdateExplosions (void)
 {
 	int          f, i;

@@ -130,7 +130,7 @@ SV_SetIdealPitch (void)
 	SVfloat (sv_player, idealpitch) = -dir * sv_idealpitchscale->value;
 }
 
-void
+static void
 SV_UserFriction (void)
 {
 	float      *vel;
@@ -196,7 +196,7 @@ SV_Accelerate (vec3_t wishvel)
 }
 #endif
 
-void
+static void
 SV_Accelerate (void)
 {
 	int         i;
@@ -214,7 +214,7 @@ SV_Accelerate (void)
 		velocity[i] += accelspeed * wishdir[i];
 }
 
-void
+static void
 SV_AirAccelerate (vec3_t wishveloc)
 {
 	int         i;
@@ -236,7 +236,7 @@ SV_AirAccelerate (vec3_t wishveloc)
 		velocity[i] += accelspeed * wishveloc[i];
 }
 
-void
+static void
 DropPunchAngle (void)
 {
 	float       len;
@@ -250,7 +250,7 @@ DropPunchAngle (void)
 																  punchangle));
 }
 
-void
+static void
 SV_WaterMove (void)
 {
 	int         i;
@@ -302,7 +302,7 @@ SV_WaterMove (void)
 		velocity[i] += accelspeed * wishvel[i];
 }
 
-void
+static void
 SV_WaterJump (void)
 {
 	if (sv.time > SVfloat (sv_player, teleport_time) ||
@@ -315,7 +315,7 @@ SV_WaterJump (void)
 	SVvector (sv_player, velocity)[1] = SVvector (sv_player, movedir)[1];
 }
 
-void
+static void
 SV_AirMove (void)
 {
 	int         i;
@@ -409,7 +409,7 @@ SV_ClientThink (void)
 	SV_AirMove ();
 }
 
-void
+static void
 SV_ReadClientMove (usercmd_t *move)
 {
 	int         i, bits;
@@ -445,7 +445,7 @@ SV_ReadClientMove (usercmd_t *move)
 
   Returns false if the client should be killed
 */
-qboolean
+static qboolean
 SV_ReadClientMessage (void)
 {
 	int         cmd, ret;

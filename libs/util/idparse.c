@@ -40,6 +40,7 @@ static const char rcsid[] =
 #include "QF/dstring.h"
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
+#include "QF/idparse.h"
 
 static dstring_t *_com_token;
 const char *com_token;
@@ -120,7 +121,7 @@ COM_TokenizeString (const char *str, cbuf_args_t *args)
 	return;
 }
 
-void
+static void
 COM_extract_line (cbuf_t *cbuf)
 {
 	int         i;
@@ -159,14 +160,14 @@ COM_extract_line (cbuf_t *cbuf)
 	}
 }
 
-void
+static void
 COM_parse_line (cbuf_t *cbuf)
 {
 	COM_TokenizeString (cbuf->line->str, cbuf->args);
 	dstring_clearstr (cbuf->line);
 }
 
-void
+static void
 COM_execute_line (cbuf_t *cbuf)
 {
 	Cmd_Command (cbuf->args);

@@ -38,6 +38,7 @@ static const char rcsid[] =
 #endif
 
 #include "QF/sys.h"
+#include "QF/render.h"
 
 #include "r_local.h"
 

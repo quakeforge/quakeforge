@@ -55,7 +55,7 @@ typedef struct {
 } tf_triangle;
 
 
-void
+static void
 ByteSwapTri (tf_triangle *tri)
 {
 	int		i;

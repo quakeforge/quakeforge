@@ -74,7 +74,7 @@ D_MipLevelForScale (float scale)
 
 // FIXME: clean this up
 
-void
+static void
 D_DrawSolidSurface (surf_t *surf, int color)
 {
 	espan_t    *span;
@@ -106,7 +106,7 @@ D_DrawSolidSurface (surf_t *surf, int color)
 }
 
 
-void
+static void
 D_CalcGradients (msurface_t *pface)
 {
 	mplane_t   *pplane;

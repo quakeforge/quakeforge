@@ -33,6 +33,7 @@ static const char rcsid[] =
 #include <stdlib.h>
 
 #include "QF/cbuf.h"
+#include "QF/csqc.h"
 #include "QF/idparse.h" // For now, use the id console parser
 #include "QF/progs.h"
 

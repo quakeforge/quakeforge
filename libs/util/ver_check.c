@@ -36,6 +36,7 @@ static const char rcsid[] =
 #include <stdlib.h>
 
 #include "QF/qtypes.h"
+#include "QF/ver_check.h"
 
 
 /*

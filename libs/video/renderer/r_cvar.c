@@ -39,6 +39,7 @@ static const char rcsid[] =
 #include "QF/cvar.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
+#include "QF/render.h"
 
 #include "compat.h"
 #include "r_cvar.h"

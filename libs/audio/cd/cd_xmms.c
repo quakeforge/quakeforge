@@ -533,7 +533,8 @@ I_XMMS_f (void)
 	return;
 }
 
-QFPLUGIN plugin_t   *
+QFPLUGIN plugin_t *PLUGIN_INFO(cd, xmms) (void);
+QFPLUGIN plugin_t *
 PLUGIN_INFO(cd, xmms) (void)
 {
 	plugin_info.type = qfp_cd;

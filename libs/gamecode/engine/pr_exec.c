@@ -144,7 +144,7 @@ PR_EnterFunction (progs_t * pr, dfunction_t *f)
 	return;
 }
 
-void
+static void
 PR_LeaveFunction (progs_t * pr)
 {
 	int			c;

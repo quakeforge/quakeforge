@@ -74,7 +74,7 @@ HANDLE      qwclsemaphore;
 
 static HANDLE tevent;
 
-void
+static void
 startup (void)
 {
 	OSVERSIONINFO vinfo;
@@ -124,7 +124,7 @@ shutdown (void)
 		CloseHandle (qwclsemaphore);
 }
 
-void
+static void
 SleepUntilInput (int time)
 {
 	MsgWaitForMultipleObjects (1, &tevent, FALSE, time, QS_ALLINPUT);
@@ -132,8 +132,8 @@ SleepUntilInput (int time)
 
 HINSTANCE   global_hInstance;
 int         global_nCmdShow;
-char       *argv[MAX_NUM_ARGVS];
-static char *empty_string = "";
+const char *argv[MAX_NUM_ARGVS];
+static const char *empty_string = "";
 
 int WINAPI
 WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
@@ -182,7 +182,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		}
 	}
 
-	COM_InitArgv (host_parms.argc, (const char**)argv);
+	COM_InitArgv (host_parms.argc, argv);
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 

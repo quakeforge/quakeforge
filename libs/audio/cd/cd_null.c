@@ -78,6 +78,7 @@ I_CD_f (void)
 {
 }
 
+QFPLUGIN plugin_t *PLUGIN_INFO(cd, null) (void);
 QFPLUGIN plugin_t *
 PLUGIN_INFO(cd, null) (void)
 {

@@ -138,7 +138,7 @@ pi_info_name (char *info_name, int size, const char *type, const char *name)
 		snprintf (info_name, size, "PluginInfo");
 }
 
-void
+static void
 PI_InitCvars (void)
 {
 	fs_pluginpath = Cvar_Get ("fs_pluginpath", FS_PLUGINPATH, CVAR_ROM, NULL,

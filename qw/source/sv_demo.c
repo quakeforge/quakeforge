@@ -86,21 +86,6 @@ static int  header = (int) &((header_t *) 0)->data;
 
 entity_state_t demo_entities[UPDATE_MASK + 1][MAX_DEMO_PACKET_ENTITIES];
 
-// only one .. is allowed (security)
-qboolean
-sv_demoDir_OnChange (cvar_t *cvar, char *value)
-{
-	if (!value[0])
-		return true;
-
-	if (value[0] == '.' && value[1] == '.')
-		value += 2;
-	if (strstr (value, "/.."))
-		return true;
-
-	return false;
-}
-
 void
 SV_DemoPings (void)
 {
@@ -121,7 +106,7 @@ SV_DemoPings (void)
 	}
 }
 
-void
+static void
 DemoBuffer_Init (dbuffer_t * dbuffer, byte * buf, size_t size)
 {
 	demobuffer = dbuffer;
@@ -162,7 +147,7 @@ DemoSetMsgBuf (demobuf_t * prev, demobuf_t * cur)
 	Message is cleared from demobuf after that
 */
 
-void
+static void
 SV_DemoWriteToDisk (int type, int to, float time)
 {
 	int         pos = 0, oldm, oldd;
@@ -251,7 +236,7 @@ DemoSetBuf (byte type, int to)
 	demo.dbuf->h = p;
 }
 
-void
+static void
 DemoMoveBuf (void)
 {
 	// set the last message mark to the previous frame (i/e begining of this
@@ -383,7 +368,7 @@ SV_WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 	and writes packets to the disk/memory
 */
 
-float
+static float
 adjustangle (float current, float ideal, float fraction)
 {
 	float       move;
@@ -556,7 +541,7 @@ SV_DemoWritePackets (int num)
 	demo.dbuf->sz.maxsize = MAXSIZE + demo.dbuf->bufsize;
 }
 
-int
+static int
 memwrite (QFile * _mem, const void *buffer, int size)
 {
 	int         i;
@@ -569,7 +554,7 @@ memwrite (QFile * _mem, const void *buffer, int size)
 	return size;
 }
 
-qboolean
+static qboolean
 SV_InitRecord (void)
 {
 	if (!USACACHE) {
@@ -689,7 +674,7 @@ SV_Stop_f (void)
 
 	Stops recording, and removes the demo
 */
-void
+static void
 SV_Cancel_f (void)
 {
 	SV_Stop (2);
@@ -701,7 +686,7 @@ SV_Cancel_f (void)
 	Dumps the current net message, prefixed by the length and view angles
 */
 
-void
+static void
 SV_WriteRecordDemoMessage (sizebuf_t *msg, int seq)
 {
 	int         len;
@@ -725,7 +710,7 @@ SV_WriteRecordDemoMessage (sizebuf_t *msg, int seq)
 		Qflush (demo.file);
 }
 
-void
+static void
 SV_WriteSetDemoMessage (void)
 {
 	int         len;
@@ -752,7 +737,7 @@ SV_WriteSetDemoMessage (void)
 		Qflush (demo.file);
 }
 
-static char *
+static const char *
 SV_PrintTeams (void)
 {
 	char        teams[MAX_CLIENTS][128];
@@ -822,7 +807,7 @@ SV_Record (char *name)
 	char        buf_data[MAX_MSGLEN];
 	int         n, i;
 	char        path[MAX_OSPATH];
-	char       *info;
+	const char *info;
 	dstring_t  *tn = demo.name, *tp = demo.path;
 
 	client_t   *player;
@@ -1073,7 +1058,7 @@ SV_Record (char *name)
 	Cleans the demo name, removes restricted chars, makes name lowercase
 */
 
-char       *
+static char       *
 SV_CleanName (const unsigned char *name)
 {
 	static char text[1024];
@@ -1098,7 +1083,7 @@ SV_CleanName (const unsigned char *name)
 
 	record <demoname>
 */
-void
+static void
 SV_Record_f (void)
 {
 	dstring_t  *name = dstring_newstr ();
@@ -1138,8 +1123,8 @@ SV_Record_f (void)
 	easyrecord [demoname]
 */
 
-int
-Dem_CountPlayers ()
+static int
+Dem_CountPlayers (void)
 {
 	int         i, count;
 
@@ -1152,7 +1137,7 @@ Dem_CountPlayers ()
 	return count;
 }
 
-const char *
+static const char *
 Dem_Team (int num)
 {
 	int         i;
@@ -1182,7 +1167,7 @@ Dem_Team (int num)
 	return lastteam[index];
 }
 
-char       *
+static const char *
 Dem_PlayerName (int num)
 {
 	int         i;
@@ -1199,7 +1184,7 @@ Dem_PlayerName (int num)
 	return "";
 }
 
-void
+static void
 SV_EasyRecord_f (void)
 {
 	dstring_t  *name = dstring_newstr ();
@@ -1271,7 +1256,7 @@ SV_EasyRecord_f (void)
 	dstring_delete (name2);
 }
 
-void
+static void
 SV_DemoList_f (void)
 {
 /*
@@ -1314,7 +1299,7 @@ SV_DemoList_f (void)
 */
 }
 
-char       *
+static char       *
 SV_DemoNum (int num)
 {
 /*
@@ -1340,7 +1325,7 @@ SV_DemoNum (int num)
 	return NULL;
 }
 
-char       *
+static char       *
 SV_DemoName2Txt (char *name)
 {
 	char        s[MAX_OSPATH];
@@ -1358,13 +1343,13 @@ SV_DemoName2Txt (char *name)
 	return va ("%s", s);
 }
 
-char       *
+static char       *
 SV_DemoTxTNum (int num)
 {
 	return SV_DemoName2Txt (SV_DemoNum (num));
 }
 
-void
+static void
 SV_DemoRemove_f (void)
 {
 	dstring_t  *name = dstring_newstr ();
@@ -1449,7 +1434,7 @@ SV_DemoRemove_f (void)
 	unlink (SV_DemoName2Txt (path));
 }
 
-void
+static void
 SV_DemoRemoveNum_f (void)
 {
 	int         num;
@@ -1499,7 +1484,7 @@ SV_DemoRemoveNum_f (void)
 		Con_Printf ("invalid demo num\n");
 }
 
-void
+static void
 SV_DemoInfoAdd_f (void)
 {
 	const char *name = 0, *args;
@@ -1548,7 +1533,7 @@ SV_DemoInfoAdd_f (void)
 	Qclose (f);
 }
 
-void
+static void
 SV_DemoInfoRemove_f (void)
 {
 	char       *name = 0, path[MAX_OSPATH];
@@ -1584,7 +1569,7 @@ SV_DemoInfoRemove_f (void)
 		Con_Printf ("file removed\n");
 }
 
-void
+static void
 SV_DemoInfo_f (void)
 {
 	const char *buf;

@@ -66,7 +66,7 @@ static mvertex_t *pfrontenter, *pfrontexit;
 static qboolean makeclippededge;
 
 
-void
+static void
 R_EntityRotate (vec3_t vec)
 {
 	vec3_t      tvec;
@@ -150,7 +150,7 @@ R_RotateBmodel (void)
 }
 
 
-void
+static void
 R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
 {
 	bedge_t    *psideedges[2], *pnextedge, *ptedge;
@@ -396,7 +396,7 @@ R_DrawSubmodelPolygons (model_t *pmodel, int clipflags)
 }
 
 
-void
+static void
 R_RecursiveWorldNode (mnode_t *node, int clipflags)
 {
 	int         i, c, side, *pindex;

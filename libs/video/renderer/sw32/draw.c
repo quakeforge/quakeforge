@@ -344,7 +344,7 @@ Draw_AltString (int x, int y, const char *str)
 }
 
 
-void
+static void
 Draw_Pixel (int x, int y, byte color)
 {
 	switch(r_pixbytes)
@@ -718,7 +718,7 @@ Draw_ConsoleBackground (int lines)
 					lines - 14, cl_verstring->string);
 }
 
-void
+static void
 R_DrawRect (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 {
 	switch(r_pixbytes) {

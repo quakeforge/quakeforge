@@ -112,7 +112,7 @@ trivertx_t	tarray[MAXVERTS];
 char	outname[1024];
 
 
-void
+static void
 ClearModel (void)
 {
 	memset (&model, 0, sizeof (model));
@@ -134,7 +134,7 @@ ClearModel (void)
 	totsize = 0.0;
 }
 
-void
+static void
 WriteFrame (QFile *modelouthandle, int framenum)
 {
 	int				j, k;
@@ -177,7 +177,7 @@ WriteFrame (QFile *modelouthandle, int framenum)
 	Qwrite (modelouthandle, &tarray[0], model.numverts * sizeof(tarray[0]));
 }
 
-void
+static void
 WriteGroupBBox (QFile *modelouthandle, int numframes, int curframe)
 {
 	int				i, j, k;
@@ -212,7 +212,7 @@ WriteGroupBBox (QFile *modelouthandle, int numframes, int curframe)
 	Qwrite (modelouthandle, &dagroup, sizeof(dagroup));
 }
 
-void
+static void
 WriteModelFile (QFile *modelouthandle)
 {
 	int		i, curframe, curskin;
@@ -346,7 +346,7 @@ WriteModelFile (QFile *modelouthandle)
 	}
 }
 
-void
+static void
 WriteModel (void)
 {
 	QFile		*modelouthandle;
@@ -391,7 +391,7 @@ SetSkinValues
 Called for the base frame
 ============
 */
-void
+static void
 SetSkinValues (void)
 {
 	float		basex, basey, v;
@@ -490,7 +490,7 @@ SetSkinValues (void)
 			model.skinwidth, skinwidth, model.skinheight);
 }
 
-void
+static void
 Cmd_Base (void)
 {
 	triangle_t	*ptri;
@@ -545,7 +545,7 @@ Cmd_Base (void)
 	SetSkinValues ();
 }
 
-void
+static void
 Cmd_Skin (void)
 {
 	byte	*ppal, *pskinbitmap, *ptemp1, *ptemp2;
@@ -597,7 +597,7 @@ Cmd_Skin (void)
 		Error ("Too many skins; increase MAXSKINS");
 }
 
-void
+static void
 GrabFrame (char *frame, int isgroup)
 {
 	int			 numtris, time1, i, j;
@@ -757,7 +757,7 @@ GrabFrame (char *frame, int isgroup)
 	firstframe = 0;
 }
 
-void
+static void
 Cmd_Frame (int isgroup)
 {
 	while (TokenAvailable ()) {
@@ -769,7 +769,7 @@ Cmd_Frame (int isgroup)
 	}
 }
 
-void
+static void
 Cmd_SkinGroupStart (void)
 {
 	int			groupskin;
@@ -800,7 +800,7 @@ Cmd_SkinGroupStart (void)
 		Error ("Empty group\n");
 }
 
-void
+static void
 Cmd_FrameGroupStart (void)
 {
 	int			groupframe;
@@ -832,7 +832,7 @@ Cmd_FrameGroupStart (void)
 		Error ("Empty group\n");
 }
 
-void
+static void
 Cmd_Origin (void)
 {
 // rotate points into frame of reference so model points down the positive x
@@ -847,7 +847,7 @@ Cmd_Origin (void)
 	adjust[2] = -atof (token);
 }
 
-void
+static void
 Cmd_Eyeposition (void)
 {
 // rotate points into frame of reference so model points down the positive x
@@ -862,21 +862,21 @@ Cmd_Eyeposition (void)
 	model.eyeposition[2] = atof (token);
 }
 
-void
+static void
 Cmd_ScaleUp (void)
 {
 	GetToken (false);
 	scale_up = atof (token);
 }
 
-void
+static void
 Cmd_Flags (void)
 {
 	GetToken (false);
 	model.flags = atoi (token);
 }
 
-void
+static void
 Cmd_Modelname (void)
 {
 	WriteModel ();
@@ -884,7 +884,7 @@ Cmd_Modelname (void)
 	strcpy (outname, token);
 }
 
-void
+static void
 ParseScript (void)
 {
 	while (1) {

@@ -85,7 +85,7 @@ typedef struct list_s {
 					   | ((unsigned char)(c) << 8) \
 					   | (unsigned char)(d))
 
-char *
+static char *
 read_string (FILE *f, int len)
 {
 	char        c[2] = {0, 0};
@@ -105,7 +105,7 @@ read_string (FILE *f, int len)
 	return s;
 }
 
-void *
+static void *
 read_data (FILE *f, int len)
 {
 	void       *data = malloc (len);
@@ -115,13 +115,13 @@ read_data (FILE *f, int len)
 	return data;
 }
 
-void
+static void
 read_ltxt (FILE *f, int len, d_ltxt_t *ltxt)
 {
 	fread (ltxt, 1, len, f);
 }
 
-void
+static void
 read_adtl (dstring_t *list_buf, FILE *f, int len)
 {
 	d_chunk_t   ck, *chunk = 0;
@@ -170,7 +170,7 @@ read_adtl (dstring_t *list_buf, FILE *f, int len)
 	list = (list_t *) list_buf->str;
 }
 
-list_t *
+static list_t *
 read_list (d_chunk_t *ck, FILE *f, int len)
 {
 	d_chunk_t  *chunk = 0;
@@ -235,7 +235,7 @@ read_list (d_chunk_t *ck, FILE *f, int len)
 	return list;
 }
 
-d_cue_t *
+static d_cue_t *
 read_cue (FILE *f, int len)
 {
 	d_cue_t    *cue = malloc (len);
@@ -245,7 +245,7 @@ read_cue (FILE *f, int len)
 	return cue;
 }
 
-list_t *
+static list_t *
 read_riff (const char *filename)
 {
 	dstring_t  *riff_buf;

@@ -94,7 +94,7 @@ add_cpp_def (const char *arg)
 }
 
 void
-parse_cpp_name ()
+parse_cpp_name (void)
 {
 	char       *n;
 
@@ -154,7 +154,7 @@ preprocess_file (const char *filename)
 	pid_t       pid;
 	int         tempfd = 0;
 #endif
-	char       *temp1;
+	const char *temp1;
 	char       *temp2 = strrchr (this_program, PATH_SEPARATOR);
 
 	if (cpp_name) {

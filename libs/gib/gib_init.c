@@ -35,6 +35,7 @@ static const char rcsid[] =
 #include "QF/qtypes.h"
 #include "QF/cbuf.h"
 #include "QF/quakefs.h"
+#include "QF/gib_init.h"
 #include "QF/gib_parse.h"
 #include "QF/gib_builtin.h"
 #include "QF/gib_regex.h"
@@ -44,7 +45,7 @@ static const char rcsid[] =
 #include "QF/zone.h"
 #include "QF/cvar.h"
 
-void
+static void
 GIB_Exec_Override_f (void) {
 	char       *f;
 	int         mark;

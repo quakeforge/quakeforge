@@ -62,6 +62,7 @@ static const char rcsid[] =
 #include "globals.h"
 #include "lines.h"
 #include "modules.h"
+#include "qfprogs.h"
 #include "strings.h"
 
 static const struct option long_options[] = {
@@ -180,7 +181,7 @@ init_qf (void)
 	Hash_SetHashCompare (func_tab, func_hash, func_compare);
 }
 
-int
+static int
 load_progs (const char *name)
 {
 	QFile      *file;

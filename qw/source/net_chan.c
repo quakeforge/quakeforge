@@ -227,8 +227,6 @@ Netchan_CanReliable (netchan_t *chan)
 	return Netchan_CanPacket (chan);
 }
 
-qboolean    ServerPaused (void);		//FIXME
-
 /*
 	Netchan_Transmit
 

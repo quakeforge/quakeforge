@@ -110,7 +110,7 @@ wrfpcr(unsigned long val)
 }
 #endif
 
-void
+static void
 startup (void)
 {
 #ifdef __alpha__

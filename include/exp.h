@@ -31,14 +31,14 @@ typedef double (*funcfunc) (double *oplist, unsigned int numops);
 
 typedef struct optable_s
 {
-	char *str;
+	const char *str;
 	opfunc func;
 	unsigned int operands;
 } optable_t;
 
 typedef struct functable_s
 {
-	char *str;
+	const char *str;
 	funcfunc func; // Heh
 	unsigned int operands;
 } functable_t;

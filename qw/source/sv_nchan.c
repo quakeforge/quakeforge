@@ -42,7 +42,7 @@ static const char rcsid[] =
 #include "server.h"
 
 
-void
+static void
 PushBackbuf (client_t *cl)
 {
 	memset (&cl->backbuf, 0, sizeof (cl->backbuf));

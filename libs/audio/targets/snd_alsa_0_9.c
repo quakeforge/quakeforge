@@ -362,7 +362,8 @@ SNDDMA_UnblockSound (void)
 		qfsnd_pcm_pause (pcm, 0);
 }
 
-plugin_t *
+QFPLUGIN plugin_t *PLUGIN_INFO(snd_output, alsa0_9) (void);
+QFPLUGIN plugin_t *
 PLUGIN_INFO(snd_output, alsa0_9) (void)
 {
 	plugin_info.type = qfp_snd_output;

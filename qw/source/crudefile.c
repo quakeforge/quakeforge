@@ -80,7 +80,7 @@ int        cf_openfiles; // used elements
 
 	Returns 1 if the file descriptor is valid.
 */
-int
+static int
 CF_ValidDesc (int desc)
 {
 	if (desc >= 0 && desc < cf_filepcount && cf_filep[desc].file)
@@ -94,7 +94,7 @@ CF_ValidDesc (int desc)
 	Returns 1 if mode == 'r' and the file is already open for
 	writing, or if if mode == 'w' and the file's already open at all.
 */
-int
+static int
 CF_AlreadyOpen (const char * path, char mode)
 {
 	int i;
@@ -116,7 +116,7 @@ CF_AlreadyOpen (const char * path, char mode)
 
 	Returns the size of the specified file
 */
-int
+static int
 CF_GetFileSize (const char *path)
 {
 	struct stat buf;
@@ -132,8 +132,8 @@ CF_GetFileSize (const char *path)
 
 	Calculates the currently used space
 */
-void
-CF_BuildQuota ()
+static void
+CF_BuildQuota (void)
 {
 	char *file, *path;
 	struct dirent *i;
@@ -169,7 +169,7 @@ CF_BuildQuota ()
 	Ye ol' Init function :)
 */
 void
-CF_Init ()
+CF_Init (void)
 {
 	CF_BuildQuota();
 	crudefile_quota = Cvar_Get ("crudefile_quota", "-1", CVAR_ROM, NULL,

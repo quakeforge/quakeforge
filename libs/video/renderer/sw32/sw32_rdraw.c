@@ -322,7 +322,7 @@ R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip)
 }
 
 
-void
+static void
 R_EmitCachedEdge (void)
 {
 	edge_t     *pedge_t;

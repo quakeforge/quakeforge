@@ -112,7 +112,7 @@ int  joy_id;
 DWORD joy_flags;
 DWORD joy_numbuttons;
 
-PDWORD
+static PDWORD
 RawValuePointer (int axis)
 {
 	switch (axis) {
@@ -132,7 +132,7 @@ RawValuePointer (int axis)
 	return NULL;
 }
 
-qboolean
+static qboolean
 _JOY_Read (void)
 {
 	memset (&ji, 0, sizeof (ji));
@@ -216,7 +216,7 @@ JOY_Read (void)
 	}
 }
 
-int
+static int
 JOY_StartupJoystick (void)
 {
 	int /* i, */ numdevs;
@@ -292,7 +292,7 @@ JOY_Close (void)
 {
 }
 
-void
+static void
 JOY_AdvancedUpdate_f (void)
 {
 	// called once by JOY_ReadJoystick and by user whenever an update is

@@ -599,7 +599,7 @@ render_box (const struct box_def *box)
 	}
 }
 
-void
+static void
 R_DrawSkyBoxPoly (const glpoly_t *poly)
 {
 	int         i;
@@ -657,7 +657,7 @@ R_DrawSkyBoxPoly (const glpoly_t *poly)
 	render_box (&box);
 }
 
-void
+static void
 EmitSkyPolys (float speedscale, const msurface_t *fa)
 {
 	float       length, s, t;

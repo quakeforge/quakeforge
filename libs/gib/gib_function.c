@@ -55,7 +55,7 @@ hashtab_t *gib_functions = 0;
 	Builds a new function struct and returns
 	a pointer to it.
 */
-gib_function_t *
+static gib_function_t *
 GIB_Function_New (void)
 {
 	gib_function_t *new = calloc (1, sizeof (gib_function_t));
@@ -68,12 +68,12 @@ GIB_Function_New (void)
 /* 
 	Hashtable callbacks
 */
-const char *
+static const char *
 GIB_Function_Get_Key (void *ele, void *ptr)
 {
 	return ((gib_function_t *)ele)->name->str;
 }
-void
+static void
 GIB_Function_Free (void *ele, void *ptr)
 {
 	gib_function_t *func = (gib_function_t *)ele;

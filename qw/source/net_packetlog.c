@@ -173,8 +173,8 @@ static msg_t       packet = {0, 0, &_packet};
 
 	Prints packet to logfile, adds time stamp etc.
 */
-void
-Net_LogPrintf (char *fmt, ...)
+static void
+Net_LogPrintf (const char *fmt, ...)
 {
 	char        text[2048];
 	va_list     argptr;
@@ -189,7 +189,7 @@ Net_LogPrintf (char *fmt, ...)
 	Qflush (Net_PacketLog);
 }
 
-int
+static int
 Net_LogStart (const char *fname)
 {
 	char        e_path[MAX_OSPATH];
@@ -210,7 +210,7 @@ Net_LogStop (void)
 	Net_PacketLog = NULL;
 }
 
-void
+static void
 hex_dump_buf (unsigned char *buf, int len)
 {
 	int         pos = 0, llen, i;
@@ -232,8 +232,8 @@ hex_dump_buf (unsigned char *buf, int len)
 		pos += llen;
 	}
 }
-
-void
+/*
+static void
 ascii_dump_buf (unsigned char *buf, int len)
 {
 	int         pos = 0, llen, i;
@@ -247,7 +247,7 @@ ascii_dump_buf (unsigned char *buf, int len)
 		pos += llen;
 	}
 }
-
+*/
 void
 Log_Incoming_Packet (const char *p, int len)
 {
@@ -296,7 +296,7 @@ Log_Outgoing_Packet (const char *p, int len)
 	return;
 }
 
-void
+static void
 Log_Delta(int bits)
 {
 	entity_state_t to;
@@ -374,8 +374,8 @@ Log_Delta(int bits)
 }
 
 
-void
-Parse_Server_Packet ()
+static void
+Parse_Server_Packet (void)
 {
 	const char *s;
 	int         c, i, ii, iii, mask1, mask2;
@@ -817,7 +817,7 @@ Analyze_Server_Packet (const byte * data, int len)
 		Net_PacketLog = NULL;
 }
 
-void
+static void
 Parse_Client_Packet (void)
 {
 	int         mask, i, c, ii;
@@ -923,7 +923,7 @@ Analyze_Client_Packet (const byte * data, int len)
 		Net_PacketLog = NULL;
 }
 
-void
+static void
 Net_PacketLog_f (cvar_t *var)
 {
 	if (var->int_val) {
@@ -933,7 +933,7 @@ Net_PacketLog_f (cvar_t *var)
 	}
 }
 
-void
+static void
 Net_PacketLog_Zap_f (void)
 {
 	if (Net_PacketLog && Net_PacketLog != _stdout) {

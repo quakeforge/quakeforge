@@ -129,6 +129,10 @@ void Con_Skyboxlist_f (void);
 void Con_Demolist_QWD_f (void);
 void Con_Demolist_DEM_f (void);
 
+//FIXME need a better way to communicate this (bah, need a better menu system
+// in general :P)
+void C_DrawInputLine (inputline_t *il);
+
 void Menu_Init (void);
 void Menu_Load (void);
 void Menu_Draw (void);

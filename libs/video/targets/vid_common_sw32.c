@@ -50,7 +50,7 @@ unsigned char d_15to8table[65536];
 
 	LordHavoc: finds nearest matching color in a palette
 */
-int
+static int
 lhfindcolor (byte *pal, int colors, int r, int g, int b)
 {
 	int i, dist, best, bestdist, rd, gd, bd;
@@ -79,7 +79,7 @@ lhfindcolor (byte *pal, int colors, int r, int g, int b)
 	LordHavoc: makes a 32bit color*light table, RGBA order, no endian,
 	           may need to be re-ordered to hardware at display time
 */
-void
+static void
 VID_MakeColormap32 (void *outcolormap, byte *pal)
 {
 	int c, l;
@@ -119,7 +119,8 @@ VID_MakeColormap32 (void *outcolormap, byte *pal)
 	}
 }
 
-unsigned short lh24to16bit (int red, int green, int blue)
+static unsigned short
+lh24to16bit (int red, int green, int blue)
 {
 	red = bound(0, red, 255);
 	green = bound(0, green, 255);
@@ -138,7 +139,7 @@ unsigned short lh24to16bit (int red, int green, int blue)
 	LordHavoc: makes a 16bit color*light table, RGB order, native endian,
 	           may need to be translated to hardware order at display time
 */
-void
+static void
 VID_MakeColormap16 (void *outcolormap, byte *pal)
 {
 	int c, l;
@@ -166,7 +167,7 @@ VID_MakeColormap16 (void *outcolormap, byte *pal)
 
 	LordHavoc: makes a 8bit color*light table
 */
-void
+static void
 VID_MakeColormap8 (void *outcolormap, byte *pal)
 {
 	int c, l;

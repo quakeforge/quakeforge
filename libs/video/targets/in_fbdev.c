@@ -39,9 +39,10 @@ static const char rcsid[] =
 #include <sys/ioctl.h>
 
 #include "QF/cvar.h"
+#include "QF/input.h"
 #include "QF/keys.h"
 
-int
+static int
 fd_blocking (int fd, int on)
 {
 	int x;
@@ -138,11 +139,6 @@ IN_LL_Grab_Input (void)
 
 void
 IN_LL_Ungrab_Input (void)
-{
-}
-
-void
-IN_LL_ModeChanged (void)
 {
 }
 

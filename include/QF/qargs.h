@@ -34,8 +34,8 @@
 #include "QF/qtypes.h"
 
 extern	int		com_argc;
-extern	char	**com_argv;
-extern	char	*com_cmdline;
+extern	const char	**com_argv;
+extern	const char	*com_cmdline;
 
 int COM_CheckParm (const char *parm);
 void COM_AddParm (const char *parm);

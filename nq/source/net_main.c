@@ -83,8 +83,8 @@ qboolean    slistLocal = true;
 static double slistStartTime;
 static int  slistLastShown;
 
-static void Slist_Send (void);
-static void Slist_Poll (void);
+static void Slist_Send (void *);
+static void Slist_Poll (void *);
 PollProcedure slistSendProcedure = { NULL, 0.0, Slist_Send };
 PollProcedure slistPollProcedure = { NULL, 0.0, Slist_Poll };
 
@@ -348,7 +348,7 @@ NET_Slist_f (void)
 
 
 static void
-Slist_Send (void)
+Slist_Send (void *unused)
 {
 	for (net_driverlevel = 0; net_driverlevel < net_numdrivers;
 		 net_driverlevel++) {
@@ -365,7 +365,7 @@ Slist_Send (void)
 
 
 static void
-Slist_Poll (void)
+Slist_Poll (void *unused)
 {
 	for (net_driverlevel = 0; net_driverlevel < net_numdrivers;
 		 net_driverlevel++) {

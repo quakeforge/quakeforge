@@ -227,7 +227,7 @@ ServerPaused (void)
 
 	Informs all masters that this server is going down
 */
-void
+static void
 Master_Shutdown (void)
 {
 	char        string[2048];
@@ -270,7 +270,7 @@ SV_Shutdown (void)
 	Sends a datagram to all the clients informing them of the server crash,
 	then exits
 */
-void
+static void
 SV_Error (const char *error, va_list argptr)
 {
 	static qboolean inerror = false;
@@ -419,7 +419,7 @@ make_info_string_filter (const char *key)
 void
 SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 {
-	char       *info;
+	const char *info;
 	int         i;
 
 	i = client - svs.clients;
@@ -479,7 +479,7 @@ SV_FullClientUpdateToClient (client_t *client, client_t *cl)
 
 	Bad sides: affects gamespy and spytools somewhat...
 */
-int
+static int
 CheckForFlood (flood_enum_t cmdtype)
 {
 	double      currenttime;
@@ -549,7 +549,7 @@ CheckForFlood (flood_enum_t cmdtype)
 	Responds with all the info that qplug or qspy can see
 	This message can be up to around 5k with worst case string lengths.
 */
-void
+static void
 SVC_Status (void)
 {
 	client_t   *cl;
@@ -587,7 +587,7 @@ SVC_Status (void)
 #define	LOG_HIGHWATER	4096
 #define	LOG_FLUSH		10*60
 
-void
+static void
 SV_CheckLog (void)
 {
 	sizebuf_t  *sz;
@@ -615,7 +615,7 @@ SV_CheckLog (void)
 	the same as the current sequence, an A2A_NACK will be returned
 	instead of the data.
 */
-void
+static void
 SVC_Log (void)
 {
 	char        data[MAX_DATAGRAM + 64];
@@ -656,7 +656,7 @@ SVC_Log (void)
 
 	Just responds with an acknowledgement
 */
-void
+static void
 SVC_Ping (void)
 {
 	char        data;
@@ -680,11 +680,11 @@ SVC_Ping (void)
 	flood the server with invalid connection IPs.  With a
 	challenge, they must give a valid IP address.
 */
-void
+static void
 SVC_GetChallenge (void)
 {
 	int         oldest, oldestTime, i;
-	char       *extended = "";
+	const char *extended = "";
 
 	oldest = 0;
 	oldestTime = 0x7fffffff;
@@ -721,7 +721,7 @@ SVC_GetChallenge (void)
 
 	A connection request that did not come from the master
 */
-void
+static void
 SVC_DirectConnect (void)
 {
 	info_t     *userinfo = 0;
@@ -958,7 +958,7 @@ SVC_DirectConnect (void)
 	newcl->cuff_time = SV_RestorePenaltyFilter(newcl, ft_cuff);
 }
 
-int
+static int
 Rcon_Validate (cvar_t *pass)
 {
 	if (!strlen (pass->string))
@@ -970,7 +970,7 @@ Rcon_Validate (cvar_t *pass)
 	return 1;
 }
 
-char *
+static char *
 Name_of_sender (void)
 {
 	client_t   *cl;
@@ -995,7 +995,7 @@ Name_of_sender (void)
   Shift down the remaining args
   Redirect all printfs
 */
-void
+static void
 SVC_RemoteCommand (void)
 {
 	const char *command;
@@ -1068,7 +1068,7 @@ SVC_RemoteCommand (void)
   Clients that are in the game can still send
   connectionless packets.
 */
-void
+static void
 SV_ConnectionlessPacket (void)
 {
 	const char *c, *s;
@@ -1162,7 +1162,7 @@ int         numipfilters;
 ipfilter_t  ipfilters[MAX_IPFILTERS];
 unsigned int ipmasks[33]; // network byte order
 
-void
+static void
 SV_GenerateIPMasks (void)
 {
 	int i;
@@ -1175,7 +1175,7 @@ SV_GenerateIPMasks (void)
 }
 
 // Note: this function is non-reentrant and not threadsafe
-const char *
+static const char *
 SV_PrintIP (byte *ip)
 {
 #ifdef HAVE_IPV6
@@ -1264,7 +1264,7 @@ SV_IPCopy (byte *dest, byte *src)
 		((unsigned int *)dest)[i] = ((unsigned int *)src)[i];
 }
 
-qboolean
+static qboolean
 SV_StringToFilter (const char *address, ipfilter_t *f)
 {
 #ifdef HAVE_IPV6
@@ -1360,7 +1360,7 @@ bad_address:
 	return false;
 }
 
-void
+static void
 SV_RemoveIPFilter (int i)
 {
 	for (; i + 1 < numipfilters; i++)
@@ -1370,11 +1370,11 @@ SV_RemoveIPFilter (int i)
 }
 
 
-void
+static void
 SV_CleanIPList (void)
 {
 	int         i;
-	char		*type;
+	const char *type;
 
 	for (i = 0; i < numipfilters;) {
 		if (ipfilters[i].time && (ipfilters[i].time <= realtime)) {
@@ -1392,7 +1392,7 @@ SV_CleanIPList (void)
 	}
 }
 
-void
+static void
 SV_AddIP_f (void)
 {
 	int         i;
@@ -1435,7 +1435,7 @@ SV_AddIP_f (void)
 	    for (i = 0; i < MAX_CLIENTS; i++) {
 			client_t *cl = &svs.clients[i];
 			char text[1024];
-			char *typestr;
+			const char *typestr;
 			char timestr[1024];
 
 			if (cl->state == cs_free)
@@ -1480,7 +1480,7 @@ SV_AddIP_f (void)
 	}
 }
 
-void
+static void
 SV_RemoveIP_f (void)
 {
 	int         i;
@@ -1498,11 +1498,11 @@ SV_RemoveIP_f (void)
 	SV_Printf ("Didn't find %s/%u.\n", SV_PrintIP (f.ip), f.mask);
 }
 
-void
+static void
 SV_ListIP_f (void)
 {
 	int         i;
-	char		*type;
+	const char *type;
 	char		timestr[30];
 
 	SV_Printf ("IP Filter list:\n");
@@ -1527,13 +1527,13 @@ SV_ListIP_f (void)
 			   numipfilters == 1 ? "" : "s");
 }
 
-void
+static void
 SV_WriteIP_f (void)
 {
 	char        name[MAX_OSPATH];
 	int         i;
 	QFile      *f;
-	char		*type;
+	const char *type;
 
 	snprintf (name, sizeof (name), "%s/listip.cfg", com_gamedir);
 
@@ -1559,7 +1559,7 @@ SV_WriteIP_f (void)
 	Qclose (f);
 }
 
-void
+static void
 SV_netDoSexpire_f (void)
 {
 	int         arg1, i;
@@ -1588,7 +1588,7 @@ SV_netDoSexpire_f (void)
 	return;
 }
 
-void
+static void
 SV_netDoSvalues_f (void)
 {
 	int         arg1, i;
@@ -1617,7 +1617,7 @@ SV_netDoSvalues_f (void)
 	return;
 }
 
-void
+static void
 SV_MaxRate_f (cvar_t *var)
 {
 	client_t   *cl;
@@ -1644,7 +1644,7 @@ SV_MaxRate_f (cvar_t *var)
 	}
 }
 
-void
+static void
 SV_SendBan (double till)
 {
 	char        data[128];
@@ -1673,7 +1673,7 @@ SV_SendBan (double till)
 	// FIXME: this should send a disconnect to the client!
 }
 
-qboolean
+static qboolean
 SV_FilterIP (byte *ip, double *until)
 {
 	int         i;
@@ -1749,7 +1749,7 @@ SV_RestorePenaltyFilter (client_t *cl, filtertype_t type)
 	return 0.0;
 }
 
-void
+static void
 SV_ReadPackets (void)
 {
 	//NOTE star volatile, not volatile star
@@ -1824,7 +1824,7 @@ SV_ReadPackets (void)
   state for a few seconds to make sure any final reliable message gets
   resent if necessary
 */
-void
+static void
 SV_CheckTimeouts (void)
 {
 	client_t   *cl;
@@ -1862,7 +1862,7 @@ SV_CheckTimeouts (void)
 
   Add them exactly as if they had been typed at the console
 */
-void
+static void
 SV_GetConsoleCommands (void)
 {
 	Con_ProcessInput ();
@@ -1871,7 +1871,7 @@ SV_GetConsoleCommands (void)
 /*
 	SV_CheckVars
 */
-void
+static void
 SV_CheckVars (void)
 {
 	static char const *pw, *spw;
@@ -1902,8 +1902,8 @@ SV_CheckVars (void)
 
 	Run string GC on progs every pr_gc_interval frames
 */
-void
-SV_GarbageCollect ()
+static void
+SV_GarbageCollect (void)
 {
 	if (pr_gc->int_val == 1
 		|| (pr_gc->int_val == 2 && sv_pr_state.progs->version == PROG_VERSION)) {
@@ -2011,7 +2011,7 @@ SV_Frame (float time)
 	Con_ProcessInput ();	//XXX evil hack to get the cursor in the right place
 }
 
-void
+static void
 SV_InitLocal (void)
 {
 	int         i;
@@ -2393,7 +2393,7 @@ SV_ExtractFromUserinfo (client_t *cl)
 	cl->stdver = atof (Info_ValueForKey (cl->userinfo, "*qsg_version"));
 }
 
-void
+static void
 SV_InitNet (void)
 {
 	int         port, p;
@@ -2416,7 +2416,7 @@ SV_InitNet (void)
 	sv_net_initialized = 1;
 }
 
-void
+static void
 SV_Init_Memory (void)
 {
 	int         mem_parm = COM_CheckParm ("-mem");

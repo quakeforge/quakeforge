@@ -41,6 +41,5 @@ extern vec3_t lightspot;
 
 void R_RotateForEntity (struct entity_s *e);
 void glrmain_init (void);
-int R_InitGraphTextures (int base);
 
 #endif // __QF_GL_rmain_h

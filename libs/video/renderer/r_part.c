@@ -38,6 +38,7 @@ static const char rcsid[] =
 #include "QF/render.h"
 
 #include "compat.h"
+#include "r_dynamic.h"
 #include "r_local.h"
 
 unsigned int	r_maxparticles, numparticles;
@@ -52,19 +53,19 @@ void (*R_WizTrail) (struct entity_s *ent);
 void (*R_FlameTrail) (struct entity_s *ent);
 void (*R_VoorTrail) (struct entity_s *ent);
 void (*R_GlowTrail) (struct entity_s *ent, int glow_color);
-void (*R_RunParticleEffect) (vec3_t org, vec3_t dir, int color, int count);
-void (*R_BloodPuffEffect) (vec3_t org, int count);
-void (*R_GunshotEffect) (vec3_t org, int count);
-void (*R_LightningBloodEffect) (vec3_t org);
-void (*R_SpikeEffect) (vec3_t org);
-void (*R_KnightSpikeEffect) (vec3_t org);
-void (*R_SuperSpikeEffect) (vec3_t org);
-void (*R_WizSpikeEffect) (vec3_t org);
-void (*R_BlobExplosion) (vec3_t org);
-void (*R_ParticleExplosion) (vec3_t org);
-void (*R_ParticleExplosion2) (vec3_t org, int colorStart, int colorLength);
-void (*R_LavaSplash) (vec3_t org);
-void (*R_TeleportSplash) (vec3_t org);
+void (*R_RunParticleEffect) (const vec3_t org, const vec3_t dir, int color, int count);
+void (*R_BloodPuffEffect) (const vec3_t org, int count);
+void (*R_GunshotEffect) (const vec3_t org, int count);
+void (*R_LightningBloodEffect) (const vec3_t org);
+void (*R_SpikeEffect) (const vec3_t org);
+void (*R_KnightSpikeEffect) (const vec3_t org);
+void (*R_SuperSpikeEffect) (const vec3_t org);
+void (*R_WizSpikeEffect) (const vec3_t org);
+void (*R_BlobExplosion) (const vec3_t org);
+void (*R_ParticleExplosion) (const vec3_t org);
+void (*R_ParticleExplosion2) (const vec3_t org, int colorStart, int colorLength);
+void (*R_LavaSplash) (const vec3_t org);
+void (*R_TeleportSplash) (const vec3_t org);
 
 
 /*

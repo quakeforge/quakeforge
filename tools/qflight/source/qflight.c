@@ -92,7 +92,7 @@ GetFileSpace (int size)
 	return ofs;
 }
 
-void *
+static void *
 LightThread (void *junk)
 {
 	int i;
@@ -108,7 +108,7 @@ LightThread (void *junk)
 	}
 }
 
-void
+static void
 LightWorld (void)
 {
 	lightdata = dstring_new ();

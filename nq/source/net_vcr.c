@@ -68,7 +68,7 @@ VCR_Init (void)
 	return 0;
 }
 
-void
+static void
 VCR_ReadNext (void)
 {
 	if (Qread (vcrFile, &next, sizeof (next)) == 0) {

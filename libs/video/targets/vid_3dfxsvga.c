@@ -53,6 +53,7 @@ static const char rcsid[] =
 #include "QF/vid.h"
 #include "QF/GL/extensions.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_vid.h"
 
 #include "compat.h"
 #include "sbar.h"
@@ -157,7 +158,7 @@ VID_Shutdown (void)
 	qf_fxMesaDestroyContext (fc);
 }
 
-void
+static void
 GL_Init (void)
 {
 	QF_3DfxSetDitherModeEXT dither_select = NULL;
@@ -352,24 +353,6 @@ VID_Init_Cvars (void)
 {
 	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
 								 "Use system gamma control if available");
-}
-
-void
-VID_ExtraOptionDraw (unsigned int options_draw_cursor)
-{
-/* Port specific Options menu entrys */
-}
-
-void
-VID_ExtraOptionCmd (int option_cursor)
-{
-/*
-	switch(option_cursor)
-	{
-	case 12:  // Always start with 12
-	break;
-	}
-*/
 }
 
 void

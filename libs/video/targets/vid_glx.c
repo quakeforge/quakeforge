@@ -59,6 +59,7 @@ static const char rcsid[] =
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_vid.h"
 
 #include "compat.h"
 #include "context_x11.h"
@@ -151,7 +152,7 @@ VID_Shutdown (void)
 	X11_CloseDisplay ();
 }
 
-void
+static void
 GL_Init (void)
 {
 	GL_Init_Common ();
@@ -165,7 +166,7 @@ GL_EndRendering (void)
 	Sbar_Changed ();
 }
 
-void
+static void
 VID_Center_f (void) {
 	X11_ForceViewPort ();
 }
@@ -282,12 +283,6 @@ VID_SetCaption (const char *text)
 	} else {
 		X11_SetCaption (va ("%s %s", PROGRAM, VERSION));
 	}
-}
-
-void
-VID_ForceViewPort(void)
-{
-	X11_ForceViewPort ();
 }
 
 qboolean

@@ -48,6 +48,7 @@ static const char rcsid[] =
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_vid.h"
 
 #include "compat.h"
 #include "in_win.h"

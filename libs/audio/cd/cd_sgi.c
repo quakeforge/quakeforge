@@ -360,7 +360,8 @@ I_SGI_Init (void)
 	return ;
 }
 
-QFPLUGIN plugin_t   *
+QFPLUGIN plugin_t *PLUGIN_INFO(cd, sgi) (void);
+QFPLUGIN plugin_t *
 PLUGIN_INFO(cd, sgi) (void)
 {
         plugin_info.type = qfp_cd;

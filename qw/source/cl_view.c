@@ -114,7 +114,7 @@ V_CalcRoll (const vec3_t angles, const vec3_t velocity)
 	return side * sign;
 }
 
-float
+static float
 V_CalcBob (void)
 {
 	static double	bobtime;
@@ -184,7 +184,7 @@ V_StopPitchDrift (void)
 	Drifting is enabled when the center view key is hit, mlook is released
 	and lookspring is non 0, or when 
 */
-void
+static void
 V_DriftPitch (void)
 {
 	float		delta, move;
@@ -292,7 +292,7 @@ V_ParseDamage (void)
 	v_dmg_time = v_kicktime->value;
 }
 
-void
+static void
 V_cshift_f (void)
 {
 	cshift_empty.destcolor[0] = atoi (Cmd_Argv (1));
@@ -306,7 +306,7 @@ V_cshift_f (void)
 
 	When you run over an item, the server sends this command
 */
-void
+static void
 V_BonusFlash_f (void)
 {
 	if (!cl_cshift_bonus->int_val
@@ -349,7 +349,7 @@ V_SetContentsColor (int contents)
 	}
 }
 
-void
+static void
 V_CalcPowerupCshift (void)
 {
 	if (!cl.stats[STAT_ITEMS] & (IT_SUIT || IT_INVISIBILITY || IT_QUAD
@@ -475,7 +475,7 @@ V_PrepBlend (void)
 
 /* VIEW RENDERING */
 
-float
+static float
 angledelta (float a)
 {
 	a = anglemod (a);
@@ -484,7 +484,7 @@ angledelta (float a)
 	return a;
 }
 
-void
+static void
 CalcGunAngle (void)
 {
 	float			yaw, pitch, move;
@@ -522,32 +522,12 @@ CalcGunAngle (void)
 	cl.viewent.angles[PITCH] = -(r_refdef.viewangles[PITCH] + pitch);
 }
 
-void
-V_BoundOffsets (void)
-{
-	// absolutely bound refresh reletive to entity clipping hull
-	// so the view can never be inside a solid wall
-
-	if (r_refdef.vieworg[0] < cl.simorg[0] - 14)
-		r_refdef.vieworg[0] = cl.simorg[0] - 14;
-	else if (r_refdef.vieworg[0] > cl.simorg[0] + 14)
-		r_refdef.vieworg[0] = cl.simorg[0] + 14;
-	if (r_refdef.vieworg[1] < cl.simorg[1] - 14)
-		r_refdef.vieworg[1] = cl.simorg[1] - 14;
-	else if (r_refdef.vieworg[1] > cl.simorg[1] + 14)
-		r_refdef.vieworg[1] = cl.simorg[1] + 14;
-	if (r_refdef.vieworg[2] < cl.simorg[2] - 22)
-		r_refdef.vieworg[2] = cl.simorg[2] - 22;
-	else if (r_refdef.vieworg[2] > cl.simorg[2] + 30)
-		r_refdef.vieworg[2] = cl.simorg[2] + 30;
-}
-
 /*
 	V_AddIdle
 
 	Idle swaying
 */
-void
+static void
 V_AddIdle (void)
 {
 	r_refdef.viewangles[ROLL] += v_idlescale->value *
@@ -570,7 +550,7 @@ V_AddIdle (void)
 
 	Roll is induced by movement and damage
 */
-void
+static void
 V_CalcViewRoll (void)
 {
 	float		side;
@@ -588,7 +568,7 @@ V_CalcViewRoll (void)
 
 }
 
-void
+static void
 V_CalcIntermissionRefdef (void)
 {
 	entity_t   *view;
@@ -611,7 +591,7 @@ V_CalcIntermissionRefdef (void)
 #include "cl_cam.h"
 
 
-void
+static void
 V_CalcRefdef (void)
 {
 	entity_t   *view;
@@ -718,7 +698,7 @@ V_CalcRefdef (void)
 		Chase_Update ();
 }
 
-void
+static void
 DropPunchAngle (void)
 {
 	cl.punchangle -= 10 * host_frametime;

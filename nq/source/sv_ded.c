@@ -34,13 +34,21 @@ static const char rcsid[] =
 #include <stdio.h>
 #include <stdarg.h>
 
+#include "QF/cdaudio.h"
+#include "QF/csqc.h"
 #include "QF/cvar.h"
+#include "QF/draw.h"
 #include "QF/keys.h"
 #include "QF/plugin.h"
+#include "QF/screen.h"
 #include "QF/sys.h"
 
+#include "chase.h"
 #include "client.h"
 #include "host.h"
+#include "r_dynamic.h"
+#include "sbar.h"
+#include "view.h"
 
 client_state_t cl;
 client_static_t cls;
@@ -82,9 +90,10 @@ CL_Cmd_ForwardToServer (void)
 {
 }
 
-void
+int
 CDAudio_Init (void)
 {
+	return 0;
 }
 
 void
@@ -307,6 +316,7 @@ V_Init_Cvars (void)
 {
 }
 
+QFPLUGIN plugin_t *console_client_PluginInfo (void);
 QFPLUGIN plugin_t *
 console_client_PluginInfo (void)
 {

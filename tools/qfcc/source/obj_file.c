@@ -478,7 +478,7 @@ qfo_open (const char *filename)
 	return qfo;
 }
 
-defspace_t *
+static defspace_t *
 init_space (int size, pr_type_t *data)
 {
 	defspace_t *space = new_defspace ();

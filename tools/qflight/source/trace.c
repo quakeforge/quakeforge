@@ -82,7 +82,7 @@ by recursive subdivision of the line by the BSP tree.
 
 	Converts the disk node structure into the efficient tracing structure
 */
-void
+static void
 MakeTnode (int nodenum)
 {
 	dnode_t		*node;

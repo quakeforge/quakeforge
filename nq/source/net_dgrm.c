@@ -139,7 +139,7 @@ StrAddr (struct qsockaddr *addr)
 unsigned long banAddr = 0x00000000;
 unsigned long banMask = 0xffffffff;
 
-void
+static void
 NET_Ban_f (void)
 {
 	char        addrStr[32];
@@ -235,7 +235,7 @@ Datagram_SendMessage (qsocket_t * sock, sizebuf_t *data)
 }
 
 
-int
+static int
 SendMessageNext (qsocket_t * sock)
 {
 	unsigned int packetLen;
@@ -267,7 +267,7 @@ SendMessageNext (qsocket_t * sock)
 }
 
 
-int
+static int
 ReSendMessage (qsocket_t * sock)
 {
 	unsigned int packetLen;
@@ -485,7 +485,7 @@ Datagram_GetMessage (qsocket_t * sock)
 }
 
 
-void
+static void
 PrintStats (qsocket_t * s)
 {
 	Con_Printf ("canSend = %4u   \n", s->canSend);
@@ -494,7 +494,7 @@ PrintStats (qsocket_t * s)
 	Con_Printf ("\n");
 }
 
-void
+static void
 NET_Stats_f (void)
 {
 	qsocket_t  *s;
@@ -538,11 +538,11 @@ static int  testPollCount;
 static int  testDriver;
 static int  testSocket;
 
-static void Test_Poll (void);
+static void Test_Poll (void *);
 PollProcedure testPollProcedure = { NULL, 0.0, Test_Poll };
 
 static void
-Test_Poll (void)
+Test_Poll (void *unused)
 {
 	struct qsockaddr clientaddr;
 	int         control;
@@ -670,11 +670,11 @@ static qboolean test2InProgress = false;
 static int  test2Driver;
 static int  test2Socket;
 
-static void Test2_Poll (void);
+static void Test2_Poll (void *);
 PollProcedure test2PollProcedure = { NULL, 0.0, Test2_Poll };
 
 static void
-Test2_Poll (void)
+Test2_Poll (void *unused)
 {
 	struct qsockaddr clientaddr;
 	int         control;

@@ -506,7 +506,7 @@ NextSpan4:
 	}
 }
 
-void
+static void
 D_SpriteScanLeftEdge (void)
 {
 	int         i, v, itop, ibottom, lmaxindex;
@@ -560,7 +560,7 @@ D_SpriteScanLeftEdge (void)
 	} while (i != lmaxindex);
 }
 
-void
+static void
 D_SpriteScanRightEdge (void)
 {
 	int         i, v, itop, ibottom;
@@ -634,7 +634,7 @@ D_SpriteScanRightEdge (void)
 	pspan->count = DS_SPAN_LIST_END;	// mark the end of the span list 
 }
 
-void
+static void
 D_SpriteCalculateGradients (void)
 {
 	vec3_t      p_normal, p_saxis, p_taxis, p_temp1;

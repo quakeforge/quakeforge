@@ -114,7 +114,7 @@ SND_AmbientOn (void)
 	snd_ambient = true;
 }
 
-void
+static void
 SND_SoundInfo_f (void)
 {
 	if (!sound_started || !shm) {
@@ -132,7 +132,7 @@ SND_SoundInfo_f (void)
 	Sys_Printf ("%5d total_channels\n", total_channels);
 }
 
-void
+static void
 SND_Startup (void)
 {
 	int			rc;
@@ -154,7 +154,7 @@ SND_Startup (void)
 }
 
 // Load a sound ===============================================================
-sfx_t *
+static sfx_t *
 SND_FindName (const char *name)
 {
 	int			i;
@@ -406,7 +406,7 @@ SND_StopAllSounds (qboolean clear)
 		SND_ClearBuffer ();
 }
 
-void
+static void
 SND_StopAllSoundsC (void)
 {
 	SND_StopAllSounds (true);
@@ -484,7 +484,7 @@ SND_StaticSound (sfx_t *sfx, const vec3_t origin, float vol,
 
 //=============================================================================
 
-void
+static void
 SND_UpdateAmbientSounds (void)
 {
 	float		vol;
@@ -534,7 +534,7 @@ SND_UpdateAmbientSounds (void)
 	}
 }
 
-void
+static void
 SND_GetSoundtime (void)
 {
 	int			fullsamples, samplepos;
@@ -561,7 +561,7 @@ SND_GetSoundtime (void)
 	soundtime = buffers * fullsamples + samplepos / shm->channels;
 }
 
-void
+static void
 SND_Update_ (void)
 {
 	int				samps;
@@ -689,7 +689,7 @@ SND_ExtraUpdate (void)
 
 /* console functions */
 
-void
+static void
 SND_Play (void)
 {
 	char		name[256];
@@ -715,7 +715,7 @@ SND_Play (void)
 	}
 }
 
-void
+static void
 SND_PlayVol (void)
 {
 	char		name[256];
@@ -743,7 +743,7 @@ SND_PlayVol (void)
 	}
 }
 
-void
+static void
 SND_SoundList (void)
 {
 	int			load, size, total, i;
@@ -828,7 +828,7 @@ SND_UnblockSound (void)
 		S_O_UnblockSound ();
 }
 
-void
+static void
 SND_Init_Cvars (void)
 {
 	ambient_fade = Cvar_Get ("ambient_fade", "100", CVAR_NONE, NULL,
@@ -952,6 +952,7 @@ SND_Shutdown (void)
 	shm = 0;
 }
 
+QFPLUGIN plugin_t *PLUGIN_INFO(snd_render, default) (void);
 QFPLUGIN plugin_t *
 PLUGIN_INFO(snd_render, default) (void)
 {

@@ -115,7 +115,7 @@ VID_GetWindowSize (int def_w, int def_h)
 
 /* GAMMA FUNCTIONS */
 
-void
+static void
 VID_BuildGammaTable (double gamma)
 {
 	int 	i;

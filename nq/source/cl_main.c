@@ -93,14 +93,14 @@ cl_entity_state_t    cl_baselines[MAX_EDICTS];
 entity_t    cl_static_entities[MAX_STATIC_ENTITIES];
 
 
-void
+static void
 CL_Sbar_f (cvar_t *var)
 {   
 	vid.recalc_refdef = true;
 	r_lineadj = var->int_val ? sb_lines : 0;
 }
 
-void
+static void
 cl_hudswap_f (cvar_t *var)
 {
 	if (cl_hudswap)
@@ -204,7 +204,7 @@ CL_ClearState (void)
 
 	Cleans the Cshifts, so your screen doesn't stay red after a timedemo :)
 */
-void
+static void
 CL_StopCshifts (void)
 {
 	int i;
@@ -362,7 +362,7 @@ CL_NextDemo (void)
 	cls.demonum++;
 }
 
-void
+static void
 CL_PrintEntities_f (void)
 {
 	entity_t   *ent;
@@ -386,7 +386,7 @@ CL_PrintEntities_f (void)
 
 	Debugging tool, just flashes the screen
 */
-void
+static void
 SetPal (int i)
 {
 #if 0
@@ -418,7 +418,7 @@ SetPal (int i)
 #endif
 }
 
-void
+static void
 CL_NewDlight (int key, vec3_t org, int effects)
 {
 	float       radius;
@@ -469,7 +469,7 @@ CL_NewDlight (int key, vec3_t org, int effects)
 	Determines the fraction between the last two messages that the objects
 	should be put at.
 */
-float
+static float
 CL_LerpPoint (void)
 {
 	float       f, frac;
@@ -505,7 +505,7 @@ CL_LerpPoint (void)
 	return frac;
 }
 
-void
+static void
 CL_RelinkEntities (void)
 {
 	entity_t  **_ent;
@@ -741,7 +741,7 @@ CL_SetState (cactive_t state)
 		con_module->data->console->force_commandline = (state != ca_active);
 }
 
-void
+static void
 Force_CenterView_f (void)
 {
 	cl.viewangles[PITCH] = 0;

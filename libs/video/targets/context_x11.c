@@ -136,7 +136,7 @@ X11_RemoveEvent (int event, void (*event_handler) (XEvent *))
 	return true;
 }
 
-void
+static void
 X11_ProcessEventProxy(XEvent *x_event)
 {
 	if (x_event->type >= LASTEvent) {
@@ -237,7 +237,7 @@ X11_CreateNullCursor (void)
 	XDefineCursor (x_disp, x_win, nullcursor);
 }
 
-void
+static void
 X11_ForceMove (int x, int y)
 {
 	int		nx, ny;
@@ -370,7 +370,7 @@ X11_SetVidMode (int width, int height)
 #endif
 }
 
-void
+static void
 X11_UpdateFullscreen (cvar_t *fullscreen)
 {
 	if (!vid_context_created)
@@ -466,8 +466,8 @@ X11_CreateWindow (int width, int height)
 	if (ClassHint) {
 		resname = strrchr (com_argv[0], '/');
 
-		ClassHint->res_name = (resname ? resname + 1 : com_argv[0]);
-		ClassHint->res_class = PACKAGE;
+		ClassHint->res_name = (char *)(resname ? resname + 1 : com_argv[0]);
+		ClassHint->res_class = (char *)PACKAGE;
 		XSetClassHint (x_disp, x_win, ClassHint);
 		XFree (ClassHint);
 	}
@@ -504,7 +504,7 @@ X11_RestoreVidMode (void)
 #endif
 }
 
-void
+static void
 X11_GrabKeyboardBool(qboolean yes)
 {
 	static qboolean is_grabbed = false;
@@ -523,14 +523,15 @@ X11_GrabKeyboardBool(qboolean yes)
 		is_grabbed = false;
 	}
 }
-
-void
+#if 0
+static void
 X11_UngrabKeyboard (void)
 {
 	XUngrabKeyboard (x_disp, CurrentTime);
 }
+#endif
 
-void
+static void
 X11_GrabMouseBool (qboolean yes)
 {
 	static qboolean is_grabbed = false;
@@ -552,13 +553,15 @@ X11_GrabMouseBool (qboolean yes)
 				  vid.height / 2);
 }
 
-void
+#if 0
+static void
 X11_UngrabMouse(void)
 {
 	XUngrabPointer (x_disp, CurrentTime);
 	XWarpPointer (x_disp, x_win, x_win, 0, 0, 0, 0, vid.width / 2,
 				  vid.height / 2);
 }
+#endif
 
 void
 X11_Grabber (qboolean grab)

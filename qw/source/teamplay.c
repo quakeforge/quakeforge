@@ -332,7 +332,7 @@ Team_Init_Cvars (void)
 
   Location marker manipulation
 */
-void
+static void
 locs_loc (void)
 {
 	char            locfile[MAX_OSPATH];
@@ -402,7 +402,7 @@ locs_loc (void)
 	}
 }
 
-void
+static void
 Locs_Loc_Get (void)
 {
 	location_t *location;
@@ -425,13 +425,13 @@ Locs_Init (void)
 	GIB_Builtin_Add ("loc::get", Locs_Loc_Get, GIB_BUILTIN_NORMAL);
 }
 
-char *
+static const char *
 Team_F_Version (char *args)
 {
 	return va ("say %s %s", PROGRAM, VERSION);
 }
 
-char *
+static const char *
 Team_F_Skins (char *args)
 {
 	int		totalfb, l;

@@ -84,6 +84,7 @@ SNDDMA_UnblockSound (void)
 {
 }
 
+QFPLUGIN plugin_t *PLUGIN_INFO(snd_output, null) (void);
 QFPLUGIN plugin_t *
 PLUGIN_INFO(snd_output, null) (void) {
 	plugin_info.type = qfp_snd_output;

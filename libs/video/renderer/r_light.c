@@ -45,6 +45,7 @@ static const char rcsid[] =
 
 #include "compat.h"
 #include "r_cvar.h"
+#include "r_dynamic.h"
 #include "r_local.h"
 #include "r_shared.h"
 
@@ -382,7 +383,7 @@ calc_lighting_3 (msurface_t  *surf, int ds, int dt)
 	return r;
 }
 
-int
+static int
 RecursiveLightPoint (mnode_t *node, const vec3_t start, const vec3_t end)
 {
 	int			 i, r, s, t, ds, dt, side;

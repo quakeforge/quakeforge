@@ -76,7 +76,7 @@ static void (*surfmiptable32[4]) (void) = {
 int blocklights[34 * 34];	//FIXME make dynamic
 
 
-void
+static void
 R_AddDynamicLights (void)
 {
 	msurface_t *surf;
@@ -142,7 +142,7 @@ R_AddDynamicLights (void)
 
 	Combine and scale multiple lightmaps into the 8.8 format in blocklights
 */
-void
+static void
 R_BuildLightMap (void)
 {
 	int         smax, tmax;

@@ -402,7 +402,7 @@ add_lines (qfo_t *qfo)
 }
 
 static void
-fixup_relocs ()
+fixup_relocs (void)
 {
 	qfo_reloc_t *reloc;
 	qfo_def_t  *def, *field_def;
@@ -606,7 +606,7 @@ linker_begin (void)
 	pr.strings = strings;
 }
 
-void
+static void
 linker_add_qfo (qfo_t *qfo)
 {
 	code_base = code->size;

@@ -42,26 +42,9 @@ static const char rcsid[] =
 #include "r_local.h"
 
 
-void
+static void
 R_CheckVariables (void)
 {
-}
-
-/*
-	Show
-
-	Debugging use
-*/
-void
-Show (void)
-{
-	vrect_t     vr;
-
-	vr.x = vr.y = 0;
-	vr.width = vid.width;
-	vr.height = vid.height;
-	vr.pnext = NULL;
-	VID_Update (&vr);
 }
 
 /*
@@ -158,28 +141,6 @@ R_PrintAliasStats (void)
 }
 
 void
-WarpPalette (void)
-{
-	int         i, j;
-	byte        newpalette[768];
-	int         basecolor[3];
-
-	basecolor[0] = 130;
-	basecolor[1] = 80;
-	basecolor[2] = 50;
-
-	// pull the colors halfway to bright brown
-	for (i = 0; i < 256; i++) {
-		for (j = 0; j < 3; j++) {
-			newpalette[i * 3 + j] =
-				(vid.palette[i * 3 + j] + basecolor[j]) / 2;
-		}
-	}
-
-	VID_ShiftPalette (newpalette);
-}
-
-void
 R_TransformFrustum (void)
 {
 	int         i;
@@ -219,7 +180,7 @@ R_TransformPlane (mplane_t *p, float *normal, float *dist)
 	TransformVector (p->normal, normal);
 }
 
-void
+static void
 R_SetUpFrustumIndexes (void)
 {
 	int         i, j, *pindex;

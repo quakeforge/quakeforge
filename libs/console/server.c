@@ -237,11 +237,12 @@ sv_logfile_f (cvar_t *var)
 		char       *fname = strdup (var->string);
 		char       *flags = strrchr (fname, ':');
 
-		if (flags)
+		if (flags) {
 			*flags++ = 0;
-		else
-			flags = "";
-		flags = nva ("a%s", flags);
+			flags = nva ("a%s", flags);
+		} else {
+			flags = nva ("a");
+		}
 		log_file = Qopen (va ("%s/%s", fs_userpath->string, fname), flags);
 		free (flags);
 		free (fname);
@@ -452,22 +453,22 @@ C_ProcessInput (void)
 		}
 }
 
-void
+static void
 C_KeyEvent (knum_t key, short unicode, qboolean down)
 {
 }
 
-void
+static void
 C_DrawConsole (int lines)
 {
 }
 
-void
+static void
 C_CheckResize (void)
 {
 }
 
-void
+static void
 C_NewMap (void)
 {
 }
@@ -515,6 +516,7 @@ static plugin_t plugin_info = {
 	&plugin_info_data,
 };
 
+QFPLUGIN plugin_t *PLUGIN_INFO(console, server) (void);
 QFPLUGIN plugin_t *
 PLUGIN_INFO(console, server) (void)
 {

@@ -1389,7 +1389,7 @@ AC_ARG_ENABLE(Werror,
 dnl We want warnings, lots of warnings...
 if test "x$GCC" = "xyes"; then
 	if test "x$enable_Werror" $cvs_def_enabled; then
-		CFLAGS="$CFLAGS -Wall -Werror"
+		CFLAGS="$CFLAGS -Wall -Werror -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations"
 	else
 		CFLAGS="$CFLAGS -Wall"
 	fi

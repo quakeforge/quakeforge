@@ -44,8 +44,10 @@ static const char rcsid[] =
 #include "QF/render.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_rlight.h"
 
 #include "r_cvar.h"
+#include "r_dynamic.h"
 #include "r_local.h"
 #include "r_shared.h"
 
@@ -69,7 +71,7 @@ R_InitBubble (void)
 	}
 }
 
-void
+static void
 R_RenderDlight (dlight_t *light)
 {
 	float       rad;

@@ -496,6 +496,7 @@ I_CDAudio_Init (void)
 	}
 }
 
+QFPLUGIN plugin_t *PLUGIN_INFO(cd, win) (void);
 QFPLUGIN plugin_t *
 PLUGIN_INFO(cd, win) (void)
 {

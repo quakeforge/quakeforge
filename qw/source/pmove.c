@@ -80,7 +80,7 @@ Pmove_Init_Cvars (void)
 	Slide off of the impacting object
 	returns the blocked flags (1 = floor, 2 = step / wall)
 */
-int
+static int
 PM_ClipVelocity (vec3_t in, vec3_t normal, vec3_t out, float overbounce)
 {
 	float       backoff, change;
@@ -111,7 +111,7 @@ PM_ClipVelocity (vec3_t in, vec3_t normal, vec3_t out, float overbounce)
 
 	The basic solid body movement clip that slides along multiple planes
 */
-int
+static int
 PM_FlyMove (void)
 {
 	float       time_left, d;
@@ -217,7 +217,7 @@ PM_FlyMove (void)
 	Pre-PM_FlyMove function for MOVETYPE_FLY players.  Could have altered
 	other physics to fit this in, but that's to easy to screw up.  --KB
 */
-void
+static void
 PM_FlymodeMove (void)
 {
 	float       pmspeed;
@@ -257,7 +257,7 @@ PM_FlymodeMove (void)
 
 	Player is on ground, with no upwards velocity
 */
-void
+static void
 PM_GroundMove (void)
 {
 	float       downdist, updist;
@@ -335,7 +335,7 @@ PM_GroundMove (void)
 
 	Handles both ground friction and water friction
 */
-void
+static void
 PM_Friction (void)
 {
 	float       drop, friction, speed, newspeed;
@@ -415,7 +415,7 @@ PM_Accelerate (vec3_t wishdir, float wishspeed, float accel)
 		pmove.velocity[i] += accelspeed * wishdir[i];
 }
 
-void
+static void
 PM_AirAccelerate (vec3_t wishdir, float wishspeed, float accel)
 {
 	float       addspeed, accelspeed, currentspeed, wishspd = wishspeed;
@@ -440,7 +440,7 @@ PM_AirAccelerate (vec3_t wishdir, float wishspeed, float accel)
 		pmove.velocity[i] += accelspeed * wishdir[i];
 }
 
-void
+static void
 PM_WaterMove (void)
 {
 	float       wishspeed;
@@ -487,7 +487,7 @@ PM_WaterMove (void)
 	PM_FlyMove ();
 }
 
-void
+static void
 PM_AirMove (void)
 {
 	float       fmove, smove, wishspeed;
@@ -607,7 +607,7 @@ PM_CategorizePosition (void)
 	}
 }
 
-void
+static void
 JumpButton (void)
 {
 	if (pmove.dead) {
@@ -650,7 +650,7 @@ JumpButton (void)
 	pmove.oldbuttons |= BUTTON_JUMP;	// don't jump again until released
 }
 
-void
+static void
 CheckWaterJump (void)
 {
 	int         cont;
@@ -692,7 +692,7 @@ CheckWaterJump (void)
 	try nudging slightly on all axis to
 	allow for the cut precision of the net coordinates
 */
-void
+static void
 NudgePosition (void)
 {
 	int         i, x, y, z;
@@ -725,7 +725,7 @@ NudgePosition (void)
 //	Con_DPrintf ("NudgePosition: stuck\n");
 }
 
-void
+static void
 SpectatorMove (void)
 {
 	float       control, drop, friction, fmove, smove, speed, newspeed;

@@ -91,7 +91,7 @@ extern char *re_syntax_table;
 static char re_syntax_table[CHAR_SET_SIZE];
 
 static void
-init_syntax_once ()
+init_syntax_once (void)
 {
    register int c;
    static int done = 0;
@@ -839,11 +839,23 @@ static const char *re_error_msg[] =
 
 /* Subroutine declarations and macros for regex_compile.  */
 
-static void store_op1 (), store_op2 ();
-static void insert_op1 (), insert_op2 ();
-static boolean at_begline_loc_p (), at_endline_loc_p ();
-static boolean group_in_compile_stack ();
-static reg_errcode_t compile_range ();
+
+typedef struct
+{
+  struct compile_stack_elt_t *stack;
+  unsigned size;
+  unsigned avail;			/* Offset of next open position.  */
+} compile_stack_type;
+
+/* But patterns can have more than `MAX_REGNUM' registers.  We just
+   ignore the excess.  */
+typedef unsigned regnum_t;
+
+static void store_op1 (re_opcode_t op, unsigned char *loc, int arg), store_op2 (re_opcode_t op, unsigned char *loc, int arg1, int arg2);
+static void insert_op1 (re_opcode_t op, unsigned char *loc, int arg, unsigned char *end), insert_op2 (re_opcode_t op, unsigned char *loc, int arg1, int arg2, unsigned char *end);
+static boolean at_begline_loc_p (const char *pattern, const char *p, reg_syntax_t syntax), at_endline_loc_p (const char *pattern, const char *p, int syntax);
+static boolean group_in_compile_stack (compile_stack_type compile_stack, regnum_t regnum);
+static reg_errcode_t compile_range (const char **p_ptr, const char *pend, char *translate, reg_syntax_t syntax, unsigned char *b);
 
 /* Fetch the next character in the uncompiled pattern---translating it 
    if necessary.  Also cast from a signed character in the constant
@@ -969,10 +981,6 @@ static reg_errcode_t compile_range ();
    things about is what fits in that byte.  */
 #define MAX_REGNUM 255
 
-/* But patterns can have more than `MAX_REGNUM' registers.  We just
-   ignore the excess.  */
-typedef unsigned regnum_t;
-
 
 /* Macros for the compile stack.  */
 
@@ -980,7 +988,7 @@ typedef unsigned regnum_t;
    be able to hold values from -(MAX_BUF_SIZE - 1) to MAX_BUF_SIZE - 1.  */
 typedef int pattern_offset_t;
 
-typedef struct
+typedef struct compile_stack_elt_t
 {
   pattern_offset_t begalt_offset;
   pattern_offset_t fixup_alt_jump;
@@ -988,14 +996,6 @@ typedef struct
   pattern_offset_t laststart_offset;  
   regnum_t regnum;
 } compile_stack_elt_t;
-
-
-typedef struct
-{
-  compile_stack_elt_t *stack;
-  unsigned size;
-  unsigned avail;			/* Offset of next open position.  */
-} compile_stack_type;
 
 
 #define INIT_COMPILE_STACK_SIZE 32
@@ -1058,6 +1058,7 @@ typedef struct
    The `fastmap' and `newline_anchor' fields are neither
    examined nor set.  */
 
+static reg_errcode_t regex_compile (const char *pattern, int size, reg_syntax_t syntax, struct re_pattern_buffer *bufp);
 static reg_errcode_t
 regex_compile (pattern, size, syntax, bufp)
      const char *pattern;
@@ -2996,11 +2997,11 @@ re_search_2 (bufp, string1, size1, string2, size2, startpos, range, regs, stop)
 } /* re_search_2 */
 
 /* Declarations and macros for re_match_2.  */
-
-static int bcmp_translate ();
-static boolean alt_match_null_string_p (),
-               common_op_match_null_string_p (),
-               group_match_null_string_p ();
+union register_info_type;
+static int bcmp_translate (const unsigned char *s1, const unsigned char *s2, int len, char *translate);
+static boolean alt_match_null_string_p (unsigned char *p, unsigned char *end, union register_info_type *reg_info),
+               common_op_match_null_string_p (unsigned char **p, unsigned char *end, union register_info_type *reg_info),
+               group_match_null_string_p (unsigned char **p, unsigned char *end, union register_info_type *reg_info);
 
 /* Structure for per-register (a.k.a. per-group) information.
    This must not be longer than one word, because we push this value
@@ -3013,7 +3014,7 @@ static boolean alt_match_null_string_p (),
    the compiler will pack our bit fields into something that fits into
    the type of `word', i.e., is something that fits into one item on the
    failure stack.  */
-typedef union
+typedef union register_info_type
 {
   fail_stack_elt_t word;
   struct
@@ -4595,11 +4596,11 @@ common_op_match_null_string_p (p, end, reg_info)
    
 static int
 bcmp_translate (s1, s2, len, translate)
-     unsigned char *s1, *s2;
+     const unsigned char *s1, *s2;
      register int len;
      char *translate;
 {
-  register unsigned char *p1 = s1, *p2 = s2;
+  register const unsigned char *p1 = s1, *p2 = s2;
   while (len)
     {
       if (translate[*p1++] != translate[*p2++]) return 1;
@@ -4652,7 +4653,7 @@ re_compile_pattern (pattern, length, bufp)
 /* BSD has one and only one pattern buffer.  */
 static struct re_pattern_buffer re_comp_buf;
 
-char *
+const char *
 re_comp (s)
     const char *s;
 {
