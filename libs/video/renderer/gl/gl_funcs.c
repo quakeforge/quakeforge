@@ -131,7 +131,6 @@ GLF_Init (void)
 	return true;
 }
 
-
 void *
 QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 {
