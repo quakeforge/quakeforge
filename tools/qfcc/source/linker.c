@@ -54,11 +54,16 @@ static const char rcsid[] =
 #include "reloc.h"
 #include "strpool.h"
 
-typedef struct {
-	qfo_def_t  *defs;
-	int         num_defs;
-	int         max_defs;
-} defgroup_t;
+#define Xgroup(X)\
+typedef struct {\
+	qfo_##X##_t  *X##s;\
+	int         num_##X##s;\
+	int         max_##X##s;\
+} X##group_t;
+
+Xgroup(def)		// defgroup_t
+Xgroup(reloc)	// relocgroup_t
+Xgroup(func)	// funcgroup_t
 
 static hashtab_t *extern_defs;
 static hashtab_t *defined_defs;
@@ -68,17 +73,9 @@ static defspace_t *data;
 static defspace_t *far_data;
 static strpool_t *strings;
 static strpool_t *type_strings;
-static struct {
-	qfo_reloc_t *relocs;
-	int         num_relocs;
-	int         max_relocs;
-} relocs;
+static relocgroup_t relocs;
 static defgroup_t global_defs, local_defs, defs;
-static struct {
-	qfo_func_t *funcs;
-	int         num_funcs;
-	int         max_funcs;
-} funcs;
+static funcgroup_t funcs;
 static struct {
 	pr_lineno_t *lines;
 	int         num_lines;
@@ -91,18 +88,23 @@ static int      reloc_base;
 static int      func_base;
 static int      line_base;
 
-static void
-defgroup_add_defs (defgroup_t *defgroup, qfo_def_t *defs, int num_defs)
-{
-	if (defgroup->num_defs + num_defs > defgroup->max_defs) {
-		defgroup->max_defs = RUP (defgroup->num_defs + num_defs, 16384);
-		defgroup->defs = realloc (defgroup->defs,
-								  defgroup->max_defs * sizeof (qfo_def_t));
-	}
-	memcpy (defgroup->defs + defgroup->num_defs, defs,
-			num_defs * sizeof (qfo_def_t));
-	defgroup->num_defs += num_defs;
+#define Xgroup_add(X)\
+static void \
+X##group_add_##X##s (X##group_t *X##group, qfo_##X##_t *X##s, int num_##X##s)\
+{\
+	if (X##group->num_##X##s + num_##X##s > X##group->max_##X##s) {\
+		X##group->max_##X##s = RUP (X##group->num_##X##s + num_##X##s, 16384);\
+		X##group->X##s = realloc (X##group->X##s,\
+								  X##group->max_##X##s * sizeof (qfo_##X##_t));\
+	}\
+	memcpy (X##group->X##s + X##group->num_##X##s, X##s,\
+			num_##X##s * sizeof (qfo_##X##_t));\
+	X##group->num_##X##s += num_##X##s;\
 }
+
+Xgroup_add(def)		// defgroup_add_defs
+Xgroup_add(reloc)	// relocgroup_add_relocs
+Xgroup_add(func)	// funcgroup_add_funcs
 
 static const char *
 defs_get_key (void *_def, void *unused)
@@ -126,14 +128,7 @@ add_relocs (qfo_t *qfo)
 {
 	int         i;
 
-	if (relocs.num_relocs + qfo->num_relocs > relocs.max_relocs) {
-		relocs.max_relocs = RUP (relocs.num_relocs + qfo->num_relocs, 16384);
-		relocs.relocs = realloc (relocs.relocs,
-								 relocs.max_relocs * sizeof (qfo_reloc_t));
-	}
-	relocs.num_relocs += qfo->num_relocs;
-	memcpy (relocs.relocs + reloc_base, qfo->relocs,
-			qfo->num_relocs * sizeof (qfo_reloc_t));
+	relocgroup_add_relocs (&relocs, qfo->relocs, qfo->num_relocs);
 	for (i = reloc_base; i < relocs.num_relocs; i++) {
 		qfo_reloc_t *reloc = relocs.relocs + i;
 		switch ((reloc_type)reloc->type) {
@@ -156,6 +151,8 @@ add_relocs (qfo_t *qfo)
 				reloc->def += func_base;
 				break;
 			case rel_def_def:
+				reloc->ofs += data_base;
+				break;
 			case rel_def_string:
 				reloc->ofs += data_base;
 				data->data[reloc->ofs].string_var =
@@ -260,14 +257,7 @@ add_funcs (qfo_t *qfo)
 {
 	int         i;
 
-	if (funcs.num_funcs + qfo->num_funcs > funcs.max_funcs) {
-		funcs.max_funcs = RUP (funcs.num_funcs + qfo->num_funcs, 16384);
-		funcs.funcs = realloc (funcs.funcs,
-								 funcs.max_funcs * sizeof (qfo_func_t));
-	}
-	funcs.num_funcs += qfo->num_funcs;
-	memcpy (funcs.funcs + func_base, qfo->funcs,
-			qfo->num_funcs * sizeof (qfo_func_t));
+	funcgroup_add_funcs (&funcs, qfo->funcs, qfo->num_funcs);
 	for (i = func_base; i < funcs.num_funcs; i++) {
 		qfo_func_t *func = funcs.funcs + i;
 		func->name = strpool_addstr (strings, qfo->strings + func->name);
