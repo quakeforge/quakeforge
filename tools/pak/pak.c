@@ -151,7 +151,8 @@ int
 main (int argc, char **argv)
 {
 	pack_t	*pack;
-	int		i;
+	int		i, j, rehash = 0;
+	dpackfile_t *pf;
 
 	this_program = argv[0];
 
@@ -172,9 +173,35 @@ main (int argc, char **argv)
 				return 1;
 			}
 			for (i = 0; i < pack->numfiles; i++) {
-				if (options.verbosity > 0)
-					printf ("%s\n", pack->files[i].name);
-				pack_extract (pack, &pack->files[i]);
+				pf = &pack->files[i];
+				for (j = 0; j < PAK_PATH_LENGTH; j++) {
+					if (!pf->name[j])
+						break;
+					if (pf->name[j] == '\\') {
+						pf->name[j] = '/';
+						rehash = 1;
+					}
+				}
+				if (optind == argc) {
+					if (options.verbosity > 0)
+						printf ("%s\n", pf->name);
+					pack_extract (pack, pf);
+				}
+			}
+			if (optind < argc) {
+				if (rehash)
+					pack_rehash (pack);
+				while (optind < argc) {
+					pf = pack_find_file (pack, argv[optind]);
+					if (!pf) {
+						fprintf (stderr, "could not file %s\n", argv[optind]);
+						continue;
+					}
+					if (options.verbosity > 0)
+						printf ("%s\n", pf->name);
+					pack_extract (pack, pf);
+					optind++;
+				}
 			}
 			pack_close (pack);
 			break;

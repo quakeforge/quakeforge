@@ -52,6 +52,7 @@ typedef struct pack_s {
 
 pack_t *pack_new (const char *name);
 void pack_del (pack_t *pack);
+void pack_rehash (pack_t *pack);
 pack_t *pack_open (const char *name);
 void pack_close (pack_t *pack);
 pack_t *pack_create (const char *name);

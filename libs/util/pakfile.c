@@ -88,6 +88,16 @@ pack_del (pack_t *pack)
 	free (pack);
 }
 
+void
+pack_rehash (pack_t *pack)
+{
+	int         i;
+
+	for (i = 0; i < pack->numfiles; i++) {
+		Hash_Add (pack->file_hash, &pack->files[i]);
+	}
+}
+
 pack_t *
 pack_open (const char *name)
 {
