@@ -188,9 +188,9 @@ VisEntity (int ent_index)
 		surfacehit = vis + vis_size;
 		memset (surfacehit, 0, (bsp->numfaces + 7) / 8);
 
-		DecompressVis (bsp->visdata + leaf->visofs, vis,
-					   (bsp->numleafs + 7) >> 3);
-		for (i = 1, leaf = bsp->leafs + 1; i < bsp->numleafs; i++, leaf++) {
+		DecompressVis (bsp->visdata + leaf->visofs, vis, vis_size);
+		for (i = 0, leaf = bsp->leafs + 1; i < bsp->models[0].visleafs;
+			 i++, leaf++) {
 			if (!leaf->nummarksurfaces)
 				continue;
 			if (vis[i >> 3] & (1 << (i & 7))) {
