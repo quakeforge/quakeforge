@@ -36,8 +36,8 @@ game_src= Axe.r GameEntity.r World.r tempent.r
 
 game_obj=$(addsuffix .qfo,$(basename $(game_src)))
 
-game.dat$(GZ): $(game_obj) ../lib/libr.a
-	$(QFCC) $(QCFLAGS) -p $(STRIP) -o game.dat $(game_obj) ../lib/libr.a
+game.dat$(GZ): $(game_obj) ../lib/libr.a ../lib/libqw.a
+	$(QFCC) $(QCFLAGS) -p $(STRIP) -o game.dat $(game_obj) ../lib/libqw.a ../lib/libr.a
 	$(GZIP)
 
 EXTRA_DIST= $(game_src) Axe.h GameEntity.h tempent.h Weapon.h World.h
