@@ -1199,7 +1199,7 @@ Modem_Response (ComPort * p)
 		if (b == '\r' && p->bufferUsed) {
 			p->buffer[p->bufferUsed] = 0;
 			Con_Printf ("%s\n", p->buffer);
-			SCR_UpdateScreen ();
+			SCR_UpdateScreen (cl.time);
 			p->bufferUsed = 0;
 			return p->buffer;
 		}

@@ -75,7 +75,7 @@ Con_DPrintf (char *fmt, ...)
 }
 
 void
-SCR_UpdateScreen (void)
+SCR_UpdateScreen (double realtime)
 {
 }
 

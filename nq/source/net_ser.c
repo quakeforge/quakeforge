@@ -796,7 +796,7 @@ _Serial_Connect (char *host, SerialLine * p)
 			Serial_SendControlMessage (p, &net_message);
 			last_time = net_time;
 			Con_Printf ("trying...\n");
-			SCR_UpdateScreen ();
+			SCR_UpdateScreen (cl.time);
 		}
 		ret = _Serial_GetMessage (p);
 	}

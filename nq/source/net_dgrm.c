@@ -1297,7 +1297,7 @@ _Datagram_Connect (char *host)
 
 	// send the connection request
 	Con_Printf ("trying...\n");
-	SCR_UpdateScreen (realtime);
+	SCR_UpdateScreen (cl.time);
 	start_time = net_time;
 
 	for (reps = 0; reps < 3; reps++) {
@@ -1325,7 +1325,7 @@ _Datagram_Connect (char *host)
 					Con_Printf ("wrong reply address\n");
 					Con_Printf ("Expected: %s\n", StrAddr (&sendaddr));
 					Con_Printf ("Received: %s\n", StrAddr (&readaddr));
-					SCR_UpdateScreen (realtime);
+					SCR_UpdateScreen (cl.time);
 #endif
 					ret = 0;
 					continue;
@@ -1359,7 +1359,7 @@ _Datagram_Connect (char *host)
 		if (ret)
 			break;
 		Con_Printf ("still trying...\n");
-		SCR_UpdateScreen (realtime);
+		SCR_UpdateScreen (cl.time);
 		start_time = SetNetTime ();
 	}
 
