@@ -164,7 +164,7 @@ Cam_DrawPlayer (int playernum)
 {
 	if (atoi (Info_ValueForKey (cl.serverinfo, "chase")) == 0
 		|| chase_active->int_val == 0)
-		return false;
+		return true;
 
 	if (cl.spectator && autocam && locked && cl_chasecam->int_val &&
 		spec_track == playernum)
