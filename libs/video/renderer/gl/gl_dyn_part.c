@@ -405,7 +405,7 @@ R_TeleportSplash (vec3_t org)
 void
 R_RocketTrail (entity_t *ent)
 {
-	float		dist, len, pscale, pscalenext;
+	float		dist, len, origlen, percent, pscale, pscalenext;
 	vec3_t		subtract, vec;
 
 	if (numparticles >= r_maxparticles)
@@ -415,6 +415,8 @@ R_RocketTrail (entity_t *ent)
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	len = VectorNormalize (vec);
+	origlen = r_frametime / len;
+
 	pscale = 1.5 + qfrandom (1.5);
 
 	while (len > 0) {
@@ -427,11 +429,13 @@ R_RocketTrail (entity_t *ent)
 		VectorScale (vec, min(dist, len), subtract);
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 		len -= dist;
+		percent = len * origlen;
 
 		// Misty-chan's Easter Egg: change color to (rand () & 255)
 		particle_new (pt_smoke, part_tex_smoke, ent->old_origin,
-					  pscale, vec3_origin, r_realtime + 2.0,
-					  12 + (rand () & 3), 128 + (rand () & 31));
+					  pscale + percent * 4, vec3_origin,
+					  r_realtime +2.0 - percent, 12 + (rand () & 3),
+					  128 + (rand () & 31) - percent * 100);
 		pscale = pscalenext;
 	}
 }
@@ -439,7 +443,7 @@ R_RocketTrail (entity_t *ent)
 void
 R_GrenadeTrail (entity_t *ent)
 {
-	float		dist, len, pscale, pscalenext;
+	float		dist, len, origlen, percent, pscale, pscalenext;
 	vec3_t		subtract, vec;
 
 	if (numparticles >= r_maxparticles)
@@ -447,6 +451,7 @@ R_GrenadeTrail (entity_t *ent)
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	len = VectorNormalize (vec);
+	origlen = r_frametime / len;
 	pscale = 6.0 + qfrandom (7.0);
 
 	while (len > 0) {
@@ -459,11 +464,13 @@ R_GrenadeTrail (entity_t *ent)
 		VectorScale (vec, min(dist, len), subtract);
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 		len -= dist;
+		percent = len * origlen;
 
 		// Misty-chan's Easter Egg: change color to (rand () & 255)
 		particle_new (pt_smoke, part_tex_smoke, ent->old_origin,
-					  pscale, vec3_origin, r_realtime + 2.0, (rand () & 3),
-					  128 + (rand () & 31));
+					  pscale + percent * 4, vec3_origin,
+					  r_realtime + 2.0 - percent, (rand () & 3),
+					  128 + (rand () & 31) - percent * 100);
 		pscale = pscalenext;
 	}
 }
@@ -471,7 +478,7 @@ R_GrenadeTrail (entity_t *ent)
 void
 R_BloodTrail (entity_t *ent)
 {
-	float		dist, len, pscale, pscalenext;
+	float		dist, len, origlen, percent, pscale, pscalenext;
 	int			j;
 	vec3_t		subtract, vec, porg, pvel;
 
@@ -480,6 +487,7 @@ R_BloodTrail (entity_t *ent)
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	len = VectorNormalize (vec);
+	origlen = r_frametime / len;
 	pscale = 5.0 + qfrandom (10.0);
 
 	while (len > 0) {
@@ -500,9 +508,11 @@ R_BloodTrail (entity_t *ent)
 		VectorScale (vec, min(dist, len), subtract);
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 		len -= dist;
+		percent = len * origlen;
+		pvel[2] -= percent * 40;
 
 		particle_new (pt_grav, part_tex_smoke, porg, pscale, pvel,
-					  r_realtime + 2.0, 68 + (rand () & 3), 255);
+					  r_realtime + 2.0 - percent, 68 + (rand () & 3), 255);
 		pscale = pscalenext;
 	}
 }
@@ -510,7 +520,7 @@ R_BloodTrail (entity_t *ent)
 void
 R_SlightBloodTrail (entity_t *ent)
 {
-	float		dist, len, pscale, pscalenext;
+	float		dist, len, origlen, percent, pscale, pscalenext;
 	int			j;
 	vec3_t      subtract, vec, porg, pvel;
 
@@ -519,6 +529,7 @@ R_SlightBloodTrail (entity_t *ent)
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	len = VectorNormalize (vec);
+	origlen = r_frametime / len;
 	pscale = 1.5 + qfrandom (7.5);
 
 	while (len > 0) {
@@ -539,9 +550,11 @@ R_SlightBloodTrail (entity_t *ent)
 		VectorScale (vec, min(dist, len), subtract);
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 		len -= dist;
+		percent = len * origlen;
+		pvel[2] -= percent * 40;
 
 		particle_new (pt_grav, part_tex_smoke, porg, pscale, pvel,
-					  r_realtime + 1.5, 68 + (rand () & 3), 192);
+					  r_realtime + 1.5 - percent, 68 + (rand () & 3), 192);
 		pscale = pscalenext;
 	}
 }
@@ -549,7 +562,7 @@ R_SlightBloodTrail (entity_t *ent)
 void
 R_GreenTrail (entity_t *ent)
 {
-	float		dist, len;
+	float		dist, len, origlen, percent;
 	static int	tracercount;
 	vec3_t		subtract, vec, pvel;
 
@@ -558,6 +571,7 @@ R_GreenTrail (entity_t *ent)
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	len = VectorNormalize (vec);
+	origlen = r_frametime / len;
 	dist = 3.0;
 
 	while (len > 0) {
@@ -577,17 +591,19 @@ R_GreenTrail (entity_t *ent)
 		VectorScale (vec, min(dist, len), subtract);
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 		len -= dist;
+		percent = len * origlen;
 
 		particle_new (pt_fire, part_tex_smoke, ent->old_origin,
-					  2.0 + qfrandom (1.0), pvel, r_realtime + 0.5,
-					  52 + (rand () & 4), 255);
+					  2.0 + qfrandom (1.0) - percent * 2, pvel,
+					  r_realtime + 0.5 - percent, 52 + (rand () & 4),
+					  255 - percent * 32);
 	}
 }
 
 void
 R_FlameTrail (entity_t *ent)
 {
-	float		dist, len;
+	float		dist, len, origlen, percent;
 	static int	tracercount;
 	vec3_t		subtract, vec, pvel;
 
@@ -596,6 +612,7 @@ R_FlameTrail (entity_t *ent)
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	len = VectorNormalize (vec);
+	origlen = r_frametime / len;
 	dist = 3.0;
 
 	while (len > 0) {
@@ -615,16 +632,18 @@ R_FlameTrail (entity_t *ent)
 		VectorScale (vec, min(dist, len), subtract);
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 		len -= dist;
+		percent = len * origlen;
 
 		particle_new (pt_fire, part_tex_smoke, ent->old_origin,
-					  2.0 + qfrandom (1.0), pvel, r_realtime + 0.5, 234, 255);
+					  2.0 + qfrandom (1.0) - percent * 2, pvel,
+					  r_realtime + 0.5 - percent, 234, 255 - percent * 32);
 	}
 }
 
 void
 R_VoorTrail (entity_t *ent)
 {
-	float		dist, len;
+	float		dist, len, origlen, percent;
 	int			j;
 	vec3_t		subtract, vec, porg;
 
@@ -633,6 +652,7 @@ R_VoorTrail (entity_t *ent)
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	len = VectorNormalize (vec);
+	origlen = r_frametime / len;
 	dist = 3.0;
 
 	while (len > 0) {
@@ -645,9 +665,10 @@ R_VoorTrail (entity_t *ent)
 		VectorScale (vec, min(dist, len), subtract);
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 		len -= dist;
+		percent = len * origlen;
 
 		particle_new (pt_static, part_tex_dot, porg, 1.0 + qfrandom (1.0),
-					  vec3_origin, r_realtime + 0.3,
+					  vec3_origin, r_realtime + 0.3 - percent,
 					  9 * 16 + 8 + (rand () & 3), 255);
 	}
 }
