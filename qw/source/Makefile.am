@@ -180,7 +180,7 @@ endif
 client_SOURCES= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
 	cl_main.c cl_misc.c cl_parse.c cl_pred.c cl_slist.c cl_tent.c \
 	console.c keys.c locs.c model_alias.c model_sprite.c nonintel.c \
-	pcx.c r_view.c sbar.c skin.c teamplay.c tga.c wad.c vid.c $(client_ASM)
+	pcx.c r_efrag.c r_view.c sbar.c skin.c teamplay.c tga.c wad.c vid.c $(client_ASM)
 
 #
 # Software-rendering clients
@@ -189,15 +189,15 @@ client_SOURCES= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
 #
 if ASM_ARCH
 soft_ASM=	d_draw.S d_draw16.S d_parta.S d_polysa.S d_scana.S d_spr8.S \
-		d_varsa.S r_aclipa.S r_aliasa.S r_drawa.S r_edgea.S r_varsa.S \
+		d_varsa.S sw_raclipa.S sw_raliasa.S sw_rdrawa.S sw_redgea.S sw_rvarsa.S \
 		surf16.S surf8.S
 endif
 
 soft_SOURCES=	d_edge.c d_fill.c d_init.c d_modech.c \
 		d_part.c d_polyse.c d_scan.c d_sky.c d_sprite.c d_surf.c \
-		d_vars.c d_zpoint.c draw.c r_aclip.c r_alias.c r_bsp.c \
-		r_draw.c r_edge.c r_efrag.c r_light.c r_main.c r_misc.c \
-		r_part.c r_sky.c r_sprite.c r_surf.c r_vars.c sw_skin.c sw_view.c \
+		d_vars.c d_zpoint.c draw.c sw_raclip.c sw_ralias.c sw_rbsp.c \
+		sw_rdraw.c sw_redge.c sw_rlight.c sw_rmain.c sw_rmisc.c \
+		sw_rpart.c sw_rsky.c sw_rsprite.c sw_rsurf.c sw_rvars.c sw_skin.c sw_view.c \
 		screen.c $(soft_ASM) sw_model_alias.c sw_model_brush.c \
 		sw_model_sprite.c
 
@@ -262,7 +262,7 @@ qw_client_x11_DEPENDENCIES= $(CLIENT_LIB_DEPS)
 #
 ogl_SOURCES=	noisetextures.c gl_textures.c gl_draw.c gl_dyn_fires.c	\
 		gl_dyn_part.c gl_dyn_textures.c gl_mesh.c gl_ngraph.c	\
-		r_efrag.c gl_rlight.c gl_rmain.c gl_rmisc.c gl_rsurf.c	\
+		gl_rlight.c gl_rmain.c gl_rmisc.c gl_rsurf.c	\
 		gl_screen.c gl_skin.c gl_sky.c gl_sky_clip.c gl_view.c	\
 		gl_warp.c gl_model_alias.c gl_model_brush.c		\
 		gl_model_fullbright.c gl_model_sprite.c qfgl_ext.c
