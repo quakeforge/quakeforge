@@ -28,10 +28,7 @@ AUTOMAKE_OPTIONS= foreign
 
 SUBDIRS=	include source
 
-#  uncomment the following if qfcc requires the math library
-#qfcc_LDADD=-lm
-
-EXTRA_DIST=qfcc.lsm.in qfcc.spec.in
+EXTRA_DIST=qfdefs.lsm.in
 
 dist-zip: distdir
 	-chmod -R a+r $(distdir)
