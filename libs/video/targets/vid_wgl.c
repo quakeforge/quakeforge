@@ -593,14 +593,14 @@ byte        scantokey[128] = {
 	0, 27, '1', '2', '3', '4', '5', '6',
 	'7', '8', '9', '0', '-', '=', K_BACKSPACE, 9,	// 0
 	'q', 'w', 'e', 'r', 't', 'y', 'u', 'i',
-	'o', 'p', '[', ']', 13, K_CTRL, 'a', 's',	// 1
+	'o', 'p', '[', ']', 13, K_LCTRL, 'a', 's',	// 1
 	'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',
-	'\'', '`', K_SHIFT, '\\', 'z', 'x', 'c', 'v',	// 2
-	'b', 'n', 'm', ',', '.', '/', K_SHIFT, KP_MULTIPLY,
-	K_ALT, ' ', K_CAPSLOCK, K_F1, K_F2, K_F3, K_F4, K_F5,	// 3
-	K_F6, K_F7, K_F8, K_F9, K_F10, K_PAUSE, K_SCRLCK, KP_HOME,
-	KP_UPARROW, KP_PGUP, KP_MINUS, KP_LEFTARROW, KP_5, KP_RIGHTARROW, KP_PLUS, KP_END,	// 4
-	KP_DOWNARROW, KP_PGDN, KP_INS, KP_DEL, 0, 0, 0, K_F11,
+	'\'', '`', K_LSHIFT, '\\', 'z', 'x', 'c', 'v',	// 2
+	'b', 'n', 'm', ',', '.', '/', K_RSHIFT, K_KP_MULTIPLY,
+	K_LALT, ' ', K_CAPSLOCK, K_F1, K_F2, K_F3, K_F4, K_F5,	// 3
+	K_F6, K_F7, K_F8, K_F9, K_F10, K_PAUSE, K_SCROLLOCK, K_KP7,
+	K_KP8, K_KP9, K_KP_MINUS, K_KP4, K_KP5, K_KP6, K_KP_PLUS, K_KP1,	// 4
+	K_KP2, K_KP3, K_KP0, K_KP_PERIOD, 0, 0, 0, K_F11,
 	K_F12, 0, 0, 0, 0, 0, 0, 0,			// 5
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -614,14 +614,14 @@ byte        extscantokey[128] = {
 	0, 27, '1', '2', '3', '4', '5', '6',
 	'7', '8', '9', '0', '-', '=', K_BACKSPACE, 9,	// 0
 	'q', 'w', 'e', 'r', 't', 'y', 'u', 'i',
-	'o', 'p', '[', ']', KP_ENTER, K_CTRL, 'a', 's',	// 1
+	'o', 'p', '[', ']', K_KP_ENTER, K_RCTRL, 'a', 's',	// 1
 	'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',
-	'\'', '`', K_SHIFT, '\\', 'z', 'x', 'c', 'v',	// 2
-	'b', 'n', 'm', ',', '.', KP_DIVIDE, K_SHIFT, '*',
-	K_ALT, ' ', K_CAPSLOCK, K_F1, K_F2, K_F3, K_F4, K_F5,	// 3
-	K_F6, K_F7, K_F8, K_F9, K_F10, KP_NUMLCK, 0, K_HOME,
-	K_UPARROW, K_PGUP, '-', K_LEFTARROW, '5', K_RIGHTARROW, '+', K_END,	// 4
-	K_DOWNARROW, K_PGDN, K_INS, K_DEL, 0, 0, 0, K_F11,
+	'\'', '`', K_LSHIFT, '\\', 'z', 'x', 'c', 'v',	// 2
+	'b', 'n', 'm', ',', '.', K_KP_DIVIDE, K_RSHIFT, '*',
+	K_RALT, ' ', K_CAPSLOCK, K_F1, K_F2, K_F3, K_F4, K_F5,	// 3
+	K_F6, K_F7, K_F8, K_F9, K_F10, K_NUMLOCK, 0, K_HOME,
+	K_UP, K_PAGEUP, '-', K_LEFT, '5', K_RIGHT, '+', K_END,	// 4
+	K_DOWN, K_PAGEDOWN, K_INSERT, K_DELETE, 0, 0, 0, K_F11,
 	K_F12, 0, 0, 0, 0, 0, 0, 0,			// 5
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -807,11 +807,11 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			// Event.
 		case WM_MOUSEWHEEL:
 			if ((short) HIWORD (wParam) > 0) {
-				Key_Event (K_MWHEELUP, -1, true);
-				Key_Event (K_MWHEELUP, -1, false);
+				Key_Event (M_WHEEL_UP, -1, true);
+				Key_Event (M_WHEEL_UP, -1, false);
 			} else {
-				Key_Event (K_MWHEELDOWN, -1, true);
-				Key_Event (K_MWHEELDOWN, -1, false);
+				Key_Event (M_WHEEL_DOWN, -1, true);
+				Key_Event (M_WHEEL_DOWN, -1, false);
 			}
 			break;
 
