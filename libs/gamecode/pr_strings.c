@@ -105,6 +105,7 @@ void
 PR_GarbageCollect (progs_t *pr)
 {
 	strref_t   *sr;
+	strref_t   *next;
 	ddef_t     *def;
 	int         i, j;
 
@@ -129,7 +130,8 @@ PR_GarbageCollect (progs_t *pr)
 			}
 		}
 	}
-	for (sr = pr->dynamic_strings.next; sr; sr = sr->next) {
+	for (sr = pr->dynamic_strings.next; sr; sr = next) {
+		next = sr->next;
 		if (!sr->count) {
 			Hash_Del (pr->strref_hash, sr->string);
 			strref_free (sr, pr);
