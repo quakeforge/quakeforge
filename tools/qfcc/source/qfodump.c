@@ -91,8 +91,8 @@ dump_defs (qfo_t *qfo)
 			continue;
 #if 1
 		if (def->basic_type == ev_string) {
-//				printf ("    %4d %s\n", qfo->data[def->ofs].string_var,
-//						qfo->strings + qfo->data[def->ofs].string_var);
+				printf ("    %4d %s\n", qfo->data[def->ofs].string_var,
+						qfo->strings + qfo->data[def->ofs].string_var);
 		} else if (def->basic_type == ev_func) {
 			if (qfo->data[def->ofs].func_var < 1
 				|| qfo->data[def->ofs].func_var - 1 > qfo->num_funcs)
@@ -117,9 +117,10 @@ dump_funcs (qfo_t *qfo)
 
 	for (i = 0; i < qfo->num_funcs; i++) {
 		func = qfo->funcs + i;
-		printf ("%s %s:%d  %d %d %d\n",
+		printf ("%s %s:%d  %d?%d %d %d,%d\n",
 				str + func->name, str + func->file, func->line,
-				func->builtin, func->code, func->def);
+				func->builtin, func->code, func->def,
+				func->relocs, func->num_relocs);
 	}
 }
 
