@@ -1,5 +1,5 @@
-#LyX 1.2 created this file. For more info see http://www.lyx.org/
-\lyxformat 220
+#LyX 1.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 221
 \textclass scrbook
 \language american
 \inputencoding latin1
@@ -10,11 +10,15 @@
 \spacing single 
 \papersize letterpaper
 \paperpackage a4
-\use_geometry 0
+\use_geometry 1
 \use_amsmath 0
 \use_natbib 0
 \use_numerical_citations 0
 \paperorientation portrait
+\leftmargin 1in
+\topmargin 1in
+\rightmargin 0.5in
+\bottommargin 1in
 \secnumdepth 2
 \tocdepth 2
 \paragraph_separation skip
@@ -31,7 +35,7 @@ The Ruamoko Programming Language
 \layout Author
 
 Bill Currie 
-\begin_inset Formula $\bullet $
+\begin_inset Formula $\bullet$
 \end_inset 
 
  Jeff Teunissen
@@ -256,6 +260,7 @@ collapsed true
 \line_top \line_bottom 
 
 \begin_inset Include \verbatiminput{hello.r}
+preview false
 
 \end_inset 
 
@@ -316,6 +321,7 @@ collapsed true
 
   
 \begin_inset Include \verbatiminput{qfcc-output.txt}
+preview false
 
 \end_inset 
 
@@ -609,6 +615,7 @@ collapsed true
 \line_top \line_bottom 
 
 \begin_inset Include \verbatiminput{hello2.r}
+preview false
 
 \end_inset 
 
@@ -706,6 +713,7 @@ collapsed true
 \line_top \line_bottom 
 
 \begin_inset Include \verbatiminput{radians.r}
+preview false
 
 \end_inset 
 
@@ -726,7 +734,7 @@ In figure
 \end_inset 
 
 , we find a simple program uses the formula 
-\begin_inset Formula $R=D\, \times \, (\frac{\pi }{180})$
+\begin_inset Formula $R=D\,\times\,(\frac{\pi}{180})$
 \end_inset 
 
  to print a table of various angles in both their degrees and radian equivalents.
@@ -1020,7 +1028,7 @@ while
 while (degrees <= upper) {
 \newline 
     
-\begin_inset Formula $\vdots $
+\begin_inset Formula $\vdots$
 \end_inset 
 
 
@@ -1241,11 +1249,11 @@ An integer constant like
 \layout Standard
 
 The value of an integer can be specified in octal (base 8, 0
-\begin_inset Formula $\ldots $
+\begin_inset Formula $\ldots$
 \end_inset 
 
 7) or hexadecimal (base 16, 0
-\begin_inset Formula $\ldots $
+\begin_inset Formula $\ldots$
 \end_inset 
 
 F, hereafter called 
@@ -1889,7 +1897,8 @@ Variable-argument functions
 
 Typed parameters preceding the ellipsis are allowed, e.g.: 
 \family typewriter 
-void (string fmt, ...) printf;
+void (string fmt, \SpecialChar \ldots{}
+) printf;
 \layout Standard
 
 More importantly, it is now possible to write vararg functions in QC.
@@ -1903,7 +1912,8 @@ More importantly, it is now possible to write vararg functions in QC.
 \family default 
  is an array of vectors representing the parameters passed through 
 \family typewriter 
-...
+\SpecialChar \ldots{}
+
 \family default 
 .
 \layout Standard
@@ -2044,7 +2054,7 @@ think
 \family default 
  Number of parameters passed through 
 \family typewriter 
-...
+\SpecialChar \ldots{}
 
 \family default 
  in vararg functions.
@@ -2058,7 +2068,7 @@ think
 \family default 
  Array of vectors representing the parameters passed through 
 \family typewriter 
-...
+\SpecialChar \ldots{}
 
 \family default 
  in vararg functions.
@@ -2085,7 +2095,7 @@ while
 \family typewriter 
 do
 \family default 
- ...
+ \SpecialChar \ldots{}
  
 \family typewriter 
 while
