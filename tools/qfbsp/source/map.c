@@ -118,38 +118,48 @@ StartTokenParsing (char *data)
 }
 
 static qboolean
-GetToken (qboolean crossline)
+TokenAvailable (qboolean crossline)
 {
-	char       *token_p;
-
-	if (unget)							// is a token allready waiting?
+	if (unget)
 		return true;
-
-	// skip space
   skipspace:
 	while (*script_p <= 32) {
-		if (!*script_p) {
-			if (!crossline)
-				Sys_Error ("Line %i is incomplete", scriptline);
+		if (!*script_p)
 			return false;
-		}
 		if (*script_p++ == '\n') {
 			if (!crossline)
-				Sys_Error ("Line %i is incomplete", scriptline);
+				return false;
 			scriptline++;
 		}
 	}
 
 	if (script_p[0] == '/' && script_p[1] == '/') {		// comment field
+		while (*script_p && *script_p != '\n')
+			script_p++;
+		if (!*script_p)
+			return false;
 		if (!crossline)
-			Sys_Error ("Line %i is incomplete\n", scriptline);
-		while (*script_p++ != '\n')
-			if (!*script_p) {
-				if (!crossline)
-					Sys_Error ("Line %i is incomplete", scriptline);
-				return false;
-			}
+			return false;
+		scriptline++;
 		goto skipspace;
+	}
+	return true;
+}
+
+static qboolean
+GetToken (qboolean crossline)
+{
+	char       *token_p;
+
+	if (unget) {						// is a token allready waiting?
+		unget = false;
+		return true;
+	}
+
+	if (!TokenAvailable (crossline)) {
+		if (!crossline)
+			Sys_Error ("Line %i is incomplete", scriptline);
+		return false;
 	}
 
 	// copy token
