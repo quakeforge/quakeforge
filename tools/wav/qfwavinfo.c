@@ -232,6 +232,7 @@ read_list (d_chunk_t *ck, FILE *f, int len)
 	}
 	dstring_append (list_buf, (char *)&chunk, sizeof (chunk));
 	list = (list_t *) list_buf->str;
+	free (list_buf);
 	return list;
 }
 
@@ -246,7 +247,7 @@ read_cue (FILE *f, int len)
 }
 
 static list_t *
-read_riff (const char *filename)
+riff_read (const char *filename)
 {
 	dstring_t  *riff_buf;
 	list_t     *riff = 0;
@@ -304,8 +305,122 @@ read_riff (const char *filename)
 		dstring_append (riff_buf, (char *)&chunk, sizeof (chunk));
 		riff = (list_t *) riff_buf->str;
 		fclose (f);
+		free (riff_buf);
 	}
 	return riff;
+}
+
+static void
+free_adtl (d_chunk_t *adtl)
+{
+	ltxt_t     *ltxt;
+	label_t    *label;
+	data_t     *data;
+
+	//printf ("    %.4s\n", adtl->name);
+	SWITCH (adtl->name) {
+		case CASE ('l','t','x','t'):
+			ltxt = (ltxt_t *) adtl;
+			/*printf ("      %d %d %4s %d %d %d %d\n",
+					ltxt->ltxt.name,
+					ltxt->ltxt.len,
+					ltxt->ltxt.purpose,
+					ltxt->ltxt.country,
+					ltxt->ltxt.language,
+					ltxt->ltxt.dialect,
+					ltxt->ltxt.codepage);*/
+			free (ltxt);
+			break;
+		case CASE ('l','a','b','l'):
+		case CASE ('n','o','t','e'):
+			label = (label_t *) adtl;
+			//printf ("      %-8d %s\n", label->ofs, label->label);
+			free (label->label);
+			free (label);
+			break;
+		default:
+			data = (data_t *) adtl;
+			free (data->data);
+			free (data);
+			break;
+	}
+}
+
+static void
+free_list (list_t *list)
+{
+	d_chunk_t **ck;
+	data_t     *data;
+
+	//printf ("  %.4s\n", list->name);
+	for (ck = list->chunks; *ck; ck++) {
+		SWITCH (list->name) {
+			case CASE ('I','N','F','O'):
+				data = (data_t *) *ck;
+				//printf ("    %.4s\n", data->ck.name);
+				SWITCH (data->ck.name) {
+					case CASE ('I','C','R','D'):
+					case CASE ('I','S','F','T'):
+						//printf ("      %s\n", data->data);
+					default:
+						free (data->data);
+						free (data);
+						break;
+				}
+				break;
+			case CASE ('a','d','t','l'):
+				free_adtl (*ck);
+				break;
+			default:
+				data = (data_t *) *ck;
+				free (data->data);
+				free (data);
+				break;
+		}
+	}
+	free (list);
+}
+
+static void
+riff_free (list_t *riff)
+{
+	d_chunk_t **ck;
+	cue_t      *cue;
+	list_t     *list;
+	data_t     *data;
+
+	for (ck = riff->chunks; *ck; ck++) {
+		//printf ("%.4s\n", (*ck)->name);
+		SWITCH ((*ck)->name) {
+			case CASE ('c','u','e',' '):
+				cue = (cue_t *) *ck;
+				/*{
+					int i;
+					for (i = 0; i < cue->cue->count; i++) {
+						printf ("  %08x %d %.4s %d %d %d\n",
+								cue->cue->cue_points[i].name,
+								cue->cue->cue_points[i].position,
+								cue->cue->cue_points[i].chunk,
+								cue->cue->cue_points[i].chunk_start,
+								cue->cue->cue_points[i].block_start,
+								cue->cue->cue_points[i].sample_offset);
+					}
+				}*/
+				free (cue->cue);
+				free (cue);
+				break;
+			case CASE ('L','I','S','T'):
+				list = (list_t *) *ck;
+				free_list (list);
+				break;
+			default:
+				data = (data_t *) *ck;
+				free (data->data);
+				free (data);
+				break;
+		}
+	}
+	free (riff);
 }
 
 int
@@ -313,7 +428,7 @@ main (int argc, char **argv)
 {
 
 	while (*++argv) {
-		list_t     *riff = read_riff (*argv);
+		list_t     *riff = riff_read (*argv);
 		d_chunk_t **ck;
 		int         sample_start, sample_count;
 
@@ -388,6 +503,7 @@ main (int argc, char **argv)
 		}
 		if (sample_start!= -1)
 			printf ("CUEPOINT=%d %d\n", sample_start, sample_count);
+		riff_free (riff);
 	}
 	return 0;
 }
