@@ -275,6 +275,8 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root) %{_prefix}/lib/libQFconsole.so.1.0.0 
 %attr(-,root,root) %{_prefix}/lib/libQFgamecode.so.1
 %attr(-,root,root) %{_prefix}/lib/libQFgamecode.so.1.0.0
+%attr(-,root,root) %{_prefix}/lib/libQFgamecode_builtins.so.1
+%attr(-,root,root) %{_prefix}/lib/libQFgamecode_builtins.so.1.0.0
 %attr(-,root,root) %{_prefix}/lib/libQFgib.so.1
 %attr(-,root,root) %{_prefix}/lib/libQFgib.so.1.0.0
 %attr(-,root,root) %{_prefix}/lib/libQFjs.so.1
@@ -308,48 +310,64 @@ rm -rf $RPM_BUILD_ROOT
 %files 3dfx
 %attr(-,root,root)	%{_prefix}/bin/qw-client-3dfx
 %attr(-,root,root)	%{_prefix}/bin/nq-3dfx
+%attr(-,root,root)	%{_prefix}/lib/libQFtdfx.so.1
+%attr(-,root,root)	%{_prefix}/lib/libQFtdfx.so.1.0.0
 %endif
 
 %if "%{HAVE_FBDEV}"=="'yes'"
 %files fbdev
 %attr(-,root,root)	%{_prefix}/bin/qw-client-fbdev
 %attr(-,root,root)	%{_prefix}/bin/nq-fbdev
+%attr(-,root,root)	%{_prefix}/lib/libQFfbdev.so.1
+%attr(-,root,root)	%{_prefix}/lib/libQFfbdev.so.1.0.0
 %endif
 
 %if "%{HAVE_GLX}"=="'yes'"
 %files glx
 %attr(-,root,root)	%{_prefix}/bin/qw-client-glx
 %attr(-,root,root)	%{_prefix}/bin/nq-glx
+%attr(-,root,root)	%{_prefix}/lib/libQFglx.so.1
+%attr(-,root,root)	%{_prefix}/lib/libQFglx.so.1.0.0
 %endif
 
 %if "%{HAVE_SDL}"=="'yes'"
 %files sdl
 %attr(-,root,root)	%{_prefix}/bin/qw-client-sdl
 %attr(-,root,root)	%{_prefix}/bin/nq-sdl
+%attr(-,root,root)	%{_prefix}/lib/libQFsdl.so.1
+%attr(-,root,root)	%{_prefix}/lib/libQFsdl.so.1.0.0
 %endif
 
 %if "%{HAVE_SDL}"=="'yes'"
 %files sdl32
 %attr(-,root,root)	%{_prefix}/bin/qw-client-sdl32
 %attr(-,root,root)	%{_prefix}/bin/nq-sdl32
+%attr(-,root,root)	%{_prefix}/lib/libQFsdl32.so.1
+%attr(-,root,root)	%{_prefix}/lib/libQFsdl32.so.1.0.0
 %endif
 
 %if "%{HAVE_SGL}"=="'yes'"
 %files sgl
 %attr(-,root,root)	%{_prefix}/bin/qw-client-sgl
 %attr(-,root,root)	%{_prefix}/bin/nq-sgl
+%attr(-,root,root)	%{_prefix}/lib/libQFsgl.so.1
+%attr(-,root,root)	%{_prefix}/lib/libQFsgl.so.1.0.0
 %endif
 
 %if "%{HAVE_SVGA}"=="'yes'"
 %files svga
 %attr(4755,root,root)	%{_prefix}/bin/qw-client-svga
 %attr(4755,root,root)	%{_prefix}/bin/nq-svga
+%attr(-,root,root)	%{_prefix}/lib/libQFsvga.so.1
+%attr(-,root,root)	%{_prefix}/lib/libQFsvga.so.1.0.0
 %endif
 
 %if "%{HAVE_X11}"=="'yes'"
 %files x11
 %attr(-,root,root)	%{_prefix}/bin/qw-client-x11
 %attr(-,root,root)	%{_prefix}/bin/nq-x11
+%attr(-,root,root)	%{_prefix}/lib/libQFx11.so.1
+%attr(-,root,root)	%{_prefix}/lib/libQFx11.so.1.0.0
 %endif
 
 %if "%{HAVE_ALSA}"=="'yes'"
@@ -410,6 +428,9 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/lib/libQFgamecode.a
 %attr(-,root,root)	%{_prefix}/lib/libQFgamecode.la
 %attr(-,root,root)	%{_prefix}/lib/libQFgamecode.so
+%attr(-,root,root)	%{_prefix}/lib/libQFgamecode_builtins.a
+%attr(-,root,root)	%{_prefix}/lib/libQFgamecode_builtins.la
+%attr(-,root,root)	%{_prefix}/lib/libQFgamecode_builtins.so
 %attr(-,root,root)	%{_prefix}/lib/libQFgib.a
 %attr(-,root,root)	%{_prefix}/lib/libQFgib.la
 %attr(-,root,root)	%{_prefix}/lib/libQFgib.so
