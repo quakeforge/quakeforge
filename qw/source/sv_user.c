@@ -400,7 +400,7 @@ SV_Spawn_f (void)
 		SVfloat (ent, gravity) = 1.0;
 	host_client->maxspeed = sv_maxspeed->value;
 	if (sv_fields.maxspeed != -1)
-		SVfloat (ent, gravity) = sv_maxspeed->value;
+		SVfloat (ent, maxspeed) = sv_maxspeed->value;
 
 //
 // force stats to be updated
