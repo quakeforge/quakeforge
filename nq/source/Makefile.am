@@ -43,7 +43,7 @@ noinst_LIBRARIES= libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
 #if ASM_ARCH
 math_ASM= 	cl_math.S
 soft_ASM=	d_draw.S d_draw16.S d_parta.S d_polysa.S d_scana.S d_spr8.S \
-		d_varsa.S r_aclipa.S r_aliasa.S r_drawa.S r_edgea.S r_varsa.S \
+		d_varsa.S sw_raclipa.S sw_raliasa.S sw_rdrawa.S sw_redgea.S sw_rvarsa.S \
 		surf16.S surf8.S
 sound_ASM=	snd_mixa.S
 common_ASM=	sys_ia32.S worlda.S $(math_ASM)
@@ -131,7 +131,7 @@ client_LIBS=	$(top_builddir)/libs/gamecode/libQFgamecode.la $(top_builddir)/libs
 client_LIB_DEPS= libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
 
 client_SOURCES= cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
-		cl_tent.c console.c keys.c sbar.c r_part.c r_view.c \
+		cl_tent.c console.c keys.c sbar.c sw_rpart.c sw_rview.c \
 		nonintel.c gib.c gib_instructions.c gib_vars.c \
 		gib_interpret.c gib_modules.c gib_parse.c gib_stack.c vid.c
 
@@ -149,9 +149,9 @@ combined_SOURCES= $(common_SOURCES) $(client_SOURCES) $(server_SOURCES)
 
 soft_SOURCES=	d_edge.c d_fill.c d_init.c d_modech.c d_part.c d_polyse.c \
 		d_scan.c d_sky.c d_sprite.c d_surf.c d_vars.c d_zpoint.c \
-		draw.c r_aclip.c r_alias.c r_bsp.c r_draw.c r_edge.c r_efrag.c \
-		r_light.c r_main.c r_misc.c sw_part.c r_sky.c r_sprite.c \
-		r_surf.c r_vars.c screen.c sw_model_alias.c sw_model_brush.c \
+		draw.c sw_raclip.c sw_ralias.c sw_rbsp.c sw_rdraw.c sw_redge.c sw_refrag.c \
+		sw_rlight.c sw_rmain.c sw_rmisc.c sw_part.c sw_rsky.c sw_rsprite.c \
+		sw_rsurf.c sw_rvars.c screen.c sw_model_alias.c sw_model_brush.c \
 		sw_model_sprite.c sw_view.c $(soft_ASM)
 
 #
