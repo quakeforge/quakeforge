@@ -1,16 +1,14 @@
 #include "InputLine.h"
 
+#include "Rect.h"
+
 inputline_t (integer lines, integer size, integer prompt) InputLine_Create = #0;
 void (inputline_t il, void [] data) InputLine_SetUserData = #0;
 void (inputline_t il, integer width) InputLine_SetWidth = #0;
 void (inputline_t il) InputLine_Destroy = #0;
 void (inputline_t il) InputLine_Clear = #0;
 void (inputline_t il, integer ch) InputLine_Process = #0;
-#ifdef OLD_API
-void (inputline_t il, integer x, integer y, integer cursor) InputLine_Draw = #0;
-#else
-void (inputline_t il, integer cursor) InputLine_Draw = #0;
-#endif
+void (inputline_t il) InputLine_Draw = #0;
 void (inputline_t il, string str) InputLine_SetText = #0;
 string (inputline_t il) InputLine_GetText = #0;
 
@@ -19,17 +17,18 @@ string (inputline_t il) InputLine_GetText = #0;
 - (id) initWithBounds: (Rect)aRect promptCharacter: (integer)char
 {
 	id (self) = [super init];
-	id (frame) = [aRect copy];
+	control.x = aRect.origin.x;
+	control.y = aRect.origin.y;
+	control.cursor = NO;
 
-	il = InputLine_Create (frame.size.height, frame.size.width, char);
-	InputLine_SetUserData (il, frame);
+	il = InputLine_Create (aRect.size.height, aRect.size.width, char);
+	InputLine_SetUserData (il, &control);
 
 	return self;
 }
 
 - (void) free
 {
-	[frame free];
 	InputLine_Destroy (il);
 	[super free];
 }
@@ -46,11 +45,8 @@ string (inputline_t il) InputLine_GetText = #0;
 
 - (void) draw: (BOOL)cursor
 {
-#ifdef OLD_API
-	InputLine_Draw (il, frame.origin.x, frame.origin.y, cursor);
-#else
-	InputLine_Draw (il, cursor);
-#endif
+	control.cursor = cursor;
+	InputLine_Draw (il);
 }
 
 - (void) setText: (string)text

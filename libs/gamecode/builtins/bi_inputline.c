@@ -48,6 +48,7 @@ static const char rcsid[] =
 typedef struct {
 	inputline_t **lines;
 	int         max_lines;
+	void      (*draw)(inputline_t *il);
 } il_resources_t;
 
 //FIXME need to robustify the interface to avoid segfaults caused by errant
@@ -99,6 +100,7 @@ bi_InputLine_Create (progs_t *pr)
 		R_INT (pr) = 0;
 		return;
 	}
+	(*line)->draw = res->draw;
 	handle = PR_Zone_Malloc (pr, sizeof (inputline_t *));
 	*(inputline_t**)handle = *line;
 	R_INT (pr) = handle - pr->pr_globals;
@@ -203,22 +205,8 @@ static void
 bi_InputLine_Draw (progs_t *pr)
 {
 	inputline_t *il = get_inputline (pr, P_INT (pr, 0), "InputLine_Draw");
-	int         x = P_INT (pr, 1);
-	int         y = P_INT (pr, 2);
-	int         cursor = P_INT (pr, 3);
-	const char *s = il->lines[il->edit_line] + il->scroll;
 
-	if (il->scroll) {
-		Draw_Character (x, y, '<' | 0x80);
-		Draw_nString (x + 8, y, s + 1, il->width - 2);
-	} else {
-		Draw_nString (x, y, s, il->width - 1);
-	}
-	if (cursor)
-		Draw_Character (x + ((il->linepos - il->scroll) << 3), y,
-						10 + ((int) (*pr->time * 4) & 1));
-	if (strlen (s) >= il->width)
-		Draw_Character (x + ((il->width - 1) << 3), y, '>' | 0x80);
+	il->draw (il);
 }
 
 static void
@@ -252,4 +240,11 @@ InputLine_Progs_Init (progs_t *pr)
 	PR_AddBuiltin (pr, "InputLine_Clear", bi_InputLine_Clear, -1);
 	PR_AddBuiltin (pr, "InputLine_Process", bi_InputLine_Process, -1);
 	PR_AddBuiltin (pr, "InputLine_Draw", bi_InputLine_Draw, -1);
+}
+
+void
+InputLine_Progs_SetDraw (progs_t *pr, void (*draw)(inputline_t *))
+{
+	il_resources_t *res = PR_Resources_Find (pr, "InputLine");
+	res->draw = draw;
 }

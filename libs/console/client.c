@@ -58,6 +58,12 @@ static const char rcsid[] =
 
 #include "compat.h"
 
+// XXX check InputLine.h in ruamoko/include
+typedef struct {
+	int         x, y;
+	int         cursor;
+} il_data_t;
+
 static general_data_t plugin_info_general_data;
 console_data_t con_data;
 
@@ -355,21 +361,21 @@ C_Init (void)
 	input_line->enter = C_ExecLine;
 	input_line->width = con_linewidth;
 	input_line->user_data = 0;
-	input_line->draw = 0;//C_DrawInput;
+	input_line->draw = 0;
 
 	say_line = Con_CreateInputLine (32, MAXCMDLINE, ' ');
 	say_line->complete = 0;
 	say_line->enter = C_Say;
 	say_line->width = con_linewidth - 5;
 	say_line->user_data = 0;
-	say_line->draw = 0;//C_DrawInput;
+	say_line->draw = 0;
 
 	say_team_line = Con_CreateInputLine (32, MAXCMDLINE, ' ');
 	say_team_line->complete = 0;
 	say_team_line->enter = C_SayTeam;
 	say_team_line->width = con_linewidth - 10;
 	say_team_line->user_data = 0;
-	say_team_line->draw = 0;//C_DrawInput;
+	say_team_line->draw = 0;
 
 	C_CheckResize ();
 
@@ -575,7 +581,7 @@ C_KeyEvent (knum_t key, short unicode, qboolean down)
 /* DRAWING */
 
 static void
-DrawInputLine (int x, int y, inputline_t *il)
+DrawInputLine (int x, int y, int cursor, inputline_t *il)
 {
 	const char *s = il->lines[il->edit_line] + il->scroll;
 
@@ -585,10 +591,20 @@ DrawInputLine (int x, int y, inputline_t *il)
 	} else {
 		Draw_nString (x, y, s, il->width - 1);
 	}
-	Draw_Character (x + ((il->linepos - il->scroll) << 3), y,
-					10 + ((int) (*con_data.realtime * con_cursorspeed) & 1));
+	if (cursor) {
+		float       t = *con_data.realtime * con_cursorspeed;
+		int         ch = 10 + ((int) (t) & 1);
+		Draw_Character (x + ((il->linepos - il->scroll) << 3), y, ch);
+	}
 	if (strlen (s) >= il->width)
 		Draw_Character (x + ((il->width - 1) << 3), y, '>' | 0x80);
+}
+
+void
+C_DrawInputLine (inputline_t *il)
+{
+	il_data_t   *data = il->user_data;
+	DrawInputLine (data->x, data->y, data->cursor, il);
 }
 
 static void
@@ -597,7 +613,7 @@ DrawInput (void)
 	if (key_dest != key_console)// && !con_data.force_commandline)
 		return;				// don't draw anything (always draw if not active)
 
-	DrawInputLine (8, con_vislines - 22, input_line);
+	DrawInputLine (8, con_vislines - 22, 1, input_line);
 }
 
 /*
@@ -637,10 +653,10 @@ DrawNotify (void)
 
 		if (chat_team) {
 			Draw_String (8, v, "say_team:");
-			DrawInputLine (80, v, say_team_line);
+			DrawInputLine (80, v, 1, say_team_line);
 		} else {
 			Draw_String (8, v, "say:");
-			DrawInputLine (40, v, say_line);
+			DrawInputLine (40, v, 1, say_line);
 		}
 		v += 8;
 	}

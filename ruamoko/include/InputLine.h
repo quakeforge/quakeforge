@@ -1,9 +1,7 @@
 #ifndef __ruamoko_InputLine_h
 #define __ruamoko_InputLine_h
 
-#include "Rect.h"
-
-#define OLD_API		// FIXME update the input line api
+#include "Object.h"
 
 struct _inputline_t = {};	// opaque type :)
 typedef _inputline_t [] inputline_t;
@@ -14,17 +12,20 @@ typedef _inputline_t [] inputline_t;
 @extern void (inputline_t il) InputLine_Destroy;
 @extern void (inputline_t il) InputLine_Clear;
 @extern void (inputline_t il, integer ch) InputLine_Process;
-#ifdef OLD_API
-@extern void (inputline_t il, integer x, integer y, integer cursor) InputLine_Draw;
-#else
-@extern void (inputline_t il, integer cursor) InputLine_Draw;
-#endif
+@extern void (inputline_t il) InputLine_Draw;
 @extern void (inputline_t il, string str) InputLine_SetText;
 @extern string (inputline_t il) InputLine_GetText;
 
+struct il_data_t = {
+	integer		x, y;
+	BOOL		cursor;
+};
+
+@class Rect;
+
 @interface InputLine: Object
 {
-	Rect		frame;
+	il_data_t   control;
 	inputline_t	il;
 }
 

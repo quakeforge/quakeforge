@@ -45,6 +45,10 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/vfs.h"
 
+//FIXME need a better way to communicate this (bah, need a better menu system
+// in general :P)
+void C_DrawInputLine (inputline_t *il);
+
 typedef struct menu_pic_s {
 	struct menu_pic_s *next;
 	int         x, y;
@@ -477,6 +481,7 @@ Menu_Load (void)
 	}
 	PR_InitRuntime (&menu_pr_state);
 	Cbuf_Progs_SetCbuf (&menu_pr_state, con_data.cbuf);
+	InputLine_Progs_SetDraw (&menu_pr_state, C_DrawInputLine);
 	PR_ExecuteProgram (&menu_pr_state, menu_init);
 }
 
