@@ -108,8 +108,14 @@ Con_DPrintf (const char *fmt, ...)
 void
 Con_ProcessInput (void)
 {
-	if (con_module)
+	if (con_module) {
 		con_module->functions->console->pC_ProcessInput ();
-	else
-		Con_Printf ("no input for you\n");
+	} else {
+		static int  been_there_done_that = 0;
+
+		if (!been_there_done_that) {
+			been_there_done_that = 1;
+			Con_Printf ("no input for you\n");
+		}
+	}
 }

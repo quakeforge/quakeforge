@@ -305,13 +305,18 @@ C_Print (const char *fmt, va_list args)
 	static int  buffer_size;
 
 	size = vsnprintf (buffer, buffer_size, fmt, args) + 1;	// +1 for nul
-	if (size > buffer_size) {
-		buffer_size = (size + 1023) & ~1023; // 1k multiples
+	//printf ("size = %d\n", size);
+	while (size <= 0 || size > buffer_size) {
+		if (size > 0)
+			buffer_size = (size + 1023) & ~1023; // 1k multiples
+		else
+			buffer_size += 1024;
 		buffer = realloc (buffer, buffer_size);
 		if (!buffer)
 			Sys_Error ("console: could not allocate %d bytes\n",
 					   buffer_size);
-		vsnprintf (buffer, buffer_size, fmt, args);
+		size = vsnprintf (buffer, buffer_size, fmt, args);
+		//printf ("size = %d\n", size);
 	}
 
 	txt = buffer;

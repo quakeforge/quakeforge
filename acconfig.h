@@ -133,6 +133,10 @@
 /* Define this if you want progs typechecking */
 #undef TYPECHECK_PROGS
 
+/* list of server plugins and prototypes */
+#undef SERVER_PLUGIN_LIST
+#undef SERVER_PLUGIN_PROTOS
+
 /* list of cd plugins and prototypes */
 #undef CD_PLUGIN_LIST
 #undef CD_PLUGIN_PROTOS

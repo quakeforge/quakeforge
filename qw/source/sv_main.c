@@ -80,6 +80,11 @@ static const char rcsid[] =
 #include "server.h"
 #include "sv_progs.h"
 
+SERVER_PLUGIN_PROTOS
+static plugin_list_t server_plugin_list[] = {
+		SERVER_PLUGIN_LIST
+};
+
 client_t   *host_client;				// current client
 client_static_t cls;					//FIXME needed by netchan :/
 
@@ -2413,6 +2418,7 @@ SV_Init (void)
 
 	sv_console_plugin = Cvar_Get ("sv_console_plugin", "server",
 								  CVAR_ROM, 0, "Plugin used for the console");
+	PI_RegisterPlugins (server_plugin_list);
 	Con_Init (sv_console_plugin->string);
 	Sys_SetPrintf (SV_Print);
 

@@ -71,6 +71,7 @@ client_LIBFILES= \
 		$(top_builddir)/libs/console/filelist.o
 
 server_LIBFILES= \
+		$(SERVER_PLUGIN_STATIC_LIBS) \
 		$(top_builddir)/libs/models/libQFmodels.la \
 		$(top_builddir)/libs/console/libQFconsole.la
 
