@@ -255,6 +255,55 @@ R_AliasTransformVector (vec3_t in, vec3_t out)
 }
 
 
+void
+R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av)
+{
+	if (av->fv[2] < ALIAS_Z_CLIP_PLANE) {
+		fv->flags |= ALIAS_Z_CLIP;
+		return;
+	}
+
+	R_AliasProjectFinalVert (fv, av);
+
+	if (fv->v[0] < r_refdef.aliasvrect.x)
+		fv->flags |= ALIAS_LEFT_CLIP;
+	if (fv->v[1] < r_refdef.aliasvrect.y)
+		fv->flags |= ALIAS_TOP_CLIP;
+	if (fv->v[0] > r_refdef.aliasvrectright)
+		fv->flags |= ALIAS_RIGHT_CLIP;
+	if (fv->v[1] > r_refdef.aliasvrectbottom)
+		fv->flags |= ALIAS_BOTTOM_CLIP;
+}
+
+void
+R_AliasTransformFinalVert16 (finalvert_t *fv, auxvert_t *av, trivertx_t *pverts)
+{
+	trivertx_t  * pextra;
+	float       vextra[3];
+
+	pextra = pverts + pmdl->numverts;
+	vextra[0] = pverts->v[0] + pextra->v[0] / (float)256;
+	vextra[1] = pverts->v[1] + pextra->v[1] / (float)256;
+	vextra[2] = pverts->v[2] + pextra->v[2] / (float)256;
+	av->fv[0] = DotProduct (vextra, aliastransform[0]) +
+		aliastransform[0][3];
+	av->fv[1] = DotProduct (vextra, aliastransform[1]) +
+		aliastransform[1][3];
+	av->fv[2] = DotProduct (vextra, aliastransform[2]) +
+		aliastransform[2][3];
+}
+
+void
+R_AliasTransformFinalVert8 (finalvert_t *fv, auxvert_t *av, trivertx_t *pverts)
+{
+	av->fv[0] = DotProduct (pverts->v, aliastransform[0]) +
+		aliastransform[0][3];
+	av->fv[1] = DotProduct (pverts->v, aliastransform[1]) +
+		aliastransform[1][3];
+	av->fv[2] = DotProduct (pverts->v, aliastransform[2]) +
+		aliastransform[2][3];
+}
+
 /*
 	R_AliasPreparePoints
 
@@ -275,21 +324,20 @@ R_AliasPreparePoints (void)
 	fv = pfinalverts;
 	av = pauxverts;
 
-	for (i = 0; i < r_anumverts; i++, fv++, av++, r_apverts++, pstverts++) {
-		R_AliasTransformFinalVert (fv, av, r_apverts, pstverts);
-		if (av->fv[2] < ALIAS_Z_CLIP_PLANE)
-			fv->flags |= ALIAS_Z_CLIP;
-		else {
-			R_AliasProjectFinalVert (fv, av);
-
-			if (fv->v[0] < r_refdef.aliasvrect.x)
-				fv->flags |= ALIAS_LEFT_CLIP;
-			if (fv->v[1] < r_refdef.aliasvrect.y)
-				fv->flags |= ALIAS_TOP_CLIP;
-			if (fv->v[0] > r_refdef.aliasvrectright)
-				fv->flags |= ALIAS_RIGHT_CLIP;
-			if (fv->v[1] > r_refdef.aliasvrectbottom)
-				fv->flags |= ALIAS_BOTTOM_CLIP;
+	if (pmdl->ident == POLYHEADER16) {
+		for (i = 0; i < r_anumverts; i++, fv++, av++, r_apverts++,
+				pstverts++) {
+			R_AliasTransformFinalVert16 (fv, av, r_apverts);
+			R_AliasTransformFinalVert (fv, av, r_apverts, pstverts);
+			R_AliasClipAndProjectFinalVert (fv, av);
+		}
+	}
+	else {
+		for (i = 0; i < r_anumverts; i++, fv++, av++, r_apverts++,
+				pstverts++) {
+			R_AliasTransformFinalVert8 (fv, av, r_apverts);
+			R_AliasTransformFinalVert (fv, av, r_apverts, pstverts);
+			R_AliasClipAndProjectFinalVert (fv, av);
 		}
 	}
 
@@ -387,39 +435,18 @@ R_AliasSetUpTransform (int trivial_accept)
 	}
 }
 
+/*
+R_AliasTransformFinalVert
 
+now this function just copies the texture coordinates and calculates lighting
+actual 3D transform is done by R_AliasTransformFinalVert8/16 functions above
+*/
 void
 R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
 						   trivertx_t *pverts, stvert_t *pstverts)
 {
 	int         temp;
 	float       lightcos, *plightnormal;
-
-	if (pmdl->ident == POLYHEADER16)
-	{
-		trivertx_t  * pextra;
-		float       vextra[3];
-
-		pextra = pverts + pmdl->numverts;
-		vextra[0] = pverts->v[0] + pextra->v[0] / (float)256;
-		vextra[1] = pverts->v[1] + pextra->v[1] / (float)256;
-		vextra[2] = pverts->v[2] + pextra->v[2] / (float)256;
-		av->fv[0] = DotProduct (vextra, aliastransform[0]) +
-			aliastransform[0][3];
-		av->fv[1] = DotProduct (vextra, aliastransform[1]) +
-			aliastransform[1][3];
-		av->fv[2] = DotProduct (vextra, aliastransform[2]) +
-			aliastransform[2][3];
-	}
-	else
-	{
-		av->fv[0] = DotProduct (pverts->v, aliastransform[0]) +
-			aliastransform[0][3];
-		av->fv[1] = DotProduct (pverts->v, aliastransform[1]) +
-			aliastransform[1][3];
-		av->fv[2] = DotProduct (pverts->v, aliastransform[2]) +
-			aliastransform[2][3];
-	}
 
 	fv->v[2] = pstverts->s;
 	fv->v[3] = pstverts->t;
