@@ -201,18 +201,6 @@ extern	int			numfunctions;
 extern	float		pr_globals[MAX_REGS];
 extern	int			numpr_globals;
 
-extern	char		precache_sounds[MAX_SOUNDS][MAX_DATA_PATH];
-extern	int			precache_sounds_block[MAX_SOUNDS];
-extern	int			numsounds;
-
-extern	char		precache_models[MAX_MODELS][MAX_DATA_PATH];
-extern	int			precache_models_block[MAX_SOUNDS];
-extern	int			nummodels;
-
-extern	char		precache_files[MAX_FILES][MAX_DATA_PATH];
-extern	int			precache_files_block[MAX_SOUNDS];
-extern	int			numfiles;
-
 extern	int         num_auxfunctions;
 extern	pr_auxfunction_t *auxfunctions;
 
@@ -263,5 +251,7 @@ extern options_t options;
 void PrecacheSound (def_t *e, int ch);
 void PrecacheModel (def_t *e, int ch);
 void PrecacheFile (def_t *e, int ch);
+void WriteFiles (const char *sourcedir);
+int  WriteProgdefs (char *filename);
 
 #endif//__qfcc_h
