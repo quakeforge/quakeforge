@@ -267,14 +267,18 @@ I_OGGMus_Resume (void)
 	playing = true;
 }
 
-/* print out the current track map. */
+/* print out the current track map, in numerical order. */
 static void
 I_OGGMus_Info (void)
 {
 	plitem_t	*keylist = NULL;
 	plitem_t	*currentmap = NULL;
 	plitem_t	*currenttrack = NULL;
-	int			 iter = 0;
+	int			iter = 0;
+	int			count = 0;
+	int			highesttrack = 0;
+	const char	*trackstring;
+	char		**mapoutput = NULL;
 
 	if (!tracklist) {
 		Sys_Printf ("\n" "No Tracklist\n" "------------\n");
@@ -291,22 +295,57 @@ I_OGGMus_Info (void)
 	Sys_Printf ("\n" "Tracklist loaded from file:\n%s\n"
 				"---------------------------\n", mus_ogglist->string);
 
-	/* loop through the list with PL_ObjectAtIndex () */
+	/* loop, and count up the Highest key number. */
 	for (iter = 0; iter < ((plarray_t *) (keylist->data))->numvals; iter++) {
 		if (!(currentmap = PL_ObjectAtIndex (keylist, iter))) {
-			Sys_DPrintf ("OGGMus: No track for track number %i.\n", iter);
+			Sys_DPrintf ("OGGMus: No track for track index %i.\n", iter);
 			continue;
 		}
-
 		if (currentmap->type != QFString) {
 			Sys_DPrintf ("OGGMus: Track data isn't a string for: %i\n", iter);
 			continue;
 		}
 
-		currenttrack = PL_ObjectForKey (tracklist, (char *) currentmap->data);
-		Sys_Printf (" %s  -  %s\n", (char *) currentmap->data,
-					(char *) currenttrack->data);
+		if (highesttrack < strtol ((char *) currentmap->data, NULL, 10) )
+			highesttrack = strtol ((char *) currentmap->data, NULL, 10);
 	}
+	Sys_DPrintf ("Highest Track number = %i.\n", highesttrack);
+	
+	/* allocate a null terminated array of char *'s  */
+	mapoutput = calloc (highesttrack + 1, sizeof (char*));
+	if (!mapoutput)
+		Sys_Error ("couldn't allocate mapoutput array!\n");
+
+	/* loop until we've extracted 'numval' trackmaps, or hit the highest track
+	 * number */
+	for (iter = 0, count = 0;
+		 (iter < ((plarray_t *) keylist->data)->numvals
+		  || count <= highesttrack);
+		 count++)
+	{
+		trackstring = va ("%i", count);
+		
+		if (!(currenttrack = PL_ObjectForKey (tracklist, trackstring)))
+		{
+			Sys_DPrintf ("Skipping trackstring: %s.\n", trackstring);
+			continue;
+		}
+		mapoutput[iter] = nva (" %s  -  %s", trackstring,
+						 (char*) currenttrack->data);
+		if (!mapoutput[iter])
+			Sys_Error ("I_OGGMus: couldn't allocate mapstring!\n");
+		iter++;
+		
+	}
+
+	/* output the map, and delete the allocated strings */
+	for (iter = 0; (iter < ((plarray_t *) (keylist->data))->numvals); iter++)
+	{
+		Sys_Printf ("%s\n", mapoutput[iter]);
+		free (mapoutput[iter]);
+	}
+	
+	free (mapoutput);
 	PL_Free (keylist);
 }
 
