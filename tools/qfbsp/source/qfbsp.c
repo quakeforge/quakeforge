@@ -64,19 +64,6 @@ qboolean    worldmodel;
 int         hullnum;
 
 
-void
-qprintf (const char *fmt, ...)
-{
-	va_list     argptr;
-
-	if (!options.verbosity)
-		return;
-
-	va_start (argptr, fmt);
-	vprintf (fmt, argptr);
-	va_end (argptr);
-}
-
 winding_t *
 BaseWindingForPlane (plane_t *p)
 {
@@ -850,4 +837,17 @@ main (int argc, char **argv)
 	printf ("%5.1f seconds elapsed\n", end - start);
 
 	return 0;
+}
+
+void
+qprintf (const char *fmt, ...)
+{
+	va_list     argptr;
+
+	if (!options.verbosity)
+		return;
+
+	va_start (argptr, fmt);
+	vprintf (fmt, argptr);
+	va_end (argptr);
 }
