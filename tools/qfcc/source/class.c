@@ -419,7 +419,7 @@ class_find_method (class_type_t *class_type, method_t *method)
 						m->params->type = start_class->type;
 					else
 						m->params->type = &type_Class;
-					add_method (methods, m);
+					add_method (start_methods, m);
 				}
 				return m;
 			}
@@ -435,6 +435,11 @@ class_find_method (class_type_t *class_type, method_t *method)
 				method->instance ? '-' : '+',
 				sel->str, class_name,
 				category_name ? va (" (%s)", category_name) : "");
+		add_method (start_methods, method);
+		if (method->instance)
+			method->params->type = start_class->type;
+		else
+			method->params->type = &type_Class;
 	}
 	dstring_delete (sel);
 	return method;
