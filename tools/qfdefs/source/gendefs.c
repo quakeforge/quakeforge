@@ -97,6 +97,7 @@ main (int argc, char **argv)
 		return 1;
 	}
 	fputs ("#include \"def.h\"\n\n", out);
+	fprintf (out, "static const char rcsid[] =\n\t\"%s\";\n", rcsid);
 	while (fgets (buf, sizeof (buf), in)) {
 		switch (state) {
 			case 0:
