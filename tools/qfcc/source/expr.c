@@ -1918,15 +1918,12 @@ function_expr (expr_t *e1, expr_t *e2)
  
 		check_initialized (e);
 		if (ftype->parm_types[i] == &type_float && e->type == ex_integer) {
-			e->type = ex_float;
-			e->e.float_val = e->e.integer_val;
+			convert_int (e);
 			t = &type_float;
 		}
 		if (i < parm_count) {
-			if (t == &type_void) {
-				t = ftype->parm_types[i];
-				e->type = expr_types[t->type];
-			}
+			if (e->type == ex_nil)
+				convert_nil (e, t = ftype->parm_types[i]);
 			if (!type_assignable (ftype->parm_types[i], t)) {
 				//print_type (ftype->parm_types[i]); puts ("");
 				//print_type (t); puts ("");
