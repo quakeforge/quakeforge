@@ -1022,8 +1022,8 @@ SVC_RemoteCommand (void)
 		Cmd_ExecuteString (command, src_command);
 		rcon_from_user = false;
 	} else {
-		SV_Printf ("Bad rcon from %s:\n%s\n", NET_AdrToString (net_from),
-					net_message->message->data + 4);
+		SV_Printf ("Bad rcon from %s:\n\t rcon (hidden) %s\n",
+				   NET_AdrToString (net_from), Cmd_Args (2));
 
 		SV_BeginRedirect (RD_PACKET);
 		if (admin_cmd) {
