@@ -88,13 +88,16 @@ LoadPCX (QFile *f, int convert, byte *pal)
 
 	count = (pcx->xmax + 1) * (pcx->ymax + 1);
 	if (convert) {
-		tex = Hunk_TempAlloc (field_offset (tex_t, data[count * 4]));
-		tex->format = tex_rgba;
+		tex = Hunk_TempAlloc (field_offset (tex_t, data[count * 3]));
+		tex->format = tex_rgb;
 		tex->palette = 0;
 	} else {
 		tex = Hunk_TempAlloc (field_offset (tex_t, data[count]));
 		tex->format = tex_palette;
-		tex->palette = pal;
+		if (pal)
+			tex->palette = pal;
+		else
+			tex->palette = palette;
 	}
 	tex->width = pcx->xmax + 1;
 	tex->height = pcx->ymax + 1;
@@ -121,7 +124,6 @@ LoadPCX (QFile *f, int convert, byte *pal)
 				*pix++ = palette[*dataByte * 3];
 				*pix++ = palette[*dataByte * 3 + 1];
 				*pix++ = palette[*dataByte * 3 + 2];
-				*pix++ = 255;
 			}
 		} else {
 			for (; runLength > 0; runLength--) {

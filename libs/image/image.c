@@ -54,7 +54,7 @@ LoadImage (const char *imageFile)
 	tex_t      *tex = NULL;
 	QFile      *fp;
 
-	/* Get the file name without extension */
+	// Get the file name without extension
 	tmpFile = dstring_new ();
 	dstring_copystr (tmpFile, imageFile);
 	ext = strrchr (tmpFile->str, '.');
@@ -62,36 +62,49 @@ LoadImage (const char *imageFile)
 		tmp = ext - tmpFile->str;
 	else
 		tmp = tmpFile->size - 1;
-	
-	/* Check for a .png */
+
+	// Check for a .png
 	dstring_replace (tmpFile, tmp, tmpFile->size, ".png", 5);
 	QFS_FOpenFile (tmpFile->str, &fp);
 	if (fp) {
 		tex = LoadPNG (fp);
 		Qclose (fp);
+		dstring_delete (tmpFile);
+		return (tex);
 	}
-	
-	/* Check for a .tga */
-	if (!tex) {
-		dstring_replace (tmpFile, tmp, tmpFile->size, ".tga", 5);
-		QFS_FOpenFile (tmpFile->str, &fp);
-		if (fp) {
-			tex = LoadTGA (fp);
-			Qclose (fp);
-		}
+
+	// Check for a .tga
+	dstring_replace (tmpFile, tmp, tmpFile->size, ".tga", 5);
+	QFS_FOpenFile (tmpFile->str, &fp);
+	if (fp) {
+		tex = LoadTGA (fp);
+		Qclose (fp);
+		dstring_delete (tmpFile);
+		return (tex);
 	}
-	
-	/* Check for a .pcx */
-	/*if (!tex) {
-		dstring_replace (tmpFile, tmp, tmpFile->size, ".pcx", 5);
-		QFS_FOpenFile (tmpFile->str, &fp);
-		
-		if (fp) {
-			tex = LoadPCX (fp); // FIXME: needs extra arguments, how should we be passed them?
-			Qclose (fp);
-		}
-	}*/
-	
+
+/*
+	// Check for a .jpg
+	dstring_replace (tmpFile, tmp, tmpFile->size, ".jpg", 5);
+	QFS_FOpenFile (tmpFile->str, &fp);
+	if (fp) {
+		tex = LoadJPG (fp);
+		Qclose (fp);
+		dstring_delete (tmpFile);
+		return (tex);
+	}
+*/
+
+	// Check for a .pcx
+	dstring_replace (tmpFile, tmp, tmpFile->size, ".pcx", 5);
+	QFS_FOpenFile (tmpFile->str, &fp);
+	if (fp) {
+		tex = LoadPCX (fp, 1, NULL); // Convert, some users don't grok paletted
+		Qclose (fp);
+		dstring_delete (tmpFile);
+		return (tex);
+	}
+
 	dstring_delete (tmpFile);
 	return (tex);
 }
