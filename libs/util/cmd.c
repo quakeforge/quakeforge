@@ -1336,9 +1336,15 @@ Cmd_ProcessToken (cmd_token_t *token)
 int
 Cmd_Process (void)
 {
-	int arg, res, i;
-	const char *str;
+	int arg, res;
+	dstring_t *str;
+	dstring_t *org;
+	int quotes;
+	unsigned int adj = 0;
 	
+	if (cmd_activebuffer->legacy)
+		return 0;
+
 	for (arg = 0; arg < cmd_activebuffer->argc; arg++) {
 		if (cmd_activebuffer->argv[arg]->state == cmd_process) {
 			res = Cmd_ProcessToken (cmd_activebuffer->argv[arg]);
@@ -1347,26 +1353,22 @@ Cmd_Process (void)
 			cmd_activebuffer->argv[arg]->state = cmd_done;
 		}
 	}
-	dstring_clearstr (cmd_activebuffer->line);
+
 	for (arg = 0; arg < cmd_activebuffer->argc; arg++) {
-		if (cmd_activebuffer->argv[arg]->state == cmd_done)
-			str = cmd_activebuffer->argv[arg]->processed->str;
+		if (cmd_activebuffer->argv[arg]->state == cmd_original)
+			continue;
+
+		str = cmd_activebuffer->argv[arg]->processed;
+		org = cmd_activebuffer->argv[arg]->original;
+		if (cmd_activebuffer->argv[arg]->delim == '\'' ||
+			cmd_activebuffer->argv[arg]->delim == '\"')
+			quotes = 1;
 		else
-			str = cmd_activebuffer->argv[arg]->original->str;
-		for (i = 0; i < cmd_activebuffer->argv[arg]->space; i++)
-			dstring_appendstr (cmd_activebuffer->line, " ");
-		cmd_activebuffer->args[arg] = strlen(cmd_activebuffer->line->str);
-		if (cmd_activebuffer->argv[arg]->delim == '\'' ||
-			cmd_activebuffer->argv[arg]->delim == '\"')
-			dstring_appendstr (cmd_activebuffer->line, va("%c", cmd_activebuffer->argv[arg]->delim));
-		if (cmd_activebuffer->argv[arg]->delim == '{')
-			dstring_appendstr (cmd_activebuffer->line, "{");
-		dstring_appendstr (cmd_activebuffer->line, str);
-		if (cmd_activebuffer->argv[arg]->delim == '\'' ||
-			cmd_activebuffer->argv[arg]->delim == '\"')
-			dstring_appendstr (cmd_activebuffer->line, va("%c", cmd_activebuffer->argv[arg]->delim));
-		if (cmd_activebuffer->argv[arg]->delim == '{')
-			dstring_appendstr (cmd_activebuffer->line, "}");
+			quotes = 0;
+		cmd_activebuffer->args[arg] += adj;
+		adj += (str->size - 1) - (org->size - 1);
+		dstring_replace (cmd_activebuffer->line, str->str, str->size - 1,
+						 cmd_activebuffer->args[arg] + quotes, org->size - 1);
 	}
 	return 0;
 }
@@ -1401,6 +1403,8 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 			i++;
 			space++;
 		}
+		if (space)
+			dstring_appendsubstr (cmd_activebuffer->line, str + i - space, space);
 		len = Cmd_GetToken (str + i, legacy);
 		if (len < 0) {
 			Cmd_Error ("Parse error:  Unmatched quotes, braces, or "
@@ -1427,16 +1431,17 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 		/* Remove surrounding quotes or double quotes or braces */
 		quotes = 0;
 		braces = 0;
-		cmd_activebuffer->argv[cmd_argc-1]->delim = ' ';
-		if ((str[i] == '\'' && str[i + len] == '\'')
+		cmd_activebuffer->args[cmd_argc - 1] = i;
+		cmd_activebuffer->argv[cmd_argc - 1]->delim = ' ';
+		if ((!legacy && str[i] == '\'' && str[i + len] == '\'')
 			|| (str[i] == '"' && str[i + len] == '"')) {
 			cmd_activebuffer->argv[cmd_argc-1]->delim = str[i];
-			dstring_appendsubstr (cmd_activebuffer->line, str + i, 1);
-			dstring_appendsubstr (cmd_activebuffer->line, str + i, 1);
 			i++;
 			len -= 1;
 			quotes = 1;
 		}
+		dstring_appendsubstr (cmd_activebuffer->line,
+							  str + i - quotes, len + quotes * 2);
 		if (str[i] == '{' && str[i + len] == '}') {
 			i++;
 			len -= 1;

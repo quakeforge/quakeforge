@@ -48,6 +48,8 @@ void dstring_insert(dstring_t *dstr, const char *data, unsigned int len,
 					unsigned int pos);
 void dstring_snip (dstring_t *dstr, unsigned int pos, unsigned int len);
 void dstring_clear (dstring_t *dstr);
+void dstring_replace (dstring_t *dstr, const char *data, unsigned int len,
+					  unsigned int pos, unsigned int rlen);
 
 // String-specific functions
 dstring_t *dstring_newstr (void);

@@ -103,6 +103,24 @@ dstring_clear (dstring_t *dstr)
 	dstring_adjust (dstr);
 }
 
+void
+dstring_replace (dstring_t *dstr, const char *data, unsigned int len,
+				 unsigned int pos, unsigned int rlen)
+{
+	if (rlen < len) {
+		dstr->size += len - rlen;
+		dstring_adjust (dstr);
+		memmove (dstr->str + pos + len, dstr->str + pos + rlen,
+				 dstr->size - (pos + rlen));
+	} else if (rlen > len) {
+		memmove (dstr->str + pos + len, dstr->str + pos + rlen,
+				 dstr->size - (pos + rlen));
+		dstr->size -= rlen - len;
+		dstring_adjust (dstr);
+	}
+	memcpy (dstr->str + pos, data, len);
+}
+
 dstring_t  *
 dstring_newstr (void)
 {
