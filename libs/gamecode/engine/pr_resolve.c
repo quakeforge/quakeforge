@@ -168,8 +168,10 @@ PR_ResolveGlobals (progs_t *pr)
 		goto error;
 	pr->globals.time = &G_FLOAT (pr, def->ofs);
 	if (!(def = PR_FindGlobal (pr, ".self")))
-		if (!(def = PR_FindGlobal (pr, "self")))
+		if (!(def = PR_FindGlobal (pr, "self"))) {
+		    	sym = "self";
 			goto error;
+		}
 	pr->globals.self = &G_INT (pr, def->ofs);
 	if ((pr->fields.nextthink = ED_GetFieldIndex (pr, sym = "nextthink")) == -1)
 		goto error;

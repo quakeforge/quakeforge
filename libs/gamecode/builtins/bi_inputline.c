@@ -105,6 +105,16 @@ bi_InputLine_Create (progs_t *pr)
 }
 
 static void
+bi_InputLine_SetUserData (progs_t *pr)
+{
+	inputline_t *line = get_inputline (pr, P_INT (pr, 0),
+									   "InputLine_SetWidth");
+	pr_type_t  *data = P_POINTER (pr, 1);
+
+	line->user_data = data;
+}
+
+static void
 bi_InputLine_SetWidth (progs_t *pr)
 {
 	inputline_t *line = get_inputline (pr, P_INT (pr, 0),
@@ -233,6 +243,8 @@ InputLine_Progs_Init (progs_t *pr)
 
 	PR_Resources_Register (pr, "InputLine", res, bi_il_clear);
 	PR_AddBuiltin (pr, "InputLine_Create", bi_InputLine_Create, -1);
+	PR_AddBuiltin (pr, "InputLine_SetUserData",
+				   bi_InputLine_SetUserData, -1);
 	PR_AddBuiltin (pr, "InputLine_SetWidth", bi_InputLine_SetWidth, -1);
 	PR_AddBuiltin (pr, "InputLine_SetText", bi_InputLine_SetText, -1);
 	PR_AddBuiltin (pr, "InputLine_GetText", bi_InputLine_GetText, -1);
