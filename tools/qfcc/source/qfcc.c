@@ -1168,10 +1168,10 @@ main (int argc, char **argv)
 	parse_cpp_name ();
 #endif
 
-	if (strcmp (sourcedir, "")) {
+	if (options.verbosity >= 1 && strcmp (sourcedir, "")) {
 		printf ("Source directory: %s\n", sourcedir);
 	}
-	if (strcmp (progs_src, "progs.src")) {
+	if (options.verbosity >= 1 && strcmp (progs_src, "progs.src")) {
 		printf ("progs.src: %s\n", progs_src);
 	}
 

@@ -1,5 +1,5 @@
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc
-QCFLAGS=-g -Werror
+QCFLAGS=-qq -g -Werror
 INCLUDES= -I$(top_srcdir)/include
 
 noinst_PROGRAMS=qwaq
@@ -10,14 +10,14 @@ qwaq_libs= \
 	$(top_builddir)/libs/util/libQFutil.la
 
 qwaq_dat_src= \
-	main.qc $(top_srcdir)/cs-code/object.r test.r
+	main.qc test.r
 
 qwaq_SOURCES= main.c builtins.c
 qwaq_LDADD= $(qwaq_libs)
 qwaq_DEPENDENCIES= $(qwaq_libs)
 
-qwaq.dat: progs.src $(qwaq_dat_src)
+qwaq.dat: progs.src $(qwaq_dat_src) $(top_srcdir)/cs-code/object.r
 	$(QFCC) $(QCFLAGS)
 
-EXTRA_DIST=progs.src
+EXTRA_DIST=$(qwaq_dat_src)
 CLEANFILES= *.dat *.sym
