@@ -72,11 +72,11 @@ if test "$1" = gcc; then
 	args="$*"
 	AC_MSG_CHECKING(for fubared gcc)
 	if test $(gcc --version) = 2.96; then
-		AC_MSG_RESULT(yes. You poor sod, hope you have egcs)
-		CC="egcs $args"
+		AC_MSG_RESULT(yes. You poor sod, hope you have kgcc)
+		CC="kgcc $args"
 		set $CPP
 		shift
-		CPP="egcs $*"
+		CPP="kgcc $*"
 	else
 		AC_MSG_RESULT(no. good)
 	fi
