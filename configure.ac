@@ -93,12 +93,12 @@ AC_LIBTOOL_WIN32_DLL
 AM_PROG_LIBTOOL
 
 AC_PROG_YACC
-if echo $YACC | grep -vq bison; then
+if echo $YACC | grep -v bison > /dev/null; then
 	AC_MSG_ERROR(GNU bison is required but wasn't found)
 fi
 
 AM_PROG_LEX
-if echo $LEX | grep -vq flex; then
+if echo $LEX | grep -v flex > /dev/null; then
 	AC_MSG_ERROR(GNU flex is required but wasn't found)
 fi
 
