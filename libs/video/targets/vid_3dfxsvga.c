@@ -44,6 +44,7 @@ static const char rcsid[] =
 
 #include <glide/glide.h>
 #include <glide/sst1vid.h>
+#include <setjmp.h>
 #include <sys/signal.h>
 
 #include "QF/console.h"
@@ -99,11 +100,46 @@ VID_Shutdown (void)
 	qf_fxMesaDestroyContext (fc);
 }
 
+static jmp_buf  aiee_abort;
+
+static void
+aiee (int sig)
+{
+	printf ("AIEE, signal %d in shutdown code, giving up\n", sig);
+	longjmp (aiee_abort, 1);
+}
+
 void
 signal_handler (int sig)
 {
 	printf ("Received signal %d, exiting...\n", sig);
-	Sys_Quit ();
+	
+	switch (sig) {
+		case SIGHUP:
+		case SIGINT:
+		case SIGTERM:
+			signal (SIGHUP, SIG_DFL);
+			signal (SIGINT, SIG_DFL);
+			signal (SIGTERM, SIG_DFL);
+			Sys_Quit ();
+		default:
+			signal (SIGQUIT, aiee);
+			signal (SIGILL, aiee);
+			signal (SIGTRAP, aiee);
+			signal (SIGIOT, aiee);
+			signal (SIGBUS, aiee);
+			signal (SIGSEGV, aiee);
+
+			if (!setjmp (aiee_abort))
+				Sys_Shutdown ();
+
+			signal (SIGQUIT, SIG_DFL);
+			signal (SIGILL, SIG_DFL);
+			signal (SIGTRAP, SIG_DFL);
+			signal (SIGIOT, SIG_DFL);
+			signal (SIGBUS, SIG_DFL);
+			signal (SIGSEGV, SIG_DFL);
+	}
 }
 
 void
