@@ -389,7 +389,8 @@ Menu_Draw (void)
 
 	if (menu->draw) {
 		PR_ExecuteProgram (&menu_pr_state, menu->draw);
-		return;
+		if (G_INT (&menu_pr_state, OFS_RETURN))
+			return;
 	}
 
 
