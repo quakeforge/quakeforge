@@ -541,6 +541,7 @@ typedef struct cache_system_s {
 cache_system_t *Cache_TryAlloc (int size, qboolean nobottom);
 void Cache_RealFree (cache_user_t *c);
 void *Cache_RealCheck (cache_user_t *c);
+void *Cache_RealAlloc (cache_user_t *c, int size, const char *name);
 cache_system_t cache_head;
 int cache_writelock;
 
@@ -884,13 +885,20 @@ Cache_RealCheck (cache_user_t *c)
 	return c->data;
 }
 
-void       *
+void *
 Cache_Alloc (cache_user_t *c, int size, const char *name)
 {
-	cache_system_t *cs;
 	void *mem;
-
 	CACHE_WRITE_LOCK;
+	mem = Cache_RealAlloc (c, size, name);
+	CACHE_WRITE_UNLOCK;
+	return mem;
+}
+
+void       *
+Cache_RealAlloc (cache_user_t *c, int size, const char *name)
+{
+	cache_system_t *cs;
 
 	if (c->data)
 		Sys_Error ("Cache_Alloc: already allocated");
@@ -914,9 +922,7 @@ Cache_Alloc (cache_user_t *c, int size, const char *name)
 			Sys_Error ("Cache_Alloc: out of memory");
 	}
 
-	mem = Cache_RealCheck (c);
-	CACHE_WRITE_UNLOCK;
-	return mem;
+	return Cache_RealCheck (c);
 }
 
 void
@@ -956,25 +962,100 @@ Cache_Profile (void)
 	CACHE_WRITE_UNLOCK;
 }
 
-/*
-	Qalloc and friends
-*/
+void
+Cache_Add (cache_user_t *c, const char *filename, cache_loader_t loader)
+{
+	CACHE_WRITE_LOCK;
 
-size_t (*Qalloc_callback) (size_t size);
+	if (c->data || c->filename || c->loader)
+		Sys_Error ("Cache_Add: cache item already exists!\n");
+
+	c->filename = strdup (filename);
+	if (!c->filename)
+		Sys_Error ("Cache_Add: strdup failed!\n");
+	c->loader = loader;
+
+//	c->loader (c, Cache_RealAlloc); // for debugging
+
+	CACHE_WRITE_UNLOCK;
+}
+
+void
+Cache_Remove (cache_user_t *c)
+{
+	CACHE_WRITE_LOCK;
+
+	if (!c->filename || !c->loader)
+		Sys_Error ("Cache_Remove: already removed!\n");
+
+	if (Cache_RealCheck (c))
+		Cache_RealFree (c);
+
+	free (c->filename);
+	c->filename = 0;
+	c->loader = 0;
+
+	CACHE_WRITE_UNLOCK;
+}
 
 void *
-Qalloc (void *ptr, size_t size, unsigned modes)
+Cache_Get (cache_user_t *c)
+{
+	void *mem;
+	CACHE_WRITE_LOCK;
+
+	mem = Cache_RealCheck (c);
+	if (!mem) {
+		c->loader (c, Cache_RealAlloc);
+		mem = Cache_RealCheck (c);
+	}
+
+	if (!mem)
+		Sys_Error ("Cache_Get: couldn't get cache!\n");
+
+	(((cache_system_t *)c->data) - 1)->readlock++;
+
+	CACHE_WRITE_UNLOCK;
+	return mem;
+}
+
+void
+Cache_Release (cache_user_t *c)
+{
+	int *readlock;
+	CACHE_WRITE_LOCK;
+	readlock = &(((cache_system_t *)c->data) - 1)->readlock;
+
+	if (!*readlock)
+		Sys_Error ("Cache_Release: already released!\n");
+
+	(*readlock)--;
+
+//	if (!*readlock)
+//		Cache_RealFree (c); // for debugging
+	CACHE_WRITE_UNLOCK;
+}
+
+
+/*
+	QA_alloc and friends
+*/
+
+size_t (*QA_alloc_callback) (size_t size);
+
+void *
+QA_alloc (void *ptr, size_t size, unsigned modes)
 {
 	void *mem;
 
 	if (modes & ~(_QA_MODEMASK | QA_ZEROED))
-		Sys_Error ("Qalloc: bad modes field: %u\n", modes);
+		Sys_Error ("QA_alloc: bad modes field: %u\n", modes);
 
 	if (size) {
 		do {
 			if (ptr) {
 				if (modes & QA_ZEROED)
-					Sys_Error ("Qalloc: Zeroing reallocated memory not yet supported\n");
+					Sys_Error ("QA_alloc: Zeroing reallocated memory not yet supported\n");
 				else
 					mem = realloc (ptr, size);
 			} else {
@@ -984,49 +1065,49 @@ Qalloc (void *ptr, size_t size, unsigned modes)
 					mem = malloc (size);
 			}
 		} while ((modes & _QA_MODEMASK) != QA_EARLYFAIL && !mem
-				 && Qalloc_callback && Qalloc_callback (size));
+				 && QA_alloc_callback && QA_alloc_callback (size));
 
 		if (!mem && (modes & _QA_MODEMASK) == QA_NOFAIL)
-			Sys_Error ("Qalloc: could not allocate %d bytes!\n", size);
+			Sys_Error ("QA_alloc: could not allocate %d bytes!\n", size);
 
 		return mem;
 	} else {
 		if (!ptr)
-			Sys_Error ("Qalloc: can't free a NULL pointers!\n");
+			Sys_Error ("QA_alloc: can't free a NULL pointers!\n");
 		free (ptr);
 		return 0;
 	}
 }
 
 void *
-Qmalloc (size_t size)
+QA_malloc (size_t size)
 {
-	return Qalloc (0, size, QA_NOFAIL);
+	return QA_alloc (0, size, QA_NOFAIL);
 }
 
 void *
-Qcalloc (size_t nmemb, size_t size)
+QA_calloc (size_t nmemb, size_t size)
 {
-	return Qalloc (0, nmemb * size, QA_NOFAIL | QA_ZEROED);
+	return QA_alloc (0, nmemb * size, QA_NOFAIL | QA_ZEROED);
 }
 
 void *
-Qrealloc (void *ptr, size_t size)
+QA_realloc (void *ptr, size_t size)
 {
-	return Qalloc (ptr, size, QA_NOFAIL);
+	return QA_alloc (ptr, size, QA_NOFAIL);
 }
 
 void 
-Qfree (void *ptr)
+QA_free (void *ptr)
 {
-	Qalloc (ptr, 0, QA_NOFAIL);
+	QA_alloc (ptr, 0, QA_NOFAIL);
 }
 
 char *
-Qstrdup (const char *s)
+QA_strdup (const char *s)
 {
 	char *mem;
-	mem = Qmalloc (strlen (s) + 1);
+	mem = QA_malloc (strlen (s) + 1);
 	strcpy (mem, s);
 	return mem;
 }

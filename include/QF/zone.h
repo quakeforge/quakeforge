@@ -118,9 +118,15 @@ void *Hunk_TempAlloc (int size);
 
 void Hunk_Check (void);
 
+struct cache_user_s;
+typedef void * (*cache_allocator_t) (struct cache_user_s *c, int size, const char *name);
+typedef void (*cache_loader_t) (struct cache_user_s *cache, cache_allocator_t allocator);
+
 typedef struct cache_user_s
 {
 	void	*data;
+	char	*filename;
+	cache_loader_t loader;
 } cache_user_t;
 
 void Cache_Flush (void);
@@ -137,6 +143,11 @@ void *Cache_Alloc (cache_user_t *c, int size, const char *name);
 
 void Cache_Report (void);
 
+void Cache_Add (cache_user_t *c, const char *filename, cache_loader_t loader);
+void Cache_Remove (cache_user_t *c);
+void *Cache_Get (cache_user_t *c);
+void Cache_Release (cache_user_t *c);
+
 /* Modes, pick one */
 #define QA_NOFAIL       1
 #define QA_LATEFAIL     2
@@ -147,12 +158,13 @@ void Cache_Report (void);
 /* Flags, OR them with the mode */
 #define QA_ZEROED       4
 
-extern size_t (*Qalloc_callback) (size_t size);
+extern size_t (*QA_alloc_callback) (size_t size);
 
-void *Qalloc (void *ptr, size_t size, unsigned modes);
-void *Qmalloc (size_t size);
-void *Qcalloc (size_t nmemb, size_t size);
-void *Qrealloc (void *ptr, size_t size);
-void Qfree (void *ptr);
+void *QA_alloc (void *ptr, size_t size, unsigned modes);
+void *QA_malloc (size_t size);
+void *QA_calloc (size_t nmemb, size_t size);
+void *QA_realloc (void *ptr, size_t size);
+void QA_free (void *ptr);
+char *QA_strdup (const char *s);
 
 #endif // __zone_h

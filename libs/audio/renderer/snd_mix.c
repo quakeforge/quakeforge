@@ -57,8 +57,6 @@ int        *snd_p, snd_linear_count, snd_vol;
 short      *snd_out;
 
 void        SND_WriteLinearBlastStereo16 (void);
-sfxcache_t *SND_LoadSound (sfx_t *s);
-
 
 #ifndef USE_INTEL_ASM
 void
@@ -239,7 +237,7 @@ SND_PaintChannels (int endtime)
 				continue;
 			if (!ch->leftvol && !ch->rightvol)
 				continue;
-			sc = SND_LoadSound (ch->sfx);
+			sc = Cache_Get (&ch->sfx->cache);
 			if (!sc)
 				continue;
 
@@ -265,12 +263,15 @@ SND_PaintChannels (int endtime)
 						ch->pos = sc->loopstart;
 						ch->end = ltime + sc->length - ch->pos;
 					} else {			// channel just stopped
+						Cache_Release (&ch->sfx->cache);
 						ch->sfx = NULL;
 						break;
 					}
 				}
 			}
 
+			if (ch->sfx)
+				Cache_Release (&ch->sfx->cache);
 		}
 
 		// transfer out according to DMA format

@@ -46,24 +46,20 @@
 int         cache_full_cycle;
 
 byte       *SND_Alloc (int size);
-wavinfo_t   SND_GetWavinfo (char *name, byte * wav, int wavlength);
+wavinfo_t   SND_GetWavinfo (const char *name, byte * wav, int wavlength);
+sfxcache_t *SND_LoadSound (cache_user_t *cache, const char *name, cache_allocator_t allocator);
 
 
 void
-SND_ResampleSfx (sfx_t *sfx, int inrate, int inwidth, byte * data)
+SND_ResampleSfx (sfxcache_t *sc, int inrate, int inwidth, byte * data)
 {
 	int         outcount;
 	int         srcsample;
 	float       stepscale;
 	int         i;
 	int         sample, samplefrac, fracstep;
-	sfxcache_t *sc;
 	short      *is, *os;
 	unsigned char *ib, *ob;
-
-	sc = Cache_Check (&sfx->cache);
-	if (!sc)
-		return;
 
 	is = (short *) data;
 	os = (short *) sc->data;
@@ -161,24 +157,19 @@ SND_ResampleSfx (sfx_t *sfx, int inrate, int inwidth, byte * data)
 //=============================================================================
 
 sfxcache_t *
-SND_LoadSound (sfx_t *s)
+SND_LoadSound (cache_user_t *cache, const char *name, cache_allocator_t allocator)
 {
-	char        namebuffer[256];
-	byte       *data;
-	wavinfo_t   info;
-	int         len;
-	float       stepscale;
+	char		namebuffer[256];
+	byte	   *data;
+	wavinfo_t	info;
+	int			len;
+	float		stepscale;
 	sfxcache_t *sc;
-	byte        stackbuf[1 * 1024];		// avoid dirtying the cache heap
-
-	// see if still in memory
-	sc = Cache_Check (&s->cache);
-	if (sc)
-		return sc;
+	byte		stackbuf[1 * 1024];		// avoid dirtying the cache heap
 
 	// load it in
 	strcpy (namebuffer, "sound/");
-	strncat (namebuffer, s->name, sizeof (namebuffer) - strlen (namebuffer));
+	strncat (namebuffer, name, sizeof (namebuffer) - strlen (namebuffer));
 
 	data = COM_LoadStackFile (namebuffer, stackbuf, sizeof (stackbuf));
 
@@ -187,9 +178,9 @@ SND_LoadSound (sfx_t *s)
 		return NULL;
 	}
 
-	info = SND_GetWavinfo (s->name, data, com_filesize);
+	info = SND_GetWavinfo (name, data, com_filesize);
 	if (info.channels != 1) {
-		Con_Printf ("%s is a stereo sample\n", s->name);
+		Con_Printf ("%s is a stereo sample\n", name);
 		return NULL;
 	}
 
@@ -202,7 +193,7 @@ SND_LoadSound (sfx_t *s)
 		len = len * 2 * info.channels;
 	}
 
-	sc = Cache_Alloc (&s->cache, len + sizeof (sfxcache_t), s->name);
+	sc = allocator (cache, len + sizeof (sfxcache_t), name);
 
 	if (!sc)
 		return NULL;
@@ -213,9 +204,16 @@ SND_LoadSound (sfx_t *s)
 	sc->width = info.width;
 	sc->stereo = info.channels;
 
-	SND_ResampleSfx (s, sc->speed, sc->width, data + info.dataofs);
+	SND_ResampleSfx (sc, sc->speed, sc->width, data + info.dataofs);
 
 	return sc;
+}
+
+void
+SND_CallbackLoad (struct cache_user_s *cache, cache_allocator_t allocator)
+{
+	if (!SND_LoadSound (cache, cache->filename, allocator))
+		Sys_Error ("SND_CallbackLoad: load failed!\n");
 }
 
 /* WAV loading */
@@ -300,7 +298,7 @@ SND_DumpChunks (void)
 }
 
 wavinfo_t
-SND_GetWavinfo (char *name, byte * wav, int wavlength)
+SND_GetWavinfo (const char *name, byte * wav, int wavlength)
 {
 	wavinfo_t   info;
 	int         i;

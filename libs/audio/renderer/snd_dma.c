@@ -59,9 +59,9 @@ void		SND_StopAllSoundsC (void);
 void		SND_Update_ (void);
 
 sfx_t		*SND_PrecacheSound (const char *name);
-sfxcache_t	*SND_LoadSound (sfx_t *s);
 void		SND_ClearBuffer (void);
 void		SND_PaintChannels (int endtime);
+void		SND_CallbackLoad (struct cache_user_s *cache, cache_allocator_t allocator);
 
 void		SND_Init_Cvars ();
 
@@ -331,6 +331,7 @@ SND_FindName (const char *name)
 
 	sfx = &known_sfx[i];
 	strcpy (sfx->name, name);
+	Cache_Add (&sfx->cache, name, SND_CallbackLoad);
 
 	num_sfx++;
 
@@ -360,8 +361,10 @@ SND_PrecacheSound (const char *name)
 	sfx = SND_FindName (name);
 
 	// cache it in
-	if (precache->int_val)
-		SND_LoadSound (sfx);
+	if (precache->int_val) {
+		Cache_Get (&sfx->cache);
+		Cache_Release (&sfx->cache);
+	}
 
 	return sfx;
 }
@@ -417,7 +420,6 @@ SND_Spatialize (channel_t *ch)
 	int			phase;					// in samples
 	vec_t		lscale, rscale, scale;
 	vec3_t		source_vec;
-	sfx_t	   *snd;
 
 	// anything coming from the view entity will always be full volume
 	if (ch->entnum == *plugin_info_snd_render_data.viewentity) {
@@ -428,7 +430,6 @@ SND_Spatialize (channel_t *ch)
 	}
 	// calculate stereo seperation and distance attenuation
 
-	snd = ch->sfx;
 	VectorSubtract (ch->origin, listener_origin, source_vec);
 
 	dist = VectorNormalize (source_vec) * ch->dist_mult;
@@ -499,7 +500,7 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin,
 		return;							// not audible at all
 
 	// new channel
-	sc = SND_LoadSound (sfx);
+	sc = Cache_Get (&sfx->cache);
 	if (!sc) {
 		target_chan->sfx = NULL;
 		return;							// couldn't load the sound's data
@@ -508,6 +509,7 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin,
 	target_chan->sfx = sfx;
 	target_chan->pos = 0.0;
 	target_chan->end = paintedtime + sc->length;
+	Cache_Release (&sfx->cache);
 
 	// if an identical sound has also been started this frame, offset the pos
 	// a bit to keep it from just making the first one louder
@@ -613,12 +615,13 @@ SND_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
 	ss = &channels[total_channels];
 	total_channels++;
 
-	sc = SND_LoadSound (sfx);
+	sc = Cache_Get (&sfx->cache);
 	if (!sc)
 		return;
 
 	if (sc->loopstart == -1) {
 		Con_Printf ("Sound %s not looped\n", sfx->name);
+		Cache_Release (&sfx->cache);
 		return;
 	}
 
@@ -627,6 +630,7 @@ SND_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
 	ss->master_vol = vol;
 	ss->dist_mult = (attenuation / 64) / sound_nominal_clip_dist;
 	ss->end = paintedtime + sc->length;
+	Cache_Release (&sfx->cache);
 
 	SND_Spatialize (ss);
 	ss->oldphase = ss->phase;
@@ -891,10 +895,20 @@ SND_SoundList (void)
 	sfx_t	   *sfx;
 	sfxcache_t *sc;
 	int			size, total;
+	int			load;
+
+	if (Cmd_Argc() >= 2 && !strcmp (Cmd_Argv (1), "known"))
+		load = 1;
+	else
+		load = 0;
 
 	total = 0;
 	for (sfx = known_sfx, i = 0; i < num_sfx; i++, sfx++) {
-		sc = Cache_Check (&sfx->cache);
+		if (load)
+			sc = Cache_Get (&sfx->cache);
+		else
+			sc = Cache_Check (&sfx->cache);
+
 		if (!sc)
 			continue;
 		size = sc->length * sc->width * (sc->stereo + 1);
@@ -904,6 +918,9 @@ SND_SoundList (void)
 		else
 			Con_Printf (" ");
 		Con_Printf ("(%2db) %6i : %s\n", sc->width * 8, size, sfx->name);
+
+		if (load)
+			Cache_Release (&sfx->cache);
 	}
 	Con_Printf ("Total resident: %i\n", total);
 }
