@@ -110,11 +110,12 @@ cvar_t     *vid_nopageflip;
 cvar_t     *vid_config_x;
 cvar_t     *vid_config_y;
 cvar_t     *vid_stretch_by_2;
-cvar_t     *in_grab;
 cvar_t     *vid_windowed_mode;
 cvar_t     *block_switch;
 cvar_t     *vid_window_x;
 cvar_t     *vid_window_y;
+
+extern cvar_t *in_grab;
 
 typedef struct {
 	int         width;

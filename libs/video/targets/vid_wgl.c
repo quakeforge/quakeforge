@@ -146,7 +146,7 @@ LONG	CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 extern viddef_t vid;					// global video state
 
-float       gldepthmin, gldepthmax;
+extern float gldepthmin, gldepthmax;
 
 modestate_t modestate = MS_UNINIT;
 
@@ -159,8 +159,7 @@ void        GL_Init (void);
 
 //====================================
 
-cvar_t     *in_grab;
-cvar_t     *vid_use8bit;
+extern cvar_t *in_grab;
 
 int         window_center_x, window_center_y, window_x, window_y, window_width,
 			window_height;

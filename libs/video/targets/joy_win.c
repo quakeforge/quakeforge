@@ -50,8 +50,6 @@ static const char rcsid[] =
 #include "compat.h"
 
 // Joystick variables and structures
-cvar_t     *joy_device;					// Joystick device name
-cvar_t     *joy_enable;					// Joystick enabling flag
 cvar_t     *joy_sensitivity;			// Joystick sensitivity
 
 // joystick defines and variables
