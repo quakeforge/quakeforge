@@ -407,6 +407,10 @@ expr
 			$$ = new_expr ();
 			$$->type = ex_def;
 			$$->e.def = PR_GetDef (NULL, $1, pr_scope, false);
+			if (!$$->e.def) {
+				error (0, "%s undeclared", $1);
+				$$->e.def = &def_float;
+			}
 		}
 	| const			{ $$ = $1; }
 	| '(' expr ')'	{ $$ = $2; $$->paren = 1; }
