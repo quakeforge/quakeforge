@@ -250,7 +250,6 @@ PR_Opcode_Init (void)
 	for (op = pr_opcodes; op->name; op++) {
 		Hash_AddElement (opcode_table, op);
 	}
-	Hash_Stats (opcode_table);
 }
 
 static inline void
