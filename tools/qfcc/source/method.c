@@ -263,7 +263,7 @@ selector_def (const char *_sel_id, const char *_sel_types)
 	sel_def->sel_types = sel_types;
 	sel_def->def = new_def (type_SEL.aux_type, ".imm", pr.scope);
 	sel_def->def->initialized = sel_def->def->constant = 1;
-	sel_def->def->ofs = new_location (type_SEL.aux_type, pr.globals);
+	sel_def->def->ofs = new_location (type_SEL.aux_type, pr.near_data);
 	G_INT (sel_def->def->ofs) = sel_id;
 	G_INT (sel_def->def->ofs + 1) = sel_types;
 	Hash_AddElement (sel_def_hash, sel_def);

@@ -108,9 +108,9 @@ InitData (void)
 	pr.strofs = 1;
 	pr.num_functions = 1;
 
-	pr.globals = new_defspace ();
-	pr.globals->data = calloc (65536, sizeof (pr_type_t));
-	pr.scope = new_scope (sc_static, pr.globals, 0);
+	pr.near_data = new_defspace ();
+	pr.near_data->data = calloc (65536, sizeof (pr_type_t));
+	pr.scope = new_scope (sc_global, pr.near_data, 0);
 	current_scope = pr.scope;
 
 	numglobaldefs = 1;
@@ -136,7 +136,7 @@ WriteData (int crc)
 	fields = calloc (pr.scope->num_defs, sizeof (ddef_t));
 
 	for (def = pr.scope->head; def; def = def->def_next) {
-		if (def->scope->type != sc_static || !def->name)
+		if (!def->global || !def->name)
 			continue;
 		if (def->type->type == ev_func) {
 		} else if (def->type->type == ev_field) {
@@ -153,7 +153,7 @@ WriteData (int crc)
 
 		if (!def->constant
 			&& def->type->type != ev_func
-			&& def->type->type != ev_field && def->scope->type == sc_static)
+			&& def->type->type != ev_field && def->global)
 			dd->type |= DEF_SAVEGLOBAL;
 		dd->s_name = ReuseString (def->name);
 		dd->ofs = def->ofs;
@@ -168,7 +168,7 @@ WriteData (int crc)
 		printf ("%6i global defs\n", numglobaldefs);
 		printf ("%6i locals size (%s)\n", num_localdefs, big_function);
 		printf ("%6i fielddefs\n", numfielddefs);
-		printf ("%6i globals\n", pr.globals->size);
+		printf ("%6i globals\n", pr.near_data->size);
 		printf ("%6i entity fields\n", pr.size_fields);
 	}
 
@@ -227,10 +227,10 @@ WriteData (int crc)
 	SafeWrite (h, fields, numfielddefs * sizeof (ddef_t));
 
 	progs.ofs_globals = ftell (h);
-	progs.numglobals = pr.globals->size;
-	for (i = 0; i < pr.globals->size; i++)
+	progs.numglobals = pr.near_data->size;
+	for (i = 0; i < pr.near_data->size; i++)
 		G_INT (i) = LittleLong (G_INT (i));
-	SafeWrite (h, pr.globals->data, pr.globals->size * 4);
+	SafeWrite (h, pr.near_data->data, pr.near_data->size * 4);
 
 	if (options.verbosity >= -1)
 		printf ("%6i TOTAL SIZE\n", (int) ftell (h));
@@ -302,7 +302,7 @@ WriteData (int crc)
 void
 begin_compilation (void)
 {
-	pr.globals->size = RESERVED_OFS;
+	pr.near_data->size = RESERVED_OFS;
 	pr.func_tail = &pr.func_head;
 
 	pr_error_count = 0;
@@ -322,7 +322,7 @@ finish_compilation (void)
 	// check to make sure all functions prototyped have code
 	if (options.warnings.undefined_function)
 		for (d = pr.scope->head; d; d = d->def_next) {
-			if (d->type->type == ev_func && d->scope->type == sc_static) {
+			if (d->type->type == ev_func && d->global) {
 				// function args ok
 				if (d->used) {
 					if (!d->initialized) {
@@ -343,7 +343,7 @@ finish_compilation (void)
 	}
 
 	for (def = pr.scope->head; def; def = def->def_next) {
-		if (def->scope->type < sc_params || def->absolute)
+		if (def->global || def->absolute)
 			continue;
 		relocate_refs (def->refs, def->ofs);
 	}
@@ -355,15 +355,15 @@ finish_compilation (void)
 			num_localdefs = f->scope->space->size;
 			big_function = f->def->name;
 		}
-		f->dfunc->parm_start = pr.globals->size;
+		f->dfunc->parm_start = pr.near_data->size;
 		for (def = f->scope->head; def; def = def->def_next) {
 			if (def->absolute)
 				continue;
-			def->ofs += pr.globals->size;
+			def->ofs += pr.near_data->size;
 			relocate_refs (def->refs, def->ofs);
 		}
 	}
-	pr.globals->size += num_localdefs;
+	pr.near_data->size += num_localdefs;
 
 	for (l = pr.labels; l; l = l->next)
 		relocate_refs (l->refs, l->ofs);

@@ -61,7 +61,8 @@ typedef struct {
 	dfunction_t		*functions;
 	int				num_functions;
 
-	struct defspace_s *globals;
+	struct defspace_s *near_data;
+	struct defspace_s *far_data;
 	struct scope_s *scope;
 
 	int				size_fields;
@@ -77,13 +78,14 @@ extern	int			pr_source_line;
 extern	struct scope_s *current_scope;
 extern	int		pr_error_count;
 
-#define G_var(t, o)		(pr.globals->data[o].t##_var)
+#define G_var(t, o)		(pr.near_data->data[o].t##_var)
 #define	G_FLOAT(o)		G_var (float, o)
 #define	G_INT(o)		G_var (integer, o)
 #define	G_VECTOR(o)		G_var (vector, o)
 #define	G_STRING(o)		(pr.strings + G_var (string, o))
 #define	G_FUNCTION(o)	G_var (func, o)
-#define G_STRUCT(t,o)	(*(t *)&pr.globals->data[o])
+#define G_POINTER(t,o)	((t *)(pr.near_data->data + o))
+#define G_STRUCT(t,o)	(*G_POINTER (t, o))
 
 extern	string_t	s_file;			// filename for function definition
 

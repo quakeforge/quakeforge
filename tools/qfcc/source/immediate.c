@@ -276,7 +276,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 		}
 	} else {
 		cn = new_def (type, ".imm", pr.scope);
-		cn->ofs = new_location (type, pr.globals);
+		cn->ofs = new_location (type, pr.near_data);
 		if (type == &type_vector || type == &type_quaternion) {
 			int         i;
 
@@ -289,7 +289,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 	if (e.type == ex_string)
 		e.e.integer_val = ReuseString (rep->str);
 
-	memcpy (pr.globals->data + cn->ofs, &e.e, 4 * type_size (type));
+	memcpy (G_POINTER (void, cn->ofs), &e.e, 4 * type_size (type));
 
 	Hash_Add (tab, cn);
 

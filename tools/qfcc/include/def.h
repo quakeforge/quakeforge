@@ -47,6 +47,7 @@ typedef struct def_s {
 	unsigned		freed:1;		// already freed from the scope
 	unsigned		removed:1;		// already removed from the symbol table
 	unsigned		used:1;			// unused local detection
+	unsigned		global:1;		// globally declared def
 	unsigned		absolute:1;		// don't relocate (for temps for shorts)
 	unsigned		managed:1;		// managed temp
 
@@ -73,7 +74,7 @@ typedef struct defspace_s {
 } defspace_t;
 
 typedef enum {
-	sc_static,
+	sc_global,
 	sc_params,
 	sc_local,
 } scope_type;

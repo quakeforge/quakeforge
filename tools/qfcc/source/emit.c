@@ -221,9 +221,9 @@ emit_assign_expr (int oper, expr_t *e)
 		if (def_a->constant) {
 			if (options.code.cow) {
 				int         size = type_size (def_a->type);
-				int         ofs = new_location (def_a->type, pr.globals);
+				int         ofs = new_location (def_a->type, pr.near_data);
 
-				memcpy (pr.globals->data + ofs, pr.globals->data + def_a->ofs,
+				memcpy (G_POINTER (void, ofs), G_POINTER (void, def_a->ofs),
 						size);
 				def_a->ofs = ofs;
 				def_a->constant = 0;

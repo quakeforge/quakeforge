@@ -141,7 +141,7 @@ convert_name (expr_t *e)
 		}
 		d = get_def (NULL, name, current_scope, 0);
 		if (d) {
-			if (d->scope->type == sc_static) {
+			if (d->global) {
 				new = class_ivar_expr (current_class, name);
 				if (new)
 					goto convert;
@@ -327,7 +327,7 @@ check_initialized (expr_t *e)
 	if (options.warnings.uninited_variable) {
 		if (e->type == ex_def
 			&& !(e->e.def->type->type == ev_func
-				 && e->e.def->scope->type == sc_static)
+				 && e->e.def->global)
 			&& !e->e.def->initialized) {
 			warning (e, "%s may be used uninitialized", e->e.def->name);
 			e->e.def->initialized = 1;	// only warn once
@@ -569,7 +569,7 @@ print_expr (expr_t *e)
 		case ex_def:
 			if (e->e.def->name)
 				printf ("%s", e->e.def->name);
-			if (e->e.def->scope->type != sc_static) {
+			if (!e->e.def->global) {
 				printf ("<%d>", e->e.def->ofs);
 			} else {
 				printf ("[%d]", e->e.def->ofs);
@@ -1790,7 +1790,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 		case ex_def:
 			type = e1->e.def->type;
 			if (type->type == ev_struct) {
-				int         abs = e1->e.def->scope->type == sc_static;
+				int         abs = e1->e.def->global;
 				def_t      *def = e1->e.def;
 
 				e = e1;

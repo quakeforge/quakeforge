@@ -82,7 +82,7 @@ check_for_name (type_t *type, const char *name, scope_t *scope, int allocate)
 	}
 	if (!name)
 		return 0;
-	if (scope->type == sc_static && (find_struct (name) || get_enum (name))) {
+	if (scope->type == sc_global && (find_struct (name) || get_enum (name))) {
 		error (0, "%s redeclared", name);
 		return 0;
 	}
@@ -207,7 +207,7 @@ get_def (type_t *type, const char *name, scope_t *scope, int allocate)
 		size = type_size  (type->aux_type);
 		scope->space->size += type->num_parms * size;
 
-		if (scope->type != sc_static) {
+		if (scope->type >= sc_params) {
 			expr_t     *e1 = new_expr ();
 			expr_t     *e2 = new_expr ();
 
@@ -247,6 +247,7 @@ new_def (type_t *type, const char *name, scope_t *scope)
 	def->type = type;
 
 	def->scope = scope;
+	def->global = scope->type == sc_global;
 
 	def->file = s_file;
 	def->line = pr_source_line;

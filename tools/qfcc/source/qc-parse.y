@@ -340,7 +340,7 @@ def_item
 	: def_name opt_initializer
 		{
 			$$ = $1;
-			if ($$ && $$->scope->type == sc_static
+			if ($$ && $$->global
 				&& $$->type->type != ev_func)
 				def_initialized ($$);
 		}
@@ -351,11 +351,9 @@ def_name
 		{
 			if (current_scope->type == sc_local
 				&& current_scope->parent->type == sc_params) {
-				scope_t *scope;
 				def_t      *def = get_def (0, $1, current_scope, 0);
 				if (def) {
-					scope = def->scope;
-					if (scope->type == sc_params)
+					if (def->scope->type == sc_params)
 						warning (0, "local %s shadows param %s", $1, def->name);
 				}
 			}
