@@ -419,8 +419,11 @@ R_DrawBrushModel (entity_t *e)
 	e->angles[0] = -e->angles[0];		// stupid quake bug
 
 	// Build lightmap chains
-	for (i = 0; i < model->nummodelsurfaces; i++, psurf++)
-		R_AddToLightmapChain(psurf);
+	for (i = 0; i < model->nummodelsurfaces; i++, psurf++) {
+		if (psurf->flags & (SURF_DRAWTURB | SURF_DRAWSKY))
+			continue;
+		R_AddToLightmapChain (psurf);
+	}
 
 	if (gl_mtex_active) {
 		R_CalcLightmaps ();
