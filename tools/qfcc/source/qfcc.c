@@ -30,6 +30,17 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
+#ifdef HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_WAIT_H
+# include <sys/wait.h>
+#endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+
 #include <QF/crc.h>
 #include <QF/hash.h>
 #include <QF/qendian.h>
@@ -88,7 +99,7 @@ WriteFiles (void)
 	int 	i;
 	char	filename[1024];
 
-	sprintf (filename, "%s/files.dat", sourcedir);
+	sprintf (filename, "%s%cfiles.dat", sourcedir, PATH_SEPARATOR);
 	f = fopen (filename, "w");
 	if (!f)
 		Error ("Couldn't open %s", filename);
@@ -1002,26 +1013,87 @@ Options: \n\
 	// compile all the files
 	while ((src = COM_Parse (src))) {
 #ifdef NEW_PARSER
+#ifdef USE_CPP
+		pid_t	pid;
+		char	*temp1;
+		char	*temp2 = strrchr (argv[0], PATH_SEPARATOR);
+		char	tempname[1024];
+		int 	tempfd;
+#endif
 		extern FILE *yyin;
 		int yyparse(void);
 		extern void clear_frame_macros (void);
 		//extern int yydebug;
 		//yydebug = 1;
 
-		sprintf (filename, "%s/%s", sourcedir, com_token);
+		sprintf (filename, "%s%c%s", sourcedir, PATH_SEPARATOR, com_token);
 		if (!options.quiet)
 			printf ("compiling %s\n", filename);
 
+#ifdef USE_CPP
+		temp1 = getenv ("TMPDIR");
+		if ((!temp1) || (!temp1[0])) {
+			temp1 = getenv ("TEMP");
+			if ((!temp1) || (!temp1[0])) {
+				temp1 = "/tmp";
+			}
+		}
+
+		snprintf (tempname, sizeof (tempname), "%s%c%sXXXXXX", temp1, PATH_SEPARATOR, temp2 ? temp2 + 1 : argv[0]);
+		tempfd = mkstemp (tempname);
+
+		if ((pid = fork ()) == -1) {
+			perror ("fork");
+			return 1;
+		}
+
+		if (!pid) { // we're a child, check for abuse
+			execlp ("cpp", "-D__QFCC__=1", "-o", tempname, filename, NULL);
+			printf ("Child shouldn't reach here\n");
+			exit (1);
+		} else { 	// give parental guidance (or bury it in the back yard)
+			int 	status;
+			pid_t	rc;
+				
+//			printf ("pid = %d\n", pid);
+			if ((rc = waitpid (0, &status, 0 | WUNTRACED)) != pid) {
+				if (rc == -1) {
+					perror ("wait");
+					exit (1);
+				}
+				printf ("*** Uhh, dude, the wrong child (%d) just died.\n*** Don't ask me, I can't figure it out either.\n", rc);
+				exit (1);
+			}
+			if (WIFEXITED (status)) {
+				if (WEXITSTATUS (status)) {
+					printf ("cpp returned error code %d", WEXITSTATUS (status));
+					exit (1);
+				}
+			} else {
+				printf ("cpp returned prematurely.");
+				exit (1);
+			}
+		}
+			
+		yyin = fdopen (tempfd, "r+t");
+#else
 		yyin = fopen (filename, "rt");
+#endif
 		s_file = ReuseString (filename);
 		pr_source_line = 1;
 		clear_frame_macros ();
 		if (yyparse () || pr_error_count)
 			return 1;
 		fclose (yyin);
+#ifdef USE_CPP
+		if (unlink (tempname)) {
+			perror ("unlink");
+			exit (1);
+		}
+#endif
 #else
 		char	*src2;
-		sprintf (filename, "%s/%s", sourcedir, com_token);
+		sprintf (filename, "%s%c%s", sourcedir, PATH_SEPARATOR, com_token);
 		if (!options.quiet)
 			printf ("compiling %s\n", filename);
 		LoadFile (filename, (void *) &src2);
