@@ -50,6 +50,7 @@ static const char rcsid[] =
 
 #include "cpp.h"
 #include "options.h"
+#include "qfcc.h"
 
 const char *this_program;
 const char **source_files;
@@ -359,5 +360,7 @@ DecodeArgs (int argc, char **argv)
 				usage (1);
 		}
 	}
+	if (options.verbosity >= 3)
+		yydebug = 1;
 	return optind;
 }

@@ -617,9 +617,6 @@ progs_src_compile (void)
 	while ((src = COM_Parse (src))) {
 		int         err;
 
-		//extern int yydebug;
-		//yydebug = 1;
-
 		if (*sourcedir)
 			dsprintf (filename, "%s%c%s", sourcedir, PATH_SEPARATOR,
 					  com_token);

@@ -912,7 +912,7 @@ identifier_list
 	;
 
 classdecl
-	: CLASS identifier_list
+	: CLASS identifier_list ';'
 		{
 			expr_t     *e;
 			for (e = $2->e.block.head; e; e = e->next)
