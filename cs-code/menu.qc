@@ -1,3 +1,5 @@
+#include "QF/keys.h"
+
 void (integer x, integer y, string text) Menu_Begin = #0;
 void (void () func) Menu_Draw = #0;
 void (integer x, integer y, string name) Menu_Pic = #0;
@@ -145,6 +147,7 @@ void (integer x, integer y, integer width, integer lines) text_box =
 string [MAX_SAVEGAMES] filenames;
 integer [MAX_SAVEGAMES] loadable;
 integer load_cursor;
+integer save_cursor;
 
 void () scan_saves =
 {
@@ -185,8 +188,60 @@ void () load_draw =
 	Draw_Character (8, 32 + load_cursor * 8, 12 + (integer (time * 4) & 1));
 };
 
+void () save_draw =
+{
+	local integer i;
+
+	Draw_CenterPic (160, 4, "gfx/p_save.lmp");
+	for (i=0 ; i< MAX_SAVEGAMES; i++)
+		Draw_String (16, 32 + 8 * i, filenames[i]);
+	Draw_Character (8, 32 + save_cursor * 8, 12 + (integer (time * 4) & 1));
+};
+
 integer (integer key, integer unicode, integer down) load_keyevent =
 {
+	switch (key) {
+		case QFK_DOWN:
+		case QFM_WHEEL_DOWN:
+			load_cursor++;
+			load_cursor %= MAX_SAVEGAMES;
+			return 1;
+		case QFK_UP:
+		case QFM_WHEEL_UP:
+			load_cursor += MAX_SAVEGAMES - 1;
+			load_cursor %= MAX_SAVEGAMES;
+			return 1;
+		case QFK_RETURN:
+		case QFM_BUTTON1:
+			if (loadable[load_cursor]) {
+				Menu_SelectMenu (NIL);
+				Cbuf_AddText (sprintf ("load s%i.sav\n", load_cursor));
+			}
+			return 1;
+	}
+	return 0;
+};
+
+integer (integer key, integer unicode, integer down) save_keyevent =
+{
+	switch (key) {
+		case QFK_DOWN:
+		case QFM_WHEEL_DOWN:
+			save_cursor++;
+			save_cursor %= MAX_SAVEGAMES;
+			return 1;
+		case QFK_UP:
+		case QFM_WHEEL_UP:
+			save_cursor += MAX_SAVEGAMES - 1;
+			save_cursor %= MAX_SAVEGAMES;
+			return 1;
+		case QFK_RETURN:
+		case QFM_BUTTON1:
+			Menu_SelectMenu (NIL);
+			Cbuf_AddText (sprintf ("save s%i.sav\n", save_cursor));
+			return 1;
+	}
+	return 0;
 };
 
 void () load_menu =
@@ -194,6 +249,14 @@ void () load_menu =
 	Menu_Begin (0, 0, "load");
 	Menu_KeyEvent (load_keyevent);
 	Menu_Draw (load_draw);
+	Menu_End ();
+};
+
+void () save_menu =
+{
+	Menu_Begin (0, 0, "save");
+	Menu_KeyEvent (save_keyevent);
+	Menu_Draw (save_draw);
 	Menu_End ();
 };
 
@@ -312,6 +375,7 @@ void () menu_init =
 	main_menu ();
 	quit_menu ();
 	load_menu ();
+	save_menu ();
 	Menu_TopMenu ("main");
 	Menu_SetQuit (quit);
 };

@@ -1,7 +1,7 @@
 all: menu.dat
 
 menu.dat: menu.src menu.qc
-	qfcc -gP menu.src
+	qfcc -g -I../include -P menu.src
 
 clean:
 	rm -f *.dat *.h *.sym
