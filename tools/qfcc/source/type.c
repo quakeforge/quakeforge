@@ -176,6 +176,17 @@ get_typedef (const char *name)
 }
 
 type_t *
+field_type (type_t *aux)
+{
+	type_t      new;
+
+	memset (&new, 0, sizeof (new));
+	new.type = ev_field;
+	new.aux_type = aux;
+	return find_type (&new);
+}
+
+type_t *
 pointer_type (type_t *aux)
 {
 	type_t      new;

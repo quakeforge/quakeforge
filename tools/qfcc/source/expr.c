@@ -482,6 +482,16 @@ new_self_expr (void)
 }
 
 expr_t *
+new_this_expr (void)
+{
+	type_t     *type = field_type (&type_id);
+	def_t      *def = PR_GetDef (type, ".this", 0, &numpr_globals);
+
+	PR_DefInitialized (def);
+	return new_def_expr (def);
+}
+
+expr_t *
 append_expr (expr_t *block, expr_t *e)
 {
 	if (block->type != ex_block)

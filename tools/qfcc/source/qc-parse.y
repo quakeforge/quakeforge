@@ -64,8 +64,6 @@ parse_error (void)
 
 int yylex (void);
 
-type_t *build_type (int is_field, type_t *type);
-
 hashtab_t *save_local_inits (def_t *scope);
 hashtab_t *merge_local_inits (hashtab_t *dl_1, hashtab_t *dl_2);
 void restore_local_inits (hashtab_t *def_list);
@@ -112,7 +110,7 @@ void free_local_inits (hashtab_t *def_list);
 
 %token	LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS NIL
 %token	IFBE IFB IFAE IFA
-%token	SWITCH CASE DEFAULT STRUCT ENUM TYPEDEF SUPER SELF
+%token	SWITCH CASE DEFAULT STRUCT ENUM TYPEDEF SUPER SELF THIS
 %token	ARGC ARGV
 %token	ELE_START
 %token	<type> TYPE
@@ -244,16 +242,16 @@ enum
 	;
 
 type
-	: '.' type { $$ = build_type (1, $2); }
+	: '.' type { $$ = field_type ($2); }
 	| non_field_type { $$ = $1; }
 	| non_field_type function_decl
 		{
 			current_params = $2;
-			$$ = build_type (0, parse_params ($1, $2));
+			$$ = parse_params ($1, $2);
 		}
 	| non_field_type array_decl
 		{
-			$$ = build_type (0, array_type ($1, $2));
+			$$ = array_type ($1, $2);
 		}
 	;
 
@@ -783,6 +781,7 @@ expr
 	| ARGC						{ $$ = new_name_expr (".argc"); }
 	| ARGV						{ $$ = new_name_expr (".argv"); }
 	| SELF						{ $$ = new_self_expr (); }
+	| THIS						{ $$ = new_this_expr (); }
 	| const						{ $$ = $1; }
 	| '(' expr ')'				{ $$ = $2; $$->paren = 1; }
 	;
@@ -1291,20 +1290,6 @@ obj_string
 	;
 
 %%
-
-type_t *
-build_type (int is_field, type_t *type)
-{
-	if (is_field) {
-		type_t new;
-		memset (&new, 0, sizeof (new));
-		new.type = ev_field;
-		new.aux_type = type;
-		return find_type (&new);
-	} else {
-		return type;
-	}
-}
 
 typedef struct {
 	def_t		*def;
