@@ -54,6 +54,7 @@ view_new (int xp, int yp, int xl, int yl, grav_t grav)
 	view->ylen = yl;
 	view->gravity = grav;
 	view->visible = 1;
+	view->draw = view_draw;
 	return view;
 }
 

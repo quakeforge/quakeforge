@@ -757,7 +757,6 @@ C_Init (void)
 	con_debuglog = COM_CheckParm ("-condebug");
 
 	con_data.view = view_new (0, 0, 320, 200, grav_northeast);
-	con_data.view->draw = view_draw;
 
 	console_view = view_new (0, 0, 320, 200, grav_northwest);
 	say_view     = view_new (0, 0, 320, 8, grav_northwest);
