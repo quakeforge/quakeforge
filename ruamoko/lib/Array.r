@@ -14,7 +14,7 @@
 {
 	count = 0;
 	size = incr = inc;
-	array = (void[][]) obj_malloc (inc * @sizeof (void []));
+	array = (id []) obj_malloc (inc * @sizeof (id));
 	return self;
 }
 
@@ -22,7 +22,7 @@
 {
 	local integer i;
 	for (i = 0; i < count; i++)
-		obj_free (array[i]);
+		[array[i] free];
 	obj_free (array);
 }
 
@@ -48,7 +48,7 @@
 {
 	if (count == size) {
 		size += incr;
-		array = (void[][])obj_realloc (array, size * @sizeof (void []));
+		array = (id [])obj_realloc (array, size * @sizeof (id));
 	}
 	array[count++] = item;
 }
@@ -91,7 +91,7 @@
 		return NIL;
 	if (count == size) {
 		size += incr;
-		array = (void[][])obj_realloc (array, size * @sizeof (void []));
+		array = (id [])obj_realloc (array, size * @sizeof (id));
 	}
 	for (i = count; i > index; i--)
 		array[i] = array[i - 1];

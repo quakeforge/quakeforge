@@ -7,7 +7,7 @@
 {
 	integer count, size;
 	integer incr;
-	(void [])[]array;
+	id [] array;
 }
 - (id) init;
 - (id) initWithIncrement: (integer) inc;
