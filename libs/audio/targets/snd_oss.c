@@ -252,7 +252,8 @@ SNDDMA_Init (void)
 	if (mmaped_io) {				// memory map the dma buffer
 		shm->buffer = (unsigned char *) mmap
 			(NULL, info.fragstotal * info.fragsize,
-#if (defined(BSD))					// workaround for BSD OSS quirk
+#if (defined(__FreeBSD__) && (__FreeBSD_version < 500000))
+			 // workaround for BSD OSS quirk
 			 PROT_READ | PROT_WRITE,
 #else
 			 PROT_WRITE,
