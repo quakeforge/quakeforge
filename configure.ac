@@ -1531,8 +1531,8 @@ if test "x$HAVE_FBDEV" = xyes; then
 		VID_TARGETS="$VID_TARGETS libQFfbdev.la"
 		BUILD_SW=yes
 		QF_NEED(vid, [common sw])
-		QF_NEED(qw, [client common net])
-		QF_NEED(nq, [client common net])
+		QF_NEED(qw, [client common])
+		QF_NEED(nq, [client common])
 	fi
 	CAN_BUILD_SW=yes
 fi
@@ -1546,8 +1546,8 @@ if test "x$HAVE_X" = xyes; then
 		VID_TARGETS="$VID_TARGETS libQFglx.la"
 		BUILD_GL=yes
 		QF_NEED(vid, [common gl x11])
-		QF_NEED(qw, [client common net])
-		QF_NEED(nq, [client common net])
+		QF_NEED(qw, [client common])
+		QF_NEED(nq, [client common])
 	fi
 	if test "x$ENABLE_clients_x11" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-x11\$(EXEEXT)"
@@ -1556,8 +1556,8 @@ if test "x$HAVE_X" = xyes; then
 		VID_TARGETS="$VID_TARGETS libQFx11.la"
 		BUILD_SW=yes
 		QF_NEED(vid, [common sw x11])
-		QF_NEED(qw, [client common net])
-		QF_NEED(nq, [client common net])
+		QF_NEED(qw, [client common])
+		QF_NEED(nq, [client common])
 	fi
 fi
 if test "x$HAVE_MGL" = xyes; then
@@ -1568,8 +1568,8 @@ if test "x$HAVE_MGL" = xyes; then
 		VID_TARGETS="$VID_TARGETS libQFwgl.la"
 		BUILD_SW=yes
 		QF_NEED(vid, [common sw])
-		QF_NEED(qw, [client common net])
-		QF_NEED(nq, [client common net])
+		QF_NEED(qw, [client common])
+		QF_NEED(nq, [client common])
 	fi
 	CAN_BUILD_SW=yes
 fi
@@ -1581,8 +1581,8 @@ if test "x$HAVE_SDL" = xyes; then
 		VID_TARGETS="$VID_TARGETS libQFsdl.la"
 		BUILD_SW=yes
 		QF_NEED(vid, [common sdl sw])
-		QF_NEED(qw, [client common net sdl])
-		QF_NEED(nq, [client common net sdl])
+		QF_NEED(qw, [client common sdl])
+		QF_NEED(nq, [client common sdl])
 	fi
 	CAN_BUILD_SW=yes
 	if test "x$ENABLE_clients_sdl32" = xyes; then
@@ -1592,8 +1592,8 @@ if test "x$HAVE_SDL" = xyes; then
 		VID_TARGETS="$VID_TARGETS libQFsdl32.la"
 		BUILD_SW32=yes
 		QF_NEED(vid, [common sdl sw32])
-		QF_NEED(qw, [client common net sdl])
-		QF_NEED(nq, [client common net sdl])
+		QF_NEED(qw, [client common sdl])
+		QF_NEED(nq, [client common sdl])
 	fi
 	CAN_BUILD_SW32=yes
 	if test "x$ENABLE_clients_sgl" = xyes; then
@@ -1604,8 +1604,8 @@ if test "x$HAVE_SDL" = xyes; then
 		BUILD_GL=yes
 		CAN_BUILD_GL=yes
 		QF_NEED(vid, [common sdl gl])
-		QF_NEED(qw, [client common net sdl])
-		QF_NEED(nq, [client common net sdl])
+		QF_NEED(qw, [client common sdl])
+		QF_NEED(nq, [client common sdl])
 	fi
 fi
 if test "x$HAVE_SVGA" = xyes; then
@@ -1616,8 +1616,8 @@ if test "x$HAVE_SVGA" = xyes; then
 		VID_TARGETS="$VID_TARGETS libQFsvga.la"
 		BUILD_SW=yes
 		QF_NEED(vid, [asm common svga sw])
-		QF_NEED(qw, [client common net])
-		QF_NEED(nq, [client common net])
+		QF_NEED(qw, [client common])
+		QF_NEED(nq, [client common])
 	fi
 	CAN_BUILD_SW=yes
 	if test "x$ENABLE_clients_3dfx" = xyes; then
@@ -1627,8 +1627,8 @@ if test "x$HAVE_SVGA" = xyes; then
 		VID_TARGETS="$VID_TARGETS libQFtdfx.la"
 		BUILD_GL=yes
 		QF_NEED(vid, [asm common gl svga])
-		QF_NEED(qw, [client common net])
-		QF_NEED(nq, [client common net])
+		QF_NEED(qw, [client common])
+		QF_NEED(nq, [client common])
 	fi
 	CAN_BUILD_GL=yes
 fi
@@ -1640,8 +1640,8 @@ if test "x$mingw" = xyes; then
 		VID_TARGETS="$VID_TARGETS libQFwgl.la"
 		BUILD_GL=yes
 		QF_NEED(vid, [common gl])
-		QF_NEED(qw, [client common net])
-		QF_NEED(nq, [client common net])
+		QF_NEED(qw, [client common])
+		QF_NEED(nq, [client common])
 	fi
 	CAN_BUILD_GL=yes
 fi
@@ -1650,7 +1650,7 @@ unset SV_TARGETS
 if test "x$ENABLE_servers_nq" = xyes; then
 	NQ_TARGETS="nq-server\$(EXEEXT) $NQ_TARGETS"
 	SV_TARGETS="$SV_TARGETS nq"
-	QF_NEED(nq, [common net server])
+	QF_NEED(nq, [common server])
 fi
 if test "x$ENABLE_servers_master" = xyes; then
 	HW_TARGETS="hw-master\$(EXEEXT) $HW_TARGETS"
@@ -1660,7 +1660,7 @@ fi
 if test "x$ENABLE_servers_qw" = xyes; then
 	QW_TARGETS="qw-server\$(EXEEXT) $QW_TARGETS"
 	SV_TARGETS="$SV_TARGETS qw"
-	QF_NEED(qw, [common net server])
+	QF_NEED(qw, [common server])
 fi
 
 unset BSP2IMG_TARGETS
@@ -1743,8 +1743,8 @@ if test "x$BUILD_GL" = xyes; then
 fi
 
 QF_PROCESS_NEED(vid, [asm common gl sdl sw sw32 svga x11])
-QF_PROCESS_NEED(qw, [client common net sdl server], a)
-QF_PROCESS_NEED(nq, [client common net sdl server], a)
+QF_PROCESS_NEED(qw, [client common sdl server], a)
+QF_PROCESS_NEED(nq, [client common sdl server], a)
 
 AC_SUBST(CAN_BUILD_GL)
 AC_SUBST(CAN_BUILD_SW)
