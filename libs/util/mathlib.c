@@ -41,6 +41,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <math.h>
 
 #define IMPLEMENT_R_Cull
+#define IMPLEMENT_VectorNormalize
 
 #include "QF/mathlib.h"
 #include "QF/qtypes.h"
@@ -436,25 +437,6 @@ _VectorLength (const vec3_t v)
 	float		length;
 
 	length = sqrt (DotProduct (v, v));
-	return length;
-}
-
-float
-VectorNormalize (vec3_t v)
-{
-	float length;
-
-	length = DotProduct (v, v);
-	if (length) {
-		float ilength;
-
-		length = sqrt (length);
-		ilength = 1.0 / length;
-		v[0] *= ilength;
-		v[1] *= ilength;
-		v[2] *= ilength;
-	}
-
 	return length;
 }
 

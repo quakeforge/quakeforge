@@ -105,7 +105,7 @@ R_RecursiveLightUpdate (mnode_t *node)
 			surf->cached_dlight = true;
 }
 
-static void
+static inline void
 R_AddDynamicLights_1 (msurface_t *surf)
 {
 	float			dist;
@@ -170,7 +170,7 @@ R_AddDynamicLights_1 (msurface_t *surf)
 	}
 }
 
-static void
+static inline void
 R_AddDynamicLights_3 (msurface_t *surf)
 {
 	float			dist;

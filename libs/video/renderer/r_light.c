@@ -185,7 +185,7 @@ loc0:
 	}
 }
 
-static void
+static inline void
 real_mark_surfaces (float dist, msurface_t *surf, const vec3_t lightorigin,
 					dlight_t *light, int bit)
 {

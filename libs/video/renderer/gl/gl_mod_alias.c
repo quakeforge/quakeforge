@@ -91,7 +91,7 @@ float   r_avertexnormal_dots[SHADEDOT_QUANT][256] =
 vec3_t		shadevector;
 
 
-static void
+static inline void
 GL_DrawAliasFrameTri (vert_order_t *vo)
 {
 	float			color[4];
@@ -116,7 +116,7 @@ GL_DrawAliasFrameTri (vert_order_t *vo)
 	qfglEnd();
 }
 
-static void
+static inline void
 GL_DrawAliasFrameTri_fb (vert_order_t *vo)
 {
 	int				count;
@@ -139,7 +139,7 @@ GL_DrawAliasFrameTri_fb (vert_order_t *vo)
 	qfglEnd();
 }
 
-static void
+static inline void
 GL_DrawAliasFrameTriMulti (vert_order_t *vo)
 {
 	float			color[4];
@@ -168,7 +168,7 @@ GL_DrawAliasFrameTriMulti (vert_order_t *vo)
 	qfglEnd ();
 }
 
-static void
+static inline void
 GL_DrawAliasFrame (vert_order_t *vo)
 {
 	float			color[4];
@@ -208,7 +208,7 @@ GL_DrawAliasFrame (vert_order_t *vo)
 	}
 }
 
-static void
+static inline void
 GL_DrawAliasFrame_fb (vert_order_t *vo)
 {
 	int				count;
@@ -243,7 +243,7 @@ GL_DrawAliasFrame_fb (vert_order_t *vo)
 	}
 }
 
-static void
+static inline void
 GL_DrawAliasFrameMulti (vert_order_t *vo)
 {
 	float			color[4];
@@ -339,7 +339,7 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, vert_order_t *vo)
 	}
 }
 
-static vert_order_t *
+static inline vert_order_t *
 GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 {
 	float		interval;
@@ -445,7 +445,7 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 	return vo;
 }
 
-static vert_order_t *
+static inline vert_order_t *
 GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 {
 	float		  interval;

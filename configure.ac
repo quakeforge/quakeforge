@@ -1312,7 +1312,7 @@ if test "x$optimize" = xyes; then
 		CC_SUB=$3
 		IFS=" "
 		AC_MSG_RESULT($CCVER)
-		heavy="-O3 -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
+		heavy="-O2 -frename-registers -finline-limit=32000 -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
 		light="-O2"
 		AC_ARG_ENABLE(strict-aliasing,
 	[  --enable-strict-aliasing enable the -fstrict-aliasing ooption of gcc])
@@ -1472,7 +1472,7 @@ AC_ARG_ENABLE(Werror,
 dnl We want warnings, lots of warnings...
 if test "x$GCC" = "xyes"; then
 	if test "x$enable_Werror" $cvs_def_enabled; then
-		CFLAGS="$CFLAGS -Wall -Werror -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations"
+		CFLAGS="$CFLAGS -Wall -Werror -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Winline"
 	else
 		CFLAGS="$CFLAGS -Wall"
 	fi

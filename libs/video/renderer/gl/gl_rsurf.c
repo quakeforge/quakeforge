@@ -144,7 +144,7 @@ R_RenderFullbrights (void)
 	qfglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-void
+inline void
 R_RenderBrushPoly (msurface_t *fa)
 {
 	float      *v;
@@ -233,7 +233,7 @@ R_DrawWaterSurfaces (void)
 	}
 }
 
-static void
+static inline void
 DrawTextureChains (void)
 {
 	int         i;

@@ -563,7 +563,6 @@ typedef struct cache_system_s {
 cache_system_t cache_head;
 int cache_writelock;
 
-static void *Cache_RealCheck (cache_user_t *c);
 static cache_system_t *Cache_TryAlloc (int size, qboolean nobottom);
 static void Cache_RealFree (cache_user_t *c);
 static void Cache_Profile (void);
@@ -652,7 +651,7 @@ Cache_FreeHigh (int new_high_hunk)
 #endif
 }
 
-static void
+static inline void
 Cache_UnlinkLRU (cache_system_t * cs)
 {
 	if (!cs->lru_next || !cs->lru_prev)
@@ -664,7 +663,7 @@ Cache_UnlinkLRU (cache_system_t * cs)
 	cs->lru_prev = cs->lru_next = NULL;
 }
 
-static void
+static inline void
 Cache_MakeLRU (cache_system_t * cs)
 {
 	if (cs->lru_next || cs->lru_prev)
@@ -882,18 +881,7 @@ Cache_RealFree (cache_user_t *c)
 #endif
 }
 
-void *
-Cache_Check (cache_user_t *c)
-{
-	void *mem;
-
-	CACHE_WRITE_LOCK;
-	mem = Cache_RealCheck (c);
-	CACHE_WRITE_UNLOCK;
-	return mem;
-}
-
-static void *
+static inline void *
 Cache_RealCheck (cache_user_t *c)
 {
 	cache_system_t *cs;
@@ -908,6 +896,17 @@ Cache_RealCheck (cache_user_t *c)
 	Cache_MakeLRU (cs);
 
 	return c->data;
+}
+
+void *
+Cache_Check (cache_user_t *c)
+{
+	void *mem;
+
+	CACHE_WRITE_LOCK;
+	mem = Cache_RealCheck (c);
+	CACHE_WRITE_UNLOCK;
+	return mem;
 }
 
 void *

@@ -76,7 +76,7 @@ int         stripcount;
 int         strip_size;
 
 
-static void
+static inline void
 alloc_used (int size)
 {
 	if (size <= used_size)
@@ -88,7 +88,7 @@ alloc_used (int size)
 	used_size = size;
 }
 
-static void
+static inline void
 add_command (int cmd)
 {
 	if (numcommands + 1 > commands_size) {
@@ -100,7 +100,7 @@ add_command (int cmd)
 	commands[numcommands++] = cmd;
 }
 
-static void
+static inline void
 add_vertex (int vert)
 {
 	if (numorder + 1 > vertexorder_size) {
@@ -112,7 +112,7 @@ add_vertex (int vert)
 	vertexorder[numorder++] = vert;
 }
 
-static void
+static inline void
 add_strip (int vert, int tri)
 {
 	if (stripcount + 1 > strip_size) {

@@ -95,7 +95,6 @@ void _VectorMA (const vec3_t veca, float scale, const vec3_t vecb,
 void _VectorScale (const vec3_t in, vec_t scale, vec3_t out);
 void _VectorSubtract (const vec3_t veca, const vec3_t vecb, vec3_t out);
 void CrossProduct (const vec3_t v1, const vec3_t v2, vec3_t cross);
-float VectorNormalize (vec3_t v);			// returns vector length
 vec_t _VectorNormalize (vec3_t v);			// returns vector length
 void VectorInverse (vec3_t v);
 int Q_log2(int val);
@@ -141,6 +140,7 @@ void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 extern	mplane_t	frustum[4];
 extern inline qboolean R_CullBox (const vec3_t mins, const vec3_t maxs);
 extern inline qboolean R_CullSphere (const vec3_t origin, const float radius);
+extern inline float VectorNormalize (vec3_t v);	// returns vector length
 #ifndef IMPLEMENT_R_Cull
 extern inline
 #endif
@@ -171,6 +171,28 @@ R_CullSphere (const vec3_t origin, const float radius)
 			return true;
 	}
 	return false;
+}
+
+#ifndef IMPLEMENT_VectorNormalize
+extern inline
+#endif
+float
+VectorNormalize (vec3_t v)
+{
+	float length;
+
+	length = DotProduct (v, v);
+	if (length) {
+		float ilength;
+
+		length = sqrt (length);
+		ilength = 1.0 / length;
+		v[0] *= ilength;
+		v[1] *= ilength;
+		v[2] *= ilength;
+	}
+
+	return length;
 }
 
 #endif // __mathlib_h

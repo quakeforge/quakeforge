@@ -594,7 +594,7 @@ pr_class_pose_as (progs_t *pr)
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
-static inline pr_id_t    *
+static inline pr_id_t *
 class_create_instance (progs_t *pr, pr_class_t *class)
 {
 	int         size = class->instance_size * sizeof (pr_type_t);

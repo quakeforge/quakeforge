@@ -135,8 +135,7 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 void
 Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 {
-	byte       *p;
-	int         i, j, len, size, version, numframes, start, end, total;
+	int         i, j, size, version, numframes, start, end, total;
 	dtriangle_t *pintriangles;
 	daliasframetype_t *pframetype;
 	daliasskintype_t *pskintype;
@@ -151,8 +150,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 		extra = 1; // extra precision bytes
 
 	CRC_Init (&crc);
-	for (len = qfs_filesize, p = buffer; len; len--, p++)
-		CRC_ProcessByte (&crc, *p);
+	CRC_ProcessBlock (buffer, &crc, qfs_filesize);
 
 	start = Hunk_LowMark ();
 
