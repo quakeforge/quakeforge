@@ -676,7 +676,7 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 			case OP_STATE:
 				ed = PROG_TO_EDICT (pr, *pr->globals.self);
-				ed->v[pr->fields.nextthink].float_var = *pr->time + 0.1;
+				ed->v[pr->fields.nextthink].float_var = *pr->globals.time + 0.1;
 				ed->v[pr->fields.frame].float_var = E_OPA->_float;
 				ed->v[pr->fields.think].func_var = E_OPB->function;
 				break;

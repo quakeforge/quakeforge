@@ -284,7 +284,7 @@ PR_ValueString (progs_t * pr, etype_t type, eval_t *val)
 			snprintf (line, sizeof (line), "entity %i",
 					  NUM_FOR_EDICT (pr, PROG_TO_EDICT (pr, val->edict)));
 			break;
-		case ev_function:
+		case ev_func:
 			f = pr->pr_functions + val->function;
 			snprintf (line, sizeof (line), "%s()",
 					  PR_GetString (pr, f->s_name));
@@ -339,7 +339,7 @@ PR_UglyValueString (progs_t * pr, etype_t type, eval_t *val)
 			snprintf (line, sizeof (line), "%i",
 					  NUM_FOR_EDICT (pr, PROG_TO_EDICT (pr, val->edict)));
 			break;
-		case ev_function:
+		case ev_func:
 			f = pr->pr_functions + val->function;
 			snprintf (line, sizeof (line), "%s", PR_GetString (pr, f->s_name));
 			break;
@@ -730,7 +730,7 @@ ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, char *s)
 			d->_int = G_INT (pr, def->ofs);
 			break;
 
-		case ev_function:
+		case ev_func:
 			func = ED_FindFunction (pr, s);
 			if (!func) {
 				Con_Printf ("Can't find function %s\n", s);
@@ -1012,7 +1012,7 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 	def = PR_FindGlobal (pr, "self");
 	if (!def)
 		PR_Error (pr, "%s: undefined symbol: self", progsname);
-	pr->globals.self = &pr->pr_globals[def->ofs].edict_var;
+	pr->globals.self = &pr->pr_globals[def->ofs].entity_var;
 	if (!(pr->fields.nextthink = FindFieldOffset (pr, "nextthink")))
 		PR_Error (pr, "%s: undefined field: nextthink", progsname);
 	if (!(pr->fields.frame = FindFieldOffset (pr, "frame")))
