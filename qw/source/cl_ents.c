@@ -196,9 +196,10 @@ CL_ParsePacketEntities (void)
 
 	for (index = 0; block.words[index]; index++) {
 		if (block.words[index] & U_REMOVE) {
-			cl.validsequence = 0;
 			Host_NetError ("CL_ParsePacketEntities: U_REMOVE on full "
 						   "update\n");
+			cl.validsequence = 0; // XXX
+			cl.frames[packetnum].invalid = true;
 			return;
 		}
 
@@ -250,21 +251,24 @@ CL_ParseDeltaPacketEntities ()
 	cl.frames[newpacket].invalid = false;
 
 	oldpacket = cl.frames[newpacket].delta_sequence;
+
+	if ((block.from & UPDATE_MASK) != (oldpacket & UPDATE_MASK)) {
+		Host_NetError ("CL_ParseDeltaPacketEntities: from mismatch\n");
+		return;
+	}
+	if (cls.netchan.outgoing_sequence - oldpacket >= UPDATE_BACKUP - 1) {
+		// we can't use this, it is too old
+		Host_NetError ("CL_ParseDeltaPacketEntities: old packet\n");
+//		cl.validsequence = 0;				// can't render a frame
+//		cl.frames[newpacket].invalid = true;
+		return;
+	}
 	if (oldpacket == -1) {
-		Host_NetError ("Cl_ParseDeltaPacketEntities: invalid "
+        Host_NetError ("Cl_ParseDeltaPacketEntities: invalid "
 					   "delta_sequence\n");
 		return;
 	}
 
-	if ((block.from & UPDATE_MASK) != (oldpacket & UPDATE_MASK))
-		Con_DPrintf ("CL_ParseDeltaPacketEntities: WARNING: from mismatch\n");
-
-	if (cls.netchan.outgoing_sequence - oldpacket >= UPDATE_BACKUP - 1) {
-		// we can't use this, it is too old
-		Con_DPrintf ("FlushEntityPacket\n");
-		cl.validsequence = 0;				// can't render a frame
-		return;
-	}
 	cl.validsequence = cls.netchan.incoming_sequence;
 	oldp = &cl.frames[oldpacket & UPDATE_MASK].packet_entities;
 
@@ -352,7 +356,7 @@ CL_ParseDeltaPacketEntities ()
 //		Con_Printf ("copy %i\n", oldp->entities[oldindex].number);
 		if (newindex >= MAX_PACKET_ENTITIES) {
 			Host_NetError ("CL_ParseDeltaPacketEntities: newindex >= "
-						   "MAX_PACKET_ENTITIES (1st)");
+						   "MAX_PACKET_ENTITIES (3rd)");
 			return;
 		}
 		newp->entities[newindex] = oldp->entities[oldindex];
