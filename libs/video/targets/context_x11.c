@@ -376,6 +376,7 @@ void
 X11_SetVidMode (int width, int height)
 {
 	const char *str = getenv ("MESA_GLX_FX");
+	static int  initialized = 0;
 
 	if (vidmode_active)
 		return;
@@ -388,21 +389,22 @@ X11_SetVidMode (int width, int height)
 	if (!vidmode_avail)
 		vidmode_avail = VID_CheckVMode (x_disp, NULL, NULL);
 
-	if (vidmode_avail) {
+	if (!initialized && vidmode_avail) {
 		vec3_t	*temp;
 
-		if (x_gamma[0] > 0) {	// already initialized
+		initialized = 1;
+
+		vid_gamma_avail = true;
+
+		temp = X11_GetGamma ();
+		if (temp && temp[0] > 0) {
+			x_gamma[0] = (*temp)[0];
+			x_gamma[1] = (*temp)[1];
+			x_gamma[2] = (*temp)[2];
 			vid_gamma_avail = true;
-		} else {	// do the init
-			temp = X11_GetGamma ();
-			if (temp && temp[0] > 0) {
-				x_gamma[0] = (*temp)[0];
-				x_gamma[1] = (*temp)[1];
-				x_gamma[2] = (*temp)[2];
-				vid_gamma_avail = true;
-				free (temp);
-			}
+			free (temp);
 		}
+
 	}
 
 	if (vid_fullscreen->int_val && vidmode_avail) {
@@ -442,7 +444,7 @@ X11_SetVidMode (int width, int height)
 		} else {
 			Con_Printf ("VID: Mode %dx%d can't go fullscreen.\n", vid.width,
 						vid.height);
-			vid_gamma_avail = vidmode_avail = vidmode_active = false;
+			vidmode_avail = vidmode_active = false;
 		}
 	}
 #endif
@@ -747,7 +749,7 @@ X11_GetGamma (void)
 	XF86VidModeGamma	xgamma;
 	vec3_t				*temp;
 
-	if (vidmode_avail && vid_system_gamma->int_val) {
+	if (vid_gamma_avail && vid_system_gamma->int_val) {
 		if (XF86VidModeGetGamma (x_disp, x_screen, &xgamma)) {
 			if ((temp = malloc (sizeof (vec3_t)))) {
 				(*temp)[0] = xgamma.red;
@@ -760,6 +762,7 @@ X11_GetGamma (void)
 	}
 # endif
 #endif
+	vid_gamma_avail = false;
 	return NULL;
 }
 
