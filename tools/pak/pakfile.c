@@ -84,10 +84,7 @@ pack_open (const char *name)
 
 	pack->numfiles = pack->header.dirlen / sizeof (dpackfile_t);
 	pack->old_numfiles = pack->files_size = pack->numfiles;
-	if (pack->numfiles > MAX_FILES_IN_PACK) {
-		fprintf (stderr, "%s: too many files in pack: %d", name, pack->numfiles);
-		goto error;
-	}
+
 	pack->files = malloc (pack->files_size * sizeof (dpackfile_t));
 	if (!pack->files) {
 		fprintf (stderr, "out of memory\n");
