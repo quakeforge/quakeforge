@@ -1085,7 +1085,7 @@ emit_function_call (expr_t *e, def_t *dest)
 }
 
 def_t *
-emit_assign_expr (expr_t *e, def_t *dest)
+emit_assign_expr (expr_t *e)
 {
 	def_t	*def_a, *def_b;
 	opcode_t *op;
@@ -1110,18 +1110,10 @@ emit_assign_expr (expr_t *e, def_t *dest)
 				error (e1, "assignment to constant %s", def_a->name);
 			}
 		}
-		if (e2->type == ex_expr) {
-			def_b = emit_sub_expr (e2, def_a);
-		} else {
-			def_b = emit_sub_expr (e2, 0);
+		def_b = emit_sub_expr (e2, def_a);
+		if (def_b != def_a) {
 			op = PR_Opcode_Find ("=", 5, def_a, def_b, def_b);
 			emit_statement (e->line, op, def_b, def_a, 0);
-		}
-		if (!def_b->name)
-			dest = def_a;
-		if (dest) {
-			op = PR_Opcode_Find ("=", 5, dest, def_b, def_b);
-			emit_statement (e->line, op, def_b, dest, 0);
 		}
 	}
 	return def_b;
@@ -1144,7 +1136,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 			if (e->e.expr.op == 'c')
 				return emit_function_call (e, dest);
 			if (e->e.expr.op == '=')
-				return emit_assign_expr (e, dest);
+				return emit_assign_expr (e);
 			def_a = emit_sub_expr (e->e.expr.e1, 0);
 			def_b = emit_sub_expr (e->e.expr.e2, 0);
 			switch (e->e.expr.op) {
@@ -1230,11 +1222,11 @@ emit_sub_expr (expr_t *e, def_t *dest)
 				priority = 3;
 				def_a = PR_ReuseConstant (&zero, 0);
 				def_b = emit_sub_expr (e->e.expr.e1, 0);
+				if (!dest)
+					dest = PR_GetTempDef (e->e.expr.type, pr_scope);
 			} else {
 				abort ();
 			}
-			if (!dest)
-				dest = PR_GetTempDef (e->e.expr.type, pr_scope);
 			op = PR_Opcode_Find (operator, priority, def_a, def_b, dest);
 			return emit_statement (e->line, op, def_a, def_b, dest);
 		case ex_def:
@@ -1290,7 +1282,7 @@ emit_expr (expr_t *e)
 		case ex_expr:
 			switch (e->e.expr.op) {
 				case '=':
-					emit_assign_expr (e, 0);
+					emit_assign_expr (e);
 					break;
 				case 'n':
 					emit_branch (e->line, op_ifnot, e->e.expr.e1, e->e.expr.e2);
