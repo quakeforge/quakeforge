@@ -81,11 +81,54 @@ Sys_DebugLog (char *file, char *fmt, ...)
 	close (fd);
 }
 
+void
+Sys_EditFile (char *filename)
+{
+	char        cmd[256];
+	char       *term;
+	char       *editor;
+
+	term = getenv ("TERM");
+	if (term && !strcmp (term, "xterm")) {
+		editor = getenv ("VISUAL");
+		if (!editor)
+			editor = getenv ("EDITOR");
+		if (!editor)
+			editor = getenv ("EDIT");
+		if (!editor)
+			editor = "vi";
+		snprintf (cmd, sizeof (cmd), "xterm -e %s %s", editor, filename);
+		system (cmd);
+	}
+}
 
 /*
  *	System I/O
  */
 
+void
+Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
+{
+	int         r;
+	unsigned long addr;
+	int         psize = getpagesize ();
+
+	addr = (startaddr & ~(psize - 1)) - psize;
+
+//  fprintf(stderr, "writable code %lx(%lx)-%lx, length=%lx\n", startaddr,
+//          addr, startaddr+length, length);
+
+	r = mprotect ((char *) addr, length + startaddr - addr + psize, 7);
+
+	if (r < 0)
+		Sys_Error ("Protection change failed\n");
+
+}
+
+void
+Sys_DebugNumber (int y, int val)
+{
+}
 
 void
 Sys_Error (const char *error, ...)
@@ -123,6 +166,34 @@ Sys_Init (void)
 #endif
 }
 
+void
+Sys_Warn (char *warning, ...)
+{
+	va_list     argptr;
+	char        string[1024];
+
+	va_start (argptr, warning);
+	vsnprintf (string, sizeof (string), warning, argptr);
+	va_end (argptr);
+	fprintf (stderr, "Warning: %s", string);
+}
+
+// =======================================================================
+// Sleeps for microseconds
+// =======================================================================
+
+static volatile int oktogo;
+
+void
+alarm_handler (int x)
+{
+	oktogo = 1;
+}
+
+void
+Sys_LineRefresh (void)
+{
+}
 
 void
 floating_point_exception_handler (int whatever)
@@ -131,7 +202,7 @@ floating_point_exception_handler (int whatever)
 	signal (SIGFPE, floating_point_exception_handler);
 }
 
-char *
+char       *
 Sys_ConsoleInput (void)
 {
 	static char text[256];
@@ -170,10 +241,8 @@ Sys_LowFPPrecision (void)
 
 #endif
 
-void (*Sys_Printf) (const char *fmt, ...);
-
 int
-main (int c, char *v[])
+main (int c, char **v)
 {
 
 	double      time, oldtime, newtime;
@@ -182,9 +251,10 @@ main (int c, char *v[])
 	extern int  recording;
 	int         j;
 
-	signal (SIGFPE, SIG_IGN);
+//  static char cwd[1024];
 
-	Sys_Printf = Sys_StdPrintf;
+//  signal(SIGFPE, floating_point_exception_handler);
+	signal (SIGFPE, SIG_IGN);
 
 	memset (&parms, 0, sizeof (parms));
 
@@ -240,7 +310,9 @@ main (int c, char *v[])
 
 		Host_Frame (time);
 
+// graphic debugging aids
+//  if (sys_linerefresh->value)
+//      Sys_LineRefresh ();
 	}
 
 }
-

@@ -71,6 +71,75 @@ cvar_t     *sys_linerefresh;
 cvar_t     *timestamps;
 cvar_t     *timeformat;
 
+/* The translation table between the graphical font and plain ASCII  --KB */
+static char qfont_table[256] = {
+	'\0', '#', '#', '#', '#', '.', '#', '#',
+	'#', 9, 10, '#', ' ', 13, '.', '.',
+	'[', ']', '0', '1', '2', '3', '4', '5',
+	'6', '7', '8', '9', '.', '<', '=', '>',
+	' ', '!', '"', '#', '$', '%', '&', '\'',
+	'(', ')', '*', '+', ',', '-', '.', '/',
+	'0', '1', '2', '3', '4', '5', '6', '7',
+	'8', '9', ':', ';', '<', '=', '>', '?',
+	'@', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
+	'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+	'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
+	'X', 'Y', 'Z', '[', '\\', ']', '^', '_',
+	'`', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
+	'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
+	'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
+	'x', 'y', 'z', '{', '|', '}', '~', '<',
+
+	'<', '=', '>', '#', '#', '.', '#', '#',
+	'#', '#', ' ', '#', ' ', '>', '.', '.',
+	'[', ']', '0', '1', '2', '3', '4', '5',
+	'6', '7', '8', '9', '.', '<', '=', '>',
+	' ', '!', '"', '#', '$', '%', '&', '\'',
+	'(', ')', '*', '+', ',', '-', '.', '/',
+	'0', '1', '2', '3', '4', '5', '6', '7',
+	'8', '9', ':', ';', '<', '=', '>', '?',
+	'@', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
+	'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+	'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
+	'X', 'Y', 'Z', '[', '\\', ']', '^', '_',
+	'`', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
+	'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
+	'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
+	'x', 'y', 'z', '{', '|', '}', '~', '<'
+};
+
+
+/*
+ *	File I/O
+ */
+
+/*
+	Sys_FileTime
+
+	Returns -1 if file not present
+*/
+int
+Sys_FileTime (char *path)
+{
+	struct stat buf;
+
+	if (stat (path, &buf) == -1)
+		return -1;
+
+	return buf.st_mtime;
+}
+
+/*
+	Sys_mkdir
+
+	Creates a directory
+*/
+void
+Sys_mkdir (char *path)
+{
+	mkdir (path, 0777);
+}
+
 int
 Sys_FileOpenRead (char *path, int *handle)
 {
@@ -141,6 +210,41 @@ Sys_DebugLog (char *file, char *fmt, ...)
 	fd = open (file, O_WRONLY | O_CREAT | O_APPEND, 0666);
 	write (fd, data, strlen (data));
 	close (fd);
+}
+
+void
+Sys_EditFile (char *filename)
+{
+	char        cmd[256];
+	char       *term;
+	char       *editor;
+
+	term = getenv ("TERM");
+	if (term && !strcmp (term, "xterm")) {
+		editor = getenv ("VISUAL");
+		if (!editor)
+			editor = getenv ("EDITOR");
+		if (!editor)
+			editor = getenv ("EDIT");
+		if (!editor)
+			editor = "vi";
+		snprintf (cmd, sizeof (cmd), "xterm -e %s %s", editor, filename);
+		system (cmd);
+	}
+}
+
+/*
+ *	System I/O
+ */
+
+void
+Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
+{
+}
+
+void
+Sys_DebugNumber (int y, int val)
+{
 }
 
 #define MAX_PRINT_MSG	4096
@@ -217,6 +321,18 @@ Sys_Init (void)
 #endif
 }
 
+void
+Sys_Warn (char *warning, ...)
+{
+	va_list     argptr;
+	char        string[1024];
+
+	va_start (argptr, warning);
+	vsnprintf (string, sizeof (string), warning, argptr);
+	va_end (argptr);
+	fprintf (stderr, "Warning: %s", string);
+}
+
 double
 Sys_DoubleTime (void)
 {
@@ -234,8 +350,31 @@ Sys_DoubleTime (void)
 	return (tp.tv_sec - secbase) + tp.tv_usec / 1000000.0;
 }
 
+// =======================================================================
+// Sleeps for microseconds
+// =======================================================================
 
-char *
+static volatile int oktogo;
+
+void
+alarm_handler (int x)
+{
+	oktogo = 1;
+}
+
+void
+Sys_LineRefresh (void)
+{
+}
+
+void
+floating_point_exception_handler (int whatever)
+{
+//  Sys_Warn("floating point exception\n");
+	signal (SIGFPE, floating_point_exception_handler);
+}
+
+char       *
 Sys_ConsoleInput (void)
 {
 	static char text[256];
@@ -282,6 +421,7 @@ main (int argc, char *argv[])
 	char       *newargv[256];
 	int         j;
 
+//  signal (SIGFPE, floating_point_exception_handler);
 	signal (SIGFPE, SIG_IGN);
 
 	memset (&parms, 0, sizeof (parms));
@@ -329,4 +469,3 @@ main (int argc, char *argv[])
 	}
 	return true;						// return success
 }
-

@@ -1,7 +1,7 @@
 /*
-	sys.c
+	sys_win.c
 
-	virtual filesystem functions
+	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -25,37 +25,17 @@
 
 	$Id$
 */
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#include <errno.h>
-#include <stdarg.h>
-#include <sys/time.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#ifdef HAVE_STRING_H
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif
-#ifdef HAVE_LIMITS_H
-# include <limits.h>
-#endif
-#ifdef HAVE_IO_H
-# include <io.h>
-#endif
-#ifdef HAVE_WINDOWS_H
-# include <windows.h>
-#endif
+
+#include <limits.h>
+#include <direct.h>
+#include <windows.h>
 
 #include "compat.h"
-#include "QF/cvar.h"
-#include "QF/sys.h"
+#include "server.h"
 
 cvar_t     *sys_nostdout;
 
@@ -96,53 +76,39 @@ static char qfont_table[256] = {
 	'x', 'y', 'z', '{', '|', '}', '~', '<'
 };
 
+/*
+	Sys_DoubleTime
+*/
+double
+Sys_DoubleTime (void)
+{
+	static DWORD starttime;
+	static qboolean first = true;
+	DWORD       now;
+
+	now = timeGetTime ();
+
+	if (first) {
+		first = false;
+		starttime = now;
+		return 0.0;
+	}
+
+	if (now < starttime)				// wrapped?
+		return (now / 1000.0) + (LONG_MAX - starttime / 1000.0);
+
+	if (now - starttime == 0)
+		return 0.0;
+
+	return (now - starttime) / 1000.0;
+}
+
 #define MAXPRINTMSG 4096
-
-void
-Sys_mkdir (const char *path)
-{
-#ifdef HAVE_MKDIR
-# ifdef _WIN32
-	if (mkdir (path) == 0)
-		return;
-# else
-	if (mkdir (path, 0777) == 0)
-		return;
-# endif
-#else
-# ifdef HAVE__MKDIR
-	if (_mkdir (path) == 0)
-		return;
-# else
-#  error do not know how to make directories
-# endif
-#endif
-	if (errno != EEXIST)
-		Sys_Error ("mkdir %s: %s", path, strerror (errno));
-}
-
-int
-Sys_FileTime (const char *path)
-{
-#ifdef HAVE_ACCESS
-	if (access (path, R_OK) == 0)
-		return 0;
-#else
-# ifdef HAVE__ACCESS
-	if (_access (path, R_OK) == 0)
-		return 0;
-# else
-#  error do not know how to check access
-# endif
-#endif
-	return -1;
-}
-
 /*
 	Sys_Printf
 */
 void
-Sys_Printf (const char *fmt, ...)
+Sys_Printf (char *fmt, ...)
 {
 	va_list     argptr;
 	char        msg[MAXPRINTMSG];
@@ -164,45 +130,10 @@ Sys_Printf (const char *fmt, ...)
 }
 
 /*
-	Sys_DoubleTime
+	Sys_mkdir
 */
-double
-Sys_DoubleTime (void)
+void
+Sys_mkdir (char *path)
 {
-	static qboolean first = true;
-#ifdef _WIN32
-	static DWORD starttime;
-	DWORD       now;
-
-	now = timeGetTime ();
-
-	if (first) {
-		first = false;
-		starttime = now;
-		return 0.0;
-	}
-
-	if (now < starttime)				// wrapped?
-		return (now / 1000.0) + (LONG_MAX - starttime / 1000.0);
-
-	if (now - starttime == 0)
-		return 0.0;
-
-	return (now - starttime) / 1000.0;
-#else
-	struct timeval tp;
-	struct timezone tzp;
-	double now;
-	static double start_time;
-
-	gettimeofday (&tp, &tzp);
-	now = tp.tv_sec + tp.tv_usec / 1e6;
-
-	if (first) {
-		first = false;
-		start_time = now;
-	}
-
-	return now - start_time;
-#endif
+	_mkdir (path);
 }

@@ -301,8 +301,23 @@ Sys_Error (const char *error, ...)
 
 	exit (1);
 }
+/*FIXME?
+void
+Sys_Printf (const char *fmt, ...)
+{
+	va_list     argptr;
+	char        text[1024];
+	DWORD       dummy;
 
+	if (isDedicated) {
+		va_start (argptr, fmt);
+		vsnprintf (text, sizeof (text), fmt, argptr);
+		va_end (argptr);
 
+		WriteFile (houtput, text, strlen (text), &dummy, NULL);
+	}
+}
+*/
 void
 Sys_Quit (void)
 {

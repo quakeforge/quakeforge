@@ -36,9 +36,7 @@ extern	struct cvar_s	*sys_nostdout;
 int	Sys_FileTime (const char *path);
 void Sys_mkdir (const char *path);
 
-//void Sys_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
-extern void (*Sys_Printf) (const char *fmt, ...);
-void Sys_StdPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
+void Sys_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void Sys_Error (const char *error, ...) __attribute__((format(printf,1,2)));
 void Sys_Quit (void);
 double Sys_DoubleTime (void);
