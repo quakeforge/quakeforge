@@ -118,14 +118,6 @@ static const byte attr_map[256] = {
 };
 
 
-static void
-C_ExecLine (const char *line)
-{
-	if (line[0] == '/')
-		line++;
-	Cbuf_AddText (con_data.cbuf, line);
-}
-
 static inline void
 draw_fun_char (WINDOW *win, byte c)
 {
@@ -226,6 +218,14 @@ sigwinch (int sig)
 	signal (SIGWINCH, sigwinch);
 }
 #endif
+
+static void
+C_ExecLine (const char *line)
+{
+	if (line[0] == '/')
+		line++;
+	Cbuf_AddText (con_data.cbuf, line);
+}
 
 static void
 sv_logfile_f (cvar_t *var)
