@@ -1,4 +1,3 @@
-SUBDIRS=
 INCLUDES= -I$(top_srcdir)/include
 
 pkglibdir = @PLUGINDIR@
