@@ -10,6 +10,7 @@ X  It's possible to stick on some obtuse-angled corners qwsv 2.3x didn't
 X  ~/.quakeforgerc should support all commands, not just set and setrom
 X  software PCXs don't work in X11 at least if you're using 16/24/32 color
 X  ogg support
+X  server-side demos
 M  it seems possible to crash a QF server still - need to fix this!
 M  merge nq and qw code bases
 M  mingw cross compiling
@@ -44,7 +45,6 @@ o  add individual server ping/info request from console
    (not just protocol, but bit precision, too)
 ?  redirection for file downloads
 ?  way to change con back besides changing mod dir (csqc likely)
-?  server-side demos
 ?  movie-like demo controls (fastforward, rewind, step forward and back,
    seek, etc)
 ?  delta compression for protocol
