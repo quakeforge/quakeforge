@@ -103,7 +103,7 @@ float		modelalpha;					// Ender (Extend) Alpha
 
 void R_MarkLeaves (void);
 
-void R_DrawAliasModel (entity_t *e, qboolean cull);
+void R_DrawAliasModel (entity_t *e);
 void R_DrawSpriteModel (entity_t *e);
 
 
@@ -193,7 +193,7 @@ R_DrawEntitiesOnList (void)
 		if (currententity == r_player_entity)
 			currententity->angles[PITCH] *= 0.3;
 
-		R_DrawAliasModel (currententity, true);
+		R_DrawAliasModel (currententity);
 	}
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
@@ -225,7 +225,7 @@ R_DrawViewModel (void)
 	qfglDepthRange (gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-	R_DrawAliasModel (currententity, false);
+	R_DrawAliasModel (currententity);
 	if (gl_affinemodels->int_val)
 		qfglHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
 	qfglDepthRange (gldepthmin, gldepthmax);

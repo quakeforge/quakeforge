@@ -272,30 +272,31 @@ R_DrawBrushModel (entity_t *e)
 	float       dot;
 	float		color[4];
 	int         i, k;
-	model_t    *clmodel;
+	model_t    *model;
 	mplane_t   *pplane;
 	msurface_t *psurf;
 	qboolean    rotated;
 	vec3_t      mins, maxs;
 
-	clmodel = e->model;
+	model = e->model;
 
 	if (e->angles[0] || e->angles[1] || e->angles[2]) {
 		rotated = true;
 		for (i = 0; i < 3; i++) {
-			mins[i] = e->origin[i] - clmodel->radius;
-			maxs[i] = e->origin[i] + clmodel->radius;
+			mins[i] = e->origin[i] - model->radius;
+			maxs[i] = e->origin[i] + model->radius;
 		}
 	} else {
 		rotated = false;
-		VectorAdd (e->origin, clmodel->mins, mins);
-		VectorAdd (e->origin, clmodel->maxs, maxs);
+		VectorAdd (e->origin, model->mins, mins);
+		VectorAdd (e->origin, model->maxs, maxs);
 	}
 
 #if 0 // QSG FIXME
 	if (e->scale != 1.0) {
 		VectorScale (mins, e->scale, mins);
 		VectorScale (maxs, e->scale, maxs);
+		radius = model->radius * e->scale;
 	}
 #endif
 
@@ -320,10 +321,10 @@ R_DrawBrushModel (entity_t *e)
 		modelorg[2] = DotProduct (temp, up);
 	}
 
-	psurf = &clmodel->surfaces[clmodel->firstmodelsurface];
+	psurf = &model->surfaces[model->firstmodelsurface];
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
-	if (clmodel->firstmodelsurface != 0 && r_dlight_lightmap->int_val) {
+	if (model->firstmodelsurface != 0 && r_dlight_lightmap->int_val) {
 		vec3_t      lightorigin;
 
 		for (k = 0; k < r_maxdlights; k++) {
@@ -332,7 +333,7 @@ R_DrawBrushModel (entity_t *e)
 
 			VectorSubtract (r_dlights[k].origin, e->origin, lightorigin);
 			R_RecursiveMarkLights (lightorigin, &r_dlights[k], 1 << k,
-							clmodel->nodes + clmodel->hulls[0].firstclipnode);
+							model->nodes + model->hulls[0].firstclipnode);
 		}
 	}
 
@@ -342,7 +343,7 @@ R_DrawBrushModel (entity_t *e)
 	e->angles[0] = -e->angles[0];		// stupid quake bug
 
 	// draw texture
-	for (i = 0; i < clmodel->nummodelsurfaces; i++, psurf++) {
+	for (i = 0; i < model->nummodelsurfaces; i++, psurf++) {
 		// find which side of the node we are on
 		pplane = psurf->plane;
 
@@ -413,6 +414,7 @@ R_RecursiveWorldNode (mnode_t *node)
 		return;
 	if (node->visframe != r_visframecount)
 		return;
+
 	if (R_CullBox (node->minmaxs, node->minmaxs + 3))
 		return;
 

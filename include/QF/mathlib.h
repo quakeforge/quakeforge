@@ -143,11 +143,26 @@ extern inline
 qboolean
 R_CullBox (const vec3_t mins, const vec3_t maxs)
 {
-	int i;
+	int		i;
 
-	for (i=0 ; i<4 ; i++)
+	for (i=0 ; i < 4 ; i++)
 		if (BoxOnPlaneSide (mins, maxs, &frustum[i]) == 2)
 			return true;
+	return false;
+}
+
+extern inline qboolean
+R_CullSphere (const vec3_t origin, const float radius)
+{
+	int		i;
+	float	r;
+
+	for (i = 0; i < 4; i++)
+	{
+		r = DotProduct (origin, frustum[i].normal) - frustum[i].dist;
+		if (r <= -radius)
+			return true;
+	}
 	return false;
 }
 

@@ -252,7 +252,7 @@ typedef struct
 // ALIAS MODELS ===============================================================
 // Alias models are position independent, so the cache manager can move them.
 
-/* NOTE: the first three lines must match maliasgroupframedesc_t */
+// NOTE: the first three lines must match maliasgroupframedesc_t
 typedef struct
 {
 	trivertx_t			bboxmin;
@@ -312,7 +312,7 @@ typedef struct {
 
 	int			numposes;
 	int			poseverts;
-	int			posedata;	// numposes*poseverts trivert_t
+	int			posedata;	// numposes * poseverts trivert_t
 	int			commands;	// gl command list with embedded s/t
 
 	unsigned short crc;
@@ -328,7 +328,7 @@ extern	trivertx_t	*poseverts[MAXALIASFRAMES];
 extern  int			 aliasbboxmins[3];
 extern  int			 aliasbboxmaxs[3];
 
-// Whole model =======================================================
+// Whole model ================================================================
 
 typedef enum {mod_brush, mod_sprite, mod_alias} modtype_t;
 
@@ -344,84 +344,86 @@ typedef enum {mod_brush, mod_sprite, mod_alias} modtype_t;
 
 typedef struct model_s
 {
-	char		name[MAX_QPATH];
-	qboolean	needload;		// bmodels and sprites don't cache normally
-	qboolean	hasfullbrights;
+	char		 name[MAX_QPATH];
+	qboolean	 needload;		// bmodels and sprites don't cache normally
+	qboolean	 hasfullbrights;
 
-	modtype_t	type;
-	int			numframes;
-	synctype_t	synctype;
-	
-	int			flags;
+	modtype_t	 type;
+	int			 numframes;
+	synctype_t	 synctype;
+
+	int			 flags;
 
 // lighting info
-	float		min_light;
-	byte		shadow_alpha;	// 255 = 1.0
-	byte		fullbright;
+	float		 min_light;
+	byte		 shadow_alpha;	// 255 = 1.0
+	byte		 fullbright;
 
-// volume occupied by the model graphics
-	vec3_t		mins, maxs;
-	float		radius;
+// coarse cull, for fine culling, axis-aligned bbox isn't good enough
+	float		 radius;
+// FIXME: bbox cruft has to stay until sw rendering gets updated
+	vec3_t		 mins, maxs;
 
-// solid volume for clipping 
-	qboolean	clipbox;
-	vec3_t		clipmins, clipmaxs;
+// solid volume for clipping
+	qboolean	 clipbox;
+	vec3_t		 clipmins, clipmaxs;
 
 // brush model
-	int			firstmodelsurface, nummodelsurfaces;
+	int			 firstmodelsurface, nummodelsurfaces;
 
-	int			numsubmodels;
+	int			 numsubmodels;
 	dmodel_t	*submodels;
 
-	int			numplanes;
+	int			 numplanes;
 	mplane_t	*planes;
 
-	int			numleafs;		// number of visible leafs, not counting 0
+	int			 numleafs;		// number of visible leafs, not counting 0
 	mleaf_t		*leafs;
 
-	int			numvertexes;
+	int			 numvertexes;
 	mvertex_t	*vertexes;
 
-	int			numedges;
+	int			 numedges;
 	medge_t		*edges;
 
-	int			numnodes;
+	int			 numnodes;
 	mnode_t		*nodes;
 
-	int			numtexinfo;
+	int			 numtexinfo;
 	mtexinfo_t	*texinfo;
 
-	int			numsurfaces;
+	int			 numsurfaces;
 	msurface_t	*surfaces;
 
-	int			numsurfedges;
+	int			 numsurfedges;
 	int			*surfedges;
 
-	int			numclipnodes;
+	int			 numclipnodes;
 	dclipnode_t	*clipnodes;
 
-	int			nummarksurfaces;
+	int			 nummarksurfaces;
 	msurface_t	**marksurfaces;
 
-	hull_t		hulls[MAX_MAP_HULLS];
+	hull_t		 hulls[MAX_MAP_HULLS];
 
-	int			numtextures;
+	int			 numtextures;
 	texture_t	**textures;
 
 	byte		*visdata;
 	byte		*lightdata;
 	char		*entities;
 
-	unsigned int	checksum;
-	unsigned int	checksum2;
+	unsigned int checksum;
+	unsigned int checksum2;
 
 // additional model data
-	cache_user_t	cache;		// only access through Mod_Extradata
+	cache_user_t cache;		// only access through Mod_Extradata
 
 } model_t;
 
 // ============================================================================
 
+extern float RadiusFromBounds (const vec3_t mins, const vec3_t maxs);
 void	Mod_Init (void);
 void	Mod_Init_Cvars (void);
 void	Mod_ClearAll (void);

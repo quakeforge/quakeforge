@@ -63,11 +63,10 @@ char        loadname[32];				// for hunk tags
 model_t     mod_known[MAX_MOD_KNOWN];
 int         mod_numknown;
 
+texture_t  *r_notexture_mip;
+
 cvar_t     *gl_subdivide_size;
 cvar_t     *gl_mesh_cache;
-
-
-texture_t  *r_notexture_mip;
 
 
 void
@@ -81,8 +80,7 @@ Mod_Init (void)
 	int mip3size = 2*2;
 
 	memset (mod_novis, 0xff, sizeof (mod_novis));
-	r_notexture_mip = Hunk_AllocName (sizeof (texture_t)
-									  + mip0size + mip1size
+	r_notexture_mip = Hunk_AllocName (sizeof (texture_t) + mip0size + mip1size
 									  + mip2size + mip3size, "notexture");
 
 	r_notexture_mip->width = r_notexture_mip->height = 16;
@@ -288,4 +286,15 @@ Mod_Print (void)
 	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++) {
 		Sys_Printf ("%8p : %s\n", mod->cache.data, mod->name);
 	}
+}
+
+float
+RadiusFromBounds (const vec3_t mins, const vec3_t maxs)
+{
+	int		i;
+	vec3_t	corner;
+
+	for (i = 0; i < 3; i++)
+		corner[i] = max (fabs (mins[i]), fabs (maxs[i]));
+	return Length (corner);
 }

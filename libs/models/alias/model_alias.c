@@ -47,10 +47,9 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/vfs.h"
 
+#include "compat.h"
 #include "d_iface.h"
 #include "r_local.h"
-
-#include "compat.h"
 
 aliashdr_t *pheader;
 
@@ -69,15 +68,13 @@ int			aliasbboxmins[3], aliasbboxmaxs[3];
 void *
 Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 {
-	int         snum, gnum, t;
-	int         skinsize;
 	byte       *skin;
-	int         groupskins;
+	float      *poutskinintervals;
+	int         groupskins, skinsize, gnum, snum, t;
 	daliasskingroup_t *pinskingroup;
 	daliasskininterval_t *pinskinintervals;
 	maliasskindesc_t *pskindesc;
 	maliasskingroup_t *paliasskingroup;
-	float      *poutskinintervals;
 
 	if (numskins < 1 || numskins > MAX_SKINS)
 		Sys_Error ("Mod_LoadAliasModel: Invalid # of skins: %d", numskins);
@@ -137,17 +134,13 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 void
 Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 {
-	int         i, j;
+	byte       *p;
+	int         i, j, len, size, version, numframes, start, end, total;
 	mdl_t      *pinmodel, *pmodel;
 	stvert_t   *pinstverts;
 	dtriangle_t *pintriangles;
-	int         version, numframes;
-	int         size;
 	daliasframetype_t *pframetype;
 	daliasskintype_t *pskintype;
-	int         start, end, total;
-	byte       *p;
-	int         len;
 	unsigned short crc;
 	void       *mem;
 
@@ -197,8 +190,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	if (pmodel->numverts <= 0)
 		Sys_Error ("model %s has no vertices", mod->name);
 
-	if (pmodel->numverts > stverts_size)
-	{
+	if (pmodel->numverts > stverts_size) {
 		stverts = realloc (stverts, pmodel->numverts * sizeof (stvert_t));
 		if (!stverts)
 			Sys_Error ("model_alias: out of memory");
@@ -210,9 +202,9 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	if (pmodel->numtris <= 0)
 		Sys_Error ("model %s has no triangles", mod->name);
 
-	if (pmodel->numtris > triangles_size)
-	{
-		triangles = realloc (triangles, pmodel->numtris * sizeof (mtriangle_t));
+	if (pmodel->numtris > triangles_size) {
+		triangles =
+			realloc (triangles, pmodel->numtris * sizeof (mtriangle_t));
 		if (!triangles)
 			Sys_Error ("model_alias: out of memory");
 		triangles_size = pmodel->numtris;
@@ -235,8 +227,8 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 
 	// load the skins
 	pskintype = (daliasskintype_t *) &pinmodel[1];
-	pskintype =
-		Mod_LoadAllSkins (pheader->mdl.numskins, pskintype, &pheader->skindesc);
+	pskintype = Mod_LoadAllSkins (pheader->mdl.numskins, pskintype,
+								  &pheader->skindesc);
 
 	// load base s and t vertices
 	pinstverts = (stvert_t *) pskintype;
@@ -292,6 +284,8 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 		mod->maxs[i] = aliasbboxmaxs[i] * pheader->mdl.scale[i] +
 			pheader->mdl.scale_origin[i];
 	}
+
+	mod->radius = RadiusFromBounds (mod->mins, mod->maxs);
 
 	// build the draw lists
 	Mod_MakeAliasModelDisplayLists (mod, pheader, buffer, com_filesize, extra);

@@ -244,10 +244,10 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, vert_order_t *vo)
 				paliashdr->mdl.scale_origin[1];
 			point[2] =
 				verts->vert[2] * paliashdr->mdl.scale[2] +
-				paliashdr->mdl.scale_origin[2];
+				paliashdr->mdl.scale_origin[2] + lheight;
 
-			point[0] -= shadevector[0] * (point[2] + lheight);
-			point[1] -= shadevector[1] * (point[2] + lheight);
+			point[0] -= shadevector[0] * point[2];
+			point[1] -= shadevector[1] * point[2];
 			point[2] = height;
 			qfglVertex3fv (point);
 
@@ -282,7 +282,7 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 	count = paliashdr->poseverts;
 	vo = Hunk_TempAlloc (sizeof (*vo) + count * sizeof (blended_vert_t));
 	vo->order = (int *) ((byte *) paliashdr + paliashdr->commands);
-	vo->verts = (blended_vert_t*)&vo[1];
+	vo->verts = (blended_vert_t *) &vo[1];
 
 	if (numposes > 1) {
 		interval = paliashdr->frames[frame].interval;
@@ -336,6 +336,7 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 				 i++, vo_v++, verts1++, verts2++) {
 				float      *n1, *n2;
 				float       d1, d2;
+
 				VectorBlend (v1, v2, blend, vo_v->vert);
 				VectorScale (vo_v->vert, 1.0 / 256.0, vo_v->vert);
 				n1 = r_avertexnormals[verts1->lightnormalindex];
@@ -356,7 +357,7 @@ GL_GetAliasFrameVerts16 (int frame, aliashdr_t *paliashdr, entity_t *e)
 		VectorScale (verts->v, 1.0 / 256.0, vo_v->vert);
 		n = r_avertexnormals[verts->lightnormalindex];
 		d = DotProduct (shadevector, n);
-		vo_v->lightdot = max (0, d);
+		vo_v->lightdot = max (0.0, d);
 	}
 	return vo;
 }
@@ -385,7 +386,7 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 	count = paliashdr->poseverts;
 	vo = Hunk_TempAlloc (sizeof (*vo) + count * sizeof (blended_vert_t));
 	vo->order = (int *) ((byte *) paliashdr + paliashdr->commands);
-	vo->verts = (blended_vert_t*)&vo[1];
+	vo->verts = (blended_vert_t *) &vo[1];
 
 	if (numposes > 1) {
 		interval = paliashdr->frames[frame].interval;
@@ -458,7 +459,7 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 		VectorCopy (verts->v, vo_v->vert);
 		n = r_avertexnormals[verts->lightnormalindex];
 		d = DotProduct (shadevector, n);
-		vo_v->lightdot = max (0, d);
+		vo_v->lightdot = max (0.0, d);
 	}
 	return vo;
 }
@@ -506,7 +507,7 @@ R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
 }
 
 void
-R_DrawAliasModel (entity_t *e, qboolean cull)
+R_DrawAliasModel (entity_t *e)
 {
 	float		  add, an, minshade, shade;
 	int			  lnum, i, texture;
@@ -521,7 +522,13 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	VectorAdd (e->origin, model->mins, mins);
 	VectorAdd (e->origin, model->maxs, maxs);
 
-	if (cull && R_CullBox (mins, maxs)) 
+	if (e->scale != 1.0) {
+		VectorScale (mins, e->scale, mins);
+		VectorScale (maxs, e->scale, maxs);
+//		radius = radius * scale;
+	}
+
+	if (R_CullBox (mins, maxs))
 		return;
 
 	VectorSubtract (r_origin, e->origin, modelorg);
@@ -537,14 +544,15 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 
 		for (lnum = 0; lnum < r_maxdlights; lnum++) {
 			if (r_dlights[lnum].die >= r_realtime) {
-				float       d;
+				float		d;
 
 				VectorSubtract (e->origin, r_dlights[lnum].origin, dist);
 				d = DotProduct (dist, dist);
-				d = max (d, 64) * 200;
-				add = r_dlights[lnum].radius * r_dlights[lnum].radius * 8 / d;
+				d = max (d, 64.0) * 200.0;
+				add = r_dlights[lnum].radius * r_dlights[lnum].radius * 8.0 /
+					d;
 
-				if (add > 0)
+				if (add > 0.0)
 					VectorMA (ambientcolor, add, r_dlights[lnum].color,
 							  ambientcolor);
 			}
@@ -552,7 +560,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 
 		// clamp lighting so it doesn't overbright as much
 		for (i = 0; i < 3; i++) {
-			ambientcolor[i] = min (ambientcolor[i], 128/200.0);
+			ambientcolor[i] = min (ambientcolor[i], 128.0 / 200.0);
 			if (ambientcolor[i] + shadecolor[i] > 1)
 				shadecolor[i] = 1 - ambientcolor[i];
 		}
@@ -565,10 +573,10 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 			shadecolor[2] += minshade - shade;
 		}
 
-		an = e->angles[1] * (M_PI / 180);
+		an = e->angles[1] * (M_PI / 180.0);
 		shadevector[0] = cos (-an);
 		shadevector[1] = sin (-an);
-		shadevector[2] = 1;
+		shadevector[2] = 1.0;
 		VectorNormalize (shadevector);
 	}
 
@@ -577,6 +585,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	// locate the proper data
 	paliashdr = Cache_Get (&e->model->cache);
 	c_alias_polys += paliashdr->mdl.numtris;
+	VectorScale (paliashdr->mdl.scale, e->scale, scale);
 
 	// draw all the triangles
 	qfglPushMatrix ();
@@ -585,7 +594,6 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	qfglTranslatef (paliashdr->mdl.scale_origin[0],
 					paliashdr->mdl.scale_origin[1],
 					paliashdr->mdl.scale_origin[2]);
-	VectorScale (paliashdr->mdl.scale, e->scale, scale)
 	qfglScalef (scale[0], scale[1], scale[2]);
 
 	// if the model has a colorised/external skin, use it, otherwise use
@@ -655,7 +663,7 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 
 		qfglDisable (GL_TEXTURE_2D);
 		qfglDepthMask (GL_FALSE);
-		color_black[3] = modelalpha * ((model->shadow_alpha + 1) / 2);
+		color_black[3] = modelalpha * model->shadow_alpha;
 		qfglColor4ubv (color_black);
 
 		GL_DrawAliasShadow (paliashdr, vo);

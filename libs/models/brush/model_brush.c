@@ -131,9 +131,7 @@ Mod_LeafPVS (mleaf_t *leaf, model_t *model)
 	return Mod_DecompressVis (leaf->compressed_vis, model);
 }
 
-/*
-					BRUSHMODEL LOADING
-*/
+// BRUSHMODEL LOADING =========================================================
 
 byte       *mod_base;
 
@@ -467,7 +465,8 @@ CalcSurfaceExtents (msurface_t *s)
 		s->texturemins[i] = bmins[i] * 16;
 		s->extents[i] = (bmaxs[i] - bmins[i]) * 16;
 		if (!(tex->flags & TEX_SPECIAL) && s->extents[i] > 512 /* 256 */ )
-			Sys_Error ("Bad surface extents: %x %d", tex->flags, s->extents[i]);
+			Sys_Error ("Bad surface extents: %x %d", tex->flags,
+					   s->extents[i]);
 	}
 }
 
@@ -595,8 +594,6 @@ Mod_LoadLeafs (lump_t *l)
 	dleaf_t    *in;
 	mleaf_t    *out;
 	int         i, j, count, p;
-
-	// char     s[80];
 	qboolean    isnotmap = true;
 
 	in = (void *) (mod_base + l->fileofs);
@@ -607,8 +604,8 @@ Mod_LoadLeafs (lump_t *l)
 
 	loadmodel->leafs = out;
 	loadmodel->numleafs = count;
-	// snprintf(s, sizeof (s), "maps/%s.bsp",
-	// Info_ValueForKey(cl.serverinfo,"map"));
+//	snprintf(s, sizeof (s), "maps/%s.bsp",
+//	Info_ValueForKey(cl.serverinfo,"map"));
 	if (!strncmp ("maps/", loadmodel->name, 5))
 		isnotmap = false;
 	for (i = 0; i < count; i++, in++, out++) {
@@ -782,11 +779,9 @@ Mod_LoadSurfedges (lump_t *l)
 void
 Mod_LoadPlanes (lump_t *l)
 {
-	int         i, j;
+	int         i, j, bits, count;
 	mplane_t   *out;
 	dplane_t   *in;
-	int         count;
-	int         bits;
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof (*in))
@@ -811,19 +806,6 @@ Mod_LoadPlanes (lump_t *l)
 	}
 }
 
-float
-RadiusFromBounds (const vec3_t mins, const vec3_t maxs)
-{
-	int         i;
-	vec3_t      corner;
-
-	for (i = 0; i < 3; i++) {
-		corner[i] = max (fabs (mins[i]), fabs (maxs[i]));
-	}
-
-	return Length (corner);
-}
-
 void
 Mod_LoadBrushModel (model_t *mod, void *buffer)
 {
@@ -837,15 +819,13 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 
 	i = LittleLong (header->version);
 	if (i != BSPVERSION)
-		Sys_Error
-			("Mod_LoadBrushModel: %s has wrong version number (%i should be %i)",
-			 mod->name, i, BSPVERSION);
+		Sys_Error ("Mod_LoadBrushModel: %s has wrong version number (%i "
+				   "should be %i)", mod->name, i, BSPVERSION);
 
 	// swap all the lumps
 	mod_base = (byte *) header;
 
 	for (i = 0; i < sizeof (dheader_t) / 4; i++)
-
 		((int *) header)[i] = LittleLong (((int *) header)[i]);
 
 	// checksum all of the map, except for entities
@@ -855,17 +835,15 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 	for (i = 0; i < HEADER_LUMPS; i++) {
 		if (i == LUMP_ENTITIES)
 			continue;
-		mod->checksum ^=
-			LittleLong (Com_BlockChecksum
-						(mod_base + header->lumps[i].fileofs,
-						 header->lumps[i].filelen));
+		mod->checksum ^= LittleLong (Com_BlockChecksum
+									 (mod_base + header->lumps[i].fileofs,
+									  header->lumps[i].filelen));
 
 		if (i == LUMP_VISIBILITY || i == LUMP_LEAFS || i == LUMP_NODES)
 			continue;
-		mod->checksum2 ^=
-			LittleLong (Com_BlockChecksum
-						(mod_base + header->lumps[i].fileofs,
-						 header->lumps[i].filelen));
+		mod->checksum2 ^= LittleLong (Com_BlockChecksum
+									  (mod_base + header->lumps[i].fileofs,
+									   header->lumps[i].filelen));
 	}
 
 	// load into heap
