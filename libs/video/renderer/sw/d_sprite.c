@@ -30,8 +30,9 @@
 # include "config.h"
 #endif
 
-#include "d_local.h"
 #include "QF/render.h"
+
+#include "d_local.h"
 
 static int  sprite_height;
 static int  minindex, maxindex;
@@ -42,8 +43,8 @@ static sspan_t *sprite_spans;
 #undef USE_INTEL_ASM //XXX asm pic hack
 #endif
 
-#ifndef USE_INTEL_ASM
 
+#ifndef USE_INTEL_ASM
 void
 D_SpriteDrawSpans (sspan_t *pspan)
 {
@@ -65,7 +66,7 @@ D_SpriteDrawSpans (sspan_t *pspan)
 	tdivz8stepu = d_tdivzstepu * 8;
 	zi8stepu = d_zistepu * 8;
 
-// we count on FP exceptions being turned off to avoid range problems
+	// we count on FP exceptions being turned off to avoid range problems
 	izistep = (int) (d_zistepu * 0x8000 * 0x10000);
 
 	do {
@@ -194,7 +195,6 @@ D_SpriteDrawSpans (sspan_t *pspan)
 }
 #endif
 
-
 void
 D_SpriteScanLeftEdge (void)
 {
@@ -248,7 +248,6 @@ D_SpriteScanLeftEdge (void)
 
 	} while (i != lmaxindex);
 }
-
 
 void
 D_SpriteScanRightEdge (void)
@@ -324,7 +323,6 @@ D_SpriteScanRightEdge (void)
 	pspan->count = DS_SPAN_LIST_END;	// mark the end of the span list 
 }
 
-
 void
 D_SpriteCalculateGradients (void)
 {
@@ -365,7 +363,6 @@ D_SpriteCalculateGradients (void)
 	bbextents = (cachewidth << 16) - 1;
 	bbextentt = (sprite_height << 16) - 1;
 }
-
 
 void
 D_DrawSprite (void)

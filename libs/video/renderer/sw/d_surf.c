@@ -32,15 +32,16 @@
 
 #include <stdlib.h>
 
-#include "d_local.h"
 #include "QF/qargs.h"
-#include "r_local.h"
 #include "QF/sys.h"
 
-float       surfscale;
-qboolean    r_cache_thrash;				// set if surface cache is thrashing
+#include "d_local.h"
+#include "r_local.h"
 
-int         sc_size;
+float        surfscale;
+qboolean     r_cache_thrash;			// set if surface cache is thrashing
+
+int          sc_size;
 surfcache_t *sc_rover, *sc_base;
 
 #define GUARDSIZE       4

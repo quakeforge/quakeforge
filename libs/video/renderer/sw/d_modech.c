@@ -30,10 +30,10 @@
 # include "config.h"
 #endif
 
+#include "QF/render.h"
 #include "QF/sys.h"
 
 #include "d_local.h"
-#include "QF/render.h"
 
 int         d_vrectx, d_vrecty, d_vrectright_particle, d_vrectbottom_particle;
 
@@ -62,7 +62,6 @@ D_Patch (void)
 	}
 #endif // USE_INTEL_ASM
 }
-
 
 void
 D_ViewChanged (void)

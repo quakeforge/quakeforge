@@ -30,24 +30,24 @@
 # include "config.h"
 #endif
 
-#include "compat.h"
 #include "QF/cvar.h"
 #include "QF/render.h"
 #include "QF/vid.h"
 
+#include "compat.h"
 #include "d_local.h"
 #include "r_cvar.h"
 
 #define NUM_MIPS	4
 
 surfcache_t *d_initial_rover;
-qboolean    d_roverwrapped;
-int         d_minmip;
-float       d_scalemip[NUM_MIPS - 1];
+qboolean     d_roverwrapped;
+int          d_minmip;
+float        d_scalemip[NUM_MIPS - 1];
 
 static float basemip[NUM_MIPS - 1] = { 1.0, 0.5 * 0.8, 0.25 * 0.8 };
 
-extern int  d_aflatcolor;
+extern int   d_aflatcolor;
 
 void        (*d_drawspans) (espan_t *pspan);
 
@@ -70,41 +70,35 @@ D_Init (void)
 	VID_InitBuffers ();
 }
 
-
 void
 D_CopyRects (vrect_t *prects, int transparent)
 {
-
-// this function is only required if the CPU doesn't have direct access to the
-// back buffer, and there's some driver interface function that the driver
-// doesn't support and requires Quake to do in software (such as drawing the
-// console); Quake will then draw into wherever the driver points vid.buffer
-// and will call this function before swapping buffers
-
+/*
+  this function is only required if the CPU doesn't have direct access to the
+  back buffer, and there's some driver interface function that the driver
+  doesn't support and requires Quake to do in software (such as drawing the
+  console); Quake will then draw into wherever the driver points vid.buffer
+  and will call this function before swapping buffers
+*/
 }
-
 
 void
 D_EnableBackBufferAccess (void)
 {
-
 	VID_LockBuffer ();
 }
-
 
 void
 D_TurnZOn (void)
 {
-// not needed for software version
+	// not needed for software version
 }
-
 
 void
 D_DisableBackBufferAccess (void)
 {
 	VID_UnlockBuffer ();
 }
-
 
 void
 D_SetupFrame (void)
@@ -144,7 +138,6 @@ D_SetupFrame (void)
 
 	d_aflatcolor = 0;
 }
-
 
 void
 D_UpdateRects (vrect_t *prect)

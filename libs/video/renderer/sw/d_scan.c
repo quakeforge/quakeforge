@@ -30,10 +30,10 @@
 # include "config.h"
 #endif
 
-//#include "client.h"
+#include "QF/render.h"
+
 #include "d_local.h"
 #include "r_local.h"
-#include "QF/render.h"
 
 unsigned char *r_turb_pbase, *r_turb_pdest;
 fixed16_t   r_turb_s, r_turb_t, r_turb_sstep, r_turb_tstep;
@@ -117,7 +117,6 @@ D_DrawTurbulent8Span (void)
 	} while (--r_turb_spancount > 0);
 }
 #endif // !USE_INTEL_ASM
-
 
 void
 Turbulent8 (espan_t *pspan)
@@ -243,7 +242,6 @@ Turbulent8 (espan_t *pspan)
 
 	} while ((pspan = pspan->pnext) != NULL);
 }
-
 
 #ifndef USE_INTEL_ASM
 void
@@ -371,7 +369,6 @@ D_DrawSpans8 (espan_t *pspan)
 	} while ((pspan = pspan->pnext) != NULL);
 }
 #endif
-
 
 #ifndef USE_INTEL_ASM
 void
