@@ -302,6 +302,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root) %{_prefix}/lib/libQFmodels.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFsound.so.*
 %attr(-,root,root) %{_prefix}/lib/libQFutil.so.*
+%attr(-,root,root) %{fs_sharepath}/QF/menu.dat*
 %attr(-,root,root) %{fs_sharepath}/QFplugins/cd_linux.so*
 %attr(-,root,root) %{fs_sharepath}/QFplugins/console_client.so*
 %attr(-,root,root) %{fs_sharepath}/QFplugins/snd_output_disk.so*
