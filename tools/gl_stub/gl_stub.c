@@ -56,16 +56,23 @@ void *
 glXGetProcAddressARB (const GLubyte *procName)
 {
 	static int  called;
+	static int  trace;
 	gl_stub_t  *stub;
 	gl_stub_t   key;
 
 	if (!called) {
+		char       *glstub_trace;
+
 		qsort (gl_stub_funcs, NUM_FUNCS, sizeof (gl_stub_t), cmp);
 		called = 1;
+
+		glstub_trace = getenv ("GLSTUB_TRACE");
+		if (glstub_trace)
+			trace = atoi (glstub_trace);
 	}
 	key.name = procName;
 	stub = bsearch (&key, gl_stub_funcs, NUM_FUNCS, sizeof (gl_stub_t), cmp);
 	if (!stub)
 		return 0;
-	return stub->norm;
+	return trace ? stub->trace : stub->norm;
 }
