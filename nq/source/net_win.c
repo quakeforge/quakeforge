@@ -124,4 +124,4 @@ net_landriver_t net_landrivers[MAX_NET_DRIVERS] = {
 #endif
 };
 
-int         net_numlandrivers = 2;
+int         net_numlandrivers = 1;
