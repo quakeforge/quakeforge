@@ -36,6 +36,7 @@ optable_t optable[] =
 	{"+", OP_Add},
 	{"-", OP_Sub},
 	{"==", OP_Eq},
+	{"!=", OP_Neq},
 	{">=", OP_GreaterThanEqual},
 	{">", OP_GreaterThan},
 	{"<=", OP_LessThanEqual},

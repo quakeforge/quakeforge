@@ -40,10 +40,13 @@ typedef struct cmd_buffer_s {
 	struct dstring_s *buffer; // Actual text
 	qboolean wait; // Execution stopped until next frame
 	qboolean legacy; // Backwards compatible with old command buffer style
+	qboolean ownvars; // Buffer has its own private local variables
+	qboolean loop; // Buffer is in a loop
 	unsigned int argc, maxargc; // Number of args, number of args allocated
 	struct dstring_s **argv; // Array of arguments
 	struct dstring_s *realline; // Actual command being processed
 	struct dstring_s *line; // Tokenized and reassembled command
+	struct dstring_s *looptext; // If a looping buffer, the text we are looping on
 	int *args; // Array of positions of each token in above string
 	struct hashtab_s *locals; // Local variables
 	struct cmd_buffer_s *prev, *next; // Next buffer in the stack

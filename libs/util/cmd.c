@@ -109,7 +109,7 @@ Cmd_SetLocal (cmd_buffer_t *buffer, const char *key, const char *value)
 {
 	cmd_localvar_t *var;
 
-	var = (cmd_localvar_t *) Hash_Find (buffer->locals, Cmd_Argv (1));
+	var = (cmd_localvar_t *)Hash_Find(buffer->locals, key);
 	if (!var) {
 		var = Cmd_NewLocal (key, value);
 		Hash_Add (buffer->locals, (void *) var);
@@ -133,8 +133,8 @@ Cmd_LocalFree (void *ele, void *ptr)
 	free (ele);
 }
 
-cmd_buffer_t *
-Cmd_NewBuffer (void)
+cmd_buffer_t	*
+Cmd_NewBuffer (qboolean ownvars)
 {
 	cmd_buffer_t *new;
 
@@ -143,7 +143,10 @@ Cmd_NewBuffer (void)
 	new->buffer = dstring_newstr ();
 	new->line = dstring_newstr ();
 	new->realline = dstring_newstr ();
-	new->locals = Hash_NewTable (1021, Cmd_LocalGetKey, Cmd_LocalFree, 0);
+	new->looptext = dstring_newstr ();
+	if (ownvars)
+		new->locals = Hash_NewTable (1021, Cmd_LocalGetKey, Cmd_LocalFree, 0);
+	new->ownvars = ownvars;
 	return new;
 }
 
@@ -162,9 +165,10 @@ Cmd_FreeBuffer (cmd_buffer_t *del)
 		free (del->argv);
 	}
 	if (del->args)
-		free (del->args);
-	Hash_DelTable (del->locals);
-	free (del);
+		free(del->args);
+	if (del->ownvars)
+		Hash_DelTable(del->locals);
+	free(del);
 }
 
 /* Quick function to determine if a character is escaped */
@@ -244,9 +248,9 @@ Cmd_Error (const char *message)
 void
 Cbuf_Init (void)
 {
-	cmd_consolebuffer = Cmd_NewBuffer ();
-
-	cmd_legacybuffer = Cmd_NewBuffer ();
+	cmd_consolebuffer = Cmd_NewBuffer (true);
+	
+	cmd_legacybuffer = Cmd_NewBuffer (true);
 	cmd_legacybuffer->legacy = true;
 
 	cmd_activebuffer = cmd_consolebuffer;
@@ -366,7 +370,13 @@ Cbuf_ExecuteBuffer (cmd_buffer_t *buffer)
 	cmd_activebuffer = buffer;
 	buffer->wait = false;
 	cmd_error = false;
-	while (strlen (buffer->buffer->str)) {
+	while (1) {
+		if (!strlen(buffer->buffer->str)) {
+			if (buffer->loop)
+				Cbuf_InsertTextTo(buffer, buffer->looptext->str);
+			else
+				break;
+		}
 		extract_line (buffer->buffer, buf);
 		Cmd_ExecuteString (buf->str, src_command);
 		if (buffer->wait)
@@ -566,7 +576,7 @@ Cmd_Exec_f (void)
 	if (!Cvar_Command ()
 		&& (cmd_warncmd->int_val || (developer && developer->int_val)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
-	sub = Cmd_NewBuffer ();
+	sub = Cmd_NewBuffer (true);
 	Cbuf_InsertTextTo (sub, f);
 	Cmd_ExecuteSubroutine (sub);		// Execute file in it's own buffer
 	Hunk_FreeToLowMark (mark);
@@ -580,7 +590,10 @@ Cmd_Exec_f (void)
 void
 Cmd_Echo_f (void)
 {
-	Sys_Printf ("%s\n", Cmd_Args (1));
+	if (Cmd_Argc() == 2)
+		Sys_Printf ("%s\n", Cmd_Argv(1));
+	else
+		Sys_Printf ("%s\n", Cmd_Args (1));
 }
 
 /*
@@ -1416,11 +1429,9 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 	// check alias
 	a = (cmdalias_t *) Hash_Find (cmd_alias_hash, Cmd_Argv (0));
 	if (a) {
-		// Create a new buffer to execute the alias in
-		int         i;
-		cmd_buffer_t *sub;
-
-		sub = Cmd_NewBuffer ();
+		int i;
+		cmd_buffer_t *sub; // Create a new buffer to execute the alias in
+		sub = Cmd_NewBuffer (true);
 		Cbuf_InsertTextTo (sub, a->value);
 		for (i = 0; i < Cmd_Argc (); i++)
 			Cmd_SetLocal (sub, va ("%i", i), Cmd_Argv (i));
@@ -1524,32 +1535,46 @@ Cmd_If_f (void)
 		Sys_Printf ("Usage: if {condition} {commands}\n");
 		return;
 	}
-
-	num = strtol (Cmd_Argv (1), 0, 10);
-
+	
+	num = strtol (Cmd_Argv(1), 0, 10);
+	
+	if (!strcmp(Cmd_Argv(0), "ifnot"))
+		num = !num;
+	
 	if (num)
 		Cbuf_InsertText (Cmd_Argv (2));
 	return;
 }
 
 void
-Cmd_While_f (void)
-{
-	long int    num;
-
-	if (Cmd_Argc () < 3) {
-		Sys_Printf ("Usage: while {condition} {commands}\n");
+Cmd_While_f (void) {
+	cmd_buffer_t *sub;
+	
+	if (Cmd_Argc() < 3) {
+		Sys_Printf("Usage: while {condition} {commands}\n");
 		return;
 	}
-
-	num = strtol (Cmd_Argv (1), 0, 10);
-
-	if (num) {
-		// Run while loop again
-		Cbuf_InsertText (cmd_activebuffer->realline->str);
-		Cbuf_InsertText (Cmd_Argv (2));	// But not before executing body
-	}
+	
+	sub = Cmd_NewBuffer (false);
+	sub->locals = cmd_activebuffer->locals; // Use current local variables
+	sub->loop = true;
+	dstring_appendstr (sub->looptext, va("ifnot '%s' {break;};\n", Cmd_Argv(1)));
+	dstring_appendstr (sub->looptext, Cmd_Argv(2));
+	Cmd_ExecuteSubroutine (sub);
 	return;
+}
+
+void
+Cmd_Break_f (void) {
+	if (cmd_activebuffer->loop) {
+		cmd_activebuffer->loop = false;
+		dstring_clearstr(cmd_activebuffer->buffer);
+		return;
+	}
+	else {
+		Cmd_Error("break command used outside of loop!\n");
+		return;
+	}
 }
 
 void
@@ -1636,15 +1661,13 @@ Cmd_Init (void)
 	Cmd_AddCommand ("help", Cmd_Help_f, "Display help for a command or "
 					"variable");
 	Cmd_AddCommand ("if", Cmd_If_f, "Conditionally execute a set of commands.");
-	Cmd_AddCommand ("while", Cmd_While_f,
-					"Execute a set of commands while a condition is true.");
-	Cmd_AddCommand ("lset", Cmd_Lset_f,
-					"Sets the value of a local variable (not cvar).");
-	Cmd_AddCommand ("backtrace", Cmd_Backtrace_f,
-					"Show a description of the last GIB error and a backtrace.");
-	// Cmd_AddCommand ("cmd_hash_stats", Cmd_Hash_Stats_f, "Display
-	// statistics "
-	// "alias and command hash tables");
+	Cmd_AddCommand ("ifnot", Cmd_If_f, "Conditionally execute a set of commands if the condition is false.");
+	Cmd_AddCommand ("while", Cmd_While_f, "Execute a set of commands while a condition is true.");
+	Cmd_AddCommand ("break", Cmd_Break_f, "Break out of a loop.");
+	Cmd_AddCommand ("lset", Cmd_Lset_f, "Sets the value of a local variable (not cvar).");
+	Cmd_AddCommand ("backtrace", Cmd_Backtrace_f, "Show a description of the last GIB error and a backtrace.");
+	//Cmd_AddCommand ("cmd_hash_stats", Cmd_Hash_Stats_f, "Display statistics "
+	//				"alias and command hash tables");
 	cmd_warncmd = Cvar_Get ("cmd_warncmd", "0", CVAR_NONE, NULL, "Toggles the "
 							"display of error messages for unknown commands");
 }

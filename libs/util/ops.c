@@ -51,6 +51,11 @@ float OP_Eq (float op1, float op2)
 	return op1 == op2;
 }
 
+float OP_Neq (float op1, float op2)
+{
+	return op1 != op2;
+}
+
 float OP_Or (float op1, float op2)
 {
 	return op1 || op2;

@@ -28,6 +28,7 @@ float OP_Mult (float op1, float op2);
 float OP_Div (float op1, float op2);
 float OP_Exp (float op1, float op2);
 float OP_Eq (float op1, float op2);
+float OP_Neq (float op1, float op2);
 float OP_Or (float op1, float op2);
 float OP_And (float op1, float op2);
 float OP_GreaterThan (float op1, float op2);
