@@ -156,12 +156,12 @@ VID_Init (unsigned char *palette)
 
 	for (j = 0; j < 5; j++) {
 		int rgba[5][4] = {
-			8, 8, 8, 0,
-			8, 8, 8, 8,
-			5, 6, 5, 0,
-			5, 5, 5, 0,
-			5, 5, 5, 1
-		}
+			{8, 8, 8, 0},
+			{8, 8, 8, 8},
+			{5, 6, 5, 0},
+			{5, 5, 5, 0},
+			{5, 5, 5, 1},
+		};
 
 		SDL_GL_SetAttribute (SDL_GL_RED_SIZE, rgba[j][0]);
 		SDL_GL_SetAttribute (SDL_GL_GREEN_SIZE, rgba[j][1]);
@@ -170,7 +170,7 @@ VID_Init (unsigned char *palette)
 
 		for (i = 32; i >= 16; i -= 8) {
 			SDL_GL_SetAttribute (SDL_GL_DEPTH_SIZE, i);
-			if (screen = SDL_SetVideoMode (scr_width, scr_height, 0, flags))
+			if ((screen = SDL_SetVideoMode (scr_width, scr_height, 0, flags)))
 				goto success;
 		}
 	}
