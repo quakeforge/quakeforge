@@ -123,6 +123,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 netadr_t    net_from;
 netadr_t    net_local_adr;
+netadr_t    net_loopback_adr;
 int         net_socket;
 
 static sizebuf_t _net_message_message;
