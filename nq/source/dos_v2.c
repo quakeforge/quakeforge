@@ -57,6 +57,7 @@ static unsigned conventional_memory = -1;
 
 __dpmi_regs callback_regs;
 
+
 void
 map_in_conventional_memory (void)
 {
@@ -67,6 +68,7 @@ map_in_conventional_memory (void)
 	}
 }
 
+
 unsigned int
 ptr2real (void *ptr)
 {
@@ -74,18 +76,21 @@ ptr2real (void *ptr)
 	return (int) ptr - conventional_memory;
 }
 
-void       *
+
+void *
 real2ptr (unsigned int real)
 {
 	map_in_conventional_memory ();
 	return (void *) (real + conventional_memory);
 }
 
-void       *
+
+void *
 far2ptr (unsigned int farptr)
 {
 	return real2ptr (((farptr & ~0xffff) >> 12) + (farptr & 0xffff));
 }
+
 
 unsigned int
 ptr2far (void *ptr)
@@ -93,11 +98,13 @@ ptr2far (void *ptr)
 	return ((ptr2real (ptr) & ~0xf) << 12) + (ptr2real (ptr) & 0xf);
 }
 
+
 int
 dos_inportb (int port)
 {
 	return inportb (port);
 }
+
 
 int
 dos_inportw (int port)
@@ -105,11 +112,13 @@ dos_inportw (int port)
 	return inportw (port);
 }
 
+
 void
 dos_outportb (int port, int val)
 {
 	outportb (port, val);
 }
+
 
 void
 dos_outportw (int port, int val)
@@ -117,11 +126,13 @@ dos_outportw (int port, int val)
 	outportw (port, val);
 }
 
+
 void
 dos_irqenable (void)
 {
 	enable ();
 }
+
 
 void
 dos_irqdisable (void)
@@ -129,10 +140,8 @@ dos_irqdisable (void)
 	disable ();
 }
 
-//
-// Returns 0 on success
-//
 
+// Returns 0 on success
 int
 dos_int86 (int vec)
 {
@@ -142,6 +151,7 @@ dos_int86 (int vec)
 	rc = _go32_dpmi_simulate_int (vec, (_go32_dpmi_registers *) & regs);
 	return rc || (regs.x.flags & 1);
 }
+
 
 int
 dos_int386 (int vec, regs_t * inregs, regs_t * outregs)
@@ -154,17 +164,14 @@ dos_int386 (int vec, regs_t * inregs, regs_t * outregs)
 	return rc || (outregs->x.flags & 1);
 }
 
-//
+
 // Because of a quirk in dj's alloc-dos-memory wrapper, you need to keep
 // the seginfo structure around for when you free the mem.
-//
-
 static _go32_dpmi_seginfo seginfo[10];
 
-void       *
+void *
 dos_getmemory (int size)
 {
-
 	int         rc;
 	_go32_dpmi_seginfo info;
 	static int  firsttime = 1;
@@ -185,13 +192,12 @@ dos_getmemory (int size)
 			break;
 	seginfo[i] = info;
 	return real2ptr ((int) info.rm_segment << 4);
-
 }
+
 
 void
 dos_freememory (void *ptr)
 {
-
 	int         i;
 	int         segment;
 
@@ -202,8 +208,8 @@ dos_freememory (void *ptr)
 			seginfo[i].rm_segment = 0;
 			break;
 		}
-
 }
+
 
 static struct handlerhistory_s {
 	int         intr;
@@ -220,28 +226,27 @@ dos_registerintr (int intr, void (*handler) (void))
 
 	oldstuff = &handlerhistory[handlercount];
 
-// remember old handler
+	// remember old handler
 	_go32_dpmi_get_protected_mode_interrupt_vector (intr, &oldstuff->pm_oldvec);
 	oldstuff->intr = intr;
 
 	info.pm_offset = (int) handler;
 	_go32_dpmi_allocate_iret_wrapper (&info);
 
-// set new protected mode handler
+	// set new protected mode handler
 	_go32_dpmi_set_protected_mode_interrupt_vector (intr, &info);
 
 	handlercount++;
-
 }
+
 
 void
 dos_restoreintr (int intr)
 {
-
 	int         i;
 	struct handlerhistory_s *oldstuff;
 
-// find and reinstall previous interrupt
+	// find and reinstall previous interrupt
 	for (i = 0; i < handlercount; i++) {
 		oldstuff = &handlerhistory[i];
 		if (oldstuff->intr == intr) {
@@ -252,8 +257,8 @@ dos_restoreintr (int intr)
 			break;
 		}
 	}
-
 }
+
 
 void
 dos_usleep (int usecs)
@@ -261,11 +266,13 @@ dos_usleep (int usecs)
 	usleep (usecs);
 }
 
+
 int
 dos_getheapsize (void)
 {
 	return _go32_dpmi_remaining_physical_memory ();
 }
+
 
 int
 dos_lockmem (void *addr, int size)
@@ -279,6 +286,7 @@ dos_lockmem (void *addr, int size)
 	else
 		return 0;
 }
+
 
 int
 dos_unlockmem (void *addr, int size)
