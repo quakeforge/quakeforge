@@ -94,6 +94,7 @@ install: build
 		usr/lib/libQFmodels.so.* \
 		usr/lib/libQFsound.so.* \
 		usr/lib/libQFutil.so.* \
+		usr/share/games/quake/QFplugins/cd_linux.so* \
 		usr/share/games/quake/QFplugins/cd_null.so* \
 		usr/share/games/quake/QFplugins/console_client.so* \
 		usr/share/games/quake/QFplugins/snd_output_disk.so* \
