@@ -196,6 +196,8 @@ Cbuf_Execute_Stack (cbuf_t *cbuf)
 		Cbuf_DeleteStack (cbuf->down);
 		cbuf->down = 0;
 	}
+	if (cbuf->interpreter->reset)
+		cbuf->interpreter->reset (cbuf);
 }
 
 void

@@ -72,6 +72,7 @@ typedef struct cbuf_interpreter_s {
 	void		(*execute_line) (struct cbuf_s *cbuf);
 	void		(*construct) (struct cbuf_s *cbuf);
 	void		(*destruct) (struct cbuf_s *cbuf);
+	void		(*reset) (struct cbuf_s *cbuf);
 } cbuf_interpreter_t;
 
 extern cbuf_t *cbuf_active;

@@ -47,6 +47,8 @@ typedef struct gib_builtin_s {
 #define GIB_Args(x) ((x) < cbuf_active->args->argc ? cbuf_active->args->args[(x)] : "")
 #define GIB_Argd(x) ((x) < cbuf_active->args->argc ? cbuf_active->args->argv[(x)] : NULL)
 
+#define GIB_USAGE(x) (Cbuf_Error ("syntax", "%s: invalid syntax\nusage: %s %s", GIB_Argv(0), GIB_Argv(0), (x)))
+
 void GIB_Arg_Strip_Delim (unsigned int arg);
 void GIB_Return (const char *str);
 void GIB_Builtin_Add (const char *name, void (*func) (void), enum gib_builtin_type_e type);

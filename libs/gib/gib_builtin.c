@@ -446,7 +446,7 @@ GIB_Function_Export_f (void)
 	if (GIB_Argc() < 2)
 		Cbuf_Error ("syntax",
 					"function::export: invalid syntax\n"
-					"usage: funciton::export function1 function2 function3 [...]");
+					"usage: function::export function1 function2 function3 [...]");
 	for (i = 1; i < GIB_Argc(); i++) {
 		if (!(f = GIB_Function_Find (GIB_Argv (i))))
 			Cbuf_Error ("function", "function::export: function '%s' not found", GIB_Argv (i));
@@ -478,6 +478,28 @@ GIB_String_Equal_f (void)
 	else
 		GIB_Return (va("%i", !strcmp(GIB_Argv(1), GIB_Argv(2))));
 }
+
+void
+GIB_String_Findsub_f (void)
+{
+	char *haystack, *res;
+	unsigned int pos;
+	if (GIB_Argc() < 3 || GIB_Argc() > 4) {
+		GIB_USAGE ("string substr [start_pos]");
+		return;
+	}
+	haystack = GIB_Argv(1);
+	pos = atoi(GIB_Argv(3));
+	if (pos < 0)
+		Cbuf_Error ("string","%s: start position must be >= 0.", GIB_Argv(0));
+	else if (pos >= strlen (haystack))
+		GIB_Return ("-1");
+	else if ((res = strstr(haystack+pos, GIB_Argv(2))))
+		GIB_Return (va("%i", res - haystack));
+	else
+		GIB_Return ("-1");
+}
+		
 
 void
 GIB_Thread_Create_f (void)
@@ -800,6 +822,7 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("break", GIB_Break_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("string::length", GIB_String_Length_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("string::equal", GIB_String_Equal_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("string::findsub", GIB_String_Findsub_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("thread::create", GIB_Thread_Create_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("thread::kill", GIB_Thread_Kill_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("file::read", GIB_File_Read_f, GIB_BUILTIN_NORMAL);

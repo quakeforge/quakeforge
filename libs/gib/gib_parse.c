@@ -59,6 +59,7 @@ cbuf_interpreter_t gib_interp = {
 	GIB_Parse_Execute_Line,
 	GIB_Buffer_Construct,
 	GIB_Buffer_Destruct,
+	GIB_Buffer_Reset
 };
 
 /* 

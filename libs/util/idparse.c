@@ -178,4 +178,5 @@ cbuf_interpreter_t id_interp = {
 	COM_execute_line,
 	NULL,
 	NULL,
+	NULL
 };

@@ -50,7 +50,6 @@ typedef struct gib_buffer_data_s {
 		qboolean cat; // Concatenate to previous token?
 		int noprocess; // Process tokens?
 		char delim; // delimiter of token
-
 	} ret;
 	
 	struct hashtab_s *locals; // Local variables
@@ -64,4 +63,4 @@ typedef struct gib_buffer_data_s {
 
 void GIB_Buffer_Construct (struct cbuf_s *cbuf);
 void GIB_Buffer_Destruct (struct cbuf_s *cbuf);
-
+void GIB_Buffer_Reset (struct cbuf_s *cbuf);

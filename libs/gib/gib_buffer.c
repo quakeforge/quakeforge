@@ -67,3 +67,9 @@ GIB_Buffer_Destruct (struct cbuf_s *cbuf)
 		Hash_DelTable (GIB_DATA(cbuf)->locals);
 	free (cbuf->data);
 }
+
+void
+GIB_Buffer_Reset (struct cbuf_s *cbuf)
+{
+	GIB_DATA (cbuf)->ret.waiting = GIB_DATA (cbuf)->ret.available = false;
+}
