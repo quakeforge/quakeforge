@@ -13,7 +13,7 @@ EXTRA_DIST= 3dfx.txt CodingStyle glqnotes.txt \
 	config/glspeed-v1.cfg config/glspeed-v3.cfg config/swspeed.cfg \
 	\
 	config/gib/adjustvolume.gib config/gib/infobot.gib config/gib/ln.gib \
-	config/gib/sshot.gib config/gib/zoom.gib \
+	config/gib/qfadmin.gib config/gib/sshot.gib config/gib/zoom.gib \
 	\
 	data/comexp.txt \
 	\
