@@ -180,7 +180,7 @@ SV_LoadProgs (void)
 
 	PR_LoadProgs (&sv_pr_state, sv_progs->string, MAX_EDICTS,
 				  sv_progs_zone->int_val * 1024);
-	if (!sv_pr_state.progs)
+	if (!sv_pr_state.progs || !PR_RelocateBuiltins (&sv_pr_state))
 		Sys_Error ("SV_LoadProgs: couldn't load %s", sv_progs->string);
 	// progs engine needs these globals anyway
 	sv_globals.self = sv_pr_state.globals.self;

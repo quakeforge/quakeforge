@@ -461,6 +461,7 @@ void SV_SaveSpawnparms (void);
 
 void SV_Physics_Client (struct edict_s	*ent);
 
+void SV_SetupUserCommands (void);
 void SV_ExecuteUserCommand (const char *s);
 void SV_InitOperatorCommands (void);
 

@@ -46,6 +46,7 @@ static const char rcsid[] =
 #include "QF/clip_hull.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/hash.h"
 #include "QF/msg.h"
 #include "QF/sys.h"
 #include "QF/va.h"
@@ -58,6 +59,14 @@ static const char rcsid[] =
 #include "server.h"
 #include "sv_progs.h"
 #include "world.h"
+
+typedef struct ucmd_s {
+	const char *name;
+	void        (*func) (struct ucmd_s *cmd);
+	int         no_redirect;
+	func_t      qc_hook;
+	int         freeable;
+} ucmd_t;
 
 edict_t    *sv_player;
 
@@ -93,7 +102,7 @@ void        SV_FullClientUpdateToClient (client_t *client, client_t *cl);
 	This will be sent on the initial connection and upon each server load.
 */
 void
-SV_New_f (void)
+SV_New_f (ucmd_t *cmd)
 {
 	const char *gamedir;
 	int         playernum;
@@ -162,7 +171,7 @@ SV_New_f (void)
 	SV_Soundlist_f
 */
 void
-SV_Soundlist_f (void)
+SV_Soundlist_f (ucmd_t *cmd)
 {
 	const char **s;
 	unsigned    n;
@@ -174,14 +183,14 @@ SV_Soundlist_f (void)
 	// handle the case of a level changing while a client was connecting
 	if (atoi (Cmd_Argv (1)) != svs.spawncount) {
 		SV_Printf ("SV_Soundlist_f from different level\n");
-		SV_New_f ();
+		SV_New_f (0);
 		return;
 	}
 
 	n = atoi (Cmd_Argv (2));
 	if (n >= MAX_SOUNDS) {
 		SV_Printf ("SV_Soundlist_f: Invalid soundlist index\n");
-		SV_New_f ();
+		SV_New_f (0);
 		return;
 	}
 //NOTE:  This doesn't go through ClientReliableWrite since it's before the user
@@ -212,7 +221,7 @@ SV_Soundlist_f (void)
 	SV_Modellist_f
 */
 void
-SV_Modellist_f (void)
+SV_Modellist_f (ucmd_t *cmd)
 {
 	const char **s;
 	unsigned    n;
@@ -224,14 +233,14 @@ SV_Modellist_f (void)
 	// handle the case of a level changing while a client was connecting
 	if (atoi (Cmd_Argv (1)) != svs.spawncount) {
 		SV_Printf ("SV_Modellist_f from different level\n");
-		SV_New_f ();
+		SV_New_f (0);
 		return;
 	}
 
 	n = atoi (Cmd_Argv (2));
 	if (n >= MAX_MODELS) {
 		SV_Printf ("SV_Modellist_f: Invalid modellist index\n");
-		SV_New_f ();
+		SV_New_f (0);
 		return;
 	}
 //NOTE:  This doesn't go through ClientReliableWrite since it's before the user
@@ -261,7 +270,7 @@ SV_Modellist_f (void)
 	SV_PreSpawn_f
 */
 void
-SV_PreSpawn_f (void)
+SV_PreSpawn_f (ucmd_t *cmd)
 {
 	unsigned int buf;
 	unsigned int check;
@@ -276,7 +285,7 @@ SV_PreSpawn_f (void)
 	// handle the case of a level changing while a client was connecting
 	if (atoi (Cmd_Argv (1)) != svs.spawncount) {
 		SV_Printf ("SV_PreSpawn_f from different level\n");
-		SV_New_f ();
+		SV_New_f (0);
 		return;
 	}
 
@@ -328,7 +337,7 @@ SV_PreSpawn_f (void)
 	SV_Spawn_f
 */
 void
-SV_Spawn_f (void)
+SV_Spawn_f (ucmd_t *cmd)
 {
 	int         i;
 	client_t   *client;
@@ -342,7 +351,7 @@ SV_Spawn_f (void)
 // handle the case of a level changing while a client was connecting
 	if (atoi (Cmd_Argv (1)) != svs.spawncount) {
 		SV_Printf ("SV_Spawn_f from different level\n");
-		SV_New_f ();
+		SV_New_f (0);
 		return;
 	}
 // make sure they're not trying to cheat by spawning without prespawning
@@ -359,7 +368,7 @@ SV_Spawn_f (void)
 	// make sure n is valid
 	if (n < 0 || n > MAX_CLIENTS) {
 		SV_Printf ("SV_Spawn_f invalid client start\n");
-		SV_New_f ();
+		SV_New_f (0);
 		return;
 	}
 
@@ -457,7 +466,7 @@ SV_SpawnSpectator (void)
 	SV_Begin_f
 */
 void
-SV_Begin_f (void)
+SV_Begin_f (ucmd_t *cmd)
 {
 	unsigned int pmodel = 0, emodel = 0;
 	int         i;
@@ -470,7 +479,7 @@ SV_Begin_f (void)
 	// handle the case of a level changing while a client was connecting
 	if (atoi (Cmd_Argv (1)) != svs.spawncount) {
 		SV_Printf ("SV_Begin_f from different level\n");
-		SV_New_f ();
+		SV_New_f (0);
 		return;
 	}
 
@@ -557,7 +566,7 @@ SV_Begin_f (void)
 	SV_NextDownload_f
 */
 void
-SV_NextDownload_f (void)
+SV_NextDownload_f (ucmd_t *cmd)
 {
 	byte        buffer[1024];
 	int         r;
@@ -682,7 +691,7 @@ SV_NextUpload (void)
 	SV_BeginDownload_f
 */
 void
-SV_BeginDownload_f (void)
+SV_BeginDownload_f (ucmd_t *cmd)
 {
 	const char *name;
 	VFile      *file;
@@ -761,7 +770,7 @@ SV_BeginDownload_f (void)
 		ClientReliable_FinishWrite (host_client);
 	}
 
-	SV_NextDownload_f ();
+	SV_NextDownload_f (0);
 	SV_Printf ("Downloading %s to %s\n", name, host_client->name);
 }
 
@@ -876,7 +885,7 @@ SV_Say (qboolean team)
 	SV_Say_f
 */
 void
-SV_Say_f (void)
+SV_Say_f (ucmd_t *cmd)
 {
 	SV_Say (false);
 }
@@ -885,7 +894,7 @@ SV_Say_f (void)
 	SV_Say_Team_f
 */
 void
-SV_Say_Team_f (void)
+SV_Say_Team_f (ucmd_t *cmd)
 {
 	SV_Say (true);
 }
@@ -901,7 +910,7 @@ SV_Say_Team_f (void)
 	clients
 */
 void
-SV_Pings_f (void)
+SV_Pings_f (ucmd_t *cmd)
 {
 	client_t   *client;
 	int         j;
@@ -925,7 +934,7 @@ SV_Pings_f (void)
 	SV_Kill_f
 */
 void
-SV_Kill_f (void)
+SV_Kill_f (ucmd_t *cmd)
 {
 	if (SVfloat (sv_player, health) <= 0) {
 		SV_BeginRedirect (RD_CLIENT);
@@ -968,7 +977,7 @@ SV_TogglePause (const char *msg)
 	SV_Pause_f
 */
 void
-SV_Pause_f (void)
+SV_Pause_f (ucmd_t *cmd)
 {
 	static double lastpausetime;
 	double      currenttime;
@@ -1009,7 +1018,7 @@ SV_Pause_f (void)
 	The client is going to disconnect, so remove the connection immediately
 */
 void
-SV_Drop_f (void)
+SV_Drop_f (ucmd_t *cmd)
 {
 	SV_EndRedirect ();
 	if (!host_client->spectator)
@@ -1023,7 +1032,7 @@ SV_Drop_f (void)
 	Change the bandwidth estimate for a client
 */
 void
-SV_PTrack_f (void)
+SV_PTrack_f (ucmd_t *cmd)
 {
 	int         i;
 	edict_t    *ent, *tent;
@@ -1064,7 +1073,7 @@ SV_PTrack_f (void)
 	Change the bandwidth estimate for a client
 */
 void
-SV_Rate_f (void)
+SV_Rate_f (ucmd_t *cmd)
 {
 	int         rate;
 
@@ -1092,7 +1101,7 @@ SV_Rate_f (void)
 	Change the message level for a client
 */
 void
-SV_Msg_f (void)
+SV_Msg_f (ucmd_t *cmd)
 {
 	if (Cmd_Argc () != 2) {
 		SV_ClientPrintf (host_client, PRINT_HIGH, "Current msg level is %i\n",
@@ -1112,7 +1121,7 @@ SV_Msg_f (void)
 	Allow clients to change userinfo
 */
 void
-SV_SetInfo_f (void)
+SV_SetInfo_f (ucmd_t *cmd)
 {
 	if (Cmd_Argc () == 1) {
 		SV_Printf ("User info settings:\n");
@@ -1167,13 +1176,13 @@ SV_SetInfo_f (void)
 	Dump serverinfo into a string
 */
 void
-SV_ShowServerinfo_f (void)
+SV_ShowServerinfo_f (ucmd_t *cmd)
 {
 	Info_Print (svs.info);
 }
 
 void
-SV_NoSnap_f (void)
+SV_NoSnap_f (ucmd_t *cmd)
 {
 	if (*host_client->uploadfn) {
 		*host_client->uploadfn = 0;
@@ -1181,12 +1190,6 @@ SV_NoSnap_f (void)
 							host_client->name);
 	}
 }
-
-typedef struct {
-	const char *name;
-	void        (*func) (void);
-	int         no_redirect;
-} ucmd_t;
 
 ucmd_t      ucmds[] = {
 	{"new", SV_New_f},
@@ -1221,12 +1224,60 @@ ucmd_t      ucmds[] = {
 
 };
 
-static int
-ucmds_compare (const void *_a, const void *_b)
+static hashtab_t *ucmd_table;
+
+static void
+call_qc_hook (ucmd_t *cmd)
+{
+	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
+	PR_ExecuteProgram (&sv_pr_state, cmd->qc_hook);
+}
+
+static const char *
+ucmds_getkey (void *_a, void *unused)
 {
 	ucmd_t *a = (ucmd_t*)_a;
-	ucmd_t *b = (ucmd_t*)_b;
-	return strcmp (a->name, b->name);
+	return a->name;
+}
+
+static void
+ucmds_free (void *_c, void *unused)
+{
+	ucmd_t *c = (ucmd_t*)_c;
+	if (c->freeable) {
+		free ((char *)c->name);
+		free (c);
+	}
+}
+
+void
+SV_AddUserCommand (progs_t *pr)
+{
+	ucmd_t     *cmd;
+	const char *name = P_STRING (pr, 0);
+
+	cmd = Hash_Find (ucmd_table, name);
+	if (cmd) {
+		SV_Printf ("%s already a user command\n", name);
+		return;
+	}
+	cmd = malloc (sizeof (ucmd_t));
+	cmd->freeable = 1;
+	cmd->name = strdup (name);
+	cmd->func = call_qc_hook;
+	cmd->qc_hook = P_FUNCTION (pr, 1);
+	cmd->no_redirect = P_INT (pr, 2);
+	Hash_Add (ucmd_table, cmd);
+}
+
+void
+SV_SetupUserCommands (void)
+{
+	int         i;
+
+	Hash_FlushTable (ucmd_table);
+	for (i = 0; i < sizeof (ucmds) / sizeof (ucmds[0]); i++)
+		Hash_Add (ucmd_table, &ucmds[i]);
 }
 
 /*
@@ -1238,14 +1289,11 @@ void
 SV_ExecuteUserCommand (const char *s)
 {
 	ucmd_t     *u;
-	ucmd_t		cmd;
 
 	Cmd_TokenizeString (s, true);
 	sv_player = host_client->edict;
-	cmd.name = Cmd_Argv(0);
 
-	u = (ucmd_t*) bsearch (&cmd, ucmds, sizeof (ucmds) / sizeof (ucmds[0]),
-						   sizeof (ucmds[0]), ucmds_compare);
+	u = (ucmd_t*) Hash_Find (ucmd_table, Cmd_Argv(0));
 
 	if (!u) {
 		SV_BeginRedirect (RD_CLIENT);
@@ -1254,7 +1302,7 @@ SV_ExecuteUserCommand (const char *s)
 	} else {
 		if (!u->no_redirect)
 			SV_BeginRedirect (RD_CLIENT);
-		u->func ();
+		u->func (u);
 		if (!u->no_redirect)
 			SV_EndRedirect ();
 	}
@@ -1795,8 +1843,8 @@ SV_ExecuteClientMessage (client_t *cl)
 void
 SV_UserInit (void)
 {
-	qsort (ucmds, sizeof (ucmds) / sizeof (ucmds[0]), sizeof (ucmds[0]),
-		   ucmds_compare);
+	ucmd_table = Hash_NewTable (251, ucmds_getkey, ucmds_free, 0);
+	PR_AddBuiltin (&sv_pr_state, "SV_AddUserCommand", SV_AddUserCommand, -1);
 	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,
 			"How quickly a player straightens out after strafing");
 	cl_rollangle = Cvar_Get ("cl_rollangle", "2", CVAR_NONE, NULL,
