@@ -541,6 +541,7 @@ int	ReuseString (const char *str);
 typedef struct {
 	int		cow;		// copy on write for constants
 	int		version;	// maximum progs version to support (eg, 6 for id)
+	int		warn_error;	// treat warnings as errors
 } options_t;
 
 extern options_t options;

@@ -100,6 +100,11 @@ warning (expr_t *e, const char *fmt, ...)
 	va_list     args;
 	string_t file = s_file;
 	int line = pr_source_line;
+
+	if (options.warn_error) {
+		options.warn_error = 0;		// only want to do this once
+		error (e, "warnings treated as errors");
+	}
 	
 	va_start (args, fmt);
 	if (e) {

@@ -853,6 +853,7 @@ Options: \n\
 	-V, --version		output version information and exit\n\
 	--cow			allow assignment to initialized globals\n\
 	--id			only support id (progs version 6) features\n\
+	--warn=error	treat warnings as errors\n\
 ");
 		return 1;
 	}
@@ -878,6 +879,11 @@ Options: \n\
 
 	if (CheckParm ("--id")) {
 		options.version = PROG_ID_VERSION;
+	}
+
+	// FIXME eww, really must go to getopt
+	if (CheckParm ("--warn=error")) {
+		options.warn_error = 1;
 	}
 
 	if (strcmp (sourcedir, ".")) {
