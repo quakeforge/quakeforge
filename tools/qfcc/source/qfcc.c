@@ -53,6 +53,7 @@ static const char rcsid[] =
 #endif
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 
 #include <QF/cbuf.h>
 #include <QF/idparse.h>
@@ -201,7 +202,8 @@ WriteData (int crc)
 		printf ("%6i entity fields\n", pr.entity_data->size);
 	}
 
-	h = Qopen (options.output_file, "wb");
+	if (!(h = Qopen (options.output_file, "wb")))
+		Sys_Error ("%s: %s\n", options.output_file, strerror(errno));
 	Qwrite (h, &progs, sizeof (progs));
 
 	progs.ofs_strings = Qtell (h);
@@ -278,7 +280,8 @@ WriteData (int crc)
 		return 0;
 	}
 
-	h = Qopen (options.output_file, "rb");
+	if (!(h = Qopen (options.output_file, "rb")))
+		Sys_Error ("%s: %s\n", options.output_file, strerror(errno));
 
 	debug.version = LittleLong (PROG_DEBUG_VERSION);
 	CRC_Init (&debug.crc);
@@ -288,7 +291,8 @@ WriteData (int crc)
 	debug.crc = LittleShort (debug.crc);
 	debug.you_tell_me_and_we_will_both_know = 0;
 
-	h = Qopen (debugfile, "wb");
+	if (!(h = Qopen (debugfile, "wb")))
+		Sys_Error ("%s: %s\n", options.output_file, strerror(errno));
 	Qwrite (h, &debug, sizeof (debug));
 
 	debug.auxfunctions = LittleLong (Qtell (h));

@@ -285,6 +285,8 @@ qfo_write (qfo_t *qfo, const char *filename)
 	QFile      *file;
 
 	file = Qopen (filename, "wbz9");
+	if (!file)
+		return -1;
 
 	memset (&hdr, 0, sizeof (hdr));
 
