@@ -38,6 +38,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/progs.h"
 #include "QF/ruamoko.h"
 
+#include "rua_internal.h"
 
 typedef struct {
 	cbuf_t     *cbuf;
@@ -111,7 +112,7 @@ static builtin_t builtins[] = {
 };
 
 void
-RUA_Cbuf_Init (progs_t *pr)
+RUA_Cbuf_Init (progs_t *pr, int secure)
 {
 	cbuf_resources_t *res = calloc (sizeof (cbuf_resources_t), 1);
 	PR_Resources_Register (pr, "Cbuf", res, bi_cbuf_clear);
@@ -119,7 +120,7 @@ RUA_Cbuf_Init (progs_t *pr)
 }
 
 void
-Cbuf_Progs_SetCbuf (progs_t *pr, cbuf_t *cbuf)
+RUA_Cbuf_SetCbuf (progs_t *pr, cbuf_t *cbuf)
 {
 	cbuf_resources_t *res = PR_Resources_Find (pr, "Cbuf");
 	res->cbuf = cbuf;

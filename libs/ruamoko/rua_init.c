@@ -34,20 +34,26 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/progs.h"
 #include "QF/ruamoko.h"
 
-#define U __attribute__ ((unused))
-static U void (*const cbuf_progs_init)(progs_t *) = RUA_Cbuf_Init;
-static U void (*const cmd_progs_init)(progs_t *) = RUA_Cmd_Init;
-static U void (*const cvar_progs_init)(progs_t *) = RUA_Cvar_Init;
-static U void (*const file_progs_init)(progs_t *) = RUA_File_Init;
-static U void (*const hash_progs_init)(progs_t *) = RUA_Hash_Init;
-static U void (*const plist_progs_init)(progs_t *) = RUA_Plist_Init;
-static U void (*const qfile_progs_init)(progs_t *, int) = RUA_QFile_Init;
-static U void (*const qfs_progs_init)(progs_t *) = RUA_QFS_Init;
-static U void (*const string_progs_init)(progs_t *) = RUA_String_Init;
-#undef U
+#include "rua_internal.h"
+
+static void (*init_funcs[])(progs_t *, int) = {
+	RUA_Cbuf_Init,
+	RUA_Cmd_Init,
+	RUA_Cvar_Init,
+	RUA_File_Init,
+	RUA_Hash_Init,
+	RUA_Plist_Init,
+	RUA_QFile_Init,
+	RUA_QFS_Init,
+	RUA_String_Init,
+};
 
 void
-RUA_Init (void)
+RUA_Init (progs_t *pr, int secure)
 {
-	// do nothing stub for now. used to force linking
+	int         i;
+
+	PR_Resources_Init (pr);
+	for (i = 0; i < sizeof (init_funcs) / sizeof (init_funcs[0]); i++)
+		init_funcs[i] (pr, secure);
 }

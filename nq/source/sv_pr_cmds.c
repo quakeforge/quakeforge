@@ -44,6 +44,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
+#include "QF/ruamoko.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
@@ -1411,8 +1412,10 @@ static builtin_t builtins[] = {
 void
 SV_PR_Cmds_Init ()
 {
-	PR_Cmds_Init (&sv_pr_state);
 	PR_Obj_Progs_Init (&sv_pr_state);
+	RUA_Init (&sv_pr_state, 1);
+
+	PR_Cmds_Init (&sv_pr_state);
 
 	PR_RegisterBuiltins (&sv_pr_state, builtins);
 }

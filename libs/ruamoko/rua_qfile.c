@@ -41,9 +41,10 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "QF/progs.h"
 #include "QF/quakefs.h"
-#include "QF/ruamoko.h"
 #include "QF/va.h"
 #include "QF/zone.h"
+
+#include "rua_internal.h"
 
 static void
 bi_qfile_clear (progs_t *pr, void *data)

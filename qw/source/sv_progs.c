@@ -38,7 +38,6 @@
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/quakefs.h"
-#include "QF/ruamoko.h"
 #include "QF/sys.h"
 
 #include "compat.h"
@@ -392,11 +391,8 @@ SV_Progs_Init (void)
 	sv_pr_state.free_edict = free_edict; // eww, I hate the need for this :(
 	sv_pr_state.bi_map = bi_map;
 
-	PR_Resources_Init (&sv_pr_state);
 	SV_PR_Cmds_Init ();
 	SV_PR_QWE_Init (&sv_pr_state);
-	RUA_Cmd_Init (&sv_pr_state);
-	RUA_Hash_Init (&sv_pr_state);
 
 	Cmd_AddCommand ("edict", ED_PrintEdict_f, "Report information on a given "
 					"edict in the game. (edict (edict number))");

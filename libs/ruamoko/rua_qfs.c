@@ -41,9 +41,10 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "QF/progs.h"
 #include "QF/quakefs.h"
-#include "QF/ruamoko.h"
 #include "QF/va.h"
 #include "QF/zone.h"
+
+#include "rua_internal.h"
 
 static void
 check_buffer (progs_t *pr, pr_type_t *buf, int count, const char *name)
@@ -125,7 +126,7 @@ static builtin_t builtins[] = {
 };
 
 void
-RUA_QFS_Init (progs_t *pr)
+RUA_QFS_Init (progs_t *pr, int secure)
 {
 	PR_RegisterBuiltins (pr, builtins);
 }

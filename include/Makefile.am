@@ -9,8 +9,8 @@ EXTRA_DIST = asm_i386.h alsa_funcs_list.h adivtab.h anorm_dots.h anorms.h \
 	gib_thread.h gib_tree.h gib_vars.h gl_warp_sin.h in_win.h logos.h menu.h \
 	net_dgrm.h net_loop.h net_udp.h net_vcr.h net_wins.h netchan.h netmain.h \
 	old_keys.h ops.h qstring.h quakeasm.h regex.h r_cvar.h r_dynamic.h \
-	r_local.h r_screen.h r_shared.h sbar.h skin_stencil.h snd_render.h \
-	varrays.h vgamodes.h view.h vregset.h winquake.h world.h \
+	r_local.h r_screen.h r_shared.h rua_internal.h sbar.h skin_stencil.h \
+	snd_render.h varrays.h vgamodes.h view.h vregset.h winquake.h world.h \
 	\
 	win32/fnmatch.h \
 	\

@@ -56,9 +56,10 @@ int         fnmatch (const char *__pattern, const char *__string, int __flags);
 #include "QF/cvar.h"
 #include "QF/progs.h"
 #include "QF/quakefs.h"
-#include "QF/ruamoko.h"
 #include "QF/va.h"
 #include "QF/zone.h"
+
+#include "rua_internal.h"
 
 static const char *file_ban_list[] = {
 	"default.cfg{,.gz}",
@@ -179,7 +180,7 @@ static builtin_t builtins[] = {
 };
 
 void
-RUA_File_Init (progs_t *pr)
+RUA_File_Init (progs_t *pr, int secure)
 {
 	PR_RegisterBuiltins (pr, builtins);
 }

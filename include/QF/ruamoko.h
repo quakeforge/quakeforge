@@ -32,35 +32,10 @@
 #ifndef __QF_ruamoko_h
 #define __QF_ruamoko_h
 
-
 struct progs_s;
 struct cbuf_s;
 
-void RUA_Init (void);
-
-void RUA_Cbuf_Init (struct progs_s *pr);
-void Cbuf_Progs_SetCbuf (struct progs_s *pr, struct cbuf_s *cbuf);
-
-void RUA_Cmd_Init (struct progs_s *pr);
-
-void RUA_Cvar_Init (struct progs_s *pr);
-
-void RUA_File_Init (struct progs_s *pr);
-
-void RUA_Hash_Init (struct progs_s *pr);
-
-void RUA_Plist_Init (struct progs_s *pr);
-
-void RUA_String_Init (struct progs_s *pr);
-
-#include "QF/quakeio.h"
-#define QFILE_MAX_HANDLES 20
-typedef struct {
-	QFile      *handles[QFILE_MAX_HANDLES];
-} qfile_resources_t;
-
-void RUA_QFile_Init (struct progs_s *pr, int secure);
-QFile **QFile_AllocHandle (struct progs_s *pr, qfile_resources_t *res);
-void RUA_QFS_Init (struct progs_s *pr);
+void RUA_Init (struct progs_s *pr, int secure);
+void RUA_Cbuf_SetCbuf (struct progs_s *pr, struct cbuf_s *cbuf);
 
 #endif//__QF_ruamoko_h

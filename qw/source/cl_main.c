@@ -1685,7 +1685,6 @@ Host_Init (void)
 	VID_Init_Cvars ();
 
 	PR_Init ();
-	RUA_Init ();
 
 	CL_Chat_Init ();
 

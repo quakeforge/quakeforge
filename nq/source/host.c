@@ -44,7 +44,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/plugin.h"
 #include "QF/progs.h"
 #include "QF/qargs.h"
-#include "QF/ruamoko.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/va.h"
@@ -917,7 +916,6 @@ Host_Init (void)
 	V_Init_Cvars ();
 
 	PR_Init ();
-	RUA_Init ();
 
 	V_Init ();
 	Game_Init ();

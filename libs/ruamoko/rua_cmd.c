@@ -45,8 +45,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/hash.h"
 #include "QF/progs.h"
-#include "QF/ruamoko.h"
 #include "QF/sys.h"
+
+#include "rua_internal.h"
 
 typedef struct bi_cmd_s {
 	struct bi_cmd_s *next;
@@ -156,7 +157,7 @@ static builtin_t builtins[] = {
 };
 
 void
-RUA_Cmd_Init (progs_t *pr)
+RUA_Cmd_Init (progs_t *pr, int secure)
 {
 	cmd_resources_t *res = malloc (sizeof (cmd_resources_t));
 

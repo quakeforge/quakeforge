@@ -40,8 +40,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "QF/cvar.h"
 #include "QF/progs.h"
-#include "QF/ruamoko.h"
 #include "QF/zone.h"
+
+#include "rua_internal.h"
 
 /*
     bi_Cvar_GetCvarString
@@ -62,7 +63,7 @@ static builtin_t builtins[] = {
 };
 
 void
-RUA_Cvar_Init (progs_t *pr)
+RUA_Cvar_Init (progs_t *pr, int secure)
 {
 	PR_RegisterBuiltins (pr, builtins);
 }

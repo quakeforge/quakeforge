@@ -445,27 +445,19 @@ Menu_Init (void)
 	menu_pr_state.free_progs_mem = menu_free_progs_mem;
 	menu_pr_state.load_file = menu_load_file;
 
-	PR_Resources_Init (&menu_pr_state);
-
 	menu_hash = Hash_NewTable (61, menu_get_key, menu_free, 0);
 
 	PR_RegisterBuiltins (&menu_pr_state, builtins);
 
 	PR_Obj_Progs_Init (&menu_pr_state);
 
+	RUA_Init (&menu_pr_state, 1);
+
 	InputLine_Progs_Init (&menu_pr_state);
 	Key_Progs_Init (&menu_pr_state);
 	GIB_Progs_Init (&menu_pr_state);
 	PR_Cmds_Init (&menu_pr_state);
 	R_Progs_Init (&menu_pr_state);
-
-	RUA_Cbuf_Init (&menu_pr_state);
-	RUA_Cmd_Init (&menu_pr_state);
-	RUA_Cvar_Init (&menu_pr_state);
-	RUA_File_Init (&menu_pr_state);
-	RUA_QFile_Init (&menu_pr_state, 1);
-	RUA_QFS_Init (&menu_pr_state);
-	RUA_String_Init (&menu_pr_state);
 
 	PR_AddLoadFunc (&menu_pr_state, menu_resolve_globals);
 
@@ -508,7 +500,7 @@ Menu_Load (void)
 		Con_SetOrMask (0x00);
 		return;
 	}
-	Cbuf_Progs_SetCbuf (&menu_pr_state, con_data.cbuf);
+	RUA_Cbuf_SetCbuf (&menu_pr_state, con_data.cbuf);
 	InputLine_Progs_SetDraw (&menu_pr_state, C_DrawInputLine);
 	PR_ExecuteProgram (&menu_pr_state, menu_init);
 }
