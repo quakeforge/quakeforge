@@ -424,148 +424,241 @@ R_TeleportSplash (vec3_t org)
 }
 
 void
-R_RocketTrail (int type, entity_t *ent)
+R_RocketParticles (entity_t *ent)
 {
-	byte        palpha, pcolor;
-	float       dist, len, pdie, pscale, pscalenext;
-	int         ptex, j;
-	ptype_t     ptype;
-	vec3_t      porg, pvel, subtract, vec;
+	float		dist, len, pscale, pscalenext;
+	vec3_t		subtract, vec;
 
-	if (type == 0)
-		R_AddFire (ent->old_origin, ent->origin, ent);
-
-	if (!r_particles->int_val)
-		return;
+	R_AddFire (ent->old_origin, ent->origin, ent);
 
 	VectorSubtract (ent->origin, ent->old_origin, vec);
 	len = VectorNormalize (vec);
-	pdie = r_realtime + 2;
-	ptex = part_tex_dot;
-	ptype = pt_static;
-	palpha = 255;
-	pcolor = 0;
-	pscale = pscalenext = 4.5;
-	dist = 3;
-/*
-  This switch isn't just to avoid unnecessary variable unassignments, the main
-  use is to set the first pscale, since you need both it and the next to
-  calculate the distance to the 2nd particle -- Despair
-*/
-	switch (type) {
-		case 0:					// rocket trail
-			pscale = 1.5 + qfrandom (1.5);
-			ptype = pt_smoke;
-			break;
-		case 1:					// grenade trail
-			pscale = 6.0 + qfrandom (7.0);
-			ptype = pt_smoke;
-			break;
-		case 2:					// blood
-			pscale = 5.0 + qfrandom (10.0);
-			ptype = pt_grav;
-			break;
-		case 4:					// slight blood
-			palpha = 192;
-			pdie = r_realtime + 1.5;
-			pscale = 1.5 + qfrandom (7.5);
-			ptype = pt_grav;
-			break;
-		case 3:					// green tracer
-			pdie = r_realtime + 0.5;
-			ptype = pt_fire;
-			break;
-		case 5:					// flame tracer
-			pdie = r_realtime + 0.5;
-			ptype = pt_fire;
-			break;
-		case 6:					// voor trail
-			pdie = r_realtime + 0.3;
-			ptex = part_tex_dot;
-			ptype = pt_static;
-			break;
+	pscale = 1.5 + qfrandom (1.5);
+
+	while (len > 0) {
+		pscalenext = 1.5 + qfrandom (1.5);
+		dist =  (pscale + pscalenext) * 1.3;
+
+		VectorScale (vec, min(dist, len), subtract);
+		VectorAdd (ent->old_origin, subtract, ent->old_origin);
+		len -= dist;
+
+		// Misty-chan's Easter Egg: change color to (rand () & 255)
+		particle_new (pt_smoke, part_tex_smoke[rand () & 7], ent->old_origin,
+					  pscale, vec3_origin, r_realtime + 2.0,
+					  12 + (rand () & 3), 128 + (rand () & 31));
+		pscale = pscalenext;
 	}
+}
+
+void
+R_GrenadeParticles (entity_t *ent)
+{
+	float		dist, len, pscale, pscalenext;
+	vec3_t		subtract, vec;
+
+	VectorSubtract (ent->origin, ent->old_origin, vec);
+	len = VectorNormalize (vec);
+	pscale = 6.0 + qfrandom (7.0);
+
+	while (len > 0) {
+		pscalenext = 6.0 + qfrandom (7.0);
+		dist =  (pscale + pscalenext) * 2.0;
+
+		VectorScale (vec, min(dist, len), subtract);
+		VectorAdd (ent->old_origin, subtract, ent->old_origin);
+		len -= dist;
+
+		// Misty-chan's Easter Egg: change color to (rand () & 255)
+		particle_new (pt_smoke, part_tex_smoke[rand () & 7], ent->old_origin,
+					  pscale, vec3_origin, r_realtime + 2.0, (rand () & 3),
+					  128 + (rand () & 31));
+		pscale = pscalenext;
+	}
+}
+
+void
+R_BloodParticles (entity_t *ent)
+{
+	float		dist, len, pscale, pscalenext;
+	int			j;
+	vec3_t		subtract, vec, porg, pvel;
+
+	VectorSubtract (ent->origin, ent->old_origin, vec);
+	len = VectorNormalize (vec);
+	pscale = 5.0 + qfrandom (10.0);
 
 	while (len > 0) {
 		VectorCopy (vec3_origin, pvel);
+		VectorCopy (ent->old_origin, porg);
 
-		switch (type) {
-			case 0:					// rocket trail
-				pscalenext = 1.5 + qfrandom (1.5);
-				dist =  (pscale + pscalenext) * 1.3;
-//				pcolor = (rand () & 255); // Misty-chan's Easter Egg
-				pcolor = (rand () & 3) + 12;
-				palpha = 128 + (rand () & 31);
-				VectorCopy (ent->old_origin, porg);
-				ptex = part_tex_smoke[rand () & 7];
-				break;
-			case 1:					// grenade trail
-			pscalenext = 6.0 + qfrandom (7.0);
-				dist = (pscale + pscalenext) * 2;
-//				pcolor = (rand () & 255); // Misty-chan's Easter Egg
-				pcolor = (rand () & 3);
-				palpha = 128 + (rand () & 31);
-				VectorCopy (ent->old_origin, porg);
-				ptex = part_tex_smoke[rand () & 7];
-				break;
-			case 2:					// blood
-				pscalenext = 5.0 + qfrandom (10.0);
-				dist = (pscale + pscalenext) * 1.5;
-				ptex = part_tex_smoke[rand () & 7];
-				pcolor = 68 + (rand () & 3);
-				for (j = 0; j < 3; j++) {
-					pvel[j] = (qfrandom (6) - 3) * type;
-					porg[j] = ent->old_origin[j] + qfrandom (3.0) - 1.5;
-				}
-				break;
-			case 4:					// slight blood
-				pscalenext =  1.5 + qfrandom (7.5);
-				dist = (pscale + pscalenext) * 1.5;
-				ptex = part_tex_smoke[rand () & 7];
-				pcolor = 68 + (rand () & 3);
-				for (j = 0; j < 3; j++) {
-					pvel[j] = (qfrandom (6) - 3) * type;
-					porg[j] = ent->old_origin[j] + qfrandom (3.0) - 1.5;
-				}
-				break;
-			case 3:					// green tracer
-			case 5:					// flame tracer
-			{
-				static int  tracercount;
+		pscalenext = 5.0 + qfrandom (10.0);
+		dist =  (pscale + pscalenext) * 1.5;
 
-				ptex = part_tex_smoke[rand () & 7];
-				pscale = 2.0 + qfrandom (1.0);
-				if (type == 3)
-					pcolor = 52 + ((tracercount & 4) << 1);
-				else
-					pcolor = 234;
-
-				tracercount++;
-
-				VectorCopy (ent->old_origin, porg);
-				if (tracercount & 1) {
-					pvel[0] = 30 * vec[1];
-					pvel[1] = 30 * -vec[0];
-				} else {
-					pvel[0] = 30 * -vec[1];
-					pvel[1] = 30 * vec[0];
-				}
-			}
-			break;
-			case 6:					// voor trail
-				pcolor = 9 * 16 + 8 + (rand () & 3);
-				pscale = 1.0 + qfrandom (1.0);
-				for (j = 0; j < 3; j++)
-					porg[j] = ent->old_origin[j] + qfrandom (16.0) - 8.0;
-				break;
+		for (j = 0; j < 3; j++) {
+			pvel[j] = (qfrandom (6.0) - 3.0) * 4.0;
+			porg[j] = ent->old_origin[j] + qfrandom (3.0) - 1.5;
 		}
 
 		VectorScale (vec, min(dist, len), subtract);
 		VectorAdd (ent->old_origin, subtract, ent->old_origin);
 		len -= dist;
 
-		particle_new (ptype, ptex, porg, pscale, pvel, pdie, pcolor, palpha);
+		particle_new (pt_grav, part_tex_smoke[rand () & 7], porg, pscale, pvel,
+					  r_realtime + 2.0, 68 + (rand () & 3), 255);
 		pscale = pscalenext;
+	}
+}
+
+void
+R_SlightBloodParticles (entity_t *ent)
+{
+	float		dist, len, pscale, pscalenext;
+	int			j;
+	vec3_t      subtract, vec, porg, pvel;
+
+	VectorSubtract (ent->origin, ent->old_origin, vec);
+	len = VectorNormalize (vec);
+	pscale = 1.5 + qfrandom (7.5);
+
+	while (len > 0) {
+		VectorCopy (vec3_origin, pvel);
+		VectorCopy (ent->old_origin, porg);
+
+		pscalenext = 1.5 + qfrandom (7.5);
+		dist = (pscale + pscalenext) * 1.5;
+
+		for (j = 0; j < 3; j++) {
+			pvel[j] = (qfrandom (6.0) - 3.0) * 2.0;
+			porg[j] = ent->old_origin[j] + qfrandom (3.0) - 1.5;
+		}
+
+		VectorScale (vec, min(dist, len), subtract);
+		VectorAdd (ent->old_origin, subtract, ent->old_origin);
+		len -= dist;
+
+		particle_new (pt_grav, part_tex_smoke[rand () & 7], porg, pscale, pvel,
+					  r_realtime + 1.5, 68 + (rand () & 3), 192);
+		pscale = pscalenext;
+	}
+}
+
+void
+R_GreenParticles (entity_t *ent)
+{
+	float		dist, len;
+	static int	tracercount;
+	vec3_t		subtract, vec, pvel;
+
+	VectorSubtract (ent->origin, ent->old_origin, vec);
+	len = VectorNormalize (vec);
+	dist = 3.0;
+
+	while (len > 0) {
+		VectorCopy (vec3_origin, pvel);
+		tracercount++;
+		if (tracercount & 1) {
+			pvel[0] = 30 * vec[1];
+			pvel[1] = 30 * -vec[0];
+		} else {
+			pvel[0] = 30 * -vec[1];
+			pvel[1] = 30 * vec[0];
+		}
+
+		VectorScale (vec, min(dist, len), subtract);
+		VectorAdd (ent->old_origin, subtract, ent->old_origin);
+		len -= dist;
+
+		particle_new (pt_fire, part_tex_smoke[rand () & 7], ent->old_origin,
+					  2.0 + qfrandom (1.0), pvel, r_realtime + 0.5,
+					  52 + (rand () & 4), 255);
+	}
+}
+
+void
+R_FlameParticles (entity_t *ent)
+{
+	float		dist, len;
+	static int	tracercount;
+	vec3_t		subtract, vec, pvel;
+
+	VectorSubtract (ent->origin, ent->old_origin, vec);
+	len = VectorNormalize (vec);
+	dist = 3.0;
+
+	while (len > 0) {
+		VectorCopy (vec3_origin, pvel);
+		tracercount++;
+		if (tracercount & 1) {
+			pvel[0] = 30 * vec[1];
+			pvel[1] = 30 * -vec[0];
+		} else {
+			pvel[0] = 30 * -vec[1];
+			pvel[1] = 30 * vec[0];
+		}
+
+		VectorScale (vec, min(dist, len), subtract);
+		VectorAdd (ent->old_origin, subtract, ent->old_origin);
+		len -= dist;
+
+		particle_new (pt_fire, part_tex_smoke[rand () & 7], ent->old_origin,
+					  2.0 + qfrandom (1.0), pvel, r_realtime + 0.5, 234, 255);
+	}
+}
+
+void
+R_VoorParticles (entity_t *ent)
+{
+	float		dist, len;
+	int			j;
+	vec3_t		subtract, vec, porg;
+
+	VectorSubtract (ent->origin, ent->old_origin, vec);
+	len = VectorNormalize (vec);
+	dist = 3.0;
+
+	while (len > 0) {
+		for (j = 0; j < 3; j++)
+			porg[j] = ent->old_origin[j] + qfrandom (16.0) - 8.0;
+
+		VectorScale (vec, min(dist, len), subtract);
+		VectorAdd (ent->old_origin, subtract, ent->old_origin);
+		len -= dist;
+
+		particle_new (pt_static, part_tex_dot, porg, 1.0 + qfrandom (1.0),
+					  vec3_origin, r_realtime + 0.3,
+					  9 * 16 + 8 + (rand () & 3), 255);
+	}
+}
+
+void
+R_RocketTrail (int type, entity_t *ent)
+{
+	if (!r_particles->int_val)
+		return;
+
+	switch (type) {
+		case 0:					// rocket trail
+			R_RocketParticles (ent);
+			break;
+		case 1:					// grenade trail
+			R_GrenadeParticles (ent);
+			break;
+		case 2:					// blood
+			R_BloodParticles (ent);
+			break;
+		case 4:					// slight blood
+			R_SlightBloodParticles (ent);
+			break;
+		case 3:					// green tracer
+			R_GreenParticles (ent);
+			break;
+		case 5:					// flame tracer
+			R_FlameParticles (ent);
+			break;
+		case 6:					// voor trail
+			R_VoorParticles (ent);
+			break;
 	}
 }
 
