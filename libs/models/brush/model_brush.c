@@ -51,7 +51,6 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-extern int	mod_lightmap_bytes;
 byte        mod_novis[MAX_MAP_LEAFS / 8];
 cvar_t		*gl_sky_divide;
 
