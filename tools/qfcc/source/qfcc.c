@@ -716,8 +716,10 @@ DecodeArgs (int argc, char **argv)
 #ifdef USE_CPP
 	for (c = 0; c < CPP_MAX_ARGS; cpp_argv[c++] = NULL);	// clear the args
 	cpp_argv[cpp_argc++] = "cpp";
-	cpp_argv[cpp_argc++] = "-D__QUAKEC__=1";
 	cpp_argv[cpp_argc++] = "-D__QFCC__=1";
+	cpp_argv[cpp_argc++] = "-D__QUAKEC__=1";
+	cpp_argv[cpp_argc++] = "-D__RUAMOKO__=1";
+	cpp_argv[cpp_argc++] = "-D__RAUMOKO__=1";
 #endif
 
 	options.code.cpp = true;
