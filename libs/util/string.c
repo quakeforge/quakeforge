@@ -74,6 +74,8 @@ Q_snprintfz (char *dest, size_t size, const char *fmt, ...)
 	int   len;
 	va_list  argptr;
 
+	if (!size)
+		return -1;
 	va_start (argptr, fmt);
 	len = _vsnprintf (dest, size - 1, fmt, argptr);
 	va_end (argptr);
@@ -87,6 +89,8 @@ Q_vsnprintfz (char *dest, size_t size, const char *fmt, va_list argptr)
 {
 	int   len;
 
+	if (!size)
+		return -1;
 	len = _vsnprintf (dest, size - 1, fmt, argptr);
 
 	if (len < 0) // the string didn't fit into the buffer
