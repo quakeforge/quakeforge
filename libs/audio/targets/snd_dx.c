@@ -54,15 +54,11 @@ HRESULT (WINAPI * pDirectSoundCreate) (GUID FAR * lpGUID,
 
 typedef enum { SIS_SUCCESS, SIS_FAILURE, SIS_NOTAVAIL } sndinitstat;
 
-static qboolean wavonly;
 static qboolean dsound_init;
-static qboolean wav_init;
-static qboolean snd_firsttime = true, snd_isdirect, snd_iswave;
+static qboolean snd_firsttime = true;
 static qboolean primary_format_set;
 
 static int  sample16;
-static int  snd_sent, snd_completed;
-static int snd_blocked = 0;
 static volatile dma_t sn;
 
 /*
@@ -90,7 +86,6 @@ static LPDIRECTSOUNDBUFFER pDSBuf, pDSPBuf;
 static HINSTANCE   hInstDS;
 
 static sndinitstat SNDDMA_InitDirect (void);
-static qboolean    SNDDMA_InitWav (void);
 
 static plugin_t				plugin_info;
 static plugin_data_t		plugin_info_data;
@@ -120,8 +115,6 @@ SNDDMA_UnblockSound (void)
 static void
 FreeSound (void)
 {
-	int         i;
-
 	if (pDSBuf) {
 		IDirectSoundBuffer_Stop (pDSBuf);
 		IDirectSound_Release (pDSBuf);
@@ -362,7 +355,6 @@ SNDDMA_Init (void)
 		stat = SNDDMA_InitDirect ();
 
 		if (stat == SIS_SUCCESS) {
-			snd_isdirect = true;
 			Sys_Printf ("DirectSound initialized\n");
 		} else {
 			Sys_Printf ("DirectSound failed to init\n");
@@ -493,7 +485,7 @@ DSOUND_Restore (void)
 	if (!pDSBuf)
 		return;
 
-	if (IDirectSoundBuffer_GetStatus (pDSBuf, &dwStatus) != DD_OK)
+	if (IDirectSoundBuffer_GetStatus (pDSBuf, &dwStatus) != DS_OK)
 		Sys_Printf ("Couldn't get sound buffer status\n");
 
 	if (dwStatus & DSBSTATUS_BUFFERLOST)

@@ -61,9 +61,6 @@
 # ifdef MINGW_HACKS
 #  undef WINNT
 # endif
-# ifdef HAVE_DDRAW_H
-#  include <ddraw.h>
-# endif
 # ifdef MINGW_HACKS
 #  define WINNT
 # endif
@@ -74,9 +71,6 @@
 # include <windows.h>
 # ifdef HAVE_DSOUND_H
 #  include <dsound.h>
-# endif
-# ifdef HAVE_DDRAW_H
-#  include <ddraw.h>
 # endif
 #endif
 
