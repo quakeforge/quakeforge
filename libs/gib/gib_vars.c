@@ -117,16 +117,23 @@ GIB_Var_Get_Complex (hashtab_t ** first, hashtab_t ** second, char *key,
 						key[n] = 0;
 						break;
 					}
-			if (!(var = GIB_Var_Get (*first, *second, key+start))) {
-				if (create) {
-					var = GIB_Var_New (key+start);
-					if (!*first)
-						*first = Hash_NewTable (256, GIB_Var_Get_Key, GIB_Var_Free, 0);
-					Hash_Add (*first, var);
-				} else
-					return 0;
+			if (!(var = GIB_Var_Get (*first, *second, key+start)) && create) {
+				var = GIB_Var_New (key+start);
+				if (!*first)
+					*first = Hash_NewTable (256, GIB_Var_Get_Key, GIB_Var_Free, 0);
+				Hash_Add (*first, var);
 			}
-			if (index >= var->size) {
+			
+			// We are done looking up/creating var, fix up key
+			if (n)
+				key[n] = '[';
+			if (i < len)
+				key[i] = '.';
+				
+			// Give up
+			if (!var)
+				return 0;
+			else if (index >= var->size) {
 				if (create) {
 					var->array =
 						realloc (var->array, (index + 1) * sizeof (struct gib_varray_s));
@@ -139,10 +146,6 @@ GIB_Var_Get_Complex (hashtab_t ** first, hashtab_t ** second, char *key,
 			second = &zero;
 			first = &var->array[index].leaves;
 			start = i+1;
-			if (n)
-				key[n] = '[';
-			if (i < len)
-				key[i] = '.';
 		}
 	}
 	if (!var->array[index].value)
