@@ -262,7 +262,6 @@ static keyword_t keywords[] = {
 	{"enum",		ENUM,	0,					0, PROG_ID_VERSION},
 	{"typedef",		TYPEDEF, 0,					0, PROG_ID_VERSION},
 	{"super",		SUPER,	0,					0, PROG_VERSION},
-	{"SELF",		SELF,	0,					0, PROG_VERSION},
 
 	{"@class",		CLASS,	0,					0, PROG_VERSION},
 	{"@defs",		DEFS,	0,					0, PROG_VERSION},
@@ -275,6 +274,7 @@ static keyword_t keywords[] = {
 	{"@protocol",	PROTOCOL, 0,				0, PROG_VERSION},
 	{"@public",		PUBLIC,	0,					0, PROG_VERSION},
 	{"@selector",	SELECTOR, 0,				0, PROG_VERSION},
+	{"@self",		SELF,	0,					0, PROG_VERSION},
 };
 
 static const char *

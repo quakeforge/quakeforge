@@ -469,6 +469,15 @@ new_def_expr (def_t *def)
 }
 
 expr_t *
+new_self_expr (void)
+{
+	def_t      *def = PR_GetDef (&type_entity, ".self", 0, &numpr_globals);
+
+	PR_DefInitialized (def);
+	return new_def_expr (def);
+}
+
+expr_t *
 append_expr (expr_t *block, expr_t *e)
 {
 	if (block->type != ex_block)

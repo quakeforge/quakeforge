@@ -781,6 +781,7 @@ expr
 	| expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
 	| obj_expr					{ $$ = $1; }
 	| NAME						{ $$ = new_name_expr ($1); }
+	| SELF						{ $$ = new_self_expr (); }
 	| const						{ $$ = $1; }
 	| '(' expr ')'				{ $$ = $2; $$->paren = 1; }
 	;

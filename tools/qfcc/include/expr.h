@@ -134,6 +134,7 @@ expr_t *new_temp_def_expr (type_t *type);
 expr_t *new_bind_expr (expr_t *e1, expr_t *e2);
 expr_t *new_name_expr (const char *name);
 expr_t *new_def_expr (def_t *def);
+expr_t *new_self_expr (void);
 
 void inc_users (expr_t *e);
 void convert_name (expr_t *e);
