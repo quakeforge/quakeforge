@@ -77,12 +77,11 @@ static cvar_t *bgmvolume;
 
 
 /* added by Andrew, for cd_ogg */
-static cvar_t *mus_ogglist;				/* contain the filename of the ogglist. 
-										 */
-static QFile *oggfile = NULL;			/* filedescriptor with track map */
-static qboolean ogglistvalid = false;	/* true if a valid ogg list has been
-										   loaded */
-static plitem_t *tracklist = NULL;		/* the parsed tracklist */
+static cvar_t *mus_ogglist;				// contain the filename of the ogglist. 
+static QFile *oggfile = NULL;			// filedescriptor with track map
+static qboolean ogglistvalid = false;	// true if a valid ogg list has been
+										// loaded
+static plitem_t *tracklist = NULL;		// the parsed tracklist
 
 /* end of added variables. */
 
@@ -244,8 +243,8 @@ I_OGGMus_Info (void)
 
 		keylist = PL_D_AllKeys (tracklist);
 		if (keylist == NULL) {
-			Sys_DPrintf
-				("OGGMus: Didn't get valid plist_t array yet have valid tracklist?\n");
+			Sys_DPrintf ("OGGMus: Didn't get valid plist_t array yet have "
+						 "valid tracklist?\n");
 			return;
 		}
 		Sys_DPrintf ("OGGMus: number of entries %i.\n",
@@ -255,7 +254,8 @@ I_OGGMus_Info (void)
 
 		/* loop through the list with PL_ObjectAtIndex() */
 
-		for (iter = 0; iter < ((plarray_t *) (keylist->data))->numvals; iter++) {
+		for (iter = 0;
+			 iter < ((plarray_t *) (keylist->data))->numvals; iter++) {
 			currentmap = PL_ObjectAtIndex (keylist, iter);
 			if (currentmap == NULL) {
 				Sys_DPrintf ("OGGMus: No track for track number %i.\n", iter);
@@ -266,8 +266,8 @@ I_OGGMus_Info (void)
 							 iter);
 				continue;
 			}
-			currenttrack =
-				PL_ObjectForKey (tracklist, (char *) currentmap->data);
+			currenttrack = PL_ObjectForKey (tracklist,
+											(char *) currentmap->data);
 			Sys_Printf (" %s  -  %s\n", (char *) currentmap->data,
 						(char *) currenttrack->data);
 
@@ -277,11 +277,7 @@ I_OGGMus_Info (void)
 	} else {
 		Sys_Printf ("\n" "No Tracklist\n" "------------\n");
 	}
-
-
 }
-
-
 
 static void
 I_OGG_f (void)
@@ -374,7 +370,6 @@ I_OGG_f (void)
 static void
 I_OGGMus_Update (void)
 {
-
 }
 
 /* called when the mus_ogglist cvar is changed */
@@ -388,12 +383,10 @@ Mus_OggChange (cvar_t *mus_ogglist)
 	/* make sure we're not playing anything right now, and we've cleaned up */
 	CDAudio_Shutdown ();
 
-
 	if (strequal (mus_ogglist->string, "none")) {
 		/* bail if we don't have one */
 		return;
 	}
-
 
 	size = QFS_FOpenFile (mus_ogglist->string, &oggfile);
 	if (size == -1) {
