@@ -23,8 +23,8 @@ integer () servlist_all_draw =
 
 integer serv_nfull; 
 integer serv_nempty;
-inputline_t serv_maxping;
-inputline_t serv_game;
+InputLine serv_maxping;
+InputLine serv_game;
 
 integer () servlist_filter_draw =
 {
@@ -32,7 +32,7 @@ integer () servlist_filter_draw =
 	Draw_CenterPic (160, 4, Draw_CachePic ("gfx/p_multi.lmp", 1));
 	Draw_String	(62, 40, "Max Ping........:");
 	text_box (206, 32, 4, 1);
-	InputLine_Draw (serv_maxping, 206, 40, 1);
+	[serv_maxping draw:1];
 	Draw_String (62, 56, "Game Contains...:");
 	text_box (206, 48, 8, 1);
 	Draw_String (62, 72, "Server Not Full.:");
@@ -93,8 +93,8 @@ void () servlist_filter_menu =
 
 void () server_list_menu =
 {
-	serv_maxping = InputLine_Create (4, 8, ' ');
-	InputLine_SetWidth (serv_maxping, 5);
+	id (serv_maxping) = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:206 :40 :8 :4] promptCharacter:' '];
+	[serv_maxping setWidth:5];
 	
 	Menu_Begin (54, 52, "");
 	Menu_FadeScreen (1);
