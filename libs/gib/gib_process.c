@@ -123,7 +123,7 @@ int
 GIB_Process_Embedded (struct dstring_s *token)
 {
 	cbuf_t *sub;
-	int i, n, m, i1, i2;
+	int i, n, m, i1, i2, ofs = 0;
 	char c = 0, *p;
 	dstring_t *var = dstring_newstr ();
 	qboolean index;
@@ -139,11 +139,22 @@ GIB_Process_Embedded (struct dstring_s *token)
 		i = 0;
 	
 	for (; token->str[i]; i++) {
-		if (token->str[i] == '`') {
+		if (token->str[i] == '`' || (token->str[i] == '$' && token->str[i+1] == '(')) {
 			n = i;
-			if ((c = GIB_Parse_Match_Backtick (token->str, &i))) {
-				Cbuf_Error ("parse", "Could not find matching %c", c);
-				return -1;
+			switch (token->str[i]) {
+				case '`':
+					if ((c = GIB_Parse_Match_Backtick (token->str, &i))) {
+						Cbuf_Error ("parse", "Could not find matching %c", c);
+						return -1;
+					}
+					break;
+				case '$':
+					i++;
+					ofs = 1;
+					if ((c = GIB_Parse_Match_Paren (token->str, &i))) {
+						Cbuf_Error ("parse", "Could not find matching %c", c);
+						return -1;
+					}
 			}
 			if (GIB_DATA(cbuf_active)->ret.available) {
 				dstring_replace (token, n, i-n+1, GIB_DATA(cbuf_active)->ret.retval->str,
@@ -155,7 +166,7 @@ GIB_Process_Embedded (struct dstring_s *token)
 				sub = Cbuf_New (&gib_interp);
 				GIB_DATA(sub)->type = GIB_BUFFER_PROXY;
 				GIB_DATA(sub)->locals = GIB_DATA(cbuf_active)->locals;
-				dstring_insert (sub->buf, 0, token->str+n+1, i-n-1);
+				dstring_insert (sub->buf, 0, token->str+n+ofs+1, i-n-ofs-1);
 				if (cbuf_active->down)
 					Cbuf_DeleteStack (cbuf_active->down);
 				cbuf_active->down = sub;
@@ -259,28 +270,35 @@ GIB_Process_Escapes (dstring_t *token)
 	int i;
 	for (i = 0; token->str[i]; i++) {
 		if (token->str[i] == '\\') {
-			dstring_snip (token, i, 1); // Get rid of slash
-			if (strlen(token->str+i) > 2 &&
-				isdigit ((byte) token->str[i]) &&
-			    isdigit ((byte) token->str[i+1]) &&
-			    isdigit ((byte) token->str[i+2])) {
+			if (strlen(token->str+i+1) > 2 &&
+				isdigit ((byte) token->str[i+1]) &&
+			    isdigit ((byte) token->str[i+2]) &&
+			    isdigit ((byte) token->str[i+3])) {
 					unsigned int num;
-					num = 100 * (token->str[i] - '0') + 10 * (token->str[i+1] - '0') + (token->str[i+2] - '0');
+					num = 100 * (token->str[i+1] - '0') + 10 * (token->str[i+2] - '0') + (token->str[i+3] - '0');
 					if (num > 255)
-						dstring_snip (token, i, 3);
+						dstring_snip (token, i, 4);
 					else {
-						dstring_snip (token, i, 2);
+						dstring_snip (token, i, 3);
 						token->str[i] = (char) num;
 					}
-			} else switch (token->str[i]) {
+			} else switch (token->str[i+1]) {
 				case 'n':
-					token->str[i] = '\n';
-					break;
+					token->str[i+1] = '\n';
+					goto snip;
 				case 't':
-					token->str[i] = '\t';
-					break;
+					token->str[i+1] = '\t';
+					goto snip;
 				case 'r':
-					token->str[i] = '\r';
+					token->str[i+1] = '\r';
+					goto snip;
+				case '\"':
+				case '\\':
+					goto snip;
+				default:
+					break;
+				snip:
+					dstring_snip (token, i, 1);
 			}
 		}
 	}

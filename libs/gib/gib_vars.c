@@ -119,8 +119,11 @@ void
 GIB_Var_Set_Local (cbuf_t *cbuf, const char *key, const char *value)
 {
 	char *k = strdup (key);
-	if (!GIB_DATA(cbuf)->locals)
+	if (!GIB_DATA(cbuf)->locals) {
 		GIB_DATA(cbuf)->locals = Hash_NewTable (256, GIB_Var_Get_Key, GIB_Var_Free, 0);
+		if (GIB_DATA(cbuf)->type != GIB_BUFFER_NORMAL)
+				GIB_DATA(cbuf->up)->locals = GIB_DATA(cbuf)->locals;
+	}
 	GIB_Var_Set_R (GIB_DATA(cbuf)->locals, k, value);
 	free(k);
 }

@@ -95,7 +95,7 @@ GIB_Parse_Match_Dquote (const char *str, unsigned int *i)
 	unsigned int n = *i;
 	for ((*i)++; str[*i]; (*i)++) {
 		if (str[*i] == '\n')
-			return '\"'; // Newlines should never occur inside quotes, EVER
+			break;
 		else if (str[*i] == '\"' && !GIB_Escaped (str, *i))
 			return 0;
 	}
@@ -151,10 +151,11 @@ GIB_Parse_Match_Paren (const char *str, unsigned int *i)
 		if (str[*i] == '(') {
 			if ((c = GIB_Parse_Match_Paren (str, i)))
 				return c;
+		} else if (str[*i] == '\"') {
+			if ((c = GIB_Parse_Match_Dquote (str, i)))
+				return c;
 		} else if (str[*i] == ')')
 			return 0;
-		else if (str[*i] == '\n') // Newlines in math == bad
-			break;
 	}
 	*i = n;
 	return '(';
@@ -268,9 +269,6 @@ GIB_Parse_Extract_Line (struct cbuf_s *cbuf)
 		} else if (dstr->str[i] == '\"') {
 			if ((c = GIB_Parse_Match_Dquote (dstr->str, &i)))
 				goto PARSE_ERROR;
-		} else if (dstr->str[i] == '`') {
-			if ((c = GIB_Parse_Match_Backtick (dstr->str, &i)))
-				goto PARSE_ERROR;
 		} else if (dstr->str[i] == '\n' || dstr->str[i] == ';')
 			break;
 	}
@@ -344,14 +342,18 @@ GIB_Parse_Get_Token (const char *str, unsigned int *i, dstring_t *dstr, qboolean
 		while (str[*i] && !isspace((byte)str[*i]) && str[*i] != ',') { // find end of token
 			if (str[*i] == '`') {
 				if ((c = GIB_Parse_Match_Backtick (str, i))) {
-				Cbuf_Error ("parse", "Could not find matching %c", c);
-				return 0; // Parse error
+					Cbuf_Error ("parse", "Could not find matching %c", c);
+					return 0; // Parse error
 				}
-			}
-			if (str[*i] == '{') {
+			} else if (str[*i] == '(') {
+				if ((c = GIB_Parse_Match_Paren (str, i))) {
+					Cbuf_Error ("parse", "Could not find matching %c", c);
+					return 0; // Parse error
+				}
+			} else if (str[*i] == '{') {
 				if ((c = GIB_Parse_Match_Brace (str, i))) {
-				Cbuf_Error ("parse", "Could not find matching %c", c);
-				return 0; // Parse error
+					Cbuf_Error ("parse", "Could not find matching %c", c);
+					return 0; // Parse error
 				}
 			}
 			(*i)++;
