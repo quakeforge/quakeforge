@@ -169,7 +169,7 @@ R_DrawSkyBox (void)
 
 	qfglDisable (GL_DEPTH_TEST);
 	qfglDepthMask (GL_FALSE);
-	//qfglDepthRange (gldepthmax, gldepthmax);
+//	qfglDepthRange (gldepthmax, gldepthmax);
 	for (i = 0; i < 6; i++) {
 		qfglBindTexture (GL_TEXTURE_2D, SKY_TEX + i);
 		qfglBegin (GL_QUADS);
@@ -180,7 +180,7 @@ R_DrawSkyBox (void)
 
 	qfglDepthMask (GL_TRUE);
 	qfglEnable (GL_DEPTH_TEST);
-	//qfglDepthRange (gldepthmin, gldepthmax);
+//	qfglDepthRange (gldepthmin, gldepthmax);
 }
 
 vec3_t      domescale;
@@ -236,7 +236,7 @@ R_DrawSkyDome (void)
 
 	qfglDisable (GL_DEPTH_TEST);
 	qfglDepthMask (GL_FALSE);
-	//qfglDepthRange (gldepthmax, gldepthmax);
+//	qfglDepthRange (gldepthmax, gldepthmax);
 
 	qfglDisable (GL_BLEND);
 
@@ -263,7 +263,7 @@ R_DrawSkyDome (void)
 
 	qfglDepthMask (GL_TRUE);
 	qfglEnable (GL_DEPTH_TEST);
-	//qfglDepthRange (gldepthmin, gldepthmax);
+//	qfglDepthRange (gldepthmin, gldepthmax);
 }
 
 inline void
