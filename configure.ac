@@ -42,31 +42,34 @@ endian=""
 case "$host_os" in
 	mingw32*)
 		mingw=yes
-		CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/include/win32"
-		CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/include/win32/resources"
-		if test $host != $build; then
-			CC=$host_cpu-$host_os-gcc
-			AS=$host_cpu-$host_os-gcc
-			AR=$host_cpu-$host_os-ar
-			RANLIB=$host_cpu-$host_os-ranlib
+		CFLAGS="$CFLAGS -I\$(top_srcdir)/include/win32"
+		CFLAGS="$CFLAGS -I\$(top_srcdir)/include/win32/resources"
+		if test "$host" != "$build"; then
+			CC="$host_cpu-$host_os-gcc"
+			AS="$CC"
+			AR="$host_cpu-$host_os-ar"
+			RANLIB="$host_cpu-$host_os-ranlib"
 			endian="little"
 		fi
 		;;
-        cygwin*)
-               cygwin=yes
-               CPPFLAGS="$CPPFLAGS -mwindows -mno-cygwin"
-               CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/include/win32"
-               CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/include/win32/resources"
-               if test $host != $build; then
-                       CC=$host_cpu-$host_os-gcc
-                       AS=$host_cpu-$host_os-gcc
-                       AR=$host_cpu_$host_os-ar
-                       RANLIB=$host_cpu-$host_os-ranlib
-                       endian="little"
-               fi
-               LDFLAGS="$LDFLAGS -L/usr/local/lib"
-               LDFLAGS="$LDFLAGS -lSDL -mwindows -mno-cygwin"
-               ;;
+	cygwin*)
+		cygwin=yes
+		if test "$host" != "$build"; then
+			CC="$host_cpu-$host_os-gcc"
+			AS="$CC"
+			AR="$host_cpu_$host_os-ar"
+			RANLIB="$host_cpu-$host_os-ranlib"
+			case "$target" in
+				*mingw32)
+					mingw=yes
+					CFLAGS="$CFLAGS -mno-cygwin -mwindows"
+					CFLAGS="$CFLAGS -I\$(top_srcdir)/include/win32"
+					CFLAGS="$CFLAGS -I\$(top_srcdir)/include/win32/resources"
+					endian="little"
+				;;
+			esac
+		fi
+		;;
 esac
 
 dnl ==================================================================
@@ -552,18 +555,18 @@ dnl ==================================================================
 dnl Checks for which system driver to use
 AC_MSG_CHECKING(for system driver)
 case "${host}" in
-   i?86-*-mingw32*)
-	SYSTYPE=WIN32
-	AC_MSG_RESULT([Win32 driver])
-	;;
-   i?86-*-cygwin*)
-        SYSTYPE=WIN32
-        AC_MSG_RESULT([Win32 driver])
-        ;;
-   *)
-	SYSTYPE=POSIX
-	AC_MSG_RESULT([default POSIX driver])
-	;;
+	i?86-*-mingw32*)
+		SYSTYPE=WIN32
+		AC_MSG_RESULT([Win32 driver])
+		;;
+	i?86-*-cygwin*)
+		SYSTYPE=WIN32
+		AC_MSG_RESULT([Win32 driver])
+		;;
+	*)
+		SYSTYPE=POSIX
+		AC_MSG_RESULT([default POSIX driver])
+		;;
 esac
 AM_CONDITIONAL(SYSTYPE_WIN32, test "$SYSTYPE" = "WIN32")
 
@@ -595,7 +598,7 @@ AC_ARG_ENABLE(alsa,
 	[  --disable-alsa          disable checks for ALSA support])
 
 AC_ARG_ENABLE(oss,
-        [  --disable-oss           disable checks for OSS support])
+	[  --disable-oss           disable checks for OSS support])
 
 AC_ARG_ENABLE(sound,
 	[  --disable-sound         disable sound outright])
@@ -607,30 +610,30 @@ HAVE_ALSA=no
 if test "x$enable_alsa" != "xno"; then
 	if test "x$ac_cv_header_sys_asoundlib_h" = "xyes" -o \
 		"x$ac_cv_header_alsa_asoundlib_h" = "xyes"; then
-	    AC_EGREP_CPP([QF_maGiC_VALUE],
-		    [
+			AC_EGREP_CPP([QF_maGiC_VALUE],
+				[
 #include <sys/asoundlib.h>
 #if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
 #if SND_LIB_MAJOR > 0 || (SND_LIB_MAJOR == 0 && SND_LIB_MINOR == 5)
 QF_maGiC_VALUE
 #endif
 #endif
-		    ],
-		    SOUND_TYPES="$SOUND_TYPES ALSA0.5"
-		    ALSA_LIBS="-lasound"
-		    HAVE_ALSA=yes,
-		    AC_EGREP_CPP([QF_maGiC_VALUE],
-			    [
+				],
+				SOUND_TYPES="$SOUND_TYPES ALSA0.5"
+				ALSA_LIBS="-lasound"
+				HAVE_ALSA=yes,
+				AC_EGREP_CPP([QF_maGiC_VALUE],
+				[
 #include <alsa/asoundlib.h>
 #if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
 #if SND_LIB_MAJOR > 0 || (SND_LIB_MAJOR == 0 && SND_LIB_MINOR >= 9)
 QF_maGiC_VALUE
 #endif
 #endif
-			    ],
-			    SOUND_TYPES="$SOUND_TYPES ALSA0.9"
-			    ALSA_LIBS="-lasound"
-			    HAVE_ALSA=yes,
+				],
+				SOUND_TYPES="$SOUND_TYPES ALSA0.9"
+				ALSA_LIBS="-lasound"
+				HAVE_ALSA=yes,
 				AC_EGREP_CPP([QF_maGiC_VALUE],
 					[
 #include <sys/asoundlib.h>
@@ -670,7 +673,7 @@ AC_SUBST(MME_LIBS)
 dnl OSS
 HAVE_OSS=no
 if test "x$enable_oss" != "xno"; then
-        if test "x$ac_cv_header_sys_soundcard_h" = "xyes" -o \
+	if test "x$ac_cv_header_sys_soundcard_h" = "xyes" -o \
 		"x$ac_cv_header_machine_soundcard_h" = "xyes" -o \
 		"x$ac_cv_header_linux_soundcard_h" = "xyes"; then
 	AC_EGREP_CPP([QF_maGiC_VALUE],
@@ -886,7 +889,8 @@ SAVELIBS="$LIBS"
 LIBS="$LIBS -lwsock32"
 AC_TRY_LINK([
 #include <winsock.h>
-],[
+],
+[
 connect(0, NULL, 42);
 ],
 	NET_LIBS="$NET_LIBS -lwsock32 -lwinmm"
@@ -912,9 +916,10 @@ if test "x$ac_cv_func_connect" != "xyes"; then
 	LIBS="$LIBS -lwsock32"
 	AC_TRY_LINK([
 #include <winsock.h>
-],[
-connect(0, NULL, 42);
-],
+		],
+		[
+connect (0, NULL, 42);
+		],
 	    NET_LIBS="$NET_LIBS -lwsock32 -lwinmm"
 	    AC_MSG_RESULT(yes),
 	    AC_MSG_RESULT(no)
@@ -937,10 +942,10 @@ else
 fi
 
 dnl Set $prefix and $exec_prefix to $ac_default_prefix if they are not set
-test "x$prefix" = xNONE && prefix=$ac_default_prefix
-test "x$exec_prefix" = xNONE && exec_prefix="${prefix}"
+test "x$prefix" = "xNONE" && prefix=$ac_default_prefix
+test "x$exec_prefix" = "xNONE" && exec_prefix="${prefix}"
 
-if test "x$SYSTYPE" = xWIN32; then
+if test "x$SYSTYPE" = "xWIN32"; then
 	default_globalconf="~/${PACKAGE}.conf"
 	default_userconf="~/${PACKAGE}rc"
 	default_sharepath="."
@@ -1016,7 +1021,6 @@ AC_SUBST(plugindir)
 AC_SUBST(PLUGINDIR)
 
 dnl CFLAGS for release and devel versions
-CFLAGS=""
 AC_ARG_ENABLE(debug,
 	[  --disable-debug         compile without debugging],
 	debug=$enable_debug
@@ -1037,8 +1041,8 @@ AC_ARG_ENABLE(optimize,
 )
 
 AC_ARG_ENABLE(typecheck-progs,
-	[  --disable-typecheck-progs disable type checking on progs field access])
-if test "x$enable_typecheck_progs" $cvs_def_enabled; then
+	[  --enable-typecheck-progs Enable type checking on progs field access])
+if test "x$enable_typecheck_progs" = xyes; then
 	AC_DEFINE(TYPECHECK_PROGS)
 fi
 
@@ -1084,7 +1088,6 @@ if test "x$optimize" = xyes; then
 	fi
 else
 	AC_MSG_RESULT(no)
-	CFLAGS="$CFLAGS "
 fi
 
 dnl CFLAGS for release and devel versions
@@ -1108,8 +1111,13 @@ if test "x$GCC" = xyes; then
 	AC_MSG_CHECKING(for -pipe vs -save-temps)
 	AC_ARG_ENABLE(save-temps,
 		[  --enable-save-temps     save temporary files],
-		AC_MSG_RESULT(-save-temps); CFLAGS="$CFLAGS -save-temps"; BUILD_TYPE="$BUILD_TYPE Save-temps",
-		AC_MSG_RESULT(-pipe); check_pipe=yes)
+		AC_MSG_RESULT(-save-temps)
+		CFLAGS="$CFLAGS -save-temps"
+		BUILD_TYPE="$BUILD_TYPE Save-temps"
+		,
+		AC_MSG_RESULT(-pipe)
+		check_pipe=yes
+	)
 fi
 if test "x$check_pipe" = xyes; then
 	AC_MSG_CHECKING(whether -pipe works)
