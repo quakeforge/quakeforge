@@ -311,16 +311,6 @@ V_Init_Cvars (void)
 {
 }
 
-void
-S_BlockSound (void)
-{
-}
-
-void
-S_UnblockSound (void)
-{
-}
-
 plugin_t *console_client_PluginInfo (void);
 plugin_t *
 console_client_PluginInfo (void)

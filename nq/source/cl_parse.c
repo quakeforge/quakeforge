@@ -266,7 +266,7 @@ CL_ParseServerInfo (void)
 
 	Con_DPrintf ("Serverinfo packet received.\n");
 
-	S_BlockSound ();
+	S_StopAllSounds (true);
 
 	// wipe the client_state_t struct
 	CL_ClearState ();
@@ -275,13 +275,13 @@ CL_ParseServerInfo (void)
 	i = MSG_ReadLong (net_message);
 	if (i != PROTOCOL_VERSION) {
 		Con_Printf ("Server returned version %i, not %i", i, PROTOCOL_VERSION);
-		goto done;
+		return;
 	}
 	// parse maxclients
 	cl.maxclients = MSG_ReadByte (net_message);
 	if (cl.maxclients < 1 || cl.maxclients > MAX_SCOREBOARD) {
 		Con_Printf ("Bad maxclients (%u) from server\n", cl.maxclients);
-		goto done;
+		return;
 	}
 	cl.scores = Hunk_AllocName (cl.maxclients * sizeof (*cl.scores), "scores");
 
@@ -310,7 +310,7 @@ CL_ParseServerInfo (void)
 			break;
 		if (nummodels == MAX_MODELS) {
 			Con_Printf ("Server sent too many model precaches\n");
-			goto done;
+			return;
 		}
 		strcpy (model_precache[nummodels], str);
 		Mod_TouchModel (str);
@@ -324,7 +324,7 @@ CL_ParseServerInfo (void)
 			break;
 		if (numsounds == MAX_SOUNDS) {
 			Con_Printf ("Server sent too many sound precaches\n");
-			goto done;
+			return;
 		}
 		strcpy (sound_precache[numsounds], str);
 		S_TouchSound (str);
@@ -338,7 +338,7 @@ CL_ParseServerInfo (void)
 		cl.model_precache[i] = Mod_ForName (model_precache[i], false);
 		if (cl.model_precache[i] == NULL) {
 			Con_Printf ("Model %s not found\n", model_precache[i]);
-			goto done;
+			return;
 		}
 		CL_KeepaliveMessage ();
 	}
@@ -358,8 +358,6 @@ CL_ParseServerInfo (void)
 
 	noclip_anglehack = false;			// noclip is turned off at start    
 	r_gravity = 800.0;					// Set up gravity for renderer effects
-done:
-	S_UnblockSound ();
 }
 
 int         bitcounts[16];
