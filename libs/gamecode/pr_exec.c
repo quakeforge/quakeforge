@@ -600,9 +600,9 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					// negative statements are built in functions
 					int         i = -newf->first_statement;
 
-					if (i >= pr->numbuiltins)
+					if (i >= pr->numbuiltins || !pr->builtins[i].proc)
 						PR_RunError (pr, "Bad builtin call number");
-					pr->builtins[i] (pr);
+					pr->builtins[i].proc (pr);
 					break;
 				}
 

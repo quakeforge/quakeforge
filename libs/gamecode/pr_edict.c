@@ -1359,6 +1359,44 @@ PR_Init (void)
 	PR_Debug_Init ();
 }
 
+#define PR_AUTOBUILTIN 110
+void
+PR_AddBuiltin (progs_t *pr, const char *name, builtin_proc builtin, int num)
+{
+	int i, j;
+
+	if (pr->numbuiltins == 0) {
+		pr->builtins = malloc (PR_AUTOBUILTIN * sizeof (builtin_t));
+		pr->numbuiltins = PR_AUTOBUILTIN;
+		if (!pr->builtins)
+			PR_Error (pr, "PR_AddBuiltin: memory allocation error!\n");
+		for (i = 0; i < pr->numbuiltins; i++) {
+			pr->builtins[i].proc = 0;
+			pr->builtins[i].name = 0;
+		}
+	}
+
+	if (num < 0) {
+		for (i = PR_AUTOBUILTIN; i < pr->numbuiltins && pr->builtins[i].proc; i++)
+			;
+		if (i >= pr->numbuiltins) {
+			pr->numbuiltins++;
+			pr->builtins = realloc (pr->builtins, pr->numbuiltins * sizeof (builtin_t));
+			if (!pr->builtins)
+				PR_Error (pr, "PR_AddBuiltin: memory allocation error!\n");
+		}
+		j = i;
+	} else {
+		if (num >= PR_AUTOBUILTIN || num == 0)
+			PR_Error (pr, "PR_AddBuiltin: invalid builtin number.\n");
+		if (pr->builtins[num].proc)
+			PR_Error (pr, "PR_AddBuiltin: builtin number already exists.\n");
+		j = num;
+	}
+	pr->builtins[j].proc = builtin;
+	pr->builtins[j].name = name;
+}
+
 edict_t    *
 EDICT_NUM (progs_t * pr, int n)
 {

@@ -414,6 +414,7 @@ void SV_Error (const char *error, ...) __attribute__((format(printf,1,2)));
 void SV_Init (void);
 void SV_Progs_Init (void);
 void SV_Progs_Init_Cvars (void);
+void SV_PR_Cmds_Init (void);
 void SV_LoadProgs (void);
 
 void Con_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));

@@ -13,12 +13,6 @@
 
 int *read_result;	//FIXME: eww
 
-static void 
-bi_fixme (progs_t *pr)
-{
-	PR_Error (pr, "unimplemented function\n");
-}
-
 static void
 bi_print (progs_t *pr)
 {
@@ -148,25 +142,22 @@ bi_printf (progs_t *pr)
 	}
 }
 
-builtin_t   builtins[] = {
-	bi_fixme,
-	bi_print,
-	bi_GarbageCollect,
-	bi_errno,
-	bi_strerror,
-	bi_open,
-	bi_close,
-	bi_read,
-	bi_write,
-	bi_seek,
-	bi_traceon,
-	bi_traceoff,
-	bi_printf,
-};
-
 void
 BI_Init (progs_t *progs)
 {
-	progs->builtins = builtins;
-	progs->numbuiltins = sizeof (builtins) / sizeof (builtins[0]);
+	progs->builtins = 0;
+	progs->numbuiltins = 0;
+
+	PR_AddBuiltin (progs, "print", bi_print, 1);
+	PR_AddBuiltin (progs, "GarbageCollect", bi_GarbageCollect, 2);
+	PR_AddBuiltin (progs, "errno", bi_errno, 3);
+	PR_AddBuiltin (progs, "strerror", bi_strerror, 4);
+	PR_AddBuiltin (progs, "open", bi_open, 5);
+	PR_AddBuiltin (progs, "close", bi_close, 6);
+	PR_AddBuiltin (progs, "read", bi_read, 7);
+	PR_AddBuiltin (progs, "write", bi_write, 8);
+	PR_AddBuiltin (progs, "seek", bi_seek, 9);
+	PR_AddBuiltin (progs, "traceon", bi_traceon, 10);
+	PR_AddBuiltin (progs, "traceoff", bi_traceoff, 11);
+	PR_AddBuiltin (progs, "printf", bi_printf, 12);
 }

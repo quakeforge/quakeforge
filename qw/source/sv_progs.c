@@ -287,9 +287,6 @@ SV_LoadProgs (void)
 		sv_globals.current_skill = 0;
 }
 
-extern builtin_t sv_builtins[];
-extern int sv_numbuiltins;
-
 void
 SV_Progs_Init (void)
 {
@@ -299,10 +296,12 @@ SV_Progs_Init (void)
 	sv_pr_state.reserved_edicts = &reserved_edicts;
 	sv_pr_state.unlink = SV_UnlinkEdict;
 	sv_pr_state.flush = SV_FlushSignon;
-	sv_pr_state.builtins = sv_builtins;
-	sv_pr_state.numbuiltins = sv_numbuiltins;
+	sv_pr_state.builtins = 0;
+	sv_pr_state.numbuiltins = 0;
 	sv_pr_state.parse_field = parse_field;
 	sv_pr_state.prune_edict = prune_edict;
+
+	SV_PR_Cmds_Init ();
 
 	Cmd_AddCommand ("edict", ED_PrintEdict_f,
 					"Report information on a given edict in the game. (edict (edict number))");

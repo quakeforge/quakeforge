@@ -134,7 +134,11 @@ int NUM_FOR_EDICT(progs_t *pr, edict_t *e);
 
 extern	int		type_size[8];
 
-typedef void (*builtin_t) (progs_t *pr);
+typedef void (*builtin_proc) (progs_t *pr);
+typedef struct {
+	const char *name;
+	builtin_proc proc;
+} builtin_t;
 
 ddef_t *PR_FindGlobal (progs_t *pr, const char *name);
 ddef_t *ED_GlobalAtOfs (progs_t * pr, int ofs);
@@ -155,6 +159,8 @@ char *PR_GlobalString (progs_t *pr, int ofs);
 char *PR_GlobalStringNoContents (progs_t *pr, int ofs);
 
 pr_type_t *GetEdictFieldValue(progs_t *pr, edict_t *ed, const char *field);
+
+void PR_AddBuiltin (progs_t *pr, const char *name, builtin_proc builtin, int num);
 
 //
 // PR Strings stuff

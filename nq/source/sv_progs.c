@@ -275,9 +275,6 @@ SV_LoadProgs (void)
 	sv_fields.pitch_speed = ED_GetFieldIndex (&sv_pr_state, "pitch_speed");
 }
 
-extern builtin_t sv_builtins[];
-extern int sv_numbuiltins;
-
 void
 SV_Progs_Init (void)
 {
@@ -286,10 +283,12 @@ SV_Progs_Init (void)
 	sv_pr_state.time = &sv.time;
 	sv_pr_state.reserved_edicts = &svs.maxclients;
 	sv_pr_state.unlink = SV_UnlinkEdict;
-	sv_pr_state.builtins = sv_builtins;
-	sv_pr_state.numbuiltins = sv_numbuiltins;
+	sv_pr_state.builtins = 0;
+	sv_pr_state.numbuiltins = 0;
 	sv_pr_state.parse_field = parse_field;
 	sv_pr_state.prune_edict = prune_edict;
+
+	SV_PR_Cmds_Init ();
 
 	Cmd_AddCommand ("edict", ED_PrintEdict_f,
 					"Report information on a given edict in the game. (edict (edict number))");
