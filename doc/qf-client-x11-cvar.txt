@@ -62,8 +62,8 @@ r    cl_autoexec          : exec autoexec.cfg on gamedir change
 r    fs_basegame          : game to use by default
 r    fs_globalcfg         : global configuration file
 r    fs_sharepath         : location of shared (read only) game directories
+r    fs_skinbase          : location of skins dir for downloads
 r    fs_userpath          : location of your game directories
-     gl_flashblend        : Toggles the type of lighting for objects
  *   gl_sky_divide        : subdivide sky polys
  *   gl_subdivide_size    : Sets the division value for the sky brushes.
      host_speeds          : display host processing times
@@ -79,7 +79,7 @@ r    joy_device           : Joystick device
  *   joyaxis5             : Set joystick axes
  *   joyaxis6             : Set joystick axes
      loadas8bit           : Toggles if sounds are loaded as 8-bit samples
-     localid              : FIXME: nobody knows what this does.
+     localid              : FIXME: This has something to do with client authentication. No Description
  *   lookspring           : Snap view to center when moving and no mlook/klook
  *   lookstrafe           : when mlook/klook on player will strafe
  *   m_filter             : Toggle mouse input filtering.
@@ -113,6 +113,7 @@ r    joy_device           : Joystick device
      r_netgraph           : Toggle the display of a graph showing network performance
      r_numedges           : Toggles the displaying of number of edges currently being viewed
      r_numsurfs           : Toggles the displaying of number of surfaces currently being viewed
+ *   r_particles          : Toggles drawing of particles.
      r_polymodelstats     : Toggles the displays of number of polygon models current being viewed
      r_reportedgeout      : Toggle the display of how many edges where not displayed
      r_reportsurfout      : Toggle the display of how many surfaces where not displayed
@@ -125,6 +126,7 @@ r    joy_device           : Joystick device
      rcon_password        : remote control password
      registered           : Is the game the registered version. 1 yes 0 no
      scr_centertime       : How long in seconds the screen hints are displayed on the screen
+ *   scr_consize          : fraction of the screen the console covers when down
      scr_conspeed         : How quickly in the console screen scrolls up and down
      scr_printspeed       : How fast the text is displayed at the end of the single player episodes
  *   sensitivity          : mouse sensitivity multiplier
