@@ -57,7 +57,7 @@ build-stamp:
 changelog-stamp:
 	dh_testdir
 	# Add here commands to build the changelog
-	[ -d CVS ] && $(MAKE) changelog
+	if test -d CVS; then $(MAKE) changelog; fi
 	touch $@
 	
 clean:
