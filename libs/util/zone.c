@@ -305,7 +305,6 @@ Hunk_HighAllocName (int size, char *name)
 
 	h = (hunk_t *) (hunk_base + hunk_size - hunk_high_used);
 
-	memset (h, 0, size);
 	h->size = size;
 	h->sentinal = HUNK_SENTINAL;
 	strncpy (h->name, name, 8);
