@@ -48,8 +48,10 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/sys.h"
 
 int			nanmask = 255 << 23;
-mplane_t	frustum[4];
-const vec3_t vec3_origin = { 0, 0, 0 };
+static mplane_t _frustum[4];
+mplane_t   *const frustum = _frustum;
+static vec3_t _vec3_origin = { 0, 0, 0 };
+const vec_t * const vec3_origin = _vec3_origin;
 
 #define DEG2RAD(a) (a * (M_PI / 180.0))
 
