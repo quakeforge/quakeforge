@@ -171,14 +171,13 @@ searchpath_t *com_base_searchpaths;		// without gamedirs
 void
 COM_FileBase (char *in, char *out)
 {
-	char    *slash, *dot;
-	char    *s;
+	char       *slash, *dot;
+	char       *s;
 
 	slash = in;
 	dot = NULL;
 	s = in;
-	while (*s)
-	{
+	while (*s) {
 		if (*s == '/')
 			slash = s + 1;
 		if (*s == '.')
@@ -188,9 +187,8 @@ COM_FileBase (char *in, char *out)
 	if (dot == NULL)
 		dot = s;
 	if (dot - slash < 2)
-		strcpy (out,"?model?");
-	else
-	{
+		strcpy (out, "?model?");
+	else {
 		while (slash < dot)
 			*out++ = *slash++;
 		*out++ = 0;
