@@ -86,7 +86,7 @@ keyhandler (int scancode, int state)
 
 	sc = scancode & 0x7f;
 	key = scantokey[0][sc];
-	if ((shifts & 0xc)) {
+	if ((shifts & 0x03)) {
 		ascii = scantokey[2][sc];
 	} else if (shifts & 3) {
 		ascii = scantokey[1][sc];

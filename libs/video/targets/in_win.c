@@ -656,7 +656,7 @@ MapKey (unsigned int keycode, int press, int *k, int *u)
 	else
 		key = scantokey[scan];
 	
-	if (shifts & 0x0c) {
+	if (shifts & 0x03) {
 		if (extended)
 			uc = shift_ext_scantokey[scan];
 		else
@@ -692,8 +692,8 @@ MapKey (unsigned int keycode, int press, int *k, int *u)
 			break;
 	}
 
-	Con_DPrintf ("%08x %02x %04x %c\n", keycode, scan, key,
-				 uc > 32 && uc < 127 ? uc : '#');
+	Con_DPrintf ("%08x %d %02x %02lx %04x %c\n", keycode, press, scan, shifts,
+				 key, uc > 32 && uc < 127 ? uc : '#');
 	*k = key;
 	*u = uc;
 }
