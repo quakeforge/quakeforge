@@ -205,9 +205,10 @@ GIB_Parse_Extract_Line (struct cbuf_s *cbuf)
 			break;
 		else if (dstr->str[i] == '/' && dstr->str[i+1] == '/') {
 			char *n;
-			if ((n = strchr (dstr->str+i, '\n')))
-				dstring_snip (dstr, i, n-dstr->str);
-			else {
+			if ((n = strchr (dstr->str+i, '\n'))) {
+				dstring_snip (dstr, i, n-dstr->str-i);
+				i--;
+			} else {
 				dstring_snip (dstr, i, strlen(dstr->str+i));
 				break;
 			}
@@ -451,10 +452,18 @@ void GIB_Parse_Execute_Line (cbuf_t *cbuf)
 	else if ((f = GIB_Function_Find (args->argv[0]->str)))
 		GIB_Function_Execute (f);
 	else if (args->argc == 3 && !strcmp (args->argv[1]->str, "=")) {
-		if (!GIB_Var_Get (cbuf, args->argv[0]->str) && GIB_Var_Get_R (gib_globals, args->argv[0]->str))
-			GIB_Var_Set_R (gib_globals, args->argv[0]->str, args->argv[2]->str);
+		// First, determine global versus local
+		int glob = 0;
+		char *c = 0;
+		if ((c = strchr (args->argv[0]->str, '.'))) // Only check stem
+			*c = 0;
+		glob = (!GIB_Var_Get (cbuf, args->argv[0]->str) && GIB_Var_Get_R (gib_globals, args->argv[0]->str));
+		if (c)
+			*c = '.';
+		if (glob)
+			GIB_Var_Set_R (gib_globals, args->argv[0]->str, args->argv[2]->str); // Set the global
 		else
-			GIB_Var_Set (cbuf, args->argv[0]->str, args->argv[2]->str);
+			GIB_Var_Set (cbuf, args->argv[0]->str, args->argv[2]->str); // Set the local
 	} else	
 		Cmd_Command (cbuf->args);
 	dstring_clearstr (cbuf->line);

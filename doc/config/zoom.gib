@@ -42,47 +42,58 @@ function "zoom.init" { // Initialize basic options
 	set in_amp ${zoom.amp}
 }
 
+zoom.init 1 90 1 90 1.15
+
 function "zoom.adjust" { // Adjust fov and sensitivity to match zoom factor
 	if ${zoom.zoomed} {
 		set fov (${zoom.fov}/${zoom.mult})
 		set in_amp (${zoom.amp}/${zoom.mult})
 		return
 	} else {
-		set fov $zoom_base_fov
-		set in_amp $zoom_base_amp
+		set fov ${zoom.fov}
+		set in_amp ${zoom.amp}
 	}
 }
 
-alias zoom_in { // Replaced ID zoom function
-	set zoom_zoomed 1
-	zoom_adjust
+function "zoom.in" { // Replaced ID zoom function
+	zoom.zoomed = 1
+	zoom.adjust
 }
 
-alias zoom_out { // Replaced ID zoom function
-	set zoom_zoomed 0
-	zoom_adjust
+function "zoom.out" { // Replaced ID zoom function
+	zoom.zoomed = 0
+	zoom.adjust
 }
 
-alias zoom_toggle {
-	toggle zoom_zoomed
-	zoom_adjust
+function "zoom.toggle" {
+	zoom.zoomed = (!${zoom.zoomed})
+	zoom.adjust
 }
 
-alias zoom_increase {
-	if #{!$zoom_zoomed} return
-	zoom_mult #{$zoom_mult + $zoom_mult_step*$zoom_mult} // Grow zoom exponentially
-	if #{$zoom_mult>$zoom_mult_upper} {
-		zoom_mult $zoom_mult_upper
+function "zoom.increase" {
+	ifnot ${zoom.zoomed} {
+		return
 	}
-	zoom_adjust
+	zoom.mult = (${zoom.mult.step}*${zoom.mult})
+	if (${zoom.mult} > ${zoom.mult.upper}) {
+		zoom.mult = ${zoom.mult.upper}
+	}
+	zoom.adjust
 }
 
-alias zoom_decrease {
-	if #{!$zoom_zoomed} return
-	zoom_mult #{$zoom_mult/(1 + $zoom_mult_step)}
-	if #{$zoom_mult < $zoom_mult_lower} {
-		zoom_mult $zoom_mult_lower
+function "zoom.decrease" {
+	ifnot ${zoom.zoomed} return
+	zoom.mult = (${zoom.mult}/(1 + ${zoom.mult.step}))
+	if (${zoom.mult} < ${zoom.mult.lower}) {
+		zoom.mult = ${zoom.mult.lower}
 	}
-	zoom_adjust
+	zoom.adjust
 }
+
+export zoom.init
+export zoom.increase
+export zoom.decrease
+export zoom.in
+export zoom.out
+export zoom.toggle
 
