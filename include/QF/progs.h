@@ -94,6 +94,7 @@ void ED_ParseGlobals (progs_t *pr, const char *data);
 
 void ED_LoadFromFile (progs_t *pr, const char *data);
 
+ddef_t *ED_FieldAtOfs (progs_t *pr, int ofs);
 ddef_t *ED_FindField (progs_t *pr, const char *name);
 int ED_GetFieldIndex (progs_t *pr, const char *name);
 dfunction_t *ED_FindFunction (progs_t *pr, const char *name);
