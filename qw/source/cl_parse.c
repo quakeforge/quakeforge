@@ -488,7 +488,7 @@ CL_ParseDownload (void)
 	}
 	// open the file if not opened yet
 	if (!cls.download) {
-		dstring_t  *name;
+		dstring_t  *name = dstring_newstr();
 		const char *path;
 		const char *fname;
 
@@ -518,6 +518,7 @@ CL_ParseDownload (void)
 			CL_RequestNextDownload ();
 			return;
 		}
+		dstring_delete (name);
 	}
 
 	Qwrite (cls.download, net_message->message->data + net_message->readcount,
