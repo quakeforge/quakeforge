@@ -287,7 +287,7 @@ void
 PR_Init_Cvars (void)
 {
 	pr_boundscheck =
-		Cvar_Get ("pr_boundscheck", "1", CVAR_NONE, NULL,
+		Cvar_Get ("pr_boundscheck", "0", CVAR_NONE, NULL,
 				  "Server progs bounds checking");
 	pr_deadbeef_ents = Cvar_Get ("pr_deadbeef_ents", "0", CVAR_NONE, NULL,
 							"set to clear unallocated memory to 0xdeadbeef");
