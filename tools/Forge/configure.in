@@ -1,0 +1,100 @@
+dnl Process this file with autoconf to produce a configure script.
+
+AC_PREREQ(2.13)
+AC_INIT(Forge_main.m)
+AC_CONFIG_HEADER(Headers/Config.h)
+AC_REVISION($Revision$) dnl
+AC_CANONICAL_SYSTEM
+
+AC_DEFINE(PACKAGE, "Forge")
+AC_DEFINE(VERSION, "0.1.0")
+
+AC_SUBST(VERSION)
+
+ISODATE=$(date +%Y-%m-%d)
+AC_SUBST(ISODATE)
+
+dnl Checks for programs.
+AC_PROG_INSTALL
+AC_PROG_CC
+AC_PROG_CPP
+
+AC_LANG_C
+
+dnl We want warnings, lots of warnings...
+if test "x$GCC" = xyes; then
+	CFLAGS="$CFLAGS -Wall -Werror -Wno-comment"
+#	CFLAGS="$CFLAGS -Wall -pedantic"
+fi
+
+dnl Objective-C checks
+AC_CHECK_PROGS(OBJC, $OBJC egcs, "")
+if test "x$OBJC" = "x"; then
+	AC_CHECK_PROGS(OBJC, $OBJC egcc, "")
+	if test "x$OBJC" = "x"; then
+		AC_CHECK_PROGS(OBJC, $OBJC gcc, "")
+	fi
+fi
+
+OBJC_LIBS="-lobjc"
+AC_CHECK_FUNC(sched_yield,, [
+	AC_CHECK_LIB(posix4, sched_yield, OBJC_LIBS="$OBJC_LIBS -lposix4",, $OBJC_LIBS)
+])
+AC_SUBST(OBJC_LIBS)
+
+AC_CACHE_CHECK(
+	[whether the Objective-C compiler ($OBJC) works],
+	ac_cv_prog_objc_works,
+	[
+	if test -n "$OBJC"; then
+		cat > conftest.m <<EOF
+#include <objc/Object.h>
+int main (void) {
+	id myid = [[Object new]];
+	[[myid free]];
+	return 0;
+}
+EOF
+		$OBJC $CFLAGS -o conftest $LDFLAGS conftest.m $OBJC_LIBS 1>&AC_FD_CC 2>&1
+		result=$?
+		rm -f conftest*
+
+		if test $result -eq 0; then
+			ac_cv_prog_objc_works=yes
+		else
+			ac_cv_prog_objc_works=no
+		fi
+	else
+		ac_cv_prog_objc_works=no
+	fi
+])
+
+dnl Checks for libraries.
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS(unistd.h)
+
+dnl Checks for library functions.
+
+AC_CHECK_HEADER(QF/qtypes.h, HAVE_QF=yes, HAVE_QF=no)
+if test "$HAVE_QF" = yes; then
+	AC_CHECK_LIB(QFutil, Qopen,
+	    HAVE_QF=yes, HAVE_QF=no,
+	    []
+	)
+fi
+
+if test "$HAVE_QF" != yes; then
+	echo '***'
+	echo '*** You seem to not have the QuakeForge libs & headers installed'
+	echo '***'
+	exit 1
+fi
+
+AC_SUBST(CFLAGS)
+AC_SUBST(LDFLAGS)
+
+AC_OUTPUT(
+	GNUmakefile.preamble
+)

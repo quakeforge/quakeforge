@@ -1,4 +1,13 @@
-shared_obj
+.vimrc
+ChangeLog
 Forge.app
 Forge.debug
 Forge.profile
+aclocal.m4
+build-stamp
+config.cache
+config.log
+config.status
+configure
+configure-stamp
+shared_obj

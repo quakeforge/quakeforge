@@ -2,10 +2,10 @@
 ADDITIONAL_CPPFLAGS += 
 
 # Additional flags to pass to the Objective-C compiler
-ADDITIONAL_OBJCFLAGS += -g -Wall -Werror -Wno-comment
+ADDITIONAL_OBJCFLAGS += -g @CFLAGS@
 
 # Additional flags to pass to the C compiler
-ADDITIONAL_CFLAGS += -g -Wall -Werror -Wno-comment
+ADDITIONAL_CFLAGS += -g @CFLAGS@
 
 # Additional include directories the compiler should search
 ADDITIONAL_INCLUDE_DIRS += -I ./Headers
