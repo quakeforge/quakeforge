@@ -739,6 +739,7 @@ CL_Init (void)
 	Cmd_AddCommand ("playdemo", CL_PlayDemo_f, "No Description");
 	Cmd_AddCommand ("timedemo", CL_TimeDemo_f, "No Description");
 	Cmd_AddCommand ("maplist", Con_Maplist_f, "List available maps");
+	Cmd_AddCommand ("skyboxlist", Con_Skyboxlist_f, "List skyboxes available");
 	Cmd_AddCommand ("demolist", Con_Demolist_DEM_f, "List available demos");
 	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "force the view "
 					"to be level");
