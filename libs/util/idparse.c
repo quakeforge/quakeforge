@@ -36,11 +36,50 @@ static __attribute__ ((unused)) const char rcsid[] =
         "$Id$";
 
 #include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "QF/dstring.h"
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/idparse.h"
+
+typedef struct idbuf_s {
+	dstring_t *buf, *line;
+} idbuf_t;
+
+#define DATA(x) ((idbuf_t *)(x)->data)
+
+static void
+COM_construct (cbuf_t *cbuf)
+{
+	idbuf_t *new = calloc (1, sizeof (idbuf_t));
+	
+	new->buf = dstring_newstr();
+	new->line = dstring_newstr();
+	cbuf->data = new;
+}
+
+static void
+COM_destruct (cbuf_t *cbuf)
+{
+	dstring_delete(DATA(cbuf)->buf);
+	dstring_delete(DATA(cbuf)->line);
+	free(cbuf->data);
+}
+
+static void
+COM_add (cbuf_t *cbuf, const char *str)
+{
+	dstring_appendstr (DATA(cbuf)->buf, str);
+}
+
+static void
+COM_insert (cbuf_t *cbuf, const char *str)
+{
+	dstring_insertstr (DATA(cbuf)->buf, 0, "\n");
+	dstring_insertstr (DATA(cbuf)->buf, 0, str);
+}
 
 static dstring_t *_com_token;
 const char *com_token;
@@ -124,12 +163,14 @@ COM_TokenizeString (const char *str, cbuf_args_t *args)
 static void
 COM_extract_line (cbuf_t *cbuf)
 {
-	int         i;
-	int         len = cbuf->buf->size - 1;
-	char       *text = cbuf->buf->str;
-	int         quotes = 0;
+	int			i;
+	dstring_t	*buf = DATA(cbuf)->buf;
+	dstring_t	*line = DATA(cbuf)->line;
+	int			len = buf->size - 1;
+	char		*text = buf->str;
+	int			quotes = 0;
 
-	dstring_clearstr (cbuf->line);
+	dstring_clearstr (line);
 	for (i = 0; i < len; i++) {
 		if (text[i] == '"')
 			quotes++;
@@ -142,7 +183,7 @@ COM_extract_line (cbuf_t *cbuf)
 					   && (text[j] != '\r'
 						   || (j < len - 1 && text[j + 1] != '\n')))
 					j++;
-				dstring_snip (cbuf->buf, i, j - i);
+				dstring_snip (buf, i, j - i);
 				break;
 			}
 		}
@@ -151,33 +192,49 @@ COM_extract_line (cbuf_t *cbuf)
 			break;
 	}
 	if (i)
-		dstring_insert (cbuf->line, 0, text, i);
+		dstring_insert (line, 0, text, i);
 	if (text[i]) {
-		dstring_snip (cbuf->buf, 0, i + 1);
+		dstring_snip (buf, 0, i + 1);
 	} else {
 		// We've hit the end of the buffer, just clear it
-		dstring_clearstr (cbuf->buf);
+		dstring_clearstr (buf);
 	}
 }
 
 static void
-COM_parse_line (cbuf_t *cbuf)
+COM_execute (cbuf_t *cbuf)
 {
-	COM_TokenizeString (cbuf->line->str, cbuf->args);
-	dstring_clearstr (cbuf->line);
+	dstring_t *buf = DATA(cbuf)->buf;
+	dstring_t *line = DATA(cbuf)->line;
+	while (*buf->str) {
+		COM_extract_line (cbuf);
+		COM_TokenizeString (line->str, cbuf->args);
+		if (cbuf->args->argc)
+			Cmd_Command (cbuf->args);
+	}
 }
 
 static void
-COM_execute_line (cbuf_t *cbuf)
+COM_execute_sets (cbuf_t *cbuf)
 {
-	Cmd_Command (cbuf->args);
+	dstring_t *buf = DATA(cbuf)->buf;
+	dstring_t *line = DATA(cbuf)->buf;
+	while (*buf->str) {
+		COM_extract_line (cbuf);
+		COM_TokenizeString (line->str, cbuf->args);
+		if (cbuf->args->argc &&
+		   (!strcmp (cbuf->args->argv[0]->str, "set") ||
+		   !strcmp (cbuf->args->argv[0]->str, "setrom")))
+			Cmd_Command (cbuf->args);
+	}
 }
 
 cbuf_interpreter_t id_interp = {
-	COM_extract_line,
-	COM_parse_line,
-	COM_execute_line,
-	NULL,
-	NULL,
+	COM_construct,
+	COM_destruct,
+	COM_add,
+	COM_insert,
+	COM_execute,
+	COM_execute_sets,
 	NULL
 };

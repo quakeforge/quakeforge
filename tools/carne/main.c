@@ -50,7 +50,11 @@ Carne_Execute_Script (const char *path, cbuf_args_t *args)
 		if (f) {
 			f[len] = 0;
 			Qread (file, f, len);
-			Cbuf_InsertText (mbuf, f);
+			// If there is a hash-bang, strip it out
+			i = 0;
+			if (f[0] == '#')
+				for (; f[i] != '\n' && f[i+1]; i++);
+			Cbuf_AddText (mbuf, f+i);
 			free (f);
 		}
 		Qclose (file);
@@ -59,12 +63,7 @@ Carne_Execute_Script (const char *path, cbuf_args_t *args)
 		return 1;
 	}
 	
-	// If there is a hash-bang, strip it out
-	if (mbuf->buf->str[0] == '#') {
-		for (i = 0; mbuf->buf->str[i] != '\n' && mbuf->buf->str[i+1]; i++);
-		dstring_snip (mbuf->buf, 0, i+1);
-	}
-	GIB_Parse_Strip_Comments (mbuf);
+	//GIB_Parse_Strip_Comments (mbuf);
 	
 	GIB_Function_Prepare_Args (mbuf, args);
 	
@@ -73,7 +72,7 @@ Carne_Execute_Script (const char *path, cbuf_args_t *args)
 		GIB_Thread_Execute ();
 		Cbuf_Execute_Stack (mbuf);
 		// Check if there is anything left to do
-		if (carne_done || (!gib_threads && !mbuf->down && !mbuf->buf->str[0]))
+		if (carne_done || !GIB_DATA(mbuf)->program)
 			break;
 	}
 	Cbuf_DeleteStack (mbuf);
@@ -111,7 +110,7 @@ main (int argc, char **argv)
 	Cmd_Init ();	
 	GIB_Init (false); // No sandbox
 	
-	GIB_Builtin_Add ("exit", Carne_GIB_Exit_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("exit", Carne_GIB_Exit_f);
 	
 	if (argc > 1) {
 		// Prepare arguments

@@ -35,22 +35,20 @@
 typedef struct gib_builtin_s {
 	struct dstring_s *name;
 	void (*func) (void);
-	enum gib_builtin_type_e {
-		GIB_BUILTIN_NORMAL = 0, // Normal argument processing
-		GIB_BUILTIN_NOPROCESS = 1, // Don't process arguments
-		GIB_BUILTIN_FIRSTONLY = 2, // Process only the first argument
-	} type;
 } gib_builtin_t;
 
+extern char gib_null_string[];
+
 #define GIB_Argc() (cbuf_active->args->argc)
-#define GIB_Argv(x) ((x) < cbuf_active->args->argc ? cbuf_active->args->argv[(x)]->str : "")
-#define GIB_Args(x) ((x) < cbuf_active->args->argc ? cbuf_active->args->args[(x)] : "")
+#define GIB_Argv(x) ((x) < cbuf_active->args->argc ? cbuf_active->args->argv[(x)]->str : gib_null_string)
+#define GIB_Args(x) ((x) < cbuf_active->args->argc ? cbuf_active->args->args[(x)] : gib_null_string)
 #define GIB_Argd(x) ((x) < cbuf_active->args->argc ? cbuf_active->args->argv[(x)] : NULL)
+#define GIB_Argm(x) ((x) < cbuf_active->args->argc ? (gib_tree_t *)cbuf_active->args->argm[(x)] : NULL)
 
 #define GIB_USAGE(x) (Cbuf_Error ("syntax", "%s: invalid syntax\nusage: %s %s", GIB_Argv(0), GIB_Argv(0), (x)))
 
 void GIB_Arg_Strip_Delim (unsigned int arg);
 dstring_t *GIB_Return (const char *str);
-void GIB_Builtin_Add (const char *name, void (*func) (void), enum gib_builtin_type_e type);
+void GIB_Builtin_Add (const char *name, void (*func) (void));
 gib_builtin_t *GIB_Builtin_Find (const char *name);
 void GIB_Builtin_Init (qboolean sandbox);

@@ -29,38 +29,35 @@
 	$Id$
 */
 
+#include "QF/cbuf.h"
+#include "QF/gib_tree.h"
+#include "QF/dstring.h"
+
 #define GIB_DATA(buffer) ((gib_buffer_data_t *)(buffer->data))
 
+
 typedef struct gib_buffer_data_s {
+	struct gib_tree_s *program, *ip;
 	struct dstring_s *arg_composite;
-	struct dstring_s *current_token;
-	struct dstring_s *loop_program;
-	struct dstring_s *loop_data;
-	
-	char *loop_var_p, *loop_list_p, *loop_ifs_p;
-	
-	// Data for handling return values
-	struct {
-		qboolean waiting, available; // Return value states
-		struct dstring_s *retval; // Returned value
-				
-		// Data saved by tokenizer/processor
-		unsigned int line_pos; // Position within line
-		unsigned int token_pos; // Position within token
-		qboolean cat; // Concatenate to previous token?
-		int noprocess; // Process tokens?
-		char delim; // delimiter of token
-	} ret;
-	
+	qboolean done, waitret, haveret;
+	struct gib_sstack_s {
+		struct gib_dsarray_s {
+			struct dstring_s **dstrs;
+			unsigned int realsize, size;
+		} *values;
+		unsigned int size, p;
+	} stack;
 	struct hashtab_s *locals; // Local variables
-	
-	enum {
-		GIB_BUFFER_NORMAL, // Normal buffer
-		GIB_BUFFER_LOOP, // Looping buffer
-		GIB_BUFFER_PROXY // Responsible for embedded command
-	} type;
+	struct hashtab_s *globals; // Current domain
 } gib_buffer_data_t;
 
 void GIB_Buffer_Construct (struct cbuf_s *cbuf);
 void GIB_Buffer_Destruct (struct cbuf_s *cbuf);
 void GIB_Buffer_Reset (struct cbuf_s *cbuf);
+void GIB_Buffer_Add (cbuf_t *cbuf, const char *str);
+void GIB_Buffer_Insert (cbuf_t *cbuf, const char *str);
+void GIB_Buffer_Push_Sstack (struct cbuf_s *cbuf);
+void GIB_Buffer_Pop_Sstack (struct cbuf_s *cbuf);
+dstring_t *GIB_Buffer_Dsarray_Get (struct cbuf_s *cbuf);
+
+extern struct cbuf_interpreter_s gib_interp;

@@ -39,11 +39,13 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/qtypes.h"
 #include "QF/cbuf.h"
 #include "QF/quakefs.h"
-#include "QF/gib_init.h"
 #include "QF/gib_parse.h"
 #include "QF/gib_builtin.h"
 #include "QF/gib_regex.h"
 #include "QF/gib_thread.h"
+#include "QF/gib_vars.h"
+#include "QF/gib_buffer.h"
+#include "QF/gib_init.h"
 #include "QF/cmd.h"
 #include "QF/sys.h"
 #include "QF/zone.h"
@@ -76,7 +78,7 @@ GIB_Exec_Override_f (void) {
 		sub->up = cbuf_active;
 		cbuf_active->state = CBUF_STATE_STACK;
 		Cbuf_AddText (sub, f);
-		GIB_Parse_Strip_Comments (sub);
+		//GIB_Parse_Strip_Comments (sub);
 	} else
 		Cbuf_InsertText (cbuf_active, f);
 	Hunk_FreeToLowMark (mark);
@@ -90,6 +92,8 @@ GIB_Init (qboolean sandbox)
 		Cmd_RemoveCommand ("exec");
 		Cmd_AddCommand ("exec", GIB_Exec_Override_f, "Execute a script file.");
 	}
+	// Initialize variables
+	GIB_Var_Init ();
 	// Initialize regex cache
 	GIB_Regex_Init ();
 	// Initialize builtins

@@ -81,6 +81,7 @@ Cbuf_ArgsAdd (cbuf_args_t *args, const char *arg)
 		args->argv = realloc (args->argv,
 							  args->argv_size * sizeof (dstring_t *));
 		args->args = realloc (args->args, args->argv_size * sizeof (char *));
+		args->argm = realloc (args->argm, args->argv_size * sizeof (void *));
 		for (i = args->argv_size - 4; i < args->argv_size; i++) {
 			args->argv[i] = dstring_newstr ();
 			args->args[i] = 0;
@@ -96,8 +97,6 @@ Cbuf_New (cbuf_interpreter_t *interp)
 {
 	cbuf_t		*cbuf = calloc (1, sizeof (cbuf_t));
 
-	cbuf->buf = dstring_newstr ();
-	cbuf->line = dstring_newstr ();
 	cbuf->args = Cbuf_ArgsNew ();
 	cbuf->interpreter = interp;
 	if (interp->construct)
@@ -110,8 +109,6 @@ Cbuf_Delete (cbuf_t *cbuf)
 {
 	if (!cbuf)
 		return;
-	dstring_delete (cbuf->buf);
-	dstring_delete (cbuf->line);
 	Cbuf_ArgsDelete (cbuf->args);
 	if (cbuf->interpreter->destruct)
 		cbuf->interpreter->destruct (cbuf);
@@ -130,16 +127,25 @@ Cbuf_DeleteStack (cbuf_t *stack)
 }
 
 void
+Cbuf_PushStack (cbuf_t *new)
+{
+	if (cbuf_active->down)
+		Cbuf_DeleteStack (cbuf_active->down);
+	cbuf_active->down = new;
+	new->up = cbuf_active;
+	cbuf_active->state = CBUF_STATE_STACK;
+}
+
+void
 Cbuf_AddText (cbuf_t *cbuf, const char *text)
 {
-	dstring_appendstr (cbuf->buf, text);
+	cbuf->interpreter->add (cbuf, text);
 }
 
 void
 Cbuf_InsertText (cbuf_t *cbuf, const char *text)
 {
-	dstring_insertstr (cbuf->buf, 0, "\n");
-	dstring_insertstr (cbuf->buf, 0, text);
+	cbuf->interpreter->insert (cbuf, text);
 }
 
 void
@@ -147,19 +153,7 @@ Cbuf_Execute (cbuf_t *cbuf)
 {
 	cbuf_active = cbuf;
 	cbuf->state = CBUF_STATE_NORMAL;
-	while (cbuf->buf->str[0] || cbuf->line->str[0]) {
-		cbuf->interpreter->extract_line (cbuf);
-		if (cbuf->state)
-			break;
-		cbuf->interpreter->parse_line (cbuf);
-		if (cbuf->state) // Merging extract and parse
-			break;       // will get rid of extra checks
-		if (!cbuf->args->argc)
-			continue;
-		cbuf->interpreter->execute_line (cbuf);
-		if (cbuf->state)
-			break;
-	}
+	cbuf->interpreter->execute (cbuf);
 }
 
 void
@@ -193,8 +187,6 @@ Cbuf_Execute_Stack (cbuf_t *cbuf)
 	}
 	return;
 ERROR:
-	dstring_clearstr (cbuf->buf);
-	dstring_clearstr (cbuf->line);
 	if (cbuf->down) {
 		Cbuf_DeleteStack (cbuf->down);
 		cbuf->down = 0;
@@ -206,44 +198,27 @@ ERROR:
 void
 Cbuf_Execute_Sets (cbuf_t *cbuf)
 {
-	cbuf_args_t *args = cbuf->args;
-
-	cbuf_active = cbuf;
-	while (cbuf->buf->str[0] || cbuf->line->str[0]) {
-		cbuf->interpreter->extract_line (cbuf);
-		cbuf->interpreter->parse_line (cbuf);
-		if (!args->argc)
-			continue;
-		if (strequal (args->argv[0]->str, "set")
-			|| strequal (args->argv[0]->str, "setrom"))
-			Cmd_Command (args);
-	}
+	cbuf->interpreter->execute_sets (cbuf);
 }
 
 void
 Cbuf_Error (const char *class, const char *fmt, ...)
 {
 	dstring_t *message = dstring_newstr();
-	char *n;
 	va_list args;
 	
 	va_start (args, fmt);
 	dvsprintf (message, fmt, args);
 	va_end (args);
-	if ((n = strchr (cbuf_active->line->str, '\n')))
-		*n = 0;
 	Sys_Printf ( 
 				"-----------------------------------\n"
 				"|Error in command buffer execution|\n"
 				"-----------------------------------\n"
 				"Type: %s\n\n"
-				"%s\n\n"
-				"Near/on line: %s\n",
+				"%s\n\n",
 				class,
-				message->str,
-				cbuf_active->line->str
+				message->str
 				);
 	cbuf_active->state = CBUF_STATE_ERROR;
-	dstring_clearstr (cbuf_active->buf);
 	dstring_delete (message);
 }

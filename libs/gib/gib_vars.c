@@ -42,179 +42,121 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/hash.h"
 #include "QF/gib_vars.h"
 #include "QF/gib_buffer.h"
+#include "QF/gib_parse.h"
         
 hashtab_t *gib_globals = 0;
+hashtab_t *gib_domains = 0;
 
 static gib_var_t *
-GIB_Var_New (void)
+GIB_Var_New (const char *key)
 {
 	gib_var_t *new = calloc (1, sizeof (gib_var_t));
-	new->key = dstring_newstr();
-	new->value = dstring_newstr();
-	
+	new->array = calloc (1, sizeof (dstring_t *));
+	new->key = strdup (key);
 	return new;
 }
 
-const char *
+static const char *
 GIB_Var_Get_Key (void *ele, void *ptr)
 {
-	return ((gib_var_t *)ele)->key->str;
-}
-
-void
-GIB_Var_Free (void *ele, void *ptr)
-{
-	gib_var_t *l = (gib_var_t *)ele;
-	dstring_delete (l->key);
-	dstring_delete (l->value);
-	if (l->subvars)
-		Hash_DelTable (l->subvars);
-}
-
-static gib_var_t *
-GIB_Var_Get_R (hashtab_t *vars, char *name)
-{
-	char *p;
-	gib_var_t *l;
-	
-	if (!vars)
-		return 0;
-	if ((p = strchr (name, '.'))) {
-		*p = 0;
-		l = Hash_Find (vars, name);
-		*p = '.';
-		if (!l || !l->subvars)
-			return 0;
-		return GIB_Var_Get_R (l->subvars, p+1);
-	} else
-		return Hash_Find (vars, name);
+	return ((gib_var_t *)ele)->key;
 }
 
 static void
-GIB_Var_Set_R (hashtab_t *vars, char *name, const char *value)
+GIB_Var_Free (void *ele, void *ptr)
 {
-	char *p;
-	gib_var_t *l;
+	unsigned int i;
+	gib_var_t *l = (gib_var_t *)ele;
+	for (i = 0; i < l->size; i++)
+		if (l->array[i])
+			dstring_delete (l->array[i]);
+	free((void *)l->key);
+	free(l);
+}
+
+gib_var_t *
+GIB_Var_Get (hashtab_t *first, hashtab_t *second, const char *key)
+{
+	gib_var_t *var;
+	if (first && (var = Hash_Find (first, key)))
+		return var;
+	else if (second && (var = Hash_Find (second, key)))
+		return var;
+	else
+		return 0;
+}
+
+/* Modifies key but restores it before returning */
+gib_var_t *
+GIB_Var_Get_Complex (hashtab_t **first, hashtab_t **second, char *key, unsigned int *ind, qboolean create)
+{
+	unsigned int i, index;
+	qboolean fix = false;
+	gib_var_t *var;
 	
-	if ((p = strchr (name, '.'))) {
-		*p = 0;
-		if (!(l = Hash_Find (vars, name))) {
-			l = GIB_Var_New ();
-			dstring_appendstr (l->key, name);
-			Hash_Add (vars, l);
-		}
-		*p = '.';
-		if (!l->subvars)
-			l->subvars = Hash_NewTable (256, GIB_Var_Get_Key, GIB_Var_Free, 0);
-		GIB_Var_Set_R (l->subvars, p+1, value);
-	} else {
-		if ((l = Hash_Find (vars, name)))
-			dstring_clearstr (l->value);
-		else {
-			l = GIB_Var_New ();
-			dstring_appendstr (l->key, name);
-			Hash_Add (vars, l);
-		}
-		dstring_appendstr (l->value, value);
+	i = strlen(key);
+	index = 0;
+	if (i && key[i-1] == ']')
+		for (i--; i; i--)
+			if (key[i] == '[') {
+				index = atoi (key+i+1);
+				key[i] = 0;
+				fix = true;
+				break;
+			}
+	if (!(var = GIB_Var_Get (*first, *second, key))) {
+		if (create) {
+			var = GIB_Var_New (key);
+			if (!*first)
+				*first = Hash_NewTable (256, GIB_Var_Get_Key, GIB_Var_Free, 0);
+			Hash_Add (*first, var);
+		} else return 0;
 	}
-}
-	
-void
-GIB_Var_Set_Local (cbuf_t *cbuf, const char *key, const char *value)
-{
-	char *k = strdup (key);
-	if (!GIB_DATA(cbuf)->locals) {
-		GIB_DATA(cbuf)->locals = Hash_NewTable (256, GIB_Var_Get_Key, GIB_Var_Free, 0);
-		if (GIB_DATA(cbuf)->type != GIB_BUFFER_NORMAL)
-				GIB_DATA(cbuf->up)->locals = GIB_DATA(cbuf)->locals;
+	if (fix)
+		key[i] = '[';
+	if (index >= var->size) {
+		if (create) {
+			var->array = realloc (var->array, (index+1) * sizeof (dstring_t *));
+			memset (var->array+var->size, 0, (index+1 - var->size) * sizeof (dstring_t *));
+			var->size = index+1;
+		} else return 0;
 	}
-	GIB_Var_Set_R (GIB_DATA(cbuf)->locals, k, value);
-	free(k);
+	if (!var->array[index])
+		var->array[index] = dstring_newstr ();
+	*ind = index;
+	return var;
 }
 
-void
-GIB_Var_Set_Global (const char *key, const char *value)
+static const char *
+GIB_Domain_Get_Key (void *ele, void *ptr)
 {
-	char *k = strdup (key);
-	GIB_Var_Set_R (gib_globals, k, value);
-	free (k);
+	return ((gib_domain_t *)ele)->name;
 }
 
-const char *
-GIB_Var_Get_Local (cbuf_t *cbuf, const char *key)
+static void
+GIB_Domain_Free (void *ele, void *ptr)
 {
-	gib_var_t *l;
-	char *k;
-	if (!GIB_DATA(cbuf)->locals)
-		return 0;
-	k = strdup(key);
-	l = GIB_Var_Get_R (GIB_DATA(cbuf)->locals, k);
-	free(k);
-	if (l)
-		return l->value->str;
-	else
-		return 0;
+	gib_domain_t *l = (gib_domain_t *)ele;
+	Hash_DelTable (l->vars);
+	free ((void *)l->name);
+	free (l);
 }
 
-const char *
-GIB_Var_Get_Global (const char *key)
+hashtab_t *
+GIB_Domain_Get (const char *name)
 {
-	gib_var_t *l;
-	char *k = strdup (key);
-	l = GIB_Var_Get_R (gib_globals, k);
-	free (k);
-	if (l)
-		return l->value->str;
-	else
-		return 0;
-}
-
-const char *
-GIB_Var_Get (cbuf_t *cbuf, char *key)
-{
-	const char *v;
-	
-	if ((v = GIB_Var_Get_Local (cbuf, key)) || (v = GIB_Var_Get_Global (key)))
-		return v;
-	else
-		return 0;
-}
-
-void
-GIB_Var_Set (cbuf_t *cbuf, char *key, const char *value)
-{
-	int glob = 0;
-	char *c = 0;
-	if ((c = strchr (key, '.'))) // Only check stem
-		*c = 0;
-	glob = (!GIB_Var_Get_Local (cbuf, key) && GIB_Var_Get_Global (key));
-	if (c)
-		*c = '.';
-	if (glob)
-		GIB_Var_Set_Global (key, value); // Set the global
-	else
-		GIB_Var_Set_Local (cbuf, key, value); // Set the local
-}
-
-void
-GIB_Var_Free_Global (const char *key)
-{
-	char *p, *k;
-	gib_var_t *root;
-	void *del;
-	k = strdup (key);
-	if ((p = strrchr (k, '.'))) {
-		*p = 0;
-		if ((root = GIB_Var_Get_R (gib_globals, k))) {
-			del = Hash_Del (root->subvars, p+1);
-			if (del)
-				GIB_Var_Free (del, 0);
-		}
-	} else {
-		del = Hash_Del (gib_globals, k);
-		if (del)
-			GIB_Var_Free (del, 0);
+	gib_domain_t *d = Hash_Find (gib_domains, name);
+	if (!d) {
+		d = calloc (1, sizeof (gib_domain_t));
+		d->name = strdup(name);
+		d->vars = Hash_NewTable (1024, GIB_Var_Get_Key, GIB_Var_Free, 0);
 	}
-	free (k);
+	return d->vars;
 }
-		
+
+void
+GIB_Var_Init (void)
+{
+	gib_globals = Hash_NewTable (1024, GIB_Var_Get_Key, GIB_Var_Free, 0);
+	gib_domains = Hash_NewTable (1024, GIB_Domain_Get_Key, GIB_Domain_Free, 0);
+}

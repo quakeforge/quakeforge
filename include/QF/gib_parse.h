@@ -29,15 +29,17 @@
 	$Id$
 */
 
+#include "QF/gib_tree.h"
+
 inline qboolean GIB_Escaped (const char *str, int i);
 
 char GIB_Parse_Match_Brace (const char *str, unsigned int *i);
 char GIB_Parse_Match_Backtick (const char *str, unsigned int *i);
 char GIB_Parse_Match_Index (const char *str, unsigned int *i);
 char GIB_Parse_Match_Paren (const char *str, unsigned int *i);
+char GIB_Parse_Match_Var (const char *str, unsigned int *i);
 
-void GIB_Parse_Strip_Comments (struct cbuf_s *cbuf);
-void GIB_Parse_Extract_Line (struct cbuf_s *cbuf);
-void GIB_Parse_Tokenize_Line (struct cbuf_s *cbuf);
+gib_tree_t *GIB_Parse_Lines (const char *program, unsigned int flags);
+gib_tree_t *GIB_Parse_Embedded (const char *program, unsigned int flags, gib_tree_t **embedded);
 
-extern struct cbuf_interpreter_s gib_interp;
+extern qboolean gib_parse_error;

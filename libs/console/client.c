@@ -410,7 +410,7 @@ C_Init (void)
 					"file");
 					
 	// register GIB builtins
-	GIB_Builtin_Add ("print::center", C_GIB_Print_Center_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("print::center", C_GIB_Print_Center_f);
 	
 	con_initialized = true;
 }

@@ -44,6 +44,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/gib_parse.h"
 #include "QF/gib_thread.h"
 #include "QF/gib_function.h"
+#include "QF/gib_buffer.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
 
@@ -113,7 +114,7 @@ GIB_Thread_Execute (void)
 	for (cur = gib_threads; cur->next; cur = cur->next);
 	for (; cur; cur = tmp) {
 		tmp = cur->prev;
-		if (!cur->cbuf->buf->str[0] && !cur->cbuf->down) {
+		if (!cur->cbuf->down) {
 			GIB_Thread_Remove (cur);
 			GIB_Thread_Delete (cur);
 		} else
@@ -174,7 +175,7 @@ GIB_Event_Callback (gib_event_t *event, unsigned int argc, ...)
 	
 	va_start (ap, argc);
 	
-	Cbuf_ArgsAdd (args, f->name->str);
+	Cbuf_ArgsAdd (args, f->name);
 	for (i = 0; i < argc; i++)
 			Cbuf_ArgsAdd (args, va_arg (ap, const char *));
 			

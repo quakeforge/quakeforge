@@ -39,14 +39,13 @@
 typedef struct cbuf_args_s {
 	int         argc;
 	struct dstring_s **argv;
+	void **argm; // Metadata (optional)
 	const char **args;
 	int         argv_size;
 } cbuf_args_t;
 
 
 typedef struct cbuf_s {
-	struct dstring_s *buf;
-	struct dstring_s *line;
 	cbuf_args_t *args;
 	struct cbuf_interpreter_s *interpreter;	
 
@@ -57,21 +56,22 @@ typedef struct cbuf_s {
 		CBUF_STATE_WAIT, // Buffer is stalled until next frame
 		CBUF_STATE_ERROR, // An unrecoverable error occured
 		CBUF_STATE_STACK, // A buffer has been added to the stack
+		CBUF_STATE_DONE, // This buffer has completed execution
 	}	state;
 	
-	qboolean strict; // Should we tolerate unknown commands?
-	
+	qboolean strict; // Should we tolerate unknown commands
 	double resumetime; // Time when stack can be executed again
 	
-	void *data; // Pointer to a custom structure if needed
+	void *data; // Pointer to interpreter data
 } cbuf_t;
 
 typedef struct cbuf_interpreter_s {
-	void        (*extract_line) (struct cbuf_s *cbuf);
-	void        (*parse_line) (struct cbuf_s *cbuf);
-	void		(*execute_line) (struct cbuf_s *cbuf);
 	void		(*construct) (struct cbuf_s *cbuf);
 	void		(*destruct) (struct cbuf_s *cbuf);
+	void		(*add) (struct cbuf_s *cbuf, const char *str);
+	void		(*insert) (struct cbuf_s *cbuf, const char *str);
+	void		(*execute) (struct cbuf_s *cbuf);
+	void		(*execute_sets) (struct cbuf_s *cbuf);
 	void		(*reset) (struct cbuf_s *cbuf);
 } cbuf_interpreter_t;
 
@@ -85,6 +85,7 @@ cbuf_t * Cbuf_New (cbuf_interpreter_t *interp);
 
 void Cbuf_Delete (cbuf_t *cbuf);
 void Cbuf_DeleteStack (cbuf_t *stack);
+void Cbuf_PushStack (cbuf_t *new);
 void Cbuf_AddText (cbuf_t *cbuf, const char *text);
 void Cbuf_InsertText (cbuf_t *cbuf, const char *text);
 void Cbuf_Execute (cbuf_t *cbuf);

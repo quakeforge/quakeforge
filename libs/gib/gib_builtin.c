@@ -54,6 +54,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/hash.h"
 #include "QF/dstring.h"
 #include "QF/gib_parse.h"
+#include "QF/gib_execute.h"
 #include "QF/gib_builtin.h"
 #include "QF/gib_buffer.h"
 #include "QF/gib_function.h"
@@ -61,6 +62,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/gib_regex.h"
 #include "QF/gib_thread.h"
 #include "regex.h"
+
+char gib_null_string[] = "";
 
 hashtab_t *gib_builtins;
 
@@ -87,7 +90,7 @@ GIB_Builtin_Free (void *ele, void *ptr)
 	Registers a new builtin GIB command.
 */
 void
-GIB_Builtin_Add (const char *name, void (*func) (void), enum gib_builtin_type_e type)
+GIB_Builtin_Add (const char *name, void (*func) (void))
 {
 	gib_builtin_t *new;
 	
@@ -97,7 +100,6 @@ GIB_Builtin_Add (const char *name, void (*func) (void), enum gib_builtin_type_e 
 	new = calloc (1, sizeof (gib_builtin_t));
 	new->func = func;
 	new->name = dstring_newstr();
-	new->type = type;
 	dstring_appendstr (new->name, name);
 	Hash_Add (gib_builtins, new);
 }
@@ -117,34 +119,19 @@ GIB_Builtin_Find (const char *name)
 	return (gib_builtin_t *) Hash_Find (gib_builtins, name);
 }
 
-/*
-	GIB_Arg_Strip_Delim
-	
-	Strips any wrapping characters off of the
-	specified argument.  Useful for GIB_BUILTIN_NOPROCESS
-	or GIB_BUILTIN_FIRSTONLY builtins.
-*/
-void
-GIB_Arg_Strip_Delim (unsigned int arg)
-{
-	char *p = cbuf_active->args->argv[arg]->str;
-	if (*p == '{' || *p == '\"') {
-		dstring_snip (cbuf_active->args->argv[arg], 0, 1);
-		p[strlen(p)-1] = 0;
-	}
-}
-
 dstring_t *
 GIB_Return (const char *str)
 {
-	if (GIB_DATA(cbuf_active)->type != GIB_BUFFER_PROXY)
-		return 0;
-	dstring_clearstr (GIB_DATA(cbuf_active->up)->ret.retval);
-	GIB_DATA(cbuf_active->up)->ret.available = true;
-	if (!str)
-		return GIB_DATA(cbuf_active->up)->ret.retval;
-	else
-		dstring_appendstr (GIB_DATA(cbuf_active->up)->ret.retval, str);
+	dstring_t *dstr;
+	if (GIB_DATA(cbuf_active)->waitret) {
+		GIB_DATA(cbuf_active)->haveret = true;
+		dstr = GIB_Buffer_Dsarray_Get (cbuf_active);
+		dstring_clearstr (dstr);
+		if (!str) 
+			return dstr;
+		else
+			dstring_appendstr (dstr, str);
+	}
 	return 0;
 }
 
@@ -156,10 +143,23 @@ GIB_Return (const char *str)
 static void
 GIB_Function_f (void)
 {
+	gib_tree_t *program;
+
 	if (GIB_Argc () != 3)
 		GIB_USAGE ("name program");
-	else
-		GIB_Function_Define (GIB_Argv(1), GIB_Argv(2));
+	else {
+		// Is the function program already tokenized?
+		if (GIB_Argm (2)->delim != '{') {
+			// Parse on the fly
+			if (!(program = GIB_Parse_Lines (GIB_Argv(2), TREE_NORMAL))) {
+				// Error!
+				Cbuf_Error ("parse", "Parse error while defining function '%s'.", GIB_Argv(1));
+				return;
+			}
+		} else
+			program = GIB_Argm (2)->children;
+		GIB_Function_Define (GIB_Argv(1), GIB_Argv(2), program, GIB_DATA(cbuf_active)->globals);
+	}
 }			
 
 static void
@@ -170,7 +170,7 @@ GIB_Function_Get_f (void)
 	else {
 		gib_function_t *f;
 		if ((f = GIB_Function_Find (GIB_Argv (1))))
-			GIB_Return (f->program->str);
+			GIB_Return (f->text->str);
 		else
 			GIB_Return ("");
 	}
@@ -179,118 +179,72 @@ GIB_Function_Get_f (void)
 static void
 GIB_Local_f (void)
 {
-	int i;
+	unsigned int i, index;
+	hashtab_t *zero = 0;
 	
 	if (GIB_Argc () < 2)
 		GIB_USAGE ("var1 [var2 var3 ...]");
 	else
 		for (i = 1; i < GIB_Argc(); i++)
-			GIB_Var_Set_Local (cbuf_active, GIB_Argv(i), "");
+			GIB_Var_Get_Complex (&GIB_DATA(cbuf_active)->locals, &zero, GIB_Argv(i), &index, true);
 }
+
 
 static void
 GIB_Global_f (void)
 {
-	int i;
+	unsigned int i, index;
+	hashtab_t *zero = 0;
 	
 	if (GIB_Argc () < 2)
 		GIB_USAGE ("var1 [var2 var3 ...]");
 	else
 		for (i = 1; i < GIB_Argc(); i++)
-			GIB_Var_Set_Global (GIB_Argv(i), "");
+			GIB_Var_Get_Complex (&GIB_DATA(cbuf_active)->globals, &zero, GIB_Argv(i), &index, true);
 }
 
 static void
-GIB_Global_Delete_f (void)
+GIB_Global_Domain_f (void)
 {
-	if (GIB_Argc () != 2)
-		GIB_USAGE ("var");
-	if (GIB_Var_Get_Global (GIB_Argv(1)))
-		GIB_Var_Free_Global (GIB_Argv(1));
+	if (GIB_Argc() != 2)
+		GIB_USAGE ("domain");
+	else
+		GIB_DATA(cbuf_active)->globals = GIB_Domain_Get (GIB_Argv(1));
 }
 
 static void
 GIB_Return_f (void)
 {
-	cbuf_t *sp;
+	cbuf_t *sp = cbuf_active->up;
 	
-	if (GIB_Argc () > 2)
-		GIB_USAGE ("[value]");
+	GIB_DATA(cbuf_active)->done = true;
+	if (!GIB_Argm(0)->next) // No return values
+		return;
+	else if (GIB_Argc() == 1) // Empty return array
+		GIB_DATA(sp)->waitret = false;
+	else if (!sp || // Nothing above us on the stack
+	   sp->interpreter != &gib_interp || // Not a GIB buffer
+	   !GIB_DATA(sp)->waitret) // Doesn't want a return value
+		Sys_DPrintf("GIB warning: unwanted return value(s) discarded.\n"); // Not a serious error
 	else {
-		sp = cbuf_active;
-		while (sp->interpreter == &gib_interp && GIB_DATA(sp)->type == GIB_BUFFER_LOOP) { // Get out of loops
-			GIB_DATA(sp)->type = GIB_BUFFER_PROXY;
-			dstring_clearstr (sp->buf);
-			dstring_clearstr (sp->line);
-			sp = sp->up;
+		unsigned int i;
+		dstring_t *dstr;
+		for (i = 1; i < GIB_Argc(); i++) {
+			dstr = GIB_Buffer_Dsarray_Get (sp);
+			dstring_clearstr (dstr);
+			dstring_appendstr (dstr, GIB_Argv(i));
 		}
-		dstring_clearstr (sp->buf);
-		dstring_clearstr (sp->line);
-		if (GIB_Argc () == 1)
-			return;
-		if (!sp->up || // Nothing above us on the stack
-		  sp->up->interpreter != &gib_interp || // Not a GIB buffer
-		  GIB_DATA(sp->up)->type != GIB_BUFFER_PROXY || // Not a proxy buffer
-		  !sp->up->up ||  // Nothing above proxy buffer on the stack
-		  sp->up->up->interpreter != &gib_interp || // Not a GIB buffer to return to
-		  !GIB_DATA(sp->up->up)->ret.waiting) // Buffer doesn't want a return value
-			Sys_Printf("GIB warning: unwanted return value discarded.\n"); // Not a serious error
-		else {
-			dstring_clearstr (GIB_DATA(sp->up->up)->ret.retval);
-			dstring_appendstr (GIB_DATA(sp->up->up)->ret.retval, GIB_Argv(1));
-			GIB_DATA(sp->up->up)->ret.available = true;
-		}
+		GIB_DATA(sp)->waitret = false;
 	}
 }
 
-static void
-GIB_If_f (void)
-{
-	int condition;
-	if ((!strcmp (GIB_Argv (3), "else") && GIB_Argc() >= 5) || // if condition {program} else ...
-	    (GIB_Argc() == 3)) { // if condition {program}
-	    	condition = atoi(GIB_Argv(1));
-	    	if (GIB_Argv(0)[2])
-	    		condition = !condition;
-	    	if (condition) {
-		    	GIB_Arg_Strip_Delim (2);
-	    		Cbuf_InsertText (cbuf_active, GIB_Argv(2));
-	    	} else if (GIB_Argc() == 5) {
-	    		GIB_Arg_Strip_Delim (4);
-	    		Cbuf_InsertText (cbuf_active, GIB_Argv(4));
-	    	} else if (GIB_Argc() > 5)
-	    		Cbuf_InsertText (cbuf_active, GIB_Args (4));
-	} else
-		GIB_USAGE ("condition program [else ...]");
-}
-
-static void
-GIB_While_f (void)
-{
-	if (GIB_Argc() != 3) {
-		GIB_USAGE ("condition program");
-	} else {
-		cbuf_t *sub = Cbuf_New (&gib_interp);
-		GIB_DATA(sub)->type = GIB_BUFFER_LOOP;
-		GIB_DATA(sub)->locals = GIB_DATA(cbuf_active)->locals;
-		GIB_DATA(sub)->loop_program = dstring_newstr ();
-		if (cbuf_active->down)
-			Cbuf_DeleteStack (cbuf_active->down);
-		cbuf_active->down = sub;
-		sub->up = cbuf_active;
-		GIB_Arg_Strip_Delim (2);
-		dstring_appendstr (GIB_DATA(sub)->loop_program, va("ifnot %s break\n%s", GIB_Argv (1), GIB_Argv (2)));
-		Cbuf_AddText (sub, GIB_DATA(sub)->loop_program->str);
-		cbuf_active->state = CBUF_STATE_STACK;
-	}
-}
-
+/*
 static void
 GIB_Field_Get_f (void)
 {
 	unsigned int field;
-	char *end;
-	const char *list, *ifs;
+	char *list, *end;
+	const char *ifs;
 	if (GIB_Argc() < 3 || GIB_Argc() > 4) {
 		GIB_USAGE ("list element [fs]");
 		return;
@@ -303,7 +257,7 @@ GIB_Field_Get_f (void)
 		ifs = " \t\n\r";
 	if (!*ifs) {
 		if (field < strlen(GIB_Argv(1))) {
-			((char *)GIB_Argv(1))[field+1] = 0;
+			GIB_Argv(1)[field+1] = 0;
 			GIB_Return (GIB_Argv(1)+field);
 		} else
 			GIB_Return ("");
@@ -321,103 +275,65 @@ GIB_Field_Get_f (void)
 		}
 		field--;
 	}
-	for (end = (char *)list; !strchr(ifs, *end); end++);
+	for (end = list; !strchr(ifs, *end); end++);
 	*end = 0;
 	GIB_Return (list);
 }
-		
-		
-static void
-GIB___For_f (void)
-{
-	char *end = 0, old = 0;
-	if (!GIB_DATA(cbuf_active)->loop_list_p[0]) {
-		Cbuf_InsertText (cbuf_active, "break;");
-		return;
-	}
-	if (!GIB_DATA(cbuf_active)->loop_ifs_p[0]) {
-		end = GIB_DATA(cbuf_active)->loop_list_p;
-		old = end[1];
-		end[1] = 0;
-		GIB_Var_Set_Local (cbuf_active, GIB_DATA(cbuf_active)->loop_var_p, GIB_DATA(cbuf_active)->loop_list_p++);
-		end[1] = old;
-		return;
-	}
-	for (end = GIB_DATA(cbuf_active)->loop_list_p; !strchr(GIB_DATA(cbuf_active)->loop_ifs_p, *end); end++);
-	if (*end) {
-		old = *end;
-		*end = 0;
-	}
-	GIB_Var_Set_Local (cbuf_active, GIB_DATA(cbuf_active)->loop_var_p, GIB_DATA(cbuf_active)->loop_list_p);
-	if (old)
-		*end = old;
-	while (*end && strchr(GIB_DATA(cbuf_active)->loop_ifs_p, *end))
-		end++;
-	GIB_DATA(cbuf_active)->loop_list_p = end;
-}
-
+*/
+	
 static void
 GIB_For_f (void)
 {
-	if (strcmp ("in", GIB_Argv (2)) ||
-	   (GIB_Argc() == 7 && strcmp ("by", GIB_Argv(4))) ||
-	   (GIB_Argc() != 5 && GIB_Argc() != 7))
-		GIB_USAGE ("variable in list [by fs] program");
-	else if (GIB_Argv (3)[0]) {
-		char *ll;
-		const char *ifs;
-		cbuf_t *sub = Cbuf_New (&gib_interp);
-		// Create loop buffer
-		GIB_DATA(sub)->type = GIB_BUFFER_LOOP;
-		GIB_DATA(sub)->locals = GIB_DATA(cbuf_active)->locals;
-		GIB_DATA(sub)->loop_program = dstring_newstr ();
-		GIB_DATA(sub)->loop_data = dstring_newstr ();
-		if (cbuf_active->down)
-			Cbuf_DeleteStack (cbuf_active->down);
-		cbuf_active->down = sub;
-		sub->up = cbuf_active;
-		// Store all for-loop data in one big dstring (easy to clean up)
-		dstring_appendstr (GIB_DATA(sub)->loop_data, GIB_Argv(3));
-		dstring_append (GIB_DATA(sub)->loop_data, GIB_Argv(1), strlen(GIB_Argv(1))+1);
-		if (GIB_Argc() == 7)
-			ifs = GIB_Argv (5);
-		else if (!(ifs = GIB_Var_Get_Local (cbuf_active, "ifs")))
-			ifs = " \n\r\t";
-		dstring_append (GIB_DATA(sub)->loop_data, ifs, strlen(ifs)+1);
-		// Store pointers to data
-		for (ll = GIB_DATA(sub)->loop_data->str; *ll && strchr (ifs, *ll); ll++);
-		GIB_DATA(sub)->loop_list_p = ll; // List to iterate through
-		GIB_DATA(sub)->loop_var_p = GIB_DATA(sub)->loop_data->str + strlen(GIB_Argv(3))+1; // Var to use
-		GIB_DATA(sub)->loop_ifs_p = GIB_DATA(sub)->loop_var_p + strlen(GIB_Argv(1))+1; // Internal field separator
-		dstring_appendstr (GIB_DATA(sub)->loop_program, "__for;");
-		dstring_appendstr (GIB_DATA(sub)->loop_program, GIB_Argc() == 7 ? GIB_Argv (6) : GIB_Argv(4));
-		Cbuf_AddText (sub, GIB_DATA(sub)->loop_program->str);
-		cbuf_active->state = CBUF_STATE_STACK;
+	dstring_t *dstr;
+	unsigned int i;
+	if (GIB_Argc() < 5) {
+		GIB_DATA(cbuf_active)->ip = GIB_DATA(cbuf_active)->ip->jump;
+		return;
 	}
+	GIB_Buffer_Push_Sstack (cbuf_active);
+	dstr = GIB_Buffer_Dsarray_Get (cbuf_active);
+	dstring_clearstr (dstr);
+	dstring_appendstr (dstr, GIB_Argv(1));
+	for (i = GIB_Argc()-2; i > 2; i--) {
+		dstr = GIB_Buffer_Dsarray_Get (cbuf_active);
+		dstring_appendstr (dstr, GIB_Argv(i));
+	}
+	GIB_Execute_For_Next (cbuf_active);
 }
 
 static void
 GIB_Break_f (void)
 {
-	if (GIB_DATA(cbuf_active)->type != GIB_BUFFER_LOOP)
-		Cbuf_Error ("syntax",
-					"break attempted outside of a loop"
-					);
-	else {
-		GIB_DATA(cbuf_active)->type = GIB_BUFFER_PROXY; // If we set it to normal, locals will get double freed
-		dstring_clearstr (cbuf_active->buf);
-	}					
+	if (!GIB_DATA(cbuf_active)->ip->jump) {
+		Cbuf_Error ("loop", "Break command attempted outside of a loop.");
+		return;
+	}
+	if (!GIB_DATA(cbuf_active)->ip->jump->flags & TREE_COND) // In a for loop?
+		GIB_Buffer_Pop_Sstack (cbuf_active); // Kill it
+	GIB_DATA(cbuf_active)->ip = GIB_DATA(cbuf_active)->ip->jump->jump;
 }
+
+static gib_tree_t gib_cont = {
+	"",
+	' ',
+	0, 0, 0, 0,
+	TREE_NORMAL
+};
 
 static void
 GIB_Continue_f (void)
 {
-	if (GIB_DATA(cbuf_active)->type != GIB_BUFFER_LOOP)
-		Cbuf_Error ("syntax",
-					"continue attempted outside of a loop"
-					);
-	else
-		dstring_clearstr (cbuf_active->buf);
+	if (!GIB_DATA(cbuf_active)->ip->jump) {
+		Cbuf_Error ("loop", "Continue command attempted outside of a loop.");
+		return;
+	}
+	if (GIB_DATA(cbuf_active)->ip->jump->flags & TREE_COND) {
+		gib_cont.next = GIB_DATA(cbuf_active)->ip->jump;
+		GIB_DATA(cbuf_active)->ip = &gib_cont;
+	} else {
+		GIB_Execute_For_Next (cbuf_active);
+		GIB_DATA(cbuf_active)->ip = GIB_DATA(cbuf_active)->ip->jump;
+	}
 }
 
 // Note: this is a standard console command, not a GIB builtin
@@ -451,7 +367,7 @@ GIB_Function_Export_f (void)
 		if (!(f = GIB_Function_Find (GIB_Argv (i))))
 			Cbuf_Error ("function", "function::export: function '%s' not found", GIB_Argv (i));
 		else if (!f->exported) {
-			Cmd_AddCommand (f->name->str, GIB_Runexported_f, "Exported GIB function.");
+			Cmd_AddCommand (f->name, GIB_Runexported_f, "Exported GIB function.");
 			f->exported = true;
 		}
 	}
@@ -482,7 +398,7 @@ static void
 GIB_String_Findsub_f (void)
 {
 	dstring_t *ret;
-	const char *haystack, *res;
+	char *haystack, *res;
 	if (GIB_Argc() != 3) {
 		GIB_USAGE ("string substr");
 		return;
@@ -547,25 +463,26 @@ GIB_Regex_Extract_f (void)
 	int i;
 	char o;
 	
-	if (GIB_Argc() < 4) {
-		GIB_USAGE ("string regex options [var1 var2 var3 ...]");
+	if (GIB_Argc() != 4) {
+		GIB_USAGE ("string regex options");
 		return;
 	}
-	match = calloc (GIB_Argc() - 4, sizeof(regmatch_t));
+	match = calloc (32, sizeof(regmatch_t));
 	
 	if (!(reg = GIB_Regex_Compile (GIB_Argv(2), REG_EXTENDED | GIB_Regex_Translate_Options (GIB_Argv(3)))))
 		Cbuf_Error ("regex", "%s: %s", GIB_Argv(0), GIB_Regex_Error ());
-	else if (!regexec(reg, GIB_Argv(1), GIB_Argc() - 4, match, 0) && match[0].rm_eo) {
-		for (i = 0; i < GIB_Argc() - 4; i++) {
-			if (match[i].rm_so != -1 && *GIB_Argv(i+4)) {
+	else if (!regexec(reg, GIB_Argv(1), 32, match, 0) && match[0].rm_eo) {
+		if (!(ret = GIB_Return(0)))
+			return;
+		dsprintf (ret, "%lu", (unsigned long) match[0].rm_eo);
+		for (i = 0; i < 32; i++) {
+			if (match[i].rm_so != -1) {
 				o = GIB_Argv(1)[match[i].rm_eo];
-				((char *)GIB_Argv(1))[match[i].rm_eo] = 0;
-				GIB_Var_Set_Local (cbuf_active, GIB_Argv(i+4), GIB_Argv(1)+match[i].rm_so);
-				((char *)GIB_Argv(1))[match[i].rm_eo] = o;
+				GIB_Argv(1)[match[i].rm_eo] = 0;
+				GIB_Return (GIB_Argv(1)+match[i].rm_so);
+				GIB_Argv(1)[match[i].rm_eo] = o;
 			}
 		}
-		if ((ret = GIB_Return (0)))
-			dsprintf (ret, "%lu", (unsigned long) match[0].rm_eo);
 	} else
 		GIB_Return ("-1");
 	free (match);
@@ -593,19 +510,11 @@ GIB_Thread_Kill_f (void)
 		GIB_USAGE ("id");
 	else {
 		gib_thread_t *thread;
-		cbuf_t *cur;
 		unsigned long int id = strtoul (GIB_Argv(1), 0, 10);
 		thread = GIB_Thread_Find (id);
 		if (!thread) {
 			Cbuf_Error ("thread", "thread.kill: thread %lu does not exist.", id);
 			return;
-		}
-		for (cur = thread->cbuf; cur; cur = cur->down) {
-			// Kill all loops
-			if (GIB_DATA(cur)->type == GIB_BUFFER_LOOP)
-				GIB_DATA(cur)->type = GIB_BUFFER_PROXY; // Proxy to prevent shared locals being freed
-			dstring_clearstr (cur->line);
-			dstring_clearstr (cur->buf);
 		}
 	}
 }
@@ -656,7 +565,7 @@ static void
 GIB_File_Read_f (void)
 {
 	QFile      *file;
-	const char *path;
+	char       *path;
 	int        len;
 	dstring_t  *ret;
 
@@ -697,7 +606,7 @@ static void
 GIB_File_Write_f (void)
 {
 	QFile      *file;
-	const char *path;
+	char       *path;
 	
 	if (GIB_Argc () != 3) {
 		GIB_USAGE ("file data");
@@ -728,10 +637,8 @@ GIB_File_Find_f (void)
 {
 	DIR        *directory;
 	struct dirent *entry;
-	const char *path, *glob = 0;
-	char       *s;
-	const char *ifs;
-	dstring_t  *list;
+	const char       *path, *glob = 0;
+	char *s;
 
 	if (GIB_Argc () != 2) {
 		GIB_USAGE ("glob");
@@ -759,25 +666,16 @@ GIB_File_Find_f (void)
 		  "file.find: could not open directory %s: %s", path, strerror (errno));
 		return;
 	}
-	if ((list = GIB_Return (0))) {
-		if (!(ifs = GIB_Var_Get_Local (cbuf_active, "ifs")))
-			ifs = "\n"; // Newlines don't appear in filenames and are part of the default ifs
-		while ((entry = readdir (directory))) {
-			if (strcmp (entry->d_name, ".") &&
-			  strcmp (entry->d_name, "..") &&
-			  !fnmatch (glob, entry->d_name, 0)) {
-				dstring_appendsubstr (list, ifs, 1);
-				dstring_appendstr (list, entry->d_name);
-			}
-		}
-	}
+	while ((entry = readdir (directory)))
+		if (strcmp (entry->d_name, ".") && strcmp (entry->d_name, "..") && !fnmatch (glob, entry->d_name, 0))
+			GIB_Return (entry->d_name);
 	closedir (directory);
 }
 
 static void
 GIB_File_Move_f (void)
 {
-	const char *path1, *path2;
+	char *path1, *path2;
 
 	if (GIB_Argc () != 3) {
 		GIB_USAGE ("from_file to_file");
@@ -804,7 +702,7 @@ GIB_File_Move_f (void)
 static void
 GIB_File_Delete_f (void)
 {
-	const char *path;
+	char *path;
 
 	if (GIB_Argc () != 2) {
 		GIB_USAGE ("file");
@@ -827,24 +725,21 @@ GIB_Range_f (void)
 {
 	double i, inc, start, limit;
 	dstring_t *dstr;
-	const char *ifs;
 	if (GIB_Argc () < 3 || GIB_Argc () > 4) {
 		GIB_USAGE ("lower upper [step]");
 		return;
 	}
-	if (!(dstr = GIB_Return (0)))
-		return; // Why bother?
 	limit = atof(GIB_Argv(2));
 	start = atof(GIB_Argv(1));
 	if (GIB_Argc () == 4 && (inc = atof(GIB_Argv(3))) == 0.0)
 		return;
 	else
 		inc = limit < start ? -1.0 : 1.0;
-	if (!(ifs = GIB_Var_Get_Local (cbuf_active, "ifs")))
-			ifs = " ";
-	for (i = atof(GIB_Argv(1)); inc < 0 ? i >= limit : i <= limit; i += inc)
-		dasprintf(dstr, "%.10g%.1s", i, ifs);
-	dstr->str[dstr->size-2] = 0;
+	for (i = atof(GIB_Argv(1)); inc < 0 ? i >= limit : i <= limit; i += inc) {
+		if (!(dstr = GIB_Return(0)))
+			return;
+		dsprintf(dstr, "%.10g", i);
+	}
 }
 
 static void
@@ -860,42 +755,37 @@ GIB_Print_f (void)
 void
 GIB_Builtin_Init (qboolean sandbox)
 {
-	gib_globals = Hash_NewTable (512, GIB_Var_Get_Key, GIB_Var_Free, 0);
 
 	if (sandbox)
 		GIB_File_Transform_Path = GIB_File_Transform_Path_Secure;
 	else
 		GIB_File_Transform_Path = GIB_File_Transform_Path_Null;
 	
-	GIB_Builtin_Add ("function", GIB_Function_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("function::get", GIB_Function_Get_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("function::export", GIB_Function_Export_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("local", GIB_Local_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("global", GIB_Global_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("global::delete", GIB_Global_Delete_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("return", GIB_Return_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("if", GIB_If_f, GIB_BUILTIN_FIRSTONLY);
-	GIB_Builtin_Add ("ifnot", GIB_If_f, GIB_BUILTIN_FIRSTONLY);
-	GIB_Builtin_Add ("while", GIB_While_f, GIB_BUILTIN_NOPROCESS);
-	GIB_Builtin_Add ("field::get", GIB_Field_Get_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("for", GIB_For_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("__for", GIB___For_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("break", GIB_Break_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("continue", GIB_Continue_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("string::length", GIB_String_Length_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("string::equal", GIB_String_Equal_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("string::findsub", GIB_String_Findsub_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("regex::match", GIB_Regex_Match_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("regex::replace", GIB_Regex_Replace_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("regex::extract", GIB_Regex_Extract_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("thread::create", GIB_Thread_Create_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("thread::kill", GIB_Thread_Kill_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("event::register", GIB_Event_Register_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("file::read", GIB_File_Read_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("file::write", GIB_File_Write_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("file::find", GIB_File_Find_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("file::move", GIB_File_Move_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("file::delete", GIB_File_Delete_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("range", GIB_Range_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("print", GIB_Print_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("function", GIB_Function_f);
+	GIB_Builtin_Add ("function::get", GIB_Function_Get_f);
+	GIB_Builtin_Add ("function::export", GIB_Function_Export_f);
+	GIB_Builtin_Add ("local", GIB_Local_f);
+	GIB_Builtin_Add ("global", GIB_Global_f);
+	GIB_Builtin_Add ("global::domain", GIB_Global_Domain_f);
+	GIB_Builtin_Add ("return", GIB_Return_f);
+//	GIB_Builtin_Add ("dieifnot", GIB_Dieifnot_f);
+	GIB_Builtin_Add ("for", GIB_For_f);
+	GIB_Builtin_Add ("break", GIB_Break_f);
+	GIB_Builtin_Add ("continue", GIB_Continue_f);
+	GIB_Builtin_Add ("string::length", GIB_String_Length_f);
+	GIB_Builtin_Add ("string::equal", GIB_String_Equal_f);
+	GIB_Builtin_Add ("string::findsub", GIB_String_Findsub_f);
+	GIB_Builtin_Add ("regex::match", GIB_Regex_Match_f);
+	GIB_Builtin_Add ("regex::replace", GIB_Regex_Replace_f);
+	GIB_Builtin_Add ("regex::extract", GIB_Regex_Extract_f);
+	GIB_Builtin_Add ("thread::create", GIB_Thread_Create_f);
+	GIB_Builtin_Add ("thread::kill", GIB_Thread_Kill_f);
+	GIB_Builtin_Add ("event::register", GIB_Event_Register_f);
+	GIB_Builtin_Add ("file::read", GIB_File_Read_f);
+	GIB_Builtin_Add ("file::write", GIB_File_Write_f);
+	GIB_Builtin_Add ("file::find", GIB_File_Find_f);
+	GIB_Builtin_Add ("file::move", GIB_File_Move_f);
+	GIB_Builtin_Add ("file::delete", GIB_File_Delete_f);
+	GIB_Builtin_Add ("range", GIB_Range_f);
+	GIB_Builtin_Add ("print", GIB_Print_f);
 }

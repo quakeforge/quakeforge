@@ -36,6 +36,7 @@ static __attribute__ ((unused)) const char rcsid[] =
         "$Id$";
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "QF/sys.h"
 #include "QF/dstring.h"
@@ -45,6 +46,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/gib_buffer.h"
 #include "QF/gib_function.h"
 #include "QF/gib_vars.h"
+#include "QF/gib_tree.h"
 #include "QF/va.h"
 
 hashtab_t *gib_functions = 0;
@@ -56,12 +58,11 @@ hashtab_t *gib_functions = 0;
 	a pointer to it.
 */
 static gib_function_t *
-GIB_Function_New (void)
+GIB_Function_New (const char *name)
 {
 	gib_function_t *new = calloc (1, sizeof (gib_function_t));
-	new->name = dstring_newstr();
-	new->program = dstring_newstr();
-	
+	new->text = dstring_newstr();
+	new->name = strdup (name);
 	return new;
 }
 
@@ -71,40 +72,46 @@ GIB_Function_New (void)
 static const char *
 GIB_Function_Get_Key (void *ele, void *ptr)
 {
-	return ((gib_function_t *)ele)->name->str;
+	return ((gib_function_t *)ele)->name;
 }
 static void
 GIB_Function_Free (void *ele, void *ptr)
 {
 	gib_function_t *func = (gib_function_t *)ele;
-	dstring_delete (func->name);
-	dstring_delete (func->program);
+	dstring_delete (func->text);
+	free ((void *)func->name);
+	if (func->program)
+		GIB_Tree_Free_Recursive (func->program, true);
 	free (func);
 }
 
 /*
 	GIB_Function_Define
 	
-	Sets the program text of a GIB function,
+	Sets the program and text of a GIB function,
 	allocating one and adding it to the functions
 	hash if needed.
 */
 void
-GIB_Function_Define (const char *name, const char *program)
+GIB_Function_Define (const char *name, const char *text, gib_tree_t *program, hashtab_t *globals)
 {
 	gib_function_t *func;
 	
 	if (!gib_functions)
 		gib_functions = Hash_NewTable (1024, GIB_Function_Get_Key, GIB_Function_Free, 0);
 	func = Hash_Find(gib_functions, name);
-	if (func)
-		dstring_clearstr (func->program);
-	else {
-		func = GIB_Function_New ();
-		dstring_appendstr (func->name, name);
+	if (func) {
+		dstring_clearstr (func->text);
+		GIB_Tree_Free_Recursive (func->program, true);
+	} else {
+		func = GIB_Function_New (name);
 		Hash_Add (gib_functions, func);
 	}
-	dstring_appendstr (func->program, program);
+	dstring_appendstr (func->text, text);
+	func->program = program;
+	func->globals = globals;
+	GIB_Tree_Add_Flag_Recursive (program, TREE_PERM); // Don't free this, we are using it now
+	program->flags |= TREE_FUNC; // Even when forcing a recursive free, don't free this
 }
 
 /*
@@ -125,11 +132,24 @@ GIB_Function_Find (const char *name)
 void
 GIB_Function_Prepare_Args (cbuf_t *cbuf, cbuf_args_t *args)
 {
-	int i;
-	
-	for (i = 0; i < args->argc; i++)
-		GIB_Var_Set_Local (cbuf, va("%i", i), args->argv[i]->str);
-	GIB_Var_Set_Local (cbuf, "argc", va("%i", args->argc));
+	static hashtab_t *zero = 0;
+	unsigned int i;
+	gib_var_t *var;
+	static char argss[] = "args", argcs[] = "argc";
+
+	var = GIB_Var_Get_Complex (&GIB_DATA(cbuf)->locals, &zero, argss, &i, true);
+	var->array = realloc (var->array, sizeof (dstring_t *) * args->argc);
+	memset (var->array+1, 0, (args->argc-1) * sizeof (dstring_t *));
+	var->size = args->argc;
+	for (i = 0; i < args->argc; i++) {
+		if (var->array[i])
+			dstring_clearstr(var->array[i]);
+		else
+			var->array[i] = dstring_newstr();
+		dstring_appendstr (var->array[i], args->argv[i]->str);
+	}
+	var = GIB_Var_Get_Complex (&GIB_DATA(cbuf)->locals, &zero, argcs, &i, true);
+	dsprintf(var->array[0], "%u", args->argc);
 }
 
 /*
@@ -142,6 +162,7 @@ GIB_Function_Prepare_Args (cbuf_t *cbuf, cbuf_args_t *args)
 void
 GIB_Function_Execute (cbuf_t *cbuf, gib_function_t *func, cbuf_args_t *args)
 {
-	Cbuf_AddText (cbuf, func->program->str);
+	GIB_DATA(cbuf)->program = func->program;
+	GIB_DATA(cbuf)->globals = func->globals;
 	GIB_Function_Prepare_Args (cbuf, args);
 }

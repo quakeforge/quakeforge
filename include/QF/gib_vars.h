@@ -35,16 +35,18 @@
 extern hashtab_t *gib_globals;
 
 typedef struct gib_var_s {
-	struct dstring_s *key, *value;
-	struct hashtab_s *subvars;
+	const char *key;
+	struct dstring_s **array;
+	unsigned int size;
 } gib_var_t;
 
-void GIB_Var_Set_Local (cbuf_t *cbuf, const char *key, const char *value);
-void GIB_Var_Set_Global (const char *key, const char *value);
-void GIB_Var_Set (cbuf_t *cbuf, char *key, const char *value);
-const char *GIB_Var_Get_Local (cbuf_t *cbuf, const char *key);
-const char *GIB_Var_Get_Global (const char *key);
-const char *GIB_Var_Get (cbuf_t *cbuf, char *key);
-const char *GIB_Var_Get_Key (void *ele, void *ptr);
-void GIB_Var_Free (void *ele, void *ptr);
-void GIB_Var_Free_Global (const char *key);
+typedef struct gib_domain_s {
+	const char *name;
+	hashtab_t *vars;
+} gib_domain_t;
+
+gib_var_t *GIB_Var_Get (hashtab_t *first, hashtab_t *second, const char *key);
+gib_var_t *GIB_Var_Get_Complex (hashtab_t **first, hashtab_t **second, char *key, unsigned int *ind, qboolean create);
+hashtab_t *GIB_Domain_Get (const char *name);
+
+void GIB_Var_Init (void);

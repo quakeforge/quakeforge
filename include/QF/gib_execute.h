@@ -29,23 +29,5 @@
 	$Id$
 */
 
-#ifndef __gib_function_h
-#define __gib_function_h
-
-#include "QF/hash.h"
-#include "QF/gib_tree.h"
-
-typedef struct gib_function_s {
-	const char *name;
-	struct dstring_s *text;
-	struct gib_tree_s *program;
-	struct hashtab_s *globals;
-	qboolean exported;
-} gib_function_t;
-
-void GIB_Function_Define (const char *name, const char *text, gib_tree_t *program, hashtab_t *globals);
-gib_function_t *GIB_Function_Find (const char *name);
-void GIB_Function_Prepare_Args (cbuf_t *cbuf, cbuf_args_t *args);
-void GIB_Function_Execute (cbuf_t *cbuf, gib_function_t *func, cbuf_args_t *args);
-
-#endif
+int GIB_Execute_For_Next (cbuf_t *cbuf);
+void GIB_Execute (cbuf_t *cbuf);

@@ -41,35 +41,124 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/dstring.h"
 #include "QF/cbuf.h"
 #include "QF/hash.h"
+#include "QF/gib_parse.h"
 #include "QF/gib_buffer.h"
+#include "QF/gib_tree.h"
+#include "QF/gib_vars.h"
+#include "QF/gib_execute.h"
 
 void
 GIB_Buffer_Construct (struct cbuf_s *cbuf)
 {
 	cbuf->data = calloc (1, sizeof (gib_buffer_data_t));
 	GIB_DATA (cbuf)->arg_composite = dstring_newstr ();
-	GIB_DATA (cbuf)->current_token = dstring_newstr ();
-	GIB_DATA (cbuf)->ret.retval = dstring_newstr ();
+	GIB_DATA (cbuf)->globals = gib_globals;
 	cbuf->strict = true;
 }
 
 void
 GIB_Buffer_Destruct (struct cbuf_s *cbuf)
 {
-	dstring_delete (GIB_DATA (cbuf)->arg_composite);
-	dstring_delete (GIB_DATA (cbuf)->current_token);
-	if (GIB_DATA (cbuf)->loop_program)
-		dstring_delete (GIB_DATA(cbuf)->loop_program);
-	if (GIB_DATA (cbuf)->loop_data)
-		dstring_delete (GIB_DATA(cbuf)->loop_data);
-	dstring_delete (GIB_DATA (cbuf)->ret.retval);
-	if (GIB_DATA(cbuf)->locals && GIB_DATA(cbuf)->type == GIB_BUFFER_NORMAL)
-		Hash_DelTable (GIB_DATA(cbuf)->locals);
+	gib_buffer_data_t *g = GIB_DATA(cbuf);
+	unsigned int i, j;
+	
+	dstring_delete (g->arg_composite);
+	if (g->locals)
+		Hash_DelTable (g->locals);
+	if (g->program)
+		GIB_Tree_Free_Recursive (g->program, false);
+	for (i = 0; i < g->stack.size; i++) {
+		for (j = 0; j < g->stack.values[i].realsize; j++)
+			dstring_delete (g->stack.values[i].dstrs[j]);
+		if (g->stack.values[i].dstrs)
+			free (g->stack.values[i].dstrs);
+	}
+	if (g->stack.values)
+		free (g->stack.values);
 	free (cbuf->data);
 }
 
 void
-GIB_Buffer_Reset (struct cbuf_s *cbuf)
+GIB_Buffer_Add (cbuf_t *cbuf, const char *str)
 {
-	GIB_DATA (cbuf)->ret.waiting = GIB_DATA (cbuf)->ret.available = false;
+	gib_buffer_data_t *g = GIB_DATA (cbuf);
+	gib_tree_t **save, *cur;
+
+	cbuf_active = cbuf;
+
+	if (g->program) {
+		for (cur = g->program; cur->next; cur = cur->next);
+		save = &cur->next;
+	} else
+		save = &g->program;
+	*save = GIB_Parse_Lines (str, TREE_NORMAL);
+	if (gib_parse_error)
+		Cbuf_Error ("parse", "Parse error in program!");
 }
+
+void
+GIB_Buffer_Insert (cbuf_t *cbuf, const char *str)
+{
+	gib_buffer_data_t *g = GIB_DATA (cbuf);
+	gib_tree_t *lines, *cur;
+
+	if ((lines = GIB_Parse_Lines (str, TREE_NORMAL))) {
+		for (cur = lines; cur; cur = cur->next);
+		cur->next = g->program;
+		g->program = lines;
+	}
+	if (gib_parse_error)
+		Cbuf_Error ("parse", "Parse error in program!");
+}
+
+void
+GIB_Buffer_Reset (cbuf_t *cbuf)
+{
+	GIB_DATA(cbuf)->done = GIB_DATA(cbuf)->waitret = GIB_DATA(cbuf)->haveret = false;
+	if (GIB_DATA(cbuf)->program)
+		GIB_Tree_Free_Recursive (GIB_DATA(cbuf)->program, false);
+	GIB_DATA(cbuf)->ip = 0;
+	GIB_DATA(cbuf)->program = 0;
+}
+
+void
+GIB_Buffer_Push_Sstack (struct cbuf_s *cbuf)
+{
+	gib_buffer_data_t *g = GIB_DATA(cbuf);
+	if (++g->stack.p > g->stack.size) {
+		g->stack.values = realloc(g->stack.values, sizeof (struct gib_dsarray_s) * g->stack.p);
+		g->stack.values[g->stack.p-1].dstrs = 0;
+		g->stack.values[g->stack.p-1].size = g->stack.values[g->stack.p-1].realsize = 0;
+		g->stack.size = g->stack.p;
+	}
+	g->stack.values[g->stack.p-1].size = 0;
+}
+
+void
+GIB_Buffer_Pop_Sstack (struct cbuf_s *cbuf)
+{
+	GIB_DATA(cbuf)->stack.p--;
+}
+
+dstring_t *
+GIB_Buffer_Dsarray_Get (struct cbuf_s *cbuf)
+{
+	struct gib_dsarray_s *vals = GIB_DATA(cbuf)->stack.values+GIB_DATA(cbuf)->stack.p-1;
+	if (++vals->size > vals->realsize) {
+		vals->dstrs = realloc (vals->dstrs, sizeof (dstring_t *) * vals->size);
+		vals->dstrs[vals->size-1] = dstring_newstr ();
+		vals->realsize = vals->size;
+	} else
+		dstring_clearstr (vals->dstrs[vals->size-1]);
+	return vals->dstrs[vals->size-1];
+}
+
+cbuf_interpreter_t gib_interp = {
+	GIB_Buffer_Construct,
+	GIB_Buffer_Destruct,
+	GIB_Buffer_Add,
+	GIB_Buffer_Insert,
+	GIB_Execute,
+	GIB_Execute,
+	GIB_Buffer_Reset
+};
