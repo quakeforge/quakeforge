@@ -355,10 +355,12 @@ C_Print (const char *fmt, va_list args)
 #ifdef HAVE_CURSES_H
 	if (use_curses) {
 		Con_BufferAddText (output_buffer, buffer->str);
-		while (*txt)
-			draw_fun_char (output, *txt++);
-		wrefresh (output);
-		wrefresh (input);	// move the screen cursor back to the input line
+		if (!view_offset) {
+			while (*txt)
+				draw_fun_char (output, *txt++);
+			wrefresh (output);
+			wrefresh (input);	// move the cursor back to the input line
+		}
 	} else
 #endif
 	{
