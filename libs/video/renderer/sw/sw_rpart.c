@@ -32,13 +32,13 @@
 
 #include <stdlib.h>
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/vfs.h"
 #include "QF/render.h"
 
+#include "compat.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_local.h"

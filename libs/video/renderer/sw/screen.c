@@ -39,7 +39,6 @@
 #include <time.h>
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
@@ -52,6 +51,7 @@
 #include "QF/vfs.h"
 #include "QF/vid.h"
 
+#include "compat.h"
 #include "d_iface.h"
 #include "r_cvar.h"
 #include "r_local.h"
@@ -418,12 +418,12 @@ SCR_SizeDown_f (void)
 void
 SCR_Init (void)
 {
-	//
 	// register our commands
-	//
-	Cmd_AddCommand ("screenshot", SCR_ScreenShot_f, "Take a screenshot and write it as qfxxx.tga in the current directory");
+	Cmd_AddCommand ("screenshot", SCR_ScreenShot_f, "Take a screenshot and "
+					"write it as qfxxx.tga in the current directory");
 	Cmd_AddCommand ("sizeup", SCR_SizeUp_f, "Increase the size of the screen");
-	Cmd_AddCommand ("sizedown", SCR_SizeDown_f, "Decrease the size of the screen");
+	Cmd_AddCommand ("sizedown", SCR_SizeDown_f, "Decrease the size of the "
+					"screen");
 
 	scr_ram = Draw_PicFromWad ("ram");
 	scr_net = Draw_PicFromWad ("net");
