@@ -175,13 +175,7 @@ TestLine (lightinfo_t *l, vec3_t start, vec3_t end)
 			// go down the back side
 			VectorCopy (tstack->backpt, backpt);
 
-			node = tnodes[tstack->node].children[!tstack->side];
-		}
-
-		if (node == CONTENTS_SOLID && empty) {
-			// DONE!
-			VectorCopy (backpt, l->testlineimpact);
-			return false;
+			node = tnodes[tstack->node].children[tstack->side ^ 1];
 		}
 
 		tnode = &tnodes[node];
