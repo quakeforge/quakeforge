@@ -870,7 +870,7 @@ COM_LoadGameDirectory (char *dir)
 	closedir (dir_ptr);
 
 	// XXX WARNING!!! This is /NOT/ subtable for strcmp!!!!!
-	// This passes 'char **' instead of 'char *' to the cmp function!
+	// This passes 'void **' instead of 'char *' to the cmp function!
 	qsort (pakfiles, count, sizeof (char *),
 		   (int (*)(const void *, const void *)) qstrcmp);
 
