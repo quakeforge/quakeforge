@@ -95,11 +95,15 @@ static gefv_cache gefvCache[GEFV_CACHESIZE] = { {NULL, ""}, {NULL, ""} };
 	Sets everything to NULL
 */
 void
-ED_ClearEdict (progs_t * pr, edict_t *e)
+ED_ClearEdict (progs_t * pr, edict_t *e, int val)
 {
+	int i;
+
 	if (NUM_FOR_EDICT(pr,e)<*pr->reserved_edicts)
 		printf("clearing reserved edict %d\n", NUM_FOR_EDICT(pr,e));
-	memset (&e->v, 0, pr->progs->entityfields * 4);
+	for (i=0; i < pr->progs->entityfields; i++)
+		e->v[i].int_var = val;
+	//memset (&e->v, 0, pr->progs->entityfields * 4);
 	e->free = false;
 }
 
@@ -125,7 +129,7 @@ ED_Alloc (progs_t * pr)
 		// the first couple seconds of server time can involve a lot of
 		// freeing and allocating, so relax the replacement policy
 		if (e->free && (e->freetime < 2 || *(pr)->time - e->freetime > 0.5)) {
-			ED_ClearEdict (pr, e);
+			ED_ClearEdict (pr, e, 0);
 			return e;
 		}
 	}
@@ -139,7 +143,7 @@ ED_Alloc (progs_t * pr)
 	} else
 		(*(pr)->num_edicts)++;
 	e = EDICT_NUM (pr, i);
-	ED_ClearEdict (pr, e);
+	ED_ClearEdict (pr, e, 0);
 
 	return e;
 }
@@ -156,7 +160,7 @@ ED_Free (progs_t * pr, edict_t *ed)
 	if (pr->unlink)
 		pr->unlink (ed);				// unlink from world bsp
 
-	ED_ClearEdict (pr, ed);
+	ED_ClearEdict (pr, ed, 0xdeadbeef);
 	ed->free = true;
 	ed->freetime = *(pr)->time;
 }
