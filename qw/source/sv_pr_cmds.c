@@ -120,7 +120,11 @@ PF_makevectors (progs_t *pr)
 /*
 	PF_setorigin
 
-	This is the only valid way to move an object without using the physics of the world (setting velocity and waiting).  Directly changing origin will not set internal links correctly, so clipping would be messed up.  This should be called when an object is spawned, and then only if it is teleported.
+	This is the only valid way to move an object without using the physics of
+	the world (setting velocity and waiting).  Directly changing origin will
+	not set internal links correctly, so clipping would be messed up.  This
+	should be called when an object is spawned, and then only if it is
+	teleported.
 
 	setorigin (entity, origin)
 */
@@ -575,7 +579,7 @@ PF_stuffcmd (progs_t *pr)
 /*
 	PF_localcmd
 
-	Sends text over to the client's execution buffer
+	Inserts text into the server console's execution buffer
 
 	localcmd (string)
 */
