@@ -71,6 +71,10 @@ cmd_buffer_t *cmd_consolebuffer; // Console buffer
 cmd_buffer_t *cmd_legacybuffer; // Server stuffcmd buffer with absolute backwards-compatibility
 cmd_buffer_t *cmd_activebuffer; // Buffer currently being executed
 
+dstring_t *cmd_backtrace;
+
+qboolean cmd_error;
+
 cvar_t     *cmd_warncmd;
 cvar_t     *cmd_highchars;
 
@@ -158,11 +162,25 @@ Cmd_Wait_f (void)
 		cur->wait = true;
 }
 
+void
+Cmd_Error (const char *message)
+{
+	cmd_buffer_t *cur;
+	Sys_Printf("GIB:  Error in execution.  Type backtrace for a description and execution path to the error\n");
+	cmd_error = true;
+	dstring_clearstr (cmd_backtrace);
+	dstring_appendstr (cmd_backtrace, message);
+	dstring_appendstr (cmd_backtrace, "Path of execution:\n");
+	for (cur = cmd_activebuffer; cur; cur = cur->prev)
+		dstring_appendstr (cmd_backtrace, va("--> %s\n", cur->realline->str));
+}
+	
+
 /*
 						COMMAND BUFFER
 */
 
-byte        cmd_text_buf[8192];
+//byte        cmd_text_buf[8192];
 
 void
 Cbuf_Init (void)
@@ -173,6 +191,8 @@ Cbuf_Init (void)
 	cmd_legacybuffer->legacy = true;
 	
 	cmd_activebuffer = cmd_consolebuffer;
+
+	cmd_backtrace = dstring_newstr ();
 }
 
 
@@ -244,12 +264,8 @@ extract_line (dstring_t *buffer, dstring_t *line)
 		}
 		if (buffer->str[i] == '\n' || buffer->str[i] == '\r') {
 			if (braces) {
-				if (i && buffer->str[i-1] != ';')
-					buffer->str[i] = ';';
-				else {
 				dstring_snip(buffer, i, 1);
 				i--;
-				}
 			}
 			else
 				break;
@@ -278,12 +294,14 @@ Cbuf_ExecuteBuffer (cmd_buffer_t *buffer)
 	cmd_buffer_t *temp = cmd_activebuffer; // save old context
 	cmd_activebuffer = buffer;
 	buffer->wait = false;
+	cmd_error = false;
 	while (strlen(buffer->buffer->str)) {
 		extract_line (buffer->buffer, buf);
 		Cmd_ExecuteString(buf->str, src_command);
-		if (buffer->wait) {
+		if (buffer->wait)
 			break;
-		}
+		if (cmd_error)
+			break;
 		dstring_clearstr(buf);
 	}
 	dstring_delete (buf);
@@ -291,29 +309,45 @@ Cbuf_ExecuteBuffer (cmd_buffer_t *buffer)
 }
 
 void
-Cbuf_Execute (void)
+Cbuf_ExecuteStack (cmd_buffer_t *buffer)
 {
 	qboolean wait = false;
 	cmd_buffer_t *cur;
 	
-	// Execute the buffer stack first
-	while (cmd_consolebuffer->next) {
-		for (cur = cmd_consolebuffer; cur->next; cur=cur->next);
+	for (cur = buffer; cur->next; cur = cur->next);
+	for (;cur != buffer; cur = cur->prev) {
 		Cbuf_ExecuteBuffer (cur);
 		if (cur->wait) {
 			wait = true;
 			break;
 		}
+		else if (cmd_error)
+			break;
 		else {
 			cur->prev->next = 0;
 			Cmd_FreeBuffer (cur);
 		}
 	}
 	if (!wait)
-		Cbuf_ExecuteBuffer (cmd_consolebuffer); // Then console buffer
-	Cbuf_ExecuteBuffer (cmd_legacybuffer); // Then legacy/stufftext buffer
+		Cbuf_ExecuteBuffer (buffer);
+	if (cmd_error) { // If an error occured, nuke the entire stack
+		for (cur = buffer->next; cur; cur = cur->next)
+			Cmd_FreeBuffer(cur);
+		buffer->next = 0;
+		dstring_clearstr (buffer->buffer); // And the root buffer
+	}
 }
+
+/*
+	Executes both root buffers
+*/
 	
+void Cbuf_Execute (void)
+{
+	Cbuf_ExecuteStack (cmd_consolebuffer);
+	Cbuf_ExecuteStack (cmd_legacybuffer);
+}	
+
 void Cmd_ExecuteSubroutine (const char *text)
 {
 	cmd_buffer_t *buffer = Cmd_NewBuffer ();
@@ -332,9 +366,11 @@ void Cmd_ExecuteSubroutine (const char *text)
 	Cbuf_Execute_Sets
 	
 	Similar to Cbuf_Execute, but only
-	executes set and setrom commands. Used
-	for reading config files before the cmd
-	subsystem is entirely loaded.
+	executes set and setrom commands,
+	and only in the console buffer.
+	Used for reading config files
+	before the cmd subsystem is
+	entirely loaded.
 */
 
 void
@@ -931,6 +967,9 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 	const char *str = text;
 	unsigned int cmd_argc = 0;
 	
+	dstring_clearstr (cmd_activebuffer->realline);
+	dstring_appendstr (cmd_activebuffer->realline, text);
+	
 	/* Turn off tags at the beginning of a command.
 	This causes tags to continue past token boundaries. */
 	tag_shift = 0;
@@ -945,9 +984,9 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 		}
 		len = Cmd_GetToken (str + i);
 		if (len < 0) {
-			Sys_Printf ("Parse error:  Unmatched quotes, braces, or double quotes in following line:\n--> %s\n", text);
-			cmd_argc = 0;
-			break;
+			Cmd_Error ("Parse error:  Unmatched quotes, braces, or double quotes\n");
+			cmd_activebuffer->argc = 0;
+			return;
 		}
 		else if (len == 0)
 			break;
@@ -987,13 +1026,13 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 				Cmd_ProcessVariables(cmd_activebuffer->argv[cmd_argc-1]);
 				res = Cmd_ProcessMath(cmd_activebuffer->argv[cmd_argc-1]);
 				if (res == -1) {
-					Sys_Printf("Parse error:  Unmatched parenthesis in following line:\n--> %s\n", text);
-					cmd_argc = 0;
+					Cmd_Error ("Parse error:  Unmatched parenthesis\n");
+					cmd_activebuffer->argc = 0;
 					return;
 				}
 				if (res == -2) {
-					Sys_Printf("Math error:  Invalid math expression on the following line:\n--> %s\n", text);
-					cmd_argc = 0;
+					Cmd_Error("Math error:  Invalid math expression\n");
+					cmd_activebuffer->argc = 0;
 					return;
 				}
 			}
@@ -1010,8 +1049,6 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 		cmd_activebuffer->args[i] = strlen(cmd_activebuffer->line->str);
 		dstring_appendstr (cmd_activebuffer->line, cmd_activebuffer->argv[i]->str);
 	}
-	dstring_clearstr (cmd_activebuffer->realline);
-	dstring_appendstr (cmd_activebuffer->realline, text);
 	cmd_activebuffer->argc = cmd_argc;
 }
 
@@ -1398,6 +1435,11 @@ Cmd_While_f (void) {
 	return;
 }
 
+void
+Cmd_Backtrace_f (void)
+{
+	Sys_Printf("%s", cmd_backtrace->str);
+}
 
 void
 Cmd_Hash_Stats_f (void)
@@ -1466,6 +1508,7 @@ Cmd_Init (void)
 					"variable");
 	Cmd_AddCommand ("if", Cmd_If_f, "Conditionally execute a set of commands.");
 	Cmd_AddCommand ("while", Cmd_While_f, "Execute a set of commands while a condition is true.");
+	Cmd_AddCommand ("backtrace", Cmd_Backtrace_f, "Show a description of the last GIB error and a backtrace.");
 	//Cmd_AddCommand ("cmd_hash_stats", Cmd_Hash_Stats_f, "Display statistics "
 	//				"alias and command hash tables");
 	cmd_warncmd = Cvar_Get ("cmd_warncmd", "0", CVAR_NONE, NULL, "Toggles the "
