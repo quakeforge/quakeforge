@@ -1311,6 +1311,8 @@ SV_StringToFilter (const char *address, ipfilter_t *f)
 				mask = 0;
 		}
 #ifdef HAVE_IPV6
+	} else {
+		mask = 128;
 	}
 #endif
 
