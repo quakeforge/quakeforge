@@ -269,7 +269,7 @@ DrawTextureChains (void)
 void
 R_DrawBrushModel (entity_t *e)
 {
-	float       dot;
+	float       dot, radius;
 	float		color[4];
 	int         i, k;
 	model_t    *model;
@@ -282,26 +282,26 @@ R_DrawBrushModel (entity_t *e)
 
 	if (e->angles[0] || e->angles[1] || e->angles[2]) {
 		rotated = true;
-		for (i = 0; i < 3; i++) {
-			mins[i] = e->origin[i] - model->radius;
-			maxs[i] = e->origin[i] + model->radius;
-		}
+		radius = model->radius;
+#if 0 //QSG FIXME
+		if (e->scale != 1.0)
+			radius *= e->scale;
+#endif
+		if (R_CullSphere (e->origin, radius))
+			return;
 	} else {
 		rotated = false;
 		VectorAdd (e->origin, model->mins, mins);
 		VectorAdd (e->origin, model->maxs, maxs);
-	}
-
 #if 0 // QSG FIXME
-	if (e->scale != 1.0) {
-		VectorScale (mins, e->scale, mins);
-		VectorScale (maxs, e->scale, maxs);
-		radius = model->radius * e->scale;
-	}
+		if (e->scale != 1.0) {
+			VectorScale (mins, e->scale, mins);
+			VectorScale (maxs, e->scale, maxs);
+		}
 #endif
-
-	if (R_CullBox (mins, maxs))
-		return;
+		if (R_CullBox (mins, maxs))
+			return;
+	}
 
 	VectorCopy (e->colormod, color);
 	color[3] = e->colormod[3];
