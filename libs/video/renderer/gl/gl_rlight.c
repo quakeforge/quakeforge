@@ -295,7 +295,6 @@ mark_surfaces (msurface_t *surf, vec3_t lightorigin,  dlight_t *light,
 	vec3_t     impact;
 #endif
 
-	surf->dlightframe = r_framecount;
 	dist = PlaneDiff(lightorigin, surf->plane);
 	if (surf->flags & SURF_PLANEBACK)
 		dist = -dist;
