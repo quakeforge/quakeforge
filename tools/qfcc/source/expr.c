@@ -2376,6 +2376,18 @@ is_indirect (expr_t *e)
 	return 0;
 }
 
+static inline int
+is_lvalue (expr_t *e)
+{
+	if (e->type == ex_def || e->type == ex_temp)
+		return 1;
+	if (e->type == ex_expr && e->e.expr.op == '.')
+		return 1;
+	if (e->type == ex_uexpr && e->e.expr.op == '.')
+		return 1;
+	return 0;
+}
+
 expr_t *
 assign_expr (expr_t *e1, expr_t *e2)
 {
@@ -2391,8 +2403,27 @@ assign_expr (expr_t *e1, expr_t *e2)
 	if (e2->type == ex_error)
 		return e2;
 
+	if (options.traditional) {
+		if (e2->type == ex_expr && !e2->paren
+			&& (e2->e.expr.op == AND || e2->e.expr.op == OR)) {
+			notice (e2, "precedence of `%s' and `%s' inverted for "
+						"traditional code", get_op_string (op),
+						get_op_string (e2->e.expr.op));
+			e1 = assign_expr (e1, e2->e.expr.e1);
+			e1->paren = 1;
+			return binary_expr (e2->e.expr.op, e1, e2->e.expr.e2);
+		}
+	}
+
 	if (e1->type == ex_def)
 		def_initialized (e1->e.def);
+
+	if (!is_lvalue (e1)) {
+		if (options.traditional)
+			warning (e1, "invalid lvalue in assignment");
+		else
+			return error (e1, "invalid lvalue in assignment");
+	}
 	//XXX func = func ???
 	check_initialized (e2);
 	t1 = get_type (e1);
