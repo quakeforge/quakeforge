@@ -32,19 +32,14 @@
 
 extern qboolean      mouseactive;
 extern float         mouse_x, mouse_y;
-extern unsigned int  uiWheelMessage;
 
 extern void IN_UpdateClipCursor (void);
 extern void IN_ShowMouse (void);
 extern void IN_HideMouse (void);
 extern void IN_ActivateMouse (void);
-extern void IN_SetQuakeMouseState (void);
 extern void IN_DeactivateMouse (void);
-extern void IN_RestoreOriginalMouseState (void);
 extern void IN_Init (void);
 extern void IN_Shutdown (void);
-extern void IN_MouseEvent (int mstate);
-//extern void IN_MouseMove (usercmd_t *cmd);
 extern void IN_Move (void);
 extern void IN_Accumulate (void);
 extern void IN_Commands (void);

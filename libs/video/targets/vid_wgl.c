@@ -57,11 +57,19 @@ static const char rcsid[] =
 
 extern const char *gl_renderer;
 
-HGLRC (GLAPIENTRY *qf_wglCreateContext) (HDC);
-BOOL (GLAPIENTRY *qf_wglDeleteContext) (HGLRC);
-HGLRC (GLAPIENTRY *qf_wglGetCurrentContext) (void);
-HDC (GLAPIENTRY *qf_wglGetCurrentDC) (void);
-BOOL (GLAPIENTRY *qf_wglMakeCurrent) (HDC, HGLRC);
+HWND		mainwindow;
+qboolean win_canalttab = false;
+modestate_t modestate = MS_UNINIT;
+RECT		window_rect;
+DEVMODE	win_gdevmode;
+int			window_center_x, window_center_y, window_x, window_y, window_width,
+			window_height;
+
+static HGLRC (GLAPIENTRY *qf_wglCreateContext) (HDC);
+static BOOL (GLAPIENTRY *qf_wglDeleteContext) (HGLRC);
+static HGLRC (GLAPIENTRY *qf_wglGetCurrentContext) (void);
+static HDC (GLAPIENTRY *qf_wglGetCurrentDC) (void);
+static BOOL (GLAPIENTRY *qf_wglMakeCurrent) (HDC, HGLRC);
 
 #define MAX_MODE_LIST	30
 #define VID_ROW_SIZE	3
@@ -93,7 +101,7 @@ typedef struct {
 	int			height;
 } lmode_t;
 
-lmode_t lowresmodes[] = {
+static lmode_t lowresmodes[] = {
 	{320, 200},
 	{320, 240},
 	{400, 300},
@@ -104,38 +112,27 @@ static int		nummodes;
 static vmode_t	modelist[MAX_MODE_LIST];
 static vmode_t	badmode;
 
-DEVMODE	win_gdevmode;
-qboolean win_canalttab = false;
 static qboolean		windowed, leavecurrentmode;
 static int	windowed_mouse;
 static HICON hIcon;
 
-RECT		WindowRect;
-DWORD		WindowStyle, ExWindowStyle;
+static RECT		WindowRect;
+static DWORD		WindowStyle;
 
-HWND		mainwindow;
-
-int			vid_modenum = NO_MODE;
-int			vid_realmode;
-int			vid_default = MODE_WINDOWED;
+static int			vid_modenum = NO_MODE;
+static int			vid_realmode;
+static int			vid_default = MODE_WINDOWED;
 static int	windowed_default;
-unsigned char	vid_curpal[256 * 3];
 static qboolean	fullsbardraw = true;
 
-HDC         maindc;
-
-HWND WINAPI InitializeWindow (HINSTANCE hInstance, int nCmdShow);
-LONG	CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-modestate_t modestate = MS_UNINIT;
-
-LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-void        AppActivate (BOOL fActive, BOOL minimize);
-char       *VID_GetModeDescription (int mode);
-void        GL_Init (void);
+static HDC         maindc;
 
 
-void * (WINAPI *glGetProcAddress) (const char *symbol) = NULL;
+
+static char       *VID_GetModeDescription (int mode);
+static void        GL_Init (void);
+
+static void * (WINAPI *glGetProcAddress) (const char *symbol) = NULL;
 
 void *
 QFGL_GetProcAddress (void *handle, const char *name)
@@ -163,23 +160,9 @@ QFGL_LoadLibrary (void)
 
 //====================================
 
-int			window_center_x, window_center_y, window_x, window_y, window_width,
-			window_height;
-RECT		window_rect;
 
 
-void
-VID_ForceLockState (int lk)
-{
-}
-
-int
-VID_ForceUnlockedAndReturnState (void)
-{
-	return 0;
-}
-
-void
+static void
 CenterWindow (HWND hWndCenter, int width, int height, BOOL lefttopjustify)
 {
 	int			CenterX, CenterY;
@@ -194,7 +177,7 @@ CenterWindow (HWND hWndCenter, int width, int height, BOOL lefttopjustify)
 				  SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW | SWP_DRAWFRAME);
 }
 
-qboolean
+static qboolean
 VID_SetWindowedMode (int modenum)
 {
 	HDC			hdc;
@@ -262,7 +245,7 @@ VID_SetWindowedMode (int modenum)
 	return true;
 }
 
-qboolean
+static qboolean
 VID_SetFullDIBMode (int modenum)
 {
 	HDC			hdc;
@@ -350,7 +333,7 @@ VID_SetFullDIBMode (int modenum)
 	return true;
 }
 
-int
+static int
 VID_SetMode (int modenum, unsigned char *palette)
 {
 	int			original_mode;
@@ -447,7 +430,7 @@ VID_UpdateWindowStatus (int w_x, int w_y)
 	IN_UpdateClipCursor ();
 }
 
-void
+static void
 GL_Init (void)
 {
 	GL_Init_Common ();
@@ -484,12 +467,6 @@ GL_EndRendering (void)
 	}
 	if (fullsbardraw)
 		Sbar_Changed ();
-}
-
-void
-VID_SetDefaultMode (void)
-{
-	IN_DeactivateMouse ();
 }
 
 void
@@ -534,7 +511,7 @@ VID_Shutdown (void)
 
 //==========================================================================
 
-BOOL
+static BOOL
 bSetupPixelFormat (HDC hDC)
 {
 	PIXELFORMATDESCRIPTOR pfd ;
@@ -566,13 +543,13 @@ bSetupPixelFormat (HDC hDC)
 	return TRUE;
 }
 
-int
+static int
 VID_NumModes (void)
 {
 	return nummodes;
 }
 
-vmode_t		*
+static vmode_t		*
 VID_GetModePtr (int modenum)
 {
 	if ((modenum >= 0) && (modenum < nummodes))
@@ -581,7 +558,7 @@ VID_GetModePtr (int modenum)
 		return &badmode;
 }
 
-char		*
+static char		*
 VID_GetModeDescription (int mode)
 {
 	char		*pinfo;
@@ -606,7 +583,7 @@ VID_GetModeDescription (int mode)
 
 
 // KJB: Added this to return the mode driver name in description for console
-char		*
+static char		*
 VID_GetExtModeDescription (int mode)
 {
 	static char pinfo[40];
@@ -634,58 +611,8 @@ VID_GetExtModeDescription (int mode)
 	return pinfo;
 }
 
-void
-VID_DescribeCurrentMode_f (void)
-{
-	Con_Printf ("%s\n", VID_GetExtModeDescription (vid_modenum));
-}
 
-void
-VID_NumModes_f (void)
-{
-	if (nummodes == 1)
-		Con_Printf ("%d video mode is available\n", nummodes);
-	else
-		Con_Printf ("%d video modes are available\n", nummodes);
-}
-
-void
-VID_DescribeMode_f (void)
-{
-	int			t, modenum;
-
-	modenum = atoi (Cmd_Argv (1));
-
-	t = leavecurrentmode;
-	leavecurrentmode = 0;
-
-	Con_Printf ("%s\n", VID_GetExtModeDescription (modenum));
-
-	leavecurrentmode = t;
-}
-
-void
-VID_DescribeModes_f (void)
-{
-	int			i, lnummodes, t;
-	char	   *pinfo;
-	vmode_t	   *pv;
-
-	lnummodes = VID_NumModes ();
-
-	t = leavecurrentmode;
-	leavecurrentmode = 0;
-
-	for (i = 1; i < lnummodes; i++) {
-		pv = VID_GetModePtr (i);
-		pinfo = VID_GetExtModeDescription (i);
-		Con_Printf ("%2d: %s\n", i, pinfo);
-	}
-
-	leavecurrentmode = t;
-}
-
-void
+static void
 VID_InitDIB (HINSTANCE hInstance)
 {
 	WNDCLASS	wc;
@@ -735,7 +662,7 @@ VID_InitDIB (HINSTANCE hInstance)
 	nummodes = 1;
 }
 
-void
+static void
 VID_InitFullDIB (HINSTANCE hInstance)
 {
 	DEVMODE		devmode;
@@ -888,16 +815,6 @@ VID_Init (unsigned char *palette)
 										  true);
 
 	memset (&devmode, 0, sizeof (devmode));
-
-	Cmd_AddCommand ("vid_nummodes", VID_NumModes_f, "Reports the total number "
-					"of video modes available");
-	Cmd_AddCommand ("vid_describecurrentmode", VID_DescribeCurrentMode_f,
-					"Report current video mode.");
-	Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f, "Report "
-					"information on specified video mode, default is "
-					"current.\n(vid_describemode (mode))");
-	Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f, "Report "
-					"information on all video modes.");
 
 	hIcon = LoadIcon (global_hInstance, MAKEINTRESOURCE (IDI_ICON1));
 
@@ -1161,7 +1078,7 @@ VID_SetGamma (double gamma)
 	return i;
 }
 
-void
+static void
 VID_SaveGamma (void)
 {
 	HDC			hdc = GetDC (NULL);
@@ -1170,7 +1087,7 @@ VID_SaveGamma (void)
 	ReleaseDC (NULL, hdc);
 }
 
-void
+static void
 VID_RestoreGamma (void)
 {
 	HDC			hdc = GetDC (NULL);

@@ -61,10 +61,8 @@ HRESULT (WINAPI * pDirectInputCreate) (HINSTANCE hinst, DWORD dwVersion,
 extern qboolean win_canalttab;
 extern DEVMODE win_gdevmode;
 
-// mouse public variables
-unsigned int uiWheelMessage;
-
 // mouse local variables
+static unsigned int uiWheelMessage;
 static int  mouse_buttons;
 static int  mouse_oldbuttonstate;
 static POINT current_pos;
@@ -129,7 +127,6 @@ static DIDATAFORMAT df = {
 void
 IN_UpdateClipCursor (void)
 {
-
 	if (mouseinitialized && in_mouse_avail && !dinput) {
 		ClipCursor (&window_rect);
 	}
@@ -138,7 +135,6 @@ IN_UpdateClipCursor (void)
 void
 IN_ShowMouse (void)
 {
-
 	if (!mouseshowtoggle) {
 		ShowCursor (TRUE);
 		mouseshowtoggle = 1;
@@ -148,7 +144,6 @@ IN_ShowMouse (void)
 void
 IN_HideMouse (void)
 {
-
 	if (mouseshowtoggle) {
 		ShowCursor (FALSE);
 		mouseshowtoggle = 0;
@@ -158,7 +153,6 @@ IN_HideMouse (void)
 void
 IN_ActivateMouse (void)
 {
-
 	mouseactivatetoggle = true;
 
 	if (mouseinitialized) {
@@ -186,13 +180,6 @@ IN_ActivateMouse (void)
 }
 
 void
-IN_SetQuakeMouseState (void)
-{
-	if (mouseactivatetoggle)
-		IN_ActivateMouse ();
-}
-
-void
 IN_DeactivateMouse (void)
 {
 
@@ -216,19 +203,6 @@ IN_DeactivateMouse (void)
 
 		in_mouse_avail = false;
 	}
-}
-
-void
-IN_RestoreOriginalMouseState (void)
-{
-	if (mouseactivatetoggle) {
-		IN_DeactivateMouse ();
-		mouseactivatetoggle = true;
-	}
-	// try to redraw the cursor so it gets reinitialized, because sometimes it
-	// has garbage after the mode switch
-	ShowCursor (TRUE);
-	ShowCursor (FALSE);
 }
 
 static qboolean
@@ -412,7 +386,7 @@ IN_LL_Shutdown (void)
 	}
 }
 
-void
+static void
 IN_MouseEvent (int mstate)
 {
 	int         i;
@@ -446,7 +420,6 @@ IN_LL_Ungrab_Input (void)
 void
 IN_LL_ClearStates (void)
 {
-
 	if (in_mouse_avail) {
 		mx_accum = 0;
 		my_accum = 0;
@@ -456,7 +429,7 @@ IN_LL_ClearStates (void)
 
 void
 IN_LL_SendKeyEvents (void)
-{   
+{
 	MSG         msg;
 	int         mx, my;
 //  HDC hdc;
@@ -561,7 +534,7 @@ IN_LL_SendKeyEvents (void)
 
 //==========================================================================
 
-unsigned short scantokey[128] = {
+static unsigned short scantokey[128] = {
 //  0       1        2       3       4       5       6       7
 //  8       9        A       B       C       D       E       F
 	0, 27, '1', '2', '3', '4', '5', '6',
@@ -582,7 +555,7 @@ unsigned short scantokey[128] = {
 	0, 0, 0, 0, 0, 0, 0, 0
 };
 
-unsigned short shift_scantokey[128] = {
+static unsigned short shift_scantokey[128] = {
 //  0       1        2       3       4       5       6       7
 //  8       9        A       B       C       D       E       F
 	0, 27, '!', '@', '#', '$', '%', '^',
@@ -603,7 +576,7 @@ unsigned short shift_scantokey[128] = {
 	0, 0, 0, 0, 0, 0, 0, 0
 };
 
-unsigned short ext_scantokey[128] = {
+static unsigned short ext_scantokey[128] = {
 //  0       1        2       3       4       5       6       7
 //  8       9        A       B       C       D       E       F
 	0, 27, '1', '2', '3', '4', '5', '6',					// 0
@@ -624,7 +597,7 @@ unsigned short ext_scantokey[128] = {
 	0, 0, 0, 0, 0, 0, 0, 0
 };
 
-unsigned short shift_ext_scantokey[128] = {
+static unsigned short shift_ext_scantokey[128] = {
 //  0       1        2       3       4       5       6       7
 //  8       9        A       B       C       D       E       F
 	0, 27, '!', '@', '#', '$', '%', '^',
@@ -652,7 +625,7 @@ unsigned short shift_ext_scantokey[128] = {
 
 	Map from windows to quake keynums
 */
-void
+static void
 MapKey (unsigned int keycode, int press, int *k, int *u)
 {
 	int         extended;

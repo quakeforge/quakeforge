@@ -120,7 +120,6 @@ extern qboolean		ActiveApp, Minimized;
 
 extern qboolean	WinNT;
 
-int VID_ForceUnlockedAndReturnState (void);
 void VID_ForceLockState (int lk);
 extern qboolean	winsock_lib_initialized;
 
@@ -135,17 +134,12 @@ extern HWND		hwnd_dialog;
 
 extern HANDLE	hinput, houtput;
 
-void IN_UpdateClipCursor (void);
-void CenterWindow(HWND hWndCenter, int width, int height, BOOL lefttopjustify);
-
 void S_BlockSound (void);
 void S_UnblockSound (void);
 
 DWORD *DSOUND_LockBuffer(qboolean lockit);
 void DSOUND_ClearBuffer(int clear);
 void DSOUND_Restore(void);
-
-void VID_SetDefaultMode (void);
 
 extern int (PASCAL FAR *pWSAStartup)(WORD wVersionRequired, LPWSADATA lpWSAData);
 extern int (PASCAL FAR *pWSACleanup)(void);
@@ -160,6 +154,11 @@ extern int (PASCAL FAR *pgethostname)(char FAR * name, int namelen);
 extern struct hostent FAR * (PASCAL FAR *pgethostbyname)(const char FAR * name);
 extern struct hostent FAR * (PASCAL FAR *pgethostbyaddr)(const char FAR * addr, int len, int type);
 extern int (PASCAL FAR *pgetsockname)(SOCKET s, struct sockaddr FAR *name, int FAR * namelen);
+
+HWND WINAPI InitializeWindow (HINSTANCE hInstance, int nCmdShow);
+LONG CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+void AppActivate (BOOL fActive, BOOL minimize);
 #endif /* _WIN32 */
 
 #endif /* _WINQUAKE_H */

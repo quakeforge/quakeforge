@@ -130,9 +130,6 @@ void VID_SetCaption (const char *text);
 
 void VID_GetWindowSize (int def_w, int def_h);
 
-int VID_ForceUnlockedAndReturnState (void);
-void VID_ForceLockState (int lk);
-
 void VID_InitGamma (unsigned char *);
 double VID_GetGamma (void);
 qboolean VID_SetGamma (double);

@@ -135,9 +135,6 @@ startup (void)
 static void
 shutdown (void)
 {
-
-	VID_ForceUnlockedAndReturnState ();
-
 	if (tevent)
 		CloseHandle (tevent);
 
