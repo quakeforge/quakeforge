@@ -213,8 +213,8 @@ PR_ReuseConstant (expr_t *e, def_t *def)
 	if (def) {
 		cn = def;
 	} else {
-		cn = PR_NewDef (pr_immediate_type, "IMMEDIATE", 0);
-		cn->ofs = PR_NewLocation (pr_immediate_type);
+		cn = PR_NewDef (type, "IMMEDIATE", 0);
+		cn->ofs = PR_NewLocation (type);
 		pr_global_defs[cn->ofs] = cn;
 	}
 	cn->initialized = 1;
