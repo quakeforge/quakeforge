@@ -245,7 +245,7 @@ Con_Condump_f (void)
 		end = start + con_linewidth;
 		while (end > start && end[-1] != ' ')
 			end--;
-		Qprintf (file, "%.*s\n", end - start, start);
+		Qprintf (file, "%.*s\n", (int)(end - start), start);
 		line++;
 	}
 
