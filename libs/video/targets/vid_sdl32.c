@@ -94,7 +94,6 @@ VID_Init (unsigned char *palette)
 
 	// Set up display mode (width and height)
 	VID_GetWindowSize (BASEWIDTH, BASEHEIGHT);
-	Con_CheckResize (); // Now that we have a window size, fix console
 
 	vid.maxwarpwidth = WARP_WIDTH;
 	vid.maxwarpheight = WARP_HEIGHT;
@@ -147,6 +146,7 @@ VID_Init (unsigned char *palette)
 	// now we know everything we need to know about the buffer
 	VGA_width = vid.conwidth = vid.width;
 	VGA_height = vid.conheight = vid.height;
+	Con_CheckResize (); // Now that we have a window size, fix console
 	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
 	vid.numpages = 1;
 	if (vid_colormap)

@@ -221,8 +221,6 @@ Resize (old_console_t *con)
 							
 	con->current = con_totallines - 1;
 	con->display = con->current;
-
-	view_resize (con_data.view, vid.width, vid.height);
 }
 
 /*
@@ -235,6 +233,8 @@ C_CheckResize (void)
 {
 	Resize (&con_main);
 	Resize (&con_chat);
+
+	view_resize (con_data.view, vid.conwidth, vid.conheight);
 }
 
 static void

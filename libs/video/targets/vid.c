@@ -113,8 +113,8 @@ VID_GetWindowSize (int def_w, int def_h)
 	scr_width = vid.width = vid_width->int_val;
 	scr_height = vid.height = vid_height->int_val;
 
-	vid_conwidth = Cvar_Get ("vid_conwidth", va ("%d", def_w), CVAR_NONE, NULL,
-			"console effective width (GL only)");
+	vid_conwidth = Cvar_Get ("vid_conwidth", va ("%d", scr_width), CVAR_NONE,
+							 NULL, "console effective width (GL only)");
 	if ((pnum = COM_CheckParm ("-conwidth"))) {
 		if (pnum >= com_argc - 1)
 			Sys_Error ("VID: -conwidth <width>");

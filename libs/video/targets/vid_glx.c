@@ -203,7 +203,6 @@ VID_Init (unsigned char *palette)
 					"quake window in a virtual desktop.\n");
 
 	VID_GetWindowSize (640, 480);
-	Con_CheckResize ();		// Now that we have a window size, fix console
 
 	vid.maxwarpwidth = WARP_WIDTH;
 	vid.maxwarpheight = WARP_HEIGHT;
@@ -214,11 +213,17 @@ VID_Init (unsigned char *palette)
 	vid.conwidth = max (vid.conwidth, 320);
 
 	// pick a conheight that matches with correct aspect
-	vid.conheight = vid.conwidth * 3 / 4;
+	vid.conheight = (vid.conwidth * 3) / 4;
 
 	if ((i = COM_CheckParm ("-conheight")))	// conheight no smaller than 200p
 		vid.conheight = atoi (com_argv[i + 1]);
 	vid.conheight = max (vid.conheight, 200);
+
+	vid.height = vid.conheight = min (vid.conheight,
+									  (unsigned int) scr_height);
+	vid.width = vid.conwidth = min (vid.conwidth, (unsigned int) scr_width);
+
+	Con_CheckResize ();		// Now that we have a window size, fix console
 
 	X11_OpenDisplay ();
 
@@ -237,10 +242,6 @@ VID_Init (unsigned char *palette)
 	ctx = qfglXCreateContext (x_disp, x_visinfo, NULL, True);
 
 	qfglXMakeCurrent (x_disp, x_win, ctx);
-
-	vid.height = vid.conheight = min (vid.conheight,
-									  (unsigned int) scr_height);
-	vid.width = vid.conwidth = min (vid.conwidth, (unsigned int) scr_width);
 
 	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
 	vid.numpages = 2;

@@ -966,7 +966,7 @@ VID_Init (unsigned char *palette)
 		vid.conwidth = 320;
 
 	// pick a conheight that matches with correct aspect
-	vid.conheight = vid.conwidth * 3 / 4;
+	vid.conheight = (vid.conwidth * 3) / 4;
 
 	if ((i = COM_CheckParm ("-conheight")) != 0)
 		vid.conheight = atoi (com_argv[i + 1]);

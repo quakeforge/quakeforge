@@ -183,8 +183,8 @@ view_draw (view_t *view)
 	}
 }
 
-void
-view_resize (view_t *view, int xl, int yl)
+static void
+_resize (view_t *view, int xl, int yl)
 {
 	int         i, xd, yd;
 
@@ -192,30 +192,30 @@ view_resize (view_t *view, int xl, int yl)
 	yd = yl - view->ylen;
 	view->xlen = xl;
 	view->ylen = yl;
-	setgeometry (view);
 	for (i = 0; i < view->num_children; i++) {
 		view_t     *v = view->children[i];
 
 		if (v->resize_x && v->resize_y) {
-			view_resize (v, v->xlen + xd, v->ylen + yd);
+			_resize (v, v->xlen + xd, v->ylen + yd);
 		} else if (v->resize_x) {
-			view_resize (v, v->xlen + xd, v->ylen);
+			_resize (v, v->xlen + xd, v->ylen);
 		} else if (v->resize_y) {
-			view_resize (v, v->xlen, v->ylen + yd);
-		} else {
-			setgeometry (v);
+			_resize (v, v->xlen, v->ylen + yd);
 		}
 	}
 }
 
 void
+view_resize (view_t *view, int xl, int yl)
+{
+	_resize (view, xl, yl);
+	setgeometry (view);
+}
+
+void
 view_move (view_t *view, int xp, int yp)
 {
-	int         i;
-
 	view->xpos = xp;
 	view->ypos = yp;
 	setgeometry (view);
-	for (i = 0; i < view->num_children; i++)
-		setgeometry (view->children[i]);
 }

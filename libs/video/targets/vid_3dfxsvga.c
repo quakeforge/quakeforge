@@ -286,7 +286,6 @@ VID_Init (unsigned char *palette)
 										  "fxMesaSwapBuffers", true);
 	
 	VID_GetWindowSize (640, 480);
-	Con_CheckResize (); // Now that we have a window size, fix console
 
 	vid.maxwarpwidth = WARP_WIDTH;
 	vid.maxwarpheight = WARP_HEIGHT;
@@ -308,12 +307,18 @@ VID_Init (unsigned char *palette)
 	vid.conwidth = max (vid.conwidth, 320);
 
 	// pick a conheight that matches with correct aspect
-	vid.conheight = vid.conwidth * 3 / 4;
+	vid.conheight = (vid.conwidth * 3) / 4;
 
 	if ((i = COM_CheckParm ("-conheight")) != 0)
 		vid.conheight = atoi (com_argv[i + 1]);
 
 	vid.conheight = max (vid.conheight, 200);
+
+	vid.width = vid.conwidth = min (vid.conwidth, (unsigned int) scr_width);
+	vid.height = vid.conheight = min (vid.conheight,
+									  (unsigned int) scr_height);
+
+	Con_CheckResize (); // Now that we have a window size, fix console
 
 	fc = qf_fxMesaCreateContext (0, findres (&scr_width, &scr_height),
 							  GR_REFRESH_75Hz, attribs);
@@ -321,10 +326,6 @@ VID_Init (unsigned char *palette)
 		Sys_Error ("Unable to create 3DFX context.");
 
 	qf_fxMesaMakeCurrent (fc);
-
-	vid.width = vid.conwidth = min (vid.conwidth, (unsigned int) scr_width);
-	vid.height = vid.conheight = min (vid.conheight,
-									  (unsigned int) scr_height);
 
 	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
 	vid.numpages = 2;
