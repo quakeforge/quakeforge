@@ -33,9 +33,9 @@
 #include <limits.h>
 #include <dmedia/audio.h>
 
-#include "console.h"
-#include "qtypes.h"
-#include "qargs.h"
+#include "QF/console.h"
+#include "QF/qtypes.h"
+#include "QF/qargs.h"
 #include "sound.h"
 
 static int  snd_inited = 0;

@@ -1,10 +1,12 @@
-
 /*
 	snd_null.c
 
-	@description@
+	include this instead of all the other snd_* files to have no sound
+	code whatsoever
 
 	Copyright (C) 1996-1997  Id Software, Inc.
+	Copyright (C) 1999,2000  contributors of the QuakeForge project
+	Please see the file "AUTHORS" for a list of contributors
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -27,9 +29,18 @@
 	$Id$
 */
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+#include "QF/qtypes.h"
+#include "sound.h"
+
+// =======================================================================
+// Various variables also defined in snd_dma.c
+// FIXME - should be put in one place
+// =======================================================================
+channel_t   channels[MAX_CHANNELS];
+int         total_channels;
+volatile dma_t *shm = 0;
+cvar_t     *loadas8bit;
+int         paintedtime;				// sample PAIRS
 
 
 cvar_t     *bgmvolume;
@@ -39,6 +50,16 @@ cvar_t     *volume;
 void
 S_Init (void)
 {
+	S_Init_Cvars ();
+}
+
+void
+S_Init_Cvars (void)
+{
+	volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, "Volume level of sounds");
+	loadas8bit =
+		Cvar_Get ("loadas8bit", "0", CVAR_NONE, "Load samples as 8-bit");
+	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, "CD music volume");
 }
 
 void
@@ -72,8 +93,8 @@ S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
 }
 
 void
-S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin,
-			  float fvol, float attenuation)
+S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol,
+			  float attenuation)
 {
 }
 

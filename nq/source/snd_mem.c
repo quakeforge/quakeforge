@@ -1,7 +1,7 @@
 /*
 	snd_mem.c
 
-	@description@
+	sound caching
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -29,23 +29,25 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
-#include <string.h>
-
-#include "QF/sys.h"
-#include "sound.h"
+#include "QF/console.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
-#include "QF/console.h"
+#include "sound.h"
+#include "QF/sys.h"
 
 int         cache_full_cycle;
 
 byte       *S_Alloc (int size);
 
 /*
-================
-ResampleSfx
-================
+	ResampleSfx
 */
 void
 ResampleSfx (sfx_t *sfx, int inrate, int inwidth, byte * data)
@@ -70,7 +72,6 @@ ResampleSfx (sfx_t *sfx, int inrate, int inwidth, byte * data)
 
 	stepscale = (float) inrate / shm->speed;	// this is usually 0.5, 1, or 
 												// 
-	// 
 	// 2
 
 	outcount = sc->length / stepscale;
@@ -162,9 +163,7 @@ ResampleSfx (sfx_t *sfx, int inrate, int inwidth, byte * data)
 //=============================================================================
 
 /*
-==============
-S_LoadSound
-==============
+	S_LoadSound
 */
 sfxcache_t *
 S_LoadSound (sfx_t *s)
@@ -185,7 +184,7 @@ S_LoadSound (sfx_t *s)
 //Con_Printf ("S_LoadSound: %x\n", (int)stackbuf);
 // load it in
 	strcpy (namebuffer, "sound/");
-	strcat (namebuffer, s->name);
+	strncat (namebuffer, s->name, sizeof (namebuffer) - strlen (namebuffer));
 
 //  Con_Printf ("loading %s\n",namebuffer);
 
@@ -230,11 +229,7 @@ S_LoadSound (sfx_t *s)
 
 
 /*
-===============================================================================
-
-WAV loading
-
-===============================================================================
+	WAV loading
 */
 
 
@@ -320,9 +315,7 @@ DumpChunks (void)
 }
 
 /*
-============
-GetWavinfo
-============
+	GetWavinfo
 */
 wavinfo_t
 GetWavinfo (char *name, byte * wav, int wavlength)

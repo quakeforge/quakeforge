@@ -1,4 +1,3 @@
-
 /*
 	snd_sdl.c
 
@@ -28,15 +27,16 @@
 */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+# include "config.h"
 #endif
+
 #include <SDL_audio.h>
 #include <SDL_byteorder.h>
 
-#include "console.h"
-#include "qargs.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/qargs.h"
 #include "sound.h"
-#include "cmd.h"
 
 static dma_t the_shm;
 static int  snd_inited;
@@ -66,17 +66,17 @@ SNDDMA_Init (void)
 	desired.freq = desired_speed;
 	switch (desired_bits) {
 		case 8:
-		desired.format = AUDIO_U8;
-		break;
+			desired.format = AUDIO_U8;
+			break;
 		case 16:
-		if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
-			desired.format = AUDIO_S16MSB;
-		else
-			desired.format = AUDIO_S16LSB;
-		break;
+			if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
+				desired.format = AUDIO_S16MSB;
+			else
+				desired.format = AUDIO_S16LSB;
+			break;
 		default:
-		Con_Printf ("Unknown number of audio bits: %d\n", desired_bits);
-		return 0;
+			Con_Printf ("Unknown number of audio bits: %d\n", desired_bits);
+			return 0;
 	}
 	desired.channels = 2;
 	desired.samples = 512;
@@ -91,27 +91,27 @@ SNDDMA_Init (void)
 	/* Make sure we can support the audio format */
 	switch (obtained.format) {
 		case AUDIO_U8:
-		/* Supported */
-		break;
-		case AUDIO_S16LSB:
-		case AUDIO_S16MSB:
-		if (((obtained.format == AUDIO_S16LSB) &&
-			 (SDL_BYTEORDER == SDL_LIL_ENDIAN)) ||
-			((obtained.format == AUDIO_S16MSB) &&
-			 (SDL_BYTEORDER == SDL_BIG_ENDIAN))) {
 			/* Supported */
 			break;
-		}
-		/* Unsupported, fall through */ ;
+		case AUDIO_S16LSB:
+		case AUDIO_S16MSB:
+			if (((obtained.format == AUDIO_S16LSB) &&
+				 (SDL_BYTEORDER == SDL_LIL_ENDIAN)) ||
+				((obtained.format == AUDIO_S16MSB) &&
+				 (SDL_BYTEORDER == SDL_BIG_ENDIAN))) {
+				/* Supported */
+				break;
+			}
+			/* Unsupported, fall through */ ;
 		default:
-		/* Not supported -- force SDL to do our bidding */
-		SDL_CloseAudio ();
-		if (SDL_OpenAudio (&desired, NULL) < 0) {
-			Con_Printf ("Couldn't open SDL audio: %s\n", SDL_GetError ());
-			return 0;
-		}
-		memcpy (&obtained, &desired, sizeof (desired));
-		break;
+			/* Not supported -- force SDL to do our bidding */
+			SDL_CloseAudio ();
+			if (SDL_OpenAudio (&desired, NULL) < 0) {
+				Con_Printf ("Couldn't open SDL audio: %s\n", SDL_GetError ());
+				return 0;
+			}
+			memcpy (&obtained, &desired, sizeof (desired));
+			break;
 	}
 	SDL_PauseAudio (0);
 

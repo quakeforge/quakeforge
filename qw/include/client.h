@@ -285,6 +285,7 @@ typedef struct
 
 	char		levelname[40];	// for display on solo scoreboard
 	int			playernum;
+	int			viewentity;
 	int			stdver;
 
 // refresh related state

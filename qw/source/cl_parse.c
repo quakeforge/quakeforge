@@ -656,6 +656,10 @@ CL_ParseServerData (void)
 		cl.spectator = true;
 		cl.playernum &= ~128;
 	}
+
+	// evil hack so NQ and QW can share sound code
+	cl.viewentity = cl.playernum + 1;
+
 	// get the full level name
 	str = MSG_ReadString (net_message);
 	strncpy (cl.levelname, str, sizeof (cl.levelname) - 1);

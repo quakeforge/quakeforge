@@ -1,7 +1,7 @@
 /*
 	snd_oss.c
 
-	@description@
+	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -34,49 +34,75 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
 #include <sys/shm.h>
 #include <sys/wait.h>
-#include <linux/soundcard.h>
+#include <errno.h>
 #include <stdio.h>
-#include "qtypes.h"
-#include "console.h"
+
+#ifdef HAVE_SYS_IOCTL_H
+# include <sys/ioctl.h>
+#endif
+
+#ifdef HAVE_SYS_MMAN_H
+# include <sys/mman.h>
+#endif
+
+#if defined HAVE_SYS_SOUNDCARD_H
+# include <sys/soundcard.h>
+#elif defined HAVE_LINUX_SOUNDCARD_H
+# include <linux/soundcard.h>
+#elif HAVE_MACHINE_SOUNDCARD_H
+# include <machine/soundcard.h>
+#endif
+
+#include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/qargs.h"
 #include "sound.h"
-#include "qargs.h"
+
+#ifndef MAP_FAILED
+# define MAP_FAILED ((void *) -1)
+#endif
 
 static int         audio_fd;
 static int         snd_inited;
 static char       *snd_dev = "/dev/dsp";
 
-static int  tryrates[] = { 11025, 22051, 44100, 8000 };
+static int  tryrates[] = { 11025, 22050, 22051, 44100, 8000 };
 
 qboolean
 SNDDMA_Init (void)
 {
-
 	int         rc;
 	int         fmt;
 	int         tmp;
 	int         i;
 	struct audio_buf_info info;
 	int         caps;
+	int         retries = 3;
 
 	snd_inited = 0;
 
-// open /dev/dsp, confirm capability to mmap, and get size of dma buffer
+	// open snd_dev, confirm capability to mmap, and get size of dma buffer
 	if (snd_device->string[0])
 		snd_dev = snd_device->string;
 
 	audio_fd = open (snd_dev, O_RDWR);
-	if (audio_fd < 0) {
-		perror (snd_dev);
-		Con_Printf ("Could not open %s\n", snd_dev);
-		return 0;
+	if (audio_fd < 0) {					// Failed open, retry up to 3 times
+		// if it's busy
+		while ((audio_fd < 0) && retries-- &&
+			   ((errno == EAGAIN) || (errno == EBUSY))) {
+			sleep (1);
+			audio_fd = open (snd_dev, O_RDWR);
+		}
+		if (audio_fd < 0) {
+			perror (snd_dev);
+			Con_Printf ("Could not open %s\n", snd_dev);
+			return 0;
+		}
 	}
 
-	rc = ioctl (audio_fd, SNDCTL_DSP_RESET, 0);
-	if (rc < 0) {
+	if ((rc = ioctl (audio_fd, SNDCTL_DSP_RESET, 0)) < 0) {
 		perror (snd_dev);
 		Con_Printf ("Could not reset %s\n", snd_dev);
 		close (audio_fd);
@@ -91,7 +117,7 @@ SNDDMA_Init (void)
 	}
 
 	if (!(caps & DSP_CAP_TRIGGER) || !(caps & DSP_CAP_MMAP)) {
-		Con_Printf ("Sorry but your soundcard can't do this\n");
+		Con_Printf ("Sound device can't do memory-mapped I/O.\n");
 		close (audio_fd);
 		return 0;
 	}
@@ -106,42 +132,46 @@ SNDDMA_Init (void)
 	shm = &sn;
 	shm->splitbuffer = 0;
 
-// set sample bits & speed
+	// set sample bits & speed
+	shm->samplebits = snd_bits->int_val;
 
-	if (snd_bits->int_val)
-		shm->samplebits = snd_bits->int_val;
 	if (shm->samplebits != 16 && shm->samplebits != 8) {
 		ioctl (audio_fd, SNDCTL_DSP_GETFMTS, &fmt);
-		if (fmt & AFMT_S16_LE)
+
+		if (fmt & AFMT_S16_LE) {		// little-endian 16-bit signed
 			shm->samplebits = 16;
-		else if (fmt & AFMT_U8)
-			shm->samplebits = 8;
+		} else {
+			if (fmt & AFMT_U8) {		// unsigned 8-bit ulaw
+				shm->samplebits = 8;
+			}
+		}
 	}
 
-	if (snd_rate->int_val)
+	if (snd_rate->int_val) {
 		shm->speed = snd_rate->int_val;
-	else {
-		for (i = 0; i < sizeof (tryrates) / 4; i++)
+	} else {
+		for (i = 0; i < (sizeof (tryrates) / 4); i++)
 			if (!ioctl (audio_fd, SNDCTL_DSP_SPEED, &tryrates[i]))
 				break;
 		shm->speed = tryrates[i];
 	}
 
-	if (!snd_stereo->int_val)
+	if (!snd_stereo->int_val) {
 		shm->channels = 1;
-	else
+	} else {
 		shm->channels = 2;
+	}
 
 	shm->samples = info.fragstotal * info.fragsize / (shm->samplebits / 8);
 	shm->submission_chunk = 1;
 
-// memory map the dma buffer
-
+	// memory map the dma buffer
 	shm->buffer = (unsigned char *) mmap (NULL, info.fragstotal
 										  * info.fragsize,
 										  PROT_READ | PROT_WRITE,
 										  MAP_FILE | MAP_SHARED, audio_fd, 0);
-	if (!shm->buffer || shm->buffer == MAP_FAILED) {
+
+	if (shm->buffer == MAP_FAILED) {
 		perror (snd_dev);
 		Con_Printf ("Could not mmap %s\n", snd_dev);
 		close (audio_fd);
@@ -158,6 +188,7 @@ SNDDMA_Init (void)
 		close (audio_fd);
 		return 0;
 	}
+
 	if (tmp)
 		shm->channels = 2;
 	else
@@ -239,7 +270,7 @@ SNDDMA_GetDMAPos (void)
 		return 0;
 	}
 //  shm->samplepos = (count.bytes / (shm->samplebits / 8)) & (shm->samples-1);
-//  fprintf(stderr, "%d    \r", count.ptr);
+//  fprintf(stderr, "%d \r", count.ptr);
 	shm->samplepos = count.ptr / (shm->samplebits / 8);
 
 	return shm->samplepos;
@@ -256,11 +287,9 @@ SNDDMA_Shutdown (void)
 }
 
 /*
-==============
-SNDDMA_Submit
+	SNDDMA_Submit
 
-Send sound to device if buffer isn't really the dma buffer
-===============
+	Send sound to device if buffer isn't really the dma buffer
 */
 void
 SNDDMA_Submit (void)

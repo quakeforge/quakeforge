@@ -60,7 +60,7 @@ void        S_StopAllSounds (qboolean clear);
 void        S_StopAllSoundsC (void);
 
 // QuakeWorld hack...
-#define	viewentity	playernum+1
+//#define	viewentity	playernum+1
 
 // =======================================================================
 // Internal sound data & structures

@@ -55,9 +55,9 @@
 # include <machine/soundcard.h>
 #endif
 
-#include "cmd.h"
-#include "console.h"
-#include "qargs.h"
+#include "QF/cmd.h"
+#include "QF/console.h"
+#include "QF/qargs.h"
 #include "sound.h"
 
 #ifndef MAP_FAILED

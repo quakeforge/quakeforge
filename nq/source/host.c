@@ -927,6 +927,7 @@ Host_Init (quakeparms_t *parms)
 	Cbuf_Execute_Sets ();
 
 	V_Init ();
+	S_Init_Cvars ();
 	SCR_InitCvars ();
 	VID_Init_Cvars ();
 	COM_Init ();

@@ -1,7 +1,7 @@
 /*
 	snd_mix.c
 
-	@description@
+	portable code to mix sounds for snd_dma.c
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -29,14 +29,20 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
+#include "QF/console.h"
 #include "sound.h"
-#include "QF/compat.h"
 
 #ifdef _WIN32
-#include "winquake.h"
+# include "winquake.h"
 #else
-#define DWORD	unsigned long
+# define DWORD	unsigned long
 #endif
 
 #define	PAINTBUFFER_SIZE	512
@@ -50,7 +56,7 @@ short      *snd_out;
 
 void        Snd_WriteLinearBlastStereo16 (void);
 
-#ifndef	USE_INTEL_ASM
+#ifndef USE_INTEL_ASM
 void
 Snd_WriteLinearBlastStereo16 (void)
 {
@@ -84,13 +90,6 @@ S_TransferStereo16 (int endtime)
 	int         lpaintedtime;
 	DWORD      *pbuf;
 
-#ifdef _WIN32
-	int         reps;
-	DWORD       dwSize, dwSize2;
-	DWORD      *pbuf2;
-	HRESULT     hresult;
-#endif
-
 	snd_vol = volume->value * 256;
 
 	snd_p = (int *) paintbuffer;
@@ -98,27 +97,10 @@ S_TransferStereo16 (int endtime)
 
 #ifdef _WIN32
 	if (pDSBuf) {
-		reps = 0;
-
-		while (
-			   (hresult =
-				pDSBuf->lpVtbl->Lock (pDSBuf, 0, gSndBufSize, &pbuf, &dwSize,
-									  &pbuf2, &dwSize2, 0)) != DS_OK) {
-			if (hresult != DSERR_BUFFERLOST) {
-				Con_Printf
-					("S_TransferStereo16: DS::Lock Sound Buffer Failed\n");
-				S_Shutdown ();
-				S_Startup ();
-				return;
-			}
-
-			if (++reps > 10000) {
-				Con_Printf
-					("S_TransferStereo16: DS: couldn't restore buffer\n");
-				S_Shutdown ();
-				S_Startup ();
-				return;
-			}
+		pbuf = DSOUND_LockBuffer (true);
+		if (!pbuf) {
+			Con_Printf ("DSOUND_LockBuffer fails!\n");
+			return;
 		}
 	} else
 #endif
@@ -147,7 +129,7 @@ S_TransferStereo16 (int endtime)
 
 #ifdef _WIN32
 	if (pDSBuf)
-		pDSBuf->lpVtbl->Unlock (pDSBuf, pbuf, dwSize, NULL, 0);
+		DSOUND_LockBuffer (false);
 #endif
 }
 
@@ -163,13 +145,6 @@ S_TransferPaintBuffer (int endtime)
 	int         snd_vol;
 	DWORD      *pbuf;
 
-#ifdef _WIN32
-	int         reps;
-	DWORD       dwSize, dwSize2;
-	DWORD      *pbuf2;
-	HRESULT     hresult;
-#endif
-
 	if (shm->samplebits == 16 && shm->channels == 2) {
 		S_TransferStereo16 (endtime);
 		return;
@@ -184,27 +159,10 @@ S_TransferPaintBuffer (int endtime)
 
 #ifdef _WIN32
 	if (pDSBuf) {
-		reps = 0;
-
-		while (
-			   (hresult =
-				pDSBuf->lpVtbl->Lock (pDSBuf, 0, gSndBufSize, &pbuf, &dwSize,
-									  &pbuf2, &dwSize2, 0)) != DS_OK) {
-			if (hresult != DSERR_BUFFERLOST) {
-				Con_Printf
-					("S_TransferPaintBuffer: DS::Lock Sound Buffer Failed\n");
-				S_Shutdown ();
-				S_Startup ();
-				return;
-			}
-
-			if (++reps > 10000) {
-				Con_Printf
-					("S_TransferPaintBuffer: DS: couldn't restore buffer\n");
-				S_Shutdown ();
-				S_Startup ();
-				return;
-			}
+		pbuf = DSOUND_LockBuffer (true);
+		if (!pbuf) {
+			Con_Printf ("DSOUND_LockBuffer fails!\n");
+			return;
 		}
 	} else
 #endif
@@ -240,30 +198,14 @@ S_TransferPaintBuffer (int endtime)
 		}
 	}
 #ifdef _WIN32
-	if (pDSBuf) {
-		DWORD       dwNewpos, dwWrite;
-		int         il = paintedtime;
-		int         ir = endtime - paintedtime;
-
-		ir += il;
-
-		pDSBuf->lpVtbl->Unlock (pDSBuf, pbuf, dwSize, NULL, 0);
-
-		pDSBuf->lpVtbl->GetCurrentPosition (pDSBuf, &dwNewpos, &dwWrite);
-
-//      if ((dwNewpos >= il) && (dwNewpos <= ir))
-//          Con_Printf("%d-%d p %d c\n", il, ir, dwNewpos);
-	}
+	if (pDSBuf)
+		DSOUND_LockBuffer (false);
 #endif
 }
 
 
 /*
-===============================================================================
-
-CHANNEL MIXING
-
-===============================================================================
+	CHANNEL MIXING
 */
 
 void        SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int endtime);
@@ -285,8 +227,8 @@ S_PaintChannels (int endtime)
 			end = paintedtime + PAINTBUFFER_SIZE;
 
 		// clear the paint buffer
-		// memset(paintbuffer, 0, (end - paintedtime) *
-		// sizeof(portable_samplepair_t));
+//      memset (paintbuffer, 0,
+//              (end - paintedtime) * sizeof (portable_samplepair_t));
 		max_overpaint = 0;
 
 		// paint in the channels.
@@ -302,8 +244,7 @@ S_PaintChannels (int endtime)
 
 			ltime = paintedtime;
 
-			while (ltime < end) {
-				// paint up to end
+			while (ltime < end) {		// paint up to end
 				if (ch->end < end)
 					count = ch->end - ltime;
 				else
@@ -334,12 +275,10 @@ S_PaintChannels (int endtime)
 		// transfer out according to DMA format
 		S_TransferPaintBuffer (end);
 
-		memcpy (paintbuffer,
-				paintbuffer + end - paintedtime,
-				max_overpaint * sizeof (paintbuffer[0]));
-		memset (paintbuffer + max_overpaint,
-				0,
-				sizeof (paintbuffer) - max_overpaint * sizeof (paintbuffer[0]));
+		memmove (paintbuffer, paintbuffer + end - paintedtime,
+				 max_overpaint * sizeof (paintbuffer[0]));
+		memset (paintbuffer + max_overpaint, 0, sizeof (paintbuffer)
+				- max_overpaint * sizeof (paintbuffer[0]));
 
 		paintedtime = end;
 	}
@@ -356,7 +295,7 @@ SND_InitScaletable (void)
 }
 
 
-#ifndef	USE_INTEL_ASM
+#ifndef USE_INTEL_ASM
 
 void
 SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count)
@@ -384,16 +323,18 @@ SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count)
 	ch->pos += count;
 }
 
-#endif // USE_INTEL_ASM
+#endif // !USE_INTEL_ASM
 
 
 void
 SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
 {
+	int         data;
+	int         left, right;
 	int         leftvol, rightvol;
 	signed short *sfx;
 	unsigned int i = 0;
-	unsigned int left_phase, right_phase;	// never allowed < 0 anyway
+	unsigned int left_phase, right_phase;	// Never allowed < 0 anyway
 
 	leftvol = ch->leftvol;
 	rightvol = ch->rightvol;
@@ -424,7 +365,6 @@ SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
 			old_phase_left = 0;
 			old_phase_right = -ch->oldphase;
 		}
-
 		new_phase_left = left_phase;
 		new_phase_right = right_phase;
 
@@ -478,11 +418,10 @@ SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)
 		}
 	}
 
-	for (; count; count--, i++) {
-		int         data = sfx[i];
-		int         left = (data * leftvol) >> 8;
-		int         right = (data * rightvol) >> 8;
-
+	for (i = 0; i < count; i++) {
+		data = sfx[i];
+		left = (data * leftvol) >> 8;
+		right = (data * rightvol) >> 8;
 		paintbuffer[i + left_phase].left += left;
 		paintbuffer[i + right_phase].right += right;
 	}

@@ -89,56 +89,57 @@ SNDDMA_Init (void)
 
 	switch (rate) {
 		case -1:
-		if (snd_pcm_hw_params_set_rate_near (pcm, hw, 44100, 0) >= 0) {
-			frag_size = 256;			/* assuming stereo 8 bit */
-			rate = 44100;
-		} else if (snd_pcm_hw_params_set_rate_near (pcm, hw, 22050, 0) >= 0) {
-			frag_size = 128;			/* assuming stereo 8 bit */
-			rate = 22050;
-		} else if (snd_pcm_hw_params_set_rate_near (pcm, hw, 11025, 0) >= 0) {
-			frag_size = 64;				/* assuming stereo 8 bit */
-			rate = 11025;
-		} else {
-			Con_Printf ("ALSA: no useable rates\n");
-			goto error;
-		}
-		break;
+			if (snd_pcm_hw_params_set_rate_near (pcm, hw, 44100, 0) >= 0) {
+				frag_size = 256;		/* assuming stereo 8 bit */
+				rate = 44100;
+			} else if (snd_pcm_hw_params_set_rate_near (pcm, hw, 22050, 0) >= 0) {
+				frag_size = 128;		/* assuming stereo 8 bit */
+				rate = 22050;
+			} else if (snd_pcm_hw_params_set_rate_near (pcm, hw, 11025, 0) >= 0) {
+				frag_size = 64;			/* assuming stereo 8 bit */
+				rate = 11025;
+			} else {
+				Con_Printf ("ALSA: no useable rates\n");
+				goto error;
+			}
+			break;
 		case 11025:
 		case 22050:
 		case 44100:
-		if (snd_pcm_hw_params_set_rate_near (pcm, hw, rate, 0) >= 0) {
-			frag_size = 64 * rate / 11025;	/* assuming stereo 8 bit */
-			break;
-		}
-		/* Fall through */
+			if (snd_pcm_hw_params_set_rate_near (pcm, hw, rate, 0) >= 0) {
+				frag_size = 64 * rate / 11025;	/* assuming stereo 8 bit */
+				break;
+			}
+			/* Fall through */
 		default:
-		Con_Printf ("ALSA: desired rate not supported\n");
-		goto error;
+			Con_Printf ("ALSA: desired rate not supported\n");
+			goto error;
 	}
 
 	switch (bps) {
 		case -1:
-		if (snd_pcm_hw_params_set_format (pcm, hw, SND_PCM_FORMAT_S16_LE) >= 0) {
-			bps = 16;
-		} else if (snd_pcm_hw_params_set_format (pcm, hw, SND_PCM_FORMAT_U8) >=
-				   0) {
-			bps = 8;
-		} else {
-			Con_Printf ("ALSA: no useable formats\n");
-			goto error;
-		}
-		break;
+			if (snd_pcm_hw_params_set_format (pcm, hw, SND_PCM_FORMAT_S16_LE) >=
+				0) {
+				bps = 16;
+			} else if (snd_pcm_hw_params_set_format (pcm, hw, SND_PCM_FORMAT_U8)
+					   >= 0) {
+				bps = 8;
+			} else {
+				Con_Printf ("ALSA: no useable formats\n");
+				goto error;
+			}
+			break;
 		case 8:
 		case 16:
-		if (snd_pcm_hw_params_set_format (pcm, hw,
-										  bps == 8 ? SND_PCM_FORMAT_U8 :
-										  SND_PCM_FORMAT_S16) >= 0) {
-			break;
-		}
-		/* Fall through */
+			if (snd_pcm_hw_params_set_format (pcm, hw,
+											  bps == 8 ? SND_PCM_FORMAT_U8 :
+											  SND_PCM_FORMAT_S16) >= 0) {
+				break;
+			}
+			/* Fall through */
 		default:
-		Con_Printf ("ALSA: desired format not supported\n");
-		goto error;
+			Con_Printf ("ALSA: desired format not supported\n");
+			goto error;
 	}
 
 	if (snd_pcm_hw_params_set_access (pcm, hw,
@@ -149,23 +150,23 @@ SNDDMA_Init (void)
 
 	switch (stereo) {
 		case -1:
-		if (snd_pcm_hw_params_set_channels (pcm, hw, 2) >= 0) {
-			stereo = 1;
-		} else if (snd_pcm_hw_params_set_channels (pcm, hw, 1) >= 0) {
-			stereo = 0;
-		} else {
-			Con_Printf ("ALSA: no useable channels\n");
-			goto error;
-		}
-		break;
+			if (snd_pcm_hw_params_set_channels (pcm, hw, 2) >= 0) {
+				stereo = 1;
+			} else if (snd_pcm_hw_params_set_channels (pcm, hw, 1) >= 0) {
+				stereo = 0;
+			} else {
+				Con_Printf ("ALSA: no useable channels\n");
+				goto error;
+			}
+			break;
 		case 0:
 		case 1:
-		if (snd_pcm_hw_params_set_channels (pcm, hw, stereo ? 2 : 1) >= 0)
-			break;
-		/* Fall through */
+			if (snd_pcm_hw_params_set_channels (pcm, hw, stereo ? 2 : 1) >= 0)
+				break;
+			/* Fall through */
 		default:
-		Con_Printf ("ALSA: desired channels not supported\n");
-		goto error;
+			Con_Printf ("ALSA: desired channels not supported\n");
+			goto error;
 	}
 
 	snd_pcm_hw_params_set_period_size_near (pcm, hw, frag_size, 0);
@@ -193,13 +194,11 @@ SNDDMA_Init (void)
 	shm->splitbuffer = 0;
 	shm->channels = stereo + 1;
 	shm->submission_chunk = snd_pcm_hw_params_get_period_size (hw, 0);	// don't 
-																		// 
-	// 
-	// mix 
-	// less 
-	// than 
-	// this 
-	// #
+																		// mix 
+																		// less 
+																		// than 
+																		// this 
+																		// #
 	shm->samplepos = 0;					// in mono samples
 	shm->samplebits = bps;
 	buffer_size = snd_pcm_hw_params_get_buffer_size (hw);
@@ -283,32 +282,32 @@ SNDDMA_Submit (void)
 
 	switch (state) {
 		case SND_PCM_STATE_PREPARED:
-		snd_pcm_mmap_forward (pcm, count);
-		snd_pcm_start (pcm);
-		break;
-		case SND_PCM_STATE_RUNNING:
-		hw_ptr = get_hw_ptr ();
-		missed = hw_ptr - shm->samplepos / shm->channels;
-		if (missed < 0)
-			missed += buffer_size;
-		count -= missed;
-		offset = snd_pcm_mmap_offset (pcm);
-		if (offset > hw_ptr)
-			count -= (offset - hw_ptr);
-		else
-			count -= (buffer_size - hw_ptr + offset);
-		if (count < 0) {
-			snd_pcm_rewind (pcm, -count);
-		} else {
-			avail = snd_pcm_avail_update (pcm);
-			if (avail < 0)
-				avail = buffer_size;
-			if (count > avail)
-				count = avail;
 			snd_pcm_mmap_forward (pcm, count);
-		}
-		break;
+			snd_pcm_start (pcm);
+			break;
+		case SND_PCM_STATE_RUNNING:
+			hw_ptr = get_hw_ptr ();
+			missed = hw_ptr - shm->samplepos / shm->channels;
+			if (missed < 0)
+				missed += buffer_size;
+			count -= missed;
+			offset = snd_pcm_mmap_offset (pcm);
+			if (offset > hw_ptr)
+				count -= (offset - hw_ptr);
+			else
+				count -= (buffer_size - hw_ptr + offset);
+			if (count < 0) {
+				snd_pcm_rewind (pcm, -count);
+			} else {
+				avail = snd_pcm_avail_update (pcm);
+				if (avail < 0)
+					avail = buffer_size;
+				if (count > avail)
+					count = avail;
+				snd_pcm_mmap_forward (pcm, count);
+			}
+			break;
 		default:
-		break;
+			break;
 	}
 }

@@ -1,10 +1,11 @@
-
 /*
 	snd_sun.c
 
-	@description@
+	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
+	Copyright (C) 1999,2000  contributors of the QuakeForge project
+	Please see the file "AUTHORS" for a list of contributors
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -30,8 +31,10 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 
-#include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -43,10 +46,14 @@
 #include <sys/audioio.h>
 #include <errno.h>
 
+#include "QF/qtypes.h"
+#include "sound.h"
+#include "QF/qargs.h"
+#include "QF/console.h"
+
 int         audio_fd;
 int         snd_inited;
 
-static int  bufpos;
 static int  wbufp;
 static audio_info_t info;
 
@@ -56,21 +63,12 @@ unsigned char dma_buffer[BUFFER_SIZE];
 unsigned char pend_buffer[BUFFER_SIZE];
 int         pending;
 
-static int  lastwrite = 0;
-
 qboolean
 SNDDMA_Init (void)
 {
-	int         rc;
-	int         fmt;
-	int         tmp;
-	int         i;
-	char       *s;
-	int         caps;
-
 	if (snd_inited) {
 		printf ("Sound already init'd\n");
-		return;
+		return 0;
 	}
 
 	shm = &sn;
@@ -186,23 +184,19 @@ SNDDMA_Shutdown (void)
 }
 
 /*
-==============
-SNDDMA_Submit
+	SNDDMA_Submit
 
-Send sound to device if buffer isn't really the dma buffer
-===============
+	Send sound to device if buffer isn't really the dma buffer
 */
 void
 SNDDMA_Submit (void)
 {
-	int         samps;
 	int         bsize;
 	int         bytes, b;
 	static unsigned char writebuf[1024];
 	unsigned char *p;
 	int         idx;
 	int         stop = paintedtime;
-	extern int  soundtime;
 
 	if (paintedtime < wbufp)
 		wbufp = 0;						// reset

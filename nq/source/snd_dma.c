@@ -29,28 +29,38 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
-#include <string.h>
 #include <stdlib.h>
 
-#include "QF/sys.h"
-#include "sound.h"
+#include "client.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
-#include "client.h"
-#include "QF/qargs.h"
 #include "host.h"
+#include "model.h"
+#include "QF/qargs.h"
+#include "QF/sys.h"
+#include "sound.h"
 
 #ifdef _WIN32
 #include "winquake.h"
+#include "in_win.h"
 #endif
 
 void        S_Play (void);
 void        S_PlayVol (void);
 void        S_SoundList (void);
-void        S_Update_ ();
+void        S_Update_ (void);
 void        S_StopAllSounds (qboolean clear);
 void        S_StopAllSoundsC (void);
+
+// QuakeWorld hack...
+//#define	viewentity	playernum+1
 
 // =======================================================================
 // Internal sound data & structures
@@ -98,7 +108,6 @@ cvar_t     *snd_stereo;
 cvar_t     *nosound;
 cvar_t     *precache;
 cvar_t     *loadas8bit;
-cvar_t     *bgmbuffer;
 cvar_t     *ambient_level;
 cvar_t     *ambient_fade;
 cvar_t     *snd_noextraupdate;
@@ -152,15 +161,13 @@ S_SoundInfo_f (void)
 	Con_Printf ("%5d samplebits\n", shm->samplebits);
 	Con_Printf ("%5d submission_chunk\n", shm->submission_chunk);
 	Con_Printf ("%5d speed\n", shm->speed);
-	Con_Printf ("0x%x dma buffer\n", (int) shm->buffer);
+	Con_Printf ("0x%lx dma buffer\n", (unsigned long) shm->buffer);
 	Con_Printf ("%5d total_channels\n", total_channels);
 }
 
 
 /*
-================
-S_Startup
-================
+	S_Startup
 */
 
 void
@@ -188,9 +195,7 @@ S_Startup (void)
 
 
 /*
-================
-S_Init
-================
+	S_Init
 */
 void
 S_Init (void)
@@ -198,40 +203,16 @@ S_Init (void)
 
 	Con_Printf ("\nSound Initialization\n");
 
-	Cmd_AddCommand ("play", S_Play, "No Description");
-	Cmd_AddCommand ("playvol", S_PlayVol, "No Description");
-	Cmd_AddCommand ("stopsound", S_StopAllSoundsC, "No Description");
-	Cmd_AddCommand ("soundlist", S_SoundList, "No Description");
-	Cmd_AddCommand ("soundinfo", S_SoundInfo_f, "No Description");
-
-	snd_device = Cvar_Get ("snd_device", "", CVAR_ROM,
-						   "sound device. \"\" is system default");
-	snd_rate = Cvar_Get ("snd_rate", "0", CVAR_ROM,
-						 "sound playback rate. 0 is system default");
-	snd_bits = Cvar_Get ("snd_bits", "0", CVAR_ROM,
-						 "sound sample depth. 0 is system default");
-	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM,
-						   "sound stereo output");
-	nosound = Cvar_Get ("nosound", "0", CVAR_NONE, "None");
-	volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, "None");
-	precache = Cvar_Get ("precache", "1", CVAR_NONE, "None");
-	loadas8bit = Cvar_Get ("loadas8bit", "0", CVAR_NONE, "None");
-	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, "None");
-	bgmbuffer = Cvar_Get ("bgmbuffer", "4096", CVAR_NONE, "None");
-	ambient_level = Cvar_Get ("ambient_level", "0.3", CVAR_NONE, "None");
-	ambient_fade = Cvar_Get ("ambient_fade", "100", CVAR_NONE, "None");
-	snd_noextraupdate = Cvar_Get ("snd_noextraupdate", "0", CVAR_NONE, "None");
-	snd_show = Cvar_Get ("snd_show", "0", CVAR_NONE, "None");
-	snd_interp =
-		Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE,
-				  "control sample interpolation");
-	snd_phasesep =
-		Cvar_Get ("snd_phasesep", "0.0", CVAR_ARCHIVE,
-				  "max stereo phase separation in ms. 0.6 is for 20cm head");
-	snd_volumesep =
-		Cvar_Get ("snd_volumesep", "1.0", CVAR_ARCHIVE,
-				  "max stereo volume separation in ms. 1.0 is max");
-	_snd_mixahead = Cvar_Get ("_snd_mixahead", "0.1", CVAR_ARCHIVE, "None");
+	Cmd_AddCommand ("play", S_Play,
+					"Play selected sound effect (play pathto/sound.wav)");
+	Cmd_AddCommand ("playvol", S_PlayVol,
+					"Play selected sound effect at selected volume (playvol pathto/sound.wav num");
+	Cmd_AddCommand ("stopsound", S_StopAllSoundsC,
+					"Stops all sounds currently being played");
+	Cmd_AddCommand ("soundlist", S_SoundList,
+					"Reports a list of sounds in the cache");
+	Cmd_AddCommand ("soundinfo", S_SoundInfo_f,
+					"Report information on the sound system");
 
 	if (COM_CheckParm ("-nosound"))
 		return;
@@ -243,7 +224,6 @@ S_Init (void)
 		Cvar_Set (loadas8bit, "1");
 		Con_Printf ("loading all sounds as 8bit\n");
 	}
-
 
 
 	snd_initialized = true;
@@ -274,8 +254,7 @@ S_Init (void)
 		shm->submission_chunk = 1;
 		shm->buffer = Hunk_AllocName (1 << 16, "shmbuf");
 	}
-
-	Con_Printf ("Sound sampling rate: %i\n", shm->speed);
+//  Con_Printf ("Sound sampling rate: %i\n", shm->speed);
 
 	// provides a tick sound until washed clean
 
@@ -286,6 +265,52 @@ S_Init (void)
 	ambient_sfx[AMBIENT_SKY] = S_PrecacheSound ("ambience/wind2.wav");
 
 	S_StopAllSounds (true);
+}
+
+void
+S_Init_Cvars (void)
+{
+	snd_device = Cvar_Get ("snd_device", "", CVAR_ROM,
+						   "sound device. \"\" is system default");
+	snd_rate = Cvar_Get ("snd_rate", "0", CVAR_ROM,
+						 "sound playback rate. 0 is system default");
+	snd_bits = Cvar_Get ("snd_bits", "0", CVAR_ROM,
+						 "sound sample depth. 0 is system default");
+	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM,
+						   "sound stereo output");
+	nosound = Cvar_Get ("nosound", "0", CVAR_NONE, "Set to turn sound off");
+	volume =
+		Cvar_Get ("volume", "0.7", CVAR_ARCHIVE,
+				  "Set the volume for sound playback");
+	precache =
+		Cvar_Get ("precache", "1", CVAR_NONE, "Toggle the use of a precache");
+	loadas8bit =
+		Cvar_Get ("loadas8bit", "0", CVAR_NONE,
+				  "Toggles if sounds are loaded as 8-bit samples");
+	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, "Volume of CD music");
+	ambient_level =
+		Cvar_Get ("ambient_level", "0.3", CVAR_NONE, "Ambient sounds' volume");
+	ambient_fade =
+		Cvar_Get ("ambient_fade", "100", CVAR_NONE,
+				  "How quickly ambient sounds fade in or out");
+	snd_noextraupdate =
+		Cvar_Get ("snd_noextraupdate", "0", CVAR_NONE,
+				  "Toggles the correct value display in host_speeds. Usually messes up sound playback when in effect");
+	snd_show =
+		Cvar_Get ("snd_show", "0", CVAR_NONE,
+				  "Toggles the display of sounds currently being played");
+	snd_interp =
+		Cvar_Get ("snd_interp", "1", CVAR_ARCHIVE,
+				  "control sample interpolation");
+	snd_phasesep =
+		Cvar_Get ("snd_phasesep", "0.0", CVAR_ARCHIVE,
+				  "max stereo phase separation in ms. 0.6 is for 20cm head");
+	snd_volumesep =
+		Cvar_Get ("snd_volumesep", "1.0", CVAR_ARCHIVE,
+				  "max stereo volume separation in ms. 1.0 is max");
+	_snd_mixahead =
+		Cvar_Get ("_snd_mixahead", "0.1", CVAR_ARCHIVE,
+				  "Delay time for sounds");
 }
 
 
@@ -317,10 +342,7 @@ S_Shutdown (void)
 // =======================================================================
 
 /*
-==================
-S_FindName
-
-==================
+	S_FindName
 */
 sfx_t      *
 S_FindName (char *name)
@@ -353,10 +375,7 @@ S_FindName (char *name)
 
 
 /*
-==================
-S_TouchSound
-
-==================
+	S_TouchSound
 */
 void
 S_TouchSound (char *name)
@@ -371,10 +390,7 @@ S_TouchSound (char *name)
 }
 
 /*
-==================
-S_PrecacheSound
-
-==================
+	S_PrecacheSound
 */
 sfx_t      *
 S_PrecacheSound (char *name)
@@ -397,9 +413,7 @@ S_PrecacheSound (char *name)
 //=============================================================================
 
 /*
-=================
-SND_PickChannel
-=================
+	SND_PickChannel
 */
 channel_t  *
 SND_PickChannel (int entnum, int entchannel)
@@ -415,14 +429,8 @@ SND_PickChannel (int entnum, int entchannel)
 		 ch_idx++) {
 		if (entchannel != 0				// channel 0 never overrides
 			&& channels[ch_idx].entnum == entnum
-			&& (channels[ch_idx].entchannel == entchannel || entchannel == -1)) {	// always 
-																					// 
-			// 
-			// override 
-			// sound 
-			// from 
-			// same 
-			// entity
+			&& (channels[ch_idx].entchannel == entchannel || entchannel == -1)) {
+			// always override sound from same entity
 			first_to_die = ch_idx;
 			break;
 		}
@@ -447,9 +455,7 @@ SND_PickChannel (int entnum, int entchannel)
 }
 
 /*
-=================
-SND_Spatialize
-=================
+	SND_Spatialize
 */
 void
 SND_Spatialize (channel_t *ch)
@@ -507,8 +513,8 @@ SND_Spatialize (channel_t *ch)
 // =======================================================================
 
 void
-S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin,
-			  float fvol, float attenuation)
+S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol,
+			  float attenuation)
 {
 	channel_t  *target_chan, *check;
 	sfxcache_t *sc;
@@ -540,7 +546,6 @@ S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin,
 	target_chan->entnum = entnum;
 	target_chan->entchannel = entchannel;
 	SND_Spatialize (target_chan);
-	target_chan->oldphase = target_chan->phase;
 
 	if (!target_chan->leftvol && !target_chan->rightvol)
 		return;							// not audible at all
@@ -634,36 +639,9 @@ S_ClearBuffer (void)
 		clear = 0;
 
 #ifdef _WIN32
-	if (pDSBuf) {
-		DWORD       dwSize;
-		DWORD      *pData;
-		int         reps;
-		HRESULT     hresult;
-
-		reps = 0;
-
-		while (
-			   (hresult =
-				pDSBuf->lpVtbl->Lock (pDSBuf, 0, gSndBufSize, &pData, &dwSize,
-									  NULL, NULL, 0)) != DS_OK) {
-			if (hresult != DSERR_BUFFERLOST) {
-				Con_Printf ("S_ClearBuffer: DS::Lock Sound Buffer Failed\n");
-				S_Shutdown ();
-				return;
-			}
-
-			if (++reps > 10000) {
-				Con_Printf ("S_ClearBuffer: DS: couldn't restore buffer\n");
-				S_Shutdown ();
-				return;
-			}
-		}
-
-		memset (pData, clear, shm->samples * shm->samplebits / 8);
-
-		pDSBuf->lpVtbl->Unlock (pDSBuf, pData, dwSize, NULL, 0);
-
-	} else
+	if (pDSBuf)
+		DSOUND_ClearBuffer (clear);
+	else
 #endif
 	{
 		memset (shm->buffer, clear, shm->samples * shm->samplebits / 8);
@@ -672,9 +650,7 @@ S_ClearBuffer (void)
 
 
 /*
-=================
-S_StaticSound
-=================
+	S_StaticSound
 */
 void
 S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
@@ -716,9 +692,7 @@ S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
 //=============================================================================
 
 /*
-===================
-S_UpdateAmbientSounds
-===================
+	S_UpdateAmbientSounds
 */
 void
 S_UpdateAmbientSounds (void)
@@ -768,11 +742,9 @@ S_UpdateAmbientSounds (void)
 
 
 /*
-============
-S_Update
+	S_Update
 
-Called once each time through the main loop
-============
+	Called once each time through the main loop
 */
 void
 S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
@@ -801,7 +773,7 @@ S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 		if (!ch->sfx)
 			continue;
 		ch->oldphase = ch->phase;		// prepare to lerp from prev to next
-		// phase
+										// phase
 		SND_Spatialize (ch);			// respatialize channel
 		if (!ch->leftvol && !ch->rightvol)
 			continue;
@@ -869,11 +841,7 @@ GetSoundtime (void)
 
 // it is possible to miscount buffers if it has wrapped twice between
 // calls to S_Update.  Oh well.
-#ifdef __sun__
-	soundtime = SNDDMA_GetSamples ();
-#else
 	samplepos = SNDDMA_GetDMAPos ();
-
 
 	if (samplepos < oldsamplepos) {
 		buffers++;						// buffer wrapped
@@ -888,7 +856,6 @@ GetSoundtime (void)
 	oldsamplepos = samplepos;
 
 	soundtime = buffers * fullsamples + samplepos / shm->channels;
-#endif
 }
 
 void
@@ -904,10 +871,12 @@ S_ExtraUpdate (void)
 	S_Update_ ();
 }
 
+
+
 void
 S_Update_ (void)
 {
-	unsigned    endtime;
+	unsigned int endtime;
 	int         samps;
 
 	if (!sound_started || (snd_blocked > 0))
@@ -928,21 +897,8 @@ S_Update_ (void)
 		endtime = soundtime + samps;
 
 #ifdef _WIN32
-// if the buffer was lost or stopped, restore it and/or restart it
-	{
-		DWORD       dwStatus;
-
-		if (pDSBuf) {
-			if (pDSBuf->lpVtbl->GetStatus (pDSBuf, &dwStatus) != DD_OK)
-				Con_Printf ("Couldn't get sound buffer status\n");
-
-			if (dwStatus & DSBSTATUS_BUFFERLOST)
-				pDSBuf->lpVtbl->Restore (pDSBuf);
-
-			if (!(dwStatus & DSBSTATUS_PLAYING))
-				pDSBuf->lpVtbl->Play (pDSBuf, 0, 0, DSBPLAY_LOOPING);
-		}
-	}
+	if (pDSBuf)
+		DSOUND_Restore ();
 #endif
 
 	S_PaintChannels (endtime);
@@ -951,11 +907,7 @@ S_Update_ (void)
 }
 
 /*
-===============================================================================
-
-console functions
-
-===============================================================================
+	console functions
 */
 
 void
@@ -970,7 +922,7 @@ S_Play (void)
 	while (i < Cmd_Argc ()) {
 		if (!strrchr (Cmd_Argv (i), '.')) {
 			strcpy (name, Cmd_Argv (i));
-			strcat (name, ".wav");
+			strncat (name, ".wav", sizeof (name) - strlen (name));
 		} else
 			strcpy (name, Cmd_Argv (i));
 		sfx = S_PrecacheSound (name);
@@ -992,7 +944,7 @@ S_PlayVol (void)
 	while (i < Cmd_Argc ()) {
 		if (!strrchr (Cmd_Argv (i), '.')) {
 			strcpy (name, Cmd_Argv (i));
-			strcat (name, ".wav");
+			strncat (name, ".wav", sizeof (name) - strlen (name));
 		} else
 			strcpy (name, Cmd_Argv (i));
 		sfx = S_PrecacheSound (name);

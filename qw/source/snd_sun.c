@@ -46,10 +46,10 @@
 #include <sys/audioio.h>
 #include <errno.h>
 
-#include "qtypes.h"
+#include "QF/qtypes.h"
 #include "sound.h"
-#include "qargs.h"
-#include "console.h"
+#include "QF/qargs.h"
+#include "QF/console.h"
 
 int         audio_fd;
 int         snd_inited;

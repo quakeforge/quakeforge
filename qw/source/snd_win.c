@@ -33,8 +33,8 @@
 #define CINTERFACE
 
 #include "winquake.h"
-#include "qargs.h"
-#include "console.h"
+#include "QF/qargs.h"
+#include "QF/console.h"
 #include "sound.h"
 
 #define iDirectSoundCreate(a,b,c)	pDirectSoundCreate(a,b,c)

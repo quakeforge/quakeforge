@@ -39,9 +39,9 @@
 #include <fcntl.h>
 #include <sys/types.h>
 
-#include "console.h"
+#include "QF/console.h"
 #include "sound.h"
-#include "qargs.h"
+#include "QF/qargs.h"
 
 static int  snd_inited;
 QFile      *snd_file;

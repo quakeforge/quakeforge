@@ -1,4 +1,3 @@
-
 /*
 	snd_alsa_0_5.c
 
@@ -29,19 +28,14 @@
 */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+# include "config.h"
 #endif
-
-#include <qtypes.h>
-#include <sound.h>
-#include <qargs.h>
-#include <console.h>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 #include <fcntl.h>
 #include <sys/types.h>
 #ifdef HAVE_SYS_IOCTL_H
@@ -59,6 +53,10 @@
 #endif
 
 #include <sys/asoundlib.h>
+
+#include "QF/console.h"
+#include "QF/qargs.h"
+#include "sound.h"
 
 #ifndef MAP_FAILED
 # define MAP_FAILED ((void*)-1)
@@ -271,7 +269,6 @@ SNDDMA_Init (void)
 	shm->samples =
 		setup.buf.block.frags * setup.buf.block.frag_size / (shm->samplebits / 8);	// mono 
 																					// 
-	// 
 	// samples 
 	// in 
 	// buffer
@@ -316,11 +313,9 @@ SNDDMA_Shutdown (void)
 }
 
 /*
-==============
-SNDDMA_Submit
+	SNDDMA_Submit
 
-Send sound to device if buffer isn't really the dma buffer
-===============
+	Send sound to device if buffer isn't really the dma buffer
 */
 void
 SNDDMA_Submit (void)
@@ -337,24 +332,27 @@ SNDDMA_Submit (void)
 		mmap_control->fragments[i % setup.buf.block.frags].data = 1;
 	switch (mmap_control->status.status) {
 		case SND_PCM_STATUS_PREPARED:
-		if ((rc = snd_pcm_channel_go (pcm_handle, SND_PCM_CHANNEL_PLAYBACK)) <
-			0) {
-			fprintf (stderr, "unable to start playback. %s\n",
-					 snd_strerror (rc));
-			exit (1);
-		}
-		break;
+			if ((rc = snd_pcm_channel_go (pcm_handle, SND_PCM_CHANNEL_PLAYBACK))
+				< 0) {
+				fprintf (stderr, "unable to start playback. %s\n",
+						 snd_strerror (rc));
+				exit (1);
+			}
+			break;
 		case SND_PCM_STATUS_RUNNING:
-		break;
+			break;
 		case SND_PCM_STATUS_UNDERRUN:
-		if ((rc = snd_pcm_plugin_prepare (pcm_handle, SND_PCM_CHANNEL_PLAYBACK))
-			< 0) {
-			fprintf (stderr, "underrun: playback channel prepare error. %s\n",
-					 snd_strerror (rc));
-			exit (1);
-		}
-		break;
+			if (
+				(rc =
+				 snd_pcm_plugin_prepare (pcm_handle,
+										 SND_PCM_CHANNEL_PLAYBACK)) < 0) {
+				fprintf (stderr,
+						 "underrun: playback channel prepare error. %s\n",
+						 snd_strerror (rc));
+				exit (1);
+			}
+			break;
 		default:
-		break;
+			break;
 	}
 }

@@ -54,8 +54,8 @@
 
 #include <sys/asoundlib.h>
 
-#include "console.h"
-#include "qargs.h"
+#include "QF/console.h"
+#include "QF/qargs.h"
 #include "sound.h"
 
 #ifndef MAP_FAILED
