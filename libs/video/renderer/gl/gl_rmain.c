@@ -567,49 +567,48 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 	VectorCopy (currententity->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
 
-	// get lighting information
-	shadelight = R_LightPoint (currententity->origin);
-
-	// always give the gun some light
-	if (e == r_view_model)
-		shadelight = max (shadelight, 24);
-
-	for (lnum = 0; lnum < r_maxdlights; lnum++) {
-		if (r_dlights[lnum].die >= r_realtime) {
-			VectorSubtract (currententity->origin, r_dlights[lnum].origin,
-							dist);
-			add = (r_dlights[lnum].radius * r_dlights[lnum].radius * 8) /
-				(DotProduct (dist, dist));	// FIXME Deek
-
-			if (add > 0)
-				shadelight += add;
-		}
-	}
-
-	// clamp lighting so it doesn't overbright as much
-	shadelight = min (shadelight, 100); // was 200
-
-	// never allow players to go totally black
-	if (strequal (clmodel->name, "progs/player.mdl")) {
-		shadelight = max (shadelight, 8);
-	}
-	
 	if (strnequal (clmodel->name, "progs/flame", 11)
-			|| strnequal (clmodel->name, "progs/bolt", 10)) {
+		|| strnequal (clmodel->name, "progs/bolt", 10)) {
 		modelIsFullbright = true;
-		shadelight = 255;	// make certain models full brightness always
+		shadelight = 1.0;	// make certain models full brightness always
+	} else {
+		// get lighting information
+		shadelight = R_LightPoint (currententity->origin);
+
+		// always give the gun some light
+		if (e == r_view_model)
+			shadelight = max (shadelight, 24);
+
+		for (lnum = 0; lnum < r_maxdlights; lnum++) {
+			if (r_dlights[lnum].die >= r_realtime) {
+				VectorSubtract (currententity->origin, r_dlights[lnum].origin,
+								dist);
+				add = (r_dlights[lnum].radius * r_dlights[lnum].radius * 8) /
+					(DotProduct (dist, dist));	// FIXME Deek
+
+				if (add > 0)
+					shadelight += add;
+			}
+		}
+
+		// clamp lighting so it doesn't overbright as much
+		shadelight = min (shadelight, 100); // was 200
+
+		// never allow players to go totally black
+		if (strequal (clmodel->name, "progs/player.mdl")) {
+			shadelight = max (shadelight, 8);
+		}
+		shadelight *= 0.005;
+
+		shadedots = r_avertexnormal_dots[(int) (e->angles[1] *
+												(SHADEDOT_QUANT / 360.0)) &
+										 (SHADEDOT_QUANT - 1)];
+		an = e->angles[1] * (M_PI / 180);
+		shadevector[0] = cos (-an);
+		shadevector[1] = sin (-an);
+		shadevector[2] = 1;
+		VectorNormalize (shadevector);
 	}
-
-	shadedots = r_avertexnormal_dots[(int) (e->angles[1] *
-											(SHADEDOT_QUANT / 360.0)) &
-									 (SHADEDOT_QUANT - 1)];
-	shadelight *= 0.005;
-
-	an = e->angles[1] * (M_PI / 180);
-	shadevector[0] = cos (-an);
-	shadevector[1] = sin (-an);
-	shadevector[2] = 1;
-	VectorNormalize (shadevector);
 
 	// locate the proper data
 	paliashdr = Cache_Get (&currententity->model->cache);
