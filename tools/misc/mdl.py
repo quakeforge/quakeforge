@@ -3,16 +3,22 @@ from pprint import *
 import sys
 
 model = open(sys.argv[1],"rb").read()
-m = unpack ("4s l 3f 3f f 3f i i i i i i i i f", model[:84])
-m = m[0:2] + (m[2:5],) + (m[5:8],) + m[8:9] + (m[9:12],) + m[12:21]
-model = model[84:]
+m = unpack ("4s l 3f 3f f 3f i i i i i i i i", model[:80])
+model = model[80:]
+m = m[0:2] + (m[2:5],) + (m[5:8],) + m[8:9] + (m[9:12],) + m[12:20]
+if m[2] == 6:
+	m = m + unpack ("f", model[:4])
+	model = model[4:]
 pprint (m)
 
 skins = []
 s = m[7] * m[8]
 for i in range(m[6]):
-	t=unpack ("l", model[:4])[0]
-	model = model[4:]
+	if m[2] == 6:
+		t = unpack ("l", model[:4])[0]
+		model = model[4:]
+	else:
+		t = 0
 	if t==0:
 		skins.append((t,model[:s]))
 		model = model[s:]
@@ -25,7 +31,8 @@ for i in range(m[6]):
 			k[2].append (model[:s])
 			model = model[s:]
 		skins.append (k)
-pprint (skins)
+model = model[8:]
+#pprint (skins)
 
 stverts = []
 for i in range(m[9]):
@@ -43,15 +50,23 @@ pprint (tris)
 
 frames = []
 for i in range (m[11]):
-	t = unpack ("l", model[:4])[0]
-	model = model[4:]
+	if m[2] == 6:
+		t = unpack ("l", model[:4])[0]
+		model = model[4:]
+	else:
+		t = 0
 	if t==0:
-		f = (t, unpack ("3B B 3B B 16s", model[:24]), [])
-		model = model[24:]
+		if m[2] == 6:
+			f = (t, unpack ("3B B 3B B 16s", model[:24]), [])
+			model = model[24:]
+		else:
+			f = (t, unpack ("3B B 3B B f", model[:12]), [])
+			model = model[12:]
 		for j in range(m[9]):
 			x = unpack("3B B", model[:4])
-			f[2].append((x[:3], x[3]))
 			model = model[4:]
+			f[2].append((x[:3], x[3]))
+			pprint (x)
 		frames.append(f)
 	else:
 		g = (t, unpack ("l 3B B 3B B", model[:12]))
@@ -69,3 +84,5 @@ for i in range (m[11]):
 			g[3].append(f)
 		frames.append(g)
 pprint(frames)
+pprint (model)
+print len(model)
