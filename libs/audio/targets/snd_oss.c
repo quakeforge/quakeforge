@@ -137,6 +137,7 @@ try_open (int rw)
 		mmmode |= PROT_READ;
 		mmflags |= MAP_SHARED;
 	}
+	omode |= O_NONBLOCK;
 
 	audio_fd = open (snd_dev, omode);
 	if (audio_fd < 0) {					// Failed open, retry up to 3 times
