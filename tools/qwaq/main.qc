@@ -62,7 +62,8 @@ void () blarg =
 void () eek =
 {
 	traceon();
-	self.origin = '0 0 0';
+	if (self && self.origin)
+		self.origin = '0 0 0';
 	self.origin = self.origin + '1 2 3';
 	traceoff();
 };
@@ -130,4 +131,5 @@ void () assign =
 	foo = bar;
 	foo = bar = 1;
 	foo = bar = bar + 1;
+	foo = self.nextthink = self.nextthink + 1;
 };
