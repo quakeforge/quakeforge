@@ -198,7 +198,7 @@ Draw_Init (void)
 	It can be clipped to the top of the screen to allow the console to be
 	smoothly scrolled off.
 */
-void
+inline void
 Draw_Character (int x, int y, unsigned int num)
 {
 	byte       *dest;
@@ -265,9 +265,9 @@ Draw_String (int x, int y, const char *str)
 void
 Draw_nString (int x, int y, const char *str, int count)
 {
-	int         size;
-	for (size = 0; size < count; size++, x +=8) {
+	while (count-- && *str) {
 		Draw_Character (x, y, *str++);
+		x += 8;
 	}
 }
 

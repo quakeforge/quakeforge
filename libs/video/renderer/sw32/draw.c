@@ -327,9 +327,9 @@ Draw_String (int x, int y, const char *str)
 void
 Draw_nString (int x, int y, const char *str, int count)
 {
-	int     size; 
-	for (size = 0; size < count; size++, x += 8) {
+	while (count-- && *str) {
 		Draw_Character (x, y, *str++);
+		x += 8;
 	}
 }
 

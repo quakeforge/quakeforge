@@ -361,8 +361,7 @@ Draw_nString (int x, int y, const char *str, int count)
 	qfglBegin (GL_QUADS);
 
 	while (count-- && *str) {
-		if ((num = *str++) != 32) // Don't render spaces
-        {
+		if ((num = *str++) != 32) {		// Don't render spaces
 			frow = (num >> 4) * CELL_SIZE;
 			fcol = (num & 15) * CELL_SIZE;
 
@@ -375,7 +374,7 @@ Draw_nString (int x, int y, const char *str, int count)
 			qfglTexCoord2f (fcol, frow + CELL_SIZE);
 			qfglVertex2f (x, y + 8);
 		}
-		x+=8;
+		x += 8;
 	}
     qfglEnd ();
 }
