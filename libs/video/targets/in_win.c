@@ -401,15 +401,43 @@ IN_MouseEvent (int mstate)
 }
 
 void
-IN_LL_Commands (void)
+IN_LL_Grab_Input (void)
 {
-	int         mx, my;
+}
 
+void
+IN_LL_Ungrab_Input (void)
+{
+}
+
+void
+IN_LL_ClearStates (void)
+{
+
+	if (in_mouse_avail) {
+		mx_accum = 0;
+		my_accum = 0;
+		mouse_oldbuttonstate = 0;
+	}
+}
+
+void
+IN_LL_SendKeyEvents (void)
+{   
+	MSG         msg;
+	int         mx, my;
 //  HDC hdc;
 	int         i;
 	DIDEVICEOBJECTDATA od;
 	DWORD       dwElements;
 	HRESULT     hr;
+
+	while (PeekMessage (&msg, NULL, 0, 0, PM_NOREMOVE)) {
+		if (!GetMessage (&msg, NULL, 0, 0))
+			Sys_Quit ();
+		TranslateMessage (&msg);
+		DispatchMessage (&msg);
+	}
 
 	if (!in_mouse_avail)
 		return;
@@ -495,39 +523,5 @@ IN_LL_Commands (void)
 	// if the mouse has moved, force it to the center, so there's room to move
 	if (mx || my) {
 		SetCursorPos (window_center_x, window_center_y);
-	}
-}
-
-void
-IN_LL_Grab_Input (void)
-{
-}
-
-void
-IN_LL_Ungrab_Input (void)
-{
-}
-
-void
-IN_LL_ClearStates (void)
-{
-
-	if (in_mouse_avail) {
-		mx_accum = 0;
-		my_accum = 0;
-		mouse_oldbuttonstate = 0;
-	}
-}
-
-void
-IN_LL_SendKeyEvents (void)
-{   
-	MSG         msg;
-
-	while (PeekMessage (&msg, NULL, 0, 0, PM_NOREMOVE)) {
-		if (!GetMessage (&msg, NULL, 0, 0))
-			Sys_Quit ();
-		TranslateMessage (&msg);
-		DispatchMessage (&msg);
 	}
 }

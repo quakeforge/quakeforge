@@ -28,7 +28,6 @@
 #ifndef __QF_plugin_cd_h_
 #define __QF_plugin_cd_h_
 
-#include <QF/cdaudio.h>
 #include <QF/qtypes.h>
 #include <QF/plugin.h>
 

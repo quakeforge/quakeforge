@@ -820,11 +820,6 @@ IN_LL_SendKeyEvents (void)
 }
 
 void
-IN_LL_Commands (void)
-{
-}
-
-void
 IN_LL_Grab_Input (void)
 {
 	SDL_WM_GrabInput (SDL_GRAB_ON);

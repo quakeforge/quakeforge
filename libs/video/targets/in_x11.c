@@ -474,11 +474,6 @@ event_motion (XEvent * event)
 }
 
 void
-IN_LL_Commands (void)
-{
-} 
-
-void
 IN_LL_Grab_Input (void)
 {
 	XGrabPointer (x_disp, x_win, True, MOUSE_MASK, GrabModeAsync,
@@ -512,11 +507,7 @@ IN_LL_Shutdown (void)
 	in_mouse_avail = 0;
 	if (x_disp) {
 		XAutoRepeatOn (x_disp);
-
-#ifdef HAVE_DGA
-		if (dga_avail)
-			XF86DGADirectVideo (x_disp, DefaultScreen (x_disp), 0);
-#endif
+		dga_off ();
 	}
 	X11_CloseDisplay ();
 }

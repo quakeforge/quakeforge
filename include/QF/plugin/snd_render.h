@@ -29,22 +29,24 @@
 #define __QF_plugin_snd_render_h_
 
 #include <QF/qtypes.h>
-#include <QF/sound.h>
 #include <QF/plugin.h>
 
 /*
 	All sound plugins must export these functions
 */
+
+struct sfx_s;
+
 typedef void (QFPLUGIN *P_S_Init) (void);
 typedef void (QFPLUGIN *P_S_Shutdown) (void);
 typedef void (QFPLUGIN *P_S_AmbientOff) (void);
 typedef void (QFPLUGIN *P_S_AmbientOn) (void);
 typedef void (QFPLUGIN *P_S_TouchSound) (const char *sample);
 typedef void (QFPLUGIN *P_S_ClearBuffer) (void);
-typedef void (QFPLUGIN *P_S_StartSound) (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol, float attenuation);
-typedef void (QFPLUGIN *P_S_StaticSound) (sfx_t *sfx, vec3_t origin, float vol, float attenuation);
+typedef void (QFPLUGIN *P_S_StartSound) (int entnum, int entchannel, struct sfx_s *sfx, vec3_t origin, float fvol, float attenuation);
+typedef void (QFPLUGIN *P_S_StaticSound) (struct sfx_s *sfx, vec3_t origin, float vol, float attenuation);
 typedef void (QFPLUGIN *P_S_StopSound) (int entnum, int entchannel);
-typedef sfx_t * (QFPLUGIN *P_S_PrecacheSound) (const char *sample);
+typedef struct sfx_s * (QFPLUGIN *P_S_PrecacheSound) (const char *sample);
 typedef void (QFPLUGIN *P_S_ClearPrecache) (void);
 typedef void (QFPLUGIN *P_S_Update) (vec3_t origin, vec3_t v_forward, vec3_t v_right, vec3_t v_up);
 typedef void (QFPLUGIN *P_S_StopAllSounds) (qboolean clear);

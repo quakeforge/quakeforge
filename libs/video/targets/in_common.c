@@ -95,8 +95,6 @@ void
 IN_Commands (void)
 {
 	JOY_Command ();
-
-	IN_LL_Commands ();
 }
 
 void

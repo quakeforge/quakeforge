@@ -417,11 +417,7 @@ IN_LL_SendKeyEvents (void)
 	if (UseKeyboard) {
 		while ((keyboard_update ()));
 	}
-}
 
-void
-IN_LL_Commands (void)
-{
 	if (UseMouse) {
 		/* Poll mouse values */
 		while (mouse_update ());
