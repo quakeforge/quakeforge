@@ -69,14 +69,14 @@ float	FloatSwap (float f);
 float	FloatNoSwap (float f);
 
 // NOTE: these /always/ read and write /little/ endian entities.
-struct VFile_s;
-void WriteFloat (struct VFile_s *file, float f);
-void WriteByte (struct VFile_s *file, int b);
-void WriteShort (struct VFile_s *file, unsigned int s);
-void WriteLong (struct VFile_s *file, unsigned int l);
-float ReadFloat (struct VFile_s *file);
-byte ReadByte (struct VFile_s *file);
-unsigned short ReadShort (struct VFile_s *file);
-unsigned long ReadLong (struct VFile_s *file);
+struct QFile_s;
+void WriteFloat (struct QFile_s *file, float f);
+void WriteByte (struct QFile_s *file, int b);
+void WriteShort (struct QFile_s *file, unsigned int s);
+void WriteLong (struct QFile_s *file, unsigned int l);
+float ReadFloat (struct QFile_s *file);
+byte ReadByte (struct QFile_s *file);
+unsigned short ReadShort (struct QFile_s *file);
+unsigned long ReadLong (struct QFile_s *file);
 
 #endif // __qendian_h

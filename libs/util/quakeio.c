@@ -41,15 +41,17 @@ static const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-#ifdef WIN32
+#ifdef HAVE_IO_H
 # include <io.h>
-# include <fcntl.h>
 #else
 # include <pwd.h>
 #endif
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #ifdef _MSC_VER
 # define _POSIX_
 #endif
@@ -59,6 +61,7 @@ static const char rcsid[] =
 #include <stdlib.h>
 
 #include "QF/dstring.h"
+#include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/quakeio.h"
 
@@ -69,11 +72,12 @@ static const char rcsid[] =
 # endif
 #endif
 
-struct VFile_s {
+struct QFile_s {
 	FILE *file;
 #ifdef HAVE_ZLIB
 	gzFile *gzfile;
 #endif
+	off_t size;
 };
 
 
@@ -123,12 +127,20 @@ Qrename (const char *old, const char *new)
 	return rename (e_old, e_new);
 }
 
+int
+Qfilesize (QFile *file)
+{
+	return file->size;
+}
+
 QFile *
 Qopen (const char *path, const char *mode)
 {
 	QFile      *file;
 	char        m[80], *p;
+	int         reading = 0;
 	int         zip = 0;
+	int         size = -1;
 	char        e_path[PATH_MAX];
 
 	Qexpand_squiggle (path, e_path);
@@ -139,6 +151,9 @@ Qopen (const char *path, const char *mode)
 			zip = 1;
 			continue;
 		}
+		if (*mode == 'r') {
+			reading = 1;
+		}
 #ifndef HAVE_ZLIB
 		if (strchr ("0123456789fh", *mode)) {
 			continue;
@@ -148,9 +163,32 @@ Qopen (const char *path, const char *mode)
 	}
 	*p = 0;
 
+	if (reading) {
+		int         fd = open (path, O_RDONLY);
+		if (fd != -1) {
+			size = lseek (fd, 0, SEEK_END);
+			lseek (fd, 0, SEEK_SET);
+#ifdef HAVE_ZLIB
+			if (zip) {
+				byte        id[2];
+
+				read (fd, id, 2);
+				if (id[0] == 0x1f && id[1] == 0x8b) {
+					lseek (fd, -4, SEEK_END);
+					read (fd, &size, 4);
+					size = LittleLong (size);
+				}
+				lseek (fd, 0, SEEK_SET);
+			}
+#endif
+			close (fd);
+		}
+	}
+
 	file = calloc (sizeof (*file), 1);
 	if (!file)
 		return 0;
+	file->size = size;
 #ifdef HAVE_ZLIB
 	if (zip) {
 		file->gzfile = gzopen (path, m);

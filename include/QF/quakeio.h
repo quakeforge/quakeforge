@@ -34,10 +34,11 @@
 
 #include "QF/gcc_attr.h"
 
-typedef struct VFile_s QFile;
+typedef struct QFile_s QFile;
 
 void Qexpand_squiggle(const char *path, char *dest);
 int Qrename(const char *old, const char *new);
+int Qfilesize (QFile *file);
 QFile *Qopen(const char *path, const char *mode);
 QFile *Qdopen(int fd, const char *mode);
 void Qclose(QFile *file);
