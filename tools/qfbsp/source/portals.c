@@ -137,8 +137,8 @@ MakeHeadnodePortals (node_t *node)
 		for (j = 0; j < 6; j++) {
 			if (j == i)
 				continue;
-			portals[i]->winding =
-				ClipWinding (portals[i]->winding, &bplanes[j], true);
+			portals[i]->winding = ClipWinding (portals[i]->winding,
+											   &bplanes[j], true);
 		}
 	}
 }
