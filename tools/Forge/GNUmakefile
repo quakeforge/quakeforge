@@ -54,6 +54,7 @@ Forge_RESOURCE_FILES= \
 	Bundles/MainPrefs/MainPrefs.forgeb \
 	Forge.gorm \
 	Forge.tiff \
+	ForgeDocument.tiff \
 	ForgeInfo.plist
 
 Forge_LOCALIZED_RESOURCE_FILES= \

@@ -2,9 +2,11 @@ include $(GNUSTEP_MAKEFILES)/common.make
 
 BUNDLE_NAME=		MainPrefs
 BUNDLE_EXTENSION=	.forgeb
-BUNDLE_INSTALL_DIR=	$(GNUSTEP_LOCAL_ROOT)/Library/Forge
+#
+# We don't install this bundle, it goes inside the app.
+#
+#BUNDLE_INSTALL_DIR=	$(GNUSTEP_LOCAL_ROOT)/Library/Forge
 
-MainPrefs_MAIN_MODEL_FILE=	MainPrefs.gorm
 MainPrefs_RESOURCE_FILES= \
 	MainPrefs.gorm
 
@@ -18,9 +20,6 @@ MainPrefs_HEADERS= \
 
 MainPrefs_PRINCIPAL_CLASS= \
 	MainPrefs
-
-#MainPrefs_RESOURCE_FILES= \
-#	Forge.tiff
 
 -include GNUmakefile.preamble
 

@@ -10,4 +10,16 @@
     Copyright = "Copyright (C) 2001 Dusk To Dawn Computing, Inc.";
     CopyrightDescription = "Released under the GNU GPL. See COPYING for details.";
     FullVersionID = "0.1.0 (Development)";
+    NSTypes = (
+    	{
+	    NSName = "forge";
+	    NSHumanReadableName = "Forge project file";
+	    NSUnixExtensions = ("forge");
+	    NSDOSExtensions = ("forge");
+	    NSMIMETypes = ("application/x-forge-project");
+	    NSIcon = ForgeDocument;
+	    NSRole = Editor;
+	    NSDocumentClass = Document;
+	}
+    );
 }

@@ -144,8 +144,8 @@ static id <BundleDelegate>	owner = nil;
 		self = [super init];
 		owner = anOwner;
 		[owner registerPrefsController: self];
-		if (![NSBundle loadNibNamed: @"MainPrefsView" owner: self]) {
-			NSLog (@"MainPrefs: Could not load nib \"MainPrefsView\", using compiled version");
+		if (![NSBundle loadNibNamed: @"MainPrefs" owner: self]) {
+			NSLog (@"MainPrefs: Could not load nib \"MainPrefs\", using compiled version");
 			view = [[MainPrefsView alloc] initWithOwner: self andFrame: PrefsRect];
 
 			// hook up to our outlet(s)
