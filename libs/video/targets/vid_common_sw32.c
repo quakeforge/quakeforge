@@ -210,7 +210,6 @@ void
 VID_InitBuffers (void)
 {
 	int         buffersize, zbuffersize, cachesize = 1;
-	void       *vid_surfcache;
 
 	// Calculate the sizes we want first
 	buffersize = vid.rowbytes * vid.height;
@@ -252,8 +251,8 @@ VID_InitBuffers (void)
 		Sys_Error ("Not enough memory for video mode\n");
 	}
 	// Allocate the new surface cache; free the z-buffer if we fail
-	vid_surfcache = calloc (cachesize, 1);
-	if (!vid_surfcache) {
+	vid.surfcache = calloc (cachesize, 1);
+	if (!vid.surfcache) {
 		free (vid.buffer);
 		free (vid.zbuffer);
 		vid.zbuffer = NULL;

@@ -46,7 +46,7 @@ int         r_turb_spancount;
 
 void        D_DrawTurbulentSpan (void);
 
-extern float *d_zitable;
+extern float d_zitable[65536];
 
 
 /*

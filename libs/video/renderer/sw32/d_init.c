@@ -31,7 +31,7 @@
 #endif
 
 #include "QF/cvar.h" 
-// #include "QF/render.h" 
+ #include "QF/render.h" 
 // #include "QF/vid.h" 
 
 #include "compat.h" 
@@ -65,13 +65,18 @@ D_Init (void)
 	r_aliasuvscale = 1.0;
 
 	// LordHavoc: compute 1/zi table for use in rendering code everywhere
-	if (!d_zitable[1])
-	{
+	if (!d_zitable[1]) {
 		int i;
 		d_zitable[0] = 0;
 		for (i = 1;i < 65536;i++)
 			d_zitable[i] = (65536.0 * 65536.0 / (double) i);
 	}
+
+	vid.surf_cache_size = D_SurfaceCacheForRes;
+	vid.flush_caches = D_FlushCaches;
+	vid.init_caches = D_InitCaches;
+
+	VID_InitBuffers ();
 }
 
 void
