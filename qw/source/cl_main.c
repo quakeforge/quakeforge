@@ -1481,7 +1481,7 @@ Host_Frame (float time)
 	r_frametime = host_frametime;
 
 	// don't allow cheats in multiplayer
-	if (!atoi (Info_ValueForKey (cl.serverinfo, "watervis")))
+	if (r_active && !atoi (Info_ValueForKey (cl.serverinfo, "watervis")))
 		Cvar_SetValue (r_wateralpha, 1);
 
 	CL_UpdateScreen (realtime);
