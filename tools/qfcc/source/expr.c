@@ -288,6 +288,7 @@ check_initialized (expr_t *e)
 		if (e->type == ex_def
 			&& !(e->e.def->type->type == ev_func
 				 && e->e.def->global)
+			&& !e->e.def->external
 			&& !e->e.def->initialized) {
 			warning (e, "%s may be used uninitialized", e->e.def->name);
 			e->e.def->initialized = 1;	// only warn once
@@ -2503,18 +2504,25 @@ encode_expr (type_t *type)
 }
 
 expr_t *
-super_expr (class_type_t *class)
+super_expr (class_type_t *class_type)
 {
 	def_t      *super_d;
 	expr_t     *super;
 	expr_t     *e;
 	expr_t     *super_block;
+	class_t    *class;
+	class_type_t _class_type;
 
-	if (!class)
+	if (!class_type)
 		return error (0, "`super' used outside of class implementation");
 
-	//if (!class->super_class)
-	//	return error (0, "%s has no super class", class->name);
+	if (class_type->is_class)
+		class = class_type->c.class;
+	else
+		class = class_type->c.category->class;
+
+	if (!class->super_class)
+		return error (0, "%s has no super class", class->name);
 
 	super_d = get_def (type_Super.aux_type, ".super", current_func->scope,
 					   st_local);
@@ -2526,7 +2534,9 @@ super_expr (class_type_t *class)
 								  new_name_expr ("self"));
 	append_expr (super_block, e);
 
-	e = new_def_expr (class_def (class, 1));
+	_class_type.is_class = 1;
+	_class_type.c.class = class;
+	e = new_def_expr (class_def (&_class_type, 1));
 	e = assign_expr (binary_expr ('.', super, new_name_expr ("class")),
 					 binary_expr ('.', e, new_name_expr ("super_class")));
 	append_expr (super_block, e);
