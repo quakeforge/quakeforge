@@ -80,6 +80,7 @@ sfx_t      *cl_sfx_ric2;
 sfx_t      *cl_sfx_ric3;
 sfx_t      *cl_sfx_r_exp3;
 
+model_t    *cl_mod_beam;
 model_t    *cl_mod_bolt;
 model_t    *cl_mod_bolt2;
 model_t    *cl_mod_bolt3;
@@ -122,6 +123,9 @@ CL_TEnts_Init (void)
 	cl_mod_bolt2 = Mod_ForName ("progs/bolt2.mdl", true);
 	cl_mod_bolt3 = Mod_ForName ("progs/bolt3.mdl", true);
 	cl_spr_explod = Mod_ForName ("progs/s_explod.spr", true);
+	cl_mod_beam = Mod_ForName ("progs/beam.mdl", false);
+	if (!cl_mod_beam)
+		cl_mod_beam = cl_mod_bolt;
 }
 
 void
@@ -214,11 +218,14 @@ CL_ParseBeam (model_t *m)
 void
 CL_ParseTEnt (void)
 {
-	byte        type;
+	byte         type;
 	dlight_t   *dl;
-	int         colorStart, colorLength;
+	int          colorStart, colorLength;
 	explosion_t *ex;
-	vec3_t      col, pos;
+	vec3_t       col, pos;
+	sfx_t *		 spike_sound[] = {
+		cl_sfx_ric3, cl_sfx_ric3, cl_sfx_ric2, cl_sfx_ric1,
+	};
 
 	type = MSG_ReadByte (net_message);
 	switch (type) {
@@ -237,40 +244,32 @@ CL_ParseTEnt (void)
 		case TE_SPIKE:					// spike hitting wall
 			MSG_ReadCoordV (net_message, pos);
 			R_SpikeEffect (pos);
+			{
+				int		i;
+				sfx_t  *sound;
 
-			switch (rand () % 20) {
-				case 19:
-					S_StartSound (-1, 0, cl_sfx_ric1, pos, 1, 1);
-					break;
-				case 18:
-					S_StartSound (-1, 0, cl_sfx_ric2, pos, 1, 1);
-					break;
-				case 17:
-				case 16:
-					S_StartSound (-1, 0, cl_sfx_ric3, pos, 1, 1);
-					break;
-				default:
-					S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
+				i = (rand () % 20) - 16;
+				if (i >= 0)
+					sound = spike_sound[i];
+				else
+					sound = cl_sfx_tink1;
+				S_StartSound (-1, 0, sound, pos, 1, 1);
 			}
 			break;
 
 		case TE_SUPERSPIKE:				// super spike hitting wall
 			MSG_ReadCoordV (net_message, pos);
 			R_SuperSpikeEffect (pos);
+			{
+				int		i;
+				sfx_t  *sound;
 
-			switch (rand () % 20) {
-				case 19:
-					S_StartSound (-1, 0, cl_sfx_ric1, pos, 1, 1);
-					break;
-				case 18:
-					S_StartSound (-1, 0, cl_sfx_ric2, pos, 1, 1);
-					break;
-				case 17:
-				case 16:
-					S_StartSound (-1, 0, cl_sfx_ric3, pos, 1, 1);
-					break;
-				default:
-					S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
+				i = (rand () % 20) - 16;
+				if (i >= 0)
+					sound = spike_sound[i];
+				else
+					sound = cl_sfx_tink1;
+				S_StartSound (-1, 0, sound, pos, 1, 1);
 			}
 			break;
 
@@ -325,7 +324,7 @@ CL_ParseTEnt (void)
 
 		// PGM 01/21/97
 		case TE_BEAM:					// grappling hook beam
-			CL_ParseBeam (Mod_ForName ("progs/beam.mdl", true));
+			CL_ParseBeam (cl_mod_beam);
 			break;
 		// PGM 01/21/97
 

@@ -85,6 +85,7 @@ sfx_t      *cl_sfx_ric2;
 sfx_t      *cl_sfx_ric3;
 sfx_t      *cl_sfx_r_exp3;
 
+model_t	   *cl_mod_beam;
 model_t    *cl_mod_bolt;
 model_t    *cl_mod_bolt2;
 model_t    *cl_mod_bolt3;
@@ -127,6 +128,9 @@ CL_TEnts_Init (void)
 	cl_mod_bolt2 = Mod_ForName ("progs/bolt2.mdl", true);
 	cl_mod_bolt3 = Mod_ForName ("progs/bolt3.mdl", true);
 	cl_spr_explod = Mod_ForName ("progs/s_explod.spr", true);
+	cl_mod_beam = Mod_ForName ("progs/beam.mdl", false);
+	if (!cl_mod_beam)
+		cl_mod_beam = cl_mod_bolt;
 }
 
 void
@@ -393,7 +397,7 @@ CL_ParseTEnt (void)
 
 		// PGM 01/21/97
 		case TE_BEAM:					// grappling hook beam
-			CL_ParseBeam (Mod_ForName ("progs/beam.mdl", true));
+			CL_ParseBeam (cl_mod_beam);
 			break;
 		// PGM 01/21/97
 
