@@ -401,9 +401,16 @@ _VectorCopy (const vec3_t in, vec3_t out)
 void
 CrossProduct (const vec3_t v1, const vec3_t v2, vec3_t cross)
 {
-	cross[0] = v1[1] * v2[2] - v1[2] * v2[1];
-	cross[1] = v1[2] * v2[0] - v1[0] * v2[2];
-	cross[2] = v1[0] * v2[1] - v1[1] * v2[0];
+	float v10 = v1[0];
+	float v11 = v1[1];
+	float v12 = v1[2];
+	float v20 = v2[0];
+	float v21 = v2[1];
+	float v22 = v2[2];
+
+	cross[0] = v11 * v22 - v12 * v21;
+	cross[1] = v12 * v20 - v10 * v22;
+	cross[2] = v10 * v21 - v11 * v20;
 }
 
 vec_t
