@@ -1516,13 +1516,13 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if ((op == '&' || op == '|' || is_compare (op))
 		&& e1->type == ex_uexpr && e1->e.expr.op == '!' && !e1->paren) {
 		if (options.traditional) {
-			notice (e1, "precedence of `!' and `%c' inverted for traditional "
-					    "code", op);
+			notice (e1, "precedence of `!' and `%s' inverted for traditional "
+					    "code", get_op_string (op));
 			e1->e.expr.e1->paren = 1;
 			return unary_expr ('!', binary_expr (op, e1->e.expr.e1, e2));
 		} else if (!is_compare (op)) {
 			warning (e1, "ambiguous logic. Suggest explicit parentheses with "
-					 "expressions involving ! and %c", op);
+					 "expressions involving ! and %s", get_op_string (op));
 		}
 	}
 
