@@ -1731,6 +1731,7 @@ if test "x$static_plugins" = xauto -a "x$SYSTYPE" = xWIN32; then
 	static_plugins=yes
 fi
 if test "x$static_plugins" = xyes; then
+	AC_DEFINE(STATIC_PLUGINS, 1, [Define this if you are building static plugins])
 	PLUGIN_RPATH=''
 	SERVER_PLUGIN_STATIC="$SERVER_PLUGIN_TARGETS"
 	SERVER_PLUGIN_TARGETS=""

@@ -363,7 +363,7 @@ I_SGI_Init (void)
 }
 
 QFPLUGIN plugin_t   *
-cd_sgi_PluginInfo (void)
+PLUGIN_INFO(cd, sgi) (void)
 {
         plugin_info.type = qfp_cd;
         plugin_info.api_version = QFPLUGIN_VERSION;

@@ -278,7 +278,7 @@ I_CDAudio_Init (void)
 }
 
 QFPLUGIN plugin_t *
-cd_sdl_PluginInfo (void)
+PLUGIN_INFO(cd, sdl) (void)
 {
 	plugin_info.type = qfp_cd;
 	plugin_info.api_version = QFPLUGIN_VERSION;

@@ -20,7 +20,7 @@ libsnd_output_alsa0_5_la_LIBADD=	$(ALSA_LIBS)
 libsnd_output_alsa0_5_la_SOURCES=	snd_alsa_0_5.c
 
 libsnd_output_alsa0_9_la_LDFLAGS=	-version-info 1:0:0 $(PLUGIN_RPATH)
-libsnd_output_alsa0_9_la_LIBADD=	$(ALSA_LIBS)
+libsnd_output_alsa0_9_la_LIBADD=
 libsnd_output_alsa0_9_la_SOURCES=	snd_alsa_0_9.c
 
 libsnd_output_oss_la_LDFLAGS=	-version-info 1:0:0 $(PLUGIN_RPATH)

@@ -49,6 +49,12 @@
 #include <QF/plugin/snd_output.h>
 #include <QF/plugin/snd_render.h>
 
+#ifdef STATIC_PLUGINS
+#define PLUGIN_INFO(type,name) type##_##name##_PluginInfo
+#else
+#define PLUGIN_INFO(type,name) PluginInfo
+#endif
+
 typedef enum {
 	qfp_null = 0,	// Not real
 	qfp_input,		// Input (pointing devices, joysticks, etc)

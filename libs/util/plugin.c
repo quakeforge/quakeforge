@@ -65,10 +65,77 @@ cvar_t     *fs_pluginpath;
 
 hashtab_t  *registered_plugins;
 
+static const char *pi_error = "";
+
 static const char *
 plugin_get_key (void *pl, void *unused)
 {
 	return ((plugin_list_t *) pl)->name;
+}
+
+static int
+pi_close_lib (void *handle)
+{
+#if defined(HAVE_DLOPEN)
+	return (dlclose (handle) == 0);
+#elif defined (_WIN32)
+	return (FreeLibrary (handle) == 0);
+#endif
+}
+
+static void *
+pi_get_symbol (void *handle, const char *name)
+{
+#if defined(HAVE_DLOPEN)
+	return dlsym (handle, name);
+#elif defined (_WIN32)
+	return GetProcAddress (handle, name);
+#endif
+}
+
+static void *
+pi_open_lib (const char *name)
+{
+	void       *dlhand;
+
+#if defined(HAVE_DLOPEN)
+	if (!(dlhand = dlopen (name, RTLD_NOW))) {
+		pi_error = dlerror ();
+		return 0;
+	}
+#elif defined (_WIN32)
+	if (!(dlhand = LoadLibrary (name))) {	// lib not found
+		pi_error = "LoadLibrary failed";
+		return 0;
+	}
+#endif
+	pi_error = "";
+	return dlhand;
+}
+
+static void
+pi_realname (char *realname, int size, const char *type, const char *name)
+{
+#if defined(HAVE_DLOPEN)
+	const char *format = "%s/lib%s_%s.so";
+#elif defined(_WIN32)
+	const char *format = "%s/QF%s_%s.dll";
+#else
+# error "No shared library support. FIXME"
+#endif
+
+	snprintf (realname, size, format, fs_pluginpath->string, type, name);
+}
+
+static void
+pi_info_name (char *info_name, int size, const char *type, const char *name)
+{
+	if (type && name)
+		snprintf (info_name, size, "%s_%s_PluginInfo", type, name);
+	else if (type)
+		snprintf (info_name, size, "%s_PluginInfo", type);
+	else
+		snprintf (info_name, size, "PluginInfo");
 }
 
 void
@@ -120,61 +187,39 @@ PI_LoadPlugin (const char *type, const char *name)
 		plugin_info = pl->info;
 	}
 	if (!plugin_info) {
-		// Build the plugin info name
-		snprintf (plugin_info_name, sizeof (plugin_info_name),
-				  "%s_%s_PluginInfo", type, name);
 		// Build the path to the file to load
-#if defined(HAVE_DLOPEN)
-		snprintf (realname, sizeof (realname), "%s/lib%s_%s.so",
-					fs_pluginpath->string, type,
+		pi_realname (realname, sizeof (realname), type,
 					(tmpname ? tmpname + 1 : name));
-#elif defined(_WIN32)
-		snprintf (realname, sizeof (realname), "%s/QF%s_%s.dll",
-					fs_pluginpath->string, type,
-					(tmpname ? tmpname + 1 : name));
-#else
-# error "No shared library support. FIXME"
-		return NULL;
-#endif
 
-#if defined(HAVE_DLOPEN)
-		if (!(dlhand = dlopen (realname, RTLD_GLOBAL | RTLD_NOW))) {
+		if (!(dlhand = pi_open_lib (realname))) {
 			// lib not found
 			Sys_Printf ("Could not load plugin \"%s\".\n", realname);
-			Sys_DPrintf ("Reason: \"%s\".\n", dlerror ());
+			Sys_DPrintf ("Reason: \"%s\".\n", pi_error);
 			return NULL;
 		}
-#elif defined (_WIN32)
-		if (!(dlhand = LoadLibrary (realname))) {	// lib not found
-			Sys_Printf ("Could not load plugin \"%s\".\n", realname);
-			return NULL;
-		}
-#endif
 
-#if defined(HAVE_DLOPEN)
-		if (!(plugin_info = dlsym (dlhand, plugin_info_name))) {
-			// info function not found
-			dlclose (dlhand);
-			Sys_Printf ("Plugin info function not found\n");
-			return NULL;
+		// Build the plugin info name as $type_$name_PluginInfo
+		pi_info_name (plugin_info_name, sizeof (plugin_info_name), type, name);
+		if (!(plugin_info = pi_get_symbol (dlhand, plugin_info_name))) {
+			// Build the plugin info name as $type_PluginInfo
+			pi_info_name (plugin_info_name, sizeof (plugin_info_name),
+						  type, 0);
+			if (!(plugin_info = pi_get_symbol (dlhand, plugin_info_name))) {
+				// Build the plugin info name as PluginInfo
+				pi_info_name (plugin_info_name, sizeof (plugin_info_name),
+							  0, 0);
+				if (!(plugin_info = pi_get_symbol (dlhand, plugin_info_name))) {
+					// info function not found
+					pi_close_lib (dlhand);
+					Sys_Printf ("Plugin info function not found\n");
+					return NULL;
+				}
+			}
 		}
-#elif defined (_WIN32)
-		if (!(plugin_info = (P_PluginInfo) GetProcAddress (dlhand,
-														   plugin_info_name))) {
-			// info function not found
-			FreeLibrary (dlhand);
-			Sys_Printf ("Plugin info function not found\n");
-			return NULL;
-		}
-#endif
 	}
 
 	if (!(plugin = plugin_info ())) {	// Something went badly wrong
-#if defined(HAVE_DLOPEN)
-		dlclose (dlhand);
-#elif defined (_WIN32)
-		FreeLibrary (dlhand);
-#endif
+		pi_close_lib (dlhand);
 		Sys_Printf ("Something went badly wrong.\n");
 		return NULL;
 	}
@@ -192,15 +237,12 @@ PI_UnloadPlugin (plugin_t *plugin)
 			&& plugin->functions->general->p_Shutdown) {
 		plugin->functions->general->p_Shutdown ();
 	} else {
-		Sys_DPrintf ("Warning: No shutdown function for type %d plugin!\n", plugin->type);
+		Sys_DPrintf ("Warning: No shutdown function for type %d plugin!\n",
+					 plugin->type);
 	}
 	if (!plugin->handle) // we didn't load it
 		return true;
-#if defined(HAVE_DLOPEN)
-	return (dlclose (plugin->handle) == 0);
-#elif defined (_WIN32)
-	return (FreeLibrary (plugin->handle) == 0);
-#endif
+	return pi_close_lib (plugin->handle);
 }
 
 void

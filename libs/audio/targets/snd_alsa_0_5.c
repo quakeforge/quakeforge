@@ -404,7 +404,7 @@ SNDDMA_UnblockSound (void)
 }
 
 plugin_t *
-snd_output_alsa0_5_PluginInfo (void) {
+PLUGIN_INFO(snd_output, alsa0_5) (void) {
 	plugin_info.type = qfp_snd_output;
 	plugin_info.api_version = QFPLUGIN_VERSION;
 	plugin_info.plugin_version = "0.1";

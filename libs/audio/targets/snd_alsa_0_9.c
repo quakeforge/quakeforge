@@ -33,6 +33,7 @@ static const char rcsid[] =
 #endif
 
 #include <stdio.h>
+#include <dlfcn.h>
 #include <alsa/asoundlib.h>
 
 #include "QF/cvar.h"
@@ -62,9 +63,37 @@ static general_funcs_t    plugin_info_general_funcs;
 static snd_output_data_t       plugin_info_snd_output_data;
 static snd_output_funcs_t      plugin_info_snd_output_funcs;
 
+static void *alsa_handle;
 
-void
-static SNDDMA_Init_Cvars (void)
+#define QF_ALSA_NEED(ret, func, params) \
+static ret (*qf##func) params;
+#include "alsa_funcs_list.h"
+#undef QF_ALSA_NEED
+
+static qboolean
+load_libasound (void)
+{
+	if (!(alsa_handle = dlopen ("libasound.so.2", RTLD_GLOBAL | RTLD_NOW))) {
+		Sys_Printf ("couldn't load libasound.so.2: %s\n", dlerror ());
+		return false;
+	}
+#define QF_ALSA_NEED(ret, func, params) \
+	if (!(qf##func = dlsym (alsa_handle, #func))) { \
+		Sys_Printf ("Couldn't load ALSA function %s\n", #func); \
+		dlclose (alsa_handle); \
+		alsa_handle = 0; \
+		return false; \
+	}
+#include "alsa_funcs_list.h"
+#undef QF_ALSA_NEED
+	return true;
+}
+
+#define snd_pcm_hw_params_sizeof qfsnd_pcm_hw_params_sizeof
+#define snd_pcm_sw_params_sizeof qfsnd_pcm_sw_params_sizeof
+
+static void
+SNDDMA_Init_Cvars (void)
 {
 	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM, NULL,
 						   "sound stereo output");
@@ -85,6 +114,9 @@ SNDDMA_Init (void)
 	int			rate = -1, bps = -1, stereo = -1;
 	snd_pcm_hw_params_t	*hw;
 	snd_pcm_sw_params_t	*sw;
+
+	if (!load_libasound ())
+		return false;
 
 	snd_pcm_hw_params_alloca (&hw);
 	snd_pcm_sw_params_alloca (&sw);
@@ -108,26 +140,27 @@ SNDDMA_Init (void)
 	stereo = snd_stereo->int_val;
 	if (!pcmname)
 		pcmname = "plughw:0,0";
-	if ((err = snd_pcm_open (&pcm, pcmname,
-							 SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK)) < 0) {
-		Sys_Printf ("Error: audio open error: %s\n", snd_strerror (err));
+	if ((err = qfsnd_pcm_open (&pcm, pcmname,
+							   SND_PCM_STREAM_PLAYBACK,
+							   SND_PCM_NONBLOCK)) < 0) {
+		Sys_Printf ("Error: audio open error: %s\n", qfsnd_strerror (err));
 		return 0;
 	}
 
 	Sys_Printf ("Using PCM %s.\n", pcmname);
-	snd_pcm_hw_params_any (pcm, hw);
+	qfsnd_pcm_hw_params_any (pcm, hw);
 
 	switch (rate) {
 		case -1:
-			if (snd_pcm_hw_params_set_rate_near (pcm, hw, 44100, 0) >= 0) {
+			if (qfsnd_pcm_hw_params_set_rate_near (pcm, hw, 44100, 0) >= 0) {
 				frag_size = 256;		/* assuming stereo 8 bit */
 				rate = 44100;
-			} else if (snd_pcm_hw_params_set_rate_near (pcm, hw, 22050, 0) >=
-					   0) {
+			} else if (qfsnd_pcm_hw_params_set_rate_near (pcm, hw,
+														  22050, 0) >= 0) {
 				frag_size = 128;		/* assuming stereo 8 bit */
 				rate = 22050;
-			} else if (snd_pcm_hw_params_set_rate_near (pcm, hw, 11025, 0) >=
-					   0) {
+			} else if (qfsnd_pcm_hw_params_set_rate_near (pcm, hw,
+														  11025, 0) >= 0) {
 				frag_size = 64;			/* assuming stereo 8 bit */
 				rate = 11025;
 			} else {
@@ -138,7 +171,7 @@ SNDDMA_Init (void)
 		case 11025:
 		case 22050:
 		case 44100:
-			if (snd_pcm_hw_params_set_rate_near (pcm, hw, rate, 0) >= 0) {
+			if (qfsnd_pcm_hw_params_set_rate_near (pcm, hw, rate, 0) >= 0) {
 				frag_size = 64 * rate / 11025;	/* assuming stereo 8 bit */
 				break;
 			}
@@ -150,11 +183,11 @@ SNDDMA_Init (void)
 
 	switch (bps) {
 		case -1:
-			if (snd_pcm_hw_params_set_format (pcm, hw, SND_PCM_FORMAT_S16_LE)
-				>= 0) {
+			if (qfsnd_pcm_hw_params_set_format (pcm, hw,
+												SND_PCM_FORMAT_S16_LE) >= 0) {
 				bps = 16;
-			} else if (snd_pcm_hw_params_set_format (pcm, hw,
-													 SND_PCM_FORMAT_U8)
+			} else if (qfsnd_pcm_hw_params_set_format (pcm, hw,
+													   SND_PCM_FORMAT_U8)
 					   >= 0) {
 				bps = 8;
 			} else {
@@ -164,9 +197,9 @@ SNDDMA_Init (void)
 			break;
 		case 8:
 		case 16:
-			if (snd_pcm_hw_params_set_format (pcm, hw,
-											  bps == 8 ? SND_PCM_FORMAT_U8 :
-											  SND_PCM_FORMAT_S16) >= 0) {
+			if (qfsnd_pcm_hw_params_set_format (pcm, hw,
+												bps == 8 ? SND_PCM_FORMAT_U8 :
+												SND_PCM_FORMAT_S16) >= 0) {
 				break;
 			}
 			/* Fall through */
@@ -175,17 +208,17 @@ SNDDMA_Init (void)
 			goto error;
 	}
 
-	if (snd_pcm_hw_params_set_access (pcm, hw,
-									  SND_PCM_ACCESS_MMAP_INTERLEAVED) < 0) {
+	if (qfsnd_pcm_hw_params_set_access (pcm, hw,
+										SND_PCM_ACCESS_MMAP_INTERLEAVED) < 0) {
 		Sys_Printf ("ALSA: interleaved is not supported\n");
 		goto error;
 	}
 
 	switch (stereo) {
 		case -1:
-			if (snd_pcm_hw_params_set_channels (pcm, hw, 2) >= 0) {
+			if (qfsnd_pcm_hw_params_set_channels (pcm, hw, 2) >= 0) {
 				stereo = 1;
-			} else if (snd_pcm_hw_params_set_channels (pcm, hw, 1) >= 0) {
+			} else if (qfsnd_pcm_hw_params_set_channels (pcm, hw, 1) >= 0) {
 				stereo = 0;
 			} else {
 				Sys_Printf ("ALSA: no useable channels\n");
@@ -194,7 +227,7 @@ SNDDMA_Init (void)
 			break;
 		case 0:
 		case 1:
-			if (snd_pcm_hw_params_set_channels (pcm, hw, stereo ? 2 : 1) >= 0)
+			if (qfsnd_pcm_hw_params_set_channels (pcm, hw, stereo ? 2 : 1) >= 0)
 				break;
 			/* Fall through */
 		default:
@@ -202,19 +235,19 @@ SNDDMA_Init (void)
 			goto error;
 	}
 
-	snd_pcm_hw_params_set_period_size_near (pcm, hw, frag_size, 0);
+	qfsnd_pcm_hw_params_set_period_size_near (pcm, hw, frag_size, 0);
 
-	err = snd_pcm_hw_params (pcm, hw);
+	err = qfsnd_pcm_hw_params (pcm, hw);
 	if (err < 0) {
 		Sys_Printf ("ALSA: unable to install hw params\n");
 		goto error;
 	}
 
-	snd_pcm_sw_params_current (pcm, sw);
-	snd_pcm_sw_params_set_start_threshold (pcm, sw, ~0U);
-	snd_pcm_sw_params_set_stop_threshold (pcm, sw, ~0U);
+	qfsnd_pcm_sw_params_current (pcm, sw);
+	qfsnd_pcm_sw_params_set_start_threshold (pcm, sw, ~0U);
+	qfsnd_pcm_sw_params_set_stop_threshold (pcm, sw, ~0U);
 
-	err = snd_pcm_sw_params (pcm, sw);
+	err = qfsnd_pcm_sw_params (pcm, sw);
 	if (err < 0) {
 		Sys_Printf ("ALSA: unable to install sw params\n");
 		goto error;
@@ -224,11 +257,12 @@ SNDDMA_Init (void)
 	memset ((dma_t *) shm, 0, sizeof (*shm));
 	shm->splitbuffer = 0;
 	shm->channels = stereo + 1;
-	shm->submission_chunk = snd_pcm_hw_params_get_period_size (hw, 0); // don't
+	shm->submission_chunk = qfsnd_pcm_hw_params_get_period_size (hw, 0);
+										// don't
 										// mix less than this #
 	shm->samplepos = 0;					// in mono samples
 	shm->samplebits = bps;
-	buffer_size = snd_pcm_hw_params_get_buffer_size (hw);
+	buffer_size = qfsnd_pcm_hw_params_get_buffer_size (hw);
 	shm->samples = buffer_size * shm->channels;	// mono samples in buffer
 	shm->speed = rate;
 	SNDDMA_GetDMAPos ();//XXX sets shm->buffer
@@ -244,7 +278,7 @@ SNDDMA_Init (void)
 	snd_inited = 1;
 	return 1;
 error:
-	snd_pcm_close (pcm);
+	qfsnd_pcm_close (pcm);
 	return 0;
 }
 
@@ -258,7 +292,7 @@ SNDDMA_GetDMAPos (void)
 	if (!snd_inited)
 		return 0;
 
-	snd_pcm_mmap_begin (pcm, &areas, &offset, &nframes);
+	qfsnd_pcm_mmap_begin (pcm, &areas, &offset, &nframes);
 	offset *= shm->channels;
 	nframes *= shm->channels;
 	shm->samplepos = offset;
@@ -270,7 +304,7 @@ static void
 SNDDMA_Shutdown (void)
 {
 	if (snd_inited) {
-		snd_pcm_close (pcm);
+		qfsnd_pcm_close (pcm);
 		snd_inited = 0;
 	}
 }
@@ -295,17 +329,17 @@ SNDDMA_Submit (void)
 
 	nframes = count / shm->channels;
 
-	snd_pcm_mmap_begin (pcm, &areas, &offset, &nframes);
+	qfsnd_pcm_mmap_begin (pcm, &areas, &offset, &nframes);
 
-	state = snd_pcm_state (pcm);
+	state = qfsnd_pcm_state (pcm);
 
 	switch (state) {
 		case SND_PCM_STATE_PREPARED:
-			snd_pcm_mmap_commit (pcm, offset, nframes);
-			snd_pcm_start (pcm);
+			qfsnd_pcm_mmap_commit (pcm, offset, nframes);
+			qfsnd_pcm_start (pcm);
 			break;
 		case SND_PCM_STATE_RUNNING:
-			snd_pcm_mmap_commit (pcm, offset, nframes);
+			qfsnd_pcm_mmap_commit (pcm, offset, nframes);
 			break;
 		default:
 			break;
@@ -316,7 +350,7 @@ static void
 SNDDMA_BlockSound (void)
 {
 	if (++snd_blocked == 1)
-		snd_pcm_pause (pcm, 1);
+		qfsnd_pcm_pause (pcm, 1);
 }
 
 static void
@@ -325,11 +359,11 @@ SNDDMA_UnblockSound (void)
 	if (!snd_blocked)
 		return;
 	if (!--snd_blocked)
-		snd_pcm_pause (pcm, 0);
+		qfsnd_pcm_pause (pcm, 0);
 }
 
 plugin_t *
-snd_output_alsa0_9_PluginInfo (void)
+PLUGIN_INFO(snd_output, alsa0_9) (void)
 {
 	plugin_info.type = qfp_snd_output;
 	plugin_info.api_version = QFPLUGIN_VERSION;

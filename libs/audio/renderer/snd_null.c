@@ -30,6 +30,10 @@
 static const char rcsid[] = 
 	"$Id$";
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include "QF/cvar.h"
 #include "QF/plugin.h"
 #include "QF/sound.h"
@@ -164,7 +168,7 @@ SND_UnblockSound (void)
 }
 
 QFPLUGIN plugin_t *
-snd_render_null_PluginInfo (void)
+PLUGIN_INFO(snd_render, null) (void)
 {
     plugin_info.type = qfp_sound;
     plugin_info.api_version = QFPLUGIN_VERSION;

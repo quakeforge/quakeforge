@@ -811,7 +811,7 @@ static plugin_t plugin_info = {
 };
 
 QFPLUGIN plugin_t *
-console_client_PluginInfo (void)
+PLUGIN_INFO(console, client) (void)
 {
 	return &plugin_info;
 }

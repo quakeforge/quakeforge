@@ -79,7 +79,7 @@ I_CD_f (void)
 }
 
 QFPLUGIN plugin_t *
-cd_null_PluginInfo (void)
+PLUGIN_INFO(cd, null) (void)
 {
 	plugin_info.type = qfp_cd;
 	plugin_info.api_version = QFPLUGIN_VERSION;
