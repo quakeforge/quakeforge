@@ -19,7 +19,7 @@ integer HUDHandleClass;
 
 - (void) dealloc
 {
-	[origin dealloc];
+	[origin release];
 	[super dealloc];
 }
 
@@ -105,7 +105,7 @@ integer HUDHandleClass;
 
 - (void) dealloc
 {
-	[picture dealloc];
+	[picture release];
 	[super dealloc];
 }
 
@@ -116,7 +116,7 @@ integer HUDHandleClass;
 
 - (void) setFile: (string) _file
 {
-	[picture dealloc];
+	[picture release];
 	picture = [[QPic alloc] initName :_file];
 }
 
@@ -142,7 +142,7 @@ integer HUDHandleClass;
 
 - (void) dealloc
 {
-	[frames dealloc];
+	[frames release];
 	[super dealloc];
 }
 

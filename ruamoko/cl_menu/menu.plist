@@ -1,0 +1,135 @@
+{
+	video_options = {
+		Class = MenuGroup;
+		Messages = (
+			(initWithBounds:, $rect),
+			(addViews:, $views),
+			(setBase:, 4)
+		);
+		rect = "[0, 0, 320, 200]";
+		views = (
+			{
+				Class = Pic;
+				Messages = (
+					(initWithBounds:, $rect),
+					(setPic:, "\"gfx/qplaque.lmp\"")
+				);
+				rect = "[16, 4, 0, 0]";
+			},
+			{
+				Class = CenterPic;
+				Messages = (
+					(initWithBounds:, $rect),
+					(setPic:, "\"gfx/p_option.lmp\"")
+				);
+				rect = "[160, 4, 0, 0]";
+			},
+			{
+				Class = Text;
+				Messages = (
+					(initWithBounds:, $rect),
+					(setText:, "\"Video\"")
+				);
+				rect = "[54, 40, 40, 8]";
+			},
+			{
+				Class = Text;
+				Messages = (
+					(initWithBounds:, $rect),
+					(setText:, "\"-----\"")
+				);
+				rect = "[54, 50, 40, 8]";
+			},
+			{
+				Class = CvarToggleView;
+				Messages = (
+					(initWithBounds:title::, $rect, "\"Fullscreen\"", $toggle)
+				);
+				rect = "[70, 60, 224, 8]";
+				toggle = {
+					Class = CvarToggle;
+					Messages = (
+						(initWithCvar:, "\"vid_fullscreen\"")
+					);
+				};
+			},
+			{
+				Class = Text;
+				Messages = (
+					(initWithBounds:, $rect),
+					(setText:, "\"Crosshair\"")
+				);
+				rect = "[70, 70, 224, 8]";
+			},
+			{
+				Class = CrosshairView;
+				crosshair = {
+					Class = CrosshairCvar;
+					Messages = (
+						(initWithCvar:, "\"crosshair\"")
+					);
+				};
+				rect = "[256, 67, 14, 14]";
+				Messages = (
+					(initWithBounds::, $rect, $crosshair)
+				);
+			},
+			{
+				Class = CvarToggleView;
+				Messages = (
+					(initWithBounds:title::, $rect, "\"Show FPS\"", $toggle)
+				);
+				rect = "[70, 80, 224, 8]";
+				toggle = {
+					Class = CvarToggle;
+					Messages = (
+						(initWithCvar:, "\"hud_fps\"")
+					);
+				};
+			},
+			{
+				Class = CvarToggleView;
+				Messages = (
+					(initWithBounds:title::, $rect, "\"Show time\"", $toggle)
+				);
+				rect = "[70, 90, 224, 8]";
+				toggle = {
+					Class = CvarToggle;
+					Messages = (
+						(initWithCvar:, "\"hud_time\"")
+					);
+				};
+			},
+			{
+				Class = CvarRangeView;
+				Messages = (
+					(initWithBounds:title:sliderWidth::,
+						$rect, "\"Gamma\"", 136, $range)
+				);
+				rect = "[70, 100, 224, 8]";
+				range = {
+					Class = CvarRange;
+					Messages = (
+						(initWithCvar:min:max:step:,
+							"\"vid_gamma\"", 0.4, 3.0, 0.1)
+					);
+				};
+			},
+			{
+				Class = CvarRangeView;
+				Messages = (
+					(initWithBounds:title:sliderWidth::,
+						$rect, "\"Viewsize\"", 112, $range)
+				);
+				rect = "[70, 110, 224, 8]";
+				range = {
+					Class = CvarRange;
+					Messages = (
+						(initWithCvar:min:max:step:,
+							"\"viewsize\"", 30.0, 120.0, 10.0)
+					);
+				};
+			}
+		);
+	};
+}

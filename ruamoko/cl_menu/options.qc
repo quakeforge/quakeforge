@@ -34,6 +34,9 @@
 #include "key.h"
 #include "controls_o.h"
 #include "options_util.h"
+#include "qfs.h"
+
+#include "PropertyList.h"
 
 #include "gui/InputLine.h"
 #include "gui/Pic.h"
@@ -155,9 +158,131 @@ DRAW_video_options =
 	[video_options setBasePos:x y:y];
 	[video_options draw];
 
-	opt_cursor  (x + 62, y + (Menu_GetIndex () * 10) + 60);
 	return 1;
 };
+
+void dprint (string str) = #0;
+
+integer (integer key, integer unicode, integer down)
+KEY_video_options =
+{
+	return [video_options keyEvent:key unicode:unicode down:down];
+}
+
+id object_from_plist (PLItem plist);
+
+id
+class_from_plist (PLDictionary pldict)
+{
+	local @param [8]params;
+	local @va_list va_list = { 0, params };
+	local string classname, selname, paramstr;
+	local Class class;
+	local id obj;
+	local PLArray messages, msg;
+	local integer message_count, i, j;
+	local SEL sel;
+	local PLItem item;
+
+	classname = [(PLString) [pldict getObjectForKey:"Class"] string];
+	class = obj_lookup_class (classname);
+	if (!class) {
+		dprint ("could not find " + classname + "\n");
+		return NIL;
+	}
+	obj = [class alloc];
+
+	messages = (PLArray) [pldict getObjectForKey:"Messages"];
+	message_count = [messages count];
+	for (i = 0; i < message_count; i++) {
+		msg = (PLArray) [messages getObjectAtIndex:i];
+		selname = [(PLString) [msg getObjectAtIndex:0] string];
+		sel = sel_get_uid (selname);
+		va_list.count = [msg count] - 1;
+		for (j = 0; j < va_list.count; j++) {
+			paramstr = [(PLString) [msg getObjectAtIndex:j + 1] string];
+			switch (str_mid (paramstr, 0, 1)) {
+				case "\"":
+					va_list.list[j].string_val = str_mid (paramstr, 1, -1);
+					break;
+				case "$":
+					item = [pldict getObjectForKey:str_mid (paramstr, 1)];
+					va_list.list[j].pointer_val = object_from_plist (item);
+					break;
+				case "0": case "1": case "2": case "3": case "4":
+				case "5": case "6": case "7": case "8": case "9":
+					if (str_str (paramstr, "."))
+						va_list.list[j].float_val = stof (paramstr);
+					else
+						va_list.list[j].integer_val = stoi (paramstr);
+					break;
+			}
+		}
+		obj_msg_sendv (obj, sel, va_list);
+	}
+	return obj;
+}
+
+id
+array_from_plist (PLArray plarray)
+{
+	local Array array;
+	local integer i, count;
+
+	array = [[Array alloc] init];
+	count = [plarray count];
+	for (i = 0; i < count; i++)
+		[array addItem: object_from_plist ([plarray getObjectAtIndex:i])];
+	return array;
+}
+
+id
+string_from_plist (PLString plstring)
+{
+	local string str = [plstring string];
+	local string tmp;
+	local integer xp, yp, xl, yl;
+	local PLItem item;
+
+	if (str_mid (str, 0, 1) == "[") {
+		tmp = "(" + str_mid (str, 1, -1) + ")";
+		item = [PLItem newFromString:tmp];
+		xp = stoi ([(PLString) [item getObjectAtIndex:0] string]);
+		yp = stoi ([(PLString) [item getObjectAtIndex:1] string]);
+		xl = stoi ([(PLString) [item getObjectAtIndex:2] string]);
+		yl = stoi ([(PLString) [item getObjectAtIndex:3] string]);
+		return [[Rect alloc] initWithComponents:xp :yp :xl :yl];
+	}
+	return NIL;
+}
+
+id
+object_from_plist (PLItem plist)
+{
+	switch ([plist type]) {
+		case QFDictionary:
+			return class_from_plist ((PLDictionary) plist);
+		case QFArray:
+			return array_from_plist ((PLArray) plist);
+		case QFBinary:
+			return NIL;
+		case QFString:
+			return string_from_plist ((PLString) plist);
+	}
+}
+
+PLItem read_plist (void)
+{
+	local string plist_data, l;
+	local QFile file;
+
+	file = QFS_OpenFile ("menu.plist");
+	plist_data = "";
+	while ((l = Qgetline (file)))
+		plist_data += l;
+	Qclose (file);
+	return [PLItem newFromString:plist_data];
+}
 
 /*
 	MENU_video_options
@@ -167,74 +292,17 @@ DRAW_video_options =
 void () 
 MENU_video_options =
 {
-	local integer	bar_pad;
-	local Rect rect, r;
-	local id view;
+	local PLItem plist;
 
 	Menu_Begin (54, 50, "Video");
 	Menu_FadeScreen (1);
 	Menu_Draw (DRAW_video_options);
+	Menu_KeyEvent (KEY_video_options);
 
-	video_options = [[Group alloc] initWithComponents:0 :0 :320 :200];
+	plist = read_plist ();
 
-	view = [[Pic alloc] initWithComponents:16 :4 :0 :0];
-	[view setPic:"gfx/qplaque.lmp"];
-	[video_options addView:view];
+	video_options = object_from_plist ([plist getObjectForKey:"video_options"]);
 
-	view = [[CenterPic alloc] initWithComponents:160 :4 :0 :0];
-	[view setPic:"gfx/p_option.lmp"];
-	[video_options addView:view];
-
-	view = [[Text alloc] initWithComponents:54 :40 :40 :8];
-	[view setText:"Video"];
-	[video_options addView:view];
-
-	view = [[Text alloc] initWithComponents:54 :50 :40 :8];
-	[view setText:"-----"];
-	[video_options addView:view];
-
-	rect = [[Rect alloc] initWithComponents:70 :60 :224 :8];
-	fullscreen_view = [[CvarToggleView alloc] initWithBounds:rect title:"Fullscreen" :[[CvarToggle alloc] initWithCvar:"vid_fullscreen"]];
-	[video_options addView:fullscreen_view];
-
-	rect.origin.y += 10;
-	view = [[Text alloc] initWithBounds:rect];
-	[view setText:"Crosshair"];
-	[video_options addView:view];
-	r = [[Rect alloc] initWithComponents: 0 :rect.origin.y - 3 :14 :14];
-	r.origin.x = rect.origin.x + rect.size.width - 24 - r.size.width;
-	crosshair_view = [[CrosshairView alloc] initWithBounds:r :[[CrosshairCvar alloc] initWithCvar:"crosshair"]];
-	[r dealloc];
-	[video_options addView:crosshair_view];
-
-	rect.origin.y += 10;
-	fps_view = [[CvarToggleView alloc] initWithBounds:rect title:"Show FPS" :[[CvarToggle alloc] initWithCvar:"hud_fps"]];
-	[video_options addView:fps_view];
-
-
-	rect.origin.y += 10;
-	time_view = [[CvarToggleView alloc] initWithBounds:rect title:"Show time" :[[CvarToggle alloc] initWithCvar:"hud_time"]];
-	[video_options addView:time_view];
-
-
-	rect.origin.y += 10;
-	gamma_view = [[CvarRangeView alloc] initWithBounds:rect title:"Gamma:" sliderWidth:17 * 8 :[[CvarRange alloc] initWithCvar:"vid_gamma" min:MIN_GAMMA max:MAX_GAMMA step:GAMMA_STEP]];
-	[video_options addView:gamma_view];
-
-	rect.origin.y += 10;
-	viewsize_view = [[CvarRangeView alloc] initWithBounds:rect title:"Viewsize:" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"viewsize" min:MIN_VIEWSIZE max:MAX_VIEWSIZE step:VIEWSIZE_STEP]];
-	[video_options addView:viewsize_view];
-
-	[rect dealloc];
-	
-	Menu_Item (54, 60, "fullscreen", CB_video_options, 0);
-	Menu_Item (54, 70, "crosshair", CB_video_options, 0);
-	Menu_Item (54, 80, "fps", CB_video_options, 0);
-	Menu_Item (54, 80, "time", CB_video_options, 0);
-	bar_pad = 90;
-
-	Menu_Item (54, bar_pad + 10, "gamma", CB_video_options, 1);
-	Menu_Item (54, bar_pad + 20, "viewsize", CB_video_options, 1);
 	Menu_End ();
 };
 
@@ -326,7 +394,7 @@ MENU_audio_options =
 	bgmvolume_view = [[CvarRangeView alloc] initWithBounds:rect title:"Music :" sliderWidth:14 * 8 :[[CvarRange alloc] initWithCvar:"bgmvolume" min:MIN_VOLUME max:MAX_VOLUME step:VOLUME_STEP]];
 	[audio_options addView:bgmvolume_view];
 
-	[rect dealloc];
+	[rect release];
 	
 	bar_pad = 0;
 	Menu_Item (54, bar_pad + 10, "volume", CB_audio_options, 1);
@@ -461,7 +529,7 @@ MENU_control_options =
 	lookstrafe_view = [[CvarToggleView alloc] initWithBounds:rect title:"Lookstrafe" :[[CvarToggle alloc] initWithCvar:"lookstrafe"]];
 	[control_options addView:lookstrafe_view];
 
-	[rect dealloc];
+	[rect release];
 
 	MENU_control_binding ();
 
@@ -559,7 +627,7 @@ MENU_feature_options =
 	fraglog_view = [[CvarToggleView alloc] initWithBounds:rect title:"Frag Logging" :[[CvarToggle alloc] initWithCvar:"cl_fraglog"]];
 	[feature_options addView:fraglog_view];
 
-	[rect dealloc];
+	[rect release];
 
 	Menu_Item (54, 70, "cl_autorecord", CB_feature_options, 0);
 	Menu_Item (54, 80, "cl_fraglog", CB_feature_options, 0);
@@ -766,7 +834,7 @@ MENU_player_options =
 	bottomcolor_view = [[CvarColorView alloc] initWithBounds:rect :[[CvarColor alloc] initWithCvar:"bottomcolor"]];
 	[player_options addView:bottomcolor_view];
 
-	[rect dealloc];
+	[rect release];
 
 	Menu_Begin (54, 80, "Player");
 	Menu_FadeScreen (1);

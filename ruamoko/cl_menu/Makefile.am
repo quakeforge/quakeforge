@@ -15,7 +15,7 @@ GZ=
 endif
 STRIP=$(shell echo `echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`)
 
-menu_data=menu.dat$(GZ)
+menu_data=menu.dat$(GZ) menu.plist
 
 if BUILD_RUAMOKO
 data=$(menu_data)
@@ -46,5 +46,6 @@ EXTRA_DIST= $(menu_src) \
 	Frame.h HUD.h \
 	client_menu.h controls_o.h \
 	menu.h options.h \
-	options_util.h servlist.h
+	options_util.h servlist.h \
+	menu.plist
 CLEANFILES= *.dat *.sym *.gz *.qfo

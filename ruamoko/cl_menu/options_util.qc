@@ -28,11 +28,71 @@
 #include "draw.h"
 #include "system.h"
 #include "string.h"
+#include "key.h"
 
+#include "Array.h"
 #include "gui/Text.h"
 #include "gui/Rect.h"
 #include "gui/Slider.h"
 #include "options_util.h"
+
+@implementation MenuGroup
+-(id) init
+{
+	if ((self = [super init]))
+		current = base = 0;
+}
+
+-(void)setBase:(integer)b
+{
+	if (b >= [views count])
+		b = [views count] - 1;
+	if (b < 0)
+		b = 0;
+	current = base = b;
+}
+
+- (integer) keyEvent:(integer)key unicode:(integer)unicode down:(integer)down
+{
+	switch (key) {
+		case QFK_DOWN:
+		case QFM_WHEEL_DOWN:
+			[self next];
+			return 1;
+		case QFK_UP:
+		case QFM_WHEEL_UP:
+			[self prev];
+			return 1;
+		default:
+			return [[views getItemAt:current]
+						keyEvent:key
+						unicode:unicode
+						down:down];
+	}
+}
+
+-(void) next
+{
+	if (++current >= [views count])
+		current = base;
+}
+
+-(void) prev
+{
+	if (--current < base)
+		current = [views count] - 1;
+}
+
+- (void) draw
+{
+	local View cur;
+
+	[super draw];
+	cur = (View) [views getItemAt:current];
+	opt_cursor  (cur.xabs - 8, cur.yabs);
+}
+@end
+
 
 @implementation CvarObject
 -(id)init
@@ -137,6 +197,18 @@
 	[self update];
 }
 
+- (integer) keyEvent:(integer)key unicode:(integer)unicode down:(integer)down
+{
+	switch (key) {
+		case QFK_RETURN:
+		case QFM_BUTTON1:
+			[self toggle];
+			return 1;
+		default:
+			return 0;
+	}
+}
+
 @end
 
 @implementation CvarColor
@@ -186,6 +258,20 @@
 	xl = (xl + 1) & ~1;		// text_box only does multiples of 2
 	Draw_Fill (xabs + 8, yabs + 8, xl * 8, ylen - 16,
 			   [color value] * 16 + 8);
+}
+
+- (integer) keyEvent:(integer)key unicode:(integer)unicode down:(integer)down
+{
+	switch (key) {
+		case QFK_DOWN:
+		case QFM_WHEEL_DOWN:
+			[self next];
+			return 1;
+		case QFK_UP:
+		case QFM_WHEEL_UP:
+			[self prev];
+			return 1;
+	}
 }
 @end
 
@@ -280,6 +366,18 @@
 	[self update];
 }
 
+- (integer) keyEvent:(integer)key unicode:(integer)unicode down:(integer)down
+{
+	switch (key) {
+		case QFK_RIGHT:
+			[self inc];
+			return 1;
+		case QFK_LEFT:
+			[self dec];
+			return 1;
+	}
+}
+
 @end
 
 @implementation CrosshairCvar
@@ -317,6 +415,37 @@
 	Draw_Fill (xabs, yabs, xlen, ylen, 0);
 	Draw_Crosshair ([crosshair crosshair], xabs + xlen / 2, yabs + ylen / 2);
 }
+
+- (integer) keyEvent:(integer)key unicode:(integer)unicode down:(integer)down
+{
+	switch (key) {
+		case QFK_RETURN:
+		case QFM_BUTTON1:
+			[self next];
+			return 1;
+		default:
+			return 0;
+	}
+}
+@end
+
+@implementation ProxyView
+
+-(id)initWithBounds:(Rect)aRect title:(string)_title view:(View)aView
+{
+	self = [super initWidthBounds:aRect text:_title];
+	if (!self)
+		return self;
+
+	view = aView;
+	return self;
+}
+
+- (integer) keyEvent:(integer)key unicode:(integer)unicode down:(integer)down
+{
+	return [view keyEvent:key unicode:unicode down:down];
+}
+
 @end
 
 /*

@@ -6,6 +6,14 @@
 @class Text;
 @class Slider;
 
+@interface MenuGroup : Group
+{
+	integer base;
+	integer current;
+}
+-(void)setBase:(integer)b;
+@end
+
 @interface CvarObject : Object
 {
 	string name;
@@ -83,6 +91,13 @@
 }
 -(id)initWithBounds:(Rect)aRect :(CrosshairCvar)_crosshair;
 -(void) next;
+@end
+
+@interface ProxyView : View
+{
+	View view;
+}
+-(id)initWithBounds:(Rect)aRect title:(string)_title view:(View)aView;
 @end
 
 

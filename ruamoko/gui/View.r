@@ -27,11 +27,22 @@
 	return [self initWithOrigin:aRect.origin size:aRect.size];
 }
 
+- (id) canFocus: (integer) cf
+{
+	flags |= 1;
+	return self;
+}
+
+- (integer) canFocus
+{
+	return flags & 1;
+}
+
 - (void) setBasePos: (integer) x y: (integer) y
 {
 	local Point point = [[Point alloc] initWithComponents:x :y];
 	[self setBasePos:point];
-	[point dealloc];
+	[point release];
 }
 
 - (void) setBasePos: (Point)pos
@@ -42,6 +53,11 @@
 
 -(void) draw
 {
+}
+
+- (integer) keyEvent:(integer)key unicode:(integer)unicode down:(integer)down
+{
+	return 0;
 }
 
 @end

@@ -13,7 +13,7 @@
 
 - (void) dealloc
 {
-	[picture dealloc];
+	[picture release];
 	[super dealloc];
 }
 
