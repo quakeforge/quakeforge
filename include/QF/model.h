@@ -187,7 +187,9 @@ typedef struct mleaf_s
 	int			contents;		// wil be a negative contents number
 	int			visframe;		// node needs to be traversed if current
 
-	float		minmaxs[6];		// for bounding box culling
+	// for bounding box culling
+	float		mins[3];
+	float		maxs[3];
 
 	struct mnode_s	*parent;
 
