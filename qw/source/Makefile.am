@@ -107,8 +107,8 @@ EXTRA_libqfsys_cl_a_SOURCES= cl_sys_sdl.c cl_sys_unix.c cl_sys_win.c sys_win.c s
 if SNDTYPE_ALSA_0_5
 libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_alsa_0_5.c
 endif
-if SNDTYPE_ALSA_0_6
-libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_alsa_0_6.c
+if SNDTYPE_ALSA_0_9
+libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_alsa_0_9.c
 endif
 if SNDTYPE_MME
 libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_mme.c
@@ -132,7 +132,7 @@ if SNDTYPE_NULL
 libqfsnd_a_SOURCES=	snd_null.c
 endif
 EXTRA_libqfsnd_a_SOURCES= snd_dma.c snd_mem.c snd_mix.c snd_alsa_0_5.c \
-			snd_alsa_0_6.c snd_oss.c snd_sdl.c snd_sgi.c \
+			snd_alsa_0_9.c snd_oss.c snd_sdl.c snd_sgi.c \
 			snd_sun.c snd_win.c snd_null.c
 
 #

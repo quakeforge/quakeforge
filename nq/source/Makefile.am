@@ -71,8 +71,8 @@ EXTRA_libqfsys_a_SOURCES= dirent.c fnmatch.c sys_unix.c sys_win.c
 if SNDTYPE_ALSA_0_5
 libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_alsa_0_5.c $(sound_ASM)
 endif
-if SNDTYPE_ALSA_0_6
-libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_alsa_0_6.c $(sound_ASM)
+if SNDTYPE_ALSA_0_9
+libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_alsa_0_9.c $(sound_ASM)
 endif
 if SNDTYPE_MME
 libqfsnd_a_SOURCES=	snd_dma.c snd_mem.c snd_mix.c snd_mme.c $(sound_ASM)
@@ -90,7 +90,7 @@ if SNDTYPE_NULL
 libqfsnd_a_SOURCES=	snd_null.c $(sound_ASM)
 endif
 EXTRA_libqfsnd_a_SOURCES= snd_dma.c snd_mem.c snd_mix.c snd_alsa_0_5.c \
-			snd_alsa_0_6.c snd_oss.c snd_sun.c snd_win.c snd_null.c \
+			snd_alsa_0_9.c snd_oss.c snd_sun.c snd_win.c snd_null.c \
 			$(sound_ASM)
 
 #
