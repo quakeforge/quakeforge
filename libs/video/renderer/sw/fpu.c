@@ -51,14 +51,4 @@ void
 R_SetFPCW (void)
 {
 }
-
-void
-R_PushFPCW_SetHigh (void)
-{
-}
-
-void
-R_PopFPCW (void)
-{
-}
 #endif

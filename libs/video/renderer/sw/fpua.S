@@ -134,23 +134,6 @@ F_BEGIN(R_HighFPPrecision)
 F_END(R_HighFPPrecision)
 
 
-F_BEGIN(R_PushFPCW_SetHigh)
-	got_base(5)
-	fnstcw	got_var(pushed_cw)
-	fldcw	got_var(full_cw)
-
-	ret
-F_END(R_PushFPCW_SetHigh)
-
-
-F_BEGIN(R_PopFPCW)
-	got_base(6)
-	fldcw	got_var(pushed_cw)
-
-	ret
-F_END(R_PopFPCW)
-
-
 F_BEGIN(R_SetFPCW)
 	got_base(7)
 	fnstcw	got_var(cw)
