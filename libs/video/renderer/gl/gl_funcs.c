@@ -76,17 +76,17 @@ GLF_Init (void)
 #endif
 
 #define QFGL_NEED(ret, name, args)	\
-	qf##name = QFGL_ProcAddress (handle, #name);
+	qf##name = QFGL_ProcAddress (handle, #name, true);
 
 #include "QF/GL/qf_funcs_list.h"
 #undef QFGL_NEED
-	QFGL_ProcAddress (NULL, NULL); // tell ProcAddress to clear its cache
+	QFGL_ProcAddress (NULL, NULL, false); // tell ProcAddress to clear its cache
 
 	return true;
 }
 
 void *
-QFGL_ProcAddress (void *handle, const char *name)
+QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
 {
 	static qboolean inited = false;
 	void			*glfunc = NULL;
@@ -113,15 +113,14 @@ QFGL_ProcAddress (void *handle, const char *name)
 #endif
 	}
 
-	if (developer && developer->int_val)
-		Sys_Printf ("DEBUG: Finding symbol %s ... ", name);
+	Con_DPrintf ("DEBUG: Finding symbol %s ... ", name);
 #if defined(HAVE_DLOPEN)
 		glfunc = dlsym (handle, name);
 #elif defined(_WIN32)
 		glfunc = GetProcAddress (handle, name);
 #endif
 	if (glGetProcAddress && glfunc != glGetProcAddress (name)) {
-		Con_Printf ("mismatch! [%p != %p]\n", glfunc, glGetProcAddress (name));
+		Con_DPrintf ("mismatch! [%p != %p]\n", glfunc, glGetProcAddress (name));
 		return glfunc;
 	}
 
@@ -132,7 +131,11 @@ QFGL_ProcAddress (void *handle, const char *name)
 		Con_DPrintf ("found [%p]\n", glfunc);
 		return glfunc;
 	}
-	
-	Con_Printf ("not found\n");
+
+	Con_DPrintf ("not found\n");
+
+	if (crit)
+		Sys_Error ("Couldn't load critical OpenGL function %s, exiting...\n", name);
+
 	return NULL;
 }
