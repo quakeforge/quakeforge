@@ -236,5 +236,4 @@ cbuf_interpreter_t id_interp = {
 	COM_insert,
 	COM_execute,
 	COM_execute_sets,
-	NULL
 };

@@ -127,6 +127,33 @@ GIB_Var_Get_Complex (hashtab_t **first, hashtab_t **second, char *key, unsigned 
 	return var;
 }
 
+void
+GIB_Var_Assign (gib_var_t *var, unsigned int index, dstring_t **values, unsigned int numv)
+{
+	unsigned int i, len;
+
+	// Now, expand the array to the correct size
+	len = numv + index;
+	if (len >= var->size) {
+		var->array = realloc (var->array, len * sizeof (dstring_t *));
+		memset (var->array+var->size, 0, (len-var->size) * sizeof (dstring_t *));
+		var->size = len;
+	} else if (len < var->size) {
+		for (i = len; i < var->size; i++)
+			if (var->array[i])
+				dstring_delete (var->array[i]);
+		var->array = realloc (var->array, len * sizeof (dstring_t *));
+	}
+	var->size = len;
+	for (i = 0; i < numv; i++) {
+		if (var->array[i+index])
+			dstring_clearstr (var->array[i+index]);
+		else
+			var->array[i+index] = dstring_newstr ();
+		dstring_appendstr (var->array[i+index], values[i]->str);
+	}
+}
+
 static const char *
 GIB_Domain_Get_Key (void *ele, void *ptr)
 {
@@ -150,6 +177,7 @@ GIB_Domain_Get (const char *name)
 		d = calloc (1, sizeof (gib_domain_t));
 		d->name = strdup(name);
 		d->vars = Hash_NewTable (1024, GIB_Var_Get_Key, GIB_Var_Free, 0);
+		Hash_Add (gib_domains, d);
 	}
 	return d->vars;
 }

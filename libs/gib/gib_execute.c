@@ -145,38 +145,6 @@ GIB_Execute_Prepare_Line (cbuf_t *cbuf, gib_tree_t *line)
 	return 0;
 }
 
-static void
-GIB_Execute_Assign (cbuf_t *cbuf)
-{
-	cbuf_args_t *args = cbuf->args;
-	gib_var_t *var;
-	unsigned int index, i, len, el;
-
-	// First, grab our variable
-	var = GIB_Var_Get_Complex (&GIB_DATA(cbuf)->locals, &GIB_DATA(cbuf)->globals, args->argv[0]->str, &index, true);
-	// Now, expand the array to the correct size
-	len = args->argc-2 + index;
-	if (len >= var->size) {
-		var->array = realloc (var->array, len * sizeof (dstring_t *));
-		memset (var->array+var->size, 0, (len-var->size) * sizeof (dstring_t *));
-		var->size = len;
-	} else if (len < var->size) {
-		for (i = len; i < var->size; i++)
-			if (var->array[i])
-				dstring_delete (var->array[i]);
-		var->array = realloc (var->array, len * sizeof (dstring_t *));
-	}
-	var->size = len;
-	for (i = 2; i < args->argc; i++) {
-		el = i-2+index;
-		if (var->array[el])
-			dstring_clearstr (var->array[el]);
-		else
-			var->array[el] = dstring_newstr ();
-		dstring_appendstr (var->array[el], args->argv[i]->str);
-	}
-}
-	
 int
 GIB_Execute_For_Next (cbuf_t *cbuf)
 {
@@ -201,13 +169,8 @@ GIB_Execute (cbuf_t *cbuf)
 	gib_builtin_t *b;
 	gib_function_t *f;
 	
-	if (g->waitret) {
-			Cbuf_Error ("return", "Embedded function '%s' did not return a value.", cbuf->args->argv[0]->str);
-			return;
-	}
-	if (!g->program) {
+	if (!g->program)
 		return;
-	}
 	if (!g->ip)
 		g->ip = g->program;
 	while (!g->done) {
@@ -225,29 +188,23 @@ GIB_Execute (cbuf_t *cbuf)
 				continue;
 		} else if (cbuf->args->argc) {
 			if (g->ip->flags & TREE_EMBED) {
+				// Get ready for return values
 				g->waitret = true;
-				GIB_Buffer_Push_Sstack (cbuf); // Make room for return values
+				GIB_Buffer_Push_Sstack (cbuf);
+			} else
+				g->waitret = false;
+			if (cbuf->args->argc >= 2 && !strcmp (cbuf->args->argv[1]->str, "=") && ((gib_tree_t *)cbuf->args->argm[1])->delim == ' ') {
+				unsigned int index;
+				GIB_Var_Assign (GIB_Var_Get_Complex (&g->locals, &g->globals, cbuf->args->argv[0]->str, &index, true), index, cbuf->args->argv+2, cbuf->args->argc-2);
 			}
-			if (!strcmp (cbuf->args->argv[1]->str, "=") && ((gib_tree_t *)cbuf->args->argm[1])->delim == ' ')
-				GIB_Execute_Assign (cbuf);
 			else if ((b = GIB_Builtin_Find (cbuf->args->argv[0]->str))) {
 				b->func ();
-				// If there already was an error, don't override it
-				if (g->ip->flags & TREE_EMBED && !cbuf->state) {
-					if (!g->haveret) {
-						Cbuf_Error ("return", "Embedded builtin '%s' did not return a value.", cbuf->args->argv[0]->str);
-						return;
-					}
-					g->haveret = g->waitret = 0;
-				}
 			} else if ((f = GIB_Function_Find (cbuf->args->argv[0]->str))) {
 				cbuf_t *new = Cbuf_New (&gib_interp);
 				cbuf->down = new;
 				new->up = cbuf;
 				cbuf->state = CBUF_STATE_STACK;
 				GIB_Function_Execute (new, f, cbuf->args);
-				if (g->ip->flags & TREE_EMBED)
-					g->waitret = true;
 			} else {
 				GIB_Execute_Generate_Composite (cbuf);
 				Cmd_Command (cbuf->args);

@@ -39,7 +39,7 @@
 typedef struct gib_buffer_data_s {
 	struct gib_tree_s *program, *ip;
 	struct dstring_s *arg_composite;
-	qboolean done, waitret, haveret;
+	qboolean done, waitret;
 	struct gib_sstack_s {
 		struct gib_dsarray_s {
 			struct dstring_s **dstrs;
@@ -53,7 +53,6 @@ typedef struct gib_buffer_data_s {
 
 void GIB_Buffer_Construct (struct cbuf_s *cbuf);
 void GIB_Buffer_Destruct (struct cbuf_s *cbuf);
-void GIB_Buffer_Reset (struct cbuf_s *cbuf);
 void GIB_Buffer_Add (cbuf_t *cbuf, const char *str);
 void GIB_Buffer_Insert (cbuf_t *cbuf, const char *str);
 void GIB_Buffer_Push_Sstack (struct cbuf_s *cbuf);

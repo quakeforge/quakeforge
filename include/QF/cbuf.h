@@ -55,11 +55,10 @@ typedef struct cbuf_s {
 		CBUF_STATE_NORMAL = 0, // Normal condition
 		CBUF_STATE_WAIT, // Buffer is stalled until next frame
 		CBUF_STATE_ERROR, // An unrecoverable error occured
-		CBUF_STATE_STACK, // A buffer has been added to the stack
-		CBUF_STATE_DONE, // This buffer has completed execution
-	}	state;
+		CBUF_STATE_STACK // A buffer has been added to the stack
+	} state;
 	
-	qboolean strict; // Should we tolerate unknown commands
+	qboolean strict; // Should we tolerate unknown commands?
 	double resumetime; // Time when stack can be executed again
 	
 	void *data; // Pointer to interpreter data
@@ -72,7 +71,6 @@ typedef struct cbuf_interpreter_s {
 	void		(*insert) (struct cbuf_s *cbuf, const char *str);
 	void		(*execute) (struct cbuf_s *cbuf);
 	void		(*execute_sets) (struct cbuf_s *cbuf);
-	void		(*reset) (struct cbuf_s *cbuf);
 } cbuf_interpreter_t;
 
 extern cbuf_t *cbuf_active;

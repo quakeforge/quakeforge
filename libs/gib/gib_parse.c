@@ -246,7 +246,7 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int flags, gib_
 					// Handle comments
 					} else if (program[*i] == '/' && program[*i+1] == '/') {
 						for((*i) += 2; program[*i] && program[*i] != '\n'; (*i)++);
-						return nodes;
+						goto DONE;
 					}
 				}
 		}
@@ -276,7 +276,7 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int flags, gib_
 				cur->flags |= TREE_P_EMBED;
 				// Add any embedded commands to top of chain
 				if (new) {
-					for (tmp = new; tmp->next; tmp = tmp->next); // Get to end of embedded list
+					for (tmp = new; tmp->next; tmp = tmp->next);
 					tmp->next = embs;
 					embs = new;
 				}
@@ -306,6 +306,7 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int flags, gib_
 			(*i)++;
 		node = &cur->next;
 	}
+DONE:
 	*embedded = embs;
 	return nodes;
 ERROR:
@@ -375,7 +376,11 @@ GIB_Parse_Semantic_Preprocess (gib_tree_t *line)
 	// If we have a while loop, handle that
 	if (!strcmp (line->children->str, "while")) {
 		// Sanity checks
-		if (!line->children->next || !line->children->next->next || !line->children->next->next->children || line->flags & TREE_EMBED) {
+		if (!line->children->next ||
+		   !line->children->next->next ||
+		   line->children->next->next->delim != '{' ||
+		   !line->children->next->next->children ||
+		   line->flags & TREE_EMBED) {
 			gib_parse_error = true;
 			return line;
 		}
@@ -406,7 +411,7 @@ GIB_Parse_Semantic_Preprocess (gib_tree_t *line)
 		// Find last token in line (contains program block)
 		for (tmp = line->children->next->next->next->next; tmp->next; tmp = tmp->next);
 		// More sanity
-		if (!tmp->children) {
+		if (tmp->delim != '{' || !tmp->children) {
 			gib_parse_error = true;
 			return line;
 		}

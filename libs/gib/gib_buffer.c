@@ -112,16 +112,6 @@ GIB_Buffer_Insert (cbuf_t *cbuf, const char *str)
 }
 
 void
-GIB_Buffer_Reset (cbuf_t *cbuf)
-{
-	GIB_DATA(cbuf)->done = GIB_DATA(cbuf)->waitret = GIB_DATA(cbuf)->haveret = false;
-	if (GIB_DATA(cbuf)->program)
-		GIB_Tree_Free_Recursive (GIB_DATA(cbuf)->program, false);
-	GIB_DATA(cbuf)->ip = 0;
-	GIB_DATA(cbuf)->program = 0;
-}
-
-void
 GIB_Buffer_Push_Sstack (struct cbuf_s *cbuf)
 {
 	gib_buffer_data_t *g = GIB_DATA(cbuf);
@@ -160,5 +150,4 @@ cbuf_interpreter_t gib_interp = {
 	GIB_Buffer_Insert,
 	GIB_Execute,
 	GIB_Execute,
-	GIB_Buffer_Reset
 };

@@ -124,7 +124,6 @@ GIB_Return (const char *str)
 {
 	dstring_t *dstr;
 	if (GIB_DATA(cbuf_active)->waitret) {
-		GIB_DATA(cbuf_active)->haveret = true;
 		dstr = GIB_Buffer_Dsarray_Get (cbuf_active);
 		dstring_clearstr (dstr);
 		if (!str) 
@@ -179,32 +178,38 @@ GIB_Function_Get_f (void)
 static void
 GIB_Local_f (void)
 {
-	unsigned int i, index;
+	gib_var_t *var;
+	unsigned int index;
 	hashtab_t *zero = 0;
 	
 	if (GIB_Argc () < 2)
-		GIB_USAGE ("var1 [var2 var3 ...]");
-	else
-		for (i = 1; i < GIB_Argc(); i++)
-			GIB_Var_Get_Complex (&GIB_DATA(cbuf_active)->locals, &zero, GIB_Argv(i), &index, true);
+		GIB_USAGE ("var [= value1 value2 ...]");
+	else {
+		var = GIB_Var_Get_Complex (&GIB_DATA(cbuf_active)->locals, &zero, GIB_Argv(1), &index, true);
+		if (GIB_Argc() >= 3)
+			GIB_Var_Assign (var, index, cbuf_active->args->argv+3, GIB_Argc() - 3);
+	}
 }
 
 
 static void
 GIB_Global_f (void)
 {
-	unsigned int i, index;
+	gib_var_t *var;
+	unsigned int index;
 	hashtab_t *zero = 0;
 	
 	if (GIB_Argc () < 2)
-		GIB_USAGE ("var1 [var2 var3 ...]");
-	else
-		for (i = 1; i < GIB_Argc(); i++)
-			GIB_Var_Get_Complex (&GIB_DATA(cbuf_active)->globals, &zero, GIB_Argv(i), &index, true);
+		GIB_USAGE ("var [= value1 value2 ...]");
+	else {
+		var = GIB_Var_Get_Complex (&GIB_DATA(cbuf_active)->globals, &zero, GIB_Argv(1), &index, true);
+		if (GIB_Argc() >= 3)
+			GIB_Var_Assign (var, index, cbuf_active->args->argv+3, GIB_Argc() - 3);
+	}
 }
 
 static void
-GIB_Global_Domain_f (void)
+GIB_Domain_f (void)
 {
 	if (GIB_Argc() != 2)
 		GIB_USAGE ("domain");
@@ -218,15 +223,8 @@ GIB_Return_f (void)
 	cbuf_t *sp = cbuf_active->up;
 	
 	GIB_DATA(cbuf_active)->done = true;
-	if (!GIB_Argm(0)->next) // No return values
-		return;
-	else if (GIB_Argc() == 1) // Empty return array
-		GIB_DATA(sp)->waitret = false;
-	else if (!sp || // Nothing above us on the stack
-	   sp->interpreter != &gib_interp || // Not a GIB buffer
-	   !GIB_DATA(sp)->waitret) // Doesn't want a return value
-		Sys_DPrintf("GIB warning: unwanted return value(s) discarded.\n"); // Not a serious error
-	else {
+	
+	if (GIB_Argc() > 1 && sp && sp->interpreter == &gib_interp && GIB_DATA(sp)->waitret) {
 		unsigned int i;
 		dstring_t *dstr;
 		for (i = 1; i < GIB_Argc(); i++) {
@@ -234,7 +232,6 @@ GIB_Return_f (void)
 			dstring_clearstr (dstr);
 			dstring_appendstr (dstr, GIB_Argv(i));
 		}
-		GIB_DATA(sp)->waitret = false;
 	}
 }
 
@@ -395,12 +392,36 @@ GIB_String_Equal_f (void)
 }
 
 static void
-GIB_String_Findsub_f (void)
+GIB_String_Sub_f (void)
+{
+	dstring_t *ret;
+	int start, end, len;
+	if (GIB_Argc() != 4)
+		GIB_USAGE ("string start end");
+	else {
+		len = strlen (GIB_Argv(1));
+		start = atoi (GIB_Argv(2));
+		end = atoi (GIB_Argv(3));
+		while (start < 0)
+			start += len-1;
+		while (end < 0)
+			end += len;
+		if (start >= len)
+			return;
+		if (end > len || !end)
+			end = len;
+		if ((ret = GIB_Return (0)))
+			dstring_appendsubstr (ret, GIB_Argv(1)+start, end-start);
+	}
+}
+
+static void
+GIB_String_Find_f (void)
 {
 	dstring_t *ret;
 	char *haystack, *res;
 	if (GIB_Argc() != 3) {
-		GIB_USAGE ("string substr");
+		GIB_USAGE ("haystack needle");
 		return;
 	}
 	haystack = GIB_Argv(1);
@@ -752,6 +773,16 @@ GIB_Print_f (void)
 	Sys_Printf ("%s", GIB_Argv(1));
 }
 
+static void
+GIB_Random_f (void)
+{
+	dstring_t *ret;
+	if (GIB_Argc() != 1)
+		GIB_USAGE ("");
+	else if ((ret = GIB_Return (0)))
+		dsprintf (ret, "%.10g", (double) random()/(double) RAND_MAX);
+}
+
 void
 GIB_Builtin_Init (qboolean sandbox)
 {
@@ -766,15 +797,15 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("function::export", GIB_Function_Export_f);
 	GIB_Builtin_Add ("local", GIB_Local_f);
 	GIB_Builtin_Add ("global", GIB_Global_f);
-	GIB_Builtin_Add ("global::domain", GIB_Global_Domain_f);
+	GIB_Builtin_Add ("domain", GIB_Domain_f);
 	GIB_Builtin_Add ("return", GIB_Return_f);
-//	GIB_Builtin_Add ("dieifnot", GIB_Dieifnot_f);
 	GIB_Builtin_Add ("for", GIB_For_f);
 	GIB_Builtin_Add ("break", GIB_Break_f);
 	GIB_Builtin_Add ("continue", GIB_Continue_f);
 	GIB_Builtin_Add ("string::length", GIB_String_Length_f);
 	GIB_Builtin_Add ("string::equal", GIB_String_Equal_f);
-	GIB_Builtin_Add ("string::findsub", GIB_String_Findsub_f);
+	GIB_Builtin_Add ("string::sub", GIB_String_Sub_f);
+	GIB_Builtin_Add ("string::find", GIB_String_Find_f);
 	GIB_Builtin_Add ("regex::match", GIB_Regex_Match_f);
 	GIB_Builtin_Add ("regex::replace", GIB_Regex_Replace_f);
 	GIB_Builtin_Add ("regex::extract", GIB_Regex_Extract_f);
@@ -788,4 +819,5 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("file::delete", GIB_File_Delete_f);
 	GIB_Builtin_Add ("range", GIB_Range_f);
 	GIB_Builtin_Add ("print", GIB_Print_f);
+	GIB_Builtin_Add ("random", GIB_Random_f);
 }

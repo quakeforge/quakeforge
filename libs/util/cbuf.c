@@ -191,8 +191,9 @@ ERROR:
 		Cbuf_DeleteStack (cbuf->down);
 		cbuf->down = 0;
 	}
-	if (cbuf->interpreter->reset)
-		cbuf->interpreter->reset (cbuf);
+	// Tear it down and build it back up
+	cbuf->interpreter->destruct (cbuf);
+	cbuf->interpreter->construct (cbuf);
 }
 
 void
