@@ -57,6 +57,7 @@ static struct option const long_options[] = {
 	{"nofill",		no_argument,		0, 'f'},
 	{"noclip",		no_argument,		0, 'c'},
 	{"onlyents",	no_argument,		0, 'e'},
+	{"portal",		no_argument,		0, 'p'},
 	{"usehulls",	no_argument,		0, 'u'},
 	{"hullnum",		required_argument,	0, 'H'},
 	{"subdivide",	required_argument,	0, 's'},	
@@ -75,6 +76,7 @@ static const char *short_options =
 	"f"		// nofill
 	"c"		// noclip
 	"e"		// onlyents
+	"p"		// portal
 	"u"		// usehulls
 	"H:"	// hullnum
 	"s:"	// subdivide
@@ -98,6 +100,7 @@ usage (int status)
 		"    -t, --notjunc\n"
 		"    -c, --noclip\n"
 		"    -e, --onlyents\n"
+		"    -p, --portal\n"
 		"    -u, --usehulls            Use the existing hull files\n"
 		"    -H, --hullnum [num]\n"
 		"    -s, --subdivide [size]\n"
@@ -147,6 +150,9 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'e':					// onlyents
 				options.onlyents = true;
+				break;
+			case 'p':					// portal
+				options.portal = true;
 				break;
 			case 'u':					// usehulls
 				options.usehulls = true;

@@ -38,6 +38,7 @@ typedef struct {
 	qboolean	nofill;
 	qboolean	noclip;
 	qboolean	onlyents;
+	qboolean	portal;
 	qboolean	usehulls;
 	qboolean	watervis;
 	int			hullnum;

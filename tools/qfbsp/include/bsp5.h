@@ -25,8 +25,7 @@
 #include "QF/mathlib.h"
 #include "QF/bspfile.h"
 
-typedef struct
-{
+typedef struct {
 	vec3_t	normal;
 	vec_t	dist;
 	int		type;
@@ -48,8 +47,7 @@ typedef struct
 
 //============================================================================
 
-typedef struct
-{
+typedef struct {
 	int		numpoints;
 	vec3_t	points[8];			// variable sized
 } winding_t;
@@ -65,8 +63,7 @@ void	DivideWinding (winding_t *in, plane_t *split, winding_t **front, winding_t 
 
 //============================================================================
  
-typedef struct visfacet_s
-{
+typedef struct visfacet_s {
 	struct visfacet_s	*next;
 	
 	int				planenum;
@@ -83,8 +80,7 @@ typedef struct visfacet_s
 	int            *edges;
 } face_t;
 
-typedef struct surface_s
-{
+typedef struct surface_s {
 	struct surface_s	*next;
 	struct surface_s	*original;	// before BSP cuts it up
 	int			planenum;
@@ -100,8 +96,7 @@ typedef struct surface_s
 // there is a node_t structure for every node and leaf in the bsp tree
 #define	PLANENUM_LEAF		-1
 
-typedef struct node_s
-{
+typedef struct node_s {
 	vec3_t			mins,maxs;		// bounding volume, not just points inside
 
 // information for decision nodes	
@@ -129,16 +124,14 @@ typedef struct node_s
 
 #define	NUM_CONTENTS	2				// solid and water
 
-typedef struct brush_s
-{
+typedef struct brush_s {
 	struct brush_s	*next;
 	vec3_t			mins, maxs;
 	face_t			*faces;
 	int				contents;
 } brush_t;
 
-typedef struct
-{
+typedef struct {
 	vec3_t		mins, maxs;
 	brush_t		*brushes;		// NULL terminated list
 } brushset_t;
@@ -191,8 +184,7 @@ void MakeFaceEdges (node_t *headnode);
 
 // portals.c ==================================================================
 
-typedef struct portal_s
-{
+typedef struct portal_s {
 	int			planenum;
 	node_t		*nodes[2];		// [0] = front side of planenum
 	struct portal_s	*next[2];	
@@ -249,6 +241,10 @@ void DrawTri (vec3_t p1, vec3_t p2, vec3_t p3);
 // outside.c ==================================================================
 
 qboolean FillOutside (node_t *node);
+
+// readbsp.c ==================================================================
+
+void LoadBSP (void);
 
 //=============================================================================
 

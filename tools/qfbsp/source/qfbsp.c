@@ -765,24 +765,29 @@ ProcessFile (void)
 	QFS_StripExtension (options.bspfile, options.pointfile);
 	strcat (options.pointfile, ".pts");
 	bsp = BSP_New ();
+	if (options.portal) {
+		LoadBSP ();
+		return;
+	}
+
 	// load brushes and entities
 	LoadMapFile (options.mapfile);
 
-	if (!options.onlyents) {
-		remove (options.bspfile);
-		if (!options.usehulls) {
-			options.hullfile[strlen (options.hullfile) - 1] = '1';
-			remove (options.hullfile);
-			options.hullfile[strlen (options.hullfile) - 1] = '2';
-			remove (options.hullfile);
-		}
-		remove (options.portfile);
-		remove (options.pointfile);
-	}
 	if (options.onlyents) {
 		UpdateEntLump ();
 		return;
 	}
+
+	remove (options.bspfile);
+	if (!options.usehulls) {
+		options.hullfile[strlen (options.hullfile) - 1] = '1';
+		remove (options.hullfile);
+		options.hullfile[strlen (options.hullfile) - 1] = '2';
+		remove (options.hullfile);
+	}
+	remove (options.portfile);
+	remove (options.pointfile);
+
 	// init the tables to be shared by all models
 	BeginBSPFile ();
 
@@ -808,7 +813,6 @@ main (int argc, char **argv)
 	DecodeArgs (argc, argv);
 
 // XXX	SetQdirFromPath (argv[i]);
-
 
 	// do it!
 	start = Sys_DoubleTime ();
