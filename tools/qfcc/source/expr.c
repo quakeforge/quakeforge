@@ -291,15 +291,26 @@ type_mismatch (expr_t *e1, expr_t *e2, int op)
 static void
 check_initialized (expr_t *e)
 {
-	if (options.warnings.uninited_variable) {
-		if (e->type == ex_def
-			&& !(e->e.def->type->type == ev_func
-				 && e->e.def->global)
-			&& !(e->e.def->type->type == ev_struct)
-			&& !e->e.def->external
-			&& !e->e.def->initialized) {
-			warning (e, "%s may be used uninitialized", e->e.def->name);
-			e->e.def->initialized = 1;	// only warn once
+	const char *name;
+
+	if (e->type == ex_def
+		&& !(e->e.def->type->type == ev_func
+			 && e->e.def->global)
+		&& !(e->e.def->type->type == ev_struct)
+		&& !e->e.def->external
+		&& !e->e.def->initialized) {
+		name = e->e.def->name;
+		if (options.warnings.uninited_variable)
+			warning (e, "%s may be used uninitialized", name);
+		e->e.def->initialized = 1;	// only warn once
+		if (options.traditional && !e->e.def->set) {
+			e->e.def->set = 1;	// only auto-init once
+			e = assign_expr (e, new_nil_expr ());
+			e->file = current_func->s_file;
+			e->line = current_func->def->line;
+			e->next = current_func->var_init;
+			current_func->var_init = e;
+			notice (e, "auto-initializing %s", name);
 		}
 	}
 }

@@ -274,6 +274,11 @@ emit_function (function_t *f, expr_t *e)
 	if (f->aux)
 		lineno_base = f->aux->source_line;
 
+	while (f->var_init) {
+		emit_expr (f->var_init);
+		f->var_init = f->var_init->next;
+	}
+
 	current_scope = f->scope;
 	while (e) {
 		//printf ("%d ", pr.source_line);

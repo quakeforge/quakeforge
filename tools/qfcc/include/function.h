@@ -46,6 +46,7 @@ typedef struct function_s {
 	struct def_s       *def;
 	struct scope_s     *scope;
 	struct reloc_s     *refs;
+	struct expr_s      *var_init;
 } function_t;
 
 extern function_t *current_func;

@@ -225,7 +225,7 @@ WriteProgdefs (const char *filename)
 			 RESERVED_OFS);
 
 	for (d = pr.scope->head; d; d = d->def_next) {
-		if (!strcmp (d->name, "end_sys_globals"))
+		if (d->name && !strcmp (d->name, "end_sys_globals"))
 			break;
 		if (!d->ofs)
 			continue;
@@ -259,10 +259,10 @@ WriteProgdefs (const char *filename)
 	// print all fields
 	fprintf (f, "typedef struct\n{\n");
 	for (d = pr.scope->head; d; d = d->def_next) {
-		if (!strcmp (d->name, "end_sys_fields"))
+		if (d->name && !strcmp (d->name, "end_sys_fields"))
 			break;
 
-		if (!d->ofs || d->type->type != ev_field)
+		if (!d->name || !d->ofs || d->type->type != ev_field)
 			continue;
 
 		switch (d->type->aux_type->type) {

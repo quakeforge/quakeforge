@@ -43,6 +43,7 @@ typedef struct def_s {
 	struct reloc_s *refs;			// for relocations
 
 	unsigned		initialized:1;	// for uninit var detection
+	unsigned		set:1;			// uninit var auto-inited
 	unsigned		constant:1;	// 1 when a declaration included "= immediate"
 	unsigned		freed:1;		// already freed from the scope
 	unsigned		removed:1;		// already removed from the symbol table
