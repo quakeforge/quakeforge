@@ -2054,7 +2054,7 @@ Cmd_CmdList_f (void)
 	cmd_function_t *cmd;
 	int         i;
 	int         show_description = 0;
-
+	
 	if (Cmd_Argc () > 1)
 		show_description = 1;
 	for (cmd = cmd_functions, i = 0; cmd; cmd = cmd->next, i++) {
@@ -2348,21 +2348,23 @@ Cmd_Strlen_f (void)
 }
 
 
-void
-Cmd_Writefile_f (void)
-{
-	VFile *file;
-	char *d, *p, *path;
+/* File access */
 
-	if (Cmd_Restricted ()) {
-		Cmd_Error ("writefile: access to restricted command denied.\n");
-		return;
-	}
-	if (Cmd_Argc() != 3) {
-		Cmd_Error ("writefile: invalid number of arguments.\n");
-		return;
-	}
-	p = path = cmd_activebuffer->argv[1]->processed->str;
+/*
+	Cmd_CollapsePath
+
+	Collapses .. and . in a path
+	and returns 1 if permission
+	to access it is granted.
+	Thanks to taniwha for this
+	mystic routine.
+*/
+
+int
+Cmd_CollapsePath (char *str)
+{
+	char *d, *p, *path;
+	p = path = str;
 	while (*p) {
 		if (p[0] == '.') {
 			if (p[1] == '.') {
@@ -2396,10 +2398,33 @@ Cmd_Writefile_f (void)
 	if ( (!path[0])
 	  || (path[0] == '.' && path[1] == '.' && (path[2] == '/' || path [2] == 0))
 	  || (path[strlen (path) - 1] =='/') ) {
-		Cmd_Error ("writefile: invalid path or filename\n");
+		return 0;
+	}
+	return 1;
+}
+void
+Cmd_Writefile_f (void)
+{
+	VFile *file;
+	char *path;
+
+	if (Cmd_Restricted ()) {
+		Cmd_Error ("writefile: access to restricted command denied.\n");
 		return;
 	}
-	Sys_DPrintf ("writefile: opening %s/%s\n", com_gamedir, Cmd_Argv(1));
+	if (Cmd_Argc() != 3) {
+		Cmd_Error ("writefile: invalid number of arguments.\n");
+		return;
+	}
+	path = strdup (Cmd_Argv(1));
+	SYS_CHECKMEM (path);
+	if (!Cmd_CollapsePath (path)) {
+			free (path);
+			Cmd_Error ("writefile: access to restricted directory/file denied.\n");
+			return;
+	}
+	free(path);
+	Sys_DPrintf ("writefile: opening %s/%s\n", com_gamedir, path);
 	if (!(file = Qopen (va("%s/%s", com_gamedir, Cmd_Argv(1)), "w"))) {
 		Cmd_Error (va ("writefile: could not open file for writing: %s\n", strerror (errno)));
 		return;

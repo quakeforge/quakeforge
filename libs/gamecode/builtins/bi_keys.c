@@ -58,7 +58,7 @@ bi_Key_SetBinding (progs_t *pr)
 		binding = NULL;	/* unbind a binding */
 	}
 
-	Key_SetBinding (target, keynum, binding);
+	Key_SetBinding (target, keynum, binding, false);
 }
 
 /*
@@ -77,7 +77,7 @@ bi_Key_LookupBinding (progs_t *pr)
 	const char *keybind = NULL;
 
 	for (i = 0; i < QFK_LAST; i++) {
-		keybind = keybindings[target][i];
+		keybind = keybindings[target][i].str;
 		if(keybind == NULL) { continue; }
 		if(strcmp(keybind, binding) == 0) {
 			bindnum--;
@@ -105,7 +105,7 @@ bi_Key_CountBinding (progs_t *pr)
 	const char *keybind = NULL;
 
 	for (i = 0; i < QFK_LAST; i++) {
-		keybind = keybindings[target][i];
+		keybind = keybindings[target][i].str;
 		if(keybind == NULL) { continue; }
 		if(strcmp(keybind, binding) == 0) {
 			res++;

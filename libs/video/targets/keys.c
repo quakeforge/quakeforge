@@ -59,7 +59,7 @@ cvar_t     *in_bind_imt;
 keydest_t   key_dest = key_console;
 imt_t		game_target = IMT_CONSOLE;
 
-char       *keybindings[IMT_LAST][QFK_LAST];
+struct keybind_s keybindings[IMT_LAST][QFK_LAST];
 int			keydown[QFK_LAST];
 
 static int  keyhelp;
@@ -385,8 +385,10 @@ Key_Game (knum_t key, short unicode)
 {
 	const char *kb;
 	char        cmd[1024];
+	cmd_buffer_t *tbuffer;
 
 	kb = Key_GetBinding(game_target, key);
+	tbuffer = keybindings[game_target][key].restricted ? cmd_legacybuffer : cmd_keybindbuffer;
 	if (!kb && (game_target > IMT_0))
 		kb = Key_GetBinding(IMT_0, key);
 
@@ -400,15 +402,15 @@ Key_Game (knum_t key, short unicode)
 	if (!keydown[key]) {
 		if (kb[0] == '+') {
 			snprintf (cmd, sizeof (cmd), "-%s %d\n", kb + 1, key);
-			Cbuf_AddTextTo (cmd_keybindbuffer, cmd);
+			Cbuf_AddTextTo (tbuffer, cmd);
 		}
 	} else if (keydown[key] == 1) {
 		if (kb[0] == '+') {
 			snprintf (cmd, sizeof (cmd), "%s %d\n", kb, key);
-			Cbuf_AddTextTo (cmd_keybindbuffer, cmd);
+			Cbuf_AddTextTo (tbuffer, cmd);
 		} else {
 			snprintf (cmd, sizeof (cmd), "%s\n", kb);
-			Cbuf_AddTextTo (cmd_keybindbuffer, cmd);
+			Cbuf_AddTextTo (tbuffer, cmd);
 		}
 	}
 	return true;
@@ -533,7 +535,7 @@ Key_In_Unbind (const char *imt, const char *key)
 		return;
 	}
 
-	Key_SetBinding (t, b, NULL);
+	Key_SetBinding (t, b, NULL, false);
 }
 
 void
@@ -553,11 +555,11 @@ Key_Unbindall_f (void)
 
 	for (j = 0; j < IMT_LAST; j++)
 		for (i = 0; i < QFK_LAST; i++)
-			Key_SetBinding (j, i, NULL);
+			Key_SetBinding (j, i, NULL, false);
 }
 
 void
-Key_In_Bind (const char *imt, const char *key, const char *cmd)
+Key_In_Bind (const char *imt, const char *key, const char *cmd, qboolean restricted)
 {
 	int t, b;
 
@@ -581,7 +583,7 @@ Key_In_Bind (const char *imt, const char *key, const char *cmd)
 			Con_Printf ("%s %s is not bound\n", imt, key);
 		return;
 	}
-	Key_SetBinding (t, b, cmd);
+	Key_SetBinding (t, b, cmd, restricted);
 }
 
 void
@@ -614,7 +616,7 @@ Key_In_Bind_f (void)
 		}
 	}
 
-	Key_In_Bind (imt, key, cmd);
+	Key_In_Bind (imt, key, cmd, Cmd_Restricted ());
 }
 
 void
@@ -659,7 +661,7 @@ Key_Bind_f (void)
 		}
 	}
 
-	Key_In_Bind (imt, key, cmd);
+	Key_In_Bind (imt, key, cmd, Cmd_Restricted ());
 }
 
 void
@@ -827,22 +829,23 @@ Key_Init_Cvars (void)
 const char *
 Key_GetBinding (imt_t imt, knum_t key)
 {
-	return keybindings[imt][key];
+	return keybindings[imt][key].str;
 }
 
 void
-Key_SetBinding (imt_t target, knum_t keynum, const char *binding)
+Key_SetBinding (imt_t target, knum_t keynum, const char *binding, qboolean restricted)
 {
 	if (keynum == -1)
 		return;
 
 	// free old bindings
-	if (keybindings[target][keynum]) {
-		free (keybindings[target][keynum]);
-		keybindings[target][keynum] = NULL;
+	if (keybindings[target][keynum].str) {
+		free (keybindings[target][keynum].str);
+		keybindings[target][keynum].str = NULL;
 	}
 	// allocate memory for new binding
 	if (binding) {
-		keybindings[target][keynum] = strdup(binding);
+		keybindings[target][keynum].str = strdup(binding);
 	}
+	keybindings[target][keynum].restricted = restricted;
 }

@@ -378,7 +378,10 @@ typedef struct {
 extern keydest_t	key_dest;
 extern imt_t		game_target;
 
-extern char		*keybindings[IMT_LAST][QFK_LAST];
+extern struct keybind_s {
+	char *str;
+	qboolean restricted;
+} keybindings[IMT_LAST][QFK_LAST];
 extern int		keydown[QFK_LAST];
 
 void Key_Event (knum_t key, short unicode, qboolean down);
@@ -387,7 +390,7 @@ void Key_Init_Cvars (void);
 void Key_WriteBindings (VFile *f);
 void Key_ClearStates (void);
 const char *Key_GetBinding (imt_t imt, knum_t key);
-void Key_SetBinding (imt_t target, knum_t keynum, const char *binding);
+void Key_SetBinding (imt_t target, knum_t keynum, const char *binding, qboolean restricted);
 
 
 const char *Key_KeynumToString (knum_t keynum);
