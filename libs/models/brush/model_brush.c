@@ -91,9 +91,6 @@ Mod_DecompressVis (byte * in, model_t *model)
 	row = (model->numleafs + 7) >> 3;
 	out = decompressed;
 
-#if 0
-	memcpy (out, in, row);
-#else
 	if (!in) {							// no vis info, so make all visible
 		while (row) {
 			*out++ = 0xff;
@@ -115,7 +112,6 @@ Mod_DecompressVis (byte * in, model_t *model)
 			c--;
 		}
 	} while (out - decompressed < row);
-#endif
 
 	return decompressed;
 }

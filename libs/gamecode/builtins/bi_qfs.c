@@ -39,20 +39,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 # include <strings.h>
 #endif
 
-#ifdef HAVE_FNMATCH_H
-# define model_t sunmodel_t
-# include <fnmatch.h>
-# undef model_t
-#else
-# ifdef WIN32
-# include "fnmatch.h"
-# endif
-#endif
-
-#ifndef HAVE_FNMATCH_PROTO
-int         fnmatch (const char *__pattern, const char *__string, int __flags);
-#endif
-
 #include "QF/csqc.h"
 #include "QF/progs.h"
 #include "QF/quakefs.h"
