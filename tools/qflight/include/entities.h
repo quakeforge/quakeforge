@@ -31,6 +31,7 @@
 #define __entities_h
 
 #define DEFAULTLIGHTLEVEL	300
+#define DEFAULTFALLOFF 1.0f
 
 typedef struct epair_s {
 	struct epair_s *next;
@@ -41,7 +42,7 @@ typedef struct epair_s {
 typedef struct entity_s {
 	const char *classname;
 	vec3_t      origin;
-	float       angle;
+	vec_t       angle;
 	int         light;
 	// LordHavoc: added falloff (smaller fractions = bigger light area),
 	// color, and lightradius (also subbrightness to implement lightradius)
@@ -68,6 +69,7 @@ extern int num_entities;
 const char *ValueForKey (entity_t *ent, const char *key);
 void SetKeyValue (entity_t *ent, const char *key, const char *value);
 float FloatForKey (entity_t *ent, const char *key);
+entity_t *FindEntityWithKeyPair(char *key, char *value);
 void GetVectorForKey (entity_t *ent, const char *key, vec3_t vec);
 
 void LoadEntities (void);

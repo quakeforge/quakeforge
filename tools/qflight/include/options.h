@@ -34,9 +34,12 @@
 typedef struct {
 	int			verbosity;		// 0=silent
 	int			threads;
+	int         novis;
 	qboolean	extra;
-	float		distance;
-	float		range;
+	vec_t		distance;
+	vec_t		range;
+	vec_t       globallightscale;
+	const char *lightsfilename;
 } options_t;
 
 extern options_t options;

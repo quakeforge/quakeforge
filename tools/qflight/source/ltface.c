@@ -461,6 +461,7 @@ LightFace (int surfnum)
 	lightinfo_t	l;
 	vec_t		total;
 	vec_t		*light;
+	lightchain_t *lightchain;
 
 	f = bsp->faces + surfnum;
 
@@ -500,9 +501,12 @@ LightFace (int surfnum)
 
 	// cast all lights
 	l.numlightstyles = 0;
-	for (i = 0; i < num_entities; i++) {
-		if (entities[i].light)
-			SingleLightFace (&entities[i], &l);
+	for (lightchain = surfacelightchain[surfnum]; lightchain;
+		 lightchain = lightchain->next) {
+		SingleLightFace (lightchain->light, &l);
+	}
+	for (i = 0; i < num_novislights; i++) {
+		SingleLightFace (novislights[i], &l);
 	}
 
 	FixMinlight (&l);

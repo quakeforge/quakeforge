@@ -54,6 +54,7 @@ static struct option const long_options[] = {
 	{"version", no_argument, 0, 'V'},
 	{"threads", required_argument, 0, 't'},
 	{"extra", no_argument, 0, 'e'},
+	{"novis", no_argument, 0, 'N'},
 	{"distance", required_argument, 0, 'd'},	
 	{"range", required_argument, 0, 'r'},
 	{"file", required_argument, 0, 'f'},
@@ -65,6 +66,7 @@ static const char *short_options =
 	"v"		// verbose
 	"h"		// help
 	"V"		// version
+	"N"		// novis
 	"t:"	// threads
 	"e"		// extra sampling
 	"d:"	// scale distance
@@ -83,6 +85,7 @@ usage (int status)
 		"    -v, --verbose             Display more output than usual\n"
 		"    -h, --help                Display this help and exit\n"
 		"    -V, --version             Output version information and exit\n"
+		"    -N, --novis               Don't use vis data\n"
 		"    -t, --threads [num]       Number of threads to use\n"
 		"    -e, --extra               Apply extra sampling\n"
 		"    -d, --distance [scale]    Scale distance\n"
@@ -96,11 +99,13 @@ DecodeArgs (int argc, char **argv)
 {
 	int		c;
 
+	memset (&options, 0, sizeof (options));
 	options.verbosity = 0;
 	options.threads = 1;
 	options.extra = false;
 	options.distance = 1.0;
 	options.range = 0.5;
+	options.globallightscale = 1.0;
 	bspfile = NULL;
 
 	while ((c = getopt_long (argc, argv, short_options, long_options, 0))
@@ -114,6 +119,9 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'h':					// help
 				usage (0);
+				break;
+			case 'N':					// novis
+				options.novis = 1;
 				break;
 			case 'V':					// version
 				printf ("%s version %s\n", PACKAGE, VERSION);

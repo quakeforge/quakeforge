@@ -71,6 +71,7 @@ dstring_t *lightdata;
 
 dmodel_t *bspmodel;
 int bspfileface;		// next surface to dispatch
+int bspfileent;			// next entity to dispatch
 
 vec3_t bsp_origin;
 
@@ -94,9 +95,24 @@ GetFileSpace (int size)
 }
 
 static void *
+VisThread (void *junk)
+{
+	int         i;
+
+	while (1) {
+		LOCK;
+		i = bspfileent++;
+		UNLOCK;
+		if (i >= num_entities)
+			return 0;
+		VisEntity (i);
+	}
+}
+
+static void *
 LightThread (void *junk)
 {
-	int i;
+	int         i;
 
 	while (1) {
 		LOCK;
@@ -113,7 +129,11 @@ static void
 LightWorld (void)
 {
 	lightdata = dstring_new ();
+	surfacelightchain = (lightchain_t **) calloc (bsp->numfaces,
+												  sizeof (lightchain_t *));
 
+	VisThread (0);	// not worth threading :/
+	VisStats ();
 	RunThreadsOn (LightThread);
 
 	BSP_AddLighting (bsp, lightdata->str, lightdata->size);

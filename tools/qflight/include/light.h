@@ -32,6 +32,7 @@
 
 #define	ON_EPSILON	0.1
 #define	MAXLIGHTS	1024
+#define LIGHTDISTBIAS 65536.0
 
 extern float scaledist;
 extern float scalecos;
@@ -60,7 +61,19 @@ int GetFileSpace (int size);
 void TransformSample (vec3_t in, vec3_t out);
 void RotateSample (vec3_t in, vec3_t out);
 
+void VisEntity (int ent_index);
+void VisStats (void);
+
 extern struct bsp_s *bsp;
 extern struct dstring_s *lightdata;
+
+typedef struct lightchain_s {
+	struct lightchain_s *next;
+	struct entity_s *light;
+} lightchain_t;
+
+extern lightchain_t **surfacelightchain;
+extern struct entity_s **novislights;
+extern int num_novislights;
 
 #endif// __light_h
