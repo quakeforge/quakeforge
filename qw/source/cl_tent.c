@@ -199,6 +199,17 @@ CL_AllocBeam (int ent)
 }
 
 void
+CL_ClearBeam (beam_t *b)
+{
+	if (b->ent_count) {
+		entity_t   *e = b->ent_list + b->ent_count;
+		while (e != b->ent_list)
+			R_RemoveEfrags (e-- - 1);
+		b->ent_count = 0;
+	}
+}
+
+void
 CL_ParseBeam (model_t *m)
 {
 	beam_t     *b;
@@ -211,12 +222,7 @@ CL_ParseBeam (model_t *m)
 	MSG_ReadCoordV (net_message, end);
 
 	if ((b = CL_AllocBeam (ent))) {
-		if (b->ent_count) {
-			entity_t   *e = b->ent_list + b->ent_count;
-			while (e != b->ent_list)
-				R_RemoveEfrags (e-- - 1);
-			b->ent_count = 0;
-		}
+		CL_ClearBeam (b);
 		b->entity = ent;
 		b->model = m;
 		b->endtime = cl.time + 0.2;
@@ -414,17 +420,13 @@ CL_UpdateBeams (void)
 	// update lightning
 	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++) {
 		if (!b->model || b->endtime < cl.time) {
-			if (b->ent_count) {
-				entity_t   *e = b->ent_list + b->ent_count;
-				while (e != b->ent_list)
-					R_RemoveEfrags (e-- - 1);
-				b->ent_count = 0;
-			}
+			CL_ClearBeam (b);
 			continue;
 		}
 
 		// if coming from the player, update the start position
 		if (b->entity == cl.viewentity) {
+			CL_ClearBeam (b);
 			VectorCopy (cl.simorg, b->start);
 		}
 		// calculate pitch and yaw
