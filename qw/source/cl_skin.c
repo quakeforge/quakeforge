@@ -80,7 +80,8 @@ Skin_NextDownload (void)
 			return;						// started a download
 	}
 
-	Netchan_AckPacket (&cls.netchan);
+	if (!cls.demoplayback)
+		Netchan_AckPacket (&cls.netchan);
 
 	cls.downloadtype = dl_none;
 

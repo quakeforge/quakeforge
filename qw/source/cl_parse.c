@@ -268,7 +268,8 @@ Model_NextDownload (void)
 			return;						// started a download
 	}
 
-	Netchan_AckPacket (&cls.netchan);
+	if (!cls.demoplayback)
+		Netchan_AckPacket (&cls.netchan);
 
 	for (i = 1; i < MAX_MODELS; i++) {
 		char *info_key = 0;
@@ -350,7 +351,8 @@ Sound_NextDownload (void)
 			return;						// started a download
 	}
 
-	Netchan_AckPacket (&cls.netchan);
+	if (!cls.demoplayback)
+		Netchan_AckPacket (&cls.netchan);
 
 	for (i = 1; i < MAX_SOUNDS; i++) {
 		if (!cl.sound_name[i][0])

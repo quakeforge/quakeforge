@@ -534,9 +534,7 @@ PM_AirMove (void)
 		// add gravity
 		pmove.velocity[2] -= movevars.entgravity * movevars.gravity *
 			frametime;
-#if 0
-		PM_FlyMove ();
-#else
+
 		if (!PM_FlyMove ()) {
 			// the move didn't get blocked
 			PM_CategorizePosition ();
@@ -554,7 +552,6 @@ PM_AirMove (void)
 				VectorCopy (original, pmove.origin);
 			}
 		}
-#endif
 	}
 }
 
