@@ -192,6 +192,8 @@ R_RunSpikeEffect (vec3_t pos, particle_effect_t type)
 		case PE_SUPERSPIKE:
 			R_RunParticleEffect (pos, 0, 20);
 			break;
+		default: // FIXME: this right?
+			break;
 	}
 }
 
@@ -210,6 +212,8 @@ R_RunPuffEffect (vec3_t pos, particle_effect_t type, byte cnt)
 			break;
 		case PE_LIGHTNINGBLOOD:
 			R_RunParticleEffect (pos, 225, 50);
+			break;
+		default: // FIXME: this right?
 			break;
 	}
 }
@@ -600,6 +604,8 @@ R_DrawParticles (void)
 				case pt_slowgrav:
 				case pt_grav:
 					p->vel[2] -= grav;
+					break;
+				default: // FIXME: is this right?
 					break;
 			}
 		}

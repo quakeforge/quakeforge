@@ -49,6 +49,7 @@ void
 Skin_Set_Translate (int top, int bottom, void *_dest)
 {
 	int         i, j;
+	byte *dest2; // FIXME: bleargh, this needs cleaning up
 
 	top = bound (0, top, 13) * 16;
 	bottom = bound (0, bottom, 13) * 16;
@@ -149,25 +150,25 @@ Skin_Set_Translate (int top, int bottom, void *_dest)
 				  r_pixbytes);
 	}
 
-	byte *dest = (byte *) _dest;
+	dest2 = (byte *) _dest;
 
 	for (j = 0;j < 256;j++)
-		dest[j] = d_8to24table[j];
+		dest2[j] = d_8to24table[j];
 
 	if (top < 128) {
 		for (j = 0;j < 16;j++)
-			dest[TOP_RANGE + j] = d_8to24table[top + j];
+			dest2[TOP_RANGE + j] = d_8to24table[top + j];
 	} else {
 		for (j = 0; j < 16; j++)
-			dest[TOP_RANGE + j] = d_8to24table[top + 15 - j];
+			dest2[TOP_RANGE + j] = d_8to24table[top + 15 - j];
 	}
 
 	if (bottom < 128) {
 		for (j = 0;j < 16;j++)
-			dest[BOTTOM_RANGE + j] = d_8to24table[bottom + j];
+			dest2[BOTTOM_RANGE + j] = d_8to24table[bottom + j];
 	} else {
 		for (j = 0; j < 16; j++)
-			dest[BOTTOM_RANGE + j] = d_8to24table[bottom + 15 - j];
+			dest2[BOTTOM_RANGE + j] = d_8to24table[bottom + 15 - j];
 	}
 }
 
