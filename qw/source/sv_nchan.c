@@ -39,6 +39,17 @@
 #include "QF/msg.h"
 #include "server.h"
 
+void
+PushBackbuf (client_t *cl)
+{
+	memset (&cl->backbuf, 0, sizeof (cl->backbuf));
+	cl->backbuf.allowoverflow = true;
+	cl->backbuf.data = cl->backbuf_data[cl->num_backbuf];
+	cl->backbuf.maxsize = sizeof (cl->backbuf_data[cl->num_backbuf]);
+	cl->backbuf_size[cl->num_backbuf] = 0;
+	cl->num_backbuf++;
+}
+
 // check to see if client block will fit, if not, rotate buffers
 void
 ClientReliableCheckBlock (client_t *cl, int maxsize)
@@ -47,12 +58,7 @@ ClientReliableCheckBlock (client_t *cl, int maxsize)
 		cl->netchan.message.cursize > cl->netchan.message.maxsize - maxsize - 1) {
 		// we would probably overflow the buffer, save it for next
 		if (!cl->num_backbuf) {
-			memset (&cl->backbuf, 0, sizeof (cl->backbuf));
-			cl->backbuf.allowoverflow = true;
-			cl->backbuf.data = cl->backbuf_data[0];
-			cl->backbuf.maxsize = sizeof (cl->backbuf_data[0]);
-			cl->backbuf_size[0] = 0;
-			cl->num_backbuf++;
+			PushBackbuf (cl);
 		}
 
 		if (cl->backbuf.cursize > cl->backbuf.maxsize - maxsize - 1) {
@@ -64,12 +70,7 @@ ClientReliableCheckBlock (client_t *cl, int maxsize)
 														// client
 				return;
 			}
-			memset (&cl->backbuf, 0, sizeof (cl->backbuf));
-			cl->backbuf.allowoverflow = true;
-			cl->backbuf.data = cl->backbuf_data[cl->num_backbuf];
-			cl->backbuf.maxsize = sizeof (cl->backbuf_data[cl->num_backbuf]);
-			cl->backbuf_size[cl->num_backbuf] = 0;
-			cl->num_backbuf++;
+			PushBackbuf (cl);
 		}
 	}
 }
