@@ -721,6 +721,40 @@ SVC_GetChallenge (void)
 							svs.challenges[i].challenge, extended);
 }
 
+static client_t *
+SVC_AllocClient (int spectator)
+{
+	client_t   *cl;
+	int         i, clients, spectators, free;
+
+	// count up the clients and spectators
+	clients = 0;
+	spectators = 0;
+	free = 0;
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+		if (cl->state == cs_free)
+			free++;
+		else if (cl->spectator)
+			spectators++;
+		else
+			clients++;
+	}
+
+	// if at server limits, refuse connection
+	if (!free || (spectator && spectators >= maxspectators->int_val)
+		|| (!spectator && clients >= maxclients->int_val)) {
+		return 0;
+	}
+	// find a client slot
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+		if (cl->state == cs_free) {
+			return cl;
+		}
+	}
+	SV_Printf ("WARNING: miscounted available clients\n");
+	return 0;
+}
+
 /*
 	SVC_DirectConnect
 
@@ -734,7 +768,7 @@ SVC_DirectConnect (void)
 	client_t   *cl, *newcl;
 	client_t    temp;
 	edict_t    *ent;
-	int         challenge, clients, edictnum, qport, spectators, version, i;
+	int         challenge, edictnum, qport, version, i;
 	static int  userid;
 	netadr_t    adr;
 	qboolean    spectator;
@@ -855,36 +889,9 @@ SVC_DirectConnect (void)
 			break;
 		}
 	}
-
-	// count up the clients and spectators
-	clients = 0;
-	spectators = 0;
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-		if (cl->state == cs_free)
-			continue;
-		if (cl->spectator)
-			spectators++;
-		else
-			clients++;
-	}
-
-	// if at server limits, refuse connection
-	if ((spectator && spectators >= maxspectators->int_val)
-		|| (!spectator && clients >= maxclients->int_val)) {
+	if (!(newcl = SVC_AllocClient (spectator))) {
 		SV_Printf ("%s:full connect\n", NET_AdrToString (adr));
 		Netchan_OutOfBandPrint (adr, "%c\nserver is full\n\n", A2C_PRINT);
-		return;
-	}
-	// find a client slot
-	newcl = NULL;
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-		if (cl->state == cs_free) {
-			newcl = cl;
-			break;
-		}
-	}
-	if (!newcl) {
-		SV_Printf ("WARNING: miscounted available clients\n");
 		return;
 	}
 	// build a new connection
