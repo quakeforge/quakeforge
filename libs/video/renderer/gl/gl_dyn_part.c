@@ -169,18 +169,10 @@ R_ParticleExplosion (vec3_t org)
 /*
 	R_NewExplosion (org);
 */
-	if (cl_surprise->int_val)
-	{
-		particle_new_random (pt_smokecloud, part_tex_smoke, org, 4,
-					30, 8, r_realtime + 5,
-					(rand () & 255),
-					128 + (rand () & 63));
-	} else {
-		particle_new_random (pt_smokecloud, part_tex_smoke, org, 4,
+	particle_new_random (pt_smokecloud, part_tex_smoke, org, 4,
 					30, 8, r_realtime + 5, 
 					(rand () & 7) + 8,
 					128 + (rand () & 63));
-	}
 }
 void
 R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
@@ -439,7 +431,8 @@ R_RocketTrail (entity_t *ent)
 
 		particle_new (pt_smoke, part_tex_smoke, ent->old_origin,
 					  pscale + percent * 4.0, vec3_origin,
-					  r_realtime + 2.0 - percent * 2.0, 12 + (rand () & 3),
+					  r_realtime + 2.0 - percent * 2.0, 
+					  12 + (rand () & 3),
 					  128 + (rand () & 31) - percent * 100.0);
 		if (numparticles >= r_maxparticles)
 			break;
@@ -473,7 +466,8 @@ R_GrenadeTrail (entity_t *ent)
 
 		particle_new (pt_smoke, part_tex_smoke, ent->old_origin,
 					  pscale + percent * 4.0, vec3_origin,
-					  r_realtime + 2.0 - percent * 2.0, (rand () & 3),
+					  r_realtime + 2.0 - percent * 2.0, 
+					  (rand () & 3),
 					  160 + (rand () & 31) - percent * 100.0);
 		if (numparticles >= r_maxparticles)
 			break;
