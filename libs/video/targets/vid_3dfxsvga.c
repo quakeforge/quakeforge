@@ -59,43 +59,43 @@ static const char rcsid[] =
 #include "sbar.h"
 #include "r_cvar.h"
 
-#define WARP_WIDTH              320
-#define WARP_HEIGHT             200
+#define WARP_WIDTH				320
+#define WARP_HEIGHT				200
 
 #define GLAPI extern
 #define GLAPIENTRY
 
-#define FXMESA_NONE             0       /* to terminate attribList */
+#define FXMESA_NONE				0		// to terminate attribList
 #define FXMESA_DOUBLEBUFFER     10
-#define FXMESA_ALPHA_SIZE       11      /* followed by an integer */
-#define FXMESA_DEPTH_SIZE       12      /* followed by an integer */
+#define FXMESA_ALPHA_SIZE       11		// followed by an integer
+#define FXMESA_DEPTH_SIZE		12		// followed by an integer
 
-#define GL_DITHER                               0x0BD0
+#define GL_DITHER				0x0BD0
 
 typedef struct tfxMesaContext *fxMesaContext;
 
 typedef long	FxI32;
-typedef FxI32 GrScreenResolution_t;
-typedef FxI32 GrDitherMode_t;
-typedef FxI32 GrScreenRefresh_t;
+typedef FxI32	GrScreenResolution_t;
+typedef FxI32	GrDitherMode_t;
+typedef FxI32	GrScreenRefresh_t;
 
-#define GR_REFRESH_75Hz   0x3
+#define GR_REFRESH_75Hz			0x3
 
-#define GR_DITHER_2x2           0x1
-#define GR_DITHER_4x4           0x2
-#define GR_RESOLUTION_320x200   0x0
-#define GR_RESOLUTION_320x240   0x1
-#define GR_RESOLUTION_400x256   0x2
-#define GR_RESOLUTION_512x384   0x3
-#define GR_RESOLUTION_640x200   0x4
-#define GR_RESOLUTION_640x350   0x5
-#define GR_RESOLUTION_640x400   0x6
-#define GR_RESOLUTION_640x480   0x7
-#define GR_RESOLUTION_800x600   0x8
-#define GR_RESOLUTION_960x720   0x9
-#define GR_RESOLUTION_512x256   0xb
-#define GR_RESOLUTION_856x480   0xa
-#define GR_RESOLUTION_400x300   0xF
+#define GR_DITHER_2x2			0x1
+#define GR_DITHER_4x4			0x2
+#define GR_RESOLUTION_320x200	0x0
+#define GR_RESOLUTION_320x240	0x1
+#define GR_RESOLUTION_400x256	0x2
+#define GR_RESOLUTION_512x384	0x3
+#define GR_RESOLUTION_640x200	0x4
+#define GR_RESOLUTION_640x350	0x5
+#define GR_RESOLUTION_640x400	0x6
+#define GR_RESOLUTION_640x480	0x7
+#define GR_RESOLUTION_800x600	0x8
+#define GR_RESOLUTION_960x720	0x9
+#define GR_RESOLUTION_512x256	0xb
+#define GR_RESOLUTION_856x480	0xa
+#define GR_RESOLUTION_400x300	0xF
 
 void (* qf_fxMesaDestroyContext) (fxMesaContext ctx);
 void (* qf_fxMesaSwapBuffers) (void);
@@ -105,11 +105,42 @@ void (* qf_fxMesaMakeCurrent) (fxMesaContext ctx);
 // FIXME!!!!! This belongs in include/qfgl_ext.h -- deek
 typedef void (GLAPIENTRY * QF_3DfxSetDitherModeEXT) (GrDitherMode_t mode);
 
-
 static fxMesaContext fc = NULL;
 
-int         VID_options_items = 0;
+int			VID_options_items = 0;
 
+
+#if defined(HAVE_DLOPEN)
+
+void * (* glGetProcAddress) (const char *symbol)= NULL;
+void * (* getProcAddress) (void *handle, const char *symbol);
+
+void *
+QFGL_LoadLibrary (void)
+{
+	void   *handle;
+
+	if (!(handle = dlopen (gl_driver->string, RTLD_NOW))) {
+		Sys_Error ("Couldn't load OpenGL library %s: %s", gl_driver->string,
+				   dlerror ());
+	}
+	getProcAddress = dlsym;
+	glGetProcAddress = dlsym (handle, "glXGetProcAddressARB");
+	return handle;
+}
+#else
+
+# error "Cannot load libraries: %s was not configured with DSO support"
+
+// the following is to avoid other compiler errors
+void * (* getProcAddress) (void *handle, const char *symbol);
+
+void *
+QFGL_LoadLibrary (void)
+{
+	return 0;
+}
+#endif  // HAVE_DLOPEN
 
 
 void

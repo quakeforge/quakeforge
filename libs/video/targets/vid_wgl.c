@@ -93,28 +93,27 @@ typedef struct {
 	int         height;
 } lmode_t;
 
-lmode_t     lowresmodes[] = {
+lmode_t lowresmodes[] = {
 	{320, 200},
 	{320, 240},
 	{400, 300},
 	{512, 384},
 };
 
-
 // FIXME: Only used by MGL ..
-qboolean    DDActive;
+qboolean	DDActive;
 
 // If you ever merge screen/gl_screen, don't forget this one
-qboolean    scr_skipupdate;
+qboolean	scr_skipupdate;
 
-static vmode_t modelist[MAX_MODE_LIST];
-static int  nummodes;
-static vmode_t badmode;
+static int		nummodes;
+static vmode_t	modelist[MAX_MODE_LIST];
+static vmode_t	badmode;
 
-DEVMODE win_gdevmode;
+DEVMODE	win_gdevmode;
 qboolean win_canalttab = false;
-static qboolean windowed, leavecurrentmode;
-static int  windowed_mouse;
+static qboolean		windowed, leavecurrentmode;
+static int	windowed_mouse;
 static HICON hIcon;
 
 RECT        WindowRect;
@@ -134,8 +133,6 @@ HDC         maindc;
 HWND WINAPI InitializeWindow (HINSTANCE hInstance, int nCmdShow);
 LONG	CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-
-
 modestate_t modestate = MS_UNINIT;
 
 LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -144,12 +141,43 @@ char       *VID_GetModeDescription (int mode);
 void        VID_UpdateWindowStatus (int window_x, int window_y);
 void        GL_Init (void);
 
+
+#if defined(_WIN32)
+
+void * (* glGetProcAddress) (const char *symbol) = NULL;
+void * (* getProcAddress) (HINSTANCE, LPCSTR);
+
+void *
+QFGL_LoadLibrary (void)
+{
+	void   *handle;
+
+	if (!(handle = LoadLibrary (gl_driver->string)))
+		Sys_Error ("Couldn't load OpenGL library %s!", gl_driver->string);
+	getProcAddress = GetProcAddress;
+	(FARPROC)glGetProcAddress = GetProcAddress (handle, "wglGetProcAddress");
+	return handle;
+}
+#else
+
+# error "Cannot load libraries: %s was not configured with DSO support"
+
+// the following is to avoid other compiler errors
+void * (* getProcAddress) (void *handle, const char *symbol);
+
+void *
+QFGL_LoadLibrary (void)
+{
+	return 0;
+}
+#endif	// _WIN32
+
+
 //====================================
 
-
-int         window_center_x, window_center_y, window_x, window_y, window_width,
+int			window_center_x, window_center_y, window_x, window_y, window_width,
 			window_height;
-RECT        window_rect;
+RECT		window_rect;
 
 
 void

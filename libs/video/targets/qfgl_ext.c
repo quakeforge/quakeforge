@@ -56,6 +56,7 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
@@ -64,6 +65,57 @@ static const char rcsid[] =
 
 #include "r_cvar.h"
 
+
+void *
+QFGL_ProcAddress (void *handle, const char *name, qboolean crit)
+{
+	void	*glfunc = NULL;
+
+	Con_DPrintf ("DEBUG: Finding symbol %s ... ", name);
+
+	if (glGetProcAddress)
+		glfunc = glGetProcAddress (name);
+	if (!glfunc)
+		glfunc = getProcAddress (handle, name);
+	if (glfunc) {
+		Con_DPrintf ("found [%p]\n", glfunc);
+		return glfunc;
+	}
+	Con_DPrintf ("not found\n");
+
+	if (crit) {
+		if (strncmp ("fxMesa", name, 6) == 0) {
+			Con_DPrintf ("This is a console-only client. It requires a "
+						 "mesa-glide compatable library.\n");
+			Con_DPrintf ("If you are trying to run OpenGL QuakeForge in X, "
+						 "please use a -glx or -sgl target.\n");
+		}
+		Sys_Error ("Couldn't load critical OpenGL function %s, exiting...",
+				   name);
+	}
+	return NULL;
+}
+
+// First we need to get all the function pointers declared.
+#define QFGL_NEED(ret, name, args)	\
+	ret (GLAPIENTRY * qf##name) args;
+#include "QF/GL/qf_funcs_list.h"
+#undef QFGL_NEED
+void		*libgl_handle;
+
+// Then we need to open the libGL and set all the symbols.
+qboolean
+GLF_Init (void)
+{
+	libgl_handle = QFGL_LoadLibrary ();
+
+#define QFGL_NEED(ret, name, args)	\
+	qf##name = QFGL_ProcAddress (libgl_handle, #name, true);
+#include "QF/GL/qf_funcs_list.h"
+#undef QFGL_NEED
+
+	return true;
+}
 
 /*
   ParseExtensionList

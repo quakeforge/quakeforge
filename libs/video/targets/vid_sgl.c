@@ -65,10 +65,23 @@ HWND 		mainwindow;
 #define	WARP_WIDTH	320
 #define	WARP_HEIGHT	200
 
-int         VID_options_items = 1;
-int         modestate;
+int			VID_options_items = 1;
+int			modestate;
 
 static SDL_Surface *screen = NULL;
+
+void * (* glGetProcAddress) (const char *symbol) = NULL; // FIXME
+//# error "Cannot load libraries: %s was not configured with DSO support"
+
+// the following is to avoid other compiler errors
+void * (* getProcAddress) (void *handle, const char *symbol);
+
+void *
+QFGL_LoadLibrary (void)
+{
+	return 0;
+}
+//#endif
 
 
 void

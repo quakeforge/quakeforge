@@ -71,24 +71,57 @@ static const char rcsid[] =
 /* GLXContext is a pointer to opaque data. */
 typedef struct __GLXcontextRec *GLXContext;
 
-#define GLX_RGBA                4       /* true if RGBA mode */
-#define GLX_DOUBLEBUFFER        5       /* double buffering supported */
-#define GLX_RED_SIZE            8       /* number of red component bits */
-#define GLX_GREEN_SIZE          9       /* number of green component bits */
-#define GLX_BLUE_SIZE           10      /* number of blue component bits */
-#define GLX_DEPTH_SIZE          12      /* number of depth bits */
+#define GLX_RGBA				4		// true if RGBA mode
+#define GLX_DOUBLEBUFFER		5		// double buffering supported
+#define GLX_RED_SIZE			8		// number of red component bits
+#define GLX_GREEN_SIZE			9		// number of green component bits
+#define GLX_BLUE_SIZE			10		// number of blue component bits
+#define GLX_DEPTH_SIZE			12		// number of depth bits
 
 static GLXContext ctx = NULL;
 typedef XID GLXDrawable;
 
 void (* qfglXSwapBuffers) (Display *dpy, GLXDrawable drawable);
 XVisualInfo* (* qfglXChooseVisual) (Display *dpy, int screen, int *attribList);
-GLXContext (* qfglXCreateContext) (Display *dpy, XVisualInfo *vis, GLXContext shareList, Bool direct);
+GLXContext (* qfglXCreateContext) (Display *dpy, XVisualInfo *vis,
+								   GLXContext shareList, Bool direct);
 Bool (* qfglXMakeCurrent) (Display *dpy, GLXDrawable drawable, GLXContext ctx);
 
 
 /*-----------------------------------------------------------------------*/
 
+
+#if defined(HAVE_DLOPEN)
+
+void * (* glGetProcAddress) (const char *symbol) = NULL;
+void * (* getProcAddress) (void *handle, const char *symbol);
+
+void *
+QFGL_LoadLibrary (void)
+{
+	void		*handle;
+
+	if (!(handle = dlopen (gl_driver->string, RTLD_NOW))) {
+		Sys_Error ("Couldn't load OpenGL library %s: %s", gl_driver->string,
+				   dlerror ());
+	}
+	getProcAddress = dlsym;
+	glGetProcAddress = dlsym (handle, "glXGetProcAddressARB");
+	return handle;
+}
+#else
+
+# error "Cannot load libraries: %s was not configured with DSO support"
+
+// the following is to avoid other compiler errors
+void * (* getProcAddress) (void *handle, const char *symbol);
+
+void *
+QFGL_LoadLibrary (void)
+{
+	return 0;
+}
+#endif	// HAVE_DLOPEN
 
 
 void
