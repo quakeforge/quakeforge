@@ -314,9 +314,17 @@ GIB_Field_Get_f (void)
 	field = atoi (GIB_Argv(2));
 	
 	if (GIB_Argc() == 4)
-			ifs = GIB_Argv (3);
+		ifs = GIB_Argv (3);
 	else if (!(ifs = GIB_Var_Get_Local (cbuf_active, "ifs")))
-			ifs = " \t\n\r";
+		ifs = " \t\n\r";
+	if (!*ifs) {
+		if (field < strlen(GIB_Argv(1))) {
+			GIB_Argv(1)[field+1] = 0;
+			GIB_Return (GIB_Argv(1)+field);
+		} else
+			GIB_Return ("");
+		return;
+	}
 	for (list = GIB_Argv(1); *list && strchr(ifs, *list); list++);
 	while (field) {
 		while (!strchr(ifs, *list))

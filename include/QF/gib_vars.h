@@ -41,8 +41,10 @@ typedef struct gib_var_s {
 
 void GIB_Var_Set_Local (cbuf_t *cbuf, const char *key, const char *value);
 void GIB_Var_Set_Global (const char *key, const char *value);
+void GIB_Var_Set (cbuf_t *cbuf, char *key, const char *value);
 const char *GIB_Var_Get_Local (cbuf_t *cbuf, const char *key);
 const char *GIB_Var_Get_Global (const char *key);
+const char *GIB_Var_Get (cbuf_t *cbuf, char *key);
 const char *GIB_Var_Get_Key (void *ele, void *ptr);
 void GIB_Var_Free (void *ele, void *ptr);
 void GIB_Var_Free_Global (const char *key);

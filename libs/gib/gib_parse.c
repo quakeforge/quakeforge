@@ -37,9 +37,11 @@ static const char rcsid[] =
 
 #include <ctype.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "QF/sys.h"
 #include "QF/dstring.h"
+#include "QF/va.h"
 #include "QF/cmd.h"
 #include "QF/cbuf.h"
 #include "QF/gib_buffer.h"
@@ -491,6 +493,68 @@ FILTER_ERROR:
 	return;
 }
 
+inline qboolean
+GIB_Parse_Execute_Varexp (cbuf_t *cbuf)
+{
+	char *s;
+	const char *v;
+	double newval, other;
+	cbuf_args_t *args = cbuf->args;
+	if (args->argc == 1) {
+		s = args->argv[0]->str + strlen(args->argv[0]->str) - 2;
+		if (!strcmp (s, "++") || !strcmp (s, "--")) {
+			*s = 0;
+			if ((v = GIB_Var_Get (cbuf, args->argv[0]->str)))
+				newval = atof (v);
+			else
+				newval = 0.0;
+			switch (s[1]) {
+				case '+':
+					newval++;
+					break;
+				case '-':
+					newval--;
+			}
+			GIB_Var_Set (cbuf, args->argv[0]->str, va("%.10g", newval));
+			return true;
+		} else
+			return false;
+	} else if (args->argc == 3 && strlen(args->argv[1]->str) <= 2 && strchr(args->argv[1]->str, '=')) {
+		s = args->argv[1]->str;
+		if (*s == '=') {
+			GIB_Var_Set (cbuf, args->argv[0]->str, args->argv[2]->str);
+			return true;
+		} else if (s[1] == '=') {
+			if ((v = GIB_Var_Get (cbuf, args->argv[0]->str)))
+				newval = atof (v);
+			else
+				newval = 0.0;
+			other = atof (args->argv[2]->str);
+			switch (*s) {
+				case '+':
+					newval += other;
+					break;
+				case '-':
+					newval -= other;
+					break;
+				case '*':
+					newval *= other;
+					break;
+				case '/':
+					newval /= other;
+					break;
+				default:
+					return false;
+			}
+			GIB_Var_Set (cbuf, args->argv[0]->str, va("%.10g", newval));
+			return true;
+		} else
+			return false;
+	} else
+		return false;
+}			
+			
+
 /*
 	GIB_Parse_Execute_Line
 	
@@ -503,7 +567,7 @@ FILTER_ERROR:
 	Assignment to a local/global variable
 	Normal quake console commands
 */
-static void
+void
 GIB_Parse_Execute_Line (cbuf_t *cbuf)
 {
 	cbuf_args_t *args = cbuf->args;
@@ -518,20 +582,7 @@ GIB_Parse_Execute_Line (cbuf_t *cbuf)
 		cbuf_active->down = sub;
 		sub->up = cbuf_active;
 		cbuf_active->state = CBUF_STATE_STACK;
-	} else if (args->argc == 3 && !strcmp (args->argv[1]->str, "=")) {
-		// First, determine global versus local
-		int glob = 0;
-		char *c = 0;
-		if ((c = strchr (args->argv[0]->str, '.'))) // Only check stem
-			*c = 0;
-		glob = (!GIB_Var_Get_Local (cbuf, args->argv[0]->str) && GIB_Var_Get_Global (args->argv[0]->str));
-		if (c)
-			*c = '.';
-		if (glob)
-			GIB_Var_Set_Global (args->argv[0]->str, args->argv[2]->str); // Set the global
-		else
-			GIB_Var_Set_Local (cbuf, args->argv[0]->str, args->argv[2]->str); // Set the local
-	} else	
+	} else if (!GIB_Parse_Execute_Varexp(cbuf))
 		Cmd_Command (cbuf->args);
 	dstring_clearstr (cbuf->line);
 	// If this is a looping buffer and it is now empty,

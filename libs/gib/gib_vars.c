@@ -165,6 +165,33 @@ GIB_Var_Get_Global (const char *key)
 		return 0;
 }
 
+const char *
+GIB_Var_Get (cbuf_t *cbuf, char *key)
+{
+	const char *v;
+	
+	if ((v = GIB_Var_Get_Local (cbuf, key)) || (v = GIB_Var_Get_Global (key)))
+		return v;
+	else
+		return 0;
+}
+
+void
+GIB_Var_Set (cbuf_t *cbuf, char *key, const char *value)
+{
+	int glob = 0;
+	char *c = 0;
+	if ((c = strchr (key, '.'))) // Only check stem
+		*c = 0;
+	glob = (!GIB_Var_Get_Local (cbuf, key) && GIB_Var_Get_Global (key));
+	if (c)
+		*c = '.';
+	if (glob)
+		GIB_Var_Set_Global (key, value); // Set the global
+	else
+		GIB_Var_Set_Local (cbuf, key, value); // Set the local
+}
+
 void
 GIB_Var_Free_Global (const char *key)
 {
