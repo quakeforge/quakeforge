@@ -57,7 +57,7 @@ PL_FreeItem (plitem_t *item)
 		case QFArray: {
 				int 	i = ((plarray_t *) item->data)->numvals;
 
-				while (--i) {
+				while (i-- > 0) {
 					PL_FreeItem (((plarray_t *) item->data)->values[i]);
 				}
 				free (item->data);
@@ -387,6 +387,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 				}
 
 				k->key = (char *) key->data;
+				free (key);
 				k->value = value;
 
 				Hash_Add (dict, k);
