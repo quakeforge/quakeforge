@@ -1,7 +1,7 @@
 INCLUDES= -I$(top_srcdir)/include $(SDL_CFLAGS)
 
-pkglib_LTLIBRARIES=	@CD_PLUGIN_TARGETS@ libcd_null.la
-EXTRA_LTLIBRARIES=	libcd_linux.la libcd_sdl.la libcd_sgi.la libcd_win.la
+pkglib_LTLIBRARIES=	@CD_PLUGIN_TARGETS@
+EXTRA_LTLIBRARIES=	libcd_linux.la libcd_sdl.la libcd_sgi.la libcd_win.la libcd_null.la
 
 
 libcd_linux_la_LDFLAGS=	-version-info 1:0:0

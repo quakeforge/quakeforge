@@ -2,8 +2,8 @@ INCLUDES= -I$(top_srcdir)/include $(ALSA_CFLAGS) $(MME_CFLAGS) $(OSS_CFLAGS) $(S
 
 libdir = @PLUGINDIR@
 
-lib_LTLIBRARIES = @SND_PLUGIN_TARGETS@ libsound_null.la libsound_disk.la
-EXTRA_LTLIBRARIES = libsound_sdl.la libsound_alsa0_5.la libsound_alsa0_9.la libsound_oss.la libsound_sgi.la libsound_sun.la libsound_win.la
+lib_LTLIBRARIES = @SND_PLUGIN_TARGETS@
+EXTRA_LTLIBRARIES = libsound_sdl.la libsound_alsa0_5.la libsound_alsa0_9.la libsound_oss.la libsound_sgi.la libsound_sun.la libsound_win.la libsound_null.la libsound_disk.la
 
 common_sound_files= snd_dma.c snd_mem.c snd_mix.c snd_mixa.S
 

@@ -5,7 +5,8 @@ clean-local:
 
 INCLUDES= -I$(top_srcdir)/include
 
-lib_LTLIBRARIES= libQFsound.la libQFcd.la
+lib_LTLIBRARIES= @CD_TARGETS@ @SND_TARGETS@
+EXTRA_LTLIBRARIES= libQFsound.la libQFcd.la
 
 libQFsound_la_LDFLAGS= -version-info 1:0:0
 libQFsound_la_SOURCES= snd_common.c snd.c

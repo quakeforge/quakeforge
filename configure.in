@@ -927,7 +927,7 @@ dnl Checks for CD-ROM
 dnl ==================================================================
 
 CD_CFLAGS=""
-CD_PLUGIN_TARGETS=""
+CD_PLUGIN_TARGETS="libcd_null.la"
 CDTYPE=""
 
 AC_MSG_CHECKING(for CD audio support)
@@ -1369,9 +1369,10 @@ AC_ARG_WITH(server,
 CL_TARGETS=""
 QW_TARGETS=""
 NQ_TARGETS=""
+
 CD_TARGETS=""
 SND_TARGETS=""
-SND_PLUGIN_TARGETS=""
+SND_PLUGIN_TARGETS="libsound_null.la libsound_disk.la"
 VID_TARGETS=""
 BUILD_GL=no
 BUILD_SW=no
@@ -1446,7 +1447,7 @@ if test "x$SV_TARGETS" = xyes; then
 	QW_TARGETS="qw-server\$(EXEEXT) $QW_TARGETS"
 #	NQ_TARGETS="nq-server\$(EXEEXT) $NQ_TARGETS"
 fi
-if test -n "$VID_TARGETS"; then
+if test -n "$CL_TARGETS"; then
 	CD_TARGETS="libQFcd.la"
 	SND_TARGETS="libQFsound.la"
 	if test "`echo $SOUND_TYPES | grep ALSA0.5`"; then
@@ -1476,7 +1477,9 @@ if test -n "$VID_TARGETS"; then
 	VID_TARGETS="libQFjs.la $VID_TARGETS"
 else
 	CD_TARGETS=""
+	CD_PLUGIN_TARGETS=""
 	SND_TARGETS=""
+	SND_PLUGIN_TARGETS=""
 	SOUND_TYPES=""
 	CDTYPE=""
 fi
