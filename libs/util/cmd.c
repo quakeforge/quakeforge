@@ -925,27 +925,27 @@ Cmd_GetToken (const char *str, qboolean legacy)
 		if (isspace ((byte)str[i]))
 			break;
 		if (!legacy) {
-			if (str[i] == '\'') {
+			if (str[i] == '\'' && !escaped (str,i)) {
 				ret = Cmd_EndSingleQuote (str+i);
 				if (ret < 0)
 					return ret;
 				i += ret;
 				continue;
 			}
-			if (str[i] == '{') {
+			if (str[i] == '{' && !escaped (str,i)) {
 				ret = Cmd_EndBrace (str+i);
 				if (ret < 0)
 					return ret;
 				i += ret;
 				continue;
 			}
-			if (str[i] == '}')
+			if (str[i] == '}' && !escaped (str,i))
 				return -1;
 		}
-		if (str[i] == '\"') {
+		if (str[i] == '\"' && !escaped (str,i)) {
 			ret = Cmd_EndDoubleQuote (str+i);
 			if (ret < 0)
-				return ret;	
+				return ret;
 			i += ret;
 			continue;
 		}
@@ -2015,9 +2015,31 @@ Cmd_Backtrace_f (void)
 void
 Cmd_Randint_f (void) {
 	int low, high;
+	if (Cmd_Argc () != 3) {
+		Cmd_Error ("randint: invalid number of arguments.\n");
+		return;
+	}
 	low = atoi(Cmd_Argv(1));
 	high = atoi(Cmd_Argv(2));
 	Cmd_Return (va("%i", (int)(low+(float)rand()/(float)RAND_MAX*(float)(high-low+1))));
+}
+
+void
+Cmd_Streq_f (void) {
+	if (Cmd_Argc () != 3) {
+		Cmd_Error ("streq: invalid number of arguments.\n");
+		return;
+	}
+	Cmd_Return (va("%i",!strcmp (Cmd_Argv(1), Cmd_Argv(2))));
+}
+
+void
+Cmd_Strlen_f (void) {
+	if (Cmd_Argc () != 2) {
+		Cmd_Error ("strlen: invalid number of arguments.\n");
+		return;
+	}
+	Cmd_Return (va("%i",strlen (Cmd_Argv(1))));
 }
 
 void
@@ -2100,6 +2122,8 @@ Cmd_Init (void)
 	Cmd_AddCommand ("backtrace", Cmd_Backtrace_f, "Show a description of the last GIB error and a backtrace.");
 
 	Cmd_AddCommand ("randint", Cmd_Randint_f, "Returns a random integer between $1 and $2");
+	Cmd_AddCommand ("streq", Cmd_Streq_f, "Returns 1 if $1 and $2 are the same string, 0 otherwise");
+	Cmd_AddCommand ("strlen", Cmd_Strlen_f, "Returns the length of $1");
 
 	//Cmd_AddCommand ("cmd_hash_stats", Cmd_Hash_Stats_f, "Display statistics "
 	//				"alias and command hash tables");
