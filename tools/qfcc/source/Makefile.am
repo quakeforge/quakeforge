@@ -39,7 +39,7 @@ bin_PROGRAMS=	qfcc
 noinst_PROGRAMS= qfodump
 
 qfcc_SOURCES= \
-	class.c cmdlib.c cpp.c debug.c def.c emit.c expr.c function.c idstuff.c \
+	class.c cpp.c debug.c def.c emit.c expr.c function.c idstuff.c \
 	immediate.c linker.c method.c obj_file.c opcodes.c options.c qc-lex.l \
 	qc-parse.y qfcc.c reloc.c strpool.c struct.c switch.c type.c
 

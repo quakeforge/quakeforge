@@ -164,7 +164,7 @@ WriteData (int crc)
 	ddef_t     *dd;
 	dprograms_t progs;
 	pr_debug_header_t debug;
-	FILE       *h;
+	QFile      *h;
 	int         i;
 
 	globals = calloc (pr.scope->num_defs + 1, sizeof (ddef_t));
@@ -201,14 +201,14 @@ WriteData (int crc)
 		printf ("%6i entity fields\n", pr.entity_data->size);
 	}
 
-	h = SafeOpenWrite (options.output_file);
-	SafeWrite (h, &progs, sizeof (progs));
+	h = Qopen (options.output_file, "wb");
+	Qwrite (h, &progs, sizeof (progs));
 
-	progs.ofs_strings = ftell (h);
+	progs.ofs_strings = Qtell (h);
 	progs.numstrings = pr.strings->size;
-	SafeWrite (h, pr.strings->strings, pr.strings->size);
+	Qwrite (h, pr.strings->strings, pr.strings->size);
 
-	progs.ofs_statements = ftell (h);
+	progs.ofs_statements = Qtell (h);
 	progs.numstatements = pr.code->size;
 	for (i = 0; i < pr.code->size; i++) {
 		pr.code->code[i].op = LittleShort (pr.code->code[i].op);
@@ -216,12 +216,12 @@ WriteData (int crc)
 		pr.code->code[i].b = LittleShort (pr.code->code[i].b);
 		pr.code->code[i].c = LittleShort (pr.code->code[i].c);
 	}
-	SafeWrite (h, pr.code->code, pr.code->size * sizeof (dstatement_t));
+	Qwrite (h, pr.code->code, pr.code->size * sizeof (dstatement_t));
 
 	{
 		dfunction_t *df;
 
-		progs.ofs_functions = ftell (h);
+		progs.ofs_functions = Qtell (h);
 		progs.numfunctions = pr.num_functions;
 		for (i = 0, df = pr.functions + 1; i < pr.num_functions; i++, df++) {
 			df->first_statement = LittleLong (df->first_statement);
@@ -231,35 +231,35 @@ WriteData (int crc)
 			df->numparms        = LittleLong (df->numparms);
 			df->locals          = LittleLong (df->locals);
 		}
-		SafeWrite (h, pr.functions, pr.num_functions * sizeof (dfunction_t));
+		Qwrite (h, pr.functions, pr.num_functions * sizeof (dfunction_t));
 	}
 
-	progs.ofs_globaldefs = ftell (h);
+	progs.ofs_globaldefs = Qtell (h);
 	progs.numglobaldefs = numglobaldefs;
 	for (i = 0; i < numglobaldefs; i++) {
 		globals[i].type = LittleShort (globals[i].type);
 		globals[i].ofs = LittleShort (globals[i].ofs);
 		globals[i].s_name = LittleLong (globals[i].s_name);
 	}
-	SafeWrite (h, globals, numglobaldefs * sizeof (ddef_t));
+	Qwrite (h, globals, numglobaldefs * sizeof (ddef_t));
 
-	progs.ofs_fielddefs = ftell (h);
+	progs.ofs_fielddefs = Qtell (h);
 	progs.numfielddefs = numfielddefs;
 	for (i = 0; i < numfielddefs; i++) {
 		fields[i].type = LittleShort (fields[i].type);
 		fields[i].ofs = LittleShort (fields[i].ofs);
 		fields[i].s_name = LittleLong (fields[i].s_name);
 	}
-	SafeWrite (h, fields, numfielddefs * sizeof (ddef_t));
+	Qwrite (h, fields, numfielddefs * sizeof (ddef_t));
 
-	progs.ofs_globals = ftell (h);
+	progs.ofs_globals = Qtell (h);
 	progs.numglobals = pr.near_data->size;
 	for (i = 0; i < pr.near_data->size; i++)
 		G_INT (i) = LittleLong (G_INT (i));
-	SafeWrite (h, pr.near_data->data, pr.near_data->size * 4);
+	Qwrite (h, pr.near_data->data, pr.near_data->size * 4);
 
 	if (options.verbosity >= -1)
-		printf ("%6i TOTAL SIZE\n", (int) ftell (h));
+		printf ("%6i TOTAL SIZE\n", (int) Qtell (h));
 
 	progs.entityfields = pr.entity_data->size;
 
@@ -270,28 +270,28 @@ WriteData (int crc)
 	for (i = 0; i < sizeof (progs) / 4; i++)
 		((int *) &progs)[i] = LittleLong (((int *) &progs)[i]);
 
-	fseek (h, 0, SEEK_SET);
-	SafeWrite (h, &progs, sizeof (progs));
-	fclose (h);
+	Qseek (h, 0, SEEK_SET);
+	Qwrite (h, &progs, sizeof (progs));
+	Qclose (h);
 
 	if (!options.code.debug) {
 		return 0;
 	}
 
-	h = SafeOpenRead (options.output_file);
+	h = Qopen (options.output_file, "rb");
 
 	debug.version = LittleLong (PROG_DEBUG_VERSION);
 	CRC_Init (&debug.crc);
-	while ((i = fgetc (h)) != EOF)
+	while ((i = Qgetc (h)) != EOF)
 		CRC_ProcessByte (&debug.crc, i);
-	fclose (h);
+	Qclose (h);
 	debug.crc = LittleShort (debug.crc);
 	debug.you_tell_me_and_we_will_both_know = 0;
 
-	h = SafeOpenWrite (debugfile);
-	SafeWrite (h, &debug, sizeof (debug));
+	h = Qopen (debugfile, "wb");
+	Qwrite (h, &debug, sizeof (debug));
 
-	debug.auxfunctions = LittleLong (ftell (h));
+	debug.auxfunctions = LittleLong (Qtell (h));
 	debug.num_auxfunctions = LittleLong (pr.num_auxfunctions);
 	for (i = 0; i < pr.num_auxfunctions; i++) {
 		pr.auxfunctions[i].function = LittleLong (pr.auxfunctions[i].function);
@@ -300,29 +300,29 @@ WriteData (int crc)
 		pr.auxfunctions[i].local_defs = LittleLong (pr.auxfunctions[i].local_defs);
 		pr.auxfunctions[i].num_locals = LittleLong (pr.auxfunctions[i].num_locals);
 	}
-	SafeWrite (h, pr.auxfunctions,
-			   pr.num_auxfunctions * sizeof (pr_auxfunction_t));
+	Qwrite (h, pr.auxfunctions,
+			pr.num_auxfunctions * sizeof (pr_auxfunction_t));
 
-	debug.linenos = LittleLong (ftell (h));
+	debug.linenos = LittleLong (Qtell (h));
 	debug.num_linenos = LittleLong (pr.num_linenos);
 	for (i = 0; i < pr.num_linenos; i++) {
 		pr.linenos[i].fa.addr = LittleLong (pr.linenos[i].fa.addr);
 		pr.linenos[i].line = LittleLong (pr.linenos[i].line);
 	}
-	SafeWrite (h, pr.linenos, pr.num_linenos * sizeof (pr_lineno_t));
+	Qwrite (h, pr.linenos, pr.num_linenos * sizeof (pr_lineno_t));
 
-	debug.locals = LittleLong (ftell (h));
+	debug.locals = LittleLong (Qtell (h));
 	debug.num_locals = LittleLong (pr.num_locals);
 	for (i = 0; i < pr.num_locals; i++) {
 		pr.locals[i].type = LittleShort (pr.locals[i].type);
 		pr.locals[i].ofs = LittleShort (pr.locals[i].ofs);
 		pr.locals[i].s_name = LittleLong (pr.locals[i].s_name);
 	}
-	SafeWrite (h, pr.locals, pr.num_locals * sizeof (ddef_t));
+	Qwrite (h, pr.locals, pr.num_locals * sizeof (ddef_t));
 
-	fseek (h, 0, SEEK_SET);
-	SafeWrite (h, &debug, sizeof (debug));
-	fclose (h);
+	Qseek (h, 0, SEEK_SET);
+	Qwrite (h, &debug, sizeof (debug));
+	Qclose (h);
 	return 0;
 }
 
