@@ -738,38 +738,50 @@ CL_AddFlagModels (entity_t *ent, int team, int key)
 
 	f = 14.0;
 	if (ent->frame >= 29 && ent->frame <= 40) {
-		if (ent->frame >= 29 && ent->frame <= 34) {	// axpain
-			if (ent->frame == 29)
+		switch (ent->frame) {
+			case 29:									// 29-34 axpain
 				f = 16.0;
-			else if (ent->frame == 30)
+				break;
+			case 30:
 				f = 22.0;
-			else if (ent->frame == 31)
+				break;
+			case 31:
 				f = 26.0;
-			else if (ent->frame == 32)
+				break;
+			case 32:
 				f = 25.0;
-			else if (ent->frame == 33)
+				break;
+			case 33:
 				f = 24.0;
-			else if (ent->frame == 34)
+				break;
+			case 34:
 				f = 18.0;
-		} else if (ent->frame >= 35 && ent->frame <= 40) {	// pain
-			if (ent->frame == 35)
+				break;
+
+			case 35:									// 35-40 pain
 				f = 16.0;
-			else if (ent->frame == 36)
+				break;
+			case 36:
 				f = 24.0;
-			else if (ent->frame == 37)
+				break;
+			case 37:
 				f = 24.0;
-			else if (ent->frame == 38)
+				break;
+			case 38:
 				f = 22.0;
-			else if (ent->frame == 39)
+				break;
+			case 39:
 				f = 18.0;
-			else if (ent->frame == 40)
+				break;
+			case 40:
 				f = 16.0;
+				break;
 		}
 	} else if (ent->frame >= 103 && ent->frame <= 118) {
-		if (ent->frame >= 103 && ent->frame <= 106)		// 103-104 nailattack
+		if (ent->frame <= 106)							// 103-104 nailattack
 			f = 20.0;									// 105-106 light
-		else if (ent->frame >= 107 && ent->frame <= 118)
-			f = 21.0;			// 107-112 rocketattack    112-118 shotattack
+		else											// 107-112 rocketattack
+			f = 21.0;									// 112-118 shotattack
 	}
 
 	newent = R_NewEntity ();
