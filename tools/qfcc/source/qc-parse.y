@@ -695,6 +695,7 @@ statement_block
 				current_scope->num_defs += num_defs;
 				*current_scope->tail = defs;
 				while (*current_scope->tail) {
+					(*current_scope->tail)->scope = current_scope;
 					current_scope->tail = &(*current_scope->tail)->def_next;
 				}
 			}
