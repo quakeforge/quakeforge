@@ -571,9 +571,11 @@ AC_CHECK_LIB(mme, waveOutOpen, HAVE_LIBMME=yes)
 AC_ARG_ENABLE(alsa,
 	[  --disable-alsa          disable checks for ALSA support])
 
+AC_ARG_ENABLE(oss,
+        [  --disable-oss           disable checks for OSS support])
+
 AC_ARG_ENABLE(sound,
-	[  --disable-sound         disable sound outright]
-)
+	[  --disable-sound         disable sound outright])
 
 SOUND_TYPES=
 AC_MSG_CHECKING(for sound support)
@@ -631,7 +633,8 @@ AC_SUBST(MME_LIBS)
 
 dnl OSS
 HAVE_OSS=no
-if test "x$ac_cv_header_sys_soundcard_h" = "xyes" -o \
+if test "x$enable_oss" != "xno"; then
+        if test "x$ac_cv_header_sys_soundcard_h" = "xyes" -o \
 		"x$ac_cv_header_machine_soundcard_h" = "xyes" -o \
 		"x$ac_cv_header_linux_soundcard_h" = "xyes"; then
 	AC_EGREP_CPP([QF_maGiC_VALUE],
@@ -669,6 +672,7 @@ QF_maGiC_VALUE
 			)
 		)
 	)
+    fi
 fi
 AC_SUBST(HAVE_OSS)
 AC_SUBST(OSS_LIBS)
