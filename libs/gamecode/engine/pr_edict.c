@@ -1115,7 +1115,7 @@ PR_LoadProgsFile (progs_t * pr, const char *progsname)
 	pr->pr_functions =
 		(dfunction_t *) ((byte *) pr->progs + pr->progs->ofs_functions);
 	pr->pr_strings = (char *) pr->progs + pr->progs->ofs_strings;
-	pr->pr_stringsize = LittleLong (pr->progs->numstrings);
+	pr->pr_stringsize = pr->progs->numstrings;
 	pr->pr_globaldefs =
 		(ddef_t *) ((byte *) pr->progs + pr->progs->ofs_globaldefs);
 	pr->pr_fielddefs =
