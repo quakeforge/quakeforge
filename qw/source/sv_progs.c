@@ -59,8 +59,8 @@ func_t	SpectatorThink;
 
 static int reserved_edicts = MAX_CLIENTS;
 
-int
-ED_Prune_Edict (progs_t *pr, edict_t *ent)
+static int
+prune_edict (progs_t *pr, edict_t *ent)
 {
 	if (((int) SVFIELD (ent, spawnflags, float) & SPAWNFLAG_NOT_DEATHMATCH))
 		return 1;
@@ -100,8 +100,8 @@ PR_Profile_f (void)
 	PR_Profile (&sv_pr_state);
 }
 
-int
-ED_Parse_Extra_Fields (progs_t *pr, char *key, char *value)
+static int
+parse_field (progs_t *pr, char *key, char *value)
 {
 	/*
 		If skyname is set, we want to allow skyboxes and set what the skybox
@@ -256,6 +256,9 @@ SV_LoadProgs (void)
 	sv_fields.colormod = ED_GetFieldIndex (&sv_pr_state, "colormod");
 }
 
+extern builtin_t sv_builtins[];
+extern int sv_numbuiltins;
+
 void
 SV_Progs_Init (void)
 {
@@ -265,6 +268,10 @@ SV_Progs_Init (void)
 	sv_pr_state.reserved_edicts = &reserved_edicts;
 	sv_pr_state.unlink = SV_UnlinkEdict;
 	sv_pr_state.flush = SV_FlushSignon;
+	sv_pr_state.builtins = sv_builtins;
+	sv_pr_state.numbuiltins = sv_numbuiltins;
+	sv_pr_state.parse_field = parse_field;
+	sv_pr_state.prune_edict = prune_edict;
 
 	Cmd_AddCommand ("edict", ED_PrintEdict_f, "Report information on a given edict in the game. (edict (edict number))");
 	Cmd_AddCommand ("edicts", ED_PrintEdicts_f, "Display information on all edicts in the game.");

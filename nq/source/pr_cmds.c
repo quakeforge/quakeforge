@@ -1902,7 +1902,7 @@ PF_checkextension (progs_t *pr)
 }
 
 
-builtin_t   pr_builtin[] = {
+builtin_t   sv_builtins[] = {
 	PF_Fixme,
 	PF_makevectors,						// void(entity e)   makevectors
 	// = #1;
@@ -2065,5 +2065,4 @@ builtin_t   pr_builtin[] = {
 	PF_checkextension,
 };
 
-builtin_t  *pr_builtins = pr_builtin;
-int         pr_numbuiltins = sizeof (pr_builtin) / sizeof (pr_builtin[0]);
+int         sv_numbuiltins = sizeof (sv_builtins) / sizeof (sv_builtins[0]);

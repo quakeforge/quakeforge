@@ -140,8 +140,6 @@ int NUM_FOR_EDICT(progs_t *pr, edict_t *e);
 extern	int		type_size[8];
 
 typedef void (*builtin_t) (progs_t *pr);
-extern	builtin_t *pr_builtins;
-extern int pr_numbuiltins;
 
 ddef_t *PR_FindGlobal (progs_t *pr, const char *name);
 
@@ -169,10 +167,6 @@ eval_t *GetEdictFieldValue(progs_t *pr, edict_t *ed, char *field);
 char *PR_GetString(progs_t *pr, int num);
 int PR_SetString(progs_t *pr, char *s);
 
-// externaly supplied functions
-
-int ED_Parse_Extra_Fields (progs_t *pr, char *key, char *value);
-int ED_Prune_Edict (progs_t *pr, edict_t *ent);
 
 //============================================================================
 
@@ -237,6 +231,12 @@ struct progs_s {
 
 	void			(*unlink)(edict_t *ent);
 	void			(*flush)(void);
+
+	int				(*parse_field)(progs_t *pr, char *key, char *value);
+	int				(*prune_edict)(progs_t *pr, edict_t *ent);
+
+	builtin_t		*builtins;
+	int				numbuiltins;
 
 	// required globals
 	struct {

@@ -661,9 +661,9 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					// built in functions
 					int         i = -newf->first_statement;
 
-					if (i >= pr_numbuiltins)
+					if (i >= pr->numbuiltins)
 						PR_RunError (pr, "Bad builtin call number");
-					pr_builtins[i] (pr);
+					pr->builtins[i] (pr);
 					break;
 				}
 

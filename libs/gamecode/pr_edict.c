@@ -846,7 +846,7 @@ ED_ParseEdict (progs_t * pr, char *data, edict_t *ent)
 
 		key = ED_FindField (pr, keyname);
 		if (!key) {
-			if (!ED_Parse_Extra_Fields (pr, keyname, com_token)) {
+			if (!pr->parse_field || !pr->parse_field (pr, keyname, com_token)) {
 				Con_Printf ("'%s' is not a field\n", keyname);
 				continue;
 			}
@@ -913,7 +913,7 @@ ED_LoadFromFile (progs_t * pr, char *data)
 		data = ED_ParseEdict (pr, data, ent);
 
 		// remove things from different skill levels or deathmatch
-		if (ED_Prune_Edict (pr, ent)) {
+		if (pr->prune_edict && pr->prune_edict (pr, ent)) {
 			ED_Free (pr, ent);
 			inhibit++;
 			continue;

@@ -66,8 +66,8 @@ cvar_t     *saved2;
 cvar_t     *saved3;
 cvar_t     *saved4;
 
-int
-ED_Prune_Edict (progs_t *pr, edict_t *ent)
+static int
+prune_edict (progs_t *pr, edict_t *ent)
 {
 	// remove things from different skill levels or deathmatch
 	if (deathmatch->int_val) {
@@ -119,8 +119,8 @@ PR_Profile_f (void)
 	PR_Profile (&sv_pr_state);
 }
 
-int
-ED_Parse_Extra_Fields (progs_t * pr, char *key, char *value)
+static int
+parse_field (progs_t * pr, char *key, char *value)
 {
 	return 0;
 }
@@ -275,6 +275,9 @@ sv_fields.radsuit_finished = ED_GetFieldIndex (&sv_pr_state, "radsuit_finished")
 sv_fields.speed = ED_GetFieldIndex (&sv_pr_state, "speed");
 }
 
+extern builtin_t sv_builtins[];
+extern int sv_numbuiltins;
+
 void
 SV_Progs_Init (void)
 {
@@ -283,6 +286,10 @@ SV_Progs_Init (void)
 	sv_pr_state.time = &sv.time;
 	sv_pr_state.reserved_edicts = &svs.maxclients;
 	sv_pr_state.unlink = SV_UnlinkEdict;
+	sv_pr_state.builtins = sv_builtins;
+	sv_pr_state.numbuiltins = sv_numbuiltins;
+	sv_pr_state.parse_field = parse_field;
+	sv_pr_state.prune_edict = prune_edict;
 
 	Cmd_AddCommand ("edict", ED_PrintEdict_f,
 					"Report information on a given edict in the game. (edict (edict number))");

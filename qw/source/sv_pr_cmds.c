@@ -1643,7 +1643,7 @@ PF_Checkextension (progs_t *pr)
 	G_FLOAT(pr, OFS_RETURN) = 0; //FIXME make this function actually useful :P
 }
 
-builtin_t   pr_builtin[] = {
+builtin_t   sv_builtins[] = {
 	PF_Fixme,
 	PF_makevectors,						// void(entity e)   makevectors
 										// = #1;
@@ -1788,5 +1788,4 @@ builtin_t   pr_builtin[] = {
 	PF_Checkextension,
 };
 
-builtin_t  *pr_builtins = pr_builtin;
-int         pr_numbuiltins = sizeof (pr_builtin) / sizeof (pr_builtin[0]);
+int         sv_numbuiltins = sizeof (sv_builtins) / sizeof (sv_builtins[0]);
