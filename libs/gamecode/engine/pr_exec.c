@@ -49,133 +49,6 @@ static const char rcsid[] =
 #include "compat.h"
 
 
-void
-PR_PrintStatement (progs_t * pr, dstatement_t *s)
-{
-	int			addr = s - pr->pr_statements;
-	int			ofs;
-	opcode_t	*op;
-
-	if (pr_debug->int_val && pr->debug) {
-		const char *source_line = PR_Get_Source_Line (pr, addr);
-
-		if (source_line)
-			Sys_Printf ("%s\n", source_line);
-	}
-
-	op = PR_Opcode (s->op);
-	if (!op) {
-		Sys_Printf ("Unknown instruction %d\n", s->op);
-		return;
-	}
-
-	Sys_Printf ("%04x ", addr);
-	if (pr_debug->int_val > 1)
-		Sys_Printf ("%02x %04x(%s) %04x(%s) %04x(%s)\t",
-					s->op,
-					s->a, pr_type_name[op->type_a],
-					s->b, pr_type_name[op->type_b],
-					s->c, pr_type_name[op->type_c]);
-
-	Sys_Printf ("%s ", op->opname);
-
-	switch (s->op) {
-		case OP_IF:
-		case OP_IFNOT:
-		case OP_IFBE:
-		case OP_IFB:
-		case OP_IFAE:
-		case OP_IFA:
-			ofs = (short) s->b;
-
-			Sys_Printf ("%s branch %i (%i)",
-					PR_GlobalString (pr, s->a, ev_integer)->str, ofs, addr + ofs);
-			break;
-
-		case OP_GOTO:
-			ofs = (short) s->a;
-			Sys_Printf ("branch %i (%i)", ofs, addr + ofs);
-			break;
-
-		case OP_RETURN:
-		case OP_DONE:
-			Sys_Printf ("%s", PR_GlobalString (pr, s->a, ev_void)->str);
-			break;
-
-		default:
-			if (op->type_a != ev_void)
-				Sys_Printf ("%s", PR_GlobalString (pr, s->a, op->type_a)->str);
-
-			if (op->type_b != ev_void) {
-				if (op->type_c != ev_void)
-					Sys_Printf (", %s", PR_GlobalString (pr, s->b, op->type_b)->str);
-				else
-					Sys_Printf (", %s",
-						PR_GlobalStringNoContents (pr, s->b, op->type_b)->str);
-			}
-
-			if (op->type_c != ev_void) {
-				if (op->type_b == ev_pointer && op->type_c == ev_integer)
-					Sys_Printf (", %s", PR_GlobalString (pr, s->c, op->type_c)->str);
-				else
-					Sys_Printf (", %s",
-						PR_GlobalStringNoContents (pr, s->c, op->type_c)->str);
-			}
-	}
-	Sys_Printf ("\n");
-}
-
-void
-PR_StackTrace (progs_t * pr)
-{
-	int				i;
-	dfunction_t	   *f;
-
-	if (pr->pr_depth == 0) {
-		Sys_Printf ("<NO STACK>\n");
-		return;
-	}
-
-	pr->pr_stack[pr->pr_depth].s = pr->pr_xstatement;
-	pr->pr_stack[pr->pr_depth].f = pr->pr_xfunction;
-	for (i = pr->pr_depth; i >= 0; i--) {
-		f = pr->pr_stack[i].f;
-
-		if (!f) {
-			Sys_Printf ("<NO FUNCTION>\n");
-		} else
-			Sys_Printf ("%12s : %s: %x\n", PR_GetString (pr, f->s_file),
-						PR_GetString (pr, f->s_name), pr->pr_stack[i].s);
-	}
-}
-
-void
-PR_Profile (progs_t * pr)
-{
-	int				max, num, i;
-	dfunction_t	   *best, *f;
-
-	num = 0;
-	do {
-		max = 0;
-		best = NULL;
-		for (i = 0; i < pr->progs->numfunctions; i++) {
-			f = &pr->pr_functions[i];
-			if (f->profile > max) {
-				max = f->profile;
-				best = f;
-			}
-		}
-		if (best) {
-			if (num < 10)
-				Sys_Printf ("%7i %s\n", best->profile,
-							PR_GetString (pr, best->s_name));
-			num++;
-			best->profile = 0;
-		}
-	} while (best);
-}
-
 /*
 	PR_RunError
 
@@ -184,21 +57,21 @@ PR_Profile (progs_t * pr)
 void
 PR_RunError (progs_t * pr, const char *error, ...)
 {
-	char		string[1024];
-	va_list		argptr;
+	dstring_t  *string = dstring_new ();
+	va_list     argptr;
 
 	va_start (argptr, error);
-	vsnprintf (string, sizeof (string), error, argptr);
+	dvsprintf (string, error, argptr);
 	va_end (argptr);
 
 	PR_DumpState (pr);
 
-	Sys_Printf ("%s\n", string);
+	Sys_Printf ("%s\n", string->str);
 
 	// dump the stack so PR_Error can shutdown functions
 	pr->pr_depth = 0;					
 
-	PR_Error (pr, "Program error");
+	PR_Error (pr, "Program error: %s", string->str);
 }
 
 /*
