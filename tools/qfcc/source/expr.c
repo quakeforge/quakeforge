@@ -822,7 +822,7 @@ emit_function_call (expr_t *e, def_t *dest)
 }
 
 def_t *
-emit_assign_expr (expr_t *e)
+emit_assign_expr (expr_t *e, def_t *dest)
 {
 	def_t	*def_a, *def_b;
 	opcode_t *op;
@@ -854,6 +854,10 @@ emit_assign_expr (expr_t *e)
 			op = PR_Opcode_Find ("=", 5, def_a, def_b, def_b);
 			emit_statement (op, def_b, def_a, 0);
 		}
+		if (dest) {
+			op = PR_Opcode_Find ("=", 5, dest, def_b, def_b);
+			emit_statement (op, def_b, dest, 0);
+		}
 	}
 	return def_b;
 }
@@ -875,7 +879,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 			if (e->e.expr.op == 'c')
 				return emit_function_call (e, dest);
 			if (e->e.expr.op == '=')
-				return emit_assign_expr (e);
+				return emit_assign_expr (e, dest);
 			def_a = emit_sub_expr (e->e.expr.e1, 0);
 			def_b = emit_sub_expr (e->e.expr.e2, 0);
 			switch (e->e.expr.op) {
@@ -1014,7 +1018,7 @@ emit_expr (expr_t *e)
 		case ex_expr:
 			switch (e->e.expr.op) {
 				case '=':
-					emit_assign_expr (e);
+					emit_assign_expr (e, 0);
 					break;
 				case 'n':
 					emit_branch (op_ifnot, e->e.expr.e1, e->e.expr.e2);
