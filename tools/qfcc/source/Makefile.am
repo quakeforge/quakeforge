@@ -48,7 +48,6 @@ endif
 bin_PROGRAMS=	$(qfcc) $(qfprogs)
 bin_SCRIPTS=	$(qfpreqcc)
 EXTRA_PROGRAMS= qfcc qfprogs
-EXTRA_SCRIPTS=	qfpreqcc
 
 qfcc_SOURCES= \
 	class.c constfold.c cpp.c debug.c def.c emit.c expr.c function.c \
@@ -65,4 +64,4 @@ qfprogs_DEPENDENCIES= $(QFCC_DEPS)
 
 constfold.$(OBJEXT) emit.$(OBJEXT) expr.$(OBJEXT) switch.$(OBJEXT) qc-lex.$(OBJEXT): qc-parse.h
 
-EXTRA_DIST=qc-lex.c qc-parse.c qc-parse.h
+EXTRA_DIST=qc-lex.c qc-parse.c qc-parse.h qfpreqcc

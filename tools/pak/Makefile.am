@@ -19,7 +19,6 @@ endif
 bin_PROGRAMS=	$(pak)
 bin_SCRIPTS=	$(zpak)
 EXTRA_PROGRAMS=	pak
-EXTRA_SCRIPTS=	zpak
 
 man_MANS=	$(mans)
 
@@ -27,4 +26,4 @@ pak_SOURCES=	pak.c
 pak_LDADD=	$(PAK_LIBS)
 pak_DEPENDENCIES= $(PAK_DEPS)
 
-EXTRA_DIST=		pak.h pak.1
+EXTRA_DIST=		pak.h pak.1 zpak
