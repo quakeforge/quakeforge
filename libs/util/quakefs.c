@@ -69,6 +69,7 @@ static const char rcsid[] =
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
+#include "QF/pak.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/qtypes.h"
@@ -118,22 +119,6 @@ cvar_t     *fs_basegame;
 cvar_t     *fs_skinbase;
 
 int         com_filesize;
-
-/*
-	Structs for pack files on disk
-*/
-typedef struct {
-	char        name[56];
-	int         filepos, filelen;
-} dpackfile_t;
-
-typedef struct {
-	char        id[4];
-	int         dirofs;
-	int         dirlen;
-} dpackheader_t;
-
-#define	MAX_FILES_IN_PACK	2048
 
 char        com_gamedir[MAX_OSPATH];
 
