@@ -95,7 +95,7 @@ decode_args (int argc, char **argv)
 	options.mode = mo_none;
 	options.pad = false;
 	options.packfile = NULL;
-	options.verbosity = 1;
+	options.verbosity = 0;
 
 	while ((c = getopt_long (argc, argv, "c"	// create archive
 										 "t"	// test archive
