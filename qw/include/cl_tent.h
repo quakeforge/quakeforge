@@ -29,6 +29,8 @@
 #ifndef _CL_TENT_H
 #define _CL_TENT_H
 
+extern struct entity_s cl_entities[MAX_EDICTS];
+
 void CL_TEnts_Init (void);
 void CL_ClearEnts (void);
 void CL_ClearTEnts (void);

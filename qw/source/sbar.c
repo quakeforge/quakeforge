@@ -366,7 +366,7 @@ Sbar_SortFrags (qboolean includespec)
 	// sort by frags
 	scoreboardlines = 0;
 	for (i = 0; i < MAX_CLIENTS; i++) {
-		if (cl.players[i].name[0] && (!cl.players[i].spectator || includespec)) {
+		if (cl.players[i].name && (!cl.players[i].spectator || includespec)) {
 			fragsort[scoreboardlines] = i;
 			scoreboardlines++;
 			if (cl.players[i].spectator)
@@ -404,7 +404,7 @@ Sbar_SortTeams (void)
 
 	for (i = 0; i < MAX_CLIENTS; i++) {
 		s = &cl.players[i];
-		if (!s->name[0])
+		if (!s->name)
 			continue;
 		if (s->spectator)
 			continue;
@@ -589,7 +589,7 @@ Sbar_DrawFrags (void)
 	for (i = 0; i < l; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
-		if (!s->name[0])
+		if (!s->name)
 			continue;
 		if (s->spectator)
 			continue;
@@ -739,7 +739,7 @@ Sbar_Draw (int swap)
 
 //				Sbar_DrawString (160-14*8+4,4, "SPECTATOR MODE - TRACK CAMERA");
 				snprintf (st, sizeof (st), "Tracking %-.13s, [JUMP] for next",
-						  cl.players[spec_track].name);
+						  cl.players[spec_track].name->value);
 				Sbar_DrawString (0, -8, st);
 			}
 		} else if (sb_showscores || cl.stats[STAT_HEALTH] <= 0)
@@ -957,7 +957,7 @@ Sbar_DeathmatchOverlay (int start)
 	for (i = 0; i < l && y <= vid.height - 10; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
-		if (!s->name[0])
+		if (!s->name)
 			continue;
 
 		// draw ping
@@ -983,9 +983,9 @@ Sbar_DeathmatchOverlay (int start)
 			Draw_String (x + 40, y, "(spectator)");
 			// draw name
 			if (cl.teamplay)
-				Draw_String (x + 152 + 40, y, s->name);
+				Draw_String (x + 152 + 40, y, s->name->value);
 			else
-				Draw_String (x + 152, y, s->name);
+				Draw_String (x + 152, y, s->name->value);
 			y += skip;
 			continue;
 		}
@@ -1031,9 +1031,9 @@ Sbar_DeathmatchOverlay (int start)
 		}
 		// draw name
 		if (cl.teamplay)
-			Draw_String (x + 152 + 40, y, s->name);
+			Draw_String (x + 152 + 40, y, s->name->value);
 		else
-			Draw_String (x + 152, y, s->name);
+			Draw_String (x + 152, y, s->name->value);
 
 		y += skip;
 	}
@@ -1098,7 +1098,7 @@ Sbar_MiniDeathmatchOverlay (void)
 	for ( /* */ ; i < scoreboardlines && y < vid.height - 8 + 1; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
-		if (!s->name[0])
+		if (!s->name)
 			continue;
 
 		// draw ping
@@ -1130,7 +1130,7 @@ Sbar_MiniDeathmatchOverlay (void)
 		}
 		// draw name
 		name[16] = 0;
-		strncpy (name, s->name, 16);
+		strncpy (name, s->name->value, 16);
 		if (cl.teamplay)
 			Draw_String (x + 48 + 40, y, name);
 		else

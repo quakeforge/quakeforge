@@ -35,6 +35,8 @@
 #define NET_TIMINGSMASK 255
 
 struct skin_s;
+struct entity_s;
+struct entity_state_s;
 
 extern int	packet_latency[NET_TIMINGS];
 extern int	parsecountmod;
@@ -51,10 +53,13 @@ extern int	cl_gib3index;
 int CL_CalcNet (void);
 void CL_ParseServerMessage (void);
 void CL_NewTranslation (int slot, struct skin_s *skin);
+void CL_SetColormap (struct entity_s *ent, int slot);
 qboolean	CL_CheckOrDownloadFile (const char *filename);
 qboolean CL_IsUploading(void);
 void CL_NextUpload(void);
 void CL_StartUpload (byte *data, int size);
 void CL_StopUpload(void);
+void CL_EntFromBaseline (struct entity_state_s *es, struct entity_s *ent,
+						 int ind);
 
 #endif

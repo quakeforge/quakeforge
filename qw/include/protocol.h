@@ -266,7 +266,7 @@
 
 // entity_state_t is the information conveyed from the server
 // in an update message
-typedef struct
+typedef struct entity_state_s
 {
 	int		number;			// edict index
 

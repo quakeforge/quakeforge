@@ -68,23 +68,24 @@ static struct predicted_player {
 #define	MAX_PROJECTILES	32
 int          cl_num_projectiles;
 
-entity_t    cl_player_ents[MAX_CLIENTS];
 entity_t    cl_flag_ents[MAX_CLIENTS];
 entity_t    cl_projectiles[MAX_PROJECTILES];
-entity_t    cl_packet_ents[512];	// FIXME: magic number
+entity_t    cl_entities[MAX_EDICTS];
 
+struct {
+	model_t    *model;
+	int         skinnum;
+} cl_entity_model_states[MAX_EDICTS];
 
 void
 CL_ClearEnts ()
 {
 	int		i;
 
-	for (i = 0; i < sizeof (cl_packet_ents) / sizeof (cl_packet_ents[0]); i++)
-		CL_Init_Entity (&cl_packet_ents[i]);
+	for (i = 0; i < sizeof (cl_entities) / sizeof (cl_entities[0]); i++)
+		CL_Init_Entity (&cl_entities[i]);
 	for (i = 0; i < sizeof (cl_flag_ents) / sizeof (cl_flag_ents[0]); i++)
 		CL_Init_Entity (&cl_flag_ents[i]);
-	for (i = 0; i < sizeof (cl_player_ents) / sizeof (cl_player_ents[0]); i++)
-		CL_Init_Entity (&cl_player_ents[i]);
 }
 
 void
@@ -129,13 +130,41 @@ CL_NewDlight (int key, vec3_t org, int effects)
 
 int         bitcounts[32];				// / just for protocol profiling
 
+void
+CL_EntFromBaseline (entity_state_t *es, entity_t *ent, int ind)
+{
+	ent->model = cl.model_precache[es->modelindex];
+	ent->frame = es->frame;
+	ent->skinnum = es->skinnum;
+	VectorCopy (es->origin, ent->origin);
+	VectorCopy (es->origin, ent->old_origin);
+	VectorCopy (es->angles, ent->angles);
+	ent->alpha = es->alpha / 255.0;
+	ent->scale = es->scale / 16.0;
+	ent->glow_color = es->glow_color;
+	ent->glow_size = (char)es->glow_size / 8.0;
+	if (es->colormod == 255) {
+		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1;
+	} else {
+		ent->colormod[0] = ((es->colormod >> 5) & 7) / 7.0;
+		ent->colormod[1] = ((es->colormod >> 2) & 7) / 7.0;
+		ent->colormod[2] = ((es->colormod >> 0) & 3) / 3.0;
+	}
+	if (ind >= 0 && ind < MAX_EDICTS) {
+		cl_entity_model_states[ind].model = ent->model;
+		cl_entity_model_states[ind].skinnum = ent->skinnum;
+		CL_SetColormap (ent, es->colormap - 1);
+	}
+}
+
 /*
 	CL_ParseDelta
 
 	Can go from either a baseline or a previous packet_entity
 */
 void
-CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
+CL_ParseDelta (entity_state_t *from, entity_state_t *to, entity_t *ent,
+			   int bits, int do_colormap)
 {
 	int		i;
 
@@ -164,41 +193,71 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 
 	to->flags = bits;
 
-	if (bits & U_MODEL)
+	if (bits & U_MODEL) {
 		to->modelindex = MSG_ReadByte (net_message);
+		ent->model = cl.model_precache[to->modelindex];
+	}
 
-	if (bits & U_FRAME)
+	if (bits & U_FRAME) {
 		to->frame = MSG_ReadByte (net_message);
+		ent->frame = to->frame;
+	}
 
 	if (bits & U_COLORMAP)
 		to->colormap = MSG_ReadByte (net_message);
 
-	if (bits & U_SKIN)
+	if (bits & U_SKIN) {
 		to->skinnum = MSG_ReadByte (net_message);
+		ent->skinnum = to->skinnum;
+	}
 
 	if (bits & U_EFFECTS)
 		to->effects = MSG_ReadByte (net_message);
 
-	if (bits & U_ORIGIN1)
+	VectorCopy (ent->origin, ent->old_origin);
+
+	if (bits & U_ORIGIN1) {
 		to->origin[0] = MSG_ReadCoord (net_message);
+		ent->origin[0] = to->origin[0];
+	}
 
-	if (bits & U_ANGLE1)
+	if (bits & U_ANGLE1) {
 		to->angles[0] = MSG_ReadAngle (net_message);
+		ent->angles[0] = to->angles[0];
+	}
 
-	if (bits & U_ORIGIN2)
+	if (bits & U_ORIGIN2) {
 		to->origin[1] = MSG_ReadCoord (net_message);
+		ent->origin[1] = to->origin[1];
+	}
 
-	if (bits & U_ANGLE2)
+	if (bits & U_ANGLE2) {
 		to->angles[1] = MSG_ReadAngle (net_message);
+		ent->angles[1] = to->angles[1];
+	}
 
-	if (bits & U_ORIGIN3)
+	if (bits & U_ORIGIN3) {
 		to->origin[2] = MSG_ReadCoord (net_message);
+		ent->origin[2] = to->origin[2];
+	}
 
-	if (bits & U_ANGLE3)
+	if (bits & U_ANGLE3) {
 		to->angles[2] = MSG_ReadAngle (net_message);
+		ent->angles[2] = to->angles[2];
+	}
 
 	if (bits & U_SOLID) {
 		// FIXME
+	}
+
+	if (do_colormap) {
+		int         ind = ent - cl_entities;
+		if (cl_entity_model_states[ind].model != ent->model
+			|| cl_entity_model_states[ind].skinnum != ent->skinnum) {
+			cl_entity_model_states[ind].model = ent->model;
+			cl_entity_model_states[ind].skinnum = ent->skinnum;
+			CL_SetColormap (ent, to->colormap - 1);
+		}
 	}
 
 	if (!(bits & U_EXTEND1))
@@ -207,24 +266,43 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 	// LordHavoc: Endy neglected to mark this as being part of the QSG
 	// version 2 stuff... rearranged it and implemented missing effects
 // Ender (QSG - Begin)
-	if (bits & U_ALPHA)
+	if (bits & U_ALPHA) {
 		to->alpha = MSG_ReadByte (net_message);
-	if (bits & U_SCALE)
+		ent->alpha = to->alpha / 255.0;
+	}
+	if (bits & U_SCALE) {
 		to->scale = MSG_ReadByte (net_message);
-	if (bits & U_EFFECTS2)
+		ent->scale = to->scale / 16.0;
+	}
+	if (bits & U_EFFECTS2) {
 		to->effects = (to->effects & 0xFF) | (MSG_ReadByte (net_message) << 8);
-	if (bits & U_GLOWSIZE)
+	}
+	if (bits & U_GLOWSIZE) {
 		to->glow_size = MSG_ReadByte (net_message);
-	if (bits & U_GLOWCOLOR)
+		ent->glow_size = (char)to->glow_size * 8.0;
+	}
+	if (bits & U_GLOWCOLOR) {
 		to->glow_color = MSG_ReadByte (net_message);
-	if (bits & U_COLORMOD)
+		ent->glow_color = to->glow_color;
+	}
+	if (bits & U_COLORMOD) {
 		to->colormod = MSG_ReadByte (net_message);
+		if (to->colormod == 255) {
+			ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1;
+		} else {
+			ent->colormod[0] = ((to->colormod >> 5) & 7) / 7.0;
+			ent->colormod[1] = ((to->colormod >> 2) & 7) / 7.0;
+			ent->colormod[2] = ((to->colormod >> 0) & 3) / 3.0;
+		}
+	}
 
 	if (!(bits & U_EXTEND2))
 		return;
 
-	if (bits & U_FRAME2)
+	if (bits & U_FRAME2) {
 		to->frame = (to->frame & 0xFF) | (MSG_ReadByte (net_message) << 8);
+		ent->frame = to->frame;
+	}
 // Ender (QSG - End)
 }
 
@@ -232,6 +310,7 @@ void
 FlushEntityPacket (void)
 {
 	entity_state_t	olde, newe;
+	entity_t        fakee;
 	int				word;
 
 	Con_DPrintf ("FlushEntityPacket\n");
@@ -252,7 +331,7 @@ FlushEntityPacket (void)
 		if (!word)
 			break;						// done
 
-		CL_ParseDelta (&olde, &newe, word);
+		CL_ParseDelta (&olde, &newe, &fakee, word, 0);
 	}
 }
 
@@ -360,8 +439,10 @@ CL_ParsePacketEntities (qboolean delta)
 			if (newindex >= MAX_PACKET_ENTITIES)
 				Host_Error ("CL_ParsePacketEntities: newindex == "
 							"MAX_PACKET_ENTITIES");
+			CL_EntFromBaseline (&cl_baselines[newnum], &cl_entities[newnum],
+								newnum);
 			CL_ParseDelta (&cl_baselines[newnum], &newp->entities[newindex],
-						   word);
+						   &cl_entities[newnum], word, 1);
 			newindex++;
 			continue;
 		}
@@ -372,14 +453,13 @@ CL_ParsePacketEntities (qboolean delta)
 				Con_Printf ("WARNING: delta on full update");
 			}
 			if (word & U_REMOVE) {	// Clear the entity
-				entity_t	*ent = &cl_packet_ents[newnum];
-				memset (ent, 0, sizeof (entity_t));
 				oldindex++;
 				continue;
 			}
 //			Con_Printf ("delta %i\n", newnum);
 			CL_ParseDelta (&oldp->entities[oldindex],
-						   &newp->entities[newindex], word);
+						   &newp->entities[newindex], &cl_entities[newnum],
+						   word, 1);
 			newindex++;
 			oldindex++;
 		}
@@ -397,7 +477,6 @@ CL_LinkPacketEntities (void)
 	entity_state_t *s1;
 	model_t		   *model;
 	packet_entities_t *pack;
-	player_info_t  *info;
 
 	pack = &cl.frames[cls.netchan.incoming_sequence &
 					  UPDATE_MASK].packet_entities;
@@ -429,75 +508,19 @@ CL_LinkPacketEntities (void)
 		if (!ent)
 			break;						// object list is full
 
-		*ent = &cl_packet_ents[s1->number];
+		*ent = &cl_entities[s1->number];
 
-		(*ent)->model = model = cl.model_precache[s1->modelindex];
+		model = (*ent)->model;
 
-		// set colormap
-		if (s1->colormap && (s1->colormap <= MAX_CLIENTS)
-			&& cl.players[s1->colormap - 1].name[0]
-			&& !strcmp ((*ent)->model->name, "progs/player.mdl")) {
-			(*ent)->colormap = cl.players[s1->colormap - 1].translations;
-			info = &cl.players[s1->colormap - 1];
-		} else {
-			(*ent)->colormap = vid.colormap8;
-			info = NULL;
-		}
-
-		if (info && !info->skin)
-			Skin_Find (info);
-		if (info && info->skin) {
-			(*ent)->skin = Skin_NewTempSkin ();
-			if ((*ent)->skin) {
-				i = s1->colormap - 1;
-				CL_NewTranslation (i, (*ent)->skin);
-			}
-		} else {
-			(*ent)->skin = NULL;
-		}
-
-		// LordHavoc: cleaned up Endy's coding style, and fixed Endy's bugs
-		// Ender: Extend (Colormod) [QSG - Begin]
-		// N.B: All messy code below is the sole fault of LordHavoc and
-		// his futile attempts to save bandwidth. :)
-		(*ent)->glow_size =	s1->glow_size < 128 ? s1->glow_size * 8.0 :
-			(s1->glow_size - 256) * 8.0;
-		(*ent)->glow_color = s1->glow_color;
-		(*ent)->alpha = s1->alpha / 255.0;
-		(*ent)->scale = s1->scale / 16.0;
-
-		if (s1->colormod == 255) {
-			(*ent)->colormod[0] = (*ent)->colormod[1] =
-				(*ent)->colormod[2] = 1;
-		} else {
-			(*ent)->colormod[0] = (float) ((s1->colormod >> 5) & 7) * (1.0 /
-																	   7.0);
-			(*ent)->colormod[1] = (float) ((s1->colormod >> 2) & 7) * (1.0 /
-																	   7.0);
-			(*ent)->colormod[2] = (float) (s1->colormod & 3) * (1.0 / 3.0);
-		}
-		// Ender: Extend (Colormod) [QSG - End]
-
-		// set skin
-		(*ent)->skinnum = s1->skinnum;
-
-		// set frame
-		(*ent)->frame = s1->frame;
-		if ((*ent)->visframe != r_framecount - 1) {
-			(*ent)->pose1 = (*ent)->pose2 = -1;
-		}
-		(*ent)->visframe = r_framecount;
+		if (!model)
+			Host_Error ("null model: %d %s\n", s1->number,
+						cl.model_precache[s1->modelindex]->name);
 
 		if (model->flags & EF_ROTATE) { // rotate binary objects locally
 			(*ent)->angles[0] = 0;
 			(*ent)->angles[1] = anglemod (100 * cl.time);
 			(*ent)->angles[2] = 0;
-		} else {
-			VectorCopy(s1->angles, (*ent)->angles);
 		}
-
-		VectorCopy ((*ent)->origin, (*ent)->old_origin);
-		VectorCopy (s1->origin, (*ent)->origin);
 
 		// add automatic particle trails
 		if (!model->flags)
@@ -599,12 +622,14 @@ CL_ParsePlayerinfo (void)
 {
 	int				flags, msec, num, i;
 	player_state_t *state;
+	entity_t   *ent;
 
 	num = MSG_ReadByte (net_message);
-	if (num > MAX_CLIENTS)
+	if (num >= MAX_CLIENTS)
 		Host_Error ("CL_ParsePlayerinfo: bad num");
 
 	state = &cl.frames[parsecountmod].playerstate[num];
+	ent = &cl_entities[num + 1];
 
 	state->number = num;
 	flags = state->flags = MSG_ReadShort (net_message);
@@ -613,8 +638,10 @@ CL_ParsePlayerinfo (void)
 	state->origin[0] = MSG_ReadCoord (net_message);
 	state->origin[1] = MSG_ReadCoord (net_message);
 	state->origin[2] = MSG_ReadCoord (net_message);
+	VectorCopy (state->origin, ent->origin);
 
 	state->frame = MSG_ReadByte (net_message);
+	ent->frame = state->frame;
 
 	// the other player's last move was likely some time
 	// before the packet was sent out, so accurately track
@@ -639,11 +666,13 @@ CL_ParsePlayerinfo (void)
 	else
 		i = cl_playerindex;
 	state->modelindex = i;
+	ent->model = cl.model_precache[i];
 
 	if (flags & PF_SKINNUM)
 		state->skinnum = MSG_ReadByte (net_message);
 	else
 		state->skinnum = 0;
+	ent->skinnum = state->skinnum;
 
 	if (flags & PF_EFFECTS)
 		state->effects = MSG_ReadByte (net_message);
@@ -656,6 +685,14 @@ CL_ParsePlayerinfo (void)
 		state->weaponframe = 0;
 
 	VectorCopy (state->command.angles, state->viewangles);
+
+	if (cl_entity_model_states[ent - cl_entities].model != ent->model
+		|| cl_entity_model_states[ent - cl_entities].skinnum != ent->skinnum) {
+		cl_entity_model_states[ent - cl_entities].model = ent->model;
+		cl_entity_model_states[ent - cl_entities].skinnum = ent->skinnum;
+		CL_SetColormap (ent, num);
+	}
+	//FIXME: players don't have extend stuff
 }
 
 /*
@@ -765,7 +802,7 @@ CL_LinkPlayers (void)
 		// spawn light flashes, even ones coming from invisible objects
 		if (j == cl.playernum) {
 			VectorCopy (cl.simorg, org);
-			r_player_entity = &cl_player_ents[j];
+			r_player_entity = &cl_entities[j + 1];
 		} else
 			VectorCopy (state->origin, org);
 
@@ -795,35 +832,7 @@ CL_LinkPlayers (void)
 		_ent = R_NewEntity ();
 		if (!_ent)						// object list is full
 			break;
-		ent = *_ent = &cl_player_ents[j];
-
-		ent->frame = state->frame;
-		ent->model = cl.model_precache[state->modelindex];
-		ent->skinnum = state->skinnum;
-		ent->colormap = info->translations;
-		if (state->modelindex == cl_playerindex) { //XXX
-			// use custom skin
-			if (!info->skin)
-				Skin_Find (info);
-			if (info && info->skin) {
-				ent->skin = Skin_NewTempSkin ();
-				if (ent->skin) {
-					CL_NewTranslation (j, ent->skin);
-				}
-			} else {
-				ent->skin = NULL;
-			}
-		} else {
-			ent->skin = NULL;
-		}
-
-		// LordHavoc: more QSG VERSION 2 stuff, FIXME: players don't have
-		// extend stuff
-		ent->glow_size = 0;
-		ent->glow_color = 254;
-		ent->alpha = 1;
-		ent->scale = 1;
-		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1;
+		ent = *_ent = &cl_entities[j + 1];
 
 		// angles
 		if (j == cl.playernum)
@@ -839,18 +848,19 @@ CL_LinkPlayers (void)
 		ent->angles[ROLL] = 0;
 		ent->angles[ROLL] = V_CalcRoll (ent->angles, state->velocity) * 4;
 
-		// only predict half the move to minimize overruns
-		msec = 500 * (playertime - state->state_time);
-		if (msec <= 0 || (!cl_predict_players->int_val)) {
-			VectorCopy (state->origin, ent->origin);
-		} else {	// predict players movement
-			state->command.msec = msec = min (msec, 255);
+		if (cl_predict_players->int_val) {
+			// only predict half the move to minimize overruns
+			msec = 500 * (playertime - state->state_time);
+			if (msec > 0) {
+				// predict players movement
+				state->command.msec = msec = min (msec, 255);
 
-			oldphysent = pmove.numphysent;
-			CL_SetSolidPlayers (j);
-			CL_PredictUsercmd (state, &exact, &state->command, false);
-			pmove.numphysent = oldphysent;
-			VectorCopy (exact.origin, ent->origin);
+				oldphysent = pmove.numphysent;
+				CL_SetSolidPlayers (j);
+				CL_PredictUsercmd (state, &exact, &state->command, false);
+				pmove.numphysent = oldphysent;
+				VectorCopy (exact.origin, ent->origin);
+			}
 		}
 
 		if (state->effects & EF_FLAG1)
@@ -1033,7 +1043,6 @@ CL_EmitEntities (void)
 		return;
 
 	R_ClearEnts ();
-	Skin_ClearTempSkins ();
 
 	CL_LinkPlayers ();
 	CL_LinkPacketEntities ();
@@ -1046,6 +1055,10 @@ CL_Ents_Init (void)
 {
 	int         i;
 
+	for (i = 0; i < MAX_CLIENTS; i++)
+		CL_Init_Entity (&cl_flag_ents[i]);
 	for (i = 0; i < MAX_PROJECTILES; i++)
 		CL_Init_Entity (&cl_projectiles[i]);
+	for (i = 0; i < MAX_EDICTS; i++)
+		CL_Init_Entity (&cl_entities[i]);
 }
