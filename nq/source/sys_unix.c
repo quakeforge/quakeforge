@@ -30,6 +30,12 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,7 +46,6 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <signal.h>
-#include <string.h>
 #include <time.h>
 
 #include "QF/sys.h"

@@ -31,15 +31,16 @@
 # include "config.h"
 #endif
 
-#include "QF/compat.h"
-#include "sbar.h"
-#include "game.h"
 #include "QF/cmd.h"
+#include "QF/compat.h"
+#include "QF/screen.h"
 #include "QF/vid.h"
 #include "QF/va.h"
-#include "draw.h"
 #include "QF/wad.h"
-#include "QF/screen.h"
+
+#include "sbar.h"
+#include "game.h"
+#include "draw.h"
 #include "client.h"
 #include "server.h"
 
@@ -213,10 +214,10 @@ void
 Sbar_DrawTransPic (int x, int y, qpic_t *pic)
 {
 	if (sbar_centered)
-		Draw_TransPic (x + ((vid.width - 320) >> 1),
+		Draw_Pic (x + ((vid.width - 320) >> 1),
 					   y + (vid.height - SBAR_HEIGHT), pic);
 	else
-		Draw_TransPic (x, y + (vid.height - SBAR_HEIGHT), pic);
+		Draw_Pic (x, y + (vid.height - SBAR_HEIGHT), pic);
 }
 
 /*
@@ -981,7 +982,7 @@ Sbar_IntermissionNumber (int x, int y, int num, int digits, int color)
 		else
 			frame = *ptr - '0';
 
-		Draw_TransPic (x, y, sb_nums[color][frame]);
+		Draw_Pic (x, y, sb_nums[color][frame]);
 		x += 24;
 		ptr++;
 	}
@@ -1006,7 +1007,7 @@ Sbar_DeathmatchOverlay (void)
 	scr_copyeverything = 1;
 	scr_fullupdate = 0;
 
-	pic = Draw_CachePic ("gfx/ranking.lmp");
+	pic = Draw_CachePic ("gfx/ranking.lmp", true);
 	Draw_Pic (160 - pic->width / 2, 0, pic);
 
 	// scores
@@ -1152,26 +1153,26 @@ Sbar_IntermissionOverlay (void)
 		return;
 	}
 
-	pic = Draw_CachePic ("gfx/complete.lmp");
+	pic = Draw_CachePic ("gfx/complete.lmp", true);
 	Draw_Pic (64, 24, pic);
 
-	pic = Draw_CachePic ("gfx/inter.lmp");
-	Draw_TransPic (0, 56, pic);
+	pic = Draw_CachePic ("gfx/inter.lmp", true);
+	Draw_Pic (0, 56, pic);
 
 	// time
 	dig = cl.completed_time / 60;
 	Sbar_IntermissionNumber (160, 64, dig, 3, 0);
 	num = cl.completed_time - dig * 60;
-	Draw_TransPic (234, 64, sb_colon);
-	Draw_TransPic (246, 64, sb_nums[0][num / 10]);
-	Draw_TransPic (266, 64, sb_nums[0][num % 10]);
+	Draw_Pic (234, 64, sb_colon);
+	Draw_Pic (246, 64, sb_nums[0][num / 10]);
+	Draw_Pic (266, 64, sb_nums[0][num % 10]);
 
 	Sbar_IntermissionNumber (160, 104, cl.stats[STAT_SECRETS], 3, 0);
-	Draw_TransPic (232, 104, sb_slash);
+	Draw_Pic (232, 104, sb_slash);
 	Sbar_IntermissionNumber (240, 104, cl.stats[STAT_TOTALSECRETS], 3, 0);
 
 	Sbar_IntermissionNumber (160, 144, cl.stats[STAT_MONSTERS], 3, 0);
-	Draw_TransPic (232, 144, sb_slash);
+	Draw_Pic (232, 144, sb_slash);
 	Sbar_IntermissionNumber (240, 144, cl.stats[STAT_TOTALMONSTERS], 3, 0);
 }
 
@@ -1189,8 +1190,8 @@ Sbar_FinaleOverlay (void)
 
 	scr_copyeverything = 1;
 
-	pic = Draw_CachePic ("gfx/finale.lmp");
-	Draw_TransPic ((vid.width - pic->width) / 2, 16, pic);
+	pic = Draw_CachePic ("gfx/finale.lmp", true);
+	Draw_Pic ((vid.width - pic->width) / 2, 16, pic);
 }
 
 /*

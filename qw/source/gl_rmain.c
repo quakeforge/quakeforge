@@ -171,13 +171,7 @@ R_RotateForEntity (entity_t *e)
 	glRotatef (e->angles[2], 1, 0, 0);
 }
 
-/*
-	SPRITE MODELS
-*/
 
-/*
-	R_GetSpriteFrame
-*/
 static mspriteframe_t *
 R_GetSpriteFrame (entity_t *currententity)
 {
@@ -222,9 +216,6 @@ R_GetSpriteFrame (entity_t *currententity)
 }
 
 
-/*
-	R_DrawSpriteModel
-*/
 static void
 R_DrawSpriteModel (entity_t *e)
 {
@@ -278,10 +269,10 @@ R_DrawSpriteModel (entity_t *e)
 	glDisable (GL_ALPHA_TEST);
 }
 
+
 /*
 	ALIAS MODELS
 */
-
 
 #define NUMVERTEXNORMALS	162
 
@@ -568,11 +559,6 @@ GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2, entity_t
 }
 
 
-
-/*
-	R_SetupAliasFrame
-
-*/
 static void
 R_SetupAliasFrame (int frame, aliashdr_t *paliashdr, qboolean fb)
 {
@@ -595,11 +581,7 @@ R_SetupAliasFrame (int frame, aliashdr_t *paliashdr, qboolean fb)
 	GL_DrawAliasFrame (paliashdr, pose, fb);
 }
 
-/*
-	R_SetupAliasBlendedFrame
 
-
-*/
 void
 R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t *e, qboolean fb)
 {
@@ -651,9 +633,6 @@ R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t *e, qboolea
 }
 
 
-/*
-	R_DrawAliasModel
-*/
 static void
 R_DrawAliasModel (entity_t *e)
 {
@@ -882,6 +861,7 @@ R_ShowNearestLoc (void)
 	}
 }
 
+
 /*
 	R_DrawEntitiesOnList
 
@@ -926,9 +906,7 @@ R_DrawEntitiesOnList (void)
 	}
 }
 
-/*
-	R_DrawViewModel
-*/
+
 static void
 R_DrawViewModel (void)
 {
@@ -948,6 +926,7 @@ R_DrawViewModel (void)
 	R_DrawAliasModel (currententity);
 	glDepthRange (gldepthmin, gldepthmax);
 }
+
 
 static int
 SignbitsForPlane (mplane_t *out)
@@ -1002,10 +981,6 @@ R_SetFrustum (void)
 }
 
 
-
-/*
-	R_SetupFrame
-*/
 void
 R_SetupFrame (void)
 {
@@ -1050,9 +1025,6 @@ MYgluPerspective (GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar)
 }
 
 
-/*
-	R_SetupGL
-*/
 static void
 R_SetupGL (void)
 {
@@ -1117,9 +1089,6 @@ R_SetupGL (void)
 }
 
 
-/*
-	R_Clear
-*/
 static void
 R_Clear (void)
 {
@@ -1133,6 +1102,7 @@ R_Clear (void)
 
 	glDepthRange (gldepthmin, gldepthmax);
 }
+
 
 /*
 	R_RenderView

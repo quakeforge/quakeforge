@@ -30,12 +30,13 @@
 #define _CLIENT_H
 
 #include "QF/info.h"
-#include "net.h"
-#include "protocol.h"
 #include "QF/quakefs.h"
-#include "render.h"
 #include "QF/vid.h"
 #include "QF/zone.h"
+
+#include "net.h"
+#include "protocol.h"
+#include "render.h"
 
 // player_state_t is the information needed by a player entity
 // to do move prediction and to generate a drawable entity

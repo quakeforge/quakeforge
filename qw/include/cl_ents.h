@@ -1,7 +1,7 @@
 /*
-	client.h
+	cl_ents.h
 
-	Client definitions
+	Client entity definitions
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 

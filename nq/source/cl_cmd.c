@@ -29,7 +29,6 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -70,14 +69,10 @@ Cmd_ForwardToServer (void)
 		SZ_Print (&cls.message, "\n");
 }
 
-/*
-	cl_Cmd_Init
-*/
+
 void
 cl_Cmd_Init (void)
 {
-//
-// register our commands
-//
+	// register our commands
 	Cmd_AddCommand ("cmd", Cmd_ForwardToServer, "No Description");
 }

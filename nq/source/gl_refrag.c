@@ -30,14 +30,15 @@
 # include "config.h"
 #endif
 
-#include "render.h"
 #include "QF/model.h"
 #include "QF/sys.h"
 #include "QF/console.h"
 
 #include "client.h"
-#include "d_iface.h"
+// #include "d_iface.h"
 #include "glquake.h"
+#include "render.h"
+#include "r_local.h"
 
 mnode_t    *r_pefragtopnode;
 
@@ -97,11 +98,7 @@ R_RemoveEfrags (entity_t *ent)
 	ent->efrag = NULL;
 }
 
-/*
-===================
-R_SplitEntityOnNode
-===================
-*/
+
 void
 R_SplitEntityOnNode (mnode_t *node)
 {
@@ -163,12 +160,6 @@ R_SplitEntityOnNode (mnode_t *node)
 }
 
 
-
-/*
-===========
-R_AddEfrags
-===========
-*/
 void
 R_AddEfrags (entity_t *ent)
 {

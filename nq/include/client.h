@@ -1,7 +1,7 @@
 /*
 	client.h
 
-	@description@
+	Client definitions
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -31,15 +31,16 @@
 
 #include <stdio.h>
 
+#include "QF/cvar.h"
 #include "QF/info.h"
 #include "QF/mathlib.h"
+#include "QF/model.h"
+#include "QF/quakefs.h"
+#include "QF/sound.h"
+
 #include "protocol.h"
 #include "net.h"
-#include "QF/model.h"
-#include "QF/sound.h"
 #include "render.h"
-#include "QF/cvar.h"
-#include "QF/quakefs.h"
 #include "game.h"
 
 typedef struct usercmd_s

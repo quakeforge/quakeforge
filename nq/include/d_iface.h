@@ -1,7 +1,7 @@
 /*
 	d_iface.h
 
-	@description@
+	Interface header file for rasterization modules
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -29,6 +29,7 @@
 #ifndef __d_iface_h
 #define __d_iface_h
 
+#include "QF/mathlib.h"
 #include "QF/model.h"
 #include "render.h"
 
@@ -169,6 +170,7 @@ void D_DrawZPoint (void);
 void D_EnableBackBufferAccess (void);
 void D_EndParticles (void);
 void D_Init (void);
+void D_Init_Cvars (void);
 void D_ViewChanged (void);
 void D_SetupFrame (void);
 void D_StartParticles (void);

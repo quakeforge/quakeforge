@@ -2,7 +2,7 @@
 /*
 	cl_main.c
 
-	@description@
+	entity parsing and management
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -31,19 +31,21 @@
 # include "config.h"
 #endif
 
-#include "QF/msg.h"
+#include "QF/cmd.h"
 #include "QF/compat.h"
+#include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/input.h"
+#include "QF/msg.h"
+#include "QF/screen.h"
+#include "QF/va.h"
+
 #include "client.h"
 #include "chase.h"
-#include "QF/input.h"
 #include "host.h"
-#include "QF/va.h"
 #include "host.h"
+#include "render.h"
 #include "server.h"
-#include "QF/console.h"
-#include "QF/screen.h"
-#include "QF/cmd.h"
 
 byte       *vid_colormap;
 
@@ -67,6 +69,8 @@ cvar_t     *m_yaw;
 cvar_t     *m_forward;
 cvar_t     *m_side;
 
+cvar_t     *r_firecolor;
+
 cvar_t     *show_fps;
 cvar_t     *show_time;
 
@@ -85,74 +89,61 @@ dlight_t    cl_dlights[MAX_DLIGHTS];
 int         cl_numvisedicts;
 entity_t   *cl_visedicts[MAX_VISEDICTS];
 
+
 void
 CL_InitCvars (void)
 {
-	show_fps =
-		Cvar_Get ("show_fps", "0", CVAR_NONE, NULL,
-				  "display realtime frames per second");
-	// Misty: I like to be able to see the time when I play
+
+	r_firecolor = Cvar_Get ("r_firecolor", "0.9 0.4 0", CVAR_ARCHIVE, NULL,
+				"color of rocket and lava ball fires");
+	show_fps = Cvar_Get ("show_fps", "0", CVAR_NONE, NULL,
+			     "display realtime frames per second");
 	show_time = Cvar_Get ("show_time", "0", CVAR_NONE, NULL,
-						  "display the current time");
-	cl_warncmd =
-		Cvar_Get ("cl_warncmd", "0", CVAR_NONE, NULL,
-				  "inform when execing a command");
+			      "display the current time");
+	cl_warncmd = Cvar_Get ("cl_warncmd", "0", CVAR_NONE, NULL,
+			  "inform when execing a command");
 	cl_name = Cvar_Get ("_cl_name", "player", CVAR_ARCHIVE, NULL,
-			"Player name");
-	cl_color = Cvar_Get ("_cl_color", "0", CVAR_ARCHIVE, NULL, "Player color");
-	cl_upspeed =
-		Cvar_Get ("cl_upspeed", "200", CVAR_NONE, NULL,
-				"swim/fly up/down speed");
-	cl_forwardspeed =
-		Cvar_Get ("cl_forwardspeed", "200", CVAR_ARCHIVE, NULL,
-				"forward speed");
-	cl_backspeed =
-		Cvar_Get ("cl_backspeed", "200", CVAR_ARCHIVE, NULL, "backward speed");
+			    "Player name");
+	cl_color = Cvar_Get ("_cl_color", "0", CVAR_ARCHIVE, NULL,
+			     "Player color");
+	cl_upspeed = Cvar_Get ("cl_upspeed", "200", CVAR_NONE, NULL,
+			  "swim/fly up/down speed");
+	cl_forwardspeed = Cvar_Get ("cl_forwardspeed", "200", CVAR_ARCHIVE,
+				    NULL, "forward speed");
+	cl_backspeed = Cvar_Get ("cl_backspeed", "200", CVAR_ARCHIVE, NULL,
+				 "backward speed");
 	cl_sidespeed = Cvar_Get ("cl_sidespeed", "350", CVAR_NONE, NULL,
-			"strafe speed");
-	cl_movespeedkey =
-		Cvar_Get ("cl_movespeedkey", "2.0", CVAR_NONE, NULL,
-				  "move `run' speed multiplier");
+				 "strafe speed");
+	cl_movespeedkey = Cvar_Get ("cl_movespeedkey", "2.0", CVAR_NONE, NULL,
+				    "move `run' speed multiplier");
 	cl_yawspeed = Cvar_Get ("cl_yawspeed", "140", CVAR_NONE, NULL,
-			"turning speed");
-	cl_pitchspeed =
-		Cvar_Get ("cl_pitchspeed", "150", CVAR_NONE, NULL,
-				"look up/down speed");
-	cl_anglespeedkey =
-		Cvar_Get ("cl_anglespeedkey", "1.5", CVAR_NONE, NULL,
-				  "turn `run' speed multiplier");
-	cl_shownet =
-		Cvar_Get ("cl_shownet", "0", CVAR_NONE, NULL,
-				  "show network packets. 0=off, 1=basic, 2=verbose");
-	cl_nolerp =
-		Cvar_Get ("cl_nolerp", "0", CVAR_NONE, NULL,
-				"linear motion interpolation");
-	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, NULL, "status bar mode");
-	cl_hudswap =
-		Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, NULL,
-				"new HUD on left side?");
+				"turning speed");
+	cl_pitchspeed = Cvar_Get ("cl_pitchspeed", "150", CVAR_NONE, NULL,
+			  "look up/down speed");
+	cl_anglespeedkey = Cvar_Get ("cl_anglespeedkey", "1.5", CVAR_NONE,
+				     NULL, "turn `run' speed multiplier");
+	cl_shownet = Cvar_Get ("cl_shownet", "0", CVAR_NONE, NULL,
+			       "show network packets. 0=off, 1=basic, 2=verbose");
+	cl_nolerp = Cvar_Get ("cl_nolerp", "0", CVAR_NONE, NULL,
+			      "linear motion interpolation");
+	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, NULL,
+			    "status bar mode");
+	cl_hudswap = Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, NULL,
+			       "new HUD on left side?");
 	lookspring =
 		Cvar_Get ("lookspring", "0", CVAR_ARCHIVE, NULL,
-				  "Snap view to center when moving and no mlook/klook");
-	m_pitch =
-		Cvar_Get ("m_pitch", "0.022", CVAR_ARCHIVE, NULL,
-				  "mouse pitch (up/down) multipier");
-	m_yaw =
-		Cvar_Get ("m_yaw", "0.022", CVAR_ARCHIVE, NULL,
-				  "mouse yaw (left/right) multipiler");
-	m_forward =
-		Cvar_Get ("m_forward", "1", CVAR_ARCHIVE, NULL,
-				"mouse forward/back speed");
+			  "Snap view to center when moving and no mlook/klook");
+	m_pitch = Cvar_Get ("m_pitch", "0.022", CVAR_ARCHIVE, NULL,
+			    "mouse pitch (up/down) multipier");
+	m_yaw =	Cvar_Get ("m_yaw", "0.022", CVAR_ARCHIVE, NULL,
+			  "mouse yaw (left/right) multipiler");
+	m_forward = Cvar_Get ("m_forward", "1", CVAR_ARCHIVE, NULL,
+			      "mouse forward/back speed");
 	m_side = Cvar_Get ("m_side", "0.8", CVAR_ARCHIVE, NULL,
-			"mouse strafe speed");
+			   "mouse strafe speed");
 }
 
-/*
-=====================
-CL_ClearState
 
-=====================
-*/
 void
 CL_ClearState (void)
 {
@@ -182,6 +173,7 @@ CL_ClearState (void)
 		cl.free_efrags[i].entnext = &cl.free_efrags[i + 1];
 	cl.free_efrags[i].entnext = NULL;
 }
+
 
 /*
 =====================
@@ -232,8 +224,6 @@ CL_Disconnect_f (void)
 }
 
 
-
-
 /*
 =====================
 CL_EstablishConnection
@@ -262,6 +252,7 @@ CL_EstablishConnection (char *host)
 	cls.signon = 0;						// need all the signon messages
 	// before playing
 }
+
 
 /*
 =====================
@@ -309,6 +300,7 @@ CL_SignonReply (void)
 	}
 }
 
+
 /*
 =====================
 CL_NextDemo
@@ -340,11 +332,7 @@ CL_NextDemo (void)
 	cls.demonum++;
 }
 
-/*
-==============
-CL_PrintEntities_f
-==============
-*/
+
 void
 CL_PrintEntities_f (void)
 {
@@ -404,12 +392,7 @@ SetPal (int i)
 #endif
 }
 
-/*
-===============
-CL_AllocDlight
 
-===============
-*/
 dlight_t   *
 CL_AllocDlight (int key)
 {
@@ -446,11 +429,7 @@ CL_AllocDlight (int key)
 	return dl;
 }
 
-/*
-===============
-CL_NewDlight
-===============
-*/
+
 void
 CL_NewDlight (int key, float x, float y, float z, float radius, float time,
 			  int type)
@@ -488,12 +467,7 @@ CL_NewDlight (int key, float x, float y, float z, float radius, float time,
 	}
 }
 
-/*
-===============
-CL_DecayLights
 
-===============
-*/
 void
 CL_DecayLights (void)
 {
@@ -562,11 +536,6 @@ CL_LerpPoint (void)
 }
 
 
-/*
-===============
-CL_RelinkEntities
-===============
-*/
 void
 CL_RelinkEntities (void)
 {
@@ -705,24 +674,27 @@ CL_RelinkEntities (void)
 		}
 #endif
 
-		if (ent->model->flags & EF_GIB)
-			R_RocketTrail (oldorg, ent->origin, 2, ent);
-		else if (ent->model->flags & EF_ZOMGIB)
-			R_RocketTrail (oldorg, ent->origin, 4, ent);
-		else if (ent->model->flags & EF_TRACER)
-			R_RocketTrail (oldorg, ent->origin, 3, ent);
-		else if (ent->model->flags & EF_TRACER2)
-			R_RocketTrail (oldorg, ent->origin, 5, ent);
-		else if (ent->model->flags & EF_ROCKET) {
-			R_RocketTrail (oldorg, ent->origin, 0, ent);
+		if (VectorDistance_fast(ent->msg_origins[1], ent->origin) > (256*256))
+			VectorCopy (ent ->origin, ent->msg_origins[1]);
+		if (ent->model->flags & EF_ROCKET) {
 			dl = CL_AllocDlight (i);
 			VectorCopy (ent->origin, dl->origin);
+			VectorCopy (r_firecolor->vec, dl->color);
 			dl->radius = 200;
-			dl->die = cl.time + 0.01;
+			dl->die = cl.time + 0.1;
+			R_RocketTrail (0, ent);
 		} else if (ent->model->flags & EF_GRENADE)
-			R_RocketTrail (oldorg, ent->origin, 1, ent);
+			R_RocketTrail (1, ent);
+		else if (ent->model->flags & EF_GIB)
+			R_RocketTrail (2, ent);
+		else if (ent->model->flags & EF_ZOMGIB)
+			R_RocketTrail (4, ent);
+		else if (ent->model->flags & EF_TRACER)
+			R_RocketTrail (3, ent);
+		else if (ent->model->flags & EF_TRACER2)
+			R_RocketTrail (5, ent);
 		else if (ent->model->flags & EF_TRACER3)
-			R_RocketTrail (oldorg, ent->origin, 6, ent);
+			R_RocketTrail (6, ent);
 
 		ent->forcelink = false;
 

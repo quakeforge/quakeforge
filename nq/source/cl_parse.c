@@ -30,8 +30,12 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
-#include <string.h>
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include "client.h"
 #include "host.h"
@@ -46,6 +50,7 @@
 #include "QF/sound.h" // FIXME: DEFAULT_SOUND_PACKET_*
 #include "game.h"
 #include "QF/input.h"
+
 
 char       *svc_strings[] = {
 	"svc_bad",
@@ -97,6 +102,7 @@ char       *svc_strings[] = {
 
 //=============================================================================
 
+
 /*
 ===============
 CL_EntityNum
@@ -120,11 +126,6 @@ CL_EntityNum (int num)
 }
 
 
-/*
-==================
-CL_ParseStartSoundPacket
-==================
-*/
 void
 CL_ParseStartSoundPacket (void)
 {
@@ -163,6 +164,7 @@ CL_ParseStartSoundPacket (void)
 	S_StartSound (ent, channel, cl.sound_precache[sound_num], pos,
 				  volume / 255.0, attenuation);
 }
+
 
 /*
 ==================
@@ -226,11 +228,7 @@ CL_KeepaliveMessage (void)
 
 struct model_s **snd_worldmodel = &cl.worldmodel;
 
-/*
-==================
-CL_ParseServerInfo
-==================
-*/
+
 void
 CL_ParseServerInfo (void)
 {
@@ -488,11 +486,7 @@ CL_ParseUpdate (int bits)
 	}
 }
 
-/*
-==================
-CL_ParseBaseline
-==================
-*/
+
 void
 CL_ParseBaseline (entity_t *ent)
 {
@@ -615,11 +609,7 @@ CL_ParseClientdata (int bits)
 	}
 }
 
-/*
-=====================
-CL_NewTranslation
-=====================
-*/
+
 void
 CL_NewTranslation (int slot)
 {
@@ -652,11 +642,7 @@ CL_NewTranslation (int slot)
 	}
 }
 
-/*
-=====================
-CL_ParseStatic
-=====================
-*/
+
 void
 CL_ParseStatic (void)
 {
@@ -682,11 +668,7 @@ CL_ParseStatic (void)
 	R_AddEfrags (ent);
 }
 
-/*
-===================
-CL_ParseStaticSound
-===================
-*/
+
 void
 CL_ParseStaticSound (void)
 {
@@ -707,11 +689,7 @@ CL_ParseStaticSound (void)
 #define SHOWNET(x) if(cl_shownet->int_val==2)Con_Printf ("%3i:%s\n", net_message->readcount-1, x);
 
 int snd_viewentity;
-/*
-=====================
-CL_ParseServerMessage
-=====================
-*/
+
 void
 CL_ParseServerMessage (void)
 {

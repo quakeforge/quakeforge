@@ -1,4 +1,3 @@
-
 /*
 	gl_rsurf.c
 
@@ -31,9 +30,14 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include <stdio.h>
-#include <string.h>
 #include <math.h>
 
 #include "QF/compat.h"
@@ -41,20 +45,16 @@
 #include "QF/qargs.h"
 #include "QF/vid.h"
 #include "QF/sys.h"
-#include "QF/mathlib.h"					// needed by: protocol.h, render.h,
-										// client.h,
-						// modelgen.h, glmodel.h
+#include "QF/mathlib.h"
 #include "QF/wad.h"
 #include "draw.h"
 #include "QF/cvar.h"
-#include "net.h"						// needed by: client.h
-#include "protocol.h"					// needed by: client.h
+#include "protocol.h"
 #include "QF/cmd.h"
 #include "sbar.h"
-#include "render.h"						// needed by: client.h, gl_model.h,
-										// glquake.h
-#include "client.h"						// need cls in this file
-#include "QF/model.h"						// needed by: glquake.h
+#include "render.h"
+#include "client.h"
+#include "QF/model.h"
 #include "QF/console.h"
 #include "glquake.h"
 
@@ -69,6 +69,7 @@ int         lightmap_textures;
 unsigned    blocklights[18 * 18 * 3];
 
 cvar_t     *gl_colorlights;
+cvar_t     *gl_lightmap_components;
 
 #define	BLOCK_WIDTH		128
 #define	BLOCK_HEIGHT	128
@@ -97,12 +98,14 @@ msurface_t *waterchain = NULL;
 
 extern qboolean lighthalf;
 
+
 // LordHavoc: place for gl_rsurf setup code
 void
 glrsurf_init ()
 {
 	memset (&lightmaps, 0, sizeof (lightmaps));
 }
+
 
 void
 recursivelightupdate (mnode_t *node)
@@ -119,6 +122,7 @@ recursivelightupdate (mnode_t *node)
 			 c--, surf++) surf->cached_dlight = true;
 }
 
+
 // LordHavoc: function to force all lightmaps to be updated
 void
 R_ForceLightUpdate ()
@@ -128,6 +132,7 @@ R_ForceLightUpdate ()
 		recursivelightupdate (cl.worldmodel->nodes);
 }
 
+
 /*
 	R_AddDynamicLights
 
@@ -136,11 +141,6 @@ R_ForceLightUpdate ()
 int         dlightdivtable[8192];
 int         dlightdivtableinitialized = 0;
 
-/*
-===============
-R_AddDynamicLights
-===============
-*/
 void
 R_AddDynamicLights (msurface_t *surf)
 {
@@ -243,6 +243,7 @@ R_AddDynamicLights (msurface_t *surf)
 		}
 	}
 }
+
 
 /*
 	R_BuildLightMap
@@ -363,6 +364,7 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 	}
 }
 
+
 /*
 ===============
 R_TextureAnimation
@@ -422,6 +424,7 @@ GL_UploadLightmap (int i, int x, int y, int w, int h)
 					 GL_UNSIGNED_BYTE,
 					 lightmaps[i] + (y * BLOCK_WIDTH) * lightmap_bytes);
 }
+
 
 /*
 ================
@@ -494,11 +497,7 @@ R_DrawMultitexturePoly (msurface_t *s)
 	}
 }
 
-/*
-================
-R_BlendLightmaps
-================
-*/
+
 void
 R_BlendLightmaps (void)
 {
@@ -541,11 +540,6 @@ R_BlendLightmaps (void)
 	glDepthMask (1);					// back to normal Z buffering
 }
 
-/*
-
-	R_RenderFullbrights
-
-*/
 
 void
 R_RenderFullbrights (void)
@@ -577,11 +571,7 @@ R_RenderFullbrights (void)
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-/*
-================
-R_RenderBrushPoly
-================
-*/
+
 void
 R_RenderBrushPoly (msurface_t *fa)
 {
@@ -651,6 +641,7 @@ R_RenderBrushPoly (msurface_t *fa)
 	}
 }
 
+
 void
 GL_WaterSurface (msurface_t *s)
 {
@@ -672,11 +663,7 @@ GL_WaterSurface (msurface_t *s)
 	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 }
 
-/*
-================
-R_DrawWaterSurfaces
-================
-*/
+
 void
 R_DrawWaterSurfaces (void)
 {
@@ -715,11 +702,6 @@ R_DrawWaterSurfaces (void)
 }
 
 
-/*
-================
-DrawTextureChains
-================
-*/
 void
 DrawTextureChains (void)
 {
@@ -736,11 +718,7 @@ DrawTextureChains (void)
 	}
 }
 
-/*
-=================
-R_DrawBrushModel
-=================
-*/
+
 void
 R_DrawBrushModel (entity_t *e)
 {
@@ -858,11 +836,7 @@ R_DrawBrushModel (entity_t *e)
 =============================================================
 */
 
-/*
-================
-R_RecursiveWorldNode
-================
-*/
+
 void
 R_RecursiveWorldNode (mnode_t *node)
 {
@@ -967,12 +941,6 @@ R_RecursiveWorldNode (mnode_t *node)
 }
 
 
-
-/*
-=============
-R_DrawWorld
-=============
-*/
 void
 R_DrawWorld (void)
 {
@@ -1010,11 +978,6 @@ R_DrawWorld (void)
 }
 
 
-/*
-===============
-R_MarkLeaves
-===============
-*/
 void
 R_MarkLeaves (void)
 {
@@ -1050,7 +1013,6 @@ R_MarkLeaves (void)
 		}
 	}
 }
-
 
 
 /*
@@ -1111,11 +1073,6 @@ model_t    *currentmodel;
 
 int         nColinElim;
 
-/*
-================
-BuildSurfaceDisplayList
-================
-*/
 void
 BuildSurfaceDisplayList (msurface_t *fa)
 {
@@ -1223,11 +1180,7 @@ BuildSurfaceDisplayList (msurface_t *fa)
 
 }
 
-/*
-========================
-GL_CreateSurfaceLightmap
-========================
-*/
+
 void
 GL_CreateSurfaceLightmap (msurface_t *surf)
 {

@@ -46,10 +46,8 @@ soft_ASM=	d_draw.S d_draw16.S d_parta.S d_polysa.S d_scana.S d_spr8.S \
 		surf16.S surf8.S
 common_ASM=	sys_ia32.S worlda.S $(math_ASM)
 
-common_SOURCES= game.c wad.c world.c \
-		model.c model_alias.c model_brush.c model_sprite.c \
-		com.c \
-		$(common_ASM)
+common_SOURCES= game.c wad.c world.c model.c model_alias.c model_brush.c \
+		model_sprite.c com.c $(common_ASM)
 
 # ... System type
 if SYSTYPE_WIN32
@@ -90,7 +88,7 @@ combined_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(server_SOURCES) \
 soft_SOURCES=	d_edge.c d_fill.c d_init.c d_modech.c d_part.c d_polyse.c \
 		d_scan.c d_sky.c d_sprite.c d_surf.c d_vars.c d_zpoint.c \
 		draw.c sw_raclip.c sw_ralias.c sw_rbsp.c sw_rdraw.c sw_redge.c sw_refrag.c \
-		sw_rlight.c sw_rmain.c sw_rmisc.c sw_part.c sw_rsky.c sw_rsprite.c \
+		sw_rlight.c sw_rmain.c sw_rmisc.c sw_rpart.c sw_rsky.c sw_rsprite.c \
 		sw_rsurf.c sw_rvars.c screen.c sw_model_alias.c sw_model_brush.c \
 		sw_model_sprite.c sw_view.c $(soft_ASM)
 
@@ -122,10 +120,11 @@ nq_x11_DEPENDENCIES=$(client_LIB_DEPS)
 
 # OpenGL-using targets
 # ... Common stuff
-ogl_SOURCES=	gl_draw.c gl_mesh.c gl_part.c gl_refrag.c gl_rlight.c \
-		gl_rmain.c gl_rmisc.c gl_rsurf.c gl_screen.c gl_view.c \
-		gl_warp.c gl_model_alias.c gl_model_brush.c gl_model_fullbright.c \
-		gl_model_sprite.c
+ogl_SOURCES=	noisetextures.c gl_textures.c gl_draw.c gl_dyn_fires.c	\
+		gl_dyn_part.c gl_dyn_textures.c gl_mesh.c		\
+		gl_refrag.c gl_rlight.c gl_rmain.c gl_rmisc.c gl_rsurf.c \
+		gl_screen.c gl_view.c gl_warp.c gl_model_alias.c	\
+		gl_model_brush.c gl_model_fullbright.c gl_model_sprite.c
 
 # ... 3Dfx Voodoo 1 and 2 SVGAlib-based console GL
 nq_3dfx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)

@@ -65,19 +65,15 @@ cachepic_t  menu_cachepics[MAX_CACHED_PICS];
 int         menu_numcachepics;
 
 
-qpic_t     *
+qpic_t *
 Draw_PicFromWad (char *name)
 {
 	return W_GetLumpName (name);
 }
 
-/*
-================
-Draw_CachePic
-================
-*/
-qpic_t     *
-Draw_CachePic (char *path)
+
+qpic_t *
+Draw_CachePic (char *path, qboolean alpha)
 {
 	cachepic_t *pic;
 	int         i;
@@ -565,7 +561,7 @@ Draw_ConsoleBackground (int lines)
 	int         f, fstep;
 	qpic_t     *conback;
 
-	conback = Draw_CachePic ("gfx/conback.lmp");
+	conback = Draw_CachePic ("gfx/conback.lmp", true);
 
 	// draw the pic
 	if (r_pixbytes == 1) {

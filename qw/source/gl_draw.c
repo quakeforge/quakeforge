@@ -88,8 +88,7 @@ typedef struct {
 	float       sl, tl, sh, th;
 } glpic_t;
 
-//=============================================================================
-/* Support Routines */
+extern int gl_filter_min, gl_filter_max;
 
 typedef struct cachepic_s {
 	char        name[MAX_QPATH];
@@ -103,8 +102,6 @@ static cachepic_t cachepics[MAX_CACHED_PICS];
 static int  numcachepics;
 
 static byte menuplyr_pixels[4096];
-
-extern int gl_filter_min, gl_filter_max;
 
 
 qpic_t *
@@ -508,8 +505,6 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	glColor3ubv (lighthalf_v);
 }
 
-
-extern int gl_filter_min, gl_filter_max;
 
 /*
 	Draw_TransPicTranslate

@@ -29,6 +29,12 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include <errno.h>
 #include <unistd.h>
@@ -43,7 +49,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <sys/stat.h>
-#include <string.h>
 #include <dpmi.h>
 #include <sys/nearptr.h>
 #include <conio.h>

@@ -29,14 +29,16 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
-#include <string.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef HAVE_STRINGS_H
-#include <strings.h>
-#endif
 
 #include "QF/qtypes.h"
 #include "QF/compat.h"
@@ -66,6 +68,7 @@ msurface_t *warpface;
 
 extern cvar_t *gl_subdivide_size;
 
+
 void
 BoundPoly (int numverts, float *verts, vec3_t mins, vec3_t maxs)
 {
@@ -83,6 +86,7 @@ BoundPoly (int numverts, float *verts, vec3_t mins, vec3_t maxs)
 				maxs[j] = *v;
 		}
 }
+
 
 void
 SubdividePolygon (int numverts, float *verts)
@@ -167,6 +171,7 @@ SubdividePolygon (int numverts, float *verts)
 	}
 }
 
+
 /*
 ================
 GL_SubdivideSurface
@@ -207,14 +212,13 @@ GL_SubdivideSurface (msurface_t *fa)
 
 //=========================================================
 
-
-
 // speed up sin calculations - Ed
 float       turbsin[] = {
 #	include "gl_warp_sin.h"
 };
 
 #define TURBSCALE (256.0 / (2 * M_PI))
+
 
 /*
 =============
@@ -257,7 +261,6 @@ EmitWaterPolys (msurface_t *fa)
 		glEnd ();
 	}
 }
-
 
 /*
 =================================================================
@@ -692,6 +695,7 @@ R_DrawSkyDome (void)
 	glDepthRange (gldepthmin, gldepthmax);
 }
 
+
 void
 R_DrawSky (void)
 {
@@ -700,8 +704,6 @@ R_DrawSky (void)
 	else
 		R_DrawSkyDome ();
 }
-
-
 
 //===============================================================
 
@@ -771,11 +773,7 @@ R_InitSky (texture_t *mt)
 	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
-/*
-=============
-EmitSkyPolys
-=============
-*/
+
 void
 EmitSkyPolys (msurface_t *fa)
 {
@@ -809,11 +807,7 @@ EmitSkyPolys (msurface_t *fa)
 	}
 }
 
-/*
-=================
-R_DrawSkyChain
-=================
-*/
+
 void
 R_DrawSkyChain (msurface_t *s)
 {
@@ -837,6 +831,7 @@ R_DrawSkyChain (msurface_t *s)
 
 	glDisable (GL_BLEND);
 }
+
 
 /*
 ===============

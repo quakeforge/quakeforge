@@ -29,24 +29,30 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include <math.h>
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "QF/compat.h"
-#include "QF/qargs.h"
 #include "QF/console.h"
-#include "r_local.h"
-#include "view.h"
+#include "QF/model.h"
+#include "QF/qargs.h"
+#include "QF/sys.h"
+
+#include "client.h"
+#include "chase.h"
 #include "game.h"
 #include "glquake.h"
-#include "client.h"
-#include "QF/model.h"
 #include "render.h"
-#include "QF/sys.h"
-#include "chase.h"
+#include "r_local.h"
+#include "view.h"
 
 entity_t    r_worldentity;
 
@@ -64,13 +70,7 @@ int         r_framecount;				// used for dlight push checking
 
 int         c_brush_polys, c_alias_polys;
 
-qboolean    envmap;						// true during envmap command capture 
-
-										// 
-
-										// 
-
-										// 
+qboolean    envmap;						// true during envmap command capture
 
 
 int         particletexture;			// little dot for particles
@@ -128,7 +128,7 @@ cvar_t     *gl_playermip;
 cvar_t     *gl_nocolors;
 cvar_t     *gl_keeptjunctions;
 cvar_t     *gl_reporttjunctions;
-cvar_t     *gl_particles;
+cvar_t     *r_particles;
 
 cvar_t     *r_skyname;
 cvar_t     *gl_skymultipass;
@@ -207,11 +207,7 @@ R_RotateForEntity (entity_t *e)
 =============================================================
 */
 
-/*
-================
-R_GetSpriteFrame
-================
-*/
+
 static mspriteframe_t *
 R_GetSpriteFrame (entity_t *currententity)
 {
@@ -256,12 +252,6 @@ R_GetSpriteFrame (entity_t *currententity)
 }
 
 
-/*
-=================
-R_DrawSpriteModel
-
-=================
-*/
 static void
 R_DrawSpriteModel (entity_t *e)
 {
@@ -320,6 +310,7 @@ R_DrawSpriteModel (entity_t *e)
 	glDisable (GL_ALPHA_TEST);
 }
 
+
 /*
 =============================================================
 
@@ -327,7 +318,6 @@ R_DrawSpriteModel (entity_t *e)
 
 =============================================================
 */
-
 
 #define NUMVERTEXNORMALS	162
 
@@ -348,11 +338,7 @@ float      *shadedots = r_avertexnormal_dots[0];
 
 int         lastposenum;
 
-/*
-=============
-GL_DrawAliasFrame
-=============
-*/
+
 static void
 GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
 {
@@ -402,11 +388,7 @@ GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
 }
 
 
-/*
-=============
-GL_DrawAliasShadow
-=============
-*/
+
 extern vec3_t lightspot;
 
 static void
@@ -468,13 +450,6 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 }
 
 
-
-/*
-=================
-R_SetupAliasFrame
-
-=================
-*/
 static void
 R_SetupAliasFrame (int frame, aliashdr_t *paliashdr, qboolean fb)
 {
@@ -498,12 +473,6 @@ R_SetupAliasFrame (int frame, aliashdr_t *paliashdr, qboolean fb)
 }
 
 
-/*
-=================
-R_DrawAliasModel
-
-=================
-*/
 static void
 R_DrawAliasModel (entity_t *e)
 {
@@ -671,11 +640,7 @@ R_DrawAliasModel (entity_t *e)
 
 //==================================================================================
 
-/*
-=============
-R_DrawEntitiesOnList
-=============
-*/
+
 static void
 R_DrawEntitiesOnList (void)
 {
@@ -713,11 +678,7 @@ R_DrawEntitiesOnList (void)
 	}
 }
 
-/*
-=============
-R_DrawViewModel
-=============
-*/
+
 static void
 R_DrawViewModel (void)
 {
@@ -733,6 +694,7 @@ R_DrawViewModel (void)
 	R_DrawAliasModel (currententity);
 	glDepthRange (gldepthmin, gldepthmax);
 }
+
 
 static int
 SignbitsForPlane (mplane_t *out)
@@ -787,12 +749,6 @@ R_SetFrustum (void)
 }
 
 
-
-/*
-===============
-R_SetupFrame
-===============
-*/
 static void
 R_SetupFrame (void)
 {
@@ -839,11 +795,6 @@ MYgluPerspective (GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar)
 }
 
 
-/*
-=============
-R_SetupGL
-=============
-*/
 static void
 R_SetupGL (void)
 {
@@ -926,6 +877,7 @@ R_SetupGL (void)
 	glShadeModel (GL_SMOOTH);
 }
 
+
 /*
 ================
 R_RenderScene
@@ -958,11 +910,6 @@ R_RenderScene (void)
 }
 
 
-/*
-=============
-R_Clear
-=============
-*/
 static void
 R_Clear (void)
 {
@@ -977,13 +924,7 @@ R_Clear (void)
 	glDepthRange (gldepthmin, gldepthmax);
 }
 
-#if 0									// !!! FIXME, Zoid, mirror is
-										// disabled for now
-/*
-=============
-R_Mirror
-=============
-*/
+#if 0 // !!! FIXME, Zoid, mirror is disabled for now
 void
 R_Mirror (void)
 {
@@ -1047,6 +988,7 @@ R_Mirror (void)
 	glColor4f (1, 1, 1, 1);
 }
 #endif
+
 
 /*
 ================

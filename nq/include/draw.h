@@ -1,7 +1,7 @@
 /*
 	draw.h
 
-	@description@
+	Video buffer handling definitions and prototypes
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -34,6 +34,7 @@
 extern	qpic_t		*draw_disc;	// also used on sbar
 
 void Draw_Init (void);
+void Draw_Init_Cvars (void);
 void Draw_Character8 (int x, int y, int num);
 void Draw_DebugChar (char num);
 void Draw_Pic (int x, int y, qpic_t *pic);
@@ -49,7 +50,7 @@ void Draw_FadeScreen (void);
 void Draw_String8 (int x, int y, char *str);
 void Draw_Crosshair(void);
 qpic_t *Draw_PicFromWad (char *name);
-qpic_t *Draw_CachePic (char *path);
+qpic_t *Draw_CachePic (char *path, qboolean alpha);
 void Draw_Crosshair(void);
 
 #endif // __draw_h

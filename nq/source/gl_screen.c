@@ -29,9 +29,14 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include <math.h>
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -41,24 +46,21 @@
 #include "QF/qendian.h"
 #include "QF/vid.h"
 #include "QF/sys.h"
-#include "QF/mathlib.h"					// needed by: protocol.h, render.h,
-										// client.h,
-						// modelgen.h, glmodel.h
+#include "QF/mathlib.h"
 #include "QF/wad.h"
 #include "draw.h"
 #include "QF/cvar.h"
-#include "net.h"						// needed by: client.h
-#include "protocol.h"					// needed by: client.h
+#include "net.h"
+#include "protocol.h"
 #include "QF/keys.h"
 #include "QF/cmd.h"
 #include "sbar.h"
 #include "QF/sound.h"
 #include "QF/screen.h"
 #include "r_local.h"
-#include "render.h"						// needed by: client.h, gl_model.h,
-										// glquake.h
-#include "client.h"						// need cls in this file
-#include "QF/model.h"						// needed by: glquake.h
+#include "render.h"
+#include "client.h"
+#include "QF/model.h"
 #include "QF/console.h"
 #include "glquake.h"
 #include "view.h"
@@ -176,6 +178,7 @@ int         scr_center_lines;
 int         scr_erase_lines;
 int         scr_erase_center;
 
+
 /*
 ==============
 SCR_CenterPrint
@@ -247,6 +250,7 @@ SCR_DrawCenterString (void)
 	} while (1);
 }
 
+
 void
 SCR_CheckDrawCenterString (void)
 {
@@ -266,11 +270,7 @@ SCR_CheckDrawCenterString (void)
 
 //=============================================================================
 
-/*
-====================
-CalcFov
-====================
-*/
+
 float
 CalcFov (float fov_x, float width, float height)
 {
@@ -288,6 +288,7 @@ CalcFov (float fov_x, float width, float height)
 
 	return a;
 }
+
 
 /*
 =================
@@ -410,11 +411,6 @@ SCR_SizeDown_f (void)
 
 //============================================================================
 
-/*
-==================
-SCR_Init
-==================
-*/
 void
 SCR_Init_Cvars (void)
 {
@@ -430,6 +426,7 @@ SCR_Init_Cvars (void)
 	gl_triplebuffer = Cvar_Get ("gl_triplebuffer", "1", CVAR_ARCHIVE, NULL,
 			"None");
 }
+
 
 void
 SCR_Init (void)
@@ -449,12 +446,6 @@ SCR_Init (void)
 }
 
 
-
-/*
-==============
-SCR_DrawRam
-==============
-*/
 void
 SCR_DrawRam (void)
 {
@@ -467,11 +458,7 @@ SCR_DrawRam (void)
 	Draw_Pic (scr_vrect.x + 32, scr_vrect.y, scr_ram);
 }
 
-/*
-==============
-SCR_DrawTurtle
-==============
-*/
+
 void
 SCR_DrawTurtle (void)
 {
@@ -492,11 +479,6 @@ SCR_DrawTurtle (void)
 	Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
 }
 
-/*
-==============
-SCR_DrawFPS
-==============
-*/
 
 void
 SCR_DrawFPS (void)
@@ -527,6 +509,7 @@ SCR_DrawFPS (void)
 	Draw_String8 (x, y, st);
 
 }
+
 
 /* Misty: I like to see the time */
 void
@@ -563,11 +546,7 @@ SCR_DrawTime (void)
 	Draw_String8 (x, y, st);
 }
 
-/*
-==============
-DrawPause
-==============
-*/
+
 void
 SCR_DrawPause (void)
 {
@@ -579,18 +558,12 @@ SCR_DrawPause (void)
 	if (!cl.paused)
 		return;
 
-	pic = Draw_CachePic ("gfx/pause.lmp");
+	pic = Draw_CachePic ("gfx/pause.lmp", true);
 	Draw_Pic ((vid.width - pic->width) / 2,
 			  (vid.height - 48 - pic->height) / 2, pic);
 }
 
 
-
-/*
-==============
-SCR_DrawLoading
-==============
-*/
 void
 SCR_DrawLoading (void)
 {
@@ -599,21 +572,15 @@ SCR_DrawLoading (void)
 	if (!scr_drawloading)
 		return;
 
-	pic = Draw_CachePic ("gfx/loading.lmp");
+	pic = Draw_CachePic ("gfx/loading.lmp", true);
 	Draw_Pic ((vid.width - pic->width) / 2,
 			  (vid.height - 48 - pic->height) / 2, pic);
 }
 
 
-
 //=============================================================================
 
 
-/*
-==================
-SCR_SetUpToDrawConsole
-==================
-*/
 void
 SCR_SetUpToDrawConsole (void)
 {
@@ -650,11 +617,7 @@ SCR_SetUpToDrawConsole (void)
 		con_notifylines = 0;
 }
 
-/*
-==================
-SCR_DrawConsole
-==================
-*/
+
 void
 SCR_DrawConsole (void)
 {
@@ -686,11 +649,6 @@ typedef struct _TargaHeader {
 } TargaHeader;
 
 
-/* 
-================== 
-SCR_ScreenShot_f
-================== 
-*/
 void
 SCR_ScreenShot_f (void)
 {
@@ -747,12 +705,6 @@ SCR_ScreenShot_f (void)
 //=============================================================================
 
 
-/*
-===============
-SCR_BeginLoadingPlaque
-
-================
-*/
 void
 SCR_BeginLoadingPlaque (void)
 {
@@ -779,12 +731,7 @@ SCR_BeginLoadingPlaque (void)
 	scr_fullupdate = 0;
 }
 
-/*
-===============
-SCR_EndLoadingPlaque
 
-================
-*/
 void
 SCR_EndLoadingPlaque (void)
 {
@@ -797,6 +744,7 @@ SCR_EndLoadingPlaque (void)
 
 char       *scr_notifystring;
 qboolean    scr_drawdialog;
+
 
 void
 SCR_DrawNotifyString (void)
@@ -869,6 +817,7 @@ SCR_ModalMessage (char *text)
 
 //=============================================================================
 
+
 /*
 ===============
 SCR_BringDownConsole
@@ -890,6 +839,7 @@ SCR_BringDownConsole (void)
 	// frame
 	VID_SetPalette (vid_basepal);
 }
+
 
 void
 SCR_TileClear (void)
@@ -918,8 +868,10 @@ SCR_TileClear (void)
 #endif
 }
 
+
 float       oldsbar = 0;
 extern void R_ForceLightUpdate ();
+unsigned char lighthalf_v[3];
 qboolean    lighthalf;
 extern cvar_t *gl_lightmode;
 

@@ -29,47 +29,47 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
-#include <string.h>
-#include <stdio.h>
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
 #ifdef HAVE_STRINGS_H
-#include <strings.h>
+# include <strings.h>
 #endif
 
-#include "QF/vid.h"
-#include "QF/sys.h"
-#include "QF/mathlib.h"					// needed by: protocol.h, render.h,
-										// client.h,
-						// modelgen.h, glmodel.h
-#include "QF/wad.h"
-#include "draw.h"
-#include "QF/cvar.h"
-#include "net.h"						// needed by: client.h
-#include "protocol.h"					// needed by: client.h
+#include <stdio.h>
+
 #include "QF/cmd.h"
-#include "sbar.h"
-#include "render.h"						// needed by: client.h, gl_model.h,
-										// glquake.h
-#include "client.h"						// need cls in this file
-#include "QF/model.h"						// needed by: glquake.h
 #include "QF/console.h"
+#include "QF/cvar.h"
+#include "QF/mathlib.h"
+#include "QF/model.h"
+#include "QF/sys.h"
+#include "QF/varrays.h"
+#include "QF/vid.h"
+#include "QF/wad.h"
+
+#include "client.h"
+#include "draw.h"
 #include "glquake.h"
+#include "net.h"
+#include "protocol.h"
+#include "sbar.h"
+#include "render.h"
+#include "r_dynamic.h"
 #include "r_local.h"
 
 extern entity_t r_worldentity;
+extern void GDT_Init ();
+
+varray_t2f_c4f_v3f_t varray[MAX_VARRAY_VERTS];
 
 qboolean    VID_Is8bit (void);
 void        R_InitBubble ();
-void        R_FireColor_f (void);
 
 cvar_t     *gl_fires;
 qboolean    allowskybox;				// allow skyboxes?  --KB
 
-/*
-==================
-R_InitTextures
-==================
-*/
+
 void
 R_InitTextures (void)
 {
@@ -100,59 +100,11 @@ R_InitTextures (void)
 	}
 }
 
-byte        dottexture[8][8] = {
-	{0, 1, 1, 0, 0, 0, 0, 0}
-	,
-	{1, 1, 1, 1, 0, 0, 0, 0}
-	,
-	{1, 1, 1, 1, 0, 0, 0, 0}
-	,
-	{0, 1, 1, 0, 0, 0, 0, 0}
-	,
-	{0, 0, 0, 0, 0, 0, 0, 0}
-	,
-	{0, 0, 0, 0, 0, 0, 0, 0}
-	,
-	{0, 0, 0, 0, 0, 0, 0, 0}
-	,
-	{0, 0, 0, 0, 0, 0, 0, 0}
-	,
-};
-void
-R_InitParticleTexture (void)
-{
-	int         x, y;
-	byte        data[8][8][4];
-
-	// 
-	// particle texture
-	// 
-	particletexture = texture_extension_number++;
-	glBindTexture (GL_TEXTURE_2D, particletexture);
-
-	for (x = 0; x < 8; x++) {
-		for (y = 0; y < 8; y++) {
-			data[y][x][0] = 255;
-			data[y][x][1] = 255;
-			data[y][x][2] = 255;
-			data[y][x][3] = dottexture[x][y] * 255;
-		}
-	}
-	glTexImage2D (GL_TEXTURE_2D, 0, gl_alpha_format, 8, 8, 0, GL_RGBA,
-				  GL_UNSIGNED_BYTE, data);
-
-	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-}
 
 /*
-===============
-R_Envmap_f
+	R_Envmap_f
 
-Grab six views for environment mapping tests
-===============
+	Grab six views for environment mapping tests
 */
 void
 R_Envmap_f (void)
@@ -214,9 +166,7 @@ R_Envmap_f (void)
 	GL_EndRendering ();
 }
 
-/*
-   R_LoadSky_f
-*/
+
 void
 R_LoadSky_f (void)
 {
@@ -229,11 +179,6 @@ R_LoadSky_f (void)
 }
 
 
-/*
-===============
-R_Init
-===============
-*/
 void
 R_Init (void)
 {
@@ -244,8 +189,6 @@ R_Init (void)
 	Cmd_AddCommand ("envmap", R_Envmap_f, "No Description");
 	Cmd_AddCommand ("pointfile", R_ReadPointFile_f, "No Description");
 	Cmd_AddCommand ("loadsky", R_LoadSky_f, "No Description");
-
-	Cmd_AddCommand ("r_firecolor", R_FireColor_f, "No Description");
 
 	r_norefresh = Cvar_Get ("r_norefresh", "0", CVAR_NONE, NULL, "None");
 	r_lightmap = Cvar_Get ("r_lightmap", "0", CVAR_NONE, NULL, "None");
@@ -278,8 +221,8 @@ R_Init (void)
 	gl_fires = Cvar_Get ("gl_fires", "0", CVAR_ARCHIVE, NULL,
 						 "Toggles lavaball and rocket fireballs");
 
-	gl_particles = Cvar_Get ("gl_particles", "1", CVAR_ARCHIVE, NULL,
-							 "whether or not to draw particles");
+	r_particles = Cvar_Get ("r_particles", "1", CVAR_ARCHIVE, NULL,
+				"whether or not to draw particles");
 
 	gl_fb_models = Cvar_Get ("gl_fb_models", "1", CVAR_ARCHIVE, NULL,
 							 "Toggles fullbright color support for models..  "
@@ -299,12 +242,12 @@ R_Init (void)
 
 	R_InitBubble ();
 
-	R_InitParticles ();
-	R_InitParticleTexture ();
+	GDT_Init ();
 
 	playertextures = texture_extension_number;
 	texture_extension_number += 16;
 }
+
 
 /*
 ===============
@@ -455,11 +398,7 @@ R_TranslatePlayerSkin (int playernum)
 #endif
 }
 
-/*
-===============
-R_NewMap
-===============
-*/
+
 void
 R_NewMap (void)
 {
@@ -538,6 +477,7 @@ R_TimeRefresh_f (void)
 //  GL_EndRendering ();
 	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 }
+
 
 void
 D_FlushCaches (void)

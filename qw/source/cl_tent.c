@@ -52,6 +52,7 @@
 
 #define	MAX_BEAMS	8
 #define MAX_BEAM_ENTS 20
+
 typedef struct {
 	int         entity;
 	struct model_s *model;
@@ -64,6 +65,7 @@ typedef struct {
 beam_t      cl_beams[MAX_BEAMS];
 
 #define	MAX_EXPLOSIONS	8
+
 typedef struct {
 	float       start;
 	entity_t    ent;
@@ -80,9 +82,7 @@ sfx_t      *cl_sfx_ric2;
 sfx_t      *cl_sfx_ric3;
 sfx_t      *cl_sfx_r_exp3;
 
-/*
-	CL_TEnts_Init
-*/
+
 void
 CL_TEnts_Init (void)
 {
@@ -95,12 +95,7 @@ CL_TEnts_Init (void)
 	cl_sfx_r_exp3 = S_PrecacheSound ("weapons/r_exp3.wav");
 }
 
-/*
-	CL_Init_Entity
 
-	Set the fields of the entity to reasonable defaults. Especially
-	the extended fields.
-*/
 void
 CL_Init_Entity (entity_t *ent)
 {
@@ -115,9 +110,7 @@ CL_Init_Entity (entity_t *ent)
 	ent->pose1 = ent->pose2 = -1;
 }
 
-/*
-	CL_ClearTEnts
-*/
+
 void
 CL_ClearTEnts (void)
 {
@@ -136,9 +129,7 @@ CL_ClearTEnts (void)
 	}
 }
 
-/*
-	CL_AllocExplosion
-*/
+
 explosion_t *
 CL_AllocExplosion (void)
 {
@@ -161,9 +152,7 @@ CL_AllocExplosion (void)
 	return &cl_explosions[index];
 }
 
-/*
-	CL_ParseBeam
-*/
+
 void
 CL_ParseBeam (model_t *m)
 {
@@ -206,9 +195,7 @@ CL_ParseBeam (model_t *m)
 	Con_Printf ("beam list overflow!\n");
 }
 
-/*
-	CL_ParseTEnt
-*/
+
 void
 CL_ParseTEnt (void)
 {
@@ -258,6 +245,7 @@ CL_ParseTEnt (void)
 					S_StartSound (-1, 0, cl_sfx_ric3, pos, 1, 1);
 			}
 			break;
+
 		case TE_SUPERSPIKE:			// super spike hitting wall
 			pos[0] = MSG_ReadCoord (net_message);
 			pos[1] = MSG_ReadCoord (net_message);
@@ -357,9 +345,6 @@ CL_ParseTEnt (void)
 }
 
 
-/*
-	CL_NewTempEntity
-*/
 entity_t   **
 CL_NewTempEntity (void)
 {
@@ -369,9 +354,7 @@ CL_NewTempEntity (void)
 	return &cl_visedicts[cl_numvisedicts++];
 }
 
-/*
-	CL_UpdateBeams
-*/
+
 void
 CL_UpdateBeams (void)
 {
@@ -433,9 +416,7 @@ CL_UpdateBeams (void)
 	}
 }
 
-/*
-	CL_UpdateExplosions
-*/
+
 void
 CL_UpdateExplosions (void)
 {
@@ -461,9 +442,7 @@ CL_UpdateExplosions (void)
 	}
 }
 
-/*
-	CL_UpdateTEnts
-*/
+
 void
 CL_UpdateTEnts (void)
 {

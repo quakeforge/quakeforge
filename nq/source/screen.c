@@ -1,7 +1,7 @@
 /*
 	screen.c
 
-	@description@
+	master for refresh, status bar, console, chat, notify, etc
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -31,19 +31,21 @@
 #endif
 
 #include <time.h>
-#include "r_local.h"
+
 #include "QF/cmd.h"
 #include "QF/compat.h"
-#include "QF/screen.h"
-#include "sbar.h"
-#include "QF/input.h"
-#include "view.h"
-#include "host.h"
-#include "QF/sys.h"
 #include "QF/console.h"
-#include "QF/qendian.h"
+#include "QF/input.h"
 #include "QF/keys.h"
+#include "QF/screen.h"
+#include "QF/sys.h"
+#include "QF/qendian.h"
+
 #include "draw.h"
+#include "host.h"
+#include "r_local.h"
+#include "sbar.h"
+#include "view.h"
 
 // only the refresh window will be updated unless these variables are flagged 
 int         scr_copytop;
@@ -90,6 +92,7 @@ qboolean    block_drawing;
 
 void        SCR_ScreenShot_f (void);
 
+
 void
 SCR_Init_Cvars (void)
 {
@@ -109,6 +112,7 @@ float       scr_centertime_off;
 int         scr_center_lines;
 int         scr_erase_lines;
 int         scr_erase_center;
+
 
 /*
 ==============
@@ -134,6 +138,7 @@ SCR_CenterPrint (char *str)
 	}
 }
 
+
 void
 SCR_EraseCenterString (void)
 {
@@ -152,6 +157,7 @@ SCR_EraseCenterString (void)
 	scr_copytop = 1;
 	Draw_TileClear (0, y, vid.width, 8 * scr_erase_lines);
 }
+
 
 void
 SCR_DrawCenterString (void)
@@ -199,6 +205,7 @@ SCR_DrawCenterString (void)
 	} while (1);
 }
 
+
 void
 SCR_CheckDrawCenterString (void)
 {
@@ -217,6 +224,7 @@ SCR_CheckDrawCenterString (void)
 }
 
 //=============================================================================
+
 
 /*
 ====================
@@ -240,6 +248,7 @@ CalcFov (float fov_x, float width, float height)
 
 	return a;
 }
+
 
 /*
 =================
@@ -342,6 +351,7 @@ SCR_SizeDown_f (void)
 
 //============================================================================
 
+
 /*
 ==================
 SCR_Init
@@ -374,7 +384,6 @@ SCR_Init (void)
 }
 
 
-
 /*
 ==============
 SCR_DrawRam
@@ -391,6 +400,7 @@ SCR_DrawRam (void)
 
 	Draw_Pic (scr_vrect.x + 32, scr_vrect.y, scr_ram);
 }
+
 
 /*
 ==============
@@ -417,6 +427,7 @@ SCR_DrawTurtle (void)
 	Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
 }
 
+
 /*
 ==============
 SCR_DrawNet
@@ -432,6 +443,7 @@ SCR_DrawNet (void)
 
 	Draw_Pic (scr_vrect.x + 64, scr_vrect.y, scr_net);
 }
+
 
 void
 SCR_DrawFPS (void)
@@ -461,6 +473,7 @@ SCR_DrawFPS (void)
 	y = vid.height - sb_lines - 8;
 	Draw_String8 (x, y, st);
 }
+
 
 /* Misty: I like to see the time */
 void
@@ -497,6 +510,7 @@ SCR_DrawTime (void)
 	Draw_String8 (x, y, st);
 }
 
+
 /*
 ==============
 DrawPause
@@ -513,11 +527,10 @@ SCR_DrawPause (void)
 	if (!cl.paused)
 		return;
 
-	pic = Draw_CachePic ("gfx/pause.lmp");
+	pic = Draw_CachePic ("gfx/pause.lmp", true);
 	Draw_Pic ((vid.width - pic->width) / 2,
 			  (vid.height - 48 - pic->height) / 2, pic);
 }
-
 
 
 /*
@@ -533,21 +546,14 @@ SCR_DrawLoading (void)
 	if (!scr_drawloading)
 		return;
 
-	pic = Draw_CachePic ("gfx/loading.lmp");
+	pic = Draw_CachePic ("gfx/loading.lmp", true);
 	Draw_Pic ((vid.width - pic->width) / 2,
 			  (vid.height - 48 - pic->height) / 2, pic);
 }
 
-
-
 //=============================================================================
 
 
-/*
-==================
-SCR_SetUpToDrawConsole
-==================
-*/
 void
 SCR_SetUpToDrawConsole (void)
 {
@@ -589,11 +595,7 @@ SCR_SetUpToDrawConsole (void)
 		con_notifylines = 0;
 }
 
-/*
-==================
-SCR_DrawConsole
-==================
-*/
+
 void
 SCR_DrawConsole (void)
 {
@@ -606,7 +608,6 @@ SCR_DrawConsole (void)
 			Con_DrawNotify ();			// only draw notify in game
 	}
 }
-
 
 /* 
 ============================================================================== 
@@ -633,11 +634,7 @@ typedef struct {
 	unsigned char data;					// unbounded
 } pcx_t;
 
-/* 
-============== 
-WritePCXfile 
-============== 
-*/
+
 void
 WritePCXfile (char *filename, byte * data, int width, int height,
 			  int rowbytes, byte * palette)
@@ -695,12 +692,6 @@ WritePCXfile (char *filename, byte * data, int width, int height,
 }
 
 
-
-/* 
-================== 
-SCR_ScreenShot_f
-================== 
-*/
 void
 SCR_ScreenShot_f (void)
 {
@@ -742,16 +733,9 @@ SCR_ScreenShot_f (void)
 	Con_Printf ("Wrote %s\n", pcxname);
 }
 
-
 //=============================================================================
 
 
-/*
-===============
-SCR_BeginLoadingPlaque
-
-================
-*/
 void
 SCR_BeginLoadingPlaque (void)
 {
@@ -778,12 +762,7 @@ SCR_BeginLoadingPlaque (void)
 	scr_fullupdate = 0;
 }
 
-/*
-===============
-SCR_EndLoadingPlaque
 
-================
-*/
 void
 SCR_EndLoadingPlaque (void)
 {
@@ -796,6 +775,7 @@ SCR_EndLoadingPlaque (void)
 
 char       *scr_notifystring;
 qboolean    scr_drawdialog;
+
 
 void
 SCR_DrawNotifyString (void)
@@ -828,6 +808,7 @@ SCR_DrawNotifyString (void)
 		start++;						// skip the \n
 	} while (1);
 }
+
 
 /*
 ==================
@@ -865,8 +846,8 @@ SCR_ModalMessage (char *text)
 	return key_lastpress == 'y';
 }
 
-
 //=============================================================================
+
 
 /*
 ===============
@@ -1055,11 +1036,6 @@ SCR_UpdateScreen (void)
 }
 
 
-/*
-==================
-SCR_UpdateWholeScreen
-==================
-*/
 void
 SCR_UpdateWholeScreen (void)
 {

@@ -29,13 +29,18 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
 #include <sys/segments.h>
 #include <go32.h>
 #include <unistd.h>
 #include <sys/nearptr.h>
 #include <dos.h>
-#include <string.h>
 #include <dpmi.h>
 // #include <osfcn.h>
 #include <bios.h>

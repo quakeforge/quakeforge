@@ -1,7 +1,7 @@
 /*
 	d_part.c
 
-	@description@
+	software driver module for drawing particles
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -33,11 +33,6 @@
 #include "d_local.h"
 
 
-/*
-==============
-D_EndParticles
-==============
-*/
 void
 D_EndParticles (void)
 {
@@ -45,11 +40,6 @@ D_EndParticles (void)
 }
 
 
-/*
-==============
-D_StartParticles
-==============
-*/
 void
 D_StartParticles (void)
 {
@@ -57,13 +47,8 @@ D_StartParticles (void)
 }
 
 
-#ifndef	USE_INTEL_ASM
+#ifndef USE_INTEL_ASM
 
-/*
-==============
-D_DrawParticle
-==============
-*/
 void
 D_DrawParticle (particle_t *pparticle)
 {

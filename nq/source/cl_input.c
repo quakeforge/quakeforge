@@ -29,18 +29,22 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 
-#include <string.h>
-
-#include "QF/msg.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/compat.h"
-#include "QF/keys.h"
 #include "QF/input.h"
+#include "QF/keys.h"
+#include "QF/msg.h"
 
-#include "host.h"
 #include "client.h"
+#include "host.h"
 
 /*
 ===============================================================================
@@ -103,6 +107,7 @@ KeyDown (kbutton_t *b)
 	b->state |= 1 + 2;					// down + impulse down
 }
 
+
 void
 KeyUp (kbutton_t *b)
 {
@@ -164,6 +169,7 @@ IN_MLookUp (void)
 	if (!(in_mlook.state & 1) && lookspring->int_val)
 		V_StartPitchDrift ();
 }
+
 void
 IN_UpDown (void)
 {
@@ -350,6 +356,7 @@ IN_Impulse (void)
 	in_impulse = atoi (Cmd_Argv (1));
 }
 
+
 /*
 ===============
 CL_KeyState
@@ -400,8 +407,6 @@ CL_KeyState (kbutton_t *key)
 
 	return val;
 }
-
-
 
 
 //==========================================================================
@@ -473,6 +478,7 @@ CL_AdjustAngles (void)
 
 }
 
+
 /*
 ================
 CL_BaseMove
@@ -536,7 +542,6 @@ CL_BaseMove (usercmd_t *cmd)
 		cl.viewangles[PITCH] = bound (-70, cl.viewangles[PITCH], 80);
 	}
 }
-
 
 
 /*
@@ -616,11 +621,7 @@ CL_SendMove (usercmd_t *cmd)
 	}
 }
 
-/*
-============
-CL_InitInput
-============
-*/
+
 void
 CL_InitInput (void)
 {
@@ -659,5 +660,4 @@ CL_InitInput (void)
 	Cmd_AddCommand ("-klook", IN_KLookUp, "No Description");
 	Cmd_AddCommand ("+mlook", IN_MLookDown, "No Description");
 	Cmd_AddCommand ("-mlook", IN_MLookUp, "No Description");
-
 }
