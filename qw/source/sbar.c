@@ -96,10 +96,10 @@ static qboolean largegame = false;
 cvar_t     *cl_showscoresuid;
 cvar_t     *fs_fraglog;
 cvar_t     *cl_fraglog;
-cvar_t     *cl_sbar;
-cvar_t     *cl_sbar_separator;
-cvar_t     *cl_hudswap;
-cvar_t     *cl_overlay_gravity;
+cvar_t     *hud_sbar;
+cvar_t     *hud_sbar_separator;
+cvar_t     *hud_swap;
+cvar_t     *hud_scoreboard_gravity;
 
 static view_t *sbar_view;
 static view_t *sbar_inventory_view;
@@ -118,7 +118,7 @@ static void Sbar_TeamOverlay (view_t *view);
 static void Sbar_DeathmatchOverlay (view_t *view, int start);
 
 static void
-cl_hudswap_f (cvar_t *var)
+hud_swap_f (cvar_t *var)
 {
 	hudswap = var->int_val;
 	if (var->int_val) {
@@ -134,7 +134,7 @@ cl_hudswap_f (cvar_t *var)
 }
 
 static void
-cl_overlay_gravity_f (cvar_t *var)
+hud_scoreboard_gravity_f (cvar_t *var)
 {
 	grav_t      grav;
 
@@ -196,7 +196,7 @@ calc_sb_lines (cvar_t *var)
 }
 
 static void
-cl_sbar_f (cvar_t *var)
+hud_sbar_f (cvar_t *var)
 {
 	vid.recalc_refdef = true;
 	if (scr_viewsize)
@@ -219,8 +219,8 @@ static void
 viewsize_f (cvar_t *var)
 {
 	calc_sb_lines (var);
-	if (cl_sbar)
-		r_lineadj = cl_sbar->int_val ? sb_lines : 0;
+	if (hud_sbar)
+		r_lineadj = hud_sbar->int_val ? sb_lines : 0;
 }
 
 
@@ -940,7 +940,7 @@ Sbar_Draw (void)
 
 	sbar_view->visible = 0;
 
-	headsup = !(cl_sbar->int_val || scr_viewsize->int_val < 100);
+	headsup = !(hud_sbar->int_val || scr_viewsize->int_val < 100);
 	if ((sb_updates >= vid.numpages) && !headsup)
 		return;
 
@@ -1560,7 +1560,7 @@ draw_miniteam (view_t *view)
 /*
 	// draw separator
 	x += 208;
-	if (cl_sbar_separator->int_val)
+	if (hud_sbar_separator->int_val)
 		for (y = vid.height - sb_lines; y < (int) vid.height - 6; y += 2)
 			Draw_Character (x, y, 14);
 */
@@ -1975,15 +1975,16 @@ Sbar_Init (void)
 	cl_fraglog = Cvar_Get ("cl_fraglog", "0", CVAR_ARCHIVE, NULL,
 						   "Automatic fraglogging, non-zero value will switch "
 						   "it on.");
-	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, cl_sbar_f,
-						"status bar mode: 0 = hud, 1 = oldstyle");
-	cl_sbar_separator = Cvar_Get ("cl_sbar_separator", "0", CVAR_ARCHIVE, NULL,
-								  "turns on status bar separator");
-	cl_hudswap = Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, cl_hudswap_f,
-						   "new HUD on left side?");
-	cl_overlay_gravity = Cvar_Get ("cl_overlay_gravity", "center",
-								   CVAR_ARCHIVE, cl_overlay_gravity_f,
-								   "control placement of scoreboard overlay: "
-								   "center, northwest, north, northeast, "
-								   "west, east, southwest, south, southeast");
+	hud_sbar = Cvar_Get ("hud_sbar", "0", CVAR_ARCHIVE, hud_sbar_f,
+						 "status bar mode: 0 = hud, 1 = oldstyle");
+	hud_sbar_separator = Cvar_Get ("hud_sbar_separator", "0", CVAR_ARCHIVE,
+								   NULL, "turns on status bar separator");
+	hud_swap = Cvar_Get ("hud_swap", "0", CVAR_ARCHIVE, hud_swap_f,
+						 "new HUD on left side?");
+	hud_scoreboard_gravity = Cvar_Get ("hud_scoreboard_gravity", "center",
+									   CVAR_ARCHIVE, hud_scoreboard_gravity_f,
+									   "control placement of scoreboard "
+									   "overlay: center, northwest, north, "
+									   "northeast, west, east, southwest, "
+									   "south, southeast");
 }

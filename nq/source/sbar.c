@@ -93,10 +93,9 @@ int         hipweapons[4] =
 	{ HIT_LASER_CANNON_BIT, HIT_MJOLNIR_BIT, 4, HIT_PROXIMITY_GUN_BIT };
 qpic_t     *hsb_items[2];			// MED 01/04/97 added hipnotic items array
 
-qboolean    sbar_centered;
-
-cvar_t     *cl_sbar;
-cvar_t     *cl_hudswap;
+cvar_t     *hud_sbar;
+cvar_t     *hud_swap;
+cvar_t     *hud_scoreboard_gravity;
 
 static view_t *sbar_view;
 static view_t *sbar_inventory_view;
@@ -111,7 +110,7 @@ static view_t *overlay_view;
 static view_t *stuff_view;
 
 static void
-cl_hudswap_f (cvar_t *var)
+hud_swap_f (cvar_t *var)
 {
 	if (var->int_val) {
 		hud_armament_view->gravity = grav_southwest;
@@ -127,6 +126,35 @@ cl_hudswap_f (cvar_t *var)
 	view_move (hud_armament_view, hud_armament_view->xpos,
 			   hud_armament_view->ypos);
 	view_move (stuff_view, stuff_view->xpos, stuff_view->ypos);
+}
+
+static void
+hud_scoreboard_gravity_f (cvar_t *var)
+{
+	grav_t      grav;
+
+	if (strequal (var->string, "center"))
+		grav = grav_center;
+	else if (strequal (var->string, "northwest"))
+		grav = grav_northwest;
+	else if (strequal (var->string, "north"))
+		grav = grav_north;
+	else if (strequal (var->string, "northeast"))
+		grav = grav_northeast;
+	else if (strequal (var->string, "west"))
+		grav = grav_west;
+	else if (strequal (var->string, "east"))
+		grav = grav_east;
+	else if (strequal (var->string, "southwest"))
+		grav = grav_southwest;
+	else if (strequal (var->string, "south"))
+		grav = grav_south;
+	else if (strequal (var->string, "southeast"))
+		grav = grav_southeast;
+	else
+		grav = grav_center;
+	overlay_view->gravity = grav;
+	view_move (overlay_view, overlay_view->xpos, overlay_view->ypos);
 }
 
 static void
@@ -163,7 +191,7 @@ calc_sb_lines (cvar_t *var)
 }
 
 static void
-cl_sbar_f (cvar_t *var)
+hud_sbar_f (cvar_t *var)
 {
 	vid.recalc_refdef = true;
 	if (scr_viewsize)
@@ -186,8 +214,8 @@ static void
 viewsize_f (cvar_t *var)
 {
 	calc_sb_lines (var);
-	if (cl_sbar)
-		r_lineadj = cl_sbar->int_val ? sb_lines : 0;
+	if (hud_sbar)
+		r_lineadj = hud_sbar->int_val ? sb_lines : 0;
 }
 
 
@@ -998,7 +1026,7 @@ Sbar_Draw (void)
 
 	sbar_view->visible = 0;
 
-	headsup = !(cl_sbar->int_val || scr_viewsize->int_val < 100);
+	headsup = !(hud_sbar->int_val || scr_viewsize->int_val < 100);
 
 	if ((sb_updates >= vid.numpages) && !headsup)
 		return;
@@ -1676,8 +1704,14 @@ Sbar_Init (void)
 	}
 
 	r_viewsize_callback = viewsize_f;
-	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, cl_sbar_f,
-						"status bar mode");
-	cl_hudswap = Cvar_Get ("cl_hudswap", "0", CVAR_ARCHIVE, cl_hudswap_f,
-						   "new HUD on left side?");
+	hud_sbar = Cvar_Get ("hud_sbar", "0", CVAR_ARCHIVE, hud_sbar_f,
+						 "status bar mode");
+	hud_swap = Cvar_Get ("hud_swap", "0", CVAR_ARCHIVE, hud_swap_f,
+						 "new HUD on left side?");
+	hud_scoreboard_gravity = Cvar_Get ("hud_scoreboard_gravity", "center",
+									   CVAR_ARCHIVE, hud_scoreboard_gravity_f,
+									   "control placement of scoreboard "
+									   "overlay: center, northwest, north, "
+									   "northeast, west, east, southwest, "
+									   "south, southeast");
 }
