@@ -28,7 +28,7 @@ global zoom
 
 function zoom::init { // Initialize basic options
 	if ($argc != 6) {
-		echo "Usage: $0 base_amp base_fov min_zoom max_zoom zoom_step"
+		echo "Usage: ", $0, " base_amp base_fov min_zoom max_zoom zoom_step"
 		return
 	}
 	zoom.amp = $1
@@ -43,7 +43,7 @@ function zoom::init { // Initialize basic options
 }
 
 // Default initial values
-zoom.init 1 90 1 90 1.15
+zoom::init 1 90 1 90 1.15
 
 function zoom::adjust { // Adjust fov and sensitivity to match zoom factor
 	if ${zoom.zoomed} {
