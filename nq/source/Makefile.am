@@ -216,7 +216,7 @@ endif
 nq_server_LDFLAGS=	$(common_ldflags)
 nq_server_SOURCES=	$(common_sources) $(server_sources) $(ded_sources)
 nq_server_LDADD=	$(server_LIBS)
-nq_server_DEPENDENCIES=	$(server_LIB_DEPSS)
+nq_server_DEPENDENCIES=	$(server_LIB_DEPS)
 
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,
 # or it won't be distributed with 'make dist'
