@@ -391,7 +391,7 @@ ClusterFlow (int clusternum)
 	totalvis += numvis;
 
 	i = CompressRow (outbuffer, compressed);
- 	cluster->visofs = visdata->size;
+	cluster->visofs = visdata->size;
 	dstring_append (visdata, compressed, i);
 }
 
@@ -464,7 +464,7 @@ CalcVis (void)
 		ClusterFlow (i);
 
 	for (i = 0; i < numrealleafs; i++) {
-		bsp->leafs[i].visofs = clusters[leafcluster[i]].visofs;
+		bsp->leafs[i + 1].visofs = clusters[leafcluster[i]].visofs;
 	}
 	if (options.verbosity >= 0)
 		printf ("average clusters visible: %i\n", totalvis / portalclusters);
