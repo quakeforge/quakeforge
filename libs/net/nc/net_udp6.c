@@ -550,7 +550,7 @@ NET_Init (int port)
 	// determine my name & address
 	NET_GetLocalAddress ();
 
-	Con_Printf ("UDP Initialized\n");
+	Con_Printf ("UDP (IPv6) Initialized\n");
 }
 
 void

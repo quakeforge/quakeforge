@@ -162,7 +162,7 @@ UDP_Init (void)
 	if (colon)
 		*colon = 0;
 
-	Con_Printf ("UDP Initialized\n");
+	Con_Printf ("UDP (IPv4) Initialized\n");
 	tcpipAvailable = true;
 
 	return net_controlsocket;
