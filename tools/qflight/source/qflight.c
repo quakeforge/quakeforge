@@ -197,7 +197,7 @@ main (int argc, char **argv)
 	e = strrchr (litfile->str, '.');
 	dstring_replace (litfile, e - litfile->str, -1, ".lit", 5);
 
-	f = Qopen (bspfile, "rb");
+	f = Qopen (bspfile, "rbz");
 	bsp = LoadBSPFile (f, Qfilesize (f));
 	Qclose (f);
 	LoadEntities ();
