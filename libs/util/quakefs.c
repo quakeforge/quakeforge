@@ -809,7 +809,7 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile,
 	// make sure they're not trying to do weird stuff with our private files
 	path = QFS_CompressPath (filename);
 	if (contains_updir(path)) {
-		Sys_Printf ("FindFile: %s: attempt to escape directory tree!\n", path);
+		Sys_DPrintf ("FindFile: %s: attempt to escape directory tree!\n", path);
 		goto error;
 	}
 
