@@ -58,11 +58,10 @@ HWND 		mainwindow;
 
 // static float oldin_grab = 0;
 
-cvar_t      *vid_system_gamma;
+cvar_t     *vid_system_gamma;
 extern viddef_t vid;					// global video state
 
-int         modestate;					// FIXME: just to avoid cross-compile
-										// errors - remove later
+int modestate; // FIXME: just to avoid cross-compile errors - remove later
 
 // The original defaults
 #define    BASEWIDTH    320
@@ -90,8 +89,6 @@ VID_SetPalette (unsigned char *palette)
 void
 VID_Init (unsigned char *palette)
 {
-	// Uint8 video_bpp;
-	// Uint16 video_w, video_h;
 	Uint32      flags;
 
 	// Load the SDL library
@@ -158,9 +155,9 @@ VID_UpdateFullscreen (cvar_t *vid_fullscreen)
 void
 VID_Init_Cvars ()
 {
-	vid_fullscreen =
-		Cvar_Get ("vid_fullscreen", "0", CVAR_NONE, VID_UpdateFullscreen,
-				  "Toggles fullscreen game mode");
+	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_NONE,
+							   VID_UpdateFullscreen,
+							   "Toggles fullscreen game mode");
 	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
 								 "Use system gamma control if available");
 }
@@ -253,6 +250,5 @@ VID_SetCaption (const char *text)
 qboolean
 VID_SetGamma (double gamma)
 {
-//	return SDL_SetGamma ((float) gamma, (float) gamma, (float) gamma);
-	return false; // FIXME
+	return false; //FIXME
 }

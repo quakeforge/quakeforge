@@ -47,12 +47,11 @@ static const char rcsid[] =
 #include "QF/va.h"
 #include "QF/vid.h"
 
-//#include "compat.h"
 #include "d_iface.h"
 #include "d_local.h"
 
 #ifdef WIN32
-/* fixme: this is evil hack to get full DirectSound support with SDL */
+/* FIXME: this is evil hack to get full DirectSound support with SDL */
 #include <windows.h>
 #include <SDL_syswm.h>
 HWND 		mainwindow;
@@ -63,7 +62,7 @@ HWND 		mainwindow;
 cvar_t     *vid_bitdepth;
 extern viddef_t vid;					// global video state
 
-int modestate; // fixme: just to avoid cross-comp errors - remove later
+int modestate; // FIXME: just to avoid cross-compile errors - remove later
 
 // The original defaults
 #define    BASEWIDTH    320
@@ -178,7 +177,7 @@ VID_Init (unsigned char *palette)
 	SDL_ShowCursor (0);
 
 #ifdef WIN32
-        // fixme: EVIL thing - but needed for win32 until
+        // FIXME: EVIL thing - but needed for win32 until
         // SDL_sound works better - without this DirectSound fails.
 
 //        SDL_GetWMInfo(&info);
@@ -194,8 +193,8 @@ VID_UpdateFullscreen (cvar_t *vid_fullscreen)
 {
 	if (!vid.initialized)
 		return;
-	if ((vid_fullscreen->int_val && !(screen->flags & SDL_FULLSCREEN)) ||
-		(!vid_fullscreen->int_val && screen->flags & SDL_FULLSCREEN))
+	if ((vid_fullscreen->int_val && !(screen->flags & SDL_FULLSCREEN))
+		|| (!vid_fullscreen->int_val && screen->flags & SDL_FULLSCREEN))
 		if (!SDL_WM_ToggleFullScreen (screen))
 			Con_Printf ("VID_UpdateFullscreen: error setting fullscreen\n");
 }
@@ -281,10 +280,12 @@ VID_SetCaption (const char *text)
 {
 	if (text && *text) {
 		char       *temp = strdup (text);
+
 		SDL_WM_SetCaption (va ("%s %s: %s", PROGRAM, VERSION, temp), NULL);
 		free (temp);
-	} else
+	} else {
 		SDL_WM_SetCaption (va ("%s %s", PROGRAM, VERSION), NULL);
+	}
 }
 
 qboolean
