@@ -67,6 +67,8 @@ typedef struct {
 	float		*trace_inwater;
 	int			*msg_entity;
 	string_t	*null;
+
+	int			*newmis;
 } sv_globals_t;
 
 extern sv_globals_t sv_globals;
@@ -177,9 +179,10 @@ typedef struct
 	int			air_finished;		//float
 	int			pain_finished;		//float
 	int			radsuit_finished;	//float
-	int			speed;				//Float
+	int			speed;				//float
 
 	int			rotated_bbox;		//int
+	int			lastruntime;		//float
 } sv_fields_t;
 
 extern sv_fields_t sv_fields;
@@ -196,5 +199,7 @@ extern sv_fields_t sv_fields;
 #define SVentity(e,f)	SVFIELD (e, f, entity)
 #define SVvector(e,f)	SVFIELD (e, f, vector)
 #define SVinteger(e,f)	SVFIELD (e, f, integer)
+
+extern func_t EndFrame;
 
 #endif // __sv_progs_h

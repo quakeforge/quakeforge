@@ -317,7 +317,7 @@ SV_LoadProgs (void)
 
 	// Zoid, find the spectator functions
 	SpectatorConnect = SpectatorThink = SpectatorDisconnect = 0;
-	UserInfoCallback = 0;
+	EndFrame = UserInfoCallback = 0;
 
 	if ((f = ED_FindFunction (&sv_pr_state, "SpectatorConnect")) != NULL)
 		SpectatorConnect = (func_t) (f - sv_pr_state.pr_functions);
@@ -329,7 +329,6 @@ SV_LoadProgs (void)
 		UserInfoCallback = (func_t) (f - sv_pr_state.pr_functions);
 
 	// 2000-01-02 EndFrame function by Maddes/FrikaC
-	EndFrame = 0;
 	if ((f = ED_FindFunction (&sv_pr_state, "EndFrame")) != NULL)
 		EndFrame = (func_t) (f - sv_pr_state.pr_functions);
 

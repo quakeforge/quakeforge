@@ -1863,8 +1863,21 @@ SV_Frame (float time)
 	SV_CleanIPList ();
 
 	// move autonomous things around if enough time has passed
-	if (!sv.paused)
-		SV_Physics ();
+	if (!sv.paused) {
+		static double old_time;
+
+		// don't bother running a frame if sys_ticrate seconds haven't passed
+		sv_frametime = realtime - old_time;
+		if (sv_frametime >= sv_mintic->value) {
+			if (sv_frametime > sv_maxtic->value)
+				sv_frametime = sv_maxtic->value;
+			old_time = realtime;
+
+			*sv_globals.frametime = sv_frametime;
+
+			SV_Physics ();
+		}
+	}
 
 	// get packets
 	SV_ReadPackets ();
@@ -2407,6 +2420,7 @@ SV_Init (void)
 
 	SV_Init_Memory ();
 
+	svs.maxclients = MAX_CLIENTS;
 	svs.info = Info_ParseString ("", MAX_SERVERINFO_STRING);
 	localinfo = Info_ParseString ("", 0);	// unlimited
 	SV_InitOperatorCommands ();

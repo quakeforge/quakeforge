@@ -66,6 +66,8 @@ cvar_t     *saved2;
 cvar_t     *saved3;
 cvar_t     *saved4;
 
+func_t      EndFrame;
+
 static int
 prune_edict (progs_t *pr, edict_t *ent)
 {
@@ -131,6 +133,9 @@ parse_field (progs_t *pr, const char *key, const char *value)
 void
 SV_LoadProgs (void)
 {
+	ddef_t     *def;
+	dfunction_t *f;
+
 	PR_LoadProgs (&sv_pr_state, sv_progs->string, sv.max_edicts, 0);
 	if (!sv_pr_state.progs)
 		Host_Error ("SV_LoadProgs: couldn't load %s", sv_progs->string);
@@ -304,6 +309,14 @@ SV_LoadProgs (void)
 	sv_fields.pitch_speed = ED_GetFieldIndex (&sv_pr_state, "pitch_speed");
 
 	sv_fields.rotated_bbox = ED_GetFieldIndex (&sv_pr_state, "rotated_bbox");
+	sv_fields.lastruntime = ED_GetFieldIndex (&sv_pr_state, "lastruntime");
+
+	def = PR_FindGlobal (&sv_pr_state, "newmis");
+	sv_globals.newmis = def ? &G_var (&sv_pr_state, def->ofs, entity) : 0;
+
+	EndFrame = 0;
+	if ((f = ED_FindFunction (&sv_pr_state, "EndFrame")) != NULL)
+		EndFrame = (func_t) (f - sv_pr_state.pr_functions);
 }
 
 void

@@ -747,9 +747,11 @@ SV_ProgStartFrame (void)
 void
 SV_RunEntity (edict_t *ent)
 {
-	if (SVfloat (ent, lastruntime) == (float) realtime)
-		return;
-	SVfloat (ent, lastruntime) = (float) realtime;
+	if (sv_fields.lastruntime != -1) {
+		if (SVfloat (ent, lastruntime) == (float) realtime)
+			return;
+		SVfloat (ent, lastruntime) = (float) realtime;
+	}
 
 	switch ((int) SVfloat (ent, movetype)) {
 		case MOVETYPE_PUSH:
@@ -781,7 +783,8 @@ SV_RunNewmis (void)
 {
 	edict_t    *ent;
 
-	if (!*sv_globals.newmis)
+	if (sv_fields.lastruntime == -1 || !sv_globals.newmis
+		|| !*sv_globals.newmis)
 		return;
 	ent = PROG_TO_EDICT (&sv_pr_state, *sv_globals.newmis);
 	sv_frametime = 0.05;
@@ -793,19 +796,8 @@ SV_RunNewmis (void)
 void
 SV_Physics (void)
 {
-	static double old_time;
 	edict_t    *ent;
 	int         i;
-
-	// don't bother running a frame if sys_ticrate seconds haven't passed
-	sv_frametime = realtime - old_time;
-	if (sv_frametime < sv_mintic->value)
-		return;
-	if (sv_frametime > sv_maxtic->value)
-		sv_frametime = sv_maxtic->value;
-	old_time = realtime;
-
-	*sv_globals.frametime = sv_frametime;
 
 	SV_ProgStartFrame ();
 
@@ -820,8 +812,9 @@ SV_Physics (void)
 			SV_LinkEdict (ent, true);	// force retouch even for stationary
 		}
 
-		if (i > 0 && i <= MAX_CLIENTS) {
-			continue;				// clients are run directly from packets
+		if (i > 0 && i <= svs.maxclients) {
+			// clients are run directly from packets
+			continue;
 		}
 
 		SV_RunEntity (ent);
@@ -831,7 +824,6 @@ SV_Physics (void)
 	if (*sv_globals.force_retouch)
 		(*sv_globals.force_retouch)--;
 
-// 2000-01-02 EndFrame function by Maddes/FrikaC  start
 	if (EndFrame) {
 		// let the progs know that the frame has ended
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
@@ -839,7 +831,6 @@ SV_Physics (void)
 		*sv_globals.time = sv.time;
 		PR_ExecuteProgram (&sv_pr_state, EndFrame);
 	}
-// 2000-01-02 EndFrame function by Maddes/FrikaC  end
 }
 
 void

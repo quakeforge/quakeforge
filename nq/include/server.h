@@ -280,4 +280,6 @@ void SV_Progs_Init_Cvars (void);
 
 void Cvar_Info (struct cvar_s *var);
 
+#define		STOP_EPSILON	0.1
+
 #endif // __server_h

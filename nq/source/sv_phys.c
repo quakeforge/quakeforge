@@ -193,8 +193,6 @@ SV_Impact (edict_t *e1, edict_t *e2)
 	*sv_globals.other = old_other;
 }
 
-#define	STOP_EPSILON	0.1
-
 /*
   ClipVelocity
 
@@ -727,6 +725,12 @@ SV_ProgStartFrame (void)
 void
 SV_RunEntity (edict_t *ent)
 {
+	if (sv_fields.lastruntime != -1) {
+		if (SVfloat (ent, lastruntime) == (float) realtime)
+			return;
+		SVfloat (ent, lastruntime) = (float) realtime;
+	}
+
 	switch ((int) SVfloat (ent, movetype)) {
 		case MOVETYPE_PUSH:
 			SV_Physics_Pusher (ent);
@@ -753,6 +757,21 @@ SV_RunEntity (edict_t *ent)
 }
 
 void
+SV_RunNewmis (void)
+{
+	edict_t    *ent;
+
+	if (sv_fields.lastruntime == -1 || !sv_globals.newmis
+		|| !*sv_globals.newmis)
+		return;
+	ent = PROG_TO_EDICT (&sv_pr_state, *sv_globals.newmis);
+	sv_frametime = 0.05;
+	*sv_globals.newmis = 0;
+
+	SV_RunEntity (ent);
+}
+
+void
 SV_Physics (void)
 {
 	edict_t    *ent;
@@ -775,11 +794,19 @@ SV_Physics (void)
 			SV_Physics_Client (ent, i);
 			continue;
 		}
+
 		SV_RunEntity (ent);
+		SV_RunNewmis ();
 	}
 
 	if (*sv_globals.force_retouch)
 		(*sv_globals.force_retouch)--;
 
-	sv.time += sv_frametime;
+	if (EndFrame) {
+		// let the progs know that the frame has ended
+		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
+		*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, sv.edicts);
+		*sv_globals.time = sv.time;
+		PR_ExecuteProgram (&sv_pr_state, EndFrame);
+	}
 }

@@ -269,6 +269,7 @@ typedef struct
 	int			spawncount;			// number of servers spawned since start,
 									// used to check late spawns
 	client_t	clients[MAX_CLIENTS];
+	int			maxclients;
 	int			num_clients;
 	int			serverflags;		// episode completion information
 	
