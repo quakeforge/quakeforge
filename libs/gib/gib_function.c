@@ -53,22 +53,6 @@ const char  rcsid[] =
 
 hashtab_t  *gib_functions = 0;
 
-/*
-	GIB_Function_New
-	
-	Builds a new function struct and returns
-	a pointer to it.
-*/
-static gib_function_t *
-GIB_Function_New (const char *name)
-{
-	gib_function_t *new = calloc (1, sizeof (gib_function_t));
-
-	new->text = dstring_newstr ();
-	new->name = strdup (name);
-	return new;
-}
-
 /* 
 	Hashtable callbacks
 */
@@ -93,6 +77,29 @@ GIB_Function_Free (void *ele, void *ptr)
 		free (func->script);
 	}
 	free (func);
+}
+
+/*
+	GIB_Function_New
+	
+	Builds a new function struct and returns
+	a pointer to it.
+*/
+static gib_function_t *
+GIB_Function_New (const char *name)
+{
+	gib_function_t *new = calloc (1, sizeof (gib_function_t));
+
+	static void
+	afree (void *data, void *unused)
+	{
+		free (data);
+	};
+	
+	new->text = dstring_newstr ();
+	new->name = strdup (name);
+	new->arglist = llist_new (afree, NULL, NULL);
+	return new;
 }
 
 /*
@@ -151,16 +158,32 @@ GIB_Function_Find (const char *name)
 	return (gib_function_t *) Hash_Find (gib_functions, name);
 }
 
-void
-GIB_Function_Prepare_Args (cbuf_t * cbuf, const char **args, unsigned int argc)
+static void
+GIB_Function_Prepare_Args (cbuf_t * cbuf, const char **args, unsigned int
+		argc, llist_t *arglist)
 {
 	static hashtab_t *zero = 0;
-	unsigned int i;
+	unsigned int i, ind;
 	gib_var_t  *var;
 	static char argss[] = "args";
 
+	static qboolean 
+	iterate (char *arg, llist_node_t *node)
+	{	
+		var = GIB_Var_Get_Complex (&GIB_DATA(cbuf)->locals, &zero,
+			arg, &ind, true);
+		if (!var->array[0].value)
+			var->array[0].value = dstring_newstr ();
+		dstring_copystr (var->array[0].value, args[i]);
+		i++;
+		return i < argc;
+	}
+	
+	i = 1; llist_iterate (arglist, LLIST_ICAST (iterate));
+	
 	var =
-		GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals, &zero, argss, &i, true);
+		GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals, &zero, argss,
+			&ind, true);
 	var->array = realloc (var->array, sizeof (struct gib_varray_s) * argc);
 	memset (var->array + 1, 0, (argc - 1) * sizeof (struct gib_varray_s));
 	var->size = argc;
@@ -173,16 +196,32 @@ GIB_Function_Prepare_Args (cbuf_t * cbuf, const char **args, unsigned int argc)
 	}
 }
 
-void
-GIB_Function_Prepare_Args_D (cbuf_t * cbuf, dstring_t **args, unsigned int argc)
+static void
+GIB_Function_Prepare_Args_D (cbuf_t * cbuf, dstring_t **args, unsigned int
+		argc, llist_t *arglist)
 {
 	static hashtab_t *zero = 0;
-	unsigned int i;
+	unsigned int i, ind;
 	gib_var_t  *var;
 	static char argss[] = "args";
 
+	static qboolean 
+	iterate (char *arg, llist_node_t *node)
+	{	
+		var = GIB_Var_Get_Complex (&GIB_DATA(cbuf)->locals, &zero,
+			arg, &ind, true);
+		if (!var->array[0].value)
+			var->array[0].value = dstring_newstr ();
+		dstring_copystr (var->array[0].value, args[i]->str);
+		i++;
+		return i < argc;
+	}
+	
+	i = 1; llist_iterate (arglist, LLIST_ICAST (iterate));
+	
 	var =
-		GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals, &zero, argss, &i, true);
+		GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals, &zero, argss,
+				&ind, true);
 	var->array = realloc (var->array, sizeof (struct gib_varray_s) * argc);
 	memset (var->array + 1, 0, (argc - 1) * sizeof (struct gib_varray_s));
 	var->size = argc;
@@ -202,28 +241,34 @@ GIB_Function_Prepare_Args_D (cbuf_t * cbuf, dstring_t **args, unsigned int argc)
 	a GIB function with certain arguments
 */
 
-void
+int
 GIB_Function_Execute (cbuf_t * cbuf, gib_function_t * func, const char ** args,
 					  unsigned int argc)
 {
+	if (argc < func->minargs)
+		return -1;
 	GIB_Tree_Ref (&func->program);
 	if (func->script)
 		func->script->refs++;
 	GIB_Buffer_Set_Program (cbuf, func->program);
 	GIB_DATA (cbuf)->script = func->script;
 	GIB_DATA (cbuf)->globals = func->globals;
-	GIB_Function_Prepare_Args (cbuf, args, argc);
+	GIB_Function_Prepare_Args (cbuf, args, argc, func->arglist);
+	return 0;
 }
 
-void
+int
 GIB_Function_Execute_D (cbuf_t * cbuf, gib_function_t * func, dstring_t ** args,
 					  unsigned int argc)
 {
+	if (argc < func->minargs)
+		return -1;
 	GIB_Tree_Ref (&func->program);
 	if (func->script)
 		func->script->refs++;
 	GIB_Buffer_Set_Program (cbuf, func->program);
 	GIB_DATA (cbuf)->script = func->script;
 	GIB_DATA (cbuf)->globals = func->globals;
-	GIB_Function_Prepare_Args_D (cbuf, args, argc);
+	GIB_Function_Prepare_Args_D (cbuf, args, argc, func->arglist);
+	return 0;
 }

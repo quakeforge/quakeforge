@@ -60,7 +60,7 @@ typedef struct gib_object_s {
 	hashtab_t *methods;
 	void **data;
 	unsigned long int handle, refs;
-	hashtab_t *signals;
+	hashtab_t *signals, *vars;
 	llist_t *slots;
 	const char *handstr;
 } gib_object_t;

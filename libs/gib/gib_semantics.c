@@ -87,15 +87,21 @@ GIB_Semantic_Validate_Class (gib_tree_t * tokens)
 							"function.",
 							cmd->start);
 					return -1;
-				} else if (!cmd->next || !cmd->next->next ||
-						cmd->next->next->delim != '{'
-						|| !cmd->next->next->children) {
-					GIB_Parse_Error ("Malformed function "
-							"definition; name, "
-							"program block "
-							"expected.",
-							cmd->start);
-					return -1;
+				} else {
+					gib_tree_t *last;
+
+					for (last = cmd; last->next; last = last->next);
+					
+					if (!cmd->next || !last || last->delim != '{' ||
+							!last->children) {
+						GIB_Parse_Error ("Malformed function "
+								"definition; name, "
+								"optional arg list, "
+								"program block "
+								"expected.",
+								cmd->start);
+						return -1;
+					}
 				}
 				break;
 			default:

@@ -240,6 +240,8 @@ GIB_Object_Finish_Destroy (int argc, const char **argv, void *data)
 	GIB_Handle_Free (obj->handle);
 	free ((void *) obj->handstr);
 	Hash_DelTable (obj->signals);
+	if (obj->vars)
+		Hash_DelTable (obj->vars);
 	llist_delete (obj->slots);
 	free (obj);
 }
@@ -316,8 +318,10 @@ void
 GIB_Reply (gib_object_t *obj, gib_message_t mesg, int argc, const char
 		**argv)
 {
-	mesg.reply (argc, argv, mesg.replydata);
-	GIB_Object_Decref (obj);
+	if (mesg.reply) {
+		mesg.reply (argc, argv, mesg.replydata);
+		GIB_Object_Decref (obj);
+	}
 }
 
 gib_object_t *

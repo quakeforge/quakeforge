@@ -339,10 +339,15 @@ GIB_Execute (cbuf_t * cbuf)
 						b->func ();
 					else if ((f = GIB_Function_Find (cbuf->args->argv[0]->str))) {
 						cbuf_t     *new = Cbuf_PushStack (&gib_interp);
-						GIB_Function_Execute_D (
-							new, f,
-							cbuf->args->argv, cbuf->args->argc
-						);
+						if (GIB_Function_Execute_D
+								(new, f,
+								 cbuf->args->argv,
+								 cbuf->args->argc))	
+							GIB_Error ("syntax", "not "
+									"enough "
+									"arguments to "
+									"function '%s'",
+									cbuf->args->argv[0]->str);
 					} else {
 						GIB_Execute_Generate_Composite (cbuf);
 						if (Cmd_Command (cbuf->args))

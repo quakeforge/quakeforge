@@ -52,6 +52,7 @@ const char  rcsid[] =
 #include "QF/cmd.h"
 #include "QF/cbuf.h"
 #include "QF/hash.h"
+#include "QF/llist.h"
 #include "QF/dstring.h"
 #include "QF/gib.h"
 
@@ -174,24 +175,31 @@ static void
 GIB_Function_f (void)
 {
 	gib_tree_t *program;
-
-	if (GIB_Argc () != 3)
-		GIB_USAGE ("name program");
+	gib_function_t *func;
+	int i;
+	
+	if (GIB_Argc () < 3)
+		GIB_USAGE ("name [arg1 arg2 ...] program");
 	else {
 		// Is the function program already tokenized?
-		if (GIB_Argm (2)->delim != '{') {
+		if (GIB_Argm (GIB_Argc()-1)->delim != '{') {
 			// Parse on the fly
-			if (!(program = GIB_Parse_Lines (GIB_Argv (2), 0))) {
+			if (!(program = GIB_Parse_Lines (GIB_Argv
+							(GIB_Argc()-1), 0))) {
 				// Error!
 				GIB_Error ("parse", "Parse error while defining function '%s'.",
 						   GIB_Argv (1));
 				return;
 			}
 		} else
-			program = GIB_Argm (2)->children;
-		GIB_Function_Define (GIB_Argv (1), GIB_Argv (2), program,
+			program = GIB_Argm (GIB_Argc()-1)->children;
+		func = GIB_Function_Define (GIB_Argv (1), GIB_Argv (GIB_Argc()-1), program,
 							 GIB_DATA (cbuf_active)->script,
 							 GIB_DATA (cbuf_active)->globals);
+		llist_flush (func->arglist);
+		for (i = 2; i < GIB_Argc()-1; i++)
+			llist_append (func->arglist, strdup (GIB_Argv(i)));
+		func->minargs = GIB_Argc()-2;
 	}
 }
 
@@ -855,12 +863,8 @@ GIB_File_Find_f (void)
 		glob = s + 1;
 	}
 	directory = opendir (path);
-	if (!directory) {
-		GIB_Error ("file",
-				   "%s: could not open directory %s: %s", GIB_Argv (0), path,
-				   strerror (errno));
+	if (!directory)
 		return;
-	}
 	while ((entry = readdir (directory)))
 		if (strcmp (entry->d_name, ".") && strcmp (entry->d_name, "..")
 			&& !fnmatch (glob, entry->d_name, 0))
@@ -985,6 +989,25 @@ GIB_Emit_f (void)
 }
 
 static void
+GIB_Exists_f (void)
+{
+	if (GIB_Object_Get (GIB_Argv (1)))
+		GIB_Return ("1");
+	else
+		GIB_Return ("0");
+}
+
+static void
+GIB_Error_f (void)
+{
+	if (GIB_Argc() < 3) {
+		GIB_USAGE ("error_type explanation");
+		return;
+	} else
+		GIB_Error (GIB_Argv(1), "%s", GIB_Argv(2));
+}
+
+static void
 GIB_bp1_f (void)
 {
 }
@@ -1049,6 +1072,8 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("print", GIB_Print_f);
 	GIB_Builtin_Add ("class", GIB_Class_f);
 	GIB_Builtin_Add ("emit", GIB_Emit_f);
+	GIB_Builtin_Add ("exists", GIB_Exists_f);
+	GIB_Builtin_Add ("error", GIB_Error_f);
 	GIB_Builtin_Add ("bp1", GIB_bp1_f);
 	GIB_Builtin_Add ("bp2", GIB_bp2_f);
 	GIB_Builtin_Add ("bp3", GIB_bp3_f);

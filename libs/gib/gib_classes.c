@@ -526,11 +526,16 @@ typedef struct Scrobj_method_s {
 static void *
 Scrobj_Construct (gib_object_t *obj)
 {
-	Scrobj_t *new = malloc (sizeof (Scrobj_t));
-	
-	new->shared = GIB_Var_Hash_New ();
+	//Scrobj_t *new = malloc (sizeof (Scrobj_t));
+	//
+	//new->shared = GIB_Var_Hash_New ();
 
-	return new;
+	//return new;
+
+	if (!obj->vars)
+		obj->vars = GIB_Var_Hash_New ();
+	
+	return NULL;
 }
 
 static void *
@@ -546,10 +551,10 @@ Scrobj_Class_Construct (gib_object_t *obj)
 static void
 Scrobj_Destruct (void *data)
 {
-	Scrobj_t *s = (Scrobj_t *) data;
+	//Scrobj_t *s = (Scrobj_t *) data;
 
-	Hash_DelTable (s->shared);
-	free (s);
+	//Hash_DelTable (s->shared);
+	//free (s);
 }
 
 static void
@@ -569,14 +574,15 @@ Scrobj_Method_f (gib_object_t *obj, gib_method_t *method, void *data,
 	static hashtab_t *nhash = NULL;
 	gib_var_t *var;
 	
-	
+	if (GIB_Function_Execute (thread, ((Scrobj_method_t *)method->data)->func,
+			mesg.argv, mesg.argc))
+		return -1;
+
 	GIB_DATA(thread)->dnotify = Scrobj_Thread_Died;
 	GIB_DATA(thread)->reply.obj = obj;
 	GIB_DATA(thread)->reply.method = method;
 	GIB_DATA(thread)->reply.mesg = mesg;
-	GIB_Function_Execute (thread, ((Scrobj_method_t *)method->data)->func,
-			mesg.argv, mesg.argc);
-	GIB_DATA(thread)->globals = ((Scrobj_t *)data)->shared;
+	GIB_DATA(thread)->globals = obj->vars;
 	var = GIB_Var_Get_Complex (&GIB_DATA(thread)->locals, &nhash, this,
 			&ind, true);
 	if (obj->handle)
@@ -633,16 +639,31 @@ GIB_Classes_Build_Scripted (const char *name, const char *parentname,
 			case TREE_T_CMD:
 				if (!strcmp (line->children->str,
 							"function")) {
+					gib_tree_t *cur, *last;
 					gib_methodtab_t *new = malloc (sizeof
 							(gib_methodtab_t));
 					Scrobj_method_t *data = malloc (sizeof
 							(Scrobj_method_t));
+					for (last =
+							line->children->next->next;
+							last->next; last =
+							last->next);
 					data->func = GIB_Function_Define
 						(fname
 						 (line->children->next->str),
-						 line->children->next->next->str,
-						 line->children->next->next->children,
+						 last->str,
+						 last->children,
 						 script, NULL);
+					llist_flush (data->func->arglist);
+					data->func->minargs = 1;
+					for (cur = line->children->next->next;
+							cur != last; cur =
+							cur->next) {
+						llist_append
+							(data->func->arglist,
+							 strdup (cur->str));
+						data->func->minargs++;
+					}
 					new->data = data;
 					new->name = line->children->next->str;
 					new->func = Scrobj_Method_f;
