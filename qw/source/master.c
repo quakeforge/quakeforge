@@ -66,8 +66,9 @@ static const char rcsid[] =
 #define SLIST_MULTIPLE 1
 
 typedef struct {
-	struct sockaddr_in addr;
-	time_t updated;
+	struct		sockaddr_in addr;
+	time_t		updated;
+	qboolean	notimeout;
 } server_t;
 
 int 
@@ -117,6 +118,7 @@ QW_AddHeartbeat (server_t **servers_p, int slen,
 		*servers_p = newservers;
 	}
 	servers[freeslot].addr = *addr;
+	servers[freeslot].notimeout = false;
 #if 1
 	printf ("Added %s:%d (seq %d, players %d)\n",
 			inet_ntoa (servers[freeslot].addr.sin_addr),
@@ -135,7 +137,8 @@ QW_TimeoutHearts (server_t *servers, int slen)
 	time (&t);
 	for (i = 0; i < slen; i++) {
 		if (servers[i].updated != 0
-			&& servers[i].updated < t - MASTER_TIMEOUT) {
+			&& servers[i].updated < t - MASTER_TIMEOUT
+			&& !servers[i].notimeout) {
 			servers[i].updated = 0;
 #if 1
 			printf ("Removed %s:%d (timeout)\n",
@@ -233,7 +236,7 @@ QW_Master (struct sockaddr_in *addr)
 	for (i = 0; i < serverlen; i++)
 		servers[i].updated = 0;
 
-	sock = socket (AF_INET, SOCK_DGRAM, 0);
+	sock = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (sock < 0) {
 		printf ("socket failed\n");
 		return;
