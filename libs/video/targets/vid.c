@@ -53,8 +53,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 byte		gammatable[256];
 cvar_t	   *vid_gamma;
 cvar_t	   *vid_system_gamma;
-cvar_t     *vid_conwidth;
-cvar_t     *vid_conheight;
+cvar_t     *con_width; // FIXME: Try to move with rest of con code
+cvar_t     *con_height; // FIXME: Try to move with rest of con code
 qboolean	vid_gamma_avail;		// hardware gamma availability
 
 unsigned int	d_8to24table[256];
@@ -114,29 +114,28 @@ VID_GetWindowSize (int def_w, int def_h)
 	scr_width = vid.width = vid_width->int_val;
 	scr_height = vid.height = vid_height->int_val;
 
-	vid_conwidth = Cvar_Get ("vid_conwidth", va ("%d", scr_width), CVAR_NONE,
-							 NULL, "console effective width (GL only)");
+	con_width = Cvar_Get ("con_width", va ("%d", scr_width), CVAR_NONE, NULL,
+						  "console effective width (GL only)");
 	if ((pnum = COM_CheckParm ("-conwidth"))) {
 		if (pnum >= com_argc - 1)
 			Sys_Error ("VID: -conwidth <width>");
-		Cvar_Set (vid_conwidth, com_argv[pnum + 1]);
+		Cvar_Set (con_width, com_argv[pnum + 1]);
 		if (!vid_height->int_val)
 			Sys_Error ("VID: Bad console width");
 	}
-	Cvar_SetFlags (vid_conwidth, vid_conwidth->flags | CVAR_ROM);
-	vid.conwidth = vid_conwidth->int_val;
-	
-	conheight = ((vid.conwidth & 0xFFF8) * 3) / 4;
-	vid_conheight = Cvar_Get ("vid_conheight", va ("%d", conheight), CVAR_NONE,
-							 NULL, "console effective height (GL only)");
+	Cvar_SetFlags (con_width, con_width->flags | CVAR_ROM);
+	vid.conwidth = con_width->int_val;
+
+	con_height = ((vid.conwidth & 0xFFF8) * 3) / 4;
+	con_height = Cvar_Get ("con_height", va ("%d", conheight), CVAR_NONE, NULL,
+						   "console effective height (GL only)");
 	if ((pnum = COM_CheckParm ("-conheight"))) {
 		if (pnum >= com_argc - 1)
 			Sys_Error ("VID: -conheight <width>");
-		Cvar_Set (vid_conheight, com_argv[pnum + 1]);
+		Cvar_Set (con_height, com_argv[pnum + 1]);
 	}
-	Cvar_SetFlags (vid_conheight, vid_conheight->flags | CVAR_ROM);
-	vid.conheight = vid_conheight->int_val;
-
+	Cvar_SetFlags (con_height, con_height->flags | CVAR_ROM);
+	vid.conheight = con_height->int_val;
 }
 
 /* GAMMA FUNCTIONS */
