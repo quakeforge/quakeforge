@@ -29,7 +29,7 @@ tmp	:= debian/tmp
 ifeq ($(DEB_BUILD_GNU_TYPE),)
 RETARGET=
 else
-RETARGET=	--host=$(DEB_BUILD_GNU_TYPE)
+RETARGET=	--build=$(DEB_BUILD_GNU_TYPE)
 endif
 
 configure: configure-stamp
