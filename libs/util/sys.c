@@ -414,12 +414,14 @@ Sys_Error (const char *error, ...)
 
 	Sys_Shutdown ();
 
-	// print the message again using the default error printer to increase the
-	// chances of the error being seen.
+	if (sys_err_printf_function != Sys_ErrPrintf) {
+		// print the message again using the default error printer to increase
+		// the chances of the error being seen.
 #ifdef VA_LIST_IS_ARRAY
-	VA_COPY (args, tmp_args);
+		VA_COPY (args, tmp_args);
 #endif
-	Sys_ErrPrintf (error, args);
+		Sys_ErrPrintf (error, args);
+	}
 
 	exit (1);
 }
