@@ -390,7 +390,7 @@ class_ivar_expr (class_type_t *class_type, const char *name)
 method_t *
 class_find_method (class_type_t *class_type, method_t *method)
 {
-	methodlist_t *methods, *start_methods;;
+	methodlist_t *methods, *start_methods;
 	method_t   *m;
 	dstring_t  *sel;
 	class_t    *class, *start_class;
