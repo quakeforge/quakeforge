@@ -181,6 +181,14 @@ get_op_string (int op)
 			return "(";
 		case '.':
 			return ".";
+		case 'i':
+			return "<if>";
+		case 'n':
+			return "<ifnot>";
+		case 'g':
+			return "<goto>";
+		case 'r':
+			return "<return>";
 		default:
 			return "unknown";
 	}
@@ -305,20 +313,12 @@ print_expr (expr_t *e)
 				printf (")");
 			} else {
 				print_expr (e->e.expr.e2);
-				if (isprint (e->e.expr.op)) {
-					printf (" %c", e->e.expr.op);
-				} else {
-					printf (" %d", e->e.expr.op);
-				}
+				printf (" %s", get_op_string (e->e.expr.op));
 			}
 			break;
 		case ex_uexpr:
 			print_expr (e->e.expr.e1);
-			if (isprint (e->e.expr.op)) {
-				printf (" u%c", e->e.expr.op);
-			} else {
-				printf (" u%d", e->e.expr.op);
-			}
+			printf (" u%s", get_op_string (e->e.expr.op));
 			break;
 		case ex_def:
 			printf ("%s", e->e.def->name);
