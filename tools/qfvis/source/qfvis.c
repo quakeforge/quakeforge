@@ -3,6 +3,7 @@
 
 	PVS/PHS generation tool
 
+	Copyright (C) 1996-1997  Id Software, Inc.
 	Copyright (C) 2002 Colin Thompson
 
 	This program is free software; you can redistribute it and/or
