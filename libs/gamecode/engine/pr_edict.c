@@ -43,6 +43,7 @@ static const char rcsid[] =
 #include "QF/idparse.h"
 #include "QF/crc.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/progs.h"
 #include "QF/qdefs.h"
@@ -341,27 +342,29 @@ PR_UglyValueString (progs_t * pr, etype_t type, pr_type_t *val)
 /*
 	PR_GlobalString
 
-	Returns a string with a description and the contents of a global,
-	padded to 20 field width
+	Returns a string with a description and the contents of a global
 */
-char       *
+dstring_t *
 PR_GlobalString (progs_t * pr, int ofs, etype_t type)
 {
-	char       *s;
-	int         i;
-	ddef_t     *def = 0;
-	static char line[128];
+	ddef_t				*def = NULL;
+	static dstring_t	*line = NULL;
+	char				*s;
+
+	if (!line)
+		line = dstring_newstr();
 
 	if (type == ev_short) {
-		snprintf (line, sizeof (line), "%-20d", (short) ofs);
+		dsprintf (line, "%04x", (short) ofs);
 		return line;
 	}
+
 	if (pr_debug->int_val && pr->debug)
 		def = PR_Get_Local_Def (pr, ofs);
 	if (!def)
 		def = ED_GlobalAtOfs (pr, ofs);
 	if (!def && type == ev_void)
-		snprintf (line, sizeof (line), "%i(?)", ofs);
+		dsprintf (line, "[%04x]", ofs);
 	else {
 		char *name = "?";
 		char *oi = "";
@@ -370,48 +373,53 @@ PR_GlobalString (progs_t * pr, int ofs, etype_t type)
 				type = def->type;
 			name = PR_GetString (pr, def->s_name);
 			if (type != (def->type & ~DEF_SAVEGLOBAL))
-				oi = "!";
+				oi = "?";
 		}
+
 		if (ofs > pr->globals_size)
 			s = "Out of bounds";
 		else
 			s = PR_ValueString (pr, type, &pr->pr_globals[ofs]);
-		snprintf (line, sizeof (line), "%i(%s%s)%s", ofs, oi, name, s);
+
+		if (strequal(name, "IMMEDIATE") || strequal(name, ".imm")) {
+			if (type == ev_string)
+				dsprintf (line, "\"%s\"", s);
+			else
+				dsprintf (line, "%s", s);
+		} else if (strequal(name, "?"))
+			dsprintf (line, "[%04x]", ofs);
+		else {
+			if (type == ev_func)
+				dsprintf (line, "%s%s", name, oi);
+			else
+				dsprintf (line, "%s%s(%s)", name, oi, s);
+		}
 	}
-
-	i = strlen (line);
-	for (; i < 20; i++)
-		strncat (line, " ", sizeof (line) - strlen (line));
-	strncat (line, " ", sizeof (line) - strlen (line));
-
 	return line;
 }
 
-char       *
+dstring_t *
 PR_GlobalStringNoContents (progs_t * pr, int ofs, etype_t type)
 {
-	int         i;
-	ddef_t     *def = 0;
-	static char line[128];
+	static dstring_t	*line = NULL;
+	ddef_t				*def = NULL;
+
+	if (!line)
+		line = dstring_newstr();
 
 	if (type == ev_short) {
-		snprintf (line, sizeof (line), "%-20d", (short) ofs);
+		dsprintf (line, "%x", (short) ofs);
 		return line;
 	}
+
 	if (pr_debug->int_val && pr->debug)
 		def = PR_Get_Local_Def (pr, ofs);
 	if (!def)
 		def = ED_GlobalAtOfs (pr, ofs);
 	if (!def)
-		snprintf (line, sizeof (line), "%i(?)", ofs);
+		dsprintf (line, "[%x]", ofs);
 	else
-		snprintf (line, sizeof (line), "%i(%s)", ofs,
-				  PR_GetString (pr, def->s_name));
-
-	i = strlen (line);
-	for (; i < 20; i++)
-		strncat (line, " ", sizeof (line) - strlen (line));
-	strncat (line, " ", sizeof (line) - strlen (line));
+		dsprintf (line, "%s", PR_GetString (pr, def->s_name));
 
 	return line;
 }
