@@ -66,7 +66,7 @@ C(R_Alias_clip_bottom):
 	call	.Lpic1
 .Lpic1:
 	popl	%eax
-	addl	$_GLOBAL_OFFSET_TABLE_-1+[.-.Lpic1],%eax
+	addl	$C(_GLOBAL_OFFSET_TABLE_)-1+[.-.Lpic1],%eax
 
 	movl	float_point5@GOTOFF(%eax),%edx
 	movl	C(r_refdef)@GOT(%eax),%eax
@@ -185,7 +185,7 @@ LDo3Forward:
 	ret
 #ifdef PIC
 .Lsize1:
-	.size	R_Alias_clip_bottom,.Lsize1-R_Alias_clip_bottom
+	.size	C(R_Alias_clip_bottom),.Lsize1-C(R_Alias_clip_bottom)
 #endif
 	.align 4
 
@@ -207,7 +207,7 @@ C(R_Alias_clip_top):
 	call	.Lpic2
 .Lpic2:
 	popl	%eax
-	addl	$_GLOBAL_OFFSET_TABLE_-1+[.-.Lpic2],%eax
+	addl	$C(_GLOBAL_OFFSET_TABLE_)-1+[.-.Lpic2],%eax
 
 	movl	float_point5@GOTOFF(%eax),%edx
 	movl	C(r_refdef)@GOT(%eax),%eax
@@ -220,7 +220,7 @@ C(R_Alias_clip_top):
 	jmp		LDoForwardOrBackward
 #ifdef PIC
 .Lsize2:
-	.size	R_Alias_clip_top,.Lsize2-R_Alias_clip_top
+	.size	C(R_Alias_clip_top),.Lsize2-C(R_Alias_clip_top)
 #endif
 	.align 4
 
@@ -243,7 +243,7 @@ C(R_Alias_clip_right):
 	call	.Lpic3
 .Lpic3:
 	popl	%eax
-	addl	$_GLOBAL_OFFSET_TABLE_-1+[.-.Lpic3],%eax
+	addl	$C(_GLOBAL_OFFSET_TABLE_)-1+[.-.Lpic3],%eax
 
 	movl	float_point5@GOTOFF(%eax),%edx
 	movl	C(r_refdef)@GOT(%eax),%eax
@@ -276,7 +276,7 @@ LDoForward2:
 	jmp		LDoForward
 #ifdef PIC
 .Lsize3:
-	.size	R_Alias_clip_right,.Lsize3-R_Alias_clip_right
+	.size	C(R_Alias_clip_right),.Lsize3-C(R_Alias_clip_right)
 #endif
 	.align 4
 
@@ -298,7 +298,7 @@ C(R_Alias_clip_left):
 	call	.Lpic4
 .Lpic4:
 	popl	%eax
-	addl	$_GLOBAL_OFFSET_TABLE_-1+[.-.Lpic4],%eax
+	addl	$C(_GLOBAL_OFFSET_TABLE_)-1+[.-.Lpic4],%eax
 
 	movl	float_point5@GOTOFF(%eax),%edx
 	movl	C(r_refdef)@GOT(%eax),%eax
@@ -311,7 +311,7 @@ C(R_Alias_clip_left):
 	jmp		LRightLeftEntry
 #ifdef PIC
 .Lsize4:
-	.size	R_Alias_clip_left,.Lsize4-R_Alias_clip_left
+	.size	C(R_Alias_clip_left),.Lsize4-C(R_Alias_clip_left)
 #endif
 	.align 4
 

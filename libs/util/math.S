@@ -71,7 +71,7 @@ C(BoxOnPlaneSide):
 	call	.Lpic
 .Lpic:
 	popl	%esi
-	addl	$_GLOBAL_OFFSET_TABLE_+[.-.Lpic],%esi
+	addl	$C(_GLOBAL_OFFSET_TABLE_)+[.-.Lpic],%esi
 #endif
 
 

@@ -107,7 +107,7 @@ LRightSet:
 #ifdef PIC
 	call	.Lpic1
 .Lpic1:	popl	%ebx
-	addl	$_GLOBAL_OFFSET_TABLE_+[.-.Lpic1],%ebx
+	addl	$C(_GLOBAL_OFFSET_TABLE_)+[.-.Lpic1],%ebx
 
 	movl	C(snd_scaletable)@GOT(%ebx,%eax),%eax
 	movl	C(snd_scaletable)@GOT(%ebx,%edx),%edx
@@ -199,7 +199,7 @@ C(SND_WriteLinearBlastStereo16):
 	call	.Lpic2
 .Lpic2:
 	popl	%ebx
-	addl	$_GLOBAL_OFFSET_TABLE_+[.-.Lpic2],%ebx
+	addl	$C(_GLOBAL_OFFSET_TABLE_)+[.-.Lpic2],%ebx
 #endif
 
 //	int		i;
