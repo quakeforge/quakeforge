@@ -33,8 +33,8 @@
 #define __garbage_h
 
 void Garbage_Do_Mark (Object *root);
-void Garbage_Do_Sweep (Object **allobjs);
+Object * Garbage_Do_Sweep (Object **allobjs);
 unsigned int Garbage_Pending (void);
-void Garbage_Dispose (unsigned int amount);
+void Garbage_Dispose (Object **allobjs, unsigned int amount);
 
 #endif

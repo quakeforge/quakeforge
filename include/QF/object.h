@@ -74,12 +74,14 @@ struct List_s;
 typedef void (*ReplyHandler_t) (struct Object_s *retValue);
 
 typedef struct Object_s {
+	unsigned marked :1;
+	unsigned finalized :1;
 	struct Class_s *cl;
 	int refs;
-	qboolean marked;
 	struct Object_s *next;
 	struct String_s * methodDecl(Object, toString);
 	ObjRefs_t * methodDecl(Object, allRefs);
+	qboolean methodDecl(Object, finalize);
 	void *data;
 
 } Object;

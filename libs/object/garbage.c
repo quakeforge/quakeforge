@@ -61,24 +61,32 @@ Garbage_Do_Mark (Object *root)
 	}
 }
 
-void
+Object *
 Garbage_Do_Sweep (Object **allobjs)
 {
 	Object **prevNext;
 	Object *obj;
 
-	for (prevNext = allobjs, obj = *allobjs; obj; obj = *prevNext) {
+	for (prevNext = allobjs, obj = *allobjs;; obj = *prevNext) {
 		if (obj->marked) {
 			obj->marked = false;
 			prevNext = &obj->next;
 		} else if (!obj->refs) {
-			*prevNext = obj->next;
-			obj->next = junk;
-			junk = obj;
-			junked++;
-			Sys_DPrintf ("GC: %s@%p is ready for disposal...\n", obj->cl->name, obj);
+			if (!obj->finalized && methodCall(obj, finalize)) {
+				obj->finalized = true;
+				Garbage_Do_Mark (obj);
+				prevNext = &obj->next;
+			} else {
+				*prevNext = obj->next;
+				obj->next = junk;
+				junk = obj;
+				junked++;
+				Sys_DPrintf ("GC: %s@%p is ready for disposal...\n", obj->cl->name, obj);
+			}
 		} else
 			*prevNext = obj->next;
+		if (!*prevNext)
+			return obj;
 	}
 }
 
@@ -89,14 +97,20 @@ Garbage_Pending (void)
 }
 
 void
-Garbage_Dispose (unsigned int amount)
+Garbage_Dispose (Object **allobjs, unsigned int amount)
 {
 	Object *next;
 
 	for (; junk && amount; junk = next, amount--) {
 		next = junk->next;
-		Sys_DPrintf ("GC: Disposing of %s@%p...\n", junk->cl->name, junk);
-		Object_Delete (junk);
-		junked--;
+		if (junk->marked) {
+			junk->marked = false;
+			junk->next = *allobjs;
+			*allobjs = junk;
+		} else {
+			Sys_DPrintf ("GC: Disposing of %s@%p...\n", junk->cl->name, junk);
+			Object_Delete (junk);
+			junked--;
+		}
 	}
 }

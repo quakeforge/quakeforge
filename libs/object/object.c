@@ -61,6 +61,12 @@ static __attribute__ ((unused)) const char rcsid[] =
 Object *allObjs = NULL;
 ArrayList *rootObj = NULL;
 
+static qboolean
+Object_Finalize_f (Object *self)
+{
+	return false;
+}
+
 static String *
 Object_ToString_f (Object *self) 
 {
@@ -72,6 +78,7 @@ Object_Init_f (Object *self)
 {
 	self->allRefs = NULL;
 	self->toString = Object_ToString_f;
+	self->finalize = Object_Finalize_f;
 	Sys_DPrintf("%s@%p initing...\n", self->cl->name, self);
 }
 
@@ -117,6 +124,7 @@ Object_Create (Class *cl, qboolean floating)
 	} else
 		new->refs = 1;
 	new->marked = false;
+	new->finalized = false;
 	new->next = allObjs;
 	allObjs = new;
 	return new;
@@ -243,13 +251,18 @@ Object_Garbage_Collect (void)
 	frames++;
 
 	if (frames % 2000 == 0) {
+		Object *all, *last;
 		Sys_DPrintf("GC: Marking...\n");
 		Garbage_Do_Mark (OBJECT(rootObj));
 		Sys_DPrintf("GC: Sweeping...\n");
-		Garbage_Do_Sweep (&allObjs);
+		all = allObjs;
+		allObjs = NULL;
+		last = Garbage_Do_Sweep (&all);
+		last->next = allObjs;
+		allObjs = all;
 	}
 	if (frames % 50 == 0 && Garbage_Pending()) {
 		Sys_DPrintf("GC: Disposing...\n");
-		Garbage_Dispose (Garbage_Pending()/2 + 1);
+		Garbage_Dispose (&allObjs, Garbage_Pending()/2 + 1);
 	}
 }
