@@ -351,8 +351,10 @@ rm -rf $RPM_BUILD_ROOT
 %files utils
 %attr(-,root,root)	%{_prefix}/bin/pak
 %attr(-,root,root)	%{_prefix}/bin/qfprogs
+%attr(-,root,root)	%{_prefix}/bin/qfwavinfo
 %attr(-,root,root)	%{_prefix}/man/man1/pak.1.gz
 #%attr(-,root,root)	%{_prefix}/man/man1/qfprogs.1.gz
+#%attr(-,root,root)	%{_prefix}/man/man1/qfwavinfo.1.gz
 
 %files stub
 
