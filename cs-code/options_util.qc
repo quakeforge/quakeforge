@@ -41,6 +41,7 @@ void (integer x, integer y, integer spacing, string spacechar, string label, str
 	}
 	Draw_String (x + spacing,  y, valstr);
 };
+
 void (integer x, integer y, integer spacing, string label, string valstr) draw_val_item =
 {
 	draw_item (x, y, spacing, ".", label, ":" + valstr);
@@ -72,9 +73,9 @@ float (float min, float max, float step, float val, integer cntflag) min_max_cnt
 	}
 
 	if(val > max) {
-		val = min;
-	} else if(val < min) {
 		val = max;
+	} else if(val < min) {
+		val = min;
 	}
 	return val;
 };
