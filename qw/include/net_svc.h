@@ -59,6 +59,16 @@ typedef struct net_svc_serverdata_s
 	movevars_t	movevars;
 } net_svc_serverdata_t;
 
+typedef struct net_svc_sound_s
+{
+	short		channel;
+	float		volume;
+	float		attenuation;
+	byte		sound_num;
+	vec3_t		position;
+	int			entity;
+} net_svc_sound_t;
+
 typedef struct net_svc_updateuserinfo_s
 {
 	byte		slot;
@@ -99,6 +109,7 @@ qboolean NET_SVC_Print_Parse (net_svc_print_t *print, msg_t *message);
 qboolean NET_SVC_Damage_Parse (net_svc_damage_t *damage, msg_t *message);
 qboolean NET_SVC_ServerData_Parse (net_svc_serverdata_t *serverdata,
 								   msg_t *message);
+qboolean NET_SVC_Sound_Parse (net_svc_sound_t *sound, msg_t *message);
 qboolean NET_SVC_UpdateUserInfo_Parse (net_svc_updateuserinfo_t *updateuserinfo,
 									   msg_t *message);
 qboolean NET_SVC_SetInfo_Parse (net_svc_setinfo_t *setinfo, msg_t *message);

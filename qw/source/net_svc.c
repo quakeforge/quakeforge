@@ -45,6 +45,7 @@ static const char rcsid[] =
 #endif
 
 #include "QF/msg.h"
+#include "QF/sound.h"
 
 #include "compat.h"
 #include "net_svc.h"
@@ -95,6 +96,33 @@ NET_SVC_ServerData_Parse (net_svc_serverdata_t *serverdata, msg_t *message)
 	serverdata->movevars.friction = MSG_ReadFloat (message);
 	serverdata->movevars.waterfriction = MSG_ReadFloat (message);
 	serverdata->movevars.entgravity = MSG_ReadFloat (message);
+
+	return message->badread;
+}
+
+qboolean
+NET_SVC_Sound_Parse (net_svc_sound_t *sound, msg_t *message)
+{
+	int i;
+
+	sound->channel = MSG_ReadShort (message);
+	if (sound->channel & SND_VOLUME)
+		sound->volume = MSG_ReadByte (message) / 255.0;
+	else
+		sound->volume = DEFAULT_SOUND_PACKET_VOLUME / 255.0;
+
+	if (sound->channel & SND_ATTENUATION)
+		sound->attenuation = MSG_ReadByte (message) / 64.0;
+	else
+		sound->attenuation = DEFAULT_SOUND_PACKET_ATTENUATION;
+
+	sound->sound_num = MSG_ReadByte (message);
+
+	for (i = 0; i < 3; i++)
+		sound->position[i] = MSG_ReadCoord (message);
+
+	sound->entity = (sound->channel >> 3) & 1023;
+	sound->channel &= 7;
 
 	return message->badread;
 }

@@ -898,35 +898,16 @@ CL_ParseStaticSound (void)
 void
 CL_ParseStartSoundPacket (void)
 {
-	float       attenuation;
-	int         channel, ent, sound_num, volume, i;
-	vec3_t      pos;
+	net_svc_sound_t sound;
 
-	channel = MSG_ReadShort (net_message);
+	NET_SVC_Sound_Parse (&sound, net_message);
 
-	if (channel & SND_VOLUME)
-		volume = MSG_ReadByte (net_message);
-	else
-		volume = DEFAULT_SOUND_PACKET_VOLUME;
+	if (sound.entity > MAX_EDICTS)
+		Host_EndGame ("CL_ParseStartSoundPacket: ent = %i", sound.entity);
 
-	if (channel & SND_ATTENUATION)
-		attenuation = MSG_ReadByte (net_message) / 64.0;
-	else
-		attenuation = DEFAULT_SOUND_PACKET_ATTENUATION;
-
-	sound_num = MSG_ReadByte (net_message);
-
-	for (i = 0; i < 3; i++)
-		pos[i] = MSG_ReadCoord (net_message);
-
-	ent = (channel >> 3) & 1023;
-	channel &= 7;
-
-	if (ent > MAX_EDICTS)
-		Host_EndGame ("CL_ParseStartSoundPacket: ent = %i", ent);
-
-	S_StartSound (ent, channel, cl.sound_precache[sound_num], pos,
-				  volume / 255.0, attenuation);
+	S_StartSound (sound.entity, sound.channel,
+				  cl.sound_precache[sound.sound_num], sound.position,
+				  sound.volume, sound.attenuation);
 }
 
 /*
