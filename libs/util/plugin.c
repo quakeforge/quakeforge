@@ -192,7 +192,7 @@ PI_UnloadPlugin (plugin_t *plugin)
 			&& plugin->functions->general->p_Shutdown) {
 		plugin->functions->general->p_Shutdown ();
 	} else {
-		Sys_Printf ("Warning: No shutdown function for type %d plugin!\n", plugin->type);
+		Sys_DPrintf ("Warning: No shutdown function for type %d plugin!\n", plugin->type);
 	}
 	if (!plugin->handle) // we didn't load it
 		return true;
