@@ -109,8 +109,17 @@ Cmd_NewLocal (const char *key, const char *value)
 	return new;
 }
 
+cmd_localvar_t	*
+Cmd_GetLocal (cmd_buffer_t *buffer, const char *key)
+{
+	cmd_localvar_t *var;
+
+	var = (cmd_localvar_t *)Hash_Find(buffer->locals, key);
+	return var;
+}
+
 void
-Cmd_SetLocal (cmd_buffer_t *buffer, const char *key, const char *value, int index)
+Cmd_SetLocal (cmd_buffer_t *buffer, const char *key, const char *value)
 {
 	cmd_localvar_t *var;
 
@@ -119,13 +128,8 @@ Cmd_SetLocal (cmd_buffer_t *buffer, const char *key, const char *value, int inde
 		var = Cmd_NewLocal (key, value);
 		Hash_Add (buffer->locals, (void *) var);
 	} else {
-		if (index < 0) {
-			dstring_clearstr (var->value);
-			dstring_appendstr (var->value, value);
-		} else if (index <= strlen(var->value->str)) {
-			dstring_snip (var->value, index, 1);
-			dstring_insertstr (var->value, value, index);
-		}			
+		dstring_clearstr (var->value);
+		dstring_appendstr (var->value, value);
 	}
 }
 
@@ -271,6 +275,17 @@ escape (dstring_t * dstr, const char *clist)
 	}
 }
 
+/* Quick function to unescape a character in a dstring */
+int
+unescape (dstring_t * dstr, int start)
+{
+	int i;
+
+	for (i = start; i && dstr->str[i-1] == '\\'; i--);
+	dstring_snip (dstr, i, (int) ((start - i)/2.0+0.5));
+	return (int) ((start - i)/2.0+.05);
+}
+
 /*
 	Cmd_Wait_f
 
@@ -411,8 +426,12 @@ Cbuf_ExtractLine (dstring_t * buffer, dstring_t * line, qboolean legacy)
 				n = strlen(buffer->str+i); // snip till \0
 			dstring_snip (buffer, i, n);
 		}
-		if ((buffer->str[i] == '\n' || buffer->str[i] == '\r') && !braces)
-			break;
+		if ((buffer->str[i] == '\n' || buffer->str[i] == '\r') && !braces) {
+			if (escaped (buffer->str, i))
+				dstring_snip (buffer, i-1, 2);
+			else
+				break;
+		}
 	}
 	if (i)
 		dstring_insert (line, buffer->str, i, 0);
@@ -886,6 +905,37 @@ Cmd_EndBrace (const char *str)
 }
 
 int
+Cmd_EndBracket (const char *str)
+{
+	int         i, n;
+
+	for (i = 1; i < strlen (str); i++) {
+		if (str[i] == '{' && !escaped (str, i)) {
+			n = Cmd_EndBrace (str + i);
+			if (n < 0)
+				return n;
+			else
+				i += n;
+		} else if (str[i] == '\"' && !escaped (str, i)) {
+			n = Cmd_EndDoubleQuote (str + i);
+			if (n < 0)
+				return n;
+			else
+				i += n;
+		} else if (str[i] == '[' && !escaped (str, i)) {
+			n = Cmd_EndBracket (str + i);
+			if (n < 0)
+				return n;
+			else
+				i += n;
+		} else if (str[i] == ']' && !escaped (str,i))
+				return i;
+	}
+	return -1;							// No matching brace found
+}
+
+
+int
 Cmd_GetToken (const char *str, qboolean legacy)
 {
 	int         i, ret;
@@ -969,7 +1019,7 @@ struct stable_s {
 
 /*
 	Cmd_ProcessTags
-	
+
 	Looks for html-like tags in a dstring and
 	modifies the string accordingly
 
@@ -1032,36 +1082,91 @@ Cmd_ProcessTags (dstring_t * dstr)
 }
 
 int
-Cmd_ProcessIndex (dstring_t * dstr, int start)
+Cmd_ProcessMath (dstring_t * dstr)
 {
-	dstring_t *value;
-	int val;
-	int i,n;
-	
-	for (i = start + 1;; i++) {
-		if (dstr->str[i] == ']' && !escaped (dstr->str, i)) {
-			value = dstring_newstr ();
-			dstring_insert (value, dstr->str+start+1, i-start, 0); 
-			n = Cmd_ProcessVariables(value);
-			if (n < 0)
-				return n;
-			dstring_snip (dstr, start, i-start+1);
-			val = atoi (value->str);
-			dstring_delete (value);
-			return val;
-		}
-		if (!dstr->str[i]) {
-			Cmd_Error ("Unmatched bracket in index expression.\n");
-			return -1;
+	dstring_t  *statement;
+	int         i, n;
+	double       value;
+	char       *temp;
+	int         ret = 0;
+
+	statement = dstring_newstr ();
+
+	for (i = 0; i < strlen (dstr->str); i++) {
+		if (dstr->str[i] == '#' && dstr->str[i + 1] == '{') {
+			if (!escaped (dstr->str, i)) {
+				i -= unescape (dstr, i);
+				n = Cmd_EndBrace (dstr->str+i+1)+1;
+				if (n < 0) {
+					Cmd_Error ("Unmatched brace in math expression.\n");
+					ret = -1;
+					break;
+				}
+				/* Copy text between parentheses into a buffer */
+				dstring_clearstr (statement);
+				dstring_insert (statement, dstr->str + i + 2, n - 2, 0);
+				value = EXP_Evaluate (statement->str);
+				if (EXP_ERROR == EXP_E_NORMAL) {
+					temp = va ("%.10g", value);
+					dstring_snip (dstr, i, n + 1);	// Nuke the statement
+					dstring_insertstr (dstr, temp, i);	// Stick in the value
+					i += strlen (temp) - 1;
+				} else {
+					ret = -2;
+					Cmd_Error (va("Math error: invalid expression %s\n", statement->str));
+					break;					// Math evaluation error
+				}
+			} else
+				i -= unescape (dstr, i);
 		}
 	}
-	Cmd_Error ("Reached end of Cmd_ProcessIndex when I shouldn't have.\n");
-	return -1; // Should never get here
+	dstring_delete (statement);
+	return ret;
 }
-			
+
+int
+Cmd_ProcessIndex (dstring_t * dstr, int start, int *val1, int *val2)
+{
+	dstring_t *index;
+	char *sep;
+	int i,n, temp;
+
+	i = Cmd_EndBracket (dstr->str + start);
+	if (i < 0) {
+		Cmd_Error ("Unmatched bracket in index expression.\n");
+		return i;
+	}
+	index = dstring_newstr ();
+	dstring_insert (index, dstr->str+start+1, i-1, 0);
+	dstring_snip (dstr, start, i+1);
+	n = Cmd_ProcessVariables(index);
+	if (n < 0) {
+		dstring_delete (index);
+		return n;
+	}
+	n = Cmd_ProcessMath (index);
+	if (n < 0) {
+		dstring_delete (index);
+		return n;
+	}
+	if ((sep = strchr(index->str, ':'))) {
+		*val1 = atoi (index->str);
+		*val2 = atoi (sep+1);
+	} else {
+		*val1 = *val2 = atoi(index->str);
+	}
+	dstring_delete (index);
+	if (*val2 < *val1) {
+		temp = *val1;
+		*val1 = *val2;
+		*val2 = temp;
+	}
+	return 0;
+}
+
 /*
 	Cmd_ProcessVariablesRecursive
-	
+
 	Looks for occurances of ${varname} and
 	replaces them with the contents of the
 	variable.  Will first replace occurances
@@ -1074,32 +1179,27 @@ Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
 	cmd_localvar_t *lvar;
 	cvar_t     *cvar;
 	int         i, n, braces = 0;
-	static int level = 0; // Keep track of our level of recursion for debugging
-	
-	level++;
-	if (level > 100) {
-		Sys_Printf("Warning! Variable substitution caught in loop.  Text was: %s\n", dstr->str+start);
-		level = 0;
-		return -1;
-	}
 
 	if (dstr->str[start+1] == '{')
 		braces = 1;
 	for (i = start + 1 + braces;; i++) {
-		if (dstr->str[i] == '$' && (braces || dstr->str[i-1] == '$') && !escaped (dstr->str, i)) {
-			n = Cmd_ProcessVariablesRecursive (dstr, i);
-			if (n < 0) {
-				break;
-			} else {
-				i += n - 1;
-				continue;
-			}
+		if (dstr->str[i] == '$' && (braces || dstr->str[i-1] == '$')) {
+			if (!escaped (dstr->str, i)) {
+				i -= unescape (dstr, i);
+				n = Cmd_ProcessVariablesRecursive (dstr, i);
+				if (n < 0) {
+					break;
+				} else {
+					i += n - 1;
+					continue;
+				}
+			} else
+				i -= unescape (dstr, i);
 		} else if (!dstr->str[i] && braces) {		// No closing brace
 			Cmd_Error ("Unmatched brace in variable substitution expression.\n");
 			n = -1;
 			break;
 		} else if ((braces && dstr->str[i] == '}' && !escaped (dstr->str, i)) || (!braces && !isalnum((byte)dstr->str[i]) && dstr->str[i] != '_')) {
-			int index;
 			dstring_t *varname = dstring_newstr ();
 			dstring_t *copy = dstring_newstr ();
 			dstring_insert (varname, dstr->str + start + 1 + braces, i - start - 1 - braces, 0);
@@ -1115,15 +1215,19 @@ Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
 				dstring_appendstr (copy, cvar->string);
 			}
 			if (dstr->str[start] == '[') {
-				index = Cmd_ProcessIndex (dstr, start);
-				if (index < 0)
+				int val1, val2, res;
+				res = Cmd_ProcessIndex (dstr, start, &val1, &val2);
+				if (res < 0)
 					n = -1;
-				else if (index < strlen(copy->str)) {
-					dstring_insert (dstr, copy->str+index, 1, start);
-					n = 1;
-				}
-				else
+				else if (val1 >= strlen(copy->str) || val1 < 0)
 					n = 0;
+				else if (val2 < strlen(copy->str)) {
+					dstring_insert (dstr, copy->str+val1, val2-val1+1, start);
+					n = val2 - val1 + 1;
+				} else {
+					dstring_insert (dstr, copy->str+val1, strlen(copy->str)-val1, start);
+					n = strlen(copy->str)-val1;
+				}
 			} else {
 				dstring_insertstr (dstr, copy->str, start);
 				n = strlen(copy->str);
@@ -1133,7 +1237,6 @@ Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
 			break;
 		}
 	}
-	level--;
 	return n;
 }
 
@@ -1150,6 +1253,7 @@ Cmd_ProcessEmbeddedSingle (dstring_t * dstr, int start)
 		return -1;
 	}
 	if (cmd_activebuffer->returned == cmd_waiting) {
+		cmd_activebuffer->returned = cmd_normal;
 		Cmd_Error ("Embedded command expression did not result in a return value.\n");
 		return -1;
 	}
@@ -1176,18 +1280,22 @@ int
 Cmd_ProcessEmbedded (cmd_token_t *tok, dstring_t * dstr)
 {
 	int i, n;
-	
+
 	for (i = tok->pos; i < strlen(dstr->str); i++) {
 		if (dstr->str[i] == '~' && dstr->str[i+1] == '{') {
-			n = Cmd_ProcessEmbeddedSingle (dstr, i);
-			if (n == -2) {
-				tok->pos = i;
-				return n;
-			}
-			if (n < 0)
-				return n;
-			else
-				i += n-1;
+			if (!escaped (dstr->str, i)) {
+				i -= unescape (dstr, i);
+				n = Cmd_ProcessEmbeddedSingle (dstr, i);
+				if (n == -2) {
+					tok->pos = i;
+					return n;
+				}
+				if (n < 0)
+					return n;
+				else
+					i += n-1;
+			} else
+				i -= unescape (dstr, i);
 		}
 	}
 	return 0;
@@ -1199,56 +1307,21 @@ Cmd_ProcessVariables (dstring_t * dstr)
 	int         i, n;
 
 	for (i = 0; i < strlen (dstr->str); i++) {
-		if (dstr->str[i] == '$' && !escaped (dstr->str, i)) {
-			n = Cmd_ProcessVariablesRecursive (dstr, i);
-			if (n < 0)
-				return n;
-			else
-				i += n - 1;
+		if (dstr->str[i] == '$') {
+			if (!escaped (dstr->str, i)) {
+				i -= unescape (dstr, i);
+				n = Cmd_ProcessVariablesRecursive (dstr, i);
+				if (n < 0)
+					return n;
+				else
+					i += n - 1;
+			} else
+				i -= unescape (dstr, i);
 		}
 	}
 	return 0;
 }
 
-int
-Cmd_ProcessMath (dstring_t * dstr)
-{
-	dstring_t  *statement;
-	int         i, n;
-	double       value;
-	char       *temp;
-	int         ret = 0;
-
-	statement = dstring_newstr ();
-
-	for (i = 0; i < strlen (dstr->str); i++) {
-		if (dstr->str[i] == '#' && dstr->str[i + 1] == '{'
-			&& !escaped (dstr->str, i)) {
-			n = Cmd_EndBrace (dstr->str+i+1)+1;
-			if (n < 0) {
-				Cmd_Error ("Unmatched brace in math expression.\n");
-				ret = -1;
-				break;
-			}
-			/* Copy text between parentheses into a buffer */
-			dstring_clearstr (statement);
-			dstring_insert (statement, dstr->str + i + 2, n - 2, 0);
-			value = EXP_Evaluate (statement->str);
-			if (EXP_ERROR == EXP_E_NORMAL) {
-				temp = va ("%.10g", value);
-				dstring_snip (dstr, i, n + 1);	// Nuke the statement
-				dstring_insertstr (dstr, temp, i);	// Stick in the value
-				i += strlen (temp) - 1;
-			} else {
-				ret = -2;
-				Cmd_Error (va("Math error: invalid expression %s\n", statement->str));
-				break;					// Math evaluation error
-			}
-		}
-	}
-	dstring_delete (statement);
-	return ret;
-}
 
 /*
 	Cmd_ProcessEscapes
@@ -1262,18 +1335,17 @@ Cmd_ProcessMath (dstring_t * dstr)
 */
 
 void
-Cmd_ProcessEscapes (dstring_t * dstr)
+Cmd_ProcessEscapes (dstring_t * dstr, const char *noprocess)
 {
 	int         i;
 
-	for (i = 0; i < strlen (dstr->str); i++) {
-		if (dstr->str[i] == '\\' && dstr->str[i+1]) {
-			dstring_snip (dstr, i, 1);
-			if (dstr->str[i] == '\\')
-				i++;
-			if (dstr->str[i] == 'n')
+	if (strlen(dstr->str) == 1)
+		return;
+	for (i = 1; i <= strlen (dstr->str); i++) {
+		if (!(dstr->str[i] && strchr (noprocess, dstr->str[i])) && dstr->str[i-1] == '\\' && dstr->str[i] != '\\') {
+			if (dstr->str[i] == 'n' && escaped (dstr->str, i))
 				dstr->str[i] = '\n';
-			i--;
+			i -= unescape (dstr, i);
 		}
 	}
 }
@@ -1282,7 +1354,7 @@ int
 Cmd_ProcessToken (cmd_token_t *token)
 {
 	int res;
-
+	Cmd_ProcessEscapes (token->processed, "$#~");
 	res = Cmd_ProcessEmbedded (token, token->processed);
 	if (res < 0)
 		return res;
@@ -1293,14 +1365,13 @@ Cmd_ProcessToken (cmd_token_t *token)
 	if (res < 0)
 		return res;
 	Cmd_ProcessTags (token->processed);
-	Cmd_ProcessEscapes (token->processed);
 	token->state = cmd_done;
 	return 0;
 }
 
 /*
 	Cmd_Process
-	
+
 	Processes all tokens that need to be processed
 */
 
@@ -1312,7 +1383,7 @@ Cmd_Process (void)
 	dstring_t *org;
 	int quotes;
 	unsigned int adj = 0;
-	
+
 	if (cmd_activebuffer->legacy)
 		return 0;
 
@@ -1722,21 +1793,7 @@ Cmd_ExecuteParsed (cmd_source_t src)
 	
 	// Check for assignment
 	if (Cmd_Argc() == 3 && !strcmp(Cmd_Argv(1), "=")) {
-		int i, n = 0;
-		dstring_t *var = dstring_newstr ();
-		dstring_appendstr (var, Cmd_Argv(0));
-		if (var->str[strlen(var->str)-1] == ']') {
-			for (i = 0; i < strlen(var->str); i++)
-				if (var->str[i] == '[') {
-					n = Cmd_ProcessIndex (var, i);
-					if (n >= 0)
-						Cmd_SetLocal (cmd_activebuffer, var->str, Cmd_Argv(2), n);
-					break;
-				}
-		}
-		else
-			Cmd_SetLocal (cmd_activebuffer, Cmd_Argv(0), Cmd_Argv(2), -1);
-		dstring_delete (var);
+		Cmd_SetLocal (cmd_activebuffer, Cmd_Argv(0), Cmd_Argv(2));
 		return;
 	}
 
@@ -1748,8 +1805,8 @@ Cmd_ExecuteParsed (cmd_source_t src)
 		sub = Cmd_NewBuffer (true);
 		Cbuf_InsertTextTo (sub, a->value);
 		for (i = 0; i < Cmd_Argc (); i++)
-			Cmd_SetLocal (sub, va ("%i", i), Cmd_Argv (i), -1);
-		Cmd_SetLocal (sub, "argn", va ("%i", Cmd_Argc ()), -1);
+			Cmd_SetLocal (sub, va ("%i", i), Cmd_Argv (i));
+		Cmd_SetLocal (sub, "argn", va ("%i", Cmd_Argc ()));
 		Cmd_ExecuteSubroutine (sub);
 		return;
 	}
@@ -1994,7 +2051,7 @@ Cmd_Lset_f (void)
 		Sys_Printf ("Usage: lset [local variable] [value]\n");
 		return;
 	}
-	Cmd_SetLocal (cmd_activebuffer, Cmd_Argv (1), Cmd_Argv (2), -1);
+	Cmd_SetLocal (cmd_activebuffer, Cmd_Argv (1), Cmd_Argv (2));
 }
 
 void
