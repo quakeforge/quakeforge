@@ -199,7 +199,7 @@ get_def (type_t *type, const char *name, scope_t *scope,
 		return def;
 
 	if (def) {
-		if (!def->external)
+		if (!def->external || storage == st_extern)
 			return def;
 	} else {
 		// allocate a new def
