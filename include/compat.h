@@ -56,10 +56,12 @@
 #endif
 
 /* These may be underscored... */
-#if !defined(HAVE_SNPRINTF) && defined(HAVE__SNPRINTF)
+#if defined(HAVE__SNPRINTF)
+# undef snprintf
 # define snprintf _snprintf
 #endif
-#if !defined(HAVE_VSNPRINTF) && defined(HAVE__VSNPRINTF)
+#if defined(HAVE__VSNPRINTF)
+# undef vsnprintf
 # define vsnprintf _vsnprintf
 #endif
 #if defined(_WIN32) && !defined(__BORLANDC__)

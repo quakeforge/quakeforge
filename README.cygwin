@@ -1,0 +1,40 @@
+NOTE: this method was determined in windows98, if it doesn't work for your
+system, let us know 
+
+email: quake-user@lists.sourceforge.net
+IRC: irc.openprojects.net #quakeforge
+==========================================================================
+
+WARNING: QuakeForge may take several hours from bootstrap to the completion
+         of make install on some systems
+
+To build win32(mingw) quakeforge bins you will need to download and build
+libtools and SDL sources, in that order.
+
+You will also need 3 headers from the Microsoft Directx SDK.
+ddraw.h dinput.h dsound.h
+Put them in your /usr/include/w32api dir
+ 
+Obtain libtool source from www.gnu.org (good place to get to know), and when you 
+configure libtool please ensure you use --prefix=/usr otherwise you will
+have problems.
+
+Obtain SDL source from www.libsdl.org. You do not need the SDL mingw file, it is
+just a bunch of docs and test source.
+
+Once both are built and installed, then you can start.
+
+in quakeforge run
+./bootstrap
+./configure --disable-oss --host=i386-mingw32 --build=i386-cygwin --target=i386-ming32 --disable-Werror
+make
+make install
+
+NOTE: due to bugs in the Directx8 SDK header files you will need 
+--disable-Werror on the configure command line. This may also be the 
+case with earlier Directx SDK's but it hasn't been tested. 
+
+Let us know how you go.
+
+
+Chris Ison (WildCode) for Quakeforge

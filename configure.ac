@@ -53,12 +53,20 @@ case "$host_os" in
 		CFLAGS="$CFLAGS -I\$(top_srcdir)/include/win32"
 		CFLAGS="$CFLAGS -I\$(top_srcdir)/include/win32/resources"
 		if test "$host" != "$build"; then
-			CC="$host_cpu-$host_os-gcc"
-			AS="$CC"
-			AR="$host_cpu-$host_os-ar"
-			RANLIB="$host_cpu-$host_os-ranlib"
-			endian="little"
+			case "$build_os" in
+				cygwin*)
+					CFLAGS="$CFLAGS -mno-cygwin"
+					CPPFLAGS="$CPPFLAGS $CFLAGS"
+					;;
+				*)
+					CC="$host_cpu-$host_os-gcc"
+					AS="$CC"
+					AR="$host_cpu-$host_os-ar"
+					RANLIB="$host_cpu-$host_os-ranlib"
+					;;
+			esac
 		fi
+		endian="little"
 		;;
 	cygwin*)
 		cygwin=yes
@@ -69,19 +77,7 @@ case "$host_os" in
 			RANLIB="$host_cpu-$host_os-ranlib"
 			endian="little"
 		fi
-		if test "$host" != "$target"; then
-			case "$target_os" in
-				mingw32*)
-					mingw=yes
-					CPPFLAGS="$CPPFLAGS -mno-cygwin -mconsole"
-					CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/include/win32"
-					CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/include/win32/resources"
-					LDFLAGS="$LDFLAGS -mno-cygwin -mconsole"
-					endian="little"
-				;;
-			esac
-		fi
-		;;
+	;;
 esac
 
 dnl ==================================================================
