@@ -1,14 +1,14 @@
 # Additional flags to pass to the preprocessor
-ADDITIONAL_CPPFLAGS += 
+ADDITIONAL_CPPFLAGS +=
 
 # Additional flags to pass to the Objective-C compiler
-ADDITIONAL_OBJCFLAGS += -g @CFLAGS@
+ADDITIONAL_OBJCFLAGS += -Wall -Werror
 
 # Additional flags to pass to the C compiler
-ADDITIONAL_CFLAGS += -g @CFLAGS@
+ADDITIONAL_CFLAGS += -Wall -Werror
 
 # Additional include directories the compiler should search
-ADDITIONAL_INCLUDE_DIRS += -I ./Headers
+ADDITIONAL_INCLUDE_DIRS +=
 
 # Additional LDFLAGS to pass to the linker
 ADDITIONAL_LDFLAGS += 
@@ -36,4 +36,7 @@ ADDITIONAL_WO_LIBS +=
 #
 
 # Additional directories to be created during installation
-ADDITIONAL_INSTALL_DIRS +=
+ADDITIONAL_INSTALL_DIRS += \
+	$(GNUSTEP_LOCAL_DIR)/Library/Forge \
+	$(GNUSTEP_NETWORK_DIR)/Library/Forge \
+	$(GNUSTEP_SYSTEM_DIR)/Library/Forge

@@ -3,7 +3,7 @@
 #
 #	Main makefile for the Forge Quake Editor
 #
-#	Copyright (C) 2001 Jeff Teunissen <deek@dusknet.dhs.org>
+#	Copyright (C) 2001 Jeff Teunissen <deek@d2dc.net>
 #
 #	This Makefile is free software; you can redistribute it and/or
 #	modify it under the terms of the GNU General Public License
@@ -67,6 +67,7 @@ Forge_LANGUAGES= \
 # Header files
 #
 Forge_HEADERS= \
+	Config.h \
 	BundleController.h \
 	Controller.h \
 	Preferences.h \

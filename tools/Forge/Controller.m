@@ -41,8 +41,6 @@ static const char rcsid[] =
 
 @implementation Controller
 
-static PrefsController	*prefsController = nil;
-
 - (BOOL) application: (NSApplication *) app openFile: (NSString *) filename;
 {
 	return NO;
@@ -137,8 +135,8 @@ static PrefsController	*prefsController = nil;
 	NSMenu	*project;
 	NSMenu	*file;
 	NSMenu	*edit;
-	NSMenu	*bsp;
-	NSMenu	*brush;
+//	NSMenu	*bsp;
+//	NSMenu	*brush;
 	NSMenu	*windows;
 	NSMenu	*services;
 

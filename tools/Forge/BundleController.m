@@ -37,6 +37,8 @@ static const char rcsid[] =
 #import <Foundation/NSDebug.h>
 #import <Foundation/NSFileManager.h>
 #import <Foundation/NSPathUtilities.h>
+#import <AppKit/NSPanel.h>
+
 #import "BundleController.h"
 
 @interface BundleController (Private)
@@ -84,10 +86,10 @@ static const char rcsid[] =
 
 	// ensure path exists, and is a directory
 	if (![fm fileExistsAtPath: path isDirectory: &isDir])
-		return;
+		return nil;
 
 	if (!isDir)
-		return;
+		return nil;
 
 	// scan for bundles matching the extension in the dir
 	enumerator = [[fm directoryContentsAtPath: path] objectEnumerator];
@@ -95,6 +97,7 @@ static const char rcsid[] =
 		if ([[dir pathExtension] isEqualToString: extension])
 			[bundleList addObject: dir];
 	}
+	return bundleList;
 }
 
 @end
