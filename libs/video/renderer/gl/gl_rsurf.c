@@ -580,7 +580,7 @@ get_side (mnode_t *node)
 	return (DotProduct (modelorg, plane->normal) - plane->dist) < 0;
 }
 
-static void
+static inline void
 visit_node (mnode_t *node, int side)
 {
 	int         c;
