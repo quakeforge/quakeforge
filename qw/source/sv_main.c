@@ -2362,7 +2362,7 @@ SV_Init (void)
 	Sys_Init ();
 
 	svs.info = Info_ParseString ("", MAX_SERVERINFO_STRING);
-	localinfo = Info_ParseString ("", MAX_LOCALINFO_STRING);
+	localinfo = Info_ParseString ("", 0);	// unlimited
 
 	Cbuf_Init ();
 	Cmd_Init ();

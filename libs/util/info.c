@@ -120,7 +120,8 @@ Info_SetValueForStarKey (info_t *info, const char *key, const char *value, int f
 		cursize -= strlen (k->key) + 1;
 		cursize -= strlen (k->value) + 1;
 	}
-	if (cursize + strlen (key) + 1 + strlen (value) + 1 > info->maxsize) {
+	if (info->maxsize &&
+		cursize + strlen (key) + 1 + strlen (value) + 1 > info->maxsize) {
 		Sys_Printf ("Info string length exceeded\n");
 		return;
 	}
