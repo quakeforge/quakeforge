@@ -617,6 +617,8 @@ SCR_SetUpToDrawConsole (void)
 	else
 		scr_conlines = 0;				// none visible
 
+	if (scr_con_current >= vid.height - sb_lines)
+		scr_copyeverything = 1;
 	if (scr_conlines < scr_con_current) {
 		scr_con_current -= scr_conspeed->value * r_frametime;
 		if (scr_conlines > scr_con_current)
@@ -627,6 +629,8 @@ SCR_SetUpToDrawConsole (void)
 		if (scr_conlines < scr_con_current)
 			scr_con_current = scr_conlines;
 	}
+	if (scr_con_current >= vid.height - sb_lines)
+		scr_copyeverything = 1;
 
 	if (clearconsole++ < vid.numpages)
 		Sbar_Changed ();
