@@ -166,7 +166,6 @@ X11_ProcessEvent (void)
 
 	XNextEvent (x_disp, &x_event);
 	if (x_event.type >= LASTEvent) {
-		// FIXME: KLUGE!!!!!!
 		if (x_event.type == x_shmeventtype)
 			oktodraw = 1;
 		return;
@@ -373,22 +372,38 @@ X11_SetVidMode (int width, int height)
 
 void X11_UpdateFullscreen (cvar_t *fullscreen)
 {
+	XSetWindowAttributes attr;
+	unsigned long mask = CWOverrideRedirect;
+
 	if (!vid_context_created) {
 		return;
 	}
-	
+
 	if (!fullscreen->int_val) {
-		if (in_grab) {
-			in_grab->flags &= ~CVAR_ROM;
-		}
 		X11_RestoreVidMode ();
 	} else {
+		X11_SetVidMode (scr_width, scr_height);
+	}
+
+	XUnmapWindow (x_disp, x_win);
+	attr.override_redirect = vidmode_active != 0;
+	XChangeWindowAttributes (x_disp, x_win, mask, &attr);
+	XMoveWindow(x_disp, x_win, 0, 0);
+	XMapWindow (x_disp, x_win);
+	XRaiseWindow (x_disp, x_win);
+
+	if (vidmode_active) {
+		X11_ForceViewPort ();
 		if (in_grab) {
 			in_grab->flags &= ~CVAR_ROM;
 			Cvar_Set (in_grab, "1");
 			in_grab->flags |= CVAR_ROM;
 		}
-		X11_SetVidMode (scr_width, scr_height);
+		IN_LL_Grab_Input ();
+	} else {
+		if (in_grab) {
+			in_grab->flags &= ~CVAR_ROM;
+		}
 	}
 }
 
