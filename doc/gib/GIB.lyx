@@ -98,8 +98,11 @@ ash
 \noun on 
 Bash
 \noun default 
- is the GNU implementation of the UNIX shell, with which GIB shares many
- similarities.
+ is the 
+\noun on 
+GNU
+\noun default 
+ implementation of the UNIX shell, with which GIB shares many similarities.
 \end_inset 
 
  is a scripting language first introduced in 
@@ -519,9 +522,9 @@ program blocks
  Curly braces should only be used where GIB code is appropriate, such as
  in a loop or function definitions.
  Arguments in curly braces 
-\series bold 
+\emph on 
 may
-\series default 
+\emph default 
  be used for any purpose, but this comes with two drawbacks:
 \layout Enumerate
 
@@ -1057,4 +1060,255 @@ To understand why you add one to the second number, envision each element
  the piles between the first separator and the third separator.
  If bad analogies don't suit you, simply remember to specify one more than
  the last element that you want.
+\layout Standard
+
+Negative numbers count backwards from the end of the array.
+ For instance, using -1 for the second number will include everything except
+ the very last element of the array.
+ To specify the very end of the array, omit the second number.
+ Examples:
+\layout LyX-Code
+
+array = one two three four
+\layout LyX-Code
+
+echo @array[1:-1] // Prints: two three
+\layout LyX-Code
+
+echo @array[2:]   // Prints: three four
+\layout LyX-Code
+
+echo @array[-1:]  // Prints: four
+\layout Standard
+
+If the selected range does not make sense (i.e.
+ the starting element comes after the ending element), or begins past the
+ end of the array, no arguments will be added.
+ If the range begins within the array but extends beyond its size, it will
+ be clipped to the end of the array.
+\layout Subsection
+
+Hashes
+\layout Standard
+
+Every element in a GIB array is capable of containing a hash.
+ A hash is an unordered list of names, called 
+\emph on 
+keys
+\emph default 
+, that can be used to access more arrays.
+ Another way to think about it is that each element of an array can have
+ its own set of variables.
+\layout Subsubsection
+
+Assigning to Hashes
+\layout Standard
+
+Assignment to a hash is very similar to normal assignment, except that you
+ must specify an additional name (called the key) and optional element number.
+ The element that contains the hash is called the 
+\emph on 
+stem
+\emph default 
+, and the array stored in the hash is called the 
+\emph on 
+leaf
+\emph default 
+.
+ The stem and leaf are separated by a single period.
+ Examples:
+\layout LyX-Code
+
+foo.bar = "Hello"
+\layout LyX-Code
+
+foo[2].bar = "World"
+\layout LyX-Code
+
+foo[3].bar[2] = "!!"
+\layout LyX-Code
+
+foo.bar.baz = "There is no limit to the depth of hashes"
+\layout Standard
+
+As the last example shows, the elements of the arrays stored in a hash can
+ have their 
+\emph on 
+own
+\emph default 
+ hashes.
+ The depth of GIB variables is limited only by system memory.
+\layout Subsubsection
+
+Embedding Hashes
+\layout Standard
+
+As with assignment, embedding hashes uses the same format as embedding standard
+ variables.
+ However, you 
+\emph on 
+must
+\emph default 
+ use curly braces or the periods between stems and leaves will not be treated
+ as part of the variable.
+ Examples:
+\layout LyX-Code
+
+echo ${foo.bar}
+\layout LyX-Code
+
+echo ${foo[2].bar}
+\layout LyX-Code
+
+echo ${foo[3].bar[2]}
+\layout LyX-Code
+
+echo ${foo.bar.baz}
+\layout Subsubsection
+
+Expanding Hashes
+\layout Standard
+
+If an array element contains a hash, it's possible to acquire a list of
+ all the keys it contains.
+ If a normal argument begins with a percent symbol (
+\family typewriter 
+%
+\family default 
+), the rest of the argument will be treated as the name of a variable and
+ optional element number.
+ The argument will be removed, and one argument will be added in its place
+ for each key in the hash.
+ Example:
+\layout LyX-Code
+
+foo.one = "a"
+\layout LyX-Code
+
+foo.two = "b"
+\layout LyX-Code
+
+foo.three = "c"
+\layout LyX-Code
+
+echo %foo // Prints in any order: one two three
+\layout Standard
+
+If the hash is unused or contains no keys, no arguments will be added.
+ Note that the order of keys in the resulting list is unpredictable.
+\layout Subsection
+
+Dynamic Variables
+\layout Standard
+
+Many of the features of variables would be absolutely useless without the
+ ability to assign, embed, or expand variables differently depending on
+ circumstances when the program is run.
+ For instance, arrays would not be very flexible if you couldn't calculate
+ the element number you wish to access while the program is running.
+ Luckily, GIB allows you to use values of other variables to construct the
+ name a variable before accessing it.
+\layout Subsubsection
+
+Assigning Dynamically
+\layout Standard
+
+To assign dynamically, simply embed other variables as you would in any
+ other argument.
+ For instance, you could assign to an element of an array as follows:
+\layout LyX-Code
+
+number = 2
+\layout LyX-Code
+
+foo[$number] = "bar"
+\layout Standard
+
+Variable leaves can be assigned to in the same way:
+\layout LyX-Code
+
+leaf = "bar"
+\layout LyX-Code
+
+foo.$leaf.message = "This variable was assigned to dynamically."
+\layout Standard
+
+Deciding element numbers or leaves while the script is running is the chief
+ use of this ability, but you can dynamically construct a variable name
+ any way you wish:
+\layout LyX-Code
+
+array = "in" "mouse" "amp"
+\layout LyX-Code
+
+echo Setting sensitivity to 10...
+\layout LyX-Code
+
+set ${array[0]}_${array[1]}_${array[2]} 10
+\layout Standard
+
+This may prove useful under certain circumstances, even though the example
+ given isn't one of them.
+\layout Subsubsection
+
+Embedding Dynamically
+\layout Standard
+
+Embedding dynamically follows a similar pattern.
+ Within the name of an embedded variable you may embed other variables.
+ Example:
+\layout LyX-Code
+
+number = 3
+\layout LyX-Code
+
+foo[$number] = "bar"
+\layout LyX-Code
+
+echo Element $number of foo is equal to $foo[$number]
+\layout Standard
+
+This works for leaves as well:
+\layout LyX-Code
+
+leaf = "bar"
+\layout LyX-Code
+
+foo.$leaf = "Hello"
+\layout LyX-Code
+
+echo ${foo.$leaf} // Prints: Hello
+\layout Standard
+
+Remember that in most circumstances, you must surround the entire variable
+ name with braces.
+ The only case where you don't have to is when embedding a variable as an
+ element number, as in the first example.
+\layout Subsubsection
+
+Expanding Dynamically
+\layout Standard
+
+Dynamic expansion is as simple as dynamic assignment.
+ You can embed variables in an argument beginning with @ or % as you would
+ with any other argument.
+ Example:
+\layout LyX-Code
+
+array = one two three four
+\layout LyX-Code
+
+start = 1
+\layout LyX-Code
+
+end = 3
+\layout LyX-Code
+
+echo @array[$start:$end] // Prints: two three
+\layout Subsection
+
+Variable Scope
+\layout Comment
+
+FIXME: add this section!
 \the_end

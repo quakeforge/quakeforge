@@ -441,8 +441,10 @@ GIB_Contains_f (void)
 		GIB_USAGE ("needle [straw1 straw2 ...]");
 	else if (GIB_CanReturn())
 		for (i = 2; i < GIB_Argc(); i++)
-			if (!strcmp(GIB_Argv(1), GIB_Argv(i)))
+			if (!strcmp(GIB_Argv(1), GIB_Argv(i))) {
 				GIB_Return("1");
+				return;
+			}
 	GIB_Return ("0");
 }
 
