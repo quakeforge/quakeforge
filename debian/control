@@ -3,7 +3,7 @@ Section: contrib/games
 Priority: optional
 Maintainer: Jeff Teunissen <deek@debian.org>
 Standards-Version: 3.1.1
-Build-Depends: automake, autoconf, libtool, bison, flex, debhelper, libsdl1.2-dev, zlib1g-dev, libncurses5-dev, libglide2-dev, svgalibg1-dev
+Build-Depends: automake, autoconf, libtool, bison, flex, debhelper, libsdl1.2-dev, zlib1g-dev, libncurses5-dev, svgalibg1-dev
 
 Package: quakeforge
 Architecture: any
@@ -73,21 +73,6 @@ Description: QuakeForge 3D game engine - X11 client
  .
  This package contains the X11 versions of the QuakeForge client and
  standalone engine.
-
-Package: quakeforge-3dfx
-Architecture: any
-Conflicts: libglide3, quake-3dfx
-Depends: ${shlibs:Depends}, libgl1, quake-game
-Provides: quakeforge-client
-Suggests: joystick
-Description: QuakeForge 3D game engine - Voodoo 1/2 Client
- QuakeForge is a source port of Quake and QuakeWorld, the successors to id
- Software's very popular DOOM series. Its primary development goal is to
- remain compatible with the original games released by id Software while
- adding portability and optional extensions to enhance gameplay.
- .
- This package contains the Voodoo 1/2 versions of the QuakeForge client and
- standalone engine. For Voodoo 3 and higher, please use qf-glx.
 
 Package: quakeforge-glx
 Architecture: any
