@@ -1,4 +1,5 @@
 import array
+import sys
 
 black   = (  0,  0,  0)
 blue    = (  0,  0,255)
@@ -62,7 +63,7 @@ class Frames:
 			self.cur += 1
 			return obj
 	def __init__ (self, data):
-		self.times = map (lambda x: (int(x) + 5)/100, data)
+		self.times = map (lambda x: int(x), data)
 		min = max = self.times[0]
 		sum = 0
 		for t in self.times:
@@ -88,44 +89,105 @@ class Frames:
 		return Frames.iterator (self)
 
 frames = []
-for i in range (1, 4):
-	f = open ("timeframes.txt."+ `i`, "rt")
+for fname in sys.argv[1:]:
+	f = open (fname, "rt")
 	lines = f.readlines ()
 	f.close ()
 	frames.append (Frames (lines))
-	print frames[-1].min/10.0, frames[-1].max/10.0, frames[-1].avg/10.0
+	print frames[-1].min/1000.0, frames[-1].max/1000.0, frames[-1].avg/1000.0
 
 width = len (frames[0])
-height = frames[0].max
+max = frames[0].max
 for f in frames:
 	if width < len (f):
 		width = len (f)
-	if height < f.max + 1:
-		height = f.max + 1
+	if max < f.max:
+		max = f.max
+
+tick_mult = 10
+if max < 1000:
+	scale = 1.0
+	ticks = 10
+elif max < 2000:
+	scale = 0.5
+	ticks = 5
+elif max < 4000:
+	scale = 0.25
+	ticks = 5
+	tick_mult = 5
+elif max < 5000:
+	scale = 0.2
+	ticks = 2
+elif max < 10000:
+	scale = 0.1
+	ticks = 10
+elif max < 20000:
+	scale = 0.05
+	ticks = 5
+elif max < 40000:
+	scale = 0.025
+	ticks = 5
+	tick_mult = 5
+elif max < 50000:
+	scale = 0.02
+	ticks = 2
+elif max < 100000:
+	scale = 0.01
+	ticks = 10
+elif max < 200000:
+	scale = 0.005
+	ticks = 5
+elif max < 400000:
+	scale = 0.0025
+	ticks = 5
+	tick_mult = 5
+elif max < 500000:
+	scale = 0.002
+	ticks = 2
+elif max < 1000000:
+	scale = 0.001
+	ticks = 10
+elif max < 2000000:
+	scale = 0.0005
+	ticks = 5
+elif max < 4000000:
+	scale = 0.00025
+	ticks = 5
+	tick_mult = 5
+elif max < 5000000:
+	scale = 0.0002
+	ticks = 2
+else:
+	scale = 0.0001
+	ticks = 10
+
+height = int (max * scale + 0.5) + 1
 
 a = array.array ('B', '\0' * height * width * 3)
 
 hline (0, width - 1, 0, grey)
 vline (0, 0, height - 1, grey)
-for y in range (0, height - 1, 10):
+for y in range (0, height - 1, ticks):
 	hline (0, 5, y, grey)
-for y in range (0, height - 1, 100):
+for y in range (0, height - 1, ticks * tick_mult):
 	hline (0, 10, y, grey)
-for x in range (0, width - 1, 10):
+for x in range (0, width - 1, 100):
 	vline (x, 0, 5, grey)
 
+b1 = 0.8
+a1 = 1 - b1
+
 for f in frames:
-	ravg = 0.0
-	ravg_span = 20
+	ravg = 0
 	for x in range (len (f)):
+		y1 = int (f[x] * scale + 0.5)
 		if x < len (f) - 1:
-			vline (x, f[x], f[x + 1], map (div10, yellow), 1)
-		plot (x, f[x], red)
-		plot (x, int (ravg + 0.5), map (div10, cyan), 1)
-		if (x >= ravg_span):
-			ravg -= f[x - ravg_span]/float(ravg_span)
-		ravg += f[x]/float(ravg_span)
-	hline (0, len (f) - 1, int (f.avg + 0.5), map (div10, blue), 1)
+			y2 = int (f[x + 1] * scale + 0.5)
+			vline (x, y1, y2, map (div10, yellow), 1)
+		plot (x, y1, red)
+		ravg = a1 * f[x] + b1 * ravg
+		plot (x, int (ravg * scale + 0.5), map (div10, cyan), 1)
+	hline (0, len (f) - 1, int (f.avg * scale + 0.5), map (div10, blue), 1)
 
 f = open ("timeframes.ppm", "wb")
 f.write ("P6\n")
