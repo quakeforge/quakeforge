@@ -33,6 +33,19 @@
 #include "QF/qtypes.h"
 #include "QF/dstring.h"
 
+typedef struct cmd_buffer_s {
+	dstring_t *buffer; // Actual text
+	qboolean wait; // Execution stopped until next frame
+	qboolean legacy; // Backwards compatible with old command buffer style
+	unsigned int argc, maxargc; // Number of args, number of args allocated
+	dstring_t **argv; // Array of arguments
+	dstring_t *realline; // Actual command being processed
+	dstring_t *line; // Tokenized and reassembled command
+	int *args; // Array of positions of each token in above string
+	int *argspace; // Amount of space before each token
+	struct cmd_buffer_s *prev, *next; // Next buffer in the stack
+} cmd_buffer_t;
+
 //===========================================================================
 
 /*
@@ -51,7 +64,7 @@ The game starts with a Cbuf_AddText ("exec quake.rc\n"); Cbuf_Execute ();
 void Cbuf_Init (void);
 // allocates an initial text buffer that will grow as needed
 
-void Cbuf_AddTextTo (dstring_t *buffer, const char *text);
+void Cbuf_AddTextTo (cmd_buffer_t *buffer, const char *text);
 void Cbuf_AddText (const char *text);
 // as new commands are generated from the console or keybindings,
 // the text is added to the end of the command buffer.
@@ -153,6 +166,6 @@ const char *COM_Parse (const char *data);
 
 extern struct cvar_s *cmd_warncmd;
 
-extern dstring_t *cmd_legacybuffer; // Allow access to the legacy buffer as an alternate console buffer
+extern cmd_buffer_t *cmd_legacybuffer; // Allow access to the legacy buffer as an alternate console buffer
 
 #endif // __cmd_h

@@ -67,19 +67,9 @@ The command buffer interface should be generalized and
 each part of QF (console, stufftext, config files and scripts)
 that needs one should allocate and maintain its own.
 */
-dstring_t *cmd_buffer; // Console buffer
-dstring_t *cmd_legacybuffer; // Server stuffcmd buffer with absolute backwards-compatibility
-dstring_t *cmd_activebuffer; // Buffer currently being executed
-dstring_t *cmd_trueline; // The true, unadulterated line last tokenized
-dstring_t *cmd_argbuf; // Buffer for reconstructing tokens into single string
-qboolean cmd_wait = false;
-qboolean cmd_legacy = false; // Are we executing current buffer in legacy mode?
-int cmd_argc;
-int cmd_maxargc = 0;
-dstring_t **cmd_argv = 0;
-int *cmd_args = 0;
-int *cmd_argspace = 0;
-
+cmd_buffer_t *cmd_consolebuffer; // Console buffer
+cmd_buffer_t *cmd_legacybuffer; // Server stuffcmd buffer with absolute backwards-compatibility
+cmd_buffer_t *cmd_activebuffer; // Buffer currently being executed
 
 cvar_t     *cmd_warncmd;
 cvar_t     *cmd_highchars;
@@ -88,6 +78,35 @@ hashtab_t  *cmd_alias_hash;
 hashtab_t  *cmd_hash;
 
 //=============================================================================
+
+/* Functions to manage command buffers */
+
+cmd_buffer_t	*
+Cmd_NewBuffer (void)
+{
+	cmd_buffer_t *new;
+	
+	new = calloc(1, sizeof(cmd_buffer_t));
+	new->buffer = dstring_newstr ();
+	new->line = dstring_newstr ();
+	new->realline = dstring_newstr ();
+	
+	return new;
+}
+
+void 
+Cmd_FreeBuffer (cmd_buffer_t *del)
+{
+	int i;
+	
+	dstring_delete (del->buffer);
+	dstring_delete (del->line);
+	dstring_delete (del->realline);
+	for (i = 0; i < del->maxargc; i++)
+		if (del->argv[i])
+			dstring_delete(del->argv[i]);
+	free(del);
+}
 
 
 /* Quick function to determine if a character is escaped */
@@ -134,7 +153,9 @@ escape (dstring_t *dstr)
 void
 Cmd_Wait_f (void)
 {
-	cmd_wait = true;
+	cmd_buffer_t *cur;
+	for (cur = cmd_activebuffer; cur; cur = cur->prev)
+		cur->wait = true;
 }
 
 /*
@@ -146,19 +167,19 @@ byte        cmd_text_buf[8192];
 void
 Cbuf_Init (void)
 {
-
-	cmd_buffer = dstring_newstr ();
-	cmd_legacybuffer = dstring_newstr ();
-	cmd_activebuffer = cmd_buffer;
-	cmd_argbuf = dstring_newstr ();
-	cmd_trueline = dstring_newstr ();
+	cmd_consolebuffer = Cmd_NewBuffer ();
+	
+	cmd_legacybuffer = Cmd_NewBuffer ();
+	cmd_legacybuffer->legacy = true;
+	
+	cmd_activebuffer = cmd_consolebuffer;
 }
 
 
 void
-Cbuf_AddTextTo (dstring_t *buffer, const char *text)
+Cbuf_AddTextTo (cmd_buffer_t *buffer, const char *text)
 {
-	dstring_appendstr (buffer, text);
+	dstring_appendstr (buffer->buffer, text);
 }
 
 /* 
@@ -174,10 +195,10 @@ Cbuf_AddText (const char *text)
 }
 
 void
-Cbuf_InsertTextTo (dstring_t *buffer, const char *text)
+Cbuf_InsertTextTo (cmd_buffer_t *buffer, const char *text)
 {
-	dstring_insertstr (buffer, "\n", 0);
-	dstring_insertstr (buffer, text, 0);
+	dstring_insertstr (buffer->buffer, "\n", 0);
+	dstring_insertstr (buffer->buffer, text, 0);
 }
 
 /* Cbuf_InsertText
@@ -222,8 +243,14 @@ extract_line (dstring_t *buffer, dstring_t *line)
 			dstring_snip(buffer, i, n);
 		}
 		if (buffer->str[i] == '\n' || buffer->str[i] == '\r') {
-			if (braces)
+			if (braces) {
+				if (i && buffer->str[i-1] != ';')
+					buffer->str[i] = ';';
+				else {
 				dstring_snip(buffer, i, 1);
+				i--;
+				}
+			}
 			else
 				break;
 		}
@@ -245,16 +272,16 @@ extract_line (dstring_t *buffer, dstring_t *line)
 */
 
 void 
-Cbuf_ExecuteBuffer (dstring_t *buffer)
+Cbuf_ExecuteBuffer (cmd_buffer_t *buffer)
 {
 	dstring_t *buf = dstring_newstr ();
-	dstring_t *temp = cmd_activebuffer; // save old context
+	cmd_buffer_t *temp = cmd_activebuffer; // save old context
 	cmd_activebuffer = buffer;
-	while (strlen(buffer->str)) {
-		extract_line (buffer, buf);
+	buffer->wait = false;
+	while (strlen(buffer->buffer->str)) {
+		extract_line (buffer->buffer, buf);
 		Cmd_ExecuteString(buf->str, src_command);
-		if (cmd_wait) {
-			cmd_wait = false;
+		if (buffer->wait) {
 			break;
 		}
 		dstring_clearstr(buf);
@@ -266,11 +293,41 @@ Cbuf_ExecuteBuffer (dstring_t *buffer)
 void
 Cbuf_Execute (void)
 {
-	Cbuf_ExecuteBuffer (cmd_buffer); // Console buffer gets precedence
-	cmd_legacy = true;
+	qboolean wait = false;
+	cmd_buffer_t *cur;
+	
+	// Execute the buffer stack first
+	while (cmd_consolebuffer->next) {
+		for (cur = cmd_consolebuffer; cur->next; cur=cur->next);
+		Cbuf_ExecuteBuffer (cur);
+		if (cur->wait) {
+			wait = true;
+			break;
+		}
+		else {
+			cur->prev->next = 0;
+			Cmd_FreeBuffer (cur);
+		}
+	}
+	if (!wait)
+		Cbuf_ExecuteBuffer (cmd_consolebuffer); // Then console buffer
 	Cbuf_ExecuteBuffer (cmd_legacybuffer); // Then legacy/stufftext buffer
-	cmd_legacy = false;
-}	
+}
+	
+void Cmd_ExecuteSubroutine (const char *text)
+{
+	cmd_buffer_t *buffer = Cmd_NewBuffer ();
+	
+	cmd_activebuffer->next = buffer;
+	buffer->prev = cmd_activebuffer;
+	Cbuf_InsertTextTo (buffer, text);
+	Cbuf_ExecuteBuffer (buffer);
+	if (!buffer->wait) {
+		Cmd_FreeBuffer(buffer);
+		cmd_activebuffer->next = 0;
+	}
+	return;
+}
 /*
 	Cbuf_Execute_Sets
 	
@@ -285,8 +342,8 @@ Cbuf_Execute_Sets (void)
 {
 	dstring_t *buf = dstring_newstr ();
 	
-	while (strlen(cmd_buffer->str)) {
-		extract_line (cmd_buffer, buf);
+	while (strlen(cmd_consolebuffer->buffer->str)) {
+		extract_line (cmd_consolebuffer->buffer, buf);
 		if (!strncmp (buf->str, "set", 3) && isspace ((int) buf->str[3])) {
 			Cmd_ExecuteString (buf->str, src_command);
 		} else if (!strncmp (buf->str, "setrom", 6) && isspace ((int) buf->str[6])) {
@@ -370,7 +427,7 @@ Cmd_Exec_File (const char *path)
 			f[len] = 0;
 			Qread (file, f, len);
 			Qclose (file);
-			Cbuf_InsertTextTo (cmd_buffer, f); // Always insert into console
+			Cbuf_InsertTextTo (cmd_consolebuffer, f); // Always insert into console
 			free (f);
 		}
 	}
@@ -393,12 +450,10 @@ Cmd_Exec_f (void)
 		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
 		return;
 	}
-	Cbuf_InsertTextTo (cmd_buffer, f); // Always insert into console
-	Hunk_FreeToLowMark (mark);
-
-	if (!Cvar_Command () && (cmd_warncmd->int_val
-							 || (developer && developer->int_val)))
+	if (!Cvar_Command () && (cmd_warncmd->int_val || (developer && developer->int_val)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
+	Cmd_ExecuteSubroutine (f); // Execute file in it's own buffer
+	Hunk_FreeToLowMark (mark);
 }
 
 /*
@@ -512,15 +567,15 @@ static cmd_function_t *cmd_functions;	// possible commands to execute
 int
 Cmd_Argc (void)
 {
-	return cmd_argc;
+	return cmd_activebuffer->argc;
 }
 
 const char       *
 Cmd_Argv (int arg)
 {
-	if (arg >= cmd_argc)
+	if (arg >= cmd_activebuffer->argc)
 		return "";
-	return cmd_argv[arg]->str;
+	return cmd_activebuffer->argv[arg]->str;
 }
 
 /*
@@ -531,9 +586,9 @@ Cmd_Argv (int arg)
 const char       *
 Cmd_Args (int start)
 {
-	if (start >= cmd_argc)
+	if (start >= cmd_activebuffer->argc)
 		return "";
-	return cmd_argbuf->str + cmd_args[start];
+	return cmd_activebuffer->line->str + cmd_activebuffer->args[start];
 }
 
 
@@ -776,12 +831,12 @@ Cmd_ProcessMath (dstring_t *dstr)
 				else if (!dstr->str[i+n])
 					return -1; // Open parentheses, give up
 			}
-			/* Copy text between braces into a buffer */
+			/* Copy text between parentheses into a buffer */
 			dstring_clearstr (statement);
 			dstring_insert (statement, dstr->str+i+2, n-2, 0);
 			value = EXP_Evaluate (statement->str);
 			if (EXP_ERROR == EXP_E_NORMAL) {
-				temp = va("%f", value);
+				temp = va("%g", value);
 				dstring_snip (dstr, i, n+1); // Nuke the statement
 				dstring_insertstr (dstr, temp, i); // Stick in the value
 				i += strlen(temp) - 1;
@@ -874,8 +929,7 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 {
 	int i = 0, n, len = 0, quotes, braces, space, res;
 	const char *str = text;
-	
-	cmd_argc = 0;
+	unsigned int cmd_argc = 0;
 	
 	/* Turn off tags at the beginning of a command.
 	This causes tags to continue past token boundaries. */
@@ -898,21 +952,21 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 		else if (len == 0)
 			break;
 		cmd_argc++;
-		if (cmd_argc > cmd_maxargc) {
-			cmd_argv = realloc(cmd_argv, sizeof(dstring_t *)*cmd_argc);
-			if (!cmd_argv)
+		if (cmd_argc > cmd_activebuffer->maxargc) {
+			cmd_activebuffer->argv = realloc(cmd_activebuffer->argv, sizeof(dstring_t *)*cmd_argc);
+			if (!cmd_activebuffer->argv)
 				Sys_Error ("Cmd_TokenizeString:  Failed to reallocate memory.\n");
-			cmd_args = realloc(cmd_args, sizeof(int)*cmd_argc);
-			if (!cmd_args)
+			cmd_activebuffer->args = realloc(cmd_activebuffer->args, sizeof(int)*cmd_argc);
+			if (!cmd_activebuffer->args)
 				Sys_Error ("Cmd_TokenizeString:  Failed to reallocate memory.\n");
-			cmd_argspace = realloc(cmd_argspace, sizeof(int)*cmd_argc);
-			if (!cmd_argspace)
+			cmd_activebuffer->argspace = realloc(cmd_activebuffer->argspace, sizeof(int)*cmd_argc);
+			if (!cmd_activebuffer->argspace)
 				Sys_Error ("Cmd_TokenizeString:  Failed to reallocate memory.\n");
-			cmd_argv[cmd_argc-1] = dstring_newstr ();
-			cmd_maxargc++;
+			cmd_activebuffer->argv[cmd_argc-1] = dstring_newstr ();
+			cmd_activebuffer->maxargc++;
 		}
-		dstring_clearstr(cmd_argv[cmd_argc-1]);
-		cmd_argspace[cmd_argc-1] = space;
+		dstring_clearstr(cmd_activebuffer->argv[cmd_argc-1]);
+		cmd_activebuffer->argspace[cmd_argc-1] = space;
 		/* Remove surrounding quotes or double quotes or braces*/
 		quotes = 0;
 		braces = 0;
@@ -926,12 +980,12 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 			len-=1;
 			braces = 1;
 		}
-		dstring_insert(cmd_argv[cmd_argc-1], str + i, len, 0);
+		dstring_insert(cmd_activebuffer->argv[cmd_argc-1], str + i, len, 0);
 		if (filter && text[0] != '|') {
 			if (!braces) {
-				Cmd_ProcessTags(cmd_argv[cmd_argc-1]);
-				Cmd_ProcessVariables(cmd_argv[cmd_argc-1]);
-				res = Cmd_ProcessMath(cmd_argv[cmd_argc-1]);
+				Cmd_ProcessTags(cmd_activebuffer->argv[cmd_argc-1]);
+				Cmd_ProcessVariables(cmd_activebuffer->argv[cmd_argc-1]);
+				res = Cmd_ProcessMath(cmd_activebuffer->argv[cmd_argc-1]);
 				if (res == -1) {
 					Sys_Printf("Parse error:  Unmatched parenthesis in following line:\n--> %s\n", text);
 					cmd_argc = 0;
@@ -943,21 +997,22 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 					return;
 				}
 			}
-			Cmd_ProcessEscapes(cmd_argv[cmd_argc-1]);
+			Cmd_ProcessEscapes(cmd_activebuffer->argv[cmd_argc-1]);
 		}
 
 		i += len + quotes + braces; /* If we ended on a quote or brace, skip it */
 	}
 	/* Now we must reconstruct cmd_args */
-	dstring_clearstr (cmd_argbuf);
+	dstring_clearstr (cmd_activebuffer->line);
 	for (i = 0; i < cmd_argc; i++) {
-		for (n = 0; n < cmd_argspace[i]; n++)
-			dstring_appendstr (cmd_argbuf," ");
-		cmd_args[i] = strlen(cmd_argbuf->str);
-		dstring_appendstr (cmd_argbuf, cmd_argv[i]->str);
+		for (n = 0; n < cmd_activebuffer->argspace[i]; n++)
+			dstring_appendstr (cmd_activebuffer->line," ");
+		cmd_activebuffer->args[i] = strlen(cmd_activebuffer->line->str);
+		dstring_appendstr (cmd_activebuffer->line, cmd_activebuffer->argv[i]->str);
 	}
-	dstring_clearstr (cmd_trueline);
-	dstring_appendstr (cmd_trueline, text);
+	dstring_clearstr (cmd_activebuffer->realline);
+	dstring_appendstr (cmd_activebuffer->realline, text);
+	cmd_activebuffer->argc = cmd_argc;
 }
 
 void
@@ -1195,14 +1250,14 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 	cmdalias_t *a;
 	cmd_source = src;
 
-	Cmd_TokenizeString (text, !cmd_legacy);
+	Cmd_TokenizeString (text, !cmd_activebuffer->legacy);
 
 	// execute the command line
 	if (!Cmd_Argc ())
 		return;							// no tokens
 
 	// check functions
-	cmd = (cmd_function_t*)Hash_Find (cmd_hash, cmd_argv[0]->str);
+	cmd = (cmd_function_t*)Hash_Find (cmd_hash, Cmd_Argv(0));
 	if (cmd) {
 		if (cmd->function)
 			cmd->function ();
@@ -1214,19 +1269,18 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 		return;
 
 	// check alias
-	a = (cmdalias_t*)Hash_Find (cmd_alias_hash, cmd_argv[0]->str);
+	a = (cmdalias_t*)Hash_Find (cmd_alias_hash, Cmd_Argv(0));
 	if (a) {
 		dstring_t *temp = dstring_newstr ();
 		dstring_appendstr (temp, a->value);
 		Cmd_ProcessPercents (temp);
-		Cbuf_InsertText (temp->str);
+		Cmd_ExecuteSubroutine (temp->str);
 		dstring_delete (temp);
 		return;
 	}
 
 	if (cmd_warncmd->int_val || developer->int_val)
 		Sys_Printf ("Unknown command \"%s\"\n", Cmd_Argv (0));
-	cmd_argc = 0;
 }
 
 /*
@@ -1338,7 +1392,7 @@ Cmd_While_f (void) {
 	num = strtol (Cmd_Argv(1), 0, 10);
 	
 	if (num) {
-		Cbuf_InsertText (cmd_trueline->str); // Run while loop again
+		Cbuf_InsertText (cmd_activebuffer->realline->str); // Run while loop again
 		Cbuf_InsertText (Cmd_Argv(2)); // But not before executing body
 	}
 	return;

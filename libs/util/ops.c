@@ -75,5 +75,5 @@ float OP_GreaterThanEqual (float op1, float op2)
 }
 float OP_LessThanEqual (float op1, float op2)
 {
-	return op2 <= op1;
+	return op1 <= op2;
 }
