@@ -2041,10 +2041,6 @@ SV_InitLocal (void)
 								 "Sets the water friction value");
 	sv_aim = Cvar_Get ("sv_aim", "2", CVAR_NONE, NULL,
 					   "Sets the value for auto-aiming leniency");
-	sv_timecheck_fuzz = Cvar_Get ("sv_timecheck_fuzz", "250", CVAR_NONE, NULL,
-								 "Milliseconds of tolerance before time cheat throttling kicks in.");
-	sv_timecheck_decay = Cvar_Get ("sv_timecheck_decay", "2", CVAR_NONE,
-									 NULL, "Rate at which time inaccuracies are \"forgiven\".");
 	sv_minqfversion = Cvar_Get ("sv_minqfversion", "0", CVAR_SERVERINFO,
 								Cvar_Info, "Minimum QF version on client");
 	sv_maxrate = Cvar_Get ("sv_maxrate", "10000", CVAR_SERVERINFO, Cvar_Info,

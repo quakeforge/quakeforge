@@ -84,6 +84,10 @@ cvar_t     *sv_kickfake;
 
 cvar_t     *sv_mapcheck;
 
+cvar_t     *sv_timecheck_mode;
+cvar_t     *sv_timekick;
+cvar_t     *sv_timekick_fuzz;
+cvar_t     *sv_timekick_interval;
 cvar_t     *sv_timecheck_fuzz;
 cvar_t     *sv_timecheck_decay;
 
@@ -1414,21 +1418,73 @@ SV_PreRunCmd (void)
 	memset (playertouch, 0, sizeof (playertouch));
 }
 
+static void
+adjust_usecs (usercmd_t *ucmd)
+{
+	int         passed;
+
+	if (host_client->last_check == -1.0)
+		return;
+	passed = (int) ((realtime - host_client->last_check) * 1000.0);
+	host_client->msecs += passed - ucmd->msec;
+	if (host_client->msecs >= 0) {
+		host_client->msecs -= sv_timecheck_decay->int_val;
+	} else {
+		host_client->msecs += sv_timecheck_decay->int_val;
+	}
+	if (abs (host_client->msecs) > sv_timecheck_fuzz->int_val) {
+		int         fuzz = sv_timecheck_fuzz->int_val;
+		host_client->msecs = bound (-fuzz, host_client->msecs, fuzz);
+		ucmd->msec = passed;
+	}
+}
+
+static void
+check_usecs (usercmd_t *ucmd)
+{
+	double      tmp_time;
+	int         tmp_time1;
+
+	host_client->msecs += ucmd->msec;
+	if (host_client->spectator)
+		return;
+	if (host_client->last_check == -1.0)
+		return;
+	tmp_time = realtime - host_client->last_check;
+	if (tmp_time < sv_timekick_interval->value)
+		return;
+	tmp_time1 = tmp_time * (1000 + sv_timekick_fuzz->value);
+	if (host_client->msecs < tmp_time1)
+		return;
+	host_client->msec_cheating++;
+	SV_BroadcastPrintf (PRINT_HIGH, "%s thinks there are %d ms "
+						"in %d seconds (Strike %d/%d)\n",
+						host_client->name, host_client->msecs,
+						(int) tmp_time, host_client->msec_cheating,
+						sv_timekick->int_val);
+	if (host_client->msec_cheating < sv_timekick->int_val)
+		return;
+	SV_BroadcastPrintf (PRINT_HIGH, "Strike %d for %s!!\n",
+						host_client->msec_cheating, host_client->name);
+	SV_BroadcastPrintf (PRINT_HIGH, "Please see "
+						"http://www.quakeforge.net/speed_cheat.php for "
+						"information on QuakeForge's time cheat protection. "
+						"That page explains how some may be cheating "
+						"without knowing it.\n");
+	SV_DropClient (host_client);
+}
+
 void
 SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 {
-	int			oldmsec, passed, i, n;
+	int			oldmsec, i, n;
 	edict_t    *ent;
 
 	if (!inside) {
-		if (host_client->last_check != -1.0) {
-				passed = (int)((realtime - host_client->last_check)*1000.0);
-				host_client->msecs += passed - ucmd->msec;
-				host_client->msecs -= host_client->msecs >= 0 ? sv_timecheck_decay->int_val : -sv_timecheck_decay->int_val;
-				if (abs(host_client->msecs) > sv_timecheck_fuzz->int_val) {
-					host_client->msecs = bound (-sv_timecheck_fuzz->int_val, host_client->msecs, sv_timecheck_fuzz->int_val);
-					ucmd->msec = passed;
-				}
+		if (sv_timecheck_mode->int_val) {
+			adjust_usecs (ucmd);
+		} else {
+			check_usecs (ucmd);
 		}
 		host_client->last_check = realtime;
 	}
@@ -1758,6 +1814,22 @@ SV_UserInit (void)
 	sv_mapcheck = Cvar_Get ("sv_mapcheck", "1", CVAR_NONE, NULL, "Toggle the "
 							"use of map checksumming to check for players who "
 							"edit maps to cheat");
+	sv_timecheck_mode = Cvar_Get ("sv_timecheck_mode", "0", CVAR_NONE, NULL,
+								  "select between timekick (0, default) and "
+								  "timecheck (1)");
+	sv_timekick = Cvar_Get ("sv_timekick", "3", CVAR_SERVERINFO, Cvar_Info,
+							"Time cheat protection");
+	sv_timekick_fuzz = Cvar_Get ("sv_timekick_fuzz", "30", CVAR_NONE, NULL,
+								 "Time cheat \"fuzz factor\" in milliseconds");
+	sv_timekick_interval = Cvar_Get ("sv_timekick_interval", "30", CVAR_NONE,
+									 NULL, "Time cheat check interval in "
+									 "seconds");
+	sv_timecheck_fuzz = Cvar_Get ("sv_timecheck_fuzz", "250", CVAR_NONE, NULL,
+								  "Milliseconds of tolerance before time "
+								  "cheat throttling kicks in.");
+	sv_timecheck_decay = Cvar_Get ("sv_timecheck_decay", "2", CVAR_NONE,
+								   NULL, "Rate at which time inaccuracies are "
+								   "\"forgiven\".");
 	sv_kickfake = Cvar_Get ("sv_kickfake", "1", CVAR_NONE, NULL,
 							"Kick users sending to send fake talk messages");
 }
