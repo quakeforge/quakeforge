@@ -31,6 +31,6 @@ libQFutil_la_SOURCES= \
 	fendian.c getopt.c getopt1.c hash.c idparse.c info.c link.c llist.c \
 	mathlib.c mdfour.c msg.c pakfile.c plugin.c qargs.c qendian.c \
 	qfplist.c quakefs.c quakeio.c riff.c sizebuf.c string.c sys.c \
-	va.c ver_check.c wad.c zone.c $(fnmatch)
+	va.c ver_check.c wad.c wadfile.c zone.c $(fnmatch)
 
 EXTRA_DIST= $(asm_src) $(fnmatch_src)

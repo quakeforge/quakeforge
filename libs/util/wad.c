@@ -56,7 +56,7 @@ byte       *wad_base;
 	comparing 4 chars at a time Space padding is so names can be printed
 	nicely in tables. Can safely be performed in place.
 */
-void
+static void
 W_CleanupName (const char *in, char *out)
 {
 	int			i;
@@ -90,10 +90,8 @@ W_LoadWadFile (const char *filename)
 
 	header = (wadinfo_t *) wad_base;
 
-	if (header->identification[0] != 'W'
-		|| header->identification[1] != 'A'
-		|| header->identification[2] != 'D'
-		|| header->identification[3] != '2')
+	if (header->id[0] != 'W' || header->id[1] != 'A' || header->id[2] != 'D'
+		|| header->id[3] != '2')
 		Sys_Error ("Wad file %s doesn't have WAD2 id", filename);
 
 	wad_numlumps = LittleLong (header->numlumps);
@@ -109,7 +107,7 @@ W_LoadWadFile (const char *filename)
 	}
 }
 
-lumpinfo_t *
+static lumpinfo_t *
 W_GetLumpinfo (const char *name)
 {
 	int         i;
@@ -136,23 +134,6 @@ W_GetLumpName (const char *name)
 
 	return (void *) (wad_base + lump->filepos);
 }
-
-void *
-W_GetLumpNum (int num)
-{
-	lumpinfo_t *lump;
-
-	if (num < 0 || num > wad_numlumps)
-		Sys_Error ("W_GetLumpNum: bad number: %i", num);
-
-	lump = wad_lumps + num;
-
-	return (void *) (wad_base + lump->filepos);
-}
-
-/*
-  automatic byte swapping
-*/
 
 void
 SwapPic (qpic_t *pic)

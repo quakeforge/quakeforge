@@ -38,6 +38,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/qendian.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/wad.h"
 
 #include "bsp5.h"
 #include "options.h"
@@ -276,22 +277,6 @@ BumpModel (int hullnum)
 	BSP_AddModel (bsp, &bm);
 }
 
-typedef struct {
-	char        identification[4];		// should be WAD2
-	int         numlumps;
-	int         infotableofs;
-} wadinfo_t;
-
-typedef struct {
-	int         filepos;
-	int         disksize;
-	int         size;					// uncompressed
-	char        type;
-	char        compression;
-	char        pad1, pad2;
-	char        name[16];				// must be null terminated
-} lumpinfo_t;
-
 typedef struct wadlist_s {
 	struct wadlist_s *next;
 	const char *path;
@@ -337,7 +322,7 @@ TEX_InitFromWad (char *path)
 	wl->path = strdup (path);
 
 	Qread (texfile, &wl->wadinfo, sizeof (wadinfo_t));
-	if (strncmp (wl->wadinfo.identification, "WAD2", 4))
+	if (strncmp (wl->wadinfo.id, "WAD2", 4))
 		Sys_Error ("TEX_InitFromWad: %s isn't a wadfile", path);
 	wl->wadinfo.numlumps = LittleLong (wl->wadinfo.numlumps);
 	wl->wadinfo.infotableofs = LittleLong (wl->wadinfo.infotableofs);
