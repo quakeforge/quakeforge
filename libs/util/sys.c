@@ -314,9 +314,7 @@ Sys_DoubleTime (void)
 
 	gettimeofday (&tp, &tzp);
 
-	tp.tv_usec /= 1000;			// lose some precision, we don't need it
-
-	now = tp.tv_sec + tp.tv_usec / 1000.0;
+	now = tp.tv_sec + tp.tv_usec / 1e6;
 
 	if (first) {
 		first = false;
