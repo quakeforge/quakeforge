@@ -1766,3 +1766,37 @@ cast_expr (type_t *t, expr_t *e)
 	c->e.expr.type = t;
 	return c;
 }
+
+void
+init_elements (def_t *def, expr_t *eles)
+{
+	expr_t     *e;
+	int         count, i;
+	float      *g = &G_FLOAT (G_INT (def->ofs));
+
+	for (count = 0, e = eles->e.block.head; e; count++, e = e->next)
+		;
+	if (count > def->type->num_parms) {
+		warning (eles, "excessive elements in initializer");
+		count = def->type->num_parms;
+	}
+	for (i = 0, e = eles->e.block.head; i < count; i++, e = e->next) {
+		if (e->type == ex_block) {
+			warning (e, "not yet implemented");
+		} else if (e->type >= ex_string) {
+			if (get_type (e) != def->type->aux_type) {
+				error (e, "type mismatch in initializer");
+				g += pr_type_size[def->type->aux_type->type];
+			} else {
+				if (e->type == ex_string) {
+					*(int*)g = ReuseString (e->e.string_val);
+				} else {
+					memcpy (g, &e->e, pr_type_size[extract_type (e)] * 4);
+				}
+				g += pr_type_size[extract_type (e)];
+			}
+		} else {
+			error (e, "non-constant initializer");
+		}
+	}
+}

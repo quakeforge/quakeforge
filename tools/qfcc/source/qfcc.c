@@ -485,6 +485,7 @@ void
 PR_RelocateRefs (def_t *def)
 {
 	statref_t  *ref;
+	int        *d;
 
 	for (ref = def->refs; ref; ref = ref->next) {
 		switch (ref->field) {
@@ -496,6 +497,10 @@ PR_RelocateRefs (def_t *def)
 				break;
 			case 2:
 				ref->statement->c = def->ofs;
+				break;
+			case 4:
+				d = (int*)ref->statement;
+				*d += def->ofs;
 				break;
 			default:
 				abort ();

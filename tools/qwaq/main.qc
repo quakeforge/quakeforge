@@ -11,6 +11,15 @@ struct foo = {
 void (foo bar) eek;
 float (float a, float b) boing;
 
+string [6] dot = {
+	"gfx/menudot0.lpm",
+	"gfx/menudot1.lpm",
+	"gfx/menudot2.lpm",
+	"gfx/menudot3.lpm",
+	"gfx/menudot4.lpm",
+	"gfx/menudot5.lpm",
+};
+
 float () main =
 {
 	local float messed_or;
@@ -32,5 +41,7 @@ float () main =
 		print (buffer);
 	} while (read_result == 1024);
 	close (handle);
+	for (handle = 0; handle < 6; handle++)
+		print (dot[handle] + "\n");
 	return 0;
 };

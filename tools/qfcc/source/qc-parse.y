@@ -118,7 +118,7 @@ typedef struct {
 %type	<def>	param param_list def_name
 %type	<def>	var_def_item var_def_list
 %type	<def>	func_def_item func_def_list
-%type	<expr>	const opt_expr expr arg_list
+%type	<expr>	const opt_expr expr arg_list element_list element_list1 element
 %type	<expr>	statement statements statement_block
 %type	<expr>	break_label continue_label
 %type	<function> begin_function
@@ -137,6 +137,7 @@ expr_t	*break_label;
 expr_t	*continue_label;
 switch_block_t *switch_block;
 type_t	*struct_type;
+expr_t	*current_init;
 
 def_t		*pr_scope;					// the function being parsed, or NULL
 string_t	s_file;						// filename for function definition
@@ -326,6 +327,58 @@ opt_var_initializer
 				}
 			}
 		}
+	| '=' '{' { current_init = new_block_expr (); } element_list '}'
+		{
+			init_elements (current_def, $4);
+			current_init = 0;
+		}
+	;
+
+element_list
+	: /* empty */
+		{
+			$$ = new_block_expr ();
+		}
+	| element_list1 opt_comma
+		{
+			$$ = current_init;
+		}
+	;
+
+element_list1
+	: element
+		{
+			append_expr (current_init, $1);
+		}
+	| element_list1 ',' element
+		{
+			append_expr (current_init, $3);
+		}
+	;
+
+element
+	: '{'
+		{
+			$$ = current_init;
+			current_init = new_block_expr ();
+		}
+	  element_list
+		{
+			current_init = $<expr>2;
+		}
+	  '}'
+		{
+			$$ = $3;
+		}
+	| expr
+		{
+			$$ = $1;
+		}
+	;
+
+opt_comma
+	: /* empty */
+	| ','
 	;
 
 opt_func_initializer

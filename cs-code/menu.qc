@@ -13,14 +13,14 @@ entity self;
 .float frame;
 .void () think;
 
-string [6] dot;/* = {
+string [6] dot = {
 	"gfx/menudot0.lpm",
 	"gfx/menudot1.lpm",
 	"gfx/menudot2.lpm",
 	"gfx/menudot3.lpm",
 	"gfx/menudot4.lpm",
 	"gfx/menudot5.lpm",
-};*/
+};
 
 void (integer x, integer y) spinner =
 {

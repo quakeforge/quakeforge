@@ -187,6 +187,19 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 			pr.size_fields += size;
 		}
 	} else if (type->type == ev_pointer) {
+		dstatement_t *st;
+		statref_t  *ref;
+
+		if (pr_scope) {
+			st = (dstatement_t *) &G_INT (def->ofs);
+			ref = PR_NewStatref (st, 4);
+			ref->next = def->refs;
+			def->refs = ref;
+			G_INT (def->ofs) = 1;
+		} else {
+			G_INT (def->ofs) = *allocate;
+		}
+
 		size = PR_GetTypeSize (type->aux_type);
 		*allocate += type->num_parms * size;
 		if (type->num_parms)
