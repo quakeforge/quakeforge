@@ -590,6 +590,37 @@ SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 	}
 }
 
+static void
+get_stats (edict_t *ent, int spectator, int stats[MAX_CL_STATS])
+{
+	memset (stats, 0, sizeof (int) * MAX_CL_STATS);
+
+	stats[STAT_HEALTH] = SVfloat (ent, health);
+	stats[STAT_WEAPON] = SV_ModelIndex (PR_GetString (&sv_pr_state,
+										  SVstring (ent, weaponmodel)));
+	stats[STAT_AMMO] = SVfloat (ent, currentammo);
+	stats[STAT_ARMOR] = SVfloat (ent, armorvalue);
+	stats[STAT_SHELLS] = SVfloat (ent, ammo_shells);
+	stats[STAT_NAILS] = SVfloat (ent, ammo_nails);
+	stats[STAT_ROCKETS] = SVfloat (ent, ammo_rockets);
+	stats[STAT_CELLS] = SVfloat (ent, ammo_cells);
+	if (!spectator)
+		stats[STAT_ACTIVEWEAPON] = SVfloat (ent, weapon);
+	// stuff the sigil bits into the high bits of items for sbar
+	stats[STAT_ITEMS] = ((int) SVfloat (ent, items)
+						 | ((int) *sv_globals.serverflags << 28));
+
+	// Extensions to the QW 2.40 protocol for Mega2k  --KB
+	stats[STAT_VIEWHEIGHT] = (int) SVvector (ent, view_ofs)[2];
+
+	// FIXME: this should become a * key!  --KB
+	if (SVfloat (ent, movetype) == MOVETYPE_FLY
+		&& !atoi (Info_ValueForKey (svs.info, "playerfly")))
+		SVfloat (ent, movetype) = MOVETYPE_WALK;
+
+	stats[STAT_FLYMODE] = (SVfloat (ent, movetype) == MOVETYPE_FLY);
+}
+
 /*
 	SV_UpdateClientStats
 
@@ -604,37 +635,13 @@ SV_UpdateClientStats (client_t *client)
 	int         stats[MAX_CL_STATS];
 
 	ent = client->edict;
-	memset (stats, 0, sizeof (stats));
 
 	// if we are a spectator and we are tracking a player, we get his stats
 	// so our status bar reflects his
 	if (client->spectator && client->spec_track > 0)
 		ent = svs.clients[client->spec_track - 1].edict;
 
-	stats[STAT_HEALTH] = SVfloat (ent, health);
-	stats[STAT_WEAPON] = SV_ModelIndex
-		(PR_GetString (&sv_pr_state, SVstring (ent, weaponmodel)));
-	stats[STAT_AMMO] = SVfloat (ent, currentammo);
-	stats[STAT_ARMOR] = SVfloat (ent, armorvalue);
-	stats[STAT_SHELLS] = SVfloat (ent, ammo_shells);
-	stats[STAT_NAILS] = SVfloat (ent, ammo_nails);
-	stats[STAT_ROCKETS] = SVfloat (ent, ammo_rockets);
-	stats[STAT_CELLS] = SVfloat (ent, ammo_cells);
-	if (!client->spectator)
-		stats[STAT_ACTIVEWEAPON] = SVfloat (ent, weapon);
-	// stuff the sigil bits into the high bits of items for sbar
-	stats[STAT_ITEMS] =
-		(int) SVfloat (ent, items) | ((int) *sv_globals.serverflags << 28);
-
-	// Extensions to the QW 2.40 protocol for Mega2k  --KB
-	stats[STAT_VIEWHEIGHT] = (int) SVvector (ent, view_ofs)[2];
-
-	// FIXME: this should become a * key!  --KB
-	if (SVfloat (ent, movetype) == MOVETYPE_FLY
-		&& !atoi (Info_ValueForKey (svs.info, "playerfly")))
-		SVfloat (ent, movetype) = MOVETYPE_WALK;
-
-	stats[STAT_FLYMODE] = (SVfloat (ent, movetype) == MOVETYPE_FLY);
+	get_stats (ent, client->spectator, stats);
 
 	for (i = 0; i < MAX_CL_STATS; i++)
 		if (stats[i] != client->stats[i]) {
@@ -887,7 +894,6 @@ SV_SendDemoMessage(void)
 	client_t   *c;
 	byte        buf[MAX_DATAGRAM];
 	sizebuf_t	msg;
-	edict_t    *ent;
 	int         stats[MAX_CL_STATS];
 	float       min_fps;
 
@@ -937,34 +943,7 @@ SV_SendDemoMessage(void)
 		if (c->spectator)
 			continue;
 
-		ent = c->edict;
-		memset (stats, 0, sizeof(stats));
-
-		stats[STAT_HEALTH] = SVfloat (ent, health);
-		stats[STAT_WEAPON] = SV_ModelIndex (PR_GetString (&sv_pr_state,
-											  SVstring (ent, weaponmodel)));
-		stats[STAT_AMMO] = SVfloat (ent, currentammo);
-		stats[STAT_ARMOR] = SVfloat (ent, armorvalue);
-		stats[STAT_SHELLS] = SVfloat (ent, ammo_shells);
-		stats[STAT_NAILS] = SVfloat (ent, ammo_nails);
-		stats[STAT_ROCKETS] = SVfloat (ent, ammo_rockets);
-		stats[STAT_CELLS] = SVfloat (ent, ammo_cells);
-		stats[STAT_ACTIVEWEAPON] = SVfloat (ent, weapon);
-		
-
-		// stuff the sigil bits into the high bits of items for sbar
-		stats[STAT_ITEMS] = ((int)SVfloat (ent, items)
-							 | ((int)sv_globals.serverflags << 28));
-
-		// Extensions to the QW 2.40 protocol for Mega2k  --KB
-		stats[STAT_VIEWHEIGHT] = (int) SVvector (ent, view_ofs)[2];
-
-		// FIXME: this should become a * key!  --KB
-		if (SVfloat (ent, movetype) == MOVETYPE_FLY
-			&& !atoi (Info_ValueForKey (svs.info, "playerfly")))
-			SVfloat (ent, movetype) = MOVETYPE_WALK;
-
-		stats[STAT_FLYMODE] = (SVfloat (ent, movetype) == MOVETYPE_FLY);
+		get_stats (c->edict, 0, stats);
 
 		for (j=0 ; j<MAX_CL_STATS ; j++)
 			if (stats[j] != demo.stats[i][j]) {
