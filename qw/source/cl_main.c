@@ -145,9 +145,7 @@ cvar_t     *localid;
 
 static qboolean allowremotecmd = true;
 
-//
-// info mirrors
-//
+/*  info mirrors */
 cvar_t     *password;
 cvar_t     *spectator;
 cvar_t     *cl_name;
@@ -1241,6 +1239,8 @@ CL_Init_Cvars (void)
 						   "swim/fly up/down speed");
 	cl_yawspeed = Cvar_Get ("cl_yawspeed", "140", CVAR_NONE, NULL,
 							"turning speed");
+	cl_writecfg = Cvar_Get ("cl_writecfg", "1", CVAR_NONE, NULL,
+							"write config files?");
 	cl_shownet = Cvar_Get ("cl_shownet", "0", CVAR_NONE, NULL,
 						   "show network packets. 0=off, 1=basic, 2=verbose");
 	cl_sbar = Cvar_Get ("cl_sbar", "0", CVAR_ARCHIVE, NULL, "status bar mode");
@@ -1272,8 +1272,6 @@ CL_Init_Cvars (void)
 						 "display realtime frames per second");
 	show_time = Cvar_Get ("show_time", "0", CVAR_NONE, NULL,
 						  "display the current time");
-	cl_writecfg = Cvar_Get ("cl_writecfg", "1", CVAR_NONE, NULL,
-							"write config files?");
 	cl_predict_players2 = Cvar_Get ("cl_predict_players2", "1", CVAR_NONE,
 									NULL, "If this and cl_predict_players are "
 									"0, no player prediction is done");

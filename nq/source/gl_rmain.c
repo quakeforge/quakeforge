@@ -50,9 +50,9 @@
 #include "QF/sys.h"
 #include "QF/vid.h"
 
-#include "client.h"
 #include "chase.h"
-#include "game.h"
+#include "client.h"
+//#include "game.h"
 #include "glquake.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
@@ -652,7 +652,7 @@ R_DrawAliasModel (entity_t *e)
 	}
 
 	// clamp lighting so it doesn't overbright as much
-	shadelight = min (shadelight, 200);
+	shadelight = min (shadelight, 100); // was 200
 
 	// never allow players to go totally black
 	if (strequal (clmodel->name, "progs/player.mdl")) {
@@ -1080,7 +1080,10 @@ R_RenderScene (void)
 	R_RenderDlights ();
 }
 
+
 void R_RenderBrushPoly (msurface_t *fa);
+
+
 void
 R_Mirror (void)
 {
@@ -1093,9 +1096,8 @@ R_Mirror (void)
 
 	memcpy (r_base_world_matrix, r_world_matrix, sizeof (r_base_world_matrix));
 
-	d =
-		DotProduct (r_refdef.vieworg,
-					mirror_plane->normal) - mirror_plane->dist;
+	d = DotProduct (r_refdef.vieworg, mirror_plane->normal) -
+		mirror_plane->dist;
 	VectorMA (r_refdef.vieworg, -2 * d, mirror_plane->normal, r_refdef.vieworg);
 
 	d = DotProduct (vpn, mirror_plane->normal);
@@ -1157,7 +1159,7 @@ R_RenderView (void)
 	if (!r_worldentity.model || !cl.worldmodel)
 		Sys_Error ("R_RenderView: NULL worldmodel");
 
-//  glFinish ();
+//	glFinish ();
 
 	mirror = false;
 

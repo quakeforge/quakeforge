@@ -1,7 +1,7 @@
 /*
 	com.c
 
-	@description@
+	misc functions used in client and server
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -75,9 +75,10 @@ COM_CheckRegistered (void)
 
 
 void
-COM_Init ()
+COM_Init (void)
 {
-	registered = Cvar_Get ("registered", "0", CVAR_NONE, NULL, "None");
+	registered = Cvar_Get ("registered", "0", CVAR_NONE, NULL,
+						   "Is the game the registered version. 1 yes 0 no");
 	cmdline = Cvar_Get ("cmdline", "0", CVAR_SERVERINFO, Cvar_Info, "None");
 	Cmd_AddCommand ("path", COM_Path_f, "No Description");
 

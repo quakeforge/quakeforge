@@ -1,4 +1,3 @@
-
 /*
 	host.c
 
@@ -73,27 +72,28 @@ Memory is cleared / released when a server or client begins, not when they end.
 
 extern int  fps_count;
 
-qboolean    msg_suppress_1 = 0;
+qboolean	msg_suppress_1 = 0;
 
 quakeparms_t host_parms;
 
-qboolean    host_initialized;			// true if into command execution
+qboolean	host_initialized;			// true if into command execution
 
-double      host_frametime;
-double      host_time;
-double      realtime;					// without any filtering or bounding
-double      oldrealtime;				// last frame run
-int         host_framecount;
+double		host_frametime;
+double		host_time;
+double		realtime;					// without any filtering or bounding
+double		oldrealtime;				// last frame run
+int			host_framecount;
+int			host_hunklevel;
 
-int         host_hunklevel;
-
-int         minimum_memory;
+int			minimum_memory;
 
 client_t   *host_client;				// current client
 
-jmp_buf     host_abortserver;
+jmp_buf		host_abortserver;
 
 byte       *vid_basepal;
+
+extern cvar_t *cl_writecfg;
 
 cvar_t     *fs_globalcfg;
 cvar_t     *fs_usercfg;
@@ -161,7 +161,7 @@ Host_Error (char *error, ...)
 		Sys_Error ("Host_Error: recursively entered");
 	inerror = true;
 
-//	SCR_EndLoadingPlaque ();			// reenable screen updates
+//	SCR_EndLoadingPlaque ();						// reenable screen updates
 
 	va_start (argptr, error);
 	vsnprintf (string, sizeof (string), error, argptr);
@@ -172,7 +172,7 @@ Host_Error (char *error, ...)
 		Host_ShutdownServer (false);
 
 	if (cls.state == ca_dedicated)
-		Sys_Error ("Host_Error: %s\n", string);	// dedicated servers exit
+		Sys_Error ("Host_Error: %s\n", string);		// dedicated servers exit
 
 	CL_Disconnect ();
 	cls.demonum = -1;
@@ -257,8 +257,7 @@ Host_InitLocal (void)
 
 	Host_FindMaxClients ();
 
-	host_time = 1.0;					// so a think at time 0 won't get
-	// called
+	host_time = 1.0;				// so a think at time 0 won't get called
 }
 
 
@@ -274,8 +273,9 @@ Host_WriteConfiguration (void)
 
 // dedicated servers initialize the host but don't parse and set the
 // config.cfg cvars
-	if (host_initialized & !isDedicated) {
-		f = Qopen (va ("%s/config.cfg", com_gamedir), "w");
+	if (cl_writecfg->int_val && (host_initialized & !isDedicated)) {
+		char       *path = va ("%s/config.cfg", com_gamedir);
+		f = Qopen (path, "w");
 		if (!f) {
 			Con_Printf ("Couldn't write config.cfg.\n");
 			return;

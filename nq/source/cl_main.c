@@ -1,4 +1,3 @@
-
 /*
 	cl_main.c
 
@@ -51,13 +50,10 @@
 
 byte       *vid_colormap;
 
-// we need to declare some mouse variables here, because the menu system
-// references them even when on a unix system.
-
 // these two are not intended to be set directly
 cvar_t     *cl_name;
 
-cvar_t     *writecfg;
+cvar_t     *cl_writecfg;
 
 cvar_t     *cl_shownet;
 cvar_t     *cl_nolerp;
@@ -133,6 +129,8 @@ CL_InitCvars (void)
 						   "swim/fly up/down speed");
 	cl_yawspeed = Cvar_Get ("cl_yawspeed", "140", CVAR_NONE, NULL,
 							"turning speed");
+	cl_writecfg = Cvar_Get ("cl_writecfg", "1", CVAR_NONE, NULL,
+							"write config files?");
 	cl_shownet = Cvar_Get ("cl_shownet", "0", CVAR_NONE, NULL,
 						   "show network packets. 0=off, 1=basic, 2=verbose");
 	cl_nolerp = Cvar_Get ("cl_nolerp", "0", CVAR_NONE, NULL,
