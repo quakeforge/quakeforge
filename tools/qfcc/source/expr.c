@@ -793,14 +793,16 @@ field_expr (expr_t *e1, expr_t *e2)
 	t1 = extract_type (e1);
 	t2 = extract_type (e2);
 
-	if (t1 != ev_entity || t2 != ev_field) {
+	if ((t1 != ev_entity || t2 != ev_field)
+		&& (t1 != ev_pointer || (t2 != ev_integer && t2 != ev_uinteger))) {
 		return error (e1, "type missmatch for .");
 	}
 
 	e = new_binary_expr ('.', e1, e2);
-	e->e.expr.type = (e2->type == ex_def)
-					 ? e2->e.def->type->aux_type
-					 : e2->e.expr.type;
+	if (t1 == ev_pointer)
+		e->e.expr.type = get_type (e1)->aux_type;
+	else
+		e->e.expr.type = get_type (e2)->aux_type;
 	return e;
 }
 
@@ -986,12 +988,15 @@ type_mismatch:
 		type = &type_float;
 	}
 	if (op == '=' && e1->type == ex_expr && e1->e.expr.op == '.') {
-		type_t      new;
+		if (t1 == &type_entity) {
+			type_t      new;
 
-		memset (&new, 0, sizeof (new));
-		new.type = ev_pointer;
-		type = new.aux_type = e1->e.expr.type;
-		e1->e.expr.type = PR_FindType (&new);
+			memset (&new, 0, sizeof (new));
+			new.type = ev_pointer;
+			type = new.aux_type = e1->e.expr.type;
+			e1->e.expr.type = PR_FindType (&new);
+		} else {
+		}
 	}
 	if (!type)
 		error (e1, "internal error");
@@ -1379,4 +1384,29 @@ incop_expr (int op, expr_t *e, int postop)
 		return block;
 	}
 	return incop;
+}
+
+expr_t *
+array_expr (expr_t *array, expr_t *index)
+{
+	type_t     *array_type = get_type (array);
+	type_t     *index_type = get_type (index);
+	expr_t     *scale;
+	int         size;
+
+	if (array_type->type != ev_pointer || array_type->num_parms < 1)
+		return error (array, "not an array");
+	if (index_type != &type_integer && index_type != &type_uinteger)
+		return error (index, "invalid array index type");
+	if (index->type >= ex_integer &&
+		index->e.uinteger_val >= array_type->num_parms)
+		return error (index, "array index out of bounds");
+	size = pr_type_size[array_type->aux_type->type];
+	if (size > 1) {
+		scale = new_expr ();
+		scale->type = expr_types [index_type->type];
+		scale->e.integer_val = size;
+		index = binary_expr ('*', index, scale);
+	}
+	return binary_expr ('.', array, index);
 }

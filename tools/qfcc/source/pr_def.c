@@ -80,6 +80,7 @@ find_type (type_t *type, type_t *aux_type)
 	memset (&new, 0, sizeof (new));
 	new.type = type->type;
 	new.aux_type = aux_type;
+	new.num_parms = 0;
 	return PR_FindType (&new);
 }
 
@@ -171,6 +172,9 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 		} else {
 			pr.size_fields += pr_type_size[type->aux_type->type];
 		}
+	} else if (type->type == ev_pointer) {
+		*allocate += type->num_parms * pr_type_size[type->aux_type->type];
+		def->initialized = def->constant = 1;
 	}
 
 	return def;

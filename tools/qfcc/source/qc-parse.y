@@ -60,6 +60,7 @@ void finish_function (function_t *f);
 void emit_function (function_t *f, expr_t *e);
 void build_scope (function_t *f, def_t *func);
 type_t *build_type (int is_field, type_t *type);
+type_t *build_array_type (int size);
 
 hashtab_t *save_local_inits (def_t *scope);
 hashtab_t *merge_local_inits (hashtab_t *dl_1, hashtab_t *dl_2);
@@ -99,7 +100,7 @@ typedef struct {
 %left	'*' '/' '&' '|' '^' '%'
 //%left	'!' '~'
 %right	<op> UNARY INCOP
-%right	'('
+%right	'(' '['
 %left	'.'
 
 %token	<string_val> NAME STRING_VAL
@@ -113,7 +114,7 @@ typedef struct {
 %token	SWITCH CASE DEFAULT
 %token	<type> TYPE
 
-%type	<type>	type opt_func func_parms
+%type	<type>	type opt_func func_parms array_decl
 %type	<integer_val> opt_field
 %type	<def>	param param_list def_name
 %type	<def>	var_def_item var_def_list
@@ -153,6 +154,8 @@ defs
 def
 	: opt_field TYPE
 	  { current_type = build_type ($1, $2); } var_def_list
+	| opt_field TYPE { current_type = $2; } array_decl
+	  { current_type = build_type ($1, $4); } var_def_list
 	| opt_field TYPE { current_type = $2; } func_parms
 	  { current_type = build_type ($1, $4); } func_def_list
 	;
@@ -203,6 +206,17 @@ func_parms
 		{
 			$$ = parse_params ((def_t*)1);
 		}
+	;
+
+array_decl
+	: '[' const ']'
+		{
+			if ($2->type != ex_integer || $2->e.integer_val < 1)
+				error (0, "invalid array size");
+			else
+				$$ = build_array_type ($2->e.integer_val);
+		}
+	| '[' ']' { $$ = build_array_type (0); }
 	;
 
 var_def_list
@@ -661,6 +675,7 @@ expr
 	| expr '%' expr				{ $$ = binary_expr ('%', $1, $3); }
 	| expr '(' arg_list ')'		{ $$ = function_expr ($1, $3); }
 	| expr '(' ')'				{ $$ = function_expr ($1, 0); }
+	| expr '[' expr ']'			{ $$ = array_expr ($1, $3); }
 	| expr '.' expr				{ $$ = binary_expr ('.', $1, $3); }
 	| '+' expr %prec UNARY		{ $$ = $2; }
 	| '-' expr %prec UNARY		{ $$ = unary_expr ('-', $2); }
@@ -796,6 +811,18 @@ build_type (int is_field, type_t *type)
 	} else {
 		return type;
 	}
+}
+
+type_t *
+build_array_type (int size)
+{
+	type_t      new;
+
+	memset (&new, 0, sizeof (new));
+	new.type = ev_pointer;
+	new.aux_type = current_type;
+	new.num_parms = size;
+	return PR_FindType (&new);
 }
 
 function_t *
