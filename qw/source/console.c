@@ -655,7 +655,7 @@ Con_CompleteCommandLine (void)
 		key_lines[edit_line][1] = '/';
 		strncpy(key_lines[edit_line] + 2, cmd, cmd_len);
 		key_linepos = cmd_len + 2;
-		if (!cmd[cmd_len]) {
+		if (c + v + a == 1) {
 			key_lines[edit_line][key_linepos] = ' ';
 			key_linepos++;
 		}
