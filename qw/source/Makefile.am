@@ -76,7 +76,7 @@ libqw_server_a_SOURCES= \
 qf_server_LIBS= \
 		$(SERVER_PLUGIN_STATIC_LIBS) \
 		$(top_builddir)/libs/net/libnet_chan.la \
-		$(top_builddir)/libs/gamecode/builtins/libQFcsqc.la \
+		$(top_builddir)/libs/ruamoko/libQFruamoko.la \
 		$(top_builddir)/libs/models/libQFmodels.la \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
 		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
@@ -96,7 +96,7 @@ qw_master_LDFLAGS=	$(common_ldflags)
 
 cl_plugin_LIBS= \
 		$(CLIENT_PLUGIN_STATIC_LIBS) \
-		$(top_builddir)/libs/gamecode/builtins/libQFcsqc.la
+		$(top_builddir)/libs/ruamoko/libQFruamoko.la
 
 qf_client_LIBS= \
 		$(top_builddir)/libs/net/libnet_chan.la \

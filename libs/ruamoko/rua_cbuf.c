@@ -34,9 +34,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include <stdlib.h>
 
 #include "QF/cbuf.h"
-#include "QF/csqc.h"
 #include "QF/idparse.h" // For now, use the id console parser
 #include "QF/progs.h"
+#include "QF/ruamoko.h"
 
 
 typedef struct {
@@ -111,7 +111,7 @@ static builtin_t builtins[] = {
 };
 
 void
-Cbuf_Progs_Init (progs_t *pr)
+RUA_Cbuf_Init (progs_t *pr)
 {
 	cbuf_resources_t *res = calloc (sizeof (cbuf_resources_t), 1);
 	PR_Resources_Register (pr, "Cbuf", res, bi_cbuf_clear);

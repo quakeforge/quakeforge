@@ -39,9 +39,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "QF/csqc.h"
 #include "QF/progs.h"
 #include "QF/quakefs.h"
+#include "QF/ruamoko.h"
 #include "QF/va.h"
 #include "QF/zone.h"
 
@@ -300,7 +300,7 @@ static builtin_t builtins[] = {
 };
 
 void
-QFile_Progs_Init (progs_t *pr, int secure)
+RUA_QFile_Init (progs_t *pr, int secure)
 {
 	qfile_resources_t *res = calloc (sizeof (qfile_resources_t), 1);
 

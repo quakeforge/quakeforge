@@ -47,6 +47,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/progs.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
+#include "QF/ruamoko.h"
 #include "QF/sys.h"
 #include "QF/view.h"
 
@@ -452,18 +453,19 @@ Menu_Init (void)
 
 	PR_Obj_Progs_Init (&menu_pr_state);
 
-	Cbuf_Progs_Init (&menu_pr_state);
-	Cmd_Progs_Init (&menu_pr_state);
-	GIB_Progs_Init (&menu_pr_state);
-	Cvar_Progs_Init (&menu_pr_state);
-	File_Progs_Init (&menu_pr_state);
 	InputLine_Progs_Init (&menu_pr_state);
 	Key_Progs_Init (&menu_pr_state);
-	QFile_Progs_Init (&menu_pr_state, 1);
-	QFS_Progs_Init (&menu_pr_state);
+	GIB_Progs_Init (&menu_pr_state);
 	PR_Cmds_Init (&menu_pr_state);
 	R_Progs_Init (&menu_pr_state);
-	String_Progs_Init (&menu_pr_state);
+
+	RUA_Cbuf_Init (&menu_pr_state);
+	RUA_Cmd_Init (&menu_pr_state);
+	RUA_Cvar_Init (&menu_pr_state);
+	RUA_File_Init (&menu_pr_state);
+	RUA_QFile_Init (&menu_pr_state, 1);
+	RUA_QFS_Init (&menu_pr_state);
+	RUA_String_Init (&menu_pr_state);
 
 	PR_AddLoadFunc (&menu_pr_state, menu_resolve_globals);
 

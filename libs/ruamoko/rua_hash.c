@@ -42,9 +42,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 #endif
 #include <stdlib.h>
 
-#include "QF/csqc.h"
 #include "QF/hash.h"
 #include "QF/progs.h"
+#include "QF/ruamoko.h"
 
 typedef struct bi_hashtab_s {
 	struct bi_hashtab_s *next;
@@ -325,7 +325,7 @@ static builtin_t builtins[] = {
 };
 
 void
-Hash_Progs_Init (progs_t *pr)
+RUA_Hash_Init (progs_t *pr)
 {
 	hash_resources_t *res = malloc (sizeof (hash_resources_t));
 	res->tabs = 0;

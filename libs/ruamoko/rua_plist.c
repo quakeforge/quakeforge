@@ -42,10 +42,10 @@ static __attribute__ ((unused)) const char rcsid[] =
 #endif
 #include <stdlib.h>
 
-#include "QF/csqc.h"
 #include "QF/hash.h"
 #include "QF/progs.h"
 #include "QF/qfplist.h"
+#include "QF/ruamoko.h"
 
 typedef struct {
 	hashtab_t  *items;
@@ -184,7 +184,7 @@ static builtin_t builtins[] = {
 };
 
 void
-Plist_Progs_Init (progs_t *pr)
+RUA_Plist_Init (progs_t *pr)
 {
 	plist_resources_t *res = malloc (sizeof (plist_resources_t));
 	res->items = Hash_NewTable (1021, 0, 0, 0);

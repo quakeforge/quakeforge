@@ -53,10 +53,10 @@ static __attribute__ ((unused)) const char rcsid[] =
 int         fnmatch (const char *__pattern, const char *__string, int __flags);
 #endif
 
-#include "QF/csqc.h"
 #include "QF/cvar.h"
 #include "QF/progs.h"
 #include "QF/quakefs.h"
+#include "QF/ruamoko.h"
 #include "QF/va.h"
 #include "QF/zone.h"
 
@@ -179,7 +179,7 @@ static builtin_t builtins[] = {
 };
 
 void
-File_Progs_Init (progs_t *pr)
+RUA_File_Init (progs_t *pr)
 {
 	PR_RegisterBuiltins (pr, builtins);
 }

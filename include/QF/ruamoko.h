@@ -1,7 +1,7 @@
 /*
-	csqc.h
+	ruamoko.h
 
-	CSQC prototypes
+	ruamoko prototypes
 
 	Copyright (C) 2001 Bill Currie
 
@@ -29,17 +29,38 @@
 	$Id$
 */
 
-#ifndef __QF_csqc_h
-#define __QF_csqc_h
+#ifndef __QF_ruamoko_h
+#define __QF_ruamoko_h
+
 
 struct progs_s;
 struct cbuf_s;
-struct inputline_s;
 
-void GIB_Progs_Init (struct progs_s *pr);
+void RUA_Init (void);
 
-void InputLine_Progs_Init (struct progs_s *pr);
-void InputLine_Progs_SetDraw (struct progs_s *pr,
-							  void (*draw)(struct inputline_s*));
+void RUA_Cbuf_Init (struct progs_s *pr);
+void Cbuf_Progs_SetCbuf (struct progs_s *pr, struct cbuf_s *cbuf);
 
-#endif//__QF_csqc_h
+void RUA_Cmd_Init (struct progs_s *pr);
+
+void RUA_Cvar_Init (struct progs_s *pr);
+
+void RUA_File_Init (struct progs_s *pr);
+
+void RUA_Hash_Init (struct progs_s *pr);
+
+void RUA_Plist_Init (struct progs_s *pr);
+
+void RUA_String_Init (struct progs_s *pr);
+
+#include "QF/quakeio.h"
+#define QFILE_MAX_HANDLES 20
+typedef struct {
+	QFile      *handles[QFILE_MAX_HANDLES];
+} qfile_resources_t;
+
+void RUA_QFile_Init (struct progs_s *pr, int secure);
+QFile **QFile_AllocHandle (struct progs_s *pr, qfile_resources_t *res);
+void RUA_QFS_Init (struct progs_s *pr);
+
+#endif//__QF_ruamoko_h

@@ -57,8 +57,7 @@ common_ldflags= -export-dynamic
 
 cl_plugin_LIBS= \
 		$(SERVER_PLUGIN_STATIC_LIBS) \
-		$(CLIENT_PLUGIN_STATIC_LIBS) \
-		$(top_builddir)/libs/gamecode/builtins/libQFcsqc.la
+		$(CLIENT_PLUGIN_STATIC_LIBS)
 
 client_LIBFILES= \
 		$(top_builddir)/libs/video/targets/libQFjs.la \
@@ -74,9 +73,10 @@ common_LIBFILES= \
 		$(top_builddir)/libs/net/libnet_main.la \
 		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
-		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
 		$(top_builddir)/libs/image/libQFimage.la \
 		$(top_builddir)/libs/gib/libQFgib.la \
+		$(top_builddir)/libs/ruamoko/libQFruamoko.la \
+		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
 		$(top_builddir)/libs/util/libQFutil.la
 
 client_LIBS=	$(client_LIBFILES) $(common_LIBFILES)

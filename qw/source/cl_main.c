@@ -65,7 +65,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
-#include "QF/csqc.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/input.h"
@@ -77,6 +76,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
+#include "QF/ruamoko.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
@@ -1685,7 +1685,7 @@ Host_Init (void)
 	VID_Init_Cvars ();
 
 	PR_Init ();
-	BI_Init ();
+	RUA_Init ();
 
 	CL_Chat_Init ();
 

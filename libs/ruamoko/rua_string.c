@@ -42,9 +42,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 #endif
 #include <stdlib.h>
 
-#include "QF/csqc.h"
 #include "QF/dstring.h"
 #include "QF/progs.h"
+#include "QF/ruamoko.h"
 
 static void
 bi_str_new (progs_t *pr)
@@ -86,7 +86,7 @@ static builtin_t builtins[] = {
 };
 
 void
-String_Progs_Init (progs_t *pr)
+RUA_String_Init (progs_t *pr)
 {
 	PR_RegisterBuiltins (pr, builtins);
 }

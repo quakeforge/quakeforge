@@ -31,25 +31,23 @@
 static __attribute__ ((unused)) const char rcsid[] = 
 	"$Id$";
 
-#include "QF/csqc.h"
 #include "QF/progs.h"
+#include "QF/ruamoko.h"
 
 #define U __attribute__ ((unused))
-static U void (*const cbuf_progs_init)(progs_t *) = Cbuf_Progs_Init;
-static U void (*const cmd_progs_init)(progs_t *) = Cmd_Progs_Init;
-static U void (*const gib_progs_init)(progs_t *) = GIB_Progs_Init;
-static U void (*const cvar_progs_init)(progs_t *) = Cvar_Progs_Init;
-static U void (*const file_progs_init)(progs_t *) = File_Progs_Init;
-static U void (*const hash_progs_init)(progs_t *) = Hash_Progs_Init;
-static U void (*const inputline_progs_init)(progs_t *) = InputLine_Progs_Init;
-static U void (*const plist_progs_init)(progs_t *) = Plist_Progs_Init;
-static U void (*const qfile_progs_init)(progs_t *, int) = QFile_Progs_Init;
-static U void (*const qfs_progs_init)(progs_t *) = QFS_Progs_Init;
-static U void (*const string_progs_init)(progs_t *) = String_Progs_Init;
+static U void (*const cbuf_progs_init)(progs_t *) = RUA_Cbuf_Init;
+static U void (*const cmd_progs_init)(progs_t *) = RUA_Cmd_Init;
+static U void (*const cvar_progs_init)(progs_t *) = RUA_Cvar_Init;
+static U void (*const file_progs_init)(progs_t *) = RUA_File_Init;
+static U void (*const hash_progs_init)(progs_t *) = RUA_Hash_Init;
+static U void (*const plist_progs_init)(progs_t *) = RUA_Plist_Init;
+static U void (*const qfile_progs_init)(progs_t *, int) = RUA_QFile_Init;
+static U void (*const qfs_progs_init)(progs_t *) = RUA_QFS_Init;
+static U void (*const string_progs_init)(progs_t *) = RUA_String_Init;
 #undef U
 
 void
-BI_Init ()
+RUA_Init (void)
 {
 	// do nothing stub for now. used to force linking
 }

@@ -399,6 +399,8 @@ void Key_SetBinding (imt_t target, knum_t keynum, const char *binding);
 
 
 const char *Key_KeynumToString (knum_t keynum);
+struct progs_s;
+void Key_Progs_Init (struct progs_s *pr);
 #endif
 
 #endif // _KEYS_H

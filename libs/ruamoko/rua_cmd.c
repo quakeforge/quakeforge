@@ -1,7 +1,7 @@
 /*
 	bi_cmd.c
 
-	Command api for csqc
+	Command api for ruamoko
 
 	Copyright (C) 2002 Bill Currie
 
@@ -43,9 +43,9 @@ static __attribute__ ((unused)) const char rcsid[] =
 #endif
 
 #include "QF/cmd.h"
-#include "QF/csqc.h"
 #include "QF/hash.h"
 #include "QF/progs.h"
+#include "QF/ruamoko.h"
 #include "QF/sys.h"
 
 typedef struct bi_cmd_s {
@@ -156,7 +156,7 @@ static builtin_t builtins[] = {
 };
 
 void
-Cmd_Progs_Init (progs_t *pr)
+RUA_Cmd_Init (progs_t *pr)
 {
 	cmd_resources_t *res = malloc (sizeof (cmd_resources_t));
 
