@@ -754,6 +754,7 @@ CL_Init (void)
 
 	CL_InitInput ();
 	CL_TEnts_Init ();
+	CL_ClearState ();
 
 	Cmd_AddCommand ("entities", CL_PrintEntities_f, "No Description");
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "No Description");
