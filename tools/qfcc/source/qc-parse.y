@@ -791,19 +791,27 @@ free_key (void *_d, void *unused)
 	free (_d);
 }
 
-hashtab_t *
-save_local_inits (def_t *scope)
+static void
+scan_scope (hashtab_t *tab, def_t *scope)
 {
-	hashtab_t  *tab = Hash_NewTable (61, get_key, free_key, 0);
 	def_t      *def;
+	if (scope->scope)
+		scan_scope (tab, scope->scope);
 	for (def = scope->scope_next; def; def = def->scope_next) {
-		if  (def->name) {
+		if  (def->name && !def->removed) {
 			def_state_t *ds = malloc (sizeof (def_state_t));
 			ds->def = def;
 			ds->state = def->initialized;
 			Hash_Add (tab, ds);
 		}
 	}
+}
+
+hashtab_t *
+save_local_inits (def_t *scope)
+{
+	hashtab_t  *tab = Hash_NewTable (61, get_key, free_key, 0);
+	scan_scope (tab, scope);
 	return tab;
 }
 
