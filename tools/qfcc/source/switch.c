@@ -232,8 +232,14 @@ build_switch (expr_t *sw, case_node_t  *tree, int op, expr_t *sw_val,
 	expr_t     *high_label = default_label;
 	expr_t     *low_label = default_label;
 
-	if (!tree)
+	if (!tree) {
+		branch = new_unary_expr ('g', default_label);
+		branch->line = sw_val->line;
+		branch->file = sw_val->file;
+		append_expr (sw, branch);
+		temp->e.temp.users--;
 		return;
+	}
 
 	if (tree->right) {
 		high_label = new_label_expr ();
@@ -271,8 +277,7 @@ build_switch (expr_t *sw, case_node_t  *tree, int op, expr_t *sw_val,
 			if (tree->right)
 				append_expr (sw, high_label);
 		}
-		if (tree->right)
-			build_switch (sw, tree->right, op, sw_val, temp, default_label);
+		build_switch (sw, tree->right, op, sw_val, temp, default_label);
 	} else {
 		expr_t     *utemp = new_temp_def_expr (&type_uinteger);
 		int         low = tree->low->e.integer_val;
@@ -375,6 +380,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 			test->file = cmp->file = sw_val->file;
 			append_expr (sw, test);
 		}
+		append_expr (sw, default_expr);
 	} else {
 		expr_t     *temp;
 		int         op;
@@ -401,7 +407,6 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 		}
 		build_switch (sw, case_tree, op, sw_val, temp, default_label->label);
 	}
-	append_expr (sw, default_expr);
 	append_expr (sw, statements);
 	append_expr (sw, break_label);
 	return sw;
