@@ -1809,7 +1809,8 @@ static void
 PF_testentitypos (progs_t *pr)
 {
 	edict_t    *ent = G_EDICT (pr, OFS_PARM0);
-	RETURN_EDICT (pr, SV_TestEntityPosition (ent));
+	ent = SV_TestEntityPosition (ent);
+	RETURN_EDICT (pr, ent ? ent : sv.edicts);
 }
 
 
