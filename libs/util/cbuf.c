@@ -231,8 +231,8 @@ Cbuf_Error (const char *class, const char *fmt, ...)
 				"-----------------------------------\n"
 				"|Error in command buffer execution|\n"
 				"-----------------------------------\n"
-				"Type: %s\n"
-				"%s\n"
+				"Type: %s\n\n"
+				"%s\n\n"
 				"Near/on line: %s\n",
 				class,
 				message->str,

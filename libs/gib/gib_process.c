@@ -110,8 +110,7 @@ GIB_Process_Math (struct dstring_s *token)
 	
 	value = EXP_Evaluate (token->str);
 	if (EXP_ERROR) {
-		// FIXME:  Give real error descriptions
-		Cbuf_Error ("math", "Expression \"%s\" caused error %i", token->str, EXP_ERROR);
+		Cbuf_Error ("math", "Expression \"%s\" caused an error:\n%s", token->str, EXP_GetErrorMsg());
 		return -1;
 	} else {
 		dstring_clearstr (token);
