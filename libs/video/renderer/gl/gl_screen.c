@@ -524,12 +524,12 @@ SCR_ScreenShot (int width, int height)
 	w = (vid.width < width) ? vid.width : width;
 	h = (vid.height < height) ? vid.height : height;
 
+	fracw = (float) vid.width / (float) w;
+	frach = (float) vid.height / (float) h;
+
 	tex = malloc (field_offset (tex_t, data[w * h]));
 	if (!tex)
 		return 0;
-
-	fracw = (float) vid.width / (float) w;
-	frach = (float) vid.height / (float) h;
 
 	tex->width = w;
 	tex->height = h;
@@ -564,8 +564,8 @@ SCR_ScreenShot (int width, int height)
 			g /= count;
 			b /= count;
 			*dest++ = r;
-			*dest++ = b;
 			*dest++ = g;
+			*dest++ = b;
 		}
 	}
 
