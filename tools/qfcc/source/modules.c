@@ -103,7 +103,7 @@ dump_class (progs_t *pr, pr_class_t *class)
 	} else {
 		printf ("    %s @ %d\n", class_name, POINTER_TO_PROG (pr, class));
 	}
-	printf ("        %d %d %d %d\n", class->class_pointer, class->version,
+	printf ("        %d %d %u %d\n", class->class_pointer, class->version,
 			class->info, class->instance_size);
 	dump_methods (pr, &G_STRUCT (pr, pr_method_list_t, class->methods), 0);
 	dump_methods (pr, &G_STRUCT (pr, pr_method_list_t, meta->methods), 1);

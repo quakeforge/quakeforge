@@ -821,7 +821,7 @@ print_expr (expr_t *e)
 			printf ("%d", e->e.integer_val);
 			break;
 		case ex_uinteger:
-			printf ("%d", e->e.uinteger_val);
+			printf ("%u", e->e.uinteger_val);
 			break;
 		case ex_short:
 			printf ("%d", e->e.short_val);

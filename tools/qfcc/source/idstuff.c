@@ -300,7 +300,7 @@ WriteProgdefs (const char *filename)
 	while ((c = fgetc (f)) != EOF)
 		CRC_ProcessByte (&crc, (byte) c);
 
-	fprintf (f, "#define PROGHEADER_CRC %i\n", crc);
+	fprintf (f, "#define PROGHEADER_CRC %u\n", crc);
 	fclose (f);
 
 	return crc;

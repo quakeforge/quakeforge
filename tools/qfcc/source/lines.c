@@ -71,7 +71,7 @@ dump_lines (progs_t *pr)
 				func = pr->pr_functions + aux_func->function;
 		}
 
-		printf ("%5d %5d", lineno->fa.addr, lineno->line);
+		printf ("%5u %5u", lineno->fa.addr, lineno->line);
 		line = addr = -1;
 		if (aux_func)
 			line = aux_func->source_line + lineno->line;
@@ -79,11 +79,11 @@ dump_lines (progs_t *pr)
 			addr = lineno->line ? lineno->fa.addr
 								: (unsigned int) func->first_statement;
 		if (aux_func && func)
-			printf (" %05x %s:%d %s+%d", addr, pr->pr_strings + func->s_file,
+			printf (" %05x %s:%u %s+%u", addr, pr->pr_strings + func->s_file,
 					line, pr->pr_strings + func->s_name,
 					addr - func->first_statement);
 		else if (aux_func)
-			printf ("%d %d %d %d %d", aux_func->function, line,
+			printf ("%u %u %u %u %u", aux_func->function, line,
 					aux_func->line_info, aux_func->local_defs,
 					aux_func->num_locals);
 		else if (lineno->line)
