@@ -20,7 +20,7 @@ X	warn for local shadowing parameter
 X	clean up error expression handling to minimize follow on errors
 X	object oriented features ala Objective-C
 X	short circuit logic for && and || (optional?)
-o	quaternion type. Tricky: requires 4 word args/return
+X	quaternion type. Tricky: requires 4 word args/return
 o	CSE optimizations. Hard?
 o	fix local structure used/uninitialized warnings
 o	arrays in entities/structures?
