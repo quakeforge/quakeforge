@@ -55,11 +55,11 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-cvar_t     *pr_boundscheck;
-cvar_t     *pr_deadbeef_ents;
-cvar_t     *pr_deadbeef_locals;
+cvar_t		*pr_boundscheck;
+cvar_t		*pr_deadbeef_ents;
+cvar_t		*pr_deadbeef_locals;
 
-int         pr_type_size[ev_type_count] = {
+int			pr_type_size[ev_type_count] = {
 	1,			// ev_void
 	1,			// ev_string
 	1,			// ev_float
@@ -79,7 +79,7 @@ int         pr_type_size[ev_type_count] = {
 	0,			// ev_array        variable
 };
 
-const char *pr_type_name[ev_type_count] = {
+const char	*pr_type_name[ev_type_count] = {
 	"void",
 	"string",
 	"float",
@@ -99,8 +99,8 @@ const char *pr_type_name[ev_type_count] = {
 	"array",
 };
 
-ddef_t     *ED_FieldAtOfs (progs_t * pr, int ofs);
-qboolean    ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, const char *s);
+ddef_t     *ED_FieldAtOfs (progs_t *pr, int ofs);
+qboolean    ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s);
 
 /*
 	ED_ClearEdict
@@ -108,7 +108,7 @@ qboolean    ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, const cha
 	Sets everything to NULL
 */
 void
-ED_ClearEdict (progs_t * pr, edict_t *e, int val)
+ED_ClearEdict (progs_t *pr, edict_t *e, int val)
 {
 	int i;
 
@@ -128,8 +128,8 @@ ED_ClearEdict (progs_t * pr, edict_t *e, int val)
 	instead of being removed and recreated, which can cause interpolated
 	angles and bad trails.
 */
-edict_t    *
-ED_Alloc (progs_t * pr)
+edict_t *
+ED_Alloc (progs_t *pr)
 {
 	int         i;
 	edict_t    *e;
@@ -166,7 +166,7 @@ ED_Alloc (progs_t * pr)
 	NULLs all references to entity
 */
 void
-ED_FreeRefs (progs_t * pr, edict_t *ed)
+ED_FreeRefs (progs_t *pr, edict_t *ed)
 {
 	int i, j, k;
 	ddef_t *def;
@@ -197,7 +197,7 @@ ED_FreeRefs (progs_t * pr, edict_t *ed)
 	FIXME: walk all entities and NULL out references to this entity
 */
 void
-ED_Free (progs_t * pr, edict_t *ed)
+ED_Free (progs_t *pr, edict_t *ed)
 {
 	if (pr->unlink)
 		pr->unlink (ed);				// unlink from world bsp
@@ -219,14 +219,14 @@ ED_Free (progs_t * pr, edict_t *ed)
 /*
 	PR_ValueString
 
-	Returns a string describing *data in a type specific manner
+	Returns a string describing *data in a type-specific manner
 */
-char       *
-PR_ValueString (progs_t * pr, etype_t type, pr_type_t *val)
+char *
+PR_ValueString (progs_t *pr, etype_t type, pr_type_t *val)
 {
-	static char line[256];
-	ddef_t     *def;
-	dfunction_t *f;
+	static char	line[256];
+	ddef_t		*def;
+	dfunction_t	*f;
 
 	type &= ~DEF_SAVEGLOBAL;
 
@@ -259,18 +259,18 @@ PR_ValueString (progs_t * pr, etype_t type, pr_type_t *val)
 			strcpy (line, "void");
 			break;
 		case ev_float:
-			snprintf (line, sizeof (line), "%5.1f", val->float_var);
+			snprintf (line, sizeof (line), "%g", val->float_var);
 			break;
 		case ev_vector:
-			snprintf (line, sizeof (line), "'%5.1f %5.1f %5.1f'",
+			snprintf (line, sizeof (line), "'%g %g %g'",
 					  val->vector_var[0], val->vector_var[1],
 					  val->vector_var[2]);
 			break;
 		case ev_pointer:
-			snprintf (line, sizeof (line), "[%d]", val->integer_var);
+			snprintf (line, sizeof (line), "[$%x]", val->integer_var);
 			break;
 		case ev_quaternion:
-			snprintf (line, sizeof (line), "'%5.1f %5.1f %5.1f %5.1f'",
+			snprintf (line, sizeof (line), "'%g %g %g %g'",
 					  val->vector_var[0], val->vector_var[1],
 					  val->vector_var[2], val->vector_var[3]);
 			break;
@@ -278,7 +278,7 @@ PR_ValueString (progs_t * pr, etype_t type, pr_type_t *val)
 			snprintf (line, sizeof (line), "%d", val->integer_var);
 			break;
 		case ev_uinteger:
-			snprintf (line, sizeof (line), "%u", val->uinteger_var);
+			snprintf (line, sizeof (line), "$%08x", val->uinteger_var);
 			break;
 		default:
 			snprintf (line, sizeof (line), "bad type %i", type);
@@ -294,12 +294,12 @@ PR_ValueString (progs_t * pr, etype_t type, pr_type_t *val)
 	Returns a string describing *data in a type specific manner
 	Easier to parse than PR_ValueString
 */
-char       *
-PR_UglyValueString (progs_t * pr, etype_t type, pr_type_t *val)
+char *
+PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val)
 {
-	static char line[256];
-	ddef_t     *def;
-	dfunction_t *f;
+	static char	line[256];
+	ddef_t		*def;
+	dfunction_t	*f;
 
 	type &= ~DEF_SAVEGLOBAL;
 
@@ -345,7 +345,7 @@ PR_UglyValueString (progs_t * pr, etype_t type, pr_type_t *val)
 	Returns a string with a description and the contents of a global
 */
 dstring_t *
-PR_GlobalString (progs_t * pr, int ofs, etype_t type)
+PR_GlobalString (progs_t *pr, int ofs, etype_t type)
 {
 	ddef_t				*def = NULL;
 	static dstring_t	*line = NULL;
@@ -364,7 +364,7 @@ PR_GlobalString (progs_t * pr, int ofs, etype_t type)
 	if (!def)
 		def = ED_GlobalAtOfs (pr, ofs);
 	if (!def && type == ev_void)
-		dsprintf (line, "[%04x]", ofs);
+		dsprintf (line, "[$%x]", ofs);
 	else {
 		char *name = "?";
 		char *oi = "";
@@ -387,7 +387,7 @@ PR_GlobalString (progs_t * pr, int ofs, etype_t type)
 			else
 				dsprintf (line, "%s", s);
 		} else if (strequal(name, "?"))
-			dsprintf (line, "[%04x]", ofs);
+			dsprintf (line, "[$%x]", ofs);
 		else {
 			if (type == ev_func)
 				dsprintf (line, "%s%s", name, oi);
@@ -399,7 +399,7 @@ PR_GlobalString (progs_t * pr, int ofs, etype_t type)
 }
 
 dstring_t *
-PR_GlobalStringNoContents (progs_t * pr, int ofs, etype_t type)
+PR_GlobalStringNoContents (progs_t *pr, int ofs, etype_t type)
 {
 	static dstring_t	*line = NULL;
 	ddef_t				*def = NULL;
@@ -417,7 +417,7 @@ PR_GlobalStringNoContents (progs_t * pr, int ofs, etype_t type)
 	if (!def)
 		def = ED_GlobalAtOfs (pr, ofs);
 	if (!def)
-		dsprintf (line, "[%x]", ofs);
+		dsprintf (line, "[$%x]", ofs);
 	else
 		dsprintf (line, "%s", PR_GetString (pr, def->s_name));
 
@@ -431,14 +431,14 @@ PR_GlobalStringNoContents (progs_t * pr, int ofs, etype_t type)
 	For debugging
 */
 void
-ED_Print (progs_t * pr, edict_t *ed)
+ED_Print (progs_t *pr, edict_t *ed)
 {
-	int         l;
-	ddef_t     *d;
-	pr_type_t  *v;
-	int         i;
-	char       *name;
-	int         type;
+	int			l;
+	int			i;
+	char		*name;
+	int			type;
+	ddef_t		*d;
+	pr_type_t	*v;
 
 	if (ed->free) {
 		Sys_Printf ("FREE\n");
@@ -496,13 +496,13 @@ ED_Print (progs_t * pr, edict_t *ed)
 	For savegames
 */
 void
-ED_Write (progs_t * pr, QFile *f, edict_t *ed)
+ED_Write (progs_t *pr, QFile *f, edict_t *ed)
 {
-	ddef_t     *d;
-	pr_type_t  *v;
-	int         i, j;
-	char       *name;
-	int         type;
+	int			i, j;
+	int			type;
+	char		*name;
+	ddef_t		*d;
+	pr_type_t	*v;
 
 	Qprintf (f, "{\n");
 
@@ -535,7 +535,7 @@ ED_Write (progs_t * pr, QFile *f, edict_t *ed)
 }
 
 void
-ED_PrintNum (progs_t * pr, int ent)
+ED_PrintNum (progs_t *pr, int ent)
 {
 	ED_Print (pr, EDICT_NUM (pr, ent));
 }
@@ -548,9 +548,9 @@ ED_PrintNum (progs_t * pr, int ent)
 void
 ED_PrintEdicts (progs_t *pr, const char *fieldval)
 {
-	int     i;
+	int		i;
 	int		count;
-	ddef_t *def;
+	ddef_t	*def;
 
 	def = ED_FindField(pr, "classname");
 
@@ -575,13 +575,13 @@ ED_PrintEdicts (progs_t *pr, const char *fieldval)
 	For debugging
 */
 void
-ED_Count (progs_t * pr)
+ED_Count (progs_t *pr)
 {
-	int         i;
-	edict_t    *ent;
-	int         active, models, solid, step, zombie;
-	ddef_t     *solid_def;
-	ddef_t     *model_def;
+	int			i;
+	int			active, models, solid, step, zombie;
+	ddef_t		*solid_def;
+	ddef_t		*model_def;
+	edict_t		*ent;
 
 	solid_def = ED_FindField (pr, "solid");
 	model_def = ED_FindField (pr, "model");
@@ -617,12 +617,12 @@ ED_Count (progs_t * pr)
 	ED_WriteGlobals
 */
 void
-ED_WriteGlobals (progs_t * pr, QFile *f)
+ED_WriteGlobals (progs_t *pr, QFile *f)
 {
-	ddef_t     *def;
-	int         i;
-	char       *name;
-	int         type;
+	ddef_t		*def;
+	int			i;
+	char		*name;
+	int			type;
 
 	Qprintf (f, "{\n");
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
@@ -647,10 +647,10 @@ ED_WriteGlobals (progs_t * pr, QFile *f)
 	ED_ParseGlobals
 */
 void
-ED_ParseGlobals (progs_t * pr, const char *data)
+ED_ParseGlobals (progs_t *pr, const char *data)
 {
-	char        keyname[64];
-	ddef_t     *key;
+	char		keyname[64];
+	ddef_t		*key;
 
 	while (1) {
 		// parse key
@@ -687,11 +687,11 @@ ED_ParseGlobals (progs_t * pr, const char *data)
 /*
 	ED_NewString
 */
-char       *
-ED_NewString (progs_t * pr, const char *string)
+char *
+ED_NewString (progs_t *pr, const char *string)
 {
-	char       *new, *new_p;
-	int         i, l;
+	char		*new, *new_p;
+	int			i, l;
 
 	l = strlen (string) + 1;
 	new = Hunk_Alloc (l);
@@ -719,14 +719,14 @@ ED_NewString (progs_t * pr, const char *string)
 	returns false if error
 */
 qboolean
-ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, const char *s)
+ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s)
 {
-	int         i;
-	char        string[128];
-	ddef_t     *def;
-	char       *v, *w;
-	pr_type_t  *d;
-	dfunction_t *func;
+	int			i;
+	char		string[128];
+	ddef_t		*def;
+	char		*v, *w;
+	pr_type_t	*d;
+	dfunction_t	*func;
 
 	d = &base[key->ofs];
 
@@ -787,24 +787,21 @@ ED_ParseEpair (progs_t * pr, pr_type_t *base, ddef_t *key, const char *s)
 	ed should be a properly initialized empty edict.
 	Used for initial level load and for savegames.
 */
-const char       *
-ED_ParseEdict (progs_t * pr, const char *data, edict_t *ent)
+const char *
+ED_ParseEdict (progs_t *pr, const char *data, edict_t *ent)
 {
-	ddef_t     *key;
-	qboolean    anglehack;
-	qboolean    init;
-	char        keyname[256];
-	const char *token;
-	int         n;
+	ddef_t		*key;
+	qboolean	anglehack;
+	qboolean	init = false;
+	char		keyname[256];
+	const char	*token;
+	int			n;
 
-	init = false;
-
-// clear it
+	// clear it
 	if (ent != *(pr)->edicts)			// hack
 		memset (&ent->v, 0, pr->progs->entityfields * 4);
 
-// go through all the dictionary pairs
-	while (1) {
+	while (1) {	// go through all the dictionary pairs
 		// parse key
 		data = COM_Parse (data);
 		if (com_token[0] == '}')
@@ -888,21 +885,17 @@ ED_ParseEdict (progs_t * pr, const char *data, edict_t *ent)
 	to call ED_CallSpawnFunctions () to let the objects initialize themselves.
 */
 void
-ED_LoadFromFile (progs_t * pr, const char *data)
+ED_LoadFromFile (progs_t *pr, const char *data)
 {
-	edict_t    *ent;
-	int         inhibit;
-	dfunction_t *func;
-	pr_type_t  *classname;
-	ddef_t     *def;
-
-	ent = NULL;
-	inhibit = 0;
+	edict_t		*ent = NULL;
+	int			inhibit = 0;
+	dfunction_t	*func;
+	pr_type_t	*classname;
+	ddef_t		*def;
 
 	*pr->globals.time = *(pr)->time;
 
-	// parse ents
-	while (1) {
+	while (1) {	// parse ents
 		// parse the opening brace  
 		data = COM_Parse (data);
 		if (!data)
@@ -922,6 +915,7 @@ ED_LoadFromFile (progs_t * pr, const char *data)
 			inhibit++;
 			continue;
 		}
+
 		//
 		// immediately call spawn function
 		//
@@ -933,9 +927,9 @@ ED_LoadFromFile (progs_t * pr, const char *data)
 			continue;
 		}
 		classname = &ent->v[def->ofs];
+
 		// look for the spawn function
 		func = ED_FindFunction (pr, PR_GetString (pr, classname->string_var));
-
 		if (!func) {
 			Sys_Printf ("No spawn function for:\n");
 			ED_Print (pr, ent);
@@ -955,17 +949,19 @@ ED_LoadFromFile (progs_t * pr, const char *data)
 edict_t *
 PR_InitEdicts (progs_t *pr, int num_edicts)
 {   
-	edict_t *edicts;
-	edict_t *e;
-	int     i, j;
+	edict_t	*edicts;
+	edict_t	*e;
+	int		i, j;
+
 	pr->pr_edictareasize = pr->pr_edict_size * num_edicts;
 	edicts = Hunk_AllocName (pr->pr_edictareasize, "edicts");
 	(*pr->edicts) = edicts;
+
 	if (pr_deadbeef_ents->int_val) {
 		memset (edicts, 0, *pr->reserved_edicts * pr->pr_edict_size);
-		for (j =  *pr->reserved_edicts; j < num_edicts; j++) {
+		for (j = *pr->reserved_edicts; j < num_edicts; j++) {
 			e = EDICT_NUM (pr, j);
-			for (i=0; i < pr->progs->entityfields; i++)
+			for (i = 0; i < pr->progs->entityfields; i++)
 				e->v[i].integer_var = 0xdeadbeef;
 		}
 	} else {
@@ -974,8 +970,8 @@ PR_InitEdicts (progs_t *pr, int num_edicts)
 	return edicts;
 }
 
-edict_t    *
-EDICT_NUM (progs_t * pr, int n)
+edict_t *
+EDICT_NUM (progs_t *pr, int n)
 {
 	int offs = n * pr->pr_edict_size;
 	if (offs < 0 || n >= pr->pr_edictareasize)
@@ -987,7 +983,7 @@ EDICT_NUM (progs_t * pr, int n)
 int
 NUM_FOR_BAD_EDICT (progs_t *pr, edict_t *e)
 {
-	int         b;
+	int		b;
 
 	b = (byte *) e - (byte *) * (pr)->edicts;
 	b = b / pr->pr_edict_size;
@@ -998,7 +994,7 @@ NUM_FOR_BAD_EDICT (progs_t *pr, edict_t *e)
 int
 NUM_FOR_EDICT (progs_t *pr, edict_t *e)
 {
-	int b;
+	int		b;
 
 	b = NUM_FOR_BAD_EDICT (pr, e);
 
