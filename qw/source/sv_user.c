@@ -690,7 +690,7 @@ SV_BeginDownload_f (void)
 		// now sounds
 		|| (strncmp (name, "sound/", 6) == 0 && !allow_download_sounds->int_val)
 		// now maps (note special case for maps, must not be in pak)
-		|| (strncmp (name, "maps/", 6) == 0 && !allow_download_maps->int_val)
+		|| (strncmp (name, "maps/", 5) == 0 && !allow_download_maps->int_val)
 		// MUST be in a subdirectory    
 		|| !strstr (name, "/")) {		// don't allow anything with .. path
 		ClientReliableWrite_Begin (host_client, svc_download, 4);
