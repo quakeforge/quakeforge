@@ -811,27 +811,6 @@ R_DrawSkyChain (msurface_t *sky_chain)
 	}
 	draw_z_sky_polys (sky_chain);
 #if 0
-	// seems to work, but this is the wrong place to do it.
-	color_white[3] = 0;
-	qfglColor4ubv (color_white);
-	sc = sky_chain;
-	while (sc) {
-		glpoly_t   *p = sc->polys;
-
-		while (p) {
-			int i;
-
-			qfglBegin (GL_POLYGON);
-			for (i = 0; i < p->numverts; i++) {
-				qfglVertex3fv (p->verts[i]);
-			}
-			qfglEnd ();
-			p = p->next;
-		}
-		sc = sc->texturechain;
-	}
-#endif
-#if 0
 	qfglDisable (GL_TEXTURE_2D);
 	sc = sky_chain;
 	qfglColor3ubv (255, 255, 255);
