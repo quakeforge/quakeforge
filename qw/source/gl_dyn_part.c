@@ -627,14 +627,16 @@ R_DrawParticles (void)
 				part->vel[2] -= grav;
 				break;
 			case pt_smoke:
-				if ((part->alpha -= host_frametime * 128) < 1)
+				if ((part->alpha -= host_frametime * 90) < 1)
 					part->die = -1;
 				part->scale += host_frametime * 6;
+				part->org[2] += host_frametime * 30;
 				break;
 			case pt_smokecloud:
 				if ((part->alpha -= host_frametime * 128) < 1)
 					part->die = -1;
 				part->scale += host_frametime * 60;
+				part->org[2] += host_frametime * 90;
 				break;
 			case pt_bloodcloud:
 /*
