@@ -751,7 +751,7 @@ static int
 open_file (searchpath_t *search, const char *filename, QFile **gzfile,
 		   dstring_t *foundname, int zip)
 {
-	char        netpath[MAX_OSPATH];
+	char        netpath[MAX_OSPATH];		//FIXME: overflow
 
 	file_from_pak = 0;
 
@@ -808,10 +808,10 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile,
 	searchpath_t *search;
 	char       *path;
 #ifdef HAVE_VORBIS
-	char        oggfilename[MAX_OSPATH];
+	char        oggfilename[MAX_OSPATH];		//FIXME: overflow
 #endif
 #ifdef HAVE_ZLIB
-	char        gzfilename[MAX_OSPATH];
+	char        gzfilename[MAX_OSPATH];		//FIXME: overflow
 #endif
 
 	// make sure they're not trying to do weird stuff with our private files
@@ -882,7 +882,7 @@ QFS_LoadFile (const char *path, int usehunk)
 {
 	QFile      *h;
 	byte       *buf = NULL;
-	char        base[32];
+	char        base[32];		//FIXME: overflow
 	int         len;
 
 	// look for it in the filesystem or pack files
@@ -1294,10 +1294,12 @@ QFS_Open (const char *path, const char *mode)
 QFile *
 QFS_WOpen (const char *path, int zip)
 {
-	char        mode[4] = "wb\000\000";
+	char        mode[5] = "wb\000\000";
 
-	if (zip)
-		mode[2] = bound (1, zip, 9) + '0';
+	if (zip) {
+		mode[2] = 'z';
+		mode[3] = bound (1, zip, 9) + '0';
+	}
 	return QFS_Open (path, mode);
 }
 

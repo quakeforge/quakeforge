@@ -157,7 +157,7 @@ SV_Match_User (const char *substr)
 static void
 SV_SetMaster_f (void)
 {
-	char        data[2];
+	char        data[2];		//FIXME: overflow
 	int         i;
 
 	memset (&master_adr, 0, sizeof (master_adr));
@@ -341,7 +341,7 @@ SV_Give_f (void)
 }
 
 // Use this to keep track of current level  --KB
-static char curlevel[MAX_QPATH] = "";
+static char curlevel[MAX_QPATH] = "";		//FIXME: overflow
 
 const char *
 SV_Current_Map (void)
@@ -393,8 +393,8 @@ nice_time (float time)
 static void
 SV_Map_f (void)
 {
-	char        level[MAX_QPATH];
-	char        expanded[MAX_QPATH];
+	char        level[MAX_QPATH];		//FIXME: overflow
+	char        expanded[MAX_QPATH];		//FIXME: overflow
 	QFile      *f;
 
 	if (Cmd_Argc () > 2) {
@@ -568,7 +568,7 @@ SV_Cuff_f (void)
 	double      mins = 0.5;
 	qboolean    all = false, done = false;
 	client_t    *cl = 0;
-	char        text[1024];
+	char        text[1024];		//FIXME: overflow
 
 	if (Cmd_Argc () != 2 && Cmd_Argc () != 3) {
 		SV_Printf ("usage: cuff <name/userid/ALL> [minutes]\n"
@@ -630,7 +630,7 @@ SV_Mute_f (void)
 	double      mins = 0.5;
 	qboolean    all = false, done = false;
 	client_t    *cl = 0;
-	char        text[1024];
+	char        text[1024];		//FIXME: overflow
 
 	if (Cmd_Argc () != 2 && Cmd_Argc () != 3) {
 		SV_Printf ("usage: mute <name/userid/ALL> [minutes]\n"
@@ -688,7 +688,7 @@ static void
 SV_Tell (const char *prefix)
 {
 	char       *p;
-	char        text[512];
+	char        text[512];		//FIXME: overflow
 	client_t   *cl;
 	int         i;
 
@@ -762,7 +762,7 @@ static void
 SV_ConSay (const char *prefix)
 {
 	char       *p;
-	char        text[1024];
+	char        text[1024];		//FIXME: overflow
 	client_t   *client;
 	int         j;
 

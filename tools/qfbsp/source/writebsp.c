@@ -355,7 +355,7 @@ TEX_InitFromWad (char *path)
 static int
 LoadLump (char *name, dstring_t *dest)
 {
-	char        cname[16];
+	char        cname[16];		//FIXME: overflow
 	int         i;
 	int         ofs = dest->size;
 	wadlist_t  *wl;
@@ -382,7 +382,7 @@ static void
 AddAnimatingTextures (void)
 {
 	int         base, i, j, k;
-	char        name[32];
+	char        name[32];		//FIXME: overflow
 	wadlist_t  *wl;
 
 	base = nummiptex;

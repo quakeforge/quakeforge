@@ -129,7 +129,7 @@ cvar_t     *temp1;
 void
 Host_EndGame (const char *message, ...)
 {
-	char        string[1024];
+	char        string[1024];		//FIXME: overflow
 	va_list     argptr;
 
 	va_start (argptr, message);
@@ -159,7 +159,7 @@ Host_EndGame (const char *message, ...)
 void
 Host_Error (const char *error, ...)
 {
-	char        string[1024];
+	char        string[1024];		//FIXME: overflow
 	static qboolean inerror = false;
 	va_list     argptr;
 
@@ -303,7 +303,7 @@ Host_WriteConfiguration (void)
 void
 SV_ClientPrintf (const char *fmt, ...)
 {
-	char        string[1024];
+	char        string[1024];		//FIXME: overflow
 	va_list     argptr;
 
 	va_start (argptr, fmt);
@@ -322,7 +322,7 @@ SV_ClientPrintf (const char *fmt, ...)
 void
 SV_BroadcastPrintf (const char *fmt, ...)
 {
-	char        string[1024];
+	char        string[1024];		//FIXME: overflow
 	int         i;
 	va_list     argptr;
 
@@ -345,7 +345,7 @@ SV_BroadcastPrintf (const char *fmt, ...)
 void
 Host_ClientCommands (const char *fmt, ...)
 {
-	char        string[1024];
+	char        string[1024];		//FIXME: overflow
 	va_list     argptr;
 
 	va_start (argptr, fmt);

@@ -251,7 +251,7 @@ CL_Version_f (void)
 static void
 CL_SendConnectPacket (void)
 {
-	char        data[2048];
+	char        data[2048];		//FIXME: overflow
 	double      t1, t2;
 
 // JACK: Fixed bug where DNS lookups would cause two connects real fast
@@ -291,7 +291,7 @@ CL_SendConnectPacket (void)
 static void
 CL_CheckForResend (void)
 {
-	char        data[2048];
+	char        data[2048];		//FIXME: overflow
 	double      t1, t2;
 
 	if (connect_time == -1)
@@ -355,7 +355,7 @@ CL_Connect_f (void)
 static void
 CL_Rcon_f (void)
 {
-	char        message[1024];
+	char        message[1024];		//FIXME: overflow
 	netadr_t    to;
 
 	snprintf (message, sizeof (message), "\377\377\377\377rcon %s %s",
@@ -624,7 +624,7 @@ CL_FullServerinfo_f (void)
 static void
 CL_AddQFInfoKeys (void)
 {
-	char        cap[100] = "";			// max of 98 or so flags
+	char        cap[100] = "";			// max of 98 or so flags		//FIXME: overflow
 
 	// set the capabilities info. single char flags (possibly with modifiers)
 	// defined capabilities (* = not implemented):
@@ -653,7 +653,7 @@ CL_AddQFInfoKeys (void)
 static void
 CL_FullInfo_f (void)
 {
-	char        key[512], value[512];
+	char        key[512], value[512];		//FIXME: overflow
 	char       *o;
 	const char *s;
 
@@ -730,7 +730,7 @@ CL_SetInfo_f (void)
 static void
 CL_Packet_f (void)
 {
-	char        send[2048];
+	char        send[2048];		//FIXME: overflow
 	char       *out;
 	const char *in;
 	int         i, l;
@@ -771,7 +771,7 @@ CL_Packet_f (void)
 void
 CL_NextDemo (void)
 {
-	char        str[1024];
+	char        str[1024];		//FIXME: overflow
 
 	if (cls.demonum == -1)
 		return;							// don't play demos
@@ -878,7 +878,7 @@ CL_ConnectionlessPacket (void)
 	}
 	// remote command from gui front end
 	if (c == A2C_CLIENT_COMMAND) {
-		char        cmdtext[2048];
+		char        cmdtext[2048];		//FIXME: overflow
 		int         len;
 
 		Con_Printf ("client command\n");
@@ -1128,7 +1128,7 @@ CL_SetState (cactive_t state)
 void
 CL_Init (void)
 {
-	char        st[80];
+	char        st[80];		//FIXME: overflow
 
 	CL_SetState (ca_disconnected);
 
@@ -1337,7 +1337,7 @@ CL_Init_Cvars (void)
 void
 Host_EndGame (const char *message, ...)
 {
-	char        string[1024];
+	char        string[1024];		//FIXME: overflow
 	va_list     argptr;
 
 	va_start (argptr, message);
@@ -1360,7 +1360,7 @@ Host_EndGame (const char *message, ...)
 void
 Host_Error (const char *error, ...)
 {
-	char        string[1024];
+	char        string[1024];		//FIXME: overflow
 	static qboolean inerror = false;
 	va_list     argptr;
 

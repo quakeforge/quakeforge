@@ -1361,8 +1361,8 @@ PF_logfrag (progs_t *pr)
 
 	// do gib event callback
 	if (sv_frag_e->func) {
-		char buf[16];
-		char type1[2], type2[2];
+		char buf[16];		//FIXME: overflow
+		char type1[2], type2[2];		//FIXME: overflow
 		int u1, u2;
 		
 		type1[1] = type2[1] = 0;
@@ -1409,7 +1409,7 @@ void
 PF_infokey (progs_t *pr)
 {
 	const char *key, *value;
-	static char ov[256];
+	static char ov[256];		//FIXME: overflow
 	edict_t    *e;
 	int         e1;
 
@@ -1538,7 +1538,7 @@ PF_setinfokey (progs_t *pr)
 	int         e1 = NUM_FOR_EDICT (pr, edict);
 	const char *key = P_GSTRING (pr, 1);
 	const char *value = P_GSTRING (pr, 2);
-	char		oldval[MAX_INFO_STRING];
+	char		oldval[MAX_INFO_STRING];		//FIXME: overflow
 
 	if (e1 == 0) {
 		if (*value)

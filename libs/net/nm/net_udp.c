@@ -248,7 +248,7 @@ UDP_CloseSocket (int socket)
 static int
 PartialIPAddress (const char *in, struct qsockaddr *hostaddr)
 {
-	char        buff[256];
+	char        buff[256];		//FIXME: overflow
 	char       *b;
 	int         addr, mask, num, port, run;
 
@@ -312,6 +312,7 @@ UDP_CheckNewConnections (void)
 		Sys_Error ("UDP: ioctlsocket (FIONREAD) failed");
 	if (available)
 		return net_acceptsocket;
+	// quietly absorb empty packets
 	recvfrom (net_acceptsocket, buff, 0, 0, (struct sockaddr *) &from,
 			  &fromlen);
 	return -1;
@@ -376,7 +377,7 @@ UDP_Write (int socket, byte * buf, int len, struct qsockaddr *addr)
 const char       *
 UDP_AddrToString (struct qsockaddr *addr)
 {
-	static char buffer[22];
+	static char buffer[22];		//FIXME: overflow
 	int         haddr;
 
 	haddr = ntohl (((struct sockaddr_in *) addr)->sin_addr.s_addr);

@@ -126,7 +126,7 @@ struct {
 char       *
 StrAddr (struct qsockaddr *addr)
 {
-	static char buf[34];
+	static char buf[34];		//FIXME: overflow
 	byte       *p = (byte *) addr;
 	int         n;
 
@@ -144,8 +144,8 @@ unsigned long banMask = 0xffffffff;
 static void
 NET_Ban_f (void)
 {
-	char        addrStr[32];
-	char        maskStr[32];
+	char        addrStr[32];		//FIXME: overflow
+	char        maskStr[32];		//FIXME: overflow
 	void        (*print) (const char *fmt, ...);
 
 	if (cmd_source == src_command) {
@@ -549,8 +549,8 @@ Test_Poll (void *unused)
 	struct qsockaddr clientaddr;
 	int         control;
 	int         len;
-	char        name[32];
-	char        address[64];
+	char        name[32];		//FIXME: overflow
+	char        address[64];		//FIXME: overflow
 	int         colors;
 	int         frags;
 	int         connectTime;
@@ -681,8 +681,8 @@ Test2_Poll (void *unused)
 	struct qsockaddr clientaddr;
 	int         control;
 	int         len;
-	char        name[256];
-	char        value[256];
+	char        name[256];		//FIXME: overflow
+	char        value[256];		//FIXME: overflow
 
 	net_landriverlevel = test2Driver;
 	name[0] = 0;

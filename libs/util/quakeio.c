@@ -133,7 +133,7 @@ QFile *
 Qopen (const char *path, const char *mode)
 {
 	QFile      *file;
-	char        m[80], *p;
+	char        m[80], *p;		//FIXME: overflow
 	int         reading = 0;
 	int         zip = 0;
 	int         size = -1;
@@ -191,7 +191,7 @@ QFile *
 Qdopen (int fd, const char *mode)
 {
 	QFile      *file;
-	char        m[80], *p;
+	char        m[80], *p;		//FIXME: overflow
 	int         zip = 0;
 
 #ifdef WIN32

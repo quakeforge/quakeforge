@@ -348,7 +348,7 @@ draw_fill (view_t *view, int x, int y, int w, int h, int col)
 static void
 draw_num (view_t *view, int x, int y, int num, int digits, int color)
 {
-	char        str[12];
+	char        str[12];		//FIXME: overflow
 	char       *ptr;
 	int         l, frame;
 
@@ -413,7 +413,7 @@ Sbar_SortFrags (qboolean includespec)
 static void
 Sbar_SortTeams (void)
 {
-	char        t[16 + 1];
+	char        t[16 + 1];		//FIXME: overflow
 	int         i, j, k;
 	player_info_t *s;
 
@@ -483,7 +483,7 @@ Sbar_ColorForMap (int m)
 static void
 draw_solo (view_t *view)
 {
-	char        str[80];
+	char        str[80];		//FIXME: overflow
 	int         minutes, seconds;
 
 	draw_pic (view, 0, 0, sb_scorebar); 
@@ -497,7 +497,7 @@ draw_solo (view_t *view)
 static inline void
 dmo_ping (view_t *view, int x, int y, player_info_t *s)
 {
-	char		num[12];
+	char		num[12];		//FIXME: overflow
 	int         p;
 
 	p = s->ping;
@@ -510,7 +510,7 @@ dmo_ping (view_t *view, int x, int y, player_info_t *s)
 static inline void
 dmo_uid (view_t *view, int x, int y, player_info_t *s)
 {
-	char		num[12];
+	char		num[12];		//FIXME: overflow
 	int         p;
 
 	p = s->userid;
@@ -521,7 +521,7 @@ dmo_uid (view_t *view, int x, int y, player_info_t *s)
 static inline void
 dmo_pl (view_t *view, int x, int y, player_info_t *s)
 {
-	char		num[12];
+	char		num[12];		//FIXME: overflow
 	int         p;
 
 	// draw pl
@@ -555,7 +555,7 @@ calc_fph (int frags, int total)
 static inline void
 dmo_main (view_t *view, int x, int y, player_info_t *s, int is_client)
 {
-	char		num[12];
+	char		num[12];		//FIXME: overflow
 	int			fph, minutes, total, top, bottom, f;
 
 	// get time
@@ -663,7 +663,7 @@ draw_weapons_hud (view_t *view)
 static void
 draw_ammo_sbar (view_t *view)
 {
-	char        num[6];
+	char        num[6];		//FIXME: overflow
 	int         i;
 
 	// ammo counts
@@ -684,7 +684,7 @@ draw_ammo_sbar (view_t *view)
 static void
 draw_ammo_hud (view_t *view)
 {
-	char        num[6];
+	char        num[6];		//FIXME: overflow
 	int         i;
 
 	// ammo counts
@@ -758,7 +758,7 @@ draw_frags (view_t *view)
 	int         i, k, l, p = -1;
 	int         top, bottom;
 	int         x;
-	char        num[12];
+	char        num[12];		//FIXME: overflow
 	player_info_t *s;
 
 	Sbar_SortFrags (false);
@@ -843,7 +843,7 @@ draw_face (view_t *view)
 static void
 draw_spectator (view_t *view)
 {
-	char        st[512];
+	char        st[512];		//FIXME: overflow
 
 	if (autocam != CAM_TRACK) {
 		draw_string (view, 160 - 7 * 8, 4, "SPECTATOR MODE");
@@ -975,7 +975,7 @@ Sbar_Draw (void)
 void
 Sbar_TeamOverlay (view_t *view)
 {
-	char        num[12];
+	char        num[12];		//FIXME: overflow
 	int         pavg, plow, phigh, i, k, l, x, y;
 	team_t     *tm;
 	info_key_t *player_team = cl.players[cl.playernum].team;
@@ -1060,9 +1060,9 @@ Sbar_TeamOverlay (view_t *view)
 void
 Sbar_LogFrags (void)
 {
-	char        num[512];
-	char        conv[512];
-	char        conv2[512];
+	char        num[512];		//FIXME: overflow
+	char        conv[512];		//FIXME: overflow
+	char        conv2[512];		//FIXME: overflow
 	char       *cp = NULL;
 	QFile      *file = NULL;
 	int         minutes, fph, total, d, f, i, k, l, p;
@@ -1472,7 +1472,7 @@ static void
 draw_minifrags (view_t *view)
 {
 	int         numlines, top, bottom, f, i, k, x, y;
-	char        num[12];
+	char        num[12];		//FIXME: overflow
 	player_info_t *s;
 
 	scr_copyeverything = 1;
@@ -1546,7 +1546,7 @@ static void
 draw_miniteam (view_t *view)
 {
 	int         i, k, x, y;
-	char        num[12];
+	char        num[12];		//FIXME: overflow
 	info_key_t *player_team = cl.players[cl.playernum].team;
 	team_t     *tm;
 
@@ -1587,7 +1587,7 @@ draw_time (view_t *view)
 	struct tm  *local = NULL;
 	time_t      utc = 0;
 	const char *timefmt = NULL;
-	char        st[80];
+	char        st[80];		//FIXME: overflow
 
 	// Get local time
 	utc = time (NULL);
@@ -1606,7 +1606,7 @@ draw_time (view_t *view)
 static void
 draw_fps (view_t *view)
 {
-	char          st[80];
+	char          st[80];		//FIXME: overflow
 	double        t;
 	static double lastframetime;
 	static int    lastfps;

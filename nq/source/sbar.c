@@ -334,7 +334,7 @@ draw_fill (view_t *view, int x, int y, int w, int h, int col)
 static void
 draw_num (view_t *view, int x, int y, int num, int digits, int color)
 {
-	char        str[12];
+	char        str[12];		//FIXME: overflow
 	char       *ptr;
 	int         l, frame;
 
@@ -360,7 +360,7 @@ draw_num (view_t *view, int x, int y, int num, int digits, int color)
 static inline void
 draw_smallnum (view_t *view, int x, int y, int n, int packed, int colored)
 {
-	char        num[4];
+	char        num[4];		//FIXME: overflow
 
 	packed = packed != 0;				// ensure 0 or 1
 
@@ -422,7 +422,7 @@ Sbar_SortFrags (void)
 static void
 draw_solo (view_t *view)
 {
-	char        str[80];
+	char        str[80];		//FIXME: overflow
 	int         minutes, seconds, tens, units;
 	int         l;
 
@@ -583,7 +583,7 @@ draw_frags (view_t *view)
 	int         i, k, l, p = -1;
 	int         top, bottom;
 	int         x;
-	char        num[12];
+	char        num[12];		//FIXME: overflow
 	scoreboard_t *s;
 
 	if (cl.maxclients == 1)
@@ -1048,7 +1048,7 @@ Sbar_DeathmatchOverlay (view_t *view)
 	int         i, k, l;
 	int         top, bottom;
 	int         x, y, f;
-	char        num[12];
+	char        num[12];		//FIXME: overflow
 	scoreboard_t *s;
 
 	scr_copyeverything = 1;
@@ -1101,7 +1101,7 @@ draw_time (view_t *view)
 	struct tm  *local = NULL;
 	time_t      utc = 0;
 	const char *timefmt = NULL;
-	char        st[80];
+	char        st[80];		//FIXME: overflow
 
 	// Get local time
 	utc = time (NULL);
@@ -1120,7 +1120,7 @@ draw_time (view_t *view)
 static void
 draw_fps (view_t *view)
 {
-	char          st[80];
+	char          st[80];		//FIXME: overflow
 	double        t;
 	static double lastframetime;
 	static int    lastfps;
