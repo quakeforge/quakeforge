@@ -1,6 +1,6 @@
 #include "QF/cvar.h"
 
-extern cvar_t *gl_sky_divide;			// FIXME
+extern cvar_t *gl_sky_divide;		// FIXME
 extern void R_ForceLightUpdate (void);
 
 cvar_t     *cl_crossx;
@@ -18,6 +18,7 @@ cvar_t     *gl_clear;
 cvar_t     *gl_conalpha;
 cvar_t     *gl_conspin;
 cvar_t     *gl_constretch;
+cvar_t     *gl_cull; // FIXME
 cvar_t     *gl_dlight_lightmap;
 cvar_t     *gl_dlight_polyblend;
 cvar_t     *gl_dlight_smooth;
@@ -32,8 +33,10 @@ cvar_t     *gl_max_size;
 cvar_t     *gl_nocolors;
 cvar_t     *gl_picmip;
 cvar_t     *gl_playermip;
+cvar_t     *gl_reporttjunctions;
 cvar_t     *gl_sky_clip;
 cvar_t     *gl_skymultipass;
+cvar_t     *gl_texsort;
 cvar_t     *gl_triplebuffer;
 
 cvar_t     *r_aliasstats;
@@ -49,6 +52,7 @@ cvar_t     *r_dynamic;
 cvar_t     *r_graphheight;
 cvar_t     *r_maxedges;
 cvar_t     *r_maxsurfs;
+cvar_t     *r_mirroralpha;
 cvar_t     *r_netgraph;
 cvar_t     *r_netgraph_alpha;
 cvar_t     *r_netgraph_box;
@@ -124,7 +128,8 @@ R_Init_Cvars (void)
 	gl_conspin = Cvar_Get ("gl_conspin", "0", CVAR_ARCHIVE, NULL,
 						   "speed at which the console spins");
 	gl_constretch = Cvar_Get ("gl_constretch", "0", CVAR_ARCHIVE, NULL,
-							  "toggle console slide or stretch");
+							  "toggle console between slide and stretch");
+	gl_cull = Cvar_Get ("gl_cull", "1", CVAR_NONE, NULL, "None");
 	gl_dlight_lightmap = Cvar_Get ("gl_dlight_lightmap", "1", CVAR_ARCHIVE,
 								   NULL, "Set to 1 for high quality dynamic "
 								   "lighting.");
@@ -158,6 +163,8 @@ R_Init_Cvars (void)
 						  "textures. 0 is normal, 1 is half, 2 is 1/4");
 	gl_playermip = Cvar_Get ("gl_playermip", "0", CVAR_NONE, NULL,
 							 "Detail of player skins. 0 best, 4 worst.");
+	gl_reporttjunctions = Cvar_Get ("gl_reporttjunctions", "0", CVAR_NONE,
+									NULL, "None");
 	gl_sky_clip = Cvar_Get ("gl_sky_clip", "0", CVAR_ARCHIVE, NULL,
 							"controls amount of sky overdraw");
 	gl_sky_divide = Cvar_Get ("gl_sky_divide", "1", CVAR_ARCHIVE, NULL,
@@ -165,6 +172,7 @@ R_Init_Cvars (void)
 	gl_skymultipass = Cvar_Get ("gl_skymultipass", "1", CVAR_ARCHIVE, NULL,
 								"controls whether the skydome is single or "
 								"double pass");
+	gl_texsort = Cvar_Get ("gl_texsort", "1", CVAR_NONE, NULL, "None");
 	gl_triplebuffer = Cvar_Get ("gl_triplebuffer", "1", CVAR_ARCHIVE, NULL,
 								"Set to 1 by default. Fixes status bar "
 								"flicker on some hardware");
@@ -177,7 +185,7 @@ R_Init_Cvars (void)
 	r_aliastransbase = Cvar_Get ("r_aliastransbase", "200", CVAR_NONE, NULL,
 								 "Determines how much of an alias model is "
 								 "clipped away and how much is viewable");
-	r_ambient =	Cvar_Get ("r_ambient", "0", CVAR_NONE, NULL,
+	r_ambient = Cvar_Get ("r_ambient", "0", CVAR_NONE, NULL,
 						  "Determines the ambient lighting for a level");
 	r_clearcolor = Cvar_Get ("r_clearcolor", "2", CVAR_NONE, NULL,
 							 "This sets the color for areas outside of the "
@@ -200,6 +208,7 @@ R_Init_Cvars (void)
 						   "Sets the maximum number of edges");
 	r_maxsurfs = Cvar_Get ("r_maxsurfs", "0", CVAR_NONE, NULL,
 						   "Sets the maximum number of surfaces");
+	r_mirroralpha = Cvar_Get ("r_mirroralpha", "1", CVAR_NONE, NULL, "None");
 	r_netgraph = Cvar_Get ("r_netgraph", "0", CVAR_NONE, NULL,
 						   "Toggle the display of a graph showing network "
 						   "performance");
@@ -234,7 +243,7 @@ R_Init_Cvars (void)
 	r_timegraph = Cvar_Get ("r_timegraph", "0", CVAR_NONE, NULL,
 							"Toggle the display of a performance graph");
 	r_wateralpha = Cvar_Get ("r_wateralpha", "1", CVAR_NONE, NULL,
-							 "Determine opacity of liquids. 1 = solid, "
+							 "Determine the opacity of liquids. 1 = solid, "
 							 "0 = transparent, otherwise translucent.");
 	r_waterripple = Cvar_Get ("r_waterripple", "0", CVAR_NONE, NULL,
 							  "Set to make liquids ripple, try setting to 5");
@@ -249,7 +258,7 @@ R_Init_Cvars (void)
 							"Fraction of the screen the console covers when "
 							"down");
 	scr_conspeed = Cvar_Get ("scr_conspeed", "300", CVAR_NONE, NULL,
-							 "How quickly console scrolls up or down");
+							 "How quickly the console scrolls up or down");
 	scr_fov = Cvar_Get ("fov", "90", CVAR_NONE, NULL, "Your field of view in "
 						"degrees. Smaller than 90 zooms in.");
 	scr_printspeed = Cvar_Get ("scr_printspeed", "8", CVAR_NONE, NULL,
