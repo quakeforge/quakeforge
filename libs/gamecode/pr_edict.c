@@ -1186,14 +1186,16 @@ PR_LoadProgs (progs_t * pr, const char *progsname)
 		switch (st->op) {
 			case OP_IF:
 			case OP_IFNOT:
-				if ((unsigned short) st->a >= pr->progs->numglobals
-					|| st->b + i < 0 || st->b + i >= pr->progs->numstatements)
+				if (st->a >= pr->progs->numglobals
+					|| (short)st->b + i < 0
+					|| (short)st->b + i >= pr->progs->numstatements)
 					PR_Error
 						(pr, "PR_LoadProgs: out of bounds IF/IFNOT (statement %d)\n",
 						 i);
 				break;
 			case OP_GOTO:
-				if (st->a + i < 0 || st->a + i >= pr->progs->numstatements)
+				if ((short)st->a + i < 0
+					|| (short)st->a + i >= pr->progs->numstatements)
 					PR_Error
 						(pr, "PR_LoadProgs: out of bounds GOTO (statement %d)\n",
 						 i);
@@ -1266,9 +1268,9 @@ PR_LoadProgs (progs_t * pr, const char *progsname)
 			case OP_SHR_F:
 			case OP_SHL_I:
 			case OP_SHR_I:
-				if ((unsigned short) st->a >= pr->progs->numglobals
-					|| (unsigned short) st->b >= pr->progs->numglobals
-					|| (unsigned short) st->c >= pr->progs->numglobals)
+				if (st->a >= pr->progs->numglobals
+					|| st->b >= pr->progs->numglobals
+					|| st->c >= pr->progs->numglobals)
 					PR_Error
 						(pr, "PR_LoadProgs: out of bounds global index (statement %d)\n",
 						 i);
@@ -1279,8 +1281,8 @@ PR_LoadProgs (progs_t * pr, const char *progsname)
 			case OP_NOT_S:
 			case OP_NOT_FNC:
 			case OP_NOT_ENT:
-				if ((unsigned short) st->a >= pr->progs->numglobals
-					|| (unsigned short) st->c >= pr->progs->numglobals)
+				if (st->a >= pr->progs->numglobals
+					|| st->c >= pr->progs->numglobals)
 					PR_Error
 						(pr, "PR_LoadProgs: out of bounds global index (statement %d)\n",
 						 i);
@@ -1301,8 +1303,8 @@ PR_LoadProgs (progs_t * pr, const char *progsname)
 			case OP_STORE_V:
 			case OP_STORE_I:
 			case OP_STOREP_I:
-				if ((unsigned short) st->a >= pr->progs->numglobals
-					|| (unsigned short) st->b >= pr->progs->numglobals)
+				if (st->a >= pr->progs->numglobals
+					|| st->b >= pr->progs->numglobals)
 					PR_Error
 						(pr, "PR_LoadProgs: out of bounds global index (statement %d)\n",
 						 i);
@@ -1319,7 +1321,7 @@ PR_LoadProgs (progs_t * pr, const char *progsname)
 			case OP_CALL8:
 			case OP_DONE:
 			case OP_RETURN:
-				if ((unsigned short) st->a >= pr->progs->numglobals)
+				if (st->a >= pr->progs->numglobals)
 					PR_Error
 						(pr, "PR_LoadProgs: out of bounds global index (statement %d)\n",
 						 i);

@@ -77,22 +77,21 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s)
 
 	if (s->op == OP_IF || s->op == OP_IFNOT)
 		Con_Printf ("%sbranch %i (%i)",
-					PR_GlobalString (pr, (unsigned short) s->a), s->b,
+					PR_GlobalString (pr, s->a), s->b,
 					addr + s->b);
 	else if (s->op == OP_GOTO) {
 		Con_Printf ("branch %i (%i)", s->a, addr + s->a);
 	} else if ((unsigned int) (s->op - OP_STORE_F) < 6) {
-		Con_Printf ("%s", PR_GlobalString (pr, (unsigned short) s->a));
+		Con_Printf ("%s", PR_GlobalString (pr, s->a));
 		Con_Printf ("%s",
-					PR_GlobalStringNoContents (pr, (unsigned short) s->b));
+					PR_GlobalStringNoContents (pr, s->b));
 	} else {
 		if (s->a)
-			Con_Printf ("%s", PR_GlobalString (pr, (unsigned short) s->a));
+			Con_Printf ("%s", PR_GlobalString (pr, s->a));
 		if (s->b)
-			Con_Printf ("%s", PR_GlobalString (pr, (unsigned short) s->b));
+			Con_Printf ("%s", PR_GlobalString (pr, s->b));
 		if (s->c)
-			Con_Printf ("%s",
-						PR_GlobalStringNoContents (pr, (unsigned short) s->c));
+			Con_Printf ("%s", PR_GlobalStringNoContents (pr, s->c));
 	}
 	Con_Printf ("\n");
 }
@@ -269,9 +268,9 @@ PR_LeaveFunction (progs_t * pr)
 
 	The interpretation main loop
 */
-#define OPA (pr->pr_globals[(unsigned short) st->a])
-#define OPB (pr->pr_globals[(unsigned short) st->b])
-#define OPC (pr->pr_globals[(unsigned short) st->c])
+#define OPA (pr->pr_globals[st->a])
+#define OPB (pr->pr_globals[st->b])
+#define OPC (pr->pr_globals[st->c])
 
 extern cvar_t *pr_boundscheck;
 
@@ -596,14 +595,14 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			// ==================
 			case OP_IFNOT:
 				if (!OPA.integer_var)
-					st += st->b - 1;		// offset the s++
+					st += (short)st->b - 1;		// offset the s++
 				break;
 			case OP_IF:
 				if (OPA.integer_var)
-					st += st->b - 1;		// offset the s++
+					st += (short)st->b - 1;		// offset the s++
 				break;
 			case OP_GOTO:
-				st += st->a - 1;			// offset the s++
+				st += (short)st->a - 1;			// offset the s++
 				break;
 			case OP_CALL0:
 			case OP_CALL1:
