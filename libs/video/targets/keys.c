@@ -421,8 +421,7 @@ void
 Key_Console (knum_t key, short unicode)
 {
 	// escape is un-bindable
-	if (keydown[key] == 1 && key != QFK_ESCAPE && unicode != '\x1b'
-		&& Key_Game (key, unicode))
+	if (keydown[key] == 1 && key && Key_Game (key, unicode))
 		return;
 
 	Con_KeyEvent (key, unicode, keydown[key]);
