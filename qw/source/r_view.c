@@ -34,7 +34,6 @@
 #include <math.h>
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/screen.h"
@@ -42,6 +41,7 @@
 
 #include "bothdefs.h"
 #include "client.h"
+#include "compat.h"
 #include "host.h"
 #include "pmove.h"
 #include "view.h"
@@ -64,6 +64,9 @@ cvar_t     *cl_rollangle;
 cvar_t     *cl_bob;
 cvar_t     *cl_bobcycle;
 cvar_t     *cl_bobup;
+
+cvar_t     *v_centermove;
+cvar_t     *v_centerspeed;
 
 cvar_t     *v_kicktime;
 cvar_t     *v_kickroll;
@@ -155,18 +158,13 @@ V_CalcBob (void)
 }
 
 
-cvar_t     *v_centermove;
-cvar_t     *v_centerspeed;
-
 void
 V_StartPitchDrift (void)
 {
-#if 1
 	if (cl.laststop == cl.time) {
 		return;							// something else is keeping it from
 										// drifting
 	}
-#endif
 	if (cl.nodrift || !cl.pitchvel) {
 		cl.pitchvel = v_centerspeed->value;
 		cl.nodrift = false;
@@ -352,7 +350,8 @@ void
 V_SetContentsColor (int contents)
 {
 	if (!cl_cshift_contents->int_val
-		&& !(atoi (Info_ValueForKey (cl.serverinfo, "cshifts")) & INFO_CSHIFT_CONTENTS)) {
+		&& !(atoi (Info_ValueForKey (cl.serverinfo, "cshifts")) &
+			 INFO_CSHIFT_CONTENTS)) {
 		cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
 		return;
 	}
@@ -395,33 +394,35 @@ V_CalcItemCshift (void)
 void
 V_CalcGlowCshift (void)
 {
-	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY ||
+	if (!cl.stats[STAT_ITEMS] & (IT_SUIT || IT_INVISIBILITY || IT_QUAD || IT_INVULNERABILITY))
+	{
+		cl.cshifts[CSHIFT_POWERUP].percent = 0;
+		return;
+	}
+	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY &&
 		cl.stats[STAT_ITEMS] & IT_QUAD) {
-		if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY &&
-			cl.stats[STAT_ITEMS] & IT_QUAD) {
-			cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
-			cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
-			cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
-			cl.cshifts[CSHIFT_POWERUP].percent = 30;
-		} else if (cl.stats[STAT_ITEMS] & IT_QUAD) {
-			cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
-			cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
-			cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
-			cl.cshifts[CSHIFT_POWERUP].percent = 30;
-		} else if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
-			cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
-			cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
-			cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
-			cl.cshifts[CSHIFT_POWERUP].percent = 30;
-		}
+		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
+		cl.cshifts[CSHIFT_POWERUP].percent = 30;
+	} else if (cl.stats[STAT_ITEMS] & IT_QUAD) {
+		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
+		cl.cshifts[CSHIFT_POWERUP].percent = 30;
+	} else if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
+		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
+		cl.cshifts[CSHIFT_POWERUP].percent = 30;
 	} else {
 		V_CalcItemCshift ();
 	}
 }
 
 
-/* 
-	VIEW RENDERING 
+/*
+	VIEW RENDERING
 */
 
 

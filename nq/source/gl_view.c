@@ -104,7 +104,8 @@ void
 V_CalcPowerupCshift (void)
 {
 	if (!cl_cshift_powerup->int_val)
-//		|| (atoi (Info_ValueForKey (cl.serverinfo, "cshifts")) & INFO_CSHIFT_POWERUP))
+//		|| (atoi (Info_ValueForKey (cl.serverinfo, "cshifts"))
+//			& INFO_CSHIFT_POWERUP))
 		return;
 
 	if (gl_dlight_polyblend->int_val

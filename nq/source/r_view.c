@@ -31,7 +31,6 @@
 #endif
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
@@ -40,6 +39,7 @@
 
 #include "chase.h"
 #include "client.h"
+#include "compat.h"
 #include "host.h"
 #include "r_local.h"
 #include "view.h"
@@ -129,12 +129,10 @@ V_CalcBob (void)
 void
 V_StartPitchDrift (void)
 {
-#if 1
 	if (cl.laststop == cl.time) {
 		return;							// something else is keeping it from
 										// drifting
 	}
-#endif
 	if (cl.nodrift || !cl.pitchvel) {
 		cl.pitchvel = v_centerspeed->value;
 		cl.nodrift = false;
@@ -322,12 +320,12 @@ V_SetContentsColor (int contents)
 
 	switch (contents) {
 		case CONTENTS_EMPTY:
-		case CONTENTS_SOLID:
-			cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
+			cl.cshifts[CSHIFT_CONTENTS] = cshift_empty; 
 			break;
 		case CONTENTS_LAVA:
 			cl.cshifts[CSHIFT_CONTENTS] = cshift_lava;
 			break;
+		case CONTENTS_SOLID:
 		case CONTENTS_SLIME:
 			cl.cshifts[CSHIFT_CONTENTS] = cshift_slime;
 			break;
@@ -358,33 +356,34 @@ V_CalcItemCshift (void)
 void
 V_CalcGlowCshift (void)
 {
-	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY ||
+	if (!cl.stats[STAT_ITEMS] & (IT_SUIT || IT_INVISIBILITY || IT_QUAD || IT_INVULNERABILITY))
+	{
+		cl.cshifts[CSHIFT_POWERUP].percent = 0;
+		return;
+	}
+	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY &&
 		cl.stats[STAT_ITEMS] & IT_QUAD) {
-		if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY &&
-			cl.stats[STAT_ITEMS] & IT_QUAD) {
-			cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
-			cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
-			cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
-			cl.cshifts[CSHIFT_POWERUP].percent = 30;
-		} else if (cl.stats[STAT_ITEMS] & IT_QUAD) {
-			cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
-			cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
-			cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
-			cl.cshifts[CSHIFT_POWERUP].percent = 30;
-		} else if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
-			cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
-			cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
-			cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
-			cl.cshifts[CSHIFT_POWERUP].percent = 30;
-		}
+		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
+		cl.cshifts[CSHIFT_POWERUP].percent = 30;
+	} else if (cl.stats[STAT_ITEMS] & IT_QUAD) {
+		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
+		cl.cshifts[CSHIFT_POWERUP].percent = 30;
+	} else if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
+		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
+		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
+		cl.cshifts[CSHIFT_POWERUP].percent = 30;
 	} else {
 		V_CalcItemCshift ();
 	}
 }
 
-
-/* 
-	VIEW RENDERING 
+/*
+	VIEW RENDERING
 */
 
 
