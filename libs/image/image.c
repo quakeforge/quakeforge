@@ -38,71 +38,60 @@ static __attribute__ ((unused)) const char rcsid[] =
 # include <strings.h>
 #endif
 
-#include "compat.h"
-
-#include "QF/qtypes.h"
+#include "QF/dstring.h"
+#include "QF/image.h"
+#include "QF/pcx.h"
+#include "QF/png.h"
 #include "QF/quakefs.h"
 #include "QF/texture.h"
-#include "QF/png.h"
 #include "QF/tga.h"
-#include "QF/pcx.h"
-#include "QF/image.h"
 
 tex_t *
-LoadImage (char *imageFile, QFile *fp)
+LoadImage (const char *imageFile, QFile *fp)
 {
-	int tmp;
-	char *tmpFile, *ext;
-	tex_t *tex = NULL;
+	int         tmp;
+	dstring_t  *tmpFile;
+	char       *ext;
+	tex_t      *tex = NULL;
 	
 	/* Get the file name without extension */
-	tmp = strlen (imageFile);
-	tmpFile = strdup (imageFile);
-	ext = strrchr (tmpFile, '.');
-	ext[0] = '\0';
-	
-	if (strlen(tmpFile) != (tmp - 4))
-		return (NULL); /* Extension must be 3 characters long */
-	
-	tmp = 0;
+	tmpFile = dstring_new ();
+	dstring_copystr (tmpFile, imageFile);
+	ext = strrchr (tmpFile->str, '.');
+	if (ext)
+		tmp = ext - tmpFile->str;
+	else
+		tmp = tmpFile->size;
 	
 	/* Check for a .png */
-	strcat (ext, ".png");
-	QFS_FOpenFile (tmpFile, &fp);
+	dstring_replace (tmpFile, tmp, tmpFile->size, ".png", 5);
+	QFS_FOpenFile (tmpFile->str, &fp);
 	if (fp) {
 		tex = LoadPNG (fp);
 		Qclose (fp);
-		tmp = 1;
 	}
 	
 	/* Check for a .tga */
-	if (tmp == 0) {
-		ext = strrchr (tmpFile, '.');
-		ext[0] = '\0';
-		strcat (ext, ".tga");
-		QFS_FOpenFile (tmpFile, &fp);
-		
+	if (!tex) {
+		dstring_replace (tmpFile, tmp, tmpFile->size, ".tga", 5);
+		QFS_FOpenFile (tmpFile->str, &fp);
 		if (fp) {
 			tex = LoadTGA (fp);
 			Qclose (fp);
-			tmp = 1;
 		}
 	}
 	
 	/* Check for a .pcx */
-	/*if (tmp == 0) {
-		ext = strrchr (tmpFile, '.');
-		ext[0] = '\0';
-		strcat (ext, ".tga");
-		QFS_FOpenFile (tmpFile, &fp);
+	/*if (!tex) {
+		dstring_replace (tmpFile, tmp, tmpFile->size, ".pcx", 5);
+		QFS_FOpenFile (tmpFile->str, &fp);
 		
 		if (fp) {
 			tex = LoadPCX (fp); // FIXME: needs extra arguments, how should we be passed them?
 			Qclose (fp);
-			tmp = 1;
 		}
 	}*/
 	
-	free (tmpFile);
+	dstring_delete (tmpFile);
 	return (tex);
 }
