@@ -148,6 +148,7 @@ typedef struct
 	int			owner;			//int
 	int			message;		//string_t
 	int			sounds;			//float
+	int			rotated_bbox;	//int
 
 	int			alpha;
 	int			scale;

@@ -612,8 +612,8 @@ SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1,
 	eventually rotation) of the end points
 */
 trace_t
-SV_ClipMoveToEntity (edict_t *ent, vec3_t start, vec3_t mins, vec3_t maxs,
-					 vec3_t end)
+SV_ClipMoveToEntity (edict_t *touched, edict_t *mover, vec3_t start,
+					 vec3_t mins, vec3_t maxs, vec3_t end)
 {
 	trace_t     trace;
 	vec3_t      offset;
@@ -627,23 +627,33 @@ SV_ClipMoveToEntity (edict_t *ent, vec3_t start, vec3_t mins, vec3_t maxs,
 	trace.allsolid = true;
 	VectorCopy (end, trace.endpos);
 
-	// get the clipping hull
-	hull = SV_HullForEntity (ent, mins, maxs, offset);
+	if (sv_fields.rotated_bbox != -1
+		&& (SVFIELD (mover, rotated_bbox, integer)
+			|| SVFIELD (touched, rotated_bbox, integer))) {
+		// get the hull
+		// get relative start and end locations
+		// rotate hull(?) and start/end locations
+		// run the hull check
+		// unrotate the trace
+	} else {
+		// get the clipping hull
+		hull = SV_HullForEntity (touched, mins, maxs, offset);
 
-	VectorSubtract (start, offset, start_l);
-	VectorSubtract (end, offset, end_l);
+		VectorSubtract (start, offset, start_l);
+		VectorSubtract (end, offset, end_l);
 
-	// trace a line through the apropriate clipping hull
-	SV_RecursiveHullCheck (hull, hull->firstclipnode, 0, 1, start_l, end_l,
-						   &trace);
+		// trace a line through the apropriate clipping hull
+		SV_RecursiveHullCheck (hull, hull->firstclipnode, 0, 1, start_l, end_l,
+							   &trace);
 
-	// fix trace up by the offset
-	if (trace.fraction != 1)
-		VectorAdd (trace.endpos, offset, trace.endpos);
+		// fix trace up by the offset
+		if (trace.fraction != 1)
+			VectorAdd (trace.endpos, offset, trace.endpos);
+	}
 
 	// did we clip the move?
 	if (trace.fraction < 1 || trace.startsolid)
-		trace.ent = ent;
+		trace.ent = touched;
 
 	return trace;
 }
@@ -701,11 +711,11 @@ SV_ClipToLinks (areanode_t *node, moveclip_t * clip)
 		}
 
 		if ((int) SVFIELD (touch, flags, float) & FL_MONSTER)
-			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins2,
-										 clip->maxs2, clip->end);
+			trace = SV_ClipMoveToEntity (touch, clip->passedict, clip->start,
+										 clip->mins2, clip->maxs2, clip->end);
 		else
-			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins,
-										 clip->maxs, clip->end);
+			trace = SV_ClipMoveToEntity (touch, clip->passedict, clip->start,
+										 clip->mins, clip->maxs, clip->end);
 		if (trace.allsolid || trace.startsolid
 			|| trace.fraction < clip->trace.fraction) {
 			trace.ent = touch;
@@ -763,7 +773,7 @@ SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type,
 	memset (&clip, 0, sizeof (moveclip_t));
 
 	// clip to world
-	clip.trace = SV_ClipMoveToEntity (sv.edicts, start, mins, maxs, end);
+	clip.trace = SV_ClipMoveToEntity (sv.edicts, passedict, start, mins, maxs, end);
 
 	clip.start = start;
 	clip.end = end;

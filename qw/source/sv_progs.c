@@ -253,6 +253,7 @@ SV_LoadProgs (void)
 	sv_fields.owner = PR_GetFieldOffset (&sv_pr_state, "owner");
 	sv_fields.message = PR_GetFieldOffset (&sv_pr_state, "message");
 	sv_fields.sounds = PR_GetFieldOffset (&sv_pr_state, "sounds");
+	sv_fields.rotated_bbox = ED_GetFieldOffset (&sv_pr_state, "rotated_bbox");
 
 	// Zoid, find the spectator functions
 	SpectatorConnect = SpectatorThink = SpectatorDisconnect = 0;
