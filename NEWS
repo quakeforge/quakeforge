@@ -6,6 +6,7 @@ Changes from 0.5.2
     o General enhancements.
         * MVD playback in the qw clients.
         * MVD recording in the qw server.
+          MVD support thanks to qwex 0.165b and highlander
         * sv_maxrate changes now take effect immediately rather than when
           clients (re)connect or change their rate
         * segfault when using "snd_output null" fixed
@@ -23,14 +24,44 @@ Changes from 0.5.2
           in line with all other targets giving the vid_width and vid_height
           cvars. Automatic aspect ratio support dropped.
         * X11 (nq-x11 and qw-client-x11) no longer hangs on 32bpp displays
-        * new `view' system giving eeasier to control hud elements, centered
+        * new `view' system giving easier to control hud elements, centered
           menus and locatable scoreboard (hud_scoreboard_gravity)
         * OSS sound driver fixes: some kernel drivers need write only access,
           others need read/write
-        * able to load/unload semi-arbitrary plugins using console commands
-        * streaming for large sound files (eg, full length oggs)
+        * able to load/unload semi-arbitrary plug-ins using console commands
+        * streaming for large sound files (eg., full length oggs)
         * stereo sample support
         * map command in the rcon admin list
+        * configurable "quake" directory layout
+        * server now actually runs properly when there's no network or
+          console input (eg, bots continue to battle unattended)
+        * skydome (gl_sky_clip 0) renders correctly
+        * external entity file support (maps/foo.bsp will use maps/foo.ent if
+          available)
+        * map specific config files
+        * map specific external textures in "textures/mapname/"
+        * support for more tga formats
+        * vid_conwidth cvar
+        * cleaner mouse enter/leave handling for x11 and glx windows
+        * hexenworld master server
+        * software and gl (some cards) fish-eye support
+        * "crosshair 3" for gl clients
+        * remote screen shots work
+        * curses console no longer default
+        * more key-names supported
+        * Matthew Wong's bsp2bmp `imported' as bsp2img. pcx output only
+          currently.
+        * console operator chat messages get echoed
+        * BSD fseek bug fixed
+        * no_pogo_stick 3 mode forcing friction independent of jump being
+          active
+        * rcon password /never/ gets written as it may be legitimate for
+          another server (ie, confused person :)
+
+    o GIB enhancements
+        * events system (map change, client enter/leave etc)
+        * several bug fixes
+        * documentation
 
     o qfcc enhancements.
         * @argc and @argv deprecated in favor of @args.count and @args.list
@@ -40,9 +71,21 @@ Changes from 0.5.2
         * default search paths for includes and libs
         * updated man page and command line help
         * [super ...] messages work
+        * categories work
+        * nested and struct block initializers work
+        * can access vector elements as vec.x as well as vec_x
+        * void (void) func; is now valid (no params)
+        * initialized globals can be used any place a true constant is expected
+
+    o qfbsp/qflight/qfvis enhancements
+        * various crash bug fixes
+        * hint, skip and detail brush support
+        * emit clipnodes in the correct order
+        * groks quest's "map2" format in addition to the original format
 
     o Progs engine enhancements.
         * arbitrary size data copying
+        * optionally handle division by 0 gracefully
 
 Changes from 0.3.0
 
