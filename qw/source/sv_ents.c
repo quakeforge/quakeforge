@@ -629,7 +629,7 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean recorder)
 		max_packet_entities = MAX_DEMO_PACKET_ENTITIES;
 
 		for (i=0, cl = svs.clients; i<MAX_CLIENTS; i++, cl++) {
-			if (cl->state != cs_spawned)
+			if (cl->state != cs_spawned && cl->state != cs_server)
 				continue;
 
 			if (cl->spectator)

@@ -1086,12 +1086,13 @@ PF_WriteBytes (progs_t *pr)
 			if (sv.demorecording)
 				MSG_WriteByte (&demo.dbuf->sz, p);
 		}
-	} else
+	} else {
 		sizebuf_t  *msg = WriteDest (pr);
 		for (i = 1; i < pr->pr_argc; i++) {
 			p = G_FLOAT (pr, OFS_PARM0 + i * (OFS_PARM1 - OFS_PARM0));
 			MSG_WriteByte (msg, p);
 		}
+	}
 }
 
 void
