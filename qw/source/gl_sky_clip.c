@@ -132,7 +132,7 @@ determine_face (vec3_t v)
 		i = 2;
 	}
 	if (!m) {
-		Sys_Error ("%s speared by sky poly edge\n", name->string);
+		Sys_Error ("%s speared by sky poly edge\n", cl_name->string);
 	}
 	if (v[i] < 0)
 		i += 3;

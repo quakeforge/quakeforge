@@ -150,7 +150,7 @@ static qboolean allowremotecmd = true;
 //
 cvar_t     *password;
 cvar_t     *spectator;
-cvar_t     *name;
+cvar_t     *cl_name;
 cvar_t     *team;
 cvar_t     *rate;
 cvar_t     *noaim;
@@ -1296,8 +1296,8 @@ CL_Init_Cvars (void)
 	// 
 	// info mirrors
 	// 
-	name = Cvar_Get ("name", "unnamed", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
-					 "Player name");
+	cl_name = Cvar_Get ("name", "unnamed", CVAR_ARCHIVE | CVAR_USERINFO,
+						Cvar_Info, "Player name");
 	password = Cvar_Get ("password", "", CVAR_USERINFO, Cvar_Info,
 			"Server password");
 	spectator = Cvar_Get ("spectator", "", CVAR_USERINFO, Cvar_Info,

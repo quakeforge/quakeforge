@@ -272,7 +272,7 @@ extern cvar_t	*m_yaw;
 extern cvar_t	*m_forward;
 extern cvar_t	*m_side;
 
-extern struct cvar_s *name;
+extern struct cvar_s *cl_name;
 
 #define	MAX_TEMP_ENTITIES	64			// lightning bolts, etc
 #define	MAX_STATIC_ENTITIES	128			// torches, etc

@@ -792,7 +792,7 @@ SCR_RSShot_f (void)
 	st[sizeof (st) - 1] = 0;
 	SCR_DrawStringToSnap (st, newbuf, w - strlen (st) * 8, h - 11, w);
 
-	strncpy (st, name->string, sizeof (st));
+	strncpy (st, cl_name->string, sizeof (st));
 	st[sizeof (st) - 1] = 0;
 	SCR_DrawStringToSnap (st, newbuf, w - strlen (st) * 8, h - 21, w);
 
