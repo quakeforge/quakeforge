@@ -102,14 +102,15 @@ add_statement_ref (def_t *def, dstatement_t *st, int field)
 	if (def) {
 		int         st_ofs = st - pr.code->code;
 
+		def->users--;
+		def->used = 1;
+
 		if (def->alias) {
 			def = def->alias;
+			def->used = 1;
 			reloc_op_def_ofs (def, st_ofs, field);
 		} else
 			reloc_op_def (def, st_ofs, field);
-
-		def->users--;
-		def->used = 1;
 	}
 }
 
@@ -313,9 +314,10 @@ emit_bind_expr (expr_t *e1, expr_t *e2)
 	}
 	def = emit_sub_expr (e1, e2->e.temp.def);
 	if (t1 != t2) {
-		def_t      *tmp = new_def (t2, 0, current_scope);
+		def_t      *tmp = new_def (t2, 0, def->scope);
 
-		tmp->ofs = def->ofs;
+		tmp->ofs = 0;
+		tmp->alias = def;
 		tmp->users = e2->e.temp.users;
 		tmp->freed = 1;				// don't free this offset when freeing def
 		def = tmp;
