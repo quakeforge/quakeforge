@@ -49,6 +49,7 @@ static const char rcsid[] =
 #include "immediate.h"
 #include "linker.h"
 #include "obj_file.h"
+#include "options.h"
 #include "qfcc.h"
 #include "reloc.h"
 #include "strpool.h"
@@ -353,13 +354,15 @@ linker_finish (void)
 	qfo_t      *qfo;
 
 	undef_defs = (qfo_def_t **) Hash_GetList (extern_defs);
-	for (def = undef_defs; *def; def++) {
-		pr.source_file = (*def)->file;
-		pr.source_line = (*def)->line;
-		error (0, "undefined symbol %s", strings->strings + (*def)->name);
+	if (!options.partial_link) {
+		for (def = undef_defs; *def; def++) {
+			pr.source_file = (*def)->file;
+			pr.source_line = (*def)->line;
+			error (0, "undefined symbol %s", strings->strings + (*def)->name);
+		}
+		if (pr.error_count)
+			return 0;
 	}
-	if (pr.error_count)
-		return 0;
 
 	qfo = qfo_new ();
 	qfo_add_code (qfo, code->code, code->size);

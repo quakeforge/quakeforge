@@ -547,10 +547,14 @@ separate_compile (void)
 		}
 		qfo = linker_finish ();
 		if (qfo) {
-			qfo_to_progs (qfo, &pr);
-			setup_sym_file (options.output_file);
-			finish_compilation ();
-			WriteData (0);
+			if (options.partial_link) {
+				qfo_write (qfo, options.output_file);
+			} else {
+				qfo_to_progs (qfo, &pr);
+				setup_sym_file (options.output_file);
+				finish_compilation ();
+				WriteData (0);
+			}
 		}
 	}
 	return err;

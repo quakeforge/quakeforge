@@ -83,6 +83,7 @@ static const char *short_options =
 	"l:"	// lib file
 	"o:"	// output file
 	"c"		// separate compilation
+	"r"		// partial linking
 	"s:"	// source dir
 	"P:"	// progs.src name
 	"F"		// generate files.dat
@@ -210,6 +211,9 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'c':					// traditional
 				options.compile = true;
+				break;
+			case 'r':					// traditional
+				options.partial_link = true;
 				break;
 			case 'C':{					// code options
 					char       *opts = strdup (optarg);

@@ -64,6 +64,7 @@ typedef struct {
 	qboolean		files_dat;		// generate files.dat
 	qboolean		traditional;	// behave more like qcc
 	qboolean		compile;		// serparate compilation mode
+	qboolean		partial_link;	// partial linking
 	int				strip_path;		// number of leading path elements to strip
 									// from source file names
 	const char     *output_file;
