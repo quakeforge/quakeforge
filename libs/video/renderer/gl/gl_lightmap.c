@@ -242,7 +242,7 @@ static void
 R_BuildLightMap_1 (msurface_t *surf)
 {
 	byte		   *dest;
-	int				maps, size, smax, tmax, i, j, stride;
+	int				maps, size, stride, smax, tmax, i, j;
 	unsigned int	scale;
 	unsigned int   *bl;
 
@@ -291,18 +291,18 @@ R_BuildLightMap_1 (msurface_t *surf)
 			+ (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
 
 	switch (gl_overbright->int_val) {
-	case 1:
-		for (i = 0; i < tmax; i++, dest += stride) {
-			for (j = smax; j; j--) {
-				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
-				bl++;
-			}
-		}
-		break;
 	case 2:
 		for (i = 0; i < tmax; i++, dest += stride) {
 			for (j = smax; j; j--) {
 				*dest++ = min (*bl >> 9, 255);
+				bl++;
+			}
+		}
+		break;
+	case 1:
+		for (i = 0; i < tmax; i++, dest += stride) {
+			for (j = smax; j; j--) {
+				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
 				bl++;
 			}
 		}
@@ -322,7 +322,7 @@ static void
 R_BuildLightMap_3 (msurface_t *surf)
 {
 	byte		   *dest;
-	int				maps, size, smax, tmax, i, j, stride;
+	int				maps, size, stride, smax, tmax, i, j;
 	unsigned int	scale;
 	unsigned int   *bl;
 
@@ -370,18 +370,6 @@ R_BuildLightMap_3 (msurface_t *surf)
 			+ (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
 
 	switch (gl_overbright->int_val) {
-	case 1:
-		for (i = 0; i < tmax; i++, dest += stride) {
-			for (j = 0; j < smax; j++) {
-				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
-				bl++;
-				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
-				bl++;
-				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
-				bl++;
-			}
-		}
-		break;
 	case 2:
 		for (i = 0; i < tmax; i++, dest += stride) {
 			for (j = 0; j < smax; j++) {
@@ -390,6 +378,18 @@ R_BuildLightMap_3 (msurface_t *surf)
 				*dest++ = min (*bl >> 9, 255);
 				bl++;
 				*dest++ = min (*bl >> 9, 255);
+				bl++;
+			}
+		}
+		break;
+	case 1:
+		for (i = 0; i < tmax; i++, dest += stride) {
+			for (j = 0; j < smax; j++) {
+				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
+				bl++;
+				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
+				bl++;
+				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
 				bl++;
 			}
 		}
@@ -461,19 +461,6 @@ R_BuildLightMap_4 (msurface_t *surf)
 			+ (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
 
 	switch (gl_overbright->int_val) {
-	case 1:
-		for (i = 0; i < tmax; i++, dest += stride) {
-			for (j = 0; j < smax; j++) {
-				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
-				bl++;
-				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
-				bl++;
-				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
-				bl++;
-				*dest++ = 0;
-			}
-		}
-		break;
 	case 2:
 		for (i = 0; i < tmax; i++, dest += stride) {
 			for (j = 0; j < smax; j++) {
@@ -482,6 +469,19 @@ R_BuildLightMap_4 (msurface_t *surf)
 				*dest++ = min (*bl >> 9, 255);
 				bl++;
 				*dest++ = min (*bl >> 9, 255);
+				bl++;
+				*dest++ = 0;
+			}
+		}
+		break;
+	case 1:
+		for (i = 0; i < tmax; i++, dest += stride) {
+			for (j = 0; j < smax; j++) {
+				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
+				bl++;
+				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
+				bl++;
+				*dest++ = min ((*bl >> 9) + (*bl >> 10), 255);
 				bl++;
 				*dest++ = 0;
 			}
