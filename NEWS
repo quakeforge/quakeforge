@@ -3,6 +3,17 @@ NEWS for the QuakeForge project
 
 Changes from 0.3.0
 
+    o General enhancements.
+        * NQ (quake1, single player, NetQuake, WinQuake) is back.
+        * Video (driver and renderer), audio, gamecode (progs), console,
+          model loading and general utility code shared in common libs between
+          NQ and QW
+        * Plugin system for sound and cd drivers.
+        * Ogg Vorbis compression for sound effect samples (streamed ogg support
+          is planned).
+        * Menu system re-written in QuakeC/Ruamoko
+        * Curses console for servers in *nix.
+
     o Progs engine enhancements.
         * Fully modular. Mod/Server-independant, allowing for
           stand-alone QuakeC interpreter and client-side code.
@@ -125,4 +136,7 @@ Changes from 0.3.0
         * People who aren't really trying to cheat won't be kicked :)
 
     o Rendering enhancements
-        * TBD
+        * Experimental 32 bit software renderer.
+        * Dynamic lights don't shine through walls.
+        * Colored alias model lighting for GL.
+        * Speed improvments.
