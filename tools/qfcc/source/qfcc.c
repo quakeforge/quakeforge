@@ -142,8 +142,6 @@ WriteData (int crc)
 		if (def->scope)
 			continue;
 		if (def->type->type == ev_func) {
-//          df = &functions[numfunctions];
-//          numfunctions++;
 		} else if (def->type->type == ev_field) {
 			dd = &fields[numfielddefs];
 			numfielddefs++;

@@ -323,7 +323,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 			dstatement_t *st;
 			statref_t  *ref;
 
-			st = (dstatement_t *) &pr_globals[G_INT (def->ofs) + i];
+			st = (dstatement_t *) (G_INT (def->ofs) + i);
 			ref = PR_NewStatref (st, 3);
 			ref->next = tree->labels[i]->e.label.refs;
 			tree->labels[i]->e.label.refs = ref;
