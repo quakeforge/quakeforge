@@ -484,7 +484,7 @@ R_TextureAnimation (msurface_t *surf)
 	return base;
 }
 
-/* BRUSH MODELS */
+// BRUSH MODELS ===============================================================
 
 static void
 GL_UploadLightmap (int i, int x, int y, int w, int h)
@@ -691,21 +691,6 @@ R_RenderBrushPoly (msurface_t *fa)
 	}
 }
 
-static void
-GL_WaterSurface (msurface_t *s)
-{
-	qfglBindTexture (GL_TEXTURE_2D, s->texinfo->texture->gl_texturenum);
-	if (cl_wateralpha < 1.0) {
-		qfglDepthMask (GL_FALSE);
-		color_white[3] = cl_wateralpha * 255;
-		qfglColor4ubv (color_white);
-		EmitWaterPolys (s);
-		qfglColor3ubv (color_white);
-		qfglDepthMask (GL_TRUE);
-	} else
-		EmitWaterPolys (s);
-}
-
 void
 R_DrawWaterSurfaces (void)
 {
@@ -765,11 +750,11 @@ DrawTextureChains (void)
 	qfglEnable (GL_BLEND);
 }
 
-// FIXME: add modelalpha support?
 void
 R_DrawBrushModel (entity_t *e)
 {
 	float       dot;
+	float		color[4];
 	int         i, k;
 	model_t    *clmodel;
 	mplane_t   *pplane;
@@ -791,8 +776,18 @@ R_DrawBrushModel (entity_t *e)
 		VectorAdd (e->origin, clmodel->maxs, maxs);
 	}
 
+#if 0 // QSG FIXME
+	if (e->scale != 1.0) {
+		VectorScale (mins, e->scale, mins);
+		VectorScale (maxs, e->scale, maxs);
+	}
+#endif
+
 	if (R_CullBox (mins, maxs))
 		return;
+
+	VectorCopy (e->colormod, color);
+	color[3] = e->colormod[3];
 
 	memset (lightmap_polys, 0, sizeof (lightmap_polys));
 	memset (fullbright_polys, 0, sizeof (fullbright_polys));
@@ -821,7 +816,7 @@ R_DrawBrushModel (entity_t *e)
 
 			VectorSubtract (r_dlights[k].origin, e->origin, lightorigin);
 			R_RecursiveMarkLights (lightorigin, &r_dlights[k], 1 << k,
-						  clmodel->nodes + clmodel->hulls[0].firstclipnode);
+							clmodel->nodes + clmodel->hulls[0].firstclipnode);
 		}
 	}
 
@@ -841,8 +836,22 @@ R_DrawBrushModel (entity_t *e)
 		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
 			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
 			if (psurf->flags & SURF_DRAWTURB) {
-				GL_WaterSurface (psurf);
+				qfglBindTexture (GL_TEXTURE_2D,
+								 psurf->texinfo->texture->gl_texturenum);
+				if (cl_wateralpha < 1.0) {
+					qfglDepthMask (GL_FALSE);
+					color[3] *= cl_wateralpha;
+					qfglColor4fv (color);
+					EmitWaterPolys (psurf);
+					qfglColor3ubv (color_white);
+					qfglDepthMask (GL_TRUE);
+				} else {
+					qfglColor4fv (color);
+					EmitWaterPolys (psurf);
+					qfglColor3ubv (color_white);
+				}
 			} else if (psurf->flags & SURF_DRAWSKY) {
+// FIXME: add modelalpha support for sky brushes
 				CHAIN_SURF (psurf, sky_chain);
 				return;
 #if 0
@@ -851,16 +860,20 @@ R_DrawBrushModel (entity_t *e)
 #endif
 			} else {
 				texture_t  *tex;
+
 				if (!psurf->texinfo->texture->anim_total)
 					tex = psurf->texinfo->texture;
 				else
 					tex = R_TextureAnimation (psurf);
-				if ( tex->gl_fb_texturenum > 0) {
-					psurf->polys->fb_chain = fullbright_polys[tex->gl_fb_texturenum];
+				if (tex->gl_fb_texturenum > 0) {
+					psurf->polys->fb_chain =
+						fullbright_polys[tex->gl_fb_texturenum];
 					fullbright_polys[tex->gl_fb_texturenum] = psurf->polys;
 				}
 				qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
+				qfglColor4fv (color);
 				R_RenderBrushPoly (psurf);
+				qfglColor3ubv (color_white);
 			}
 		}
 	}
@@ -873,13 +886,10 @@ R_DrawBrushModel (entity_t *e)
 	if (gl_fb_bmodels->int_val)
 		R_RenderFullbrights ();
 
-//	if (gl_sky_clip->int_val)
-//		R_DrawSkyChain (sky_chain);
-
 	qfglPopMatrix ();
 }
 
-/* WORLD MODEL */
+// WORLD MODEL ================================================================
 
 static void
 R_RecursiveWorldNode (mnode_t *node)
@@ -933,10 +943,7 @@ R_RecursiveWorldNode (mnode_t *node)
 				continue;				// wrong side
 
 			if (surf->flags & SURF_DRAWTURB) {
-//				if (cl_wateralpha < 1.0) // FIXME: DESPAIR
 					CHAIN_SURF_B2F (surf, waterchain);
-//				else
-//					CHAIN_SURF (surf, waterchain);
 			} else if (surf->flags & SURF_DRAWSKY) {
 				CHAIN_SURF (surf, sky_chain);
 #if 0
@@ -1041,7 +1048,7 @@ R_MarkLeaves (void)
 	}
 }
 
-/* LIGHTMAP ALLOCATION */
+// LIGHTMAP ALLOCATION ========================================================
 
 // returns a texture number and the position inside it
 static int
