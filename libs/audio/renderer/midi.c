@@ -50,16 +50,19 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "snd_render.h"
 
 static int midi_intiialized = 0;
-	
+
 static cvar_t  *wildmidi_volume;
 static cvar_t  *wildmidi_config;
 
 static int
 midi_init ( void ) {
-	wildmidi_volume = Cvar_Get ("wildmidi_volume", "100", CVAR_ARCHIVE, NULL, "Set the Master Volume");
-	wildmidi_config = Cvar_Get ("wildmidi_config", "/etc/timidity.cfg", CVAR_ROM, NULL, "path/filename of timidity.cfg");
-	
-	if (WildMidi_Init(wildmidi_config->string, shm->speed, 0) == -1)
+	wildmidi_volume = Cvar_Get ("wildmidi_volume", "100", CVAR_ARCHIVE, NULL,
+								"Set the Master Volume");
+	wildmidi_config = Cvar_Get ("wildmidi_config", "/etc/timidity.cfg",
+								CVAR_ROM, NULL,
+								"path/filename of timidity.cfg");
+
+	if (WildMidi_Init (wildmidi_config->string, shm->speed, 0) == -1)
 		return 1;
 	midi_intiialized = 1;
 	return 0;
@@ -69,12 +72,12 @@ static wavinfo_t
 get_info (void * handle) {
 	wavinfo_t   info;
 	struct _WM_Info *wm_info;
-	
-	if ((wm_info = WildMidi_GetInfo(handle)) == NULL) {
+
+	if ((wm_info = WildMidi_GetInfo (handle)) == NULL) {
 		Sys_Printf ("Could not obtain midi information\n");
 		return info;
 	}
-	
+
 	info.rate = shm->speed;
 	info.width = 2;
 	info.channels = 2;
@@ -84,7 +87,7 @@ get_info (void * handle) {
 	info.datalen = info.samples * 4;
 	return info;
 }
-	
+
 static int
 midi_stream_read (void *file, byte *buf, int count, wavinfo_t *info)
 {
@@ -134,22 +137,22 @@ midi_stream_open (sfx_t *_sfx)
 	unsigned long int local_buffer_size;
 
 	QFS_FOpenFile (stream->file, &file);
-	
-	local_buffer_size = Qfilesize(file);
-	
-	local_buffer = malloc(local_buffer_size);
-	Qread(file, local_buffer, local_buffer_size);
-	Qclose(file);
+
+	local_buffer_size = Qfilesize (file);
+
+	local_buffer = malloc (local_buffer_size);
+	Qread (file, local_buffer, local_buffer_size);
+	Qclose (file);
 
 	handle = WildMidi_OpenBuffer(local_buffer, local_buffer_size);
-	
+
 	if (handle == NULL) 
 		return NULL;	
-	
+
 	sfx = calloc (1, sizeof (sfx_t));
 	samples = shm->speed * 0.3;
 	size = samples = (samples + 255) & ~255;
-	
+
 	// WildMidi audio data is 16bit stereo
 	size *= 4;
 	
@@ -180,52 +183,50 @@ midi_stream_open (sfx_t *_sfx)
 	stream->buffer.advance (&stream->buffer, 0);
 
 	stream->resample (&stream->buffer, 0, 0, 0);
-	
+
 	return sfx;
 }
 
 void
 SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 {
-	
 	wavinfo_t   info;
 	sfxstream_t *stream = calloc (1, sizeof (sfxstream_t));
-	midi * handle;
+	midi *handle;
 	unsigned char *local_buffer;
-	unsigned long int local_buffer_size = Qfilesize(file);
+	unsigned long int local_buffer_size = Qfilesize (file);
 
 	if (!midi_intiialized) {
-		if (midi_init()) {
+		if (midi_init ()) {
 			return;
 		}
 	}
 		
 	
-	local_buffer = malloc(local_buffer_size);
-	Qread(file, local_buffer, local_buffer_size);
-	Qclose(file);
+	local_buffer = malloc (local_buffer_size);
+	Qread (file, local_buffer, local_buffer_size);
+	Qclose (file);
 
 	// WildMidi takes ownership, so be damned if you touch it
-	handle = WildMidi_OpenBuffer(local_buffer, local_buffer_size);
-	
+	handle = WildMidi_OpenBuffer (local_buffer, local_buffer_size);
 
 	if (handle == NULL) 
 		return;
-	
+
 	info = get_info (handle);
-	
+
 	WildMidi_Close (handle);
-		
+
 	Sys_DPrintf ("stream %s\n", realname);
-	
+
 	// we init stream here cause we will only ever stream
-	
+
 	sfx->open = midi_stream_open;
 	sfx->wavinfo = SND_CacheWavinfo;
 	sfx->touch = sfx->retain = SND_StreamRetain;
 	sfx->release = SND_StreamRelease;
 	sfx->data = stream;
-	
+
 	stream->file = realname;
 	stream->wavinfo = info;
 }
