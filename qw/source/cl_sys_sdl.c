@@ -155,4 +155,5 @@ SDL_main (int c, char **v)
 		Host_Frame (time);
 		oldtime = newtime;
 	}
+	return 0;	// shouldn't be reachable, but mingw gcc 3.1 is being weird
 }

@@ -12,6 +12,10 @@
 
 #include "pakfile.h"
 
+#ifdef _WIN32
+void *alloca(size_t size);
+#endif
+
 static const char *
 pack_get_key (void *p, void *unused)
 {
