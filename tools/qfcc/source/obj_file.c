@@ -313,9 +313,8 @@ qfo_write (qfo_t *qfo, const char *filename)
 }
 
 qfo_t *
-qfo_read (const char *filename)
+qfo_read (VFile *file)
 {
-	VFile      *file;
 	qfo_header_t hdr;
 	qfo_t      *qfo;
 	qfo_def_t  *def;
@@ -324,12 +323,6 @@ qfo_read (const char *filename)
 	dstatement_t *st;
 	pr_type_t  *var;
 	pr_lineno_t *line;
-
-	file = Qopen (filename, "rbz");
-	if (!file) {
-		perror (filename);
-		return 0;
-	}
 
 	Qread (file, &hdr, sizeof (hdr));
 
@@ -385,8 +378,6 @@ qfo_read (const char *filename)
 		Qread (file, qfo->lines, qfo->num_lines * sizeof (pr_lineno_t));
 	Qread (file, qfo->types, qfo->types_size);
 
-	Qclose (file);
-
 	for (st = qfo->code; st - qfo->code < qfo->code_size; st++) {
 		st->op = LittleLong (st->op);
 		st->a  = LittleLong (st->a);
@@ -436,6 +427,21 @@ qfo_read (const char *filename)
 		line->line    = LittleLong (line->line);
 	}
 
+	return qfo;
+}
+
+qfo_t *qfo_open (const char *filename)
+{
+	qfo_t      *qfo;
+	VFile      *file;
+
+	file = Qopen (filename, "rbz");
+	if (!file) {
+		perror (filename);
+		return 0;
+	}
+	qfo = qfo_read (file);
+	Qclose (file);
 	return qfo;
 }
 

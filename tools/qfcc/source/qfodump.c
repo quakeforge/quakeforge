@@ -182,7 +182,7 @@ main (int argc, char **argv)
 		}
 	}
 	while (optind < argc) {
-		qfo = qfo_read (argv[optind++]);
+		qfo = qfo_open (argv[optind++]);
 		if (!qfo)
 			return 1;
 		dump_defs (qfo);

@@ -546,7 +546,10 @@ separate_compile (void)
 		qfo_t      *qfo;
 		linker_begin ();
 		for (file = source_files; *file; file++) {
-			linker_add_object_file (*file);
+			if (strncmp (*file, "-l", 2))
+				linker_add_object_file (*file);
+			else
+				linker_add_lib (*file + 2);
 		}
 		qfo = linker_finish ();
 		if (qfo) {

@@ -39,9 +39,17 @@ static const char rcsid[] =
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+#ifdef HAVE_IO_H
+# include <io.h>
+#endif
 #include <stdlib.h>
+#include <fcntl.h>
 
 #include "QF/hash.h"
+#include "QF/pakfile.h"
 
 #include "def.h"
 #include "emit.h"
@@ -183,7 +191,8 @@ process_def (qfo_def_t *def)
 			def->flags = d->flags;
 			Hash_Add (defined_defs, def);
 		} else {
-			Hash_Add (extern_defs, def);
+			if (def->num_relocs)
+				Hash_Add (extern_defs, def);
 		}
 	} else {
 		if (def->flags & QFOD_GLOBAL) {
@@ -533,17 +542,8 @@ linker_begin (void)
 }
 
 void
-linker_add_object_file (const char *filename)
+linker_add_qfo (qfo_t *qfo)
 {
-	qfo_t      *qfo;
-
-	qfo = qfo_read (filename);
-	if (!qfo)
-		return;  
-
-	if (options.verbosity >= 2)
-		puts (filename);
-
 	code_base = code->size;
 	data_base = data->size;
 	far_data_base = far_data->size;
@@ -561,8 +561,65 @@ linker_add_object_file (const char *filename)
 	add_funcs (qfo);
 	add_defs (qfo);
 	add_lines (qfo);
+}
+
+void
+linker_add_object_file (const char *filename)
+{
+	qfo_t      *qfo;
+
+	qfo = qfo_open (filename);
+	if (!qfo)
+		return;  
+
+	if (options.verbosity >= 2)
+		puts (filename);
+
+	linker_add_qfo (qfo);
 	
 	qfo_delete (qfo);
+}
+
+void
+linker_add_lib (const char *libname)
+{
+	pack_t     *pack = pack_open (libname);
+	int         i, j;
+	int         did_something;
+
+	if (!pack)
+		return;
+	do {
+		did_something = 0;
+		for (i = 0; i < pack->numfiles; i++) {
+			int         fd;
+			VFile      *f;
+			qfo_t      *qfo;
+
+			fd = open (libname, O_RDONLY);
+			lseek (fd, pack->files[i].filepos, SEEK_SET);
+			f = Qdopen (fd, "rbz");
+			qfo = qfo_read (f);
+			Qclose (f);
+			close (fd);
+
+			for (j = 0; j < qfo->num_defs; j++) {
+				qfo_def_t  *def = qfo->defs + j;
+				if ((def->flags & QFOD_GLOBAL)
+					&& !(def->flags & QFOD_EXTERNAL)
+					&& Hash_Find (extern_defs, qfo->strings + def->name)) {
+					if (options.verbosity >= 2)
+						printf ("adding %s\n", pack->files[i].name);
+					linker_add_qfo (qfo);
+					did_something = 1;
+					break;
+				}
+			}
+
+			qfo_delete (qfo);
+		}
+	} while (did_something);
+	pack_del (pack);
 }
 
 qfo_t *
