@@ -1123,7 +1123,11 @@ dnl Checks for CD-ROM
 dnl ==================================================================
 
 CD_CFLAGS=""
-CD_PLUGIN_TARGETS="cd_file.la"
+if test "x$HAVE_VORBIS" = xyes; then
+    CD_PLUGIN_TARGETS="cd_file.la"
+else
+    CD_PLUGIN_TARGETS=""
+fi
 unset CDTYPE
 
 AC_MSG_CHECKING(for CD audio support)
@@ -1998,7 +2002,10 @@ if test "x$static_plugins" = xyes; then
 else
 	plugin_ldflags="$plugin_ldflags"' -version-info $(plugin_version) -rpath $(plugindir)'
 fi
-plugin_ldflags="$plugin_ldflags -module -avoid-version"
+
+dnl Don't use -module here, it belongs in makefile.am due to automake
+dnl needing it there to work correctly
+plugin_ldflags="$plugin_ldflags -avoid-version"
 SERVER_PLUGIN_STATIC_LIBS=""
 CLIENT_PLUGIN_STATIC_LIBS=""
 CD_PLUGIN_STATIC_LIBS=""
