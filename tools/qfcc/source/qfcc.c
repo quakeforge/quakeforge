@@ -67,6 +67,7 @@ static const char rcsid[] =
 #include <QF/hash.h>
 #include <QF/qendian.h>
 #include <QF/sys.h>
+#include <QF/va.h>
 
 #include "cmdlib.h"
 #include "qfcc.h"
@@ -167,13 +168,12 @@ WriteFiles (void)
 {
 	FILE       *f;
 	int         i;
-	char        filename[1024];
+	dstring_t  *filename = dstring_newstr ();
 
-	snprintf (filename, sizeof (filename), "%s%cfiles.dat", sourcedir,
-			  PATH_SEPARATOR);
-	f = fopen (filename, "w");
+	dsprintf (filename, "%s%cfiles.dat", sourcedir, PATH_SEPARATOR);
+	f = fopen (filename->str, "w");
 	if (!f)
-		Error ("Couldn't open %s", filename);
+		Error ("Couldn't open %s", filename->str);
 
 	fprintf (f, "%i\n", numsounds);
 	for (i = 0; i < numsounds; i++)
@@ -188,6 +188,7 @@ WriteFiles (void)
 		fprintf (f, "%i %s\n", precache_files_block[i], precache_files[i]);
 
 	fclose (f);
+	dstring_delete (filename);
 }
 
 /*
@@ -964,10 +965,7 @@ DecodeArgs (int argc, char **argv)
 					char       *temp = strtok (opts, ",");
 
 					while (temp) {
-						char        temp2[1024];
-
-						snprintf (temp2, sizeof (temp2), "%s%s", "-D", temp);
-						add_cpp_def (strdup (temp2));
+						add_cpp_def (strdup (va ("%s%s", "-D", temp)));
 						temp = strtok (NULL, ",");
 					}
 					free (opts);
@@ -978,10 +976,7 @@ DecodeArgs (int argc, char **argv)
 					char       *temp = strtok (opts, ",");
 
 					while (temp) {
-						char        temp2[1024];
-
-						snprintf (temp2, sizeof (temp2), "%s%s", "-I", temp);
-						add_cpp_def (strdup (temp2));
+						add_cpp_def (strdup (va ("%s%s", "-I", temp)));
 						temp = strtok (NULL, ",");
 					}
 					free (opts);
@@ -992,10 +987,7 @@ DecodeArgs (int argc, char **argv)
 					char       *temp = strtok (opts, ",");
 
 					while (temp) {
-						char        temp2[1024];
-
-						snprintf (temp2, sizeof (temp2), "%s%s", "-U", temp);
-						add_cpp_def (strdup (temp2));
+						add_cpp_def (strdup (va ("%s%s", "-U", temp)));
 						temp = strtok (NULL, ",");
 					}
 					free (opts);
@@ -1160,7 +1152,7 @@ int
 main (int argc, char **argv)
 {
 	char       *src;
-	char        filename[1024];
+	dstring_t  *filename = dstring_newstr ();
 	int         crc = 0;
 	double      start, stop;
 
@@ -1188,10 +1180,10 @@ main (int argc, char **argv)
 	init_types ();
 
 	if (*sourcedir)
-		snprintf (filename, sizeof (filename), "%s/%s", sourcedir, progs_src);
+		dsprintf (filename, "%s/%s", sourcedir, progs_src);
 	else
-		snprintf (filename, sizeof (filename), "%s", progs_src);
-	LoadFile (filename, (void *) &src);
+		dsprintf (filename, "%s", progs_src);
+	LoadFile (filename->str, (void *) &src);
 
 	if (!(src = Parse (src)))
 		Error ("No destination filename.  qfcc --help for info.\n");
@@ -1233,16 +1225,16 @@ main (int argc, char **argv)
 		//yydebug = 1;
 
 		if (*sourcedir)
-			snprintf (filename, sizeof (filename), "%s%c%s", sourcedir,
-					  PATH_SEPARATOR, qfcc_com_token);
+			dsprintf (filename, "%s%c%s", sourcedir, PATH_SEPARATOR,
+					  qfcc_com_token);
 		else
-			snprintf (filename, sizeof (filename), "%s", qfcc_com_token);
+			dsprintf (filename, "%s", qfcc_com_token);
 		if (options.verbosity >= 2)
-			printf ("compiling %s\n", filename);
+			printf ("compiling %s\n", filename->str);
 
-		yyin = preprocess_file (filename);
+		yyin = preprocess_file (filename->str);
 
-		s_file = ReuseString (strip_path (filename));
+		s_file = ReuseString (strip_path (filename->str));
 		pr_source_line = 1;
 		clear_frame_macros ();
 		error = yyparse () || pr_error_count;

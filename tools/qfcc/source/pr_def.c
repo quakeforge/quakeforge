@@ -32,6 +32,7 @@ static const char rcsid[] =
 
 #include <QF/hash.h>
 #include <QF/sys.h>
+#include <QF/va.h>
 
 #include "qfcc.h"
 #include "expr.h"
@@ -117,7 +118,6 @@ def_t *
 PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 {
 	def_t      *def = check_for_name (type, name, scope, allocate);
-	char        element[MAX_NAME];
 	int         size;
 
 	if (def || !allocate)
@@ -139,18 +139,15 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 	if (type->type == ev_vector && name) {
 		def_t      *d;
 
-		snprintf (element, sizeof (element), "%s_x", name);
-		d = PR_GetDef (&type_float, element, scope, allocate);
+		d = PR_GetDef (&type_float, va ("%s_x", name), scope, allocate);
 		d->used = 1;
 		d->parent = def;
 
-		snprintf (element, sizeof (element), "%s_y", name);
-		d = PR_GetDef (&type_float, element, scope, allocate);
+		d = PR_GetDef (&type_float, va ("%s_y", name), scope, allocate);
 		d->used = 1;
 		d->parent = def;
 
-		snprintf (element, sizeof (element), "%s_z", name);
-		d = PR_GetDef (&type_float, element, scope, allocate);
+		d = PR_GetDef (&type_float, va ("%s_z", name), scope, allocate);
 		d->used = 1;
 		d->parent = def;
 	} else {
@@ -163,18 +160,18 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 		if (type->aux_type->type == ev_vector) {
 			def_t      *d;
 
-			snprintf (element, sizeof (element), "%s_x", name);
-			d = PR_GetDef (&type_floatfield, element, scope, allocate);
+			d = PR_GetDef (&type_floatfield,
+						   va ("%s_x", name), scope, allocate);
 			d->used = 1;				// always `used'
 			d->parent = def;
 
-			snprintf (element, sizeof (element), "%s_y", name);
-			d = PR_GetDef (&type_floatfield, element, scope, allocate);
+			d = PR_GetDef (&type_floatfield,
+						   va ("%s_y", name), scope, allocate);
 			d->used = 1;				// always `used'
 			d->parent = def;
 
-			snprintf (element, sizeof (element), "%s_z", name);
-			d = PR_GetDef (&type_floatfield, element, scope, allocate);
+			d = PR_GetDef (&type_floatfield,
+						   va ("%s_z", name), scope, allocate);
 			d->used = 1;				// always `used'
 			d->parent = def;
 		} else if (type->aux_type->type == ev_pointer) {

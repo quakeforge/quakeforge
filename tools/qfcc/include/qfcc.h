@@ -22,25 +22,8 @@
 #ifndef __qfcc_h
 #define __qfcc_h
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
-#include <stdio.h>
-#include <setjmp.h>
-
 #include "QF/pr_comp.h"
 #include "QF/pr_debug.h"
-
-/* These may be underscored... */
-#if defined(HAVE__SNPRINTF)
-# undef snprintf
-# define snprintf _snprintf
-#endif
-#if defined(HAVE__VSNPRINTF)
-# undef vsnprintf
-# define vsnprintf _vsnprintf
-#endif
 
 /*
 	TODO:

@@ -348,33 +348,16 @@ new_expr (void)
 	return e;
 }
 
-static int
-num_digits (int val)
-{
-	int         num = 1;
-
-	if (val < 0) {
-		num++;
-		val = -val;
-	}
-	while (val > 9) {
-		val /= 10;
-		num++;
-	}
-	return num;
-}
-
 const char *
 new_label_name (void)
 {
 	static int  label = 0;
 	int         lnum = ++label;
 	const char *fname = current_func->def->name;
-	int         len = 1 + strlen (fname) + 1 + num_digits (lnum) + 1;
-	char       *lname = malloc (len);
+	char       *lname;
 
+	lname = strdup (va ("$%s_%d", fname, lnum));
 	SYS_CHECKMEM (lname);
-	snprintf (lname, len, "$%s_%d", fname, lnum);
 	return lname;
 }
 
