@@ -129,25 +129,32 @@ Draw_InitText (void)
 	if (r_init) {
 		if (vaelements > 3)
 			tVAsize = vaelements - (vaelements % 4);
-		else
+		else if (vaelements >= 0)
 			tVAsize = 2048;
-		Con_Printf ("Text: %i maximum vertex elements.\n", tVAsize);
+		else
+			tVAsize = 0;
 
-		if (textVertices)
-			free (textVertices);
-		textVertices = calloc (tVAsize, 2 * sizeof (float));
+		if (tVAsize) {
+			Con_Printf ("Text: %i maximum vertex elements.\n", tVAsize);
 
-		if (textCoords)
-			free (textCoords);
-		textCoords = calloc (tVAsize, 2 * sizeof (float));
+			if (textVertices)
+				free (textVertices);
+			textVertices = calloc (tVAsize, 2 * sizeof (float));
 
-		qfglTexCoordPointer (2, GL_FLOAT, 0, textCoords);
-		qfglVertexPointer (2, GL_FLOAT, 0, textVertices);
-		if (tVAindices)
-			free (tVAindices);
-		tVAindices = (int *) calloc (tVAsize, sizeof (int));
-		for (i = 0; i < tVAsize; i++)
-			tVAindices[i] = i;
+			if (textCoords)
+				free (textCoords);
+			textCoords = calloc (tVAsize, 2 * sizeof (float));
+
+			qfglTexCoordPointer (2, GL_FLOAT, 0, textCoords);
+			qfglVertexPointer (2, GL_FLOAT, 0, textVertices);
+			if (tVAindices)
+				free (tVAindices);
+			tVAindices = (int *) calloc (tVAsize, sizeof (int));
+			for (i = 0; i < tVAsize; i++)
+				tVAindices[i] = i;
+		} else {
+			Con_Printf ("Text: Vertex Array use disabled.\n");
+		}
 	} else {
 		if (textVertices) {
 			free (textVertices);
@@ -332,11 +339,6 @@ void
 Draw_Init (void)
 {
 	int         i;
-	GLint		texSize;
-
-	// Some cards have a texture size limit.
-	qfglGetIntegerv(GL_MAX_TEXTURE_SIZE, &texSize);
-	Cvar_Set (gl_max_size, va("%d", texSize));
 
 	Cmd_AddCommand ("gl_texturemode", &GL_TextureMode_f,
 					"Texture mipmap quality.");
@@ -381,13 +383,21 @@ flush_text (void)
 }
 
 static inline void
-queue_character (int x, int y, int num)
+queue_character (float x, float y, int num)
 {
 	float		frow, fcol;
 
 	frow = (num >> 4) * CELL_SIZE;
 	fcol = (num & 15) * CELL_SIZE;
 
+	*tV++ = x;
+	*tV++ = y;
+	*tV++ = x + 8.0;
+	*tV++ = y;
+	*tV++ = x + 8.0;
+	*tV++ = y + 8.0;
+	*tV++ = x;
+	*tV++ = y + 8.0;
 	*tC++ = fcol;
 	*tC++ = frow;
 	*tC++ = fcol + CELL_SIZE;
@@ -396,14 +406,6 @@ queue_character (int x, int y, int num)
 	*tC++ = frow + CELL_SIZE;
 	*tC++ = fcol;
 	*tC++ = frow + CELL_SIZE;
-	*tV++ = x;
-	*tV++ = y;
-	*tV++ = x + 8;
-	*tV++ = y;
-	*tV++ = x + 8;
-	*tV++ = y + 8;
-	*tV++ = x;
-	*tV++ = y + 8;
 }
 
 static inline void
@@ -431,7 +433,7 @@ Draw_Character (int x, int y, unsigned int num)
 
 	num &= 255;
 
-	queue_character (x, y, num);
+	queue_character ((float) x, (float) y, num);
 	tVA_increment ();
 }
 
@@ -439,18 +441,22 @@ void
 Draw_String (int x, int y, const char *str)
 {
 	unsigned char	num;
+	float			x1, y1;
 
 	if (!str || !str[0])
 		return;
 	if (y <= -8)
 		return;							// totally off screen
 
+	x1 = (float) x;
+	y1 = (float) y;
+
 	while (*str) {
 		if ((num = *str++) != 32) {		// Don't render spaces
-			queue_character (x, y, num);
+			queue_character (x1, y1, num);
 			tVA_increment ();
 		}
-		x += 8;
+		x1 += 8.0;
 	}
 }
 
@@ -458,18 +464,22 @@ void
 Draw_nString (int x, int y, const char *str, int count)
 {
 	unsigned char	num;
+	float			x1, y1;
 
 	if (!str || !str[0])
 		return;
 	if (y <= -8)
 		return;                         // totally off screen
 
+	x1 = (float) x;
+	y1 = (float) y;
+
 	while (count-- && *str) {
 		if ((num = *str++) != 32) {		// Don't render spaces
-			queue_character (x, y, num);
+			queue_character (x1, y1, num);
 			tVA_increment ();
 		}
-		x += 8;
+		x1 += 8.0;
 	}
 }
 
@@ -477,19 +487,23 @@ void
 Draw_AltString (int x, int y, const char *str)
 {
 	unsigned char	num;
+	float			x1, y1;
 
 	if (!str || !str[0])
 		return;
 	if (y <= -8)
 		return;							// totally off screen
 
+	x1 = (float) x;
+	y1 = (float) y;
+
 	while (*str) {
 		if ((num = *str++ | 0x80) != (0x80 | 32)) // Don't render spaces
 		{
-			queue_character (x, y, num);
+			queue_character (x1, y1, num);
 			tVA_increment ();
 		}
-		x += 8;
+		x1 += 8.0;
 	}
 }
 

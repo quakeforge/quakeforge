@@ -70,7 +70,6 @@ cvar_t     *gl_keeptjunctions;
 cvar_t     *gl_lerp_anim;
 cvar_t     *gl_lightmap_align;
 cvar_t     *gl_lightmap_subimage;
-cvar_t     *gl_max_size;
 cvar_t     *gl_nocolors;
 cvar_t     *gl_particle_mip;
 cvar_t     *gl_particle_size;
@@ -144,6 +143,7 @@ void      (*r_viewsize_callback)(cvar_t *var);
 int         r_viewsize;
 
 float		cl_wateralpha;
+
 
 static void
 r_particles_f (cvar_t *var)
@@ -288,8 +288,6 @@ R_Init_Cvars (void)
 									 "around the area changed. 1 updates "
 									 "every line that changed. 0 updates the "
 									 "entire lightmap.");
-	gl_max_size = Cvar_Get ("gl_max_size", "1024", CVAR_NONE, NULL,
-							"Texture dimension");
 	gl_nocolors = Cvar_Get ("gl_nocolors", "0", CVAR_NONE, NULL,
 							"Set to 1, turns off all player colors");
 	gl_particle_mip = Cvar_Get ("gl_particle_mip", "0", CVAR_NONE, NULL,

@@ -93,12 +93,26 @@ qboolean			is8bit = false;
 
 qboolean			gl_feature_mach64 = false;
 
+cvar_t      *gl_max_size;
 cvar_t      *gl_multitexture;
 cvar_t      *gl_vaelements_max;
 cvar_t      *gl_screenshot_byte_swap;
 cvar_t      *vid_mode;
 cvar_t      *vid_use8bit;
 
+
+static void
+gl_max_size_f (cvar_t *var)
+{
+	GLint		texSize;
+
+	// Check driver's max texture size
+	qfglGetIntegerv (GL_MAX_TEXTURE_SIZE, &texSize);
+	if (var->int_val < 1)
+		Cvar_SetValue (var, texSize);
+	else
+		Cvar_SetValue (var, bound (1, var->int_val, texSize));	
+}
 
 static void
 gl_multitexture_f (cvar_t *var)
@@ -124,6 +138,8 @@ GL_Common_Init_Cvars (void)
 								  "Limit the vertex array size for buggy "
 								  "drivers. 0 (default) uses driver provided "
 								  "limit, -1 disables use of vertex arrays.");
+	gl_max_size = Cvar_Get ("gl_max_size", "0", CVAR_NONE, gl_max_size_f,
+							"Texture dimension");
 	gl_multitexture = Cvar_Get ("gl_multitexture", "0", CVAR_ARCHIVE,
 								gl_multitexture_f, "Use multitexture when "
 								"available.");
