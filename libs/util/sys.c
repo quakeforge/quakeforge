@@ -561,13 +561,13 @@ const char *
 Sys_ConsoleInput (void)
 {
 	static char text[256];
-	int         len = 0;
+	static int len = 0;
 
 #ifdef _WIN32
 	int         c;
 
 	// read a line out
-	while (kbhit ()) {
+	while (_kbhit ()) {
 		c = _getch ();
 		putch (c);
 		if (c == '\r') {
