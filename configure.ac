@@ -94,6 +94,25 @@ AM_PROG_LIBTOOL
 AC_PROG_YACC
 AM_PROG_LEX
 
+AC_ARG_WITH(cpp,
+[  --with-cpp=CPP          how qfcc should invoke cpp],
+	cpp_name="$withval", cpp_name=auto
+)
+if test "x$cpp_name" != xauto; then
+	CPP_NAME="$cpp_name"
+else
+	case "$target_os" in
+		*bsd*)
+			touch conftest.c
+			CPP_NAME="`(f=\`$CC -v -E -Dfoo conftest.c -o conftest.i 2>&1 | grep -e -Dfoo\`; set $f; echo "$1")` %d %i %o"
+			rm -f conftest.[ci]
+			;;
+		linux*)
+			CPP_NAME="cpp %d -o %o %i"
+			;;
+	esac
+fi
+
 AC_CHECK_LIB(l, main, LEXLIB="-ll", AC_CHECK_LIB(fl, main, LEXLIB="-lfl"))
 AC_SUBST(LEXLIB)
 
@@ -1748,7 +1767,6 @@ AC_SUBST(QFCC_DEPS)
 AC_SUBST(QFCC_INCS)
 
 AC_DEFINE_UNQUOTED(PATH_SEPARATOR, '/')
-CPP_NAME=$ac_cv_prog_CPP
 AC_DEFINE_UNQUOTED(CPP_NAME, "$CPP_NAME")
 AC_DEFINE(USE_CPP)
 
@@ -1863,6 +1881,7 @@ AC_MSG_RESULT([
 	Compression support: $HAVE_ZLIB
 	Compiler version   : $CCVER
 	Compiler flags     : $CFLAGS
+	qfcc cpp invocation: $CPP_NAME
 
 	Shared game data directory: $sharepath
 	Per-user game data directory: $userpath

@@ -92,12 +92,17 @@ char        destfile[1024];
 char        debugfile[1024];
 
 #ifdef USE_CPP
-# define CPP_MAX_USER_ARGS	250
-# define CPP_MAX_ARGS		256
-/*
-	We reserve 6 args at the end.
-*/
-char       *cpp_argv[CPP_MAX_ARGS];
+typedef struct cpp_arg_s {
+	struct cpp_arg_s *next;
+	const char *arg;
+} cpp_arg_t;
+
+cpp_arg_t  *cpp_arg_list;
+cpp_arg_t **cpp_arg_tail = &cpp_arg_list;
+cpp_arg_t  *cpp_def_list;
+cpp_arg_t **cpp_def_tail = &cpp_def_list;
+const char **cpp_argv;
+char       *cpp_name = CPP_NAME;
 static int  cpp_argc = 0;
 #endif
 
@@ -716,18 +721,87 @@ usage (int status)
 	exit (status);
 }
 
+#ifdef USE_CPP
+static void
+add_cpp_arg (const char *arg)
+{
+	cpp_arg_t  *cpp_arg = malloc (sizeof (cpp_arg_t));
+	cpp_arg->next = 0;
+	cpp_arg->arg = arg;
+	*cpp_arg_tail = cpp_arg;
+	cpp_arg_tail = &(*cpp_arg_tail)->next;
+	cpp_argc++;
+}
+
+static void
+add_cpp_def (const char *arg)
+{
+	cpp_arg_t  *cpp_def = malloc (sizeof (cpp_arg_t));
+	cpp_def->next = 0;
+	cpp_def->arg = arg;
+	*cpp_def_tail = cpp_def;
+	cpp_def_tail = &(*cpp_def_tail)->next;
+	cpp_argc++;
+}
+
+static void
+parse_cpp_name ()
+{
+	char       *n;
+
+	n = strdup (cpp_name);
+	while (*n) {
+		while (*n && *n == ' ')
+			n++;
+		add_cpp_arg (n);
+		while (*n && *n != ' ')
+			n++;
+		if (*n)
+			*n++ = 0;
+	}
+}
+
+static void
+build_cpp_args (const char *in_name, const char *out_name)
+{
+	cpp_arg_t  *cpp_arg;
+	cpp_arg_t  *cpp_def;
+	const char **arg;
+
+	if (cpp_argv)
+		free (cpp_argv);
+	cpp_argv = (const char **)malloc ((cpp_argc + 1) * sizeof (char**));
+	for (arg = cpp_argv, cpp_arg = cpp_arg_list;
+		 cpp_arg;
+		 cpp_arg = cpp_arg->next) {
+		if (!strcmp (cpp_arg->arg, "%d")) {
+			for (cpp_def = cpp_def_list; cpp_def; cpp_def = cpp_def->next)
+				*arg++ = cpp_def->arg;
+		} else if (!strcmp (cpp_arg->arg, "%i")) {
+			*arg++ = in_name;
+		} else if (!strcmp (cpp_arg->arg, "%o")) {
+			*arg++ = out_name;
+		} else {
+			*arg++ = cpp_arg->arg;
+		}
+	}
+	*arg = 0;
+	for (arg = cpp_argv; *arg; arg++)
+		printf ("%s ", *arg);
+	puts ("");
+}
+#endif
+
 static int
 DecodeArgs (int argc, char **argv)
 {
 	int         c;
 
 #ifdef USE_CPP
-	for (c = 0; c < CPP_MAX_ARGS; cpp_argv[c++] = NULL);	// clear the args
-	cpp_argv[cpp_argc++] = "cpp";
-	cpp_argv[cpp_argc++] = "-D__QFCC__=1";
-	cpp_argv[cpp_argc++] = "-D__QUAKEC__=1";
-	cpp_argv[cpp_argc++] = "-D__RUAMOKO__=1";
-	cpp_argv[cpp_argc++] = "-D__RAUMOKO__=1";
+	add_cpp_def ("-D__QFCC__=1");
+	add_cpp_def ("-D__QUAKEC__=1");
+	add_cpp_def ("-D__RUAMOKO__=1");
+	add_cpp_def ("-D__RAUMOKO__=1");
 #endif
 
 	options.code.cpp = true;
@@ -803,7 +877,7 @@ DecodeArgs (int argc, char **argv)
 						} else if (!(strcasecmp (temp, "v6only"))) {
 							options.code.progsversion = PROG_ID_VERSION;
 #ifdef USE_CPP
-							cpp_argv[cpp_argc++] = "-D__VERSION6__=1";
+							add_cpp_def ("-D__VERSION6__=1");
 #endif
 						} else if (!(strcasecmp (temp, "no-v6only"))) {
 							options.code.progsversion = PROG_VERSION;
@@ -868,11 +942,11 @@ DecodeArgs (int argc, char **argv)
 					char       *opts = strdup (optarg);
 					char       *temp = strtok (opts, ",");
 
-					while (temp && (cpp_argc < CPP_MAX_USER_ARGS)) {
+					while (temp) {
 						char        temp2[1024];
 
 						snprintf (temp2, sizeof (temp2), "%s%s", "-D", temp);
-						cpp_argv[cpp_argc++] = strdup (temp2);
+						add_cpp_def (strdup (temp2));
 						temp = strtok (NULL, ",");
 					}
 					free (opts);
@@ -882,11 +956,11 @@ DecodeArgs (int argc, char **argv)
 					char       *opts = strdup (optarg);
 					char       *temp = strtok (opts, ",");
 
-					while (temp && (cpp_argc < CPP_MAX_USER_ARGS)) {
+					while (temp) {
 						char        temp2[1024];
 
 						snprintf (temp2, sizeof (temp2), "%s%s", "-I", temp);
-						cpp_argv[cpp_argc++] = strdup (temp2);
+						add_cpp_def (strdup (temp2));
 						temp = strtok (NULL, ",");
 					}
 					free (opts);
@@ -896,11 +970,11 @@ DecodeArgs (int argc, char **argv)
 					char       *opts = strdup (optarg);
 					char       *temp = strtok (opts, ",");
 
-					while (temp && (cpp_argc < CPP_MAX_USER_ARGS)) {
+					while (temp) {
 						char        temp2[1024];
 
 						snprintf (temp2, sizeof (temp2), "%s%s", "-U", temp);
-						cpp_argv[cpp_argc++] = strdup (temp2);
+						add_cpp_def (strdup (temp2));
 						temp = strtok (NULL, ",");
 					}
 					free (opts);
@@ -977,6 +1051,10 @@ main (int argc, char **argv)
 
 	PR_BeginCompilation ();
 
+#ifdef USE_CPP
+	parse_cpp_name ();
+#endif
+
 	// compile all the files
 	while ((src = Parse (src))) {
 #ifdef USE_CPP
@@ -1027,6 +1105,7 @@ main (int argc, char **argv)
 				snprintf (tempname, sizeof (tempname), "%s%c%sXXXXXX", temp1,
 						  PATH_SEPARATOR, temp2 ? temp2 + 1 : argv[0]);
 			}
+			build_cpp_args (filename, tempname);
 
 # ifdef _WIN32
 			if (!options.save_temps)
@@ -1035,7 +1114,7 @@ main (int argc, char **argv)
 			fclose (yyin);
 
 			{
-				int		status = spawnvp (_P_WAIT, "cpp", cpp_argv);
+				int		status = spawnvp (_P_WAIT, cpp_argv[0], cpp_argv);
 
 				if (status) {
 					fprintf (stderr, "%s: cpp returned error code %d\n",
@@ -1056,11 +1135,7 @@ main (int argc, char **argv)
 			}
 			if (!pid) {
 				// we're a child, check for abuse
-				cpp_argv[cpp_argc++] = "-o";
-				cpp_argv[cpp_argc++] = tempname;
-				cpp_argv[cpp_argc++] = filename;
-
-				execvp ("cpp", cpp_argv);
+				execvp (cpp_argv[0], (char **)cpp_argv);
 				fprintf (stderr, "Child shouldn't reach here\n");
 				exit (1);
 			} else {
