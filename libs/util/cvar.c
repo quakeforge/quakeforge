@@ -282,18 +282,12 @@ Cvar_SetROM (cvar_t *var, const char *value)
 		var->callback (var);
 }
 
-// 1999-09-07 weird cvar zeros fix by Maddes
 void
 Cvar_SetValue (cvar_t *var, float value)
 {
 	char        val[32];
-	int         i;
 
-	snprintf (val, sizeof (val), "%f", value);
-	for (i = strlen (val) - 1; i > 0 && val[i] == '0' && val[i - 1] != '.';
-		 i--) {
-		val[i] = 0;
-	}
+	snprintf (val, sizeof (val), "%g", value);
 	Cvar_Set (var, val);
 }
 
