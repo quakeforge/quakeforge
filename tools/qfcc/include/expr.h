@@ -30,7 +30,7 @@ typedef struct expr_s {
 		def_t	*def;
 		int		int_val;
 		float	float_val;
-		string_t string_val;
+		char	*string_val;
 		float	vector_val[3];
 		float	quaternion_val[4];
 	} e;

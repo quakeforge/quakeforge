@@ -261,7 +261,7 @@ make_string (char *token)
 {
 	char *str;
 
-	pr_file_p = token + 1;
+	pr_file_p = token;
 	PR_LexString ();
 	str = malloc (pr_token_len + 1);
 	memcpy (str, pr_token, pr_token_len + 1);

@@ -130,7 +130,7 @@ print_expr (expr_t *e)
 			printf ("%g", e->e.float_val);
 			break;
 		case ex_string:
-			printf ("\"%s\"", strings + e->e.string_val);
+			printf ("\"%s\"", e->e.string_val);
 			break;
 		case ex_vector:
 			printf ("'%g", e->e.vector_val[0]);
@@ -153,16 +153,16 @@ do_op_string (int op, expr_t *e1, expr_t *e2)
 	char *buf;
 	char *s1, *s2;
 
-	s1 = strings + e1->e.string_val;
-	s2 = strings + e2->e.string_val;
+	s1 = e1->e.string_val;
+	s2 = e2->e.string_val;
 	
 	switch (op) {
 		case '+':
 			len = strlen (s1) + strlen (s2) + 1;
-			buf = alloca (len);
+			buf = malloc (len);
 			strcpy (buf, s1);
 			strcat (buf, s2);
-			e1->e.string_val = ReuseString (buf);
+			e1->e.string_val = buf;
 			break;
 		case LT:
 			e1->type = ex_int;
@@ -502,8 +502,7 @@ unary_expr (int op, expr_t *e)
 					e->type = ex_int;
 					return e;
 				case ex_string:
-					e->e.int_val = !e->e.string_val
-									|| !G_STRING(e->e.string_val)[0];
+					e->e.int_val = !e->e.string_val || !e->e.string_val[0];
 					e->type = ex_int;
 					return e;
 				case ex_vector:

@@ -510,7 +510,7 @@ const
 		{
 			$$ = new_expr ();
 			$$->type = ex_string;
-			$$->e.string_val = ReuseString ($1);
+			$$->e.string_val = $1;
 		}
 	| VECTOR_VAL {}
 		{
@@ -625,12 +625,12 @@ build_function (function_t *f)
 void
 emit_function (function_t *f, expr_t *e)
 {
-	PR_PrintType (f->def->type);
+/*	PR_PrintType (f->def->type);
 	printf (" %s =\n{\n", f->def->name);
 	while (e) {
 		print_expr (e);
 		puts("");
 		e = e->next;
 	}
-	printf ("}\n");
+	printf ("}\n");*/
 }
