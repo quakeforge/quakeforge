@@ -681,8 +681,6 @@ SV_BeginDownload_f (void)
 	if (strstr (name, "..") || !allow_download->int_val
 		// leading dot is no good
 		|| *name == '.'
-		// leading slash bad as well, must be in subdir
-		|| *name == '/'
 		// next up, skin check
 		|| (strncmp (name, "skins/", 6) == 0 && !allow_download_skins->int_val)
 		// now models
