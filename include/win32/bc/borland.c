@@ -33,29 +33,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-// replacement funcs for missing asms - not good but who cares
-#ifndef USE_INTEL_ASM
-void Sys_HighFPPrecision(void)
-{
-	return;
-}
-
-void Sys_LowFPPrecision(void)
-{
-	return;
-}
-
-void MaskExceptions(void)
-{
-	return;
-}
-
-void Sys_SetFPCW(void)
-{
-	return;
-}
-#endif
-
 #if (__BORLANDC__ < 0x550)
 
 void vsnprintf(char *buffer, size_t t,char *format, va_list argptr)
