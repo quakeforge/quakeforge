@@ -45,6 +45,7 @@ static const char rcsid[] =
 # include <execinfo.h>
 #endif
 
+#include <setjmp.h>
 #include <errno.h>
 #include <limits.h>
 #include <signal.h>
@@ -107,9 +108,6 @@ static qboolean	vidmode_active = false;
 qboolean	vid_fullscreen_active;
 static qboolean    vid_context_created = false;
 static int  window_x, window_y, window_saved;
-
-cvar_t		*sys_backtrace;
-cvar_t		*sys_dump_core;
 
 static int	xss_timeout;
 static int	xss_interval;
@@ -196,45 +194,35 @@ X11_ProcessEvents (void)
 // ========================================================================
 // Tragic death handler
 // ========================================================================
-void
-dump_backtrace ()
+
+static jmp_buf  aiee_abort;
+
+static void
+aiee (int sig)
 {
-#ifdef HAVE_EXECINFO_H
-#define MAXDEPTH 30
-	static int count = 0; // don't wanna do this too many times
-	void *array[MAXDEPTH];
-	size_t size;
-	if (sys_backtrace && (count < sys_backtrace->int_val)) {
-		count++;
-		size = backtrace (array, MAXDEPTH);
-		fflush (stderr);
-		backtrace_symbols_fd (array, size, STDERR_FILENO);
-	}
-#endif
+	printf ("AIEE, signal %d in shutdown code, giving up\n", sig);
+	longjmp (aiee_abort, 1);
 }
 
 static void
 TragicDeath (int sig)
 {
-#ifdef HAVE_UNISTD_H
-	if (sys_dump_core && sys_dump_core->int_val == 1) { // paranoid check that is NOT needed at time of writing (cvar init happens before rest of init)
-		if (fork()) {
-			printf ("Received signal %d, dumping core and exiting...\n", sig);
-			dump_backtrace ();
-			Sys_Quit ();
-		} else {
-			signal (SIGABRT, SIG_IGN); // is xlib setting a handler on us?
-			abort ();
-		}
-	} else {
-#endif
-		printf ("Received signal %d, exiting...\n", sig);
-		dump_backtrace ();
-		Sys_Quit ();
-		abort();	// Hopefully not an infinite loop. // never reached
-#ifdef HAVE_UNISTD_H
-	}
-#endif
+	signal (SIGHUP, aiee);
+	signal (SIGINT, aiee);
+	signal (SIGQUIT, aiee);
+	signal (SIGILL, aiee);
+	signal (SIGTRAP, aiee);
+	signal (SIGIOT, aiee);
+	signal (SIGBUS, aiee);
+	signal (SIGSEGV, aiee);
+	signal (SIGTERM, aiee);
+
+	printf ("Received signal %d, exiting...\n", sig);
+
+	if (!setjmp (aiee_abort))
+		Sys_Shutdown ();
+
+	signal (sig, SIG_DFL);
 }
 
 void
@@ -258,9 +246,9 @@ X11_OpenDisplay (void)
 		signal (SIGTRAP, TragicDeath);
 		signal (SIGIOT, TragicDeath);
 		signal (SIGBUS, TragicDeath);
-//		signal (SIGFPE, TragicDeath);
 		signal (SIGSEGV, TragicDeath);
 		signal (SIGTERM, TragicDeath);
+//		signal (SIGFPE, TragicDeath);
 
 		// for debugging only
 		XSynchronize (x_disp, True);
@@ -480,13 +468,6 @@ X11_Init_Cvars (void)
 							   "Toggles fullscreen game mode");
 	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
 								 "Use system gamma control if available");
-	sys_dump_core = Cvar_Get ("sys_dump_core", "0", CVAR_NONE,
-							  dump_core_callback, "Dump core on Tragic Death. "
-							  "Be sure to check 'ulimit -c'");
-	sys_backtrace = Cvar_Get ("sys_backtrace", "0", CVAR_NONE,
-							  backtrace_callback, "Dump a backtrace on Tragic "
-							  "Death. Value is the max number of times to "
-							  "dump core incase of recursive shutdown");
 }
    
 void

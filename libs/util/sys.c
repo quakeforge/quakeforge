@@ -327,8 +327,8 @@ Sys_Init_Cvars (void)
 						  "Minimum is 0, maximum is 13");
 }
 
-static void
-run_shutdown_list (void)
+void
+Sys_Shutdown (void)
 {
 	shutdown_list_t *p = shutdown_list;
 
@@ -341,7 +341,7 @@ run_shutdown_list (void)
 void
 Sys_Quit (void)
 {
-	run_shutdown_list ();
+	Sys_Shutdown ();
 
 	exit (0);
 }
@@ -355,7 +355,7 @@ Sys_Error (const char *error, ...)
 	sys_err_printf_function (error, argptr);
 	va_end (argptr);
 
-	run_shutdown_list ();
+	Sys_Shutdown ();
 
 	exit (1);
 }
