@@ -716,9 +716,12 @@ emit_assign_expr (expr_t *e)
 {
 	def_t	*def_a, *def_b;
 	opcode_t *op;
-	def_a = emit_sub_expr (e->e.expr.e1, 0);
+	expr_t *e1 = e->e.expr.e1;
+	expr_t *e2 = e->e.expr.e2;
+
+	def_a = emit_sub_expr (e1, 0);
 	if (def_a->type == &type_pointer) {
-		def_b = emit_sub_expr (e->e.expr.e2, 0);
+		def_b = emit_sub_expr (e2, 0);
 		op = PR_Opcode_Find ("=", 5, def_a, def_b, def_b);
 		emit_statement (op, def_b, def_a, 0);
 	} else {
@@ -734,7 +737,13 @@ emit_assign_expr (expr_t *e)
 						 strings + e->file, e->line, def_a->name);
 			}
 		}
-		def_b = emit_sub_expr (e->e.expr.e2, def_a);
+		if (e2->type == ex_expr) {
+			def_b = emit_sub_expr (e2, def_a);
+		} else {
+			def_b = emit_sub_expr (e2, 0);
+			op = PR_Opcode_Find ("=", 5, def_a, def_b, def_b);
+			emit_statement (op, def_b, def_a, 0);
+		}
 	}
 	return def_b;
 }
