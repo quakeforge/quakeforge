@@ -176,7 +176,7 @@ I_OGGMus_Play (int track, qboolean looping)
 {
 	plitem_t   *trackmap = NULL;
 	dstring_t  *trackstring = dstring_new ();
-	wavinfo_t  *info;
+	wavinfo_t  *info = 0;
 
 	Sys_DPrintf ("Entering I_OGGMus_Play\n");
 	/* alrighty. grab the list, map track to filename. grab filename from data
