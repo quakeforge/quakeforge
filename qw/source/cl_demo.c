@@ -407,7 +407,7 @@ CL_GetMessage (void)
 	if (cls.demoplayback) {
 		qboolean    ret = CL_GetDemoMessage ();
 
-		if (!ret && demo_timeframes_isactive) {
+		if (!ret && demo_timeframes_isactive && cls.td_starttime) {
 			CL_TimeFrames_AddTimestamp ();
 		}
 		return ret;
