@@ -117,7 +117,7 @@ SV_New_f (void)
 //NOTE:  This doesn't go through ClientReliableWrite since it's before the user
 //spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
-		SV_Printf ("WARNING %s: [SV_New] Back buffered (%d0, clearing",
+		SV_Printf ("WARNING %s: [SV_New] Back buffered (%d0, clearing\n",
 					host_client->name, host_client->netchan.message.cursize);
 		host_client->num_backbuf = 0;
 		SZ_Clear (&host_client->netchan.message);

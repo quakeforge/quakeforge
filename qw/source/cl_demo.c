@@ -620,7 +620,7 @@ CL_Record_f (void)
 
 		MSG_WriteByte (&buf, svc_updateentertime);
 		MSG_WriteByte (&buf, i);
-		MSG_WriteFloat (&buf, player->entertime);
+		MSG_WriteFloat (&buf, realtime - player->entertime);
 
 		MSG_WriteByte (&buf, svc_updateuserinfo);
 		MSG_WriteByte (&buf, i);
