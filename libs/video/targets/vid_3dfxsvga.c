@@ -222,20 +222,21 @@ findres (int *width, int *height)
 void
 TDFX_BrightenPalette (unsigned char *palette)
 {
-	byte      *pal;
-	int        i;
-	float red, green, blue, maxnum, somenum;
+	byte       *pal;
+	int         i;
+	float       red, green, blue, maxnum, somenum;
+
 	pal = palette;
 	for (i = 0; i < 255; i++)
 	{
-		red = (float)pal[0];
-		green = (float)pal[1];
-		blue = (float)pal[2];
-		maxnum = max(red,max(green,blue));
-		somenum = (bound(0.0,(maxnum * tdfx_brighten->value),255.0) / maxnum);
-		pal[0] = (int)(somenum * red);
-		pal[1] = (int)(somenum * green);
-		pal[2] = (int)(somenum * blue);
+		red = (float) pal[0];
+		green = (float) pal[1];
+		blue = (float) pal[2];
+		maxnum = max (red, max (green, blue));
+		somenum = (bound (0.0, (maxnum * tdfx_brighten->value), 255.0) / maxnum);
+		pal[0] = (byte) ((somenum * red) + 0.5);
+		pal[1] = (byte) ((somenum * green) + 0.5);
+		pal[2] = (byte) ((somenum * blue) + 0.5);
 		pal += 3;
 	}
 }
