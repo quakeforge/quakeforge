@@ -93,8 +93,6 @@ static qboolean playing = false;
 static qboolean wasPlaying = false;
 static qboolean musEnabled = true;
 
-extern int net_socket;
-
 static void I_XMMS_f (void);
 
 
@@ -111,6 +109,8 @@ I_XMMS_Running (void)
 {
 
 	int res;
+	int i;
+	int fd_size = getdtablesize();
 
 	if(!xmms_remote_is_running(0)) {
 
@@ -126,7 +126,8 @@ I_XMMS_Running (void)
 		// Well, we don't want the child to be running about with
 		// 27001 still open
 
-		close(net_socket);
+		for (i = 3; i < fd_size; i++)
+			close(i);
 
 		// run xmms
 		if(execvp(xmms_cmd, xmms_args)) { // Oh dear
