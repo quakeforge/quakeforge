@@ -120,7 +120,11 @@ static void *
 pi_open_lib (const char *name, int global_syms)
 {
 	void       *dlhand;
+#ifdef __OpenBSD__
+	int        flags = RTLD_LAZY;
+#else
 	int        flags = RTLD_NOW;
+#endif
 
 #if defined(HAVE_DLOPEN)
 # if defined(RTLD_GLOBAL)
