@@ -198,14 +198,62 @@ CL_AllocBeam (int ent)
 	return 0;
 }
 
-void
-CL_ClearBeam (beam_t *b)
+static inline void
+clear_beam (beam_t *b)
 {
 	if (b->ent_count) {
 		entity_t   *e = b->ent_list + b->ent_count;
 		while (e != b->ent_list)
 			R_RemoveEfrags (e-- - 1);
 		b->ent_count = 0;
+	}
+}
+
+static inline void
+setup_beam (beam_t *b)
+{
+	entity_t   *ent;
+	float       forward, pitch, yaw, d;
+	int         ent_count;
+	vec3_t      dist, org;
+
+	// calculate pitch and yaw
+	VectorSubtract (b->end, b->start, dist);
+
+	if (dist[1] == 0 && dist[0] == 0) {
+		yaw = 0;
+		if (dist[2] > 0)
+			pitch = 90;
+		else
+			pitch = 270;
+	} else {
+		yaw = (int) (atan2 (dist[1], dist[0]) * 180 / M_PI);
+		if (yaw < 0)
+			yaw += 360;
+
+		forward = sqrt (dist[0] * dist[0] + dist[1] * dist[1]);
+		pitch = (int) (atan2 (dist[2], forward) * 180 / M_PI);
+		if (pitch < 0)
+			pitch += 360;
+	}
+
+	// add new entities for the lightning
+	VectorCopy (b->start, org);
+	d = VectorNormalize (dist);
+	VectorScale (dist, 30, dist);
+	ent_count = ceil (d / 30);
+	ent_count = min (ent_count, MAX_BEAM_ENTS);
+	b->ent_count = ent_count;
+	d = 0;
+	while (ent_count--) {
+		ent = &b->ent_list[ent_count];
+		VectorMA (org, d, dist, ent->origin);
+		d += 1;
+		ent->model = b->model;
+		ent->angles[0] = pitch;
+		ent->angles[1] = yaw;
+		if (!ent->efrag)
+			R_AddEfrags (ent);
 	}
 }
 
@@ -222,13 +270,17 @@ CL_ParseBeam (model_t *m)
 	MSG_ReadCoordV (net_message, end);
 
 	if ((b = CL_AllocBeam (ent))) {
-		CL_ClearBeam (b);
+		clear_beam (b);
 		b->entity = ent;
 		b->model = m;
 		b->endtime = cl.time + 0.2;
 		b->seed = rand();
-		VectorCopy (start, b->start);
 		VectorCopy (end, b->end);
+		if (b->entity != cl.viewentity) {
+			// this will be done in CL_UpdateBeams
+			VectorCopy (start, b->start);
+			setup_beam (b);
+		}
 	}
 }
 
@@ -411,65 +463,31 @@ void
 CL_UpdateBeams (void)
 {
 	beam_t     *b;
-	entity_t   *ent;
-	float       forward, pitch, yaw, d;
 	int         i, ent_count;
-	vec3_t      dist, org;
 	unsigned    seed;
 
 	// update lightning
 	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++) {
 		if (!b->model || b->endtime < cl.time) {
-			CL_ClearBeam (b);
+			clear_beam (b);
 			continue;
 		}
 
 		// if coming from the player, update the start position
 		if (b->entity == cl.viewentity) {
-			CL_ClearBeam (b);
+			clear_beam (b);
 			VectorCopy (cl.simorg, b->start);
-		}
-		// calculate pitch and yaw
-		VectorSubtract (b->end, b->start, dist);
-
-		if (dist[1] == 0 && dist[0] == 0) {
-			yaw = 0;
-			if (dist[2] > 0)
-				pitch = 90;
-			else
-				pitch = 270;
-		} else {
-			yaw = (int) (atan2 (dist[1], dist[0]) * 180 / M_PI);
-			if (yaw < 0)
-				yaw += 360;
-
-			forward = sqrt (dist[0] * dist[0] + dist[1] * dist[1]);
-			pitch = (int) (atan2 (dist[2], forward) * 180 / M_PI);
-			if (pitch < 0)
-				pitch += 360;
+			setup_beam (b);
 		}
 
 		seed = b->seed + ((int)(cl.time * BEAM_SEED_INTERVAL) %
 						  BEAM_SEED_INTERVAL);
 
 		// add new entities for the lightning
-		VectorCopy (b->start, org);
-		d = VectorNormalize (dist);
-		VectorScale (dist, 30, dist);
-		ent_count = ceil (d / 30);
-		ent_count = min (ent_count, MAX_BEAM_ENTS);
-		b->ent_count = ent_count;
-		d = 0;
+		ent_count = b->ent_count;
 		while (ent_count--) {
-			ent = &b->ent_list[ent_count];
-			VectorMA (org, d, dist, ent->origin);
-			d += 1;
-			ent->model = b->model;
-			ent->angles[0] = pitch;
-			ent->angles[1] = yaw;
-			ent->angles[2] = (seed = seed * BEAM_SEED_PRIME) % 360;
-			if (!ent->efrag)
-				R_AddEfrags (ent);
+			seed = seed * BEAM_SEED_PRIME;
+			b->ent_list[ent_count].angles[2] = seed % 360;
 		}
 	}
 }
