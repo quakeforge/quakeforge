@@ -63,12 +63,7 @@ typedef struct {
 } demo_client_t;
 
 typedef struct {
-	qboolean    allowoverflow;			// if false, do a Sys_Error
-	qboolean    overflowed;				// set to true if the buffer size
-										// failed
-	byte       *data;
-	int         maxsize;
-	int         cursize;
+	sizebuf_t   sz;
 	int         bufsize;
 	header_t   *h;
 } demobuf_t;
@@ -112,5 +107,27 @@ typedef struct {
 } demo_t;
 
 extern demo_t      demo;
+extern struct cvar_s *sv_demoUseCache;
+extern struct cvar_s *sv_demoCacheSize;
+extern struct cvar_s *sv_demoMaxDirSize;
+extern struct cvar_s *sv_demoDir;
+extern struct cvar_s *sv_demofps;
+extern struct cvar_s *sv_demoPings;
+extern struct cvar_s *sv_demoNoVis;
+extern struct cvar_s *sv_demoMaxSize;
+extern struct cvar_s *sv_demoPrefix;
+extern struct cvar_s *sv_demoSuffix;
+extern struct cvar_s *sv_onrecordfinish;
+extern struct cvar_s *sv_ondemoremove;
+extern struct cvar_s *sv_demotxt;
+extern struct cvar_s *serverdemo;
+
+void DemoWrite_Begin (byte type, int to, int size);
+void SV_DemoWritePackets (int num);
+void SV_Stop_f (void);
+void SV_Stop (int reason);
+void DemoSetMsgBuf (demobuf_t * prev, demobuf_t * cur);
+void Demo_Init (void);
+void SV_DemoPings (void);
 
 #endif//__sv_demo_h

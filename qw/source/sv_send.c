@@ -50,6 +50,7 @@ static const char rcsid[] =
 #include "bothdefs.h"
 #include "compat.h"
 #include "server.h"
+#include "sv_demo.h"
 #include "sv_progs.h"
 
 #define CHAN_AUTO   0
@@ -248,7 +249,7 @@ SV_PrintToClient (client_t *cl, int level, const char *string)
 	Sends text across to be displayed if the level passes
 */
 void
-SV_ClientPrintf (client_t *cl, int level, const char *fmt, ...)
+SV_ClientPrintf (int recorder, client_t *cl, int level, const char *fmt, ...)
 {
 	char        string[1024];
 	va_list     argptr;
@@ -259,6 +260,13 @@ SV_ClientPrintf (client_t *cl, int level, const char *fmt, ...)
 	va_start (argptr, fmt);
 	vsnprintf (string, sizeof (string), fmt, argptr);
 	va_end (argptr);
+
+	if (recorder && sv.demorecording) {
+		DemoWrite_Begin (dem_single, cl - svs.clients, strlen (string) + 3);
+		MSG_WriteByte (&demo.dbuf->sz, svc_print);
+		MSG_WriteByte (&demo.dbuf->sz, level);
+		MSG_WriteString (&demo.dbuf->sz, string);
+	}
 
 	SV_PrintToClient (cl, level, string);
 }
@@ -289,6 +297,13 @@ SV_BroadcastPrintf (int level, const char *fmt, ...)
 			continue;
 
 		SV_PrintToClient (cl, level, string);
+	}
+
+	if (sv.demorecording) {
+		DemoWrite_Begin (dem_all, cl - svs.clients, strlen (string) + 3);
+		MSG_WriteByte (&demo.dbuf->sz, svc_print);
+		MSG_WriteByte (&demo.dbuf->sz, level);
+		MSG_WriteString (&demo.dbuf->sz, string);
 	}
 }
 
@@ -396,6 +411,15 @@ SV_Multicast (const vec3_t origin, int to)
 		} else
 			SZ_Write (&client->datagram, sv.multicast.data,
 					  sv.multicast.cursize);
+	}
+
+	if (sv.demorecording) {
+		if (reliable) {
+			//DemoWrite_Begin(dem_multiple, cls, sv.multicast.cursize);
+			DemoWrite_Begin(dem_all, 0, sv.multicast.cursize);
+			SZ_Write (&demo.dbuf->sz, sv.multicast.data, sv.multicast.cursize);
+		} else
+			SZ_Write(&demo.datagram, sv.multicast.data, sv.multicast.cursize);
 	}
 
 	SZ_Clear (&sv.multicast);
@@ -518,9 +542,11 @@ void
 SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 {
 	edict_t    *ent, *other;
-	int         i;
+	int         i, clnum;
 
 	ent = client->edict;
+
+	clnum = NUM_FOR_EDICT (&sv_pr_state, ent) - 1;
 
 	// send the chokecount for r_netgraph
 	if (client->chokecount) {
@@ -541,11 +567,26 @@ SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 		SVfloat (ent, dmg_take) = 0;
 		SVfloat (ent, dmg_save) = 0;
 	}
+
+	// add this to server demo
+	if (sv.demorecording && msg->cursize) {
+		DemoWrite_Begin(dem_single, clnum, msg->cursize);
+		SZ_Write(&demo.dbuf->sz, msg->data, msg->cursize);
+	}
+
 	// a fixangle might get lost in a dropped packet.  Oh well.
 	if (SVfloat (ent, fixangle)) {
 		MSG_WriteByte (msg, svc_setangle);
 		MSG_WriteAngleV (msg, SVvector (ent, angles));
+		VectorCopy (SVvector (ent, angles), demo.angles[clnum]);
 		SVfloat (ent, fixangle) = 0;
+		demo.fixangle[clnum] = true;
+
+		if (sv.demorecording) {
+			MSG_WriteByte (&demo.datagram, svc_setangle);
+			MSG_WriteByte (&demo.datagram, clnum);
+			MSG_WriteAngleV (&demo.datagram, demo.angles[clnum]);
+		}
 	}
 }
 
@@ -628,7 +669,7 @@ SV_SendClientDatagram (client_t *client)
 	// send over all the objects that are in the PVS
 	// this will include clients, a packetentities, and
 	// possibly a nails update
-	SV_WriteEntitiesToClient (client, &msg);
+	SV_WriteEntitiesToClient (client, &msg, false);
 
 	// copy the accumulated multicast datagram
 	// for this client out to the message
@@ -677,6 +718,14 @@ SV_UpdateToReliableMessages (void)
 															frags));
 			}
 
+			if (sv.demorecording) {
+				DemoWrite_Begin(dem_all, 0, 4);
+				MSG_WriteByte (&demo.dbuf->sz, svc_updatefrags);
+				MSG_WriteByte (&demo.dbuf->sz, i);
+				MSG_WriteShort (&demo.dbuf->sz,
+								SVfloat (host_client->edict, frags));
+			}
+
 			host_client->old_frags = SVfloat (host_client->edict, frags);
 		}
 		// maxspeed/entgravity changes
@@ -687,12 +736,22 @@ SV_UpdateToReliableMessages (void)
 			host_client->entgravity = SVfloat (ent, gravity);
 			ClientReliableWrite_Begin (host_client, svc_entgravity, 5);
 			ClientReliableWrite_Float (host_client, host_client->entgravity);
+			if (sv.demorecording) {
+				DemoWrite_Begin (dem_single, i, 5);
+				MSG_WriteByte (&demo.dbuf->sz, svc_entgravity);
+				MSG_WriteFloat (&demo.dbuf->sz, host_client->entgravity);
+			}
 		}
 		if (sv_fields.maxspeed != -1
 			&& host_client->maxspeed != SVfloat (ent, maxspeed)) {
 			host_client->maxspeed = SVfloat (ent, maxspeed);
 			ClientReliableWrite_Begin (host_client, svc_maxspeed, 5);
 			ClientReliableWrite_Float (host_client, host_client->maxspeed);
+			if (sv.demorecording) {
+				DemoWrite_Begin (dem_single, i, 5);
+				MSG_WriteByte (&demo.dbuf->sz, svc_maxspeed);
+				MSG_WriteFloat (&demo.dbuf->sz, host_client->maxspeed);
+			}
 		}
 	}
 
@@ -702,8 +761,7 @@ SV_UpdateToReliableMessages (void)
 	// append the broadcast messages to each client messages
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
 		if (client->state < cs_connected)
-			continue;					// reliables go to all connected or
-										// spawned
+			continue;				// reliables go to all connected or spawned
 
 		ClientReliableCheckBlock (client, sv.reliable_datagram.cursize);
 		ClientReliableWrite_SZ (client, sv.reliable_datagram.data,
@@ -713,6 +771,14 @@ SV_UpdateToReliableMessages (void)
 			continue;					// datagrams only go to spawned
 		SZ_Write (&client->datagram, sv.datagram.data, sv.datagram.cursize);
 	}
+
+	if (sv.demorecording && sv.reliable_datagram.cursize) {
+		DemoWrite_Begin (dem_all, 0, sv.reliable_datagram.cursize);
+		SZ_Write (&demo.dbuf->sz, sv.reliable_datagram.data,
+				  sv.reliable_datagram.cursize);
+	}
+	if (sv.demorecording)
+		SZ_Write(&demo.datagram, sv.datagram.data, sv.datagram.cursize); // FIXME: ???
 
 	SZ_Clear (&sv.reliable_datagram);
 	SZ_Clear (&sv.datagram);
@@ -814,6 +880,133 @@ SV_SendClientMessages (void)
 	}
 }
 
+void
+SV_SendDemoMessage(void)
+{
+	int         i, j, cls = 0;
+	client_t   *c;
+	byte        buf[MAX_DATAGRAM];
+	sizebuf_t	msg;
+	edict_t    *ent;
+	int         stats[MAX_CL_STATS];
+	float       min_fps;
+
+	if (!sv.demorecording)
+		return;
+
+	if (sv_demoPings->value) {
+		if (sv.time - demo.pingtime > sv_demoPings->value) {
+			SV_DemoPings ();
+			demo.pingtime = sv.time;
+		}
+	}
+
+
+	if (!sv_demofps->value)
+		min_fps = 20.0;
+	else
+		min_fps = sv_demofps->value;
+
+	min_fps = max(4, min_fps);
+	if (sv.time - demo.time < 1.0 / min_fps)
+		return;
+
+	for (i=0, c = svs.clients ; i<MAX_CLIENTS ; i++, c++)
+	{
+		if (c->state != cs_spawned)
+			continue;	// datagrams only go to spawned
+
+		cls |= 1 << i;
+	}
+
+	if (!cls) {
+		SZ_Clear (&demo.datagram);
+		return;
+	}
+
+	msg.data = buf;
+	msg.maxsize = sizeof(buf);
+	msg.cursize = 0;
+	msg.allowoverflow = true;
+	msg.overflowed = false;
+	
+	for (i=0, c = svs.clients; i < MAX_CLIENTS; i++, c++) {
+		if (c->state != cs_spawned)
+			continue;	// datagrams only go to spawned
+
+		if (c->spectator)
+			continue;
+
+		ent = c->edict;
+		memset (stats, 0, sizeof(stats));
+
+		stats[STAT_HEALTH] = SVfloat (ent, health);
+		stats[STAT_WEAPON] = SV_ModelIndex (PR_GetString (&sv_pr_state,
+											  SVstring (ent, weaponmodel)));
+		stats[STAT_AMMO] = SVfloat (ent, currentammo);
+		stats[STAT_ARMOR] = SVfloat (ent, armorvalue);
+		stats[STAT_SHELLS] = SVfloat (ent, ammo_shells);
+		stats[STAT_NAILS] = SVfloat (ent, ammo_nails);
+		stats[STAT_ROCKETS] = SVfloat (ent, ammo_rockets);
+		stats[STAT_CELLS] = SVfloat (ent, ammo_cells);
+		stats[STAT_ACTIVEWEAPON] = SVfloat (ent, weapon);
+		
+
+		// stuff the sigil bits into the high bits of items for sbar
+		stats[STAT_ITEMS] = ((int)SVfloat (ent, items)
+							 | ((int)sv_globals.serverflags << 28));
+
+		for (j=0 ; j<MAX_CL_STATS ; j++)
+			if (stats[j] != demo.stats[i][j]) {
+				demo.stats[i][j] = stats[j];
+				if (stats[j] >=0 && stats[j] <= 255) {
+					DemoWrite_Begin(dem_stats, i, 3);
+					MSG_WriteByte(&demo.dbuf->sz, svc_updatestat);
+					MSG_WriteByte(&demo.dbuf->sz, j);
+					MSG_WriteByte(&demo.dbuf->sz, stats[j]);
+				} else {
+					DemoWrite_Begin(dem_stats, i, 6);
+					MSG_WriteByte(&demo.dbuf->sz, svc_updatestatlong);
+					MSG_WriteByte(&demo.dbuf->sz, j);
+					MSG_WriteLong(&demo.dbuf->sz, stats[j]);
+				}
+			}
+	}
+
+	// send over all the objects that are in the PVS
+	// this will include clients, a packetentities, and
+	// possibly a nails update
+	msg.cursize = 0;
+	if (!demo.recorder.delta_sequence)
+		demo.recorder.delta_sequence = -1;
+	SV_WriteEntitiesToClient (&demo.recorder, &msg, true);
+	DemoWrite_Begin(dem_all, 0, msg.cursize);
+	SZ_Write (&demo.dbuf->sz, msg.data, msg.cursize);
+	// copy the accumulated multicast datagram
+	// for this client out to the message
+	if (demo.datagram.cursize) {
+		DemoWrite_Begin(dem_all, 0, demo.datagram.cursize);
+		SZ_Write (&demo.dbuf->sz, demo.datagram.data, demo.datagram.cursize);
+		SZ_Clear (&demo.datagram);
+	}
+
+	demo.recorder.delta_sequence = demo.recorder.netchan.incoming_sequence&255;
+	demo.recorder.netchan.incoming_sequence++;
+	demo.frames[demo.parsecount&DEMO_FRAMES_MASK].time = demo.time = sv.time;
+
+	// that's a backup of 3sec in 20fps, should be enough
+	if (demo.parsecount - demo.lastwritten > 60) {
+		SV_DemoWritePackets(1);
+	}
+
+	demo.parsecount++;
+	DemoSetMsgBuf(demo.dbuf,
+				  &demo.frames[demo.parsecount&DEMO_FRAMES_MASK].buf);
+
+	if (sv_demoMaxSize->int_val && demo.size > sv_demoMaxSize->int_val*1024)
+		SV_Stop (1);
+}
+
 #if defined(_WIN32) && !defined(__GNUC__)
 # pragma optimize( "", on )
 #endif
@@ -830,8 +1023,7 @@ SV_SendMessagesToAll (void)
 	int         i;
 
 	for (i = 0, c = svs.clients; i < MAX_CLIENTS; i++, c++)
-		if (c->state)					// FIXME: should this only send to
-										// active?
+		if (c->state)				// FIXME: should this only send to active?
 			c->send_message = true;
 
 	SV_SendClientMessages ();

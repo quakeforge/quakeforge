@@ -249,11 +249,13 @@ typedef struct
 {
 	double	active;
 	double	idle;
+	double  demo;
 	int		count;
 	int		packets;
 
 	double	latched_active;
 	double	latched_idle;
+	double  latched_demo;
 	int		latched_packets;
 } svstats_t;
 
@@ -510,11 +512,12 @@ void SV_SetMoveVars(void);
 void SV_Print (const char *fmt, va_list args);
 void SV_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void SV_SendClientMessages (void);
+void SV_SendDemoMessage(void);
 
 void SV_Multicast (const vec3_t origin, int to);
 void SV_StartSound (struct edict_s *entity, int channel, const char *sample,
 					int volume, float attenuation);
-void SV_ClientPrintf (client_t *cl, int level, const char *fmt, ...) __attribute__((format(printf,3,4)));
+void SV_ClientPrintf (int recorder, client_t *cl, int level, const char *fmt, ...) __attribute__((format(printf,4,5)));
 void SV_BroadcastPrintf (int level, const char *fmt, ...) __attribute__((format(printf,2,3)));
 void SV_BroadcastCommand (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void SV_SendMessagesToAll (void);
@@ -543,7 +546,8 @@ void SV_Status_f (void);
 //
 // sv_ents.c
 //
-void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg);
+void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg,
+							   qboolean recorder);
 
 //
 // sv_nchan.c

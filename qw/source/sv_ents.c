@@ -37,12 +37,14 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
+#include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/sys.h"
 
 #include "compat.h"
 #include "msg_ucmd.h"
 #include "server.h"
+#include "sv_demo.h"
 #include "sv_progs.h"
 
 
@@ -108,6 +110,7 @@ SV_FatPVS (vec3_t org)
 #define	MAX_NAILS	32
 edict_t	   *nails[MAX_NAILS];
 int			numnails;
+int         nailcount;
 
 
 qboolean
@@ -124,7 +127,7 @@ SV_AddNailUpdate (edict_t *ent)
 }
 
 void
-SV_EmitNailUpdate (sizebuf_t *msg)
+SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
 {
 	byte	   *buf;				// [48 bits] xyzpy 12 12 12 4 8 
 	int			n, p, x, y, z, yaw;
@@ -134,11 +137,20 @@ SV_EmitNailUpdate (sizebuf_t *msg)
 		return;
 
 	buf =  SZ_GetSpace (msg, numnails * 6 + 2);
-	*buf++ = svc_nails;
+	*buf++ = recorder ? svc_nails2 : svc_nails;
 	*buf++ = numnails;
 
 	for (n = 0; n < numnails; n++) {
 		ent = nails[n];
+		if (recorder) {
+			if (!SVfloat (ent, colormap)) {
+				if (!((++nailcount) & 255))
+					nailcount++;
+				SVfloat (ent, colormap) = nailcount&255;
+			}
+			*buf++ = (byte)SVfloat (ent, colormap);
+		}
+
 		x = ((int) (SVvector (ent, origin)[0] + 4096 + 1) >> 1) & 4095;
 		y = ((int) (SVvector (ent, origin)[1] + 4096 + 1) >> 1) & 4095;
 		z = ((int) (SVvector (ent, origin)[2] + 4096 + 1) >> 1) & 4095;
@@ -350,8 +362,16 @@ SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 			continue;
 		}
 
-		if (newnum < oldnum) {			// this is a new entity, send it from 
-										// the baseline
+		if (newnum < oldnum) {
+			// this is a new entity, send it from the baseline
+			if (newnum == 9999) {
+				Sys_Printf ("LOL, %d, %d, %d, %d %d %d\n", newnum, oldnum,
+							to->num_entities, oldmax,
+							client->netchan.incoming_sequence & UPDATE_MASK,
+							client->delta_sequence & UPDATE_MASK);
+				if (!client->edict)
+					Sys_Printf("demo\n");
+			}
 			ent = EDICT_NUM (&sv_pr_state, newnum);
 //			SV_Printf ("baseline %i\n", newnum);
 			SV_WriteDelta (ent->data, &to->entities[newindex], msg, true,
@@ -372,6 +392,15 @@ SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 	MSG_WriteShort (msg, 0);			// end of packetentities
 }
 
+#define DF_ORIGIN   1			//FIXME move to protocol.h
+#define DF_ANGLES   (1<<3)
+#define DF_EFFECTS  (1<<6)
+#define DF_SKINNUM  (1<<7)
+#define DF_DEAD     (1<<8)
+#define DF_GIB      (1<<9)
+#define DF_WEAPONFRAME (1<<10)
+#define DF_MODEL    (1<<11)
+
 void
 SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 						 sizebuf_t *msg)
@@ -380,12 +409,53 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 	client_t   *cl;
 	edict_t	   *ent;
 	usercmd_t	cmd;
+	demo_frame_t *demo_frame;
+	demo_client_t *dcl;
 
-	for (j = 0, cl = svs.clients; j < MAX_CLIENTS; j++, cl++) {
+	demo_frame = &demo.frames[demo.parsecount & DEMO_FRAMES_MASK];
+
+	for (j = 0, cl = svs.clients, dcl = demo_frame->clients; j < MAX_CLIENTS;
+		 j++, cl++, dcl++) {
+
 		if (cl->state != cs_spawned)
 			continue;
 
 		ent = cl->edict;
+
+		if (!clent) {
+			if (cl->spectator)
+				continue;
+
+			dcl->parsecount = demo.parsecount;
+			VectorCopy (SVvector (ent, origin), dcl->info.origin);
+			VectorCopy (SVvector (ent, angles), dcl->info.angles);
+			dcl->info.angles[0] *= -3;
+			dcl->info.angles[2] = 0; // no roll angle
+
+			if (SVfloat (ent, health) <= 0) {
+				// don't show the corpse looking around...
+				dcl->info.angles[0] = 0;
+				dcl->info.angles[1] = SVvector (ent, angles)[1];
+				dcl->info.angles[2] = 0;
+			}
+
+			dcl->info.skinnum = SVfloat (ent, skin);
+			dcl->info.effects = SVfloat (ent, effects);
+			dcl->info.weaponframe = SVfloat (ent, weaponframe);
+			dcl->info.model = SVfloat (ent, modelindex);
+			dcl->sec = sv.time - cl->localtime;
+			dcl->frame = SVfloat (ent, frame);
+			dcl->flags = 0;
+			dcl->cmdtime = cl->localtime;
+			dcl->fixangle = demo.fixangle[j];
+			demo.fixangle[j] = 0;
+
+			if (SVfloat (ent, health) <= 0)
+				dcl->flags |= DF_DEAD;
+			if (SVvector (ent, mins)[2] != -24)
+				dcl->flags |= DF_GIB;
+			continue;
+		}
 
 		// ZOID visibility tracking
 		if (ent != clent &&
@@ -438,11 +508,11 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 				pflags |= PF_QF;
 		}
 
-		if (cl->spectator) {			// only sent origin and velocity to
-										// spectators
+		if (cl->spectator) {
+			// only sent origin and velocity to spectators
 			pflags &= PF_VELOCITY1 | PF_VELOCITY2 | PF_VELOCITY3;
-		} else if (ent == clent) {		// don't send a lot of data on
-										// personal entity
+		} else if (ent == clent) {
+			// don't send a lot of data on personal entity
 			pflags &= ~(PF_MSEC | PF_COMMAND);
 			if (SVfloat (ent, weaponframe))
 				pflags |= PF_WEAPONFRAME;
@@ -540,7 +610,7 @@ SV_WritePlayersToClient (client_t *client, edict_t *clent, byte * pvs,
 	svc_playerinfo messages
 */
 void
-SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
+SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean recorder)
 {
 	byte	   *pvs;
 	int			e, i, num_edicts, mpe_moaned = 0;
@@ -555,8 +625,29 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 
 	// find the client's PVS
 	clent = client->edict;
-	VectorAdd (SVvector (clent, origin), SVvector (clent, view_ofs), org);
-	pvs = SV_FatPVS (org);
+	pvs = 0;
+	if (!recorder) {
+		VectorAdd (SVvector (clent, origin), SVvector (clent, view_ofs), org);
+		pvs = SV_FatPVS (org);
+	} else {
+		client_t   *cl;
+
+		for (i=0, cl = svs.clients; i<MAX_CLIENTS; i++, cl++) {
+			if (cl->state != cs_spawned)
+				continue;
+
+			if (cl->spectator)
+				continue;
+
+			VectorAdd (SVvector (cl->edict, origin),
+					   SVvector (cl->edict, view_ofs), org);
+			if (pvs == NULL) {
+				pvs = SV_FatPVS (org);
+			} else {
+				SV_AddToFatPVS (org, sv.worldmodel->nodes);
+			}
+		}
+	}
 
 	// send over the players in the PVS
 	SV_WritePlayersToClient (client, clent, pvs, msg);
@@ -580,13 +671,15 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 			|| !*PR_GetString (&sv_pr_state, SVstring (ent, model)))
 			continue;
 
-		// ignore if not touching a PV leaf
-		for (i = 0; i < ent->num_leafs; i++)
-			if (pvs[ent->leafnums[i] >> 3] & (1 << (ent->leafnums[i] & 7)))
-				break;
+		if (!sv_demoNoVis->int_val || !recorder) {
+			// ignore if not touching a PV leaf
+			for (i = 0; i < ent->num_leafs; i++)
+				if (pvs[ent->leafnums[i] >> 3] & (1 << (ent->leafnums[i] & 7)))
+					break;
 
-		if (i == ent->num_leafs)
-			continue;					// not visible
+			if (i == ent->num_leafs)
+				continue;					// not visible
+		}
 
 		if (SV_AddNailUpdate (ent))
 			continue;					// added to the special update list
@@ -654,5 +747,5 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 	SV_EmitPacketEntities (client, pack, msg);
 
 	// now add the specialized nail update
-	SV_EmitNailUpdate (msg);
+	SV_EmitNailUpdate (msg, recorder);
 }

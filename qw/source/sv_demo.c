@@ -53,10 +53,6 @@ static const char rcsid[] =
 
 demo_t      demo;
 
-void        DemoWrite_Begin (byte type, int to, int size);
-void        SV_DemoWritePackets (int num);
-void        SV_Stop_f (void);
-
 #define MIN_DEMO_MEMORY 0x100000
 #define USACACHE (sv_demoUseCache->int_val && svs.demomemsize)
 #define DWRITE(a,b,d) dwrite((QFile *)d,a,b)
@@ -65,6 +61,9 @@ void        SV_Stop_f (void);
 				demobuffer->maxsize - demobuffer->end)
 
 
+
+static int  demo_max_size;
+static int  demo_size;
 cvar_t     *sv_demoUseCache;
 cvar_t     *sv_demoCacheSize;
 cvar_t     *sv_demoMaxDirSize;
@@ -73,9 +72,6 @@ cvar_t     *sv_demofps;
 cvar_t     *sv_demoPings;
 cvar_t     *sv_demoNoVis;
 cvar_t     *sv_demoMaxSize;
-
-static int  demo_max_size;
-static int  demo_size;
 cvar_t     *sv_demoPrefix;
 cvar_t     *sv_demoSuffix;
 cvar_t     *sv_onrecordfinish;
@@ -151,13 +147,13 @@ DemoSetMsgBuf (demobuf_t * prev, demobuf_t * cur)
 	// fix the maxsize of previous msg buffer,
 	// we won't be able to write there anymore
 	if (prev != NULL)
-		prev->maxsize = prev->bufsize;
+		prev->sz.maxsize = prev->bufsize;
 
 	demo.dbuf = cur;
 	memset (demo.dbuf, 0, sizeof (*demo.dbuf));
 
-	demo.dbuf->data = demobuffer->data + demobuffer->end;
-	demo.dbuf->maxsize = MAXSIZE;
+	demo.dbuf->sz.data = demobuffer->data + demobuffer->end;
+	demo.dbuf->sz.maxsize = MAXSIZE;
 }
 
 /*
@@ -176,7 +172,7 @@ SV_DemoWriteToDisk (int type, int to, float time)
 	int         size;
 	sizebuf_t   msg;
 
-	(byte *) p = demo.dbuf->data;
+	(byte *) p = demo.dbuf->sz.data;
 	demo.dbuf->h = NULL;
 
 	oldm = demo.dbuf->bufsize;
@@ -194,14 +190,14 @@ SV_DemoWriteToDisk (int type, int to, float time)
 				SV_WriteDemoMessage (&msg, p->type, p->to, time);
 			}
 			// data is written so it need to be cleard from demobuf
-			if (demo.dbuf->data != (byte *) p)
-				memmove (demo.dbuf->data + size + header, demo.dbuf->data,
-						 (byte *) p - demo.dbuf->data);
+			if (demo.dbuf->sz.data != (byte *) p)
+				memmove (demo.dbuf->sz.data + size + header,
+						 demo.dbuf->sz.data, (byte *) p - demo.dbuf->sz.data);
 
 			demo.dbuf->bufsize -= size + header;
-			demo.dbuf->data += size + header;
+			demo.dbuf->sz.data += size + header;
 			pos -= size + header;
-			demo.dbuf->maxsize -= size + header;
+			demo.dbuf->sz.maxsize -= size + header;
 			demobuffer->start += size + header;
 		}
 		// move along
@@ -211,7 +207,7 @@ SV_DemoWriteToDisk (int type, int to, float time)
 	if (demobuffer->start == demobuffer->last) {
 		if (demobuffer->start == demobuffer->end) {
 			demobuffer->end = 0;		// demobuffer is empty
-			demo.dbuf->data = demobuffer->data;
+			demo.dbuf->sz.data = demobuffer->data;
 		}
 		// go back to begining of the buffer
 		demobuffer->last = demobuffer->end;
@@ -231,13 +227,13 @@ DemoSetBuf (byte type, int to)
 	header_t   *p;
 	int         pos = 0;
 
-	(byte *) p = demo.dbuf->data;
+	(byte *) p = demo.dbuf->sz.data;
 
 	while (pos < demo.dbuf->bufsize) {
 		pos += header + p->size;
 
 		if (type == p->type && to == p->to && !p->full) {
-			demo.dbuf->cursize = pos;
+			demo.dbuf->sz.cursize = pos;
 			demo.dbuf->h = p;
 			return;
 		}
@@ -252,7 +248,7 @@ DemoSetBuf (byte type, int to)
 	p->full = 0;
 
 	demo.dbuf->bufsize += header;
-	demo.dbuf->cursize = demo.dbuf->bufsize;
+	demo.dbuf->sz.cursize = demo.dbuf->bufsize;
 	demobuffer->end += header;
 	demo.dbuf->h = p;
 }
@@ -265,11 +261,11 @@ DemoMoveBuf (void)
 	demobuffer->last = demobuffer->end - demo.dbuf->bufsize;
 
 	// move buffer to the begining of demo buffer
-	memmove (demobuffer->data, demo.dbuf->data, demo.dbuf->bufsize);
-	demo.dbuf->data = demobuffer->data;
+	memmove (demobuffer->data, demo.dbuf->sz.data, demo.dbuf->bufsize);
+	demo.dbuf->sz.data = demobuffer->data;
 	demobuffer->end = demo.dbuf->bufsize;
 	demo.dbuf->h = NULL;				// it will be setup again
-	demo.dbuf->maxsize = MAXSIZE + demo.dbuf->bufsize;
+	demo.dbuf->sz.maxsize = MAXSIZE + demo.dbuf->bufsize;
 }
 
 void
@@ -279,7 +275,7 @@ DemoWrite_Begin (byte type, int to, int size)
 	qboolean    move = false;
 
 	// will it fit?
-	while (demo.dbuf->bufsize + size + header > demo.dbuf->maxsize) {
+	while (demo.dbuf->bufsize + size + header > demo.dbuf->sz.maxsize) {
 		// if we reached the end of buffer move msgbuf to the begining
 		if (!move && demobuffer->end > demobuffer->start)
 			move = true;
@@ -299,9 +295,9 @@ DemoWrite_Begin (byte type, int to, int size)
 		DemoSetBuf (type, to);
 	}
 	// we have to make room for new data
-	if (demo.dbuf->cursize != demo.dbuf->bufsize) {
-		p = demo.dbuf->data + demo.dbuf->cursize;
-		memmove (p + size, p, demo.dbuf->bufsize - demo.dbuf->cursize);
+	if (demo.dbuf->sz.cursize != demo.dbuf->bufsize) {
+		p = demo.dbuf->sz.data + demo.dbuf->sz.cursize;
+		memmove (p + size, p, demo.dbuf->bufsize - demo.dbuf->sz.cursize);
 	}
 
 	demo.dbuf->bufsize += size;
@@ -568,7 +564,7 @@ SV_DemoWritePackets (int num)
 		demo.lastwritten = demo.parsecount;
 
 	demo.dbuf = &demo.frames[demo.parsecount & DEMO_FRAMES_MASK].buf;
-	demo.dbuf->maxsize = MAXSIZE + demo.dbuf->bufsize;
+	demo.dbuf->sz.maxsize = MAXSIZE + demo.dbuf->bufsize;
 }
 
 int
@@ -582,55 +578,6 @@ memwrite (QFile * _mem, const void *buffer, int size)
 		*(*mem)++ = *buf++;
 
 	return size;
-}
-
-static char chartbl[256];
-void        CleanName_Init ();
-
-void
-Demo_Init (void)
-{
-	int         p, size = MIN_DEMO_MEMORY;
-
-	p = COM_CheckParm ("-democache");
-	if (p) {
-		if (p < com_argc - 1)
-			size = atoi (com_argv[p + 1]) * 1024;
-		else
-			Sys_Error ("Memory_Init: you must specify a size in KB after "
-					   "-democache");
-	}
-
-	if (size < MIN_DEMO_MEMORY) {
-		Con_Printf ("Minimum memory size for demo cache is %dk\n",
-					MIN_DEMO_MEMORY / 1024);
-		size = MIN_DEMO_MEMORY;
-	}
-
-	demo.name = dstring_newstr ();
-	demo.path = dstring_newstr ();
-
-	svs.demomem = Hunk_AllocName (size, "demo");
-	svs.demomemsize = size;
-	demo_max_size = size - 0x80000;
-	CleanName_Init ();
-
-	serverdemo = Cvar_Get ("serverdemo", "", CVAR_SERVERINFO, Cvar_Info, "");
-	sv_demofps = Cvar_Get ("sv_demofps", "20", CVAR_NONE, 0, "");
-	sv_demoPings = Cvar_Get ("sv_demoPings", "3", CVAR_NONE, 0, "");
-	sv_demoNoVis = Cvar_Get ("sv_demoNoVis", "1", CVAR_NONE, 0, "");
-	sv_demoUseCache = Cvar_Get ("sv_demoUseCache", "0", CVAR_NONE, 0, "");
-	sv_demoCacheSize = Cvar_Get ("sv_demoCacheSize", va ("%d", size / 1024),
-								 CVAR_ROM, 0, "");
-	sv_demoMaxSize = Cvar_Get ("sv_demoMaxSize", "20480", CVAR_NONE, 0, "");
-	sv_demoMaxDirSize = Cvar_Get ("sv_demoMaxDirSize", "102400", CVAR_NONE, 0,
-								  "");
-	sv_demoDir = Cvar_Get ("sv_demoDir", "demos", CVAR_NONE, 0, "");
-	sv_demoPrefix = Cvar_Get ("sv_demoPrefix", "", CVAR_NONE, 0, "");
-	sv_demoSuffix = Cvar_Get ("sv_demoSuffix", "", CVAR_NONE, 0, "");
-	sv_onrecordfinish = Cvar_Get ("sv_onrecordfinish", "", CVAR_NONE, 0, "");
-	sv_ondemoremove = Cvar_Get ("sv_ondemoremove", "", CVAR_NONE, 0, "");
-	sv_demotxt = Cvar_Get ("sv_demotxt", "1", CVAR_NONE, 0, "");
 }
 
 qboolean
@@ -690,7 +637,7 @@ SV_Stop (int reason)
 	// write a disconnect message to the demo file
 
 	// clearup to be sure message will fit
-	demo.dbuf->cursize = 0;
+	demo.dbuf->sz.cursize = 0;
 	demo.dbuf->h = NULL;
 	demo.dbuf->bufsize = 0;
 	DemoWrite_Begin (dem_all, 0, 2 + strlen ("EndOfDemo"));
@@ -824,7 +771,6 @@ SV_PrintTeams (void)
 	int         i, j, numcl = 0, numt = 0;
 	client_t   *clients[MAX_CLIENTS];
 	char        buf[2048] = { 0 };
-	extern char chartbl2[];
 
 	// count teams and players
 	for (i = 0; i < MAX_CLIENTS; i++) {
@@ -866,7 +812,7 @@ SV_PrintTeams (void)
 	if (!numcl)
 		return "\n";
 	for (p = buf; *p; p++)
-		*p = chartbl2[(byte) * p];
+		*p = sys_char_map[(byte) * p];
 	return va ("%s", buf);
 }
 
@@ -884,16 +830,17 @@ SV_Record (char *name)
 	int         n, i;
 	char        path[MAX_OSPATH];
 	char       *info;
+	dstring_t  *tn = demo.name, *tp = demo.path;
 
 	client_t   *player;
 	const char *gamedir, *s;
 	int         seq = 1;
 
 	memset (&demo, 0, sizeof (demo));
-	/*XXX
 	for (i = 0; i < UPDATE_BACKUP; i++)
 		demo.recorder.frames[i].entities.entities = demo_entities[i];
-	*/
+	dstring_clearstr (demo.name = tn);
+	dstring_clearstr (demo.path = tp);
 
 	DemoBuffer_Init (&demo.dbuffer, demo.buffer, sizeof (demo.buffer));
 	DemoSetMsgBuf (NULL, &demo.frames[0].buf);
@@ -1128,87 +1075,6 @@ SV_Record (char *name)
 }
 
 /*
-	SV_CleanName_Init
-
-	sets chararcter table for quake text->filename translation
-*/
-
-void
-CleanName_Init ()
-{
-	int         i;
-
-	for (i = 0; i < 256; i++)
-		chartbl[i] = (((i & 127) < 'a' || (i & 127) > 'z')
-					  && ((i & 127) < '0'
-						  || (i & 127) > '9')) ? '_' : (i & 127);
-
-	// special cases
-
-	// numbers
-	for (i = 18; i < 29; i++)
-		chartbl[i] = chartbl[i + 128] = i + 30;
-
-	// allow lowercase only
-	for (i = 'A'; i <= 'Z'; i++)
-		chartbl[i] = chartbl[i + 128] = i + 'a' - 'A';
-
-	// brackets
-	chartbl[29] = chartbl[29 + 128] = chartbl[128] = '(';
-	chartbl[31] = chartbl[31 + 128] = chartbl[130] = ')';
-	chartbl[16] = chartbl[16 + 128] = '[';
-	chartbl[17] = chartbl[17 + 128] = ']';
-
-	// dot
-	chartbl[5] = chartbl[14] = chartbl[15] = chartbl[28] = chartbl[46] = '.';
-	chartbl[5 + 128] = chartbl[14 + 128] = chartbl[15 + 128] =
-		chartbl[28 + 128] = chartbl[46 + 128] = '.';
-
-	// !
-	chartbl[33] = chartbl[33 + 128] = '!';
-
-	// #
-	chartbl[35] = chartbl[35 + 128] = '#';
-
-	// %
-	chartbl[37] = chartbl[37 + 128] = '%';
-
-	// &
-	chartbl[38] = chartbl[38 + 128] = '&';
-
-	// '
-	chartbl[39] = chartbl[39 + 128] = '\'';
-
-	// (
-	chartbl[40] = chartbl[40 + 128] = '(';
-
-	// )
-	chartbl[41] = chartbl[41 + 128] = ')';
-
-	// +
-	chartbl[43] = chartbl[43 + 128] = '+';
-
-	// -
-	chartbl[45] = chartbl[45 + 128] = '-';
-
-	// @
-	chartbl[64] = chartbl[64 + 128] = '@';
-
-	// ^
-	chartbl[94] = chartbl[94 + 128] = '^';
-
-
-	chartbl[91] = chartbl[91 + 128] = '[';
-	chartbl[93] = chartbl[93 + 128] = ']';
-
-	chartbl[16] = chartbl[16 + 128] = '[';
-	chartbl[17] = chartbl[17 + 128] = ']';
-
-	chartbl[123] = chartbl[123 + 128] = '{';
-	chartbl[125] = chartbl[125 + 128] = '}';
-}
-
-/*
 	SV_CleanName
 
 	Cleans the demo name, removes restricted chars, makes name lowercase
@@ -1220,13 +1086,13 @@ SV_CleanName (const unsigned char *name)
 	static char text[1024];
 	char       *out = text;
 
-	*out = chartbl[*name++];
+	*out = sys_char_map[*name++];
 
 	while (*name)
-		if (*out == '_' && chartbl[*name] == '_')
+		if (*out == '_' && sys_char_map[*name] == '_')
 			name++;
 		else
-			*++out = chartbl[*name++];
+			*++out = sys_char_map[*name++];
 
 	*++out = 0;
 	return text;
@@ -1765,4 +1631,62 @@ SV_DemoInfo_f (void)
 	}
 
 	Qclose (f);
+}
+
+void
+Demo_Init (void)
+{
+	int         p, size = MIN_DEMO_MEMORY;
+
+	p = COM_CheckParm ("-democache");
+	if (p) {
+		if (p < com_argc - 1)
+			size = atoi (com_argv[p + 1]) * 1024;
+		else
+			Sys_Error ("Memory_Init: you must specify a size in KB after "
+					   "-democache");
+	}
+
+	if (size < MIN_DEMO_MEMORY) {
+		Con_Printf ("Minimum memory size for demo cache is %dk\n",
+					MIN_DEMO_MEMORY / 1024);
+		size = MIN_DEMO_MEMORY;
+	}
+
+	demo.name = dstring_newstr ();
+	demo.path = dstring_newstr ();
+
+	svs.demomem = Hunk_AllocName (size, "demo");
+	svs.demomemsize = size;
+	demo_max_size = size - 0x80000;
+
+	serverdemo = Cvar_Get ("serverdemo", "", CVAR_SERVERINFO, Cvar_Info,
+						   "FIXME");
+	sv_demofps = Cvar_Get ("sv_demofps", "20", CVAR_NONE, 0, "FIXME");
+	sv_demoPings = Cvar_Get ("sv_demoPings", "3", CVAR_NONE, 0, "FIXME");
+	sv_demoNoVis = Cvar_Get ("sv_demoNoVis", "1", CVAR_NONE, 0, "FIXME");
+	sv_demoUseCache = Cvar_Get ("sv_demoUseCache", "0", CVAR_NONE, 0, "FIXME");
+	sv_demoCacheSize = Cvar_Get ("sv_demoCacheSize", va ("%d", size / 1024),
+								 CVAR_ROM, 0, "FIXME");
+	sv_demoMaxSize = Cvar_Get ("sv_demoMaxSize", "20480", CVAR_NONE, 0,
+							   "FIXME");
+	sv_demoMaxDirSize = Cvar_Get ("sv_demoMaxDirSize", "102400", CVAR_NONE, 0,
+								  "FIXME");
+	sv_demoDir = Cvar_Get ("sv_demoDir", "demos", CVAR_NONE, 0, "FIXME");
+	sv_demoPrefix = Cvar_Get ("sv_demoPrefix", "", CVAR_NONE, 0, "FIXME");
+	sv_demoSuffix = Cvar_Get ("sv_demoSuffix", "", CVAR_NONE, 0, "FIXME");
+	sv_onrecordfinish = Cvar_Get ("sv_onrecordfinish", "", CVAR_NONE, 0, "FIXME");
+	sv_ondemoremove = Cvar_Get ("sv_ondemoremove", "", CVAR_NONE, 0, "FIXME");
+	sv_demotxt = Cvar_Get ("sv_demotxt", "1", CVAR_NONE, 0, "FIXME");
+
+	Cmd_AddCommand ("record", SV_Record_f, "FIXME");
+	Cmd_AddCommand ("easyrecord", SV_EasyRecord_f, "FIXME");
+	Cmd_AddCommand ("stop", SV_Stop_f, "FIXME");
+	Cmd_AddCommand ("cancel", SV_Cancel_f, "FIXME");
+	Cmd_AddCommand ("demolist", SV_DemoList_f, "FIXME");
+	Cmd_AddCommand ("rmdemo", SV_DemoRemove_f, "FIXME");
+	Cmd_AddCommand ("rmdemonum", SV_DemoRemoveNum_f, "FIXME");
+	Cmd_AddCommand ("demoInfoAdd", SV_DemoInfoAdd_f, "FIXME");
+	Cmd_AddCommand ("demoInfoRemove", SV_DemoInfoRemove_f, "FIXME");
+	Cmd_AddCommand ("demoInfo", SV_DemoInfo_f, "FIXME");
 }

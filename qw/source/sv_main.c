@@ -87,6 +87,7 @@ static const char rcsid[] =
 #include "net.h"
 #include "pmove.h"
 #include "server.h"
+#include "sv_demo.h"
 #include "sv_progs.h"
 
 SERVER_PLUGIN_PROTOS
@@ -99,6 +100,7 @@ cbuf_args_t *sv_args;
 
 client_t   *host_client;				// current client
 client_static_t cls;					//FIXME needed by netchan :/
+entity_state_t cl_entities[MAX_CLIENTS][UPDATE_BACKUP+1][MAX_PACKET_ENTITIES]; // client entities
 
 double      sv_frametime;
 double      realtime;					// without any filtering or bounding
@@ -153,6 +155,7 @@ cvar_t     *allow_download_skins;
 cvar_t     *allow_download_models;
 cvar_t     *allow_download_sounds;
 cvar_t     *allow_download_maps;
+cvar_t     *allow_download_demos;
 
 cvar_t     *sv_highchars;
 cvar_t     *sv_phs;
@@ -230,6 +233,9 @@ SV_Shutdown (void)
 		Qclose (sv_fraglogfile);
 		sv_fraglogfile = NULL;
 	}
+	if (sv.demorecording)
+		SV_Stop_f();
+
 	NET_Shutdown ();
 	Con_Shutdown ();
 }
@@ -871,6 +877,11 @@ SVC_DirectConnect (void)
 	// accept the new client
 	// this is the only place a client_t is ever initialized
 	*newcl = temp;
+	for (i = 0; i < UPDATE_BACKUP; i++) {
+		newcl->frames[i].entities.entities = cl_entities[newcl-svs.clients][i];
+		memset (cl_entities[newcl-svs.clients][i], 0,
+				sizeof (cl_entities[newcl-svs.clients][i]));
+	}
 
 	Netchan_OutOfBandPrint (adr, "%c", S2C_CONNECTION);
 
@@ -1859,6 +1870,7 @@ void
 SV_Frame (float time)
 {
 	static double start, end;
+	double      demo_start, demo_end;
 
 	start = Sys_DoubleTime ();
 	svs.stats.idle += start - end;
@@ -1919,6 +1931,11 @@ SV_Frame (float time)
 	// send messages back to the clients that had packets read this frame
 	SV_SendClientMessages ();
 
+	demo_start = Sys_DoubleTime ();
+	SV_SendDemoMessage ();
+	demo_end = Sys_DoubleTime ();
+	svs.stats.demo += demo_end - demo_start;
+
 	// send a heartbeat to the master if needed
 	Master_Heartbeat ();
 
@@ -1931,10 +1948,12 @@ SV_Frame (float time)
 		svs.stats.latched_active = svs.stats.active;
 		svs.stats.latched_idle = svs.stats.idle;
 		svs.stats.latched_packets = svs.stats.packets;
+		svs.stats.latched_demo = svs.stats.demo;
 		svs.stats.active = 0;
 		svs.stats.idle = 0;
 		svs.stats.packets = 0;
 		svs.stats.count = 0;
+		svs.stats.demo = 0;
 	}
 	Con_ProcessInput ();	//XXX evil hack to get the cursor in the right place
 }
@@ -2082,6 +2101,9 @@ SV_InitLocal (void)
 	allow_download_maps = Cvar_Get ("allow_download_maps", "1", CVAR_NONE,
 									NULL, "Toggle if clients can download "
 									"maps from the server");
+	allow_download_demos = Cvar_Get ("allow_download_demos", "1", CVAR_NONE,
+									 NULL, "Toggle if clients can download "
+									 "maps from the server");
 	sv_highchars = Cvar_Get ("sv_highchars", "1", CVAR_NONE, NULL,
 							 "Toggle the use of high character color names "
 							 "for players");
@@ -2283,7 +2305,7 @@ SV_ExtractFromUserinfo (client_t *cl)
 		if (strcmp (val, newname)) {
 			Netchan_OutOfBandPrint (net_from, "%c\nPlease choose a "
 									"different name.\n", A2C_PRINT);
-			SV_ClientPrintf (cl, PRINT_HIGH, "Please choose a "
+			SV_ClientPrintf (1, cl, PRINT_HIGH, "Please choose a "
 							 "different name.\n");
 			SV_Printf("Client %d kicked for having a invalid name\n",
 					  cl->userid);
@@ -2299,7 +2321,7 @@ SV_ExtractFromUserinfo (client_t *cl)
 			} else if (cl->lastnamecount++ > 4) {
 				SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked for "
 									"name spam\n", cl->name);
-				SV_ClientPrintf (cl, PRINT_HIGH, "You were kicked "
+				SV_ClientPrintf (1, cl, PRINT_HIGH, "You were kicked "
 								 "from the game for name spamming\n");
 				cl->drop = true;
 				return;
@@ -2484,6 +2506,8 @@ SV_Init (void)
 
 	SV_InitLocal ();
 	Pmove_Init ();
+
+	Demo_Init ();
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();

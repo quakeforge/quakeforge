@@ -60,6 +60,7 @@ static const char rcsid[] =
 #include "msg_ucmd.h"
 #include "pmove.h"
 #include "server.h"
+#include "sv_demo.h"
 #include "sv_progs.h"
 #include "world.h"
 
@@ -293,7 +294,7 @@ SV_PreSpawn_f (ucmd_t *cmd)
 
 		if (sv_mapcheck->int_val && check != sv.worldmodel->checksum &&
 			check != sv.worldmodel->checksum2) {
-			SV_ClientPrintf (host_client, PRINT_HIGH, "Map model file does "
+			SV_ClientPrintf (1, host_client, PRINT_HIGH, "Map model file does "
 							 "not match (%s), %i != %i/%i.\n"
 							 "You may need a new version of the map, or the "
 							 "proper install files.\n",
@@ -522,7 +523,7 @@ SV_Begin_f (ucmd_t *cmd)
 	if (sv.paused) {
 		ClientReliableWrite_Begin (host_client, svc_setpause, 2);
 		ClientReliableWrite_Byte (host_client, sv.paused);
-		SV_ClientPrintf (host_client, PRINT_HIGH, "Server is paused.\n");
+		SV_ClientPrintf (1, host_client, PRINT_HIGH, "Server is paused.\n");
 	}
 #if 0
 // send a fixangle over the reliable channel to make sure it gets there
@@ -597,7 +598,7 @@ SV_NextUpload (void)
 	int		percent, size;
 
 	if (!*host_client->uploadfn) {
-		SV_ClientPrintf (host_client, PRINT_HIGH, "Upload denied\n");
+		SV_ClientPrintf (1, host_client, PRINT_HIGH, "Upload denied\n");
 		ClientReliableWrite_Begin (host_client, svc_stufftext, 8);
 		ClientReliableWrite_String (host_client, "stopul");
 
@@ -752,7 +753,7 @@ SV_Say (qboolean team)
 	char		text[2048], t1[32];
 	const char *t2;
 	client_t   *client;
-	int			tmp, j;
+	int			tmp, j, cls = 0;
 
 	if (Cmd_Argc () < 2)
 		return;
@@ -772,7 +773,7 @@ SV_Say (qboolean team)
 
 	if (fp_messages) {
 		if (!sv.paused && realtime < host_client->lockedtill) {
-			SV_ClientPrintf (host_client, PRINT_CHAT,
+			SV_ClientPrintf (1, host_client, PRINT_CHAT,
 							 "You can't talk for %d more seconds\n",
 							 (int) (host_client->lockedtill - realtime));
 			return;
@@ -784,10 +785,10 @@ SV_Say (qboolean team)
 			&& (realtime - host_client->whensaid[tmp] < fp_persecond)) {
 			host_client->lockedtill = realtime + fp_secondsdead;
 			if (fp_msg[0])
-				SV_ClientPrintf (host_client, PRINT_CHAT,
+				SV_ClientPrintf (1, host_client, PRINT_CHAT,
 								 "FloodProt: %s\n", fp_msg);
 			else
-				SV_ClientPrintf (host_client, PRINT_CHAT,
+				SV_ClientPrintf (1, host_client, PRINT_CHAT,
 								 "FloodProt: You can't talk for %d seconds.\n",
 								 fp_secondsdead);
 			return;
@@ -812,7 +813,7 @@ SV_Say (qboolean team)
 				SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked for "
 									"attempting to fake messages\n",
 									host_client->name);
-				SV_ClientPrintf (host_client, PRINT_HIGH, "You were kicked "
+				SV_ClientPrintf (1, host_client, PRINT_HIGH, "You were kicked "
 								 "for attempting to fake messages\n");
 				SV_DropClient (host_client);
 				return;
@@ -843,8 +844,23 @@ SV_Say (qboolean team)
 					continue;			// on different teams
 			}
 		}
-		SV_ClientPrintf (client, PRINT_CHAT, "%s", text);
+		cls |= 1 << j;
+		SV_ClientPrintf (0, client, PRINT_CHAT, "%s", text);
 	}
+
+	if (!sv.demorecording || !cls)
+		return;
+	// non-team messages should be seen allways, even if not tracking any
+	// player
+	if (!team && ((host_client->spectator && sv_spectalk->value)
+				  || !host_client->spectator)) {
+		DemoWrite_Begin (dem_all, 0, strlen (text) + 3);
+	} else {
+		DemoWrite_Begin (dem_multiple, cls, strlen (text) + 3);
+	}
+	MSG_WriteByte (&demo.dbuf->sz, svc_print);
+	MSG_WriteByte (&demo.dbuf->sz, PRINT_CHAT);
+	MSG_WriteString (&demo.dbuf->sz, text);
 }
 
 void
@@ -891,7 +907,7 @@ SV_Kill_f (ucmd_t *cmd)
 {
 	if (SVfloat (sv_player, health) <= 0) {
 		SV_BeginRedirect (RD_CLIENT);
-		SV_ClientPrintf (host_client, PRINT_HIGH,
+		SV_ClientPrintf (1, host_client, PRINT_HIGH,
 						 "Can't suicide -- already dead!\n");
 		SV_EndRedirect ();
 		return;
@@ -932,7 +948,7 @@ SV_Pause_f (ucmd_t *cmd)
 	currenttime = Sys_DoubleTime ();
 
 	if (lastpausetime + 1 > currenttime) {
-		SV_ClientPrintf (host_client, PRINT_HIGH,
+		SV_ClientPrintf (1, host_client, PRINT_HIGH,
 						 "Pause flood not allowed.\n");
 		return;
 	}
@@ -940,12 +956,12 @@ SV_Pause_f (ucmd_t *cmd)
 	lastpausetime = currenttime;
 
 	if (!pausable->int_val) {
-		SV_ClientPrintf (host_client, PRINT_HIGH, "Pause not allowed.\n");
+		SV_ClientPrintf (1, host_client, PRINT_HIGH, "Pause not allowed.\n");
 		return;
 	}
 
 	if (host_client->spectator) {
-		SV_ClientPrintf (host_client, PRINT_HIGH,
+		SV_ClientPrintf (1, host_client, PRINT_HIGH,
 						 "Spectators can not pause.\n");
 		return;
 	}
@@ -999,7 +1015,8 @@ SV_PTrack_f (ucmd_t *cmd)
 	i = atoi (Cmd_Argv (1));
 	if (i < 0 || i >= MAX_CLIENTS || svs.clients[i].state != cs_spawned ||
 		svs.clients[i].spectator) {
-		SV_ClientPrintf (host_client, PRINT_HIGH, "Invalid client to track\n");
+		SV_ClientPrintf (1, host_client, PRINT_HIGH,
+						 "Invalid client to track\n");
 		host_client->spec_track = 0;
 		ent = EDICT_NUM (&sv_pr_state, host_client - svs.clients + 1);
 		tent = EDICT_NUM (&sv_pr_state, 0);
@@ -1024,7 +1041,7 @@ SV_Rate_f (ucmd_t *cmd)
 	int		rate;
 
 	if (Cmd_Argc () != 2) {
-		SV_ClientPrintf (host_client, PRINT_HIGH, "Current rate is %i\n",
+		SV_ClientPrintf (1, host_client, PRINT_HIGH, "Current rate is %i\n",
 						 (int) (1.0 / host_client->netchan.rate + 0.5));
 		return;
 	}
@@ -1036,7 +1053,7 @@ SV_Rate_f (ucmd_t *cmd)
 		rate = max (500, rate);
 	}
 
-	SV_ClientPrintf (host_client, PRINT_HIGH, "Net rate set to %i\n", rate);
+	SV_ClientPrintf (1, host_client, PRINT_HIGH, "Net rate set to %i\n", rate);
 	host_client->netchan.rate = 1.0 / rate;
 }
 
@@ -1049,14 +1066,15 @@ void
 SV_Msg_f (ucmd_t *cmd)
 {
 	if (Cmd_Argc () != 2) {
-		SV_ClientPrintf (host_client, PRINT_HIGH, "Current msg level is %i\n",
+		SV_ClientPrintf (1, host_client, PRINT_HIGH,
+						 "Current msg level is %i\n",
 						 host_client->messagelevel);
 		return;
 	}
 
 	host_client->messagelevel = atoi (Cmd_Argv (1));
 
-	SV_ClientPrintf (host_client, PRINT_HIGH, "Msg level set to %i\n",
+	SV_ClientPrintf (1, host_client, PRINT_HIGH, "Msg level set to %i\n",
 					 host_client->messagelevel);
 }
 

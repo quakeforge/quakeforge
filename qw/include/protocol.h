@@ -297,7 +297,7 @@ typedef struct
 typedef struct
 {
 	int		num_entities;
-	entity_state_t	entities[MAX_PACKET_ENTITIES];
+	entity_state_t	*entities;
 } packet_entities_t;
 
 typedef struct usercmd_s

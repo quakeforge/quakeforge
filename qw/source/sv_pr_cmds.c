@@ -243,7 +243,7 @@ PF_sprint (progs_t *pr)
 
 	client = &svs.clients[entnum - 1];
 
-	SV_ClientPrintf (client, level, "%s", s);
+	SV_ClientPrintf (1, client, level, "%s", s);
 }
 
 /*

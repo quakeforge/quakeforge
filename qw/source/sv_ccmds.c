@@ -53,6 +53,7 @@ static const char rcsid[] =
 #include "bothdefs.h"
 #include "compat.h"
 #include "server.h"
+#include "sv_demo.h"
 #include "sv_progs.h"
 
 qboolean    sv_allow_cheats;
@@ -265,9 +266,9 @@ SV_God_f (void)
 
 	SVfloat (sv_player, flags) = (int) SVfloat (sv_player, flags) ^ FL_GODMODE;
 	if (!((int) SVfloat (sv_player, flags) & FL_GODMODE))
-		SV_ClientPrintf (host_client, PRINT_HIGH, "godmode OFF\n");
+		SV_ClientPrintf (1, host_client, PRINT_HIGH, "godmode OFF\n");
 	else
-		SV_ClientPrintf (host_client, PRINT_HIGH, "godmode ON\n");
+		SV_ClientPrintf (1, host_client, PRINT_HIGH, "godmode ON\n");
 }
 
 void
@@ -284,10 +285,10 @@ SV_Noclip_f (void)
 
 	if (SVfloat (sv_player, movetype) != MOVETYPE_NOCLIP) {
 		SVfloat (sv_player, movetype) = MOVETYPE_NOCLIP;
-		SV_ClientPrintf (host_client, PRINT_HIGH, "noclip ON\n");
+		SV_ClientPrintf (1, host_client, PRINT_HIGH, "noclip ON\n");
 	} else {
 		SVfloat (sv_player, movetype) = MOVETYPE_WALK;
-		SV_ClientPrintf (host_client, PRINT_HIGH, "noclip OFF\n");
+		SV_ClientPrintf (1, host_client, PRINT_HIGH, "noclip OFF\n");
 	}
 }
 
@@ -377,6 +378,9 @@ SV_Map_f (void)
 	}
 	Qclose (f);
 
+	if (sv.demorecording)
+		SV_Stop_f ();
+
 	SV_BroadcastCommand ("changing\n");
 	SV_SendMessagesToAll ();
 
@@ -417,7 +421,8 @@ SV_Kick_f (void)
 			SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked\n", cl->name);
 			// print directly, because the dropped client won't get the
 			// SV_BroadcastPrintf message
-			SV_ClientPrintf (cl, PRINT_HIGH, "You were kicked from the game\n");
+			SV_ClientPrintf (1, cl, PRINT_HIGH,
+							 "You were kicked from the game\n");
 			SV_DropClient (cl);
 			return;
 		}
@@ -431,25 +436,27 @@ SV_Status_f (void)
 {
 	int         i;
 	client_t   *cl;
-	float       cpu, avg, pak;
+	float       cpu, avg, pak, demo = 0;
 	const char *s;
 
 
 	cpu = (svs.stats.latched_active + svs.stats.latched_idle);
-	if (cpu)
+	if (cpu) {
+		demo = 100 * svs.stats.latched_demo / cpu;
 		cpu = 100 * svs.stats.latched_active / cpu;
+	}
 	avg = 1000 * svs.stats.latched_active / STATFRAMES;
 	pak = (float) svs.stats.latched_packets / STATFRAMES;
 
 	SV_Printf ("net address      : %s\n", NET_AdrToString (net_local_adr));
-	SV_Printf ("cpu utilization  : %3i%%\n", (int) cpu);
+	SV_Printf ("cpu utilization  : %3i%% (%3i%%)\n", (int) cpu, (int)demo);
 	SV_Printf ("avg response time: %i ms\n", (int) avg);
 	SV_Printf ("packets/frame    : %5.2f\n", pak);
 
 	// min fps lat drp
 	if (sv_redirected != RD_NONE) {
 		// most remote clients are 40 columns
-		// 0123456789012345678901234567890123456789
+		//          0123456789012345678901234567890123456789
 		SV_Printf ("name               userid frags\n");
 		SV_Printf ("  address          rate ping drop\n");
 		SV_Printf ("  ---------------- ---- ---- -----\n");
@@ -475,11 +482,11 @@ SV_Status_f (void)
 				SV_Printf ("ZOMBIE\n");
 				continue;
 			}
-			SV_Printf ("%4i %4i %5.2f\n", (int) (1000 * cl->netchan.frame_rate)
-						, (int) SV_CalcPing (cl)
-						,
-						100.0 * cl->netchan.drop_count /
-						cl->netchan.incoming_sequence);
+			SV_Printf ("%4i %4i %5.2f\n",
+					   (int) (1000 * cl->netchan.frame_rate),
+					   (int) SV_CalcPing (cl),
+					   100.0 * cl->netchan.drop_count /
+							cl->netchan.incoming_sequence);
 		}
 	} else {
 		SV_Printf ("frags userid address         name            rate ping "
@@ -676,9 +683,9 @@ SV_Tell (const char *prefix)
 		if (!cl->state)
 			continue;
 		if (cl->userid == uid) {
-			SV_ClientPrintf(cl, PRINT_CHAT, "\n"); // bell
-			SV_ClientPrintf(cl, PRINT_HIGH, "%s\n", text);
-			SV_ClientPrintf(cl, PRINT_CHAT, "%s", ""); // bell
+			SV_ClientPrintf (1, cl, PRINT_CHAT, "\n"); // bell
+			SV_ClientPrintf (1, cl, PRINT_HIGH, "%s\n", text);
+			SV_ClientPrintf (1, cl, PRINT_CHAT, "%s", ""); // bell
 			return;
 		}
 	}
@@ -766,9 +773,15 @@ SV_ConSay (const char *prefix)
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
 		if (client->state != cs_spawned)	// kk just has !client->state
 			continue;
-		SV_ClientPrintf (client, PRINT_HIGH, "%s\n", text);
+		SV_ClientPrintf (1, client, PRINT_HIGH, "%s\n", text);
 		if (*prefix != 'I')		// beep, except for Info says
-			SV_ClientPrintf(client, PRINT_CHAT, "%s", "");
+			SV_ClientPrintf (0, client, PRINT_CHAT, "%s", "");
+	}
+	if (sv.demorecording) {
+		DemoWrite_Begin (dem_all, 0, strlen (text) + 3);
+		MSG_WriteByte (&demo.dbuf->sz, svc_print);
+		MSG_WriteByte (&demo.dbuf->sz, PRINT_CHAT);
+		MSG_WriteString (&demo.dbuf->sz, text);
 	}
 }
 

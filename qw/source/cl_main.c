@@ -181,6 +181,7 @@ static int  cl_usleep_cache;
 
 client_static_t cls;
 client_state_t cl;
+entity_state_t cl_entities[UPDATE_BACKUP][MAX_PACKET_ENTITIES];
 
 entity_state_t cl_baselines[MAX_EDICTS];
 efrag_t     cl_efrags[MAX_EFRAGS];
@@ -388,11 +389,16 @@ CL_Rcon_f (void)
 void
 CL_ClearState (void)
 {
+	int         i;
+
 	S_StopAllSounds (true);
 
 	// wipe the entire cl structure
 	Info_Destroy (cl.serverinfo);
 	memset (&cl, 0, sizeof (cl));
+	for (i = 0; i < UPDATE_BACKUP; i++)
+		cl.frames[i].packet_entities.entities = cl_entities[i];
+	memset (cl_entities, 0, sizeof (cl_entities));
 	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING);
 
 	CL_Init_Entity (&cl.viewent);
