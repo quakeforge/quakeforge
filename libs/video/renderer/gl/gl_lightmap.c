@@ -351,7 +351,9 @@ R_BuildLightMap_3 (msurface_t *surf)
 			scale = d_lightstylevalue[surf->styles[maps]];
 			surf->cached_light[maps] = scale;					// 8.8 fraction
 			bl = blocklights;
-			for (i = 0; i < size; i++) {
+			for (i = 0; i < smax * tmax; i++) {
+				*bl++ += *lightmap++ * scale;
+				*bl++ += *lightmap++ * scale;
 				*bl++ += *lightmap++ * scale;
 			}
 		}
@@ -442,7 +444,9 @@ R_BuildLightMap_4 (msurface_t *surf)
 			scale = d_lightstylevalue[surf->styles[maps]];
 			surf->cached_light[maps] = scale;					// 8.8 fraction
 			bl = blocklights;
-			for (i = 0; i < size; i++) {
+			for (i = 0; i < smax * tmax; i++) {
+				*bl++ += *lightmap++ * scale;
+				*bl++ += *lightmap++ * scale;
 				*bl++ += *lightmap++ * scale;
 			}
 		}
