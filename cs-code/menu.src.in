@@ -1,7 +1,8 @@
 menu.dat
 
-@srcdir@/cvar_def.qc
 @srcdir@/cbuf_def.qc
+@srcdir@/cmd_def.qc
+@srcdir@/cvar_def.qc
 @srcdir@/draw_def.qc
 @srcdir@/file_def.qc
 @srcdir@/game_def.qc

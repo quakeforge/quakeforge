@@ -378,14 +378,15 @@ Menu_Init (void)
 	PR_AddBuiltin (&menu_pr_state, "Menu_GetIndex", bi_Menu_GetIndex, -1);
 
 	Cbuf_Progs_Init (&menu_pr_state);
+	Cmd_Progs_Init (&menu_pr_state);
+	Cvar_Progs_Init (&menu_pr_state);
 	File_Progs_Init (&menu_pr_state);
 	InputLine_Progs_Init (&menu_pr_state);
-	String_Progs_Init (&menu_pr_state);
-	StringHash_Progs_Init (&menu_pr_state);
-	Cvar_Progs_Init (&menu_pr_state);
 	Key_Progs_Init (&menu_pr_state);
 	PR_Cmds_Init (&menu_pr_state);
 	R_Progs_Init (&menu_pr_state);
+	String_Progs_Init (&menu_pr_state);
+	StringHash_Progs_Init (&menu_pr_state);
 
 	confirm_quit = Cvar_Get ("confirm_quit", "1", CVAR_ARCHIVE, NULL,
 							 "confirm quit command");

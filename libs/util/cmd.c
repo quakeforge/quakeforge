@@ -779,6 +779,7 @@ typedef struct cmd_function_s {
 	const char *name;
 	xcommand_t  function;
 	const char *description;
+	void *data;
 	qboolean pure;
 } cmd_function_t;
 
@@ -1349,7 +1350,7 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 	cmd_activebuffer->argc = cmd_argc;
 }
 
-void
+int
 Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 				const char *description)
 {
@@ -1359,13 +1360,13 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 	// fail if the command is a variable name
 	if (Cvar_FindVar (cmd_name)) {
 		Sys_Printf ("Cmd_AddCommand: %s already defined as a var\n", cmd_name);
-		return;
+		return 0;
 	}
 	// fail if the command already exists
 	cmd = (cmd_function_t *) Hash_Find (cmd_hash, cmd_name);
 	if (cmd) {
 		Sys_Printf ("Cmd_AddCommand: %s already defined\n", cmd_name);
-		return;
+		return 0;
 	}
 
 	cmd = calloc (1, sizeof (cmd_function_t));
@@ -1380,6 +1381,24 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 			break;
 	cmd->next = *c;
 	*c = cmd;
+	return 1;
+}
+
+int
+Cmd_RemoveCommand (const char *name)
+{
+	cmd_function_t *cmd;
+	cmd_function_t **c;
+
+	cmd = (cmd_function_t *) Hash_Del (cmd_hash, name);
+	if (!cmd)
+		return 0;
+	for (c = &cmd_functions; *c; c = &(*c)->next)
+		if ((*c)->next == cmd)
+			break;
+	(*c)->next = cmd->next;
+	free (cmd);
+	return 1;
 }
 
 void

@@ -33,13 +33,14 @@ static const char rcsid[] =
 #include "QF/csqc.h"
 #include "QF/progs.h"
 
-static void (*const cbuf_progs_init)(struct progs_s *) = Cbuf_Progs_Init;
-static void (*const file_progs_init)(struct progs_s *) = File_Progs_Init;
-static void (*const inputline_progs_init)(struct progs_s *) = InputLine_Progs_Init;
-static void (*const string_progs_init)(struct progs_s *) = String_Progs_Init;
-static void (*const stringhashe_progs_init)(struct progs_s *) = StringHash_Progs_Init;
-static void (*const cvar_progs_init)(struct progs_s *) = Cvar_Progs_Init;
-static void (*const key_progs_init)(struct progs_s *) = Key_Progs_Init;
+static void (*const cbuf_progs_init)(progs_t *) = Cbuf_Progs_Init;
+static void (*const cvar_progs_init)(progs_t *) = Cvar_Progs_Init;
+static void (*const cmd_progs_init)(progs_t *) = Cmd_Progs_Init;
+static void (*const file_progs_init)(progs_t *) = File_Progs_Init;
+static void (*const key_progs_init)(progs_t *) = Key_Progs_Init;
+static void (*const inputline_progs_init)(progs_t *) = InputLine_Progs_Init;
+static void (*const string_progs_init)(progs_t *) = String_Progs_Init;
+static void (*const stringhashe_progs_init)(progs_t *) = StringHash_Progs_Init;
 
 void
 BI_Init ()

@@ -1,0 +1,171 @@
+/*
+	bi_cmd.c
+
+	Command api for csqc
+
+	Copyright (C) 2001 Bill Currie
+
+	Author: Bill Currie
+	Date: 2002/4/12
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+*/
+static const char rcsid[] =
+	"$Id$";
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#include <stdlib.h>
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
+#include "QF/cmd.h"
+#include "QF/hash.h"
+#include "QF/progs.h"
+#include "QF/sys.h"
+
+typedef struct bi_cmd_s {
+	struct bi_cmd_s *next;
+	char       *name;
+	progs_t    *pr;
+	func_t      func;
+} bi_cmd_t;
+
+typedef struct {
+	bi_cmd_t  *cmds;
+} cmd_resources_t;
+
+static hashtab_t *bi_cmds;
+
+static const char *
+bi_cmd_get_key (void *c, void *unused)
+{
+	return ((bi_cmd_t *)c)->name;
+}
+
+static void
+bi_cmd_free (void *_c, void *unused)
+{
+	bi_cmd_t   *c = (bi_cmd_t *) _c;
+
+	free (c->name);
+	free (c);
+}
+
+static void
+bi_cmd_f (void *pr)
+{
+	bi_cmd_t   *cmd = Hash_Find (bi_cmds, Cmd_Argv (0));
+
+	if (!cmd)
+		Sys_Error ("bi_cmd_f: unexpected call %s\n", Cmd_Argv (0));
+	PR_ExecuteProgram (cmd->pr, cmd->func);
+}
+
+static void
+bi_Cmd_AddCommand (progs_t *pr)
+{
+	cmd_resources_t *res = PR_Resources_Find (pr, "Cmd");
+	bi_cmd_t   *cmd = malloc (sizeof (bi_cmd_t));
+	char       *name = strdup (G_STRING (pr, OFS_PARM0));
+	func_t      func = G_FUNCTION (pr, OFS_PARM1);
+
+	if (!cmd || !name || !Cmd_AddCommand (name, (void(*)(void))bi_cmd_f, "CSQC command")) {
+		if (name)
+			free (name);
+		if (cmd)
+			free (cmd);
+		G_INT (pr, OFS_RETURN) = 0;
+		return;
+	}
+	cmd->name = name;
+	cmd->func = func;
+	cmd->pr = pr;
+	Hash_Add (bi_cmds, cmd);
+	cmd->next = res->cmds;
+	res->cmds = cmd;
+	G_INT (pr, OFS_RETURN) = 1;
+}
+
+static void
+bi_cmd_clear (progs_t *pr, void *data)
+{
+	cmd_resources_t *res = (cmd_resources_t *)data;
+	bi_cmd_t   *cmd;
+
+	while ((cmd = res->cmds)) {
+		Cmd_RemoveCommand (cmd->name);
+		Hash_Del (bi_cmds, cmd->name);
+		res->cmds = cmd->next;
+		bi_cmd_free (cmd, 0);
+	}
+}
+
+static void
+bi_Cmd_Argc (progs_t *pr)
+{
+	G_INT (pr, OFS_RETURN) = Cmd_Argc ();
+}
+
+static void
+bi_Cmd_Argv (progs_t *pr)
+{
+	RETURN_STRING (pr, Cmd_Argv (G_INT (pr, OFS_PARM0)));
+}
+
+static void
+bi_Cmd_Args (progs_t *pr)
+{
+	RETURN_STRING (pr, Cmd_Args (G_INT (pr, OFS_PARM0)));
+}
+
+static void
+bi_Cmd_Argu (progs_t *pr)
+{
+	RETURN_STRING (pr, Cmd_Argu (G_INT (pr, OFS_PARM0)));
+}
+
+//Cmd_CheckParm
+//Cmd_TokenizeString
+//Cmd_ExecuteString
+//Cmd_ForwardToServer
+
+void
+Cmd_Progs_Init (progs_t *pr)
+{
+	cmd_resources_t *res = malloc (sizeof (cmd_resources_t));
+
+	res->cmds = 0;
+	PR_Resources_Register (pr, "Cmd", res, bi_cmd_clear);
+
+	bi_cmds = Hash_NewTable (1021, bi_cmd_get_key, bi_cmd_free, 0);
+
+	PR_AddBuiltin (pr, "Cmd_AddCommand", bi_Cmd_AddCommand, -1);
+	PR_AddBuiltin (pr, "Cmd_Argc", bi_Cmd_Argc, -1);
+	PR_AddBuiltin (pr, "Cmd_Argv", bi_Cmd_Argv, -1);
+	PR_AddBuiltin (pr, "Cmd_Args", bi_Cmd_Args, -1);
+	PR_AddBuiltin (pr, "Cmd_Argu", bi_Cmd_Argu, -1);
+}

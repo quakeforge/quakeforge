@@ -128,7 +128,8 @@ void	Cmd_Init_Hash (void);
 void	Cmd_Init (void);
 void	cl_Cmd_Init (void);
 
-void	Cmd_AddCommand (const char *cmd_name, xcommand_t function, const char *description);
+int		Cmd_AddCommand (const char *cmd_name, xcommand_t function, const char *description);
+int		Cmd_RemoveCommand (const char *cmd_name);
 // called by the init functions of other parts of the program to
 // register commands and functions to call for them.
 // The cmd_name is referenced later, so it should not be in temp memory

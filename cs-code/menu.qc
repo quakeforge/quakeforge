@@ -88,6 +88,14 @@ integer (string text, integer key) save_f =
 	return 0;
 };
 
+void () load_save_f =
+{
+	if (Cmd_Argv (0) == "menu_load")
+		Menu_SelectMenu ("load");
+	else
+		Menu_SelectMenu ("save");
+};
+
 integer () load_draw =
 {
 	local integer i;
@@ -103,7 +111,7 @@ integer () save_draw =
 {
 	local integer i;
 
-	Draw_CenterPic (160, 4, Draw_CachePic ("p_save.lmp", 1));
+	Draw_CenterPic (160, 4, Draw_CachePic ("gfx/p_save.lmp", 1));
 	for (i=0 ; i< MAX_SAVEGAMES; i++)
 		Draw_String (16, 32 + 8 * i, filenames[i]);
 	Draw_Character (8, 32 + save_cursor * 8, 12 + (integer (time * 4) & 1));
@@ -163,6 +171,7 @@ void () load_menu =
 	Menu_KeyEvent (load_keyevent);
 	Menu_Draw (load_draw);
 	Menu_End ();
+	Cmd_AddCommand ("menu_load", load_save_f);
 };
 
 void () save_menu =
@@ -172,6 +181,7 @@ void () save_menu =
 	Menu_KeyEvent (save_keyevent);
 	Menu_Draw (save_draw);
 	Menu_End ();
+	Cmd_AddCommand ("menu_save", load_save_f);
 };
 
 // ********* QUIT

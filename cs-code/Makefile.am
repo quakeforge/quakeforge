@@ -19,7 +19,7 @@ STRIP=$(shell echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c)
 pkgdata_DATA= menu.dat$(GZ)
 
 menu_src= \
-	cbuf_def.qc controls_o.qc cvar_def.qc draw_def.qc file_def.qc \
+	cbuf_def.qc cmd_def.qc controls_o.qc cvar_def.qc draw_def.qc file_def.qc \
 	game_def.qc inputline_def.qc inputline_util.qc key_defs.qc menu.qc \
 	menu_def.qc menu_pics.qc menu_util.qc options.qc options_util.qc \
 	servlist.qc string_def.qc stringh_def.qc
