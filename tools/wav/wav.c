@@ -386,7 +386,8 @@ main (int argc, char **argv)
 					break;
 			}
 		}
-		printf ("%s: CUEPOINT=%d %d\n", *argv, sample_start, sample_count);
+		if (sample_start!= -1)
+			printf ("CUEPOINT=%d %d\n", sample_start, sample_count);
 	}
 	return 0;
 }
