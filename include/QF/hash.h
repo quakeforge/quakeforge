@@ -120,4 +120,9 @@ unsigned long Hash_String (const char *str);
 */
 void **Hash_GetList (hashtab_t *tab);
 
+/*
+	dump statistics about the hash table
+*/
+void Hash_Stats (hashtab_t *tab);
+
 #endif // __hash_h

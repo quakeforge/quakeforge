@@ -1,5 +1,5 @@
 /*
-	hash.h
+	hash.c
 
 	hash tables
 
@@ -37,6 +37,7 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
+#include <math.h>
 #include <stdlib.h>		// should be sys/types.h, but bc is stupid
 
 #include "QF/hash.h"
@@ -52,6 +53,7 @@ struct hashlink_s {
 
 struct hashtab_s {
 	size_t tab_size;
+	unsigned int size_bits;
 	size_t num_ele;
 	void *user_data;
 	int (*compare)(void*,void*,void*);
@@ -102,6 +104,30 @@ compare (void *a, void *b, void *data)
 	return a == b;
 }
 
+static inline int
+get_index (unsigned long hash, size_t size, size_t bits)
+{
+#if 0
+	unsigned long mask = ~0UL << bits;
+	unsigned long extract;
+	
+	size -= 1;
+	for (extract = (hash & mask) >> bits;
+		 extract;
+		 extract = (hash & mask) >> bits) {
+		hash &= ~mask;
+		hash ^= extract;
+	} while (extract);
+	if (hash > size) {
+		extract = hash - size;
+		hash = size - (extract >> 1);
+	}
+	return hash;
+#else
+	return hash % size;
+#endif
+}
+
 hashtab_t *
 Hash_NewTable (int tsize, const char *(*gk)(void*,void*),
 			   void (*f)(void*,void*), void *ud)
@@ -113,6 +139,11 @@ Hash_NewTable (int tsize, const char *(*gk)(void*,void*),
 	tab->user_data = ud;
 	tab->get_key = gk;
 	tab->free_ele = f;
+
+	while (tsize) {
+		tab->size_bits++;
+		tsize = ((unsigned int) tsize) >> 1;
+	}
 
 	tab->get_hash = get_hash;
 	tab->compare = compare;
@@ -157,7 +188,7 @@ int
 Hash_Add (hashtab_t *tab, void *ele)
 {
 	unsigned long h = Hash_String (tab->get_key(ele, tab->user_data));
-	size_t ind = h % tab->tab_size;
+	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
 	struct hashlink_s *lnk = malloc (sizeof (struct hashlink_s));
 
 	if (!lnk)
@@ -176,7 +207,7 @@ int
 Hash_AddElement (hashtab_t *tab, void *ele)
 {
 	unsigned long h = tab->get_hash (ele, tab->user_data);
-	size_t ind = h % tab->tab_size;
+	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
 	struct hashlink_s *lnk = malloc (sizeof (struct hashlink_s));
 
 	if (!lnk)
@@ -195,7 +226,7 @@ void *
 Hash_Find (hashtab_t *tab, const char *key)
 {
 	unsigned long h = Hash_String (key);
-	size_t ind = h % tab->tab_size;
+	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
 	struct hashlink_s *lnk = tab->tab[ind];
 
 	while (lnk) {
@@ -210,7 +241,7 @@ void *
 Hash_FindElement (hashtab_t *tab, void *ele)
 {
 	unsigned long h = tab->get_hash (ele, tab->user_data);
-	size_t ind = h % tab->tab_size;
+	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
 	struct hashlink_s *lnk = tab->tab[ind];
 
 	while (lnk) {
@@ -225,7 +256,7 @@ void *
 Hash_Del (hashtab_t *tab, const char *key)
 {
 	unsigned long h = Hash_String (key);
-	size_t ind = h % tab->tab_size;
+	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
 	struct hashlink_s *lnk = tab->tab[ind];
 	void *data;
 
@@ -248,7 +279,7 @@ void *
 Hash_DelElement (hashtab_t *tab, void *ele)
 {
 	unsigned long h = tab->get_hash (ele, tab->user_data);
-	size_t ind = h % tab->tab_size;
+	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
 	struct hashlink_s *lnk = tab->tab[ind];
 	void *data;
 
@@ -286,4 +317,55 @@ Hash_GetList (hashtab_t *tab)
 	}
 	*l++ = 0;
 	return list;
+}
+
+static inline double
+sqr (double x)
+{
+	return x * x;
+}
+
+void
+Hash_Stats (hashtab_t *tab)
+{
+	int        *lengths = calloc (tab->tab_size, sizeof (int));
+	int         chains = 0;
+	int         i;
+	int         min_length = tab->num_ele;
+	int         max_length = 0;
+
+	if (!lengths) {
+		Sys_Printf ("Hash_Stats: memory alloc error\n");
+		return;
+	}
+
+	for (i = 0; i < tab->tab_size; i++) {
+		struct hashlink_s *lnk = tab->tab[i];
+
+		while (lnk) {
+			lengths[i]++;
+			lnk = lnk->next;
+		}
+		if (lengths[i]) {
+			min_length = min (min_length, lengths[i]);
+			max_length = max (max_length, lengths[i]);
+			chains++;
+		}
+	}
+	Sys_Printf ("%d elements\n", tab->num_ele);
+	Sys_Printf ("%d / %d chains\n", chains, tab->tab_size);
+	if (chains) {
+		double      average = (double) tab->num_ele / chains;
+		double      variance = 0;
+		Sys_Printf ("%d minium chain length\n", min_length);
+		Sys_Printf ("%d maximum chain length\n", max_length);
+		Sys_Printf ("%.3g average chain length\n", average);
+		for (i = 0; i < tab->tab_size; i++) {
+			if (lengths[i])
+				variance += sqr (lengths[i] - average);
+		}
+		variance /= chains;
+		Sys_Printf ("%.3g variance, %.3g standard deviation\n",
+					variance, sqrt (variance));
+	}
 }
