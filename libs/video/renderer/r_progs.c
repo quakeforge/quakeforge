@@ -51,8 +51,19 @@ bi_Draw_Pic (progs_t *pr)
 	Draw_Pic (x, y, pic);
 }
 
+static void
+bi_Draw_String (progs_t *pr)
+{
+	int         x = G_INT (pr, OFS_PARM0);
+	int         y = G_INT (pr, OFS_PARM1);
+	const char *text = G_STRING (pr, OFS_PARM2);
+
+	Draw_String (x, y, text);
+}
+
 void
 R_Progs_Init (progs_t *pr)
 {
 	PR_AddBuiltin (pr, "Draw_Pic", bi_Draw_Pic, -1);
+	PR_AddBuiltin (pr, "Draw_String", bi_Draw_String, -1);
 }
