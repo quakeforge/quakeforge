@@ -614,12 +614,43 @@ CL_FinishMove (usercmd_t *cmd)
 			(360.0 / 65536.0);
 }
 
+static inline int
+pps_check (int dontdrop)
+{
+	static float	pps_balance = 0.0;
+	static int		dropcount = 0;
+
+	pps_balance += host_frametime;
+	// never drop more than 2 messages in a row -- that'll cause PL
+	// and don't drop if one of the last two movemessages have an impulse
+	if (pps_balance > 0.0 || dropcount >= 2 || dontdrop) {
+		float   pps;
+
+		if (!(pps = cl_maxnetfps->int_val))
+			pps = rate->value / 80.0;
+		
+		pps = bound (1, pps, 72);
+		
+		pps_balance -= 1.0 / pps;
+		pps_balance = bound (-0.1, pps_balance, 0.1);
+		dropcount = 0;
+		return 1;
+	} else {
+		int i;
+		// don't count this message when calculating PL
+		i = cls.netchan.outgoing_sequence & UPDATE_MASK;
+		cl.frames[i].receivedtime = -3;
+		// drop this message
+		cls.netchan.outgoing_sequence++;
+		dropcount++;
+		return 0;
+	}
+}
+
 void
 CL_SendCmd (void)
 {
 	byte			data[128];
-	static float	pps_balance = 0.0;
-	static int		dropcount = 0;
 	int				checksumIndex, lost, seq_hash, i;
 	qboolean		dontdrop; // FIXME: needed without cl_c2sImpulseBackup?
 	sizebuf_t		buf;
@@ -637,7 +668,7 @@ CL_SendCmd (void)
 //	seq_hash = (cls.netchan.outgoing_sequence & 0xffff) ; // ^ QW_CHECK_HASH;
 	seq_hash = cls.netchan.outgoing_sequence;
 
-	// get basic movement from keyboard
+	// get basic movement from keyboard, mouse, etc
 	CL_BaseMove (cmd);
 
 	// if we are spectator, try autocam
@@ -708,31 +739,9 @@ CL_SendCmd (void)
 	if (cls.demorecording)
 		CL_WriteDemoCmd (cmd);
 
-	pps_balance += host_frametime;
-	// never drop more than 2 messages in a row -- that'll cause PL
-	// and don't drop if one of the last two movemessages have an impulse
-	if (pps_balance > 0.0 || dropcount >= 2 || dontdrop) {
-		float   pps;
-
-		if (!(pps = cl_maxnetfps->int_val))
-			pps = rate->value / 80.0;
-		
-		pps = bound (1, pps, 72);
-		
-		pps_balance -= 1.0 / pps;
-		pps_balance = bound (-0.1, pps_balance, 0.1);
-		dropcount = 0;
-	} else {
-		// don't count this message when calculating PL
-		cl.frames[i].receivedtime = -3;
-		// drop this message
-		cls.netchan.outgoing_sequence++;
-		dropcount++;
-		return;
-	}
-
 	// deliver the message
-	Netchan_Transmit (&cls.netchan, buf.cursize, buf.data);
+	if (pps_check (dontdrop))
+		Netchan_Transmit (&cls.netchan, buf.cursize, buf.data);
 }
 
 void
