@@ -38,12 +38,13 @@ typedef enum {
 	ev_quaternion,
 	ev_integer,
 	ev_uinteger,
+	ev_short,			// value is embedded in the opcode
 	
 	ev_type_count		// not a type, gives number of types
 } etype_t;
 
 extern int pr_type_size[ev_type_count];
-
+extern const char *type_name[ev_type_count];
 
 #define	OFS_NULL		0
 #define	OFS_RETURN		1
@@ -217,6 +218,24 @@ typedef enum {
 	OP_GT_UI,
 	OP_LE_UI,
 	OP_GE_UI,
+
+	OP_LOADBI_F,
+	OP_LOADBI_V,
+	OP_LOADBI_S,
+	OP_LOADBI_ENT,
+	OP_LOADBI_FLD,
+	OP_LOADBI_FNC,
+	OP_LOADBI_I,
+	OP_LOADBI_P,
+
+	OP_STOREBI_F,
+	OP_STOREBI_V,
+	OP_STOREBI_S,
+	OP_STOREBI_ENT,
+	OP_STOREBI_FLD,
+	OP_STOREBI_FNC,
+	OP_STOREBI_I,
+	OP_STOREBI_P,
 } pr_opcode_e;
 
 typedef struct
@@ -230,7 +249,6 @@ typedef struct
 } opcode_t;
 
 extern opcode_t pr_opcodes[];
-extern const char *type_name[ev_type_count];
 opcode_t *PR_Opcode (short opcode);
 void PR_Opcode_Init (void);
 

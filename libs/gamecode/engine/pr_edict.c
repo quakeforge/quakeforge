@@ -68,6 +68,7 @@ int         pr_type_size[ev_type_count] = {
 	4,
 	1,
 	1,
+	0,			// value in opcode
 };
 
 const char *type_name[ev_type_count] = {
@@ -82,6 +83,7 @@ const char *type_name[ev_type_count] = {
 	"quaternion",
 	"integer",
 	"uinteger",
+	"short",
 };
 
 ddef_t     *ED_FieldAtOfs (progs_t * pr, int ofs);
@@ -476,6 +478,10 @@ PR_GlobalString (progs_t * pr, int ofs, etype_t type)
 	void       *val;
 	static char line[128];
 
+	if (type == ev_short) {
+		snprintf (line, sizeof (line), "%-20d", (short) ofs);
+		return line;
+	}
 	if (pr_debug->int_val && pr->debug)
 		def = PR_Get_Local_Def (pr, ofs);
 	val = (void *) &pr->pr_globals[ofs];

@@ -574,6 +574,25 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				VectorCopy (ptr->vector_var, OPC.vector_var);
 				break;
 
+			case OP_LOADBI_F:
+			case OP_LOADBI_S:
+			case OP_LOADBI_ENT:
+			case OP_LOADBI_FLD:
+			case OP_LOADBI_FNC:
+			case OP_LOADBI_I:
+			case OP_LOADBI_P:
+				//FIXME put bounds checking in
+				pointer = OPA.integer_var + (short) st->b;
+				ptr = pr->pr_globals + pointer;
+				OPC.integer_var = ptr->integer_var;
+				break;
+			case OP_LOADBI_V:
+				//FIXME put bounds checking in
+				pointer = OPA.integer_var + (short) st->b;
+				ptr = pr->pr_globals + pointer;
+				VectorCopy (ptr->vector_var, OPC.vector_var);
+				break;
+
 			case OP_LEA:
 				pointer = OPA.integer_var + OPB.integer_var;
 				OPC.integer_var = pointer;
@@ -594,6 +613,25 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 			case OP_STOREB_V:
 				//FIXME put bounds checking in
 				pointer = OPB.integer_var + OPC.integer_var;
+				ptr = pr->pr_globals + pointer;
+				VectorCopy (OPA.vector_var, ptr->vector_var);
+				break;
+
+			case OP_STOREBI_F:
+			case OP_STOREBI_S:
+			case OP_STOREBI_ENT:
+			case OP_STOREBI_FLD:
+			case OP_STOREBI_FNC:
+			case OP_STOREBI_I:
+			case OP_STOREBI_P:
+				//FIXME put bounds checking in
+				pointer = OPB.integer_var + (short) st->c;
+				ptr = pr->pr_globals + pointer;
+				ptr->integer_var = OPA.integer_var;
+				break;
+			case OP_STOREBI_V:
+				//FIXME put bounds checking in
+				pointer = OPB.integer_var + (short) st->c;
 				ptr = pr->pr_globals + pointer;
 				VectorCopy (OPA.vector_var, ptr->vector_var);
 				break;
