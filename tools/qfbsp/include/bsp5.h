@@ -250,7 +250,7 @@ qboolean FillOutside (node_t *node);
 
 extern	brushset_t	*brushset;
 
-void qprintf (const char *fmt, ...) __attribute ((format (printf, 1, 2)));	// only prints if verbose
+void qprintf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));	// only prints if verbose
 
 extern	int		valid;
 
