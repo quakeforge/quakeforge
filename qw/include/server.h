@@ -451,6 +451,8 @@ extern struct clip_hull_s *pf_hull_list[];
 // sv_main.c
 //
 
+client_t *SV_AllocClient (int spectator, int server);
+
 void SV_SavePenaltyFilter (client_t *cl, filtertype_t type, double pentime);
 double SV_RestorePenaltyFilter (client_t *cl, filtertype_t type);
 

@@ -721,11 +721,12 @@ SVC_GetChallenge (void)
 							svs.challenges[i].challenge, extended);
 }
 
-static client_t *
-SVC_AllocClient (int spectator)
+client_t *
+SV_AllocClient (int spectator, int server)
 {
 	client_t   *cl;
 	int         i, clients, spectators, free;
+	static int  userid;
 
 	// count up the clients and spectators
 	clients = 0;
@@ -741,13 +742,16 @@ SVC_AllocClient (int spectator)
 	}
 
 	// if at server limits, refuse connection
-	if (!free || (spectator && spectators >= maxspectators->int_val)
-		|| (!spectator && clients >= maxclients->int_val)) {
+	if (!free ||
+		(!server && ((spectator && spectators >= maxspectators->int_val)
+					 || (!spectator && clients >= maxclients->int_val)))) {
 		return 0;
 	}
 	// find a client slot
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
 		if (cl->state == cs_free) {
+			svs.num_clients++;
+			cl->userid = userid++;	// so every client gets a unique id
 			return cl;
 		}
 	}
@@ -769,7 +773,6 @@ SVC_DirectConnect (void)
 	client_t    temp;
 	edict_t    *ent;
 	int         challenge, edictnum, qport, version, i;
-	static int  userid;
 	netadr_t    adr;
 	qboolean    spectator;
 
@@ -862,12 +865,9 @@ SVC_DirectConnect (void)
 	}
 
 	adr = net_from;
-	userid++;							// so every client gets a unique id
 
 	newcl = &temp;
 	memset (newcl, 0, sizeof (client_t));
-
-	newcl->userid = userid;
 
 	newcl->userinfo = userinfo;
 
@@ -880,7 +880,6 @@ SVC_DirectConnect (void)
 				|| adr.port == cl->netchan.remote_address.port)) {
 			if (cl->state == cs_connected) {
 				SV_Printf ("%s:dup connect\n", NET_AdrToString (adr));
-				userid--;
 				return;
 			}
 
@@ -889,7 +888,7 @@ SVC_DirectConnect (void)
 			break;
 		}
 	}
-	if (!(newcl = SVC_AllocClient (spectator))) {
+	if (!(newcl = SV_AllocClient (spectator, 0))) {
 		SV_Printf ("%s:full connect\n", NET_AdrToString (adr));
 		Netchan_OutOfBandPrint (adr, "%c\nserver is full\n\n", A2C_PRINT);
 		return;
@@ -913,7 +912,6 @@ SVC_DirectConnect (void)
 	newcl->state = cs_connected;
 	newcl->prespawned = false;
 	newcl->spawned = false;
-	svs.num_clients++;
 
 	newcl->datagram.allowoverflow = true;
 	newcl->datagram.data = newcl->datagram_buf;

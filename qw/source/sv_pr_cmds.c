@@ -50,6 +50,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "crudefile.h"
 #include "server.h"
 #include "sv_demo.h"
+#include "sv_gib.h"
 #include "sv_pr_cmds.h"
 #include "sv_progs.h"
 #include "world.h"
@@ -1718,6 +1719,42 @@ PF_sv_cvar (progs_t *pr)
 	}
 }
 
+static void
+PF_SV_AllocClient (progs_t *pr)
+{
+	client_t   *cl = SV_AllocClient (0, 1);
+	edict_t    *ent;
+
+	if (!cl) {
+		R_var (pr, entity) = 0;
+		return;
+	}
+	memset (cl, 0, sizeof (*cl));
+	cl->userinfo = Info_ParseString ("", 1023, !sv_highchars->int_val);
+	//XXX netchan? Netchan_Setup (&newcl->netchan, adr, qport);
+	cl->state = cs_server;
+	cl->spectator = 0;
+	ent = EDICT_NUM (&sv_pr_state, (cl - svs.clients) + 1);
+	SV_ExtractFromUserinfo (cl);
+	RETURN_EDICT (pr, ent);
+}
+
+static void
+PF_SV_FreeClient (progs_t *pr)
+{
+	int         entnum = P_EDICTNUM (pr, 0);
+	client_t   *cl = svs.clients + entnum - 1;
+
+	if (cl->state != cs_server)
+		PR_RunError (pr, "not a server client");
+	if (cl->userinfo)
+		Info_Destroy (cl->userinfo);
+	SV_FullClientUpdate (cl, &sv.reliable_datagram);
+	if (sv_client_disconnect_e->func)
+		GIB_Event_Callback (sv_client_disconnect_e, 2, va("%u", cl->userid),
+							"server");
+}
+
 void
 SV_PR_Cmds_Init ()
 {
@@ -1792,4 +1829,7 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "cfwrite", PF_cfwrite, 106); // float (float desc, string buf) cfwrite
 	PR_AddBuiltin (&sv_pr_state, "cfeof", PF_cfeof, 107); // float (float desc) cfeof
 	PR_AddBuiltin (&sv_pr_state, "cfquota", PF_cfquota, 108); // float () cfquota
+
+	PR_AddBuiltin (&sv_pr_state, "SV_AllocClient", PF_SV_AllocClient, -1);
+	PR_AddBuiltin (&sv_pr_state, "SV_FreeClient", PF_SV_FreeClient, -1);
 };
