@@ -210,7 +210,13 @@ Chase_Update (void)
 		}
 
 		// mouse and joystick controllers add to movement
-//		IN_Move (&cmd); // problem - mouse strafe movement is weird
+		dir[1] = cl.viewangles[1] - camera_angles[1];  dir[0] = 0;  dir[2] = 0;
+		AngleVectors (dir, forward, right, up);
+		VectorScale  (forward, viewdelta.position[2] * m_forward->value, forward);
+		VectorScale  (right,   viewdelta.position[0] * m_side->value,    right);
+		VectorAdd    (forward, right, dir);
+		cmd.forwardmove += dir[0];
+		cmd.sidemove    -= dir[1];
 
 		dir[1] = camera_angles[1];  dir[0] = 0;  dir[2] = 0;
 		AngleVectors (dir, forward, right, up);

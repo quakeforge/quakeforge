@@ -525,16 +525,17 @@ CL_BaseMove (usercmd_t *cmd)
  	if (cl.chase
 		&& (chase_active->int_val == 2 || chase_active->int_val == 3))
 	{
-		vec3_t dir = {0,0,0}, forward, right, up;
+		vec3_t dir = {0,0,0}, forward, right, up, f, r;
 		dir[1] = r_refdef.viewangles[1] - cl.viewangles[1];
 		AngleVectors (dir, forward, right, up);
-
-		VectorScale (forward, cmd->forwardmove, forward);
-		VectorScale (right,   cmd->sidemove,    right);
-		VectorAdd   (forward, right, dir);
-
-		cmd->forwardmove = dir[0];
-		cmd->sidemove    = dir[1];
+		VectorScale (forward, cmd->forwardmove, f);
+		VectorScale (right,   cmd->sidemove,    r);
+		cmd->forwardmove = f[0] + r[0];
+		cmd->sidemove    = f[1] + r[1];
+		VectorScale (forward, viewdelta.position[2], f);
+		VectorScale (right,   viewdelta.position[0], r);
+		viewdelta.position[2] =  f[0] + r[0];
+		viewdelta.position[0] = (f[1] + r[1]) * -1;
 	}
 
 	cmd->forwardmove += viewdelta.position[2] * m_forward->value;

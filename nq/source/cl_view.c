@@ -609,14 +609,6 @@ V_CalcRefdef (void)
 	// view is the weapon model (only visible from inside body)
 	view = &cl.viewent;
 
-	// transform the view offset by the model's matrix to get the offset from
-	// model origin for the view
-	ent->angles[YAW] = cl.viewangles[YAW];	// the model should face
-	// the view dir
-	ent->angles[PITCH] = -cl.viewangles[PITCH];	// the model should face
-	// the view dir
-
-
 	bob = V_CalcBob ();
 
 	// refresh position
