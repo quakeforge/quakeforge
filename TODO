@@ -5,30 +5,37 @@ M = more testing
 I = in progress
 W = waiting on other work
 
+X  fix skybox/dome vis problems (workable solution found, needs new renderer)
+X  It's possible to stick on some obtuse-angled corners qwsv 2.3x didn't
+X  ~/.quakeforgerc should support all commands, not just set and setrom
 M  it seems possible to crash a QF server still - need to fix this!
-M  Scitech MGL used in win32 is screwed - dump it and use SDL
 M  merge nq and qw code bases
+M  mingw cross compiling
+M  Scitech MGL used in win32 is screwed - dump it and use SDL
+M  software targets should mix color at 16/16 or 24/32 color
 I  GL is still way too slow
 I  Client side QuakeC.
-M  mingw cross compiling
-I  merge nq and qw code bases
-X  fix skybox/dome vis problems (workable solution found, needs new renderer)
-o  allow qf clients to download .lit files from qf servers.
-o  ogg support
-X  It's possible to stick on some obtuse-angled corners qwsv 2.3x didn't
-o  better server control of certain cvars
-o  triggers (f_respawn, f_death, f_took; cl_triggers)
+I  menu rewrite
+I  clean up TODO ;)
 o  software PCXs don't work in X11 at least if you're using 16/24/32 color
-o  stateful console (eg, rcon mode, chat mode, normal command mode...)
-o  menu rewrite
-o  scripted hud
 o  doublesize modes (eg, render in 320x240 but display in 640x480)
+o  allow qf clients to download .lit files from qf servers.
+o  better server control of certain cvars
+o  ogg support
+o  triggers (f_respawn, f_death, f_took; cl_triggers)
+o  stateful console (eg, rcon mode, chat mode, normal command mode...)
+o  scripted hud
+o  add a U_PHYSICAL field to entities.  it should include a solid bit,
+   a rotated bbox bit, and mins/maxs for the bbos
+o  gui for serverlist
+o  add favorates serverlist manipulation
+o  redo serverlist filtering for better flexability and/or easier use
+o  add individual server ping/info request from console
 ?  more direct intra-team comms (eg, talk to offense or defense directly)
 ?  Draw_Pic and friends need a cleanup in GL at least
-?  console commands to see a user, ignore talk from them, etc
-?  improved crosshairs (custom file, 32 bit for GL, etc)
-M  software targets should mix color at 16/16 or 24/32 color
 ?  Draw_Pic and other tex draw functions should use local palettes
+?  improved crosshairs (custom file, 32 bit for GL, etc)
+?  console commands to see a user, ignore talk from them, etc
 ?  wad loader should load wad3 and fall back to wad2 if necessary
 ?  better control over client console logging
 ?  ban reasons and expire times
@@ -46,14 +53,6 @@ M  software targets should mix color at 16/16 or 24/32 color
 ?  custom particle explosions (doable via csqc)
 ?  server should shutdown cleanly when it recieves SIGTERM and SIGHUP
 ?  client-only commands (rejected if done via a server stuffcmd)
-X  ~/.quakeforgerc should support all commands, not just set and setrom
-o  clean up TODO ;)
-o  add a U_PHYSICAL field to entities.  it should include a solid bit,
-   a rotated bbox bit, and mins/maxs for the bbos
-o  gui for serverlist
-o  add favorates serverlist manipulation
-o  redo serverlist filtering for better flexability and/or easier use
-o  add individual server ping/info request from console
 ?  bring software-mode skybox code in from Quake 2
 ?  bring some assembly code for the software renderer in from Quake 2.
 
@@ -173,4 +172,3 @@ So we don't forget something in the binds menu:
   Keyboard look
   Swim up
   Swim down
-
