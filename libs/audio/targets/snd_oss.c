@@ -224,6 +224,8 @@ SNDDMA_Init (void)
 	if (rc < 0) {
 		perror (snd_dev);
 		Sys_Printf ("Could not set %s to stereo=%d", snd_dev, shm->channels);
+		if (mmaped_io)
+			munmap (shm->buffer, shm->samples * shm->samplebits / 8);
 		close (audio_fd);
 		return 0;
 	}
@@ -237,6 +239,8 @@ SNDDMA_Init (void)
 	if (rc < 0) {
 		perror (snd_dev);
 		Sys_Printf ("Could not set %s speed to %d", snd_dev, shm->speed);
+		if (mmaped_io)
+			munmap (shm->buffer, shm->samples * shm->samplebits / 8);
 		close (audio_fd);
 		return 0;
 	}
@@ -247,6 +251,8 @@ SNDDMA_Init (void)
 		if (rc < 0) {
 			perror (snd_dev);
 			Sys_Printf ("Could not support 16-bit data.  Try 8-bit.\n");
+			if (mmaped_io)
+				munmap (shm->buffer, shm->samples * shm->samplebits / 8);
 			close (audio_fd);
 			return 0;
 		}
@@ -256,12 +262,16 @@ SNDDMA_Init (void)
 		if (rc < 0) {
 			perror (snd_dev);
 			Sys_Printf ("Could not support 8-bit data.\n");
+			if (mmaped_io)
+				munmap (shm->buffer, shm->samples * shm->samplebits / 8);
 			close (audio_fd);
 			return 0;
 		}
 	} else {
 		perror (snd_dev);
 		Sys_Printf ("%d-bit sound not supported.", shm->samplebits);
+		if (mmaped_io)
+			munmap (shm->buffer, shm->samples * shm->samplebits / 8);
 		close (audio_fd);
 		return 0;
 	}
@@ -272,6 +282,8 @@ SNDDMA_Init (void)
 	if (rc < 0) {
 		perror (snd_dev);
 		Sys_Printf ("Could not toggle.\n");
+		if (mmaped_io)
+			munmap (shm->buffer, shm->samples * shm->samplebits / 8);
 		close (audio_fd);
 		return 0;
 	}
@@ -280,6 +292,8 @@ SNDDMA_Init (void)
 	if (rc < 0) {
 		perror (snd_dev);
 		Sys_Printf ("Could not toggle.\n");
+		if (mmaped_io)
+			munmap (shm->buffer, shm->samples * shm->samplebits / 8);
 		close (audio_fd);
 		return 0;
 	}
@@ -301,6 +315,8 @@ SNDDMA_GetDMAPos (void)
 	if (ioctl (audio_fd, SNDCTL_DSP_GETOPTR, &count) == -1) {
 		perror (snd_dev);
 		Sys_Printf ("Uh, sound dead.\n");
+		if (mmaped_io)
+			munmap (shm->buffer, shm->samples * shm->samplebits / 8);
 		close (audio_fd);
 		snd_inited = 0;
 		return 0;
@@ -317,6 +333,8 @@ static void
 SNDDMA_Shutdown (void)
 {
 	if (snd_inited) {
+		if (mmaped_io)
+			munmap (shm->buffer, shm->samples * shm->samplebits / 8);
 		close (audio_fd);
 		snd_inited = 0;
 	}
