@@ -254,10 +254,6 @@ WriteData (int crc)
 		dd->ofs = def->ofs;
 	}
 
-//  PrintStrings ();
-//  PrintFunctions ();
-//  PrintFields ();
-//  PrintGlobals ();
 	strofs = (strofs + 3) & ~3;
 
 	if (options.verbosity >= 0) {

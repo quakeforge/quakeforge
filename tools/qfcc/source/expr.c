@@ -281,7 +281,6 @@ num_digits (int val)
 {
 	int         num = 1;
 
-//  printf ("%d ", val);
 	if (val < 0) {
 		num++;
 		val = -val;
@@ -290,7 +289,6 @@ num_digits (int val)
 		val /= 10;
 		num++;
 	}
-//  printf ("%d\n", num);
 	return num;
 }
 
@@ -378,7 +376,6 @@ new_bind_expr (expr_t *e1, expr_t *e2)
 		error (e1, "internal error");
 		abort ();
 	}
-	// e = new_binary_expr ('b', e1, e2);
 	e = new_expr ();
 	e->type = ex_expr;
 	e->e.expr.op = 'b';

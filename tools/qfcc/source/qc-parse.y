@@ -98,7 +98,6 @@ typedef struct {
 %left	SHL SHR
 %left	'+' '-'
 %left	'*' '/' '&' '|' '^' '%'
-//%left	'!' '~'
 %right	<op> UNARY INCOP
 %right	'(' '['
 %left	'.'
@@ -424,12 +423,10 @@ statement_block
 statements
 	: /*empty*/
 		{
-			//printf("statements: /* empty */\n");
 			$$ = new_block_expr ();
 		}
 	| statements statement
 		{
-			//printf("statements: statements statement\n");
 			$$ = append_expr ($1, $2);
 		}
 	;
