@@ -202,7 +202,6 @@ R_DrawSpriteModel (entity_t *e)
 
 	qfglBindTexture (GL_TEXTURE_2D, frame->gl_texturenum);
 
-	qfglEnable (GL_ALPHA_TEST);
 	qfglBegin (GL_QUADS);
 
 	qfglTexCoord2f (0, 1);
@@ -226,8 +225,6 @@ R_DrawSpriteModel (entity_t *e)
 	qfglVertex3fv (point);
 
 	qfglEnd ();
-
-	qfglDisable (GL_ALPHA_TEST);
 }
 
 /* ALIAS MODELS */
@@ -780,6 +777,7 @@ R_DrawEntitiesOnList (void)
 	}
 	qfglColor3ubv (color_white);
 
+	qfglEnable (GL_ALPHA_TEST);
 	for (i = 0; i < r_numvisedicts; i++) {
 		if (r_visedicts[i]->model->type != mod_sprite)
 			continue;
@@ -788,6 +786,7 @@ R_DrawEntitiesOnList (void)
 
 		R_DrawSpriteModel (currententity);
 	}
+	qfglDisable (GL_ALPHA_TEST);
 }
 
 static void
