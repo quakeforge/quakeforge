@@ -239,7 +239,7 @@ CL_CheckOrDownloadFile (const char *filename)
 
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 	MSG_WriteString (&cls.netchan.message,
-					 va ("download %s", cls.downloadname));
+					 va ("download \"%s\"", cls.downloadname));
 
 	cls.downloadnumber++;
 
