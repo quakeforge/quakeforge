@@ -128,7 +128,9 @@ QFGL_LoadLibrary (void)
 		Sys_Error ("Couldn't load OpenGL library %s: %s", gl_driver->string,
 				   dlerror ());
 	}
-	glGetProcAddress = dlsym (handle, "glXGetProcAddressARB");
+	glGetProcAddress = dlsym (handle, "glXGetProcAddress");
+	if (!glGetProcAddress)
+		glGetProcAddress = dlsym (handle, "glXGetProcAddressARB");
 	return handle;
 }
 
