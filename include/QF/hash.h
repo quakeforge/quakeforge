@@ -54,6 +54,19 @@ hashtab_t *Hash_NewTable (int tsize, const char *(*gk)(void*,void*),
 						  void (*f)(void*,void*), void *ud);
 
 /*
+	change the hash and compare functions used by the Has_*Element functions.
+	the default hash function just returns the address of the element, and the
+	default compare just compares the addresses. compare is to return 0 for not
+	equal and non-0 otherwise.
+
+	gh takes the same parameters as gk above
+	cmp is element 1, element 2, userdata
+*/
+void Hash_SetHashCompare (hashtab_t *tab, unsigned long (*gh)(void*,void*),
+						  int (*cmp)(void*,void*,void*));
+
+
+/*
 	delete a hash table:
 		tab:	the table to be deleted
 */
@@ -72,6 +85,7 @@ void Hash_FlushTable (hashtab_t *tab);
 	returns 0 for success, -1 for error.
 */
 int Hash_Add (hashtab_t *tab, void *ele);
+int Hash_AddElement (hashtab_t *tab, void *ele);
 
 /*
 	find an element within a hash table:
@@ -80,6 +94,7 @@ int Hash_Add (hashtab_t *tab, void *ele);
 	returns a pointer to the element if found, otherwise 0.
 */
 void *Hash_Find (hashtab_t *tab, const char *key);
+void *Hash_FindElement (hashtab_t *tab, void *ele);
 
 /*
 	delete an element from a hash table:
@@ -91,5 +106,12 @@ void *Hash_Find (hashtab_t *tab, const char *key);
 	responsibility.
 */
 void *Hash_Del (hashtab_t *tab, const char *key);
+void *Hash_DelElement (hashtab_t *tab, void *ele);
+
+/*
+	returh the hash value of a string. this is the same function as used
+	internally.
+*/
+unsigned long Hash_String (const char *str);
 
 #endif // __hash_h

@@ -51,14 +51,16 @@ struct hashlink_s {
 struct hashtab_s {
 	size_t tab_size;
 	void *user_data;
+	int (*compare)(void*,void*,void*);
+	unsigned long (*get_hash)(void*,void*);
 	const char *(*get_key)(void*,void*);
 	void (*free_ele)(void*,void*);
 	struct hashlink_s *tab[1];             // variable size
 };
 
 
-static unsigned long
-hash (const char *str)
+unsigned long
+Hash_String (const char *str)
 {
 	//FIXME not 64 bit clean
 #if 0
@@ -85,9 +87,21 @@ hash (const char *str)
 #endif
 }
 
+static unsigned long
+get_hash (void *ele, void *data)
+{
+	return (unsigned long)ele;
+}
+
+static int
+compare (void *a, void *b, void *data)
+{
+	return a == b;
+}
+
 hashtab_t *
-Hash_NewTable (int tsize, const char *(*gk)(void*,void*), void (*f)(void*,void*),
-			   void *ud)
+Hash_NewTable (int tsize, const char *(*gk)(void*,void*),
+			   void (*f)(void*,void*), void *ud)
 {
 	hashtab_t *tab = calloc (1, field_offset (hashtab_t, tab[tsize]));
 	if (!tab)
@@ -96,7 +110,18 @@ Hash_NewTable (int tsize, const char *(*gk)(void*,void*), void (*f)(void*,void*)
 	tab->user_data = ud;
 	tab->get_key = gk;
 	tab->free_ele = f;
+
+	tab->get_hash = get_hash;
+	tab->compare = compare;
 	return tab;
+}
+
+void
+Hash_SetHashCompare (hashtab_t *tab, unsigned long (*gh)(void*,void*),
+					 int (*cmp)(void*,void*,void*))
+{
+	tab->get_hash = gh;
+	tab->compare = cmp;
 }
 
 void
@@ -127,7 +152,25 @@ Hash_FlushTable (hashtab_t *tab)
 int
 Hash_Add (hashtab_t *tab, void *ele)
 {
-	unsigned long h = hash (tab->get_key(ele, tab->user_data));
+	unsigned long h = Hash_String (tab->get_key(ele, tab->user_data));
+	size_t ind = h % tab->tab_size;
+	struct hashlink_s *lnk = malloc (sizeof (struct hashlink_s));
+
+	if (!lnk)
+		return -1;
+	if (tab->tab[ind])
+		tab->tab[ind]->prev = &lnk->next;
+	lnk->next = tab->tab[ind];
+	lnk->prev = &tab->tab[ind];
+	lnk->data = ele;
+	tab->tab[ind] = lnk;
+	return 0;
+}
+
+int
+Hash_AddElement (hashtab_t *tab, void *ele)
+{
+	unsigned long h = tab->get_hash (ele, tab->user_data);
 	size_t ind = h % tab->tab_size;
 	struct hashlink_s *lnk = malloc (sizeof (struct hashlink_s));
 
@@ -145,7 +188,7 @@ Hash_Add (hashtab_t *tab, void *ele)
 void *
 Hash_Find (hashtab_t *tab, const char *key)
 {
-	unsigned long h = hash (key);
+	unsigned long h = Hash_String (key);
 	size_t ind = h % tab->tab_size;
 	struct hashlink_s *lnk = tab->tab[ind];
 
@@ -158,15 +201,52 @@ Hash_Find (hashtab_t *tab, const char *key)
 }
 
 void *
+Hash_FindElement (hashtab_t *tab, void *ele)
+{
+	unsigned long h = tab->get_hash (ele, tab->user_data);
+	size_t ind = h % tab->tab_size;
+	struct hashlink_s *lnk = tab->tab[ind];
+
+	while (lnk) {
+		if (tab->compare (lnk->data, ele, tab->user_data))
+			return lnk->data;
+		lnk = lnk->next;
+	}
+	return 0;
+}
+
+void *
 Hash_Del (hashtab_t *tab, const char *key)
 {
-	unsigned long h = hash (key);
+	unsigned long h = Hash_String (key);
 	size_t ind = h % tab->tab_size;
 	struct hashlink_s *lnk = tab->tab[ind];
 	void *data;
 
 	while (lnk) {
 		if (strequal (key, tab->get_key (lnk->data, tab->user_data))) {
+			data = lnk->data;
+			if (lnk->next)
+				lnk->next->prev = lnk->prev;
+			*lnk->prev = lnk->next;
+			free (lnk);
+			return data;
+		}
+		lnk = lnk->next;
+	}
+	return 0;
+}
+
+void *
+Hash_DelElement (hashtab_t *tab, void *ele)
+{
+	unsigned long h = tab->get_hash (ele, tab->user_data);
+	size_t ind = h % tab->tab_size;
+	struct hashlink_s *lnk = tab->tab[ind];
+	void *data;
+
+	while (lnk) {
+		if (tab->compare (lnk->data, ele, tab->user_data)) {
 			data = lnk->data;
 			if (lnk->next)
 				lnk->next->prev = lnk->prev;

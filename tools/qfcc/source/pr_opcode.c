@@ -55,39 +55,51 @@ PR_AddStatementRef (def_t *def, dstatement_t *st, int field)
 	}
 }
 
-static const char *
-get_key (void *_op, void *_tab)
+#define ROTL(x,n) (((x)<<(n))|(x)>>(32-n))
+
+static unsigned long
+get_hash (void *_op, void *_tab)
 {
 	opcode_t *op = (opcode_t *)_op;
 	hashtab_t **tab = (hashtab_t **)_tab;
-	static char rep[100];
-	char *r = rep;
-	const char *s = op->name;
+	unsigned long hash;
 
 	if (tab == &opcode_priority_table) {
-		while (*s)
-			*r++ = *s++;
-		*r++ = op->priority + 2;
-		*r = 0;
+		hash = op->priority;
 	} else if (tab == &opcode_priority_type_table_ab) {
-		while (*s)
-			*r++ = *s++;
-		*r++ = op->priority + 2;
-		*r++ = op->type_a + 2;
-		*r++ = op->type_b + 2;
-		*r = 0;
+		hash = ~op->priority + ROTL(~op->type_a, 8) + ROTL(~op->type_b, 16);
 	} else if (tab == &opcode_priority_type_table_abc) {
-		while (*s)
-			*r++ = *s++;
-		*r++ = op->priority + 2;
-		*r++ = op->type_a + 2;
-		*r++ = op->type_b + 2;
-		*r++ = op->type_c + 2;
-		*r = 0;
+		hash = ~op->priority + ROTL(~op->type_a, 8) + ROTL(~op->type_b, 16)
+			   + ROTL(~op->type_c, 24);
 	} else {
 		abort ();
 	}
-	return rep;
+	return hash + Hash_String (op->name);;
+}
+
+static int
+compare (void *_opa, void *_opb, void *_tab)
+{
+	opcode_t *opa = (opcode_t *)_opa;
+	opcode_t *opb = (opcode_t *)_opb;
+	hashtab_t **tab = (hashtab_t **)_tab;
+	int cmp;
+
+	if (tab == &opcode_priority_table) {
+		cmp = opa->priority == opb->priority;
+	} else if (tab == &opcode_priority_type_table_ab) {
+		cmp = (opa->priority == opb->priority)
+			  && (opa->type_a == opb->type_a)
+			  && (opa->type_b == opb->type_b);
+	} else if (tab == &opcode_priority_type_table_abc) {
+		cmp = (opa->priority == opb->priority)
+			  && (opa->type_a == opb->type_a)
+			  && (opa->type_b == opb->type_b)
+			  && (opa->type_c == opb->type_c);
+	} else {
+		abort ();
+	}
+	return cmp && !strcmp (opa->name, opb->name);
 }
 
 opcode_t *
@@ -95,7 +107,6 @@ PR_Opcode_Find (const char *name, int priority, def_t *var_a, def_t *var_b, def_
 {
 	opcode_t op;
 	hashtab_t **tab;
-	char rep[100];
 
 	op.name = name;
 	op.priority = priority;
@@ -107,12 +118,9 @@ PR_Opcode_Find (const char *name, int priority, def_t *var_a, def_t *var_b, def_
 			tab = &opcode_priority_type_table_ab;
 		else
 			tab = &opcode_priority_type_table_abc;
-		strcpy (rep, get_key (&op, tab));
-		//printf ("%s\n", rep);
-		return Hash_Find (*tab, rep);
+		return Hash_FindElement (*tab, &op);
 	} else {
-		strcpy (rep, get_key (&op, &opcode_priority_table));
-		return Hash_Find (opcode_priority_table, rep);
+		return Hash_FindElement (opcode_priority_table, &op);
 	}
 }
 
@@ -122,21 +130,24 @@ PR_Opcode_Init_Tables (void)
 	opcode_t *op;
 
 	PR_Opcode_Init ();
-	opcode_priority_table = Hash_NewTable (1021, get_key, 0,
+	opcode_priority_table = Hash_NewTable (1021, 0, 0,
 										   &opcode_priority_table);
-	opcode_priority_type_table_ab = Hash_NewTable (1021, get_key, 0,
+	opcode_priority_type_table_ab = Hash_NewTable (1021, 0, 0,
 												   &opcode_priority_type_table_ab);
-	opcode_priority_type_table_abc = Hash_NewTable (1021, get_key, 0,
+	opcode_priority_type_table_abc = Hash_NewTable (1021, 0, 0,
 													&opcode_priority_type_table_abc);
+	Hash_SetHashCompare (opcode_priority_table, get_hash, compare);
+	Hash_SetHashCompare (opcode_priority_type_table_ab, get_hash, compare);
+	Hash_SetHashCompare (opcode_priority_type_table_abc, get_hash, compare);
 	for (op = pr_opcodes; op->name; op++) {
 		if (op->min_version > options.version)
 			continue;
 		if (options.version == PROG_ID_VERSION
 			&& op->type_c == ev_integer)
 			op->type_c = ev_float;
-		Hash_Add (opcode_priority_table, op);
-		Hash_Add (opcode_priority_type_table_ab, op);
-		Hash_Add (opcode_priority_type_table_abc, op);
+		Hash_AddElement (opcode_priority_table, op);
+		Hash_AddElement (opcode_priority_type_table_ab, op);
+		Hash_AddElement (opcode_priority_type_table_abc, op);
 		if (!strcmp (op->name, "<DONE>")) {
 			op_done = op;
 		} else if (!strcmp (op->name, "<RETURN>")) {
