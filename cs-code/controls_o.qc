@@ -47,7 +47,7 @@ init_binding_hash =
 	   the key of the hash is the string, which will 
 	   be displayed as binding description.
 	   The first value of the key is the command, which
-	   is binded. 
+	   is bound. 
        The second valu (loaded later) of the hash 
 	   will be the keyname. (see get_hash_keys())
 	*/
@@ -96,10 +96,10 @@ init_binding_hash =
 /*
 	get_keyname
 
-	Gets the string of the key, which is binded 
+	Gets the string of the key, which is bound 
 	to a special binding.
 	bindnum is the number of the binding.
-	As a command/binding can be binded to many keys,
+	As a command/binding can be bound to many keys,
 	you can get the second, third, etc. key by giving 
 	the bindnum.
 */
@@ -134,8 +134,8 @@ get_hash_keys =
 	hlen = StringHash_Length(hash_id);
 	for(i = 0;i < hlen; i++) {
 		binding = StringHash_GetIdx(hash_id, i, 0);
-		desc1 = get_keyname(binding, 1);	// first key binded to
-		desc2 = get_keyname(binding, 2);	// second key binded to
+		desc1 = get_keyname(binding, 1);	// first key bound to
+		desc2 = get_keyname(binding, 2);	// second key bound to
 
 		if(desc2 != "") {
 			desc1 += ", " + desc2;
@@ -173,7 +173,6 @@ load_keybindings =
 	They get the binding from the correct hash.
 */
 
-
 /*
 	CB_MAIN_control_binding
 
@@ -208,7 +207,6 @@ CB_MAIN_control_binding =
 		}
 	}
 
-	load_keybindings();
 	return retval;
 };
 
@@ -221,9 +219,25 @@ integer (string text, integer key)
 CB_basic_control_binding = 
 {
 	local string binding = StringHash_GetIdx(basic_binding_hash, stoi(text), 0);
-	return CB_MAIN_control_binding(binding, key);
+	local integer ret = CB_MAIN_control_binding(binding, key);
+
+	// fetch all keynames (possible to optimize.. but not very neccessary)
+	get_hash_keys(basic_binding_hash);
+	return ret;
 };
 
+
+/*
+	CB_ME_basic_control_binding
+
+	Loading basic keynames when entering the
+	menu
+*/
+integer ()
+CB_ME_basic_control_binding =
+{
+    get_hash_keys(basic_binding_hash);
+};
 
 /*
 	DRAW_basic_control_binding
@@ -266,6 +280,7 @@ MENU_basic_control_binding =
 	
 	Menu_Begin (54, 40, "Basic bindings");
 	Menu_FadeScreen (1);
+	Menu_EnterHook(CB_ME_basic_control_binding);
 	Menu_Draw (DRAW_basic_control_binding);
 
 	hl = StringHash_Length(basic_binding_hash);
@@ -285,7 +300,23 @@ integer (string text, integer key)
 CB_misc_control_binding = 
 {
 	local string binding = StringHash_GetIdx(misc_binding_hash, stoi(text), 0);
-	return CB_MAIN_control_binding(binding, key);
+	local integer ret = CB_MAIN_control_binding(binding, key);
+
+	// fetch all keynames (possible to optimize.. but not very neccessary)
+	get_hash_keys(misc_binding_hash);
+	return ret;
+};
+
+/*
+	CB_ME_misc_control_binding
+
+	Loading misc keynames when entering the
+	menu
+*/
+integer ()
+CB_ME_misc_control_binding =
+{
+    get_hash_keys(misc_binding_hash);
 };
 
 /*
@@ -329,6 +360,7 @@ MENU_misc_control_binding =
 
 	Menu_Begin (54, 50, "Misc bindings");
 	Menu_FadeScreen (1);
+	Menu_EnterHook(CB_ME_misc_control_binding);
 	Menu_Draw (DRAW_misc_control_binding);
 
 	hl = StringHash_Length(basic_binding_hash);
@@ -347,7 +379,23 @@ integer (string text, integer key)
 CB_weapon_control_binding = 
 {
 	local string binding = StringHash_GetIdx(weapon_binding_hash, stoi(text),0);
-	return CB_MAIN_control_binding(binding, key);
+	local integer ret = CB_MAIN_control_binding(binding, key);
+
+	// fetch all keynames (possible to optimize.. but not very neccessary)
+	get_hash_keys(weapon_binding_hash);
+	return ret;
+};
+
+/*
+	CB_ME_weapon_control_binding
+
+	Loading weapon keynames when entering the
+	menu
+*/
+integer ()
+CB_ME_weapon_control_binding =
+{
+    get_hash_keys(weapon_binding_hash);
 };
 
 /*
@@ -391,6 +439,7 @@ MENU_weapon_control_binding =
 
 	Menu_Begin (54, 60, "Weapon bindings");
 	Menu_FadeScreen (1);
+	Menu_EnterHook(CB_ME_weapon_control_binding);
 	Menu_Draw (DRAW_weapon_control_binding);
 
 	hl = StringHash_Length(basic_binding_hash);
@@ -409,7 +458,6 @@ void ()
 MENU_control_binding =
 {
 	init_binding_hash (); // init the keybinding hashes
-	load_keybindings ();  // load the keybindings into hashes // FIXME
 
 	Menu_Begin (54, 60, "Bindings");
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
