@@ -28,6 +28,8 @@
 
 */
 
+extern const char *com_token;
+
 const char *COM_Parse (const char *data);
 void COM_TokenizeString (const char *str, cbuf_args_t *args);
 void COM_extract_line (cbuf_t *cbuf);

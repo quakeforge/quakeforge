@@ -55,6 +55,7 @@ static const char rcsid[] =
 #include <stdio.h>
 
 #include <QF/cbuf.h>
+#include <QF/idparse.h>
 #include <QF/crc.h>
 #include <QF/dstring.h>
 #include <QF/hash.h>

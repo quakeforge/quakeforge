@@ -63,10 +63,6 @@ typedef struct cbuf_s {
 
 extern cbuf_t *cbuf_active;
 
-extern const char *com_token;
-const char *COM_Parse (const char *data);
-void COM_TokenizeString (const char *str, cbuf_args_t *args);
-
 cbuf_args_t *Cbuf_ArgsNew (void);
 void Cbuf_ArgsDelete (cbuf_args_t *);
 void Cbuf_ArgsAdd (cbuf_args_t *args, const char *arg);

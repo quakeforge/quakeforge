@@ -32,6 +32,7 @@ static const char rcsid[] =
 #endif
 
 #include "QF/cbuf.h"
+#include "QF/idparse.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/va.h"

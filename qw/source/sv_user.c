@@ -43,6 +43,7 @@ static const char rcsid[] =
 #include <ctype.h>
 
 #include "QF/cbuf.h"
+#include "QF/idparse.h"
 #include "QF/checksum.h"
 #include "QF/clip_hull.h"
 #include "QF/cmd.h"
