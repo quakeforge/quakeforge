@@ -55,16 +55,22 @@ dump_methods (progs_t *pr, pr_method_list_t *methods, int class)
 	int         i;
 	char        mark = class ? '+' : '-';
 	const char *sel_id;
+	const char *types;
 
 	while (methods) {
 		pr_method_t *method = methods->method_list;
 		for (i = 0; i < methods->method_count; i++) {
-			if (PR_StringValid (pr, method->method_name.sel_id))
-				sel_id = PR_GetString (pr, method->method_name.sel_id);
+			if (PR_StringValid (pr, method->method_name))
+				sel_id = PR_GetString (pr, method->method_name);
 			else
 				sel_id = "<invalid string>";
-			printf ("        %c%s %d @ %d\n", mark, sel_id, method->method_imp,
-					POINTER_TO_PROG (pr, method));
+			if (PR_StringValid (pr, method->method_types))
+				types = PR_GetString (pr, method->method_types);
+			else
+				types = "<invalid string>";
+			printf ("        %c%s %d @ %d %s\n", mark, sel_id,
+					method->method_imp,
+					PR_SetPointer (pr, method), types);
 			method++;
 		}
 		methods = &G_STRUCT (pr, pr_method_list_t, methods->method_next);
@@ -98,10 +104,10 @@ dump_class (progs_t *pr, pr_class_t *class)
 	if (class->super_class) {
 		if (PR_StringValid (pr, class->super_class))
 			super_class_name = PR_GetString (pr, class->super_class);
-		printf ("    %s @ %d : %s\n", class_name, POINTER_TO_PROG (pr, class),
+		printf ("    %s @ %d : %s\n", class_name, PR_SetPointer (pr, class),
 				super_class_name);
 	} else {
-		printf ("    %s @ %d\n", class_name, POINTER_TO_PROG (pr, class));
+		printf ("    %s @ %d\n", class_name, PR_SetPointer (pr, class));
 	}
 	printf ("        %d %d %u %d\n", class->class_pointer, class->version,
 			class->info, class->instance_size);
@@ -120,7 +126,7 @@ dump_category (progs_t *pr, pr_category_t *category)
 	if (PR_StringValid (pr, category->class_name))
 		class_name = PR_GetString (pr, category->class_name);
 	printf ("    %s (%s) @ %d\n", class_name, category_name,
-			POINTER_TO_PROG (pr, category));
+			PR_SetPointer (pr, category));
 	dump_methods (pr,
 				  &G_STRUCT (pr, pr_method_list_t, category->instance_methods),
 				  0);

@@ -29,6 +29,13 @@
 #ifndef __hash_h
 #define __hash_h
 
+/** \addtogroup utils */
+//@{
+
+/** \defgroup hash Hash tables
+*/
+//@{
+
 typedef struct hashtab_s hashtab_t;
 
 /** create a new hash table:
@@ -153,5 +160,8 @@ void **Hash_GetList (hashtab_t *tab);
 /** dump statistics about the hash table
 */
 void Hash_Stats (hashtab_t *tab);
+
+//@}
+//@}
 
 #endif // __hash_h

@@ -31,6 +31,13 @@
 #ifndef __qendian_h
 #define __qendian_h
 
+/** \addtogroup utils */
+//@{
+
+/** \defgroup qendian Endian handling functions
+*/
+//@{
+
 #include "QF/qtypes.h"
 
 #ifndef NULL
@@ -88,5 +95,8 @@ float ReadFloat (struct QFile_s *file);
 byte ReadByte (struct QFile_s *file);
 unsigned short ReadShort (struct QFile_s *file);
 unsigned long ReadLong (struct QFile_s *file);
+
+//@}
+//@}
 
 #endif // __qendian_h

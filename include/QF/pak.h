@@ -32,6 +32,13 @@
 #ifndef __qf_pak_h
 #define __qf_pak_h
 
+/** \addtogroup utils */
+//@{
+
+/** \addtogroup pak
+*/
+//@{
+
 #define PAK_PATH_LENGTH 56
 
 typedef struct {
@@ -44,5 +51,8 @@ typedef struct {
 	int			dirofs;
 	int			dirlen;
 } dpackheader_t;
+
+//@}
+//@}
 
 #endif//__qf_pak_h

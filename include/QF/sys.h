@@ -29,6 +29,14 @@
 #ifndef __sys_h
 #define __sys_h
 
+/** \addtogroup utils */
+//@{
+
+/** \defgroup sys Portability
+	Non-portable functions
+*/
+//@{
+
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -104,5 +112,8 @@ void Sys_DebugLog(const char *file, const char *fmt, ...) __attribute__((format(
 		if (!(x))														\
 			Sys_Error ("%s: Failed to allocate memory.", __FUNCTION__);	\
 	} while (0)
+
+//@}
+//@}
 
 #endif // __sys_h

@@ -30,6 +30,14 @@
 #ifndef _WAD_H
 #define _WAD_H
 
+/** \addtogroup utils */
+//@{
+
+/** \addtogroup wad
+	Wad Files
+*/
+//@{
+
 #include "QF/wadfile.h"
 
 
@@ -41,5 +49,8 @@ void	W_LoadWadFile (const char *filename);
 void	*W_GetLumpName (const char *name);
 
 void SwapPic (qpic_t *pic);
+
+//@}
+//@}
 
 #endif // _WAD_H

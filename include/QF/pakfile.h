@@ -31,6 +31,13 @@
 #ifndef __QF_pakfile_h
 #define __QF_pakfile_h
 
+/** \addtogroup utils */
+//@{
+
+/** \defgroup pak pakfile proccessing
+*/
+//@{
+
 #include "QF/hash.h"
 #include "QF/pak.h"
 #include "QF/quakeio.h"
@@ -59,5 +66,8 @@ pack_t *pack_create (const char *name);
 int pack_add (pack_t *pack, const char *filename);
 int pack_extract (pack_t *pack, dpackfile_t *pf);
 dpackfile_t *pack_find_file (pack_t *pack, const char *filename);
+
+//@}
+//@}
 
 #endif//__QF_pakfile_h

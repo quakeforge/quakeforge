@@ -24,7 +24,20 @@ EXTRA_DIST= 3dfx.txt CodingStyle glqnotes.txt \
 	data/docs/install.quake data/docs/install.quake2 data/docs/readme \
 	data/docs/readme.glquake data/docs/readme.squake data/docs/readme.x11 \
 	\
-	ideas/quakedownload.txt ideas/rhamph.txt ideas/serverlist.txt
+	ideas/quakedownload.txt ideas/rhamph.txt ideas/serverlist.txt \
+	\
+	progs/vm-mem.fig
 
-doc: quakeforge.dox
+%.png: %.fig
+	@mkdir -p `dirname $@`
+	fig2dev -L png $< $@
+
+%.eps: %.fig
+	@mkdir -p `dirname $@`
+	fig2dev -L ps $< $@
+
+progs/vm-mem.png: progs/vm-mem.fig
+progs/vm-mem.eps: progs/vm-mem.fig
+
+doc: quakeforge.dox progs/vm-mem.png progs/vm-mem.eps
 	doxygen quakeforge.dox

@@ -30,6 +30,13 @@
 #ifndef __mdfour_h
 #define __mdfour_h
 
+/** \addtogroup utils */
+//@{
+
+/** \addtogroup crc
+*/
+//@{
+
 #include "QF/uint32.h"
 
 #define MDFOUR_DIGEST_BYTES 16
@@ -43,5 +50,8 @@ void mdfour_begin(struct mdfour *md); // old: MD4Init
 void mdfour_update(struct mdfour *md, const unsigned char *in, int n); //old: MD4Update
 void mdfour_result(struct mdfour *md, unsigned char *out); // old: MD4Final
 void mdfour(unsigned char *out, const unsigned char *in, int n);
+
+//@}
+//@}
 
 #endif	// __mdfour_h

@@ -29,6 +29,13 @@
 #ifndef __cvar_h
 #define __cvar_h
 
+/** \addtogroup utils */
+//@{
+
+/** \defgroup cvar Configuration variables
+*/
+//@{
+
 #include "QF/qtypes.h"
 #include "QF/quakeio.h"
 
@@ -125,5 +132,8 @@ void Cvar_Init (void);
 void Cvar_Shutdown (void);
 
 extern cvar_t	*cvar_vars;
+
+//@}
+//@}
 
 #endif // __cvar_h

@@ -117,6 +117,7 @@ init_qf (void)
 	pr.load_file = load_file;
 	pr.allocate_progs_mem = allocate_progs_mem;
 	pr.free_progs_mem = free_progs_mem;
+	pr.no_exec_limit = 1;
 
 	PR_Init_Cvars ();
 	PR_Init ();

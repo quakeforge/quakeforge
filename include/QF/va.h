@@ -30,9 +30,20 @@
 #ifndef __va_h
 #define __va_h
 
+/** \addtogroup utils */
+//@{
+
+/** \addtogroup misc
+	Formatted printing.
+*/
+//@{
+
 // does a varargs printf into a temp buffer
 char	*va(const char *format, ...) __attribute__((format(printf,1,2)));
 // does a varargs printf into a malloced buffer
 char	*nva(const char *format, ...) __attribute__((format(printf,1,2)));
+
+//@}
+//@}
 
 #endif // __va_h

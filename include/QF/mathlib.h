@@ -29,6 +29,13 @@
 #ifndef __mathlib_h
 #define __mathlib_h
 
+/** \addtogroup utils */
+//@{
+
+/** \defgroup mathlib Vector and matrix functions
+*/
+//@{
+
 #include <math.h>
 #include "QF/qtypes.h"
 
@@ -311,5 +318,8 @@ VectorNormalize (vec3_t v)
 
 	return length;
 }
+
+//@}
+//@}
 
 #endif // __mathlib_h
