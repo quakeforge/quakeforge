@@ -24,8 +24,10 @@ sw_src= \
 	sw_redge.c sw_rmain.c sw_rmisc.c sw_rpart.c sw_rsky.c sw_rsprite.c \
 	sw_rsurf.c sw_skin.c
 
+libasm_la_LDFLAGS= -static
 libasm_la_SOURCES= $(asm_src)
 
+libsw_la_LDFLAGS= -static
 libsw_la_SOURCES= $(sw_src)
 if ASM_ARCH
 libsw_la_LIBADD= $(asm)
