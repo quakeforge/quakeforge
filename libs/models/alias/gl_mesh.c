@@ -267,9 +267,8 @@ BuildTris (void)
 			continue;
 
 		bestlen = 0;
-		for (type = 0; type < 2; type++)
+		for (type = 0; type < 2; type++) {
 //  type = 1;
-		{
 			for (startv = 0; startv < 3; startv++) {
 				if (type == 1)
 					len = StripLength (i, startv);
