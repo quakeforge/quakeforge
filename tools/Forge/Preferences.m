@@ -26,7 +26,13 @@
 	$Id$
 */
 
-#import "qedefs.h"
+#import <Foundation/NSNotification.h>
+#import <Foundation/NSString.h>
+#import <Foundation/NSUserDefaults.h>
+#import <Foundation/NSValue.h>
+
+#import <AppKit/NSButton.h>
+#import <AppKit/NSControl.h>
 
 #import "Preferences.h"
 
@@ -110,6 +116,11 @@ static Preferences	*sharedInstance = nil;
 
 - (void) dealloc
 {
+	[[NSNotificationCenter defaultCenter] removeObserver: self];
+	[currentValues release];
+	[displayedValues release];
+	currentValues = displayedValues = nil;
+	[super dealloc];
 }
 
 /*
@@ -119,11 +130,13 @@ static Preferences	*sharedInstance = nil;
 */
 - (void) updateUI
 {
-	qprintf ("defaults updated");
-	
-	[map_i makeGlobalPerform: @selector(flushTextures)];
-	[quakeed_i updateAll];
-		
+	id theCenter = [NSNotificationCenter defaultCenter];
+
+	NSLog (@"Defaults updated, UI should update.");
+
+	[theCenter postNotificationName: @"ForgeTextureCacheShouldFlush" object: self userInfo: nil];
+	[theCenter postNotificationName: @"ForgeUIShouldUpdate" object: self userInfo: nil];
+
 	return;
 }
 
@@ -216,6 +229,8 @@ static Preferences	*sharedInstance = nil;
 		[currentValues release];
 
 	currentValues = [defaultValues () copyWithZone: [self zone]];
+	[currentValues retain];
+
 	[self discardDisplayedValues];
 }
 
