@@ -1735,7 +1735,7 @@ PF_SV_AllocClient (progs_t *pr)
 	cl->state = cs_server;
 	cl->spectator = 0;
 	ent = EDICT_NUM (&sv_pr_state, (cl - svs.clients) + 1);
-	SV_ExtractFromUserinfo (cl);
+	//SV_ExtractFromUserinfo (cl);
 	RETURN_EDICT (pr, ent);
 }
 
