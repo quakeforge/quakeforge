@@ -245,7 +245,7 @@ PR_ValueString (progs_t *pr, etype_t type, pr_type_t *val)
 				def = PR_Get_Local_Def (pr, ofs);
 			if (!def)
 				def = ED_GlobalAtOfs (pr, ofs);
-			if (def)
+			if (def && def->s_name)
 				snprintf (line, sizeof (line), "&%s",
 						  PR_GetString (pr, def->s_name));
 			else
