@@ -237,14 +237,17 @@ PF_sprint (progs_t *pr)
 	entnum = P_EDICTNUM (pr, 0);
 	level = P_FLOAT (pr, 1);
 
-	s = PF_VarString (pr, 2);
-
 	if (entnum < 1 || entnum > MAX_CLIENTS) {
 		SV_Printf ("tried to sprint to a non-client\n");
 		return;
 	}
 
 	client = &svs.clients[entnum - 1];
+
+	if (client->state == cs_server)
+		return;
+
+	s = PF_VarString (pr, 2);
 
 	SV_ClientPrintf (1, client, level, "%s", s);
 }
@@ -264,7 +267,6 @@ PF_centerprint (progs_t *pr)
 	int         entnum;
 
 	entnum = P_EDICTNUM (pr, 0);
-	s = PF_VarString (pr, 1);
 
 	if (entnum < 1 || entnum > MAX_CLIENTS) {
 		SV_Printf ("tried to sprint to a non-client\n");
@@ -272,6 +274,11 @@ PF_centerprint (progs_t *pr)
 	}
 
 	cl = &svs.clients[entnum - 1];
+
+	if (cl->state == cs_server)
+		return;
+
+	s = PF_VarString (pr, 1);
 
 	ClientReliableWrite_Begin (cl, svc_centerprint, 2 + strlen (s));
 	ClientReliableWrite_String (cl, s);
@@ -555,9 +562,13 @@ PF_stuffcmd (progs_t *pr)
 	entnum = P_EDICTNUM (pr, 0);
 	if (entnum < 1 || entnum > MAX_CLIENTS)
 		PR_RunError (pr, "Parm 0 not a client");
-	str = P_STRING (pr, 1);
 
 	cl = &svs.clients[entnum - 1];
+
+	if (cl->state == cs_server)
+		return;
+
+	str = P_STRING (pr, 1);
 
 	buf = cl->stufftext_buf;
 	if (strlen (buf) + strlen (str) >= MAX_STUFFTEXT)
@@ -1078,12 +1089,14 @@ PF_WriteBytes (progs_t *pr)
 	if (P_FLOAT (pr, 0) == MSG_ONE) {
 		client_t   *cl = Write_GetClient (pr);
 
-		ClientReliableCheckBlock (cl, pr->pr_argc);
+		if (cl->state != cs_server)
+			ClientReliableCheckBlock (cl, pr->pr_argc);
 		if (sv.demorecording)
 			DemoWrite_Begin (dem_single, cl - svs.clients, pr->pr_argc);
 		for (i = 1; i < pr->pr_argc; i++) {
 			p = G_FLOAT (pr, OFS_PARM0 + i * (OFS_PARM1 - OFS_PARM0));
-			ClientReliableWrite_Byte (cl, p);
+			if (cl->state != cs_server)
+				ClientReliableWrite_Byte (cl, p);
 			if (sv.demorecording)
 				MSG_WriteByte (&demo.dbuf->sz, p);
 		}
@@ -1102,8 +1115,10 @@ PF_WriteByte (progs_t *pr)
 	if (P_FLOAT (pr, 0) == MSG_ONE) {
 		client_t   *cl = Write_GetClient (pr);
 
-		ClientReliableCheckBlock (cl, 1);
-		ClientReliableWrite_Byte (cl, P_FLOAT (pr, 1));
+		if (cl->state != cs_server) {
+			ClientReliableCheckBlock (cl, 1);
+			ClientReliableWrite_Byte (cl, P_FLOAT (pr, 1));
+		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 1);
 			MSG_WriteByte (&demo.dbuf->sz, P_FLOAT (pr, 1));
@@ -1118,8 +1133,10 @@ PF_WriteChar (progs_t *pr)
 	if (P_FLOAT (pr, 0) == MSG_ONE) {
 		client_t   *cl = Write_GetClient (pr);
 
-		ClientReliableCheckBlock (cl, 1);
-		ClientReliableWrite_Char (cl, P_FLOAT (pr, 1));
+		if (cl->state != cs_server) {
+			ClientReliableCheckBlock (cl, 1);
+			ClientReliableWrite_Char (cl, P_FLOAT (pr, 1));
+		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 1);
 			MSG_WriteByte (&demo.dbuf->sz, P_FLOAT (pr, 1));
@@ -1134,8 +1151,10 @@ PF_WriteShort (progs_t *pr)
 	if (P_FLOAT (pr, 0) == MSG_ONE) {
 		client_t   *cl = Write_GetClient (pr);
 
-		ClientReliableCheckBlock (cl, 2);
-		ClientReliableWrite_Short (cl, P_FLOAT (pr, 1));
+		if (cl->state != cs_server) {
+			ClientReliableCheckBlock (cl, 2);
+			ClientReliableWrite_Short (cl, P_FLOAT (pr, 1));
+		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 2);
 			MSG_WriteShort (&demo.dbuf->sz, P_FLOAT (pr, 1));
@@ -1150,8 +1169,10 @@ PF_WriteLong (progs_t *pr)
 	if (P_FLOAT (pr, 0) == MSG_ONE) {
 		client_t   *cl = Write_GetClient (pr);
 
-		ClientReliableCheckBlock (cl, 4);
-		ClientReliableWrite_Long (cl, P_FLOAT (pr, 1));
+		if (cl->state != cs_server) {
+			ClientReliableCheckBlock (cl, 4);
+			ClientReliableWrite_Long (cl, P_FLOAT (pr, 1));
+		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 4);
 			MSG_WriteLong (&demo.dbuf->sz, P_FLOAT (pr, 1));
@@ -1166,8 +1187,10 @@ PF_WriteAngle (progs_t *pr)
 	if (P_FLOAT (pr, 0) == MSG_ONE) {
 		client_t   *cl = Write_GetClient (pr);
 
-		ClientReliableCheckBlock (cl, 1);
-		ClientReliableWrite_Angle (cl, P_FLOAT (pr, 1));
+		if (cl->state != cs_server) {
+			ClientReliableCheckBlock (cl, 1);
+			ClientReliableWrite_Angle (cl, P_FLOAT (pr, 1));
+		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 1);
 			MSG_WriteAngle (&demo.dbuf->sz, P_FLOAT (pr, 1));
@@ -1182,8 +1205,10 @@ PF_WriteCoord (progs_t *pr)
 	if (P_FLOAT (pr, 0) == MSG_ONE) {
 		client_t   *cl = Write_GetClient (pr);
 
-		ClientReliableCheckBlock (cl, 2);
-		ClientReliableWrite_Coord (cl, P_FLOAT (pr, 1));
+		if (cl->state != cs_server) {
+			ClientReliableCheckBlock (cl, 2);
+			ClientReliableWrite_Coord (cl, P_FLOAT (pr, 1));
+		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 2);
 			MSG_WriteCoord (&demo.dbuf->sz, P_FLOAT (pr, 1));
@@ -1200,8 +1225,10 @@ PF_WriteAngleV (progs_t *pr)
 	if (P_FLOAT (pr, 0) == MSG_ONE) {
 		client_t   *cl = Write_GetClient (pr);
 
-		ClientReliableCheckBlock (cl, 1);
-		ClientReliableWrite_AngleV (cl, ang);
+		if (cl->state != cs_server) {
+			ClientReliableCheckBlock (cl, 1);
+			ClientReliableWrite_AngleV (cl, ang);
+		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 1);
 			MSG_WriteAngleV (&demo.dbuf->sz, ang);
@@ -1218,8 +1245,10 @@ PF_WriteCoordV (progs_t *pr)
 	if (P_FLOAT (pr, 0) == MSG_ONE) {
 		client_t   *cl = Write_GetClient (pr);
 
-		ClientReliableCheckBlock (cl, 2);
-		ClientReliableWrite_CoordV (cl, coord);
+		if (cl->state != cs_server) {
+			ClientReliableCheckBlock (cl, 2);
+			ClientReliableWrite_CoordV (cl, coord);
+		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 2);
 			MSG_WriteCoordV (&demo.dbuf->sz, coord);
@@ -1234,8 +1263,10 @@ PF_WriteString (progs_t *pr)
 	if (P_FLOAT (pr, 0) == MSG_ONE) {
 		client_t   *cl = Write_GetClient (pr);
 
-		ClientReliableCheckBlock (cl, 1 + strlen (P_STRING (pr, 1)));
-		ClientReliableWrite_String (cl, P_STRING (pr, 1));
+		if (cl->state != cs_server) {
+			ClientReliableCheckBlock (cl, 1 + strlen (P_STRING (pr, 1)));
+			ClientReliableWrite_String (cl, P_STRING (pr, 1));
+		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients,
 							 1 + strlen (P_STRING (pr, 1)));
@@ -1251,8 +1282,10 @@ PF_WriteEntity (progs_t *pr)
 	if (P_FLOAT (pr, 0) == MSG_ONE) {
 		client_t   *cl = Write_GetClient (pr);
 
-		ClientReliableCheckBlock (cl, 2);
-		ClientReliableWrite_Short (cl, P_EDICTNUM (pr, 1));
+		if (cl->state != cs_server) {
+			ClientReliableCheckBlock (cl, 2);
+			ClientReliableWrite_Short (cl, P_EDICTNUM (pr, 1));
+		}
 		if (sv.demorecording) {
 			DemoWrite_Begin (dem_single, cl - svs.clients, 2);
 			MSG_WriteShort (&demo.dbuf->sz, P_EDICTNUM (pr, 1));
@@ -1302,6 +1335,9 @@ PF_setspawnparms (progs_t *pr)
 
 	// copy spawn parms out of the client_t
 	client = svs.clients + (i - 1);
+
+	if (client->state == cs_server)
+		return;
 
 	for (i = 0; i < NUM_SPAWN_PARMS; i++)
 		sv_globals.parms[i] = client->spawn_parms[i];
@@ -1723,22 +1759,18 @@ static void
 PF_SV_AllocClient (progs_t *pr)
 {
 	client_t   *cl = SV_AllocClient (0, 1);
-	edict_t    *ent;
 
 	if (!cl) {
 		R_var (pr, entity) = 0;
 		return;
 	}
-	ent = EDICT_NUM (&sv_pr_state, (cl - svs.clients) + 1);
 
-	memset (cl, 0, sizeof (*cl));
 	cl->userinfo = Info_ParseString ("", 1023, !sv_highchars->int_val);
 	//XXX netchan? Netchan_Setup (&newcl->netchan, adr, qport);
 	cl->state = cs_server;
 	cl->spectator = 0;
-	cl->edict = ent;
 	//SV_ExtractFromUserinfo (cl);
-	RETURN_EDICT (pr, ent);
+	RETURN_EDICT (pr, cl->edict);
 }
 
 static void

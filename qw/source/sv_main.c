@@ -751,7 +751,9 @@ SV_AllocClient (int spectator, int server)
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
 		if (cl->state == cs_free) {
 			svs.num_clients++;
+			memset (cl, 0, sizeof (client_t));
 			cl->userid = userid++;	// so every client gets a unique id
+			cl->edict = EDICT_NUM (&sv_pr_state, (cl - svs.clients) + 1);
 			return cl;
 		}
 	}
@@ -770,9 +772,7 @@ SVC_DirectConnect (void)
 	info_t     *userinfo = 0;
 	const char *s;
 	client_t   *cl, *newcl;
-	client_t    temp;
-	edict_t    *ent;
-	int         challenge, edictnum, qport, version, i;
+	int         challenge, qport, version, i;
 	netadr_t    adr;
 	qboolean    spectator;
 
@@ -866,11 +866,6 @@ SVC_DirectConnect (void)
 
 	adr = net_from;
 
-	newcl = &temp;
-	memset (newcl, 0, sizeof (client_t));
-
-	newcl->userinfo = userinfo;
-
 	// if there is already a slot for this ip, drop it
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
 		if (cl->state < cs_zombie)
@@ -893,10 +888,10 @@ SVC_DirectConnect (void)
 		Netchan_OutOfBandPrint (adr, "%c\nserver is full\n\n", A2C_PRINT);
 		return;
 	}
+	newcl->userinfo = userinfo;
 	// build a new connection
 	// accept the new client
 	// this is the only place a client_t is ever initialized
-	*newcl = temp;
 	for (i = 0; i < UPDATE_BACKUP; i++) {
 		newcl->frames[i].entities.entities = cl_entities[newcl-svs.clients][i];
 		memset (cl_entities[newcl-svs.clients][i], 0,
@@ -904,8 +899,6 @@ SVC_DirectConnect (void)
 	}
 
 	Netchan_OutOfBandPrint (adr, "%c", S2C_CONNECTION);
-
-	edictnum = (newcl - svs.clients) + 1;
 
 	Netchan_Setup (&newcl->netchan, adr, qport);
 
@@ -919,9 +912,6 @@ SVC_DirectConnect (void)
 
 	// spectator mode can ONLY be set at join time
 	newcl->spectator = spectator;
-
-	ent = EDICT_NUM (&sv_pr_state, edictnum);
-	newcl->edict = ent;
 
 	// parse some info from the info strings
 	SV_ExtractFromUserinfo (newcl);
