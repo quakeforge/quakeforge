@@ -250,6 +250,7 @@ main (int argc, char **argv)
 				break;
 			case 'P':
 				source_path = strdup (optarg);
+				break;
 			case 'v':
 				verbosity++;
 				break;
