@@ -70,40 +70,6 @@ Mod_ProcessTexture (miptex_t *mt, texture_t *tx)
 						true, false, 1);
 }
 
-static tex_t *
-Mod_ProcessLuma (tex_t *luma)
-{
-	byte	   *data;
-	int			i;
-	size_t		size = luma->width * luma->height;
-	tex_t	   *newluma = luma;
-
-	if (luma->format < 3)
-		return luma;
-
-	if (luma->format == 3) {
-		// Doesn't have alpha, let's give it some.
-		newluma = Hunk_TempAlloc (field_offset (tex_t, data[size * 4]));
-
-		for (i = 0; i < size; i++) {
-			newluma->data[i * 4] = luma->data[i * 3];
-			newluma->data[i * 4 + 1] = luma->data[i * 3 + 1];
-			newluma->data[i * 4 + 2] = luma->data[i * 3 + 2];
-			newluma->data[i * 4 + 3] = 0xFF;
-		}
-
-		newluma->format = 4;
-	}
-
-	data = newluma->data;
-
-	for (i = 0; i < size * 4; i += 4) {
-		if (!(data[i] | data[i + 1] | data[i + 2]))
-			data[i + 3] = 0;
-	}
-
-	return newluma;
-}
 
 static tex_t *
 Mod_LoadAnExternalTexture (char * tname, char *mname)
@@ -154,15 +120,17 @@ Mod_LoadExternalTextures (model_t *mod)
 				luma = Mod_LoadAnExternalTexture (va ("%s_glow", tx->name),
 												  mod->name);
 
-			tx->gl_fb_texturenum = 0;	// what about paletted (pcx)?
-			if (luma) {
-				if (luma->format > 2)	// If false, something's on crack
-					luma = Mod_ProcessLuma (luma);
+			tx->gl_fb_texturenum = 0;
 
+			if (luma) {
 				tx->gl_fb_texturenum =
 					GL_LoadTexture (va ("fb_%s", tx->name), luma->width,
 									luma->height, luma->data, true, true,
 									luma->format);
+			} else if (base->format == 1) {
+				tx->gl_fb_texturenum =
+					Mod_Fullbright (luma->data, luma->width, luma->height,
+									va("fb_%s", tx->name));
 			}
 		}
 	}
