@@ -199,12 +199,9 @@ NET_SVC_Stufftext_Parse (net_svc_stufftext_t *block, msg_t *msg)
 net_status_t
 NET_SVC_Damage_Emit (net_svc_damage_t *block, sizebuf_t *buf)
 {
-	int i;
-
 	MSG_WriteByte (buf, block->armor);
 	MSG_WriteByte (buf, block->blood);
-	for (i = 0; i < 3; i++)
-		MSG_WriteCoord (buf, block->from[i]);
+	MSG_WriteCoordV (buf, block->from);
 
 	return buf->overflowed;
 }
@@ -216,8 +213,7 @@ NET_SVC_Damage_Parse (net_svc_damage_t *block, msg_t *msg)
 
 	block->armor = MSG_ReadByte (msg);
 	block->blood = MSG_ReadByte (msg);
-	for (i = 0; i < 3; i++)
-		block->from[i] = MSG_ReadCoord (msg);
+	block->from = MSG_ReadCoordV (msg);
 
 	return msg->badread;
 }
@@ -276,10 +272,7 @@ NET_SVC_ServerData_Parse (net_svc_serverdata_t *block, msg_t *msg)
 net_status_t
 NET_SVC_SetAngle_Emit (net_svc_setangle_t *block, sizebuf_t *buf)
 {
-	int i;
-
-	for (i = 0; i < 3; i++)
-		MSG_WriteAngle (buf, block->angles[i]);
+	MSG_WriteAngleV (buf, block->angles);
 
 	return buf->overflowed;
 }
@@ -287,10 +280,7 @@ NET_SVC_SetAngle_Emit (net_svc_setangle_t *block, sizebuf_t *buf)
 net_status_t
 NET_SVC_SetAngle_Parse (net_svc_setangle_t *block, msg_t *msg)
 {
-	int i;
-
-	for (i = 0; i < 3; i++)
-		block->angles[i] = MSG_ReadAngle (msg);
+	block->angles = MSG_ReadAngleV (msg);
 
 	return msg->badread;
 }
@@ -465,10 +455,7 @@ NET_SVC_SpawnBaseline_Emit (net_svc_spawnbaseline_t *block, sizebuf_t *buf)
 	MSG_WriteByte (buf, block->colormap);
 	MSG_WriteByte (buf, block->skinnum);
 
-	for (i = 0; i < 3; i++) {
-		MSG_WriteCoord (buf, block->origin[i]);
-		MSG_WriteAngle (buf, block->angles[i]);
-	}
+	MSG_WriteCoordAngleV (buf, block->origin, block->angles);
 
 	return buf->overflowed;
 }
@@ -476,19 +463,13 @@ NET_SVC_SpawnBaseline_Emit (net_svc_spawnbaseline_t *block, sizebuf_t *buf)
 net_status_t
 NET_SVC_SpawnBaseline_Parse (net_svc_spawnbaseline_t *block, msg_t *msg)
 {
-	int i;
-
 	block->num = MSG_ReadShort (msg);
 	block->modelindex = MSG_ReadByte (msg);
 	block->frame = MSG_ReadByte (msg);
 	block->colormap = MSG_ReadByte (msg);
 	block->skinnum = MSG_ReadByte (msg);
 
-	// these are interlaced?  bad drugs...
-	for (i = 0; i < 3; i ++) {
-		block->origin[i] = MSG_ReadCoord (msg);
-		block->angles[i] = MSG_ReadAngle (msg);
-	}
+	MSG_ReadCoordAngleV (msg, block->origin, block->angles);
 
 	return msg->badread;
 }
@@ -502,10 +483,7 @@ NET_SVC_SpawnStatic_Emit (net_svc_spawnstatic_t *block, sizebuf_t *buf)
 	MSG_WriteByte (buf, block->frame);
 	MSG_WriteByte (buf, block->colormap);
 	MSG_WriteByte (buf, block->skinnum);
-	for (i = 0; i < 3; i++) {
-		MSG_WriteCoord (buf, block->origin[i]);
-		MSG_WriteAngle (buf, block->angles[i]);
-	}
+	MSG_WriteCoordAngleV (buf, block->origin, block->angles);
 
 	return buf->overflowed;
 }
@@ -520,11 +498,7 @@ NET_SVC_SpawnStatic_Parse (net_svc_spawnstatic_t *block, msg_t *msg)
 	block->colormap = MSG_ReadByte (msg);
 	block->skinnum = MSG_ReadByte (msg);
 
-	// these are interlaced?  bad drugs...
-	for (i = 0; i < 3; i++) {
-		block->origin[i] = MSG_ReadCoord (msg);
-		block->angles[i] = MSG_ReadAngle (msg);
-	}
+	MSG_ReadCoordAngleV (msg, block->origin, block->angles);
 
 	return msg->badread;
 }
@@ -545,8 +519,7 @@ NET_SVC_TempEntity_Emit (net_svc_tempentity_t *block, sizebuf_t *buf)
 		case TE_LAVASPLASH:
 		case TE_TELEPORT:
 		case TE_LIGHTNINGBLOOD:
-			for (i = 0; i < 3; i++)
-				MSG_WriteCoord (buf, block->position[i]);
+			MSG_WriteCoordV (buf, block->position);
 			break;
 		case TE_LIGHTNING1:
 		case TE_LIGHTNING2:
@@ -555,20 +528,17 @@ NET_SVC_TempEntity_Emit (net_svc_tempentity_t *block, sizebuf_t *buf)
 			MSG_WriteShort (buf, block->beamentity);
 			for (i = 0; i < 3; i++)
 				MSG_WriteShort (buf, block->position[i]);
-			for (i = 0; i < 3; i++)
-				MSG_WriteCoord (buf, block->beamend[i]);
+			MSG_WriteCoordV (buf, block->beamend);
 			break;
 		case TE_EXPLOSION2:
-			for (i = 0; i < 3; i++)
-				MSG_WriteCoord (buf, block->position[i]);
+			MSG_WriteCoordV (buf, block->position);
 			MSG_WriteByte (buf, block->colorstart);
 			MSG_WriteByte (buf, block->colorlength);
 			break;
 		case TE_GUNSHOT:
 		case TE_BLOOD:
 			MSG_WriteByte (buf, block->gunshotcount);
-			for (i = 0; i < 3; i++)
-				MSG_WriteCoord (buf, block->position[i]);
+			MSG_WriteCoordV (buf, block->position);
 			break;
 		default:
 			return NET_ERROR;
@@ -593,30 +563,25 @@ NET_SVC_TempEntity_Parse (net_svc_tempentity_t *block, msg_t *msg)
 		case TE_LAVASPLASH:
 		case TE_TELEPORT:
 		case TE_LIGHTNINGBLOOD:
-			for (i = 0; i < 3; i++)
-				block->position[i] = MSG_ReadCoord (msg);
+			MSG_ReadCoordV (msg, block->position);
 			break;
 		case TE_LIGHTNING1:
 		case TE_LIGHTNING2:
 		case TE_LIGHTNING3:
 		case TE_BEAM:
 			block->beamentity = MSG_ReadShort (msg);
-			for (i = 0; i < 3; i++)
-				block->position[i] = MSG_ReadCoord (msg);
-			for (i = 0; i < 3; i++)
-				block->beamend[i] = MSG_ReadCoord (msg);
+			MSG_ReadCoordV (msg, block->position);
+			MSG_ReadCoordV (msg, block->beamend);
 			break;
 		case TE_EXPLOSION2:
-			for (i = 0; i < 3; i++)
-				block->position[i] = MSG_ReadCoord (msg);
+			MSG_ReadCoordV (msg, block->position);
 			block->colorstart = MSG_ReadByte (msg);
 			block->colorlength = MSG_ReadByte (msg);
 			break;
 		case TE_GUNSHOT:
 		case TE_BLOOD:
 			block->gunshotcount = MSG_ReadByte (msg);
-			for (i = 0; i < 3; i++)
-				block->position[i] = MSG_ReadCoord (msg);
+			MSG_ReadCoordV (msg, block->position);
 			break;
 		default:
 			return NET_ERROR;
@@ -653,10 +618,7 @@ net_status_t
 NET_SVC_SpawnStaticSound_Emit (net_svc_spawnstaticsound_t *block,
 							   sizebuf_t *buf)
 {
-	int i;
-
-	for (i = 0; i < 3; i++)
-		MSG_WriteCoord (buf, block->position[i]);
+	MSG_WriteCoordV (buf, block->position);
 	MSG_WriteByte (buf, block->sound_num);
 	MSG_WriteByte (buf, block->volume);
 	MSG_WriteByte (buf, block->attenuation);
@@ -668,10 +630,7 @@ net_status_t
 NET_SVC_SpawnStaticSound_Parse (net_svc_spawnstaticsound_t *block,
 								msg_t *msg)
 {
-	int i;
-
-	for (i = 0; i < 3; i++)
-		block->position[i] = MSG_ReadCoord (msg);
+	MSG_ReadCoordV (msg, block->position);
 	block->sound_num = MSG_ReadByte (msg);
 	block->volume = MSG_ReadByte (msg);
 	block->attenuation = MSG_ReadByte (msg);
@@ -734,12 +693,8 @@ NET_SVC_CDTrack_Parse (net_svc_cdtrack_t *block, msg_t *msg)
 net_status_t
 NET_SVC_Intermission_Emit (net_svc_intermission_t *block, sizebuf_t *buf)
 {
-	int i;
-
-	for (i = 0; i < 3; i++)
-		MSG_WriteCoord (buf, block->origin[i]);
-	for (i = 0; i < 3; i++)
-		MSG_WriteAngle (buf, block->angles[i]);
+	MSG_WriteCoordV (buf, block->origin);
+	MSG_WriteAngleV (buf, block->angles);
 
 	return buf->overflowed;
 }
@@ -747,12 +702,8 @@ NET_SVC_Intermission_Emit (net_svc_intermission_t *block, sizebuf_t *buf)
 net_status_t
 NET_SVC_Intermission_Parse (net_svc_intermission_t *block, msg_t *msg)
 {
-	int i;
-
-	for (i = 0; i < 3; i++)
-		block->origin[i] = MSG_ReadCoord (msg);
-	for (i = 0; i < 3; i++)
-		block->angles[i] = MSG_ReadAngle (msg);
+	MSG_ReadCoordV (msg, block->origin);
+	MSG_ReadAngleV (msg, block->angles);
 
 	return msg->badread;
 }
@@ -930,8 +881,7 @@ NET_SVC_Playerinfo_Emit (net_svc_playerinfo_t *block, sizebuf_t *buf)
 	MSG_WriteByte (buf, block->playernum);
 	MSG_WriteShort (buf, block->flags);
 
-	for (i = 0; i < 3; i++)
-		MSG_WriteCoord (buf, block->origin[i]);
+	MSG_WriteCoordV (buf, block->origin);
 	MSG_WriteByte (buf, block->frame);
 
 	if (block->flags & PF_MSEC)
@@ -960,8 +910,7 @@ NET_SVC_Playerinfo_Parse (net_svc_playerinfo_t *block, msg_t *msg)
 
 	block->playernum = MSG_ReadByte (msg);
 	block->flags = MSG_ReadShort (msg);
-	for (i = 0; i < 3; i++)
-		block->origin[i] = MSG_ReadCoord (msg);
+	MSG_ReadCoordV (msg, block->origin);
 	block->frame = MSG_ReadByte (msg);
 
 	if (block->flags & PF_MSEC)
@@ -1016,11 +965,11 @@ NET_SVC_Nails_Emit (net_svc_nails_t *block, sizebuf_t *buf)
 	MSG_WriteByte (buf, block->numnails);
 
 	for (i = 0; i < block->numnails; i++) {
-		x = (int) (block->nails[i].origin[0] + 4096) >> 1;
-		y = (int) (block->nails[i].origin[1] + 4096) >> 1;
-		z = (int) (block->nails[i].origin[2] + 4096) >> 1;
-		p = (int) (16 * block->nails[i].angles[0] / 360) & 15;
-		yaw = (int) (256 * block->nails[i].angles[1] / 360) & 255;
+		x = ((int) (block->nails[i].origin[0] + 4096 + 1) >> 1) & 4095;
+		y = ((int) (block->nails[i].origin[1] + 4096 + 1) >> 1) & 4095;
+		z = ((int) (block->nails[i].origin[2] + 4096 + 1) >> 1) & 4095;
+		p = (int) (block->nails[i].angles[0] * (16.0 / 360.0)) & 15;
+		yaw = (int) (block->nails[i].angles[1] * (256.0 / 360.0)) & 255;
 
 		bits[0] = x;
 		bits[1] = (x >> 8) | (y << 4);
@@ -1433,4 +1382,3 @@ NET_SVC_SetPause_Parse (net_svc_setpause_t *block, msg_t *msg)
 
 	return msg->badread;
 }
-
