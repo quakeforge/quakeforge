@@ -104,9 +104,9 @@ int_imm_get_key (void *_def, void *_str)
 }
 
 static const char *
-stings_get_key (void *_str, void *unsued)
+strings_get_key (void *_str, void *unsued)
 {
-	return (char *) _str;
+	return strings + (int) _str;
 }
 
 int
@@ -115,26 +115,27 @@ CopyString (const char *str)
 	int         old;
 
 	if (!strings_tab) {
-		strings_tab = Hash_NewTable (16381, stings_get_key, 0, 0);
-		Hash_Add (strings_tab, strings);
+		strings_tab = Hash_NewTable (16381, strings_get_key, 0, 0);
 	}
 	old = strofs;
 	strcpy (strings + strofs, str);
 	strofs += strlen (str) + 1;
-	Hash_Add (strings_tab, strings + old);
+	Hash_Add (strings_tab, (void *)old);
 	return old;
 }
 
 int
 ReuseString (const char *str)
 {
-	char       *s;
+	int         s;
 
+	if (!*str)
+		return 0;
 	if (!strings_tab)
 		return CopyString (str);
-	s = Hash_Find (strings_tab, str);
+	s = (long) Hash_Find (strings_tab, str);
 	if (s)
-		return s - strings;
+		return s;
 	return CopyString (str);
 }
 
@@ -276,7 +277,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 	cn->initialized = cn->constant = 1;
 	// copy the immediate to the global area
 	if (e.type == ex_string)
-		e.e.integer_val = CopyString (rep->str);
+		e.e.integer_val = ReuseString (rep->str);
 
 	memcpy (pr_globals + cn->ofs, &e.e, 4 * pr_type_size[type->type]);
 
