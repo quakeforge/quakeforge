@@ -188,6 +188,22 @@ CL_ClearState (void)
 
 
 /*
+	CL_StopCshifts
+
+	Cleans the Cshifts, so your screen doesn't stay red after a timedemo :)
+*/
+void
+CL_StopCshifts (void)
+{
+	int i;
+	for (i = 0; i < NUM_CSHIFTS; i++)
+		cl.cshifts[i].percent = 0;
+	for (i = 0; i < MAX_CL_STATS; i++)
+		cl.stats[i] = 0;
+}
+
+
+/*
 	CL_Disconnect
 
 	Sends a disconnect message to the server
@@ -196,13 +212,16 @@ CL_ClearState (void)
 void
 CL_Disconnect (void)
 {
-// stop sounds (especially looping!)
+	// stop sounds (especially looping!)
 	S_StopAllSounds (true);
 
-// bring the console down and fade the colors back to normal
-//  SCR_BringDownConsole ();
+	// Clean the Cshifts
+	CL_StopCshifts ();
 
-// if running a local server, shut it down
+	// bring the console down and fade the colors back to normal
+//	SCR_BringDownConsole ();
+
+	// if running a local server, shut it down
 	if (cls.demoplayback)
 		CL_StopPlayback ();
 	else if (cls.state == ca_connected) {

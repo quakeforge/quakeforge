@@ -690,9 +690,6 @@ V_RenderView (void)
 			V_CalcRefdef ();
 	}
 
-//	nq thinks dlights should be here
-	R_PushDlights (vec3_origin);
-
 	R_RenderView ();
 }
 

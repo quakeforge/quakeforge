@@ -67,7 +67,6 @@
 #include "sbar.h"
 #include "view.h"
 
-extern cvar_t *gl_dlight_polyblend;
 extern cvar_t *cl_autoexec;
 
 char       *svc_strings[] = {

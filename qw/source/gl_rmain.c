@@ -1073,7 +1073,7 @@ R_RenderView (void)
 	R_Clear ();
 
 	// render normal view
-	R_SetupFrame ();					// Setup stuff for frame.
+	R_SetupFrame ();
 
 	R_SetFrustum ();
 
@@ -1081,13 +1081,11 @@ R_RenderView (void)
 
 	R_PushDlights (vec3_origin);
 
-	R_MarkLeaves ();					// done here so we know if we're in
-										// water
+	R_MarkLeaves ();			// done here so we know if we're in water
 
-	R_DrawWorld ();						// adds static entities to the list
+	R_DrawWorld ();				// adds static entities to the list
 
-	S_ExtraUpdate ();					// don't let sound get messed up if
-										// going slow
+	S_ExtraUpdate ();			// don't let sound get messed up if going slow
 
 	R_DrawEntitiesOnList ();
 

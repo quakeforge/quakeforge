@@ -471,13 +471,13 @@ CL_Disconnect (void)
 
 	VID_SetCaption ("Disconnected");
 
-// stop sounds (especially looping!)
+	// stop sounds (especially looping!)
 	S_StopAllSounds (true);
 
-// Clean the Cshifts
+	// Clean the Cshifts
 	CL_StopCshifts ();
 
-// if running a local server, shut it down
+	// if running a local server, shut it down
 	if (cls.demoplayback)
 		CL_StopPlayback ();
 	else if (cls.state != ca_disconnected) {
