@@ -71,8 +71,6 @@ HWND 		mainwindow;
 #define	WARP_WIDTH	320
 #define	WARP_HEIGHT	200
 
-static qboolean vid_initialized = false;
-
 cvar_t     *vid_fullscreen;
 cvar_t      *vid_system_gamma;
 
@@ -102,7 +100,7 @@ VID_SDL_GammaCheck (void)
 void
 VID_Shutdown (void)
 {
-//	if (!vid_initialized)
+//	if (!vid.initialized)
 //		return;
 //	Con_Printf ("VID_Shutdown\n");
 	SDL_Quit ();
@@ -237,7 +235,7 @@ VID_Init (unsigned char *palette)
 
 	Con_Printf ("Video mode %dx%d initialized.\n", scr_width, scr_height);
 
-	vid_initialized = true;
+	vid.initialized = true;
 
 #ifdef WIN32
         // FIXME: EVIL thing - but needed for win32 until

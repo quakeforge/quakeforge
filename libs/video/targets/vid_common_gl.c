@@ -152,9 +152,9 @@ VID_SetPalette (unsigned char *palette)
 	pal = palette;
 	table = d_8to24table;
 	for (i = 0; i < 255; i++) { // used to be i<256, see d_8to24table below
-		r = pal[0];
-		g = pal[1];
-		b = pal[2];
+		r = gammatable[pal[0]];
+		g = gammatable[pal[1]];
+		b = gammatable[pal[2]];
 		pal += 3;
 
 #ifdef WORDS_BIGENDIAN

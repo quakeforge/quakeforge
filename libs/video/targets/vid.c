@@ -140,9 +140,6 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 {
 	double gamma = bound (0.1, vid_gamma->value, 9.9);
 	
-	if (vid_gamma->flags & CVAR_ROM)	// System gamma unavailable
-		return;
-
 	vid.recalc_refdef = 1;				// force a surface cache flush
 
 	if (vid_gamma_avail && vid_system_gamma->int_val) {	// Have system, use it
@@ -152,7 +149,8 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 	} else {	// We have to hack the palette
 		Con_DPrintf ("Setting software gamma to %g\n", gamma);
 		VID_BuildGammaTable (gamma);
-		V_UpdatePalette (); // update with the new palette
+		if (vid.initialized)
+			VID_SetPalette (vid_basepal); // update with the new palette
 	}
 }
 

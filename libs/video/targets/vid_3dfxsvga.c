@@ -284,6 +284,8 @@ VID_Init (unsigned char *palette)
 	// Check for 3DFX Extensions and initialize them.
 	VID_Init8bitPalette ();
 
+	vid.initialzed = true;
+
 	Con_Printf ("Video mode %dx%d initialized.\n", scr_width, scr_height);
 
 	vid.recalc_refdef = 1;				// force a surface cache flush

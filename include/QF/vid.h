@@ -44,6 +44,7 @@ typedef struct vrect_s {
 } vrect_t;
 
 typedef struct {
+	qboolean		initialized;
 	pixel_t			*buffer;		// invisible buffer
 	short			*zbuffer;
 	void			*surfcache;

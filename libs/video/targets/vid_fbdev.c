@@ -531,6 +531,8 @@ VID_Init (unsigned char *palette)
 
 		VID_InitGamma (palette);
 		VID_SetPalette (palette);
+
+		vid.initialzed = true;
 	}
 }
 

@@ -550,6 +550,8 @@ VID_Init (unsigned char *palette)
 
 //  XSynchronize (x_disp, False);
 	X11_AddEvent (x_shmeventtype, event_shm);
+
+	vid.initialzed = true;
 }
 
 void

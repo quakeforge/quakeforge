@@ -114,7 +114,6 @@ static int  nummodes;
 static vmode_t badmode;
 
 static DEVMODE gdevmode;
-static qboolean vid_initialized = false;
 static qboolean windowed, leavecurrentmode;
 static qboolean vid_canalttab = false;
 static qboolean vid_wassuspended = false;
@@ -522,7 +521,7 @@ VID_Shutdown (void)
                 DestroyWindow (hwnd_dialog);
 #endif
 
-	if (vid_initialized) {
+	if (vid.initialized) {
 		vid_canalttab = false;
 		hRC = wglGetCurrentContext ();
 		hDC = wglGetCurrentDC ();
@@ -1353,7 +1352,7 @@ VID_Init (unsigned char *palette)
 		}
 	}
 
-	vid_initialized = true;
+	vid.initialized = true;
 
 	if ((i = COM_CheckParm ("-conwidth")) != 0)
 		vid.conwidth = atoi (com_argv[i + 1]);

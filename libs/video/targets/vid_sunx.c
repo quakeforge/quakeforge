@@ -812,6 +812,8 @@ VID_Init (unsigned char *palette)
 	vid_menudrawfn = VID_MenuDraw;
 	vid_menukeyfn = VID_MenuKey;
 
+
+	vid.initialzed = true;
 }
 
 void

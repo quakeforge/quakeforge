@@ -82,7 +82,7 @@ RECT        window_rect;
 static DEVMODE gdevmode;
 static qboolean startwindowed = 0, windowed_mode_set = 0;
 static int  firstupdate = 1;
-static qboolean vid_initialized = false, vid_palettized;
+static qboolean vid_palettized;
 static int  lockcount;
 static int  vid_fulldib_on_focus_mode;
 static qboolean force_minimized, in_mode_set, is_mode0x13, force_mode_set;
@@ -1508,7 +1508,7 @@ void
 VID_SetDefaultMode (void)
 {
 
-	if (vid_initialized)
+	if (vid.initialized)
 		VID_SetMode (0, vid_curpal);
 
 	IN_DeactivateMouse ();
@@ -2047,7 +2047,7 @@ VID_Init (unsigned char *palette)
 	hide_window = false;
 //  S_Init ();
 
-	vid_initialized = true;
+	vid.initialized = true;
 
 	force_mode_set = true;
 	VID_SetMode (vid_default, palette);
@@ -2093,7 +2093,7 @@ VID_Shutdown (void)
                         DestroyWindow (hwnd_dialog);
 #endif
 
-	if (vid_initialized) {
+	if (vid.initialized) {
 		if (modestate == MS_FULLDIB)
 			ChangeDisplaySettings (NULL, CDS_FULLSCREEN);
 
@@ -2112,7 +2112,7 @@ VID_Shutdown (void)
 		MGL_exit ();
 
 		vid_testingmode = 0;
-		vid_initialized = 0;
+		vid.initialized = 0;
 	}
 }
 
@@ -2294,7 +2294,7 @@ D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
 	int         i, j, reps, repshift;
 	vrect_t     rect;
 
-	if (!vid_initialized)
+	if (!vid.initialized)
 		return;
 
 	if (vid.aspect > 1.5) {
@@ -2377,7 +2377,7 @@ D_EndDirectRect (int x, int y, int width, int height)
 	int         i, j, reps, repshift;
 	vrect_t     rect;
 
-	if (!vid_initialized)
+	if (!vid.initialized)
 		return;
 
 	if (vid.aspect > 1.5) {
@@ -2542,7 +2542,7 @@ AppActivate (BOOL fActive, BOOL minimize)
 
 	MGL_appActivate (windc, ActiveApp);
 
-	if (vid_initialized) {
+	if (vid.initialized) {
 		// yield the palette if we're losing the focus
 		hdc = GetDC (NULL);
 
@@ -2588,7 +2588,7 @@ AppActivate (BOOL fActive, BOOL minimize)
 	if (!in_mode_set) {
 		if (ActiveApp) {
 			if (vid_fulldib_on_focus_mode) {
-				if (vid_initialized) {
+				if (vid.initialized) {
 					msg_suppress_1 = true;	// don't want to see normal mode
 											// set message
 					VID_SetMode (vid_fulldib_on_focus_mode, vid_curpal);
@@ -2612,7 +2612,7 @@ AppActivate (BOOL fActive, BOOL minimize)
 
 		if (!ActiveApp) {
 			if (modestate == MS_FULLDIB) {
-				if (vid_initialized) {
+				if (vid.initialized) {
 					force_minimized = true;
 					i = vid_fulldib_on_focus_mode;
 					msg_suppress_1 = true;	// don't want to see normal mode
@@ -2852,7 +2852,7 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 			scr_fullupdate = 0;
 
-			if (vid_initialized && !in_mode_set && windc
+			if (vid.initialized && !in_mode_set && windc
 				&& MGL_activatePalette (windc, false) && !Minimized) {
 				VID_SetPalette (vid_curpal);
 				InvalidateRect (mainwindow, NULL, false);

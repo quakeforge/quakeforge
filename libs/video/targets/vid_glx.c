@@ -63,8 +63,6 @@
 #define WARP_WIDTH		320
 #define WARP_HEIGHT 	200
 
-static qboolean vid_initialized = false;
-
 static GLXContext ctx = NULL;
 
 extern void GL_Init_Common (void);
@@ -80,7 +78,7 @@ const char *gl_extensions;
 void
 VID_Shutdown (void)
 {
-	if (!vid_initialized)
+	if (!vid.initialized)
 		return;
 
 	Con_Printf ("VID_Shutdown\n");
@@ -214,14 +212,14 @@ VID_Init (unsigned char *palette)
 	GL_Init ();
 
 	VID_InitGamma (palette);
-	VID_SetPalette (palette);
 
 	// Check for 8-bit extension and initialize if present
 	VID_Init8bitPalette ();
+	VID_SetPalette (palette);
 
 	Con_Printf ("Video mode %dx%d initialized.\n", scr_width, scr_height);
 
-	vid_initialized = true;
+	vid.initialized = true;
 
 	vid.recalc_refdef = 1;				// force a surface cache flush
 }

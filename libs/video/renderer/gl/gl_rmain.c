@@ -99,7 +99,6 @@ void        R_MarkLeaves (void);
 
 extern cvar_t *scr_fov;
 
-extern byte gammatable[256];
 extern qboolean lighthalf;
 
 

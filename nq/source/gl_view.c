@@ -47,8 +47,6 @@
 
 extern double    host_frametime;
 
-extern byte      gammatable[256];
-
 extern cvar_t   *cl_cshift_powerup;
 
 byte             ramps[3][256];
