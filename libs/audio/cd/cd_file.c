@@ -309,7 +309,7 @@ I_OGGMus_Info (void)
 	Sys_DPrintf ("Highest Track number = %i.\n", highesttrack);
 	
 	/* allocate a null terminated array of char *'s  */
-	mapoutput = calloc (highesttrack + 1, sizeof (char*));
+	mapoutput = calloc (highesttrack + 1, sizeof (char *));
 	if (!mapoutput)
 		Sys_Error ("couldn't allocate mapoutput array!\n");
 
@@ -392,12 +392,12 @@ I_OGG_f (void)
 	}
 
 	if (strequal (command, "play")) {
-		CDAudio_Play (atoi (Cmd_Argv (2)), false);
+		I_OGGMus_Play (atoi (Cmd_Argv (2)), false);
 		return;
 	}
 
 	if (strequal (command, "loop")) {
-		CDAudio_Play (atoi (Cmd_Argv (2)), true);
+		I_OGGMus_Play (atoi (Cmd_Argv (2)), true);
 		return;
 	}
 
@@ -407,12 +407,12 @@ I_OGG_f (void)
 	}
 
 	if (strequal (command, "pause")) {
-		CDAudio_Pause ();
+		I_OGGMus_Pause ();
 		return;
 	}
 
 	if (strequal (command, "resume")) {
-		CDAudio_Resume ();
+		I_OGGMus_Resume ();
 		return;
 	}
 
