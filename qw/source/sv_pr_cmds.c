@@ -1999,13 +1999,13 @@ PF_Checkextension (progs_t *pr)
 }
 
 void
-PF_checkfunction (progs_t *pr)
+PF_checkbuiltin (progs_t *pr)
 {
 	G_FUNCTION (pr, OFS_RETURN) = -PR_FindBuiltin (pr, G_STRING (pr, OFS_PARM0));
 }
 
 void
-PF_getfunction (progs_t *pr)
+PF_getbuiltin (progs_t *pr)
 {
 	int i;
 	const char *name;
@@ -2139,6 +2139,6 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "cfwrite", PF_cfwrite, -1);	// float (float desc, string buf) cfwrite = #106
 	PR_AddBuiltin (&sv_pr_state, "cfeof", PF_cfeof, -1);	// float (float desc) cfeof = #107
 	PR_AddBuiltin (&sv_pr_state, "cfquota", PF_cfquota, -1);	// float () cfquota = #108
-	PR_AddBuiltin (&sv_pr_state, "checkfunction", PF_checkfunction, 109);	// function (string name) checkfunction = #109
-	PR_AddBuiltin (&sv_pr_state, "getfunction", PF_getfunction, 110);	// function (string name) getfunction = #110
+	PR_AddBuiltin (&sv_pr_state, "checkbuiltin", PF_checkbuiltin, 109);	// function (string name) checkfunction = #109
+	PR_AddBuiltin (&sv_pr_state, "getbuiltin", PF_getbuiltin, 110);	// function (string name) getfunction = #110
 };
