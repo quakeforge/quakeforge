@@ -36,6 +36,7 @@
 
 #include "QF/qendian.h"
 #include "QF/qtypes.h"
+#include "QF/vfile.h"
 
 /*
 					BYTE ORDER FUNCTIONS
@@ -116,4 +117,87 @@ float
 FloatNoSwap (float f)
 {
 	return f;
+}
+
+void
+WriteFloat (VFile *file, float f)
+{
+	// a float in C is /defined/ to be 32 bits. byte order, can, of course
+	// still make a mess.
+	union {
+		float       f;
+		byte        b[4];
+	} dat;
+
+	dat.f = LittleFloat (f);
+	Qwrite (file, dat.b, sizeof (dat.b));
+}
+
+void
+WriteByte (VFile *file, int b)
+{
+	byte        dat = b & 0xff;
+	Qwrite (file, &dat, 1);
+}
+
+void
+WriteShort (VFile *file, unsigned int s)
+{
+	byte        dat[2];
+
+	dat[0] = s & 0xff;
+	dat[1] = (s >> 8) & 0xff;
+	Qwrite (file, dat, sizeof (dat));
+}
+
+void
+WriteLong (VFile *file, unsigned int l)
+{
+	byte        dat[4];
+
+	dat[0] = l & 0xff;
+	dat[1] = (l >> 8) & 0xff;
+	dat[2] = (l >> 16) & 0xff;
+	dat[3] = (l >> 24) & 0xff;
+	Qwrite (file, dat, sizeof (dat));
+}
+
+float
+ReadFloat (VFile *file)
+{
+	// a float in C is /defined/ to be 32 bits. byte order, can, of course
+	// still make a mess.
+	union {
+		float       f;
+		byte        b[4];
+	} dat;
+
+	Qread (file, dat.b, sizeof (dat.b));
+	return LittleFloat (dat.f);
+}
+
+byte
+ReadByte (VFile *file)
+{
+	byte        dat;
+	Qread (file, &dat, 1);
+	return dat;
+}
+
+unsigned short
+ReadShort (VFile *file)
+{
+	byte        dat[2];
+
+	Qread (file, dat, sizeof (dat));
+	return (dat[1] << 8) | dat[0];
+}
+
+unsigned long
+ReadLong (VFile *file)
+{
+	byte        dat[4];
+
+	Qread (file, dat, sizeof (dat));
+	return (dat[3] << 24) | (dat[2] << 16) | (dat[1] << 8) | dat[0];
 }
