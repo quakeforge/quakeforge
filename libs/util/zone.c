@@ -653,6 +653,18 @@ Cache_MakeLRU (cache_system_t * cs)
 	cache_head.lru_next = cs;
 }
 
+qboolean
+Cache_FreeLRU ()
+{
+	cache_system_t *cs;
+	for (cs = cache_head.lru_prev; cs->readlock; cs = cs->lru_prev)
+		;
+	if (cs == &cache_head)
+		return 0;
+	Cache_RealFree (cs->user);
+	return 1;
+}
+
 /*
 	Cache_TryAlloc
 
@@ -799,9 +811,10 @@ Cache_Init (void)
 	cache_head.next = cache_head.prev = &cache_head;
 	cache_head.lru_next = cache_head.lru_prev = &cache_head;
 
-	Cmd_AddCommand ("flush", Cache_Flush, "Clears the current game cache");
+	Cmd_AddCommand ("cache_flush", Cache_Flush, "Clears the current game cache");
 	Cmd_AddCommand ("cache_profile", Cache_Profile, "Prints a profile of "
 					"the current cache");
+	Cmd_AddCommand ("cache_print", Cache_Print, "Prints out items in the cache");
 }
 
 /*
@@ -896,11 +909,9 @@ Cache_Alloc (cache_user_t *c, int size, const char *name)
 			cs->user = c;
 			break;
 		}
-		// free the least recently used cahedat
-		if (cache_head.lru_prev == &cache_head)
+		// free the least recently used cachedat
+		if (!Cache_FreeLRU())
 			Sys_Error ("Cache_Alloc: out of memory");
-		// not enough memory at all
-		Cache_RealFree (cache_head.lru_prev->user);
 	}
 
 	mem = Cache_RealCheck (c);
