@@ -848,7 +848,7 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 		char buf2[1024];
 
 		strncpy(buf, text, sizeof(buf) - 1);
-		buf[sizeof(buf)] = 0;
+		buf[sizeof(buf) - 1] = 0;
 		Cmd_ParseSpecial (buf);
 		Cmd_ExpandVariables (buf, buf2);
 		Cmd_TokenizeString (buf2);
