@@ -63,7 +63,7 @@ Purpose and Applications
 
 GIB
 \begin_inset Foot
-collapsed true
+collapsed false
 
 \layout Standard
 
@@ -94,8 +94,12 @@ ash
 \begin_inset Quotes erd
 \end_inset 
 
- Bash is the GNU implementation of the UNIX shell, with which GIB shares
- many similarities.
+ 
+\noun on 
+Bash
+\noun default 
+ is the GNU implementation of the UNIX shell, with which GIB shares many
+ similarities.
 \end_inset 
 
  is a scripting language first introduced in 
@@ -296,9 +300,6 @@ collapsed false
 
 \layout Standard
 
-
-\family sans 
-\series bold 
 Character
 \end_inset 
 </cell>
@@ -307,9 +308,6 @@ Character
 
 \layout Standard
 
-
-\family sans 
-\series bold 
 Replacement
 \end_inset 
 </cell>
@@ -330,8 +328,6 @@ n
 
 \layout Standard
 
-
-\family sans 
 Newline
 \end_inset 
 </cell>
@@ -352,8 +348,6 @@ t
 
 \layout Standard
 
-
-\family sans 
 Tab
 \end_inset 
 </cell>
@@ -374,8 +368,6 @@ r
 
 \layout Standard
 
-
-\family sans 
 Carriage return
 \end_inset 
 </cell>
@@ -396,8 +388,6 @@ Carriage return
 
 \layout Standard
 
-
-\family sans 
 Double quote (does not end argument)
 \end_inset 
 </cell>
@@ -420,8 +410,6 @@ Double quote (does not end argument)
 
 \layout Standard
 
-
-\family sans 
 Backslash (does not escape next character)
 \end_inset 
 </cell>
@@ -444,7 +432,7 @@ Escape characters
 
 \layout Standard
 \added_space_top bigskip 
-The code example above could be rewritten to include a newline character
+The preceding code example could be rewritten to include a newline character
  so that printing will continue on the next line:
 \layout LyX-Code
 
@@ -459,9 +447,11 @@ Besides a single character, a backslash can be followed by three digits
 \layout Standard
 \line_top \line_bottom \align left 
 
-\family sans 
 \series bold 
-Warning: 
+\color red
+Warning
+\color default
+: 
 \series default 
 \emph on 
 Attempting to send any string with the character of decimal value 255 over
@@ -472,7 +462,7 @@ Attempting to send any string with the character of decimal value 255 over
 "
 \backslash 
 255"
-\family sans 
+\family default 
  in any chat message, info string, or any other text sent between the client
  and server.
 \layout Standard
@@ -494,11 +484,13 @@ echo (1/(1+1))
 \layout Standard
 
 This will result in 
-\family typewriter 
-\series bold 
+\begin_inset Quotes eld
+\end_inset 
+
 0.5
-\family default 
-\series default 
+\begin_inset Quotes erd
+\end_inset 
+
  being printed.
  For a detailed explanation of the capabilities of the math evaluator, please
  see Section .
@@ -524,8 +516,8 @@ program blocks
 , or groups of GIB commands.
  To facilitate readable formatting of code, line breaks are allowed within
  curly braces.
- Curly braces should only be used where GIB code is called for, such as
- in a loop or function definition.
+ Curly braces should only be used where GIB code is appropriate, such as
+ in a loop or function definitions.
  Arguments in curly braces 
 \series bold 
 may
@@ -603,7 +595,7 @@ print "20 divided by 4 is ", (20/4), "
 \backslash 
 n"
 \layout Standard
-\pagebreak_bottom 
+
 Concatenation will not work with curly-brace-enclosed arguments.
  In addition, it will not work or simply be ignored on instances of variable
  expansion, which will be discussed in Section 
@@ -612,6 +604,30 @@ Concatenation will not work with curly-brace-enclosed arguments.
 \end_inset 
 
 .
+\layout Subsection
+
+Comments
+\layout Standard
+
+GIB uses the same format for comments as the console.
+ Any text between two forward slashes (
+\family typewriter 
+//
+\family default 
+) and the end of the current line will be discarded when the script is parsed.
+ To use two forward slashes without starting a comment, enclose the argument
+ in double quotes.
+ Example:
+\layout LyX-Code
+
+echo "Hello" // This is a comment
+\layout LyX-Code
+
+echo "// This is not a comment"
+\layout Standard
+\pagebreak_bottom 
+Proper use of comments in your scripts will make them easier to read and
+ understand.
 \layout Section
 
 Variables
@@ -684,7 +700,7 @@ Embedding
 \series default 
 
 \newline 
-The value of a variable is placed somewhere within an argument
+The value of a variable is placed somewhere within an argument.
 \layout Itemize
 
 
@@ -723,7 +739,7 @@ fov
 Assigning to Console Variables
 \layout Standard
 
-To assign to a console variable from GIB, you simply use the 
+To assign to a console variable from GIB, simply use the 
 \family typewriter 
 set
 \family default 
@@ -739,7 +755,7 @@ Embedding Console Variables
 \layout Standard
 
 To embed the value of a console variable in an argument, include the name
- of the variable preceeded by a dollar sign (
+ of the variable preceded by a dollar sign (
 \family typewriter 
 $
 \family default 
@@ -795,6 +811,9 @@ echo The variable with the name /
 \layout LyX-Code
 
 echo Thecurrentfieldofvisionis${fov}degrees.Wheredidmyspacebargo?
+\layout Standard
+
+Variables that do not exist are considered to contain an empty string.
 \layout Subsection
 
 Standard Variables
@@ -820,7 +839,7 @@ Assigning to Standard Variables
 \layout Standard
 
 To assign to a standard variable, begin a command with the name of the variable,
- followed by any number of spaces and an equals (
+ followed by at least one space and an equals (
 \family typewriter 
 =
 \family default 
@@ -840,13 +859,9 @@ bar
 \end_inset 
 
  in the variable 
-\begin_inset Quotes eld
-\end_inset 
-
+\family typewriter 
 foo
-\begin_inset Quotes erd
-\end_inset 
-
+\family default 
 .
 \layout Subsubsection
 
@@ -878,7 +893,7 @@ Assigning to Arrays
 \layout Standard
 
 Assignment to arrays is the same as assignment to standard variables, except
- that you specify the element of the array to which you which to assign.
+ that you specify the element of the array to which you wish to assign.
  In fact, all standard variables 
 \emph on 
 are
@@ -890,8 +905,8 @@ are
 
 \end_inset 
 
- are use the zeroth element of an array via this default behavior.
- To specify a specific element, follow name of the variable by the element
+ use element 0 of an array via this default behavior.
+ To specify a specific element, follow the name of the variable by the element
  number enclosed in brackets (
 \family typewriter 
 [
@@ -907,4 +922,139 @@ are
 foo[2] = "Hello!"
 \layout Standard
 
+It's possible--and useful--to assign to several elements of an array at
+ the same time.
+ To do this, simply include more than one argument after the equals sign.
+ All elements starting at the specified number will be assigned with their
+ respective argument.
+ Example:
+\layout LyX-Code
+
+foo[0] = "one" "two"
+\layout Standard
+
+This will assign 
+\begin_inset Quotes eld
+\end_inset 
+
+one
+\begin_inset Quotes erd
+\end_inset 
+
+ to the element 0 of 
+\family typewriter 
+foo
+\family default 
+ and 
+\begin_inset Quotes eld
+\end_inset 
+
+two
+\begin_inset Quotes erd
+\end_inset 
+
+ to element 1.
+ If you specify no arguments after the equals sign, all elements beginning
+ at the specified number are simply removed.
+ If this is element 0, the variable becomes a zero-size array, which is
+ important in embedding and expansion.
+\layout Subsubsection
+
+Embedding Arrays
+\layout Standard
+
+As with assignment, you need only specify the element number in brackets
+ after the name of a variable to use that specific element.
+ Example:
+\layout LyX-Code
+
+echo $foo[2]
+\layout Standard
+
+If you wish to enclose the name of the variable in curly braces, the brackets
+ and element number must fall inside the braces:
+\layout LyX-Code
+
+echo ${foo[2]}
+\layout Standard
+
+Instead of a dollar sign, you may use a number symbol (
+\family typewriter 
+#
+\family default 
+).
+ In this case, the size of the array will be embedded in the argument rather
+ than its value.
+ Variables that have never been used are considered to have a size of zero.
+ If you specify an element, the size of the array minus the specified number
+ will be used.
+ Example:
+\layout LyX-Code
+
+foo = "one" "two" "three"
+\layout LyX-Code
+
+echo #foo    // Prints: 3
+\layout LyX-Code
+
+echo #foo[1] // Prints: 2
+\layout Subsubsection
+
+Expanding Arrays
+\layout Standard
+
+A very useful feature of arrays is the ability to expand them into multiple
+ arguments.
+ If a normal argument begins with an at symbol (
+\family typewriter 
+@
+\family default 
+), the rest of the argument will be treated as the name of an array.
+ The argument will be removed and replaced by a single argument for each
+ element of the array.
+ Consider the following program:
+\layout LyX-Code
+
+array = one two three
+\layout LyX-Code
+
+echo @array
+\layout Standard
+
+This prints the exact same thing as:
+\layout LyX-Code
+
+echo one two three
+\layout Standard
+
+It's possible to specify a range of elements to use instead of the entire
+ array.
+ To do this, follow the name of the array with an opening bracket, the number
+ of the first element to use, a colon (:), one plus the number of the last
+ element to use, and a closing bracket.
+ Example:
+\layout LyX-Code
+
+array = one two three four
+\layout LyX-Code
+
+echo @array[1:3] // Prints: two three
+\layout LyX-Code
+
+\layout Standard
+\line_top \line_bottom 
+
+\series bold 
+Note
+\series default 
+: 
+\emph on 
+To understand why you add one to the second number, envision each element
+ of the array as a different pile of groceries on a store checkout belt.
+ Between each pile sits a plastic separator.
+ The numbers in the brackets represent the numbers of the separators.
+ To specify the second and third piles of groceries, you would pick all
+ the piles between the first separator and the third separator.
+ If bad analogies don't suit you, simply remember to specify one more than
+ the last element that you want.
 \the_end
