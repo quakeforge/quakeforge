@@ -83,10 +83,10 @@ R_GetSpriteFrame (entity_t *currententity)
 	return pspriteframe;
 }
 
-// FIXME: add modelalpha support?
 void
 R_DrawSpriteModel (entity_t *e)
 {
+	float			 color[4];
 	float			*up, *right;
 	msprite_t		*psprite;
 	mspriteframe_t	*frame;
@@ -110,10 +110,16 @@ R_DrawSpriteModel (entity_t *e)
 		up = vup;
 		right = vright;
 	}
+	VectorScale (up, e->scale, up);
+	VectorScale (right, e->scale, right);
 
 	qfglBindTexture (GL_TEXTURE_2D, frame->gl_texturenum);
 
 	qfglBegin (GL_QUADS);
+
+	VectorCopy (e->colormod, color);
+	color[3] = e->alpha;
+	qfglColor4fv (color);
 
 	qfglTexCoord2f (0, 1);
 	VectorMA (e->origin, frame->down, up, point);
