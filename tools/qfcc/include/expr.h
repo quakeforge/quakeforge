@@ -83,6 +83,8 @@ typedef struct {
 	struct def_s *def;
 } ex_pointer_t;
 
+#define POINTER_VAL(p) (((p).def ? (p).def->ofs : 0) + (p).val)
+
 typedef struct expr_s {
 	struct expr_s *next;
 	expr_type	type;
@@ -193,9 +195,11 @@ const char *get_op_string (int op);
 extern int lineno_base;
 
 struct keywordarg_s;
+struct class_type_s;
 expr_t *selector_expr (struct keywordarg_s *selector);
 expr_t *protocol_expr (const char *protocol);
 expr_t *encode_expr (struct type_s *type);
+expr_t *super_expr (struct class_type_s *class_type);
 expr_t *message_expr (expr_t *receiver, struct keywordarg_s *message);
 expr_t *sizeof_expr (expr_t *expr, struct type_s *type);
 

@@ -10,7 +10,7 @@ typedef enum {
 @extern void (id object, integer code, string fmt, @va_list args) obj_verror;
 //obj_error_handler (objc_error_handler func) obj_set_error_handler = #0;
 @extern IMP (id receiver, SEL op) obj_msg_lookup;
-@extern IMP (id receiver, SEL op) obj_msg_lookup_super;
+@extern IMP (Super class, SEL op) obj_msg_lookup_super;
 //retval_t (id receiver, SEL op, @va_list args) obj_msg_sendv;
 @extern (void []) (integer size) obj_malloc;
 @extern (void []) (integer size) obj_atomic_malloc;

@@ -1125,6 +1125,7 @@ field_expr (expr_t *e1, expr_t *e2)
 	t1 = get_type (e1);
 	switch (t1->type) {
 		case ev_struct:
+		case ev_class:
 			check_initialized (e1);
 			if (e2->type != ex_name)
 				return error (e2, "structure field name expected");
@@ -1225,7 +1226,7 @@ field_expr (expr_t *e1, expr_t *e2)
 								e = new_expr ();
 								e->type = ex_pointer;
 								e1 = e1->e.expr.e1;
-								i = e1->e.pointer.val;
+								i = POINTER_VAL (e1->e.pointer);
 								e->e.pointer.val = i + field->offset;
 								e->e.pointer.type = field->type;
 								return unary_expr ('.', e);
@@ -2065,17 +2066,20 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 		case ex_def:
 			{
 				def_t      *def = e1->e.def;
+				def->used = 1;
 				type = def->type;
-				if (type->type == ev_struct) {
-					e = e1;
+				if (type->type == ev_struct || type->type == ev_class) {
+					e = new_expr ();
+					e->line = e1->line;
+					e->file = e1->file;
 					e->type = ex_pointer;
-					e->e.pointer.val = def->ofs;
+					e->e.pointer.val = 0;
 					e->e.pointer.type = t;
 					e->e.pointer.def = def;
 				} else if (type->type == ev_array) {
 					e = e1;
 					e->type = ex_pointer;
-					e->e.pointer.val = def->ofs;
+					e->e.pointer.val = 0;
 					e->e.pointer.type = t;
 					e->e.pointer.def = def;
 				} else {
@@ -2135,8 +2139,10 @@ is_indirect (expr_t *e)
 		return 0;
 	e = e->e.expr.e1;
 	if (e->type != ex_pointer
-		|| !(e->e.pointer.val > 0 && e->e.pointer.val < 65536))
+		|| !(POINTER_VAL (e->e.pointer) >= 0
+			 && POINTER_VAL (e->e.pointer) < 65536)) {
 		return 1;
+	}
 	return 0;
 }
 
@@ -2215,7 +2221,8 @@ assign_expr (expr_t *e1, expr_t *e2)
 		} else {
 			e = e1->e.expr.e1;
 			if (e->type != ex_pointer
-				|| !(e->e.pointer.val > 0 && e->e.pointer.val < 65536)) {
+				|| !(POINTER_VAL (e->e.pointer) > 0
+					 && POINTER_VAL (e->e.pointer) < 65536)) {
 				e1 = e;
 				op = PAS;
 			}
@@ -2228,7 +2235,8 @@ assign_expr (expr_t *e1, expr_t *e2)
 		if (e2->type == ex_uexpr) {
 			e = e2->e.expr.e1;
 			if (e->type != ex_pointer
-				|| !(e->e.pointer.val > 0 && e->e.pointer.val < 65536)) {
+				|| !(POINTER_VAL (e->e.pointer) > 0
+					 && POINTER_VAL (e->e.pointer) < 65536)) {
 				if (e->type == ex_expr && e->e.expr.op == '&'
 					&& e->e.expr.type->type == ev_pointer
 					&& e->e.expr.e1->type < ex_string) {
@@ -2391,6 +2399,40 @@ encode_expr (type_t *type)
 }
 
 expr_t *
+super_expr (class_type_t *class)
+{
+	def_t      *super_d;
+	expr_t     *super;
+	expr_t     *e;
+	expr_t     *super_block;
+
+	if (!class)
+		return error (0, "`super' used outside of class implementation");
+
+	//if (!class->super_class)
+	//	return error (0, "%s has no super class", class->name);
+
+	super_d = get_def (type_Super.aux_type, ".super", current_func->scope,
+					   st_local);
+	def_initialized (super_d);
+	super = new_def_expr (super_d);
+	super_block = new_block_expr ();
+
+	e = assign_expr (binary_expr ('.', super, new_name_expr ("self")),
+								  new_name_expr ("self"));
+	append_expr (super_block, e);
+
+	e = new_def_expr (class_def (class, 1));
+	e = assign_expr (binary_expr ('.', super, new_name_expr ("class")),
+					 binary_expr ('.', e, new_name_expr ("super_class")));
+	append_expr (super_block, e);
+
+	e = address_expr (super, 0, 0);
+	super_block->e.block.result = e;
+	return super_block;
+}
+
+expr_t *
 message_expr (expr_t *receiver, keywordarg_t *message)
 {
 	expr_t     *args = 0, **a = &args;
@@ -2405,18 +2447,28 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	if (receiver->type == ex_name
 		&& strcmp (receiver->e.string_val, "super") == 0) {
 		super = 1;
-		receiver->e.string_val = "self";
+
+		receiver = super_expr (current_class);
+
+		if (receiver->type == ex_error)
+			return receiver;
+		if (current_class->is_class)
+			class = current_class->c.class;
+		else
+			class = current_class->c.category->class;
+		rec_type = class->type;
+	} else {
+		rec_type = get_type (receiver);
+
+		if (receiver->type == ex_error)
+			return receiver;
+
+		if (rec_type->type != ev_pointer
+			|| (rec_type->aux_type->type != ev_object
+				&& rec_type->aux_type->type != ev_class))
+			return error (receiver, "not a class/object");
+		class = rec_type->aux_type->class;
 	}
-	rec_type = get_type (receiver);
-
-	if (receiver->type == ex_error)
-		return receiver;
-
-	if (rec_type->type != ev_pointer
-		|| (rec_type->aux_type->type != ev_object
-			&& rec_type->aux_type->type != ev_class))
-		return error (receiver, "not a class/object");
-	class = rec_type->aux_type->class;
 	if (rec_type != &type_id) {
 		method = class_message_response (class, selector);
 		if (method)

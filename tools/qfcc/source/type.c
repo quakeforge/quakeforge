@@ -86,8 +86,11 @@ type_t      type_Protocol = { ev_pointer, "Protocol" };
 type_t      type_SEL = { ev_pointer, "SEL" };
 type_t      type_IMP = { ev_func, "IMP", NULL, &type_id, -3, { &type_id,
 															   &type_SEL }};
+type_t      type_supermsg = { ev_func, ".supermsg", NULL, &type_id, -3,
+							  { 0, &type_SEL }};
 type_t      type_obj_exec_class = { ev_func, "function", NULL, &type_void, 1, { 0 }};
 type_t      type_Method = { ev_pointer, "Method" };
+type_t      type_Super = { ev_pointer, "Super" };
 type_t     *type_category;
 type_t     *type_ivar;
 type_t     *type_module;
@@ -684,6 +687,10 @@ init_types (void)
 	new_struct_field (&type_va_list, &type_integer, "count", vis_public);
 	new_struct_field (&type_va_list, pointer_type (&type_param), "list",
 					  vis_public);
+
+	type = type_Super.aux_type = new_struct ("Super");
+	new_struct_field (type, &type_id, "self", vis_public);
+	new_struct_field (type, &type_Class, "class", vis_public);
 #if 0
 	type = type_module = new_struct ("obj_module_t");
 	new_struct_field (type, &type_integer, "version", vis_public);
@@ -718,6 +725,7 @@ chain_initial_types (void)
 	chain_type (&type_short);
 	chain_type (&type_struct);
 	chain_type (&type_IMP);
+	chain_type (&type_Super);
 
 	chain_type (&type_SEL);
 	chain_type (&type_Method);
@@ -726,6 +734,9 @@ chain_initial_types (void)
 	chain_type (&type_id);
 	chain_type (type_category);
 	chain_type (type_ivar);
+
+	type_supermsg.parm_types[0] = &type_Super;
+	chain_type (&type_supermsg);
 
 	type_module = new_struct ("obj_module_t");
 	new_struct_field (type_module, &type_integer, "version", vis_public);

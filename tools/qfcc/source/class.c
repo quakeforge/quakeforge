@@ -432,7 +432,7 @@ class_message_response (class_t *class, expr_t *sel)
 		error (sel, "not a selector");
 		return 0;
 	}
-	selector = &G_STRUCT (pr_sel_t, sel->e.pointer.val);
+	selector = &G_STRUCT (pr_sel_t, POINTER_VAL (sel->e.pointer));
 	sel_name = G_GETSTR (selector->sel_id);
 	while (c) {
 		if (c->methods) {

@@ -160,4 +160,9 @@ typedef struct pr_module_s {
 	pointer_t   symtab;				// pr_symtab_t
 } pr_module_t;
 
+typedef struct pr_super_s {
+	pointer_t   self;
+	pointer_t   class;
+} pr_super_t;
+
 #endif//__pr_obj_h

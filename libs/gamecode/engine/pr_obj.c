@@ -283,19 +283,15 @@ obj_msg_lookup (progs_t *pr, pr_id_t *receiver, pr_sel_t *op)
 }
 
 static func_t
-obj_msg_lookup_super (progs_t *pr, pr_id_t *receiver, pr_sel_t *op)
+obj_msg_lookup_super (progs_t *pr, pr_super_t *super, pr_sel_t *op)
 {
 	pr_class_t *class;
-	pr_class_t *super = 0;
-	if (!receiver)
+
+	if (!super->self)
 		return 0;
-	class = &G_STRUCT (pr, pr_class_t, receiver->class_pointer);
-	if (class->super_class)
-		super = &G_STRUCT (pr, pr_class_t, class->super_class);
-	if (!super)
-		PR_RunError (pr, "%s has no super class",
-					 PR_GetString (pr, class->name));
-	return obj_find_message (pr, super, op);
+
+	class = &G_STRUCT (pr, pr_class_t, super->class);
+	return obj_find_message (pr, class, op);
 }
 
 static void
@@ -339,9 +335,10 @@ pr_obj_msg_lookup (progs_t *pr)
 static void
 pr_obj_msg_lookup_super (progs_t *pr)
 {
-	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
-	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
-	R_INT (pr) = obj_msg_lookup_super (pr, receiver, op);
+	pr_super_t *super = &P_STRUCT (pr, pr_super_t, 0);
+	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
+
+	R_INT (pr) = obj_msg_lookup_super (pr, super, _cmd);
 }
 
 static void
@@ -450,21 +447,18 @@ pr_obj_msgSend (progs_t *pr)
 static void
 pr_obj_msgSend_super (progs_t *pr)
 {
-	pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
+	pr_super_t *super = &P_STRUCT (pr, pr_super_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
 	func_t      imp;
 
-	if (!self) {
-		R_INT (pr) = R_INT (pr);
-		return;
-	}
-	if (!_cmd)
-		PR_RunError (pr, "null selector");
-	imp = obj_msg_lookup_super (pr, self, _cmd);
-	if (!imp)
+	imp = obj_msg_lookup_super (pr, super, _cmd);
+	if (!imp) {
+		pr_id_t    *self = &G_STRUCT (pr, pr_id_t, super->self);
 		PR_RunError (pr, "%s does not respond to %s",
 					 PR_GetString (pr, object_get_class_name (pr, self)),
 					 PR_GetString (pr, _cmd->sel_id));
+	}
+	P_POINTER (pr, 0) = super->self;
 	call_function (pr, imp);
 }
 

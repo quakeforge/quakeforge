@@ -386,8 +386,9 @@ emit_deref_expr (expr_t *e, def_t *dest)
 		if (e->e.pointer.def) {
 			d = new_def (e->e.pointer.type, 0, current_scope);
 			d->local = e->e.pointer.def->local;
-			d->ofs = e->e.pointer.def->ofs;
-			d->alias = e->e.pointer.def;
+			d->ofs = POINTER_VAL (e->e.pointer);
+			if (d->ofs == e->e.pointer.def->ofs)
+				d->alias = e->e.pointer.def;
 		} else if (e->e.pointer.val >= 0 && e->e.pointer.val < 65536) {
 			d = new_def (e->e.pointer.type, 0, current_scope);
 			d->ofs = e->e.pointer.val;
@@ -400,9 +401,7 @@ emit_deref_expr (expr_t *e, def_t *dest)
 		}
 		return d;
 	}
-	if (!dest && (e->type != ex_pointer
-				  || !(e->e.pointer.val > 0
-					   && e->e.pointer.val < 65536))) {
+	if (!dest) {
 		dest = get_tempdef (type, current_scope);
 		dest->users += 2;
 	}
