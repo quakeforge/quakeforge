@@ -137,7 +137,7 @@ GDT_InitSmokeParticleTexture (void)
 				c = 255 - (dx*dx + dy2);
 				if (c < 1)
 					c = 0;
-				d = (noise1[y][x] + noise2[y][x]) / 3;
+				d = (noise1[y][x] + noise2[y][x]) / 2;
 				if (d > 0) {
 					data[y][x][0] = 255;
 					data[y][x][1] = (d * c)/255;
@@ -180,7 +180,7 @@ GDT_InitSmokeRingParticleTexture (void)
 				//b = ((c / 255) * (c2 / 255)) * 512;
 				b = (c * c2) * 512 / (255*255);
 				if (b < 1) b = 0;
-				d = (noise1[y][x] + noise2[y][x]) / 3;
+				d = (noise1[y][x] + noise2[y][x]) / 2;
 				if (d > 0) {
 					data[y][x][0] = 255;
 					data[y][x][1] = (d * b)/255;

@@ -484,56 +484,55 @@ R_RocketTrail (int type, entity_t *ent)
 		pdie = cl.time + 2;
 		ptype = pt_static;
 		ptex = part_tex_dot;
-		pcolor = 0;
-		pscale = .75;
 		palpha = 255;
-		dist = 1;
+		pcolor = 0;
+		pscale = 6;
+		dist = 40;
 
 		switch (type) {
 			case 0:					// rocket trail
-				dist = 40;
 				pdie = cl.time + 60;
 				ptype = pt_smokering;
-				pscale = lhrandom (10, 15);
+				pscale = lhrandom (9, 12);
 				// Misty-chan: Temporary easter egg
 				pcolor = (rand () & 255);
 				// pcolor = (rand () & 3) + 12;
-				palpha = 220 + (rand () & 31);
+				palpha = 128 + (rand () & 31);
 				VectorVectors(vec, right, up);
 				VectorCopy (ent->old_origin, porg);
 				ptex = part_tex_smoke_ring[rand () & 7];
 				break;
 			case 1:					// grenade trail
-				dist = 4;
-				pdie = cl.time + 1;
 				ptype = pt_smoke;
 				pscale = lhrandom (6, 9);
 				// Misty-chan: Temporary easter egg.
 				pcolor = (rand () & 255);
-				// pcolor = (rand () & 3) + 3;
-				palpha = 48 + (rand () & 31);
+				// pcolor = (rand () & 2);
+				palpha = 128 + (rand () & 31);
 				VectorCopy (ent->old_origin, porg);
 				ptex = part_tex_smoke[rand () & 7];
 				break;
-			case 4:					// slight blood
-				dist = 4;
 			case 2:					// blood
-				dist = 4;
+				pscale = 12;
+			case 4:					// slight blood
+				pscale += lhrandom (0, 3);
+				ptex = part_tex_smoke[rand () & 7];
 				pcolor = 68 + (rand () & 3);
 				for (j = 0; j < 3; j++) {
-					pvel[j] = (rand () & 15) - 8;
-					porg[j] = ent->old_origin[j] + ((rand () % 3) - 2);
+					pvel[j] = lhrandom (-3, 3) * type;
+					porg[j] = ent->old_origin[j] + lhrandom (-1.5, 1.5);
 				}
 				ptype = pt_grav;
 				break;
 			case 6:					// voor trail
+// Use smoke ring effects here, once merged with nq? --Despair
 				dist = 3;
 				pcolor = 9 * 16 + 8 + (rand () & 3);
 				ptype = pt_static;
 				pscale = lhrandom (.75, 1.5);
 				pdie = cl.time + 0.3;
 				for (j = 0; j < 3; j++)
-					porg[j] = ent->old_origin[j] + ((rand () & 15) - 8);
+					porg[j] = ent->old_origin[j] + lhrandom (-8, 8);
 				break;
 			case 3:
 			case 5:					// tracer
