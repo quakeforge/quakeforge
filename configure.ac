@@ -1210,7 +1210,7 @@ if test "x$optimize" = xyes; then
 		IFS=" "
 		AC_MSG_RESULT($CCVER)
 		heavy="-O3 -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
-		light="-O2 -malign-loops=2 -malign-jumps=2 -malign-functions=2"
+		light="-O2"
 		AC_ARG_ENABLE(strict-aliasing,
 	[  --enable-strict-aliasing enable the -fstrict-aliasing ooption of gcc])
 		if test "x$enable_strict_aliasing" = "xyes"; then
@@ -1231,17 +1231,11 @@ if test "x$optimize" = xyes; then
 				fi
 			fi
 		fi
-		if test $CC_MAJ = 2 -a $CC_MIN = 96; then
-			CFLAGS="$CFLAGS $light"
-		else
-			CFLAGS="$CFLAGS $heavy"
-		fi
 		AC_MSG_CHECKING(for special compiler settings)
 		AC_ARG_WITH(arch,
 		[  --with-arch=ARCH        control compiler architecture directly],
 			arch="$withval", arch=auto
 		)
-		echo -n $arch
 		case "$arch" in
 			auto)
 				case "${host_cpu}" in
@@ -1274,7 +1268,24 @@ if test "x$optimize" = xyes; then
 				[],
 				AC_MSG_RESULT(yes),
 				CFLAGS="$save_CFLAGS"
+				AC_MSG_RESULT(no)
 			)
+		fi
+		if test $CC_MAJ = 2 -a $CC_MIN = 96; then
+			AC_MSG_CHECKING(if align options work)
+			save_CFLAGS="$CFLAGS"
+			CFLAGS="$CFLAGS -malign-loops=2 -malign-jumps=2 -malign-functions=2"
+			AC_TRY_COMPILE(
+				[],
+				[],
+				light="$light -malign-loops=2 -malign-jumps=2 -malign-functions=2"
+				AC_MSG_RESULT(yes),
+				AC_MSG_RESULT(no)
+			)
+			CFLAGS="$save_CFLAGS"
+			CFLAGS="$CFLAGS $light"
+		else
+			CFLAGS="$CFLAGS $heavy"
 		fi
 	else
 		CFLAGS=-O2
