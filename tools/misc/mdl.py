@@ -1,7 +1,8 @@
 from struct import *
 from pprint import *
+import sys
 
-model = open("flame.mdl","rb").read()
+model = open(sys.argv[1],"rb").read()
 m = unpack ("4s l 3f 3f f 3f i i i i i i i i f", model[:84])
 m = m[0:2] + (m[2:5],) + (m[5:8],) + m[8:9] + (m[9:12],) + m[12:21]
 model = model[84:]
