@@ -347,7 +347,8 @@ Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 	endaddr = (endaddr + psize - 1) & ~(psize - 1);
 #  endif
 
-	r = mprotect ((char *) startaddr, endaddr - startaddr, 7);
+	r = mprotect ((char *) startaddr, endaddr - startaddr,
+				  PROT_EXEC | PROT_READ | PROT_WRITE);
 
 	if (r < 0)
 		Sys_Error ("Protection change failed");
