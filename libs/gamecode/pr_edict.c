@@ -1304,8 +1304,8 @@ NUM_FOR_EDICT (progs_t * pr, edict_t *e)
 	b = (byte *) e - (byte *) * (pr)->edicts;
 	b = b / pr->pr_edict_size;
 
-	if (b < 0 || b >= *(pr)->num_edicts)
-		PR_Error (pr, "NUM_FOR_EDICT: bad pointer");
+	if (b && (b < 0 || b >= *(pr)->num_edicts))
+		PR_Error (pr, "NUM_FOR_EDICT: bad pointer %d %p %p", b, e, * (pr)->edicts);
 	return b;
 }
 
