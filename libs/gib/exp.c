@@ -57,6 +57,8 @@ optable_t optable[] =
 
 functable_t functable[] =
 {
+	{"sqrt", Func_Sqrt, 1},
+	{"abs", Func_Abs, 1},
 	{"sin", Func_Sin, 1},
 	{"cos", Func_Cos, 1},
 	{"tan", Func_Tan, 1},

@@ -147,3 +147,15 @@ Func_Atan (double *oplist, unsigned int numops)
 {
 	return atan (oplist[0]);
 }
+
+double
+Func_Sqrt (double *oplist, unsigned int numops)
+{
+	return sqrt (oplist[0]);
+}
+
+double
+Func_Abs (double *oplist, unsigned int numops)
+{
+	return fabs (oplist[0]);
+}

@@ -44,4 +44,6 @@ double Func_Tan (double *oplist, unsigned int numops);
 double Func_Asin (double *oplist, unsigned int numops);
 double Func_Acos (double *oplist, unsigned int numops);
 double Func_Atan (double *oplist, unsigned int numops);
+double Func_Sqrt (double *oplist, unsigned int numops);
+double Func_Abs (double *oplist, unsigned int numops);
 #endif // __ops_h

@@ -415,9 +415,20 @@ GIB_Break_f (void)
 					"break attempted outside of a loop"
 					);
 	else {
-		GIB_DATA(cbuf_active)->type = GIB_BUFFER_PROXY; // If we set it to normal locals will get freed
+		GIB_DATA(cbuf_active)->type = GIB_BUFFER_PROXY; // If we set it to normal, locals will get double freed
 		dstring_clearstr (cbuf_active->buf);
 	}					
+}
+
+void
+GIB_Continue_f (void)
+{
+	if (GIB_DATA(cbuf_active)->type != GIB_BUFFER_LOOP)
+		Cbuf_Error ("syntax",
+					"break attempted outside of a loop"
+					);
+	else
+		dstring_clearstr (cbuf_active->buf);
 }
 
 // Note: this is a standard console command, not a GIB builtin
@@ -890,6 +901,7 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("for", GIB_For_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("__for", GIB___For_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("break", GIB_Break_f, GIB_BUILTIN_NORMAL);
+	GIB_Builtin_Add ("continue", GIB_Continue_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("string::length", GIB_String_Length_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("string::equal", GIB_String_Equal_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("string::findsub", GIB_String_Findsub_f, GIB_BUILTIN_NORMAL);
