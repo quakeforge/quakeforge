@@ -252,6 +252,12 @@ VID_GetGamma (void)
 	return (double) X11_GetGamma ();
 }
 
+void
+VID_ForceViewPort(void)
+{
+	X11_ForceViewPort ();
+}
+
 qboolean
 VID_SetGamma (double gamma)
 {

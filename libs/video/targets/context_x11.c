@@ -319,10 +319,23 @@ X11_SetVidMode (int width, int height)
 #endif
 }
 
+void X11_UpdateFullscreen (cvar_t *v_fs)
+{
+	if (!vid_context_created) {
+		return;
+	}
+	if (v_fs->int_val==0) {
+		X11_RestoreVidMode();
+	} else {
+		X11_SetVidMode(scr_width,scr_height);
+	}
+}
+
 void
 X11_Init_Cvars (void)
 {
-	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ROM, NULL,
+	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ARCHIVE, 
+							   &X11_UpdateFullscreen,
 							   "Toggles fullscreen game mode");
 	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
 								 "Use system gamma control if available");
@@ -412,6 +425,7 @@ X11_RestoreVidMode (void)
 		X11_SetGamma (x_gamma);
 		XF86VidModeSwitchToMode (x_disp, x_screen, vidmodes[original_mode]);
 		XFree (vidmodes);
+		vidmode_active=false;
 	}
 #endif
 }
