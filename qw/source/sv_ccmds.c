@@ -344,6 +344,40 @@ SV_Give_f (void)
 // Use this to keep track of current level  --KB
 static char curlevel[MAX_QPATH] = "";
 
+static const char *
+nice_time (float time)
+{
+	int         t = time + 0.5;
+
+#if 0 //FIXME ditch or cvar?
+	if (t < 60) {
+		return va ("%ds", t);
+	} else if (t < 600) {
+		return va ("%dm%02ds", t / 60, t % 60);
+	} else if (t < 3600) {
+		return va ("%dm", t / 60);
+	} else if (t < 36000) {
+		t /= 60;
+		return va ("%dh%02dm", t / 60, t % 60);
+	} else if (t < 86400) {
+		return va ("%dh", t / 3600);
+	} else {
+		t /= 3600;
+		return va ("%dd%02dh", t / 24, t % 24);
+	}
+#endif
+	if (t < 60) {
+		return va ("%ds", t);
+	} else if (t < 3600) {
+		return va ("%dm%02ds", t / 60, t % 60);
+	} else if (t < 86400) {
+		return va ("%dh%02dm%02ds", t / 3600, (t / 60) % 60, t % 60);
+	} else {
+		return va ("%dd%02dh%02dm%02ds",
+				   t / 86400, (t / 3600) % 24, (t / 60) % 60, t % 60);
+	}
+}
+
 /*
 	SV_Map_f
 
@@ -363,7 +397,7 @@ SV_Map_f (void)
 		return;
 	}
 	if (Cmd_Argc () == 1) {
-		SV_Printf ("map is %s\n", curlevel);
+		SV_Printf ("map is %s (%s)\n", curlevel, nice_time (sv.time));
 		return;
 	}
 	strncpy (level, Cmd_Argv (1), sizeof (level) - 1);
