@@ -100,6 +100,7 @@
 #include "net.h"
 #include "pmove.h"
 #include "r_cvar.h"
+#include "r_dynamic.h"
 #include "sbar.h"
 #include "view.h"
 
@@ -426,6 +427,7 @@ CL_ClearState (void)
 
 	R_ClearEfrags ();
 	R_ClearDlights ();
+	R_ClearFires ();
 
 // wipe the entire cl structure
 	memset (&cl, 0, sizeof (cl));

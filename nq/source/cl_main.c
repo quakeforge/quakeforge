@@ -31,7 +31,6 @@
 #endif
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
@@ -42,10 +41,12 @@
 #include "QF/skin.h"
 #include "QF/va.h"
 
-#include "client.h"
 #include "chase.h"
+#include "client.h"
+#include "compat.h"
 #include "host.h"
 #include "host.h"
+#include "r_cvar.h"
 #include "r_dynamic.h"
 #include "server.h"
 
@@ -73,8 +74,6 @@ cvar_t     *m_pitch;
 cvar_t     *m_yaw;
 cvar_t     *m_forward;
 cvar_t     *m_side;
-
-cvar_t     *r_firecolor;
 
 cvar_t     *show_fps;
 cvar_t     *show_time;
@@ -152,8 +151,6 @@ CL_InitCvars (void)
 						  "mouse forward/back speed");
 	m_side = Cvar_Get ("m_side", "0.8", CVAR_ARCHIVE, NULL,
 					   "mouse strafe speed");
-	r_firecolor = Cvar_Get ("r_firecolor", "0.9 0.4 0", CVAR_ARCHIVE, NULL,
-							"color of rocket and lava ball fires");
 	show_fps = Cvar_Get ("show_fps", "0", CVAR_NONE, NULL,
 						 "display realtime frames per second");
 	show_time = Cvar_Get ("show_time", "0", CVAR_NONE, NULL,
@@ -183,6 +180,7 @@ CL_ClearState (void)
 
 	R_ClearEfrags ();
 	R_ClearDlights ();
+	R_ClearFires ();
 
 	for (i = 0; i < MAX_EDICTS; i++) {
 		cl_entities[i].baseline = &cl_baselines[i];

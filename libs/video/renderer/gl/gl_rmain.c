@@ -58,7 +58,6 @@
 #include "QF/GL/qf_vid.h"
 #include "QF/GL/qf_rsurf.h"
 #include "QF/GL/qf_rlight.h"
-#include "QF/GL/qf_fires.h"
 
 #include "r_cvar.h"
 #include "r_dynamic.h"

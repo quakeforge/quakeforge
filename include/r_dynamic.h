@@ -50,7 +50,7 @@ void R_RunPuffEffect (vec3_t org, particle_effect_t type, byte count);
 void R_RunSpikeEffect (vec3_t org, particle_effect_t type);
 
 #ifdef QUAKE2
-void R_DarkFieldParticles (entity_t *ent);
+void R_DarkFieldParticles (struct entity_s *ent);
 #endif
 void R_EntityParticles (struct entity_s *ent);
 void R_BlobExplosion (vec3_t org);
@@ -63,5 +63,24 @@ void R_PushDlights (vec3_t entorigin);
 void R_InitParticles (void);
 void R_ClearParticles (void);
 void R_DrawParticles (void);
+
+#define MAX_FIRES				128		// rocket flames
+
+typedef struct {
+	int		key;			// allows reusability
+	vec3_t	origin, owner;
+	float	size;
+	float	die, decay;		// duration settings
+	float	minlight;		// lighting threshold
+	float	color[3];		// RGB
+} fire_t;
+
+extern fire_t r_fires[];
+
+void R_AddFire (vec3_t start, vec3_t end, struct entity_s *ent);
+void R_DrawFire (fire_t *f);
+void R_UpdateFires (void);
+fire_t *R_AllocFire (int key);
+void R_ClearFires (void);
 
 #endif // _R_DYNAMIC_H

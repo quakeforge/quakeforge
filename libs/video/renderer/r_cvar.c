@@ -85,6 +85,7 @@ cvar_t     *r_drawflat;
 cvar_t     *r_drawviewmodel;
 cvar_t     *r_dspeeds;
 cvar_t     *r_dynamic;
+cvar_t     *r_firecolor;
 cvar_t     *r_graphheight;
 cvar_t     *r_maxedges;
 cvar_t     *r_maxsurfs;
@@ -222,6 +223,8 @@ R_Init_Cvars (void)
 						  "Toggles the display of drawing speed information");
 	r_dynamic = Cvar_Get ("r_dynamic", "1", CVAR_NONE, NULL,
 						  "Set to 0 to disable lightmap changes");
+	r_firecolor = Cvar_Get ("r_firecolor", "0.9 0.4 0", CVAR_ARCHIVE, NULL,
+							"color of rocket and lava ball fires");
 	r_graphheight = Cvar_Get ("r_graphheight", "32", CVAR_NONE, NULL,
 							  "Set the number of lines displayed in the "
 							  "various graphs");

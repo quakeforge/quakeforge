@@ -53,14 +53,13 @@
 #include "host.h"
 #include "msg_ucmd.h"
 #include "pmove.h"
+#include "r_cvar.h"
 #include "r_dynamic.h"
 #include "view.h"
 
 extern cvar_t *cl_predict_players;
 extern cvar_t *cl_predict_players2;
 extern cvar_t *cl_solid_players;
-
-cvar_t *r_firecolor;
 
 static struct predicted_player {
 	int         flags;
@@ -1076,6 +1075,4 @@ CL_EmitEntities (void)
 void
 CL_Ents_Init (void)
 {
-	r_firecolor = Cvar_Get ("r_firecolor", "0.9 0.4 0", CVAR_ARCHIVE, NULL,
-							"color of rocket and lava ball fires");
 }

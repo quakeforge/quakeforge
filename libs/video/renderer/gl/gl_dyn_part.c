@@ -39,21 +39,20 @@
 #include <stdlib.h>
 
 #include "QF/cmd.h"
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/render.h"
 #include "QF/sys.h"
-#include "varrays.h"
 #include "QF/vfs.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
-#include "r_cvar.h"
-#include "QF/GL/qf_fires.h"
 
+#include "compat.h"
+#include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_shared.h"
+#include "varrays.h"
 
 static particle_t *particles, **freeparticles;
 static short r_numparticles, numparticles;
