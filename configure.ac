@@ -1397,6 +1397,10 @@ AC_SUBST(ASFLAGS)
 AC_SUBST(CCAS)
 AC_SUBST(CCASFLAGS)
 
+dnl silence automake about .r files
+F77=touch
+AC_SUBST(F77)
+
 dnl ==================================================================
 dnl Make sure we link against a working zlib
 dnl ==================================================================
@@ -1993,6 +1997,11 @@ AC_OUTPUT(
 	tools/wav/Makefile
 
 	cs-code/Makefile
+
+	ruamoko/Makefile
+	ruamoko/include/Makefile
+	ruamoko/lib/Makefile
+	ruamoko/game/Makefile
 
 	doc/Makefile
 	doc/man/Makefile
