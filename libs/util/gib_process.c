@@ -263,7 +263,19 @@ GIB_Process_Escapes (dstring_t *token)
 	for (i = 0; token->str[i]; i++) {
 		if (token->str[i] == '\\') {
 			dstring_snip (token, i, 1); // Get rid of slash
-			switch (token->str[i]) {
+			if (strlen(token->str+i) > 2 &&
+				isdigit ((byte) token->str[i]) &&
+			    isdigit ((byte) token->str[i+1]) &&
+			    isdigit ((byte) token->str[i+2])) {
+					unsigned int num;
+					num = 100 * (token->str[i] - '0') + 10 * (token->str[i+1] - '0') + (token->str[i+2] - '0');
+					if (num > 255)
+						dstring_snip (token, i, 3);
+					else {
+						dstring_snip (token, i, 2);
+						token->str[i] = (char) num;
+					}
+			} else switch (token->str[i]) {
 				case 'n':
 					token->str[i] = '\n';
 					break;
