@@ -49,6 +49,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/zone.h"
 
 #include "netchan.h"
+#include "server.h"
 
 SERVER_PLUGIN_PROTOS
 static plugin_list_t server_plugin_list[] = {
@@ -81,6 +82,13 @@ qtv_memory_init (void)
 }
 
 static void
+qtv_shutdown (void)
+{
+	NET_Shutdown ();
+	Con_Shutdown ();
+}
+
+static void
 qtv_quit_f (void)
 {
 	Sys_Printf ("Shutting down.\n");
@@ -91,6 +99,8 @@ static void
 qtv_init (void)
 {
 	qtv_cbuf = Cbuf_New (&id_interp);
+
+	Sys_RegisterShutdown (qtv_shutdown);
 
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
@@ -136,6 +146,8 @@ qtv_init (void)
 
 	Cmd_StuffCmds (qtv_cbuf);
 	Cbuf_Execute_Sets (qtv_cbuf);
+
+	Server_Init ();
 
 	Cmd_AddCommand ("quit", qtv_quit_f, "Shut down qtv");
 
