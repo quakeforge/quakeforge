@@ -43,7 +43,6 @@ static void (*const inputline_progs_init)(progs_t *) = InputLine_Progs_Init;
 static void (*const plist_progs_init)(progs_t *) = Plist_Progs_Init;
 static void (*const qfile_progs_init)(progs_t *, int) = QFile_Progs_Init;
 static void (*const qfs_progs_init)(progs_t *) = QFS_Progs_Init;
-static void (*const string_progs_init)(progs_t *) = String_Progs_Init;
 
 void
 BI_Init ()

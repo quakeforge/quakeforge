@@ -84,7 +84,7 @@ draw_item =
 	local integer	i;
 
 	Draw_String	(x,  y,	label); 
-	for (i = x + String_Len (label) * 8; i < (x+spacing); i += 8) {
+	for (i = x + (integer) strlen (label) * 8; i < (x+spacing); i += 8) {
 		Draw_String (i, y, spacechar);
 	}
 	Draw_String (x + spacing,  y, valstr);

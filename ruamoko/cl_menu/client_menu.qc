@@ -6,7 +6,6 @@
 #include "InputLine.h"
 #include "Rect.h"
 #include "string.h"
-#include "../include/string.h"
 #include "math.h"
 #include "cbuf.h"
 #include "options.h"
@@ -102,7 +101,7 @@ void () scan_saves =
 		if (!f)
 			continue;
 		Qgetline (f);
-		filenames[i] = String_ReplaceChar ('_', ' ', Qgetline (f));
+		filenames[i] = Qgetline (f);
 		loadable[i] = 1;
 		Qclose (f);
 	}

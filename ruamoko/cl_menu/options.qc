@@ -28,7 +28,7 @@
 #include "cbuf.h"
 #include "menu.h"
 #include "system.h"
-#include "../include/string.h"
+#include "string.h"
 #include "math.h"
 #include "draw.h"
 #include "cvar.h"

@@ -452,7 +452,6 @@ Menu_Init (void)
 	QFS_Progs_Init (&menu_pr_state);
 	PR_Cmds_Init (&menu_pr_state);
 	R_Progs_Init (&menu_pr_state);
-	String_Progs_Init (&menu_pr_state);
 
 	confirm_quit = Cvar_Get ("confirm_quit", "1", CVAR_ARCHIVE, NULL,
 							 "confirm quit command");

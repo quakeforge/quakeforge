@@ -31,7 +31,7 @@ EXTRA_DATA= $(menu_data)
 menu_src= \
 	client_menu.qc controls_o.qc \
 	inputline_util.qc menu.r options.qc \
-	options_util.qc servlist.qc string.r
+	options_util.qc servlist.qc
 
 %.qfo: %.r
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<

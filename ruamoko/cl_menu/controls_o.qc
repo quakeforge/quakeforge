@@ -32,7 +32,6 @@
 #include "debug.h"
 #include "string.h"
 #include "key.h"
-#include "../include/string.h"
 #include "options_util.h"
 
 integer set_key_flag;	// holds flag for the key-setting
@@ -138,7 +137,7 @@ get_keyname =
 	} else {
 		keyname = Key_KeynumToString(keynum);
 		// cut away the "K_", thats maybe enough as description for now
-		keyname = String_Cut(0, 2, keyname);
+		//keyname = String_Cut(0, 2, keyname);
 	}
 	return keyname;
 };
