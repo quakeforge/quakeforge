@@ -121,21 +121,6 @@ Sys_mkdir (const char *path)
 		Sys_Error ("mkdir %s: %s", path, strerror (errno));
 }
 
-void
-QFutil_Sys_Error (const char *error, ...)
-{
-	va_list     argptr;
-	char        string[1024];
-
-	va_start (argptr, error);
-	vsnprintf (string, sizeof (string), error, argptr);
-	fprintf (stderr, "Error: %s\n", string);
-
-	exit (1);
-}
-
-void Sys_Error (const char *error, ...) __attribute ((weak, alias ("QFutil_Sys_Error")));
-
 int
 Sys_FileTime (const char *path)
 {

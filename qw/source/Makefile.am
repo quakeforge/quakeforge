@@ -40,7 +40,8 @@ EXTRA_PROGRAMS= qw-client-3dfx qw-client-fbdev \
 		qw-client-sgl qw-client-svga qw-client-wgl \
 		qw-client-x11 qw-server
 
-noinst_LIBRARIES= libqfjs.a libqfnet.a libqfsys_cl.a libqfsys_sv.a
+noinst_LIBRARIES= libqfjs.a libqfnet.a
+#libqfsys_cl.a libqfsys_sv.a
 
 if PACKETLOG
 packetlogger = net_packetlog.c
@@ -70,11 +71,10 @@ EXTRA_libqfnet_a_SOURCES= net_chan.c net_udp.c net_udp6.c
 # ... System type
 #
 if SYSTYPE_WIN32
-libqfsys_sv_a_SOURCES=	fnmatch.c dirent.c sv_sys_win.c sys_win.c
+syssv_SRC=	fnmatch.c dirent.c sv_sys_win.c
 else
-libqfsys_sv_a_SOURCES=	sv_sys_unix.c
+syssv_SRC=	sv_sys_unix.c
 endif
-EXTRA_libqfsys_sv_a_SOURCES= fnmatch.c dirent.c sv_sys_unix.c sv_sys_win.c
 
 if ASM_ARCH
 world_ASM=	worlda.S
@@ -83,13 +83,13 @@ endif
 server_SOURCES=	sv_ccmds.c sv_cvar.c \
 		sv_ents.c sv_init.c sv_main.c sv_misc.c sv_model.c \
 		sv_move.c sv_nchan.c sv_phys.c sv_pr_cmds.c sv_progs.c sv_send.c \
-		sv_user.c world.c $(world_ASM)
+		sv_user.c world.c $(world_ASM) $(syssv_SRC)
 
 qw_server_SOURCES=	$(common_SOURCES) $(server_SOURCES)
 qw_server_LDADD= 	$(top_builddir)/libs/util/libQFutil.la \
 			$(top_builddir)/libs/gamecode/libQFgamecode.la \
-			-L. -lqfnet -lqfsys_sv $(NET_LIBS) $(DL_LIBS)
-qw_server_DEPENDENCIES= libqfnet.a libqfsys_sv.a
+			-L. -lqfnet $(NET_LIBS) $(DL_LIBS)
+qw_server_DEPENDENCIES= libqfnet.a
 
 #
 # Client builds
@@ -97,11 +97,10 @@ qw_server_DEPENDENCIES= libqfnet.a libqfsys_sv.a
 # ... System type
 #
 if SYSTYPE_WIN32
-libqfsys_cl_a_SOURCES=	cl_sys_win.c fnmatch.c dirent.c sys_win.c
+syscl_SRC=	cl_sys_win.c fnmatch.c dirent.c
 else
-libqfsys_cl_a_SOURCES=	cl_sys_unix.c
+syscl_SRC=	cl_sys_unix.c
 endif
-EXTRA_libqfsys_cl_a_SOURCES= cl_sys_sdl.c cl_sys_unix.c cl_sys_win.c sys_win.c fnmatch.c dirent.c
 
 #
 # ... Joystick
@@ -122,9 +121,9 @@ CLIENT_LIBS=		$(top_builddir)/libs/util/libQFutil.la \
 			$(top_builddir)/libs/gamecode/libQFgamecode.la \
 			$(top_builddir)/libs/audio/cd/libQFcd.la \
 			$(top_builddir)/libs/audio/targets/libQFsound.la \
-			-L. -lqfnet -lqfsys_cl -lqfjs \
+			-L. -lqfnet -lqfjs \
 			$(SOUND_LIBS) $(NET_LIBS) $(JOY_LIBS)
-CLIENT_LIB_DEPS=	libqfnet.a libqfsys_cl.a libqfjs.a
+CLIENT_LIB_DEPS=	libqfnet.a libqfjs.a
 
 if ASM_ARCH
 client_ASM=	cl_math.S
@@ -133,7 +132,7 @@ endif
 client_SOURCES= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
 	cl_main.c cl_misc.c cl_parse.c cl_pred.c cl_slist.c cl_tent.c \
 	console.c keys.c locs.c model_alias.c model_sprite.c nonintel.c \
-	pcx.c r_efrag.c r_view.c sbar.c skin.c teamplay.c tga.c wad.c vid.c $(client_ASM)
+	pcx.c r_efrag.c r_view.c sbar.c skin.c teamplay.c tga.c wad.c vid.c $(client_ASM) $(syscl_SRC)
 
 #
 # Software-rendering clients
