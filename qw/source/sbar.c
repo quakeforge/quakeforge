@@ -37,6 +37,8 @@ static const char rcsid[] =
 # include <strings.h>
 #endif
 
+#include <time.h>
+
 #include <stdlib.h>
 
 #include "QF/cmd.h"
@@ -46,6 +48,7 @@ static const char rcsid[] =
 #include "QF/screen.h"
 #include "QF/va.h"
 #include "QF/vid.h"
+#include "QF/vfs.h"
 
 #include "bothdefs.h"
 #include "cl_cam.h"
@@ -88,6 +91,7 @@ void        Sbar_MiniDeathmatchOverlay (void);
 static qboolean largegame = false;
 
 cvar_t     *cl_showscoresuid;
+cvar_t     *fs_fraglog;
 
 
 /*
@@ -244,6 +248,9 @@ Sbar_Init (void)
 
 	cl_showscoresuid = Cvar_Get ("cl_showscoresuid", "0", CVAR_NONE, NULL,
 								 "show uid instead of ping on scores");
+
+	fs_fraglog = Cvar_Get ("fs_fraglog", "qw-scores.log", CVAR_NONE, NULL,
+								 "filename of the automatic frag-log");
 }
 
 // drawing routines are reletive to the status bar location
@@ -878,6 +885,106 @@ Sbar_TeamOverlay (void)
 	y += 8;
 	Sbar_DeathmatchOverlay (y);
 }
+
+/*
+	Sbar_LogFrags
+
+	autologging of frags after a match ended 
+	(called by recived network packet with command scv_intermission)
+	TODO: Find a new and better place for this function
+		  (i am nearly shure this is wrong place)
+	added by Elmex
+*/
+void
+Sbar_LogFrags (void)
+{
+	char        num[512];
+	VFile      *file;
+	int         minutes, fph, total, f, i, k, l, p;
+	player_info_t *s;
+	const char		*t = NULL;
+	time_t tt = time(NULL);
+	char        e_path[MAX_OSPATH];
+
+	memset(&e_path,0,MAX_OSPATH);
+    Qexpand_squiggle (fs_userpath->string, e_path);
+
+	if((file = Qopen (va ("%s/%s", e_path, fs_fraglog->string), "a")) == NULL) {
+		return;
+	}
+
+	t = ctime(&tt);
+	if(t) 
+		Qwrite(file, t ,strlen(t));
+
+	Qwrite(file,cls.servername,strlen(cls.servername));
+	Qwrite(file,"\n",1);
+	Qwrite(file,cl.worldmodel->name,strlen(cl.worldmodel->name));
+	Qwrite(file," ", 1);
+	Qwrite(file,cl.levelname,strlen(cl.levelname));
+	Qwrite(file,"\n",1);
+
+	// scores   
+	Sbar_SortFrags (true);
+
+	// draw the text
+	l = scoreboardlines;
+
+
+	if (cl.teamplay) {
+		// TODO: test if the teamplay does correct output
+		Qwrite(file, "pl  fph time frags team name\n", strlen("pl  fph time frags team name\n"));
+	} else {
+		Qwrite(file, "pl  fph time frags name\n", strlen("pl  fph time frags name\n"));
+	}
+
+	for (i = 0; i < l; i++) {
+		k = fragsort[i];
+		s = &cl.players[k];
+		if (!s->name[0])
+			continue;
+
+ 		// draw pl
+		p = s->pl;
+
+		// get time
+		if (cl.intermission)
+			total = cl.completed_time - s->entertime;
+		else
+			total = realtime - s->entertime;
+		minutes = (int) total / 60;
+
+		// get frags
+		f = s->frags;
+
+		// get fph
+		if(total != 0) {
+			fph = (3600/total)*f;
+		}
+		else {
+			fph = 0;
+		}
+		if(fph >= 999) fph = 999;
+		if(fph <= -999) fph = -999;
+		
+		if(s->spectator) {
+			snprintf(num, sizeof (num), "%3i (spec)", s->pl);
+		} else {
+			if(cl.teamplay) {
+				snprintf(num, sizeof (num), "%3i %3i %4i %3i    %4s %s", s->pl, fph, 
+					minutes, f, s->team->value, s->name);
+			} else {
+				snprintf(num, sizeof (num), "%3i %3i %4i %3i   %s", s->pl, fph, 
+					minutes, f, s->name);
+			}
+		}
+		Qwrite(file, num, strlen(num));
+		Qwrite(file, "\n\n", 1);
+	}
+	
+	Qclose(file);
+}
+
 
 /*
 	Sbar_DeathmatchOverlay

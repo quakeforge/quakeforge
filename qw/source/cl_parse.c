@@ -1122,6 +1122,8 @@ CL_MuzzleFlash (void)
 
 int         received_framecount;
 
+void Sbar_LogFrags(void);
+
 void
 CL_ParseServerMessage (void)
 {
@@ -1321,6 +1323,7 @@ CL_ParseServerMessage (void)
 
 			case svc_intermission:
 				Con_DPrintf ("svc_intermission\n");
+
 				cl.intermission = 1;
 				cl.completed_time = realtime;
 				vid.recalc_refdef = true;	// go to full screen
@@ -1334,9 +1337,16 @@ CL_ParseServerMessage (void)
 					Con_DPrintf ("%f ", cl.simangles[i]);
 				Con_DPrintf ("\n");
 				VectorCopy (vec3_origin, cl.simvel);
+
+				/* 
+					automatic fraglogging (by elmex)
+					XXX: Should this _really_ called here?  
+				*/
+				Sbar_LogFrags(); 
 				break;
 
 			case svc_finale:
+				Con_Printf("svc_finale\n");
 				cl.intermission = 2;
 				cl.completed_time = realtime;
 				vid.recalc_refdef = true;	// go to full screen
