@@ -90,6 +90,8 @@ hashtab_t  *cmd_hash;
 
 /* Structure management */
 
+
+/* Creates a new local variable */
 cmd_localvar_t *
 Cmd_NewLocal (const char *key, const char *value)
 {
@@ -108,6 +110,7 @@ Cmd_NewLocal (const char *key, const char *value)
 	return new;
 }
 
+/* Gets a local variable from a command buffer */
 cmd_localvar_t	*
 Cmd_GetLocal (cmd_buffer_t *buffer, const char *key)
 {
@@ -117,6 +120,7 @@ Cmd_GetLocal (cmd_buffer_t *buffer, const char *key)
 	return var;
 }
 
+/* Sets a local variable on a command buffer */
 void
 Cmd_SetLocal (cmd_buffer_t *buffer, const char *key, const char *value)
 {
@@ -132,6 +136,7 @@ Cmd_SetLocal (cmd_buffer_t *buffer, const char *key, const char *value)
 	}
 }
 
+/* Hashtable callbacks... */
 const char *
 Cmd_LocalGetKey (void *ele, void *ptr)
 {
@@ -146,8 +151,9 @@ Cmd_LocalFree (void *ele, void *ptr)
 	free (ele);
 }
 
-/* Token management stuff */
+/* Token management */
 
+/* Creates a new token */
 cmd_token_t	*
 Cmd_NewToken (void) {
 	cmd_token_t *new;
@@ -161,6 +167,7 @@ Cmd_NewToken (void) {
 
 /* Command buffer management */
 
+/* Creates a command buffer with or without its own local variables */
 cmd_buffer_t	*
 Cmd_NewBuffer (qboolean ownvars)
 {
@@ -190,7 +197,7 @@ Cmd_NewBuffer (qboolean ownvars)
 /*
 	Cmd_FreeBuffer
 
-	Actually just "recycles" buffer for
+	Actually just "recycles" a buffer for
 	later use
 */
 
@@ -209,6 +216,7 @@ Cmd_FreeBuffer (cmd_buffer_t *free) {
 	cmd_recycled = free;
 }
 
+/* Frees an entire linked list (stack) of buffers */
 void
 Cmd_FreeStack (cmd_buffer_t *stack) {
 	cmd_buffer_t *temp;
@@ -219,7 +227,9 @@ Cmd_FreeStack (cmd_buffer_t *stack) {
 	}
 }
 
+/* Thread management */
 
+/* Creates a new thread */
 cmd_thread_t	*
 Cmd_NewThread (long int id) {
 	cmd_thread_t *new;
@@ -232,6 +242,7 @@ Cmd_NewThread (long int id) {
 	return new;
 }
 
+/* Frees a thread */
 void
 Cmd_FreeThread (cmd_thread_t *thread) {
 	Cmd_FreeBuffer (thread->cbuf);
@@ -239,6 +250,7 @@ Cmd_FreeThread (cmd_thread_t *thread) {
 	return;
 }
 
+/* Adds a thread to a linked list */
 void
 Cmd_AddThread (cmd_thread_t **list, cmd_thread_t *thread) {
 	thread->next = *list;
@@ -248,6 +260,7 @@ Cmd_AddThread (cmd_thread_t **list, cmd_thread_t *thread) {
 	*list = thread;
 }
 
+/* Removes a thread from a linked list and frees it */
 void
 Cmd_RemoveThread (cmd_thread_t **list, cmd_thread_t *thread) {
 	if (thread == *list)
@@ -259,33 +272,12 @@ Cmd_RemoveThread (cmd_thread_t **list, cmd_thread_t *thread) {
 	Cmd_FreeThread (thread);
 }
 
-/*void
-Cmd_FreeBuffer (cmd_buffer_t *del)
-{
-	int         i;
 
-	dstring_delete (del->buffer);
-	dstring_delete (del->line);
-	dstring_delete (del->realline);
-	dstring_delete (del->looptext);
-	if (del->maxargc) {
-		for (i = 0; i < del->maxargc; i++) {
-			if (del->argv[i])
-				dstring_delete (del->argv[i]);
-			if (del->argu[i])
-				dstring_delete (del->argu[i]);
-		}
-		free (del->argv);
-		free (del->argu);
-	}
-	if (del->args)
-		free(del->args);
-	if (del->ownvars)
-		Hash_DelTable(del->locals);
-	free(del);
-}*/
+/* End structure management */
 
-/* Quick function to determine if a character is escaped */
+/* Escape character functions used by most of the parser */
+
+/* Determines if a character is escaped */
 qboolean
 escaped (const char *str, int i)
 {
@@ -298,7 +290,7 @@ escaped (const char *str, int i)
 	return c & 1;
 }
 
-/* Quick function to escape stuff in a dstring */
+/* Escapes a list of characters in a dstring */
 void
 escape (dstring_t * dstr, const char *clist)
 {
@@ -313,7 +305,7 @@ escape (dstring_t * dstr, const char *clist)
 	}
 }
 
-/* Quick function to unescape a character in a dstring */
+/* Unescapes a character and all backslashes preceding it in a dstring */
 int
 unescape (dstring_t * dstr, int start)
 {
@@ -324,6 +316,7 @@ unescape (dstring_t * dstr, int start)
 	return (int) ((start - i)/2.0+.05);
 }
 
+
 /*
 	Cmd_Wait_f
 
@@ -332,45 +325,9 @@ unescape (dstring_t * dstr, int start)
 	next frame.  This allows commands like:
 	bind g "impulse 5 ; +attack ; wait ; -attack ; impulse 2"
 */
-void
-Cmd_Wait_f (void)
-{
-	cmd_buffer_t *cur;
-	for (cur = cmd_activebuffer; cur; cur = cur->prev)
-		cur->wait = true;
-}
-
-void
-Cmd_Error (const char *message)
-{
-	cmd_buffer_t *cur;
-
-	Sys_Printf ("GIB:  Error in execution.  "
-				"Type backtrace for a description and execution path to "
-				"the error\n");
-	cmd_error = true;
-	dstring_clearstr (cmd_backtrace);
-	dstring_appendstr (cmd_backtrace, message);
-	dstring_appendstr (cmd_backtrace, "Path of execution:\n");
-	for (cur = cmd_activebuffer; cur; cur = cur->prev) {
-		dstring_appendstr (cmd_backtrace, va ("--> %s\n", cur->realline->str));
-	}
-}
-
-void
-Cmd_Return (const char *value) {
-	if (cmd_activebuffer->prev && cmd_activebuffer->prev->returned == cmd_waiting) {
-		dstring_clearstr (cmd_activebuffer->prev->retval);
-		dstring_appendstr (cmd_activebuffer->prev->retval, value);
-		cmd_activebuffer->prev->returned = cmd_returned;
-	}
-}
 
 
-
-/*
-						COMMAND BUFFER
-*/
+/* Command buffer functions */
 
 void
 Cbuf_Init (void)
@@ -397,12 +354,6 @@ Cbuf_AddTextTo (cmd_buffer_t *buffer, const char *text)
 	dstring_appendstr (buffer->buffer, text);
 }
 
-/* 
-	Cbuf_AddText
-	
-	Add text to the active buffer
-*/
-
 void
 Cbuf_AddText (const char *text)
 {
@@ -416,11 +367,6 @@ Cbuf_InsertTextTo (cmd_buffer_t *buffer, const char *text)
 	dstring_insertstr (buffer->buffer, text, 0);
 }
 
-/* Cbuf_InsertText
-
-	Add text to the beginning of the active buffer
-*/
-
 void
 Cbuf_InsertText (const char *text)
 {
@@ -430,11 +376,12 @@ Cbuf_InsertText (const char *text)
 
 /*
 	Cbuf_ExtractLine
-	
+
 	Finds the next \n,\r, or ;-delimeted
 	line in the command buffer and copies
 	it into a buffer.  Also shifts the rest
 	of the command buffer back to the start.
+	Won't cut a line off inside braces.
 */
 
 void
@@ -485,10 +432,16 @@ Cbuf_ExtractLine (dstring_t * buffer, dstring_t * line, qboolean legacy)
 
 /*
 	Cbuf_ExecuteBuffer
-	
+
 	Extracts and executes each line in the
-	command buffer, until it is empty or
-	a wait command is executed
+	command buffer, until it is empty,
+	a wait command is executed, or an
+	error occurs.
+	
+	Records its position each step of the
+	way so that execution can be paused
+	and restarted after a command is tokenized.
+	This is necessary for embedded commands.
 */
 
 void
@@ -545,11 +498,22 @@ Cbuf_ExecuteBuffer (cmd_buffer_t *buffer)
 	cmd_activebuffer = temp;			// restore old context
 }
 
+
+/*
+	Cbuf_ExecuteStack
+	
+	Executes an entire stack of buffers,
+	starting at the bottom and moving up.
+	This is the proper way to start execution
+	of a specific buffer.  It will handle
+	subroutine and errors properly.
+*/
+
 void
 Cbuf_ExecuteStack (cmd_buffer_t *buffer)
 {
 	cmd_buffer_t *cur, *temp;
-	
+
 	cmd_error = false;
 
 	for (cur = buffer; cur->next; cur = cur->next);
@@ -611,7 +575,7 @@ Cbuf_Execute (void)
 */
 
 void
-Cmd_ExecuteSubroutine (cmd_buffer_t *buffer)
+Cbuf_ExecuteSubroutine (cmd_buffer_t *buffer)
 {
 	if (cmd_activebuffer->next) // Get rid of anything already there
 		Cmd_FreeStack (cmd_activebuffer->next);
@@ -623,7 +587,7 @@ Cmd_ExecuteSubroutine (cmd_buffer_t *buffer)
 
 /*
 	Cbuf_Execute_Sets
-	
+
 	Similar to Cbuf_Execute, but only
 	executes set and setrom commands,
 	and only in the console buffer.
@@ -651,9 +615,7 @@ Cbuf_Execute_Sets (void)
 }
 
 
-/*
-						SCRIPT COMMANDS
-*/
+/* Command execution functions */
 
 /*
 	Cmd_StuffCmds_f
@@ -700,13 +662,13 @@ Cmd_StuffCmds_f (void)
 		}
 	}
 
-	// Sys_Printf("[\n%s]\n",build);
-
 	if (build[0])
 		Cbuf_InsertText (build);
 
 	free (build);
 }
+
+/* Executes a file by dumping it into the console buffer */
 
 void
 Cmd_Exec_File (const char *path)
@@ -731,134 +693,41 @@ Cmd_Exec_File (const char *path)
 	}
 }
 
+
+/* Generates a GIB error and prepares a
+description and backtrace for the programmer */
 void
-Cmd_Exec_f (void)
+Cmd_Error (const char *message)
 {
-	char       *f;
-	int         mark;
-	cmd_buffer_t *sub;
+	cmd_buffer_t *cur;
 
-	if (Cmd_Argc () != 2) {
-		Sys_Printf ("exec <filename> : execute a script file\n");
-		return;
+	Sys_Printf ("GIB:  Error in execution.  "
+				"Type backtrace for a description and execution path to "
+				"the error\n");
+	cmd_error = true;
+	dstring_clearstr (cmd_backtrace);
+	dstring_appendstr (cmd_backtrace, message);
+	dstring_appendstr (cmd_backtrace, "Path of execution:\n");
+	for (cur = cmd_activebuffer; cur; cur = cur->prev) {
+		dstring_appendstr (cmd_backtrace, va ("--> %s\n", cur->realline->str));
 	}
-
-	mark = Hunk_LowMark ();
-	f = (char *) COM_LoadHunkFile (Cmd_Argv (1));
-	if (!f) {
-		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
-		return;
-	}
-	if (!Cvar_Command ()
-		&& (cmd_warncmd->int_val || (developer && developer->int_val)))
-		Sys_Printf ("execing %s\n", Cmd_Argv (1));
-	sub = Cmd_NewBuffer (true);
-	Cbuf_AddTextTo (sub, f);
-	Hunk_FreeToLowMark (mark);
-	Cmd_ExecuteSubroutine (sub);		// Execute file in it's own buffer
 }
 
-/*
-	Cmd_Echo_f
-
-	Just prints the rest of the line to the console
-*/
+/* Returns a value to the previous buffer
+in the stack, but only if it wants one */
 void
-Cmd_Echo_f (void)
-{
-	if (Cmd_Argc() == 2)
-		Sys_Printf ("%s\n", Cmd_Argv(1));
-	else
-		Sys_Printf ("%s\n", Cmd_Args (1));
-}
-
-/*
-	Cmd_Alias_f
-
-	Creates a new command that executes a command string (possibly ; seperated)
-*/
-void
-Cmd_Alias_f (void)
-{
-	cmdalias_t *alias;
-	char       *cmd;
-	int         i, c;
-	const char *s;
-
-	if (Cmd_Argc () == 1) {
-		Sys_Printf ("Current alias commands:\n");
-		for (alias = cmd_alias; alias; alias = alias->next)
-			Sys_Printf ("alias %s \"%s\"\n", alias->name, alias->value);
-		return;
-	}
-
-	s = Cmd_Argv (1);
-	// if the alias already exists, reuse it
-	alias = (cmdalias_t *) Hash_Find (cmd_alias_hash, s);
-	if (alias) {
-		free ((char *) alias->value);
-	} else {
-		cmdalias_t **a;
-
-		alias = calloc (1, sizeof (cmdalias_t));
-		if (!alias)
-			Sys_Error ("Cmd_Alias_f: Memory Allocation Failure\n");
-		alias->name = strdup (s);
-		Hash_Add (cmd_alias_hash, alias);
-		for (a = &cmd_alias; *a; a = &(*a)->next)
-			if (strcmp ((*a)->name, alias->name) >= 0)
-				break;
-		alias->next = *a;
-		*a = alias;
-	}
-	// copy the rest of the command line
-	cmd = malloc (strlen (Cmd_Args (1)) + 2);	// can never be longer
-	if (!cmd)
-		Sys_Error ("Cmd_Alias_f: Memory Allocation Failure\n");
-	cmd[0] = 0;							// start out with a null string
-	c = Cmd_Argc ();
-	for (i = 2; i < c; i++) {
-		strcat (cmd, Cmd_Argv (i));
-		if (i != c - 1)
-			strcat (cmd, " ");
-	}
-
-	alias->value = cmd;
-}
-
-void
-Cmd_UnAlias_f (void)
-{
-	cmdalias_t *alias;
-	const char *s;
-
-	if (Cmd_Argc () != 2) {
-		Sys_Printf ("unalias <alias>: erase an existing alias\n");
-		return;
-	}
-
-	s = Cmd_Argv (1);
-	alias = Hash_Del (cmd_alias_hash, s);
-
-	if (alias) {
-		cmdalias_t **a;
-
-		for (a = &cmd_alias; *a != alias; a = &(*a)->next)
-			;
-		*a = alias->next;
-
-		free ((char *) alias->name);
-		free ((char *) alias->value);
-		free (alias);
-	} else {
-		Sys_Printf ("Unknown alias \"%s\"\n", s);
+Cmd_Return (const char *value) {
+	if (cmd_activebuffer->prev && cmd_activebuffer->prev->returned == cmd_waiting) {
+		dstring_clearstr (cmd_activebuffer->prev->retval);
+		dstring_appendstr (cmd_activebuffer->prev->retval, value);
+		cmd_activebuffer->prev->returned = cmd_returned;
 	}
 }
 
 
-/*
-					COMMAND EXECUTION
-*/
+
+
+/* Command parsing functions */
 
 typedef struct cmd_function_s {
 	struct cmd_function_s *next;
@@ -895,11 +764,6 @@ Cmd_Argu (int arg)
 	return cmd_activebuffer->argv[arg]->original->str;
 }
 
-/*
-	Cmd_Args
-
-	Returns a single string containing argv(start) to argv(argc()-1)
-*/
 const char *
 Cmd_Args (int start)
 {
@@ -915,6 +779,9 @@ Cmd_Argsu (int start)
 		return "";
 	return cmd_activebuffer->realline->str + cmd_activebuffer->argsu[start];
 }
+
+/* Functions to find partner quotes and braces
+corecursively */
 
 int
 Cmd_EndDoubleQuote (const char *str)
@@ -980,10 +847,11 @@ Cmd_EndBracket (const char *str)
 		} else if (str[i] == ']' && !escaped (str,i))
 				return i;
 	}
-	return -1;							// No matching brace found
+	return -1;							// No matching bracket found
 }
 
 
+/* Returns the length of the token beginning at str */
 int
 Cmd_GetToken (const char *str, qboolean legacy)
 {
@@ -1022,12 +890,15 @@ Cmd_GetToken (const char *str, qboolean legacy)
 	return i;
 }
 
+/* These are only used internally, but need to be declared in advance */
 int Cmd_ProcessVariables (dstring_t * dstr);
 int Cmd_ProcessEmbedded (cmd_token_t *tok, dstring_t * dstr);
 
+/* HTML-like tag information */
 int         tag_shift = 0;
 int         tag_special = 0;
 
+/* Special character replacement table */
 struct stable_s {
 	char        a, b;
 } stable1[] = {
@@ -1050,7 +921,7 @@ struct stable_s {
 	{'#', 0x0B},							// White block
 
 	{'a', 0x7F},							// White arrow.
-	// DO NOT USE <a> WITH <b> TAG IN ANYTHING SENT TO SERVER.  PERIOD.
+	// DO NOT USE <s>a</s> WITH <b> TAG IN ANYTHING SENT TO SERVER.  PERIOD.
 	{'A', 0x8D},							// Brown arrow
 
 	{'0', 0x92},							// Golden numbers
@@ -1074,7 +945,7 @@ struct stable_s {
 
 	FIXME:  This has become messy.  Create tag.[ch]
 	and write a more generalized tag parser using
-	callbacks
+	callbacks`
 */
 
 void
@@ -1130,6 +1001,10 @@ Cmd_ProcessTags (dstring_t * dstr)
 	}
 }
 
+/* Looks for statements of the form #{expression}
+and feeds them through the EXP math interpreter,
+replacing them with the answer in the string */
+
 int
 Cmd_ProcessMath (dstring_t * dstr)
 {
@@ -1169,6 +1044,10 @@ Cmd_ProcessMath (dstring_t * dstr)
 	return ret;
 }
 
+/* Looks for a bracketted index expression
+(i.e [5:29]), evaluates math and variables inside,
+removes it from the string, and stores the range
+specified in the index into two ints */
 int
 Cmd_ProcessIndex (dstring_t * dstr, int start, int *val1, int *val2)
 {
@@ -1228,6 +1107,7 @@ Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
 	if (dstr->str[start+1] == '{')
 		braces = 1;
 	for (i = start + 1 + braces;; i++) {
+		// If we are within braces or two $ appear next to each other, consider it recursive
 		if (dstr->str[i] == '$' && (braces || dstr->str[i-1] == '$') && !escaped (dstr->str, i)) {
 			n = Cmd_ProcessVariablesRecursive (dstr, i);
 			if (n < 0) {
@@ -1283,6 +1163,34 @@ Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
 	return n;
 }
 
+/* Scans a dstring for instances of $var or
+${var} and calls a recursive function to handle
+them */
+int
+Cmd_ProcessVariables (dstring_t * dstr)
+{
+	int         i, n;
+
+	for (i = 0; i < strlen (dstr->str); i++) {
+		if (dstr->str[i] == '$' && !escaped (dstr->str, i)) {
+			n = Cmd_ProcessVariablesRecursive (dstr, i);
+			if (n < 0)
+				return n;
+			else
+				i += n - 1;
+		}
+	}
+	return 0;
+}
+
+/* Handles a single instance of an embedded function
+This is done by creating a subroutine buffer with the
+contents of the braces, saving our current position
+and returning an error code to drop back to
+Cbuf_ExecuteStack.  When the subroutine is executed,
+it should return a value to this buffer.  When
+this function is called again, it will see that a
+value is available and substitute it into the string */
 int
 Cmd_ProcessEmbeddedSingle (dstring_t * dstr, int start)
 {
@@ -1313,7 +1221,7 @@ Cmd_ProcessEmbeddedSingle (dstring_t * dstr, int start)
 		sub->locals = cmd_activebuffer->locals;
 		dstring_insert (command, dstr->str + start + 2, n - 2, 0);
 		Cbuf_InsertTextTo (sub, command->str);
-		Cmd_ExecuteSubroutine (sub);
+		Cbuf_ExecuteSubroutine (sub);
 		cmd_activebuffer->returned = cmd_waiting;
 		n = -2;
 		dstring_delete (command);
@@ -1321,6 +1229,8 @@ Cmd_ProcessEmbeddedSingle (dstring_t * dstr, int start)
 	return n;
 }
 
+/* Scans for instances of ~{commands} and calls a function
+to handle it */
 int
 Cmd_ProcessEmbedded (cmd_token_t *tok, dstring_t * dstr)
 {
@@ -1342,22 +1252,7 @@ Cmd_ProcessEmbedded (cmd_token_t *tok, dstring_t * dstr)
 	return 0;
 }
 
-int
-Cmd_ProcessVariables (dstring_t * dstr)
-{
-	int         i, n;
 
-	for (i = 0; i < strlen (dstr->str); i++) {
-		if (dstr->str[i] == '$' && !escaped (dstr->str, i)) {
-			n = Cmd_ProcessVariablesRecursive (dstr, i);
-			if (n < 0)
-				return n;
-			else
-				i += n - 1;
-		}
-	}
-	return 0;
-}
 
 
 /*
@@ -1365,10 +1260,10 @@ Cmd_ProcessVariables (dstring_t * dstr)
 
 	Looks for the escape character \ and
 	removes it.  Special cases exist for
-	\\ and \n; otherwise, it is simply
-	filtered.  This should be the last
-	step in the parser so that quotes,
-	tags, etc. can be escaped
+	\n; otherwise, it is simply filtered.
+	This should be the last step in the
+	parser so that quotes, tags, etc.
+	can be escaped
 */
 
 int
@@ -1381,9 +1276,13 @@ Cmd_ProcessEscapes (dstring_t * dstr, const char *noprocess)
 	for (i = 0; i < strlen (dstr->str); i++)
 		if (dstr->str[i] == '\\') {
 			dstring_snip (dstr, i, 1);
+			if (dstr->str[i] == 'n')
+				dstr->str[i] = '\n';
 		}
 	return 0;
 }
+
+/* Applies all filters to a single token */
 
 int
 Cmd_ProcessToken (cmd_token_t *token)
@@ -1420,9 +1319,16 @@ Cmd_Process (void)
 	dstring_t *org;
 	int quotes;
 	unsigned int adj = 0;
+	cmd_function_t *cmd;
 
-	if (cmd_activebuffer->legacy)
+	if (cmd_activebuffer->legacy) // Legacy buffers will never require processing, ever
 		return 0;
+	cmd = (cmd_function_t *) Hash_Find (cmd_hash, cmd_activebuffer->argv[0]->original->str);
+	if (cmd && cmd->pure) // If the function is pure, don't bother processing
+		return 0;
+
+	tag_shift = 0;
+	tag_special = 0;
 
 	for (arg = 0; arg < cmd_activebuffer->argc; arg++) {
 		if (cmd_activebuffer->argv[arg]->state == cmd_process) {
@@ -1433,6 +1339,8 @@ Cmd_Process (void)
 		}
 	}
 
+	/* Here we edit the composite command line to reflect
+	the changes made to individual tokens. */
 	for (arg = 0; arg < cmd_activebuffer->argc; arg++) {
 		if (cmd_activebuffer->argv[arg]->state == cmd_original)
 			continue;
@@ -1452,13 +1360,14 @@ Cmd_Process (void)
 	return 0;
 }
 
+
+/* Breaks a string up into tokens */
 void
 Cmd_TokenizeString (const char *text, qboolean legacy)
 {
-	int         i = 0, len = 0, quotes, braces, space;
+	int         i = 0, len = 0, quotes, braces;
 	const char *str = text;
 	unsigned int cmd_argc = 0;
-	cmd_function_t *cmd;
 	qboolean process = true;
 
 	dstring_clearstr (cmd_activebuffer->realline);
@@ -1466,25 +1375,13 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 	dstring_clearstr (cmd_activebuffer->line);
 	dstring_appendstr (cmd_activebuffer->line, text);
 
-	/* Turn off tags at the beginning of a command. This causes tags to
-	   continue past token boundaries. */
-	tag_shift = 0;
-	tag_special = 0;
 	if (text[0] == '|') {
 		legacy = true;
 		str++;
 	}
 	while (strlen (str + i)) {
-		if (!legacy && cmd_argc == 1) { // See if command wants unprocessed tokens
-			cmd = (cmd_function_t *) Hash_Find (cmd_hash, cmd_activebuffer->argv[0]->original->str);
-			if (cmd && cmd->pure)
-				process = false;
-		}
-		space = 0;
-		while (isspace ((byte)str[i])) {
+		while (isspace ((byte)str[i])) // Get rid of white space
 			i++;
-			space++;
-		}
 		len = Cmd_GetToken (str + i, legacy);
 		if (len < 0) {
 			Cmd_Error ("Parse error:  Unmatched quotes, braces, or "
@@ -1537,13 +1434,86 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 		else
 			cmd_activebuffer->argv[cmd_argc-1]->state = cmd_original;
 		cmd_activebuffer->argv[cmd_argc-1]->pos = 0;
-		cmd_activebuffer->argv[cmd_argc-1]->space = space;
 		i += len + quotes + braces;		/* If we ended on a quote or brace,
 										   skip it */
 	}
 	cmd_activebuffer->argc = cmd_argc;
 }
 
+/*
+	Cmd_ExecuteParsed
+
+	A complete command line has been parsed, so try to execute it
+*/
+void
+Cmd_ExecuteParsed (cmd_source_t src)
+{
+	cmd_function_t *cmd;
+	cmdalias_t *a;
+
+	cmd_source = src;
+
+	// execute the command line
+	if (!Cmd_Argc ())
+		return;							// no tokens
+
+	// check functions
+	cmd = (cmd_function_t *) Hash_Find (cmd_hash, Cmd_Argv (0));
+	if (cmd) {
+		if (cmd->function)
+			cmd->function ();
+		return;
+	}
+	// Tonik: check cvars
+	if (Cvar_Command ())
+		return;
+
+	// Check for assignment
+	if (Cmd_Argc() == 3 && !strcmp(Cmd_Argv(1), "=")) {
+		Cmd_SetLocal (cmd_activebuffer, Cmd_Argv(0), Cmd_Argv(2));
+		return;
+	}
+
+	// check alias
+	a = (cmdalias_t *) Hash_Find (cmd_alias_hash, Cmd_Argv (0));
+	if (a) {
+		int i;
+		cmd_buffer_t *sub; // Create a new buffer to execute the alias in
+		sub = Cmd_NewBuffer (true);
+		Cbuf_InsertTextTo (sub, a->value);
+		for (i = 0; i < Cmd_Argc (); i++)
+			Cmd_SetLocal (sub, va ("%i", i), Cmd_Argv (i));
+		Cmd_SetLocal (sub, "argn", va ("%i", Cmd_Argc ()));
+		Cbuf_ExecuteSubroutine (sub);
+		return;
+	}
+
+	if (cmd_warncmd->int_val || developer->int_val)
+		Sys_Printf ("Unknown command \"%s\"\n", Cmd_Argv (0));
+}
+
+/* Executes a single command in an internal buffer context */
+int Cmd_ExecuteString (const char *text, cmd_source_t src)
+{
+	cmd_buffer_t *old = cmd_activebuffer; // Save context
+	int ret;
+	cmd_activebuffer = cmd_privatebuffer;
+	Cmd_TokenizeString (text, cmd_activebuffer->legacy);
+	if (!Cmd_Argc()) {
+		cmd_activebuffer = old;
+		return -1;
+	}
+	ret = Cmd_Process ();
+	if (ret < 0) {
+		cmd_activebuffer = old;
+		return ret;
+	}
+	Cmd_ExecuteParsed (src);
+	cmd_activebuffer = old;
+	return 0;
+}
+
+/* Registers a command and handler function */
 int
 Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 				const char *description)
@@ -1565,7 +1535,7 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 
 	cmd = calloc (1, sizeof (cmd_function_t));
 	if (!cmd)
-		Sys_Error ("Cmd_AddCommand: Memory_Allocation_Failure\n");
+		Sys_Error ("Cmd_AddCommand: Memory Allocation Failure\n");
 	cmd->name = cmd_name;
 	cmd->function = function;
 	cmd->description = description;
@@ -1578,6 +1548,7 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 	return 1;
 }
 
+/* Unregisters a command */
 int
 Cmd_RemoveCommand (const char *name)
 {
@@ -1595,17 +1566,19 @@ Cmd_RemoveCommand (const char *name)
 	return 1;
 }
 
+/* Sets a command to receive unprocessed tokens */
 void
 Cmd_SetPure (const char *name)
 {
 	cmd_function_t *cmd;
-	
+
 	cmd = (cmd_function_t *) Hash_Find (cmd_hash, name);
-	
+
 	if (cmd)
 		cmd->pure = true;
 }
 
+/* Checks for the existance of a command */
 qboolean
 Cmd_Exists (const char *cmd_name)
 {
@@ -1618,6 +1591,9 @@ Cmd_Exists (const char *cmd_name)
 
 	return false;
 }
+
+
+/* Command completion functions */
 
 const char *
 Cmd_CompleteCommand (const char *partial)
@@ -1800,77 +1776,6 @@ Cmd_CompleteAliasBuildList (const char *partial)
 	return buf;
 }
 
-/*
-	Cmd_ExecuteParsed
-
-	A complete command line has been parsed, so try to execute it
-*/
-void
-Cmd_ExecuteParsed (cmd_source_t src)
-{
-	cmd_function_t *cmd;
-	cmdalias_t *a;
-
-	cmd_source = src;
-
-	// execute the command line
-	if (!Cmd_Argc ())
-		return;							// no tokens
-
-	// check functions
-	cmd = (cmd_function_t *) Hash_Find (cmd_hash, Cmd_Argv (0));
-	if (cmd) {
-		if (cmd->function)
-			cmd->function ();
-		return;
-	}
-	// Tonik: check cvars
-	if (Cvar_Command ())
-		return;
-	
-	// Check for assignment
-	if (Cmd_Argc() == 3 && !strcmp(Cmd_Argv(1), "=")) {
-		Cmd_SetLocal (cmd_activebuffer, Cmd_Argv(0), Cmd_Argv(2));
-		return;
-	}
-
-	// check alias
-	a = (cmdalias_t *) Hash_Find (cmd_alias_hash, Cmd_Argv (0));
-	if (a) {
-		int i;
-		cmd_buffer_t *sub; // Create a new buffer to execute the alias in
-		sub = Cmd_NewBuffer (true);
-		Cbuf_InsertTextTo (sub, a->value);
-		for (i = 0; i < Cmd_Argc (); i++)
-			Cmd_SetLocal (sub, va ("%i", i), Cmd_Argv (i));
-		Cmd_SetLocal (sub, "argn", va ("%i", Cmd_Argc ()));
-		Cmd_ExecuteSubroutine (sub);
-		return;
-	}
-
-	if (cmd_warncmd->int_val || developer->int_val)
-		Sys_Printf ("Unknown command \"%s\"\n", Cmd_Argv (0));
-}
-
-int Cmd_ExecuteString (const char *text, cmd_source_t src)
-{
-	cmd_buffer_t *old = cmd_activebuffer; // Save context
-	int ret;
-	cmd_activebuffer = cmd_privatebuffer;
-	Cmd_TokenizeString (text, cmd_activebuffer->legacy);
-	if (!Cmd_Argc()) {
-		cmd_activebuffer = old;
-		return -1;
-	}
-	ret = Cmd_Process ();
-	if (ret < 0) {
-		cmd_activebuffer = old;
-		return ret;
-	}
-	Cmd_ExecuteParsed (src);
-	cmd_activebuffer = old;
-	return 0;
-}
 
 /*
 	Cmd_CheckParm
@@ -1893,6 +1798,173 @@ Cmd_CheckParm (const char *parm)
 	return 0;
 }
 
+/* Basic command handler functions */
+
+/* Executes a script as a subroutine */
+void
+Cmd_Exec_f (void)
+{
+	char       *f;
+	int         mark;
+	cmd_buffer_t *sub;
+
+	if (Cmd_Argc () != 2) {
+		Sys_Printf ("exec <filename> : execute a script file\n");
+		return;
+	}
+
+	mark = Hunk_LowMark ();
+	f = (char *) COM_LoadHunkFile (Cmd_Argv (1));
+	if (!f) {
+		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
+		return;
+	}
+	if (!Cvar_Command ()
+		&& (cmd_warncmd->int_val || (developer && developer->int_val)))
+		Sys_Printf ("execing %s\n", Cmd_Argv (1));
+	sub = Cmd_NewBuffer (true);
+	Cbuf_AddTextTo (sub, f);
+	Hunk_FreeToLowMark (mark);
+	Cbuf_ExecuteSubroutine (sub);		// Execute file in it's own buffer
+}
+
+/*
+	Cmd_Echo_f
+
+	Just prints the rest of the line to the console
+*/
+void
+Cmd_Echo_f (void)
+{
+	if (Cmd_Argc() == 2)
+		Sys_Printf ("%s\n", Cmd_Argv(1));
+	else
+		Sys_Printf ("%s\n", Cmd_Args (1));
+}
+
+/* Hash table functions for aliases and commands */
+static void
+cmd_alias_free (void *_a, void *unused)
+{
+	cmdalias_t *a = (cmdalias_t *) _a;
+
+	free ((char *) a->name);
+	free ((char *) a->value);
+	free (a);
+}
+
+static const char *
+cmd_alias_get_key (void *_a, void *unused)
+{
+	cmdalias_t *a = (cmdalias_t *) _a;
+
+	return a->name;
+}
+
+static const char *
+cmd_get_key (void *c, void *unused)
+{
+	cmd_function_t *cmd = (cmd_function_t *) c;
+
+	return cmd->name;
+}
+
+/*
+	Cmd_Alias_f
+
+	Creates a new command that executes a command string (possibly ; seperated)
+	In GIB, these essentially are functions
+*/
+void
+Cmd_Alias_f (void)
+{
+	cmdalias_t *alias;
+	char       *cmd;
+	int         i, c;
+	const char *s;
+
+	if (Cmd_Argc () == 1) {
+		Sys_Printf ("Current alias commands:\n");
+		for (alias = cmd_alias; alias; alias = alias->next)
+			Sys_Printf ("alias %s \"%s\"\n", alias->name, alias->value);
+		return;
+	}
+
+	s = Cmd_Argv (1);
+	// if the alias already exists, reuse it
+	alias = (cmdalias_t *) Hash_Find (cmd_alias_hash, s);
+	if (alias) {
+		free ((char *) alias->value);
+	} else {
+		cmdalias_t **a;
+
+		alias = calloc (1, sizeof (cmdalias_t));
+		if (!alias)
+			Sys_Error ("Cmd_Alias_f: Memory Allocation Failure\n");
+		alias->name = strdup (s);
+		Hash_Add (cmd_alias_hash, alias);
+		for (a = &cmd_alias; *a; a = &(*a)->next)
+			if (strcmp ((*a)->name, alias->name) >= 0)
+				break;
+		alias->next = *a;
+		*a = alias;
+	}
+	// copy the rest of the command line
+	cmd = malloc (strlen (Cmd_Args (1)) + 2);	// can never be longer
+	if (!cmd)
+		Sys_Error ("Cmd_Alias_f: Memory Allocation Failure\n");
+	cmd[0] = 0;							// start out with a null string
+	c = Cmd_Argc ();
+	for (i = 2; i < c; i++) {
+		strcat (cmd, Cmd_Argv (i));
+		if (i != c - 1)
+			strcat (cmd, " ");
+	}
+
+	alias->value = cmd;
+}
+
+/* Deletes an alias entirely */
+void
+Cmd_UnAlias_f (void)
+{
+	cmdalias_t *alias;
+	const char *s;
+
+	if (Cmd_Argc () != 2) {
+		Sys_Printf ("unalias <alias>: erase an existing alias\n");
+		return;
+	}
+
+	s = Cmd_Argv (1);
+	alias = Hash_Del (cmd_alias_hash, s);
+
+	if (alias) {
+		cmdalias_t **a;
+
+		for (a = &cmd_alias; *a != alias; a = &(*a)->next)
+			;
+		*a = alias->next;
+
+		free ((char *) alias->name);
+		free ((char *) alias->value);
+		free (alias);
+	} else {
+		Sys_Printf ("Unknown alias \"%s\"\n", s);
+	}
+}
+
+/* Pauses execution of the current stack until
+next call of Cmd_Execute (usually next frame) */
+void
+Cmd_Wait_f (void)
+{
+	cmd_buffer_t *cur;
+	for (cur = cmd_activebuffer; cur; cur = cur->prev)
+		cur->wait = true;
+}
+
+/* Prints a list of available commands */
 void
 Cmd_CmdList_f (void)
 {
@@ -1913,6 +1985,7 @@ Cmd_CmdList_f (void)
 	Sys_Printf ("------------\n%d commands\n", i);
 }
 
+/* Prints help about a command or cvar */
 void
 Cmd_Help_f (void)
 {
@@ -1948,11 +2021,13 @@ Cmd_Help_f (void)
 
 /*
 	Scripting commands
-	
+
 	The following functions are commands for enhanced scripting
-	
+
 */
 
+/* Conditionally executes a block of code
+Supports if - if else - else */
 void
 Cmd_If_f (void)
 {
@@ -1992,30 +2067,39 @@ Cmd_If_f (void)
 	return;
 }
 
+/* Executes a block of code while a condition
+is met */
 void
 Cmd_While_f (void) {
 	cmd_buffer_t *sub;
-	
+
 	if (Cmd_Argc() < 3) {
 		Sys_Printf("Usage: while {condition} {commands}\n");
 		return;
 	}
-	
+
 	sub = Cmd_NewBuffer (false);
 	sub->locals = cmd_activebuffer->locals; // Use current local variables
 	sub->loop = true;
-	dstring_appendstr (sub->looptext, va("ifnot %s break\n", Cmd_Argv(1)));
+	if (cmd_activebuffer->argv[1]->delim == '{')
+		dstring_appendstr (sub->looptext, va("ifnot {%s} break\n", Cmd_Argv(1)));
+	else if (cmd_activebuffer->argv[1]->delim == '\"')
+		dstring_appendstr (sub->looptext, va("ifnot \"%s\" break\n", Cmd_Argv(1)));
+	else
+		dstring_appendstr (sub->looptext, va("ifnot %s break\n", Cmd_Argv(1)));
 	dstring_appendstr (sub->looptext, Cmd_Argv(2));
-	Cmd_ExecuteSubroutine (sub);
+	Cbuf_ExecuteSubroutine (sub);
 	return;
 }
 
+/* Works exactly like for in C:
+for {initializer; condition; iterator} {code} */
 void
 Cmd_For_f (void) {
 	cmd_buffer_t *sub;
 	dstring_t *arg1, *init, *cond, *inc;
 
-	if (Cmd_Argc() < 2 || Cmd_Argc() > 3) {
+	if (Cmd_Argc() < 2 || Cmd_Argc() > 3 || cmd_activebuffer->argv[1]->delim != '{') {
 		Cmd_Error("Malformed for statement.\n");
 		return;
 	}
@@ -2037,7 +2121,7 @@ Cmd_For_f (void) {
 		dstring_appendstr (sub->looptext, va("%s\n", Cmd_Argv(2)));
 		dstring_appendstr (sub->looptext, va("%s", inc->str));
 		Cbuf_InsertTextTo (sub, init->str);
-		Cmd_ExecuteSubroutine (sub);
+		Cbuf_ExecuteSubroutine (sub);
 	} else
 		Cmd_Error("Malformed for statement.\n");
 	dstring_delete (arg1);
@@ -2047,19 +2131,20 @@ Cmd_For_f (void) {
 	return;
 }
 
+/* Breaks out of a loop buffer */
 void
 Cmd_Break_f (void) {
 	if (cmd_activebuffer->loop) {
 		cmd_activebuffer->loop = false;
 		dstring_clearstr(cmd_activebuffer->buffer);
 		return;
-	}
-	else {
+	} else {
 		Cmd_Error("Break command used outside of loop!\n");
 		return;
 	}
 }
 
+/* Returns a value to the buffer that requested it */
 void
 Cmd_Return_f (void) {
 	int argc = Cmd_Argc();
@@ -2079,63 +2164,26 @@ Cmd_Return_f (void) {
 		return;
 	}
 	dstring_clearstr (cmd_activebuffer->buffer); // Clear the buffer out no matter what
-	if (!cmd_activebuffer->embedded)
-		cmd_activebuffer = cmd_activebuffer->prev;
+	if (!cmd_activebuffer->embedded) // If this isn't an embedded command buffer
+		cmd_activebuffer = cmd_activebuffer->prev; // The buffer we want must be two places up on the stack
 	if (argc == 2)
 		Cmd_Return (val);
 	cmd_activebuffer = old;
 }
 
+/* Sets the value of a local variable
+Obsoleted by var = value, kept anyway */
 void
 Cmd_Lset_f (void)
 {
 	if (Cmd_Argc () != 3) {
-		Sys_Printf ("Usage: lset [local variable] [value]\n");
+		Cmd_Error ("lset: invalid number of arguments.\n");
 		return;
 	}
 	Cmd_SetLocal (cmd_activebuffer, Cmd_Argv (1), Cmd_Argv (2));
 }
 
-void
-Cmd_Backtrace_f (void)
-{
-	Sys_Printf ("%s", cmd_backtrace->str);
-}
-
-/* Useful builtin functions */
-
-void
-Cmd_Randint_f (void) {
-	int low, high;
-	if (Cmd_Argc () != 3) {
-		Cmd_Error ("randint: invalid number of arguments.\n");
-		return;
-	}
-	low = atoi(Cmd_Argv(1));
-	high = atoi(Cmd_Argv(2));
-	Cmd_Return (va("%i", (int)(low+(float)rand()/(float)RAND_MAX*(float)(high-low+1))));
-}
-
-void
-Cmd_Streq_f (void)
-{
-	if (Cmd_Argc () != 3) {
-		Cmd_Error ("streq: invalid number of arguments.\n");
-		return;
-	}
-	Cmd_Return (va("%i",!strcmp (Cmd_Argv(1), Cmd_Argv(2))));
-}
-
-void
-Cmd_Strlen_f (void)
-{
-	if (Cmd_Argc () != 2) {
-		Cmd_Error ("strlen: invalid number of arguments.\n");
-		return;
-	}
-	Cmd_Return (va("%ld", (long) strlen (Cmd_Argv(1))));
-}
-
+/* Executes a command in a new thread */
 void
 Cmd_Detach_f (void)
 {
@@ -2154,6 +2202,7 @@ Cmd_Detach_f (void)
 	Cmd_Return (va("%li", thread->id));
 }
 
+/* Kills a thread based on its thread id */
 void
 Cmd_Killthread_f (void)
 {
@@ -2172,17 +2221,66 @@ Cmd_Killthread_f (void)
 		}
 	Cmd_Error ("kill: invalid thread id\n");
 }
+
+/* Useful builtin functions */
+
+/* Generates a random integer between two values */
+void
+Cmd_Randint_f (void) {
+	int low, high;
+	if (Cmd_Argc () != 3) {
+		Cmd_Error ("randint: invalid number of arguments.\n");
+		return;
+	}
+	low = atoi(Cmd_Argv(1));
+	high = atoi(Cmd_Argv(2));
+	Cmd_Return (va("%i", (int)(low+(float)rand()/(float)RAND_MAX*(float)(high-low+1))));
+}
+
+/* Returns 1 if two strings are equal, zero otherwise */
+void
+Cmd_Streq_f (void)
+{
+	if (Cmd_Argc () != 3) {
+		Cmd_Error ("streq: invalid number of arguments.\n");
+		return;
+	}
+	Cmd_Return (va("%i",!strcmp (Cmd_Argv(1), Cmd_Argv(2))));
+}
+
+/* Returns the length of a string */
+void
+Cmd_Strlen_f (void)
+{
+	if (Cmd_Argc () != 2) {
+		Cmd_Error ("strlen: invalid number of arguments.\n");
+		return;
+	}
+	Cmd_Return (va("%ld", (long) strlen (Cmd_Argv(1))));
+}
+
+
+/* Stats and information */
+
+/* Prints the last backtrace recorded */
+void
+Cmd_Backtrace_f (void)
+{
+	Sys_Printf ("%s", cmd_backtrace->str);
+}
+
+/* Prints a list of running threads */
 void
 Cmd_Threadstats_f (void)
 {
 	cmd_thread_t *t;
-	
+
 	Sys_Printf ("Currently running threads:\n");
 	for (t = cmd_threads; t; t = t->next)
 		Sys_Printf("%li\n", t->id);
 }
 
-
+/* Prints hash statistsics */
 void
 Cmd_Hash_Stats_f (void)
 {
@@ -2190,32 +2288,6 @@ Cmd_Hash_Stats_f (void)
 	Hash_Stats (cmd_alias_hash);
 	Sys_Printf ("command hash table:\n");
 	Hash_Stats (cmd_hash);
-}
-
-static void
-cmd_alias_free (void *_a, void *unused)
-{
-	cmdalias_t *a = (cmdalias_t *) _a;
-
-	free ((char *) a->name);
-	free ((char *) a->value);
-	free (a);
-}
-
-static const char *
-cmd_alias_get_key (void *_a, void *unused)
-{
-	cmdalias_t *a = (cmdalias_t *) _a;
-
-	return a->name;
-}
-
-static const char *
-cmd_get_key (void *c, void *unused)
-{
-	cmd_function_t *cmd = (cmd_function_t *) c;
-
-	return cmd->name;
 }
 
 /*
@@ -2282,6 +2354,8 @@ Cmd_Init (void)
 	Cvar_Get ("M_PI", "3.1415926535897932384626433832795029", CVAR_ROM, NULL, "Pi");
 }
 
+
+/* Legacy junk.  Get rid of it sometime */
 char       *com_token;
 static size_t com_token_size;
 
