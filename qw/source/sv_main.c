@@ -674,6 +674,13 @@ SVC_DirectConnect (void)
 	strncpy (userinfo, Cmd_Argv (4), sizeof (userinfo) - 2);
 	userinfo[sizeof (userinfo) - 2] = 0;
 
+	// Validate the userinfo string.
+	if (!Info_Validate(userinfo)) {
+		Netchan_OutOfBandPrint (net_from, "%c\nInvalid userinfo string.\n",
+								A2C_PRINT);
+		return;
+	}
+
 	// see if the challenge is valid
 	for (i = 0; i < MAX_CHALLENGES; i++) {
 		if (NET_CompareBaseAdr (net_from, svs.challenges[i].adr)) {

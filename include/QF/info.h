@@ -45,5 +45,6 @@ void Info_RemovePrefixedKeys (char *start, char prefix);
 void Info_SetValueForKey (char *s, char *key, char *value, size_t maxsize);
 void Info_SetValueForStarKey (char *s, char *key, char *value, size_t maxsize);
 void Info_Print (char *s);
+qboolean Info_Validate (char *s);
 
 #endif	// _INFO_H
