@@ -1532,7 +1532,6 @@ bitnot_expr:
 					return e;
 				case ex_float:
 					e->e.float_val = ~(int) e->e.float_val;
-					e->type = ex_integer;
 					return e;
 				case ex_nil:
 				case ex_string:
