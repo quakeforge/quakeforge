@@ -281,8 +281,6 @@ Hash_GetList (hashtab_t *tab)
 		struct hashlink_s *lnk;
 
 		for (lnk = tab->tab[ind]; lnk; lnk = lnk->next) {
-			if (l - list == tab->num_ele)
-				Sys_Error ("hash.c: internal error\n");
 			*l++ = lnk->data;
 		}
 	}
