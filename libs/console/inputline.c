@@ -59,6 +59,7 @@ Con_CreateInputLine (int lines, int width, char prompt)
 	p = (char**)(inputline + 1);
 	l = (char*)&p[lines];
 
+	inputline->lines = p;
 	inputline->num_lines = lines;
 	inputline->line_width = width;
 	while (lines--) {
@@ -66,6 +67,9 @@ Con_CreateInputLine (int lines, int width, char prompt)
 		l += width;
 	}
 	inputline->prompt_char = prompt;
+
+	inputline->lines[0][0] = prompt;
+	inputline->linepos = 1;
 	return inputline;
 }
 
@@ -76,13 +80,12 @@ Con_DestroyInputLine (inputline_t *inputline)
 }
 
 void
-Con_ProcessInput (inputline_t *il, int ch)
+Con_ProcessInputLine (inputline_t *il, int ch)
 {
 	int			i;
 
 	switch (ch) {
-		/*
-		case K_ENTER:
+		case K_RETURN:
 			if (il->enter)
 				il->enter (il->lines[il->edit_line] + 1);
 			il->edit_line = (il->edit_line + 1) % il->num_lines;
@@ -102,20 +105,20 @@ Con_ProcessInput (inputline_t *il, int ch)
 				il->linepos--;
 			}
 			break;
-		case K_DEL:
+		case K_DELETE:
 			if (il->linepos < strlen (il->lines[il->edit_line]))
 				strcpy (il->lines[il->edit_line] + il->linepos,
 						il->lines[il->edit_line] + il->linepos + 1);
 			break;
-		case K_RIGHTARROW:
+		case K_RIGHT:
 			if (il->linepos < strlen (il->lines[il->edit_line]))
 				il->linepos++;
 			break;
-		case K_LEFTARROW:
+		case K_LEFT:
 			if (il->linepos > 1)
 				il->linepos--;
 			break;
-		case K_UPARROW:
+		case K_UP:
 			do {
 				il->history_line = (il->history_line - 1) % il->num_lines;
 			} while (il->history_line != il->edit_line
@@ -125,7 +128,7 @@ Con_ProcessInput (inputline_t *il, int ch)
 			strcpy (il->lines[il->edit_line], il->lines[il->history_line]);
 			il->linepos = strlen (il->lines[il->edit_line]);
 			break;
-		case K_DOWNARROW:
+		case K_DOWN:
 			if (il->history_line == il->edit_line)
 				break;
 			do {
@@ -147,7 +150,6 @@ Con_ProcessInput (inputline_t *il, int ch)
 		case K_END:
 			il->linepos = strlen (il->lines[il->edit_line]);
 			break;
-			*/
 		default:
 			if (ch >= ' ' && ch < 256 && ch != 127) {
 				i = strlen (il->lines[il->edit_line]);

@@ -35,9 +35,11 @@
 #include <QF/plugin.h>
 
 typedef void (QFPLUGIN *P_C_Print) (const char *fmt, va_list args);
+typedef void (QFPLUGIN *P_C_ProcessInput) (void);
 
 typedef struct console_func_s {
-	P_C_Print	pC_Print;
+	P_C_Print			pC_Print;
+	P_C_ProcessInput	pC_ProcessInput;
 } console_funcs_t;
 
 typedef struct console_data_s {

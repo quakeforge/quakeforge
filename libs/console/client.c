@@ -59,8 +59,9 @@ console_t   con_main;
 console_t   con_chat;
 console_t  *con;						// point to either con_main or con_chat
 
-int         con_linewidth;				// characters across screen
 int         con_totallines;				// total lines in console scrollback
+extern int  con_linewidth;				// characters across screen
+
 
 float       con_cursorspeed = 4;
 
@@ -572,6 +573,11 @@ Con_DrawDownload (int lines)
 		Draw_Character ((i + 1) << 3, y, dlbar[i]);
 }
 
+static void
+C_ProcessInput (void)
+{
+}
+
 static general_funcs_t plugin_info_general_funcs = {
 	C_Init,
 	C_Shutdown,
@@ -581,6 +587,7 @@ static general_data_t plugin_info_general_data;
 static console_data_t plugin_info_console_data;
 static console_funcs_t plugin_info_console_funcs = {
 	C_Print,
+	C_ProcessInput,
 };
 
 static plugin_funcs_t plugin_info_funcs = {

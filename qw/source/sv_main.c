@@ -1489,7 +1489,7 @@ SV_CheckTimeouts (void)
 void
 SV_GetConsoleCommands (void)
 {
-	Con_ProcessInput (0, 0); //XXX parms not used yet
+	Con_ProcessInput ();
 }
 
 /*
@@ -1600,7 +1600,7 @@ SV_Frame (float time)
 		svs.stats.packets = 0;
 		svs.stats.count = 0;
 	}
-	Con_ProcessInput (0, 0);	//XXX evil hack to get the cursor in the right place
+	Con_ProcessInput ();	//XXX evil hack to get the cursor in the right place
 }
 
 void

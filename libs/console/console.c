@@ -40,8 +40,9 @@
 #include "QF/cvar.h"
 #include "QF/plugin.h"
 
-static plugin_t *con_module;
+int         con_linewidth;				// characters across screen
 
+static plugin_t *con_module;
 
 void
 Con_Init (const char *plugin_name)
@@ -92,4 +93,11 @@ Con_DPrintf (const char *fmt, ...)
 			vfprintf (stdout, fmt, args);
 		va_end (args);
 	}
+}
+
+void
+Con_ProcessInput (void)
+{
+	if (con_module)
+		con_module->functions->console->pC_ProcessInput ();
 }

@@ -71,7 +71,7 @@ else
 syssv_SRC=	sv_sys_unix.c
 endif
 
-server_SOURCES= crudefile.c sv_ccmds.c sv_console.c sv_cvar.c sv_ents.c \
+server_SOURCES= crudefile.c sv_ccmds.c sv_cvar.c sv_ents.c \
 		sv_init.c sv_main.c sv_model.c sv_move.c \
 		sv_nchan.c sv_phys.c sv_pr_cmds.c sv_progs.c sv_send.c \
 		sv_user.c world.c $(syssv_SRC)
@@ -79,10 +79,12 @@ server_SOURCES= crudefile.c sv_ccmds.c sv_console.c sv_cvar.c sv_ents.c \
 qf_server_LIBS= $(top_builddir)/libs/models/libQFmodels.la \
 		$(top_builddir)/libs/gamecode/engine/libQFgamecode.la \
 		$(top_builddir)/libs/gamecode/builtins/libQFgamecode_builtins.la \
+		$(top_builddir)/libs/console/libQFconsole.la \
 		$(top_builddir)/libs/util/libQFutil.la
 
 qw_server_SOURCES=	$(common_SOURCES) $(server_SOURCES)
 qw_server_LDADD=	libqfnet.la $(ASM) $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
+qw_server_LDFLAGS=	$(common_ldflags)
 qw_server_DEPENDENCIES=	libqfnet.la $(ASM) $(qf_server_LIBS)
 
 qf_client_LIBS=	$(top_builddir)/libs/video/targets/libQFjs.la \

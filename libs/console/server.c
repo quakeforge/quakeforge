@@ -50,11 +50,14 @@
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/keys.h"
 #include "QF/plugin.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
 #include "compat.h"
+
+extern int  con_linewidth;
 
 #ifdef HAVE_CURSES_H
 static int use_curses = 1;
@@ -63,6 +66,9 @@ static WINDOW *output;
 static WINDOW *status;
 static WINDOW *input;
 static int screen_x, screen_y;
+
+#define     MAXCMDLINE  256
+static inputline_t *input_line;
 
 static chtype attr_table[4] = {
 	A_NORMAL,
@@ -90,6 +96,15 @@ static const byte attr_map[256] = {
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 };
 #endif
+
+
+static void
+C_ExecLine (const char *line)
+{
+	if (line[0] == '/')
+		line++;
+	Cbuf_AddText (line);
+}
 
 
 static void
@@ -133,6 +148,12 @@ C_Init (void)
 		wrefresh (output);
 		wrefresh (status);
 		wrefresh (input);
+
+		input_line = Con_CreateInputLine (16, MAXCMDLINE, ']');
+		input_line->complete = Con_BasicCompleteCommandLine;
+		input_line->enter = C_ExecLine;
+
+		con_linewidth = screen_x;
 	} else
 #endif
 		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
@@ -181,6 +202,99 @@ C_Print (const char *fmt, va_list args)
 		vfprintf (stdout, fmt, args);
 }
 
+static void
+C_ProcessInput (void)
+{
+#ifdef HAVE_CURSES_H
+	if (use_curses) {
+		int         ch = wgetch (input), i;
+		const char *text;
+
+		switch (ch) {
+			case KEY_ENTER:
+			case '\n':
+			case '\r':
+				ch = K_RETURN;
+				break;
+			case '\t':
+				ch = K_TAB;
+				break;
+			case KEY_BACKSPACE:
+			case '\b':
+				ch = K_BACKSPACE;
+				break;
+			case KEY_DC:
+				ch = K_DELETE;
+				break;
+			case KEY_RIGHT:
+				ch = K_RIGHT;
+				break;
+			case KEY_LEFT:
+				ch = K_LEFT;
+				break;
+			case KEY_UP:
+				ch = K_UP;
+				break;
+			case KEY_DOWN:
+				ch = K_DOWN;
+				break;
+			case KEY_HOME:
+				ch = K_HOME;
+				break;
+			case KEY_END:
+				ch = K_END;
+				break;
+			case KEY_NPAGE:
+				ch = K_PAGEDOWN;
+				break;
+			case KEY_PPAGE:
+				ch = K_PAGEUP;
+				break;
+			default:
+				if (ch < 0 || ch >= 256)
+					ch = 0;
+		}
+		if (ch)
+			Con_ProcessInputLine (input_line, ch);
+		i = input_line->linepos - 1;
+		if (input_line->scroll > i)
+			input_line->scroll = i;
+		if (input_line->scroll < i - (screen_x - 2) + 1)
+			input_line->scroll = i - (screen_x - 2) + 1;
+		text = input_line->lines[input_line->edit_line] + input_line->scroll;
+		if ((int)strlen (text + 1) < screen_x - 2) {
+			text = input_line->lines[input_line->edit_line];
+			input_line->scroll = strlen (text + 1) - (screen_x - 2);
+			input_line->scroll = max (input_line->scroll, 0);
+			text += input_line->scroll;
+		}
+		wmove (input, 0, 0);
+		if (input_line->scroll) {
+			waddch (input, '<');
+		} else {
+			waddch (input, *text++);
+		}
+		for (i = 0; i < screen_x - 2 && *text; i++)
+			waddch (input, *text++);
+		while (i++ < screen_x - 2)
+			waddch (input, ' ');
+		if (*text) {
+			waddch (input, '>');
+		} else {
+			waddch (input, ' ');
+		}
+		wmove (input, 0, input_line->linepos - input_line->scroll);
+		touchline (stdscr, screen_y - 1, 1);
+		wrefresh (input);
+	} else
+#endif
+		while (1) {
+			const char *cmd = Sys_ConsoleInput ();
+			if (!cmd)
+				Cbuf_AddText (cmd);
+		}
+}
+
 static general_funcs_t plugin_info_general_funcs = {
 	C_Init,
 	C_Shutdown,
@@ -189,6 +303,7 @@ static general_data_t plugin_info_general_data;
 
 static console_funcs_t plugin_info_console_funcs = {
 	C_Print,
+	C_ProcessInput,
 };
 static console_data_t plugin_info_console_data;
 

@@ -73,12 +73,10 @@ extern	int	con_notifylines;		// scan lines to clear for notify lines
 void Con_DrawCharacter (int cx, int line, int num);
 
 void Con_CheckResize (void);
-void Con_Init (const char *plugin_name);
-void Con_Shutdown (void);
-void Con_Init_Cvars (void);
-void Con_ProcessInput (inputline_t *il, int ch);
+void Con_ProcessInputLine (inputline_t *il, int ch);
 void Con_DrawConsole (int lines);
 void Con_DrawDownload (int lines);
+
 void Con_Print (const char *txt);
 void Con_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void Con_DPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
@@ -92,6 +90,7 @@ void Con_ToggleConsole_f (void);
 // (i.e. will display possible variables, aliases, commands
 // that match what they've typed so far)
 void Con_CompleteCommandLine(void);
+void Con_BasicCompleteCommandLine (inputline_t *il);
 
 // Generic libs/util/console.c function to display a list
 // formatted in columns on the console
@@ -101,5 +100,12 @@ inputline_t *Con_CreateInputLine (int lines, int width, char prompt);
 void Con_DestroyInputLine (inputline_t *inputline);
 
 extern struct cvar_s *developer;
+
+// init/shutdown functions
+void Con_Init (const char *plugin_name);
+void Con_Init_Cvars (void);
+void Con_Shutdown (void);
+
+void Con_ProcessInput (void);
 
 #endif // __console_h
