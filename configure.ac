@@ -747,15 +747,6 @@ if test "x$enable_sound" = "xno"; then
 	SOUND_TYPES=""
 fi
 
-AM_CONDITIONAL(HAVE_SND_ALSA_0_5, test "`echo $SOUND_TYPES | grep ALSA0.5`")
-AM_CONDITIONAL(HAVE_SND_ALSA_0_9, test "`echo $SOUND_TYPES | grep ALSA0.9`")
-AM_CONDITIONAL(HAVE_SND_MME, test "`echo $SOUND_TYPES | grep MME`")
-AM_CONDITIONAL(HAVE_SND_OSS, test "`echo $SOUND_TYPES | grep OSS`")
-AM_CONDITIONAL(HAVE_SND_SDL, test "`echo $SOUND_TYPES | grep SDL`")
-AM_CONDITIONAL(HAVE_SND_SGI, test "`echo $SOUND_TYPES | grep SGI`")
-AM_CONDITIONAL(HAVE_SND_SUN, test "`echo $SOUND_TYPES | grep SUN`")
-AM_CONDITIONAL(HAVE_SND_WIN32, test "`echo $SOUND_TYPES | grep Win32`")
-
 if test "$SOUND_TYPES"; then
 	AC_MSG_RESULT([$SOUND_TYPES])
 else
@@ -1272,20 +1263,20 @@ CL_TARGETS=""
 QW_TARGETS=""
 NQ_TARGETS=""
 
-CD_TARGETS=""
-SND_TARGETS=""
-SND_PLUGIN_TARGETS="libsnd_output_disk.la"
-VID_TARGETS=""
-BUILD_SND_RENDERER=no
 BUILD_GL=no
-BUILD_SW=no
 BUILD_SW32=no
+BUILD_SW=no
 CAN_BUILD_GL=no
-CAN_BUILD_SW=no
 CAN_BUILD_SW32=no
+CAN_BUILD_SW=no
 
-HAVE_3DFX=no
-HAVE_GLX=no
+CD_TARGETS=""
+SND_PLUGIN_TARGETS="libsnd_output_disk.la"
+SND_REND_TARGETS=""
+SND_TARGETS=""
+VID_REND_TARGETS=""
+VID_TARGETS=""
+
 if test "x$HAVE_FBDEV" = xyes; then
 	if test "x$ENABLE_FBDEV" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-fbdev\$(EXEEXT)"
@@ -1297,6 +1288,8 @@ if test "x$HAVE_FBDEV" = xyes; then
 	CAN_BUILD_SW=yes
 fi
 if test "x$HAVE_X" = xyes; then
+	CAN_BUILD_GL=yes
+	CAN_BUILD_SW=yes
 	if test "x$ENABLE_GLX" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-glx\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-glx\$(EXEEXT)"
@@ -1304,8 +1297,13 @@ if test "x$HAVE_X" = xyes; then
 		VID_TARGETS="$VID_TARGETS libQFglx.la"
 		BUILD_GL=yes
 	fi
-	HAVE_GLX=yes
-	CAN_BUILD_GL=yes
+	if test "x$ENABLE_X11" = xyes; then
+		QW_TARGETS="$QW_TARGETS qw-client-x11\$(EXEEXT)"
+		NQ_TARGETS="$NQ_TARGETS nq-x11\$(EXEEXT)"
+		CL_TARGETS="$CL_TARGETS X11"
+		VID_TARGETS="$VID_TARGETS libQFx11.la"
+		BUILD_SW=yes
+	fi
 fi
 if test "x$HAVE_MGL" = xyes; then
 	if test "x$ENABLE_MGL" = xyes; then
@@ -1363,19 +1361,19 @@ if test "x$mingw" = xyes; then
 	fi
 	CAN_BUILD_GL=yes
 fi
-if test "x$HAVE_X" = xyes; then
-	if test "x$ENABLE_X11" = xyes; then
-		QW_TARGETS="$QW_TARGETS qw-client-x11\$(EXEEXT)"
-		NQ_TARGETS="$NQ_TARGETS nq-x11\$(EXEEXT)"
-		CL_TARGETS="$CL_TARGETS X11"
-		VID_TARGETS="$VID_TARGETS libQFx11.la"
-		BUILD_SW=yes
-	fi
-	CAN_BUILD_SW=yes
-fi
 if test "x$SV_TARGETS" = xyes; then
 	QW_TARGETS="qw-server\$(EXEEXT) qw-master\$(EXEEXT) $QW_TARGETS"
 #	NQ_TARGETS="nq-server\$(EXEEXT) $NQ_TARGETS"
+fi
+
+if test "x$BUILD_SW" = xyes; then
+	VID_REND_TARGETS="$VID_REND_TARGETS libQFrenderer_sw.la"
+fi
+if test "x$BUILD_SW32" = xyes; then
+	VID_REND_TARGETS="$VID_REND_TARGETS libQFrenderer_sw32.la"
+fi
+if test "x$BUILD_GL" = xyes; then
+	VID_REND_TARGETS="$VID_REND_TARGETS libQFrenderer_gl.la"
 fi
 
 AC_SUBST(CAN_BUILD_GL)
@@ -1383,16 +1381,14 @@ AC_SUBST(CAN_BUILD_SW)
 AC_SUBST(CAN_BUILD_SW32)
 
 AC_SUBST(HAVE_FBDEV)
-AC_SUBST(HAVE_GLX)
 AC_SUBST(HAVE_SDL)
 AC_SUBST(HAVE_SVGA)
 AC_SUBST(HAVE_X)
 
-AC_DEFINE(HAVE_GLX)
-
 if test -n "$CL_TARGETS"; then
 	CD_TARGETS="libQFcd.la"
 	SND_TARGETS="libQFsound.la"
+	VID_TARGETS="libQFjs.la $VID_TARGETS"
 	if test "`echo $SOUND_TYPES | grep ALSA0.5`"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsnd_output_alsa0_5.la"
 	fi
@@ -1418,26 +1414,27 @@ if test -n "$CL_TARGETS"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS libsnd_output_win.la"
 	fi
 	if test "$SOUND_TYPES"; then
-		BUILD_SND_RENDERER=yes
+		SND_REND_TARGETS="$SND_REND_TARGETS libsnd_render_default.la"
 	fi
-	VID_TARGETS="libQFjs.la $VID_TARGETS"
 else
-	CD_TARGETS=""
-	CD_PLUGIN_TARGETS=""
-	SND_TARGETS=""
-	SND_PLUGIN_TARGETS=""
-	SOUND_TYPES=""
 	CDTYPE=""
+	CD_PLUGIN_TARGETS=""
+	CD_TARGETS=""
+	SND_PLUGIN_TARGETS=""
+	SND_REND_TARGETS=""
+	SND_TARGETS=""
+	SOUND_TYPES=""
 fi
 AC_SUBST(NQ_TARGETS)
 AC_SUBST(QW_TARGETS)
-AC_SUBST(CD_TARGETS)
 AC_SUBST(CD_PLUGIN_TARGETS)
-AC_SUBST(SND_TARGETS)
+AC_SUBST(CD_TARGETS)
 AC_SUBST(SND_PLUGIN_TARGETS)
+AC_SUBST(SND_REND_TARGETS)
+AC_SUBST(SND_TARGETS)
+AC_SUBST(VID_REND_TARGETS)
 AC_SUBST(VID_TARGETS)
 
-AM_CONDITIONAL(BUILD_SND_RENDERER, test "$BUILD_SND_RENDERER" = "yes")
 AM_CONDITIONAL(BUILD_GL, test "$BUILD_GL" = "yes")
 AM_CONDITIONAL(BUILD_SW, test "$BUILD_SW" = "yes")
 AM_CONDITIONAL(BUILD_SW32, test "$BUILD_SW32" = "yes")
