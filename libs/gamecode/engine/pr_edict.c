@@ -307,6 +307,8 @@ PR_GlobalString (progs_t *pr, int ofs, etype_t type)
 			if (type == ev_void)
 				type = def->type;
 			name = PR_GetString (pr, def->s_name);
+			if (!*name)
+				dsprintf (line, "[$%x]", ofs);
 			if (type != (etype_t) (def->type & ~DEF_SAVEGLOBAL))
 				oi = "?";
 		}
@@ -322,11 +324,17 @@ PR_GlobalString (progs_t *pr, int ofs, etype_t type)
 			else
 				dsprintf (line, "%s", s);
 		} else if (strequal(name, "?"))
-			dsprintf (line, "[$%x](%08x)%s", ofs,
-					  pr->pr_globals[ofs].integer_var, s);
+			if (type == ev_string)
+				dsprintf (line, "[$%x](%08x)\"%s\"", ofs,
+						  pr->pr_globals[ofs].integer_var, s);
+			else
+				dsprintf (line, "[$%x](%08x)%s", ofs,
+						  pr->pr_globals[ofs].integer_var, s);
 		else {
 			if (type == ev_func)
 				dsprintf (line, "%s%s", name, oi);
+			else if (type == ev_string)
+				dsprintf (line, "%s%s\"%s\"", name, oi, s);
 			else
 				dsprintf (line, "%s%s(%s)", name, oi, s);
 		}
@@ -337,8 +345,9 @@ PR_GlobalString (progs_t *pr, int ofs, etype_t type)
 const char *
 PR_GlobalStringNoContents (progs_t *pr, int ofs, etype_t type)
 {
-	static dstring_t	*line = NULL;
-	ddef_t				*def = NULL;
+	static dstring_t *line = NULL;
+	ddef_t     *def = NULL;
+	const char *name;
 
 	if (!line)
 		line = dstring_newstr();
@@ -354,8 +363,10 @@ PR_GlobalStringNoContents (progs_t *pr, int ofs, etype_t type)
 		def = ED_GlobalAtOfs (pr, ofs);
 	if (!def)
 		dsprintf (line, "[$%x]", ofs);
+	else if (!*(name = PR_GetString (pr, def->s_name)))
+		dsprintf (line, "[$%x]", ofs);
 	else
-		dsprintf (line, "%s", PR_GetString (pr, def->s_name));
+		dsprintf (line, "%s", name);
 
 	return line->str;
 }
