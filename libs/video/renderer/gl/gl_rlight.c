@@ -41,7 +41,6 @@
 
 #include "QF/cvar.h"
 #include "QF/render.h"
-
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 
@@ -49,6 +48,7 @@
 #include "r_cvar.h"
 
 extern float v_blend[4];
+
 
 void
 R_AnimateLight (void)

@@ -34,6 +34,7 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
 #include "QF/cvar.h"
 
 extern cvar_t *gl_sky_divide;		// FIXME
@@ -63,9 +64,14 @@ cvar_t     *gl_fires;
 cvar_t     *gl_keeptjunctions;
 cvar_t     *gl_lerp_anim;
 cvar_t     *gl_libgl;
+cvar_t     *gl_lightmap_align;
 cvar_t     *gl_lightmap_components;
+cvar_t     *gl_lightmap_subimage;
 cvar_t     *gl_max_size;
 cvar_t     *gl_nocolors;
+cvar_t     *gl_occlusion;
+cvar_t     *gl_particle_mip;
+cvar_t     *gl_particle_size;
 cvar_t     *gl_picmip;
 cvar_t     *gl_playermip;
 cvar_t     *gl_reporttjunctions;
@@ -73,7 +79,6 @@ cvar_t     *gl_sky_clip;
 cvar_t     *gl_skymultipass;
 cvar_t     *gl_texsort;
 cvar_t     *gl_triplebuffer;
-cvar_t     *gl_occlusion;
 
 cvar_t     *r_aliasstats;
 cvar_t     *r_aliastransadj;
@@ -172,13 +177,32 @@ R_Init_Cvars (void)
 							 "Toggles model animation interpolation");
 	gl_libgl = Cvar_Get ("gl_libgl", "libGL.so.1", CVAR_ROM, NULL,
 						 "The GL library to use. (path optional)");
+	gl_lightmap_align = Cvar_Get ("gl_lightmap_align", "1", CVAR_NONE, NULL,
+								  "Workaround for nvidia slow path. Set to 4 "
+								  "or 16 if you have an nvidia 3d "
+								  "accelerator, set to 1 otherwise.");
 	gl_lightmap_components = Cvar_Get ("gl_lightmap_components", "4", CVAR_ROM,
 									   NULL, "Lightmap texture components. 1 "
 									   "is greyscale, 3 is RGB, 4 is RGBA.");
+	gl_lightmap_subimage = Cvar_Get ("gl_lightmap_subimage", "1", CVAR_NONE,
+									 NULL, "Lightmap Update method. Default 2 "
+									 "updates a minimum 'dirty rectangle' "
+									 "around the area changed. 1 updates "
+									 "every line that changed. 0 updates the "
+									 "entire lightmap.");
 	gl_max_size = Cvar_Get ("gl_max_size", "1024", CVAR_NONE, NULL,
 							"Texture dimension");
 	gl_nocolors = Cvar_Get ("gl_nocolors", "0", CVAR_NONE, NULL,
 							"Set to 1, turns off all player colors");
+	gl_occlusion = Cvar_Get ("gl_occlusion", "0", CVAR_NONE, NULL,
+							 "Toggles experimental alias model occlusion "
+							 "tests.");
+	gl_particle_mip = Cvar_Get ("gl_particle_mip", "0", CVAR_NONE, NULL,
+								"Toggles particle texture mipmapping.");
+	gl_particle_size = Cvar_Get ("gl_particle_size", "5", CVAR_NONE, NULL,
+								 "Vertical and horizontal size of particle "
+								 "textures as a power of 2. Default is 5 "
+								 "(32 texel square).");
 	gl_picmip = Cvar_Get ("gl_picmip", "0", CVAR_NONE, NULL, "Dimensions of "
 						  "textures. 0 is normal, 1 is half, 2 is 1/4");
 	gl_playermip = Cvar_Get ("gl_playermip", "0", CVAR_NONE, NULL,
@@ -192,8 +216,6 @@ R_Init_Cvars (void)
 	gl_skymultipass = Cvar_Get ("gl_skymultipass", "1", CVAR_ARCHIVE, NULL,
 								"controls whether the skydome is single or "
 								"double pass");
-	gl_occlusion = Cvar_Get ("gl_occlusion", "0", CVAR_NONE, NULL, 
-							 "Toggles experimental alias model occlusion tests.");
 	gl_texsort = Cvar_Get ("gl_texsort", "1", CVAR_NONE, NULL, "None");
 	gl_triplebuffer = Cvar_Get ("gl_triplebuffer", "1", CVAR_ARCHIVE, NULL,
 								"Set to 1 by default. Fixes status bar "

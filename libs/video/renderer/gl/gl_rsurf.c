@@ -40,15 +40,9 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "compat.h"
 #include "QF/cvar.h"
 #include "QF/render.h"
 #include "QF/sys.h"
-
-#include "r_cvar.h"
-#include "r_local.h"
-#include "r_shared.h"
-
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_textures.h"
@@ -56,42 +50,45 @@
 #include "QF/GL/qf_vid.h"
 #include "QF/GL/qf_sky.h"
 
+#include "compat.h"
+#include "r_cvar.h"
+#include "r_local.h"
+#include "r_shared.h"
+
 void EmitWaterPolys (msurface_t *fa);
 
 qboolean	r_cache_thrash;
 
-int			skytexturenum;
-
 extern vec3_t shadecolor;				// Ender (Extend) Colormod
 
+int         active_lightmaps;
+int         dlightdivtable[8192];
 int			gl_internalformat;
 int         lightmap_bytes;				// 1, 3, or 4
 int         lightmap_textures;
-
-unsigned int blocklights[18 * 18 * 3];
-
-#define	BLOCK_WIDTH		128
-#define	BLOCK_HEIGHT	128
+int			skytexturenum;
 
 // LordHavoc: since lightmaps are now allocated only as needed, allow a ridiculous number :)
 #define	MAX_LIGHTMAPS	1024
-int         active_lightmaps;
+#define	BLOCK_WIDTH		128 // 256
+#define	BLOCK_HEIGHT	128 // 256
 
-typedef struct glRect_s {
-	unsigned char l, t, w, h;
-} glRect_t;
-
-glpoly_t   *lightmap_polys[MAX_LIGHTMAPS];
-glpoly_t   *fullbright_polys[MAX_GLTEXTURES];
-qboolean    lightmap_modified[MAX_LIGHTMAPS];
-glRect_t    lightmap_rectchange[MAX_LIGHTMAPS];
-
-int         allocated[MAX_LIGHTMAPS][BLOCK_WIDTH];
-
-// the lightmap texture data needs to be kept in
-// main memory so texsubimage can update properly
+// keep lightmap texture data in main memory so texsubimage can update properly
 // LordHavoc: changed to be allocated at runtime (typically lower memory usage)
 byte       *lightmaps[MAX_LIGHTMAPS];
+
+// unsigned int blocklights[BLOCK_WIDTH * BLOCK_HEIGHT * 3];
+unsigned int blocklights[18 * 18 * 3];
+int         allocated[MAX_LIGHTMAPS][BLOCK_WIDTH];
+
+typedef struct glRect_s {
+	unsigned short l, t, w, h;
+} glRect_t;
+
+glpoly_t   *fullbright_polys[MAX_GLTEXTURES];
+qboolean    lightmap_modified[MAX_LIGHTMAPS];
+glpoly_t   *lightmap_polys[MAX_LIGHTMAPS];
+glRect_t    lightmap_rectchange[MAX_LIGHTMAPS];
 
 msurface_t *waterchain = NULL;
 msurface_t *sky_chain;
@@ -101,7 +98,11 @@ msurface_t *sky_chain;
 void
 glrsurf_init (void)
 {
+	int         s;
 	memset (&lightmaps, 0, sizeof (lightmaps));
+		dlightdivtable[0] = 1048576 >> 7;
+		for (s = 1; s < 8192; s++)
+			dlightdivtable[s] = 1048576 / (s << 7);
 }
 
 
@@ -131,10 +132,6 @@ R_ForceLightUpdate (void)
 }
 
 
-int         dlightdivtable[8192];
-int         dlightdivtableinitialized = 0;
-
-
 /*
 	R_AddDynamicLights
 
@@ -155,13 +152,6 @@ R_AddDynamicLights (msurface_t *surf)
 #else
 	long long   k;
 #endif
-
-	if (!dlightdivtableinitialized) {
-		dlightdivtable[0] = 1048576 >> 7;
-		for (s = 1; s < 8192; s++)
-			dlightdivtable[s] = 1048576 / (s << 7);
-		dlightdivtableinitialized = 1;
-	}
 
 	smax = (surf->extents[0] >> 4) + 1;
 	tmax = (surf->extents[1] >> 4) + 1;
@@ -370,13 +360,28 @@ extern float speedscale;				// for top sky and bottom sky
 void
 GL_UploadLightmap (int i, int x, int y, int w, int h)
 {
-/*	qfglTexSubImage2D (GL_TEXTURE_2D, 0, 0, y, BLOCK_WIDTH, h, gl_lightmap_format,
-					 GL_UNSIGNED_BYTE,
-					 lightmaps[i] + (y * BLOCK_WIDTH) * lightmap_bytes);
+/*	qfglTexSubImage2D (GL_TEXTURE_2D, 0, 0, y, BLOCK_WIDTH, h,
+	gl_lightmap_format, GL_UNSIGNED_BYTE,
+	lightmaps[i] + (y * BLOCK_WIDTH) * lightmap_bytes);
 */
-	qfglTexImage2D (GL_TEXTURE_2D, 0, gl_internalformat, BLOCK_WIDTH,
-				  BLOCK_HEIGHT, 0, gl_lightmap_format,
-				  GL_UNSIGNED_BYTE, lightmaps[i]);
+	switch (gl_lightmap_subimage->int_val) {
+	case 2:
+		qfglTexSubImage2D (GL_TEXTURE_2D, 0, x, y, w, h,
+						   gl_lightmap_format, GL_UNSIGNED_BYTE,
+						   lightmaps[i] + (y * BLOCK_WIDTH) * lightmap_bytes);
+		break;
+	case 1:
+		qfglTexSubImage2D (GL_TEXTURE_2D, 0, 0, y, BLOCK_WIDTH, h,
+						   gl_lightmap_format, GL_UNSIGNED_BYTE,
+						   lightmaps[i] + (y * BLOCK_WIDTH) * lightmap_bytes);
+		break;
+	default:
+	case 0:
+		qfglTexImage2D (GL_TEXTURE_2D, 0, gl_internalformat, BLOCK_WIDTH,
+						BLOCK_HEIGHT, 0, gl_lightmap_format, GL_UNSIGNED_BYTE,
+						lightmaps[i]);
+		break;
+	}
 }
 
 
@@ -502,7 +507,6 @@ R_RenderFullbrights (void)
 	float      *v;
 
 	qfglBlendFunc (GL_ONE, GL_ONE);
-
 	for (i = 1; i < MAX_GLTEXTURES; i++) {
 		if (!fullbright_polys[i])
 			continue;
@@ -992,8 +996,8 @@ AllocBlock (int w, int h, int *x, int *y)
 
 		// LordHavoc: allocate lightmaps only as needed
 		if (!lightmaps[texnum])
-			lightmaps[texnum] = calloc (BLOCK_WIDTH * BLOCK_HEIGHT, lightmap_bytes); // DESPAIR: was 3, not lightmap_bytes
-
+			lightmaps[texnum] = calloc (BLOCK_WIDTH * BLOCK_HEIGHT,
+										lightmap_bytes);
 		for (i = 0; i < w; i++)
 			allocated[texnum][*x + i] = best + h;
 
@@ -1149,6 +1153,26 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		texture_extension_number += MAX_LIGHTMAPS;
 	}
 
+/*
+	// FIXME: use callback to set lightmapalign/lightmapalignmask, avoid
+	// checking it every frame
+	if (gl_lightmap_align->int_val < 1)
+		gl_lightmap_align = 1;
+	else if (gl_lightmap_align->int_val > 16)
+		gl_lightmap_align = 16;
+	lightmapalign = 1;
+	while (lightmapalign < gl_lightmapalign.value)
+		lightmapalign <<= 1;
+	gl_lightmapalign.value = lightmapalign;
+	lightmapalignmask = ~(lightmapalign - 1);
+	if (gl_lightmap_subimage->int_val < 1)
+	{
+		lightmapalign = 1;
+		lightmapalignmask = ~0;
+	}
+*/
+
+	// FIXME: don't call unnecessarily every frame.
 	switch (gl_lightmap_components->int_val) {
 	case 1:
 		gl_internalformat = 1;
@@ -1164,7 +1188,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 	default:
 		gl_internalformat = 3;
 		gl_lightmap_format = GL_RGBA;
-		lightmap_bytes = 4;
+		lightmap_bytes = 3;
 		break;
 	}
 

@@ -40,7 +40,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/locs.h"
@@ -51,7 +50,6 @@
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
-
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_screen.h"
@@ -59,6 +57,7 @@
 #include "QF/GL/qf_rsurf.h"
 #include "QF/GL/qf_rlight.h"
 
+#include "compat.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_local.h"
