@@ -352,8 +352,8 @@ Hash_Stats (hashtab_t *tab)
 			chains++;
 		}
 	}
-	Sys_Printf ("%d elements\n", tab->num_ele);
-	Sys_Printf ("%d / %d chains\n", chains, tab->tab_size);
+	Sys_Printf ("%d elements\n", (int)tab->num_ele);
+	Sys_Printf ("%d / %d chains\n", chains, (int)tab->tab_size);
 	if (chains) {
 		double      average = (double) tab->num_ele / chains;
 		double      variance = 0;

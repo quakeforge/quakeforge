@@ -572,8 +572,8 @@ SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg)
 				state->glow_size = bound (-1024, (int) SVfloat
 										  (ent, glow_size), 1016) >> 3;
 
-			if (sv_fields.glow_color != -1 && SVvector (ent, glow_color))
-				state->glow_color = (int) SVvector (ent, glow_color);
+			if (sv_fields.glow_color != -1 && SVfloat (ent, glow_color))
+				state->glow_color = (int) SVfloat (ent, glow_color);
 
 			if (sv_fields.colormod != -1
 				&& SVvector (ent, colormod)[0]

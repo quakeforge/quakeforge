@@ -99,6 +99,6 @@ extern int vsnprintf(char *s, size_t maxlen, const char *format, va_list arg);
 #endif
 
 #undef field_offset
-#define field_offset(type,field) ((int)&(((type *)0)->field))
+#define field_offset(type,field) ((size_t)&(((type *)0)->field))
 
 #endif // __compat_h

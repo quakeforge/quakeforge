@@ -1083,7 +1083,7 @@ QA_alloc (unsigned flags, ...)
 				 && QA_alloc_callback && QA_alloc_callback (size));
 
 		if (!mem && failure == QA_NOFAIL)
-			Sys_Error ("QA_alloc: could not allocate %d bytes!\n", size);
+			Sys_Error ("QA_alloc: could not allocate %d bytes!\n", (int)size);
 
 		return mem;
 	} else {
