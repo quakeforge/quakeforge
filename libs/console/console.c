@@ -92,6 +92,15 @@ Con_Printf (const char *fmt, ...)
 }
 
 void
+Con_Print (const char *fmt, va_list args)
+{
+	if (con_module)
+		con_module->functions->console->pC_Print (fmt, args);
+	else
+		vfprintf (stdout, fmt, args);
+}
+
+void
 Con_DPrintf (const char *fmt, ...)
 {
 	if (developer && developer->int_val) {
