@@ -87,15 +87,6 @@ qw_server_SOURCES=	$(common_SOURCES) $(server_SOURCES)
 qw_server_LDADD=	libqfnet.la $(ASM) $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
 qw_server_DEPENDENCIES=	libqfnet.la $(ASM) $(qf_server_LIBS)
 
-# Client builds
-#
-# ... System type
-if SYSTYPE_WIN32
-syscl_SRC=	cl_sys_win.c
-else
-syscl_SRC=	cl_sys_unix.c
-endif
-
 qf_client_LIBS=	$(top_builddir)/libs/video/targets/libQFjs.la \
 		$(top_builddir)/libs/gamecode/libQFgamecode.la \
 		$(top_builddir)/libs/audio/libQFcd.la \
@@ -109,37 +100,36 @@ client_LIB_DEPS=	libqfnet.la $(ASM) $(qf_client_LIBS)
 client_SOURCES= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
 		cl_main.c cl_misc.c cl_ngraph.c cl_parse.c cl_pred.c \
 		cl_screen.c cl_skin.c cl_slist.c cl_tent.c cl_view.c \
-		console.c keys.c locs.c sbar.c skin.c teamplay.c \
-		$(syscl_SRC)
+		console.c keys.c locs.c sbar.c skin.c teamplay.c
 
 # Software-rendering clients
 
 # ... Linux FBDev
-qw_client_fbdev_SOURCES= $(common_SOURCES) $(client_SOURCES)
+qw_client_fbdev_SOURCES= $(common_SOURCES) $(client_SOURCES) cl_sys_unix.c
 qw_client_fbdev_LDADD= ../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFfbdev.la $(client_LIBS)
 qw_client_fbdev_LDFLAGS= $(common_ldflags)
 qw_client_fbdev_DEPENDENCIES=../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFfbdev.la  $(client_LIB_DEPS)
 
 # ... SciTech MGL
-qw_client_mgl_SOURCES=	$(common_SOURCES) $(client_SOURCES)
+qw_client_mgl_SOURCES=	$(common_SOURCES) $(client_SOURCES) cl_sys_win.c
 qw_client_mgl_LDADD=	../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFmgl.la $(client_LIBS) $(MGL_LIBS)
 qw_client_mgl_LDFLAGS=  $(common_ldflags)
 qw_client_mgl_DEPENDENCIES=../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFmgl.la $(client_LIB_DEPS)
 
 # ... Simple DirectMedia Layer, version 1.0 and higher
-qw_client_sdl_SOURCES=	$(common_SOURCES) $(client_SOURCES)
+qw_client_sdl_SOURCES=	$(common_SOURCES) $(client_SOURCES) cl_sys_sdl.c
 qw_client_sdl_LDADD=	../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsdl.la $(client_LIBS) $(SDL_LIBS)
 qw_client_sdl_LDFLAGS=  $(common_ldflags)
 qw_client_sdl_DEPENDENCIES=../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsdl.la $(client_LIB_DEPS)
 
 # ... Linux SVGAlib
-qw_client_svga_SOURCES= $(common_SOURCES) $(client_SOURCES)
+qw_client_svga_SOURCES= $(common_SOURCES) $(client_SOURCES) cl_sys_unix.c
 qw_client_svga_LDADD=	../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsvga.la $(client_LIBS) $(SVGA_LIBS)
 qw_client_svga_LDFAGS=  $(common_ldflags)
 qw_client_svga_DEPENDENCIES=../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsvga.la $(client_LIB_DEPS)
 
 # ... X11
-qw_client_x11_SOURCES=	$(common_SOURCES) $(client_SOURCES)
+qw_client_x11_SOURCES=	$(common_SOURCES) $(client_SOURCES) cl_sys_unix.c
 qw_client_x11_LDADD=	../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFx11.la $(client_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB)
 qw_client_x11_LDFLAGS=	$(common_ldflags)
 qw_client_x11_DEPENDENCIES=../../libs/video/renderer/.libs/libQFrenderer_sw.a ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFx11.la $(client_LIB_DEPS)
@@ -148,25 +138,25 @@ qw_client_x11_DEPENDENCIES=../../libs/video/renderer/.libs/libQFrenderer_sw.a ..
 # OpenGL-using clients
 
 # ... 3Dfx Voodoo 1 and 2 SVGAlib-based console GL
-qw_client_3dfx_SOURCES=	$(common_SOURCES) $(client_SOURCES)
+qw_client_3dfx_SOURCES=	$(common_SOURCES) $(client_SOURCES) cl_sys_unix.c
 qw_client_3dfx_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFtdfx.la $(client_LIBS) $(GLIDE_LIBS) $(SVGA_LIBS) $(DL_LIBS)
 qw_client_3dfx_LDFLAGS= $(common_ldflags)
 qw_client_3dfx_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFtdfx.la $(client_LIB_DEPS)
 
 # ... OpenGL in X Window
-qw_client_glx_SOURCES=	$(common_SOURCES) $(client_SOURCES)
+qw_client_glx_SOURCES=	$(common_SOURCES) $(client_SOURCES) cl_sys_unix.c
 qw_client_glx_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFglx.la $(client_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 -lXext $(X_EXTRA_LIBS) $(DL_LIBS)
 qw_client_glx_LDFLAGS=  $(common_ldflags)
 qw_client_glx_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFglx.la $(client_LIB_DEPS)
 
 # ... Simple DirectMedia Layer, version 1.1 and higher, in GL mode
-qw_client_sgl_SOURCES=	$(common_SOURCES) $(client_SOURCES)
+qw_client_sgl_SOURCES=	$(common_SOURCES) $(client_SOURCES) cl_sys_sdl.c
 qw_client_sgl_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFsgl.la $(client_LIBS) $(SDL_LIBS) $(X_LIBS) $(DL_LIBS)
 qw_client_sgl_LDFLAGS=  $(common_ldflags)
 qw_client_sgl_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFsgl.la $(client_LIB_DEPS)
 
 # ... SGI/Microsoft WGL (Windows OpenGL)
-qw_client_wgl_SOURCES=	$(common_SOURCES) $(client_SOURCES)
+qw_client_wgl_SOURCES=	$(common_SOURCES) $(client_SOURCES) cl_sys_win.c
 qw_client_wgl_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFwgl.la $(client_LIBS) -lgdi32 -lwinmm
 qw_client_wgl_LDFLAGS=  $(common_ldflags)
 qw_client_wgl_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFwgl.la $(client_LIB_DEPS)
@@ -181,3 +171,12 @@ EXTRA_DIST=	makefile.mgw makefile.win \
 
 # Kill the temp files, hopefully.
 CLEANFILES	= *.i *.s $(YACCLEX_CLEANFILES)
+
+cl_sys_sdl.o: cl_sys_sdl.c
+	@echo '$(COMPILE) $(SDL_CFLAGS) -c $<'; \
+	$(COMPILE) $(SDL_CFLAGS) -Wp,-MD,.deps/$(*F).pp -c $<
+	@-cp .deps/$(*F).pp .deps/$(*F).P; \
+	tr ' ' '\012' < .deps/$(*F).pp \
+	  | sed -e 's/^\\$$//' -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/ :/' \
+	    >> .deps/$(*F).P; \
+	rm .deps/$(*F).pp

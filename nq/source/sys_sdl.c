@@ -65,7 +65,7 @@
 #include "compat.h"
 #include "host.h"
 
-qboolean    is_server = false;
+qboolean    isDedicated = false;
 char       *svs_info;
 
 int         starttime;
@@ -219,7 +219,7 @@ SDL_main (int c, char **v)
 		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
 #endif
 
-	Host_Init ();
+	Host_Init (&host_parms);
 
 	oldtime = Sys_DoubleTime ();
 	while (1) {
