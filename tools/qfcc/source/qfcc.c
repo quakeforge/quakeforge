@@ -533,11 +533,13 @@ void
 PR_PrintStatement (dstatement_t *s)
 {
 	int 	i;
+	opcode_t *op;
 
+	op = PR_Opcode (s->op);
 	printf ("%4i : %4i : %s ", (int) (s - statements),
-			statement_linenums[s - statements], pr_opcodes[s->op].opname);
+			statement_linenums[s - statements], op->opname);
 
-	for (i = strlen (pr_opcodes[s->op].opname); i < 10; i++) {
+	for (i = strlen (op->opname); i < 10; i++) {
 		printf (" ");
 	}
 
@@ -803,6 +805,8 @@ Options: \n\
 	if (strcmp (sourcedir, ".")) {
 		printf ("Source directory: %s\n", sourcedir);
 	}
+
+	PR_Opcode_Init ();
 
 	InitData ();
 

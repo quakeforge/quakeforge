@@ -321,17 +321,28 @@ extern	pr_info_t	pr;
 
 typedef struct
 {
-	char		*name;
-	char		*opname;
-	float		priority;
+	const char	*name;
+	const char	*opname;
+	pr_opcode_e opcode;
+	int			priority;
 	qboolean	right_associative;
 	def_t		*type_a, *type_b, *type_c;
 } opcode_t;
 
+extern opcode_t *op_done;
+extern opcode_t *op_return;
+extern opcode_t *op_if;
+extern opcode_t *op_ifnot;
+extern opcode_t *op_state;
+extern opcode_t *op_goto;
+
+def_t *PR_Statement (opcode_t *op, def_t *var_a, def_t *var_b);
+opcode_t *PR_Opcode_Find (const char *name, int priority, def_t *var_a, def_t *var_b, def_t *var_c);
+opcode_t *PR_Opcode (short opcode);
+void PR_Opcode_Init (void);
+
 //============================================================================
 
-
-extern	opcode_t	pr_opcodes[99];		// sized by initialization
 
 extern	qboolean	pr_dumpasm;
 
