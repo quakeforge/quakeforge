@@ -330,10 +330,12 @@ process_field (qfo_def_t *def)
 	qfo_def_t  *field_def;
 	pr_type_t  *var = DATA (def->ofs);
 
-	if ((_d = Hash_Find (field_defs, STRING (def->name)))) {
-		field_def = deref_def (_d, &fields);
-		def_error (def, "%s redefined", STRING (def->name));
-		def_error (field_def, "previous definition");
+	if (strcmp (STRING (def->name), ".imm")) { //FIXME better test
+		if ((_d = Hash_Find (field_defs, STRING (def->name)))) {
+			field_def = deref_def (_d, &fields);
+			def_error (def, "%s redefined", STRING (def->name));
+			def_error (field_def, "previous definition");
+		}
 	}
 	defgroup_add_defs (&fields, def, 1);
 	field_def = fields.defs + fields.num_defs - 1;
