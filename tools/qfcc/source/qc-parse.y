@@ -938,6 +938,7 @@ new_class_with_super
 		{
 			$1->super_class = $3;
 			$$ = $1;
+			current_class = $$;
 		}
 	;
 
@@ -980,7 +981,7 @@ protocol_name
 classdef
 	: INTERFACE new_class_name
 	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
-	  '{' ivar_decl_list '}'			{ $2->ivars = $6; }
+	  '{' ivar_decl_list '}'			{ class_add_ivars ($2, $6); }
 	  methodprotolist					{ class_add_methods ($2, $9); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_class_name
@@ -989,7 +990,7 @@ classdef
 	  END								{ current_class = 0; }
 	| INTERFACE new_class_with_super
 	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
-	  '{' ivar_decl_list '}'			{ $2->ivars = $6; }
+	  '{' ivar_decl_list '}'			{ class_add_ivars ($2, $6); }
 	  methodprotolist					{ class_add_methods ($2, $9); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_class_with_super
@@ -1022,7 +1023,15 @@ protocolrefs
 	;
 
 ivar_decl_list
-	: { current_ivars = new_struct (0); } ivar_decl_list_2
+	:	/* */
+		{
+			current_ivars = new_struct (0);
+			if (current_class->super_class)
+				new_struct_field (current_ivars,
+								  current_class->super_class->ivars, 0,
+								  vis_private);
+		}
+	  ivar_decl_list_2
 		{
 			$$ = current_ivars;
 			current_ivars = 0;
@@ -1129,11 +1138,13 @@ methodproto
 	: '+' methoddecl ';'
 		{
 			$2->instance = 0;
+			$2->params->type = &type_Class;
 			$$ = $2;
 		}
 	| '-' methoddecl ';'
 		{
 			$2->instance = 1;
+			$2->params->type = current_class->type;
 			$$ = $2;
 		}
 	;

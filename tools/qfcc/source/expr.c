@@ -969,16 +969,33 @@ field_expr (expr_t *e1, expr_t *e2)
 			e = unary_expr ('.', address_expr (e1, e2, field->type));
 			return e;
 		case ev_pointer:
-			if (t1->aux_type->type == ev_struct) {
-				if (e2->type == ex_name) {
-					field = struct_find_field (t1->aux_type, e2->e.string_val);
-					if (!field)
-						return error (e2, "structure has no field %s",
-									  e2->e.string_val);
-					e2->type = ex_short;
-					e2->e.short_val = field->offset;
-					t1 = pointer_type (field->type);
-				}
+			switch (t1->aux_type->type) {
+				case ev_struct:
+					if (e2->type == ex_name) {
+						field = struct_find_field (t1->aux_type,
+												   e2->e.string_val);
+						if (!field)
+							return error (e2, "structure has no field %s",
+										  e2->e.string_val);
+						e2->type = ex_short;
+						e2->e.short_val = field->offset;
+						t1 = pointer_type (field->type);
+					}
+					break;
+				case ev_class:
+					if (e2->type == ex_name) {
+						field = class_find_ivar (t1->aux_type->class,
+												 0,
+												 e2->e.string_val);
+						if (!field)
+							return new_error_expr ();
+						e2->type = ex_short;
+						e2->e.short_val = field->offset;
+						t1 = pointer_type (field->type);
+					}
+					break;
+				default:
+					break;
 			}
 			if (e1->type == ex_pointer) {
 				if (e2->type == ex_short) {
@@ -1807,16 +1824,17 @@ assign_expr (expr_t *e1, expr_t *e2)
 	type_t     *t1, *t2, *type;
 	expr_t     *e;
 
+	convert_name (e1);
+	convert_name (e2);
+
 	if (e1->type == ex_error)
 		return e1;
 	if (e2->type == ex_error)
 		return e2;
 
-	convert_name (e1);
 	if (e1->type == ex_def)
 		PR_DefInitialized (e1->e.def);
 	//XXX func = func ???
-	convert_name (e2);
 	check_initialized (e2);
 	t1 = get_type (e1);
 	t2 = get_type (e2);
@@ -1992,6 +2010,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	if (receiver->type == ex_name
 		&& strcmp (receiver->e.string_val, "super") == 0) {
 		super = 1;
+		receiver->e.string_val = "self";
 	}
 	rec_type = get_type (receiver);
 	if (rec_type->type != ev_pointer || rec_type->aux_type->type != ev_class)

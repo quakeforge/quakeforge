@@ -428,6 +428,8 @@ init_types (void)
 
 	type = type_Class.aux_type = new_struct ("Class");
 	type->type = ev_class;
+	type->class = &class_Class;
+	class_Class.ivars = type_Class.aux_type;
 	new_struct_field (type, &type_Class, "class_pointer", vis_public);
 	new_struct_field (type, &type_Class, "super_class", vis_public);
 	new_struct_field (type, &type_string, "name", vis_public);
@@ -445,6 +447,8 @@ init_types (void)
 
 	type = type_Protocol.aux_type = new_struct ("Protocol");
 	type->type = ev_class;
+	type->class = &class_Protocol;
+	class_Protocol.ivars = type_Protocol.aux_type;
 	new_struct_field (type, &type_Class, "class_pointer", vis_public);
 	new_struct_field (type, &type_string, "protocol_name", vis_public);
 	new_struct_field (type, &type_pointer, "protocol_list", vis_public);

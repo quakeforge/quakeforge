@@ -48,6 +48,8 @@ static hashtab_t *category_hash;
 static hashtab_t *protocol_hash;
 
 class_t         class_id = {1, "id", 0, 0, 0, 0, 0, 0, &type_id};
+class_t         class_Class = {1, "Class", 0, 0, 0, 0, 0, 0, &type_Class};
+class_t         class_Protocol = {1, "Protocl", 0, 0, 0, 0, 0, 0, &type_Protocol};
 
 static const char *
 class_get_key (void *class, void *unused)
@@ -163,7 +165,8 @@ class_begin (class_t *class)
 		class->def->initialized = class->def->constant = 1;
 		cls = &G_STRUCT (pr_class_t, class->def->ofs);
 		cls->class_pointer = meta_def->ofs;
-		if (class->super_class)
+		if (class->super_class
+			&& class->super_class->def)	//FIXME implementation only
 			cls->super_class = class->super_class->def->ofs;
 		cls->name = meta->name;
 		cls->protocols = meta->protocols;
@@ -191,6 +194,31 @@ class_finish (class_t *class)
 		cls->ivars = emit_struct (class->ivars, class->class_name);
 		cls->methods = emit_methods (class->methods, class->class_name, 1);
 	}
+}
+
+struct_field_t *
+class_find_ivar (class_t *class, int protected, const char *name)
+{
+	struct_field_t *ivar;
+	class_t    *c;
+
+	ivar = struct_find_field (class->ivars, name);
+	if (ivar)
+		return ivar;
+	for (c = class->super_class; c; c = c->super_class) {
+		ivar = struct_find_field (c->ivars, name);
+		if (ivar) {
+			if (ivar->visibility == vis_private
+				|| (protected && ivar->visibility == vis_protected)) {
+				error (0, "%s.%s is not accessable here",
+					   class->class_name, name);
+				return 0;
+			}
+			return ivar;
+		}
+	}
+	error (0, "%s.%s does not exist", class->class_name, name);
+	return 0;
 }
 
 method_t *
@@ -254,6 +282,12 @@ category_compare (void *_c1, void *_c2, void *unused)
 }
 
 void
+class_add_ivars (class_t *class, struct type_s *ivars)
+{
+	class->ivars = ivars;
+}
+
+void
 class_check_ivars (class_t *class, struct type_s *ivars)
 {
 	if (!struct_compare_fields (class->ivars, ivars))
@@ -295,8 +329,10 @@ class_def (class_t *class)
 	def = PR_GetDef (class->type,
 					 va ("_OBJ_CLASS_POINTER_%s", class->class_name),
 					 0, &numpr_globals);
-	def->initialized = def->constant = 1;
-	G_INT (def->ofs) = class->def->ofs;
+	if (class->def) {	//FIXME need externals?
+		def->initialized = def->constant = 1;
+		G_INT (def->ofs) = class->def->ofs;
+	}
 	return def;
 }
 

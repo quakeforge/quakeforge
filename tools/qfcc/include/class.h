@@ -45,6 +45,8 @@ typedef struct class_s {
 } class_t;
 
 extern class_t  class_id;
+extern class_t  class_Class;
+extern class_t  class_Protocol;
 
 struct expr_s;
 struct method_s;
@@ -55,9 +57,12 @@ class_t *get_class (const char *name, int create);
 void class_add_methods (class_t *class, struct methodlist_s *methods);
 void class_add_protocol_methods (class_t *class, expr_t *protocols);
 void class_add_protocol (class_t *class, struct protocol_s *protocol);
+void class_add_ivars (class_t *class, struct type_s *ivars);
 void class_check_ivars (class_t *class, struct type_s *ivars);
 void class_begin (class_t *class);
 void class_finish (class_t *class);
+struct struct_field_s *class_find_ivar (class_t *class, int protected,
+										const char *name);
 struct method_s *class_find_method (class_t *class, struct method_s *method);
 struct method_s *class_message_response (class_t *class, struct expr_s *sel);
 struct def_s *class_def (class_t *class);

@@ -158,8 +158,7 @@ new_keywordarg (const char *selector, struct expr_s *expr)
 static void
 make_message_def (const char *name, def_t **def, function_t **func)
 {
-	*def = PR_GetDef (&type_IMP, "obj_msgSend",
-								  0, &numpr_globals);
+	*def = PR_GetDef (&type_IMP, name, 0, &numpr_globals);
 	*func = new_function ();
 	(*func)->builtin = 0;
 	(*func)->def = *def;
