@@ -68,14 +68,14 @@ static volatile dma_t sn;
  */
 
 static HANDLE      hData;
-static HPSTR       lpData, lpData2;
+static HPSTR       lpData;//, lpData2;
 
 static HGLOBAL     hWaveHdr;
 static LPWAVEHDR   lpWaveHdr;
 
 static HWAVEOUT    hWaveOut;
 
-static WAVEOUTCAPS wavecaps;
+//static WAVEOUTCAPS wavecaps;
 
 static DWORD       gSndBufSize;
 
@@ -93,7 +93,7 @@ static qboolean    SNDDMA_InitWav (void);
 /*
 	S_BlockSound
 */
-static void
+void
 S_BlockSound (void)
 {
 	// DirectSound takes care of blocking itself
@@ -106,7 +106,7 @@ S_BlockSound (void)
 /*
 	S_UnblockSound
 */
-static void
+void
 S_UnblockSound (void)
 {
 	// DirectSound takes care of blocking itself
@@ -490,7 +490,7 @@ SNDDMA_InitWav (void)
 	Returns false if nothing is found.
 */
 
-static qboolean
+qboolean
 SNDDMA_Init (void)
 {
 	sndinitstat stat;
@@ -643,7 +643,7 @@ SNDDMA_Shutdown (void)
 	FreeSound ();
 }
 
-static DWORD      *
+DWORD      *
 DSOUND_LockBuffer (qboolean lockit)
 {
 	int         reps;
@@ -689,7 +689,7 @@ DSOUND_LockBuffer (qboolean lockit)
 	return (pbuf1);
 }
 
-static void
+void
 DSOUND_ClearBuffer (int clear)
 {
 	DWORD      *pData;
@@ -700,7 +700,7 @@ DSOUND_ClearBuffer (int clear)
 	DSOUND_LockBuffer (false);
 }
 
-static void
+void
 DSOUND_Restore (void)
 {
 // if the buffer was lost or stopped, restore it and/or restart it
