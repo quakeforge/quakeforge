@@ -476,11 +476,10 @@ GIB_Parse_Embedded (const char *program, unsigned int flags, gib_tree_t **embedd
 {
 	unsigned int i, n, t;
 	char c, d, *str;
-	gib_parse_error = false;
-
 	gib_tree_t *lines = 0, **line = &lines, *cur, *tokens, *emb, *tmp;
 	unsigned int start, end;
 	
+	gib_parse_error = false;
 	*embedded = 0;
 	
 	for (i = 0; program[i]; i++) {
