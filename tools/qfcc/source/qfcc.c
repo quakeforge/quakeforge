@@ -1048,8 +1048,12 @@ preprocess_file (const char *filename)
 # ifdef _WIN32
 		if (!options.save_temps)
 			mktemp (tempname->str);
-		yyin = fopen (tempname->str, "wt");
-		fclose (yyin);
+
+		{
+			FILE       *tmp = fopen (tempname->str, "wt");
+
+			fclose (tmp);
+		}
 
 		{
 			int		status = spawnvp (_P_WAIT, cpp_argv[0], (char **)cpp_argv);
@@ -1062,7 +1066,7 @@ preprocess_file (const char *filename)
 			}
 		}
 
-		yyin = fopen (tempname->str, "rt");
+		return fopen (tempname->str, "rt");
 # else
 		if (!options.save_temps)
 			tempfd = mkstemp (tempname->str);
