@@ -1915,9 +1915,9 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "cfeof", PF_cfeof, 107); // float (float desc) cfeof
 	PR_AddBuiltin (&sv_pr_state, "cfquota", PF_cfquota, 108); // float () cfquota
 
-	PR_AddBuiltin (&sv_pr_state, "SV_AllocClient", PF_SV_AllocClient, -1);
-	PR_AddBuiltin (&sv_pr_state, "SV_FreeClient", PF_SV_FreeClient, -1);
-	PR_AddBuiltin (&sv_pr_state, "SV_SetUserinfo", PF_SV_SetUserinfo, -1);
-	PR_AddBuiltin (&sv_pr_state, "SV_SetPing", PR_SV_SetPing, -1);
-	PR_AddBuiltin (&sv_pr_state, "SV_UserCmd", PR_SV_UserCmd, -1);
+	PR_AddBuiltin (&sv_pr_state, "SV_AllocClient", PF_SV_AllocClient, -1); // entity () SV_AllocClient
+	PR_AddBuiltin (&sv_pr_state, "SV_FreeClient", PF_SV_FreeClient, -1); // void (entity cl) SV_FreeClient
+	PR_AddBuiltin (&sv_pr_state, "SV_SetUserinfo", PF_SV_SetUserinfo, -1); // void (entity cl, string userinfo) SV_SetUserinfo
+	PR_AddBuiltin (&sv_pr_state, "SV_SetPing", PR_SV_SetPing, -1); // void (entity cl, integer ping) SV_SetPing
+	PR_AddBuiltin (&sv_pr_state, "SV_UserCmd", PR_SV_UserCmd, -1); // void (entity cl, float secs, vector angles, vector move, integer buttons, integer impulse) SV_UserCmd
 };
