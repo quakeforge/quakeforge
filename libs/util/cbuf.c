@@ -156,12 +156,16 @@ Cbuf_PushStack (cbuf_interpreter_t *interp)
 void
 Cbuf_AddText (cbuf_t *cbuf, const char *text)
 {
+	if (cbuf->state == CBUF_STATE_JUNK)
+		cbuf->state = CBUF_STATE_NORMAL;
 	cbuf->interpreter->add (cbuf, text);
 }
 
 void
 Cbuf_InsertText (cbuf_t *cbuf, const char *text)
 {
+	if (cbuf->state == CBUF_STATE_JUNK)
+		cbuf->state = CBUF_STATE_NORMAL;
 	cbuf->interpreter->insert (cbuf, text);
 }
 
