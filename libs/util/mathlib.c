@@ -307,6 +307,36 @@ BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, mplane_t *p)
 }
 #endif
 
+/*
+	angles is a left(?) handed system: 'pitch yaw roll' with x (pitch) axis to
+	the right, y (yaw) axis up and z (roll) axis forward.
+
+	the math in AngleVectors has the entity frame as left handed with x
+	(forward) axis forward, y (right) axis to the right and z (up) up. However,
+	the world is a right (?) handed system with x to the right, y forward and
+	z up.
+
+	pitch =
+		cp 0 -sp
+		0  1  0
+		sp 0  cp
+
+	yaw =
+		 cy sy 0
+		-sy cy 0
+		 0  0  1
+
+	roll =
+		1  0  0
+		0  cr sr
+		0 -sr cr
+
+	final = roll * (pitch * yaw)
+	final =
+		[forward]
+		[-right]	-ve due to left handed to right handed conversion
+		[up]
+*/
 void
 AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 {
@@ -325,9 +355,11 @@ AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 	forward[0] = cp * cy;
 	forward[1] = cp * sy;
 	forward[2] = -sp;
-	right[0] = (-1 * sr * sp * cy + -1 * cr * -sy);
-	right[1] = (-1 * sr * sp * sy + -1 * cr * cy);
-	right[2] = -1 * sr * cp;
+	// need to flip right because it's a left handed system in a right handed
+	// world
+	right[0] = -1 * (sr * sp * cy + cr * -sy);
+	right[1] = -1 * (sr * sp * sy + cr * cy);
+	right[2] = -1 * (sr * cp);
 	up[0] = (cr * sp * cy + -sr * -sy);
 	up[1] = (cr * sp * sy + -sr * cy);
 	up[2] = cr * cp;
