@@ -31,9 +31,18 @@
 #endif
 
 #include "winquake.h"
-#include "errno.h"
-#include "resource.h"
 #include "conproc.h"
+#include "resource.h"
+
+#include "QF/compat.h"
+#include "QF/qargs.h"
+#include "QF/quakeio.h"
+#include "QF/sys.h"
+
+#include "client.h"
+#include "game.h"
+#include "host.h"
+#include "screen.h"
 
 #define MINIMUM_WIN_MEMORY		0x0880000
 #define MAXIMUM_WIN_MEMORY		0x1000000
@@ -57,7 +66,7 @@ qboolean    isDedicated;
 static qboolean sc_return_on_enter = false;
 HANDLE      hinput, houtput;
 
-static char *tracking_tag = "Clams & Mooses";
+static const char tracking_tag[] = "Clams & Mooses";
 
 static HANDLE tevent;
 static HANDLE hFile;
@@ -81,7 +90,7 @@ void
 Sys_PageIn (void *ptr, int size)
 {
 	byte       *x;
-	int         j, m, n;
+	int         m, n;
 
 // touch all the memory to make sure it's there. The 16-page skip is to
 // keep Win 95 from thinking we're trying to page ourselves in (we are
@@ -118,148 +127,6 @@ findhandle (void)
 			return i;
 	Sys_Error ("out of handles");
 	return -1;
-}
-
-/*
-================
-filelength
-================
-*/
-int
-filelength (QFile *f)
-{
-	int         pos;
-	int         end;
-	int         t;
-
-	t = VID_ForceUnlockedAndReturnState ();
-
-	pos = ftell (f);
-	fseek (f, 0, SEEK_END);
-	end = ftell (f);
-	fseek (f, pos, SEEK_SET);
-
-	VID_ForceLockState (t);
-
-	return end;
-}
-
-int
-Sys_FileOpenRead (char *path, int *hndl)
-{
-	QFile      *f;
-	int         i, retval;
-	int         t;
-
-	t = VID_ForceUnlockedAndReturnState ();
-
-	i = findhandle ();
-
-	f = Qopen (path, "rb");
-
-	if (!f) {
-		*hndl = -1;
-		retval = -1;
-	} else {
-		sys_handles[i] = f;
-		*hndl = i;
-		retval = filelength (f);
-	}
-
-	VID_ForceLockState (t);
-
-	return retval;
-}
-
-int
-Sys_FileOpenWrite (char *path)
-{
-	QFile      *f;
-	int         i;
-	int         t;
-
-	t = VID_ForceUnlockedAndReturnState ();
-
-	i = findhandle ();
-
-	f = Qopen (path, "wb");
-	if (!f)
-		Sys_Error ("Error opening %s: %s", path, strerror (errno));
-	sys_handles[i] = f;
-
-	VID_ForceLockState (t);
-
-	return i;
-}
-
-void
-Sys_FileClose (int handle)
-{
-	int         t;
-
-	t = VID_ForceUnlockedAndReturnState ();
-	Qclose (sys_handles[handle]);
-	sys_handles[handle] = NULL;
-	VID_ForceLockState (t);
-}
-
-void
-Sys_FileSeek (int handle, int position)
-{
-	int         t;
-
-	t = VID_ForceUnlockedAndReturnState ();
-	fseek (sys_handles[handle], position, SEEK_SET);
-	VID_ForceLockState (t);
-}
-
-int
-Sys_FileRead (int handle, void *dest, int count)
-{
-	int         t, x;
-
-	t = VID_ForceUnlockedAndReturnState ();
-	x = fread (dest, 1, count, sys_handles[handle]);
-	VID_ForceLockState (t);
-	return x;
-}
-
-int
-Sys_FileWrite (int handle, void *data, int count)
-{
-	int         t, x;
-
-	t = VID_ForceUnlockedAndReturnState ();
-	x = fwrite (data, 1, count, sys_handles[handle]);
-	VID_ForceLockState (t);
-	return x;
-}
-
-int
-Sys_FileTime (char *path)
-{
-	QFile      *f;
-	int         t, retval;
-
-	t = VID_ForceUnlockedAndReturnState ();
-
-	f = Qopen (path, "rb");
-
-	if (f) {
-		Qclose (f);
-		retval = 1;
-	} else {
-		retval = -1;
-	}
-
-	VID_ForceLockState (t);
-	return retval;
-}
-
-void
-Sys_mkdir (char *path)
-{
-	_mkdir (path);
 }
 
 
@@ -364,7 +231,7 @@ Sys_Init (void)
 
 
 void
-Sys_Error (char *error, ...)
+Sys_Error (const char *error, ...)
 {
 	va_list     argptr;
 	char        text[1024], text2[1024];
@@ -433,9 +300,9 @@ Sys_Error (char *error, ...)
 
 	exit (1);
 }
-
+/*FIXME?
 void
-Sys_Printf (char *fmt, ...)
+Sys_Printf (const char *fmt, ...)
 {
 	va_list     argptr;
 	char        text[1024];
@@ -449,7 +316,7 @@ Sys_Printf (char *fmt, ...)
 		WriteFile (houtput, text, strlen (text), &dummy, NULL);
 	}
 }
-
+*/
 void
 Sys_Quit (void)
 {
@@ -545,7 +412,7 @@ Sys_InitFloatTime (void)
 	j = COM_CheckParm ("-starttime");
 
 	if (j) {
-		curtime = (double) (Q_atof (com_argv[j + 1]));
+		curtime = (double) (atof (com_argv[j + 1]));
 	} else {
 		curtime = 0.0;
 	}
@@ -560,9 +427,10 @@ Sys_ConsoleInput (void)
 	static char text[256];
 	static int  len;
 	INPUT_RECORD recs[1024];
-	int         count;
-	int         i, dummy;
-	int         ch, numread, numevents;
+	DWORD       dummy;
+	int         ch;
+	DWORD       numread;
+	DWORD		numevents;
 
 	if (!isDedicated)
 		return NULL;
@@ -690,7 +558,6 @@ int         WINAPI
 WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		 int nCmdShow)
 {
-	MSG         msg;
 	quakeparms_t parms;
 	double      time, oldtime, newtime;
 	MEMORYSTATUS lpBuffer;
@@ -711,8 +578,8 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	if (!GetCurrentDirectory (sizeof (cwd), cwd))
 		Sys_Error ("Couldn't determine current directory");
 
-	if (cwd[Q_strlen (cwd) - 1] == '/')
-		cwd[Q_strlen (cwd) - 1] = 0;
+	if (cwd[strlen (cwd) - 1] == '/')
+		cwd[strlen (cwd) - 1] = 0;
 
 	parms.basedir = cwd;
 	parms.cachedir = NULL;
@@ -785,7 +652,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		t = COM_CheckParm ("-heapsize") + 1;
 
 		if (t < com_argc)
-			parms.memsize = Q_atoi (com_argv[t]) * 1024;
+			parms.memsize = atoi (com_argv[t]) * 1024;
 	}
 
 	parms.membase = malloc (parms.memsize);
@@ -811,17 +678,17 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		// give QHOST a chance to hook into the console
 		if ((t = COM_CheckParm ("-HFILE")) > 0) {
 			if (t < com_argc)
-				hFile = (HANDLE) Q_atoi (com_argv[t + 1]);
+				hFile = (HANDLE) atoi (com_argv[t + 1]);
 		}
 
 		if ((t = COM_CheckParm ("-HPARENT")) > 0) {
 			if (t < com_argc)
-				heventParent = (HANDLE) Q_atoi (com_argv[t + 1]);
+				heventParent = (HANDLE) atoi (com_argv[t + 1]);
 		}
 
 		if ((t = COM_CheckParm ("-HCHILD")) > 0) {
 			if (t < com_argc)
-				heventChild = (HANDLE) Q_atoi (com_argv[t + 1]);
+				heventChild = (HANDLE) atoi (com_argv[t + 1]);
 		}
 
 		InitConProc (hFile, heventParent, heventChild);

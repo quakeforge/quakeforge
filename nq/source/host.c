@@ -37,6 +37,7 @@
 #include "view.h"
 #include "chase.h"
 #include "QF/cdaudio.h"
+#include "QF/compat.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/keys.h"

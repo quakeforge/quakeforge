@@ -39,6 +39,7 @@
 #include <stdio.h>
 
 #include "QF/console.h"
+#include "QF/compat.h"
 #include "QF/mdfour.h"
 #include "QF/model.h"
 #include "QF/quakefs.h"

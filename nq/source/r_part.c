@@ -33,6 +33,7 @@
 
 #include "r_local.h"
 #include "QF/qargs.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "server.h"
 #include "QF/msg.h"

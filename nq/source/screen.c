@@ -33,6 +33,7 @@
 #include <time.h>
 #include "r_local.h"
 #include "QF/cmd.h"
+#include "QF/compat.h"
 #include "screen.h"
 #include "sbar.h"
 #include "QF/input.h"

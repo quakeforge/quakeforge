@@ -88,10 +88,10 @@ extern glvert_t glv;
 extern	int glx, gly, glwidth, glheight;
 
 #ifdef _WIN32
-extern	PROC glArrayElementEXT;
-extern	PROC glColorPointerEXT;
-extern	PROC glTexturePointerEXT;
-extern	PROC glVertexPointerEXT;
+//extern	PROC glArrayElementEXT;
+//extern	PROC glColorPointerEXT;
+//extern	PROC glTexturePointerEXT;
+//extern	PROC glVertexPointerEXT;
 #endif
 
 // r_local.h -- private refresh defs
@@ -258,6 +258,7 @@ void GL_BuildLightmaps (void);
 void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboolean alpha) ;
 void GL_Set2D (void);
 void GL_CheckGamma (unsigned char *pal);
+void GL_CheckBrightness (unsigned char *pal);
 
 void EmitWaterPolys (msurface_t *fa);
 void EmitSkyPolys (msurface_t *fa);

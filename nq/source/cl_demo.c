@@ -38,6 +38,7 @@
 #include "host.h"
 #include "QF/msg.h"
 #include "client.h"
+#include "QF/compat.h"
 #include "QF/sys.h"
 #include "QF/console.h"
 #include "QF/cmd.h"

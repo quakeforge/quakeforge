@@ -5,6 +5,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "QF/cvar.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/qargs.h"
 #include "QF/cmd.h"

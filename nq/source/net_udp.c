@@ -31,12 +31,30 @@
 #endif
 
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <sys/param.h>
-#include <sys/ioctl.h>
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
+# include <netinet/in.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
+# include <arpa/inet.h>
+#endif
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+#endif
+#ifdef HAVE_SYS_PARAM_H
+# include <sys/param.h>
+#endif
+#ifdef HAVE_SYS_IOCTL_H
+# include <sys/ioctl.h>
+#endif
+#ifdef HAVE_WINDOWS_H
+# include <windows.h>
+#endif
+#ifdef HAVE_WINSOCK_H
+# include <winsock.h>
+#endif
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -54,9 +72,29 @@
 #endif
 
 #include "net.h"
+#include "QF/compat.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 #include "QF/console.h"
+
+#ifdef _WIN32
+# undef EWOULDBLOCK
+# define EWOULDBLOCK    WSAEWOULDBLOCK
+# undef ECONNREFUSED
+# define ECONNREFUSED   WSAECONNREFUSED
+#endif
+
+#ifndef MAXHOSTNAMELEN
+# define MAXHOSTNAMELEN 512
+#endif
+
+#ifndef HAVE_SOCKLEN_T
+# ifdef HAVE_SIZE
+   typedef size_t socklen_t;
+# else
+      typedef unsigned int socklen_t;
+# endif
+#endif
 
 //extern int gethostname (char *, int);
 extern int  close (int);
@@ -151,12 +189,17 @@ UDP_OpenSocket (int port)
 {
 	int         newsocket;
 	struct sockaddr_in address;
-	qboolean    _true = true;
+#ifdef _WIN32
+#define ioctl ioctlsocket
+	unsigned long _true = true;
+#else
+	int        _true = true;
+#endif
 
 	if ((newsocket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
 		return -1;
 
-	if (ioctl (newsocket, FIONBIO, (char *) &_true) == -1)
+	if (ioctl (newsocket, FIONBIO, &_true) == -1)
 		goto ErrorReturn;
 
 	address.sin_family = AF_INET;

@@ -34,6 +34,7 @@
 #include "server.h"
 #include "host.h"
 #include "QF/cmd.h"
+#include "QF/compat.h"
 #include "world.h"
 #include "QF/va.h"
 #include "screen.h"

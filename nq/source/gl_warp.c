@@ -39,6 +39,7 @@
 #endif
 
 #include "QF/qtypes.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/model.h"
 #include "QF/quakefs.h"

@@ -32,6 +32,7 @@
 #endif
 
 #include "QF/msg.h"
+#include "QF/compat.h"
 #include "QF/cvar.h"
 #include "client.h"
 #include "chase.h"

@@ -35,6 +35,7 @@
 
 #include "r_local.h"
 #include "QF/sys.h"
+#include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/qendian.h"
 #include "QF/checksum.h"

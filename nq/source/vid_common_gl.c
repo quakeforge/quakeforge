@@ -51,6 +51,7 @@
 #endif
 
 #include "QF/console.h"
+#include "QF/compat.h"
 #include "glquake.h"
 #include "QF/input.h"
 #include "QF/qargs.h"

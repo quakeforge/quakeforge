@@ -30,21 +30,24 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#include "quakedef.h"
-#include "QF/va.h"
 #include "winquake.h"
+#include <commctrl.h>
+
+#include "QF/va.h"
+#include "QF/compat.h"
 #include "QF/sys.h"
+#include "client.h"
 #include "resource.h"
 #include "glquake.h"
+#include "host.h"
 #include "in_win.h"
-#include <commctrl.h>
 #include "screen.h"
 #include "QF/keys.h"
 #include "QF/qargs.h"
 #include "QF/cmd.h"
 #include "QF/qendian.h"
 #include "draw.h"
-#include "cdaudio.h"
+#include "QF/cdaudio.h"
 #include "QF/console.h"
 #include "sbar.h"
 
@@ -98,7 +101,6 @@ qboolean    scr_skipupdate;
 
 static vmode_t modelist[MAX_MODE_LIST];
 static int  nummodes;
-static vmode_t *pcurrentmode;
 static vmode_t badmode;
 
 static DEVMODE gdevmode;
@@ -149,10 +151,10 @@ void        ClearAllStates (void);
 void        VID_UpdateWindowStatus (void);
 void        GL_Init (void);
 
-PROC        glArrayElementEXT;
-PROC        glColorPointerEXT;
-PROC        glTexCoordPointerEXT;
-PROC        glVertexPointerEXT;
+//PROC        glArrayElementEXT;
+//PROC        glColorPointerEXT;
+//PROC        glTexCoordPointerEXT;
+//PROC        glVertexPointerEXT;
 
 typedef void (APIENTRY * lp3DFXFUNC) (int, int, int, int, int, const void *);
 lp3DFXFUNC  glColorTableEXT;
@@ -388,7 +390,7 @@ int
 VID_SetMode (int modenum, unsigned char *palette)
 {
 	int         original_mode, temp;
-	qboolean    stat;
+	qboolean    stat = false;
 	MSG         msg;
 
 	if ((windowed && (modenum != 0)) ||
@@ -497,8 +499,8 @@ VID_UpdateWindowStatus (void)
 void
 CheckArrayExtensions (void)
 {
+#if 0 // FIXME
 	char       *tmp;
-
 	/* check for texture extension */
 	tmp = (unsigned char *) glGetString (GL_EXTENSIONS);
 	while (*tmp) {
@@ -525,6 +527,7 @@ CheckArrayExtensions (void)
 	}
 
 	Sys_Error ("Vertex array extension not present");
+#endif
 }
 
 //int       texture_mode = GL_NEAREST;
@@ -649,8 +652,6 @@ GL_BeginRendering
 void
 GL_BeginRendering (int *x, int *y, int *width, int *height)
 {
-	extern cvar_t *gl_clear;
-
 	*x = *y = 0;
 	*width = WindowRect.right - WindowRect.left;
 	*height = WindowRect.bottom - WindowRect.top;
@@ -772,8 +773,6 @@ BOOL        gammaworks;
 void
 VID_ShiftPalette (unsigned char *palette)
 {
-	extern byte ramps[3][256];
-
 //  VID_SetPalette (palette);
 
 //  gammaworks = SetDeviceGammaRamp (maindc, ramps);
@@ -1051,12 +1050,12 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		case WM_KEYDOWN:
 		case WM_SYSKEYDOWN:
-		Key_Event (MapKey (lParam), true);
+		Key_Event (MapKey (lParam), 0, true);
 		break;
 
 		case WM_KEYUP:
 		case WM_SYSKEYUP:
-		Key_Event (MapKey (lParam), false);
+		Key_Event (MapKey (lParam), 0, false);
 		break;
 
 		case WM_SYSCHAR:
@@ -1094,11 +1093,11 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		// Event.
 		case WM_MOUSEWHEEL:
 		if ((short) HIWORD (wParam) > 0) {
-			Key_Event (K_MWHEELUP, true);
-			Key_Event (K_MWHEELUP, false);
+			Key_Event (K_MWHEELUP, 0, true);
+			Key_Event (K_MWHEELUP, 0, false);
 		} else {
-			Key_Event (K_MWHEELDOWN, true);
-			Key_Event (K_MWHEELDOWN, false);
+			Key_Event (K_MWHEELDOWN, 0, true);
+			Key_Event (K_MWHEELDOWN, 0, false);
 		}
 		break;
 
@@ -1546,7 +1545,7 @@ void
 VID_Init (unsigned char *palette)
 {
 	int         i, existingmode;
-	int         basenummodes, width, height, bpp, findbpp, done;
+	int         basenummodes, width, height=640, bpp, findbpp, done;
 	char        gldir[MAX_OSPATH];
 	HDC         hdc;
 	DEVMODE     devmode;
@@ -1724,7 +1723,9 @@ VID_Init (unsigned char *palette)
 	vid.colormap = host_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap + 2048));
 
+#ifdef SPLASH_SCREEN
 	DestroyWindow (hwnd_dialog);
+#endif
 
 	GL_CheckBrightness (palette);
 	VID_SetPalette (palette);
@@ -1779,7 +1780,7 @@ extern void M_DrawCharacter (int cx, int line, int num);
 extern void M_DrawTransPic (int x, int y, qpic_t *pic);
 extern void M_DrawPic (int x, int y, qpic_t *pic);
 
-static int  vid_line, vid_wmodes;
+static int  vid_wmodes;
 
 typedef struct {
 	int         modenum;
