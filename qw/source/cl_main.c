@@ -1496,6 +1496,7 @@ Host_Frame (float time)
 	r_paused = cl.paused;
 	r_active = cls.state == ca_active;
 	r_view_model = &cl.viewent;
+	r_frametime = host_frametime;
 
 	// don't allow cheats in multiplayer
 	if (!atoi (Info_ValueForKey (cl.serverinfo, "watervis")))

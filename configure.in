@@ -1536,6 +1536,9 @@ AC_OUTPUT(
 	libs/models/sprite/Makefile
 	libs/util/Makefile
 	libs/video/Makefile
+	libs/video/renderer/Makefile
+	libs/video/renderer/gl/Makefile
+	libs/video/renderer/sw/Makefile
 	libs/video/targets/Makefile
 
 	qw/Makefile

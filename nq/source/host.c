@@ -712,6 +712,7 @@ _Host_Frame (float time)
 	r_paused = cl.paused;
 	r_active = cls.state == ca_active;
 	r_view_model = &cl.viewent;
+	r_frametime = host_frametime;
 
 	CL_UpdateScreen (cl.time);
 

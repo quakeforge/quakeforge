@@ -97,78 +97,66 @@ client_LIB_DEPS=	libqfnet.a $(qf_client_LIBS)
 client_SOURCES= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
 		cl_main.c cl_misc.c cl_ngraph.c cl_parse.c cl_screen.c cl_pred.c \
 		cl_skin.c cl_slist.c cl_tent.c \
-		console.c keys.c locs.c nonintel.c pcx.c r_cvar.c r_efrag.c \
-		r_ent.c r_graph.c r_main.c r_view.c sbar.c skin.c teamplay.c tga.c \
+		console.c keys.c locs.c nonintel.c pcx.c \
+		r_view.c sbar.c skin.c teamplay.c tga.c \
 		wad.c cl_math.S $(syscl_SRC)
 
 # Software-rendering clients
 #
 # ... Common stuff
 
-soft_SOURCES=	d_edge.c d_fill.c d_init.c d_modech.c \
-		d_part.c d_polyse.c d_scan.c d_sky.c d_sprite.c d_surf.c \
-		d_vars.c d_zpoint.c draw.c sw_graph.c sw_raclip.c sw_ralias.c sw_rbsp.c \
-		sw_rdraw.c sw_redge.c sw_rlight.c sw_rmain.c sw_rmisc.c \
-		sw_rpart.c sw_rsky.c sw_rsprite.c sw_rsurf.c sw_skin.c \
-		sw_view.c screen.c \
-		\
-		d_draw.S d_draw16.S d_parta.S d_polysa.S d_scana.S d_spr8.S \
-		d_varsa.S sw_raclipa.S sw_raliasa.S sw_rdrawa.S sw_redgea.S \
-		sw_rvarsa.S surf16.S surf8.S
+soft_SOURCES=	sw_rpart.c sw_view.c
 
 # ... Linux FBDev
 qw_client_fbdev_SOURCES= $(common_SOURCES) $(client_SOURCES) $(soft_SOURCES)
-qw_client_fbdev_LDADD= ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFfbdev.la $(client_LIBS)
-qw_client_fbdev_DEPENDENCIES=../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFfbdev.la  $(client_LIB_DEPS)
+qw_client_fbdev_LDADD= ../../libs/video/renderer/libQFrenderer_sw.la ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFfbdev.la $(client_LIBS)
+qw_client_fbdev_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_sw.la ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFfbdev.la  $(client_LIB_DEPS)
 
 # ... SciTech MGL
 qw_client_mgl_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(soft_SOURCES)
-qw_client_mgl_LDADD=	../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFmgl.la $(client_LIBS) $(MGL_LIBS)
-qw_client_mgl_DEPENDENCIES=../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFmgl.la $(client_LIB_DEPS)
+qw_client_mgl_LDADD=	../../libs/video/renderer/libQFrenderer_sw.la ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFmgl.la $(client_LIBS) $(MGL_LIBS)
+qw_client_mgl_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_sw.la ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFmgl.la $(client_LIB_DEPS)
 
 # ... Simple DirectMedia Layer, version 1.0 and higher
 qw_client_sdl_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(soft_SOURCES)
-qw_client_sdl_LDADD=	../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsdl.la $(client_LIBS) $(SDL_LIBS)
-qw_client_sdl_DEPENDENCIES=../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsdl.la $(client_LIB_DEPS)
+qw_client_sdl_LDADD=	../../libs/video/renderer/libQFrenderer_sw.la ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsdl.la $(client_LIBS) $(SDL_LIBS)
+qw_client_sdl_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_sw.la ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsdl.la $(client_LIB_DEPS)
 
 # ... Linux SVGAlib
 qw_client_svga_SOURCES= $(common_SOURCES) $(client_SOURCES) $(soft_SOURCES)
-qw_client_svga_LDADD=	../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsvga.la $(client_LIBS) $(SVGA_LIBS)
-qw_client_svga_DEPENDENCIES=../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsvga.la $(client_LIB_DEPS)
+qw_client_svga_LDADD=	../../libs/video/renderer/libQFrenderer_sw.la ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsvga.la $(client_LIBS) $(SVGA_LIBS)
+qw_client_svga_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_sw.la ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFsvga.la $(client_LIB_DEPS)
 
 # ... X11
 qw_client_x11_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(soft_SOURCES)
-qw_client_x11_LDADD=	../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFx11.la $(client_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB)
-qw_client_x11_DEPENDENCIES=../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFx11.la $(client_LIB_DEPS)
+qw_client_x11_LDADD=	../../libs/video/renderer/libQFrenderer_sw.la ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFx11.la $(client_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB)
+qw_client_x11_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_sw.la ../../libs/models/libQFmodels_sw.la ../../libs/video/targets/libQFx11.la $(client_LIB_DEPS)
 
 
 # OpenGL-using clients
 #
 # ... Common stuff
-ogl_SOURCES=	noisetextures.c gl_textures.c gl_draw.c gl_dyn_fires.c \
-		gl_dyn_part.c gl_dyn_textures.c gl_graph.c gl_rlight.c	\
-		gl_rmain.c gl_rmisc.c gl_rsurf.c gl_screen.c gl_skin.c \
-		gl_sky.c gl_sky_clip.c gl_view.c gl_warp.c
+ogl_SOURCES=	gl_dyn_part.c gl_view.c
 
 # ... 3Dfx Voodoo 1 and 2 SVGAlib-based console GL
 qw_client_3dfx_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(ogl_SOURCES)
-qw_client_3dfx_LDADD=	../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFtdfx.la $(client_LIBS) $(TDFXGL_LIBS) $(SVGA_LIBS) $(DL_LIBS)
-qw_client_3dfx_DEPENDENCIES=../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFtdfx.la $(client_LIB_DEPS)
+qw_client_3dfx_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFtdfx.la $(client_LIBS) $(TDFXGL_LIBS) $(SVGA_LIBS) $(DL_LIBS)
+qw_client_3dfx_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFtdfx.la $(client_LIB_DEPS)
 
 # ... OpenGL in X Window
 qw_client_glx_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(ogl_SOURCES)
-qw_client_glx_LDADD=	../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFglx.la $(client_LIBS) $(GLX_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(DL_LIBS)
-qw_client_glx_DEPENDENCIES=../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFglx.la $(client_LIB_DEPS)
+qw_client_glx_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFglx.la $(client_LIBS) $(GLX_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(DL_LIBS)
+qw_client_glx_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFglx.la $(client_LIB_DEPS)
 
 # ... Simple DirectMedia Layer, version 1.1 and higher, in GL mode
 qw_client_sgl_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(ogl_SOURCES)
-qw_client_sgl_LDADD=	../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFsgl.la $(client_LIBS) $(SDL_LIBS) $(X_LIBS) $(GLX_LIBS) $(DL_LIBS)
-qw_client_sgl_DEPENDENCIES=../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFsgl.la $(client_LIB_DEPS)
+qw_client_sgl_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFsgl.la $(client_LIBS) $(SDL_LIBS) $(X_LIBS) $(GLX_LIBS) $(DL_LIBS)
+qw_client_sgl_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFsgl.la $(client_LIB_DEPS)
 
 # ... SGI/Microsoft WGL (Windows OpenGL)
 qw_client_wgl_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(ogl_SOURCES)
-qw_client_wgl_LDADD=	../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFwgl.la $(client_LIBS) $(GLX_LIBS) -lgdi32 -lwinmm
-qw_client_wgl_DEPENDENCIES=../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFwgl.la $(client_LIB_DEPS)
+qw_client_wgl_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFwgl.la $(client_LIBS) $(GLX_LIBS) -lgdi32 -lwinmm
+qw_client_wgl_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFwgl.la $(client_LIB_DEPS)
 
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,
 # or it won't be distributed with 'make dist'

@@ -1,0 +1,9 @@
+*.la
+*.lo
+.deps
+.libs
+.vimrc
+Makefile
+Makefile.in
+fbset_modes_y.[ch]
+fbset_modes_l.c
