@@ -75,7 +75,7 @@ static void
 shutdown (void)
 {
 	// change stdin to blocking
-	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~FNDELAY);
+	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
 }
 
 void
@@ -161,7 +161,7 @@ main (int c, const char *v[])
 
 	isDedicated = (COM_CheckParm ("-dedicated") != 0);
 
-	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
+	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
 
 	Sys_RegisterShutdown (Host_Shutdown);
 	Sys_RegisterShutdown (shutdown);
@@ -169,7 +169,7 @@ main (int c, const char *v[])
 	Host_Init ();
 
 	if (!sys_nostdout->int_val) {
-		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
+		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
 		Con_Printf ("Quake -- Version %s\n", NQ_VERSION);
 	}
 
