@@ -31,7 +31,7 @@
 #endif
 
 #include "draw.h"
-#include "vid.h"
+#include "QF/vid.h"
 #include "QF/zone.h"
 #include "QF/sys.h"
 #include "QF/quakefs.h"

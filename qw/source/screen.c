@@ -51,7 +51,7 @@
 #include "sbar.h"
 #include "skin.h"
 #include "QF/sys.h"
-#include "vid.h"
+#include "QF/vid.h"
 #include "view.h"
 
 /*
@@ -664,7 +664,7 @@ SCR_ScreenShot_f (void)
 
 	// save the pcx file
 	WritePCXfile (pcxname, vid.buffer, vid.width, vid.height, vid.rowbytes,
-				  host_basepal, false, false);
+				  vid_basepal, false, false);
 
 	// for adapters that can't stay mapped in for linear writes all the time
 	D_DisableBackBufferAccess ();
@@ -692,9 +692,9 @@ MipColor (int r, int g, int b)
 	bestdist = 256 * 256 * 3;
 
 	for (i = 0; i < 256; i++) {
-		r1 = host_basepal[i * 3] - r;
-		g1 = host_basepal[i * 3 + 1] - g;
-		b1 = host_basepal[i * 3 + 2] - b;
+		r1 = vid_basepal[i * 3] - r;
+		g1 = vid_basepal[i * 3 + 1] - g;
+		b1 = vid_basepal[i * 3 + 2] - b;
 		dist = r1 * r1 + g1 * g1 + b1 * b1;
 		if (dist < bestdist) {
 			bestdist = dist;
@@ -815,9 +815,9 @@ SCR_RSShot_f (void)
 			for ( /* */ ; dy < dey; dy++) {
 				src = vid.buffer + (vid.rowbytes * dy) + dx;
 				for (nx = dx; nx < dex; nx++) {
-					r += host_basepal[*src * 3];
-					g += host_basepal[*src * 3 + 1];
-					b += host_basepal[*src * 3 + 2];
+					r += vid_basepal[*src * 3];
+					g += vid_basepal[*src * 3 + 1];
+					b += vid_basepal[*src * 3 + 2];
 					src++;
 					count++;
 				}
@@ -842,7 +842,7 @@ SCR_RSShot_f (void)
 	st[sizeof (st) - 1] = 0;
 	SCR_DrawStringToSnap (st, newbuf, w - strlen (st) * 8, 20, w);
 
-	WritePCXfile (pcxname, newbuf, w, h, w, host_basepal, true, false);
+	WritePCXfile (pcxname, newbuf, w, h, w, vid_basepal, true, false);
 
 	free (newbuf);
 

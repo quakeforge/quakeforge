@@ -1,7 +1,7 @@
 /*
 	d_fill.c
 
-	@description@
+	clears a specified rectangle to the specified color
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -30,19 +30,18 @@
 # include "config.h"
 #endif
 
-#include "vid.h"
+#include "d_iface.h"
+
 
 /*
-================
-D_FillRect
-================
+	D_FillRect
 */
 void
 D_FillRect (vrect_t *rect, int color)
 {
 	int         rx, ry, rwidth, rheight;
 	unsigned char *dest;
-	unsigned   *ldest;
+	unsigned int *ldest;
 
 	rx = rect->x;
 	ry = rect->y;
@@ -69,7 +68,7 @@ D_FillRect (vrect_t *rect, int color)
 
 	if (((rwidth & 0x03) == 0) && (((long) dest & 0x03) == 0)) {
 		// faster aligned dword clear
-		ldest = (unsigned *) dest;
+		ldest = (unsigned int *) dest;
 		color += color << 16;
 
 		rwidth >>= 2;
@@ -78,7 +77,7 @@ D_FillRect (vrect_t *rect, int color)
 		for (ry = 0; ry < rheight; ry++) {
 			for (rx = 0; rx < rwidth; rx++)
 				ldest[rx] = color;
-			ldest = (unsigned *) ((byte *) ldest + vid.rowbytes);
+			ldest = (unsigned int *) ((byte *) ldest + vid.rowbytes);
 		}
 	} else {
 		// slower byte-by-byte clear for unaligned cases

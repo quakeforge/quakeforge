@@ -55,7 +55,7 @@
 #include "locs.h"
 #include "r_dynamic.h"
 #include "skin.h"
-#include "vid.h"
+#include "QF/vid.h"
 #include "view.h"
 
 entity_t	r_worldentity;

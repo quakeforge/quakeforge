@@ -42,7 +42,7 @@
 #include "QF/msg.h"
 #include "pmove.h"
 #include "screen.h"
-#include "vid.h"
+#include "QF/vid.h"
 #include "view.h"
 
 /*

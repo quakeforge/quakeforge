@@ -29,6 +29,7 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
 #include <math.h>
 
 #include "QF/compat.h"
@@ -37,7 +38,7 @@
 #include "QF/qargs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "vid.h"
+#include "QF/vid.h"
 #include "view.h"
 
 extern viddef_t vid;					// global video state
@@ -114,19 +115,21 @@ VID_BuildGammaTable (double gamma)
 {
 	int 	i;
 
+	gammatable[0] = 0;
 	if (gamma == 1.0) { // linear, don't bother with the math
-		for (i = 0; i < 256; i++) {
+		for (i = 1; i < 255; i++) {
 			gammatable[i] = i;
 		}
 	} else {
 		double	g = 1.0 / gamma;
 		int 	v;
 
-		for (i = 0; i < 256; i++) { // Build/update gamma lookup table
+		for (i = 1; i < 255; i++) { // Build/update gamma lookup table
 			v = (int) ((255.0 * pow ((double) i / 255.0, g)) + 0.5);
 			gammatable[i] = bound (0, v, 255);
 		}
 	}
+	gammatable[255] = 255;
 }
 
 /*

@@ -42,7 +42,7 @@
 #include "skin.h"
 #include "QF/compat.h"
 #include "QF/sys.h"
-#include "vid.h"
+#include "QF/vid.h"
 
 void
 Skin_Set_Translate (player_info_t *player)

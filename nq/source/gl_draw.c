@@ -37,7 +37,7 @@
 #endif
 
 #include "QF/compat.h"
-#include "vid.h"
+#include "QF/vid.h"
 #include "QF/sys.h"
 #include "QF/mathlib.h"					// needed by: protocol.h, render.h,
 										// client.h,
@@ -58,7 +58,7 @@
 
 static int  GL_LoadPicTexture (qpic_t *pic);
 
-extern byte *host_basepal;
+extern byte *vid_basepal;
 extern unsigned char d_15to8table[65536];
 extern cvar_t *crosshair, *cl_crossx, *cl_crossy, *crosshaircolor;
 extern qboolean lighthalf;
@@ -877,11 +877,11 @@ Draw_Fill (int x, int y, int w, int h, int c)
 {
 	glDisable (GL_TEXTURE_2D);
 	if (lighthalf)
-		glColor3f (host_basepal[c * 3] / 510.0, host_basepal[c * 3 + 1] / 510.0,
-				   host_basepal[c * 3 + 2] / 510.0);
+		glColor3f (vid_basepal[c * 3] / 510.0, vid_basepal[c * 3 + 1] / 510.0,
+				   vid_basepal[c * 3 + 2] / 510.0);
 	else
-		glColor3f (host_basepal[c * 3] / 255.0, host_basepal[c * 3 + 1] / 255.0,
-				   host_basepal[c * 3 + 2] / 255.0);
+		glColor3f (vid_basepal[c * 3] / 255.0, vid_basepal[c * 3 + 1] / 255.0,
+				   vid_basepal[c * 3 + 2] / 255.0);
 
 	glBegin (GL_QUADS);
 

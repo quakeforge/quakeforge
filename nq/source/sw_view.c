@@ -37,7 +37,7 @@
 #include "draw.h"
 #include "host.h"
 #include "view.h"
-#include "vid.h"
+#include "QF/vid.h"
 
 extern byte        gammatable[256];
 
@@ -95,7 +95,7 @@ V_UpdatePalette (void)
 	if (!new && !force)
 		return;
 
-	basepal = host_basepal;
+	basepal = vid_basepal;
 	newpal = pal;
 
 	for (i = 0; i < 256; i++) {

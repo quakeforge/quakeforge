@@ -48,7 +48,7 @@
 #include "sbar.h"
 #include "screen.h"
 #include "QF/va.h"
-#include "vid.h"
+#include "QF/vid.h"
 
 int         sb_updates;					// if >= vid.numpages, no update
 

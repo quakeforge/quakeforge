@@ -258,7 +258,7 @@ IN_Move (void)
 	if ((in_mlook.state & 1) && !(in_strafe.state & 1)) {
 		viewdelta.angles[PITCH] += dy;
 	} else {
-		if ((in_strafe.state & 1) && noclip_anglehack)
+		if (in_strafe.state & 1)
 			viewdelta.position[1] -= dy;
 		else
 			viewdelta.position[2] -= dy;

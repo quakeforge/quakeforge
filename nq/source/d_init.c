@@ -31,7 +31,6 @@
 #endif
 
 #include "d_local.h"
-#include "vid.h"
 
 #define NUM_MIPS	4
 

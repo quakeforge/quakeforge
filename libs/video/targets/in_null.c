@@ -1,7 +1,7 @@
 /*
-	sbar.h
+	in_null.c
 
-	@description@
+	for systems without a mouse
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -26,23 +26,39 @@
 	$Id$
 */
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
-// the status bar is only redrawn if something has changed, but if anything
-// does, the entire thing will be redrawn for the next vid.numpages frames.
+void
+IN_Init (void)
+{
+}
 
-#define	SBAR_HEIGHT		24
+void
+IN_Init_Cvars (void)
+{
+}
 
-extern	int			sb_lines;			// scan lines to draw
+void
+IN_Shutdown (void)
+{
+}
 
-void Sbar_Init (void);
+void
+IN_Commands (void)
+{
+}
 
-void Sbar_Changed (void);
-// call whenever any of the client stats represented on the sbar changes
+void
+IN_Move (usercmd_t *cmd)
+{
+}
 
-void Sbar_Draw (void);
-// called every frame by screen
-
-void Sbar_IntermissionOverlay (void);
-// called each frame after the level has been completed
-
-void Sbar_FinaleOverlay (void);
+/*
+	IN_ModeChanged
+*/
+void
+IN_ModeChanged (void)
+{
+}

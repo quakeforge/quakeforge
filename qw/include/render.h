@@ -32,7 +32,7 @@
 #include "QF/mathlib.h"
 #include "QF/model.h"
 #include "QF/cvar.h"
-#include "vid.h"
+#include "QF/vid.h"
 //#include "model.h" 
 //now we know why (struct model_s *) is used here instead of model_t
 //damn circular reference ! same with player_info_s -- yan

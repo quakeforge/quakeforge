@@ -39,7 +39,7 @@
 #include "QF/compat.h"
 #include "QF/input.h"
 #include "QF/qendian.h"
-#include "vid.h"
+#include "QF/vid.h"
 #include "QF/sys.h"
 #include "QF/mathlib.h"					// needed by: protocol.h, render.h,
 										// client.h,
@@ -110,7 +110,7 @@ console is:
 
 */
 
-extern byte *host_basepal;
+extern byte *vid_basepal;
 extern double host_frametime;
 extern double realtime;
 int         glx, gly, glwidth, glheight;
@@ -887,7 +887,7 @@ SCR_BringDownConsole (void)
 
 	cl.cshifts[0].percent = 0;			// no area contents palette on next
 	// frame
-	VID_SetPalette (host_basepal);
+	VID_SetPalette (vid_basepal);
 }
 
 void

@@ -39,7 +39,7 @@
 #include "QF/compat.h"
 #include "r_local.h"
 #include "QF/qargs.h"
-#include "vid.h"
+#include "QF/vid.h"
 #include "QF/sys.h"
 #include "QF/mathlib.h"					// needed by: protocol.h, render.h,
 										// client.h,

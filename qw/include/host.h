@@ -49,8 +49,6 @@ extern struct cvar_s	*password;
 
 extern double	host_frametime;		// Tonik
 
-extern byte		*host_basepal;
-extern byte		*host_colormap;
 extern int		host_framecount;	// incremented every frame, never reset
 
 extern qboolean	msg_suppress_1;		// Suppresses resolution and cache size

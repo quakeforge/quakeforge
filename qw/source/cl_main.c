@@ -93,7 +93,7 @@
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "teamplay.h"
-#include "vid.h"
+#include "QF/vid.h"
 #include "view.h"
 #include "QF/va.h"
 
@@ -189,8 +189,8 @@ int         host_framecount;
 
 int         host_hunklevel;
 
-byte       *host_basepal;
-byte       *host_colormap;
+byte       *vid_basepal;
+byte       *vid_colormap;
 
 cvar_t     *host_speeds;				// set for running times
 cvar_t     *show_fps;					// set for running times
@@ -1634,15 +1634,15 @@ Host_Init (void)
 
 	R_Textures_Init ();
 
-	host_basepal = (byte *) COM_LoadHunkFile ("gfx/palette.lmp");
-	if (!host_basepal)
+	vid_basepal = (byte *) COM_LoadHunkFile ("gfx/palette.lmp");
+	if (!vid_basepal)
 		Sys_Error ("Couldn't load gfx/palette.lmp");
-	host_colormap = (byte *) COM_LoadHunkFile ("gfx/colormap.lmp");
-	if (!host_colormap)
+	vid_colormap = (byte *) COM_LoadHunkFile ("gfx/colormap.lmp");
+	if (!vid_colormap)
 		Sys_Error ("Couldn't load gfx/colormap.lmp");
 #ifdef __linux__
 	CDAudio_Init ();
-	VID_Init (host_basepal);
+	VID_Init (vid_basepal);
 	IN_Init ();
 	Draw_Init ();
 	SCR_Init ();
@@ -1655,7 +1655,7 @@ Host_Init (void)
 	Skin_Init ();
 	CL_Init ();
 #else
-	VID_Init (host_basepal);
+	VID_Init (vid_basepal);
 	Draw_Init ();
 	SCR_Init ();
 	R_Init ();
@@ -1719,6 +1719,6 @@ Host_Shutdown (void)
 	NET_Shutdown ();
 	S_Shutdown ();
 	IN_Shutdown ();
-	if (host_basepal)
+	if (vid_basepal)
 		VID_Shutdown ();
 }

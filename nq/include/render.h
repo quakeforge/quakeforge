@@ -31,7 +31,7 @@
 
 #include "QF/mathlib.h"
 #include "QF/cvar.h"
-#include "vid.h"
+#include "QF/vid.h"
 #include "protocol.h"
 
 #define	MAXCLIPPLANES	11

@@ -34,6 +34,10 @@
 #define VID_CBITS	6
 #define VID_GRADES	(1 << VID_CBITS)
 
+struct cvar_s;
+extern byte   *vid_basepal;
+extern byte   *vid_colormap;
+
 typedef struct vrect_s {
 	int				x,y,width,height;
 	struct vrect_s	*pnext;

@@ -98,7 +98,7 @@ LoadPCX (QFile *f, int convert)
 	if (convert) {
 		tex->palette = 0;
 	} else {
-		tex->palette = host_basepal;
+		tex->palette = vid_basepal;
 	}
 	pix = tex->data;
 

@@ -733,7 +733,7 @@ SCR_ScreenShot_f (void)
 	// buffer
 
 	WritePCXfile (pcxname, vid.buffer, vid.width, vid.height, vid.rowbytes,
-				  host_basepal);
+				  vid_basepal);
 
 	D_DisableBackBufferAccess ();		// for adapters that can't stay
 	// mapped in
@@ -887,7 +887,7 @@ SCR_BringDownConsole (void)
 
 	cl.cshifts[0].percent = 0;			// no area contents palette on next
 	// frame
-	VID_SetPalette (host_basepal);
+	VID_SetPalette (vid_basepal);
 }
 
 

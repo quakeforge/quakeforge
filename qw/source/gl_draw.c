@@ -47,7 +47,7 @@
 #include "QF/sys.h"
 
 
-extern byte *host_basepal;
+extern byte *vid_basepal;
 extern cvar_t *crosshair, *cl_crossx, *cl_crossy, *crosshaircolor,
 	*gl_lightmap_components;
 
@@ -684,11 +684,11 @@ Draw_Fill (int x, int y, int w, int h, int c)
 {
 	glDisable (GL_TEXTURE_2D);
 	if (lighthalf)
-		glColor3f (host_basepal[c * 3] / 510.0, host_basepal[c * 3 + 1] / 510.0,
-				   host_basepal[c * 3 + 2] / 510.0);
+		glColor3f (vid_basepal[c * 3] / 510.0, vid_basepal[c * 3 + 1] / 510.0,
+				   vid_basepal[c * 3 + 2] / 510.0);
 	else
-		glColor3f (host_basepal[c * 3] / 255.0, host_basepal[c * 3 + 1] / 255.0,
-				   host_basepal[c * 3 + 2] / 255.0);
+		glColor3f (vid_basepal[c * 3] / 255.0, vid_basepal[c * 3 + 1] / 255.0,
+				   vid_basepal[c * 3 + 2] / 255.0);
 
 	glBegin (GL_QUADS);
 

@@ -44,7 +44,7 @@
 #include "QF/compat.h"
 
 
-extern byte *host_basepal;
+extern byte *vid_basepal;
 extern double host_frametime;
 extern int  onground;
 extern byte gammatable[256];

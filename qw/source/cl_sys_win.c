@@ -47,7 +47,7 @@
 #include "screen.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
-#include "vid.h"
+#include "QF/vid.h"
 
 qboolean    is_server = false;
 char       *svs_info;

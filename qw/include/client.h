@@ -34,7 +34,7 @@
 #include "protocol.h"
 #include "QF/quakefs.h"
 #include "render.h"
-#include "vid.h"
+#include "QF/vid.h"
 #include "QF/zone.h"
 
 // player_state_t is the information needed by a player entity

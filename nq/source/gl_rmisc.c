@@ -36,7 +36,7 @@
 #include <strings.h>
 #endif
 
-#include "vid.h"
+#include "QF/vid.h"
 #include "QF/sys.h"
 #include "QF/mathlib.h"					// needed by: protocol.h, render.h,
 										// client.h,

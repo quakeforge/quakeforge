@@ -46,7 +46,7 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "sbar.h"
-#include "vid.h"
+#include "QF/vid.h"
 #include "draw.h"
 #include "QF/input.h"
 #include "screen.h"
@@ -86,7 +86,7 @@ client_t   *host_client;				// current client
 
 jmp_buf     host_abortserver;
 
-byte       *host_basepal;
+byte       *vid_basepal;
 byte       *host_colormap;
 
 cvar_t     *fs_globalcfg;
@@ -960,10 +960,10 @@ Host_Init (quakeparms_t *parms)
 	R_InitTextures ();					// needed even for dedicated servers
 
 	if (cls.state != ca_dedicated) {
-		host_basepal = (byte *) COM_LoadHunkFile ("gfx/palette.lmp");
-		if (!host_basepal)
+		vid_basepal = (byte *) COM_LoadHunkFile ("gfx/palette.lmp");
+		if (!vid_basepal)
 			Sys_Error ("Couldn't load gfx/palette.lmp");
-		host_basepal[765] = host_basepal[766] = host_basepal[767] = 0;	// LordHavoc: 
+		vid_basepal[765] = vid_basepal[766] = vid_basepal[767] = 0;	// LordHavoc: 
 																		// 
 		// force 
 		// the 
@@ -975,7 +975,7 @@ Host_Init (quakeparms_t *parms)
 		if (!host_colormap)
 			Sys_Error ("Couldn't load gfx/colormap.lmp");
 
-		VID_Init (host_basepal);
+		VID_Init (vid_basepal);
 		IN_Init ();
 
 		Draw_Init ();

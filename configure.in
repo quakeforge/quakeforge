@@ -1258,7 +1258,8 @@ fi
 
 dnl We want warnings, lots of warnings...
 if test "x$GCC" = xyes; then
-	CFLAGS="$CFLAGS -Wall -Werror"
+	CFLAGS="$CFLAGS -Wall"
+#	CFLAGS="$CFLAGS -Wall -Werror"
 #	CFLAGS="$CFLAGS -Wall -pedantic"
 fi
 

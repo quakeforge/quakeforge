@@ -35,7 +35,7 @@
 #include "sbar.h"
 #include "game.h"
 #include "QF/cmd.h"
-#include "vid.h"
+#include "QF/vid.h"
 #include "QF/va.h"
 #include "draw.h"
 #include "wad.h"

@@ -128,7 +128,7 @@ V_UpdatePalette (void)
 	if (!new && !force)
 		return;
 
-	basepal = host_basepal;
+	basepal = vid_basepal;
 	newpal = pal;
 
 	for (i = 0; i < 256; i++) {
