@@ -45,7 +45,9 @@
 # include <X11/extensions/xf86dga.h>
 #endif
 
-#include <dlfcn.h>
+#ifdef HAVE_DLOPEN
+# include <dlfcn.h>
+#endif
 
 #include "QF/cmd.h"
 #include "compat.h"
@@ -95,7 +97,7 @@ const char *gl_vendor;
 const char *gl_renderer;
 const char *gl_version;
 const char *gl_extensions;
-void *libgl_handle;
+void		*libgl_handle;
 
 void
 VID_Shutdown (void)
@@ -170,35 +172,20 @@ VID_Init (unsigned char *palette)
 		None
 	};
 
-	libgl_handle = dlopen (gl_libgl->string, RTLD_NOW);
-	if (!libgl_handle) {
-		Con_Printf("Can't open libgl %s: %s\n", gl_libgl->string, dlerror());
+#ifdef HAVE_DLOPEN
+	if (!(libgl_handle = dlopen (gl_libgl->string, RTLD_NOW))) {
+		Sys_Error ("Can't open OpenGL library \"%s\": %s\n", gl_libgl->string, dlerror());
 		return;
 	}
+#else
+# error "No dynamic library support. FIXME."
+#endif
 
-	glXSwapBuffers = QFGL_ProcAddress (libgl_handle, "glXSwapBuffers");
-	if (!glXSwapBuffers) {
-		Sys_Error(va("Can't load symbol glXSwapBuffers: %s\n", dlerror()));
-		return;
-	}
-
-	glXChooseVisual = QFGL_ProcAddress (libgl_handle, "glXChooseVisual");
-	if (!glXChooseVisual) {
-		Sys_Error(va("Can't load symbol glXChooseVisual: %s\n", dlerror()));
-		return;
-	}
-
-	glXCreateContext = QFGL_ProcAddress (libgl_handle, "glXCreateContext");
-	if (!glXCreateContext) {
-		Sys_Error(va("Can't load symbol glXCreateContext: %s\n", dlerror()));
-		return;
-	}
-
-	glXMakeCurrent = QFGL_ProcAddress (libgl_handle, "glXMakeCurrent");
-	if (!glXMakeCurrent) {
-		Sys_Error(va("Can't load symbol glXMakeCurrent: %s\n", dlerror()));
-		return;
-	}
+	glXSwapBuffers = QFGL_ProcAddress (libgl_handle, "glXSwapBuffers", true);
+	glXChooseVisual = QFGL_ProcAddress (libgl_handle, "glXChooseVisual", true);
+	glXCreateContext = QFGL_ProcAddress (libgl_handle, "glXCreateContext", true);
+	glXMakeCurrent = QFGL_ProcAddress (libgl_handle, "glXMakeCurrent", true);
+	QFGL_ProcAddress (NULL, NULL, false);	// make ProcAddress clear its cache
 
 	Cmd_AddCommand ("vid_center", VID_Center_f, "Center the view port on the quake window in a virtual desktop.\n");
 
