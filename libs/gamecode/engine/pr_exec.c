@@ -248,6 +248,12 @@ PR_LeaveFunction (progs_t * pr)
 #define OPB (pr->pr_globals[st->b])
 #define OPC (pr->pr_globals[st->c])
 
+/*
+	This gets around the problem of needing to test for -0.0 but denormals
+	causing exceptions (or wrong results for what we need) on the alpha.
+*/
+#define FNZ(x) ((x).integer_var && (x).integer_var != 0x80000000)
+
 
 /*
 	PR_ExecuteProgram
@@ -369,13 +375,13 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				OPC.float_var = OPA.float_var < OPB.float_var;
 				break;
 			case OP_AND:	// OPA and OPB have to be float for -0.0
-				OPC.integer_var = OPA.float_var && OPB.float_var;
+				OPC.integer_var = FNZ (OPA) && FNZ (OPB);
 				break;
 			case OP_OR:	// OPA and OPB have to be float for -0.0
-				OPC.integer_var = OPA.float_var || OPB.float_var;
+				OPC.integer_var = FNZ (OPA) || FNZ (OPB);
 				break;
 			case OP_NOT_F:
-				OPC.integer_var = !OPA.float_var;
+				OPC.integer_var = !FNZ (OPA);
 				break;
 			case OP_NOT_V:
 				OPC.integer_var = VectorIsZero (OPA.vector_var);
