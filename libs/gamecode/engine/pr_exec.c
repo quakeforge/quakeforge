@@ -890,11 +890,12 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 
 			case OP_MOVE:
-				memmove (&OPC, &OPA, st->b);
+				memmove (&OPC, &OPA, st->b * 4);
 				break;
 			case OP_MOVEP:
 				memmove (pr->pr_globals + OPC.integer_var,
-						 pr->pr_globals + OPA.integer_var, OPB.uinteger_var);
+						 pr->pr_globals + OPA.integer_var,
+						 OPB.uinteger_var * 4);
 				break;
 
 // LordHavoc: to be enabled when Progs version 7 (or whatever it will be numbered) is finalized
