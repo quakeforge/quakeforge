@@ -857,28 +857,6 @@ pr__i_Object__hash (progs_t *pr)
 }
 
 static void
-pr__i_Object__compare_ (progs_t *pr)
-{
-	int          ret;
-	ret = P_INT (pr, 0) != P_INT (pr, 2);
-	if (ret) {
-		ret = P_INT (pr, 0) > P_INT (pr, 2);
-		if (!ret)
-			ret = -1;
-	}
-	R_INT (pr) = ret;
-}
-
-static void
-pr__c_Object__conformsTo_ (progs_t *pr)
-{
-	//pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
-	//pr_protocol_t *protocol = &P_STRUCT (pr, pr_protocol_t, 2);
-	//XXX
-	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
-}
-
-static void
 pr__i_Object_error_error_ (progs_t *pr)
 {
 	//pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
@@ -965,8 +943,6 @@ static struct {
 	{"object_is_meta_class",	pr_object_is_meta_class},
 
 	{"_i_Object__hash",			pr__i_Object__hash},
-	{"_i_Object__compare_",		pr__i_Object__compare_},
-	{"_c_Object__conformsTo_",	pr__c_Object__conformsTo_},
 	{"_i_Object_error_error_",		pr__i_Object_error_error_},
 	{"_c_Object__conformsToProtocol_",	pr__c_Object__conformsToProtocol_},
 };
