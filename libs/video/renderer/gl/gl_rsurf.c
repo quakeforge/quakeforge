@@ -760,41 +760,26 @@ R_RecursiveWorldNode (mnode_t *node)
 
 	// find which side of the node we are on
 	plane = node->plane;
-
-	switch (plane->type) {
-		case PLANE_X:
-			dot = modelorg[0] - plane->dist;
-			break;
-		case PLANE_Y:
-			dot = modelorg[1] - plane->dist;
-			break;
-		case PLANE_Z:
-			dot = modelorg[2] - plane->dist;
-			break;
-		default:
-			dot = DotProduct (modelorg, plane->normal) - plane->dist;
-			break;
-	}
-
+	if (plane->type < 3)
+		dot = modelorg[plane->type] - plane->dist;
+	else
+		dot = DotProduct (modelorg, plane->normal) - plane->dist;
 	side = dot < 0;
 
 	// recurse down the children, front side first
 	R_RecursiveWorldNode (node->children[side]);
 
+	// sneaky hack for side = side ? SURF_PLANEBACK : 0;
+ 	side = (~side + 1) & SURF_PLANEBACK;
 	// draw stuff
 	if ((c = node->numsurfaces)) {
 		surf = r_worldentity.model->surfaces + node->firstsurface;
-
-		if (dot < -BACKFACE_EPSILON)
-			side = SURF_PLANEBACK;
-		else if (dot > BACKFACE_EPSILON)
-			side = 0;
-
 		for (; c; c--, surf++) {
 			if (surf->visframe != r_visframecount)
 				continue;
 
-			if ((dot < 0) ^ !!(surf->flags & SURF_PLANEBACK))
+			// side is either 0 or SURF_PLANEBACK
+			if (side ^ (surf->flags & SURF_PLANEBACK))
 				continue;				// wrong side
 
 			if (surf->flags & SURF_DRAWTURB) {
@@ -803,7 +788,6 @@ R_RecursiveWorldNode (mnode_t *node)
 			} else if (surf->flags & SURF_DRAWSKY) {
 				surf->texturechain = sky_chain;
 				sky_chain = surf;
-				continue;
 			} else if (gl_mtex_active) {
 				R_DrawMultitexturePoly (surf);
 			} else {

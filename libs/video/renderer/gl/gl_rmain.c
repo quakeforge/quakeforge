@@ -250,6 +250,7 @@ vec3_t      shadevector;
 static void
 GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
 {
+	float           color[4];
 	float           l;
 	int             count;
 	int            *order;
@@ -257,6 +258,8 @@ GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
 
 	verts = vo->verts;
 	order = vo->order;
+
+	color[3] = modelalpha;
 
 	if (modelalpha != 1.0)
 		qfglDepthMask (GL_FALSE);
@@ -277,16 +280,15 @@ GL_DrawAliasFrame (vert_order_t *vo, qboolean fb)
 
 		do {
 			// texture coordinates come from the draw list
-			qfglTexCoord2f (((float *) order)[0], ((float *) order)[1]);
+			qfglTexCoord2fv ((float *) order);
 			order += 2;
 
 			if (!fb) {
 				// normals and vertexes come from the frame list
 				l = shadelight * verts->lightdot;
+				VectorScale (shadecolor, l, color);
 
-				// LordHavoc: cleanup after Endy
-				qfglColor4f (shadecolor[0] * l, shadecolor[1] * l,
-						   shadecolor[2] * l, modelalpha);
+				qfglColor4fv (color);
 			}
 
 			qfglVertex3fv (verts->vert);
