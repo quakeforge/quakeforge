@@ -57,11 +57,13 @@ ver_compare (const char *value, const char *reference)
 
 	for (;;) {
 		valptr = value;
-		while (*valptr && !isdigit ((int) *valptr))	// Scan past any non-digits
+		// Scan past any non-digits
+		while (*valptr && !isdigit ((byte) *valptr))
 			valptr++;
 
 		refptr = reference;
-		while (*refptr && !isdigit ((int) *refptr))	// get past non-digits
+		// get past non-digits
+		while (*refptr && !isdigit ((byte) *refptr))
 			refptr++;
 
 		for (;;) {
@@ -85,10 +87,10 @@ ver_compare (const char *value, const char *reference)
 
 		vl = rl = 0;
 
-		if (isdigit ((int) *valptr))
+		if (isdigit ((byte) *valptr))
 			vl = strtol (value, (char **) &value, 10);
 
-		if (isdigit ((int) *refptr))
+		if (isdigit ((byte) *refptr))
 			rl = strtol (reference, (char **) &reference, 10);
 
 		if (vl != rl)

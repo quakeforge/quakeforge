@@ -621,10 +621,10 @@ qstrcmp (char **os1, char **os2)
 	while (1) {
 		in1 = in2 = n1 = n2 = 0;
 
-		if ((in1 = isdigit ((int) *s1)))
+		if ((in1 = isdigit ((byte) *s1)))
 			n1 = strtol (s1, &s1, 10);
 
-		if ((in2 = isdigit ((int) *s2)))
+		if ((in2 = isdigit ((byte) *s2)))
 			n2 = strtol (s2, &s2, 10);
 
 		if (in1 && in2) {

@@ -735,7 +735,7 @@ SV_BeginDownload_f (ucmd_t *cmd)
 		char *n = p;
 
 		while (*name)
-			*p++ = tolower ((int) *name++);
+			*p++ = tolower ((byte) *name++);
 		*p = 0;
 		name = n;
 	}

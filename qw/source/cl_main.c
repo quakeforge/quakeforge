@@ -927,7 +927,7 @@ CL_ConnectionlessPacket (void)
 
 		s = MSG_ReadString (net_message);
 
-		while (*s && isspace ((int) *s))
+		while (*s && isspace ((byte) *s))
 			s++;
 		len = strlen (s);
 		while (len && isspace ((byte) s[len - 1]))
