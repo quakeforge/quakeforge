@@ -91,7 +91,14 @@ m		([\-+]?)
 						return FLOAT_VAL;
 					}
 
-{ID}	return type_or_name(yytext);
+{ID}				return type_or_name(yytext);
+@{ID}				{
+						int         tok = type_or_name(yytext);
+						if (tok == '@')
+							REJECT;
+						return tok;
+					}
+@					return '@';
 
 \"(\\.|[^"])*\"		{
 						yylval.string_val = make_string (yytext);
@@ -251,6 +258,18 @@ static keyword_t keywords[] = {
 	{"struct",		STRUCT, 0,					0, PROG_VERSION},
 	{"enum",		ENUM,	0,					0, PROG_ID_VERSION},
 	{"typedef",		TYPEDEF, 0,					0, PROG_ID_VERSION},
+
+	{"@class",		CLASS,	0,					0, PROG_VERSION},
+	{"@defs",		DEFS,	0,					0, PROG_VERSION},
+	{"@encode",		ENCODE,	0,					0, PROG_VERSION},
+	{"@end",		END,	0,					0, PROG_VERSION},
+	{"@implementation", IMPLEMENTATION, 0,		0, PROG_VERSION},
+	{"@interface",	INTERFACE, 0,				0, PROG_VERSION},
+	{"@private",	PRIVATE, 0,					0, PROG_VERSION},
+	{"@protected",	PROTECTED, 0,				0, PROG_VERSION},
+	{"@protocol",	PROTOCOL, 0,				0, PROG_VERSION},
+	{"@public",		PUBLIC,	0,					0, PROG_VERSION},
+	{"@selector",	SELECTOR, 0,				0, PROG_VERSION},
 };
 
 static const char *
@@ -278,6 +297,9 @@ type_or_name (char *token)
 	if (keyword) {
 		yylval.type = keyword->type;
 		return keyword->value;
+	}
+	if (token[0] == '@') {
+		return '@';
 	}
 	if ((type = find_struct (token)) || (type = get_typedef (token))) {
 		yylval.type = type;
@@ -531,3 +553,5 @@ make_string (char *token)
 
 	return str;
 }
+
+static void *(*const yy_flex_realloc_hack)(void *,yy_size_t) = yy_flex_realloc;

@@ -96,8 +96,7 @@ typedef struct {
 %right	'?' ':'
 %left	OR AND
 %left	EQ NE LE GE LT GT
-%left	SHL SHR
-%left	'+' '-'
+%left	SHL SHR %left	'+' '-'
 %left	'*' '/' '&' '|' '^' '%'
 %right	<op> UNARY INCOP
 %right	'(' '['
@@ -115,13 +114,16 @@ typedef struct {
 %token	ELE_START
 %token	<type> TYPE
 
+%token	CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE PROTECTED
+%token	PROTOCOL PUBLIC SELECTOR
+
 %type	<type>	type type_name
 %type	<params> function_decl
 %type	<integer_val> array_decl
 %type	<def>	param param_list def_name
 %type	<def>	def_item def_list
 %type	<expr>	const opt_expr expr arg_list element_list element_list1 element
-%type	<expr>	string_val
+%type	<expr>	string_val opt_state_expr
 %type	<expr>	statement statements statement_block
 %type	<expr>	break_label continue_label enum_list enum
 %type	<function> begin_function
@@ -170,6 +172,7 @@ def
 			process_enum ($4);
 			new_typedef ($7, &type_integer);
 		}
+	| obj_def
 	;
 
 struct_defs
@@ -389,44 +392,41 @@ var_initializer
 				}
 			}
 		}
-	| '=' begin_function statement_block end_function
+	| '=' opt_state_expr begin_function statement_block end_function
 		{
-			build_function ($2);
-			emit_function ($2, $3);
-			finish_function ($2);
+			build_function ($3);
+			if ($2) {
+				$2->next = $4;
+				emit_function ($3, $2);
+			} else {
+				emit_function ($3, $4);
+			}
+			finish_function ($3);
 		}
-	| '=' '[' const ','
-		{
-			$<def>$ = current_def;
-		}
-	  def_name
-	  	{
-			current_def = $<def>5;
-		}
-	  ']'
-		{
-			if ($3->type == ex_integer)
-				convert_int ($3);
-			if ($3->type != ex_float)
-				error ($3, "invalid type for frame number");
-			if ($6->type->type != ev_func)
-				error ($3, "invalid type for think");
-			$<expr>$ = new_expr ();
-		}
-	  begin_function statement_block end_function
-		{
-			expr_t *e = $<expr>9;
-			build_function ($10);
-			e->type = ex_expr;
-			e->e.expr.op = 's';
-			e->e.expr.e1 = $3;
-			e->e.expr.e2 = new_expr ();
-			e->e.expr.e2->type = ex_def;
-			e->e.expr.e2->e.def = $6;
-			e->next = $11;
+	;
 
-			emit_function ($10, e);
-			finish_function ($10);
+opt_state_expr
+	: /* emtpy */
+		{
+			$$ = 0;
+		}
+	| '[' const ',' { $<def>$ = current_def; }
+	  def_name { current_def = $<def>5; } ']'
+		{
+			if ($2->type == ex_integer)
+				convert_int ($2);
+			if ($2->type != ex_float)
+				error ($2, "invalid type for frame number");
+			if ($5->type->type != ev_func)
+				error ($2, "invalid type for think");
+
+			$$ = new_expr ();
+			$$->type = ex_expr;
+			$$->e.expr.op = 's';
+			$$->e.expr.e1 = $2;
+			$$->e.expr.e2 = new_expr ();
+			$$->e.expr.e2->type = ex_def;
+			$$->e.expr.e2->e.def = $5;
 		}
 	;
 
@@ -797,6 +797,7 @@ expr
 	| '&' expr %prec UNARY		{ $$ = address_expr ($2, 0, 0); }
 	| INCOP expr				{ $$ = incop_expr ($1, $2, 0); }
 	| expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
+	| obj_expr					{ /* XXX */ }
 	| NAME						{ $$ = new_name_expr ($1); }
 	| const						{ $$ = $1; }
 	| '(' expr ')'				{ $$ = $2; $$->paren = 1; }
@@ -861,6 +862,200 @@ string_val
 			e->e.string_val = $2;
 			$$ = binary_expr ('+', $1, e);
 		}
+	;
+
+obj_def
+	: classdef
+	| classdecl
+	| protocoldef
+	| methoddef
+	| END
+	;
+
+identifier_list
+	: NAME { /* XXX */ }
+	| identifier_list ',' NAME
+	;
+
+classdecl
+	: CLASS identifier_list
+	;
+
+classdef
+	: INTERFACE NAME protocolrefs '{'
+	  ivar_decl_list '}'
+	  methodprotolist
+	  END
+	| INTERFACE NAME protocolrefs
+	  methodprotolist
+	  END
+	| INTERFACE NAME ':' NAME protocolrefs '{'
+	  ivar_decl_list '}'
+	  methodprotolist
+	  END
+	| INTERFACE NAME ':' NAME protocolrefs
+	  methodprotolist
+	  END
+	| INTERFACE NAME '(' NAME ')' protocolrefs
+	  methodprotolist
+	  END
+	| IMPLEMENTATION NAME '{'
+	  ivar_decl_list '}'
+	| IMPLEMENTATION NAME
+	| IMPLEMENTATION NAME ':' NAME '{'
+	  ivar_decl_list '}'
+	| IMPLEMENTATION NAME ':' NAME
+	| IMPLEMENTATION NAME '(' NAME ')'
+	;
+
+protocoldef
+	: PROTOCOL NAME protocolrefs
+	  methodprotolist END
+	;
+
+protocolrefs
+	: /* emtpy */
+	| '<' identifier_list '>'
+	;
+
+ivar_decl_list
+	: ivar_decl_list visibility_spec ivar_decls
+	| ivar_decls
+	;
+
+visibility_spec
+	: PRIVATE
+	| PROTECTED
+	| PUBLIC
+	;
+
+ivar_decls
+	: /* empty */
+	| ivar_decls ivar_decl ';'
+	;
+
+ivar_decl
+	: type ivars { /* XXX */ }
+	;
+
+ivars
+	: ivar_declarator
+	| ivars ',' ivar_declarator
+	;
+
+ivar_declarator
+	: NAME { /* XXX */ }
+	;
+
+methoddef
+	: '+'
+	  methoddecl opt_state_expr
+	  begin_function statement_block end_function
+	| '-'
+	  methoddecl opt_state_expr
+	  begin_function statement_block end_function
+	;
+
+methodprotolist
+	: /* emtpy */
+	| methodprotolist2
+	;
+
+methodprotolist2
+	: methodproto
+	| methodprotolist2 methodproto
+	;
+
+methodproto
+	: '+' methoddecl ';'
+	| '-' methoddecl ';'
+	;
+
+methoddecl
+	: '(' type ')' unaryselector
+	| unaryselector
+	| '(' type ')' keywordselector optparmlist
+	| keywordselector optparmlist
+	;
+
+optparmlist
+	: /* empty */
+	| ',' ELIPSIS
+	;
+
+unaryselector
+	: selector
+	;
+
+keywordselector
+	: keyworddecl
+	| keywordselector keyworddecl
+	;
+
+selector
+	: NAME { /* XXX */ }
+	;
+
+keyworddecl
+	: selector ':' '(' type ')' NAME
+	| selector ':' NAME
+	| ':' '(' type ')' NAME
+	| ':' NAME
+	;
+
+messageargs
+	: selector
+	| keywordarglist
+	;
+
+keywordarglist
+	: keywordarg
+	| keywordarglist keywordarg
+	;
+
+keywordexpr
+	: expr { /* XXX */ }
+	;
+
+keywordarg
+	: selector ':' keywordexpr
+	| ':' keywordexpr
+	;
+
+receiver
+	: expr { /* XXX */ }
+	;
+
+obj_expr
+	: obj_messageexpr
+	| SELECTOR '(' selectorarg ')'
+	| PROTOCOL '(' NAME ')'
+	| ENCODE '(' type ')'
+	| obj_string
+	;
+
+obj_messageexpr
+	: '[' receiver messageargs ']'
+	;
+
+selectorarg
+	: selector
+	| keywordnamelist
+	;
+
+keywordnamelist
+	: keywordname
+	| keywordnamelist keywordname
+	;
+
+keywordname
+	: selector ':'
+	| ':'
+	;
+
+obj_string
+	: '@' STRING_VAL
+	| obj_string '@' STRING_VAL
 	;
 
 %%
