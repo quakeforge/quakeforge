@@ -80,7 +80,7 @@ parse_error (void)
 
 int yylex (void);
 
-hashtab_t *save_local_inits (def_t *scope);
+hashtab_t *save_local_inits (scope_t *scope);
 hashtab_t *merge_local_inits (hashtab_t *dl_1, hashtab_t *dl_2);
 void restore_local_inits (hashtab_t *def_list);
 void free_local_inits (hashtab_t *def_list);
@@ -178,8 +178,8 @@ switch_block_t *switch_block;
 type_t	*struct_type;
 visibility_t current_visibility;
 type_t	*current_ivars;
+scope_t *current_scope;
 
-def_t		*pr_scope;					// the function being parsed, or NULL
 string_t	s_file;						// filename for function definition
 
 int      element_flag;
@@ -340,7 +340,7 @@ def_item
 	: def_name opt_initializer
 		{
 			$$ = $1;
-			if ($$ && !$$->scope && $$->type->type != ev_func)
+			if ($$ && !$$->scope->parent && $$->type->type != ev_func)
 				PR_DefInitialized ($$);
 		}
 	;
@@ -348,17 +348,20 @@ def_item
 def_name
 	: NAME
 		{
-			int *alloc = &pr.num_globals;
-
-			if (pr_scope) {
-				alloc = pr_scope->alloc;
-				if (pr_scope->scope && !pr_scope->scope->scope) {
-					def_t      *def = PR_GetDef (0, $1, pr_scope->scope, 0);
-					if (def && def->scope && !def->scope->scope)
-						warning (0, "local %s shadows param %s", $1, def->name);
+			if (current_scope->parent) {
+				scope_t *scope = current_scope->parent;
+				if (!scope->parent && scope->parent->parent) {
+					def_t      *def = PR_GetDef (0, $1, scope, 0);
+					if (def) {
+						scope = def->scope;
+						if (scope->parent && !scope->parent->parent) {
+							warning (0, "local %s shadows param %s", $1,
+									 def->name);
+						}
+					}
 				}
 			}
-			$$ = PR_GetDef (current_type, $1, pr_scope, alloc);
+			$$ = PR_GetDef (current_type, $1, current_scope, 1);
 			current_def = $$;
 		}
 	;
@@ -372,7 +375,7 @@ opt_initializer
 var_initializer
 	: '=' expr
 		{
-			if (pr_scope) {
+			if (current_scope->parent) {
 				append_expr (local_expr,
 							 assign_expr (new_def_expr (current_def), $2));
 				PR_DefInitialized (current_def);
@@ -487,40 +490,36 @@ begin_function
 
 				lineno->fa.func = $$->aux - auxfunctions;
 			}
-			pr_scope = current_def;
 			build_scope ($$, current_def, current_params);
+			current_scope = $$->scope;
 		}
 	;
 
 end_function
 	: /*empty*/
 		{
-			pr_scope = 0;
+			current_scope = current_scope->parent;
 		}
 	;
 
 statement_block
 	: '{' 
 		{
-			def_t      *scope = PR_NewDef (&type_void, ".scope", pr_scope);
-			scope->alloc = pr_scope->alloc;
-			scope->used = 1;
-			pr_scope->scope_next = scope->scope_next;
-			scope->scope_next = 0;
-			pr_scope = scope;
+			scope_t    *scope = new_scope (current_scope->space, current_scope);
+			current_scope = scope;
 		}
 	  statements '}'
 		{
-			def_t      *scope = pr_scope;
+			def_t      *defs = current_scope->head;
 
-			PR_FlushScope (pr_scope, 1);
+			PR_FlushScope (current_scope, 1);
 
-			while (scope->scope_next)
-				 scope = scope->scope_next;
-
-			scope->scope_next = pr_scope->scope->scope_next;
-			pr_scope->scope->scope_next = pr_scope;
-			pr_scope = pr_scope->scope;
+			current_scope = current_scope->parent;
+			*current_scope->tail = defs;
+			while (*current_scope->tail) {
+				current_scope->tail = &(*current_scope->tail)->next;
+				current_scope->num_defs++;
+			}
 			$$ = $3;
 		}
 	;
@@ -652,7 +651,7 @@ statement
 		}
 	| IF '(' expr ')' save_inits statement ELSE
 		{
-			$<def_list>$ = save_local_inits (pr_scope);
+			$<def_list>$ = save_local_inits (current_scope);
 			restore_local_inits ($5);
 		}
 	  statement
@@ -665,7 +664,7 @@ statement
 
 			$$ = new_block_expr ();
 
-			else_ini = save_local_inits (pr_scope);
+			else_ini = save_local_inits (current_scope);
 
 			restore_local_inits ($5);
 			free_local_inits ($5);
@@ -746,7 +745,7 @@ switch_block
 save_inits
 	: /* empty */
 		{
-			$$ = save_local_inits (pr_scope);
+			$$ = save_local_inits (current_scope);
 		}
 	;
 
@@ -1330,12 +1329,12 @@ free_key (void *_d, void *unused)
 }
 
 static void
-scan_scope (hashtab_t *tab, def_t *scope)
+scan_scope (hashtab_t *tab, scope_t *scope)
 {
 	def_t      *def;
-	if (scope->scope)
-		scan_scope (tab, scope->scope);
-	for (def = scope->scope_next; def; def = def->scope_next) {
+	if (scope->parent && scope->parent->parent)
+		scan_scope (tab, scope->parent);
+	for (def = scope->head; def; def = def->def_next) {
 		if  (def->name && !def->removed) {
 			def_state_t *ds;
 			ALLOC (1024, def_state_t, def_states, ds);
@@ -1347,7 +1346,7 @@ scan_scope (hashtab_t *tab, def_t *scope)
 }
 
 hashtab_t *
-save_local_inits (def_t *scope)
+save_local_inits (scope_t *scope)
 {
 	hashtab_t  *tab = Hash_NewTable (61, get_key, free_key, 0);
 	scan_scope (tab, scope);

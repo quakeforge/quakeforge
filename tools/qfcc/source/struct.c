@@ -202,10 +202,10 @@ emit_struct(type_t *strct, const char *name)
 	for (i = 0; i < count; i++)
 		new_struct_field (ivar_list, type_ivar, 0, vis_public);
 	dsprintf (ivars_name, "_OBJ_INSTANCE_VARIABLES_%s", name);
-	ivars_def = PR_GetDef (ivar_list, ivars_name->str, 0, 0);
+	ivars_def = PR_GetDef (ivar_list, ivars_name->str, pr.scope, 0);
 	if (ivars_def)
 		goto done;
-	ivars_def = PR_GetDef (ivar_list, ivars_name->str, 0, &pr.num_globals);
+	ivars_def = PR_GetDef (ivar_list, ivars_name->str, pr.scope, 1);
 	ivars_def->initialized = ivars_def->constant = 1;
 	ivars = &G_STRUCT (pr_ivar_list_t, ivars_def->ofs);
 	ivars->ivar_count = count;
@@ -252,7 +252,7 @@ process_enum (expr_t *enm)
 		}
 		if ((structs && find_struct (name->e.string_val))
 			|| get_enum (name->e.string_val)
-			|| PR_GetDef (NULL, name->e.string_val, 0, 0)) {
+			|| PR_GetDef (NULL, name->e.string_val, pr.scope, 0)) {
 			error (name, "%s redeclared", name->e.string_val);
 			continue;
 		}

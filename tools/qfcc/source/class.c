@@ -159,7 +159,7 @@ class_begin (class_t *class)
 								va ("_OBJ_CATEGORY_%s_%s",
 									class->class_name,
 									class->category_name),
-								0, &pr.num_globals);
+								pr.scope, 1);
 		class->def->initialized = class->def->constant = 1;
 		category = &G_STRUCT (pr_category_t, class->def->ofs);
 		category->category_name = ReuseString (class->category_name);
@@ -175,7 +175,7 @@ class_begin (class_t *class)
 		
 		meta_def = PR_GetDef (type_Class.aux_type,
 							  va ("_OBJ_METACLASS_%s", class->class_name),
-							  0, &pr.num_globals);
+							  pr.scope, 1);
 		meta_def->initialized = meta_def->constant = 1;
 		meta = &G_STRUCT (pr_class_t, meta_def->ofs);
 		meta->class_pointer  = ReuseString (class->class_name);
@@ -190,7 +190,7 @@ class_begin (class_t *class)
 
 		class->def = PR_GetDef (type_Class.aux_type,
 								va ("_OBJ_CLASS_%s", class->class_name),
-								0, &pr.num_globals);
+								pr.scope, 1);
 		class->def->initialized = class->def->constant = 1;
 		cls = &G_STRUCT (pr_class_t, class->def->ofs);
 		cls->class_pointer = meta_def->ofs;
@@ -398,7 +398,7 @@ class_def (class_t *class)
 
 	def = PR_GetDef (class->type,
 					 va ("_OBJ_CLASS_POINTER_%s", class->class_name),
-					 0, &pr.num_globals);
+					 pr.scope, 1);
 	if (def->initialized)
 		return def;
 	if (class->def) {	//FIXME need externals?
@@ -451,7 +451,7 @@ class_finish_module (void)
 	new_struct_field (symtab_type, &type_integer, "cat_def_cnt", vis_public);
 	for (i = 0; i < num_classes + num_categories; i++)
 		new_struct_field (symtab_type, &type_pointer, 0, vis_public);
-	symtab_def = PR_GetDef (symtab_type, "_OBJ_SYMTAB", 0, &pr.num_globals);
+	symtab_def = PR_GetDef (symtab_type, "_OBJ_SYMTAB", pr.scope, 1);
 	symtab_def->initialized = symtab_def->constant = 1;
 	symtab = &G_STRUCT (pr_symtab_t, symtab_def->ofs);
 	symtab->cls_def_cnt = num_classes;
@@ -464,7 +464,7 @@ class_finish_module (void)
 		if ((*t)->def)
 			*def_ptr++ = (*t)->def->ofs;
 
-	module_def = PR_GetDef (type_module, "_OBJ_MODULE", 0, &pr.num_globals);
+	module_def = PR_GetDef (type_module, "_OBJ_MODULE", pr.scope, 1);
 	module_def->initialized = module_def->constant = 1;
 	module = &G_STRUCT (pr_module_t, module_def->ofs);
 	module->size = type_size (type_module);
@@ -472,17 +472,18 @@ class_finish_module (void)
 	module->symtab = symtab_def->ofs;
 
 	exec_class_def = PR_GetDef (&type_obj_exec_class, "__obj_exec_class",
-								0, &pr.num_globals);
+								pr.scope, 1);
 	exec_class_func = new_function ();
 	exec_class_func->builtin = 0;
 	exec_class_func->def = exec_class_def;
 	build_function (exec_class_func);
 	finish_function (exec_class_func);
 
-	init_def = PR_GetDef (&type_function, ".ctor", 0, &pr.num_globals);
+	init_def = PR_GetDef (&type_function, ".ctor", pr.scope, 1);
 	init_func = new_function ();
 	init_func->def = init_def;
 	init_func->code = pr.num_statements;
+	build_scope (init_func, init_def, 0);
 	build_function (init_func);
 	init_expr = new_block_expr ();
 	append_expr (init_expr,
@@ -543,7 +544,7 @@ protocol_add_protocol_methods (protocol_t *protocol, expr_t *protocols)
 def_t *
 protocol_def (protocol_t *protocol)
 {
-	return PR_GetDef (&type_Protocol, protocol->name, 0, &pr.num_globals);
+	return PR_GetDef (&type_Protocol, protocol->name, pr.scope, 1);
 }
 
 protocollist_t *
@@ -573,7 +574,7 @@ emit_protocol (protocol_t *protocol)
 
 	proto_def = PR_GetDef (type_Protocol.aux_type,
 						   va ("_OBJ_PROTOCOL_%s", protocol->name),
-						   0, &pr.num_globals);
+						   pr.scope, 1);
 	proto_def->initialized = proto_def->constant = 1;
 	proto = &G_STRUCT (pr_protocol_t, proto_def->ofs);
 	proto->class_pointer = 0;
@@ -604,7 +605,7 @@ emit_protocol_list (protocollist_t *protocols, const char *name)
 		new_struct_field (protocol_list, &type_pointer, 0, vis_public);
 	proto_list_def = PR_GetDef (type_Protocol.aux_type,
 								va ("_OBJ_PROTOCOLS_%s", name),
-								0, &pr.num_globals);
+								pr.scope, 1);
 	proto_list_def->initialized = proto_list_def->constant = 1;
 	proto_list = &G_STRUCT (pr_protocol_list_t, proto_list_def->ofs);
 	proto_list->next = 0;

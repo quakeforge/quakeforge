@@ -98,6 +98,8 @@ parse_cpp_name ()
 {
 	char       *n;
 
+	if (!cpp_name)
+		return;
 	n = strdup (cpp_name);
 	while (*n) {
 		while (*n && *n == ' ')

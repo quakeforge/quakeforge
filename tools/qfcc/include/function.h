@@ -43,6 +43,7 @@ typedef struct function_s {
 	const char			*file;		// source file with definition
 	int					file_line;
 	struct def_s		*def;
+	struct scope_s     *scope;
 	int					parm_ofs[MAX_PARMS];	// allways contiguous, right?
 } function_t;
 

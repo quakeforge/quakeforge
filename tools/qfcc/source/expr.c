@@ -139,7 +139,7 @@ convert_name (expr_t *e)
 			e->e.def = class_def (class);
 			return;
 		}
-		d = PR_GetDef (NULL, name, pr_scope, 0);
+		d = PR_GetDef (NULL, name, current_scope, 0);
 		if (d) {
 			if (!d->scope) {
 				new = class_ivar_expr (current_class, name);
@@ -326,7 +326,7 @@ check_initialized (expr_t *e)
 {
 	if (options.warnings.uninited_variable) {
 		if (e->type == ex_def
-			&& !(e->e.def->type->type == ev_func && !e->e.def->scope)
+			&& !(e->e.def->type->type == ev_func && !e->e.def->scope->parent)
 			&& !e->e.def->initialized) {
 			warning (e, "%s may be used uninitialized", e->e.def->name);
 			e->e.def->initialized = 1;	// only warn once
@@ -476,7 +476,7 @@ new_def_expr (def_t *def)
 expr_t *
 new_self_expr (void)
 {
-	def_t      *def = PR_GetDef (&type_entity, ".self", 0, &pr.num_globals);
+	def_t      *def = PR_GetDef (&type_entity, ".self", pr.scope, 1);
 
 	PR_DefInitialized (def);
 	return new_def_expr (def);
@@ -486,7 +486,7 @@ expr_t *
 new_this_expr (void)
 {
 	type_t     *type = field_type (&type_id);
-	def_t      *def = PR_GetDef (type, ".this", 0, &pr.num_globals);
+	def_t      *def = PR_GetDef (type, ".this", pr.scope, 1);
 
 	PR_DefInitialized (def);
 	return new_def_expr (def);
@@ -1629,10 +1629,9 @@ function_expr (expr_t *e1, expr_t *e2)
 		expr_t     *ret = new_expr ();
 
 		ret->type = ex_def;
-		ret->e.def = PR_NewDef (0, 0, 0);
-		*ret->e.def = def_ret;
+		ret->e.def = PR_NewDef (ftype->aux_type, 0, pr.scope);
+		ret->e.def->ofs = def_ret.ofs;
 
-		ret->e.def->type = ftype->aux_type;
 		call->e.block.result = ret;
 	}
 	return call;

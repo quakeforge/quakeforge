@@ -123,13 +123,13 @@ build_scope (function_t *f, def_t *func, param_t *params)
 	param_t    *p;
 	def_t      *argv = 0;
 
-	func->alloc = &func->locals;
+	f->scope = new_scope (new_defspace (), pr.scope);
 
 	if (func->type->num_parms < 0) {
-		def = PR_GetDef (&type_integer, ".argc", func, func->alloc);
+		def = PR_GetDef (&type_integer, ".argc", f->scope, 1);
 		def->used = 1;
 		PR_DefInitialized (def);
-		argv = PR_GetDef (&type_pointer, ".argv", func, func->alloc);
+		argv = PR_GetDef (&type_pointer, ".argv", f->scope, 1);
 		argv->used = 1;
 		PR_DefInitialized (argv);
 	}
@@ -139,7 +139,7 @@ build_scope (function_t *f, def_t *func, param_t *params)
 			continue;					// ellipsis marker
 		if (!p->type)
 			continue;					// non-param selector
-		def = PR_GetDef (p->type, p->name, func, func->alloc);
+		def = PR_GetDef (p->type, p->name, f->scope, 1);
 		f->parm_ofs[i] = def->ofs;
 		if (i > 0 && f->parm_ofs[i] < f->parm_ofs[i - 1]) {
 			error (0, "bad parm order");
@@ -153,7 +153,7 @@ build_scope (function_t *f, def_t *func, param_t *params)
 
 	if (argv) {
 		while (i < MAX_PARMS) {
-			def = PR_GetDef (&type_vector, 0, func, func->alloc);
+			def = PR_GetDef (&type_vector, 0, f->scope, 1);
 			def->used = 1;
 			if (argv->type == &type_pointer)
 				argv->type = array_type (&type_vector, MAX_PARMS - i);
@@ -224,7 +224,8 @@ finish_function (function_t *f)
 	df->s_name = ReuseString (f->def->name);
 	df->s_file = s_file;
 	df->numparms = f->def->type->num_parms;
-	df->locals = f->def->locals;
+	if (f->scope)
+		df->locals = f->scope->space->size;
 	df->parm_start = 0;
 	if ((count = df->numparms) < 0)
 		count = -count - 1;
@@ -234,7 +235,7 @@ finish_function (function_t *f)
 	if (f->aux) {
 		def_t *def;
 		f->aux->function = df - pr.functions;
-		for (def = f->def->scope_next; def; def = def->scope_next) {
+		for (def = f->scope->head; def; def = def->def_next) {
 			if (def->name) {
 				ddef_t *d = new_local ();
 				d->type = def->type->type;
@@ -255,7 +256,7 @@ emit_function (function_t *f, expr_t *e)
 	if (f->aux)
 		lineno_base = f->aux->source_line;
 
-	pr_scope = f->def;
+	current_scope = f->scope;
 	while (e) {
 		//printf ("%d ", pr_source_line);
 		//print_expr (e);
@@ -265,8 +266,8 @@ emit_function (function_t *f, expr_t *e)
 		e = e->next;
 	}
 	emit_statement (pr_source_line, op_done, 0, 0, 0);
-	PR_FlushScope (pr_scope, 0);
-	pr_scope = 0;
+	PR_FlushScope (current_scope, 0);
+	current_scope = pr.scope;
 	PR_ResetTempDefs ();
 
 	//puts ("");

@@ -42,43 +42,62 @@ typedef struct def_s {
 
 	struct reloc_s *refs;			// for relocations
 
-	int				initialized:1;	// for uninit var detection
-	int				constant:1;	// 1 when a declaration included "= immediate"
+	unsigned		initialized:1;	// for uninit var detection
+	unsigned		constant:1;	// 1 when a declaration included "= immediate"
 	unsigned		freed:1;		// already freed from the scope
 	unsigned		removed:1;		// already removed from the symbol table
 	unsigned		used:1;			// unused local detection
 	unsigned		absolute:1;		// don't relocate (for temps for shorts)
 	unsigned		managed:1;		// managed temp
+
 	string_t		file;			// source file
 	int				line;			// source line
 
 	int				users;			// ref counted temps
 	struct expr_s	*expr;			// temp expr using this def
 
-	int				locals;
-	int				*alloc;
-	struct def_s	*def_next;		// for writing out the global defs list
+	struct def_s	*def_next;		// next def in scope
 	struct def_s	*next;			// general purpose linking
-	struct def_s	*scope_next;	// to facilitate hash table removal
-	struct def_s	*scope;			// function the var was defined in, or NULL
+	struct scope_s	*scope;			// scope the var was defined in
 	struct def_s	*parent;		// vector/quaternion member
+
+	void			*return_addr;	// who allocated this
 } def_t;
+
+typedef struct defspace_s {
+	struct defspace_s *next;
+	pr_type_t  *data;
+	int         size;
+	int         max_size;
+	int       (*grow) (struct defspace_s *space);
+} defspace_t;
+
+typedef struct scope_s {
+	struct scope_s *next;
+	defspace_t *space;
+	def_t      *head;
+	def_t     **tail;
+	int         num_defs;
+	struct scope_s *parent;
+} scope_t;
 
 extern	def_t	def_ret, def_parms[MAX_PARMS];
 extern	def_t	def_void;
 extern	def_t	def_function;
 
-struct def_s *PR_GetDef (struct type_s *type, const char *name,
-						 struct def_s *scope, int *allocate);
-struct def_s *PR_NewDef (struct type_s *type, const char *name,
-						 struct def_s *scope);
-int PR_NewLocation (struct type_s *type);
-void PR_FreeLocation (struct def_s *def);
-struct def_s *PR_GetTempDef (struct type_s *type, struct def_s *scope);
+scope_t *new_scope (defspace_t *space, scope_t *parent);
+defspace_t *new_defspace (void);
+
+def_t *PR_GetDef (struct type_s *type, const char *name, scope_t *scope,
+				  int allocate);
+def_t *PR_NewDef (struct type_s *type, const char *name, scope_t *scope);
+int PR_NewLocation (struct type_s *type, defspace_t *space);
+void PR_FreeLocation (def_t *def);
+def_t *PR_GetTempDef (struct type_s *type, scope_t *scope);
 void PR_FreeTempDefs ();
 void PR_ResetTempDefs ();
-void PR_FlushScope (struct def_s *scope, int force_used);
-void PR_DefInitialized (struct def_s *d);
+void PR_FlushScope (scope_t *scope, int force_used);
+void PR_DefInitialized (def_t *d);
 
 
 #endif//__def_h

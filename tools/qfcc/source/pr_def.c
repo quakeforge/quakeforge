@@ -53,6 +53,8 @@ def_t       def_ret, def_parms[MAX_PARMS];
 static def_t *free_temps[4];			// indexted by type size
 static def_t temp_scope;
 static def_t *free_defs;
+static defspace_t *free_spaces;
+static scope_t *free_scopes;
 static locref_t *free_locs[4];			// indexted by type size
 static locref_t *free_free_locs;
 
@@ -71,7 +73,7 @@ defs_get_key (void *_def, void *_tab)
 }
 
 static def_t *
-check_for_name (type_t *type, const char *name, def_t *scope, int *allocate)
+check_for_name (type_t *type, const char *name, scope_t *scope, int allocate)
 {
 	def_t      *def;
 
@@ -96,6 +98,35 @@ check_for_name (type_t *type, const char *name, def_t *scope, int *allocate)
 	return 0;
 }
 
+static int
+grow_space (defspace_t *space)
+{
+	space->max_size += 1024;
+	return 1;
+}
+
+defspace_t *
+new_defspace (void)
+{
+	defspace_t *space;
+
+	ALLOC (1024, defspace_t, spaces, space);
+	space->grow = grow_space;
+	return space;
+}
+
+scope_t *
+new_scope (defspace_t *space, scope_t *parent)
+{
+	scope_t    *scope;
+
+	ALLOC (1024, scope_t, scopes, scope);
+	scope->space = space;
+	scope->parent = parent;
+	scope->tail = &scope->head;
+	return scope;
+}
+
 /*
 	PR_GetDef
 
@@ -103,7 +134,7 @@ check_for_name (type_t *type, const char *name, def_t *scope, int *allocate)
 	If allocate is true, a new def will be allocated if it can't be found
 */
 def_t *
-PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
+PR_GetDef (type_t *type, const char *name, scope_t *scope, int allocate)
 {
 	def_t      *def = check_for_name (type, name, scope, allocate);
 	int         size;
@@ -117,7 +148,7 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 		Hash_Add (defs_by_name, def);
 
 	// FIXME: need to sort out location re-use
-	def->ofs = *allocate;
+	def->ofs = scope->space->size;
 
 	/* 
 		make automatic defs for the vectors elements .origin can be accessed
@@ -138,7 +169,7 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 		d->used = 1;
 		d->parent = def;
 	} else {
-		*allocate += type_size (type);
+		scope->space->size += type_size (type);
 	}
 
 	if (type->type == ev_field) {
@@ -170,12 +201,12 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 			pr.size_fields += size;
 		}
 	} else if (type->type == ev_pointer && type->num_parms) {
-		int         ofs = *allocate;
+		int         ofs = scope->space->size;
 
 		size = type_size  (type->aux_type);
-		*allocate += type->num_parms * size;
+		scope->space->size += type->num_parms * size;
 
-		if (pr_scope) {
+		if (scope->parent) {
 			expr_t     *e1 = new_expr ();
 			expr_t     *e2 = new_expr ();
 
@@ -183,10 +214,11 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 			e1->e.def = def;
 
 			e2->type = ex_def;
-			e2->e.def = PR_NewDef (type->aux_type, 0, pr_scope);
+			e2->e.def = PR_NewDef (type->aux_type, 0, scope);
 			e2->e.def->ofs = ofs;
 
-			append_expr (local_expr, new_binary_expr ('=', e1, address_expr (e2, 0, 0)));
+			append_expr (local_expr,
+						 new_binary_expr ('=', e1, address_expr (e2, 0, 0)));
 		} else {
 			G_INT (def->ofs) = ofs;
 			def->constant = 1;
@@ -198,21 +230,17 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 }
 
 def_t *
-PR_NewDef (type_t *type, const char *name, def_t *scope)
+PR_NewDef (type_t *type, const char *name, scope_t *scope)
 {
 	def_t      *def;
 
 	ALLOC (16384, def_t, defs, def);
 
-	if (name) {
-		*pr.def_tail = def;
-		pr.def_tail = &def->def_next;
-	}
+	*scope->tail = def;
+	scope->tail = &def->def_next;
+	scope->num_defs++;
 
-	if (scope) {
-		def->scope_next = scope->scope_next;
-		scope->scope_next = def;
-	}
+	def->return_addr = __builtin_return_address (0);
 
 	def->name = name ? strdup (name) : 0;
 	def->type = type;
@@ -226,7 +254,7 @@ PR_NewDef (type_t *type, const char *name, def_t *scope)
 }
 
 int
-PR_NewLocation (type_t *type)
+PR_NewLocation (type_t *type, defspace_t *space)
 {
 	int         size = type_size (type);
 	locref_t   *loc;
@@ -240,8 +268,8 @@ PR_NewLocation (type_t *type)
 
 		return loc->ofs;
 	}
-	pr.num_globals += size;
-	return pr.num_globals - size;
+	space->size += size;
+	return space->size - size;
 }
 
 void
@@ -257,7 +285,7 @@ PR_FreeLocation (def_t *def)
 }
 
 def_t *
-PR_GetTempDef (type_t *type, def_t *scope)
+PR_GetTempDef (type_t *type, scope_t *scope)
 {
 	int         size = type_size (type);
 	def_t      *def;
@@ -268,8 +296,8 @@ PR_GetTempDef (type_t *type, def_t *scope)
 		def->type = type;
 	} else {
 		def = PR_NewDef (type, 0, scope);
-		def->ofs = *scope->alloc;
-		*scope->alloc += size;
+		def->ofs = scope->space->size;
+		scope->space->size += size;
 	}
 	def->freed = def->removed = def->users = 0;
 	def->next = temp_scope.next;
@@ -325,11 +353,11 @@ PR_ResetTempDefs (void)
 }
 
 void
-PR_FlushScope (def_t *scope, int force_used)
+PR_FlushScope (scope_t *scope, int force_used)
 {
 	def_t      *def;
 
-	for (def = scope->scope_next; def; def = def->scope_next) {
+	for (def = scope->head; def; def = def->def_next) {
 		if (def->name) {
 			if (!force_used && !def->used) {
 				expr_t      e;

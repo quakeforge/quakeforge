@@ -167,15 +167,20 @@ ReuseConstant (expr_t *expr, def_t *def)
 			Hash_NewTable (16381, quaternion_imm_get_key, 0, 0);
 		integer_imm_defs = Hash_NewTable (16381, int_imm_get_key, 0, "integer");
 
-		Hash_Add (string_imm_defs, cn = PR_NewDef (&type_string, ".imm", 0));
+		Hash_Add (string_imm_defs, cn = PR_NewDef (&type_string, ".imm",
+												   pr.scope));
 		cn->initialized = cn->constant = 1;
-		Hash_Add (float_imm_defs, cn = PR_NewDef (&type_float, ".imm", 0));
+		Hash_Add (float_imm_defs, cn = PR_NewDef (&type_float, ".imm",
+												  pr.scope));
 		cn->initialized = cn->constant = 1;
-		Hash_Add (entity_imm_defs, cn = PR_NewDef (&type_entity, ".imm", 0));
+		Hash_Add (entity_imm_defs, cn = PR_NewDef (&type_entity, ".imm",
+												   pr.scope));
 		cn->initialized = cn->constant = 1;
-		Hash_Add (pointer_imm_defs, cn = PR_NewDef (&type_pointer, ".imm", 0));
+		Hash_Add (pointer_imm_defs, cn = PR_NewDef (&type_pointer, ".imm",
+													pr.scope));
 		cn->initialized = cn->constant = 1;
-		Hash_Add (integer_imm_defs, cn = PR_NewDef (&type_integer, ".imm", 0));
+		Hash_Add (integer_imm_defs, cn = PR_NewDef (&type_integer, ".imm",
+													pr.scope));
 		cn->initialized = cn->constant = 1;
 	}
 	cn = 0;
@@ -253,7 +258,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 			cn = def;
 		} else {
 			if (cn->type != type) {
-				def = PR_NewDef (type, ".imm", 0);
+				def = PR_NewDef (type, ".imm", pr.scope);
 				def->ofs = cn->ofs;
 				cn = def;
 			}
@@ -264,19 +269,19 @@ ReuseConstant (expr_t *expr, def_t *def)
 	// always share immediates
 	if (def) {
 		if (def->type != type) {
-			cn = PR_NewDef (type, ".imm", 0);
+			cn = PR_NewDef (type, ".imm", pr.scope);
 			cn->ofs = def->ofs;
 		} else {
 			cn = def;
 		}
 	} else {
-		cn = PR_NewDef (type, ".imm", 0);
-		cn->ofs = PR_NewLocation (type);
+		cn = PR_NewDef (type, ".imm", pr.scope);
+		cn->ofs = PR_NewLocation (type, pr.globals);
 		if (type == &type_vector || type == &type_quaternion) {
 			int         i;
 
 			for (i = 0; i < 3 + (type == &type_quaternion); i++)
-				PR_NewDef (&type_float, ".imm", 0);
+				PR_NewDef (&type_float, ".imm", pr.scope);
 		}
 	}
 	cn->initialized = cn->constant = 1;
@@ -284,7 +289,7 @@ ReuseConstant (expr_t *expr, def_t *def)
 	if (e.type == ex_string)
 		e.e.integer_val = ReuseString (rep->str);
 
-	memcpy (pr.globals + cn->ofs, &e.e, 4 * type_size (type));
+	memcpy (pr.globals->data + cn->ofs, &e.e, 4 * type_size (type));
 
 	Hash_Add (tab, cn);
 

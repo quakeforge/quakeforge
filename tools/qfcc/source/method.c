@@ -57,9 +57,7 @@ static const char rcsid[] =
 #include "type.h"
 
 static def_t   *send_message_def;
-static function_t *send_message_func;
 static def_t   *send_message_super_def;
-static function_t *send_message_super_func;
 
 method_t *
 new_method (type_t *ret_type, param_t *selector, param_t *opt_parms)
@@ -123,7 +121,7 @@ method_def (class_t *class, method_t *method)
 			*s = '_';
 	//printf ("%s %s %s %ld\n", method->name, method->types, str->str, str->size);
 	// FIXME need a file scope
-	def = PR_GetDef (method->type, str->str, 0, &pr.num_globals);
+	def = PR_GetDef (method->type, str->str, pr.scope, 1);
 	dstring_delete (str);
 	return def;
 }
@@ -171,14 +169,13 @@ new_keywordarg (const char *selector, struct expr_s *expr)
 }
 
 static void
-make_message_def (const char *name, def_t **def, function_t **func)
+make_message_def (const char *name, def_t **def)
 {
-	*def = PR_GetDef (&type_IMP, name, 0, &pr.num_globals);
-	*func = new_function ();
-	(*func)->builtin = 0;
-	(*func)->def = *def;
-	build_function (*func);
-	finish_function (*func);
+	expr_t     *zero = new_expr ();
+
+	zero->type = ex_integer;
+	*def = PR_GetDef (&type_IMP, name, pr.scope, 1);
+	build_builtin_function (*def, zero);
 }
 
 expr_t *
@@ -187,10 +184,8 @@ send_message (int super)
 	expr_t     *e;
 
 	if (!send_message_def) {
-		make_message_def ("obj_msgSend",
-						  &send_message_def, &send_message_func);
-		make_message_def ("obj_msgSend_super",
-						  &send_message_super_def, &send_message_super_func);
+		make_message_def ("obj_msgSend", &send_message_def);
+		make_message_def ("obj_msgSend_super", &send_message_super_def);
 	}
 	e = new_expr ();
 	e->type = ex_def;
@@ -266,9 +261,9 @@ selector_def (const char *_sel_id, const char *_sel_types)
 	sel_def = malloc (sizeof (sel_def_t));
 	sel_def->sel_id = sel_id;
 	sel_def->sel_types = sel_types;
-	sel_def->def = PR_NewDef (type_SEL.aux_type, ".imm", 0);
+	sel_def->def = PR_NewDef (type_SEL.aux_type, ".imm", pr.scope);
 	sel_def->def->initialized = sel_def->def->constant = 1;
-	sel_def->def->ofs = PR_NewLocation (type_SEL.aux_type);
+	sel_def->def->ofs = PR_NewLocation (type_SEL.aux_type, pr.globals);
 	G_INT (sel_def->def->ofs) = sel_id;
 	G_INT (sel_def->def->ofs + 1) = sel_types;
 	Hash_AddElement (sel_def_hash, sel_def);
@@ -302,7 +297,7 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 	for (i = 0; i < count; i++)
 		new_struct_field (method_list, type_Method.aux_type, 0, vis_public);
 	methods_def = PR_GetDef (method_list, va ("_OBJ_%s_METHODS_%s", type, name),
-							 0, &pr.num_globals);
+							 pr.scope, 1);
 	methods_def->initialized = methods_def->constant = 1;
 	methods = &G_STRUCT (pr_method_list_t, methods_def->ofs);
 	methods->method_next = 0;
