@@ -59,6 +59,8 @@ cbuf_t     *qtv_cbuf;
 
 cvar_t     *qtv_console_plugin;
 cvar_t     *qtv_mem_size;
+cvar_t     *fs_globalcfg;
+cvar_t     *fs_usercfg;
 
 static void
 qtv_memory_init (void)
@@ -98,6 +100,23 @@ qtv_init (void)
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
 	Cmd_Init ();
 
+	Cmd_StuffCmds (qtv_cbuf);
+	Cbuf_Execute_Sets (qtv_cbuf);
+
+	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG,
+							 CVAR_ROM, 0, "global configuration file");
+	Cmd_Exec_File (qtv_cbuf, fs_globalcfg->string, 0);
+	Cbuf_Execute_Sets (qtv_cbuf);
+
+	// execute +set again to override the config file
+	Cmd_StuffCmds (qtv_cbuf);
+	Cbuf_Execute_Sets (qtv_cbuf);
+	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG,
+						   CVAR_ROM, 0, "user configuration file");
+	Cmd_Exec_File (qtv_cbuf, fs_usercfg->string, 0);
+	Cbuf_Execute_Sets (qtv_cbuf);
+
+	// execute +set again to override the config file
 	Cmd_StuffCmds (qtv_cbuf);
 	Cbuf_Execute_Sets (qtv_cbuf);
 
