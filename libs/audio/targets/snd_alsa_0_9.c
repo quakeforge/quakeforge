@@ -32,19 +32,17 @@
 #endif
 
 #include <stdio.h>
-
 #include <sys/asoundlib.h>
 
-#include "QF/cvar.h"
-#include "QF/sound.h"
-#include "QF/qargs.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/plugin.h"
+#include "QF/qargs.h"
+#include "QF/sound.h"
 
 static int  snd_inited;
 
 static snd_pcm_t *pcm;
-//static const snd_pcm_channel_area_t *mmap_areas;
 static const char *pcmname = NULL;
 size_t      buffer_size;
 
@@ -102,10 +100,12 @@ SNDDMA_Init (void)
 			if (snd_pcm_hw_params_set_rate_near (pcm, hw, 44100, 0) >= 0) {
 				frag_size = 256;		/* assuming stereo 8 bit */
 				rate = 44100;
-			} else if (snd_pcm_hw_params_set_rate_near (pcm, hw, 22050, 0) >= 0) {
+			} else if (snd_pcm_hw_params_set_rate_near (pcm, hw, 22050, 0) >=
+					   0) {
 				frag_size = 128;		/* assuming stereo 8 bit */
 				rate = 22050;
-			} else if (snd_pcm_hw_params_set_rate_near (pcm, hw, 11025, 0) >= 0) {
+			} else if (snd_pcm_hw_params_set_rate_near (pcm, hw, 11025, 0) >=
+					   0) {
 				frag_size = 64;			/* assuming stereo 8 bit */
 				rate = 11025;
 			} else {
@@ -128,10 +128,11 @@ SNDDMA_Init (void)
 
 	switch (bps) {
 		case -1:
-			if (snd_pcm_hw_params_set_format (pcm, hw, SND_PCM_FORMAT_S16_LE) >=
-				0) {
+			if (snd_pcm_hw_params_set_format (pcm, hw, SND_PCM_FORMAT_S16_LE)
+				>= 0) {
 				bps = 16;
-			} else if (snd_pcm_hw_params_set_format (pcm, hw, SND_PCM_FORMAT_U8)
+			} else if (snd_pcm_hw_params_set_format (pcm, hw,
+													 SND_PCM_FORMAT_U8)
 					   >= 0) {
 				bps = 8;
 			} else {
@@ -188,9 +189,7 @@ SNDDMA_Init (void)
 	}
 
 	snd_pcm_sw_params_current (pcm, sw);
-//	snd_pcm_sw_params_set_start_mode (pcm, sw, SND_PCM_START_EXPLICIT);
 	snd_pcm_sw_params_set_start_threshold (pcm, sw, ~0U);
-//	snd_pcm_sw_params_set_xrun_mode (pcm, sw, SND_PCM_XRUN_NONE);
 	snd_pcm_sw_params_set_stop_threshold (pcm, sw, ~0U);
 
 	err = snd_pcm_sw_params (pcm, sw);
@@ -198,8 +197,6 @@ SNDDMA_Init (void)
 		Con_Printf ("ALSA: unable to install sw params\n");
 		goto error;
 	}
-
-	//mmap_areas = snd_pcm_mmap_running_areas (pcm);
 
 	shm = &sn;
 	memset ((dma_t *) shm, 0, sizeof (*shm));
@@ -213,7 +210,6 @@ SNDDMA_Init (void)
 	shm->samples = buffer_size * shm->channels;	// mono samples in buffer
 	shm->speed = rate;
 	SNDDMA_GetDMAPos ();//XXX sets shm->buffer
-	//shm->buffer = (unsigned char *) mmap_areas->addr;
 	Con_Printf ("%5d stereo\n", shm->channels - 1);
 	Con_Printf ("%5d samples\n", shm->samples);
 	Con_Printf ("%5d samplepos\n", shm->samplepos);
@@ -225,11 +221,10 @@ SNDDMA_Init (void)
 
 	snd_inited = 1;
 	return 1;
-  error:
+error:
 	snd_pcm_close (pcm);
 	return 0;
 }
-
 
 int
 SNDDMA_GetDMAPos (void)
@@ -249,7 +244,6 @@ SNDDMA_GetDMAPos (void)
 	return shm->samplepos;
 }
 
-
 void
 SNDDMA_Shutdown (void)
 {
@@ -258,7 +252,6 @@ SNDDMA_Shutdown (void)
 		snd_inited = 0;
 	}
 }
-
 
 /*
 	SNDDMA_Submit
@@ -295,7 +288,6 @@ SNDDMA_Submit (void)
 			break;
 	}
 }
-
 
 plugin_t *
 PluginInfo (void)

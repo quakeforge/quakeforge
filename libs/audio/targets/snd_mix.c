@@ -36,10 +36,11 @@
 # include <strings.h>
 #endif
 
-#include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/sound.h"
+
+#include "compat.h"
 
 #ifdef _WIN32
 # include "winquake.h"
@@ -58,6 +59,7 @@ short      *snd_out;
 
 void        SND_WriteLinearBlastStereo16 (void);
 sfxcache_t *SND_LoadSound (sfx_t *s);
+
 
 #ifndef USE_INTEL_ASM
 void
@@ -206,13 +208,12 @@ SND_TransferPaintBuffer (int endtime)
 #endif
 }
 
-
 /*
 	CHANNEL MIXING
 */
 
-void        SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int endtime);
-void        SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int endtime);
+void       SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int endtime);
+void       SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int endtime);
 
 void
 SND_PaintChannels (int endtime)
@@ -297,9 +298,7 @@ SND_InitScaletable (void)
 			snd_scaletable[i][j] = ((signed char) j) * i * 8;
 }
 
-
 #ifndef USE_INTEL_ASM
-
 void
 SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count)
 {
@@ -325,9 +324,7 @@ SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count)
 
 	ch->pos += count;
 }
-
 #endif // !USE_INTEL_ASM
-
 
 void
 SND_PaintChannelFrom16 (channel_t *ch, sfxcache_t *sc, int count)

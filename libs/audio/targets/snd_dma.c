@@ -142,13 +142,11 @@ SND_AmbientOff (void)
 	snd_ambient = false;
 }
 
-
 void
 SND_AmbientOn (void)
 {
 	snd_ambient = true;
 }
-
 
 void
 SND_SoundInfo_f (void)
@@ -167,7 +165,6 @@ SND_SoundInfo_f (void)
 	Con_Printf ("0x%lx dma buffer\n", (unsigned long) shm->buffer);
 	Con_Printf ("%5d total_channels\n", total_channels);
 }
-
 
 void
 SND_Startup (void)
@@ -191,7 +188,6 @@ SND_Startup (void)
 
 	sound_started = 1;
 }
-
 
 void
 SND_Init (void)
@@ -223,7 +219,6 @@ SND_Init (void)
 //		Cvar_Set (snd_loadas8bit, "1");
 //		Con_Printf ("loading all sounds as 8bit\n");
 //	}
-
 
 	snd_initialized = true;
 
@@ -264,7 +259,6 @@ SND_Init (void)
 
 	SND_StopAllSounds (true);
 }
-
 
 void
 SND_Init_Cvars (void)
@@ -308,7 +302,6 @@ SND_Init_Cvars (void)
 							  "max stereo volume separation. 1.0 is max");
 }
 
-
 // Shutdown sound engine ======================================================
 void
 SND_Shutdown (void)
@@ -328,7 +321,6 @@ SND_Shutdown (void)
 
 	shm = 0;
 }
-
 
 // Load a sound ===============================================================
 sfx_t *
@@ -360,7 +352,6 @@ SND_FindName (const char *name)
 	return sfx;
 }
 
-
 void
 SND_TouchSound (const char *name)
 {
@@ -372,7 +363,6 @@ SND_TouchSound (const char *name)
 	sfx = SND_FindName (name);
 	Cache_Check (&sfx->cache);
 }
-
 
 sfx_t *
 SND_PrecacheSound (const char *name)
@@ -391,9 +381,7 @@ SND_PrecacheSound (const char *name)
 	return sfx;
 }
 
-
 //=============================================================================
-
 
 channel_t *
 SND_PickChannel (int entnum, int entchannel)
@@ -409,7 +397,8 @@ SND_PickChannel (int entnum, int entchannel)
 		 ch_idx++) {
 		if (entchannel != 0				// channel 0 never overrides
 			&& channels[ch_idx].entnum == entnum
-			&& (channels[ch_idx].entchannel == entchannel || entchannel == -1)) {
+			&& (channels[ch_idx].entchannel == entchannel ||
+				entchannel == -1)) {
 			// always override sound from same entity
 			first_to_die = ch_idx;
 			break;
@@ -434,7 +423,6 @@ SND_PickChannel (int entnum, int entchannel)
 
 	return &channels[first_to_die];
 }
-
 
 void
 SND_Spatialize (channel_t *ch)
@@ -486,11 +474,10 @@ SND_Spatialize (channel_t *ch)
 	ch->phase = phase;
 }
 
-
 // Start a sound effect =======================================================
 void
-SND_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol,
-			  float attenuation)
+SND_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin,
+				float fvol, float attenuation)
 {
 	channel_t  *target_chan, *check;
 	sfxcache_t *sc;
@@ -556,7 +543,6 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvo
 	}
 }
 
-
 void
 SND_StopSound (int entnum, int entchannel)
 {
@@ -571,7 +557,6 @@ SND_StopSound (int entnum, int entchannel)
 		}
 	}
 }
-
 
 void
 SND_StopAllSounds (qboolean clear)
@@ -593,13 +578,11 @@ SND_StopAllSounds (qboolean clear)
 		SND_ClearBuffer ();
 }
 
-
 void
 SND_StopAllSoundsC (void)
 {
 	SND_StopAllSounds (true);
 }
-
 
 void
 SND_ClearBuffer (void)
@@ -627,7 +610,6 @@ SND_ClearBuffer (void)
 		memset (shm->buffer, clear, shm->samples * shm->samplebits / 8);
 	}
 }
-
 
 void
 SND_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
@@ -665,9 +647,7 @@ SND_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
 	ss->oldphase = ss->phase;
 }
 
-
 //=============================================================================
-
 
 void
 SND_UpdateAmbientSounds (void)
@@ -692,7 +672,8 @@ SND_UpdateAmbientSounds (void)
 		return;
 	}
 
-	for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS; ambient_channel++) {
+	for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
+		 ambient_channel++) {
 		chan = &channels[ambient_channel];
 		chan->sfx = ambient_sfx[ambient_channel];
 
@@ -716,7 +697,6 @@ SND_UpdateAmbientSounds (void)
 		chan->leftvol = chan->rightvol = chan->master_vol;
 	}
 }
-
 
 /*
 	SND_Update
@@ -767,7 +747,8 @@ SND_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 			}
 			// search for one
 			combine = channels + MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS;
-			for (j = MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS; j < i; j++, combine++)
+			for (j = MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS; j < i; j++,
+					 combine++)
 				if (combine->sfx == ch->sfx)
 					break;
 
@@ -782,8 +763,6 @@ SND_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 				continue;
 			}
 		}
-
-
 	}
 
 	// debugging output
@@ -803,7 +782,6 @@ SND_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 	// mix some sound
 	SND_Update_ ();
 }
-
 
 void
 SND_GetSoundtime (void)
@@ -834,7 +812,6 @@ SND_GetSoundtime (void)
 	soundtime = buffers * fullsamples + samplepos / shm->channels;
 }
 
-
 void
 SND_ExtraUpdate (void)
 {
@@ -842,7 +819,6 @@ SND_ExtraUpdate (void)
 		return;							// don't pollute timings
 	SND_Update_ ();
 }
-
 
 void
 SND_Update_ (void)
@@ -877,11 +853,9 @@ SND_Update_ (void)
 	SNDDMA_Submit ();
 }
 
-
 /*
 	console functions
 */
-
 
 void
 SND_Play (void)
@@ -903,7 +877,6 @@ SND_Play (void)
 		i++;
 	}
 }
-
 
 void
 SND_PlayVol (void)
@@ -927,7 +900,6 @@ SND_PlayVol (void)
 		i += 2;
 	}
 }
-
 
 void
 SND_SoundList (void)
@@ -953,7 +925,6 @@ SND_SoundList (void)
 	Con_Printf ("Total resident: %i\n", total);
 }
 
-
 void
 SND_LocalSound (const char *sound)
 {
@@ -969,21 +940,19 @@ SND_LocalSound (const char *sound)
 		Con_Printf ("S_LocalSound: can't cache %s\n", sound);
 		return;
 	}
-	SND_StartSound (*plugin_info_sound_data.viewentity, -1, sfx, vec3_origin, 1, 1);
+	SND_StartSound (*plugin_info_sound_data.viewentity, -1, sfx, vec3_origin,
+					1, 1);
 }
-
 
 void
 SND_ClearPrecache (void)
 {
 }
 
-
 void
 SND_BeginPrecaching (void)
 {
 }
-
 
 void
 SND_EndPrecaching (void)

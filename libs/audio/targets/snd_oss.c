@@ -29,6 +29,19 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_SYS_IOCTL_H
+# include <sys/ioctl.h>
+#endif
+#ifdef HAVE_SYS_MMAN_H
+# include <sys/mman.h>
+#endif
+#if defined HAVE_SYS_SOUNDCARD_H
+# include <sys/soundcard.h>
+#elif defined HAVE_LINUX_SOUNDCARD_H
+# include <linux/soundcard.h>
+#elif HAVE_MACHINE_SOUNDCARD_H
+# include <machine/soundcard.h>
+#endif
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -38,22 +51,6 @@
 #include <sys/wait.h>
 #include <errno.h>
 #include <stdio.h>
-
-#ifdef HAVE_SYS_IOCTL_H
-# include <sys/ioctl.h>
-#endif
-
-#ifdef HAVE_SYS_MMAN_H
-# include <sys/mman.h>
-#endif
-
-#if defined HAVE_SYS_SOUNDCARD_H
-# include <sys/soundcard.h>
-#elif defined HAVE_LINUX_SOUNDCARD_H
-# include <linux/soundcard.h>
-#elif HAVE_MACHINE_SOUNDCARD_H
-# include <machine/soundcard.h>
-#endif
 
 #include "QF/cmd.h"
 #include "QF/console.h"

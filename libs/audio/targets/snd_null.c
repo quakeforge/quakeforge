@@ -37,6 +37,7 @@
 // Various variables also defined in snd_dma.c
 // FIXME - should be put in one place
 // =======================================================================
+
 extern channel_t       channels[MAX_CHANNELS];
 extern int             total_channels;
 extern volatile dma_t *shm;
@@ -57,6 +58,7 @@ sound_data_t       plugin_info_sound_data;
 sound_funcs_t      plugin_info_sound_funcs;
 
 void SND_Init_Cvars (void);
+
 
 void
 SND_Init (void)
@@ -176,7 +178,8 @@ PluginInfo (void) {
     plugin_info.plugin_version = "0.1";
     plugin_info.description = "ALSA 0.5.x digital output";
     plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
-		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge project\n"
+		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge "
+		"project\n"
 		"Please see the file \"AUTHORS\" for a list of contributors";
     plugin_info.functions = &plugin_info_funcs;
     plugin_info.data = &plugin_info_data;
