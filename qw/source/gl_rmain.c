@@ -134,8 +134,6 @@ cvar_t	*gl_skymultipass;
 cvar_t	*gl_sky_clip;
 cvar_t	*gl_sky_divide;
 
-cvar_t	*brighten;
-
 extern cvar_t *scr_fov;
 
 extern byte gammatable[256];
@@ -145,50 +143,6 @@ extern qboolean lighthalf;
 void
 glrmain_init (void)
 {
-}
-
-/*
-	GL_CheckBrightness
-
-	This is something like the brightness cvar, except it hacks the palette
-	directly instead of brightening the screen afterward.
-*/
-void
-GL_CheckBrightness (unsigned char *pal)
-{
-	int         i, inf;
-	float       brightness;
-
-	brighten = Cvar_Get ("brighten", "1", CVAR_NONE, NULL,
-						 "Palette hack equivalent to brightness");
-
-	if ((i = COM_CheckParm ("-brighten"))) {
-		brightness = atof (com_argv[i + 1]);
-	} else {
-		brightness = brighten->value;
-	}
-	brightness = bound (1, brightness, 5);
-
-	Cvar_SetValue (brighten, brightness);
-	Cvar_SetFlags (brighten, brighten->flags | CVAR_ROM);
-
-	// Build gamma table
-	if (brightness == 1.0) {			// screw the math
-		for (i = 0; i < 256; i++) {
-			gammatable[i] = i;
-		}
-	} else {
-		for (i = 0; i < 256; i++) {		// brighten up the palette
-			inf = (i * brightness);
-			inf = bound (0, inf, 255);
-			gammatable[i] = inf;
-		}
-	}
-
-	// correct the palette
-	for (i = 0; i < 768; i++) {
-		pal[i] = gammatable[pal[i]];
-	}
 }
 
 /*
