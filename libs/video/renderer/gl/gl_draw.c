@@ -285,7 +285,6 @@ void
 Draw_Character (int x, int y, int num)
 {
 	float       frow, fcol;
-	int         row, col;
 
 	if (num == 32)
 		return;							// space
@@ -295,11 +294,8 @@ Draw_Character (int x, int y, int num)
 	if (y <= -8)
 		return;							// totally off screen
 
-	row = num >> 4;
-	col = num & 15;
-
-	frow = row * CELL_SIZE;
-	fcol = col * CELL_SIZE;
+	frow = (num >> 4) * CELL_SIZE;
+	fcol = (num & 15) * CELL_SIZE;
 
 	qfglBindTexture (GL_TEXTURE_2D, char_texture);
 
