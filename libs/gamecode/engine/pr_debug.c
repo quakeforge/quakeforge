@@ -319,12 +319,9 @@ PR_Get_Lineno_Addr (progs_t *pr, pr_lineno_t *lineno)
 unsigned int
 PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno)
 {
-	pr_auxfunction_t *f;
-
 	if (lineno->line)
 		return lineno->line;
-	f = &pr->auxfunctions[lineno->fa.func];
-	return f->source_line;
+	return 0;
 }
 
 pr_lineno_t *
@@ -373,6 +370,7 @@ PR_Get_Source_Line (progs_t *pr, unsigned int addr)
 	if (!func || !fname)
 		return 0;
 	line = PR_Get_Lineno_Line (pr, lineno);
+	line += func->source_line;
 
 	file = PR_Load_Source_File (pr, fname);
 

@@ -232,7 +232,9 @@ NUM_FOR_BAD_EDICT (progs_t *pr, edict_t *e)
 	int		b;
 
 	b = (byte *) e - (byte *) * (pr)->edicts;
-	b = b / pr->pr_edict_size;
+
+	if (pr->pr_edict_size)
+		b /= pr->pr_edict_size;
 
 	return b;
 }
