@@ -83,7 +83,7 @@ qf_server_LIBS= $(top_builddir)/libs/models/libQFmodels.la \
 
 qw_server_SOURCES=	$(common_SOURCES) $(server_SOURCES)
 qw_server_LDADD=	-L. -lqfnet $(ASM) $(qf_server_LIBS) $(NET_LIBS) $(DL_LIBS)
-qw_server_DEPENDENCIES=	libqfnet.a $(ASM) $(qf_server_LIBS)
+qw_server_DEPENDENCIES=	libqfnet.la $(ASM) $(qf_server_LIBS)
 
 # Client builds
 #
@@ -101,7 +101,7 @@ qf_client_LIBS=	$(top_builddir)/libs/video/targets/libQFjs.la \
 		$(top_builddir)/libs/util/libQFutil.la
 
 client_LIBS= -L. -lqfnet $(ASM) $(qf_client_LIBS) $(NET_LIBS)
-client_LIB_DEPS=	libqfnet.a $(ASM) $(qf_client_LIBS)
+client_LIB_DEPS=	libqfnet.la $(ASM) $(qf_client_LIBS)
 # libQFjs is seperate because it needs to be linked after when building statically
 
 client_SOURCES= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \

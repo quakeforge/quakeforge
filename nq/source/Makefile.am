@@ -74,7 +74,7 @@ qf_client_LIBS= $(top_builddir)/libs/video/targets/libQFjs.la \
 		$(top_builddir)/libs/util/libQFutil.la
 
 client_LIBS=	-L. -lqfnet $(ASM) $(qf_client_LIBS) $(NET_LIBS)
-client_LIB_DEPS=	libqfnet.a $(ASM) $(qf_client_LIBS)
+client_LIB_DEPS=	libqfnet.la $(ASM) $(qf_client_LIBS)
 
 client_SOURCES=	cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_screen.c \
 		cl_parse.c cl_tent.c \
@@ -159,8 +159,8 @@ nq_wgl_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/mod
 ded_SOURCES=	sys_unixd.c sv_ded.c
 
 nq_server_SOURCES=	$(common_SOURCES) $(server_SOURCES) $(ded_SOURCES)
-nq_server_LDADD=	libqfnet.a $(ASM)
-nq_server_DEPENDENCIES=	libqfnet.a $(ASM)
+nq_server_LDADD=	libqfnet.la $(ASM)
+nq_server_DEPENDENCIES=	libqfnet.la $(ASM)
 
 # Stuff that doesn't get linked into an executable NEEDS to be mentioned here,
 # or it won't be distributed with 'make dist'
