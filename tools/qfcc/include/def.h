@@ -43,7 +43,7 @@ typedef struct def_s {
 	int				ofs;
 	int				initialized;	// for uninit var detection
 	int				constant;	// 1 when a declaration included "= immediate"
-	struct statref_s *refs;			// for relocations
+	struct reloc_s *refs;			// for relocations
 
 	unsigned		freed:1;		// already freed from the scope
 	unsigned		removed:1;		// already removed from the symbol table

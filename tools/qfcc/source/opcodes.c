@@ -32,10 +32,10 @@ static const char rcsid[] =
 
 #include <QF/hash.h>
 
-#include "qfcc.h"
 #include "def.h"
 #include "opcodes.h"
 #include "options.h"
+#include "qfcc.h"
 #include "type.h"
 
 hashtab_t  *opcode_type_table_ab;
@@ -53,30 +53,6 @@ opcode_t   *op_state;
 opcode_t   *op_goto;
 opcode_t   *op_jump;
 opcode_t   *op_jumpb;
-
-statref_t *
-PR_NewStatref (int ofs, int field)
-{
-	statref_t  *ref = calloc (1, sizeof (statref_t));
-
-	ref->ofs = ofs;
-	ref->field = field;
-	return ref;
-}
-
-void
-PR_AddStatementRef (def_t *def, dstatement_t *st, int field)
-{
-	if (def) {
-		statref_t  *ref = PR_NewStatref (st - pr.statements, field);
-
-		ref->next = def->refs;
-		def->refs = ref;
-
-		def->users--;
-		def->used = 1;
-	}
-}
 
 #define ROTL(x,n) (((x)<<(n))|(x)>>(32-n))
 
@@ -120,7 +96,7 @@ compare (void *_opa, void *_opb, void *_tab)
 }
 
 opcode_t *
-PR_Opcode_Find (const char *name, def_t *var_a, def_t *var_b, def_t *var_c)
+opcode_find (const char *name, def_t *var_a, def_t *var_b, def_t *var_c)
 {
 	opcode_t    op;
 	hashtab_t **tab;
@@ -142,7 +118,7 @@ PR_Opcode_Find (const char *name, def_t *var_a, def_t *var_b, def_t *var_c)
 }
 
 void
-PR_Opcode_Init_Tables (void)
+opcode_init (void)
 {
 	opcode_t   *op;
 

@@ -73,6 +73,7 @@ static const char rcsid[] =
 #include "immediate.h"
 #include "opcodes.h"
 #include "options.h"
+#include "reloc.h"
 #include "type.h"
 
 options_t   options;
@@ -311,28 +312,6 @@ PR_BeginCompilation (void)
 	pr_error_count = 0;
 }
 
-void
-PR_RelocateRefs (def_t *def)
-{
-	statref_t  *ref;
-
-	for (ref = def->refs; ref; ref = ref->next) {
-		switch (ref->field) {
-			case 0:
-				pr.statements[ref->ofs].a = def->ofs;
-				break;
-			case 1:
-				pr.statements[ref->ofs].b = def->ofs;
-				break;
-			case 2:
-				pr.statements[ref->ofs].c = def->ofs;
-				break;
-			default:
-				abort ();
-		}
-	}
-}
-
 /*
 	PR_FinishCompilation
 
@@ -346,6 +325,7 @@ qboolean PR_FinishCompilation (void)
 	function_t *f;
 	def_t      *def;
 	expr_t      e;
+	ex_label_t *l;
 
 	class_finish_module ();
 	// check to make sure all functions prototyped have code
@@ -374,7 +354,7 @@ qboolean PR_FinishCompilation (void)
 	for (def = pr.def_head; def; def = def->def_next) {
 		if (def->scope || def->absolute)
 			continue;
-		PR_RelocateRefs (def);
+		relocate_refs (def->refs, def->ofs);
 	}
 
 	for (f = pr.func_head; f; f = f->next) {
@@ -389,10 +369,13 @@ qboolean PR_FinishCompilation (void)
 			if (def->absolute)
 				continue;
 			def->ofs += pr.num_globals;
-			PR_RelocateRefs (def);
+			relocate_refs (def->refs, def->ofs);
 		}
 	}
 	pr.num_globals += num_localdefs;
+
+	for (l = pr.labels; l; l = l->next)
+		relocate_refs (l->refs, l->ofs);
 
 	return !errors;
 }
@@ -443,7 +426,7 @@ main (int argc, char **argv)
 		printf ("progs.src: %s\n", progs_src);
 	}
 
-	PR_Opcode_Init_Tables ();
+	opcode_init ();
 
 	InitData ();
 	init_types ();

@@ -45,6 +45,7 @@
 //
 typedef struct {
 	struct type_s	*types;
+	struct ex_label_s *labels;
 	
 	struct def_s	*def_head;		// unused head of linked list
 	struct def_s	**def_tail;		// add new defs after this and move it

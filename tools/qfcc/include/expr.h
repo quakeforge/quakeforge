@@ -56,8 +56,9 @@ typedef enum {
 	ex_short,
 } expr_type;
 
-typedef struct {
-	struct statref_s *refs;
+typedef struct ex_label_s {
+	struct ex_label_s *next;
+	struct reloc_s *refs;
 	int         ofs;
 	const char *name;
 } ex_label_t;

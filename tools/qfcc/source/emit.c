@@ -51,10 +51,25 @@ static const char rcsid[] =
 #include "opcodes.h"
 #include "options.h"
 #include "qfcc.h"
+#include "reloc.h"
 #include "type.h"
 #include "qc-parse.h"
 
 def_t      *emit_sub_expr (expr_t *e, def_t *dest);
+
+void
+add_statement_ref (def_t *def, dstatement_t *st, int field)
+{
+	if (def) {
+		reloc_t    *ref = new_reloc (st - pr.statements, field);
+
+		ref->next = def->refs;
+		def->refs = ref;
+
+		def->users--;
+		def->used = 1;
+	}
+}
 
 def_t *
 emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b,
@@ -118,9 +133,9 @@ emit_statement (int sline, opcode_t *op, def_t *var_a, def_t *var_b,
 			var_c ? var_c->name : "", statement->c);
 #endif
 
-	PR_AddStatementRef (var_a, statement, 0);
-	PR_AddStatementRef (var_b, statement, 1);
-	PR_AddStatementRef (var_c, statement, 2);
+	add_statement_ref (var_a, statement, 0);
+	add_statement_ref (var_b, statement, 1);
+	add_statement_ref (var_c, statement, 2);
 
 	if (op->right_associative)
 		return var_a;
@@ -131,7 +146,7 @@ void
 emit_branch (int line, opcode_t *op, expr_t *e, expr_t *l)
 {
 	dstatement_t *st;
-	statref_t  *ref;
+	reloc_t    *ref;
 	def_t      *def = 0;
 	int         ofs;
 
@@ -145,7 +160,7 @@ emit_branch (int line, opcode_t *op, expr_t *e, expr_t *l)
 		else
 			st->b = l->e.label.ofs - ofs;
 	} else {
-		ref = PR_NewStatref (ofs, op != op_goto);
+		ref = new_reloc (ofs, op == op_goto ? rel_op_a_op : rel_op_b_op);
 		ref->next = l->e.label.refs;
 		l->e.label.refs = ref;
 	}
@@ -170,17 +185,17 @@ emit_function_call (expr_t *e, def_t *dest)
 		parm.type = types[extract_type (earg)];
 		arg = emit_sub_expr (earg, &parm);
 		if (earg->type != ex_expr && earg->type != ex_uexpr) {
-			op = PR_Opcode_Find ("=", arg, &parm, &def_void);
+			op = opcode_find ("=", arg, &parm, &def_void);
 			emit_statement (e->line, op, arg, &parm, 0);
 		}
 	}
-	op = PR_Opcode_Find (va ("<CALL%d>", count), &def_function, &def_void,
+	op = opcode_find (va ("<CALL%d>", count), &def_function, &def_void,
 						 &def_void);
 	emit_statement (e->line, op, func, 0, 0);
 
 	def_ret.type = func->type->aux_type;
 	if (dest) {
-		op = PR_Opcode_Find ("=", dest, &def_ret, &def_void);
+		op = opcode_find ("=", dest, &def_ret, &def_void);
 		emit_statement (e->line, op, &def_ret, dest, 0);
 		return dest;
 	} else {
@@ -223,7 +238,7 @@ emit_assign_expr (int oper, expr_t *e)
 		}
 		def_b = emit_sub_expr (e2, def_a);
 		if (def_b != def_a) {
-			op = PR_Opcode_Find (operator, def_b, def_a, &def_void);
+			op = opcode_find (operator, def_b, def_a, &def_void);
 			emit_statement (e->line, op, def_b, def_a, 0);
 		}
 		return def_a;
@@ -234,11 +249,11 @@ emit_assign_expr (int oper, expr_t *e)
 		if (e1->type == ex_expr && extract_type (e1->e.expr.e1) == ev_pointer) {
 			def_a = emit_sub_expr (e1->e.expr.e1, 0);
 			def_c = emit_sub_expr (e1->e.expr.e2, 0);
-			op = PR_Opcode_Find (operator, def_b, def_a, def_c);
+			op = opcode_find (operator, def_b, def_a, def_c);
 		} else {
 			def_a = emit_sub_expr (e1, 0);
 			def_c = 0;
-			op = PR_Opcode_Find (operator, def_b, def_a, &def_void);
+			op = opcode_find (operator, def_b, def_a, &def_void);
 		}
 		emit_statement (e->line, op, def_b, def_a, def_c);
 		return def_b;
@@ -316,7 +331,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 				dest = PR_GetTempDef (e->e.expr.type, pr_scope);
 				dest->users += 2;
 			}
-			op = PR_Opcode_Find (operator, def_a, def_b, dest);
+			op = opcode_find (operator, def_a, def_b, dest);
 			d = emit_statement (e->line, op, def_a, def_b, dest);
 			break;
 		case ex_uexpr:
@@ -391,7 +406,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 				default:
 					abort ();
 			}
-			op = PR_Opcode_Find (operator, def_a, def_b, dest);
+			op = opcode_find (operator, def_a, def_b, dest);
 			d = emit_statement (e->line, op, def_a, def_b, dest);
 			break;
 		case ex_def:
@@ -447,7 +462,6 @@ emit_expr (expr_t *e)
 	def_t      *def;
 	def_t      *def_a;
 	def_t      *def_b;
-	statref_t  *ref;
 	ex_label_t *label;
 
 	//printf ("%d ", e->line);
@@ -459,24 +473,6 @@ emit_expr (expr_t *e)
 		case ex_label:
 			label = &e->e.label;
 			label->ofs = pr.num_statements;
-			for (ref = label->refs; ref; ref = ref->next) {
-				switch (ref->field) {
-					case 0:
-						pr.statements[ref->ofs].a = label->ofs - ref->ofs;
-						break;
-					case 1:
-						pr.statements[ref->ofs].b = label->ofs - ref->ofs;
-						break;
-					case 2:
-						pr.statements[ref->ofs].c = label->ofs - ref->ofs;
-						break;
-					case 3:
-						G_INT (ref->ofs) = label->ofs;
-						break;
-					default:
-						abort ();
-				}
-			}
 			break;
 		case ex_block:
 			for (e = e->e.block.head; e; e = e->next)

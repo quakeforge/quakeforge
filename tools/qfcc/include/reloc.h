@@ -1,5 +1,5 @@
 /*
-	opcodes.h
+	reloc.h
 
 	#DESCRIPTION#
 
@@ -29,26 +29,30 @@
 	$Id$
 */
 
-#ifndef __opcodes_h
-#define __opcodes_h
+#ifndef __reloc_h
+#define __reloc_h
 
-extern struct opcode_s *op_done;
-extern struct opcode_s *op_return;
-extern struct opcode_s *op_if;
-extern struct opcode_s *op_ifnot;
-extern struct opcode_s *op_ifbe;
-extern struct opcode_s *op_ifb;
-extern struct opcode_s *op_ifae;
-extern struct opcode_s *op_ifa;
-extern struct opcode_s *op_state;
-extern struct opcode_s *op_goto;
-extern struct opcode_s *op_jump;
-extern struct opcode_s *op_jumpb;
+typedef enum {
+	rel_none,
+	rel_op_a_def,
+	rel_op_b_def,
+	rel_op_c_def,
+	rel_op_a_op,
+	rel_op_b_op,
+	rel_op_c_op,
+	rel_def_op,
+	rel_def_def,
+} reloc_type;
 
-struct def_s;
+typedef struct reloc_s {
+	struct reloc_s *next;
+	int			ofs;
+	reloc_type	type;
+} reloc_t;
 
-struct opcode_s *opcode_find (const char *name, struct def_s *var_a,
-							  struct def_s *var_b, struct def_s *var_c);
-void opcode_init (void);
+struct statement_s;
 
-#endif//__opcodes_h
+reloc_t *new_reloc (int ofs, reloc_type type);
+void relocate_refs (reloc_t *refs, int ofs);
+
+#endif//__reloc_h

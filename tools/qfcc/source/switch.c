@@ -44,13 +44,15 @@ static const char rcsid[] =
 #include <QF/hash.h>
 #include <QF/sys.h>
 
-#include "qfcc.h"
 #include "def.h"
 #include "expr.h"
 #include "opcodes.h"
 #include "options.h"
-#include "type.h"
+#include "qfcc.h"
+#include "reloc.h"
 #include "switch.h"
+#include "type.h"
+
 #include "qc-parse.h"
 
 typedef struct case_node_s {
@@ -320,9 +322,9 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 			build_switch (sw, tree->right, op, sw_val, temp, default_label);
 		}
 		for (i = 0; i <= high - low; i++) {
-			statref_t  *ref;
+			reloc_t    *ref;
 
-			ref = PR_NewStatref (G_INT (def->ofs) + i, 3);
+			ref = new_reloc (G_INT (def->ofs) + i, rel_def_op);
 			ref->next = tree->labels[i]->e.label.refs;
 			tree->labels[i]->e.label.refs = ref;
 		}
