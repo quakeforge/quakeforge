@@ -1016,6 +1016,7 @@ Cmd_ProcessMath (dstring_t * dstr)
 				i += strlen (temp) - 1;
 			} else {
 				ret = -2;
+				Cmd_Error (va("Math error: invalid expression %s\n", statement->str));
 				break;					// Math evaluation error
 			}
 		}
@@ -1153,7 +1154,6 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 					return;
 				}
 				if (res == -2) {
-					Cmd_Error ("Math error:  Invalid math expression\n");
 					cmd_activebuffer->argc = 0;
 					return;
 				}

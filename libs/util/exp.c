@@ -272,7 +272,6 @@ exp_error_t EXP_Validate (token *chain)
 				EXP_InsertTokenAfter (cur, new);
 			}
 			else
-				EXP_DestroyTokens (chain);
 				return EXP_E_SYNTAX; /* Operator misuse */
 		}
 		else if (cur->generic.type == TOKEN_NUM && cur->generic.next->generic.type == TOKEN_NUM)
