@@ -193,8 +193,7 @@ void PR_GarbageCollect (progs_t *pr);
 // PR Resources stuff
 //
 
-void
-PR_Resources_Init (progs_t *pr);
+void PR_Resources_Init (progs_t *pr);
 void PR_Resources_Clear (progs_t *pr);
 void PR_Resources_Register (progs_t *pr, const char *name, void *data,
 							void (*clear)(progs_t *, void *));
