@@ -1411,6 +1411,15 @@ convert_nil (expr_t *e, type_t *t)
 		e->e.pointer.type = &type_void;
 }
 
+static int
+is_compare (int op)
+{
+	if (op == OR || op == AND || op == EQ || op == NE || op == LE
+		|| op == GE || op == LT || op == GT || op == '>' || op == '<')
+		return 1;
+	return 0;
+}
+
 expr_t *
 binary_expr (int op, expr_t *e1, expr_t *e2)
 {
@@ -1481,7 +1490,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	if (e1->type >= ex_string && e2->type >= ex_string)
 		return binary_const (op, e1, e2);
 
-	if ((op == '&' || op == '|')
+	if ((op == '&' || op == '|' || is_compare (op))
 		&& e1->type == ex_uexpr && e1->e.expr.op == '!' && !e1->paren) {
 		if (options.traditional) {
 			notice (e1, "precedence of `!' and `%c' inverted for traditional "
@@ -1538,8 +1547,7 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	} else {
 		type = t1;
 	}
-	if (op == OR || op == AND || op == EQ || op == NE || op == LE
-		|| op == GE || op == LT || op == GT || op == '>' || op == '<') {
+	if (is_compare (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
 			type = &type_integer;
 		else
