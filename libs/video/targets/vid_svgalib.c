@@ -493,4 +493,10 @@ outb (unsigned char val, unsigned short port)
 {
 	asm ("outb %b0, %w1" : :"a"(val), "d"(port));
 }
+#elif defined(__FreeBSD__)
+static inline void
+outb (unsigned char value, unsigned short port)
+{
+	__asm__ __volatile__ ("outb %b0,%w1"::"a" (value), "d" (port));
+}
 #endif
