@@ -1159,6 +1159,10 @@ PR_LoadProgs (progs_t * pr, char *progsname)
 			case OP_BITAND:
 			case OP_BITOR:
 			case OP_ADD_S:
+			case OP_GE_S:
+			case OP_LE_S:
+			case OP_GT_S:
+			case OP_LT_S:
 			case OP_GE:
 			case OP_LE:
 			case OP_GT:

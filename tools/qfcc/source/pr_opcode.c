@@ -68,8 +68,12 @@ opcode_t    pr_opcodes[] = {
 
 	{"<=", "LE", OP_LE, 4, false, &def_float, &def_float, &def_float},
 	{">=", "GE", OP_GE, 4, false, &def_float, &def_float, &def_float},
+	{"<=", "LE_S", OP_LE_S, 4, false, &def_string, &def_string, &def_float},
+	{">=", "GE_S", OP_GE_S, 4, false, &def_string, &def_string, &def_float},
 	{"<", "LT", OP_LT, 4, false, &def_float, &def_float, &def_float},
 	{">", "GT", OP_GT, 4, false, &def_float, &def_float, &def_float},
+	{"<", "LT_S", OP_LT_S, 4, false, &def_string, &def_string, &def_float},
+	{">", "GT_S", OP_GT_S, 4, false, &def_string, &def_string, &def_float},
 
 	{".", "INDIRECT", OP_LOAD_F, 1, false, &def_entity, &def_field, &def_float},
 	{".", "INDIRECT", OP_LOAD_V, 1, false, &def_entity, &def_field, &def_vector},

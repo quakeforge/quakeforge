@@ -129,6 +129,10 @@ typedef enum {
 	OP_BITOR,
 
 	OP_ADD_S,
+	OP_LE_S,
+	OP_GE_S,
+	OP_LT_S,
+	OP_GT_S,
 } pr_opcode_e;
 
 

@@ -134,6 +134,10 @@ char       *pr_opnames[] = {
 	"BITOR",
 
 	"ADD_S",
+	"LE_S",
+	"GE_S",
+	"LT_S",
+	"GT_S",
 };
 
 //=============================================================================
@@ -485,11 +489,6 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					&& (E_OPA->vector[1] == E_OPB->vector[1])
 					&& (E_OPA->vector[2] == E_OPB->vector[2]);
 				break;
-			case OP_EQ_S:
-				E_OPC->_float =
-					!strcmp (PR_GetString (pr, E_OPA->string),
-							 PR_GetString (pr, E_OPB->string));
-				break;
 			case OP_EQ_E:
 				E_OPC->_float = E_OPA->_int == E_OPB->_int;
 				break;
@@ -504,10 +503,25 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 					|| (E_OPA->vector[1] != E_OPB->vector[1])
 					|| (E_OPA->vector[2] != E_OPB->vector[2]);
 				break;
+			case OP_LE_S:
+			case OP_GE_S:
+			case OP_LT_S:
+			case OP_GT_S:
 			case OP_NE_S:
-				E_OPC->_float =
-					strcmp (PR_GetString (pr, E_OPA->string),
-							PR_GetString (pr, E_OPB->string));
+			case OP_EQ_S:
+				{
+					int cmp = strcmp (PR_GetString (pr, E_OPA->string),
+									  PR_GetString (pr, E_OPB->string));
+					switch (st->op) {
+						case OP_LE_S: cmp = (cmp <= 0); break;
+						case OP_GE_S: cmp = (cmp >= 0); break;
+						case OP_LT_S: cmp = (cmp < 0); break;
+						case OP_GT_S: cmp = (cmp > 0); break;
+						case OP_NE_S: break;
+						case OP_EQ_S: cmp = !cmp; break;
+					}
+					E_OPC->_float = cmp;
+				}
 				break;
 			case OP_NE_E:
 				E_OPC->_float = E_OPA->_int != E_OPB->_int;
