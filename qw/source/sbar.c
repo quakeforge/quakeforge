@@ -1085,7 +1085,7 @@ Sbar_Draw_DMO_Team_Ping (view_t *view, int l, int y, int skip)
 	player_info_t *s;
 
 	x = 4;
-//						0    40 64  104  152   192
+//							  0    40 64  104  152   192
 	draw_string (view, x, y, "ping pl fph time frags team name");
 	y += 8;
 	draw_string (view, x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
@@ -1116,7 +1116,7 @@ Sbar_Draw_DMO_Team_Ping (view_t *view, int l, int y, int skip)
 
 		if (s->spectator) {
 			draw_string (view, x + 72, y, "(spectator)");
-			draw_string (view, x + 184 + 40, y, s->name);			// draw name
+			draw_string (view, x + 184 + 40, y, s->name);		// draw name
 			y += skip;
 			continue;
 		}
@@ -1157,7 +1157,7 @@ Sbar_Draw_DMO_Team_Ping (view_t *view, int l, int y, int skip)
 		}
 		draw_nstring (view, x + 136, y, num, 5);
 
-		draw_nstring (view, x + 184, y, s->team->value, 4);	// draw team
+		draw_nstring (view, x + 184, y, s->team->value, 4);		// draw team
 		draw_string (view, x + 184 + 40, y, s->name);			// draw name
 		y += skip;
 	}
@@ -1171,7 +1171,7 @@ Sbar_Draw_DMO_Team_UID (view_t *view, int l, int y, int skip)
 	player_info_t *s;
 
 	x = 4;
-//						0    40 64  104  152   192
+//							  0    40 64  104  152   192
 	draw_string (view, x, y, " uid pl fph time frags team name");
 	y += 8;
 	draw_string (view, x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
@@ -1200,7 +1200,7 @@ Sbar_Draw_DMO_Team_UID (view_t *view, int l, int y, int skip)
 
 		if (s->spectator) {
 			draw_string (view, x + 72, y, "(spectator)");
-			draw_string (view, x + 184 + 40, y, s->name);			// draw name
+			draw_string (view, x + 184 + 40, y, s->name);		// draw name
 			y += skip;
 			continue;
 		}
@@ -1241,7 +1241,7 @@ Sbar_Draw_DMO_Team_UID (view_t *view, int l, int y, int skip)
 		}
 		draw_nstring (view, x + 136, y, num, 5);
 
-		draw_nstring (view, x + 184, y, s->team->value, 4);	// draw team
+		draw_nstring (view, x + 184, y, s->team->value, 4);		// draw team
 		draw_string (view, x + 184 + 40, y, s->name);			// draw name
 		y += skip;
 	}
@@ -1255,7 +1255,7 @@ Sbar_Draw_DMO_Team_Ping_UID (view_t *view, int l, int y, int skip)
 	player_info_t *s;
 
 	x = 4;
-//						0    40 64  104  152   192
+//							  0    40 64  104  152   192
 	draw_string (view, x, y, "ping pl fph time frags team  uid name");
 	y += 8;
 	draw_string (view, x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
@@ -1289,8 +1289,8 @@ Sbar_Draw_DMO_Team_Ping_UID (view_t *view, int l, int y, int skip)
 			draw_string (view, x + 72, y, "(spectator)");
 			p = s->userid;
 			snprintf (num, sizeof (num), "%4i", p);
-			draw_string (view, x + 184 + 40, y, num);				// draw uid
-			draw_string (view, x + 184 + 80, y, s->name);			// draw name
+			draw_string (view, x + 184 + 40, y, num);			// draw uid
+			draw_string (view, x + 184 + 80, y, s->name);		// draw name
 			y += skip;
 			continue;
 		}
@@ -1348,7 +1348,7 @@ Sbar_Draw_DMO_Ping (view_t *view, int l, int y, int skip)
 	player_info_t *s;
 
 	x = 16;
-//						0    40 64  104  152
+//							  0    40 64  104  152
 	draw_string (view, x, y, "ping pl fph time frags name");
 	y += 8;
 	draw_string (view, x, y, "\x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1f "
@@ -1600,8 +1600,8 @@ Sbar_Draw_DMO_Ping_UID (view_t *view, int l, int y, int skip)
 
 		p = s->userid;
 		snprintf (num, sizeof (num), "%4i", p);
-		draw_string (view, x + 184, y, num);						// draw UID
-		draw_string (view, x + 184 + 40, y, s->name);				// draw name
+		draw_string (view, x + 184, y, num);					// draw UID
+		draw_string (view, x + 184 + 40, y, s->name);			// draw name
 		y += skip;
 	}
 }
