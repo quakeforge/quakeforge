@@ -58,15 +58,17 @@
 #include "r_local.h"
 #include "render.h"
 
-extern entity_t r_worldentity;
-extern void GDT_Init ();
-
 varray_t2f_c4f_v3f_t varray[MAX_VARRAY_VERTS];
 
 qboolean    VID_Is8bit (void);
-void        R_InitBubble ();
-
 qboolean    allowskybox;				// allow skyboxes?  --KB
+void        R_InitBubble (void);
+
+extern cvar_t  *r_netgraph;
+
+extern void GDT_Init ();
+
+extern entity_t r_worldentity;
 
 
 void
@@ -75,7 +77,7 @@ R_InitTextures (void)
 	int         x, y, m;
 	byte       *dest;
 
-// create a simple checkerboard texture for the default
+	// create a simple checkerboard texture for the default
 	r_notexture_mip =
 		Hunk_AllocName (sizeof (texture_t) + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2,
 						"notexture");
@@ -89,13 +91,14 @@ R_InitTextures (void)
 
 	for (m = 0; m < 4; m++) {
 		dest = (byte *) r_notexture_mip + r_notexture_mip->offsets[m];
-		for (y = 0; y < (16 >> m); y++)
+		for (y = 0; y < (16 >> m); y++) {
 			for (x = 0; x < (16 >> m); x++) {
 				if ((y < (8 >> m)) ^ (x < (8 >> m)))
 					*dest++ = 0;
 				else
 					*dest++ = 0xff;
 			}
+		}
 	}
 }
 
@@ -182,12 +185,14 @@ void
 R_Init (void)
 {
 	allowskybox = false;				// server will decide if this is
-	// allowed  --KB
+										// allowed  --KB
 
-	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f, "No Description");
+	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f,
+					"Tests the current refresh rate for the current location");
 	Cmd_AddCommand ("envmap", R_Envmap_f, "No Description");
-	Cmd_AddCommand ("pointfile", R_ReadPointFile_f, "No Description");
-	Cmd_AddCommand ("loadsky", R_LoadSky_f, "No Description");
+	Cmd_AddCommand ("pointfile", R_ReadPointFile_f,
+					"Load a pointfile to determine map leaks");
+	Cmd_AddCommand ("loadsky", R_LoadSky_f, "Load a skybox");
 
 	R_InitBubble ();
 
@@ -199,11 +204,9 @@ R_Init (void)
 
 
 /*
-===============
-R_TranslatePlayerSkin
+	R_TranslatePlayerSkin
 
-Translates a skin texture by the per-player color lookup
-===============
+	Translates a skin texture by the per-player color lookup
 */
 void
 R_TranslatePlayerSkin (int playernum)
@@ -351,7 +354,8 @@ R_TranslatePlayerSkin (int playernum)
 void
 R_NewMap (void)
 {
-	int         i;
+	int			 i;
+	cvar_t		*r_skyname;
 
 	for (i = 0; i < 256; i++)
 		d_lightstylevalue[i] = 264;		// normal light value
@@ -359,8 +363,7 @@ R_NewMap (void)
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
 	r_worldentity.model = cl.worldmodel;
 
-// clear out efrags in case the level hasn't been reloaded
-// FIXME: is this one short?
+	// clear out efrags in case the level hasn't been reloaded
 	for (i = 0; i < cl.worldmodel->numleafs; i++)
 		cl.worldmodel->leafs[i].efrags = NULL;
 
@@ -390,11 +393,9 @@ R_NewMap (void)
 
 
 /*
-====================
-R_TimeRefresh_f
+	R_TimeRefresh_f
 
-For program optimization
-====================
+	For program optimization
 */
 // LordHavoc: improved appearance and accuracy of timerefresh
 void
@@ -403,7 +404,6 @@ R_TimeRefresh_f (void)
 	int         i;
 	double      start, stop, time;
 
-//  glDrawBuffer  (GL_FRONT);
 	glFinish ();
 	GL_EndRendering ();
 
@@ -416,13 +416,10 @@ R_TimeRefresh_f (void)
 		GL_EndRendering ();
 	}
 
-//  glFinish ();
 	stop = Sys_DoubleTime ();
 	time = stop - start;
 	Con_Printf ("%f seconds (%f fps)\n", time, 128 / time);
 
-//  glDrawBuffer  (GL_BACK);
-//  GL_EndRendering ();
 	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 }
 

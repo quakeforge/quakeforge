@@ -54,19 +54,16 @@
 
 varray_t2f_c4f_v3f_t varray[MAX_VARRAY_VERTS];
 
-qboolean VID_Is8bit (void);
-void R_InitBubble (void);
+qboolean    VID_Is8bit (void);
+qboolean	allowskybox;				// allow skyboxes?  --KB
+void        R_InitBubble (void);
 
 extern cvar_t	*gl_lerp_anim;
-
 extern cvar_t	*r_netgraph;
 
 extern void GDT_Init ();
-qboolean	allowskybox;				// allow skyboxes?  --KB
 
-/*
-	R_Textures_Init
-*/
+
 void
 R_Textures_Init (void)
 {
@@ -97,6 +94,7 @@ R_Textures_Init (void)
 		}
 	}
 }
+
 
 /*
 	R_Envmap_f
@@ -163,9 +161,7 @@ R_Envmap_f (void)
 	GL_EndRendering ();
 }
 
-/*
-   R_LoadSky_f
-*/
+
 void
 R_LoadSky_f (void)
 {
@@ -178,18 +174,17 @@ R_LoadSky_f (void)
 }
 
 
-/*
-	R_Init
-*/
 void
 R_Init (void)
 {
 	allowskybox = false;				// server will decide if this is
 										// allowed  --KB
 
-	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f, "Tests the current refresh rate for the current location");
-	Cmd_AddCommand ("envmap", R_Envmap_f, "FIXME: What on earth does this do? No Description");
-	Cmd_AddCommand ("pointfile", R_ReadPointFile_f, "Load a pointfile to determine map leaks");
+	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f,
+					"Tests the current refresh rate for the current location");
+	Cmd_AddCommand ("envmap", R_Envmap_f, "No Description");
+	Cmd_AddCommand ("pointfile", R_ReadPointFile_f,
+					"Load a pointfile to determine map leaks");
 	Cmd_AddCommand ("loadsky", R_LoadSky_f, "Load a skybox");
 
 	R_InitBubble ();
@@ -214,9 +209,7 @@ R_Init (void)
 	glVertexPointer (3, GL_FLOAT, sizeof(varray[0]), varray[0].vertex);
 }
 
-/*
-	R_NewMap
-*/
+
 void
 R_NewMap (void)
 {
@@ -229,7 +222,7 @@ R_NewMap (void)
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
 	r_worldentity.model = cl.worldmodel;
 
-// clear out efrags in case the level hasn't been reloaded
+	// clear out efrags in case the level hasn't been reloaded
 	for (i = 0; i < cl.worldmodel->numleafs; i++)
 		cl.worldmodel->leafs[i].efrags = NULL;
 
@@ -267,7 +260,6 @@ R_TimeRefresh_f (void)
 	int         i;
 	double      start, stop, time;
 
-//  glDrawBuffer  (GL_FRONT);
 	glFinish ();
 	GL_EndRendering ();
 
@@ -280,13 +272,10 @@ R_TimeRefresh_f (void)
 		GL_EndRendering ();
 	}
 
-//  glFinish ();
 	stop = Sys_DoubleTime ();
 	time = stop - start;
 	Con_Printf ("%f seconds (%f fps)\n", time, 128 / time);
 
-//  glDrawBuffer  (GL_BACK);
-//  GL_EndRendering ();
 	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
 }
 

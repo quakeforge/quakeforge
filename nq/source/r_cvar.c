@@ -15,15 +15,16 @@ cvar_t     *d_subdiv16;
 
 cvar_t     *gl_affinemodels;
 cvar_t     *gl_clear;
-cvar_t     *gl_colorlights;
 cvar_t     *gl_conalpha;
 cvar_t     *gl_conspin;
 cvar_t     *gl_constretch;
-cvar_t     *gl_cull;
+cvar_t     *gl_cull; // FIXME
+cvar_t     *gl_dlight_lightmap; 
+cvar_t     *gl_dlight_polyblend; 
+cvar_t     *gl_dlight_smooth; 
 cvar_t     *gl_fb_bmodels;
 cvar_t     *gl_fb_models;
 cvar_t     *gl_fires;
-cvar_t     *gl_flashblend;
 cvar_t     *gl_keeptjunctions;
 cvar_t     *gl_lightmap_components;
 cvar_t     *gl_lightmode;
@@ -31,10 +32,11 @@ cvar_t     *gl_max_size;
 cvar_t     *gl_nocolors;
 cvar_t     *gl_picmip;
 cvar_t     *gl_playermip;
-cvar_t     *gl_polyblend;
+cvar_t     *gl_polyblend; // FIXME
 cvar_t     *gl_reporttjunctions;
+cvar_t     *gl_sky_clip;
 cvar_t     *gl_skymultipass;
-cvar_t     *gl_smoothmodels;
+cvar_t     *gl_smoothmodels; // FIXME
 cvar_t     *gl_texsort;
 cvar_t     *gl_triplebuffer;
 
@@ -102,41 +104,77 @@ void
 R_Init_Cvars (void)
 {
 
-	cl_crossx = Cvar_Get ("cl_crossx", "0", CVAR_ARCHIVE, NULL, "Sets the position of the crosshair on the X-axis");
-	cl_crossx = Cvar_Get ("cl_crossx", "0", CVAR_ARCHIVE, NULL, "Sets the position of the crosshair on the X-axis.");
-	cl_crossy = Cvar_Get ("cl_crossy", "0", CVAR_ARCHIVE, NULL, "Sets the position of the crosshair on the Y-axis");
-	cl_crossy = Cvar_Get ("cl_crossy", "0", CVAR_ARCHIVE, NULL, "Sets the position of the crosshair on the Y-axis.");
-	cl_verstring = Cvar_Get ("cl_verstring", PROGRAM " " VERSION, CVAR_NONE, NULL, "Client version string");
-	crosshair = Cvar_Get ("crosshair", "0", CVAR_ARCHIVE, NULL, "Crosshair type. 0 off, 1 old without color, 2 new with colors");
-	crosshair = Cvar_Get ("crosshair", "0", CVAR_ARCHIVE, NULL, "Crosshair type. 0 off, 1 old, 2 new with color");
-	crosshaircolor = Cvar_Get ("crosshaircolor", "79", CVAR_ARCHIVE, NULL, "Color of the new crosshair");
-	crosshaircolor = Cvar_Get ("crosshaircolor", "79", CVAR_ARCHIVE, NULL, "Crosshair 2's color");
-
-	d_mipcap = Cvar_Get ("d_mipcap", "0", CVAR_NONE, NULL, "None");
-	d_mipscale = Cvar_Get ("d_mipscale", "1", CVAR_NONE, NULL, "None");
-	d_subdiv16 = Cvar_Get ("d_subdiv16", "1", CVAR_NONE, NULL, "None");
-
-	gl_affinemodels = Cvar_Get ("gl_affinemodels", "0", CVAR_NONE, NULL, "None");
-	gl_clear = Cvar_Get ("gl_clear", "0", CVAR_NONE, NULL, "None");
-	gl_colorlights = Cvar_Get ("gl_colorlights", "1", CVAR_ROM, NULL, "Whether to use RGB lightmaps or not");
-	gl_conalpha = Cvar_Get ("gl_conalpha", "0.6", CVAR_ARCHIVE, NULL, "alpha value for the console background");
-	gl_conspin = Cvar_Get ("gl_conspin", "0", CVAR_ARCHIVE, NULL, "speed at which the console spins");
-	gl_constretch = Cvar_Get ("gl_constretch", "0", CVAR_ARCHIVE, NULL, "whether slide the console or stretch it");
+	cl_crossx =	Cvar_Get ("cl_crossx", "0", CVAR_ARCHIVE, NULL,
+						  "Sets the position of the crosshair on the X-axis");
+	cl_crossx = Cvar_Get ("cl_crossx", "0", CVAR_ARCHIVE, NULL,
+						  "Sets the position of the crosshair on the X-axis.");
+	cl_crossy = Cvar_Get ("cl_crossy", "0", CVAR_ARCHIVE, NULL,
+						  "Sets the position of the crosshair on the Y-axis");
+	cl_crossy = Cvar_Get ("cl_crossy", "0", CVAR_ARCHIVE, NULL,
+						  "Sets the position of the crosshair on the Y-axis.");
+	cl_verstring = Cvar_Get ("cl_verstring", PROGRAM " " VERSION, CVAR_NONE,
+							 NULL, "Client version string");
+	crosshair =
+		Cvar_Get ("crosshair", "0", CVAR_ARCHIVE, NULL,
+				  "Crosshair type. 0 off, 1 old without color, 2 new with colors");
+	crosshaircolor = Cvar_Get ("crosshaircolor", "79", CVAR_ARCHIVE, NULL,
+							   "Color of the new crosshair");
+	d_mipcap = Cvar_Get ("d_mipcap", "0", CVAR_NONE, NULL,
+						 "Detail level. 0 is highest, 3 is lowest.");
+	d_mipscale =
+		Cvar_Get ("d_mipscale", "1", CVAR_NONE, NULL,
+				  "Detail level of objects. 0 is highest, 3 is lowest");
+	d_subdiv16 = Cvar_Get ("d_subdiv16", "1", CVAR_NONE, NULL,
+						   "Set to enable extreme perspective correction");
+	gl_affinemodels =
+		Cvar_Get ("gl_affinemodels", "0", CVAR_NONE, NULL,
+				  "Makes texture rendering quality better if set to 1");
+	gl_clear = Cvar_Get ("gl_clear", "0", CVAR_NONE, NULL,
+						 "Set to 1 to make background black. Useful for removing HOM effect"); 
+	gl_conalpha = Cvar_Get ("gl_conalpha", "0.6", CVAR_ARCHIVE, NULL,
+							"alpha value for the console background");
+	gl_conspin = Cvar_Get ("gl_conspin", "0", CVAR_ARCHIVE, NULL,
+						   "speed at which the console spins");
+	gl_constretch = Cvar_Get ("gl_constretch", "0", CVAR_ARCHIVE, NULL,
+							  "whether slide the console or stretch it");
 	gl_cull = Cvar_Get ("gl_cull", "1", CVAR_NONE, NULL, "None");
-	gl_fb_bmodels = Cvar_Get ("gl_fb_bmodels", "1", CVAR_ARCHIVE, NULL, "Toggles fullbright color support for bmodels");
-	gl_fb_models = Cvar_Get ("gl_fb_models", "1", CVAR_ARCHIVE, NULL, "Toggles fullbright color support for models..  " "This is very handy, but costs me 2 FPS.. (=:]");
-	gl_fires = Cvar_Get ("gl_fires", "0", CVAR_ARCHIVE, NULL, "Toggles lavaball and rocket fireballs");
-	gl_flashblend = Cvar_Get ("gl_flashblend", "0", CVAR_NONE, NULL, "None");
+    gl_dlight_lightmap = 
+        Cvar_Get ("gl_dlight_lightmap", "1", CVAR_ARCHIVE, NULL, 
+                  "Set to 1 for high quality dynamic lighting."); 
+    gl_dlight_polyblend = 
+        Cvar_Get ("gl_dlight_polyblend", "0", CVAR_ARCHIVE, NULL, 
+                  "Set to 1 to use a dynamic light effect faster on GL"); 
+    gl_dlight_smooth = 
+        Cvar_Get ("gl_dlight_smooth", "1", CVAR_ARCHIVE, NULL, 
+                  "Smooth dynamic vertex lighting"); 
+	gl_fb_bmodels = Cvar_Get ("gl_fb_bmodels", "1", CVAR_ARCHIVE, NULL,
+							  "Toggles fullbright color support for bmodels");
+	gl_fb_models = Cvar_Get ("gl_fb_models", "1", CVAR_ARCHIVE, NULL,
+							 "Toggles fullbright color support for models..  "
+							 "This is very handy, but costs me 2 FPS.. (=:]");
+	gl_fires = Cvar_Get ("gl_fires", "0", CVAR_ARCHIVE, NULL,
+						 "Toggles lavaball and rocket fireballs");
 	gl_keeptjunctions = Cvar_Get ("gl_keeptjunctions", "1", CVAR_NONE, NULL, "None");
-	gl_lightmap_components = Cvar_Get ("gl_lightmap_components", "4", CVAR_ROM, NULL, "Lightmap texture components. 1 is greyscale, 3 is RGB, 4 is RGBA.");
-	gl_lightmode = Cvar_Get ("gl_lightmode", "1", CVAR_ARCHIVE, gl_lightmode_callback, "Lighting mode (0 = GLQuake style, 1 = new style)");
-	gl_max_size = Cvar_Get ("gl_max_size", "1024", CVAR_NONE, NULL, "Texture dimension"); 
-	gl_nocolors = Cvar_Get ("gl_nocolors", "0", CVAR_NONE, NULL, "None");
-	gl_picmip = Cvar_Get ("gl_picmip", "0", CVAR_NONE, NULL, "Dimensions of displayed textures. 0 is normal, 1 is half, 2 is 1/4"); 
-	gl_playermip = Cvar_Get ("gl_playermip", "0", CVAR_NONE, NULL, "None");
-	gl_polyblend = Cvar_Get ("gl_polyblend", "1", CVAR_NONE, NULL, "None");
+	gl_lightmap_components =
+		Cvar_Get ("gl_lightmap_components", "4", CVAR_ROM, NULL,
+				  "Lightmap texture components. 1 is greyscale, 3 is RGB, 4 is RGBA.");
+	gl_lightmode =
+		Cvar_Get ("gl_lightmode", "1", CVAR_ARCHIVE, gl_lightmode_callback,
+				  "Lighting mode (0 = GLQuake style, 1 = new style)");
+	gl_max_size = Cvar_Get ("gl_max_size", "1024", CVAR_NONE, NULL,
+							"Texture dimension"); 
+	gl_nocolors = Cvar_Get ("gl_nocolors", "0", CVAR_NONE, NULL,
+							"Set to 1, turns off all player colors");
+	gl_picmip = Cvar_Get ("gl_picmip", "0", CVAR_NONE, NULL,
+						  "Dimensions of displayed textures. 0 is normal, 1 is half, 2 is 1/4"); 
+	gl_playermip = Cvar_Get ("gl_playermip", "0", CVAR_NONE, NULL,
+							 "Detail of player skins. 0 best, 4 worst.");
 	gl_reporttjunctions = Cvar_Get ("gl_reporttjunctions", "0", CVAR_NONE, NULL, "None");
-	gl_skymultipass = Cvar_Get ("gl_skymultipass", "1", CVAR_NONE, NULL, "controls wether the skydome is single or double pass");
+	gl_sky_clip = 
+        Cvar_Get ("gl_sky_clip", "0", CVAR_ARCHIVE, NULL, 
+                  "controls whether sky is drawn first (0) or later (1)"); 
+	gl_skymultipass = Cvar_Get ("gl_skymultipass", "1", CVAR_NONE, NULL,
+								"controls wether the skydome is single or double pass");
 	gl_smoothmodels = Cvar_Get ("gl_smoothmodels", "1", CVAR_NONE, NULL, "None");
 	gl_texsort = Cvar_Get ("gl_texsort", "1", CVAR_NONE, NULL, "None");
 	gl_triplebuffer = Cvar_Get ("gl_triplebuffer", "1", CVAR_ARCHIVE, NULL, "Set to 1 by default. Fixes status bar flicker on some hardware");

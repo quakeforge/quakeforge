@@ -76,9 +76,7 @@ qboolean	envmap;						// true during envmap command capture
 int 	playertextures;				// up to 16 color translated skins
 int 	player_fb_textures;			// up to 128 skin fullbright maps
 
-//
 // view origin
-//
 vec3_t	vup;
 vec3_t	vpn;
 vec3_t	vright;
@@ -87,15 +85,12 @@ vec3_t	r_origin;
 float	r_world_matrix[16];
 float	r_base_world_matrix[16];
 
-//
 // screen size info
-//
 refdef_t	r_refdef;
 
 mleaf_t *r_viewleaf, *r_oldviewleaf;
 
 int 	d_lightstylevalue[256];		// 8.8 fraction of base light value
-
 
 vec3_t	shadecolor;					// Ender (Extend) Colormod
 float	modelalpha;					// Ender (EXtend) Alpha
@@ -107,28 +102,12 @@ extern cvar_t *scr_fov;
 extern byte gammatable[256];
 extern qboolean lighthalf;
 
+
 // LordHavoc: place for gl_rmain setup code
 void
 glrmain_init (void)
 {
 }
-
-/*
-	R_CullBox
-
-	Returns true if the box is completely outside the frustum
-*/
-/*
-qboolean R_CullBox (vec3_t mins, vec3_t maxs)
-{
-	int		i;
-
-	for (i=0 ; i<4 ; i++)
-		if (BoxOnPlaneSide (mins, maxs, &frustum[i]) == 2)
-			return true;
-	return false;
-}
-*/
 
 
 void
@@ -257,18 +236,14 @@ float	shadelight;
 // precalculated dot products for quantized angles
 #define SHADEDOT_QUANT 16
 float	r_avertexnormal_dots[SHADEDOT_QUANT][256] =
-#include "anorm_dots.h"
-           ;
+	#include "anorm_dots.h"
+		;
 
-float	*shadedots = r_avertexnormal_dots[0];
+float  *shadedots = r_avertexnormal_dots[0];
 
 int 	lastposenum, lastposenum0;
 
-/*
-	GL_DrawAliasFrame
 
-	Standard model drawing
-*/
 static void
 GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
 {
@@ -286,7 +261,7 @@ GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
 	if (modelalpha != 1.0)
 		glDepthMask (GL_FALSE);
 
-	if (fb) {	// don't do this in the loop, it doesn't change
+	if (fb) {
 		if (lighthalf)
 			glColor4f (0.5, 0.5, 0.5, modelalpha);
 		else
@@ -406,13 +381,14 @@ GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, float ble
 
 }
 
+
+extern vec3_t lightspot;
+
 /*
 	GL_DrawAliasShadow
 
 	Standard shadow drawing
 */
-extern vec3_t lightspot;
-
 static void
 GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 {
@@ -446,9 +422,15 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 			order += 2;
 
 			// normals and vertexes come from the frame list
-			point[0] = verts->v[0] * paliashdr->mdl.scale[0] + paliashdr->mdl.scale_origin[0];
-			point[1] = verts->v[1] * paliashdr->mdl.scale[1] + paliashdr->mdl.scale_origin[1];
-			point[2] = verts->v[2] * paliashdr->mdl.scale[2] + paliashdr->mdl.scale_origin[2];
+			point[0] =
+				verts->v[0] * paliashdr->mdl.scale[0] +
+				paliashdr->mdl.scale_origin[0];
+			point[1] =
+				verts->v[1] * paliashdr->mdl.scale[1] +
+				paliashdr->mdl.scale_origin[1];
+			point[2] =
+				verts->v[2] * paliashdr->mdl.scale[2] +
+				paliashdr->mdl.scale_origin[2];
 
 			point[0] -= shadevector[0] * (point[2] + lheight);
 			point[1] -= shadevector[1] * (point[2] + lheight);
@@ -462,6 +444,7 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 		glEnd ();
 	}
 }
+
 
 /*
 	GL_DrawAliasBlendedShadow
@@ -572,7 +555,7 @@ R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t *e, qboolea
 		pose += (int) (cl.time / e->frame_interval) % numposes;
 	} else {
 		/*
-			One tenth of a second is a good for most Quake animations. If the
+			One tenth of a second is good for most Quake animations. If the
 			nextthink is longer then the animation is usually meant to pause
 			(e.g. check out the shambler magic animation in shambler.qc).  If
 			its shorter then things will still be smoothed partly, and the
@@ -594,7 +577,6 @@ R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t *e, qboolea
 	} else {
 		blend = (realtime - e->frame_start_time) / e->frame_interval;
 	}
-	// Con_DPrintf ("numposes: %d, poses: %d %d\n", numposes, e->pose1, e->pose2);
 
 	// wierd things start happening if blend passes 1
 	if (cl.paused || blend > 1)
@@ -799,7 +781,6 @@ R_DrawAliasModel (entity_t *e)
 	}
 }
 
-//==================================================================================
 
 /*
 	R_ShowNearestLoc
@@ -1046,9 +1027,7 @@ R_SetupGL (void)
 
 	glGetFloatv (GL_MODELVIEW_MATRIX, r_world_matrix);
 
-	// 
 	// set drawing parms
-	// 
 	glEnable (GL_CULL_FACE);
 	glDisable (GL_ALPHA_TEST);
 	glAlphaFunc (GL_GREATER, 0.5);

@@ -50,8 +50,10 @@
 #include "chase.h"
 #include "game.h"
 #include "glquake.h"
-#include "render.h"
+#include "r_cvar.h"
 #include "r_local.h"
+#include "r_dynamic.h"
+//#include "render.h"
 #include "view.h"
 
 entity_t    r_worldentity;
@@ -73,16 +75,13 @@ int         c_brush_polys, c_alias_polys;
 qboolean    envmap;						// true during envmap command capture
 
 
-int         particletexture;			// little dot for particles
 int         playertextures;				// up to 16 color translated skins
 
 int         mirrortexturenum;			// quake texturenum, not gltexturenum
 qboolean    mirror;
 mplane_t   *mirror_plane;
 
-//
 // view origin
-//
 vec3_t      vup;
 vec3_t      vpn;
 vec3_t      vright;
@@ -91,15 +90,15 @@ vec3_t      r_origin;
 float       r_world_matrix[16];
 float       r_base_world_matrix[16];
 
-//
 // screen size info
-//
 refdef_t    r_refdef;
 
 mleaf_t    *r_viewleaf, *r_oldviewleaf;
 
 int         d_lightstylevalue[256];		// 8.8 fraction of base light value
 
+vec3_t		shadecolor;					// Ender (EXtend) Colormod
+float		modelalpha;					// Ender (EXtend) Alpha
 
 void        R_MarkLeaves (void);
 
@@ -109,11 +108,13 @@ extern byte gammatable[256];
 extern qboolean lighthalf;
 static float vid_gamma = 1.0;
 
+
 // LordHavoc: place for gl_rmain setup code
 void
 glrmain_init ()
 {
 };
+
 
 /*
 	GL_CheckGamma
@@ -165,14 +166,6 @@ R_RotateForEntity (entity_t *e)
 	// ZOID: fixed z angle
 	glRotatef (e->angles[2], 1, 0, 0);
 }
-
-/*
-=============================================================
-
-  SPRITE MODELS
-
-=============================================================
-*/
 
 
 static mspriteframe_t *
@@ -242,11 +235,6 @@ R_DrawSpriteModel (entity_t *e)
 		right = vright;
 	}
 
-	if (lighthalf)
-		glColor4f (0.5, 0.5, 0.5, 1);
-	else
-		glColor4f (1, 1, 1, 1);
-
 	glBindTexture (GL_TEXTURE_2D, frame->gl_texturenum);
 
 	glEnable (GL_ALPHA_TEST);
@@ -279,11 +267,7 @@ R_DrawSpriteModel (entity_t *e)
 
 
 /*
-=============================================================
-
   ALIAS MODELS
-
-=============================================================
 */
 
 #define NUMVERTEXNORMALS	162
@@ -297,9 +281,9 @@ float       shadelight;
 
 // precalculated dot products for quantized angles
 #define SHADEDOT_QUANT 16
-float       r_avertexnormal_dots[SHADEDOT_QUANT][256] =
-#include "anorm_dots.h"
-           ;
+float   r_avertexnormal_dots[SHADEDOT_QUANT][256] =
+	#include "anorm_dots.h"
+		;
 
 float      *shadedots = r_avertexnormal_dots[0];
 
@@ -320,20 +304,24 @@ GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
 	verts += posenum * paliashdr->poseverts;
 	order = (int *) ((byte *) paliashdr + paliashdr->commands);
 
-	if (fb)
-		glColor3f (1, 1, 1);
-	else if (lighthalf)
-		shadelight *= 2;
-	while (1) {
+	if (modelalpha != 1.0)
+		glDepthMask (GL_FALSE);
+
+	if (fb) {
+		if (lighthalf)
+			glColor4f (0.5, 0.5, 0.5, modelalpha);
+		else
+			glColor4f (1, 1, 1, modelalpha);
+	}
+
+	while ((count = *order++)) {
 		// get the vertex count and primitive type
-		count = *order++;
-		if (!count)
-			break;						// done
 		if (count < 0) {
 			count = -count;
 			glBegin (GL_TRIANGLE_FAN);
-		} else
+		} else {
 			glBegin (GL_TRIANGLE_STRIP);
+		}
 
 		do {
 			// texture coordinates come from the draw list
@@ -343,7 +331,10 @@ GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
 			if (!fb) {
 				// normals and vertexes come from the frame list
 				l = shadedots[verts->lightnormalindex] * shadelight;
-				glColor3f (l, l, l);
+
+				// LordHavoc: cleanup after Endy
+				glColor4f (shadecolor[0] * l, shadecolor[1] * l,
+						   shadecolor[2] * l, modelalpha);
 			}
 
 			glVertex3f (verts->v[0], verts->v[1], verts->v[2]);
@@ -352,8 +343,12 @@ GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
 
 		glEnd ();
 	}
-}
 
+	if (modelalpha != 1.0)
+		glDepthMask (GL_TRUE);
+
+	glColor3ubv (lighthalf_v);
+}
 
 
 extern vec3_t lightspot;
@@ -376,11 +371,9 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 
 	height = -lheight + 1.0;
 
-	while (1) {
+	while ((count = *order++)) {
 		// get the vertex count and primitive type
-		count = *order++;
-		if (!count)
-			break;						// done
+
 		if (count < 0) {
 			count = -count;
 			glBegin (GL_TRIANGLE_FAN);
@@ -464,10 +457,7 @@ R_DrawAliasModel (entity_t *e)
 	VectorCopy (currententity->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
 
-	// 
 	// get lighting information
-	// 
-
 	shadelight = R_LightPoint (currententity->origin);
 
 	// always give the gun some light
@@ -514,23 +504,15 @@ R_DrawAliasModel (entity_t *e)
 	shadevector[2] = 1;
 	VectorNormalize (shadevector);
 
-	// 
 	// locate the proper data
-	// 
 	paliashdr = (aliashdr_t *) Mod_Extradata (currententity->model);
-
 	c_alias_polys += paliashdr->mdl.numtris;
 
-	// 
 	// draw all the triangles
-	// 
-
 	glPushMatrix ();
 	R_RotateForEntity (e);
 
 	// LordHavoc: must be in modulate mode for reasons of lighting as well as 
-	// 
-	// 
 	// fullbright support
 	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
@@ -604,8 +586,6 @@ R_DrawAliasModel (entity_t *e)
 	}
 
 }
-
-//==================================================================================
 
 
 static void
@@ -769,9 +749,7 @@ R_SetupGL (void)
 	extern int  glwidth, glheight;
 	int         x, x2, y2, y, w, h;
 
-	// 
 	// set up viewpoint
-	// 
 	glMatrixMode (GL_PROJECTION);
 	glLoadIdentity ();
 	x = r_refdef.vrect.x * glwidth / vid.width;
@@ -829,9 +807,7 @@ R_SetupGL (void)
 
 	glGetFloatv (GL_MODELVIEW_MATRIX, r_world_matrix);
 
-	// 
 	// set drawing parms
-	// 
 	if (gl_cull->int_val)
 		glEnable (GL_CULL_FACE);
 	else
@@ -842,38 +818,6 @@ R_SetupGL (void)
 	glAlphaFunc (GL_GREATER, 0.5);
 	glEnable (GL_DEPTH_TEST);
 	glShadeModel (GL_SMOOTH);
-}
-
-
-/*
-================
-R_RenderScene
-
-r_refdef must be set before the first call
-================
-*/
-static void
-R_RenderScene (void)
-{
-	R_SetupFrame ();
-
-	R_SetFrustum ();
-
-	R_SetupGL ();
-
-	R_MarkLeaves ();					// done here so we know if we're in
-	// water
-
-	R_DrawWorld ();						// adds static entities to the list
-
-	S_ExtraUpdate ();					// don't let sound get messed up if
-	// going slow
-
-	R_DrawEntitiesOnList ();
-
-	R_RenderDlights ();
-	R_UpdateFires ();
-	R_DrawParticles ();
 }
 
 
@@ -890,6 +834,7 @@ R_Clear (void)
 
 	glDepthRange (gldepthmin, gldepthmax);
 }
+
 
 #if 0 // !!! FIXME, Zoid, mirror is disabled for now
 void
@@ -958,11 +903,9 @@ R_Mirror (void)
 
 
 /*
-================
-R_RenderView
+	R_RenderView
 
-r_refdef must be set before the first call
-================
+	r_refdef must be set before the first call
 */
 void
 R_RenderView (void)
@@ -980,10 +923,30 @@ R_RenderView (void)
 	R_Clear ();
 
 	// render normal view
-	R_RenderScene ();
-	R_DrawViewModel ();
+	R_SetupFrame ();
+
+	R_SetFrustum ();
+
+	R_SetupGL ();
+
+	R_MarkLeaves ();			// done here so we know if we're in water
+
+	R_DrawWorld ();				// adds static entities to the list
+
+	S_ExtraUpdate ();			// don't let sound get messed up if going slow
+
+	R_DrawEntitiesOnList ();
+
+	R_RenderDlights ();
+
 	R_DrawWaterSurfaces ();
 
+	R_UpdateFires ();
+
+	R_DrawParticles ();
+
+	R_DrawViewModel ();
+
 	// render mirror view
-//  R_Mirror ();
+//	R_Mirror ();
 }

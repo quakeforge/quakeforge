@@ -43,8 +43,6 @@
 #include "glquake.h"
 #include "r_shared.h"
 
-int         r_dlightframecount;
-
 /*
 	R_AnimateLight
 */
@@ -121,7 +119,6 @@ R_RenderDlight (dlight_t *light)
 
 	VectorSubtract (light->origin, r_origin, v);
 	if (Length (v) < rad) {				// view is inside the dlight
-		AddLightBlend (1, 0.5, 0, light->radius * 0.0003);
 		return;
 	}
 
@@ -163,14 +160,11 @@ R_RenderDlights (void)
 	int         i;
 	dlight_t   *l;
 
-	if (!gl_flashblend->int_val)
+	if (!gl_dlight_polyblend->int_val)
 		return;
 
-	r_dlightframecount = r_framecount + 1;	// because the count hasn't
-	// advanced yet for this frame
 	glDepthMask (GL_FALSE);
 	glDisable (GL_TEXTURE_2D);
-	glEnable (GL_BLEND);
 	glBlendFunc (GL_ONE, GL_ONE);
 	glShadeModel (GL_SMOOTH);
 
@@ -181,8 +175,9 @@ R_RenderDlights (void)
 		R_RenderDlight (l);
 	}
 
-	glColor3f (1, 1, 1);
-	glDisable (GL_BLEND);
+	if (!gl_dlight_smooth->int_val)
+		glShadeModel (GL_FLAT);
+	glColor3ubv (lighthalf_v);
 	glEnable (GL_TEXTURE_2D);
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthMask (GL_TRUE);
@@ -298,11 +293,9 @@ R_PushDlights (vec3_t entorigin)
 	dlight_t   *l;
 	vec3_t      lightorigin;
 
-	if (gl_flashblend->int_val)
+	if (!gl_dlight_lightmap->int_val)
 		return;
 
-	r_dlightframecount = r_framecount + 1;	// because the count hasn't
-	// advanced yet for this frame
 	l = cl_dlights;
 
 	for (i = 0; i < MAX_DLIGHTS; i++, l++) {
