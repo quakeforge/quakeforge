@@ -199,7 +199,11 @@ preprocess_file (const char *filename)
 
 		{
 			FILE       *tmp = fopen (tempname->str, "wt");
-
+			if (tmp == NULL) {
+				fprintf (stderr, "%s: qfcc was unable to open\n",
+						 tempname->str);
+				exit(1);
+			}
 			fclose (tmp);
 		}
 
