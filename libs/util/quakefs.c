@@ -442,15 +442,16 @@ COM_WriteBuffers (const char *filename, int count, ...)
 void
 COM_CreatePath (const char *path)
 {
-	const char *ofs;
+	char       *ofs;
 	char        e_path[MAX_OSPATH];
 
 	Qexpand_squiggle (path, e_path);
-	path = e_path;
 
-	for (ofs = path + 1; *ofs; ofs++) {
+	for (ofs = e_path + 1; *ofs; ofs++) {
 		if (*ofs == '/') {				// create the directory
-			Sys_mkdir (va ("%.*s", ofs - path, path));
+			*ofs = 0;
+			Sys_mkdir (e_path);
+			*ofs = '/';
 		}
 	}
 }
