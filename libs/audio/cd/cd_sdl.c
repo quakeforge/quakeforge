@@ -283,20 +283,6 @@ I_CDAudio_Init (void)
 		cdValid = false;
 	}
 	
-	Cmd_AddCommand ("cd", I_CD_f, "Control the CD player.\n"
-		"Commands:\n"
-		"eject - Eject the CD.\n"
-		"info - Reports information on the CD.\n"
-		"loop (track number) - Loops the specified track.\n"
-		"remap (track1) (track2) ... - Remap the current track order.\n"
-		"reset - Causes the CD audio to re-initialize.\n"
-		"resume - Will resume playback after pause.\n"
-		"off - Shuts down the CD audio system..\n"
-		"on - Re-enables the CD audio system after a cd off command.\n"
-		"pause - Pause the CD playback.\n"
-		"play (track number) - Plays the specified track one time.\n"
-		"stop - Stops the currently playing track.");
-	
 	Con_Printf ("CD Audio Initialized.\n");
 }
 

@@ -29,6 +29,7 @@
 */
 
 #include "QF/cdaudio.h"
+#include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/plugin.h"
@@ -36,22 +37,6 @@
 
 cvar_t                *cd_plugin;
 plugin_t              *cdmodule = NULL;
-
-
-int
-CDAudio_Init (void)
-{
-	cd_plugin = Cvar_Get ("cd_plugin", "null", CVAR_ARCHIVE, NULL,
-						  "CD Plugin to use");
-	cdmodule = PI_LoadPlugin ("cd", cd_plugin->string);
-	if (!cdmodule) {
-		Con_Printf ("Loading of cd module: %s failed!\n", cd_plugin->string);
-		return -1;
-	} else {
-		cdmodule->functions->general->p_Init ();
-		return 0; // FIXME: Assumes success
-	}
-}
 
 
 void
@@ -99,4 +84,34 @@ CD_f (void)
 {
 	if (cdmodule)
 		cdmodule->functions->cd->pCD_f ();
+}
+
+
+int
+CDAudio_Init (void)
+{
+	cd_plugin = Cvar_Get ("cd_plugin", "null", CVAR_ARCHIVE, NULL,
+						  "CD Plugin to use");
+	cdmodule = PI_LoadPlugin ("cd", cd_plugin->string);
+	if (!cdmodule) {
+		Con_Printf ("Loading of cd module: %s failed!\n", cd_plugin->string);
+		return -1;
+	} else {
+		cdmodule->functions->general->p_Init ();
+		return 0; // FIXME: Assumes success
+	}
+	Cmd_AddCommand ("cd", CD_f, "Control the CD player.\n"
+		"Commands:\n"
+		"eject - Eject the CD.\n"
+		"info - Reports information on the CD.\n"
+		"loop (track number) - Loops the specified track.\n"
+		"remap (track1) (track2) ... - Remap the current track order.\n"
+		"reset - Causes the CD audio to re-initialize.\n"
+		"resume - Will resume playback after pause.\n"
+		"off - Shuts down the CD audio system..\n"
+		"on - Re-enables the CD audio system after a cd off command.\n"
+		"pause - Pause the CD playback.\n"
+		"play (track number) - Plays the specified track one time.\n"
+		"stop - Stops the currently playing track.");
+	Con_Printf ("CD Audio Initialized\n");
 }
