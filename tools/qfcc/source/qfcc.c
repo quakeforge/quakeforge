@@ -906,7 +906,6 @@ Options: \n\
 #ifdef NEW_PARSER
 		extern FILE *yyin;
 		int yyparse(void);
-		extern int lineno;
 		extern void clear_frame_macros (void);
 		//extern int yydebug;
 		//yydebug = 1;
@@ -916,7 +915,7 @@ Options: \n\
 
 		yyin = fopen (filename, "rt");
 		s_file = ReuseString (filename);
-		lineno = 1;
+		pr_source_line = 1;
 		clear_frame_macros ();
 		if (yyparse ()) {
 			printf ("%s\n", filename);

@@ -6,12 +6,12 @@
 #define YYERROR_VERBOSE 1
 
 extern char *yytext;
-extern int lineno;
+extern int pr_source_line;
 
 void
 yyerror (const char *s)
 {
-	fprintf (stderr, "%d, %s %s\n", lineno, yytext, s);
+	fprintf (stderr, "%d, %s %s\n", pr_source_line, yytext, s);
 }
 
 int yylex (void);

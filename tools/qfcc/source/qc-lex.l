@@ -7,9 +7,7 @@
 
 #define YY_NO_UNPUT
 
-int lineno;
-
-void error (char*s){fprintf(stderr,"%d: %s\n",lineno,s);}
+void error (char*s){fprintf(stderr,"%d: %s\n",pr_source_line,s);}
 
 int type_or_name (char *token);
 
@@ -45,7 +43,7 @@ m		([\-+]?)
 							if (c == EOF)
 								error ("EOF in comment");
 							if (c == '\n')
-								lineno++;
+								pr_source_line++;
 						} while (c != '/' && c != EOF);
 					}
 
@@ -83,6 +81,21 @@ m		([\-+]?)
 					}
 
 ^#{s}+{DIGIT}+{s}+\"(\.|[^"])*\".*$ {
+						char *p;
+						int line;
+						
+						pr_file_p = yytext + 1;
+						line = strtol (pr_file_p, &p, 10);
+						pr_file_p = p;
+						while (isspace (*pr_file_p))
+							pr_file_p++;
+						if (!*pr_file_p)
+							PR_ParseError ("Unexpected end of file");
+						PR_LexString ();		// grab the filename
+						while (*pr_file_p && *pr_file_p != '\n')	// ignore flags
+							pr_file_p++;
+						pr_source_line = line - 1;
+						s_file = ReuseString (pr_immediate_string);
 					}
 
 "!"|"("|")"|"{"|"}"|"."|"*"|"/"|"&"|"|"|"+"|"-"|"="|"["|"]"|";"|","|"#"	return yytext[0];
@@ -111,7 +124,7 @@ m		([\-+]?)
 <grab_other>[^\n]*	/* skip */
 
 <*>\n				{
-						lineno++;
+						pr_source_line++;
 						BEGIN (INITIAL);
 					}
 
