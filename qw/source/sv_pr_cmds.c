@@ -1902,8 +1902,7 @@ PF_rotate_bbox (progs_t *pr)
 	}
 	// find all 8 corners of the rotated box
 	VectorCopy (mins, v[0]);
-	VectorCopy (mins, v[1]);
-	
+	VectorCopy (maxs, v[1]);
 	VectorSubtract (maxs, mins, d);
 	for (i = 0; i < 3; i++) {
 		vec3_t      x;
@@ -1917,11 +1916,15 @@ PF_rotate_bbox (progs_t *pr)
 	VectorCopy (v[0], hull->clip_mins);
 	VectorCopy (v[0], hull->clip_maxs);
 	for (i = 0; i < 8; i++) {
+		//Con_Printf ("'%0.1f %0.1f %0.1f'\n", v[i][0], v[i][1], v[i][2]);
 		for (j = 0; j < 3; j++) {
 			hull->clip_mins[j] = min (hull->clip_mins[j], v[i][j]);
 			hull->clip_maxs[j] = max (hull->clip_maxs[j], v[i][j]);
 		}
 	}
+	//Con_Printf ("---\n");
+	//Con_Printf ("'%0.1f %0.1f %0.1f'\n", hull->clip_mins[0], hull->clip_mins[1], hull->clip_mins[2]);
+	//Con_Printf ("'%0.1f %0.1f %0.1f'\n", hull->clip_maxs[0], hull->clip_maxs[1], hull->clip_maxs[2]);
 
 	// now set up the clip planes
 	hull->planes[0].dist = DotProduct (dir[1], maxs);
