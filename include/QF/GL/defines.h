@@ -29,14 +29,6 @@
 #ifndef __gl_defines_h
 #define __gl_defines_h
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
-#ifdef HAVE_WINDOWS_H
-# include <windows.h>
-#endif
-
 #include "QF/qtypes.h"
 
 /*

@@ -29,14 +29,6 @@
 #ifndef __gl_textures_h
 #define __gl_textures_h
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
-#ifdef HAVE_WINDOWS_H
-# include <windows.h>
-#endif
-
 #include "QF/qtypes.h"
 
 #define MAX_GLTEXTURES	2048

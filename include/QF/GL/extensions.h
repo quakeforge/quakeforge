@@ -29,13 +29,6 @@
 #ifndef __qfgl_ext_h_
 #define __qfgl_ext_h_
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-#ifdef HAVE_WINDOWS_H
-# include <windows.h>
-#endif
-
 #include "QF/qtypes.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/types.h"

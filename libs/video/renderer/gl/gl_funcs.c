@@ -31,6 +31,10 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 
+#ifdef HAVE_WINDOWS_H
+# include <windows.h>
+#endif
+
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
 #endif

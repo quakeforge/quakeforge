@@ -29,14 +29,6 @@
 #ifndef __QF_GL_vid_h
 #define __QF_GL_vid_h
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
-#ifdef HAVE_WINDOWS_H
-# include <windows.h>
-#endif
-
 #include "QF/qtypes.h"
 #include "QF/GL/types.h"
 #include "QF/GL/extensions.h"

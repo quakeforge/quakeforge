@@ -29,14 +29,6 @@
 #ifndef __QF_GL_rsurf_h
 #define __QF_GL_rsurf_h
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
-#ifdef HAVE_WINDOWS_H
-# include <windows.h>
-#endif
-
 extern int skytexturenum;		// index in cl.loadmodel, not gl texture object
 extern int mirrortexturenum;	// quake texturenum, not gltexturenum
 

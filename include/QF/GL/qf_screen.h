@@ -29,14 +29,6 @@
 #ifndef __QF_GL_screen_h
 #define __QF_GL_screen_h
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
-#ifdef HAVE_WINDOWS_H
-# include <windows.h>
-#endif
-
 extern int glx, gly, glwidth, glheight;
 
 #endif // __QF_GL_screen_h
