@@ -1089,7 +1089,7 @@ AC_ARG_WITH(user-cfg,
 [  --with-user-cfg=FILE    If set will change the name and location of the
                           user-specific config file used by QuakeForge.
                           Defaults to ~/.quakeforgerc.],
-globalconf="$withval", userconf="auto")
+userconf="$withval", userconf="auto")
 if test "x$userconf" = "xauto" || test "x$userconf" = "xyes" || \
 	test "x$userconf" = "xno"; then  dnl yes/no sanity checks
 	userconf="$default_userconf"
@@ -1140,7 +1140,7 @@ AC_SUBST(PLUGINDIR)
 
 AC_ARG_WITH(gl-driver,
 	[  --with-gl-driver        default gl dynamic lib name],
-	gl_driver=%withval,
+	gl_driver=$withval,
 	gl_driver=auto
 )
 if test "$gl_driver" = auto; then
