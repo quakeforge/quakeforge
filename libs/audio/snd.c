@@ -64,6 +64,11 @@ void
 S_Init (void)
 {
 	S_Init_Cvars ();
+	if (!*snd_output->string || !*snd_render->string) {
+		Con_Printf ("Not loading sound due to no renderer/output\n");
+		return;
+	}
+
 	snd_output_module = PI_LoadPlugin ("snd_output", snd_output->string);
 	if (!snd_output_module) {
 		Con_Printf ("Loading of sound output module: %s failed!\n",
