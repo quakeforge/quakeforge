@@ -324,8 +324,9 @@ PR_Get_Source_Line (progs_t *pr, unsigned int addr)
 	unsigned int		line;
 	file_t			   *file;
 	pr_auxfunction_t   *func;
-
-	pr_lineno_t *lineno = PR_Find_Lineno (pr, addr);
+	pr_lineno_t        *lineno;
+	
+	lineno = PR_Find_Lineno (pr, addr);
 	if (!lineno || PR_Get_Lineno_Addr (pr, lineno) != addr)
 		return 0;
 	func = PR_Get_Lineno_Func (pr, lineno);
@@ -374,10 +375,15 @@ void
 PR_DumpState (progs_t *pr)
 {
 	if (pr_debug->int_val && pr->debug) {
-		int addr = pr->pr_xstatement;
+		pr_lineno_t *lineno;
+		int         addr = pr->pr_xstatement;
 
-		while (!PR_Get_Source_Line (pr, addr))
-			addr--;
+		lineno = PR_Find_Lineno (pr, addr);
+		if (lineno
+			&& PR_Get_Lineno_Func (pr, lineno)
+			&& PR_Get_Source_File (pr, lineno))
+			addr =PR_Get_Lineno_Addr (pr, lineno);
+
 		while (addr != pr->pr_xstatement)
 			PR_PrintStatement (pr, pr->pr_statements + addr++);
 	}
