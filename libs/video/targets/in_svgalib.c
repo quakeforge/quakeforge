@@ -389,6 +389,9 @@ IN_InitMouse (void)
 	Sys_Printf ("Mouse: dev=%s,type=%s,speed=%d\n",
 			mousedev, mice[mtype].name, mouserate);
 #endif
+	//FIXME: vga_init() opens the mouse automoatically
+	//       closing it to ensure its opened how we want it
+	mouse_close();
 	if (mouse_init (mousedev, mtype, mouserate)) {
 		Con_Printf ("No mouse found\n");
 		UseMouse = 0;
