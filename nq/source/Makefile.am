@@ -30,11 +30,11 @@
 #
 # Stuff that is common to both client and server
 #
-INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/nq/include $(GGI_CFLAGS) $(MGL_CFLAGS) $(SDL_CFLAGS) $(SVGA_CFLAGS) $(X_CFLAGS) $(GLX_CFLAGS) $(TDFXGL_CFLAGS)
+INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/nq/include $(MGL_CFLAGS) $(SDL_CFLAGS) $(SVGA_CFLAGS) $(X_CFLAGS) $(GLX_CFLAGS) $(TDFXGL_CFLAGS)
 
 bin_PROGRAMS =	@NQ_TARGETS@
 
-EXTRA_PROGRAMS= nq-ggi nq-mgl nq-sdl \
+EXTRA_PROGRAMS= nq-mgl nq-sdl \
 		nq-svga nq-x11 nq-3dfx \
 		nq-glx nq-sgl nq-wgl nq-server
 
@@ -153,15 +153,6 @@ soft_SOURCES=	d_edge.c d_fill.c d_init.c d_modech.c d_part.c d_polyse.c \
 		r_light.c r_main.c r_misc.c sw_part.c r_sky.c r_sprite.c \
 		r_surf.c r_vars.c screen.c sw_model_alias.c sw_model_brush.c \
 		sw_model_sprite.c sw_view.c $(soft_ASM)
-
-#
-# ... GGI
-#
-ggi_SOURCES=		vid_ggi.c
-
-nq_ggi_SOURCES=	$(combined_SOURCES) $(soft_SOURCES) $(ggi_SOURCES)
-nq_ggi_LDADD=	$(client_LIBS) $(GGI_LIBS)
-nq_ggi_DEPENDENCIES=libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
 
 #
 # ... SciTech MGL

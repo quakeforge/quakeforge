@@ -5,8 +5,6 @@ EXTRA_DIST=	changelog control copyright rules \
 		quakeforge.conf \
 		qf-client-3dfx.dirs qf-client-3dfx.docs qf-client-3dfx.files \
 			qf-client-3dfx.suid qf-client-3dfx.undocumented \
-		qf-client-ggi.dirs qf-client-ggi.docs qf-client-ggi.files \
-			qf-client-ggi.undocumented \
 		qf-client-glx.dirs qf-client-glx.docs qf-client-glx.files \
 			qf-client-glx.undocumented \
 		qf-client-sdl.dirs qf-client-sdl.docs qf-client-sdl.files \

@@ -883,6 +883,7 @@ void SCR_BringDownConsole (void)
 
 void SCR_TileClear (void)
 {
+#if 0
 	if (r_refdef.vrect.x > 0) {
 		// left
 		Draw_TileClear (0, 0, r_refdef.vrect.x, vid.height - sb_lines);
@@ -903,6 +904,7 @@ void SCR_TileClear (void)
 			vid.height - sb_lines - 
 			(r_refdef.vrect.height + r_refdef.vrect.y));
 	}
+#endif
 }
 
 float oldsbar = 0;

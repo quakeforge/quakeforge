@@ -101,7 +101,7 @@ AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(
 	arpa/inet.h asm/io.h assert.h conio.h ctype.h ddraw.h dinput.h \
 	direct.h dirent.h dlfcn.h dmedia/audio.h dmedia/cdaudio.h dpmi.h \
-	dsound.h errno.h fcntl.h fnmatch.h ggi/ggi.h glide/sst1vid.h io.h \
+	dsound.h errno.h fcntl.h fnmatch.h glide/sst1vid.h io.h \
 	libc.h limits.h linux/cdrom.h linux/joystick.h linux/soundcard.h \
 	machine/soundcard.h malloc.h math.h mgraph.h _mingw.h netdb.h \
 	netinet/in.h pwd.h setjmp.h signal.h stdarg.h stdio.h stdlib.h \
@@ -370,39 +370,6 @@ fi
 AC_SUBST(HAVE_MGL)
 AC_SUBST(MGL_CFLAGS)
 AC_SUBST(MGL_LIBS)
-
-dnl Checks for LibGGI support
-AC_ARG_WITH(ggi,
-[  --with-ggi[=DIR]        use LibGGI found in DIR],
-HAVE_GGI=$withval, HAVE_GGI=auto)
-if test "x$HAVE_GGI" != xno; then
-	if test "x$HAVE_GGI" != xauto; then
-		GGI_CFLAGS="$GGI_CFLAGS= -I$withval/include"
-		GGI_LIBS="$GGI_LIBS -L$withval/lib"
-		dnl The default system location is /usr/include or /usr/local/include
-		dnl and we (obviously) do not need to set CFLAGS for that
-	fi
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $GGI_CFLAGS"
-	AC_CHECK_HEADER(ggi/ggi.h, HAVE_GGI=yes, HAVE_GGI=no)
-	CPPFLAGS="$save_CPPFLAGS"
-
-	dnl Make sure -lggi works
-	if test "x$HAVE_GGI" = xyes; then
-		AC_CHECK_LIB(ggi, ggiEventsQueued,
-			GGI_LIBS="$GGI_LIBS -lggi"
-			HAVE_GGI=yes,
-			HAVE_GGI=no,
-			[$GGI_LIBS]
-		)
-	fi 
-	if test "x$HAVE_GGI" != xyes; then
-		GGI_CFLAGS="" GGI_LIBS=""
-	fi
-fi
-AC_SUBST(HAVE_GGI)
-AC_SUBST(GGI_CFLAGS)
-AC_SUBST(GGI_LIBS)
 
 dnl Checks for Linux FBDev support
 AC_ARG_WITH(fbdev,
@@ -1290,14 +1257,13 @@ dnl ==================================================================
 
 AC_ARG_WITH(clients,
 	[  --with-clients=<list>   compile clients in <list>;
-                          3dfx,fbdev,ggi,glx,mgl,sdl,sgl,svga,x11],
+                          3dfx,fbdev,glx,mgl,sdl,sgl,svga,x11],
 	clients="$withval",
 	clients="all"
 )
 if test "$clients" = "all"; then
 	ENABLE_3DFX=yes
 	ENABLE_FBDEV=yes
-	ENABLE_GGI=yes
 	ENABLE_GLX=yes
 	ENABLE_MGL=yes
 	ENABLE_SDL=yes
@@ -1307,7 +1273,6 @@ if test "$clients" = "all"; then
 else
 	ENABLE_3DFX=no
 	ENABLE_FBDEV=no
-	ENABLE_GGI=no
 	ENABLE_GLX=no
 	ENABLE_MGL=no
 	ENABLE_SDL=no
@@ -1322,9 +1287,6 @@ else
 				;;
 			fbdev)
 				ENABLE_FBDEV=yes
-				;;
-			ggi)
-				ENABLE_GGI=yes
 				;;
 			glx)
 				ENABLE_GLX=yes
@@ -1366,11 +1328,6 @@ if test "x$HAVE_FBDEV" = xyes -a "x$ENABLE_FBDEV" = xyes; then
 	QW_TARGETS="$QW_TARGETS qw-client-fbdev\$(EXEEXT)"
 	NQ_TARGETS="$NQ_TARGETS nq-fbdev\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS FBDEV"
-fi
-if test "x$HAVE_GGI" = xyes -a "x$ENABLE_GGI" = xyes; then
-	QW_TARGETS="$QW_TARGETS qw-client-ggi\$(EXEEXT)"
-	NQ_TARGETS="$NQ_TARGETS nq-ggi\$(EXEEXT)"
-	CL_TARGETS="$CL_TARGETS GGI"
 fi
 if test "x$HAVE_X" = xyes; then
 	if test "x$HAVE_GLX" = xyes -a "x$ENABLE_GLX" = xyes; then

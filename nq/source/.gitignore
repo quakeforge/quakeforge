@@ -5,7 +5,6 @@
 *.obj
 Makefile
 Makefile.in
-nq-ggi
 nq-glx
 nq-sdl
 nq-svga

@@ -11,8 +11,6 @@ Makefile.in
 client.exe
 qw-client-3dfx
 qw-client-3dfx.exe
-qw-client-ggi
-qw-client-ggi.exe
 qw-client-fbdev
 qw-client-glx
 qw-client-glx.exe

@@ -27,19 +27,6 @@ Description: First-person shooter Internet game - common files
  .
  This package contains files common to all QuakeForge packages.
 
-Package: qf-client-ggi
-Architecture: any
-Depends: ${shlibs:Depends}, quake-game
-Suggests: joystick
-Provides: qf-client
-Description: First-person shooter Internet game - GGI client
- QuakeForge is a source port of Quake and QuakeWorld, the successors to id
- Software's very popular DOOM series. Its primary development goal is to
- remain compatible with the original games released by id Software while
- adding portability and optional extensions to enhance gameplay.
- .
- This package contains the GGI version of the QuakeForge client.
-
 Package: qf-client-sdl
 Architecture: i386
 Depends: ${shlibs:Depends}, libsdl1.1, quake-game

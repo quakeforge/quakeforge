@@ -31,11 +31,11 @@ AUTOMAKE_OPTIONS=	foreign
 #
 # Stuff that is common to both client and server
 #
-INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/qw/include $(GGI_CFLAGS) $(MGL_CFLAGS) $(SDL_CFLAGS) $(SVGA_CFLAGS) $(X_CFLAGS) $(GLX_CFLAGS) $(TDFXGL_CFLAGS)
+INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/qw/include $(MGL_CFLAGS) $(SDL_CFLAGS) $(SVGA_CFLAGS) $(X_CFLAGS) $(GLX_CFLAGS) $(TDFXGL_CFLAGS)
 
 bin_PROGRAMS =	@QW_TARGETS@
 
-EXTRA_PROGRAMS= qw-client-3dfx qw-client-fbdev qw-client-ggi \
+EXTRA_PROGRAMS= qw-client-3dfx qw-client-fbdev \
 		qw-client-glx qw-client-mgl qw-client-sdl \
 		qw-client-sgl qw-client-svga qw-client-wgl \
 		qw-client-x11 qw-server
@@ -216,15 +216,6 @@ fbset_modes_l.o: fbset_modes_l.c
 qw_client_fbdev_SOURCES= $(common_SOURCES) $(client_SOURCES) $(soft_SOURCES) $(fbdev_SOURCES)
 qw_client_fbdev_LDADD= $(CLIENT_LIBS)
 qw_client_fbdev_DEPENDENCIES=libqfnet.a libqfsys_cl.a libqfsnd.a libqfcd.a libqfjs.a
-
-#
-# ... GGI
-#
-ggi_SOURCES=		vid_ggi.c in_ggi.c
-
-qw_client_ggi_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(soft_SOURCES) $(ggi_SOURCES)
-qw_client_ggi_LDADD=	$(GGI_LIBS) $(CLIENT_LIBS)
-qw_client_ggi_DEPENDENCIES=libqfnet.a libqfsys_cl.a libqfsnd.a libqfcd.a libqfjs.a
 
 #
 # ... SciTech MGL
