@@ -1140,9 +1140,20 @@ if test "x$optimize" = xyes; then
 	if test "x$GCC" = xyes; then
 		CFLAGS="$CFLAGS -O3 -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
 		AC_ARG_ENABLE(strict-aliasing,
-	[  --enable-strict-aliasing enable the -fstrict-aliasing ooption of gcc],
+	[  --enable-strict-aliasing enable the -fstrict-aliasing ooption of gcc])
+		if test "x$enable_strict_aliasing" = "xyes"; then
 			CFLAGS="$CFLAGS -fstrict-aliasing"
-		)
+		else
+			if test "x$enable_strict_aliasing" != "xno"; then
+				set $CCVER
+				IFS="."
+				set $2
+				if test $1 -ge 3; then
+					CFLAGS="$CFLAGS -fstrict-aliasing"
+				fi
+				IFS=" "
+			fi
+		fi
 		AC_MSG_CHECKING(for special compiler settings)
 		case "${host_cpu}" in
 			i?86)
