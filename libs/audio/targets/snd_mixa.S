@@ -52,6 +52,9 @@
 #define count	12+16
 
 .globl C(SND_PaintChannelFrom8)
+#ifdef PIC
+	.type	C(SND_PaintChannelFrom8),@function
+#endif
 C(SND_PaintChannelFrom8):
 	pushl	%esi				// preserve register variables
 	pushl	%edi
@@ -93,25 +96,44 @@ LRightSet:
 	addl	%edi,%esi
 	shll	$7,%eax
 	addl	%ecx,%edi
+	addl	%ecx,%esi
 	shll	$7,%edx
 	movl	%edi,ch_pos(%ebx)
-	addl	$(C(snd_scaletable)),%eax
-	addl	$(C(snd_scaletable)),%edx
-	subl	%ebx,%ebx
-	movb	-1(%esi,%ecx,1),%bl
+
+#ifdef PIC
+	call	.Lpic1
+.Lpic1:	popl	%ebx
+	addl	$_GLOBAL_OFFSET_TABLE_+[.-.Lpic1],%ebx
+
+	leal	C(snd_scaletable)@GOTOFF(%ebx,%eax),%eax
+	leal	C(snd_scaletable)@GOTOFF(%ebx,%edx),%edx
+
+	leal	C(paintbuffer)@GOTOFF(%ebx),%ebx
+#else
+	leal	C(snd_scaletable)(%eax),%eax
+	leal	C(snd_scaletable)(%edx),%edx
+
+	leal	C(paintbuffer),%ebx
+#endif
+	pushl	%ebx			// save paintbuffer offset
 
 	testl	$1,%ecx
+	leal	0(%ebx,%ecx,psp_size),%ecx
+	movl	$0,%ebx
+	movb	-1(%esi),%bl
 	jz		LMix8Loop
 
 	movl	(%eax,%ebx,4),%edi
 	movl	(%edx,%ebx,4),%ebp
-	addl	C(paintbuffer)+psp_left-psp_size(,%ecx,psp_size),%edi
-	addl	C(paintbuffer)+psp_right-psp_size(,%ecx,psp_size),%ebp
-	movl	%edi,C(paintbuffer)+psp_left-psp_size(,%ecx,psp_size)
-	movl	%ebp,C(paintbuffer)+psp_right-psp_size(,%ecx,psp_size)
-	movb	-2(%esi,%ecx,1),%bl
+	addl	psp_left-psp_size(%ecx),%edi
+	addl	psp_right-psp_size(%ecx),%ebp
+	movl	%edi,psp_left-psp_size(%ecx)
+	movl	%ebp,psp_right-psp_size(%ecx)
+	movb	-2(%esi),%bl
 
-	decl	%ecx
+	subl	$psp_size,%ecx
+	decl	%esi
+	cmpl	(%esp),%ecx
 	jz		LDone
 
 //	for (i=0 ; i<count ; i++)
@@ -123,49 +145,72 @@ LMix8Loop:
 //		paintbuffer[i].right += rscale[data];
 	movl	(%eax,%ebx,4),%edi
 	movl	(%edx,%ebx,4),%ebp
-	addl	C(paintbuffer)+psp_left-psp_size(,%ecx,psp_size),%edi
-	addl	C(paintbuffer)+psp_right-psp_size(,%ecx,psp_size),%ebp
-	movb	-2(%esi,%ecx,1),%bl
-	movl	%edi,C(paintbuffer)+psp_left-psp_size(,%ecx,psp_size)
-	movl	%ebp,C(paintbuffer)+psp_right-psp_size(,%ecx,psp_size)
+	addl	psp_left-psp_size(%ecx),%edi
+	addl	psp_right-psp_size(%ecx),%ebp
+	movb	-2(%esi),%bl
+	movl	%edi,psp_left-psp_size(%ecx)
+	movl	%ebp,psp_right-psp_size(%ecx)
 
 	movl	(%eax,%ebx,4),%edi
 	movl	(%edx,%ebx,4),%ebp
-	movb	-3(%esi,%ecx,1),%bl
-	addl	C(paintbuffer)+psp_left-psp_size*2(,%ecx,psp_size),%edi
-	addl	C(paintbuffer)+psp_right-psp_size*2(,%ecx,psp_size),%ebp
-	movl	%edi,C(paintbuffer)+psp_left-psp_size*2(,%ecx,psp_size)
-	movl	%ebp,C(paintbuffer)+psp_right-psp_size*2(,%ecx,psp_size)
+	movb	-3(%esi),%bl
+	addl	psp_left-psp_size*2(%ecx),%edi
+	addl	psp_right-psp_size*2(%ecx),%ebp
+	movl	%edi,psp_left-psp_size*2(%ecx)
+	movl	%ebp,psp_right-psp_size*2(%ecx)
 
 //	}
-	subl	$2,%ecx
+	subl	$2*psp_size,%ecx
+	subl	$2,%esi
+	cmpl	(%esp),%ecx
 	jnz		LMix8Loop
 
 LDone:
+	addl	$4,%esp			// remove paintbuffer offset
 	popl	%ebp
 	popl	%ebx
 	popl	%edi
 	popl	%esi
 
 	ret
-
+#ifdef PIC
+.Lfe1:
+	.size	C(SND_PaintChannelFrom8),.Lfe1-C(SND_PaintChannelFrom8)
+#endif
 
 //----------------------------------------------------------------------
 // Transfer of stereo buffer to 16-bit DMA buffer code
 //----------------------------------------------------------------------
 
 .globl C(Snd_WriteLinearBlastStereo16)
+#ifdef PIC
+	.type	C(Snd_WriteLinearBlastStereo16),@function
+#endif
 C(Snd_WriteLinearBlastStereo16):
 	pushl	%esi				// preserve register variables
 	pushl	%edi
 	pushl	%ebx
 
+#ifdef PIC
+	call	.Lpic2
+.Lpic2:
+	popl	%ebx
+	addl	$_GLOBAL_OFFSET_TABLE_+[.-.Lpic2],%ebx
+#endif
+
 //	int		i;
 //	int		val;
+#ifdef PIC
+    movl	C(snd_linear_count)@GOTOFF(%ebx),%ecx
+	movl	C(snd_vol)@GOTOFF(%ebx),%esi
+	movl	C(snd_out)@GOTOFF(%ebx),%edi
+	movl	C(snd_p)@GOTOFF(%ebx),%ebx
+#else
 	movl	C(snd_linear_count),%ecx
-	movl	C(snd_p),%ebx
 	movl	C(snd_vol),%esi
 	movl	C(snd_out),%edi
+	movl	C(snd_p),%ebx
+#endif
 
 //	for (i=0 ; i<snd_linear_count ; i+=2)
 //	{
@@ -226,6 +271,10 @@ LClampDone2:
 	popl	%esi
 
 	ret
+#ifdef PIC
+.Lfe2:
+	.size	C(Snd_WriteLinearBlastStereo16),.Lfe2-C(Snd_WriteLinearBlastStereo16)
+#endif
 
 
 #endif	// USE_INTEL_ASM

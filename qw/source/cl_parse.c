@@ -249,7 +249,7 @@ CL_CheckOrDownloadFile (char *filename)
 	return false;
 }
 
-struct model_s *snd_worldmodel;
+struct model_s **snd_worldmodel = &cl.worldmodel;
 /*
 	Model_NextDownload
 */
@@ -302,8 +302,6 @@ Model_NextDownload (void)
 
 	// all done
 	cl.worldmodel = cl.model_precache[1];
-        // FIXME: evil hack for sound
-        snd_worldmodel = cl.worldmodel;
 
 	R_NewMap ();
 	Team_NewMap ();

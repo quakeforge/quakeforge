@@ -135,7 +135,7 @@ int         fakedma_updates = 15;
 // FIXME: Evil hack that doesn't deserve to see the light of day.
 // (pending merge of nq and qw client_stat_t's)
 extern int snd_viewentity;
-extern struct model_s *snd_worldmodel;
+extern struct model_s **snd_worldmodel;
 
 void
 S_AmbientOff (void)
@@ -715,10 +715,10 @@ S_UpdateAmbientSounds (void)
 		return;
 
 // calc ambient sound levels
-	if (!snd_worldmodel)
+	if (!*snd_worldmodel)
 		return;
 
-	l = Mod_PointInLeaf (listener_origin, snd_worldmodel);
+	l = Mod_PointInLeaf (listener_origin, *snd_worldmodel);
 	if (!l || !ambient_level->value) {
 		for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
 			 ambient_channel++)

@@ -224,7 +224,7 @@ CL_KeepaliveMessage (void)
 	SZ_Clear (&cls.message);
 }
 
-struct model_s *snd_worldmodel;
+struct model_s **snd_worldmodel = &cl.worldmodel;
 
 /*
 ==================
@@ -329,7 +329,6 @@ CL_ParseServerInfo (void)
 
 // local state
 	cl_entities[0].model = cl.worldmodel = cl.model_precache[1];
-	snd_worldmodel = cl.worldmodel;
 
 	R_NewMap ();
 
