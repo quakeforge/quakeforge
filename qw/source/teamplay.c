@@ -319,8 +319,8 @@ Team_Init_Cvars (void)
 							"when you put %l in messages");
 	cl_nofake = Cvar_Get ("cl_nofake", "0", CVAR_NONE, NULL,
 						  "Unhide fake messages");
-	cl_freply = Cvar_Get ("cl_freply", "20", CVAR_NONE, NULL,
-						"Delay between replies to f_*.  Set to zero to disable.");
+	cl_freply = Cvar_Get ("cl_freply", "0", CVAR_NONE, NULL,
+						"Delay between replies to f_*. 0 disables. Minimum suggested setting is 20");
 }
 
 /*
