@@ -219,7 +219,7 @@ qw_client_3dfx_libs= \
 qw_client_3dfx_SOURCES= $(common_sources) $(client_sources) cl_sys_unix.c
 qw_client_3dfx_LDADD= $(qw_client_3dfx_libs) \
 			$(GLIDE_LIBS) $(SVGA_LIBS) $(NET_LIBS)
-qw_client_3dfx_LDFAGS=  $(common_ldflags)
+qw_client_3dfx_LDFLAGS=  $(common_ldflags)
 qw_client_3dfx_DEPENDENCIES= $(qw_client_3dfx_libs)
 
 # ... Simple DirectMedia Layer, version 1.2 and higher, in GL mode
