@@ -1138,8 +1138,8 @@ VID_Init (unsigned char *palette)
 	HGLRC       baseRC;
 	DWORD lasterror;
 
-	if (!(libgl_handle = LoadLibrary (gl_libgl->string))) {
-		Sys_Error ("Can't open OpenGL library \"%s\"\n", gl_libgl->string);
+	if (!(libgl_handle = LoadLibrary (gl_driver->string))) {
+		Sys_Error ("Can't open OpenGL library \"%s\"\n", gl_driver->string);
 		return;
 	}
 

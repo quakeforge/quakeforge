@@ -20,7 +20,7 @@ extern struct cvar_s     *gl_fb_models;
 extern struct cvar_s     *gl_fires;
 extern struct cvar_s     *gl_keeptjunctions;
 extern struct cvar_s     *gl_lerp_anim;
-extern struct cvar_s     *gl_libgl;
+extern struct cvar_s     *gl_driver;
 extern struct cvar_s     *gl_lightmap_align;
 extern struct cvar_s     *gl_lightmap_subimage;
 extern struct cvar_s     *gl_max_size;

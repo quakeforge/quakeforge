@@ -65,14 +65,14 @@ GLF_Init (void)
 	void	*handle;
 
 #if defined(HAVE_DLOPEN)
-	if (!(handle = dlopen (gl_libgl->string, RTLD_NOW))) {
-		Sys_Error ("Couldn't load OpenGL library %s: %s\n", gl_libgl->string,
+	if (!(handle = dlopen (gl_driver->string, RTLD_NOW))) {
+		Sys_Error ("Couldn't load OpenGL library %s: %s\n", gl_driver->string,
 				   dlerror ());
 		return false;
 	}
 #elif defined(_WIN32)
-	if (!(handle = LoadLibrary (gl_libgl->string))) {
-		Sys_Error ("Couldn't load OpenGL library %s!\n", gl_libgl->string);
+	if (!(handle = LoadLibrary (gl_driver->string))) {
+		Sys_Error ("Couldn't load OpenGL library %s!\n", gl_driver->string);
 		return false;
 	}
 #else

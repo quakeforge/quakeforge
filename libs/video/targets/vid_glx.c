@@ -144,8 +144,8 @@ VID_Init (unsigned char *palette)
 	};
 
 #ifdef HAVE_DLOPEN
-	if (!(libgl_handle = dlopen (gl_libgl->string, RTLD_NOW))) {
-		Sys_Error ("Can't open OpenGL library \"%s\": %s\n", gl_libgl->string,
+	if (!(libgl_handle = dlopen (gl_driver->string, RTLD_NOW))) {
+		Sys_Error ("Can't open OpenGL library \"%s\": %s\n", gl_driver->string,
 				   dlerror());
 		return;
 	}

@@ -64,7 +64,7 @@ cvar_t     *gl_fb_models;
 cvar_t     *gl_fires;
 cvar_t     *gl_keeptjunctions;
 cvar_t     *gl_lerp_anim;
-cvar_t     *gl_libgl;
+cvar_t     *gl_driver;
 cvar_t     *gl_lightmap_align;
 cvar_t     *gl_lightmap_subimage;
 cvar_t     *gl_max_size;
@@ -193,8 +193,13 @@ R_Init_Cvars (void)
 								  "upon level load");
 	gl_lerp_anim = Cvar_Get ("gl_lerp_anim", "1", CVAR_ARCHIVE, NULL,
 							 "Toggles model animation interpolation");
-	gl_libgl = Cvar_Get ("gl_libgl", "libGL.so.1", CVAR_ROM, NULL,
-						 "The GL library to use. (path optional)");
+
+#ifdef _WIN32
+	gl_driver = Cvar_Get ("gl_driver", "OPENGL32.DLL", CVAR_ROM, NULL,
+#else
+	gl_driver = Cvar_Get ("gl_driver", "libGL.so.1", CVAR_ROM, NULL,
+#endif
+						 "The OpenGL library to use. (path optional)");
 	gl_lightmap_align = Cvar_Get ("gl_lightmap_align", "1", CVAR_NONE, NULL,
 								  "Workaround for nvidia slow path. Set to 4 "
 								  "or 16 if you have an nvidia 3d "
