@@ -29,29 +29,28 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
-#include <stdlib.h>
 #ifdef HAVE_STRING_H
-#include <string.h>
+# include <string.h>
 #endif
 #ifdef HAVE_STRINGS_H
-#include <strings.h>
+# include <strings.h>
 #endif
 
-//char *date = "Dec 21 1999";
-static char *date = __DATE__;
-static char *mon[12] =
-	{ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
-		"Nov", "Dec" };
+#include <stdlib.h>
+
+static char *date = __DATE__;						// Was "Dec 21 1999"
+static char *mon[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+						 "Aug", "Sep", "Oct", "Nov", "Dec" };
 static char mond[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
-// returns days since Dec 21 1999
+
+/* returns days since Dec 21 1999 */
 int
 build_number (void)
 {
-	int         m = 0;
-	int         d = 0;
-	int         y = 0;
+	int			m = 0;
+	int			d = 0;
+	int			y = 0;
 	static int  b = 0;
 
 	if (b != 0)
@@ -73,7 +72,7 @@ build_number (void)
 		b += 1;
 	}
 
-	b -= 36148;							// Dec 21 1999
+	b -= 36148;											// Dec 21 1999
 
 	return b;
 }
