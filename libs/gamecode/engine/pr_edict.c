@@ -400,6 +400,9 @@ PR_ValueString (progs_t * pr, etype_t type, pr_type_t *val)
 		case ev_integer:
 			snprintf (line, sizeof (line), "%d", val->integer_var);
 			break;
+		case ev_uinteger:
+			snprintf (line, sizeof (line), "%u", val->uinteger_var);
+			break;
 		default:
 			snprintf (line, sizeof (line), "bad type %i", type);
 			break;
