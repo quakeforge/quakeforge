@@ -31,13 +31,14 @@
 
 // LordHavoc: since lightmaps are now allocated only as needed, allow a ridiculous number :)
 #define MAX_LIGHTMAPS	1024
-#define BLOCK_WIDTH		128
-#define BLOCK_HEIGHT	128
+#define BLOCK_WIDTH		64
+#define BLOCK_HEIGHT	64
 
 typedef struct glRect_s {
 	unsigned short l, t, w, h;
 } glRect_t;
 
+extern int lm_src_blend, lm_dest_blend;
 extern model_t *currentmodel;
 extern mvertex_t *r_pcurrentvertbase;
 
