@@ -901,7 +901,6 @@ classdecl
 class_name
 	: NAME
 		{
-			current_visibility = vis_private;
 			$$ = get_class ($1, 0);
 			if (!$$) {
 				error (0, "undefined symbol `%s'", $1);
@@ -1025,6 +1024,7 @@ protocolrefs
 ivar_decl_list
 	:	/* */
 		{
+			current_visibility = vis_protected;
 			current_ivars = new_struct (0);
 			if (current_class->super_class)
 				new_struct_field (current_ivars,
