@@ -47,7 +47,18 @@ typedef struct cbuf_s {
 	cbuf_args_t *args;
 	void        (*extract_line) (struct cbuf_s *cbuf);
 	void        (*parse_line) (struct cbuf_s *cbuf);
-	qboolean    wait;
+	void		(*destructor) (struct cbuf_s *cbuf);
+
+	struct cbuf_s *up, *down; // The stack
+	
+	enum {
+		CBUF_STATE_NORMAL = 0, // Normal condition
+		CBUF_STATE_WAIT, // Buffer is stalled until next frame
+		CBUF_STATE_ERROR, // An unrecoverable error occured
+		CBUF_STATE_STACK, // A buffer has been added to the stack
+	}	state;
+	
+	void *data; // Pointer to a custom structure if needed
 } cbuf_t;
 
 extern cbuf_t *cbuf_active;
@@ -60,7 +71,12 @@ cbuf_args_t *Cbuf_ArgsNew (void);
 void Cbuf_ArgsDelete (cbuf_args_t *);
 void Cbuf_ArgsAdd (cbuf_args_t *args, const char *arg);
 
-cbuf_t *Cbuf_New (void);
+cbuf_t * Cbuf_New (
+		void (*extract) (struct cbuf_s *cbuf),
+		void (*parse) (struct cbuf_s *cbuf),
+		void (*construct) (struct cbuf_s *cbuf),
+		void (*destruct) (struct cbuf_s *cbuf)
+		);
 void CBuf_Delete (cbuf_t *cbuf);
 void Cbuf_AddText (cbuf_t *cbuf, const char *text);
 void Cbuf_InsertText (cbuf_t *cbuf, const char *text);

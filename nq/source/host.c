@@ -32,6 +32,7 @@ static const char rcsid[] =
 #endif
 
 #include "QF/cbuf.h"
+#include "QF/idparse.h"
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
@@ -847,7 +848,7 @@ Host_Init (void)
 {
 	Con_Printf ("Host_Init\n");
 
-	host_cbuf = Cbuf_New ();
+	host_cbuf = Cbuf_New (COM_extract_line, COM_parse_line, NULL, NULL);
 	cmd_source = src_command;
 
 	Cvar_Init_Hash ();

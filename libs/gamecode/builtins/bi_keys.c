@@ -39,6 +39,7 @@ static const char rcsid[] =
 #endif
 
 #include "QF/cbuf.h"
+#include "QF/idparse.h"
 #include "QF/keys.h"
 #include "QF/progs.h"
 #include "QF/zone.h"
@@ -49,7 +50,7 @@ static inline void
 check_cbuf (void)
 {
 	if (!cbuf)
-		cbuf = Cbuf_New ();
+		cbuf = Cbuf_New (COM_extract_line, COM_parse_line, NULL, NULL);
 }
 
 /*

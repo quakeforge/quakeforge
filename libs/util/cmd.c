@@ -43,6 +43,7 @@ static const char rcsid[] =
 #include <dirent.h>
 
 #include "QF/cbuf.h"
+#include "QF/idparse.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
@@ -511,7 +512,7 @@ next call of Cmd_Execute (usually next frame) */
 void
 Cmd_Wait_f (void)
 {
-	cbuf_active->wait = true;
+	cbuf_active->state = CBUF_STATE_WAIT;
 }
 
 void
@@ -588,7 +589,7 @@ Cmd_Init (void)
 	Cmd_AddCommand ("wait", Cmd_Wait_f, "Wait a game tic");
 	cmd_warncmd = Cvar_Get ("cmd_warncmd", "0", CVAR_NONE, NULL, "Toggles the "
 							"display of error messages for unknown commands");
-	cmd_cbuf = Cbuf_New ();
+	cmd_cbuf = Cbuf_New (COM_extract_line, COM_parse_line, NULL, NULL);
 }
 
 int

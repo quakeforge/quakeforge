@@ -31,6 +31,7 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 #include "QF/cbuf.h"
+#include "QF/idparse.h" // For now, use the id console parser
 #include "QF/progs.h"
 
 static cbuf_t *cbuf; //FIXME use a properly allocated cbuf rather than this hack
@@ -39,7 +40,7 @@ static inline void
 check_cbuf (void)
 {
 	if (!cbuf)
-		cbuf = Cbuf_New ();
+		cbuf = Cbuf_New (COM_extract_line, COM_parse_line, NULL, NULL);
 }
 
 static void
