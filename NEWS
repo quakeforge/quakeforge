@@ -6,7 +6,7 @@ Changes from 0.5.2
     o General enhancements.
         * MVD playback in the qw clients.
         * MVD recording in the qw server.
-        * sv_maxrate changes now take effect immediately rathern than when
+        * sv_maxrate changes now take effect immediately rather than when
           clients (re)connect or change their rate
         * segfault when using "snd_output null" fixed
 
@@ -30,10 +30,10 @@ Changes from 0.3.0
           is planned).
         * Menu system re-written in QuakeC/Ruamoko
         * Curses console for servers in Unix.
-        * New keybinding system.
+        * New key binding system.
 
     o Progs engine enhancements.
-        * Fully modular. Mod/Server-independant, allowing for
+        * Fully modular. Mod/Server-independent, allowing for
           stand-alone QuakeC interpreter and client-side code.
         * The engine is no longer dependent on progdefs.h. This makes
           QuakeForge have trouble with QuakeC compilers that strip
