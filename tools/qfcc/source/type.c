@@ -242,10 +242,11 @@ print_type (type_t *type)
 		case ev_object:
 		case ev_class:
 			class = type->class;
-			printf (" %s %s%s", pr_type_name[type->type],
+			printf (" %s%s", 
 					class->class_name,
 					class->category_name ? va (" (%s)", class->category_name)
 										 : "");
+			break;
 		default:
 			printf(" %s", pr_type_name[type->type]);
 			break;

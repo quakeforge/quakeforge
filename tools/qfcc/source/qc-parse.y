@@ -246,7 +246,7 @@ enum
 type
 	: '.' type { $$ = build_type (1, $2); }
 	| type array_decl { $$ = build_type (0, build_array_type ($1, $2)); }
-	| type_name function_decl
+	| type function_decl
 		{
 			current_params = $2;
 			$$ = build_type (0, parse_params ($1, $2));
