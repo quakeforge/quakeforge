@@ -6,7 +6,6 @@ extern struct cvar_s     *crosshaircolor;
 
 extern struct cvar_s     *d_mipcap;
 extern struct cvar_s     *d_mipscale;
-extern struct cvar_s     *d_subdiv16;
 
 extern struct cvar_s     *gl_affinemodels;
 extern struct cvar_s     *gl_clear;

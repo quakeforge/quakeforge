@@ -50,7 +50,6 @@ cvar_t     *crosshaircolor;
 
 cvar_t     *d_mipcap;
 cvar_t     *d_mipscale;
-cvar_t     *d_subdiv16;
 
 cvar_t     *gl_affinemodels;
 cvar_t     *gl_clear;
@@ -166,8 +165,6 @@ R_Init_Cvars (void)
 						 "Detail level. 0 is highest, 3 is lowest.");
 	d_mipscale = Cvar_Get ("d_mipscale", "1", CVAR_NONE, NULL, "Detail level "
 						   "of objects. 0 is highest, 3 is lowest.");
-	d_subdiv16 = Cvar_Get ("d_subdiv16", "1", CVAR_NONE, NULL,
-						   "Set to enable extreme perspective correction");
 	gl_affinemodels = Cvar_Get ("gl_affinemodels", "0", CVAR_ARCHIVE, NULL,
 								"Makes texture rendering quality better if "
 								"set to 1");
