@@ -415,7 +415,7 @@ field_expr (expr_t *e1, expr_t *e2)
 	t1 = get_type (e1);
 	t2 = get_type (e2);
 
-	if (t1 != ev_entity && t2 != ev_field) {
+	if (t1 != ev_entity || t2 != ev_field) {
 		yyerror ("type missmatch for .");
 		return 0;
 	}
