@@ -98,10 +98,8 @@ install: build
 		usr/lib/libQFsound.so.* \
 		usr/lib/libQFutil.so.* \
 		usr/lib/quakeforge/plugins/cd_linux.so* \
-		usr/lib/quakeforge/plugins/cd_null.so* \
 		usr/lib/quakeforge/plugins/console_client.so* \
 		usr/lib/quakeforge/plugins/snd_output_disk.so* \
-		usr/lib/quakeforge/plugins/snd_output_null.so* \
 		usr/lib/quakeforge/plugins/snd_render_default.so*
 	dh_installdocs -p$(common) NEWS TODO
 	dh_installchangelogs -p$(common) ChangeLog
