@@ -37,6 +37,7 @@
 #endif
 
 #include "QF/compat.h"
+#include "QF/model.h"
 #include "QF/skin.h"
 
 #include "QF/render.h"
@@ -73,6 +74,12 @@ Skin_Set_Translate (int top, int bottom, byte *dest)
 
 void
 Skin_Do_Translation (skin_t *player_skin, int slot)
+{
+}
+
+
+void
+Skin_Do_Translation_Model (model_t *model, int skinnum, int slot)
 {
 }
 

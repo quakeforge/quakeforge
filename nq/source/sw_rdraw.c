@@ -709,21 +709,21 @@ R_RenderPoly (msurface_t *fa, int clipflags)
 	// r_nearzi, and extract the s and t coordinates at the vertices
 	pplane = fa->plane;
 	switch (pplane->type) {
-	case PLANE_X:
-	case PLANE_ANYX:
-		s_axis = 1;
-		t_axis = 2;
-		break;
-	case PLANE_Y:
-	case PLANE_ANYY:
-		s_axis = 0;
-		t_axis = 2;
-		break;
-	case PLANE_Z:
-	case PLANE_ANYZ:
-		s_axis = 0;
-		t_axis = 1;
-		break;
+		case PLANE_X:
+		case PLANE_ANYX:
+			s_axis = 1;
+			t_axis = 2;
+			break;
+		case PLANE_Y:
+		case PLANE_ANYY:
+			s_axis = 0;
+			t_axis = 2;
+			break;
+		case PLANE_Z:
+		case PLANE_ANYZ:
+			s_axis = 0;
+			t_axis = 1;
+			break;
 	}
 
 	r_nearzi = 0;
@@ -795,7 +795,7 @@ R_ZDrawSubmodelPolys (model_t *pmodel)
 		// draw the polygon
 		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
 			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-			// FIXME: use bounding-box-based frustum clipping info?
+// FIXME: use bounding-box-based frustum clipping info?
 			R_RenderPoly (psurf, 15);
 		}
 	}

@@ -43,7 +43,6 @@ extern byte gammatable[256];
 
 qboolean    V_CheckGamma (void);
 
-
 void 
 V_CalcPowerupCshift (void) 
 { 

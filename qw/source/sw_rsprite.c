@@ -110,7 +110,6 @@ R_ClipSpriteFace (int nump, clipplane_t *pclipplane)
 		if (dists[i] >= 0) {
 			memcpy (outstep, instep, sizeof (vec5_t));
 			outstep += sizeof (vec5_t) / sizeof (float);
-
 			outcount++;
 		}
 
@@ -312,15 +311,15 @@ R_DrawSprite (void)
 		r_spritedesc.vup[1] = 0;
 		r_spritedesc.vup[2] = 1;
 		r_spritedesc.vright[0] = tvec[1];
-		// CrossProduct(r_spritedesc.vup, -modelorg,
+		//CrossProduct(r_spritedesc.vup, -modelorg,
 		r_spritedesc.vright[1] = -tvec[0];
-		// r_spritedesc.vright)
+		//r_spritedesc.vright)
 		r_spritedesc.vright[2] = 0;
 		VectorNormalize (r_spritedesc.vright);
 		r_spritedesc.vpn[0] = -r_spritedesc.vright[1];
 		r_spritedesc.vpn[1] = r_spritedesc.vright[0];
 		r_spritedesc.vpn[2] = 0;
-//		CrossProduct (r_spritedesc.vright, r_spritedesc.vup, r_spritedesc.vpn)
+		//CrossProduct (r_spritedesc.vright, r_spritedesc.vup, r_spritedesc.vpn)
 	} else if (psprite->type == SPR_VP_PARALLEL) {
 		// generate the sprite's axes, completely parallel to the viewplane.
 		// There are no problem situations, because the sprite is always in the
@@ -347,14 +346,14 @@ R_DrawSprite (void)
 		r_spritedesc.vup[1] = 0;
 		r_spritedesc.vup[2] = 1;
 		r_spritedesc.vright[0] = vpn[1];
-		// CrossProduct (r_spritedesc.vup, vpn,
+		//CrossProduct (r_spritedesc.vup, vpn,
 		r_spritedesc.vright[1] = -vpn[0];	// r_spritedesc.vright)
 		r_spritedesc.vright[2] = 0;
 		VectorNormalize (r_spritedesc.vright);
 		r_spritedesc.vpn[0] = -r_spritedesc.vright[1];
 		r_spritedesc.vpn[1] = r_spritedesc.vright[0];
 		r_spritedesc.vpn[2] = 0;
-//		CrossProduct (r_spritedesc.vright, r_spritedesc.vup, r_spritedesc.vpn)
+		//CrossProduct (r_spritedesc.vright, r_spritedesc.vup, r_spritedesc.vpn)
 	} else if (psprite->type == SPR_ORIENTED) {
 		// generate the sprite's axes, according to the sprite's world
 		// orientation

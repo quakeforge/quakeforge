@@ -137,7 +137,6 @@ R_MakeSky (void)
 			pnewsky = (unsigned int *) ((byte *) pnewsky + 1);
 		}
 #endif
-
 		pnewsky += 128 / sizeof (unsigned int);
 	}
 
@@ -188,7 +187,6 @@ R_GenSkyTile (void *pdest)
 			pd = (unsigned int *) ((byte *) pd + 1);
 		}
 #endif
-
 		pnewsky += 128 / sizeof (unsigned int);
 	}
 }
@@ -244,7 +242,6 @@ R_SetSkyFrame (void)
 	temp = SKYSIZE * s1 * s2;
 
 	skytime = cl.time - ((int) (cl.time / temp) * temp);
-
 
 	r_skymade = 0;
 }

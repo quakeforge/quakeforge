@@ -50,10 +50,6 @@ extern byte      gammatable[256];
 
 extern qboolean  V_CheckGamma (void);
 
-extern void      V_CalcIntermissionRefdef (void);
-extern void      V_CalcRefdef (void);
-
-extern cvar_t   *gl_cshiftpercent;
 extern cvar_t   *cl_cshift_powerup;
 
 byte             ramps[3][256];

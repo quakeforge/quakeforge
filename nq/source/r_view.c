@@ -88,8 +88,6 @@ cvar_t     *crosshaircolor;
 cvar_t     *cl_crossx;
 cvar_t     *cl_crossy;
 
-cvar_t     *gl_cshiftpercent;
-
 cvar_t     *brightness;
 cvar_t     *contrast;
 
@@ -718,8 +716,6 @@ V_Init (void)
 			"None");
 	cl_crossx = Cvar_Get ("cl_crossx", "0", CVAR_NONE, NULL, "None");
 	cl_crossy = Cvar_Get ("cl_crossy", "0", CVAR_NONE, NULL, "None");
-	gl_cshiftpercent = Cvar_Get ("gl_cshiftpercent", "100", CVAR_NONE, NULL,
-			"None");
 
 	scr_ofsx = Cvar_Get ("scr_ofsx", "0", CVAR_NONE, NULL, "None");
 	scr_ofsy = Cvar_Get ("scr_ofsy", "0", CVAR_NONE, NULL, "None");

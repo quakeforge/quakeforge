@@ -1,7 +1,7 @@
 /*
 	r_alias.c
 
-	@description@
+	routines for setting up to draw alias models
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -31,9 +31,13 @@
 #endif
 
 #include "QF/console.h"
+#include "QF/render.h"
+#include "QF/skin.h"
 #include "QF/sys.h"
+#include "QF/texture.h"
 
 #include "client.h"
+#include "d_ifacea.h"
 #include "r_local.h"
 
 #define LIGHT_MIN	5					// lowest light value we'll allow, to
@@ -161,7 +165,6 @@ R_AliasCheckBBox (void)
 			zfullyclipped = false;
 		}
 	}
-
 
 	if (zfullyclipped) {
 		return false;					// everything was near-z-clipped
@@ -358,9 +361,9 @@ R_AliasSetUpTransform (int trivial_accept)
 	VectorInverse (viewmatrix[1]);
 	VectorCopy (vpn, viewmatrix[2]);
 
-//  viewmatrix[0][3] = 0;
-//  viewmatrix[1][3] = 0;
-//  viewmatrix[2][3] = 0;
+//	viewmatrix[0][3] = 0;
+//	viewmatrix[1][3] = 0;
+//	viewmatrix[2][3] = 0;
 
 	R_ConcatTransforms (viewmatrix, rotationmatrix, aliastransform);
 
@@ -436,8 +439,7 @@ R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts)
 
 		// x, y, and z are scaled down by 1/2**31 in the transform, so 1/z is
 		// scaled up by 1/2**31, and the scaling cancels out for x and y in
-		// the
-		// projection
+		// the projection
 		fv->v[5] = zi;
 
 		fv->v[0] = ((DotProduct (pverts->v, aliastransform[0]) +

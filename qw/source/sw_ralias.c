@@ -31,6 +31,7 @@
 #endif
 
 #include "QF/console.h"
+#include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
@@ -38,10 +39,10 @@
 #include "client.h"
 #include "d_ifacea.h"
 #include "r_local.h"
-#include "QF/render.h"
 
-#define LIGHT_MIN	5	// lowest light value we'll allow, to
-						// avoid the need for inner-loop light clamping
+#define LIGHT_MIN	5					// lowest light value we'll allow, to
+										// avoid the need for inner-loop light
+										// clamping
 
 mtriangle_t *ptriangles;
 affinetridesc_t r_affinetridesc;
@@ -577,7 +578,6 @@ R_AliasSetupSkin (void)
 void
 R_AliasSetupLighting (alight_t *plighting)
 {
-
 	// guarantee that no vertex will ever be lit below LIGHT_MIN, so we don't
 	// have to clamp off the bottom
 	r_ambientlight = plighting->ambientlight;
