@@ -73,7 +73,6 @@
 #include "QF/quakefs.h"
 #include "QF/qargs.h"
 #include "QF/screen.h"
-#include "QF/skin.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/teamplay.h"
@@ -89,6 +88,7 @@
 #include "cl_main.h"
 #include "cl_parse.h"
 #include "cl_pred.h"
+#include "cl_skin.h"
 #include "cl_slist.h"
 #include "cl_tent.h"
 #include "client.h"
@@ -1600,7 +1600,7 @@ Host_Init (void)
 
 	CL_Cam_Init_Cvars ();
 	CL_Input_Init_Cvars ();
-	Skin_Init_Cvars ();
+	CL_Skin_Init_Cvars ();
 	CL_Init_Cvars ();
 	CL_Prediction_Init_Cvars ();
 	COM_Init_Cvars ();
@@ -1655,7 +1655,7 @@ Host_Init (void)
 
 	cls.state = ca_disconnected;
 	Sbar_Init ();
-	Skin_Init ();
+	CL_Skin_Init ();
 	CL_Init ();
 #else
 	VID_Init (vid_basepal);
@@ -1668,7 +1668,7 @@ Host_Init (void)
 	cls.state = ca_disconnected;
 	CDAudio_Init ();
 	Sbar_Init ();
-	Skin_Init ();
+	CL_Skin_Init ();
 	CL_Init ();
 	IN_Init ();
 #endif
