@@ -36,20 +36,13 @@
 # include <strings.h>
 #endif
 
-#include "QF/cmd.h"
-#include "QF/compat.h"
 #include "QF/console.h"
 #include "QF/hash.h"
-#include "QF/info.h"
-#include "QF/msg.h"
 #include "QF/pcx.h"
-#include "QF/qendian.h"
 #include "QF/quakefs.h"
-#include "QF/screen.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/texture.h"
-#include "QF/va.h"
 
 #include "client.h"
 

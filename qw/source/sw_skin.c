@@ -38,8 +38,6 @@
 
 #include "QF/compat.h"
 #include "QF/skin.h"
-#include "QF/sys.h"
-#include "QF/vid.h"
 
 #include "render.h"
 
