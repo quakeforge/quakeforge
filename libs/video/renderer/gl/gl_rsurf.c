@@ -238,7 +238,7 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 
 	// set to full bright if no light data
 	if (!r_worldentity.model->lightdata) {
-		memset (&blocklights[0], 65280, 3 * size * sizeof(int));
+		memset (&blocklights[0], 0xff, 3 * size * sizeof(int));
 		goto store;
 	}
 
