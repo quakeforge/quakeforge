@@ -246,6 +246,7 @@ qboolean FillOutside (node_t *node);
 
 void LoadBSP (void);
 void bsp2prt (void);
+void extract_textures (void);
 
 //=============================================================================
 

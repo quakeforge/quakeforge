@@ -186,8 +186,7 @@ pack_close (pack_t *pack)
 				pack->numfiles * sizeof (pack->files[0]));
 		pack->header.dirlen = pack->numfiles * sizeof (pack->files[0]);
 		pack->header.dirofs = LittleLong (pack->header.dirofs);
-		pack->header.dirlen = LittleLong (pack->numfiles
-										  * sizeof (pack->files[0]));
+		pack->header.dirlen = LittleLong (pack->header.dirlen);
 		Qseek (pack->handle, 0, SEEK_SET);
 		Qwrite (pack->handle, &pack->header, sizeof (pack->header));
 

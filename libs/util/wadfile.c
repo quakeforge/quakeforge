@@ -176,7 +176,7 @@ wad_create (const char *name)
 		wad_del (wad);
 		return 0;
 	}
-	strncpy (wad->header.id, "PACK", sizeof (wad->header.id));
+	strncpy (wad->header.id, "WAD2", sizeof (wad->header.id));
 
 	Qwrite (wad->handle, &wad->header, sizeof (wad->header));
 
@@ -200,10 +200,8 @@ wad_close (wad_t *wad)
 		Qseek (wad->handle, wad->header.infotableofs, SEEK_SET);
 		Qwrite (wad->handle, wad->lumps,
 				wad->numlumps * sizeof (wad->lumps[0]));
-		wad->header.numlumps = wad->numlumps * sizeof (wad->lumps[0]);
 		wad->header.infotableofs = LittleLong (wad->header.infotableofs);
-		wad->header.numlumps = LittleLong (wad->numlumps
-										   * sizeof (wad->lumps[0]));
+		wad->header.numlumps = LittleLong (wad->numlumps);
 		Qseek (wad->handle, 0, SEEK_SET);
 		Qwrite (wad->handle, &wad->header, sizeof (wad->header));
 
@@ -251,12 +249,59 @@ wad_add (wad_t *wad, const char *filename, const char *lumpname, byte type)
 
 	Qseek (wad->handle, 0, SEEK_END);
 	pf->filepos = Qtell (wad->handle);
+	pf->type = type;
 	pf->size = 0;
 	while ((bytes = Qread (file, buffer, sizeof (buffer)))) {
 		Qwrite (wad->handle, buffer, bytes);
 		pf->size += bytes;
 	}
 	Qclose (file);
+	if (wad->pad && pf->size & 3) {
+		static char buf[4];
+		Qwrite (wad->handle, buf, 4 - (pf->size & 3));
+	}
+	Hash_AddElement (wad->lump_hash, pf);
+	return 0;
+}
+
+int
+wad_add_data (wad_t *wad, const char *lumpname, byte type, const void *data,
+			  int bytes)
+{
+	lumpinfo_t *pf;
+	lumpinfo_t  dummy;
+
+	strncpy (dummy.name, lumpname, 16);
+	dummy.name[15] = 0;
+
+	pf = Hash_FindElement (wad->lump_hash, &dummy);
+	if (pf)
+		return -1;
+	if (wad->numlumps == wad->lumps_size) {
+		lumpinfo_t *f;
+		
+		wad->lumps_size += 64;
+
+		f = realloc (wad->lumps, wad->lumps_size * sizeof (lumpinfo_t));
+		if (!f)
+			return -1;
+		wad->lumps = f;
+	}
+
+	wad->modified = 1;
+
+	pf = &wad->lumps[wad->numlumps++];
+
+	strncpy (pf->name, lumpname, sizeof (pf->name));
+	pf->name[sizeof (pf->name) - 1] = 0;
+
+	Qseek (wad->handle, 0, SEEK_END);
+	pf->filepos = Qtell (wad->handle);
+	pf->type = type;
+	pf->size = bytes;
+
+	Qwrite (wad->handle, data, bytes);
+
 	if (wad->pad && pf->size & 3) {
 		static char buf[4];
 		Qwrite (wad->handle, buf, 4 - (pf->size & 3));

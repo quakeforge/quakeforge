@@ -285,22 +285,6 @@ typedef struct wadlist_s {
 
 wadlist_t  *wadlist;
 
-static void
-CleanupName (char *in, char *out)
-{
-	int         i;
-
-	for (i = 0; i < 16; i++) {
-		if (!in[i])
-			break;
-
-		out[i] = toupper (in[i]);
-	}
-
-	for (; i < 16; i++)
-		out[i] = 0;
-}
-
 static int
 TEX_InitFromWad (char *path)
 {
@@ -329,14 +313,11 @@ TEX_InitFromWad (char *path)
 static int
 LoadLump (char *name, dstring_t *dest)
 {
-	char        cname[16];		//FIXME: overflow
 	int         r;
 	int         ofs = dest->size;
 	wadlist_t  *wl;
 	lumpinfo_t *lump;
 	QFile      *texfile;
-
-	CleanupName (name, cname);
 
 	for (wl = wadlist; wl; wl = wl->next) {
 		if ((lump = wad_find_lump (wl->wad, name))) {

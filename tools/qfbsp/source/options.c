@@ -48,21 +48,22 @@ static __attribute__ ((unused)) const char rcsid[] =
 const char *this_program;
 
 static struct option const long_options[] = {
-	{"quiet",		no_argument,		0, 'q'},
-	{"verbose",		no_argument,		0, 'v'},
-	{"help",		no_argument,		0, 'h'},
-	{"version",		no_argument,		0, 'V'},
-	{"draw",		no_argument,		0, 'd'},
-	{"notjunc",		no_argument,		0, 't'},
-	{"nofill",		no_argument,		0, 'f'},
-	{"noclip",		no_argument,		0, 'c'},
-	{"onlyents",	no_argument,		0, 'e'},
-	{"portal",		no_argument,		0, 'p'},
-	{"usehulls",	no_argument,		0, 'u'},
-	{"hullnum",		required_argument,	0, 'H'},
-	{"subdivide",	required_argument,	0, 's'},	
-	{"wadpath",		required_argument,	0, 'w'},
-	{"watervis",	no_argument,		0, 'W'},
+	{"quiet",				no_argument,		0, 'q'},
+	{"verbose",				no_argument,		0, 'v'},
+	{"help",				no_argument,		0, 'h'},
+	{"version",				no_argument,		0, 'V'},
+	{"draw",				no_argument,		0, 'd'},
+	{"notjunc",				no_argument,		0, 't'},
+	{"nofill",				no_argument,		0, 'f'},
+	{"noclip",				no_argument,		0, 'c'},
+	{"onlyents",			no_argument,		0, 'e'},
+	{"portal",				no_argument,		0, 'p'},
+	{"extract-textures",	no_argument,		0, 'E'},
+	{"usehulls",			no_argument,		0, 'u'},
+	{"hullnum",				required_argument,	0, 'H'},
+	{"subdivide",			required_argument,	0, 's'},	
+	{"wadpath",				required_argument,	0, 'w'},
+	{"watervis",			no_argument,		0, 'W'},
 	{NULL, 0, NULL, 0}
 };
 
@@ -77,6 +78,7 @@ static const char *short_options =
 	"c"		// noclip
 	"e"		// onlyents
 	"p"		// portal
+	"E"		// extract-texures
 	"u"		// usehulls
 	"H:"	// hullnum
 	"s:"	// subdivide
@@ -101,6 +103,7 @@ usage (int status)
 		"    -c, --noclip\n"
 		"    -e, --onlyents\n"
 		"    -p, --portal\n"
+		"    -E, --extract-textures\n"
 		"    -u, --usehulls            Use the existing hull files\n"
 		"    -H, --hullnum [num]\n"
 		"    -s, --subdivide [size]\n"
@@ -153,6 +156,9 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'p':					// portal
 				options.portal = true;
+				break;
+			case 'E':					// extract-textures
+				options.extract_textures = true;
 				break;
 			case 'u':					// usehulls
 				options.usehulls = true;

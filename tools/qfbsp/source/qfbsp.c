@@ -771,6 +771,12 @@ ProcessFile (void)
 		return;
 	}
 
+	if (options.extract_textures) {
+		LoadBSP ();
+		extract_textures ();
+		return;
+	}
+
 	// load brushes and entities
 	LoadMapFile (options.mapfile);
 

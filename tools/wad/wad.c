@@ -206,7 +206,8 @@ main (int argc, char **argv)
 				if (options.verbosity >= 1)
 					printf ("%6d ", wad->lumps[i].size);
 				if (options.verbosity >= 0)
-					printf ("%s\n", wad->lumps[i].name);
+					printf ("%3d %s\n", wad->lumps[i].type,
+							wad->lumps[i].name);
 			}
 			wad_close (wad);
 			break;

@@ -33,6 +33,28 @@
 #include "QF/quakeio.h"
 #include "QF/qtypes.h"
 
+//===============
+//   TYPES
+//===============
+
+#define	CMP_NONE		0
+#define	CMP_LZSS		1
+
+#define	TYP_NONE		0
+#define	TYP_LABEL		1
+
+#define	TYP_LUMPY		64				// 64 + grab command number
+#define	TYP_PALETTE		64
+#define	TYP_QTEX		65
+#define	TYP_QPIC		66
+#define	TYP_SOUND		67
+#define	TYP_MIPTEX		68
+
+typedef struct qpic_s {
+	int			width, height;
+	byte		data[4];			// variably sized
+} qpic_t;
+
 typedef struct wadinfo_s {
 	char		id[4];					// should be WAD2 or 2DAW
 	int			numlumps;
@@ -72,6 +94,8 @@ void wad_close (wad_t *wad);
 wad_t *wad_create (const char *name);
 int wad_add (wad_t *wad, const char *filename, const char *lumpname,
 			 byte type);
+int wad_add_data (wad_t *wad, const char *lumpname, byte type,
+				  const void *data, int bytes);
 int wad_extract (wad_t *wad, lumpinfo_t *pf);
 lumpinfo_t *wad_find_lump (wad_t *wad, const char *filename);
 
