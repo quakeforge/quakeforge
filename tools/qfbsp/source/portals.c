@@ -411,10 +411,10 @@ WritePortalFile_r (node_t *node)
 						 p->nodes[0]->visleafnum, p->nodes[1]->visleafnum);
 			for (i = 0; i < w->numpoints - 1; i++) {
 				fprintf (pf, "(%g %g %g) ",
-						 w->points[i][0], w->points[i][0], w->points[i][0]);
+						 w->points[i][0], w->points[i][1], w->points[i][2]);
 			}
 			fprintf (pf, "(%g %g %g)\n",
-					 w->points[i][0], w->points[i][0], w->points[i][0]);
+					 w->points[i][0], w->points[i][1], w->points[i][2]);
 		}
 
 		if (p->nodes[0] == node)
