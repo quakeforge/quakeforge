@@ -166,8 +166,8 @@ setup_data (void)
 	for (d = pr.scope->head; d; d = d->def_next)
 		write_def (d, def++, &reloc);
 	for (f = pr.func_head; f; f = f->next) {
-		func->name           = LittleLong (f->dfunc->s_name);
-		func->file           = LittleLong (f->dfunc->s_file);
+		func->name           = LittleLong (f->s_name);
+		func->file           = LittleLong (f->s_file);
 		func->line           = LittleLong (f->def->line);
 		func->builtin        = LittleLong (f->builtin);
 		func->code           = LittleLong (f->code);
@@ -182,8 +182,7 @@ setup_data (void)
 		func->num_local_defs = LittleLong (f->scope->num_defs);
 		if (f->aux)
 			func->line_info  = LittleLong (f->aux->line_info);
-		func->num_parms      = LittleLong (f->dfunc->numparms);
-		memcpy (func->parm_size, f->dfunc->parm_size, MAX_PARMS);
+		func->num_parms      = LittleLong (function_parms (f, func->parm_size));
 		func->relocs         = LittleLong (reloc - relocs);
 		write_relocs (f->refs, &reloc);
 

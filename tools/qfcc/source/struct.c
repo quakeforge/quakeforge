@@ -146,7 +146,7 @@ new_struct (const char *name)
 	strct->type->class = (struct class_s *)strct;
 	strct->is_union = 0;
 	if (name) {
-		strct->type->name = strdup (name);
+		strct->type->name = save_string (name);
 		Hash_Add (structs, strct);
 	}
 	return strct->type;

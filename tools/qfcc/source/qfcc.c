@@ -98,6 +98,27 @@ const char *big_function = 0;
 ddef_t      *fields;
 int         numfielddefs;
 
+hashtab_t  *saved_strings;
+
+static const char *
+ss_get_key (void *s, void *unused)
+{
+	return (const char *)s;
+}
+
+const char *
+save_string (const char *str)
+{
+	char       *s;
+	if (!saved_strings)
+		saved_strings = Hash_NewTable (16381, ss_get_key, 0, 0);
+	s = Hash_Find (saved_strings, str);
+	if (s)
+		return s;
+	s = strdup (str);
+	Hash_Add (saved_strings, s);
+	return s;
+}
 
 void
 InitData (void)
@@ -134,8 +155,8 @@ WriteData (int crc)
 	FILE       *h;
 	int         i;
 
-	globals = calloc (pr.scope->num_defs, sizeof (ddef_t));
-	fields = calloc (pr.scope->num_defs, sizeof (ddef_t));
+	globals = calloc (pr.scope->num_defs + 1, sizeof (ddef_t));
+	fields = calloc (pr.scope->num_defs + 1, sizeof (ddef_t));
 
 	for (def = pr.scope->head; def; def = def->def_next) {
 		if (!def->global || !def->name)
@@ -192,20 +213,17 @@ WriteData (int crc)
 	SafeWrite (h, pr.statements, pr.num_statements * sizeof (dstatement_t));
 
 	{
-		function_t *f;
+		dfunction_t *df;
 
 		progs.ofs_functions = ftell (h);
 		progs.numfunctions = pr.num_functions;
-		pr.functions = malloc (pr.num_functions * sizeof (dfunction_t));
-		for (i = 1, f = pr.func_head; f; i++, f = f->next) {
-			pr.functions[i].first_statement =
-				LittleLong (f->dfunc->first_statement);
-			pr.functions[i].parm_start = LittleLong (f->dfunc->parm_start);
-			pr.functions[i].s_name = LittleLong (f->dfunc->s_name);
-			pr.functions[i].s_file = LittleLong (f->dfunc->s_file);
-			pr.functions[i].numparms = LittleLong (f->dfunc->numparms);
-			pr.functions[i].locals = LittleLong (f->dfunc->locals);
-			memcpy (pr.functions[i].parm_size, f->dfunc->parm_size, MAX_PARMS);
+		for (i = 0, df = pr.functions + 1; i < pr.num_functions; i++, df++) {
+			df->first_statement = LittleLong (df->first_statement);
+			df->parm_start      = LittleLong (df->parm_start);
+			df->s_name          = LittleLong (df->s_name);
+			df->s_file          = LittleLong (df->s_file);
+			df->numparms        = LittleLong (df->numparms);
+			df->locals          = LittleLong (df->locals);
 		}
 		SafeWrite (h, pr.functions, pr.num_functions * sizeof (dfunction_t));
 	}
@@ -320,6 +338,7 @@ finish_compilation (void)
 	def_t      *def;
 	expr_t      e;
 	ex_label_t *l;
+	dfunction_t *df;
 
 	class_finish_module ();
 	// check to make sure all functions prototyped have code
@@ -351,14 +370,25 @@ finish_compilation (void)
 		relocate_refs (def->refs, def->ofs);
 	}
 
-	for (f = pr.func_head; f; f = f->next) {
-		if (f->builtin || !f->code)
+	pr.functions = calloc (pr.num_functions + 1, sizeof (dfunction_t));
+	for (df = pr.functions + 1, f = pr.func_head; f; df++, f = f->next) {
+		df->s_name = f->s_name;
+		df->s_file = f->s_file;
+		df->numparms = function_parms (f, df->parm_size);
+		if (f->scope)
+			df->locals = f->scope->space->size;
+		if (f->builtin) {
+			df->first_statement = -f->builtin;
 			continue;
+		}
+		if (!f->code)
+			continue;
+		df->first_statement = f->code;
 		if (f->scope->space->size > num_localdefs) {
 			num_localdefs = f->scope->space->size;
 			big_function = f->def->name;
 		}
-		f->dfunc->parm_start = pr.near_data->size;
+		df->parm_start = pr.near_data->size;
 		for (def = f->scope->head; def; def = def->def_next) {
 			if (def->absolute)
 				continue;

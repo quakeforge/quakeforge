@@ -134,9 +134,10 @@ static void
 vector_component (def_t *vec, int comp, scope_t *scope)
 {
 	def_t      *d;
+	const char *name;
 
-	d = new_def (&type_float, va (vector_component_names[comp], vec->name),
-				 scope);
+	name = save_string (va (vector_component_names[comp], vec->name));
+	d = new_def (&type_float, name, scope);
 	d->used = 1;
 	d->parent = vec;
 	d->ofs = vec->ofs + comp;
@@ -147,9 +148,10 @@ static void
 vector_field_component (def_t *vec, int comp, scope_t *scope)
 {
 	def_t      *d;
+	const char *name;
 
-	d = new_def (&type_floatfield, va (vector_component_names[comp], vec->name),
-				 scope);
+	name = save_string (va (vector_component_names[comp], vec->name));
+	d = new_def (&type_floatfield, name, scope);
 	d->used = 1;				// always `used'
 	d->parent = vec;
 	d->ofs = vec->ofs + comp;
@@ -217,7 +219,7 @@ new_def (type_t *type, const char *name, scope_t *scope)
 
 	def->return_addr = __builtin_return_address (0);
 
-	def->name = name ? strdup (name) : 0;
+	def->name = name;
 	def->type = type;
 
 	def->scope = scope;

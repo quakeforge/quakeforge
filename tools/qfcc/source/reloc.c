@@ -116,7 +116,7 @@ new_reloc (int ofs, reloc_type type)
 {
 	reloc_t    *ref;
 
-	ALLOC (1024, reloc_t, refs, ref);
+	ALLOC (16384, reloc_t, refs, ref);
 	ref->ofs = ofs;
 	ref->type = type;
 	return ref;

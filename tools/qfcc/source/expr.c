@@ -669,21 +669,20 @@ print_expr (expr_t *e)
 static expr_t *
 do_op_string (int op, expr_t *e1, expr_t *e2)
 {
-	int         len;
-	char       *buf;
 	const char *s1, *s2;
+	static dstring_t *temp_str;
 
 	s1 = e1->e.string_val ? e1->e.string_val : "";
 	s2 = e2->e.string_val ? e2->e.string_val : "";
 
 	switch (op) {
 		case '+':
-			len = strlen (s1) + strlen (s2) + 1;
-			buf = malloc (len);
-			SYS_CHECKMEM (buf);
-			strcpy (buf, s1);
-			strcat (buf, s2);
-			e1->e.string_val = buf;
+			if (!temp_str)
+				temp_str = dstring_newstr ();
+			dstring_clearstr (temp_str);
+			dstring_appendstr (temp_str, s1);
+			dstring_appendstr (temp_str, s2);
+			e1->e.string_val = save_string (temp_str->str);
 			break;
 		case LT:
 			e1->type = ex_integer;

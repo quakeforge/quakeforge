@@ -43,8 +43,10 @@ static const char rcsid[] =
 #include <stdlib.h>
 #include <ctype.h>
 
+#include <QF/dstring.h>
 #include <QF/hash.h>
 #include <QF/sys.h>
+
 #include "qfcc.h"
 #include "expr.h"
 #include "class.h"
@@ -62,7 +64,7 @@ int do_grab (char *token);
 
 void add_frame_macro (char *token);
 
-char *make_string (char *token);
+const char *make_string (char *token);
 
 extern YYSTYPE yylval;
 extern int element_flag;
@@ -136,18 +138,18 @@ m		([\-+]?)
 					}
 
 '(\\[^xX0-7\r\n]|[^'\r\n]|\\[xX][0-9A-Fa-f]+|\\[0-7]+)*'	{
-						char *str = make_string (yytext);
+						const char *str = make_string (yytext);
 
 						if (str[1])
 							warning (0, "multibyte char constant");
 						yylval.integer_val = *str;
-						free (str);
 						return INT_VAL;
 					}
 
 ^#{s}+{DIGIT}+{s}+\"(\.|[^"\n])*\".*$ {
 						char *p;
 						char *s;
+						const char *str;
 						int line;
 						
 						p = yytext + 1;
@@ -157,12 +159,11 @@ m		([\-+]?)
 							p++;
 						if (!*p)
 							error (0, "Unexpected end of file");
-						s = make_string (p);		// grab the filename
+						str = make_string (p);		// grab the filename
 						while (*p && *p != '\n')	// ignore flags
 							p++;
 						pr_source_line = line - 1;
-						s_file = ReuseString (strip_path (s));
-						free (s);
+						s_file = ReuseString (strip_path (str));
 					}
 
 [+\-*/&|^%]=		{
@@ -335,7 +336,7 @@ type_or_name (char *token)
 		yylval.type = type;
 		return TYPE;
 	}
-	yylval.string_val = strdup (token);
+	yylval.string_val = save_string (token);
 	return NAME;
 }
 
@@ -369,7 +370,6 @@ static void
 frame_free (void *_f, void *unused)
 {
 	frame_t    *f = (frame_t *)_f;
-	free ((char*)f->name);
 	f->next = free_frames;
 	free_frames = f;
 }
@@ -412,7 +412,7 @@ add_frame_macro (char *token)
 	frame_t *frame;
 	ALLOC (1024, frame_t, frames, frame);
 
-	frame->name = strdup (token);
+	frame->name = save_string (token);
 	frame->num = frame_number++;
 	Hash_Add (frame_tab, frame);
 }
@@ -425,18 +425,22 @@ clear_frame_macros (void)
 		Hash_FlushTable (frame_tab);
 }
 
-char *
+const char *
 make_string (char *token)
 {
-	char       *str, *s;
+	char        s[2];
 	int         c;
 	int         i;
 	int         mask;
 	int         boldnext;
 	int         quote;
+	static dstring_t *str;
 
-	s = str = malloc (strlen (token) + 1);
-	SYS_CHECKMEM (str);
+	if (!str)
+		str = dstring_newstr ();
+	dstring_clearstr (str);
+
+	s[1] = 0;
 
 	mask = 0x00;
 	boldnext = 0;
@@ -574,17 +578,17 @@ make_string (char *token)
 					break;
 			}
 		} else if (c == quote) {
-			*s++ = 0;
 			break;;
 		}
 		if (boldnext)
 			c = c ^ 0x80;
 		boldnext = 0;
 		c = c ^ mask;
-		*s++ = c;
+		s[0] = c;
+		dstring_appendstr (str, s);
 	} while (1);
 
-	return str;
+	return save_string (str->str);
 }
 
 static void *(*const yy_flex_realloc_hack)(void *,yy_size_t) = yy_flex_realloc;

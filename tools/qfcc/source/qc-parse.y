@@ -96,7 +96,7 @@ void free_local_inits (hashtab_t *def_list);
 	expr_t		*expr;
 	int			integer_val;
 	float		float_val;
-	char		*string_val;
+	const char *string_val;
 	float		vector_val[3];
 	float		quaternion_val[4];
 	struct function_s *function;
@@ -479,7 +479,7 @@ opt_comma
 begin_function
 	: /*empty*/
 		{
-			$$ = current_func = new_function ();
+			$$ = current_func = new_function (current_def->name);
 			$$->def = current_def;
 			$$->refs = new_reloc ($$->def->ofs, rel_def_func);
 			$$->code = pr.num_statements;
@@ -1204,29 +1204,29 @@ keywordselector
 
 selector
 	: NAME
-	| TYPE						{ $$ = strdup (yytext); }
+	| TYPE						{ $$ = save_string (yytext); }
 	| reserved_word
 	;
 
 reserved_word
-	: LOCAL						{ $$ = strdup (yytext); }
-	| RETURN					{ $$ = strdup (yytext); }
-	| WHILE						{ $$ = strdup (yytext); }
-	| DO						{ $$ = strdup (yytext); }
-	| IF						{ $$ = strdup (yytext); }
-	| ELSE						{ $$ = strdup (yytext); }
-	| FOR						{ $$ = strdup (yytext); }
-	| BREAK						{ $$ = strdup (yytext); }
-	| CONTINUE					{ $$ = strdup (yytext); }
-	| SWITCH					{ $$ = strdup (yytext); }
-	| CASE						{ $$ = strdup (yytext); }
-	| DEFAULT					{ $$ = strdup (yytext); }
-	| NIL						{ $$ = strdup (yytext); }
-	| STRUCT					{ $$ = strdup (yytext); }
-	| UNION						{ $$ = strdup (yytext); }
-	| ENUM						{ $$ = strdup (yytext); }
-	| TYPEDEF					{ $$ = strdup (yytext); }
-	| SUPER						{ $$ = strdup (yytext); }
+	: LOCAL						{ $$ = save_string (yytext); }
+	| RETURN					{ $$ = save_string (yytext); }
+	| WHILE						{ $$ = save_string (yytext); }
+	| DO						{ $$ = save_string (yytext); }
+	| IF						{ $$ = save_string (yytext); }
+	| ELSE						{ $$ = save_string (yytext); }
+	| FOR						{ $$ = save_string (yytext); }
+	| BREAK						{ $$ = save_string (yytext); }
+	| CONTINUE					{ $$ = save_string (yytext); }
+	| SWITCH					{ $$ = save_string (yytext); }
+	| CASE						{ $$ = save_string (yytext); }
+	| DEFAULT					{ $$ = save_string (yytext); }
+	| NIL						{ $$ = save_string (yytext); }
+	| STRUCT					{ $$ = save_string (yytext); }
+	| UNION						{ $$ = save_string (yytext); }
+	| ENUM						{ $$ = save_string (yytext); }
+	| TYPEDEF					{ $$ = save_string (yytext); }
+	| SUPER						{ $$ = save_string (yytext); }
 	;
 
 keyworddecl

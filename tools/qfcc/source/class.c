@@ -475,7 +475,7 @@ class_finish_module (void)
 
 	exec_class_def = get_def (&type_obj_exec_class, "__obj_exec_class",
 								pr.scope, 1);
-	exec_class_func = new_function ();
+	exec_class_func = new_function ("__obj_exec_class");
 	exec_class_func->builtin = 0;
 	exec_class_func->def = exec_class_def;
 	exec_class_func->refs = new_reloc (exec_class_def->ofs, rel_def_func);
@@ -483,7 +483,7 @@ class_finish_module (void)
 	finish_function (exec_class_func);
 
 	init_def = get_def (&type_function, ".ctor", pr.scope, 1);
-	init_func = new_function ();
+	init_func = new_function (".ctor");
 	init_func->def = init_def;
 	init_func->refs = new_reloc (init_def->ofs, rel_def_func);
 	init_func->code = pr.num_statements;

@@ -92,6 +92,8 @@ extern	string_t	s_file;			// filename for function definition
 
 const char *strip_path (const char *filename);
 
+const char *save_string (const char *str);
+
 #define ALLOC(s, t, n, v)							\
 	do {											\
 		if (!free_##n) {							\

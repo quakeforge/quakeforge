@@ -54,11 +54,15 @@ static const char rcsid[] =
 #include "reloc.h"
 #include "type.h"
 
+static param_t *free_params;
+static function_t *free_functions;
+
 param_t *
 new_param (const char *selector, type_t *type, const char *name)
 {
-	param_t    *param = malloc (sizeof (param_t));
+	param_t    *param;
 
+	ALLOC (4096, param_t, params, param);
 	param->next = 0;
 	param->selector = selector;
 	param->type = type;
@@ -165,14 +169,17 @@ build_scope (function_t *f, def_t *func, param_t *params)
 }
 
 function_t *
-new_function (void)
+new_function (const char *name)
 {
 	function_t	*f;
 
-	f = calloc (1, sizeof (function_t));
+	ALLOC (1024, function_t, functions, f);
+
 	*pr.func_tail = f;
 	pr.func_tail = &f->next;
 	f->function_num = pr.num_functions++;
+	f->s_name = ReuseString (name);
+	f->s_file = s_file;
 	return f;
 }
 
@@ -191,7 +198,7 @@ build_builtin_function (def_t *def, expr_t *bi_val)
 		return 0;
 	}
 
-	f = new_function ();
+	f = new_function (def->name);
 
 	f->builtin = bi_val->type == ex_integer ? bi_val->e.integer_val
 											: (int)bi_val->e.float_val;
@@ -213,28 +220,6 @@ build_function (function_t *f)
 void
 finish_function (function_t *f)
 {
-	dfunction_t *df;
-	int i, count;
-
-	df = calloc (1, sizeof (dfunction_t));
-	f->dfunc = df;
-
-	if (f->builtin)
-		df->first_statement = -f->builtin;
-	else
-		df->first_statement = f->code;
-
-	df->s_name = ReuseString (f->def->name);
-	df->s_file = s_file;
-	df->numparms = f->def->type->num_parms;
-	if (f->scope)
-		df->locals = f->scope->space->size;
-	df->parm_start = 0;
-	if ((count = df->numparms) < 0)
-		count = -count - 1;
-	for (i = 0; i < count; i++)
-		df->parm_size[i] = type_size (f->def->type->parm_types[i]);
-
 	if (f->aux) {
 		def_t *def;
 		f->aux->function = f->function_num;
@@ -274,4 +259,19 @@ emit_function (function_t *f, expr_t *e)
 	reset_tempdefs ();
 
 	//puts ("");
+}
+
+int
+function_parms (function_t *f, byte *parm_size)
+{
+	int         count, i;
+
+	if (f->def->type->num_parms >= 0)
+		count = f->def->type->num_parms;
+	else
+		count = -f->def->type->num_parms - 1;
+
+	for (i = 0; i < count; i++)
+		parm_size[i] = type_size (f->def->type->parm_types[i]);
+	return f->def->type->num_parms;
 }
