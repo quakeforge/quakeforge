@@ -591,7 +591,8 @@ separate_compile (void)
 		}
 		if (strncmp (*file, "-l", 2)
 			&& (!strcmp (extension->str, ".r")
-				|| !strcmp (extension->str, ".qc"))) {
+				|| !strcmp (extension->str, ".qc")
+				|| !strcmp (extension->str, ".c"))) {
 			if (options.verbosity >= 2)
 				printf ("%s %s\n", *file, output_file->str);
 			temp_files[i++] = save_string (output_file->str);
