@@ -56,6 +56,7 @@ int         numfunctions;
 
 ddef_t      globals[MAX_GLOBALS];
 int         numglobaldefs;
+int			num_locals;
 
 ddef_t      fields[MAX_FIELDS];
 int         numfielddefs;
@@ -269,6 +270,7 @@ WriteData (int crc)
 	printf ("%6i statements\n", numstatements);
 	printf ("%6i functions\n", numfunctions);
 	printf ("%6i globaldefs\n", numglobaldefs);
+	printf ("%6i locals size\n", num_locals);
 	printf ("%6i fielddefs\n", numfielddefs);
 	printf ("%6i pr_globals\n", numpr_globals);
 
@@ -614,7 +616,6 @@ PR_FinishCompilation (void)
 	def_t		*d;
 	qboolean	errors = false;
 	function_t	*f;
-	int			num_locals = 0;
 	def_t		*def;
 	statref_t	*ref;
 
