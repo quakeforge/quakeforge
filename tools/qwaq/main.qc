@@ -27,3 +27,11 @@ float () baz =
 {
 	return foo + bar;
 };
+
+void (float x) test =
+{
+	local string str;
+	local float urk = 0;
+
+	print ("owie");
+};
