@@ -32,14 +32,13 @@
 
 #include <sys/types.h>
 #include <errno.h>
-
 #include <dmedia/cdaudio.h>
 
-#include "cdaudio.h"
+#include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/qargs.h"
-#include "sound.h"
+#include "QF/sound.h"
 
 static qboolean initialized = false;
 static qboolean enabled = true;

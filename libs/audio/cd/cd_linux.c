@@ -1,7 +1,7 @@
 /*
 	cd_linux.c
 
-	@description@
+	(description)
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -29,26 +29,32 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+#ifdef HAVE_SYS_IOCTL_H
+# include <sys/ioctl.h>
+#endif
 
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/ioctl.h>
-#include <sys/file.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <string.h>
-#include <time.h>
+
 #include <errno.h>
-
+#include <fcntl.h>
+#include <stdlib.h>
+#include <time.h>
 #include <linux/cdrom.h>
 
-#include "QF/qargs.h"
+#include "QF/cdaudio.h"
 #include "QF/cmd.h"
-#include "cdaudio.h"
 #include "QF/console.h"
-#include "sound.h"
-#include "client.h"
+#include "QF/cvar.h"
+#include "QF/qargs.h"
+#include "QF/sound.h"
 
 static qboolean cdValid = false;
 static qboolean playing = false;
@@ -71,7 +77,7 @@ CDAudio_Eject (void)
 		return;							// no cd init'd
 
 	if (ioctl (cdfile, CDROMEJECT) == -1)
-		Con_DPrintf ("ioctl cdromeject failed\n");
+		Con_DPrintf ("CDAudio: ioctl cdromeject failed\n");
 }
 
 
@@ -82,7 +88,7 @@ CDAudio_CloseDoor (void)
 		return;							// no cd init'd
 
 	if (ioctl (cdfile, CDROMCLOSETRAY) == -1)
-		Con_DPrintf ("ioctl cdromclosetray failed\n");
+		Con_DPrintf ("CDAudio: ioctl cdromclosetray failed\n");
 }
 
 static int
@@ -93,7 +99,7 @@ CDAudio_GetAudioDiskInfo (void)
 	cdValid = false;
 
 	if (ioctl (cdfile, CDROMREADTOCHDR, &tochdr) == -1) {
-		Con_DPrintf ("ioctl cdromreadtochdr failed\n");
+		Con_DPrintf ("CDAudio: ioctl cdromreadtochdr failed\n");
 		return -1;
 	}
 
@@ -112,8 +118,9 @@ CDAudio_GetAudioDiskInfo (void)
 void
 CDAudio_Play (byte track, qboolean looping)
 {
-	struct cdrom_tocentry entry;
-	struct cdrom_ti ti;
+	struct cdrom_tocentry entry0;
+	struct cdrom_tocentry entry1;
+	struct cdrom_msf msf;
 
 	if (cdfile == -1 || !enabled)
 		return;
@@ -131,14 +138,23 @@ CDAudio_Play (byte track, qboolean looping)
 		return;
 	}
 	// don't try to play a non-audio track
-	entry.cdte_track = track;
-	entry.cdte_format = CDROM_MSF;
-	if (ioctl (cdfile, CDROMREADTOCENTRY, &entry) == -1) {
-		Con_DPrintf ("ioctl cdromreadtocentry failed\n");
+	entry0.cdte_track = track;
+	entry0.cdte_format = CDROM_MSF;
+	if (ioctl (cdfile, CDROMREADTOCENTRY, &entry0) == -1) {
+		Con_DPrintf ("CDAudio: ioctl cdromreadtocentry failed\n");
 		return;
 	}
-	if (entry.cdte_ctrl == CDROM_DATA_TRACK) {
-		Con_Printf ("CDAudio: track %i is not audio\n", track);
+	entry1.cdte_track = track + 1;
+	entry1.cdte_format = CDROM_MSF;
+	if (entry1.cdte_track > maxTrack) {
+		entry1.cdte_track = CDROM_LEADOUT;
+	}
+	if (ioctl (cdfile, CDROMREADTOCENTRY, &entry1) == -1) {
+		Con_DPrintf ("CDAudio: ioctl cdromreadtocentry failed\n");
+		return;
+	}
+	if (entry0.cdte_ctrl == CDROM_DATA_TRACK) {
+		Con_Printf ("track %i is not audio\n", track);
 		return;
 	}
 
@@ -148,18 +164,27 @@ CDAudio_Play (byte track, qboolean looping)
 		CDAudio_Stop ();
 	}
 
-	ti.cdti_trk0 = track;
-	ti.cdti_trk1 = track;
-	ti.cdti_ind0 = 1;
-	ti.cdti_ind1 = 99;
+	msf.cdmsf_min0 = entry0.cdte_addr.msf.minute;
+	msf.cdmsf_sec0 = entry0.cdte_addr.msf.second;
+	msf.cdmsf_frame0 = entry0.cdte_addr.msf.frame;
 
-	if (ioctl (cdfile, CDROMPLAYTRKIND, &ti) == -1) {
-		Con_DPrintf ("ioctl cdromplaytrkind failed\n");
+	msf.cdmsf_min1 = entry1.cdte_addr.msf.minute;
+	msf.cdmsf_sec1 = entry1.cdte_addr.msf.second;
+	msf.cdmsf_frame1 = entry1.cdte_addr.msf.frame;
+
+	Con_DPrintf ("%2d:%02d:%02d %2d:%02d:%02d\n",
+				 msf.cdmsf_min0,
+				 msf.cdmsf_sec0,
+				 msf.cdmsf_frame0,
+				 msf.cdmsf_min1, msf.cdmsf_sec1, msf.cdmsf_frame1);
+
+	if (ioctl (cdfile, CDROMPLAYMSF, &msf) == -1) {
+		Con_DPrintf ("CDAudio: ioctl cdromplaytrkind failed (%s)\n",
+					 strerror (errno));
 		return;
 	}
-
-	if (ioctl (cdfile, CDROMRESUME) == -1)
-		Con_DPrintf ("ioctl cdromresume failed\n");
+	// if ( ioctl(cdfile, CDROMRESUME) == -1 ) 
+	// Con_DPrintf("CDAudio: ioctl cdromresume failed\n");
 
 	playLooping = looping;
 	playTrack = track;
@@ -180,7 +205,7 @@ CDAudio_Stop (void)
 		return;
 
 	if (ioctl (cdfile, CDROMSTOP) == -1)
-		Con_DPrintf ("ioctl cdromstop failed (%d)\n", errno);
+		Con_DPrintf ("CDAudio: ioctl cdromstop failed (%d)\n", errno);
 
 	wasPlaying = false;
 	playing = false;
@@ -196,7 +221,7 @@ CDAudio_Pause (void)
 		return;
 
 	if (ioctl (cdfile, CDROMPAUSE) == -1)
-		Con_DPrintf ("ioctl cdrompause failed\n");
+		Con_DPrintf ("CDAudio: ioctl cdrompause failed\n");
 
 	wasPlaying = playing;
 	playing = false;
@@ -216,7 +241,7 @@ CDAudio_Resume (void)
 		return;
 
 	if (ioctl (cdfile, CDROMRESUME) == -1)
-		Con_DPrintf ("ioctl cdromresume failed\n");
+		Con_DPrintf ("CDAudio: ioctl cdromresume failed\n");
 	playing = true;
 }
 
@@ -321,7 +346,7 @@ CD_f (void)
 		else if (wasPlaying)
 			Con_Printf ("Paused %s track %u\n",
 						playLooping ? "looping" : "playing", playTrack);
-		Con_Printf ("Volume is %f\n", cdvolume);
+		Con_Printf ("Volume is %g\n", cdvolume);
 		return;
 	}
 }
@@ -351,7 +376,7 @@ CDAudio_Update (void)
 		lastchk = time (NULL) + 2;		// two seconds between chks
 		subchnl.cdsc_format = CDROM_MSF;
 		if (ioctl (cdfile, CDROMSUBCHNL, &subchnl) == -1) {
-			Con_DPrintf ("ioctl cdromsubchnl failed\n");
+			Con_DPrintf ("CDAudio: ioctl cdromsubchnl failed\n");
 			playing = false;
 			return;
 		}
@@ -369,8 +394,10 @@ CDAudio_Init (void)
 {
 	int         i;
 
+#if 0
 	if (cls.state == ca_dedicated)
 		return -1;
+#endif
 
 	if (COM_CheckParm ("-nocdaudio"))
 		return -1;
@@ -380,7 +407,7 @@ CDAudio_Init (void)
 		cd_dev[sizeof (cd_dev) - 1] = 0;
 	}
 
-	if ((cdfile = open (cd_dev, O_RDONLY)) == -1) {
+	if ((cdfile = open (cd_dev, O_RDONLY | O_NONBLOCK)) == -1) {
 		Con_Printf ("CDAudio_Init: open of \"%s\" failed (%i)\n", cd_dev,
 					errno);
 		cdfile = -1;
@@ -397,7 +424,19 @@ CDAudio_Init (void)
 		cdValid = false;
 	}
 
-	Cmd_AddCommand ("cd", CD_f, "No Description");
+	Cmd_AddCommand ("cd", CD_f, "Control the CD player.\n"
+		"Commands:\n"
+		"eject - Eject the CD.\n"
+		"info - Reports information on the CD.\n"
+		"loop (track number) - Loops the specified track.\n"
+		"remap (track1) (track2) ... - Remap the current track order.\n"
+		"reset - Causes the CD audio to re-initialize.\n"
+		"resume - Will resume playback after pause.\n"
+		"off - Shuts down the CD audio system..\n"
+		"on - Re-enables the CD audio system after a cd off command.\n"
+		"pause - Pause the CD playback.\n"
+		"play (track number) - Plays the specified track one time.\n"
+		"stop - Stops the currently playing track.");
 
 	Con_Printf ("CD Audio Initialized\n");
 

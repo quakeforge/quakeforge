@@ -38,7 +38,7 @@ bin_PROGRAMS =	@NQ_TARGETS@
 EXTRA_PROGRAMS= nq-3dfx nq-fbdev nq-glx nq-mgl nq-sdl \
 		nq-sgl nq-svga nq-wgl nq-x11 nq-server
 
-noinst_LIBRARIES= libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
+noinst_LIBRARIES= libqfsys.a libqfsnd.a libqfjs.a libqfnet.a
 
 #if ASM_ARCH
 math_ASM= 	cl_math.S
@@ -93,20 +93,6 @@ EXTRA_libqfsnd_a_SOURCES= snd_dma.c snd_mem.c snd_mix.c snd_alsa_0_5.c \
 			$(sound_ASM)
 
 #
-# ... CD audio
-#
-if CDTYPE_WIN32
-libqfcd_a_SOURCES=	cd_win.c
-endif
-if CDTYPE_LINUX
-libqfcd_a_SOURCES=	cd_linux.c
-endif
-if CDTYPE_NULL
-libqfcd_a_SOURCES=	cd_null.c
-endif
-EXTRA_libqfcd_a_SOURCES= cd_dos.c cd_win.c cd_linux.c cd_null.c
-
-#
 # ... Joystick
 #
 if JOYTYPE_LINUX
@@ -124,11 +110,14 @@ EXTRA_libqfjs_a_SOURCES= joy_linux.c joy_null.c
 libqfnet_a_SOURCES=	net_bsd.c net_dgrm.c net_loop.c \
 			net_main.c net_udp.c net_vcr.c
 
-EXTRA_libqfcd_a_SOURCES=net_dos.c net_bw.c net_ipx.c net_mp.c net_ser.c \
+EXTRA_libqfnet_a_SOURCES=net_dos.c net_bw.c net_ipx.c net_mp.c net_ser.c \
 			net_win.c net_wins.c net_wipx.c
 
-client_LIBS=	$(top_builddir)/libs/gamecode/libQFgamecode.la $(top_builddir)/libs/util/libQFutil.la -L. -lqfsys -lqfsnd -lqfcd -lqfjs -lqfnet $(SOUND_LIBS) $(NET_LIBS)
-client_LIB_DEPS= libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
+client_LIBS=	$(top_builddir)/libs/gamecode/libQFgamecode.la \
+		$(top_builddir)/libs/util/libQFutil.la \
+		$(top_builddir)/libs/audio/cd/libQFcd.la \
+		-L. -lqfsys -lqfsnd -lqfjs -lqfnet $(SOUND_LIBS) $(NET_LIBS)
+client_LIB_DEPS= libqfsys.a libqfsnd.a libqfjs.a libqfnet.a
 
 client_SOURCES= cl_cam.c cl_cmd.c cl_demo.c cl_input.c cl_main.c cl_parse.c \
 		cl_tent.c console.c keys.c sbar.c r_part.c r_view.c \

@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 EXTRA_DIST = adivtab.h anorm_dots.h anorms.h asm_draw.h asm_ia32.h \
-	bspfile.h block16.h cdaudio.h chase.h client.h checksum.h cmd.h compat.h \
+	bspfile.h block16.h chase.h client.h checksum.h cmd.h compat.h \
 	conproc.h console.h context_x11.h crc.h cvar.h \
 	dga_check.h d_iface.h d_ifacea.h d_local.h dosisms.h draw.h \
 	gcc_attr.h gib_error.h gib.h gib_instructions.h \

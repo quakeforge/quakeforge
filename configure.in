@@ -1393,6 +1393,8 @@ AC_OUTPUT(
 	include/QF/Makefile
 	include/win32/version.h
 	libs/Makefile
+	libs/audio/Makefile
+	libs/audio/cd/Makefile
 	libs/gamecode/Makefile
 	libs/util/Makefile
 	qw/include/Makefile

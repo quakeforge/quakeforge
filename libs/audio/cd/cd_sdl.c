@@ -40,11 +40,11 @@
 
 #include <SDL.h>
 
-#include "cdaudio.h"
+#include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/qargs.h"
-#include "sound.h"
+#include "QF/sound.h"
 
 static qboolean cdValid = false;
 static qboolean initialized = false;

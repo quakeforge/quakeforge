@@ -32,7 +32,7 @@
 
 #include <stdlib.h>
 
-#include "cdaudio.h"
+#include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "d_local.h"
@@ -44,7 +44,7 @@
 #include "QF/qendian.h"
 #include "resource.h"
 #include "screen.h"
-#include "sound.h"
+#include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "wad.h"

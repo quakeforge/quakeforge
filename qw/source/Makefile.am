@@ -40,7 +40,7 @@ EXTRA_PROGRAMS= qw-client-3dfx qw-client-fbdev \
 		qw-client-sgl qw-client-svga qw-client-wgl \
 		qw-client-x11 qw-server
 
-noinst_LIBRARIES= libqfcd.a libqfjs.a libqfnet.a libqfsnd.a libqfsys_cl.a libqfsys_sv.a
+noinst_LIBRARIES= libqfjs.a libqfnet.a libqfsnd.a libqfsys_cl.a libqfsys_sv.a
 
 if PACKETLOG
 packetlogger = net_packetlog.c
@@ -86,7 +86,9 @@ server_SOURCES=	sv_ccmds.c sv_cvar.c \
 		sv_user.c world.c $(world_ASM)
 
 qw_server_SOURCES=	$(common_SOURCES) $(server_SOURCES)
-qw_server_LDADD= 	$(top_builddir)/libs/util/libQFutil.la $(top_builddir)/libs/gamecode/libQFgamecode.la -L. -lqfnet -lqfsys_sv $(NET_LIBS) $(DL_LIBS)
+qw_server_LDADD= 	$(top_builddir)/libs/util/libQFutil.la \
+			$(top_builddir)/libs/gamecode/libQFgamecode.la \
+			-L. -lqfnet -lqfsys_sv $(NET_LIBS) $(DL_LIBS)
 qw_server_DEPENDENCIES= libqfnet.a libqfsys_sv.a
 
 #
@@ -136,26 +138,6 @@ EXTRA_libqfsnd_a_SOURCES= snd_dma.c snd_mem.c snd_mix.c snd_alsa_0_5.c \
 			snd_sun.c snd_win.c snd_null.c
 
 #
-# ... CD audio
-#
-if CDTYPE_LINUX
-libqfcd_a_SOURCES=	cd_linux.c
-endif
-if CDTYPE_SDL
-libqfcd_a_SOURCES=	cd_sdl.c
-endif
-if CDTYPE_SGI
-libqfcd_a_SOURCES=	cd_sgi.c
-endif
-if CDTYPE_WIN32
-libqfcd_a_SOURCES=	cd_win.c
-endif
-if CDTYPE_NULL
-libqfcd_a_SOURCES=	cd_null.c
-endif
-EXTRA_libqfcd_a_SOURCES= cd_dos.c cd_linux.c cd_sdl.c cd_sgi.c cd_win.c cd_null.c
-
-#
 # ... Joystick
 #
 if JOYTYPE_LINUX
@@ -170,8 +152,12 @@ endif
 libqfjs_a_CFLAGS=	$(JOY_CFLAGS)
 EXTRA_libqfjs_a_SOURCES= joy_linux.c joy_win.c joy_null.c
 
-CLIENT_LIBS=		$(top_builddir)/libs/util/libQFutil.la $(top_builddir)/libs/gamecode/libQFgamecode.la -L. -lqfnet -lqfsys_cl -lqfsnd -lqfcd -lqfjs $(SOUND_LIBS) $(NET_LIBS) $(CD_LIBS) $(JOY_LIBS)
-CLIENT_LIB_DEPS=	libqfnet.a libqfsys_cl.a libqfsnd.a libqfcd.a libqfjs.a
+CLIENT_LIBS=		$(top_builddir)/libs/util/libQFutil.la \
+			$(top_builddir)/libs/gamecode/libQFgamecode.la \
+			$(top_builddir)/libs/audio/cd/libQFcd.la \
+			-L. -lqfnet -lqfsys_cl -lqfsnd -lqfjs \
+			$(SOUND_LIBS) $(NET_LIBS) $(JOY_LIBS)
+CLIENT_LIB_DEPS=	libqfnet.a libqfsys_cl.a libqfsnd.a libqfjs.a
 
 if ASM_ARCH
 client_ASM=	snd_mixa.S cl_math.S
