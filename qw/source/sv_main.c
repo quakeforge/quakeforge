@@ -1867,8 +1867,8 @@ SV_Frame (float time)
 	rand ();
 
 	// decide the simulation time
+	realtime += time;
 	if (!sv.paused) {
-		realtime += time;
 		sv.time += time;
 	}
 	// check timeouts
@@ -1885,11 +1885,15 @@ SV_Frame (float time)
 		static double old_time;
 
 		// don't bother running a frame if sys_ticrate seconds haven't passed
-		sv_frametime = realtime - old_time;
+		sv_frametime = sv.time - old_time;
+		if (sv_frametime < 0) {
+			old_time = sv.time - sv_mintic->value;
+			sv_frametime = sv_mintic->value;
+		}
 		if (sv_frametime >= sv_mintic->value) {
 			if (sv_frametime > sv_maxtic->value)
 				sv_frametime = sv_maxtic->value;
-			old_time = realtime;
+			old_time = sv.time;
 
 			*sv_globals.frametime = sv_frametime;
 
