@@ -247,6 +247,9 @@ opcode_t    pr_opcodes[] = {
 	{"==", "eq.p", OP_EQ_P, false, ev_pointer, ev_pointer, ev_integer, PROG_VERSION},
 	{"!=", "ne.p", OP_NE_P, false, ev_pointer, ev_pointer, ev_integer, PROG_VERSION},
 
+	{"<MOVE>", "move", OP_MOVE, true, ev_struct, ev_short, ev_struct, PROG_VERSION},
+	{"<MOVE>", "movep", OP_MOVEP, true, ev_pointer, ev_integer, ev_pointer, PROG_VERSION},
+
 	// end of table
 	{0},
 };

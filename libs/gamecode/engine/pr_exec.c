@@ -889,6 +889,14 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				OPC.integer_var = OPA.integer_var != OPB.integer_var;
 				break;
 
+			case OP_MOVE:
+				memmove (&OPC, &OPA, st->b);
+				break;
+			case OP_MOVEP:
+				memmove (pr->pr_globals + OPC.integer_var,
+						 pr->pr_globals + OPA.integer_var, OPB.uinteger_var);
+				break;
+
 // LordHavoc: to be enabled when Progs version 7 (or whatever it will be numbered) is finalized
 /*
 			case OP_BOUNDCHECK:

@@ -255,6 +255,9 @@ typedef enum {
 	OP_GE_P,
 	OP_LT_P,
 	OP_GT_P,
+
+	OP_MOVE,
+	OP_MOVEP,
 } pr_opcode_e;
 
 typedef struct opcode_s {
