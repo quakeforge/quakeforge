@@ -451,6 +451,7 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 	int         numposes;
 	trivertx_t *verts;
 	int         i;
+	float       interval;
 
 	if ((frame >= paliashdr->mdl.numframes) || (frame < 0)) {
 		Con_DPrintf ("R_AliasSetupFrame: no such frame %d\n", frame);
@@ -467,39 +468,27 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 	vo->order = (int *) ((byte *) paliashdr + paliashdr->commands);
 	vo->verts = (blended_vert_t*)&vo[1];
 
-	if (!gl_lerp_anim->int_val) {
-		float       interval;
-
-		if (numposes > 1) {
-			interval = paliashdr->frames[frame].interval;
-			pose += (int) (r_realtime / interval) % numposes;
-		}
-		for (i = 0; i < count; i++) {
-			vo->verts[i].vert[0] = verts[i].v[0];
-			vo->verts[i].vert[1] = verts[i].v[1];
-			vo->verts[i].vert[2] = verts[i].v[2];
-			vo->verts[i].lightdot = shadedots[verts[i].lightnormalindex];
-		}
-		lastposenum = pose;
+	if (numposes > 1) {
+		interval = paliashdr->frames[frame].interval;
+		pose += (int) (r_realtime / interval) % numposes;
 	} else {
+		/*
+			One tenth of a second is good for most Quake animations. If
+			the nextthink is longer then the animation is usually meant
+			to pause (e.g. check out the shambler magic animation in
+			shambler.qc).  If its shorter then things will still be
+			smoothed partly, and the jumps will be less noticable
+			because of the shorter time.  So, this is probably a good
+			assumption.
+		*/
+		interval = 0.1;
+	}
+
+	if (gl_lerp_anim->int_val) {
 		trivertx_t *verts1, *verts2;
 		float       blend, lerp;
 
-		if (numposes > 1) {
-			e->frame_interval = paliashdr->frames[frame].interval;
-			pose += (int) (r_realtime / e->frame_interval) % numposes;
-		} else {
-			/*
-				One tenth of a second is good for most Quake animations. If
-				the nextthink is longer then the animation is usually meant
-				to pause (e.g. check out the shambler magic animation in
-				shambler.qc).  If its shorter then things will still be
-				smoothed partly, and the jumps will be less noticable
-				because of the shorter time.  So, this is probably a good
-				assumption.
-			*/
-			e->frame_interval = 0.1;
-		}
+		e->frame_interval = interval;
 
 		if (e->pose2 != pose) {
 			e->frame_start_time = r_realtime;
@@ -522,20 +511,34 @@ GL_GetAliasFrameVerts (int frame, aliashdr_t *paliashdr, entity_t *e)
 		verts1 = verts + e->pose1 * count;
 		verts2 = verts + e->pose2 * count;
 
-		for (i = 0; i < count; i++) {
-			vo->verts[i].vert[0] = verts1[i].v[0] * lerp
-									+ verts2[i].v[0] * blend;
-			vo->verts[i].vert[1] = verts1[i].v[1] * lerp
-									+ verts2[i].v[1] * blend;
-			vo->verts[i].vert[2] = verts1[i].v[2] * lerp
-									+ verts2[i].v[2] * blend;
-			vo->verts[i].lightdot =
-				shadedots[verts1[i].lightnormalindex] * lerp
-				+ shadedots[verts2[i].lightnormalindex] * blend;
+		if (!blend) {
+			verts = verts1;
+		} else if (blend == 1) {
+			verts = verts2;
+		} else {
+			for (i = 0; i < count; i++) {
+				vo->verts[i].vert[0] = verts1[i].v[0] * lerp
+										+ verts2[i].v[0] * blend;
+				vo->verts[i].vert[1] = verts1[i].v[1] * lerp
+										+ verts2[i].v[1] * blend;
+				vo->verts[i].vert[2] = verts1[i].v[2] * lerp
+										+ verts2[i].v[2] * blend;
+				vo->verts[i].lightdot =
+					shadedots[verts1[i].lightnormalindex] * lerp
+					+ shadedots[verts2[i].lightnormalindex] * blend;
+			}
+			lastposenum0 = e->pose1;
+			lastposenum = e->pose2;
+			return vo;
 		}
-		lastposenum0 = e->pose1;
-		lastposenum = e->pose2;
 	}
+	for (i = 0; i < count; i++) {
+		vo->verts[i].vert[0] = verts[i].v[0];
+		vo->verts[i].vert[1] = verts[i].v[1];
+		vo->verts[i].vert[2] = verts[i].v[2];
+		vo->verts[i].lightdot = shadedots[verts[i].lightnormalindex];
+	}
+	lastposenum = pose;
 	return vo;
 }
 
