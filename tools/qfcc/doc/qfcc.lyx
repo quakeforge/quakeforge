@@ -22,6 +22,15 @@
 \papersides 1
 \paperpagestyle default
 
+\layout Standard
+
+This is currently just new stuff in 
+\family typewriter 
+\series bold 
+qfcc
+\family default 
+\series default 
+.
 \layout Section
 
 New Type Features
@@ -158,7 +167,7 @@ y useful for engine interface functions).
 \layout Subsection
 
 Arrays
-\layout Standard
+\layout Verse
 
 
 \family typewriter 
@@ -187,7 +196,7 @@ Complex types can be created by nesting type declarations within
 \family default 
 s.
  eg:
-\layout Standard
+\layout Verse
 
 
 \family typewriter 
@@ -298,7 +307,7 @@ Initialization
 
 Local variables of basic types can now be initialized when declared.
  eg
-\layout Standard
+\layout Verse
 
 
 \family typewriter 
@@ -404,4 +413,457 @@ think
 \family default 
  in vararg functions.
  Not valid elsewhere.
+\layout Section
+
+Code constructs
+\layout Subsection
+
+
+\family typewriter 
+break
+\layout Standard
+
+The 
+\family typewriter 
+break
+\family default 
+ statement can be used to leave a loop (
+\family typewriter 
+while
+\family default 
+, 
+\family typewriter 
+do
+\family default 
+ ...
+ 
+\family typewriter 
+while
+\family default 
+, or 
+\family typewriter 
+for
+\family default 
+) prematurely.
+ The 
+\family typewriter 
+break
+\family default 
+ statement is also used to leave a 
+\family typewriter 
+switch
+\family default 
+ statement.
+\layout Subsection
+
+
+\family typewriter 
+continue
+\layout Standard
+
+The 
+\family typewriter 
+continue
+\family default 
+ statement is used to jump to the beginning of a loop.
+ In 
+\family typewriter 
+for
+\family default 
+ loops, the test and post expressions are evaluated before continuing with
+ the loop.
+\layout Subsection
+
+
+\family typewriter 
+for
+\layout Standard
+
+The 
+\family typewriter 
+for
+\family default 
+ loop is:
+\layout Verse
+
+
+\family typewriter 
+for (
+\emph on 
+initialization expression
+\emph default 
+; 
+\emph on 
+test expression
+\emph default 
+; 
+\emph on 
+post expression
+\emph default 
+)
+\emph on 
+
+\newline 
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+statement
+\layout Standard
+
+and is equivalent to
+\layout Verse
+
+
+\family typewriter 
+\emph on 
+initialization expression
+\emph default 
+
+\newline 
+while (
+\emph on 
+test expression
+\emph default 
+) {
+\newline 
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+
+\emph on 
+statement
+\emph default 
+
+\newline 
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+
+\emph on 
+post expression
+\emph default 
+
+\newline 
+}
+\layout Subsection
+
+
+\family typewriter 
+switch
+\layout Standard
+
+The 
+\family typewriter 
+switch
+\family default 
+ statement is used to select between multiple code blocks based on the value
+ of an expression.
+\layout Verse
+
+
+\family typewriter 
+switch (
+\emph on 
+test expression
+\emph default 
+) {
+\newline 
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+case
+\emph on 
+ value
+\emph default 
+:
+\newline 
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+optional statements
+\newline 
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+case
+\emph on 
+ value
+\emph default 
+:
+\newline 
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+optional statements
+\newline 
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+default:
+\newline 
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+optional statements
+\newline 
+}
+\layout Standard
+
+Code execution starts at the selected 
+\family typewriter 
+case
+\family default 
+ and continues on to the end of the switch block.
+ Following 
+\family typewriter 
+case
+\family default 
+s do 
+\emph on 
+not
+\emph default 
+ affect code execution.
+ If this behaviour is not desired, as is usual, then a 
+\family typewriter 
+break
+\family default 
+ statement is required to cause the code to jump to the end of the 
+\family typewriter 
+switch
+\family default 
+, skipping any intervening code.
+ That is, just like C.
+\layout Subsubsection
+
+
+\family typewriter 
+\emph on 
+test expression
+\layout Standard
+
+The test expression may result in a float, string or integer value.
+\layout Subsubsection
+
+
+\family typewriter 
+case 
+\emph on 
+value
+\layout Verse
+
+
+\family typewriter 
+case 
+\emph on 
+value
+\emph default 
+:
+\layout Standard
+
+The case value may be of any constant type consistent with the test expression
+ of the 
+\family typewriter 
+switch
+\family default 
+.
+\layout Subsubsection
+
+
+\family typewriter 
+default
+\layout Standard
+
+If specified, this is where execution will go when no 
+\family typewriter 
+case
+\family default 
+ has been selected by the test expression.
+ If not specified, and no 
+\family typewriter 
+case
+\family default 
+ has been selected by the test expression, the 
+\family typewriter 
+switch
+\family default 
+ does not execute any code within the block.
+\layout Section
+
+Expressions
+\layout Subsection
+
+Binary
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+<<\SpecialChar ~
+>>
+\family default 
+ bit shift left and right
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+^
+\family default 
+ bitwise exclusive or
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+%
+\family default 
+ modulus
+\layout Subsubsection
+
+Assignment
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+\emph on 
+op
+\emph default 
+= 
+\family default 
+equivalent to 
+\family typewriter 
+a = a 
+\emph on 
+op 
+\emph default 
+b
+\family default 
+.
+\layout Subsection
+
+Unary
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+~
+\family default 
+ bitwise not
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+&
+\family default 
+ address
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+++
+\emph on 
+e
+\emph default 
+\SpecialChar ~
+--
+\emph on 
+e
+\family default 
+\emph default 
+ pre increment and decrement
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+\emph on 
+e
+\emph default 
+++\SpecialChar ~
+
+\emph on 
+e
+\emph default 
+--
+\family default 
+ post increment and decrement
+\layout Subsection
+
+Other
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+\emph on 
+type\SpecialChar ~
+
+\emph default 
+(
+\emph on 
+expr
+\emph default 
+)
+\family default 
+ cast expression.
+ Only works for converting between integer and float types and between pointer
+ types.
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+\emph on 
+expr
+\emph default 
+[
+\emph on 
+expr
+\emph default 
+] 
+\family default 
+array indexing.
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+\emph on 
+expr
+\emph default 
+?
+\emph on 
+expr
+\emph default 
+:
+\emph on 
+expr 
+\family default 
+\emph default 
+C's trinary expression
 \the_end
