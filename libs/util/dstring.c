@@ -55,6 +55,7 @@ dstring_delete (dstring_t *dstr)
 	free (dstr);
 }
 
+inline
 void
 dstring_adjust (dstring_t *dstr)
 {

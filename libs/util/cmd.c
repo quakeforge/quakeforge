@@ -291,6 +291,7 @@ Cmd_RemoveThread (cmd_thread_t **list, cmd_thread_t *thread) {
 /* Escape character functions used by most of the parser */
 
 /* Determines if a character is escaped */
+inline
 qboolean
 escaped (const char *str, int i)
 {
@@ -304,6 +305,7 @@ escaped (const char *str, int i)
 }
 
 /* Escapes a list of characters in a dstring */
+inline
 void
 escape (dstring_t * dstr, const char *clist)
 {
@@ -319,6 +321,7 @@ escape (dstring_t * dstr, const char *clist)
 }
 
 /* Unescapes a character and all backslashes preceding it in a dstring */
+inline
 int
 unescape (dstring_t * dstr, int start)
 {
@@ -405,19 +408,18 @@ Cbuf_ExtractLine (dstring_t * buffer, dstring_t * line, qboolean legacy)
 	char		*tmp;
 
 	for (i = 0; buffer->str[i]; i++) {
-		if (buffer->str[i] == '"' && !escaped (buffer->str, i))
-			dquotes ^= 1;
-		if (buffer->str[i] == ';' && !escaped (buffer->str, i)
-			&& !dquotes && !braces)
-			break;
-		if (!legacy && buffer->str[i] == '{' && !escaped (buffer->str, i)
-			&& !dquotes)
-			braces++;
-		if (!legacy && buffer->str[i] == '}' && !escaped (buffer->str, i)
-			&& !dquotes)
-			braces--;
+		if (!escaped (buffer->str, i)) {
+			if (buffer->str[i] == '"')
+				dquotes ^= 1;
+			else if (buffer->str[i] == ';' && !dquotes && !braces)
+				break;
+			else if (!legacy && buffer->str[i] == '{' && !dquotes)
+				braces++;
+			else if (!legacy && buffer->str[i] == '}' && !dquotes)
+				braces--;
+		}
 		if (buffer->str[i] == '/' && buffer->str[i + 1] == '/'
-			&& !dquotes) {
+		  && !dquotes) {
 			// Filter out comments until newline
 			if ((tmp = strchr (buffer->str+i, '\n')))
 				n = tmp - (buffer->str+i);
@@ -426,11 +428,13 @@ Cbuf_ExtractLine (dstring_t * buffer, dstring_t * line, qboolean legacy)
 			else
 				n = strlen(buffer->str+i); // snip till \0
 			dstring_snip (buffer, i, n);
+			i--;
 		}
-		if ((buffer->str[i] == '\n' || buffer->str[i] == '\r') && !braces) {
-			if (escaped (buffer->str, i))
+		else if ((buffer->str[i] == '\n' || buffer->str[i] == '\r') && !braces) {
+			if (escaped (buffer->str, i)) {
 				dstring_snip (buffer, i-1, 2);
-			else
+				i -= 2;
+			} else
 				break;
 		}
 	}
@@ -451,7 +455,7 @@ Cbuf_ExtractLine (dstring_t * buffer, dstring_t * line, qboolean legacy)
 	command buffer, until it is empty,
 	a wait command is executed, or an
 	error occurs.
-	
+
 	Records its position each step of the
 	way so that execution can be paused
 	and restarted after a command is tokenized.
@@ -777,10 +781,9 @@ Cmd_Argv (int arg)
 {
 	if (arg >= cmd_activebuffer->argc)
 		return "";
-	if (cmd_activebuffer->argv[arg]->state == cmd_done)
-		return cmd_activebuffer->argv[arg]->processed->str;
-	else
-		return cmd_activebuffer->argv[arg]->original->str;
+	return cmd_activebuffer->argv[arg]->state == cmd_done ?
+		cmd_activebuffer->argv[arg]->processed->str :
+		cmd_activebuffer->argv[arg]->original->str;
 }
 
 const char *
@@ -796,7 +799,9 @@ Cmd_Args (int start)
 {
 	if (start >= cmd_activebuffer->argc)
 		return "";
-	return cmd_activebuffer->line->str + cmd_activebuffer->args[start];
+	return cmd_activebuffer->argv[start]->state == cmd_done ?
+		cmd_activebuffer->line->str + cmd_activebuffer->args[start] :
+		cmd_activebuffer->realline->str + cmd_activebuffer->argsu[start];
 }
 
 const char *
@@ -835,20 +840,26 @@ Cmd_EndBrace (const char *str)
 	int         i, n;
 
 	for (i = 1; i < strlen (str); i++) {
-		if (str[i] == '{' && !escaped (str, i)) {
-			n = Cmd_EndBrace (str + i);
-			if (n < 0)
-				return n;
-			else
-				i += n;
-		} else if (str[i] == '\"' && !escaped (str, i)) {
-			n = Cmd_EndDoubleQuote (str + i);
-			if (n < 0)
-				return n;
-			else
-				i += n;
-		} else if (str[i] == '}' && !escaped (str, i))
-			return i;
+		if (!escaped (str, i)) {
+			switch (str[i]) {
+				case '{':
+					n = Cmd_EndBrace (str + i);
+					if (n < 0)
+						return n;
+					else
+						i += n;
+					break;
+				case '\"':
+					n = Cmd_EndDoubleQuote (str + i);
+					if (n < 0)
+						return n;
+					else
+						i += n;
+					break;
+				case '}':
+					return i;
+			}
+		}
 	}
 	return -1;							// No matching brace found
 }
@@ -859,26 +870,33 @@ Cmd_EndBracket (const char *str)
 	int         i, n;
 
 	for (i = 1; i < strlen (str); i++) {
-		if (str[i] == '{' && !escaped (str, i)) {
-			n = Cmd_EndBrace (str + i);
-			if (n < 0)
-				return n;
-			else
-				i += n;
-		} else if (str[i] == '\"' && !escaped (str, i)) {
-			n = Cmd_EndDoubleQuote (str + i);
-			if (n < 0)
-				return n;
-			else
-				i += n;
-		} else if (str[i] == '[' && !escaped (str, i)) {
-			n = Cmd_EndBracket (str + i);
-			if (n < 0)
-				return n;
-			else
-				i += n;
-		} else if (str[i] == ']' && !escaped (str,i))
-				return i;
+		if (!escaped (str, i)) {
+			switch (str[i]) {
+				case '{':
+					n = Cmd_EndBrace (str + i);
+					if (n < 0)
+						return n;
+					else
+						i += n;
+					break;
+				case '\"':
+					n = Cmd_EndDoubleQuote (str + i);
+					if (n < 0)
+						return n;
+					else
+						i += n;
+					break;
+				case '[':
+					n = Cmd_EndBracket (str + i);
+					if (n < 0)
+						return n;
+					else
+						i += n;
+					break;
+				case ']':
+					return i;
+			}
+		}
 	}
 	return -1;							// No matching bracket found
 }
@@ -901,23 +919,23 @@ Cmd_GetToken (const char *str, qboolean legacy)
 	for (i = 0; i < strlen (str); i++) {
 		if (isspace ((byte)str[i]))
 			break;
-		if (!legacy) {
-			if (str[i] == '{' && !escaped (str,i)) {
+		if (!escaped (str, i)) {
+			if (str[i] == '{' && !legacy) {
 				ret = Cmd_EndBrace (str+i);
 				if (ret < 0)
 					return ret;
 				i += ret;
 				continue;
 			}
-			if (str[i] == '}' && !escaped (str,i))
+			else if (str[i] == '}')
 				return -1;
-		}
-		if (str[i] == '\"' && !escaped (str,i)) {
-			ret = Cmd_EndDoubleQuote (str+i);
-			if (ret < 0)
-				return ret;
-			i += ret;
-			continue;
+			else if (str[i] == '\"') {
+				ret = Cmd_EndDoubleQuote (str+i);
+				if (ret < 0)
+					return ret;
+				i += ret;
+				continue;
+			}
 		}
 	}
 	return i;
@@ -1140,56 +1158,59 @@ Cmd_ProcessVariablesRecursive (dstring_t * dstr, int start)
 	if (dstr->str[start+1] == '{')
 		braces = 1;
 	for (i = start + 1 + braces;; i++) {
-		// If we are within braces or two $ appear next to each other, consider it recursive
-		if (dstr->str[i] == '$' && (braces || dstr->str[i-1] == '$') && !escaped (dstr->str, i)) {
-			n = Cmd_ProcessVariablesRecursive (dstr, i);
-			if (n < 0) {
+		if (!escaped (dstr->str, i)) {
+			// If we are within braces or two $ appear next to each other, consider it recursive
+			if (dstr->str[i] == '$' && (braces || dstr->str[i-1] == '$')) {
+				n = Cmd_ProcessVariablesRecursive (dstr, i);
+				if (n < 0) {
+					break;
+				} else {
+					i += n - 1;
+					continue;
+				}
+			} else if ((braces && dstr->str[i] == '}') || (!braces && !isalnum((byte)dstr->str[i]) && dstr->str[i] != '_')) {
+				dstring_t *varname = dstring_newstr ();
+				dstring_t *copy = dstring_newstr ();
+				dstring_insert (varname, dstr->str + start + 1 + braces, i - start - 1 - braces, 0);
+				// Nuke it, even if no match is found
+				dstring_snip (dstr, start, i - start + braces);
+				lvar = (cmd_localvar_t *) Hash_Find (cmd_activebuffer->locals,
+													 varname->str);
+				if (lvar) {
+					// Local variables get precedence
+					dstring_appendstr (copy, lvar->value->str);
+				} else if ((cvar = Cvar_FindVar (varname->str))) {
+					// Then cvars
+					dstring_appendstr (copy, cvar->string);
+				}
+				n = 0;
+				dstring_clearstr (varname); // Reuse variable
+				if (dstr->str[start] == '[') {
+					int val1, val2, res;
+					res = Cmd_ProcessIndex (dstr, start, &val1, &val2);
+					if (res < 0)
+						n = -1;
+					else if (val1 >= strlen(copy->str) || val1 < 0)
+						n = 0;
+					else if (val2 < strlen(copy->str))
+						dstring_insert (varname, copy->str+val1, val2-val1+1, 0);
+					else
+						dstring_insert (varname, copy->str+val1, strlen(copy->str)-val1, 0);
+				} else
+					dstring_appendstr (varname, copy->str);
+				if (n >= 0) {
+					escape (varname, "<#\\"); // Preserve backslashes, tags, and math as unprocessed
+					dstring_insertstr (dstr, varname->str, start);
+					n = strlen(varname->str);
+				}
+				dstring_delete (copy);
+				dstring_delete (varname);
 				break;
-			} else {
-				i += n - 1;
-				continue;
 			}
-		} else if (!dstr->str[i] && braces) {		// No closing brace
+		}
+		if (!dstr->str[i] && braces) {		// No closing brace
 			Cmd_Error ("Unmatched brace in variable substitution expression.\n");
 			n = -1;
-			break;
-		} else if ((braces && dstr->str[i] == '}' && !escaped (dstr->str, i)) || (!braces && !isalnum((byte)dstr->str[i]) && dstr->str[i] != '_')) {
-			dstring_t *varname = dstring_newstr ();
-			dstring_t *copy = dstring_newstr ();
-			dstring_insert (varname, dstr->str + start + 1 + braces, i - start - 1 - braces, 0);
-			// Nuke it, even if no match is found
-			dstring_snip (dstr, start, i - start + braces);
-			lvar = (cmd_localvar_t *) Hash_Find (cmd_activebuffer->locals,
-												 varname->str);
-			if (lvar) {
-				// Local variables get precedence
-				dstring_appendstr (copy, lvar->value->str);
-			} else if ((cvar = Cvar_FindVar (varname->str))) {
-				// Then cvars
-				dstring_appendstr (copy, cvar->string);
-			}
-			n = 0;
-			dstring_clearstr (varname); // Reuse variable
-			if (dstr->str[start] == '[') {
-				int val1, val2, res;
-				res = Cmd_ProcessIndex (dstr, start, &val1, &val2);
-				if (res < 0)
-					n = -1;
-				else if (val1 >= strlen(copy->str) || val1 < 0)
-					n = 0;
-				else if (val2 < strlen(copy->str))
-					dstring_insert (varname, copy->str+val1, val2-val1+1, 0);
-				else
-					dstring_insert (varname, copy->str+val1, strlen(copy->str)-val1, 0);
-			} else
-				dstring_appendstr (varname, copy->str);
-			if (n >= 0) {
-				escape (varname, "<#\\"); // Preserve backslashes, tags, and math as unprocessed
-				dstring_insertstr (dstr, varname->str, start);
-				n = strlen(varname->str);
-			}
-			dstring_delete (copy);
-			dstring_delete (varname);
 			break;
 		}
 	}
@@ -1321,6 +1342,9 @@ int
 Cmd_ProcessToken (cmd_token_t *token)
 {
 	int res;
+
+	dstring_clearstr (token->processed);
+	dstring_appendstr (token->processed, token->original->str);
 	res = Cmd_ProcessEmbedded (token, token->processed);
 	if (res < 0)
 		return res;
@@ -1376,6 +1400,8 @@ Cmd_Process (void)
 
 	/* Here we edit the composite command line to reflect
 	the changes made to individual tokens. */
+	dstring_clearstr (cmd_activebuffer->line);
+	dstring_appendstr (cmd_activebuffer->line, cmd_activebuffer->realline->str);
 	for (arg = 0; arg < cmd_activebuffer->argc; arg++) {
 		if (cmd_activebuffer->argv[arg]->state == cmd_original)
 			continue;
@@ -1386,7 +1412,7 @@ Cmd_Process (void)
 			quotes = 1;
 		else
 			quotes = 0;
-		cmd_activebuffer->args[arg] += adj;
+		cmd_activebuffer->args[arg] = cmd_activebuffer->argsu[arg] + adj;
 		adj += (str->size - 1) - (org->size - 1);
 		dstring_replace (cmd_activebuffer->line, str->str, str->size - 1,
 						 cmd_activebuffer->args[arg] + quotes + (cmd_activebuffer->argv[arg]->delim == '{'), org->size - 1);
@@ -1441,28 +1467,23 @@ Cmd_TokenizeString (const char *text, qboolean legacy)
 			cmd_activebuffer->maxargc++;
 		}
 		dstring_clearstr (cmd_activebuffer->argv[cmd_argc-1]->original);
-		dstring_clearstr (cmd_activebuffer->argv[cmd_argc-1]->processed);
 		/* Remove surrounding quotes or double quotes or braces */
 		quotes = 0;
 		braces = 0;
 		cmd_activebuffer->argsu[cmd_argc - 1] = i;
-		cmd_activebuffer->args[cmd_argc - 1] = i;
-		cmd_activebuffer->argv[cmd_argc - 1]->delim = ' ';
-		if ((!legacy && str[i] == '\'' && str[i + len] == '\'')
-			|| (str[i] == '"' && str[i + len] == '"')) {
+		if (str[i] == '"' && str[i + len] == '"') {
 			cmd_activebuffer->argv[cmd_argc-1]->delim = str[i];
 			i++;
 			len -= 1;
 			quotes = 1;
-		}
-		if (str[i] == '{' && str[i + len] == '}') {
+		} else if (!legacy && str[i] == '{' && str[i + len] == '}') {
 			i++;
 			len -= 1;
 			braces = 1;
 			cmd_activebuffer->argv[cmd_argc-1]->delim = '{';
-		}
+		} else
+			cmd_activebuffer->argv[cmd_argc - 1]->delim = ' ';
 		dstring_insert (cmd_activebuffer->argv[cmd_argc-1]->original, str + i, len, 0);
-		dstring_insert (cmd_activebuffer->argv[cmd_argc-1]->processed, str + i, len, 0);
 		if (!legacy && !braces && process)
 			cmd_activebuffer->argv[cmd_argc-1]->state = cmd_process;
 		else
