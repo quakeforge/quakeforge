@@ -5,8 +5,13 @@
 
 #import "Forge.h"
 
+#import "Preferences.h"
+
 #include <sys/types.h>
 #include <signal.h>
+
+extern	Preferences 	*prefs;
+
 
 id		quakeed_i;
 id		entclasses_i;
@@ -73,10 +78,8 @@ void DisplayCmdOutput (void)
 	[project_i addToOutput: output];
 	[output release];
 
-	if ([preferences_i getShowBSP])
+	if ([prefs objectForKey: ShowBSPOutput])
 		[inspcontrol_i changeInspectorTo: i_output];
-
-	[preferences_i playBspSound];		
 	
 //	NSPing ();
 }
@@ -375,8 +378,8 @@ App delegate methods
 	running = YES;
 	g_cmd_out_i = cmd_out_i;	// for qprintf
 
-	[preferences_i	readDefaults];
-	[project_i		initProject];
+	prefs = [Preferences sharedInstance];
+	[project_i initProject];
 
 	[xyview_i setModeRadio: xy_drawmode_i];	// because xy view is inside
 											// scrollview and can't be
@@ -672,7 +675,7 @@ saveBSP
 	[project_i addToOutput: @"\n\n========= BUSY =========\n\n"];
 	[project_i addToOutput: expandedcmd];
 
-	if ([preferences_i getShowBSP])
+	if ([prefs objectForKey: ShowBSPOutput])
 		[inspcontrol_i changeInspectorTo:i_output];
 	
 	if (wt) {

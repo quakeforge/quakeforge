@@ -1,78 +1,91 @@
+/*
+	Preferences.h
 
-extern	id	preferences_i;
+	Preferences class definition for Forge
 
-extern	float		lightaxis[3];
+	Copyright (C) 1996 Id Software, Inc.
+	Copyright (C) 2001 Jeff Teunissen <deek@quakeforge.net>
 
-// these are personal preferences saved in NeXT defaults, not project
-// parameters saved in the quake.qe_project file
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License as
+	published by the Free Software Foundation; either version 2 of
+	the License, or (at your option) any later version.
 
-@interface Preferences:Object
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public
+	License along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+	$Id$
+*/
+#ifdef HAVE_CONFIG_H
+# include "Config.h"
+#endif
+
+#import <Foundation/NSObject.h>
+#import <Foundation/NSDictionary.h>
+
+/*
+	Keys in the dictionary
+*/
+#define ProjectPath	@"projectPath"
+#define BspSoundPath @"bspSoundPath"
+#define ShowBSPOutput @"showBSPOutput"
+#define OffsetBrushCopy @"offsetBrushCopy"
+#define StartWad @"startWad"
+#define XLight @"xLight"
+#define YLight @"yLight"
+#define ZLight @"zLight"
+
+@interface Preferences: NSObject
 {
-	id		bspSound_i;			// actual sound object
+	// UI targets
+	id		projectPathField;		// path to the project to load on startup
+	id		bspSoundPathField;		// location of BSP sounds
+	id		startWadField;			// which wadfile to load on startup
+	id		xLightField;			// Lighting for X side
+	id		yLightField;			// Lighting for Y side
+	id		zLightField;			// Lighting for Z side
+	id		showBSPOutputButton; 	// "Show BSP Output" checkbox
+	id		offsetBrushCopyButton;	// "Brush offset" checkbox
 
-// internal state
-	char	projectpath[1024];
-	char	bspSound[1024];
-	
-	BOOL	brushOffset;
-	BOOL	showBSP;
-
-	float	xlight;
-	float	ylight;
-	float	zlight;				// 0.0 - 1.0
-	
-	int		startwad;			// 0 - 2
-	
-// UI targets
-	id	startproject_i;			// TextField	
-
-	id	bspSoundField_i;		// TextField of bspSound	
-
-	id	brushOffset_i;			// Brush Offset checkbox
-	id	showBSP_i;				// Show BSP Output checkbox
-	
-	id	startwad_i;				// which wad to load at startup
-
-	id	xlight_i;				// X-side lighting
-	id	ylight_i;				// Y-side lighting
-	id	zlight_i;				// Z-side lighting	
+	NSDictionary		*currentValues;
+	NSMutableDictionary *displayedValues;
 }
 
-- readDefaults;
++ (void) saveDefaults;
+- (void) loadDefaults;
 
-//
-// validate and set methods called by UI or defaults
-//
-- setProjectPath:(char *)path;
-- setBspSoundPath:(char *)path;	// set the path of the soundfile externally
-- setShowBSP:(int)state;		// set the state of ShowBSP
-- setBrushOffset:(int)state;	// set the state of BrushOffset
-- setStartWad:(int)value;		// set start wad (0-2)
-- setXlight:(float)value;		// set Xlight value for CameraView
-- setYlight:(float)value;		// set Ylight value for CameraView
-- setZlight:(float)value;		// set Zlight value for CameraView
++ (Preferences *) sharedInstance;	// Return the shared instance
 
-//
-// UI targets
-//
-- setBspSound:sender;			// use OpenPanel to select sound
-- setCurrentProject:sender;		// make current roject the default
-- UIChanged: sender;			// target for all checks and fields
+- (NSDictionary *) preferences; 	// current prefs
 
-//
-// methods used by other objects to retreive defaults
-//
-- playBspSound;
+- (void) updateUI;					// Update the displayed values in the UI
+- (void) commitDisplayedValues; 	// Make displayed settings current
+- (void) discardDisplayedValues;	// Replace displayed settings with current
 
-- (char *)getProjectPath;
-- (int)getBrushOffset;			// get the state
-- (int)getShowBSP;				// get the state
+// UI notifications
+- (void) ok: (id) sender;				// commit displayed values
+- (void) revert: (id) sender;			// revert to current values
+- (void) revertToDefault: (id) sender;	// revert current values to defaults and
+										// discard displayed values
 
-- (float)getXlight;				// get Xlight value
-- (float)getYlight;				// get Ylight value
-- (float)getZlight;				// get Zlight value
+- (void) prefsChanged: (id) sender;	// Notify the object to update the UI
 
-- (int)getStartWad;
 
+- (id) objectForKey: (id) key;
+//+ (void) setObject: (id) obj forKey: (id) key;
+
+
++ (NSDictionary *) preferencesFromDefaults;
++ (void) savePreferencesToDefaults: (NSDictionary *) dict;
 
 @end

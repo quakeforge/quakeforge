@@ -3,6 +3,7 @@ ChangeLog
 Forge.app
 Forge.debug
 Forge.profile
+GNUmakefile.preamble
 aclocal.m4
 build-stamp
 config.cache

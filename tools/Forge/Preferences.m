@@ -1,330 +1,300 @@
+/*
+	Preferences.m
+
+	Preferences class for Forge
+
+	Copyright (C) 2001 Jeff Teunissen <deek@quakeforge.net>
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License as
+	published by the Free Software Foundation; either version 2 of
+	the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public
+	License along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+	$Id$
+*/
 
 #import "qedefs.h"
 
-id	preferences_i;
+#import "Preferences.h"
 
-#define	DEFOWNER	"QuakeEd2"
-
-float		lightaxis[3] = {1, 0.6, 0.75};
+static NSDictionary *defaultValues (void) {
+    static NSDictionary *dict = nil;
+    if (!dict) {
+        dict = [[NSDictionary alloc] initWithObjectsAndKeys:
+				@"/Local/Forge/Projects", ProjectPath,
+				@"/Local/Forge/Sounds", BspSoundPath,
+				[NSNumber numberWithInt: 0], StartWad,
+				[NSNumber numberWithFloat: 1.0], XLight,
+				[NSNumber numberWithFloat: 0.6], YLight,
+				[NSNumber numberWithFloat: 0.75], ZLight,
+				[NSNumber numberWithBool: NO], ShowBSPOutput,
+				[NSNumber numberWithBool: NO], OffsetBrushCopy,
+				nil];
+    }
+    return dict;
+}
 
 @implementation Preferences
 
-- init
+static Preferences	*sharedInstance = nil;
+
+- (id) objectForKey: (id) key
 {
-	[super init];
-	preferences_i = self;
-	return self;
+    return [[[[self class] sharedInstance] preferences] objectForKey: key];
 }
 
-int _atoi (char *c)
++ (void) saveDefaults
 {
-	if (!c)
-		return 0;
-	return atoi(c);
-}
-
-int _atof (char *c)
-{
-	if (!c)
-		return 0;
-	return atof(c);
-}
-
-void WriteNumericDefault (char *name, float value)
-{
-	char	str[128];
-	
-	sprintf (str,"%f", value);
-	NXWriteDefault (DEFOWNER, name, str);
-}
-void WriteStringDefault (char *name, char *value)
-{
-	NXWriteDefault (DEFOWNER, name, value);
-}
-
-//
-//	Read in at start of program
-//
-- readDefaults
-{
-	char *string;
-	float	value;
-	
-	string = (char *)NXGetDefaultValue(DEFOWNER,"ProjectPath");
-	[self setProjectPath: string];
-	
-	string = (char *)NXGetDefaultValue(DEFOWNER,"BspSoundPath");
-	[self setBspSoundPath:string];
-
-	value = _atoi((char *)NXGetDefaultValue(DEFOWNER,"ShowBSPOutput"));
-	[self setShowBSP:value];
-
-	value = _atoi((char *)NXGetDefaultValue(DEFOWNER,"OffsetBrushCopy"));
-	[self setBrushOffset:value];
-
-	value = _atoi((char *)NXGetDefaultValue(DEFOWNER,"StartWad"));
-	[self setStartWad:value];
-
-	value = _atof((char *)NXGetDefaultValue(DEFOWNER,"Xlight"));
-	[self setXlight:value];
-
-	value = _atof((char *)NXGetDefaultValue(DEFOWNER,"Ylight"));
-	[self setYlight:value];
-
-	value = _atof((char *)NXGetDefaultValue(DEFOWNER,"Zlight"));
-	[self setZlight:value];
-
-	return self;
-}
-
-
-- setProjectPath:(char *)path
-{
-	if (!path)
-		path = "";
-	strcpy (projectpath, path);
-	[startproject_i setStringValue: path];
-	WriteStringDefault ("ProjectPath", path);
-	return self;
-}
-
-- setCurrentProject:sender
-{
-	[startproject_i setStringValue: [project_i currentProjectFile]];
-	[self UIChanged: self];
-	return self;
-}
-
-- (char *)getProjectPath
-{
-	return projectpath;
-}
-
-
-//
-//===============================================
-//	BSP sound stuff
-//===============================================
-//
-//	Set the BSP sound using an OpenPanel
-//
-- setBspSound:sender
-{
-	id	panel;
-	char	*types[]={"snd",NULL};
-	int	rtn;
-	char	**filename;
-	char	path[1024], file[64];
-	
-	panel = [OpenPanel new];
-
-	ExtractFilePath (bspSound, path);
-	ExtractFileBase (bspSound, file);
-	
-	rtn = [panel 
-			runModalForDirectory:path 
-			file: file
-			types: types];
-
-	if (rtn)
-	{
-		filename = (char **)[panel filenames];
-		strcpy(bspSound,[panel directory]);
-		strcat(bspSound,"/");
-		strcat(bspSound,filename[0]);
-		[self setBspSoundPath:bspSound];
-		[self playBspSound];
+	if (sharedInstance) {
+		[Preferences savePreferencesToDefaults: [sharedInstance preferences]];
 	}
-
-	return self;
 }
 
-
-//
-//	Play the BSP sound
-//
-- playBspSound
+- (void) loadDefaults
 {
-	[bspSound_i play];	
-	return self;
+	if (currentValues)
+		[currentValues release];
+
+	currentValues = [[[self class] preferencesFromDefaults] copyWithZone: [self zone]];
+	[self discardDisplayedValues];
 }
 
-
-//
-//	Set the bspSound path
-//
-- setBspSoundPath:(char *)path
++ (Preferences *) sharedInstance
 {
-	if (!path)
-		path = "";
-	strcpy(bspSound,path);
+    return (sharedInstance ? sharedInstance : [[self alloc] init]);
+}
 
-	if (bspSound_i)
-		[bspSound_i free];
-	bspSound_i = [[Sound alloc] initFromSoundfile:bspSound];
-	if (!bspSound_i)
-	{
-		strcpy (bspSound, "/NextLibrary/Sounds/Funk.snd");
-		bspSound_i = [[Sound alloc] initFromSoundfile:bspSound];
+- (id) init
+{
+	if (sharedInstance) {
+		[self dealloc];
+	} else {
+		[super init];
+		currentValues = [[[self class] preferencesFromDefaults] copyWithZone:[self zone]];
+		[self discardDisplayedValues];
+		sharedInstance = self;
 	}
-
-	[bspSoundField_i setStringValue:bspSound];
-	
-	WriteStringDefault ("BspSoundPath", bspSound);
-	
-	return self;
+	return sharedInstance;
 }
 
-//===============================================
-//	Show BSP Output management
-//===============================================
-
-//
-//	Set the state
-//
-- setShowBSP:(int)state
+- (NSDictionary *) preferences
 {
-	showBSP = state;
-	[showBSP_i setIntValue:state];
-	WriteNumericDefault ("ShowBSPOutput", showBSP);
-
-	return self;
+	return currentValues;
 }
 
-//
-//	Get the state
-//
-- (int)getShowBSP
+- (void) dealloc
 {
-	return showBSP;
 }
-
-
-//===============================================
-//	"Offset Brush ..." management
-//===============================================
-
-//
-//	Set the state
-//
-- setBrushOffset:(int)state
-{
-	brushOffset = state;
-	[brushOffset_i setIntValue:state];
-	WriteNumericDefault ("OffsetBrushCopy", state);
-	return self;
-}
-
-//
-//	Get the state
-//
-- (int)getBrushOffset
-{
-	return brushOffset;
-}
-
-//===============================================
-//	StartWad
-//===============================================
-
-- setStartWad:(int)value		// set start wad (0-2)
-{
-	startwad = value;
-	if (startwad<0 || startwad>2)
-		startwad = 0;
-	
-	[startwad_i selectCellAt:startwad : 0];
-
-	WriteNumericDefault ("StartWad", value);
-	return self;
-}
-
-- (int)getStartWad
-{
-	return startwad;
-}
-
-
-//===============================================
-//	X,Y,Z light values
-//===============================================
-//
-//	Set the state
-//
-- setXlight:(float)value
-{
-	xlight = value;
-	if (xlight < 0.25 || xlight > 1)
-		xlight = 0.6;
-	lightaxis[1] = xlight;
-	[xlight_i setFloatValue:xlight];
-	WriteNumericDefault ("Xlight", xlight);
-	return self;
-}
-- setYlight:(float)value
-{
-	ylight = value;
-	if (ylight < 0.25 || ylight > 1)
-		ylight = 0.75;
-	lightaxis[2] = ylight;
-	[ylight_i setFloatValue:ylight];
-	WriteNumericDefault ("Ylight", ylight);
-	return self;
-}
-- setZlight:(float)value
-{
-	zlight = value;
-	if (zlight < 0.25 || zlight > 1)
-		zlight = 1;
-	lightaxis[0] = zlight;
-	[zlight_i setFloatValue:zlight];
-	WriteNumericDefault ("Zlight", zlight);
-	return self;
-}
-
-//
-//	Get the state
-//
-- (float)getXlight
-{
-	return [xlight_i floatValue];
-}
-- (float)getYlight
-{
-	return [ylight_i floatValue];
-}
-- (float)getZlight
-{
-	return [zlight_i floatValue];
-}
-
-
 
 /*
-============
-UIChanged
+	updateUI
 
-Grab all the current UI state
-============
+	Update the user interface with new preferences
 */
--UIChanged: sender
+- (void) updateUI
 {
 	qprintf ("defaults updated");
 	
-	[self setProjectPath: (char *)[startproject_i stringValue]];
-	[self setBspSoundPath: (char *)[bspSoundField_i stringValue]];
-	[self setShowBSP: [showBSP_i intValue]];
-	[self setBrushOffset: [brushOffset_i intValue]];
-	[self setStartWad: [startwad_i selectedRow]];
-	[self setXlight: [xlight_i floatValue]];
-	[self setYlight: [ylight_i floatValue]];
-	[self setZlight: [zlight_i floatValue]];
-
 	[map_i makeGlobalPerform: @selector(flushTextures)];
 	[quakeed_i updateAll];
 		
-	return self;
+	return;
 }
 
+- (void) prefsChanged: (id) sender {
+	static NSNumber 	*yes = nil;
+	static NSNumber 	*no = nil;
+	int 				anInt;
+	float				aFloat;
+	
+	if (!yes) {
+		yes = [[NSNumber alloc] initWithBool: YES];
+		no = [[NSNumber alloc] initWithBool: NO];
+	}
+
+	[displayedValues setObject: [projectPathField stringValue] forKey: ProjectPath];
+	[displayedValues setObject: [bspSoundPathField stringValue] forKey: BspSoundPath];
+
+	if ((anInt = [startWadField intValue]) < 0 || anInt > 2) {
+		if ((anInt = [[displayedValues objectForKey: StartWad] intValue]) < 0 || anInt > 2) {
+			anInt = [[defaultValues () objectForKey: StartWad] intValue];
+		}
+		[startWadField setIntValue: anInt];
+	} else {
+		[displayedValues setObject: [NSNumber numberWithInt: anInt] forKey: StartWad];
+	}
+
+	if ((aFloat = [xLightField floatValue]) < 0.0 || aFloat > 1.0) {
+		if ((aFloat = [[displayedValues objectForKey: XLight] floatValue]) < 0.0 || aFloat > 1.0) {
+			aFloat = [[defaultValues () objectForKey: XLight] floatValue];
+		}
+		[xLightField setFloatValue: aFloat];
+	} else {
+		[displayedValues setObject: [NSNumber numberWithFloat: aFloat] forKey: XLight];
+	}
+
+	if ((aFloat = [yLightField floatValue]) < 0.0 || aFloat > 1.0) {
+		if ((aFloat = [[displayedValues objectForKey: YLight] floatValue]) < 0.0 || aFloat > 1.0) {
+			aFloat = [[defaultValues () objectForKey: YLight] floatValue];
+		}
+		[yLightField setFloatValue: aFloat];
+	} else {
+		[displayedValues setObject: [NSNumber numberWithFloat: aFloat] forKey: YLight];
+	}
+
+	if ((aFloat = [zLightField floatValue]) < 0.0 || aFloat > 1.0) {
+		if ((aFloat = [[displayedValues objectForKey: YLight] floatValue]) < 0.0 || aFloat > 1.0) {
+			aFloat = [[defaultValues () objectForKey: YLight] floatValue];
+		}
+		[zLightField setFloatValue: aFloat];
+	} else {
+		[displayedValues setObject: [NSNumber numberWithFloat: aFloat] forKey: ZLight];
+	}
+
+	[displayedValues setObject: ([showBSPOutputButton state] ? yes : no) forKey: ShowBSPOutput];
+	[displayedValues setObject: ([offsetBrushCopyButton state] ? yes : no) forKey: OffsetBrushCopy];
+
+	[self commitDisplayedValues];
+}
+
+- (void) commitDisplayedValues
+{
+	if (currentValues != displayedValues) {
+		[currentValues release];
+		currentValues = [displayedValues copyWithZone: [self zone]];
+	}
+}
+
+- (void) discardDisplayedValues
+{
+	if (currentValues != displayedValues) {
+		[displayedValues release];
+		displayedValues = [currentValues mutableCopyWithZone: [self zone]];
+		[self updateUI];
+	}
+}
+
+- (void) ok: (id) sender
+{
+	[self commitDisplayedValues];
+}
+
+- (void) revert: (id) sender
+{
+	[self discardDisplayedValues];
+}
+
+- (void) revertToDefault: (id) sender
+{
+	if (currentValues)
+		[currentValues release];
+
+	currentValues = [defaultValues () copyWithZone: [self zone]];
+	[self discardDisplayedValues];
+}
+
+/***
+	Code to deal with defaults
+***/
+
+#define getBoolDefault(name) \
+{ \
+	NSString *str = [defaults stringForKey: name]; \
+	[dict setObject: (str ? [NSNumber numberWithBool: [str hasPrefix: @"Y"]] : [defaultValues() objectForKey: name]) forKey: name]; \
+}
+
+#define getFloatDefault(name) \
+{ \
+	NSString *str = [defaults stringForKey: name]; \
+	[dict setObject: (str ? [NSNumber numberWithFloat: [str floatValue]] : [defaultValues() objectForKey: name]) forKey: name]; \
+}
+
+#define getIntDefault(name) \
+{ \
+	NSString *str = [defaults stringForKey: name]; \
+	[dict setObject: (str ? [NSNumber numberWithInt: [str intValue]] : [defaultValues() objectForKey: name]) forKey: name]; \
+}
+
+#define getStringDefault(name) \
+{ \
+	NSString *str = [defaults stringForKey: name]; \
+	[dict setObject: (str ? str : [defaultValues() objectForKey: name]) forKey: name]; \
+}
+
++ (NSDictionary *) preferencesFromDefaults
+{
+	NSUserDefaults		*defaults = [NSUserDefaults standardUserDefaults];
+	NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity: 10];
+
+	getStringDefault(ProjectPath);
+	getStringDefault(BspSoundPath);
+	getIntDefault(StartWad);
+	getFloatDefault(XLight);
+	getFloatDefault(YLight);
+	getFloatDefault(ZLight);
+	getBoolDefault(ShowBSPOutput);
+	getBoolDefault(OffsetBrushCopy);
+
+	return dict;
+}
+
+#define setBoolDefault(name) \
+{ \
+	if ([[defaultValues() objectForKey: name] isEqual: [dict objectForKey: name]]) \
+		[defaults removeObjectForKey: name]; \
+	else \
+		[defaults setBool:[[dict objectForKey:name] boolValue] forKey: name]; \
+}
+
+#define setFloatDefault(name) \
+{ \
+	if ([[defaultValues() objectForKey: name] isEqual: [dict objectForKey: name]]) \
+		[defaults removeObjectForKey: name]; \
+	else \
+		[defaults setFloat:[[dict objectForKey:name] floatValue] forKey: name]; \
+}
+
+#define setIntDefault(name) \
+{ \
+	if ([[defaultValues() objectForKey:name] isEqual:[dict objectForKey:name]]) \
+		[defaults removeObjectForKey:name]; \
+	else \
+		[defaults setInteger:[[dict objectForKey:name] intValue] forKey:name]; \
+}
+
+#define setStringDefault(name) \
+{ \
+	if ([[defaultValues() objectForKey:name] isEqual: [dict objectForKey: name]]) \
+		[defaults removeObjectForKey: name]; \
+	else \
+		[defaults setObject: [[dict objectForKey: name] stringValue] forKey: name]; \
+}
+
++ (void) savePreferencesToDefaults: (NSDictionary *) dict
+{
+	NSUserDefaults	*defaults = [NSUserDefaults standardUserDefaults];
+
+	setStringDefault(ProjectPath);
+	setStringDefault(BspSoundPath);
+	setIntDefault(StartWad);
+	setFloatDefault(XLight);
+	setFloatDefault(YLight);
+	setFloatDefault(ZLight);
+	setBoolDefault(ShowBSPOutput);
+	setBoolDefault(OffsetBrushCopy);
+}
 
 @end
