@@ -2081,7 +2081,7 @@ AC_SUBST(plugin_ldflags)
 AC_SUBST(plugin_libadd)
 
 QF_DEPS(BSP2IMG,
-	[-I$(top_srcdir)/tools/qfbsp/include],
+	[],
 	[$(top_builddir)/libs/image/libQFimage.la $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
