@@ -622,13 +622,13 @@ IN_LL_Grab_Input (int grab)
 			return;
 		}
 		input_grabbed = 1;
-		if (in_dga)
+		if (in_dga->int_val)
 			dga_on ();
 	} else {
 		XUngrabPointer (x_disp, CurrentTime);
 		XUngrabKeyboard (x_disp, CurrentTime);
 		input_grabbed = 0;
-		if (in_dga)
+		if (in_dga->int_val)
 			dga_off ();
 	}
 }
