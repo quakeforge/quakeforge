@@ -101,10 +101,31 @@ bi_String_Len (progs_t *pr)
     G_INT (pr, OFS_RETURN) = strlen(str);
 }
 
+/*
+	bi_String_GetChar
+
+	Gives the intervalue of a character in
+	a string
+*/
+static void
+bi_String_GetChar (progs_t *pr)
+{   
+    const char *str = G_STRING (pr, OFS_PARM0);
+	int         pos = G_INT (pr, OFS_PARM1);
+	int         ret = 0; 
+
+	if(pos > 0 && pos < strlen(str)) {
+		ret = (int)str[pos];
+	}
+	G_INT (pr, OFS_RETURN) = ret;
+}
+
+
 void
 String_Progs_Init (progs_t *pr)
 {
 	PR_AddBuiltin (pr, "String_ReplaceChar", bi_String_ReplaceChar, -1);
 	PR_AddBuiltin (pr, "String_Cut", bi_String_Cut, -1);
 	PR_AddBuiltin (pr, "String_Len", bi_String_Len, -1);
+	PR_AddBuiltin (pr, "String_GetChar", bi_String_GetChar, -1);
 }

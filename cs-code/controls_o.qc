@@ -411,6 +411,8 @@ MENU_control_binding =
 	init_binding_hash (); // init the keybinding hashes
 	load_keybindings ();  // load the keybindings into hashes
 
+	set_key_flag = 0;
+
 	Menu_Begin (54, 60, "Bindings");
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");

@@ -10,6 +10,8 @@ menu.dat
 @srcdir@/string_def.qc
 @srcdir@/stringh_def.qc
 
+@srcdir@/inputline_util.qc
+@srcdir@/menu_util.qc
 @srcdir@/options_util.qc
 
 @srcdir@/controls_o.qc

@@ -107,6 +107,24 @@ bi_Draw_AltString (progs_t *pr)
 	Draw_AltString (x, y, text);
 }
 
+/*
+	bi_Draw_Fill
+
+	Draws a filled area with a color
+	(only a wrapper function to original qf-api)
+*/
+static void
+bi_Draw_Fill (progs_t *pr)
+{
+	int         x = G_INT (pr, OFS_PARM0);
+	int         y = G_INT (pr, OFS_PARM1);
+	int         w = G_INT (pr, OFS_PARM2);
+	int         h = G_INT (pr, OFS_PARM3);
+	int         color = G_INT (pr, OFS_PARM4);
+
+	Draw_Fill (x, y, w, h, color);
+}
+
 void
 R_Progs_Init (progs_t *pr)
 {
@@ -116,4 +134,5 @@ R_Progs_Init (progs_t *pr)
 	PR_AddBuiltin (pr, "Draw_String", bi_Draw_String, -1);
 	PR_AddBuiltin (pr, "Draw_nString", bi_Draw_nString, -1);
 	PR_AddBuiltin (pr, "Draw_AltString", bi_Draw_AltString, -1);
+	PR_AddBuiltin (pr, "Draw_Fill", bi_Draw_Fill, -1);
 }

@@ -8,9 +8,10 @@ describes in the file "CodingStyle" in doc/
 But you may use not the same prefixes.
 
 Use these prefixes where it makes sense:
-CB_  Input callback
+CB_  Menu_Item callback
 MENU_ Menu making function
 DRAW_ Draw 
+KEYEV_ Keyevent callback
 
 Comment functions like this:
 /*

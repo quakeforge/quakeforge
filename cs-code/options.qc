@@ -44,6 +44,10 @@
 #define MAX_VOLUME 1.5
 #define VOLUME_STEP 0.1
 
+#define MIN_COLOR 0
+#define MAX_COLOR 13
+#define COLOR_STEP 1
+
 /****************************
  * VIDEO OPTIONS 
  * Video settings menu code
@@ -179,6 +183,9 @@ CB_audio_options =
 {
 	local float volume;
 
+	if(!(key == QFK_RIGHT || key == QFK_LEFT )) {
+		return 0;
+	}
 	volume = cvar("volume");
 	volume = min_max_cnt(MIN_VOLUME, MAX_VOLUME, VOLUME_STEP, volume, 
 		(key == QFK_RIGHT) && (key != QFK_LEFT));
@@ -424,25 +431,155 @@ MENU_feature_options =
 	Menu_End ();
 };
 
+
+/***************************************************
+ * PLAYER OPTIONS
+ * Player settings, generally name, team, and color
+ ***************************************************/
+
+// input for playername
+string player_config_playername;
+inputline_t player_config_plname_il;
+
+// this holds active inputline pointer
+inputline_t player_config_iactive;
+
+// table for cursor-positions
+#define NUM_PLAYERCONFIG_CMDS 3
+integer [NUM_PLAYERCONFIG_CMDS] player_config_cursor_tbl = { 68, 90, 105 };
+integer player_config_cursor;
+
+// array, which holds commands for this menu
+string [NUM_PLAYERCONFIG_CMDS] player_config_vals = {
+	"",
+	"topcolor",
+	"bottomcolor"
+};
+
+
+integer (integer key, integer unicode, integer down) 
+KEYEV_player_options =
+{
+	local float colortmp;
+
+	switch (key) {
+		case QFK_DOWN:
+		case QFM_WHEEL_DOWN:
+			if (!player_config_iactive) {
+				player_config_cursor ++;
+				player_config_cursor %= NUM_PLAYERCONFIG_CMDS;
+			}
+			break;
+		case QFK_UP:
+		case QFM_WHEEL_UP:
+			if (!player_config_iactive) {
+				player_config_cursor += NUM_PLAYERCONFIG_CMDS - 1;
+				player_config_cursor %= NUM_PLAYERCONFIG_CMDS;
+			}
+			break;
+		case QFK_RETURN:
+			if (player_config_iactive) {
+				player_config_iactive = NIL;
+			} else {
+				if (player_config_cursor == 0) {
+					player_config_iactive = player_config_plname_il;
+				}
+			}
+			break;
+	}
+	if(key != QFK_RETURN && player_config_iactive) {
+		InputLine_Process (player_config_iactive, key >= 256 ? key : unicode);
+	}
+
+	if(!(key == QFK_RIGHT || key == QFK_LEFT )) {
+		return 1;
+	}
+
+	switch (player_config_vals[player_config_cursor]) {
+		case "topcolor":
+			colortmp = cvar("topcolor");
+			colortmp = min_max_cnt(MIN_COLOR, MAX_COLOR, COLOR_STEP, colortmp,
+				(key == QFK_RIGHT) && (key != QFK_LEFT));
+			cvar_set("topcolor", ftos(colortmp));
+			break;
+		case "bottomcolor":
+			colortmp = cvar("bottomcolor");
+			colortmp = min_max_cnt(MIN_COLOR, MAX_COLOR, COLOR_STEP, colortmp,
+				(key == QFK_RIGHT) && (key != QFK_LEFT));
+			cvar_set("bottomcolor", ftos(colortmp));
+			break;
+	}
+
+	
+	return 1;
+};
+
+
+/*
+	DRAW_player_options
+
+	Draws the player option menu
+*/
+integer () 
+DRAW_player_options = 
+{
+	local integer cursor_pad = 0, spacing = 120;
+#define PLAYER_CONF_Y_PAD 60
+
+	Draw_Pic		(16, 4, "gfx/qplaque.lmp");
+	Draw_CenterPic  (160,4, "gfx/p_option.lmp");
+	Draw_String		(54,  40, "Player");
+	Draw_String		(54,  50, "--------");
+
+
+	text_box(70, PLAYER_CONF_Y_PAD, 17, 1);
+	InputLine_Draw (player_config_plname_il, 70, PLAYER_CONF_Y_PAD + 8, 
+		player_config_iactive != NIL);
+	
+
+	draw_val_item (70, PLAYER_CONF_Y_PAD + 30, spacing, "Top color", 
+		"   " + ftos(cvar("topcolor"))); 
+	draw_val_item (70, PLAYER_CONF_Y_PAD + 45, spacing, "Bottom color", 
+		"   " + ftos(cvar("bottomcolor"))); 
+
+	// Draw nice color boxes
+	text_box(192, PLAYER_CONF_Y_PAD + 30 - 8, 1, 1);
+	Draw_Fill (200, PLAYER_CONF_Y_PAD + 30, 16, 8,
+		ftoi(cvar("topcolor"))*16+8);
+
+	text_box(192, PLAYER_CONF_Y_PAD + 45 - 8, 1, 1);
+	Draw_Fill (200, PLAYER_CONF_Y_PAD + 45, 16, 8,
+		ftoi(cvar("bottomcolor"))*16+8);
+
+	opt_cursor  (62, player_config_cursor_tbl[player_config_cursor]);
+	return 1;
+};
+
+
+/*
+	MENU_player_options
+
+	Makes the player option menu
+*/
+void () 
+MENU_player_options =
+{
+	player_config_plname_il = InputLine_Create (4, 18, ' ');
+	InputLine_SetWidth (player_config_plname_il, 18);
+	player_config_iactive = NIL;
+
+	Menu_Begin (54, 80, "Player");
+	Menu_FadeScreen (1);
+	Menu_KeyEvent (KEYEV_player_options);
+	Menu_Draw (DRAW_player_options);
+	Menu_End ();
+};
+
+
 /*************************
  * MAIN OPTIONS 
  * Main options menu code
  *************************/
-
-/*
-	CB_options
-
-	Callback for main options menu
-*/
-integer (integer key, integer unicode, integer down) 
-CB_options =
-{
-	// pre-loading of the bindings and set_key_flag == 0
-	set_key_flag = 0;
-
-	return 0;
-};
-
 
 /*
 	MENU_options
@@ -458,12 +595,12 @@ MENU_options =
 	Menu_FadeScreen (1);
 	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/p_option.lmp");
-	Menu_KeyEvent (CB_options);
 
 	MENU_control_options ();
-	MENU_video_options ();
-	MENU_audio_options ();
+	MENU_video_options   ();
+	MENU_audio_options   ();
 	MENU_feature_options ();
+	MENU_player_options  ();
 
 	Menu_End ();
 };
