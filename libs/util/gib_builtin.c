@@ -35,6 +35,7 @@ static const char rcsid[] =
 # include "config.h"
 #endif
 
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -323,25 +324,28 @@ GIB_While_f (void)
 void
 GIB___For_f (void)
 {
-	char *end = 0;
-	if (!GIB_DATA(cbuf_active)->loop_list_p) {
+	char *end = 0, old = 0;
+	if (!GIB_DATA(cbuf_active)->loop_list_p[0]) {
 		Cbuf_InsertText (cbuf_active, "break;");
 		return;
 	}
-	if ((end = strchr (GIB_DATA(cbuf_active)->loop_list_p, '\n')))
+	for (end = GIB_DATA(cbuf_active)->loop_list_p; *end && !isspace((byte) *end); end++);
+	if (*end) {
+		old = *end;
 		*end = 0;
-	GIB_Var_Set_Local (cbuf_active, GIB_DATA(cbuf_active)->loop_var_p, GIB_DATA(cbuf_active)->loop_list_p);
-	if (end) {
-		*end = '\n';
-		end++;
 	}
+	GIB_Var_Set_Local (cbuf_active, GIB_DATA(cbuf_active)->loop_var_p, GIB_DATA(cbuf_active)->loop_list_p);
+	if (old)
+		*end = old;
+	while (isspace ((byte)*end))
+		end++;
 	GIB_DATA(cbuf_active)->loop_list_p = end;
 }
 
 void
 GIB_For_f (void)
 {
-	if (GIB_Argc() != 5) {
+	if (GIB_Argc() != 5 || strcmp ("in", GIB_Argv (2))) {
 		Cbuf_Error ("syntax",
 					"for: invalid syntax\n"
 					"usage: for variable in list {program}"
@@ -612,7 +616,7 @@ GIB_File_Find_f (void)
 	list = dstring_newstr ();
 	while ((entry = readdir (directory))) {
 		if (!fnmatch (GIB_Argv (1), entry->d_name, 0)) {
-			dstring_appendstr (list, "\n");
+			dstring_appendstr (list, " ");
 			dstring_appendstr (list, entry->d_name);
 		}
 	}
@@ -623,29 +627,6 @@ GIB_File_Find_f (void)
 	dstring_delete (list);
 }
 	
-void
-GIB_List_Get_f (void)
-{
-	char *list, *pos, *end;
-	unsigned long int i;
-	if (GIB_Argc () < 3) {
-		Cbuf_Error ("syntax",
-		  "list.get: invalid syntax\n"
-		  "usage: list.get list element");
-		return;
-	}	
-
-	for (i = strtoul (GIB_Argv(2), 0, 10), pos = list = cbuf_active->args->argv[1]->str; i > 0 && *pos; pos++)
-		i -= (*pos == '\n');
-	if (i) {
-		GIB_Return ("");
-		return;
-	}
-	if ((end = strchr (pos, '\n')))
-		*end = 0;
-	GIB_Return (pos);
-}
-
 void
 GIB_Range_f (void)
 {
@@ -670,7 +651,7 @@ GIB_Range_f (void)
 	}
 	dstr = dstring_newstr ();
 	for (i = atof(GIB_Argv(1)); inc < 0 ? i >= limit : i <= limit; i += inc)
-		dstring_appendstr (dstr, va("\n%.10g", i));
+		dstring_appendstr (dstr, va(" %.10g", i));
 	GIB_Return (dstr->str[0] ? dstr->str+1 : "");
 	dstring_delete (dstr);
 }
@@ -699,6 +680,5 @@ GIB_Builtin_Init (void)
 	GIB_Builtin_Add ("file.read", GIB_File_Read_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("file.write", GIB_File_Write_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("file.find", GIB_File_Find_f, GIB_BUILTIN_NORMAL);
-	GIB_Builtin_Add ("list.get", GIB_List_Get_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("range", GIB_Range_f, GIB_BUILTIN_NORMAL);
 }
