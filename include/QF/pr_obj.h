@@ -106,8 +106,8 @@ typedef struct pr_protocol_s {
 	pointer_t   class_pointer;		// pr_class_t
 	string_t    protocol_name;
 	pointer_t   protocol_list;		// pr_protocol_list_t
-	pointer_t   instance_methods;	// pr_method_list_t
-	pointer_t   class_methods;		// pr_method_list_t
+	pointer_t   instance_methods;	// pr_method_description_list_t
+	pointer_t   class_methods;		// pr_method_description_list_t
 } pr_protocol_t;
 
 typedef struct pr_category_s {
@@ -121,7 +121,7 @@ typedef struct pr_category_s {
 typedef struct pr_protocol_list_s {
 	pointer_t   next;
 	int         count;
-	pointer_t   list[1];
+	pointer_t   list[1];			// pr_protocol_t
 } pr_protocol_list_t;
 
 typedef struct pr_method_list_s {
@@ -134,6 +134,15 @@ typedef struct pr_method_list_s {
 	} method_list[1];
 } pr_method_list_t;
 typedef struct pr_method_s pr_method_t;
+
+typedef struct pr_method_description_list_s {
+	int         count;
+	struct pr_method_description_s {
+		pointer_t   name;			// pr_sel_t
+		string_t    types;
+	} list[1];
+} pr_method_description_list_t;
+typedef struct pr_method_description_s pr_method_description_t;
 
 typedef struct pr_ivar_list_s {
 	int         ivar_count;
@@ -158,8 +167,11 @@ typedef struct pr_symtab_s {
 	pointer_t   refs;				// pr_sel_t
 	int         cls_def_cnt;
 	int         cat_def_cnt;
-	pointer_t   defs[1];			// variable array of class pointers then
-									// category pointers
+	pointer_t   defs[1];			// variable array of cls_def_cnt class
+									// pointers then cat_def_cnt category
+									// pointers followed by a null terminated
+									// array of pr_static_instances (not yet
+									// implemented in qfcc)
 } pr_symtab_t;
 
 typedef struct pr_module_s {

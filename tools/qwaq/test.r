@@ -8,6 +8,12 @@
 
 @implementation Foo
 
++load
+{
+	print ("+load\n");
+	return self;
+}
+
 +alloc
 {
 	print ("+alloc\n");

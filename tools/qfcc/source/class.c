@@ -171,31 +171,24 @@ class_add_methods (class_t *class, methodlist_t *methods)
 }
 
 void
-class_add_protocol_methods (class_t *class, expr_t *protocols)
+class_add_protocols (class_t *class, protocollist_t *protocols)
 {
-	expr_t     *e;
+	int         i;
 	protocol_t *p;
+	methodlist_t *methods;
 
-	if (!protocol_hash)
-		protocol_hash = Hash_NewTable (1021, protocol_get_key, 0, 0);
+	if (!protocols)
+		return;
 
-	if (!class->methods)
-		class->methods = new_methodlist ();
+	methods = class->methods;
 
-	for (e = protocols; e; e = e->next) {
-		methodlist_t *methods = class->methods;
-		method_t   **m = methods->tail;
-
-		if (!(p = get_protocol (e->e.string_val, 0))) {
-			error (e, "undefined protocol `%s'", e->e.string_val);
-			continue;
-		}
+	for (i = 0; i < protocols->count; i++) {
+		p = protocols->list[i];
 		copy_methods (methods, p->methods);
-		while (*m) {
-			(*m)->params->type = class->type;
-			m = &(*m)->next;
-		}
+		if (p->protocols)
+			class_add_protocols (class, p->protocols);
 	}
+	class->protocols = protocols;
 }
 
 void
@@ -239,8 +232,6 @@ class_begin (class_type_t *class_type)
 		meta->instance_size = type_size (type_Class.aux_type);
 		EMIT_DEF (meta->ivars,
 				  emit_struct (type_Class.aux_type->s.class->ivars, "Class"));
-		EMIT_DEF (meta->protocols,
-				  emit_protocol_list (class->protocols, class->name));
 
 		class->def->initialized = class->def->constant = 1;
 		class->def->nosave = 1;
@@ -254,7 +245,8 @@ class_begin (class_type_t *class_type)
 		}
 		EMIT_STRING (cls->name, class->name);
 		cls->info = _PR_CLS_CLASS;
-		cls->protocols = meta->protocols;
+		EMIT_DEF (cls->protocols,
+				  emit_protocol_list (class->protocols, class->name));
 	}
 }
 
@@ -313,16 +305,15 @@ class_finish (class_type_t *class_type)
 		pr_category_t *pr_category;
 		category_t *category = class_type->c.category;
 		class_t    *class = category->class;
+		char       *name;
 
+		name = nva ("%s_%s", class->name, category->name);
 		pr_category = &G_STRUCT (pr_category_t, category->def->ofs);
 		EMIT_DEF (pr_category->instance_methods,
-				emit_methods (category->methods, va ("%s_%s",
-						class->name,
-						category->name), 1));
+				emit_methods (category->methods, name, 1));
 		EMIT_DEF (pr_category->class_methods,
-				emit_methods (category->methods, va ("%s_%s",
-						class->name,
-						category->name), 0));
+				emit_methods (category->methods, name, 0));
+		free (name);
 		emit_class_ref (class->name);
 		emit_category_name (class->name, category->name);
 	} else {
@@ -335,12 +326,12 @@ class_finish (class_type_t *class_type)
 		meta = &G_STRUCT (pr_class_t, cls->class_pointer);
 
 		EMIT_DEF (meta->methods, emit_methods (class->methods,
-					class->name, 0));
+											   class->name, 0));
 
 		cls->instance_size = class->ivars? type_size (class->ivars->type) : 0;
 		EMIT_DEF (cls->ivars, emit_struct (class->ivars, class->name));
 		EMIT_DEF (cls->methods, emit_methods (class->methods,
-					class->name, 1));
+											  class->name, 1));
 		if (class->super_class)
 			emit_class_ref (class->super_class->name);
 		emit_class_name (class->name);
@@ -609,32 +600,24 @@ category_add_methods (category_t *category, methodlist_t *methods)
 }
 
 void
-category_add_protocol_methods (category_t *category, expr_t *protocols)
+category_add_protocols (category_t *category, protocollist_t *protocols)
 {
-	expr_t     *e;
+	int         i;
 	protocol_t *p;
-	type_t     *type;
+	methodlist_t *methods;
 
-	if (!protocol_hash)
-		protocol_hash = Hash_NewTable (1021, protocol_get_key, 0, 0);
-	if (!category->methods)
-		category->methods = new_methodlist ();
-	type = category->class->type;
+	if (!protocols)
+		return;
 
-	for (e = protocols; e; e = e->next) {
-		methodlist_t *methods = category->methods;
-		method_t   **m = methods->tail;
+	methods = category->methods;
 
-		if (!(p = get_protocol (e->e.string_val, 0))) {
-			error (e, "undefined protocol `%s'", e->e.string_val);
-			continue;
-		}
+	for (i = 0; i < protocols->count; i++) {
+		p = protocols->list[i];
 		copy_methods (methods, p->methods);
-		while (*m) {
-			(*m)->params->type = type;
-			m = &(*m)->next;
-		}
+		if (p->protocols)
+			category_add_protocols (category, p->protocols);
 	}
+	category->protocols = protocols;
 }
 
 def_t *
@@ -752,8 +735,10 @@ class_finish_module (void)
 	build_function (init_func);
 	init_expr = new_block_expr ();
 	append_expr (init_expr,
-			function_expr (new_def_expr (exec_class_def),
-				address_expr (new_def_expr (module_def), 0, 0)));
+			build_function_call (new_def_expr (exec_class_def),
+								 exec_class_def->type,
+								 address_expr (new_def_expr (module_def),
+									 		   0, 0)));
 	emit_function (init_func, init_expr);
 	finish_function (init_func);
 }
@@ -774,6 +759,7 @@ get_protocol (const char *name, int create)
 
 	p = calloc (sizeof (protocol_t), 1);
 	p->name = name;
+	p->methods = new_methodlist ();
 	if (name)
 		Hash_Add (protocol_hash, p);
 	return p;
@@ -784,29 +770,15 @@ protocol_add_methods (protocol_t *protocol, methodlist_t *methods)
 {
 	if (!methods)
 		return;
-	if (!protocol->methods)
-		protocol->methods = new_methodlist ();
 	*protocol->methods->tail = methods->head;
 	protocol->methods->tail = methods->tail;
 	free (methods);
 }
 
 void
-protocol_add_protocol_methods (protocol_t *protocol, expr_t *protocols)
+protocol_add_protocols (protocol_t *protocol, protocollist_t *protocols)
 {
-	expr_t     *e;
-	protocol_t *p;
-
-	if (!protocol->methods)
-		protocol->methods = new_methodlist ();
-
-	for (e = protocols; e; e = e->next) {
-		if (!(p = get_protocol (e->e.string_val, 0))) {
-			error (e, "undefined protocol `%s'", e->e.string_val);
-			continue;
-		}
-		copy_methods (protocol->methods, p->methods);
-	}
+	protocol->protocols = protocols;
 }
 
 def_t *
@@ -816,12 +788,28 @@ protocol_def (protocol_t *protocol)
 }
 
 protocollist_t *
-new_protocollist (void)
+new_protocol_list (void)
 {
 	protocollist_t *protocollist = malloc (sizeof (protocollist_t));
 
 	protocollist->count = 0;
 	protocollist->list = 0;
+	return protocollist;
+}
+
+protocollist_t *
+add_protocol (protocollist_t *protocollist, const char *name)
+{
+	protocol_t *protocol = get_protocol (name, 0);
+
+	if (!protocol) {
+		error (0, "undefined protocol `%s'", name);
+		return protocollist;
+	}
+	protocollist->count++;
+	protocollist->list = realloc (protocollist->list,
+								  sizeof (protocol_t) * protocollist->count);
+	protocollist->list[protocollist->count - 1] = protocol;
 	return protocollist;
 }
 
@@ -841,11 +829,12 @@ emit_protocol (protocol_t *protocol)
 	EMIT_STRING (proto->protocol_name, protocol->name);
 	EMIT_DEF (proto->protocol_list,
 			  emit_protocol_list (protocol->protocols,
-								  va ("PROTOCOLo_%s", protocol->name)));
+								  va ("PROTOCOL_%s", protocol->name)));
 	EMIT_DEF (proto->instance_methods,
-			  emit_methods (protocol->methods, protocol->name, 1));
+			  emit_method_descriptions (protocol->methods, protocol->name, 1));
 	EMIT_DEF (proto->class_methods,
-			  emit_methods (protocol->methods, protocol->name, 0));
+			  emit_method_descriptions (protocol->methods, protocol->name, 0));
+	emit_class_ref ("Protocol");
 	return proto_def;
 }
 

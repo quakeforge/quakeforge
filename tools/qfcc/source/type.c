@@ -804,6 +804,7 @@ chain_initial_types (void)
 	chain_type (&type_Class);
 	chain_type (&type_Protocol);
 	chain_type (&type_id);
+	chain_type (&type_method_description);
 	chain_type (type_category);
 	chain_type (type_ivar);
 

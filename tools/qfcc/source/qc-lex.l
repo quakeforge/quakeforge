@@ -298,7 +298,7 @@ static keyword_t keywords[] = {
 	{"function",	TYPE,	&type_function,		0, PROG_VERSION},
 	{"id",			TYPE,	&type_id,			0, PROG_VERSION},
 	{"Class",		TYPE,	&type_Class,		0, PROG_VERSION},
-	{"Protocol",	TYPE,	&type_Protocol,		0, PROG_VERSION},
+//	{"Protocol",	TYPE,	&type_Protocol,		0, PROG_VERSION},
 	{"Method",		TYPE,	&type_Method,		0, PROG_VERSION},
 	{"Super",		TYPE,	&type_Super,		0, PROG_VERSION},
 	{"SEL",			TYPE,	&type_SEL,			0, PROG_VERSION},

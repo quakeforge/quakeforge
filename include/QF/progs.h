@@ -1228,8 +1228,12 @@ struct progs_s {
 	string_t   *selector_names;
 	struct hashtab_s *selector_hash;
 	struct hashtab_s *classes;
-	struct hashtab_s *categories;
-	struct hashtab_s *protocols;
+	struct hashtab_s *load_methods;
+	void       *unresolved_classes;
+	void       *unclaimed_categories;
+	void       *unclaimed_proto_list;
+	void       *module_list;
+	void       *class_tree_list;
 	//@}
 
 	/// debug info

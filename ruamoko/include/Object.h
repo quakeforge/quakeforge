@@ -62,6 +62,8 @@ typedef enum {
 @extern BOOL (id object) object_is_instance;
 @extern BOOL (id object) object_is_meta_class;
 
+@class Protocol;
+
 @protocol Object
 - (Class) class;
 - (Class) superclass;

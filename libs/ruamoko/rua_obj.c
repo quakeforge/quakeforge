@@ -51,11 +51,237 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "compat.h"
 #include "rua_internal.h"
 
-static void
-{
+typedef struct obj_list {
+	struct obj_list *next;
+	void       *data;
+} obj_list;
 
-	} else {
+static obj_list *obj_list_free_list;
+
+static obj_list *
+obj_list_new (void)
+{
+	int         i;
+	obj_list   *l;
+
+	if (!obj_list_free_list) {
+		obj_list_free_list = calloc (128, sizeof (obj_list));
+		for (i = 0; i < 127; i++)
+			obj_list_free_list[i].next = &obj_list_free_list[i + 1];
 	}
+	l = obj_list_free_list;
+	obj_list_free_list = l->next;
+	l->next = 0;
+	return l;
+}
+
+static void
+obj_list_free (obj_list *l)
+{
+	obj_list   *e;
+
+	if (!l)
+		return;
+
+	for (e = l; e->next; e = e->next)
+		;
+	e->next = obj_list_free_list;
+	obj_list_free_list = l;
+}
+
+static inline obj_list *
+list_cons (void *data, obj_list *next)
+{
+	obj_list   *l = obj_list_new ();
+	l->data = data;
+	l->next = next;
+	return l;
+}
+
+static inline void
+list_remove (obj_list **list)
+{
+	if ((*list)->next) {
+		obj_list   *l = *list;
+		*list = (*list)->next;
+		l->next = 0;
+		obj_list_free (l);
+	} else {
+		obj_list_free (*list);
+		*list = 0;
+	}
+}
+
+typedef struct class_tree {
+	pr_class_t *class;
+	obj_list   *subclasses;
+} class_tree;
+
+class_tree *class_tree_free_list;
+
+static class_tree *
+class_tree_new (void)
+{
+	int         i;
+	class_tree *t;
+
+	if (!class_tree_free_list) {
+		class_tree_free_list = calloc (128, sizeof (class_tree));
+		for (i = 0; i < 127; i++) {
+			class_tree *x = &class_tree_free_list[i];
+			x->subclasses = (obj_list *) (x + 1);
+		}
+	}
+	t = class_tree_free_list;
+	class_tree_free_list = (class_tree *) t->subclasses;
+	t->subclasses = 0;
+	return t;
+}
+
+static int
+class_is_subclass_of_class (progs_t *pr, pr_class_t *class,
+							pr_class_t *superclass)
+{
+	while (class) {
+		if (class == superclass)
+			return 1;
+		if (!class->super_class)
+			break;
+		class = Hash_Find (pr->classes, PR_GetString (pr, class->super_class));
+	}
+	return 0;
+}
+
+static class_tree *
+create_tree_of_subclasses_inherited_from (progs_t *pr, pr_class_t *bottom,
+										  pr_class_t *upper)
+{
+	const char *super_class = PR_GetString (pr, bottom->super_class);
+	pr_class_t *superclass;
+	class_tree *tree, *prev;
+	
+	superclass = bottom->super_class ? Hash_Find (pr->classes, super_class)
+									 : 0;
+	tree = prev = class_tree_new ();
+	prev->class = bottom;
+	while (superclass != upper) {
+		tree = class_tree_new ();
+		tree->class = superclass;
+		tree->subclasses = list_cons (prev, tree->subclasses);
+		super_class = PR_GetString (pr, superclass->super_class);
+		superclass = (superclass->super_class ? Hash_Find (pr->classes,
+														   super_class)
+											  : 0);
+		prev = tree;
+	}
+	return tree;
+}
+
+static class_tree *
+_obj_tree_insert_class (progs_t *pr, class_tree *tree, pr_class_t *class)
+{
+	obj_list   *subclasses;
+	class_tree *new_tree;
+
+	if (!tree)
+		return create_tree_of_subclasses_inherited_from (pr, class, 0);
+	if (class == tree->class)
+		return tree;
+	if ((class->super_class ? Hash_Find (pr->classes,
+										 PR_GetString (pr,
+											 		   class->super_class))
+							: 0) == tree->class) {
+		obj_list   *list = tree->subclasses;
+		class_tree *node;
+
+		while (list) {
+			if (((class_tree *) list->data)->class == class)
+				return tree;
+			list = list->next;
+		}
+		node = class_tree_new ();
+		node->class = class;
+		tree->subclasses = list_cons (node, tree->subclasses);
+		return tree;
+	}
+	if (!class_is_subclass_of_class (pr, class, tree->class))
+		return 0;
+	for (subclasses = tree->subclasses; subclasses;
+		 subclasses = subclasses->next) {
+		pr_class_t *aclass = ((class_tree *)subclasses->data)->class;
+		if (class_is_subclass_of_class (pr, class, aclass)) {
+			subclasses->data = _obj_tree_insert_class (pr, subclasses->data,
+													   class);
+			return tree;
+		}
+	}
+	new_tree = create_tree_of_subclasses_inherited_from (pr, class,
+														 tree->class);
+	tree->subclasses = list_cons (new_tree, tree->subclasses);
+	return tree;
+}
+
+static void
+obj_tree_insert_class (progs_t *pr, pr_class_t *class)
+{
+	obj_list   *list_node;
+	class_tree *tree;
+
+	list_node = pr->class_tree_list;
+	while (list_node) {
+		tree = _obj_tree_insert_class (pr, list_node->data, class);
+		if (tree) {
+			list_node->data = tree;
+			break;
+		} else {
+			list_node = list_node->next;
+		}
+	}
+	if (!list_node) {
+		tree = _obj_tree_insert_class (pr, 0, class);
+		pr->class_tree_list = list_cons (tree, pr->class_tree_list);
+	}
+}
+
+static void
+obj_create_classes_tree (progs_t *pr, pr_module_t *module)
+{
+	pr_symtab_t *symtab = &G_STRUCT (pr, pr_symtab_t, module->symtab);
+	int         i;
+
+	for (i = 0; i < symtab->cls_def_cnt; i++) {
+		pr_class_t *class = &G_STRUCT (pr, pr_class_t, symtab->defs[i]);
+		obj_tree_insert_class (pr, class);
+	}
+}
+
+static void
+obj_destroy_class_tree_node (progs_t *pr, class_tree *tree, int level)
+{
+	tree->subclasses = (obj_list *) class_tree_free_list;
+	class_tree_free_list = tree;
+}
+
+static void
+obj_preorder_traverse (progs_t *pr, class_tree *tree, int level,
+					   void (*func) (progs_t *, class_tree *, int))
+{
+	obj_list   *node;
+
+	func (pr, tree, level);
+	for (node = tree->subclasses; node; node = node->next)
+		obj_preorder_traverse (pr, node->data, level + 1, func);
+}
+
+static void
+obj_postorder_traverse (progs_t *pr, class_tree *tree, int level,
+						void (*func) (progs_t *, class_tree *, int))
+{
+	obj_list   *node;
+
+	for (node = tree->subclasses; node; node = node->next)
+		obj_postorder_traverse (pr, node->data, level + 1, func);
+	func (pr, tree, level);
 }
 
 static const char *
@@ -72,27 +298,15 @@ class_get_key (void *c, void *pr)
 }
 
 static unsigned long
-category_get_hash (void *_c, void *_pr)
+load_methods_get_hash (void *m, void *pr)
 {
-	progs_t    *pr = (progs_t *) _pr;
-	pr_category_t *cat = (pr_category_t *) _c;
-	const char *category_name = PR_GetString (pr, cat->category_name);
-	const char *class_name = PR_GetString (pr, cat->class_name);
-
-	return Hash_String (category_name) ^ Hash_String (class_name);
+	return (unsigned long) m;
 }
 
 static int
-category_compare (void *_c1, void *_c2, void *_pr)
+load_methods_compare (void *m1, void *m2, void *pr)
 {
-	progs_t    *pr = (progs_t *) _pr;
-	pr_category_t *c1 = (pr_category_t *) _c1;
-	pr_category_t *c2 = (pr_category_t *) _c2;
-	const char *cat1 = PR_GetString (pr, c1->category_name);
-	const char *cat2 = PR_GetString (pr, c2->category_name);
-	const char *cls1 = PR_GetString (pr, c1->class_name);
-	const char *cls2 = PR_GetString (pr, c2->class_name);
-	return strcmp (cat1, cat2) == 0 && strcmp (cls1, cls2) == 0;
+	return m1 == m2;
 }
 
 static inline int
@@ -506,7 +720,15 @@ obj_msg_lookup (progs_t *pr, pr_id_t *receiver, pr_sel_t *op)
 	if (!receiver)
 		return 0;
 	class = &G_STRUCT (pr, pr_class_t, receiver->class_pointer);
-	return obj_find_message (pr, class, op);
+	if (PR_CLS_ISCLASS (class)) {
+		if (!PR_CLS_ISINITIALIZED (class))
+			obj_send_initialize (pr, class);
+	} else if (PR_CLS_ISMETA (class)
+			   && PR_CLS_ISCLASS ((pr_class_t *) receiver)) {
+		if (!PR_CLS_ISINITIALIZED ((pr_class_t *) receiver))
+			obj_send_initialize (pr, (pr_class_t *) receiver);
+	}
+	return get_imp (pr, class, op);
 }
 
 static func_t
@@ -533,6 +755,93 @@ obj_verror (progs_t *pr, pr_id_t *object, int code, const char *fmt, int count,
 		arglist[i] = args + i * 3;
 	PR_Sprintf (pr, dstr, "obj_verror", fmt, count, arglist);
 	PR_RunError (pr, "%s", dstr->str);
+}
+
+static void
+rua___obj_exec_class (progs_t *pr)
+{
+	pr_module_t *module = &P_STRUCT (pr, pr_module_t, 0);
+	pr_symtab_t *symtab;
+	pr_sel_t   *sel;
+	pointer_t  *ptr;
+	int         i;
+	obj_list  **cell;
+
+	if (!module)
+		return;
+	symtab = &G_STRUCT (pr, pr_symtab_t, module->symtab);
+	if (!symtab)
+		return;
+
+	pr->module_list = list_cons (module, pr->module_list);
+
+	sel = &G_STRUCT (pr, pr_sel_t, symtab->refs);
+	for (i = 0; i < symtab->sel_ref_cnt; i++) {
+		const char *name, *types;
+		name = PR_GetString (pr, sel->sel_id);
+		types = PR_GetString (pr, sel->sel_types);
+		sel_register_typed_name (pr, name, types, sel);
+		sel++;
+	}
+
+	ptr = symtab->defs;
+	for (i = 0; i < symtab->cls_def_cnt; i++, ptr++) {
+		pr_class_t *class = &G_STRUCT (pr, pr_class_t, *ptr);
+		pr_class_t *meta = &G_STRUCT (pr, pr_class_t, class->class_pointer);
+		const char *super_class = PR_GetString (pr, class->super_class);
+
+		class->subclass_list = 0;
+
+		Hash_Add (pr->classes, class);
+
+		obj_register_selectors_from_class (pr, class);
+		obj_register_selectors_from_class (pr, meta);
+
+		if (class->protocols) {
+			pr_protocol_list_t *protocol_list;
+			protocol_list = &G_STRUCT (pr, pr_protocol_list_t,
+									   class->protocols);
+			obj_init_protocols (pr, protocol_list);
+		}
+
+		if (class->super_class && !Hash_Find (pr->classes, super_class))
+			pr->unresolved_classes = list_cons (class, pr->unresolved_classes);
+	}
+
+	for (i = 0; i < symtab->cat_def_cnt; i++, ptr++) {
+		pr_category_t *category = &G_STRUCT (pr, pr_category_t, *ptr);
+		const char *class_name = PR_GetString (pr, category->class_name);
+		pr_class_t *class = Hash_Find (pr->classes, class_name);
+
+		if (class) {
+			finish_category (pr, category, class);
+		} else {
+			pr->unclaimed_categories = list_cons (category,
+												  pr->unclaimed_categories);
+		}
+	}
+
+	for (cell = (obj_list **) &pr->unclaimed_categories; *cell; ) {
+		pr_category_t *category = (*cell)->data;
+		const char *class_name = PR_GetString (pr, category->class_name);
+		pr_class_t *class = Hash_Find (pr->classes, class_name);
+
+		if (class) {
+			list_remove (cell);
+			finish_category (pr, category, class);
+		} else {
+			cell = &(*cell)->next;
+		}
+	}
+
+	if (pr->unclaimed_proto_list && Hash_Find (pr->classes, "Protocol")) {
+		for (cell = (obj_list **) &pr->unclaimed_proto_list; *cell; ) {
+			obj_init_protocols (pr, (*cell)->data);
+			list_remove (cell);
+		}
+	}
+
+	obj_send_load (pr);
 }
 
 static void
@@ -948,10 +1257,10 @@ rua_method_get_imp (progs_t *pr)
 static void
 rua_get_imp (progs_t *pr)
 {
-	//pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
-	//pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 1);
-	//XXX
-	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
+	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
+	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 1);
+
+	R_INT (pr) = get_imp (pr, class, sel);
 }
 
 //====================================================================
@@ -1039,20 +1348,8 @@ static void
 rua_object_get_class_name (progs_t *pr)
 {
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
-	pr_class_t *class;
 
-	if (object) {
-		class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
-		if (PR_CLS_ISCLASS (class)) {
-			R_INT (pr) = class->name;
-			return;
-		}
-		if (PR_CLS_ISMETA (class)) {
-			R_INT (pr) = ((pr_class_t *)object)->name;
-			return;
-		}
-	}
-	RETURN_STRING (pr, "Nil");
+	R_STRING (pr) = object_get_class_name (pr, object);
 }
 
 static void
@@ -1189,7 +1486,6 @@ static int
 rua_init_finish (progs_t *pr)
 {
 	pr_class_t **class_list, **class;
-	pr_category_t **category_list, **category;
 
 	class_list = (pr_class_t **) Hash_GetList (pr->classes);
 	if (*class_list) {
@@ -1206,12 +1502,6 @@ rua_init_finish (progs_t *pr)
 	}
 	free (class_list);
 
-	category_list = (pr_category_t **) Hash_GetList (pr->categories);
-	if (*category_list) {
-		for (category = category_list; *category; category++)
-			finish_category (pr, *category);
-	}
-	free (category_list);
 	return 1;
 }
 
@@ -1237,15 +1527,22 @@ rua_init_runtime (progs_t *pr)
 	else
 		Hash_FlushTable (pr->classes);
 
-	if (!pr->categories) {
-		pr->categories = Hash_NewTable (1021, 0, 0, pr);
-		Hash_SetHashCompare (pr->categories,
-							 category_get_hash, category_compare);
+	if (!pr->load_methods) {
+		pr->load_methods = Hash_NewTable (1021, 0, 0, pr);
+		Hash_SetHashCompare (pr->load_methods, load_methods_get_hash,
+							 load_methods_compare);
 	} else {
-		Hash_FlushTable (pr->categories);
+		Hash_FlushTable (pr->load_methods);
 	}
 
-	pr->fields.this = ED_GetFieldIndex (pr, ".this");
+	pr->unresolved_classes = 0;
+	pr->unclaimed_categories = 0;
+	pr->unclaimed_proto_list = 0;
+	pr->module_list = 0;
+	pr->class_tree_list = 0;
+
+	if ((def = PR_FindField (pr, ".this")))
+		pr->fields.this = def->ofs;
 
 	PR_AddLoadFinishFunc (pr, rua_init_finish);
 	return 1;

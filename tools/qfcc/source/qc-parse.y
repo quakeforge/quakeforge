@@ -117,6 +117,7 @@ expr_t *argv_expr (void);
 	struct category_s *category;
 	struct class_type_s	*class_type;
 	struct protocol_s *protocol;
+	struct protocollist_s *protocol_list;
 	struct keywordarg_s *keywordarg;
 	struct methodlist_s *methodlist;
 	struct struct_s *strct;
@@ -175,7 +176,7 @@ expr_t *argv_expr (void);
 %type	<param>	optparmlist unaryselector keyworddecl keywordselector
 %type	<method> methodproto methoddecl
 %type	<expr>	obj_expr identifier_list obj_messageexpr obj_string receiver
-%type	<expr>	protocolrefs protocol_list
+%type	<protocol_list>	protocolrefs protocol_list
 %type	<keywordarg> messageargs keywordarg keywordarglist selectorarg
 %type	<keywordarg> keywordnamelist keywordname
 %type	<class> class_name new_class_name class_with_super new_class_with_super
@@ -1242,29 +1243,29 @@ protocol_name
 
 classdef
 	: INTERFACE new_class_name
-	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
+	  protocolrefs						{ class_add_protocols ($2, $3);}
 	  '{'								{ $$ = $2; }
 	  ivar_decl_list '}'				{ class_add_ivars ($2, $7); $$ = $2; }
 	  methodprotolist					{ class_add_methods ($2, $10); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_class_name
-	  protocolrefs					{ class_add_protocol_methods ($2, $3); }
+	  protocolrefs					{ class_add_protocols ($2, $3); }
 					{ class_add_ivars ($2, class_new_ivars ($2)); $$ = $2; }
 	  methodprotolist					{ class_add_methods ($2, $6); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_class_with_super
-	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
+	  protocolrefs						{ class_add_protocols ($2, $3);}
 	  '{'								{ $$ = $2; }
 	  ivar_decl_list '}'				{ class_add_ivars ($2, $7); $$ = $2; }
 	  methodprotolist					{ class_add_methods ($2, $10); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_class_with_super
-	  protocolrefs					{ class_add_protocol_methods ($2, $3); }
+	  protocolrefs						{ class_add_protocols ($2, $3); }
 					{ class_add_ivars ($2, class_new_ivars ($2)); $$ = $2; }
 	  methodprotolist					{ class_add_methods ($2, $6); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_category_name
-	  protocolrefs	{ category_add_protocol_methods ($2, $3); $$ = $2->class;}
+	  protocolrefs		{ category_add_protocols ($2, $3); $$ = $2->class;}
 	  methodprotolist					{ category_add_methods ($2, $5); }
 	  END								{ current_class = 0; }
 	| IMPLEMENTATION class_name			{ class_begin (&$2->class_type); }
@@ -1280,14 +1281,15 @@ classdef
 
 protocoldef
 	: PROTOCOL protocol_name 
-	  protocolrefs	{ protocol_add_protocol_methods ($2, $3); $<class>$ = 0; }
+	  protocolrefs			{ protocol_add_protocols ($2, $3); $<class>$ = 0; }
 	  methodprotolist			{ protocol_add_methods ($2, $5); }
 	  END
 	;
 
 protocolrefs
 	: /* emtpy */				{ $$ = 0; }
-	| LT protocol_list GT		{ $$ = $2->e.block.head; }
+	| LT 						{ $$ = new_protocol_list (); }
+	  protocol_list GT			{ $$ = $3; }
 	;
 
 protocol_list
@@ -1297,8 +1299,7 @@ protocol_list
 		}
 	| protocol_list ',' identifier
 		{
-			append_expr ($1, new_name_expr ($3));
-			$$ = $1;
+			$$ = add_protocol ($1, $3);
 		}
 	;
 
