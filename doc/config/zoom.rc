@@ -29,7 +29,7 @@ set zoom_mult 1.25
 set zoom_zoomed 0
 
 set zoom_mult_lower 1.25
-set zoom_mult_upper 114 // This is more or less the hard limit
+set zoom_mult_upper 90 // This is more or less the hard limit
 set zoom_mult_step .25;
 
 alias zoom_init { // Initialize basic options
@@ -52,8 +52,8 @@ alias zoom_mult { // "Accessor" for zoom_mult
 
 alias zoom_adjust { // Adjust fov and sensitivity to match zoom factor
 	if $zoom_zoomed {
-		set fov #{2atan(tan($zoom_base_fov*$M_PI/360)/$zoom_mult)/$M_PI*180};
-		set in_mouse_amp #{$zoom_base_sensitivity*($fov/$zoom_base_fov)};
+		set fov #{$zoom_base_fov/$zoom_mult};
+		set in_mouse_amp #{$zoom_base_sensitivity/$zoom_mult};
 		return;
 	} else {
 		set fov $zoom_base_fov;
