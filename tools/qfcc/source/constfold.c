@@ -434,7 +434,7 @@ do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	}
 	if (op != PAS && op != '.' && op != '&' && op != 'M'
 		&& extract_type (e1) != extract_type (e2))
-		internal_error (e);
+		type_mismatch (e1, e2, op);
 	if ((op == '.' || op == '&') && get_type (e2) == &type_uinteger) {
 		//FIXME should implement unsigned addressing
 		e->e.expr.e2 = cast_expr (&type_integer, e2);
