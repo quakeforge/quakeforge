@@ -103,6 +103,7 @@ ED_Alloc (progs_t * pr)
 	int         i;
 	edict_t    *e;
 	int         start = pr->reserved_edicts ? *pr->reserved_edicts : 0;
+	int         max_edicts = pr->pr_edictareasize / pr->pr_edict_size;
 
 	for (i = start + 1; i < *(pr)->num_edicts; i++) {
 		e = EDICT_NUM (pr, i);
@@ -114,7 +115,7 @@ ED_Alloc (progs_t * pr)
 		}
 	}
 
-	if (i == MAX_EDICTS) {
+	if (i == max_edicts) {
 		Con_Printf ("WARNING: ED_Alloc: no free edicts\n");
 		i--;							// step on whatever is the last edict
 		e = EDICT_NUM (pr, i);
@@ -1171,9 +1172,10 @@ PR_Init (void)
 edict_t    *
 EDICT_NUM (progs_t * pr, int n)
 {
-	if (n < 0 || n >= MAX_EDICTS)
+	int offs = n * pr->pr_edict_size;
+	if (offs < 0 || n >= pr->pr_edictareasize)
 		PR_Error (pr, "EDICT_NUM: bad number %i", n);
-	return (edict_t *) ((byte *) * (pr)->edicts + (n) * pr->pr_edict_size);
+	return PROG_TO_EDICT (pr, offs);
 }
 
 int
