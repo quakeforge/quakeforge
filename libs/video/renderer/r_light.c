@@ -185,21 +185,13 @@ loc0:
 	}
 }
 
-static inline void
-mark_surfaces (msurface_t *surf, const vec3_t lightorigin, dlight_t *light,
-			   int bit)
+static void
+real_mark_surfaces (float dist, msurface_t *surf, const vec3_t lightorigin,
+					dlight_t *light, int bit)
 {
-	float      dist;
 	float      dist2, d;
 	float      maxdist = light->radius * light->radius;
 	vec3_t     impact;
-
-	dist = PlaneDiff(lightorigin, surf->plane);
-	if (surf->flags & SURF_PLANEBACK)
-		dist = -dist;
-	if ((dist < -0.25f && !(surf->flags & SURF_LIGHTBOTHSIDES))
-		|| dist > light->radius)
-		return;
 
 	dist2 = dist * dist;
 	dist = -dist;
@@ -239,6 +231,22 @@ mark_surfaces (msurface_t *surf, const vec3_t lightorigin, dlight_t *light,
 		surf->dlightframe = r_framecount;
 	}
 	surf->dlightbits |= bit;
+}
+
+static inline void
+mark_surfaces (msurface_t *surf, const vec3_t lightorigin, dlight_t *light,
+			   int bit)
+{
+	float      dist;
+
+	dist = PlaneDiff(lightorigin, surf->plane);
+	if (surf->flags & SURF_PLANEBACK)
+		dist = -dist;
+	if ((dist < -0.25f && !(surf->flags & SURF_LIGHTBOTHSIDES))
+		|| dist > light->radius)
+		return;
+
+	real_mark_surfaces (dist, surf, lightorigin, light, bit);
 }
 
 void
