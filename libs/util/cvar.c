@@ -318,7 +318,7 @@ Cvar_Command (void)
 /*
 	Cvar_WriteVariables
 
-	Writes lines containing "set variable value" for all variables
+	Writes lines containing "seta variable value" for all variables
 	with the archive flag set to true.
 */
 void
@@ -328,20 +328,21 @@ Cvar_WriteVariables (QFile *f)
 
 	for (var = cvar_vars; var; var = var->next)
 		if (var->flags & CVAR_ARCHIVE)
-			Qprintf (f, "set %s \"%s\"\n", var->name, var->string);
+			Qprintf (f, "seta %s \"%s\"\n", var->name, var->string);
 }
 
 static void
-Cvar_Set_f (void)
+set_cvar (const char *cmd, int orflags)
 {
 	cvar_t     *var;
 	const char *value;
 	const char *var_name;
 
 	if (Cmd_Argc () != 3) {
-		Sys_Printf ("usage: set <cvar> <value>\n");
+		Sys_Printf ("usage: %s <cvar> <value>\n", cmd);
 		return;
 	}
+
 	var_name = Cmd_Argv (1);
 	value = Cmd_Argv (2);
 	var = Cvar_FindVar (var_name);
@@ -355,43 +356,30 @@ Cvar_Set_f (void)
 						 var_name);
 		} else {
 			Cvar_Set (var, value);
+			Cvar_SetFlags (var, var->flags | orflags);
 		}
 	} else {
-		var = Cvar_Get (var_name, value, CVAR_USER_CREATED, NULL,
+		var = Cvar_Get (var_name, value, CVAR_USER_CREATED | orflags, NULL,
 						USER_CVAR);
 	}
 }
 
 static void
+Cvar_Set_f (void)
+{
+	set_cvar ("set", CVAR_NONE);
+}
+
+static void
 Cvar_Setrom_f (void)
 {
-	cvar_t     *var;
-	const char *value;
-	const char *var_name;
+	set_cvar ("setrom", CVAR_ROM);
+}
 
-	if (Cmd_Argc () != 3) {
-		Sys_Printf ("usage: setrom <cvar> <value>\n");
-		return;
-	}
-	var_name = Cmd_Argv (1);
-	value = Cmd_Argv (2);
-	var = Cvar_FindVar (var_name);
-
-	if (!var)
-		var = Cvar_FindAlias (var_name);
-
-	if (var) {
-		if (var->flags & CVAR_ROM) {
-			Sys_DPrintf ("Cvar \"%s\" is read-only, cannot modify\n",
-						 var_name);
-		} else {
-			Cvar_Set (var, value);
-			Cvar_SetFlags (var, var->flags | CVAR_ROM);
-		}
-	} else {
-		var = Cvar_Get (var_name, value, CVAR_USER_CREATED | CVAR_ROM, NULL,
-						USER_RO_CVAR);
-	}
+static void
+Cvar_Seta_f (void)
+{
+	set_cvar ("seta", CVAR_ARCHIVE);
 }
 
 static void
@@ -493,8 +481,11 @@ Cvar_Init (void)
 	Cmd_AddCommand ("set", Cvar_Set_f, "Set the selected variable, useful on "
 					"the command line (+set variablename setting)");
 	Cmd_AddCommand ("setrom", Cvar_Setrom_f, "Set the selected variable and "
-					"make it read only, useful on the command line.\n"
+					"make it read only, useful on the command line. "
 					"(+setrom variablename setting)");
+	Cmd_AddCommand ("seta", Cvar_Seta_f, "Set the selected variable, and make "
+					"it archived, useful on the command line (+seta "
+					"variablename setting)");
 	Cmd_AddCommand ("toggle", Cvar_Toggle_f, "Toggle a cvar on or off");
 	Cmd_AddCommand ("cvarlist", Cvar_CvarList_f, "List all cvars");
 }
