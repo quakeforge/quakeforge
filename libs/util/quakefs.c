@@ -129,7 +129,7 @@ typedef struct qfs_var_s {
 	char       *val;
 } qfs_var_t;
 
-static void QFS_AddGameDirectory (const char *dir); //FIXME
+static void QFS_AddGameDirectory (const char *dir);
 
 gamedir_t  *qfs_gamedir;
 static plitem_t *qfs_gd_plist;
