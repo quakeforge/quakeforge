@@ -811,10 +811,6 @@ R_DrawBrushModel (entity_t *e)
 	R_RotateForEntity (e);
 	e->angles[0] = -e->angles[0];		// stupid quake bug
 
-	// LordHavoc: anyone without multitexture won't want texsort 0 anyway...
-	if (!gl_mtex_active)
-		Cvar_SetValue (gl_texsort, 1);
-
 	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
 	// 
@@ -988,10 +984,6 @@ R_DrawWorld (void)
 	VectorCopy (r_refdef.vieworg, modelorg);
 
 	currententity = &ent;
-
-	// LordHavoc: anyone without multitexture won't want texsort 0 anyway...
-	if (!gl_mtex_active)
-		Cvar_SetValue (gl_texsort, 1);
 
 	glColor3f (1.0, 1.0, 1.0);
 	memset (lightmap_polys, 0, sizeof (lightmap_polys));
@@ -1309,7 +1301,7 @@ GL_BuildLightmaps (void)
 		}
 	}
 
-	if (gl_mtex_active && !gl_texsort->int_val)
+	if (!gl_texsort->int_val)
 		qglSelectTexture (gl_mtex_enum + 1);
 
 	// 
@@ -1331,6 +1323,6 @@ GL_BuildLightmaps (void)
 					  GL_UNSIGNED_BYTE, lightmaps[i]);
 	}
 
-	if (gl_mtex_active && !gl_texsort->int_val)
+	if (!gl_texsort->int_val)
 		qglSelectTexture (gl_mtex_enum + 0);
 }
