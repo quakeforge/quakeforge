@@ -168,8 +168,6 @@ void
 reloc_op_def_ofs (def_t *def, int ofs, int field)
 {
 	reloc_t    *ref = new_reloc (ofs, rel_op_a_def_ofs + field);
-	unsigned short x = (&pr.code->code[ofs].a)[field];
-	printf ("%3d %c %3d %3d %s\n", ofs, 'a' + field, x, def->ofs, def->name);
 	ref->next = def->refs;
 	def->refs = ref;
 }
