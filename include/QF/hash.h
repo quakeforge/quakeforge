@@ -105,7 +105,9 @@ void *Hash_FindElement (hashtab_t *tab, void *ele);
 		tab:	the table to search
 		key:	the key string identifying the elements being searched for
 	returns a null terminated list of element pointers if at least one found,
-	otherwise 0.
+	otherwise 0. returned list is guaranteed to be in reverse order of
+	insertion. ie, deleting items from the list in list order will delete the
+	correct items.
 */
 void **Hash_FindList (hashtab_t *tab, const char *key);
 void **Hash_FindElementList (hashtab_t *tab, void *ele);
