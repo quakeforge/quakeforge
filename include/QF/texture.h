@@ -41,8 +41,9 @@ typedef struct tex_s {
 	unsigned char	data[4];					// variable length
 } tex_t;
 
-#define tex_palette 0;
-#define tex_rgb 3;
-#define tex_rgba 4;
+#define tex_palette 0
+#define tex_la 2
+#define tex_rgb 3
+#define tex_rgba 4
 
 #endif // __texture_h
