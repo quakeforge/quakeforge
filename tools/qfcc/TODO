@@ -14,14 +14,14 @@ X	move the chained funcion support out of emit_function_expr into
 X	pre- and post- increment operators (++ and --)
 X	break/continue keywords for switch() and for(;;)
 X	full scoping
-I	gut out old parser
+X	gut out old parser
 X	switch/case, for any type
-o	short circuit logic for && and || (optional?)
 X	warn for local shaddowing parameter
+X	clean up error expression handling to minimuse follow on errors
+X	object oriented features ala Objective-C
+o	short circuit logic for && and || (optional?)
 o	quaternion type. Tricky: requires 4 word args/return
 o	CSE optimisations. Hard?
-X	clean up error expression handling to minimuse follow on errors
 o	fix local structure used/uninitialized warnings
 o	arrays in entities/structures?
-M	object oriented features ala Objective-C
 ?	pass the first two parms in call->b and call->c
