@@ -30,6 +30,7 @@ static const char rcsid[] =
 #endif
 #include <stdlib.h>
 
+#include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/va.h"
 
@@ -103,11 +104,13 @@ def_t *
 PR_ReuseConstant (expr_t *expr, def_t *def)
 {
 	def_t      *cn;
-	const char *rep;
+	static dstring_t*rep = 0;
 	hashtab_t  *tab = 0;
 	type_t     *type;
 	expr_t      e = *expr;
 
+	if (!rep)
+		rep = dstring_newstr ();
 	if (!string_imm_defs) {
 		string_imm_defs = Hash_NewTable (16381, string_imm_get_key, 0, 0);
 		float_imm_defs = Hash_NewTable (16381, float_imm_get_key, 0, 0);
@@ -134,29 +137,29 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 	cn = 0;
 	switch (e.type) {
 		case ex_entity:
-			rep = va ("\001entity:%08X\001", e.e.integer_val);
+			dsprintf (rep, "\001entity:%08X\001", e.e.integer_val);
 			tab = entity_imm_defs;
 			type = &type_entity;
 			break;
 		case ex_field:
-			rep = va ("\001field:%08X\001", e.e.integer_val);
+			dsprintf (rep, "\001field:%08X\001", e.e.integer_val);
 			tab = field_imm_defs;
 			type = &type_field;
 			break;
 		case ex_func:
-			rep = va ("\001func:%08X\001", e.e.integer_val);
+			dsprintf (rep, "\001func:%08X\001", e.e.integer_val);
 			tab = func_imm_defs;
 			type = &type_function;
 			break;
 		case ex_pointer:
-			rep = va ("\001pointer:%08X\001", e.e.pointer.val);
+			dsprintf (rep, "\001pointer:%08X\001", e.e.pointer.val);
 			tab = pointer_imm_defs;
 			type = &type_pointer;
 			break;
 		case ex_integer:
 		case ex_uinteger:
 			if (!def || def->type != &type_float) {
-				rep = va ("\001integer:%08X\001", e.e.integer_val);
+				dsprintf (rep, "\001integer:%08X\001", e.e.integer_val);
 				tab = integer_imm_defs;
 				if (e.type == ex_uinteger)
 					type = &type_uinteger;
@@ -169,24 +172,24 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 			else
 				e.e.float_val = e.e.integer_val;
 		case ex_float:
-			rep = va ("\001float:%08X\001", e.e.integer_val);
+			dsprintf (rep, "\001float:%08X\001", e.e.integer_val);
 			tab = float_imm_defs;
 			type = &type_float;
 			break;
 		case ex_string:
-			rep = e.e.string_val ? e.e.string_val : "";
+			dsprintf (rep, "%s", e.e.string_val ? e.e.string_val : "");
 			tab = string_imm_defs;
 			type = &type_string;
 			break;
 		case ex_vector:
-			rep = va ("\001vector:%08X\001%08X\001%08X\001",
+			dsprintf (rep, "\001vector:%08X\001%08X\001%08X\001",
 					  *(int *) &e.e.vector_val[0],
 					  *(int *) &e.e.vector_val[1], *(int *) &e.e.vector_val[2]);
 			tab = vector_imm_defs;
 			type = &type_vector;
 			break;
 		case ex_quaternion:
-			rep = va ("\001quaternion:%08X\001%08X\001%08X\001%08X\001",
+			dsprintf (rep, "\001quaternion:%08X\001%08X\001%08X\001%08X\001",
 					  *(int *) &e.e.quaternion_val[0],
 					  *(int *) &e.e.quaternion_val[1],
 					  *(int *) &e.e.quaternion_val[2],
@@ -197,7 +200,7 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 		default:
 			abort ();
 	}
-	cn = (def_t *) Hash_Find (tab, rep);
+	cn = (def_t *) Hash_Find (tab, rep->str);
 	if (cn) {
 		if (def) {
 			PR_FreeLocation (def);
@@ -236,7 +239,7 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 	cn->initialized = cn->constant = 1;
 	// copy the immediate to the global area
 	if (e.type == ex_string)
-		e.e.integer_val = CopyString (rep);
+		e.e.integer_val = CopyString (rep->str);
 
 	memcpy (pr_globals + cn->ofs, &e.e, 4 * pr_type_size[type->type]);
 
