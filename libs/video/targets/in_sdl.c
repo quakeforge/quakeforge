@@ -301,8 +301,6 @@ IN_LL_SendKeyEvents (void)
 void
 IN_LL_Commands (void)
 {
-	JOY_Command ();
-
 	if (old_windowed_mouse != _windowed_mouse->value) {
 		old_windowed_mouse = _windowed_mouse->value;
 		if (!_windowed_mouse->value) {
