@@ -163,11 +163,9 @@ static void
 mark_surfaces (msurface_t *surf, vec3_t lightorigin, dlight_t *light, int bit)
 {
 	float      dist;
-#if 1
 	float      dist2, d;
 	float      maxdist = light->radius * light->radius;
 	vec3_t     impact;
-#endif
 
 	dist = PlaneDiff(lightorigin, surf->plane);
 	if (surf->flags & SURF_PLANEBACK)
@@ -175,7 +173,7 @@ mark_surfaces (msurface_t *surf, vec3_t lightorigin, dlight_t *light, int bit)
 	if ((dist < -0.25f && !(surf->flags & SURF_LIGHTBOTHSIDES))
 		|| dist > light->radius)
 		return;
-#if 1
+
 	dist2 = dist * dist;
 	dist = -dist;
 	VectorMA (light->origin, dist, surf->plane->normal, impact);
@@ -208,7 +206,7 @@ mark_surfaces (msurface_t *surf, vec3_t lightorigin, dlight_t *light, int bit)
 				return;
 		}
 	}
-#endif
+
 	if (surf->dlightframe != r_framecount) {
 		surf->dlightbits = 0;
 		surf->dlightframe = r_framecount;
