@@ -35,10 +35,10 @@ INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/qw/include $(GGI_CFLAGS) $(MGL
 
 bin_PROGRAMS =	@QW_TARGETS@
 
-EXTRA_PROGRAMS= cougar-qw-cl-3dfx cougar-qw-cl-fbdev cougar-qw-cl-ggi \
-		cougar-qw-cl-glx cougar-qw-cl-mgl cougar-qw-cl-sdl \
-		cougar-qw-cl-sgl cougar-qw-cl-svga cougar-qw-cl-wgl \
-		cougar-qw-cl-x11 cougar-qw-sv
+EXTRA_PROGRAMS= qw-client-3dfx qw-client-fbdev qw-client-ggi \
+		qw-client-glx qw-client-mgl qw-client-sdl \
+		qw-client-sgl qw-client-svga qw-client-wgl \
+		qw-client-x11 qw-server
 
 noinst_LIBRARIES= libqfcd.a libqfjs.a libqfnet.a libqfsnd.a libqfsys_cl.a libqfsys_sv.a
 

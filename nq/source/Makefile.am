@@ -34,9 +34,9 @@ INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/nq/include $(GGI_CFLAGS) $(MGL
 
 bin_PROGRAMS =	@NQ_TARGETS@
 
-EXTRA_PROGRAMS= cougar-nq-cl-ggi cougar-nq-cl-mgl cougar-nq-cl-sdl \
-		cougar-nq-cl-svga cougar-nq-cl-x11 cougar-nq-cl-3dfx \
-		cougar-nq-cl-glx cougar-nq-cl-sgl cougar-nq-cl-wgl cougar-nq-sv
+EXTRA_PROGRAMS= nq-ggi nq-mgl nq-sdl \
+		nq-svga nq-x11 nq-3dfx \
+		nq-glx nq-sgl nq-wgl nq-server
 
 noinst_LIBRARIES= libqfsys.a libqfsnd.a libqfcd.a libqfjs.a libqfnet.a
 

@@ -1358,57 +1358,57 @@ CL_TARGETS=""
 QW_TARGETS=""
 NQ_TARGETS=""
 if test "x$HAVE_TDFXGL" = xyes -a "x$ENABLE_3DFX" = xyes; then
-	QW_TARGETS="$QW_TARGETS cougar-qw-cl-3dfx\$(EXEEXT)"
-	NQ_TARGETS="$NQ_TARGETS cougar-nq-cl-3dfx\$(EXEEXT)"
+	QW_TARGETS="$QW_TARGETS qw-client-3dfx\$(EXEEXT)"
+	NQ_TARGETS="$NQ_TARGETS nq-3dfx\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS 3dfx"
 fi
 if test "x$HAVE_FBDEV" = xyes -a "x$ENABLE_FBDEV" = xyes; then
-	QW_TARGETS="$QW_TARGETS cougar-qw-cl-fbdev\$(EXEEXT)"
-	NQ_TARGETS="$NQ_TARGETS cougar-nq-cl-fbdev\$(EXEEXT)"
+	QW_TARGETS="$QW_TARGETS qw-client-fbdev\$(EXEEXT)"
+	NQ_TARGETS="$NQ_TARGETS nq-fbdev\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS FBDEV"
 fi
 if test "x$HAVE_GGI" = xyes -a "x$ENABLE_GGI" = xyes; then
-	QW_TARGETS="$QW_TARGETS cougar-qw-cl-ggi\$(EXEEXT)"
-	NQ_TARGETS="$NQ_TARGETS cougar-nq-cl-ggi\$(EXEEXT)"
+	QW_TARGETS="$QW_TARGETS qw-client-ggi\$(EXEEXT)"
+	NQ_TARGETS="$NQ_TARGETS nq-ggi\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS GGI"
 fi
 if test "x$HAVE_X" = xyes; then
 	if test "x$HAVE_GLX" = xyes -a "x$ENABLE_GLX" = xyes; then
-		QW_TARGETS="$QW_TARGETS cougar-qw-cl-glx\$(EXEEXT)"
-		NQ_TARGETS="$NQ_TARGETS cougar-nq-cl-glx\$(EXEEXT)"
+		QW_TARGETS="$QW_TARGETS qw-client-glx\$(EXEEXT)"
+		NQ_TARGETS="$NQ_TARGETS nq-glx\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS GLX"
 	fi
 fi
 if test "x$HAVE_MGL" = xyes -a "x$ENABLE_MGL" = xyes; then
-	QW_TARGETS="$QW_TARGETS cougar-qw-cl-mgl\$(EXEEXT)"
-	NQ_TARGETS="$NQ_TARGETS cougar-nq-cl-mgl\$(EXEEXT)"
+	QW_TARGETS="$QW_TARGETS qw-client-mgl\$(EXEEXT)"
+	NQ_TARGETS="$NQ_TARGETS nq-mgl\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS MGL"
 fi
 if test "x$HAVE_SDL" = xyes -a "x$ENABLE_SDL" = xyes; then
-	QW_TARGETS="$QW_TARGETS cougar-qw-cl-sdl\$(EXEEXT)"
-	NQ_TARGETS="$NQ_TARGETS cougar-nq-cl-sdl\$(EXEEXT)"
+	QW_TARGETS="$QW_TARGETS qw-client-sdl\$(EXEEXT)"
+	NQ_TARGETS="$NQ_TARGETS nq-sdl\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS SDL"
 fi
 if test "x$HAVE_SGL" = xyes; then
 	if test "x$HAVE_GLX" = xyes -a "x$ENABLE_SGL" = xyes; then
-		QW_TARGETS="$QW_TARGETS cougar-qw-cl-sgl\$(EXEEXT)"
-		NQ_TARGETS="$NQ_TARGETS cougar-nq-cl-sgl\$(EXEEXT)"
+		QW_TARGETS="$QW_TARGETS qw-client-sgl\$(EXEEXT)"
+		NQ_TARGETS="$NQ_TARGETS nq-sgl\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS SDL-GL"
 	fi
 fi
 if test "x$HAVE_SVGA" = xyes -a "x$ENABLE_SVGA" = xyes; then
-	QW_TARGETS="$QW_TARGETS cougar-qw-cl-svga\$(EXEEXT)"
-	NQ_TARGETS="$NQ_TARGETS cougar-nq-cl-svga\$(EXEEXT)"
+	QW_TARGETS="$QW_TARGETS qw-client-svga\$(EXEEXT)"
+	NQ_TARGETS="$NQ_TARGETS nq-svga\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS SVGAlib"
 fi
 if test "x$HAVE_X" = xyes -a "x$ENABLE_X11" = xyes; then
-	QW_TARGETS="$QW_TARGETS cougar-qw-cl-x11\$(EXEEXT)"
-	NQ_TARGETS="$NQ_TARGETS cougar-nq-cl-x11\$(EXEEXT)"
+	QW_TARGETS="$QW_TARGETS qw-client-x11\$(EXEEXT)"
+	NQ_TARGETS="$NQ_TARGETS nq-x11\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS X11"
 fi
 if test "x$SV_TARGETS" = xyes; then
-	QW_TARGETS="cougar-qw-sv\$(EXEEXT) $QW_TARGETS"
-#	NQ_TARGETS="cougar-nq-sv\$(EXEEXT) $NQ_TARGETS"
+	QW_TARGETS="qw-server\$(EXEEXT) $QW_TARGETS"
+#	NQ_TARGETS="nq-server\$(EXEEXT) $NQ_TARGETS"
 fi
 AC_SUBST(NQ_TARGETS)
 AC_SUBST(QW_TARGETS)
