@@ -1,9 +1,17 @@
-void (integer x, integer y, string text) Menu_Begin = #0;
-void (integer x, integer y, string name) Menu_Pic = #0;
-void (integer x, integer y, string name) Menu_CenterPic = #0;
-void (integer x, integer y, string text, void (string text, integer key) func) Menu_Item = #0;
-void (void (integer x, integer y) func) Menu_Cursor = #0;
-void () Menu_End = #0;
+void (integer x, integer y, string text) Menu_Begin = #1;
+void (integer x, integer y, string name) Menu_Pic = #1;
+void (integer x, integer y, string name) Menu_CenterPic = #1;
+void (integer x, integer y, string text, void (string text, integer key) func) Menu_Item = #1;
+void (void (integer x, integer y) func) Menu_Cursor = #1;
+void () Menu_End = #1;
+
+void (integer x, integer y, string name) Draw_Pic = #1;
+
+float time;
+entity self;
+.float nextthink;
+.float frame;
+.void () think;
 
 string [6] dot;/* = {
 	"gfx/menudot0.lpm",
@@ -16,7 +24,7 @@ string [6] dot;/* = {
 
 void (integer x, integer y) spinner =
 {
-	//Draw_Pic (x, y, dot[integer(time * 10) % 6]);
+	Draw_Pic (x, y, dot[integer(time * 10) % 6]);
 };
 
 void (string text, integer key) quit =

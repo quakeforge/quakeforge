@@ -1750,3 +1750,19 @@ assign_expr (expr_t *e1, expr_t *e2)
 	e->e.expr.type = type;
 	return e;
 }
+
+expr_t *
+cast_expr (type_t *t, expr_t *e)
+{
+	expr_t    *c;
+
+	if ((t != &type_integer && t != &type_uinteger
+		 && get_type (e) != &type_float)
+		&& (t != &type_float && get_type (e) != &type_integer)) {
+		return error (e, "can not cast from %s to %s",
+					  pr_type_name[extract_type (e)], pr_type_name[t->type]);
+	}
+	c = new_unary_expr ('C', e);
+	c->e.expr.type = t;
+	return c;
+}

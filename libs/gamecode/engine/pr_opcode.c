@@ -126,6 +126,10 @@ opcode_t    pr_opcodes[] = {
 	{"&", "lea",  OP_LEA,  false, ev_pointer, ev_integer, ev_pointer, PROG_VERSION},
 	{"&", "leai", OP_LEAI, false, ev_pointer, ev_short, ev_pointer, PROG_VERSION},
 
+	{"=", "conv.if",   OP_CONV_IF,   false, ev_integer, ev_void, ev_float, PROG_VERSION},
+	{"=", "conv.fi",   OP_CONV_FI,   false, ev_float, ev_void, ev_integer, PROG_VERSION},
+
+
 	{"=", "store.f",   OP_STORE_F,   true, ev_float, ev_float, ev_void, PROG_ID_VERSION},
 	{"=", "store.v",   OP_STORE_V,   true, ev_vector, ev_vector, ev_void, PROG_ID_VERSION},
 	{"=", "store.s",   OP_STORE_S,   true, ev_string, ev_string, ev_void, PROG_ID_VERSION},

@@ -247,6 +247,8 @@ emit_sub_expr (expr_t *e, def_t *dest)
 	opcode_t   *op;
 	const char *operator;
 	def_t      *def_a, *def_b, *d = 0;
+	static expr_t zero;
+	def_t      *tmp = 0;
 
 	switch (e->type) {
 		case ex_block:
@@ -289,63 +291,72 @@ emit_sub_expr (expr_t *e, def_t *dest)
 			d = emit_statement (e->line, op, def_a, def_b, dest);
 			break;
 		case ex_uexpr:
-			if (e->e.expr.op == '!') {
-				operator = "!";
-				def_a = emit_sub_expr (e->e.expr.e1, 0);
-				def_b = &def_void;
-			} else if (e->e.expr.op == '~') {
-				operator = "~";
-				def_a = emit_sub_expr (e->e.expr.e1, 0);
-				def_b = &def_void;
-			} else if (e->e.expr.op == '-') {
-				static expr_t zero;
-
-				zero.type = expr_types[extract_type (e->e.expr.e1)];
-
-				operator = "-";
-				def_a = PR_ReuseConstant (&zero, 0);
-				def_b = emit_sub_expr (e->e.expr.e1, 0);
-				if (!dest) {
-					dest = PR_GetTempDef (e->e.expr.type, pr_scope);
-					dest->users += 2;
-				}
-			} else if (e->e.expr.op == '&') {
-				static expr_t zero;
-				def_t      *tmp = 0;
-
-				zero.type = ex_short;
-
-				operator = "&";
-				if (e->e.expr.e1->type == ex_expr
-					&& e->e.expr.e1->e.expr.op == '.') {
-					tmp = PR_GetTempDef (e->e.expr.type, pr_scope);
-					tmp->users += 2;
-					def_b = emit_sub_expr (&zero, 0);
-				} else {
+			switch (e->e.expr.op) {
+				case '!':
+					operator = "!";
+					def_a = emit_sub_expr (e->e.expr.e1, 0);
 					def_b = &def_void;
-				}
-				def_a = emit_sub_expr (e->e.expr.e1, tmp);
-				if (!dest) {
-					dest = PR_GetTempDef (e->e.expr.type, pr_scope);
-					dest->users += 2;
-				}
-			} else if (e->e.expr.op == '.') {
-				if (!dest
-					&& (e->e.expr.e1->type != ex_pointer
-						|| !(e->e.expr.e1->e.pointer.val > 0
-							 && e->e.expr.e1->e.pointer.val < 65536))) {
-					dest = PR_GetTempDef (e->e.expr.type, pr_scope);
-					dest->users += 2;
-				}
-				if (e->e.expr.e1->type == ex_expr
-					&& e->e.expr.e1->e.expr.op == '&')
-					e->e.expr.e1->e.expr.op = '.';
-				d = emit_sub_expr (e->e.expr.e1, dest);
-				if (!d->name)
-					d->type = e->e.expr.type;
-				return d;
-			} else {
-				abort ();
+					break;
+				case '~':
+					operator = "~";
+					def_a = emit_sub_expr (e->e.expr.e1, 0);
+					def_b = &def_void;
+					break;
+				case '-':
+					zero.type = expr_types[extract_type (e->e.expr.e1)];
+
+					operator = "-";
+					def_a = PR_ReuseConstant (&zero, 0);
+					def_b = emit_sub_expr (e->e.expr.e1, 0);
+					if (!dest) {
+						dest = PR_GetTempDef (e->e.expr.type, pr_scope);
+						dest->users += 2;
+					}
+					break;
+				case '&':
+					zero.type = ex_short;
+
+					operator = "&";
+					if (e->e.expr.e1->type == ex_expr
+						&& e->e.expr.e1->e.expr.op == '.') {
+						tmp = PR_GetTempDef (e->e.expr.type, pr_scope);
+						tmp->users += 2;
+						def_b = emit_sub_expr (&zero, 0);
+					} else {
+						def_b = &def_void;
+					}
+					def_a = emit_sub_expr (e->e.expr.e1, tmp);
+					if (!dest) {
+						dest = PR_GetTempDef (e->e.expr.type, pr_scope);
+						dest->users += 2;
+					}
+					break;
+				case '.':
+					if (!dest
+						&& (e->e.expr.e1->type != ex_pointer
+							|| !(e->e.expr.e1->e.pointer.val > 0
+								 && e->e.expr.e1->e.pointer.val < 65536))) {
+						dest = PR_GetTempDef (e->e.expr.type, pr_scope);
+						dest->users += 2;
+					}
+					if (e->e.expr.e1->type == ex_expr
+						&& e->e.expr.e1->e.expr.op == '&')
+						e->e.expr.e1->e.expr.op = '.';
+					d = emit_sub_expr (e->e.expr.e1, dest);
+					if (!d->name)
+						d->type = e->e.expr.type;
+					return d;
+				case 'C':
+					if (!dest) {
+						dest = PR_GetTempDef (e->e.expr.type, pr_scope);
+						dest->users = 2;
+					}
+					def_a = emit_sub_expr (e->e.expr.e1, 0);
+					def_b = &def_void;
+					operator = "=";
+					break;
+				default:
+					abort ();
 			}
 			op = PR_Opcode_Find (operator, def_a, def_b, dest);
 			d = emit_statement (e->line, op, def_a, def_b, dest);

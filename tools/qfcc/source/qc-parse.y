@@ -695,6 +695,7 @@ expr
 	| expr '%' expr				{ $$ = binary_expr ('%', $1, $3); }
 	| expr '(' arg_list ')'		{ $$ = function_expr ($1, $3); }
 	| expr '(' ')'				{ $$ = function_expr ($1, 0); }
+	| TYPE '(' expr ')'			{ $$ = cast_expr ($1, $3); }
 	| expr '[' expr ']'			{ $$ = array_expr ($1, $3); }
 	| expr '.' expr				{ $$ = binary_expr ('.', $1, $3); }
 	| '+' expr %prec UNARY		{ $$ = $2; }
