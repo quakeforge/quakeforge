@@ -40,14 +40,24 @@ struct inputline_s;
 
 void Cbuf_Progs_Init (struct progs_s *pr);
 void Cbuf_Progs_SetCbuf (struct progs_s *pr, struct cbuf_s *cbuf);
+
 void Cmd_Progs_Init (struct progs_s *pr);
+
 void Cvar_Progs_Init (struct progs_s *pr);
+
 void File_Progs_Init (struct progs_s *pr);
+
 void InputLine_Progs_Init (struct progs_s *pr);
 void InputLine_Progs_SetDraw (struct progs_s *pr,
 							  void (*draw)(struct inputline_s*));
+
 void Key_Progs_Init (struct progs_s *pr);
+
+void QFile_Progs_Init (struct progs_s *pr, int secure);
+int QFile_open (struct progs_s *pr, const char *path, const char *mode);
+
 void String_Progs_Init (struct progs_s *pr);
+
 void StringHash_Progs_Init (struct progs_s *pr);
 
 #endif//__QF_csqc_h

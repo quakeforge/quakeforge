@@ -1,11 +1,8 @@
 #ifndef __ruamoko_file_h
 #define __ruamoko_file_h
 
-struct _file_t = {};
-typedef _file_t [] file_t;
+#include "qfile.h"
 
-@extern file_t (string path, string mode) File_Open;
-@extern void (file_t file) File_Close;
-@extern string (file_t file) File_GetLine;
+@extern QFile (string path, string mode) File_Open;
 
 #endif//__ruamoko_file_h

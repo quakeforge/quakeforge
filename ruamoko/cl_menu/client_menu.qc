@@ -94,17 +94,17 @@ integer save_cursor;
 void () scan_saves =
 {
 	local integer i;
-	local file_t f;
+	local QFile f;
 	for (i = 0; i < MAX_SAVEGAMES; i++) {
 		loadable[i] = 0;
 		filenames[i] = "--- UNUSED SLOT ---";
 		f = File_Open (sprintf ("s%i.sav", i), "rz");
 		if (!f)
 			continue;
-		File_GetLine (f);
-		filenames[i] = String_ReplaceChar ('_', ' ', File_GetLine (f));
+		Qgetline (f);
+		filenames[i] = String_ReplaceChar ('_', ' ', Qgetline (f));
 		loadable[i] = 1;
-		File_Close (f);
+		Qclose (f);
 	}
 };
 

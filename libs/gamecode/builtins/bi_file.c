@@ -59,9 +59,6 @@ int         fnmatch (const char *__pattern, const char *__string, int __flags);
 #include "QF/va.h"
 #include "QF/zone.h"
 
-#define MAX_HANDLES 20
-static QFile *handles[MAX_HANDLES];
-
 static const char *file_ban_list[] = {
 	"default.cfg{,.gz}",
 	"demo1.dem{,.gz}",
@@ -123,7 +120,6 @@ bi_File_Open (progs_t *pr)
 	const char *mode = P_STRING (pr, 1);
 	char       *path;
 	char       *p;
-	int         h;
 	int         do_write = 0;
 	int         do_read = 0;
 
@@ -162,49 +158,16 @@ bi_File_Open (progs_t *pr)
 		goto error;
 	if (do_write && !file_writeable (path))
 		goto error;
-	for (h = 0; h < MAX_HANDLES && handles[h]; h++)
-		;
-	if (h == MAX_HANDLES)
-		goto error;
-	if (!(handles[h] = Qopen (va ("%s/%s", com_gamedir, path), mode)))
-		goto error;
+	R_INT (pr) = QFile_open (pr, va ("%s/%s", com_gamedir, path), mode);
 	free (path);
-	R_INT (pr) = h + 1;
 	return;
 error:
 	free (path);
 	R_INT (pr) = 0;
 }
 
-static void
-bi_File_Close (progs_t *pr)
-{
-	int         h = P_INT (pr, 0) - 1;
-
-	if (h < 0 || h >= MAX_HANDLES || !handles[h])
-		return;
-	Qclose (handles[h]);
-	handles[h] = 0;
-}
-
-static void
-bi_File_GetLine (progs_t *pr)
-{
-	int         h = P_INT (pr, 0) - 1;
-	const char *s;
-
-	if (h < 0 || h >= MAX_HANDLES || !handles[h]) {
-		R_INT (pr) = 0;
-		return;
-	}
-	s = Qgetline (handles[h]);
-	RETURN_STRING (pr, s);
-}
-
 void
 File_Progs_Init (progs_t *pr)
 {
 	PR_AddBuiltin (pr, "File_Open", bi_File_Open, -1);
-	PR_AddBuiltin (pr, "File_Close", bi_File_Close, -1);
-	PR_AddBuiltin (pr, "File_GetLine", bi_File_GetLine, -1);
 }
