@@ -396,7 +396,7 @@ dnl Checks for Linux FBDev support
 AC_ARG_WITH(fbdev,
 [  --with-fbdev            use Linux framebuffer device],
 HAVE_FBDEV=$withval, HAVE_FBDEV=auto)
-if test "x$HAVE_FBDEV" = xyes; then
+if test "x$HAVE_FBDEV" != xno; then
 	dnl We should still be able to compile it even if
 	dnl there is no fbdev support in the running kernel
 	AC_CHECK_HEADERS(linux/fb.h, HAVE_FBDEV=yes, HAVE_FBDEV=no)
