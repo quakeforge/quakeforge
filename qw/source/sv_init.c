@@ -296,6 +296,9 @@ SV_SpawnServer (const char *server)
 	edict_t    *ent;
 	int         i;
 
+// Misty: Lets try this again. HACKHACKHACK
+	realtime = 0;
+
 	Con_DPrintf ("SpawnServer: %s\n", server);
 
 	SV_SaveSpawnparms ();
@@ -353,8 +356,6 @@ SV_SpawnServer (const char *server)
 	}
 
 	sv.time = 1.0;
-// Misty HACKHACKHACK
-	realtime = 0;
 
 	strncpy (sv.name, server, sizeof (sv.name));
 	snprintf (sv.modelname, sizeof (sv.modelname), "maps/%s.bsp", server);
