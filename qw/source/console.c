@@ -314,13 +314,9 @@ Con_Print (const char *fmt, va_list args)
 	int         mask, c, l, y;
 	static int  cr;
 	static char txt[1024];
-	const char *s;
+	char       *s;
 
 	vsnprintf (txt, sizeof (txt), fmt, args);
-
-	// echo to debugging console
-	for (s = txt; *s; s++)
-		fputc (sys_char_map[(byte)*s], stdout);
 
 	// log all messages to file
 	if (con_debuglog)
@@ -337,7 +333,7 @@ Con_Print (const char *fmt, va_list args)
 	} else
 		mask = 0;
 
-	while ((c = *s)) {
+	while ((c = (byte)*s)) {
 		// count word length
 		for (l = 0; l < con_linewidth; l++)
 			if (s[l] <= ' ')
@@ -347,7 +343,7 @@ Con_Print (const char *fmt, va_list args)
 		if (l != con_linewidth && (con->x + l > con_linewidth))
 			con->x = 0;
 
-		s++;
+		*s++ = sys_char_map[c];
 
 		if (cr) {
 			con->current--;
@@ -382,6 +378,9 @@ Con_Print (const char *fmt, va_list args)
 		}
 
 	}
+
+	// echo to debugging console
+	fputs (txt, stdout);
 }
 
 /* DRAWING */
