@@ -195,12 +195,15 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length)
 	ib = data;
 	ob = sc->data;
 
+	os += sc->head;
+	ob += sc->head;
+
 	stepscale = (float) inrate / shm->speed;	// usually 0.5, 1, or 2
 
 	outcount = length / stepscale;
 //printf ("%d %d\n", length, outcount);
 
-	sc->sfx->length = outcount;
+	sc->sfx->length = info->samples / stepscale;
 	if (info->loopstart != -1)
 		sc->sfx->loopstart = info->loopstart / stepscale;
 	else
@@ -285,7 +288,7 @@ SND_ResampleMono (sfxbuffer_t *sc, byte *data, int length)
 		}
 	}
 	{
-		byte       *x = sc->data + outcount * outwidth;
+		byte       *x = sc->data + sc->length * outwidth;
 		if (memcmp (x, "\xde\xad\xbe\xef", 4))
 			Sys_Error ("SND_ResampleMono screwed the pooch %02x%02x%02x%02x",
 					   x[0], x[1], x[2], x[3]);
@@ -309,11 +312,14 @@ SND_ResampleStereo (sfxbuffer_t *sc, byte *data, int length)
 	ib = (stereo8_t *) data;
 	ob = (stereo8_t *) sc->data;
 
+	os += sc->head;
+	ob += sc->head;
+
 	stepscale = (float) inrate / shm->speed;	// usually 0.5, 1, or 2
 
 	outcount = length / stepscale;
 
-	sc->sfx->length = outcount;
+	sc->sfx->length = info->samples / stepscale;
 	if (info->loopstart != -1)
 		sc->sfx->loopstart = info->loopstart / stepscale;
 	else

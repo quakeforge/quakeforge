@@ -88,11 +88,11 @@ static ov_callbacks callbacks = {
 static wavinfo_t
 get_info (OggVorbis_File *vf)
 {
-	wavinfo_t   info;
 	vorbis_info *vi;
 	int         sample_start = -1, sample_count = 0;
 	int         samples;
 	char      **ptr;
+	wavinfo_t   info;
 
 	vi = ov_info (vf, -1);
 	samples = ov_pcm_total (vf, -1);
@@ -156,11 +156,9 @@ load_ogg (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 	sfxbuffer_t *sc = 0;
 	sfx_t      *sfx = block->sfx;
 	void       (*resample)(sfxbuffer_t *, byte *, int);
-	wavinfo_t  info;
+	wavinfo_t  *info = &block->wavinfo;
 
-	info = get_info (vf);
-
-	switch (info.channels) {
+	switch (info->channels) {
 		case 1:
 			resample = SND_ResampleMono;
 			break;
@@ -169,22 +167,21 @@ load_ogg (OggVorbis_File *vf, sfxblock_t *block, cache_allocator_t allocator)
 			break;
 		default:
 			Sys_Printf ("%s: unsupported channel count: %d\n",
-						sfx->name, info.channels);
+						sfx->name, info->channels);
 			return 0;
 	}
 
-	data = malloc (info.datalen);
+	data = malloc (info->datalen);
 	if (!data)
 		goto bail;
-	sc = SND_GetCache (info.samples, info.rate, info.width, info.channels,
+	sc = SND_GetCache (info->samples, info->rate, info->width, info->channels,
 					   block, allocator);
 	if (!sc)
 		goto bail;
 	sc->sfx = sfx;
-	if (read_ogg (vf, data, info.datalen) < 0)
+	if (read_ogg (vf, data, info->datalen) < 0)
 		goto bail;
-	block->wavinfo = info;
-	resample (sc, data, info.samples);
+	resample (sc, data, info->samples);
 	sc->length = sc->head = sfx->length;
   bail:
 	if (data)
@@ -214,14 +211,156 @@ ogg_callback_load (void *object, cache_allocator_t allocator)
 }
 
 static void
-stream_ogg (sfx_t *sfx, OggVorbis_File *vf)
+cache_ogg (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 {
+	sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
+	ov_clear (vf);
+	sfx->data = block;
+	sfx->wavinfo = SND_CacheWavinfo;
+	sfx->touch = SND_CacheTouch;
+	sfx->retain = SND_CacheRetain;
+	sfx->release = SND_CacheRelease;
+
+	block->sfx = sfx;
+	block->file = realname;
+	block->wavinfo = info;
+
+	Cache_Add (&block->cache, block, ogg_callback_load);
+}
+
+static void
+fill_buffer (sfxbuffer_t *buffer, int count)
+{
+	byte        data[65536];
+	float       stepscale;
+	int         bps, bytes, insamples, outsamples;
+	sfx_t      *sfx = buffer->sfx;
+	sfxstream_t *stream = (sfxstream_t *) sfx->data;
+	wavinfo_t  *info = &stream->wavinfo;
+
+	stepscale = (float) info->rate / shm->speed;
+	bps = info->width * info->channels;
+	insamples = sizeof (data) / bps;
+	outsamples = insamples / stepscale;
+
+	bytes = count * bps * stepscale;
+
+	while (bytes > sizeof (data)) {
+		read_ogg (stream->file, data, sizeof (data));
+		stream->resample (buffer, data, insamples);
+		buffer->head += outsamples;
+		count -= outsamples;
+		bytes -= sizeof (data);
+	}
+
+	if (bytes) {
+		int         n = bytes / bps;
+		read_ogg (stream->file, data, bytes);
+		stream->resample (buffer, data, n);
+		buffer->head += count;
+	}
+}
+
+static void
+ogg_advance (sfxbuffer_t *buffer, int count)
+{
+	int         headpos, samples;
+	int         post_count = 0;
+	sfx_t      *sfx = buffer->sfx;
+	sfxstream_t *stream = (sfxstream_t *) sfx->data;
+	wavinfo_t  *info = &stream->wavinfo;
+
+	// find out how many samples the buffer currently holds
+	samples = buffer->head - buffer->tail;
+	if (samples < 0)
+		samples += buffer->length;
+
+	headpos = buffer->pos + samples;
+
+	if (info->loopstart == -1) {
+		// unlooped sound
+		if (headpos == sfx->length)
+			return;					// at end of sample, nothing to do
+		if (headpos + count > sfx->length)
+			count = sfx->length - headpos;	// only advance to end of sample
+	} else {
+		// looped sound
+		if (headpos > sfx->length) {
+			// already handled the loop, nothing to worry about
+		} else {
+			if (headpos + count > sfx->length) {
+				post_count = headpos + count - sfx->length;
+			}
+		}
+	}
+
+	buffer->pos += count;
+	if (samples < count) {
+		buffer->tail = buffer->head = 0;
+		ov_pcm_seek (stream->file, buffer->pos);
+	} else {
+		buffer->tail += count;
+		if (buffer->tail >= buffer->length)
+			buffer->tail -= buffer->length;
+	}
+
+	count -= post_count;
+
+	// find out how many new samples we can fit into the buffer
+	samples = buffer->tail - buffer->head - 1;
+	if (samples < 0)
+		samples += buffer->length;
+
+	while (samples) {
+		count = buffer->length - buffer->head;
+		if (count > samples)
+			count = samples;
+		samples -= count;
+
+		fill_buffer (buffer, count);
+
+		if (buffer->head >= buffer->length)
+			buffer->head = buffer->length;
+	}
+}
+
+static void
+stream_ogg (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
+{
+	sfxstream_t *stream;
+	int          samples;
+	int          size;
+	
+	samples = size = shm->speed * 0.3;
+	if (!snd_loadas8bit->int_val)
+		size *= 2;
+	if (info.channels == 2)
+		size *= 2;
+	stream = calloc (1, sizeof (sfxstream_t) + size);
+	memcpy (stream->buffer.data + size, "\xde\xad\xbe\xef", 4);
+
+	free (realname);
+
+	sfx->data = stream;
+	sfx->wavinfo = SND_CacheWavinfo;
+	sfx->touch = sfx->retain = SND_StreamRetain;
+	sfx->release = SND_StreamRelease;
+
+	stream->sfx = sfx;
+	stream->file = vf;
+	stream->resample = info.channels == 2 ? SND_ResampleStereo
+										  : SND_ResampleMono;
+	stream->wavinfo = info;
+
+	stream->buffer.length = samples;
+	stream->buffer.advance = ogg_advance;
 }
 
 void
 SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 {
 	OggVorbis_File vf;
+	wavinfo_t   info;
 
 	if (ov_open_callbacks (file, &vf, 0, 0, callbacks) < 0) {
 		Sys_Printf ("Input does not appear to be an Ogg bitstream.\n");
@@ -229,22 +368,17 @@ SND_LoadOgg (QFile *file, sfx_t *sfx, char *realname)
 		free (realname);
 		return;
 	}
-	if (ov_pcm_total (&vf, -1) < 8 * shm->speed) {
-		sfxblock_t *block = calloc (1, sizeof (sfxblock_t));
-		ov_clear (&vf);
-		sfx->data = block;
-		sfx->wavinfo = SND_CacheWavinfo;
-		sfx->touch = SND_CacheTouch;
-		sfx->retain = SND_CacheRetain;
-		sfx->release = SND_CacheRelease;
-		block->sfx = sfx;
-		block->file = realname;
-		Cache_Add (&block->cache, block, ogg_callback_load);
+	info = get_info (&vf);
+	if (info.channels < 1 || info.channels > 2) {
+		Sys_Printf ("unsupported number of channels");
+		return;
+	}
+	if (info.samples / info.rate < 3) {
+		printf ("cache %s\n", realname);
+		cache_ogg (sfx, realname, &vf, info);
 	} else {
-		sfx->touch = sfx->retain = SND_StreamRetain;
-		sfx->release = SND_StreamRelease;
-		free (realname);
-		stream_ogg (sfx, &vf);
+		printf ("stream %s\n", realname);
+		stream_ogg (sfx, realname, &vf, info);
 	}
 }
 

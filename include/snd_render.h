@@ -67,6 +67,7 @@ typedef struct sfxstream_s {
 	sfx_t      *sfx;
 	void       *file;
 	wavinfo_t   wavinfo;
+	void       (*resample)(sfxbuffer_t *, byte *, int);
 	sfxbuffer_t buffer;
 } sfxstream_t;
 
