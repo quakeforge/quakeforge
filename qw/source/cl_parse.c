@@ -997,6 +997,9 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 	QFS_StripExtension (s, skin);
 	if (!strequal (s, skin))
 		Info_SetValueForKey (player->userinfo, "skin", skin, 1);
+	s = Info_ValueForKey (player->userinfo, "name");
+	if (!*s)
+		Info_SetValueForKey (player->userinfo, "name", va ("user-%i [exploit]", player->userid), 1);
 	strncpy (player->name, Info_ValueForKey (player->userinfo, "name"),
 			 sizeof (player->name) - 1);
 	player->_topcolor = player->_bottomcolor = -1;
