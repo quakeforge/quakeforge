@@ -100,7 +100,7 @@ PL_SkipSpace (pldata_t *pl)
 {
 	while (pl->pos < pl->end) {
 		char	c = pl->ptr[pl->pos];
-		
+
 		if (!isspace (c)) {
 			if (c == '/' && pl->pos < pl->end - 1) {	// check for comments
 				if (pl->ptr[pl->pos + 1] == '/') {
@@ -207,7 +207,7 @@ PL_ParseQuotedString (pldata_t *pl)
 		pl->error = "Reached end of string while parsing quoted string";
 		return NULL;
 	}
-	
+
 	if (pl->pos - start - shrink == 0) {
 		str = "";
 	} else {
@@ -312,13 +312,13 @@ PL_ParsePropertyListItem (pldata_t *pl)
 
 	if (!PL_SkipSpace (pl))
 		return NULL;
-	
+
 	switch (pl->ptr[pl->pos]) {
 		case '{': {
 			hashtab_t *dict = Hash_NewTable (1021, dict_get_key, dict_free, NULL);
 
 			pl->pos++;
-			
+
 			while (PL_SkipSpace (pl) && pl->ptr[pl->pos] != '}') {
 				plitem_t	*key;
 				plitem_t	*value;
@@ -338,10 +338,9 @@ PL_ParsePropertyListItem (pldata_t *pl)
 					free (key);
 					return NULL;
 				}
-						
 
 				if (pl->ptr[pl->pos] != '=') {
-					pl->error = "Unexpected character (wanted '=')";
+					pl->error = "Unexpected character (expected '=')";
 					free (key->data);
 					free (key);
 					return NULL;
@@ -358,8 +357,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 				if (!(PL_SkipSpace (pl))) {
 					free (key->data);
 					free (key);
-					free (value->data);
-					free (value);
+					PL_FreeItem (value);
 					return NULL;
 				}
 
@@ -369,8 +367,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 					pl->error = "Unexpected character (wanted ';' or '}')";
 					free (key->data);
 					free (key);
-					free (value->data);
-					free (value);
+					PL_FreeItem (value);
 					return NULL;
 				}
 
@@ -380,8 +377,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 					if (!k) {
 						free (key->data);
 						free (key);
-						free (value->data);
-						free (value);
+						PL_FreeItem (value);
 						return NULL;
 					}
 
@@ -397,9 +393,9 @@ PL_ParsePropertyListItem (pldata_t *pl)
 				free (dict);
 				return NULL;
 			}
-			
+
 			pl->pos++;
-			
+
 			item = calloc (1, sizeof (plitem_t));
 			item->type = QFDictionary;
 			item->data = dict;
@@ -413,13 +409,15 @@ PL_ParsePropertyListItem (pldata_t *pl)
 
 			while (PL_SkipSpace (pl) && pl->ptr[pl->pos] != ')') {
 				plitem_t	*value;
-				
+
 				if (!(value = PL_ParsePropertyListItem (pl)))
 					return NULL;
+
 				if (!(PL_SkipSpace (pl))) {
 					free (value);
 					return NULL;
 				}
+
 				if (pl->ptr[pl->pos] == ',') {
 					pl->pos++;
 				} else if (pl->ptr[pl->pos] != ')') {
@@ -427,6 +425,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 					free (value);
 					return NULL;
 				}
+
 				if (a->numvals == MAX_ARRAY_INDEX) {
 					pl->error = "Unexpected character (too many items in array)";
 					free (value);
@@ -435,7 +434,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 				a->values[a->numvals++] = value;
 			}
 			pl->pos++;
-			
+
 			item = calloc (1, sizeof (plitem_t));
 			item->type = QFArray;
 			item->data = a;
