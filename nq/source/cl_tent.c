@@ -370,8 +370,8 @@ CL_ParseTEnt (void)
 		case TE_GUNSHOT:				// bullet hitting wall
 		case TE_BLOOD:					// bullets hitting body
 			if (type == TE_GUNSHOT) {
+				Con_Printf("gunshot ");
 				cnt = 20;
-				type = 0;
 			} else {
 				cnt = MSG_ReadByte (net_message);
 			}
@@ -381,6 +381,7 @@ CL_ParseTEnt (void)
 			pos[1] = MSG_ReadCoord (net_message);
 			pos[2] = MSG_ReadCoord (net_message);
 			R_RunPuffEffect (pos, type, cnt);
+			Con_Printf("%d %d %f %f %f\n", type, cnt, pos[0], pos[1], pos[2]);
 			break;
 
 #ifdef QUAKE2
