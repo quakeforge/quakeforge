@@ -1844,7 +1844,6 @@ AC_OUTPUT(
 	libs/gamecode/Makefile
 	libs/gamecode/engine/Makefile
 	libs/gamecode/builtins/Makefile
-	libs/gib/Makefile
 	libs/models/Makefile
 	libs/models/alias/Makefile
 	libs/models/brush/Makefile
