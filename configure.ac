@@ -1087,7 +1087,7 @@ fi
 
 AC_ARG_ENABLE(optimize,
 	[  --disable-optimize      compile without optimizations (for development)],
-	optimize=$disable_optimize,
+	optimize=$enable_optimize,
 	optimize=yes
 )
 
