@@ -28,7 +28,7 @@ Source:         %{name}-%{version}.tar.gz
 Group:		Amusements/Games
 Copyright:	GPL
 #Icon:		
-Requires:	quakeforge-common, quakeforge-client, quake-game
+Requires:	quakeforge-common, quake-game
 BuildRoot:	/var/tmp/%{name}-%{version}
 Summary:	QuakeForge 3D game engine
 %description
@@ -430,8 +430,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root) %dir	%{fs_sharepath}/id1
 
 %post stub
-if test -f %{fs_sharepath}/id1/pak0.pak; then
-else
+if test ! -f %{fs_sharepath}/id1/pak0.pak; then
 	echo Warning: %{fs_sharepath}/id1/pak0.pak not found
 	echo Install either the shareware or registered quake data in
 	echo %{fs_sharepath}

@@ -1,3 +1,11 @@
+quakeforge (0.5.2-1.1) frozen unstable; urgency=low
+
+  * The "It is a silly place" release.
+  * Fix /etc/quakeforge.conf to load the default plugin, like all the work on
+    the plugins made everyone think it would work. :)
+
+ -- Jeff Teunissen <deek@d2dc.net>  Thu, 10 Oct 2002 00:54:23 -0400
+
 quakeforge (0.5.2-1) frozen unstable; urgency=low
 
   * New release.
