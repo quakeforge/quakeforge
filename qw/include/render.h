@@ -33,14 +33,13 @@
 #include "QF/model.h"
 #include "QF/cvar.h"
 #include "QF/vid.h"
-//#include "model.h" 
-//now we know why (struct model_s *) is used here instead of model_t
-//damn circular reference ! same with player_info_s -- yan
+
+// now we know why (struct model_s *) is used here instead of model_t
+// damn circular reference ! same with player_info_s -- yan
 
 #define	TOP_RANGE		16			// soldier uniform colors
 #define	BOTTOM_RANGE	96
 
-//=============================================================================
 
 // LordHavoc: reindented this after 'Endy was here', also added scale.
 typedef struct entity_s
@@ -59,7 +58,8 @@ typedef struct entity_s
 	float					syncbase;
 
 	struct efrag_s			*efrag; // linked list of efrags (FIXME)
-	int						visframe; // last frame this entity was found in an active leaf, only used for static objects
+	int						visframe; // last frame this entity was found in an
+									  // active leaf, only used for static objects
 
 	float					colormod[3]; // color tint for model
 	float					alpha; // opacity (alpha) of the model
@@ -69,7 +69,8 @@ typedef struct entity_s
 
 	// FIXME: could turn these into a union
 	int						trivial_accept;
-	struct mnode_s			*topnode; // for bmodels, first world node that splits bmodel, or NULL if not split
+	struct mnode_s			*topnode; // for bmodels, first world node that
+									  // splits bmodel, or NULL if not split
 
 	// Animation interpolation
     float                   frame_start_time;
@@ -77,6 +78,7 @@ typedef struct entity_s
     int                     pose1; 
     int                     pose2;
 } entity_t;
+
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct
@@ -109,9 +111,11 @@ typedef struct
 	int			ambientlight;
 } refdef_t;
 
-//
-// refresh
-//
+
+/*
+  REFRESH
+*/
+
 extern	int		reinit_surfcache;
 
 extern	refdef_t	r_refdef;
@@ -121,28 +125,30 @@ extern	struct texture_s	*r_notexture_mip;
 
 extern	entity_t	r_worldentity;
 
+
 void R_Init (void);
 void R_Init_Cvars (void);
-void R_Textures_Init (void);
 void R_InitEfrags (void);
+void R_InitSky (struct texture_s *mt);	// called at level load
+void R_Textures_Init (void);
 void R_RenderView (void);		// must set r_refdef first
 void R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect);
 								// called whenever r_refdef or vid change
-void R_InitSky (struct texture_s *mt);	// called at level load
 
 void R_AddEfrags (entity_t *ent);
 void R_RemoveEfrags (entity_t *ent);
 
 void R_NewMap (void);
 
+
 // LordHavoc: relative bmodel lighting
 void R_PushDlights (vec3_t entorigin);
 void R_DrawWaterSurfaces (void);
 
-//
-// surface cache related
-//
-extern	int		reinit_surfcache;	// if 1, surface cache is currently empty and
+/*
+  Surface cache related
+*/
+extern	int		reinit_surfcache;	// if 1, surface cache is currently empty
 extern qboolean	r_cache_thrash;	// set if thrashing the surface cache
 
 void *D_SurfaceCacheAddress (void);

@@ -40,13 +40,12 @@
 #define	TOP_RANGE		16			// soldier uniform colors
 #define	BOTTOM_RANGE	96
 
-//=============================================================================
 
 typedef struct entity_s
 {
 	qboolean				forcelink;		// model changed
 
-	int keynum; // FIXME: hack to match qw
+	int						keynum; // FIXME: hack to match qw
 	int						update_type;
 
 	entity_state_t			baseline;		// to fill in defaults in updates
@@ -63,14 +62,15 @@ typedef struct entity_s
 	byte					*colormap;
 	int						effects;		// light, particals, etc
 	int						skinnum;		// for Alias models
-	int						visframe;		// last frame this entity was found in an active leaf
-											
+	int						visframe;		// last frame this entity was
+											// found in an active leaf
 	int						dlightframe;	// dynamic lighting
 	int						dlightbits;
 	
 // FIXME: could turn these into a union
 	int						trivial_accept;
-	struct mnode_s			*topnode;		// for bmodels, first world node that splits bmodel, or NULL if not split
+	struct mnode_s			*topnode;	// for bmodels, first world node that
+										// splits bmodel, or NULL if not split
 
 	// Animation interpolation
 	float                   frame_start_time;
@@ -111,11 +111,11 @@ typedef struct
 } refdef_t;
 
 
-//
-// refresh
-//
-extern	int		reinit_surfcache;
+/*
+  REFRESH
+*/
 
+extern	int		reinit_surfcache;
 
 extern	refdef_t	r_refdef;
 extern vec3_t	r_origin, vpn, vright, vup;
@@ -124,12 +124,12 @@ extern	struct texture_s	*r_notexture_mip;
 
 
 void R_Init (void);
-void R_Textures_Init (void);
 void R_InitEfrags (void);
+void R_InitSky (struct texture_s *mt);	// called at level load
+void R_Textures_Init (void);
 void R_RenderView (void);		// must set r_refdef first
 void R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect);
 								// called whenever r_refdef or vid change
-void R_InitSky (struct texture_s *mt);	// called at level load
 
 void R_AddEfrags (entity_t *ent);
 void R_RemoveEfrags (entity_t *ent);
@@ -154,13 +154,14 @@ void R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength);
 void R_LavaSplash (vec3_t org);
 void R_TeleportSplash (vec3_t org);
 
+// LordHavoc: relative bmodel lighting
 void R_PushDlights (vec3_t entorigin);
+void R_DrawWaterSurfaces (void);
 
-
-//
-// surface cache related
-//
-extern	int		reinit_surfcache;	// if 1, surface cache is currently empty and
+/*
+  Surface cache related
+*/
+extern	int		reinit_surfcache;	// if 1, surface cache is currently empty
 extern qboolean	r_cache_thrash;	// set if thrashing the surface cache
 
 void *D_SurfaceCacheAddress (void);
@@ -173,7 +174,7 @@ void R_SetVrect (vrect_t *pvrect, vrect_t *pvrectin, int lineadj);
 void R_DrawBrushModel (entity_t *e);
 void R_DrawWorld (void);
 void R_RenderDlights (void);
-void R_DrawWaterSurfaces (void);
+
 struct msurface_s;
 void R_RenderBrushPoly (struct msurface_s *fa);
 
