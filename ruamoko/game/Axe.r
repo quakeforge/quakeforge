@@ -42,12 +42,8 @@
 	else {
 		sound (s, CHAN_WEAPON, "player/axhit2.wav", 1, ATTN_NORM);
 
-		WriteByte (MSG_MULTICAST, SVC_TEMPENTITY);
-		WriteByte (MSG_MULTICAST, TE_GUNSHOT);
-		WriteByte (MSG_MULTICAST, 3);
-		WriteCoord (MSG_MULTICAST, org_x);
-		WriteCoord (MSG_MULTICAST, org_y);
-		WriteCoord (MSG_MULTICAST, org_z);
+		WriteBytes (MSG_MULTICAST, SVC_TEMPENTITY, TE_GUNSHOT, 3.0);
+		WriteCoordV (MSG_MULTICAST, org);
 		multicast (org, MULTICAST_PVS);
 	}
 }
