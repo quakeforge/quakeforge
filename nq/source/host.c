@@ -54,6 +54,8 @@
 #include "gib.h"
 #include "sv_progs.h"
 
+extern void R_Particles_Init_Cvars (void);
+
 /*
 
 A server can always be started, even if the system started out as a client
@@ -979,6 +981,9 @@ Host_Init (quakeparms_t *parms)
 
 		VID_Init (vid_basepal);
 		IN_Init ();
+
+		Draw_Init_Cvars ();
+		R_Particles_Init_Cvars ();
 
 		Draw_Init ();
 		SCR_Init ();

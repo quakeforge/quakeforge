@@ -130,7 +130,10 @@ Draw_Init (void)
 	r_rectdesc.rowbytes = draw_backtile->width;
 }
 
-
+void
+Draw_Init_Cvars (void)
+{
+}
 
 /*
 ================
