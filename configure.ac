@@ -161,7 +161,19 @@ else
 fi
 
 if test "x$ac_cv_header_pthread_h" = "xyes"; then
-	PTHREAD_FLAGS=-pthread
+	echo $LDFLAGS
+	save_ldflags="$LDFLAGS"
+	LDFLAGS="$LDFLAGS -pthread"
+	AC_TRY_LINK(
+		[#include <pthread.h>],
+		[pthread_attr_t type;
+		 pthread_attr_init(&type);],
+		[PTHREAD_FLAGS=-pthread],
+		[PTHREAD_FLAGS=-lpthread]
+	)
+	LDFLAGS="$save_ldflags"
+	echo $LDFLAGS
+	echo $PTHREAD_FLAGS
 fi
 AC_SUBST(PTHREAD_FLAGS)
 
