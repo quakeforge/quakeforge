@@ -58,8 +58,10 @@ static const char rcsid[] =
 
 aliashdr_t *pheader;
 
-stvert_t    stverts[MAXALIASVERTS];
-mtriangle_t triangles[MAXALIASTRIS];
+stvert_t    *stverts;
+mtriangle_t *triangles;
+int stverts_size = 0;
+int triangles_size = 0;
 
 // a pose is a single set of vertexes.  a frame may be an animating
 // sequence of poses
@@ -196,13 +198,26 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	if (pmodel->numverts <= 0)
 		Sys_Error ("model %s has no vertices", mod->name);
 
-	if (pmodel->numverts > MAXALIASVERTS)
-		Sys_Error ("model %s has too many vertices", mod->name);
+	if (pmodel->numverts > stverts_size)
+	{
+		stverts = realloc (stverts, pmodel->numverts * sizeof (stvert_t));
+		if (!stverts)
+			Sys_Error ("model_alias: out of memory");
+		stverts_size = pmodel->numverts;
+	}
 
 	pmodel->numtris = LittleLong (pinmodel->numtris);
 
 	if (pmodel->numtris <= 0)
 		Sys_Error ("model %s has no triangles", mod->name);
+
+	if (pmodel->numtris > triangles_size)
+	{
+		triangles = realloc (triangles, pmodel->numtris * sizeof (mtriangle_t));
+		if (!triangles)
+			Sys_Error ("model_alias: out of memory");
+		triangles_size = pmodel->numtris;
+	}
 
 	pmodel->numframes = LittleLong (pinmodel->numframes);
 	numframes = pmodel->numframes;
