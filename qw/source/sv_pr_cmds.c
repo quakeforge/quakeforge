@@ -1745,7 +1745,7 @@ PF_SV_FreeClient (progs_t *pr)
 	int         entnum = P_EDICTNUM (pr, 0);
 	client_t   *cl = svs.clients + entnum - 1;
 
-	if (cl->state != cs_server)
+	if (entnum < 1 || entnum > MAX_CLIENTS || cl->state != cs_server)
 		PR_RunError (pr, "not a server client");
 	if (cl->userinfo)
 		Info_Destroy (cl->userinfo);
