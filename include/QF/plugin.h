@@ -91,6 +91,7 @@ typedef struct plugin_s {
 	const char		*copyright;
 	plugin_funcs_t	*functions;
 	plugin_data_t	*data;
+	const char		*full_name;
 } plugin_t;
 
 /*
