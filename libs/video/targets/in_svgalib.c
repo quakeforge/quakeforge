@@ -61,7 +61,6 @@ static unsigned char scantokey[128];
 static int  mouse_buttons;
 static int  mouse_buttonstate;
 static int  mouse_oldbuttonstate;
-static int  mx, my;
 
 static void IN_InitKeyboard (void);
 static void IN_InitMouse (void);
@@ -84,8 +83,8 @@ static void
 mousehandler (int buttonstate, int dx, int dy, int dz, int drx, int dry, int drz)
 {
 	mouse_buttonstate = buttonstate;
-	mx += dx;
-	my += dy;
+	in_mouse_x += dx;
+	in_mouse_y += dy;
 	if (drx > 0) {
 		Key_Event (K_MWHEELUP, 0, 1);
 		Key_Event (K_MWHEELUP, 0, 0);
