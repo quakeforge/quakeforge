@@ -34,7 +34,7 @@ static const char rcsid[] =
 #include <windows.h>
 
 #include "QF/vid.h"
-
+#include "QF/input.h"
 
 void
 VID_RaiseWindow (void)

@@ -47,7 +47,6 @@ extern void IN_MouseEvent (int mstate);
 //extern void IN_MouseMove (usercmd_t *cmd);
 extern void IN_Move (void);
 extern void IN_Accumulate (void);
-extern void IN_ClearStates (void);
 extern void IN_Commands (void);
 
 #endif // _IN_WIN_H

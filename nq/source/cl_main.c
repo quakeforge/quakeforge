@@ -716,6 +716,7 @@ CL_SetState (cactive_t state)
 		r_active = true;
 		game_target = IMT_0;
 		key_dest = key_game;
+		IN_ClearStates ();
 		VID_SetCaption ("");
 	} else {
 		r_active = false;

@@ -1103,6 +1103,7 @@ CL_SetState (cactive_t state)
 		r_active = true;
 		game_target = IMT_0;
 		key_dest = key_game;
+		IN_ClearStates ();
 	} else {
 		r_active = false;
 		game_target = IMT_CONSOLE;

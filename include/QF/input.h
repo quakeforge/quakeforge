@@ -50,6 +50,8 @@ void IN_Shutdown (void);
 void IN_Commands (void);
 // oportunity for devices to stick commands on the script buffer
 
+void IN_ClearStates (void);
+
 void IN_SendKeyEvents (void);
 // Perform Key_Event () callbacks until the input que is empty
 
