@@ -879,43 +879,36 @@ draw_rogue_status (view_t *view)
 static void
 draw_hipnotic_weapons_sbar (view_t *view)
 {
-	int         i;
-	int         flashon;
-	int         grenadeflashing = 0;
+	static int  x[] = {0, 24, 48, 72, 96, 120, 144, 176, 200, 96};
+	static int  h[] = {0, 1, 3};
+	int         flashon, i;
+	qpic_t     *pic;
+	int         mask;
+	float       time;
 
-	draw_weapons_sbar (view);
+	for (i = 0; i < 10; i++) {
+		if (i < 7) {
+			mask = IT_SHOTGUN << i;
+			time = cl.item_gettime[i];
+		} else {
+			mask = 1 << hipweapons[h[i - 7]];
+			time = cl.item_gettime[hipweapons[h[i - 7]]];
+		}
+		if (cl.stats[STAT_ITEMS] & mask) {
+			flashon = calc_flashon (time, mask);
 
-	// hipnotic weapons
-	for (i = 0; i < 4; i++) {
-		if (cl.stats[STAT_ITEMS] & (1 << hipweapons[i])) {
-			flashon = calc_flashon (cl.item_gettime[hipweapons[i]],
-									1 << hipweapons[i]);
-
-			// check grenade launcher
-			switch (i) {
-				default:
-				draw_pic (view, 176 + (i * 24), 0, hsb_weapons[flashon][i]);
-				break;
-				case 2:
-				if (cl.stats[STAT_ITEMS] & HIT_PROXIMITY_GUN) {
-					if (flashon) {
-						grenadeflashing = 1;
-						draw_pic (view, 96, 0, hsb_weapons[flashon][2]);
-					}
-				}
-				break;
-				case 3:
-				if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << 4)) {
-					if (flashon && !grenadeflashing) {
-						draw_pic (view, 96, 0, hsb_weapons[flashon][3]);
-					} else if (!grenadeflashing) {
-						draw_pic (view, 96, 0, hsb_weapons[0][3]);
-					}
-				} else {
-					draw_pic (view, 96, 0, hsb_weapons[flashon][4]);
-				}
-				break;
+			if (i == 4 && cl.stats[STAT_ACTIVEWEAPON] == (1 << hipweapons[3]))
+				continue;
+			if (i == 9 && cl.stats[STAT_ACTIVEWEAPON] != (1 << hipweapons[3]))
+				continue;
+			if (i < 7) {
+				pic = sb_weapons[flashon][i];
+			} else {
+				pic = hsb_weapons[flashon][h[i - 7]];
 			}
+
+			draw_subpic (view, x[i], 0, pic, 0, 0, 24, 16);
+
 			if (flashon > 1)
 				sb_updates = 0;		// force update to remove flash
 		}
@@ -943,7 +936,6 @@ draw_hipnotic_weapons_hud (view_t *view)
 		if (cl.stats[STAT_ITEMS] & mask) {
 			flashon = calc_flashon (time, mask);
 
-			pic = 0;
 			if (i < 7) {
 				pic = sb_weapons[flashon][i];
 			} else {
