@@ -1315,6 +1315,12 @@ AddLinksToPmove (areanode_t *node)
 				pe->model = NULL;
 				VectorCopy (SVFIELD (check, mins, vector), pe->mins);
 				VectorCopy (SVFIELD (check, maxs, vector), pe->maxs);
+				if (sv_fields.rotated_bbox != -1
+					&& SVFIELD (check, rotated_bbox, integer)) {
+					int h = SVFIELD (check, rotated_bbox, integer);
+					extern hull_t pf_hull_list[];
+					pe->hull = &pf_hull_list[h - 1];
+				}
 			}
 		}
 	}

@@ -59,6 +59,7 @@ typedef struct
 	vec3_t	origin;
 	model_t	*model;		// only for bsp models
 	vec3_t	mins, maxs;	// only for non-bsp models
+	hull_t	*hull;		// hey, magic :)
 	int		info;		// for client or server to identify
 } physent_t;
 

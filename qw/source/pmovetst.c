@@ -360,9 +360,13 @@ PM_PlayerMove (vec3_t start, vec3_t end)
 		if (pe->model)
 			hull = &pmove.physents[i].model->hulls[1];
 		else {
-			VectorSubtract (pe->mins, player_maxs, mins);
-			VectorSubtract (pe->maxs, player_mins, maxs);
-			hull = PM_HullForBox (mins, maxs);
+			if (pe->hull) {
+				hull = pe->hull;
+			} else {
+				VectorSubtract (pe->mins, player_maxs, mins);
+				VectorSubtract (pe->maxs, player_mins, maxs);
+				hull = PM_HullForBox (mins, maxs);
+			}
 		}
 
 		// PM_HullForEntity (ent, mins, maxs, offset);
