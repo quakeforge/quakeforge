@@ -1598,6 +1598,7 @@ CL_Init_Memory (void)
 	if (!mem_base)
 		Sys_Error ("Can't allocate %d\n", mem_size);
 
+	Sys_PageIn (mem_base, mem_size);
 	Memory_Init (mem_base, mem_size);
 }
 

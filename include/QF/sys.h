@@ -78,6 +78,7 @@ void Sys_Init_Cvars (void);
 // memory protection
 //
 void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length);
+void Sys_PageIn (void *ptr, int size);
 
 //
 // system IO

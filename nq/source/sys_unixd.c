@@ -143,43 +143,33 @@ int
 main (int argc, const char **argv)
 {
 	double      time, oldtime, newtime;
-	quakeparms_t parms;
-	const char *newargv[256];
-	int         j;
 
 	signal (SIGFPE, SIG_IGN);
 
-	memset (&parms, 0, sizeof (parms));
+	memset (&host_parms, 0, sizeof (host_parms));
 
 	COM_InitArgv (argc, argv);
 
 	// dedicated server ONLY!
 	if (!COM_CheckParm ("-dedicated")) {
+		const char **newargv;
+
+		newargv = malloc ((argc + 2) * sizeof (*newargv));
 		memcpy (newargv, argv, argc * 4);
-		newargv[argc] = "-dedicated";
-		argc++;
+		newargv[argc++] = "-dedicated";
+		newargv[argc] = 0;
 		argv = newargv;
 		COM_InitArgv (argc, argv);
+		host_parms.argc = com_argc;
+		host_parms.argv = com_argv;
 	}
-
-	parms.argc = com_argc;
-	parms.argv = com_argv;
-
-	parms.memsize = 16 * 1024 * 1024;
-
-	j = COM_CheckParm ("-mem");
-	if (j)
-		parms.memsize = (int) (atof (com_argv[j + 1]) * 1024 * 1024);
-	if ((parms.membase = malloc (parms.memsize)) == NULL)
-		Sys_Error ("Can't allocate %d\n", parms.memsize);
 
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
 
 	Sys_RegisterShutdown (Host_Shutdown);
 	Sys_RegisterShutdown (shutdown);
 
-	Sys_Printf ("Host_Init\n");
-	Host_Init (&parms);
+	Host_Init ();
 
 	oldtime = Sys_DoubleTime () - 0.1;
 	while (1) {							// Main message loop

@@ -71,6 +71,8 @@ cvar_t     *sys_extrasleep;
 cvar_t     *sys_dead_sleep;
 cvar_t     *sys_sleep;
 
+int         sys_checksum;
+
 static sys_printf_t sys_printf_function = Sys_StdPrintf;
 
 typedef struct shutdown_list_s {
@@ -364,4 +366,25 @@ Sys_TimeID (void) //FIXME I need a new name, one that doesn't make me feel 3 fee
 	val = ((int) (getpid () + getuid () * 1000) * time (NULL)) & 0xffff;
 #endif
 	return val;
+}
+
+void
+Sys_PageIn (void *ptr, int size)
+{
+//may or may not be useful in linux #ifdef WIN32
+	byte       *x;
+	int         m, n;
+
+	// touch all the memory to make sure it's there. The 16-page skip is to
+	// keep Win 95 from thinking we're trying to page ourselves in (we are
+	// doing that, of course, but there's no reason we shouldn't)
+	x = (byte *) ptr;
+
+	for (n = 0; n < 4; n++) {
+		for (m = 0; m < (size - 16 * 0x1000); m += 4) {
+			sys_checksum += *(int *) &x[m];
+			sys_checksum += *(int *) &x[m + 16 * 0x1000];
+		}
+	}
+//#endif
 }

@@ -61,7 +61,7 @@ extern	double		realtime;			// not bounded in any way, changed at
 void Host_ClearMemory (void);
 void Host_ServerFrame (void);
 void Host_InitCommands (void);
-void Host_Init (quakeparms_t *parms);
+void Host_Init ();
 void Host_Skin_Init (void);
 void Host_Skin_Init_Cvars (void);
 void Host_Shutdown(void);

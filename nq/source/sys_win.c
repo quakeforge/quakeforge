@@ -77,27 +77,6 @@ void        MaskExceptions (void);
 void        Sys_PushFPCW_SetHigh (void);
 void        Sys_PopFPCW (void);
 
-volatile int sys_checksum;
-
-
-void
-Sys_PageIn (void *ptr, int size)
-{
-	byte       *x;
-	int         m, n;
-
-	// touch all the memory to make sure it's there. The 16-page skip is to
-	// keep Win 95 from thinking we're trying to page ourselves in (we are
-	// doing that, of course, but there's no reason we shouldn't)
-	x = (byte *) ptr;
-
-	for (n = 0; n < 4; n++) {
-		for (m = 0; m < (size - 16 * 0x1000); m += 4) {
-			sys_checksum += *(int *) &x[m];
-			sys_checksum += *(int *) &x[m + 16 * 0x1000];
-		}
-	}
-}
 
 // FILE IO ====================================================================
 
@@ -293,7 +272,6 @@ int         WINAPI
 WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		 int nCmdShow)
 {
-	quakeparms_t parms;
 	double      time, oldtime, newtime;
 	MEMORYSTATUS lpBuffer;
 	static char cwd[1024];
@@ -316,16 +294,16 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	if (cwd[strlen (cwd) - 1] == '/')
 		cwd[strlen (cwd) - 1] = 0;
 
-	parms.argc = 1;
+	host_parms.argc = 1;
 	argv[0] = empty_string;
 
-	while (*lpCmdLine && (parms.argc < MAX_NUM_ARGVS)) {
+	while (*lpCmdLine && (host_parms.argc < MAX_NUM_ARGVS)) {
 		while (*lpCmdLine && ((*lpCmdLine <= 32) || (*lpCmdLine > 126)))
 			lpCmdLine++;
 
 		if (*lpCmdLine) {
-			argv[parms.argc] = lpCmdLine;
-			parms.argc++;
+			argv[host_parms.argc] = lpCmdLine;
+			host_parms.argc++;
 
 			while (*lpCmdLine && ((*lpCmdLine > 32) && (*lpCmdLine <= 126)))
 				lpCmdLine++;
@@ -337,12 +315,9 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		}
 	}
 
-	parms.argv = argv;
-
-	COM_InitArgv (parms.argc, (const char**)parms.argv);
-
-	parms.argc = com_argc;
-	parms.argv = com_argv;
+	COM_InitArgv (host_parms.argc, (const char**)host_parms.argv);
+	host_parms.argc = com_argc;
+	host_parms.argv = com_argv;
 
 	isDedicated = (COM_CheckParm ("-dedicated") != 0);
 
@@ -365,6 +340,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 			SetForegroundWindow (hwnd_dialog);
 		}
 	}
+#if 0
 	// take the greater of all the available memory or half the total memory,
 	// but at least 8 Mb and no more than 16 Mb, unless they explicitly
 	// request otherwise
@@ -378,20 +354,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 
 	if (parms.memsize > MAXIMUM_WIN_MEMORY)
 		parms.memsize = MAXIMUM_WIN_MEMORY;
-
-	if (COM_CheckParm ("-mem")) {
-		t = COM_CheckParm ("-mem") + 1;
-
-		if (t < com_argc)
-			parms.memsize = atoi (com_argv[t]) * 1024 * 1024;
-	}
-
-	parms.membase = malloc (parms.memsize);
-
-	if (!parms.membase)
-		Sys_Error ("Not enough memory free; check disk space\n");
-
-	Sys_PageIn (parms.membase, parms.memsize);
+#endif
 
 	tevent = CreateEvent (NULL, FALSE, FALSE, NULL);
 
@@ -431,8 +394,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	Sys_RegisterShutdown (Host_Shutdown);
 	Sys_RegisterShutdown (shutdown);
 
-	Con_Printf ("Host_Init\n");
-	Host_Init (&parms);
+	Host_Init ();
 
 	oldtime = Sys_DoubleTime ();
 

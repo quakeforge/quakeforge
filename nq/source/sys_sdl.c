@@ -164,7 +164,6 @@ Sys_LowFPPrecision (void)
 int
 SDL_main (int c, char **v)
 {
-	int         j;
 	double      time, oldtime, newtime;
 
 #ifndef WIN32
@@ -177,18 +176,6 @@ SDL_main (int c, char **v)
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 
-	host_parms.memsize = 16 * 1024 * 1024;	// 16MB default heap
-
-	j = COM_CheckParm ("-mem");
-	if (j)
-		host_parms.memsize = (int) (atof (com_argv[j + 1]) * 1024 * 1024);
-	host_parms.membase = malloc (host_parms.memsize);
-
-	if (!host_parms.membase) {
-		Con_Printf ("Can't allocate memory for zone.\n");
-		return 1;
-	}
-
 #ifndef WIN32
 	noconinput = COM_CheckParm ("-noconinput");
 	if (!noconinput)
@@ -198,7 +185,7 @@ SDL_main (int c, char **v)
 	Sys_RegisterShutdown (Host_Shutdown);
 	Sys_RegisterShutdown (shutdown);
 
-	Host_Init (&host_parms);
+	Host_Init ();
 
 	oldtime = Sys_DoubleTime ();
 	while (1) {

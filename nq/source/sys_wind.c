@@ -126,14 +126,10 @@ const char       *newargv[256];
 int
 main (int argc, const char **argv)
 {
-	quakeparms_t parms;
 	double      time, oldtime;
 
-	memset (&parms, 0, sizeof (parms));
+	memset (&host_parms, 0, sizeof (host_parms));
 
-	parms.memsize = 16384 * 1024;
-	if (!(parms.membase = malloc (parms.memsize)))
-		Sys_Error ("Can't allocate %d\n", parms.memsize);
 #if 0
 	_getcwd (cwd, sizeof (cwd));
 	if (cwd[Q_strlen (cwd) - 1] == '\\')
@@ -150,14 +146,13 @@ main (int argc, const char **argv)
 		COM_InitArgv (argc, argv);
 	}
 
-	parms.argc = com_argc;
-	parms.argv = com_argv;
+	host_parms.argc = com_argc;
+	host_parms.argv = com_argv;
 
 	Sys_RegisterShutdown (Host_Shutdown);
 	Sys_RegisterShutdown (shutdown);
 
-	Con_Printf ("Host_Init\n");
-	Host_Init (&parms);
+	Host_Init ();
 
 	oldtime = Sys_DoubleTime ();
 

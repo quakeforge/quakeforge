@@ -96,6 +96,8 @@ byte       *vid_basepal;
 cvar_t     *fs_globalcfg;
 cvar_t     *fs_usercfg;
 
+cvar_t     *host_mem_size;
+
 cvar_t     *host_framerate;
 cvar_t     *host_speeds;
 
@@ -279,7 +281,7 @@ Host_WriteConfiguration (void)
 
 	// dedicated servers initialize the host but don't parse and set the
 	// config.cfg cvars
-	if (!isDedicated && cl_writecfg->int_val && host_initialized) {
+	if (host_initialized && !isDedicated && cl_writecfg->int_val) {
 		char       *path = va ("%s/config.cfg", com_gamedir);
 		f = Qopen (path, "w");
 		if (!f) {
@@ -859,24 +861,47 @@ check_quakerc (void)
 }
 
 void
-Host_Init (quakeparms_t *parms)
+CL_Init_Memory (void)
 {
+	int         mem_parm = COM_CheckParm ("-mem");
+	int         mem_size;
+	void       *mem_base;
+
 	if (standard_quake)
 		minimum_memory = MINIMUM_MEMORY;
 	else
 		minimum_memory = MINIMUM_MEMORY_LEVELPAK;
 
+	host_mem_size = Cvar_Get ("host_mem_size", "16", CVAR_NONE, NULL,
+							  "Amount of memory (in MB) to allocate for the "
+							  PROGRAM " heap");
+	if (mem_parm)
+		Cvar_Set (host_mem_size, com_argv[mem_parm + 1]);
+
 	if (COM_CheckParm ("-minmemory"))
-		parms->memsize = minimum_memory;
+		Cvar_SetValue (host_mem_size, minimum_memory / (1024 * 1024.0));
 
-	host_parms = *parms;
+	Cvar_SetFlags (host_mem_size, host_mem_size->flags | CVAR_ROM);
 
-	if (parms->memsize < minimum_memory)
-		Sys_Error ("Only %4.1fMB of memory available, can't execute game",
-				   parms->memsize / (float) 0x100000);
+	mem_size = (int) (host_mem_size->value * 1024 * 1024);
 
-	com_argc = parms->argc;
-	com_argv = parms->argv;
+	if (mem_size < minimum_memory)
+		Sys_Error ("Only %4.1f megs of memory reported, can't execute game",
+				   mem_size / (float) 0x100000);
+
+	mem_base = malloc (mem_size);
+
+	if (!mem_base)
+		Sys_Error ("Can't allocate %d\n", mem_size);
+
+	Sys_PageIn (mem_base, mem_size);
+	Memory_Init (mem_base, mem_size);
+}
+
+void
+Host_Init (void)
+{
+	Con_Printf ("Host_Init\n");
 
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
@@ -913,7 +938,7 @@ Host_Init (quakeparms_t *parms)
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute_Sets ();
 
-	Memory_Init (parms->membase, parms->memsize);
+	CL_Init_Memory ();
 
 	pr_gametype = "netquake";
 
@@ -958,7 +983,7 @@ Host_Init (quakeparms_t *parms)
 
 	GIB_Init ();
 
-	Host_InitVCR (parms);
+	Host_InitVCR (&host_parms);
 	Host_InitLocal ();
 
 	NET_Init ();
@@ -972,7 +997,7 @@ Host_Init (quakeparms_t *parms)
 	SV_Init ();
 
 //	Con_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
-	Con_Printf ("%4.1f megabyte heap\n", parms->memsize / (1024 * 1024.0));
+	Con_Printf ("%4.1f megabyte heap\n", host_mem_size->value);
 
 	if (cls.state != ca_dedicated) {
 		vid_basepal = (byte *) COM_LoadHunkFile ("gfx/palette.lmp");
