@@ -70,9 +70,13 @@ Generate debugging info. Synonym for \fB\-\-code debug\fP.
 .B \-h, \-\-help
 Show summary of options.
 .TP
-.B \-I, \-\-include DIR
+.B \-I DIR
 Add DIR to the list of directories for the preprocessor to search when looking
 for include files.
+.TP
+.B \-\-include FILE
+Process FILE as if \fB#include "FILE"\fP appeared as the first line of
+the primary source file. See the cpp man page (\fB\-include\fP) for details.
 .TP
 .B \-L DIR
 Add DIR to the search path used for -l.

@@ -74,7 +74,7 @@ static struct option const long_options[] = {
 	{"advanced", no_argument, 0, 258},
 	{"strip-path", required_argument, 0, 'p'},
 	{"define", required_argument, 0, 'D'},
-	{"include", required_argument, 0, 'I'},
+	{"include", required_argument, 0, 259},
 	{"undefine", required_argument, 0, 'U'},
 	{"cpp", required_argument, 0, 256},
 	{"notice", required_argument, 0, 'N'},
@@ -134,10 +134,13 @@ usage (int status)
 "    -h, --help                Display this help and exit\n"
 "    -V, --version             Output version information and exit\n\n"
 "    -S, --save-temps          Do not delete temporary files\n"
-"    -D, --define SYMBOL[=VAL],...  Define symbols for the preprocessor\n"
-"    -I, --include DIR,...          Set directories for the preprocessor\n"
-"                                   to search for #includes\n"
-"    -U, --undefine SYMBOL,...      Undefine preprocessor symbols\n"
+"    -D, --define SYMBOL[=VAL] Define symbols for the preprocessor\n"
+"    -I DIR                    Set directories for the preprocessor\n"
+"                              to search for #includes\n"
+"        --include FILE        Process file as if `#include \"file\"'\n"
+"                              appeared as the first line of the primary\n"
+"                              source file.\n"
+"    -U, --undefine SYMBOL     Undefine preprocessor symbols\n"
 "        --cpp CPPSPEC         cpp execution command line\n"
 "    -L DIR                    Add linker library search path\n"
 "    -l LIB                    Link with libLIB.a\n"
@@ -349,47 +352,18 @@ DecodeArgs (int argc, char **argv)
 			case 'S':					// save temps
 				options.save_temps = true;
 				break;
-			case 'D':{					// defines for cpp
-					add_cpp_def (nva ("%s%s", "-D", optarg));
-#if 0
-					char       *opts = strdup (optarg);
-					char       *temp = strtok (opts, ",");
-
-					while (temp) {
-						add_cpp_def (nva ("%s%s", "-D", temp));
-						temp = strtok (NULL, ",");
-					}
-					free (opts);
-#endif
-				}
+			case 'D':					// defines for cpp
+				add_cpp_def (nva ("%s%s", "-D", optarg));
 				break;
-			case 'I':{					// includes
-					add_cpp_def (nva ("%s%s", "-I", optarg));
-#if 0
-					char       *opts = strdup (optarg);
-					char       *temp = strtok (opts, ",");
-
-					while (temp) {
-						add_cpp_def (nva ("%s%s", "-I", temp));
-						temp = strtok (NULL, ",");
-					}
-					free (opts);
-#endif
-				}
+			case 259:					// include-file
+				add_cpp_def (nva ("%s", "-include"));
+				add_cpp_def (nva ("%s", optarg));
 				break;
-			case 'U':{					// undefines
-					add_cpp_def (nva ("%s%s", "-U", optarg));
-#if 0
-					char       *opts = strdup (optarg);
-					char       *temp = strtok (opts, ",");
-
-					while (temp) {
-						add_cpp_def (nva ("%s%s", "-U", temp));
-						temp = strtok (NULL, ",");
-					}
-					free (opts);
-#endif
-				}
+			case 'I':					// includes
+				add_cpp_def (nva ("%s%s", "-I", optarg));
+				break;
+			case 'U':					// undefines
+				add_cpp_def (nva ("%s%s", "-U", optarg));
 				break;
 			case 'M':
 				if (optarg) {
