@@ -37,13 +37,16 @@
 #endif
 
 #include "compat.h"
+#include "r_cvar.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/texture.h"
 
-#include "glquake.h"
+#include "QF/GL/defines.h"
+#include "QF/GL/funcs.h"
+#include "QF/GL/qf_textures.h"
 
 static byte translate[256];
 static unsigned int translate32[256];
@@ -134,12 +137,12 @@ build_skin_32 (byte * original, int tinwidth, int tinheight,
 		}
 	}
 
-	glTexImage2D (GL_TEXTURE_2D, 0, samples,
+	QFGL_glTexImage2D (GL_TEXTURE_2D, 0, samples,
 				  scaled_width, scaled_height, 0, GL_RGBA,
 				  GL_UNSIGNED_BYTE, pixels);
 
-	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
 static void
@@ -150,7 +153,7 @@ build_skin (int texnum, byte *ptexels, int width, int height,
 
 	// because this happens during gameplay, do it fast
 	// instead of sending it through GL_Upload8()
-	glBindTexture (GL_TEXTURE_2D, texnum);
+	QFGL_glBindTexture (GL_TEXTURE_2D, texnum);
 
 	// FIXME deek: This 512x256 limit sucks!
 	scaled_width = min (gl_max_size->int_val, 512);

@@ -691,7 +691,6 @@ Sbar_DrawNormal (void)
 	// armor
 	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
 		Sbar_DrawNum (24, 0, 666, 3, 1);
-		Sbar_DrawPic (0, 0, draw_disc);
 	} else {
 		Sbar_DrawNum (24, 0, cl.stats[STAT_ARMOR], 3,
 					  cl.stats[STAT_ARMOR] <= 25);

@@ -1,7 +1,7 @@
 /*
-	varrays.h
+	gl_textures.h
 
-	OpenGL-specific definitions and prototypes
+	GL texture stuff from the renderer.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -26,8 +26,8 @@
 	$Id$
 */
 
-#ifndef __qf_varrays_h
-#define __qf_varrays_h
+#ifndef __gl_textures_h
+#define __gl_textures_h
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -37,28 +37,17 @@
 # include <windows.h>
 #endif
 
-#include "QF/GL/types.h"
+#include "QF/qtypes.h"
 
-typedef struct varray_t2f_c4f_v3f_s {
-	 GLfloat	texcoord[2];
-	 GLfloat	color[4];
-	 GLfloat	vertex[3];
-} varray_t2f_c4f_v3f_t;
+#define MAX_GLTEXTURES	2048
 
-typedef struct varray_t2f_c4ub_v3f_s {
-	 GLfloat	texcoord[2];
-	 GLubyte	color[4];
-	 GLfloat	vertex[3];
-} varray_t2f_c4ub_v3f_t;
+extern int gl_alpha_format;
+extern int gl_solid_format;
+extern int gl_lightmap_format;
 
-typedef struct varray_t2f_c4f_n3f_v3f_s {
-	 GLfloat	texcoord[2];
-	 GLfloat	color[4];
-	 GLfloat	normal[3];
-	 GLfloat	vertex[3];
-} varray_t2f_c4f_n3f_v3f_t;
+void GL_Upload8 (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
+void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
+int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, int bytesperpixel);
+int GL_FindTexture (char *identifier);
 
-#define MAX_VARRAY_VERTS	10000
-extern varray_t2f_c4f_v3f_t varray[MAX_VARRAY_VERTS];
-
-#endif // __qf_varrays_h
+#endif // __gl_textures_h

@@ -37,14 +37,15 @@
 # include <strings.h>
 #endif
 
-#include <GL/glx.h>
-
+#include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <X11/cursorfont.h>
 
 #ifdef HAVE_DGA
 # include <X11/extensions/xf86dga.h>
 #endif
+
+#include <dlfcn.h>
 
 #include "QF/cmd.h"
 #include "compat.h"
@@ -54,15 +55,38 @@
 #include "QF/qendian.h"
 #include "QF/va.h"
 #include "QF/vid.h"
+#include "QF/GL/funcs.h"
+#include "QF/sys.h"
 
 #include "context_x11.h"
-#include "glquake.h"
 #include "sbar.h"
+#include "QF/cvar.h"
+#include "r_cvar.h"
 
 #define WARP_WIDTH		320
 #define WARP_HEIGHT 	200
 
+/*
+** GLXContext is a pointer to opaque data.
+*/
+typedef struct __GLXcontextRec *GLXContext;
+
+#define GLX_RGBA                4       /* true if RGBA mode */
+#define GLX_DOUBLEBUFFER        5       /* double buffering supported */
+#define GLX_RED_SIZE            8       /* number of red component bits */
+#define GLX_GREEN_SIZE          9       /* number of green component bits */
+#define GLX_BLUE_SIZE           10      /* number of blue component bits */
+#define GLX_DEPTH_SIZE          12      /* number of depth bits */
+
 static GLXContext ctx = NULL;
+typedef XID GLXDrawable;
+
+void (* QFGLX_glXSwapBuffers) (Display *dpy, GLXDrawable drawable);
+XVisualInfo* (* QFGLX_glXChooseVisual) (Display *dpy, int screen, int *attribList);
+GLXContext (* QFGLX_glXCreateContext) (Display *dpy, XVisualInfo *vis, GLXContext shareList, Bool direct);
+Bool (* QFGLX_glXMakeCurrent) (Display *dpy, GLXDrawable drawable, GLXContext ctx);
+
+
 
 extern void GL_Init_Common (void);
 extern void VID_Init8bitPalette (void);
@@ -73,6 +97,7 @@ const char *gl_vendor;
 const char *gl_renderer;
 const char *gl_version;
 const char *gl_extensions;
+void *libgl_handle;
 
 void
 VID_Shutdown (void)
@@ -123,8 +148,8 @@ GL_Init (void)
 void
 GL_EndRendering (void)
 {
-	glFlush ();
-	glXSwapBuffers (x_disp, x_win);
+	QFGL_glFlush ();
+	QFGLX_glXSwapBuffers (x_disp, x_win);
 	Sbar_Changed ();
 }
 
@@ -146,6 +171,36 @@ VID_Init (unsigned char *palette)
 		GLX_DEPTH_SIZE, 1,
 		None
 	};
+
+	libgl_handle = dlopen (gl_libgl->string, RTLD_NOW);
+	if (!libgl_handle) {
+		Con_Printf("Can't open libgl %s: %s\n", gl_libgl->string, dlerror());
+		return;
+	}
+
+	QFGLX_glXSwapBuffers = dlsym(libgl_handle, "glXSwapBuffers");
+	if (!QFGLX_glXSwapBuffers) {
+		Sys_Error(va("Can't load symbol glXSwapBuffers: %s\n", dlerror()));
+		return;
+	}
+
+	QFGLX_glXChooseVisual = dlsym(libgl_handle, "glXChooseVisual");
+	if (!QFGLX_glXChooseVisual) {
+		Sys_Error(va("Can't load symbol glXChooseVisual: %s\n", dlerror()));
+		return;
+	}
+
+	QFGLX_glXCreateContext = dlsym(libgl_handle, "glXCreateContext");
+	if (!QFGLX_glXCreateContext) {
+		Sys_Error(va("Can't load symbol glXCreateContext: %s\n", dlerror()));
+		return;
+	}
+
+	QFGLX_glXMakeCurrent = dlsym(libgl_handle, "glXMakeCurrent");
+	if (!QFGLX_glXMakeCurrent) {
+		Sys_Error(va("Can't load symbol glXMakeCurrent: %s\n", dlerror()));
+		return;
+	}
 
 	Cmd_AddCommand ("vid_center", VID_Center_f, "Center the view port on the quake window in a virtual desktop.\n");
 
@@ -179,7 +234,7 @@ VID_Init (unsigned char *palette)
 
 	X11_OpenDisplay ();
 
-	x_visinfo = glXChooseVisual (x_disp, x_screen, attrib);
+	x_visinfo = QFGLX_glXChooseVisual (x_disp, x_screen, attrib);
 	if (!x_visinfo) {
 		fprintf (stderr,
 				 "Error couldn't get an RGB, Double-buffered, Depth visual\n");
@@ -196,9 +251,9 @@ VID_Init (unsigned char *palette)
 
 	XSync (x_disp, 0);
 
-	ctx = glXCreateContext (x_disp, x_visinfo, NULL, True);
+	ctx = QFGLX_glXCreateContext (x_disp, x_visinfo, NULL, True);
 
-	glXMakeCurrent (x_disp, x_win, ctx);
+	QFGLX_glXMakeCurrent (x_disp, x_win, ctx);
 
 	vid.height = vid.conheight = min (vid.conheight, scr_height);
 	vid.width = vid.conwidth = min (vid.conwidth, scr_width);

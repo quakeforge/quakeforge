@@ -62,6 +62,7 @@ cvar_t     *gl_fb_models;
 cvar_t     *gl_fires;
 cvar_t     *gl_keeptjunctions;
 cvar_t     *gl_lerp_anim;
+cvar_t     *gl_libgl;
 cvar_t     *gl_lightmap_components;
 cvar_t     *gl_max_size;
 cvar_t     *gl_nocolors;
@@ -72,6 +73,7 @@ cvar_t     *gl_sky_clip;
 cvar_t     *gl_skymultipass;
 cvar_t     *gl_texsort;
 cvar_t     *gl_triplebuffer;
+cvar_t     *gl_occlusion;
 
 cvar_t     *r_aliasstats;
 cvar_t     *r_aliastransadj;
@@ -167,6 +169,8 @@ R_Init_Cvars (void)
 								  "upon level load");
 	gl_lerp_anim = Cvar_Get ("gl_lerp_anim", "1", CVAR_ARCHIVE, NULL,
 							 "Toggles model animation interpolation");
+	gl_libgl = Cvar_Get ("gl_libgl", "libGL.so.1", CVAR_ROM, NULL,
+						 "The GL library to use. (path optional)");
 	gl_lightmap_components = Cvar_Get ("gl_lightmap_components", "4", CVAR_ROM,
 									   NULL, "Lightmap texture components. 1 "
 									   "is greyscale, 3 is RGB, 4 is RGBA.");
@@ -187,6 +191,8 @@ R_Init_Cvars (void)
 	gl_skymultipass = Cvar_Get ("gl_skymultipass", "1", CVAR_ARCHIVE, NULL,
 								"controls whether the skydome is single or "
 								"double pass");
+	gl_occlusion = Cvar_Get ("gl_occlusion", "0", CVAR_NONE, NULL, 
+							 "Toggles experimental alias model occlusion tests.");
 	gl_texsort = Cvar_Get ("gl_texsort", "1", CVAR_NONE, NULL, "None");
 	gl_triplebuffer = Cvar_Get ("gl_triplebuffer", "1", CVAR_ARCHIVE, NULL,
 								"Set to 1 by default. Fixes status bar "

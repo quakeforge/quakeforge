@@ -1,7 +1,7 @@
 /*
-	varrays.h
+	gl_rsurf.h
 
-	OpenGL-specific definitions and prototypes
+	GL texture stuff from the renderer.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -26,8 +26,8 @@
 	$Id$
 */
 
-#ifndef __qf_varrays_h
-#define __qf_varrays_h
+#ifndef __QF_GL_rsurf_h
+#define __QF_GL_rsurf_h
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -37,28 +37,11 @@
 # include <windows.h>
 #endif
 
-#include "QF/GL/types.h"
+extern int skytexturenum;		// index in cl.loadmodel, not gl texture object
+extern int mirrortexturenum;	// quake texturenum, not gltexturenum
 
-typedef struct varray_t2f_c4f_v3f_s {
-	 GLfloat	texcoord[2];
-	 GLfloat	color[4];
-	 GLfloat	vertex[3];
-} varray_t2f_c4f_v3f_t;
+void GL_BuildLightmaps (struct model_s **models, int num_models);
+void R_DrawBrushModel (struct entity_s *e);
+void R_DrawWorld (void);
 
-typedef struct varray_t2f_c4ub_v3f_s {
-	 GLfloat	texcoord[2];
-	 GLubyte	color[4];
-	 GLfloat	vertex[3];
-} varray_t2f_c4ub_v3f_t;
-
-typedef struct varray_t2f_c4f_n3f_v3f_s {
-	 GLfloat	texcoord[2];
-	 GLfloat	color[4];
-	 GLfloat	normal[3];
-	 GLfloat	vertex[3];
-} varray_t2f_c4f_n3f_v3f_t;
-
-#define MAX_VARRAY_VERTS	10000
-extern varray_t2f_c4f_v3f_t varray[MAX_VARRAY_VERTS];
-
-#endif // __qf_varrays_h
+#endif // __QF_GL_rsurf_h

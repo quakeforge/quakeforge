@@ -32,7 +32,10 @@
 
 #include <stdlib.h>
 
-#include "glquake.h"
+#include "QF/GL/defines.h"
+#include "QF/GL/qf_vid.h"
+#include "QF/GL/funcs.h"
+#include "QF/qtypes.h"
 
 extern void noise_diamondsquare(unsigned char *noise, int size);
 extern void noise_plasma(unsigned char *noise, int size);
@@ -80,10 +83,10 @@ GDT_InitDotParticleTexture (void)
 		}
 	}
 	part_tex_dot = texture_extension_number++;
-	glBindTexture (GL_TEXTURE_2D, part_tex_dot);
-	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexImage2D (GL_TEXTURE_2D, 0, 2, 16, 16, 0, GL_LUMINANCE_ALPHA,
+	QFGL_glBindTexture (GL_TEXTURE_2D, part_tex_dot);
+	QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	QFGL_glTexImage2D (GL_TEXTURE_2D, 0, 2, 16, 16, 0, GL_LUMINANCE_ALPHA,
 		      GL_UNSIGNED_BYTE, data);
 }
 
@@ -112,10 +115,10 @@ GDT_InitSparkParticleTexture (void)
 		}
 	}
 	part_tex_spark = texture_extension_number++;
-	glBindTexture (GL_TEXTURE_2D, part_tex_spark);
-	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexImage2D (GL_TEXTURE_2D, 0, 2, 16, 16, 0, GL_LUMINANCE_ALPHA,
+	QFGL_glBindTexture (GL_TEXTURE_2D, part_tex_spark);
+	QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	QFGL_glTexImage2D (GL_TEXTURE_2D, 0, 2, 16, 16, 0, GL_LUMINANCE_ALPHA,
 		      GL_UNSIGNED_BYTE, data);
 }
 
@@ -150,10 +153,10 @@ GDT_InitSmokeParticleTexture (void)
 			}
 		}
 		part_tex_smoke[i] = texture_extension_number++;
-		glBindTexture (GL_TEXTURE_2D, part_tex_smoke[i]);
-		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D (GL_TEXTURE_2D, 0, 2, 32, 32, 0, GL_LUMINANCE_ALPHA,
+		QFGL_glBindTexture (GL_TEXTURE_2D, part_tex_smoke[i]);
+		QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		QFGL_glTexImage2D (GL_TEXTURE_2D, 0, 2, 32, 32, 0, GL_LUMINANCE_ALPHA,
 			      GL_UNSIGNED_BYTE, data);
 	}
 }
@@ -194,10 +197,10 @@ GDT_InitSmokeRingParticleTexture (void)
 			}
 		}
 		part_tex_smoke_ring[i] = texture_extension_number++;
-		glBindTexture (GL_TEXTURE_2D, part_tex_smoke_ring[i]);
-		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D (GL_TEXTURE_2D, 0, 2, 32, 32, 0, GL_LUMINANCE_ALPHA,
+		QFGL_glBindTexture (GL_TEXTURE_2D, part_tex_smoke_ring[i]);
+		QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		QFGL_glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		QFGL_glTexImage2D (GL_TEXTURE_2D, 0, 2, 32, 32, 0, GL_LUMINANCE_ALPHA,
 			      GL_UNSIGNED_BYTE, data);
 	}
 }

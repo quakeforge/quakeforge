@@ -35,12 +35,12 @@
 
 #include <stdlib.h>
 
+#include "QF/GL/qf_textures.h"
 #include "QF/checksum.h"
 #include "QF/console.h"
 #include "QF/qendian.h"
 #include "QF/sys.h"
 
-#include "glquake.h"
 #include "r_local.h"
 
 int

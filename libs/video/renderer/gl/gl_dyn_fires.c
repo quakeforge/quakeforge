@@ -42,16 +42,32 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/render.h"
+#include "QF/GL/funcs.h"
+#include "QF/GL/defines.h"
+#include "QF/GL/qf_rlight.h"
 
-#include "glquake.h"
+#include "r_cvar.h"
 #include "r_shared.h"
 
 #define MAX_FIRES				128		// rocket flames
+
+typedef struct {
+	int		key;			// allows reusability
+	vec3_t	origin, owner;
+	float	size;
+	float	die, decay;		// duration settings
+	float	minlight;		// lighting threshold
+	float	color[3];		// RGB
+} fire_t;
 
 static fire_t r_fires[MAX_FIRES];
 extern cvar_t *gl_fires;
 extern cvar_t *r_firecolor;
 
+void R_AddFire (vec3_t, vec3_t, struct entity_s *ent);
+fire_t *R_AllocFire (int);
+void R_DrawFire (fire_t *);
+void R_UpdateFires (void);
 
 /*
 	R_AddFire
@@ -150,12 +166,12 @@ R_DrawFire (fire_t *f)
 		return;
 	}
 	// we're not - draw it
-	glBegin (GL_TRIANGLE_FAN);
-	glColor3fv (f->color);
+	QFGL_glBegin (GL_TRIANGLE_FAN);
+	QFGL_glColor3fv (f->color);
 	for (i = 0; i < 3; i++)
 		vec[i] = f->origin[i] - vpn[i] * radius;
-	glVertex3fv (vec);
-	glColor3f (0.0, 0.0, 0.0);
+	QFGL_glVertex3fv (vec);
+	QFGL_glColor3f (0.0, 0.0, 0.0);
 
 	// don't panic, this just draws a bubble...
 	for (i = 16; i >= 0; i--) {
@@ -165,14 +181,14 @@ R_DrawFire (fire_t *f)
 			vec2[j] = f->owner[j] + (*b_cos * vright[j]
 									 + vup[j] * (*b_sin)) * radius;
 		}
-		glVertex3fv (vec);
-		glVertex3fv (vec2);
+		QFGL_glVertex3fv (vec);
+		QFGL_glVertex3fv (vec2);
 
 		b_sin += 2;
 		b_cos += 2;
 	}
-	glEnd ();
-	glColor3ubv (lighthalf_v);
+	QFGL_glEnd ();
+	QFGL_glColor3ubv (lighthalf_v);
 }
 
 
@@ -190,9 +206,9 @@ R_UpdateFires (void)
 	if (!gl_fires->int_val)
 		return;
 
-	glDepthMask (GL_FALSE);
-	glDisable (GL_TEXTURE_2D);
-	glBlendFunc (GL_ONE, GL_ONE);
+	QFGL_glDepthMask (GL_FALSE);
+	QFGL_glDisable (GL_TEXTURE_2D);
+	QFGL_glBlendFunc (GL_ONE, GL_ONE);
 
 	f = r_fires;
 	for (i = 0; i < MAX_FIRES; i++, f++) {
@@ -202,7 +218,7 @@ R_UpdateFires (void)
 		R_DrawFire (f);
 	}
 
-	glEnable (GL_TEXTURE_2D);
-	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDepthMask (GL_TRUE);
+	QFGL_glEnable (GL_TEXTURE_2D);
+	QFGL_glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	QFGL_glDepthMask (GL_TRUE);
 }

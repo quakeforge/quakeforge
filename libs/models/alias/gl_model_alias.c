@@ -45,8 +45,7 @@
 #include "QF/qendian.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
-
-#include "glquake.h"
+#include "QF/GL/qf_textures.h"
 
 byte        player_8bit_texels[320 * 200];
 

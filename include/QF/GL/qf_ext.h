@@ -36,16 +36,9 @@
 # include <windows.h>
 #endif
 
-#include <GL/gl.h>
-
-#ifdef HAVE_GL_GLX_H
-# include <GL/glx.h>
-#endif
-#ifdef HAVE_GL_GLEXT_H
-# include <GL/glext.h>
-#endif
-
 #include "QF/qtypes.h"
+#include "QF/GL/defines.h"
+#include "QF/GL/types.h"
 
 // Define GLAPIENTRY to a useful value
 #ifndef GLAPIENTRY

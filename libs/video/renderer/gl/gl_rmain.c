@@ -52,7 +52,14 @@
 #include "QF/sys.h"
 #include "QF/vid.h"
 
-#include "glquake.h"
+#include "QF/GL/defines.h"
+#include "QF/GL/funcs.h"
+#include "QF/GL/qf_screen.h"
+#include "QF/GL/qf_vid.h"
+#include "QF/GL/qf_rsurf.h"
+#include "QF/GL/qf_rlight.h"
+#include "QF/GL/qf_fires.h"
+
 #include "r_cvar.h"
 #include "r_dynamic.h"
 #include "r_local.h"
@@ -98,8 +105,7 @@ float		modelalpha;					// Ender (Extend) Alpha
 
 void        R_MarkLeaves (void);
 
-extern cvar_t *scr_fov;
-
+//qboolean R_CullBlocked (vec3_t mins, vec3_t maxs, vec3_t org);
 
 // LordHavoc: place for gl_rmain setup code
 void
@@ -111,12 +117,12 @@ glrmain_init (void)
 void
 R_RotateForEntity (entity_t *e)
 {
-	glTranslatef (e->origin[0], e->origin[1], e->origin[2]);
+	QFGL_glTranslatef (e->origin[0], e->origin[1], e->origin[2]);
 
-	glRotatef (e->angles[1], 0, 0, 1);
-	glRotatef (-e->angles[0], 0, 1, 0);
+	QFGL_glRotatef (e->angles[1], 0, 0, 1);
+	QFGL_glRotatef (-e->angles[0], 0, 1, 0);
 	// ZOID: fixed z angle
-	glRotatef (e->angles[2], 1, 0, 0);
+	QFGL_glRotatef (e->angles[2], 1, 0, 0);
 }
 
 
@@ -187,34 +193,34 @@ R_DrawSpriteModel (entity_t *e)
 		right = vright;
 	}
 
-	glBindTexture (GL_TEXTURE_2D, frame->gl_texturenum);
+	QFGL_glBindTexture (GL_TEXTURE_2D, frame->gl_texturenum);
 
-	glEnable (GL_ALPHA_TEST);
-	glBegin (GL_QUADS);
+	QFGL_glEnable (GL_ALPHA_TEST);
+	QFGL_glBegin (GL_QUADS);
 
-	glTexCoord2f (0, 1);
+	QFGL_glTexCoord2f (0, 1);
 	VectorMA (e->origin, frame->down, up, point);
 	VectorMA (point, frame->left, right, point);
-	glVertex3fv (point);
+	QFGL_glVertex3fv (point);
 
-	glTexCoord2f (0, 0);
+	QFGL_glTexCoord2f (0, 0);
 	VectorMA (e->origin, frame->up, up, point);
 	VectorMA (point, frame->left, right, point);
-	glVertex3fv (point);
+	QFGL_glVertex3fv (point);
 
-	glTexCoord2f (1, 0);
+	QFGL_glTexCoord2f (1, 0);
 	VectorMA (e->origin, frame->up, up, point);
 	VectorMA (point, frame->right, right, point);
-	glVertex3fv (point);
+	QFGL_glVertex3fv (point);
 
-	glTexCoord2f (1, 1);
+	QFGL_glTexCoord2f (1, 1);
 	VectorMA (e->origin, frame->down, up, point);
 	VectorMA (point, frame->right, right, point);
-	glVertex3fv (point);
+	QFGL_glVertex3fv (point);
 
-	glEnd ();
+	QFGL_glEnd ();
 
-	glDisable (GL_ALPHA_TEST);
+	QFGL_glDisable (GL_ALPHA_TEST);
 }
 
 
@@ -257,24 +263,24 @@ GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
 	order = (int *) ((byte *) paliashdr + paliashdr->commands);
 
 	if (modelalpha != 1.0)
-		glDepthMask (GL_FALSE);
+		QFGL_glDepthMask (GL_FALSE);
 
 	if (fb) {
-		glColor4f (1, 1, 1, modelalpha);
+		QFGL_glColor4f (1, 1, 1, modelalpha);
 	}
 
 	while ((count = *order++)) {
 		// get the vertex count and primitive type
 		if (count < 0) {
 			count = -count;
-			glBegin (GL_TRIANGLE_FAN);
+			QFGL_glBegin (GL_TRIANGLE_FAN);
 		} else {
-			glBegin (GL_TRIANGLE_STRIP);
+			QFGL_glBegin (GL_TRIANGLE_STRIP);
 		}
 
 		do {
 			// texture coordinates come from the draw list
-			glTexCoord2f (((float *) order)[0], ((float *) order)[1]);
+			QFGL_glTexCoord2f (((float *) order)[0], ((float *) order)[1]);
 			order += 2;
 
 			if (!fb) {
@@ -282,21 +288,21 @@ GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum, qboolean fb)
 				l = shadedots[verts->lightnormalindex] * shadelight;
 
 				// LordHavoc: cleanup after Endy
-				glColor4f (shadecolor[0] * l, shadecolor[1] * l,
+				QFGL_glColor4f (shadecolor[0] * l, shadecolor[1] * l,
 						   shadecolor[2] * l, modelalpha);
 			}
 
-			glVertex3f (verts->v[0], verts->v[1], verts->v[2]);
+			QFGL_glVertex3f (verts->v[0], verts->v[1], verts->v[2]);
 			verts++;
 		} while (--count);
 
-		glEnd ();
+		QFGL_glEnd ();
 	}
 
 	if (modelalpha != 1.0)
-		glDepthMask (GL_TRUE);
+		QFGL_glDepthMask (GL_TRUE);
 
-	glColor3ubv (lighthalf_v);
+	QFGL_glColor3ubv (lighthalf_v);
 }
 
 
@@ -327,10 +333,10 @@ GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, float ble
 	order = (int *) ((byte *) paliashdr + paliashdr->commands);
 
 	if (modelalpha != 1.0)
-		glDepthMask (GL_FALSE);
+		QFGL_glDepthMask (GL_FALSE);
 
 	if (fb) {	// don't do this in the loop, it doesn't change
-		glColor4f (1, 1, 1, modelalpha);
+		QFGL_glColor4f (1, 1, 1, modelalpha);
 	}
 
 	lerp = 1 - blend;
@@ -338,14 +344,14 @@ GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, float ble
 
 		if (count < 0) {
 			count = -count;
-			glBegin (GL_TRIANGLE_FAN);
+			QFGL_glBegin (GL_TRIANGLE_FAN);
 		} else {
-			glBegin (GL_TRIANGLE_STRIP);
+			QFGL_glBegin (GL_TRIANGLE_STRIP);
 		}
 
 		do {
 			// texture coordinates come from the draw list
-			glTexCoord2f (((float *) order)[0], ((float *) order)[1]);
+			QFGL_glTexCoord2f (((float *) order)[0], ((float *) order)[1]);
 			order += 2;
 
 			if (!fb) {
@@ -355,24 +361,24 @@ GL_DrawAliasBlendedFrame (aliashdr_t *paliashdr, int pose1, int pose2, float ble
 									   lerp)
 									+ (shadedots[verts2->lightnormalindex] *
 									   blend));
-				glColor4f (shadecolor[0] * light, shadecolor[1] * light,
+				QFGL_glColor4f (shadecolor[0] * light, shadecolor[1] * light,
 							shadecolor[2] * light, modelalpha);
 			}
 
 			// blend the vertex positions from each frame together
-			glVertex3f ((verts1->v[0] * lerp) + (verts2->v[0] * blend),
+			QFGL_glVertex3f ((verts1->v[0] * lerp) + (verts2->v[0] * blend),
 						(verts1->v[1] * lerp) + (verts2->v[1] * blend),
 						(verts1->v[2] * lerp) + (verts2->v[2] * blend));
 
 			verts1++;
 			verts2++;
 		} while (--count);
-		glEnd ();
+		QFGL_glEnd ();
 	}
 
 	if (modelalpha != 1.0)
-		glDepthMask (GL_TRUE);
-	glColor3ubv (lighthalf_v);
+		QFGL_glDepthMask (GL_TRUE);
+	QFGL_glColor3ubv (lighthalf_v);
 }
 
 
@@ -406,13 +412,13 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 
 		if (count < 0) {
 			count = -count;
-			glBegin (GL_TRIANGLE_FAN);
+			QFGL_glBegin (GL_TRIANGLE_FAN);
 		} else
-			glBegin (GL_TRIANGLE_STRIP);
+			QFGL_glBegin (GL_TRIANGLE_STRIP);
 
 		do {
 			// texture coordinates come from the draw list
-			// (skipped for shadows) glTexCoord2fv ((float *)order);
+			// (skipped for shadows) QFGL_glTexCoord2fv ((float *)order);
 			order += 2;
 
 			// normals and vertexes come from the frame list
@@ -430,12 +436,12 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 			point[1] -= shadevector[1] * (point[2] + lheight);
 			point[2] = height;
 //          height -= 0.001;
-			glVertex3fv (point);
+			QFGL_glVertex3fv (point);
 
 			verts++;
 		} while (--count);
 
-		glEnd ();
+		QFGL_glEnd ();
 	}
 }
 
@@ -473,9 +479,9 @@ GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2, entity_t
 
 		if (count < 0) {
 			count = -count;
-			glBegin (GL_TRIANGLE_FAN);
+			QFGL_glBegin (GL_TRIANGLE_FAN);
 		} else {
-			glBegin (GL_TRIANGLE_STRIP);
+			QFGL_glBegin (GL_TRIANGLE_STRIP);
 		}
 
 		do {
@@ -495,14 +501,14 @@ GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2, entity_t
 			point2[0] -= shadevector[0] * (point2[2] + lheight);
 			point2[1] -= shadevector[1] * (point2[2] + lheight);
 
-			glVertex3f ((point1[0] * lerp) + (point2[0] * blend),
+			QFGL_glVertex3f ((point1[0] * lerp) + (point2[0] * blend),
 						(point1[1] * lerp) + (point2[1] * blend),
 						height);
 
 			verts1++;
 			verts2++;
 		} while (--count);
-		glEnd ();
+		QFGL_glEnd ();
 	}
 }
 
@@ -581,7 +587,7 @@ R_SetupAliasBlendedFrame (int frame, aliashdr_t *paliashdr, entity_t *e, qboolea
 
 
 static void
-R_DrawAliasModel (entity_t *e)
+R_DrawAliasModel (entity_t *e, qboolean cull)
 {
 	int         lnum;
 	vec3_t      dist;
@@ -601,8 +607,13 @@ R_DrawAliasModel (entity_t *e)
 	VectorAdd (currententity->origin, clmodel->mins, mins);
 	VectorAdd (currententity->origin, clmodel->maxs, maxs);
 
-	if (R_CullBox (mins, maxs))
+	if (cull && R_CullBox (mins, maxs))
 		return;
+
+	/*
+	if (cull && R_CullBlocked(mins, maxs, currententity->origin))
+		return;
+		*/
 
 	// FIXME: shadecolor is supposed to be the lighting for the model, not
 	// just colormod
@@ -660,21 +671,21 @@ R_DrawAliasModel (entity_t *e)
 	c_alias_polys += paliashdr->mdl.numtris;
 
 	// draw all the triangles
-	glPushMatrix ();
+	QFGL_glPushMatrix ();
 	R_RotateForEntity (e);
 
 	if (strequal (clmodel->name, "progs/eyes.mdl")) {
-		glTranslatef (paliashdr->mdl.scale_origin[0],
+		QFGL_glTranslatef (paliashdr->mdl.scale_origin[0],
 					  paliashdr->mdl.scale_origin[1],
 					  paliashdr->mdl.scale_origin[2] - (22 + 8));
 		// double size of eyes, since they are really hard to see in GL
-		glScalef (paliashdr->mdl.scale[0] * 2, paliashdr->mdl.scale[1] * 2,
+		QFGL_glScalef (paliashdr->mdl.scale[0] * 2, paliashdr->mdl.scale[1] * 2,
 				  paliashdr->mdl.scale[2] * 2);
 	} else {
-		glTranslatef (paliashdr->mdl.scale_origin[0],
+		QFGL_glTranslatef (paliashdr->mdl.scale_origin[0],
 					  paliashdr->mdl.scale_origin[1],
 					  paliashdr->mdl.scale_origin[2]);
-		glScalef (paliashdr->mdl.scale[0], paliashdr->mdl.scale[1],
+		QFGL_glScalef (paliashdr->mdl.scale[0], paliashdr->mdl.scale[1],
 				  paliashdr->mdl.scale[2]);
 	}
 
@@ -701,10 +712,10 @@ R_DrawAliasModel (entity_t *e)
 		}
 	}
 
-	glBindTexture (GL_TEXTURE_2D, texture);
+	QFGL_glBindTexture (GL_TEXTURE_2D, texture);
 
 	if (gl_affinemodels->int_val)
-		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+		QFGL_glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
 	if (gl_lerp_anim->int_val) {
 		R_SetupAliasBlendedFrame (currententity->frame, paliashdr, currententity, false);
@@ -714,7 +725,7 @@ R_DrawAliasModel (entity_t *e)
 
 	// This block is GL fullbright support for objects...
 	if (fb_texture) {
-		glBindTexture (GL_TEXTURE_2D, fb_texture);
+		QFGL_glBindTexture (GL_TEXTURE_2D, fb_texture);
 		if (gl_lerp_anim->int_val) {
 			R_SetupAliasBlendedFrame (currententity->frame, paliashdr,
 			                          currententity, true);
@@ -724,9 +735,9 @@ R_DrawAliasModel (entity_t *e)
 	}
 
 	if (gl_affinemodels->int_val)
-		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
+		QFGL_glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_DONT_CARE);
 
-	glPopMatrix ();
+	QFGL_glPopMatrix ();
 
 	if (r_shadows->int_val) {
 		// torches, grenades, and lightning bolts do not have shadows
@@ -735,11 +746,11 @@ R_DrawAliasModel (entity_t *e)
 		if (strequal (clmodel->name, "progs/grenade.mdl"))
 			return;
 
-		glPushMatrix ();
+		QFGL_glPushMatrix ();
 		R_RotateForEntity (e);
 
-		glDisable (GL_TEXTURE_2D);
-		glColor4f (0, 0, 0, 0.5);
+		QFGL_glDisable (GL_TEXTURE_2D);
+		QFGL_glColor4f (0, 0, 0, 0.5);
 
 		if (gl_lerp_anim->int_val) {
 			GL_DrawAliasBlendedShadow (paliashdr, lastposenum0, lastposenum, currententity);
@@ -747,9 +758,9 @@ R_DrawAliasModel (entity_t *e)
 			GL_DrawAliasShadow (paliashdr, lastposenum);
 		}
 
-		glEnable (GL_TEXTURE_2D);
-		glColor3ubv (lighthalf_v);
-		glPopMatrix ();
+		QFGL_glEnable (GL_TEXTURE_2D);
+		QFGL_glColor3ubv (lighthalf_v);
+		QFGL_glPopMatrix ();
 	}
 }
 
@@ -820,7 +831,7 @@ R_DrawEntitiesOnList (void)
 		if (currententity == r_player_entity)
 			currententity->angles[PITCH] *= 0.3;
 
-		R_DrawAliasModel (currententity);
+		R_DrawAliasModel (currententity, true);
 	}
 
 	for (i = 0; i < r_numvisedicts; i++) {
@@ -849,9 +860,9 @@ R_DrawViewModel (void)
 	modelalpha = currententity->alpha;
 
 	// hack the depth range to prevent view model from poking into walls
-	glDepthRange (gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));
-	R_DrawAliasModel (currententity);
-	glDepthRange (gldepthmin, gldepthmax);
+	QFGL_glDepthRange (gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));
+	R_DrawAliasModel (currententity, false);
+	QFGL_glDepthRange (gldepthmin, gldepthmax);
 }
 
 
@@ -946,7 +957,7 @@ MYgluPerspective (GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar)
 	xmin = ymin * aspect;
 	xmax = ymax * aspect;
 
-	glFrustum (xmin, xmax, ymin, ymax, zNear, zFar);
+	QFGL_glFrustum (xmin, xmax, ymin, ymax, zNear, zFar);
 }
 
 
@@ -958,8 +969,8 @@ R_SetupGL (void)
 	int			x, x2, y2, y, w, h;
 
 	// set up viewpoint
-	glMatrixMode (GL_PROJECTION);
-	glLoadIdentity ();
+	QFGL_glMatrixMode (GL_PROJECTION);
+	QFGL_glLoadIdentity ();
 	x = r_refdef.vrect.x * glwidth / vid.width;
 	x2 = (r_refdef.vrect.x + r_refdef.vrect.width) * glwidth / vid.width;
 	y = (vid.height - r_refdef.vrect.y) * glheight / vid.height;
@@ -984,41 +995,41 @@ R_SetupGL (void)
 		w = h = 256;
 	}
 
-	glViewport (glx + x, gly + y2, w, h);
+	QFGL_glViewport (glx + x, gly + y2, w, h);
 	screenaspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;
 	MYgluPerspective (r_refdef.fov_y, screenaspect, 4, 4096);
 
 	if (mirror) {
 		if (mirror_plane->normal[2])
-			glScalef (1, -1, 1);
+			QFGL_glScalef (1, -1, 1);
 		else
-			glScalef (-1, 1, 1);
-		glCullFace (GL_BACK);
+			QFGL_glScalef (-1, 1, 1);
+		QFGL_glCullFace (GL_BACK);
 	} else
-		glCullFace (GL_FRONT);
+		QFGL_glCullFace (GL_FRONT);
 
-	glMatrixMode (GL_MODELVIEW);
-	glLoadIdentity ();
+	QFGL_glMatrixMode (GL_MODELVIEW);
+	QFGL_glLoadIdentity ();
 
-	glRotatef (-90, 1, 0, 0);			// put Z going up
-	glRotatef (90, 0, 0, 1);			// put Z going up
-	glRotatef (-r_refdef.viewangles[2], 1, 0, 0);
-	glRotatef (-r_refdef.viewangles[0], 0, 1, 0);
-	glRotatef (-r_refdef.viewangles[1], 0, 0, 1);
-	glTranslatef (-r_refdef.vieworg[0], -r_refdef.vieworg[1],
+	QFGL_glRotatef (-90, 1, 0, 0);			// put Z going up
+	QFGL_glRotatef (90, 0, 0, 1);			// put Z going up
+	QFGL_glRotatef (-r_refdef.viewangles[2], 1, 0, 0);
+	QFGL_glRotatef (-r_refdef.viewangles[0], 0, 1, 0);
+	QFGL_glRotatef (-r_refdef.viewangles[1], 0, 0, 1);
+	QFGL_glTranslatef (-r_refdef.vieworg[0], -r_refdef.vieworg[1],
 				  -r_refdef.vieworg[2]);
 
-	glGetFloatv (GL_MODELVIEW_MATRIX, r_world_matrix);
+	QFGL_glGetFloatv (GL_MODELVIEW_MATRIX, r_world_matrix);
 
 	// set drawing parms
-	glEnable (GL_CULL_FACE);
-	glDisable (GL_ALPHA_TEST);
-	glAlphaFunc (GL_GREATER, 0.5);
-	glEnable (GL_DEPTH_TEST);
+	QFGL_glEnable (GL_CULL_FACE);
+	QFGL_glDisable (GL_ALPHA_TEST);
+	QFGL_glAlphaFunc (GL_GREATER, 0.5);
+	QFGL_glEnable (GL_DEPTH_TEST);
 	if (gl_dlight_smooth->int_val)
-		glShadeModel (GL_SMOOTH);
+		QFGL_glShadeModel (GL_SMOOTH);
 	else
-		glShadeModel (GL_FLAT);
+		QFGL_glShadeModel (GL_FLAT);
 }
 
 
@@ -1026,14 +1037,14 @@ static void
 R_Clear (void)
 {
 	if (gl_clear->int_val)
-		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		QFGL_glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	else
-		glClear (GL_DEPTH_BUFFER_BIT);
+		QFGL_glClear (GL_DEPTH_BUFFER_BIT);
 	gldepthmin = 0;
 	gldepthmax = 1;
-	glDepthFunc (GL_LEQUAL);
+	QFGL_glDepthFunc (GL_LEQUAL);
 
-	glDepthRange (gldepthmin, gldepthmax);
+	QFGL_glDepthRange (gldepthmin, gldepthmax);
 }
 
 
@@ -1101,34 +1112,34 @@ R_Mirror (void)
 
 	gldepthmin = 0.5;
 	gldepthmax = 1;
-	glDepthRange (gldepthmin, gldepthmax);
-	glDepthFunc (GL_LEQUAL);
+	QFGL_glDepthRange (gldepthmin, gldepthmax);
+	QFGL_glDepthFunc (GL_LEQUAL);
 
 	R_RenderScene ();
 	R_DrawWaterSurfaces ();
 
 	gldepthmin = 0;
 	gldepthmax = 1;//XXX 0.5;
-	glDepthRange (gldepthmin, gldepthmax);
-	glDepthFunc (GL_LEQUAL);
+	QFGL_glDepthRange (gldepthmin, gldepthmax);
+	QFGL_glDepthFunc (GL_LEQUAL);
 
 	// blend on top
-	glMatrixMode (GL_PROJECTION);
+	QFGL_glMatrixMode (GL_PROJECTION);
 	if (mirror_plane->normal[2])
-		glScalef (1, -1, 1);
+		QFGL_glScalef (1, -1, 1);
 	else
-		glScalef (-1, 1, 1);
-	glCullFace (GL_FRONT);
-	glMatrixMode (GL_MODELVIEW);
+		QFGL_glScalef (-1, 1, 1);
+	QFGL_glCullFace (GL_FRONT);
+	QFGL_glMatrixMode (GL_MODELVIEW);
 
-	glLoadMatrixf (r_base_world_matrix);
+	QFGL_glLoadMatrixf (r_base_world_matrix);
 
-	glColor4f (1, 1, 1, r_mirroralpha->value);
+	QFGL_glColor4f (1, 1, 1, r_mirroralpha->value);
 	s = r_worldentity.model->textures[mirrortexturenum]->texturechain;
 	for (; s; s = s->texturechain)
 		R_RenderBrushPoly (s);
 	r_worldentity.model->textures[mirrortexturenum]->texturechain = NULL;
-	glColor4f (1, 1, 1, 1);
+	QFGL_glColor4f (1, 1, 1, 1);
 }
 
 
@@ -1146,7 +1157,7 @@ R_RenderView (void)
 	if (!r_worldentity.model)
 		Sys_Error ("R_RenderView: NULL worldmodel");
 
-//	glFinish ();
+//	QFGL_glFinish ();
 
 	mirror = false;
 
@@ -1166,3 +1177,119 @@ R_RenderView (void)
 	// render mirror view
 	R_Mirror ();
 }
+
+#if 0
+qboolean R_CullBlocked (vec3_t mins, vec3_t maxs, vec3_t org)
+{
+	static struct trace_t  trace;
+	vec3_t  point;
+	float   rad;
+
+	if (!gl_occlusion->int_val)
+		return false;
+
+	// Check the origin first
+	if ( Mod_PointInLeaf(org, cl.worldmodel)->contents != CONTENTS_SOLID)
+	{
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, org, &trace))
+			return false;
+	}
+
+	rad = sqrt((maxs[0]-org[0])*(maxs[0]-org[0]) +
+			(maxs[1]-org[1])*(maxs[1]-org[1]) +
+			(maxs[2]-org[2])*(maxs[2]-org[2]) );
+
+	// Check a few points on the bounding sphere to catch rotating objects
+	// Raise the origin a bit to catch droptofloor models
+	point[0] = org[0]; point[1] = org[1]+rad; point[2] = org[2]+4;
+	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
+	{
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+			return false;
+	}
+	point[0] = org[0]+rad; point[1] = org[1]; point[2] = org[2]+4;
+	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
+	{
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+			return false;
+	}
+	point[0] = org[0]; point[1] = org[1]-rad; point[2] = org[2]+4;
+	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
+	{
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+			return false;
+	}
+	point[0] = org[0]-rad; point[1] = org[1]; point[2] = org[2]+4;
+	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
+	{
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+			return false;
+	}
+
+	// Check the poles of the sphere (can catch ents on ledges that would otherwise be missed)
+	point[0] = org[0]; point[1] = org[1]; point[2] = org[2]+rad;
+	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
+	{
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+			return false;
+	}
+	point[0] = org[0]; point[1] = org[1]; point[2] = org[2]-rad;
+	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
+	{
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+			return false;
+	}
+
+
+	// Check the corners...
+	if ( Mod_PointInLeaf(maxs, cl.worldmodel)->contents != CONTENTS_SOLID)
+	{
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, maxs, &trace))
+			return false;
+	}
+	point[0] = mins[0]; point[1] = maxs[1]; point[2] = maxs[2];
+	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
+	{
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+			return false;
+	}
+	point[0] = mins[0]; point[1] = mins[1]; point[2] = maxs[2];
+	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
+	{
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+			return false;
+	}
+	point[0] = maxs[0]; point[1] = mins[1]; point[2] = maxs[2];
+	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
+	{
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+			return false;
+	}
+	if ( Mod_PointInLeaf(mins, cl.worldmodel)->contents != CONTENTS_SOLID)
+	{
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, mins, &trace))
+			return false;
+	}
+	point[0] = mins[0]; point[1] = maxs[1]; point[2] = mins[2]+4;
+	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
+	{
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+			return false;
+	}
+	point[0] = maxs[0]; point[1] = mins[1]; point[2] = mins[2]+4;
+	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
+	{
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+			return false;
+	}
+	point[0] = maxs[0]; point[1] = maxs[1]; point[2] = mins[2]+4;
+	if ( Mod_PointInLeaf(point, cl.worldmodel)->contents != CONTENTS_SOLID)
+	{
+		if (SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, r_refdef.vieworg, point, &trace))
+			return false;
+	}
+
+	// Model is blocked (probably)
+	return true;
+}
+#endif

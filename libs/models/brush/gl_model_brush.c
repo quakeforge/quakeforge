@@ -41,10 +41,10 @@
 
 #include "compat.h"
 #include "QF/console.h"
-#include "glquake.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/vfs.h"
+#include "QF/GL/qf_textures.h"
 
 int         Mod_Fullbright (byte * skin, int width, int height, char *name);
 

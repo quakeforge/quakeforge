@@ -44,8 +44,8 @@
 
 #include "bothdefs.h"
 #include "client.h"
-#include "glquake.h"
 #include "view.h"
+#include "r_cvar.h"
 
 extern double    host_frametime;
 

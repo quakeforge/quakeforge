@@ -1,4 +1,4 @@
-INCLUDES= -I$(top_srcdir)/include $(GGI_CFLAGS) $(MGL_CFLAGS) $(SDL_CFLAGS) $(SVGA_CFLAGS) $(X_CFLAGS) $(GLX_CFLAGS) $(TDFXGL_CFLAGS)
+INCLUDES= -I$(top_srcdir)/include $(GGI_CFLAGS) $(MGL_CFLAGS) $(SDL_CFLAGS) $(SVGA_CFLAGS) $(X_CFLAGS) $(TDFXGL_CFLAGS)
 
 lib_LTLIBRARIES =	@VID_TARGETS@
 EXTRA_LTLIBRARIES = libQFjs.la libQFfbdev.la libQFsvga.la libQFx11.la libQFglx.la libQFsdl.la libQFsgl.la libQFtdfx.la libQFwgl.la libQFmgl.la
@@ -44,7 +44,7 @@ fbset_modes_y.lo: $(srcdir)/fbset_modes_y.c
 fbset_modes_l.lo: $(srcdir)/fbset_modes_l.c
 	$(LTCOMPILE) -Wno-error -c $<
 
-libQFglx_la_LDFLAGS=	-version-info 1:0:0 $(GLX_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS)
+libQFglx_la_LDFLAGS=	-version-info 1:0:0 $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS)
 libQFglx_la_SOURCES=	in_common.c in_x11.c vid.c context_x11.c dga_check.c \
 			qfgl_ext.c vid_common_gl.c vid_glx.c
 libQFglx.la: $(libQFglx_la_OBJECTS) $(libQFglx_la_DEPENDENCIES)

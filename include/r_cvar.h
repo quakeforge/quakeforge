@@ -1,3 +1,5 @@
+extern unsigned char lighthalf_v[3];
+
 extern struct cvar_s     *cl_crossx;
 extern struct cvar_s     *cl_crossy;
 extern struct cvar_s     *cl_verstring;
@@ -21,16 +23,20 @@ extern struct cvar_s     *gl_fb_models;
 extern struct cvar_s     *gl_fires;
 extern struct cvar_s     *gl_keeptjunctions;
 extern struct cvar_s     *gl_lerp_anim;
+extern struct cvar_s     *gl_libgl;
 extern struct cvar_s     *gl_lightmap_components;
 extern struct cvar_s     *gl_max_size;
+extern struct cvar_s     *gl_multitexture;
 extern struct cvar_s     *gl_nocolors;
 extern struct cvar_s     *gl_picmip;
 extern struct cvar_s     *gl_playermip;
 extern struct cvar_s     *gl_reporttjunctions;
 extern struct cvar_s     *gl_sky_clip;
+extern struct cvar_s     *gl_sky_divide;
 extern struct cvar_s     *gl_skymultipass;
 extern struct cvar_s     *gl_texsort;
 extern struct cvar_s     *gl_triplebuffer;
+extern struct cvar_s     *gl_occlusion;
 
 extern struct cvar_s     *r_aliasstats;
 extern struct cvar_s     *r_aliastransadj;

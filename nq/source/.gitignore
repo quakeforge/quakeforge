@@ -2,6 +2,8 @@
 *.d
 *.o
 *.obj
+*.lo
+*.la
 .deps
 .libs
 .vimrc

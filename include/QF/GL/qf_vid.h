@@ -1,7 +1,7 @@
 /*
-	varrays.h
+	gl_textures.h
 
-	OpenGL-specific definitions and prototypes
+	GL texture stuff from the renderer.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -26,8 +26,8 @@
 	$Id$
 */
 
-#ifndef __qf_varrays_h
-#define __qf_varrays_h
+#ifndef __QF_GL_vid_h
+#define __QF_GL_vid_h
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -37,28 +37,22 @@
 # include <windows.h>
 #endif
 
+#include "QF/qtypes.h"
 #include "QF/GL/types.h"
+#include "QF/GL/qf_ext.h"
 
-typedef struct varray_t2f_c4f_v3f_s {
-	 GLfloat	texcoord[2];
-	 GLfloat	color[4];
-	 GLfloat	vertex[3];
-} varray_t2f_c4f_v3f_t;
+// Multitexturing
+extern QF_glActiveTextureARB	qglActiveTexture;
+extern QF_glMultiTexCoord2fARB	qglMultiTexCoord2f;
+extern qboolean					gl_mtex_capable;
+extern GLenum					gl_mtex_enum;
+// convenience check
+#define gl_mtex_active	(gl_mtex_capable && gl_multitexture->int_val)
 
-typedef struct varray_t2f_c4ub_v3f_s {
-	 GLfloat	texcoord[2];
-	 GLubyte	color[4];
-	 GLfloat	vertex[3];
-} varray_t2f_c4ub_v3f_t;
+extern int texture_extension_number;
+extern float gldepthmin, gldepthmax;
 
-typedef struct varray_t2f_c4f_n3f_v3f_s {
-	 GLfloat	texcoord[2];
-	 GLfloat	color[4];
-	 GLfloat	normal[3];
-	 GLfloat	vertex[3];
-} varray_t2f_c4f_n3f_v3f_t;
+void GL_EndRendering (void);
+void GL_BeginRendering (int *x, int *y, int *width, int *height);
 
-#define MAX_VARRAY_VERTS	10000
-extern varray_t2f_c4f_v3f_t varray[MAX_VARRAY_VERTS];
-
-#endif // __qf_varrays_h
+#endif // __QF_GL_vid_h

@@ -1,7 +1,7 @@
 /*
-	varrays.h
+	funcs.h
 
-	OpenGL-specific definitions and prototypes
+	GL function defs.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -26,39 +26,13 @@
 	$Id$
 */
 
-#ifndef __qf_varrays_h
-#define __qf_varrays_h
-
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
-#ifdef HAVE_WINDOWS_H
-# include <windows.h>
-#endif
+#ifndef __QF_GL_funcs_h
+#define __QF_GL_funcs_h
 
 #include "QF/GL/types.h"
 
-typedef struct varray_t2f_c4f_v3f_s {
-	 GLfloat	texcoord[2];
-	 GLfloat	color[4];
-	 GLfloat	vertex[3];
-} varray_t2f_c4f_v3f_t;
+#define QFGL_NEED(ret, name, args)	extern ret (* QFGL_##name) args
+#include "QF/GL/qf_funcs_list.h"
+#undef QFGL_NEED
 
-typedef struct varray_t2f_c4ub_v3f_s {
-	 GLfloat	texcoord[2];
-	 GLubyte	color[4];
-	 GLfloat	vertex[3];
-} varray_t2f_c4ub_v3f_t;
-
-typedef struct varray_t2f_c4f_n3f_v3f_s {
-	 GLfloat	texcoord[2];
-	 GLfloat	color[4];
-	 GLfloat	normal[3];
-	 GLfloat	vertex[3];
-} varray_t2f_c4f_n3f_v3f_t;
-
-#define MAX_VARRAY_VERTS	10000
-extern varray_t2f_c4f_v3f_t varray[MAX_VARRAY_VERTS];
-
-#endif // __qf_varrays_h
+#endif // __QF_GL_funcs_h

@@ -516,128 +516,6 @@ fi
 AC_SUBST(GLIDE_CFLAGS)
 AC_SUBST(GLIDE_LIBS)
 
-dnl Checks for GLX support
-AC_ARG_WITH(glx,
-[  --with-glx[=DIR]        use GLX with libraries found in DIR],
-	glx_libraries=$withval, glx_libraries=auto
-)
-AC_ARG_WITH(glx-includes,
-[  --with-glx-includes[=DIR]
-                          use GLX with header files found in DIR],
-	glx_includes=$withval, glx_includes=auto
-)
-if test "x$glx_includes" = xno; then
-	glx_libraries=""
-fi
-if test "x$glx_librariesS" = xno; then
-	glx_includes=""
-fi
-
-dnl Checks for GLX headers. lib[Mesa]GL should be either in a standard
-dnl include directory or the X include directory. Either way, we
-dnl use X_CFLAGS.
-if test "x$glx_includes" != xauto -a "x$glx_includes" != x; then
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS -I$glx_includes"
-	AC_CHECK_HEADER($glx_includes/GL/gl.h, HAVE_GLX=yes, HAVE_GLX=no )
-	CPPFLAGS="$save_CPPFLAGS"
-else
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $X_CFLAGS"
-	AC_CHECK_HEADER(GL/gl.h, HAVE_GLX=yes, HAVE_GLX=no)
-	CPPFLAGS="$save_CPPFLAGS"
-fi
-
-save_CPPFLAGS="$CPPFLAGS"
-CPPFLAGS="$CPPFLAGS $X_CFLAGS"
-dnl Checks for OpenGL features in headers
-if test "x$HAVE_GLX" != xno; then
-	AC_MSG_CHECKING(for GL_COLOR_INDEX8_EXT in GL/gl.h)
-	AC_TRY_COMPILE([#include "GL/gl.h"],
-		[ int x = (int) GL_COLOR_INDEX8_EXT;],
-		AC_DEFINE(HAVE_GL_COLOR_INDEX8_EXT) AC_MSG_RESULT(yes),
-		AC_MSG_RESULT(no)
-	)
-	AC_CHECK_HEADERS(GL/glext.h, HAVE_GL_GLEXT_H=yes)
-fi
-CPPFLAGS="$save_CPPFLAGS"
-
-dnl Make sure -lGL or -lMesaGL or -lopengl32 works
-if test "x$glx_libraries" != xauto -a "x$glx_libraries" != xno -a "x$glx_libraries" != x; then
-	if test "x$HAVE_GLX" = xyes; then
-		HAVE_GLX=no
-		AC_CHECK_LIB(GL, glColor4f,
-			HAVE_GLX=yes
-			OGL_NAME=GL,,
-			[ -L$glx_libraries -lX11 $X_EXTRA_LIBS ]
-		)
-		if test "x$HAVE_GLX" != xyes; then
-			AC_CHECK_LIB(MesaGL, glColor4f,
-				HAVE_GLX=yes
-				OGL_NAME=MesaGL,,
-				[ -L$glx_libraries -lX11 $X_EXTRA_LIBS ]
-			)
-		fi
-		if test "x$HAVE_GLX" != xyes; then
-			AC_CHECK_LIB(opengl32, glColor4f,
-				HAVE_GLX=yes
-				OGL_NAME=opengl32,,
-				[ -L$glx_libraries ]
-			)
-		fi
-	fi
-else
-	if test "x$glx_libraries" != xauto \
-			-o "x$glx_libraries" != xno \
-			-o "x$glx_libraries" != x; then
-		glx_libraries=""
-	fi
-	
-	if test "x$HAVE_GLX" = xyes; then
-		HAVE_GLX=no
-		AC_CHECK_LIB(GL, glColor4f,
-			HAVE_GLX=yes
-			GLX_LIBS=-lXext
-			OGL_NAME=GL,,
-			[ $X_LIBS -lX11 -lXext $X_EXTRA_LIBS ]
-		)
-		if test "x$HAVE_GLX" != xyes; then
-			AC_CHECK_LIB(MesaGL, glColor4f,
-				HAVE_GLX=yes
-				GLX_LIBS=-lXext
-				OGL_NAME=MesaGL,,
-				[ $X_LIBS -lX11 -lXext $X_EXTRA_LIBS ]
-			)
-		fi
-		if test "x$HAVE_GLX" != xyes; then
-			LIBS_save="$LIBS"
-			LIBS="$LIBS -lopengl32"
-			AC_MSG_CHECKING(for glColor4f in -lopengl32)
-			AC_TRY_LINK(
-				[#include <GL/gl.h>],
-				[glColor4f(0,0,0,0);],
-				HAVE_GLX=yes
-				OGL_NAME=opengl32
-				AC_MSG_RESULT(yes),
-				AC_MSG_RESULT(no)
-			)
-			LIBS="$LIBS_save"
-		fi
-	fi
-fi
-
-if test "x$HAVE_GLX" = xyes; then
-	test "x$glx_includes" != x &&	GLX_CFLAGS="-I$glx_includes"
-	test "x$glx_libraries" != x && GLX_LIBS="-L$glx_libraries"
-	GLX_LIBS="$GLX_LIBS -l$OGL_NAME"
-	AC_DEFINE(HAVE_GLX)
-else
-	GLX_CFLAGS=""
-	GLX_LIBS=""
-fi
-AC_SUBST(GLX_CFLAGS)
-AC_SUBST(GLX_LIBS)
-
 dnl SDL/SDL-GL checks
 AC_ARG_ENABLE(sdl,
 [  --disable-sdl           disable checking for SDL],
@@ -1397,7 +1275,7 @@ if test "x$HAVE_FBDEV" = xyes -a "x$ENABLE_FBDEV" = xyes; then
 	BUILD_SW=yes
 fi
 if test "x$HAVE_X" = xyes; then
-	if test "x$HAVE_GLX" = xyes -a "x$ENABLE_GLX" = xyes; then
+	if test "x$ENABLE_GLX" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-glx\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-glx\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS GLX"
@@ -1420,7 +1298,7 @@ if test "x$HAVE_SDL" = xyes -a "x$ENABLE_SDL" = xyes; then
 	BUILD_SW=yes
 fi
 if test "x$HAVE_SGL" = xyes; then
-	if test "x$HAVE_GLX" = xyes -a "x$ENABLE_SGL" = xyes; then
+	if test "x$ENABLE_SGL" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-sgl\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-sgl\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS SDL-GL"
@@ -1435,7 +1313,7 @@ if test "x$HAVE_SVGA" = xyes -a "x$ENABLE_SVGA" = xyes; then
 	VID_TARGETS="$VID_TARGETS libQFsvga.la"
 	BUILD_SW=yes
 fi
-if test "x$mingw" = xyes -a "x$HAVE_GLX" = xyes -a "x$ENABLE_WGL" = xyes; then
+if test "x$mingw" = xyes -a "x$ENABLE_WGL" = xyes; then
 	QW_TARGETS="$QW_TARGETS qw-client-wgl\$(EXEEXT)"
 	NQ_TARGETS="$NQ_TARGETS nq-wgl\$(EXEEXT)"
 	CL_TARGETS="$CL_TARGETS WGL"

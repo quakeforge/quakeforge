@@ -87,10 +87,6 @@ server_SOURCES= host.c host_cmd.c pr_cmds.c sv_cvar.c sv_main.c \
 combined_SOURCES=	$(common_SOURCES) $(client_SOURCES) $(server_SOURCES) \
 			$(qfsys_SRC)
 
-if BUILD_GL
-AM_CFLAGS = $(GLX_CFLAGS)
-endif
-
 # Software-rendering targets
 #
 # ... Common stuff
@@ -139,19 +135,19 @@ nq_3dfx_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/mo
 
 # ... OpenGL in X Window
 nq_glx_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)
-nq_glx_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFglx.la $(client_LIBS) $(GLX_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(DL_LIBS)
+nq_glx_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFglx.la $(client_LIBS) $(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 -lXext $(X_EXTRA_LIBS) $(DL_LIBS)
 nq_glx_LDFLAGS= $(common_ldflags)
 nq_glx_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFglx.la $(client_LIB_DEPS)
 
 # ... Simple Directmedia Layer, version 1.1 and higher, in GL mode
 nq_sgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES)
-nq_sgl_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFsgl.la $(client_LIBS) $(X_LIBS) $(SDL_LIBS) $(GLX_LIBS) $(DL_LIBS)
+nq_sgl_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFsgl.la $(client_LIBS) $(X_LIBS) $(SDL_LIBS) $(DL_LIBS)
 nq_sgl_LDFLAGS= $(common_ldflags)
 nq_sgl_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFsgl.la $(client_LIB_DEPS)
 
 # ... SGI/Microsoft WGL (Windows OpenGL)
 nq_wgl_SOURCES=	$(combined_SOURCES) $(ogl_SOURCES) conproc.c
-nq_wgl_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFwgl.la $(client_LIBS) $(GLX_LIBS) -lgdi32 -lcomctl32 -lwinmm
+nq_wgl_LDADD=	../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFwgl.la $(client_LIBS) -lgdi32 -lcomctl32 -lwinmm
 nq_wgl_LDFLAGS= $(common_ldflags)
 nq_wgl_DEPENDENCIES=../../libs/video/renderer/libQFrenderer_gl.la ../../libs/models/libQFmodels_gl.la ../../libs/video/targets/libQFwgl.la $(client_LIB_DEPS)
 

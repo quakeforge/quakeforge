@@ -4,6 +4,8 @@
 *.o
 *.obj
 *.s
+*.lo
+*.la
 .deps
 .libs
 .vimrc

@@ -45,14 +45,6 @@
 # include "winquake.h"
 #endif
 
-#include <GL/gl.h>
-
-#ifdef HAVE_GL_GLX_H
-# include <GL/glx.h>
-#endif
-#ifdef HAVE_GL_GLEXT_H
-# include <GL/glext.h>
-#endif
 #ifdef HAVE_WINDOWS_H
 # include <windows.h>
 #endif
@@ -66,7 +58,8 @@
 
 #include "QF/qtypes.h"
 
-#include "qfgl_ext.h"
+#include "QF/GL/qf_ext.h"
+#include "QF/GL/funcs.h"
 
 /*
 	ParseExtensionList
@@ -105,7 +98,7 @@ QFGL_ExtensionPresent (const char *name)
 	static const GLubyte *gl_extensions = NULL;
 
 	if (!gl_extensions) {				// get and save GL extension list
-		gl_extensions = glGetString (GL_EXTENSIONS);
+		gl_extensions = QFGL_glGetString (GL_EXTENSIONS);
 	}
 
 	return QFGL_ParseExtensionList (gl_extensions, name);

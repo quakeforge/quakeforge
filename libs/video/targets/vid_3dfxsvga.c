@@ -38,7 +38,6 @@
 # include <strings.h>
 #endif
 
-#include <GL/gl.h>
 #include <GL/fxmesa.h>
 #include <glide/glide.h>
 #include <glide/sst1vid.h>
@@ -144,7 +143,7 @@ GL_Init (void)
 void
 GL_EndRendering (void)
 {
-	glFlush ();
+	QFGL_glFlush ();
 	fxMesaSwapBuffers ();
 	Sbar_Changed ();
 }

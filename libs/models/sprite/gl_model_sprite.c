@@ -39,10 +39,10 @@
 # include <strings.h>
 #endif
 
-#include "glquake.h"
 #include "compat.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
+#include "QF/GL/qf_textures.h"
 
 extern model_t *loadmodel;
 extern char loadname[];
