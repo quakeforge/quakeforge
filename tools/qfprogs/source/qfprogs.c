@@ -79,6 +79,50 @@ static int      memsize = 1024*1024;
 
 static hashtab_t *func_tab;
 
+static VFile *
+open_file (const char *path, int *len)
+{
+	int         fd = open (path, O_RDONLY);
+	unsigned char id[2];
+	unsigned char len_bytes[4];
+
+	if (fd == -1) {
+		perror (path);
+		return 0;
+	}
+	read (fd, id, 2);
+	if (id[0] == 0x1f && id[1] == 0x8b) {
+		lseek (fd, -4, SEEK_END);
+		read (fd, len_bytes, 4);
+		*len = ((len_bytes[3] << 24)
+				| (len_bytes[2] << 16)
+				| (len_bytes[1] << 8)
+				| (len_bytes[0]));
+	} else {
+		*len = lseek (fd, 0, SEEK_END);
+	}
+	lseek (fd, 0, SEEK_SET);
+
+	return Qdopen (fd, "rbz");
+}
+
+static void *
+load_file (progs_t *pr, const char *name)
+{
+	VFile      *file;
+	int         size;
+	void       *sym;
+
+	file = open_file (name, &size);
+	if (!file) {
+		perror (name);
+		return 0;
+	}
+	sym = malloc (size);
+	Qread (file, sym, size);
+	return sym;
+}
+
 static void *
 allocate_progs_mem (progs_t *pr, int size)
 {
@@ -133,38 +177,12 @@ init_qf (void)
 	pr.edicts = &edicts;
 	pr.num_edicts = &num_edicts;
 	pr.reserved_edicts = &reserved_edicts;
+	pr.load_file = load_file;
 	pr.allocate_progs_mem = allocate_progs_mem;
 	pr.free_progs_mem = free_progs_mem;
 
 	func_tab = Hash_NewTable (1021, 0, 0, 0);
 	Hash_SetHashCompare (func_tab, func_hash, func_compare);
-}
-
-static VFile *
-open_file (const char *path, int *len)
-{
-	int         fd = open (path, O_RDONLY);
-	unsigned char id[2];
-	unsigned char len_bytes[4];
-
-	if (fd == -1) {
-		perror (path);
-		return 0;
-	}
-	read (fd, id, 2);
-	if (id[0] == 0x1f && id[1] == 0x8b) {
-		lseek (fd, -4, SEEK_END);
-		read (fd, len_bytes, 4);
-		*len = ((len_bytes[3] << 24)
-				| (len_bytes[2] << 16)
-				| (len_bytes[1] << 8)
-				| (len_bytes[0]));
-	} else {
-		*len = lseek (fd, 0, SEEK_END);
-	}
-	lseek (fd, 0, SEEK_SET);
-
-	return Qdopen (fd, "rbz");
 }
 
 int
@@ -190,7 +208,7 @@ load_progs (const char *name)
 		if (pr.pr_functions[i].first_statement > 0)// don't bother with builtins
 			Hash_AddElement (func_tab, &pr.pr_functions[i]);
 	}
-	//PR_LoadDebug (&pr);
+	PR_LoadDebug (&pr);
 	return 1;
 }
 

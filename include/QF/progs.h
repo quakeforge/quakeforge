@@ -332,6 +332,7 @@ struct progs_s {
 	int				(*prune_edict)(progs_t *pr, edict_t *ent);
 	void			(*free_edict)(progs_t *pr, edict_t *ent);
 
+	void            *(*load_file)(progs_t *pr, const char *path);
 	void			*(*allocate_progs_mem)(progs_t *pr, int size);
 	void			(*free_progs_mem)(progs_t *pr, void *mem);
 

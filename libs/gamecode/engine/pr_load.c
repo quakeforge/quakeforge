@@ -70,6 +70,12 @@ var_get_key (void *d, void *_pr)
 }
 
 static void *
+load_file (progs_t *pr, const char *path)
+{
+	return COM_LoadHunkFile (path);
+}
+
+static void *
 allocate_progs_mem (progs_t *pr, int size)
 {
 	return Hunk_AllocName (size, pr->progs_name);
@@ -146,6 +152,8 @@ PR_LoadProgsFile (progs_t * pr, VFile *file, int size, int edicts, int zone)
 	pr->pr_edict_size &= ~(sizeof (void*) - 1);
 	pr->pr_edictareasize = edicts * pr->pr_edict_size;
 
+	if (!pr->load_file)
+		pr->load_file = load_file;
 	if (!pr->allocate_progs_mem)
 		pr->allocate_progs_mem = allocate_progs_mem;
 	if (!pr->free_progs_mem)

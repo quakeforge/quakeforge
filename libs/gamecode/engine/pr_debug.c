@@ -61,6 +61,7 @@ typedef struct {
 	char *text;
 	line_t *lines;
 	int num_lines;
+	progs_t *pr;
 } file_t;
 
 cvar_t      *pr_debug;
@@ -77,9 +78,11 @@ file_get_key (void *_f, void *unused)
 static void
 file_free (void *_f, void *unused)
 {
-	file_t *f = (file_t*)_f;
+	file_t     *f = (file_t*)_f;
+	progs_t    *pr = f->pr;
+
 	free (f->lines);
-	free (f->text);
+	((progs_t *) pr)->free_progs_mem (pr, f->text);
 	free (f->name);
 	free (f);
 }
@@ -113,7 +116,7 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 	path = Hunk_TempAlloc (strlen (pr_source_path->string) + strlen (fname) +
 						   2);
 	sprintf (path, "%s/%s", pr_source_path->string, fname);
-	f->text = COM_LoadFile (path, 0);
+	f->text = pr->load_file (pr, path);
 	if (!f->text) {
 		free (f);
 		return 0;
@@ -123,14 +126,14 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 			f->num_lines++;
 	f->name = strdup (fname);
 	if (!f->name) {
-		free (f->text);
+		pr->free_progs_mem (pr, f->text);
 		free (f);
 		return 0;
 	}
 	f->lines = malloc (f->num_lines * sizeof (line_t));
 	if (!f->lines) {
 		free (f->name);
-		free (f->text);
+		pr->free_progs_mem (pr, f->text);
 		free (f);
 		return 0;
 	}
@@ -142,6 +145,7 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 		}
 	}
 	f->lines[f->num_lines++].len = l - f->lines[f->num_lines].text;
+	f->pr = pr;
 	Hash_Add (file_hash, f);
 	return f;
 }
@@ -179,7 +183,7 @@ PR_LoadDebug (progs_t *pr)
 							   + 1);
 	strncpy (sym_path, pr->progs_name, path_end - pr->progs_name);
 	strcpy (sym_path + (path_end - pr->progs_name), sym_file);
-	pr->debug = (pr_debug_header_t*)COM_LoadHunkFile (sym_path);
+	pr->debug = pr->load_file (pr, sym_path);
 	if (!pr->debug) {
 		Sys_Printf ("can't load %s for debug info\n", sym_path);
 		return;

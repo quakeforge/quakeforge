@@ -64,8 +64,10 @@ disassemble_progs (progs_t *pr)
 
 	for (i = 0; i < pr->progs->numstatements; i++) {
 		dfunction_t *f = func_find (i);
-		if (f)
+		if (f) {
 			Sys_Printf ("%s:\n", PR_GetString (pr, f->s_name));
+			pr->pr_xfunction = f;
+		}
 		PR_PrintStatement (pr, &pr->pr_statements[i]);
 	}
 }
