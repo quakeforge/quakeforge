@@ -198,7 +198,7 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 	if (e.type == ex_string)
 		e.e.integer_val = CopyString (r);
 
-	memcpy (pr_globals + cn->ofs, &e.e, 4 * type_size[type->type]);
+	memcpy (pr_globals + cn->ofs, &e.e, 4 * pr_type_size[type->type]);
 
 	Hash_Add (tab, cn);
 

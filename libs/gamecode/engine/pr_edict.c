@@ -56,15 +56,18 @@ cvar_t     *pr_boundscheck;
 cvar_t     *pr_deadbeef_ents;
 cvar_t     *pr_deadbeef_locals;
 
-int         type_size[8] = {
+int         pr_type_size[ev_type_count] = {
 	1,
-	sizeof (string_t) / 4,
+	1,
 	1,
 	3,
 	1,
 	1,
-	sizeof (func_t) / 4,
-	sizeof (void *) / 4
+	1,
+	1,
+	4,
+	1,
+	1,
 };
 
 const char *type_name[ev_type_count] = {
@@ -622,10 +625,10 @@ ED_Write (progs_t * pr, VFile *f, edict_t *ed)
 
 		// if the value is still all 0, skip the field
 		type = d->type & ~DEF_SAVEGLOBAL;
-		for (j = 0; j < type_size[type]; j++)
+		for (j = 0; j < pr_type_size[type]; j++)
 			if (v[j].integer_var)
 				break;
-		if (j == type_size[type])
+		if (j == pr_type_size[type])
 			continue;
 
 		Qprintf (f, "\"%s\" ", name);

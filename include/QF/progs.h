@@ -139,8 +139,6 @@ int NUM_FOR_BAD_EDICT(progs_t *pr, edict_t *e);
 #define	E_VECTOR(e,o)	E_var (e, o, vector)
 #define	E_STRING(p,e,o)	(PR_GetString (p, E_var (e, o, string)))
 
-extern	int		type_size[8];
-
 typedef void (*builtin_proc) (progs_t *pr);
 typedef struct {
 	const char *name;

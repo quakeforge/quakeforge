@@ -920,7 +920,7 @@ PR_PrintFunction (def_t *def)
 	for (d = def->scope_next; d; d = d->scope_next) {
 		printf ("%s: %d %d %d\n",
 				d->name ? d->name : "<temp>",
-				d->ofs, d->type->type, type_size[d->type->type]);
+				d->ofs, d->type->type, pr_type_size[d->type->type]);
 		for (r = d->refs; r; r = r->next)
 			printf (" %d", r->statement - statements);
 		printf ("\n");

@@ -171,7 +171,7 @@ emit_assign_expr (expr_t *e)
 	} else {
 		if (def_a->constant) {
 			if (options.code.cow) {
-				int size = type_size [def_a->type->type];
+				int size = pr_type_size [def_a->type->type];
 				int ofs = PR_NewLocation (def_a->type);
 
 				memcpy (pr_globals + ofs, pr_globals + def_a->ofs, size);

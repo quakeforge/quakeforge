@@ -810,7 +810,7 @@ finish_function (function_t *f)
 	df->locals = f->def->locals;
 	df->parm_start = 0;
 	for (i = 0; i < df->numparms; i++)
-		df->parm_size[i] = type_size[f->def->type->parm_types[i]->type];
+		df->parm_size[i] = pr_type_size[f->def->type->parm_types[i]->type];
 
 	if (f->aux) {
 		def_t *def;

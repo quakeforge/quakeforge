@@ -111,7 +111,7 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 		d->used = 1;
 		d->parent = def;
 	} else {
-		*allocate += type_size[type->type];
+		*allocate += pr_type_size[type->type];
 	}
 
 	if (type->type == ev_field) {
@@ -135,7 +135,7 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 			d->used = 1;	// always `used'
 			d->parent = def;
 		} else {
-			pr.size_fields += type_size[type->aux_type->type];
+			pr.size_fields += pr_type_size[type->aux_type->type];
 		}
 	}
 
@@ -173,7 +173,7 @@ PR_NewDef (type_t *type, const char *name, def_t *scope)
 int
 PR_NewLocation (type_t *type)
 {
-	int size = type_size[type->type];
+	int size = pr_type_size[type->type];
 	locref_t *loc;
 
 	if (free_locs[size]) {
@@ -192,7 +192,7 @@ PR_NewLocation (type_t *type)
 void
 PR_FreeLocation (def_t *def)
 {
-	int size = type_size[def->type->type];
+	int size = pr_type_size[def->type->type];
 	locref_t *loc;
 
 	if (!free_free_locs) {
@@ -213,7 +213,7 @@ PR_FreeLocation (def_t *def)
 def_t *
 PR_GetTempDef (type_t *type, def_t *scope)
 {
-	int size = type_size[type->type];
+	int size = pr_type_size[type->type];
 	def_t *def;
 	if (free_temps[size]) {
 		def = free_temps[size];
@@ -222,7 +222,7 @@ PR_GetTempDef (type_t *type, def_t *scope)
 	} else {
 		def = PR_NewDef (type, 0, scope);
 		def->ofs = *scope->alloc;
-		*scope->alloc += type_size[size];
+		*scope->alloc += pr_type_size[size];
 	}
 	def->users = 0;
 	def->next = temp_scope.next;
@@ -244,7 +244,7 @@ PR_FreeTempDefs (void)
 
 			if (d->users < 0)
 				printf ("%s:%d: warning: %3d %3d\n", strings + d->file, d->line, d->ofs, d->users);
-			size = type_size[d->type->type];
+			size = pr_type_size[d->type->type];
 			if (d->expr)
 				d->expr->e.temp.def = 0;
 

@@ -68,8 +68,6 @@ type_t	type_integer = { ev_integer, &def_integer };
 
 type_t	type_floatfield = { ev_field, &def_field, NULL, &type_float };
 
-int 	type_size[ev_type_count] = { 1, 1, 1, 3, 1, 1, 1, 1, 4, 1 };
-
 def_t	def_void = { &type_void, "temp" };
 def_t	def_string = { &type_string, "temp" };
 def_t	def_float = { &type_float, "temp" };
