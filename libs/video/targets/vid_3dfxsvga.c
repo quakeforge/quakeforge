@@ -303,11 +303,6 @@ VID_Init (unsigned char *palette)
 	attribs[4] = 1;
 	attribs[5] = FXMESA_NONE;
 
-	if ((i = COM_CheckParm ("-conwidth")))
-		vid.conwidth = atoi (com_argv[i + 1]);
-	else
-		vid.conwidth = 640;
-
 	vid.conwidth &= 0xfff8;				// make it a multiple of eight
 
 	vid.conwidth = max (vid.conwidth, 320);

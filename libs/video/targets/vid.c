@@ -53,6 +53,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 byte		gammatable[256];
 cvar_t	   *vid_gamma;
 cvar_t	   *vid_system_gamma;
+cvar_t     *vid_conwidth;
 qboolean	vid_gamma_avail;		// hardware gamma availability
 
 unsigned int	d_8to24table[256];
@@ -111,6 +112,18 @@ VID_GetWindowSize (int def_w, int def_h)
 
 	scr_width = vid.width = vid_width->int_val;
 	scr_height = vid.height = vid_height->int_val;
+
+	vid_conwidth = Cvar_Get ("vid_conwidth", va ("%d", def_w), CVAR_NONE, NULL,
+			"console effective width (GL only)");
+	if ((pnum = COM_CheckParm ("-conwidth"))) {
+		if (pnum >= com_argc - 1)
+			Sys_Error ("VID: -conwidth <width>");
+		Cvar_Set (vid_conwidth, com_argv[pnum + 1]);
+		if (!vid_height->int_val)
+			Sys_Error ("VID: Bad console width");
+	}
+	Cvar_SetFlags (vid_conwidth, vid_conwidth->flags | CVAR_ROM);
+	vid.conwidth = vid_conwidth->int_val;
 }
 
 /* GAMMA FUNCTIONS */

@@ -210,14 +210,6 @@ VID_Init (unsigned char *palette)
 	vid.colormap8 = vid_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 
-	// Interpret command-line params
-
-	// Set vid parameters
-	if ((i = COM_CheckParm ("-conwidth")))
-		vid.conwidth = atoi (com_argv[i + 1]);
-	else
-		vid.conwidth = scr_width;
-
 	vid.conwidth &= 0xfff8;				// make it a multiple of eight
 	vid.conwidth = max (vid.conwidth, 320);
 
