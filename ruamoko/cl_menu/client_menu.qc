@@ -476,9 +476,9 @@ void () main_menu =
 
 void () menu_init =
 {
-	id (lanConfig_port_il) = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:126 :lanConfig_cursor_table[0] :4 :8] promptCharacter:' '];
+	id (lanConfig_port_il) = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:126 :lanConfig_cursor_table[0] :8 :4] promptCharacter:' '];
 	[lanConfig_port_il setWidth:10];
-	id (lanConfig_join_il) = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:70 :lanConfig_cursor_table[2] :4 :24] promptCharacter:' '];
+	id (lanConfig_join_il) = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:70 :lanConfig_cursor_table[2] :24 :4] promptCharacter:' '];
 	[lanConfig_join_il setWidth:26];
 	switch (gametype ()) {
 	case "netquake":
