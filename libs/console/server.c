@@ -464,7 +464,7 @@ C_ProcessInput (void)
 static void
 C_KeyEvent (knum_t key, short unicode, qboolean down)
 {
-#ifdef HAVE_CURSES
+#ifdef HAVE_CURSES_H
 	int         ovf = view_offset;
 
 	switch (key) {
