@@ -123,7 +123,7 @@ int NUM_FOR_EDICT(progs_t *pr, edict_t *e);
 #define	G_INT(p,o)		G_var (p, o, int)
 #define G_EDICT(p,o)	((edict_t *)(PR_edicts (p) + G_INT (p, o)))
 #define G_EDICTNUM(p,o)	NUM_FOR_EDICT(p, G_EDICT(p, o))
-#define	G_VECTOR(p,o)	(&G_FLOAT (p, o))
+#define	G_VECTOR(p,o)	G_var (p, o, vector)
 #define	G_STRING(p,o)	PR_GetString (p, G_var (p, o, string))
 #define	G_FUNCTION(p,o)	G_var (p, o, func)
 
