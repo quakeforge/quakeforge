@@ -3,4 +3,5 @@
 *.pak
 *.qfo
 *.sym
+.deps
 .vimrc

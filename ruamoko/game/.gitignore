@@ -2,4 +2,5 @@
 *.dat
 *.qfo
 *.sym
+.deps
 .vimrc

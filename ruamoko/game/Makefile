@@ -13,10 +13,11 @@ game_source = \
 	world.r
 
 game_obj = $(addsuffix .qfo,$(basename $(game_source)))
-game_dep = $(addsuffix .d,$(basename $(game_source)))
+game_dep = $(addprefix .deps/,$(addsuffix .d,$(basename $(game_source))))
 
 %.qfo: %.r
-	@$(QFCC) -M $(QCPPFLAGS) -c $< | sed -e 's/\.r\.o\>/.qfo/' > `basename $@ .qfo`.d
+	@mkdir -p .deps
+	@$(QFCC) -q -M $(QCPPFLAGS) -c $< | sed -e 's/\.r\.o\>/.qfo/' > .deps/`basename $@ .qfo`.d
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
 
 %.qfo: %.qc
@@ -29,5 +30,6 @@ game.dat: $(game_obj) ../lib/libr.pak
 
 clean:
 	rm -f *.qfo *.dat *.sym *.d
+	rm -rf .deps
 
 -include $(game_dep)

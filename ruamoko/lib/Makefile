@@ -7,9 +7,11 @@ libr_source = \
 	object.r
 
 libr_obj = $(addsuffix .qfo,$(basename $(libr_source)))
-libr_dep = $(addsuffix .d,$(basename $(libr_source)))
+libr_dep = $(addprefix .deps/,$(addsuffix .d,$(basename $(libr_source))))
 
 %.qfo: %.r
+	@mkdir -p .deps
+	@$(QFCC) -M -q $(QCPPFLAGS) -c $< | sed -e 's/\.r\.o\>/.qfo/' > .deps/`basename $@ .qfo`.d
 	$(QFCC) $(QCFLAGS) $(QCPPFLAGS) -c -o $@ $<
 
 %.qfo: %.qc
