@@ -8,14 +8,18 @@ INCLUDES= -I$(top_srcdir)/include $(PAK_INCS)
 
 if BUILD_PAK
 pak=pak
+zpak=zpak
 mans=pak.1
 else
 pak=
+zpak=
 mans=
 endif
 
 bin_PROGRAMS=	$(pak)
-EXTRA_PROGRAMS= pak
+bin_SCRIPTS=	$(zpak)
+EXTRA_PROGRAMS=	pak
+EXTRA_SCRIPTS=	zpak
 
 man_MANS=	$(mans)
 
