@@ -52,7 +52,7 @@ static const char rcsid[] =
 static int
 fgetLittleShort (VFile *f)
 {
-	byte        b1, b2;
+	byte		b1, b2;
 
 	b1 = Qgetc (f);
 	b2 = Qgetc (f);
@@ -64,7 +64,7 @@ fgetLittleShort (VFile *f)
 static int
 fgetLittleLong (VFile *f)
 {
-	byte	b1, b2, b3, b4;
+	byte		b1, b2, b3, b4;
 
 	b1 = Qgetc(f);
 	b2 = Qgetc(f);
@@ -79,10 +79,9 @@ static inline byte *
 blit_rgb (byte *buf, int count, byte red, byte green, byte blue)
 {
 	while (count--) {
-		buf[0] = red;
-		buf[1] = green;
-		buf[2] = blue;
-		buf += 3;
+		*buf++ = red;
+		*buf++ = green;
+		*buf++ = blue;
 	}
 	return buf;
 }
@@ -91,11 +90,10 @@ static inline byte *
 blit_rgba (byte *buf, int count, byte red, byte green, byte blue, byte alpha)
 {
 	while (count--) {
-		buf[0] = red;
-		buf[1] = green;
-		buf[2] = blue;
-		buf[3] = alpha;
-		buf += 4;
+		*buf++ = red;
+		*buf++ = green;
+		*buf++ = blue;
+		*buf++ = alpha;
 	}
 	return buf;
 }
@@ -103,46 +101,42 @@ blit_rgba (byte *buf, int count, byte red, byte green, byte blue, byte alpha)
 static inline byte *
 read_bgr (byte *buf, int count, byte **data)
 {
-	byte        blue = (*data)[0];
-	byte        green = (*data)[1];
-	byte        red = (*data)[2];
+	byte		blue = *(*data)++;
+	byte		green = *(*data)++;
+	byte		red = *(*data)++;
 
-	*data += 3;
-	return blit_rgb(buf, count, red, green, blue);
+	return blit_rgb (buf, count, red, green, blue);
 }
 
 static inline byte *
 read_rgb (byte *buf, int count, byte **data)
 {
-	byte        red = (*data)[0];
-	byte        green = (*data)[1];
-	byte        blue = (*data)[2];
+	byte		red = *(*data)++;
+	byte		green = *(*data)++;
+	byte		blue = *(*data)++;
 
-	*data += 3;
-	return blit_rgb(buf, count, red, green, blue);
+	return blit_rgb (buf, count, red, green, blue);
 }
 
 static inline byte *
 read_bgra (byte *buf, int count, byte **data)
 {
-	byte        blue = (*data)[0];
-	byte        green = (*data)[1];
-	byte        red = (*data)[2];
-	byte        alpha = (*data)[3];
+	byte		blue = *(*data)++;
+	byte		green = *(*data)++;
+	byte		red = *(*data)++;
+	byte		alpha = *(*data)++;
 
-	*data += 4;
 	return blit_rgba (buf, count, red, green, blue, alpha);
 }
 
 static inline byte *
 read_rgba (byte *buf, int count, byte **data)
 {
-	byte        red = (*data)[0];
-	byte        green = (*data)[1];
-	byte        blue = (*data)[2];
-	byte        alpha = (*data)[3];
+	byte		red = *(*data)++;
+	byte		green = *(*data)++;
+	byte		blue = *(*data)++;
+	byte		alpha = *(*data)++;
 
-	*data += 4;
 	return blit_rgba (buf, count, red, green, blue, alpha);
 }
 
@@ -199,7 +193,7 @@ LoadTGA (VFile *fin)
 	tex->palette = 0;
 
 	// skip TARGA image comment
-	dataByte = (byte *)(targa + 1);
+	dataByte = (byte *) (targa + 1);
 	dataByte += targa->id_length;
 
 	span = columns * tex->format;
@@ -225,7 +219,7 @@ LoadTGA (VFile *fin)
 	} else if (targa->image_type == 10) {	// RLE compressed image
 		unsigned char packetHeader, packetSize;
 
-		byte *(*expand)(byte *buf, int count, byte **data);
+		byte *(*expand) (byte *buf, int count, byte **data);
 
 		if (targa->pixel_size == 24)
 			expand = read_bgr;
@@ -241,9 +235,9 @@ LoadTGA (VFile *fin)
 					int count = columns - column;
 
 					packetSize -= count;
-					if (packetHeader & 0x80) {	// run-length packet
+					if (packetHeader & 0x80) {		// run-length packet
 						expand (pixcol, count, &dataByte);
-					} else {				// non run-length packet
+					} else {						// non run-length packet
 						while (count--)
 							expand (pixcol, 1, &dataByte);
 					}
@@ -253,15 +247,15 @@ LoadTGA (VFile *fin)
 						goto done;
 				}
 				column += packetSize;
-				if (packetHeader & 0x80) {	// run-length packet
+				if (packetHeader & 0x80) {			// run-length packet
 					pixcol = expand (pixcol, packetSize, &dataByte);
-				} else {				// non run-length packet
+				} else {							// non run-length packet
 					while (packetSize--)
 						pixcol = expand (pixcol, 1, &dataByte);
 				}
 			}
 		}
-done:
+	done:;
 	}
 
 	Hunk_FreeToLowMark (targa_mark);
