@@ -420,14 +420,10 @@ field_expr (expr_t *e1, expr_t *e2)
 		return 0;
 	}
 
-	e = new_expr ();
-	e->type = ex_expr;
-	e->e.expr.op = '.';
+	e = new_binary_expr ('.', e1, e2);
 	e->e.expr.type = (e2->type == ex_def)
 					 ? e2->e.def->type->aux_type
 					 : e2->e.expr.type;
-	e->e.expr.e1 = e1;
-	e->e.expr.e2 = e2;
 	return e;
 }
 
@@ -450,50 +446,37 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	}
 
 	if (t1 == t2) {
-		expr_t *e = new_expr ();
-		e->type = ex_expr;
-		e->e.expr.op = op;
-		if (op >= OR && op <= GT)
+		expr_t *e = new_binary_expr (op, e1, e2);
+		if ((op >= OR && op <= GT) || (op == '*' && t1 == ev_vector))
 			e->e.expr.type = &type_float;
 		else
 			e->e.expr.type = types[t1];
-		e->e.expr.e1 = e1;
-		e->e.expr.e2 = e2;
+		if (op == '=' && e1->type == ex_expr && e1->e.expr.op == '.') {
+			e1->e.expr.type = &type_pointer;
+		}
 		return e;
 	} else {
 		switch (t1) {
 			case ev_float:
 				if (t2 == ev_vector) {
-					expr_t *e = new_expr ();
-					e->type = ex_expr;
-					e->e.expr.op = op;
+					expr_t *e = new_binary_expr (op, e1, e2);
 					e->e.expr.type = &type_vector;
-					e->e.expr.e1 = e1;
-					e->e.expr.e2 = e2;
 					return e;
 				} else {
 					goto type_mismatch;
 				}
 			case ev_vector:
 				if (t2 == ev_float) {
-					expr_t *e = new_expr ();
-					e->type = ex_expr;
-					e->e.expr.op = op;
+					expr_t *e = new_binary_expr (op, e1, e2);
 					e->e.expr.type = &type_vector;
-					e->e.expr.e1 = e1;
-					e->e.expr.e2 = e2;
 					return e;
 				} else {
 					goto type_mismatch;
 				}
 			case ev_field:
 				if (e1->e.expr.type->aux_type->type == t2) {
-					expr_t *e = new_expr ();
-					e->type = ex_expr;
-					e->e.expr.op = op;
+					expr_t *e = new_binary_expr (op, e1, e2);
 					e->e.expr.type = e->e.expr.type->aux_type;
-					e->e.expr.e1 = e1;
-					e->e.expr.e2 = e2;
 					return e;
 				} else {
 					goto type_mismatch;
@@ -522,13 +505,10 @@ unary_expr (int op, expr_t *e)
 				case ex_expr:
 				case ex_def:
 					{
-						expr_t *n = new_expr ();
-						n->type = ex_uexpr;
-						n->e.expr.op = op;
+						expr_t *n = new_unary_expr (op, e);
 						n->e.expr.type = (e->type == ex_def)
 										 ? e->e.def->type
 										 : e->e.expr.type;
-						n->e.expr.e1 = e;
 						return n;
 					}
 				case ex_int:
@@ -561,11 +541,8 @@ unary_expr (int op, expr_t *e)
 				case ex_expr:
 				case ex_def:
 					{
-						expr_t *n = new_expr ();
-						n->type = ex_uexpr;
-						n->e.expr.op = op;
+						expr_t *n = new_unary_expr (op, e);
 						n->e.expr.type = &type_float;
-						n->e.expr.e1 = e;
 						return n;
 					}
 				case ex_int:
@@ -636,12 +613,8 @@ function_expr (expr_t *e1, expr_t *e2)
 			return 0;
 		}
 	}
-	e = new_expr ();
-	e->type = ex_expr;
-	e->e.expr.op = 'c';
+	e = new_binary_expr ('c', e1, e2);
 	e->e.expr.type = ftype->aux_type;
-	e->e.expr.e1 = e1;
-	e->e.expr.e2 = e2;
 	return e;
 }
 
@@ -649,6 +622,7 @@ def_t *
 emit_statement (opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_c)
 {
 	dstatement_t    *statement;
+	def_t			*ret;
 
 	statement = &statements[numstatements];
 	numstatements++;
@@ -660,10 +634,12 @@ emit_statement (opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_c)
 		// ifs, gotos, and assignments don't need vars allocated
 		var_c = NULL;
 		statement->c = 0;
+		ret = var_a;
 	} else {	// allocate result space
 		if (!var_c)
 			var_c = PR_GetTempDef (op->type_c->type, pr_scope);
 		statement->c = var_c->ofs;
+		ret = var_c;
 	}
 	PR_AddStatementRef (var_a, statement, 0);
 	PR_AddStatementRef (var_b, statement, 1);
@@ -703,6 +679,22 @@ emit_function_call (expr_t *e, def_t *dest)
 }
 
 def_t *
+emit_assign_expr (expr_t *e)
+{
+	def_t	*def_a, *def_b;
+	opcode_t *op;
+	def_a = emit_sub_expr (e->e.expr.e1, 0);
+	if (def_a->type == &type_pointer) {
+		def_b = emit_sub_expr (e->e.expr.e2, 0);
+		op = PR_Opcode_Find ("=", 5, def_a, def_b, def_b);
+		emit_statement (op, def_b, def_a, 0);
+	} else {
+		def_b = emit_sub_expr (e->e.expr.e2, def_a);
+	}
+	return def_b;
+}
+
+def_t *
 emit_sub_expr (expr_t *e, def_t *dest)
 {
 	opcode_t *op;
@@ -710,15 +702,16 @@ emit_sub_expr (expr_t *e, def_t *dest)
 	def_t *def_a, *def_b;
 	int priority;
 
-	if (e->type == ex_expr && e->e.expr.op == 'c')
-		return emit_function_call (e, dest);
-
 	switch (e->type) {
 		default:
 		case ex_label:
 		case ex_block:
 			abort ();
 		case ex_expr:
+			if (e->e.expr.op == 'c')
+				return emit_function_call (e, dest);
+			if (e->e.expr.op == '=')
+				return emit_assign_expr (e);
 			def_a = emit_sub_expr (e->e.expr.e1, 0);
 			def_b = emit_sub_expr (e->e.expr.e2, 0);
 			switch (e->e.expr.op) {
@@ -728,10 +721,6 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					break;
 				case OR:
 					operator = "||";
-					priority = 6;
-					break;
-				case '=':
-					operator = "=";
 					priority = 6;
 					break;
 				case EQ:
@@ -789,6 +778,8 @@ emit_sub_expr (expr_t *e, def_t *dest)
 				default:
 					abort ();
 			}
+			if (!dest)
+				dest = PR_GetTempDef (e->e.expr.type, pr_scope);
 			op = PR_Opcode_Find (operator, priority, def_a, def_b, dest);
 			return emit_statement (op, def_a, def_b, dest);
 		case ex_uexpr:
@@ -826,6 +817,9 @@ void
 emit_expr (expr_t *e)
 {
 	def_t *def;
+	//def_t *def_a;
+	//def_t *def_b;
+	//opcode_t *op;
 	statref_t *ref;
 	dstatement_t *st;
 
@@ -839,6 +833,7 @@ emit_expr (expr_t *e)
 		case ex_expr:
 			switch (e->e.expr.op) {
 				case '=':
+					emit_assign_expr (e);
 					break;
 				case 'n':
 					break;
@@ -873,6 +868,12 @@ emit_expr (expr_t *e)
 						e->e.label.refs = ref;
 					}
 					return;
+				default:
+					fprintf (stderr,
+							 "%s:%d: warning: unused expression ignored\n",
+							 strings + e->file, e->line);
+					emit_expr (e->e.expr.e1);
+					break;
 			}
 		case ex_def:
 		case ex_int:
