@@ -990,8 +990,8 @@ cmd_get_key (void *c, void *unused)
 void
 Cmd_Init_Hash (void)
 {
-	cmd_hash = Hash_NewTable (16381, cmd_get_key, 0, 0);
-	cmd_alias_hash = Hash_NewTable (16381, cmd_alias_get_key, cmd_alias_free,
+	cmd_hash = Hash_NewTable (1021, cmd_get_key, 0, 0);
+	cmd_alias_hash = Hash_NewTable (1021, cmd_alias_get_key, cmd_alias_free,
 									0);
 }
 
@@ -1014,8 +1014,8 @@ Cmd_Init (void)
 	Cmd_AddCommand ("cmdlist", Cmd_CmdList_f, "List all commands");
 	Cmd_AddCommand ("help", Cmd_Help_f, "Display help for a command or "
 					"variable");
-	Cmd_AddCommand ("cmd_hash_stats", Cmd_Hash_Stats_f, "Display statistics "
-					"alias and command hash tables");
+	//Cmd_AddCommand ("cmd_hash_stats", Cmd_Hash_Stats_f, "Display statistics "
+	//				"alias and command hash tables");
 	cmd_warncmd = Cvar_Get ("cmd_warncmd", "0", CVAR_NONE, NULL, "Toggles the "
 							"display of error messages for unknown commands");
 	cmd_highchars = Cvar_Get ("cmd_highchars", "0", CVAR_NONE, NULL, "Toggles availability of special "
