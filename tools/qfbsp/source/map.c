@@ -187,6 +187,13 @@ GetToken (qboolean crossline)
 	return true;
 }
 
+static void
+UngetToken (void)
+{
+	unget = true;
+}
+
+
 entity_t   *mapent;
 
 static void
@@ -238,16 +245,39 @@ TextureAxisFromPlane (plane_t *pln, vec3_t xv, vec3_t yv)
 	VectorCopy (baseaxis[bestaxis * 3 + 2], yv);
 }
 
+static vec3_t *
+ParseVerts (int *n_verts)
+{
+	vec3_t     *verts;
+	int         i;
+
+	if (token[0] != ':')
+		Sys_Error ("parsing brush");
+	*n_verts = atoi (token + 1);
+	verts = malloc (sizeof (vec3_t) * *n_verts);
+
+	for (i = 0; i < *n_verts; i++) {
+		GetToken (true);
+		verts[i][0] = atof (token);
+		GetToken (true);
+		verts[i][1] = atof (token);
+		GetToken (true);
+		verts[i][2] = atof (token);
+	}
+
+	return verts;
+}
+
 static void
 ParseBrush (void)
 {
 	float       shift[2], rotate, scale[2];
-	int         i, j;
+	int         i, j, n_verts = 0;
 	mbrush_t   *b;
 	mface_t    *f, *f2;
 	texinfo_t   tx;
 	vec3_t      planepts[3];
-	vec3_t      t1, t2, t3;
+	vec3_t      t1, t2, t3, *verts = 0;
 	vec_t       d;
 
 	b = &mapbrushes[nummapbrushes];
@@ -255,27 +285,47 @@ ParseBrush (void)
 	b->next = mapent->brushes;
 	mapent->brushes = b;
 
+	GetToken (true);
+	if (strcmp (token, "(") != 0) {
+		verts = ParseVerts (&n_verts);
+	} else {
+		UngetToken ();
+	}
+
 	do {
 		if (!GetToken (true))
 			break;
 		if (!strcmp (token, "}"))
 			break;
 
-		// read the three point plane definition
-		for (i = 0; i < 3; i++) {
-			if (i != 0)
-				GetToken (true);
-			if (strcmp (token, "("))
-				Sys_Error ("parsing brush");
-
-			for (j = 0; j < 3; j++) {
-				GetToken (false);
-				planepts[i][j] = atoi (token);
-			}
-
+		if (verts) {
+			int         n_v, v;
+			n_v = atoi (token);
 			GetToken (false);
-			if (strcmp (token, ")"))
-				Sys_Error ("parsing brush");
+			for (i = 0; i < n_v; i++) {
+				GetToken (false);
+				v = atoi (token);
+				if (i < 3)
+					VectorCopy (verts[v], planepts[i]);
+			}
+			GetToken (false);
+		} else {
+			// read the three point plane definition
+			for (i = 0; i < 3; i++) {
+				if (i != 0)
+					GetToken (true);
+				if (strcmp (token, "("))
+					Sys_Error ("parsing brush");
+
+				for (j = 0; j < 3; j++) {
+					GetToken (false);
+					planepts[i][j] = atoi (token);
+				}
+
+				GetToken (false);
+				if (strcmp (token, ")"))
+					Sys_Error ("parsing brush");
+			}
 		}
 
 		// read the texturedef
@@ -292,6 +342,15 @@ ParseBrush (void)
 		scale[0] = atof (token);
 		GetToken (false);
 		scale[1] = atof (token);
+
+		while (TokenAvailable (false)) {
+			GetToken (false);
+			//XXX
+			//if (!strcmp (token, "detail"))
+			//	b->detail = 1;
+			//else
+			//	Sys_Error ("Parse error on line %i", scriptline);
+		}
 
 		// if the three points are all on a previous plane, it is a duplicate
 		// plane
@@ -395,6 +454,8 @@ ParseBrush (void)
 		// unique the texinfo
 		f->texinfo = FindTexinfo (&tx);
 	} while (1);
+	if (verts)
+		free (verts);
 }
 
 static qboolean
