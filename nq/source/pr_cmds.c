@@ -1912,7 +1912,7 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "setorigin", PF_setorigin, 2);	// void(entity e, vector o) setorigin = #2
 	PR_AddBuiltin (&sv_pr_state, "setmodel", PF_setmodel, 3);	// void(entity e, string m) setmodel = #3
 	PR_AddBuiltin (&sv_pr_state, "setsize", PF_setsize, 4);	// void(entity e, vector min, vector max) setsize = #4
-	PR_AddBuiltin (&sv_pr_state, "Fixme", PF_Fixme, 5);	// void(entity e, vector min, vector max) setabssize = #5
+	PR_AddBuiltin (&sv_pr_state, "fixme", PF_Fixme, 5);	// void(entity e, vector min, vector max) setabssize = #5
 	PR_AddBuiltin (&sv_pr_state, "break", PF_break, 6);	// void() break = #6
 	PR_AddBuiltin (&sv_pr_state, "random", PF_random, 7);	// float() random = #7
 	PR_AddBuiltin (&sv_pr_state, "sound", PF_sound, 8);	// void(entity e, float chan, string samp) sound = #8
@@ -1921,11 +1921,11 @@ SV_PR_Cmds_Init ()
 	PR_AddBuiltin (&sv_pr_state, "objerror", PF_objerror, 11);	// void(string e) objerror = #11
 	PR_AddBuiltin (&sv_pr_state, "vlen", PF_vlen, 12);	// float(vector v) vlen = #12
 	PR_AddBuiltin (&sv_pr_state, "vectoyaw", PF_vectoyaw, 13);	// float(vector v) vectoyaw = #13
-	PR_AddBuiltin (&sv_pr_state, "Spawn", PF_Spawn, 14);	// entity() spawn = #14
-	PR_AddBuiltin (&sv_pr_state, "Remove", PF_Remove, 15);	// void(entity e) remove = #15
+	PR_AddBuiltin (&sv_pr_state, "spawn", PF_Spawn, 14);	// entity() spawn = #14
+	PR_AddBuiltin (&sv_pr_state, "remove", PF_Remove, 15);	// void(entity e) remove = #15
 	PR_AddBuiltin (&sv_pr_state, "traceline", PF_traceline, 16);	// float(vector v1, vector v2, float tryents) traceline = #16
 	PR_AddBuiltin (&sv_pr_state, "checkclient", PF_checkclient, 17);	// entity() clientlist = #17
-	PR_AddBuiltin (&sv_pr_state, "Find", PF_Find, 18);	// entity(entity start, .string fld, string match) find = #18
+	PR_AddBuiltin (&sv_pr_state, "find", PF_Find, 18);	// entity(entity start, .string fld, string match) find = #18
 	PR_AddBuiltin (&sv_pr_state, "precache_sound", PF_precache_sound, 19);	// void(string s) precache_sound = #19
 	PR_AddBuiltin (&sv_pr_state, "precache_model", PF_precache_model, 20);	// void(string s) precache_model = #20
 	PR_AddBuiltin (&sv_pr_state, "stuffcmd", PF_stuffcmd, 21);	// void(entity client, string s) stuffcmd = #21
@@ -1960,14 +1960,14 @@ SV_PR_Cmds_Init ()
 	// 50
 	PR_AddBuiltin (&sv_pr_state, "vectoangles", PF_vectoangles, 51);	// vector(vector v) vectoangles = #51
 
-	PR_AddBuiltin (&sv_pr_state, "WriteByte", PF_WriteByte, 52);	// void(float to, float f) WriteByte = #52
-	PR_AddBuiltin (&sv_pr_state, "WriteChar", PF_WriteChar, 53);	// void(float to, float f) WriteChar = #53
-	PR_AddBuiltin (&sv_pr_state, "WriteShort", PF_WriteShort, 54);	// void(float to, float f) WriteShort = #54
-	PR_AddBuiltin (&sv_pr_state, "WriteLong", PF_WriteLong, 55);	// void(float to, float f) WriteLong = #55
-	PR_AddBuiltin (&sv_pr_state, "WriteCoord", PF_WriteCoord, 56);	// void(float to, float f) WriteCoord = #56
-	PR_AddBuiltin (&sv_pr_state, "WriteAngle", PF_WriteAngle, 57);	// void(float to, float f) WriteAngle = #57
-	PR_AddBuiltin (&sv_pr_state, "WriteString", PF_WriteString, 58);	// void(float to, string s) WriteString = #58
-	PR_AddBuiltin (&sv_pr_state, "WriteEntity", PF_WriteEntity, 59);	// void(float to, entity s) WriteEntity = #59
+	PR_AddBuiltin (&sv_pr_state, "writebyte", PF_WriteByte, 52);	// void(float to, float f) WriteByte = #52
+	PR_AddBuiltin (&sv_pr_state, "writechar", PF_WriteChar, 53);	// void(float to, float f) WriteChar = #53
+	PR_AddBuiltin (&sv_pr_state, "writeshort", PF_WriteShort, 54);	// void(float to, float f) WriteShort = #54
+	PR_AddBuiltin (&sv_pr_state, "writelong", PF_WriteLong, 55);	// void(float to, float f) WriteLong = #55
+	PR_AddBuiltin (&sv_pr_state, "writecoord", PF_WriteCoord, 56);	// void(float to, float f) WriteCoord = #56
+	PR_AddBuiltin (&sv_pr_state, "writeangle", PF_WriteAngle, 57);	// void(float to, float f) WriteAngle = #57
+	PR_AddBuiltin (&sv_pr_state, "writestring", PF_WriteString, 58);	// void(float to, string s) WriteString = #58
+	PR_AddBuiltin (&sv_pr_state, "writeentity", PF_WriteEntity, 59);	// void(float to, entity s) WriteEntity = #59
 
 #ifdef QUAKE2
 /*	PF_sin,
