@@ -1110,11 +1110,11 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 		cmd_activebuffer->args[cmd_argc - 1] = strlen (cmd_activebuffer->line->str);
 		if ((str[i] == '\'' && str[i + len] == '\'')
 			|| (str[i] == '"' && str[i + len] == '"')) {
+			dstring_appendsubstr (cmd_activebuffer->line, str + i, 1);
+			dstring_appendsubstr (cmd_activebuffer->line, str + i, 1);
 			i++;
 			len -= 1;
 			quotes = 1;
-			dstring_appendsubstr (cmd_activebuffer->line, str + i, 1);
-			dstring_appendsubstr (cmd_activebuffer->line, str + i, 1);
 		}
 		if (str[i] == '{' && str[i + len] == '}') {
 			i++;
@@ -1149,8 +1149,7 @@ Cmd_TokenizeString (const char *text, qboolean filter)
 		}
 		dstring_insertstr (cmd_activebuffer->line,
 						   cmd_activebuffer->argv[cmd_argc - 1]->str,
-						   strlen (cmd_activebuffer->line->str) - 2 * quotes);
-
+						   strlen (cmd_activebuffer->line->str) - quotes);
 		i += len + quotes + braces;		/* If we ended on a quote or brace,
 										   skip it */
 	}
