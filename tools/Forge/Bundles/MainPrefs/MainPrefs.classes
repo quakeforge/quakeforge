@@ -1,13 +1,4 @@
 {
-    BundleController = {
-	Actions = (
-	    setDelegate
-	);
-	Outlets = (
-	    delegate
-	);
-	Super = NSObject;
-    };
     IBInspector = {
 	Actions = (
 	    ok:,
@@ -15,6 +6,22 @@
 	    touch:
 	);
 	Outlets = (
+	    window
+	);
+	Super = NSObject;
+    };
+    MainPrefs = {
+	Actions = (
+	    loadPrefs:,
+	    projectPathChanged:,
+	    projectPathFindButtonClicked:,
+	    resetPrefsToDefault:,
+	    savePrefs:
+	);
+	Outlets = (
+	    projectPathField,
+	    projectPathFindButton,
+	    view,
 	    window
 	);
 	Super = NSObject;
@@ -73,12 +80,5 @@
 	    delegate
 	);
 	Super = NSResponder;
-    };
-    PrefsPanel = {
-	Actions = (
-	);
-	Outlets = (
-	);
-	Super = NSPanel;
     };
 }

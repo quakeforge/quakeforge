@@ -32,12 +32,20 @@
 # include "Config.h"
 #endif
 
+#import <AppKit/NSNibDeclarations.h>
+
 #import "BundleController.h"
 #import "PrefsView.h"
 
+#define ProjectPath	@"projectPath"
+
 @interface MainPrefs: NSObject <PrefsViewController, ForgeBundle>
 {
-	NSView	*view;
+	IBOutlet id		projectPathField;
+	IBOutlet id		projectPathFindButton;
+
+	IBOutlet id		window;
+	IBOutlet id		view;
 }
 
 @end

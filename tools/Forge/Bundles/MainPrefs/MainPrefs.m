@@ -39,10 +39,97 @@ static const char rcsid[] =
 # import <AppKit/NSNibLoading.h>
 #endif
 
+#import <AppKit/NSOpenPanel.h>
+
 #import "PrefsPanel.h"
 #import "PrefsController.h"
 #import "MainPrefs.h"
 #import "MainPrefsView.h"
+
+@interface MainPrefs (Private)
+
+- (NSDictionary *) preferencesFromDefaults;
+- (void) savePreferencesToDefaults: (NSDictionary *) dict;
+
+- (void) commitDisplayedValues;
+- (void) discardDisplayedValues;
+
+- (void) updateUI;
+
+@end
+
+@implementation MainPrefs (Private)
+
+static NSDictionary			*currentValues = nil;
+static NSMutableDictionary	*displayedValues = nil;
+
+static NSMutableDictionary *
+defaultValues (void) {
+    static NSMutableDictionary *dict = nil;
+
+    if (!dict) {
+        dict = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
+				@"/Local/Forge/Projects", ProjectPath,
+				nil];
+    }
+    return dict;
+}
+
+static NSString *
+getStringDefault (NSMutableDictionary *dict, NSString *name)
+{
+	NSString	*str = [[NSUserDefaults standardUserDefaults] stringForKey: name];
+
+	if (!str)
+		str = [defaultValues() objectForKey: name];
+
+	[dict setObject: str forKey: name];
+	
+	return str;
+}
+
+- (NSDictionary *) preferencesFromDefaults
+{
+	NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity: 5];
+
+	getStringDefault (dict, ProjectPath);
+	return dict;
+}
+
+- (void) savePreferencesToDefaults: (NSDictionary *) dict
+{
+	NSUserDefaults	*defaults = [NSUserDefaults standardUserDefaults];
+
+#define setStringDefault(name) \
+	[defaults setObject: [dict objectForKey: (name)] forKey: (name)]
+
+	NSDebugLog (@"Updating Main Preferences...");
+	setStringDefault (ProjectPath);
+	[defaults synchronize];
+}
+
+- (void) commitDisplayedValues
+{
+	[currentValues release];
+	currentValues = [[displayedValues copy] retain];
+	[self savePreferencesToDefaults: currentValues];
+	[self updateUI];
+}
+
+- (void) discardDisplayedValues
+{
+	[displayedValues release];
+	displayedValues = [[currentValues mutableCopy] retain];
+	[self updateUI];
+}
+
+- (void) updateUI
+{
+	[projectPathField setStringValue: [displayedValues objectForKey: ProjectPath]];
+	[projectPathField setNeedsDisplay: YES];
+}
+
+@end	// MainPrefs (Private)
 
 @implementation MainPrefs
 
@@ -57,17 +144,19 @@ static id <BundleDelegate>	owner = nil;
 		self = [super init];
 		owner = anOwner;
 		[owner registerPrefsController: self];
-		
-#ifdef USING_NIBS
 		if (![NSBundle loadNibNamed: @"MainPrefsView" owner: self]) {
 			NSLog (@"MainPrefs: Could not load nib \"MainPrefsView\", using compiled version");
-#endif
-			view = [[MainPrefsView alloc] initWithFrame: PrefsRect];
-#ifdef USING_NIBS
-	    }
-#endif
+			view = [[MainPrefsView alloc] initWithOwner: self andFrame: PrefsRect];
 
+			// hook up to our outlet(s)
+			projectPathField = [view directoryField];
+		} else {
+			view = [window contentView];
+		}
 		[view retain];
+
+		[self loadPrefs: self];
+
 		sharedInstance = self;
 	}
 	return sharedInstance;
@@ -75,17 +164,26 @@ static id <BundleDelegate>	owner = nil;
 
 - (void) loadPrefs: (id) sender
 {
-	return;
+	if (currentValues)
+		[currentValues release];
+
+	currentValues = [[[self preferencesFromDefaults] copyWithZone: [self zone]] retain];
+	[self discardDisplayedValues];
 }
 
 - (void) savePrefs: (id) sender
 {
-	return;
+	[self commitDisplayedValues];
 }
 
 - (void) resetPrefsToDefault: (id) sender
 {
-	return;
+	if (currentValues)
+		[currentValues release];
+
+	currentValues = [[defaultValues () copyWithZone: [self zone]] retain];
+
+	[self discardDisplayedValues];
 }
 
 - (void) showView: (id) sender;
@@ -112,6 +210,35 @@ static id <BundleDelegate>	owner = nil;
 - (SEL) buttonAction
 {
 	return @selector(showView:);
+}
+
+- (id) projectPath
+{
+	return [displayedValues objectForKey: ProjectPath];
+}
+
+- (id) projectPathFindButtonClicked: (id) sender
+{
+	int			result;
+	NSOpenPanel	*oPanel = [NSOpenPanel openPanel];
+
+	[oPanel setAllowsMultipleSelection: NO];
+	[oPanel setCanChooseFiles: NO];
+	[oPanel setCanChooseDirectories: YES];
+
+	result = [oPanel runModalForDirectory: NSHomeDirectory() file: nil types: nil];
+	if (result == NSOKButton) {		// got a new dir
+		NSArray		*pathArray = [oPanel filenames];
+
+		[displayedValues setObject: [pathArray objectAtIndex: 0] forKey: ProjectPath];
+		[self updateUI];
+	}
+}
+
+- (void) projectPathChanged: (id) sender
+{
+	[displayedValues setObject: [sender stringValue] forKey: ProjectPath];
+	[self updateUI];
 }
 
 @end

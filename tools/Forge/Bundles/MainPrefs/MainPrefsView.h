@@ -34,4 +34,14 @@
 #import "PrefsView.h"
 
 @interface MainPrefsView: NSView
+{
+	id		directoryField;
+	id 		findButton;
+	id		owner;
+}
+
+- (id) initWithOwner: (id) anOwner andFrame: (NSRect) frameRect;
+
+- (id) directoryField;
+
 @end

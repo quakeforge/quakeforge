@@ -4,6 +4,10 @@ BUNDLE_NAME=		MainPrefs
 BUNDLE_EXTENSION=	.forgeb
 BUNDLE_INSTALL_DIR=	$(GNUSTEP_LOCAL_ROOT)/Library/Forge
 
+MainPrefs_MAIN_MODEL_FILE=	MainPrefs.gorm
+MainPrefs_RESOURCE_FILES= \
+	MainPrefs.gorm
+
 MainPrefs_OBJC_FILES=	\
 	MainPrefsView.m \
 	MainPrefs.m

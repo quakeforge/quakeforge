@@ -35,26 +35,57 @@ static const char rcsid[] =
 
 #import <AppKit/NSBezierPath.h>
 #import <AppKit/NSButton.h>
+#import <AppKit/NSTextField.h>
 #import <AppKit/NSColor.h>
 
 #import "MainPrefsView.h"
+#import "MainPrefs.h"
 
 @implementation MainPrefsView
 
-- (id) initWithFrame: (NSRect) frameRect
+- (id) initWithOwner: (id) anOwner andFrame: (NSRect) frameRect
 {
-	id button;
+	id		label = nil;
+
+	owner = anOwner;
 
 	if ((self = [super initWithFrame: frameRect])) {
 
-		button = [[NSButton alloc] initWithFrame: NSMakeRect (0, 0, 60, 24)];
-		[button autorelease];
+		label = [[NSTextField alloc] initWithFrame: NSMakeRect (3, 201, 480, 24)];
+		[label setEditable: NO];
+		[label setSelectable: NO];
+		[label setAllowsEditingTextAttributes: NO];
+		[label setImportsGraphics: NO];
+		[label setTextColor: [NSColor blackColor]];
+		[label setBackgroundColor: [NSColor controlColor]];
+		[label setBezeled: NO];
+		[label setStringValue: @"Project load path"];
+		[self addSubview: [label autorelease]];
 
-		[button setTitle: @"Default"];
-		[button setTarget: self];
-		[button setAction: @selector(resetToDefaults:)];
-		[self addSubview: button];
+		directoryField = [[NSTextField alloc] initWithFrame: NSMakeRect (3, 174, 410, 24)];
+		[directoryField setEditable: YES];
+		[directoryField setSelectable: YES];
+		[directoryField setAllowsEditingTextAttributes: NO];
+		[directoryField setImportsGraphics: NO];
+		[directoryField setTextColor: [NSColor blackColor]];
+		[directoryField setBackgroundColor: [NSColor whiteColor]];
+		[directoryField setBezeled: YES];
+		[directoryField setTarget: owner];
+		[directoryField setAction: @selector(projectPathChanged:)];
+		[self addSubview: [directoryField autorelease]];
+
+		findButton = [[NSButton alloc] initWithFrame: NSMakeRect (419, 174, 64, 24)];
+		[findButton setTitle: @"Find..."];
+		[findButton setTarget: owner];
+		[findButton setAction: @selector(projectPathFindButtonClicked:)];
+		[self addSubview: [findButton autorelease]];
 	}
 	return self;
 }
+
+- (id) directoryField
+{
+	return directoryField;
+}
+
 @end
