@@ -85,6 +85,10 @@ type_t     *types[] = {
 	&type_integer,
 	&type_uinteger,
 	&type_short,
+	&type_void,							// FIXME what type?
+	&type_void,							// FIXME what type?
+	&type_void,							// FIXME what type?
+	&type_SEL,
 };
 
 expr_type   expr_types[] = {

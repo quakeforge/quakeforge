@@ -145,4 +145,19 @@ typedef struct pr_ivar_list_s {
 } pr_ivar_list_t;
 typedef struct pr_ivar_s pr_ivar_t;
 
+typedef struct pr_symtab_s {
+	int         sel_ref_cnt;
+	int         cls_def_cnt;
+	int         cat_def_cnt;
+	pointer_t   defs[1];			// variable array of class pointers then
+									// category pointers
+} pr_symtab_t;
+
+typedef struct pr_module_s {
+	int         version;
+	int         size;
+	string_t    name;
+	pointer_t   symtab;				// pr_symtab_t
+} pr_module_t;
+
 #endif//__pr_obj_h

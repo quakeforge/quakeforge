@@ -70,9 +70,11 @@ type_t      type_Class = { ev_pointer };
 type_t      type_Protocol = { ev_pointer };
 type_t      type_SEL = { ev_pointer };
 type_t      type_IMP = { ev_func, NULL, &type_id, -3, { &type_id, &type_SEL }};
+type_t      type_obj_exec_class = { ev_func, NULL, &type_void, 1, { 0 }};
 type_t     *type_method;
 type_t     *type_category;
 type_t     *type_ivar;
+type_t     *type_module;
 
 type_t      type_floatfield = { ev_field, NULL, &type_float };
 
@@ -428,7 +430,7 @@ init_types (void)
 	new_struct_field (type_method, &type_IMP, "method_imp", vis_public);
 	chain_type (type_method);
 
-	type = type_Class.aux_type = new_struct ("Class");
+	type = type_Class.aux_type = new_struct (0);
 	type->type = ev_class;
 	type->class = &class_Class;
 	class_Class.ivars = type_Class.aux_type;
@@ -478,4 +480,14 @@ init_types (void)
 	new_struct_field (type, &type_string, "ivar_type", vis_public);
 	new_struct_field (type, &type_integer, "ivar_offset", vis_public);
 	chain_type (type_ivar);
+
+	type = type_module = new_struct (0);
+	new_struct_field (type, &type_integer, "version", vis_public);
+	new_struct_field (type, &type_integer, "size", vis_public);
+	new_struct_field (type, &type_string, "name", vis_public);
+	new_struct_field (type, &type_pointer, "symtab", vis_public);
+	chain_type (type_module);
+
+	type_obj_exec_class.parm_types[0] = pointer_type (type_module);
+	chain_type (&type_obj_exec_class);
 }

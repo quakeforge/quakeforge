@@ -63,6 +63,7 @@ static const char rcsid[] =
 #include <QF/sys.h>
 
 #include "qfcc.h"
+#include "class.h"
 #include "type.h"
 
 options_t   options;
@@ -531,6 +532,7 @@ qboolean PR_FinishCompilation (void)
 	def_t      *def;
 	expr_t      e;
 
+	class_finish_module ();
 	// check to make sure all functions prototyped have code
 	if (options.warnings.undefined_function)
 		for (d = pr.def_head.def_next; d; d = d->def_next) {

@@ -181,7 +181,8 @@ emit_struct(type_t *strct, const char *name)
 	if (!strct)
 		return 0;
 	for (count = 0, field = strct->struct_head; field; field = field->next)
-		count++;
+		if (field->name)
+			count++;
 	ivar_list = new_struct (0);
 	new_struct_field (ivar_list, &type_integer, "ivar_count", vis_public);
 	for (i = 0; i < count; i++)
@@ -194,12 +195,15 @@ emit_struct(type_t *strct, const char *name)
 	ivars_def->initialized = ivars_def->constant = 1;
 	ivars = &G_STRUCT (pr_ivar_list_t, ivars_def->ofs);
 	ivars->ivar_count = count;
-	for (i = 0, field = strct->struct_head; field; i++, field = field->next) {
+	for (i = 0, field = strct->struct_head; field; field = field->next) {
+		if (!field->name)
+			continue;
 		encode_type (encoding, field->type);
 		ivars->ivar_list[i].ivar_name = ReuseString (field->name);
 		ivars->ivar_list[i].ivar_type = ReuseString (encoding->str);
 		ivars->ivar_list[i].ivar_offset = field->offset;
 		dstring_clearstr (encoding);
+		i++;
 	}
   done:
 	dstring_delete (encoding);

@@ -415,6 +415,7 @@ extern	def_t		*pr_global_defs[MAX_REGS];	// to find def for a global
 
 def_t *PR_ReuseConstant (expr_t *expr, def_t *def);
 
+extern	char		destfile[];
 extern	int			pr_source_line;
 
 extern	def_t	*pr_scope;

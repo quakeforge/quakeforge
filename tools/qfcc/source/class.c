@@ -134,14 +134,21 @@ class_begin (class_t *class)
 	if (class->def)
 		return;
 	if (class->class_name && class->category_name) {
-		def_t      *category_def;
+		pr_category_t *category;
 
-		category_def = PR_GetDef (type_category,
-								  va ("_OBJ_CATEGORY_%s_%s",
-									  class->class_name,
-									  class->category_name),
-								  0, &numpr_globals);
-		category_def->initialized = category_def->constant = 1;
+		class->def = PR_GetDef (type_category,
+								va ("_OBJ_CATEGORY_%s_%s",
+									class->class_name,
+									class->category_name),
+								0, &numpr_globals);
+		class->def->initialized = class->def->constant = 1;
+		category = &G_STRUCT (pr_category_t, class->def->ofs);
+		category->category_name = ReuseString (class->category_name);
+		category->class_name = ReuseString (class->class_name);
+		category->protocols = emit_protocol_list (class->protocols,
+												  va ("%s_%s",
+													  class->class_name,
+													  class->category_name));
 	} else if (class->class_name) {
 		def_t      *meta_def;
 		pr_class_t *meta;
@@ -182,6 +189,16 @@ class_finish (class_t *class)
 		pr_category_t *category;
 
 		category = &G_STRUCT (pr_category_t, class->def->ofs);
+		category->instance_methods = emit_methods (class->methods,
+												   va ("%s_%s",
+													   class->class_name,
+													   class->category_name),
+												   1);
+		category->class_methods = emit_methods (class->methods,
+												va ("%s_%s",
+													class->class_name,
+													class->category_name),
+												0);
 	} else if (class->class_name) {
 		pr_class_t *meta;
 		pr_class_t *cls;
@@ -347,7 +364,7 @@ get_category (const char *class_name, const char *category_name, int create)
 
 	c = calloc (sizeof (class_t), 1);
 	c->class_name = class_name;
-	c->class_name = category_name;
+	c->category_name = category_name;
 	if (class_name && category_name)
 		Hash_AddElement (category_hash, c);
 	return c;
@@ -370,6 +387,88 @@ class_def (class_t *class)
 	}
 	def->initialized = def->constant = 1;
 	return def;
+}
+
+void
+class_finish_module (void)
+{
+	class_t   **classes = 0;
+	class_t   **categories = 0;
+	class_t   **t;
+	int         num_classes = 0;
+	int         num_categories = 0;
+	int         i;
+	type_t     *symtab_type;
+	def_t      *symtab_def;
+	pr_symtab_t *symtab;
+	pointer_t   *def_ptr;
+	def_t      *module_def;
+	pr_module_t *module;
+	def_t      *exec_class_def;
+	function_t *exec_class_func;
+	def_t      *init_def;
+	function_t *init_func;
+	expr_t     *init_expr;
+
+	if (class_hash) {
+		classes = (class_t **) Hash_GetList (class_hash);
+		for (t = classes; *t; t++)
+			if ((*t)->def)
+				num_classes++;
+	}
+	if (category_hash) {
+		categories = (class_t **) Hash_GetList (category_hash);
+		for (t = categories; *t; t++)
+			if ((*t)->def)
+				num_categories++;
+	}
+	if (!num_classes && !num_categories)
+		return;
+	symtab_type = new_struct (0);
+	new_struct_field (symtab_type, &type_integer, "sel_ref_cnt", vis_public);
+	new_struct_field (symtab_type, &type_integer, "cls_def_cnt", vis_public);
+	new_struct_field (symtab_type, &type_integer, "cat_def_cnt", vis_public);
+	for (i = 0; i < num_classes + num_categories; i++)
+		new_struct_field (symtab_type, &type_pointer, 0, vis_public);
+	symtab_def = PR_GetDef (symtab_type, "_OBJ_SYMTAB", 0, &numpr_globals);
+	symtab_def->initialized = symtab_def->constant = 1;
+	symtab = &G_STRUCT (pr_symtab_t, symtab_def->ofs);
+	symtab->cls_def_cnt = num_classes;
+	symtab->cat_def_cnt = num_categories;
+	def_ptr = symtab->defs;
+	for (i = 0, t = classes; i < num_classes; i++, t++)
+		if ((*t)->def)
+			*def_ptr++ = (*t)->def->ofs;
+	for (i = 0, t = categories; i < num_categories; i++, t++)
+		if ((*t)->def)
+			*def_ptr++ = (*t)->def->ofs;
+
+	module_def = PR_GetDef (type_module, "_OBJ_MODULE", 0, &numpr_globals);
+	module_def->initialized = module_def->constant = 1;
+	module = &G_STRUCT (pr_module_t, module_def->ofs);
+	module->size = type_size (type_module);
+	module->name = ReuseString (destfile);
+	module->symtab = symtab_def->ofs;
+
+	exec_class_def = PR_GetDef (&type_obj_exec_class, "__obj_exec_class",
+								0, &numpr_globals);
+	exec_class_func = new_function ();
+	exec_class_func->builtin = 0;
+	exec_class_func->def = exec_class_def;
+	build_function (exec_class_func);
+	finish_function (exec_class_func);
+
+	init_def = PR_GetDef (&type_function, ".ctor", 0, &numpr_globals);
+	init_func = new_function ();
+	init_func->def = init_def;
+	init_func->code = numstatements;
+	build_function (init_func);
+	init_expr = new_block_expr ();
+	append_expr (init_expr,
+				 function_expr (new_def_expr (exec_class_def),
+								address_expr (new_def_expr (module_def), 0, 0)));
+	emit_function (init_func, init_expr);
+	finish_function (init_func);
 }
 
 protocol_t *

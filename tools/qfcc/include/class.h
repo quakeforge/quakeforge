@@ -71,6 +71,7 @@ struct method_s *class_message_response (class_t *class, struct expr_s *sel);
 struct def_s *class_def (class_t *class);
 class_t *get_category (const char *class_name, const char *category_name,
 					   int create);
+void class_finish_module (void);
 
 typedef struct protocol_s {
 	const char *name;
