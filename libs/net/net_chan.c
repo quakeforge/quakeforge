@@ -104,6 +104,8 @@ static __attribute__ ((unused)) const char rcsid[] =
 */
 
 int         net_drop;
+int         net_nochoke;
+int         net_blocksend;
 cvar_t     *showpackets;
 cvar_t     *showdrop;
 cvar_t     *qport;
@@ -155,10 +157,7 @@ Netchan_OutOfBand (netadr_t adr, int length, byte * data)
 
 	// send the datagram
 	// zoid, no input in demo playback mode
-	if (!is_server) {
-		if (!cls.demoplayback)
-			Netchan_SendPacket (send.cursize, send.data, adr);
-	} else
+	if (!net_blocksend)
 		Netchan_SendPacket (send.cursize, send.data, adr);
 }
 
@@ -189,7 +188,7 @@ Netchan_OutOfBandPrint (netadr_t adr, const char *format, ...)
 	called to open a channel to a remote system
 */
 void
-Netchan_Setup (netchan_t *chan, netadr_t adr, int qport)
+Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, int flags)
 {
 	memset (chan, 0, sizeof (*chan));
 
@@ -201,6 +200,7 @@ Netchan_Setup (netchan_t *chan, netadr_t adr, int qport)
 	chan->message.maxsize = sizeof (chan->message_buf);
 
 	chan->qport = qport;
+	chan->flags = flags;
 
 	chan->rate = 1.0 / 2500.0;
 }
@@ -242,7 +242,7 @@ Netchan_CanReliable (netchan_t *chan)
 	0 length will still generate a packet and deal with the reliable messages.
 */
 void
-Netchan_Transmit (netchan_t *chan, int length, byte * data)
+Netchan_Transmit (netchan_t *chan, int length, byte *data)
 {
 	byte        send_buf[MAX_MSGLEN + PACKET_HEADER];
 	int         i;
@@ -286,8 +286,8 @@ Netchan_Transmit (netchan_t *chan, int length, byte * data)
 	MSG_WriteLong (&send, w2);
 
 	// send the qport if we are a client
-	if (!is_server)
-		MSG_WriteShort (&send, cls.qport);
+	if (chan->flags & NC_SEND_QPORT)
+		MSG_WriteShort (&send, chan->qport);
 
 	// copy the reliable message to the packet first
 	if (send_reliable) {
@@ -304,17 +304,14 @@ Netchan_Transmit (netchan_t *chan, int length, byte * data)
 	chan->outgoing_time[i] = realtime;
 
 	// zoid, no input in demo playback mode
-	if (!is_server) {
-		if (!cls.demoplayback)
-			Netchan_SendPacket (send.cursize, send.data, chan->remote_address);
-	} else
+	if (!net_blocksend)
 		Netchan_SendPacket (send.cursize, send.data, chan->remote_address);
 
 	if (chan->cleartime < realtime)
 		chan->cleartime = realtime + send.cursize * chan->rate;
 	else
 		chan->cleartime += send.cursize * chan->rate;
-	if (ServerPaused ())
+	if (net_nochoke)
 		chan->cleartime = realtime;
 
 	if (showpackets->int_val)
@@ -335,13 +332,9 @@ Netchan_Process (netchan_t *chan)
 	int          qport;
 	unsigned int reliable_ack, reliable_message, sequence, sequence_ack;
 
-	if (is_server) {
+	if (!net_blocksend)
 		if (!NET_CompareAdr (net_from, chan->remote_address))
 			return false;
-	} else {
-		if (!cls.demoplayback &&
-			!NET_CompareAdr (net_from, chan->remote_address)) return false;
-	}
 
 	// get sequence numbers     
 	MSG_BeginReading (net_message);
@@ -349,7 +342,7 @@ Netchan_Process (netchan_t *chan)
 	sequence_ack = MSG_ReadLong (net_message);
 
 	// read the qport if we are a server
-	if (is_server)
+	if (chan->flags & NC_READ_QPORT)
 		qport = MSG_ReadShort (net_message);
 
 	reliable_message = sequence >> 31;

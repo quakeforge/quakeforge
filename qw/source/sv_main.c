@@ -83,7 +83,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "bothdefs.h"
 #include "buildnum.h"
 #include "compat.h"
-#include "client.h"		//FIXME needed by cls below (for netchan)
 #include "crudefile.h"
 #include "game.h"
 #include "netchan.h"
@@ -102,7 +101,6 @@ cbuf_t     *sv_cbuf;
 cbuf_args_t *sv_args;
 
 client_t   *host_client;				// current client
-client_static_t cls;					//FIXME needed by netchan :/
 entity_state_t cl_entities[MAX_CLIENTS][UPDATE_BACKUP+1][MAX_PACKET_ENTITIES]; // client entities
 
 double      sv_frametime;
@@ -213,13 +211,6 @@ const char *client_info_filters[] = {  // Info keys needed by client
 	"*ver",
 	NULL
 };
-
-
-qboolean
-ServerPaused (void)
-{
-	return sv.paused;
-}
 
 /*
 	Master_Shutdown
@@ -905,7 +896,7 @@ SVC_DirectConnect (void)
 
 	Netchan_OutOfBandPrint (adr, "%c", S2C_CONNECTION);
 
-	Netchan_Setup (&newcl->netchan, adr, qport);
+	Netchan_Setup (&newcl->netchan, adr, qport, NC_READ_QPORT);
 
 	newcl->state = cs_connected;
 	newcl->prespawned = false;

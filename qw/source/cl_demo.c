@@ -119,6 +119,7 @@ CL_StopPlayback (void)
 	cls.demoplayback = 0;
 	cls.demoplayback2 = 0;
 	demotime_cached = 0;
+	net_blocksend = 0;
 
 	if (cls.timedemo)
 		CL_FinishTimeDemo ();
@@ -896,6 +897,7 @@ CL_StartDemo (void)
 	}
 
 	cls.demoplayback = true;
+	net_blocksend = 1;
 	if (strequal (QFS_FileExtension (name), ".mvd")) {
 		cls.demoplayback2 = true;
 		Con_Printf ("mvd\n");
@@ -903,7 +905,7 @@ CL_StartDemo (void)
 		Con_Printf ("qwd\n");
 	}
 	CL_SetState (ca_demostart);
-	Netchan_Setup (&cls.netchan, net_from, 0);
+	Netchan_Setup (&cls.netchan, net_from, 0, NC_SEND_QPORT);
 	realtime = 0;
 	cls.findtrack = true;
 	cls.lasttype = 0;

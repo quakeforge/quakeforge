@@ -50,23 +50,17 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 #include "netchan.h"
 
-#include "../../qw/include/client.h" //FIXME ick, netchan is so incestuous
-
 SERVER_PLUGIN_PROTOS
 static plugin_list_t server_plugin_list[] = {
 	SERVER_PLUGIN_LIST
 };
 
-qboolean    is_server = true;
 double      realtime;
 cvar_t     *net_packetlog;
-client_static_t cls;
 void Log_Outgoing_Packet (const char *p, int len, int has_sequence);
 void Log_Incoming_Packet (const char *p, int len, int has_sequence);
-qboolean ServerPaused (void);
 void Log_Outgoing_Packet (const char *p, int len, int has_sequence) { }
 void Log_Incoming_Packet (const char *p, int len, int has_sequence) { }
-qboolean ServerPaused (void) { return 0; }
 
 
 cbuf_t     *qtv_cbuf;

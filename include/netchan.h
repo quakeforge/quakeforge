@@ -106,6 +106,7 @@ typedef struct
 
 	netadr_t	remote_address;
 	int			qport;
+	int			flags;
 
 // bandwidth estimator
 	double		cleartime;			// if realtime > nc->cleartime, free to go
@@ -135,6 +136,8 @@ typedef struct
 } netchan_t;
 
 extern	int	net_drop;		// packets dropped before this one
+extern	int net_nochoke;	// don't choke packets
+extern	int net_blocksend;	// don't send packets (used by client for demos)
 
 void Netchan_Init (void);
 void Netchan_Init_Cvars (void);
@@ -142,7 +145,10 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data);
 void Netchan_OutOfBand (netadr_t adr, int length, byte *data);
 void Netchan_OutOfBandPrint (netadr_t adr, const char *format, ...) __attribute__((format(printf,2,3)));
 qboolean Netchan_Process (netchan_t *chan);
-void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport);
+void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, int flags);
+
+#define NC_SEND_QPORT	0x01
+#define NC_READ_QPORT	0x02
 
 qboolean Netchan_CanPacket (netchan_t *chan);
 qboolean Netchan_CanReliable (netchan_t *chan);

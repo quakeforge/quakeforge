@@ -944,6 +944,7 @@ SV_TogglePause (const char *msg)
 	int         i;
 
 	sv.paused ^= 1;
+	net_nochoke = sv.paused;
 
 	if (msg)
 		SV_BroadcastPrintf (PRINT_HIGH, "%s", msg);

@@ -845,7 +845,7 @@ CL_ConnectionlessPacket (void)
 				Con_Printf ("Dup connect received.  Ignored.\n");
 			return;
 		}
-		Netchan_Setup (&cls.netchan, net_from, cls.qport);
+		Netchan_Setup (&cls.netchan, net_from, cls.qport, NC_SEND_QPORT);
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message, "new");
 		CL_SetState (ca_connected);
@@ -1819,10 +1819,4 @@ Host_Shutdown (void)
 	IN_Shutdown ();
 	if (host_basepal)
 		VID_Shutdown ();
-}
-
-qboolean
-ServerPaused (void)
-{
-	return false;
 }

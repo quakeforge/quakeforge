@@ -1823,7 +1823,7 @@ PF_SV_AllocClient (progs_t *pr)
 		return;
 	}
 
-	//XXX netchan? Netchan_Setup (&newcl->netchan, adr, qport);
+	//XXX netchan? Netchan_Setup (&newcl->netchan, adr, qport, NC_READ_QPORT);
 	cl->state = cs_server;
 	cl->spectator = 0;
 	cl->connection_started = realtime;
