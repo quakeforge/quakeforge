@@ -32,6 +32,9 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_NETINET_IN_H
+# include <netinet/in.h>
+#endif
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -54,9 +57,11 @@
 #include "commdef.h"
 #include "QF/console.h"
 #include "QF/quakefs.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 
 server_entry_t *slist;
+int slist_last_details;
 
 server_entry_t *
 SL_Add (server_entry_t *start, char *ip, char *desc)
@@ -343,6 +348,63 @@ SL_Connect (server_entry_t *sldata, int slitemno)
 	CL_BeginServerConnect ();
 }
 
+
+void
+SL_Update (server_entry_t *sldata)
+{
+	// FIXME - Need to change this so the info is not sent in 1 burst
+	//         as it appears to be causing the occasional problem
+	//         with some servers
+
+	int serv;
+	netadr_t addy;
+	server_entry_t *cp;
+	char data_ping[] = "\377\377\377\377k";
+	char data_status[] = "\377\377\377\377status";
+	
+	for (serv = 0; serv < SL_Len (sldata); serv++)
+	{
+		cp = SL_Get_By_Num (sldata, serv);
+		NET_StringToAdr (cp->server, &addy);
+
+		if (!addy.port)
+			addy.port = ntohs (27500);
+
+		cp->pingsent = Sys_DoubleTime ();
+		cp->pongback = 0;
+		NET_SendPacket (6, data_ping, addy);
+		NET_SendPacket (11, data_status, addy);
+		cp->waitstatus = 1;
+								
+	}
+}
+
+void
+SL_Con_Details (server_entry_t *sldata, int slitemno)
+{
+	int i, playercount;
+	server_entry_t *cp;
+	playercount = 0;
+	slist_last_details = slitemno;
+	cp = SL_Get_By_Num (sldata, (slitemno - 1));
+	Con_Printf("Server: %s\n", cp->server);
+	Con_Printf("Ping: ");
+	if (cp->pongback)
+		Con_Printf("%i\n", (int)(cp->pongback * 1000));
+	else
+		Con_Printf("N/A\n");
+	if (cp->status)
+	{
+		Con_Printf("Game: %s\n", Info_ValueForKey (cp->status, "*gamedir"));
+		Con_Printf("Map: %s\n", Info_ValueForKey (cp->status, "map"));
+		for (i = 0; i < strlen(cp->status); i++)
+			if (cp->status[i] == '\n')
+				playercount++;
+		Con_Printf("Players: %i/%s\n", playercount, Info_ValueForKey(cp->status, "maxclients"));
+	} else
+		Con_Printf("No Details Available\n");
+}
+
 void
 SL_Command (void)
 {
@@ -350,13 +412,33 @@ SL_Command (void)
 	
 	if (Cmd_Argc () == 1)
 		SL_Con_List(slist); 
+	else if (strcasecmp(Cmd_Argv(1),"update") == 0)
+	{
+		if (Cmd_Argc () == 2)
+			SL_Update(slist);
+		else
+			Con_Printf("Syntax: slist update\n");
+	}
 	else if (strcasecmp(Cmd_Argv(1),"connect") == 0)
 	{
-		sltemp = atoi(Cmd_Argv(2)); 
-		if(sltemp && (sltemp <= SL_Len (slist)))
-			SL_Connect(slist,sltemp);
+		if (Cmd_Argc () == 3)
+		{
+			sltemp = atoi(Cmd_Argv(2)); 
+			if(sltemp && (sltemp <= SL_Len (slist)))
+				SL_Connect(slist,sltemp);
+			else
+				Con_Printf("Error: Invalid Server Number -> %s\n",Cmd_Argv(2));
+		} 
+		else if ((Cmd_Argc () == 2) && slist_last_details)
+			SL_Connect(slist,slist_last_details);
 		else
-			Con_Printf("Error: Invalid Server Number -> %s\n",Cmd_Argv(2));
+			Con_Printf("Syntax: slist connect #\n");
+	}
+	else
+	{
+		sltemp = atoi(Cmd_Argv(1));
+		if((Cmd_Argc () == 2) && sltemp && (sltemp <= SL_Len (slist)))
+			SL_Con_Details(slist,sltemp);
 	}
 }
 
