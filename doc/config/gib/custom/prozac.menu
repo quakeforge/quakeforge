@@ -1,0 +1,143 @@
+menu "primary" { // Primary weapons
+	item "sniper rifle"
+	item "assult cannon"
+	item "rocket launcher"
+	item "pyro toys"
+	item "grenade set"
+	item "lightning gun"
+	item "light assult"
+}
+
+menu "secondary" { // Secondary weapons
+	item "super nailgun"
+	item "knife"
+	item "double barrel"
+	item "rail gun"
+	item "nail gun"
+	item "tranquilizer"
+	item "single barrel"
+}
+
+menu "misc" { // Misc/Extra weapons
+	item "mauser"
+	item "air-fist"
+	item "impulse rifle"
+	item "laser cannon"
+}
+
+menu "leg" { // Leg enhancements
+	item "cheetah"
+	item "cougar"
+	item "white rhino"
+	item "scrub jay"
+	item "kgb officer"
+	item "black mamba"
+	item "imperialpenguin"
+}
+
+menu "health" {  // Health and armor
+	item "75 green"
+	item "100 yellow"
+	item "150 red"
+	item "200 red"
+	item "300 red"
+	item "+50 health"
+	item "+5 health"
+}
+
+menu "armor" {  // Special armor/ammo
+	item "ceramic armor"
+	item "impact armor"
+	item "asbestos armor"
+	item "kevlar armor"
+	item "blast armor"
+	item "ammo backpack"
+	item "ammo bandolier"
+}
+
+menu "special1" {  // Special items
+	item "scanner"
+	item "auto-scanner"
+	item "detpack"
+	item "medikit"
+	item "spy kit"
+	item "scuba gear"
+	item "grapple"
+}
+
+menu "special2" { // More special items
+	item "scanner jammer"
+	item "cyberaug unit"
+	item "motion sensor"
+	item "field generator"
+	item "full armor"
+	item "c4 tossable det"
+	item "dispenser"
+}
+
+menu "grenades1" {  // Grenades - combat
+	item "normal grenades"
+	item "flame grenades"
+	item "gas grenades"
+	item "emp grenades"
+	item "frag grenades"
+	item "nail grenades"
+	item "mirv grenades"
+}
+
+menu "grenades2" {  // Grenades - utility
+	item "flares"
+	item "caltrops"
+	item "concussion grenades"
+	item "flash grenades"
+	item "antigrav grenades"
+	item "bio-infection grenades"
+	item "krac grenades"
+}
+
+menu "engy" {  // Engineering items
+	item "spanner"
+	item "sentrygun"
+	item "turret upgrade"
+	item "tesla"
+	item "tesla upgrade"
+	item "camera"
+	item "teleporter"
+}
+
+menu "skill1" { // Skilled profession
+	item "thief"
+	item "runner"
+	item "warlock"
+	item "chaplan"
+	item "berserker"
+	item "guerilla"
+	item "judoka"
+}
+
+menu "skill2" {  // More professions
+	item "army"
+	item "cybernet"
+	item "martyr"
+	item "crusader"
+}
+
+menu "abilities" { // Proficiency
+	item "stealth"
+	item "highjump"
+	item "aspect of hwguy"
+	item "explosive body"
+	item "gymnast"
+	item "demon lore"
+	item "close combat"
+}
+
+menu "optional" { // Optional equipment
+	item "auto-id"
+	item "respawn guard"
+	item "hover boots"
+	item "boot upgrade"
+	item "laser guided rockets"
+	item "otr bullets"
+	item "cluster rockets"
+}
