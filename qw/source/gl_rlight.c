@@ -225,7 +225,7 @@ loc0:
 	}
 
 // mark the polygons
-	surf = cl.worldmodel->surfaces + node->firstsurface;
+	surf = r_worldentity.model->surfaces + node->firstsurface;
 	for (i = 0; i < node->numsurfaces; i++, surf++) {
 		int s, t;
 		float l, dist, dist2;
@@ -297,7 +297,7 @@ R_PushDlights (vec3_t entorigin)
 		if (l->die < r_realtime || !l->radius)
 			continue;
 		VectorSubtract (l->origin, entorigin, lightorigin);
-		R_MarkLights (lightorigin, l, 1 << i, cl.worldmodel->nodes);
+		R_MarkLights (lightorigin, l, 1 << i, r_worldentity.model->nodes);
 	}
 }
 
@@ -356,7 +356,7 @@ RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 	VectorCopy (mid, lightspot);
 	lightplane = plane;
 
-	surf = cl.worldmodel->surfaces + node->firstsurface;
+	surf = r_worldentity.model->surfaces + node->firstsurface;
 	for (i = 0; i < node->numsurfaces; i++, surf++) {
 		if (surf->flags & SURF_DRAWTILED)
 			continue;					// no lightmaps
@@ -412,14 +412,14 @@ R_LightPoint (vec3_t p)
 	vec3_t      end;
 	int         r;
 
-	if (!cl.worldmodel->lightdata)
+	if (!r_worldentity.model->lightdata)
 		return 255;
 
 	end[0] = p[0];
 	end[1] = p[1];
 	end[2] = p[2] - 2048;
 
-	r = RecursiveLightPoint (cl.worldmodel->nodes, p, end);
+	r = RecursiveLightPoint (r_worldentity.model->nodes, p, end);
 
 	if (r == -1)
 		r = 0;

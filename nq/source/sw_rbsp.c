@@ -35,7 +35,6 @@
 #include "QF/console.h"
 #include "QF/sys.h"
 
-#include "client.h"
 #include "r_local.h"
 #include "QF/render.h"
 
@@ -501,7 +500,7 @@ R_RecursiveWorldNode (mnode_t *node, int clipflags)
 		c = node->numsurfaces;
 
 		if (c) {
-			surf = cl.worldmodel->surfaces + node->firstsurface;
+			surf = r_worldentity.model->surfaces + node->firstsurface;
 
 			if (dot < -BACKFACE_EPSILON) {
 				do {

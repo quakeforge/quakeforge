@@ -937,7 +937,7 @@ R_SetupFrame (void)
 
 	// current viewleaf
 	r_oldviewleaf = r_viewleaf;
-	r_viewleaf = Mod_PointInLeaf (r_origin, cl.worldmodel);
+	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.model);
 
 	V_SetContentsColor (r_viewleaf->contents);
 	V_CalcBlend ();
@@ -1135,10 +1135,10 @@ R_Mirror (void)
 	glLoadMatrixf (r_base_world_matrix);
 
 	glColor4f (1, 1, 1, r_mirroralpha->value);
-	s = cl.worldmodel->textures[mirrortexturenum]->texturechain;
+	s = r_worldentity.model->textures[mirrortexturenum]->texturechain;
 	for (; s; s = s->texturechain)
 		R_RenderBrushPoly (s);
-	cl.worldmodel->textures[mirrortexturenum]->texturechain = NULL;
+	r_worldentity.model->textures[mirrortexturenum]->texturechain = NULL;
 	glColor4f (1, 1, 1, 1);
 }
 
@@ -1154,7 +1154,7 @@ R_RenderView (void)
 	if (r_norefresh->int_val)
 		return;
 
-	if (!r_worldentity.model || !cl.worldmodel)
+	if (!r_worldentity.model)
 		Sys_Error ("R_RenderView: NULL worldmodel");
 
 //	glFinish ();

@@ -470,7 +470,7 @@ R_SetupFrame (void)
 
 	// current viewleaf
 	r_oldviewleaf = r_viewleaf;
-	r_viewleaf = Mod_PointInLeaf (r_origin, cl.worldmodel);
+	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.model);
 
 	r_dowarpold = r_dowarp;
 	r_dowarp = r_waterwarp->int_val && (r_viewleaf->contents <= CONTENTS_WATER);

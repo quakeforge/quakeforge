@@ -187,8 +187,8 @@ R_NewMap (void)
 	r_worldentity.model = cl.worldmodel;
 
 	// clear out efrags in case the level hasn't been reloaded
-	for (i = 0; i < cl.worldmodel->numleafs; i++)
-		cl.worldmodel->leafs[i].efrags = NULL;
+	for (i = 0; i < r_worldentity.model->numleafs; i++)
+		r_worldentity.model->leafs[i].efrags = NULL;
 
 	r_viewleaf = NULL;
 	R_ClearParticles ();
@@ -198,14 +198,14 @@ R_NewMap (void)
 	// identify sky texture
 	skytexturenum = -1;
 	mirrortexturenum = -1;
-	for (i = 0; i < cl.worldmodel->numtextures; i++) {
-		if (!cl.worldmodel->textures[i])
+	for (i = 0; i < r_worldentity.model->numtextures; i++) {
+		if (!r_worldentity.model->textures[i])
 			continue;
-		if (!strncmp (cl.worldmodel->textures[i]->name, "sky", 3))
+		if (!strncmp (r_worldentity.model->textures[i]->name, "sky", 3))
 			skytexturenum = i;
-		if (!strncmp (cl.worldmodel->textures[i]->name, "window02_1", 10))
+		if (!strncmp (r_worldentity.model->textures[i]->name, "window02_1", 10))
 			mirrortexturenum = i;
-		cl.worldmodel->textures[i]->texturechain = NULL;
+		r_worldentity.model->textures[i]->texturechain = NULL;
 	}
 	r_skyname = Cvar_FindVar ("r_skyname");
 	if (r_skyname != NULL)

@@ -193,8 +193,8 @@ R_NewMap (void)
 
 	// clear out efrags in case the level hasn't been reloaded
 // FIXME: is this one short?
-	for (i = 0; i < cl.worldmodel->numleafs; i++)
-		cl.worldmodel->leafs[i].efrags = NULL;
+	for (i = 0; i < r_worldentity.model->numleafs; i++)
+		r_worldentity.model->leafs[i].efrags = NULL;
 
 	r_viewleaf = NULL;
 	R_ClearParticles ();
@@ -439,11 +439,11 @@ R_MarkLeaves (void)
 	r_visframecount++;
 	r_oldviewleaf = r_viewleaf;
 
-	vis = Mod_LeafPVS (r_viewleaf, cl.worldmodel);
+	vis = Mod_LeafPVS (r_viewleaf, r_worldentity.model);
 
-	for (i = 0; i < cl.worldmodel->numleafs; i++) {
+	for (i = 0; i < r_worldentity.model->numleafs; i++) {
 		if (vis[i >> 3] & (1 << (i & 7))) {
-			node = (mnode_t *) &cl.worldmodel->leafs[i + 1];
+			node = (mnode_t *) &r_worldentity.model->leafs[i + 1];
 			do {
 				if (node->visframe == r_visframecount)
 					break;
@@ -743,7 +743,7 @@ R_DrawBEntitiesOnList (void)
 							r_emaxs[j] = minmaxs[3 + j];
 						}
 
-						R_SplitEntityOnNode2 (cl.worldmodel->nodes);
+						R_SplitEntityOnNode2 (r_worldentity.model->nodes);
 
 						if (r_pefragtopnode) {
 							currententity->topnode = r_pefragtopnode;
@@ -875,7 +875,7 @@ R_RenderView_ (void)
 // done in screen.c
 	Sys_LowFPPrecision ();
 
-	if (!r_worldentity.model || !cl.worldmodel)
+	if (!r_worldentity.model)
 		Sys_Error ("R_RenderView: NULL worldmodel");
 
 	if (!r_dspeeds->int_val) {
