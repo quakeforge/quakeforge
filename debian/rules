@@ -208,7 +208,8 @@ install: build
 	dh_movefiles -p$(QFCC) --sourcedir=$(tmp) \
 		usr/bin/qfcc \
 		usr/share/man/man1/qfcc.1 \
-		usr/include/QF/ruamoko/*
+		usr/include/QF/ruamoko/* \
+		usr/lib/ruamoko/*
 	install -d -m755 debian/$(QFCC)/usr/share/doc
 	ln -s $(common) debian/$(QFCC)/usr/share/doc/$(QFCC)
 
