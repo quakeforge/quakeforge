@@ -414,7 +414,7 @@ SL_Con_Details (server_entry_t *sldata, int slitemno)
 		Con_Printf("N/A\n");
 	if (cp->status)
 	{
-		Con_Printf("Hostname: %s\n", Info_ValueForKey (cp->status, "hostname"));
+		Con_Printf("Name: %s\n", cp->desc);
 		Con_Printf("Game: %s\n", Info_ValueForKey (cp->status, "*gamedir"));
 		Con_Printf("Map: %s\n", Info_ValueForKey (cp->status, "map"));
 		for (i = 0; i < strlen(cp->status); i++)
@@ -433,6 +433,9 @@ SL_MasterUpdate(void)
 {
 	netadr_t addy;
 	char data[] = "c\n";
+	
+	SL_Del_All(slist);
+	
 	NET_StringToAdr ("qwmaster.ocrana.de:27000", &addy);
 	NET_SendPacket (3, data, addy);
 	NET_StringToAdr ("qwmaster.barrysworld.com:27000", &addy);
@@ -557,6 +560,7 @@ int
 SL_CheckStatus (char *cs_from, char *cs_data)
 {
 	server_entry_t *temp;
+	char *tmp_desc;
 	
 	for (temp = slist; temp; temp = temp->next)
 		if (temp->waitstatus)
@@ -567,6 +571,15 @@ SL_CheckStatus (char *cs_from, char *cs_data)
 				temp->status = realloc(temp->status, strlen(cs_data) + 1);
 				strcpy(temp->status, cs_data);
 				temp->waitstatus = 0;
+				tmp_desc = Info_ValueForKey (temp->status, "hostname");
+				if (tmp_desc[0] != '\0')
+				{
+					temp->desc = realloc(temp->desc, strlen(tmp_desc) + 1);
+					strcpy(temp->desc, tmp_desc);
+				} else {
+					temp->desc = realloc(temp->desc, strlen(temp->status) + 1);
+					strcpy(temp->desc, temp->server);
+				}
 				for (i = 0; i < strlen(temp->status); i++)
 					if (temp->status[i] == '\n')
 					{
