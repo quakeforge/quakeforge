@@ -53,6 +53,8 @@
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
+#include "compat.h"
+
 #ifdef HAVE_CURSES_H
 static int use_curses = 1;
 

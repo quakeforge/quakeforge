@@ -333,7 +333,7 @@ Sys_InitFloatTime (void)
 }
 
 
-char       *
+const char *
 Sys_ConsoleInput (void)
 {
 	static char text[256];
@@ -502,7 +502,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 
 	parms.argv = argv;
 
-	COM_InitArgv (parms.argc, parms.argv);
+	COM_InitArgv (parms.argc, (const char**)parms.argv);
 
 	parms.argc = com_argc;
 	parms.argv = com_argv;
@@ -633,6 +633,6 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 }
 
 void
-Sys_DebugLog (char *file, char *fmt, ...)
+Sys_DebugLog (const char *file, const char *fmt, ...)
 {
 }

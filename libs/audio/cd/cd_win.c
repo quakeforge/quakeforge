@@ -354,7 +354,7 @@ I_CDAudio_Update (void)
 static void
 I_CD_f (void)
 {
-	char       *command;
+	const char *command;
 	int         ret;
 	int         n;
 

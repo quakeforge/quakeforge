@@ -84,7 +84,7 @@ void        Sys_PushFPCW_SetHigh (void);
 
 
 void
-Sys_DebugLog (char *file, char *fmt, ...)
+Sys_DebugLog (const char *file, const char *fmt, ...)
 {
 	va_list     argptr;
 	static char data[1024];
@@ -226,7 +226,7 @@ Sys_Quit (void)
 }
 
 
-char *
+const char *
 Sys_ConsoleInput (void)
 {
 	static char text[256];
@@ -412,7 +412,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 
 	host_parms.argv = argv;
 
-	COM_InitArgv (host_parms.argc, host_parms.argv);
+	COM_InitArgv (host_parms.argc, (const char**)host_parms.argv);
 
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
