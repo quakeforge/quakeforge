@@ -160,9 +160,7 @@ R_AddDynamicLights (msurface_t *surf)
 
 		VectorSubtract (r_dlights[lnum].origin, currententity->origin, local);
 		dist = DotProduct (local, surf->plane->normal) - surf->plane->dist;
-		for (i = 0; i < 3; i++)
-			impact[i] =
-				r_dlights[lnum].origin[i] - surf->plane->normal[i] * dist;
+		VectorMA (r_dlights[lnum].origin, -dist, surf->plane->normal, impact);
 
 		i = DotProduct (impact,	surf->texinfo->vecs[0]) +
 			surf->texinfo->vecs[0][3] - surf->texturemins[0];
@@ -274,11 +272,11 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 	case 4:
 		for (i = 0; i < tmax; i++, dest += stride) {
 			for (j = 0; j < smax; j++) {
-				*dest++ = bound (0, *bl >> shift, 255);
+				*dest++ = min (*bl >> shift, 255);
 				bl++;
-				*dest++ = bound (0, *bl >> shift, 255);
+				*dest++ = min (*bl >> shift, 255);
 				bl++;
-				*dest++ = bound (0, *bl >> shift, 255);
+				*dest++ = min (*bl >> shift, 255);
 				bl++;
 				*dest++ = 255;
 			}
@@ -287,11 +285,11 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 	case 3:
 		for (i = 0; i < tmax; i++, dest += stride) {
 			for (j = 0; j < smax; j++) {
-				*dest++ = bound (0, *bl >> shift, 255);
+				*dest++ = min (*bl >> shift, 255);
 				bl++;
-				*dest++ = bound (0, *bl >> shift, 255);
+				*dest++ = min (*bl >> shift, 255);
 				bl++;
-				*dest++ = bound (0, *bl >> shift, 255);
+				*dest++ = min (*bl >> shift, 255);
 				bl++;
 			}
 		}
@@ -303,7 +301,7 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 				t2 += *bl++;
 				t2 += *bl++;
 				t2 /= 3;
-				*dest++ = bound (0, t2 >> shift, 255);
+				*dest++ = min (t2 >> shift, 255);
 			}
 		}
 		break;
