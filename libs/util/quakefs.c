@@ -1130,14 +1130,6 @@ QFS_Gamedir (const char *dir)
 }
 
 void
-QFS_CreateGameDirectory (const char *gamename)
-{
-	if (strcmp (fs_userpath->string, "."))
-		QFS_CreatePath (va ("%s/%s/dummy", fs_userpath->string, gamename));
-	QFS_AddGameDirectory (gamename);
-}
-
-void
 QFS_Init (const char *game)
 {
 	int         i;
@@ -1267,7 +1259,7 @@ QFS_WOpen (const char *path, int zip)
 	char        mode[4] = "wb\000\000";
 
 	if (zip)
-		mode[2] = bound (1, zip, 9);
+		mode[2] = bound (1, zip, 9) + '0';
 	dsprintf (full_path, "%s/%s", fs_userpath->string, path);
 	QFS_CreatePath (full_path->str);
 	file = Qopen (full_path->str, mode);

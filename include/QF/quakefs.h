@@ -93,6 +93,5 @@ void QFS_LoadCacheFile (const char *path, struct cache_user_s *cu);
 void QFS_CreatePath (const char *path);
 void QFS_Gamedir (const char *dir);
 void QFS_Init (const char *game);
-void QFS_CreateGameDirectory (const char *gamename);
 
 #endif // __quakefs_h

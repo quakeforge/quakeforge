@@ -46,18 +46,17 @@ Game_Init (void)
 
 	// FIXME: make this dependant on QF metadata in the mission packs
 	standard_quake = true;
+
 	if ((i = COM_CheckParm ("-hipnotic"))) {
-		QFS_CreateGameDirectory ("hipnotic");
+		QFS_Gamedir ("hipnotic");
 		standard_quake = false;
 		hipnotic = true;
-	}
-	if ((i = COM_CheckParm ("-rogue"))) {
-		QFS_CreateGameDirectory ("rogue");
+	} else if ((i = COM_CheckParm ("-rogue"))) {
+		QFS_Gamedir ("rogue");
 		standard_quake = false;
 		rogue = true;
-	}
-	if ((i = COM_CheckParm ("-abyss"))) {
-		QFS_CreateGameDirectory ("abyss");
+	} else if ((i = COM_CheckParm ("-abyss"))) {
+		QFS_Gamedir ("abyss");
 		abyss = true;
 	}
 }
