@@ -1783,7 +1783,10 @@ PF_SV_FreeClient (progs_t *pr)
 
 	if (cl->userinfo)
 		Info_Destroy (cl->userinfo);
-	//SV_FullClientUpdate (cl, &sv.reliable_datagram);
+	cl->userinfo = 0;
+	SV_FullClientUpdate (cl, &sv.reliable_datagram);
+	cl->state = cs_free;
+
 	//if (sv_client_disconnect_e->func)
 	//	GIB_Event_Callback (sv_client_disconnect_e, 2, va("%u", cl->userid),
 	//						"server");
