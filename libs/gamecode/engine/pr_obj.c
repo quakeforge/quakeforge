@@ -552,10 +552,11 @@ pr_sel_is_mapped (progs_t *pr)
 static void
 pr_class_get_class_method (progs_t *pr)
 {
-	//pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
-	//pr_sel_t   *aSel = &P_STRUCT (pr, pr_sel_t, 1);
-	//XXX
-	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
+	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
+	pr_sel_t   *aSel = &P_STRUCT (pr, pr_sel_t, 1);
+	class = &G_STRUCT (pr, pr_class_t, class->class_pointer);
+	pr_method_t *method = obj_find_message (pr, class, aSel);
+	RETURN_POINTER (pr, method);
 }
 
 static void
@@ -567,14 +568,40 @@ pr_class_get_instance_method (progs_t *pr)
 	RETURN_POINTER (pr, method);
 }
 
+#define CLASSOF(x) (&G_STRUCT (pr, pr_class_t, (x)->class_pointer))
+
 static void
 pr_class_pose_as (progs_t *pr)
 {
-	//pr_class_t *imposter = &P_STRUCT (pr, pr_class_t, 0);
-	//pr_class_t *superclass = &P_STRUCT (pr, pr_class_t, 1);
-	//XXX
-	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
+	pr_class_t *impostor = &P_STRUCT (pr, pr_class_t, 0);
+	pr_class_t *superclass = &P_STRUCT (pr, pr_class_t, 1);
+	pointer_t  *subclass;
+
+	subclass = &superclass->subclass_list;
+	while (*subclass) {
+		pr_class_t *sub = &P_STRUCT (pr, pr_class_t, *subclass);
+		pointer_t   nextSub = sub->sibling_class;
+		if (sub != impostor) {
+			sub->sibling_class = impostor->subclass_list;
+			sub->super_class = P_POINTER (pr, 0);	// impostor
+			impostor->subclass_list = *subclass;	// sub
+			CLASSOF (sub)->sibling_class = CLASSOF (impostor)->sibling_class;
+			CLASSOF (sub)->super_class = impostor->class_pointer;
+			CLASSOF (impostor)->subclass_list = sub->class_pointer;
+		}
+		*subclass = nextSub;
+	}
+	superclass->subclass_list = P_POINTER (pr, 0);	// impostor
+	CLASSOF (superclass)->subclass_list = impostor->class_pointer;
+
+	impostor->sibling_class = 0;
+	CLASSOF (impostor)->sibling_class = 0;
+
+	//XXX how much do I need to do here?!?
+	//class_table_replace (super_class, impostor);
+	R_INT (pr) = P_POINTER (pr, 0);	// impostor
 }
+#undef CLASSOF
 
 static inline pr_id_t *
 class_create_instance (progs_t *pr, pr_class_t *class)
@@ -665,7 +692,7 @@ pr_class_get_gc_object_type (progs_t *pr)
 static void
 pr_class_ivar_set_gcinvisible (progs_t *pr)
 {
-	//pr_class_t *imposter = &P_STRUCT (pr, pr_class_t, 0);
+	//pr_class_t *impostor = &P_STRUCT (pr, pr_class_t, 0);
 	//const char *ivarname = P_GSTRING (pr, 1);
 	//int         gcInvisible = P_INT (pr, 2);
 	//XXX
