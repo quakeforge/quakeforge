@@ -490,7 +490,7 @@ begin_function
 			$$->code = pr.code->size;
 			if (options.code.debug) {
 				pr_lineno_t *lineno = new_lineno ();
-				$$->aux->source_line = pr.source_line;
+				$$->aux->source_line = $$->def->line;
 				$$->aux->line_info = lineno - pr.linenos;
 				$$->aux->local_defs = pr.num_locals;
 
