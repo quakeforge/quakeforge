@@ -59,6 +59,7 @@ static const char rcsid[] =
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <getopt.h>
 
 #include "protocol.h"
 
@@ -337,7 +338,6 @@ make_host_addr (const char *host, int port, struct sockaddr_in *host_addr)
 	return 0;
 }
 
-#ifndef WIN32
 static void
 read_hosts (const char *fname)
 {
@@ -372,19 +372,16 @@ read_hosts (const char *fname)
 	}
 	fclose (host_file);
 }
-#endif
 
 int
 main (int argc, char **argv)
 {
 	struct sockaddr_in addr;
 	short port = htons (PORT_MASTER);
-#ifndef WIN32 //FIXME
 	int c;
-#endif
 
 	servers = calloc (sizeof (server_t), serverlen);
-#ifndef WIN32 //FIXME
+
 	while ((c = getopt (argc, argv, "p:f:")) != -1) {
 		switch (c) {
 			case 'p':
@@ -395,7 +392,7 @@ main (int argc, char **argv)
 				break;
 		}
 	}
-#endif
+
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = INADDR_ANY;
 	addr.sin_port = port;

@@ -95,8 +95,8 @@ qw_server_LDFLAGS=	$(common_ldflags)
 qw_server_DEPENDENCIES=	libqfnet.la libasm.la $(qf_server_LIBS)
 
 qw_master_SOURCES=	master.c
-qw_master_LDADD=	$(NET_LIBS)
-qw_master_LDFLAGS=	$(common_ldflags)
+qw_master_LDADD=	$(top_builddir)/libs/util/libQFutil.la $(NET_LIBS)
+qw_master_LDFLAGS=	$(common_ldflags) -static
 
 cl_plugin_LIBS= \
 		$(CLIENT_PLUGIN_STATIC_LIBS) \
