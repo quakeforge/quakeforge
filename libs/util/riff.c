@@ -308,7 +308,8 @@ riff_read (QFile *f)
 		dstring_delete (riff_buf);
 		return 0;
 	}
-	while (Rread (f, &ck, sizeof (ck))) {
+	//FIXME the pos test should be in quakeio
+	while (Qtell (f) < file_len && Rread (f, &ck, sizeof (ck))) {
 		ck.len = LittleLong (ck.len);
 		//printf ("%.4s %d\n", ck.name, ck.len);
 		if (ck.len < 0x80000000)
