@@ -502,9 +502,9 @@ PR_ParseError (char *error, ...)
 	to string
 */
 void
-PR_Expect (char *string)
+PR_Expect (token_type_t type, char *string)
 {
-	if (strcmp (string, pr_token))
+	if (type != pr_token_type || strcmp (string, pr_token))
 		PR_ParseError ("expected %s, found %s", string, pr_token);
 	PR_Lex ();
 }
@@ -517,9 +517,9 @@ PR_Expect (char *string)
 	Otherwise, return false and do nothing else.
 */
 qboolean
-PR_Check (char *string)
+PR_Check (token_type_t type, char *string)
 {
-	if (strcmp (string, pr_token))
+	if (type != pr_token_type || strcmp (string, pr_token))
 		return false;
 
 	PR_Lex ();
@@ -599,7 +599,7 @@ void
 PR_SkipToSemicolon (void)
 {
 	do {
-		if (!pr_bracelevel && PR_Check (";"))
+		if (!pr_bracelevel && PR_Check (tt_punct, ";"))
 			return;
 		PR_Lex ();
 	} while (pr_token[0]);	// eof will return a null token
@@ -620,7 +620,7 @@ PR_ParseType (void)
 	type_t		*type;
 	char		*name;
 
-	if (PR_Check (".")) {
+	if (PR_Check (tt_punct, ".")) {
 		memset (&new, 0, sizeof (new));
 		new.type = ev_field;
 		new.aux_type = PR_ParseType ();
@@ -645,7 +645,7 @@ PR_ParseType (void)
 	}
 	PR_Lex ();
 
-	if (!PR_Check ("("))
+	if (!PR_Check (tt_punct, "("))
 		return type;
 
 	// function type
@@ -653,8 +653,8 @@ PR_ParseType (void)
 	new.type = ev_function;
 	new.aux_type = type;				// return type
 	new.num_parms = 0;
-	if (!PR_Check (")")) {
-		if (PR_Check ("...")) {
+	if (!PR_Check (tt_punct, ")")) {
+		if (PR_Check (tt_punct, "...")) {
 			new.num_parms = -1;			// variable args
 		} else {
 			do {
@@ -663,10 +663,10 @@ PR_ParseType (void)
 				strcpy (pr_parm_names[new.num_parms], name);
 				new.parm_types[new.num_parms] = type;
 				new.num_parms++;
-			} while (PR_Check (","));
+			} while (PR_Check (tt_punct, ","));
 		}
 
-		PR_Expect (")");
+		PR_Expect (tt_punct, ")");
 	}
 
 	return PR_FindType (&new);

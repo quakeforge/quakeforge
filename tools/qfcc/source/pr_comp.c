@@ -354,7 +354,7 @@ PR_ParseFunctionCall (def_t *func)
 
 	// copy the arguments to the global parameter variables
 	arg = 0;
-	if (!PR_Check (")")) {
+	if (!PR_Check (tt_punct, ")")) {
 		do {
 			if (t->num_parms != -1 && arg >= t->num_parms)
 				PR_ParseError ("too many parameters");
@@ -378,11 +378,11 @@ PR_ParseFunctionCall (def_t *func)
 			def_parms[arg].type = t->parm_types[arg];
 			PR_Statement (&pr_opcodes[OP_STORE_V], e, &def_parms[arg]);
 			arg++;
-		} while (PR_Check (","));
+		} while (PR_Check (tt_punct, ","));
 
 		if (t->num_parms != -1 && arg != t->num_parms)
 			PR_ParseError ("too few parameters");
-		PR_Expect (")");
+		PR_Expect (tt_punct, ")");
 	}
 
 	if (arg > 8)
@@ -428,7 +428,7 @@ PR_Term (void)
 	def_t		*e;
 	etype_t 	t;
 
-	if (PR_Check ("!")) {
+	if (PR_Check (tt_punct, "!")) {
 		e = PR_Expression (NOT_PRIORITY);
 		t = e->type->type;
 		switch (t) {
@@ -448,9 +448,9 @@ PR_Term (void)
 		}
 	}
 
-	if (PR_Check ("(")) {
+	if (PR_Check (tt_punct, "(")) {
 		e = PR_Expression (TOP_PRIORITY);
-		PR_Expect (")");
+		PR_Expect (tt_punct, ")");
 		return e;
 	}
 
@@ -474,7 +474,7 @@ PR_Expression (int priority)
 	e = PR_Expression (priority - 1);
 
 	while (1) {
-		if (priority == 1 && PR_Check ("("))
+		if (priority == 1 && PR_Check (tt_punct, "("))
 			return PR_ParseFunctionCall (e);
 
 		for (op = pr_opcodes; op->name; op++) {
@@ -482,7 +482,7 @@ PR_Expression (int priority)
 			if (op->priority != priority)
 				continue;
 
-			if (!PR_Check (op->name))
+			if (!PR_Check (tt_punct, op->name))
 				continue;
 
 			if (op->right_associative) {
@@ -550,32 +550,32 @@ PR_ParseStatement (void)
 	def_t			*e;
 	dstatement_t	*patch1, *patch2;
 
-	if (PR_Check ("{")) {
+	if (PR_Check (tt_punct, "{")) {
 		do {
 			PR_ParseStatement ();
-		} while (!PR_Check ("}"));
+		} while (!PR_Check (tt_punct, "}"));
 		return;
 	}
 
-	if (PR_Check ("return")) {
-		if (PR_Check (";")) {
+	if (PR_Check (tt_name, "return")) {
+		if (PR_Check (tt_punct, ";")) {
 			PR_Statement (&pr_opcodes[OP_RETURN], 0, 0);
 			return;
 		}
 
 		e = PR_Expression (TOP_PRIORITY);
 
-		PR_Expect (";");
+		PR_Expect (tt_punct, ";");
 		PR_Statement (&pr_opcodes[OP_RETURN], e, 0);
 
 		return;
 	}
 
-	if (PR_Check ("while")) {
-		PR_Expect ("(");
+	if (PR_Check (tt_name, "while")) {
+		PR_Expect (tt_punct, "(");
 		patch2 = &statements[numstatements];
 		e = PR_Expression (TOP_PRIORITY);
-		PR_Expect (")");
+		PR_Expect (tt_punct, ")");
 		patch1 = &statements[numstatements];
 		PR_Statement (&pr_opcodes[OP_IFNOT], e, 0);
 		PR_ParseStatement ();
@@ -585,36 +585,36 @@ PR_ParseStatement (void)
 		return;
 	}
 
-	if (PR_Check ("do")) {
+	if (PR_Check (tt_name, "do")) {
 		patch1 = &statements[numstatements];
 		PR_ParseStatement ();
-		PR_Expect ("while");
-		PR_Expect ("(");
+		PR_Expect (tt_name, "while");
+		PR_Expect (tt_punct, "(");
 		e = PR_Expression (TOP_PRIORITY);
-		PR_Expect (")");
-		PR_Expect (";");
+		PR_Expect (tt_punct, ")");
+		PR_Expect (tt_punct, ";");
 		junkdef.ofs = patch1 - &statements[numstatements];
 		PR_Statement (&pr_opcodes[OP_IF], e, &junkdef);
 		return;
 	}
 
-	if (PR_Check ("local")) {
+	if (PR_Check (tt_name, "local")) {
 		PR_ParseDefs ();
 		locals_end = numpr_globals;
 		return;
 	}
 
-	if (PR_Check ("if")) {
-		PR_Expect ("(");
+	if (PR_Check (tt_name, "if")) {
+		PR_Expect (tt_punct, "(");
 		e = PR_Expression (TOP_PRIORITY);
-		PR_Expect (")");
+		PR_Expect (tt_punct, ")");
 
 		patch1 = &statements[numstatements];
 		PR_Statement (&pr_opcodes[OP_IFNOT], e, 0);
 
 		PR_ParseStatement ();
 
-		if (PR_Check ("else")) {
+		if (PR_Check (tt_name, "else")) {
 			patch2 = &statements[numstatements];
 			PR_Statement (&pr_opcodes[OP_GOTO], 0, 0);
 			patch1->b = &statements[numstatements] - patch1;
@@ -628,7 +628,7 @@ PR_ParseStatement (void)
 	}
 
 	PR_Expression (TOP_PRIORITY);
-	PR_Expect (";");
+	PR_Expect (tt_punct, ";");
 }
 
 
@@ -663,12 +663,12 @@ PR_ParseState (void)
 
 	s1 = PR_ParseImmediate ();
 
-	PR_Expect (",");
+	PR_Expect (tt_punct, ",");
 
 	name = PR_ParseName ();
 	def = PR_GetDef (&type_function, name, 0, true);
 
-	PR_Expect ("]");
+	PR_Expect (tt_punct, "]");
 
 	PR_Statement (&pr_opcodes[OP_STATE], s1, def);
 }
@@ -688,7 +688,7 @@ PR_ParseImmediateStatements (type_t *type)
 	f = malloc (sizeof (function_t));
 
 	// check for builtin function definition #1, #2, etc
-	if (PR_Check ("#")) {
+	if (PR_Check (tt_punct, "#")) {
 		if (pr_token_type != tt_immediate
 			|| pr_immediate_type != &type_float
 			|| pr_immediate._float != (int) pr_immediate._float) {
@@ -713,13 +713,13 @@ PR_ParseImmediateStatements (type_t *type)
 	f->code = numstatements;
 
 	// check for a state opcode
-	if (PR_Check ("["))
+	if (PR_Check (tt_punct, "["))
 		PR_ParseState ();
 
 	// parse regular statements
-	PR_Expect ("{");
+	PR_Expect (tt_punct, "{");
 
-	while (!PR_Check ("}"))
+	while (!PR_Check (tt_punct, "}"))
 		PR_ParseStatement ();
 
 	// emit an end of statements opcode
@@ -848,7 +848,7 @@ PR_ParseDefs (void)
 		def = PR_GetDef (type, name, pr_scope, true);
 
 		// check for an initialization
-		if (PR_Check ("=")) {
+		if (PR_Check (tt_punct, "=")) {
 			if (def->initialized)
 				PR_ParseError ("%s redeclared", name);
 
@@ -892,9 +892,9 @@ PR_ParseDefs (void)
 			PR_Lex ();
 		}
 
-	} while (PR_Check (","));
+	} while (PR_Check (tt_punct, ","));
 
-	PR_Expect (";");
+	PR_Expect (tt_punct, ";");
 }
 
 /*
