@@ -39,17 +39,17 @@
 
 #include <stdarg.h>
 
-#include "QF/console.h"
+#include "QF/GL/defines.h"
+#include "QF/GL/funcs.h"
+#include "QF/GL/qf_sky.h"
+#include "QF/GL/qf_vid.h"
+
+#include "QF/cvar.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 
 #include "view.h"
 #include "r_cvar.h"
-
-#include "QF/GL/defines.h"
-#include "QF/GL/funcs.h"
-#include "QF/GL/qf_sky.h"
-#include "QF/GL/qf_vid.h"
 
 extern qboolean skyloaded;
 extern vec5_t skyvec[6][4];
@@ -679,7 +679,25 @@ void
 R_DrawSkyChain (msurface_t *sky_chain)
 {
 	msurface_t *sc = sky_chain;
-	
+
+	if (gl_sky_clip->int_val > 2) {
+		qfglDisable (GL_BLEND);
+		qfglDisable (GL_TEXTURE_2D);
+		qfglColor3f (0, 0, 0);
+		while (sc) {
+			glpoly_t   *p = sc->polys;
+
+			while (p) {
+				R_DrawSkyDomePoly (p);
+				p = p->next;
+			}
+			sc = sc->texturechain;
+		}
+		qfglEnable (GL_TEXTURE_2D);
+		qfglEnable (GL_BLEND);
+		return;
+	}
+
 	if (skyloaded) {
 		qfglDepthRange (gldepthmax, gldepthmax);
 		while (sc) {
@@ -693,6 +711,8 @@ R_DrawSkyChain (msurface_t *sky_chain)
 		}
 		qfglDepthRange (gldepthmin, gldepthmax);
 	} else {
+		// this code is duplicated from above because skydome is not yet
+		// clipped
 		qfglDisable (GL_BLEND);
 		qfglDisable (GL_TEXTURE_2D);
 		qfglColor3f (0, 0, 0);
