@@ -126,6 +126,7 @@ R_LoadSkys (const char *skyname)
 		tex_t	*targa;
 
 		qfglBindTexture (GL_TEXTURE_2D, SKY_TEX + i);
+
 		targa = LoadImage (name = va ("env/%s%s", skyname, suf[i]));
 		if (!targa || targa->format < 3) {	// FIXME Can't do PCX right now
 			Con_DPrintf ("Couldn't load %s\n", name);
@@ -146,6 +147,8 @@ R_LoadSkys (const char *skyname)
 
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		qfglTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 #if 0
 		for (j = 0; j < 4; j++) {
@@ -364,7 +367,7 @@ R_DrawSkyDome (void)
 	// clouds
 	if (gl_sky_multipass->int_val) {
 		qfglBindTexture (GL_TEXTURE_2D, alphaskytexture);
-		speedscale = r_realtime / 4.0;
+		speedscale = r_realtime / 8.0;
 		speedscale -= floor (speedscale);
 		R_DrawSkyLayer (speedscale);
 	}
