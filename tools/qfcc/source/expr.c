@@ -1968,6 +1968,9 @@ return_expr (function_t *f, expr_t *e)
 						  f->def->name);
 		warning (e, "type mismatch for return value of %s",
 				 f->def->name);
+	} else {
+		if (f->def->type->aux_type != t)
+			e = cast_expr (f->def->type->aux_type, e);
 	}
 	return new_unary_expr ('r', e);
 }
