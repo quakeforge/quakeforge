@@ -65,6 +65,8 @@ static const struct option long_options[] = {
 	{"disassemble", no_argument, 0, 'd'},
 	{"globals", no_argument, 0, 'g'},
 	{"strings", no_argument, 0, 's'},
+	{"fields", no_argument, 0, 'f'},
+	{"functions", no_argument, 0, 'F'},
 	{NULL, 0, NULL, 0},
 };
 
@@ -199,7 +201,7 @@ main (int argc, char **argv)
 	void      (*func)(progs_t *pr) = dump_globals;
 
 	init_qf ();
-	while ((c = getopt_long (argc, argv, "dgs", long_options, 0)) != EOF) {
+	while ((c = getopt_long (argc, argv, "dgsfF", long_options, 0)) != EOF) {
 		switch (c) {
 			case 'd':
 				func = disassemble_progs;
@@ -209,6 +211,12 @@ main (int argc, char **argv)
 				break;
 			case 's':
 				func = dump_strings;
+				break;
+			case 'f':
+				func = dump_fields;
+				break;
+			case 'F':
+				func = dump_functions;
 				break;
 			default:
 				return 1;

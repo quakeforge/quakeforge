@@ -77,3 +77,50 @@ dump_globals (progs_t *pr)
 		printf ("%s %d %d %s%s\n", type, saveglobal, offset, name, comment);
 	}
 }
+
+void
+dump_fields (progs_t *pr)
+{
+	int i;
+	const char *name;
+	const char *type;
+	int         offset;
+	char       *comment;
+
+	for (i = 0; i < pr->progs->numfielddefs; i++) {
+		ddef_t *def = &pr->pr_fielddefs[i];
+
+		name = PR_GetString (pr, def->s_name);
+		type = pr_type_name[def->type & ~DEF_SAVEGLOBAL];
+		offset = def->ofs;
+
+		comment = " ";
+
+		printf ("%s %d %s%s\n", type, offset, name, comment);
+	}
+}
+
+void
+dump_functions (progs_t *pr)
+{
+	int i;
+	const char *name;
+	int         start;
+	char       *comment;
+
+	for (i = 0; i < pr->progs->numfunctions; i++) {
+		dfunction_t *func = &pr->pr_functions[i];
+
+		name = PR_GetString (pr, func->s_name);
+
+		comment = " ";
+
+		start = func->first_statement;
+		if (start > 0)
+			comment = va (" @ %d", start);
+		else
+			comment = va (" = #%d", -start);
+
+		printf ("%s%s\n", name, comment);
+	}
+}
