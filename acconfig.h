@@ -103,9 +103,6 @@
 /* Define this to something appropriate for declaring 0 length arrays */
 #undef ZERO_LENGTH_ARRAY
 
-/* Define this if you want to have packet logging */
-#undef PACKET_LOGGING
-
 /* Define this if you have FB_AUX_VGA_PLANES_VGA4 */
 #undef HAVE_FB_AUX_VGA_PLANES_VGA4
 

@@ -34,8 +34,6 @@
 
 // FIXME: we did support Quake1 protocol too...
 
-#ifdef PACKET_LOGGING
-
 #define QUAKEWORLD
 
 #include <ctype.h>
@@ -48,6 +46,7 @@
 #include "server.h"
 #include "QF/va.h"
 
+cvar_t     *net_packetlog;
 cvar_t     *net_loglevel;
 
 //extern server_t sv;
@@ -203,7 +202,7 @@ Net_LogStart (char *fname)
 
 	Qexpand_squiggle (fs_userpath->string, e_path);
 	Con_Printf ("Opening packet logfile: %s\n", fname);
-	Net_PacketLog = Qopen (va ("%s/%s", e_path, fname), "wt+");
+	Net_PacketLog = Qopen (va ("%s/%s", e_path, fname), "at");
 	if (!Net_PacketLog)
 		return -1;
 	return 0;
@@ -958,10 +957,23 @@ Parse_Client_Packet (void)
 	}
 }
 
+void
+Net_PacketLog_f (cvar_t *var)
+{
+	if (var->int_val) {
+		Net_LogStart ("qfpacket.log");
+	} else {
+		Net_LogStop ();
+	}
+}
+
 int
 Net_Log_Init (char **sound_precache)
 {
 	Net_sound_precache = sound_precache;
+
+	net_packetlog = Cvar_Get ("net_packetlog", "0", CVAR_NONE, Net_PacketLog_f,
+							 "enable/disable packet logging");
 
 // 0 = no logging
 // 1 = hex dump only
@@ -972,9 +984,5 @@ Net_Log_Init (char **sound_precache)
 	net_loglevel =
 		Cvar_Get ("net_loglevel", "2", CVAR_NONE, NULL,
 				"Packet logging/parsing");
-
-	Net_LogStart ("qfpacket.log");
 	return 0;
 }
-
-#endif // PACKET_LOGGING

@@ -70,10 +70,12 @@
 
 #include "QF/compat.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
 #include "QF/msg.h"
-#include "net.h"
 #include "QF/sys.h"
 #include "QF/qargs.h"
+
+#include "net.h"
 
 #ifdef _WIN32
 # include <windows.h>
@@ -92,6 +94,8 @@
    typedef unsigned int socklen_t;
 # endif
 #endif
+
+extern cvar_t     *net_packetlog;
 
 netadr_t    net_local_adr;
 
@@ -307,9 +311,8 @@ NET_GetPacket (void)
 		return false;
 	}
 
-#ifdef PACKET_LOGGING
-        Log_Incoming_Packet(net_message_buffer,_net_message_message.cursize);
-#endif
+	if (net_packetlog->int_val)
+		Log_Incoming_Packet(net_message_buffer,_net_message_message.cursize);
 	return ret;
 }
 
@@ -323,9 +326,8 @@ NET_SendPacket (int length, void *data, netadr_t to)
 
 	NetadrToSockadr (&to, &addr);
 
-#ifdef PACKET_LOGGING
-        Log_Outgoing_Packet(data,length);
-#endif
+	if (net_packetlog->int_val)
+		Log_Outgoing_Packet(data,length);
 
 	ret =
 		sendto (net_socket, data, length, 0, (struct sockaddr *) &addr,
