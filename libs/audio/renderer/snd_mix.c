@@ -205,11 +205,11 @@ SND_PaintChannels (int endtime)
 				if (count > 0) {
 					sc->paint (ch, sc, count);
 
+					if (sc->advance)
+						sc->advance (sc, count);
+
 					ltime += count;
 				}
-
-				if (sc->advance)
-					sc->advance (sc, count);
 
 				// if at end of loop, restart
 				if (ltime >= ch->end) {
