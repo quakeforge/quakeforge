@@ -32,26 +32,31 @@
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
 #include <stdlib.h>
 
 #include "QF/clip_hull.h"
 #include "QF/cmd.h"
-#include "QF/cvar.h"
-#include "QF/msg.h"
-#include "QF/va.h"
-#include "QF/progs.h"
-#include "QF/zone.h"
-#include "QF/mathlib.h"
 #include "QF/console.h"
+#include "QF/cvar.h"
+#include "QF/mathlib.h"
+#include "QF/msg.h"
+#include "QF/progs.h"
+#include "QF/va.h"
+#include "QF/zone.h"
 
 #define	RETURN_EDICT(p, e) ((p)->pr_globals[OFS_RETURN].integer_var = EDICT_TO_PROG(p, e))
 #define	RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].integer_var = PR_SetString((p), s))
 
 /*
-						BUILT-IN FUNCTIONS
+  BUILT-IN FUNCTIONS
 */
 
 // FIXME: Hunk_TempAlloc, Con_Printf, Cvar_*, PR_SetString, PR_RunError, ED_PrintEdicts, PF_traceon, PF_traceoff, ED_PrintNum, PR_FindBuiltin isn't threadsafe/reentrant
+
 
 const char *
 PF_VarString (progs_t *pr, int first)
@@ -68,7 +73,6 @@ PF_VarString (progs_t *pr, int first)
 	return out;
 }
 
-
 /*
 	PF_normalize
 
@@ -83,7 +87,8 @@ PF_normalize (progs_t *pr)
 
 	value1 = G_VECTOR (pr, OFS_PARM0);
 
-	new = value1[0] * value1[0] + value1[1] * value1[1] + value1[2] * value1[2];
+	new = value1[0] * value1[0] + value1[1] * value1[1] + value1[2] *
+		  value1[2];
 	new = sqrt (new);
 
 	if (new == 0)
@@ -111,7 +116,8 @@ PF_vlen (progs_t *pr)
 
 	value1 = G_VECTOR (pr, OFS_PARM0);
 
-	new = value1[0] * value1[0] + value1[1] * value1[1] + value1[2] * value1[2];
+	new = value1[0] * value1[0] + value1[1] * value1[1] + value1[2] *
+		  value1[2];
 	new = sqrt (new);
 
 	G_FLOAT (pr, OFS_RETURN) = new;
@@ -140,7 +146,6 @@ PF_vectoyaw (progs_t *pr)
 
 	G_FLOAT (pr, OFS_RETURN) = yaw;
 }
-
 
 /*
 	PF_vectoangles
@@ -372,9 +377,6 @@ PF_eprint (progs_t *pr)
 	ED_PrintNum (pr, G_EDICTNUM (pr, OFS_PARM0));
 }
 
-/*
-	PF_dprint
-*/
 void
 PF_dprint (progs_t *pr)
 {
@@ -511,33 +513,33 @@ PF_getbuiltin (progs_t *pr)
 void
 PR_Cmds_Init (progs_t *pr)
 {
-	PR_AddBuiltin (pr, "break", PF_break, 6); // void() break
-	PR_AddBuiltin (pr, "random", PF_random, 7);	// float() random
-	PR_AddBuiltin (pr, "normalize", PF_normalize, 9);	// vector(vector v) normalize
-	PR_AddBuiltin (pr, "vlen", PF_vlen, 12);	// float(vector v) vlen
-	PR_AddBuiltin (pr, "vectoyaw", PF_vectoyaw, 13);	// float(vector v) vectoyaw
-	PR_AddBuiltin (pr, "find", PF_Find, 18);	// entity(entity start, .string fld, string match) find
-	PR_AddBuiltin (pr, "dprint", PF_dprint, 25);  // void(string s) dprint
-	PR_AddBuiltin (pr, "ftos", PF_ftos, 26);	// void(string s) ftos
-	PR_AddBuiltin (pr, "vtos", PF_vtos, 27);	// void(string s) vtos
-	PR_AddBuiltin (pr, "coredump", PF_coredump, 28);	// void() coredump
-	PR_AddBuiltin (pr, "traceon", PF_traceon, 29);	// void() traceon
-	PR_AddBuiltin (pr, "traceoff", PF_traceoff, 30);	// void() traceoff
-	PR_AddBuiltin (pr, "eprint", PF_eprint, 31);	// void(entity e) eprint
-	PR_AddBuiltin (pr, "rint", PF_rint, 36);	// float(float v) rint
-	PR_AddBuiltin (pr, "floor", PF_floor, 37);	// float(float v) floor
-	PR_AddBuiltin (pr, "ceil", PF_ceil, 38);	// float(float v) ceil
-	PR_AddBuiltin (pr, "fabs", PF_fabs, 43);	// float(float f) fabs
-	PR_AddBuiltin (pr, "cvar", PF_cvar, 45);	// float(string s) cvar
+	PR_AddBuiltin (pr, "break", PF_break, 6); // void () break
+	PR_AddBuiltin (pr, "random", PF_random, 7);	// float () random
+	PR_AddBuiltin (pr, "normalize", PF_normalize, 9);	// vector (vector v) normalize
+	PR_AddBuiltin (pr, "vlen", PF_vlen, 12);	// float (vector v) vlen
+	PR_AddBuiltin (pr, "vectoyaw", PF_vectoyaw, 13);	// float (vector v) vectoyaw
+	PR_AddBuiltin (pr, "find", PF_Find, 18);	// entity (entity start, .string fld, string match) find
+	PR_AddBuiltin (pr, "dprint", PF_dprint, 25);  // void (string s) dprint
+	PR_AddBuiltin (pr, "ftos", PF_ftos, 26);	// void (string s) ftos
+	PR_AddBuiltin (pr, "vtos", PF_vtos, 27);	// void (string s) vtos
+	PR_AddBuiltin (pr, "coredump", PF_coredump, 28);	// void () coredump
+	PR_AddBuiltin (pr, "traceon", PF_traceon, 29);	// void () traceon
+	PR_AddBuiltin (pr, "traceoff", PF_traceoff, 30);	// void () traceoff
+	PR_AddBuiltin (pr, "eprint", PF_eprint, 31);	// void (entity e) eprint
+	PR_AddBuiltin (pr, "rint", PF_rint, 36);	// float (float v) rint
+	PR_AddBuiltin (pr, "floor", PF_floor, 37);	// float (float v) floor
+	PR_AddBuiltin (pr, "ceil", PF_ceil, 38);	// float (float v) ceil
+	PR_AddBuiltin (pr, "fabs", PF_fabs, 43);	// float (float f) fabs
+	PR_AddBuiltin (pr, "cvar", PF_cvar, 45);	// float (string s) cvar
 #if 0
-	PR_AddBuiltin (pr, "localcmd", PF_localcmd, 46);	// void(string s) localcmd
+	PR_AddBuiltin (pr, "localcmd", PF_localcmd, 46);	// void (string s) localcmd
 #endif
-	PR_AddBuiltin (pr, "nextent", PF_nextent, 47);	// entity(entity e) nextent
-	PR_AddBuiltin (pr, "vectoangles", PF_vectoangles, 51);	// vector(vector v) vectoangles
-	PR_AddBuiltin (pr, "cvar_set", PF_cvar_set, 72);	// void(string var, string val) cvar_set
+	PR_AddBuiltin (pr, "nextent", PF_nextent, 47);	// entity (entity e) nextent
+	PR_AddBuiltin (pr, "vectoangles", PF_vectoangles, 51); // vector (vector v) vectoangles
+	PR_AddBuiltin (pr, "cvar_set", PF_cvar_set, 72);	// void (string var, string val) cvar_set
 
-	PR_AddBuiltin (pr, "stof", PF_stof, 81);	// float(string s) stof
+	PR_AddBuiltin (pr, "stof", PF_stof, 81);	// float (string s) stof
 	PR_AddBuiltin (pr, "strlen", PF_strlen, 100);	// float (string s) strlen
 	PR_AddBuiltin (pr, "charcount", PF_charcount, 101);	// float (string goal, string s) charcount
-	PR_AddBuiltin (pr, "sprintf", PF_sprintf, 109); // string (...) sprintf
+//	PR_AddBuiltin (pr, "sprintf", PF_sprintf, 109); // string (...) sprintf
 };
