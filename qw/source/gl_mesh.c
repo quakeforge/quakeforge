@@ -40,7 +40,7 @@
 
 #include "QF/console.h"
 #include "QF/mdfour.h"
-#include "model.h"
+#include "QF/model.h"
 #include "QF/quakefs.h"
 
 /*

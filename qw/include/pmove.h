@@ -31,7 +31,7 @@
 
 #include "protocol.h"
 #include "QF/mathlib.h"
-#include "model.h"
+#include "QF/model.h"
 
 #define STOP_EPSILON 0.1
 

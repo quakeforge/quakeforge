@@ -30,6 +30,7 @@
 #define _RENDER_H
 
 #include "QF/mathlib.h"
+#include "QF/model.h"
 #include "QF/cvar.h"
 #include "vid.h"
 //#include "model.h" 
@@ -40,14 +41,6 @@
 #define	BOTTOM_RANGE	96
 
 //=============================================================================
-
-typedef struct efrag_s
-{
-	struct mleaf_s		*leaf;
-	struct efrag_s		*leafnext;
-	struct entity_s		*entity;
-	struct efrag_s		*entnext;
-} efrag_t;
 
 // LordHavoc: reindented this after 'Endy was here', also added scale.
 typedef struct entity_s

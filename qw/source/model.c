@@ -40,7 +40,7 @@
 #endif
 
 #include "QF/cvar.h"
-#include "model.h"
+#include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "server.h"

@@ -41,7 +41,7 @@
 
 #include "QF/console.h"
 #include "glquake.h"
-#include "model.h"
+#include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 

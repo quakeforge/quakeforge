@@ -40,7 +40,7 @@
 #endif
 
 #include "glquake.h"
-#include "model.h"
+#include "QF/model.h"
 #include "QF/qendian.h"
 
 extern model_t *loadmodel;

@@ -39,7 +39,7 @@
 # include <strings.h>
 #endif
 
-#include "model.h"
+#include "QF/model.h"
 
 extern model_t *loadmodel;
 extern char loadname[];

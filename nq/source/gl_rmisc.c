@@ -36,7 +36,6 @@
 #include <strings.h>
 #endif
 
-#include "bspfile.h"					// needed by: glquake.h
 #include "vid.h"
 #include "QF/sys.h"
 #include "QF/mathlib.h"					// needed by: protocol.h, render.h,
@@ -52,7 +51,7 @@
 #include "render.h"						// needed by: client.h, gl_model.h,
 										// glquake.h
 #include "client.h"						// need cls in this file
-#include "model.h"						// needed by: glquake.h
+#include "QF/model.h"						// needed by: glquake.h
 #include "QF/console.h"
 #include "glquake.h"
 #include "r_local.h"

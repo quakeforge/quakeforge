@@ -43,7 +43,7 @@
 #include "client.h"
 #include "QF/crc.h"
 #include "QF/info.h"
-#include "model.h"
+#include "QF/model.h"
 #include "QF/msg.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"

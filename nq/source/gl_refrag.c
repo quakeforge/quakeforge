@@ -31,7 +31,7 @@
 #endif
 
 #include "render.h"
-#include "model.h"
+#include "QF/model.h"
 #include "client.h"
 #include "QF/sys.h"
 #include "QF/console.h"

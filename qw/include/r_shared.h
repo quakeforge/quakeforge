@@ -33,7 +33,7 @@
 
 #include "QF/mathlib.h"
 #include "QF/cvar.h"
-#include "model.h"
+#include "QF/model.h"
 #include "d_iface.h"
 
 #define	MAXVERTS	16					// max points in a surface polygon

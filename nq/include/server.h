@@ -35,7 +35,7 @@
 #include "net.h"
 #include "QF/cvar.h"
 #include "protocol.h"
-#include "model.h"
+#include "QF/model.h"
 #include "sv_progs.h"
 #include "QF/sizebuf.h"
 #include "QF/info.h"

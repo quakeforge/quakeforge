@@ -43,7 +43,6 @@
 #include <GL/gl.h>
 
 #include "QF/qtypes.h"
-#include "model.h"
 #include "d_iface.h"
 
 void GL_BeginRendering (int *x, int *y, int *width, int *height);

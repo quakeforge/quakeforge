@@ -43,7 +43,6 @@
 #include "client.h"
 #include "QF/cmd.h"
 #include "QF/compat.h"
-#include "commdef.h"
 #include "draw.h"
 #include "QF/msg.h"
 #include "sbar.h"

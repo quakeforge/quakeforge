@@ -60,7 +60,6 @@
 # include <X11/extensions/xf86vmode.h>
 #endif
 
-#include "commdef.h"
 #include "QF/console.h"
 #include "context_x11.h"
 #include "QF/cvar.h"

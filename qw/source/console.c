@@ -40,7 +40,6 @@
 
 #include "client.h"
 #include "QF/cmd.h"
-#include "commdef.h"
 #include "QF/console.h"
 #include "draw.h"
 #include "input.h"

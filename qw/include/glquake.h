@@ -41,7 +41,7 @@
 
 #include "client.h"
 #include "QF/cvar.h"
-#include "model.h"
+#include "QF/model.h"
 #include "render.h"
 #include "qfgl_ext.h"
 #include "wad.h"

@@ -29,7 +29,6 @@
 #ifndef _QUAKEDEF_H
 #define _QUAKEDEF_H
 
-#include "commdef.h"
 #include "QF/gcc_attr.h"
 #include "QF/qtypes.h"
 
@@ -68,5 +67,17 @@ void Host_Frame (float time);
 void Host_Quit_f (void);
 void Host_ClientCommands (char *fmt, ...) __attribute__((format(printf,1,2)));
 void Host_ShutdownServer (qboolean crash);
+
+typedef struct
+{
+	int		argc;
+	char	**argv;
+	void	*membase;
+	int		memsize;
+} quakeparms_t;
+
+/* Host */
+extern  quakeparms_t host_parms;
+
 
 #endif // _QUAKEDEH_H

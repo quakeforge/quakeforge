@@ -33,7 +33,7 @@
 # include "config.h"
 #endif
 
-#include "model.h"
+#include "QF/model.h"
 #include "server.h"
 #include "QF/qendian.h"
 

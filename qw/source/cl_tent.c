@@ -45,7 +45,7 @@
 #include "client.h"
 #include "QF/console.h"
 #include "host.h"
-#include "model.h"
+#include "QF/model.h"
 #include "QF/msg.h"
 #include "r_dynamic.h"
 #include "sound.h"

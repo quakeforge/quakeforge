@@ -38,6 +38,7 @@
 #include <time.h>
 
 #include "bothdefs.h"
+#include "QF/console.h"
 #include "QF/msg.h"
 #include "server.h"
 #include "sv_progs.h"

@@ -54,7 +54,6 @@
 #include "cl_slist.h"
 #include "client.h"
 #include "QF/cmd.h"
-#include "commdef.h"
 #include "QF/console.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"

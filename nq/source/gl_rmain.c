@@ -43,7 +43,7 @@
 #include "game.h"
 #include "glquake.h"
 #include "client.h"
-#include "model.h"
+#include "QF/model.h"
 #include "render.h"
 #include "QF/sys.h"
 #include "chase.h"

@@ -40,7 +40,7 @@
 
 #include "QF/qtypes.h"
 #include "QF/console.h"
-#include "model.h"
+#include "QF/model.h"
 #include "QF/quakefs.h"
 #include "glquake.h"
 #include "QF/sys.h"

@@ -32,7 +32,7 @@
 #endif
 
 #include "world.h"
-#include "model.h"
+#include "QF/model.h"
 #include "server.h"
 #include "QF/sys.h"
 #include "QF/console.h"

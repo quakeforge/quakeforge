@@ -42,7 +42,7 @@
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "host.h"
-#include "model.h"
+#include "QF/model.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 #include "sound.h"

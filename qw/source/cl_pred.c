@@ -35,7 +35,6 @@
 #include "bothdefs.h"
 #include "cl_ents.h"
 #include "client.h"
-#include "commdef.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "pmove.h"

@@ -33,7 +33,7 @@
 #include "QF/cvar.h"
 #include "vid.h"
 #include "client.h"
-#include "model.h"
+#include "QF/model.h"
 #include "pmove.h"
 #include "r_shared.h"
 

@@ -38,7 +38,7 @@
 #include "QF/va.h"
 #include "screen.h"
 #include "QF/msg.h"
-#include "model.h"
+#include "QF/model.h"
 #include "QF/console.h"
 #include "QF/keys.h"
 #include "QF/sys.h"

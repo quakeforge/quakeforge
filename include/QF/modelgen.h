@@ -1,7 +1,7 @@
 /*
 	modelgen.h
 
-	@description@
+	header file for model generation program
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -26,27 +26,16 @@
 	$Id$
 */
 
-
 // *********************************************************
 // * This file must be identical in the modelgen directory *
 // * and in the Quake directory, because it's used to      *
 // * pass data from one to the other via model files.      *
 // *********************************************************
 
-#ifdef INCLUDELIBS
+#ifndef _MODELGEN_H
+#define _MODELGEN_H
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
-
-#include "cmdlib.h"
-#include "scriplib.h"
-#include "trilib.h"
-#include "lbmlib.h"
 #include "QF/mathlib.h"
-
-#endif
 
 #define ALIAS_VERSION	6
 
@@ -137,4 +126,4 @@ typedef struct {
 
 #define IDPOLYHEADER	(('O'<<24)+('P'<<16)+('D'<<8)+'I')
 														// little-endian "IDPO"
-
+#endif // _MODELGEN_H

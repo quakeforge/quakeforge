@@ -30,10 +30,9 @@
 #define _MODEL_H
 
 #include "QF/qtypes.h"
-#include "render.h"
-#include "bspfile.h"
-#include "spritegn.h"
-#include "modelgen.h"
+#include "QF/bspfile.h"
+#include "QF/spritegn.h"
+#include "QF/modelgen.h"
 #include "QF/zone.h"
 
 /*
@@ -62,6 +61,14 @@ BRUSH MODELS
 ==============================================================================
 */
 
+typedef struct efrag_s
+{
+	struct mleaf_s		*leaf;
+	struct efrag_s		*leafnext;
+	struct entity_s		*entity;
+	struct efrag_s		*entnext;
+} efrag_t;
+
 
 //
 // in memory representation
@@ -75,15 +82,15 @@ typedef struct
 typedef struct texture_s
 {
 	char		name[16];
-	unsigned	width, height;
+	unsigned int	width, height;
 	int			gl_texturenum;
 	int			gl_fb_texturenum;
 	struct msurface_s	*texturechain;	// for gl_texsort drawing
 	int			anim_total;				// total tenths in sequence ( 0 = no)
 	int			anim_min, anim_max;		// time for this frame min <=time< max
 	struct texture_s *anim_next;		// in the animation sequence
-	struct texture_s *alternate_anims;	// bmodels in frame 1 use these
-	unsigned	offsets[MIPLEVELS];		// four mip maps stored
+	struct texture_s *alternate_anims;	// bmodels in frmae 1 use these
+	unsigned int	offsets[MIPLEVELS];		// four mip maps stored
 } texture_t;
 
 
@@ -194,7 +201,7 @@ typedef struct mleaf_s
 	byte		ambient_sound_level[NUM_AMBIENTS];
 } mleaf_t;
 
-// !!! if this is changed, it must be changed in asm_ia32.h too !!!
+// !!! if this is changed, it must be changed in asm_i386.h too !!!
 typedef struct
 {
 	dclipnode_t	*clipnodes;
@@ -320,7 +327,6 @@ typedef struct {
 	int			gl_texturenum[MAX_SKINS][4];
 	int			gl_fb_texturenum[MAX_SKINS][4];
 	int			texels[MAX_SKINS];  // only for player skins
-
 	maliasframedesc_t	frames[1];
 } aliashdr_t;
 
@@ -420,8 +426,8 @@ typedef struct model_s
 	byte		*lightdata;
 	char		*entities;
 
-	unsigned	checksum;
-	unsigned	checksum2;
+	unsigned int	checksum;
+	unsigned int	checksum2;
 
 //
 // additional model data
@@ -433,6 +439,7 @@ typedef struct model_s
 //============================================================================
 
 void	Mod_Init (void);
+void	Mod_Init_Cvars (void);
 void	Mod_ClearAll (void);
 model_t *Mod_ForName (char *name, qboolean crash);
 void	*Mod_Extradata (model_t *mod);	// handles caching
@@ -440,7 +447,9 @@ void	Mod_TouchModel (char *name);
 
 mleaf_t *Mod_PointInLeaf (float *p, model_t *model);
 byte	*Mod_LeafPVS (mleaf_t *leaf, model_t *model);
-
 model_t	*Mod_FindName (char *name);
+void	Mod_ProcessTexture(miptex_t *mt, texture_t *tx);
+void	Mod_LoadLighting (lump_t *l);
+int     Mod_CalcFullbright (byte *in, byte *out, int pixels);
 
 #endif	// _MODEL_H

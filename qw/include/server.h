@@ -31,11 +31,11 @@
 #define _SERVER_H
 
 #include "QF/gcc_attr.h"
-#include "commdef.h"
+#include "host.h"
 #include "net.h"
 #include "QF/cvar.h"
 #include "protocol.h"
-#include "model.h"
+#include "QF/model.h"
 #include "QF/progs.h"
 #include "QF/sizebuf.h"
 #include "QF/info.h"
@@ -397,6 +397,7 @@ extern	QFile		*sv_logfile;
 extern	QFile		*sv_fraglogfile;
 
 extern	double		sv_frametime;
+extern	double		realtime;
 
 extern	progs_t		sv_pr_state;
 

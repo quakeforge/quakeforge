@@ -31,7 +31,7 @@
 #define _WORLD_H
 
 #include "QF/mathlib.h"
-#include "model.h"
+#include "QF/model.h"
 #include "QF/progs.h"
 
 typedef struct

@@ -43,7 +43,7 @@
 #include "QF/cmd.h"
 #include "client.h"
 #include "locs.h"
-#include "model.h"
+#include "QF/model.h"
 #include "QF/sys.h"
 #include "teamplay.h"
 

@@ -44,7 +44,7 @@
 #include "QF/cmd.h"
 #include "QF/compat.h"
 #include "game.h"
-#include "model.h"
+#include "QF/model.h"
 #include "net.h"
 #include "QF/msg.h"
 #include "pmove.h"

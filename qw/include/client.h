@@ -354,6 +354,8 @@ extern char	*server_version;	// version of server we connected to
 
 extern	qboolean	allowskybox;
 
+extern	double		realtime;
+
 //=============================================================================
 
 

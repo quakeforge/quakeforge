@@ -38,7 +38,7 @@
 
 #include "QF/compat.h"
 #include "QF/console.h"
-#include "model.h"
+#include "QF/model.h"
 #include "pmove.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"

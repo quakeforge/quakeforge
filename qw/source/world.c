@@ -38,7 +38,6 @@
 
 #include <stdio.h>
 
-#include "commdef.h"
 #include "QF/console.h"
 #include "QF/crc.h"
 #include "server.h"

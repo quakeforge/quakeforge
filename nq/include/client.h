@@ -35,7 +35,7 @@
 #include "QF/mathlib.h"
 #include "protocol.h"
 #include "net.h"
-#include "model.h"
+#include "QF/model.h"
 #include "sound.h"
 #include "render.h"
 #include "QF/cvar.h"

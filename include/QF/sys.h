@@ -31,6 +31,8 @@
 
 #include "QF/gcc_attr.h"
 
+extern	struct cvar_s	*sys_nostdout;
+
 int	Sys_FileTime (const char *path);
 void Sys_mkdir (const char *path);
 

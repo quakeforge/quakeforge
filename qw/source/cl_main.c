@@ -80,7 +80,7 @@
 #include "host.h"
 #include "input.h"
 #include "QF/keys.h"
-#include "model.h"
+#include "QF/model.h"
 #include "QF/msg.h"
 #include "net.h"
 #include "pmove.h"

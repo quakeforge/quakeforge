@@ -42,7 +42,7 @@
 
 #include "QF/checksum.h"
 #include "d_iface.h"
-#include "model.h"
+#include "QF/model.h"
 #include "QF/qendian.h"
 #include "server.h"
 #include "QF/sys.h"

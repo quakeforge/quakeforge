@@ -41,15 +41,6 @@
 
 //=============================================================================
 
-typedef struct efrag_s
-{
-	struct mleaf_s		*leaf;
-	struct efrag_s		*leafnext;
-	struct entity_s		*entity;
-	struct efrag_s		*entnext;
-} efrag_t;
-
-
 typedef struct entity_s
 {
 	qboolean				forcelink;		// model changed

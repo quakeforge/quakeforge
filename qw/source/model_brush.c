@@ -44,8 +44,9 @@
 
 #include "QF/checksum.h"
 #include "QF/cvar.h"
-#include "model.h"
+#include "QF/model.h"
 #include "QF/qendian.h"
+#include "render.h"
 #include "server.h"
 
 extern model_t *loadmodel;

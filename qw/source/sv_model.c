@@ -32,7 +32,7 @@
 #endif
 
 #include "QF/cvar.h"
-#include "model.h"
+#include "QF/model.h"
 
 const int   mod_lightmap_bytes = 1;
 mplane_t    frustum[4];
