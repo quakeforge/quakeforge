@@ -33,6 +33,7 @@ static const char rcsid[] =
 
 #include <math.h>
 
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qtypes.h"
 
@@ -69,7 +70,9 @@ void
 Pmove_Init_Cvars (void)
 {
 	no_pogo_stick = Cvar_Get ("no_pogo_stick", "0", CVAR_SERVERINFO, Cvar_Info,
-							  "disable the ability to pogo stick");
+							  "disable the ability to pogo stick: 0 pogo "
+							  "alowed, 1 no pogo, 2 pogo but high friction, 3 "
+							  "high friction and no pogo");
 }
 
 #define	STEPSIZE	18
@@ -641,7 +644,7 @@ JumpButton (void)
 	}
 
 	if (onground == -1) {
-		if (no_pogo_stick->int_val)
+		if (no_pogo_stick->int_val & 1)
 			pmove.oldbuttons |= BUTTON_JUMP;	// don't jump again until
 												// released
 		return;							// in air, so no effect
@@ -823,6 +826,17 @@ PlayerMove (void)
 
 	// set onground, watertype, and waterlevel
 	PM_CategorizePosition ();
+
+	if (no_pogo_stick->int_val & 2) {
+		if (onground != -1 && pmove.oldonground == -1) {	// just landed
+			float save = movevars.friction;
+			pmove.waterjumptime = 0;
+			movevars.friction *= 3;
+			PM_Friction ();
+			movevars.friction = save;
+		}
+	}
+	pmove.oldonground = onground;
 
 	if (waterlevel == 2)
 		CheckWaterJump ();

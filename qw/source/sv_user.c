@@ -1500,6 +1500,7 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 	pmove.cmd = *ucmd;
 	pmove.dead = SVfloat (sv_player, health) <= 0;
 	pmove.oldbuttons = host_client->oldbuttons;
+	pmove.oldonground = host_client->oldonground;
 
 	movevars.entgravity = host_client->entgravity;
 	movevars.maxspeed = host_client->maxspeed;
@@ -1532,6 +1533,7 @@ SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 #endif
 
 	host_client->oldbuttons = pmove.oldbuttons;
+	host_client->oldonground = pmove.oldonground;
 	SVfloat (sv_player, teleport_time) = pmove.waterjumptime;
 	SVfloat (sv_player, waterlevel) = waterlevel;
 	SVfloat (sv_player, watertype) = watertype;

@@ -67,6 +67,7 @@ typedef struct player_state_s {
 	float		waterjumptime;
 	int			onground;		// -1 = in air, else pmove entity number
 	int			oldbuttons;
+	int			oldonground;
 
 	// QSG2
 	byte		glow_size;

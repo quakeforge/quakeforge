@@ -78,6 +78,7 @@ CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 	VectorCopy (from->velocity, pmove.velocity);
 
 	pmove.oldbuttons = from->oldbuttons;
+	pmove.oldonground = from->oldonground;
 	pmove.waterjumptime = from->waterjumptime;
 	pmove.dead = cl.stats[STAT_HEALTH] <= 0;
 	if (clientplayer)
@@ -91,6 +92,7 @@ CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
 	PlayerMove ();
 	to->waterjumptime = pmove.waterjumptime;
 	to->oldbuttons = pmove.oldbuttons;	// Tonik
+	to->oldonground = pmove.oldonground;
 	VectorCopy (pmove.origin, to->origin);
 	VectorCopy (pmove.angles, to->viewangles);
 	VectorCopy (pmove.velocity, to->velocity);
