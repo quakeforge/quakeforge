@@ -38,7 +38,7 @@ libgui_a_SOURCES=\
 libgui_a_AR=$(PAK) -cf
 
 libcsqc_a_SOURCES= \
-	cbuf.r cmd.r cvar.r file.r
+	cbuf.r cmd.r cvar.r file.r gib.r
 libcsqc_a_AR=	$(PAK) -cf
 
 CLEANFILES=	*.qfo *.o

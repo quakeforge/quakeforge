@@ -49,6 +49,8 @@ void File_Progs_Init (struct progs_s *pr);
 
 void Hash_Progs_Init (struct progs_s *pr);
 
+void GIB_Progs_Init (struct progs_s *pr);
+
 void InputLine_Progs_Init (struct progs_s *pr);
 void InputLine_Progs_SetDraw (struct progs_s *pr,
 							  void (*draw)(struct inputline_s*));

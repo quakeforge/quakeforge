@@ -74,7 +74,7 @@ hashtab_t  *gib_builtins;
 static const char *
 GIB_Builtin_Get_Key (void *ele, void *ptr)
 {
-	return ((gib_builtin_t *) ele)->name->str;
+	return ((gib_builtin_t *) ele)->name;
 }
 static void
 GIB_Builtin_Free (void *ele, void *ptr)
@@ -82,7 +82,7 @@ GIB_Builtin_Free (void *ele, void *ptr)
 	gib_builtin_t *b;
 
 	b = (gib_builtin_t *) ele;
-	dstring_delete (b->name);
+	free ((void *)b->name);
 	free (b);
 }
 
@@ -91,7 +91,8 @@ GIB_Builtin_Free (void *ele, void *ptr)
 	
 	Registers a new builtin GIB command.
 */
-void
+
+gib_builtin_t *
 GIB_Builtin_Add (const char *name, void (*func) (void))
 {
 	gib_builtin_t *new;
@@ -102,9 +103,25 @@ GIB_Builtin_Add (const char *name, void (*func) (void))
 
 	new = calloc (1, sizeof (gib_builtin_t));
 	new->func = func;
-	new->name = dstring_newstr ();
-	dstring_appendstr (new->name, name);
+	new->name = strdup (name);
 	Hash_Add (gib_builtins, new);
+
+	return new;
+}
+
+void
+GIB_Builtin_Remove (const char *name)
+{
+	gib_builtin_t *del;
+
+	if ((del = Hash_Find (gib_builtins, name)))
+		Hash_Free (gib_builtins, Hash_DelElement (gib_builtins, del));
+}
+
+qboolean
+GIB_Builtin_Exists (const char *name)
+{
+	return Hash_Find (gib_builtins, name) ? true : false;
 }
 
 /*

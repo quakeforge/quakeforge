@@ -7,5 +7,5 @@ include_HEADERS= \
 	\
 	draw.h key.h \
 	\
-	cbuf.h cmd.h cvar.h file.h hash.h plist.h \
+	cbuf.h cmd.h cvar.h file.h gib.h hash.h plist.h \
 	Object.h Array.h Entity.h InputLine.h Point.h Rect.h Size.h

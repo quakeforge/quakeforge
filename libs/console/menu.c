@@ -444,6 +444,7 @@ Menu_Init (void)
 
 	Cbuf_Progs_Init (&menu_pr_state);
 	Cmd_Progs_Init (&menu_pr_state);
+	GIB_Progs_Init (&menu_pr_state);
 	Cvar_Progs_Init (&menu_pr_state);
 	File_Progs_Init (&menu_pr_state);
 	InputLine_Progs_Init (&menu_pr_state);

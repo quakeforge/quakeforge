@@ -34,7 +34,7 @@
 #include "QF/dstring.h" // For ->str
 
 typedef struct gib_builtin_s {
-	struct dstring_s *name;
+	const char *name;
 	void (*func) (void);
 } gib_builtin_t;
 
@@ -53,6 +53,8 @@ extern char gib_null_string[];
 void GIB_Arg_Strip_Delim (unsigned int arg);
 dstring_t *GIB_Return (const char *str);
 void GIB_Error (const char *type, const char *fmt, ...);
-void GIB_Builtin_Add (const char *name, void (*func) (void));
+gib_builtin_t *GIB_Builtin_Add (const char *name, void (*func) (void));
+void GIB_Builtin_Remove (const char *name);
+qboolean GIB_Builtin_Exists (const char *name);
 gib_builtin_t *GIB_Builtin_Find (const char *name);
 void GIB_Builtin_Init (qboolean sandbox);

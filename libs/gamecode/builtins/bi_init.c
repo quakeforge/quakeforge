@@ -36,6 +36,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 static void (*const cbuf_progs_init)(progs_t *) = Cbuf_Progs_Init;
 static void (*const cmd_progs_init)(progs_t *) = Cmd_Progs_Init;
+static void (*const gib_progs_init)(progs_t *) = GIB_Progs_Init;
 static void (*const cvar_progs_init)(progs_t *) = Cvar_Progs_Init;
 static void (*const file_progs_init)(progs_t *) = File_Progs_Init;
 static void (*const hash_progs_init)(progs_t *) = Hash_Progs_Init;
