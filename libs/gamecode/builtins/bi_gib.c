@@ -83,7 +83,7 @@ bi_gib_builtin_f (void)
 	int i;
 
 	if (!builtin)
-		Sys_Error ("bi_gib_bultin_f: unexpected call %s", GIB_Argv (0));
+		Sys_Error ("bi_gib_builtin_f: unexpected call %s", GIB_Argv (0));
 
 	pr_list = PR_Zone_Malloc (builtin->pr, GIB_Argc() * sizeof (pr_type_t));
 
@@ -145,6 +145,41 @@ bi_GIB_Return (progs_t *pr)
 	R_INT (pr) = GIB_CanReturn () ? 1 : 0;
 }
 
+static void
+bi_GIB_Handle_Class_New (progs_t *pr)
+{
+	R_INT (pr) = GIB_Handle_Class_New ();
+}
+
+static void
+bi_GIB_Handle_New (progs_t *pr)
+{
+	long *qcptr = malloc (sizeof (long));
+	*qcptr = P_POINTER (pr, 0);
+	R_INT (pr) = GIB_Handle_New (qcptr, P_INT (pr, 1));
+}
+
+static void
+bi_GIB_Handle_Free (progs_t *pr)
+{
+	unsigned long int hand = P_INT (pr, 0);
+	unsigned short int cl = (unsigned short) P_INT (pr, 1);
+	long *qcptr = GIB_Handle_Get (hand, cl);
+
+	free (qcptr);
+	GIB_Handle_Free (hand, cl);
+}
+
+static void
+bi_GIB_Handle_Get (progs_t *pr)
+{
+	long *hand = GIB_Handle_Get (P_INT (pr, 0), (unsigned short) P_INT (pr, 1));
+	if (hand)
+		R_INT (pr) = *hand;
+	else
+		R_INT (pr) = 0;
+}
+
 void
 GIB_Progs_Init (progs_t *pr)
 {
@@ -157,4 +192,8 @@ GIB_Progs_Init (progs_t *pr)
 
 	PR_AddBuiltin (pr, "GIB_Builtin_Add", bi_GIB_Builtin_Add, -1);
 	PR_AddBuiltin (pr, "GIB_Return", bi_GIB_Return, -1);
+	PR_AddBuiltin (pr, "GIB_Handle_Class_New", bi_GIB_Handle_Class_New, -1);
+	PR_AddBuiltin (pr, "GIB_Handle_New", bi_GIB_Handle_New, -1);
+	PR_AddBuiltin (pr, "GIB_Handle_Free", bi_GIB_Handle_Free, -1);
+	PR_AddBuiltin (pr, "GIB_Handle_Get", bi_GIB_Handle_Get, -1);
 }
