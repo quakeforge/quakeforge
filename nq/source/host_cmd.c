@@ -246,21 +246,35 @@ Host_Map_f (void)
 {
 	int         i;
 	char        name[MAX_QPATH];
+	const char *expanded;
+	QFile      *f;
 
 	if (cmd_source != src_command)
 		return;
 
+	if (Cmd_Argc () > 2) {
+		Con_Printf ("map <levelname> : continue game on a new level\n");
+		return;
+	}
 	if (Cmd_Argc () == 1) {
 		Con_Printf ("map is %s\n", sv.name);
 		return;
 	}
+
+	// check to make sure the level exists
+	expanded = va ("maps/%s.bsp", Cmd_Argv (1));
+	COM_FOpenFile (expanded, &f);
+	if (!f) {
+		Con_Printf ("Can't find %s\n", expanded);
+		return;
+	}
+	Qclose (f);
 
 	cls.demonum = -1;					// stop demo loop in case this fails
 
 	CL_Disconnect ();
 	Host_ShutdownServer (false);
 
-	key_dest = key_game;				// remove console or menu
 //	SCR_BeginLoadingPlaque ();
 
 	cls.mapstring[0] = 0;
