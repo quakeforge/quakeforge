@@ -453,7 +453,7 @@ void
 LightFace (int surfnum)
 {
 	int         ofs;
-	byte       *out;
+	byte       *out, *outdata;
 	dface_t		*f;
 	int			lightmapwidth, lightmapsize, size, c, i, j, s, t, w, h;
 	lightinfo_t	l;
@@ -516,7 +516,7 @@ LightFace (int surfnum)
 	lightmapsize = size * l.numlightstyles;
 
 	LOCK;
-	out = malloc (lightmapsize);
+	outdata = out = malloc (lightmapsize);
 	UNLOCK;
 	ofs = GetFileSpace (lightmapsize);
 	f->lightofs = ofs;
@@ -550,7 +550,7 @@ LightFace (int surfnum)
 			}
 	}
 	LOCK;
-	memcpy (lightdata->str + ofs, out, lightmapsize);
-	free (out);
+	memcpy (lightdata->str + ofs, outdata, lightmapsize);
+	free (outdata);
 	UNLOCK;
 }

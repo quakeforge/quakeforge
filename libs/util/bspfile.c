@@ -183,9 +183,12 @@ LoadBSPFile (QFile *file, int size)
 #define SET_LUMP(l,n) \
 do { \
 	bsp->num##n = LittleLong (header->lumps[l].filelen); \
-	bsp->n = malloc (bsp->num##n); \
-	memcpy (bsp->n, (byte *) header + LittleLong (header->lumps[l].fileofs), \
-			bsp->num##n); \
+	if (bsp->num##n) { \
+		bsp->n = malloc (bsp->num##n); \
+		memcpy (bsp->n, \
+				(byte *) header + LittleLong (header->lumps[l].fileofs), \
+				bsp->num##n); \
+	} \
 	bsp->num##n /= sizeof (bsp->n[0]); \
 } while (0)
 
@@ -206,9 +209,12 @@ do { \
 #define SET_LUMP(l,n) \
 do { \
 	bsp->n##size = LittleLong (header->lumps[l].filelen); \
-	bsp->n = malloc (bsp->n##size); \
-	memcpy (bsp->n, (byte *) header + LittleLong (header->lumps[l].fileofs), \
-			bsp->n##size); \
+	if (bsp->n##size) { \
+		bsp->n = malloc (bsp->n##size); \
+		memcpy (bsp->n, \
+				(byte *) header + LittleLong (header->lumps[l].fileofs), \
+				bsp->n##size); \
+	} \
 	bsp->n##size /= sizeof (bsp->n[0]); \
 } while (0)
 

@@ -83,7 +83,7 @@ GetFileSpace (int size)
 	int ofs;
 
 	LOCK;
-	lightdata->size = (lightdata->size + 3) & 3;
+	lightdata->size = (lightdata->size + 3) & ~3;
 	ofs = lightdata->size;
 	lightdata->size += size;
 	dstring_adjust (lightdata);
