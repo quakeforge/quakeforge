@@ -499,7 +499,7 @@ SCR_DrawPause (int swap)
 	if (!scr_showpause->int_val)		// turn off for screenshots
 		return;
 
-	if (r_paused)
+	if (!r_paused)
 		return;
 
 	pic = Draw_CachePic ("gfx/pause.lmp", true);
