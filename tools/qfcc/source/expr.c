@@ -945,6 +945,8 @@ emit_assign_expr (expr_t *e, def_t *dest)
 			op = PR_Opcode_Find ("=", 5, def_a, def_b, def_b);
 			emit_statement (e->line, op, def_b, def_a, 0);
 		}
+		if (!def_b->name)
+			dest = def_a;
 		if (dest) {
 			op = PR_Opcode_Find ("=", 5, dest, def_b, def_b);
 			emit_statement (e->line, op, def_b, dest, 0);
