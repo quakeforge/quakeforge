@@ -30,3 +30,5 @@
 
 void GIB_Parse_Extract_Line (struct cbuf_s *cbuf);
 void GIB_Parse_Tokenize_Line (struct cbuf_s *cbuf);
+
+extern struct cbuf_interpreter_s gib_interp;

@@ -32,6 +32,21 @@
 
 typedef struct gib_buffer_data_s {
 	struct dstring_s *arg_composite;
+	struct dstring_s *current_token;
+	
+	// Data for handling return values
+	struct {
+		qboolean waiting, available;
+		unsigned int line_pos; // Position within line
+		unsigned int token_pos; // Position within token
+		struct dstring_s *retval; // Returned value
+	} ret;
+	
+	enum {
+		GIB_BUFFER_NORMAL, // Normal buffer
+		GIB_BUFFER_LOOP, // Looping buffer
+		GIB_BUFFER_PROXY // Responsible for embedded command
+	} type;
 } gib_buffer_data_t;
 
 void GIB_Buffer_Construct (struct cbuf_s *cbuf);

@@ -40,7 +40,7 @@ static inline void
 check_cbuf (void)
 {
 	if (!cbuf)
-		cbuf = Cbuf_New (COM_extract_line, COM_parse_line, NULL, NULL);
+		cbuf = Cbuf_New (&id_interp);
 }
 
 static void

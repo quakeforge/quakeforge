@@ -91,23 +91,16 @@ Cbuf_ArgsAdd (cbuf_args_t *args, const char *arg)
 }
 
 cbuf_t *
-Cbuf_New (
-		void (*extract) (struct cbuf_s *cbuf),
-		void (*parse) (struct cbuf_s *cbuf),
-		void (*construct) (struct cbuf_s *cbuf),
-		void (*destruct) (struct cbuf_s *cbuf)
-		)
+Cbuf_New (cbuf_interpreter_t *interp)
 {
 	cbuf_t     *cbuf = calloc (1, sizeof (cbuf_t));
 
 	cbuf->buf = dstring_newstr ();
 	cbuf->line = dstring_newstr ();
 	cbuf->args = Cbuf_ArgsNew ();
-	cbuf->extract_line = extract;
-	cbuf->parse_line = parse;
-	cbuf->destructor = destruct;
-	if (construct)
-			construct (cbuf);
+	cbuf->interpreter = interp;
+	if (interp->construct)
+			interp->construct (cbuf);
 	return cbuf;
 }
 
@@ -119,9 +112,20 @@ Cbuf_Delete (cbuf_t *cbuf)
 	dstring_delete (cbuf->buf);
 	dstring_delete (cbuf->line);
 	Cbuf_ArgsDelete (cbuf->args);
-	if (cbuf->destructor)
-		cbuf->destructor (cbuf);
+	if (cbuf->interpreter->destruct)
+		cbuf->interpreter->destruct (cbuf);
 	free (cbuf);
+}
+
+void
+Cbuf_DeleteStack (cbuf_t *stack)
+{
+	cbuf_t *next;
+	
+	for (; stack; stack = next) {
+		next = stack->down;
+		Cbuf_Delete (stack);
+	}
 }
 
 void
@@ -133,27 +137,25 @@ Cbuf_AddText (cbuf_t *cbuf, const char *text)
 void
 Cbuf_InsertText (cbuf_t *cbuf, const char *text)
 {
-	dstring_insertstr (cbuf->buf, "\n", 0);
-	dstring_insertstr (cbuf->buf, text, 0);
+	dstring_insertstr (cbuf->buf, 0, "\n");
+	dstring_insertstr (cbuf->buf, 0, text);
 }
 
 void
 Cbuf_Execute (cbuf_t *cbuf)
 {
-	cbuf_args_t *args = cbuf->args;
-
 	cbuf_active = cbuf;
 	cbuf->state = CBUF_STATE_NORMAL;
 	while (cbuf->buf->str[0]) {
-		cbuf->extract_line (cbuf);
+		cbuf->interpreter->extract_line (cbuf);
 		if (cbuf->state)
 			break;
-		cbuf->parse_line (cbuf);
+		cbuf->interpreter->parse_line (cbuf);
 		if (cbuf->state) // Merging extract and parse
 			break;       // will get rid of extra checks
-		if (!args->argc)
+		if (!cbuf->args->argc)
 			continue;
-		Cmd_Command (args);
+		cbuf->interpreter->execute_line (cbuf);
 		if (cbuf->state)
 			break;
 	}
@@ -166,6 +168,10 @@ Cbuf_Execute_Stack (cbuf_t *cbuf)
 	
 	for (sp = cbuf; sp->down; sp = sp->down);
 	while (sp) {
+		if (sp->down) {
+			Cbuf_Delete (sp->down);
+			sp->down = 0;
+		}
 		Cbuf_Execute (sp);
 		if (sp->state) {
 			if (sp->state == CBUF_STATE_STACK) {
@@ -175,13 +181,13 @@ Cbuf_Execute_Stack (cbuf_t *cbuf)
 				break;
 			else
 				return;
-		}
+		}		
 		sp = sp->up;
 	}
 	dstring_clearstr (cbuf->buf);
-	for (cbuf = cbuf->down; cbuf; cbuf = sp) { // Reduce, reuse, recycle
-		sp = cbuf->down;
-		Cbuf_Delete (cbuf);
+	if (cbuf->down) {
+		Cbuf_DeleteStack (cbuf->down);
+		cbuf->down = 0;
 	}
 }
 
@@ -192,8 +198,8 @@ Cbuf_Execute_Sets (cbuf_t *cbuf)
 
 	cbuf_active = cbuf;
 	while (cbuf->buf->str[0]) {
-		cbuf->extract_line (cbuf);
-		cbuf->parse_line (cbuf);
+		cbuf->interpreter->extract_line (cbuf);
+		cbuf->interpreter->parse_line (cbuf);
 		if (!args->argc)
 			continue;
 		if (strequal (args->argv[0]->str, "set")

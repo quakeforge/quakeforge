@@ -77,8 +77,8 @@ dstring_append (dstring_t *dstr, const char *data, unsigned int len)
 }
 
 void
-dstring_insert (dstring_t *dstr, const char *data, unsigned int len,
-				unsigned int pos)
+dstring_insert (dstring_t *dstr, unsigned int pos, const char *data,
+				unsigned int len)
 {
 	unsigned int oldsize = dstr->size;
 
@@ -104,8 +104,8 @@ dstring_clear (dstring_t *dstr)
 }
 
 void
-dstring_replace (dstring_t *dstr, const char *data, unsigned int len,
-				 unsigned int pos, unsigned int rlen)
+dstring_replace (dstring_t *dstr, unsigned int pos, unsigned int rlen,
+				const char *data, unsigned int len)
 {
 	unsigned int oldsize = dstr->size;
 	if (rlen < len) {
@@ -158,21 +158,21 @@ dstring_appendsubstr (dstring_t *dstr, const char *str, unsigned int len)
 }
 
 void
-dstring_insertstr (dstring_t *dstr, const char *str, unsigned int pos)
+dstring_insertstr (dstring_t *dstr, unsigned int pos, const char *str)
 {
 	// Don't insert strlen + 1 to achieve concatenation
-	dstring_insert (dstr, str, strlen (str), pos);
+	dstring_insert (dstr, pos, str, strlen (str));
 }
 
 void
-dstring_insertsubstr (dstring_t *dstr, const char *str, unsigned int pos,
+dstring_insertsubstr (dstring_t *dstr, unsigned int pos, const char *str,
 					  unsigned int len)
 {
 	unsigned int l = strlen (str);
 
 	if (len > l)
 		len = l;
-	dstring_insert (dstr, str, len, pos);
+	dstring_insert (dstr, pos, str, len);
 }
 
 void

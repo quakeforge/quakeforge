@@ -52,6 +52,7 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/vfs.h"
 #include "QF/zone.h"
+#include "QF/gib_builtin.h"
 
 typedef struct cmdalias_s {
 	struct cmdalias_s *next;
@@ -589,7 +590,11 @@ Cmd_Init (void)
 	Cmd_AddCommand ("wait", Cmd_Wait_f, "Wait a game tic");
 	cmd_warncmd = Cvar_Get ("cmd_warncmd", "0", CVAR_NONE, NULL, "Toggles the "
 							"display of error messages for unknown commands");
-	cmd_cbuf = Cbuf_New (COM_extract_line, COM_parse_line, NULL, NULL);
+	cmd_cbuf = Cbuf_New (&id_interp);
+	
+	// FIXME:  GIB should really be initialized elsewhere
+	
+	GIB_Builtin_Init ();
 }
 
 int

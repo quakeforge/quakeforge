@@ -32,6 +32,7 @@
 
 #include "QF/dstring.h"
 #include "QF/cbuf.h"
+#include "QF/cmd.h"
 
 static dstring_t *_com_token;
 const char *com_token;
@@ -68,7 +69,7 @@ skipwhite:
 		while (1) {
 			c = data[i++];
 			if (c == '"' || !c) {
-				dstring_insert (_com_token, data, i - 1, 0);
+				dstring_insert (_com_token, 0, data, i - 1);
 				goto done;
 			}
 		}
@@ -77,7 +78,7 @@ skipwhite:
 	do {
 		i++;
 	} while (data[i] && !isspace ((byte) data[i]));
-	dstring_insert (_com_token, data, i, 0);
+	dstring_insert (_com_token, 0, data, i);
 done:
 	com_token = _com_token->str;
 	return data + i;
@@ -140,7 +141,7 @@ COM_extract_line (cbuf_t *cbuf)
 			break;
 	}
 	if (i)
-		dstring_insert (cbuf->line, text, i, 0);
+		dstring_insert (cbuf->line, 0, text, i);
 	if (text[i]) {
 		dstring_snip (cbuf->buf, 0, i + 1);
 	} else {
@@ -154,3 +155,17 @@ COM_parse_line (cbuf_t *cbuf)
 {
 	COM_TokenizeString (cbuf->line->str, cbuf->args);;
 }
+
+void
+COM_execute_line (cbuf_t *cbuf)
+{
+	Cmd_Command (cbuf->args);
+}
+
+cbuf_interpreter_t id_interp = {
+	COM_extract_line,
+	COM_parse_line,
+	COM_execute_line,
+	NULL,
+	NULL,
+};

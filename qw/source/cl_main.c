@@ -1663,7 +1663,7 @@ CL_Init_Memory (void)
 void
 Host_Init (void)
 {
-	cl_cbuf = Cbuf_New (COM_extract_line, COM_parse_line, NULL, NULL);
+	cl_cbuf = Cbuf_New (&id_interp);
 
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();

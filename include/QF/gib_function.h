@@ -28,21 +28,9 @@
 
 */
 
-#include <stdlib.h>
+typedef struct gib_function_s {
+	struct dstring_s *name, *program;
+} gib_function_t;
 
-#include "QF/dstring.h"
-#include "QF/cbuf.h"
-#include "QF/gib_buffer.h"
-
-void GIB_Buffer_Construct (struct cbuf_s *cbuf)
-{
-	cbuf->data = calloc (1, sizeof (gib_buffer_data_t));
-	GIB_DATA (cbuf)->arg_composite = dstring_newstr ();
-	GIB_DATA (cbuf)->current_token = dstring_newstr ();
-}
-
-void GIB_Buffer_Destruct (struct cbuf_s *cbuf)
-{
-	dstring_delete (GIB_DATA (cbuf)->arg_composite);
-	free (cbuf->data);
-}
+void GIB_Function_Define (const char *name, const char *program);
+gib_function_t *GIB_Function_Find (const char *name);

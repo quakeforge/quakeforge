@@ -33,9 +33,27 @@
 
 #include "QF/sys.h"
 #include "QF/dstring.h"
+#include "QF/cmd.h"
 #include "QF/cbuf.h"
 #include "QF/gib_buffer.h"
 #include "QF/gib_process.h"
+#include "QF/gib_builtin.h"
+#include "QF/gib_function.h"
+
+// Interpreter structure and prototypes
+
+void GIB_Parse_Extract_Line (cbuf_t *cbuf);
+void GIB_Parse_Tokenize_Line (cbuf_t *cbuf);
+void GIB_Parse_Execute_Line (cbuf_t *cbuf);
+
+cbuf_interpreter_t gib_interp = {
+	GIB_Parse_Extract_Line,
+	GIB_Parse_Tokenize_Line,
+	GIB_Parse_Execute_Line,
+	GIB_Buffer_Construct,
+	GIB_Buffer_Destruct,
+};
+
 
 /* Co-recursive parsing functions */
 
@@ -43,6 +61,8 @@ inline char
 GIB_Parse_Match_Dquote (const char *str, unsigned int *i)
 {
 	for ((*i)++; str[*i]; (*i)++) {
+		if (str[*i] == '\n')
+			return '\"'; // Newlines should never occur inside quotes
 		if (str[*i] == '\"')
 			return 0;
 	}
@@ -68,34 +88,66 @@ GIB_Parse_Match_Brace (const char *str, unsigned int *i)
 	return '{';
 }
 
+inline char
+GIB_Parse_Match_Paren (const char *str, unsigned int *i)
+{
+	char c;
+	for ((*i)++; str[*i]; (*i)++) {
+		if (str[*i] == '(') {
+			if ((c = GIB_Parse_Match_Paren (str, i)))
+				return c;
+		}
+		if (str[*i] == ')')
+			return 0;
+	}
+	return '(';
+}
+
 void
 GIB_Parse_Extract_Line (struct cbuf_s *cbuf)
 {
 	int i;
 	char c;
+	
+	if (GIB_DATA(cbuf)->ret.waiting) // Not ready for next line
+		return;
+	
 	dstring_t *dstr = cbuf->buf;
 	
 	dstring_clearstr (cbuf->line);
-	
+		
 	for (i = 0; dstr->str[i]; i++) {
 		if (dstr->str[i] == '{') {
 			if ((c = GIB_Parse_Match_Brace (dstr->str, &i))) {
-				Cbuf_Error ("parse", "Could not find match for character %c", c);
+				Cbuf_Error ("parse", "Could not find matching %c", c);
 				return;
 			}
-		}
-		else if (dstr->str[i] == '\n' || dstr->str[i] == ';')
+		} else if (dstr->str[i] == '\"') {
+			if ((c = GIB_Parse_Match_Dquote (dstr->str, &i))) {
+				Cbuf_Error ("parse", "Could not find matching %c", c);
+				return;
+			}
+		} else if (dstr->str[i] == '\n' || dstr->str[i] == ';')
 			break;
+		else if (dstr->str[i] == '/' && dstr->str[i+1] == '/') {
+			char *n;
+			if ((n = strchr (dstr->str+i, '\n')))
+				dstring_snip (dstr, i, n-dstr->str);
+			else {
+				dstring_snip (dstr, i, strlen(dstr->str+i));
+				i--; // So we don't go past null
+			}
+		}
 	}
 	
-	if (i) {
-		dstring_insert (cbuf->line, dstr->str, i, 0);
-		Sys_DPrintf ("extracted line: %s\n", cbuf->line->str);
-		if (dstr->str[0])
-			dstring_snip (dstr, 0, i);
+	if (dstr->str[0]) {
+		if (i) {
+			dstring_insert (cbuf->line, 0, dstr->str, i);
+			Sys_DPrintf ("extracted line: %s\n", cbuf->line->str);
+		}
+		dstring_snip (dstr, 0, i + (dstr->str[i] == '\n' || dstr->str[i] == ';'));
 	}
-	else
-		dstring_clearstr (dstr);
+
 	return;
 
 }
@@ -109,24 +161,32 @@ GIB_Parse_Get_Token (const char *str, unsigned int *i, dstring_t *dstr)
 	n = *i; // Save start position
 	if (str[*i] == '\"') {
 		if ((c = GIB_Parse_Match_Dquote (str, i))) {
-			Cbuf_Error ("parse", "Could not find match for character %c", c);
+			Cbuf_Error ("parse", "Could not find matching %c", c);
 			return 0; // Parse error
 		} else {
-			dstring_insert (dstr, str+n+1, *i-n-1, 0);
+			dstring_insert (dstr, 0, str+n+1, *i-n-1);
 			return '\"';
 		}
 	} else if (str[*i] == '{') {
 		if ((c = GIB_Parse_Match_Brace (str, i))) {
-			Cbuf_Error ("parse", "Could not find match for character %c", c);
+			Cbuf_Error ("parse", "Could not find matching %c", c);
 			return 0; // Parse error
 		} else {
-			dstring_insert (dstr, str+n+1, *i-n-1, 0);
+			dstring_insert (dstr, 0, str+n+1, *i-n-1);
 			return '{';
+		}
+	} else if (str[*i] == '(') {
+		if ((c = GIB_Parse_Match_Paren (str, i))) {
+			Cbuf_Error ("parse", "Could not find matching %c", c);
+			return 0; // Parse error
+		} else {
+			dstring_insert (dstr, 0, str+n+1, *i-n-1);
+			return '\(';
 		}
 	} else {
 		while (str[*i] && !isspace(str[*i]) && str[*i] != ',') // find end of token
 			(*i)++;
-		dstring_insert (dstr, str+n, *i-n, 0);
+		dstring_insert (dstr, 0, str+n, *i-n);
 		return ' ';
 	}
 	return 0; // We should never get here
@@ -140,28 +200,59 @@ GIB_Parse_Generate_Composite (struct cbuf_s *cbuf)
 	
 	dstring_clearstr (GIB_DATA (cbuf)->arg_composite);
 	for (i = 0; i < args->argc; i++) {
+		// ->str could be moved by realloc when a dstring is resized
+		// so save the offset instead of the pointer
 		args->args[i] = (const char *) strlen (GIB_DATA (cbuf)->arg_composite->str);
 		dstring_appendstr (GIB_DATA (cbuf)->arg_composite, args->argv[i]->str);
 		dstring_appendstr (GIB_DATA (cbuf)->arg_composite, " ");
 	}
+	
+	// Get rid of trailing space
 	GIB_DATA (cbuf)->arg_composite->str[strlen(GIB_DATA (cbuf)->arg_composite->str)-1] = 0;
+	
 	for (i = 0; i < args->argc; i++)
+		// now that arg_composite is done we can add the pointer to the stored
+		// offsets and get valid pointers. This *should* be portable.
 		args->args[i] += (unsigned long int) GIB_DATA (cbuf)->arg_composite->str;
 }		
+
+inline void
+GIB_Parse_Add_Token (struct cbuf_args_s *args, qboolean cat, dstring_t *token)
+{
+	if (cat) {
+			dstring_appendstr (args->argv[args->argc-1], token->str);
+	} else
+			Cbuf_ArgsAdd (args, token->str);
+}
 
 void
 GIB_Parse_Tokenize_Line (struct cbuf_s *cbuf)
 {
-	dstring_t *arg = dstring_newstr ();
+	dstring_t *arg = GIB_DATA(cbuf)->current_token;
 	const char *str = cbuf->line->str;
 	cbuf_args_t *args = cbuf->args;
-	qboolean cat = false;
+	static qboolean cat = false;
 	char delim;
 	int i;
 	
-	cbuf->args->argc = 0;
+	// This function can be interrupted to call a GIB
+	// subroutine.  First we need to clean up anything
+	// we left unfinished
 	
-	for (i = 0;str[i];) {
+	// Do we have a left-over token that needs processing?
+	
+	if (GIB_DATA(cbuf)->ret.waiting) {
+		// FIXME: Call processing function here
+		if (GIB_DATA(cbuf)->ret.waiting) // Still not done?
+			return;
+		i = GIB_DATA(cbuf)->ret.line_pos; // Start where we left off
+	} else {
+		args->argc = 0; // Start from scratch
+		i = 0;
+		cat = false;
+	}
+	
+	for (i = 0; str[i];) {
 		while (isspace(str[i])) // Eliminate whitespace
 			i++;
 		if (!str[i]) // Blank token
@@ -175,17 +266,51 @@ GIB_Parse_Tokenize_Line (struct cbuf_s *cbuf)
 		if (!delim)
 			break;
 		Sys_DPrintf("Got token: %s\n", arg->str);
-		if (*arg->str == '$' && delim == ' ')
-			GIB_Process_Variable (arg);
-		if (cat) {
-			dstring_appendstr (args->argv[args->argc-1], arg->str);
+		
+		// Global filters -- command sub and var sub
+		
+		// FIXME:  Command sub goes here with subroutine handling
+		
+		if (delim != '{' && delim != '\"')
+			GIB_Process_Variables_All (arg);
+			
+		if (delim == '(')
+			if (GIB_Process_Math (arg))
+				goto FILTER_ERROR; // GOTO??!?!?!? AHHHH!
+		
+		// Add token to list
+		GIB_Parse_Add_Token (args, cat, arg);
+		if (cat)
 			cat = false;
-		} else
-			Cbuf_ArgsAdd (args, arg->str);
-		if (delim != ' ')
+		
+		if (delim != ' ') // Move into whitespace if we haven't already
 			i++;
 		dstring_clearstr (arg);
 	}
-	dstring_delete (arg);
 	GIB_Parse_Generate_Composite (cbuf);
+	return;
+FILTER_ERROR: // Error during filtering, clean up mess
+	dstring_clearstr (arg);
+	args->argc = 0;
+	return;
 }
+
+void GIB_Parse_Execute_Line (cbuf_t *cbuf)
+{
+	gib_builtin_t *b;
+	gib_function_t *f;
+	
+	if ((b = GIB_Builtin_Find (cbuf->args->argv[0]->str)))
+		b->func ();
+	else if ((f = GIB_Function_Find (cbuf->args->argv[0]->str))) {
+		cbuf_t *sub = Cbuf_New (&gib_interp);
+		Cbuf_AddText (sub, f->program->str);
+		if (cbuf_active->down)
+			Cbuf_DeleteStack (cbuf_active->down);
+		cbuf_active->down = sub;
+		sub->up = cbuf_active;
+		cbuf_active->state = CBUF_STATE_STACK;
+	} else	
+		Cmd_Command (cbuf->args);
+}
+

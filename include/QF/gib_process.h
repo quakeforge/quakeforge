@@ -29,3 +29,5 @@
 */
 
 void GIB_Process_Variable (struct dstring_s *token);
+void GIB_Process_Variables_All (struct dstring_s *token);
+int GIB_Process_Math (struct dstring_s *token);

@@ -43,13 +43,12 @@ typedef struct cbuf_args_s {
 	int         argv_size;
 } cbuf_args_t;
 
+
 typedef struct cbuf_s {
 	struct dstring_s *buf;
 	struct dstring_s *line;
 	cbuf_args_t *args;
-	void        (*extract_line) (struct cbuf_s *cbuf);
-	void        (*parse_line) (struct cbuf_s *cbuf);
-	void		(*destructor) (struct cbuf_s *cbuf);
+	struct cbuf_interpreter_s *interpreter;	
 
 	struct cbuf_s *up, *down; // The stack
 	
@@ -63,23 +62,28 @@ typedef struct cbuf_s {
 	void *data; // Pointer to a custom structure if needed
 } cbuf_t;
 
+typedef struct cbuf_interpreter_s {
+	void        (*extract_line) (struct cbuf_s *cbuf);
+	void        (*parse_line) (struct cbuf_s *cbuf);
+	void		(*execute_line) (struct cbuf_s *cbuf);
+	void		(*construct) (struct cbuf_s *cbuf);
+	void		(*destruct) (struct cbuf_s *cbuf);
+} cbuf_interpreter_t;
+
 extern cbuf_t *cbuf_active;
 
 cbuf_args_t *Cbuf_ArgsNew (void);
 void Cbuf_ArgsDelete (cbuf_args_t *);
 void Cbuf_ArgsAdd (cbuf_args_t *args, const char *arg);
 
-cbuf_t * Cbuf_New (
-		void (*extract) (struct cbuf_s *cbuf),
-		void (*parse) (struct cbuf_s *cbuf),
-		void (*construct) (struct cbuf_s *cbuf),
-		void (*destruct) (struct cbuf_s *cbuf)
-		);
+cbuf_t * Cbuf_New (cbuf_interpreter_t *interp);
 
 void Cbuf_Delete (cbuf_t *cbuf);
+void Cbuf_DeleteStack (cbuf_t *stack);
 void Cbuf_AddText (cbuf_t *cbuf, const char *text);
 void Cbuf_InsertText (cbuf_t *cbuf, const char *text);
 void Cbuf_Execute (cbuf_t *cbuf);
+void Cbuf_Execute_Stack (cbuf_t *cbuf);
 void Cbuf_Execute_Sets (cbuf_t *cbuf);
 void Cbuf_Error (const char *class, const char *fmt, ...);
 

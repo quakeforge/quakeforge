@@ -263,7 +263,7 @@ SV_Error (const char *error, va_list argptr)
 	inerror = true;
 
 	dvsprintf (string, error, argptr);
-	dstring_insertstr (string, "server crashed: ", 0);
+	dstring_insertstr (string, 0, "server crashed: ");
 	dstring_appendstr (string, "\n");
 	SV_FinalMessage (string->str);
 
@@ -1915,7 +1915,7 @@ SV_Frame (float time)
 	SV_GetConsoleCommands ();
 
 	// process console commands
-	Cbuf_Execute (sv_cbuf);
+	Cbuf_Execute_Stack (sv_cbuf);
 
 	SV_CheckVars ();
 
@@ -2408,8 +2408,7 @@ SV_Init (void)
 //	COM_AddParm ("-game");
 //	COM_AddParm ("qw");
 
-	sv_cbuf = Cbuf_New (GIB_Parse_Extract_Line, GIB_Parse_Tokenize_Line,
-				 GIB_Buffer_Construct, GIB_Buffer_Destruct);
+	sv_cbuf = Cbuf_New (&gib_interp);
 	sv_args = Cbuf_ArgsNew ();
 
 	Sys_RegisterShutdown (SV_Shutdown);
