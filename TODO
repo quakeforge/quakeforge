@@ -30,6 +30,15 @@ o  doublesize modes (eg, render in 320x240 but display in 640x480)
 ?  wad loader should load wad3 and fall back to wad2 if necessary
 ?  better control over client console logging
 ?  ban reasons and expire times
+?  no 512 entities limit (protocol limitation)
+?  large or infinite (!) maps (currently has +-4096 protocol limit)
+?  http for file downloads
+?  way to change con back besides changing mod dir (csqc likely)
+?  server-side demos
+?  movie-like demo controls (fastforward, rewind, step forward and back, seek, etc)
+?  delta compression for protocol
+?  transmit nails as source/direction/speed/time rather than direction/location, to improve delta compression
+?  custom particle explosions (doable via csqc)
 
 Future directory tree:
 o  todo
