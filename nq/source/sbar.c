@@ -244,10 +244,11 @@ draw_pic (view_t *view, int x, int y, qpic_t *pic)
 }
 
 static inline void
-draw_cachepic (view_t *view, int x, int y, const char *name)
+draw_cachepic (view_t *view, int x, int y, const char *name, int cent)
 {
 	qpic_t *pic = Draw_CachePic (name, true);
-	x += (view->xlen - pic->width) / 2;
+	if (cent)
+		x += (view->xlen - pic->width) / 2;
 	Draw_Pic (view->xabs + x, view->yabs + y, pic);
 }
 
@@ -448,238 +449,16 @@ draw_ammo_hud (view_t *view)
 	}
 }
 
-static void
-draw_rogue_inventory (view_t *view)
-{
-	int         i;
-	float       time;
-	int         flashon;
-
-	if (cl.stats[STAT_ACTIVEWEAPON] >= RIT_LAVA_NAILGUN)
-		draw_pic (view, 0, -24, rsb_invbar[0]);
-	else
-		draw_pic (view, 0, -24, rsb_invbar[1]);
-
-	// weapons
-	for (i = 0; i < 7; i++) {
-		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
-			time = cl.item_gettime[i];
-			flashon = (int) ((cl.time - time) * 10);
-			flashon = max (0, flashon);
-
-			if (flashon >= 10) {
-				if (cl.stats[STAT_ACTIVEWEAPON] == (IT_SHOTGUN << i))
-					flashon = 1;
-				else
-					flashon = 0;
-			} else {
-				flashon = (flashon % 5) + 2;
-			}
-
-			draw_pic (view, i * 24, -16, sb_weapons[flashon][i]);
-
-			if (flashon > 1)
-				sb_updates = 0;			// force update to remove flash
-		}
-	}
-
-	// check for powered up weapon.
-	if (cl.stats[STAT_ACTIVEWEAPON] >= RIT_LAVA_NAILGUN) {
-		for (i = 0; i < 5; i++) {
-			if (cl.stats[STAT_ACTIVEWEAPON] == (RIT_LAVA_NAILGUN << i)) {
-				draw_pic (view, (i + 2) * 24, -16, rsb_weapons[i]);
-			}
-		}
-	}
-
-	// ammo counts
-	draw_ammo_sbar (view);
-
-	flashon = 0;
-
-	// items
-	for (i = 0; i < 6; i++) {
-		if (cl.stats[STAT_ITEMS] & (1 << (17 + i))) {
-			time = cl.item_gettime[17 + i];
-			if (time && time > (cl.time - 2) && flashon) {	// Flash frame
-				sb_updates = 0;
-			} else {
-				//MED 01/04/97 changed keys
-				if (!hipnotic || (i > 1)) {
-					draw_pic (view, 192 + i * 16, -16, sb_items[i]);
-				}
-			}
-			if (time && time > cl.time - 2)
-				sb_updates = 0;
-		}
-	}
-
-	for (i = 0; i < 2; i++) {
-		if (cl.stats[STAT_ITEMS] & (1 << (29 + i))) {
-			time = cl.item_gettime[29 + i];
-
-			if (time && time > (cl.time - 2) && flashon) {	// flash
-				// frame
-				sb_updates = 0;
-			} else {
-				draw_pic (view, 288 + i * 16, -16, rsb_items[i]);
-			}
-
-			if (time && time > (cl.time - 2))
-				sb_updates = 0;
-		}
-	}
-}
-
-static void
-draw_hipnotic_inventory (view_t *view)
-{
-	int         i;
-	float       time;
-	int         flashon;
-
-	draw_pic (view, 0, -24, sb_ibar);
-
-	// weapons
-	for (i = 0; i < 7; i++) {
-		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
-			time = cl.item_gettime[i];
-			flashon = (int) ((cl.time - time) * 10);
-			flashon = max (0, flashon);
-
-			if (flashon >= 10) {
-				if (cl.stats[STAT_ACTIVEWEAPON] == (IT_SHOTGUN << i))
-					flashon = 1;
-				else
-					flashon = 0;
-			} else {
-				flashon = (flashon % 5) + 2;
-			}
-
-			draw_pic (view, i * 24, -16, sb_weapons[flashon][i]);
-
-			if (flashon > 1)
-				sb_updates = 0;			// force update to remove flash
-		}
-	}
-
-	// hipnotic weapons
-	if (hipnotic) {
-		int         grenadeflashing = 0;
-
-		for (i = 0; i < 4; i++) {
-			if (cl.stats[STAT_ITEMS] & (1 << hipweapons[i])) {
-				time = cl.item_gettime[hipweapons[i]];
-				flashon = (int) ((cl.time - time) * 10);
-				flashon = max (0, flashon);
-
-				if (flashon >= 10) {
-					if (cl.stats[STAT_ACTIVEWEAPON] == (1 << hipweapons[i]))
-						flashon = 1;
-					else
-						flashon = 0;
-				} else {
-					flashon = (flashon % 5) + 2;
-				}
-
-				// check grenade launcher
-				switch (i) {
-					case 2:
-					if (cl.stats[STAT_ITEMS] & HIT_PROXIMITY_GUN) {
-						if (flashon) {
-							grenadeflashing = 1;
-							draw_pic (view, 96, -16, hsb_weapons[flashon][2]);
-						}
-					}
-					break;
-					case 3:
-					if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << 4)) {
-						if (flashon && !grenadeflashing) {
-							draw_pic (view, 96, -16, hsb_weapons[flashon][3]);
-						} else if (!grenadeflashing) {
-							draw_pic (view, 96, -16, hsb_weapons[0][3]);
-						}
-					} else {
-						draw_pic (view, 96, -16, hsb_weapons[flashon][4]);
-					}
-					break;
-					default:
-					draw_pic (view, 176 + (i * 24), -16, hsb_weapons[flashon][i]);
-					break;
-				}
-				if (flashon > 1)
-					sb_updates = 0;		// force update to remove flash
-			}
-		}
-	}
-
-	// ammo counts
-	draw_ammo_sbar (view);
-
-	flashon = 0;
-
-	// items
-	for (i = 0; i < 6; i++) {
-		if (cl.stats[STAT_ITEMS] & (1 << (17 + i))) {
-			time = cl.item_gettime[17 + i];
-			if (time && time > (cl.time - 2) && flashon) {	// Flash frame
-				sb_updates = 0;
-			} else {
-				//MED 01/04/97 changed keys
-				if (!hipnotic || (i > 1)) {
-					draw_pic (view, 192 + i * 16, -16, sb_items[i]);
-				}
-			}
-			if (time && time > cl.time - 2)
-				sb_updates = 0;
-		}
-	}
-
-	// hipnotic items
-	if (hipnotic) {
-		for (i = 0; i < 2; i++) {
-			if (cl.stats[STAT_ITEMS] & (1 << (24 + i))) {
-				time = cl.item_gettime[24 + i];
-				if (time && time > cl.time - 2 && flashon) {	// flash
-					// frame
-					sb_updates = 0;
-				} else {
-					draw_pic (view, 288 + i * 16, -16, hsb_items[i]);
-				}
-				if (time && time > (cl.time - 2))
-					sb_updates = 0;
-			}
-		}
-	}
-
-	// sigils
-	for (i = 0; i < 4; i++) {
-		if (cl.stats[STAT_ITEMS] & (1 << (28 + i))) {
-			time = cl.item_gettime[28 + i];
-			if (time && time > cl.time - 2 && flashon) {	// flash
-				// frame
-				sb_updates = 0;
-			} else {
-				draw_pic (view, 320 - 32 + i * 8, -16, sb_sigil[i]);
-			}
-			if (time && time > cl.time - 2)
-				sb_updates = 0;
-		}
-	}
-}
-
 static int
-calc_flashon (int ind)
+calc_flashon (float time, int mask)
 {
-	float       time;
 	int         flashon;
 
-	time = cl.item_gettime[ind];
 	flashon = (int) ((cl.time - time) * 10);
 	if (flashon < 0)
 		flashon = 0;
 	if (flashon >= 10) {
-		if (cl.stats[STAT_ACTIVEWEAPON] == (IT_SHOTGUN << ind))
+		if (cl.stats[STAT_ACTIVEWEAPON] == mask)
 			flashon = 1;
 		else
 			flashon = 0;
@@ -696,7 +475,7 @@ draw_weapons_sbar (view_t *view)
 	// weapons
 	for (i = 0; i < 7; i++) {
 		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
-			flashon = calc_flashon (i);
+			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
 			draw_pic (view, i * 24, 0, sb_weapons[flashon][i]);
 			if (flashon > 1)
 				sb_updates = 0;			// force update to remove flash
@@ -714,7 +493,7 @@ draw_weapons_hud (view_t *view)
 
 	for (i = 0; i < 7; i++) {
 		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
-			flashon = calc_flashon (i);
+			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
 			draw_subpic (view, x, i * 16, sb_weapons[flashon][i], 0, 0, 24, 16);
 			if (flashon > 1)
 				sb_updates = 0;			// force update to remove flash
@@ -890,6 +669,236 @@ draw_face (view_t *view)
 }
 
 static void
+draw_status_bar (view_t *view)
+{
+	draw_pic (view, 0, 0, sb_sbar);
+}
+
+static void
+draw_status (view_t *view)
+{
+	if (sb_showscores || cl.stats[STAT_HEALTH] <= 0) {
+		draw_solo (view);
+		return;
+	}
+	// armor
+	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
+		draw_num (view, 24, 0, 666, 3, 1);
+	} else {
+		draw_num (view, 24, 0, cl.stats[STAT_ARMOR], 3,
+				  cl.stats[STAT_ARMOR] <= 25);
+		if (cl.stats[STAT_ITEMS] & IT_ARMOR3)
+			draw_pic (view, 0, 0, sb_armor[2]);
+		else if (cl.stats[STAT_ITEMS] & IT_ARMOR2)
+			draw_pic (view, 0, 0, sb_armor[1]);
+		else if (cl.stats[STAT_ITEMS] & IT_ARMOR1)
+			draw_pic (view, 0, 0, sb_armor[0]);
+	}
+
+	// face
+	draw_face (view);
+
+	// health
+	draw_num (view, 136, 0, cl.stats[STAT_HEALTH], 3,
+			  cl.stats[STAT_HEALTH] <= 25);
+
+	// ammo icon
+	if (cl.stats[STAT_ITEMS] & IT_SHELLS)
+		draw_pic (view, 224, 0, sb_ammo[0]);
+	else if (cl.stats[STAT_ITEMS] & IT_NAILS)
+		draw_pic (view, 224, 0, sb_ammo[1]);
+	else if (cl.stats[STAT_ITEMS] & IT_ROCKETS)
+		draw_pic (view, 224, 0, sb_ammo[2]);
+	else if (cl.stats[STAT_ITEMS] & IT_CELLS)
+		draw_pic (view, 224, 0, sb_ammo[3]);
+	draw_num (view, 248, 0, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
+}
+
+static void
+draw_rogue_weapons_sbar (view_t *view)
+{
+	int         i;
+
+	draw_weapons_sbar (view);
+
+	// check for powered up weapon.
+	if (cl.stats[STAT_ACTIVEWEAPON] >= RIT_LAVA_NAILGUN) {
+		for (i = 0; i < 5; i++) {
+			if (cl.stats[STAT_ACTIVEWEAPON] == (RIT_LAVA_NAILGUN << i)) {
+				draw_pic (view, (i + 2) * 24, -16, rsb_weapons[i]);
+			}
+		}
+	}
+}
+
+static void
+draw_rogue_items_sbar (view_t *view)
+{
+	int         i;
+	float       time;
+
+	draw_items (view);
+
+	for (i = 0; i < 2; i++) {
+		if (cl.stats[STAT_ITEMS] & (1 << (29 + i))) {
+			time = cl.item_gettime[29 + i];
+			draw_pic (view, 288 + i * 16, -16, rsb_items[i]);
+			if (time && time > (cl.time - 2))
+				sb_updates = 0;
+		}
+	}
+}
+
+static void
+draw_rogue_inventory_sbar (view_t *view)
+{
+	if (cl.stats[STAT_ACTIVEWEAPON] >= RIT_LAVA_NAILGUN)
+		draw_pic (view, 0, -24, rsb_invbar[0]);
+	else
+		draw_pic (view, 0, -24, rsb_invbar[1]);
+
+	draw_rogue_weapons_sbar (view);
+	draw_ammo_sbar (view);
+	draw_rogue_items_sbar (view);
+}
+
+static void
+draw_hipnotic_weapons_sbar (view_t *view)
+{
+	int         i;
+	int         flashon;
+	int         grenadeflashing = 0;
+
+	draw_weapons_sbar (view);
+
+	// hipnotic weapons
+	for (i = 0; i < 4; i++) {
+		if (cl.stats[STAT_ITEMS] & (1 << hipweapons[i])) {
+			flashon = calc_flashon (cl.item_gettime[hipweapons[i]],
+									1 << hipweapons[i]);
+
+			// check grenade launcher
+			switch (i) {
+				default:
+				draw_pic (view, 176 + (i * 24), 0, hsb_weapons[flashon][i]);
+				break;
+				case 2:
+				if (cl.stats[STAT_ITEMS] & HIT_PROXIMITY_GUN) {
+					if (flashon) {
+						grenadeflashing = 1;
+						draw_pic (view, 96, 0, hsb_weapons[flashon][2]);
+					}
+				}
+				break;
+				case 3:
+				if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << 4)) {
+					if (flashon && !grenadeflashing) {
+						draw_pic (view, 96, 0, hsb_weapons[flashon][3]);
+					} else if (!grenadeflashing) {
+						draw_pic (view, 96, 0, hsb_weapons[0][3]);
+					}
+				} else {
+					draw_pic (view, 96, 0, hsb_weapons[flashon][4]);
+				}
+				break;
+			}
+			if (flashon > 1)
+				sb_updates = 0;		// force update to remove flash
+		}
+	}
+}
+
+static void
+draw_hipnotic_weapons_hud (view_t *view)
+{
+	int         flashon, grenadeflashing = 0, i, x;
+	static int  y[] = {0, 16, 32, 48, 64, 96, 112, 128, 144, 80, 80};
+	qpic_t     *pic;
+	int         mask;
+	float       time;
+
+	if (view->parent->gravity == grav_southeast)
+		x = view->xlen - 24;
+
+	// hipnotic weapons
+	for (i = 0; i < 11; i++) {
+		if (i < 7) {
+			mask = cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i);
+			time = cl.item_gettime[i];
+		} else {
+			mask = cl.stats[STAT_ITEMS] & (1 << hipweapons[i - 7]);
+			time = cl.item_gettime[hipweapons[i - 7]];
+		}
+		if (cl.stats[STAT_ITEMS] & mask) {
+			flashon = calc_flashon (time, mask);
+
+			if (i < 7) {
+				pic = sb_weapons[flashon][i];
+			} else if (i < 9) {
+				pic = hsb_weapons[flashon][i - 7];
+			} else if (i == 9) {
+				if (cl.stats[STAT_ITEMS] & HIT_PROXIMITY_GUN) {
+					if (flashon) {
+						grenadeflashing = 1;
+						pic = hsb_weapons[flashon][2];
+					}
+				}
+			} else {
+				if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << 4)) {
+					if (flashon && !grenadeflashing) {
+						pic = hsb_weapons[flashon][3];
+					} else if (!grenadeflashing) {
+						pic = hsb_weapons[0][3];
+					}
+				} else {
+					pic = hsb_weapons[flashon][4];
+				}
+			}
+
+			if (pic)
+				draw_pic (view, x, y[i], pic);
+
+			if (flashon > 1)
+				sb_updates = 0;		// force update to remove flash
+		}
+	}
+}
+
+static void
+draw_hipnotic_items (view_t *view)
+{
+	int         i;
+	float       time;
+
+	// items
+	for (i = 2; i < 6; i++) {
+		if (cl.stats[STAT_ITEMS] & (1 << (17 + i))) {
+			time = cl.item_gettime[17 + i];
+			draw_pic (view, 192 + i * 16, 0, sb_items[i]);
+			if (time && time > cl.time - 2)
+				sb_updates = 0;
+		}
+	}
+
+	// hipnotic items
+	for (i = 0; i < 2; i++) {
+		if (cl.stats[STAT_ITEMS] & (1 << (24 + i))) {
+			time = cl.item_gettime[24 + i];
+			draw_pic (view, 288 + i * 16, 0, hsb_items[i]);
+			if (time && time > (cl.time - 2))
+				sb_updates = 0;
+		}
+	}
+}
+
+static void
+draw_hipnotic_inventory_sbar (view_t *view)
+{
+	draw_pic (view, 0, 0, sb_ibar);
+	view_draw (view);
+}
+
+static void
 draw_rogue_status (view_t *view)
 {
 	draw_pic (view, 0, 0, sb_sbar);
@@ -936,88 +945,15 @@ draw_rogue_status (view_t *view)
 static void
 draw_hipnotic_status (view_t *view)
 {
-	draw_pic (view, 0, 0, sb_sbar);
+	draw_status (view);
+
+	if (sb_showscores || cl.stats[STAT_HEALTH] <= 0)
+		return;
 
 	if (cl.stats[STAT_ITEMS] & IT_KEY1)
 		draw_pic (view, 209, 3, sb_items[0]);
 	if (cl.stats[STAT_ITEMS] & IT_KEY2)
 		draw_pic (view, 209, 12, sb_items[1]);
-	// armor
-	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
-		draw_num (view, 24, 0, 666, 3, 1);
-	} else {
-		draw_num (view, 24, 0, cl.stats[STAT_ARMOR], 3,
-					  cl.stats[STAT_ARMOR] <= 25);
-		if (cl.stats[STAT_ITEMS] & IT_ARMOR3)
-			draw_pic (view, 0, 0, sb_armor[2]);
-		else if (cl.stats[STAT_ITEMS] & IT_ARMOR2)
-			draw_pic (view, 0, 0, sb_armor[1]);
-		else if (cl.stats[STAT_ITEMS] & IT_ARMOR1)
-			draw_pic (view, 0, 0, sb_armor[0]);
-	}
-
-	// face
-	draw_face (view);
-
-	// health
-	draw_num (view, 136, 0, cl.stats[STAT_HEALTH], 3,
-				  cl.stats[STAT_HEALTH] <= 25);
-
-	if (cl.stats[STAT_ITEMS] & IT_SHELLS)
-		draw_pic (view, 224, 0, sb_ammo[0]);
-	else if (cl.stats[STAT_ITEMS] & IT_NAILS)
-		draw_pic (view, 224, 0, sb_ammo[1]);
-	else if (cl.stats[STAT_ITEMS] & IT_ROCKETS)
-		draw_pic (view, 224, 0, sb_ammo[2]);
-	else if (cl.stats[STAT_ITEMS] & IT_CELLS)
-		draw_pic (view, 224, 0, sb_ammo[3]);
-	draw_num (view, 248, 0, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
-}
-
-static void
-draw_status_bar (view_t *view)
-{
-	draw_pic (view, 0, 0, sb_sbar);
-}
-
-static void
-draw_status (view_t *view)
-{
-	if (sb_showscores || cl.stats[STAT_HEALTH] <= 0) {
-		draw_solo (view);
-		return;
-	}
-	// armor
-	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
-		draw_num (view, 24, 0, 666, 3, 1);
-	} else {
-		draw_num (view, 24, 0, cl.stats[STAT_ARMOR], 3,
-				  cl.stats[STAT_ARMOR] <= 25);
-		if (cl.stats[STAT_ITEMS] & IT_ARMOR3)
-			draw_pic (view, 0, 0, sb_armor[2]);
-		else if (cl.stats[STAT_ITEMS] & IT_ARMOR2)
-			draw_pic (view, 0, 0, sb_armor[1]);
-		else if (cl.stats[STAT_ITEMS] & IT_ARMOR1)
-			draw_pic (view, 0, 0, sb_armor[0]);
-	}
-
-	// face
-	draw_face (view);
-
-	// health
-	draw_num (view, 136, 0, cl.stats[STAT_HEALTH], 3,
-			  cl.stats[STAT_HEALTH] <= 25);
-
-	// ammo icon
-	if (cl.stats[STAT_ITEMS] & IT_SHELLS)
-		draw_pic (view, 224, 0, sb_ammo[0]);
-	else if (cl.stats[STAT_ITEMS] & IT_NAILS)
-		draw_pic (view, 224, 0, sb_ammo[1]);
-	else if (cl.stats[STAT_ITEMS] & IT_ROCKETS)
-		draw_pic (view, 224, 0, sb_ammo[2]);
-	else if (cl.stats[STAT_ITEMS] & IT_CELLS)
-		draw_pic (view, 224, 0, sb_ammo[3]);
-	draw_num (view, 248, 0, cl.stats[STAT_AMMO], 3, cl.stats[STAT_AMMO] <= 10);
 }
 
 static void
@@ -1071,7 +1007,7 @@ Sbar_DeathmatchOverlay (view_t *view)
 	scr_copyeverything = 1;
 	scr_fullupdate = 0;
 
-	draw_cachepic (view, 0, 0, "gfx/ranking.lmp");
+	draw_cachepic (view, 0, 0, "gfx/ranking.lmp", 1);
 
 	// scores
 	Sbar_SortFrags ();
@@ -1131,7 +1067,7 @@ draw_time (view_t *view)
 	}
 
 	strftime (st, sizeof (st), timefmt, local);
-	draw_string (view, 8, 8, st);
+	draw_string (view, 8, 0, st);
 }
 
 static void
@@ -1149,7 +1085,7 @@ draw_fps (view_t *view)
 		lastframetime = t;
 	}
 	snprintf (st, sizeof (st), "%3d FPS", lastfps);
-	draw_string (view, 80, 8, st);
+	draw_string (view, 8, 8, st);
 }
 
 static void
@@ -1170,9 +1106,9 @@ draw_intermission (view_t *view)
 	scr_copyeverything = 1;
 	scr_fullupdate = 0;
 
-	draw_cachepic (view, 64, 24, "gfx/complete.lmp");
+	draw_cachepic (view, 64, 24, "gfx/complete.lmp", 0);
 
-	draw_cachepic (view, 0, 56, "gfx/inter.lmp");
+	draw_cachepic (view, 0, 56, "gfx/inter.lmp", 0);
 
 	// time
 	dig = cl.completed_time / 60;
@@ -1323,26 +1259,113 @@ init_hud_views (void)
 }
 
 static void
-init_hipnotic_views (void)
+init_hipnotic_sbar_views (void)
 {
 	view_t     *view;
 
-	sbar_view = hud_view = view_new (0, 0, 320, 48, grav_south);
+	sbar_view = view_new (0, 0, 320, 48, grav_south);
+
+	sbar_frags_view = view_new (0, 0, 130, 8, grav_northeast);
+	sbar_frags_view->draw = draw_frags;
+
+	sbar_inventory_view = view_new (0, 0, 320, 24, grav_northwest);
+	sbar_inventory_view->draw = draw_hipnotic_inventory_sbar;
+
+	view = view_new (0, 0, 224, 16, grav_southwest);
+	view->draw = draw_hipnotic_weapons_sbar;
+	view_add (sbar_inventory_view, view);
+
+	view = view_new (0, 0, 32, 8, grav_northwest);
+	view->draw = draw_ammo_sbar;
+	view_add (sbar_inventory_view, view);
+
+	view = view_new (0, 0, 96, 16, grav_southeast);
+	view->draw = draw_hipnotic_items;
+	view_add (sbar_inventory_view, view);
+
+	view = view_new (0, 0, 32, 16, grav_southeast);
+	view->draw = draw_sigils;
+	view_add (sbar_inventory_view, view);
+
+	if (sbar_frags_view)
+		view_add (sbar_inventory_view, sbar_frags_view);
+
+	view_add (sbar_view, sbar_inventory_view);
+
+	view = view_new (0, 0, 320, 24, grav_southwest);
+	view->draw = draw_status_bar;
+	view_add (sbar_view, view);
+
+	view = view_new (0, 0, 320, 24, grav_southwest);
+	view->draw = draw_hipnotic_status;
+	view_add (sbar_view, view);
+
+	if (vid.width > 320) {
+		int         l = (vid.width - 320) / 2;
+
+		view = view_new (-l, 0, l, 48, grav_southwest);
+		view->draw = draw_tile;
+		view->resize_y = 1;
+		view_add (sbar_view, view);
+
+		view = view_new (-l, 0, l, 48, grav_southeast);
+		view->draw = draw_tile;
+		view->resize_y = 1;
+		view_add (sbar_view, view);
+	}
+}
+
+static void
+init_hipnotic_hud_views (void)
+{
+	view_t     *view;
+
+	hud_view = view_new (0, 0, 320, 48, grav_south);
+	hud_frags_view = view_new (0, 0, 130, 8, grav_northeast);
+	hud_frags_view->draw = draw_frags;
+
+	hud_view->resize_y = 1;
+
+	hud_armament_view = view_new (0, 48, 42, 204, grav_southeast);
+
+	view = view_new (0, 0, 42, 160, grav_northeast);
+	view->draw = draw_hipnotic_weapons_hud;
+	view_add (hud_armament_view, view);
+
+	view = view_new (0, 0, 42, 44, grav_southeast);
+	view->draw = draw_ammo_hud;
+	view_add (hud_armament_view, view);
+
+	hud_inventory_view = view_new (0, 0, 320, 24, grav_northwest);
+	view_add (hud_view, hud_inventory_view);
 
 	view = view_new (0, 0, 320, 24, grav_southwest);
 	view->draw = draw_hipnotic_status;
 	view_add (hud_view, view);
 
-	view = view_new (0, 0, 320, 24, grav_northwest);
-	view->draw = draw_hipnotic_inventory;
-	view_add (hud_view, view);
+	view = view_new (0, 0, 96, 16, grav_southeast);
+	view->draw = draw_hipnotic_items;
+	view_add (hud_inventory_view, view);
+
+	view = view_new (0, 0, 32, 16, grav_southeast);
+	view->draw = draw_sigils;
+	view_add (hud_inventory_view, view);
+
+	if (hud_frags_view)
+		view_add (hud_inventory_view, hud_frags_view);
+
+	view = view_new (0, 0, vid.conwidth, 48, grav_south);
+	view_add (view, hud_view);
+	hud_view = view;
+
+	view_add (hud_view, hud_armament_view);
 
 	if (con_module)
 		view_insert (con_module->data->console->view, hud_view, 0);
 }
 
 static void
-init_rogue_views (void)
+init_rogue_sbar_views (void)
 {
 	view_t     *view;
 
@@ -1353,11 +1376,16 @@ init_rogue_views (void)
 	view_add (hud_view, view);
 
 	view = view_new (0, 0, 320, 24, grav_northwest);
-	view->draw = draw_rogue_inventory;
+	view->draw = draw_rogue_inventory_sbar;
 	view_add (hud_view, view);
 
 	if (con_module)
 		view_insert (con_module->data->console->view, hud_view, 0);
+}
+
+static void
+init_rogue_hud_views (void)
+{
 }
 
 static void
@@ -1370,7 +1398,7 @@ init_views (void)
 	overlay_view->draw = draw_overlay;
 	overlay_view->visible = 0;
 
-	stuff_view = view_new (0, 48, 144, 16, grav_southwest);
+	stuff_view = view_new (0, 48, 80, 16, grav_southwest);
 	stuff_view->draw = draw_stuff;
 
 	if (con_module) {
@@ -1379,9 +1407,11 @@ init_views (void)
 	}
 
 	if (hipnotic) {
-		init_hipnotic_views ();
+		init_hipnotic_sbar_views ();
+		init_hipnotic_hud_views ();
 	} else if (rogue) {
-		init_rogue_views ();
+		init_rogue_sbar_views ();
+		init_rogue_hud_views ();
 	} else {
 		init_sbar_views ();
 		init_hud_views ();
