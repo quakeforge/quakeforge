@@ -324,9 +324,6 @@ GL_Init_Common (void)
 	qfglCullFace (GL_FRONT);
 	qfglEnable (GL_TEXTURE_2D);
 
-	qfglEnable (GL_ALPHA_TEST);
-	qfglAlphaFunc (GL_GREATER, 0.666);
-
 	qfglPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
 	qfglShadeModel (GL_FLAT);
