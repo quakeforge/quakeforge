@@ -107,7 +107,7 @@ client_sources= cl_cam.c cl_cmd.c cl_cvar.c cl_demo.c cl_ents.c cl_input.c \
 # Software-rendering clients
 
 # We need libQFrenderer_sw to always be static -- there's assembler in there
-soft_LIBS=	$(top_builddir)/libs/video/renderer/.libs/libQFrenderer_sw.a \
+soft_LIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer_sw.la \
 		$(top_builddir)/libs/models/libQFmodels_sw.la
 
 # ... Linux FBDev
@@ -145,13 +145,13 @@ qw_client_sdl_DEPENDENCIES= \
 
 # ... 32-bit software, SDL
 qw_client_sdl32_SOURCES=$(qw_client_sdl_SOURCES)
-qw_client_sdl32_LDADD=	$(top_builddir)/libs/video/renderer/.libs/libQFrenderer_sw32.a \
+qw_client_sdl32_LDADD=	$(top_builddir)/libs/video/renderer/libQFrenderer_sw32.la \
 			$(top_builddir)/libs/models/libQFmodels_sw32.la \
 			$(top_builddir)/libs/video/targets/libQFsdl32.la \
 			$(client_LIBS) $(SDL_LIBS)
 qw_client_sdl32_LDFLAGS=$(common_ldflags)
 qw_client_sdl32_DEPENDENCIES= \
-			$(top_builddir)/libs/video/renderer/.libs/libQFrenderer_sw32.a \
+			$(top_builddir)/libs/video/renderer/libQFrenderer_sw32.la \
 			$(top_builddir)/libs/models/libQFmodels_sw32.la \
 			$(top_builddir)/libs/video/targets/libQFsdl32.la \
 			$(client_LIB_DEPS)
