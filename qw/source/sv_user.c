@@ -84,9 +84,8 @@ cvar_t     *sv_kickfake;
 
 cvar_t     *sv_mapcheck;
 
-cvar_t     *sv_timekick;
-cvar_t     *sv_timekick_fuzz;
-cvar_t     *sv_timekick_interval;
+cvar_t     *sv_timecheck_fuzz;
+cvar_t     *sv_timecheck_decay;
 
 void SV_FullClientUpdateToClient (client_t *client, client_t *cl);
 
@@ -1418,45 +1417,20 @@ SV_PreRunCmd (void)
 void
 SV_RunCmd (usercmd_t *ucmd, qboolean inside)
 {
-	double		tmp_time;
-	int			oldmsec, tmp_time1, i, n;
+	int			oldmsec, passed, i, n;
 	edict_t    *ent;
 
-	if (!inside) {						// prevent infinite loop
-		host_client->msecs += ucmd->msec;
-
-		if (!host_client->spectator && sv_timekick->int_val
-			&& ((tmp_time = realtime - host_client->last_check) >=
-				sv_timekick_interval->value)) {
-
-			tmp_time1 = tmp_time * (1000 + sv_timekick_fuzz->value);
-
-			if ((host_client->last_check != -1)	// don't do it if new player
-				&& (host_client->msecs > tmp_time1)) {
-				host_client->msec_cheating++;
-				SV_BroadcastPrintf (PRINT_HIGH, "%s thinks there are %d ms "
-									"in %d seconds (Strike %d/%d)\n",
-									host_client->name, host_client->msecs,
-									(int) tmp_time, host_client->msec_cheating,
-									sv_timekick->int_val);
-
-				if (host_client->msec_cheating >= sv_timekick->int_val) {
-					SV_BroadcastPrintf (PRINT_HIGH, "Strike %d for %s!!\n",
-													host_client->msec_cheating,
-													host_client->name);
-					SV_BroadcastPrintf
-						(PRINT_HIGH, "Please see "
-						 "http://www.quakeforge.net/speed_cheat.php for "
-						 "information on QuakeForge's time cheat protection. "
-						 "That page explains how some may be cheating "
-						 "without knowing it.\n");
-					SV_DropClient (host_client);
+	if (!inside) {
+		if (host_client->last_check != -1.0) {
+				passed = (int)((realtime - host_client->last_check)*1000.0);
+				host_client->msecs += passed - ucmd->msec;
+				host_client->msecs -= host_client->msecs >= 0 ? sv_timecheck_decay->int_val : -sv_timecheck_decay->int_val;
+				if (abs(host_client->msecs) > sv_timecheck_fuzz->int_val) {
+					host_client->msecs = bound (-sv_timecheck_fuzz->int_val, host_client->msecs, sv_timecheck_fuzz->int_val);
+					ucmd->msec = passed;
 				}
-			}
-
-			host_client->msecs = 0;
-			host_client->last_check = realtime;
 		}
+		host_client->last_check = realtime;
 	}
 
 	cmd = *ucmd;

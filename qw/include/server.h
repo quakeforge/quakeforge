@@ -555,9 +555,8 @@ void ClientReliableWrite_SZ(client_t *cl, void *data, int len);
 
 void Cvar_Info (struct cvar_s *var);
 
-extern struct cvar_s *sv_timekick;
-extern struct cvar_s *sv_timekick_fuzz;
-extern struct cvar_s *sv_timekick_interval;
+extern struct cvar_s *sv_timecheck_fuzz;
+extern struct cvar_s *sv_timecheck_decay;
 extern struct cvar_s *sv_maxrate;
 extern struct cvar_s *sv_timestamps;
 extern struct cvar_s *sv_timefmt;
