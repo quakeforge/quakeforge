@@ -3,11 +3,8 @@
 %define release 1
 %define builddir $RPM_BUILD_DIR/%{name}-%{version}
 
-%define HAVE_3DFX   '@HAVE_3DFX@'
 %define HAVE_FBDEV  '@HAVE_FBDEV@'
-%define HAVE_GLX    '@HAVE_GLX@'
 %define HAVE_SDL    '@HAVE_SDL@'
-%define HAVE_SGL    '@HAVE_SGL@'
 %define HAVE_SVGA   '@HAVE_SVGA@'
 %define HAVE_X11    '@HAVE_X@'
 
@@ -70,14 +67,6 @@ Software's very popular DOOM series. Its primary development goal is to
 remain compatible with the original games released by id Software while
 adding portability and optional extensions to enhance gameplay.
 
-%if "%{HAVE_3DFX}"=="'yes'"
-%package 3dfx
-Summary:	QuakeForge 3D game engine - 3dfx client
-Group:		Amusements/Games
-#Requires:
-%description 3dfx
-%endif
-
 %if "%{HAVE_FBDEV}"=="'yes'"
 %package fbdev
 Summary:	QuakeForge 3D game engine - fbdev client
@@ -90,7 +79,7 @@ remain compatible with the original games released by id Software while
 adding portability and optional extensions to enhance gameplay.
 %endif
 
-%if "%{HAVE_GLX}"=="'yes'"
+%if "%{HAVE_X11}"=="'yes'"
 %package glx
 Summary:	QuakeForge 3D game engine - glx client
 Group:		Amusements/Games
@@ -126,7 +115,7 @@ remain compatible with the original games released by id Software while
 adding portability and optional extensions to enhance gameplay.
 %endif
 
-%if "%{HAVE_SGL}"=="'yes'"
+%if "%{HAVE_SDL}"=="'yes'"
 %package sgl
 Summary:	QuakeForge 3D game engine - SDL-GL client
 Group:		Amusements/Games
@@ -317,14 +306,6 @@ rm -rf $RPM_BUILD_ROOT
 %files master
 %attr(-,root,root)	%{_prefix}/bin/qw-master
 
-%if "%{HAVE_3DFX}"=="'yes'"
-%files 3dfx
-%attr(-,root,root)	%{_prefix}/bin/qw-client-3dfx
-%attr(-,root,root)	%{_prefix}/bin/nq-3dfx
-%attr(-,root,root)	%{_prefix}/lib/libQFtdfx.so.1
-%attr(-,root,root)	%{_prefix}/lib/libQFtdfx.so.1.0.0
-%endif
-
 %if "%{HAVE_FBDEV}"=="'yes'"
 %files fbdev
 %attr(-,root,root)	%{_prefix}/bin/qw-client-fbdev
@@ -333,7 +314,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/lib/libQFfbdev.so.1.0.0
 %endif
 
-%if "%{HAVE_GLX}"=="'yes'"
+%if "%{HAVE_X11}"=="'yes'"
 %files glx
 %attr(-,root,root)	%{_prefix}/bin/qw-client-glx
 %attr(-,root,root)	%{_prefix}/bin/nq-glx
@@ -357,7 +338,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/lib/libQFsdl32.so.1.0.0
 %endif
 
-%if "%{HAVE_SGL}"=="'yes'"
+%if "%{HAVE_SDL}"=="'yes'"
 %files sgl
 %attr(-,root,root)	%{_prefix}/bin/qw-client-sgl
 %attr(-,root,root)	%{_prefix}/bin/nq-sgl
@@ -421,11 +402,6 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %files devel
-%if "%{HAVE_3DFX}"=="'yes'"
-%attr(-,root,root)	%{_prefix}/lib/libQF3dfx.a
-%attr(-,root,root)	%{_prefix}/lib/libQF3dfx.la
-%attr(-,root,root)	%{_prefix}/lib/libQF3dfx.so
-%endif
 %attr(-,root,root)	%{_prefix}/lib/libQFcd.a
 %attr(-,root,root)	%{_prefix}/lib/libQFcd.la
 %attr(-,root,root)	%{_prefix}/lib/libQFcd.so
@@ -441,7 +417,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/lib/libQFgib.a
 %attr(-,root,root)	%{_prefix}/lib/libQFgib.la
 %attr(-,root,root)	%{_prefix}/lib/libQFgib.so
-%if "%{HAVE_GLX}"=="'yes'"
+%if "%{HAVE_X11}"=="'yes'"
 %attr(-,root,root)	%{_prefix}/lib/libQFglx.a
 %attr(-,root,root)	%{_prefix}/lib/libQFglx.la
 %attr(-,root,root)	%{_prefix}/lib/libQFglx.so
@@ -467,7 +443,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/lib/libQFsdl.la
 %attr(-,root,root)	%{_prefix}/lib/libQFsdl.so
 %endif
-%if "%{HAVE_SGL}"=="'yes'"
+%if "%{HAVE_SDL}"=="'yes'"
 %attr(-,root,root)	%{_prefix}/lib/libQFsgl.a
 %attr(-,root,root)	%{_prefix}/lib/libQFsgl.la
 %attr(-,root,root)	%{_prefix}/lib/libQFsgl.so
