@@ -268,9 +268,9 @@ PR_LeaveFunction (progs_t * pr)
 	return pr->pr_stack[pr->pr_depth].s;
 }
 
-#define OPA (pr->pr_globals[st->a])
-#define OPB (pr->pr_globals[st->b])
-#define OPC (pr->pr_globals[st->c])
+#define OPA (*op_a)
+#define OPB (*op_b)
+#define OPC (*op_c)
 
 /*
 	This gets around the problem of needing to test for -0.0 but denormals
@@ -312,11 +312,17 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 	startprofile = profile = 0;
 
 	while (1) {
+		pr_type_t  *op_a, *op_b, *op_c;
+
 		st++;
 		if (++profile > 1000000 && !pr->no_exec_limit) {
 			pr->pr_xstatement = st - pr->pr_statements;
 			PR_RunError (pr, "runaway loop error");
 		}
+
+		op_a = pr->pr_globals + st->a;
+		op_b = pr->pr_globals + st->b;
+		op_c = pr->pr_globals + st->c;
 
 		if (pr->pr_trace)
 			PR_PrintStatement (pr, st);
