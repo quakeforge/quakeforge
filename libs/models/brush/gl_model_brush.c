@@ -132,10 +132,10 @@ Mod_LoadLighting (lump_t *l)
 	dstring_t  *litfilename = dstring_new ();
 	int         i;
 
+	dstring_copystr (litfilename, loadmodel->name);
 	loadmodel->lightdata = NULL;
 	if (mod_lightmap_bytes > 1) {
 		// LordHavoc: check for a .lit file to load
-		dstring_copystr (litfilename, loadmodel->name);
 		QFS_StripExtension (litfilename->str, litfilename->str);
 		dstring_appendstr (litfilename, ".lit");
 		data = (byte *) QFS_LoadHunkFile (litfilename->str);
