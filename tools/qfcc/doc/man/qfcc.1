@@ -36,16 +36,78 @@ qfcc \- The QuakeForge Code Compiler
 understand.
 .PP
 .SH OPTIONS
-\fBqfcc\fP accepts the following options:
+\fBqfcc\fP takes the following arguments:
 .TP
-.B \-s, \-\-source <dir>
-Set source directory for "progs.src".
+.B \-s, \-\-source DIR
+look for progs.src in DIR instead of the current directory.
+.TP
+.B \-q
+Inhibit some of qfcc's normal output.
+.TP
+.B \-\-quiet LEVEL
+Set quiet level to LEVEL. 1 is equivalent to \-q, 2 is silence.
+.TP
+.B \-g, \-\-debug
+Output symbol information for the QuakeForge server's built-in debugger.
+.TP
+.B \-\-code OPTION,...
+Set code generation options. See
+.B
+CODE GENERATION OPTIONS
+for details.
+.TP
+.B \-\-warn OPTION,...
+Set warning options. See
+.B
+WARNING OPTIONS
+for details.
 .TP
 .B \-h, \-\-help
 Show summary of options.
 .TP
 .B \-V, \-\-version
-Show version of program.
+Show the version of qfcc.
+.SH "CODE GENERATION OPTIONS"
+The following options are valid for \fBqfcc\fP's
+.B \-\-code
+argument:
+.TP
+.B cow
+Allow assignment to initialized globals. In QuakeC, a global that has been
+initialized to a value is supposed to be treated like a named constant. However,
+.B qcc
+never really enforced this. The
+.B cow
+option allows
+.B qfcc
+to gracefully cope with QuakeC source that assigns values to
+initialized globals in this manner. (also known as "copy on write" -- never mind
+the bovine connotations)
+.TP
+.B v6only
+Restrict the compiler to only version 6 progs (original Quake/QuakeWorld)
+features. This means that the compiled data file should be able to run on older
+servers, as long as you have not used any QuakeForge-specific built-in
+functions. Also disables some of the compiler's features (like integers and
+string manipulation support).
+.SH "WARNING OPTIONS"
+The following options are valid for \fBqfcc\fP's
+.B \-\-warn
+argument:
+.TP
+.B error
+Promote warnings to errors. This works just like \fBgcc\fP's
+.B -Werror
+argument.
+.TP
+.B undef-functions
+Emit a warning when a function is called, but has not yet been defined.
+.TP
+.B vararg-integer
+Emit a warning when a function that takes a variable number of arguments is
+passed a constant of an integer type.
+.SH "FILES"
+progs.src
 .SH "SEE ALSO"
 .BR quakeforge (1)
 .SH AUTHORS
