@@ -86,8 +86,6 @@ particle_new (ptype_t type, int texnum, const vec3_t org, float scale,
 		return NULL;
 	}
 */
-	if(gl_feature_mach64 && type == pt_smokecloud && texnum == part_tex_smoke )
-		return;
 
 	part = &particles[numparticles++];
 
@@ -133,21 +131,27 @@ R_InitParticles (void)
 	if (r_maxparticles && r_init) {
 		if (vaelements > 3)
 			pVAsize = min (vaelements - (vaelements % 4), r_maxparticles * 4);
-		else
+		else if (vaelements >= 0)
 			pVAsize = r_maxparticles * 4;
-		Con_Printf ("Particles: %i maximum vertex elements.\n", pVAsize);
+		else
+			pVAsize = 0;
+		if (pVAsize) {
+			Con_Printf ("Particles: %i maximum vertex elements.\n", pVAsize);
 
-		if (particleVertexArray)
-			free (particleVertexArray);
-		particleVertexArray = (varray_t2f_c4ub_v3f_t *)
-			calloc (pVAsize, sizeof (varray_t2f_c4ub_v3f_t));
-		qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, particleVertexArray);
+			if (particleVertexArray)
+				free (particleVertexArray);
+			particleVertexArray = (varray_t2f_c4ub_v3f_t *)
+				calloc (pVAsize, sizeof (varray_t2f_c4ub_v3f_t));
+			qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, particleVertexArray);
 
-		if (pVAindices)
-			free (pVAindices);
-		pVAindices = (int *) calloc (pVAsize, sizeof (int));
-		for (i = 0; i < pVAsize; i++)
-			pVAindices[i] = i;
+			if (pVAindices)
+				free (pVAindices);
+			pVAindices = (int *) calloc (pVAsize, sizeof (int));
+			for (i = 0; i < pVAsize; i++)
+				pVAindices[i] = i;
+		} else {
+			Con_Printf ("Particles: Vertex Array use disabled.\n");
+		}
 	} else {
 		if (particleVertexArray) {
 			free (particleVertexArray);
@@ -1534,7 +1538,7 @@ R_DrawParticles (void)
 void
 r_easter_eggs_f (cvar_t *var)
 {
-	if (easter_eggs) {
+	if (easter_eggs && !gl_feature_mach64) {
 		if (easter_eggs->int_val) {
 			R_ParticleExplosion = R_ParticleExplosion_EE;
 			R_TeleportSplash = R_TeleportSplash_EE;
@@ -1560,7 +1564,7 @@ void
 r_particles_style_f (cvar_t *var)
 {
 	if (r_particles_style) {
-		if (r_particles_style->int_val) {
+		if (r_particles_style->int_val && !gl_feature_mach64) {
 			R_BlobExplosion = R_BlobExplosion_QF;
 			R_ParticleExplosion = R_ParticleExplosion_QF;
 			R_ParticleExplosion2 = R_ParticleExplosion2_QF;
