@@ -1220,36 +1220,14 @@ SV_EasyRecord_f (void)
 	}
 
 	// Make sure the filename doesn't contain illegal characters
-	dsprintf (name2, "%s/%s/%s%s%s", 
+	dsprintf (name2, "%s/%s%s%s%s%s", 
 			  qfs_gamedir->dir.def, sv_demoDir->string,
+			  sv_demoDir->string[0] ? "/" : "",
 			  sv_demoPrefix->string, SV_CleanName (name->str),
 			  sv_demoSuffix->string);
-	QFS_CreatePath (name2->str);
 
-	// find a filename that doesn't exist yet
-	dsprintf (name, "%s", name2->str);
-	name->size += 4;
-	dstring_adjust (name);
-	QFS_DefaultExtension (name->str, ".mvd");
-	if ((f = QFS_Open (name->str, "rb")) == 0)
-		f = QFS_Open (va ("%s.gz", name->str), "rb");
-
-	if (f) {
-		i = 1;
-		do {
-			Qclose (f);
-			dsprintf (name, "%s_%02i", name2->str, i);
-			name->size += 4;
-			dstring_adjust (name);
-			QFS_DefaultExtension (name->str, ".mvd");
-			if ((f = QFS_Open (name->str, "rb")) == 0)
-				f = QFS_Open (va ("%s.gz", name->str), "rb");
-			i++;
-		} while (f);
-	}
-
-
-	SV_Record (name->str);
+	if (QFS_NextFilename (name, name2->str, ".mvd"))
+		SV_Record (name->str);
 
 	dstring_delete (name);
 	dstring_delete (name2);
