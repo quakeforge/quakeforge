@@ -32,24 +32,42 @@
 #ifndef __function_h
 #define __function_h
 
+#include "QF/pr_comp.h"
+
+typedef struct function_s {
+	struct function_s	*next;
+	dfunction_t			*dfunc;
+	pr_auxfunction_t	*aux;		// debug info;
+	int					builtin;	// if non 0, call an internal function
+	int					code;		// first statement
+	const char			*file;		// source file with definition
+	int					file_line;
+	struct def_s		*def;
+	int					parm_ofs[MAX_PARMS];	// allways contiguous, right?
+} function_t;
+
+extern function_t *pr_functions;
+extern function_t *current_func;
+
 typedef struct param_s {
 	// the first two fields match the first two fiels of keywordarg_t in
 	// method.h
 	struct param_s *next;
 	const char *selector;
-	type_t     *type;
+	struct type_s *type;
 	const char *name;
 } param_t;
 
 struct expr_s;
 
-param_t *new_param (const char *selector, type_t *type, const char *name);
+param_t *new_param (const char *selector, struct type_s *type,
+					const char *name);
 param_t *_reverse_params (param_t *params, param_t *next);
 param_t *reverse_params (param_t *params);
-type_t *parse_params (type_t *type, param_t *params);
-void build_scope (function_t *f, def_t *func, param_t *params);
+struct type_s *parse_params (struct type_s *type, param_t *params);
+void build_scope (function_t *f, struct def_s *func, param_t *params);
 function_t *new_function (void);
-void build_builtin_function (def_t *def, struct expr_s *bi_val);
+void build_builtin_function (struct def_s *def, struct expr_s *bi_val);
 void build_function (function_t *f);
 void finish_function (function_t *f);
 void emit_function (function_t *f, expr_t *e);

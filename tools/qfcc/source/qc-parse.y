@@ -48,7 +48,9 @@ static const char rcsid[] =
 #include "qfcc.h"
 #include "expr.h"
 #include "function.h"
+#include "immediate.h"
 #include "method.h"
+#include "options.h"
 #include "class.h"
 #include "struct.h"
 #include "switch.h"
@@ -94,7 +96,7 @@ void free_local_inits (hashtab_t *def_list);
 	char		*string_val;
 	float		vector_val[3];
 	float		quaternion_val[4];
-	function_t *function;
+	struct function_s *function;
 	struct switch_block_s	*switch_block;
 	struct param_s	*param;
 	struct method_s	*method;
@@ -374,7 +376,7 @@ var_initializer
 				PR_DefInitialized (current_def);
 			} else {
 				if ($2->type >= ex_string) {
-					current_def = PR_ReuseConstant ($2,  current_def);
+					current_def = ReuseConstant ($2,  current_def);
 				} else {
 					error ($2, "non-constant expression used for initializer");
 				}

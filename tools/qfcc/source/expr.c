@@ -48,9 +48,12 @@ static const char rcsid[] =
 
 #include "qfcc.h"
 #include "expr.h"
-#include "function.h"
 #include "class.h"
+#include "function.h"
+#include "idstuff.h"
+#include "immediate.h"
 #include "method.h"
+#include "options.h"
 #include "struct.h"
 #include "type.h"
 #include "qc-parse.h"
@@ -1530,7 +1533,7 @@ function_expr (expr_t *e1, expr_t *e2)
 		// FIXME eww, I hate this, but it's needed :(
 		// FIXME make a qc hook? :)
 		def_t      *func = e1->e.def;
-		def_t      *e = PR_ReuseConstant (e2, 0);
+		def_t      *e = ReuseConstant (e2, 0);
 
 		if (strncmp (func->name, "precache_sound", 14) == 0)
 			PrecacheSound (e, func->name[4]);

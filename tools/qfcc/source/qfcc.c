@@ -61,10 +61,16 @@ static const char rcsid[] =
 #include <QF/sys.h>
 #include <QF/va.h>
 
-#include "cmdlib.h"
 #include "qfcc.h"
-#include "expr.h"
 #include "class.h"
+#include "cmdlib.h"
+#include "cpp.h"
+#include "def.h"
+#include "expr.h"
+#include "function.h"
+#include "idstuff.h"
+#include "immediate.h"
+#include "options.h"
 #include "type.h"
 
 options_t   options;
@@ -102,48 +108,6 @@ const char *big_function = 0;
 ddef_t      fields[MAX_FIELDS];
 int         numfielddefs;
 
-
-/*
-	CopyString
-
-	Return an offset from the string heap
-*/
-static hashtab_t *strings_tab;
-
-static const char *
-stings_get_key (void *_str, void *unsued)
-{
-	return (char *) _str;
-}
-
-int
-CopyString (const char *str)
-{
-	int         old;
-
-	if (!strings_tab) {
-		strings_tab = Hash_NewTable (16381, stings_get_key, 0, 0);
-		Hash_Add (strings_tab, strings);
-	}
-	old = strofs;
-	strcpy (strings + strofs, str);
-	strofs += strlen (str) + 1;
-	Hash_Add (strings_tab, strings + old);
-	return old;
-}
-
-int
-ReuseString (const char *str)
-{
-	char       *s;
-
-	if (!strings_tab)
-		return CopyString (str);
-	s = Hash_Find (strings_tab, str);
-	if (s)
-		return s - strings;
-	return CopyString (str);
-}
 
 void
 InitData (void)
@@ -340,13 +304,8 @@ WriteData (int crc)
 void
 PR_BeginCompilation (void)
 {
-	int         i;
-
 	numpr_globals = RESERVED_OFS;
 	pr.def_tail = &pr.def_head;
-
-	for (i = 0; i < RESERVED_OFS; i++)
-		pr_global_defs[i] = &def_void;
 
 	pr_error_count = 0;
 }
@@ -412,8 +371,8 @@ qboolean PR_FinishCompilation (void)
 	if (options.code.debug) {
 		e.type = ex_string;
 		e.e.string_val = debugfile;
-		PR_ReuseConstant (&e, PR_GetDef (&type_string, ".debug_file", 0,
-										 &numpr_globals));
+		ReuseConstant (&e, PR_GetDef (&type_string, ".debug_file", 0,
+									  &numpr_globals));
 	}
 
 	for (def = pr.def_head.def_next; def; def = def->def_next) {

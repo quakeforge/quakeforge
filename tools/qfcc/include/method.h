@@ -39,8 +39,8 @@ typedef struct method_s {
 	int         instance;
 	param_t    *selector;
 	param_t    *params;
-	type_t     *type;
-	def_t      *def;
+	struct type_s *type;
+	struct def_s *def;
 	char       *name;
 	char       *types;
 } method_t;
@@ -62,9 +62,10 @@ struct class_s;
 struct expr_s;
 struct dstring_s;
 
-method_t *new_method (type_t *ret_type, param_t *selector, param_t *opt_parms);
+method_t *new_method (struct type_s *ret_type, param_t *selector,
+					  param_t *opt_parms);
 void add_method (methodlist_t *methodlist, method_t *method);
-def_t *method_def (struct class_s *class, method_t *method);
+struct def_s *method_def (struct class_s *class, method_t *method);
 
 methodlist_t *new_methodlist (void);
 void copy_methods (methodlist_t *dst, methodlist_t *src);

@@ -35,6 +35,13 @@ static const char rcsid[] =
 #include "cmdlib.h"
 #include "qfcc.h"
 #include "expr.h"
+#include "options.h"
+#include "type.h"
+
+#define	MAX_SOUNDS		1024
+#define	MAX_MODELS		1024
+#define	MAX_FILES		1024
+#define	MAX_DATA_PATH	64
 
 static char precache_sounds[MAX_SOUNDS][MAX_DATA_PATH];
 static int  precache_sounds_block[MAX_SOUNDS];

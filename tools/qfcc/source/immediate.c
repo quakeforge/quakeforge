@@ -36,6 +36,7 @@ static const char rcsid[] =
 
 #include "qfcc.h"
 #include "expr.h"
+#include "immediate.h"
 #include "type.h"
 
 static hashtab_t *string_imm_defs;
@@ -47,6 +48,7 @@ static hashtab_t *func_imm_defs;
 static hashtab_t *pointer_imm_defs;
 static hashtab_t *quaternion_imm_defs;
 static hashtab_t *integer_imm_defs;
+static hashtab_t *strings_tab;
 
 static const char *
 string_imm_get_key (void *_def, void *unused)
@@ -100,8 +102,43 @@ int_imm_get_key (void *_def, void *_str)
 	return rep;
 }
 
+static const char *
+stings_get_key (void *_str, void *unsued)
+{
+	return (char *) _str;
+}
+
+int
+CopyString (const char *str)
+{
+	int         old;
+
+	if (!strings_tab) {
+		strings_tab = Hash_NewTable (16381, stings_get_key, 0, 0);
+		Hash_Add (strings_tab, strings);
+	}
+	old = strofs;
+	strcpy (strings + strofs, str);
+	strofs += strlen (str) + 1;
+	Hash_Add (strings_tab, strings + old);
+	return old;
+}
+
+int
+ReuseString (const char *str)
+{
+	char       *s;
+
+	if (!strings_tab)
+		return CopyString (str);
+	s = Hash_Find (strings_tab, str);
+	if (s)
+		return s - strings;
+	return CopyString (str);
+}
+
 def_t *
-PR_ReuseConstant (expr_t *expr, def_t *def)
+ReuseConstant (expr_t *expr, def_t *def)
 {
 	def_t      *cn;
 	static dstring_t*rep = 0;
@@ -228,7 +265,6 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 	} else {
 		cn = PR_NewDef (type, ".imm", 0);
 		cn->ofs = PR_NewLocation (type);
-		pr_global_defs[cn->ofs] = cn;
 		if (type == &type_vector || type == &type_quaternion) {
 			int         i;
 

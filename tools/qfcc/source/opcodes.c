@@ -33,6 +33,8 @@ static const char rcsid[] =
 #include <QF/hash.h>
 
 #include "qfcc.h"
+#include "options.h"
+#include "type.h"
 
 hashtab_t  *opcode_type_table_ab;
 hashtab_t  *opcode_type_table_abc;

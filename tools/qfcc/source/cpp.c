@@ -54,7 +54,8 @@ static const char rcsid[] =
 
 #include "QF/dstring.h"
 
-#include "qfcc.h"
+#include "cpp.h"
+#include "options.h"
 
 typedef struct cpp_arg_s {
 	struct cpp_arg_s *next;

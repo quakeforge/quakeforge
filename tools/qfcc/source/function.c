@@ -47,6 +47,7 @@ static const char rcsid[] =
 
 #include "expr.h"
 #include "function.h"
+#include "immediate.h"
 #include "type.h"
 
 param_t *

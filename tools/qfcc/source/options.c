@@ -45,9 +45,11 @@ static const char rcsid[] =
 
 #include <getopt.h>
 
+#include "QF/pr_comp.h"
 #include "QF/va.h"
 
-#include "qfcc.h"
+#include "cpp.h"
+#include "options.h"
 
 const char *this_program;
 

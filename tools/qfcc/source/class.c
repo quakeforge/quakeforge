@@ -48,9 +48,10 @@ static const char rcsid[] =
 
 #include "qfcc.h"
 
-#include "expr.h"
 #include "class.h"
+#include "def.h"
 #include "expr.h"
+#include "immediate.h"
 #include "method.h"
 #include "struct.h"
 #include "type.h"

@@ -46,6 +46,8 @@ static const char rcsid[] =
 
 #include "qfcc.h"
 #include "expr.h"
+#include "immediate.h"
+#include "options.h"
 #include "type.h"
 #include "qc-parse.h"
 
@@ -322,7 +324,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 					zero.type = expr_types[extract_type (e->e.expr.e1)];
 
 					operator = "-";
-					def_a = PR_ReuseConstant (&zero, 0);
+					def_a = ReuseConstant (&zero, 0);
 					def_b = emit_sub_expr (e->e.expr.e1, 0);
 					if (!dest) {
 						dest = PR_GetTempDef (e->e.expr.type, pr_scope);
@@ -415,7 +417,7 @@ emit_sub_expr (expr_t *e, def_t *dest)
 		case ex_quaternion:
 		case ex_integer:
 		case ex_uinteger:
-			d = PR_ReuseConstant (e, 0);
+			d = ReuseConstant (e, 0);
 			break;
 		case ex_short:
 			d = PR_NewDef (&type_short, 0, pr_scope);

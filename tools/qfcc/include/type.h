@@ -32,6 +32,21 @@
 #ifndef __type_h
 #define __type_h
 
+#include "QF/pr_comp.h"
+
+typedef struct type_s {
+	etype_t			type;
+	struct type_s	*next;
+// function/pointer/struct types are more complex
+	struct type_s	*aux_type;	// return type or field type
+	int				num_parms;	// -1 = variable args
+	struct type_s	*parm_types[MAX_PARMS];	// only [num_parms] allocated
+	struct hashtab_s *struct_fields;
+	struct struct_field_s	*struct_head;
+	struct struct_field_s	**struct_tail;
+	struct class_s	*class;		// for ev_class
+} type_t;
+
 extern	type_t	type_void;
 extern	type_t	type_string;
 extern	type_t	type_float;
@@ -56,9 +71,6 @@ extern	type_t	type_Method;
 extern	type_t	*type_category;
 extern	type_t	*type_ivar;
 extern	type_t	*type_module;
-
-extern	def_t	def_void;
-extern	def_t	def_function;
 
 struct dstring_s;
 

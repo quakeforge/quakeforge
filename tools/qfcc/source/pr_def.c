@@ -44,7 +44,6 @@ typedef struct locref_s {
 	int         ofs;
 } locref_t;
 
-def_t      *pr_global_defs[MAX_REGS];	// to find def for a global variable
 static def_t *free_temps[4];			// indexted by type size
 static def_t temp_scope;
 static locref_t *free_locs[4];			// indexted by type size
@@ -103,7 +102,6 @@ PR_GetArray (type_t *etype, const char *name, int size, def_t *scope,
 	def->ofs = *allocate;
 	def->initialized = def->constant = 1;
 	*allocate += type_size (type) * size + 1;
-	pr_global_defs[def->ofs] = def;
 	G_INT (def->ofs) = def->ofs + 1;
 	return def;
 }
@@ -130,7 +128,6 @@ PR_GetDef (type_t *type, const char *name, def_t *scope, int *allocate)
 
 	// FIXME: need to sort out location re-use
 	def->ofs = *allocate;
-	pr_global_defs[*allocate] = def;
 
 	/* 
 		make automatic defs for the vectors elements .origin can be accessed

@@ -71,14 +71,14 @@ typedef struct {
 
 typedef struct {
 	struct expr_s *expr;
-	def_t		*def;
-	type_t		*type;
+	struct def_s *def;
+	struct type_s *type;
 	int			users;
 } ex_temp_t;
 
 typedef struct {
 	int			val;
-	type_t		*type;
+	struct type_s *type;
 	int			abs;
 } ex_pointer_t;
 
@@ -94,11 +94,11 @@ typedef struct expr_s {
 		ex_block_t block;
 		struct {
 			int		op;
-			type_t	*type;
+			struct type_s *type;
 			struct expr_s *e1;
 			struct expr_s *e2;
 		}		expr;
-		def_t	*def;
+		struct def_s *def;
 		ex_temp_t temp;
 
 		const char	*string_val;
@@ -121,7 +121,7 @@ extern expr_type expr_types[];
 
 extern expr_t *local_expr;
 
-type_t *get_type (expr_t *e);
+struct type_s *get_type (expr_t *e);
 etype_t extract_type (expr_t *e);
 
 expr_t *new_expr (void);
@@ -130,10 +130,10 @@ expr_t *new_label_expr (void);
 expr_t *new_block_expr (void);
 expr_t *new_binary_expr (int op, expr_t *e1, expr_t *e2);
 expr_t *new_unary_expr (int op, expr_t *e1);
-expr_t *new_temp_def_expr (type_t *type);
+expr_t *new_temp_def_expr (struct type_s *type);
 expr_t *new_bind_expr (expr_t *e1, expr_t *e2);
 expr_t *new_name_expr (const char *name);
-expr_t *new_def_expr (def_t *def);
+expr_t *new_def_expr (struct def_s *def);
 expr_t *new_self_expr (void);
 expr_t *new_this_expr (void);
 
@@ -151,17 +151,18 @@ expr_t *binary_expr (int op, expr_t *e1, expr_t *e2);
 expr_t *asx_expr (int op, expr_t *e1, expr_t *e2);
 expr_t *unary_expr (int op, expr_t *e);
 expr_t *function_expr (expr_t *e1, expr_t *e2);
-expr_t *return_expr (function_t *f, expr_t *e);
+struct function_s;
+expr_t *return_expr (struct function_s *f, expr_t *e);
 expr_t *conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2);
 expr_t *incop_expr (int op, expr_t *e, int postop);
 expr_t *array_expr (expr_t *array, expr_t *index);
-expr_t *address_expr (expr_t *e1, expr_t *e2, type_t *t);
+expr_t *address_expr (expr_t *e1, expr_t *e2, struct type_s *t);
 expr_t *assign_expr (expr_t *e1, expr_t *e2);
-expr_t *cast_expr (type_t *t, expr_t *e);
+expr_t *cast_expr (struct type_s *t, expr_t *e);
 
-void init_elements (def_t *def, expr_t *eles);
+void init_elements (struct def_s *def, expr_t *eles);
 
-def_t *emit_statement (int line, opcode_t *op, def_t *var_a, def_t *var_b, def_t *var_c);
+struct def_s *emit_statement (int line, opcode_t *op, struct def_s *var_a, struct def_s *var_b, struct def_s *var_c);
 void emit_expr (expr_t *e);
 
 expr_t *error (expr_t *e, const char *fmt, ...) __attribute__((format(printf, 2,3)));
@@ -174,7 +175,7 @@ extern int lineno_base;
 struct keywordarg_s;
 expr_t *selector_expr (struct keywordarg_s *selector);
 expr_t *protocol_expr (const char *protocol);
-expr_t *encode_expr (type_t *type);
+expr_t *encode_expr (struct type_s *type);
 expr_t *message_expr (expr_t *receiver, struct keywordarg_s *message);
 
 #endif//__expr_h
