@@ -129,34 +129,55 @@ new_scope (scope_type type, defspace_t *space, scope_t *parent)
 	return scope;
 }
 
+static void
+set_storage_bits (def_t *def, storage_class_t storage)
+{
+	switch (storage) {
+		case st_none:
+			break;
+		case st_global:
+			def->global = 1;
+			def->external = 0;
+			break;
+		case st_extern:
+			def->global = 1;
+			def->external = 1;
+			break;
+		case st_static:
+			def->external = 0;
+			def->global = 0;
+			break;
+		case st_local:
+			break;
+	}
+}
+
 static const char *vector_component_names[] = {"%s_x", "%s_y", "%s_z"};
 
 static void
-vector_component (def_t *vec, int comp, scope_t *scope)
+vector_component (int is_field, def_t *vec, int comp, scope_t *scope,
+				  storage_class_t storage)
 {
 	def_t      *d;
 	const char *name;
 
 	name = save_string (va (vector_component_names[comp], vec->name));
-	d = new_def (&type_float, name, scope);
+	if (vec->external) {
+		d = get_def (is_field ? &type_floatfield : &type_float, name, scope,
+					 st_none);
+		if (!d) {
+			error (0, "internal error");
+			abort ();
+		}
+	} else {
+		d = new_def (is_field ? &type_floatfield : &type_float, name, scope);
+	}
 	d->used = 1;
 	d->parent = vec;
 	d->ofs = vec->ofs + comp;
-	Hash_Add (defs_by_name, d);
-}
-
-static void
-vector_field_component (def_t *vec, int comp, scope_t *scope)
-{
-	def_t      *d;
-	const char *name;
-
-	name = save_string (va (vector_component_names[comp], vec->name));
-	d = new_def (&type_floatfield, name, scope);
-	d->used = 1;				// always `used'
-	d->parent = vec;
-	d->ofs = vec->ofs + comp;
-	G_INT (d->ofs) = G_INT (vec->ofs) + comp;
+	set_storage_bits (d, storage);
+	if (is_field && (storage == st_global || storage == st_static))
+		G_INT (d->ofs) = G_INT (vec->ofs) + comp;
 	Hash_Add (defs_by_name, d);
 }
 
@@ -171,39 +192,62 @@ get_def (type_t *type, const char *name, scope_t *scope,
 		 storage_class_t storage)
 {
 	def_t      *def = check_for_name (type, name, scope, storage);
+	defspace_t *space;
 
-	if (def || storage == st_none)
+	if (storage == st_none)
 		return def;
 
-	// allocate a new def
-	def = new_def (type, name, scope);
-	if (name)
-		Hash_Add (defs_by_name, def);
+	if (def) {
+		if (!def->external)
+			return def;
+	} else {
+		// allocate a new def
+		def = new_def (type, name, scope);
+		if (name)
+			Hash_Add (defs_by_name, def);
+	}
 
-	if (type->type == ev_field && type->aux_type == &type_vector)
-		def->ofs = new_location (type->aux_type, scope->space);
-	else
-		def->ofs = new_location (type, scope->space);
+	switch (storage) {
+		case st_none:
+		case st_global:
+		case st_local:
+			space = scope->space;
+			break;
+		case st_extern:
+			space = 0;
+			break;
+		case st_static:
+			space = pr.near_data;
+			break;
+	}
+	if (space) {
+		if (type->type == ev_field && type->aux_type == &type_vector)
+			def->ofs = new_location (type->aux_type, space);
+		else
+			def->ofs = new_location (type, space);
+	}
 
 	/* 
 		make automatic defs for the vectors elements .origin can be accessed
 		as .origin_x, .origin_y, and .origin_z
 	*/
 	if (type->type == ev_vector && name) {
-		vector_component (def, 0, scope);
-		vector_component (def, 1, scope);
-		vector_component (def, 2, scope);
+		vector_component (0, def, 0, scope, storage);
+		vector_component (0, def, 1, scope, storage);
+		vector_component (0, def, 2, scope, storage);
 	}
 
 	if (type->type == ev_field) {
-		G_INT (def->ofs) = new_location (type->aux_type, pr.entity_data);
+		if (storage == st_global || storage == st_static)
+			G_INT (def->ofs) = new_location (type->aux_type, pr.entity_data);
 
 		if (type->aux_type->type == ev_vector) {
-			vector_field_component (def, 0, scope);
-			vector_field_component (def, 1, scope);
-			vector_field_component (def, 2, scope);
+			vector_component (1, def, 0, scope, storage);
+			vector_component (1, def, 1, scope, storage);
+			vector_component (1, def, 2, scope, storage);
 		}
 	}
+	set_storage_bits (def, storage);
 
 	return def;
 }
@@ -226,7 +270,6 @@ new_def (type_t *type, const char *name, scope_t *scope)
 
 	def->scope = scope;
 	def->space = scope->space;
-	def->global = scope->type == sc_global;
 
 	def->file = s_file;
 	def->line = pr_source_line;

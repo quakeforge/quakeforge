@@ -367,6 +367,12 @@ finish_compilation (void)
 			}
 		}
 
+	for (d = pr.scope->head; d; d = d->def_next) {
+		if (d->external) {
+			errors = true;
+			error (0, "undefined global %s\n", d->name);
+		}
+	}
 	if (errors)
 		return !errors;
 
@@ -374,7 +380,7 @@ finish_compilation (void)
 		e.type = ex_string;
 		e.e.string_val = debugfile;
 		ReuseConstant (&e, get_def (&type_string, ".debug_file", pr.scope,
-					   st_static));
+					   st_global));
 	}
 
 	for (def = pr.scope->head; def; def = def->def_next) {
