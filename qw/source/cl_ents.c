@@ -522,9 +522,12 @@ CL_LinkPacketEntities (void)
 
 		model = (*ent)->model;
 
-		if (!model)
-			Host_Error ("null model: %d %s\n", s1->number,
+		if (!model) {
+			Con_Printf ("WARNING: null model: %d %s\n", s1->number,
 						cl.model_precache[s1->modelindex]->name);
+			model = (*ent)->model = cl.model_precache[s1->modelindex];
+			cl_entity_model_states[s1->number].model = model;
+		}
 
 		if (model->flags & EF_ROTATE) { // rotate binary objects locally
 			(*ent)->angles[0] = 0;
