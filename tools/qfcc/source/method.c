@@ -115,6 +115,22 @@ new_method (type_t *ret_type, param_t *selector, param_t *opt_parms)
 	return meth;
 }
 
+method_t *
+copy_method (method_t *method)
+{
+	method_t   *meth = calloc (sizeof (method_t), 1);
+	param_t    *self = copy_params (method->params);
+
+	meth->next = 0;
+	meth->instance = method->instance;
+	meth->selector = self->next->next;
+	meth->params = self;
+	meth->type = parse_params (method->type->aux_type, meth->params);
+	meth->name = method->name;
+	meth->types = method->types;
+	return meth;
+}
+
 void
 add_method (methodlist_t *methodlist, method_t *method)
 {

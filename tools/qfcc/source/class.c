@@ -390,26 +390,44 @@ class_ivar_expr (class_type_t *class_type, const char *name)
 method_t *
 class_find_method (class_type_t *class_type, method_t *method)
 {
-	methodlist_t *methods;
+	methodlist_t *methods, *start_methods;;
 	method_t   *m;
 	dstring_t  *sel;
+	class_t    *class, *start_class;
 	const char *class_name;
 	const char *category_name = 0;
 
 	if (!class_type->is_class) {
 		methods = class_type->c.category->methods;
 		category_name = class_type->c.category->name;
-		class_name = class_type->c.category->class->name;
+		class = class_type->c.category->class;
 	} else {
-		methods = class_type->c.class->methods;
-		class_name = class_type->c.class->name;
+		class = class_type->c.class;
+		methods = class->methods;
 	}
-	for (m = methods->head; m; m = m->next)
-		if (method_compare (method, m)) {
-			if (m->type != method->type)
-				error (0, "method type mismatch");
-			return m;
-		}
+	class_name = class->name;
+	start_methods = methods;
+	start_class = class;
+	while (class) {
+		for (m = methods->head; m; m = m->next)
+			if (method_compare (method, m)) {
+				if (m->type != method->type)
+					error (0, "method type mismatch");
+				if (methods != start_methods) {
+					m = copy_method (m);
+					if (m->instance)
+						m->params->type = start_class->type;
+					else
+						m->params->type = &type_Class;
+					add_method (methods, m);
+				}
+				return m;
+			}
+		if (class->methods == methods)
+			class = class->super_class;
+		else
+			methods = class->methods;
+	}
 	sel = dstring_newstr ();
 	selector_name (sel, (keywordarg_t *)method->selector);
 	if (options.warnings.interface_check) {
