@@ -347,8 +347,10 @@ C_Print (const char *fmt, va_list args)
 
 	txt = buffer->str;
 
-	if (log_file)
+	if (log_file) {
 		Qputs (log_file, buffer->str);
+		Qflush (log_file);
+	}
 #ifdef HAVE_CURSES_H
 	if (use_curses) {
 		Con_BufferAddText (output_buffer, buffer->str);
