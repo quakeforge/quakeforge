@@ -1138,6 +1138,7 @@ function_expr (expr_t *e1, expr_t *e2)
 		if (ftype->parm_types[i - 1] == &type_float && e->type == ex_integer) {
 			e->type = ex_float;
 			e->e.float_val = e->e.integer_val;
+			t = &type_float;
 		}
 		if (ftype->num_parms != -1) {
 			if (t != ftype->parm_types[i - 1])
@@ -1201,6 +1202,7 @@ return_expr (function_t *f, expr_t *e)
 		if (f->def->type->aux_type == &type_float && e->type == ex_integer) {
 			e->type = ex_float;
 			e->e.float_val = e->e.integer_val;
+			t = &type_float;
 		}
 		if (f->def->type->aux_type != t)
 			return error (e, "type mismatch for return value of %s",
