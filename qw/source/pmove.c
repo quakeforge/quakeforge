@@ -108,13 +108,13 @@ PM_ClipVelocity (vec3_t in, vec3_t normal, vec3_t out, float overbounce)
 	return blocked;
 }
 
+#define	MAX_CLIP_PLANES	5
+
 /*
 	PM_FlyMove
 
 	The basic solid body movement clip that slides along multiple planes
 */
-#define	MAX_CLIP_PLANES	5
-
 int
 PM_FlyMove (void)
 {
@@ -240,8 +240,7 @@ PM_FlymodeMove (void)
 	VectorCopy (pmvel, pmtmp);
 	pmspeed = VectorNormalize (pmtmp);	// don't alter pmvel
 
-	if (pmspeed > movevars.maxspeed)	// there IS a spoon, Neo..
-	{
+	if (pmspeed > movevars.maxspeed) {	// there IS a spoon, Neo..
 		VectorScale (pmvel, movevars.maxspeed / pmspeed, pmvel);
 		pmspeed = movevars.maxspeed;
 	}
@@ -306,9 +305,8 @@ PM_GroundMove (void)
 	VectorCopy (pmove.origin, dest);
 	dest[2] += STEPSIZE;
 	trace = PM_PlayerMove (pmove.origin, dest);
-	if (!trace.startsolid && !trace.allsolid) {
+	if (!trace.startsolid && !trace.allsolid)
 		VectorCopy (trace.endpos, pmove.origin);
-	}
 	// slide move
 	PM_FlyMove ();
 
@@ -318,9 +316,8 @@ PM_GroundMove (void)
 	trace = PM_PlayerMove (pmove.origin, dest);
 	if (trace.plane.normal[2] < 0.7)
 		goto usedown;
-	if (!trace.startsolid && !trace.allsolid) {
+	if (!trace.startsolid && !trace.allsolid)
 		VectorCopy (trace.endpos, pmove.origin);
-	}
 	VectorCopy (pmove.origin, up);
 
 	// decide which one went farther
@@ -487,8 +484,8 @@ PM_WaterMove (void)
 	VectorCopy (dest, start);
 	start[2] += STEPSIZE + 1;
 	trace = PM_PlayerMove (start, dest);
-	if (!trace.startsolid && !trace.allsolid)	// FIXME: check steep slope?
-	{									// walked up the step
+	if (!trace.startsolid && !trace.allsolid) {	// FIXME: check steep slope?
+												// walked up the step
 		VectorCopy (trace.endpos, pmove.origin);
 		return;
 	}
@@ -544,9 +541,9 @@ PM_AirMove (void)
 		if (!PM_FlyMove ()) {
 			// the move didn't get blocked
 			PM_CategorizePosition ();
-			if (onground != -1)			// but we're on ground now
-			{
+			if (onground != -1) {			// but we're on ground now
 				vec3_t      original;
+
 				// This is a hack to fix the jumping bug
 				VectorCopy (pmove.origin, original);
 				// Calculate correct velocity
@@ -750,7 +747,7 @@ SpectatorMove (void)
 		speed = sqrt (speed);
 		drop = 0;
 
-		friction = movevars.friction * 1.5;	// extra friction
+		friction = movevars.friction * 1.5;					// extra friction
 		control = speed < movevars.stopspeed ? movevars.stopspeed : speed;
 		drop += control * friction * frametime;
 
@@ -831,6 +828,7 @@ PlayerMove (void)
 		&& onground != -1 && pmove.oldonground == -1	// just landed
 		&& no_pogo_stick->int_val & 2) {
 		float save = movevars.friction;
+
 		pmove.waterjumptime = 0;
 		movevars.friction *= 3;
 		PM_Friction ();

@@ -223,11 +223,9 @@ char        prespawn_name[] = "prespawn %i 0 %i";
 char        modellist_name[] = "modellist %i %i";
 char        soundlist_name[] = "soundlist %i %i";
 
-
 void        CL_RSShot_f (void);
 
 extern cvar_t *cl_showscoresuid;
-
 
 
 void
@@ -265,8 +263,8 @@ CL_SendConnectPacket (void)
 	double      t1, t2;
 
 // JACK: Fixed bug where DNS lookups would cause two connects real fast
-//       Now, adds lookup time to the connect time.
-//       Should I add it to realtime instead?!?!
+//		 Now, adds lookup time to the connect time.
+//		 Should I add it to realtime instead?!?!
 
 	if (cls.state != ca_disconnected)
 		return;
@@ -375,10 +373,8 @@ CL_Rcon_f (void)
 		to = cls.netchan.remote_address;
 	else {
 		if (!rcon_address->string[0]) {
-			Con_Printf ("You must either be connected, "
-						"or set the 'rcon_address' cvar "
-						"to issue rcon commands\n");
-
+			Con_Printf ("You must either be connected, or set the "
+						"'rcon_address' cvar to issue rcon commands\n");
 			return;
 		}
 		NET_StringToAdr (rcon_address->string, &to);
@@ -586,7 +582,7 @@ CL_FullServerinfo_f (void)
 		server_version = strdup (p);
 	} else if ((p = Info_ValueForKey (cl.serverinfo, "*version")) && *p) {
 		if (server_version == NULL)
-			Con_Printf ("QaukeWorld v%s Server\n", p);
+			Con_Printf ("QuakeWorld v%s Server\n", p);
 		server_version = strdup (p);
 	}
 
@@ -1245,10 +1241,10 @@ CL_Init (void)
 	// forward to server commands
 	Cmd_AddCommand ("kill", CL_Cmd_ForwardToServer, "Suicide :)");
 	Cmd_AddCommand ("pause", CL_Cmd_ForwardToServer, "Pause the game");
-	Cmd_AddCommand ("say", CL_Cmd_ForwardToServer, "Say something to all other "
-					"players");
-	Cmd_AddCommand ("say_team", CL_Cmd_ForwardToServer, "Say something only to "
-					"people on your team");
+	Cmd_AddCommand ("say", CL_Cmd_ForwardToServer, "Say something to all "
+					"other players");
+	Cmd_AddCommand ("say_team", CL_Cmd_ForwardToServer, "Say something only "
+					"to people on your team");
 	Cmd_AddCommand ("serverinfo", CL_Cmd_ForwardToServer, "Report the current "
 					"server info");
 }
@@ -1522,7 +1518,7 @@ Host_Frame (float time)
 	if ((sleeptime = Host_SimulationTime (time)) != 0) {
 #ifdef HAVE_USLEEP
 		if (cl_usleep_cache && sleeptime > 0.002) // minimum sleep time
-			usleep ((unsigned long)(sleeptime * 1000000 / 2));
+			usleep ((unsigned long) (sleeptime * 1000000 / 2));
 #endif
 		return;					// framerate is too high
 	}
@@ -1687,7 +1683,7 @@ Host_Init (void)
 	// only reads from within the quake file system, and changing that is
 	// probably Not A Good Thing (tm).
 	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG, CVAR_ROM, NULL,
-			"global configuration file");
+							 "global configuration file");
 	Cmd_Exec_File (cl_cbuf, fs_globalcfg->string);
 	Cbuf_Execute_Sets (cl_cbuf);
 

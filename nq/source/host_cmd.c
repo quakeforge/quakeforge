@@ -1074,88 +1074,93 @@ Host_Give_f (void)
 		case '7':
 		case '8':
 		case '9':
-		// MED 01/04/97 added hipnotic give stuff
-		if (hipnotic) {
-			if (t[0] == '6') {
-				if (t[1] == 'a')
+			// MED 01/04/97 added hipnotic give stuff
+			if (hipnotic) {
+				if (t[0] == '6') {
+					if (t[1] == 'a')
+						SVfloat (sv_player, items) =
+							(int) SVfloat (sv_player, items)
+							| HIT_PROXIMITY_GUN;
+					else
+						SVfloat (sv_player, items) =
+							(int) SVfloat (sv_player, items)
+							| IT_GRENADE_LAUNCHER;
+				} else if (t[0] == '9')
 					SVfloat (sv_player, items) =
-						(int) SVfloat (sv_player, items) | HIT_PROXIMITY_GUN;
-				else
+						(int) SVfloat (sv_player, items) | HIT_LASER_CANNON;
+				else if (t[0] == '0')
 					SVfloat (sv_player, items) =
-						(int) SVfloat (sv_player, items) | IT_GRENADE_LAUNCHER;
-			} else if (t[0] == '9')
-				SVfloat (sv_player, items) =
-					(int) SVfloat (sv_player, items) | HIT_LASER_CANNON;
-			else if (t[0] == '0')
-				SVfloat (sv_player, items) = (int) SVfloat (sv_player, items) | HIT_MJOLNIR;
-			else if (t[0] >= '2')
-				SVfloat (sv_player, items) =
-					(int) SVfloat (sv_player, items) | (IT_SHOTGUN << (t[0] - '2'));
-		} else {
-			if (t[0] >= '2')
-				SVfloat (sv_player, items) =
-					(int) SVfloat (sv_player, items) | (IT_SHOTGUN << (t[0] - '2'));
-		}
-		break;
+						(int) SVfloat (sv_player, items) | HIT_MJOLNIR;
+				else if (t[0] >= '2')
+					SVfloat (sv_player, items) =
+						(int) SVfloat (sv_player, items)
+						| (IT_SHOTGUN << (t[0] - '2'));
+			} else {
+				if (t[0] >= '2')
+					SVfloat (sv_player, items) =
+						(int) SVfloat (sv_player, items)
+						| (IT_SHOTGUN << (t[0] - '2'));
+			}
+			break;
 
 		case 's':
-		if (rogue) {
-			SVfloat (sv_player, ammo_shells1) = v;
-		}
+			if (rogue) {
+				SVfloat (sv_player, ammo_shells1) = v;
+			}
 
-		SVfloat (sv_player, ammo_shells) = v;
-		break;
+			SVfloat (sv_player, ammo_shells) = v;
+			break;
 		case 'n':
-		if (rogue) {
-			SVfloat (sv_player, ammo_nails1) = v;
-			if (SVfloat (sv_player, weapon) <= IT_LIGHTNING)
+			if (rogue) {
+				SVfloat (sv_player, ammo_nails1) = v;
+				if (SVfloat (sv_player, weapon) <= IT_LIGHTNING)
+					SVfloat (sv_player, ammo_nails) = v;
+			} else {
 				SVfloat (sv_player, ammo_nails) = v;
-		} else {
-			SVfloat (sv_player, ammo_nails) = v;
-		}
-		break;
+			}
+			break;
 		case 'l':
-		if (rogue) {
-			SVfloat (sv_player, ammo_lava_nails) = v;
-			if (SVfloat (sv_player, weapon) > IT_LIGHTNING)
-				SVfloat (sv_player, ammo_nails) = v;
-		}
-		break;
+			if (rogue) {
+				SVfloat (sv_player, ammo_lava_nails) = v;
+				if (SVfloat (sv_player, weapon) > IT_LIGHTNING)
+					SVfloat (sv_player, ammo_nails) = v;
+			}
+			break;
 		case 'r':
-		if (rogue) {
-			SVfloat (sv_player, ammo_rockets1) = v;
-			if (SVfloat (sv_player, weapon) <= IT_LIGHTNING)
+			if (rogue) {
+				SVfloat (sv_player, ammo_rockets1) = v;
+				if (SVfloat (sv_player, weapon) <= IT_LIGHTNING)
+					SVfloat (sv_player, ammo_rockets) = v;
+			} else {
 				SVfloat (sv_player, ammo_rockets) = v;
-		} else {
-			SVfloat (sv_player, ammo_rockets) = v;
-		}
-		break;
+			}
+			break;
 		case 'm':
-		if (rogue) {
-			SVfloat (sv_player, ammo_multi_rockets) = 0;
-			if (SVfloat (sv_player, weapon) > IT_LIGHTNING)
-				SVfloat (sv_player, ammo_rockets) = v;
-		}
-		break;
+			if (rogue) {
+				SVfloat (sv_player, ammo_multi_rockets) = 0;
+				if (SVfloat (sv_player, weapon) > IT_LIGHTNING)
+					SVfloat (sv_player, ammo_rockets) = v;
+			}
+			break;
 		case 'h':
-		SVfloat (sv_player, health) = v;
-		break;
+			SVfloat (sv_player, health) = v;
+			break;
 		case 'c':
-		if (rogue) {
-			SVfloat (sv_player, ammo_cells1) = v;
-			if (SVfloat (sv_player, weapon) <= IT_LIGHTNING)
+			if (rogue) {
+				SVfloat (sv_player, ammo_cells1) = v;
+				if (SVfloat (sv_player, weapon) <= IT_LIGHTNING)
+					SVfloat (sv_player, ammo_cells) = v;
+			} else {
 				SVfloat (sv_player, ammo_cells) = v;
-		} else {
-			SVfloat (sv_player, ammo_cells) = v;
-		}
-		break;
+			}
+			break;
 		case 'p':
-		if (rogue) {
-			SVfloat (sv_player, ammo_plasma) = v;
-			if (SVfloat (sv_player, weapon) > IT_LIGHTNING)
-				SVfloat (sv_player, ammo_cells) = v;
-		}
-		break;
+			if (rogue) {
+				SVfloat (sv_player, ammo_plasma) = v;
+				if (SVfloat (sv_player, weapon) > IT_LIGHTNING)
+					SVfloat (sv_player, ammo_cells) = v;
+			}
+			break;
 	}
 }
 #endif

@@ -182,7 +182,7 @@ void
 SV_SendServerinfo (client_t *client)
 {
 	const char **s;
-	char        message[2048];
+	char		 message[2048];
 
 	MSG_WriteByte (&client->message, svc_print);
 	snprintf (message, sizeof (message), "%c\nVersion %s server (%i CRC)", 2,
@@ -392,8 +392,7 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 	ent = NEXT_EDICT (&sv_pr_state, sv.edicts);
 	for (e = 1; e < sv.num_edicts; e++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
 		// ignore if not touching a PV leaf
-		if (ent != clent)				// clent is ALLWAYS sent
-		{
+		if (ent != clent) {				// clent is ALLWAYS sent
 			// ignore ents without visible models
 			if (!SVfloat (ent, modelindex) ||
 				!*PR_GetString (&sv_pr_state, SVstring (ent, model)))
@@ -500,11 +499,9 @@ SV_CleanupEnts (void)
 	edict_t    *ent;
 
 	ent = NEXT_EDICT (&sv_pr_state, sv.edicts);
-	for (e = 1; e < sv.num_edicts; e++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
-		SVfloat (ent, effects) = (int) SVfloat (ent, effects) &
-			~EF_MUZZLEFLASH;
-	}
-
+	for (e = 1; e < sv.num_edicts; e++, ent = NEXT_EDICT (&sv_pr_state, ent))
+		SVfloat (ent, effects) = (int) SVfloat (ent, effects)
+			& ~EF_MUZZLEFLASH;
 }
 
 void
@@ -596,7 +593,7 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 			MSG_WriteByte (msg, SVvector (ent, velocity)[i] / 16);
 	}
 
-	// [always sent]    if (bits & SU_ITEMS)
+//	if (bits & SU_ITEMS) // [always sent]
 	MSG_WriteLong (msg, items);
 
 	if (bits & SU_WEAPONFRAME)
@@ -604,9 +601,8 @@ SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	if (bits & SU_ARMOR)
 		MSG_WriteByte (msg, SVfloat (ent, armorvalue));
 	if (bits & SU_WEAPON)
-		MSG_WriteByte (msg,
-					   SV_ModelIndex (PR_GetString (&sv_pr_state, SVstring
-													(ent, weaponmodel))));
+		MSG_WriteByte (msg, SV_ModelIndex (PR_GetString (&sv_pr_state, SVstring
+														 (ent, weaponmodel))));
 
 	MSG_WriteShort (msg, SVfloat (ent, health));
 	MSG_WriteByte (msg, SVfloat (ent, currentammo));
@@ -667,7 +663,8 @@ SV_UpdateToReliableMessages (void)
 	// check for changes to be sent over the reliable streams
 	for (i = 0, host_client = svs.clients; i < svs.maxclients;
 		 i++, host_client++) {
-		if (host_client->old_frags != (int) SVfloat (host_client->edict, frags)) {
+		if (host_client->old_frags != (int) SVfloat (host_client->edict,
+													 frags)) {
 			for (j = 0, client = svs.clients; j < svs.maxclients; j++,
 					 client++) {
 				if (!client->active)
@@ -733,12 +730,11 @@ SV_SendClientMessages (void)
 			if (!SV_SendClientDatagram (host_client))
 				continue;
 		} else {
-			// the player isn't totally in the game yet
-			// send small keepalive messages if too much time has passed
-			// send a full message when the next signon stage has been
-			// requested
-			// some other message data (name changes, etc) may accumulate 
-			// between signon stages
+			// The player isn't totally in the game yet
+			// Send small keepalive messages if too much time has passed
+			// Send a full message when the next signon stage has been
+			// requested; some other message data (name changes, etc) may
+			// accumulate between signon stages
 			if (!host_client->sendsignon) {
 				if (realtime - host_client->last_message > 5)
 					SV_SendNop (host_client);
@@ -746,9 +742,8 @@ SV_SendClientMessages (void)
 			}
 		}
 
-		// check for an overflowed message.  Should only happen
-		// on a very fucked up connection that backs up a lot, then
-		// changes level
+		// check for an overflowed message.  Should only happen on a very
+		// fucked up connection that backs up a lot, then changes level
 		if (host_client->message.overflowed) {
 			SV_DropClient (true);
 			host_client->message.overflowed = false;
@@ -813,34 +808,35 @@ SV_CreateBaseline (void)
 
 		// create entity baseline
 		VectorCopy (SVvector (svent, origin),
-					((entity_state_t*)svent->data)->origin);
+					((entity_state_t *) svent->data)->origin);
 		VectorCopy (SVvector (svent, angles),
-					((entity_state_t*)svent->data)->angles);
-		((entity_state_t*)svent->data)->frame = SVfloat (svent, frame);
-		((entity_state_t*)svent->data)->skin = SVfloat (svent, skin);
+					((entity_state_t *) svent->data)->angles);
+		((entity_state_t *) svent->data)->frame = SVfloat (svent, frame);
+		((entity_state_t *) svent->data)->skin = SVfloat (svent, skin);
 		if (entnum > 0 && entnum <= svs.maxclients) {
-			((entity_state_t*)svent->data)->colormap = entnum;
-			((entity_state_t*)svent->data)->modelindex = SV_ModelIndex
+			((entity_state_t *) svent->data)->colormap = entnum;
+			((entity_state_t *) svent->data)->modelindex = SV_ModelIndex
 				("progs/player.mdl");
 		} else {
-			((entity_state_t*)svent->data)->colormap = 0;
-			((entity_state_t*)svent->data)->modelindex =
-				SV_ModelIndex (PR_GetString (&sv_pr_state,SVstring (svent,
-																	model)));
+			((entity_state_t *) svent->data)->colormap = 0;
+			((entity_state_t *) svent->data)->modelindex =
+				SV_ModelIndex (PR_GetString (&sv_pr_state, SVstring (svent,
+																	 model)));
 		}
 
 		// add to the message
 		MSG_WriteByte (&sv.signon, svc_spawnbaseline);
 		MSG_WriteShort (&sv.signon, entnum);
 
-		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->modelindex);
-		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->frame);
-		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->colormap);
-		MSG_WriteByte (&sv.signon, ((entity_state_t*)svent->data)->skin);
+		MSG_WriteByte (&sv.signon,
+					   ((entity_state_t *) svent->data)->modelindex);
+		MSG_WriteByte (&sv.signon, ((entity_state_t *) svent->data)->frame);
+		MSG_WriteByte (&sv.signon, ((entity_state_t *) svent->data)->colormap);
+		MSG_WriteByte (&sv.signon, ((entity_state_t *) svent->data)->skin);
 
 		MSG_WriteCoordAngleV (&sv.signon,
-							  ((entity_state_t*)svent->data)->origin,
-							  ((entity_state_t*)svent->data)->angles);
+							  ((entity_state_t *) svent->data)->origin,
+							  ((entity_state_t *) svent->data)->angles);
 	}
 }
 
@@ -890,11 +886,9 @@ SV_SaveSpawnparms (void)
 			EDICT_TO_PROG (&sv_pr_state, host_client->edict);
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.SetChangeParms);
 		for (j = 0; j < NUM_SPAWN_PARMS; j++)
-			host_client->spawn_parms[j] =
-				sv_globals.parms[j];
+			host_client->spawn_parms[j] = sv_globals.parms[j];
 	}
 }
-
 
 /*
   SV_SpawnServer
@@ -1031,8 +1025,8 @@ SV_SpawnServer (const char *server)
 	SV_CreateBaseline ();
 
 	// send serverinfo to all connected clients
-	for (i = 0, host_client = svs.clients; i < svs.maxclients;
-		 i++, host_client++)
+	for (i = 0, host_client = svs.clients; i < svs.maxclients; i++,
+			 host_client++)
 		if (host_client->active)
 			SV_SendServerinfo (host_client);
 
