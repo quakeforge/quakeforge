@@ -229,6 +229,11 @@ signal_hook (int sig, void *data)
 				else
 					OPC.integer_var = 0x7fffffff;
 				return 1;
+			case OP_MOD_I:
+			case OP_MOD_U:
+			case OP_MOD_F:
+				OPC.integer_var = 0x00000000;
+				return 1;
 			default:
 				break;
 		}
