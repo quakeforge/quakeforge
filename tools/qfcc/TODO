@@ -1,0 +1,12 @@
+o = todo
+X = done
+? = maybe but not likely
+M = more testing
+I = in progress
+W = waiting on other work
+
+o	switch/case, for any type
+o	native integer type
+o	quaternion type
+o	?: operator
+o	<op>= operator ( var += expr, etc. )
