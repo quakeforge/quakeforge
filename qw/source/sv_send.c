@@ -63,7 +63,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 
 /* SV_Printf redirection */
 
-dstring_t   outputbuf;
+dstring_t   outputbuf = {&dstring_default_mem};
 int         con_printf_no_log;
 redirect_t  sv_redirected;
 
