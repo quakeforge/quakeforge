@@ -97,12 +97,20 @@ if test "x$HAVE_QF" != xno; then
 	)
 fi
 
+QFDEFS_LIBS="-lQFgamecode -lQFutil"
+QFDEFS_DEPS=""
+QFDEFS_INCS=""
+
 if test "x$HAVE_QF" = xno; then
 	echo '***'
 	echo '*** You seem to not have the QuakeForge libs & headers installed'
 	echo '***'
 	exit 1
 fi
+
+AC_SUBST(QFDEFS_LIBS)
+AC_SUBST(QFDEFS_DEPS)
+AC_SUBST(QFDEFS_INCS)
 
 AC_OUTPUT(
 	include/Makefile
