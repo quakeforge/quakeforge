@@ -431,8 +431,6 @@ ED_ParseOld (progs_t *pr, const char *data)
 	pr_type_t	*classname;
 	ddef_t		*def;
 
-	*pr->globals.time = *(pr)->time;
-
 	while (1) {	// parse ents
 		// parse the opening brace
 		data = COM_Parse (data);

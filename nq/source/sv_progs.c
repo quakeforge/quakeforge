@@ -493,7 +493,6 @@ SV_Progs_Init (void)
 {
 	sv_pr_state.edicts = &sv.edicts;
 	sv_pr_state.num_edicts = &sv.num_edicts;
-	sv_pr_state.time = &sv.time;
 	sv_pr_state.reserved_edicts = &svs.maxclients;
 	sv_pr_state.unlink = SV_UnlinkEdict;
 	sv_pr_state.parse_field = parse_field;

@@ -90,11 +90,13 @@ ED_Alloc (progs_t *pr)
 	int         start = pr->reserved_edicts ? *pr->reserved_edicts : 0;
 	int         max_edicts = pr->pr_edictareasize / pr->pr_edict_size;
 
-	for (i = start + 1; i < *(pr)->num_edicts; i++) {
+	for (i = start + 1; i < *pr->num_edicts; i++) {
 		e = EDICT_NUM (pr, i);
 		// the first couple seconds of server time can involve a lot of
 		// freeing and allocating, so relax the replacement policy
-		if (e->free && (e->freetime < 2 || *(pr)->time - e->freetime > 0.5)) {
+		if (e->free && (!pr->globals.time
+						|| e->freetime < 2
+						|| *pr->globals.time - e->freetime > 0.5)) {
 			ED_ClearEdict (pr, e, 0);
 			return e;
 		}
@@ -135,7 +137,8 @@ ED_Free (progs_t *pr, edict_t *ed)
 			ED_ClearEdict (pr, ed, 0);
 	}
 	ed->free = true;
-	ed->freetime = *(pr)->time;
+	if (pr->globals.time)
+		ed->freetime = *pr->globals.time;
 }
 
 //===========================================================================
@@ -198,7 +201,7 @@ ED_Count (progs_t *pr)
 	for (i = 0; i < *(pr)->num_edicts; i++) {
 		ent = EDICT_NUM (pr, i);
 		if (ent->free) {
-			if (*(pr)->time - ent->freetime <= 0.5)
+			if (pr->globals.time && *pr->globals.time - ent->freetime <= 0.5)
 				zombie++;
 			continue;
 		}

@@ -1217,8 +1217,6 @@ struct progs_s {
 	int         localstack[LOCALSTACK_SIZE];
 	int         localstack_used;
 
-	double     *time;
-
 	pr_resource_t *resources;
 	struct hashtab_s *resource_hash;
 
