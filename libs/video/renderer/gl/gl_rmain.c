@@ -52,10 +52,10 @@
 #include "QF/vid.h"
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
+#include "QF/GL/qf_rlight.h"
+#include "QF/GL/qf_rsurf.h"
 #include "QF/GL/qf_screen.h"
 #include "QF/GL/qf_vid.h"
-#include "QF/GL/qf_rsurf.h"
-#include "QF/GL/qf_rlight.h"
 
 #include "compat.h"
 #include "r_cvar.h"
@@ -87,7 +87,6 @@ int         c_brush_polys, c_alias_polys;
 
 qboolean    envmap;						// true during envmap command capture
 
-
 int         mirrortexturenum;			// quake texturenum, not gltexturenum
 qboolean    mirror;
 mplane_t   *mirror_plane;
@@ -116,10 +115,10 @@ void        R_MarkLeaves (void);
 //qboolean R_CullBlocked (vec3_t mins, vec3_t maxs, vec3_t org);
 
 
-// LordHavoc: place for gl_rmain setup code
 void
 glrmain_init (void)
 {
+	// LordHavoc: place for gl_rmain setup code
 }
 
 void
@@ -230,7 +229,7 @@ R_DrawSpriteModel (entity_t *e)
 }
 
 /*
-	ALIAS MODELS
+  ALIAS MODELS
 */
 
 #define NUMVERTEXNORMALS	162
@@ -359,7 +358,7 @@ GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 			point[0] -= shadevector[0] * (point[2] + lheight);
 			point[1] -= shadevector[1] * (point[2] + lheight);
 			point[2] = height;
-//          height -= 0.001;
+//			height -= 0.001;
 			qfglVertex3fv (point);
 
 			verts++;
@@ -390,7 +389,8 @@ GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2, entity_t
 	lheight = e->origin[2] - lightspot[2];
 	height = -lheight + 1.0;
 
-	verts2 = verts1 = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
+	verts2 = verts1 = (trivertx_t *) ((byte *) paliashdr +
+									  paliashdr->posedata);
 
 	verts1 += pose1 * paliashdr->poseverts;
 	verts2 += pose2 * paliashdr->poseverts;
@@ -399,7 +399,6 @@ GL_DrawAliasBlendedShadow (aliashdr_t *paliashdr, int pose1, int pose2, entity_t
 
 	while ((count = *order++)) {
 		// get the vertex count and primitive type
-
 		if (count < 0) {
 			count = -count;
 			qfglBegin (GL_TRIANGLE_FAN);
@@ -1119,7 +1118,8 @@ R_RenderView (void)
 }
 
 #if 0
-qboolean R_CullBlocked (vec3_t mins, vec3_t maxs, vec3_t org)
+qboolean
+R_CullBlocked (vec3_t mins, vec3_t maxs, vec3_t org)
 {
 	static struct trace_t  trace;
 	vec3_t  point;
