@@ -114,7 +114,7 @@ typedef struct {
 %token	<type> TYPE
 
 %type	<type>	type opt_func func_parms array_decl
-%type	<integer_val> opt_field
+%type	<integer_val> opt_field opt_comma_elipsis
 %type	<def>	param param_list def_name
 %type	<def>	var_def_item var_def_list
 %type	<def>	func_def_item func_def_list
@@ -239,7 +239,7 @@ func_parms
 			pr_scope->alloc = &pr_scope->locals;
 			*pr_scope->alloc = 0;
 		}
-	  param_list
+	  param_list opt_comma_elipsis
 		{
 			PR_FlushScope (pr_scope, 1);
 			current_type = $<scope>2.type;
@@ -247,7 +247,10 @@ func_parms
 		}
 	  ')'
 		{
-			$$ = parse_params ($3);
+			if ($4)
+				$$ = parse_params ((def_t*)1);
+			else
+				$$ = parse_params ($3);
 		}
 	| '(' ')'
 		{
@@ -323,6 +326,11 @@ def_name
 			$$ = PR_GetDef (current_type, $1, pr_scope, alloc);
 			current_def = $$;
 		}
+	;
+
+opt_comma_elipsis
+	: /* empty */ { $$ = 0 }
+	| ',' ELIPSIS { $$ = 1 }
 	;
 
 param_list
