@@ -2,12 +2,11 @@
 AUTOMAKE_OPTIONS=	foreign
 SUBDIRS = QF
 EXTRA_DIST = asm_i386.h adivtab.h anorm_dots.h anorms.h asm_draw.h block16.h \
-	block8.h buildnum.h compat.h context_x11.h d_iface.h d_ifacea.h d_local.h \
-	dga_check.h dosisms.h fbset.h gib_error.h gib_instructions.h \
-	gib_interpret.h gib_modules.h gib_parse.h gib_stack.h gib_vars.h \
-	gl_warp_sin.h glquake.h in_win.h logos.h menu.h mpdosock.h qfgl_ext.h \
-	quakeasm.h r_cvar.h r_dynamic.h r_local.h r_shared.h sbar.h stamp-h.in \
-	varrays.h vgamodes.h vid_dos.h view.h vregset.h winquake.h \
+	block8.h buildnum.h compat.h context_x11.h d_iface.h d_ifacea.h
+	d_local.h dga_check.h dosisms.h fbset.h gl_warp_sin.h glquake.h \
+	in_win.h logos.h menu.h mpdosock.h qfgl_ext.h quakeasm.h r_cvar.h \
+	r_dynamic.h r_local.h r_shared.h sbar.h stamp-h.in varrays.h \
+	vgamodes.h vid_dos.h view.h vregset.h winquake.h \
 	\
 	win32/bc/borland.c win32/bc/config.h \
 	\
@@ -19,3 +18,4 @@ EXTRA_DIST = asm_i386.h adivtab.h anorm_dots.h anorms.h asm_draw.h block16.h \
 	win32/resources/resource.h \
 	\
 	win32/vc/config.h win32/vc/dirent.h win32/version.h win32/version.h.in
+
