@@ -562,7 +562,7 @@ R_DrawParticles (void)
 	float       scale;
 	particle_t *part;
 	vec3_t		up, right, o_up, o_right;
-	vec3_t		up_scale, right_scale, up_right_scale;
+	vec3_t		up_scale, right_scale, up_right_scale, down_right_scale;
 	int         activeparticles, maxparticle, j, k;
 	
 	// LordHavoc: particles should not affect zbuffer
@@ -603,8 +603,7 @@ R_DrawParticles (void)
 			at = (byte *) & d_8to24table[(byte) part->color];
 			alpha = part->alpha;
 
-#define mVectorCompare(x, y) ((x[0] == y[0]) && (x[1] == y[1]) && (x[2] == y[2]))
-			if (mVectorCompare(part->up, part->right)) {
+			if (VectorCompare(part->up, part->right)) {
 				memcpy(up, o_up, sizeof(up));
 				memcpy(right, o_right, sizeof(right));
 			} else {
@@ -623,33 +622,16 @@ R_DrawParticles (void)
 
 			scale = part->scale;
 
-			up_scale[0] = up[0] * scale;
-			up_scale[1] = up[1] * scale;
-			up_scale[2] = up[2] * scale;
+			VectorScale    (up,    scale, up_scale);
+			VectorScale    (right, scale, right_scale);
 
-			right_scale[0] = right[0] * scale;
-			right_scale[1] = right[1] * scale;
-			right_scale[2] = right[2] * scale;
+			VectorAdd      (right_scale, up_scale, up_right_scale);
+			VectorSubtract (right_scale, up_scale, down_right_scale);
 
-			up_right_scale[0] = (up[0] + right[0]) * scale;
-			up_right_scale[1] = (up[1] + right[1]) * scale;
-			up_right_scale[2] = (up[2] + right[2]) * scale;
-
-			varray[0].vertex[0] = part->org[0] + up_right_scale[0];
-			varray[0].vertex[1] = part->org[1] + up_right_scale[1];
-			varray[0].vertex[2] = part->org[2] + up_right_scale[2];
-
-			varray[1].vertex[0] = part->org[0] - up_scale[0] + right_scale[0];
-			varray[1].vertex[1] = part->org[1] - up_scale[1] + right_scale[1];
-			varray[1].vertex[2] = part->org[2] - up_scale[2] + right_scale[2];
-
-			varray[2].vertex[0] = part->org[0] - up_right_scale[0];
-			varray[2].vertex[1] = part->org[1] - up_right_scale[1];
-			varray[2].vertex[2] = part->org[2] - up_right_scale[2];
-
-			varray[3].vertex[0] = part->org[0] + up_scale[0] - right_scale[0];
-			varray[3].vertex[1] = part->org[1] + up_scale[1] - right_scale[1];
-			varray[3].vertex[2] = part->org[2] + up_scale[2] - right_scale[2];
+			VectorAdd      (part->org, up_right_scale,   varray[0].vertex);
+			VectorAdd      (part->org, down_right_scale, varray[1].vertex);
+			VectorSubtract (part->org, up_right_scale,   varray[2].vertex);
+			VectorSubtract (part->org, down_right_scale, varray[3].vertex);
 
 			qfglBindTexture (GL_TEXTURE_2D, part->tex);
 			qfglDrawArrays (GL_QUADS, 0, 4);

@@ -369,7 +369,7 @@ AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 }
 
 int
-VectorCompare (vec3_t v1, vec3_t v2)
+_VectorCompare (vec3_t v1, vec3_t v2)
 {
 	int         i;
 
@@ -470,7 +470,7 @@ VectorInverse (vec3_t v)
 }
 
 void
-VectorScale (vec3_t in, vec_t scale, vec3_t out)
+_VectorScale (vec3_t in, vec_t scale, vec3_t out)
 {
 	out[0] = in[0] * scale;
 	out[1] = in[1] * scale;
