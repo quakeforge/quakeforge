@@ -250,8 +250,21 @@ GIB_Process_Embedded (struct dstring_s *token)
 	return 0;
 }
 
+void
+GIB_Process_Escapes (dstring_t *token)
+{
+	int i;
+	for (i = 0; token->str[i]; i++) {
+		if (token->str[i] == '\\') {
+			dstring_snip (token, i, 1);
+			if (token->str[i] == 'n')
+				token->str[i] = '\n';
+		}
+	}
+}
+
 int
-GIB_Process_Token (struct dstring_s *token, char delim)
+GIB_Process_Token (dstring_t *token, char delim)
 {
 	if (delim != '{' && delim != '\"') {
 		if (GIB_Process_Embedded (token))
@@ -263,5 +276,7 @@ GIB_Process_Token (struct dstring_s *token, char delim)
 	if (delim == '(')
 		if (GIB_Process_Math (token))
 			return -1;
+	if (delim == '\"')
+		GIB_Process_Escapes (token);
 	return 0;
 }

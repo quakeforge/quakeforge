@@ -47,6 +47,7 @@ static const char rcsid[] =
 #include "QF/gib_builtin.h"
 #include "QF/gib_function.h"
 #include "QF/gib_vars.h"
+#include "QF/gib_parse.h"
 
 // Interpreter structure and prototypes
 
@@ -61,6 +62,17 @@ cbuf_interpreter_t gib_interp = {
 	GIB_Buffer_Construct,
 	GIB_Buffer_Destruct,
 };
+
+inline qboolean
+GIB_Escaped (const char *str, int i)
+{
+	int         n, c;
+
+	if (!i)
+		return 0;
+	for (n = i - 1, c = 0; n >= 0 && str[n] == '\\'; n--, c++);
+	return c & 1;
+}
 
 
 /*
@@ -77,7 +89,7 @@ GIB_Parse_Match_Dquote (const char *str, unsigned int *i)
 	for ((*i)++; str[*i]; (*i)++) {
 		if (str[*i] == '\n')
 			return '\"'; // Newlines should never occur inside quotes, EVER
-		else if (str[*i] == '\"')
+		else if (str[*i] == '\"' && !GIB_Escaped (str, *i))
 			return 0;
 	}
 	return '\"';
