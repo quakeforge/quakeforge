@@ -1,3 +1,9 @@
+quakeforge (0.5.5-2) frozen unstable; urgency=low
+
+  * New release.
+
+ -- Bill Currie <bill@taniwha.org>  Mon, 21 Jul 2003 23:09:00 -0600
+
 quakeforge (0.5.5-0cvs20040727) frozen unstable; urgency=low
 
   * CVS snapshot.
