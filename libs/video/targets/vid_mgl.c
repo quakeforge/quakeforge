@@ -142,7 +142,6 @@ static int  VID_highhunkmark;
 
 unsigned char vid_curpal[256 * 3];
 
-unsigned short d_8to16table[256];
 unsigned int d_8to24table[256];
 
 int         driver = grDETECT, mode;

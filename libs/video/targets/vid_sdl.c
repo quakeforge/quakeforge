@@ -60,7 +60,6 @@ cvar_t     *vid_fullscreen;
 cvar_t      *vid_system_gamma;
 qboolean    vid_gamma_avail;
 extern viddef_t vid;					// global video state
-unsigned short d_8to16table[256];
 
 int         modestate;					// FIXME: just to avoid cross-comp.
                                                         // errors - remove later

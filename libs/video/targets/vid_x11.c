@@ -80,7 +80,6 @@
 #include "dga_check.h"
 
 extern viddef_t vid;	// global video state
-unsigned short	d_8to16table[256];
 
 static Colormap x_cmap;
 static GC		x_gc;

@@ -69,8 +69,6 @@
 
 #include "fbset.h"
 
-unsigned short d_8to16table[256];
-
 extern void ReadModeDB(void);
 extern struct VideoMode *FindVideoMode(const char *name);
 void ConvertFromVideoMode(const struct VideoMode *vmode,
@@ -152,34 +150,6 @@ D_EndDirectRect (int x, int y, int width, int height)
 			off = offset % 0x10000;
 			memcpy (vid.direct + off, &backingbuf[(i + j) * 24], width);
 		}
-	}
-}
-
-
-static void
-VID_Gamma_f (void)
-{
-	float       gamma, f, inf;
-	unsigned char palette[768];
-	int         i;
-
-	if (Cmd_Argc () == 2) {
-		gamma = atof (Cmd_Argv (1));
-
-		for (i = 0; i < 768; i++) {
-			f = pow ((vid_basepal[i] + 1) / 256.0, gamma);
-			inf = f * 255 + 0.5;
-			if (inf < 0)
-				inf = 0;
-			if (inf > 255)
-				inf = 255;
-			palette[i] = inf;
-		}
-
-		VID_SetPalette (palette);
-
-		/* Force a surface cache flush */
-		vid.recalc_refdef = 1;
 	}
 }
 
@@ -506,8 +476,6 @@ VID_Init (unsigned char *palette)
 	if (fbdev_inited)
 		return;
 
-	Cmd_AddCommand ("gamma", VID_Gamma_f, "No Description");
-
 	if (UseDisplay) {
 		fbname = getenv("FRAMEBUFFER");
 		if (!fbname)
@@ -561,6 +529,7 @@ VID_Init (unsigned char *palette)
 		VID_SetMode (current_mode.name, palette);
 		Con_CheckResize (); // Now that we have a window size, fix console
 
+		VID_InitGamma (palette);
 		VID_SetPalette (palette);
 	}
 }

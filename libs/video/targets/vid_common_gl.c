@@ -57,7 +57,6 @@
 #define WARP_WIDTH              320
 #define WARP_HEIGHT             200
 
-//unsigned short    d_8to16table[256];
 unsigned int d_8to24table[256];
 unsigned char d_15to8table[65536];
 

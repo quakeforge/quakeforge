@@ -83,7 +83,6 @@ byte        vid_current_palette[768];	// save for mode changes
 
 static qboolean nomodecheck = false;
 
-unsigned short d_8to16table[256];		// not used in 8 bpp mode
 unsigned    d_8to24table[256];			// not used in 8 bpp mode
 
 void        VID_MenuDraw (void);

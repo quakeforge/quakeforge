@@ -36,6 +36,8 @@
 #include "QF/sys.h"
 #include "QF/vid.h"
 
+unsigned short d_8to16table[256];
+
 void
 VID_InitBuffers (void)
 {
