@@ -372,7 +372,7 @@ CL_UpdateBeams (void)
 			continue;
 
 		// if coming from the player, update the start position
-		if (b->entity == cl.playernum + 1) {	// entity 0 is the world
+		if (b->entity == cl.viewentity) {
 			VectorCopy (cl.simorg, b->start);
 		}
 		// calculate pitch and yaw

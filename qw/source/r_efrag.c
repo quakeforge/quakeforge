@@ -168,8 +168,7 @@ R_SplitEntityOnNode2 (mnode_t *node)
 	if (node->contents < 0) {
 		if (node->contents != CONTENTS_SOLID)
 			r_pefragtopnode = node;		// we've reached a non-solid leaf, so 
-										// it's
-		// visible and not BSP clipped
+										// it's visible and not BSP clipped
 		return;
 	}
 
