@@ -493,11 +493,13 @@ R_ShowNearestLoc (void)
 	nearloc = locs_find (r_origin);
 	if (nearloc) {
 		dl = R_AllocDlight (4096);
-		VectorCopy (nearloc->loc, dl->origin);
-		dl->radius = 200;
-		dl->die = r_realtime + 0.1;
-		dl->color[1] = 1;
-		
+		if (dl) {
+			VectorCopy (nearloc->loc, dl->origin);
+			dl->radius = 200;
+			dl->die = r_realtime + 0.1;
+			dl->color[1] = 1;
+		}
+
 		VectorCopy(nearloc->loc, trueloc);
 		R_RunParticleEffect(trueloc, vec3_origin, 252, 10);
 	}

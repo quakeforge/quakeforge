@@ -146,13 +146,14 @@ R_ShowNearestLoc (void)
 
 	if (nearloc) {
 		dl = R_AllocDlight (4096);
-		VectorCopy (nearloc->loc, dl->origin);
-		dl->radius = 200;
-		dl->die = r_realtime + 0.1;
-		dl->color[0] = 0;
-		dl->color[1] = 1;
-		dl->color[2] = 0;
-
+		if (dl) {
+			VectorCopy (nearloc->loc, dl->origin);
+			dl->radius = 200;
+			dl->die = r_realtime + 0.1;
+			dl->color[0] = 0;
+			dl->color[1] = 1;
+			dl->color[2] = 0;
+		}
 		VectorCopy (nearloc->loc, trueloc);
 		(*R_WizSpikeEffect) (trueloc);
 	}

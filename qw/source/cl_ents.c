@@ -100,8 +100,9 @@ CL_NewDlight (int key, vec3_t org, int effects)
 	if (!(effects & (EF_BLUE | EF_RED | EF_BRIGHTLIGHT | EF_DIMLIGHT)))
 		return;
 
-	radius = 200 + (rand () & 31);
 	dl = R_AllocDlight (key);
+	if (!dl)
+		return;
 	VectorCopy (org, dl->origin);
 	dl->die = cl.time + 0.1;
 	switch (effects & (EF_BLUE | EF_RED)) {
@@ -118,6 +119,7 @@ CL_NewDlight (int key, vec3_t org, int effects)
 			VectorCopy (normal, dl->color);
 			break;
 	}
+	radius = 200 + (rand () & 31);
 	if (effects & EF_BRIGHTLIGHT) {
 		radius += 200;
 		dl->origin[2] += 16;
@@ -510,10 +512,12 @@ CL_LinkPacketEntities (void)
 
 		if (model->flags & EF_ROCKET) {
 			dl = R_AllocDlight (-s1->number);
-			VectorCopy ((*ent)->origin, dl->origin);
-			VectorCopy (r_firecolor->vec, dl->color);
-			dl->radius = 200;
-			dl->die = cl.time + 0.1;
+			if (dl) {
+				VectorCopy ((*ent)->origin, dl->origin);
+				VectorCopy (r_firecolor->vec, dl->color);
+				dl->radius = 200;
+				dl->die = cl.time + 0.1;
+			}
 		}
 
 		if (model->flags & EF_ROCKET)

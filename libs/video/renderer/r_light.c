@@ -435,11 +435,9 @@ R_AllocDlight (int key)
 {
 	int         i;
 	dlight_t   *dl;
-	static dlight_t dummy;
 
 	if (!r_maxdlights) {
-		memset (&dummy, 0, sizeof (dummy));
-		return &dummy;
+		return NULL;
 	}
 
 	// first look for an exact key match

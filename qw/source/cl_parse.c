@@ -1102,8 +1102,10 @@ CL_MuzzleFlash (void)
 
 	pl = &cl.frames[parsecountmod].playerstate[i - 1];
 
-	dl = R_AllocDlight (i); //FIXME
-	// this interfers with powerup glows, but we need more lights.
+	dl = R_AllocDlight (i);
+	if (!dl)
+		return;
+
 	VectorCopy (pl->origin, dl->origin);
 	if (i - 1 == cl.playernum)
 		AngleVectors (cl.viewangles, fv, rv, uv);

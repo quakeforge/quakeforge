@@ -349,13 +349,15 @@ CL_ParseTEnt (void)
 
 			// light
 			dl = R_AllocDlight (0);
-			VectorCopy (pos, dl->origin);
-			dl->radius = 350;
-			dl->die = cl.time + 0.5;
-			dl->decay = 300;
-			dl->color[0] = 0.86;
-			dl->color[1] = 0.31;
-			dl->color[2] = 0.24;
+			if (dl) {
+				VectorCopy (pos, dl->origin);
+				dl->radius = 350;
+				dl->die = cl.time + 0.5;
+				dl->decay = 300;
+				dl->color[0] = 0.86;
+				dl->color[1] = 0.31;
+				dl->color[2] = 0.24;
+			}
 
 			// sound
 			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
@@ -408,8 +410,11 @@ CL_ParseTEnt (void)
 			MSG_ReadCoordV (net_message, pos);
 			colorStart = MSG_ReadByte (net_message);
 			colorLength = MSG_ReadByte (net_message);
+			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
 			R_ParticleExplosion2 (pos, colorStart, colorLength);
 			dl = R_AllocDlight (0);
+			if (!dl)
+				break;
 			VectorCopy (pos, dl->origin);
 			dl->radius = 350;
 			dl->die = cl.time + 0.5;
@@ -420,7 +425,6 @@ CL_ParseTEnt (void)
 									   3 + 1] * (1.0 / 255.0);
 			dl->color[2] = vid_basepal[(colorStart + (rand() % colorLength)) *
 									   3 + 2] * (1.0 / 255.0);
-			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
 			break;
 
 		case TE_GUNSHOT:				// bullet hitting wall
@@ -440,13 +444,15 @@ CL_ParseTEnt (void)
 
 			// light
 			dl = R_AllocDlight (0);
-			VectorCopy (pos, dl->origin);
-			dl->radius = 150;
-			dl->die = cl.time + 0.1;
-			dl->decay = 200;
-			dl->color[0] = 0.25;
-			dl->color[1] = 0.40;
-			dl->color[2] = 0.65;
+			if (dl) {
+				VectorCopy (pos, dl->origin);
+				dl->radius = 150;
+				dl->die = cl.time + 0.1;
+				dl->decay = 200;
+				dl->color[0] = 0.25;
+				dl->color[1] = 0.40;
+				dl->color[2] = 0.65;
+			}
 
 			R_LightningBloodEffect (pos);
 			break;
