@@ -405,8 +405,14 @@ finish_compilation (void)
 
 	for (d = pr.scope->head; d; d = d->def_next) {
 		if (d->external && d->refs) {
-			errors = true;
-			error (0, "undefined global %s", d->name);
+			if (strcmp (d->name, ".self") == 0) {
+				get_def (d->type, ".self", pr.scope, st_global);
+			} else if (strcmp (d->name, ".this") == 0) {
+				get_def (d->type, ".this", pr.scope, st_global);
+			} else {
+				errors = true;
+				error (0, "undefined global %s", d->name);
+			}
 		}
 	}
 	if (errors)
