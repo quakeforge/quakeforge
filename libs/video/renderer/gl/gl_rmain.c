@@ -251,27 +251,19 @@ static void
 R_SetFrustum (void)
 {
 	int         i;
-	if (r_refdef.fov_x == 90) {
-		// front side is visible
-		VectorAdd (vpn, vright, frustum[0].normal);
-		VectorSubtract (vpn, vright, frustum[1].normal);
 
-		VectorAdd (vpn, vup, frustum[2].normal);
-		VectorSubtract (vpn, vup, frustum[3].normal);
-	} else {
-		// rotate VPN right by FOV_X/2 degrees
-		RotatePointAroundVector (frustum[0].normal, vup, vpn,
-								 -(90 - r_refdef.fov_x / 2));
-		// rotate VPN left by FOV_X/2 degrees
-		RotatePointAroundVector (frustum[1].normal, vup, vpn,
-								 90 - r_refdef.fov_x / 2);
-		// rotate VPN up by FOV_X/2 degrees
-		RotatePointAroundVector (frustum[2].normal, vright, vpn,
-								 90 - r_refdef.fov_y / 2);
-		// rotate VPN down by FOV_X/2 degrees
-		RotatePointAroundVector (frustum[3].normal, vright, vpn,
-								 -(90 - r_refdef.fov_y / 2));
-	}
+	// rotate VPN right by FOV_X/2 degrees
+	RotatePointAroundVector (frustum[0].normal, vup, vpn,
+							 -(90 - r_refdef.fov_x / 2));
+	// rotate VPN left by FOV_X/2 degrees
+	RotatePointAroundVector (frustum[1].normal, vup, vpn,
+							 90 - r_refdef.fov_x / 2);
+	// rotate VPN up by FOV_Y/2 degrees
+	RotatePointAroundVector (frustum[2].normal, vright, vpn,
+							 90 - r_refdef.fov_y / 2);
+	// rotate VPN down by FOV_Y/2 degrees
+	RotatePointAroundVector (frustum[3].normal, vright, vpn,
+							 -(90 - r_refdef.fov_y / 2));
 
 	for (i = 0; i < 4; i++) {
 		frustum[i].type = PLANE_ANYZ;
@@ -314,7 +306,7 @@ MYgluPerspective (GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar)
 	ymin = -ymax;
 
 	xmin = ymin * aspect;
-	xmax = ymax * aspect;
+	xmax = -xmin;
 
 	qfglFrustum (xmin, xmax, ymin, ymax, zNear, zFar);
 }
@@ -325,36 +317,40 @@ R_SetupGL (void)
 	float		screenaspect;
 	int			x, x2, y2, y, w, h;
 
+	R_SetFrustum ();
+
 	// set up viewpoint
 	qfglMatrixMode (GL_PROJECTION);
 	qfglLoadIdentity ();
-	x = r_refdef.vrect.x * glwidth / vid.width;
-	x2 = (r_refdef.vrect.x + r_refdef.vrect.width) * glwidth / vid.width;
-	y = (vid.height - r_refdef.vrect.y) * glheight / vid.height;
-	y2 = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height)) * glheight
-		/ vid.height;
-
-	// fudge around because of frac screen scale
-	if (x > 0)
-		x--;
-	if (x2 < glwidth)
-		x2++;
-	if (y2 < 0)
-		y2--;
-	if (y < glheight)
-		y++;
-
-	w = x2 - x;
-	h = y - y2;
 
 	if (envmap) {
 		x = y2 = 0;
 		w = h = 256;
+	} else {
+		x = r_refdef.vrect.x * glwidth / vid.width;
+		x2 = (r_refdef.vrect.x + r_refdef.vrect.width) * glwidth / vid.width;
+		y = (vid.height - r_refdef.vrect.y) * glheight / vid.height;
+		y2 = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height)) *
+			glheight / vid.height;
+
+		// fudge around because of frac screen scale
+		if (x > 0)
+			x--;
+		if (x2 < glwidth)
+			x2++;
+		if (y2 < 0)
+			y2--;
+		if (y < glheight)
+			y++;
+
+		w = x2 - x;
+		h = y - y2;
 	}
 
 	qfglViewport (glx + x, gly + y2, w, h);
 	screenaspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;
-	MYgluPerspective (r_refdef.fov_y, screenaspect, 4, r_farclip->value);
+	MYgluPerspective (r_refdef.fov_y, screenaspect, r_nearclip->value,
+					  r_farclip->value);
 
 	if (mirror) {
 		if (mirror_plane->normal[2])
@@ -405,7 +401,6 @@ R_RenderScene (void)
 		r_time1 = Sys_DoubleTime ();
 
 	R_SetupFrame ();
-	R_SetFrustum ();
 	R_SetupGL ();
 	R_MarkLeaves ();			// done here so we know if we're in water
 	R_PushDlights (vec3_origin);

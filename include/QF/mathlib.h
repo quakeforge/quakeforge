@@ -112,8 +112,8 @@ int BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs,
 					struct mplane_s *plane);
 float   anglemod (float a);
 
-void RotatePointAroundVector (vec3_t dst, const vec3_t dir, const vec3_t point,
-							  float degrees );
+void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
+							  const vec3_t point, float degrees);
 
 #define BOX_ON_PLANE_SIDE(emins, emaxs, p)				\
 	(((p)->type < 3)?									\

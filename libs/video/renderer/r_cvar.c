@@ -38,7 +38,9 @@ static const char rcsid[] =
 
 #include "QF/cvar.h"
 #include "QF/model.h"
+#include "QF/qendian.h"
 
+#include "compat.h"
 #include "r_cvar.h"
 #include "r_dynamic.h"
 
@@ -102,6 +104,7 @@ cvar_t     *r_lightmap_components;
 cvar_t     *r_maxedges;
 cvar_t     *r_maxsurfs;
 cvar_t     *r_mirroralpha;
+cvar_t	   *r_nearclip;
 cvar_t     *r_netgraph;
 cvar_t     *r_netgraph_alpha;
 cvar_t     *r_netgraph_box;
@@ -112,6 +115,7 @@ cvar_t     *r_numsurfs;
 cvar_t     *r_particles;
 cvar_t	   *r_particles_style;
 cvar_t	   *r_particles_max;
+cvar_t	   *r_particles_nearclip;
 cvar_t     *r_reportedgeout;
 cvar_t     *r_reportsurfout;
 cvar_t     *r_shadows;
@@ -160,6 +164,33 @@ r_lightmap_components_f (cvar_t *var)
 			mod_lightmap_bytes = 3;
 			break;
 	}
+}
+
+static void
+r_farclip_f (cvar_t *var)
+{
+	Cvar_SetValue (r_farclip, bound (8.0, var->value, Q_MAXFLOAT));
+	if (r_particles_nearclip && r_nearclip)
+		Cvar_SetValue (r_particles_nearclip,
+					   bound (r_nearclip->value, var->value,
+							  r_farclip->value));
+}
+
+static void
+r_nearclip_f (cvar_t *var)
+{
+	Cvar_SetValue (r_nearclip, bound (0.01, var->value, 4.0));
+	if (r_particles_nearclip && r_farclip)
+		Cvar_SetValue (r_particles_nearclip,
+					   bound (r_nearclip->value, var->value,
+							  r_farclip->value));
+}
+
+static void
+r_particles_nearclip_f (cvar_t *var)
+{
+	Cvar_SetValue (r_particles_nearclip, bound (r_nearclip->value, var->value,
+												r_farclip->value));
 }
 
 void
@@ -286,8 +317,9 @@ R_Init_Cvars (void)
 						  "Set to 0 to disable lightmap changes");
 	r_explosionclip = Cvar_Get ("r_explosionclip", "0", CVAR_ARCHIVE, NULL,
 								"Clip explosions.");
-	r_farclip = Cvar_Get ("r_farclip", "4096", CVAR_ARCHIVE, NULL, "Distance "
-						  "of the far clipping plane from the player.");
+	r_farclip = Cvar_Get ("r_farclip", "4096", CVAR_ARCHIVE, r_farclip_f,
+						  "Distance of the far clipping plane from the "
+						  "player.");
 	r_firecolor = Cvar_Get ("r_firecolor", "0.9 0.7 0.0", CVAR_ARCHIVE, NULL,
 							"color of rocket and lava ball fires");
 	r_graphheight = Cvar_Get ("r_graphheight", "32", CVAR_NONE, NULL,
@@ -302,6 +334,9 @@ R_Init_Cvars (void)
 	r_maxsurfs = Cvar_Get ("r_maxsurfs", "0", CVAR_NONE, NULL,
 						   "Sets the maximum number of surfaces");
 	r_mirroralpha = Cvar_Get ("r_mirroralpha", "1", CVAR_NONE, NULL, "None");
+	r_nearclip = Cvar_Get ("r_nearclip", "4", CVAR_ARCHIVE, r_nearclip_f,
+						   "Distance of the near clipping plane from the "
+						   "player.");
 	r_netgraph = Cvar_Get ("r_netgraph", "0", CVAR_NONE, NULL,
 						   "Toggle the display of a graph showing network "
 						   "performance");
@@ -325,6 +360,10 @@ R_Init_Cvars (void)
 								r_particles_max_f, "Maximum amount of "
 								"particles to display. No maximum, minimum " 
 								"is 0.");
+	r_particles_nearclip = Cvar_Get ("r_particles_nearclip", "32",
+									 CVAR_ARCHIVE, r_particles_nearclip_f,
+									 "Distance of the particle near clipping "
+									 "plane from the player.");
 	r_particles_style = Cvar_Get ("r_particles_style", "1", CVAR_ARCHIVE,
 								  r_particles_style_f, "Sets particle style. "
 								  "0 for Id, 1 for QF.");

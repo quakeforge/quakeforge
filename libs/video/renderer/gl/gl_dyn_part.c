@@ -1298,7 +1298,8 @@ R_DrawParticles (void)
 	time30 = r_frametime * 30.0;
 	time50 = r_frametime * 50.0;
 
-	minparticledist = DotProduct (r_refdef.vieworg, vpn) + 32.0;
+	minparticledist = DotProduct (r_refdef.vieworg, vpn) +
+		r_particles_nearclip->value;
 
 	activeparticles = 0;
 	vacount = 0;

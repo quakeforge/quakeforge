@@ -37,17 +37,19 @@
 # define NULL ((void *)0)
 #endif
 
-#define Q_MAXCHAR ((char)0x7f)
-#define Q_MAXSHORT ((short)0x7fff)
-#define Q_MAXINT	((int)0x7fffffff)
-#define Q_MAXLONG ((int)0x7fffffff)
-#define Q_MAXFLOAT ((int)0x7fffffff)
+#define Q_MAXCHAR	 ((char)0x7f)
+#define Q_MAXSHORT	((short)0x7fff)
+#define Q_MAXINT	  ((int)0x7fffffff)
+#define Q_MAXLONG	  ((int)0x7fffffff)
+#define Q_MAXFLOAT	  3.40282346638528859811704183484516925440e38
 
-#define Q_MINCHAR ((char)0x80)
-#define Q_MINSHORT ((short)0x8000)
-#define Q_MININT 	((int)0x80000000)
-#define Q_MINLONG ((int)0x80000000)
-#define Q_MINFLOAT ((int)0x7fffffff)
+#define Q_MINCHAR	 ((char)0x80)
+#define Q_MINSHORT	((short)0x8000)
+#define Q_MININT	  ((int)0x80000000)
+#define Q_MINLONG	  ((int)0x80000000)
+#define Q_MINFLOAT	  -3.40282346638528859811704183484516925440e38
+
+#define Q_FLOAT_EPSILON 1.1754943508222875079687365372222456778186655567720875215087517062784172594547271728515625e-38
 
 //============================================================================
 

@@ -112,7 +112,7 @@ VectorVectors(const vec3_t forward, vec3_t right, vec3_t up)
 }
 
 void
-RotatePointAroundVector (vec3_t dst, const vec3_t dir, const vec3_t point,
+RotatePointAroundVector (vec3_t dst, const vec3_t axis, const vec3_t point,
 						 float degrees)
 {
 	float       m[3][3];
@@ -123,9 +123,9 @@ RotatePointAroundVector (vec3_t dst, const vec3_t dir, const vec3_t point,
 	int         i;
 	vec3_t      vr, vup, vf;
 
-	VectorCopy (dir, vf);
+	VectorCopy (axis, vf);
 
-	PerpendicularVector (vr, dir);
+	PerpendicularVector (vr, axis);
 	CrossProduct (vr, vf, vup);
 
 	m[0][0] = vr[0];
