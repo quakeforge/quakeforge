@@ -877,8 +877,10 @@ if test "x$enable_alsa" != "xno"; then
 			AC_EGREP_CPP([QF_maGiC_VALUE],
 			[
 #include <alsa/asoundlib.h>
-#if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
-#if SND_LIB_MAJOR > 0 || (SND_LIB_MAJOR == 0 && SND_LIB_MINOR >= 9)
+#if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR) && \
+    defined(SND_LIB_SUBMINOR)
+#if SND_LIB_MAJOR > 0 || (SND_LIB_MAJOR == 0 && SND_LIB_MINOR >= 9 && \
+			  SND_LIB_SUBMINOR >= 8)
 QF_maGiC_VALUE
 #endif
 #endif
@@ -889,8 +891,10 @@ QF_maGiC_VALUE
 			AC_EGREP_CPP([QF_maGiC_VALUE],
 				[
 #include <sys/asoundlib.h>
-#if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR)
-#if SND_LIB_MAJOR > 0 || (SND_LIB_MAJOR == 0 && SND_LIB_MINOR >= 9)
+#if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR) && \
+    defined(SND_LIB_SUBMINOR)
+#if SND_LIB_MAJOR > 0 || (SND_LIB_MAJOR == 0 && SND_LIB_MINOR >= 9 && \
+			  SND_LIB_SUBMINOR >= 8)
 QF_maGiC_VALUE
 #endif
 #endif
@@ -901,6 +905,41 @@ QF_maGiC_VALUE
 			)
 	    )
 	fi
+fi
+if HAVE_ALSA == "no"; then
+    if test "x$enable_alsa" != "xno"; then
+	if test "x$ac_cv_header_sys_asoundlib_h" = "xyes" -o \
+		"x$ac_cv_header_alsa_asoundlib_h" = "xyes"; then
+			AC_EGREP_CPP([QF_maGiC_VALUE],
+			[
+#include <alsa/asoundlib.h>
+#if defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR) && \
+    defined(SND_LIB_SUBMINOR)
+#if SND_LIB_MAJOR == 0 && SND_LIB_MINOR >= 9 && SND_LIB_SUBMINOR < 8
+QF_maGiC_VALUE
+#endif
+#endif
+			],
+			SOUND_TYPES="$SOUND_TYPES ALSA0_9"
+			ALSA_LIBS="-lasound"
+			HAVE_ALSA=yes,
+			AC_EGREP_CPP([QF_maGiC_VALUE],
+				[
+#include <sys/asoundlib.h>
+#if (defined(SND_LIB_MAJOR) && defined(SND_LIB_MINOR) && \
+     defined(SND_LIB_SUBMINOR)
+#if SND_LIB_MAJOR == 0 && SND_LIB_MINOR >= 9 && SND_LIB_SUBMINOR < 8
+QF_maGiC_VALUE
+#endif
+#endif
+				],
+				SOUND_TYPES="$SOUND_TYPES ALSA0_9"
+				ALSA_LIBS="-lasound"
+				HAVE_ALSA=yes
+			)
+		)
+	fi
+    fi
 fi
 AC_SUBST(ALSA_LIBS)
 AC_SUBST(HAVE_ALSA)
@@ -1832,7 +1871,9 @@ if test -n "$CL_TARGETS"; then
 	CD_TARGETS="libQFcd.la"
 	SND_TARGETS="libQFsound.la"
 	JOY_TARGETS="libQFjs.la"
-	if test "`echo $SOUND_TYPES | grep ALSA`"; then
+	if test "`echo $SOUND_TYPES | grep ALSA0_9`"; then
+		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_alsa0_9.la"
+	elif test "`echo $SOUND_TYPES | grep ALSA`"; then
 		SND_PLUGIN_TARGETS="$SND_PLUGIN_TARGETS snd_output_alsa.la"
 	fi
 	if test "`echo $SOUND_TYPES | grep MME`"; then
