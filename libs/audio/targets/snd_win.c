@@ -663,16 +663,16 @@ DSOUND_LockBuffer (qboolean lockit)
 			if (hresult != DSERR_BUFFERLOST) {
 				Sys_Printf
 					("S_TransferStereo16: DS::Lock Sound Buffer Failed\n");
-				S_Shutdown ();
-				S_Startup ();
+				SNDDMA_Shutdown ();
+				SNDDMA_Init ();
 				return NULL;
 			}
 
 			if (++reps > 10000) {
 				Sys_Printf
 					("S_TransferStereo16: DS: couldn't restore buffer\n");
-				S_Shutdown ();
-				S_Startup ();
+				SNDDMA_Shutdown ();
+				SNDDMA_Init ();
 				return NULL;
 			}
 		}
