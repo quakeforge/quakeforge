@@ -180,14 +180,14 @@ PL_D_AllKeys (plitem_t *dict)
 }
 
 plitem_t *
-PL_ObjectAtIndex (plitem_t *item, int index)
+PL_ObjectAtIndex (plitem_t *array, int index)
 {
-	plarray_t  *array = (plarray_t *) item->data;
+	plarray_t  *arr = (plarray_t *) array->data;
 
-	if (item->type != QFArray)
+	if (array->type != QFArray)
 		return NULL;
 
-	return index >= 0 && index < array->numvals ? array->values[index] : NULL;
+	return index >= 0 && index < arr->numvals ? arr->values[index] : NULL;
 }
 
 qboolean
