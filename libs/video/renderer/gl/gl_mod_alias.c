@@ -619,25 +619,26 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 		}
 	}
 
-	if (modelalpha < 1.0)
-		qfglDepthMask (GL_TRUE);
-
 	qfglPopMatrix ();
 
+	// FIXME: Translucent objects should cast colored shadows
 	// torches, grenades, and lightning bolts do not have shadows
 	if (r_shadows->int_val && clmodel->shadow_alpha) {
 		qfglPushMatrix ();
 		R_RotateForEntity (e);
 
 		qfglDisable (GL_TEXTURE_2D);
-		color_black[3] = (clmodel->shadow_alpha + 1) / 2;
+		qfglDepthMask (GL_FALSE);
+		color_black[3] = modelalpha * ((clmodel->shadow_alpha + 1) / 2);
 		qfglColor4ubv (color_black);
 
 		GL_DrawAliasShadow (paliashdr, vo);
 
+		qfglDepthMask (GL_TRUE);
 		qfglEnable (GL_TEXTURE_2D);
 		qfglPopMatrix ();
-	}
+	} else if (modelalpha < 1.0)
+		qfglDepthMask (GL_TRUE);
 
 	Cache_Release (&e->model->cache);
 }
