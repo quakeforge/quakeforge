@@ -47,8 +47,10 @@ VID_GetWindowSize (int def_w, int def_h)
 {
 	int pnum;
 
-	vid_width = Cvar_Get ("vid_width", va ("%d", def_w), CVAR_NONE, 0, "screen width");
-	vid_height = Cvar_Get ("vid_height", va ("%d", def_h), CVAR_NONE, 0, "screen height");
+	vid_width = Cvar_Get ("vid_width", va ("%d", def_w), CVAR_NONE, NULL,
+			"screen width");
+	vid_height = Cvar_Get ("vid_height", va ("%d", def_h), CVAR_NONE, NULL,
+			"screen height");
 
 	if ((pnum = COM_CheckParm ("-width"))) {
 		if (pnum >= com_argc - 1)

@@ -317,16 +317,16 @@ Draw_Init_Cvars (void)
 	gl_lightmode = Cvar_Get ("gl_lightmode", "1", CVAR_ARCHIVE, 
 							gl_lightmode_callback,
 							"Lighting mode (0 = GLQuake style, 1 = new style)");
-	gl_max_size = Cvar_Get ("gl_max_size", "1024", CVAR_NONE, 0, "Texture dimension"); 
-	gl_picmip = Cvar_Get ("gl_picmip", "0", CVAR_NONE, 0, "Dimensions of displayed textures. 0 is normal, 1 is half, 2 is 1/4"); 
-	gl_constretch = Cvar_Get ("gl_constretch", "0", CVAR_ARCHIVE, 0,
+	gl_max_size = Cvar_Get ("gl_max_size", "1024", CVAR_NONE, NULL, "Texture dimension"); 
+	gl_picmip = Cvar_Get ("gl_picmip", "0", CVAR_NONE, NULL, "Dimensions of displayed textures. 0 is normal, 1 is half, 2 is 1/4"); 
+	gl_constretch = Cvar_Get ("gl_constretch", "0", CVAR_ARCHIVE, NULL,
 							  "whether slide the console or stretch it");
-	gl_conalpha = Cvar_Get ("gl_conalpha", "0.6", CVAR_ARCHIVE, 0,
+	gl_conalpha = Cvar_Get ("gl_conalpha", "0.6", CVAR_ARCHIVE, NULL,
 							"alpha value for the console background");
-	gl_conspin = Cvar_Get ("gl_conspin", "0", CVAR_ARCHIVE, 0,
+	gl_conspin = Cvar_Get ("gl_conspin", "0", CVAR_ARCHIVE, NULL,
 						   "speed at which the console spins");
 	gl_lightmap_components = Cvar_Get ("gl_lightmap_components", "4", CVAR_ROM, 0, "Lightmap texture components. 1 is greyscale, 3 is RGB, 4 is RGBA.");
-	cl_verstring = Cvar_Get ("cl_verstring", PROGRAM " " VERSION, CVAR_NONE, 0,
+	cl_verstring = Cvar_Get ("cl_verstring", PROGRAM " " VERSION, CVAR_NONE, NULL,
 							 "Client version string");
 }
 

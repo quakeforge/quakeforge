@@ -1,4 +1,3 @@
-
 /*
 	in_sdl.c
 
@@ -358,10 +357,10 @@ IN_Init_Cvars (void)
 	JOY_Init_Cvars ();
 
 	_windowed_mouse =
-		Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, 0,
+		Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, NULL,
 				  "If set to 1, quake will grab the mouse in X");
-	// m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, 0, "Toggle mouse
-	// input filtering");
+	// m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, NULL,
+	// 		"Toggle mouse input filtering");
 }
 
 void

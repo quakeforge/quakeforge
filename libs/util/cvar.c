@@ -4,7 +4,6 @@
 	dynamic variable tracking
 
 	Copyright (C) 1996-1997  Id Software, Inc.
-	Copyright (C) 1999,2000  Nelson Rush.
 	Copyright (C) 1999,2000  contributors of the QuakeForge project
 	Please see the file "AUTHORS" for a list of contributors
 
@@ -316,7 +315,7 @@ Cvar_Set_f (void)
 			Cvar_Set (var, value);
 		}
 	} else {
-		var = Cvar_Get (var_name, value, CVAR_USER_CREATED, 0,
+		var = Cvar_Get (var_name, value, CVAR_USER_CREATED, NULL,
 						"User-created cvar");
 	}
 }
@@ -347,7 +346,7 @@ Cvar_Setrom_f (void)
 			Cvar_SetFlags (var, var->flags | CVAR_ROM);
 		}
 	} else {
-		var = Cvar_Get (var_name, value, CVAR_USER_CREATED | CVAR_ROM, 0,
+		var = Cvar_Get (var_name, value, CVAR_USER_CREATED | CVAR_ROM, NULL,
 						"User-created READ-ONLY Cvar");
 	}
 }
@@ -460,7 +459,8 @@ Cvar_Init_Hash (void)
 void
 Cvar_Init (void)
 {
-	developer = Cvar_Get ("developer", "0", CVAR_NONE, 0, "set to enable extra debugging information");
+	developer = Cvar_Get ("developer", "0", CVAR_NONE, NULL,
+			"set to enable extra debugging information");
 
 	Cmd_AddCommand ("set", Cvar_Set_f, "Set the selected variable, useful on the command line (+set variablename setting)");
 	Cmd_AddCommand ("setrom", Cvar_Setrom_f, "Set the selected variable and make it read only, useful on the command line.\n"

@@ -284,11 +284,12 @@ void
 SV_Progs_Init_Cvars (void)
 {
 	r_skyname =
-		Cvar_Get ("r_skyname", "", CVAR_SERVERINFO, Cvar_Info, "name of skybox");
-	sv_progs = Cvar_Get ("sv_progs", "qwprogs.dat", CVAR_ROM, 0,
+		Cvar_Get ("r_skyname", "", CVAR_SERVERINFO, Cvar_Info,
+				"name of skybox");
+	sv_progs = Cvar_Get ("sv_progs", "qwprogs.dat", CVAR_ROM, NULL,
 						 "Allows selectable game progs if you have several "
 						 "of them in the gamedir");
-	pr_checkextentions = Cvar_Get ("sv_progs", "1", CVAR_ROM, 0,
+	pr_checkextentions = Cvar_Get ("sv_progs", "1", CVAR_ROM, NULL,
 								   "indicate the presence of the "
 								   "checkextentions qc function");
 }

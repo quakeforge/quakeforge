@@ -603,9 +603,10 @@ Cam_Reset (void)
 void
 CL_Cam_Init_Cvars (void)
 {
-	cl_hightrack = Cvar_Get ("cl_hightrack", "0", CVAR_NONE, 0, "view the player with the highest frags while in spectator mode.");
-	cl_chasecam = Cvar_Get ("cl_chasecam", "0", CVAR_NONE, 0, "get first person view of the person you are tracking in spectator mode");
+	cl_hightrack = Cvar_Get ("cl_hightrack", "0", CVAR_NONE, NULL, "view the player with the highest frags while in spectator mode.");
+	cl_chasecam = Cvar_Get ("cl_chasecam", "0", CVAR_NONE, NULL, "get first person view of the person you are tracking in spectator mode");
 	cl_camera_maxpitch =
-		Cvar_Get ("cl_camera_maxpitch", "10", CVAR_NONE, 0, "highest camera pitch in spectator mode");
-	cl_camera_maxyaw = Cvar_Get ("cl_camera_maxyaw", "30", CVAR_NONE, 0, "highest camera yaw in spectator mode");
+		Cvar_Get ("cl_camera_maxpitch", "10", CVAR_NONE, NULL, "highest camera pitch in spectator mode");
+	cl_camera_maxyaw = Cvar_Get ("cl_camera_maxyaw", "30", CVAR_NONE, NULL, "highest camera yaw in spectator mode");
 }
+

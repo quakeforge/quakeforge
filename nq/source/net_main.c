@@ -844,23 +844,24 @@ NET_Init (void)
 	SZ_Alloc (&_net_message_message, NET_MAXMESSAGE);
 
 	net_messagetimeout =
-		Cvar_Get ("net_messagetimeout", "300", CVAR_NONE, 0, "None");
-	hostname = Cvar_Get ("hostname", "UNNAMED", CVAR_NONE, 0, "None");
+		Cvar_Get ("net_messagetimeout", "300", CVAR_NONE, NULL, "None");
+	hostname = Cvar_Get ("hostname", "UNNAMED", CVAR_NONE, NULL, "None");
 	config_com_port =
-		Cvar_Get ("_config_com_port", "0x3f8", CVAR_ARCHIVE, 0, "None");
-	config_com_irq = Cvar_Get ("_config_com_irq", "4", CVAR_ARCHIVE, 0, "None");
+		Cvar_Get ("_config_com_port", "0x3f8", CVAR_ARCHIVE, NULL, "None");
+	config_com_irq = Cvar_Get ("_config_com_irq", "4", CVAR_ARCHIVE, NULL,
+			"None");
 	config_com_baud =
-		Cvar_Get ("_config_com_baud", "57600", CVAR_ARCHIVE, 0, "None");
+		Cvar_Get ("_config_com_baud", "57600", CVAR_ARCHIVE, NULL, "None");
 	config_com_modem =
-		Cvar_Get ("_config_com_modem", "1", CVAR_ARCHIVE, 0, "None");
+		Cvar_Get ("_config_com_modem", "1", CVAR_ARCHIVE, NULL, "None");
 	config_modem_dialtype =
-		Cvar_Get ("_config_modem_dialtype", "T", CVAR_ARCHIVE, 0, "None");
+		Cvar_Get ("_config_modem_dialtype", "T", CVAR_ARCHIVE, NULL, "None");
 	config_modem_clear =
-		Cvar_Get ("_config_modem_clear", "ATZ", CVAR_ARCHIVE, 0, "None");
+		Cvar_Get ("_config_modem_clear", "ATZ", CVAR_ARCHIVE, NULL, "None");
 	config_modem_init =
-		Cvar_Get ("_config_modem_init", "", CVAR_ARCHIVE, 0, "None");
+		Cvar_Get ("_config_modem_init", "", CVAR_ARCHIVE, NULL, "None");
 	config_modem_hangup =
-		Cvar_Get ("_config_modem_hangup", "AT H", CVAR_ARCHIVE, 0, "None");
+		Cvar_Get ("_config_modem_hangup", "AT H", CVAR_ARCHIVE, NULL, "None");
 
 	Cmd_AddCommand ("slist", NET_Slist_f, "No Description");
 	Cmd_AddCommand ("listen", NET_Listen_f, "No Description");

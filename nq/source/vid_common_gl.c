@@ -286,8 +286,8 @@ VID_Is8bit (void)
 }
 
 #ifdef HAVE_TDFXGL
-void        3
-dfx_Init8bitPalette ()
+void
+Tdfx_Init8bitPalette ()
 {
 // Check for 8bit Extensions and initialize them.
 	int         i;
@@ -378,11 +378,11 @@ VID_Init8bitPalette (void)
 		Con_Printf ("disabled.\n");
 		return;
 	}
-	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, 0,
+	vid_use8bit = Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,
 							"Whether to use Shared Palettes.");
 	if (vid_use8bit->value) {
 #ifdef HAVE_TDFXGL
-		3           dfx_Init8bitPalette ();
+		Tdfx_Init8bitPalette ();
 #else
 #ifdef GL_SHARED_TEXTURE_PALETTE_EXT
 		Shared_Init8bitPalette ();

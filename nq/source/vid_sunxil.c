@@ -1,4 +1,3 @@
-
 /*
 	vid_sunxil.c
 
@@ -419,7 +418,8 @@ VID_Init (unsigned char *palette)
 
 	Cmd_AddCommand ("gamma", VID_Gamma_f, "No Description");
 
-	pixel_multiply = Cvar_Get ("pixel_multiply", "2", CVAR_ARCHIVE, 0, "None");
+	pixel_multiply = Cvar_Get ("pixel_multiply", "2", CVAR_ARCHIVE, NULL,
+			"None");
 
 	if (pipe (render_pipeline) < 0)
 		Sys_Error ("VID_Init: pipe");
@@ -1339,8 +1339,9 @@ IN_SendKeyEvents (void)
 void
 IN_Init (void)
 {
-	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, 0, "None");
-	m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, 0, "None");
+	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, NULL,
+			"None");
+	m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, NULL, "None");
 	if (COM_CheckParm ("-nomouse"))
 		return;
 	mouse_x = mouse_y = 0.0;

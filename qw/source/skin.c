@@ -312,15 +312,16 @@ Skin_Init (void)
 void
 Skin_Init_Cvars (void)
 {
-	baseskin = Cvar_Get ("baseskin", "base", CVAR_NONE, 0,
+	baseskin = Cvar_Get ("baseskin", "base", CVAR_NONE, NULL,
 						 "default base skin name");
-	noskins = Cvar_Get ("noskins", "0", CVAR_NONE, 0,
+	noskins = Cvar_Get ("noskins", "0", CVAR_NONE, NULL,
 						"set to 1 to not download new skins");
-	skin = Cvar_Get ("skin", "", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info, "Players skin");
-	topcolor = Cvar_Get ("topcolor", "0", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
-						 "Players color on top");
-	bottomcolor = Cvar_Get ("bottomcolor", "0", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
-							"Players color on bottom");
+	skin = Cvar_Get ("skin", "", CVAR_ARCHIVE | CVAR_USERINFO, Cvar_Info,
+			"Players skin");
+	topcolor = Cvar_Get ("topcolor", "0", CVAR_ARCHIVE | CVAR_USERINFO,
+			Cvar_Info, "Players color on top");
+	bottomcolor = Cvar_Get ("bottomcolor", "0", CVAR_ARCHIVE | CVAR_USERINFO,
+			Cvar_Info, "Players color on bottom");
 }
 
 /*

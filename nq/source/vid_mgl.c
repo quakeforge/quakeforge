@@ -1,4 +1,3 @@
-
 /*
 	vid_mgl.c
 
@@ -2114,21 +2113,24 @@ VID_Init (unsigned char *palette)
 void
 VID_Init_Cvars ()
 {
-	vid_mode = Cvar_Get ("vid_mode", "0", CVAR_NONE, 0, "None");
-	vid_nopageflip = Cvar_Get ("vid_nopageflip", "0", CVAR_ARCHIVE, 0, "None");
+	vid_mode = Cvar_Get ("vid_mode", "0", CVAR_NONE, NULL, "None");
+	vid_nopageflip = Cvar_Get ("vid_nopageflip", "0", CVAR_ARCHIVE, NULL,
+			"None");
 	_vid_default_mode_win =
-		Cvar_Get ("_vid_default_mode_win", "3", CVAR_ARCHIVE, 0, "None");
-	vid_config_x = Cvar_Get ("vid_config_x", "800", CVAR_ARCHIVE, 0, "None");
-	vid_config_y = Cvar_Get ("vid_config_y", "600", CVAR_ARCHIVE, 0, "None");
-	vid_stretch_by_2 = Cvar_Get ("vid_stretch_by_2", "1", CVAR_ARCHIVE, 0, "None");
-	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, 0, "None");
+		Cvar_Get ("_vid_default_mode_win", "3", CVAR_ARCHIVE, NULL, "None");
+	vid_config_x = Cvar_Get ("vid_config_x", "800", CVAR_ARCHIVE, NULL, "None");
+	vid_config_y = Cvar_Get ("vid_config_y", "600", CVAR_ARCHIVE, NULL, "None");
+	vid_stretch_by_2 = Cvar_Get ("vid_stretch_by_2", "1", CVAR_ARCHIVE, NULL,
+			"None");
+	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, NULL,
+			"None");
 	vid_fullscreen_mode =
-		Cvar_Get ("vid_fullscreen_mode", "3", CVAR_ARCHIVE, 0, "None");
+		Cvar_Get ("vid_fullscreen_mode", "3", CVAR_ARCHIVE, NULL, "None");
 	vid_windowed_mode =
-		Cvar_Get ("vid_windowed_mode", "0", CVAR_ARCHIVE, 0, "None");
-	block_switch = Cvar_Get ("block_switch", "0", CVAR_ARCHIVE, 0, "None");
-	vid_window_x = Cvar_Get ("vid_window_x", "0", CVAR_ARCHIVE, 0, "None");
-	vid_window_y = Cvar_Get ("vid_window_y", "0", CVAR_ARCHIVE, 0, "None");
+		Cvar_Get ("vid_windowed_mode", "0", CVAR_ARCHIVE, NULL, "None");
+	block_switch = Cvar_Get ("block_switch", "0", CVAR_ARCHIVE, NULL, "None");
+	vid_window_x = Cvar_Get ("vid_window_x", "0", CVAR_ARCHIVE, NULL, "None");
+	vid_window_y = Cvar_Get ("vid_window_y", "0", CVAR_ARCHIVE, NULL, "None");
 }
 
 

@@ -1391,7 +1391,8 @@ VID_Init8bitPalette (void)
 	GLubyte		*oldPalette, *newPalette;
 
 	vid_use8bit =
-		Cvar_Get ("vid_use8bit", "0", CVAR_ROM, 0, "Use 8-bit shared palettes.");
+		Cvar_Get ("vid_use8bit", "0", CVAR_ROM, NULL,
+				"Use 8-bit shared palettes.");
 
         if (!vid_use8bit->int_val) return;
 
@@ -1662,7 +1663,8 @@ VID_Init (unsigned char *palette)
 void
 VID_Init_Cvars ()
 {
-	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, 0, "Grab the mouse from X while playing quake");
+	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, NULL,
+			"Grab the mouse from X while playing quake");
 }
 
 

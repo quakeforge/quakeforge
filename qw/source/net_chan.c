@@ -129,10 +129,13 @@ Netchan_Init (void)
 void
 Netchan_Init_Cvars (void)
 {
-	showpackets = Cvar_Get ("showpackets", "0", CVAR_NONE, 0, "Show all network packets");
-	showdrop = Cvar_Get ("showdrop", "0", CVAR_NONE, 0, "Toggle the display of how many packets you are dropping");
-        qport = Cvar_Get ("qport", "0", CVAR_NONE, 0, "The internal port number for the game networking code."
-        "Useful for clients who use multiple connections through one IP address (NAT/IP-MASQ) because default port is random.");
+	showpackets = Cvar_Get ("showpackets", "0", CVAR_NONE, NULL,
+			"Show all network packets");
+	showdrop = Cvar_Get ("showdrop", "0", CVAR_NONE, NULL,
+			"Toggle the display of how many packets you are dropping");
+        qport = Cvar_Get ("qport", "0", CVAR_NONE, NULL,
+				"The internal port number for the game networking code."
+				"Useful for clients who use multiple connections through one IP address (NAT/IP-MASQ) because default port is random.");
 }
 
 /*

@@ -1490,13 +1490,13 @@ SV_InitLocal (void)
 
 	SV_UserInit ();
 
-	rcon_password = Cvar_Get ("rcon_password", "", CVAR_NONE, 0, "Set the password for rcon commands");
-	password = Cvar_Get ("password", "", CVAR_NONE, 0, "Set the server password for players");
-	spectator_password = Cvar_Get ("spectator_password", "", CVAR_NONE, 0, "Set the spectator password");
+	rcon_password = Cvar_Get ("rcon_password", "", CVAR_NONE, NULL, "Set the password for rcon commands");
+	password = Cvar_Get ("password", "", CVAR_NONE, NULL, "Set the server password for players");
+	spectator_password = Cvar_Get ("spectator_password", "", CVAR_NONE, NULL, "Set the spectator password");
 
-	sv_mintic = Cvar_Get ("sv_mintic", "0.03", CVAR_NONE, 0, 
+	sv_mintic = Cvar_Get ("sv_mintic", "0.03", CVAR_NONE, NULL, 
 		"The minimum amount of time the server will wait before sending packets to a client. Set to .5 to make modem users happy");
-	sv_maxtic = Cvar_Get ("sv_maxtic", "0.1", CVAR_NONE, 0, 
+	sv_maxtic = Cvar_Get ("sv_maxtic", "0.1", CVAR_NONE, NULL, 
 		"The maximum amount of time in seconds before a client a receives an update from the server");
 	fraglimit = Cvar_Get ("fraglimit", "0", CVAR_SERVERINFO, Cvar_Info, "Amount of frags a player must attain in order to exit the level");
 	timelimit = Cvar_Get ("timelimit", "0", CVAR_SERVERINFO, Cvar_Info, 
@@ -1524,34 +1524,34 @@ SV_InitLocal (void)
 	spawn = Cvar_Get ("spawn", "0", CVAR_SERVERINFO, Cvar_Info, "Spawn the player entity");
 	watervis = Cvar_Get ("watervis", "0", CVAR_SERVERINFO, Cvar_Info, "Toggle the use of r_watervis by OpenGL clients");
 
-	timeout = Cvar_Get ("timeout", "65", CVAR_NONE, 0, 
+	timeout = Cvar_Get ("timeout", "65", CVAR_NONE, NULL, 
 		"Sets the amount of time in seconds before a client is considered disconnected if the server does not receive a packet");
-	zombietime = Cvar_Get ("zombietime", "2", CVAR_NONE, 0, 
+	zombietime = Cvar_Get ("zombietime", "2", CVAR_NONE, NULL, 
 		"The number of seconds that the server will keep the character of a player on the map who seems to have disconnected");
 
-	sv_maxvelocity = Cvar_Get ("sv_maxvelocity", "2000", CVAR_NONE, 0, "Sets the maximum velocity an object can travel");
-	sv_gravity = Cvar_Get ("sv_gravity", "800", CVAR_NONE, 0, "Sets the global value for the amount of gravity");
-	sv_stopspeed = Cvar_Get ("sv_stopspeed", "100", CVAR_NONE, 0, 
+	sv_maxvelocity = Cvar_Get ("sv_maxvelocity", "2000", CVAR_NONE, NULL, "Sets the maximum velocity an object can travel");
+	sv_gravity = Cvar_Get ("sv_gravity", "800", CVAR_NONE, NULL, "Sets the global value for the amount of gravity");
+	sv_stopspeed = Cvar_Get ("sv_stopspeed", "100", CVAR_NONE, NULL, 
 		"Sets the value that determines how fast the player should come to a complete stop");
-	sv_maxspeed = Cvar_Get ("sv_maxspeed", "320", CVAR_NONE, 0, "Sets the maximum speed a player can move");
+	sv_maxspeed = Cvar_Get ("sv_maxspeed", "320", CVAR_NONE, NULL, "Sets the maximum speed a player can move");
 	sv_spectatormaxspeed =
-		Cvar_Get ("sv_spectatormaxspeed", "500", CVAR_NONE, 0, "Sets the maximum speed a spectator can move");
-	sv_accelerate = Cvar_Get ("sv_accelerate", "10", CVAR_NONE, 0, "Sets the acceleration value for the players");
-	sv_airaccelerate = Cvar_Get ("sv_airaccelerate", "0.7", CVAR_NONE, 0, "Sets how quickly the players accelerate in air");
+		Cvar_Get ("sv_spectatormaxspeed", "500", CVAR_NONE, NULL, "Sets the maximum speed a spectator can move");
+	sv_accelerate = Cvar_Get ("sv_accelerate", "10", CVAR_NONE, NULL, "Sets the acceleration value for the players");
+	sv_airaccelerate = Cvar_Get ("sv_airaccelerate", "0.7", CVAR_NONE, NULL, "Sets how quickly the players accelerate in air");
 	sv_wateraccelerate =
-		Cvar_Get ("sv_wateraccelerate", "10", CVAR_NONE, 0, "Sets the water acceleration value");
-	sv_friction = Cvar_Get ("sv_friction", "4", CVAR_NONE, 0, "Sets the friction value for the players");
-	sv_waterfriction = Cvar_Get ("sv_waterfriction", "4", CVAR_NONE, 0, "Sets the water friction value");
+		Cvar_Get ("sv_wateraccelerate", "10", CVAR_NONE, NULL, "Sets the water acceleration value");
+	sv_friction = Cvar_Get ("sv_friction", "4", CVAR_NONE, NULL, "Sets the friction value for the players");
+	sv_waterfriction = Cvar_Get ("sv_waterfriction", "4", CVAR_NONE, NULL, "Sets the water friction value");
 
-	sv_aim = Cvar_Get ("sv_aim", "2", CVAR_NONE, 0, "Sets the value for auto-aiming leniency");
+	sv_aim = Cvar_Get ("sv_aim", "2", CVAR_NONE, NULL, "Sets the value for auto-aiming leniency");
 
 	sv_timekick =
 		Cvar_Get ("sv_timekick", "3", CVAR_SERVERINFO, Cvar_Info, "Time cheat protection");
 	sv_timekick_fuzz =
-		Cvar_Get ("sv_timekick_fuzz", "15", CVAR_NONE, 0,
+		Cvar_Get ("sv_timekick_fuzz", "15", CVAR_NONE, NULL,
 				  "Time cheat \"fuzz factor\"");
 	sv_timekick_interval =
-		Cvar_Get ("sv_timekick_interval", "30", CVAR_NONE, 0,
+		Cvar_Get ("sv_timekick_interval", "30", CVAR_NONE, NULL,
 				  "Time cheat check interval");
 
 	sv_minqfversion =
@@ -1562,45 +1562,45 @@ SV_InitLocal (void)
 		Cvar_Get ("sv_maxrate", "0", CVAR_SERVERINFO, Cvar_Info, "Maximum allowable rate");
 
 	sv_allow_log =
-		Cvar_Get ("sv_allow_log", "1", CVAR_NONE, 0, "Allow remote logging");
+		Cvar_Get ("sv_allow_log", "1", CVAR_NONE, NULL, "Allow remote logging");
 	sv_allow_status =
-		Cvar_Get ("sv_allow_status", "1", CVAR_NONE, 0,
+		Cvar_Get ("sv_allow_status", "1", CVAR_NONE, NULL,
 				  "Allow remote status queries (qstat etc)");
 	sv_allow_ping =
-		Cvar_Get ("sv_allow_pings", "1", CVAR_NONE, 0,
+		Cvar_Get ("sv_allow_pings", "1", CVAR_NONE, NULL,
 				  "Allow remote pings (qstat etc)");
 	sv_netdosprotect =
-		Cvar_Get ("sv_netdosprotect", "0", CVAR_NONE, 0,
+		Cvar_Get ("sv_netdosprotect", "0", CVAR_NONE, NULL,
 				  "DoS flood attack protection");
 
 	sv_timestamps =
-		Cvar_Get ("sv_timestamps", "0", CVAR_NONE, 0,
+		Cvar_Get ("sv_timestamps", "0", CVAR_NONE, NULL,
 				  "Time/date stamps in log entries");
 	sv_timefmt =
-		Cvar_Get ("sv_timefmt", "[%b %e %X] ", CVAR_NONE, 0,
+		Cvar_Get ("sv_timefmt", "[%b %e %X] ", CVAR_NONE, NULL,
 				  "Time/date format to use");
 
-	filterban = Cvar_Get ("filterban", "1", CVAR_NONE, 0, 
+	filterban = Cvar_Get ("filterban", "1", CVAR_NONE, NULL, 
 		"Determines the rules for the IP list "
 		"0 Only IP addresses on the Ban list will be allowed onto the server, "
 		"1 Only IP addresses NOT on the Ban list will be allowed onto the server");
 
-	allow_download = Cvar_Get ("allow_download", "1", CVAR_NONE, 0, "Toggle if clients can download game data from the server");
+	allow_download = Cvar_Get ("allow_download", "1", CVAR_NONE, NULL, "Toggle if clients can download game data from the server");
 	allow_download_skins =
-		Cvar_Get ("allow_download_skins", "1", CVAR_NONE, 0, "Toggle if clients can download skins from the server");
+		Cvar_Get ("allow_download_skins", "1", CVAR_NONE, NULL, "Toggle if clients can download skins from the server");
 	allow_download_models =
-		Cvar_Get ("allow_download_models", "1", CVAR_NONE, 0, "Toggle if clients can download models from the server");
+		Cvar_Get ("allow_download_models", "1", CVAR_NONE, NULL, "Toggle if clients can download models from the server");
 	allow_download_sounds =
-		Cvar_Get ("allow_download_sounds", "1", CVAR_NONE, 0, "Toggle if clients can download sounds from the server");
+		Cvar_Get ("allow_download_sounds", "1", CVAR_NONE, NULL, "Toggle if clients can download sounds from the server");
 	allow_download_maps =
-		Cvar_Get ("allow_download_maps", "1", CVAR_NONE, 0, "Toggle if clients can download maps from the server");
+		Cvar_Get ("allow_download_maps", "1", CVAR_NONE, NULL, "Toggle if clients can download maps from the server");
 
-	sv_highchars = Cvar_Get ("sv_highchars", "1", CVAR_NONE, 0, "Toggle the use of high character color names for players");
+	sv_highchars = Cvar_Get ("sv_highchars", "1", CVAR_NONE, NULL, "Toggle the use of high character color names for players");
 
-	sv_phs = Cvar_Get ("sv_phs", "1", CVAR_NONE, 0,
+	sv_phs = Cvar_Get ("sv_phs", "1", CVAR_NONE, NULL,
 	"Possibly Hearable Set. If set to zero, the server calculates sound hearability in realtime");
 	 
-	pausable = Cvar_Get ("pausable", "1", CVAR_NONE, 0, "Toggle if server can be paused 1 is on, 0 is off");
+	pausable = Cvar_Get ("pausable", "1", CVAR_NONE, NULL, "Toggle if server can be paused 1 is on, 0 is off");
 
 	// DoS protection
 	Cmd_AddCommand ("netdosexpire", SV_netDoSexpire_f, "FIXME: part of DoS protection obviously, but I don't know what it does. No Description");

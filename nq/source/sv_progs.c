@@ -305,23 +305,27 @@ SV_Progs_Init (void)
 void
 SV_Progs_Init_Cvars (void)
 {
-	r_skyname = Cvar_Get ("r_skyname", "", CVAR_SERVERINFO, Cvar_Info, "name of skybox");
-	sv_progs = Cvar_Get ("sv_progs", "progs.dat", CVAR_ROM, 0,
+	r_skyname = Cvar_Get ("r_skyname", "", CVAR_SERVERINFO, Cvar_Info,
+			"name of skybox");
+	sv_progs = Cvar_Get ("sv_progs", "progs.dat", CVAR_ROM, NULL,
 						 "Allows selectable game progs if you have several "
 						 "of them in the gamedir");
-	pr_checkextentions = Cvar_Get ("sv_progs", "1", CVAR_ROM, 0,
+	pr_checkextentions = Cvar_Get ("sv_progs", "1", CVAR_ROM, NULL,
 								   "indicate the presence of the "
 								   "checkextentions qc function");
 
-	nomonsters = Cvar_Get ("nomonsters", "0", CVAR_NONE, 0, "No Description");
-	gamecfg = Cvar_Get ("gamecfg", "0", CVAR_NONE, 0, "No Description");
-	scratch1 = Cvar_Get ("scratch1", "0", CVAR_NONE, 0, "No Description");
-	scratch2 = Cvar_Get ("scratch2", "0", CVAR_NONE, 0, "No Description");
-	scratch3 = Cvar_Get ("scratch3", "0", CVAR_NONE, 0, "No Description");
-	scratch4 = Cvar_Get ("scratch4", "0", CVAR_NONE, 0, "No Description");
-	savedgamecfg = Cvar_Get ("savedgamecfg", "0", CVAR_ARCHIVE, 0, "No Description");
-	saved1 = Cvar_Get ("saved1", "0", CVAR_ARCHIVE, 0, "No Description");
-	saved2 = Cvar_Get ("saved2", "0", CVAR_ARCHIVE, 0, "No Description");
-	saved3 = Cvar_Get ("saved3", "0", CVAR_ARCHIVE, 0, "No Description");
-	saved4 = Cvar_Get ("saved4", "0", CVAR_ARCHIVE, 0, "No Description");
+	nomonsters = Cvar_Get ("nomonsters", "0", CVAR_NONE, NULL,
+			"No Description");
+	gamecfg = Cvar_Get ("gamecfg", "0", CVAR_NONE, NULL, "No Description");
+	scratch1 = Cvar_Get ("scratch1", "0", CVAR_NONE, NULL, "No Description");
+	scratch2 = Cvar_Get ("scratch2", "0", CVAR_NONE, NULL, "No Description");
+	scratch3 = Cvar_Get ("scratch3", "0", CVAR_NONE, NULL, "No Description");
+	scratch4 = Cvar_Get ("scratch4", "0", CVAR_NONE, NULL, "No Description");
+	savedgamecfg = Cvar_Get ("savedgamecfg", "0", CVAR_ARCHIVE, NULL,
+			"No Description");
+	saved1 = Cvar_Get ("saved1", "0", CVAR_ARCHIVE, NULL, "No Description");
+	saved2 = Cvar_Get ("saved2", "0", CVAR_ARCHIVE, NULL, "No Description");
+	saved3 = Cvar_Get ("saved3", "0", CVAR_ARCHIVE, NULL, "No Description");
+	saved4 = Cvar_Get ("saved4", "0", CVAR_ARCHIVE, NULL, "No Description");
 }
+

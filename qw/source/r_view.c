@@ -743,29 +743,48 @@ V_Init (void)
 void
 V_Init_Cvars (void)
 {
-	v_centermove = Cvar_Get ("v_centermove", "0.15", CVAR_NONE, 0, "How far the player must move forward before the view re-centers");
-	v_centerspeed = Cvar_Get ("v_centerspeed", "500", CVAR_NONE, 0, "How quickly you return to a center view after a lookup or lookdown");
+	v_centermove = Cvar_Get ("v_centermove", "0.15", CVAR_NONE, NULL,
+			"How far the player must move forward before the view re-centers");
+	v_centerspeed = Cvar_Get ("v_centerspeed", "500", CVAR_NONE, NULL,
+			"How quickly you return to a center view after a lookup or lookdown");
 
-	v_iyaw_cycle = Cvar_Get ("v_iyaw_cycle", "2", CVAR_NONE, 0, "How far you tilt right and left when v_idlescale is enabled");
-	v_iroll_cycle = Cvar_Get ("v_iroll_cycle", "0.5", CVAR_NONE, 0, "How quickly you tilt right and left when v_idlescale is enabled");
-	v_ipitch_cycle = Cvar_Get ("v_ipitch_cycle", "1", CVAR_NONE, 0, "How quickly you lean forwards and backwards when v_idlescale is enabled");
-	v_iyaw_level = Cvar_Get ("v_iyaw_level", "0.3", CVAR_NONE, 0, "How far you tilt right and left when v_idlescale is enabled");
-	v_iroll_level = Cvar_Get ("v_iroll_level", "0.1", CVAR_NONE, 0, "How far you tilt right and left when v_idlescale is enabled");
-	v_ipitch_level = Cvar_Get ("v_ipitch_level", "0.3", CVAR_NONE, 0, "How far you lean forwards and backwards when v_idlescale is enabled");
+	v_iyaw_cycle = Cvar_Get ("v_iyaw_cycle", "2", CVAR_NONE, NULL,
+			"How far you tilt right and left when v_idlescale is enabled");
+	v_iroll_cycle = Cvar_Get ("v_iroll_cycle", "0.5", CVAR_NONE, NULL,
+			"How quickly you tilt right and left when v_idlescale is enabled");
+	v_ipitch_cycle = Cvar_Get ("v_ipitch_cycle", "1", CVAR_NONE, NULL,
+			"How quickly you lean forwards and backwards when v_idlescale is enabled");
+	v_iyaw_level = Cvar_Get ("v_iyaw_level", "0.3", CVAR_NONE, NULL,
+			"How far you tilt right and left when v_idlescale is enabled");
+	v_iroll_level = Cvar_Get ("v_iroll_level", "0.1", CVAR_NONE, NULL,
+			"How far you tilt right and left when v_idlescale is enabled");
+	v_ipitch_level = Cvar_Get ("v_ipitch_level", "0.3", CVAR_NONE, NULL,
+			"How far you lean forwards and backwards when v_idlescale is enabled");
 
-	v_idlescale = Cvar_Get ("v_idlescale", "0", CVAR_NONE, 0, "Toggles whether the view remains idle");
+	v_idlescale = Cvar_Get ("v_idlescale", "0", CVAR_NONE, NULL,
+			"Toggles whether the view remains idle");
 
-	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, 0, "How quickly you straighten out after strafing");
-	cl_rollangle = Cvar_Get ("cl_rollangle", "2.0", CVAR_NONE, 0, "How much your screen tilts when strafing");
+	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,
+			"How quickly you straighten out after strafing");
+	cl_rollangle = Cvar_Get ("cl_rollangle", "2.0", CVAR_NONE, NULL,
+			"How much your screen tilts when strafing");
 
-	cl_bob = Cvar_Get ("cl_bob", "0.02", CVAR_NONE, 0, "How much your weapon moves up and down when walking");
-	cl_bobcycle = Cvar_Get ("cl_bobcycle", "0.6", CVAR_NONE, 0, "How quickly your weapon moves up and down when walking");
-	cl_bobup = Cvar_Get ("cl_bobup", "0.5", CVAR_NONE, 0, "How long your weapon stays up before cycling when walking");
+	cl_bob = Cvar_Get ("cl_bob", "0.02", CVAR_NONE, NULL,
+			"How much your weapon moves up and down when walking");
+	cl_bobcycle = Cvar_Get ("cl_bobcycle", "0.6", CVAR_NONE, NULL,
+			"How quickly your weapon moves up and down when walking");
+	cl_bobup = Cvar_Get ("cl_bobup", "0.5", CVAR_NONE, NULL,
+			"How long your weapon stays up before cycling when walking");
 
-	v_kicktime = Cvar_Get ("v_kicktime", "0.5", CVAR_NONE, 0, "How long the kick from an attack lasts");
-	v_kickroll = Cvar_Get ("v_kickroll", "0.6", CVAR_NONE, 0, "How much you lean when hit");
-	v_kickpitch = Cvar_Get ("v_kickpitch", "0.6", CVAR_NONE, 0, "How much you look up when hit");
+	v_kicktime = Cvar_Get ("v_kicktime", "0.5", CVAR_NONE, NULL,
+			"How long the kick from an attack lasts");
+	v_kickroll = Cvar_Get ("v_kickroll", "0.6", CVAR_NONE, NULL,
+			"How much you lean when hit");
+	v_kickpitch = Cvar_Get ("v_kickpitch", "0.6", CVAR_NONE, NULL,
+			"How much you look up when hit");
 
-	brightness = Cvar_Get ("brightness", "1", CVAR_ARCHIVE, 0, "Brightness level");
-	contrast = Cvar_Get ("contrast", "1", CVAR_ARCHIVE, 0, "Contrast level");
+	brightness = Cvar_Get ("brightness", "1", CVAR_ARCHIVE, NULL,
+			"Brightness level");
+	contrast = Cvar_Get ("contrast", "1", CVAR_ARCHIVE, NULL, "Contrast level");
 }
+

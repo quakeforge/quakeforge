@@ -1207,7 +1207,7 @@ void
 PR_Init_Cvars (void)
 {
 	pr_boundscheck =
-		Cvar_Get ("pr_boundscheck", "1", CVAR_NONE, 0,
+		Cvar_Get ("pr_boundscheck", "1", CVAR_NONE, NULL,
 				  "Server progs bounds checking");
 }
 

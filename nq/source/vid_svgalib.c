@@ -5,7 +5,6 @@
 	Linux SVGALib video routines
 
 	Copyright (C) 1996-1997  Id Software, Inc.
-	Copyright (C) 1999-2000  Nelson Rush.
 	Copyright (C) 1999-2000  Marcus Sundberg [mackan@stacken.kth.se]
 	Copyright (C) 1999-2000  David Symonds [xoxus@usa.net]
 	Copyright (C) 1999,2000  contributors of the QuakeForge project
@@ -598,10 +597,10 @@ VID_Init (unsigned char *palette)
 void
 VID_Init_Cvars ()
 {
-	vid_mode = Cvar_Get ("vid_mode", "5", CVAR_NONE, 0, "None");
-	vid_redrawfull = Cvar_Get ("vid_redrawfull", "0", CVAR_NONE, 0, "None");
-	vid_waitforrefresh = Cvar_Get ("vid_waitforrefresh", "0",
-								   CVAR_ARCHIVE, 0, "None");
+	vid_mode = Cvar_Get ("vid_mode", "5", CVAR_NONE, NULL, "None");
+	vid_redrawfull = Cvar_Get ("vid_redrawfull", "0", CVAR_NONE, NULL, "None");
+	vid_waitforrefresh = Cvar_Get ("vid_waitforrefresh", "0", CVAR_ARCHIVE,
+			NULL, "None");
 }
 
 

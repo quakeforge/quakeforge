@@ -99,6 +99,6 @@ Game_Init (void)
 void
 Game_Init_Cvars (void)
 {
-	fs_skinbase = Cvar_Get ("fs_skinbase", "qw", CVAR_ROM, 0,
+	fs_skinbase = Cvar_Get ("fs_skinbase", "qw", CVAR_ROM, NULL,
 							"location of skins dir for downloads");
 }

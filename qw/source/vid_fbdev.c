@@ -6,7 +6,6 @@
 	based on vid_svgalib.c
 
 	Copyright (C) 1996-1997  Id Software, Inc.
-	Copyright (C) 1999-2000  Nelson Rush.
 	Copyright (C) 1999-2000  Marcus Sundberg [mackan@stacken.kth.se]
 	Copyright (C) 1999-2000  David Symonds [xoxus@usa.net]
 	Copyright (C) 1999,2000  contributors of the QuakeForge project
@@ -625,11 +624,12 @@ VID_Init (unsigned char *palette)
 void
 VID_Init_Cvars ()
 {
-	vid_mode = Cvar_Get ("vid_mode", "0", CVAR_NONE, 0, "Sets the video mode");
-	vid_redrawfull = Cvar_Get ("vid_redrawfull", "0", CVAR_NONE, 0,
+	vid_mode = Cvar_Get ("vid_mode", "0", CVAR_NONE, NULL,
+			"Sets the video mode");
+	vid_redrawfull = Cvar_Get ("vid_redrawfull", "0", CVAR_NONE, NULL,
 				"Redraw entire screen each frame instead of just dirty areas");
-	vid_waitforrefresh = Cvar_Get ("vid_waitforrefresh", "0", CVAR_ARCHIVE, 0,
-				"Wait for vertical retrace before drawing next frame");
+	vid_waitforrefresh = Cvar_Get ("vid_waitforrefresh", "0", CVAR_ARCHIVE,
+			NULL, "Wait for vertical retrace before drawing next frame");
 }
 
 

@@ -1,4 +1,3 @@
-
 /*
 	vid_sgl.c
 
@@ -222,7 +221,7 @@ VID_Init (unsigned char *palette)
 void
 VID_Init_Cvars ()
 {
-	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_NONE, 0, "None");
+	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_NONE, NULL, "None");
 }
 
 void

@@ -768,37 +768,41 @@ V_Init (void)
 	Cmd_AddCommand ("bf", V_BonusFlash_f, "No Description");
 	Cmd_AddCommand ("centerview", V_StartPitchDrift, "No Description");
 
-	v_centermove = Cvar_Get ("v_centermove", "0.15", CVAR_NONE, 0, "None");
-	v_centerspeed = Cvar_Get ("v_centerspeed", "500", CVAR_NONE, 0, "None");
+	v_centermove = Cvar_Get ("v_centermove", "0.15", CVAR_NONE, NULL, "None");
+	v_centerspeed = Cvar_Get ("v_centerspeed", "500", CVAR_NONE, NULL, "None");
 
-	v_iyaw_cycle = Cvar_Get ("v_iyaw_cycle", "2", CVAR_NONE, 0, "None");
-	v_iroll_cycle = Cvar_Get ("v_iroll_cycle", "0.5", CVAR_NONE, 0, "None");
-	v_ipitch_cycle = Cvar_Get ("v_ipitch_cycle", "1", CVAR_NONE, 0, "None");
-	v_iyaw_level = Cvar_Get ("v_iyaw_level", "0.3", CVAR_NONE, 0, "None");
-	v_iroll_level = Cvar_Get ("v_iroll_level", "0.1", CVAR_NONE, 0, "None");
-	v_ipitch_level = Cvar_Get ("v_ipitch_level", "0.3", CVAR_NONE, 0, "None");
+	v_iyaw_cycle = Cvar_Get ("v_iyaw_cycle", "2", CVAR_NONE, NULL, "None");
+	v_iroll_cycle = Cvar_Get ("v_iroll_cycle", "0.5", CVAR_NONE, NULL, "None");
+	v_ipitch_cycle = Cvar_Get ("v_ipitch_cycle", "1", CVAR_NONE, NULL, "None");
+	v_iyaw_level = Cvar_Get ("v_iyaw_level", "0.3", CVAR_NONE, NULL, "None");
+	v_iroll_level = Cvar_Get ("v_iroll_level", "0.1", CVAR_NONE, NULL, "None");
+	v_ipitch_level = Cvar_Get ("v_ipitch_level", "0.3", CVAR_NONE, NULL,
+			"None");
 
-	v_idlescale = Cvar_Get ("v_idlescale", "0", CVAR_NONE, 0, "None");
-	crosshair = Cvar_Get ("crosshair", "0", CVAR_ARCHIVE, 0, "None");
-	crosshaircolor = Cvar_Get ("crosshaircolor", "79", CVAR_ARCHIVE, 0, "None");
-	cl_crossx = Cvar_Get ("cl_crossx", "0", CVAR_NONE, 0, "None");
-	cl_crossy = Cvar_Get ("cl_crossy", "0", CVAR_NONE, 0, "None");
-	gl_cshiftpercent = Cvar_Get ("gl_cshiftpercent", "100", CVAR_NONE, 0, "None");
+	v_idlescale = Cvar_Get ("v_idlescale", "0", CVAR_NONE, NULL, "None");
+	crosshair = Cvar_Get ("crosshair", "0", CVAR_ARCHIVE, NULL, "None");
+	crosshaircolor = Cvar_Get ("crosshaircolor", "79", CVAR_ARCHIVE, NULL,
+			"None");
+	cl_crossx = Cvar_Get ("cl_crossx", "0", CVAR_NONE, NULL, "None");
+	cl_crossy = Cvar_Get ("cl_crossy", "0", CVAR_NONE, NULL, "None");
+	gl_cshiftpercent = Cvar_Get ("gl_cshiftpercent", "100", CVAR_NONE, NULL,
+			"None");
 
-	scr_ofsx = Cvar_Get ("scr_ofsx", "0", CVAR_NONE, 0, "None");
-	scr_ofsy = Cvar_Get ("scr_ofsy", "0", CVAR_NONE, 0, "None");
-	scr_ofsz = Cvar_Get ("scr_ofsz", "0", CVAR_NONE, 0, "None");
-	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, 0, "None");
-	cl_rollangle = Cvar_Get ("cl_rollangle", "2.0", CVAR_NONE, 0, "None");
-	cl_bob = Cvar_Get ("cl_bob", "0.02", CVAR_NONE, 0, "None");
-	cl_bobcycle = Cvar_Get ("cl_bobcycle", "0.6", CVAR_NONE, 0, "None");
-	cl_bobup = Cvar_Get ("cl_bobup", "0.5", CVAR_NONE, 0, "None");
+	scr_ofsx = Cvar_Get ("scr_ofsx", "0", CVAR_NONE, NULL, "None");
+	scr_ofsy = Cvar_Get ("scr_ofsy", "0", CVAR_NONE, NULL, "None");
+	scr_ofsz = Cvar_Get ("scr_ofsz", "0", CVAR_NONE, NULL, "None");
+	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL, "None");
+	cl_rollangle = Cvar_Get ("cl_rollangle", "2.0", CVAR_NONE, NULL, "None");
+	cl_bob = Cvar_Get ("cl_bob", "0.02", CVAR_NONE, NULL, "None");
+	cl_bobcycle = Cvar_Get ("cl_bobcycle", "0.6", CVAR_NONE, NULL, "None");
+	cl_bobup = Cvar_Get ("cl_bobup", "0.5", CVAR_NONE, NULL, "None");
 
-	v_kicktime = Cvar_Get ("v_kicktime", "0.5", CVAR_NONE, 0, "None");
-	v_kickroll = Cvar_Get ("v_kickroll", "0.6", CVAR_NONE, 0, "None");
-	v_kickpitch = Cvar_Get ("v_kickpitch", "0.6", CVAR_NONE, 0, "None");
+	v_kicktime = Cvar_Get ("v_kicktime", "0.5", CVAR_NONE, NULL, "None");
+	v_kickroll = Cvar_Get ("v_kickroll", "0.6", CVAR_NONE, NULL, "None");
+	v_kickpitch = Cvar_Get ("v_kickpitch", "0.6", CVAR_NONE, NULL, "None");
 
 	BuildGammaTable (1.0, 1.0);			// no gamma yet
-	brightness = Cvar_Get ("brightness", "1", CVAR_ARCHIVE, 0, "None");
-	contrast = Cvar_Get ("contrast", "1", CVAR_ARCHIVE, 0, "None");
+	brightness = Cvar_Get ("brightness", "1", CVAR_ARCHIVE, NULL, "None");
+	contrast = Cvar_Get ("contrast", "1", CVAR_ARCHIVE, NULL, "None");
 }
+

@@ -132,8 +132,9 @@ Sys_Quit (void)
 void
 Sys_Init_Cvars (void)
 {
-	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, 0, "Toggle console output");
-	sys_sleep = Cvar_Get ("sys_sleep", "8", CVAR_NONE, 0, 
+	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, NULL,
+			"Toggle console output");
+	sys_sleep = Cvar_Get ("sys_sleep", "8", CVAR_NONE, NULL, 
 		"Sleep how long in seconds between checking for connections. minimum is 0, maximum is 13");
 }
 

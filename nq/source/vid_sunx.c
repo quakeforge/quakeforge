@@ -1,4 +1,3 @@
-
 /*
 	vid_sunx.c
 
@@ -1312,7 +1311,7 @@ Sys_ConsoleInput (void)
 void
 IN_Init (void)
 {
-	m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, 0, "None");
+	m_filter = Cvar_Get ("m_filter", "0", CVAR_ARCHIVE, NULL, "None");
 	if (COM_CheckParm ("-nomouse"))
 		return;
 	mouse_x = mouse_y = 0.0;

@@ -1,4 +1,3 @@
-
 /*
 	in_sun.c
 
@@ -158,7 +157,8 @@ IN_Init (void)
 	if (!x_disp)
 		Sys_Error ("X display not open!\n");
 
-	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, 0, "None");
+	_windowed_mouse = Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, NULL,
+			"None");
 
 	// we really really want to clean these up...
 	atexit (IN_Shutdown);

@@ -402,20 +402,20 @@ SCR_SizeDown_f (void)
 void
 SCR_Init_Cvars (void)
 {
-	scr_fov = Cvar_Get ("fov", "90", CVAR_NONE, 0, "field of view. 90 is normal, smaller numbers zoom");
-	scr_viewsize = Cvar_Get ("viewsize", "100", CVAR_ARCHIVE, 0, "Set the screen size 30 minimum, 120 maximum");
-	scr_consize = Cvar_Get ("scr_consize", "0.5", CVAR_ARCHIVE, 0, "fraction of the screen the console covers when down");
-	scr_conspeed = Cvar_Get ("scr_conspeed", "300", CVAR_NONE, 0, "How quickly in the console screen scrolls up and down");
-	scr_showram = Cvar_Get ("showram", "1", CVAR_NONE, 0, "Show ram icon when low on ram in game");
-	scr_showturtle = Cvar_Get ("showturtle", "0", CVAR_NONE, 0, "Show turtle icon when fps is lower than 10");
-	scr_showpause = Cvar_Get ("showpause", "1", CVAR_NONE, 0, "Show paused graphic when paused");
-	scr_centertime = Cvar_Get ("scr_centertime", "2", CVAR_NONE, 0, "How long in seconds the screen hints are displayed on the screen");
-	scr_printspeed = Cvar_Get ("scr_printspeed", "8", CVAR_NONE, 0, "How fast the text is displayed at the end of the single player episodes");
+	scr_fov = Cvar_Get ("fov", "90", CVAR_NONE, NULL, "field of view. 90 is normal, smaller numbers zoom");
+	scr_viewsize = Cvar_Get ("viewsize", "100", CVAR_ARCHIVE, NULL, "Set the screen size 30 minimum, 120 maximum");
+	scr_consize = Cvar_Get ("scr_consize", "0.5", CVAR_ARCHIVE, NULL, "fraction of the screen the console covers when down");
+	scr_conspeed = Cvar_Get ("scr_conspeed", "300", CVAR_NONE, NULL, "How quickly in the console screen scrolls up and down");
+	scr_showram = Cvar_Get ("showram", "1", CVAR_NONE, NULL, "Show ram icon when low on ram in game");
+	scr_showturtle = Cvar_Get ("showturtle", "0", CVAR_NONE, NULL, "Show turtle icon when fps is lower than 10");
+	scr_showpause = Cvar_Get ("showpause", "1", CVAR_NONE, NULL, "Show paused graphic when paused");
+	scr_centertime = Cvar_Get ("scr_centertime", "2", CVAR_NONE, NULL, "How long in seconds the screen hints are displayed on the screen");
+	scr_printspeed = Cvar_Get ("scr_printspeed", "8", CVAR_NONE, NULL, "How fast the text is displayed at the end of the single player episodes");
 
-	crosshaircolor = Cvar_Get ("crosshaircolor", "79", CVAR_ARCHIVE, 0, "Crosshair 2's color");
-	crosshair = Cvar_Get ("crosshair", "0", CVAR_ARCHIVE, 0, "Crosshair type. 0 off, 1 old, 2 new with color");
-	cl_crossx = Cvar_Get ("cl_crossx", "0", CVAR_ARCHIVE, 0, "Sets the position of the crosshair on the X-axis");
-	cl_crossy = Cvar_Get ("cl_crossy", "0", CVAR_ARCHIVE, 0, "Sets the position of the crosshair on the Y-axis");
+	crosshaircolor = Cvar_Get ("crosshaircolor", "79", CVAR_ARCHIVE, NULL, "Crosshair 2's color");
+	crosshair = Cvar_Get ("crosshair", "0", CVAR_ARCHIVE, NULL, "Crosshair type. 0 off, 1 old, 2 new with color");
+	cl_crossx = Cvar_Get ("cl_crossx", "0", CVAR_ARCHIVE, NULL, "Sets the position of the crosshair on the X-axis");
+	cl_crossy = Cvar_Get ("cl_crossy", "0", CVAR_ARCHIVE, NULL, "Sets the position of the crosshair on the Y-axis");
 }
 
 void

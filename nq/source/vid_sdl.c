@@ -1,4 +1,3 @@
-
 /*
 	vid_sdl.c
 
@@ -187,7 +186,7 @@ void
 VID_Init_Cvars ()
 {
 	vid_fullscreen =
-		Cvar_Get ("vid_fullscreen", "0", CVAR_ROM, 0,
+		Cvar_Get ("vid_fullscreen", "0", CVAR_ROM, NULL,
 				  "Toggles fullscreen game mode");
 }
 

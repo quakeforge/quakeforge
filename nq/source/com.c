@@ -82,7 +82,7 @@ COM_Init
 void
 COM_Init ()
 {
-	registered = Cvar_Get ("registered", "0", CVAR_NONE, 0, "None");
+	registered = Cvar_Get ("registered", "0", CVAR_NONE, NULL, "None");
 	cmdline = Cvar_Get ("cmdline", "0", CVAR_SERVERINFO, Cvar_Info, "None");
 	Cmd_AddCommand ("path", COM_Path_f, "No Description");
 
@@ -90,3 +90,4 @@ COM_Init ()
 	COM_Filesystem_Init ();
 	COM_CheckRegistered ();
 }
+

@@ -1,4 +1,3 @@
-
 /*
 	sv_main.c
 
@@ -60,17 +59,21 @@ SV_Init (void)
 {
 	int         i;
 
-	sv_maxvelocity = Cvar_Get ("sv_maxvelocity", "2000", CVAR_NONE, 0, "None");
-	sv_gravity = Cvar_Get ("sv_gravity", "800", CVAR_SERVERINFO, Cvar_Info, "None");
-	sv_friction = Cvar_Get ("sv_friction", "4", CVAR_SERVERINFO, Cvar_Info, "None");
-	sv_edgefriction = Cvar_Get ("edgefriction", "2", CVAR_NONE, 0, "None");
-	sv_stopspeed = Cvar_Get ("sv_stopspeed", "100", CVAR_NONE, 0, "None");
-	sv_maxspeed = Cvar_Get ("sv_maxspeed", "320", CVAR_SERVERINFO, Cvar_Info, "None");
-	sv_accelerate = Cvar_Get ("sv_accelerate", "10", CVAR_NONE, 0, "None");
+	sv_maxvelocity = Cvar_Get ("sv_maxvelocity", "2000", CVAR_NONE, NULL,
+			"None");
+	sv_gravity = Cvar_Get ("sv_gravity", "800", CVAR_SERVERINFO, Cvar_Info,
+			"None");
+	sv_friction = Cvar_Get ("sv_friction", "4", CVAR_SERVERINFO, Cvar_Info,
+			"None");
+	sv_edgefriction = Cvar_Get ("edgefriction", "2", CVAR_NONE, NULL, "None");
+	sv_stopspeed = Cvar_Get ("sv_stopspeed", "100", CVAR_NONE, NULL, "None");
+	sv_maxspeed = Cvar_Get ("sv_maxspeed", "320", CVAR_SERVERINFO, Cvar_Info,
+			"None");
+	sv_accelerate = Cvar_Get ("sv_accelerate", "10", CVAR_NONE, NULL, "None");
 	sv_idealpitchscale =
-		Cvar_Get ("sv_idealpitchscale", "0.8", CVAR_NONE, 0, "None");
-	sv_aim = Cvar_Get ("sv_aim", "0.93", CVAR_NONE, 0, "None");
-	sv_nostep = Cvar_Get ("sv_nostep", "0", CVAR_NONE, 0, "None");
+		Cvar_Get ("sv_idealpitchscale", "0.8", CVAR_NONE, NULL, "None");
+	sv_aim = Cvar_Get ("sv_aim", "0.93", CVAR_NONE, NULL, "None");
+	sv_nostep = Cvar_Get ("sv_nostep", "0", CVAR_NONE, NULL, "None");
 
 	for (i = 0; i < MAX_MODELS; i++)
 		snprintf (localmodels[i], sizeof (localmodels[i]), "*%i", i);
