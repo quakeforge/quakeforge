@@ -20,6 +20,8 @@ NQ_VERSION=1.09
 NQ_QSG_VERSION=1.0
 QW_VERSION=2.40
 QW_QSG_VERSION=2.0
+RPMVERSION=`echo $VERSION | tr - _`
+AC_SUBST(RPMVERSION)
 
 AC_DEFINE_UNQUOTED(PROGRAM, 		"$PROGRAM", ["Proper" package name])
 AC_DEFINE_UNQUOTED(NQ_VERSION,		"$NQ_VERSION", [Define this to the NetQuake standard version you support])

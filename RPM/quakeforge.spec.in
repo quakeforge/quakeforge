@@ -1,5 +1,5 @@
 %define name	quakeforge
-%define version @VERSION@
+%define version @RPMVERSION@
 %define release 1
 %define builddir $RPM_BUILD_DIR/%{name}-%{version}
 
