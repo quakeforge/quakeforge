@@ -1090,10 +1090,6 @@ SV_Msg_f (void)
 void
 SV_SetInfo_f (void)
 {
-	int         i;
-	char        oldval[MAX_INFO_STRING];
-
-
 	if (Cmd_Argc () == 1) {
 		SV_Printf ("User info settings:\n");
 		Info_Print (host_client->userinfo);
@@ -1108,26 +1104,34 @@ SV_SetInfo_f (void)
 	if (Cmd_Argv (1)[0] == '*')
 		return;							// don't set priveledged values
 
-	strcpy (oldval, Info_ValueForKey (host_client->userinfo, Cmd_Argv (1)));
 
-	Info_SetValueForKey (host_client->userinfo, Cmd_Argv (1), Cmd_Argv (2),
-						 MAX_INFO_STRING);
-// name is extracted below in ExtractFromUserInfo
-//  strncpy (host_client->name, Info_ValueForKey (host_client->userinfo, "name")
-//      , sizeof(host_client->name)-1); 
-//  SV_FullClientUpdate (host_client, &sv.reliable_datagram);
-//  host_client->sendinfo = true;
+	if (SetUserInfo) {
+		float ret;
 
-	if (strequal
-		(Info_ValueForKey (host_client->userinfo, Cmd_Argv (1)), oldval))
-		return;								// key hasn't changed
+		G_var (&sv_pr_state, OFS_PARM0, string) = PR_SetString (&sv_pr_state,
+																Cmd_Argv (1));
+		G_var (&sv_pr_state, OFS_PARM1, string) = PR_SetString (&sv_pr_state,
+																Cmd_Argv (2));
+		PR_ExecuteProgram (&sv_pr_state, SetUserInfo);
+		ret = G_FLOAT (&sv_pr_state, OFS_RETURN);		// get the return value
+		if (!ret)
+			return;
+	} else {
+		char        oldval[MAX_INFO_STRING];
+
+		strcpy (oldval, Info_ValueForKey (host_client->userinfo, Cmd_Argv (1)));
+		Info_SetValueForKey (host_client->userinfo, Cmd_Argv (1), Cmd_Argv (2),
+							 MAX_INFO_STRING);
+		if (strequal
+			(Info_ValueForKey (host_client->userinfo, Cmd_Argv (1)), oldval))
+			return;								// key hasn't changed
+	}
 
 	// process any changed values
 	SV_ExtractFromUserinfo (host_client);
 
-	i = host_client - svs.clients;
 	MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
-	MSG_WriteByte (&sv.reliable_datagram, i);
+	MSG_WriteByte (&sv.reliable_datagram, host_client - svs.clients);
 	MSG_WriteString (&sv.reliable_datagram, Cmd_Argv (1));
 	MSG_WriteString (&sv.reliable_datagram,
 					 Info_ValueForKey (host_client->userinfo, Cmd_Argv (1)));
