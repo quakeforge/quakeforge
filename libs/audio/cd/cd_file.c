@@ -271,9 +271,8 @@ static void
 I_OGGMus_Info (void)
 {
 	plitem_t	*keylist = NULL;
-	plitem_t	*currentmap = NULL;
 	plitem_t	*currenttrack = NULL;
-	int			 count = 0, iter = 0, highesttrack = 0;
+	int			 count = 0, iter = 0;
 	const char	*trackstring;
 
 	if (!tracklist) {
@@ -286,41 +285,20 @@ I_OGGMus_Info (void)
 		return;
 	}
 
-	Sys_DPrintf ("OGGMus: number of entries %i.\n",
-				 ((plarray_t *) (keylist->data))->numvals);
 	Sys_Printf ("\n" "Tracklist loaded from file:\n%s\n"
 				"---------------------------\n", mus_ogglist->string);
 
 	/* loop, and count up the Highest key number. */
-	for (iter = 0; iter < ((plarray_t *) (keylist->data))->numvals; iter++) {
-		if (!(currentmap = PL_ObjectAtIndex (keylist, iter))) {
-			Sys_DPrintf ("OGGMus: No track for track index %i.\n", iter);
-			continue;
-		}
-		if (currentmap->type != QFString) {
-			Sys_DPrintf ("OGGMus: Track data isn't a string for: %i\n", iter);
-			continue;
-		}
-
-		if (highesttrack < strtol ((char *) currentmap->data, NULL, 10))
-			highesttrack = strtol ((char *) currentmap->data, NULL, 10);
-	}
-	Sys_DPrintf ("Highest Track number = %i.\n", highesttrack);
-
-	/* loop until we've extracted 'numval' trackmaps, or hit the highest track
-	 * number */
-	for (iter = 0, count = 0; (iter < ((plarray_t *) keylist->data)->numvals
-							   || count <= highesttrack); count++) {
-		trackstring = va ("%i", count);
-		
+	for (iter = 1, count = 0; count < ((plarray_t *) (keylist->data))->numvals
+							&& iter <= 99 ; iter++) {
+		trackstring = va ("%i", iter);
 		if (!(currenttrack = PL_ObjectForKey (tracklist, trackstring))) {
-			Sys_DPrintf ("Skipping trackstring: %s.\n", trackstring);
 			continue;
 		}
 		Sys_Printf (" %s  -  %s\n", trackstring, (char *) currenttrack->data);
-		iter++;
+		count++;
+
 	}
-	
 	PL_Free (keylist);
 }
 
