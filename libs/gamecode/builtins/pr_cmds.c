@@ -474,8 +474,10 @@ PF_charcount (progs_t *pr)
 	int count;
 
 	goal = (G_STRING (pr, OFS_PARM0))[0];
-	if (goal == '\0')
+	if (goal == '\0') {
 		G_FLOAT (pr, OFS_RETURN) = 0;
+		return;
+	}
 
 	count = 0;
 	s = G_STRING (pr, OFS_PARM1);
@@ -509,40 +511,33 @@ PF_getbuiltin (progs_t *pr)
 void
 PR_Cmds_Init (progs_t *pr)
 {
-	PR_AddBuiltin (pr, "break", PF_break, 6); // void() break = #6
-	PR_AddBuiltin (pr, "random", PF_random, 7);	// float() random = #7
-	PR_AddBuiltin (pr, "normalize", PF_normalize, 9);	// vector(vector v) normalize = #9
-	PR_AddBuiltin (pr, "vlen", PF_vlen, 12);	// float(vector v) vlen = #12
-	PR_AddBuiltin (pr, "vectoyaw", PF_vectoyaw, 13);	// float(vector v) vectoyaw = #13
-	PR_AddBuiltin (pr, "find", PF_Find, 18);	// entity(entity start, .string fld, string match) find = #18
-	PR_AddBuiltin (pr, "dprint", PF_dprint, 25);  // void(string s) dprint = #25
-	PR_AddBuiltin (pr, "ftos", PF_ftos, 26);	// void(string s) ftos = #26
-	PR_AddBuiltin (pr, "vtos", PF_vtos, 27);	// void(string s) vtos = #27
-	PR_AddBuiltin (pr, "coredump", PF_coredump, 28);	// void() coredump = #28
-	PR_AddBuiltin (pr, "traceon", PF_traceon, 29);	// void() traceon = #29
-	PR_AddBuiltin (pr, "traceoff", PF_traceoff, 30);	// void() traceoff = #30
-	PR_AddBuiltin (pr, "eprint", PF_eprint, 31);	// void(entity e) = #31 debug print an entire entity
-	PR_AddBuiltin (pr, "rint", PF_rint, 36);	// float(float v) rint = #36
-	PR_AddBuiltin (pr, "floor", PF_floor, 37);	// float(float v) floor = #37
-	PR_AddBuiltin (pr, "ceil", PF_ceil, 38);	// float(float v) ceil = #38
-	PR_AddBuiltin (pr, "fabs", PF_fabs, 43);	// float(float f) fabs = #43
-	PR_AddBuiltin (pr, "cvar", PF_cvar, 45);	// float(string s) cvar = #45
+	PR_AddBuiltin (pr, "break", PF_break, 6); // void() break
+	PR_AddBuiltin (pr, "random", PF_random, 7);	// float() random
+	PR_AddBuiltin (pr, "normalize", PF_normalize, 9);	// vector(vector v) normalize
+	PR_AddBuiltin (pr, "vlen", PF_vlen, 12);	// float(vector v) vlen
+	PR_AddBuiltin (pr, "vectoyaw", PF_vectoyaw, 13);	// float(vector v) vectoyaw
+	PR_AddBuiltin (pr, "find", PF_Find, 18);	// entity(entity start, .string fld, string match) find
+	PR_AddBuiltin (pr, "dprint", PF_dprint, 25);  // void(string s) dprint
+	PR_AddBuiltin (pr, "ftos", PF_ftos, 26);	// void(string s) ftos
+	PR_AddBuiltin (pr, "vtos", PF_vtos, 27);	// void(string s) vtos
+	PR_AddBuiltin (pr, "coredump", PF_coredump, 28);	// void() coredump
+	PR_AddBuiltin (pr, "traceon", PF_traceon, 29);	// void() traceon
+	PR_AddBuiltin (pr, "traceoff", PF_traceoff, 30);	// void() traceoff
+	PR_AddBuiltin (pr, "eprint", PF_eprint, 31);	// void(entity e) eprint
+	PR_AddBuiltin (pr, "rint", PF_rint, 36);	// float(float v) rint
+	PR_AddBuiltin (pr, "floor", PF_floor, 37);	// float(float v) floor
+	PR_AddBuiltin (pr, "ceil", PF_ceil, 38);	// float(float v) ceil
+	PR_AddBuiltin (pr, "fabs", PF_fabs, 43);	// float(float f) fabs
+	PR_AddBuiltin (pr, "cvar", PF_cvar, 45);	// float(string s) cvar
 #if 0
-	PR_AddBuiltin (pr, "localcmd", PF_localcmd, 46);	// void(string s) localcmd = #46
+	PR_AddBuiltin (pr, "localcmd", PF_localcmd, 46);	// void(string s) localcmd
 #endif
-	PR_AddBuiltin (pr, "nextent", PF_nextent, 47);	// entity(entity e) nextent = #47
-	PR_AddBuiltin (pr, "vectoangles", PF_vectoangles, 51);	// vector(vector v) vectoangles = #51
-	PR_AddBuiltin (pr, "cvar_set", PF_cvar_set, 72);	// void(string var, string val) cvar_set = #72
+	PR_AddBuiltin (pr, "nextent", PF_nextent, 47);	// entity(entity e) nextent
+	PR_AddBuiltin (pr, "vectoangles", PF_vectoangles, 51);	// vector(vector v) vectoangles
+	PR_AddBuiltin (pr, "cvar_set", PF_cvar_set, 72);	// void(string var, string val) cvar_set
 
-	PR_AddBuiltin (pr, "stof", PF_stof, 81);	// float(string s) stof = #81
-	PR_AddBuiltin (pr, "strlen", PF_strlen, 100);	// = #100
-	PR_AddBuiltin (pr, "charcount", PF_charcount, 101);	// = #101
-#if 0
-	PR_AddBuiltin (pr, "cfopen", PF_cfopen, 103);	// float (string path, string mode) cfopen = #103
-	PR_AddBuiltin (pr, "cfclose", PF_cfclose, 104);	// void (float desc) cfclose = #104
-	PR_AddBuiltin (pr, "cfread", PF_cfread, 105);	// string (float desc) cfread = #105
-	PR_AddBuiltin (pr, "cfwrite", PF_cfwrite, 106);	// float (float desc, string buf) cfwrite = #106
-	PR_AddBuiltin (pr, "cfeof", PF_cfeof, 107);	// float (float desc) cfeof = #107
-	PR_AddBuiltin (pr, "cfquota", PF_cfquota, 108);	// float () cfquota = #108
-#endif
+	PR_AddBuiltin (pr, "stof", PF_stof, 81);	// float(string s) stof
+	PR_AddBuiltin (pr, "strlen", PF_strlen, 100);	// float (string s) strlen
+	PR_AddBuiltin (pr, "charcount", PF_charcount, 101);	// float (string goal, string s) charcount
+	PR_AddBuiltin (pr, "sprintf", PF_sprintf, 109); // string (...) sprintf
 };
