@@ -55,10 +55,11 @@
 #include <sys/asoundlib.h>
 
 #include "QF/console.h"
+#include "QF/cvar.h"
+#include "QF/plugin.h"
 #include "QF/qargs.h"
 #include "QF/sound.h"
-#include "QF/plugin.h"
-#include "QF/cvar.h"
+#include "QF/sys.h"
 
 #ifndef MAP_FAILED
 # define MAP_FAILED ((void*)-1)
@@ -346,9 +347,7 @@ SNDDMA_Submit (void)
 		case SND_PCM_STATUS_PREPARED:
 			if ((rc = snd_pcm_channel_go (pcm_handle, SND_PCM_CHANNEL_PLAYBACK))
 				< 0) {
-				fprintf (stderr, "unable to start playback. %s\n",
-						 snd_strerror (rc));
-				exit (1);
+				Sys_Error ("unable to start playback. %s\n", snd_strerror (rc));
 			}
 			break;
 		case SND_PCM_STATUS_RUNNING:
@@ -358,10 +357,8 @@ SNDDMA_Submit (void)
 				(rc =
 				 snd_pcm_plugin_prepare (pcm_handle,
 										 SND_PCM_CHANNEL_PLAYBACK)) < 0) {
-				fprintf (stderr,
-						 "underrun: playback channel prepare error. %s\n",
-						 snd_strerror (rc));
-				exit (1);
+				Sys_Error ("underrun: playback channel prepare error. %s\n",
+						   snd_strerror (rc));
 			}
 			break;
 		default:

@@ -111,31 +111,6 @@ VID_Shutdown (void)
 	X11_CloseDisplay ();
 }
 
-#if 0
-static void
-signal_handler (int sig)
-{
-	printf ("Received signal %d, exiting...\n", sig);
-	Sys_Quit ();
-	exit (sig);
-}
-
-static void
-InitSig (void)
-{
-	signal (SIGHUP, signal_handler);
-	signal (SIGINT, signal_handler);
-	signal (SIGQUIT, signal_handler);
-	signal (SIGILL, signal_handler);
-	signal (SIGTRAP, signal_handler);
-	signal (SIGIOT, signal_handler);
-	signal (SIGBUS, signal_handler);
-/*	signal (SIGFPE, signal_handler); */
-	signal (SIGSEGV, signal_handler);
-	signal (SIGTERM, signal_handler);
-}
-#endif
-
 /*
 	GL_Init
 */
@@ -221,9 +196,7 @@ VID_Init (unsigned char *palette)
 
 	x_visinfo = glXChooseVisual (x_disp, x_screen, attrib);
 	if (!x_visinfo) {
-		fprintf (stderr,
-				 "Error couldn't get an RGB, Double-buffered, Depth visual\n");
-		exit (1);
+		Sys_Error ("Error couldn't get an RGB, Double-buffered, Depth visual\n");
 	}
 	x_vis = x_visinfo->visual;
 

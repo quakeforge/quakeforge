@@ -105,7 +105,6 @@ Sys_Error (const char *error, ...)
 
 	Host_Shutdown ();
 	exit (1);
-
 }
 
 

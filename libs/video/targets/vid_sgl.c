@@ -114,7 +114,6 @@ signal_handler (int sig)
 {
 	printf ("Received signal %d, exiting...\n", sig);
 	Sys_Quit ();
-	exit (sig);
 }
 
 static void

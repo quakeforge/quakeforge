@@ -110,8 +110,6 @@ signal_handler (int sig)
 {
 	printf ("Received signal %d, exiting...\n", sig);
 	Sys_Quit ();
-	abort ();
-	exit (0);
 }
 
 void

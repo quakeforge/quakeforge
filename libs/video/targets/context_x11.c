@@ -194,11 +194,6 @@ TragicDeath (int sig)
 #ifdef HAVE_UNISTD_H
 	}
 #endif
-
-	// exit (sig);
-	// XCloseDisplay(x_disp);
-	// VID_Shutdown();
-	// Sys_Error("This death brought to you by the number %d\n", signal_num);
 }
 
 void
