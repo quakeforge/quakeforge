@@ -51,6 +51,7 @@ static const char rcsid[] =
 #include "expr.h"
 #include "class.h"
 #include "def.h"
+#include "emit.h"
 #include "immediate.h"
 #include "method.h"
 #include "reloc.h"
@@ -245,11 +246,9 @@ sel_def_compare (void *_sd1, void *_sd2, void *unused)
 }
 
 def_t *
-selector_def (const char *_sel_id, const char *_sel_types)
+selector_def (const char *sel_id, const char *sel_types)
 {
-	string_t    sel_id = ReuseString (_sel_id);
-	string_t    sel_types = ReuseString (_sel_types);
-	sel_def_t   _sel_def = {sel_id, sel_types, 0};
+	sel_def_t   _sel_def = {ReuseString (sel_id), ReuseString (sel_types), 0};
 	sel_def_t  *sel_def = &_sel_def;
 
 	if (!sel_def_hash) {
@@ -260,18 +259,18 @@ selector_def (const char *_sel_id, const char *_sel_types)
 	if (sel_def)
 		return sel_def->def;
 	sel_def = malloc (sizeof (sel_def_t));
-	sel_def->sel_id = sel_id;
-	sel_def->sel_types = sel_types;
 	sel_def->def = new_def (type_SEL.aux_type, ".imm", pr.scope);
 	sel_def->def->initialized = sel_def->def->constant = 1;
 	sel_def->def->ofs = new_location (type_SEL.aux_type, pr.near_data);
-	G_INT (sel_def->def->ofs) = sel_id;
-	G_INT (sel_def->def->ofs + 1) = sel_types;
+	EMIT_STRING (G_INT (sel_def->def->ofs), sel_id);
+	EMIT_STRING (G_INT (sel_def->def->ofs + 1), sel_types);
+	sel_def->sel_id = G_INT (sel_def->def->ofs);
+	sel_def->sel_types = G_INT (sel_def->def->ofs + 1);
 	Hash_AddElement (sel_def_hash, sel_def);
 	return sel_def->def;
 }
 
-int
+def_t *
 emit_methods (methodlist_t *_methods, const char *name, int instance)
 {
 	const char *type = instance ? "INSTANCE" : "CLASS";
@@ -304,24 +303,19 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 	methods->method_next = 0;
 	methods->method_count = count;
 	for (i = 0, method = _methods->head; method; method = method->next) {
-		reloc_t    *ref;
 		if (!method->instance != !instance || !method->def)
 			continue;
-		methods->method_list[i].method_name.sel_id = ReuseString (method->name);
-		methods->method_list[i].method_name.sel_types =
-			ReuseString (method->types);
-		methods->method_list[i].method_types =
-			methods->method_list[i].method_name.sel_types;
+		EMIT_STRING (methods->method_list[i].method_name.sel_id, method->name);
+		EMIT_STRING (methods->method_list[i].method_name.sel_types, method->types);
+		EMIT_STRING (methods->method_list[i].method_types, method->types);
 		methods->method_list[i].method_imp = G_FUNCTION (method->def->ofs);
 		if (method->func) {
-			ref = new_reloc (POINTER_OFS (&methods->method_list[i].method_imp),
-							 rel_def_func);
-			ref->next = method->func->refs;
-			method->func->refs = ref;
+			reloc_def_func (method->func,
+							POINTER_OFS (&methods->method_list[i].method_imp));
 		}
 		i++;
 	}
-	return methods_def->ofs;
+	return methods_def;
 }
 
 void

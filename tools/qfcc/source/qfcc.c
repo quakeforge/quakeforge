@@ -170,7 +170,7 @@ WriteData (int crc)
 	fields = calloc (pr.scope->num_defs + 1, sizeof (ddef_t));
 
 	for (def = pr.scope->head; def; def = def->def_next) {
-		if (!def->global || !def->name)
+		if (def->local || !def->name)
 			continue;
 		if (def->type->type == ev_func) {
 		} else if (def->type->type == ev_field) {
@@ -351,7 +351,6 @@ finish_compilation (void)
 	ex_label_t *l;
 	dfunction_t *df;
 
-	class_finish_module ();
 	// check to make sure all functions prototyped have code
 	if (options.warnings.undefined_function)
 		for (d = pr.scope->head; d; d = d->def_next) {
@@ -489,7 +488,10 @@ compile_to_obj (const char *file, const char *obj)
 		}
 	}
 	if (!err) {
-		qfo_t      *qfo = qfo_from_progs (&pr);
+		qfo_t      *qfo;
+
+		class_finish_module ();
+		qfo = qfo_from_progs (&pr);
 		err = qfo_write (qfo, obj);
 		qfo_delete (qfo);
 	}
@@ -633,6 +635,7 @@ progs_src_compile (void)
 		qfo_write (qfo, options.output_file);
 		qfo_delete (qfo);
 	} else {
+		class_finish_module ();
 		if (!finish_compilation ()) {
 			fprintf (stderr, "compilation errors\n");
 			return 1;

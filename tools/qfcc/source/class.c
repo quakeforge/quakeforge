@@ -176,12 +176,13 @@ class_begin (class_t *class)
 
 		class->def->initialized = class->def->constant = 1;
 		category = &G_STRUCT (pr_category_t, class->def->ofs);
-		category->category_name = ReuseString (class->category_name);
-		category->class_name = ReuseString (class->class_name);
-		category->protocols = emit_protocol_list (class->protocols,
-												  va ("%s_%s",
-													  class->class_name,
-													  class->category_name));
+		EMIT_STRING (category->category_name, class->category_name);
+		EMIT_STRING (category->class_name, class->class_name);
+		EMIT_DEF (category->protocols,
+				  emit_protocol_list (class->protocols,
+									  va ("%s_%s",
+										  class->class_name,
+										  class->category_name)));
 	} else if (class->class_name) {
 		def_t      *meta_def;
 		pr_class_t *meta;
@@ -192,19 +193,19 @@ class_begin (class_t *class)
 							  pr.scope, st_static);
 		meta_def->initialized = meta_def->constant = 1;
 		meta = &G_STRUCT (pr_class_t, meta_def->ofs);
-		meta->class_pointer  = ReuseString (class->class_name);
+		EMIT_STRING (meta->class_pointer, class->class_name);
 		if (class->super_class)
-			meta->super_class = ReuseString (class->super_class->class_name);
-		meta->name = meta->class_pointer;
+			EMIT_STRING (meta->super_class, class->super_class->class_name);
+		EMIT_STRING (meta->name, class->class_name);
 		meta->info = _PR_CLS_META;
 		meta->instance_size = type_size (type_Class.aux_type);
-		meta->ivars = emit_struct (type_Class.aux_type, "Class");
-		meta->protocols = emit_protocol_list (class->protocols,
-											  class->class_name);
+		EMIT_DEF (meta->ivars, emit_struct (type_Class.aux_type, "Class"));
+		EMIT_DEF (meta->protocols, emit_protocol_list (class->protocols,
+													   class->class_name));
 
 		class->def->initialized = class->def->constant = 1;
 		cls = &G_STRUCT (pr_class_t, class->def->ofs);
-		cls->class_pointer = meta_def->ofs;
+		EMIT_DEF (cls->class_pointer, meta_def);
 		cls->super_class = meta->super_class;
 		cls->name = meta->name;
 		meta->info = _PR_CLS_CLASS;
@@ -219,16 +220,14 @@ class_finish (class_t *class)
 		pr_category_t *category;
 
 		category = &G_STRUCT (pr_category_t, class->def->ofs);
-		category->instance_methods = emit_methods (class->methods,
-												   va ("%s_%s",
-													   class->class_name,
-													   class->category_name),
-												   1);
-		category->class_methods = emit_methods (class->methods,
-												va ("%s_%s",
+		EMIT_DEF (category->instance_methods,
+				  emit_methods (class->methods, va ("%s_%s",
 													class->class_name,
-													class->category_name),
-												0);
+													class->category_name), 1));
+		EMIT_DEF (category->class_methods,
+				  emit_methods (class->methods, va ("%s_%s",
+													class->class_name,
+													class->category_name), 0));
 	} else if (class->class_name) {
 		pr_class_t *meta;
 		pr_class_t *cls;
@@ -237,11 +236,13 @@ class_finish (class_t *class)
 
 		meta = &G_STRUCT (pr_class_t, cls->class_pointer);
 
-		meta->methods = emit_methods (class->methods, class->class_name, 0);
+		EMIT_DEF (meta->methods, emit_methods (class->methods,
+											   class->class_name, 0));
 
 		cls->instance_size = type_size (class->ivars);
-		cls->ivars = emit_struct (class->ivars, class->class_name);
-		cls->methods = emit_methods (class->methods, class->class_name, 1);
+		EMIT_DEF (cls->ivars, emit_struct (class->ivars, class->class_name));
+		EMIT_DEF (cls->methods, emit_methods (class->methods,
+											  class->class_name, 1));
 	}
 }
 
@@ -417,7 +418,7 @@ class_pointer_def (class_t *class)
 		class->def = class_def (class, 1);
 	if (!class->def->external)
 		G_INT (def->ofs) = class->def->ofs;
-	//FIXME need reloc
+	reloc_def_def (class->def, def->ofs);
 	return def;
 }
 
@@ -445,13 +446,13 @@ class_finish_module (void)
 	if (class_hash) {
 		classes = (class_t **) Hash_GetList (class_hash);
 		for (t = classes; *t; t++)
-			if ((*t)->def)
+			if ((*t)->def && !(*t)->def->external)
 				num_classes++;
 	}
 	if (category_hash) {
 		categories = (class_t **) Hash_GetList (category_hash);
 		for (t = categories; *t; t++)
-			if ((*t)->def)
+			if ((*t)->def && !(*t)->def->external)
 				num_categories++;
 	}
 	if (!num_classes && !num_categories)
@@ -468,33 +469,39 @@ class_finish_module (void)
 	symtab->cls_def_cnt = num_classes;
 	symtab->cat_def_cnt = num_categories;
 	def_ptr = symtab->defs;
-	for (i = 0, t = classes; i < num_classes; i++, t++)
-		if ((*t)->def)
+	for (i = 0, t = classes; i < num_classes; i++, t++) {
+		if ((*t)->def && !(*t)->def->external) {
+			reloc_def_def ((*t)->def, POINTER_OFS (def_ptr));
 			*def_ptr++ = (*t)->def->ofs;
-	for (i = 0, t = categories; i < num_categories; i++, t++)
-		if ((*t)->def)
+		}
+	}
+	for (i = 0, t = categories; i < num_categories; i++, t++) {
+		if ((*t)->def && !(*t)->def->external) {
+			reloc_def_def ((*t)->def, POINTER_OFS (def_ptr));
 			*def_ptr++ = (*t)->def->ofs;
+		}
+	}
 
 	module_def = get_def (type_module, "_OBJ_MODULE", pr.scope, st_static);
 	module_def->initialized = module_def->constant = 1;
 	module = &G_STRUCT (pr_module_t, module_def->ofs);
 	module->size = type_size (type_module);
-	module->name = ReuseString (options.output_file);
-	module->symtab = symtab_def->ofs;
+	EMIT_STRING (module->name, options.output_file);
+	EMIT_DEF (module->symtab, symtab_def);
 
 	exec_class_def = get_def (&type_obj_exec_class, "__obj_exec_class",
 								pr.scope, st_static);
 	exec_class_func = new_function ("__obj_exec_class");
 	exec_class_func->builtin = 0;
 	exec_class_func->def = exec_class_def;
-	exec_class_func->refs = new_reloc (exec_class_def->ofs, rel_def_func);
+	reloc_def_func (exec_class_func, exec_class_def->ofs);
 	build_function (exec_class_func);
 	finish_function (exec_class_func);
 
 	init_def = get_def (&type_function, ".ctor", pr.scope, st_static);
 	init_func = new_function (".ctor");
 	init_func->def = init_def;
-	init_func->refs = new_reloc (init_def->ofs, rel_def_func);
+	reloc_def_func (init_func, init_def->ofs);
 	init_func->code = pr.code->size;
 	build_scope (init_func, init_def, 0);
 	build_function (init_func);
@@ -579,7 +586,7 @@ add_protocol (protocollist_t *protocollist, protocol_t *protocol)
 	protocollist->list[protocollist->count++] = protocol;
 }
 
-int
+def_t *
 emit_protocol (protocol_t *protocol)
 {
 	def_t      *proto_def;
@@ -591,17 +598,18 @@ emit_protocol (protocol_t *protocol)
 	proto_def->initialized = proto_def->constant = 1;
 	proto = &G_STRUCT (pr_protocol_t, proto_def->ofs);
 	proto->class_pointer = 0;
-	proto->protocol_name = ReuseString (protocol->name);
-	proto->protocol_list =
-		emit_protocol_list (protocol->protocols,
-							va ("PROTOCOL_%s", protocol->name));
-	proto->instance_methods = emit_methods (protocol->methods,
-											protocol->name, 1);
-	proto->class_methods = emit_methods (protocol->methods, protocol->name, 0);
-	return proto_def->ofs;
+	EMIT_STRING (proto->protocol_name, protocol->name);
+	EMIT_DEF (proto->protocol_list,
+			  emit_protocol_list (protocol->protocols,
+								  va ("PROTOCOLo_%s", protocol->name)));
+	EMIT_DEF (proto->instance_methods,
+			  emit_methods (protocol->methods, protocol->name, 1));
+	EMIT_DEF (proto->class_methods,
+			  emit_methods (protocol->methods, protocol->name, 0));
+	return proto_def;
 }
 
-int
+def_t *
 emit_protocol_list (protocollist_t *protocols, const char *name)
 {
 	def_t      *proto_list_def;
@@ -624,8 +632,8 @@ emit_protocol_list (protocollist_t *protocols, const char *name)
 	proto_list->next = 0;
 	proto_list->count = protocols->count;
 	for (i = 0; i < protocols->count; i++)
-		proto_list->list[i] = emit_protocol (protocols->list[i]);
-	return proto_list_def->ofs;
+		EMIT_DEF (proto_list->list[i], emit_protocol (protocols->list[i]));
+	return proto_list_def;
 }
 
 void

@@ -44,6 +44,7 @@ static const char rcsid[] =
 #include "def.h"
 #include "emit.h"
 #include "expr.h"
+#include "function.h"
 #include "qfcc.h"
 #include "reloc.h"
 
@@ -123,4 +124,28 @@ new_reloc (int ofs, reloc_type type)
 	ref->ofs = ofs;
 	ref->type = type;
 	return ref;
+}
+
+void
+reloc_def_def (def_t *def, int ofs)
+{
+	reloc_t    *ref = new_reloc (ofs, rel_def_def);
+	ref->next = def->refs;
+	def->refs = ref;
+}
+
+void
+reloc_def_func (function_t *func, int ofs)
+{
+	reloc_t    *ref = new_reloc (ofs, rel_def_func);
+	ref->next = func->refs;
+	func->refs = ref;
+}
+
+void
+reloc_def_string (int ofs)
+{
+	reloc_t    *ref = new_reloc (ofs, rel_def_string);
+	ref->next = pr.relocs;
+	pr.relocs = ref;
 }

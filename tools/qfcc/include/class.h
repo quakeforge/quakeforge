@@ -94,8 +94,8 @@ struct def_s *protocol_def (protocol_t *protocol);
 protocollist_t *new_protocollist (void);
 void add_protocol (protocollist_t *protocollist, protocol_t *protocol);
 
-int emit_protocol (protocol_t *protocol);
-int emit_protocol_list (protocollist_t *protocols, const char *name);
+struct def_s *emit_protocol (protocol_t *protocol);
+struct def_s *emit_protocol_list (protocollist_t *protocols, const char *name);
 
 void clear_classes (void);
 

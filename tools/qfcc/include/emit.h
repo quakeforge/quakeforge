@@ -49,4 +49,18 @@ struct def_s *emit_statement (struct expr_s *e, opcode_t *op, struct def_s *var_
 struct def_s *emit_sub_expr (struct expr_s*e, struct def_s *dest);
 void emit_expr (struct expr_s *e);
 
+#define EMIT_STRING(dest,str)						\
+	do {											\
+		(dest) = ReuseString (str);					\
+		reloc_def_string (POINTER_OFS (&(dest)));	\
+	} while (0)
+
+#define EMIT_DEF(dest,def)								\
+	do {												\
+		def_t      *d = (def);							\
+		(dest) = d ? d->ofs : 0;						\
+		if (d)											\
+			reloc_def_def (d, POINTER_OFS (&(dest)));	\
+	} while (0)
+
 #endif//__emit_h

@@ -80,7 +80,8 @@ void selector_name (struct dstring_s *sel_id, keywordarg_t *selector);
 void selector_types (struct dstring_s *sel_types, keywordarg_t *selector);
 struct def_s *selector_def (const char *sel_id, const char *sel_types);
 
-int emit_methods (methodlist_t *methods, const char *name, int instance);
+struct def_s *emit_methods (methodlist_t *methods, const char *name,
+							int instance);
 
 void clear_selectors (void);
 

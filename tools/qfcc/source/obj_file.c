@@ -492,11 +492,11 @@ qfo_to_progs (qfo_t *qfo, pr_info_t *pr)
 		pd->line = qd->line;
 	}
 
-	pr->num_functions = qfo->num_functions;
-	pr->func_head = calloc (pr->num_functions, sizeof (function_t));
+	pr->num_functions = qfo->num_functions + 1;
+	pr->func_head = calloc (qfo->num_functions, sizeof (function_t));
 	pr->func_tail = &pr->func_head;
 	for (i = 0, pf = pr->func_head, qf = qfo->functions;
-		 i < pr->num_functions; i++, pf++, qf++) {
+		 i < qfo->num_functions; i++, pf++, qf++) {
 		*pr->func_tail = pf;
 		pr->func_tail = &pf->next;
 		pf->aux = new_auxfunction ();

@@ -55,7 +55,7 @@ struct type_s *new_union (const char *name);
 struct type_s *find_struct (const char *name);
 void copy_struct_fields (struct type_s *dst, struct type_s *src);
 
-int emit_struct (struct type_s *strct, const char *name);
+struct def_s *emit_struct (struct type_s *strct, const char *name);
 
 void process_enum (struct expr_s *enm);
 struct expr_s *get_enum (const char *name);

@@ -47,10 +47,12 @@ static const char rcsid[] =
 #include <QF/sys.h>
 #include <QF/va.h>
 
-#include "qfcc.h"
 #include "def.h"
+#include "emit.h"
 #include "expr.h"
 #include "immediate.h"
+#include "qfcc.h"
+#include "reloc.h"
 #include "struct.h"
 #include "type.h"
 
@@ -202,7 +204,7 @@ struct_compare_fields (struct type_s *s1, struct type_s *s2)
 	return !((!f1) ^ !(f2));
 }
 
-int
+def_t *
 emit_struct(type_t *strct, const char *name)
 {
 	struct_field_t *field;
@@ -234,8 +236,8 @@ emit_struct(type_t *strct, const char *name)
 		if (!field->name)
 			continue;
 		encode_type (encoding, field->type);
-		ivars->ivar_list[i].ivar_name = ReuseString (field->name);
-		ivars->ivar_list[i].ivar_type = ReuseString (encoding->str);
+		EMIT_STRING (ivars->ivar_list[i].ivar_name, field->name);
+		EMIT_STRING (ivars->ivar_list[i].ivar_type, encoding->str);
 		ivars->ivar_list[i].ivar_offset = field->offset;
 		dstring_clearstr (encoding);
 		i++;
@@ -243,7 +245,7 @@ emit_struct(type_t *strct, const char *name)
   done:
 	dstring_delete (encoding);
 	dstring_delete (ivars_name);
-	return ivars_def->ofs;
+	return ivars_def;
 }
 
 void
