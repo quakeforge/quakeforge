@@ -13,7 +13,7 @@
 .\" along with this program; see the file COPYING.  If not, write to
 .\" the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 .\"
-.TH QFCC 1 "February 21, 2001" QuakeForge QuakeForge\ Developer\'s\ Manual
+.TH QFCC 1 "October 26, 2001" QuakeForge "QuakeForge Developer's Manual"
 .\" Please update the above date whenever this man page is modified.
 .\"
 .\" Some roff macros, for reference:
@@ -47,16 +47,13 @@ Inhibit some of qfcc's normal output.
 Display more output than usual.
 .TP
 .B \-\-code OPTION,...
-Set code generation options. See
-.B
-CODE GENERATION OPTIONS
-for details.
+Set code generation options. See \fBCODE GENERATION OPTIONS\fP for details.
 .TP
 .B \-\-warn OPTION,...
-Set warning options. See
-.B
-WARNING OPTIONS
-for details.
+Set warning options. See \fBWARNING OPTIONS\fP for details.
+.TP
+.B \-g, \-\-debug
+Synonym for \fB\-\-code debug\fP.
 .TP
 .B \-h, \-\-help
 Show summary of options.
@@ -83,7 +80,7 @@ Allow assignment to initialized globals. In QuakeC, a global that has been
 initialized to a value is not a variable, but a named constant. However,
 \fBqcc\fP never really enforced this. The \fBcow\fP option allows \fBqfcc\fP
 to gracefully cope with QuakeC source that assigns values to initialized globals
-in this manner. (also known as "copy on write" -- never mind the bovine
+in this manner. (also known as "copy on write" \(em never mind the bovine
 connotations)
 .TP
 .B debug
