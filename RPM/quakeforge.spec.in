@@ -1,8 +1,8 @@
 %define name	quakeforge
-%define version @VERSION@
+%define qfversion @VERSION@
 %define rpmversion @RPMVERSION@
 %define release 1
-%define builddir $RPM_BUILD_DIR/%{name}-%{version}
+%define builddir $RPM_BUILD_DIR/%{name}-%{qfversion}
 
 %define HAVE_FBDEV  '@HAVE_FBDEV@'
 %define HAVE_SDL    '@HAVE_SDL@'
@@ -24,13 +24,13 @@ Release:	%{release}
 Vendor:		The QuakeForge Project 
 Packager:	The QuakeForge Project quakeforge-devel@lists.quakeforge.net
 URL:		http://www.quakeforge.net/
-Source:         %{name}-%{version}.tar.gz
+Source:         %{name}-%{qfversion}.tar.gz
 #Patch:		
 Group:		Amusements/Games
 Copyright:	GPL
 #Icon:		
 Requires:	quakeforge-common, quake-game
-BuildRoot:	/var/tmp/%{name}-%{version}
+BuildRoot:	/var/tmp/%{name}-%{qfversion}
 Summary:	QuakeForge 3D game engine
 %description
 QuakeForge is a source port of Quake and QuakeWorld, the successors to id
@@ -265,7 +265,7 @@ adding portability and optional extensions to enhance gameplay.
 This sub-package provides the quake-game pseudo package.
 
 %prep
-%setup -n %{name}-%{version} 
+%setup -n %{name}-%{qfversion} 
 #%patch -p1
 
 %build
