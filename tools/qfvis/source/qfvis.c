@@ -225,8 +225,11 @@ CopyWinding (winding_t *winding)
 /*
 	ClipWinding
 
-	Clips the winding to the plane, returning the new winding on the positive side
+	Clips the winding to the plane, returning the new winding on the positive
+	side
+
 	Frees the input winding.
+
 	If keepon is true, an exactly on-plane winding will be saved, otherwise
 	it will be clipped away.
 */
@@ -509,7 +512,8 @@ CalcPortalVis (void)
 	if (pthread_attr_setstacksize (&attrib, 0x100000) == -1)
 		fprintf (stderr, "pthread_attr_setstacksize failed");
 	for (i = 0; i < numthreads; i++) {
-	    if (pthread_create (&work_threads[i], attrib, LeafThread, (pthread_addr_t) i) == -1)
+	    if (pthread_create (&work_threads[i], attrib, LeafThread,
+							(pthread_addr_t) i) == -1)
 			fprintf (stderr, "pthread_create failed");
 	}
 
@@ -526,7 +530,8 @@ CalcPortalVis (void)
 #endif
 
     if (options.verbosity >= 0) {
-		printf ("portalcheck: %i  portaltest: %i  portalpass: %i\n", c_portalcheck, c_portaltest, c_portalpass);
+		printf ("portalcheck: %i  portaltest: %i  portalpass: %i\n",
+				c_portalcheck, c_portaltest, c_portalpass);
 		printf ("c_vistest: %i  c_mighttest: %i\n", c_vistest, c_mighttest);
     }
 
@@ -779,11 +784,13 @@ LoadPortals (char *name)
     vismap_end = vismap + MAX_MAP_VISIBILITY;
 
     for (i = 0, portal = portals; i < numportals; i++) {
-		if (fscanf (f, "%i %i %i ", &numpoints, &leafnums[0], &leafnums[1]) != 3)
+		if (fscanf (f, "%i %i %i ", &numpoints, &leafnums[0],
+					&leafnums[1]) != 3)
 			fprintf (stderr, "LoadPortals: reading portal %i", i);
 		if (numpoints > MAX_POINTS_ON_WINDING)
 			fprintf (stderr, "LoadPortals: portal %i has too many points", i);
-		if ((unsigned) leafnums[0] > portalleafs || (unsigned) leafnums[1] > portalleafs)
+		if ((unsigned) leafnums[0] > portalleafs
+			|| (unsigned) leafnums[1] > portalleafs)
 			fprintf (stderr, "LoadPortals: reading portal %i", i);
 
 		winding = portal->winding = NewWinding (numpoints);
@@ -870,7 +877,8 @@ main (int argc, char **argv)
 
     visdatasize = vismap_p - dvisdata;
 	if (options.verbosity >= 0)
-		printf ("visdatasize:%i  compressed from %i\n", visdatasize, originalvismapsize);
+		printf ("visdatasize:%i  compressed from %i\n", visdatasize,
+				originalvismapsize);
 
     CalcAmbientSounds ();
 

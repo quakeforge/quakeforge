@@ -59,8 +59,11 @@ static const char rcsid[] =
 #include "vis.h"
 
 /*
-	Some textures (sky, water, slime, lava) are considered ambient sound emiters.
-	Find an aproximate distance to the nearest emiter of each class for each leaf.
+	Some textures (sky, water, slime, lava) are considered ambient sound
+	emiters.
+
+	Find an aproximate distance to the nearest emiter of each class for each
+	leaf.
 */
 
 void

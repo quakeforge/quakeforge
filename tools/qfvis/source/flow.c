@@ -84,14 +84,14 @@ CheckStack (leaf_t *leaf, threaddata_t *thread)
 
 	Source, pass, and target are an ordering of portals.
 
-	Generates seperating planes candidates by taking two points from source and 		
+	Generates seperating planes candidates by taking two points from source and
 	one point from pass, and clips target by them.
 
 	If target is totally clipped away, that portal can not be seen through.
 
 	Normal clip keeps target on the same side as pass, which is correct if the
-	order goes source, pass, target.  If the order goes pass, source, target then
-	flipclip should be set.
+	order goes source, pass, target.  If the order goes pass, source, target
+	then flipclip should be set.
 */
 winding_t	*
 ClipToSeperators (winding_t *source, winding_t *pass, winding_t *target, 
@@ -279,11 +279,13 @@ RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 		stack.portal = p;
 		stack.next = NULL;
 
-		target = ClipWinding(p->winding, &thread->pstack_head.portalplane, false);
+		target = ClipWinding(p->winding, &thread->pstack_head.portalplane,
+							 false);
 		if (!target)
 			continue;
 
-		if (!prevstack->pass) {	// the second leaf can only be blocked if coplanar
+		if (!prevstack->pass) {
+			// the second leaf can only be blocked if coplanar
 
 			stack.source = prevstack->source;
 			stack.pass = target;
@@ -381,8 +383,8 @@ PortalFlow (portal_t *p)
 }
 
 /*
-	This is a rough first-order aproximation that is used to trivially reject some
-	of the final calculations.
+	This is a rough first-order aproximation that is used to trivially reject
+	some of the final calculations.
 */
 void
 SimpleFlood (portal_t *srcportal, int leafnum)
@@ -429,7 +431,8 @@ BasePortalVis (void)
 			
 			winding = tp->winding;
 			for (k = 0; k < winding->numpoints; k++) {
-				d = DotProduct (winding->points[k], p->plane.normal) - p->plane.dist;
+				d = DotProduct (winding->points[k],
+								p->plane.normal) - p->plane.dist;
 				if (d > ON_EPSILON)
 					break;
 			}
@@ -438,7 +441,8 @@ BasePortalVis (void)
 
 			winding = p->winding;
 			for (k = 0; k < winding->numpoints; k++) {
-				d = DotProduct (winding->points[k], tp->plane.normal) - tp->plane.dist;
+				d = DotProduct (winding->points[k],
+								tp->plane.normal) - tp->plane.dist;
 				if (d < -ON_EPSILON)
 					break;
 			}
