@@ -248,7 +248,7 @@ vorbis_stream (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 	int         size;
 	
 	samples = shm->speed * 0.3;
-	size = samples = (samples + 3) & ~3;
+	size = samples = (samples + 255) & ~255;
 	if (!snd_loadas8bit->int_val)
 		size *= 2;
 	if (info.channels == 2)

@@ -157,6 +157,11 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 	wavinfo_t  *info = &stream->wavinfo;
 	void       *prev;
 
+	stream->pos += count;
+	count = (stream->pos - buffer->pos) & ~255;
+	if (!count)
+		return;
+
 	stepscale = (float) info->rate / shm->speed;	// usually 0.5, 1, or 2
 
 	// find out how many samples the buffer currently holds
@@ -185,6 +190,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 				buffer->pos %= sfx->length - sfx->loopstart;
 				buffer->pos += sfx->loopstart;
 			}
+			stream->pos = buffer->pos;
 		}
 		headpos = buffer->pos;
 		stream->seek (stream->file, buffer->pos * stepscale, info);
@@ -200,6 +206,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 			} else {
 				buffer->pos -= sfx->length - sfx->loopstart;
 			}
+			stream->pos = buffer->pos;
 		}
 
 		buffer->tail += count;
