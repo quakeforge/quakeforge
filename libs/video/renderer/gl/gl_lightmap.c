@@ -146,8 +146,7 @@ R_AddDynamicLights_1 (msurface_t *surf)
 			surf->texinfo->vecs[1][3] - surf->texturemins[1];
 
 		// for comparisons to minimum acceptable light
-		maxdist = (int) ((r_dlights[lnum].radius * r_dlights[lnum].radius) *
-						 0.75);
+		maxdist = (int) (r_dlights[lnum].radius * r_dlights[lnum].radius);
 
 		// clamp radius to avoid exceeding 8192 entry division table
 		if (maxdist > 1048576)
@@ -211,8 +210,7 @@ R_AddDynamicLights_3 (msurface_t *surf)
 			surf->texinfo->vecs[1][3] - surf->texturemins[1];
 
 		// for comparisons to minimum acceptable light
-		maxdist = (int) ((r_dlights[lnum].radius * r_dlights[lnum].radius) *
-						 0.75);
+		maxdist = (int) (r_dlights[lnum].radius * r_dlights[lnum].radius);
 
 		// clamp radius to avoid exceeding 8192 entry division table
 		if (maxdist > 1048576)
