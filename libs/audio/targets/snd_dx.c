@@ -289,8 +289,7 @@ SNDDMA_InitDirect (void)
 	reps = 0;
 
 	while ((hresult = IDirectSoundBuffer_Lock (pDSBuf, 0, gSndBufSize,
-											   (LPVOID *) & lpData, &dwSize,
-											   NULL, NULL, 0)) != DS_OK) {
+		(LPVOID *)(char *)&lpData, &dwSize, NULL, NULL, 0)) != DS_OK) {
 		if (hresult != DSERR_BUFFERLOST) {
 			Sys_Printf ("SNDDMA_InitDirect: DS::Lock Sound Buffer Failed\n");
 			FreeSound ();
@@ -435,8 +434,8 @@ DSOUND_LockBuffer (qboolean lockit)
 	if (lockit) {
 		reps = 0;
 		while ((hresult = IDirectSoundBuffer_Lock
-				(pDSBuf, 0, gSndBufSize, (LPVOID *) & pbuf1, &dwSize,
-				 (LPVOID *) & pbuf2, &dwSize2, 0)) != DS_OK) {
+				(pDSBuf, 0, gSndBufSize, (LPVOID *)(char *) &pbuf1, &dwSize,
+				 (LPVOID *)(char *) &pbuf2, &dwSize2, 0)) != DS_OK) {
 			if (hresult != DSERR_BUFFERLOST) {
 				Sys_Printf
 					("S_TransferStereo16: DS::Lock Sound Buffer Failed\n");
