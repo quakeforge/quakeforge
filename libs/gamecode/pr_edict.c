@@ -150,6 +150,36 @@ ED_Alloc (progs_t * pr)
 }
 
 /*
+	ED_FreeRefs
+
+	NULLs all references to entity
+*/
+void
+ED_FreeRefs (progs_t * pr, edict_t *ed)
+{
+	int i, j, k;
+	ddef_t *def;
+	for (i = 0; i < pr->progs->numglobaldefs; i++) {
+		def = &pr->pr_globaldefs[i];
+		if ((def->type & ~DEF_SAVEGLOBAL) == ev_entity) {
+			if (ed == G_EDICT (pr, def->ofs)) {
+				Con_Printf ("Reference found to free'd edict: %p\n", ed);
+			}
+		}
+	}
+	for (i = 0; i < pr->progs->numfielddefs; i++) {
+		def = &pr->pr_fielddefs[i];
+		if ((def->type & ~DEF_SAVEGLOBAL) == ev_entity) {
+			for (j = 0; j < *pr->num_edicts; j++) {
+				k = E_var (EDICT_NUM (pr, j), def->ofs, entity);
+				if (ed == PROG_TO_EDICT (pr, k))
+					Con_Printf ("Reference found to free'd edict: %p\n", ed);
+			}
+		}
+	}
+}
+
+/*
 	ED_Free
 
 	Marks the edict as free
