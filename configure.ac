@@ -1229,16 +1229,31 @@ if test "x$optimize" = xyes; then
 			CFLAGS="$CFLAGS $heavy"
 		fi
 		AC_MSG_CHECKING(for special compiler settings)
-		case "${host_cpu}" in
-			i?86)
-				if test "x$HAVE_AMD" = "xyes"; then
-					MORE_CFLAGS="-march=k6"
-				else
-					MORE_CFLAGS="-march=${host_cpu}"
-				fi
+		AC_ARG_WITH(arch,
+		[  --with-arch=ARCH        control compiler architecture directly],
+			arch="$withval", arch=auto
+		)
+		echo -n $arch
+		case "$arch" in
+			auto)
+				case "${host_cpu}" in
+					i?86)
+						if test "x$HAVE_AMD" = "xyes"; then
+							MORE_CFLAGS="-march=k6"
+						else
+							MORE_CFLAGS="-march=${host_cpu}"
+						fi
+						;;
+					*)
+						MORE_CFLAGS=""
+						;;
+				esac
+				;;
+			no|"")
+				MORE_CFLAGS=""
 				;;
 			*)
-				MORE_CFLAGS=""
+				MORE_CFLAGS="-march=$arch"
 				;;
 		esac
 		if test "x$MORE_CFLAGS" = x; then
