@@ -281,15 +281,6 @@ insert_cube_vertices (struct box_def *box, struct visit_def visit, int count,
 	va_list     args;
 	vec3_t    **v;
 
-#ifdef __BORLANDC__
-// This is fix for borland alloca "feature" which fails to restore stack
-// correctly if calling function doesn't have any references to local
-// variables.
-	char dummy[5];
-
-	dummy[0]=0;
-#endif
-
 	va_start (args, count);
 	v = (vec3_t **) alloca (count * sizeof (vec3_t *));
 
