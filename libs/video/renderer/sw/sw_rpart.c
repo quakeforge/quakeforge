@@ -355,8 +355,8 @@ R_TeleportSplash_QF (const vec3_t org)
 			}
 }
 
-void
-R_DarkFieldParticles_ID (entity_t *ent)
+static void
+R_DarkFieldParticles_ID (const entity_t *ent)
 {
 	int				i, j, k;
 	unsigned int	rnd;
@@ -404,7 +404,7 @@ R_DarkFieldParticles_ID (entity_t *ent)
 static vec3_t		avelocities[NUMVERTEXNORMALS];
 
 static void
-R_EntityParticles_ID (entity_t *ent)
+R_EntityParticles_ID (const entity_t *ent)
 {
 	int			i;
 	float		angle, sp, sy, cp, cy; // cr, sr
@@ -457,17 +457,18 @@ R_EntityParticles_ID (entity_t *ent)
 }
 
 static void
-R_RocketTrail_QF (entity_t *ent)
+R_RocketTrail_QF (const entity_t *ent)
 {
 	float		len;
 	int			j;
 	particle_t *p;
-	vec3_t		vec;
+	vec3_t		old_origin, vec;
 
 	if (!r_particles->int_val)
 		return;
 
-	VectorSubtract (ent->origin, ent->old_origin, vec);
+	VectorCopy (ent->old_origin, old_origin);
+	VectorSubtract (ent->origin, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -487,24 +488,25 @@ R_RocketTrail_QF (entity_t *ent)
 		p->color = ramp3[(int) p->ramp];
 		p->type = pt_fire;
 		for (j = 0; j < 3; j++)
-			p->org[j] = ent->old_origin[j] + ((rand () % 6) - 3);
+			p->org[j] = old_origin[j] + ((rand () % 6) - 3);
 
-		VectorAdd (ent->old_origin, vec, ent->old_origin);
+		VectorAdd (old_origin, vec, old_origin);
 	}
 }
 
 static void
-R_GrenadeTrail_QF (entity_t *ent)
+R_GrenadeTrail_QF (const entity_t *ent)
 {
 	float		len;
 	int			j;
 	particle_t *p;
-	vec3_t		vec;
+	vec3_t		old_origin, vec;
 
 	if (!r_particles->int_val)
 		return;
 
-	VectorSubtract (ent->origin, ent->old_origin, vec);
+	VectorCopy (ent->old_origin, old_origin);
+	VectorSubtract (ent->origin, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -524,24 +526,25 @@ R_GrenadeTrail_QF (entity_t *ent)
 		p->color = ramp3[(int) p->ramp];
 		p->type = pt_fire;
 		for (j = 0; j < 3; j++)
-			p->org[j] = ent->old_origin[j] + ((rand () % 6) - 3);
+			p->org[j] = old_origin[j] + ((rand () % 6) - 3);
 
-		VectorAdd (ent->old_origin, vec, ent->old_origin);
+		VectorAdd (old_origin, vec, old_origin);
 	}
 }
 
 static void
-R_BloodTrail_QF (entity_t *ent)
+R_BloodTrail_QF (const entity_t *ent)
 {
 	float		len;
 	int			j;
 	particle_t *p;
-	vec3_t		vec;
+	vec3_t		old_origin, vec;
 
 	if (!r_particles->int_val)
 		return;
 
-	VectorSubtract (ent->origin, ent->old_origin, vec);
+	VectorCopy (ent->old_origin, old_origin);
+	VectorSubtract (ent->origin, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -560,25 +563,26 @@ R_BloodTrail_QF (entity_t *ent)
 		p->type = pt_slowgrav;
 		p->color = 67 + (rand () & 3);
 		for (j = 0; j < 3; j++)
-			p->org[j] = ent->old_origin[j] + ((rand () % 6) - 3);
+			p->org[j] = old_origin[j] + ((rand () % 6) - 3);
 		break;
 
-		VectorAdd (ent->old_origin, vec, ent->old_origin);
+		VectorAdd (old_origin, vec, old_origin);
 	}
 }
 
 static void
-R_SlightBloodTrail_QF (entity_t *ent)
+R_SlightBloodTrail_QF (const entity_t *ent)
 {
 	float		len;
 	int			j;
 	particle_t *p;
-	vec3_t		vec;
+	vec3_t		old_origin, vec;
 
 	if (!r_particles->int_val)
 		return;
 
-	VectorSubtract (ent->origin, ent->old_origin, vec);
+	VectorCopy (ent->old_origin, old_origin);
+	VectorSubtract (ent->origin, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -597,23 +601,24 @@ R_SlightBloodTrail_QF (entity_t *ent)
 		p->type = pt_slowgrav;
 		p->color = 67 + (rand () & 3);
 		for (j = 0; j < 3; j++)
-			p->org[j] = ent->old_origin[j] + ((rand () % 6) - 3);
+			p->org[j] = old_origin[j] + ((rand () % 6) - 3);
 
-		VectorAdd (ent->old_origin, vec, ent->old_origin);
+		VectorAdd (old_origin, vec, old_origin);
 	}
 }
 
 static void
-R_WizTrail_QF (entity_t *ent)
+R_WizTrail_QF (const entity_t *ent)
 {
 	float		len;
 	particle_t *p;
-	vec3_t		vec;
+	vec3_t		old_origin, vec;
 
 	if (!r_particles->int_val)
 		return;
 
-	VectorSubtract (ent->origin, ent->old_origin, vec);
+	VectorCopy (ent->old_origin, old_origin);
+	VectorSubtract (ent->origin, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -634,7 +639,7 @@ R_WizTrail_QF (entity_t *ent)
 
 		tracercount++;
 
-		VectorCopy (ent->old_origin, p->org);
+		VectorCopy (old_origin, p->org);
 		if (tracercount & 1) {
 			p->vel[0] = 30.0 * vec[1];
 			p->vel[1] = 30.0 * -vec[0];
@@ -644,21 +649,22 @@ R_WizTrail_QF (entity_t *ent)
 		}
 		p->vel[2] = 0.0;
 
-		VectorAdd (ent->old_origin, vec, ent->old_origin);
+		VectorAdd (old_origin, vec, old_origin);
 	}
 }
 
 static void
-R_FlameTrail_QF (entity_t *ent)
+R_FlameTrail_QF (const entity_t *ent)
 {
 	float		len;
 	particle_t *p;
-	vec3_t		vec;
+	vec3_t		old_origin, vec;
 
 	if (!r_particles->int_val)
 		return;
 
-	VectorSubtract (ent->origin, ent->old_origin, vec);
+	VectorCopy (ent->old_origin, old_origin);
+	VectorSubtract (ent->origin, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -679,7 +685,7 @@ R_FlameTrail_QF (entity_t *ent)
 
 		tracercount++;
 
-		VectorCopy (ent->old_origin, p->org);
+		VectorCopy (old_origin, p->org);
 		if (tracercount & 1) {
 			p->vel[0] = 30 * vec[1];
 			p->vel[1] = 30 * -vec[0];
@@ -689,22 +695,23 @@ R_FlameTrail_QF (entity_t *ent)
 		}
 		p->vel[2] = 0.0;
 
-		VectorAdd (ent->old_origin, vec, ent->old_origin);
+		VectorAdd (old_origin, vec, old_origin);
 	}
 }
 
 static void
-R_VoorTrail_QF (entity_t *ent)
+R_VoorTrail_QF (const entity_t *ent)
 {
 	float		len;
 	int			j;
 	particle_t *p;
-	vec3_t		vec;
+	vec3_t		old_origin, vec;
 
 	if (!r_particles->int_val)
 		return;
 
-	VectorSubtract (ent->origin, ent->old_origin, vec);
+	VectorCopy (ent->old_origin, old_origin);
+	VectorSubtract (ent->origin, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -723,9 +730,9 @@ R_VoorTrail_QF (entity_t *ent)
 		p->type = pt_static;
 		p->color = 9 * 16 + 8 + (rand () & 3);
 		for (j = 0; j < 3; j++)
-			p->org[j] = ent->old_origin[j] + ((rand () & 15) - 8);
+			p->org[j] = old_origin[j] + ((rand () & 15) - 8);
 
-		VectorAdd (ent->old_origin, vec, ent->old_origin);
+		VectorAdd (old_origin, vec, old_origin);
 	}
 }
 
