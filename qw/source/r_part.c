@@ -58,8 +58,6 @@ cvar_t      *r_particles;
 void
 R_MaxParticlesCheck (cvar_t *var)
 {
-	// Clear out all the particles. Note this has MASSIVE problems here, it's a lot different than GL that's for sure!
-	R_ClearParticles ();
 	// Do not use 0 in this! sw doesn't grok 0 and it's going to segfault if we do!
 	r_numparticles = max(var->int_val, 1);
         
@@ -72,9 +70,7 @@ R_MaxParticlesCheck (cvar_t *var)
                 
 	particles = (particle_t *) calloc (r_numparticles, sizeof (particle_t));
         
-	// My not so successful attempts to get the sw renderer to work on the fly. ATM this causes segfaults anyway. Be wary!
-	particles[0].next = NULL;
-	free_particles = &particles[0];
+	R_ClearParticles ();
 }
 
 /*
@@ -101,8 +97,6 @@ R_ClearParticles (void)
 {
 	int         i;
 
-	if (!particles)
-		return;
 	free_particles = &particles[0];
 	active_particles = NULL;
 
