@@ -361,6 +361,26 @@ NET_SVC_Nails_Parse (net_svc_nails_t *block, msg_t *msg)
 }
 
 qboolean
+NET_SVC_Modellist_Parse (net_svc_modellist_t *block, msg_t *msg)
+{
+	int i;
+
+	block->startmodel = MSG_ReadByte (msg);
+
+	for (i = 0; i < MAX_MODELS; i++) {
+		block->models[i] = MSG_ReadString (msg);
+		if (!*block->models[i])
+			break;
+	}
+	// this is a bit redundant, but I think the robustness is a good thing
+	block->models[MAX_MODELS] = "";
+
+	block->nextmodel = MSG_ReadByte (msg);
+
+	return msg->badread;
+}
+
+qboolean
 NET_SVC_Soundlist_Parse (net_svc_soundlist_t *block, msg_t *msg)
 {
 	int i;
@@ -381,22 +401,86 @@ NET_SVC_Soundlist_Parse (net_svc_soundlist_t *block, msg_t *msg)
 }
 
 qboolean
-NET_SVC_Modellist_Parse (net_svc_modellist_t *block, msg_t *msg)
+NET_SVC_PacketEntities_Parse (net_svc_packetentities_t *block, msg_t *msg)
 {
-	int i;
+	int				i;
+	unsigned int	bits; // bytes of bits: [EXT2][EXT1][ORIG][MORE]
+	entity_state_t *es;
 
-	block->startmodel = MSG_ReadByte (msg);
-
-	for (i = 0; i < MAX_MODELS; i++) {
-		block->models[i] = MSG_ReadString (msg);
-		if (!*block->models[i])
+	for (i = 0; i < MAX_PACKET_ENTITIES; i++) {
+		block->vars[i].word = bits = (unsigned short) MSG_ReadShort (msg);
+		if (!bits || msg->badread)
 			break;
-	}
-	// this is a bit redundant, but I think the robustness is a good thing
-	block->models[MAX_MODELS] = "";
+		es = &block->vars[i].state;
+		es->number = bits & 511;
+		bits &= ~511;
 
-	block->nextmodel = MSG_ReadByte (msg);
+		es->frame = 0;
+		es->effects = 0;
+
+		if (bits & U_MOREBITS)
+			bits |= MSG_ReadByte (msg);
+		if (bits & U_EXTEND1) {
+			bits |= MSG_ReadByte (msg) << 16;
+			if (bits & U_EXTEND2)
+				bits |= MSG_ReadByte (msg) << 24;
+		}
+
+		es->flags = bits;
+
+		if (bits & U_MODEL)
+			es->modelindex = MSG_ReadByte (msg);
+		if (bits & U_FRAME)
+			es->frame = MSG_ReadByte (msg);
+		if (bits & U_COLORMAP)
+			es->colormap = MSG_ReadByte (msg);
+		if (bits & U_SKIN)
+			es->skinnum = MSG_ReadByte (msg);
+		if (bits & U_EFFECTS)
+			es->effects = MSG_ReadByte (msg);
+
+		if (bits & U_ORIGIN1)
+			es->origin[0] = MSG_ReadCoord (msg);
+		if (bits & U_ANGLE1)
+			es->angles[0] = MSG_ReadAngle (msg);
+		if (bits & U_ORIGIN2)
+			es->origin[1] = MSG_ReadCoord (msg);
+		if (bits & U_ANGLE2)
+			es->angles[1] = MSG_ReadAngle (msg);
+		if (bits & U_ORIGIN3)
+			es->origin[2] = MSG_ReadCoord (msg);
+		if (bits & U_ANGLE3)
+			es->angles[2] = MSG_ReadAngle (msg);
+
+		if (bits & U_ALPHA)
+			es->alpha = MSG_ReadByte (msg);
+		if (bits & U_SCALE)
+			es->scale = MSG_ReadByte (msg);
+		if (bits & U_EFFECTS2) {
+			if (bits & U_EFFECTS)
+				es->effects = (es->effects & 0xFF) | (MSG_ReadByte (msg) << 8);
+			else
+				es->effects = MSG_ReadByte (msg) << 8;
+		}
+		if (bits & U_GLOWSIZE)
+			es->glow_size = MSG_ReadByte (msg);
+		if (bits & U_GLOWCOLOR)
+			es->glow_color = MSG_ReadByte (msg);
+		if (bits & U_COLORMOD)
+			es->colormod = MSG_ReadByte (msg);
+		if (bits & U_FRAME2) {
+			if (bits & U_FRAME)
+				es->frame = (es->frame & 0xFF) | (MSG_ReadByte (msg) << 8);
+			else
+				es->frame = MSG_ReadByte (msg) << 8;
+		}
+
+		if (bits & U_SOLID) {
+			// FIXME
+		}
+	}
+	block->vars[i].word = 0;
+	block->num = i;
 
 	return msg->badread;
 }
-

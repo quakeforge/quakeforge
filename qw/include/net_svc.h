@@ -161,19 +161,30 @@ typedef struct net_svc_nails_s
 	} nails[MAX_PROJECTILES];
 } net_svc_nails_t;
 
+typedef struct net_svc_modellist_s
+{
+	byte        startmodel;
+	const char *models[MAX_MODELS + 1]; // space left for terminating
+										// empty string
+	byte        nextmodel;
+} net_svc_modellist_t;
+
 typedef struct net_svc_soundlist_s
 {
 	byte		startsound;
-	const char *sounds[MAX_SOUNDS + 1]; // space left for terminating empty string
+	const char *sounds[MAX_SOUNDS + 1]; // space left for terminating
+										// empty string
 	byte		nextsound;
 } net_svc_soundlist_t;
 
-typedef struct net_svc_modellist_s
+typedef struct net_svc_packetentities_s
 {
-	byte		startmodel;
-	const char *models[MAX_MODELS + 1]; // space left for terminating empty string
-	byte		nextmodel;
-} net_svc_modellist_t;
+	int			num;
+	struct {
+		unsigned short	word;
+		entity_state_t	state;
+	} vars[MAX_PACKET_ENTITIES];
+} net_svc_packetentities_t;
 
 qboolean NET_SVC_Print_Parse (net_svc_print_t *block, msg_t *msg);
 qboolean NET_SVC_Damage_Parse (net_svc_damage_t *block, msg_t *msg);
@@ -192,7 +203,9 @@ qboolean NET_SVC_ServerInfo_Parse (net_svc_serverinfo_t *block, msg_t *msg);
 qboolean NET_SVC_Download_Parse (net_svc_download_t *block, msg_t *msg);
 qboolean NET_SVC_Playerinfo_Parse (net_svc_playerinfo_t *block, msg_t *msg);
 qboolean NET_SVC_Nails_Parse (net_svc_nails_t *block, msg_t *msg);
-qboolean NET_SVC_Soundlist_Parse (net_svc_soundlist_t *block, msg_t *msg);
 qboolean NET_SVC_Modellist_Parse (net_svc_modellist_t *block, msg_t *msg);
+qboolean NET_SVC_Soundlist_Parse (net_svc_soundlist_t *block, msg_t *msg);
+qboolean NET_SVC_PacketEntities_Parse (net_svc_packetentities_t *block,
+									   msg_t *msg);
 
 #endif // NET_SVC_H

@@ -1356,11 +1356,11 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_packetentities:
-				CL_ParsePacketEntities (false);
+				CL_ParsePacketEntities ();
 				break;
 
 			case svc_deltapacketentities:
-				CL_ParsePacketEntities (true);
+				CL_ParseDeltaPacketEntities (true);
 				break;
 
 			case svc_maxspeed:

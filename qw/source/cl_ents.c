@@ -235,6 +235,53 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 }
 
 void
+CL_EntityState_Copy (entity_state_t *src, entity_state_t *dest, int bits)
+{
+	if (bits & U_MODEL)
+		dest->modelindex = src->modelindex;
+	if (bits & U_FRAME)
+		dest->frame = (dest->frame & 0xFF00) | (src->frame & 0xFF);
+	if (bits & U_COLORMAP)
+		dest->colormap = src->colormap;
+	if (bits & U_SKIN)
+		dest->skinnum = src->skinnum;
+	if (bits & U_EFFECTS)
+		dest->effects = (dest->effects & 0xFF00) | (src->effects & 0xFF);
+
+	if (bits & U_ORIGIN1)
+		dest->origin[0] = src->origin[0];
+	if (bits & U_ANGLE1)
+		dest->angles[0] = src->angles[0];
+	if (bits & U_ORIGIN2)
+		dest->origin[1] = src->origin[1];
+	if (bits & U_ANGLE2)
+		dest->angles[1] = src->angles[1];
+	if (bits & U_ORIGIN3)
+		dest->origin[2] = src->origin[2];
+	if (bits & U_ANGLE3)
+		dest->angles[2] = src->angles[2];
+
+	if (bits & U_ALPHA)
+		dest->alpha = src->alpha;
+	if (bits & U_SCALE)
+		dest->scale = src->scale;
+	if (bits & U_EFFECTS2)
+		dest->effects = (dest->effects & 0xFF) | (src->effects & 0xFF00);
+	if (bits & U_GLOWSIZE)
+		dest->glow_size = src->glow_size;
+	if (bits & U_GLOWCOLOR)
+		dest->glow_color = src->glow_color;
+	if (bits & U_COLORMOD)
+		dest->colormod = src->colormod;
+	if (bits & U_FRAME2)
+		dest->frame = (dest->frame & 0xFF) | (src->frame & 0xFF00);
+
+	if (bits & U_SOLID) {
+		// FIXME
+	}
+}
+
+void
 FlushEntityPacket (void)
 {
 	entity_state_t	olde, newe;
@@ -262,14 +309,61 @@ FlushEntityPacket (void)
 	}
 }
 
+void
+CL_ParsePacketEntities (void)
+{
+	int			index, packetnum;
+	packet_entities_t *newp;
+	net_svc_packetentities_t block;
+
+	packetnum = cls.netchan.incoming_sequence & UPDATE_MASK;
+	newp = &cl.frames[packetnum].packet_entities;
+	cl.frames[packetnum].invalid = false;
+
+	cl.validsequence = cls.netchan.incoming_sequence;
+
+	newp->num_entities = 0;
+
+	if (NET_SVC_PacketEntities_Parse (&block, net_message)) {
+		Host_EndGame ("CL_ParsePacketEntities: Bad Read");
+		return;
+	}
+
+	for (index = 0; block.vars[index].word; index++) {
+		if (block.vars[index].word & U_REMOVE) {
+			cl.validsequence = 0;
+			Con_Printf ("CL_ParsePacketEntities: WARNING: U_REMOVE on "
+						"full update\n");
+			return;
+		}
+
+		if (index >= MAX_PACKET_ENTITIES) {
+			Host_EndGame ("CL_ParsePacketEntities: index == "
+						  "MAX_PACKET_ENTITIES");
+			return;
+		}
+
+		CL_EntityState_Copy (&cl_baselines[block.vars[index].word & 511],
+							 &newp->entities[index],
+							 ~block.vars[index].state.flags);
+		CL_EntityState_Copy (&block.vars[index].state,
+							 &newp->entities[index],
+							 block.vars[index].state.flags);
+		newp->entities[index].number = block.vars[index].state.number;
+		continue;
+	}
+
+	newp->num_entities = index;
+}
+
 /*
-	CL_ParsePacketEntities
+	CL_ParseDeltaPacketEntities
 
 	An svc_packetentities has just been parsed, deal with the
 	rest of the data stream.
 */
 void
-CL_ParsePacketEntities (qboolean delta)
+CL_ParseDeltaPacketEntities (qboolean delta)
 {
 	byte		from;
 	int			oldindex, newindex, newnum, oldnum, oldpacket, newpacket, word;
@@ -320,9 +414,11 @@ CL_ParsePacketEntities (qboolean delta)
 		if (!word) {	// copy rest of ents from old packet
 			while (oldindex < oldp->num_entities) {	
 //				Con_Printf ("copy %i\n", oldp->entities[oldindex].number);
-				if (newindex >= MAX_PACKET_ENTITIES)
-					Host_EndGame ("CL_ParsePacketEntities: newindex == "
+				if (newindex >= MAX_PACKET_ENTITIES) {
+					Host_EndGame ("CL_ParseDeltaPacketEntities: newindex == "
 								  "MAX_PACKET_ENTITIES");
+					return;
+				}
 				newp->entities[newindex] = oldp->entities[oldindex];
 				newindex++;
 				oldindex++;
@@ -341,9 +437,11 @@ CL_ParsePacketEntities (qboolean delta)
 			}
 //			Con_Printf ("copy %i\n", oldnum);
 			// copy one of the old entities over to the new packet unchanged
-			if (newindex >= MAX_PACKET_ENTITIES)
-				Host_EndGame ("CL_ParsePacketEntities: newindex == "
+			if (newindex >= MAX_PACKET_ENTITIES) {
+				Host_EndGame ("CL_ParseDeltaPacketEntities: newindex == "
 							  "MAX_PACKET_ENTITIES");
+				return;
+			}
 			newp->entities[newindex] = oldp->entities[oldindex];
 			newindex++;
 			oldindex++;
@@ -363,9 +461,11 @@ CL_ParsePacketEntities (qboolean delta)
 				continue;
 			}
 
-			if (newindex >= MAX_PACKET_ENTITIES)
-				Host_EndGame ("CL_ParsePacketEntities: newindex == "
+			if (newindex >= MAX_PACKET_ENTITIES) {
+				Host_EndGame ("CL_ParseDeltaPacketEntities: newindex == "
 							  "MAX_PACKET_ENTITIES");
+				return;
+			}
 			CL_ParseDelta (&cl_baselines[newnum], &newp->entities[newindex],
 						   word);
 			newindex++;
