@@ -179,9 +179,6 @@ main (int c, const char *v[])
 	Con_Printf ("Host_Init\n");
 	Host_Init (&parms);
 
-	Sys_Init_Cvars ();
-	Sys_Init ();
-
 	if (!sys_nostdout->int_val) {
 		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
 		Con_Printf ("Quake -- Version %s\n", NQ_VERSION);

@@ -159,9 +159,6 @@ main (int argc, const char **argv)
 	Con_Printf ("Host_Init\n");
 	Host_Init (&parms);
 
-	Sys_Init_Cvars ();
-	Sys_Init ();
-
 	oldtime = Sys_DoubleTime ();
 
 	/* main window message loop */

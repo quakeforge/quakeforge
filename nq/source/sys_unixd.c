@@ -181,9 +181,6 @@ main (int argc, const char **argv)
 	Sys_Printf ("Host_Init\n");
 	Host_Init (&parms);
 
-	Sys_Init_Cvars ();
-	Sys_Init ();
-
 	oldtime = Sys_DoubleTime () - 0.1;
 	while (1) {							// Main message loop
 		// find time spent rendering last frame

@@ -1642,8 +1642,6 @@ Host_Init (void)
 	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING);
 	cl.serverinfo = Info_ParseString ("", MAX_INFO_STRING);
 
-	Locs_Init ();
-
 	PI_Init ();
 
 	CL_Cam_Init_Cvars ();
@@ -1673,6 +1671,14 @@ Host_Init (void)
 	Game_Init ();
 	COM_Init ();
 
+	PI_RegisterPlugins (client_plugin_list);
+	Con_Init ("client");
+	if (con_module) {
+		con_module->data->console->dl_name = cls.downloadname;
+		con_module->data->console->dl_percent = &cls.downloadpercent;
+		con_module->data->console->realtime = &realtime;
+	}
+
 	NET_Init (cl_port->int_val);
 	Netchan_Init ();
 	{
@@ -1686,19 +1692,12 @@ Host_Init (void)
 
 	W_LoadWadFile ("gfx.wad");
 	Key_Init ();
-	PI_RegisterPlugins (client_plugin_list);
-	Con_Init ("client");
-	if (con_module) {
-		con_module->data->console->dl_name = cls.downloadname;
-		con_module->data->console->dl_percent = &cls.downloadpercent;
-		con_module->data->console->realtime = &realtime;
-	}
 	Mod_Init ();
 
 	CL_TimeFrames_Init();
 
 //	Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
-	Con_Printf ("%4.1f megs RAM used.\n", cl_mem_size->value);
+	Con_Printf ("%4.1f megabyte heap.\n", cl_mem_size->value);
 
 	vid_basepal = (byte *) COM_LoadHunkFile ("gfx/palette.lmp");
 	if (!vid_basepal)
@@ -1706,20 +1705,7 @@ Host_Init (void)
 	vid_colormap = (byte *) COM_LoadHunkFile ("gfx/colormap.lmp");
 	if (!vid_colormap)
 		Sys_Error ("Couldn't load gfx/colormap.lmp");
-#ifdef __linux__
-	CDAudio_Init ();
-	VID_Init (vid_basepal);
-	IN_Init ();
-	Draw_Init ();
-	SCR_Init ();
-	R_Init ();
 
-	S_Init (&cl.worldmodel, &viewentity, &host_frametime);
-
-	Sbar_Init ();
-	CL_Skin_Init ();
-	CL_Init ();
-#else
 	VID_Init (vid_basepal);
 	Draw_Init ();
 	SCR_Init ();
@@ -1729,10 +1715,12 @@ Host_Init (void)
 
 	CDAudio_Init ();
 	Sbar_Init ();
-	CL_Skin_Init ();
 	CL_Init ();
 	IN_Init ();
-#endif
+
+	CL_SetState (ca_disconnected);
+	CL_Skin_Init ();
+	Locs_Init ();
 
 	if (cl_quakerc->int_val)
 		Cbuf_InsertText ("exec quake.rc\n");
@@ -1751,12 +1739,11 @@ Host_Init (void)
 
 	host_initialized = true;
 
-	CL_SetState (ca_disconnected);
 
 	Con_Printf ("\nClient version %s (build %04d)\n\n", VERSION,
 				build_number ());
 
-	Con_Printf ("ÄÅÅÇ %s initialized ÄÅÅÇ\n", PROGRAM);
+	Con_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n", PROGRAM);
 
 	CL_UpdateScreen (realtime);
 }

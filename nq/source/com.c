@@ -83,7 +83,5 @@ COM_Init (void)
 	cmdline = Cvar_Get ("cmdline", "0", CVAR_SERVERINFO, Cvar_Info, "None");
 	Cmd_AddCommand ("path", COM_Path_f, "Show what paths Quake is using");
 
-	COM_Filesystem_Init_Cvars ();
-	COM_Filesystem_Init ();
 	COM_CheckRegistered ();
 }

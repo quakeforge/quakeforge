@@ -200,9 +200,6 @@ SDL_main (int c, char **v)
 
 	Host_Init (&host_parms);
 
-	Sys_Init_Cvars ();
-	Sys_Init ();
-
 	oldtime = Sys_DoubleTime ();
 	while (1) {
 		// find time spent rendering last frame

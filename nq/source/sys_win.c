@@ -425,8 +425,6 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 		InitConProc (hFile, heventParent, heventChild);
 	}
 
-	Sys_Init ();
-
 // because sound is off until we become active
 	//XXX S_BlockSound ();
 
@@ -435,9 +433,6 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 
 	Con_Printf ("Host_Init\n");
 	Host_Init (&parms);
-
-	Sys_Init_Cvars ();
-	Sys_Init ();
 
 	oldtime = Sys_DoubleTime ();
 

@@ -880,6 +880,8 @@ Host_Init (quakeparms_t *parms)
 	Cmd_Init_Hash ();
 	Memory_Init (parms->membase, parms->memsize);
 	Cvar_Init ();
+	Sys_Init_Cvars ();
+	Sys_Init ();
 
 	Cbuf_Init ();
 	Cmd_Init ();
@@ -910,8 +912,11 @@ Host_Init (quakeparms_t *parms)
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute_Sets ();
 
+	PI_Init ();
+
 	Chase_Init_Cvars ();
 	CL_InitCvars ();
+	COM_Filesystem_Init_Cvars ();
 	IN_Init_Cvars ();
 	VID_Init_Cvars ();
 	S_Init_Cvars ();
@@ -928,10 +933,12 @@ Host_Init (quakeparms_t *parms)
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute_Sets ();
 
-	PI_Init ();
+	V_Init ();
+	COM_Filesystem_Init ();
+	Game_Init ();
+	COM_Init ();
 
 	PI_RegisterPlugins (client_plugin_list);
-
 	if (isDedicated)
 		Con_Init ("server");
 	else
@@ -940,42 +947,34 @@ Host_Init (quakeparms_t *parms)
 		con_module->data->console->realtime = &realtime;
 	}
 
-	V_Init ();
-	COM_Init ();
-
 	GIB_Init ();
 
-	Game_Init ();
+	NET_Init ();
 
 	Host_InitVCR (parms);
 	Host_InitLocal ();
+
 	W_LoadWadFile ("gfx.wad");
 	Key_Init ();
+	Mod_Init ();
 	// FIXME: MENUCODE
 //	M_Init ();
 	PR_Init ();
 	SV_Progs_Init ();
-	Mod_Init ();
-	NET_Init ();
 	SV_Init ();
 
-	Con_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
+//	Con_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
 	Con_Printf ("%4.1f megabyte heap\n", parms->memsize / (1024 * 1024.0));
 
 	if (cls.state != ca_dedicated) {
 		vid_basepal = (byte *) COM_LoadHunkFile ("gfx/palette.lmp");
 		if (!vid_basepal)
 			Sys_Error ("Couldn't load gfx/palette.lmp");
-		// LordHavoc: force the transparent color to black
-		vid_basepal[765] = vid_basepal[766] = vid_basepal[767] = 0;
 		vid_colormap = (byte *) COM_LoadHunkFile ("gfx/colormap.lmp");
 		if (!vid_colormap)
 			Sys_Error ("Couldn't load gfx/colormap.lmp");
 
 		VID_Init (vid_basepal);
-		IN_Init ();
-
-
 		Draw_Init ();
 		SCR_Init ();
 		R_Init ();
@@ -985,6 +984,8 @@ Host_Init (quakeparms_t *parms)
 		CDAudio_Init ();
 		Sbar_Init ();
 		CL_Init ();
+		IN_Init ();
+
 		CL_SetState (ca_disconnected);
 	}
 	Host_Skin_Init ();
@@ -1002,7 +1003,7 @@ Host_Init (quakeparms_t *parms)
 
 	host_initialized = true;
 
-	Con_Printf ("========Quake Initialized=========\n");
+	Con_Printf ("\x80\x81\x81\x81\x81\x81\x81\x81%s Initialized\x81\x81\x81\x81\x81\x81\x81\x81\x82\n", PROGRAM);
 
 	CL_UpdateScreen (cl.time);
 }
