@@ -213,7 +213,7 @@ JOY_Open (void)
 {
 	return JOY_StartupJoystick();
 //	Cmd_AddCommand ("joyadvancedupdate", JOY_AdvancedUpdate_f, "FIXME: This "
-					"appears to update the joystick poll? No Description");
+//					"appears to update the joystick poll? No Description");
 }
 
 void

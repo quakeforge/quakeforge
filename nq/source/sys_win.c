@@ -55,13 +55,10 @@
 										// minimization
 #define NOT_FOCUS_SLEEP	20				// sleep time when not focus
 
-int         starttime;
 qboolean    ActiveApp, Minimized;
 qboolean    WinNT;
 
 static double pfreq;
-static double curtime = 0.0;
-static double lastcurtime = 0.0;
 static int  lowshift;
 qboolean    isDedicated;
 static qboolean sc_return_on_enter = false;
@@ -75,7 +72,6 @@ static HANDLE heventParent;
 static HANDLE heventChild;
 
 void        MaskExceptions (void);
-void        Sys_InitFloatTime (void);
 void        Sys_PushFPCW_SetHigh (void);
 void        Sys_PopFPCW (void);
 
@@ -171,8 +167,6 @@ Sys_Init (void)
 	}
 
 	pfreq = 1.0 / (double) lowpart;
-
-	Sys_InitFloatTime ();
 
 	vinfo.dwOSVersionInfoSize = sizeof (vinfo);
 
@@ -279,24 +273,6 @@ Sys_Quit (void)
 	exit (0);
 }
 
-void
-Sys_InitFloatTime (void)
-{
-	int         j;
-
-	Sys_DoubleTime ();
-
-	j = COM_CheckParm ("-starttime");
-
-	if (j) {
-		curtime = (double) (atof (com_argv[j + 1]));
-	} else {
-		curtime = 0.0;
-	}
-
-	lastcurtime = curtime;
-}
-
 const char *
 Sys_ConsoleInput (void)
 {
@@ -368,12 +344,6 @@ Sys_ConsoleInput (void)
 	}
 
 	return NULL;
-}
-
-void
-Sys_Sleep (void)
-{
-	Sleep (1);
 }
 
 // WINDOWS CRAP ===============================================================
@@ -534,6 +504,9 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	Sys_Printf ("Host_Init\n");
 	Host_Init (&parms);
 
+	Sys_Init_Cvars ();
+	Sys_Init ();
+
 	oldtime = Sys_DoubleTime ();
 
 	/* main window message loop */
@@ -543,7 +516,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 			time = newtime - oldtime;
 
 			while (time < sys_ticrate->value) {
-				Sys_Sleep ();
+				Sleep (1);
 				newtime = Sys_DoubleTime ();
 				time = newtime - oldtime;
 			}

@@ -57,36 +57,10 @@
 # include <libc.h>
 #endif
 
-cvar_t     *sys_extrasleep;
-cvar_t     *sys_dead_sleep;
-
 qboolean    is_server = true;
 qboolean    stdin_ready;
 server_static_t svs;
 char       *svs_info = svs.info;
-
-
-/*
-	Sys_Init_Cvars
-
-	Quake calls this so the system can register variables before host_hunklevel
-	is marked
-*/
-void
-Sys_Init_Cvars (void)
-{
-	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, NULL,
-			"Toggles console screen output");
-	sys_extrasleep = Cvar_Get ("sys_extrasleep", "0", CVAR_NONE, NULL,
-		"Set to cause whatever amount delay in microseconds you want. Mostly "
-							   "useful to generate simulated bad "
-							   "connections.");
-	sys_dead_sleep = Cvar_Get ("sys_dead_sleep", "1", CVAR_NONE, NULL,
-							   "When set, the server gets NO cpu if no "
-							   "clients are connected and there's no other "
-							   "activity. *MIGHT* cause problems with some "
-							   "mods.");
-}
 
 void
 Sys_Init (void)
@@ -99,7 +73,6 @@ Sys_Init (void)
 void
 Sys_Quit (void)
 {
-
 	Net_LogStop();
 
 	exit (0);

@@ -51,6 +51,8 @@
 #include "QF/va.h"
 #include "QF/zone.h"
 
+#include "compat.h"
+
 #define	RETURN_EDICT(p, e) ((p)->pr_globals[OFS_RETURN].integer_var = EDICT_TO_PROG(p, e))
 #define	RETURN_STRING(p, s) ((p)->pr_globals[OFS_RETURN].integer_var = PR_SetString((p), s))
 

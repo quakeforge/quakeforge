@@ -34,6 +34,9 @@
 #include "QF/gcc_attr.h"
 
 extern	struct cvar_s	*sys_nostdout;
+extern	struct cvar_s	*sys_extrasleep;
+extern	struct cvar_s	*sys_dead_sleep;
+extern	struct cvar_s	*sys_sleep;
 
 extern const char sys_char_map[256];
 

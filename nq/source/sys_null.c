@@ -192,11 +192,6 @@ Sys_ConsoleInput (void)
 }
 
 void
-Sys_Sleep (void)
-{
-}
-
-void
 IN_SendKeyEvents (void)
 {
 }

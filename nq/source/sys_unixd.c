@@ -67,11 +67,6 @@ qboolean    isDedicated;
 
 int         nostdout = 0;
 
-cvar_t     *sys_linerefresh;
-cvar_t     *timestamps;
-cvar_t     *timeformat;
-
-
 int
 Sys_FileOpenRead (char *path, int *handle)
 {
@@ -144,44 +139,6 @@ Sys_DebugLog (char *file, char *fmt, ...)
 	close (fd);
 }
 
-#define MAX_PRINT_MSG	4096
-void
-Sys_Printf (char *fmt, ...)
-{
-	va_list     argptr;
-	char        start[MAX_PRINT_MSG];	// String we started with
-	char        stamp[MAX_PRINT_MSG];	// Time stamp
-	char        final[MAX_PRINT_MSG];	// String we print
-
-	time_t      mytime = 0;
-	struct tm  *local = NULL;
-
-	unsigned char *p;
-
-	va_start (argptr, fmt);
-	vsnprintf (start, sizeof (start), fmt, argptr);
-	va_end (argptr);
-
-	if (nostdout)
-		return;
-
-	if (timestamps && timeformat && timestamps && timeformat
-		&& timeformat->string && timestamps->int_val) {
-		mytime = time (NULL);
-		local = localtime (&mytime);
-		strftime (stamp, sizeof (stamp), timeformat->string, local);
-
-		snprintf (final, sizeof (final), "%s%s", stamp, start);
-	} else {
-		snprintf (final, sizeof (final), "%s", start);
-	}
-
-	for (p = (unsigned char *) final; *p; p++) {
-		putc (qfont_table[*p], stdout);
-	}
-	fflush (stdout);
-}
-
 void
 Sys_Error (char *error, ...)
 {
@@ -216,23 +173,6 @@ Sys_Init (void)
 #ifdef USE_INTEL_ASM
 	Sys_SetFPCW ();
 #endif
-}
-
-double
-Sys_DoubleTime (void)
-{
-	struct timeval tp;
-	struct timezone tzp;
-	static int  secbase;
-
-	gettimeofday (&tp, &tzp);
-
-	if (!secbase) {
-		secbase = tp.tv_sec;
-		return tp.tv_usec / 1000000.0;
-	}
-
-	return (tp.tv_sec - secbase) + tp.tv_usec / 1000000.0;
 }
 
 char *
@@ -313,6 +253,9 @@ main (int argc, char *argv[])
 
 	printf ("Host_Init\n");
 	Host_Init (&parms);
+
+	Sys_Init_Cvars ();
+	Sys_Init ();
 
 	oldtime = Sys_DoubleTime () - 0.1;
 

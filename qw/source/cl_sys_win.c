@@ -43,7 +43,6 @@
 #include <windows.h>
 
 #include "QF/console.h"
-#include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
@@ -65,8 +64,6 @@
 
 char       *svs_info;
 
-int         starttime;
-
 qboolean    ActiveApp, Minimized, WinNT;
 qboolean    is_server = false;
 
@@ -81,21 +78,6 @@ void        Sys_PopFPCW (void);
 void        Sys_PushFPCW_SetHigh (void);
 void        Sys_InitFloatTime (void);
 
-extern cvar_t *sys_nostdout;
-
-
-/*
-	Sys_Init_Cvars
-
-	Quake calls this so the system can register variables before host_hunklevel
-	is marked
-*/
-void
-Sys_Init_Cvars (void)
-{
-	sys_nostdout = Cvar_Get ("sys_nostdout", "1", CVAR_NONE, NULL, "unset to "
-							 "enable std out - windows does NOT support this");
-}
 
 void
 Sys_Init (void)
@@ -194,19 +176,6 @@ Sys_DebugLog (const char *file, const char *fmt, ...)
 	write (fd, data, strlen (data));
 	close (fd);
 };
-
-int
-wfilelength (VFile *f)
-{
-	int         end, pos;
-
-	pos = Qtell (f);
-	Qseek (f, 0, SEEK_END);
-	end = Qtell (f);
-	Qseek (f, pos, SEEK_SET);
-
-	return end;
-}
 
 /*
 	Sys_ConsoleInput
@@ -320,14 +289,8 @@ Sys_ConsoleInput (void)
 }
 
 void
-Sys_Sleep (void)
-{
-}
-
-void
 SleepUntilInput (int time)
 {
-
 	MsgWaitForMultipleObjects (1, &tevent, FALSE, time, QS_ALLINPUT);
 }
 

@@ -51,7 +51,6 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 
-#include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
@@ -61,22 +60,6 @@
 int         noconinput = 0;
 qboolean    is_server = false;
 char       *svs_info;
-
-
-/*
-	Sys_Init_Cvars
-
-	Quake calls this so the system can register variables before host_hunklevel
-	is marked
-*/
-void
-Sys_Init_Cvars (void)
-{
-	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, NULL,
-							 "set to disable std out");
-	if (COM_CheckParm ("-nostdout"))
-		Cvar_Set (sys_nostdout, "1");
-}
 
 void
 Sys_Init (void)

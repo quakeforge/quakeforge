@@ -65,6 +65,10 @@
 static void Sys_StdPrintf (const char *fmt, va_list args);
 
 cvar_t     *sys_nostdout;
+cvar_t     *sys_extrasleep;
+cvar_t     *sys_dead_sleep;
+cvar_t     *sys_sleep;
+
 static sys_printf_t sys_printf_function = Sys_StdPrintf;
 
 /* The translation table between the graphical font and plain ASCII  --KB */
@@ -254,4 +258,24 @@ Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 		Sys_Error ("Protection change failed\n");
 # endif
 #endif
+}
+
+void
+Sys_Init_Cvars (void)
+{
+	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, NULL,
+							 "Set to disable std out");
+	sys_extrasleep = Cvar_Get ("sys_extrasleep", "0", CVAR_NONE, NULL,
+							   "Set to cause whatever amount delay in "
+							   "microseconds you want. Mostly "
+							   "useful to generate simulated bad "
+							   "connections.");
+	sys_dead_sleep = Cvar_Get ("sys_dead_sleep", "1", CVAR_NONE, NULL,
+							   "When set, the server gets NO cpu if no "
+							   "clients are connected and there's no other "
+							   "activity. *MIGHT* cause problems with some "
+							   "mods.");
+	sys_sleep = Cvar_Get ("sys_sleep", "8", CVAR_NONE, NULL, "Sleep how long "
+						  "in seconds between checking for connections. "
+						  "Minimum is 0, maximum is 13");
 }

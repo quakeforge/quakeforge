@@ -47,25 +47,6 @@ qboolean    WinNT;
 server_static_t svs;
 char       *svs_info = svs.info;
 
-extern cvar_t *sys_nostdout;
-cvar_t     *sys_sleep;
-
-
-/*
-	Sys_Init_Cvars
-
-	Quake calls this so the system can register variables before host_hunklevel
-	is marked
-*/
-void
-Sys_Init_Cvars (void)
-{
-	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, NULL,
-							 "Toggle console output");
-	sys_sleep = Cvar_Get ("sys_sleep", "8", CVAR_NONE, NULL, "Sleep how long "
-						  "in seconds between checking for connections. "
-						  "Minimum is 0, maximum is 13");
-}
 
 void
 Sys_Init (void)

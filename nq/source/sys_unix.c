@@ -50,19 +50,14 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include "QF/sys.h"
-#include "QF/qargs.h"
 #include "QF/cvar.h"
+#include "QF/qargs.h"
+#include "QF/sys.h"
 
 #include "host.h"
 #include "server.h"
 
-qboolean    isDedicated;
-
-cvar_t     *sys_linerefresh;
-cvar_t     *timestamps;
-cvar_t     *timeformat;
-
+qboolean    isDedicated = false;
 
 void
 Sys_Init (void)
@@ -196,13 +191,10 @@ main (int c, const char *v[])
 
 	Host_Init (&parms);
 
+	Sys_Init_Cvars ();
 	Sys_Init ();
 
-	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, NULL,
-			"set to disable std out");
-	if (COM_CheckParm ("-nostdout"))
-		Cvar_Set (sys_nostdout, "1");
-	else {
+	if (!sys_nostdout->int_val) {
 		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY);
 		printf ("Quake -- Version %s\n", NQ_VERSION);
 	}

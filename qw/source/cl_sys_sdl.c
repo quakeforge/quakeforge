@@ -61,7 +61,6 @@
 #include <SDL.h>
 #include <SDL_main.h>
 
-#include "QF/cvar.h"
 #include "QF/sys.h"
 #include "QF/qargs.h"
 
@@ -72,7 +71,6 @@
 qboolean    is_server = false;
 char       *svs_info;
 
-int         starttime;
 int         noconinput;
 
 #ifdef _WIN32
@@ -82,21 +80,6 @@ qboolean    Minimized = false;
 void        MaskExceptions (void);
 #endif
 
-
-/*
-	Sys_Init_Cvars
-
-	Quake calls this so the system can register variables before host_hunklevel
-	is marked
-*/
-void
-Sys_Init_Cvars (void)
-{
-	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, NULL,
-							 "set to disable std out");
-	if (COM_CheckParm ("-nostdout"))
-		Cvar_Set (sys_nostdout, "1");
-}
 
 void
 Sys_Init (void)
@@ -197,11 +180,6 @@ Sys_LowFPPrecision (void)
 {
 }
 #endif
-
-void
-Sys_Sleep (void)
-{
-}
 
 #ifndef SDL_main
 # define SDL_main main

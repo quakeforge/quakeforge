@@ -32,6 +32,7 @@
 # include "config.h"
 #endif
 
+#include "winquake.h"	// must come first due to nasties in windows headers
 #include <dinput.h>
 
 #include "QF/cmd.h"
@@ -42,7 +43,6 @@
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "winquake.h"
 
 #define DINPUT_BUFFERSIZE           16
 #define iDirectInputCreate(a,b,c,d)	pDirectInputCreate(a,b,c,d)

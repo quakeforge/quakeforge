@@ -58,7 +58,7 @@
 int     cl_timeframes_isactive;
 int     cl_timeframes_index;
 int     demotime_cached;
-struct  timeval *cl_timeframes_array;
+double *cl_timeframes_array;
 #define CL_TIMEFRAMES_ARRAYBLOCK 4096
 
 extern cvar_t *cl_timeframes;
@@ -825,18 +825,15 @@ CL_TimeFrames_Reset (void)
 void
 CL_TimeFrames_AddTimestamp (void)
 {
-	int retval;
 	if (cl_timeframes_isactive) {
 		if (!(cl_timeframes_index % CL_TIMEFRAMES_ARRAYBLOCK))
 			cl_timeframes_array = realloc
-				(cl_timeframes_array, sizeof(struct timeval) *
+				(cl_timeframes_array, sizeof(cl_timeframes_array[0]) *
 				 ((cl_timeframes_index / CL_TIMEFRAMES_ARRAYBLOCK) + 1) *
 				 CL_TIMEFRAMES_ARRAYBLOCK);
 		if (cl_timeframes_array == NULL)
 			Sys_Error ("Unable to allocate timeframes buffer\n");
-		retval = gettimeofday(cl_timeframes_array + cl_timeframes_index, NULL);
-		if (retval)
-			Sys_Error ("CL_TimeFrames_Addtimestamp: gettimeofday() failed.\n");
+		cl_timeframes_array[cl_timeframes_index] = Sys_DoubleTime ();
 		cl_timeframes_index++;
 	}
 	return;
@@ -861,15 +858,7 @@ void CL_TimeFrames_DumpLog (void)
 		return;
 	}
 	for (i = 1; i < cl_timeframes_index; i++) {
-		frame = (cl_timeframes_array[i].tv_sec -
-				 cl_timeframes_array[i - 1].tv_sec);
-		if (frame < 999) {
-			frame *= 1000000;
-			frame += cl_timeframes_array[i].tv_usec -
-				cl_timeframes_array[i - 1].tv_usec;
-		} else
-			frame = 999999999;
-
+		frame = (cl_timeframes_array[i] - cl_timeframes_array[i - 1]) * 1e6;
 		Qprintf (outputfile, "%09ld\n", frame);
 	}
 	Qclose (outputfile);

@@ -186,27 +186,6 @@ Sys_Quit (void)
 	exit (0);
 }
 
-double
-Sys_DoubleTime (void)
-{
-	double      t;
-	struct _timeb tstruct;
-	static int  starttime;
-
-	_ftime (&tstruct);
-
-	if (!starttime)
-		starttime = tstruct.time;
-	t = (tstruct.time - starttime) + tstruct.millitm * 0.001;
-
-	return t;
-}
-
-void
-Sys_Sleep (void)
-{
-}
-
 void
 IN_SendKeyEvents (void)
 {
@@ -294,6 +273,9 @@ main (int argc, char **argv)
 
 	printf ("Host_Init\n");
 	Host_Init (&parms);
+
+	Sys_Init_Cvars ();
+	Sys_Init ();
 
 	oldtime = Sys_DoubleTime ();
 
