@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef _WIN32
+void *alloca(size_t size);
+#endif
+
 #include "QF/dstring.h"
 
 typedef struct d_chunk_s {
