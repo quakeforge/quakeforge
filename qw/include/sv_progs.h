@@ -83,82 +83,70 @@ extern sv_funcs_t sv_funcs;
 
 typedef struct
 {
-	int			modelindex;		//float		*
-	int			absmin;			//vec3_t		*		*
-	int			absmax;			//vec3_t		*
-	int			ltime;			//float		*
-	int			lastruntime;	//float		*
-	int			movetype;		//float		*
-	int			solid;			//float		*
-	int			origin;			//vec3_t		*
-	int			oldorigin;		//vec3_t		*
-	int			velocity;		//vec3_t		*
-	int			angles;			//vec3_t		*
-	int			avelocity;		//vec3_t		*
+	int			modelindex;		//float
+	int			absmin;			//vec3_t
+	int			absmax;			//vec3_t
+	int			ltime;			//float
+	int			lastruntime;	//float
+	int			movetype;		//float
+	int			solid;			//float
+	int			origin;			//vec3_t
+	int			oldorigin;		//vec3_t
+	int			velocity;		//vec3_t
+	int			angles;			//vec3_t
+	int			avelocity;		//vec3_t
 	int			classname;		//string_t
-	int			model;			//string_t		*
-	int			frame;			//float		*
-	int			skin;			//float		*
-	int			effects;		//float		*
-	int			mins;			//vec3_t		*
-	int			maxs;			//vec3_t		*
-	int			size;			//vec3_t		*
-	int			touch;			//func_t		*
-	//int			use;			//func_t
-	int			think;			//func_t		*
-	int			blocked;		//func_t		*
-	int			nextthink;		//float		*
-	int			groundentity;	//int		*
-	int			health;			//float		*
-	int			frags;			//float		*
-	int			weapon;			//float		*
-	int			weaponmodel;	//string_t		*
-	int			weaponframe;	//float		*
+	int			model;			//string_t
+	int			frame;			//float
+	int			skin;			//float
+	int			effects;		//float
+	int			mins;			//vec3_t
+	int			maxs;			//vec3_t
+	int			size;			//vec3_t
+	int			touch;			//func_t
+	int			think;			//func_t
+	int			blocked;		//func_t
+	int			nextthink;		//float
+	int			groundentity;	//int
+	int			health;			//float
+	int			frags;			//float
+	int			weapon;			//float
+	int			weaponmodel;	//string_t
+	int			weaponframe;	//float
 	int			currentammo;	//float
-	int			ammo_shells;	//float		*
-	int			ammo_nails;		//float		*
-	int			ammo_rockets;	//float		*
-	int			ammo_cells;		//float		*
-	int			items;			//float		*
+	int			ammo_shells;	//float
+	int			ammo_nails;		//float
+	int			ammo_rockets;	//float
+	int			ammo_cells;		//float
+	int			items;			//float
 	int			takedamage;		//float
-	int			chain;			//int		*
-	//int			deadflag;		//float
-	int			view_ofs;		//vec3_t		*
-	int			button0;		//float		*
-	int			button1;		//float		*
-	int			button2;		//float		*
+	int			chain;			//int
+	int			view_ofs;		//vec3_t
+	int			button0;		//float
+	int			button1;		//float
+	int			button2;		//float
 	int			impulse;		//float
-	int			fixangle;		//float		*
-	int			v_angle;		//vec3_t		*
-	int			netname;		//string_t		*
-	int			enemy;			//int		*
-	int			flags;			//float		*
-	int			colormap;		//float		*
+	int			fixangle;		//float
+	int			v_angle;		//vec3_t
+	int			netname;		//string_t
+	int			enemy;			//int
+	int			flags;			//float
+	int			colormap;		//float
 	int			team;			//float
-	//int			max_health;		//float
-	int			teleport_time;	//float		*
-	//int			armortype;		//float
-	int			armorvalue;		//float		*
-	int			waterlevel;		//float		*
-	int			watertype;		//float		*
-	int			ideal_yaw;		//float		*
-	int			yaw_speed;		//float		*
-	//int			aiment;			//int
-	int			goalentity;		//int		*
-	int			spawnflags;		//float		*
-	//int			target;			//string_t
-	//int			targetname;		//string_t
-	int			dmg_take;		//float		*
-	int			dmg_save;		//float		*
-	int			dmg_inflictor;	//int		*
+	int			teleport_time;	//float
+	int			armorvalue;		//float
+	int			waterlevel;		//float
+	int			watertype;		//float
+	int			ideal_yaw;		//float
+	int			yaw_speed;		//float
+	int			goalentity;		//int
+	int			spawnflags;		//float
+	int			dmg_take;		//float
+	int			dmg_save;		//float
+	int			dmg_inflictor;	//int
 	int			owner;			//int
-	//int			movedir;		//vec3_t
 	int			message;		//string_t
 	int			sounds;			//float
-	//int			noise;			//string_t
-	//int			noise1;			//string_t
-	//int			noise2;			//string_t
-	//int			noise3;			//string_t
 } sv_fields_t;
 
 extern sv_fields_t sv_fields;
