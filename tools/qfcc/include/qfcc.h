@@ -292,6 +292,7 @@ typedef struct def_s {
 	int				constant;	// 1 when a declaration included "= immediate"
 	statref_t		*refs;			// for relocations
 
+	int				freed;			// already freed from the scope
 	int				removed;		// already removed from the symbol table
 	int				used;			// unused local detection
 	string_t		file;			// source file

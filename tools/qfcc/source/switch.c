@@ -255,7 +255,6 @@ build_switch (expr_t *sw, case_node_t  *tree, int op, expr_t *sw_val,
 	test->file = sw_val->file;
 
 	if (tree->low == tree->high) {
-		printf ("%3d\n", tree->low->e.integer_val);
 		branch = new_binary_expr ('n', test, tree->labels[0]);
 		branch->line = sw_val->line;
 		branch->file = sw_val->file;
@@ -284,7 +283,7 @@ build_switch (expr_t *sw, case_node_t  *tree, int op, expr_t *sw_val,
 		int         i;
 		expr_t     *range = binary_expr ('-', tree->high, tree->low);
 
-		printf ("%3d %3d\n", low, high);
+		range->type = ex_uinteger;
 
 		def = PR_GetArray (&type_uinteger, name, high - low + 1, 0,
 						   &numpr_globals);
@@ -299,7 +298,6 @@ build_switch (expr_t *sw, case_node_t  *tree, int op, expr_t *sw_val,
 			branch->file = sw_val->file;
 			append_expr (sw, branch);
 		}
-		tree->high->type = ex_uinteger;
 		append_expr (sw, new_binary_expr ('b', temp, utemp));
 		test = binary_expr (GT, utemp, range);
 		test->line = sw_val->line;

@@ -136,7 +136,10 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 			if (!def || def->type != &type_float) {
 				sprintf (rep, "\001integer:%08X\001", e.e.integer_val);
 				tab = integer_imm_defs;
-				type = &type_integer;
+				if (e.type == ex_uinteger)
+					type = &type_uinteger;
+				else
+					type = &type_integer;
 				break;
 			}
 			if (e.type == ex_uinteger)
@@ -186,7 +189,12 @@ PR_ReuseConstant (expr_t *expr, def_t *def)
 	// allocate a new one
 	// always share immediates
 	if (def) {
-		cn = def;
+		if (def->type != type) {
+			cn = PR_NewDef (type, ".imm", 0);
+			cn->ofs = def->ofs;
+		} else {
+			cn = def;
+		}
 	} else {
 		cn = PR_NewDef (type, ".imm", 0);
 		cn->ofs = PR_NewLocation (type);

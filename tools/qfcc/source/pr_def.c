@@ -93,6 +93,7 @@ PR_GetArray (type_t *etype, const char *name, int size, def_t *scope,
 		return def;
 	def = PR_NewDef (type, name, scope);
 	def->ofs = *allocate;
+	def->initialized = def->constant = 1;
 	*allocate += pr_type_size [type->type] * size + 1;
 	pr_global_defs[def->ofs] = def;
 	G_INT (def->ofs) = def->ofs + 1;
@@ -281,8 +282,11 @@ PR_FreeTempDefs (void)
 			if (d->expr)
 				d->expr->e.temp.def = 0;
 
-			d->next = free_temps[size];
-			free_temps[size] = d;
+			if (!d->freed) {
+				d->next = free_temps[size];
+				free_temps[size] = d;
+				d->freed = 1;
+			}
 		} else {
 			def = &(*def)->next;
 		}

@@ -195,6 +195,29 @@ emit_assign_expr (expr_t *e)
 }
 
 def_t *
+emit_bind_expr (expr_t *e1, expr_t *e2)
+{
+	type_t     *t1 = get_type (e1);
+	type_t     *t2 = get_type (e2);
+	def_t      *def;
+
+	if (!e2 || e2->type != ex_temp) {
+		error (e1, "internal error");
+		abort ();
+	}
+	def = emit_sub_expr (e1, e2->e.temp.def);
+	if (t1 != t2) {
+		def_t      *tmp = PR_NewDef (t2, 0, def->scope);
+		tmp->ofs = def->ofs;
+		tmp->users = e2->e.temp.users;
+		tmp->freed = 1;			// don't free this offset when freeing def
+		def = tmp;
+	}
+	e2->e.temp.def = def;
+	return e2->e.temp.def;
+}
+
+def_t *
 emit_sub_expr (expr_t *e, def_t *dest)
 {
 	opcode_t   *op;
@@ -364,11 +387,7 @@ emit_expr (expr_t *e)
 					emit_statement (e->line, op_state, def_a, def_b, 0);
 					break;
 				case 'b':
-					if (!e->e.expr.e2 || e->e.expr.e2->type != ex_temp) {
-						error (e, "internal error");
-						abort ();
-					}
-					e->e.expr.e2->e.temp.def = emit_sub_expr (e->e.expr.e1, e->e.expr.e2->e.temp.def);
+					emit_bind_expr (e->e.expr.e1, e->e.expr.e2);
 					break;
 				case 'g':
 					def_a = emit_sub_expr (e->e.expr.e1, 0);
