@@ -793,11 +793,12 @@ LoadPortals (char *name)
 
 	leafcluster = calloc (numrealleafs, sizeof (int));
 	if (read_leafs) {
-		for (i = 0; i < numrealleafs; i++)
+		for (i = 0; i < numrealleafs; i++) {
 			line = Qgetline (f);
 			if (sscanf (line, "%i\n", &leafcluster[i]) != 1)
 				Sys_Error ("LoadPortals: parse error in leaf->cluster "
 						   "mappings");
+		}
 	} else {
 		for (i = 0; i < numrealleafs; i++)
 			leafcluster[i] = i;
