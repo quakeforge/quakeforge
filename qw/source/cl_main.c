@@ -986,6 +986,11 @@ CL_ConnectionlessPacket (void)
 
 	if (c == S2C_CHALLENGE) {
 		Con_Printf ("challenge");
+		if (cls.state >= ca_connected) {
+			if (!cls.demoplayback)
+				Con_Printf ("\nDup challenge received.  Ignored.\n");
+			return;
+		}
 
 		s = MSG_ReadString (net_message);
 		cls.challenge = atoi (s);
