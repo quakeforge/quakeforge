@@ -50,10 +50,11 @@ new_string_ref (progs_t *pr)
 {
 	strref_t *sr;
 	if (!pr->free_string_refs) {
-		int		i;
+		int		i, size;
 
 		pr->dyn_str_size++;
-		pr->dynamic_strings = realloc (pr->dynamic_strings, pr->dyn_str_size);
+		size = pr->dyn_str_size * sizeof (strref_t *);
+		pr->dynamic_strings = realloc (pr->dynamic_strings, size);
 		if (!pr->dynamic_strings)
 			PR_Error (pr, "out of memory");
 		if (!(pr->free_string_refs = calloc (1024, sizeof (strref_t))))
