@@ -141,12 +141,11 @@ Skin_Cache (skin_t *skin)
 	byte       *ipix, *opix;
 	int         i;
 
-	if (cls.downloadtype == dl_skin)
-		return NULL;					// use base until downloaded
-
-	if (noskins->int_val == 1)			// JACK: So NOSKINS > 1 will show
-										// skins, but
-		return NULL;					// not download new ones.
+	if (cls.downloadtype == dl_skin)		// use base until downloaded
+		return NULL;
+	// NOSKINS > 1 will show skins, but not download new ones.
+	if (noskins->int_val == 1)
+		return NULL;
 
 	if (skin->failedload)
 		return NULL;
