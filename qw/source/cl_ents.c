@@ -63,8 +63,6 @@ static struct predicted_player {
 	vec3_t      origin;					// predicted origin
 } predicted_players[MAX_CLIENTS];
 
-entity_t  **CL_NewTempEntity (void);
-
 entity_t    cl_packet_ents[512];	// FIXME: magic number
 entity_t    cl_flag_ents[MAX_CLIENTS];
 entity_t    cl_player_ents[MAX_CLIENTS];

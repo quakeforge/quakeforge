@@ -229,6 +229,22 @@ R_ParticleExplosion (vec3_t org)
 
 
 void
+R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
+{
+	int         i;
+	int         colorMod = 0;
+
+	if (!r_particles->int_val)
+		return;
+	
+	for (i = 0; i < 512; i++) {
+		particle_new_random (pt_blob, part_tex_dot, org, 16, 2, 256, (cl.time + 0.3), (colorStart + (colorMod % colorLength)), 255);
+		colorMod++;
+	}
+}
+
+
+void
 R_BlobExplosion (vec3_t org)
 {
 	int         i;

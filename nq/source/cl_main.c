@@ -176,8 +176,6 @@ CL_ClearState (void)
 	memset (cl_entities, 0, sizeof (cl_entities));
 	memset (cl_dlights, 0, sizeof (cl_dlights));
 	memset (cl_lightstyle, 0, sizeof (cl_lightstyle));
-	memset (cl_temp_entities, 0, sizeof (cl_temp_entities));
-	memset (cl_beams, 0, sizeof (cl_beams));
 
 	// allocate the efrags and chain together into a free list
 	cl.free_efrags = cl_efrags;
@@ -553,6 +551,7 @@ CL_LerpPoint (void)
 void
 CL_RelinkEntities (void)
 {
+	entity_t  **_ent;
 	entity_t   *ent;
 	int         i, j;
 	float       frac, f, d;
@@ -563,8 +562,6 @@ CL_RelinkEntities (void)
 
 	// determine partial update time    
 	frac = CL_LerpPoint ();
-
-	cl_numvisedicts = 0;
 
 	// interpolate player info
 	for (i = 0; i < 3; i++)
@@ -713,10 +710,8 @@ CL_RelinkEntities (void)
 		if (ent->effects & EF_NODRAW)
 			continue;
 #endif
-		if (cl_numvisedicts < MAX_VISEDICTS) {
-			cl_visedicts[cl_numvisedicts] = ent;
-			cl_numvisedicts++;
-		}
+		if ((_ent = CL_NewTempEntity ()))
+			*_ent = ent;
 	}
 }
 
@@ -747,6 +742,8 @@ CL_ReadFromServer (void)
 
 	if (cl_shownet->int_val)
 		Con_Printf ("\n");
+
+	cl_numvisedicts = 0;
 
 	CL_RelinkEntities ();
 	CL_UpdateTEnts ();
@@ -798,7 +795,7 @@ CL_Init (void)
 	SZ_Alloc (&cls.message, 1024);
 
 	CL_InitInput ();
-	CL_InitTEnts ();
+	CL_TEnts_Init ();
 
 	Cmd_AddCommand ("entities", CL_PrintEntities_f, "No Description");
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "No Description");

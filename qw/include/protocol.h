@@ -244,6 +244,14 @@
 #define	TE_TELEPORT			11
 #define	TE_BLOOD			12
 #define	TE_LIGHTNINGBLOOD	13
+#ifdef QUAKE2
+#define TE_IMPLOSION        14
+#define TE_RAILTRAIL        15
+#endif
+#define TE_EXPLOSION2       16
+// PGM 01/21/97 
+#define TE_BEAM             17
+// PGM 01/21/97
 
 
 /*

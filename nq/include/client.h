@@ -81,16 +81,6 @@ typedef struct
 
 #define	SIGNONS		4			// signon messages to receive before connected
 
-
-#define	MAX_BEAMS	24
-typedef struct
-{
-	int		entity;
-	struct model_s	*model;
-	float	endtime;
-	vec3_t	start, end;
-} beam_t;
-
 #define	MAX_EFRAGS		640
 
 #define	MAX_MAPSTRING	2048
@@ -284,8 +274,6 @@ extern	entity_t		cl_entities[MAX_EDICTS];
 extern	entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
 extern	lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 extern	dlight_t		cl_dlights[MAX_DLIGHTS];
-extern	entity_t		cl_temp_entities[MAX_TEMP_ENTITIES];
-extern	beam_t			cl_beams[MAX_BEAMS];
 
 //=============================================================================
 
@@ -363,7 +351,12 @@ void V_SetContentsColor (int contents);
 //
 // cl_tent
 //
-void CL_InitTEnts (void);
+void CL_TEnts_Init (void);
+void CL_ClearEnts (void);
+void CL_ClearTEnts (void);
+void CL_Init_Entity (struct entity_s *ent);
+struct entity_s **CL_NewTempEntity (void);
+void CL_ParseTEnt (void);
 void CL_SignonReply (void);
 
 void Cvar_Info (struct cvar_s *var);

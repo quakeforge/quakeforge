@@ -1087,7 +1087,7 @@ R_Mirror (void)
 {
 	float       d;
 	msurface_t *s;
-	entity_t   *ent;
+	entity_t   **ent;
 
 	if (!mirror)
 		return;
@@ -1106,11 +1106,9 @@ R_Mirror (void)
 	r_refdef.viewangles[1] = atan2 (vpn[1], vpn[0]) / M_PI * 180;
 	r_refdef.viewangles[2] = -r_refdef.viewangles[2];
 
-	ent = &cl_entities[cl.viewentity];
-	if (cl_numvisedicts < MAX_VISEDICTS) {
-		cl_visedicts[cl_numvisedicts] = ent;
-		cl_numvisedicts++;
-	}
+	ent = CL_NewTempEntity();
+	if (ent)
+		*ent = &cl_entities[cl.viewentity];
 
 	gldepthmin = 0.5;
 	gldepthmax = 1;

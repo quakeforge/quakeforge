@@ -167,16 +167,16 @@
 #define	TE_LIGHTNING3		9
 #define	TE_LAVASPLASH		10
 #define	TE_TELEPORT			11
-#define TE_EXPLOSION2		12
-
-// PGM 01/21/97 
-#define TE_BEAM				13
-// PGM 01/21/97 
-
+#define TE_BLOOD			12
+#define TE_LIGHTNINGBLOOD 13
 #ifdef QUAKE2
 #define TE_IMPLOSION		14
 #define TE_RAILTRAIL		15
 #endif
+#define TE_EXPLOSION2		16
+// PGM 01/21/97 
+#define TE_BEAM				17
+// PGM 01/21/97 
 
 typedef struct entity_state_s
 {

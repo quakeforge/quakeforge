@@ -39,16 +39,17 @@
 #include <math.h>
 #include <stdlib.h>
 
+#include "QF/console.h"
+#include "QF/model.h"
+#include "QF/msg.h"
+#include "QF/sound.h"
+#include "QF/sys.h"
+
 #include "cl_ents.h"
 #include "cl_main.h"
 #include "cl_tent.h"
 #include "client.h"
-#include "QF/console.h"
-#include "host.h"
-#include "QF/model.h"
-#include "QF/msg.h"
 #include "r_dynamic.h"
-#include "QF/sound.h"
 
 #define	MAX_BEAMS	8
 #define MAX_BEAM_ENTS 20
@@ -81,6 +82,10 @@ sfx_t      *cl_sfx_ric1;
 sfx_t      *cl_sfx_ric2;
 sfx_t      *cl_sfx_ric3;
 sfx_t      *cl_sfx_r_exp3;
+#ifdef QUAKE2
+sfx_t      *cl_sfx_imp;
+sfx_t      *cl_sfx_rail;
+#endif
 
 
 void
@@ -93,6 +98,10 @@ CL_TEnts_Init (void)
 	cl_sfx_ric2 = S_PrecacheSound ("weapons/ric2.wav");
 	cl_sfx_ric3 = S_PrecacheSound ("weapons/ric3.wav");
 	cl_sfx_r_exp3 = S_PrecacheSound ("weapons/r_exp3.wav");
+#ifdef QUAKE2
+	cl_sfx_imp = S_PrecacheSound ("shambler/sattck1.wav");
+	cl_sfx_rail = S_PrecacheSound ("weapons/lstart.wav");
+#endif
 }
 
 
@@ -201,8 +210,12 @@ CL_ParseTEnt (void)
 {
 	byte        type;
 	vec3_t      pos;
+#ifdef QUAKE2
+	vec3_t      endpos;
+#endif
 	dlight_t   *dl;
 	int         rnd;
+	int         colorStart, colorLength;
 	explosion_t *ex;
 	int         cnt = -1;
 
@@ -213,7 +226,6 @@ CL_ParseTEnt (void)
 			pos[1] = MSG_ReadCoord (net_message);
 			pos[2] = MSG_ReadCoord (net_message);
 			R_RunSpikeEffect (pos, type);
-			// R_RunParticleEffect (pos, 20, 30);
 			S_StartSound (-1, 0, cl_sfx_wizhit, pos, 1, 1);
 			break;
 
@@ -222,7 +234,6 @@ CL_ParseTEnt (void)
 			pos[1] = MSG_ReadCoord (net_message);
 			pos[2] = MSG_ReadCoord (net_message);
 			R_RunSpikeEffect (pos, type);
-			// R_RunParticleEffect (pos, 226, 20);
 			S_StartSound (-1, 0, cl_sfx_knighthit, pos, 1, 1);
 			break;
 
@@ -231,7 +242,6 @@ CL_ParseTEnt (void)
 			pos[1] = MSG_ReadCoord (net_message);
 			pos[2] = MSG_ReadCoord (net_message);
 			R_RunSpikeEffect (pos, type);
-			// R_RunParticleEffect (pos, 0, 10);
 
 			if (rand () % 5)
 				S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
@@ -251,7 +261,6 @@ CL_ParseTEnt (void)
 			pos[1] = MSG_ReadCoord (net_message);
 			pos[2] = MSG_ReadCoord (net_message);
 			R_RunSpikeEffect (pos, type);
-			// R_RunParticleEffect (pos, 0, 20);
 
 			if (rand () % 5)
 				S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
@@ -314,6 +323,12 @@ CL_ParseTEnt (void)
 			CL_ParseBeam (Mod_ForName ("progs/bolt3.mdl", true));
 			break;
 
+		// PGM 01/21/97
+		case TE_BEAM:				// grappling hook beam
+			CL_ParseBeam (Mod_ForName ("progs/beam.mdl", true));
+			break;
+		// PGM 01/21/97
+
 		case TE_LAVASPLASH:
 			pos[0] = MSG_ReadCoord (net_message);
 			pos[1] = MSG_ReadCoord (net_message);
@@ -328,6 +343,24 @@ CL_ParseTEnt (void)
 			R_TeleportSplash (pos);
 			break;
 
+		case TE_EXPLOSION2:			// color mapped explosion
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
+			colorStart = MSG_ReadByte (net_message);
+			colorLength = MSG_ReadByte (net_message);
+			R_ParticleExplosion2 (pos, colorStart, colorLength);
+			dl = CL_AllocDlight (0);
+			VectorCopy (pos, dl->origin);
+			dl->radius = 350;
+			dl->die = cl.time + 0.5;
+			dl->decay = 300;
+			dl->color[0] = 0.86;
+			dl->color[1] = 0.31;
+			dl->color[2] = 0.24;
+			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
+			break;
+
 		case TE_GUNSHOT:				// bullet hitting wall
 		case TE_BLOOD:					// bullets hitting body
 			cnt = MSG_ReadByte (net_message);
@@ -336,11 +369,42 @@ CL_ParseTEnt (void)
 			pos[1] = MSG_ReadCoord (net_message);
 			pos[2] = MSG_ReadCoord (net_message);
 			R_RunPuffEffect (pos, type, cnt);
-			// R_RunParticleEffect (pos, 0, 20*cnt);
 			break;
 
+#ifdef QUAKE2
+		case TE_IMPLOSION:
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
+			S_StartSound (-1, 0, cl_sfx_imp, pos, 1, 1);
+			break;
+
+		case TE_RAILTRAIL:
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
+			endpos[0] = MSG_ReadCoord (net_message);
+			endpos[1] = MSG_ReadCoord (net_message);
+			endpos[2] = MSG_ReadCoord (net_message);
+			S_StartSound (-1, 0, cl_sfx_rail, pos, 1, 1);
+			S_StartSound (-1, 1, cl_sfx_r_exp3, endpos, 1, 1);
+	/* Need updating to new Particle API
+			R_RocketTrail (pos, endpos, 0 + 128);
+			R_ParticleExplosion (endpos);
+	 */
+			dl = CL_AllocDlight (-1);
+			VectorCopy (endpos, dl->origin);
+			dl->radius = 350;
+			dl->die = cl.time + 0.5;
+			dl->decay = 300;
+			dl->color[0] = 0.86;
+			dl->color[1] = 0.31;
+			dl->color[2] = 0.24;
+			break;
+#endif
+
 		default:
-			Host_EndGame ("CL_ParseTEnt: bad type");
+			Sys_Error ("CL_ParseTEnt: bad type");
 	}
 }
 
