@@ -189,7 +189,7 @@ GL_SubdivideSurface (msurface_t *fa)
 
 // speed up sin calculations - Ed
 float       turbsin[] = {
-#	include "QF/gl_warp_sin.h"
+#	include "gl_warp_sin.h"
 };
 
 

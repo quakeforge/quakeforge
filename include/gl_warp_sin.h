@@ -1,7 +1,7 @@
 /*
 	gl_warp_sin.h
 
-	(description)
+	Use LUT for sin, faster on most cpus.
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
