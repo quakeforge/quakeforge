@@ -291,9 +291,9 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_output_disk.so
 %attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_output_disk.so.1
 %attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_output_disk.so.1.0.0
-%attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_output_null.so
-%attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_output_null.so.1
-%attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_output_null.so.1.0.0
+#%attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_output_null.so
+#%attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_output_null.so.1
+#%attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_output_null.so.1.0.0
 %attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_render_default.so
 %attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_render_default.so.1
 %attr(-,root,root) %{_prefix}/lib/quakeforge/libsnd_render_default.so.1.0.0
@@ -502,7 +502,8 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,root,root)	%{_prefix}/include/QF/plugin/console.h
 %attr(-,root,root)	%{_prefix}/include/QF/plugin/general.h
 %attr(-,root,root)	%{_prefix}/include/QF/plugin/input.h
-%attr(-,root,root)	%{_prefix}/include/QF/plugin/sound.h
+%attr(-,root,root)	%{_prefix}/include/QF/plugin/snd_output.h
+%attr(-,root,root)	%{_prefix}/include/QF/plugin/snd_render.h
 %attr(-,root,root)	%{_prefix}/include/QF/pr_comp.h
 %attr(-,root,root)	%{_prefix}/include/QF/pr_debug.h
 %attr(-,root,root)	%{_prefix}/include/QF/progs.h
