@@ -12,7 +12,7 @@ AC_VALIDATE_CACHED_SYSTEM_TUPLE(
 
 
 dnl This is the only place where the package version appears
-AM_INIT_AUTOMAKE(quakeforge, 0.5.4-CVS)
+AM_INIT_AUTOMAKE(quakeforge, 0.5.5)
 
 dnl Define the proper name and extra version numbers for package
 PROGRAM=QuakeForge
