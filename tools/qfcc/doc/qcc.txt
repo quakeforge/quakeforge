@@ -22,7 +22,7 @@ $Id$
 comments
 --------
 // comments discard text until the end of line
-/ *  * / comments discard all enclosed text (spaced out on this line
+/*  */ comments discard all enclosed text (spaced out on this line
 because this documentation is in a regular C comment block, and typing
 them in normally causes a parse error)
 
