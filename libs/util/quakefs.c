@@ -65,7 +65,6 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
-#include "QF/info.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/qtypes.h"

@@ -155,6 +155,24 @@ void        SV_AcceptClient (netadr_t adr, int userid, char *userinfo);
 void        Master_Shutdown (void);
 
 
+const char *client_info_filters[] = {  // Info keys needed by client
+	"name",
+	"topcolor",
+	"bottomcolor",
+	"rate",
+	"msg",
+	"skin",
+	"team",
+	"noaim",
+	"pmodel",
+	"emodel",
+	"spectator",
+	"*spectator",
+	"*ver",
+	NULL
+};
+
+
 qboolean
 ServerPaused (void)
 {
@@ -349,7 +367,7 @@ SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 	MSG_WriteFloat (buf, realtime - client->connection_started);
 
 	strncpy (info, client->userinfo, sizeof (info));
-	Info_RemovePrefixedKeys (info, '_');	// server passwords, etc
+	Info_RemovePrefixedKeys (info, '_', client_info_filters);	// server passwords, etc
 
 	MSG_WriteByte (buf, svc_updateuserinfo);
 	MSG_WriteByte (buf, i);

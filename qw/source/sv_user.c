@@ -1148,11 +1148,14 @@ SV_SetInfo_f (void)
 	// process any changed values
 	SV_ExtractFromUserinfo (host_client);
 
-	MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
-	MSG_WriteByte (&sv.reliable_datagram, host_client - svs.clients);
-	MSG_WriteString (&sv.reliable_datagram, Cmd_Argv (1));
-	MSG_WriteString (&sv.reliable_datagram,
-					 Info_ValueForKey (host_client->userinfo, Cmd_Argv (1)));
+	if (Info_FilterForKey (Cmd_Argv (1), client_info_filters)) {
+		MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
+		MSG_WriteByte (&sv.reliable_datagram, host_client - svs.clients);
+		MSG_WriteString (&sv.reliable_datagram, Cmd_Argv (1));
+		MSG_WriteString (&sv.reliable_datagram,
+						 Info_ValueForKey (host_client->userinfo,
+							 			   Cmd_Argv (1)));
+	}
 }
 
 /*

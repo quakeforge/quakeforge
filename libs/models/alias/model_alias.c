@@ -41,7 +41,6 @@
 
 #include "compat.h"
 #include "QF/crc.h"
-#include "QF/info.h"
 #include "QF/model.h"
 #include "QF/msg.h"
 #include "QF/qendian.h"

@@ -413,6 +413,8 @@ extern	double		realtime;
 
 extern	struct progs_s		sv_pr_state;
 
+extern	const char *client_info_filters[];
+
 //===========================================================
 // FIXME: declare exported functions in their own relevant .h
 

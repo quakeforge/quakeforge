@@ -44,6 +44,24 @@
 
 #include "compat.h"
 
+/*
+	Info_FilterForKey
+
+	Searches for key in the "client-needed" info string list
+*/
+qboolean
+Info_FilterForKey (const char *key, const char **filter_list)
+{
+	const char  **s;
+
+	for (s = filter_list; *s; s++) {
+		if (strequal (*s, key)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 
 /*
 	Info_ValueForKey
@@ -138,7 +156,7 @@ Info_RemoveKey (char *s, const char *key)
 }
 
 void
-Info_RemovePrefixedKeys (char *start, char prefix)
+Info_RemovePrefixedKeys (char *start, char prefix, const char **filter_list)
 {
 	char       *s;
 	char        pkey[512];
@@ -167,7 +185,8 @@ Info_RemovePrefixedKeys (char *start, char prefix)
 		}
 		*o = 0;
 
-		if (pkey[0] == prefix) {
+		if (pkey[0] == prefix
+			|| (filter_list && !Info_FilterForKey (pkey, filter_list))) {
 			Info_RemoveKey (start, pkey);
 			s = start;
 		}
