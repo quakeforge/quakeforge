@@ -393,7 +393,7 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 	ent = NEXT_EDICT (&sv_pr_state, sv.edicts);
 	for (e = 1; e < sv.num_edicts; e++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
 		// ignore if not touching a PV leaf
-		if (ent != clent) {				// clent is ALLWAYS sent
+		if (ent != clent) {				// clent is ALWAYS sent
 			// ignore ents without visible models
 			if (!SVfloat (ent, modelindex) ||
 				!*PR_GetString (&sv_pr_state, SVstring (ent, model)))

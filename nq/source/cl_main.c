@@ -484,7 +484,6 @@ CL_LerpPoint (void)
 static void
 CL_RelinkEntities (void)
 {
-	entity_t  **_ent;
 	entity_t   *ent;
 	cl_entity_state_t *state;
 	dlight_t   *dl;
@@ -520,7 +519,7 @@ CL_RelinkEntities (void)
 	for (i = 1, state = cl_baselines + 1; i < cl.num_entities; i++, state++) {
 		ent = state->ent;
 		if (!ent->model) {				// empty slot
-			if (state->forcelink)
+			if (ent->efrag)
 				R_RemoveEfrags (ent);	// just became empty
 			continue;
 		}
@@ -528,15 +527,21 @@ CL_RelinkEntities (void)
 		if (state->msgtime != cl.mtime[0]) {
 			ent->model = NULL;
 			ent->pose1 = ent->pose2 = -1;
+			if (ent->efrag)
+				R_RemoveEfrags (ent);	// just became empty
 			continue;
 		}
 
-		VectorCopy (ent->origin, ent->old_origin);
-
-		if (state->forcelink) {		// The entity was not updated in the last
-									// message so move to the final spot
-		} else {					// If the delta is large, assume a teleport
-									// and don't lerp
+		if (state->forcelink) {
+			// The entity was not updated in the last message so move to the
+			// final spot
+			if (i != cl.viewentity || chase_active->int_val) {
+				if (ent->efrag)
+					R_RemoveEfrags (ent);
+				R_AddEfrags (ent);
+			}
+		} else {
+			// If the delta is large, assume a teleport and don't lerp
 			f = frac;
 			VectorSubtract (state->msg_origins[0],
 							state->msg_origins[1], delta);
@@ -558,7 +563,19 @@ CL_RelinkEntities (void)
 					ent->angles[j] = state->msg_angles[1][j] + f * d;
 				}
 			}
+			if (i != cl.viewentity || chase_active->int_val) {
+				if (ent->efrag) {
+					if (!VectorCompare (ent->origin, ent->old_origin)) {
+						R_RemoveEfrags (ent);
+						R_AddEfrags (ent);
+					}
+				} else {
+					R_AddEfrags (ent);
+				}
+			}
 		}
+
+		VectorCopy (ent->origin, ent->old_origin);
 
 		// rotate binary objects locally
 		if (ent->model->flags & EF_ROTATE)
@@ -612,12 +629,6 @@ CL_RelinkEntities (void)
 			R_GlowTrail (ent, state->glow_color);
 
 		state->forcelink = false;
-
-		if (i == cl.viewentity && !chase_active->int_val) {
-			continue;
-		}
-		if ((_ent = R_NewEntity ()))
-			*_ent = ent;
 	}
 }
 
