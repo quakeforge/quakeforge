@@ -8,12 +8,12 @@ if [ -z "`which xmgrace`" ]; then
 fi
 
 # Setup our file vars
-if [ "$#" -ge "2" ]; then
+if [ "$#" -ge "1" ]; then
 	infile="$1"
 else
 	infile="${HOME}/.quakeforge/timeframes.txt"
 fi
-if [ "$#" -ge "3" ]; then
+if [ "$#" -ge "2" ]; then
 	outfile="$2"
 else
 	outfile="timeframes.png"
