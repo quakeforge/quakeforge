@@ -282,11 +282,56 @@ GIB_While_f (void)
 }
 
 void
+GIB_Field_Get_f (void)
+{
+	unsigned int field;
+	char *list, *end;
+	const char *ifs;
+	if (GIB_Argc() < 3 || GIB_Argc() > 4) {
+		Cbuf_Error ("syntax",
+					"field.get: invalid syntax\n"
+					"usage: field.get list element [ifs]"
+					);
+		return;
+	}
+	field = atoi (GIB_Argv(2));
+	
+	if (GIB_Argc() == 4)
+			ifs = GIB_Argv (3);
+	else if (!(ifs = GIB_Var_Get_Local (cbuf_active, "ifs")))
+			ifs = " \t\n";
+	for (list = GIB_Argv(1); *list && strchr(ifs, *list); list++);
+	while (field) {
+		while (!strchr(ifs, *list))
+			list++;
+		while (*list && strchr(ifs, *list))
+			list++;
+		if (!*list) {
+			GIB_Return ("");
+			return;
+		}
+		field--;
+	}
+	for (end = list; !strchr(ifs, *end); end++);
+	*end = 0;
+	GIB_Return (list);
+}
+		
+		
+void
 GIB___For_f (void)
 {
 	char *end = 0, old = 0;
 	if (!GIB_DATA(cbuf_active)->loop_list_p[0]) {
 		Cbuf_InsertText (cbuf_active, "break;");
+		return;
+	}
+	if (!GIB_DATA(cbuf_active)->loop_ifs_p[0]) {
+		end = GIB_DATA(cbuf_active)->loop_list_p;
+		old = end[1];
+		end[1] = 0;
+		GIB_Var_Set_Local (cbuf_active, GIB_DATA(cbuf_active)->loop_var_p, GIB_DATA(cbuf_active)->loop_list_p++);
+		end[1] = old;
 		return;
 	}
 	for (end = GIB_DATA(cbuf_active)->loop_list_p; !strchr(GIB_DATA(cbuf_active)->loop_ifs_p, *end); end++);
@@ -305,7 +350,9 @@ GIB___For_f (void)
 void
 GIB_For_f (void)
 {
-	if (GIB_Argc() != 5 || strcmp ("in", GIB_Argv (2))) {
+	if (strcmp ("in", GIB_Argv (2)) ||
+	   (GIB_Argc() == 7 && strcmp ("by", GIB_Argv(4))) ||
+	   (GIB_Argc() != 5 && GIB_Argc() != 7)) {
 		Cbuf_Error ("syntax",
 					"for: invalid syntax\n"
 					"usage: for variable in list {program}"
@@ -326,7 +373,9 @@ GIB_For_f (void)
 		// Store all for-loop data in one big buffer (easy to clean up)
 		dstring_appendstr (GIB_DATA(sub)->loop_data, GIB_Argv(3));
 		dstring_append (GIB_DATA(sub)->loop_data, GIB_Argv(1), strlen(GIB_Argv(1))+1);
-		if (!(ifs = GIB_Var_Get_Local (cbuf_active, "ifs")))
+		if (GIB_Argc() == 7)
+			ifs = GIB_Argv (5);
+		else if (!(ifs = GIB_Var_Get_Local (cbuf_active, "ifs")))
 			ifs = " \n\t";
 		dstring_append (GIB_DATA(sub)->loop_data, ifs, strlen(ifs)+1);
 		// Store pointers to data
@@ -337,7 +386,7 @@ GIB_For_f (void)
 		GIB_DATA(sub)->loop_var_p = GIB_DATA(sub)->loop_data->str + strlen(GIB_Argv(3))+1; // Var to use
 		GIB_DATA(sub)->loop_ifs_p = GIB_DATA(sub)->loop_var_p + strlen(GIB_Argv(1))+1; // Internal field separator
 		dstring_appendstr (GIB_DATA(sub)->loop_program, "__for;");
-		dstring_appendstr (GIB_DATA(sub)->loop_program, GIB_Argv(4));
+		dstring_appendstr (GIB_DATA(sub)->loop_program, GIB_Argc() == 7 ? GIB_Argv (6) : GIB_Argv(4));
 		Cbuf_AddText (sub, GIB_DATA(sub)->loop_program->str);
 		cbuf_active->state = CBUF_STATE_STACK;
 	}
@@ -722,6 +771,7 @@ GIB_Builtin_Init (void)
 	GIB_Builtin_Add ("if", GIB_If_f, GIB_BUILTIN_FIRSTONLY);
 	GIB_Builtin_Add ("ifnot", GIB_If_f, GIB_BUILTIN_FIRSTONLY);
 	GIB_Builtin_Add ("while", GIB_While_f, GIB_BUILTIN_NOPROCESS);
+	GIB_Builtin_Add ("field.get", GIB_Field_Get_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("for", GIB_For_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("__for", GIB___For_f, GIB_BUILTIN_NORMAL);
 	GIB_Builtin_Add ("break", GIB_Break_f, GIB_BUILTIN_NORMAL);
