@@ -2023,7 +2023,7 @@ builtin_t   sv_builtins[] = {
 	PF_Fixme,			// 94
 	PF_getboxhull,		// integer () getboxhull = #95
 	PF_freeboxhull,		// void (integer hull) freeboxhull = #96
-	PF_rotate_bbox,		// void (integer hull, vector angles, vector mins, vector maxs) rotate_bbox = #97
+	PF_rotate_bbox,		// void (integer hull, vector right, vector forward, vector up, vector mins, vector maxs) rotate_bbox = #97
 	PF_checkmove,		// void (vector start, vector mins, vector maxs, vector end, float type, entity passent) checkmove = #98
 	PF_Checkextension,	// = #99
 	PF_strlen,			// = #100
