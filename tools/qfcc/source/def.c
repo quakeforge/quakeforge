@@ -150,6 +150,7 @@ set_storage_bits (def_t *def, storage_class_t storage)
 		case st_local:
 			break;
 	}
+	def->initialized = 0;
 }
 
 static const char *vector_component_names[] = {"%s_x", "%s_y", "%s_z"};
@@ -248,6 +249,8 @@ get_def (type_t *type, const char *name, scope_t *scope,
 		}
 	}
 	set_storage_bits (def, storage);
+	if (storage == st_extern || storage == st_static)
+		def_initialized (def);
 
 	return def;
 }

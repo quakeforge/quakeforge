@@ -190,6 +190,7 @@ setup_data (void)
 			func->line_info  = LittleLong (f->aux->line_info);
 		func->num_parms      = LittleLong (function_parms (f, func->parm_size));
 		func->relocs         = LittleLong (reloc - relocs);
+		func->num_relocs     = LittleLong (count_relocs (f->refs));
 		write_relocs (f->refs, &reloc);
 
 		if (f->scope)
