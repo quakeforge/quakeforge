@@ -49,7 +49,7 @@ sound_ASM=	snd_mixa.S
 common_ASM=	sys_ia32.S worlda.S $(math_ASM)
 #endif
 
-common_SOURCES= mathlib.c wad.c world.c \
+common_SOURCES= game.c mathlib.c wad.c world.c \
 		model.c model_alias.c model_brush.c model_sprite.c \
 		quakefs.c \
 		quakeio.c com.c \

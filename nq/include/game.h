@@ -169,4 +169,6 @@ extern qboolean		isDedicated;
 extern qboolean		abyss, rogue, hipnotic, standard_quake;
 extern cvar_t		*registered;
 
+void Game_Init (void);
+
 #endif // __game_h

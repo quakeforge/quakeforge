@@ -893,6 +893,8 @@ void Host_Init (quakeparms_t *parms)
 	Cmd_Init ();
 
 	GIB_Init ();
+
+	Game_Init ();
 	
         // execute +set as early as possible
         Cmd_StuffCmds_f ();
