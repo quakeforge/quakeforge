@@ -701,8 +701,7 @@ print_expr (expr_t *e)
 				}
 				printf (")");
 			} else if (e->e.expr.op == 'b') {
-				print_expr (e->e.expr.e1);
-				printf ("<-->");
+				printf (" <-->");
 				print_expr (e->e.expr.e2);
 			} else {
 				print_expr (e->e.expr.e2);
@@ -1136,6 +1135,8 @@ field_expr (expr_t *e1, expr_t *e2)
 {
 	type_t     *t1, *t2;
 	expr_t     *e;
+	def_t      *d;
+	int         i;
 	struct_field_t *field;
 	class_t    *class;
 
@@ -1210,6 +1211,49 @@ field_expr (expr_t *e1, expr_t *e2)
 				e = new_binary_expr ('.', e1, e2);
 				e->e.expr.type = t2->aux_type;
 				return e;
+			}
+			break;
+		case ev_vector:
+			if (!options.traditional && e2->type == ex_name) {
+				field = struct_find_field (vector_struct, e2->e.string_val);
+				if (!field)
+					return error (e2, "vector has no field %s",
+								  e2->e.string_val);
+				switch (e1->type) {
+					case ex_expr:
+						if (e1->e.expr.op == '.'
+							&& extract_type (e1->e.expr.e1) == ev_entity
+							&& e1->e.expr.e2->type == ex_def) {
+							d = e1->e.expr.e2->e.def->def_next;
+							for (i = field->offset; i; i--)
+								d = d->def_next;
+							e = new_def_expr (d);
+							e = new_binary_expr ('.', e1->e.expr.e1, e);
+							e->e.expr.type = field->type;
+							return e;
+						}
+					case ex_block:
+					case ex_uexpr:
+#if 0
+						e1 = new_bind_expr (e1, new_temp_def_expr (t1));
+						e2 = new_short_expr (field->offset);
+						e = address_expr (e1, e2, field->type);
+						e = unary_expr ('.', e);
+						return e;
+#endif
+						break;
+					case ex_def:
+						d = e1->e.def->def_next;
+						for (i = field->offset; i; i--)
+							d = d->def_next;
+						e = new_def_expr (d);
+						return e;
+					case ex_vector:
+						e = new_float_expr (e1->e.vector_val[field->offset]);
+						return e;
+					default:
+						break;
+				}
 			}
 			break;
 		default:
@@ -2026,6 +2070,10 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				e = e1;
 				e->e.expr.op = '&';
 				e->e.expr.type = pointer_type (e->e.expr.type);
+				break;
+			} else if (e1->e.expr.op == 'b') {
+				e = new_unary_expr ('&', e1);
+				e->e.expr.type = pointer_type (e1->e.expr.type);
 				break;
 			}
 			return error (e1, "invalid type for unary &");
