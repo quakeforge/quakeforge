@@ -111,6 +111,9 @@ msurface_t **sky_chain_tail;
 # define CHAIN_SURF CHAIN_SURF_B2F
 #endif
 
+void (*R_AddDynamicLights) (msurface_t *surf);
+void (*R_BuildLightMap) (msurface_t *surf, byte *dest, int stride);
+
 
 // LordHavoc: place for gl_rsurf setup code
 void
@@ -140,7 +143,71 @@ R_RecursiveLightUpdate (mnode_t *node)
 }
 
 static void
-R_AddDynamicLights (msurface_t *surf)
+R_AddDynamicLights_1 (msurface_t *surf)
+{
+	float			dist;
+	int				lnum, maxdist, maxdist2, maxdist3, smax, smax_bytes, tmax,
+					grey;
+	unsigned int	td, i, j, s, t;
+	unsigned int	sdtable[18];
+	unsigned int   *bl;
+	vec3_t			impact, local;
+
+	smax = (surf->extents[0] >> 4) + 1;
+	smax_bytes = smax * gl_internalformat;
+	tmax = (surf->extents[1] >> 4) + 1;
+
+	for (lnum = 0; lnum < r_maxdlights; lnum++) {
+		if (!(surf->dlightbits & (1 << lnum)))
+			continue;					// not lit by this light
+
+		VectorSubtract (r_dlights[lnum].origin, currententity->origin, local);
+		dist = DotProduct (local, surf->plane->normal) - surf->plane->dist;
+		VectorMA (r_dlights[lnum].origin, -dist, surf->plane->normal, impact);
+
+		i = DotProduct (impact,	surf->texinfo->vecs[0]) +
+			surf->texinfo->vecs[0][3] - surf->texturemins[0];
+
+		// reduce calculations
+		t = dist * dist;
+		for (s = 0; s < smax; s++, i -= 16)
+			sdtable[s] = i * i + t;
+
+		i = DotProduct (impact,	surf->texinfo->vecs[1]) +
+			surf->texinfo->vecs[1][3] - surf->texturemins[1];
+
+		// for comparisons to minimum acceptable light
+		maxdist = (int) ((r_dlights[lnum].radius * r_dlights[lnum].radius) *
+						 0.75);
+
+		// clamp radius to avoid exceeding 8192 entry division table
+		if (maxdist > 1048576)
+			maxdist = 1048576;
+		maxdist3 = maxdist - t;
+
+		// convert to 8.8 blocklights format
+		grey = (r_dlights[lnum].color[0] + r_dlights[lnum].color[1] +
+				r_dlights[lnum].color[2]) * maxdist / 3.0;
+		bl = blocklights;
+		for (t = 0; t < tmax; t++, i -= 16) {
+			td = i * i;
+			if (td < maxdist3) {		// ensure part is visible on this line
+				maxdist2 = maxdist - td;
+				for (s = 0; s < smax; s++) {
+					if (sdtable[s] < maxdist2) {
+						j = dlightdivtable[(sdtable[s] + td) >> 7];
+						*bl++ += (grey * j) >> 7;
+					} else
+						bl++;
+				}
+			} else
+				bl += smax_bytes;		// skip line
+		}
+	}
+}
+
+static void
+R_AddDynamicLights_3 (msurface_t *surf)
 {
 	float			dist;
 	int				lnum, maxdist, maxdist2, maxdist3, smax, smax_bytes, tmax,
@@ -183,38 +250,22 @@ R_AddDynamicLights (msurface_t *surf)
 		maxdist3 = maxdist - t;
 
 		// convert to 8.8 blocklights format
-		if (gl_internalformat > 1) {
-			red = r_dlights[lnum].color[0] * maxdist;
-			green = r_dlights[lnum].color[1] * maxdist;
-			blue = r_dlights[lnum].color[2] * maxdist;
-		} else {
-			red = (r_dlights[lnum].color[0] + r_dlights[lnum].color[1] +
-				   r_dlights[lnum].color[2]) * maxdist / 3.0;
-			green = blue = 0;
-		}
+		red = r_dlights[lnum].color[0] * maxdist;
+		green = r_dlights[lnum].color[1] * maxdist;
+		blue = r_dlights[lnum].color[2] * maxdist;
 		bl = blocklights;
 		for (t = 0; t < tmax; t++, i -= 16) {
 			td = i * i;
 			if (td < maxdist3) {		// ensure part is visible on this line
 				maxdist2 = maxdist - td;
-				if (gl_internalformat > 1) {
-					for (s = 0; s < smax; s++) {
-						if (sdtable[s] < maxdist2) {
-							j = dlightdivtable[(sdtable[s] + td) >> 7];
-							*bl++ += (red * j) >> 7;
-							*bl++ += (green * j) >> 7;
-							*bl++ += (blue * j) >> 7;
-						} else
-							bl += 3;
-					}
-				} else {
-					for (s = 0; s < smax; s++) {
-                        if (sdtable[s] < maxdist2) {
-                            j = dlightdivtable[(sdtable[s] + td) >> 7];
-							*bl++ += (red * j) >> 7;
-                        } else
-							bl++;
-                    }
+				for (s = 0; s < smax; s++) {
+					if (sdtable[s] < maxdist2) {
+						j = dlightdivtable[(sdtable[s] + td) >> 7];
+						*bl++ += (red * j) >> 7;
+						*bl++ += (green * j) >> 7;
+						*bl++ += (blue * j) >> 7;
+					} else
+						bl += 3;
 				}
 			} else
 				bl += smax_bytes;		// skip line
@@ -222,16 +273,8 @@ R_AddDynamicLights (msurface_t *surf)
 	}
 }
 
-/*
-  R_BuildLightMap
-
-  Combine and scale multiple lightmaps.
-  After talking it over with LordHavoc, I've decided to switch to using
-  GL_RGB for colored lights and averaging them out for plain white
-  lighting if needed.  Much cleaner that way.  --KB
-*/
 static void
-R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
+R_BuildLightMap_1 (msurface_t *surf, byte *dest, int stride)
 {
 	byte		   *lightmap;
 	int				maps, shift, size, smax, tmax, i, j;
@@ -285,41 +328,147 @@ R_BuildLightMap (msurface_t *surf, byte * dest, int stride)
 	}
 #endif
 
-	switch (lightmap_bytes) {
-	case 4:
-		for (i = 0; i < tmax; i++, dest += stride) {
-			for (j = 0; j < smax; j++) {
-				*dest++ = min (*bl >> shift, 255);
-				bl++;
-				*dest++ = min (*bl >> shift, 255);
-				bl++;
-				*dest++ = min (*bl >> shift, 255);
-				bl++;
-				dest++;			// `*dest++ = 255;` for RGBA internal format
-								// instead of RGB
+	for (i = 0; i < tmax; i++, dest += stride) {
+		for (j = 0; j < smax; j++) {
+			*dest++ = min (*bl >> shift, 255);
+			bl++;
+		}
+	}
+}
+
+static void
+R_BuildLightMap_3 (msurface_t *surf, byte *dest, int stride)
+{
+	byte		   *lightmap;
+	int				maps, shift, size, smax, tmax, i, j;
+	unsigned int	scale;
+	unsigned int   *bl;
+
+	surf->cached_dlight = (surf->dlightframe == r_framecount);
+
+	smax = (surf->extents[0] >> 4) + 1;
+	tmax = (surf->extents[1] >> 4) + 1;
+	size = smax * tmax;
+	lightmap = surf->samples;
+
+	// set to full bright if no light data
+	if (!r_worldentity.model->lightdata) {
+		memset (&blocklights[0], 0xff, gl_internalformat * size * sizeof(int));
+		goto store;
+	}
+
+	// clear to no light
+	memset (&blocklights[0], 0, gl_internalformat * size * sizeof(int));
+
+	// add all the lightmaps
+	if (lightmap) {
+		for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255;
+			 maps++) {
+			scale = d_lightstylevalue[surf->styles[maps]];
+			surf->cached_light[maps] = scale;					// 8.8 fraction
+			bl = blocklights;
+			for (i = 0; i < (size * gl_internalformat); i++) {
+				*bl++ += *lightmap++ * scale;
 			}
 		}
-		break;
-	case 3:
-		for (i = 0; i < tmax; i++, dest += stride) {
-			for (j = 0; j < smax; j++) {
-				*dest++ = min (*bl >> shift, 255);
-				bl++;
-				*dest++ = min (*bl >> shift, 255);
-				bl++;
-				*dest++ = min (*bl >> shift, 255);
-				bl++;
+	}
+	// add all the dynamic lights
+	if (surf->dlightframe == r_framecount)
+		R_AddDynamicLights (surf);
+
+  store:
+	// bound and shift
+	stride -= smax * lightmap_bytes;
+	bl = blocklights;
+
+#if 0
+	if (gl_mtex_active) {
+		shift = 7;		// 0-1 lightmap range.
+	} else {
+#endif
+		shift = 8;		// 0-2 lightmap range.
+#if 0
+	}
+#endif
+
+	for (i = 0; i < tmax; i++, dest += stride) {
+		for (j = 0; j < smax; j++) {
+			*dest++ = min (*bl >> shift, 255);
+			bl++;
+			*dest++ = min (*bl >> shift, 255);
+			bl++;
+			*dest++ = min (*bl >> shift, 255);
+			bl++;
+		}
+	}
+}
+
+static void
+R_BuildLightMap_4 (msurface_t *surf, byte * dest, int stride)
+{
+	byte		   *lightmap;
+	int				maps, shift, size, smax, tmax, i, j;
+	unsigned int	scale;
+	unsigned int   *bl;
+
+	surf->cached_dlight = (surf->dlightframe == r_framecount);
+
+	smax = (surf->extents[0] >> 4) + 1;
+	tmax = (surf->extents[1] >> 4) + 1;
+	size = smax * tmax;
+	lightmap = surf->samples;
+
+	// set to full bright if no light data
+	if (!r_worldentity.model->lightdata) {
+		memset (&blocklights[0], 0xff, gl_internalformat * size * sizeof(int));
+		goto store;
+	}
+
+	// clear to no light
+	memset (&blocklights[0], 0, gl_internalformat * size * sizeof(int));
+
+	// add all the lightmaps
+	if (lightmap) {
+		for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255;
+			 maps++) {
+			scale = d_lightstylevalue[surf->styles[maps]];
+			surf->cached_light[maps] = scale;					// 8.8 fraction
+			bl = blocklights;
+			for (i = 0; i < (size * gl_internalformat); i++) {
+				*bl++ += *lightmap++ * scale;
 			}
 		}
-		break;
-	case 1:
-		for (i = 0; i < tmax; i++, dest += stride) {
-			for (j = 0; j < smax; j++) {
-				*dest++ = min (*bl >> shift, 255);
-				bl++;
-			}
+	}
+	// add all the dynamic lights
+	if (surf->dlightframe == r_framecount)
+		R_AddDynamicLights (surf);
+
+  store:
+	// bound and shift
+	stride -= smax * lightmap_bytes;
+	bl = blocklights;
+
+#if 0
+	if (gl_mtex_active) {
+		shift = 7;		// 0-1 lightmap range.
+	} else {
+#endif
+		shift = 8;		// 0-2 lightmap range.
+#if 0
+	}
+#endif
+
+	for (i = 0; i < tmax; i++, dest += stride) {
+		for (j = 0; j < smax; j++) {
+			*dest++ = min (*bl >> shift, 255);
+			bl++;
+			*dest++ = min (*bl >> shift, 255);
+			bl++;
+			*dest++ = min (*bl >> shift, 255);
+			bl++;
+			dest++;			// `*dest++ = 255;` for RGBA internal format
+			// instead of RGB
 		}
-		break;
 	}
 }
 
@@ -1106,17 +1255,23 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		gl_internalformat = 1;
 		gl_lightmap_format = GL_LUMINANCE;
 		lightmap_bytes = 1;
+		R_AddDynamicLights = R_AddDynamicLights_1;
+		R_BuildLightMap = R_BuildLightMap_1;
 		break;
 	case 3:
 		gl_internalformat = 3;
 		gl_lightmap_format = GL_RGB;
 		lightmap_bytes = 3;
+		R_AddDynamicLights = R_AddDynamicLights_3;
+		R_BuildLightMap = R_BuildLightMap_3;
 		break;
 	case 4:
 	default:
 		gl_internalformat = 3;
 		gl_lightmap_format = GL_RGBA;
 		lightmap_bytes = 4;
+		R_AddDynamicLights = R_AddDynamicLights_3;
+		R_BuildLightMap = R_BuildLightMap_4;
 		break;
 	}
 
