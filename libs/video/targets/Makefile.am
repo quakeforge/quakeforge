@@ -80,9 +80,8 @@ libQFsvga.la: $(libQFsvga_la_OBJECTS) $(libQFsvga_la_DEPENDENCIES)
 
 libQFtdfx_la_LDFLAGS=	-version-info 1:0:0
 libQFtdfx_la_SOURCES=	in_common.c in_svgalib.c qfgl_ext.c vid.c vid_common_gl.c vid_3dfxsvga.c
-TDFX_LIBS = $(LIBS) -lGL
 libQFtdfx.la: $(libQFtdfx_la_OBJECTS) $(libQFtdfx_la_DEPENDENCIES)
-	$(LINK) -rpath $(libdir) $(libQFtdfx_la_LDFLAGS) $(libQFtdfx_la_OBJECTS) $(libQFtdfx_la_LIBADD) $(TDFX_LIBS)
+	$(LINK) -rpath $(libdir) $(libQFtdfx_la_LDFLAGS) $(libQFtdfx_la_OBJECTS) $(libQFtdfx_la_LIBADD) $(LIBS)
 
 
 libQFwgl_la_LDFLAGS=	-version-info 1:0:0

@@ -42,6 +42,10 @@
 #include <glide/sst1vid.h>
 #include <sys/signal.h>
 
+#ifdef HAVE_DLOPEN
+# include <dlfcn.h>
+#endif
+
 #include "compat.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
@@ -53,6 +57,7 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
+#include "r_cvar.h"
 
 #define WARP_WIDTH              320
 #define WARP_HEIGHT             200
@@ -69,10 +74,10 @@
 
 typedef struct tfxMesaContext *fxMesaContext;
 
-GLAPI void GLAPIENTRY fxMesaDestroyContext(fxMesaContext ctx);
-GLAPI void GLAPIENTRY fxMesaSwapBuffers(void);
-GLAPI fxMesaContext GLAPIENTRY fxMesaCreateContext(GLuint win, GrScreenResolution_t, GrScreenRefresh_t, const GLint attribList[]);
-GLAPI void GLAPIENTRY fxMesaMakeCurrent(fxMesaContext ctx);
+void (* fxMesaDestroyContext) (fxMesaContext ctx);
+void (* fxMesaSwapBuffers) (void);
+fxMesaContext (* fxMesaCreateContext) (GLuint win, GrScreenResolution_t, GrScreenRefresh_t, const GLint attribList[]);
+void (* fxMesaMakeCurrent) (fxMesaContext ctx);
 
 // FIXME!!!!! This belongs in include/qfgl_ext.h -- deek
 typedef void (GLAPIENTRY * QF_3DfxSetDitherModeEXT) (GrDitherMode_t mode);
@@ -81,6 +86,8 @@ cvar_t      *vid_system_gamma;
 cvar_t      *tdfx_brighten;
 
 static fxMesaContext fc = NULL;
+
+void        *libgl_handle;
 
 int         VID_options_items = 0;
 
@@ -262,6 +269,20 @@ VID_Init (unsigned char *palette)
 	int         i;
 	GLint       attribs[32];
 
+#ifdef HAVE_DLOPEN
+	if (!(libgl_handle = dlopen (gl_libgl->string, RTLD_NOW))) {
+		Sys_Error ("Can't open OpenGL library \"%s\": %s\n", gl_libgl->string, dlerror());
+		return;
+	}
+#else
+# error "No dynamic library support. FIXME."
+#endif
+	fxMesaCreateContext = QFGL_ProcAddress (libgl_handle, "fxMesaCreateContext", true);
+	fxMesaDestroyContext = QFGL_ProcAddress (libgl_handle, "fxMesaDestroyContext", true);
+	fxMesaMakeCurrent = QFGL_ProcAddress (libgl_handle, "fxMesaMakeCurrent", true);
+	fxMesaSwapBuffers = QFGL_ProcAddress (libgl_handle, "fxMesaSwapBuffers", true);
+	
+	QFGL_ProcAddress (NULL, NULL, false);
 	VID_GetWindowSize (640, 480);
 	Con_CheckResize (); // Now that we have a window size, fix console
 
