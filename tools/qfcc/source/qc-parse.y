@@ -59,6 +59,7 @@ void build_function (function_t *f);
 void finish_function (function_t *f);
 void emit_function (function_t *f, expr_t *e);
 void build_scope (function_t *f, def_t *func);
+type_t *build_type (int is_field, type_t *type);
 
 hashtab_t *save_local_inits (def_t *scope);
 hashtab_t *merge_local_inits (hashtab_t *dl_1, hashtab_t *dl_2);
@@ -112,9 +113,11 @@ typedef struct {
 %token	SWITCH CASE DEFAULT
 %token	<type> TYPE
 
-%type	<type>	type maybe_func
+%type	<type>	type opt_func func_parms
 %type	<integer_val> opt_field
-%type	<def>	param param_list def_item def_list def_name
+%type	<def>	param param_list def_name
+%type	<def>	var_def_item var_def_list
+%type	<def>	func_def_item func_def_list
 %type	<expr>	const opt_expr expr arg_list
 %type	<expr>	statement statements statement_block
 %type	<expr>	break_label continue_label
@@ -148,32 +151,10 @@ defs
 	;
 
 def
-	: type
-		{
-			current_type = $1;
-		}
-	  def_list
-		{
-		}
-	;
-
-type
 	: opt_field TYPE
-		{
-			current_type = $2;
-		}
-	  maybe_func
-	  	{
-			if ($1) {
-				type_t new;
-				memset (&new, 0, sizeof (new));
-				new.type = ev_field;
-				new.aux_type = $4 ? $4 : $2;
-				$$ = PR_FindType (&new);
-			} else {
-				$$ = $4 ? $4 : $2;
-			}
-		}
+	  { current_type = build_type ($1, $2); } var_def_list
+	| opt_field TYPE { current_type = $2; } func_parms
+	  { current_type = build_type ($1, $4); } func_def_list
 	;
 
 opt_field
@@ -181,12 +162,19 @@ opt_field
 	| '.' { $$ = 1; }
 	;
 
-maybe_func
+opt_func
 	: /* empty */
 		{
 			$$ = 0;
 		}
-	| '('
+	| func_parms
+		{
+			$$ = $1;
+		}
+	;
+
+func_parms
+	: '('
 		{
 			$<scope>$.scope = pr_scope;
 			$<scope>$.type = current_type;
@@ -216,15 +204,28 @@ maybe_func
 			$$ = parse_params ((def_t*)1);
 		}
 	;
-	
 
-def_list
-	: def_list ',' def_item
-	| def_item
+var_def_list
+	: var_def_list ',' var_def_item
+	| var_def_item
 	;
 
-def_item
-	: def_name opt_initializer
+var_def_item
+	: def_name opt_var_initializer
+		{
+			$$ = $1;
+			if (!$$->scope && $$->type->type != ev_func)
+				PR_DefInitialized ($$);
+		}
+	;
+
+func_def_list
+	: func_def_list ',' func_def_item
+	| func_def_item
+	;
+
+func_def_item
+	: def_name opt_func_initializer
 		{
 			$$ = $1;
 			if (!$$->scope && $$->type->type != ev_func)
@@ -235,7 +236,11 @@ def_item
 def_name
 	: NAME
 		{
-			$$ = PR_GetDef (current_type, $1, pr_scope, pr_scope ? pr_scope->alloc : &numpr_globals);
+			int *alloc = &numpr_globals;
+
+			if (pr_scope)
+				alloc = pr_scope->alloc;
+			$$ = PR_GetDef (current_type, $1, pr_scope, alloc);
 			current_def = $$;
 		}
 	;
@@ -255,14 +260,19 @@ param_list
 	;
 
 param
-	: type {current_type = $1;} def_item
+	: type {current_type = $1;} def_name
 		{
 			$3->type = $1;
 			$$ = $3;
 		}
 	;
 
-opt_initializer
+type
+	: opt_field TYPE { current_type = $2; } opt_func
+	  { $$ = build_type ($1, $4 ? $4 : $2); }
+	;
+
+opt_var_initializer
 	: /*empty*/
 	| '=' expr
 		{
@@ -280,6 +290,10 @@ opt_initializer
 				}
 			}
 		}
+	;
+
+opt_func_initializer
+	: /*empty*/
 	| '=' '#' const
 		{
 			if (current_type->type != ev_func) {
@@ -498,7 +512,7 @@ statement
 			current_type = $2;
 			local_expr = new_block_expr ();
 		}
-	  def_list ';'
+	  var_def_list ';'
 		{
 			$$ = local_expr;
 			local_expr = 0;
@@ -767,6 +781,20 @@ build_scope (function_t *f, def_t *func)
 			Error ("bad parm order");
 		def->used = 1;				// don't warn for unused params
 		PR_DefInitialized (def);	// params are assumed to be initialized
+	}
+}
+
+type_t *
+build_type (int is_field, type_t *type)
+{
+	if (is_field) {
+		type_t new;
+		memset (&new, 0, sizeof (new));
+		new.type = ev_field;
+		new.aux_type = type;
+		return PR_FindType (&new);
+	} else {
+		return type;
 	}
 }
 
