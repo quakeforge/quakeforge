@@ -58,6 +58,7 @@ static const char rcsid[] =
 extern void GL_Pre_Init (void);
 extern void GL_Init_Common (void);
 extern void VID_Init8bitPalette (void);
+extern void GL_Common_Init_Cvars (void);
 
 extern void (*vid_menudrawfn) (void);
 extern void (*vid_menukeyfn) (int);
@@ -110,9 +111,6 @@ const char *gl_renderer;
 const char *gl_version;
 const char *gl_extensions;
 
-// 8-bit and permedia support
-qboolean			isPermedia = false;
-
 // FIXME: Only used by MGL ..
 qboolean    DDActive;
 
@@ -148,9 +146,6 @@ HWND WINAPI InitializeWindow (HINSTANCE hInstance, int nCmdShow);
 LONG	CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 extern viddef_t vid;					// global video state
-
-unsigned int d_8to24table[256];
-unsigned char d_15to8table[65536];
 
 float       gldepthmin, gldepthmax;
 
@@ -254,8 +249,8 @@ VID_SetWindowedMode (int modenum)
 		vid.conheight = modelist[modenum].height;
 	if (vid.conwidth > modelist[modenum].width)
 		vid.conwidth = modelist[modenum].width;
-	vid.width = vid.conwidth;
-	vid.height = vid.conheight;
+	scr_width = vid.width = vid.conwidth;
+	scr_height = vid.height = vid.conheight;
 
 	vid.numpages = 2;
 
@@ -338,8 +333,8 @@ VID_SetFullDIBMode (int modenum)
 		vid.conheight = modelist[modenum].height;
 	if (vid.conwidth > modelist[modenum].width)
 		vid.conwidth = modelist[modenum].width;
-	vid.width = vid.conwidth;
-	vid.height = vid.conheight;
+	scr_width = vid.width = vid.conwidth;
+	scr_height = vid.height = vid.conheight;
 
 	vid.numpages = 2;
 
@@ -461,9 +456,6 @@ GL_Init (void)
 	GL_Init_Common ();
 	if (strnicmp (gl_renderer, "PowerVR", 7) == 0)
 		fullsbardraw = true;
-
-	if (strnicmp (gl_renderer, "Permedia", 8) == 0)
-		isPermedia = true;
 }
 
 void
@@ -1132,7 +1124,6 @@ VID_Init (unsigned char *palette)
 {
 	int         i, existingmode;
 	int         basenummodes, width, height=480, bpp, findbpp, done;
-	char        gldir[MAX_OSPATH];
 	HDC         hdc;
 	DEVMODE     devmode;
 	HGLRC       baseRC;
@@ -1252,8 +1243,7 @@ VID_Init (unsigned char *palette)
 
 				do {
 					if (COM_CheckParm ("-height")) {
-						height = atoi (com_argv[COM_CheckParm ("-height")
-												+ 1]);
+						height = atoi (com_argv[COM_CheckParm ("-height") + 1]);
 
 						for (i = 1, vid_default = 0; i < nummodes; i++) {
 							if ((modelist[i].width == width) &&
@@ -1304,8 +1294,6 @@ VID_Init (unsigned char *palette)
 		}
 	}
 
-	vid.initialized = true;
-
 	if ((i = COM_CheckParm ("-conwidth")) != 0)
 		vid.conwidth = atoi (com_argv[i + 1]);
 	else
@@ -1330,12 +1318,9 @@ VID_Init (unsigned char *palette)
 	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap8 + 2048));
 
 #ifdef SPLASH_SCREEN
-        if(hwnd_dialog)
-                DestroyWindow (hwnd_dialog);
+	if(hwnd_dialog)
+			DestroyWindow (hwnd_dialog);
 #endif
-
-	VID_InitGamma (palette);
-	VID_SetPalette (palette);
 
 	VID_SetMode (vid_default, palette);
 
@@ -1363,13 +1348,13 @@ VID_Init (unsigned char *palette)
 
 	GL_Init ();
 
-	snprintf (gldir, sizeof (gldir), "%s/glquake", com_gamedir);
-	Sys_mkdir (gldir);
+	VID_InitGamma (palette);
+	VID_Init8bitPalette ();
+	VID_SetPalette (palette);
+
+	vid.initialized = true;
 
 	vid_realmode = vid_modenum;
-
-	// Check for 3DFX Extensions and initialize them.
-	VID_Init8bitPalette ();
 
 	strcpy (badmode.modedesc, "Bad mode");
 	vid_canalttab = true;
