@@ -520,7 +520,7 @@ ProcessEntity (int entnum)
 				nodes = SolidBSP (surfs, false);
 
 				// make the real portals for vis tracing
-				PortalizeWorld (nodes);
+				PortalizeWorldDetail (nodes);
 
 				// save portal file for vis tracing
 				WritePortalfile (nodes);
