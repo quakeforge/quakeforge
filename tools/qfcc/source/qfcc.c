@@ -234,6 +234,8 @@ WriteData (int crc)
 	int 		i;
 
 	for (def = pr.def_head.next; def; def = def->next) {
+		if (def->scope)
+			continue;
 		if (def->type->type == ev_func) {
 //			df = &functions[numfunctions];
 //			numfunctions++;
