@@ -189,6 +189,7 @@ extern qboolean	r_force_fullscreen;
 extern qboolean	r_paused;
 extern entity_t *r_view_model;
 extern entity_t *r_player_entity;
+extern int		r_lineadj;
 
 void *D_SurfaceCacheAddress (void);
 int D_SurfaceCacheForRes (int width, int height);
@@ -206,5 +207,7 @@ struct entity_s **R_NewEntity (void);
 dlight_t *R_AllocDlight (int key);
 void R_DecayLights (double frametime);
 void R_ClearDlights (void);
+
+void R_LineGraph (int x, int y, int *h_vals, int count);
 
 #endif // __render_h

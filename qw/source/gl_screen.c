@@ -940,7 +940,7 @@ SCR_UpdateScreen (double realtime)
 	SCR_TileClear ();
 
 	if (r_netgraph->int_val)
-		R_NetGraph ();
+		CL_NetGraph ();
 
 	if (cl.intermission == 1 && key_dest == key_game) {
 		Sbar_IntermissionOverlay ();

@@ -941,8 +941,8 @@ SCR_UpdateScreen (double realtime)
 	// draw any areas not covered by the refresh
 	SCR_TileClear ();
 
-	if (r_netgraph->int_val)
-		R_NetGraph ();
+	//if (r_netgraph->int_val)
+	//	CL_NetGraph ();
 
 	if (cl.intermission == 1 && key_dest == key_game) {
 		Sbar_IntermissionOverlay ();

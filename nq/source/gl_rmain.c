@@ -1053,6 +1053,9 @@ R_Clear (void)
 void
 R_RenderScene (void)
 {
+	if (r_timegraph->int_val || r_speeds->int_val || r_dspeeds->int_val)
+		r_time1 = Sys_DoubleTime ();
+
 	R_SetupFrame ();
 
 	R_SetFrustum ();
@@ -1070,6 +1073,12 @@ R_RenderScene (void)
 	R_DrawEntitiesOnList ();
 
 	R_RenderDlights ();
+
+	if (r_timegraph->int_val)
+		R_TimeGraph ();
+
+	if (r_zgraph->int_val)
+		R_ZGraph ();
 }
 
 

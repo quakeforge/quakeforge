@@ -717,6 +717,7 @@ SCR_DrawStringToSnap (const char *s, byte * buf, int x, int y, int width)
 	}
 }
 
+
 void
 SCR_RSShot_f (void)
 {
@@ -802,7 +803,7 @@ SCR_RSShot_f (void)
 	st[sizeof (st) - 1] = 0;
 	SCR_DrawStringToSnap (st, newbuf, w - strlen (st) * 8, 10, w);
 
-	strncpy (st, name->string, sizeof (st));
+	strncpy (st, cl_name->string, sizeof (st));
 	st[sizeof (st) - 1] = 0;
 	SCR_DrawStringToSnap (st, newbuf, w - strlen (st) * 8, 20, w);
 
@@ -820,6 +821,7 @@ SCR_RSShot_f (void)
 	Con_Printf ("Sending shot to server...\n");
 #endif
 }
+
 
 //=============================================================================
 
@@ -965,6 +967,10 @@ SCR_UpdateScreen (double realtime)
 
 		SCR_DrawRam ();
 		SCR_DrawNet ();
+
+		//if (r_netgraph->int_val)
+		//	CL_NetGraph ();
+
 		SCR_DrawFPS ();
 		SCR_DrawTime ();
 		SCR_DrawTurtle ();

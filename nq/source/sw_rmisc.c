@@ -34,14 +34,12 @@
 #include "QF/console.h"
 #include "QF/cmd.h"
 #include "QF/draw.h"
+#include "QF/render.h"
 #include "QF/sys.h"
 
 #include "host.h"
 #include "r_local.h"
-#include "QF/render.h"
 #include "sbar.h"
-#include "server.h"
-#include "view.h"
 
 void
 R_CheckVariables (void)
@@ -116,161 +114,6 @@ R_LoadSky_f (void)
 	}
 
 	R_LoadSkys (Cmd_Argv (1));
-}
-
-
-/*
-	R_LineGraph
-
-	Only called by R_DisplayTime
-*/
-void
-R_LineGraph (int x, int y, int h)
-{
-	int         i;
-	byte       *dest;
-	int         s;
-	int         color;
-
-// FIXME: should be disabled on no-buffer adapters, or should be in the driver
-
-//	x += r_refdef.vrect.x;
-//	y += r_refdef.vrect.y;
-
-	dest = vid.buffer + vid.rowbytes * y + x;
-
-	s = r_graphheight->int_val;
-
-	if (h == 10000)
-		color = 0x6f;					// yellow
-	else if (h == 9999)
-		color = 0x4f;					// red
-	else if (h == 9998)
-		color = 0xd0;					// blue
-	else
-		color = 0xff;					// pink
-
-	if (h > s)
-		h = s;
-
-	for (i = 0; i < h; i++, dest -= vid.rowbytes) {
-		dest[0] = color;
-//		*(dest-vid.rowbytes) = 0x30;
-	}
-#if 0
-	for (; i < s; i++, dest -= vid.rowbytes * 2) {
-		dest[0] = 0x30;
-		*(dest - vid.rowbytes) = 0x30;
-	}
-#endif
-}
-
-
-#define MAX_TIMINGS 100
-extern float mouse_x, mouse_y;
-int          graphval;
-
-/*
-	R_TimeGraph
-
-	Performance monitoring tool
-*/
-void
-R_TimeGraph (void)
-{
-	static int  timex;
-	int         a;
-	float       r_time2;
-	static byte r_timings[MAX_TIMINGS];
-	int         x;
-
-	r_time2 = Sys_DoubleTime ();
-
-	a = (r_time2 - r_time1) / 0.01;
-//	a = fabs(mouse_y * 0.05);
-//	a = (int)((r_refdef.vieworg[2] + 1024)/1)%(int)r_graphheight->value;
-//	a = (int)((pmove.velocity[2] + 500)/10);
-//	a = fabs(velocity[0])/20;
-//	a = ((int)fabs(origin[0])/8)%20;
-//	a = (cl.idealpitch + 30)/5;
-//	a = (int)(cl.simangles[YAW] * 64/360) & 63;
-	a = graphval;
-
-	r_timings[timex] = a;
-	a = timex;
-
-	if (r_refdef.vrect.width <= MAX_TIMINGS)
-		x = r_refdef.vrect.width - 1;
-	else
-		x = r_refdef.vrect.width - (r_refdef.vrect.width - MAX_TIMINGS) / 2;
-	do {
-		R_LineGraph (x, r_refdef.vrect.height - 2, r_timings[a]);
-		if (x == 0)
-			break;					// screen too small to hold entire thing
-		x--;
-		a--;
-		if (a == -1)
-			a = MAX_TIMINGS - 1;
-	} while (a != timex);
-
-	timex = (timex + 1) % MAX_TIMINGS;
-}
-
-
-void
-R_NetGraph (void)
-{
-#if 0
-	int         a, x, y, h, i;
-	int         lost;
-	char        st[80];
-
-	x = cl_hudswap->int_val ? vid.width - (NET_TIMINGS + 16): 0;
-	y = vid.height - sb_lines - 24 - r_graphheight->int_val - 1;
-
-	h = r_graphheight->int_val % 8;
-
-	Draw_TextBox (x, y, NET_TIMINGS / 8, r_graphheight->int_val / 8 + 1);
-
-	lost = CL_CalcNet ();
-	x = cl_hudswap->int_val ? vid.width - (NET_TIMINGS + 8) : 8;
-	y = vid.height - sb_lines - 9;
-
-	y -= h;
-	for (a = 0; a < NET_TIMINGS; a++) {
-		i = (cls.netchan.outgoing_sequence - a) & NET_TIMINGSMASK;
-		R_LineGraph (x + NET_TIMINGS - 1 - a, y, packet_latency[i]);
-	}
-
-	y -= vid.height - sb_lines - 24 - r_graphheight->int_val + 7;
-	snprintf (st, sizeof (st), "%3i%% packet loss", lost);
-	if (cl_hudswap->int_val) {
-		Draw_String8 (vid.width - ((strlen (st) * 8) + 8), y, st);
-	} else {
-		Draw_String8 (8, y, st);
-	}
-#endif
-}
-
-
-void
-R_ZGraph (void)
-{
-	int         a, x, w, i;
-	static int  height[256];
-
-	if (r_refdef.vrect.width <= 256)
-		w = r_refdef.vrect.width;
-	else
-		w = 256;
-
-	height[r_framecount & 255] = ((int) r_origin[2]) & 31;
-
-	x = 0;
-	for (a = 0; a < w; a++) {
-		i = (r_framecount - a) & 255;
-		R_LineGraph (x + w - 1 - a, r_refdef.vrect.height - 2, height[i]);
-	}
 }
 
 
@@ -484,7 +327,7 @@ R_SetupFrame (void)
 				vrect.width = vid.width;
 				vrect.height = vid.height;
 
-				R_ViewChanged (&vrect, cl_sbar->int_val ? sb_lines : 0, vid.aspect);
+				R_ViewChanged (&vrect, r_lineadj, vid.aspect);
 			} else {
 				w = vid.width;
 				h = vid.height;
@@ -505,7 +348,7 @@ R_SetupFrame (void)
 				vrect.height = (int) h;
 
 				R_ViewChanged (&vrect,
-							   (int) ((float) (cl_sbar->int_val ? sb_lines : 0) *
+							   (int) ((float) r_lineadj *
 									  (h / (float) vid.height)),
 							   vid.aspect * (h / w) * ((float) vid.width /
 													   (float) vid.height));
@@ -516,7 +359,7 @@ R_SetupFrame (void)
 			vrect.width = vid.width;
 			vrect.height = vid.height;
 
-			R_ViewChanged (&vrect, cl_sbar->int_val ? sb_lines : 0, vid.aspect);
+			R_ViewChanged (&vrect, r_lineadj, vid.aspect);
 		}
 
 		r_viewchanged = false;

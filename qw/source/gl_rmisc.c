@@ -41,16 +41,16 @@
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/quakefs.h"
+#include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
 #include "QF/varrays.h"
 
-#include "client.h"
 #include "glquake.h"
 #include "r_dynamic.h"
 #include "r_local.h"
-#include "QF/render.h"
 
 varray_t2f_c4f_v3f_t varray[MAX_VARRAY_VERTS];
 
@@ -155,8 +155,7 @@ R_Init (void)
 
 	GDT_Init ();
 	
-	netgraphtexture = texture_extension_number;
-	texture_extension_number++;
+	texture_extension_number = R_InitGraphTextures (texture_extension_number);
 
 	texture_extension_number = Skin_Init_Textures (texture_extension_number);
 

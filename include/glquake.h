@@ -85,11 +85,13 @@ extern	int glx, gly, glwidth, glheight;
 
 #define BACKFACE_EPSILON	0.01
 
+#define NUM_GRAPH_TEXTURES 8
+
 extern	qboolean	envmap;
 extern	int	currenttexture;
 extern	int	cnttextures[2];
 extern	int	particletexture;
-extern	int	netgraphtexture;
+extern	int	graph_texture[NUM_GRAPH_TEXTURES];
 extern	int	netgraphtexture;	// netgraph texture
 
 extern	int	skytexturenum;		// index in cl.loadmodel, not gl texture object
@@ -233,5 +235,7 @@ extern float v_blend[4];
 void AddLightBlend (float, float, float, float);
 extern	int			c_brush_polys, c_alias_polys;
 extern	float		r_world_matrix[16];
+
+int R_InitGraphTextures (int base);
 
 #endif // __glquake_h

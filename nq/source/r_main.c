@@ -11,6 +11,8 @@ dlight_t    r_dlights[MAX_DLIGHTS];
 entity_t   *r_view_model;
 entity_t   *r_player_entity;
 lightstyle_t r_lightstyle[MAX_LIGHTSTYLES];
+int         r_lineadj;
+float       r_time1;
 
 
 dlight_t *

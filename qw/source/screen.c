@@ -965,6 +965,10 @@ SCR_UpdateScreen (double realtime)
 
 		SCR_DrawRam ();
 		SCR_DrawNet ();
+
+		if (r_netgraph->int_val)
+			CL_NetGraph ();
+
 		SCR_DrawFPS ();
 		SCR_DrawTime ();
 		SCR_DrawTurtle ();

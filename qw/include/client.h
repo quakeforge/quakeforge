@@ -318,4 +318,6 @@ extern	double		realtime;
 
 void Cvar_Info (struct cvar_s *var);
 
+void CL_NetGraph (void);
+
 #endif // _CLIENT_H

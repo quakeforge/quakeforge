@@ -56,7 +56,6 @@
 void       *colormap;
 vec3_t      viewlightvec;
 alight_t    r_viewlighting = { 128, 192, viewlightvec };
-float       r_time1;
 int         r_numallocatededges;
 qboolean    r_drawpolys;
 qboolean    r_drawculledpolys;
@@ -137,7 +136,6 @@ void        R_MarkLeaves (void);
 
 extern cvar_t *scr_fov;
 
-void        R_NetGraph (void);
 void        R_ZGraph (void);
 
 
@@ -908,9 +906,6 @@ R_RenderView_ (void)
 
 	if (r_timegraph->int_val)
 		R_TimeGraph ();
-
-	if (r_netgraph->int_val)
-		R_NetGraph ();
 
 	if (r_zgraph->int_val)
 		R_ZGraph ();
