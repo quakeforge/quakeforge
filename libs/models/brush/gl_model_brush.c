@@ -46,6 +46,7 @@ static const char rcsid[] =
 #include "QF/sys.h"
 #include "QF/texture.h"
 #include "QF/tga.h"
+#include "QF/va.h"
 #include "QF/GL/qf_textures.h"
 
 #include "compat.h"
@@ -69,42 +70,35 @@ Mod_ProcessTexture (miptex_t *mt, texture_t *tx)
 void
 Mod_LoadExternalTextures (model_t *mod)
 {
-	char		filename[MAX_QPATH + 8];
-	int			length, i;
+	char	   *filename;
+	int			i;
 	tex_t	   *targa;
 	texture_t  *tx;
 	QFile	   *f;
 
-	for (i = 0; i < mod->numtextures; i++)
-	{
+	for (i = 0; i < mod->numtextures; i++) {
 		tx = mod->textures[i];
 		if (!tx)
 			continue;
-		length = strlen (tx->name) - 1;
 
 		// backslash at the end of texture name indicates external texture
-		if (tx->name[length] != '\\')
-			continue;
+//		if (tx->name[length] != '\\')
+//			continue;
 
 		// replace special flag characters with underscores
-		if (tx->name[0] == '+' || tx->name[0] == '*')
-		 	snprintf (filename, sizeof (filename), "maps/_%s", tx->name + 1);
-		else
-		 	snprintf (filename, sizeof (filename), "maps/%s", tx->name);
-
-		length += 5; // add "maps/" to the string length calculation
-		snprintf (filename + length, sizeof (filename) - length, ".tga");
+		if (tx->name[0] == '+' || tx->name[0] == '*') {
+		 	filename = va ("maps/_%s.tga", tx->name + 1);
+		} else {
+		 	filename = va ("maps/%s.tga", tx->name);
+		}
 
 		COM_FOpenFile (filename, &f);
 		if (f) {
 			targa = LoadTGA (f);
 			Qclose (f);
-			if (targa->format < 4)
-				tx->gl_texturenum = GL_LoadTexture (tx->name, targa->width,
-					targa->height, targa->data, true, false, 3);
-			else
-				tx->gl_texturenum = GL_LoadTexture (tx->name, targa->width,
-					targa->height, targa->data, true, true, 4);
+			tx->gl_texturenum =
+				GL_LoadTexture (tx->name, targa->width, targa->height,
+								targa->data, true, false, 3);
 		}
 	}
 }

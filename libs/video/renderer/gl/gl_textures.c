@@ -178,7 +178,6 @@ static glformat_t formats[] = {
 int gl_alpha_format = 4, gl_lightmap_format = 4, gl_solid_format = 3;
 
 
-
 void
 GL_TextureMode_f (void)
 {
@@ -249,12 +248,9 @@ GL_TextureDepth_f (int format)
 
 static void
 GL_ResampleTexture (unsigned int *in, int inwidth, int inheight,
-		    unsigned int *out, int outwidth, int outheight)
+					unsigned int *out, int outwidth, int outheight)
 {
-	/*
-		any improvements in here should be mirrored in build_skin_32 in
-		gl_skin.c
-	*/
+	// Improvements here should be mirrored in build_skin_32 in gl_skin.c
 	int           i, j; 
 	unsigned int  frac, fracstep; 
 	unsigned int *inrow; 
@@ -274,12 +270,9 @@ GL_ResampleTexture (unsigned int *in, int inwidth, int inheight,
 
 static void
 GL_Resample8BitTexture (unsigned char *in, int inwidth, int inheight,
-			unsigned char *out, int outwidth, int outheight) 
+						unsigned char *out, int outwidth, int outheight) 
 {
-	/*
-		any improvements in here should be mirrored in build_skin_8 in
-		gl_skin.c
-	*/
+	// Improvements here should be mirrored in build_skin_8 in gl_skin.c
 	unsigned char *inrow;
 	int            i, j;
 	unsigned int   frac, fracstep;
@@ -303,7 +296,7 @@ GL_Resample8BitTexture (unsigned char *in, int inwidth, int inheight,
 	Operates in place, quartering the size of the texture.
 */ 
 static void
-GL_MipMap (byte * in, int width, int height)
+GL_MipMap (byte *in, int width, int height)
 {
 	byte       *out;
 	int         i, j;
@@ -328,7 +321,7 @@ GL_MipMap (byte * in, int width, int height)
 	Mipping for 8 bit textures
 */ 
 static void
-GL_MipMap8Bit (byte * in, int width, int height)
+GL_MipMap8Bit (byte *in, int width, int height)
 {
 	byte          *at1, *at2, *at3, *at4, *out;
 	int            i, j;
@@ -357,7 +350,7 @@ GL_MipMap8Bit (byte * in, int width, int height)
 
 static void
 GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
-	     qboolean alpha)
+			 qboolean alpha)
 {
 	int           scaled_width, scaled_height, intformat;
 	unsigned int *scaled;
@@ -386,7 +379,7 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
 		memcpy (scaled, data, width * height * sizeof (GLuint));
 	} else {
 		GL_ResampleTexture (data, width, height, scaled, scaled_width,
-				    scaled_height);
+							scaled_height);
 	}
 
 	qfglTexImage2D (GL_TEXTURE_2D, 0, intformat, scaled_width, scaled_height,
@@ -403,7 +396,8 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
 			scaled_height = max (scaled_height, 1);
 			miplevel++;
 			qfglTexImage2D (GL_TEXTURE_2D, miplevel, intformat, scaled_width,
-				      scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled);
+							scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+							scaled);
 		}
 	}
 
@@ -433,8 +427,8 @@ GL_Upload32 (unsigned int *data, int width, int height, qboolean mipmap,
         If we don't, this function does nothing. 
 */ 
 void 
-GL_Upload8_EXT (byte * data, int width, int height, qboolean mipmap,
-		qboolean alpha)
+GL_Upload8_EXT (byte *data, int width, int height, qboolean mipmap,
+				qboolean alpha)
 {
 	byte       *scaled;
 	int         scaled_width, scaled_height;
@@ -458,10 +452,11 @@ GL_Upload8_EXT (byte * data, int width, int height, qboolean mipmap,
 		memcpy (scaled, data, width * height);
 	} else {
 		GL_Resample8BitTexture (data, width, height, scaled, scaled_width,
-					scaled_height);
+								scaled_height);
 	}
 	qfglTexImage2D (GL_TEXTURE_2D, 0, GL_COLOR_INDEX8_EXT, scaled_width,
-		      scaled_height, 0, GL_COLOR_INDEX, GL_UNSIGNED_BYTE, scaled);
+					scaled_height, 0, GL_COLOR_INDEX, GL_UNSIGNED_BYTE,
+					scaled);
 
 	if (mipmap) {
 		int         miplevel;
@@ -475,8 +470,8 @@ GL_Upload8_EXT (byte * data, int width, int height, qboolean mipmap,
 			scaled_height = max (scaled_height, 1);
 			miplevel++;
 			qfglTexImage2D (GL_TEXTURE_2D, miplevel, GL_COLOR_INDEX8_EXT,
-				      scaled_width, scaled_height, 0, GL_COLOR_INDEX,
-				      GL_UNSIGNED_BYTE, scaled);
+							scaled_width, scaled_height, 0, GL_COLOR_INDEX,
+							GL_UNSIGNED_BYTE, scaled);
 		}
 	}
  
@@ -501,7 +496,7 @@ GL_Upload8_EXT (byte * data, int width, int height, qboolean mipmap,
 
 
 void
-GL_Upload8 (byte * data, int width, int height, qboolean mipmap, qboolean alpha)
+GL_Upload8 (byte *data, int width, int height, qboolean mipmap, qboolean alpha)
 {
 	int           i, s, p;
 	unsigned int *trans;
@@ -538,23 +533,27 @@ GL_Upload8 (byte * data, int width, int height, qboolean mipmap, qboolean alpha)
 }
 
 int
-GL_LoadTexture (const char *identifier, int width, int height, byte * data,
-		qboolean mipmap, qboolean alpha, int bytesperpixel)
+GL_LoadTexture (const char *identifier, int width, int height, byte *data,
+				qboolean mipmap, qboolean alpha, int bytesperpixel)
 {
 	int          crc, i;
 	gltexture_t *glt;
 
 	// LordHavoc: now just using a standard CRC for texture validation
-	crc = CRC_Block (data, width * height * bytesperpixel);
+	if (bytesperpixel == 1)
+		crc = CRC_Block (data, width * height * bytesperpixel);
+	else
+		crc = CRC_Block (data, width * height * 4);
 
 	// see if the texture is already present
 	if (identifier[0]) {
 		for (i = 0, glt = gltextures; i < numgltextures; i++, glt++) {
 			if (strequal (identifier, glt->identifier)) {
 				if (crc != glt->crc
-				    || width != glt->width
+					|| width != glt->width
 				    || height != glt->height
-				    || bytesperpixel != glt->bytesperpixel) goto SetupTexture;
+				    || bytesperpixel != glt->bytesperpixel)
+					goto SetupTexture;
 				else
 					return gltextures[i].texnum;
 			}
@@ -586,12 +585,15 @@ SetupTexture:
 	case 1:
 		GL_Upload8 (data, width, height, mipmap, alpha);
 		break;
+	case 3:
+		GL_Upload32 ((GLuint *) data, width, height, mipmap, 0);
+		break;
 	case 4:
 		GL_Upload32 ((GLuint *) data, width, height, mipmap, alpha);
 		break;
 	default:
 		Sys_Error ("SetupTexture: unknown bytesperpixel %i",
-			   glt->bytesperpixel);
+				   glt->bytesperpixel);
 	}
 
 	return glt->texnum;

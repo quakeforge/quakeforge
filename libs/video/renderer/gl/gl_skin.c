@@ -96,10 +96,7 @@ build_skin_8 (byte * original, int tinwidth, int tinheight,
 			  unsigned int scaled_width, unsigned int scaled_height,
 			  int inwidth, qboolean alpha)
 {
-	/*
-		any improvements in here should be mirrored in
-		GL_Resample8BitTexture in gl_textures.c
-	*/
+	//  Improvements should be mirrored in GL_ResampleTexture in gl_textures.c
 	byte        *inrow;
 	byte         pixels[512 * 256], *out;
 	int          i, j;
@@ -126,10 +123,7 @@ build_skin_32 (byte * original, int tinwidth, int tinheight,
 			   unsigned int scaled_width, unsigned int scaled_height,
 			   int inwidth, qboolean alpha)
 {
-	/*
-		any improvements in here should be mirrored in
-		GL_ResampleTexture in gl_textures.c
-	*/
+	//  Improvements should be mirrored in GL_ResampleTexture in gl_textures.c
 	byte        *inrow;
 	int          i, j;
 	int          samples = alpha ? gl_alpha_format : gl_solid_format;
@@ -148,9 +142,8 @@ build_skin_32 (byte * original, int tinwidth, int tinheight,
 		}
 	}
 
-	qfglTexImage2D (GL_TEXTURE_2D, 0, samples,
-				  scaled_width, scaled_height, 0, GL_RGBA,
-				  GL_UNSIGNED_BYTE, pixels);
+	qfglTexImage2D (GL_TEXTURE_2D, 0, samples, scaled_width, scaled_height, 0,
+					GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -175,11 +168,11 @@ build_skin (int texnum, byte *ptexels, int width, int height,
 	scaled_height >>= gl_playermip->int_val;
 
 	if (VID_Is8bit ()) {				// 8bit texture upload
-		build_skin_8 (ptexels, owidth, oheight, scaled_width,
-					  scaled_height, width, alpha);
+		build_skin_8 (ptexels, owidth, oheight, scaled_width, scaled_height,
+					  width, alpha);
 	} else {
-		build_skin_32 (ptexels, owidth, oheight, scaled_width,
-					   scaled_height, width, alpha);
+		build_skin_32 (ptexels, owidth, oheight, scaled_width, scaled_height,
+					   width, alpha);
 	}
 }
 
@@ -191,7 +184,7 @@ Skin_Do_Translation (skin_t *player_skin, int slot, skin_t *skin)
 	int         texnum = skin->texture;
 	tex_t      *skin_texels;
 
-	if ((skin_texels = (tex_t*)Skin_Cache (player_skin)) != NULL) {
+	if ((skin_texels = (tex_t *) Skin_Cache (player_skin)) != NULL) {
 		// skin data width
 		inwidth = 320;
 		inheight = 200;

@@ -86,7 +86,8 @@ R_LoadSkys (const char *skyname)
 		if (!f) {
 			Con_DPrintf ("Couldn't load %s\n", name);
 			// also look in gfx/env, where Darkplaces looks for skies
-			snprintf (name, sizeof (name), "gfx/env/%s%s.tga", skyname, suf[i]);
+			snprintf (name, sizeof (name), "gfx/env/%s%s.tga", skyname,
+					  suf[i]);
 			COM_FOpenFile (name, &f);
 			if (!f) {
 				Con_DPrintf ("Couldn't load %s\n", name);
@@ -97,14 +98,9 @@ R_LoadSkys (const char *skyname)
 		targa = LoadTGA (f);
 		Qclose (f);
 
-		if (targa->format < 4)
-			qfglTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, targa->width,
-							targa->height, 0, GL_RGB, GL_UNSIGNED_BYTE,
-							&targa->data);
-		else
-			qfglTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, targa->width,
-							targa->height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-							&targa->data);
+		qfglTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, targa->width,
+						targa->height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+						&targa->data);
 
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

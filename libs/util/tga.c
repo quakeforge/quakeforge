@@ -56,6 +56,7 @@ blit_rgb (byte *buf, int count, byte red, byte green, byte blue)
 		*buf++ = red;
 		*buf++ = green;
 		*buf++ = blue;
+		*buf++ = 255;
 	}
 	return buf;
 }
@@ -147,7 +148,7 @@ LoadTGA (QFile *fin)
 
 	switch (targa->pixel_size) {
 		case 24:
-			tex = Hunk_TempAlloc (field_offset (tex_t, data[numPixels * 3]));
+			tex = Hunk_TempAlloc (field_offset (tex_t, data[numPixels * 4]));
 			tex->format = tex_rgb;
 			break;
 		default:
@@ -165,7 +166,7 @@ LoadTGA (QFile *fin)
 	dataByte = (byte *) (targa + 1);
 	dataByte += targa->id_length;
 
-	span = columns * tex->format;
+	span = columns * 4; // tex->format
 	pixrow = tex->data + (rows - 1) * span;
 
 	if (targa->image_type == 2) {	// Uncompressed image
