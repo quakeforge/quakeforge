@@ -148,7 +148,7 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 		int         len;
 		len = strlen (*dir) + strlen (fname) + 2;
 		path = Hunk_TempAlloc (len);
-		sprintf (path, "%s/%s", *dir, fname);
+		sprintf (path, "%s%s%s", *dir, **dir ? "/" : "", fname);
 		f->text = pr->load_file (pr, path);
 	}
 	if (!f->text) {
