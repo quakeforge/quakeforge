@@ -168,12 +168,10 @@ Mod_LoadModel (model_t *mod, qboolean crash)
 model_t *
 Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 {
-	byte		  stackbuf[1024];		// avoid dirtying the cache heap
 	unsigned int *buf;
 
 	// load the file
-	buf = (unsigned int *) COM_LoadStackFile (mod->name, stackbuf,
-											  sizeof (stackbuf));
+	buf = (unsigned int *) COM_LoadFile (mod->name, 0);
 	if (!buf) {
 		if (crash)
 			Sys_Error ("Mod_LoadModel: %s not found", mod->name);
@@ -228,6 +226,7 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 			Mod_LoadExternalTextures (mod);
 			break;
 	}
+	free (buf);
 
 	return mod;
 }
