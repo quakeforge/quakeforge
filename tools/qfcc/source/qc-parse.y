@@ -393,7 +393,11 @@ var_initializer
 				def_initialized (current_def);
 			} else {
 				if ($2->type >= ex_string) {
-					current_def = ReuseConstant ($2,  current_def);
+					if (current_def->type->type == ev_func) {
+						PARSE_ERROR;
+					} else {
+						current_def = ReuseConstant ($2,  current_def);
+					}
 				} else {
 					error ($2, "non-constant expression used for initializer");
 				}

@@ -91,6 +91,19 @@ reverse_params (param_t *params)
 	return _reverse_params (params, 0);
 }
 
+param_t *
+copy_params (param_t *params)
+{
+	param_t    *n_parms = 0, **p = &n_parms;
+
+	while (params) {
+		*p = new_param (params->selector, params->type, params->name);
+		params = params->next;
+		p = &(*p)->next;
+	}
+	return n_parms;
+}
+
 type_t *
 parse_params (type_t *type, param_t *parms)
 {

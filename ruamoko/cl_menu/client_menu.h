@@ -3,6 +3,6 @@
 
 #include "InputLine.h"
 
-@extern inputline_t input_active;
+@extern InputLine input_active;
 
 #endif

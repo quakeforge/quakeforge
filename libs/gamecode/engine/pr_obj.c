@@ -218,7 +218,7 @@ obj_msg_lookup_super (progs_t *pr, pr_id_t *receiver, pr_sel_t *op)
 	if (!super)
 		PR_RunError (pr, "%s has no super class",
 					 PR_GetString (pr, class->name));
-	return obj_find_message (pr, class, op);
+	return obj_find_message (pr, super, op);
 }
 
 static void

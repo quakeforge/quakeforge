@@ -304,9 +304,9 @@ string lanConfig_portname;
 string lanConfig_joinname;
 #define NUM_LANCONFIG_CMDS 3
 integer [NUM_LANCONFIG_CMDS] lanConfig_cursor_table = { 72, 92, 124 };
-inputline_t lanConfig_port_il;
-inputline_t lanConfig_join_il;
-inputline_t input_active;
+InputLine lanConfig_port_il;
+InputLine lanConfig_join_il;
+InputLine input_active;
 
 integer () join_draw =
 {
@@ -331,14 +331,14 @@ integer () lanconfig_draw =
 	Draw_String (basex + 9 * 8, 52, "127.0.0.1");
 	Draw_String (basex, lanConfig_cursor_table[0], "Port");
 	text_box (basex + 8 * 8, lanConfig_cursor_table[0] - 8, 6, 1);
-	InputLine_Draw (lanConfig_port_il, basex + 8 * 8, lanConfig_cursor_table[0], lanConfig_cursor == 0 && input_active);
+	[lanConfig_port_il draw:lanConfig_cursor == 0 && input_active];
 	Draw_String (basex + 9 * 8, lanConfig_cursor_table[0], lanConfig_portname);
 
 	if (JoiningGame) {
 		Draw_String (basex, lanConfig_cursor_table[1], "Search for local games...");
 		Draw_String (basex, 108, "Join game at:");
 		text_box (basex + 8, lanConfig_cursor_table[2] - 8, 22, 1);
-		InputLine_Draw (lanConfig_join_il, basex + 8, lanConfig_cursor_table[2], lanConfig_cursor == 2 && input_active);
+		[lanConfig_join_il draw:lanConfig_cursor == 2 && input_active];
 		Draw_String (basex + 16, lanConfig_cursor_table[2], lanConfig_joinname);
 	} else {
 		text_box (basex, lanConfig_cursor_table[1] - 8, 2, 1);
@@ -354,7 +354,7 @@ integer () lanconfig_draw =
 integer (integer key, integer unicode, integer down) lanconfig_keyevent =
 {
 	if (input_active)
-		InputLine_Process (input_active, key >= 256 ? key : unicode);
+		[input_active processInput:(key >= 256 ? key : unicode)];
 	switch (key) {
 		case QFK_DOWN:
 		case QFM_WHEEL_DOWN:
@@ -476,10 +476,10 @@ void () main_menu =
 
 void () menu_init =
 {
-	lanConfig_port_il = InputLine_Create (4, 8, ' ');
-	InputLine_SetWidth (lanConfig_port_il, 10);
-	lanConfig_join_il = InputLine_Create (4, 24, ' ');
-	InputLine_SetWidth (lanConfig_join_il, 26);
+	id (lanConfig_port_il) = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:126 :lanConfig_cursor_table[0] :4 :8] promptCharacter:' '];
+	[lanConfig_port_il setWidth:10];
+	id (lanConfig_join_il) = [[InputLine alloc] initWithBounds:[[Rect alloc] initWithComponents:70 :lanConfig_cursor_table[2] :4 :24] promptCharacter:' '];
+	[lanConfig_join_il setWidth:26];
 	switch (gametype ()) {
 	case "netquake":
 		do_single_player = 1;

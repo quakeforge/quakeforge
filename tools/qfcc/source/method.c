@@ -167,6 +167,19 @@ new_keywordarg (const char *selector, struct expr_s *expr)
 	return k;
 }
 
+keywordarg_t *
+copy_keywordargs (const keywordarg_t *kwargs)
+{
+	keywordarg_t *n_kwargs = 0, **kw = &n_kwargs;
+
+	while (kwargs) {
+		*kw = new_keywordarg (kwargs->selector, kwargs->expr);
+		kwargs = kwargs->next;
+		kw = &(*kw)->next;
+	}
+	return n_kwargs;
+}
+
 expr_t *
 send_message (int super)
 {

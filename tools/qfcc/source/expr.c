@@ -1688,6 +1688,9 @@ function_expr (expr_t *e1, expr_t *e2)
 	}
 	for (i = 0; i < arg_expr_count - 1; i++) {
 		append_expr (call, assign_expr (arg_exprs[i][1], arg_exprs[i][0]));
+		e = arg_exprs[i][1];
+		if (e->type == ex_expr && e->e.expr.op == 'b')
+			inc_users (e);
 	}
 	if (arg_expr_count) {
 		e = new_bind_expr (arg_exprs[arg_expr_count - 1][0],
@@ -2108,6 +2111,8 @@ selector_expr (keywordarg_t *selector)
 	dstring_t  *sel_id = dstring_newstr ();
 	dstring_t  *sel_types = dstring_newstr ();
 	expr_t     *sel;
+
+	selector = copy_keywordargs (selector);
 	selector = (keywordarg_t *) reverse_params ((param_t *) selector);
 	selector_name (sel_id, selector);
 	selector_types (sel_types, selector);
