@@ -456,8 +456,8 @@ func_defs
 	;
 
 func_term
-	: non_code_func ';'
-	| code_func opt_semi
+	: non_code_func ';' {}
+	| code_func opt_semi {}
 	;
 
 func_def_list
