@@ -70,7 +70,7 @@ Find_Global_Def_offs (int offs)
 
 	d.offset = offs;
 	strcpy (rep, get_key_offs (&d, 0));
-	return Hash_Find (global_defs_by_name, rep);
+	return Hash_Find (global_defs_by_offs, rep);
 }
 
 def_t *
@@ -87,5 +87,5 @@ Find_Field_Def_offs (int offs)
 
 	d.offset = offs;
 	strcpy (rep, get_key_offs (&d, 0));
-	return Hash_Find (field_defs_by_name, rep);
+	return Hash_Find (field_defs_by_offs, rep);
 }

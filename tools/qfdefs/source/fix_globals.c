@@ -36,6 +36,7 @@ fix_missing_globals (progs_t *pr, def_t *globals)
 	ddef_t **new_defs, *d, **n;
 	char *new_strings;
 	dprograms_t *progs;
+	int offs;
 
 	for (def = globals; def->name; def ++) {
 		if (!PR_FindGlobal (pr, def->name)) {
@@ -69,32 +70,31 @@ fix_missing_globals (progs_t *pr, def_t *globals)
 		}
 	}
 	new_strings = calloc (strings_size, 1);
-	for (i = 0; i < 0; i++) {
-		def = Find_Global_Def_offs (n[i]->ofs);
-		strcpy (new_strings + n[i]->s_name, def->name);
-		n[i]->s_name += pr->pr_stringsize;
+	for (i = 0; i < defs_count; i++) {
+		def = Find_Global_Def_offs (new_defs[i]->ofs);
+		strcpy (new_strings + new_defs[i]->s_name, def->name);
+		new_defs[i]->s_name += pr->pr_stringsize;
 	}
 
 	defs_size = defs_count * sizeof (ddef_t);
 	progs = malloc (pr->progs_size + strings_size + defs_size);
 	memcpy (progs, pr->progs, pr->progs_size);
 
-	memmove ((char*)progs + progs->ofs_globaldefs + defs_size,
-			 (char*)progs + progs->ofs_globaldefs
-				+ progs->numglobaldefs * sizeof (ddef_t),
-			 pr->progs_size - (progs->ofs_globaldefs + progs->numglobaldefs));
-	memcpy ((char*)progs + progs->ofs_globaldefs
-				+ progs->numglobaldefs * sizeof (ddef_t),
-			new_defs, defs_size);
+	offs = progs->ofs_globaldefs + progs->numglobaldefs * sizeof (ddef_t);
+
+	memmove ((char*)progs + offs + defs_size, (char*)progs + offs,
+			 pr->progs_size - offs);
+	memcpy ((char*)progs + offs, new_defs, defs_size);
+
 	progs->numglobaldefs += defs_count;
 	pr->progs_size += defs_size;
 	update_offsets (progs, progs->ofs_globaldefs, defs_size);
 
-	memmove ((char*)progs + progs->ofs_strings + strings_size,
-			 (char*)progs + progs->ofs_strings + progs->numstrings,
-			 pr->progs_size - (progs->ofs_strings + progs->numstrings));
-	memcpy ((char*)progs + progs->ofs_globaldefs + progs->numstrings,
-			new_strings, strings_size);
+	offs = progs->ofs_strings + progs->numstrings;
+	memmove ((char*)progs + offs + strings_size, (char*)progs + offs,
+			 pr->progs_size - offs);
+	memcpy ((char*)progs + offs, new_strings, strings_size);
+
 	progs->numstrings += strings_size;
 	pr->progs_size += strings_size;
 	update_offsets (progs, progs->ofs_strings, strings_size);
