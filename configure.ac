@@ -906,7 +906,7 @@ QF_maGiC_VALUE
 	    )
 	fi
 fi
-if HAVE_ALSA == "no"; then
+if ["$HAVE_ALSA" == "no"]; then
     if test "x$enable_alsa" != "xno"; then
 	if test "x$ac_cv_header_sys_asoundlib_h" = "xyes" -o \
 		"x$ac_cv_header_alsa_asoundlib_h" = "xyes"; then
