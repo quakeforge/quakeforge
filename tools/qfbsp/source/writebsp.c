@@ -294,11 +294,11 @@ typedef struct {
 
 typedef struct wadlist_s {
 	struct wadlist_s *next;
+	const char *path;
 	wadinfo_t   wadinfo;
 	lumpinfo_t *lumpinfo;
 } wadlist_t;
 
-QFile      *texfile;
 wadlist_t  *wadlist;
 
 static void
@@ -322,17 +322,19 @@ TEX_InitFromWad (char *path)
 {
 	int         i;
 	wadlist_t  *wl;
+	QFile      *texfile;
 
 	texfile = Qopen (path, "rbz");
 #ifdef HAVE_ZLIB
 	if (!texfile)
-		texfile = Qopen (va ("%s.gz", path), "rbz");
+		texfile = Qopen (path = va ("%s.gz", path), "rbz");
 #endif
 	if (!texfile)
 		return -1;
 	printf ("wadfile: %s\n", path);
 
 	wl = calloc (1, sizeof (wadlist_t));
+	wl->path = strdup (path);
 
 	Qread (texfile, &wl->wadinfo, sizeof (wadinfo_t));
 	if (strncmp (wl->wadinfo.identification, "WAD2", 4))
@@ -342,6 +344,7 @@ TEX_InitFromWad (char *path)
 	Qseek (texfile, wl->wadinfo.infotableofs, SEEK_SET);
 	wl->lumpinfo = malloc (wl->wadinfo.numlumps * sizeof (lumpinfo_t));
 	Qread (texfile, wl->lumpinfo, wl->wadinfo.numlumps * sizeof (lumpinfo_t));
+	Qclose (texfile);
 
 	for (i = 0; i < wl->wadinfo.numlumps; i++) {
 		CleanupName (wl->lumpinfo[i].name, wl->lumpinfo[i].name);
@@ -357,9 +360,10 @@ static int
 LoadLump (char *name, dstring_t *dest)
 {
 	char        cname[16];		//FIXME: overflow
-	int         i;
+	int         i, r;
 	int         ofs = dest->size;
 	wadlist_t  *wl;
+	QFile      *texfile;
 
 	CleanupName (name, cname);
 
@@ -368,8 +372,25 @@ LoadLump (char *name, dstring_t *dest)
 			if (!strcmp (cname, wl->lumpinfo[i].name)) {
 				dest->size += wl->lumpinfo[i].disksize;
 				dstring_adjust (dest);
-				Qseek (texfile, wl->lumpinfo[i].filepos, SEEK_SET);
-				Qread (texfile, dest->str + ofs, wl->lumpinfo[i].disksize);
+				texfile = Qopen (wl->path, "rbz");
+				if (!texfile) {
+					printf ("couldn't open %s\n", wl->path);
+					continue;
+				}
+				r = Qseek (texfile, wl->lumpinfo[i].filepos, SEEK_SET);
+				if (r == -1) {
+					printf ("seek error: %s:%s %d\n", wl->path,
+							wl->lumpinfo[i].name, wl->lumpinfo[i].filepos);
+					Qclose (texfile);
+					continue;
+				}
+				r = Qread (texfile, dest->str + ofs, wl->lumpinfo[i].disksize);
+				Qclose (texfile);
+				if (r != wl->lumpinfo[i].disksize) {
+					printf ("seek error: %s:%s %d\n", wl->path,
+							wl->lumpinfo[i].name, wl->lumpinfo[i].disksize);
+					continue;
+				}
 				return wl->lumpinfo[i].disksize;
 			}
 		}
