@@ -37,14 +37,18 @@ YFLAGS = -d
 
 if BUILD_QFCC
 qfcc=qfcc
+qfpreqcc=qfpreqcc
 qfprogs=qfprogs
 else
 qfcc=
+qfpreqcc=
 qfprogs=
 endif
 
 bin_PROGRAMS=	$(qfcc) $(qfprogs)
+bin_SCRIPTS=	$(qfpreqcc)
 EXTRA_PROGRAMS= qfcc qfprogs
+EXTRA_SCRIPTS=	qfpreqcc
 
 qfcc_SOURCES= \
 	class.c constfold.c cpp.c debug.c def.c emit.c expr.c function.c \
