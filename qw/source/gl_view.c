@@ -63,7 +63,7 @@ float            v_blend[4];
 	V_CalcBlend
 
 	LordHavoc made this a real, true alpha blend.  Cleaned it up
-	 a bit, but otherwise this is his code.  --KB
+	a bit, but otherwise this is his code.  --KB
 */
 void
 V_CalcBlend (void)
@@ -155,6 +155,12 @@ V_CalcPowerupCshift (void)
 }
 
 
+/*
+	V_UpdatePalette
+
+	In software, this function (duh) updates the palette. In GL, all it does is
+	set up some values for shifting the screen color in a particular direction.
+*/
 void
 V_UpdatePalette (void)
 {

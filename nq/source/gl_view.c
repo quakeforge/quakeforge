@@ -1,4 +1,3 @@
-
 /*
 	gl_view.c
 
@@ -30,12 +29,14 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-#ifdef HAVE_STRING_H 
-# include <string.h> 
-#endif 
-#ifdef HAVE_STRINGS_H 
-# include <strings.h> 
-#endif 
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
+#include <stdio.h>
 
 #include "QF/compat.h"
 
@@ -43,25 +44,22 @@
 #include "glquake.h"
 #include "view.h"
 
-extern double      host_frametime; 
+extern double    host_frametime;
 
-extern byte        gammatable[256];
+extern byte      gammatable[256];
 
-extern qboolean    V_CheckGamma (void);
+extern qboolean  V_CheckGamma (void);
 
-extern void        V_CalcIntermissionRefdef (void);
-extern void        V_CalcRefdef (void);
+extern void      V_CalcIntermissionRefdef (void);
+extern void      V_CalcRefdef (void);
 
-extern cvar_t     *crosshair;
 extern cvar_t     *gl_cshiftpercent;
-extern cvar_t	  *cl_cshift_powerup;
+extern cvar_t    *cl_cshift_powerup;
 
-extern cvar_t     *scr_ofsx;
-extern cvar_t     *scr_ofsy;
-extern cvar_t     *scr_ofsz;
 
-byte        ramps[3][256];
-float       v_blend[4];					// rgba 0.0 - 1.0
+byte             ramps[3][256];
+float            v_blend[4];
+
 
 
 /*
@@ -74,7 +72,7 @@ void
 V_CalcBlend (void)
 {
 	float       r = 0, g = 0, b = 0, a = 0;
-	float       a2, a3;
+	float		a2, a3;
 	int         i;
 
 	for (i = 0; i < NUM_CSHIFTS; i++) {
@@ -96,21 +94,21 @@ V_CalcBlend (void)
 	}
 
 	if ((a2 = 1 - bound (0.0, contrast->value, 1.0)) < 0.999) { // add contrast
-        r += (128 - r) * a2; 
-        g += (128 - g) * a2; 
-        b += (128 - b) * a2; 
- 
-        a3 = (1.0 - a) * (1.0 - a2); 
-        a = 1.0 - a3; 
-    } 
- 
-    // LordHavoc: saturate color 
-    if (a) { 
-        a2 = 1.0 / a; 
-        r *= a2; 
-        g *= a2; 
-        b *= a2; 
-    } 
+		r += (128 - r) * a2;
+		g += (128 - g) * a2;
+		b += (128 - b) * a2;
+
+		a3 = (1.0 - a) * (1.0 - a2);
+		a = 1.0 - a3;
+	}
+
+	// LordHavoc: saturate color
+	if (a) {
+		a2 = 1.0 / a;
+		r *= a2;
+		g *= a2;
+		b *= a2;
+	}
 
 	v_blend[0] = min (r, 255.0) / 255.0;
 	v_blend[1] = min (g, 255.0) / 255.0;
