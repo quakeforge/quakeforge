@@ -62,7 +62,6 @@ static struct option const long_options[] = {
 	{"source",	required_argument,	0, 's'},
 	{"quiet",	no_argument,		0, 'q'},
 	{"verbose",	no_argument,		0, 'v'},
-	{NULL,		no_argument,		0, 'g'},
 	{"code",	required_argument,	0, 'C'},
 	{"warn",	required_argument,	0, 'W'},
 	{"help",	no_argument,		0, 'h'},
