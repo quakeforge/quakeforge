@@ -7,7 +7,7 @@ struct _qpic_t = {
 	integer width;
 	integer height;
 };
-typedef _qpic_t [] qpic_t;
+typedef struct _qpic_t [] qpic_t;
 
 @extern qpic_t (string name, integer alpha) Draw_CachePic;
 
@@ -25,7 +25,7 @@ typedef _qpic_t [] qpic_t;
 @interface QPic : Object
 {
 	string	name;
-	_qpic_t	size;
+	struct _qpic_t size;
 	BOOL	centered;
 }
 -initName:(string)n;

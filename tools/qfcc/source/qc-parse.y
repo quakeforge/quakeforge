@@ -118,6 +118,7 @@ expr_t *argv_expr (void);
 	struct protocol_s *protocol;
 	struct keywordarg_s *keywordarg;
 	struct methodlist_s *methodlist;
+	struct struct_s *strct;
 }
 
 %right	<op> '=' ASX PAS /* pointer assign */
@@ -172,7 +173,7 @@ expr_t *argv_expr (void);
 %type	<category> category_name new_category_name
 %type	<protocol> protocol_name
 %type	<methodlist> methodprotolist methodprotolist2
-%type	<type>	ivar_decl_list
+%type	<strct>	ivar_decl_list
 
 %expect 4
 
@@ -186,9 +187,9 @@ expr_t	*local_expr;
 expr_t	*break_label;
 expr_t	*continue_label;
 switch_block_t *switch_block;
-type_t	*struct_type;
-visibility_t current_visibility;
-type_t	*current_ivars;
+struct_t *current_struct;
+visibility_type current_visibility;
+struct_t *current_ivars;
 scope_t *current_scope;
 storage_class_t current_storage;
 
@@ -209,9 +210,11 @@ def
 	| storage_class type { $$ = $2; } def_list { }
 	| storage_class '{' simple_defs '}' { }
 	| STRUCT NAME
-	  { struct_type = new_struct ($2); } '=' '{' struct_defs '}' { }
+	  { current_struct = new_struct ($2); } '=' '{' struct_defs '}' { }
 	| UNION NAME
-	  { struct_type = new_union ($2); } '=' '{' struct_defs '}' { }
+	  { current_struct = new_union ($2); } '=' '{' struct_defs '}' { }
+	| STRUCT NAME			{ decl_struct ($2)->type; }
+	| UNION NAME			{ decl_union ($2)->type; }
 	| ENUM '{' enum_list opt_comma '}'
 	  { process_enum ($3); }
 	| TYPEDEF type NAME
@@ -246,7 +249,7 @@ struct_defs
 			class_t    *class = get_class ($3, 0);
 
 			if (class) {
-				copy_struct_fields (struct_type, class->ivars);
+				copy_struct_fields (current_struct, class->ivars);
 			} else {
 				error (0, "undefined symbol `%s'", $3);
 			}
@@ -320,6 +323,8 @@ type_name
 			}
 			$$ = class->type;
 		}
+	| STRUCT NAME			{ $$ = decl_struct ($2)->type; }
+	| UNION NAME			{ $$ = decl_union ($2)->type; }
 	;
 
 function_decl
@@ -372,7 +377,7 @@ struct_def_list
 	;
 
 struct_def_item
-	: NAME { new_struct_field (struct_type, $<type>0, $1, vis_public); }
+	: NAME { new_struct_field (current_struct, $<type>0, $1, vis_public); }
 	;
 
 def_list
@@ -1022,7 +1027,8 @@ classdef
 	  END								{ current_class = 0; }
 	| INTERFACE new_class_name
 	  protocolrefs			{ class_add_protocol_methods ($2, $3); $$ = $2; }
-	  methodprotolist					{ class_add_methods ($2, $5); }
+								{ class_add_ivars ($2, class_new_ivars ($2)); }
+	  methodprotolist					{ class_add_methods ($2, $6); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_class_with_super
 	  protocolrefs						{ class_add_protocol_methods ($2, $3);}
@@ -1032,7 +1038,8 @@ classdef
 	  END								{ current_class = 0; }
 	| INTERFACE new_class_with_super
 	  protocolrefs			{ class_add_protocol_methods ($2, $3); $$ = $2; }
-	  methodprotolist					{ class_add_methods ($2, $5); }
+								{ class_add_ivars ($2, class_new_ivars ($2)); }
+	  methodprotolist					{ class_add_methods ($2, $6); }
 	  END								{ current_class = 0; }
 	| INTERFACE new_category_name
 	  protocolrefs	{ category_add_protocol_methods ($2, $3); $$ = $2->class;}
@@ -1078,11 +1085,7 @@ ivar_decl_list
 	:	/* */
 		{
 			current_visibility = vis_protected;
-			current_ivars = new_struct (0);
-			if ($<class>0->super_class)
-				new_struct_field (current_ivars,
-								  $<class>0->super_class->ivars, 0,
-								  vis_private);
+			current_ivars = class_new_ivars ($<class>0);
 		}
 	  ivar_decl_list_2
 		{

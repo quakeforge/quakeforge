@@ -94,7 +94,7 @@ check_for_name (type_t *type, const char *name, scope_t *scope,
 	}
 	if (!name)
 		return 0;
-	if (scope->type == sc_global && (find_struct (name) || get_enum (name))) {
+	if (scope->type == sc_global && get_enum (name)) {
 		error (0, "%s redeclared", name);
 		return 0;
 	}
@@ -102,8 +102,11 @@ check_for_name (type_t *type, const char *name, scope_t *scope,
 	def = (def_t *) Hash_Find (defs_by_name, name);
 	if (def) {
 		if (storage != st_none && scope == def->scope)
-			if (type && def->type != type)
+			if (type && def->type != type) {
+				print_type (type);
+				print_type (def->type);
 				error (0, "Type mismatch on redeclaration of %s", name);
+			}
 		if (storage == st_none || def->scope == scope)
 			return def;
 	}

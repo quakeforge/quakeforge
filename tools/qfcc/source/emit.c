@@ -342,13 +342,13 @@ emit_move_expr (expr_t *e)
 	if (dst_type->type == ev_struct && src_type->type == ev_struct) {
 		size_expr = new_short_expr (type_size (dst->type));
 	} else if (dst_type->type == ev_struct) {
-		if (dst->alias)
-			dst = dst->alias;
+		//if (dst->alias)
+		//	dst = dst->alias;
 		dst = emit_sub_expr (address_expr (new_def_expr (dst), 0, 0), 0);
 		size_expr = new_integer_expr (type_size (dst_type));
 	} else if (src_type->type == ev_struct) {
-		if (src->alias)
-			src = src->alias;
+		//if (src->alias)
+		//	src = src->alias;
 		src = emit_sub_expr (address_expr (new_def_expr (src), 0, 0), 0);
 		size_expr = new_integer_expr (type_size (dst_type->aux_type));
 	} else {
@@ -399,6 +399,14 @@ emit_deref_expr (expr_t *e, def_t *dest)
 			op = opcode_find (".", d->type, z->type, dest->type);
 			d = emit_statement (e, op, d, z, dest);
 		}
+		return d;
+	}
+	if (e->type == ex_uexpr && e->e.expr.op == '&'
+		&& e->e.expr.e1->type == ex_def) {
+		d = new_def (e->e.expr.type->aux_type, 0, current_scope);
+		d->alias = e->e.expr.e1->e.def;
+		d->local = d->alias->local;
+		d->ofs = d->alias->ofs;
 		return d;
 	}
 	if (!dest) {

@@ -3,17 +3,11 @@
 
 #include "Object.h"
 
-struct list_bucket_t = {
-	list_bucket_t [] next;
-	list_bucket_t [][] prev;
-	id obj;
-};
-
 @interface List: Object
 {
 	integer count;
-	list_bucket_t [] head;
-	list_bucket_t [][] tail;
+	struct list_bucket_s [] head;
+	struct list_bucket_s [][] tail;
 }
 - (id) init;
 - (void) free;

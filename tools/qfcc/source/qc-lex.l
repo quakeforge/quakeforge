@@ -378,7 +378,7 @@ type_or_name (char *token)
 	if (token[0] == '@') {
 		return '@';
 	}
-	if ((type = find_struct (token)) || (type = get_typedef (token))) {
+	if ((type = get_typedef (token))) {
 		yylval.type = type;
 		return TYPE;
 	}

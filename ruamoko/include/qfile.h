@@ -2,7 +2,7 @@
 #define __ruamoko_qfile_h
 
 struct _qfile_t = {};
-typedef _qfile_t [] QFile;
+typedef struct _qfile_t [] QFile;
 
 @extern integer (string old, string new) Qrename;
 @extern integer (string path) Qremove;

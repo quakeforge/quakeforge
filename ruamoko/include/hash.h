@@ -2,7 +2,7 @@
 #define __ruamoko_hash_h
 
 struct _hashtab_t = {};
-typedef _hashtab_t [] hashtab_t;
+typedef struct _hashtab_t [] hashtab_t;
 
 @extern hashtab_t () Hash_NewTable;
 @extern void () Hash_SetHashCompare;

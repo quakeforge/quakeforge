@@ -98,7 +98,7 @@ type_t      type_va_list;
 type_t      type_param;
 type_t      type_zero;
 
-type_t     *vector_struct;
+struct_t   *vector_struct;
 
 type_t      type_floatfield = { ev_field, ".float", NULL, &type_float };
 
@@ -135,7 +135,7 @@ find_type (type_t *type)
 		if (check->type != type->type
 			|| check->aux_type != type->aux_type
 			|| check->num_parms != type->num_parms
-			|| check->class != type->class)
+			|| check->s.class != type->s.class)
 			continue;
 
 		if (check->type != ev_func)
@@ -279,7 +279,7 @@ print_type (type_t *type)
 			break;
 		case ev_object:
 		case ev_class:
-			printf (" %s", type->class->name);
+			printf (" %s", type->s.class->name);
 			break;
 		case ev_struct:
 			printf (" %s %s", pr_type_name[type->type], type->name);
@@ -369,15 +369,21 @@ _encode_type (dstring_t *encoding, type_t *type, int level)
 			if (type->name) {
 				dstring_appendstr (encoding, type->name);
 			} else if (type->type == ev_object || type->type == ev_class) {
-				dstring_appendstr (encoding, type->class->name);
+				dstring_appendstr (encoding, type->s.class->name);
 			}
 			if (level < 2) {
+				struct_t   *s;
 				if (type->type == ev_struct
-					&& ((struct_t *)type->class)->is_union)
+					&& type->s.strct->stype == str_union)
 					dstring_appendstr (encoding, "-");
 				else
 					dstring_appendstr (encoding, "=");
-				for (field = type->struct_head; field; field = field->next)
+				if (type->type == ev_struct) {
+					s = type->s.strct;
+				} else {
+					s = type->s.class->ivars;
+				}
+				for (field = s->struct_head; field; field = field->next)
 					_encode_type (encoding, field->type, level + 1);
 			}
 			dstring_appendstr (encoding, "}");
@@ -407,6 +413,7 @@ static type_t *
 _parse_type (const char **str)
 {
 	type_t      new;
+	struct_t   *strct;
 	dstring_t  *name;
 	const char *s;
 
@@ -464,9 +471,10 @@ _parse_type (const char **str)
 				return 0;
 			dstring_appendsubstr (name, *str, s - *str);
 			*str = s;
+			strct = 0;
 			if (name->str[0])
-				new.aux_type = find_struct (name->str);
-			if (new.aux_type) {
+				strct = get_struct (name->str, 0);
+			if (strct) {
 				dstring_delete (name);
 				if (**str == '=' || **str == '-') {
 					(*str)++;
@@ -476,24 +484,25 @@ _parse_type (const char **str)
 				if (**str != '}')
 					return 0;
 				(*str)++;
-				return new.aux_type;
+				return strct->type;
 			}
 			if (**str != '=' && **str != '-') {
 				dstring_delete (name);
 				return 0;
 			}
-			new.aux_type = new_struct (*name->str ? name->str : 0);
+			strct = get_struct (*name->str ? name->str : 0, 1);
 			if (**str == '-')
-				((struct_t *) new.aux_type->class)->is_union = 1;
+				init_struct (strct, new_type (), str_union, 0);
+			else
+				init_struct (strct, new_type (), str_struct, 0);
 			dstring_delete (name);
 			(*str)++;
 			while (**str && **str != '}')
-				new_struct_field (new.aux_type, _parse_type (str), 0,
-								  vis_public);
+				new_struct_field (strct, _parse_type (str), 0, vis_public);
 			if (**str != '}')
 				return 0;
 			(*str)++;
-			return new.aux_type;
+			return strct->type;
 		case '[':
 			new.type = ev_array;
 			while (isdigit ((byte)**str)) {
@@ -536,8 +545,8 @@ type_assignable (type_t *dst, type_t *src)
 	if ((dst->type != ev_object && dst->type != ev_class)
 		|| (src->type != ev_object && src->type != ev_class))
 		return 0;
-	dst_class = dst->class;
-	src_class = src->class;
+	dst_class = dst->s.class;
+	src_class = src->s.class;
 	//printf ("%s %s\n", dst_class->class_name, src_class->class_name);
 	if (!dst_class || dst_class == &class_id)
 		return 1;
@@ -556,9 +565,6 @@ type_assignable (type_t *dst, type_t *src)
 int
 type_size (type_t *type)
 {
-	struct_field_t *field;
-	int         size;
-
 	if (!type)
 		return 0;
 	switch (type->type) {
@@ -578,14 +584,12 @@ type_size (type_t *type)
 		case ev_type_count:
 			return pr_type_size[type->type];
 		case ev_struct:
-			return type->num_parms;
+			return type->s.strct->size;
 		case ev_object:
 		case ev_class:
-			for (size = 0, field = type->struct_head;
-				 field;
-				 field = field->next)
-				size += type_size (field->type);
-			return size;
+			if (!type->s.class->ivars)
+				return 0;
+			return type->s.class->ivars->size;
 		case ev_array:
 			return type->num_parms * type_size (type->aux_type);
 	}
@@ -596,113 +600,121 @@ void
 init_types (void)
 {
 	type_t     *type;
+	struct_t   *strct;
 
-	init_struct (malloc (sizeof (struct_t)), type = &type_zero, 0);
-	((struct_t *) type->class)->is_union = 1;
-	new_struct_field (type, &type_string,   "string_val",   vis_public);
-	new_struct_field (type, &type_float,    "float_val",    vis_public);
-	new_struct_field (type, &type_entity,   "entity_val",   vis_public);
-	new_struct_field (type, &type_field,    "field_val",    vis_public);
-	new_struct_field (type, &type_function, "func_val",     vis_public);
-	new_struct_field (type, &type_pointer,  "pointer_val",  vis_public);
-	new_struct_field (type, &type_integer,  "integer_val",  vis_public);
-	new_struct_field (type, &type_uinteger, "uinteger_val", vis_public);
-
-	init_struct (malloc (sizeof (struct_t)), type = &type_param, 0);
-	((struct_t *) type->class)->is_union = 1;
-	new_struct_field (type, &type_string,   "string_val",   vis_public);
-	new_struct_field (type, &type_float,    "float_val",    vis_public);
-	new_struct_field (type, &type_vector,   "vector_val",   vis_public);
-	new_struct_field (type, &type_entity,   "entity_val",   vis_public);
-	new_struct_field (type, &type_field,    "field_val",    vis_public);
-	new_struct_field (type, &type_function, "func_val",     vis_public);
-	new_struct_field (type, &type_pointer,  "pointer_val",  vis_public);
-	new_struct_field (type, &type_integer,  "integer_val",  vis_public);
-	new_struct_field (type, &type_uinteger, "uinteger_val", vis_public);
+	strct = calloc (sizeof (struct_t), 1);
+	init_struct (strct, &type_zero, str_union, 0);
+	new_struct_field (strct, &type_string,   "string_val",   vis_public);
+	new_struct_field (strct, &type_float,    "float_val",    vis_public);
+	new_struct_field (strct, &type_entity,   "entity_val",   vis_public);
+	new_struct_field (strct, &type_field,    "field_val",    vis_public);
+	new_struct_field (strct, &type_function, "func_val",     vis_public);
+	new_struct_field (strct, &type_pointer,  "pointer_val",  vis_public);
+	new_struct_field (strct, &type_integer,  "integer_val",  vis_public);
+	new_struct_field (strct, &type_uinteger, "uinteger_val", vis_public);
 
 	if (options.traditional)
 		return;
 
-	type = vector_struct = new_struct (0);
-	new_struct_field (type, &type_float, "x", vis_public);
-	new_struct_field (type, &type_float, "y", vis_public);
-	new_struct_field (type, &type_float, "z", vis_public);
+	strct = vector_struct = get_struct (0, 1);
+	init_struct (strct, new_type (), str_struct, 0);
+	new_struct_field (strct, &type_float, "x", vis_public);
+	new_struct_field (strct, &type_float, "y", vis_public);
+	new_struct_field (strct, &type_float, "z", vis_public);
 
-	type = type_SEL.aux_type = new_struct (0);
-	new_struct_field (type, &type_string, "sel_id", vis_public);
-	new_struct_field (type, &type_string, "sel_types", vis_public);
+	strct = get_struct (0, 1);
+	init_struct (strct, new_type (), str_struct, 0);
+	new_struct_field (strct, &type_string, "sel_id", vis_public);
+	new_struct_field (strct, &type_string, "sel_types", vis_public);
+	type_SEL.aux_type = strct->type;
 
-	type = type_Method.aux_type = new_struct (0);
-	new_struct_field (type, type_SEL.aux_type, "method_name", vis_public);
-	new_struct_field (type, &type_string, "method_types", vis_public);
-	new_struct_field (type, &type_IMP, "method_imp", vis_public);
+	strct = get_struct (0, 1);
+	init_struct (strct, new_type (), str_struct, 0);
+	new_struct_field (strct, type_SEL.aux_type, "method_name", vis_public);
+	new_struct_field (strct, &type_string, "method_types", vis_public);
+	new_struct_field (strct, &type_IMP, "method_imp", vis_public);
+	type_Method.aux_type = strct->type;
 
-	type = type_Class.aux_type = new_struct (0);
+	strct = get_struct (0, 1);
+	init_struct (strct, type = new_type (), str_struct, 0);
 	type->type = ev_class;
-	type->class = &class_Class;
-	class_Class.ivars = type_Class.aux_type;
-	new_struct_field (type, &type_Class, "class_pointer", vis_public);
-	new_struct_field (type, &type_Class, "super_class", vis_public);
-	new_struct_field (type, &type_string, "name", vis_public);
-	new_struct_field (type, &type_integer, "version", vis_public);
-	new_struct_field (type, &type_integer, "info", vis_public);
-	new_struct_field (type, &type_integer, "instance_size", vis_public);
-	new_struct_field (type, &type_pointer, "ivars", vis_public);
-	new_struct_field (type, &type_pointer, "methods", vis_public);
-	new_struct_field (type, &type_pointer, "dtable", vis_public);
-	new_struct_field (type, &type_pointer, "subclass_list", vis_public);
-	new_struct_field (type, &type_pointer, "sibling_class", vis_public);
-	new_struct_field (type, &type_pointer, "protocols", vis_public);
-	new_struct_field (type, &type_pointer, "gc_object_type", vis_public);
+	type->s.class = &class_Class;
+	new_struct_field (strct, &type_Class, "class_pointer", vis_public);
+	new_struct_field (strct, &type_Class, "super_class", vis_public);
+	new_struct_field (strct, &type_string, "name", vis_public);
+	new_struct_field (strct, &type_integer, "version", vis_public);
+	new_struct_field (strct, &type_integer, "info", vis_public);
+	new_struct_field (strct, &type_integer, "instance_size", vis_public);
+	new_struct_field (strct, &type_pointer, "ivars", vis_public);
+	new_struct_field (strct, &type_pointer, "methods", vis_public);
+	new_struct_field (strct, &type_pointer, "dtable", vis_public);
+	new_struct_field (strct, &type_pointer, "subclass_list", vis_public);
+	new_struct_field (strct, &type_pointer, "sibling_class", vis_public);
+	new_struct_field (strct, &type_pointer, "protocols", vis_public);
+	new_struct_field (strct, &type_pointer, "gc_object_type", vis_public);
+	type_Class.aux_type = strct->type;
+	class_Class.ivars = strct;
 
-	type = type_Protocol.aux_type = new_struct (0);
+	strct = get_struct (0, 1);
+	init_struct (strct, type = new_type (), str_struct, 0);
 	type->type = ev_class;
-	type->class = &class_Protocol;
-	class_Protocol.ivars = type_Protocol.aux_type;
-	new_struct_field (type, &type_Class, "class_pointer", vis_public);
-	new_struct_field (type, &type_string, "protocol_name", vis_public);
-	new_struct_field (type, &type_pointer, "protocol_list", vis_public);
-	new_struct_field (type, &type_pointer, "instance_methods", vis_public);
-	new_struct_field (type, &type_pointer, "class_methods", vis_public);
+	type->s.class = &class_Protocol;
+	new_struct_field (strct, &type_Class, "class_pointer", vis_public);
+	new_struct_field (strct, &type_string, "protocol_name", vis_public);
+	new_struct_field (strct, &type_pointer, "protocol_list", vis_public);
+	new_struct_field (strct, &type_pointer, "instance_methods", vis_public);
+	new_struct_field (strct, &type_pointer, "class_methods", vis_public);
+	type_Protocol.aux_type = strct->type;
+	class_Protocol.ivars = strct;
 
-	type = type_id.aux_type = new_struct ("id");
+	strct = get_struct (0, 1);
+	init_struct (strct, type = new_type (), str_struct, 0);
 	type->type = ev_object;
-	type->class = &class_id;
-	class_id.ivars = type_id.aux_type;
-	new_struct_field (type, &type_Class, "class_pointer", vis_public);
+	type->s.class = &class_id;
+	new_struct_field (strct, &type_Class, "class_pointer", vis_public);
+	type_id.aux_type = strct->type;
+	class_id.ivars = strct;
 
-	type = type_category = new_struct (0);
-	new_struct_field (type, &type_string, "category_name", vis_public);
-	new_struct_field (type, &type_string, "class_name", vis_public);
-	new_struct_field (type, &type_pointer, "instance_methods", vis_public);
-	new_struct_field (type, &type_pointer, "class_methods", vis_public);
-	new_struct_field (type, &type_pointer, "protocols", vis_public);
+	strct = get_struct (0, 1);
+	init_struct (strct, new_type (), str_struct, 0);
+	new_struct_field (strct, &type_string, "category_name", vis_public);
+	new_struct_field (strct, &type_string, "class_name", vis_public);
+	new_struct_field (strct, &type_pointer, "instance_methods", vis_public);
+	new_struct_field (strct, &type_pointer, "class_methods", vis_public);
+	new_struct_field (strct, &type_pointer, "protocols", vis_public);
+	type_category = strct->type;
 
-	type = type_ivar = new_struct (0);
-	new_struct_field (type, &type_string, "ivar_name", vis_public);
-	new_struct_field (type, &type_string, "ivar_type", vis_public);
-	new_struct_field (type, &type_integer, "ivar_offset", vis_public);
+	strct = get_struct (0, 1);
+	init_struct (strct, new_type (), str_struct, 0);
+	new_struct_field (strct, &type_string, "ivar_name", vis_public);
+	new_struct_field (strct, &type_string, "ivar_type", vis_public);
+	new_struct_field (strct, &type_integer, "ivar_offset", vis_public);
+	type_ivar = strct->type;
 
-	init_struct (malloc (sizeof (struct_t)), &type_va_list, 0);
-	new_struct_field (&type_va_list, &type_integer, "count", vis_public);
-	new_struct_field (&type_va_list, pointer_type (&type_param), "list",
-					  vis_public);
+	strct = calloc (sizeof (struct_t), 1);
+	init_struct (strct, &type_va_list, str_union, 0);
+	new_struct_field (strct, &type_integer, "count", vis_public);
+	new_struct_field (strct, pointer_type (&type_param), "list", vis_public);
 
-	type = type_Super.aux_type = new_struct ("Super");
-	new_struct_field (type, &type_id, "self", vis_public);
-	new_struct_field (type, &type_Class, "class", vis_public);
+	strct = get_struct ("Super", 1);
+	init_struct (strct, new_type (), str_struct, 0);
+	new_struct_field (strct, &type_id, "self", vis_public);
+	new_struct_field (strct, &type_Class, "class", vis_public);
+	type_Super.aux_type = strct->type;
 #if 0
 	type = type_module = new_struct ("obj_module_t");
-	new_struct_field (type, &type_integer, "version", vis_public);
-	new_struct_field (type, &type_integer, "size", vis_public);
-	new_struct_field (type, &type_string, "name", vis_public);
-	new_struct_field (type, &type_pointer, "symtab", vis_public);
+	new_struct_field (strct, &type_integer, "version", vis_public);
+	new_struct_field (strct, &type_integer, "size", vis_public);
+	new_struct_field (strct, &type_string, "name", vis_public);
+	new_struct_field (strct, &type_pointer, "symtab", vis_public);
 #endif
 }
 
 void
 chain_initial_types (void)
 {
+	struct_t   *strct;
+
 	chain_type (&type_void);
 	chain_type (&type_string);
 	chain_type (&type_float);
@@ -738,16 +750,18 @@ chain_initial_types (void)
 	type_supermsg.parm_types[0] = &type_Super;
 	chain_type (&type_supermsg);
 
-	type_module = new_struct ("obj_module_t");
-	new_struct_field (type_module, &type_integer, "version", vis_public);
-	new_struct_field (type_module, &type_integer, "size", vis_public);
-	new_struct_field (type_module, &type_string, "name", vis_public);
-	new_struct_field (type_module, &type_pointer, "symtab", vis_public);
+	strct = get_struct ("obj_module_s", 1);
+	init_struct (strct, new_type (), str_struct, 0);
+	new_struct_field (strct, &type_integer, "version", vis_public);
+	new_struct_field (strct, &type_integer, "size", vis_public);
+	new_struct_field (strct, &type_string, "name", vis_public);
+	new_struct_field (strct, &type_pointer, "symtab", vis_public);
+	type_module = strct->type;
+	new_typedef ("obj_module_t", type_module);
 	chain_type (type_module);
 
-	chain_type (&type_obj_exec_class);
-
 	type_obj_exec_class.parm_types[0] = pointer_type (type_module);
+	chain_type (&type_obj_exec_class);
 }
 
 void

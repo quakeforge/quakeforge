@@ -4,7 +4,7 @@
 #include "Object.h"
 
 struct _inputline_t = {};	// opaque type :)
-typedef _inputline_t [] inputline_t;
+typedef struct _inputline_t [] inputline_t;
 
 @extern inputline_t (integer lines, integer size, integer prompt) InputLine_Create;
 @extern void (inputline_t il, void [] data) InputLine_SetUserData;
@@ -26,7 +26,7 @@ struct il_data_t = {
 
 @interface InputLine: Object
 {
-	il_data_t   control;
+	struct il_data_t   control;
 	inputline_t	il;
 }
 

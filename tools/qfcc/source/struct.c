@@ -79,8 +79,8 @@ enums_get_key (void *e, void *unused)
 }
 
 struct_field_t *
-new_struct_field (type_t *strct, type_t *type, const char *name,
-				  visibility_t visibility)
+new_struct_field (struct_t *strct, type_t *type, const char *name,
+				  visibility_type visibility)
 {
 	struct_field_t *field;
 
@@ -90,13 +90,14 @@ new_struct_field (type_t *strct, type_t *type, const char *name,
 	field->visibility = visibility;
 	field->name = name;
 	field->type = type;
-	if (((struct_t *) strct->class)->is_union) {
+	if (strct->stype == str_union) {
 		int         size = type_size (type);
 		field->offset = 0;
-		strct->num_parms = strct->num_parms > size ? strct->num_parms : size;
+		if (size > strct->size)
+			strct->size = size;
 	} else {
-		field->offset = strct->num_parms;
-		strct->num_parms += type_size (type);
+		field->offset = strct->size;;
+		strct->size += type_size (type);
 	}
 	field->next = 0;
 	*strct->struct_tail = field;
@@ -107,7 +108,7 @@ new_struct_field (type_t *strct, type_t *type, const char *name,
 }
 
 struct_field_t *
-struct_find_field (type_t *strct, const char *name)
+struct_find_field (struct_t *strct, const char *name)
 {
 	if (!structs || !strct)
 		return 0;
@@ -115,66 +116,46 @@ struct_find_field (type_t *strct, const char *name)
 }
 
 type_t *
-init_struct (struct_t *strct, type_t *type, const char *name)
+init_struct (struct_t *strct, type_t *type, struct_type stype,
+			 const char *name)
 {
-	strct->name = name ? save_string (name) : 0;
+	if (name)
+		strct->name = save_string (name);
 	strct->type = type;
 	strct->type->type = ev_struct;
-	strct->type->struct_tail = &strct->type->struct_head;
-	strct->type->struct_fields = Hash_NewTable (61, struct_field_get_key, 0, 0);
-	strct->type->class = (struct class_s *)strct;
-	strct->is_union = 0;
+	strct->struct_tail = &strct->struct_head;
+	strct->struct_fields = Hash_NewTable (61, struct_field_get_key, 0, 0);
+	strct->type->s.strct = strct;
+	strct->stype = stype;
 	if (name) {
-		strct->type->name = save_string (name);
+		strct->type->name = strct->name;
 		Hash_Add (structs, strct);
 	}
 	return strct->type;
 }
 
-type_t *
-new_struct (const char *name)
+struct_t *
+get_struct (const char *name, int create)
 {
-	struct_t   *strct;
-
-	if (!structs) {
-		structs = Hash_NewTable (16381, structs_get_key, 0, 0);
-	}
-	if (name) {
-		strct = (struct_t *) Hash_Find (structs, name);
-		if (strct) {
-			error (0, "duplicate struct definition: `%s'", name);
-			return 0;
-		}
-	}
-	strct = malloc (sizeof (struct_t));
-	return init_struct (strct, new_type (), name);
-}
-
-type_t *
-new_union (const char *name)
-{
-	type_t     *un = new_struct (name);
-
-	if (un)
-		((struct_t *) un->class)->is_union = 1;
-	return un;
-}
-
-type_t *
-find_struct (const char *name)
-{
-	struct_t   *strct;
+	struct_t   *s;
 
 	if (!structs)
-		return 0;
-	strct = (struct_t *) Hash_Find (structs, name);
-	if (strct)
-		return strct->type;
-	return 0;
+		structs = Hash_NewTable (16381, structs_get_key, 0, 0);
+	if (name) {
+		s = Hash_Find (structs, name);
+		if (s || !create)
+			return s;
+	}
+	s = calloc (sizeof (struct_t), 1);
+	s->name = name;
+	s->return_addr = __builtin_return_address (0);
+	if (name)
+		Hash_Add (structs, s);
+	return s;
 }
 
 void
-copy_struct_fields (type_t *dst, type_t *src)
+copy_struct_fields (struct_t *dst, struct_t *src)
 {
 	struct_field_t *s;
 
@@ -185,7 +166,7 @@ copy_struct_fields (type_t *dst, type_t *src)
 }
 
 int
-struct_compare_fields (struct type_s *s1, struct type_s *s2)
+struct_compare_fields (struct_t *s1, struct_t *s2)
 {
 	struct_field_t *f1 = s1->struct_head;
 	struct_field_t *f2 = s2->struct_head;
@@ -200,14 +181,75 @@ struct_compare_fields (struct type_s *s1, struct type_s *s2)
 	return !((!f1) ^ !(f2));
 }
 
+static struct_t *
+start_struct (const char *name, struct_type stype)
+{
+	struct_t   *strct = get_struct (name, 1);
+	if (strct->struct_head) {
+		error (0, "%s redeclared", name);
+		goto err;
+	}
+	if (strct->stype != str_none && strct->stype != stype) {
+		error (0, "%s defined as wrong kind of tag", name);
+		goto err;
+	}
+	if (!strct->type)
+		init_struct (strct, new_type (), stype, 0);
+	return strct;
+err:
+	strct = get_struct (0, 0);
+	init_struct (strct, new_type (), stype, 0);
+	return strct;
+}
+
+struct_t *
+new_struct (const char *name)
+{
+	return start_struct (name, str_struct);
+}
+
+struct_t *
+new_union (const char *name)
+{
+	return start_struct (name, str_union);
+}
+
+static struct_t *
+check_struct (const char *name, struct_type stype)
+{
+	struct_t   *strct = get_struct (name, 0);
+
+	if (!strct)
+		return start_struct (name, stype);
+	if (strct->stype != stype) {
+		error (0, "%s defined as wrong kind of tag", name);
+		strct = get_struct (0, 0);
+		init_struct (strct, new_type (), stype, 0);
+	}
+	return strct;
+}
+
+struct_t *
+decl_struct (const char *name)
+{
+
+	return check_struct (name, str_struct);
+}
+
+struct_t *
+decl_union (const char *name)
+{
+	return check_struct (name, str_union);
+}
+
 def_t *
-emit_struct(type_t *strct, const char *name)
+emit_struct(struct_t *strct, const char *name)
 {
 	struct_field_t *field;
 	int         i, count;
 	def_t      *ivars_def;
 	pr_ivar_list_t *ivars;
-	type_t     *ivar_list;
+	struct_t   *ivar_list;
 	dstring_t  *encoding = dstring_newstr ();
 	dstring_t  *ivars_name = dstring_newstr ();
 
@@ -221,10 +263,11 @@ emit_struct(type_t *strct, const char *name)
 	for (i = 0; i < count; i++)
 		new_struct_field (ivar_list, type_ivar, 0, vis_public);
 	dsprintf (ivars_name, "_OBJ_INSTANCE_VARIABLES_%s", name);
-	ivars_def = get_def (ivar_list, ivars_name->str, pr.scope, st_none);
+	ivars_def = get_def (ivar_list->type, ivars_name->str, pr.scope, st_none);
 	if (ivars_def)
 		goto done;
-	ivars_def = get_def (ivar_list, ivars_name->str, pr.scope, st_static);
+	ivars_def = get_def (ivar_list->type, ivars_name->str, pr.scope,
+						 st_static);
 	ivars_def->initialized = ivars_def->constant = 1;
 	ivars_def->nosave = 1;
 	ivars = &G_STRUCT (pr_ivar_list_t, ivars_def->ofs);
@@ -277,8 +320,7 @@ process_enum (expr_t *enm)
 			val = name->e.expr.e2;
 			name = name->e.expr.e1;
 		}
-		if ((structs && find_struct (name->e.string_val))
-			|| get_enum (name->e.string_val)
+		if (get_enum (name->e.string_val)
 			|| get_def (NULL, name->e.string_val, pr.scope, st_none)) {
 			error (name, "%s redeclared", name->e.string_val);
 			continue;

@@ -36,20 +36,31 @@ typedef enum {
 	vis_private,
 	vis_protected,
 	vis_public,
-} visibility_t;
+} visibility_type;
+
+typedef enum {
+	str_none,
+	str_struct,
+	str_union,
+} struct_type;
 
 typedef struct struct_field_s {
 	struct struct_field_s *next;
 	const char		*name;
 	struct type_s	*type;
 	int				offset;
-	visibility_t	visibility;
+	visibility_type	visibility;
 } struct_field_t;
 
 typedef struct struct_s {
 	const char *name;
 	struct type_s *type;
-	int         is_union;
+	struct_type stype;
+	struct hashtab_s *struct_fields;
+	struct_field_t *struct_head;
+	struct_field_t **struct_tail;
+	int         size;
+	void			*return_addr;	// who allocated this
 } struct_t;
 
 typedef struct enum_s {
@@ -57,23 +68,27 @@ typedef struct enum_s {
 	int         value;
 } enum_t;
 
-struct_field_t *new_struct_field (struct type_s *strct, struct type_s *type,
-								  const char *name, visibility_t visibility);
-struct_field_t *struct_find_field (struct type_s *strct, const char *name);
-int struct_compare_fields (struct type_s *s1, struct type_s *s2);
+struct_field_t *new_struct_field (struct_t *strct, struct type_s *type,
+								  const char *name,
+								  visibility_type visibility);
+struct_field_t *struct_find_field (struct_t *strct, const char *name);
+int struct_compare_fields (struct_t *s1, struct_t *s2);
 struct type_s *init_struct (struct_t *strct, struct type_s *type,
-							const char *name);
-struct type_s *new_struct (const char *name);
-struct type_s *new_union (const char *name);
-struct type_s *find_struct (const char *name);
-void copy_struct_fields (struct type_s *dst, struct type_s *src);
+							struct_type stype, const char *name);
+struct_t *get_struct (const char *name, int create);
+void copy_struct_fields (struct_t *dst, struct_t *src);
 
-struct def_s *emit_struct (struct type_s *strct, const char *name);
+struct def_s *emit_struct (struct_t *strct, const char *name);
 
 void process_enum (struct expr_s *enm);
 struct expr_s *get_enum (const char *name);
 
 void clear_structs (void);
 void clear_enums (void);
+
+struct_t *new_struct (const char *name);
+struct_t *new_union (const char *name);
+struct_t *decl_struct (const char *name);
+struct_t *decl_union (const char *name);
 
 #endif//__struct_h

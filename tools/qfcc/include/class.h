@@ -45,7 +45,7 @@ typedef struct class_s {
 	const char *name;
 	struct class_s *super_class;
 	struct category_s *categories;
-	struct type_s *ivars;
+	struct struct_s *ivars;
 	struct methodlist_s *methods;
 	struct protocollist_s *protocols;
 	struct def_s *def;
@@ -73,15 +73,15 @@ extern class_type_t *current_class;
 struct expr_s;
 struct method_s;
 struct protocol_s;
-struct type_s;
 
 struct def_s *class_def (class_type_t *class_type, int external);
 void class_init (void);
 class_t *get_class (const char *name, int create);
 void class_add_methods (class_t *class, struct methodlist_s *methods);
 void class_add_protocol_methods (class_t *class, struct expr_s *protocols);
-void class_add_ivars (class_t *class, struct type_s *ivars);
-void class_check_ivars (class_t *class, struct type_s *ivars);
+struct struct_s *class_new_ivars (class_t *class);
+void class_add_ivars (class_t *class, struct struct_s *ivars);
+void class_check_ivars (class_t *class, struct struct_s *ivars);
 void class_begin (class_type_t *class_type);
 void class_finish (class_type_t *class_type);
 int class_access (class_type_t *current_class, class_t *class);

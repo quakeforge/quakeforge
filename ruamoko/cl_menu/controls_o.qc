@@ -41,11 +41,12 @@ Array movement_bindings;
 Array misc_bindings;
 Array weapon_bindings;
 
-struct binding_t = {
+struct binding_s = {
 	string      text;
 	string      command;
 	string      keys;
 };
+typedef struct binding_s binding_t;
 
 binding_t [16] movement_binding_list = {
 	{"Jump/Swin up", "+jump"},

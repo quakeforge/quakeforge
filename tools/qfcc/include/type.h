@@ -42,10 +42,10 @@ typedef struct type_s {
 	struct type_s	*aux_type;	// return type or field type
 	int				num_parms;	// -1 = variable args
 	struct type_s	*parm_types[MAX_PARMS];	// only [num_parms] allocated
-	struct hashtab_s *struct_fields;
-	struct struct_field_s	*struct_head;
-	struct struct_field_s	**struct_tail;
-	struct class_s	*class;		// for ev_class
+	union {
+		struct class_s	*class;		// for ev_class
+		struct struct_s *strct;		// for ev_struct
+	} s;
 } type_t;
 
 extern	type_t	type_void;
@@ -78,7 +78,7 @@ extern	type_t	type_va_list;
 extern	type_t	type_param;
 extern	type_t	type_zero;
 
-extern	type_t	*vector_struct;
+extern struct struct_s *vector_struct;
 
 struct dstring_s;
 

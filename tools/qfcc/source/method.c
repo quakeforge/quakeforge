@@ -316,7 +316,7 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 	int         i, count;
 	def_t      *methods_def;
 	pr_method_list_t *methods;
-	type_t     *method_list;
+	struct_t     *method_list;
 
 	if (!_methods)
 		return 0;
@@ -329,12 +329,14 @@ emit_methods (methodlist_t *_methods, const char *name, int instance)
 		}
 	if (!count)
 		return 0;
-	method_list = new_struct (0);
+	method_list = get_struct (0, 1);
+	init_struct (method_list, new_type (), str_struct, 0);
 	new_struct_field (method_list, &type_pointer, "method_next", vis_public);
 	new_struct_field (method_list, &type_integer, "method_count", vis_public);
 	for (i = 0; i < count; i++)
 		new_struct_field (method_list, type_Method.aux_type, 0, vis_public);
-	methods_def = get_def (method_list, va ("_OBJ_%s_METHODS_%s", type, name),
+	methods_def = get_def (method_list->type,
+						   va ("_OBJ_%s_METHODS_%s", type, name),
 						   pr.scope, st_static);
 	methods_def->initialized = methods_def->constant = 1;
 	methods_def->nosave = 1;

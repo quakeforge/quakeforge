@@ -122,7 +122,7 @@ get_class (const char *name, int create)
 	c = calloc (sizeof (class_t), 1);
 	c->name = name;
 	new = *type_Class.aux_type;
-	new.class = c;
+	new.s.class = c;
 	c->type = pointer_type (find_type (&new));
 	c->class_type.is_class = 1;
 	c->class_type.c.class = c;
@@ -212,9 +212,10 @@ class_begin (class_type_t *class_type)
 		EMIT_STRING (meta->name, class->name);
 		meta->info = _PR_CLS_META;
 		meta->instance_size = type_size (type_Class.aux_type);
-		EMIT_DEF (meta->ivars, emit_struct (type_Class.aux_type, "Class"));
-		EMIT_DEF (meta->protocols, emit_protocol_list (class->protocols,
-					class->name));
+		EMIT_DEF (meta->ivars,
+				  emit_struct (type_Class.aux_type->s.class->ivars, "Class"));
+		EMIT_DEF (meta->protocols,
+				  emit_protocol_list (class->protocols, class->name));
 
 		class->def->initialized = class->def->constant = 1;
 		class->def->nosave = 1;
@@ -311,7 +312,7 @@ class_finish (class_type_t *class_type)
 		EMIT_DEF (meta->methods, emit_methods (class->methods,
 					class->name, 0));
 
-		cls->instance_size = type_size (class->ivars);
+		cls->instance_size = class->ivars? type_size (class->ivars->type) : 0;
 		EMIT_DEF (cls->ivars, emit_struct (class->ivars, class->name));
 		EMIT_DEF (cls->methods, emit_methods (class->methods,
 					class->name, 1));
@@ -481,14 +482,24 @@ category_compare (void *_c1, void *_c2, void *unused)
 		&& strcmp (c1->class->name, c2->class->name) == 0;
 }
 
+struct_t *
+class_new_ivars (class_t *class)
+{
+	struct_t   *ivars = new_struct (0);
+	if (class->super_class)
+		new_struct_field (ivars, class->super_class->ivars->type, 0,
+						  vis_private);
+	return ivars;
+}
+
 void
-class_add_ivars (class_t *class, struct type_s *ivars)
+class_add_ivars (class_t *class, struct_t *ivars)
 {
 	class->ivars = ivars;
 }
 
 void
-class_check_ivars (class_t *class, struct type_s *ivars)
+class_check_ivars (class_t *class, struct_t *ivars)
 {
 	if (!struct_compare_fields (class->ivars, ivars))
 		warning (0, "instance variable missmatch for %s", class->name);
@@ -603,7 +614,7 @@ class_finish_module (void)
 	int         num_classes = 0;
 	int         num_categories = 0;
 	int         i;
-	type_t     *symtab_type;
+	struct_t   *symtab_type;
 	def_t      *symtab_def;
 	pr_symtab_t *symtab;
 	pointer_t   *def_ptr;
@@ -628,13 +639,15 @@ class_finish_module (void)
 	}
 	if (!num_classes && !num_categories)
 		return;
-	symtab_type = new_struct (0);
+	symtab_type = get_struct (0, 1);
+	init_struct (symtab_type, new_type (), str_struct, 0);
 	new_struct_field (symtab_type, &type_integer, "sel_ref_cnt", vis_public);
 	new_struct_field (symtab_type, &type_integer, "cls_def_cnt", vis_public);
 	new_struct_field (symtab_type, &type_integer, "cat_def_cnt", vis_public);
 	for (i = 0; i < num_classes + num_categories; i++)
 		new_struct_field (symtab_type, &type_pointer, 0, vis_public);
-	symtab_def = get_def (symtab_type, "_OBJ_SYMTAB", pr.scope, st_static);
+	symtab_def = get_def (symtab_type->type, "_OBJ_SYMTAB", pr.scope,
+						  st_static);
 	symtab_def->initialized = symtab_def->constant = 1;
 	symtab_def->nosave = 1;
 	symtab = &G_STRUCT (pr_symtab_t, symtab_def->ofs);
@@ -779,13 +792,14 @@ def_t *
 emit_protocol_list (protocollist_t *protocols, const char *name)
 {
 	def_t      *proto_list_def;
-	type_t     *protocol_list;
+	struct_t   *protocol_list;
 	pr_protocol_list_t *proto_list;
 	int         i;
 
 	if (!protocols)
 		return 0;
-	protocol_list = new_struct (0);
+	protocol_list = get_struct (0, 1);
+	init_struct (protocol_list, new_type (), str_struct, 0);
 	new_struct_field (protocol_list, &type_pointer, "next", vis_public);
 	new_struct_field (protocol_list, &type_integer, "count", vis_public);
 	for (i = 0; i < protocols->count; i++)

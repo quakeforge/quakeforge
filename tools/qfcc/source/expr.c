@@ -1119,6 +1119,7 @@ field_expr (expr_t *e1, expr_t *e2)
 	int         i;
 	struct_field_t *field;
 	class_t    *class;
+	struct_t   *strct;
 
 	if (e1->type == ex_error)
 		return e1;
@@ -1129,7 +1130,11 @@ field_expr (expr_t *e1, expr_t *e2)
 			check_initialized (e1);
 			if (e2->type != ex_name)
 				return error (e2, "structure field name expected");
-			field = struct_find_field (t1, e2->e.string_val);
+			if (t1->type == ev_struct)
+				strct = t1->s.strct;
+			else
+				strct = t1->s.class->ivars;
+			field = struct_find_field (strct, e2->e.string_val);
 			if (!field)
 				return error (e2, "structure has no field %s",
 							  e2->e.string_val);
@@ -1142,7 +1147,7 @@ field_expr (expr_t *e1, expr_t *e2)
 			switch (t1->aux_type->type) {
 				case ev_struct:
 					if (e2->type == ex_name) {
-						field = struct_find_field (t1->aux_type,
+						field = struct_find_field (t1->aux_type->s.strct,
 												   e2->e.string_val);
 						if (!field)
 							return error (e2, "structure has no field %s",
@@ -1157,7 +1162,7 @@ field_expr (expr_t *e1, expr_t *e2)
 					if (e2->type == ex_name) {
 						int         protected;
 
-						class = t1->aux_type->class;
+						class = t1->aux_type->s.class;
 						protected = class_access (current_class, class);
 						field = class_find_ivar (class, protected,
 												 e2->e.string_val);
@@ -2070,7 +2075,7 @@ expr_t *
 address_expr (expr_t *e1, expr_t *e2, type_t *t)
 {
 	expr_t     *e;
-	type_t     *type = 0;
+	type_t     *type;
 
 	if (e1->type == ex_error)
 		return e1;
@@ -2100,7 +2105,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 					e->e.pointer.def = def;
 				} else {
 					e = new_unary_expr ('&', e1);
-					e->e.expr.type = pointer_type (type);
+					e->e.expr.type = pointer_type (t);
 				}
 				break;
 			}
@@ -2119,7 +2124,6 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 		case ex_uexpr:
 			if (e1->e.expr.op == '.') {
 				e = e1->e.expr.e1;
-				type = get_type (e)->aux_type;
 				if (e->type == ex_expr && e->e.expr.op == '.') {
 					e->e.expr.type = e->e.expr.type;
 					e->e.expr.op = '&';
@@ -2324,11 +2328,11 @@ init_elements (def_t *def, expr_t *eles)
 	} else if (def->type->type == ev_struct) {
 		struct_field_t *field;
 
-		for (i = 0, field = def->type->struct_head; field;
+		for (i = 0, field = def->type->s.strct->struct_head; field;
 			 i++, field = field->next)
 			;
 		elements = calloc (i, sizeof (def_t));
-		for (i = 0, field = def->type->struct_head; field;
+		for (i = 0, field = def->type->s.strct->struct_head; field;
 			 i++, field = field->next) {
 			elements[i].type = field->type;
 			elements[i].ofs = def->ofs + field->offset;
@@ -2343,9 +2347,9 @@ init_elements (def_t *def, expr_t *eles)
 			free (elements);
 			return;
 		}
-	if (count > def->type->num_parms) {
+	if (count > num_params) {
 		warning (eles, "excessive elements in initializer");
-		count = def->type->num_parms;
+		count = num_params;
 	}
 	for (i = 0, e = eles->e.block.head; i < count; i++, e = e->next) {
 		g = G_POINTER (pr_type_t, elements[i].ofs);
@@ -2485,7 +2489,7 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 			|| (rec_type->aux_type->type != ev_object
 				&& rec_type->aux_type->type != ev_class))
 			return error (receiver, "not a class/object");
-		class = rec_type->aux_type->class;
+		class = rec_type->aux_type->s.class;
 	}
 
 	method = class_message_response (class, class_msg, selector);

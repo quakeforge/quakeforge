@@ -1,7 +1,8 @@
 #ifndef __ruamoko_plist_h
 #define __ruamoko_plist_h
 
-struct plitem_t = {integer [2] dummy;};
+struct plitem_s = {integer [2] dummy;};
+typedef struct plitem_s plitem_t;
 
 @extern plitem_t (string str) PL_GetPropertyList;
 @extern plitem_t (plitem_t item, string key) PL_ObjectForKey;
