@@ -83,13 +83,13 @@ R_LoadSkys (const char *skyname)
 
 		qfglBindTexture (GL_TEXTURE_2D, SKY_TEX + i);
 		snprintf (name, sizeof (name), "env/%s%s.tga", skyname, suf[i]);
-		COM_FOpenFile (name, &f);
+		QFS_FOpenFile (name, &f);
 		if (!f) {
 			Con_DPrintf ("Couldn't load %s\n", name);
 			// also look in gfx/env, where Darkplaces looks for skies
 			snprintf (name, sizeof (name), "gfx/env/%s%s.tga", skyname,
 					  suf[i]);
-			COM_FOpenFile (name, &f);
+			QFS_FOpenFile (name, &f);
 			if (!f) {
 				Con_DPrintf ("Couldn't load %s\n", name);
 				skyloaded = false;

@@ -774,8 +774,8 @@ main (int argc, char **argv)
 		usage (1);
 	}
 
-	COM_StripExtension (options.bspfile, options.bspfile);
-	COM_DefaultExtension (options.bspfile, ".bsp");
+	QFS_StripExtension (options.bspfile, options.bspfile);
+	QFS_DefaultExtension (options.bspfile, ".bsp");
 	
 	f = Qopen (options.bspfile, "rb");
 	bsp = LoadBSPFile (f, Qfilesize (f));
@@ -785,7 +785,7 @@ main (int argc, char **argv)
 
 	portalfile->size = strlen (options.bspfile) + 1;
 	dstring_adjust (portalfile);
-	COM_StripExtension (options.bspfile, portalfile->str);
+	QFS_StripExtension (options.bspfile, portalfile->str);
 	dstring_appendstr (portalfile, ".prt");
 	LoadPortals (portalfile->str);
 

@@ -60,7 +60,7 @@ COM_CheckRegistered (void)
 	unsigned short check[128];
 	QFile      *h;
 
-	COM_FOpenFile ("gfx/pop.lmp", &h);
+	QFS_FOpenFile ("gfx/pop.lmp", &h);
 	static_registered = 0;
 
 	if (h) {
@@ -78,8 +78,6 @@ COM_CheckRegistered (void)
 void
 COM_Init (void)
 {
-	Cmd_AddCommand ("path", COM_Path_f, "Show what paths Quake is using");
-
 	COM_CheckRegistered ();
 }
 

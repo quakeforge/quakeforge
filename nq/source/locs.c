@@ -140,7 +140,7 @@ locs_load (const char *filename)
 	int         templength = 0;
 	
 	snprintf(tmp,sizeof(tmp), "maps/%s",filename);
-	templength = _COM_FOpenFile (tmp, &file, foundname, 1);
+	templength = _QFS_FOpenFile (tmp, &file, foundname, 1);
 	if (!file) {
 		Con_Printf ("Couldn't load %s\n", tmp);
 		return;
@@ -162,7 +162,7 @@ locs_load (const char *filename)
 		t2 = strrchr (t1, '\n');
 		if (t2) {
 			t2[0] = '\0';
-			// handle dos format lines (COM_FOpenFile is binary only)
+			// handle dos format lines (QFS_FOpenFile is binary only)
 			// and unix is effectively binary only anyway
 			while (t2 > t1 && t2[-1] == '\r') {
 				t2[-1] = '\0';

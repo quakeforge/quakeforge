@@ -59,7 +59,7 @@ COM_CheckRegistered (void)
 	unsigned short check[128];
 	QFile      *h;
 
-	COM_FOpenFile ("gfx/pop.lmp", &h);
+	QFS_FOpenFile ("gfx/pop.lmp", &h);
 	static_registered = 0;
 
 	if (h) {
@@ -80,7 +80,6 @@ COM_Init (void)
 	registered = Cvar_Get ("registered", "0", CVAR_NONE, NULL,
 						   "Is the game the registered version. 1 yes 0 no");
 	cmdline = Cvar_Get ("cmdline", "0", CVAR_SERVERINFO, Cvar_Info, "None");
-	Cmd_AddCommand ("path", COM_Path_f, "Show what paths Quake is using");
 
 	COM_CheckRegistered ();
 }

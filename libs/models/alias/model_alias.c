@@ -151,7 +151,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 		extra = 1; // extra precision bytes
 
 	CRC_Init (&crc);
-	for (len = com_filesize, p = buffer; len; len--, p++)
+	for (len = qfs_filesize, p = buffer; len; len--, p++)
 		CRC_ProcessByte (&crc, *p);
 
 	start = Hunk_LowMark ();
@@ -289,7 +289,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	mod->radius = RadiusFromBounds (mod->mins, mod->maxs);
 
 	// build the draw lists
-	Mod_MakeAliasModelDisplayLists (mod, pheader, buffer, com_filesize, extra);
+	Mod_MakeAliasModelDisplayLists (mod, pheader, buffer, qfs_filesize, extra);
 
 	Mod_FinalizeAliasModel (mod, pheader);
 

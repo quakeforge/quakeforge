@@ -354,11 +354,11 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, i
 
 		// look for a cached version
 		strcpy (cache, "glquake/");
-		COM_StripExtension (m->name + strlen ("progs/"),
+		QFS_StripExtension (m->name + strlen ("progs/"),
 							cache + strlen ("glquake/"));
 		strncat (cache, ".qfms", sizeof (cache) - strlen (cache));
 
-		COM_FOpenFile (cache, &f);
+		QFS_FOpenFile (cache, &f);
 		if (f) {
 			unsigned char d1[MDFOUR_DIGEST_BYTES];
 			unsigned char d2[MDFOUR_DIGEST_BYTES];
@@ -431,11 +431,11 @@ Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m, int _s, i
 
 		if (do_cache) {
 			// save out the cached version
-			snprintf (fullpath, sizeof (fullpath), "%s/%s", com_gamedir,
+			snprintf (fullpath, sizeof (fullpath), "%s/%s", qfs_gamedir_path,
 					  cache);
 			f = Qopen (fullpath, "wbz9");
 			if (!f) {
-				COM_CreatePath (fullpath);
+				QFS_CreatePath (fullpath);
 				f = Qopen (fullpath, "wb");
 			}
 

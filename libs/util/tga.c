@@ -125,8 +125,8 @@ LoadTGA (QFile *fin)
 	tex_t      *tex;
 
 	targa_mark = Hunk_LowMark ();
-	targa = Hunk_AllocName (com_filesize, "TGA");
-	Qread (fin, targa, com_filesize);
+	targa = Hunk_AllocName (qfs_filesize, "TGA");
+	Qread (fin, targa, qfs_filesize);
 	
 	targa->colormap_index = LittleShort (targa->colormap_index);
 	targa->colormap_length = LittleShort (targa->colormap_length);
@@ -244,6 +244,6 @@ WriteTGAfile (const char *tganame, byte *data, int width, int height)
 	header.height = LittleShort (height);
 	header.pixel_size = 24;
 
-	COM_WriteBuffers (tganame, 2, &header, sizeof (header), data,
+	QFS_WriteBuffers (tganame, 2, &header, sizeof (header), data,
 					  width * height * 3);
 }

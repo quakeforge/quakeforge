@@ -51,44 +51,43 @@ typedef struct gamedir_s {
 	const char *skinpath;
 } gamedir_t;
 
-extern searchpath_t *com_searchpaths;
+extern searchpath_t *qfs_searchpaths;
 extern gamedir_t *qfs_gamedir;
 
 extern struct cvar_s *fs_userpath;
 extern struct cvar_s *fs_sharepath;
 
 extern int file_from_pak;
-extern int com_filesize;
+extern int qfs_filesize;
+
+extern char	qfs_gamedir_path[MAX_OSPATH];
+extern char	qfs_gamedir_file[MAX_OSPATH];
+
 struct cache_user_s;
 
-extern char	com_gamedir[MAX_OSPATH];
-extern char	gamedirfile[MAX_OSPATH];
+char *QFS_CompressPath (const char *pth);
+void QFS_WriteFile (const char *filename, void *data, int len);
+void QFS_WriteBuffers (const char *filename, int count, ...);
 
-char *COM_CompressPath (const char *pth);
-void COM_WriteFile (const char *filename, void *data, int len);
-void COM_WriteBuffers (const char *filename, int count, ...);
-
-int _COM_FOpenFile (const char *filename, QFile **gzfile, char *foundname, int zip);
-int COM_FOpenFile (const char *filename, QFile **gzfile);
-void COM_CloseFile (QFile *h);
-void COM_FileBase (const char *in, char *out);
-void COM_DefaultExtension (char *path, const char *extension);
-const char *COM_SkipPath (const char *pathname);
-void COM_StripExtension (const char *in, char *out);
-int COM_NextFilename (char *filename, const char *prefix, const char *ext);
-const char *COM_FileExtension (const char *in);
+int _QFS_FOpenFile (const char *filename, QFile **gzfile, char *foundname, int zip);
+int QFS_FOpenFile (const char *filename, QFile **gzfile);
+void QFS_FileBase (const char *in, char *out);
+void QFS_DefaultExtension (char *path, const char *extension);
+const char *QFS_SkipPath (const char *pathname);
+void QFS_StripExtension (const char *in, char *out);
+int QFS_NextFilename (char *filename, const char *prefix, const char *ext);
+const char *QFS_FileExtension (const char *in);
 
 
 
-byte *COM_LoadFile (const char *path, int usehunk);
-byte *COM_LoadStackFile (const char *path, void *buffer, int bufsize);
-byte *COM_LoadTempFile (const char *path);
-byte *COM_LoadHunkFile (const char *path);
-void COM_LoadCacheFile (const char *path, struct cache_user_s *cu);
-void COM_CreatePath (const char *path);
-void COM_Gamedir (const char *dir);
+byte *QFS_LoadFile (const char *path, int usehunk);
+byte *QFS_LoadStackFile (const char *path, void *buffer, int bufsize);
+byte *QFS_LoadTempFile (const char *path);
+byte *QFS_LoadHunkFile (const char *path);
+void QFS_LoadCacheFile (const char *path, struct cache_user_s *cu);
+void QFS_CreatePath (const char *path);
+void QFS_Gamedir (const char *dir);
 void QFS_Init (const char *game);
-void COM_Path_f (void);
-void COM_CreateGameDirectory (const char *gamename);
+void QFS_CreateGameDirectory (const char *gamename);
 
 #endif // __quakefs_h

@@ -64,7 +64,7 @@ GIB_Exec_Override_f (void) {
 	}
 
 	mark = Hunk_LowMark ();
-	f = (char *) COM_LoadHunkFile (Cmd_Argv (1));
+	f = (char *) QFS_LoadHunkFile (Cmd_Argv (1));
 	if (!f) {
 		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
 		return;

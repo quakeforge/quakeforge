@@ -59,7 +59,7 @@ SV_Gamedir_f (void)
 	const char *dir;
 
 	if (Cmd_Argc () == 1) {
-		Con_Printf ("Current gamedir: %s\n", gamedirfile);
+		Con_Printf ("Current gamedir: %s\n", qfs_gamedir_file);
 		return;
 	}
 
@@ -76,7 +76,7 @@ SV_Gamedir_f (void)
 		return;
 	}
 
-	COM_Gamedir (dir);
+	QFS_Gamedir (dir);
 
 	if (is_server) {
 		Info_SetValueForStarKey (*svs_info, "*gamedir", dir, 0);

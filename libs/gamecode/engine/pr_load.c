@@ -75,7 +75,7 @@ var_get_key (void *d, void *_pr)
 static void *
 load_file (progs_t *pr, const char *path)
 {
-	return COM_LoadHunkFile (path);
+	return QFS_LoadHunkFile (path);
 }
 
 static void *
@@ -99,8 +99,8 @@ PR_LoadProgsFile (progs_t * pr, QFile *file, int size, int edicts, int zone)
 	if (Qread (file, &progs, sizeof (progs)) != sizeof (progs))
 		PR_Error (pr, "error reading header");
 
-	pr->progs_size = com_filesize;
-	Sys_DPrintf ("Programs occupy %iK.\n", com_filesize / 1024);
+	pr->progs_size = qfs_filesize;
+	Sys_DPrintf ("Programs occupy %iK.\n", qfs_filesize / 1024);
 
 	// store prog crc
 	pr->crc = CRC_Block ((byte*)&progs, sizeof (progs));
@@ -263,11 +263,11 @@ void
 PR_LoadProgs (progs_t *pr, const char *progsname, int edicts, int zone)
 {
 	QFile      *file;
-	COM_FOpenFile (progsname, &file);
+	QFS_FOpenFile (progsname, &file);
 
 	pr->progs_name = progsname;
 	if (file) {
-		PR_LoadProgsFile (pr, file, com_filesize, edicts, zone);
+		PR_LoadProgsFile (pr, file, qfs_filesize, edicts, zone);
 		Qclose (file);
 	}
 	if (!pr->progs)

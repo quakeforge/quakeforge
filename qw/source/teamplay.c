@@ -353,7 +353,7 @@ locs_loc (void)
 	if (!mapname)
 		Sys_Error ("Can't duplicate mapname!");
 	map_to_loc (cl.worldmodel->name,mapname);
-	snprintf (locfile, sizeof (locfile), "%s/%s", com_gamedir, mapname);
+	snprintf (locfile, sizeof (locfile), "%s/%s", qfs_gamedir_path, mapname);
 	free(mapname);
 
 	if (strcasecmp (Cmd_Argv(1),"save") == 0) {

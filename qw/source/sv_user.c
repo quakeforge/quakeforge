@@ -710,7 +710,7 @@ SV_BeginDownload_f (ucmd_t *cmd)
 
 	zip = strchr (Info_ValueForKey (host_client->userinfo, "*cap"), 'z') != 0;
 
-	size = _COM_FOpenFile (name, &file, realname, !zip);
+	size = _QFS_FOpenFile (name, &file, realname, !zip);
 
 	host_client->download = file;
 	host_client->downloadsize = size;

@@ -170,7 +170,7 @@ DecodeArgs (int argc, char **argv)
 		options.bspfile = strdup (argv[optind++]);
 	} else {
 		options.bspfile = malloc (strlen (options.mapfile) + 5);
-		COM_StripExtension (options.mapfile, options.bspfile);
+		QFS_StripExtension (options.mapfile, options.bspfile);
 		strcat (options.bspfile, ".bsp");
 	}
 	options.hullfile = malloc (strlen (options.bspfile) + 5);

@@ -196,7 +196,7 @@ SCR_ScreenShot_f (void)
 	char        pcxname[MAX_OSPATH];
 
 	// find a file name to save it to 
-	if (!COM_NextFilename (pcxname, "qf", ".tga")) {
+	if (!QFS_NextFilename (pcxname, "qf", ".tga")) {
 		Con_Printf ("SCR_ScreenShot_f: Couldn't create a TGA file\n");
 		return;
 	}

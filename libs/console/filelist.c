@@ -177,7 +177,7 @@ filelist_fill (struct filelist *filelist, const char *path, const char *ext)
 	struct dirent *dirent;
 	char        buf[MAX_OSPATH];
 
-	for (search = com_searchpaths; search != NULL; search = search->next) {
+	for (search = qfs_searchpaths; search != NULL; search = search->next) {
 		if (search->pack) {
 			int         i;
 			pack_t     *pak = search->pack;

@@ -476,7 +476,7 @@ Cmd_Exec_f (void)
 	}
 
 	mark = Hunk_LowMark ();
-	f = (char *) COM_LoadHunkFile (Cmd_Argv (1));
+	f = (char *) QFS_LoadHunkFile (Cmd_Argv (1));
 	if (!f) {
 		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
 		return;
@@ -623,7 +623,7 @@ Cmd_Exec_File (cbuf_t *cbuf, const char *path, int qfs)
 	if (!path || !*path)
 		return;
 	if (qfs) {
-		COM_FOpenFile (path, &file);
+		QFS_FOpenFile (path, &file);
 	} else {
 		file = Qopen (path, "r");
 	}

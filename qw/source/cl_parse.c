@@ -221,7 +221,7 @@ CL_CheckOrDownloadFile (const char *filename)
 		return true;
 	}
 
-	COM_FOpenFile (filename, &f);
+	QFS_FOpenFile (filename, &f);
 	if (f) {							// it exists, no need to download
 		Qclose (f);
 		return true;
@@ -241,7 +241,7 @@ CL_CheckOrDownloadFile (const char *filename)
 
 	// download to a temp name, and only rename to the real name when done,
 	// so if interrupted a runt file wont be left
-	COM_StripExtension (cls.downloadname, cls.downloadtempname);
+	QFS_StripExtension (cls.downloadname, cls.downloadtempname);
 	strncat (cls.downloadtempname, ".tmp",
 			 sizeof (cls.downloadtempname) - strlen (cls.downloadtempname));
 
@@ -260,9 +260,9 @@ map_cfg (const char *mapname, int all)
 	char       *name = malloc (strlen (mapname) + 4 + 1);
 	QFile      *f;
 
-	COM_StripExtension (mapname, name);
+	QFS_StripExtension (mapname, name);
 	strcat (name, ".cfg");
-	COM_FOpenFile (name, &f);
+	QFS_FOpenFile (name, &f);
 	if (f) {
 		Qclose (f);
 		Cmd_Exec_File (cl_cbuf, name, 1);
@@ -324,7 +324,7 @@ Model_NextDownload (void)
 						"downloaded.\n\n", cl.model_name[i]);
 			Con_Printf ("You may need to download or purchase a %s client "
 						"pack in order to play on this server.\n\n",
-						gamedirfile);
+						qfs_gamedir_file);
 			CL_Disconnect ();
 			return;
 		}
@@ -492,13 +492,13 @@ CL_ParseDownload (void)
 		if (!qfs_gamedir->skinpath
 			|| !*qfs_gamedir->skinpath
 			|| strncmp (cls.downloadtempname, "skins/", 6))
-			snprintf (name, sizeof (name), "%s/%s", com_gamedir,
+			snprintf (name, sizeof (name), "%s/%s", qfs_gamedir_path,
 					  cls.downloadtempname);
 		else
 			snprintf (name, sizeof (name), "%s/%s/%s", fs_userpath->string,
 					  qfs_gamedir->skinpath, cls.downloadtempname);
 
-		COM_CreatePath (name);
+		QFS_CreatePath (name);
 
 		cls.download = Qopen (name, "wb");
 		if (!cls.download) {
@@ -535,9 +535,9 @@ CL_ParseDownload (void)
 			if (!qfs_gamedir->skinpath
 				|| !*qfs_gamedir->skinpath
 				|| strncmp (cls.downloadtempname, "skins/", 6)) {
-				snprintf (oldn, sizeof (oldn), "%s/%s", com_gamedir,
+				snprintf (oldn, sizeof (oldn), "%s/%s", qfs_gamedir_path,
 						  cls.downloadtempname);
-				snprintf (newn, sizeof (newn), "%s/%s", com_gamedir,
+				snprintf (newn, sizeof (newn), "%s/%s", qfs_gamedir_path,
 						  cls.downloadname);
 			} else {
 				snprintf (oldn, sizeof (oldn), "%s/%s/%s", fs_userpath->string,
@@ -679,14 +679,14 @@ CL_ParseServerData (void)
 	// game directory
 	str = MSG_ReadString (net_message);
 
-	if (!strequal (gamedirfile, str)) {
+	if (!strequal (qfs_gamedir_file, str)) {
 		// save current config
 		Host_WriteConfiguration ();
 		cflag = true;
 		Draw_ClearCache ();
 	}
 
-	COM_Gamedir (str);
+	QFS_Gamedir (str);
 
 	// ZOID--run the autoexec.cfg in the gamedir if it exists
 	if (cflag) {
@@ -983,7 +983,7 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 	const char *s;
 
 	s = Info_ValueForKey (player->userinfo, "skin");
-	COM_StripExtension (s, skin);   // FIXME: buffer overflow
+	QFS_StripExtension (s, skin);   // FIXME: buffer overflow
 	if (!strequal (s, skin))
 		Info_SetValueForKey (player->userinfo, "skin", skin, 1);
 	strncpy (player->name, Info_ValueForKey (player->userinfo, "name"),

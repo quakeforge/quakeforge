@@ -237,7 +237,7 @@ SCR_ScreenShot_f (void)
 	int         pcx_len;
 
 	// find a file name to save it to 
-	if (!COM_NextFilename (pcxname, "qf", ".pcx")) {
+	if (!QFS_NextFilename (pcxname, "qf", ".pcx")) {
 		Con_Printf ("SCR_ScreenShot_f: Couldn't create a PCX");
 		return;
 	}
@@ -248,7 +248,7 @@ SCR_ScreenShot_f (void)
 	// save the pcx file
 	pcx = EncodePCX (vid.buffer, vid.width, vid.height, vid.rowbytes,
 					 vid.basepal, false, &pcx_len);
-	COM_WriteFile (pcxname, pcx, pcx_len);
+	QFS_WriteFile (pcxname, pcx, pcx_len);
 
 
 	// for adapters that can't stay mapped in for linear writes all the time

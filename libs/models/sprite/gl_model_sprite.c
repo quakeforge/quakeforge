@@ -58,7 +58,7 @@ Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
 	snprintf (name, sizeof (name), "%s_%i", loadmodel->name, framenum);
 
 	snprintf (filename, sizeof (filename), "%s.tga", name);
-	COM_FOpenFile (filename, &f);
+	QFS_FOpenFile (filename, &f);
 	if (f) {
 		targa = LoadTGA (f);
 		Qclose (f);

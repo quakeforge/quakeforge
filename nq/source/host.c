@@ -285,7 +285,7 @@ Host_WriteConfiguration (void)
 	// dedicated servers initialize the host but don't parse and set the
 	// config.cfg cvars
 	if (host_initialized && !isDedicated && cl_writecfg->int_val) {
-		char       *path = va ("%s/config.cfg", com_gamedir);
+		char       *path = va ("%s/config.cfg", qfs_gamedir_path);
 		f = Qopen (path, "w");
 		if (!f) {
 			Con_Printf ("Couldn't write config.cfg.\n");
@@ -798,7 +798,7 @@ check_quakerc (void)
 	int ret = 1;
 	QFile *f;
 
-	COM_FOpenFile ("quake.rc", &f);
+	QFS_FOpenFile ("quake.rc", &f);
 	if (!f)
 		return 1;
 	while ((l = Qgetline (f))) {
@@ -952,10 +952,10 @@ Host_Init (void)
 	Con_Printf ("%4.1f megabyte heap\n", host_mem_size->value);
 
 	if (cls.state != ca_dedicated) {
-		host_basepal = (byte *) COM_LoadHunkFile ("gfx/palette.lmp");
+		host_basepal = (byte *) QFS_LoadHunkFile ("gfx/palette.lmp");
 		if (!host_basepal)
 			Sys_Error ("Couldn't load gfx/palette.lmp");
-		vid_colormap = (byte *) COM_LoadHunkFile ("gfx/colormap.lmp");
+		vid_colormap = (byte *) QFS_LoadHunkFile ("gfx/colormap.lmp");
 		if (!vid_colormap)
 			Sys_Error ("Couldn't load gfx/colormap.lmp");
 

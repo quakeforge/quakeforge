@@ -177,7 +177,7 @@ Draw_PicFromWad (const char *name)
 	gl = (glpic_t *) p->data;
 
 	snprintf (filename, sizeof (filename), "%s.tga", name);
-	COM_FOpenFile (filename, &f);
+	QFS_FOpenFile (filename, &f);
 	if (f) {
 		targa = LoadTGA (f);
 		Qclose (f);
@@ -225,7 +225,7 @@ Draw_CachePic (const char *path, qboolean alpha)
 		Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
 
 	// Load the picture..
-	dat = (qpic_t *) COM_LoadTempFile (path);
+	dat = (qpic_t *) QFS_LoadTempFile (path);
 	if (!dat)
 		Sys_Error ("Draw_CachePic: failed to load %s", path);
 
@@ -245,7 +245,7 @@ Draw_CachePic (const char *path, qboolean alpha)
 	gl = (glpic_t *) pic->pic.data;
 
 	snprintf (filename, sizeof (filename), "%s.tga", path);
-	COM_FOpenFile (filename, &f);
+	QFS_FOpenFile (filename, &f);
 	if (f) {
 		targa = LoadTGA (f);
 		Qclose (f);

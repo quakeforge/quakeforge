@@ -273,9 +273,9 @@ SV_CheckModel (const char *mdl)
 
 //	int len;
 
-	buf = (byte *) COM_LoadStackFile (mdl, stackbuf, sizeof (stackbuf));
+	buf = (byte *) QFS_LoadStackFile (mdl, stackbuf, sizeof (stackbuf));
 	if (buf) {
-		crc = CRC_Block (buf, com_filesize);
+		crc = CRC_Block (buf, qfs_filesize);
 	} else {
 		SV_Printf ("WARNING: cannot generate checksum for %s\n", mdl);
 	}

@@ -210,7 +210,7 @@ SV_Fraglogfile_f (void)
 	}
 	// find an unused name
 	for (i = 0; i < 1000; i++) {
-		snprintf (name, sizeof (name), "%s/frag_%i.log", com_gamedir, i);
+		snprintf (name, sizeof (name), "%s/frag_%i.log", qfs_gamedir_path, i);
 		sv_fraglogfile = Qopen (name, "r");
 		if (!sv_fraglogfile) {			// can't read it, so create this one
 			sv_fraglogfile = Qopen (name, "w");
@@ -413,7 +413,7 @@ SV_Map_f (void)
 
 	// check to make sure the level exists
 	snprintf (expanded, sizeof (expanded), "maps/%s.bsp", level);
-	COM_FOpenFile (expanded, &f);
+	QFS_FOpenFile (expanded, &f);
 	if (!f) {
 		SV_Printf ("Can't find %s\n", expanded);
 		return;
@@ -1070,14 +1070,14 @@ SV_Snap (int uid)
 
 	snprintf (pcxname, sizeof (pcxname), "%d-00.pcx", uid);
 
-	snprintf (checkname, sizeof (checkname), "%s/snap", com_gamedir);
-	COM_CreatePath (va ("%s/dummy", checkname));
+	snprintf (checkname, sizeof (checkname), "%s/snap", qfs_gamedir_path);
+	QFS_CreatePath (va ("%s/dummy", checkname));
 
 	for (i = 0; i <= 99; i++) {
 		pcxname[strlen (pcxname) - 6] = i / 10 + '0';
 		pcxname[strlen (pcxname) - 5] = i % 10 + '0';
-		snprintf (checkname, sizeof (checkname), "%s/snap/%s", com_gamedir,
-				  pcxname);
+		snprintf (checkname, sizeof (checkname), "%s/snap/%s",
+				  qfs_gamedir_path, pcxname);
 		if (Sys_FileTime (checkname) == -1)
 			break;						// file doesn't exist
 	}

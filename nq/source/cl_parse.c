@@ -225,9 +225,9 @@ map_cfg (const char *mapname, int all)
 	char       *name = malloc (strlen (mapname) + 4 + 1);
 	QFile      *f;
 
-	COM_StripExtension (mapname, name);
+	QFS_StripExtension (mapname, name);
 	strcat (name, ".cfg");
-	COM_FOpenFile (name, &f);
+	QFS_FOpenFile (name, &f);
 	if (f) {
 		Qclose (f);
 		Cmd_Exec_File (host_cbuf, name, 1);

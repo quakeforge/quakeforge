@@ -140,12 +140,12 @@ CF_BuildQuota (void)
 	struct dirent *i;
 	DIR *dir;
 
-	path = Hunk_TempAlloc (strlen (com_gamedir) + 1 + strlen (CF_DIR) + 256 +
+	path = Hunk_TempAlloc (strlen (qfs_gamedir_path) + 1 + strlen (CF_DIR) + 256 +
 						   1);
 	if (!path)
 		return;
 
-	strcpy(path, com_gamedir);
+	strcpy(path, qfs_gamedir_path);
 	strcpy(path + strlen(path), "/");
 	strcpy(path + strlen(path), CF_DIR);
 
@@ -232,13 +232,13 @@ CF_Open (const char *path, const char *mode)
 		return -1;
 	}
 
-	fullpath = malloc(strlen(com_gamedir) + 1 + strlen(CF_DIR) + strlen(path) +
-					  1);
+	fullpath = malloc(strlen(qfs_gamedir_path) + 1 + strlen(CF_DIR)
+					  + strlen(path) + 1);
 	if (!fullpath) {
 		return -1;
 	}
 
-	strcpy(fullpath, com_gamedir);
+	strcpy(fullpath, qfs_gamedir_path);
 	strcpy(fullpath + strlen(fullpath), "/");
 	strcpy(fullpath + strlen(fullpath), CF_DIR);
 	j = fullpath + strlen(fullpath);

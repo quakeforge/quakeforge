@@ -1536,7 +1536,7 @@ SV_WriteIP_f (void)
 	QFile      *f;
 	const char *type;
 
-	snprintf (name, sizeof (name), "%s/listip.cfg", com_gamedir);
+	snprintf (name, sizeof (name), "%s/listip.cfg", qfs_gamedir_path);
 
 	SV_Printf ("Writing IP Filters to %s.\n", name);
 

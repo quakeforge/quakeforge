@@ -605,7 +605,7 @@ GIB_File_Transform_Path_Secure (dstring_t *path)
 		return -1;
 	/* Qexpand_squiggle (fs_userpath->string, e_dir); */
 	dstring_insertstr (path, 0, "/");
-	dstring_insertstr (path, 0, /* e_dir */ com_gamedir);
+	dstring_insertstr (path, 0, /* e_dir */ qfs_gamedir_path);
 	return 0;
 }
 		

@@ -248,7 +248,7 @@ SCR_ScreenShot_f (void)
 	int         pcx_len;
 
 	// find a file name to save it to 
-	if (!COM_NextFilename (pcxname, "qf", ".pcx")) {
+	if (!QFS_NextFilename (pcxname, "qf", ".pcx")) {
 		Con_Printf ("SCR_ScreenShot_f: Couldn't create a PCX");
 		return;
 	}

@@ -187,7 +187,7 @@ enum e_pathtype
 Sys_PathType (const char *path)
 {
 	enum e_pathtype type;
-	char *comp = COM_CompressPath (path);
+	char *comp = QFS_CompressPath (path);
 	if (comp[0] == '/'
 #ifdef WIN32
             || (comp[0] && comp[1] == ':')

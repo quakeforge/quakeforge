@@ -90,7 +90,7 @@ Mod_LoadExternalTextures (model_t *mod)
 		} else {
 		 	filename = va ("maps/%s.tga", tx->name);
 		}
-		COM_FOpenFile (filename, &f);
+		QFS_FOpenFile (filename, &f);
 
 		if (!f) {
 			if (tx->name[0] == '*') {
@@ -98,7 +98,7 @@ Mod_LoadExternalTextures (model_t *mod)
 			} else {
 				filename = va ("textures/%s.tga", tx->name);
 			}
-			COM_FOpenFile (filename, &f);
+			QFS_FOpenFile (filename, &f);
 		}
 
 		if (f) {
@@ -123,10 +123,10 @@ Mod_LoadLighting (lump_t *l)
 	if (mod_lightmap_bytes > 1) {
 		// LordHavoc: check for a .lit file to load
 		strcpy (litfilename, loadmodel->name);
-		COM_StripExtension (litfilename, litfilename);
+		QFS_StripExtension (litfilename, litfilename);
 		strncat (litfilename, ".lit", sizeof (litfilename) -
 				 strlen (litfilename));
-		data = (byte *) COM_LoadHunkFile (litfilename);
+		data = (byte *) QFS_LoadHunkFile (litfilename);
 		if (data) {
 			if (data[0] == 'Q' && data[1] == 'L' && data[2] == 'I'
 				&& data[3] == 'T') {

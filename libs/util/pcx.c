@@ -63,8 +63,8 @@ LoadPCX (QFile *f, int convert, byte *pal)
 
 	// parse the PCX file
 	pcx_mark = Hunk_LowMark ();
-	pcx = Hunk_AllocName (com_filesize, "PCX");
-	Qread (f, pcx, com_filesize);
+	pcx = Hunk_AllocName (qfs_filesize, "PCX");
+	Qread (f, pcx, qfs_filesize);
 
 	pcx->xmax = LittleShort (pcx->xmax);
 	pcx->xmin = LittleShort (pcx->xmin);
@@ -83,7 +83,7 @@ LoadPCX (QFile *f, int convert, byte *pal)
 		return 0;
 	}
 
-	palette = ((byte *) pcx) + com_filesize - 768;
+	palette = ((byte *) pcx) + qfs_filesize - 768;
 	dataByte = (byte *) &pcx[1];
 
 	count = (pcx->xmax + 1) * (pcx->ymax + 1);

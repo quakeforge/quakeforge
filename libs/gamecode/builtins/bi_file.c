@@ -144,7 +144,7 @@ bi_File_Open (progs_t *pr)
 			do_read |= 1;
 	}
 
-	path = COM_CompressPath (pth);
+	path = QFS_CompressPath (pth);
 	//printf ("'%s'  '%s'\n", P_STRING (pr, 0), path);
 	if (!path[0])
 		goto error;
@@ -158,7 +158,7 @@ bi_File_Open (progs_t *pr)
 		goto error;
 	if (do_write && !file_writeable (path))
 		goto error;
-	R_INT (pr) = QFile_open (pr, va ("%s/%s", com_gamedir, path), mode);
+	R_INT (pr) = QFile_open (pr, va ("%s/%s", qfs_gamedir_path, path), mode);
 	free (path);
 	return;
 error:

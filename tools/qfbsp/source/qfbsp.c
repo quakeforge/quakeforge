@@ -789,13 +789,13 @@ static void
 ProcessFile (void)
 {
 	// create filenames
-	COM_StripExtension (options.bspfile, options.hullfile);
+	QFS_StripExtension (options.bspfile, options.hullfile);
 	strcat (options.hullfile, ".h0");
 
-	COM_StripExtension (options.bspfile, options.portfile);
+	QFS_StripExtension (options.bspfile, options.portfile);
 	strcat (options.portfile, ".prt");
 
-	COM_StripExtension (options.bspfile, options.pointfile);
+	QFS_StripExtension (options.bspfile, options.pointfile);
 	strcat (options.pointfile, ".pts");
 
 	if (!options.onlyents) {

@@ -406,7 +406,7 @@ menu_free_progs_mem (progs_t *pr, void *mem)
 static void *
 menu_load_file (progs_t *pr, const char *path)
 {
-	return COM_LoadFile (path, 0);
+	return QFS_LoadFile (path, 0);
 }
 
 void
@@ -474,7 +474,7 @@ Menu_Load (void)
 	menu = 0;
 	top_menu = 0;
 
-	if ((size = COM_FOpenFile (menu_pr_state.progs_name, &file)) != -1) {
+	if ((size = QFS_FOpenFile (menu_pr_state.progs_name, &file)) != -1) {
 		PR_LoadProgsFile (&menu_pr_state, file, size, 0, 256 * 1024);
 		Qclose (file);
 

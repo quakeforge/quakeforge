@@ -277,7 +277,7 @@ Host_Map_f (void)
 
 	// check to make sure the level exists
 	expanded = va ("maps/%s.bsp", Cmd_Argv (1));
-	COM_FOpenFile (expanded, &f);
+	QFS_FOpenFile (expanded, &f);
 	if (!f) {
 		Con_Printf ("Can't find %s\n", expanded);
 		return;
@@ -465,8 +465,8 @@ Host_Savegame_f (void)
 		}
 	}
 
-	snprintf (name, sizeof (name), "%s/%s", com_gamedir, Cmd_Argv (1));
-	COM_DefaultExtension (name, ".sav");
+	snprintf (name, sizeof (name), "%s/%s", qfs_gamedir_path, Cmd_Argv (1));
+	QFS_DefaultExtension (name, ".sav");
 
 	Con_Printf ("Saving game to %s...\n", name);
 	f = Qopen (name, "w");
@@ -528,8 +528,8 @@ Host_Loadgame_f (void)
 
 	cls.demonum = -1;					// stop demo loop in case this fails
 
-	snprintf (name, sizeof (name), "%s/%s", com_gamedir, Cmd_Argv (1));
-	COM_DefaultExtension (name, ".sav");
+	snprintf (name, sizeof (name), "%s/%s", qfs_gamedir_path, Cmd_Argv (1));
+	QFS_DefaultExtension (name, ".sav");
 
 	// we can't call SCR_BeginLoadingPlaque, because too much stack space has
 	// been used.  The menu calls it before stuffing loadgame command

@@ -539,22 +539,22 @@ CL_Record (const char *argv1)
 			if (mapname[k] == '.')
 				mapname[k] = '\0';
 
-		snprintf (name, sizeof (name), "%s/%s-%s", com_gamedir,
+		snprintf (name, sizeof (name), "%s/%s-%s", qfs_gamedir_path,
 				  timestring, mapname);
 	} else {
-		snprintf (name, sizeof (name), "%s/%s", com_gamedir, argv1);
+		snprintf (name, sizeof (name), "%s/%s", qfs_gamedir_path, argv1);
 	}
 
 	// open the demo file
 #ifdef HAVE_ZLIB
 	if (demo_gzip->int_val) {
-		COM_DefaultExtension (name, ".qwd.gz");
+		QFS_DefaultExtension (name, ".qwd.gz");
 		cls.demofile = Qopen (name, va ("wbz%d",
 										bound (1, demo_gzip->int_val, 9)));
 	} else
 #endif
 	{
-		COM_DefaultExtension (name, ".qwd");
+		QFS_DefaultExtension (name, ".qwd");
 		cls.demofile = Qopen (name, "wb");
 	}
 	if (!cls.demofile) {
@@ -577,7 +577,7 @@ CL_Record (const char *argv1)
 	MSG_WriteByte (&buf, svc_serverdata);
 	MSG_WriteLong (&buf, PROTOCOL_VERSION);
 	MSG_WriteLong (&buf, cl.servercount);
-	MSG_WriteString (&buf, gamedirfile);
+	MSG_WriteString (&buf, qfs_gamedir_file);
 
 	if (cl.spectator)
 		MSG_WriteByte (&buf, cl.playernum | 128);
@@ -844,10 +844,10 @@ CL_ReRecord_f (void)
 	if (cls.demorecording)
 		CL_Stop_f ();
 
-	snprintf (name, sizeof (name), "%s/%s", com_gamedir, Cmd_Argv (1));
+	snprintf (name, sizeof (name), "%s/%s", qfs_gamedir_path, Cmd_Argv (1));
 
 	// open the demo file
-	COM_DefaultExtension (name, ".qwd");
+	QFS_DefaultExtension (name, ".qwd");
 
 	cls.demofile = Qopen (name, "wb");
 	if (!cls.demofile) {
@@ -869,10 +869,10 @@ CL_StartDemo (void)
 
 	// open the demo file
 	strncpy (name, demoname, sizeof (name));
-	COM_DefaultExtension (name, ".qwd");
+	QFS_DefaultExtension (name, ".qwd");
 
 	Con_Printf ("Playing demo from %s.\n", name);
-	COM_FOpenFile (name, &cls.demofile);
+	QFS_FOpenFile (name, &cls.demofile);
 	if (!cls.demofile) {
 		Con_Printf ("ERROR: couldn't open.\n");
 		cls.demonum = -1;				// stop demo loop
@@ -880,7 +880,7 @@ CL_StartDemo (void)
 	}
 
 	cls.demoplayback = true;
-	if (strequal (COM_FileExtension (name), ".mvd")) {
+	if (strequal (QFS_FileExtension (name), ".mvd")) {
 		cls.demoplayback2 = true;
 		Con_Printf ("mvd\n");
 	} else {

@@ -271,7 +271,7 @@ Mod_LoadExternalSkin (maliasskindesc_t *pskindesc, char *filename)
 	tex_t		*targa;
 	QFile		*f;
 
-	COM_FOpenFile (filename, &f);
+	QFS_FOpenFile (filename, &f);
 	if (f)
 	{
 		targa = LoadTGA (f);

@@ -147,7 +147,7 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	unsigned int *buf;
 
 	// load the file
-	buf = (unsigned int *) COM_LoadFile (mod->name, 0);
+	buf = (unsigned int *) QFS_LoadFile (mod->name, 0);
 	if (!buf) {
 		if (crash)
 			Sys_Error ("Mod_LoadModel: %s not found", mod->name);
@@ -155,7 +155,7 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	}
 
 	// allocate a new model
-	COM_FileBase (mod->name, loadname);
+	QFS_FileBase (mod->name, loadname);
 
 	loadmodel = mod;
 

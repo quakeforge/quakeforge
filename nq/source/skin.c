@@ -104,7 +104,7 @@ Skin_Find (player_info_t *sc)
 	if (!allskins[0] && (!s || !strcaseequal (name, s)))
 		Info_SetValueForKey (sc->userinfo, "skin", name, 1);
 
-	COM_StripExtension (name, name);
+	QFS_StripExtension (name, name);
 
 	skin = Hash_Find (skin_hash, name);
 	if (skin) {
@@ -163,11 +163,11 @@ Skin_Cache (skin_t *skin)
 
 	// load the pic from disk
 	snprintf (name, sizeof (name), "skins/%s.pcx", skin->name);
-	COM_FOpenFile (name, &file);
+	QFS_FOpenFile (name, &file);
 	if (!file) {
 		Con_Printf ("Couldn't load skin %s\n", name);
 		snprintf (name, sizeof (name), "skins/%s.pcx", baseskin->string);
-		COM_FOpenFile (name, &file);
+		QFS_FOpenFile (name, &file);
 		if (!file) {
 			skin->failedload = true;
 			return NULL;

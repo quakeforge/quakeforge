@@ -1072,9 +1072,9 @@ CL_Download_f (void)
 	}
 
 	snprintf (cls.downloadname, sizeof (cls.downloadname), "%s/%s",
-			  com_gamedir, Cmd_Argv (1));
+			  qfs_gamedir_path, Cmd_Argv (1));
 
-	COM_CreatePath (cls.downloadname);
+	QFS_CreatePath (cls.downloadname);
 
 	strncpy (cls.downloadtempname, cls.downloadname,
 			 sizeof (cls.downloadtempname));
@@ -1413,9 +1413,9 @@ Host_WriteConfiguration (void)
 	QFile      *f;
 
 	if (host_initialized && cl_writecfg->int_val) {
-		char       *path = va ("%s/config.cfg", com_gamedir);
+		char       *path = va ("%s/config.cfg", qfs_gamedir_path);
 
-		COM_CreatePath (path);
+		QFS_CreatePath (path);
 		f = Qopen (path, "w");
 		if (!f) {
 			Con_Printf ("Couldn't write config.cfg.\n");
@@ -1601,7 +1601,7 @@ check_quakerc (void)
 	int ret = 1;
 	QFile *f;
 
-	COM_FOpenFile ("quake.rc", &f);
+	QFS_FOpenFile ("quake.rc", &f);
 	if (!f)
 		return 1;
 	while ((l = Qgetline (f))) {
@@ -1759,10 +1759,10 @@ Host_Init (void)
 
 	Con_Printf ("%4.1f megabyte heap.\n", cl_mem_size->value);
 
-	host_basepal = (byte *) COM_LoadHunkFile ("gfx/palette.lmp");
+	host_basepal = (byte *) QFS_LoadHunkFile ("gfx/palette.lmp");
 	if (!host_basepal)
 		Sys_Error ("Couldn't load gfx/palette.lmp");
-	vid_colormap = (byte *) COM_LoadHunkFile ("gfx/colormap.lmp");
+	vid_colormap = (byte *) QFS_LoadHunkFile ("gfx/colormap.lmp");
 	if (!vid_colormap)
 		Sys_Error ("Couldn't load gfx/colormap.lmp");
 

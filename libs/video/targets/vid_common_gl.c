@@ -213,7 +213,7 @@ VID_SetPalette (unsigned char *palette)
 		return;
 	palflag = true;
 
-	COM_FOpenFile ("glquake/15to8.pal", &f);
+	QFS_FOpenFile ("glquake/15to8.pal", &f);
 	if (f) {
 		Qread (f, d_15to8table, 1 << 15);
 		Qclose (f);
@@ -243,8 +243,8 @@ VID_SetPalette (unsigned char *palette)
 			}
 			d_15to8table[i] = k;
 		}
-		snprintf (s, sizeof (s), "%s/glquake/15to8.pal", com_gamedir);
-		COM_CreatePath (s);
+		snprintf (s, sizeof (s), "%s/glquake/15to8.pal", qfs_gamedir_path);
+		QFS_CreatePath (s);
 		if ((f = Qopen (s, "wb")) != NULL) {
 			Qwrite (f, d_15to8table, 1 << 15);
 			Qclose (f);

@@ -183,7 +183,7 @@ R_ReadPointFile_f (void)
 	snprintf (name, sizeof (name), "%s.pts", mapname);
 	free (mapname);
 
-	COM_FOpenFile (name, &f);
+	QFS_FOpenFile (name, &f);
 	if (!f) {
 		Con_Printf ("couldn't open %s\n", name);
 		return;

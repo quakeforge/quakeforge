@@ -141,8 +141,8 @@ main (int argc, char **argv)
 
     InitThreads ();
 
-	COM_StripExtension (bspfile, bspfile);
-	COM_DefaultExtension (bspfile, ".bsp");
+	QFS_StripExtension (bspfile, bspfile);
+	QFS_DefaultExtension (bspfile, ".bsp");
 
 	f = Qopen (bspfile, "rb");
 	bsp = LoadBSPFile (f, Qfilesize (f));

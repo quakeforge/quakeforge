@@ -179,8 +179,8 @@ PR_LoadDebug (progs_t *pr)
 	if (!str)
 		return;
 	pr->debugfile = PR_GetString (pr, str->string_var);
-	sym_file = COM_SkipPath (pr->debugfile);
-	path_end = COM_SkipPath (pr->progs_name);
+	sym_file = QFS_SkipPath (pr->debugfile);
+	path_end = QFS_SkipPath (pr->progs_name);
 	sym_path = Hunk_TempAlloc (strlen (sym_file) + (path_end - pr->progs_name)
 							   + 1);
 	strncpy (sym_path, pr->progs_name, path_end - pr->progs_name);

@@ -80,7 +80,7 @@ R_ReadPointFile_f (void)
 
 	// FIXME    snprintf (name, sizeof (name), "maps/%s.pts", sv.name);
 
-	COM_FOpenFile (name, &f);
+	QFS_FOpenFile (name, &f);
 	if (!f) {
 		Con_Printf ("couldn't open %s\n", name);
 		return;
