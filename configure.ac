@@ -638,7 +638,7 @@ AC_ARG_ENABLE(oss,
 AC_ARG_ENABLE(sound,
 	[  --disable-sound         disable sound outright])
 
-SOUND_TYPES=""
+unset SOUND_TYPES
 AC_MSG_CHECKING(for sound support)
 
 HAVE_ALSA=no
@@ -807,7 +807,7 @@ fi
 AC_SUBST(WINSND_LIBS)
 
 if test "x$enable_sound" = "xno"; then
-	SOUND_TYPES=""
+	unset SOUND_TYPES
 fi
 
 if test "$SOUND_TYPES"; then
@@ -848,7 +848,7 @@ dnl ==================================================================
 
 CD_CFLAGS=""
 CD_PLUGIN_TARGETS="libcd_null.la"
-CDTYPE=""
+unset CDTYPE
 
 AC_MSG_CHECKING(for CD audio support)
 
@@ -1365,7 +1365,7 @@ else
 	IFS=" "
 fi
 
-CL_TARGETS=""
+unset CL_TARGETS
 QW_TARGETS=""
 NQ_TARGETS=""
 
@@ -1470,7 +1470,7 @@ if test "x$mingw" = xyes; then
 	CAN_BUILD_GL=yes
 fi
 
-SV_TARGETS=""
+unset SV_TARGETS
 if test "x$ENABLE_NQ_SERVER" = xyes; then
 	NQ_TARGETS="nq-server\$(EXEEXT) $NQ_TARGETS"
 	SV_TARGETS="$SV_TARGETS nq"
@@ -1538,13 +1538,13 @@ if test -n "$CL_TARGETS"; then
 		SND_REND_TARGETS="$SND_REND_TARGETS libsnd_render_default.la"
 	fi
 else
-	CDTYPE=""
+	unset CDTYPE
 	CD_PLUGIN_TARGETS=""
 	CD_TARGETS=""
 	SND_PLUGIN_TARGETS=""
 	SND_REND_TARGETS=""
 	SND_TARGETS=""
-	SOUND_TYPES=""
+	unset SOUND_TYPES
 fi
 
 PLUGIN_RPATH='-rpath $(plugindir)'
@@ -1716,14 +1716,14 @@ fi
 AC_MSG_RESULT([
 	QuakeForge has been configured successfully.
 
-	Build type:$BUILD_TYPE
-	Server support:$SV_TARGETS
-	Client support:$CL_TARGETS
-	Sound support:$SOUND_TYPES
-	CD Audio system:$CDTYPE
-	IPv6 networking: $NETTYPE_IPV6
+	Build type         :$BUILD_TYPE
+	Server support     :${SV_TARGETS- no}
+	Client support     :${CL_TARGETS- no}
+	Sound support      :${SOUND_TYPES- no}
+	CD Audio system    :${CDTYPE- no}
+	IPv6 networking    : $NETTYPE_IPV6
 	Compression support: $HAVE_ZLIB
-	Compiler version: $CCVER
+	Compiler version   : $CCVER
 
 	Shared game data directory: $sharepath
 	Per-user game data directory: $userpath
