@@ -15,6 +15,7 @@ typedef struct pack_s {
 
 	int         modified;
 	int         old_numfiles;
+	int         pad;
 } pack_t;
 
 pack_t *pack_new (const char *name);
@@ -23,3 +24,4 @@ pack_t *pack_open (const char *name);
 void pack_close (pack_t *pack);
 pack_t *pack_create (const char *name);
 int pack_add (pack_t *pack, const char *filename);
+int pack_extract (pack_t *pack, dpackfile_t *pf);

@@ -1,7 +1,12 @@
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <limits.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
 
 #include <QF/qendian.h>
 
@@ -196,7 +201,7 @@ pack_add (pack_t *pack, const char *filename)
 		pf->filelen += bytes;
 	}
 	fclose (file);
-	if (pf->filelen & 3) {
+	if (pack->pad && pf->filelen & 3) {
 		static char buf[4];
 		fwrite (buf, 1, 4 - (pf->filelen & 3), pack->handle);
 	}
@@ -204,11 +209,48 @@ pack_add (pack_t *pack, const char *filename)
 	return 0;
 }
 
+static int
+make_parents (const char *_path)
+{
+	char       *path;
+	char       *d, *p, t;
+
+	path = (char *) alloca (strlen (_path) + 1);
+	strcpy (path, _path);
+	for (p = path; *p && (d = strchr (p, '/')); p = d + 1) {
+		t = *d;
+		*d = 0;
+		if (mkdir (path, 0777) < 0)
+			if (errno != EEXIST)
+				return -1;
+		*d = t;
+	}
+	return 0;
+}
+
 int
 pack_extract (pack_t *pack, dpackfile_t *pf)
 {
-	//const char *name = pf->name;
+	const char *name = pf->name;
+	int         count;
+	int         len;
+	FILE       *file;
+	char        buffer[16384];
 
-	//fseek (pack->handle, pf->filepos, SEEK_SET);
+	if (make_parents (name) == -1)
+		return -1;
+	if (!(file = fopen (name, "wb")))
+		return -1;
+	fseek (pack->handle, pf->filepos, SEEK_SET);
+	len = pf->filelen;
+	while (len) {
+		count = len;
+		if (count > sizeof (buffer))
+			count = sizeof (buffer);
+		count = fread (buffer, 1, count, pack->handle);
+		fwrite (buffer, 1, count, file);
+		len -= count;
+	}
+	fclose (file);
 	return 0;
 }

@@ -22,8 +22,9 @@ main (int argc, char **argv)
 	int         c;
 	const char *pack_file = 0;
 	int         verbose = 0;
+	int         pad = 0;
 
-	while ((c = getopt_long (argc, argv, "cf:tv", long_options, 0)) != -1) {
+	while ((c = getopt_long (argc, argv, "cf:ptvx", long_options, 0)) != -1) {
 		switch (c) {
 			case 'f':
 				pack_file = optarg;
@@ -34,8 +35,14 @@ main (int argc, char **argv)
 			case 'c':
 				mode = mo_create;
 				break;
+			case 'x':
+				mode = mo_extract;
+				break;
 			case 'v':
 				verbose = 1;
+				break;
+			case 'p':
+				pad = 1;
 				break;
 		}
 	}
@@ -46,15 +53,32 @@ main (int argc, char **argv)
 	}
 
 	switch (mode) {
+		case mo_extract:
+			pack = pack_open (pack_file);
+			if (!pack) {
+				fprintf (stderr, "error opening %s\n", pack_file);
+				return 1;
+			}
+			for (i = 0; i < pack->numfiles; i++) {
+				if (verbose)
+					fprintf (stderr, "%s\n", pack->files[i].name);
+				pack_extract (pack, &pack->files[i]);
+			}
+			pack_close (pack);
+			break;
 		case mo_test:
 			pack = pack_open (pack_file);
 			if (!pack) {
 				fprintf (stderr, "error opening %s\n", pack_file);
 				return 1;
 			}
-			for (i = 0; i < pack->numfiles; i++)
-				printf ("%6d %s\n", pack->files[i].filelen,
-						pack->files[i].name);
+			for (i = 0; i < pack->numfiles; i++) {
+				if (verbose)
+					printf ("%6d %s\n", pack->files[i].filelen,
+							pack->files[i].name);
+				else
+					printf ("%s\n", pack->files[i].name);
+			}
 			pack_close (pack);
 			break;
 		case mo_create:
@@ -63,8 +87,12 @@ main (int argc, char **argv)
 				fprintf (stderr, "error creating %s\n", pack_file);
 				return 1;
 			}
-			while (optind < argc)
+			pack->pad = pad;
+			while (optind < argc) {
+				if (verbose)
+					fprintf (stderr, "%s\n", argv[optind]);
 				pack_add (pack, argv[optind++]);
+			}
 			pack_close (pack);
 			break;
 		default:
