@@ -359,12 +359,13 @@ WriteData (int crc)
 
 	fseek (h, 0, SEEK_SET);
 	SafeWrite (h, &progs, sizeof (progs));
+	fclose (h);
 
-	fseek (h, 0, SEEK_SET);
 	if (!options.debug) {
-		fclose (h);
 		return;
 	}
+
+	h = SafeOpenRead (destfile);
 
 	debug.version = LittleLong (PROG_DEBUG_VERSION);
 	CRC_Init (&debug.crc);
