@@ -35,6 +35,7 @@ static const char rcsid[] =
 #include "conproc.h"
 #include "resource.h"
 
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/screen.h"
