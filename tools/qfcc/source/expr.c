@@ -485,6 +485,9 @@ print_expr (expr_t *e)
 		case ex_integer:
 			printf ("%d", e->e.integer_val);
 			break;
+		case ex_uinteger:
+			printf ("%d", e->e.uinteger_val);
+			break;
 	}
 }
 
@@ -1019,6 +1022,7 @@ unary_expr (int op, expr_t *e)
 						return n;
 					}
 				case ex_integer:
+				case ex_uinteger:
 					e->e.integer_val *= -1;
 					return e;
 				case ex_float:
@@ -1066,6 +1070,7 @@ unary_expr (int op, expr_t *e)
 				case ex_nil:
 					return error (e, "invalid type for unary !");
 				case ex_integer:
+				case ex_uinteger:
 					e->e.integer_val = !e->e.integer_val;
 					return e;
 				case ex_float:
@@ -1119,6 +1124,7 @@ unary_expr (int op, expr_t *e)
 						return n;
 					}
 				case ex_integer:
+				case ex_uinteger:
 					e->e.integer_val = ~e->e.integer_val;
 					return e;
 				case ex_float:
