@@ -241,7 +241,6 @@ CL_Disconnect (void)
 			Host_ShutdownServer (false);
 	}
 
-	cls.demoplayback = cls.timedemo = false;
 	cls.signon = 0;
 }
 
