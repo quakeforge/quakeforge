@@ -1265,6 +1265,7 @@ Cmd_ProcessEmbeddedSingle (dstring_t * dstr, int start)
 	} else {
 		command = dstring_newstr ();
 		sub = Cmd_NewBuffer (false);
+		sub->embedded = true;
 		sub->locals = cmd_activebuffer->locals;
 		dstring_insert (command, dstr->str + start + 2, n - 2, 0);
 		Cbuf_InsertTextTo (sub, command->str);
@@ -2038,7 +2039,8 @@ Cmd_Return_f (void) {
 		return;
 	}
 	dstring_clearstr (cmd_activebuffer->buffer); // Clear the buffer out no matter what
-	cmd_activebuffer = cmd_activebuffer->prev;
+	if (!cmd_activebuffer->embedded)
+		cmd_activebuffer = cmd_activebuffer->prev;
 	if (argc == 2)
 		Cmd_Return (val);
 	cmd_activebuffer = old;

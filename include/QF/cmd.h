@@ -69,6 +69,7 @@ typedef struct cmd_buffer_s {
 	qboolean legacy; // Backwards compatible with old console buffer
 	qboolean ownvars; // Buffer has its own private local variables
 	qboolean loop; // Buffer loops itself
+	qboolean embedded; // Buffer exists to evaluate embedded command
 	
 	// Execution position
 	enum {
