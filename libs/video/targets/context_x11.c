@@ -372,7 +372,7 @@ X11_Init_Cvars (void)
 							   "Toggles fullscreen game mode");
 	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
 								 "Use system gamma control if available");
-	sys_dump_core = Cvar_Get ("sys_dumpcore", "0", CVAR_NONE, dump_core_callback, "Dump core on Tragic Death.  Be sure to check 'ulimit -c'");
+	sys_dump_core = Cvar_Get ("sys_dump_core", "0", CVAR_NONE, dump_core_callback, "Dump core on Tragic Death.  Be sure to check 'ulimit -c'");
 }
 
 void
