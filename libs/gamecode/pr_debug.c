@@ -123,6 +123,15 @@ PR_LoadDebug (progs_t *pr)
 	char       *sym_path;
 	ddef_t     *def;
 
+	pr->debug = 0;
+	pr->auxfunctions = 0;
+	pr->auxfunction_map = 0;
+	pr->linenos = 0;
+	pr->local_defs = 0;
+
+	if (!pr_debug->int_val)
+		return;
+
 	def = PR_FindGlobal (pr, ".debug_file");
 	if (def)
 		str = &pr->pr_globals[def->ofs];
@@ -150,9 +159,6 @@ PR_LoadDebug (progs_t *pr)
 					pr->debug->version & 0xfff);
 		Hunk_FreeToLowMark (start);
 		pr->debug = 0;
-		pr->auxfunctions = 0;
-		pr->linenos = 0;
-		pr->local_defs = 0;
 		return;
 	}
 	pr->debug->crc = LittleShort (pr->debug->crc);
@@ -164,9 +170,6 @@ PR_LoadDebug (progs_t *pr)
 					pr->crc);
 		Hunk_FreeToLowMark (start);
 		pr->debug = 0;
-		pr->auxfunctions = 0;
-		pr->linenos = 0;
-		pr->local_defs = 0;
 		return;
 	}
 	pr->debug->you_tell_me_and_we_will_both_know = LittleShort (pr->debug->you_tell_me_and_we_will_both_know);
@@ -181,12 +184,17 @@ PR_LoadDebug (progs_t *pr)
 	pr->linenos = (pr_lineno_t*)((char*)pr->debug + pr->debug->linenos);
 	pr->local_defs = (ddef_t*)((char*)pr->debug + pr->debug->locals);
 
+	pr->auxfunction_map = Hunk_Alloc (pr->progs->numfunctions
+									  * sizeof (pr_auxfunction_t*));
+
 	for (i = 0; i < pr->debug->num_auxfunctions; i++) {
 		pr->auxfunctions[i].function = LittleLong (pr->auxfunctions[i].function);
 		pr->auxfunctions[i].source_line = LittleLong (pr->auxfunctions[i].source_line);
 		pr->auxfunctions[i].line_info = LittleLong (pr->auxfunctions[i].line_info);
 		pr->auxfunctions[i].local_defs = LittleLong (pr->auxfunctions[i].local_defs);
 		pr->auxfunctions[i].num_locals = LittleLong (pr->auxfunctions[i].num_locals);
+
+		pr->auxfunction_map[pr->auxfunctions[i].function] = &pr->auxfunctions[i];
 	}
 	for (i = 0; i < pr->debug->num_linenos; i++) {
 		pr->linenos[i].fa.func = LittleLong (pr->linenos[i].fa.func);
@@ -290,6 +298,27 @@ PR_Get_Source_Line (progs_t *pr, unsigned long addr)
 	sprintf (str, "%s:%ld:%.*s", fname, line,
 			 (int)file->lines[line - 1].len, file->lines[line - 1].text);
 	return str;
+}
+
+ddef_t *
+PR_Get_Local_Def (progs_t *pr, int offs)
+{
+	int i;
+	dfunction_t *func = pr->pr_xfunction;
+	pr_auxfunction_t *aux_func;
+
+	if (!func)
+		return 0;
+	aux_func = pr->auxfunction_map[func - pr->pr_functions];
+	if (!aux_func)
+		return 0;
+	offs -= func->parm_start;
+	if (offs < 0 || offs >= func->locals)
+		return 0;
+	for (i = 0; i < aux_func->num_locals; i++)
+		if (pr->local_defs[aux_func->local_defs + i].ofs == offs)
+			return &pr->local_defs[aux_func->local_defs + i];
+	return 0;
 }
 
 static const char *

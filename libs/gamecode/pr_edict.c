@@ -451,12 +451,15 @@ PR_GlobalString (progs_t * pr, int ofs)
 {
 	char       *s;
 	int         i;
-	ddef_t     *def;
+	ddef_t     *def = 0;
 	void       *val;
 	static char line[128];
 
+	if (pr_debug->int_val && pr->debug)
+		def = PR_Get_Local_Def (pr, ofs);
 	val = (void *) &pr->pr_globals[ofs];
-	def = ED_GlobalAtOfs (pr, ofs);
+	if (!def)
+		def = ED_GlobalAtOfs (pr, ofs);
 	if (!def)
 		snprintf (line, sizeof (line), "%i(?)", ofs);
 	else {
@@ -477,10 +480,13 @@ char       *
 PR_GlobalStringNoContents (progs_t * pr, int ofs)
 {
 	int         i;
-	ddef_t     *def;
+	ddef_t     *def = 0;
 	static char line[128];
 
-	def = ED_GlobalAtOfs (pr, ofs);
+	if (pr_debug->int_val && pr->debug)
+		def = PR_Get_Local_Def (pr, ofs);
+	if (!def)
+		def = ED_GlobalAtOfs (pr, ofs);
 	if (!def)
 		snprintf (line, sizeof (line), "%i(?)", ofs);
 	else
@@ -1160,7 +1166,9 @@ PR_LoadProgs (progs_t * pr, const char *progsname)
 	PR_LoadDebug (pr);
 
 	// LordHavoc: bounds check anything static
-	for (i = 0, st = pr->pr_statements; i < pr->progs->numstatements; i++, st++) {
+	for (i = 0, st = pr->pr_statements;
+		 i < pr->progs->numstatements;
+		 i++, st++) {
 		switch (st->op) {
 			case OP_IF:
 			case OP_IFNOT:

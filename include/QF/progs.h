@@ -176,6 +176,7 @@ unsigned long PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno);
 pr_lineno_t *PR_Find_Lineno (progs_t *pr, unsigned long addr);
 const char *PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno);
 const char *PR_Get_Source_Line (progs_t *pr, unsigned long addr);
+ddef_t *PR_Get_Local_Def (progs_t *pr, int offs);
 
 extern struct cvar_s *pr_debug;
 
@@ -256,6 +257,7 @@ struct progs_s {
 	char			*debugfile;
 	struct pr_debug_header_s *debug;
 	struct pr_auxfunction_s *auxfunctions;
+	struct pr_auxfunction_s **auxfunction_map;
 	struct pr_lineno_s *linenos;
 	ddef_t			*local_defs;
 

@@ -58,7 +58,7 @@ PR_PrintStatement (progs_t * pr, dstatement_t *s)
 	int         addr = s - pr->pr_statements;
 	opcode_t   *op;
 
-	if (pr_debug->int_val) {
+	if (pr_debug->int_val && pr->debug) {
 		const char *source_line = PR_Get_Source_Line (pr, addr);
 
 		if (source_line)
@@ -169,7 +169,7 @@ PR_RunError (progs_t * pr, const char *error, ...)
 	vsnprintf (string, sizeof (string), error, argptr);
 	va_end (argptr);
 
-	if (pr_debug->int_val) {
+	if (pr_debug->int_val && pr->debug) {
 		int addr = pr->pr_xstatement;
 		
 		while (!PR_Get_Source_Line (pr, addr))
@@ -186,12 +186,6 @@ PR_RunError (progs_t * pr, const char *error, ...)
 
 	PR_Error (pr, "Program error");
 }
-
-/*
-	PR_ExecuteProgram
-
-	The interpretation main loop
-*/
 
 /*
 	PR_EnterFunction
@@ -265,6 +259,8 @@ PR_LeaveFunction (progs_t * pr)
 
 /*
 	PR_ExecuteProgram
+
+	The interpretation main loop
 */
 #define OPA (pr->pr_globals[(unsigned short) st->a])
 #define OPB (pr->pr_globals[(unsigned short) st->b])

@@ -1,3 +1,9 @@
+#define NIT_TESLA            32768  //The *real* bug zapper!
+#define NIT_SECURITY_CAMERA  65536  //CH Security Camera
+#define NIT_TELEPORTER       131072 //CH Teleporter
+#define PC_ENGINEER_TF_ITEMS NIT_TESLA | NIT_SECURITY_CAMERA | NIT_TELEPORTER
+
+//float messed_or = PC_ENGINEER_TF_ITEMS;
 float foo = 1;
 float bar = 1;
 float snafu = 2;
@@ -7,9 +13,12 @@ void () eek;
 
 float () main =
 {
+	local float messed_or;
 	local float handle;
 	local string buffer;
 
+	traceon();
+	messed_or = PC_ENGINEER_TF_ITEMS;
 	handle = open ("main.qc", 0);
 	if (handle == -1) {
 		print (strerror (errno ()) + "\n");
@@ -59,10 +68,12 @@ void () blarg =
 	}
 };
 
+.entity owner;
+entity sent;
 void () eek =
 {
 	traceon();
-	if (self && self.origin)
+	if (sent && sent.owner != self )
 		self.origin = '0 0 0';
 	self.origin = self.origin + '1 2 3';
 	traceoff();
