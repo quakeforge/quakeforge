@@ -42,7 +42,7 @@ configure-stamp:
 		    --disable-xmms \
 		    --mandir=\$${prefix}/share/man \
 		    --infodir=\$${prefix}/share/info \
-		    --with-plugin-path=/usr/lib/quakeforge \
+		    --with-plugin-path=\$${prefix}/share/games/quake/QFplugins \
 		    --with-clients=glx,sdl,sgl,svga,x11 \
 		    --with-servers=master,nq,qw
 
