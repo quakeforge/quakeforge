@@ -617,9 +617,7 @@ CL_ParseServerData (void)
 	protover = MSG_ReadLong ();
 	if (protover != PROTOCOL_VERSION &&
 		!(cls.demoplayback
-		  && (protover == 26 || protover == 27
-			  || protover ==
-			  28)))
+		  && (protover <= 26 && protover >= 28)))
 			Host_EndGame
 			("Server returned version %i, not %i\nYou probably need to upgrade.\nCheck http://www.quakeworld.net/",
 			 protover, PROTOCOL_VERSION);
@@ -629,7 +627,7 @@ CL_ParseServerData (void)
 	// game directory
 	str = MSG_ReadString ();
 
-	if (strcasecmp (gamedirfile, str)) {
+	if (!strequal (gamedirfile, str)) {
 		// save current config
 		Host_WriteConfiguration ();
 		cflag = true;

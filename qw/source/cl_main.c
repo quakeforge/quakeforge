@@ -591,7 +591,7 @@ CL_FullServerinfo_f (void)
 			Con_Printf ("Invalid standards version: %s", p);
 	}
 	if ((p = Info_ValueForKey (cl.serverinfo, "skybox")) && *p) {
-		if (strcasecmp (p, "none") == 0) {
+		if (!strcaseequal (p, "none")) {
 			allowskybox = false;
 		} else {
 			allowskybox = true;
@@ -689,7 +689,7 @@ CL_FullInfo_f (void)
 		if (*s)
 			s++;
 
-		if (!strcasecmp (key, pmodel_name) || !strcasecmp (key, emodel_name))
+		if (strcaseequal (key, pmodel_name) || strcaseequal (key, emodel_name))
 			continue;
 
 		Info_SetValueForKey (cls.userinfo, key, value, MAX_INFO_STRING);
@@ -712,8 +712,9 @@ CL_SetInfo_f (void)
 		Con_Printf ("usage: setinfo [ <key> <value> ]\n");
 		return;
 	}
-	if (!strcasecmp (Cmd_Argv (1), pmodel_name)
-		|| !strcmp (Cmd_Argv (1), emodel_name)) return;
+	if (strcaseequal (Cmd_Argv (1), pmodel_name)
+		|| strcaseequal (Cmd_Argv (1), emodel_name))
+		return;
 
 	Info_SetValueForKey (cls.userinfo, Cmd_Argv (1), Cmd_Argv (2),
 						 MAX_INFO_STRING);

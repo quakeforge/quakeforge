@@ -704,9 +704,9 @@ SVC_DirectConnect (void)
 	s = Info_ValueForKey (userinfo, "spectator");
 	if (s[0] && strcmp (s, "0")) {
 		if (spectator_password->string[0] &&
-			strcasecmp (spectator_password->string, "none") &&
-			strcmp (spectator_password->string, s)) {	// failed
-			Con_Printf ("%s:spectator password failed\n",
+			!strcaseequal (spectator_password->string, "none") &&
+			!strequal (spectator_password->string, s)) {	// failed
+			Con_Printf ("%s: spectator password failed\n",
 						NET_AdrToString (net_from));
 			Netchan_OutOfBandPrint (net_from,
 									"%c\nrequires a spectator password\n\n",
@@ -718,8 +718,9 @@ SVC_DirectConnect (void)
 		spectator = true;
 	} else {
 		s = Info_ValueForKey (userinfo, "password");
-		if (password->string[0] &&
-			strcasecmp (password->string, "none") && strcmp (password->string, s)) {
+		if (password->string[0]
+			&& !strcaseequal (password->string, "none")
+			&& !strequal (password->string, s)) {
 			Con_Printf ("%s:password failed\n", NET_AdrToString (net_from));
 			Netchan_OutOfBandPrint (net_from,
 									"%c\nserver requires a password\n\n",
@@ -1748,7 +1749,7 @@ SV_ExtractFromUserinfo (client_t *cl)
 		val = Info_ValueForKey (cl->userinfo, "name");
 	}
 
-	if (!val[0] || !strcasecmp (val, "console")) {
+	if (!val[0] || strcaseequal (val, "console")) {
 		Info_SetValueForKey (cl->userinfo, "name", "unnamed", MAX_INFO_STRING);
 		val = Info_ValueForKey (cl->userinfo, "name");
 	}
@@ -1757,7 +1758,7 @@ SV_ExtractFromUserinfo (client_t *cl)
 		for (i = 0, client = svs.clients; i < MAX_CLIENTS; i++, client++) {
 			if (client->state != cs_spawned || client == cl)
 				continue;
-			if (!strcasecmp (client->name, val))
+			if (strcaseequal (client->name, val))
 				break;
 		}
 		if (i != MAX_CLIENTS) {			// dup name
