@@ -381,10 +381,27 @@ CL_ParseTEnt (void)
 		case TE_GUNSHOT:				// bullet hitting wall
 		case TE_BLOOD:					// bullets hitting body
 			cnt = MSG_ReadByte (net_message) * 20;
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
+			R_RunPuffEffect (pos, prot_to_rend[type], cnt);
+			break;
+
 		case TE_LIGHTNINGBLOOD:		// lightning hitting body
 			pos[0] = MSG_ReadCoord (net_message);
 			pos[1] = MSG_ReadCoord (net_message);
 			pos[2] = MSG_ReadCoord (net_message);
+
+			// light
+			dl = R_AllocDlight (0);
+			VectorCopy (pos, dl->origin);
+			dl->radius = 150;
+			dl->die = cl.time + 0.1;
+			dl->decay = 200;
+			dl->color[0] = 0.25;
+			dl->color[1] = 0.40;
+			dl->color[2] = 0.65;
+
 			R_RunPuffEffect (pos, prot_to_rend[type], cnt);
 			break;
 

@@ -51,7 +51,7 @@ void R_SlightBloodTrail (struct entity_s *ent);
 void R_GreenTrail (struct entity_s *ent);
 void R_FlameTrail (struct entity_s *ent);
 void R_VoorTrail (struct entity_s *ent);
-void R_RunParticleEffect (vec3_t org, int color, int count);
+void R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count);
 void R_RunPuffEffect (vec3_t org, particle_effect_t type, byte count);
 void R_RunSpikeEffect (vec3_t org, particle_effect_t type);
 

@@ -125,16 +125,16 @@ R_RunSpikeEffect (vec3_t pos, particle_effect_t type)
 {
 	switch (type) {
 		case PE_WIZSPIKE:
-			R_RunParticleEffect (pos, 20, 30);
+			R_RunParticleEffect (pos, vec3_origin, 20, 30);
 			break;
 		case PE_KNIGHTSPIKE:
-			R_RunParticleEffect (pos, 226, 20);
+			R_RunParticleEffect (pos, vec3_origin, 226, 20);
 			break;
 		case PE_SPIKE:
-			R_RunParticleEffect (pos, 0, 10);
+			R_RunParticleEffect (pos, vec3_origin, 0, 10);
 			break;
 		case PE_SUPERSPIKE:
-			R_RunParticleEffect (pos, 0, 20);
+			R_RunParticleEffect (pos, vec3_origin, 0, 20);
 			break;
 		default:
 			break;
@@ -149,13 +149,13 @@ R_RunPuffEffect (vec3_t pos, particle_effect_t type, byte cnt)
 
 	switch (type) {
 		case PE_GUNSHOT:
-			R_RunParticleEffect (pos, 0, cnt);
+			R_RunParticleEffect (pos, vec3_origin, 0, cnt);
 			break;
 		case PE_BLOOD:
-			R_RunParticleEffect (pos, 73, cnt);
+			R_RunParticleEffect (pos, vec3_origin, 73, cnt);
 			break;
 		case PE_LIGHTNINGBLOOD:
-			R_RunParticleEffect (pos, 225, 50);
+			R_RunParticleEffect (pos, vec3_origin, 225, 50);
 			break;
 		default:
 			break;
@@ -265,7 +265,7 @@ R_BlobExplosion (vec3_t org)
 }
 
 void
-R_RunParticleEffect (vec3_t org, int color, int count)
+R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count)
 {
 	int         i, j;
 	particle_t *p;
@@ -294,7 +294,7 @@ R_RunParticleEffect (vec3_t org, int color, int count)
 		p->type = pt_grav;
 		for (j = 0; j < 3; j++) {
 			p->org[j] = org[j] + scale * ((rand () & 15) - 8);
-			p->vel[j] = vec3_origin[j];	// + (rand()%300)-150;
+			p->vel[j] = dir[j];	// + (rand()%300)-150;
 		}
 	}
 }

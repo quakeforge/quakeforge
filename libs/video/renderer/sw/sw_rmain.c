@@ -457,22 +457,23 @@ R_MarkLeaves (void)
 static void
 R_ShowNearestLoc (void)
 {
-	location_t *nearloc;
-	vec3_t trueloc;
 	dlight_t   *dl;
+	location_t *nearloc;
+	vec3_t      trueloc;
 	
 	if (r_drawentities->int_val)
 		return;
+
 	nearloc = locs_find (r_origin);
 	if (nearloc) {
 		dl = R_AllocDlight (4096);
 		VectorCopy (nearloc->loc, dl->origin);
 		dl->radius = 200;
 		dl->die = r_realtime + 0.1;
-		dl->color[1]=1;
+		dl->color[1] = 1;
 		
-		VectorCopy(nearloc->loc,trueloc);
-		R_RunParticleEffect(trueloc,252,10);
+		VectorCopy(nearloc->loc, trueloc);
+		R_RunParticleEffect(trueloc, vec3_origin, 252, 10);
 	}
 }
 

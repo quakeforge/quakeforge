@@ -228,7 +228,7 @@ CL_ParseTEnt (void)
 	vec3_t      pos;
 
 	type = MSG_ReadByte (net_message);
-	//XXX FIXME this is to get around an nq/qw protocol colission
+	//XXX FIXME this is to get around an nq/qw protocol collision
 	if (1) {
 		if (type == TE_BLOOD)
 			type = TE_EXPLOSION2;
@@ -386,12 +386,28 @@ CL_ParseTEnt (void)
 			} else {
 				cnt = MSG_ReadByte (net_message) * 20;
 			}
-			/* FALLTHROUGH */
-		case TE_LIGHTNINGBLOOD:		// lightning hitting body
 			pos[0] = MSG_ReadCoord (net_message);
 			pos[1] = MSG_ReadCoord (net_message);
 			pos[2] = MSG_ReadCoord (net_message);
 			R_RunPuffEffect (pos, prot_to_rend[type], cnt);
+			break;
+
+		case TE_LIGHTNINGBLOOD:		// lightning hitting body
+			pos[0] = MSG_ReadCoord (net_message);
+			pos[1] = MSG_ReadCoord (net_message);
+			pos[2] = MSG_ReadCoord (net_message);
+
+			// light
+			dl = R_AllocDlight (0);
+			VectorCopy (pos, dl->origin);
+			dl->radius = 150;
+			dl->die = cl.time + 0.1;
+			dl->decay = 200;
+			dl->color[0] = 0.25;
+			dl->color[1] = 0.40;
+			dl->color[2] = 0.65;
+
+			R_RunPuffEffect (pos, prot_to_rend[type], 50);
 			break;
 
 		default:
@@ -497,20 +513,19 @@ CL_UpdateTEnts (void)
 void
 CL_ParseParticleEffect (void)
 {
-	int         i, count, msgcount, color;
+	int         i, count, color;
 	vec3_t      org, dir;
 
 	for (i = 0; i < 3; i++)
 		org[i] = MSG_ReadCoord (net_message);
 	for (i = 0; i < 3; i++)
-		dir[i] = MSG_ReadChar (net_message) * (1.0 / 16);
-	msgcount = MSG_ReadByte (net_message);
+		dir[i] = MSG_ReadChar (net_message) * (15.0 / 16.0);
+	count = MSG_ReadByte (net_message);
 	color = MSG_ReadByte (net_message);
 
-	if (msgcount == 255)
-		count = 1024;
-	else
-		count = msgcount;
-
-	R_RunParticleEffect (org, color, count);
+	if (count == 255) {
+		R_ParticleExplosion (org);
+	} else {
+		R_RunParticleEffect (org, dir, color, count);
+	}
 }
