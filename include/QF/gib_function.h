@@ -29,6 +29,9 @@
 	$Id$
 */
 
+#ifndef __gib_function_h
+#define __gib_function_h
+
 typedef struct gib_function_s {
 	struct dstring_s *name, *program;
 	qboolean exported;
@@ -38,3 +41,5 @@ void GIB_Function_Define (const char *name, const char *program);
 gib_function_t *GIB_Function_Find (const char *name);
 void GIB_Function_Prepare_Args (cbuf_t *cbuf, cbuf_args_t *args);
 void GIB_Function_Execute (cbuf_t *cbuf, gib_function_t *func, cbuf_args_t *args);
+
+#endif
