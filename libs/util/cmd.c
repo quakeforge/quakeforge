@@ -2067,7 +2067,7 @@ Cmd_Strlen_f (void)
 		Cmd_Error ("strlen: invalid number of arguments.\n");
 		return;
 	}
-	Cmd_Return (va("%i",strlen (Cmd_Argv(1))));
+	Cmd_Return (va("%ld", (long) strlen (Cmd_Argv(1))));
 }
 
 void
