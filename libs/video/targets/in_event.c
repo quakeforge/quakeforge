@@ -45,6 +45,8 @@
 #include "QF/sys.h"
 #include "QF/in_event.h"
 
+#define IE_MAX_DEPTH 100
+
 float ie_time;
 
 void
@@ -71,7 +73,7 @@ IE_Threshold_Event (ie_event_t *event, float value)
 
 	// call the handler
 	if (total >= data->threshold)
-		data->handler (data->nextevent, total);
+		IE_CallHandler (data->handler, data->nextevent, total);
 }
 
 void
@@ -91,7 +93,27 @@ IE_Translation_Event (ie_event_t *event, float value)
 	if (!nextevent) // no handler for it
 		return;
 
-	nextevent->handler (nextevent, value);
+	IE_CallHandler (nextevent->handler, nextevent, value);
+}
+
+void
+IE_Multiplier_Event (ie_event_t *event, float value)
+{
+	ie_multiplier_data_t *data = event->data.p;
+	IE_CallHandler (data->handler, data->nextevent, value * data->multiplier);
+}
+
+void
+IE_CallHandler (ie_handler handler, ie_event_t *event, float value)
+{
+	static int depth = 0;
+	depth++;
+	if (depth > IE_MAX_DEPTH)
+		// FIXME: we may want to just issue a warning here
+		Sys_Error ("IE_CallHandler: max recursion depth hit");
+	else
+		handler (event, value);
+	depth--;
 }
 
 

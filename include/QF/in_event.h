@@ -35,12 +35,17 @@
 #include "QF/qtypes.h"
 #include "QF/joystick.h"	// needed for JOY_MAX_AXES
 
+struct ie_event_s;
+
+typedef void (*ie_handler) (struct ie_event_s *event, float value);
+
 typedef struct ie_event_s {
 	union {
 		void *p;
 		int i;
+		float f;
 	} data;
-	void (*handler) (struct ie_event_s *key, float value);
+	ie_handler handler;
 } ie_event_t;
 
 typedef struct ie_threshold_data_s {
@@ -49,7 +54,7 @@ typedef struct ie_threshold_data_s {
 	struct ie_timevaluepair_s *history;
 	int history_count;
 	ie_event_t *nextevent;
-	void (*handler) (struct ie_event_s *key, float value);
+	ie_handler handler;
 } ie_threshold_data_t;
 
 typedef struct ie_timevaluepair_s {
@@ -73,9 +78,18 @@ typedef struct ie_translation_data_s {
 	ie_translation_index_t *index;
 } ie_translation_data_t;
 
+typedef struct ie_multiply_data_s {
+	float multiplier;
+	ie_event_t *nextevent;
+	ie_handler handler;
+} ie_multiplier_data_t;
+
 
 void IE_Threshold_Event (ie_event_t *event, float value);
 void IE_Translation_Event (ie_event_t *event, float value);
+void IE_Multiplier_Event (ie_event_t *event, float value);
+
+void IE_CallHandler (ie_handler handler, ie_event_t *event, float value);
 
 
 /*
