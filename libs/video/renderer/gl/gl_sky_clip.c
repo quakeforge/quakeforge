@@ -764,7 +764,7 @@ draw_id_sky_polys (const msurface_t *sky_chain)
 		sc = sc->texturechain;
 	}
 
-	if (gl_skymultipass->int_val) {
+	if (gl_sky_multipass->int_val) {
 		sc = sky_chain;
 
 		speedscale = r_realtime / 8;
