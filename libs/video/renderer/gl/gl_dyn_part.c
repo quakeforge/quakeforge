@@ -254,9 +254,8 @@ R_BloodPuff (vec3_t org, int count)
 	if (numparticles >= r_maxparticles)
 		return;
 
-	particle_new (pt_bloodcloud, part_tex_smoke, org, count / 4,
-				  vec3_origin, r_realtime + 99, 70 + (rand () & 3), 128 +
-				  ((count / 20) % 128));
+	particle_new (pt_bloodcloud, part_tex_smoke, org, count / 5,
+				  vec3_origin, r_realtime + 99, 70 + (rand () & 3), 128);
 }
 
 void
