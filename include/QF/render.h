@@ -196,5 +196,7 @@ void R_DecayLights (double frametime);
 void R_ClearDlights (void);
 
 void R_LineGraph (int x, int y, int *h_vals, int count);
+struct progs_s;
+void R_Progs_Init (struct progs_s *pr);
 
 #endif // __render_h

@@ -37,6 +37,7 @@ static const char rcsid[] =
 #include "QF/hash.h"
 #include "QF/plugin.h"
 #include "QF/progs.h"
+#include "QF/render.h"
 #include "QF/vfs.h"
 
 typedef struct menu_pic_s {
@@ -214,6 +215,8 @@ Menu_Init (void)
 	PR_AddBuiltin (&menu_pr_state, "Menu_Item", bi_Menu_Item, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_Cursor", bi_Menu_Cursor, -1);
 	PR_AddBuiltin (&menu_pr_state, "Menu_End", bi_Menu_End, -1);
+
+	R_Progs_Init (&menu_pr_state);
 }
 
 void

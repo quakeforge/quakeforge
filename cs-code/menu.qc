@@ -46,3 +46,8 @@ void () main_menu =
 	Menu_Item (54, 132, "", quit);
 	Menu_End ();
 };
+
+void () menu_init =
+{
+	main_menu ();
+};

@@ -64,8 +64,10 @@ EXTRA_libqfnet_la_SOURCES= \
 		net_dos.c net_bw.c net_bsd.c net_ipx.c net_mp.c net_win.c net_wins.c \
 		net_wipx.c net_udp.c
 
+cl_plugin_LIBS= \
+		$(CLIENT_PLUGIN_STATIC_LIBS)
+
 client_LIBFILES= \
-		$(CLIENT_PLUGIN_STATIC_LIBS) \
 		$(top_builddir)/libs/video/targets/libQFjs.la \
 		$(top_builddir)/libs/audio/libQFcd.la \
 		$(top_builddir)/libs/audio/libQFsound.la
@@ -108,7 +110,7 @@ soft_QFLIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer_sw.la \
 
 # ... Linux FBDev
 nq_fbdev_SOURCES=	$(combined_sources) sys_unix.c
-nq_fbdev_LDADD= 	$(soft_QFLIBS) \
+nq_fbdev_LDADD= 	$(cl_plugin_LIBS) $(soft_QFLIBS) \
 			$(top_builddir)/libs/video/targets/libQFfbdev.la \
 			$(client_LIBS)
 nq_fbdev_LDFLAGS=	$(common_ldflags)
@@ -118,7 +120,7 @@ nq_fbdev_DEPENDENCIES=	$(soft_QFLIBS) \
 
 # ... SciTech MGL
 nq_mgl_SOURCES= 	$(combined_sources) sys_win.c
-nq_mgl_LDADD=		$(soft_QFLIBS) \
+nq_mgl_LDADD=		$(cl_plugin_LIBS) $(soft_QFLIBS) \
 			$(top_builddir)/libs/video/targets/libQFmgl.la \
 			$(client_LIBS) $(MGL_LIBS)
 nq_mgl_LDFLAGS= 	$(common_ldflags)
@@ -128,7 +130,7 @@ nq_mgl_DEPENDENCIES=	$(soft_QFLIBS) \
 
 # ... SDL, version 1.2 and higher
 nq_sdl_SOURCES= 	$(combined_sources) sys_sdl.c
-nq_sdl_LDADD=		$(soft_QFLIBS) \
+nq_sdl_LDADD=		$(cl_plugin_LIBS) $(soft_QFLIBS) \
 			$(top_builddir)/libs/video/targets/libQFsdl.la \
 			$(client_LIBS) $(SDL_LIBS)
 nq_sdl_LDFLAGS= 	$(common_ldflags)
@@ -138,7 +140,8 @@ nq_sdl_DEPENDENCIES=	$(soft_QFLIBS) \
 
 # ... 32-bit software, SDL
 nq_sdl32_SOURCES=	$(combined_sources) sys_sdl.c
-nq_sdl32_LDADD= 	$(top_builddir)/libs/video/renderer/libQFrenderer_sw32.la \
+nq_sdl32_LDADD= 	$(cl_plugin_LIBS) \
+			$(top_builddir)/libs/video/renderer/libQFrenderer_sw32.la \
 			$(top_builddir)/libs/models/libQFmodels_sw.la \
 			$(top_builddir)/libs/video/targets/libQFsdl32.la \
 			$(client_LIBS) $(SDL_LIBS)
@@ -150,7 +153,8 @@ nq_sdl32_DEPENDENCIES=	$(top_builddir)/libs/video/renderer/libQFrenderer_sw32.la
 
 # ... Linux SVGAlib
 nq_svga_SOURCES=	$(combined_sources) sys_unix.c
-nq_svga_LDADD=		$(top_builddir)/libs/video/renderer/libQFrenderer_sw.la \
+nq_svga_LDADD=		$(cl_plugin_LIBS) \
+			$(top_builddir)/libs/video/renderer/libQFrenderer_sw.la \
 			$(top_builddir)/libs/models/libQFmodels_sw.la \
 			$(top_builddir)/libs/video/targets/libQFsvga.la \
 			$(client_LIBS) $(SVGA_LIBS)
@@ -162,7 +166,8 @@ nq_svga_DEPENDENCIES=	$(top_builddir)/libs/video/renderer/libQFrenderer_sw.la \
 
 # ... X11
 nq_x11_SOURCES= 	$(combined_sources) sys_unix.c
-nq_x11_LDADD=		$(top_builddir)/libs/video/renderer/libQFrenderer_sw.la \
+nq_x11_LDADD=		$(cl_plugin_LIBS) \
+			$(top_builddir)/libs/video/renderer/libQFrenderer_sw.la \
 			$(top_builddir)/libs/models/libQFmodels_sw.la \
 			$(top_builddir)/libs/video/targets/libQFx11.la \
 			$(client_LIBS) \
@@ -177,7 +182,8 @@ nq_x11_DEPENDENCIES=	$(top_builddir)/libs/video/renderer/libQFrenderer_sw.la \
 
 # ... Linux 3DFX
 nq_3dfx_SOURCES= 	$(combined_sources) sys_unix.c
-nq_3dfx_LDADD=		$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
+nq_3dfx_LDADD=		$(cl_plugin_LIBS) \
+			$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
 			$(top_builddir)/libs/models/libQFmodels_gl.la \
 			$(top_builddir)/libs/video/targets/libQFtdfx.la \
 			$(client_LIBS) $(GLIDE_LIBS) $(SVGA_LIBS)
@@ -190,7 +196,8 @@ nq_3dfx_DEPENDENCIES= 	\
 							
 # ... OpenGL in X Window
 nq_glx_SOURCES= 	$(combined_sources) sys_unix.c
-nq_glx_LDADD=		$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
+nq_glx_LDADD=		$(cl_plugin_LIBS) \
+			$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
 			$(top_builddir)/libs/models/libQFmodels_gl.la \
 			$(top_builddir)/libs/video/targets/libQFglx.la \
 			$(client_LIBS) \
@@ -204,7 +211,8 @@ nq_glx_DEPENDENCIES=	$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
 
 # ... Simple Directmedia Layer, version 1.2 and higher, in GL mode
 nq_sgl_SOURCES= 	$(combined_sources) sys_sdl.c
-nq_sgl_LDADD=		$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
+nq_sgl_LDADD=		$(cl_plugin_LIBS) \
+			$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
 			$(top_builddir)/libs/models/libQFmodels_gl.la \
 			$(top_builddir)/libs/video/targets/libQFsgl.la \
 			$(client_LIBS) \
@@ -217,7 +225,8 @@ nq_sgl_DEPENDENCIES=	$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
 
 # ... SGI/Microsoft WGL (Windows OpenGL)
 nq_wgl_SOURCES= 	$(combined_sources) conproc.c sys_win.c
-nq_wgl_LDADD=		$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
+nq_wgl_LDADD=		$(cl_plugin_LIBS) \
+			$(top_builddir)/libs/video/renderer/libQFrenderer_gl.la \
 			$(top_builddir)/libs/models/libQFmodels_gl.la \
 			$(top_builddir)/libs/video/targets/libQFwgl.la \
 			$(client_LIBS) -lgdi32 -lcomctl32 -lwinmm
