@@ -127,8 +127,8 @@ VID_Init (unsigned char *palette)
 	if (!(screen = SDL_SetVideoMode (vid.width, vid.height,
 									 vid_bitdepth->int_val, flags)))
 		Sys_Error ("VID: Couldn't set video mode: %s\n", SDL_GetError ());
+	VID_InitGamma (palette);
 	VID_SetPalette (palette);
-	VID_SetCaption ("");
 
 	switch (vid_bitdepth->int_val) {
 	case 8:
