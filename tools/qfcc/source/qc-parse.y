@@ -396,7 +396,7 @@ opt_state_expr
 			$$ = 0;
 		}
 	| '[' const ',' { $<def>$ = current_def; }
-	  def_name { current_def = $<def>5; } ']'
+	  def_name { current_def = $<def>4; } ']'
 		{
 			if ($2->type == ex_integer)
 				convert_int ($2);
