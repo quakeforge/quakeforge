@@ -82,7 +82,7 @@ combined_sources= \
 # Software-rendering targets
 
 # We need libQFrenderer_sw to always be static -- there's assembler in there
-soft_QFLIBS=	$(top_builddir)/libs/video/renderer/.libs/libQFrenderer_sw.a \
+soft_QFLIBS=	$(top_builddir)/libs/video/renderer/libQFrenderer_sw.la \
 		$(top_builddir)/libs/models/libQFmodels_sw.la
 
 # ... Linux FBDev
@@ -117,37 +117,37 @@ nq_sdl_DEPENDENCIES=	$(soft_QFLIBS) \
 
 # ... 32-bit software, SDL
 nq_sdl32_SOURCES=	$(combined_sources) sys_sdl.c
-nq_sdl32_LDADD= 	$(top_builddir)/libs/video/renderer/.libs/libQFrenderer_sw32.a \
+nq_sdl32_LDADD= 	$(top_builddir)/libs/video/renderer/libQFrenderer_sw32.la \
 			$(top_builddir)/libs/models/libQFmodels_sw32.la \
 			$(top_builddir)/libs/video/targets/libQFsdl32.la \
 			$(client_LIBS) $(SDL_LIBS)
 nq_sdl32_LDFLAGS=	$(common_ldflags)
-nq_sdl32_DEPENDENCIES=	$(top_builddir)/libs/video/renderer/.libs/libQFrenderer_sw32.a \
+nq_sdl32_DEPENDENCIES=	$(top_builddir)/libs/video/renderer/libQFrenderer_sw32.la \
 			$(top_builddir)/libs/models/libQFmodels_sw32.la \
 			$(top_builddir)/libs/video/targets/libQFsdl32.la \
 			$(client_LIB_DEPS)
 
 # ... Linux SVGAlib
 nq_svga_SOURCES=	$(combined_sources) sys_unix.c
-nq_svga_LDADD=		$(top_builddir)/libs/video/renderer/.libs/libQFrenderer_sw.a \
+nq_svga_LDADD=		$(top_builddir)/libs/video/renderer/libQFrenderer_sw.la \
 			$(top_builddir)/libs/models/libQFmodels_sw.la \
 			$(top_builddir)/libs/video/targets/libQFsvga.la \
 			$(client_LIBS) $(SVGA_LIBS)
 nq_svga_LDFLAGS=	$(common_ldflags)
-nq_svga_DEPENDENCIES=	$(top_builddir)/libs/video/renderer/.libs/libQFrenderer_sw.a \
+nq_svga_DEPENDENCIES=	$(top_builddir)/libs/video/renderer/libQFrenderer_sw.la \
 			$(top_builddir)/libs/models/libQFmodels_sw.la \
 			$(top_builddir)/libs/video/targets/libQFsvga.la \
 			$(client_LIB_DEPS)
 
 # ... X11
 nq_x11_SOURCES= 	$(combined_sources) sys_unix.c
-nq_x11_LDADD=		$(top_builddir)/libs/video/renderer/.libs/libQFrenderer_sw.a \
+nq_x11_LDADD=		$(top_builddir)/libs/video/renderer/libQFrenderer_sw.la \
 			$(top_builddir)/libs/models/libQFmodels_sw.la \
 			$(top_builddir)/libs/video/targets/libQFx11.la \
 			$(client_LIBS) \
 			$(X_PRE_LIBS) $(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB)
 nq_x11_LDFLAGS= 	$(common_ldflags)
-nq_x11_DEPENDENCIES=	$(top_builddir)/libs/video/renderer/.libs/libQFrenderer_sw.a \
+nq_x11_DEPENDENCIES=	$(top_builddir)/libs/video/renderer/libQFrenderer_sw.la \
 			$(top_builddir)/libs/models/libQFmodels_sw.la \
 			$(top_builddir)/libs/video/targets/libQFx11.la \
 			$(client_LIB_DEPS)
