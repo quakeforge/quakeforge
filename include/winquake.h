@@ -71,13 +71,16 @@
 
 extern	HINSTANCE	global_hInstance;
 extern	int			global_nCmdShow;
+
 #ifdef HAVE_DDRAW_H
+# include <ddraw.h>
 extern LPDIRECTDRAW		lpDD;
 extern LPDIRECTDRAWSURFACE	lpPrimary;
 extern LPDIRECTDRAWSURFACE	lpFrontBuffer;
 extern LPDIRECTDRAWSURFACE	lpBackBuffer;
 extern LPDIRECTDRAWPALETTE	lpDDPal;
 #endif
+
 #ifdef HAVE_DSOUND_H
 extern LPDIRECTSOUND pDS;
 extern LPDIRECTSOUNDBUFFER pDSBuf;
