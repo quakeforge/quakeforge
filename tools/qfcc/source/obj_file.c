@@ -405,6 +405,7 @@ qfo_read (VFile *file)
 	for (reloc = qfo->relocs; reloc - qfo->relocs < qfo->num_relocs; reloc++) {
 		reloc->ofs  = LittleLong (reloc->ofs);
 		reloc->type = LittleLong (reloc->type);
+		reloc->def  = LittleLong (reloc->def);
 	}
 	for (def = qfo->defs; def - qfo->defs < qfo->num_defs; def++) {
 		def->basic_type = LittleLong (def->basic_type);
