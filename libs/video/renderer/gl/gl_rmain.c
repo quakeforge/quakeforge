@@ -178,7 +178,7 @@ R_RotateForEntity (entity_t *e)
 	// ZOID: fixed z angle
 	qfglRotatef (e->angles[2], 1, 0, 0);
 }
-
+#if 0
 /*
 	R_ShowNearestLoc
 
@@ -210,7 +210,7 @@ R_ShowNearestLoc (void)
 		(*R_WizSpikeEffect) (trueloc);
 	}
 }
-
+#endif
 /*
 	R_DrawEntitiesOnList
 
@@ -221,10 +221,8 @@ R_DrawEntitiesOnList (void)
 {
 	int		i;
 
-	if (!r_drawentities->int_val) {
-		R_ShowNearestLoc();
+	if (!r_drawentities->int_val)
 		return;
-	}
 
 	// LordHavoc: split into 3 loops to simplify state changes
 	for (i = 0; i < r_numvisedicts; i++) {

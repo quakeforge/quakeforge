@@ -41,7 +41,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/draw.h"
 #include "QF/input.h"
 #include "QF/keys.h"
-#include "QF/locs.h"
 #include "QF/msg.h"
 #include "QF/plugin.h"
 #include "QF/progs.h"
@@ -61,10 +60,6 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "server.h"
 #include "sv_progs.h"
 #include "view.h"
-
-#define U __attribute__ ((unused))
-static U location_t * (* const _locs_find) (const vec3_t target) = locs_find;
-#undef U
 
 
 /*

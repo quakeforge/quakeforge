@@ -473,7 +473,7 @@ R_MarkLeaves (void)
 		}
 	}
 }
-
+#if 0
 static void
 R_ShowNearestLoc (void)
 {
@@ -497,7 +497,7 @@ R_ShowNearestLoc (void)
 		R_RunParticleEffect(trueloc, vec3_origin, 252, 10);
 	}
 }
-
+#endif
 static void
 R_DrawEntitiesOnList (void)
 {
@@ -510,10 +510,8 @@ R_DrawEntitiesOnList (void)
 	vec3_t      dist;
 	float       add;
 
-	if (!r_drawentities->int_val) {
-		R_ShowNearestLoc();
+	if (!r_drawentities->int_val)
 		return;
-	}
 
 	for (i = 0; i < r_numvisedicts; i++) {
 		currententity = r_visedicts[i];
