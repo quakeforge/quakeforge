@@ -863,6 +863,7 @@ CL_LinkPlayers (void)
 		}
 
 		// QSG2
+#if 0
 		if (state->colormod == 255) {
 			ent->colormod[0] = ent->colormod[1] = ent->colormod[2] = 1.0;
 		} else {
@@ -874,7 +875,10 @@ CL_LinkPlayers (void)
 		}
 		ent->colormod[3] = state->alpha / 255.0;
 		ent->scale = state->scale / 16.0;
-
+#else
+		ent->colormod[0] = ent->colormod[1] = ent->colormod[2] =
+			ent->colormod[3] = ent->scale = 1.0;
+#endif
 		if (state->effects & EF_FLAG1)
 			CL_AddFlagModels (ent, 0, j);
 		else if (state->effects & EF_FLAG2)
