@@ -59,21 +59,30 @@ int         fnmatch (const char *__pattern, const char *__string, int __flags);
 #include "QF/va.h"
 #include "QF/zone.h"
 
-#define MAX_HANDLES 20
-static QFile *handles[MAX_HANDLES];
+static void
+bi_qfile_clear (progs_t *pr, void *data)
+{
+	qfile_resources_t *res = (qfile_resources_t *) data;
+	int         i;
+	
+	for (i = 0; i < QFILE_MAX_HANDLES; i++)
+		if (res->handles[i]) {
+			Qclose (res->handles[i]);
+			res->handles[i] = 0;
+		}
+}
 
-int
-QFile_open (struct progs_s *pr, const char *path, const char *mode)
+QFile **
+QFile_AllocHandle (struct progs_s *pr, qfile_resources_t *res)
 {
 	int         h;
 
-	for (h = 0; h < MAX_HANDLES && handles[h]; h++)
+	for (h = 0; h < QFILE_MAX_HANDLES && res->handles[h]; h++)
 		;
-	if (h == MAX_HANDLES)
+	if (h == QFILE_MAX_HANDLES)
 		goto error;
-	if (!(handles[h] = Qopen (path, mode)))
-		goto error;
-	return h + 1;
+	res->handles[h] = (QFile *) 1;
+	return res->handles + h;
 error:
 	return 0;
 }
@@ -104,34 +113,47 @@ bi_Qremove (progs_t *pr)
 static void
 bi_Qopen (progs_t *pr)
 {
+	qfile_resources_t *res = PR_Resources_Find (pr, "QFile");
 	const char *path = P_STRING (pr, 0);
 	const char *mode = P_STRING (pr, 1);
+	QFile     **h = QFile_AllocHandle (pr, res);
 
-	R_INT (pr) = QFile_open (pr, path, mode);
+	if (!h) {
+		R_INT (pr) = 0;
+		return;
+	}
+	*h = Qopen (path, mode);
+	R_INT (pr) = (h - res->handles) + 1;
+}
+
+static QFile **
+get_qfile (progs_t *pr, int handle, const char *func)
+{
+	qfile_resources_t *res = PR_Resources_Find (pr, "QFile");
+
+	if (handle < 1 || handle > QFILE_MAX_HANDLES || !res->handles[handle - 1])
+		PR_RunError (pr, "%s: Invalid QFile", func);
+	return res->handles + handle - 1;
 }
 
 static void
 bi_Qclose (progs_t *pr)
 {
-	int         h = P_INT (pr, 0) - 1;
+	int         handle = P_INT (pr, 0);
+	QFile     **h = get_qfile (pr, handle, "Qclose");
 
-	if (h < 0 || h >= MAX_HANDLES || !handles[h])
-		return;
-	Qclose (handles[h]);
-	handles[h] = 0;
+	Qclose (*h);
+	*h = 0;
 }
 
 static void
 bi_Qgetline (progs_t *pr)
 {
-	int         h = P_INT (pr, 0) - 1;
+	int         handle = P_INT (pr, 0);
+	QFile     **h = get_qfile (pr, handle, "Qgetline");
 	const char *s;
 
-	if (h < 0 || h >= MAX_HANDLES || !handles[h]) {
-		R_INT (pr) = 0;
-		return;
-	}
-	s = Qgetline (handles[h]);
+	s = Qgetline (*h);
 	RETURN_STRING (pr, s);
 }
 
@@ -148,151 +170,121 @@ check_buffer (progs_t *pr, pr_type_t *buf, int count, const char *name)
 static void
 bi_Qread (progs_t *pr)
 {
-	int         h = P_INT (pr, 0) - 1;
+	int         handle = P_INT (pr, 0);
+	QFile     **h = get_qfile (pr, handle, "Qread");
 	pr_type_t  *buf = P_POINTER (pr, 1);
 	int         count = P_INT (pr, 2);
 
-	if (h < 0 || h >= MAX_HANDLES || !handles[h]) {
-		R_INT (pr) = -1;
-		return;
-	}
 	check_buffer (pr, buf, count, "Qread");
-	R_INT (pr) = Qread (handles[h], buf, count);
+	R_INT (pr) = Qread (*h, buf, count);
 }
 
 static void
 bi_Qwrite (progs_t *pr)
 {
-	int         h = P_INT (pr, 0) - 1;
+	int         handle = P_INT (pr, 0);
+	QFile     **h = get_qfile (pr, handle, "Qwrite");
 	pr_type_t  *buf = P_POINTER (pr, 1);
 	int         count = P_INT (pr, 2);
 
-	if (h < 0 || h >= MAX_HANDLES || !handles[h]) {
-		R_INT (pr) = -1;
-		return;
-	}
 	check_buffer (pr, buf, count, "Qwrite");
-	R_INT (pr) = Qwrite (handles[h], buf, count);
+	R_INT (pr) = Qwrite (*h, buf, count);
 }
 
 static void
 bi_Qputs (progs_t *pr)
 {
-	int         h = P_INT (pr, 0) - 1;
+	int         handle = P_INT (pr, 0);
+	QFile     **h = get_qfile (pr, handle, "Qputs");
 	const char *str = P_STRING (pr, 1);
 
-	if (h < 0 || h >= MAX_HANDLES || !handles[h]) {
-		R_INT (pr) = -1;
-		return;
-	}
-	R_INT (pr) = Qputs (handles[h], str);
+	R_INT (pr) = Qputs (*h, str);
 }
 #if 0
 static void
 bi_Qgets (progs_t *pr)
 {
-	int         h = P_INT (pr, 0) - 1;
+	int         handle = P_INT (pr, 0);
+	QFile     **h = get_qfile (pr, handle, "Qgets");
 	pr_type_t  *buf = P_POINTER (pr, 1);
 	int         count = P_INT (pr, 2);
 
-	if (h < 0 || h >= MAX_HANDLES || !handles[h]) {
-		R_INT (pr) = -1;
-		return;
-	}
 	check_buffer (pr, buf, count, "Qgets");
-	R_INT (pr) = POINTER_TO_PROG (pr, Qgets (handles[h], (char *) buf, count));
+	R_INT (pr) = POINTER_TO_PROG (pr, Qgets (*h, (char *) buf, count));
 }
 #endif
 static void
 bi_Qgetc (progs_t *pr)
 {
-	int         h = P_INT (pr, 0) - 1;
+	int         handle = P_INT (pr, 0);
+	QFile     **h = get_qfile (pr, handle, "Qgetc");
 
-	if (h < 0 || h >= MAX_HANDLES || !handles[h]) {
-		R_INT (pr) = -1;
-		return;
-	}
-	R_INT (pr) = Qgetc (handles[h]);
+	R_INT (pr) = Qgetc (*h);
 }
 
 static void
 bi_Qputc (progs_t *pr)
 {
-	int         h = P_INT (pr, 0) - 1;
+	int         handle = P_INT (pr, 0);
+	QFile     **h = get_qfile (pr, handle, "Qputc");
 	int         c = P_INT (pr, 1);
 
-	if (h < 0 || h >= MAX_HANDLES || !handles[h]) {
-		R_INT (pr) = -1;
-		return;
-	}
-	R_INT (pr) = Qputc (handles[h], c);
+	R_INT (pr) = Qputc (*h, c);
 }
 
 static void
 bi_Qseek (progs_t *pr)
 {
-	int         h = P_INT (pr, 0) - 1;
+	int         handle = P_INT (pr, 0);
+	QFile     **h = get_qfile (pr, handle, "Qseek");
 	int         offset = P_INT (pr, 1);
 	int         whence = P_INT (pr, 2);
 
-	if (h < 0 || h >= MAX_HANDLES || !handles[h]) {
-		R_INT (pr) = -1;
-		return;
-	}
-	R_INT (pr) = Qseek (handles[h], offset, whence);
+	R_INT (pr) = Qseek (*h, offset, whence);
 }
 
 static void
 bi_Qtell (progs_t *pr)
 {
-	int         h = P_INT (pr, 0) - 1;
+	int         handle = P_INT (pr, 0);
+	QFile     **h = get_qfile (pr, handle, "Qtell");
 
-	if (h < 0 || h >= MAX_HANDLES || !handles[h]) {
-		R_INT (pr) = -1;
-		return;
-	}
-	R_INT (pr) = Qtell (handles[h]);
+	R_INT (pr) = Qtell (*h);
 }
 
 static void
 bi_Qflush (progs_t *pr)
 {
-	int         h = P_INT (pr, 0) - 1;
+	int         handle = P_INT (pr, 0);
+	QFile     **h = get_qfile (pr, handle, "Qflush");
 
-	if (h < 0 || h >= MAX_HANDLES || !handles[h]) {
-		R_INT (pr) = -1;
-		return;
-	}
-	R_INT (pr) = Qflush (handles[h]);
+	R_INT (pr) = Qflush (*h);
 }
 
 static void
 bi_Qeof (progs_t *pr)
 {
-	int         h = P_INT (pr, 0) - 1;
+	int         handle = P_INT (pr, 0);
+	QFile     **h = get_qfile (pr, handle, "Qeof");
 
-	if (h < 0 || h >= MAX_HANDLES || !handles[h]) {
-		R_INT (pr) = -1;
-		return;
-	}
-	R_INT (pr) = Qeof (handles[h]);
+	R_INT (pr) = Qeof (*h);
 }
 
 static void
 bi_Qfilesize (progs_t *pr)
 {
-	int         h = P_INT (pr, 0) - 1;
+	int         handle = P_INT (pr, 0);
+	QFile     **h = get_qfile (pr, handle, "Qfilesize");
 
-	if (h < 0 || h >= MAX_HANDLES || !handles[h]) {
-		R_INT (pr) = -1;
-		return;
-	}
-	R_INT (pr) = Qfilesize (handles[h]);
+	R_INT (pr) = Qfilesize (*h);
 }
 
 void
 QFile_Progs_Init (progs_t *pr, int secure)
 {
+	qfile_resources_t *res = calloc (sizeof (qfile_resources_t), 1);
+
+	PR_Resources_Register (pr, "Qfile", res, bi_qfile_clear);
 	if (secure) {
 		PR_AddBuiltin (pr, "Qrename", secured, -1);
 		PR_AddBuiltin (pr, "Qremove", secured, -1);

@@ -53,8 +53,15 @@ void InputLine_Progs_SetDraw (struct progs_s *pr,
 
 void Key_Progs_Init (struct progs_s *pr);
 
+#include "QF/quakeio.h"
+#define QFILE_MAX_HANDLES 20
+typedef struct {
+	QFile      *handles[QFILE_MAX_HANDLES];
+} qfile_resources_t;
+
 void QFile_Progs_Init (struct progs_s *pr, int secure);
-int QFile_open (struct progs_s *pr, const char *path, const char *mode);
+QFile **QFile_AllocHandle (struct progs_s *pr, qfile_resources_t *res);
+void QFS_Progs_Init (struct progs_s *pr);
 
 void String_Progs_Init (struct progs_s *pr);
 

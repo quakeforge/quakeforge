@@ -117,6 +117,8 @@ file_writeable (char *path)
 static void
 bi_File_Open (progs_t *pr)
 {
+	qfile_resources_t *res = PR_Resources_Find (pr, "QFile");
+	QFile     **file = QFile_AllocHandle (pr, res);
 	const char *pth = P_STRING (pr, 0);
 	const char *mode = P_STRING (pr, 1);
 	char       *path;
@@ -159,8 +161,12 @@ bi_File_Open (progs_t *pr)
 		goto error;
 	if (do_write && !file_writeable (path))
 		goto error;
-	R_INT (pr) = QFile_open (pr, va ("%s/%s/%s", fs_userpath->string,
-							 qfs_gamedir->dir.def, path), mode);
+
+	*file = Qopen (va ("%s/%s/%s", fs_userpath->string,
+					   qfs_gamedir->dir.def, path), mode);
+	if (!*file)
+		goto error;
+	R_INT (pr) = (file - res->handles) + 1;
 	free (path);
 	return;
 error:
