@@ -44,6 +44,7 @@ static __attribute__ ((unused)) const char rcsid[] =
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/dstring.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/screen.h"
@@ -176,16 +177,14 @@ Draw_PicFromWad (const char *name)
 {
 	glpic_t    *gl;
 	qpic_t     *p;
-	char       *filename;
+	dstring_t  *filename = dstring_new ();
 	QFile      *f;
 	tex_t      *targa;
 
 
-
-	filename = strdup (name);
-	if (!strcmp (filename + strlen(filename) - 4, ".lmp"))
-		strcpy (filename + strlen(filename) - 4, ".tga");
-	QFS_FOpenFile (filename, &f);
+	dsprintf (filename, "%s.tga", name);
+	QFS_FOpenFile (filename->str, &f);
+	dstring_delete (filename);
 	if (f) {
 		targa = LoadTGA (f);
 		Qclose (f);
