@@ -198,6 +198,16 @@ bi_Draw_Fill (progs_t *pr)
 	Draw_Fill (x, y, w, h, color);
 }
 
+static void
+bi_Draw_Crosshair (progs_t *pr)
+{
+	int         ch = P_INT (pr, 0);
+	int         x = P_INT (pr, 1);
+	int         y = P_INT (pr, 2);
+
+	Draw_CrosshairAt (ch, x, y);
+}
+
 static const char *
 bi_draw_get_key (void *p, void *unused)
 {
@@ -231,6 +241,7 @@ static builtin_t builtins[] = {
 	{"Draw_nString",	bi_Draw_nString,	-1},
 	{"Draw_AltString",	bi_Draw_AltString,	-1},
 	{"Draw_Fill",		bi_Draw_Fill,		-1},
+	{"Draw_Crosshair",	bi_Draw_Crosshair,	-1},
 	{0}
 };
 

@@ -563,29 +563,36 @@ crosshair_3 (int x, int y)
 	qfglColor3ubv (color_white);
 }
 
+static void (*crosshair_func[]) (int x, int y) = {
+	crosshair_1,
+	crosshair_2,
+	crosshair_3,
+};
+
 void
 Draw_Crosshair (void)
 {
 	int            x, y;
+	int            ch;
 
-	if (!crosshair->int_val)
+	ch = crosshair->int_val - 1;
+	if ((unsigned) ch >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
 		return;
 
 	x = scr_vrect.x + scr_vrect.width / 2 + cl_crossx->int_val;
 	y = scr_vrect.y + scr_vrect.height / 2 + cl_crossy->int_val;
 
-	switch (crosshair->int_val) {
-		default:
-		case 1:
-			crosshair_1 (x, y);
-			break;
-		case 2:
-			crosshair_2 (x, y);
-			break;
-		case 3:
-			crosshair_3 (x, y);
-			break;
-	}
+	crosshair_func[ch] (x, y);
+}
+
+void
+Draw_CrosshairAt (int ch, int x, int y)
+{
+	ch -= 1;
+	if ((unsigned) ch >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
+		return;
+
+	crosshair_func[ch] (x, y);
 }
 
 void
