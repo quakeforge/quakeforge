@@ -84,6 +84,7 @@ void () eek =
 {
 	local string bop = "";
 	local vector v = '1 2 3';
+	local float expr = v * '0 1 0';
 
 	traceon();
 	if (sent && sent.owner != self )
@@ -101,8 +102,7 @@ void () eek =
 	printf ("%v\n", v);
 };
 
-void () assign =
-{
+void () assign = {
 	local float foo;
 	local float bar;
 
