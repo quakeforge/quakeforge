@@ -1311,6 +1311,10 @@ test_expr (expr_t *e, int test)
 			error (e, "internal error");
 			abort ();
 		case ev_void:
+			if (options.traditional) {
+				warning (e, "void has no value");
+				return e;
+			}
 			return error (e, "void has no value");
 		case ev_string:
 			new = new_string_expr (0);
