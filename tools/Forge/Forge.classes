@@ -1,24 +1,10 @@
 {
     BundleController = {
 	Actions = (
-	    setDelegate:
+	    setDelegate
 	);
 	Outlets = (
 	    delegate
-	);
-	Super = NSObject;
-    };
-    Controller = {
-	Actions = (
-	    createNew:,
-	    createNewProject:,
-	    infoPanel:,
-	    open:,
-	    openProject:,
-	    saveAll:,
-	    showPreferencesPanel:
-	);
-	Outlets = (
 	);
 	Super = NSObject;
     };
@@ -90,27 +76,24 @@
     };
     Preferences = {
 	Actions = (
-	    ok:,
-	    prefsChanged:,
-	    revert:
+	    ok,
+	    revert,
+	    revertToDefault,
+	    prefsChanged,
+	    setObject
 	);
 	Outlets = (
-	    bspSoundPath,
-	    offsetBrushCopy,
-	    projectPath,
-	    showBSPOutput,
-	    startWad,
-	    xLight,
-	    yLight,
-	    zLight
+	    "e\n\tfloat\t\tyLight",
+	    "e\n\tfloat\t\tzLight",
+	    "e\n\tBOOL\t\tshowBSPOutput"
 	);
 	Super = NSObject;
     };
-    PrefsWindowController = {
+    PrefsPanel = {
 	Actions = (
 	);
 	Outlets = (
 	);
-	Super = NSObject;
+	Super = NSPanel;
     };
 }

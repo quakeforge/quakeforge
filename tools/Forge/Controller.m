@@ -129,14 +129,11 @@ static const char rcsid[] =
 */
 - (void) applicationWillFinishLaunching: (NSNotification *) not;
 {
-#if 0
-	NSMenu	*menu = [[[NSMenu alloc] init] autorelease];
+	NSMenu	*menu = [NSApp mainMenu];
 	NSMenu	*info;
 	NSMenu	*project;
 	NSMenu	*file;
 	NSMenu	*edit;
-//	NSMenu	*bsp;
-//	NSMenu	*brush;
 	NSMenu	*windows;
 	NSMenu	*services;
 
@@ -153,6 +150,7 @@ static const char rcsid[] =
 	/*
 		Info
 	*/
+	NSDebugLog (@"Info");
 	info = [[[NSMenu alloc] init] autorelease];
 	[menu setSubmenu: info	forItem: [menu itemWithTitle: _(@"Info")]];
 
@@ -169,21 +167,22 @@ static const char rcsid[] =
 	/*
 		Project
 	*/
+	NSDebugLog (@"Project");
 	project = [[[NSMenu alloc] init] autorelease];
 	[menu setSubmenu: project	forItem: [menu itemWithTitle: _(@"Project")]];
 
 	[project addItemWithTitle: _(@"Open...")
 					   action: @selector (openProject:)
-				keyEquivalent: @"~o"];
+				keyEquivalent: @"o"];
 	[project addItemWithTitle: _(@"New")
 					   action: @selector (createNewProject:)
-				keyEquivalent: @"~n"];
+				keyEquivalent: @"n"];
 	[project addItemWithTitle: _(@"Save...")
 					   action: @selector (saveProject:)
-				keyEquivalent: @"~s"];
+				keyEquivalent: @"s"];
 	[project addItemWithTitle: _(@"Save As...")
 					   action: @selector (saveProjectAs:)
-				keyEquivalent: @"~S"];
+				keyEquivalent: @"S"];
 	[project addItemWithTitle: _(@"Close")
 					   action: @selector (closeProject:)
 				keyEquivalent: @""];
@@ -191,24 +190,19 @@ static const char rcsid[] =
 	/*
 		File
 	*/
+	NSDebugLog (@"File");
 	file = [[[NSMenu alloc] init] autorelease];
 	[menu setSubmenu: file	forItem: [menu itemWithTitle: _(@"File")]];
 
-	[file addItemWithTitle: _(@"Open...")
-					action: @selector (open:)
-			 keyEquivalent: @"o"];
-	[file addItemWithTitle: _(@"New")
-					action: @selector (createNew:)
-			 keyEquivalent: @"n"];
-	[file addItemWithTitle: _(@"Save...")
-					action: @selector (save:)
-			 keyEquivalent: @"s"];
-	[file addItemWithTitle: _(@"Save As...")
-					action: @selector (saveAs:)
-			 keyEquivalent: @"S"];
-	[file addItemWithTitle: _(@"Save All")
-					action: @selector (saveAll:)
-			 keyEquivalent: @""];
+	[file addItemWithTitle: _(@"Add File...")
+					action: @selector (addFileToProject:)
+			 keyEquivalent: @"a"];
+	[file addItemWithTitle: _(@"Add New File...")
+					action: @selector (addNewFileToProject:)
+			 keyEquivalent: @"N"];
+	[file addItemWithTitle: _(@"Save File")
+					action: @selector (saveFile:)
+			 keyEquivalent: @"f"];
 	[file addItemWithTitle: _(@"Revert to Saved")
 					action: @selector (revertToSaved:)
 			 keyEquivalent: @""];
@@ -219,6 +213,7 @@ static const char rcsid[] =
 	/*
 		Edit
 	*/
+	NSDebugLog (@"Edit");
 	edit = [[[NSMenu alloc] init] autorelease];
 	[menu setSubmenu: edit forItem: [menu itemWithTitle: _(@"Edit")]];
 	
@@ -247,21 +242,29 @@ static const char rcsid[] =
 	/*
 		Windows
 	*/
+	NSDebugLog (@"Windows");
 	windows = [[[NSMenu alloc] init] autorelease];
 
+	[windows addItemWithTitle: _(@"Close Window")
+					action: @selector (performClose:)
+			 keyEquivalent: @"w"];
+	[windows addItemWithTitle: _(@"Miniaturize Window")
+					action: @selector (performMiniaturize:)
+			 keyEquivalent: @"m"];
+	[windows addItemWithTitle: _(@"Arrange in Front")
+					action: @selector (arrangeInFront:)
+			 keyEquivalent: @""];
+
 	[NSApp setWindowsMenu: windows];
-	[menu setSubmenu: windows	forItem: [menu itemWithTitle: _(@"Windows")]];
 
 	/*
 		Services
 	*/
+	NSDebugLog (@"Services");
 	services = [[[NSMenu alloc] init] autorelease];
 
 	[NSApp setServicesMenu: services];
 	[menu setSubmenu: services	forItem: [menu itemWithTitle: _(@"Services")]];
-
-	[NSApp setMainMenu: menu];
-#endif
 
 	{	// yeah, yeah, shaddap
 		id	controller = [[BundleController alloc] init];
@@ -274,7 +277,7 @@ static const char rcsid[] =
 /*
 	applicationWillTerminate:
 
-	Sort of like SIGQUIT. App is about to die, but has a chance to clean up
+	We're about to die, but AppKit is giving us a chance to clean up
 */
 - (void) applicationWillTerminate: (NSNotification *) not;
 {
