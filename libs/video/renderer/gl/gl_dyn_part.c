@@ -169,11 +169,19 @@ R_ParticleExplosion (vec3_t org)
 /*
 	R_NewExplosion (org);
 */
-	particle_new_random (pt_smokecloud, part_tex_smoke, org, 4,
-						 30, 8, r_realtime + 5, (rand () & 7) + 8,
-						 128 + (rand () & 63));
+	if (cl_surprise->int_val)
+	{
+		particle_new_random (pt_smokecloud, part_tex_smoke, org, 4,
+					30, 8, r_realtime + 5,
+					(rand () & 255),
+					128 + (rand () & 63));
+	} else {
+		particle_new_random (pt_smokecloud, part_tex_smoke, org, 4,
+					30, 8, r_realtime + 5, 
+					(rand () & 7) + 8,
+					128 + (rand () & 63));
+	}
 }
-
 void
 R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
 {
@@ -187,8 +195,9 @@ R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
 
 	for (i = 0; i < j; i++) {
 		particle_new_random (pt_blob, part_tex_dot, org, 16, 2, 256,
-							 (r_realtime + 0.3),
-							 (colorStart + (colorMod % colorLength)), 255);
+					(r_realtime + 0.3),
+					(colorStart + (colorMod % colorLength)),
+					255);
 		colorMod++;
 	}
 }
