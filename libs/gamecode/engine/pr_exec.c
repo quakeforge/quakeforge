@@ -782,23 +782,31 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				break;
 
 			case OP_GE_I:
-			case OP_GE_U:
 			case OP_GE_P:
 				OPC.integer_var = OPA.integer_var >= OPB.integer_var;
 				break;
+			case OP_GE_U:
+				OPC.integer_var = OPA.uinteger_var >= OPB.uinteger_var;
+				break;
 			case OP_LE_I:
-			case OP_LE_U:
 			case OP_LE_P:
 				OPC.integer_var = OPA.integer_var <= OPB.integer_var;
 				break;
+			case OP_LE_U:
+				OPC.integer_var = OPA.uinteger_var <= OPB.uinteger_var;
+				break;
 			case OP_GT_I:
-			case OP_GT_U:
 			case OP_GT_P:
 				OPC.integer_var = OPA.integer_var > OPB.integer_var;
 				break;
+			case OP_GT_U:
+				OPC.integer_var = OPA.uinteger_var > OPB.uinteger_var;
+				break;
 			case OP_LT_I:
-			case OP_LT_U:
 			case OP_LT_P:
+				OPC.integer_var = OPA.uinteger_var < OPB.uinteger_var;
+				break;
+			case OP_LT_U:
 				OPC.integer_var = OPA.uinteger_var < OPB.uinteger_var;
 				break;
 
