@@ -76,6 +76,17 @@ extern void VID_Init8bitPalette (void);
 /*-----------------------------------------------------------------------*/
 
 void
+VID_SDL_GammaCheck (void)
+{
+	Uint16 redtable[256], greentable[256], bluetable[256];
+
+	if (SDL_GetGammaRamp(redtable, greentable, bluetable) < 0)
+		vid_gamma_avail = false;
+	else
+		vid_gamma_avail = true;
+}
+
+void
 VID_Shutdown (void)
 {
 //	if (!vid_initialized)
@@ -202,6 +213,8 @@ VID_Init (unsigned char *palette)
 #endif
 
 	GL_Init ();
+
+	VID_SDL_GammaCheck ();
 
 	GL_CheckBrightness (palette);
 	VID_InitGamma (palette);

@@ -163,7 +163,6 @@ VID_Init (unsigned char *palette)
 		Sys_Error ("VID: Couldn't set video mode: %s\n", SDL_GetError ());
 	VID_InitGamma (palette);
 	VID_SetPalette (palette);
-//	VID_SetCaption (""); // FIXME?
 
 	// now know everything we need to know about the buffer
 	VGA_width = vid.conwidth = vid.width;
