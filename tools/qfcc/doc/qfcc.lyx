@@ -31,6 +31,14 @@ qfcc
 \family default 
 \series default 
 .
+\layout Standard
+
+
+\begin_inset LatexCommand \tableofcontents{}
+
+\end_inset 
+
+
 \layout Section
 
 New Type Features
@@ -490,15 +498,18 @@ for
 \family typewriter 
 for (
 \emph on 
-initialization expression
+initialization\SpecialChar ~
+expression
 \emph default 
 ; 
 \emph on 
-test expression
+test\SpecialChar ~
+expression
 \emph default 
 ; 
 \emph on 
-post expression
+post\SpecialChar ~
+expression
 \emph default 
 )
 \emph on 
@@ -517,13 +528,15 @@ and is equivalent to
 
 \family typewriter 
 \emph on 
-initialization expression
+initialization\SpecialChar ~
+expression
 \emph default 
 
 \newline 
 while (
 \emph on 
-test expression
+test\SpecialChar ~
+expression
 \emph default 
 ) {
 \newline 
@@ -543,7 +556,8 @@ statement
 \SpecialChar ~
 
 \emph on 
-post expression
+post\SpecialChar ~
+expression
 \emph default 
 
 \newline 
@@ -567,7 +581,8 @@ switch
 \family typewriter 
 switch (
 \emph on 
-test expression
+test\SpecialChar ~
+expression
 \emph default 
 ) {
 \newline 
@@ -589,7 +604,12 @@ case
 \SpecialChar ~
 \SpecialChar ~
 \SpecialChar ~
-optional statements
+
+\emph on 
+optional\SpecialChar ~
+statements
+\emph default 
+
 \newline 
 \SpecialChar ~
 \SpecialChar ~
@@ -609,7 +629,12 @@ case
 \SpecialChar ~
 \SpecialChar ~
 \SpecialChar ~
-optional statements
+
+\emph on 
+optional\SpecialChar ~
+statements
+\emph default 
+
 \newline 
 \SpecialChar ~
 \SpecialChar ~
@@ -625,7 +650,12 @@ default:
 \SpecialChar ~
 \SpecialChar ~
 \SpecialChar ~
-optional statements
+
+\emph on 
+optional\SpecialChar ~
+statements
+\emph default 
+
 \newline 
 }
 \layout Standard
@@ -866,4 +896,69 @@ expr
 \family default 
 \emph default 
 C's trinary expression
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+[
+\emph on 
+expr
+\emph default 
+\SpecialChar ~
+
+\emph on 
+exprs
+\emph default 
+]
+\family default 
+ Objective-QC message
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+@selector(
+\emph on 
+exprs
+\emph default 
+)
+\family default 
+ Objective-QC selector expression
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+@protocol(
+\emph on 
+name
+\emph default 
+)
+\family default 
+ Objective-QC protocol expression
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+@encode(
+\emph on 
+type
+\emph default 
+)
+\family default 
+ Objective-QC type encoding expression
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\family typewriter 
+@
+\emph on 
+string
+\family default 
+\emph default 
+ Objective-QC string object.
+ Currently identical to a normal QC string.
 \the_end
