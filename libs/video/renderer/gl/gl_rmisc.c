@@ -65,8 +65,6 @@ qboolean    VID_Is8bit (void);
 void        R_InitBubble (void);
 
 
-
-
 /*
 	R_Envmap_f
 
@@ -213,11 +211,11 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 }
 
 /*
-	R_TimeRefresh_f
+  R_TimeRefresh_f
 
-	For program optimization
+  For program optimization
+  LordHavoc: improved appearance and accuracy of timerefresh
 */
-// LordHavoc: improved appearance and accuracy of timerefresh
 void
 R_TimeRefresh_f (void)
 {
