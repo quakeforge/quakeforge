@@ -85,7 +85,7 @@ integer save_cursor;
 void () scan_saves =
 {
 	local integer i;
-	local string f;	//FIXME need a file type;
+	local file_t f;
 	for (i = 0; i < MAX_SAVEGAMES; i++) {
 		loadable[i] = 0;
 		filenames[i] = "--- UNUSED SLOT ---";

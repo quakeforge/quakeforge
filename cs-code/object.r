@@ -134,7 +134,7 @@ BOOL (id object) object_is_meta_class = #0;
 
 -(BOOL)isEqual:anObject
 {
-	return id(self) == anObject;	//FIXME shouldn't need cast
+	return self == anObject;
 }
 
 -(integer)compare:anotherObject = #0;	// can only == or != pointers

@@ -1,6 +1,5 @@
 #include "file.h"
 
-//FIXME need a proper file struct, string sucks
-string (string path, string mode) File_Open = #0;
-void (string file) File_Close = #0;
-string (string file) File_GetLine = #0;
+file_t (string path, string mode) File_Open = #0;
+void (file_t file) File_Close = #0;
+string (file_t file) File_GetLine = #0;
