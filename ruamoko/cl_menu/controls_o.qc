@@ -27,7 +27,6 @@
 #include "Array.h"
 
 #include "menu.h"
-#include "stringh.h"
 #include "draw.h"
 #include "system.h"
 #include "debug.h"
