@@ -41,9 +41,7 @@ static const char rcsid[] =
 
 extern viddef_t vid;					// global video state
 
-int         scr_width, scr_height;
-cvar_t     *vid_width;
-cvar_t     *vid_height;
+extern int scr_width, scr_height;
 
 unsigned short d_8to16table[256];
 unsigned int d_8to24table[256];

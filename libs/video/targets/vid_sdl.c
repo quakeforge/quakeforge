@@ -58,7 +58,7 @@ HWND 		mainwindow;
 
 // static float oldin_grab = 0;
 
-cvar_t     *vid_system_gamma;
+extern cvar_t *vid_system_gamma;
 extern viddef_t vid;					// global video state
 
 int modestate; // FIXME: just to avoid cross-compile errors - remove later

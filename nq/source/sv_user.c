@@ -63,8 +63,8 @@ qboolean    onground;
 usercmd_t   cmd;
 
 cvar_t     *sv_idealpitchscale;
-cvar_t     *cl_rollspeed;
-cvar_t     *cl_rollangle;
+extern cvar_t *cl_rollspeed;
+extern cvar_t *cl_rollangle;
 
 #define	MAX_FORWARD	6
 

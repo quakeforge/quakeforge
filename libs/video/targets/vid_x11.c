@@ -108,8 +108,8 @@ static int		shiftmask_fl = 0;
 static long 	r_shift, g_shift, b_shift;
 static unsigned long r_mask, g_mask, b_mask;
 
-cvar_t		*vid_width;
-cvar_t		*vid_height;
+extern cvar_t *vid_width;
+extern cvar_t *vid_height;
 
 
 static void

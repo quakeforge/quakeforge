@@ -102,7 +102,7 @@ static qboolean vidmode_avail = false;
 
 static qboolean	vidmode_active = false;
 
-cvar_t		*vid_system_gamma;
+extern cvar_t		*vid_system_gamma;
 qboolean	vid_fullscreen_active;
 static qboolean    vid_context_created = false;
 static int  window_x, window_y, window_saved;

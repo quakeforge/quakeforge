@@ -58,6 +58,8 @@ static const char rcsid[] =
 #include "QF/mathlib.h"
 #include "QF/vid.h"
 
+viewdelta_t viewdelta;
+
 cvar_t     *in_grab;
 cvar_t     *in_amp;
 cvar_t     *in_pre_amp;

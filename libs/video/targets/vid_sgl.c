@@ -64,7 +64,7 @@ HWND 		mainwindow;
 #define	WARP_WIDTH	320
 #define	WARP_HEIGHT	200
 
-cvar_t      *vid_system_gamma;
+extern cvar_t *vid_system_gamma;
 
 int         VID_options_items = 1;
 int         modestate;

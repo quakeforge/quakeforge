@@ -59,7 +59,6 @@ static const char rcsid[] =
 void       *colormap;
 vec3_t      viewlightvec;
 alight_t    r_viewlighting = { 128, 192, viewlightvec };
-float       r_time1;
 int         r_numallocatededges;
 qboolean    r_drawpolys;
 qboolean    r_drawculledpolys;

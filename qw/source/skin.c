@@ -54,9 +54,6 @@ static const char rcsid[] =
 extern cvar_t *noskins; // XXX FIXME, this shouldn't be here?
 
 cvar_t     *baseskin;
-cvar_t     *skin;
-cvar_t     *topcolor;
-cvar_t     *bottomcolor;
 
 char        allskins[128];
 

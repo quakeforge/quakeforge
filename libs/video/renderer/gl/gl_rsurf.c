@@ -58,8 +58,6 @@ static const char rcsid[] =
 
 void EmitWaterPolys (msurface_t *fa);
 
-qboolean	 r_cache_thrash;
-
 int          active_lightmaps;
 int          dlightdivtable[8192];
 int			 gl_internalformat;

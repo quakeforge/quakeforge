@@ -37,7 +37,7 @@ static const char rcsid[] =
 
 #ifndef USE_INTEL_ASM
 
-int         r_bmodelactive; 
+extern int         r_bmodelactive; //FIXME this shouldn't even be getting compiled
 
 
 void

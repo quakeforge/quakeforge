@@ -29,10 +29,12 @@
 #ifndef __QF_input_h_
 #define __QF_input_h_
 
-struct {
+typedef struct {
 	vec3_t angles;
 	vec3_t position;
-} viewdelta;
+} viewdelta_t;
+
+extern viewdelta_t viewdelta;
 
 #define freelook (in_mlook.state & 1 || in_freelook->int_val)
 

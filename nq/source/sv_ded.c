@@ -68,8 +68,8 @@ vec3_t      r_origin;
 qboolean    r_paused;
 entity_t   *r_view_model;
 
-extern cvar_t *cl_rollangle;
-extern cvar_t *cl_rollspeed;
+cvar_t *cl_rollangle;
+cvar_t *cl_rollspeed;
 
 void
 CL_UpdateScreen (double realtime)

@@ -46,11 +46,9 @@ static const char rcsid[] =
 
 #include "compat.h"
 
-cvar_t	*m_filter;
-cvar_t	*in_grab;
+extern cvar_t *in_grab;
 
 int		old_windowed_mouse;
-int		modestate;	// FIXME: just to avoid cross-comp errors - remove later
 
 
 void

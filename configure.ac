@@ -1224,7 +1224,7 @@ if test "x$GCC" = "xyes"; then
 	else
 		CFLAGS="$CFLAGS -Wall"
 	fi
-#	CFLAGS="$CFLAGS -Wall -pedantic"
+	CFLAGS="$CFLAGS -fno-common"
 fi
 
 AS="$CC"

@@ -83,7 +83,7 @@ void (* qf_fxMesaMakeCurrent) (fxMesaContext ctx);
 // FIXME!!!!! This belongs in include/qfgl_ext.h -- deek
 typedef void (GLAPIENTRY * QF_3DfxSetDitherModeEXT) (GrDitherMode_t mode);
 
-cvar_t      *vid_system_gamma;
+extern cvar_t *vid_system_gamma;
 
 static fxMesaContext fc = NULL;
 

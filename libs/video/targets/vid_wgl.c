@@ -106,10 +106,10 @@ lmode_t     lowresmodes[] = {
 	{512, 384},
 };
 
-const char *gl_vendor;
-const char *gl_renderer;
-const char *gl_version;
-const char *gl_extensions;
+extern const char *gl_vendor;
+extern const char *gl_renderer;
+extern const char *gl_version;
+extern const char *gl_extensions;
 
 // FIXME: Only used by MGL ..
 qboolean    DDActive;

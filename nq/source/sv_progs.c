@@ -51,7 +51,6 @@ sv_globals_t sv_globals;
 sv_funcs_t sv_funcs;
 sv_fields_t sv_fields;
 
-cvar_t     *r_skyname;
 cvar_t     *sv_progs;
 cvar_t     *pr_checkextensions;
 
@@ -335,8 +334,6 @@ SV_Progs_Init (void)
 void
 SV_Progs_Init_Cvars (void)
 {
-	r_skyname = Cvar_Get ("r_skyname", "", CVAR_SERVERINFO, Cvar_Info,
-						  "name of skybox");
 	sv_progs = Cvar_Get ("sv_progs", "progs.dat", CVAR_ROM, NULL,
 						 "Allows selectable game progs if you have several "
 						 "of them in the gamedir");
