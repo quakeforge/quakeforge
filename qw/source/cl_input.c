@@ -565,7 +565,8 @@ MakeChar (int i)
 static void
 CL_FinishMove (usercmd_t *cmd)
 {
-	int         ms, i;
+	int				ms, i;
+	static double	accum = 0.0;
 
 	// always dump the first two message, because it may contain leftover
 	// inputs from the last level
@@ -588,9 +589,14 @@ CL_FinishMove (usercmd_t *cmd)
 // 1999-10-29 +USE fix by Maddes  end
 
 	// send milliseconds of time to apply the move
-	ms = host_frametime * 1000;
-	if (ms > 250)
+	accum += (host_frametime * 1000.0);
+	ms = accum + 0.5;
+	accum -= ms;
+
+	if (ms > 250) {
 		ms = 100;						// time was unreasonable
+		accum = 0.0;
+	}
 	cmd->msec = ms;
 
 	VectorCopy (cl.viewangles, cmd->angles);
