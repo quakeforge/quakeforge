@@ -157,7 +157,7 @@ SockadrToNetadr (struct sockaddr_in6 *s, netadr_t *a)
 	a->port = s->sin6_port;
 	a->family = s->sin6_family;
 }
-
+/*
 static qboolean
 NET_AdrIsLoopback (netadr_t a)
 {
@@ -169,7 +169,7 @@ NET_AdrIsLoopback (netadr_t a)
 
 	return false;
 }
-
+*/
 qboolean
 NET_CompareBaseAdr (netadr_t a, netadr_t b)
 {
