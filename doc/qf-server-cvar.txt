@@ -57,7 +57,7 @@ r    fs_userpath          : location of your game directories
      sv_timestamps        : Time/date stamps in log entries
      sv_wateraccelerate   : Sets the water acceleration value
      sv_waterfriction     : Sets the water friction value
-     sys_dead_sleep       : When set, the server gets NO cpu if no clients are connectedand there's no other activity. *MIGHT* cause problems withsome mods.
+     sys_dead_sleep       : When set, the server gets NO cpu if no clients are connected and there's no other activity. *MIGHT* cause problems with some mods.
      sys_extrasleep       : Set to cause whatever amount delay in microseconds you want. Mostly useful to generate simulated bad connections.
      sys_nostdout         : Toggles console screen output
    s teamplay             : Determines teamplay rules. 0 off, 1 You cannot hurt yourself nor your teammates, 2 You can hurt yourself, your teammates, and you will lose one frag for killing a teammate3 You can hurt yourself but you cannot hurt your teammates
