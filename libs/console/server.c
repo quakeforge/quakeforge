@@ -125,31 +125,36 @@ C_DrawOutput (void)
 	int         lines = screen_y - 3; // leave a blank line
 	int         width = screen_x;
 	int         cur_line = output_buffer->cur_line;
-	int         i;
+	int         i, y;
 
 	if (lines < 1)
 		return;
 
-	for (i = 0; i < lines; i++) {
+	for (y = i = 0; y < lines; i++, y++) {
 		con_line_t *l = Con_BufferLine (output_buffer, cur_line - i);
 		if (!l->text) {
 			i--;
 			break;
 		}
-		i += l->len / width; // really dumb line wrap algo :)
+		y += l->len / width; // really dumb line wrap algo :)
 	}
-	cur_line -= min (i, lines);
-	i -= lines;
+	cur_line -= i;
+	y -= lines;
+	wclear (output);
 	wmove (output, 0, 0);
 	do {
 		con_line_t *l = Con_BufferLine (output_buffer, cur_line++);
 		byte       *text = l->text;
 		int         len = l->len;
 
-		if (i > 0) {
-			text += i * width;
-			len -= i * width;
-			i = 0;
+		if (y > 0) {
+			text += y * width;
+			len -= y * width;
+			y = 0; 
+			if (len < 1) {
+				len = 1;
+				text = l->text + l->len - 1;
+			}
 		}
 		while (len--) {
 			chtype      ch = *text++;
