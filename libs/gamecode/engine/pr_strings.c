@@ -202,11 +202,16 @@ PR_GetString (progs_t *pr, int num)
 		num = ~num % 1024;
 
 		if (row < 0 || row >= pr->dyn_str_size)
-			return 0;
+			goto bad_string_offset;
 		return pr->dynamic_strings[row][num].string;
 	} else {
+		if (num >= pr->pr_stringsize)
+			goto bad_string_offset;
 		return pr->pr_strings + num;
 	}
+
+bad_string_offset:
+	PR_RunError (pr, "Invalid string offset 0x%u", num);
 }
 
 int
