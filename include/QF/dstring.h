@@ -42,6 +42,7 @@ typedef struct dstring_s {
 // General buffer functions
 dstring_t *dstring_new(void);
 void dstring_delete (dstring_t *dstr);
+void dstring_adjust (dstring_t *dstr);
 void dstring_append (dstring_t *dstr, const char *data, unsigned int len);
 void dstring_insert(dstring_t *dstr, const char *data, unsigned int len,
 					unsigned int pos);

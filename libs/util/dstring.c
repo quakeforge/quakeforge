@@ -55,8 +55,7 @@ dstring_delete (dstring_t *dstr)
 	free (dstr);
 }
 
-inline
-void
+inline void
 dstring_adjust (dstring_t *dstr)
 {
 	if (dstr->size > dstr->truesize) {
