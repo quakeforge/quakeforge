@@ -24,14 +24,14 @@ SRCDIR="$TOPDIR/source"
 # These are the files from the MinGW 1.1 release
 
 MINGW_URL=http://unc.dl.sourceforge.net/sourceforge/mingw
-GCC=gcc-3.2-20020817-1
-GCC_ARCHIVE=$GCC.src.tar.gz
+GCC=gcc-3.2.3-20030504-1
+GCC_ARCHIVE=$GCC-src.tar.gz
 GCC_PATCH=""
-BINUTILS=binutils-2.13.90-20021006-2
+BINUTILS=binutils-2.13.90-20030111-1
 BINUTILS_ARCHIVE=$BINUTILS-src.tar.gz
-MINGW=mingw-runtime-2.2
+MINGW=mingw-runtime-3.0
 MINGW_ARCHIVE=$MINGW.tar.gz
-W32API=w32api-2.0
+W32API=w32api-2.3
 W32API_ARCHIVE=$W32API.tar.gz
 
 # These are the files from the SDL website
@@ -99,7 +99,7 @@ extract_binutils()
 	rm -rf "$BINUTILS"
 	echo "Extracting binutils"
 	gzip -dc "$SRCDIR/$BINUTILS_ARCHIVE" | tar xf -
-	mv binutills-2.13.90-20021006-2 binutils-2.13.90-20021006-2
+	mv binutils-2.13.90-20030111-1-src binutils-2.13.90-20030111-1
 	cd "$TOPDIR"
 }
 
