@@ -1400,13 +1400,15 @@ Host_WriteConfiguration (void)
 /*
 	Host_SimulationTime
 
-	This determines if enough time has passed to run a simulation frame
+	This determines if enough time has passed to run a simulation frame, or
+	returns the amount of time that has to be waited
 */
-static inline qboolean
+static inline float
 Host_SimulationTime (float time)
 {
 	float       fps;
 	float		timescale = 1.0;
+	float		timedifference;
 
 	if (cls.demoplayback) {
 		timescale = max (0, cl_demospeed->value);
@@ -1422,9 +1424,11 @@ Host_SimulationTime (float time)
 	else
 		fps = bound (30, rate->value / 80.0, 72);
 
-	if (!cls.timedemo && ((realtime - oldrealtime) < (timescale / fps)))
-		return false;					// framerate is too high
-	return true;
+	timedifference = (timescale / fps) - (realtime - oldrealtime);
+
+	if (!cls.timedemo && (timedifference > 0))
+		return timedifference;					// framerate is too high
+	return 0;
 }
 
 
@@ -1441,13 +1445,17 @@ Host_Frame (float time)
 	static double time2 = 0;
 	static double time3 = 0;
 	int         pass1, pass2, pass3;
+	float sleeptime;
 
 	if (setjmp (host_abort))	// something bad happened, or the server disconnected
 		return;
 
 	// decide the simulation time
-	if (!Host_SimulationTime (time))
+	if ((sleeptime = Host_SimulationTime (time)) != 0) {
+		if (sleeptime > 0.01) // minimum sleep time
+			usleep((unsigned long)((sleeptime - 0.001) * 1000000));
 		return;					// framerate is too high
+	}
 
 	host_frametime = realtime - oldrealtime;
 	oldrealtime = realtime;
