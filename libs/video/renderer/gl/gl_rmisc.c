@@ -170,6 +170,7 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
 	cvar_t     *r_skyname;
 	int         i;
+	texture_t  *tex;
 
 	for (i = 0; i < 256; i++)
 		d_lightstylevalue[i] = 264;		// normal light value
@@ -190,7 +191,7 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	skytexturenum = -1;
 	mirrortexturenum = -1;
 	for (i = 0; i < r_worldentity.model->numtextures; i++) {
-		texture_t  *tex = r_worldentity.model->textures[i];
+		tex = r_worldentity.model->textures[i];
 		if (!tex)
 			continue;
 		if (!strncmp (tex->name, "sky", 3))
@@ -200,6 +201,10 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 		tex->texturechain = NULL;
 		tex->texturechain_tail = &tex->texturechain;
 	}
+	tex = r_notexture_mip;
+	tex->texturechain = NULL;
+	tex->texturechain_tail = &tex->texturechain;
+
 	r_skyname = Cvar_FindVar ("r_skyname");
 	if (r_skyname != NULL)
 		R_LoadSkys (r_skyname->string);

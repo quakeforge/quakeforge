@@ -244,11 +244,12 @@ DrawTextureChains (void)
 {
 	int         i;
 	msurface_t *s;
+	texture_t  *tex;
 
 	qfglDisable (GL_BLEND);
 
 	for (i = 0; i < r_worldentity.model->numtextures; i++) {
-		texture_t  *tex = r_worldentity.model->textures[i];
+		tex = r_worldentity.model->textures[i];
 		if (!tex)
 			continue;
 		qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
@@ -258,6 +259,9 @@ DrawTextureChains (void)
 		tex->texturechain = NULL;
 		tex->texturechain_tail = &tex->texturechain;
 	}
+	tex = r_notexture_mip;
+	tex->texturechain = NULL;
+	tex->texturechain_tail = &tex->texturechain;
 
 	qfglEnable (GL_BLEND);
 }
