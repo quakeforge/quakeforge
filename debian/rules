@@ -98,7 +98,6 @@ install: build
 		usr/lib/libQFimage.so.* \
 		usr/lib/libQFjs.so.* \
 		usr/lib/libQFmodels.so.* \
-		usr/lib/libQFobject.so.* \
 		usr/lib/libQFsound.so.* \
 		usr/lib/libQFutil.so.* \
 		usr/lib/quakeforge/plugins/cd_linux.so* \
@@ -132,8 +131,6 @@ install: build
 		usr/lib/libQFjs.so \
 		usr/lib/libQFmodels.*a \
 		usr/lib/libQFmodels.so \
-		usr/lib/libQFobject.*a \
-		usr/lib/libQFobject.so \
 		usr/lib/libQFsound.*a \
 		usr/lib/libQFsound.so \
 		usr/lib/libQFutil.*a \

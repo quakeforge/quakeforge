@@ -1,2 +1,2 @@
-libQFrenderer_gl 1 quakeforge-libs-gl (>= 0.5.1)
-libQFmodels_gl 1 quakeforge-libs-gl (>= 0.5.1)
+libQFrenderer_gl 1 quakeforge-libs-gl (>= 0.5.5)
+libQFmodels_gl 1 quakeforge-libs-gl (>= 0.5.5)
