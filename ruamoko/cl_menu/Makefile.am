@@ -30,7 +30,7 @@ EXTRA_DATA= $(menu_data)
 
 menu_src= \
 	client_menu.qc controls_o.qc \
-	inputline_util.qc menu.r HUD.r \
+	Frame.r inputline_util.qc menu.r HUD.r \
 	hud_interface.qc options.qc \
 	options_util.qc servlist.qc
 

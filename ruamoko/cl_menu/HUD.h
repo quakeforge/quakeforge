@@ -1,8 +1,10 @@
 #include "Point.h"
+#include "Frame.h"
+#include "Array.h"
 
 @interface HUDObject : Object
 {
-	Point origin, size;
+	Point origin;
 	BOOL visible;
 	integer handle;
 }
@@ -12,10 +14,9 @@
 - (void) free;
 - (integer) handle;
 - (Point) origin;
+- (Point) size;
 - (void) setOrigin: (Point) newPoint;
 - (void) translate: (Point) addPoint;
-- (Point) size;
-//- (void) center Horizontal: (BOOL) h Vertical: (BOOL) v;
 - (BOOL) isVisible;
 - (void) setVisible: (BOOL) _visible;
 - (void) display;
@@ -27,6 +28,7 @@
 }
 
 - (id) initWithComponents: (integer) x :(integer) y :(string) _text;
+- (Point) size;
 - (string) text;
 - (void) setText: (string) _text;
 - (void) display;
@@ -39,9 +41,28 @@
 
 - (id) initWithComponents: (integer)x :(integer)y :(string) _file;
 - (void) free;
+- (Point) size;
 - (void) setFile: (string) _file;
 - (void) display;
 @end
 
 @extern void () HUD_Init;
 @extern integer HUDHandleClass;
+
+@interface HUDAnimation : HUDObject
+{
+	Array frames;
+	integer currentFrame;
+	float nextFrameTime;
+	BOOL looping;
+}
+- (id) initWithComponents: (integer) x :(integer) y;
+- (void) free;
+- (Point) size;
+- (void) addFrame: (Frame) frame;
+- (void) changeFrame;
+- (void) display;
+- (void) start;
+- (void) stop;
+- (void) setLooping: (BOOL) _looping;
+@end

@@ -2,6 +2,7 @@
 #include "debug.h"
 #include "gib.h"
 #include "string.h"
+#include "system.h"
 #include "HUD.h"
 
 integer HUDHandleClass;
@@ -25,7 +26,6 @@ integer HUDHandleClass;
 - (void) free
 {
 	[origin free];
-	[size free];
 	GIB_Handle_Free (handle, HUDHandleClass);
 	[super free];
 }
@@ -42,7 +42,7 @@ integer HUDHandleClass;
 
 - (Point) size
 {
-	return size;
+	return NIL;
 }
 
 - (void) setOrigin: (Point) newPoint
@@ -54,16 +54,6 @@ integer HUDHandleClass;
 {
 	[origin addPoint :addPoint];
 }
-
-/*
-- (void) center Horizontal: (BOOL) h Vertical: (BOOL) v
-{
-	Point newCoords;
-	integer newX, newY;
-
-	if (h) {
-		newX = X
-*/
 
 - (BOOL) isVisible
 {
@@ -89,6 +79,11 @@ integer HUDHandleClass;
 	return self;
 }
 
+- (Point) size
+{
+	return [[Point alloc] initWithComponents :8*(integer) strlen (text) :8];
+}
+
 - (string) text
 {
 	return text;
@@ -97,8 +92,6 @@ integer HUDHandleClass;
 - (void) setText: (string) _text
 {
 	text = _text;
-	[size free];
-	size = [[Point alloc] initWithComponents :8*(integer) strlen (text) :8];
 }
 
 - (void) display
@@ -123,12 +116,15 @@ integer HUDHandleClass;
 	[super free];
 }
 
+- (Point) size
+{
+	return [[Point alloc] initWithComponents :[picture width] :[picture height]];
+}
+
 - (void) setFile: (string) _file
 {
 	[picture free];
 	picture = [[QPic alloc] initName :_file];
-	[size free];
-	size = [[Point alloc] initWithComponents :[picture width] :[picture height]];
 }
 
 - (void) display
@@ -136,4 +132,90 @@ integer HUDHandleClass;
 	if (visible)
 		[picture draw :[origin x] :[origin y]];
 }
+@end
+
+@implementation HUDAnimation : HUDObject
+
+- (id) initWithComponents: (integer) x :(integer) y
+{
+	self = [super initWithComponents :x :y];
+	frames = [[Array alloc] init];
+	currentFrame = 0;
+	nextFrameTime = 0;
+	looping = NO;
+
+	return self;
+}
+
+- (void) free
+{
+	[frames free];
+	[super free];
+}
+
+- (Point) size
+{
+	local Frame frame;
+
+	frame = [frames getItemAt :currentFrame];
+	return [frame size];
+}
+
+- (void) addFrame: (Frame) frame
+{
+	[frames addItem :frame];
+}
+
+- (void) changeFrame
+{
+	while (time >= nextFrameTime) {
+		local Frame f;
+		if (++currentFrame == [frames count]) {
+			if (looping)
+				currentFrame = 0;
+			else {
+				nextFrameTime = 0.0;
+				currentFrame = 0;
+				return;
+			}
+		}
+		f = [frames getItemAt :currentFrame];
+		nextFrameTime += [f duration];
+	}
+}
+
+- (void) display
+{
+	local Frame f;
+
+	if (!visible)
+		return;
+
+	if (nextFrameTime)
+		[self changeFrame];
+
+	f = [frames getItemAt :currentFrame];
+	[f draw :[origin x] :[origin y]];
+}
+
+- (void) start
+{
+	local Frame f;
+
+	currentFrame = 0;
+	f = [frames getItemAt :0];
+	nextFrameTime = time + [f duration];
+}
+
+- (void) stop
+{
+	nextFrameTime = 0.0;
+	currentFrame = 0;
+}
+
+- (void) setLooping: (BOOL) _looping
+{
+	looping = _looping;
+}
+
 @end
