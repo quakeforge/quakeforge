@@ -241,36 +241,59 @@ vorbis_stream_seek (void *file, int pos, wavinfo_t *info)
 }
 
 static void
-vorbis_stream (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
+vorbis_stream_close (sfx_t *sfx)
 {
-	sfxstream_t *stream;
+	sfxstream_t *stream = (sfxstream_t *)sfx->data;
+
+	ov_clear (stream->file);
+	free (stream);
+	free (sfx);
+}
+
+static sfx_t *
+vorbis_stream_open (sfx_t *_sfx)
+{
+	sfx_t      *sfx;
+	sfxstream_t *stream = (sfxstream_t *) _sfx->data;
+	wavinfo_t  *info = &stream->wavinfo;
 	int         samples;
 	int         size;
-	
+	QFile      *file;
+
+	QFS_FOpenFile (stream->file, &file);
+	if (!file)
+		return 0;
+
+	sfx = calloc (1, sizeof (sfx_t));
 	samples = shm->speed * 0.3;
 	size = samples = (samples + 255) & ~255;
 	if (!snd_loadas8bit->int_val)
 		size *= 2;
-	if (info.channels == 2)
+	if (info->channels == 2)
 		size *= 2;
 	stream = calloc (1, sizeof (sfxstream_t) + size);
 	memcpy (stream->buffer.data + size, "\xde\xad\xbe\xef", 4);
-
-	free (realname);
 
 	sfx->data = stream;
 	sfx->wavinfo = SND_CacheWavinfo;
 	sfx->touch = sfx->retain = SND_StreamRetain;
 	sfx->release = SND_StreamRelease;
+	sfx->close = vorbis_stream_close;
 
 	stream->sfx = sfx;
 	stream->file = malloc (sizeof (OggVorbis_File));
-	memcpy (stream->file, vf, sizeof (OggVorbis_File));;
-	stream->resample = info.channels == 2 ? SND_ResampleStereo
+	if (ov_open_callbacks (file, stream->file, 0, 0, callbacks) < 0) {
+		Sys_Printf ("Input does not appear to be an Ogg bitstream.\n");
+		Qclose (file);
+		free (stream);
+		free (sfx);
+		return 0;
+	}
+	stream->resample = info->channels == 2 ? SND_ResampleStereo
 										  : SND_ResampleMono;
 	stream->read = vorbis_stream_read;
 	stream->seek = vorbis_stream_seek;
-	stream->wavinfo = info;
+	stream->wavinfo = *info;
 
 	stream->buffer.length = samples;
 	stream->buffer.advance = SND_StreamAdvance;
@@ -280,6 +303,24 @@ vorbis_stream (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
 	stream->seek (stream->file, 0, &stream->wavinfo);
 
 	stream->buffer.advance (&stream->buffer, 0);
+
+	return sfx;
+}
+
+static void
+vorbis_stream (sfx_t *sfx, char *realname, OggVorbis_File *vf, wavinfo_t info)
+{
+	sfxstream_t *stream = calloc (1, sizeof (sfxstream_t));
+		
+	ov_clear (vf); 
+	sfx->open = vorbis_stream_open;
+	sfx->wavinfo = SND_CacheWavinfo;
+	sfx->touch = sfx->retain = SND_StreamRetain;
+	sfx->release = SND_StreamRelease;
+	sfx->data = stream;
+
+	stream->file = realname;
+	stream->wavinfo = info;
 }
 
 void

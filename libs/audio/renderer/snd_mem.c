@@ -71,6 +71,12 @@ snd_noop (sfx_t *sfx)
 {
 }
 
+static sfx_t *
+snd_open (sfx_t *sfx)
+{
+	return sfx;
+}
+
 sfxbuffer_t *
 SND_CacheTouch (sfx_t *sfx)
 {
@@ -263,6 +269,8 @@ SND_Load (sfx_t *sfx)
 
 	sfx->touch = sfx->retain = snd_fail;
 	sfx->release = snd_noop;
+	sfx->close = snd_noop;
+	sfx->open = snd_open;
 
 	dsprintf (name, "sound/%s", sfx->name);
 	_QFS_FOpenFile (name->str, &file, foundname, 1);

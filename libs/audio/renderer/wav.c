@@ -112,35 +112,52 @@ wav_stream_seek (void *file, int pos, wavinfo_t *info)
 }
 
 static void
-wav_stream (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
+wav_stream_close (sfx_t *sfx)
 {
-	sfxstream_t *stream;
+	sfxstream_t *stream = (sfxstream_t *)sfx->data;
+
+	Qclose (stream->file);
+	free (stream);
+	free (sfx);
+}
+
+static sfx_t *
+wav_stream_open (sfx_t *_sfx)
+{
+	sfx_t      *sfx;
+	sfxstream_t *stream = (sfxstream_t *) _sfx->data;
+	wavinfo_t  *info = &stream->wavinfo;
 	int         samples;
 	int         size;
+	QFile      *file;
 
+	QFS_FOpenFile (stream->file, &file);
+	if (!file)
+		return 0;
+
+	sfx = calloc (1, sizeof (sfx_t));
 	samples = shm->speed * 0.3;
 	size = samples = (samples + 255) & ~255;
 	if (!snd_loadas8bit->int_val)
 		size *= 2;
-	if (info.channels == 2)
+	if (info->channels == 2)
 		size *= 2;
 	stream = calloc (1, sizeof (sfxstream_t) + size);
 	memcpy (stream->buffer.data + size, "\xde\xad\xbe\xef", 4);
-
-	free (realname);
 
 	sfx->data = stream;
 	sfx->wavinfo = SND_CacheWavinfo;
 	sfx->touch = sfx->retain = SND_StreamRetain;
 	sfx->release = SND_StreamRelease;
+	sfx->close = wav_stream_close;
 
 	stream->sfx = sfx;
 	stream->file = file;
-	stream->resample = info.channels == 2 ? SND_ResampleStereo
+	stream->resample = info->channels == 2 ? SND_ResampleStereo
 										  : SND_ResampleMono;
 	stream->read = wav_stream_read;
 	stream->seek = wav_stream_seek;
-	stream->wavinfo = info;
+	stream->wavinfo = *info;
 
 	stream->buffer.length = samples;
 	stream->buffer.advance = SND_StreamAdvance;
@@ -150,6 +167,24 @@ wav_stream (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
 	stream->seek (stream->file, 0, &stream->wavinfo);
 
 	stream->buffer.advance (&stream->buffer, 0);
+
+	return sfx;
+}
+
+static void
+wav_stream (sfx_t *sfx, char *realname, void *file, wavinfo_t info)
+{
+	sfxstream_t *stream = calloc (1, sizeof (sfxstream_t));
+
+	Qclose (file);
+	sfx->open = wav_stream_open;
+	sfx->wavinfo = SND_CacheWavinfo;
+	sfx->touch = sfx->retain = SND_StreamRetain;
+	sfx->release = SND_StreamRelease;
+	sfx->data = stream;
+
+	stream->file = realname;
+	stream->wavinfo = info;
 }
 
 static wavinfo_t

@@ -260,8 +260,10 @@ SND_PickChannel (int entnum, int entchannel)
 	if (first_to_die == -1)
 		return NULL;
 
-	if (channels[first_to_die].sfx)
+	if (channels[first_to_die].sfx) {
+		channels[first_to_die].sfx->close (channels[first_to_die].sfx);
 		channels[first_to_die].sfx = NULL;
+	}
 
 	return &channels[first_to_die];
 }
@@ -351,13 +353,18 @@ SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 
 	// new channel
 	if (!sfx->retain (sfx)) {
+		if (target_chan->sfx)
+			target_chan->sfx->close (target_chan->sfx);
 		target_chan->sfx = NULL;
 		return;						// couldn't load the sound's data
 	}
 
-	target_chan->sfx = sfx;
+	if (!(target_chan->sfx = sfx->open (sfx))) {
+		sfx->release (sfx);
+		return;
+	}
 	target_chan->pos = 0.0;
-	target_chan->end = paintedtime + sfx->length;
+	target_chan->end = paintedtime + target_chan->sfx->length;
 	sfx->release (sfx);
 
 	// if an identical sound has also been started this frame, offset the pos
@@ -390,6 +397,8 @@ SND_StopSound (int entnum, int entchannel)
 		if (channels[i].entnum == entnum
 			&& channels[i].entchannel == entchannel) {
 			channels[i].end = 0;
+			if (channels[i].sfx)
+				channels[i].sfx->close (channels[i].sfx);
 			channels[i].sfx = NULL;
 			return;
 		}
@@ -407,8 +416,10 @@ SND_StopAllSounds (qboolean clear)
 	total_channels = MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS;	// no statics
 
 	for (i = 0; i < MAX_CHANNELS; i++)
-		if (channels[i].sfx)
+		if (channels[i].sfx) {
+			channels[i].sfx->close (channels[i].sfx);
 			channels[i].sfx = NULL;
+		}
 
 	memset (channels, 0, MAX_CHANNELS * sizeof (channel_t));
 
@@ -467,7 +478,10 @@ SND_StaticSound (sfx_t *sfx, const vec3_t origin, float vol,
 		return;
 	}
 
-	ss->sfx = sfx;
+	if (!(ss->sfx = sfx->open (sfx))) {
+		sfx->release (sfx);
+		return;
+	}
 	VectorCopy (origin, ss->origin);
 	ss->master_vol = vol;
 	ss->dist_mult = (attenuation / 64) / sound_nominal_clip_dist;
@@ -498,15 +512,18 @@ SND_UpdateAmbientSounds (void)
 	l = Mod_PointInLeaf (listener_origin, *render_data.worldmodel);
 	if (!l || !ambient_level->value) {
 		for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
-			 ambient_channel++)
+			 ambient_channel++) {
+			if (channels[ambient_channel].sfx)
+				channels[ambient_channel].sfx->close (channels[ambient_channel].sfx);
 			channels[ambient_channel].sfx = NULL;
+		}
 		return;
 	}
 
 	for (ambient_channel = 0; ambient_channel < NUM_AMBIENTS;
 		 ambient_channel++) {
 		chan = &channels[ambient_channel];
-		chan->sfx = ambient_sfx[ambient_channel];
+		chan->sfx = ambient_sfx[ambient_channel]->open (ambient_sfx[ambient_channel]);
 
 		vol = ambient_level->value * l->ambient_sound_level[ambient_channel];
 		if (vol < 8)
