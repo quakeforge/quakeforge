@@ -323,18 +323,21 @@ type_name
 	;
 
 function_decl
-	: '(' param_list ')' { $$ = reverse_params ($2); }
+	: '(' param_list ')'	{ $$ = reverse_params ($2); }
 	| '(' param_list ',' ELLIPSIS ')'
 		{
 			$$ = new_param (0, 0, 0);
 			$$->next = $2;
 			$$ = reverse_params ($$);
 		}
-	| '(' ELLIPSIS ')' { $$ = new_param (0, 0, 0); }
-	| '(' ')'
+	| '(' ELLIPSIS ')'		{ $$ = new_param (0, 0, 0); }
+	| '(' TYPE ')'
 		{
+			if ($2 != &type_void)
+				PARSE_ERROR;
 			$$ = 0;
 		}
+	| '(' ')'				{ $$ = 0; }
 	;
 
 param_list
