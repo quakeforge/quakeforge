@@ -1,5 +1,16 @@
 #! /bin/sh
 cd `dirname $0`
+# Check libtoolize version, fix for Debian/Woody
+if [ -x `which libtoolize` ]; then
+	LTIZE_VER=`libtoolize --version | head -1 | sed 's/^[^0-9]*//'`
+	LTIZE_VER_MAJOR=`echo $LTIZE_VER | cut -f1 -d'.'`
+	LTIZE_VER_MINOR=`echo $LTIZE_VER | cut -f2 -d'.'`
+
+	if [ "$LTIZE_VER_MAJOR" -lt "2" -a "$LTIZE_VER_MINOR" -lt "4" ]; then
+		WOODY_FIX="yes";
+	fi
+fi
+
 # Check Autoconf version
 if [ -x `which autoconf` ]; then
 	AC_VER=`autoconf --version | head -1 | sed 's/^[^0-9]*//'`
@@ -21,6 +32,10 @@ if [ -x `which autoconf` ]; then
 			ln -s configure.ac configure.in
 		fi
 		echo "If you see some warnings about cross-compiling, don't worry; this is normal."
+	elif [ "$WOODY_FIX" = "yes" ]; then
+		if [ ! -e configure.in ]; then
+			ln -s configure.ac configure.in
+		fi
 	else
 		rm -f configure.in
 	fi
