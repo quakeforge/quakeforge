@@ -100,6 +100,11 @@ particle_new (ptype_t type, int texnum, const vec3_t org, float scale,
 	part->ramp = ramp;
 }
 
+/*
+	particle_new_random
+	note that org_fuzz & vel_fuzz should be ints greater than 0 if you are
+	going to bother using this function.
+*/
 inline static void
 particle_new_random (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
 					 float scale, int vel_fuzz, float die, int color,
@@ -109,9 +114,7 @@ particle_new_random (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
 	vec3_t      porg, pvel;
 
 	for (j = 0; j < 3; j++) {
-		if (org_fuzz)
 			porg[j] = qfrandom (org_fuzz * 2) - org_fuzz + org[j];
-		if (vel_fuzz)
 			pvel[j] = qfrandom (vel_fuzz * 2) - vel_fuzz;
 	}
 	particle_new (type, texnum, porg, scale, pvel, die, color, alpha, ramp);
@@ -257,12 +260,12 @@ R_BlobExplosion_QF (const vec3_t org)
 	for (i = 0; i < j >> 1; i++) {
 		particle_new_random (pt_blob, part_tex_dot, org, 12, 2, 256,
 							 r_realtime + 1.0 + (rand () & 7) * 0.05,
-							 66 + rand () % 6, 1.0, 0.0);
+							 66 + i % 6, 1.0, 0.0);
 	}
 	for (i = 0; i < j / 2; i++) {
 		particle_new_random (pt_blob2, part_tex_dot, org, 12, 2, 256,
 							 r_realtime + 1.0 + (rand () & 7) * 0.05,
-							 150 + rand () % 6, 1.0, 0.0);
+							 150 + i % 6, 1.0, 0.0);
 	}
 }
 
@@ -271,17 +274,23 @@ R_RunSparkEffect_QF (const vec3_t org, int count, int ofuzz)
 {
 	if (numparticles >= r_maxparticles)
 		return;
-	particle_new (pt_smokecloud, part_tex_smoke, org,
-				  ofuzz * 0.08, vec3_origin, r_realtime + 9,
-				  12 + (rand () & 3), 0.25 + qfrandom (0.125), 0.0);
+	particle_new (pt_smokecloud, part_tex_smoke, org, ofuzz * 0.08,
+				  vec3_origin, r_realtime + 9, 12 + (rand () & 3),
+				  0.25 + qfrandom (0.125), 0.0);
 
 	if (numparticles + count >= r_maxparticles)
 		count = r_maxparticles - numparticles;
-	while (count--) {
-		int		color = rand () & 7;
-		particle_new_random (pt_fallfadespark, part_tex_dot, org,
-							 ofuzz * 0.75, 0.7, 96, r_realtime + 5.0,
-							 ramp1[color], 1.0, color);
+	if (count) {
+		int orgfuzz = ofuzz * 3 / 4;
+		if (orgfuzz < 1)
+			orgfuzz = 1;
+
+		while (count--) {
+			int		color = rand () & 7;
+			particle_new_random (pt_fallfadespark, part_tex_dot, org,
+								 orgfuzz, 0.7, 96, r_realtime + 5.0,
+								 ramp1[color], 1.0, color);
+		}
 	}
 }
 
@@ -306,8 +315,7 @@ R_GunshotEffect_QF (const vec3_t org, int count)
 {
 	int scale = 16;
 
-	if (count > 120)
-		scale = 24;
+	scale += count / 15;
 	R_RunSparkEffect_QF (org, count >> 1, scale);
 }
 
@@ -327,9 +335,8 @@ R_LightningBloodEffect_QF (const vec3_t org)
 	if (numparticles + count >= r_maxparticles)
 		count = r_maxparticles - numparticles;
 	while (count--)
-		particle_new_random (pt_fallfade, part_tex_spark, org, 12, 2.0,
-							 128, r_realtime + 5.0, 244 + (rand () % 3), 1.0,
-							 0.0);
+		particle_new_random (pt_fallfade, part_tex_spark, org, 12, 2.0, 128,
+							 r_realtime + 5.0, 244 + (count % 3), 1.0, 0.0);
 }
 
 static void
@@ -932,7 +939,7 @@ R_BlobExplosion_ID (const vec3_t org)
 	}
 }
 
-static void
+static inline void		// FIXME: inline?
 R_RunParticleEffect_ID (const vec3_t org, const vec3_t dir, int color,
 						int count)
 {
@@ -954,13 +961,16 @@ R_RunParticleEffect_ID (const vec3_t org, const vec3_t dir, int color,
 		count = r_maxparticles - numparticles;
 
 	for (i = 0; i < count; i++) {
-		for (j = 0; j < 3; j++) {
-			porg[j] = org[j] + scale * ((rand () & 15) - 8);
-		}
+		int rnd = rand ();
+
+		porg[0] = org[0] + scale * ((rnd >> 3) & 15 - 8);
+		porg[1] = org[1] + scale * ((rnd >> 7) & 15 - 8);
+		porg[2] = org[2] + scale * ((rnd >> 11) & 15 - 8);
+
 		// Note that ParseParticleEffect handles (dir * 15)
 		particle_new (pt_grav, part_tex_dot, porg, 1.0, dir,
 					  r_realtime + 0.1 * (rand () % 5),
-					  (color & ~7) + (rand () & 7), 1.0, 0.0);
+					  (color & ~7) + (rnd & 7), 1.0, 0.0);
 	}
 }
 
@@ -1314,9 +1324,9 @@ R_DrawParticles (void)
 					time10, time15, time30, time50;
 	int				activeparticles, maxparticle, j, vacount;
 	unsigned int	k;
-	varray_t2f_c4ub_v3f_t		*VA;
 	particle_t	   *part;
 	vec3_t			up_scale, right_scale, up_right_scale, down_right_scale;
+	varray_t2f_c4ub_v3f_t		*VA;
 
 	if (!r_particles->int_val)
 		return;
@@ -1357,9 +1367,9 @@ R_DrawParticles (void)
 			VA[0].color[1] = at[1];
 			VA[0].color[2] = at[2];
 			VA[0].color[3] = part->alpha * 255;
-			memcpy (VA[1].color, VA[0].color, sizeof(VA[0].color));
-			memcpy (VA[2].color, VA[0].color, sizeof(VA[0].color));
-			memcpy (VA[3].color, VA[0].color, sizeof(VA[0].color));
+			memcpy (VA[1].color, VA[0].color, sizeof (VA[0].color));
+			memcpy (VA[2].color, VA[0].color, sizeof (VA[0].color));
+			memcpy (VA[3].color, VA[0].color, sizeof (VA[0].color));
 
 			switch (part->tex) {
 				case 0:
