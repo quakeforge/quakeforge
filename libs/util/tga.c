@@ -121,27 +121,6 @@ read_bgra (byte *buf, int count, byte **data)
 }
 
 static inline byte *
-read_rgb (byte *buf, int count, byte **data)
-{
-	byte		red = *(*data)++;
-	byte		green = *(*data)++;
-	byte		blue = *(*data)++;
-
-	return blit_rgb (buf, count, red, green, blue);
-}
-
-static inline byte *
-read_rgba (byte *buf, int count, byte **data)
-{
-	byte		red = *(*data)++;
-	byte		green = *(*data)++;
-	byte		blue = *(*data)++;
-	byte		alpha = *(*data)++;
-
-	return blit_rgba (buf, count, red, green, blue, alpha);
-}
-
-static inline byte *
 reverse_read_bgr (byte *buf, int count, byte **data)
 {
 	byte		blue = *(*data)++;
