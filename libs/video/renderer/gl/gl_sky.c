@@ -65,11 +65,56 @@ int         alphaskytexture;
 qboolean    skyloaded = false;
 
 
+vec5_t      skyvec[6][4] = {
+	{
+		// right +y
+		{1, 0, 1024, 1024, 1024},
+		{1, 1, 1024, 1024, -1024},
+		{0, 1, -1024, 1024, -1024},
+		{0, 0, -1024, 1024, 1024}
+	},
+	{
+		// back -x
+		{1, 0, -1024, 1024, 1024},
+		{1, 1, -1024, 1024, -1024},
+		{0, 1, -1024, -1024, -1024},
+		{0, 0, -1024, -1024, 1024}
+	},
+	{
+		// left -y
+		{1, 0, -1024, -1024, 1024},
+		{1, 1, -1024, -1024, -1024},
+		{0, 1, 1024, -1024, -1024},
+		{0, 0, 1024, -1024, 1024}
+	},
+	{
+		// front +x
+		{1, 0, 1024, -1024, 1024},
+		{1, 1, 1024, -1024, -1024},
+		{0, 1, 1024, 1024, -1024},
+		{0, 0, 1024, 1024, 1024}
+	},
+	{
+		// up +z
+		{1, 0, 1024, -1024, 1024},
+		{1, 1, 1024, 1024, 1024},
+		{0, 1, -1024, 1024, 1024},
+		{0, 0, -1024, -1024, 1024}
+	},
+	{
+		// down -z
+		{1, 0, 1024, 1024, -1024},
+		{1, 1, 1024, -1024, -1024},
+		{0, 1, -1024, -1024, -1024},
+		{0, 0, -1024, 1024, -1024}
+	}
+};
+
 void
 R_LoadSkys (const char *skyname)
 {
 	char        name[64];
-	int         i;
+	int         i, j;
 	QFile      *f;
 
 	if (strcasecmp (skyname, "none") == 0) {
@@ -105,61 +150,23 @@ R_LoadSkys (const char *skyname)
 
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		for (j = 0; j < 4; j++) {
+			// set the texture coords to be 1/2 pixel in from the edge
+			if (skyvec[i][j][0] < 0.5)
+				skyvec[i][j][0] = 0.5 / targa->width;
+			else
+				skyvec[i][j][0] = 1 - 0.5 / targa->width;
+
+			if (skyvec[i][j][1] < 0.5)
+				skyvec[i][j][1] = 0.5 / targa->height;
+			else
+				skyvec[i][j][1] = 1 - 0.5 / targa->height;
+		}
 	}
 	if (!skyloaded)
 		Con_Printf ("Unable to load skybox %s, using normal sky\n", skyname);
 }
-
-#if 0
-#define ftc(x) (x * (254.0/256.0) + (1.0/256.0)) // avoid interpolation seams
-#else
-#define ftc(x) (x) // what seams?
-#endif
-vec5_t      skyvec[6][4] = {
-	{
-		// right +y
-		{ftc (1), ftc (0), 1024, 1024, 1024},
-		{ftc (1), ftc (1), 1024, 1024, -1024},
-		{ftc (0), ftc (1), -1024, 1024, -1024},
-		{ftc (0), ftc (0), -1024, 1024, 1024}
-	},
-	{
-		// back -x
-		{ftc (1), ftc (0), -1024, 1024, 1024},
-		{ftc (1), ftc (1), -1024, 1024, -1024},
-		{ftc (0), ftc (1), -1024, -1024, -1024},
-		{ftc (0), ftc (0), -1024, -1024, 1024}
-	},
-	{
-		// left -y
-		{ftc (1), ftc (0), -1024, -1024, 1024},
-		{ftc (1), ftc (1), -1024, -1024, -1024},
-		{ftc (0), ftc (1), 1024, -1024, -1024},
-		{ftc (0), ftc (0), 1024, -1024, 1024}
-	},
-	{
-		// front +x
-		{ftc (1), ftc (0), 1024, -1024, 1024},
-		{ftc (1), ftc (1), 1024, -1024, -1024},
-		{ftc (0), ftc (1), 1024, 1024, -1024},
-		{ftc (0), ftc (0), 1024, 1024, 1024}
-	},
-	{
-		// up +z
-		{ftc (1), ftc (0), 1024, -1024, 1024},
-		{ftc (1), ftc (1), 1024, 1024, 1024},
-		{ftc (0), ftc (1), -1024, 1024, 1024},
-		{ftc (0), ftc (0), -1024, -1024, 1024}
-	},
-	{
-		// down -z
-		{ftc (1), ftc (0), 1024, 1024, -1024},
-		{ftc (1), ftc (1), 1024, -1024, -1024},
-		{ftc (0), ftc (1), -1024, -1024, -1024},
-		{ftc (0), ftc (0), -1024, 1024, -1024}
-	}
-};
-#undef ftc
 
 static void
 R_DrawSkyBox (void)
