@@ -92,7 +92,8 @@ D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
 	int         i, j, k, plane, reps, repshift, offset, vidpage, off;
 
 	if (!svgalib_inited || !vid.direct || svgalib_backgrounded
-		|| !vga_oktowrite ())return;
+		|| !vga_oktowrite ())
+		return;
 
 	if (vid.aspect > 1.5) {
 		reps = 2;
@@ -128,16 +129,15 @@ D_BeginDirectRect (int x, int y, byte * pbitmap, int width, int height)
 	} else {
 		for (i = 0; i < (height << repshift); i += reps) {
 			for (j = 0; j < reps; j++) {
-				offset = x + ((y << repshift) + i + j)
-					* vid.rowbytes;
+				offset = x + ((y << repshift) + i + j) * vid.rowbytes;
 				off = offset % 0x10000;
 				if ((offset / 0x10000) != vidpage) {
 					vidpage = offset / 0x10000;
 					vga_setpage (vidpage);
 				}
 				memcpy (&backingbuf[(i + j) * 24], vid.direct + off, width);
-				memcpy (vid.direct + off,
-						&pbitmap[(i >> repshift) * width], width);
+				memcpy (vid.direct + off, &pbitmap[(i >> repshift) * width],
+						width);
 			}
 		}
 	}
@@ -149,7 +149,8 @@ D_EndDirectRect (int x, int y, int width, int height)
 	int         i, j, k, plane, reps, repshift, offset, vidpage, off;
 
 	if (!svgalib_inited || !vid.direct || svgalib_backgrounded
-		|| !vga_oktowrite ())return;
+		|| !vga_oktowrite ())
+		return;
 
 	if (vid.aspect > 1.5) {
 		reps = 2;
@@ -182,8 +183,7 @@ D_EndDirectRect (int x, int y, int width, int height)
 	} else {
 		for (i = 0; i < (height << repshift); i += reps) {
 			for (j = 0; j < reps; j++) {
-				offset = x + ((y << repshift) + i + j)
-					* vid.rowbytes;
+				offset = x + ((y << repshift) + i + j) * vid.rowbytes;
 				off = offset % 0x10000;
 				if ((offset / 0x10000) != vidpage) {
 					vidpage = offset / 0x10000;
@@ -221,10 +221,11 @@ VID_DescribeModes_f (void)
 	for (i = 0; i < num_modes; i++) {
 		if (modes[i].width) {
 			Con_Printf ("%d: %d x %d - ", i, modes[i].width, modes[i].height);
-			if (modes[i].bytesperpixel == 0)
+			if (modes[i].bytesperpixel == 0) {
 				Con_Printf ("ModeX\n");
-			else
+			} else {
 				Con_Printf ("%d bpp\n", modes[i].bytesperpixel << 3);
+			}
 		}
 	}
 }
@@ -358,7 +359,6 @@ VID_SetMode (int modenum, unsigned char *palette)
 
 	if ((modenum >= num_modes) || (modenum < 0) || !modes[modenum].width) {
 		Cvar_SetValue (vid_mode, current_mode);
-
 		Con_Printf ("No such video mode: %d\n", modenum);
 
 		return 0;
@@ -462,7 +462,8 @@ VID_Init (unsigned char *palette)
 						"number of video modes available.");
 		Cmd_AddCommand ("vid_describemode", VID_DescribeMode_f, "Report "
 						"information on specified video mode, default is "
-						"current.\n(vid_describemode (mode))");
+						"current.\n"
+						"(vid_describemode (mode))");
 		Cmd_AddCommand ("vid_describemodes", VID_DescribeModes_f, "Report "
 						"information on all video modes.");
 		Cmd_AddCommand ("vid_debug", VID_Debug_f, "FIXME: No Description");
@@ -505,11 +506,13 @@ void
 VID_Init_Cvars ()
 {
 	vid_mode = Cvar_Get ("vid_mode", "5", CVAR_NONE, NULL,
-			"Sets the video mode");
+						 "Sets the video mode");
 	vid_redrawfull = Cvar_Get ("vid_redrawfull", "0", CVAR_NONE, NULL,
-			"Redraw entire screen each frame instead of just dirty areas");
+							   "Redraw entire screen each frame instead of "
+							   "just dirty areas");
 	vid_waitforrefresh = Cvar_Get ("vid_waitforrefresh", "0", CVAR_ARCHIVE,
-			NULL, "Wait for vertical retrace before drawing next frame");
+								   NULL, "Wait for vertical retrace before "
+								   "drawing next frame");
 	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
 								 "Use system gamma control if available");
 }
@@ -541,8 +544,7 @@ VID_Update (vrect_t *rects)
 					((total - offset > 0x10000) ? 0x10000 : (total - offset)));
 		}
 	} else {
-		int         ycount;
-		int         offset;
+		int         offset, ycount;
 		int         vidpage = 0;
 
 		vga_setpage (0);
@@ -558,15 +560,14 @@ VID_Update (vrect_t *rects)
 					vga_setpage (vidpage);
 				}
 				if (rects->width + i > 0x10000) {
-					memcpy (framebuffer_ptr + i,
-							vid.buffer + offset, 0x10000 - i);
+					memcpy (framebuffer_ptr + i, vid.buffer + offset,
+							0x10000 - i);
 					vga_setpage (++vidpage);
-					memcpy (framebuffer_ptr,
-							vid.buffer + offset + 0x10000 - i,
+					memcpy (framebuffer_ptr, vid.buffer + offset + 0x10000 - i,
 							rects->width - 0x10000 + i);
 				} else {
-					memcpy (framebuffer_ptr + i,
-							vid.buffer + offset, rects->width);
+					memcpy (framebuffer_ptr + i, vid.buffer + offset,
+							rects->width);
 				}
 				offset += vid.rowbytes;
 			}
