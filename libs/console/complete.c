@@ -42,15 +42,10 @@
 #include "QF/cvar.h"
 
 //FIXME eww
-#define     MAXCMDLINE  256
-extern char key_lines[32][MAXCMDLINE];
-extern int  edit_line;
-extern int  key_linepos;
-
 extern int  con_linewidth;
 
 /*
-	Con_CompleteCommandLine
+	Con_BasicCompleteCommandLine
 
 	New function for tab-completion system
 	Added by EvilTypeGuy
@@ -59,7 +54,7 @@ extern int  con_linewidth;
 
 */
 void
-Con_CompleteCommandLine (void)
+Con_BasicCompleteCommandLine (inputline_t *il)
 {
 	const char *cmd = "";
 	char	*s;
@@ -67,7 +62,7 @@ Con_CompleteCommandLine (void)
 	int		cmd_len;
 	const char **list[3] = {0, 0, 0};
 
-	s = key_lines[edit_line] + 1;
+	s = il->lines[il->edit_line] + 1;
 	if (*s == '\\' || *s == '/')
 		s++;
 
@@ -135,14 +130,14 @@ Con_CompleteCommandLine (void)
 	}
 	
 	if (cmd) {
-		key_lines[edit_line][1] = '/';
-		strncpy(key_lines[edit_line] + 2, cmd, cmd_len);
-		key_linepos = cmd_len + 2;
+		il->lines[il->edit_line][1] = '/';
+		strncpy(il->lines[il->edit_line] + 2, cmd, cmd_len);
+		il->linepos = cmd_len + 2;
 		if (c + v + a == 1) {
-			key_lines[edit_line][key_linepos] = ' ';
-			key_linepos++;
+			il->lines[il->edit_line][il->linepos] = ' ';
+			il->linepos++;
 		}
-		key_lines[edit_line][key_linepos] = 0;
+		il->lines[il->edit_line][il->linepos] = 0;
 	}
 	for (i = 0; i < 3; i++)
 		if (list[i])
