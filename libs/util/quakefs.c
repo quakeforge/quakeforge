@@ -798,14 +798,6 @@ COM_AddDirectory (const char *dir)
 	COM_LoadGameDirectory (dir);
 }
 
-/*
-	COM_AddGameDirectory
-
-	FIXME: this is a wrapper for COM_AddDirectory (which used to be
-	this function) to have it load share and base paths.  Whenver
-	someone goes through to clean up the fs code, this function should
-	merge with COM_AddGameDirectory.
-*/
 void
 COM_AddGameDirectory (const char *dir)
 {

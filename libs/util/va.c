@@ -35,6 +35,7 @@ static const char rcsid[] =
 #include <stdio.h>
 
 #include "QF/qtypes.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 
 #include "compat.h"
@@ -45,17 +46,31 @@ static const char rcsid[] =
 
 	does a varargs printf into a temp buffer, so I don't need to have
 	varargs versions of all text functions.
-	FIXME: make this buffer size safe someday
 */
 char       *
-va (const char *format, ...)
+va (const char *fmt, ...)
 {
-	va_list     argptr;
-	static char string[1024];
+	va_list     args;
+	static char *string;
+	int         size;
+	static int  string_size;
 
-	va_start (argptr, format);
-	vsnprintf (string, sizeof (string), format, argptr);
-	va_end (argptr);
+	va_start (args, fmt);
+	size = vsnprintf (string, string_size, fmt, args) + 1;  // +1 for nul
+	//printf ("size = %d\n", size);
+	while (size <= 0 || size > string_size) {
+		if (size > 0)
+			string_size = (size + 1023) & ~1023; // 1k multiples
+		else
+			string_size += 1024;
+		string = realloc (string, string_size);
+		if (!string)
+			Sys_Error ("console: could not allocate %d bytes\n",
+					   string_size);
+		size = vsnprintf (string, string_size, fmt, args) + 1;
+		//printf ("size = %d\n", size);
+	}
+	va_end (args);
 
 	return string;
 }

@@ -62,13 +62,9 @@ ProjectPointOnPlane (vec3_t dst, const vec3_t p, const vec3_t normal)
 
 	d = DotProduct (normal, p) * inv_denom;
 
-	n[0] = normal[0] * inv_denom;
-	n[1] = normal[1] * inv_denom;
-	n[2] = normal[2] * inv_denom;
+	VectorScale (normal, inv_denom * d, n);
 
-	dst[0] = p[0] - d * n[0];
-	dst[1] = p[1] - d * n[1];
-	dst[2] = p[2] - d * n[2];
+	VectorSubtract (p, n, dst);
 }
 
 // assumes "src" is normalized
@@ -86,7 +82,7 @@ PerpendicularVector (vec3_t dst, const vec3_t src)
 			minelem = fabs (src[i]);
 		}
 	}
-	tempvec[0] = tempvec[1] = tempvec[2] = 0.0F;
+	VectorZero (tempvec);
 	tempvec[pos] = 1.0F;
 
 	/* project the point onto the plane defined by src */
@@ -109,10 +105,8 @@ VectorVectors(const vec3_t forward, vec3_t right, vec3_t up)
 	right[1] = -forward[0];
 	right[2] = forward[1];
 
-	d = DotProduct(forward, right);
-	right[0] -= d * forward[0];
-	right[1] -= d * forward[1];
-	right[2] -= d * forward[2];
+	d = -DotProduct(forward, right);
+	VectorMA (right, d, forward, right);
 	VectorNormalize (right);
 	CrossProduct(right, forward, up);
 }
@@ -129,9 +123,7 @@ RotatePointAroundVector (vec3_t dst, const vec3_t dir, const vec3_t point,
 	int         i;
 	vec3_t      vr, vup, vf;
 
-	vf[0] = dir[0];
-	vf[1] = dir[1];
-	vf[2] = dir[2];
+	VectorCopy (dir, vf);
 
 	PerpendicularVector (vr, dir);
 	CrossProduct (vr, vf, vup);
@@ -169,8 +161,7 @@ RotatePointAroundVector (vec3_t dst, const vec3_t dir, const vec3_t point,
 	R_ConcatRotations (tmpmat, im, rot);
 
 	for (i = 0; i < 3; i++) {
-		dst[i] = rot[i][0] * point[0] + rot[i][1] * point[1] + rot[i][2] *
-			point[2];
+		dst[i] = DotProduct (rot[i], point);
 	}
 }
 
@@ -181,12 +172,6 @@ RotatePointAroundVector (vec3_t dst, const vec3_t dir, const vec3_t point,
 float
 anglemod (float a)
 {
-#if 0
-	if (a >= 0)
-		a -= 360 * (int) (a / 360);
-	else
-		a += 360 * (1 + (int) (-a / 360));
-#endif
 	a = (360.0 / 65536) * ((int) (a * (65536 / 360.0)) & 65535);
 	return a;
 }
@@ -196,7 +181,7 @@ anglemod (float a)
 
 	Split out like this for ASM to call.
 */
-void
+void __attribute__ ((noreturn))
 BOPS_Error (void)
 {
 	Sys_Error ("BoxOnPlaneSide:  Bad signbits");
@@ -280,9 +265,7 @@ BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, mplane_t *p)
 				p->normal[2] * emaxs[2];
 			break;
 		default:
-			dist1 = dist2 = 0;			// shut up compiler
 			BOPS_Error ();
-			break;
 	}
 
 #if 0
@@ -582,7 +565,6 @@ GreatestCommonDivisor (int i1, int i2)
   Invert24To16
 
   Inverts an 8.24 value to a 16.16 value
-  TODO: move to nonintel.c
 */
 fixed16_t
 Invert24To16 (fixed16_t val)

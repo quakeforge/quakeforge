@@ -67,7 +67,6 @@ struct hashtab_s {
 unsigned long
 Hash_String (const char *str)
 {
-	//FIXME not 64 bit clean
 #if 0
 	unsigned long h = 0;
 	while (*str) {
@@ -81,9 +80,8 @@ Hash_String (const char *str)
 	// shamelessly stolen from Daniel Phillips <phillips@innominate.de>
 	// from his post to lkml
 	unsigned long hash0 = 0x12a3fe2d, hash1 = 0x37abe8f9;
-	while (*str)
-	{
-		unsigned long hash = hash1 + (hash0 ^ (*str++ * 71523));
+	while (*str) {
+		unsigned long hash = hash1 + (hash0 ^ ((unsigned char)*str++ * 71523));
 		if (hash < 0) hash -= 0x7fffffff;
 		hash1 = hash0;
 		hash0 = hash;

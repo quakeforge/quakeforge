@@ -118,9 +118,8 @@ Cbuf_AddText (const char *text)
 /*
 	Cbuf_InsertText
 
-	Adds command text immediately after the current command
+	Adds command text to the beginning of the buffer.
 	Adds a \n to the text
-	TODO: Can we just read the buffer in the reverse order?
 */
 void
 Cbuf_InsertText (const char *text)
@@ -308,19 +307,19 @@ Cmd_Exec_f (void)
 		Sys_Printf ("exec <filename> : execute a script file\n");
 		return;
 	}
-	// FIXME: is this safe freeing the hunk here?
+
 	mark = Hunk_LowMark ();
 	f = (char *) COM_LoadHunkFile (Cmd_Argv (1));
 	if (!f) {
 		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
 		return;
 	}
+	Cbuf_InsertText (f);
+	Hunk_FreeToLowMark (mark);
+
 	if (!Cvar_Command () && (cmd_warncmd->int_val
 							 || (developer && developer->int_val)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
-
-	Cbuf_InsertText (f);
-	Hunk_FreeToLowMark (mark);
 }
 
 /*
@@ -829,7 +828,6 @@ Cmd_ExpandVariables (const char *data, char *dest)
 	Cmd_ExecuteString
 
 	A complete command line has been parsed, so try to execute it
-	FIXME: lookupnoadd the token to speed search?
 */
 void
 Cmd_ExecuteString (const char *text, cmd_source_t src)
