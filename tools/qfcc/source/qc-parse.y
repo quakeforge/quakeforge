@@ -160,7 +160,7 @@ expr_t *argv_expr (void);
 %type	<param>	param param_list
 %type	<def>	def_name opt_initializer methoddef var_initializer
 %type	<expr>	const opt_expr fexpr expr element_list element_list1 element
-%type	<expr>	string_val opt_state_expr opt_step array_decl
+%type	<expr>	string_val opt_state_expr think opt_step array_decl
 %type	<expr>	statement statements statement_block
 %type	<expr>	label break_label continue_label enum_list enum
 %type	<expr>	unary_expr primary cast_expr opt_arg_list arg_list
@@ -554,7 +554,7 @@ opt_state_expr
 		{
 			$$ = 0;
 		}
-	| '[' fexpr ',' { $<type>$ = &type_function; } def_name opt_step ']'
+	| '[' fexpr ',' think opt_step ']'
 		{
 			if ($2->type == ex_integer)
 				convert_int ($2);
@@ -563,18 +563,29 @@ opt_state_expr
 			if (!type_assignable (&type_float, get_type ($2)))
 				error ($2, "invalid type for frame number");
 			$2 = cast_expr (&type_float, $2);
-			if ($5->type->type != ev_func)
+			if (extract_type ($4) != ev_func)
 				error ($2, "invalid type for think");
-			if ($6) {
-				if ($6->type == ex_integer)
-					convert_int ($6);
-				else if ($6->type == ex_uinteger)
-					convert_uint ($6);
-				if (!type_assignable (&type_float, get_type ($6)))
-					error ($6, "invalid type for time step");
+			if ($5) {
+				if ($5->type == ex_integer)
+					convert_int ($5);
+				else if ($5->type == ex_uinteger)
+					convert_uint ($5);
+				if (!type_assignable (&type_float, get_type ($5)))
+					error ($5, "invalid type for time step");
 			}
 
-			$$ = new_state_expr ($2, new_def_expr ($5), $6);
+			$$ = new_state_expr ($2, $4, $5);
+		}
+	;
+
+think
+	: { $<type>$ = &type_function; } def_name
+		{
+			$$ = new_def_expr ($2);
+		}
+	| '(' fexpr ')'
+		{
+			$$ = $2;
 		}
 	;
 
