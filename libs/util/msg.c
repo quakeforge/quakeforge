@@ -108,18 +108,18 @@ MSG_WriteString (sizebuf_t *sb, const char *s)
 void
 MSG_WriteCoord (sizebuf_t *sb, float coord)
 {
-	MSG_WriteShort (sb, (unsigned int) (coord * 8.0));
+	MSG_WriteShort (sb, (int) (coord * 8.0));
 }
 
 void
 MSG_WriteCoordV (sizebuf_t *sb, const vec3_t coord)
 {
-	byte   *buf;
-	int		i, j;
+	byte        *buf;
+	unsigned int i, j;
 
 	buf = SZ_GetSpace (sb, 6);
 	for (i = 0; i < 3; i++) {
-		j = (unsigned int) (coord[i] * 8.0);
+		j = (int) (coord[i] * 8.0);
 		*buf++ = j & 0xff;
 		*buf++ = j >> 8;
 	}
@@ -133,17 +133,17 @@ MSG_WriteCoordAngleV (sizebuf_t *sb, const vec3_t coord, const vec3_t angles)
 
 	buf = SZ_GetSpace (sb, 9);
 	for (i = 0; i < 3; i++) {
-		j = (unsigned int) (coord[i] * 8.0);
+		j = (int) (coord[i] * 8.0);
 		*buf++ = j & 0xff;
 		*buf++ = j >> 8;
-		*buf++ = ((unsigned int) (angles[i] * (256.0 / 360.0)) & 255);
+		*buf++ = ((int) (angles[i] * (256.0 / 360.0)) & 255);
 	}
 }
 
 void
 MSG_WriteAngle (sizebuf_t *sb, float angle)
 {
-	MSG_WriteByte (sb, (unsigned int) (angle * (256.0 / 360.0)) & 255);
+	MSG_WriteByte (sb, (int) (angle * (256.0 / 360.0)) & 255);
 }
 
 void
@@ -154,14 +154,14 @@ MSG_WriteAngleV (sizebuf_t *sb, const vec3_t angles)
 
 	buf = SZ_GetSpace (sb, 3);
 	for (i = 0; i < 3; i++) {
-		*buf++ = ((unsigned int) (angles[i] * (256.0 / 360.0)) & 255);
+		*buf++ = ((int) (angles[i] * (256.0 / 360.0)) & 255);
 	}
 }
 
 void
 MSG_WriteAngle16 (sizebuf_t *sb, float angle16)
 {
-	MSG_WriteShort (sb, (unsigned int) (angle16 * (65536.0 / 360.0)) & 65535);
+	MSG_WriteShort (sb, (int) (angle16 * (65536.0 / 360.0)) & 65535);
 }
 
 // reading functions ==========================================================
