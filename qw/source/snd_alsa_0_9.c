@@ -1,7 +1,7 @@
 /*
-	snd_alsa_0_6.c
+	snd_alsa_0_9.c
 
-	(description)
+	Support for ALSA 0.9 sound driver (cvs development version)
 
 	Copyright (C) 1999,2000  contributors of the QuakeForge project
 	Please see the file "AUTHORS" for a list of contributors
