@@ -85,7 +85,6 @@ float   r_avertexnormal_dots[SHADEDOT_QUANT][256] =
 	#include "anorm_dots.h"
 		;
 
-float		shadelight, ambientlight;
 vec3_t		shadevector;
 
 static void
@@ -509,8 +508,8 @@ R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
 void
 R_DrawAliasModel (entity_t *e, qboolean cull)
 {
-	float		  add, an;
-	int			  lnum, texture;
+	float		  add, an, minshade, shade;
+	int			  lnum, i, texture;
 	int			  fb_texture = 0;
 	aliashdr_t	 *paliashdr;
 	model_t		 *clmodel;
@@ -529,17 +528,12 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 
 	if (!clmodel->fullbright) {
 		// get lighting information
-		ambientlight = shadelight = R_LightPoint (e->origin);
+		R_LightPoint (e->origin);
 		ambientcolor[0] *= e->colormod[0];
 		ambientcolor[1] *= e->colormod[1];
 		ambientcolor[2] *= e->colormod[2];
-		VectorScale (ambientcolor, 0.005, shadecolor);
-
-		// always give the gun some light
-		if (e == r_view_model && shadelight < 24) {
-			VectorScale (shadecolor, 24 / (shadelight + 0.1), shadecolor);
-			shadelight = 24;
-		}
+		VectorScale (ambientcolor, 0.005, ambientcolor);
+		VectorCopy (ambientcolor, shadecolor);
 
 		for (lnum = 0; lnum < r_maxdlights; lnum++) {
 			if (r_dlights[lnum].die >= r_realtime) {
@@ -547,37 +541,32 @@ R_DrawAliasModel (entity_t *e, qboolean cull)
 
 				VectorSubtract (e->origin, r_dlights[lnum].origin, dist);
 				d = DotProduct (dist, dist);
-				d = max (d, 1);
+				d = max (d, 64) * 200;
 				add = r_dlights[lnum].radius * r_dlights[lnum].radius * 8 / d;
 
-				if (add > 0) {
+				if (add > 0)
 					VectorMA (ambientcolor, add, r_dlights[lnum].color,
 							  ambientcolor);
-					ambientlight += add;
-				}
 			}
 		}
 
 		// clamp lighting so it doesn't overbright as much
-		if (ambientlight > 128) {
-			VectorScale (ambientcolor, 128 / ambientlight, ambientcolor);
-			ambientlight = 128;
+		for (i = 0; i < 3; i++) {
+			ambientcolor[i] = min (ambientcolor[i], 128/200.0);
+			if (ambientcolor[i] + shadecolor[i] > 1)
+				shadecolor[i] = 1 - ambientcolor[i];
+			// never allow players to go totally black
+			if (shadecolor[i] < clmodel->min_light / 200.0)
+				shadecolor[i] = clmodel->min_light / 200.0;
 		}
-		if (ambientlight + shadelight > 200) {
-			VectorScale (shadecolor, (200 - ambientlight) / shadelight,
-						 shadecolor);
-			shadelight = 200 - ambientlight;
+		// always give the gun some light
+		shade = max (shadecolor[0], max (shadecolor[1], shadecolor[2]));
+		minshade = e == r_view_model ? 24/200.0 : clmodel->min_light / 200.0;
+		if (e == r_view_model && shade < minshade) {
+			shadecolor[0] += minshade - shade;
+			shadecolor[1] += minshade - shade;
+			shadecolor[2] += minshade - shade;
 		}
-		VectorScale (ambientcolor, 0.005, ambientcolor);
-
-		// never allow players to go totally black
-		if (shadelight < clmodel->min_light) {
-			VectorScale (shadecolor, clmodel->min_light / (shadelight + 0.1),
-						 shadecolor);
-			shadelight = clmodel->min_light;
-		}
-
-		shadelight *= 0.005;
 
 		an = e->angles[1] * (M_PI / 180);
 		shadevector[0] = cos (-an);
