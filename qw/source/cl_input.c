@@ -57,6 +57,8 @@ static const char rcsid[] =
 #include "view.h"
 
 cvar_t     *cl_nodelta;
+cvar_t     *cl_maxnetfps;
+cvar_t     *cl_spamimpulse;
 
 /*
 	KEY BUTTONS
@@ -74,7 +76,6 @@ cvar_t     *cl_nodelta;
 	state bit 1 is edge triggered on the up to down transition
 	state bit 2 is edge triggered on the down to up transition
 */
-
 
 kbutton_t   in_left, in_right, in_forward, in_back;
 kbutton_t   in_lookup, in_lookdown, in_moveleft, in_moveright;
@@ -608,10 +609,13 @@ CL_FinishMove (usercmd_t *cmd)
 void
 CL_SendCmd (void)
 {
-	byte        data[128];
-	int         checksumIndex, lost, seq_hash, i;
-	sizebuf_t   buf;
-	usercmd_t  *cmd, *oldcmd;
+	byte			data[128];
+	static float	pps_balance = 0.0;
+	static int		dropcount = 0;
+	int				checksumIndex, lost, seq_hash, i;
+	qboolean		dontdrop; // FIXME: needed without cl_c2sImpulseBackup?
+	sizebuf_t		buf;
+	usercmd_t	   *cmd, *oldcmd;
 
 	if (cls.demoplayback)
 		return;							// sendcmds come from the demo
@@ -655,18 +659,26 @@ CL_SendCmd (void)
 	lost = CL_CalcNet ();
 	MSG_WriteByte (&buf, (byte) lost);
 
+	dontdrop = false;
+
 	i = (cls.netchan.outgoing_sequence - 2) & UPDATE_MASK;
 	cmd = &cl.frames[i].cmd;
+	if (cl_spamimpulse->int_val >= 2)
+		dontdrop = dontdrop || cmd->impulse;
 	MSG_WriteDeltaUsercmd (&buf, &nullcmd, cmd);
 	oldcmd = cmd;
 
 	i = (cls.netchan.outgoing_sequence - 1) & UPDATE_MASK;
 	cmd = &cl.frames[i].cmd;
+	if (cl_spamimpulse->int_val >= 3)
+		dontdrop = dontdrop || cmd->impulse;
 	MSG_WriteDeltaUsercmd (&buf, oldcmd, cmd);
 	oldcmd = cmd;
 
 	i = (cls.netchan.outgoing_sequence) & UPDATE_MASK;
 	cmd = &cl.frames[i].cmd;
+	if (cl_spamimpulse->int_val >= 1)
+		dontdrop = dontdrop || cmd->impulse;
 	MSG_WriteDeltaUsercmd (&buf, oldcmd, cmd);
 
 	// calculate a checksum over the move commands
@@ -690,6 +702,32 @@ CL_SendCmd (void)
 
 	if (cls.demorecording)
 		CL_WriteDemoCmd (cmd);
+
+	if (cl_maxnetfps->int_val) {
+		pps_balance += host_frametime;
+		// never drop more than 2 messages in a row -- that'll cause PL
+		// and don't drop if one of the last two movemessages have an impulse
+		if (pps_balance > 0.0 || dropcount >= 2 || dontdrop) {
+			float   pps;
+
+			pps = cl_maxnetfps->int_val;
+			if (pps < 10) pps = 10;
+			if (pps > 72) pps = 72;
+			pps_balance -= 1.0 / pps;
+			pps_balance = bound (-0.1, pps_balance, 0.1);
+			dropcount = 0;
+		} else {
+			// don't count this message when calculating PL
+			cl.frames[i].receivedtime = -3;
+			// drop this message
+			cls.netchan.outgoing_sequence++;
+			dropcount++;
+			return;
+		}
+	} else {
+		pps_balance = 0;
+		dropcount = 0;
+	}
 
 	// deliver the message
 	Netchan_Transmit (&cls.netchan, buf.cursize, buf.data);
@@ -777,4 +815,11 @@ CL_Input_Init_Cvars (void)
 	cl_nodelta = Cvar_Get ("cl_nodelta", "0", CVAR_NONE, NULL,
 						   "Disable player delta compression. Set to 1 if you "
 						   "have a poor ISP and get many U_REMOVE warnings.");
+	cl_maxnetfps = Cvar_Get ("cl_maxnetfps", "0", CVAR_ARCHIVE, NULL,
+							 "Controls number of command packets sent per "
+							 "second. Default 0 is unlimited.");
+	cl_spamimpulse = Cvar_Get ("cl_spamimpulse", "3", CVAR_NONE, NULL,
+							   "Controls number of duplicate packets sent if "
+							   "an impulse is being sent. Default (id "
+							   "behavior) is 3.");
 }
