@@ -302,7 +302,7 @@ SV_PreSpawn_f (void)
 	// the user
 	// spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
-		SV_Printf ("WARNING %s: [SV_PreSpawn] Back buffered (%d0, clearing",
+		SV_Printf ("WARNING %s: [SV_PreSpawn] Back buffered (%d), clearing",
 					host_client->name, host_client->netchan.message.cursize);
 		host_client->num_backbuf = 0;
 		SZ_Clear (&host_client->netchan.message);
