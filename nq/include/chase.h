@@ -31,7 +31,7 @@
 
 extern	cvar_t	*chase_active;
 
-void Chase_Init (void);
+void Chase_Init_Cvars (void);
 void Chase_Reset (void);
 void Chase_Update (void);
 

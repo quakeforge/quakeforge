@@ -917,6 +917,7 @@ Host_Init (quakeparms_t *parms)
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute_Sets ();
 
+	Chase_Init_Cvars ();
 	CL_InitCvars ();
 	IN_Init_Cvars ();
 	VID_Init_Cvars ();
@@ -942,7 +943,6 @@ Host_Init (quakeparms_t *parms)
 
 	Game_Init ();
 
-	Chase_Init ();
 	Host_InitVCR (parms);
 	Host_InitLocal ();
 	W_LoadWadFile ("gfx.wad");
@@ -999,6 +999,8 @@ Host_Init (quakeparms_t *parms)
 	host_initialized = true;
 
 	Sys_Printf ("========Quake Initialized=========\n");
+
+	SCR_UpdateScreen ();
 }
 
 
