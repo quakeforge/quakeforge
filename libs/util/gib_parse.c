@@ -161,6 +161,16 @@ GIB_Parse_Match_Backtick (const char *str, unsigned int *i)
 	return '`';
 }
 
+char
+GIB_Parse_Match_Index (const char *str, unsigned int *i)
+{
+	for ((*i)++; str[*i]; (*i)++) {
+		if (str[*i] == ']')
+			return 0;
+	}
+	return '[';
+}
+
 /*
 	GIB_Parse_Extract_Line
 	
@@ -427,7 +437,7 @@ FILTER_ERROR:
 	
 	GIB builtins
 	GIB functions
-	Assignment to a local variable
+	Assignment to a local/global variable
 	Normal quake console commands
 */
 void GIB_Parse_Execute_Line (cbuf_t *cbuf)

@@ -21,39 +21,31 @@
 //              Free Software Foundation, Inc.
 //              59 Temple Place - Suite 330
 //              Boston, MA  02111-1307, USA
+//
+// $Id$
 
-set zoom_version {$Id$}
-set zoom_base_amp 1
-set zoom_base_fov 90
-set zoom_mult 1.25
-set zoom_zoomed 0
+global zoom
 
-set zoom_mult_lower 1.25
-set zoom_mult_upper 90 // This is more or less the hard limit
-set zoom_mult_step .25
-
-alias zoom_init { // Initialize basic options
-	if #{$argn != 6} {
-		echo "Usage: $0 base_sensitivity base_fov min_zoom max_zoom zoom_step"
+function "zoom.init" { // Initialize basic options
+	if ($argc != 6) {
+		echo "Usage: $0 base_amp base_fov min_zoom max_zoom zoom_step"
 		return
 	}
-	set zoom_base_amp $1
-	set zoom_base_fov $2
-	set zoom_mult_lower $3
-	set zoom_mult $3
-	set zoom_mult_upper $4
-	set zoom_mult_step $5
+	zoom.amp = $1
+	zoom.fov = $2
+	zoom.mult.lower = $3
+	zoom.mult = $3
+	zoom.mult.upper = $4
+	zoom.mult.step = $5
+	zoom.zoomed = 0
+	set fov ${zoom.fov}
+	set in_amp ${zoom.amp}
 }
 
-alias zoom_mult { // "Accessor" for zoom_mult
-	if #{!$1} return // Prevent division by zero
-	set zoom_mult $1
-}
-
-alias zoom_adjust { // Adjust fov and sensitivity to match zoom factor
-	if $zoom_zoomed {
-		set fov #{$zoom_base_fov/$zoom_mult}
-		set in_amp #{$zoom_base_amp/$zoom_mult}
+function "zoom.adjust" { // Adjust fov and sensitivity to match zoom factor
+	if ${zoom.zoomed} {
+		set fov (${zoom.fov}/${zoom.mult})
+		set in_amp (${zoom.amp}/${zoom.mult})
 		return
 	} else {
 		set fov $zoom_base_fov

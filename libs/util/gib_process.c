@@ -37,6 +37,7 @@ static const char rcsid[] =
 
 #include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 #include "QF/dstring.h"
 #include "QF/cbuf.h"
@@ -46,6 +47,44 @@ static const char rcsid[] =
 #include "QF/gib_vars.h"
 
 #include "exp.h"
+
+int GIB_Process_Variables_All (struct dstring_s *token);
+
+int
+GIB_Process_Index (dstring_t *index, unsigned int pos, int *i1, int *i2)
+{
+	int i, v1, v2;
+	char *p;
+	
+	
+	for (i = pos; index->str[i] != ']'; i++)
+		if (!index->str[i]) {
+			Cbuf_Error ("parse", "Could not find matching [");
+			return -1;
+		}
+	v1 = atoi (index->str+pos+1);
+	if (v1 < 0) {
+		Cbuf_Error ("index", "Negative index found in sub-string expression");
+		return -1;
+	}
+	if ((p = strchr (index->str+pos, ':'))) {
+		v2 = atoi (p+1);
+		if (v2 < 0) {
+			Cbuf_Error ("index", "Negative index found in sub-string expression");
+			return -1;
+		}
+	} else
+		v2 = v1;
+	dstring_snip (index, pos, i - pos + 1);
+	if (v2 < v1) {
+		v1 ^= v2;
+		v2 ^= v1;
+		v1 ^= v2;
+	}
+	*i1 = v1;
+	*i2 = v2;
+	return 0;
+}
 
 unsigned int
 GIB_Process_Variable (struct dstring_s *dstr, unsigned int pos, qboolean tolerant)
@@ -80,6 +119,8 @@ GIB_Process_Variables_All (struct dstring_s *token)
 	int i, n, m;
 	dstring_t *var = dstring_newstr ();
 	char c = 0;
+	char *p;
+	int i1, i2;
 	
 	for (i = 0; token->str[i]; i++) {
 		if (token->str[i] == '$') {
@@ -89,19 +130,50 @@ GIB_Process_Variables_All (struct dstring_s *token)
 					Cbuf_Error ("parse", "Could not find match for %c", c);
 					goto ERROR;
 				}
+				if (token->str[n+1] == '[')  {
+					// Cut index out and put it with the variable
+					m = n+1;
+					if ((c = GIB_Parse_Match_Index (token->str, &m))) {
+						Cbuf_Error ("parse", "Could not find match for %c", c);
+						goto ERROR;
+					}
+					dstring_insert (var, 0, token->str+n+1, m-n);
+					dstring_snip (token, n+1, m-n);
+				}
 				n -= i;
 				dstring_insert (var, 0, token->str+i+2, n-2);
 				dstring_insertstr (var, 0, "$");
 				n++;
 			} else {
-				for (n = 1; isalnum((byte)token->str[i+n]) || token->str[i+n] == '$' || token->str[i+n] == '_'; n++); // find end of var
+				for (n = 1; isalnum((byte)token->str[i+n]) ||
+							token->str[i+n] == '$' ||
+							token->str[i+n] == '_' ||
+							token->str[i+n] == '[' ||
+							token->str[i+n] == ']' ||
+							token->str[i+n] == ':'; n++); // find end of var
 				dstring_insert (var, 0, token->str+i, n); // extract it
 			}
 			for (m = 1; var->str[m]; m++) {
 				if (var->str[m] == '$')
 					m += GIB_Process_Variable (var, m, false) - 1;
 			}
+			i1 = -1;
+			if (var->str[strlen(var->str)-1] == ']' && (p = strrchr (var->str, '[')))
+				if (GIB_Process_Index(var, p-var->str, &i1, &i2)) {
+					c = '[';
+					goto ERROR;
+				}
 			GIB_Process_Variable (var, 0, true);
+			if (i1 >= 0) {
+				if (i1 >= strlen (var->str))
+					i1 = strlen(var->str)-1;
+				if (i2 >= strlen (var->str))
+					i2 = strlen(var->str)-1;
+				if (i2 < strlen(var->str)-1) // Snip everthing after index 2
+				dstring_snip (var, i2+1, strlen(var->str)-i2-1);
+				if (i1 > 0) // Snip everything before index 1
+				dstring_snip (var, 0, i1);
+			}
 			dstring_replace (token, i, n, var->str, strlen(var->str));
 			i += strlen (var->str) - 1;
 			dstring_clearstr (var);
@@ -187,6 +259,7 @@ GIB_Process_Token (struct dstring_s *token, char delim)
 		if (GIB_Process_Variables_All (token))
 			return -1;
 	}
+			
 	if (delim == '(')
 		if (GIB_Process_Math (token))
 			return -1;

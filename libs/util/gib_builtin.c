@@ -52,12 +52,14 @@ static const char rcsid[] =
 
 hashtab_t *gib_builtins;
 
+/*
+	Hashtable callbacks
+*/
 const char * 
 GIB_Builtin_Get_Key (void *ele, void *ptr)
 {
 	return ((gib_builtin_t *)ele)->name->str;
 }
-
 void
 GIB_Builtin_Free (void *ele, void *ptr)
 {
@@ -67,6 +69,11 @@ GIB_Builtin_Free (void *ele, void *ptr)
 	free (b);
 }
 
+/*
+	GIB_Builtin_Add
+	
+	Registers a new builtin GIB command.
+*/
 void
 GIB_Builtin_Add (const char *name, void (*func) (void), enum gib_builtin_type_e type)
 {
@@ -83,6 +90,13 @@ GIB_Builtin_Add (const char *name, void (*func) (void), enum gib_builtin_type_e 
 	Hash_Add (gib_builtins, new);
 }
 
+/*
+	GIB_Builtin_Find
+	
+	Looks up the builtin name in the builtin hash,
+	returning a pointer to the struct on success,
+	zero otherwise.
+*/
 gib_builtin_t *
 GIB_Builtin_Find (const char *name)
 {
@@ -91,12 +105,22 @@ GIB_Builtin_Find (const char *name)
 	return (gib_builtin_t *) Hash_Find (gib_builtins, name);
 }
 
+/*
+	GIB_Argc
+	
+	Returns the number of arguments available
+	in the current buffer.
+*/
 unsigned int
 GIB_Argc (void)
 {
 	return cbuf_active->args->argc;
 }
 
+/*
+	Returns a specific argument in the current
+	buffer.
+*/
 const char *
 GIB_Argv (unsigned int arg)
 {
@@ -106,6 +130,12 @@ GIB_Argv (unsigned int arg)
 		return "";
 }
 
+/*
+	GIB_Args
+	
+	Returns a pointer to the composite command
+	line starting at token arg.
+*/
 const char *
 GIB_Args (unsigned int arg)
 {
@@ -115,6 +145,13 @@ GIB_Args (unsigned int arg)
 		return "";
 }
 
+/*
+	GIB_Arg_Strip_Delim
+	
+	Strips any wrapping characters off of the
+	specified argument.  Useful for GIB_BUILTIN_NOPROCESS
+	or GIB_BUILTIN_FIRSTONLY builtins.
+*/
 void
 GIB_Arg_Strip_Delim (unsigned int arg)
 {
@@ -125,6 +162,11 @@ GIB_Arg_Strip_Delim (unsigned int arg)
 	}
 }
 
+/*
+	GIB Builtin functions
+	
+	See GIB docs for information.
+*/
 void
 GIB_Function_f (void)
 {
