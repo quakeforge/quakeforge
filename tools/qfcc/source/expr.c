@@ -2272,7 +2272,7 @@ function_expr (expr_t *e1, expr_t *e2)
 expr_t *
 return_expr (function_t *f, expr_t *e)
 {
-	type_t     *t = get_type (e);
+	type_t     *t;
 
 	if (!e) {
 		if (f->def->type->aux_type != &type_void) {
@@ -2286,6 +2286,8 @@ return_expr (function_t *f, expr_t *e)
 		}
 		return new_unary_expr ('r', 0);
 	}
+
+	t = get_type (e);
 
 	if (e->type == ex_error)
 		return e;
