@@ -49,12 +49,14 @@
 	All console printing must go through this in order to be logged to disk
 	If no console is visible, the notify window will pop up.
 */
-void __attribute__ ((weak))
-Con_Print (char *txt)
+void
+QFutil_Con_Print (char *txt)
 {
 	// echo to debugging console
 	Sys_Printf ("%s", txt);
 }
+
+void Con_Print (char *) __attribute ((weak, alias ("QFutil_Con_Print")));
 
 /*
 	Con_Printf
