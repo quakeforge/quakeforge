@@ -140,7 +140,7 @@ new_struct (const char *name)
 		}
 	}
 	strct = malloc (sizeof (struct_t));
-	strct->name = name;
+	strct->name = name ? save_string (name) : 0;
 	strct->type = new_type ();
 	strct->type->type = ev_struct;
 	strct->type->struct_tail = &strct->type->struct_head;

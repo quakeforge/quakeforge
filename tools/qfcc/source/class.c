@@ -90,16 +90,20 @@ def_t *
 class_def (class_t *class, int external)
 {
 	const char *name;
+	type_t     *type;
 	storage_class_t storage = external ? st_extern : st_global;
 
 	if (!class->class_name)
 		return 0;
-	if (class->category_name)
+	if (class->category_name) {
 		name = va ("_OBJ_CATEGORY_%s_%s",
 				   class->class_name, class->category_name);
-	else
+		type = type_category;
+	} else {
 		name = va ("_OBJ_CLASS_%s", class->class_name);
-	return get_def (type_category, name, pr.scope, storage);
+		type = type_Class.aux_type;
+	}
+	return get_def (type, name, pr.scope, storage);
 }
 
 class_t *
@@ -209,7 +213,7 @@ class_begin (class_t *class)
 		if (class->super_class)
 			EMIT_STRING (cls->super_class, class->super_class->class_name);
 		EMIT_STRING (cls->name, class->class_name);
-		meta->info = _PR_CLS_CLASS;
+		cls->info = _PR_CLS_CLASS;
 		cls->protocols = meta->protocols;
 	}
 }
