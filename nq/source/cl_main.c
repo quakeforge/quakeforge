@@ -591,9 +591,9 @@ CL_RelinkEntities (void)
 		if (ent->model->flags & EF_ROTATE)
 			ent->angles[1] = bobjrotate;
 
-		if (state->baseline.effects & EF_BRIGHTFIELD)
+		if (state->effects & EF_BRIGHTFIELD)
 			R_EntityParticles (ent);
-		if (state->baseline.effects & EF_MUZZLEFLASH) {
+		if (state->effects & EF_MUZZLEFLASH) {
 			vec3_t      fv, rv, uv;
 
 			dl = R_AllocDlight (i);
@@ -611,7 +611,7 @@ CL_RelinkEntities (void)
 				dl->color[2] = 0.05;
 			}
 		}
-		CL_NewDlight (i, ent->origin, state->baseline.effects);
+		CL_NewDlight (i, ent->origin, state->effects);
 		if (VectorDistance_fast(state->msg_origins[1], ent->origin) > (256*256))
 			VectorCopy (ent ->origin, state->msg_origins[1]);
 		if (ent->model->flags & EF_ROCKET) {
